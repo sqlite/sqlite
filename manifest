@@ -1,5 +1,5 @@
-C Version\s3.49.1
-D 2025-02-18T13:38:58.435
+C Allow\ssqlite3_rsync\sto\swork\son\snon-WAL-mode\sdatabases,\sas\slong\sas\sthe\n--wal-only\sflag\sis\snot\sused.
+D 2025-05-01T16:02:02.037
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2190,7 +2190,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 07e18a1d8cc3f6b3a4a1f3528e63c9b29a5c8a7bca0b8d394b231da464ce1247
 F tool/sqldiff.c 2a0987d183027c795ced13d6749061c1d2f38e24eddb428f56fa64c3a8f51e4b
 F tool/sqlite3_analyzer.c.in fc7735c499d226a49d843d8209b2543e4e5229eeb71a674c331323a2217b65b4
-F tool/sqlite3_rsync.c 9a1cca2ab1271c59b37a6493c15dc1bcd0ab9149197a9125926bc08dd26b83fb
+F tool/sqlite3_rsync.c f5e0b13cb159638a8556614dc13c9c3d457df69a7c426b9977fc3fb79130ce2d
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
@@ -2209,10 +2209,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 57eceb361f0290b1326acf791565eb33267a10a5201aee34bdd2d1c93d647ff8
-R 75ce877abe8a04df5ba4cb86e46a277d
-T +sym-release *
-T +sym-version-3.49.1 *
+P 873d4e274b4988d260ba8354a9718324a1c26187a4ab4c1cc0227c03d0f10e70
+R 92095fa11b8ae347e8faff30eac0dc4a
+T *branch * rsync-delete-mode
+T *sym-rsync-delete-mode *
+T -sym-branch-3.49 *
 U drh
-Z ca30243dceef882d9114cf681397efb8
+Z ea6b3d3575592e4e0539f9a05fdc7c9c
 # Remove this line to create a well-formed Fossil manifest.

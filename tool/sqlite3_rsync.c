@@ -35,6 +35,7 @@ static const char zUsage[] =
   "   --ssh PATH    Name of the SSH program used to reach the remote side\n"
   "   -v            Verbose.  Multiple v's for increasing output\n"
   "   --version     Show detailed version information\n"
+  "   --wal-only    Do not sync unless both databases are in WAL mode\n"
 ;
 
 typedef unsigned char u8;
@@ -57,6 +58,7 @@ struct SQLiteRsync {
   u8 isReplica;            /* True if running on the replica side */
   u8 iProtocol;            /* Protocol version number */
   u8 wrongEncoding;        /* ATTACH failed due to wrong encoding */
+  u8 bWalOnly;             /* Require WAL mode */
   sqlite3_uint64 nOut;     /* Bytes transmitted */
   sqlite3_uint64 nIn;      /* Bytes received */
   unsigned int nPage;      /* Total number of pages in the database */
@@ -1237,9 +1239,11 @@ static void originSide(SQLiteRsync *p){
     }
     hashRegister(p->db);
     runSql(p, "BEGIN");
-    runSqlReturnText(p, buf, "PRAGMA journal_mode");
-    if( sqlite3_stricmp(buf,"wal")!=0 ){
-      reportError(p, "Origin database is not in WAL mode");
+    if( p->bWalOnly ){
+      runSqlReturnText(p, buf, "PRAGMA journal_mode");
+      if( sqlite3_stricmp(buf,"wal")!=0 ){
+        reportError(p, "Origin database is not in WAL mode");
+      }
     }
     runSqlReturnUInt(p, &nPage, "PRAGMA page_count");
     runSqlReturnUInt(p, &szPg, "PRAGMA page_size");
@@ -1463,10 +1467,12 @@ static void replicaSide(SQLiteRsync *p){
           runSql(p, "SELECT * FROM replica.sqlite_schema");
         }
         runSql(p, "BEGIN IMMEDIATE");
-        runSqlReturnText(p, buf, "PRAGMA replica.journal_mode");
-        if( strcmp(buf, "wal")!=0 ){
-          reportError(p, "replica is not in WAL mode");
-          break;
+        if( p->bWalOnly ){
+          runSqlReturnText(p, buf, "PRAGMA replica.journal_mode");
+          if( strcmp(buf, "wal")!=0 ){
+            reportError(p, "replica is not in WAL mode");
+            break;
+          }
         }
         runSqlReturnUInt(p, &nRPage, "PRAGMA replica.page_count");
         runSqlReturnUInt(p, &szRPage, "PRAGMA replica.page_size");
@@ -1669,11 +1675,12 @@ int main(int argc, char const * const *argv){
   memset(&ctx, 0, sizeof(ctx));
   for(i=1; i<argc; i++){
     const char *z = argv[i];
-    if( strcmp(z,"--origin")==0 ){
+    if( z[0]=='-' && z[1]=='-' && z[2]!=0 ) z++;
+    if( strcmp(z,"-origin")==0 ){
       isOrigin = 1;
       continue;
     }
-    if( strcmp(z,"--replica")==0 ){
+    if( strcmp(z,"-replica")==0 ){
       isReplica = 1;
       continue;
     }
@@ -1681,15 +1688,15 @@ int main(int argc, char const * const *argv){
       ctx.eVerbose += numVs(z);
       continue;
     }
-    if( strcmp(z, "--ssh")==0 ){
+    if( strcmp(z, "-ssh")==0 ){
       zSsh = cli_opt_val;
       continue;
     }
-    if( strcmp(z, "--exe")==0 ){
+    if( strcmp(z, "-exe")==0 ){
       zExe = cli_opt_val;
       continue;
     }
-    if( strcmp(z, "--logfile")==0 ){
+    if( strcmp(z, "-logfile")==0 ){
       /* DEBUG OPTION:  --logfile FILENAME
       ** Cause all local output traffic to be duplicated in FILENAME */
       const char *zLog = cli_opt_val;
@@ -1701,17 +1708,21 @@ int main(int argc, char const * const *argv){
       }
       continue;
     }
-    if( strcmp(z, "--errorfile")==0 ){
+    if( strcmp(z, "-errorfile")==0 ){
       /* DEBUG OPTION:  --errorfile FILENAME
       ** Error messages on the local side are written into FILENAME */
       ctx.zErrFile = cli_opt_val;
       continue;
     }
-    if( strcmp(z, "--remote-errorfile")==0 ){
+    if( strcmp(z, "-remote-errorfile")==0 ){
       /* DEBUG OPTION:  --remote-errorfile FILENAME
       ** Error messages on the remote side are written into FILENAME on
       ** the remote side. */
       zRemoteErrFile = cli_opt_val;
+      continue;
+    }
+    if( strcmp(z, "-wal-only")==0 ){
+      ctx.bWalOnly = 1;
       continue;
     }
     if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
@@ -1720,18 +1731,18 @@ int main(int argc, char const * const *argv){
       printf("%s", zUsage);
       return 0;
     }
-    if( strcmp(z, "--version")==0 ){
+    if( strcmp(z, "-version")==0 ){
       printf("%s\n", sqlite3_sourceid());
       return 0;
     }
     if( z[0]=='-' ){
-      if( strcmp(z,"--commcheck")==0 ){  /* DEBUG ONLY */
+      if( strcmp(z,"-commcheck")==0 ){  /* DEBUG ONLY */
         /* Run a communication check with the remote side.  Do not attempt
         ** to exchange any database connection */
         ctx.bCommCheck = 1;
         continue;
       }
-      if( strcmp(z,"--arg-escape-check")==0 ){  /* DEBUG ONLY */
+      if( strcmp(z,"-arg-escape-check")==0 ){  /* DEBUG ONLY */
         /* Test the append_escaped_arg() routine by using it to render a
         ** copy of the input command-line, assuming all arguments except
         ** this one are filenames. */
@@ -1818,6 +1829,9 @@ int main(int argc, char const * const *argv){
     if( zRemoteErrFile ){
       append_escaped_arg(pStr, "--errorfile", 0);
       append_escaped_arg(pStr, zRemoteErrFile, 1);
+    }
+    if( ctx.bWalOnly ){
+      append_escaped_arg(pStr, "--wal-only", 0);
     }
     append_escaped_arg(pStr, zDiv, 1);
     append_escaped_arg(pStr, file_tail(ctx.zReplica), 1);
