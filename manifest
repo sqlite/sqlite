@@ -1,5 +1,5 @@
-C This\sis\sthe\sstart\sof\san\sexperiment\sin\sgetting\ssqlite3_rsync\sto\suse\sless\nbandwidth\swhen\sthe\stwo\sdatabases\sare\svery\ssimilar,\sby\ssending\shashes\nover\sblocks\sof\spages\sinitially,\srather\sthan\sover\sindividual\spages,\sthen\nrequesting\smore\sdetail\swhen\shashes\sdo\snot\smatch.
-D 2025-05-02T17:39:21.504
+C Bug\sfixes.\s\sAdded\snew\sdebugging\sfeatures\sto\sbetter\svisualize\sthe\nprotocol.
+D 2025-05-02T18:32:46.784
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2189,7 +2189,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 07e18a1d8cc3f6b3a4a1f3528e63c9b29a5c8a7bca0b8d394b231da464ce1247
 F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
-F tool/sqlite3_rsync.c 438ffaf829181863ea941c8e6d5faabfe9161d7a464b3dce1857ac2fabe09273
+F tool/sqlite3_rsync.c b786fe6316fe7ab4dc9c9f4f81c202f1baac66a49ef7a198121472f684977ce9
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
@@ -2207,11 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 660a035b6ce6684d429b882133e032181cc1664f4efadf1bc0e4ae27d45071c4
-R 2f18aca9a98c725fdd5da1ebbb1e7566
-T *branch * faster-rsync
-T *sym-faster-rsync *
-T -sym-trunk *
+P 266b4b8f0104bd4b1cff87ed78b0223006bf661a9650294a2b330d50c7ee8a0c
+R b7a2f023d4216a23fb40df2130b3b81c
 U drh
-Z 08dacd140b0440acc75d69379c13dfa6
+Z 82daa27df570baf781be22c975da80d8
 # Remove this line to create a well-formed Fossil manifest.

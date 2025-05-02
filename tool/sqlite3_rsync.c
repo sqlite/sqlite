@@ -46,9 +46,11 @@ struct SQLiteRsync {
   const char *zOrigin;     /* Name of the origin */
   const char *zReplica;    /* Name of the replica */
   const char *zErrFile;    /* Append error messages to this file */
+  const char *zDebugFile;  /* Append debugging messages to this file */
   FILE *pOut;              /* Transmit to the other side */
   FILE *pIn;               /* Receive from the other side */
   FILE *pLog;              /* Duplicate output here if not NULL */
+  FILE *pDebug;            /* Write debug info here if not NULL */
   sqlite3 *db;             /* Database connection */
   int nErr;                /* Number of errors encountered */
   int nWrErr;              /* Number of failed attempts to write on the pipe */
@@ -70,7 +72,7 @@ struct SQLiteRsync {
 /* The version number of the protocol.  Sent in the *_BEGIN message
 ** to verify that both sides speak the same dialect.
 */
-#define PROTOCOL_VERSION  1
+#define PROTOCOL_VERSION  2
 
 
 /* Magic numbers to identify particular messages sent over the wire.
@@ -882,6 +884,25 @@ static void logError(SQLiteRsync *p, const char *zFormat, ...){
   p->nErr++;
 }
 
+/*
+** Append text to the debugging mesage file, if an that file is
+** specified.
+*/
+static void debugMessage(SQLiteRsync *p, const char *zFormat, ...){
+  if( p->zDebugFile ){
+    if( p->pDebug==0 ){
+      p->pDebug = fopen(p->zDebugFile, "wb");
+    }
+    if( p->pDebug ){
+      va_list ap;
+      va_start(ap, zFormat);
+      vfprintf(p->pDebug, zFormat, ap);
+      va_end(ap);
+      fflush(p->pDebug);
+    }
+  }
+}
+
 
 /* Read a single big-endian 32-bit unsigned integer from the input
 ** stream.  Return 0 on success and 1 if there are any errors.
@@ -1334,12 +1355,19 @@ static void originSide(SQLiteRsync *p){
         ** a counter-proposal of an earlier protocol which the origin can
         ** accept by resending a new ORIGIN_BEGIN. */
         u8 newProtocol = readByte(p);
+        if( p->zDebugFile ){
+          debugMessage(p, "<- REPLICA_BEGIN %d\n", (int)newProtocol);
+        }
         if( newProtocol < p->iProtocol ){
           p->iProtocol = newProtocol;
           writeByte(p, ORIGIN_BEGIN);
           writeByte(p, p->iProtocol);
           writePow2(p, p->szPage);
           writeUint32(p, p->nPage);
+          if( p->zDebugFile ){
+            debugMessage(p, "-> ORIGIN_BEGIN %d %d %u\n", p->iProtocol,
+                         p->szPage, p->nPage);
+          }
         }else{
           reportError(p, "Invalid REPLICA_BEGIN reply");
         }
@@ -1353,6 +1381,9 @@ static void originSide(SQLiteRsync *p){
       case REPLICA_CONFIG: {
         readUint32(p, &iHash);
         readUint32(p, &nHash);
+        if( p->zDebugFile ){
+          debugMessage(p, "<- REPLICA_CONFIG %u %u\n", iHash, nHash);
+        }
         break;
       }
       case REPLICA_HASH: {
@@ -1369,14 +1400,17 @@ static void originSide(SQLiteRsync *p){
           if( pInsHash==0 ) break;
         }
         p->nHashSent++;
+        if( p->zDebugFile ){
+          debugMessage(p, "<- REPLICA_HASH %u %u\n", iHash, nHash);
+        }
         if( nHash>1 ){
           if( pCkHashN==0 ){
             pCkHashN = prepareStmt(p,
               "WITH a1(pgno) AS "
                 "(VALUES(?1) UNION ALL SELECT pgno+1 FROM a1 WHERE pgno<?2)"
-              "SELECT 1 FROM a1 CROSS JOIN sqlite_dbpage('main')"
+              "SELECT count(*) FROM a1 CROSS JOIN sqlite_dbpage('main')"
                              " USING(pgno)"
-              " WHERE agghash(hash(data))!=?3");
+              " HAVING agghash(hash(data))!=?3");
             if( pCkHashN==0 ) break;
           }
           sqlite3_bind_int64(pCkHashN, 1, iHash);
@@ -1415,19 +1449,28 @@ static void originSide(SQLiteRsync *p){
         break;
       }
       case REPLICA_READY: {
+        if( p->zDebugFile ){
+          debugMessage(p, "<- REPLICA_READY\n");
+        }
         if( nMulti>0 ){
           sqlite3_stmt *pStmt;
           pStmt = prepareStmt(p,"SELECT pgno, sz FROM badHash WHERE sz>1");
           if( pStmt==0 ) break;
           while( sqlite3_step(pStmt)==SQLITE_ROW ){
+            unsigned int pgno = (unsigned int)sqlite3_column_int64(pStmt,0);
+            unsigned int cnt = (unsigned int)sqlite3_column_int64(pStmt,1);
             writeByte(p, ORIGIN_DETAIL);
-            writeUint32(p, sqlite3_column_int(pStmt, 0));
-            writeUint32(p, sqlite3_column_int(pStmt, 1));
+            writeUint32(p, pgno);
+            writeUint32(p, cnt);
+            if( p->zDebugFile ){
+              debugMessage(p, "-> ORIGIN_DETAIL %u %u\n", pgno, cnt);
+            }
           }
           sqlite3_finalize(pStmt);
           runSql(p, "DELETE FROM badHash WHERE sz>1");
           nMulti = 0;
           writeByte(p, ORIGIN_READY);
+          if( p->zDebugFile ) debugMessage(p, "-> ORIGIN_READY\n");
         }else{
           sqlite3_stmt *pStmt;
           sqlite3_finalize(pCkHash);
@@ -1456,10 +1499,16 @@ static void originSide(SQLiteRsync *p){
             writeUint32(p, pgno);
             writeBytes(p, szPg, pContent);
             p->nPageSent++;
+            if( p->zDebugFile ){
+              debugMessage(p, "-> ORIGIN_PAGE %u\n", pgno);
+            }
           }
           sqlite3_finalize(pStmt);
           writeByte(p, ORIGIN_TXN);
           writeUint32(p, nPage);
+          if( p->zDebugFile ){
+            debugMessage(p, "-> ORIGIN_TXN %u\n", nPage);
+          }
           writeByte(p, ORIGIN_END);
         }
         fflush(p->pOut);
@@ -1517,9 +1566,13 @@ static void sendHashMessages(
       writeByte(p, REPLICA_CONFIG);
       writeUint32(p, pgno);
       writeUint32(p, npg);
+      if( p->zDebugFile ){
+        debugMessage(p, "-> REPLICA_CONFIG %u %u\n", pgno, npg);
+      }
     }
     writeByte(p, REPLICA_HASH);
     writeBytes(p, 20, a);
+    if( p->zDebugFile ) debugMessage(p, "-> REPLICA_HASH %u\n", iHash);
     p->nHashSent++;
     iHash = pgno + npg;
     nHash = npg;
@@ -1528,6 +1581,7 @@ static void sendHashMessages(
   runSql(p, "DELETE FROM sendHash");
   writeByte(p, REPLICA_READY);
   fflush(p->pOut);
+  if( p->zDebugFile ) debugMessage(p, "-> REPLICA_READY\n", iHash);
 }
 
 /*
@@ -1555,8 +1609,8 @@ static void subdivideHashRange(
     "WITH RECURSIVE c(n) AS"
     "  (VALUES(%u) UNION ALL SELECT n+%u FROM c WHERE n<%llu)"
     "REPLACE INTO sendHash(fpg,npg)"
-    " SELECT n, min(%llu-fpg,%u) FROM c",
-    fpg, nChunk, iEnd, iEnd, nChunk
+    " SELECT n, min(%llu-n,%u) FROM c",
+    fpg, nChunk, iEnd-nChunk, iEnd, nChunk
   );
 }
 
@@ -1643,6 +1697,10 @@ static void replicaSide(SQLiteRsync *p){
         p->iProtocol = readByte(p);
         szOPage = readPow2(p);
         readUint32(p, &nOPage);
+        if( p->zDebugFile ){
+          debugMessage(p, "<- ORIGIN_BEGIN %d %d %u\n", p->iProtocol, szOPage,
+                       nOPage);
+        }
         if( p->nErr ) break;
         if( p->iProtocol>PROTOCOL_VERSION ){
           /* If the protocol version on the origin side is larger, send back
@@ -1651,6 +1709,9 @@ static void replicaSide(SQLiteRsync *p){
           ** a new ORIGIN_BEGIN with a reduced protocol version. */
           writeByte(p, REPLICA_BEGIN);
           writeByte(p, PROTOCOL_VERSION);
+          if( p->zDebugFile ){
+            debugMessage(p, "-> REPLICA_BEGIN %u\n", PROTOCOL_VERSION);
+          }
           break;
         }
         p->nPage = nOPage;
@@ -1726,16 +1787,25 @@ static void replicaSide(SQLiteRsync *p){
         unsigned int fpg, npg;
         readUint32(p, &fpg);
         readUint32(p, &npg);
+        if( p->zDebugFile ){
+          debugMessage(p, "<- ORIGIN_DETAIL %u %u\n", fpg, npg);
+        }
         subdivideHashRange(p, fpg, npg);
         break;
       }
       case ORIGIN_READY: {
+        if( p->zDebugFile ){
+          debugMessage(p, "<- ORIGIN_READY\n");
+        }
         sendHashMessages(p, 0, 0);
         break;
       }
       case ORIGIN_TXN: {
         unsigned int nOPage = 0;
         readUint32(p, &nOPage);
+        if( p->zDebugFile ){
+          debugMessage(p, "<- ORIGIN_TXN %u\n", nOPage);
+        }
         if( pIns==0 ){
           /* Nothing has changed */
           runSql(p, "COMMIT");
@@ -1763,6 +1833,9 @@ static void replicaSide(SQLiteRsync *p){
         unsigned int pgno = 0;
         int rc;
         readUint32(p, &pgno);
+        if( p->zDebugFile ){
+          debugMessage(p, "<- ORIGIN_PAGE %u\n", pgno);
+        }
         if( p->nErr ) break;
         if( pIns==0 ){
           pIns = prepareStmt(p,
@@ -1910,6 +1983,7 @@ int main(int argc, char const * const *argv){
   sqlite3_int64 tmEnd;
   sqlite3_int64 tmElapse;
   const char *zRemoteErrFile = 0;
+  const char *zRemoteDebugFile = 0;
 
 #define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
@@ -1959,6 +2033,19 @@ int main(int argc, char const * const *argv){
       ** Error messages on the remote side are written into FILENAME on
       ** the remote side. */
       zRemoteErrFile = cli_opt_val;
+      continue;
+    }
+    if( strcmp(z, "-debugfile")==0 ){
+      /* DEBUG OPTION:  --debugfile FILENAME
+      ** Debugging messages on the local side are written into FILENAME */
+      ctx.zDebugFile = cli_opt_val;
+      continue;
+    }
+    if( strcmp(z, "-remote-debugfile")==0 ){
+      /* DEBUG OPTION:  --remote-debugfile FILENAME
+      ** Error messages on the remote side are written into FILENAME on
+      ** the remote side. */
+      zRemoteDebugFile = cli_opt_val;
       continue;
     }
     if( strcmp(z, "-wal-only")==0 ){
@@ -2070,6 +2157,10 @@ int main(int argc, char const * const *argv){
       append_escaped_arg(pStr, "--errorfile", 0);
       append_escaped_arg(pStr, zRemoteErrFile, 1);
     }
+    if( zRemoteDebugFile ){
+      append_escaped_arg(pStr, "--debugfile", 0);
+      append_escaped_arg(pStr, zRemoteDebugFile, 1);
+    }
     if( ctx.bWalOnly ){
       append_escaped_arg(pStr, "--wal-only", 0);
     }
@@ -2099,6 +2190,10 @@ int main(int argc, char const * const *argv){
       append_escaped_arg(pStr, "--errorfile", 0);
       append_escaped_arg(pStr, zRemoteErrFile, 1);
     }
+    if( zRemoteDebugFile ){
+      append_escaped_arg(pStr, "--debugfile", 0);
+      append_escaped_arg(pStr, zRemoteDebugFile, 1);
+    }
     append_escaped_arg(pStr, file_tail(ctx.zOrigin), 1);
     append_escaped_arg(pStr, zDiv, 1);
     zCmd = sqlite3_str_finish(pStr);
@@ -2119,6 +2214,10 @@ int main(int argc, char const * const *argv){
     if( zRemoteErrFile ){
       append_escaped_arg(pStr, "--errorfile", 0);
       append_escaped_arg(pStr, zRemoteErrFile, 1);
+    }
+    if( zRemoteDebugFile ){
+      append_escaped_arg(pStr, "--debugfile", 0);
+      append_escaped_arg(pStr, zRemoteDebugFile, 1);
     }
     append_escaped_arg(pStr, ctx.zOrigin, 1);
     append_escaped_arg(pStr, ctx.zReplica, 1);
