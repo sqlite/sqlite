@@ -1393,6 +1393,7 @@ static void replicaSide(SQLiteRsync *p){
   int c;
   sqlite3_stmt *pIns = 0;
   unsigned int szOPage = 0;
+  char eJMode = 0;               /* Journal mode prior to sync */
   char buf[65536];
 
   p->isReplica = 1;
@@ -1463,16 +1464,18 @@ static void replicaSide(SQLiteRsync *p){
         }
         if( nRPage==0 ){
           runSql(p, "PRAGMA replica.page_size=%u", szOPage);
-          runSql(p, "PRAGMA replica.journal_mode=WAL");
           runSql(p, "SELECT * FROM replica.sqlite_schema");
         }
         runSql(p, "BEGIN IMMEDIATE");
-        if( p->bWalOnly ){
-          runSqlReturnText(p, buf, "PRAGMA replica.journal_mode");
-          if( strcmp(buf, "wal")!=0 ){
+        runSqlReturnText(p, buf, "PRAGMA replica.journal_mode");
+        if( strcmp(buf, "wal")!=0 ){
+          if( p->bWalOnly && nRPage>0 ){
             reportError(p, "replica is not in WAL mode");
             break;
           }
+          eJMode = 1;      /* Non-WAL mode prior to sync */
+        }else{
+          eJMode = 2;      /* WAL-mode prior to sync */
         }
         runSqlReturnUInt(p, &nRPage, "PRAGMA replica.page_count");
         runSqlReturnUInt(p, &szRPage, "PRAGMA replica.page_size");
@@ -1537,6 +1540,11 @@ static void replicaSide(SQLiteRsync *p){
         }
         readBytes(p, szOPage, buf);
         if( p->nErr ) break;
+        if( pgno==1 &&  eJMode==2 && buf[18]==1 ){
+          /* Do not switch the replica out of WAL mode if it started in 
+          ** WAL mode */
+          buf[18] = buf[19] = 2;
+        }
         p->nPageSent++;
         sqlite3_bind_int64(pIns, 1, pgno);
         sqlite3_bind_blob(pIns, 2, buf, szOPage, SQLITE_STATIC);

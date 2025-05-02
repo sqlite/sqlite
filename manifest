@@ -1,5 +1,5 @@
-C Enhance\ssqlite3_rsync\sso\sthat,\sby\sdefault,\sit\swill\ssync\snon-WAL-mode\ndatabase\sfiles.\s\sAdd\sa\snew\scommand-line\soption\s--wal-only\sthat\srestricts\nthe\ssync\sto\sWAL-mode\sdatabases\sonly\s(the\sformer\sdefault).\s\sImprove\ncommand-line\soption\sparsing\sso\sthat\sonly\sa\ssingle\s"-"\sis\srequired\sbefore\neach\soption.
-D 2025-05-01T18:07:27.165
+C Do\snot\sallow\ssqlite3_rsync\sto\sconvert\sthe\sreplica\sfrom\sWAL-mode\sinto\nDELETE-mode,\sas\sthat\scan\sdisrupt\sexisting\sclients\son\sthe\sreplica\sside.\nDELETE-mode\sto\sWAL-mode\sconversions\sare\sallowed,\showever.\s\sSee\n[forum:/forumpost/6b575b66156673ee|forum\sthread\s6b575b66156].
+D 2025-05-02T11:18:09.023
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2189,7 +2189,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 07e18a1d8cc3f6b3a4a1f3528e63c9b29a5c8a7bca0b8d394b231da464ce1247
 F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
-F tool/sqlite3_rsync.c f5e0b13cb159638a8556614dc13c9c3d457df69a7c426b9977fc3fb79130ce2d
+F tool/sqlite3_rsync.c a8e1962d9e0418b37d6865e483640c49498efe64bf542022e845b056f6eb9cce
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
@@ -2207,9 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 20abf1ec107f942e4527901685d61283c9c2fe7bcefad63dbf5c6cbf050da849 e4126dcd1eba4f040a7c07102d34692287b74b41a3437a3b9d15c4f8c9d4e6fd
-R eaf25ba59d2c9244d7aeaa66e676c510
-T +closed e4126dcd1eba4f040a7c07102d34692287b74b41a3437a3b9d15c4f8c9d4e6fd
+P 4b53603fe468c0c28b818762917e41bdd870de6d4cc143688f1cdea3136c81a4
+R 77c0a71cca6be2a9f28e992f31255bba
 U drh
-Z 308dcdc3a40ce25db24c1b710b31692f
+Z 4ae06cab268d08247b608c21e7458e1c
 # Remove this line to create a well-formed Fossil manifest.
