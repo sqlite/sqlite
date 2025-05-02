@@ -1309,7 +1309,7 @@ static void originSide(SQLiteRsync *p){
   p->isReplica = 0;
   if( p->bCommCheck ){
     infoMsg(p, "origin  zOrigin=%Q zReplica=%Q isRemote=%d protocol=%d",
-               p->zOrigin, p->zReplica, p->isRemote, PROTOCOL_VERSION);
+               p->zOrigin, p->zReplica, p->isRemote, p->iProtocol);
     writeByte(p, ORIGIN_END);
     fflush(p->pOut);
   }else{
@@ -1335,13 +1335,12 @@ static void originSide(SQLiteRsync *p){
     if( p->nErr==0 ){
       /* Send the ORIGIN_BEGIN message */
       writeByte(p, ORIGIN_BEGIN);
-      writeByte(p, PROTOCOL_VERSION);
+      writeByte(p, p->iProtocol);
       writePow2(p, szPg);
       writeUint32(p, nPage);
       fflush(p->pOut);
       p->nPage = nPage;
       p->szPage = szPg;
-      p->iProtocol = PROTOCOL_VERSION;
       lockBytePage = (1<<30)/szPg + 1;
     }
   }
@@ -1691,7 +1690,7 @@ static void replicaSide(SQLiteRsync *p){
   p->isReplica = 1;
   if( p->bCommCheck ){
     infoMsg(p, "replica zOrigin=%Q zReplica=%Q isRemote=%d protocol=%d",
-               p->zOrigin, p->zReplica, p->isRemote, PROTOCOL_VERSION);
+               p->zOrigin, p->zReplica, p->isRemote, p->iProtocol);
     writeByte(p, REPLICA_END);
     fflush(p->pOut);
   }
@@ -1710,9 +1709,10 @@ static void replicaSide(SQLiteRsync *p){
         unsigned int nOPage = 0;
         unsigned int nRPage = 0, szRPage = 0;
         int rc = 0;
+        u8 iProtocol;
 
         closeDb(p);
-        p->iProtocol = readByte(p);
+        iProtocol = readByte(p);
         szOPage = readPow2(p);
         readUint32(p, &nOPage);
         if( p->zDebugFile ){
@@ -1720,18 +1720,19 @@ static void replicaSide(SQLiteRsync *p){
                        nOPage);
         }
         if( p->nErr ) break;
-        if( p->iProtocol>PROTOCOL_VERSION ){
+        if( iProtocol>p->iProtocol ){
           /* If the protocol version on the origin side is larger, send back
           ** a REPLICA_BEGIN message with the protocol version number of the
           ** replica side.  This gives the origin an opportunity to resend
           ** a new ORIGIN_BEGIN with a reduced protocol version. */
           writeByte(p, REPLICA_BEGIN);
-          writeByte(p, PROTOCOL_VERSION);
+          writeByte(p, p->iProtocol);
           if( p->zDebugFile ){
-            debugMessage(p, "-> REPLICA_BEGIN %u\n", PROTOCOL_VERSION);
+            debugMessage(p, "-> REPLICA_BEGIN %u\n", p->iProtocol);
           }
           break;
         }
+        p->iProtocol = iProtocol;
         p->nPage = nOPage;
         p->szPage = szOPage;
         rc = sqlite3_open(":memory:", &p->db);
@@ -2006,6 +2007,7 @@ int main(int argc, char const * const *argv){
 
 #define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
+  ctx.iProtocol = PROTOCOL_VERSION;
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' && z[1]=='-' && z[2]!=0 ) z++;
@@ -2028,6 +2030,20 @@ int main(int argc, char const * const *argv){
     if( strcmp(z, "-exe")==0 ){
       zExe = cli_opt_val;
       continue;
+    }
+    if( strcmp(z, "-wal-only")==0 ){
+      ctx.bWalOnly = 1;
+      continue;
+    }
+    if( strcmp(z, "-version")==0 ){
+      printf("%s\n", sqlite3_sourceid());
+      return 0;
+    }
+    if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
+     || strcmp(z, "-?")==0
+    ){
+      printf("%s", zUsage);
+      return 0;
     }
     if( strcmp(z, "-logfile")==0 ){
       /* DEBUG OPTION:  --logfile FILENAME
@@ -2067,39 +2083,36 @@ int main(int argc, char const * const *argv){
       zRemoteDebugFile = cli_opt_val;
       continue;
     }
-    if( strcmp(z, "-wal-only")==0 ){
-      ctx.bWalOnly = 1;
+    if( strcmp(z, "-protocol")==0 ){
+      /* DEBUG OPTION:  --protocool N
+      ** Set the protocol version to N */
+      ctx.iProtocol = atoi(cli_opt_val);
+      if( ctx.iProtocol<1 ){
+        ctx.iProtocol = 1;
+      }else if( ctx.iProtocol>PROTOCOL_VERSION ){
+        ctx.iProtocol = PROTOCOL_VERSION;
+      }
       continue;
     }
-    if( strcmp(z, "-help")==0 || strcmp(z, "--help")==0
-     || strcmp(z, "-?")==0
-    ){
-      printf("%s", zUsage);
+    if( strcmp(z,"-commcheck")==0 ){  /* DEBUG ONLY */
+      /* Run a communication check with the remote side.  Do not attempt
+      ** to exchange any database connection */
+      ctx.bCommCheck = 1;
+      continue;
+    }
+    if( strcmp(z,"-arg-escape-check")==0 ){  /* DEBUG ONLY */
+      /* Test the append_escaped_arg() routine by using it to render a
+      ** copy of the input command-line, assuming all arguments except
+      ** this one are filenames. */
+      sqlite3_str *pStr = sqlite3_str_new(0);
+      int k;
+      for(k=0; k<argc; k++){
+        append_escaped_arg(pStr, argv[k], i!=k);
+      }
+      printf("%s\n", sqlite3_str_value(pStr));
       return 0;
     }
-    if( strcmp(z, "-version")==0 ){
-      printf("%s\n", sqlite3_sourceid());
-      return 0;
-    }
-    if( z[0]=='-' ){
-      if( strcmp(z,"-commcheck")==0 ){  /* DEBUG ONLY */
-        /* Run a communication check with the remote side.  Do not attempt
-        ** to exchange any database connection */
-        ctx.bCommCheck = 1;
-        continue;
-      }
-      if( strcmp(z,"-arg-escape-check")==0 ){  /* DEBUG ONLY */
-        /* Test the append_escaped_arg() routine by using it to render a
-        ** copy of the input command-line, assuming all arguments except
-        ** this one are filenames. */
-        sqlite3_str *pStr = sqlite3_str_new(0);
-        int k;
-        for(k=0; k<argc; k++){
-          append_escaped_arg(pStr, argv[k], i!=k);
-        }
-        printf("%s\n", sqlite3_str_value(pStr));
-        return 0;
-      }
+    if( z[i]=='-' ){
       fprintf(stderr,
          "unknown option: \"%s\". Use --help for more detail.\n", z);
       return 1;
