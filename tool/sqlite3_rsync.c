@@ -522,6 +522,53 @@ int append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
   }
   return 0;
 }
+
+/* Add an approprate PATH= argument to the SSH command under construction
+** in pStr
+**
+** About This Feature
+** ==================
+**
+** On some ssh servers (Macs in particular are guilty of this) the PATH
+** variable in the shell that runs the command that is sent to the remote
+** host contains a limited number of read-only system directories:
+**
+**      /usr/bin:/bin:/usr/sbin:/sbin
+**
+** The sqlite3_rsync executable cannot be installed into any of those
+** directories because they are locked down, and so the "sqlite3_rsync"
+** command cannot run.
+**
+** To work around this, the sqlite3_rsync command is prefixed with a PATH=
+** argument, inserted by this function, to augment the PATH with additional
+** directories in which the sqlite3_rsync executable can be installed.
+**
+** But other ssh servers are confused by this initial PATH= argument.
+** Some ssh servers have a list of programs that they are allowed to run
+** and will fail if the first argument is not on that list, and PATH=....
+** is not on that list.
+**
+** So that sqlite3_rsync can invoke itself on a remote system using ssh
+** on a variety of platforms, the following algorithm is used:
+**
+**   *  First try running the sqlite3_rsync without any PATH= argument.
+**      If that works (and it does on a majority of systems) then we are
+**      done.
+**
+**   *  If the first attempt fails, then try again after adding the
+**      PATH= prefix argument.  (This function is what adds that
+**      argument.)
+**
+** A consequence of this is that if the remote system is a Mac, the
+** "ssh" command always ends up being invoked twice.  If anybody knows a
+** way around that problem, please bring it to the attention of the
+** developers.
+*/
+void add_path_argument(sqlite3_str *pStr){
+  append_escaped_arg(pStr,
+     "PATH=$HOME/bin:/usr/local/bin:/opt/homebrew/bin:$PATH", 0);
+}
+
 /*****************************************************************************
 ** End of the append_escaped_arg() routine, adapted from the Fossil         **
 *****************************************************************************/
@@ -1968,8 +2015,8 @@ static char *hostSeparator(const char *zIn){
     zIn++;
   }
   return zPath;
-
 }
+
 
 /*
 ** Parse command-line arguments.  Dispatch subroutines to do the
@@ -2175,74 +2222,106 @@ int main(int argc, char const * const *argv){
   tmStart = currentTime();
   zDiv = hostSeparator(ctx.zOrigin);
   if( zDiv ){
+    int iRetry;
     if( hostSeparator(ctx.zReplica)!=0 ){
       fprintf(stderr,
          "At least one of ORIGIN and REPLICA must be a local database\n"
          "You provided two remote databases.\n");
       return 1;
     }
-    /* Remote ORIGIN and local REPLICA */
-    sqlite3_str *pStr = sqlite3_str_new(0);
-    append_escaped_arg(pStr, zSsh, 1);
-    sqlite3_str_appendf(pStr, " -e none");
     *(zDiv++) = 0;
-    append_escaped_arg(pStr, ctx.zOrigin, 0);
-    append_escaped_arg(pStr, zExe, 1);
-    append_escaped_arg(pStr, "--origin", 0);
-    if( ctx.bCommCheck ){
-      append_escaped_arg(pStr, "--commcheck", 0);
-      if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
+    /* Remote ORIGIN and local REPLICA */
+    for(iRetry=0; 1 /*exit-via-break*/; iRetry++){
+      sqlite3_str *pStr = sqlite3_str_new(0);
+      append_escaped_arg(pStr, zSsh, 1);
+      sqlite3_str_appendf(pStr, " -e none");
+      append_escaped_arg(pStr, ctx.zOrigin, 0);
+      if( iRetry ) add_path_argument(pStr);
+      append_escaped_arg(pStr, zExe, 1);
+      append_escaped_arg(pStr, "--origin", 0);
+      if( ctx.bCommCheck ){
+        append_escaped_arg(pStr, "--commcheck", 0);
+        if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
+      }
+      if( zRemoteErrFile ){
+        append_escaped_arg(pStr, "--errorfile", 0);
+        append_escaped_arg(pStr, zRemoteErrFile, 1);
+      }
+      if( zRemoteDebugFile ){
+        append_escaped_arg(pStr, "--debugfile", 0);
+        append_escaped_arg(pStr, zRemoteDebugFile, 1);
+      }
+      if( ctx.bWalOnly ){
+        append_escaped_arg(pStr, "--wal-only", 0);
+      }
+      append_escaped_arg(pStr, zDiv, 1);
+      append_escaped_arg(pStr, file_tail(ctx.zReplica), 1);
+      if( ctx.eVerbose<2 && iRetry==0 ){
+        append_escaped_arg(pStr, "2>/dev/null", 0);
+      }
+      zCmd = sqlite3_str_finish(pStr);
+      if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
+      if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
+        if( iRetry>=1 ){
+          fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
+          return 1;
+        }
+        if( ctx.eVerbose>=2 ){
+          printf("ssh FAILED.  Retry with a PATH= argument...\n");
+        }
+        continue;
+      }
+      replicaSide(&ctx);
+      if( ctx.nHashSent==0 && iRetry==0 ) continue;
+      break;
     }
-    if( zRemoteErrFile ){
-      append_escaped_arg(pStr, "--errorfile", 0);
-      append_escaped_arg(pStr, zRemoteErrFile, 1);
-    }
-    if( zRemoteDebugFile ){
-      append_escaped_arg(pStr, "--debugfile", 0);
-      append_escaped_arg(pStr, zRemoteDebugFile, 1);
-    }
-    if( ctx.bWalOnly ){
-      append_escaped_arg(pStr, "--wal-only", 0);
-    }
-    append_escaped_arg(pStr, zDiv, 1);
-    append_escaped_arg(pStr, file_tail(ctx.zReplica), 1);
-    zCmd = sqlite3_str_finish(pStr);
-    if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
-    if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
-      fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
-      return 1;
-    }
-    replicaSide(&ctx);
   }else if( (zDiv = hostSeparator(ctx.zReplica))!=0 ){
     /* Local ORIGIN and remote REPLICA */
-    sqlite3_str *pStr = sqlite3_str_new(0);
-    append_escaped_arg(pStr, zSsh, 1);
-    sqlite3_str_appendf(pStr, " -e none");
+    int iRetry;
     *(zDiv++) = 0;
-    append_escaped_arg(pStr, ctx.zReplica, 0);
-    append_escaped_arg(pStr, zExe, 1);
-    append_escaped_arg(pStr, "--replica", 0);
-    if( ctx.bCommCheck ){
-      append_escaped_arg(pStr, "--commcheck", 0);
-      if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
+    for(iRetry=0; 1 /*exit-by-break*/; iRetry++){
+      sqlite3_str *pStr = sqlite3_str_new(0);
+      append_escaped_arg(pStr, zSsh, 1);
+      sqlite3_str_appendf(pStr, " -e none");
+      append_escaped_arg(pStr, ctx.zReplica, 0);
+      if( iRetry==1 ) add_path_argument(pStr);
+      append_escaped_arg(pStr, zExe, 1);
+      append_escaped_arg(pStr, "--replica", 0);
+      if( ctx.bCommCheck ){
+        append_escaped_arg(pStr, "--commcheck", 0);
+        if( ctx.eVerbose==0 ) ctx.eVerbose = 1;
+      }
+      if( zRemoteErrFile ){
+        append_escaped_arg(pStr, "--errorfile", 0);
+        append_escaped_arg(pStr, zRemoteErrFile, 1);
+      }
+      if( zRemoteDebugFile ){
+        append_escaped_arg(pStr, "--debugfile", 0);
+        append_escaped_arg(pStr, zRemoteDebugFile, 1);
+      }
+      if( ctx.bWalOnly ){
+        append_escaped_arg(pStr, "--wal-only", 0);
+      }
+      append_escaped_arg(pStr, file_tail(ctx.zOrigin), 1);
+      append_escaped_arg(pStr, zDiv, 1);
+      if( ctx.eVerbose<2 && iRetry==0 ){
+        append_escaped_arg(pStr, "2>/dev/null", 0);
+      }
+      zCmd = sqlite3_str_finish(pStr);
+      if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
+      if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
+        if( iRetry>=1 ){
+          fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
+          return 1;
+        }else if( ctx.eVerbose>=2 ){
+          printf("ssh FAILED.  Retry with a PATH= argument...\n");
+        }
+        continue;
+      }
+      originSide(&ctx);
+      if( ctx.nHashSent==0 && iRetry==0 ) continue;
+      break;
     }
-    if( zRemoteErrFile ){
-      append_escaped_arg(pStr, "--errorfile", 0);
-      append_escaped_arg(pStr, zRemoteErrFile, 1);
-    }
-    if( zRemoteDebugFile ){
-      append_escaped_arg(pStr, "--debugfile", 0);
-      append_escaped_arg(pStr, zRemoteDebugFile, 1);
-    }
-    append_escaped_arg(pStr, file_tail(ctx.zOrigin), 1);
-    append_escaped_arg(pStr, zDiv, 1);
-    zCmd = sqlite3_str_finish(pStr);
-    if( ctx.eVerbose>=2 ) printf("%s\n", zCmd);
-    if( popen2(zCmd, &ctx.pIn, &ctx.pOut, &childPid, 0) ){
-      fprintf(stderr, "Could not start auxiliary process: %s\n", zCmd);
-      return 1;
-    }
-    originSide(&ctx);
   }else{
     /* Local ORIGIN and REPLICA */
     sqlite3_str *pStr = sqlite3_str_new(0);
