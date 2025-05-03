@@ -30,12 +30,13 @@ static const char zUsage[] =
   "\n"
   "OPTIONS:\n"
   "\n"
-  "   --exe PATH    Name of the sqlite3_rsync program on the remote side\n"
-  "   --help        Show this help screen\n"
-  "   --ssh PATH    Name of the SSH program used to reach the remote side\n"
-  "   -v            Verbose.  Multiple v's for increasing output\n"
-  "   --version     Show detailed version information\n"
-  "   --wal-only    Do not sync unless both databases are in WAL mode\n"
+  "   --exe PATH      Name of the sqlite3_rsync program on the remote side\n"
+  "   --help          Show this help screen\n"
+  "   --protocol N    Use sync protocol version N.\n"
+  "   --ssh PATH      Name of the SSH program used to reach the remote side\n"
+  "   -v              Verbose.  Multiple v's for increasing output\n"
+  "   --version       Show detailed version information\n"
+  "   --wal-only      Do not sync unless both databases are in WAL mode\n"
 ;
 
 typedef unsigned char u8;
@@ -2029,6 +2030,15 @@ int main(int argc, char const * const *argv){
       ctx.eVerbose += numVs(z);
       continue;
     }
+    if( strcmp(z, "-protocol")==0 ){
+      ctx.iProtocol = atoi(cli_opt_val);
+      if( ctx.iProtocol<1 ){
+        ctx.iProtocol = 1;
+      }else if( ctx.iProtocol>PROTOCOL_VERSION ){
+        ctx.iProtocol = PROTOCOL_VERSION;
+      }
+      continue;
+    }
     if( strcmp(z, "-ssh")==0 ){
       zSsh = cli_opt_val;
       continue;
@@ -2087,17 +2097,6 @@ int main(int argc, char const * const *argv){
       ** Error messages on the remote side are written into FILENAME on
       ** the remote side. */
       zRemoteDebugFile = cli_opt_val;
-      continue;
-    }
-    if( strcmp(z, "-protocol")==0 ){
-      /* DEBUG OPTION:  --protocool N
-      ** Set the protocol version to N */
-      ctx.iProtocol = atoi(cli_opt_val);
-      if( ctx.iProtocol<1 ){
-        ctx.iProtocol = 1;
-      }else if( ctx.iProtocol>PROTOCOL_VERSION ){
-        ctx.iProtocol = PROTOCOL_VERSION;
-      }
       continue;
     }
     if( strcmp(z,"-commcheck")==0 ){  /* DEBUG ONLY */
