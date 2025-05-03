@@ -1488,7 +1488,6 @@ static void originSide(SQLiteRsync *p){
           writeByte(p, ORIGIN_READY);
           if( p->zDebugFile ) debugMessage(p, "-> ORIGIN_READY\n");
         }else{
-          sqlite3_stmt *pStmt;
           sqlite3_finalize(pCkHash);
           sqlite3_finalize(pCkHashN);
           sqlite3_finalize(pInsHash);

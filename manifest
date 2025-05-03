@@ -1,5 +1,5 @@
-C Addition\ssummary\sresults\soutput\swhen\susing\s-vvv\son\ssqlite3_rsync.
-D 2025-05-03T10:49:39.005
+C Fix\sa\sharmless\sredundant\svariable\sdeclaration\sin\ssqlite3_rsync.
+D 2025-05-03T10:55:47.615
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2189,7 +2189,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 07e18a1d8cc3f6b3a4a1f3528e63c9b29a5c8a7bca0b8d394b231da464ce1247
 F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
-F tool/sqlite3_rsync.c f6a7b1577b1fceb13f3fccc7ca25a6a3b1565e22b784f4862a028d7945b48670
+F tool/sqlite3_rsync.c fc1f0560be26fe50252eaf2427f6f3f6f3c50e68d08a2d9cafdf3adc65e281ff
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4855e04e44e8fce2d6e37dd468eb6e9f4565c36cbc964156e65ac0449d7c212f
-R d43ab97a6e993d57a1722261542d0a22
+P c702999cfac37fdcae64d261408e58d1f49fee65434fe346db6a2a6c7f8ac54e
+R a9ba57abefc2ac2ac477ee0b0e67f826
 U drh
-Z bf784ea19e5f3b9d0205ad27dc713ff4
+Z 8fe7a400b8200d3506457658669b00b8
 # Remove this line to create a well-formed Fossil manifest.
