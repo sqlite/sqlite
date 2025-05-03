@@ -40,6 +40,7 @@ static const char zUsage[] =
 ;
 
 typedef unsigned char u8;
+typedef sqlite3_uint64 u64;
 
 /* Context for the run */
 typedef struct SQLiteRsync SQLiteRsync;
@@ -66,7 +67,8 @@ struct SQLiteRsync {
   sqlite3_uint64 nIn;      /* Bytes received */
   unsigned int nPage;      /* Total number of pages in the database */
   unsigned int szPage;     /* Database page size */
-  unsigned int nHashSent;  /* Hashes sent (replica to origin) */
+  u64 nHashSent;           /* Hashes sent (replica to origin) */
+  unsigned int nRound;     /* Number of hash batches (replica to origin) */
   unsigned int nPageSent;  /* Page contents sent (origin to replica) */
 };
 
@@ -1466,6 +1468,7 @@ static void originSide(SQLiteRsync *p){
         if( p->zDebugFile ){
           debugMessage(p, "<- REPLICA_READY\n");
         }
+        p->nRound++;
         pStmt = prepareStmt(p,"SELECT pgno, sz FROM badHash WHERE sz>1");
         if( pStmt==0 ) break;
         while( sqlite3_step(pStmt)==SQLITE_ROW ){
@@ -1603,6 +1606,7 @@ static void sendHashMessages(
   runSql(p, "DELETE FROM sendHash");
   writeByte(p, REPLICA_READY);
   fflush(p->pOut);
+  p->nRound++;
   if( p->zDebugFile ) debugMessage(p, "-> REPLICA_READY\n", iHash);
 }
 
@@ -2298,6 +2302,11 @@ int main(int argc, char const * const *argv){
       }
       printf("%s\n", zMsg);
       sqlite3_free(zMsg);
+    }
+    if( ctx.eVerbose>=3 ){
+      printf("hashes: %lld  hash-rounds: %d"
+             "  page updates: %d  protocol: %d\n",
+             ctx.nHashSent, ctx.nRound, ctx.nPageSent, ctx.iProtocol);
     }
   }
   sqlite3_free(zCmd);
