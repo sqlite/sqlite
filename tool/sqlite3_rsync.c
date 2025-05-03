@@ -1339,6 +1339,9 @@ static void originSide(SQLiteRsync *p){
       writePow2(p, szPg);
       writeUint32(p, nPage);
       fflush(p->pOut);
+      if( p->zDebugFile ){
+        debugMessage(p, "-> ORIGIN_BEGIN %u %u %u\n", p->iProtocol,szPg,nPage);
+      }
       p->nPage = nPage;
       p->szPage = szPg;
       lockBytePage = (1<<30)/szPg + 1;
@@ -1363,6 +1366,7 @@ static void originSide(SQLiteRsync *p){
           writeByte(p, p->iProtocol);
           writePow2(p, p->szPage);
           writeUint32(p, p->nPage);
+          fflush(p->pOut);
           if( p->zDebugFile ){
             debugMessage(p, "-> ORIGIN_BEGIN %d %d %u\n", p->iProtocol,
                          p->szPage, p->nPage);
@@ -1694,6 +1698,7 @@ static void replicaSide(SQLiteRsync *p){
     writeByte(p, REPLICA_END);
     fflush(p->pOut);
   }
+  if( p->iProtocol<=0 ) p->iProtocol = PROTOCOL_VERSION;
 
   /* Respond to message from the origin.  The origin will initiate the
   ** the conversation with an ORIGIN_BEGIN message.
@@ -1716,7 +1721,7 @@ static void replicaSide(SQLiteRsync *p){
         szOPage = readPow2(p);
         readUint32(p, &nOPage);
         if( p->zDebugFile ){
-          debugMessage(p, "<- ORIGIN_BEGIN %d %d %u\n", p->iProtocol, szOPage,
+          debugMessage(p, "<- ORIGIN_BEGIN %d %d %u\n", iProtocol, szOPage,
                        nOPage);
         }
         if( p->nErr ) break;
@@ -1727,6 +1732,7 @@ static void replicaSide(SQLiteRsync *p){
           ** a new ORIGIN_BEGIN with a reduced protocol version. */
           writeByte(p, REPLICA_BEGIN);
           writeByte(p, p->iProtocol);
+          fflush(p->pOut);
           if( p->zDebugFile ){
             debugMessage(p, "-> REPLICA_BEGIN %u\n", p->iProtocol);
           }
