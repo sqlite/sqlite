@@ -49,6 +49,10 @@
 # define CONST const
 #elif !defined(Tcl_Size)
   typedef int Tcl_Size;
+# ifndef Tcl_BounceRefCount
+#  define Tcl_BounceRefCount(X) Tcl_IncrRefCount(X); Tcl_DecrRefCount(X)
+   /* https://www.tcl-lang.org/man/tcl9.0/TclLib/Object.html */
+# endif
 #endif
 /**** End copy of tclsqlite.h ****/
 
