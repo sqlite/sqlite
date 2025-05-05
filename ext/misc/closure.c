@@ -137,7 +137,7 @@
 **       AND closure.idname='groupId'
 **       AND closure.parentname='parentId';
 **
-** See the documentation at http://www.sqlite.org/loadext.html for information
+** See the documentation at http://sqlite.org/loadext.html for information
 ** on how to compile and use loadable extensions such as this one.
 */
 #include "sqlite3ext.h"

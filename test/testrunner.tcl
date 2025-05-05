@@ -98,6 +98,7 @@ Usage:
     --config CONFIGS         Only use configs on comma-separate list CONFIGS
     --dryrun                 Write what would have happened to testrunner.log
     --explain                Write summary to stdout
+    --fuzzdb FILENAME        Additional external fuzzcheck database
     --jobs NUM               Run tests using NUM separate processes
     --omit CONFIGS           Omit configs on comma-separated list CONFIGS
     --status                 Show the full "status" report while running
@@ -169,7 +170,6 @@ Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
 proc guess_number_of_cores {} {
   if {[catch {number_of_cores} ret]} {
     set ret 4
-  
     if {$::tcl_platform(platform) eq "windows"} {
       catch { set ret $::env(NUMBER_OF_PROCESSORS) }
     } else {
@@ -532,7 +532,7 @@ proc show_status {db cls} {
       (SELECT value FROM config WHERE name='start')
   }]
 
-  set total 0
+  set totalw 0
   foreach s {"" ready running done failed omit} { set S($s) 0; set W($s) 0; }
   set workpending 0
   $db eval {
@@ -557,7 +557,7 @@ proc show_status {db cls} {
     flush stdout
   }
   puts [format %-79.79s "Command: \[testrunner.tcl$cmdline\]"]
-  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$total jobs,\
+  puts [format %-79.79s "Summary: [elapsetime $tm], $fin/$totalw jobs,\
                          $ne errors, $nt tests"]
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
@@ -812,6 +812,9 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
     } elseif {($n>2 && [string match "$a*" --omit]) || $a=="-c"} {
       incr ii
       set TRG(omitconfig) [lindex $argv $ii]
+    } elseif {($n>2 && [string match "$a*" --fuzzdb])} {
+      incr ii
+      set env(FUZZDB) [lindex $argv $ii]
     } elseif {[string match "$a*" --stop-on-error]} {
       set TRG(stopOnError) 1
     } elseif {[string match "$a*" --stop-on-coredump]} {
@@ -1003,6 +1006,35 @@ proc add_job {args} {
 
   trdb last_insert_rowid
 }
+
+# Look to see if $jobcmd matches any of the glob patterns given in
+# $patternlist.  Return true if there is a match.  Return false
+# if no match is seen.
+#
+# An empty patternlist matches everything
+#
+proc job_matches_any_pattern {patternlist jobcmd} {
+  set bMatch 0
+  if {[llength $patternlist]==0} {return 1}
+  foreach p $patternlist {
+    set p [string trim $p *]
+    if {[string index $p 0]=="^"} {
+      set p [string range $p 1 end]
+    } else {
+      set p "*$p"
+    }
+    if {[string index $p end]=="\$"} {
+      set p [string range $p 0 end-1]
+    } else {
+      set p "$p*"
+    }
+    if {[string match $p $jobcmd]} {
+      set bMatch 1
+      break
+    }
+  }
+  return $bMatch
+}
        
 
 # Argument $build is either an empty string, or else a list of length 3 
@@ -1016,6 +1048,7 @@ proc add_job {args} {
 # 
 proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   global TRG
+  set ntcljob 0
 
   set topdir [file dirname $::testdir]
   set testrunner_tcl [file normalize [info script]]
@@ -1033,26 +1066,8 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   # The ::testspec array is populated by permutations.test
   foreach f [dict get $::testspec($config) -files] {
 
-    if {[llength $patternlist]>0} {
-      set bMatch 0
-      foreach p $patternlist {
-        set p [string trim $p *]
-        if {[string index $p 0]=="^"} {
-          set p [string range $p 1 end]
-        } else {
-          set p "*$p"
-        }
-        if {[string index $p end]=="\$"} {
-          set p [string range $p 0 end-1]
-        } else {
-          set p "$p*"
-        }
-        if {[string match $p "$config [file tail $f]"]} {
-          set bMatch 1
-          break
-        }
-      }
-      if {$bMatch==0} continue
+    if {![job_matches_any_pattern $patternlist "$config [file tail $f]"]} {
+      continue
     }
 
     if {[file pathtype $f]!="absolute"} { set f [file join $::testdir $f] }
@@ -1077,12 +1092,17 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
     set depid [lindex $build 0]
     if {$shelldepid!="" && [lsearch $lProp shell]>=0} { set depid $shelldepid }
 
+    incr ntcljob
     add_job                            \
         -displaytype tcl               \
         -displayname $displayname      \
         -cmd $cmd                      \
         -depid $depid                  \
         -priority $priority
+  }
+  if {$ntcljob==0 && [llength $build]>0} {
+    set bldid [lindex $build 0]
+    trdb eval {DELETE FROM jobs WHERE rowid=$bldid}
   }
 }
 
@@ -1146,26 +1166,57 @@ proc add_make_job {bld target} {
     -priority 1
 }
 
-proc add_fuzztest_jobs {buildname} {
+proc add_fuzztest_jobs {buildname patternlist} {
+  global env TRG
+  # puts buildname=$buildname
 
-  foreach {interpreter scripts} [trd_fuzztest_data] {
+  foreach {interpreter scripts} [trd_fuzztest_data $buildname] {
+    set bldDone 0
     set subcmd [lrange $interpreter 1 end]
     set interpreter [lindex $interpreter 0]
 
-    set bld [add_build_job $buildname $interpreter]
-    foreach {depid dirname displayname} $bld {}
+    if {[string match fuzzcheck* $interpreter]
+     && [info exists env(FUZZDB)]
+     && [file readable $env(FUZZDB)]
+     && $buildname ne "Windows-Win32Heap"
+     && $buildname ne "Windows-Memdebug"
+    } {
+      set TRG(FUZZDB) $env(FUZZDB)
+      set fname [file normalize $env(FUZZDB)]
+      set N [expr {([file size $fname]+4999999)/5000000}]
+      for {set i 0} {$i<$N} {incr i} {
+        lappend scripts [list --slice $i $N $fname]
+      }
+    }
 
     foreach s $scripts {
 
       # Fuzz data files fuzzdata1.db and fuzzdata2.db are larger than
       # the others. So ensure that these are run as a higher priority.
-      set tail [file tail $s]
-      if {$tail=="fuzzdata1.db" || $tail=="fuzzdata2.db"} {
+      if {[llength $s]==1} {
+        set tail [file tail $s]
+      } else {
+        set fname [lindex $s end]
+        set tail [lrange $s 0 end-1]
+        lappend tail [file tail $fname]
+      }
+      if {![job_matches_any_pattern $patternlist "$interpreter $tail"]} {
+        continue
+      }
+      if {!$bldDone} {
+        set bld [add_build_job $buildname $interpreter]
+        foreach {depid dirname displayname} $bld {}
+        set bldDone 1
+      }
+      if {[string match ?-slice* $tail]} {
+        set priority 15
+      } elseif {$tail=="fuzzdata1.db"
+          || $tail=="fuzzdata2.db"
+          || $tail=="fuzzdata8.db"} {
         set priority 5
       } else {
         set priority 1
       }
-
       add_job                                                   \
         -displaytype fuzz                                       \
         -displayname "$buildname $interpreter $tail"            \
@@ -1201,9 +1252,7 @@ proc add_devtest_jobs {lBld patternlist} {
   foreach b $lBld {
     set bld [add_build_job $b $TRG(testfixture)]
     add_tcl_jobs $bld veryquick $patternlist SHELL
-    if {$patternlist==""} {
-      add_fuzztest_jobs $b
-    }
+    add_fuzztest_jobs $b $patternlist
 
     if {[trdb one "SELECT EXISTS (SELECT 1 FROM jobs WHERE depid='SHELL')"]} {
       set sbld [add_shell_build_job $b [lindex $bld 1] [lindex $bld 0]]
@@ -1277,13 +1326,11 @@ proc add_jobs_from_cmdline {patternlist} {
           add_tcl_jobs $bld $c $patternlist SHELL
         }
 
-        if {$patternlist==""} {
-          foreach e [trd_extras $TRG(platform) $b] {
-            if {$e=="fuzztest"} {
-              add_fuzztest_jobs $b
-            } else {
-              add_make_job $bld $e
-            }
+        foreach e [trd_extras $TRG(platform) $b] {
+          if {$e=="fuzztest"} {
+            add_fuzztest_jobs $b $patternlist
+          } elseif {[job_matches_any_pattern $patternlist $e]} {
+            add_make_job $bld $e
           }
         }
 
@@ -1603,6 +1650,9 @@ proc run_testset {} {
 
   puts "\nTest database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
+  if {[info exists TRG(FUZZDB)]} {
+    puts "Extra fuzzcheck data taken from $TRG(FUZZDB)"
+  }
   trdb eval {
      SELECT sum(ntest) AS totaltest,
             sum(nerr) AS totalerr
@@ -1655,7 +1705,13 @@ proc explain_layer {indent depid} {
       puts "${indent}$displayname in $dirname"
       explain_layer "${indent}   " $jobid
     } elseif {$showtests} {
-      set tail [lindex $displayname end]
+      if {[lindex $displayname end-3] eq "--slice"} {
+        set M [lindex $displayname end-2]
+        set N [lindex $displayname end-1]
+        set tail "[lindex $displayname end] (slice $M/$N)"
+      } else {
+        set tail [lindex $displayname end]
+      }
       set e1 [lindex $displayname 1]
       if {[string match config=* $e1]} {
         set cfg [string range $e1 7 end]

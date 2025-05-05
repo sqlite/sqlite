@@ -1027,16 +1027,16 @@ static size_t fts3MatchinfoSize(MatchInfo *pInfo, char cArg){
       break;
 
     case FTS3_MATCHINFO_LHITS:
-      nVal = pInfo->nCol * pInfo->nPhrase;
+      nVal = (size_t)pInfo->nCol * pInfo->nPhrase;
       break;
 
     case FTS3_MATCHINFO_LHITS_BM:
-      nVal = pInfo->nPhrase * ((pInfo->nCol + 31) / 32);
+      nVal = (size_t)pInfo->nPhrase * ((pInfo->nCol + 31) / 32);
       break;
 
     default:
       assert( cArg==FTS3_MATCHINFO_HITS );
-      nVal = pInfo->nCol * pInfo->nPhrase * 3;
+      nVal = (size_t)pInfo->nCol * pInfo->nPhrase * 3;
       break;
   }
 

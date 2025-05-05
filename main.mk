@@ -1630,8 +1630,8 @@ pkgIndex.tcl:
 pkgIndex.tcl-1: pkgIndex.tcl
 pkgIndex.tcl-0 pkgIndex.tcl-:
 tcl: pkgIndex.tcl-$(HAVE_TCL)
-libtclsqlite3.SO = libtclsqlite3$(T.dll)
-$(libtclsqlite3.SO): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
+libtclsqlite3.DLL = libtclsqlite3$(T.dll)
+$(libtclsqlite3.DLL): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 	$(T.tcl.env.source); \
 	$(T.link.shared) -o $@ tclsqlite.o \
 		$$TCL_INCLUDE_SPEC $$TCL_STUB_LIB_SPEC $(LDFLAGS.libsqlite3) \
@@ -1639,19 +1639,19 @@ $(libtclsqlite3.SO): $(T.tcl.env.sh) tclsqlite.o $(LIBOBJ)
 # ^^^ that rpath bit is defined as TCL_LD_SEARCH_FLAGS in
 # tclConfig.sh, but it's defined in such a way as to be useless for a
 # _static_ makefile.
-$(libtclsqlite3.SO)-1: $(libtclsqlite3.SO)
-$(libtclsqlite3.SO)-0 $(libtclsqlite3.SO)-:
-libtcl: $(libtclsqlite3.SO)-$(HAVE_TCL)
+$(libtclsqlite3.DLL)-1: $(libtclsqlite3.DLL)
+$(libtclsqlite3.DLL)-0 $(libtclsqlite3.DLL)-:
+libtcl: $(libtclsqlite3.DLL)-$(HAVE_TCL)
 tcl: libtcl
 all: tcl
 
-install-tcl-1: $(libtclsqlite3.SO) pkgIndex.tcl
+install-tcl-1: $(libtclsqlite3.DLL) pkgIndex.tcl
 	$(T.tcl.env.source); \
 	$(INSTALL) -d "$(DESTDIR)$$TCLLIBDIR"; \
-	$(INSTALL) $(libtclsqlite3.SO) "$(DESTDIR)$$TCLLIBDIR"; \
+	$(INSTALL) $(libtclsqlite3.DLL) "$(DESTDIR)$$TCLLIBDIR"; \
 	$(INSTALL.noexec) pkgIndex.tcl "$(DESTDIR)$$TCLLIBDIR"
 install-tcl-0 install-tcl-:
-	@echo "TCL support disabled, so not installing $(libtclsqlite3.SO)"
+	@echo "TCL support disabled, so not installing $(libtclsqlite3.DLL)"
 install-tcl: install-tcl-$(HAVE_TCL)
 install: install-tcl
 
@@ -2244,119 +2244,6 @@ fuzzcheck-ubsan$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 fuzzy: fuzzcheck-ubsan$(T.exe)
 xbin: fuzzcheck-ubsan$(T.exe)
 
-# Usage:    FUZZDB=filename make run-fuzzcheck
-#
-# Where filename is a fuzzcheck database, this target builds and runs
-# fuzzcheck, fuzzcheck-asan, and fuzzcheck-ubsan on that database.
-#
-# FUZZDB can be a glob pattern of two or more databases. Example:
-#
-#     FUZZDB=test/fuzzdata*.db make run-fuzzcheck
-#
-# The original rules for this target were like this:
-#
-# run-fuzzcheck:	fuzzcheck$(T.exe) fuzzcheck-asan$(T.exe) fuzzcheck-ubsan$(T.exe)
-#	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
-#	./fuzzcheck$(T.exe) --spinner $(FUZZDB)
-#	./fuzzcheck-asan$(T.exe) --spinner $(FUZZDB)
-#	./fuzzcheck-ubsan$(T.exe) --spinner $(FUZZDB)
-#
-# What follows is a decomposition of these rules in a way that allows make
-# to run things in parallel when using the -jN option.
-#
-FUZZDB-check:
-	@if test "$(FUZZDB)" = ""; then echo 'ERROR: No FUZZDB specified. Rerun with FUZZDB=filename'; exit 1; fi
-run-fuzzcheck: run-fuzzcheck-n0
-run-fuzzcheck-n0: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 0 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n1
-run-fuzzcheck-n1: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 1 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n2
-run-fuzzcheck-n2: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 2 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n3
-run-fuzzcheck-n3: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 3 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n4
-run-fuzzcheck-n4: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 4 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n5
-run-fuzzcheck-n5: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 5 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n6
-run-fuzzcheck-n6: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 6 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n7
-run-fuzzcheck-n7: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 7 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n8
-run-fuzzcheck-n8: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 8 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-n9
-run-fuzzcheck-n9: FUZZDB-check fuzzcheck$(T.exe)
-	./fuzzcheck$(T.exe) --slice 9 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a0
-run-fuzzcheck-a0: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 0 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a1
-run-fuzzcheck-a1: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 1 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a2
-run-fuzzcheck-a2: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 2 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a3
-run-fuzzcheck-a3: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 3 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a4
-run-fuzzcheck-a4: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 4 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a5
-run-fuzzcheck-a5: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 5 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a6
-run-fuzzcheck-a6: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 6 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a7
-run-fuzzcheck-a7: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 7 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a8
-run-fuzzcheck-a8: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 8 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-a9
-run-fuzzcheck-a9: FUZZDB-check fuzzcheck-asan$(T.exe)
-	./fuzzcheck-asan$(T.exe) --slice 9 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u0
-run-fuzzcheck-u0: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 0 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u1
-run-fuzzcheck-u1: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 1 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u2
-run-fuzzcheck-u2: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 2 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u3
-run-fuzzcheck-u3: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 3 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u4
-run-fuzzcheck-u4: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 4 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u5
-run-fuzzcheck-u5: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 5 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u6
-run-fuzzcheck-u6: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 6 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u7
-run-fuzzcheck-u7: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 7 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u8
-run-fuzzcheck-u8: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 8 10 $(FUZZDB)
-run-fuzzcheck: run-fuzzcheck-u9
-run-fuzzcheck-u9: FUZZDB-check fuzzcheck-ubsan$(T.exe)
-	./fuzzcheck-ubsan$(T.exe) --slice 9 10 $(FUZZDB)
-
 
 ossshell$(T.exe):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 	$(T.link) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
@@ -2557,7 +2444,7 @@ tidy:
 	rm -f lemon$(B.exe) sqlite*.tar.gz
 	rm -f mkkeywordhash$(B.exe) mksourceid$(B.exe)
 	rm -f parse.* fts5parse.*
-	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB) $(libtclsqlite3.SO) libsqlite3$(T.dll).a
+	rm -f $(libsqlite3.DLL) $(libsqlite3.LIB) $(libtclsqlite3.DLL) libsqlite3$(T.dll).a
 	rm -f tclsqlite3$(T.exe) $(TESTPROGS)
 	rm -f LogEst$(T.exe) fts3view$(T.exe) rollback-test$(T.exe) showdb$(T.exe)
 	rm -f showjournal$(T.exe) showstat4$(T.exe) showwal$(T.exe) speedtest1$(T.exe)

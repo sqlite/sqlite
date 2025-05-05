@@ -133,7 +133,7 @@
 ** Which sqlite3.c we're using needs to be configurable to enable
 ** building against a custom copy, e.g. the SEE variant. We have to
 ** include sqlite3.c, as opposed to sqlite3.h, in order to get access
-** to some interal details like SQLITE_MAX_... and friends. This
+** to some internal details like SQLITE_MAX_... and friends. This
 ** increases the rebuild time considerably but we need this in order
 ** to access some internal functionality and keep the to-Java-exported
 ** values of SQLITE_MAX_... and SQLITE_LIMIT_... in sync with the C
@@ -5512,7 +5512,7 @@ static inline jobject new_java_fts5_api(JNIEnv * const env, fts5_api *sv){
 ** Returns a per-JNIEnv global ref to the Fts5ExtensionApi singleton
 ** instance, or NULL on OOM.
 */
-static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
+static jobject s3jni_getFts5ExtensionApi(JNIEnv * const env){
   if( !SJG.fts5.jExt ){
     S3JniGlobal_mutex_enter;
     if( !SJG.fts5.jExt ){
@@ -5578,7 +5578,7 @@ JniDeclFtsApi(jobject,getInstanceForDb)(JniArgsEnvClass,jobject jDb){
 
 
 JniDeclFtsXA(jobject,getInstance)(JniArgsEnvClass){
-  return s3jni_getFts5ExensionApi(env);
+  return s3jni_getFts5ExtensionApi(env);
 }
 
 JniDeclFtsXA(jint,xColumnCount)(JniArgsEnvObj,jobject jCtx){
@@ -5641,7 +5641,7 @@ static void s3jni_fts5_extension_function(Fts5ExtensionApi const *pApi,
   S3JniDeclLocal_env;
 
   assert(pAux);
-  jFXA = s3jni_getFts5ExensionApi(env);
+  jFXA = s3jni_getFts5ExtensionApi(env);
   if( !jFXA ) goto error_oom;
   jpFts = new_java_Fts5Context(env, pFts);
   if( !jpFts ) goto error_oom;

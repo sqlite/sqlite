@@ -224,6 +224,18 @@ do_execsql_test 5.3 {
     SELECT 0 as c_0
   );
 } {0}
- 
+
+# 2025-04-30 https://sqlite.org/forum/forumpost/792a09cb3df9e69f
+# A continuation of the above.
+#
+do_execsql_test 6.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a);
+  SELECT 111 IN (
+    SELECT 222 FROM (SELECT 333 ORDER BY 1)
+    UNION ALL
+    SELECT 444 FROM (SELECT 555 FROM t1 ORDER BY 1)
+  );
+} 0
 
 finish_test
