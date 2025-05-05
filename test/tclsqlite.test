@@ -358,6 +358,16 @@ do_test tcl-9.3 {
   db function ret_int {return [expr {int(rand()*200)}]}
   execsql {SELECT typeof(ret_int())}
 } {integer}
+proc breakAsNullUdf args {return -code break}
+do_test tcl-9.4 {
+  db function banu breakAsNullUdf
+  execsql {SELECT typeof(banu())}
+} {null}
+do_test tcl-9.5 {
+  db nullvalue banunull
+  db eval {SELECT 1, banu(), 3}
+} {1 banunull 3}
+
 
 # Recursive calls to the same user-defined function
 #
@@ -862,7 +872,6 @@ do_test 20.1 {
   } msg]
   list $rc $msg
 } {1 {invalid command name "db"}}
-  
 
 proc closedb {} {
   db close

@@ -1084,7 +1084,9 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     Tcl_DecrRefCount(pCmd);
   }
 
-  if( rc && rc!=TCL_RETURN ){
+  if( TCL_BREAK==rc ){
+    sqlite3_result_null(context);
+  }else if( rc && rc!=TCL_RETURN ){
     sqlite3_result_error(context, Tcl_GetStringResult(p->interp), -1);
   }else{
     Tcl_Obj *pVar = Tcl_GetObjResult(p->interp);
@@ -1102,7 +1104,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
       }else if( (c=='b' && pVar->bytes==0 && strcmp(zType,"boolean")==0 )
              || (c=='b' && pVar->bytes==0 && strcmp(zType,"booleanString")==0 )
              || (c=='w' && strcmp(zType,"wideInt")==0)
-             || (c=='i' && strcmp(zType,"int")==0) 
+             || (c=='i' && strcmp(zType,"int")==0)
       ){
         eType = SQLITE_INTEGER;
       }else if( c=='d' && strcmp(zType,"double")==0 ){
