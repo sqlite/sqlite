@@ -1618,7 +1618,7 @@ struct DbEvalContext {
   SqlPreparedStmt *pPreStmt;      /* Current statement */
   int nCol;                       /* Number of columns returned by pStmt */
   int evalFlags;                  /* Flags used */
-  Tcl_Obj *pTgtName;              /* Name of array variable */
+  Tcl_Obj *pTgtName;              /* Name of target array/dict variable */
   Tcl_Obj **apColName;            /* Array of column names */
 };
 
@@ -1721,11 +1721,10 @@ static void dbEvalRowInfo(
         }else if( Tcl_IsShared(pDict) ){
           pDict = Tcl_DuplicateObj(pDict);
         }
-        Tcl_IncrRefCount(pDict);
         if( Tcl_DictObjPut(interp, pDict, pStar, pColList)==TCL_OK ){
           Tcl_ObjSetVar2(interp, p->pTgtName, NULL, pDict, 0);
         }
-        Tcl_DecrRefCount(pDict);
+        Tcl_BounceRefCount(pDict);
       }
       Tcl_DecrRefCount(pStar);
       Tcl_DecrRefCount(pColList);
@@ -1898,7 +1897,7 @@ static int DbUseNre(void){
 /*
 ** This function is part of the implementation of the command:
 **
-**   $db eval SQL ?ARRAYNAME? SCRIPT
+**   $db eval SQL ?TGT-NAME? SCRIPT
 */
 static int SQLITE_TCLAPI DbEvalNextCmd(
   ClientData data[],                   /* data[0] is the (DbEvalContext*) */
@@ -1912,8 +1911,8 @@ static int SQLITE_TCLAPI DbEvalNextCmd(
   ** is a pointer to a Tcl_Obj containing the script to run for each row
   ** returned by the queries encapsulated in data[0]. */
   DbEvalContext *p = (DbEvalContext *)data[0];
-  Tcl_Obj *pScript = (Tcl_Obj *)data[1];
-  Tcl_Obj *pTgtName = p->pTgtName;
+  Tcl_Obj * const pScript = (Tcl_Obj *)data[1];
+  Tcl_Obj * const pTgtName = p->pTgtName;
 
   while( (rc==TCL_OK || rc==TCL_CONTINUE) && TCL_OK==(rc = dbEvalStep(p)) ){
     int i;
@@ -1926,10 +1925,41 @@ static int SQLITE_TCLAPI DbEvalNextCmd(
       }else if( (p->evalFlags & SQLITE_EVAL_WITHOUTNULLS)!=0
              && sqlite3_column_type(p->pPreStmt->pStmt, i)==SQLITE_NULL
       ){
-        Tcl_UnsetVar2(interp, Tcl_GetString(pTgtName),
-                      Tcl_GetString(apColName[i]), 0);
+        /* Remove NULL-containing column from the target container... */
+        if( 0==(SQLITE_EVAL_ASDICT & p->evalFlags) ){
+          /* Target is an array */
+          Tcl_UnsetVar2(interp, Tcl_GetString(pTgtName),
+                        Tcl_GetString(apColName[i]), 0);
+        }else{
+          /* Target is a dict */
+          Tcl_Obj *pDict = Tcl_ObjGetVar2(interp, pTgtName, NULL, 0);
+          if( pDict ){
+            if( Tcl_IsShared(pDict) ){
+              pDict = Tcl_DuplicateObj(pDict);
+            }
+            if( Tcl_DictObjRemove(interp, pDict, apColName[i])==TCL_OK ){
+              Tcl_ObjSetVar2(interp, pTgtName, NULL, pDict, 0);
+            }
+            Tcl_BounceRefCount(pDict);
+          }
+        }
+      }else if( 0==(SQLITE_EVAL_ASDICT & p->evalFlags) ){
+        /* Target is an array: set target(colName) = colValue */
+        Tcl_ObjSetVar2(interp, pTgtName, apColName[i],
+                       dbEvalColumnValue(p,i), 0);
       }else{
-        Tcl_ObjSetVar2(interp, pTgtName, apColName[i], dbEvalColumnValue(p,i), 0);
+        /* Target is a dict: set target(colName) = colValue */
+        Tcl_Obj *pDict = Tcl_ObjGetVar2(interp, pTgtName, NULL, 0);
+        if( !pDict ){
+          pDict = Tcl_NewDictObj();
+        }else if( Tcl_IsShared(pDict) ){
+          pDict = Tcl_DuplicateObj(pDict);
+        }
+        if( Tcl_DictObjPut(interp, pDict, apColName[i],
+                           dbEvalColumnValue(p,i))==TCL_OK ){
+          Tcl_ObjSetVar2(interp, pTgtName, NULL, pDict, 0);
+        }
+        Tcl_BounceRefCount(pDict);
       }
     }
 
@@ -2038,7 +2068,7 @@ static int SQLITE_TCLAPI DbObjCmd(
     "timeout",                "total_changes",         "trace",
     "trace_v2",               "transaction",           "unlock_notify",
     "update_hook",            "version",               "wal_hook",
-    0                        
+    0
   };
   enum DB_enum {
     DB_AUTHORIZER,            DB_BACKUP,               DB_BIND_FALLBACK,
