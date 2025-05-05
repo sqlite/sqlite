@@ -1618,11 +1618,12 @@ struct DbEvalContext {
   SqlPreparedStmt *pPreStmt;      /* Current statement */
   int nCol;                       /* Number of columns returned by pStmt */
   int evalFlags;                  /* Flags used */
-  Tcl_Obj *pArray;                /* Name of array variable */
+  Tcl_Obj *pTgtName;              /* Name of array variable */
   Tcl_Obj **apColName;            /* Array of column names */
 };
 
 #define SQLITE_EVAL_WITHOUTNULLS  0x00001  /* Unset array(*) for NULL */
+#define SQLITE_EVAL_ASDICT        0x00002  /* Use dict instead of array */
 
 /*
 ** Release any cache of column names currently held as part of
@@ -1643,20 +1644,20 @@ static void dbReleaseColumnNames(DbEvalContext *p){
 /*
 ** Initialize a DbEvalContext structure.
 **
-** If pArray is not NULL, then it contains the name of a Tcl array
+** If pTgtName is not NULL, then it contains the name of a Tcl array
 ** variable. The "*" member of this array is set to a list containing
 ** the names of the columns returned by the statement as part of each
 ** call to dbEvalStep(), in order from left to right. e.g. if the names
 ** of the returned columns are a, b and c, it does the equivalent of the
 ** tcl command:
 **
-**     set ${pArray}(*) {a b c}
+**     set ${pTgtName}(*) {a b c}
 */
 static void dbEvalInit(
   DbEvalContext *p,               /* Pointer to structure to initialize */
   SqliteDb *pDb,                  /* Database handle */
   Tcl_Obj *pSql,                  /* Object containing SQL script */
-  Tcl_Obj *pArray,                /* Name of Tcl array to set (*) element of */
+  Tcl_Obj *pTgtName,              /* Name of Tcl array to set (*) element of */
   int evalFlags                   /* Flags controlling evaluation */
 ){
   memset(p, 0, sizeof(DbEvalContext));
@@ -1664,9 +1665,9 @@ static void dbEvalInit(
   p->zSql = Tcl_GetString(pSql);
   p->pSql = pSql;
   Tcl_IncrRefCount(pSql);
-  if( pArray ){
-    p->pArray = pArray;
-    Tcl_IncrRefCount(pArray);
+  if( pTgtName ){
+    p->pTgtName = pTgtName;
+    Tcl_IncrRefCount(pTgtName);
   }
   p->evalFlags = evalFlags;
   addDatabaseRef(p->pDb);
@@ -1689,7 +1690,7 @@ static void dbEvalRowInfo(
     Tcl_Obj **apColName = 0;      /* Array of column names */
 
     p->nCol = nCol = sqlite3_column_count(pStmt);
-    if( nCol>0 && (papColName || p->pArray) ){
+    if( nCol>0 && (papColName || p->pTgtName) ){
       apColName = (Tcl_Obj**)Tcl_Alloc( sizeof(Tcl_Obj*)*nCol );
       for(i=0; i<nCol; i++){
         apColName[i] = Tcl_NewStringObj(sqlite3_column_name(pStmt,i), -1);
@@ -1698,20 +1699,36 @@ static void dbEvalRowInfo(
       p->apColName = apColName;
     }
 
-    /* If results are being stored in an array variable, then create
-    ** the array(*) entry for that array
+    /* If results are being stored in a variable then create the
+    ** array(*) or dict(*) entry for that variable.
     */
-    if( p->pArray ){
+    if( p->pTgtName ){
       Tcl_Interp *interp = p->pDb->interp;
       Tcl_Obj *pColList = Tcl_NewObj();
       Tcl_Obj *pStar = Tcl_NewStringObj("*", -1);
 
+      Tcl_IncrRefCount(pColList);
+      Tcl_IncrRefCount(pStar);
       for(i=0; i<nCol; i++){
         Tcl_ListObjAppendElement(interp, pColList, apColName[i]);
       }
-      Tcl_IncrRefCount(pStar);
-      Tcl_ObjSetVar2(interp, p->pArray, pStar, pColList, 0);
+      if( 0==(SQLITE_EVAL_ASDICT & p->evalFlags) ){
+        Tcl_ObjSetVar2(interp, p->pTgtName, pStar, pColList, 0);
+      }else{
+        Tcl_Obj * pDict = Tcl_ObjGetVar2(interp, p->pTgtName, NULL, 0);
+        if( !pDict ){
+          pDict = Tcl_NewDictObj();
+        }else if( Tcl_IsShared(pDict) ){
+          pDict = Tcl_DuplicateObj(pDict);
+        }
+        Tcl_IncrRefCount(pDict);
+        if( Tcl_DictObjPut(interp, pDict, pStar, pColList)==TCL_OK ){
+          Tcl_ObjSetVar2(interp, p->pTgtName, NULL, pDict, 0);
+        }
+        Tcl_DecrRefCount(pDict);
+      }
       Tcl_DecrRefCount(pStar);
+      Tcl_DecrRefCount(pColList);
     }
   }
 
@@ -1753,7 +1770,7 @@ static int dbEvalStep(DbEvalContext *p){
       if( rcs==SQLITE_ROW ){
         return TCL_OK;
       }
-      if( p->pArray ){
+      if( p->pTgtName ){
         dbEvalRowInfo(p, 0, 0);
       }
       rcs = sqlite3_reset(pStmt);
@@ -1804,9 +1821,9 @@ static void dbEvalFinalize(DbEvalContext *p){
     dbReleaseStmt(p->pDb, p->pPreStmt, 0);
     p->pPreStmt = 0;
   }
-  if( p->pArray ){
-    Tcl_DecrRefCount(p->pArray);
-    p->pArray = 0;
+  if( p->pTgtName ){
+    Tcl_DecrRefCount(p->pTgtName);
+    p->pTgtName = 0;
   }
   Tcl_DecrRefCount(p->pSql);
   dbReleaseColumnNames(p);
@@ -1896,7 +1913,7 @@ static int SQLITE_TCLAPI DbEvalNextCmd(
   ** returned by the queries encapsulated in data[0]. */
   DbEvalContext *p = (DbEvalContext *)data[0];
   Tcl_Obj *pScript = (Tcl_Obj *)data[1];
-  Tcl_Obj *pArray = p->pArray;
+  Tcl_Obj *pTgtName = p->pTgtName;
 
   while( (rc==TCL_OK || rc==TCL_CONTINUE) && TCL_OK==(rc = dbEvalStep(p)) ){
     int i;
@@ -1904,15 +1921,15 @@ static int SQLITE_TCLAPI DbEvalNextCmd(
     Tcl_Obj **apColName;
     dbEvalRowInfo(p, &nCol, &apColName);
     for(i=0; i<nCol; i++){
-      if( pArray==0 ){
+      if( pTgtName==0 ){
         Tcl_ObjSetVar2(interp, apColName[i], 0, dbEvalColumnValue(p,i), 0);
       }else if( (p->evalFlags & SQLITE_EVAL_WITHOUTNULLS)!=0
-             && sqlite3_column_type(p->pPreStmt->pStmt, i)==SQLITE_NULL 
+             && sqlite3_column_type(p->pPreStmt->pStmt, i)==SQLITE_NULL
       ){
-        Tcl_UnsetVar2(interp, Tcl_GetString(pArray), 
+        Tcl_UnsetVar2(interp, Tcl_GetString(pTgtName),
                       Tcl_GetString(apColName[i]), 0);
       }else{
-        Tcl_ObjSetVar2(interp, pArray, apColName[i], dbEvalColumnValue(p,i), 0);
+        Tcl_ObjSetVar2(interp, pTgtName, apColName[i], dbEvalColumnValue(p,i), 0);
       }
     }
 
@@ -2855,13 +2872,15 @@ deserialize_error:
   }
 
   /*
-  **    $db eval ?options? $sql ?array? ?{  ...code... }?
+  **    $db eval ?options? $sql ?varName? ?{  ...code... }?
   **
-  ** The SQL statement in $sql is evaluated.  For each row, the values are
-  ** placed in elements of the array named "array" and ...code... is executed.
-  ** If "array" and "code" are omitted, then no callback is every invoked.
-  ** If "array" is an empty string, then the values are placed in variables
-  ** that have the same name as the fields extracted by the query.
+  ** The SQL statement in $sql is evaluated.  For each row, the values
+  ** are placed in elements of the array or dict named $varName and
+  ** ...code... is executed.  If $varName and $code are omitted, then
+  ** no callback is ever invoked.  If $varName is an empty string,
+  ** then the values are placed in variables that have the same name
+  ** as the fields extracted by the query, and those variables are
+  ** accessible during the eval of $code.
   */
   case DB_EVAL: {
     int evalFlags = 0;
@@ -2869,8 +2888,9 @@ deserialize_error:
     while( objc>3 && (zOpt = Tcl_GetString(objv[2]))!=0 && zOpt[0]=='-' ){
       if( strcmp(zOpt, "-withoutnulls")==0 ){
         evalFlags |= SQLITE_EVAL_WITHOUTNULLS;
-      }
-      else{
+      }else if( strcmp(zOpt, "-asdict")==0 ){
+        evalFlags |= SQLITE_EVAL_ASDICT;
+      }else{
         Tcl_AppendResult(interp, "unknown option: \"", zOpt, "\"", (void*)0);
         return TCL_ERROR;
       }
@@ -2878,8 +2898,8 @@ deserialize_error:
       objv++;
     }
     if( objc<3 || objc>5 ){
-      Tcl_WrongNumArgs(interp, 2, objv, 
-          "?OPTIONS? SQL ?ARRAY-NAME? ?SCRIPT?");
+      Tcl_WrongNumArgs(interp, 2, objv,
+          "?OPTIONS? SQL ?VAR-NAME? ?SCRIPT?");
       return TCL_ERROR;
     }
 
@@ -2905,17 +2925,17 @@ deserialize_error:
     }else{
       ClientData cd2[2];
       DbEvalContext *p;
-      Tcl_Obj *pArray = 0;
+      Tcl_Obj *pTgtName = 0;
       Tcl_Obj *pScript;
 
       if( objc>=5 && *(char *)Tcl_GetString(objv[3]) ){
-        pArray = objv[3];
+        pTgtName = objv[3];
       }
       pScript = objv[objc-1];
       Tcl_IncrRefCount(pScript);
 
       p = (DbEvalContext *)Tcl_Alloc(sizeof(DbEvalContext));
-      dbEvalInit(p, pDb, objv[2], pArray, evalFlags);
+      dbEvalInit(p, pDb, objv[2], pTgtName, evalFlags);
 
       cd2[0] = (void *)p;
       cd2[1] = (void *)pScript;
