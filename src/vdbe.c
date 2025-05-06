@@ -2644,7 +2644,7 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
   break;
 }
 
-/* Opcode: Once P1 P2 * * *
+/* Opcode: Once P1 P2 P3 * *
 **
 ** Fall through to the next instruction the first time this opcode is
 ** encountered on each invocation of the byte-code program.  Jump to P2
@@ -2660,6 +2660,12 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
 ** whether or not the jump should be taken.  The bitmask is necessary
 ** because the self-altering code trick does not work for recursive
 ** triggers.
+**
+** The P3 operand is not used directly by this opcode.  However P3 is
+** used by the code generator as follows:  If this opcode is the start
+** of a subroutine and that subroutine uses a Bloom filter, then P3 will
+** be the register that holds that Bloom filter.  See tag-202407032019
+** in the source code for implementation details.
 */
 case OP_Once: {             /* jump */
   u32 iAddr;                /* Address of this instruction */
@@ -3705,6 +3711,7 @@ case OP_MakeRecord: {
       zHdr += sqlite3PutVarint(zHdr, serial_type);
       if( pRec->n ){
         assert( pRec->z!=0 );
+        assert( pRec->z!=(const char*)sqlite3CtypeMap );
         memcpy(zPayload, pRec->z, pRec->n);
         zPayload += pRec->n;
       }

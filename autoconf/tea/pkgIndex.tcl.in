@@ -6,14 +6,14 @@
 # edit it.
 #
 # Adapted from https://core.tcl-lang.org/tcltls
-@if TEAISH_VSATISFIES_TCL
-if {![package vsatisfies [package provide Tcl] @TEAISH_VSATISFIES_TCL@]} {
-  error "Package @TEAISH_PKGNAME@ @TEAISH_VERSION@ requires Tcl @TEAISH_VSATISFIES_TCL@"
-}
+@if TEAISH_VSATISFIES_CODE
+@TEAISH_VSATISFIES_CODE@
 @endif
 if {[package vsatisfies [package provide Tcl] 9.0-]} {
   package ifneeded {@TEAISH_PKGNAME@} {@TEAISH_VERSION@} [list apply {{dir} {
+@if TEAISH_ENABLE_DLL
     load [file join $dir {@TEAISH_DLL9@}] @TEAISH_LOAD_PREFIX@
+@endif
 @if TEAISH_PKGINIT_TCL_TAIL
     set initScript [file join $dir {@TEAISH_PKGINIT_TCL_TAIL@}]
     if {[file exists $initScript]} {
@@ -23,11 +23,13 @@ if {[package vsatisfies [package provide Tcl] 9.0-]} {
   }} $dir]
 } else {
   package ifneeded {@TEAISH_PKGNAME@} {@TEAISH_VERSION@} [list apply {{dir} {
+@if TEAISH_ENABLE_DLL
     if {[string tolower [file extension {@TEAISH_DLL8@}]] in [list .dll .dylib .so]} {
       load [file join $dir {@TEAISH_DLL8@}] @TEAISH_LOAD_PREFIX@
     } else {
       load {} @TEAISH_LOAD_PREFIX@
     }
+@endif
 @if TEAISH_PKGINIT_TCL_TAIL
     set initScript [file join $dir {@TEAISH_PKGINIT_TCL_TAIL@}]
     if {[file exists $initScript]} {

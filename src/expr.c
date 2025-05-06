@@ -3626,11 +3626,12 @@ void sqlite3CodeRhsOfIN(
       sqlite3SelectDelete(pParse->db, pCopy);
       sqlite3DbFree(pParse->db, dest.zAffSdst);
       if( addrBloom ){
+        /* Remember that location of the Bloom filter in the P3 operand
+        ** of the OP_Once that began this subroutine. tag-202407032019 */
         sqlite3VdbeGetOp(v, addrOnce)->p3 = dest.iSDParm2;
         if( dest.iSDParm2==0 ){
-          sqlite3VdbeChangeToNoop(v, addrBloom);
-        }else{
-          sqlite3VdbeGetOp(v, addrOnce)->p3 = dest.iSDParm2;
+          /* If the Bloom filter won't actually be used, keep it small */
+          sqlite3VdbeGetOp(v, addrBloom)->p1 = 10;
         }
       }
       if( rc ){
@@ -4077,7 +4078,7 @@ static void sqlite3ExprCodeIN(
       if( ExprHasProperty(pExpr, EP_Subrtn) ){
         const VdbeOp *pOp = sqlite3VdbeGetOp(v, pExpr->y.sub.iAddr);
         assert( pOp->opcode==OP_Once || pParse->nErr );
-        if( pOp->opcode==OP_Once && pOp->p3>0 ){
+        if( pOp->opcode==OP_Once && pOp->p3>0 ){  /* tag-202407032019 */
           assert( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) );
           sqlite3VdbeAddOp4Int(v, OP_Filter, pOp->p3, destIfFalse,
                                rLhs, nVector); VdbeCoverage(v);
@@ -5926,11 +5927,11 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       assert( TK_ISNULL==OP_IsNull );   testcase( op==TK_ISNULL );
       assert( TK_NOTNULL==OP_NotNull ); testcase( op==TK_NOTNULL );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      sqlite3VdbeTypeofColumn(v, r1);
+      assert( regFree1==0 || regFree1==r1 );
+      if( regFree1 ) sqlite3VdbeTypeofColumn(v, r1);
       sqlite3VdbeAddOp2(v, op, r1, dest);
       VdbeCoverageIf(v, op==TK_ISNULL);
       VdbeCoverageIf(v, op==TK_NOTNULL);
-      testcase( regFree1==0 );
       break;
     }
     case TK_BETWEEN: {
@@ -6101,11 +6102,11 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_ISNULL:
     case TK_NOTNULL: {
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      sqlite3VdbeTypeofColumn(v, r1);
+      assert( regFree1==0 || regFree1==r1 );
+      if( regFree1 ) sqlite3VdbeTypeofColumn(v, r1);
       sqlite3VdbeAddOp2(v, op, r1, dest);
       testcase( op==TK_ISNULL );   VdbeCoverageIf(v, op==TK_ISNULL);
       testcase( op==TK_NOTNULL );  VdbeCoverageIf(v, op==TK_NOTNULL);
-      testcase( regFree1==0 );
       break;
     }
     case TK_BETWEEN: {

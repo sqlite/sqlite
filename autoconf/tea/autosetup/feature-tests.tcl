@@ -186,7 +186,7 @@ proc teaish-import-features {args} {
   #
   if {$flags(-run) && "" ne $pk} {
     proj-error "Cannot use both -run and $pk" \
-      " (called from [proj-current-scope 1])"
+      " (called from [proj-scope 1])"
   }
 
   foreach arg $args {

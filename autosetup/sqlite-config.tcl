@@ -538,7 +538,7 @@ proc msg-debug {msg} {
 # the debug message. It is not legal to call this from the global
 # scope.
 proc proc-debug {msg} {
-  msg-debug "\[[proj-current-scope 1]\]: $msg"
+  msg-debug "\[[proj-scope 1]\]: $msg"
 }
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
@@ -994,7 +994,7 @@ proc sqlite-handle-emsdk {} {
       proj-bin-define wasm-opt BIN_WASM_OPT
     }
     proj-dot-ins-append $emccSh.in $emccSh {
-      catch {exec chmod u+x $fileOut}
+      catch {exec chmod u+x $dotInsOut}
     }
     proj-dot-ins-append $extWasmConfig.in $extWasmConfig
   } else {

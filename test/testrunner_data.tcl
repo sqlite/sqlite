@@ -430,7 +430,7 @@ proc trd_extras {platform bld} {
 
 # Usage: 
 #
-#     trd_fuzztest_data
+#     trd_fuzztest_data $buildname
 #
 # This returns data used by testrunner.tcl to run commands equivalent 
 # to [make fuzztest]. The returned value is a list, which should be
@@ -450,16 +450,24 @@ proc trd_extras {platform bld} {
 # directory containing this file). "fuzzcheck" and "sessionfuzz" have .exe
 # extensions on windows.
 #
-proc trd_fuzztest_data {} {
+proc trd_fuzztest_data {buildname} {
   set EXE ""
   set lFuzzDb    [glob [file join $::testdir fuzzdata*.db]] 
   set lSessionDb [glob [file join $::testdir sessionfuzz-data*.db]]
+  set sanBuilds {All-Debug Apple Have-Not Update-Delete-Limit}
 
   if {$::tcl_platform(platform) eq "windows"} {
     return [list fuzzcheck.exe $lFuzzDb]
+  } elseif {[lsearch $sanBuilds $buildname]>=0} {
+    return [list [trd_get_bin_name fuzzcheck] $lFuzzDb \
+                 [trd_get_bin_name fuzzcheck-asan] $lFuzzDb \
+                 [trd_get_bin_name fuzzcheck-ubsan] $lFuzzDb \
+                 {sessionfuzz run} $lSessionDb]
+  } else {
+    return [list [trd_get_bin_name fuzzcheck] $lFuzzDb \
+                 {sessionfuzz run} $lSessionDb]
   }
 
-  return [list [trd_get_bin_name fuzzcheck] $lFuzzDb {sessionfuzz run} $lSessionDb]
 }
 
 

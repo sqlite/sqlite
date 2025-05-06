@@ -5,17 +5,27 @@
 # probably not edit it.
 #
 # This is the wrapper script invoked by teaish's "make test" recipe.
-@if TEAISH_VSATISFIES_TCL
-if {![package vsatisfies [package provide Tcl] @TEAISH_VSATISFIES_TCL@]} {
-  error "Package @TEAISH_PKGNAME@ @TEAISH_VERSION@ requires Tcl @TEAISH_VSATISFIES_TCL@"
-}
+# It gets passed 3 args:
+#
+# $1 = the DLL name, or "" if the extension has no DLL
+#
+# $2 = the "load prefix" for Tcl's [load] or empty if $1 is empty
+#
+# $3 = the /path/to/teaish/tester.tcl (test utility code)
+#
+@if TEAISH_VSATISFIES_CODE
+@TEAISH_VSATISFIES_CODE@
 @endif
-load [lindex $::argv 0] [lindex $::argv 1];
-source [lindex $::argv 2]; # teaish/tester.tcl
+if {[llength [lindex $::argv 0]] > 0} {
+  load [file normalize [lindex $::argv 0]] [lindex $::argv 1];
+  # ----^^^^^^^ needed on Haiku when argv 0 is just a filename, else
+  # load cannot find the file.
+}
+source -encoding utf-8 [lindex $::argv 2]; # teaish/tester.tcl
 @if TEAISH_PKGINIT_TCL
 apply {{file} {
   set dir [file dirname $::argv0]
-  source $file
+  source -encoding utf-8 $file
 }} [join {@TEAISH_PKGINIT_TCL@}]
 @endif
 @if TEAISH_TEST_TCL
@@ -24,7 +34,7 @@ apply {{file} {
   array set ::teaish__BuildFlags @TEAISH__DEFINES_MAP@
   set dir [file normalize [file dirname $file]]
   #test-fail "Just testing"
-  source $file
+  source -encoding utf-8 $file
 }} [join {@TEAISH_TEST_TCL@}]
 @else # TEAISH_TEST_TCL
 # No $TEAISH_TEST_TCL provided, so here's a default test which simply
