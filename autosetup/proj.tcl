@@ -8,7 +8,13 @@
 #  * May you find forgiveness for yourself and forgive others.
 #  * May you share freely, never taking more than you give.
 #
-########################################################################
+
+#
+# ----- @module proj.tcl -----
+# @section Project-agnostic Helper APIs
+#
+
+#
 # Routines for Steve Bennett's autosetup which are common to trees
 # managed in and around the umbrella of the SQLite project.
 #
@@ -25,13 +31,12 @@
 # noted here only as an indication that there are no licensing issues
 # despite this code having a handful of near-twins running around a
 # handful of third-party source trees.
-########################################################################
 #
 # Design notes:
 #
-# - Symbols with a suffix of _ are intended for internal use within
+# - Symbols with _ separators are intended for internal use within
 #   this file, and are not part of the API which auto.def files should
-#   rely on.
+#   rely on. Symbols with - separators are public APIs.
 #
 # - By and large, autosetup prefers to update global state with the
 #   results of feature checks, e.g. whether the compiler supports flag
@@ -49,10 +54,7 @@
 # test, downstream tests may not like the $prefix/lib path added by
 # the rpath test. To avoid such problems, we avoid (intentionally)
 # updating global state via feature tests.
-########################################################################
-
-# ----- @module proj.tcl -----
-# @section Project Helper APIs
+#
 
 #
 # $proj__Config is an internal-use-only array for storing whatever generic
@@ -83,7 +85,7 @@ set proj__Config(isatty) [isatty? stdout]
 #
 proc proj-warn {args} {
   show-notices
-  puts stderr [join [list "WARNING:" {*}$args] " "]
+  puts stderr [join [list "WARNING: \[[proj-scope 1]\]: " {*}$args] " "]
 }
 
 #
@@ -103,7 +105,7 @@ proc proj-fatal {args} {
     set args [lassign $args -]
     incr lvl
   }
-  puts stderr [join [list "FATAL: \[[proj-current-scope $lvl]]: " {*}$args]]
+  puts stderr [join [list "FATAL: \[[proj-scope $lvl]]: " {*}$args]]
   exit 1
 }
 
@@ -119,27 +121,26 @@ proc proj-error {args} {
     set args [lassign $args -]
     incr lvl
   }
-  error [join [list "\[[proj-current-scope $lvl]]:" {*}$args]]
+  error [join [list "\[[proj-scope $lvl]]:" {*}$args]]
 }
 
 #
 # @proj-assert script ?message?
 #
-# Kind of like a C assert: if uplevel (eval) of [expr {$script}] is
-# false, a fatal error is triggered. The error message, by default,
-# includes the body of the failed assertion, but if $msg is set then
-# that is used instead.
+# Kind of like a C assert: if uplevel of [list expr $script] is false,
+# a fatal error is triggered. The error message, by default, includes
+# the body of the failed assertion, but if $msg is set then that is
+# used instead.
 #
 proc proj-assert {script {msg ""}} {
   if {1 == [get-env proj-assert 0]} {
     msg-result [proj-bold "asserting: $script"]
   }
-  set x "expr \{ $script \}"
-  if {![uplevel 1 $x]} {
+  if {![uplevel 1 [list expr $script]]} {
     if {"" eq $msg} {
       set msg $script
     }
-    proj-fatal "Assertion failed: $msg"
+    proj-fatal "Assertion failed in \[[proj-scope 1]\]: $msg"
   }
 }
 
@@ -212,7 +213,7 @@ proc proj-indented-notice {args} {
 # Returns 1 if cross-compiling, else 0.
 #
 proc proj-is-cross-compiling {} {
-  return [expr {[get-define host] ne [get-define build]}]
+  expr {[get-define host] ne [get-define build]}
 }
 
 #
@@ -249,7 +250,7 @@ proc proj-cflags-without-werror {{var CFLAGS}} {
       default { lappend rv $f }
     }
   }
-  return [join $rv " "]
+  join $rv " "
 }
 
 #
@@ -297,7 +298,7 @@ proc proj-search-for-header-dir {header args} {
       -dirs     { set args [lassign $args - dirs] }
       -subdirs  { set args [lassign $args - subdirs] }
       default   {
-        proj-fatal "Unhandled argument: $args"
+        proj-error "Unhandled argument: $args"
       }
     }
   }
@@ -375,7 +376,8 @@ proc proj-first-bin-of {args} {
   set rc ""
   foreach b $args {
     set u [string toupper $b]
-    # Note that cc-path-progs defines $u to false if it finds no match.
+    # Note that cc-path-progs defines $u to "false" if it finds no
+    # match.
     if {[cc-path-progs $b]} {
       set rc [get-define $u]
     }
@@ -519,7 +521,7 @@ proc proj-define-for-opt {flag def {msg ""} {iftrue 1} {iffalse 0}} {
 # @proj-opt-define-bool ?-v? optName defName ?descr?
 #
 # Checks [proj-opt-truthy $optName] and calls [define $defName X]
-# where X is 0 for false and 1 for true. descr is an optional
+# where X is 0 for false and 1 for true. $descr is an optional
 # [msg-checking] argument which defaults to $defName. Returns X.
 #
 # If args[0] is -v then the boolean semantics are inverted: if
@@ -529,7 +531,7 @@ proc proj-define-for-opt {flag def {msg ""} {iftrue 1} {iffalse 0}} {
 proc proj-opt-define-bool {args} {
   set invert 0
   if {[lindex $args 0] eq "-v"} {
-    set invert 1
+    incr invert
     lassign $args - optName defName descr
   } else {
     lassign $args optName defName descr
@@ -540,14 +542,9 @@ proc proj-opt-define-bool {args} {
   #puts "optName=$optName defName=$defName descr=$descr"
   set rc 0
   msg-checking "[join $descr] ... "
-  if {[proj-opt-truthy $optName]} {
-    if {0 eq $invert} {
-      set rc 1
-    } else {
-      set rc 0
-    }
-  } elseif {0 ne $invert} {
-    set rc 1
+  set rc [proj-opt-truthy $optName]
+  if {$invert} {
+    set rc [expr {!$rc}]
   }
   msg-result $rc
   define $defName $rc
@@ -1341,7 +1338,7 @@ proc proj-dump-defs-json {file args} {
 # that [opt-value canonical] will return X if --alias=X is passed to
 # configure.
 #
-# That said: autosetup's [opt-src] does support alias forms, but it
+# That said: autosetup's [opt-str] does support alias forms, but it
 # requires that the caller know all possible aliases. It's simpler, in
 # terms of options handling, if there's only a single canonical name
 # which each down-stream call of [opt-...] has to know.
@@ -1427,11 +1424,11 @@ proc proj-which-linenoise {dotH} {
 # manner unless they are explicitly overridden at configure-time, in
 # which case those overrides takes precedence.
 #
-# Each --XYZdir flag which is explicitly passed to configure is
-# exported as-is, as are those which default to some top-level system
-# directory, e.g. /etc or /var.  All which derive from either $prefix
-# or $exec_prefix are exported in the form of a Makefile var
-# reference, e.g.  libdir=${exec_prefix}/lib. Ergo, if
+# Each autoconf-relvant --XYZ flag which is explicitly passed to
+# configure is exported as-is, as are those which default to some
+# top-level system directory, e.g. /etc or /var.  All which derive
+# from either $prefix or $exec_prefix are exported in the form of a
+# Makefile var reference, e.g.  libdir=${exec_prefix}/lib. Ergo, if
 # --exec-prefix=FOO is passed to configure, libdir will still derive,
 # at make-time, from whatever exec_prefix is passed to make, and will
 # use FOO if exec_prefix is not overridden at make-time.  Without this
@@ -1467,7 +1464,7 @@ proc proj-remap-autoconf-dir-vars {} {
     }
     # Maintenance reminder: the [join] call is to avoid {braces}
     # around the output when someone passes in,
-    # e.g. --libdir=\${prefix}/foo/bar. The Debian package build
+    # e.g. --libdir=\${prefix}/foo/bar. Debian's SQLite package build
     # script does that.
   }
 }
@@ -1501,11 +1498,11 @@ proc proj-env-file {flag {dflt ""}} {
 # If none of those are set, $dflt is returned.
 #
 proc proj-get-env {var {dflt ""}} {
-  return [get-env $var [proj-env-file $var $dflt]]
+  get-env $var [proj-env-file $var $dflt]
 }
 
 #
-# @proj-current-scope ?lvl?
+# @proj-scope ?lvl?
 #
 # Returns the name of the _calling_ proc from ($lvl + 1) levels up the
 # call stack (where the caller's level will be 1 up from _this_
@@ -1513,7 +1510,7 @@ proc proj-get-env {var {dflt ""}} {
 # returned and if it would be negative then a string indicating such
 # is returned (as opposed to throwing an error).
 #
-proc proj-current-scope {{lvl 0}} {
+proc proj-scope {{lvl 0}} {
   #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
   set ilvl [info level]
   set offset [expr {$ilvl  - $lvl - 1}]
@@ -1526,6 +1523,14 @@ proc proj-current-scope {{lvl 0}} {
   }
 }
 
+#
+# Deprecated name of [proj-scope].
+#
+proc proj-current-scope {{lvl 0}} {
+  puts stderr \
+    "Deprecated proj-current-scope called from [proj-scope 1]. Use proj-scope instead."
+  proj-scope [incr lvl]
+}
 
 #
 # Converts parts of tclConfig.sh to autosetup [define]s.
@@ -1547,6 +1552,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
     TCL_VERSION
     TCL_MAJOR_VERSION
     TCL_MINOR_VERSION
+    TCL_PACKAGE_PATH
     TCL_PATCH_LEVEL
     TCL_SHLIB_SUFFIX
   }
@@ -1563,22 +1569,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
   lappend shBody "exit"
   set shBody [join $shBody "\n"]
   #puts "shBody=$shBody\n"; exit
-  if {0} {
-    # This doesn't work but would be preferable to using a temp file...
-    set fd [open "| sh" "rw"]
-    #puts "fd = $fd"; exit
-    puts $fd $shBody
-    flush $fd
-    set rd [read $fd]
-    close $fd
-    puts "rd=$rd"; exit 1
-    eval $rd
-  } else {
-    set shName ".tclConfigSh.tcl"
-    proj-file-write $shName $shBody
-    eval [exec sh $shName $tclConfigSh]
-    file delete -force $shName
-  }
+  eval [exec echo $shBody | sh]
 }
 
 #
@@ -1635,7 +1626,7 @@ proc proj-tweak-default-env-dirs {} {
 # If $postProcessScript is not empty then, during
 # [proj-dot-ins-process], it will be eval'd immediately after
 # processing the file. In the context of that script, the vars
-# $fileIn and $fileOut will be set to the input and output file
+# $dotInsIn and $dotInsOut will be set to the input and output file
 # names.  This can be used, for example, to make the output file
 # executable or perform validation on its contents.
 #
@@ -1657,7 +1648,7 @@ proc proj-dot-ins-append {fileIn args} {
       proj-fatal "Too many arguments: $fileIn $args"
     }
   }
-  #puts "******* [proj-current-scope]: adding $fileIn"
+  #puts "******* [proj-scope]: adding $fileIn"
   lappend ::proj__Config(dot-in-files) $fileIn
 }
 
@@ -1701,7 +1692,7 @@ proc proj-dot-ins-process {args} {
     -validate 0 {expr 1}
   }
   if {[llength $args] > 0} {
-    error "Invalid argument to [proj-current-scope]: $args"
+    error "Invalid argument to [proj-scope]: $args"
   }
   foreach f $::proj__Config(dot-in-files) {
     proj-assert {3==[llength $f]} \
@@ -1713,7 +1704,10 @@ proc proj-dot-ins-process {args} {
       proj-validate-no-unresolved-ats $fOut
     }
     if {"" ne $fScript} {
-      uplevel 1 "set fileIn $fIn; set fileOut $fOut; eval {$fScript}"
+      uplevel 1 [join [list set dotInsIn $fIn \; \
+                         set dotInsOut $fOut \; \
+                         eval \{${fScript}\} \; \
+                         unset dotInsIn dotInsOut]]
     }
   }
   if {$flags(-clear)} {
@@ -1752,13 +1746,13 @@ proc proj-validate-no-unresolved-ats {args} {
 }
 
 #
-# @proj-first-found fileList tgtVar
+# @proj-first-file-found tgtVar fileList
 #
-# Searches $fileList for an existing file. If one is found, its name is
-# assigned to tgtVar and 1 is returned, else tgtVar is not modified
+# Searches $fileList for an existing file. If one is found, its name
+# is assigned to tgtVar and 1 is returned, else tgtVar is set to ""
 # and 0 is returned.
 #
-proc proj-first-file-found {fileList tgtVar} {
+proc proj-first-file-found {tgtVar fileList} {
   upvar $tgtVar tgt
   foreach f $fileList {
     if {[file exists $f]} {
@@ -1766,6 +1760,7 @@ proc proj-first-file-found {fileList tgtVar} {
       return 1
     }
   }
+  set tgt ""
   return 0
 }
 
@@ -1775,19 +1770,10 @@ proc proj-first-file-found {fileList tgtVar} {
 # can be used to automatically reconfigure.
 #
 proc proj-setup-autoreconfig {defName} {
-  set squote {{arg} {
-    # Wrap $arg in single-quotes if it looks like it might need that
-    # to avoid mis-handling as a shell argument. We assume that $arg
-    # will never contain any single-quote characters.
-    if {[string match {*[ &;$*"]*} $arg]} { return '$arg' }
-    return $arg
-  }}
-  define-append $defName cd [apply $squote $::autosetup(builddir)] \
-    && [apply $squote $::autosetup(srcdir)/configure]
-  #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
-  foreach arg $::autosetup(argv) {
-    define-append $defName [apply $squote $arg]
-  }
+  define $defName \
+    [join [list \
+             cd \"$::autosetup(builddir)\" \
+             && [get-define AUTOREMAKE "error - missing @AUTOREMAKE@"]]]
 }
 
 #
@@ -1805,21 +1791,22 @@ proc proj-define-append {defineName args} {
 }
 
 #
-# @prod-define-amend ?-p|-prepend? ?-define? FLAG args...
+# @prod-define-amend ?-p|-prepend? ?-d|-define? defineName args...
 #
 # A proxy for Autosetup's [define-append].
 #
-# Appends all non-empty $args to the define named by $FLAG unless.  If
+# Appends all non-empty $args to the define named by $defineName.  If
 # one of (-p | -prepend) are used it instead prepends them, in their
-# given order, to $FLAG.
+# given order, to $defineName.
 #
 # If -define is used then each argument is assumed to be a [define]'d
 # flag and [get-define X ""] is used to fetch it.
 #
-# Typically, -lXYZ flags need to be in "reverse" order, with each -lY
-# resolving symbols for -lX's to its left. This order is largely
-# historical, and not relevant on all environments, but it is
-# technically correct and still relevant on some environments.
+# Re. linker flags: typically, -lXYZ flags need to be in "reverse"
+# order, with each -lY resolving symbols for -lX's to its left. This
+# order is largely historical, and not relevant on all environments,
+# but it is technically correct and still relevant on some
+# environments.
 #
 # See: proj-append-to
 #
@@ -1830,9 +1817,9 @@ proc proj-define-amend {args} {
   set xargs [list]
   foreach arg $args {
     switch -exact -- $arg {
-      -p - -prepend { set prepend 1 }
-      -d - -define  { set isdefs 1 }
       "" {}
+      -p - -prepend { incr prepend }
+      -d - -define  { incr isdefs }
       default {
         if {"" eq $defName} {
           set defName $arg
@@ -1841,6 +1828,9 @@ proc proj-define-amend {args} {
         }
       }
     }
+  }
+  if {"" eq $defName} {
+    proj-error "Missing defineName argument in call from [proj-scope 1]"
   }
   if {$isdefs} {
     set args $xargs
@@ -1863,17 +1853,22 @@ proc proj-define-amend {args} {
 }
 
 #
-# @proj-define-to-cflag ?-list? defineName...
+# @proj-define-to-cflag ?-list? ?-quote? ?-zero-undef? defineName...
 #
-# Treat each argument as the name of a [define]
-# and attempt to render it like a CFLAGS value:
+# Treat each argument as the name of a [define] and renders it like a
+# CFLAGS value in one of the following forms:
 #
 #  -D$name
-#  -D$name=value
+#  -D$name=integer   (strict integer matches only)
+#  '-D$name=value'   (without -quote)
+#  '-D$name="value"' (with -quote)
 #
-# If treats integers as numbers and everything else as a quoted
+# It treats integers as numbers and everything else as a quoted
 # string, noting that it does not handle strings which themselves
 # contain quotes.
+#
+# The -zero-undef flag causes no -D to be emitted for integer values
+# of 0.
 #
 # By default it returns the result as string of all -D... flags,
 # but if passed the -list flag it will return a list of the
@@ -1881,29 +1876,28 @@ proc proj-define-amend {args} {
 #
 proc proj-define-to-cflag {args} {
   set rv {}
-  set xargs {}
-  set returnList 0;
-  foreach arg $args {
-    switch -exact -- $arg {
-      -list {incr returnList}
-      default {
-        lappend xargs $arg
-      }
-    }
+  proj-parse-simple-flags args flags {
+    -list       0 {expr 1}
+    -quote      0 {expr 1}
+    -zero-undef 0 {expr 1}
   }
-  foreach d $xargs {
+  foreach d $args {
     set v [get-define $d ""]
-    set li [list -D${d}]
-    if {[string is integer -strict $v]} {
-      lappend li = $v
-    } elseif {"" eq $d} {
+    set li {}
+    if {"" eq $d} {
+      set v "-D${d}"
+    } elseif {[string is integer -strict $v]} {
+      if {!$flags(-zero-undef) || $v ne "0"} {
+        set v "-D${d}=$v"
+      }
+    } elseif {$flags(-quote)} {
+      set v "'-D${d}=\"$v\"'"
     } else {
-      lappend li = {"} $v {"}
+      set v "'-D${d}=$v'"
     }
-    lappend rv [join $li ""]
+    lappend rv $v
   }
-  if {$returnList} { return $rv }
-  return [join $rv]
+  expr {$flags(-list) ? $rv : [join $rv]}
 }
 
 
@@ -1967,7 +1961,7 @@ array set proj__Cache {}
 # Returns a cache key for the given argument:
 #
 #   integer: relative call stack levels to get the scope name of for
-#   use as a key. [proj-current-scope [expr {1 + $arg + addLevel}]] is
+#   use as a key. [proj-scope [expr {1 + $arg + addLevel}]] is
 #   then used to generate the key. i.e. the default of 0 uses the
 #   calling scope's name as the key.
 #
@@ -1978,7 +1972,7 @@ array set proj__Cache {}
 proc proj-cache-key {{addLevel 0} arg} {
   if {"-" eq $arg} {set arg 0}
   if {[string is integer -strict $arg]} {
-    return [proj-current-scope [expr {$arg + $addLevel + 1}]]
+    return [proj-scope [expr {$arg + $addLevel + 1}]]
   }
   return $arg
 }
@@ -2064,7 +2058,7 @@ proc proj-coalesce {args} {
 #   -flag defaultValue {script}
 #
 #   -flag => defaultValue
-#   -----^--^ (wiith spaces there!)
+#   -----^--^ (with spaces there!)
 #
 # Repeated for each flag.
 #
@@ -2096,8 +2090,8 @@ proc proj-coalesce {args} {
 # This function assumes that each flag is unique, and using a flag
 # more than once behaves in a last-one-wins fashion.
 #
-# Any $argv entries not described in $prototype are not treated
-# as flags.
+# Any argvName entries not described in $prototype are not treated as
+# flags.
 #
 # Returns the number of flags it processed in $argvName.
 #
@@ -2113,6 +2107,10 @@ proc proj-coalesce {args} {
 # After that $flags would contain {-foo 1 -bar {blah} -no-baz 2}
 # and $args would be {8 9 10}.
 #
+# Potential TODOs: consider using lappend instead of set so that any
+# given flag can be used more than once. Or add a syntax to indicate
+# that.
+#
 proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
   upvar $argvName argv
   upvar $tgtArrayName tgt
@@ -2121,26 +2119,28 @@ proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
   array set consuming {}
   set n [llength $prototype]
   # Figure out what our flags are...
-  for {set i 0} {$i < $n} {} {
+  for {set i 0} {$i < $n} {incr i} {
     set k [lindex $prototype $i]
     #puts "**** #$i of $n k=$k"
     proj-assert {[string match -* $k]} \
-      "Invalid flag value for [proj-current-scope]: $k"
+      "Invalid flag value: $k"
     set v ""
     set s ""
-    if {"=>" eq [lindex $prototype [expr {$i + 1}]]} {
-      incr i 2
-      if {$i >= $n} {
-        proj-fatal "Missing argument for $k => flag"
+    switch -exact -- [lindex $prototype [expr {$i + 1}]] {
+      => {
+        incr i 2
+        if {$i >= $n} {
+          proj-error "Missing argument for $k => flag"
+        }
+        set consuming($k) 1
+        set v [lindex $prototype $i]
       }
-      set consuming($k) 1
-      set v [lindex $prototype $i]
-    } else {
-      set v [lindex $prototype [incr i]]
-      set s [lindex $prototype [incr i]]
-      set scripts($k) $s
+      default {
+        set v [lindex $prototype [incr i]]
+        set s [lindex $prototype [incr i]]
+        set scripts($k) $s
+      }
     }
-    incr i
     #puts "**** #$i of $n k=$k v=$v s=$s"
     set dflt($k) $v
   }
@@ -2160,7 +2160,7 @@ proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
     } elseif {[info exists tgt($arg)]} {
       if {[info exists consuming($arg)]} {
         if {$i + 1 >= $n} {
-          proj-fatal "Missing argument for $arg flag"
+          proj-assert 0 {Cannot happen - bounds already checked}
         }
         set tgt($arg) [lindex $argv [incr i]]
       } elseif {"" eq $scripts($arg)} {
