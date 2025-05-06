@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sNOT\sNULL/IS\sNULL\soptimization\sof\scheck-in\s[cb94350185f555c3]\nthat\scan\scause\sinvalid\sdata\sto\sbe\sused\sfor\sa\scolumn\sif\sthat\scolumn\shas\sa\nCHECK\sconstraint\sthat\sincludes\sthe\sNOT\sNULL\sor\sIS\sNULL\soperator.\nProblem\sdiscovered\sby\sthe\s\n[https://issues.chromium.org/issues/415397143|Chromium\sfuzzer].\s\sNever\nseen\sin\sthe\swild,\sas\sfar\sas\sanybody\sknows.
-D 2025-05-06T17:53:27.367
+C Add\stest\scases\sfor\sthe\sNOT\sNULL/IS\sNULL\soptimization\sin\sCHECK\sconstraints\sfix.
+D 2025-05-06T17:56:32.330
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1005,7 +1005,7 @@ F test/cast.test a2a3b32df86e3c0601ffa2e9f028a18796305d251801efea807092dbf374a04
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/changes.test 4377d202a487f66fc2822c1bf57c46798c8b2caf7446f4f701723b1dbb6b86f6
 F test/changes2.test 07949edcc732af28cb54276bfb7d99723bccc1e905a423648bf57ac5cb0dc792
-F test/check.test 56e4ed457e9f8683b9fc56f5b964f461f6e8a8dd5a13f3d495408215d66419ed
+F test/check.test 3a7972ccbaad80d496833da8714d69d9d5d4ce9e7211af1cd2a06ae488a7de12
 F test/checkfault.test da6cb3d50247169efcb20bdf57863a3ccfa1d27d9e55cd324f0680096970f014
 F test/chunksize.test faea11c5d6df9d392252a8dd879e1b1d68c9d3e8b7909cbed8bcec3b60c706f1
 F test/cksumvfs.test 6f05dc95847c06a3dc10eee6b5ab1351d78314a52d0db15717c9388f4cb96646
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d5021533ed688d7a815ce75b338c72f577c14554027f88a21419935a9e68239
-R ab7250b40dfec6980bb5fa23b5ad485b
-U drh
-Z 7d2b589fb6d422aa7161eac531029503
+P 2adaee9aa90f280a406007695fbc4a314806584c93d6b62b46c031492b31ec27
+R 785918686456a4e780990cb7c7171f36
+U dan
+Z bab07d1fb4803bf298a1c8473b03d461
 # Remove this line to create a well-formed Fossil manifest.
