@@ -1,12 +1,12 @@
-C Enhance\ssqlite3_rsync\sso\sthat\sif\sthe\sfirst\sattempt\sto\sinvoke\sa\scopy\nof\sitself\son\sthe\sremote\ssystem\susing\sssh\sfails,\stry\sagain\safter\naugmenting\sthe\sPATH.\s\sThis\senables\ssqlite3_rsync\sto\swork\swithout\sthe\n--exe\soption\swhen\sthe\sremote\ssystem\sis\sa\sMac.
-D 2025-05-03T15:17:21.853
+C Fix\sconsole-I/O\son\sWindows\sfor\sDEBUG=3\sbuilds.\s\sBroken\sby\n[925e97e6f4238f02].
+D 2025-05-06T15:39:39.220
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in c3e414df4dc8dfb12f1f6baf129fcb6d18cd0ebd3c9109370fb3fceeeef9a37a
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc a0941cadc1f6d953204864f68860c75e149e424e246343fb9753d4261dfaf547
+F Makefile.msc 0206f28988bb6634c7e8aff05bf6cfa65d6dfe1d2b6bd95160dd99290a83dfc7
 F README.md e28077cfbef795e99c9c75ed95aa7257a1166709b562076441a8506ac421b7c1
 F VERSION 001dea55eb8304ec9130b6b44a32d3fc349f279d45a7e224fc0730c3cb8e2372
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -18,7 +18,7 @@ F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821
 F auto.def 82c32443a91c1062f7a48beec37dbb2d8d03447b1286bce8df5ebb6d8d353f8a
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 36516827bb5d2309422bbcbf53e873fa22ef179f5c25b1d3dc6a7255e63270b7
-F autoconf/Makefile.msc 5bc67d3912444c40c6f96d003e5c90663e51abb83d204a520110b1b2038dcd8b
+F autoconf/Makefile.msc f15ad424ca2820df8e39d9157965710af0a64d87773706706a12ea4f96e3a0d8
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f8f15eff6ae50d569ed13a3b18f33eaa43453c0cb80b6007df38e880b62f45d0
-R 92ec366dcda46ad4e89bcad267e1732a
+P 38d4c94d8c7802101ef3bfb411002f9497fdbbbd2b4d3514cef5b76ffd66f75b
+R 1e4612ee633cafd93cdc9b1e36fe0eea
 U drh
-Z 6f2331f004388e224b4ac4ea1a14b67b
+Z fe5bc9712ae0fa2a51da48241636dbb7
 # Remove this line to create a well-formed Fossil manifest.
