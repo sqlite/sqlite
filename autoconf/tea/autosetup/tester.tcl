@@ -29,6 +29,7 @@
 # call). If $lvl would resolve to global scope "global scope" is
 # returned and if it would be negative then a string indicating such
 # is returned (as opposed to throwing an error).
+#
 proc test-current-scope {{lvl 0}} {
   #uplevel [expr {$lvl + 1}] {lindex [info level 0] 0}
   set ilvl [info level]
@@ -45,6 +46,7 @@ proc test-current-scope {{lvl 0}} {
 # @test-msg
 #
 # Emits all arugments to stdout.
+#
 proc test-msg {args} {
   puts "$args"
 }
@@ -113,12 +115,15 @@ proc test-assert {testId script {msg ""}} {
 # @test-expect testId script result
 #
 # Runs $script in the calling scope and compares its result to
-# $result.  If they differ, it triggers an [assert].
+# $result, minus any leading or trailing whitespace.  If they differ,
+# it triggers an [assert].
 #
 proc test-expect {testId script result} {
   puts "test $testId"
-  set x [uplevel 1 $script]
-  test__assert 1 {$x eq $result} "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
+  set x [string trim [uplevel 1 $script]]
+  set result [string trim $result]
+  test__assert 1 {$x eq $result} \
+    "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
 }
 
 #
@@ -142,7 +147,11 @@ if {![array exists ::teaish__BuildFlags]} {
 }
 
 #
-# @teaish-build-flag2 flag tgtVar ?dflt?
+# @teaish-build-flag3 flag tgtVar ?dflt?
+#
+# If the current build has the configure-time flag named $flag set
+# then tgtVar is assigned its value and 1 is returned, else tgtVal is
+# assigned $dflt and 0 is returned.
 #
 # Caveat #1: only valid when called in the context of teaish's default
 # "make test" recipe, e.g. from teaish.test.tcl. It is not valid from
@@ -152,15 +161,11 @@ if {![array exists ::teaish__BuildFlags]} {
 # an external script have populated its internal state, which is
 # normally handled via teaish.tester.tcl.in.
 #
-# If the current build has the configure-time flag named $flag set
-# then tgtVar is assigned its value and 1 is returned, else tgtVal is
-# assigned $dflt and 0 is returned.
-#
 # Caveat #2: defines in the style of HAVE_FEATURENAME with a value of
 # 0 are, by long-standing configure script conventions, treated as
 # _undefined_ here.
 #
-proc teaish-build-flag2 {flag tgtVar {dflt ""}} {
+proc teaish-build-flag3 {flag tgtVar {dflt ""}} {
   upvar $tgtVar tgt
   if {[info exists ::teaish__BuildFlags($flag)]} {
     set tgt $::teaish__BuildFlags($flag)
@@ -177,12 +182,12 @@ proc teaish-build-flag2 {flag tgtVar {dflt ""}} {
 #
 # @teaish-build-flag flag ?dflt?
 #
-# Convenience form of teaish-build-flag2 which returns the
+# Convenience form of teaish-build-flag3 which returns the
 # configure-time-defined value of $flag or "" if it's not defined (or
 # if it's an empty string).
 #
 proc teaish-build-flag {flag {dflt ""}} {
   set tgt ""
-  teaish-build-flag2 $flag tgt $dflt
+  teaish-build-flag3 $flag tgt $dflt
   return $tgt
 }
