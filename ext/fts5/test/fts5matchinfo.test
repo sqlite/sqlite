@@ -528,9 +528,12 @@ do_execsql_test 16.0 {
   BEGIN EXCLUSIVE;
 }
 
-sqlite3 db2 test.db
 do_test 16.1 { 
-  catchsql { SELECT * FROM t1 } db2
+  set rc [catch {
+    sqlite3 db2 test.db
+    db2 eval {SELECT * FROM t1}
+  } errmsg]
+  lappend rc $errmsg
 } {1 {database is locked}}
 
 do_execsql_test 16.2 {
@@ -542,4 +545,3 @@ do_test 16.3 {
 } {0 {}}
 
 finish_test
-
