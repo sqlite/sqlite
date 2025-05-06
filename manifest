@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3VdbeTypeofColumn()\sfunction\sso\sthat\sit\sworks\scorrectly\neven\swhen\sSQLITE_DEBUG\sis\sdefined.
-D 2025-05-06T16:28:44.913
+C Fix\sa\sbug\sin\sthe\sNOT\sNULL/IS\sNULL\soptimization\sof\scheck-in\s[cb94350185f555c3]\nthat\scan\scause\sinvalid\sdata\sto\sbe\sused\sfor\sa\scolumn\sif\sthat\scolumn\shas\sa\nCHECK\sconstraint\sthat\sincludes\sthe\sNOT\sNULL\sor\sIS\sNULL\soperator.\nProblem\sdiscovered\sby\sthe\s\n[https://issues.chromium.org/issues/415397143|Chromium\sfuzzer].\s\sNever\nseen\sin\sthe\swild,\sas\sfar\sas\sanybody\sknows.
+D 2025-05-06T17:53:27.367
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
 F src/dbpage.c fcb1aafe00872a8aff9a7aa0ef7ff1b01e5817ec7bbd521f8f3e1e674ac8d609
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 565d2b6403e85126d2f39f993bfbd9968c29b1100450357bc6da931469fad315
+F src/expr.c 6f184da1f36576ad1ecc48a03f14774235373c64f88d462c710834930ee6c145
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c 7686ea382b20e8bfe2ab9de76150c99ee7b6e83523561f3c7787e0f68cb435c2
@@ -854,7 +854,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 3a20cbae9688af4c1e3754cc2520189d00762e37f60c2deb0b303360d166bba6
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c d580ceb395c1ae3d59da41cbfea60683ff7dd2b94ddf4d0f5657620159e2eeb7
-F src/vdbe.c 6e8030369862a64e5de35cf62a53d466ee4e9d54f4cce1219eca8914b96e956c
+F src/vdbe.c 0feab5781141acca67bd5de84172fff902304274ec5cfe58609f005b8d160050
 F src/vdbe.h 31eddcffc1d14c76c2a20fe4e137e1ee43d44f370896fae14a067052801a3625
 F src/vdbeInt.h 5446f60e89b2aa7cdf3ab0ec4e7b01b8732cd9d52d9092a0b8b1bf700768f784
 F src/vdbeapi.c 28fab30ed0acc981aecfdcaab0a421503609078e29850eb28494816682baf0a7
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ccef4f7058928943be9204b2e53baaf791021e78e538396ba9f2a1d76323e8cf
-R f6da72e117d0748ab2dd41858929ab91
+P 1d5021533ed688d7a815ce75b338c72f577c14554027f88a21419935a9e68239
+R ab7250b40dfec6980bb5fa23b5ad485b
 U drh
-Z 4d404117bbc4adfa4f143cc99e22f267
+Z 7d2b589fb6d422aa7161eac531029503
 # Remove this line to create a well-formed Fossil manifest.
