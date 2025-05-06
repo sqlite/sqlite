@@ -1,5 +1,5 @@
-C Correctly\shandle\sthe\scase\sof\sa\smulti-column\sUNIQUE\sconstraint\sthat\scontains\nthe\sROWID\sas\sone\sof\sit\scolumns,\sand\sthen\sthe\scolumns\sof\sthat\sUNIQUE\sare\nused\sin\sa\srow-value\sIN\soperator\sas\sa\sWHERE\sclause\sconstraint.
-D 2025-04-16T10:53:20.411
+C Fix\sa\sbug\sin\sthe\sNOT\sNULL/IS\sNULL\soptimization\nthat\scan\scause\sinvalid\sdata\sto\sbe\sused\sfor\sa\scolumn\sif\sthat\scolumn\shas\sa\nCHECK\sconstraint\sthat\sincludes\sthe\sNOT\sNULL\sor\sIS\sNULL\soperator.
+D 2025-05-06T18:04:04.913
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -730,7 +730,7 @@ F src/date.c 842c08ac143a56a627b05ac51d68624f2b7b03e3b4cba596205e735eed64ee57
 F src/dbpage.c 2e677acb658a29965e55398bbc61161cb7819da538057c8032adac7ab8e4a8c0
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 8705be31ee713aaa43c97d91399db09f16ee41b88250406eb99de6b47f550a98
+F src/expr.c 3fc2f37dbc172293239600cc6f041830e7e2bc3ddaaebfbb2a89520317b4a09f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c 1ab83fd94f97af9797bdf1027169e3e19482fce06b090c3acceb4bf92ae452cd
@@ -849,7 +849,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 8b29d9a5956569ea2700f869669b8ef67a9662ee5e724ff77ab3c387e27094ba
 F src/util.c e5f6a5eeaa26b69054a43bbd0048cfe3d2851f6961052b35aed8f695df922850
 F src/vacuum.c b763b6457bd058d2072ef9364832351fd8d11e8abf70cbb349657360f7d55c40
-F src/vdbe.c b428a751953c0c2ff85e3e152ec16e29d488895cd541c8c20876ff9f3bf6978a
+F src/vdbe.c 3c9e4dacc5db859cfe61ed364023f0889ca082061cbb064f44e772d274006ec2
 F src/vdbe.h 3d26d5c7660c5c7bd33ffb0d8784615072d8b23c81f8110870efe2631136bc89
 F src/vdbeInt.h 895b1ab7536f018d3d70d690f6c0adbd1062b6dddce1c2cad912927856d4033c
 F src/vdbeapi.c 82fe278a7c71b653235c6f9fb5de0b5de589908dfcb011ba2a782e8becf06f86
@@ -2209,9 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fa29e6a3b744d2dce15354aeda9e12d80c82e79c0dccec92b9a76272eaf97299
-Q +d22475b81c4e26ccc50f3b5626d43b32f7a2de34e5a764539554665bdda735d5
-R 60c7015943027219442b12ced3c73df7
+P ba7d5bad32ad6aaca1cde7133afb20e8a060b16494098b1308c945ea2de00632
+Q +2adaee9aa90f280a406007695fbc4a314806584c93d6b62b46c031492b31ec27
+R 95cfc65226e423aa18b9e0671f876db9
 U drh
-Z 87e3f0ee3f4dec05a6bcee6287d10485
+Z 1174b4e598cf8fde702d33c6b0e37116
 # Remove this line to create a well-formed Fossil manifest.
