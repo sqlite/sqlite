@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sthe\sNOT\sNULL/IS\sNULL\soptimization\sin\sCHECK\sconstraints\sfix.
-D 2025-05-06T17:56:32.330
+C Fix\sa\sharmless\swarning\sabout\sand\soversize\sshift\soperation\son\smalformed\sJSONB\ninputs.\s\s[https://issues.oss-fuzz.com/issues/415850463|OSSFuzz\s415850463].
+D 2025-05-07T17:13:30.502
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
-F src/json.c c84b0f2bae967341d5a035808d21d0619b23b6e054ceac08e7592cd87f04ed4f
+F src/json.c 44337d95da897bc2dafd381e5ea368f7b44412a161912c9476bd00ef6ba96258
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2adaee9aa90f280a406007695fbc4a314806584c93d6b62b46c031492b31ec27
-R 785918686456a4e780990cb7c7171f36
-U dan
-Z bab07d1fb4803bf298a1c8473b03d461
+P 6eb2939a6093c0796910645172d80c53055559dd57c012f1dc815d89fbf84447
+R aa09d3864a20c0924f433448286f2ab3
+U drh
+Z 5fda39bdc6536afb92f20ebba6bf824b
 # Remove this line to create a well-formed Fossil manifest.
