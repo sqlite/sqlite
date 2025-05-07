@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sNOT\sNULL/IS\sNULL\soptimization\nthat\scan\scause\sinvalid\sdata\sto\sbe\sused\sfor\sa\scolumn\sif\sthat\scolumn\shas\sa\nCHECK\sconstraint\sthat\sincludes\sthe\sNOT\sNULL\sor\sIS\sNULL\soperator.
-D 2025-05-06T18:04:04.913
+C Version\s3.49.2
+D 2025-05-07T10:39:52.886
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
@@ -2209,9 +2209,10 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ba7d5bad32ad6aaca1cde7133afb20e8a060b16494098b1308c945ea2de00632
-Q +2adaee9aa90f280a406007695fbc4a314806584c93d6b62b46c031492b31ec27
+P 9d1f01aac909a0689ab881e269c3f1e4b583b0b135689a39fd2822de7a059e5f
 R 95cfc65226e423aa18b9e0671f876db9
+T +sym-release *
+T +sym-version-3.49.2 *
 U drh
-Z 1174b4e598cf8fde702d33c6b0e37116
+Z 26aa19dada18db86c2026c3614aef5cb
 # Remove this line to create a well-formed Fossil manifest.
