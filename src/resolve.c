@@ -1202,7 +1202,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ** sqlite_version() that might change over time cannot be used
           ** in an index or generated column.  Curiously, they can be used
           ** in a CHECK constraint.  SQLServer, MySQL, and PostgreSQL all
-          ** all this. */
+          ** allow this. */
           sqlite3ResolveNotValid(pParse, pNC, "non-deterministic functions",
                                  NC_IdxExpr|NC_PartIdx|NC_GenCol, 0, pExpr);
         }else{
