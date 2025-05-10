@@ -1756,7 +1756,8 @@ json_parse_restart:
            || c=='n' || c=='r' || c=='t'
            || (c=='u' && jsonIs4Hex(&z[j+1])) ){
           if( opcode==JSONB_TEXT ) opcode = JSONB_TEXTJ;
-        }else if( c=='\'' || c=='0' || c=='v' || c=='\n'
+        }else if( c=='\'' ||  c=='v' || c=='\n'
+           || (c=='0' && !sqlite3Isdigit(z[j+1]))
            || (0xe2==(u8)c && 0x80==(u8)z[j+1]
                 && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2]))
            || (c=='x' && jsonIs2Hex(&z[j+1])) ){
@@ -2724,7 +2725,10 @@ static u32 jsonUnescapeOneChar(const char *z, u32 n, u32 *piOut){
     case 'r': {   *piOut = '\r';  return 2; }
     case 't': {   *piOut = '\t';  return 2; }
     case 'v': {   *piOut = '\v';  return 2; }
-    case '0': {   *piOut = 0;     return 2; }
+    case '0': {
+      *piOut = (n>2 && sqlite3Isdigit(z[2])) ? JSON_INVALID_CHAR : 0;
+      return 2;
+    }
     case '\'':
     case '"':
     case '/':

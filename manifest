@@ -1,5 +1,5 @@
-C Fix\sPRAGMA\strusted_schema=OFF\sand\ssimilar\sso\sthat\sit\srestricts\sthe\skinds\nof\sfunctions\sin\sCHECK\sconstraints\sthat\sthe\sdocumentation\ssays\sit\sdoes.\s\sIt\nwas\sletting\sthrough\ssome\sfunction\sthat\sit\sought\snot\shave.\s\sThis\sis\sa\ndefect\sin\s[5720924cb07766cd].\s\sSee\n[forum:/forumpost/3fa9d44c0b381342|forum\sthread\s2025-05-08T08:50Z].\nAdditional\stest\scases\swill\sbe\sadded\sseparately.
-D 2025-05-08T16:18:18.268
+C Add\senforcement\sof\sthe\sobscure\sJSON5\ssyntax\srule\sthat\sthe\s&#92;0\sescape\nsequence\smust\snot\sbe\sfollowed\sby\sa\sdigit.\n[forum:/forumpost/c061e87faf7d1c55|Forum\spost\sc061e87faf].
+D 2025-05-10T15:53:17.629
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
-F src/json.c 44337d95da897bc2dafd381e5ea368f7b44412a161912c9476bd00ef6ba96258
+F src/json.c c63af6fa729e2cc8023ae49991306b0c7d63bc250f5d1fe0c68a267a70454ebe
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ac2aa39f7e3ae7ac921fac6566186939a1282f80ced5b3e3d5006a77ecf583ff
-R 120a74143a99085785628ecaf4c3a280
+P 25920beebf71ebc9a1bb9f56932280c9e03390f26fe9da2258f950979b238ce6
+R 2ed42cd65cfe520c39e7dd7284fcf114
 U drh
-Z aaef89e67a70528b909d01d425acdd0f
+Z b145400b6c965e6bf1e844ae4249528c
 # Remove this line to create a well-formed Fossil manifest.
