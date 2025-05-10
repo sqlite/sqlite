@@ -1,5 +1,5 @@
-C Add\senforcement\sof\sthe\sobscure\sJSON5\ssyntax\srule\sthat\sthe\s&#92;0\sescape\nsequence\smust\snot\sbe\sfollowed\sby\sa\sdigit.\n[forum:/forumpost/c061e87faf7d1c55|Forum\spost\sc061e87faf].
-D 2025-05-10T15:53:17.629
+C Provide\sthe\sSQLITE_BUG_COMPATIBLE_20250510\scompile-time\soption\sthat\srestores\nthe\sJSON5\sbug\sfixed\sin\sthe\sprevious\scheck-in,\sin\scase\ssome\sapplications\sneed\nit\sfor\slegacy\scompatibility.
+D 2025-05-10T17:09:53.998
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
-F src/json.c c63af6fa729e2cc8023ae49991306b0c7d63bc250f5d1fe0c68a267a70454ebe
+F src/json.c 2406a6b0dd849ee0fd107d5cfef9fec2cdc2fbe631ece3183c31d6f85e0ec988
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 7432c944ff197046d67a1207790a1b13eec4548c85a9457eb0896bb3641dfb36
 F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
@@ -2153,7 +2153,7 @@ F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a19
 F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
 F tool/mkautoconfamal.sh 07b43da6ef5dfe4c8a119f813b997429e7237ccf537daa14e19af6e6d5a0947f
 F tool/mkccode.tcl c42a8f8cf78f92e83795d5447460dbce7aaf78a3bbf9082f1507dc71a3665f3c x
-F tool/mkctimec.tcl f76dbfc74cefad8d126384ba3263677939f077bd184fcdf8c592a1daf64f50c3 x
+F tool/mkctimec.tcl 11c9eda4a8d18c74b79280b30506d832849fd1855e6d9e95e1fd506f1d211c37 x
 F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 25920beebf71ebc9a1bb9f56932280c9e03390f26fe9da2258f950979b238ce6
-R 2ed42cd65cfe520c39e7dd7284fcf114
+P 83c7477f2b9b0d6cb54cf6b14bf3c8ef4807e4bddc7986d275cf6717da8606b7
+R ee77c9f86e461dd19e948cd6698aee42
 U drh
-Z b145400b6c965e6bf1e844ae4249528c
+Z 1db08161baea4474823f125c459434e2
 # Remove this line to create a well-formed Fossil manifest.
