@@ -601,8 +601,6 @@ void add_path_argument(sqlite3_str *pStr){
 # endif
 #endif
 
-typedef sqlite3_uint64 u64;
-
 /*
 ** State structure for a Hash hash in progress
 */

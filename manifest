@@ -1,5 +1,5 @@
-C Provide\sthe\sSQLITE_BUG_COMPATIBLE_20250510\scompile-time\soption\sthat\srestores\nthe\sJSON5\sbug\sfixed\sin\sthe\sprevious\scheck-in,\sin\scase\ssome\sapplications\sneed\nit\sfor\slegacy\scompatibility.
-D 2025-05-10T17:09:53.998
+C Remove\sa\sredundant\stypedef\sfrom\sthe\ssqlite3_rsync.c\ssource\sfile.
+D 2025-05-11T10:48:10.600
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2189,7 +2189,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 07e18a1d8cc3f6b3a4a1f3528e63c9b29a5c8a7bca0b8d394b231da464ce1247
 F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
-F tool/sqlite3_rsync.c dcf03373565eab543bd43926ed7e97ade744ab0599115fde1ff8aadf04fa4974
+F tool/sqlite3_rsync.c e8659970e839d71d2ef04b96d48ad65f1d4298a41636affaf93c32ed71f3f879
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 83c7477f2b9b0d6cb54cf6b14bf3c8ef4807e4bddc7986d275cf6717da8606b7
-R ee77c9f86e461dd19e948cd6698aee42
+P 491cf31904fdbc9567b838d1ba27901e75f8ea3a117043017d08354bb09f9711
+R 20fde39fab0cbde82ca12d070076b711
 U drh
-Z 1db08161baea4474823f125c459434e2
+Z dd2541a9e78adf5cf3c49feec2486bfe
 # Remove this line to create a well-formed Fossil manifest.
