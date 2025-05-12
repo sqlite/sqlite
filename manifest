@@ -1,5 +1,5 @@
-C Fix\sa\scoding\smistake\sin\svfstrace.
-D 2025-05-12T11:48:39.481
+C Session\sextension\sdoc\stypo\sfix\sreported\sin\s[forum:75e9408acb|forum\spost\s75e9408acb].
+D 2025-05-12T19:12:50.458
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -618,7 +618,7 @@ F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63b
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
 F ext/session/sqlite3session.c 7a8816d56940c464c74706dfb02f18129b290655df1ccb8648228a7d436141f2
-F ext/session/sqlite3session.h 9b58d8f8052145bc302a72391b898f41a47d5138c8a757818bd4dc467874f5f3
+F ext/session/sqlite3session.h 9bb1a6687b467764b35178dc29bbd2c57ab8cd3acdc8a62f088c34ad17e4fe2b
 F ext/session/test_session.c af162108e8dc40cb9fe0e876e0155cecabcb49e82e5939677d21451e36160283
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/GNUmakefile 24d7e6f446528fa67f5ade6c3c7d7e46e1ac52649d6264cbe24539c1dab608e1
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b4c37c6bcc644e21a29955e31151ea22a07627e524ce913afd3d2d6eeb7e0bb6
-R e116b764e125942058e985066d28651d
-U drh
-Z 989c0c51304c2752be15ec69d27c61bf
+P f0054cc0bce4ed735796da1ea68b7773a582042bdd60fdae4e1af4c592104d15
+R 7fae0df8d1693baf8b24b4433cb26b6c
+U stephan
+Z 859bebb1db58d472aabb846e1d589c30
 # Remove this line to create a well-formed Fossil manifest.
