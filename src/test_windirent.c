@@ -126,51 +126,6 @@ next:
 }
 
 /*
-** Implementation of the POSIX readdir_r() function using the MSVCRT.
-*/
-INT readdir_r(
-  LPDIR dirp,
-  LPDIRENT entry,
-  LPDIRENT *result
-){
-  struct _finddata_t data;
-
-  if( dirp==NULL ) return EBADF;
-
-  if( dirp->d_first.d_ino==0 ){
-    dirp->d_first.d_ino++;
-    dirp->d_next.d_ino++;
-
-    entry->d_ino = dirp->d_first.d_ino;
-    entry->d_attributes = dirp->d_first.d_attributes;
-    strncpy(entry->d_name, dirp->d_first.d_name, NAME_MAX);
-    entry->d_name[NAME_MAX] = '\0';
-
-    *result = entry;
-    return 0;
-  }
-
-next:
-
-  memset(&data, 0, sizeof(struct _finddata_t));
-  if( _findnext(dirp->d_handle, &data)==-1 ){
-    *result = NULL;
-    return ENOENT;
-  }
-
-  /* TODO: Remove this block to allow hidden and/or system files. */
-  if( is_filtered(data) ) goto next;
-
-  entry->d_ino = (ino_t)-1; /* not available */
-  entry->d_attributes = data.attrib;
-  strncpy(entry->d_name, data.name, NAME_MAX);
-  entry->d_name[NAME_MAX] = '\0';
-
-  *result = entry;
-  return 0;
-}
-
-/*
 ** Implementation of the POSIX closedir() function using the MSVCRT.
 */
 INT closedir(
