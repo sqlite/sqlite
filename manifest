@@ -1,5 +1,5 @@
-C Session\sextension\sdoc\stypo\sfix\sreported\sin\s[forum:75e9408acb|forum\spost\s75e9408acb].
-D 2025-05-12T19:12:50.458
+C Adjust\sthe\sstrftime()\stest\sin\stest/date4.test\sto\sremove\sflags\snot\ssupported\sin\smusl\slibc\sif\sthat\senvironment\sis\sdetected.
+D 2025-05-13T18:58:56.386
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1077,7 +1077,7 @@ F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68
 F test/date.test 180301372ed42520ff2d1c9bfa1d2aa726a0530d32452bd3f88f0a1c40f3c21e
 F test/date2.test 7e12ec14aaf4d5e6294b4ba140445b0eca06ea50062a9c3a69c4ee13d0b6f8b1
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
-F test/date4.test 75dc8401e8c0639a228cd26a6eaa4ff5ea8ccda912b9853d1c9462c476670e17
+F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
 F test/date5.test 14ba189bc4d03efc371dd5302e035764f6633355a3e13acb4a45e7b33530231e
 F test/dbdata.test 042f49acff3438f940eeba5868d3af080ae64ddf26ae78f80c92bec3ca7d8603
 F test/dbfuzz.c fc566102f72c8af84ae8077b4faf7f056c571e6fa7a32e98b66e42b7505f47b6
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f0054cc0bce4ed735796da1ea68b7773a582042bdd60fdae4e1af4c592104d15
-R 7fae0df8d1693baf8b24b4433cb26b6c
+P b96cfff52b4f364388f168198e999ae2407c4afbc7b020f8bb350ab103ffb55c
+R 85fec2c5ec6747ddb0f53086fb9993a9
 U stephan
-Z 859bebb1db58d472aabb846e1d589c30
+Z 3cfcb1d09cc83362d8527d22d2870aea
 # Remove this line to create a well-formed Fossil manifest.
