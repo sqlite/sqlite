@@ -1,5 +1,5 @@
-C Adjust\sthe\sstrftime()\stest\sin\stest/date4.test\sto\sremove\sflags\snot\ssupported\sin\smusl\slibc\sif\sthat\senvironment\sis\sdetected.
-D 2025-05-13T18:58:56.386
+C Fix\strunk\sfork.
+D 2025-05-13T19:06:11.380
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -418,7 +418,7 @@ F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f82
 F ext/misc/decimal.c 228d47e9ef4de60daf5851da19e3ac9ac1eda9e94432816914469501db6a1129
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c 07cf3109ec6452789e3a989a010234e2a17b599ce82ea29212c948572456abac
+F ext/misc/fileio.c 34993b810514c58ff99d7b4254d4a388d844a4774ea77bec68a1dafe8de5ce41
 F ext/misc/fossildelta.c 0aeb099e9627eea693cf21ae47826ecd1e0319b93143bed23090838b2ef0c162
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
 F ext/misc/ieee754.c c9dd9d77c8e8e18e0a5706f8ffcccf4ccb6562073709f7453d4d73f5122f4362
@@ -841,8 +841,8 @@ F src/test_tclvar.c ae873248a0188459b1c16ca7cc431265dacce524399e8b46725c2b3b7e04
 F src/test_thread.c 3edb4a5b5aeb1a6e9a275dccc848ac95acab7f496b3e9230f6d2d04953a2b862
 F src/test_vdbecov.c 5c426d9cd2b351f5f9ceb30cabf8c64a63bfcad644c507e0bd9ce2f6ae1a3bf3
 F src/test_vfs.c b4135c1308516adf0dfd494e6d6c33114e03732be899eace0502919b674586b5
-F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
-F src/test_windirent.h da2e5b73c32d09905fbdd00f27cd802212a32a58ead882736fe4f5eb775ebc50
+F src/test_windirent.c cbee2b9a118b56b5a26b99c895adcbc861587bc66d24b88d1ad6e4c1d09dad7b
+F src/test_windirent.h f8245d8002aa0d4322192d35b0f8bbfc757479e90d60fd0beb386d3913f72cdd
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b96cfff52b4f364388f168198e999ae2407c4afbc7b020f8bb350ab103ffb55c
-R 85fec2c5ec6747ddb0f53086fb9993a9
-U stephan
-Z 3cfcb1d09cc83362d8527d22d2870aea
+P fc254c1eb784c79a371bf961945a18a680982cdcd3fdcd7e6bb481712fe21cf8 c9e04dadfdf6c860631ce5603693add565ff2033aa25af5736302af7045fc91e
+R 2c951b894630034ec93ff56350c9beb9
+U drh
+Z 97e0cef690bfe86eb3019d1e3b04006a
 # Remove this line to create a well-formed Fossil manifest.
