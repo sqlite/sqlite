@@ -48,11 +48,13 @@ const char *windirent_getenv(
 ** Implementation of the POSIX opendir() function using the MSVCRT.
 */
 LPDIR opendir(
-  const char *dirname
+  const char *dirname  /* Directory name, UTF8 encoding */
 ){
-  struct _finddata_t data;
+  struct _wfinddata_t data;
   LPDIR dirp = (LPDIR)sqlite3_malloc(sizeof(DIR));
   SIZE_T namesize = sizeof(data.name) / sizeof(data.name[0]);
+  wchar_t *b1;
+  sqlite3_int64 sz;
 
   if( dirp==NULL ) return NULL;
   memset(dirp, 0, sizeof(DIR));
@@ -62,9 +64,25 @@ LPDIR opendir(
     dirname = windirent_getenv("SystemDrive");
   }
 
-  memset(&data, 0, sizeof(struct _finddata_t));
-  _snprintf(data.name, namesize, "%s\\*", dirname);
-  dirp->d_handle = _findfirst(data.name, &data);
+  memset(&data, 0, sizeof(data));
+  sz = strlen(dirname);
+  b1 = sqlite3_malloc64( (sz+3)*sizeof(b1[0]) );
+  if( b1==0 ){
+    closedir(dirp);
+    return NULL;
+  }
+  sz = MultiByteToWideChar(CP_UTF8, 0, dirname, sz, b1, sz);
+  b1[sz++] = '\\';
+  b1[sz++] = '*';
+  b1[sz] = 0;
+  if( sz+1>(sqlite3_int64)namesize ){
+    closedir(dirp);
+    sqlite3_free(b1);
+    return NULL;
+  }
+  memcpy(data.name, b1, (sz+1)*sizeof(b1[0]));
+  sqlite3_free(b1);
+  dirp->d_handle = _wfindfirst(data.name, &data);
 
   if( dirp->d_handle==BAD_INTPTR_T ){
     closedir(dirp);
@@ -75,8 +93,8 @@ LPDIR opendir(
   if( is_filtered(data) ){
 next:
 
-    memset(&data, 0, sizeof(struct _finddata_t));
-    if( _findnext(dirp->d_handle, &data)==-1 ){
+    memset(&data, 0, sizeof(data));
+    if( _wfindnext(dirp->d_handle, &data)==-1 ){
       closedir(dirp);
       return NULL;
     }
@@ -86,9 +104,8 @@ next:
   }
 
   dirp->d_first.d_attributes = data.attrib;
-  strncpy(dirp->d_first.d_name, data.name, NAME_MAX);
-  dirp->d_first.d_name[NAME_MAX] = '\0';
-
+  WideCharToMultiByte(CP_UTF8, 0, data.name, -1,
+                      dirp->d_first.d_name, DIRENT_NAME_MAX, 0, 0);
   return dirp;
 }
 
@@ -98,7 +115,7 @@ next:
 LPDIRENT readdir(
   LPDIR dirp
 ){
-  struct _finddata_t data;
+  struct _wfinddata_t data;
 
   if( dirp==NULL ) return NULL;
 
@@ -111,17 +128,16 @@ LPDIRENT readdir(
 
 next:
 
-  memset(&data, 0, sizeof(struct _finddata_t));
-  if( _findnext(dirp->d_handle, &data)==-1 ) return NULL;
+  memset(&data, 0, sizeof(data));
+  if( _wfindnext(dirp->d_handle, &data)==-1 ) return NULL;
 
   /* TODO: Remove this block to allow hidden and/or system files. */
   if( is_filtered(data) ) goto next;
 
   dirp->d_next.d_ino++;
   dirp->d_next.d_attributes = data.attrib;
-  strncpy(dirp->d_next.d_name, data.name, NAME_MAX);
-  dirp->d_next.d_name[NAME_MAX] = '\0';
-
+  WideCharToMultiByte(CP_UTF8, 0, data.name, -1,
+                      dirp->d_next.d_name, DIRENT_NAME_MAX, 0, 0);
   return &dirp->d_next;
 }
 

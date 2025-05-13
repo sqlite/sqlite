@@ -88,6 +88,7 @@
 #  else
 #    define NAME_MAX (260)
 #  endif
+#  define DIRENT_NAME_MAX (NAME_MAX)
 #endif
 
 /*
