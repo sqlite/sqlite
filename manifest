@@ -1,5 +1,5 @@
-C Rework\sthe\sshowHelp()\sfunction\sin\sthe\sCLI\simplementation\sso\sthat\sits\npurpose\sand\soperation\sare\swell\sdescribed\sby\sthe\sheader\scommit.\s\sOmit\nthe\suse\sof\senums\sthat\scause\sissues\sfor\sMSVC\s2025.
-D 2025-05-15T11:20:54.545
+C Enhance\sthe\s"changeset"\sutility\sprogram\swith\snew\scommand-line\soptions\sfor\nthe\s"changeset\sapply"\scommand.
+D 2025-05-15T17:33:32.007
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -575,7 +575,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/util/randomshape.tcl 54ee03d0d4a1c621806f7f44d5b78d2db8fac26e0e8687c36c4bd0203b27dbff
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/rtree/visual01.txt e9c2564083bcd30ec51b07f881bffbf0e12b50a3f6fced0c222c5c1d2f94ac66
-F ext/session/changeset.c 7a1e6a14c7e92d36ca177e92e88b5281acd709f3b726298dc34ec0fb58869cb5
+F ext/session/changeset.c 63fa39a4a6105fd796593b483bfcd513ac01b751d2bce99be2fc3a7fba589a6b
 F ext/session/changesetfuzz.c 227076ab0ae4447d742c01ee88a564da6478bbf26b65108bf8fac9cd8b0b24aa
 F ext/session/changesetfuzz1.test 15b629004e58d5ffcc852e6842a603775bb64b1ce51254831f3d12b113b616cd
 F ext/session/session1.test 5d2502922d38a1579076863827342379a1609ca6bae78c40691a2be1ed1be2aa x
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e7dcf25efae364b7cdf9eb8265803c816c8b8557e4a7684da428badc6ffb3875
-R 8d7346d35de07e0adf7ff5f85eb83ae9
+P 336ceeccc6f85bd78f4a26648af7edf9056d569a767b4120f125a02b2090a349
+R 6b2a68f7f4de7da8bbed287cac82444b
 U drh
-Z c3facc97efa58229c1d101134ec23e8c
+Z b55344836ef42cf1c9d4fb819c337940
 # Remove this line to create a well-formed Fossil manifest.
