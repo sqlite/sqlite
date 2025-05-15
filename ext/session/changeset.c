@@ -30,10 +30,11 @@ static void usage(const char *argv0){
     "COMMANDs:\n"
     "  apply DB [OPTIONS]   Apply the changeset to database file DB. OPTIONS:\n"
     "                          -n|--dryrun     Test run. Don't apply changes\n"
-    "                          --nosavepoint\n"
-    "                          --invert\n"
-    "                          --ignorenoop\n"
-    "                          --fknoaction\n"
+    "                          --enablefk      Enable FOREIGN KEY support\n"
+    "                          --nosavepoint   \\\n"
+    "                          --invert         \\___  Flags passed into\n"
+    "                          --ignorenoop     /     changeset_apply_v2()\n"
+    "                          --fknoaction    /\n"
     "  concat FILE2 OUT     Concatenate FILENAME and FILE2 into OUT\n"
     "  dump                 Show the complete content of the changeset\n"
     "  invert OUT           Write an inverted changeset into file OUT\n"
@@ -166,7 +167,7 @@ static int conflictCallback(
     case SQLITE_DELETE:     zOp = "DELETE from";   break;
   }
   printf("%s conflict on %s table %s with primary key", zType, zOp, zTab);
-  for(i=0; i<nCol; i++){
+  for(i=0; i<nCol && abPK; i++){
     sqlite3_value *pVal;
     if( abPK[i]==0 ) continue;
     printf("%s", zSep);
@@ -194,6 +195,7 @@ int main(int argc, char **argv){
   if( strcmp(argv[2],"apply")==0 ){
     sqlite3 *db;
     int bDryRun = 0;
+    int bEnableFK = 0;
     const char *zDb = 0;
     int i;
     int applyFlags = 0;
@@ -221,6 +223,10 @@ int main(int argc, char **argv){
           applyFlags |= SQLITE_CHANGESETAPPLY_FKNOACTION;
           continue;
         }
+        if( strcmp(zArg, "-enablefk")==0 ){
+          bEnableFK = 1;
+          continue;
+        }
         fprintf(stderr, "unknown option: \"%s\"\n", argv[i]);
         exit(1);
       }else if( zDb ){
@@ -236,6 +242,9 @@ int main(int argc, char **argv){
               zDb, sqlite3_errmsg(db));
       sqlite3_close(db);
       exit(1);
+    }
+    if( bEnableFK ){
+      sqlite3_exec(db, "PRAGMA foreign_keys=1;", 0, 0, 0);
     }
     sqlite3_exec(db, "BEGIN", 0, 0, 0);
     nConflict = 0;
