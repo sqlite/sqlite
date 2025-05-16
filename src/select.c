@@ -8498,10 +8498,9 @@ int sqlite3Select(
         if( iOrderByCol ){
           Expr *pX = p->pEList->a[iOrderByCol-1].pExpr;
           Expr *pBase = sqlite3ExprSkipCollateAndLikely(pX);
-          if( ALWAYS(pBase!=0)
-           && pBase->op==TK_IF_NULL_ROW
-          ){
-            pBase = pX = pBase->pLeft;
+          while( ALWAYS(pBase!=0) && pBase->op==TK_IF_NULL_ROW ){
+            pX = pBase->pLeft;
+            pBase = sqlite3ExprSkipCollateAndLikely(pX);
           }
           if( ALWAYS(pBase!=0)
            && pBase->op!=TK_AGG_COLUMN
