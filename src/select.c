@@ -1917,9 +1917,9 @@ static void generateSortTail(
 ** the SQLITE_ENABLE_COLUMN_METADATA compile-time option is used.
 */
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
-# define columnType(A,B,C,D,E) columnTypeImpl(A,B,C,D,E)
+# define columnType(A,B,C,D,E,F) columnTypeImpl(A,B,C,D,E,F)
 #else /* if !defined(SQLITE_ENABLE_COLUMN_METADATA) */
-# define columnType(A,B,C,D,E) columnTypeImpl(A,B)
+# define columnType(A,B,C,D,E,F) columnTypeImpl(A,B)
 #endif
 static const char *columnTypeImpl(
   NameContext *pNC,
@@ -1929,7 +1929,8 @@ static const char *columnTypeImpl(
   Expr *pExpr,
   const char **pzOrigDb,
   const char **pzOrigTab,
-  const char **pzOrigCol
+  const char **pzOrigCol,
+  const char **pzOrigTabAlias
 #endif
 ){
   char const *zType = 0;
@@ -1938,6 +1939,7 @@ static const char *columnTypeImpl(
   char const *zOrigDb = 0;
   char const *zOrigTab = 0;
   char const *zOrigCol = 0;
+  char const *zOrigTabAlias = 0;
 #endif
 
   assert( pExpr!=0 );
@@ -1961,6 +1963,10 @@ static const char *columnTypeImpl(
           }else{
             pS = 0;
           }
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
+          zOrigTabAlias =
+              pTabList->a[j].zAlias?pTabList->a[j].zAlias:pTabList->a[j].zName;
+#endif
         }else{
           pNC = pNC->pNext;
         }
@@ -2005,7 +2011,7 @@ static const char *columnTypeImpl(
           sNC.pSrcList = pS->pSrc;
           sNC.pNext = pNC;
           sNC.pParse = pNC->pParse;
-          zType = columnType(&sNC, p,&zOrigDb,&zOrigTab,&zOrigCol);
+          zType = columnType(&sNC, p,&zOrigDb,&zOrigTab,&zOrigCol,&zOrigTabAlias);
         }
       }else{
         /* A real table or a CTE table */
@@ -2051,7 +2057,7 @@ static const char *columnTypeImpl(
       sNC.pSrcList = pS->pSrc;
       sNC.pNext = pNC;
       sNC.pParse = pNC->pParse;
-      zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol);
+      zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol, &zOrigTabAlias);
       break;
     }
 #endif
@@ -2063,6 +2069,7 @@ static const char *columnTypeImpl(
     *pzOrigDb = zOrigDb;
     *pzOrigTab = zOrigTab;
     *pzOrigCol = zOrigCol;
+    *pzOrigTabAlias = zOrigTabAlias;
   }
 #endif
   return zType;
@@ -2091,7 +2098,8 @@ static void generateColumnTypes(
     const char *zOrigDb = 0;
     const char *zOrigTab = 0;
     const char *zOrigCol = 0;
-    zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol);
+    const char *zOrigTabAlias = 0;
+    zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol, &zOrigTabAlias);
 
     /* The vdbe must make its own copy of the column-type and other
     ** column specific strings, in case the schema is reset before this
@@ -2100,8 +2108,9 @@ static void generateColumnTypes(
     sqlite3VdbeSetColName(v, i, COLNAME_DATABASE, zOrigDb, SQLITE_TRANSIENT);
     sqlite3VdbeSetColName(v, i, COLNAME_TABLE, zOrigTab, SQLITE_TRANSIENT);
     sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, SQLITE_TRANSIENT);
+    sqlite3VdbeSetColName(v, i, COLNAME_TABLE_ALIAS, zOrigTabAlias, SQLITE_TRANSIENT);
 #else
-    zType = columnType(&sNC, p, 0, 0, 0);
+    zType = columnType(&sNC, p, 0, 0, 0, 0, 0);
 #endif
     sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, SQLITE_TRANSIENT);
   }
@@ -2374,6 +2383,7 @@ void sqlite3SubqueryColumnTypes(
     Select *pS2 = pSelect;
     pTab->tabFlags |= (pCol->colFlags & COLFLAG_NOINSERT);
     p = a[i].pExpr;
+    zType = columnType(&sNC, p, 0, 0, 0, 0);
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
     while( pCol->affinity<=SQLITE_AFF_NONE && pS2->pNext!=0 ){
@@ -2398,7 +2408,7 @@ void sqlite3SubqueryColumnTypes(
         pCol->affinity = SQLITE_AFF_FLEXNUM;
       }
     }
-    zType = columnType(&sNC, p, 0, 0, 0);
+    zType = columnType(&sNC, p, 0, 0, 0, 0);
     if( zType==0 || pCol->affinity!=sqlite3AffinityType(zType, 0) ){
       if( pCol->affinity==SQLITE_AFF_NUMERIC
        || pCol->affinity==SQLITE_AFF_FLEXNUM
