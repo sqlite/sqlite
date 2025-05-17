@@ -1,5 +1,9 @@
 all:
 #
+# Unless this file is named Makefile.in, you are probably looking
+# at an automatically generated/filtered copy and should probably not
+# edit it.
+#
 # This makefile is part of the teaish framework, a tool for building
 # Tcl extensions, conceptually related to TEA/tclconfig but using the
 # Autosetup configuration system instead of the GNU Autotools.
@@ -47,6 +51,12 @@ tx.dll8          = @TEAISH_DLL8@
 tx.dll9          = @TEAISH_DLL9@
 tx.dll           = $(tx.dll$(TCL_MAJOR_VERSION))
 tx.dir           = @TEAISH_EXT_DIR@
+@if TEAISH_TM_TCL
+# Input filename for tcl::tm-style module
+tx.tm             = @TEAISH_TM_TCL@
+# Target filename for tcl::tm-style installation
+tx.tm.tgt        = $(tx.name.pkg)-$(tx.version).tm
+@endif
 
 @if TEAISH_DIST_NAME
 tx.name.dist     = @TEAISH_DIST_NAME@
@@ -157,23 +167,12 @@ tx.LDFLAGS =
 #
 tx.dist.files = @TEAISH_DIST_FILES@
 
-#
-# May get amended with generated file names. They are cleaned up by
-# the 'clean' rules. Client code which wants to clean up extra stuff
-# should do so by adding their cleanup target (e.g. clean-extension)
-# as a dependency to the 'clean' target, like so:
-#
-# clean: distclean-extension
-# distclean: distclean-extension
-#
-teaish__cleanExtra =
-
 # List of deps which may trigger an auto-reconfigure.
 #
 teaish__autogen.deps = \
   $(tx.makefile.in) $(teaish.makefile.in) \
   $(tx.tcl) \
-  @TEAISH_PKGINDEX_TCL_IN@ \
+  @TEAISH_PKGINDEX_TCL_IN@ @TEAISH_TM_TCL_IN@ \
   @AUTODEPS@
 
 @if TEAISH_MAKEFILE_IN
@@ -271,10 +270,10 @@ test: test-post
 # Cleanup rules...
 #
 #.PHONY: clean-pre clean-core clean-post clean-extension
-clean-extension: # this name is reserved for use by teaish.make
+#
 clean-pre:
 clean-core: clean-pre
-	rm -f $(tx.dll8) $(tx.dll9) tclsh $(teaish__cleanExtra)
+	rm -f $(tx.dll8) $(tx.dll9) tclsh
 clean-post: clean-core
 clean: clean-post
 
@@ -300,26 +299,59 @@ distclean-core: distclean-pre
 @if TEAISH_TEST_TCL_IN
 	rm -f @TEAISH_TEST_TCL@
 @endif
-distclean-extension: # this name is reserved for use by teaish.make
 distclean-post: distclean-core
 distclean: distclean-post
+#
+# The (dist)clean-extension targets are reserved for use by
+# client-side teaish.make.
+#
+# Client code which wants to clean up extra stuff should do so by
+# adding their cleanup target (e.g. clean-extension) as a dependency
+# to the 'clean' target, like so:
+#
+# clean: distclean-extension
+# distclean: distclean-extension
+#
+distclean-extension:
+clean-extension:
 
 #
 # Installation rules...
 #
+@if TEAISH_ENABLE_INSTALL
 .PHONY: install-pre install-core install-post install-test install-prepre install-extension
 install-extension: # this name is reserved for use by teaish.make
+
+@if TEAISH_ENABLE_DLL
 install-prepre: $(tx.dll)
+@else
+install-prepre:
+@endif
+
+@if TEAISH_TM_TCL
+install-core.tmdir = $(DESTDIR)@TEAISH_TCL_TM_DIR@
+@endif
+
 install-pre: install-prepre
 install-core: install-pre
 	@if [ ! -d "$(DESTDIR)$(TCLLIBDIR)" ]; then \
 		set -x; $(INSTALL) -d "$(DESTDIR)$(TCLLIBDIR)"; \
 	fi
 # ^^^^ on some platforms, install -d fails if the target already exists.
+@if TEAISH_ENABLE_DLL
 	$(INSTALL) $(tx.dll) "$(DESTDIR)$(TCLLIBDIR)"
-	$(INSTALL.noexec) pkgIndex.tcl "$(DESTDIR)$(TCLLIBDIR)"
+@endif
+@if TEAISH_PKGINDEX_TCL
+	$(INSTALL.noexec) "@TEAISH_PKGINDEX_TCL@" "$(DESTDIR)$(TCLLIBDIR)"
+@endif
 @if TEAISH_PKGINIT_TCL
-	$(INSTALL.noexec) @TEAISH_PKGINIT_TCL@ "$(DESTDIR)$(TCLLIBDIR)"
+	$(INSTALL.noexec) "@TEAISH_PKGINIT_TCL@" "$(DESTDIR)$(TCLLIBDIR)"
+@endif
+@if TEAISH_TM_TCL
+	@if [ ! -d "$(install-core.tmdir)" ]; then \
+		set -x; $(INSTALL) -d "$(install-core.tmdir)"; \
+	fi
+	$(INSTALL.noexec) "@TEAISH_TM_TCL@" "$(install-core.tmdir)/$(tx.tm.tgt)"
 @endif
 install-test: install-core
 	@echo "Post-install test of [package require $(tx.name.pkg) $(tx.version)]..."; \
@@ -344,10 +376,17 @@ install: install-post
 uninstall-extension: # this name is reserved for use by teaish.make
 uninstall-pre:
 uninstall-core: uninstall-pre
+@if TEAISH_ENABLE_DLL
 	rm -fr "$(DESTDIR)$(TCLLIBDIR)"
+@endif
+@if TEAISH_TM_TCL
+	rm -f "$(DESTDIR)$(install-core.tmdir)/$(tx.tm.tgt)"
+@endif
+
 uninstall-post: uninstall-core
 	@echo "Uninstalled Tcl extension $(tx.name) $(tx.version)"
 uninstall: uninstall-post
+@endif # TEAISH_ENABLE_INSTALL
 
 @if TEAISH_MAKEFILE_IN
 Makefile:  $(tx.makefile.in)

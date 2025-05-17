@@ -60,8 +60,8 @@
 # $proj__Config is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
 #
-array set proj__Config {
-  self-tests 0
+array set ::proj__Config {
+  self-tests 1
 }
 
 
@@ -74,8 +74,8 @@ array set proj__Config {
 #
 # See: proj-dot-ins-append and proj-dot-ins-process
 #
-set proj__Config(dot-in-files) [list]
-set proj__Config(isatty) [isatty? stdout]
+set ::proj__Config(dot-in-files) [list]
+set ::proj__Config(isatty) [isatty? stdout]
 
 #
 # @proj-warn msg
@@ -88,6 +88,25 @@ proc proj-warn {args} {
   puts stderr [join [list "WARNING: \[[proj-scope 1]\]: " {*}$args] " "]
 }
 
+
+# Internal impl of [proj-fatal] and [proj-error]. It must be called
+# using tailcall.
+proc proj__faterr {failMode argv} {
+  show-notices
+  set lvl 1
+  while {"-up" eq [lindex $argv 0]} {
+    set argv [lassign $argv -]
+    incr lvl
+  }
+  if {$failMode} {
+    puts stderr [join [list "FATAL: \[[proj-scope $lvl]]: " {*}$argv]]
+    exit 1
+  } else {
+    error [join [list "\[[proj-scope $lvl]]:" {*}$argv]]
+  }
+}
+
+
 #
 # @proj-fatal ?-up...? msg...
 #
@@ -99,31 +118,19 @@ proc proj-warn {args} {
 # additional level.
 #
 proc proj-fatal {args} {
-  show-notices
-  set lvl 1
-  while {"-up" eq [lindex $args 0]} {
-    set args [lassign $args -]
-    incr lvl
-  }
-  puts stderr [join [list "FATAL: \[[proj-scope $lvl]]: " {*}$args]]
-  exit 1
+  tailcall proj__faterr 1 $args
 }
 
 #
 # @proj-error ?-up...? msg...
 #
-# Works like prop-fatal but uses [error] intead of [exit].
+# Works like proj-fatal but uses [error] intead of [exit].
 #
 proc proj-error {args} {
-  show-notices
-  set lvl 1
-  while {"-up" eq [lindex $args 0]} {
-    set args [lassign $args -]
-    incr lvl
-  }
-  error [join [list "\[[proj-scope $lvl]]:" {*}$args]]
+  tailcall proj__faterr 0 $args
 }
 
+set ::proj__Config(verbose-assert) [get-env proj-assert-verbose 0]
 #
 # @proj-assert script ?message?
 #
@@ -133,7 +140,7 @@ proc proj-error {args} {
 # used instead.
 #
 proc proj-assert {script {msg ""}} {
-  if {1 == [get-env proj-assert 0]} {
+  if {1 eq $::proj__Config(verbose-assert)} {
     msg-result [proj-bold "asserting: $script"]
   }
   if {![uplevel 1 [list expr $script]]} {
@@ -162,7 +169,9 @@ proc proj-bold {args} {
 # @proj-indented-notice ?-error? ?-notice? msg
 #
 # Takes a multi-line message and emits it with consistent indentation.
-# It does not perform any line-wrapping of its own.
+# It does not perform any line-wrapping of its own. Which output
+# routine it uses depends on its flags, defaulting to msg-result.
+# For -error and -notice it uses user-notice.
 #
 # If the -notice flag it used then it emits using [user-notice], which
 # means its rendering will (A) go to stderr and (B) be delayed until
@@ -176,7 +185,7 @@ proc proj-bold {args} {
 #
 proc proj-indented-notice {args} {
   set fErr ""
-  set outFunc "puts"
+  set outFunc "msg-result"
   while {[llength $args] > 1} {
     switch -exact -- [lindex $args 0] {
       -error  {
@@ -632,7 +641,7 @@ proc proj-no-check-module-loader {} {
 }
 
 #
-# @proj-file-conent ?-trim? filename
+# @proj-file-content ?-trim? filename
 #
 # Opens the given file, reads all of its content, and returns it.  If
 # the first arg is -trim, the contents of the file named by the second
@@ -701,10 +710,10 @@ proc proj-file-write {args} {
 # argument it is assumed to be the name of an autosetup boolean config
 # which controls whether to run/skip this check.
 #
-# Returns 1 if supported, else 0. Defines MAKE_COMPILATION_DB to "yes"
-# if supported, "no" if not. The use of MAKE_COMPILATION_DB is
-# deprecated/discouraged. It also sets HAVE_COMPILE_COMMANDS to 0 or
-# 1, and that's the preferred usage.
+# Returns 1 if supported, else 0, and defines HAVE_COMPILE_COMMANDS to
+# that value. Defines MAKE_COMPILATION_DB to "yes" if supported, "no"
+# if not. The use of MAKE_COMPILATION_DB is deprecated/discouraged:
+# HAVE_COMPILE_COMMANDS is preferred.
 #
 # ACHTUNG: this test has a long history of false positive results
 # because of compilers reacting differently to the -MJ flag.
@@ -713,6 +722,7 @@ proc proj-check-compile-commands {{configFlag {}}} {
   msg-checking "compile_commands.json support... "
   if {"" ne $configFlag && ![proj-opt-truthy $configFlag]} {
     msg-result "explicitly disabled"
+    define HAVE_COMPILE_COMMANDS 0
     define MAKE_COMPILATION_DB no
     return 0
   } else {
@@ -787,7 +797,12 @@ proc proj-make-from-dot-in {args} {
     catch { exec chmod u+w $fOut }
   }
   #puts "making template: $fIn ==> $fOut"
-  make-template $fIn $fOut
+  #define-push {top_srcdir} {
+    #puts "--- $fIn $fOut top_srcdir=[get-define top_srcdir]"
+    make-template $fIn $fOut
+    #puts "--- $fIn $fOut top_srcdir=[get-define top_srcdir]"
+    # make-template modifies top_srcdir
+  #}
   if {$touch} {
     proj-touch $fOut
   }
@@ -1220,7 +1235,7 @@ proc proj-quote-str_ {value} {
 # the formatted value or the value $::proj__Config(defs-skip) if the caller
 # should skip emitting that value.
 #
-set proj__Config(defs-skip) "-proj-defs-format_ sentinel"
+set ::proj__Config(defs-skip) "-proj-defs-format_ sentinel"
 proc proj-defs-format_ {type value} {
   switch -exact -- $type {
     -bare {
@@ -1258,6 +1273,8 @@ proc proj-defs-format_ {type value} {
   return $value
 }
 
+#
+# @proj-dump-defs-json outfile ...flags
 #
 # This function works almost identically to autosetup's
 # make-config-header but emits its output in JSON form. It is not a
@@ -1965,12 +1982,10 @@ array set proj__Cache {}
 #   then used to generate the key. i.e. the default of 0 uses the
 #   calling scope's name as the key.
 #
-#   "-": same as 0
-#
 #   Anything else: returned as-is
 #
 proc proj-cache-key {{addLevel 0} arg} {
-  if {"-" eq $arg} {set arg 0}
+  #if {"-" eq $arg} {set arg 0}
   if {[string is integer -strict $arg]} {
     return [proj-scope [expr {$arg + $addLevel + 1}]]
   }
@@ -2046,8 +2061,6 @@ proc proj-coalesce {args} {
 #
 # @proj-parse-simple-flags ...
 #
-# An experiment. Do not use.
-#
 # A helper to parse flags from proc argument lists.
 #
 # Expects a list of arguments to parse, an array name to store any
@@ -2097,19 +2110,20 @@ proc proj-coalesce {args} {
 #
 # Example:
 #
-# set args [list -foo -bar {blah} 8 9 10]
-# set args [proj-parse-simple-flags args flags {
+# set args [list -foo -bar {blah} 8 9 10 -theEnd]
+# proj-parse-simple-flags args flags {
 #   -foo    0  {expr 1}
 #   -bar    => 0
 #   -no-baz 2  {return 0}
 # }
 #
 # After that $flags would contain {-foo 1 -bar {blah} -no-baz 2}
-# and $args would be {8 9 10}.
+# and $args would be {8 9 10 -theEnd}.
 #
 # Potential TODOs: consider using lappend instead of set so that any
 # given flag can be used more than once. Or add a syntax to indicate
-# that.
+# that multiples are allowed. Also consider searching the whole
+# argv list, rather than stopping at the first non-flag
 #
 proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
   upvar $argvName argv
@@ -2187,7 +2201,7 @@ proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
 
 if {$::proj__Config(self-tests)} {
   apply {{} {
-    proj-warn "Test code for proj-cache"
+    #proj-warn "Test code for proj-cache"
     proj-assert {![proj-cache-check here check]}
     proj-assert {"here" eq [proj-cache-key here]}
     proj-assert {"" eq $check}
