@@ -10,16 +10,17 @@
 #
 ########################################################################
 #
-# Helper routines for running automated tests on teaish extensions
+# Helper routines for running tests on teaish extensions
 #
 ########################################################################
-# ----- @module teaish-tester.tcl -----
+# ----- @module teaish/tester.tcl -----
 #
 # @section TEA-ish Testing APIs.
 #
 # Though these are part of the autosup dir hierarchy, they are not
-# intended to be run from autosetup code. Rather, they're for
-# use with/via teaish.tester.tcl.
+# intended to be run from autosetup code. Rather, they're for use
+# with/via teaish.tester.tcl and target canonical Tcl only, not JimTcl
+# (which the autosetup pieces do target).
 
 #
 # @test-current-scope ?lvl?
@@ -71,34 +72,68 @@ proc test-fail {args} {
   error "FAIL: \[[test-current-scope 1]]: $args"
 }
 
+array set ::test__Counters {}
+array set ::test__Config {
+  verbose-assert 0 verbose-affirm 0
+}
+
+# Internal impl for affirm and assert.
 #
-# Internal impl for assert-likes. Should not be called directly by
-# client code.
-#
-proc test__assert {lvl script {msg ""}} {
-  set src "expr \{ $script \}"
-  # puts "XXXX evalling $src";
-  if {![uplevel $lvl $src]} {
+# $args = ?-v? script {msg-on-fail ""}
+proc test__affert {failMode args} {
+  if {$failMode} {
+    set what assert
+  } else {
+    set what affirm
+  }
+  set verbose $::test__Config(verbose-$what)
+  if {"-v" eq [lindex $args 0]} {
+    lassign $args - script msg
+    if {1 == [llength $args]} {
+      # If -v is the only arg, toggle default verbose mode
+      set ::test__Config(verbose-$what) [expr {!$::test__Config(verbose-$what)}]
+      return
+    }
+    incr verbose
+  } else {
+    lassign $args script msg
+  }
+  incr ::test__Counters($what)
+  if {![uplevel 1 [concat expr [list $script]]]} {
     if {"" eq $msg} {
       set msg $script
     }
-    set caller1 [test-current-scope $lvl]
-    incr lvl
-    set caller2 [test-current-scope $lvl]
-    error "Assertion failed in: \[$caller2 -> $caller1]]: $msg"
+    set txt [join [list $what # $::test__Counters($what) "failed:" $msg]]
+    if {$failMode} {
+      puts stderr $txt
+      exit 1
+    } else {
+      error $txt
+    }
+  } elseif {$verbose} {
+    puts stderr [join [list $what # $::test__Counters($what) "passed:" $script]]
   }
 }
 
 #
-# @assert script ?message?
+# @affirm ?-v? script ?msg?
 #
-# Kind of like a C assert: if uplevel (eval) of [expr {$script}] is
-# false, a fatal error is triggered. The error message, by default,
-# includes the body of the failed assertion, but if $msg is set then
-# that is used instead.
+# Works like a conventional assert method does, but reports failures
+# using [error] instead of [exit]. If -v is used, it reports passing
+# assertions to stderr. $script is evaluated in the caller's scope as
+# an argument to [expr].
 #
-proc assert {script {msg ""}} {
-  test__assert 1 $script $msg
+proc affirm {args} {
+  tailcall test__affert 0 {*}$args
+}
+
+#
+# @assert ?-v? script ?msg?
+#
+# Works like [affirm] but exits on error.
+#
+proc assert {args} {
+  tailcall test__affert 1 {*}$args
 }
 
 #
@@ -108,7 +143,7 @@ proc assert {script {msg ""}} {
 #
 proc test-assert {testId script {msg ""}} {
   puts "test $testId"
-  test__assert 2 $script $msg
+  tailcall test__affert 1 $script $msg
 }
 
 #
@@ -122,7 +157,7 @@ proc test-expect {testId script result} {
   puts "test $testId"
   set x [string trim [uplevel 1 $script]]
   set result [string trim $result]
-  test__assert 1 {$x eq $result} \
+  tailcall test__affert 0 [list $x eq $result] \
     "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
 }
 
