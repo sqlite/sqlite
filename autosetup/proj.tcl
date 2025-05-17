@@ -1998,8 +1998,8 @@ proc proj-cache-key {arg {addLevel 0}} {
 #
 # Sets a feature-check cache entry with the given key.
 #
-# See proj-cache-key for $key's and $addLevel's semantics, noting that
-# this function adds one to $addLevel for purposes of that call.
+# See proj-cache-key for -key's and -level's semantics, noting that
+# this function adds one to -level for purposes of that call.
 proc proj-cache-set {args} {
   proj-parse-simple-flags args flags {
     -key => 0
