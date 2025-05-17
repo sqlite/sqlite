@@ -98,14 +98,9 @@ SQLITE_EXTENSION_INIT1
 #  include <direct.h>
 #  include "test_windirent.h"
 #  define dirent DIRENT
-#  ifndef chmod
-#    define chmod _chmod
-#  endif
-#  ifndef stat
-#    define stat _stat
-#  endif
-#  define mkdir(path,mode) _mkdir(path)
-#  define lstat(path,buf) stat(path,buf)
+#  define stat _stat
+#  define chmod(path,mode) fileio_chmod(path,mode)
+#  define mkdir(path,mode) fileio_mkdir(path)
 #endif
 #include <time.h>
 #include <errno.h>
@@ -129,6 +124,40 @@ SQLITE_EXTENSION_INIT1
 #define FSDIR_COLUMN_DATA     3     /* File content */
 #define FSDIR_COLUMN_PATH     4     /* Path to top of search */
 #define FSDIR_COLUMN_DIR      5     /* Path is relative to this directory */
+
+/*
+** UTF8 chmod() function for Windows
+*/
+#if defined(_WIN32) || defined(WIN32)
+static int fileio_chmod(const char *zPath, int pmode){
+  sqlite3_int64 sz = strlen(zPath);
+  wchar_t *b1 = sqlite3_malloc64( (sz+1)*sizeof(b1[0]) );
+  int rc;
+  if( b1==0 ) return -1;
+  sz = MultiByteToWideChar(CP_UTF8, 0, zPath, sz, b1, sz);
+  b1[sz] = 0;
+  rc = _wchmod(b1, pmode);
+  sqlite3_free(b1);
+  return rc;
+}
+#endif
+
+/*
+** UTF8 mkdir() function for Windows
+*/
+#if defined(_WIN32) || defined(WIN32)
+static int fileio_mkdir(const char *zPath){
+  sqlite3_int64 sz = strlen(zPath);
+  wchar_t *b1 = sqlite3_malloc64( (sz+1)*sizeof(b1[0]) );
+  int rc;
+  if( b1==0 ) return -1;
+  sz = MultiByteToWideChar(CP_UTF8, 0, zPath, sz, b1, sz);
+  b1[sz] = 0;
+  rc = _wmkdir(b1);
+  sqlite3_free(b1);
+  return rc;
+}
+#endif
 
 
 /*
@@ -291,7 +320,13 @@ static int fileStat(
   struct stat *pStatBuf
 ){
 #if defined(_WIN32)
-  int rc = stat(zPath, pStatBuf);
+  sqlite3_int64 sz = strlen(zPath);
+  wchar_t *b1 = sqlite3_malloc64( (sz+1)*sizeof(b1[0]) );
+  int rc;
+  if( b1==0 ) return 1;
+  sz = MultiByteToWideChar(CP_UTF8, 0, zPath, sz, b1, sz);
+  b1[sz] = 0;
+  rc = _wstat(b1, pStatBuf);
   if( rc==0 ) statTimesToUtc(zPath, pStatBuf);
   return rc;
 #else
@@ -309,9 +344,7 @@ static int fileLinkStat(
   struct stat *pStatBuf
 ){
 #if defined(_WIN32)
-  int rc = lstat(zPath, pStatBuf);
-  if( rc==0 ) statTimesToUtc(zPath, pStatBuf);
-  return rc;
+  return fileStat(zPath, pStatBuf);
 #else
   return lstat(zPath, pStatBuf);
 #endif

@@ -3711,6 +3711,7 @@ case OP_MakeRecord: {
       zHdr += sqlite3PutVarint(zHdr, serial_type);
       if( pRec->n ){
         assert( pRec->z!=0 );
+        assert( pRec->z!=(const char*)sqlite3CtypeMap );
         memcpy(zPayload, pRec->z, pRec->n);
         zPayload += pRec->n;
       }
