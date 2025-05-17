@@ -1512,20 +1512,25 @@ proc teaish-make-config-header {filename} {
 }
 
 #
-# @teaish-feature-cache-set ?$key? value
+# @teaish-feature-cache-set $key value
 #
 # Sets a feature-check cache entry with the given key.
-# See proj-cache-set for the key's semantics.
+# See proj-cache-set for the key's semantics. $key should
+# normally be 0.
 #
-proc teaish-feature-cache-set {{key 0} val} {
-  proj-cache-set $key 1 $val
+proc teaish-feature-cache-set {key val} {
+  proj-cache-set -key $key -level 1 $val
 }
 
 #
-# @teaish-feature-cache-check ?$key? tgtVarName
+# @teaish-feature-cache-check key tgtVarName
 #
 # Checks for a feature-check cache entry with the given key.
 # See proj-cache-set for the key's semantics.
+#
+# $key should also almost always be 0 but, due to a tclsh
+# incompatibility in 1 OS, it cannot have a default value unless it's
+# the second argument (but it should be the first one).
 #
 # If the feature-check cache has a matching entry then this function
 # assigns its value to tgtVar and returns 1, else it assigns tgtVar to
@@ -1533,9 +1538,9 @@ proc teaish-feature-cache-set {{key 0} val} {
 #
 # See proj-cache-check for $key's semantics.
 #
-proc teaish-feature-cache-check {{key 0} tgtVar} {
+proc teaish-feature-cache-check {key tgtVar} {
   upvar $tgtVar tgt
-  proj-cache-check $key 1 tgt
+  proj-cache-check -key $key -level 1 tgt
 }
 
 #

@@ -1,5 +1,5 @@
-C Latest\supstream\steaish\spieces\sfor\sminor\sfixes.\sRestructure\sthis\scopy\sof\steaish\sto\ssimplify\smaintenance\sand\sthe\sautoconf\sbundle\sbuild.
-D 2025-05-17T07:02:06.426
+C Rename\sfeature-tests.tcl\sto\sfeature.tcl.\sHaiku\stcl\sportability\sfixes.
+D 2025-05-17T10:32:48.060
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -24,7 +24,7 @@ F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
 F autoconf/tea/Makefile.in 14c6a79ce87e10d8a35398f2d0e04e1d83a88eb52ee16ebf0eeaccf005ff84b3
 F autoconf/tea/README.txt 656d4686c509d375f5988ff3deda94f65fe6cd8358cd55d1f1dcc7b6e2ff73aa
-F autoconf/tea/_teaish.tester.tcl.in ed5445512e91c12afbbb99771efb68a23be4a046d52d61213fb5b6f010118129 w autoconf/tea/teaish.tester.tcl.in
+F autoconf/tea/_teaish.tester.tcl.in ed5445512e91c12afbbb99771efb68a23be4a046d52d61213fb5b6f010118129
 F autoconf/tea/auto.def ce95b9450e2fa4ba5dc857e208fe10f4e6f2d737796ac3278aee6079db417529
 F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
 F autoconf/tea/doc/sqlite3.n 9a97f4f717ceab73004ea412af7960625c1cb24b5c25e4ae4c8b5d8fa4300f4e
@@ -47,13 +47,13 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c 563b966c137a4ce3c9333e5196723b7ac0919140a9d7989eb440463cd855c367
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 2d3431d7b379a741d2b6727e34b6885e546066c1956e43757adbaf49db82945b
+F autosetup/proj.tcl 1518e5c5d9b444d3ce736affebc3f350ae72c2aa3879bd630770f3eb782a63a2
 F autosetup/sqlite-config.tcl 7ff986f6c3951f3aec5608522cbf772d8d04a0d26cc894289e2ca4836e018719
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
-F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca w autoconf/tea/autosetup/README.txt
-F autosetup/teaish/core.tcl a96140a11141dc165e0e84f38e0bd0031611553303a40ab9df7f28646611292a w autoconf/tea/autosetup/core.tcl
-F autosetup/teaish/feature-tests.tcl 18194fb79a24d30e5bbdeab40999616f39278b53a27525349ded033af2fd73be w autoconf/tea/autosetup/feature-tests.tcl
-F autosetup/teaish/tester.tcl 091745984473faea6985254b9986c6dfd0cce06f68bc515ba4afc1e6b3742fa8 w autoconf/tea/autosetup/tester.tcl
+F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
+F autosetup/teaish/core.tcl 1ebbe849d8e716424a3ffe9384c7e8b352b3e1194d3d4a153b125cc5176b3715
+F autosetup/teaish/feature.tcl 18194fb79a24d30e5bbdeab40999616f39278b53a27525349ded033af2fd73be w autosetup/teaish/feature-tests.tcl
+F autosetup/teaish/tester.tcl 091745984473faea6985254b9986c6dfd0cce06f68bc515ba4afc1e6b3742fa8
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -2207,11 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 036c97e36cb36a2ac765a8e8539433dcb63f69155d4c24857f84faa44eed6eb5
-R 84f69ea0a581f0671fbf90c83e33cd68
-T *branch * tea-cleanups
-T *sym-tea-cleanups *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 2b8d9b75ec5fe96cb5d06a3464fd4eb9a53018b7b548fedcd6cdbc46cdb55bdc
+R 84fd07659c3e7d67a0460035bc41a4ec
 U stephan
-Z ec5e72cf16174ce398433604a2e0a2ca
+Z 4c4059c315c91efea7fdeb751250b5a0
 # Remove this line to create a well-formed Fossil manifest.

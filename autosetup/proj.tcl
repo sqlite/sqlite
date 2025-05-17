@@ -1971,9 +1971,11 @@ if {0} {
 array set proj__Cache {}
 
 #
-# @proj-cache-key ?addLevel? arg
+# @proj-cache-key arg {addLevel 0}
 #
 # Helper to generate cache keys for [proj-cache-*].
+#
+# $addLevel should almost always be 0.
 #
 # Returns a cache key for the given argument:
 #
@@ -1984,8 +1986,7 @@ array set proj__Cache {}
 #
 #   Anything else: returned as-is
 #
-proc proj-cache-key {{addLevel 0} arg} {
-  #if {"-" eq $arg} {set arg 0}
+proc proj-cache-key {arg {addLevel 0}} {
   if {[string is integer -strict $arg]} {
     return [proj-scope [expr {$arg + $addLevel + 1}]]
   }
@@ -1993,14 +1994,19 @@ proc proj-cache-key {{addLevel 0} arg} {
 }
 
 #
-# @proj-cache-set ?key? ?addLevel? value
+# @proj-cache-set ?-key KEY? ?-level 0? value
 #
 # Sets a feature-check cache entry with the given key.
 #
 # See proj-cache-key for $key's and $addLevel's semantics, noting that
 # this function adds one to $addLevel for purposes of that call.
-proc proj-cache-set {{key 0} {addLevel 0} val} {
-  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+proc proj-cache-set {args} {
+  proj-parse-simple-flags args flags {
+    -key => 0
+    -level => 0
+  }
+  lassign $args val
+  set key [proj-cache-key $flags(-key) [expr {1 + $flags(-level)}]]
   #puts "** fcheck set $key = $val"
   set ::proj__Cache($key) $val
 }
@@ -2010,7 +2016,7 @@ proc proj-cache-set {{key 0} {addLevel 0} val} {
 #
 # Removes an entry from the proj-cache.
 proc proj-cache-remove {{key 0} {addLevel 0}} {
-  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+  set key [proj-cache-key $key [expr {1 + $addLevel}]]
   set rv ""
   if {[info exists ::proj__Cache($key)]} {
     set rv $::proj__Cache($key)
@@ -2020,7 +2026,7 @@ proc proj-cache-remove {{key 0} {addLevel 0}} {
 }
 
 #
-# @proj-cache-check ?$key? ?addLevel? tgtVarName
+# @proj-cache-check ?-key KEY? ?-level LEVEL? tgtVarName
 #
 # Checks for a feature-check cache entry with the given key.
 #
@@ -2030,10 +2036,15 @@ proc proj-cache-remove {{key 0} {addLevel 0}} {
 #
 # See proj-cache-key for $key's and $addLevel's semantics, noting that
 # this function adds one to $addLevel for purposes of that call.
-proc proj-cache-check {{key 0} {addLevel 0} tgtVar} {
+proc proj-cache-check {args} {
+  proj-parse-simple-flags args flags {
+    -key => 0
+    -level => 0
+  }
+  lassign $args tgtVar
   upvar $tgtVar tgt
   set rc 0
-  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+  set key [proj-cache-key $flags(-key) [expr {1 + $flags(-level)}]]
   #puts "** fcheck get key=$key"
   if {[info exists ::proj__Cache($key)]} {
     set tgt $::proj__Cache($key)
@@ -2202,15 +2213,15 @@ proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
 if {$::proj__Config(self-tests)} {
   apply {{} {
     #proj-warn "Test code for proj-cache"
-    proj-assert {![proj-cache-check here check]}
+    proj-assert {![proj-cache-check -key here check]}
     proj-assert {"here" eq [proj-cache-key here]}
     proj-assert {"" eq $check}
-    proj-cache-set here thevalue
-    proj-assert {[proj-cache-check here check]}
+    proj-cache-set -key here thevalue
+    proj-assert {[proj-cache-check -key here check]}
     proj-assert {"thevalue" eq $check}
 
     proj-assert {![proj-cache-check check]}
-    #puts "*** key = ([proj-cache-key -])"
+    #puts "*** key = ([proj-cache-key 0])"
     proj-assert {"" eq $check}
     proj-cache-set abc
     proj-assert {[proj-cache-check check]}
