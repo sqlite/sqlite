@@ -1,5 +1,5 @@
-C Adjust\sthe\stool/warnings.sh\sscript\sso\sthat\sit\sworks\son\sthe\slatest\sversions\nof\sclang\son\sMac.
-D 2025-05-19T11:08:30.301
+C Fix\sa\sharmless\scomment\stypo
+D 2025-05-19T12:34:11.670
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -851,7 +851,7 @@ F src/treeview.c d85ce76e6d1498d781957c07cb234da6d77ce0ed2d196480d516f54dabc6227
 F src/trigger.c 3ffb8ed6b64dbcc0ccae6e82435d01be3bf547e13b814e2d46f7df9bef84748e
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
-F src/utf.c 3a20cbae9688af4c1e3754cc2520189d00762e37f60c2deb0b303360d166bba6
+F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c d580ceb395c1ae3d59da41cbfea60683ff7dd2b94ddf4d0f5657620159e2eeb7
 F src/vdbe.c 0feab5781141acca67bd5de84172fff902304274ec5cfe58609f005b8d160050
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 381d3e82e831bedee56108fb585880d802c4d7d50b0804d909a33ff15a3be185
-R ffe2adf6a3bd0caa0d95c2a181a92668
+P 05a3dd9a179193d00968329152c8ffe6532f0cbdad7d19b47af32aebc0cd0d9e
+R c7d11419b45cdc90176ad19858b8099b
 U drh
-Z 85c1fd747b80ecdef16ba97eacc3b216
+Z 8e3f474b30cd847714ef887a7b6e9c59
 # Remove this line to create a well-formed Fossil manifest.
