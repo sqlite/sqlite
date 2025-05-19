@@ -1,6 +1,6 @@
 # -*- tcl -*-
 #
-# Unless this file is named teaish.tester.tcl.in, you are probably
+# Unless this file is named _teaish.tester.tcl.in, you are probably
 # looking at an automatically generated/filtered copy and should
 # probably not edit it.
 #
@@ -27,6 +27,12 @@ apply {{file} {
   set dir [file dirname $::argv0]
   source -encoding utf-8 $file
 }} [join {@TEAISH_PKGINIT_TCL@}]
+@endif
+@if TEAISH_TM_TCL
+apply {{file} {
+  set dir [file dirname $::argv0]
+  source -encoding utf-8 $file
+}} [join {@TEAISH_TM_TCL@}]
 @endif
 @if TEAISH_TEST_TCL
 apply {{file} {
