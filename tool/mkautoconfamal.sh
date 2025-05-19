@@ -63,7 +63,7 @@ cp $TOP/main.mk           $TMPSPACE
 cd $TMPSPACE
 
 # Clean up emacs-generated backup files from the target
-rm -f ./autosetup/*~
+rm -f ./autosetup/*~ ./autosetup/teaish/*~
 rm -f ./*~
 
 #if true; then
@@ -72,10 +72,6 @@ rm -f ./*~
   # the autoconf bundle.
 #  find . -name '*~' -exec rm \{} \;
 #fi
-
-mkdir -p autosetup/teaish
-mv tea/autosetup/*.tcl autosetup/teaish/.
-rm -fr tea/autosetup
 
 mkdir -p tea/generic
 cat <<EOF > tea/generic/tclsqlite3.c
