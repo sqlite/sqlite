@@ -3159,11 +3159,8 @@ static int whereLoopAddBtreeIndex(
     assert( pNew->u.btree.nBtm==0 );
     opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE|WO_ISNULL|WO_IS;
   }
-  if( pProbe->bUnordered || pProbe->bLowQual ){
-    if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
-    if( pProbe->bLowQual && pSrc->fg.isIndexedBy==0 ){ 
-      opMask &= ~(WO_EQ|WO_IN|WO_IS);
-    }
+  if( pProbe->bUnordered ){
+    opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
   }
 
   assert( pNew->u.btree.nEq<pProbe->nColumn );
@@ -4100,7 +4097,7 @@ static int whereLoopAddBtree(
            && (HasRowid(pTab) || pWInfo->pSelect!=0 || sqlite3FaultSim(700))
         ){
           WHERETRACE(0x200,
-             ("-> %s a covering index according to bitmasks\n",
+             ("-> %s is a covering index according to bitmasks\n",
              pProbe->zName, m==0 ? "is" : "is not"));
           pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         }

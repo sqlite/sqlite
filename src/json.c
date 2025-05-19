@@ -1756,7 +1756,12 @@ json_parse_restart:
            || c=='n' || c=='r' || c=='t'
            || (c=='u' && jsonIs4Hex(&z[j+1])) ){
           if( opcode==JSONB_TEXT ) opcode = JSONB_TEXTJ;
-        }else if( c=='\'' || c=='0' || c=='v' || c=='\n'
+        }else if( c=='\'' ||  c=='v' || c=='\n'
+#ifdef SQLITE_BUG_COMPATIBLE_20250510
+           || (c=='0')                            /* Legacy bug compatible */
+#else
+           || (c=='0' && !sqlite3Isdigit(z[j+1])) /* Correct implementation */
+#endif
            || (0xe2==(u8)c && 0x80==(u8)z[j+1]
                 && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2]))
            || (c=='x' && jsonIs2Hex(&z[j+1])) ){
@@ -2143,7 +2148,7 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
       *pSz = 0;
       return 0;
     }
-    sz = (pParse->aBlob[i+5]<<24) + (pParse->aBlob[i+6]<<16) +
+    sz = ((u32)pParse->aBlob[i+5]<<24) + (pParse->aBlob[i+6]<<16) +
          (pParse->aBlob[i+7]<<8) + pParse->aBlob[i+8];
     n = 9;
   }
@@ -2724,7 +2729,21 @@ static u32 jsonUnescapeOneChar(const char *z, u32 n, u32 *piOut){
     case 'r': {   *piOut = '\r';  return 2; }
     case 't': {   *piOut = '\t';  return 2; }
     case 'v': {   *piOut = '\v';  return 2; }
-    case '0': {   *piOut = 0;     return 2; }
+    case '0': {
+      /* JSON5 requires that the \0 escape not be followed by a digit.
+      ** But SQLite did not enforce this restriction in versions 3.42.0
+      ** through 3.49.2.  That was a bug.  But some applications might have
+      ** come to depend on that bug.  Use the SQLITE_BUG_COMPATIBLE_20250510
+      ** option to restore the old buggy behavior. */
+#ifdef SQLITE_BUG_COMPATIBLE_20250510
+      /* Legacy bug-compatible behavior */
+      *piOut = 0;
+#else
+      /* Correct behavior */
+      *piOut = (n>2 && sqlite3Isdigit(z[2])) ? JSON_INVALID_CHAR : 0;
+#endif
+      return 2;
+    }
     case '\'':
     case '"':
     case '/':

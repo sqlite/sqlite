@@ -1223,10 +1223,10 @@ static int renameEditSql(
     }
 
     assert( nQuot>=nNew && nSql>=0 && nNew>=0 );
-    zOut = sqlite3DbMallocZero(db, (u64)(nSql + pRename->nList*nQuot + 1));
+    zOut = sqlite3DbMallocZero(db, (u64)nSql + pRename->nList*(u64)nQuot + 1);
   }else{
     assert( nSql>0 );
-    zOut = (char*)sqlite3DbMallocZero(db, (u64)(nSql*2+1) * 3);
+    zOut = (char*)sqlite3DbMallocZero(db, (2*(u64)nSql + 1) * 3);
     if( zOut ){
       zBuf1 = &zOut[nSql*2+1];
       zBuf2 = &zOut[nSql*4+2];

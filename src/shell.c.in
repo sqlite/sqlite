@@ -5347,103 +5347,104 @@ static const char *(azHelp[]) = {
 };
 
 /*
-** Output help text.
+** Output help text for commands that match zPattern.
 **
-** zPattern describes the set of commands for which help text is provided.
-** If zPattern is NULL, then show all commands, but only give a one-line
-** description of each.
+**    *   If zPattern is NULL, then show all documented commands, but
+**        only give a one-line summary of each.
 **
-** Return the number of matches.
+**    *   If zPattern is "-a" or "-all" or "--all" then show all help text
+**        for all commands except undocumented commands.
+**
+**    *   If zPattern is "0" then show all help for undocumented commands.
+**        Undocumented commands begin with "," instead of "." in the azHelp[]
+**        array.
+**
+**    *   If zPattern is a prefix for one or more documented commands, then
+**        show help for those commands.  If only a single command matches the
+**        prefix, show the full text of the help.  If multiple commands match,
+**        Only show just the first line of each.
+**
+**    *   Otherwise, show the complete text of any documented command for which
+**        zPattern is a LIKE match for any text within that command help
+**        text.
+**
+** Return the number commands that match zPattern.
 */
 static int showHelp(FILE *out, const char *zPattern){
   int i = 0;
   int j = 0;
   int n = 0;
   char *zPat;
-  if( zPattern==0
-   || zPattern[0]=='0'
-   || cli_strcmp(zPattern,"-a")==0
-   || cli_strcmp(zPattern,"-all")==0
-   || cli_strcmp(zPattern,"--all")==0
+  if( zPattern==0 ){
+    /* Show just the first line for all help topics */
+    zPattern = "[a-z]";
+  }else if( cli_strcmp(zPattern,"-a")==0
+         || cli_strcmp(zPattern,"-all")==0
+         || cli_strcmp(zPattern,"--all")==0
   ){
-    enum HelpWanted { HW_NoCull = 0, HW_SummaryOnly = 1, HW_Undoc = 2 };
-    enum HelpHave { HH_Undoc = 2, HH_Summary = 1, HH_More = 0 };
-    /* Show all or most commands
-    ** *zPattern==0   => summary of documented commands only
-    ** *zPattern=='0' => whole help for undocumented commands
-    ** Otherwise      => whole help for documented commands
-    */
-    enum HelpWanted hw = HW_SummaryOnly;
-    enum HelpHave hh = HH_More;
-    if( zPattern!=0 ){
-      hw = (*zPattern=='0')? HW_NoCull|HW_Undoc : HW_NoCull;
-    }
+    /* Show everything except undocumented commands */
+    zPattern = ".";
+  }else if( cli_strcmp(zPattern,"0")==0 ){
+    /* Show complete help text of undocumented commands */
+    int show = 0;
     for(i=0; i<ArraySize(azHelp); i++){
-      switch( azHelp[i][0] ){
-      case ',':
-        hh = HH_Summary|HH_Undoc;
-        break;
-      case '.':
-        hh = HH_Summary;
-        break;
-      default:
-        hh &= ~HH_Summary;
-        break;
-      }
-      if( ((hw^hh)&HH_Undoc)==0 ){
-        if( (hh&HH_Summary)!=0 ){
-          sqlite3_fprintf(out, ".%s\n", azHelp[i]+1);
-          ++n;
-        }else if( (hw&HW_SummaryOnly)==0 ){
-          sqlite3_fprintf(out, "%s\n", azHelp[i]);
-        }
-      }
-    }
-  }else{
-    /* Seek documented commands for which zPattern is an exact prefix */
-    zPat = sqlite3_mprintf(".%s*", zPattern);
-    shell_check_oom(zPat);
-    for(i=0; i<ArraySize(azHelp); i++){
-      if( sqlite3_strglob(zPat, azHelp[i])==0 ){
+      if( azHelp[i][0]=='.' ){
+        show = 0;
+      }else if( azHelp[i][0]==',' ){
+        show = 1;
+        sqlite3_fprintf(out, ".%s\n", &azHelp[i][1]);
+        n++;
+      }else if( show ){
         sqlite3_fprintf(out, "%s\n", azHelp[i]);
-        j = i+1;
-        n++;
       }
     }
-    sqlite3_free(zPat);
-    if( n ){
-      if( n==1 ){
-        /* when zPattern is a prefix of exactly one command, then include
-        ** the details of that command, which should begin at offset j */
-        while( j<ArraySize(azHelp)-1 && azHelp[j][0]==' ' ){
-          sqlite3_fprintf(out, "%s\n", azHelp[j]);
-          j++;
-        }
-      }
-      return n;
-    }
-    /* Look for documented commands that contain zPattern anywhere.
-    ** Show complete text of all documented commands that match. */
-    zPat = sqlite3_mprintf("%%%s%%", zPattern);
-    shell_check_oom(zPat);
-    for(i=0; i<ArraySize(azHelp); i++){
-      if( azHelp[i][0]==',' ){
-        while( i<ArraySize(azHelp)-1 && azHelp[i+1][0]==' ' ) ++i;
-        continue;
-      }
-      if( azHelp[i][0]=='.' ) j = i;
-      if( sqlite3_strlike(zPat, azHelp[i], 0)==0 ){
-        sqlite3_fprintf(out, "%s\n", azHelp[j]);
-        while( j<ArraySize(azHelp)-1 && azHelp[j+1][0]==' ' ){
-          j++;
-          sqlite3_fprintf(out, "%s\n", azHelp[j]);
-        }
-        i = j;
-        n++;
-      }
-    }
-    sqlite3_free(zPat);
+    return n;
   }
+
+  /* Seek documented commands for which zPattern is an exact prefix */
+  zPat = sqlite3_mprintf(".%s*", zPattern);
+  shell_check_oom(zPat);
+  for(i=0; i<ArraySize(azHelp); i++){
+    if( sqlite3_strglob(zPat, azHelp[i])==0 ){
+      sqlite3_fprintf(out, "%s\n", azHelp[i]);
+      j = i+1;
+      n++;
+    }
+  }
+  sqlite3_free(zPat);
+  if( n ){
+    if( n==1 ){
+      /* when zPattern is a prefix of exactly one command, then include
+      ** the details of that command, which should begin at offset j */
+      while( j<ArraySize(azHelp)-1 && azHelp[j][0]==' ' ){
+        sqlite3_fprintf(out, "%s\n", azHelp[j]);
+        j++;
+      }
+    }
+    return n;
+  }
+
+  /* Look for documented commands that contain zPattern anywhere.
+  ** Show complete text of all documented commands that match. */
+  zPat = sqlite3_mprintf("%%%s%%", zPattern);
+  shell_check_oom(zPat);
+  for(i=0; i<ArraySize(azHelp); i++){
+    if( azHelp[i][0]==',' ){
+      while( i<ArraySize(azHelp)-1 && azHelp[i+1][0]==' ' ) ++i;
+      continue;
+    }
+    if( azHelp[i][0]=='.' ) j = i;
+    if( sqlite3_strlike(zPat, azHelp[i], 0)==0 ){
+      sqlite3_fprintf(out, "%s\n", azHelp[j]);
+      while( j<ArraySize(azHelp)-1 && azHelp[j+1][0]==' ' ){
+        j++;
+        sqlite3_fprintf(out, "%s\n", azHelp[j]);
+      }
+      i = j;
+      n++;
+    }
+  }
+  sqlite3_free(zPat);
   return n;
 }
 
