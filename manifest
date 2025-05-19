@@ -1,5 +1,5 @@
-C Latest\steaish\spieces,\smost\ssignificantly\sfor\stcl\sportability\sfixes.\sMove\sautoconf/teaish/autosetup/...\sto\sautosetup/teaish/.\sto\ssimplify\smaintenance\sand\sdeployment\svia\sthe\sautoconf\sbundle.
-D 2025-05-17T11:06:02.899
+C Adjust\sthe\stool/warnings.sh\sscript\sso\sthat\sit\sworks\son\sthe\slatest\sversions\nof\sclang\son\sMac.
+D 2025-05-19T11:08:30.301
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -24,7 +24,7 @@ F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
 F autoconf/tea/Makefile.in 14c6a79ce87e10d8a35398f2d0e04e1d83a88eb52ee16ebf0eeaccf005ff84b3
 F autoconf/tea/README.txt 656d4686c509d375f5988ff3deda94f65fe6cd8358cd55d1f1dcc7b6e2ff73aa
-F autoconf/tea/_teaish.tester.tcl.in ed5445512e91c12afbbb99771efb68a23be4a046d52d61213fb5b6f010118129 w autoconf/tea/teaish.tester.tcl.in
+F autoconf/tea/_teaish.tester.tcl.in ed5445512e91c12afbbb99771efb68a23be4a046d52d61213fb5b6f010118129
 F autoconf/tea/auto.def ce95b9450e2fa4ba5dc857e208fe10f4e6f2d737796ac3278aee6079db417529
 F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
 F autoconf/tea/doc/sqlite3.n 9a97f4f717ceab73004ea412af7960625c1cb24b5c25e4ae4c8b5d8fa4300f4e
@@ -50,10 +50,10 @@ F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88
 F autosetup/proj.tcl c4a77735b57f3c016a185bff048212a197b77723f9bea6cfafe396e4b542c666
 F autosetup/sqlite-config.tcl 7ff986f6c3951f3aec5608522cbf772d8d04a0d26cc894289e2ca4836e018719
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
-F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca w autoconf/tea/autosetup/README.txt
-F autosetup/teaish/core.tcl 1ebbe849d8e716424a3ffe9384c7e8b352b3e1194d3d4a153b125cc5176b3715 w autoconf/tea/autosetup/core.tcl
-F autosetup/teaish/feature.tcl 18194fb79a24d30e5bbdeab40999616f39278b53a27525349ded033af2fd73be w autoconf/tea/autosetup/feature-tests.tcl
-F autosetup/teaish/tester.tcl 091745984473faea6985254b9986c6dfd0cce06f68bc515ba4afc1e6b3742fa8 w autoconf/tea/autosetup/tester.tcl
+F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
+F autosetup/teaish/core.tcl 1ebbe849d8e716424a3ffe9384c7e8b352b3e1194d3d4a153b125cc5176b3715
+F autosetup/teaish/feature.tcl 18194fb79a24d30e5bbdeab40999616f39278b53a27525349ded033af2fd73be
+F autosetup/teaish/tester.tcl 091745984473faea6985254b9986c6dfd0cce06f68bc515ba4afc1e6b3742fa8
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -2205,11 +2205,10 @@ F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
 F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
-F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
+F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 036c97e36cb36a2ac765a8e8539433dcb63f69155d4c24857f84faa44eed6eb5 43259e8c3fab13b4597cdd1c670df00ec756a6fefdeb7d4ba2e0644e4ad47113
-R 39ca8780111060790d2845d7852fde6d
-T +closed 43259e8c3fab13b4597cdd1c670df00ec756a6fefdeb7d4ba2e0644e4ad47113 Closed\sby\sintegrate-merge.
-U stephan
-Z b3892a2462d40bd10e662612ff769df0
+P 381d3e82e831bedee56108fb585880d802c4d7d50b0804d909a33ff15a3be185
+R ffe2adf6a3bd0caa0d95c2a181a92668
+U drh
+Z 85c1fd747b80ecdef16ba97eacc3b216
 # Remove this line to create a well-formed Fossil manifest.
