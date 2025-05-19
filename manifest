@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scomment\stypo
-D 2025-05-19T12:34:11.670
+C Remove\sstray\stab\scharacters\sfrom\ssource\sfiles.
+D 2025-05-19T12:46:08.613
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -539,7 +539,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c f0573d5109fdc658a180db0db6eec86ab2a1cf5ce58ec66cbf3356167ea757eb
-F ext/rtree/rtree.c 99dade93b5ca1c1fa4a5ba1381140d88b27a52573a92897827d9eb2a8059a460
+F ext/rtree/rtree.c f12180fbc79f4de3dcb93afe55a64703481a23af7f80d1e988d2cb97afd07b6b
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -871,7 +871,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 1d06561f7310af61bef8a046fa95d463ad88f855be9036fec9091f984520afc5
 F src/whereInt.h ecdbfb5551cf394f04ec7f0bc7ad963146d80eee3071405ac29aa84950128b8e
-F src/wherecode.c d67fadf5430c2647773b5f702a47b82eb4af50a317f8978c0c82363cc1a5107f
+F src/wherecode.c 8825756ea7b1a49ac830719d28557c638520bb2434fe9c2dd6c7f584034bfe32
 F src/whereexpr.c 2415c8eee5ff89a8b709d7d83d71c1ff986cd720d0520057e1d8a5371339012a
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2192,7 +2192,7 @@ F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69
 F tool/sqlite3_rsync.c e8659970e839d71d2ef04b96d48ad65f1d4298a41636affaf93c32ed71f3f879
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
-F tool/src-verify.c d00f93263aa2fa6ba0cba0106d95458e6effb94fdb5fc634f56834f90c05bbb4
+F tool/src-verify.c 6c655d9a8d6b30f3648fc78a79bf3838ed68f8543869d380c43ea9f17b3b8501
 F tool/srcck1.c 559e703c6cca1d70398bdba1d7f91036c1a71adf718a1aaa6401a562ccaed154
 F tool/srctree-check.tcl fa4d82dd3e8a38d5cbce7d6ade8abef2f42b9eca0394484d521dc8d086739460
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 05a3dd9a179193d00968329152c8ffe6532f0cbdad7d19b47af32aebc0cd0d9e
-R c7d11419b45cdc90176ad19858b8099b
+P c4d25acec3c1e28e5a4664a74c263cc0d00e118a6db4b26b51cb0d42d0f2b26f
+R a1e2d47d83c4316ade37d9e683558907
 U drh
-Z 8e3f474b30cd847714ef887a7b6e9c59
+Z 581f22c93b882a8f79d8c15e1dfad58a
 # Remove this line to create a well-formed Fossil manifest.
