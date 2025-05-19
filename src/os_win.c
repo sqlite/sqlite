@@ -4208,13 +4208,13 @@ static void *winConvertFromUtf8Filename(const char *zFilename){
 
     if( osCygwin_conv_path && !(winIsDriveLetterAndColon(zFilename)
         && winIsDirSep(zFilename[2])) ){
-      int nByte;
+      i64 nByte;
       int convertflag = CCP_POSIX_TO_WIN_W;
       if( !strchr(zFilename, '/') ) convertflag |= CCP_RELATIVE;
-      nByte = (int)osCygwin_conv_path(convertflag,
+      nByte = (i64)osCygwin_conv_path(convertflag,
           zFilename, 0, 0);
       if( nByte>0 ){
-        zConverted = sqlite3MallocZero(nByte+12);
+        zConverted = sqlite3MallocZero(12+(u64)nByte);
         if ( zConverted==0 ){
           return zConverted;
         }
@@ -5097,27 +5097,6 @@ static winVfsAppData winNolockAppData = {
 ** sqlite3_vfs object.
 */
 
-#if 0 /* No longer necessary */
-/*
-** Convert a filename from whatever the underlying operating system
-** supports for filenames into UTF-8.  Space to hold the result is
-** obtained from malloc and must be freed by the calling function.
-*/
-static char *winConvertToUtf8Filename(const void *zFilename){
-  char *zConverted = 0;
-  if( osIsNT() ){
-    zConverted = winUnicodeToUtf8(zFilename);
-  }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    zConverted = winMbcsToUtf8(zFilename, osAreFileApisANSI());
-  }
-#endif
-  /* caller will handle out of memory */
-  return zConverted;
-}
-#endif
-
 /*
 ** This function returns non-zero if the specified UTF-8 string buffer
 ** ends with a directory separator character or one was successfully
@@ -5257,42 +5236,6 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
           break;
         }
         sqlite3_free(zConverted);
-#if 0 /* No longer necessary */
-      }else{
-        zConverted = sqlite3MallocZero( nMax+1 );
-        if( !zConverted ){
-          sqlite3_free(zBuf);
-          OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-          return SQLITE_IOERR_NOMEM_BKPT;
-        }
-        if( osCygwin_conv_path(
-                CCP_POSIX_TO_WIN_W, zDir,
-                zConverted, nMax+1)<0 ){
-          sqlite3_free(zConverted);
-          sqlite3_free(zBuf);
-          OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_CONVPATH\n"));
-          return winLogError(SQLITE_IOERR_CONVPATH, (DWORD)errno,
-                             "winGetTempname2", zDir);
-        }
-        if( winIsDir(zConverted) ){
-          /* At this point, we know the candidate directory exists and should
-          ** be used.  However, we may need to convert the string containing
-          ** its name into UTF-8 (i.e. if it is UTF-16 right now).
-          */
-          char *zUtf8 = winConvertToUtf8Filename(zConverted);
-          if( !zUtf8 ){
-            sqlite3_free(zConverted);
-            sqlite3_free(zBuf);
-            OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-            return SQLITE_IOERR_NOMEM_BKPT;
-          }
-          sqlite3_snprintf(nMax, zBuf, "%s", zUtf8);
-          sqlite3_free(zUtf8);
-          sqlite3_free(zConverted);
-          break;
-        }
-        sqlite3_free(zConverted);
-#endif /* No longer necessary */
       }
     }
   }
@@ -6191,34 +6134,6 @@ static int winFullPathnameNoMutex(
     }
   }
 #endif /* __CYGWIN__ */
-#if 0 /* This doesn't work correctly at all! See:
-  <https://marc.info/?l=sqlite-users&m=139299149416314&w=2>
-*/
-  SimulateIOError( return SQLITE_ERROR );
-  UNUSED_PARAMETER(nFull);
-  assert( nFull>=pVfs->mxPathname );
-  char *zOut = sqlite3MallocZero( pVfs->mxPathname+1 );
-  if( !zOut ){
-    return SQLITE_IOERR_NOMEM_BKPT;
-  }
-  if( osCygwin_conv_path(
-          CCP_POSIX_TO_WIN_W,
-          zRelative, zOut, pVfs->mxPathname+1)<0 ){
-    sqlite3_free(zOut);
-    return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
-                       "winFullPathname2", zRelative);
-  }else{
-    char *zUtf8 = winConvertToUtf8Filename(zOut);
-    if( !zUtf8 ){
-      sqlite3_free(zOut);
-      return SQLITE_IOERR_NOMEM_BKPT;
-    }
-    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zUtf8);
-    sqlite3_free(zUtf8);
-    sqlite3_free(zOut);
-  }
-  return SQLITE_OK;
-#endif
 
 #if (SQLITE_OS_WINCE || SQLITE_OS_WINRT) && defined(_WIN32)
   SimulateIOError( return SQLITE_ERROR );
@@ -6364,27 +6279,8 @@ static int winFullPathname(
 */
 static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   HANDLE h;
-#if 0 /* This doesn't work correctly at all! See:
-  <https://marc.info/?l=sqlite-users&m=139299149416314&w=2>
-*/
-  int nFull = pVfs->mxPathname+1;
-  char *zFull = sqlite3MallocZero( nFull );
-  void *zConverted = 0;
-  if( zFull==0 ){
-    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
-    return 0;
-  }
-  if( winFullPathname(pVfs, zFilename, nFull, zFull)!=SQLITE_OK ){
-    sqlite3_free(zFull);
-    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
-    return 0;
-  }
-  zConverted = winConvertFromUtf8Filename(zFull);
-  sqlite3_free(zFull);
-#else
   void *zConverted = winConvertFromUtf8Filename(zFilename);
   UNUSED_PARAMETER(pVfs);
-#endif
   if( zConverted==0 ){
     OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
     return 0;
