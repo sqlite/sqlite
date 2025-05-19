@@ -88,6 +88,7 @@
 #  else
 #    define NAME_MAX (260)
 #  endif
+#  define DIRENT_NAME_MAX (NAME_MAX)
 #endif
 
 /*
@@ -131,8 +132,7 @@ struct DIR {
 /*
 ** Provide a macro, for use by the implementation, to determine if a
 ** particular directory entry should be skipped over when searching for
-** the next directory entry that should be returned by the readdir() or
-** readdir_r() functions.
+** the next directory entry that should be returned by the readdir().
 */
 
 #ifndef is_filtered
@@ -148,12 +148,11 @@ extern const char *windirent_getenv(const char *name);
 
 /*
 ** Finally, we can provide the function prototypes for the opendir(),
-** readdir(), readdir_r(), and closedir() POSIX functions.
+** readdir(), and closedir() POSIX functions.
 */
 
 extern LPDIR opendir(const char *dirname);
 extern LPDIRENT readdir(LPDIR dirp);
-extern INT readdir_r(LPDIR dirp, LPDIRENT entry, LPDIRENT *result);
 extern INT closedir(LPDIR dirp);
 
 #endif /* defined(WIN32) && defined(_MSC_VER) */

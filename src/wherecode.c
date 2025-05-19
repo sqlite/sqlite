@@ -600,7 +600,7 @@ static Expr *removeUnindexableInClauseTerms(
           iField = pLoop->aLTerm[i]->u.x.iField - 1;
           if( pOrigRhs->a[iField].pExpr==0 ) continue; /* Duplicate PK column */
           pRhs = sqlite3ExprListAppend(pParse, pRhs, pOrigRhs->a[iField].pExpr);
-          pOrigRhs->a[iField].pExpr = 0;	
+          pOrigRhs->a[iField].pExpr = 0;
           if( pRhs ) pRhs->a[pRhs->nExpr-1].u.x.iOrderByCol = iField+1;
           if( pOrigLhs ){
             assert( pOrigLhs->a[iField].pExpr!=0 );

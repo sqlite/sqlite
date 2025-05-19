@@ -2848,7 +2848,7 @@ static int deleteCell(Rtree *pRtree, RtreeNode *pNode, int iCell, int iHeight){
 
   return rc;
 }
-	
+
 /*
 ** Insert cell pCell into node pNode. Node pNode is the head of a 
 ** subtree iHeight high (leaf nodes have iHeight==0).
