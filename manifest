@@ -1,5 +1,5 @@
-C Clarify\ssome\smalloc\ssize\scomputations\sto\ssimplify\sthe\sproof\sthat\sthey\nare\ssafe.\s\sRemove\ssome\scode\sassociated\swith\scygwin\sthat\sis\smarked\s"#if\s0".
-D 2025-05-19T14:50:36.906
+C Fix\sa\sproblem\swith\susing\sstreaming\siterators\swith\ssqlite3changegroup_add_change().
+D 2025-05-22T18:04:48.757
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -601,7 +601,7 @@ F ext/session/sessionalter.test e852acb3d2357aac7d0b920a2109da758c4331bfdf85b41d
 F ext/session/sessionat.test 00c8badb35e43a2f12a716d2734a44d614ff62361979b6b85419035bc04b45ee
 F ext/session/sessionbig.test 47c381e7acfabeef17d98519a3080d69151723354d220afa2053852182ca7adf
 F ext/session/sessionblob.test 87faf667870b72f08e91969abd9f52a383ab7b514506ee194d64a39d8faff00a
-F ext/session/sessionchange.test 77c4702050f24270b58070e2cf01c95c3d232a3ef164b70f31974b386ce69903
+F ext/session/sessionchange.test 6618cb1c1338a4b6df173b6ac42d09623fb71269962abf23ebb7617fe9f45a50
 F ext/session/sessionconflict.test 19e4a53795c4c930bfec49e809311e09b2a9e202d9446e56d7a8b139046a0c07 x
 F ext/session/sessiondiff.test e89f7aedcdd89e5ebac3a455224eb553a171e9586fc3e1e6a7b3388d2648ba8d
 F ext/session/sessionfault.test c2b43d01213b389a3f518e90775fca2120812ba51e50444c4066962263e45c11
@@ -617,9 +617,9 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 7a8816d56940c464c74706dfb02f18129b290655df1ccb8648228a7d436141f2
+F ext/session/sqlite3session.c 6b0877fe1ab832aa4b85eaca72606dfd1630a1363a1be7af10ee1042a5ec719e
 F ext/session/sqlite3session.h 9bb1a6687b467764b35178dc29bbd2c57ab8cd3acdc8a62f088c34ad17e4fe2b
-F ext/session/test_session.c af162108e8dc40cb9fe0e876e0155cecabcb49e82e5939677d21451e36160283
+F ext/session/test_session.c 2ddff73ea368d827028c32851b291416e1008845832feb27b751d15e57e13cc3
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/GNUmakefile 24d7e6f446528fa67f5ade6c3c7d7e46e1ac52649d6264cbe24539c1dab608e1
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8819b7285b71932327f47d29fa575cfb338e2fccd3f7c2023faf0575bfdb0079
-R 946ad68930588fd8088439cf4ef3fb55
-U drh
-Z 28d57a56afcfa879aa70c91fd7351c46
+P ba8184d132a935aa1980fbfb61ff308b93d433d559db4968f9014f7653ac9c6e
+R 6545703450e23e51a4d8ba6cf71d201b
+U dan
+Z e2a99740785b40c0ced82e554792c0ed
 # Remove this line to create a well-formed Fossil manifest.
