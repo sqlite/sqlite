@@ -2230,7 +2230,7 @@ fuzzy: fuzzcheck$(T.exe)
 xbin: fuzzcheck$(T.exe)
 
 # -fsanitize=... flags for fuzzcheck-asan.
-CFLAGS.fuzzcheck-asan.fsanitize ?= -fsanitize=address
+CFLAGS.fuzzcheck-asan.fsanitize ?= -fsanitize=address -DSQLITE_JSON_MAX_DEPTH=500
 
 fuzzcheck-asan$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(T.link) -o $@ $(CFLAGS.fuzzcheck-asan.fsanitize) $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
