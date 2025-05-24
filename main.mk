@@ -996,6 +996,7 @@ FUZZCHECK_OPT += \
   -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
   -DSQLITE_ENABLE_STAT4 \
   -DSQLITE_ENABLE_STMT_SCANSTATUS \
+  -DSQLITE_JSON_MAX_DEPTH=500 \
   -DSQLITE_MAX_MEMORY=50000000 \
   -DSQLITE_MAX_MMAP_SIZE=0 \
   -DSQLITE_OMIT_LOAD_EXTENSION \
@@ -2230,7 +2231,7 @@ fuzzy: fuzzcheck$(T.exe)
 xbin: fuzzcheck$(T.exe)
 
 # -fsanitize=... flags for fuzzcheck-asan.
-CFLAGS.fuzzcheck-asan.fsanitize ?= -fsanitize=address -DSQLITE_JSON_MAX_DEPTH=500
+CFLAGS.fuzzcheck-asan.fsanitize ?= -fsanitize=address
 
 fuzzcheck-asan$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
 	$(T.link) -o $@ $(CFLAGS.fuzzcheck-asan.fsanitize) $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
