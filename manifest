@@ -1,5 +1,5 @@
-C Avoid\scalls\sto\ssprintf()\sin\sLemon,\ssince\sOpenBSD\shates\ssprintf().
-D 2025-05-26T15:36:43.871
+C On\sOpenBSD,\sdo\snot\stest\sfuzzcheck\swith\subsan\sas\spart\sof\s"make\sdevtest".
+D 2025-05-26T16:17:06.110
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1735,7 +1735,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
 F test/testrunner.tcl 614c4a28f7f730acd7bec53e17d76602fb480e0d538b6ec548169e03a093f92d x
-F test/testrunner_data.tcl 8d5fa3851c48bc94e26db0be325202e44f6ca4ed838272b8d5b10c23817621e6
+F test/testrunner_data.tcl 02dd645b647d907c959fbf232b7ff7d869c2ae430d5117443fc1e16a0d32243a
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5b29724a3287c9a910f303faf056d0706b66c3e6ba23f9746c11d775c631f374
-R e9061238c0b3cee8c2477787415845d9
-U drh
-Z 9062846480eb9b629f97d72bef8a2f1f
+P ed17858ddf833b6b9c2164f31ee9138a998d28ec1564d09e20deb102eefedbc8
+R 2dbd1ddabc38afa915c96a5fb9977a81
+U dan
+Z a0aa412543fa628338bcbce343e19379
 # Remove this line to create a well-formed Fossil manifest.
