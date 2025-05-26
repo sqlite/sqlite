@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sspeedtest.tcl\stesting\sscript\sthat\swas\sintroduced\sby\n[7e9845433ff26bdc]
-D 2025-05-26T17:29:13.462
+C Slight\schange\sto\stool/split-sqlite3c.tcl\sto\smake\sit\scompatible\swith\sjimsh
+D 2025-05-26T23:20:23.908
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2186,7 +2186,7 @@ F tool/showwal.c 11eca547980a066b081f512636151233350ac679f29ecf4ebfce7f4530230b3
 F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdaddf
 F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
-F tool/split-sqlite3c.tcl 07e18a1d8cc3f6b3a4a1f3528e63c9b29a5c8a7bca0b8d394b231da464ce1247
+F tool/split-sqlite3c.tcl 4969fd642dad0ea483e4e104163021d92baf98f6a8eac981fe48525f9b873430
 F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
 F tool/sqlite3_rsync.c e8659970e839d71d2ef04b96d48ad65f1d4298a41636affaf93c32ed71f3f879
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0b5415151c9bf558378f83b1a60df3d3760f1aa311895af04e1fb79a8fb29e79
-R 6f7a612b1c86f9dd095164be8ec681dc
+P e4ffa86aa6ca82a42933281f6cbfca7bad702797eb8d6e684a1992e68dc1cfb7
+R e9e46bbbb173045e220838253d4d87e0
 U drh
-Z c58b62c267ade7cb6a741b710a6638ac
+Z e37dec5c7db1fade03b91521ee2478f8
 # Remove this line to create a well-formed Fossil manifest.
