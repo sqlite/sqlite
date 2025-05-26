@@ -817,7 +817,9 @@ proc teaish__check_tcl {} {
       if {"" ne $withSh &&
           [catch {exec echo "puts stdout \$auto_path" | "$withSh"} result] == 0} {
         foreach i $result {
-          if {[file isdirectory $i]} {
+          if {![string match //zip* $i] && [file isdirectory $i]} {
+            # isdirectory actually passes on //zipfs:/..., but those are
+            # useless for our purposes
             set tcllibdir $i/$extDirName
             break
           }
