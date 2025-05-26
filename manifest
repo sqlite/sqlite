@@ -1,5 +1,5 @@
-C Change\sjson_group_object()\sso\sthat\sit\signores\sentries\swhere\sthe\slabel\nis\sNULL.\s\s[forum:/forumpost/e5bd251fb5|Forum\spost\se5bd251fb5].
-D 2025-05-24T20:20:20.426
+C tclsqlite.c\sdoc\stypo\sfix.
+D 2025-05-26T07:15:20.435
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -794,7 +794,7 @@ F src/sqliteInt.h ded2e1527c84603d9d91adccb63dda460d96a2e2f98111d0438a479aa0dbe4
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 767a11d470b031e85f51b8924a0e8929b2362ff1975aee3474a10eba3c2e0d36
+F src/tclsqlite.c d0e63ffe7944dd223bf62066d9f982cbee1978811c7fbfd889f4ba9c5baed3d1
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c 9b54135e5f1352f06b1d23d7c183f124c1f33de6ea8997cd801f0f215c43591d
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5d25f62bcd2d754134f608162778b49b0e71c29bd5a6f2461a07caca3d76c7de
-R d987892ec7c9946323ec5c2a460ee77b
-U drh
-Z 3fb038b427963a4fec4a7c712363d8e1
+P 28215d131cd970a2756338579fb6b6091ab155be8f419505cae8ac918956165c
+R 0bd71eeaf4b7d0c078bec1e70dd7f93a
+U stephan
+Z fe2139900473a36410fefd9d8a460091
 # Remove this line to create a well-formed Fossil manifest.
