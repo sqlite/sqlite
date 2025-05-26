@@ -541,10 +541,10 @@ proc teaish__configure_phase1 {} {
     define TEAISH_VSATISFIES_CODE [join $code "\n"]
   }}; # vsatisfies
 
-  if {[proj-looks-like-windows]} {
+  if {[proj-looks-like-windows] || [proj-looks-like-mac]} {
     # Without this, linking of an extension will not work on Cygwin or
     # Msys2.
-    msg-result "Using USE_TCL_STUBS for Unix(ish)-on-Windows environment"
+    msg-result "Using USE_TCL_STUBS for this environment"
     teaish-cflags-add -DUSE_TCL_STUBS=1
   }
 

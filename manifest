@@ -1,5 +1,5 @@
-C On\sOpenBSD,\sdo\snot\stest\sfuzzcheck\swith\subsan\sas\spart\sof\s"make\sdevtest".
-D 2025-05-26T16:17:06.110
+C In\sthe\sTEA\sbuild,\senable\sUSE_TCL_STUBS\son\sMac\splatforms.
+D 2025-05-26T16:59:49.908
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -51,7 +51,7 @@ F autosetup/proj.tcl c4a77735b57f3c016a185bff048212a197b77723f9bea6cfafe396e4b54
 F autosetup/sqlite-config.tcl ccda82e43e377b832aae72a1678b1dc17dcaff36ed0ebbd8f0cfc88612ae8de3
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
-F autosetup/teaish/core.tcl 3d5b54158922a946c240e916d1c43a5cb9803166b302d61f7d61f080faa93ad9
+F autosetup/teaish/core.tcl a37bd039881bc1b0adfa25808966e62108b1e8194e730f1d1e06aad7e57b1f6e
 F autosetup/teaish/feature.tcl 18194fb79a24d30e5bbdeab40999616f39278b53a27525349ded033af2fd73be
 F autosetup/teaish/tester.tcl 091745984473faea6985254b9986c6dfd0cce06f68bc515ba4afc1e6b3742fa8
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed17858ddf833b6b9c2164f31ee9138a998d28ec1564d09e20deb102eefedbc8
-R 2dbd1ddabc38afa915c96a5fb9977a81
-U dan
-Z a0aa412543fa628338bcbce343e19379
+P a3dabd599c3d3143b67258b307d352968e5f5d4ea0456940d16ae678de8c95eb
+R d297f6832cebb1b6be0105702f8f88e2
+U stephan
+Z eaab08d8d3161e4327533800c29b7bcd
 # Remove this line to create a well-formed Fossil manifest.
