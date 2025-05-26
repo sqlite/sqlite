@@ -1,5 +1,5 @@
-C When\sdetecting\sTCLLIBDIR,\sskip\sover\s//zipfs\spaths,\sas\sthe\s(file\sisdirectory)\scommand\swill\sactually\sreturn\strue\sfor\sthose,\sbut\sthey're\suseless\sfor\sinstallation\spurposes.\sThis\sresolves\sthe\stea\sbuild's\sinability\sto\sinstall\son\sstock\sopenbsd.
-D 2025-05-26T15:20:57.472
+C Avoid\scalls\sto\ssprintf()\sin\sLemon,\ssince\sOpenBSD\shates\ssprintf().
+D 2025-05-26T15:36:43.871
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2143,7 +2143,7 @@ F tool/genfkey.README e550911fa984c8255ebed2ef97824125d83806eb5232582700de949edf
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
-F tool/lemon.c f51a488369046cd4f4212d755a214a57673ded400cbeb01e298cbf63539e1d8c
+F tool/lemon.c 00535f27e61ae8200ba8402c1753483de39eef2f59b60da8b7951c458a32e017
 F tool/lempar.c bdffd3b233a4e4e78056c9c01fadd2bb3fe902435abde3bce3d769fdf0d5cca2
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de0dfac1e5ca9d2661674c20664095386f60c77378311507fcba08111df52b38
-R 3fa837495725ba451f48513795489ef0
-U stephan
-Z 426be4d03da492ca6b0d0903f0942112
+P 5b29724a3287c9a910f303faf056d0706b66c3e6ba23f9746c11d775c631f374
+R e9061238c0b3cee8c2477787415845d9
+U drh
+Z 9062846480eb9b629f97d72bef8a2f1f
 # Remove this line to create a well-formed Fossil manifest.
