@@ -146,7 +146,7 @@ if {[lsearch -glob $cflags -O*]<0} {
   lappend cflags -Os
 }
 if {!$osmalloc} {
-  append cflags { --heap 40000000 64}
+  append speedtestflags { --heap 40000000 64}
 }
 if {!$osmalloc && [lsearch -glob $cflags {-DSQLITE_ENABLE_MEMSYS*}]<0} {
   lappend cflags -DSQLITE_ENABLE_MEMSYS5
