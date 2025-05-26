@@ -119,7 +119,7 @@ proc teaish-options {} {
 proc teaish-configure {} {
   use teaish/feature
 
-  teaish-src-add -dist -dir generic/tclsqlite3.c
+  teaish-dist-add generic/tclsqlite3.c
 
   if {[proj-opt-was-provided override-sqlite-version]} {
     teaish-pkginfo-set -version [opt-val override-sqlite-version]

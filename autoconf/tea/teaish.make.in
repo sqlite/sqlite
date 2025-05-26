@@ -1,0 +1,7 @@
+
+dir.g = $(tx.dir)/generic
+tclsqlite3.o: $(dir.g)/tclsqlite3.c
+	$(CC.tcl) -c $(dir.g)/tclsqlite3.c
+
+$(tx.dll): tclsqlite3.o
+tx.src = tclsqlite3.o

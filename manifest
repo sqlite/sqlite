@@ -1,5 +1,5 @@
-C tclsqlite.c\sdoc\stypo\sfix.
-D 2025-05-26T07:15:20.435
+C Slight\stweaks\sto\sthe\stea\sbuild\sto\shave\sto\screate\sa\s.o\sfile\sinstead\sof\sbuilding\sdirectly\sfrom\ssources.\sThis\sis\sstep\s1\sof\sN\sof\snarrowing\sdown\splatform-specific\sbreakage\sbetween\s3.49\s(autotools)\sand\s3.50\s(autosetup).
+D 2025-05-26T16:39:13.540
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -30,7 +30,8 @@ F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357
 F autoconf/tea/doc/sqlite3.n 9a97f4f717ceab73004ea412af7960625c1cb24b5c25e4ae4c8b5d8fa4300f4e
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in e07da6b94561f4aa382bab65b1ccceb04701b97bf59d007c1d1f20a222b22d07
-F autoconf/tea/teaish.tcl 81571a9f9ae5c70735595b05586cb2de9d2aea7e32aad10417c4982f2e2f01c8
+F autoconf/tea/teaish.make.in eb781e370342004c8c38b008deae57c1b9eb2a8bd97b270419f7f68ee3cc75b6
+F autoconf/tea/teaish.tcl ad489350649414162db8df5f3938ffa7d869f01195824c45f30d37505d105c38
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
@@ -2207,8 +2208,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 28215d131cd970a2756338579fb6b6091ab155be8f419505cae8ac918956165c
-R 0bd71eeaf4b7d0c078bec1e70dd7f93a
+P de0dfac1e5ca9d2661674c20664095386f60c77378311507fcba08111df52b38
+R aa7b262453a4aa0c3af4ae57e11b9fc5
+T *branch * tea-breakage-experimentation
+T *sym-tea-breakage-experimentation *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z fe2139900473a36410fefd9d8a460091
+Z 9e470967371bbb87a100deb5fa6de7b0
 # Remove this line to create a well-formed Fossil manifest.
