@@ -1,5 +1,5 @@
-C Slight\schange\sto\stool/split-sqlite3c.tcl\sto\smake\sit\scompatible\swith\sjimsh
-D 2025-05-26T23:20:23.908
+C Do\snot\suse\sa\spartial\sindex\sif\sthe\struth\sof\sthe\sWHERE\sclause\sdoes\snot\sdepend\non\sat\sleast\sone\scolumn\sfrom\sthe\stable\sbeing\sindexed.
+D 2025-05-28T14:59:42.480
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -869,7 +869,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c bcf40795a09b699ad7e42624dd6282b13335164fbabcd5a98a717758cebef451
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 1d06561f7310af61bef8a046fa95d463ad88f855be9036fec9091f984520afc5
+F src/where.c 45a3b496248a0b36d91ce34da3278d54f8fa20e9d3fbd36d45a42051d1118137
 F src/whereInt.h ecdbfb5551cf394f04ec7f0bc7ad963146d80eee3071405ac29aa84950128b8e
 F src/wherecode.c 8825756ea7b1a49ac830719d28557c638520bb2434fe9c2dd6c7f584034bfe32
 F src/whereexpr.c 2415c8eee5ff89a8b709d7d83d71c1ff986cd720d0520057e1d8a5371339012a
@@ -2207,8 +2207,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e4ffa86aa6ca82a42933281f6cbfca7bad702797eb8d6e684a1992e68dc1cfb7
-R e9e46bbbb173045e220838253d4d87e0
+P fe670ddda933007386eb10facf4048ee88671f74b1fd41dfc3120beb717b8c9e
+R fc3e14ac4195ac71d03a1c1ffcef6f5e
+T *branch * silly-partial-indexes
+T *sym-silly-partial-indexes *
+T -sym-trunk *
 U drh
-Z e37dec5c7db1fade03b91521ee2478f8
+Z cb8be70633a907000e3fad690fce45e2
 # Remove this line to create a well-formed Fossil manifest.
