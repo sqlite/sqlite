@@ -3602,6 +3602,7 @@ static int whereUsablePartialIndex(
     if( (!ExprHasProperty(pExpr, EP_OuterON) || pExpr->w.iJoin==iTab)
      && ((jointype & JT_OUTER)==0 || ExprHasProperty(pExpr, EP_OuterON))
      && sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, iTab)
+     && !sqlite3ExprImpliesExpr(pParse, pExpr, pWhere, -1)
      && (pTerm->wtFlags & TERM_VNULL)==0
     ){
       return 1;
