@@ -1,5 +1,5 @@
-C Version\s3.50.0
-D 2025-05-29T14:26:00.000
+C Fix\sa\sgoofy\shash\sfunction\sin\sLemon.\s\sNo\schanges\sto\sSQLite\sitself.
+D 2025-05-29T17:46:34.006
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2143,7 +2143,7 @@ F tool/genfkey.README e550911fa984c8255ebed2ef97824125d83806eb5232582700de949edf
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
-F tool/lemon.c 00535f27e61ae8200ba8402c1753483de39eef2f59b60da8b7951c458a32e017
+F tool/lemon.c d39ad5c209c2dc765fa2841ccfc4c54e656d3e6b645df91c8c8a94e81a1b1de5
 F tool/lempar.c bdffd3b233a4e4e78056c9c01fadd2bb3fe902435abde3bce3d769fdf0d5cca2
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2207,12 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f037ca064daeb81cb386da2a372d8e2d2dce55a3a13bc7bea4968ca51bf2843a
-R fc3e14ac4195ac71d03a1c1ffcef6f5e
-T +bgcolor * green
-T +sym-major-release *
-T +sym-release *
-T +sym-version-3.50.0 *
+P dfc790f998f450d9c35e3ba1c8c89c17466cb559f87b0239e4aab9d34e28f742
+R 00d562dd162741cb934f046e1395a93b
 U drh
-Z 5eb6447fe81d0ef07434d8f3c30d7b86
+Z 2202324fba24e3c33bb1df72de3bd912
 # Remove this line to create a well-formed Fossil manifest.
