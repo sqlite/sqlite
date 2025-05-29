@@ -1,5 +1,5 @@
-C Extend\sthe\sfix\sfor\sticket\s[623eff57e76d45f6]\sso\sthat\sit\scovers\sRIGHT\sJOIN\nin\saddition\sto\sLEFT\sJOIN.\s\sProblem\sreported\sby\s\n[forum:/forumpost/7dee41d32506c4ae|forum\spost\s2025-05-29T15:10:14Z].
-D 2025-05-29T18:44:41.902
+C Fix\sthe\smissing\s-lm\slink\sflag\sfor\sthe\ssqlite3\sshell\swhen\sbuilding\sthe\sautoconf\sbundle\swith\s--disable-static-shell,\sas\sreported\sin\s[forum:5adf1c932a\s|\sforum\spost\s5adf1c932a].
+D 2025-05-29T20:29:13.320
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -17,7 +17,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def 82c32443a91c1062f7a48beec37dbb2d8d03447b1286bce8df5ebb6d8d353f8a
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 36516827bb5d2309422bbcbf53e873fa22ef179f5c25b1d3dc6a7255e63270b7
+F autoconf/Makefile.in d0926d2309e563b5ebdfd711e5c218533acab79829a05eef4e97c3a92e17bf42
 F autoconf/Makefile.msc f15ad424ca2820df8e39d9157965710af0a64d87773706706a12ea4f96e3a0d8
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d6cbabe23d3919d5bde6a83421cdae92125caec09d5c39a648d0305878c6a1dc
-R 28a9e68992443d1bb44866db16596344
-U drh
-Z c4a3c019e57515755a30d30cb56ed7c7
+P 29b1e1b97619d03a97ef562a5707929e241d019179b4ff1d0bc2a8c008441431
+R 4762cb2ddb67d85a8f20bad68e159f3b
+U stephan
+Z a42949933613c0efadc0aa60dcb9ee1d
 # Remove this line to create a well-formed Fossil manifest.
