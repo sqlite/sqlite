@@ -1,5 +1,5 @@
-C Do\snot\suse\sa\spartial\sindex\sunless\sthe\sWHERE\sclause\suses\sone\sor\smore\scolumns\nfrom\sthe\stable\sbeing\sindexed.\s\sThis\sresolves\sthe\sissue\sreported\sby\n[forum:/forumpost/a8704b30f3|forum\spost\s2025-05-28T13:03:40Z].\sTest\scases\nare\sin\sTH3.
-D 2025-05-28T16:56:23.659
+C Version\s3.50.0
+D 2025-05-29T14:26:00.000
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2207,9 +2207,12 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe670ddda933007386eb10facf4048ee88671f74b1fd41dfc3120beb717b8c9e cbe2a392e45d40778570656d2ef2db43e58ad6453bd9d4b936fecfd963e22736
+P f037ca064daeb81cb386da2a372d8e2d2dce55a3a13bc7bea4968ca51bf2843a
 R fc3e14ac4195ac71d03a1c1ffcef6f5e
-T +closed cbe2a392e45d40778570656d2ef2db43e58ad6453bd9d4b936fecfd963e22736
+T +bgcolor * green
+T +sym-major-release *
+T +sym-release *
+T +sym-version-3.50.0 *
 U drh
-Z 09b8cc064068dcf357ab07748b442b38
+Z 5eb6447fe81d0ef07434d8f3c30d7b86
 # Remove this line to create a well-formed Fossil manifest.
