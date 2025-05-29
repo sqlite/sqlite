@@ -616,7 +616,7 @@ proc sqlite-check-common-system-deps {} {
 
   # Check for needed/wanted functions
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
-    malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
+    strchrnul usleep utime pread pread64 pwrite pwrite64
 
   apply {{} {
     set ldrt ""
