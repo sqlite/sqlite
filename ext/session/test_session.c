@@ -1585,6 +1585,9 @@ struct TestChangegroup {
 typedef struct TestChangeIter TestChangeIter;
 struct TestChangeIter {
   sqlite3_changeset_iter *pIter;
+
+  /* If this iter uses streaming. */
+  TestStreamInput in;
 };
 
 
@@ -1807,6 +1810,7 @@ static int SQLITE_TCLAPI test_sqlite3changeset_start(
   sqlite3_changeset_iter *pIter = 0;
   int flags = 0;
   int rc = SQLITE_OK;
+  int nAlloc = 0;                 /* Bytes of space to allocate */
 
   static int iCmd = 1;
   char zCmd[64];
@@ -1822,18 +1826,36 @@ static int SQLITE_TCLAPI test_sqlite3changeset_start(
     return TCL_ERROR;
   }
 
-  flags = isInvert ? SQLITE_CHANGESETSTART_INVERT : 0;
   pChangeset = (void *)Tcl_GetByteArrayFromObj(objv[objc-1], &nChangeset);
-  rc = sqlite3changeset_start_v2(&pIter, (int)nChangeset, pChangeset, flags);
+  flags = isInvert ? SQLITE_CHANGESETSTART_INVERT : 0;
+
+  nAlloc = sizeof(TestChangeIter);
+  if( test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
+    nAlloc += nChangeset;
+  }
+  pNew = (TestChangeIter*)ckalloc(nAlloc);
+  memset(pNew, 0, nAlloc);
+  if( test_tcl_integer(interp, SESSION_STREAM_TCL_VAR) ){
+    pNew->in.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
+    pNew->in.nData = nChangeset;
+    pNew->in.aData = (unsigned char*)&pNew[1];
+    memcpy(pNew->in.aData, pChangeset, nChangeset);
+  }
+
+  if( pNew->in.nStream ){
+    void *pCtx = (void*)&pNew->in;
+    rc = sqlite3changeset_start_v2_strm(&pIter, testStreamInput, pCtx, flags);
+  }else{
+    rc = sqlite3changeset_start_v2(&pIter, (int)nChangeset, pChangeset, flags);
+  }
   if( rc!=SQLITE_OK ){
     char *zErr = sqlite3_mprintf(
         "error in sqlite3changeset_start_v2() - %d", rc
     );
     Tcl_AppendResult(interp, zErr, (char*)0);
+    ckfree(pNew);
     return TCL_ERROR;
   }
-
-  pNew = (TestChangeIter*)ckalloc(sizeof(TestChangeIter));
   pNew->pIter = pIter;
 
   sprintf(zCmd, "csiter%d", iCmd++);

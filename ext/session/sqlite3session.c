@@ -3423,14 +3423,15 @@ int sqlite3changeset_start_v2_strm(
 ** object and the buffer is full, discard some data to free up space.
 */
 static void sessionDiscardData(SessionInput *pIn){
-  if( pIn->xInput && pIn->iNext>=sessions_strm_chunk_size ){
-    int nMove = pIn->buf.nBuf - pIn->iNext;
+  if( pIn->xInput && pIn->iCurrent>=sessions_strm_chunk_size ){
+    int nMove = pIn->buf.nBuf - pIn->iCurrent;
     assert( nMove>=0 );
     if( nMove>0 ){
-      memmove(pIn->buf.aBuf, &pIn->buf.aBuf[pIn->iNext], nMove);
+      memmove(pIn->buf.aBuf, &pIn->buf.aBuf[pIn->iCurrent], nMove);
     }
-    pIn->buf.nBuf -= pIn->iNext;
-    pIn->iNext = 0;
+    pIn->buf.nBuf -= pIn->iCurrent;
+    pIn->iNext -= pIn->iCurrent;
+    pIn->iCurrent = 0;
     pIn->nData = pIn->buf.nBuf;
   }
 }
@@ -3784,8 +3785,8 @@ static int sessionChangesetNextOne(
   p->rc = sessionInputBuffer(&p->in, 2);
   if( p->rc!=SQLITE_OK ) return p->rc;
 
-  sessionDiscardData(&p->in);
   p->in.iCurrent = p->in.iNext;
+  sessionDiscardData(&p->in);
 
   /* If the iterator is already at the end of the changeset, return DONE. */
   if( p->in.iNext>=p->in.nData ){
@@ -6149,14 +6150,19 @@ int sqlite3changegroup_add_change(
   sqlite3_changegroup *pGrp,
   sqlite3_changeset_iter *pIter
 ){
+  int rc = SQLITE_OK;
+
   if( pIter->in.iCurrent==pIter->in.iNext 
    || pIter->rc!=SQLITE_OK 
    || pIter->bInvert
   ){
     /* Iterator does not point to any valid entry or is an INVERT iterator. */
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+  }else{
+    pIter->in.bNoDiscard = 1;
+    rc = sessionOneChangeToHash(pGrp, pIter, 0);
   }
-  return sessionOneChangeToHash(pGrp, pIter, 0);
+  return rc;
 }
 
 /*
