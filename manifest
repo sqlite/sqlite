@@ -1,5 +1,5 @@
-C Squelch\san\sinteresting\sbut\sharmless\sstruct\sinitialization\swarning\semitted\safter\san\semsdk\supdate.\sFix\sJS\sbreakage\sintroduced\sby\schanges\sin\sEmscripten\s4.0.7:\smanually\sexport\sthe\sHEAPxyz\ssymbols\swhich\sused\sto\sbe\sexposed\sby\sdefault.
-D 2025-05-30T10:18:47.623
+C Extend\sthe\sfix\sfor\sticket\s623eff57e76d45f6]so\sthat\sit\scovers\sRIGHT\sJOIN\nin\saddition\sto\sLEFT\sJOIN.
+D 2025-05-30T11:00:57.535
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -871,7 +871,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 45a3b496248a0b36d91ce34da3278d54f8fa20e9d3fbd36d45a42051d1118137
 F src/whereInt.h ecdbfb5551cf394f04ec7f0bc7ad963146d80eee3071405ac29aa84950128b8e
-F src/wherecode.c 8825756ea7b1a49ac830719d28557c638520bb2434fe9c2dd6c7f584034bfe32
+F src/wherecode.c 65670d1ef85ef54a4db3826d63be8b646c9ac280962166b645950901ed1bda29
 F src/whereexpr.c 2415c8eee5ff89a8b709d7d83d71c1ff986cd720d0520057e1d8a5371339012a
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1361,7 +1361,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 5984da7bf74b6540aa356f2ab0c6ae68a6d12039a3d798a9ac6a100abc17d520
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test 0cc86e5fd579780b98cc01c9d6fc5b69f6ecc777f1c4daa501a14d1a74f56a6b
+F test/join.test aca62194ad41b522c55577e0e1bd99da6d5436827225aa850801c36e5f4cc914
 F test/join2.test f59d63264fb24784ae9c3bc9d867eb569cd6d442da5660f8852effe5c1938c27
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -2207,9 +2207,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 80d5a9daa6b34b628d6b5ef8b852d0a29a71fda46dd797091d9cdd3342037a9c
-Q +10d0897cc9a5998fe1344cfbb242a78b59012e29aa3b1993895dfac26721b053
-R e73a3e5bcb8a71552be6d104fe0baf90
-U stephan
-Z 328644467dfbd0a3495b11a1d524faf1
+P 042c6c6e9568f2ccd14b39812393e71481d04c42d768b4b56f71c02daad6b470
+Q +29b1e1b97619d03a97ef562a5707929e241d019179b4ff1d0bc2a8c008441431
+R 22d633d49411fe41ad7e5292408c487a
+U drh
+Z 5f5d2cf050c20b9d8f8b2fb92fb26d08
 # Remove this line to create a well-formed Fossil manifest.
