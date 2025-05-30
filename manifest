@@ -1,5 +1,5 @@
-C Configure-related\sfixes\sand\sadditions,\smost\snotably\sintegration\sof\sself-tests\sfor\sproj.tcl's\sAPIs.\sTeaish\smake-install\sfixes\sbased\son\sthe\sdiscussion\sin\s[forum:87e6660191a472c5\s|\sforum\sthread\s87e6660191a472c5].
-D 2025-05-30T16:08:31.088
+C Avoid\sinvoking\sthe\sbusy-handler\sif\sa\sblocking\slock\stimes\sout\swhile\sattempting\sto\sopen\sa\ssnapshot\stransaction.
+D 2025-05-30T18:23:03.081
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 782cc29b42b47e7ec6348eb0aaf9ffe60063f498387e7249f458d445af4b53e9
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 00fcee37947641f48d4b529d96143e74d056b7afa8f26d61292c90ee59c056b2
+F src/btree.c 138e6b0df717244ba4591af5ba3cfb3f5032ea09a2f8449997329051155366c0
 F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 67c1db4c5e89a8519fe9b6dafc287f6bc3627696b5b8536dc5e06db570d8c05f
@@ -2036,6 +2036,7 @@ F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533
 F test/walsetlk.test 9079cd8ef82570b8cf0067f31e049a72bec353fb2d5f0cc88f1736dc42ba9704
 F test/walsetlk2.test 9097083633cdf55bf1098b694fb8651d0356d38fef28b869481d18029d7ceaf4
 F test/walsetlk3.test 1b82bd92dea7e58f498b4399b0b3d26773dd8ac5c74205ce4a23c207cb8e85fe
+F test/walsetlk_snapshot.test 6376fc8a76da4571eb35cf4aef06105f716c5e52f991cefec44b9c7015aadf1e
 F test/walshared.test 42e3808582504878af237ea02c42ca793e8a0efaa19df7df26ac573370dbc7a3
 F test/walslow.test 0c51843836c9dcf40a5ac05aa781bfb977b396ee2c872d92bd48b79d5dd9aa23
 F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
@@ -2207,8 +2208,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f63608a3847469b130e029cc569fe6f03a9053352ec43c10d69849cbab4f61c5
-R 45ee8fcc96567a1f284bf3c5475d67ce
-U stephan
-Z 1517f3bde51bc97155127eadd67c114a
+P 2e486f8fd011d28fdd7e59ff34f7f04374019932eb160a8c4de56a5ce01e5782
+R 271c081be49b44d7c0913e445ea8afea
+T *branch * setlk-snapshot-fix
+T *sym-setlk-snapshot-fix *
+T -sym-trunk *
+U dan
+Z 6fb6c5ab6f440154ac0955e521c66539
 # Remove this line to create a well-formed Fossil manifest.
