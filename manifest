@@ -1,5 +1,5 @@
-C Squelch\san\sinteresting\sbut\sharmless\sstruct\sinitialization\swarning\semitted\safter\san\semsdk\supdate.\sFix\sJS\sbreakage\sintroduced\sby\schanges\sin\sEmscripten\s4.0.7:\smanually\sexport\sthe\sHEAPxyz\ssymbols\swhich\sused\sto\sbe\sexposed\sby\sdefault.
-D 2025-05-30T10:18:09.731
+C Add\s"include\s<stddef.h>"\sto\sfts5\sand\srtree\sto\sensure\sthat\sthey\suse\sthe\ssystem\sversion\sof\sthe\soffsetof()\smacro\swhen\sit\sis\savailable,\sas\sthe\sbuilt-in\sversion\striggers\subsan\serrors\swith\sclang.
+D 2025-05-30T11:14:11.545
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -108,7 +108,7 @@ F ext/fts3/unicode/mkunicode.tcl cbf5f7b5c8ce8014bad731f246f2e520eece908465de477
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
 F ext/fts5/fts5.h ff5d3cc88b29e41612bfb29eb723e29e38973de62ca75ba3e8f94ccb67f5b5f2
-F ext/fts5/fts5Int.h bffbd0acdcdf509899681f4e1cfeef1c955030acd9fe15ff9082410f80c3bead
+F ext/fts5/fts5Int.h 4c7380ce83e8f6b5b3216ebe2b33093a20fa72e832a88d14023f827b7d8b9933
 F ext/fts5/fts5_aux.c da4a7a9a11ec15c6df0699d908915a209bcde48f0b04101461316b59f71abffb
 F ext/fts5/fts5_buffer.c f1e6d0324d7c55329d340673befc26681a372a4d36086caa8d1ec7d7c53066c7
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
@@ -539,7 +539,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c f0573d5109fdc658a180db0db6eec86ab2a1cf5ce58ec66cbf3356167ea757eb
-F ext/rtree/rtree.c f12180fbc79f4de3dcb93afe55a64703481a23af7f80d1e988d2cb97afd07b6b
+F ext/rtree/rtree.c 811edc5c2f3e13dcee825a8ec6f2ebe29b34bdb0186184d75d461621173638fa
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f6318c4a6b5a133657741c066ef2c76a71880dbc98cfff1fdd632637daf002dc
-R 8bd2aba5086b16f1f67743ad460c6fa0
-U stephan
-Z 45f2ae1b421158f9c9afd5b26cdd1391
+P 10d0897cc9a5998fe1344cfbb242a78b59012e29aa3b1993895dfac26721b053
+R 1dcfe8c63509fb843f7cb99753e48416
+U dan
+Z de257d291b8e704afcab14c5e293267b
 # Remove this line to create a well-formed Fossil manifest.
