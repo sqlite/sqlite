@@ -240,7 +240,7 @@ static int vtablogConnect(
 
 
 /*
-** This method is the destructor for vtablog_cursor objects.
+** This method is the destructor for vtablog_vtab objects.
 */
 static int vtablogDisconnect(sqlite3_vtab *pVtab){
   vtablog_vtab *pTab = (vtablog_vtab*)pVtab;
@@ -252,7 +252,7 @@ static int vtablogDisconnect(sqlite3_vtab *pVtab){
 }
 
 /*
-** This method is the destructor for vtablog_cursor objects.
+** This method is (also) the destructor for vtablog_vtab objects.
 */
 static int vtablogDestroy(sqlite3_vtab *pVtab){
   vtablog_vtab *pTab = (vtablog_vtab*)pVtab;

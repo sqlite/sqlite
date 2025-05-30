@@ -99,7 +99,7 @@ proc test__affert {failMode args} {
     lassign $args script msg
   }
   incr ::test__Counters($what)
-  if {![uplevel 1 [concat expr [list $script]]]} {
+  if {![uplevel 1 expr [list $script]]} {
     if {"" eq $msg} {
       set msg $script
     }
@@ -137,6 +137,40 @@ proc assert {args} {
 }
 
 #
+# @assert-matches ?-e? pattern ?-e? rhs ?msg?
+#
+# Equivalent to assert {[string match $pattern $rhs]} except that
+# if either of those are prefixed with an -e flag, they are eval'd
+# and their results are used.
+#
+proc assert-matches {args} {
+  set evalLhs 0
+  set evalRhs 0
+  if {"-e" eq [lindex $args 0]} {
+    incr evalLhs
+    set args [lassign $args -]
+  }
+  set args [lassign $args pattern]
+  if {"-e" eq [lindex $args 0]} {
+    incr evalRhs
+    set args [lassign $args -]
+  }
+  set args [lassign $args rhs msg]
+
+  if {$evalLhs} {
+    set pattern [uplevel 1 $pattern]
+  }
+  if {$evalRhs} {
+    set rhs [uplevel 1 $rhs]
+  }
+  #puts "***pattern=$pattern\n***rhs=$rhs"
+  tailcall test__affert 1 \
+    [join [list \[ string match [list $pattern] [list $rhs] \]]] $msg
+  # why does this not work? [list \[ string match [list $pattern] [list $rhs] \]] $msg
+  # "\[string match [list $pattern] [list $rhs]\]"
+}
+
+#
 # @test-assert testId script ?msg?
 #
 # Works like [assert] but emits $testId to stdout first.
@@ -157,7 +191,7 @@ proc test-expect {testId script result} {
   puts "test $testId"
   set x [string trim [uplevel 1 $script]]
   set result [string trim $result]
-  tailcall test__affert 0 [list $x eq $result] \
+  tailcall test__affert 0 [list "{$x}" eq "{$result}"] \
     "\nEXPECTED: <<$result>>\nGOT:      <<$x>>"
 }
 
@@ -169,12 +203,43 @@ proc test-expect {testId script result} {
 #
 proc test-catch {cmd args} {
   if {[catch {
-    $cmd {*}$args
+    uplevel 1 $cmd {*}$args
   } rc xopts]} {
     puts "[test-current-scope] ignoring failure of: $cmd [lindex $args 0]: $rc"
     return 1
   }
   return 0
+}
+
+#
+# @test-catch-matching pattern (script|cmd args...)
+#
+# Works like test-catch, but it expects its argument(s) to to throw an
+# error matching the given string (checked with [string match]).  If
+# they do not throw, or the error does not match $pattern, this
+# function throws, else it returns 1.
+#
+# If there is no second argument, the $cmd is assumed to be a script,
+# and will be eval'd in the caller's scope.
+#
+# TODO: add -glob and -regex flags to control matching flavor.
+#
+proc test-catch-matching {pattern cmd args} {
+  if {[catch {
+    #puts "**** catch-matching cmd=$cmd args=$args"
+    if {0 == [llength $args]} {
+      uplevel 1 $cmd {*}$args
+    } else {
+      $cmd {*}$args
+    }
+  } rc xopts]} {
+    if {[string match $pattern $rc]} {
+      return 1
+    } else {
+      error "[test-current-scope] exception does not match {$pattern}: {$rc}"
+    }
+  }
+  error "[test-current-scope] expecting to see an error matching {$pattern}"
 }
 
 if {![array exists ::teaish__BuildFlags]} {

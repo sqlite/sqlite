@@ -4035,10 +4035,10 @@ PRIVATE int translate_code(struct lemon *lemp, struct rule *rp){
     }
   }
   if( lhsdirect ){
-    sprintf(zLhs, "yymsp[%d].minor.yy%d",1-rp->nrhs,rp->lhs->dtnum);
+    lemon_sprintf(zLhs, "yymsp[%d].minor.yy%d",1-rp->nrhs,rp->lhs->dtnum);
   }else{
     rc = 1;
-    sprintf(zLhs, "yylhsminor.yy%d",rp->lhs->dtnum);
+    lemon_sprintf(zLhs, "yylhsminor.yy%d",rp->lhs->dtnum);
   }
 
   append_str(0,0,0,0);
@@ -5925,7 +5925,7 @@ struct state **State_arrayof(void)
 PRIVATE unsigned confighash(struct config *a)
 {
   unsigned h=0;
-  h = h*571 + a->rp->index*37 + a->dot;
+  h = a->rp->index*37 + a->dot;
   return h;
 }
 

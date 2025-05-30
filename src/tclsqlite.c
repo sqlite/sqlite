@@ -4100,8 +4100,8 @@ EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 #if defined(TCLSH)
 
 /* This is the main routine for an ordinary TCL shell.  If there are
-** are arguments, run the first argument as a script.  Otherwise,
-** read TCL commands from standard input
+** arguments, run the first argument as a script.  Otherwise, read TCL
+** commands from standard input
 */
 static const char *tclsh_main_loop(void){
   static const char zMainloop[] =

@@ -1113,7 +1113,7 @@ do_execsql_test json101-21.26 {
 do_execsql_test json101-21.27 {
   WITH c(x,y) AS (VALUES('a',1),('b',2.0),('c',NULL),(NULL,'three'),('e','four'))
   SELECT json_group_object(x,y) FROM c;
-} {{{"a":1,"b":2.0,"c":null,:"three","e":"four"}}}
+} {{{"a":1,"b":2.0,"c":null,"e":"four"}}}
 
 # 2023-10-09 https://sqlite.org/forum/forumpost/b25edc1d46
 # UAF due to JSON cache overflow

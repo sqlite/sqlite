@@ -765,7 +765,7 @@
 ** ourselves.
 */
 #ifndef offsetof
-#define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
 #endif
 
 /*
@@ -2660,6 +2660,13 @@ struct KeyInfo {
 
 /* The size (in bytes) of a KeyInfo object with up to N fields */
 #define SZ_KEYINFO(N)  (offsetof(KeyInfo,aColl) + (N)*sizeof(CollSeq*))
+
+/* The size of a bare KeyInfo with no aColl[] entries */
+#if FLEXARRAY+1 > 1
+# define SZ_KEYINFO_0   offsetof(KeyInfo,aColl)
+#else
+# define SZ_KEYINFO_0   sizeof(KeyInfo)
+#endif
 
 /*
 ** Allowed bit values for entries in the KeyInfo.aSortFlags[] array.

@@ -64,6 +64,8 @@
 #endif
 int sqlite3GetToken(const unsigned char*,int*); /* In the SQLite core */
 
+#include <stddef.h>
+
 /*
 ** If building separately, we will need some setup that is normally
 ** found in sqliteInt.h
@@ -95,7 +97,7 @@ typedef unsigned int u32;
 # define NEVER(X)       (X)
 #endif
 #ifndef offsetof
-#define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
 #endif
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define FLEXARRAY
@@ -2848,7 +2850,7 @@ static int deleteCell(Rtree *pRtree, RtreeNode *pNode, int iCell, int iHeight){
 
   return rc;
 }
-	
+
 /*
 ** Insert cell pCell into node pNode. Node pNode is the head of a 
 ** subtree iHeight high (leaf nodes have iHeight==0).
