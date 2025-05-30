@@ -1,5 +1,5 @@
-C Configure-related\sfixes\sand\sadditions,\smost\snotably\sintegration\sof\sself-tests\sfor\sproj.tcl's\sAPIs.\sTeaish\smake-install\sfixes\sbased\son\sthe\sdiscussion\sin\s[forum:87e6660191a472c5\s|\sforum\sthread\s87e6660191a472c5].
-D 2025-05-30T16:08:31.088
+C When\ssynthesizing\san\sON\sconstraint\sfrom\sa\sUSING\sor\sNATURAL,\sif\sthe\sleft-hand\nside\sis\scoming\sfrom\sa\sRIGHT\sJOIN,\sbe\ssure\sto\sset\sthe\sEP_CanBeNull\sflag\sso\sthat\nthe\soptimizer\sknows\sto\scheck\sfor\sNULL\seven\sif\sthe\scolumn\shas\sa\sNOT\sNULL\nconstraint.\s\sFix\sfor\sthe\sproblem\sreported\sby\n[forum:/forumpost/4fc70203b61c7e12|forum\spost\s4fc70203b61]
+D 2025-05-30T19:55:46.105
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -785,7 +785,7 @@ F src/printf.c 3b91c334f528359145f4dde0dedd945bbb21044d0825ea064934d7222d61662c
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c ee072fe20566119a195a5a3df454479bb6e944de7aef7006ff0b4d4612f9cb86
+F src/select.c 571fff5cf453c3cafc122873b982dff39075e1edd1afec707216c9b534fde7bf
 F src/shell.c.in ba53a52dafb167ac6320703da741386c34fbcabe8c078a188bb9f89808e3ef8f
 F src/sqlite.h.in 22882ddd3a70751aa8864c81993ee4562ed54c2c508b6270f75e223ffee38e1b
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
@@ -1361,7 +1361,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 5984da7bf74b6540aa356f2ab0c6ae68a6d12039a3d798a9ac6a100abc17d520
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test aca62194ad41b522c55577e0e1bd99da6d5436827225aa850801c36e5f4cc914
+F test/join.test 015ef539ea2b779d0a219f4c0f82f39bf20884aed42142165e56791094d1cf3d
 F test/join2.test f59d63264fb24784ae9c3bc9d867eb569cd6d442da5660f8852effe5c1938c27
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f63608a3847469b130e029cc569fe6f03a9053352ec43c10d69849cbab4f61c5
-R 45ee8fcc96567a1f284bf3c5475d67ce
-U stephan
-Z 1517f3bde51bc97155127eadd67c114a
+P 2e486f8fd011d28fdd7e59ff34f7f04374019932eb160a8c4de56a5ce01e5782
+R 4fc3d788e929e3ad2e87da5f4f76e5b7
+U drh
+Z b8769468b1683decb71b7b0ba97e34bc
 # Remove this line to create a well-formed Fossil manifest.
