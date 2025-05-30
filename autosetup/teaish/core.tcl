@@ -92,6 +92,7 @@ array set teaish__Config [proj-strip-hash-comments {
     -tm.tcl.in       TEAISH_TM_TCL_IN
     -options         {}
     -pragmas         {}
+    -src             {}
   }
 
   #
@@ -331,29 +332,33 @@ proc teaish-configure-core {} {
       -url              -       -v ""
       -tm.tcl           -       -v ""
       -tm.tcl.in        -       -v ""
+      -src              -       -v ""
     } {
+      #proj-assert 0 {Just testing}
       set isPIFlag [expr {"-" ne $pflag}]
       if {$isPIFlag} {
         if {[info exists ::teaish__PkgInfo($pflag)]} {
           # Was already set - skip it.
           continue;
         }
-        proj-assert {{-} eq $key}
+        proj-assert {{-} eq $key};# "Unexpected pflag=$pflag key=$key type=$type val=$val"
         set key $f2d($pflag)
       }
-      proj-assert {"" ne $key}
-      set got [get-define $key "<nope>"]
-      if {"<nope>" ne $got} {
-        # Was already set - skip it.
-        continue
+      if {"" ne $key} {
+        if {"<nope>" ne [get-define $key "<nope>"]} {
+          # Was already set - skip it.
+          continue
+        }
       }
       switch -exact -- $type {
         -v {}
         -e { set val [eval $val] }
         default { proj-error "Invalid type flag: $type" }
       }
-      #puts "***** defining default $pflag $key {$val} isPIFlag=$isPIFlag got=$got"
-      define $key $val
+      #puts "***** defining default $pflag $key {$val} isPIFlag=$isPIFlag"
+      if {$key ne ""} {
+        define $key $val
+      }
       if {$isPIFlag} {
         set ::teaish__PkgInfo($pflag) $val
       }
@@ -541,10 +546,10 @@ proc teaish__configure_phase1 {} {
     define TEAISH_VSATISFIES_CODE [join $code "\n"]
   }}; # vsatisfies
 
-  if {[proj-looks-like-windows] || [proj-looks-like-mac]} {
+  if {[proj-looks-like-windows]} {
     # Without this, linking of an extension will not work on Cygwin or
     # Msys2.
-    msg-result "Using USE_TCL_STUBS for this environment"
+    msg-result "Using USE_TCL_STUBS for Unix(ish)-on-Windows environment"
     teaish-cflags-add -DUSE_TCL_STUBS=1
   }
 
@@ -585,7 +590,8 @@ proc teaish__configure_phase1 {} {
   #
   if {0x0f & $::teaish__Config(pkginit-policy)} {
     file delete -force -- [get-define TEAISH_PKGINIT_TCL]
-    proj-dot-ins-append [get-define TEAISH_PKGINIT_TCL_IN]
+    proj-dot-ins-append [get-define TEAISH_PKGINIT_TCL_IN] \
+      [get-define TEAISH_PKGINIT_TCL]
   }
   if {0x0f & $::teaish__Config(tm-policy)} {
     file delete -force -- [get-define TEAISH_TM_TCL]
@@ -595,17 +601,20 @@ proc teaish__configure_phase1 {} {
   apply {{} {
     # Queue up any remaining dot-in files
     set dotIns [list]
-    foreach d {
-      TEAISH_TESTER_TCL_IN
-      TEAISH_TEST_TCL_IN
-      TEAISH_MAKEFILE_IN
+    foreach {dIn => dOut} {
+      TEAISH_TESTER_TCL_IN => TEAISH_TESTER_TCL
+      TEAISH_TEST_TCL_IN   => TEAISH_TEST_TCL
+      TEAISH_MAKEFILE_IN   => TEAISH_MAKEFILE
     } {
-      lappend dotIns [get-define $d ""]
+      lappend dotIns [get-define $dIn ""] [get-define $dOut ""]
     }
-    lappend dotIns $::autosetup(srcdir)/Makefile.in; # must be after TEAISH_MAKEFILE_IN
-    foreach f $dotIns {
-      if {"" ne $f} {
-        proj-dot-ins-append $f
+    lappend dotIns $::autosetup(srcdir)/Makefile.in Makefile; # must be after TEAISH_MAKEFILE_IN.
+    # Much later: probably because of timestamps for deps purposes :-?
+    #puts "dotIns=$dotIns"
+    foreach {i o} $dotIns {
+      if {"" ne $i && "" ne $o} {
+        #puts " pre-dot-ins-append:  \[$i\] -> \[$o\]"
+        proj-dot-ins-append $i $o
       }
     }
   }}
@@ -640,10 +649,10 @@ proc teaish__configure_phase1 {} {
   #
   # NO [define]s after this point!
   #
-  proj-dot-ins-process -validate
   proj-if-opt-truthy teaish-dump-defines {
     proj-file-write config.defines.txt $tdefs
   }
+  proj-dot-ins-process -validate
 
 }; # teaish__configure_phase1
 
@@ -1068,7 +1077,7 @@ If you are attempting an out-of-tree build, use
          ]]} {
     if {[string match *.in $extM]} {
       define TEAISH_MAKEFILE_IN $extM
-      define TEAISH_MAKEFILE [file rootname [file tail $extM]]
+      define TEAISH_MAKEFILE _[file rootname [file tail $extM]]
     } else {
       define TEAISH_MAKEFILE_IN ""
       define TEAISH_MAKEFILE $extM
@@ -1136,8 +1145,8 @@ If you are attempting an out-of-tree build, use
   set flist [list $dirExt/teaish.test.tcl.in $dirExt/teaish.test.tcl]
   if {[proj-first-file-found ttt $flist]} {
     if {[string match *.in $ttt]} {
-      # Generate teaish.test.tcl from $ttt
-      set xt [file rootname [file tail $ttt]]
+      # Generate _teaish.test.tcl from $ttt
+      set xt _[file rootname [file tail $ttt]]
       file delete -force -- $xt; # ensure no stale copy is used
       define TEAISH_TEST_TCL $xt
       define TEAISH_TEST_TCL_IN $ttt
@@ -1304,7 +1313,6 @@ proc teaish-ldflags-prepend {args} {
 # object files (which are typically in the build tree)).
 #
 proc teaish-src-add {args} {
-  set i 0
   proj-parse-simple-flags args flags {
     -dist 0 {expr 1}
     -dir  0 {expr 1}
@@ -1389,7 +1397,7 @@ proc teaish__cleanup_rule {{tgt clean}} {
   return ${tgt}-_${x}_
 }
 
-# @teaish-make-obj objfile srcfile ?...args?
+# @teaish-make-obj ?flags? ?...args?
 #
 # Uses teaish-make-add to inject makefile rules for $objfile from
 # $srcfile, which is assumed to be C code which uses libtcl. Unless
@@ -1403,43 +1411,45 @@ proc teaish__cleanup_rule {{tgt clean}} {
 # Any arguments after the 2nd may be flags described below or, if no
 # -recipe is provided, flags for the compiler call.
 #
+#   -obj obj-filename.o
+#
+#   -src src-filename.c
+#
 #   -recipe {...}
 #   Uses the trimmed value of {...} as the recipe, prefixing it with
 #   a single hard-tab character.
 #
 #   -deps {...}
-#   List of extra files to list as dependencies of $o. Good luck
-#   escaping non-trivial cases properly.
+#   List of extra files to list as dependencies of $o.
 #
 #   -clean
 #   Generate cleanup rules as well.
-proc teaish-make-obj {o src args} {
-  set consume 0
-  set clean 0
-  set flag ""
-  array set flags {}
-  set xargs {}
-  foreach arg $args {
-    if {$consume} {
-      set consume 0
-      set flags($flag) $arg
-      continue
-    }
-    switch -exact -- $arg {
-      -clean {incr clean}
-      -recipe -
-      -deps {
-        set flag $arg
-        incr consume
-      }
-      default {
-        lappend xargs $arg
-      }
+proc teaish-make-obj {args} {
+  proj-parse-simple-flags args flags {
+    -clean 0 {expr 1}
+    -recipe => {}
+    -deps => {}
+    -obj => {}
+    -src => {}
+  }
+  #parray flags
+  if {"" eq $flags(-obj)} {
+    set args [lassign $args flags(-obj)]
+    if {"" eq $flags(-obj)} {
+      proj-error "Missing -obj flag."
     }
   }
+  foreach f {-deps -src} {
+    set flags($f) [string trim [string map {\n " "} $flags($f)]]
+  }
+  foreach f {-deps -src} {
+    set flags($f) [string trim $flags($f)]
+  }
+  #parray flags
+  #puts "-- args=$args"
   teaish-make-add \
-    "# [proj-scope 1] -> [proj-scope] $o $src" -nl \
-    "$o: $src $::teaish__Config(teaish.tcl)"
+    "# [proj-scope 1] -> [proj-scope] $flags(-obj) $flags(-src)" -nl \
+    "$flags(-obj): $flags(-src) $::teaish__Config(teaish.tcl)"
   if {[info exists flags(-deps)]} {
     teaish-make-add " " [join $flags(-deps)]
   }
@@ -1447,12 +1457,12 @@ proc teaish-make-obj {o src args} {
   if {[info exists flags(-recipe)]} {
     teaish-make-add [string trim $flags(-recipe)] -nl
   } else {
-    teaish-make-add [join [list \$(CC.tcl) -c $src {*}$xargs]] -nl
+    teaish-make-add [join [list \$(CC.tcl) -c $flags(-src) {*}$args]] -nl
   }
-  if {$clean} {
+  if {$flags(-clean)} {
     set rule [teaish__cleanup_rule]
     teaish-make-add \
-      "clean: $rule\n$rule:\n\trm -f \"$o\"\n"
+      "clean: $rule\n$rule:\n\trm -f \"$flags(-obj)\"\n"
   }
 }
 
@@ -2080,6 +2090,17 @@ proc teaish-pkginfo-set {args} {
         set v $x
       }
 
+      -src {
+        set d $::teaish__Config(extension-dir)
+        foreach f $v {
+          lappend ::teaish__Config(dist-files) $f
+          lappend ::teaish__Config(extension-src) $d/$f
+          lappend ::teaish__PkgInfo(-src) $f
+          # ^^^ so that default-value initialization in
+          # teaish-configure-core recognizes that it's been set.
+        }
+      }
+
       -tm.tcl -
       -tm.tcl.in {
         if {0x30 & $::teaish__Config(pkgindex-policy)} {
@@ -2517,7 +2538,7 @@ proc teaish__install {{dDest ""}} {
                              ] {
     teaish__verbose 1 msg-result "Copying files to $destDir..."
     file mkdir $destDir
-    foreach f  [glob -directory $srcDir *] {
+    foreach f  [glob -nocomplain -directory $srcDir *] {
       if {[string match {*~} $f] || [string match "#*#" [file tail $f]]} {
         # Editor-generated backups and emacs lock files
         continue
