@@ -5043,13 +5043,14 @@ static int unixShmLock(
   ** occur later in the above list than the lock being obtained may be
   ** held.
   **
-  ** It is not permitted to block on the RECOVER lock.
+  ** It is not permitted to block on the RECOVER lock if any other
+  ** locks are held.
   */
 #if defined(SQLITE_ENABLE_SETLK_TIMEOUT) && defined(SQLITE_DEBUG)
   {
     u16 lockMask = (p->exclMask|p->sharedMask);
     assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
-          (ofst!=2)                                   /* not RECOVER */
+          (ofst!=2 || lockMask==0)  /* not RECOVER */
        && (ofst!=1 || lockMask==0 || lockMask==2)
        && (ofst!=0 || lockMask<3)
        && (ofst<3  || lockMask<(1<<ofst))

@@ -3697,11 +3697,10 @@ static SQLITE_NOINLINE int btreeBeginTrans(
       (void)sqlite3PagerWalWriteLock(pPager, 0);
       unlockBtreeIfUnused(pBt);
     }
-#if defined(SQLITE_ENABLE_SETLK_TIMEOUT) && defined(SQLITE_ENABLE_SNAPSHOT)
+#if defined(SQLITE_ENABLE_SETLK_TIMEOUT)
     if( rc==SQLITE_BUSY_TIMEOUT ){
       /* If a blocking lock timed out, break out of the loop here so that
-      ** the busy-handler is not invoked. This can only happen when opening
-      ** a transaction on a snapshot. */
+      ** the busy-handler is not invoked.  */
       break;
     }
 #endif
