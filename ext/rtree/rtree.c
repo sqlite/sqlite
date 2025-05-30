@@ -64,6 +64,8 @@
 #endif
 int sqlite3GetToken(const unsigned char*,int*); /* In the SQLite core */
 
+#include <stddef.h>
+
 /*
 ** If building separately, we will need some setup that is normally
 ** found in sqliteInt.h
