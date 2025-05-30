@@ -631,6 +631,9 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
             pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
             pE1 = sqlite3ExprFunction(pParse, pFuncArgs, &tkCoalesce, 0);
           }
+        }else if( (pSrc->a[i+1].fg.jointype & JT_LEFT)!=0 && pParse->nErr==0 ){
+          assert( pE1!=0 );
+          ExprSetProperty(pE1, EP_CanBeNull);
         }
         pE2 = sqlite3CreateColumnExpr(db, pSrc, i+1, iRightCol);
         sqlite3SrcItemColumnUsed(pRight, iRightCol);
