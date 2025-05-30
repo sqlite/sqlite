@@ -80,7 +80,7 @@ typedef sqlite3_uint64 u64;
 ** Macros needed to provide flexible arrays in a portable way
 */
 #ifndef offsetof
-# define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
 #endif
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define FLEXARRAY
