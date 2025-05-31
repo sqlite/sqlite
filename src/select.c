@@ -596,7 +596,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
         }
         pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
         sqlite3SrcItemColumnUsed(&pSrc->a[iLeft], iLeftCol);
-        if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
+        if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 && pParse->nErr==0 ){
           /* This branch runs if the query contains one or more RIGHT or FULL
           ** JOINs.  If only a single table on the left side of this join
           ** contains the zName column, then this branch is a no-op.
@@ -612,6 +612,8 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           */
           ExprList *pFuncArgs = 0;   /* Arguments to the coalesce() */
           static const Token tkCoalesce = { "coalesce", 8 };
+          assert( pE1!=0 );
+          ExprSetProperty(pE1, EP_CanBeNull);
           while( tableAndColumnIndex(pSrc, iLeft+1, i, zName, &iLeft, &iLeftCol,
                                      pRight->fg.isSynthUsing)!=0 ){
             if( pSrc->a[iLeft].fg.isUsing==0
@@ -628,7 +630,13 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           if( pFuncArgs ){
             pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
             pE1 = sqlite3ExprFunction(pParse, pFuncArgs, &tkCoalesce, 0);
+            if( pE1 ){
+              pE1->affExpr = sqlite3ExprAffinity(pFuncArgs->a[0].pExpr);
+            }
           }
+        }else if( (pSrc->a[i+1].fg.jointype & JT_LEFT)!=0 && pParse->nErr==0 ){
+          assert( pE1!=0 );
+          ExprSetProperty(pE1, EP_CanBeNull);
         }
         pE2 = sqlite3CreateColumnExpr(db, pSrc, i+1, iRightCol);
         sqlite3SrcItemColumnUsed(pRight, iRightCol);
