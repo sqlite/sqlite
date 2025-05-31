@@ -62,7 +62,8 @@ testfixture_nb myvar {
 }
 
 # Give the [testfixture_nb] command time to start
-after 1000
+after 1000 {set xyz 1}
+vwait xyz
 
 db timeout 500
 set tm [lindex [time {
