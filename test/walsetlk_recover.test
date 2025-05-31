@@ -19,7 +19,6 @@ set testprefix walsetlk_recover
 
 ifcapable !wal {finish_test ; return }
 ifcapable !setlk_timeout {finish_test ; return }
-ifcapable !snapshot {finish_test; return}
 
 do_execsql_test 1.0 {
   PRAGMA journal_mode = wal;

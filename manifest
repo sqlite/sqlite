@@ -1,5 +1,5 @@
-C If\sblocking\slocks\sare\senabled,\savoid\susing\sthe\sbusy\shandler\swhen\sblocked\sby\sanother\sprocess\srunning\srecovery.
-D 2025-05-30T20:52:18.193
+C Fix\sassert()\sstatements\sin\sos_unix.c\sand\sos_win.c.\sAllow\swalsetlk_recover.test\sto\srun\sin\snon-SQLITE_ENABLE_SNAPSHOT\sbuilds.
+D 2025-05-31T15:10:41.660
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -770,8 +770,8 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 8d9b9efbf337b5d59dbb259b7a8ca745f68d4f15495dbe17737b3c325c226363
-F src/os_win.c b39f31fb0b137d67091d21880f0fded6b1c3c8c59b9e24e42844a1c0070437d4
+F src/os_unix.c 04e054ab86d86a7be99ebe5265922687791a40df5afc781d059beb47f4a40acd
+F src/os_win.c 6535f8d41674ec9512b1dc516710af5e210db7e51149a500e14bd5b811000601
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 23c0f17deb892da6b32fef1f465507df7ab5cd01d774288cb43695658a649259
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2036,7 +2036,7 @@ F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533
 F test/walsetlk.test 9079cd8ef82570b8cf0067f31e049a72bec353fb2d5f0cc88f1736dc42ba9704
 F test/walsetlk2.test 9097083633cdf55bf1098b694fb8651d0356d38fef28b869481d18029d7ceaf4
 F test/walsetlk3.test 1b82bd92dea7e58f498b4399b0b3d26773dd8ac5c74205ce4a23c207cb8e85fe
-F test/walsetlk_recover.test f653e7c85f77ba51828ba64d2d98f42f4afaf26bbd82ac60fbf1c6c8063e370f
+F test/walsetlk_recover.test 7c43dbcf550324ee1b37f40f21150bcbb66a028e4be5f10547599a34ffee9123
 F test/walsetlk_snapshot.test 6376fc8a76da4571eb35cf4aef06105f716c5e52f991cefec44b9c7015aadf1e
 F test/walshared.test 42e3808582504878af237ea02c42ca793e8a0efaa19df7df26ac573370dbc7a3
 F test/walslow.test 0c51843836c9dcf40a5ac05aa781bfb977b396ee2c872d92bd48b79d5dd9aa23
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe11f85fd3283bb7002f43bd8b796e9e7b67f6d1a92eb676be06b46d1458fc1d
-R 23bc39f2089ecb41cbb93275af5fee9c
+P a35236757ab57c4c9b34e47c5dbc10d8f1220f8152955f5303cf9c3902ee169b
+R eaf3d33697a02bafeb3824ed740b8b2a
 U dan
-Z d039c7225445fc871711c264f1609f48
+Z 2a8dae12be43752fd4cda67357fb4b7f
 # Remove this line to create a well-formed Fossil manifest.
