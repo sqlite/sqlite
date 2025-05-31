@@ -887,12 +887,21 @@ static int strlen30(const char *z){
 
 /*
 ** Return the length of a string in characters.  Multibyte UTF8 characters
-** count as a single character.
+** count as a single character for single-width characters, or as two
+** characters for double-width characters.
 */
 static int strlenChar(const char *z){
   int n = 0;
   while( *z ){
-    if( (0xc0&*(z++))!=0x80 ) n++;
+    if( (0x80&z[0])==0 ){
+      n++;
+      z++;
+    }else{
+      int u = 0;
+      int len = decodeUtf8((const u8*)z, &u);
+      z += len;
+      n += cli_wcwidth(u);
+    }
   }
   return n;
 }
