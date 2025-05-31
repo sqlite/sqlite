@@ -4245,9 +4245,9 @@ static int compoundHasDifferentAffinities(Select *p){
 **             from 2015-02-09.)
 **
 **   (3)  If the subquery is the right operand of a LEFT JOIN then
-**        (3a) the subquery may not be a join and
-**        (3b) the FROM clause of the subquery may not contain a virtual
-**             table and
+**        (3a) the subquery may not be a join
+**        (**) Was (3b): "the FROM clause of the subquery may not contain
+**             a virtual table"
 **        (**) Was: "The outer query may not have a GROUP BY." This case
 **             is now managed correctly
 **        (3d) the outer query may not be DISTINCT.
@@ -4463,7 +4463,7 @@ static int flattenSubquery(
   */
   if( (pSubitem->fg.jointype & (JT_OUTER|JT_LTORJ))!=0 ){
     if( pSubSrc->nSrc>1                        /* (3a) */
-     || IsVirtual(pSubSrc->a[0].pSTab)         /* (3b) */
+     /**** || IsVirtual(pSubSrc->a[0].pSTab)      (3b)-omitted */
      || (p->selFlags & SF_Distinct)!=0         /* (3d) */
      || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){
