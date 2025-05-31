@@ -2110,6 +2110,10 @@ static void generateColumnTypes(
 #endif
     sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, SQLITE_TRANSIENT);
   }
+#else
+  UNUSED_PARAMETER(pParse);
+  UNUSED_PARAMETER(pTabList);
+  UNUSED_PARAMETER(pEList);
 #endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 }
 

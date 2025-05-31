@@ -2856,6 +2856,7 @@ static int removeFromSharingList(BtShared *pBt){
   sqlite3_mutex_leave(pMainMtx);
   return removed;
 #else
+  UNUSED_PARAMETER( pBt );
   return 1;
 #endif
 }
@@ -11317,6 +11318,7 @@ void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
 */
 int sqlite3BtreeSchemaLocked(Btree *p){
   int rc;
+  UNUSED_PARAMETER(p);  /* only used in DEBUG builds */
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
   rc = querySharedCacheTableLock(p, SCHEMA_ROOT, READ_LOCK);
