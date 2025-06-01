@@ -1,5 +1,5 @@
-C Enhance\s"box"\sand\s"column"\smode\sformatting\sin\sthe\sCLI\sto\sbetter\sdeal\swith\ndouble-wide\scharacters.
-D 2025-05-31T20:51:42.476
+C Fix\sVACUUM\sso\sthat\sit\sworks\seven\swhen\sATTACH_WRITE\sis\sdisabled.
+D 2025-06-01T16:10:25.448
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -796,7 +796,7 @@ F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c 9b54135e5f1352f06b1d23d7c183f124c1f33de6ea8997cd801f0f215c43591d
+F src/test1.c 13cc07851f989141b29f7ca3c6c90f6d18f90081ab423c66716c8cb29d277d1f
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -853,7 +853,7 @@ F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
-F src/vacuum.c d580ceb395c1ae3d59da41cbfea60683ff7dd2b94ddf4d0f5657620159e2eeb7
+F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
 F src/vdbe.c 0feab5781141acca67bd5de84172fff902304274ec5cfe58609f005b8d160050
 F src/vdbe.h 31eddcffc1d14c76c2a20fe4e137e1ee43d44f370896fae14a067052801a3625
 F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
@@ -1960,7 +1960,7 @@ F test/uri.test 1250724af9beeed2d6c3716f5b990c483200c54f408d3c0ec9543a3c7961f8fc
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
 F test/utf16align.test 9fde0bb5d3a821594aa68c6829ab9c5453a084384137ebb9f6153e2d678039da
 F test/vacuum-into.test 5a489714feecfdabfc7b293be4111564a173dee92c0d6818dd0207f3ade65783
-F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
+F test/vacuum.test f3b2257a4fcd659513c866a5d9e5f70999cc58fd5d74e979290385fa350b79ee
 F test/vacuum2.test 9fd45ce6ce29f5614c249e03938d3567c06a9e772d4f155949f8eafe2d8af520
 F test/vacuum3.test d9d9a04ee58c485b94694fd4f68cffaba49c32234fdefe1ac1a622c5e17d4ce3
 F test/vacuum4.test 7ea76b769fffeb41f925303b04cbcf5a5bbeabe55e4c60ae754ff24eeeb7c010
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1afb1ac3e9f0a122f1374799c09b60a0dd5443434d4567d94385096ada91bf12
-R 241d4fe28f71a66e02a0774aedd929d3
+P b0de22ed0abf2ea5d269f191c884d7b2be167a2ed27018c25aaa0ea238cd621a
+R 66acec589170351980ed2fbfcdde26ad
 U drh
-Z 36464e257b6f6b054003c79b6284e296
+Z 93ec91429727f46ec026565cc279bc29
 # Remove this line to create a well-formed Fossil manifest.
