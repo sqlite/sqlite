@@ -1,5 +1,5 @@
-C Cherrypick\sobscure\s(fuzzer-generated)\sRIGHT\sJOIN\sbug\sfixes\sfrom\strunk.
-D 2025-05-31T18:46:44.241
+C Fix\san\soff-by-one\serror\sin\sthe\ssize\scomputation\sof\sa\svdbe-sorter.
+D 2025-06-01T21:49:45.627
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -861,7 +861,7 @@ F src/vdbeapi.c 28fab30ed0acc981aecfdcaab0a421503609078e29850eb28494816682baf0a7
 F src/vdbeaux.c 948c379976885a073b54cc7d8ffda087dc1a1095d1f5bb8df218796f8c933ac3
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
 F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
-F src/vdbesort.c 49e366d0216c782eba287bf602384e4330d2526a22f1275492d2785ce103c79b
+F src/vdbesort.c 706acdc581944cf6381f75c0ccf40f2debf71cdd51c5056592f3b74a1a0c3624
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
@@ -2207,11 +2207,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6ceb1322ef10c1586a7ca97b377dce0c6e35d9abbdbff5a01e841a487eac08cb
-Q +60adc78a22956429d34ccc4e2c193c5994c11c3b3cff7901d47fad7d92dba935
-Q +8d393ca07fe09f48d77adb517e2e4baaa58a9251422de62a0504999205d3ea1d
-Q +cf5b37b3a39013d8ca9de92da2289346caf52b56daff59e19b140cc586a3421f
-R ffdd73b33732d33d49d6dc53eb2a2c21
+P a61da8169b4ac64c20b3f1dfe3bb2a57c5e6517828b0224bcde3ee93949733e1
+Q +8b7a7fcf62e5c2742c243808fa482472954f2b4aae0bc7ae513bc07065c93737
+R 006bf61a8c231ef984bac8a365197718
 U drh
-Z 76d240f3bf8c7f25ba94ce8583ac551a
+Z ec6f9fc2f97b77f2ae574ce0af539602
 # Remove this line to create a well-formed Fossil manifest.
