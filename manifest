@@ -1,5 +1,5 @@
-C Fix\sVACUUM\sso\sthat\sit\sworks\seven\swhen\sATTACH_WRITE\sis\sdisabled.
-D 2025-06-01T16:10:25.448
+C Fix\san\soff-by-one\serror\sin\sthe\ssize\scomputation\sof\sa\svdbe-sorter.\n[forum:/forumpost/c1cc8b057a|Forum\spost\sc1cc8b057a].\nProblem\sintroduced\sby\scheckin\s[d4307a0d43f42e96].
+D 2025-06-01T21:38:35.769
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -861,7 +861,7 @@ F src/vdbeapi.c 28fab30ed0acc981aecfdcaab0a421503609078e29850eb28494816682baf0a7
 F src/vdbeaux.c 948c379976885a073b54cc7d8ffda087dc1a1095d1f5bb8df218796f8c933ac3
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
 F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
-F src/vdbesort.c 49e366d0216c782eba287bf602384e4330d2526a22f1275492d2785ce103c79b
+F src/vdbesort.c 706acdc581944cf6381f75c0ccf40f2debf71cdd51c5056592f3b74a1a0c3624
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b0de22ed0abf2ea5d269f191c884d7b2be167a2ed27018c25aaa0ea238cd621a
-R 66acec589170351980ed2fbfcdde26ad
+P 42494f85acb303919d3f1f2202f8b95fbd657652da4b8dc00451c10ea6c496e0
+R 60ded1de0032e5faec0ccf76dc3b70d5
 U drh
-Z 93ec91429727f46ec026565cc279bc29
+Z eb3bbd192192ef194bc4af8ae3d8408b
 # Remove this line to create a well-formed Fossil manifest.
