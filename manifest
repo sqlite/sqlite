@@ -1,5 +1,5 @@
-C Fixes\sto\sensure\sSQLITE_ENABLE_SETLK_TIMEOUT\sbuilds\suse\sa\sblocking\slock\sand\sdo\snot\scall\sxSleep()\swhen\s(a)\sopening\sa\ssnapshot\stransaction,\sand\s(b)\swhen\sblocked\sby\sanother\sprocess\srunning\srecovery.
-D 2025-06-02T18:48:36.921
+C Increase\sthe\sversion\snumber\sto\s3.51.0
+D 2025-06-02T18:58:42.711
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -8,7 +8,7 @@ F Makefile.in c3e414df4dc8dfb12f1f6baf129fcb6d18cd0ebd3c9109370fb3fceeeef9a37a
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc aa4f9ae86cf59fe94a3e93bf1a4c241b3ffffe96cf4d823517acf593c277223b
 F README.md e28077cfbef795e99c9c75ed95aa7257a1166709b562076441a8506ac421b7c1
-F VERSION 001dea55eb8304ec9130b6b44a32d3fc349f279d45a7e224fc0730c3cb8e2372
+F VERSION 16eddb43056a79c1977427ab7a05f3457c373fa159dcdced8754eb89ce7e06b8
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -2209,9 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f184d1d236e47962658a4639d9533f67a525b74cfe0f06c93e9b85fdcd02a15f 8efb95e0d4670b9c5dbd8cf34512334f47951a8dff8fdadc8645f75076acd91f
-R 87f8c350d69796fb64023493aed9406c
-T +closed 8efb95e0d4670b9c5dbd8cf34512334f47951a8dff8fdadc8645f75076acd91f
-U dan
-Z 2e11cb3824d33d1f7410effb2728f2aa
+P 7f9c0cdd0630a41db359b188b226a1ad6a3bae1663c27169acfe25edc7fb171b
+R 4efb6bc44e0a81b61f5530f71db37e62
+U drh
+Z c89f71bacec5bb21cafac9f77551c3dc
 # Remove this line to create a well-formed Fossil manifest.
