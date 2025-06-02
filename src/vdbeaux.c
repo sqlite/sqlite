@@ -4202,24 +4202,17 @@ void sqlite3VdbeSerialGet(
   return;
 }
 /*
-** This routine is used to allocate sufficient space for an UnpackedRecord
-** structure large enough to be used with sqlite3VdbeRecordUnpack() if
-** the first argument is a pointer to KeyInfo structure pKeyInfo.
+** Allocate sufficient space for an UnpackedRecord structure large enough
+** to hold a decoded index record for pKeyInfo.
 **
-** The space is either allocated using sqlite3DbMallocRaw() or from within
-** the unaligned buffer passed via the second and third arguments (presumably
-** stack space). If the former, then *ppFree is set to a pointer that should
-** be eventually freed by the caller using sqlite3DbFree(). Or, if the
-** allocation comes from the pSpace/szSpace buffer, *ppFree is set to NULL
-** before returning.
-**
-** If an OOM error occurs, NULL is returned.
+** The space is allocated using sqlite3DbMallocRaw().  If an OOM error
+** occurs, NULL is returned.
 */
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   KeyInfo *pKeyInfo               /* Description of the record */
 ){
   UnpackedRecord *p;              /* Unpacked record to return */
-  int nByte;                      /* Number of bytes required for *p */
+  u64 nByte;                      /* Number of bytes required for *p */
   assert( sizeof(UnpackedRecord) + sizeof(Mem)*65536 < 0x7fffffff );
   nByte = ROUND8P(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nKeyField+1);
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
@@ -4250,6 +4243,7 @@ void sqlite3VdbeRecordUnpack(
   Mem *pMem = p->aMem;
 
   p->default_rc = 0;
+  assert( p->pKeyInfo==pKeyInfo );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
@@ -4275,6 +4269,8 @@ void sqlite3VdbeRecordUnpack(
     ** warnings from MSAN. */
     sqlite3VdbeMemSetNull(pMem-1);
   }
+  testcase( u == pKeyInfo->nKeyField + 1 );
+  testcase( u < pKeyInfo->nKeyField + 1 );
   assert( u<=pKeyInfo->nKeyField + 1 );
   p->nField = u;
 }

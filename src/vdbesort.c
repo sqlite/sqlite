@@ -969,7 +969,8 @@ int sqlite3VdbeSorterInit(
   assert( pCsr->eCurType==CURTYPE_SORTER );
   assert( sizeof(KeyInfo) + UMXV(pCsr->pKeyInfo->nKeyField)*sizeof(CollSeq*)
                < 0x7fffffff );
-  szKeyInfo = SZ_KEYINFO(pCsr->pKeyInfo->nKeyField);
+  assert( pCsr->pKeyInfo->nKeyField<=pCsr->pKeyInfo->nAllField );
+  szKeyInfo = SZ_KEYINFO(pCsr->pKeyInfo->nAllField);
   sz = SZ_VDBESORTER(nWorker+1);
 
   pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);
@@ -983,7 +984,12 @@ int sqlite3VdbeSorterInit(
     pKeyInfo->db = 0;
     if( nField && nWorker==0 ){
       pKeyInfo->nKeyField = nField;
+      assert( nField<=pCsr->pKeyInfo->nAllField );
     }
+    /* It is OK that pKeyInfo reuses the aSortFlags field from pCsr->pKeyInfo,
+    ** since the pCsr->pKeyInfo->aSortFlags[] array is invariant and lives
+    ** longer that pSorter. */
+    assert( pKeyInfo->aSortFlags==pCsr->pKeyInfo->aSortFlags );
     sqlite3BtreeEnter(pBt);
     pSorter->pgsz = pgsz = sqlite3BtreeGetPageSize(pBt);
     sqlite3BtreeLeave(pBt);

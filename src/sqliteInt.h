@@ -2644,9 +2644,10 @@ struct FKey {
 ** argument to sqlite3VdbeKeyCompare and is used to control the
 ** comparison of the two index keys.
 **
-** Note that aSortOrder[] and aColl[] have nField+1 slots.  There
-** are nField slots for the columns of an index then one extra slot
-** for the rowid at the end.
+** The aSortOrder[] and aColl[] arrays have nAllField slots each. There
+** are nKeyField slots for the columns of an index then extra slots
+** for the rowid or key at the end.  The aSortOrder array is located after
+** the aColl[] array.
 */
 struct KeyInfo {
   u32 nRef;           /* Number of references to this KeyInfo object */
