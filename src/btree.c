@@ -872,7 +872,7 @@ static int btreeMoveto(
     assert( nKey==(i64)(int)nKey );
     pIdxKey = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
     if( pIdxKey==0 ) return SQLITE_NOMEM_BKPT;
-    sqlite3VdbeRecordUnpack(pKeyInfo, (int)nKey, pKey, pIdxKey);
+    sqlite3VdbeRecordUnpack((int)nKey, pKey, pIdxKey);
     if( pIdxKey->nField==0 || pIdxKey->nField>pKeyInfo->nAllField ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{

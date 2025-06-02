@@ -4218,7 +4218,6 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
   if( !p ) return 0;
   p->aMem = (Mem*)&((char*)p)[ROUND8P(sizeof(UnpackedRecord))];
-  assert( pKeyInfo->aSortFlags!=0 );
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nKeyField + 1;
   return p;
@@ -4230,7 +4229,6 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
 ** contents of the decoded record.
 */
 void sqlite3VdbeRecordUnpack(
-  KeyInfo *pKeyInfo,     /* Information about the record format */
   int nKey,              /* Size of the binary record */
   const void *pKey,      /* The binary record */
   UnpackedRecord *p      /* Populate this structure before returning. */
@@ -4241,9 +4239,9 @@ void sqlite3VdbeRecordUnpack(
   u16 u;                          /* Unsigned loop counter */
   u32 szHdr;
   Mem *pMem = p->aMem;
+  KeyInfo *pKeyInfo = p->pKeyInfo;
 
   p->default_rc = 0;
-  assert( p->pKeyInfo==pKeyInfo );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
@@ -5130,6 +5128,7 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
   ** The easiest way to enforce this limit is to consider only records with
   ** 13 fields or less. If the first field is an integer, the maximum legal
   ** header size is (12*5 + 1 + 1) bytes.  */
+  assert( p->pKeyInfo->aSortFlags!=0 );
   if( p->pKeyInfo->nAllField<=13 ){
     int flags = p->aMem[0].flags;
     if( p->pKeyInfo->aSortFlags[0] ){
@@ -5488,7 +5487,6 @@ void sqlite3VdbePreUpdateHook(
   i64 iKey2;
   PreUpdate preupdate;
   const char *zTbl = pTab->zName;
-  static const u8 fakeSortOrder = 0;
 #ifdef SQLITE_DEBUG
   int nRealCol;
   if( pTab->tabFlags & TF_WithoutRowid ){
@@ -5527,7 +5525,7 @@ void sqlite3VdbePreUpdateHook(
   preupdate.pKeyinfo->db = db;
   preupdate.pKeyinfo->enc = ENC(db);
   preupdate.pKeyinfo->nKeyField = pTab->nCol;
-  preupdate.pKeyinfo->aSortFlags = (u8*)&fakeSortOrder;
+  preupdate.pKeyinfo->aSortFlags = 0; /* Indicate .aColl, .nAllField uninit */
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.pTab = pTab;

@@ -766,7 +766,7 @@ static int vdbeSorterCompareTail(
 ){
   UnpackedRecord *r2 = pTask->pUnpacked;
   if( *pbKey2Cached==0 ){
-    sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
+    sqlite3VdbeRecordUnpack(nKey2, pKey2, r2);
     *pbKey2Cached = 1;
   }
   return sqlite3VdbeRecordCompareWithSkip(nKey1, pKey1, r2, 1);
@@ -793,7 +793,7 @@ static int vdbeSorterCompare(
 ){
   UnpackedRecord *r2 = pTask->pUnpacked;
   if( !*pbKey2Cached ){
-    sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
+    sqlite3VdbeRecordUnpack(nKey2, pKey2, r2);
     *pbKey2Cached = 1;
   }
   return sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
@@ -833,6 +833,7 @@ static int vdbeSorterCompareText(
       );
     }
   }else{
+    assert( pTask->pSorter->pKeyInfo->aSortFlags!=0 );
     assert( !(pTask->pSorter->pKeyInfo->aSortFlags[0]&KEYINFO_ORDER_BIGNULL) );
     if( pTask->pSorter->pKeyInfo->aSortFlags[0] ){
       res = res * -1;
@@ -896,6 +897,7 @@ static int vdbeSorterCompareInt(
     }
   }
 
+  assert( pTask->pSorter->pKeyInfo->aSortFlags!=0 );
   if( res==0 ){
     if( pTask->pSorter->pKeyInfo->nKeyField>1 ){
       res = vdbeSorterCompareTail(
@@ -2769,7 +2771,7 @@ int sqlite3VdbeSorterCompare(
   assert( r2->nField==nKeyCol );
 
   pKey = vdbeSorterRowkey(pSorter, &nKey);
-  sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, r2);
+  sqlite3VdbeRecordUnpack(nKey, pKey, r2);
   for(i=0; i<nKeyCol; i++){
     if( r2->aMem[i].flags & MEM_Null ){
       *pRes = -1;

@@ -2648,6 +2648,11 @@ struct FKey {
 ** are nKeyField slots for the columns of an index then extra slots
 ** for the rowid or key at the end.  The aSortOrder array is located after
 ** the aColl[] array.
+**
+** If SQLITE_ENABLE_PREUPDATE_HOOK is defined, then aSortFlags might be NULL
+** to indicate that this object is for use by a preupdate hook.  When aSortFlags
+** is NULL, then nAllField is uninitialized and no space is allocated for
+** aColl[], so those fields may not be used.
 */
 struct KeyInfo {
   u32 nRef;           /* Number of references to this KeyInfo object */
@@ -2659,7 +2664,9 @@ struct KeyInfo {
   CollSeq *aColl[FLEXARRAY]; /* Collating sequence for each term of the key */
 };
 
-/* The size (in bytes) of a KeyInfo object with up to N fields */
+/* The size (in bytes) of a KeyInfo object with up to N fields.  This includes
+** the main body of the KeyInfo object and the aColl[] array of N elements,
+** but does not count the memory used to hold aSortFlags[]. */
 #define SZ_KEYINFO(N)  (offsetof(KeyInfo,aColl) + (N)*sizeof(CollSeq*))
 
 /* The size of a bare KeyInfo with no aColl[] entries */
@@ -2687,9 +2694,8 @@ struct KeyInfo {
 **
 ** An instance of this object serves as a "key" for doing a search on
 ** an index b+tree. The goal of the search is to find the entry that
-** is closed to the key described by this object.  This object might hold
-** just a prefix of the key.  The number of fields is given by
-** pKeyInfo->nField.
+** is closest to the key described by this object.  This object might hold
+** just a prefix of the key.  The number of fields is given by nField.
 **
 ** The r1 and r2 fields are the values to return if this key is less than
 ** or greater than a key in the btree, respectively.  These are normally
@@ -2699,7 +2705,7 @@ struct KeyInfo {
 ** The key comparison functions actually return default_rc when they find
 ** an equals comparison.  default_rc can be -1, 0, or +1.  If there are
 ** multiple entries in the b-tree with the same key (when only looking
-** at the first pKeyInfo->nFields,) then default_rc can be set to -1 to
+** at the first nField elements) then default_rc can be set to -1 to
 ** cause the search to find the last match, or +1 to cause the search to
 ** find the first match.
 **
@@ -2711,8 +2717,8 @@ struct KeyInfo {
 ** b-tree.
 */
 struct UnpackedRecord {
-  KeyInfo *pKeyInfo;  /* Collation and sort-order information */
-  Mem *aMem;          /* Values */
+  KeyInfo *pKeyInfo;  /* Comparison info for the index that is unpacked */
+  Mem *aMem;          /* Values for columns of the index */
   union {
     char *z;            /* Cache of aMem[0].z for vdbeRecordCompareString() */
     i64 i;              /* Cache of aMem[0].u.i for vdbeRecordCompareInt() */
