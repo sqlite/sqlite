@@ -1,5 +1,5 @@
-C Improve\sthe\saccuracy\sof\saffinity\sand\scollating\ssequence\sanalysis\sfor\nNATURAL\sJOINs\sto\sthe\sleft\sof\sRIGHT\sJOINs\swhere\ssource\stables\sare\sviews\nor\ssubqueries.
-D 2025-06-02T18:42:49.982
+C Fix\sJSONB\sedit\sso\sthat\swhen\sit\sis\strying\sto\sreduce\sthe\ssize\sof\san\selement\nit\sunderstands\s0xf0\s(8-byte)\ssizes.
+D 2025-06-02T23:41:56.332
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
-F src/json.c d34969ecb9555f33fc0b2227628189a9a4e20dda5df5d173db9918a014aa7ad1
+F src/json.c cb87977b1ee25ee7d27505d65a9261b687395bf895342c8ba566b7c01aee2047
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d7edd8e671237539d795d30daaf888908a2c82e99bade4c78f3be021e8b7d655
 F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
@@ -2207,9 +2207,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 86f0e4eabe1010c00955edf19e6d7e251ca03c33dd6eed38460148473aea8e42
-Q +f184d1d236e47962658a4639d9533f67a525b74cfe0f06c93e9b85fdcd02a15f
-R 66afacf81ef488bbb70ae8ef19dd342a
+P d6a8b1ea5ca7e0d4e640144a4b3ada516486564bb5922af688328399c4cc4427
+Q +5b3de6e8ab6b228bf6c0e0c31b50ca29d8b7852b460eaaca6c6ecf5a3c083cab
+R 72fb5c22cd4c5a09904409c7a75e4355
 U drh
-Z 4004d915cde8c6e4b997df8dbcc7f756
+Z d5d4211c5c7fc4cc7586494029a3a3cb
 # Remove this line to create a well-formed Fossil manifest.
