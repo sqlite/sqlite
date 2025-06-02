@@ -77,23 +77,13 @@ example will install the extension in the /opt/tcl directory.
 
 	$ cd sqlite-*-tea
 	$ ./configure --prefix=/opt/tcl
-	$ make
+	$ make test
 	$ make install
 
 WINDOWS BUILD
 =============
 
-The recommended method to build extensions under windows is to use the
-Msys + Mingw build process. This provides a Unix-style build while
-generating native Windows binaries. Using the Msys + Mingw build tools
-means that you can use the same configure script as per the Unix build
-to create a Makefile. See the tcl/win/README file for the URL of
-the Msys + Mingw download.
+On Windows this build is known to work on Cygwin and some Msys2
+environments. We do not currently support Microsoft makefiles for
+native Windows builds.
 
-If you have VC++ then you may wish to use the files in the win
-subdirectory and build the extension using just VC++. These files have
-been designed to be as generic as possible but will require some
-additional maintenance by the project developer to synchronise with
-the TEA configure.in and Makefile.in files. Instructions for using the
-VC++ makefile are written in the first part of the Makefile.vc
-file.
