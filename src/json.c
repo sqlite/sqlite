@@ -1285,8 +1285,10 @@ static int jsonBlobChangePayloadSize(
     nExtra = 1;
   }else if( szType==13 ){
     nExtra = 2;
-  }else{
+  }else if( szType==14 ){
     nExtra = 4;
+  }else{
+    nExtra = 8;
   }
   if( szPayload<=11 ){
     nNeeded = 0;
