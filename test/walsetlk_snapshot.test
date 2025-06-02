@@ -18,8 +18,17 @@ source $testdir/lock_common.tcl
 set testprefix walsetlk_snapshot
 
 ifcapable !wal {finish_test ; return }
-ifcapable !setlk_timeout {finish_test ; return }
 ifcapable !snapshot {finish_test; return}
+
+db close
+testvfs tvfs -fullshm 1
+sqlite3 db test.db -vfs tvfs
+tvfs script sleep_callback
+tvfs filter xSleep
+set ::sleep_count 0
+proc sleep_callback {args} {
+  incr ::sleep_count
+}
 
 do_execsql_test 1.0 {
   PRAGMA journal_mode = wal;
@@ -83,6 +92,18 @@ do_execsql_test 1.4 {
 sqlite3_snapshot_free $::snap
 
 vwait myvar
+
+# All SQLite builds should pass the tests above. SQLITE_ENABLE_SETLK_TIMEOUT=1
+# builds do so without calling the VFS xSleep method.
+if {$::sqlite_options(setlk_timeout)==1} {
+  do_test 1.5.1 {
+    set ::sleep_count
+  } 0
+} else {
+  do_test 1.5.2 {
+    expr $::sleep_count>0
+  } 1
+}
 
 finish_test
 

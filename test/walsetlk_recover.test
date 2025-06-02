@@ -18,7 +18,7 @@ source $testdir/lock_common.tcl
 set testprefix walsetlk_recover
 
 ifcapable !wal {finish_test ; return }
-ifcapable !setlk_timeout {finish_test ; return }
+# ifcapable !setlk_timeout {finish_test ; return }
 
 do_execsql_test 1.0 {
   PRAGMA journal_mode = wal;
@@ -69,7 +69,7 @@ proc sleep_callback {args} {
 }
 
 sqlite3 db test.db -vfs tvfs
-sqlite3_setlk_timeout db 500
+db timeout 500
 set tm [lindex [time {
   catch {
     db eval {SELECT * FROM t1}
@@ -88,9 +88,17 @@ do_execsql_test 1.4 {
 db close
 tvfs delete
 
-do_test 1.5 {
-  set ::sleep_count
-} 0
+# All SQLite builds should pass the tests above. SQLITE_ENABLE_SETLK_TIMEOUT=1
+# builds do so without calling the VFS xSleep method.
+if {$::sqlite_options(setlk_timeout)==1} {
+  do_test 1.5.1 {
+    set ::sleep_count
+  } 0
+} else {
+  do_test 1.5.2 {
+    expr $::sleep_count>0
+  } 1
+}
 
 finish_test
 
