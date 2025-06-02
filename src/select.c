@@ -631,7 +631,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
             pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
             pE1 = sqlite3ExprFunction(pParse, pFuncArgs, &tkCoalesce, 0);
             if( pE1 ){
-              pE1->affExpr = sqlite3ExprAffinity(pFuncArgs->a[0].pExpr);
+              pE1->affExpr = SQLITE_AFF_DEFER;
             }
           }
         }else if( (pSrc->a[i+1].fg.jointype & JT_LEFT)!=0 && pParse->nErr==0 ){
