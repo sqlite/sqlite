@@ -2722,7 +2722,11 @@ static int winHandleLockTimeout(
       if( res==WAIT_OBJECT_0 ){
         ret = TRUE;
       }else if( res==WAIT_TIMEOUT ){
+#if SQLITE_ENABLE_SETLK_TIMEOUT==1
         rc = SQLITE_BUSY_TIMEOUT;
+#else
+        rc = SQLITE_BUSY;
+#endif
       }else{
         /* Some other error has occurred */
         rc = SQLITE_IOERR_LOCK;
