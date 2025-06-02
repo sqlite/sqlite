@@ -1,5 +1,5 @@
-C Slight\smodernization\sof\sthe\sTEA\sREADME.txt.
-D 2025-06-02T15:17:59.511
+C Improve\sthe\saccuracy\sof\saffinity\sand\scollating\ssequence\sanalysis\sfor\nNATURAL\sJOINs\sto\sthe\sleft\sof\sRIGHT\sJOINs\swhere\ssource\stables\sare\sviews\nor\ssubqueries.\s\sInitial\sproblem\sreport\sin\n[forum:/forumpost/829306db47|forum\spost\s829306db47].
+D 2025-06-02T18:34:17.422
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -735,7 +735,7 @@ F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
 F src/dbpage.c b3e218f8ed74fcbb7fa805df8ca669a3718d397617b3d8a8aac3307dc315c4d6
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 6f184da1f36576ad1ecc48a03f14774235373c64f88d462c710834930ee6c145
+F src/expr.c f16fa5cbd849991462edf1d31bb7def5b970bb9611afcb4ea21c77e88e52a220
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c 7686ea382b20e8bfe2ab9de76150c99ee7b6e83523561f3c7787e0f68cb435c2
@@ -784,12 +784,12 @@ F src/printf.c 3b91c334f528359145f4dde0dedd945bbb21044d0825ea064934d7222d61662c
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c 9929e56e78f958657bfbb8234916473468243f90af359cc646d97c3ee809c79c
+F src/select.c 882d739e0d5e6c7a8b46a3cca3ada37fe1a56301f1360d6b141312c666bbe482
 F src/shell.c.in 1da613953db4c8d50e3a4a66fa7d69b4c95edb3628941d732637d3c35ea0dce6
 F src/sqlite.h.in 22882ddd3a70751aa8864c81993ee4562ed54c2c508b6270f75e223ffee38e1b
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
-F src/sqliteInt.h 75290111d8e37d35ec48a4fbb4e6af5611c9a551dedecceb896734ace9f60018
+F src/sqliteInt.h 0eeb2d363e7994aba3b482d3a9c88248b4d1fdad39cb65ff48621b2ae494a763
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1376,7 +1376,7 @@ F test/joinC.test 1f1a602c2127f55f136e2cbd3bf2d26546614bf8cffe5902ec1ac9c07f87f2
 F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be28
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
-F test/joinH.test 29a25ea2c6323c6dd1ee7f2da906f24efbd467d60a9531e6704b8e2c88de9b9a
+F test/joinH.test fd76024ff104baec16417db5cafc0894ad4e0863e70803e63c1bba0322706339
 F test/journal1.test bc61a4228db11bffca118bd358ba4b868524bf080f3532749de6c539656e20fa
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test e5aeff93a7776cf644dbc48dec277655cff80a1cd24689036abc87869b120ea6
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c9888a409565e6c8891a3dafa56962df364fb729a61df2701dc0bb282e36fb75
-R 18aff812c0e458ce4faf4f0cc718bfc5
-U stephan
-Z c396247e93c4ccc4319211c213bf549c
+P bf7be67e3fb7b75fc281997f7bf9aa69eaf4da6bdf2fefe359b12d25ec95f512
+R 1f718a77d399990842b8b713bc67dc26
+U drh
+Z a6d9c9cd6e3fa998e21f0f81450c5cf2
 # Remove this line to create a well-formed Fossil manifest.
