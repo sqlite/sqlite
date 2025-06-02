@@ -2674,7 +2674,14 @@ srctree-check:	$(TOP)\tool\srctree-check.tcl
 
 # Testing for a release
 #
-releasetest:
+releasetest: verify-source
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
+
+# xdevtest is like releasetest, except that it skips the
+# dependency on verify-source so that xdevtest can be run from
+# a modified source tree.
+#
+xdevtest:	
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
 
 

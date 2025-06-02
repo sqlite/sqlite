@@ -227,7 +227,7 @@ static int dbpageEof(sqlite3_vtab_cursor *pCursor){
 ** idxStr is not used
 */
 static int dbpageFilter(
-  sqlite3_vtab_cursor *pCursor, 
+  sqlite3_vtab_cursor *pCursor,
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
@@ -237,10 +237,11 @@ static int dbpageFilter(
   sqlite3 *db = pTab->db;
   Btree *pBt;
 
-  (void)idxStr;
-  
+  UNUSED_PARAMETER(idxStr);
+  UNUSED_PARAMETER(argc);
+
   /* Default setting is no rows of result */
-  pCsr->pgno = 1; 
+  pCsr->pgno = 1;
   pCsr->mxPgno = 0;
 
   if( idxNum & 2 ){
@@ -275,8 +276,8 @@ static int dbpageFilter(
 }
 
 static int dbpageColumn(
-  sqlite3_vtab_cursor *pCursor, 
-  sqlite3_context *ctx, 
+  sqlite3_vtab_cursor *pCursor,
+  sqlite3_context *ctx,
   int i
 ){
   DbpageCursor *pCsr = (DbpageCursor *)pCursor;

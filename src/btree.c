@@ -872,7 +872,7 @@ static int btreeMoveto(
     assert( nKey==(i64)(int)nKey );
     pIdxKey = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
     if( pIdxKey==0 ) return SQLITE_NOMEM_BKPT;
-    sqlite3VdbeRecordUnpack(pKeyInfo, (int)nKey, pKey, pIdxKey);
+    sqlite3VdbeRecordUnpack((int)nKey, pKey, pIdxKey);
     if( pIdxKey->nField==0 || pIdxKey->nField>pKeyInfo->nAllField ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
@@ -2856,6 +2856,7 @@ static int removeFromSharingList(BtShared *pBt){
   sqlite3_mutex_leave(pMainMtx);
   return removed;
 #else
+  UNUSED_PARAMETER( pBt );
   return 1;
 #endif
 }
@@ -11324,6 +11325,7 @@ void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
 */
 int sqlite3BtreeSchemaLocked(Btree *p){
   int rc;
+  UNUSED_PARAMETER(p);  /* only used in DEBUG builds */
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
   rc = querySharedCacheTableLock(p, SCHEMA_ROOT, READ_LOCK);

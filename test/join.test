@@ -1304,4 +1304,42 @@ do_execsql_test join-30.3 {
    WHERE x <= y;
 } {}
 
+# 2025-05-30 https://sqlite.org/forum/forumpost/4fc70203b61c7e12
+#
+# When converting a USING(x) or NATURAL into the constraint expression
+# t1.x==t2.x, mark the t1.x term as EP_CanBeNull if it is the left table
+# of a RIGHT JOIN.
+#
+reset_db
+db null NULL
+do_execsql_test join-31.1 {
+  CREATE TABLE t1(c0 INT , c1 INT); INSERT INTO t1(c0, c1) VALUES(NULL,11);
+  CREATE TABLE t2(c0 INT NOT NULL);
+  CREATE TABLE t2n(c0 INT);
+  CREATE TABLE t3(x INT);           INSERT INTO t3(x) VALUES(3);
+  CREATE TABLE t4(y INT);           INSERT INTO t4(y) VALUES(4);
+  CREATE TABLE t5(c0 INT, x INT);   INSERT INTO t5 VALUES(NULL, 5);
+}
+do_execsql_test join-31.2 {
+  SELECT * FROM t2 RIGHT JOIN t3 ON true LEFT JOIN t1 USING(c0);
+} {NULL 3 NULL}
+do_execsql_test join-31.3 {
+  SELECT * FROM t2 RIGHT JOIN t3 ON true NATURAL LEFT JOIN t1;
+} {NULL 3 NULL}
+do_execsql_test join-31.4 {
+  SELECT * FROM t2n RIGHT JOIN t3 ON true LEFT JOIN t1 USING(c0);
+} {NULL 3 NULL}
+do_execsql_test join-31.5 {
+  SELECT * FROM t5 LEFT JOIN t1 USING(c0);
+} {NULL 5 NULL}
+do_execsql_test join-31.6 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true LEFT JOIN t1 USING(c0);
+} {3 NULL NULL}
+do_execsql_test join-31.7 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true NATURAL LEFT JOIN t1;
+} {3 NULL NULL}
+do_execsql_test join-31.8 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true JOIN t4 ON true NATURAL LEFT JOIN t1;
+} {3 NULL 4 NULL}
+
 finish_test

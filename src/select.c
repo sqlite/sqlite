@@ -596,7 +596,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
         }
         pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iLeftCol);
         sqlite3SrcItemColumnUsed(&pSrc->a[iLeft], iLeftCol);
-        if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
+        if( (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 && pParse->nErr==0 ){
           /* This branch runs if the query contains one or more RIGHT or FULL
           ** JOINs.  If only a single table on the left side of this join
           ** contains the zName column, then this branch is a no-op.
@@ -612,6 +612,8 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           */
           ExprList *pFuncArgs = 0;   /* Arguments to the coalesce() */
           static const Token tkCoalesce = { "coalesce", 8 };
+          assert( pE1!=0 );
+          ExprSetProperty(pE1, EP_CanBeNull);
           while( tableAndColumnIndex(pSrc, iLeft+1, i, zName, &iLeft, &iLeftCol,
                                      pRight->fg.isSynthUsing)!=0 ){
             if( pSrc->a[iLeft].fg.isUsing==0
@@ -628,7 +630,13 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
           if( pFuncArgs ){
             pFuncArgs = sqlite3ExprListAppend(pParse, pFuncArgs, pE1);
             pE1 = sqlite3ExprFunction(pParse, pFuncArgs, &tkCoalesce, 0);
+            if( pE1 ){
+              pE1->affExpr = sqlite3ExprAffinity(pFuncArgs->a[0].pExpr);
+            }
           }
+        }else if( (pSrc->a[i+1].fg.jointype & JT_LEFT)!=0 && pParse->nErr==0 ){
+          assert( pE1!=0 );
+          ExprSetProperty(pE1, EP_CanBeNull);
         }
         pE2 = sqlite3CreateColumnExpr(db, pSrc, i+1, iRightCol);
         sqlite3SrcItemColumnUsed(pRight, iRightCol);
@@ -2105,6 +2113,10 @@ static void generateColumnTypes(
 #endif
     sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, SQLITE_TRANSIENT);
   }
+#else
+  UNUSED_PARAMETER(pParse);
+  UNUSED_PARAMETER(pTabList);
+  UNUSED_PARAMETER(pEList);
 #endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 }
 
@@ -4236,9 +4248,9 @@ static int compoundHasDifferentAffinities(Select *p){
 **             from 2015-02-09.)
 **
 **   (3)  If the subquery is the right operand of a LEFT JOIN then
-**        (3a) the subquery may not be a join and
-**        (3b) the FROM clause of the subquery may not contain a virtual
-**             table and
+**        (3a) the subquery may not be a join
+**        (**) Was (3b): "the FROM clause of the subquery may not contain
+**             a virtual table"
 **        (**) Was: "The outer query may not have a GROUP BY." This case
 **             is now managed correctly
 **        (3d) the outer query may not be DISTINCT.
@@ -4454,7 +4466,7 @@ static int flattenSubquery(
   */
   if( (pSubitem->fg.jointype & (JT_OUTER|JT_LTORJ))!=0 ){
     if( pSubSrc->nSrc>1                        /* (3a) */
-     || IsVirtual(pSubSrc->a[0].pSTab)         /* (3b) */
+     /**** || IsVirtual(pSubSrc->a[0].pSTab)      (3b)-omitted */
      || (p->selFlags & SF_Distinct)!=0         /* (3d) */
      || (pSubitem->fg.jointype & JT_RIGHT)!=0  /* (26) */
     ){

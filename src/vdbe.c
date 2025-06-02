@@ -2476,6 +2476,7 @@ case OP_Compare: {
   pKeyInfo = pOp->p4.pKeyInfo;
   assert( n>0 );
   assert( pKeyInfo!=0 );
+  assert( pKeyInfo->aSortFlags!=0 );
   p1 = pOp->p1;
   p2 = pOp->p2;
 #ifdef SQLITE_DEBUG
@@ -5349,7 +5350,7 @@ case OP_Found: {        /* jump, in3, ncycle */
     if( rc ) goto no_mem;
     pIdxKey = sqlite3VdbeAllocUnpackedRecord(pC->pKeyInfo);
     if( pIdxKey==0 ) goto no_mem;
-    sqlite3VdbeRecordUnpack(pC->pKeyInfo, r.aMem->n, r.aMem->z, pIdxKey);
+    sqlite3VdbeRecordUnpack(r.aMem->n, r.aMem->z, pIdxKey);
     pIdxKey->default_rc = 0;
     rc = sqlite3BtreeIndexMoveto(pC->uc.pCursor, pIdxKey, &pC->seekResult);
     sqlite3DbFreeNN(db, pIdxKey);
