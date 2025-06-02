@@ -1,5 +1,5 @@
-C TEA:\sremove\sthe\sstale\sman\spage\sand\sreferences\sto\sthe\sMSC\smakefiles\sfrom\sthe\sREADME.txt.\sBased\son\sdiscussion\sat\s[forum:87e6660191a472c5\s|\sforum\spost\s87e6660191a472c5].\s\sA\scouple\sof\sweeks\sago\swe\sinternally\sdiscussed\spulling\sin\sthe\sMSC\smakefiles\sfrom\sthe\s3.49\stree\sbut\sthey\sare\sstale\sand\spossibly\sunused,\sso\sopted\sagainst\sit\sfor\sthe\stime\sbeing.
-D 2025-06-02T15:10:41.277
+C Slight\smodernization\sof\sthe\sTEA\sREADME.txt.
+D 2025-06-02T15:17:59.511
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -23,7 +23,7 @@ F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d6484909
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
 F autoconf/tea/Makefile.in bf6b43eafcd18766d81a8f0085cfc9cb051d8abae9031a8e7c3f5f1246e8f166
-F autoconf/tea/README.txt ed653d28131f356f87084928ddcf80d4935b3cd84cdb9406f534f045fc0558f7
+F autoconf/tea/README.txt 23475876343498ef2b514cc7510e8f1559a17e8e03fbc7a41c1c8a3b89e7b7e3
 F autoconf/tea/_teaish.tester.tcl.in 8253b44be88e2e3f21de95a65d3a90c2be8e70b7bdd08a5b80e337ba7402f8f1
 F autoconf/tea/auto.def ce95b9450e2fa4ba5dc857e208fe10f4e6f2d737796ac3278aee6079db417529
 F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
@@ -2207,8 +2207,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 387f4c4d98b8fb83f6ae406e4143dabda7766e8752b7f6ca104655e51330c978
-R eacb84e1e8fce545c882cbf546adff80
+P c9888a409565e6c8891a3dafa56962df364fb729a61df2701dc0bb282e36fb75
+R 18aff812c0e458ce4faf4f0cc718bfc5
 U stephan
-Z 32e930eb9547362a4891574b0cb43d68
+Z c396247e93c4ccc4319211c213bf549c
 # Remove this line to create a well-formed Fossil manifest.
