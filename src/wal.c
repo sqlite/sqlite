@@ -3076,7 +3076,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int *pCnt){
       ** WAL_RETRY this routine will be called again and will probably be
       ** right on the second iteration.
       */
-      walEnableBlocking(pWal);
+      (void)walEnableBlocking(pWal);
       if( pWal->apWiData[0]==0 ){
         /* This branch is taken when the xShmMap() method returns SQLITE_BUSY.
         ** We assume this is a transient condition, so return WAL_RETRY. The

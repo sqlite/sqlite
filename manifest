@@ -1,5 +1,5 @@
-C Fix\sJSONB\sedit\sso\sthat\swhen\sit\sis\strying\sto\sreduce\sthe\ssize\sof\san\selement\nit\sunderstands\s0xf0\s(8-byte)\ssizes.
-D 2025-06-02T23:34:42.519
+C Fix\sharmless\scompiler\swarning\sintroduced\sby\sthe\ssetlk-snapshot-fix\smerge.
+D 2025-06-03T10:18:54.950
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -865,7 +865,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 78da33510b8cb1b096fb5ae9954be910998d2477ddb623e56f5df84e56b5814d
+F src/wal.c b0f848cfba8dd057f77073493cdd542f9125b4cf87941f53e9d0db21604155c8
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 45a3b496248a0b36d91ce34da3278d54f8fa20e9d3fbd36d45a42051d1118137
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ed69d4432712603bea2161e0ca0c99e59480fb000e1cbf1aa1401d924544e351
-R 745c36561be7de68cb06b54ba333e439
+P 5b3de6e8ab6b228bf6c0e0c31b50ca29d8b7852b460eaaca6c6ecf5a3c083cab
+R 84ba82d7ea7bde162a62e665c4790bc6
 U drh
-Z 6eb7eaab7de1ec41a609797433fd777e
+Z b23b72ad23ffb60025f9c361dddc5b4d
 # Remove this line to create a well-formed Fossil manifest.
