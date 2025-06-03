@@ -1797,6 +1797,7 @@ static void replicaSide(SQLiteRsync *p){
           closeDb(p);
           break;
         }
+        sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
         runSql(p, "ATTACH %Q AS 'replica'", p->zReplica);
         if( p->wrongEncoding ){
           p->wrongEncoding = 0;
