@@ -2163,7 +2163,7 @@ static UnpackedRecord *vdbeUnpackRecord(
   pRet = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
   if( pRet ){
     memset(pRet->aMem, 0, sizeof(Mem)*(pKeyInfo->nKeyField+1));
-    sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, pRet);
+    sqlite3VdbeRecordUnpack(nKey, pKey, pRet);
   }
   return pRet;
 }
