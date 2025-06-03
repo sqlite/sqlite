@@ -1,5 +1,5 @@
-C Fix\san\soff-by-one\serror\sin\ssqlite3_rsync.
-D 2025-06-03T10:30:31.459
+C Relax\squery\sflattener\sconstraint\s(3b)\sand\sthereby\sallow\sflattening\sthe\sRHS\sof\na\sLEFT\sJOIN\seven\sif\sthe\sRHS\scontains\sa\svirtual\stable.\s\sThis\sis\sa\sperformance\noptimization\sthat\swould\snot\snormally\sbe\sfound\son\sa\spatch\sbranch,\sbut\ndownstream\sneeds\sit\sand\sdoes\snot\swant\sto\swait\son\sthe\snext\sfull\srelease.
+D 2025-06-03T17:46:24.222
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -785,7 +785,7 @@ F src/printf.c 3b91c334f528359145f4dde0dedd945bbb21044d0825ea064934d7222d61662c
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c 122c496dcbc117b88af7e75ffbc684570317b44cb285f5b0b006aa100ee66fb5
+F src/select.c 7a21df5db6bb1a4c1bb6d9fb76c8e2485a22ff8306519ad69d8ddf0d5fa10903
 F src/shell.c.in ba53a52dafb167ac6320703da741386c34fbcabe8c078a188bb9f89808e3ef8f
 F src/sqlite.h.in 22882ddd3a70751aa8864c81993ee4562ed54c2c508b6270f75e223ffee38e1b
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
@@ -1222,7 +1222,7 @@ F test/fts3fault3.test ccdd2292dd2d4e21e30fc5f4c8e064f79e516087eec5ff57ab6bc4f6a
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3fuzz001.test c78afcd8ad712ea0b8d2ed50851a8aab3bc9dc52c64a536291e07112f519357c
 F test/fts3integrity.test 0c6fe7353d7b24d78862f4272ee9df4da2f32b3ff30fa3396945cda8119580a8
-F test/fts3join.test 1a4d786539b2b79a41c28ef2ac22cacd92a8ee830249b68a7dee4a020848e3bb
+F test/fts3join.test de31d304ba479043a7d33d2f201c514b3e1da809da6797d7a58704d00e8da2e6
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test aa66cc50615578b30f6df9984819ae5b702511cf8a94251ec7c594096a703a4a
 F test/fts3matchinfo2.test 00144e841704b8debfcdf6097969cd9f2a1cf759e2203cda42583648f2e6bf58
@@ -2207,9 +2207,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cee271122784bf88f576ce29ead2c54f2833e5326f24a4cce8efa4d4c8ec9f32
-Q +27d9e8e79b921c4a86916556f3bf56b94684a7e3d40166c0fdaaf750d4011de0
-R a701ffffcfd84d6dd0a95446198e7f0e
+P e13a9492c102d8ad756fc4b0b86d7008303a1fa7660c41b574add6e111ed9b0c
+Q +1ddaa92057e550ea281d45d9860eafe69399224725548a93dd91c47a34e52152
+R 545467a16f2e3c52bb906b5fe4568673
 U drh
-Z 80b075793a4cee2af6968dbbd3e96a6b
+Z 0c3a9a55642ff216df822a8b3fa30e55
 # Remove this line to create a well-formed Fossil manifest.
