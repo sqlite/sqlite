@@ -1538,7 +1538,7 @@ static void originSide(SQLiteRsync *p){
           sqlite3_finalize(pInsHash);
           pCkHash = 0;
           pInsHash = 0;
-          if( mxHash<p->nPage ){
+          if( mxHash<=p->nPage ){
             runSql(p, "WITH RECURSIVE c(n) AS"
                       " (VALUES(%d) UNION ALL SELECT n+1 FROM c WHERE n<%d)"
                       " INSERT INTO badHash SELECT n, 1 FROM c",
