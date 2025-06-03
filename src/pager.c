@@ -700,6 +700,9 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  sqlite3 *dbWal;
+#endif
 };
 
 /*
@@ -7596,6 +7599,11 @@ static int pagerOpenWal(Pager *pPager, int bWal2){
         pPager->fd, pPager->zWal, pPager->exclusiveMode,
         pPager->journalSizeLimit, bWal2, &pPager->pWal
     );
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    if( rc==SQLITE_OK ){
+      sqlite3WalDb(pPager->pWal, pPager->dbWal);
+    }
+#endif
   }
   pagerFixMaplimit(pPager);
 
@@ -7718,6 +7726,7 @@ int sqlite3PagerWalWriteLock(Pager *pPager, int bLock){
 ** blocking locks are required.
 */
 void sqlite3PagerWalDb(Pager *pPager, sqlite3 *db){
+  pPager->dbWal = db;
   if( pagerUseWal(pPager) ){
     sqlite3WalDb(pPager->pWal, db);
   }

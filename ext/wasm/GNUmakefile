@@ -410,7 +410,7 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 # -D... flags which should be included in all invocations should be
 # appended to $(SQLITE.CALL.C-PP.FILTER.global).
 bin.c-pp := ./c-pp
-$(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
+$(bin.c-pp): c-pp.c $(sqlite3.c) # $(MAKEFILE)
 	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
@@ -597,6 +597,7 @@ emcc.flags += -v
 # -v is _very_ loud but also informative about what it's doing
 endif
 
+
 ########################################################################
 # emcc flags for .c/.o.
 emcc.cflags :=
@@ -615,8 +616,9 @@ emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
 emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.api)
 emcc.exportedRuntimeMethods := \
-    -sEXPORTED_RUNTIME_METHODS=wasmMemory
-    # wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
+    -sEXPORTED_RUNTIME_METHODS=wasmMemory,HEAP8,HEAPU8,HEAP16,HEAPU16,HEAP32,HEAPU32,HEAP64,HEAPU64
+# wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
+# Emscripten 4.0.7 (2025-04-15) stops exporting HEAP* by default
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY

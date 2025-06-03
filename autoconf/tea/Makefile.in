@@ -146,7 +146,7 @@ LDFLAGS.shlib = @SH_LDFLAGS@
 # sources passed to [teaish-src-add], but may also be appended to by
 # teaish.make.
 #
-tx.src     =@TEAISH_EXT_SRC@
+tx.src     = @TEAISH_EXT_SRC@
 
 #
 # tx.CFLAGS is typically set by teaish.make, whereas TEAISH_CFLAGS
@@ -166,6 +166,11 @@ tx.LDFLAGS =
 # and/or [teaish-src-add -dist ...].
 #
 tx.dist.files = @TEAISH_DIST_FILES@
+
+#
+# The base name for a distribution tar/zip file.
+#
+tx.dist.basename = $(tx.name.dist)-$(tx.version)
 
 # List of deps which may trigger an auto-reconfigure.
 #
@@ -199,9 +204,14 @@ $(teaish.makefile): $(teaish__auto.def) $(teaish.makefile.in) \
   @AUTODEPS@
 
 @if TEAISH_TESTER_TCL_IN
-@TEAISH_TESTER_TCL_IN@:
-@TEAISH_TESTER_TCL@: @TEAISH_TESTER_TCL_IN@
-config.log: @TEAISH_TESTER_TCL@
+@TEAISH_TESTER_TCL_IN@: $(teaish__autogen.deps)
+config.log: @TEAISH_TESTER_TCL_IN@
+@TEAISH_TESTER_TCL@:  @TEAISH_TESTER_TCL_IN@
+@endif
+@if TEAISH_TEST_TCL_IN
+@TEAISH_TEST_TCL_IN@: $(teaish__autogen.deps)
+config.log: @TEAISH_TEST_TCL_IN@
+@TEAISH_TEST_TCL@: @TEAISH_TEST_TCL_IN@
 @endif
 
 #
@@ -217,7 +227,7 @@ CC.tcl = \
 #
 CC.dll = \
   $(CC.tcl) $(tx.src) $(LDFLAGS.shlib) \
-    $(LDFLAGS.configure) $(LDFLAGS) $(tx.LDFLAGS) $(TCL_STUB_LIB_SPEC)
+    $(tx.LDFLAGS) $(LDFLAGS.configure) $(LDFLAGS) $(TCL_STUB_LIB_SPEC)
 
 @if TEAISH_ENABLE_DLL
 #
@@ -248,16 +258,25 @@ test-extension: # this name is reserved for use by teaish.make[.in]
 test-prepre: $(tx.dll)
 @endif
 @if TEAISH_TESTER_TCL
-test-core.args = @TEAISH_TESTER_TCL@
+teaish.tester.tcl = @TEAISH_TESTER_TCL@
+test-core.args = $(teaish.tester.tcl)
 @if TEAISH_ENABLE_DLL
 test-core.args += '$(tx.dll)' '$(tx.loadPrefix)'
 @else
 test-core.args += '' ''
 @endif
 test-core.args += @TEAISH_TESTUTIL_TCL@
+# Clients may pass additional args via test.args=...
+# and ::argv will be rewritten before the test script loads, to
+# remove $(test-core.args)
+test.args ?=
 test-core: test-pre
-	$(TCLSH) $(test-core.args)
-test-prepre: @TEAISH_TESTER_TCL@
+	$(TCLSH) $(test-core.args) $(test.args)
+test-gdb: $(teaish.tester.tcl)
+	gdb --args $(TCLSH) $(test-core.args) $(test.args)
+test-vg.flags ?= --leak-check=full -v --show-reachable=yes --track-origins=yes
+test-vg: $(teaish.tester.tcl)
+	valgrind $(test-vg.flags) $(TCLSH) $(test-core.args) $(test.args)
 @else # !TEAISH_TESTER_TCL
 test-prepre:
 @endif # TEAISH_TESTER_TCL
@@ -288,7 +307,7 @@ distclean-core: distclean-pre
 @endif
 @endif
 @if TEAISH_TESTER_TCL_IN
-	rm -f @TEAISH_TESTER_TCL@
+	rm -f $(teaish.tester.tcl)
 @endif
 @if TEAISH_PKGINDEX_TCL_IN
 	rm -f @TEAISH_PKGINDEX_TCL@
@@ -355,10 +374,15 @@ install-core: install-pre
 @endif
 install-test: install-core
 	@echo "Post-install test of [package require $(tx.name.pkg) $(tx.version)]..."; \
+	set xtra=""; \
+	if [ x != "x$(DESTDIR)" ]; then \
+		xtra='set ::auto_path [linsert $$::auto_path 0 [file normalize $(DESTDIR)$(TCLLIBDIR)/..]];'; \
+	fi; \
 	if echo \
-		'set c 0; ' \
+		'set c 0; ' $$xtra \
 		'@TEAISH_POSTINST_PREREQUIRE@' \
-		'if {[catch {package require $(tx.name.pkg) $(tx.version)}]} {incr c};' \
+		'if {[catch {package require $(tx.name.pkg) $(tx.version)} xc]} {incr c};' \
+		'if {$$c && "" ne $$xc} {puts $$xc; puts "auto_path=$$::auto_path"};' \
 		'exit $$c' \
 		| $(TCLSH) ; then \
 		echo "passed"; \
@@ -406,7 +430,7 @@ config.log: $(teaish.makefile.in)
 # recognized when running in --teaish-install mode, causing
 # the sub-configure to fail.
 dist.flags = --with-tclsh=$(TCLSH)
-dist.reconfig = $(teaish.dir)/configure $(dist.flags)
+dist.reconfig = $(teaish.dir)/configure $(tx.dist.reconfig-flags) $(dist.flags)
 
 # Temp dir for dist.zip. Must be different than dist.tgz or else
 # parallel builds may hose the dist.
@@ -414,24 +438,23 @@ teaish__dist.tmp.zip = teaish__dist_zip
 #
 # Make a distribution zip file...
 #
-dist.basename = $(tx.name.dist)-$(tx.version)
-dist.zip = $(dist.basename).zip
+dist.zip = $(tx.dist.basename).zip
 .PHONY: dist.zip dist.zip-core dist.zip-post
 #dist.zip-pre:
 # We apparently can't add a pre-hook here, else "make dist" rebuilds
 # the archive each time it's run.
 $(dist.zip): $(tx.dist.files)
 	@rm -fr $(teaish__dist.tmp.zip)
-	@mkdir -p $(teaish__dist.tmp.zip)/$(dist.basename)
+	@mkdir -p $(teaish__dist.tmp.zip)/$(tx.dist.basename)
 	@tar cf $(teaish__dist.tmp.zip)/tmp.tar $(tx.dist.files)
-	@tar xf $(teaish__dist.tmp.zip)/tmp.tar -C $(teaish__dist.tmp.zip)/$(dist.basename)
+	@tar xf $(teaish__dist.tmp.zip)/tmp.tar -C $(teaish__dist.tmp.zip)/$(tx.dist.basename)
 @if TEAISH_DIST_FULL
 	@$(dist.reconfig) \
-		--teaish-install=$(teaish__dist.tmp.zip)/$(dist.basename) \
-		--t-e-d=$(teaish__dist.tmp.zip)/$(dist.basename) >/dev/null
+		--teaish-install=$(teaish__dist.tmp.zip)/$(tx.dist.basename) \
+		--t-e-d=$(teaish__dist.tmp.zip)/$(tx.dist.basename) >/dev/null
 @endif
-	@rm -f $(dist.basename)/tmp.tar $(dist.zip)
-	@cd $(teaish__dist.tmp.zip) && zip -q -r ../$(dist.zip) $(dist.basename)
+	@rm -f $(tx.dist.basename)/tmp.tar $(dist.zip)
+	@cd $(teaish__dist.tmp.zip) && zip -q -r ../$(dist.zip) $(tx.dist.basename)
 	@rm -fr $(teaish__dist.tmp.zip)
 	@ls -la $(dist.zip)
 dist.zip-core: $(dist.zip)
@@ -447,23 +470,23 @@ undist: undist-zip
 # Make a distribution tarball...
 #
 teaish__dist.tmp.tgz = teaish__dist_tgz
-dist.tgz = $(dist.basename).tar.gz
+dist.tgz = $(tx.dist.basename).tar.gz
 .PHONY: dist.tgz dist.tgz-core dist.tgz-post
 # dist.tgz-pre:
 # see notes in dist.zip
 $(dist.tgz): $(tx.dist.files)
 	@rm -fr $(teaish__dist.tmp.tgz)
-	@mkdir -p $(teaish__dist.tmp.tgz)/$(dist.basename)
+	@mkdir -p $(teaish__dist.tmp.tgz)/$(tx.dist.basename)
 	@tar cf $(teaish__dist.tmp.tgz)/tmp.tar $(tx.dist.files)
-	@tar xf $(teaish__dist.tmp.tgz)/tmp.tar -C $(teaish__dist.tmp.tgz)/$(dist.basename)
+	@tar xf $(teaish__dist.tmp.tgz)/tmp.tar -C $(teaish__dist.tmp.tgz)/$(tx.dist.basename)
 @if TEAISH_DIST_FULL
-	@rm -f $(teaish__dist.tmp.tgz)/$(dist.basename)/pkgIndex.tcl.in; # kludge
+	@rm -f $(teaish__dist.tmp.tgz)/$(tx.dist.basename)/pkgIndex.tcl.in; # kludge
 	@$(dist.reconfig) \
-		--teaish-install=$(teaish__dist.tmp.tgz)/$(dist.basename) \
-		--t-e-d=$(teaish__dist.tmp.zip)/$(dist.basename) >/dev/null
+		--teaish-install=$(teaish__dist.tmp.tgz)/$(tx.dist.basename) \
+		--t-e-d=$(teaish__dist.tmp.zip)/$(tx.dist.basename) >/dev/null
 @endif
-	@rm -f $(dist.basename)/tmp.tar $(dist.tgz)
-	@cd $(teaish__dist.tmp.tgz) && tar czf ../$(dist.tgz) $(dist.basename)
+	@rm -f $(tx.dist.basename)/tmp.tar $(dist.tgz)
+	@cd $(teaish__dist.tmp.tgz) && tar czf ../$(dist.tgz) $(tx.dist.basename)
 	@rm -fr $(teaish__dist.tmp.tgz)
 	@ls -la $(dist.tgz)
 dist.tgz-core: $(dist.tgz)
