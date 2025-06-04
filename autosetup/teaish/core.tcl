@@ -522,7 +522,7 @@ proc teaish__configure_phase1 {} {
         set vputs "puts \[ $vsat \]"
         #puts "*** vputs = $vputs"
         scan [exec echo $vputs | $tclsh] %d vvcheck
-        if {0 == $vvcheck} {
+        if {![info exists vvcheck] || 0 == $vvcheck} {
           proj-fatal -up $tclsh "check failed:" $vsat
         }
       }
