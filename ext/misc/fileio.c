@@ -94,11 +94,8 @@ SQLITE_EXTENSION_INIT1
 #  include <utime.h>
 #  include <sys/time.h>
 #else
-#  include "windows.h"
-#  include <io.h>
+#  include "windirent.h"
 #  include <direct.h>
-#  include "test_windirent.h"
-#  define dirent DIRENT
 #  define stat _stat
 #  define chmod(path,mode) fileio_chmod(path,mode)
 #  define mkdir(path,mode) fileio_mkdir(path)

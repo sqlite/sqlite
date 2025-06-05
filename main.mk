@@ -772,7 +772,6 @@ TESTSRC = \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vdbecov.c \
   $(TOP)/src/test_vfs.c \
-  $(TOP)/src/test_windirent.c \
   $(TOP)/src/test_window.c \
   $(TOP)/src/test_wsd.c       \
   $(TOP)/ext/fts3/fts3_term.c \
@@ -2330,12 +2329,12 @@ SHELL_DEP = \
     $(TOP)/ext/misc/sqlar.c \
     $(TOP)/ext/misc/uint.c \
     $(TOP)/ext/misc/vfstrace.c \
+    $(TOP)/ext/misc/windirent.h \
     $(TOP)/ext/misc/zipfile.c \
     $(TOP)/ext/recover/dbdata.c \
     $(TOP)/ext/recover/sqlite3recover.c \
-    $(TOP)/ext/recover/sqlite3recover.h \
-    $(TOP)/src/test_windirent.c \
-    $(TOP)/src/test_windirent.h
+    $(TOP)/ext/recover/sqlite3recover.h
+
 
 shell.c:	$(SHELL_DEP) $(TOP)/tool/mkshellc.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mkshellc.tcl shell.c
