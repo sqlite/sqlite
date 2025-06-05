@@ -1,5 +1,5 @@
-C tea\sbuild:\sadd\san\sinfo-exists\scheck\safter\sa\s'scan'\scall,\sas\sscan\sdoes\snot\screate\sits\starget\svars\son\serror.\sProblem\sreported\sat\s[forum:fde857fb8101a4be\s|\sforum\spost\sfde857fb8101a4be]\sand\striggers\swhen\sthe\s'vsatisfies'\stest\sfor\sthe\shost's\sTcl\sversion\sfails\s(so\sthe\sbuild\swould\sfail\sanyway,\sbut\swill\sfail\smore\sinformatively\swith\sthis\sfix).
-D 2025-06-04T18:34:20.003
+C Enhance\sthe\sFSDIR\svirtual\stable\swith\sa\snew\s"level"\scolumn.\s\sThe\squery\splanner\nknows\show\sto\soptimize\sto\savoid\ssearch\sdeeper\sthan\sthe\smaximum\srequested\slevel.
+D 2025-06-05T18:28:54.497
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f82
 F ext/misc/decimal.c 228d47e9ef4de60daf5851da19e3ac9ac1eda9e94432816914469501db6a1129
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c 34993b810514c58ff99d7b4254d4a388d844a4774ea77bec68a1dafe8de5ce41
+F ext/misc/fileio.c f01aca52627d0a4b212800a024de62c6bb2c09403a09e782592d59902d49675f
 F ext/misc/fossildelta.c 0aeb099e9627eea693cf21ae47826ecd1e0319b93143bed23090838b2ef0c162
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
 F ext/misc/ieee754.c c9dd9d77c8e8e18e0a5706f8ffcccf4ccb6562073709f7453d4d73f5122f4362
@@ -2209,8 +2209,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2f8a1b79533879e4975b405c46fea496ba8bffbef065e7dd0ad29fd4aa8f8f92
-R 93ec2f0ba3ae7edbce8d608ede6c810e
-U stephan
-Z 0897533fcae3d269da2c3a6ccf2bfc1d
+P 4f21874d5d20aef2e2d67a59e4fa03d98aa6514b16e4d956acfc817142cfbdb6
+R 59f5d0a04d958d7cb4b261048dbd0b85
+U drh
+Z 276de0b7a4b37abe2f1a437bfc4df89c
 # Remove this line to create a well-formed Fossil manifest.
