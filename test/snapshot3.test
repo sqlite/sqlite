@@ -96,6 +96,9 @@ do_test 1.8 {
   list [catch { sqlite3_snapshot_open_blob db3 main $snap } msg] $msg
 } {1 SQLITE_ERROR_SNAPSHOT}
 
+db3 close
+db2 close
+
 #-------------------------------------------------------------------------
 reset_db
 do_execsql_test 2.0 {

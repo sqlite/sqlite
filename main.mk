@@ -1838,6 +1838,12 @@ mdevtest: srctree-check has_tclsh85
 sdevtest: has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
 
+# Like releasetest, except it omits srctree-check and verify-source so
+# that it can be used on a modified source tree.
+#
+xdevtest: has_tclsh85
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
+
 #
 # Validate that various generated files in the source tree
 # are up-to-date.

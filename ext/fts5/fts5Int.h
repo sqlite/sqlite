@@ -20,6 +20,7 @@ SQLITE_EXTENSION_INIT1
 
 #include <string.h>
 #include <assert.h>
+#include <stddef.h>
 
 #ifndef SQLITE_AMALGAMATION
 

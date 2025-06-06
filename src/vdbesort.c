@@ -969,7 +969,7 @@ int sqlite3VdbeSorterInit(
   assert( pCsr->eCurType==CURTYPE_SORTER );
   assert( sizeof(KeyInfo) + UMXV(pCsr->pKeyInfo->nKeyField)*sizeof(CollSeq*)
                < 0x7fffffff );
-  szKeyInfo = SZ_KEYINFO(pCsr->pKeyInfo->nKeyField+1);
+  szKeyInfo = SZ_KEYINFO(pCsr->pKeyInfo->nKeyField);
   sz = SZ_VDBESORTER(nWorker+1);
 
   pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);

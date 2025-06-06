@@ -3697,6 +3697,13 @@ static SQLITE_NOINLINE int btreeBeginTrans(
       (void)sqlite3PagerWalWriteLock(pPager, 0);
       unlockBtreeIfUnused(pBt);
     }
+#if defined(SQLITE_ENABLE_SETLK_TIMEOUT)
+    if( rc==SQLITE_BUSY_TIMEOUT ){
+      /* If a blocking lock timed out, break out of the loop here so that
+      ** the busy-handler is not invoked.  */
+      break;
+    }
+#endif
   }while( (rc&0xFF)==SQLITE_BUSY && pBt->inTransaction==TRANS_NONE &&
           btreeInvokeBusyHandler(pBt) );
   sqlite3PagerWalDb(pPager, 0);

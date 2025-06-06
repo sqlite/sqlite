@@ -1157,7 +1157,7 @@ const char * sqlite3__wasm_enum_json(void){
     { /* Validate that the above struct sizeof()s match
       ** expectations. We could improve upon this by
       ** checking the offsetof() for each member. */
-      const sqlite3_index_info siiCheck;
+      const sqlite3_index_info siiCheck = {0};
 #define IndexSzCheck(T,M)           \
       (sizeof(T) == sizeof(*siiCheck.M))
       if(!IndexSzCheck(sqlite3_index_constraint,aConstraint)
