@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sintroduced\sby\sthe\ssetlk-snapshot-fix\smerge.
-D 2025-06-05T13:14:46.332
+C Version\s3.50.1
+D 2025-06-06T14:52:32.856
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2209,9 +2209,10 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8ac4525a2e3100bb5b9460cc49bb64f007911180d5f51461282b1de0201328b6
-Q +c1f20f89d9eb3e1dd1018c0e0efe5d3043a592f078e235ad04b960334c7186c2
+P cbab5d86517f0c57c6025aaddbb9408e29bccdc8b158d2b8d40bd2f3b333ef69
 R 2e4328669cf34776de6f2dce452a9a18
+T +sym-release *
+T +sym-version-3.50.1 *
 U drh
-Z f346dec9e265e58e5acbec45d51de62c
+Z 9176f9c7403d4ffbbc5c61ed5ec557f1
 # Remove this line to create a well-formed Fossil manifest.
