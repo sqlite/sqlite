@@ -1,5 +1,5 @@
-C Remove\sthe\sclunky\stest_windirent.h\sand\stest_windirent.c\sfiles\sfrom\ssrc/\nand\sreplace\sthem\swith\sa\smuch\scleaner\sand\smore\scompact\sext/misc/windirent.h.
-D 2025-06-05T20:12:41.913
+C Update\sthe\s"msort"\sfunction\sin\sLemon\sso\sthat\sit\sworks\swith\slists\sof\sany\nlength,\sand\salso\sso\sthat\sthe\ssort\sis\sstable.\s\sThis\spatch\swas\smotivated\sby\n[forum:/forumpost/63750d717c9ed961|forum\spost\s63750d717c]\sbut\swas\nindependently\sdeveloped,\sthen\stested\sby\stemporarily\ssetting\sLISTSIZE\sto\s2.
+D 2025-06-06T23:02:03.860
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2144,7 +2144,7 @@ F tool/genfkey.README e550911fa984c8255ebed2ef97824125d83806eb5232582700de949edf
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
-F tool/lemon.c d39ad5c209c2dc765fa2841ccfc4c54e656d3e6b645df91c8c8a94e81a1b1de5
+F tool/lemon.c 8f6c122e5727cb0e5f302b8efc91489b1947a8d98206d7a1b1cfc0ed685b6e7c
 F tool/lempar.c bdffd3b233a4e4e78056c9c01fadd2bb3fe902435abde3bce3d769fdf0d5cca2
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c c3c64e4d5e90e8ba41159232c2189dba4be7b862
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1ddc0f9e79c33957961bc1443ccb74d756a02cbd20850052079782e76aef2706
-R 7dd09be15cf46602089136b6b715d42e
+P acc978df52ec41ffdb5c27764f30d53efa1f25a314b7d98983dc0d211a36b570
+R d749cfd84d99a4a145b2da613af234e9
 U drh
-Z a6216ab186a1dc583a439b7f4bc64bee
+Z 0c60cb5974561a595e1ce2ce5a531601
 # Remove this line to create a well-formed Fossil manifest.
