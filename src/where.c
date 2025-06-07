@@ -7158,6 +7158,8 @@ WhereInfo *sqlite3WhereBegin(
           wherePartIdxExpr(
               pParse, pIx, pIx->pPartIdxWhere, 0, iIndexCur, pTabItem
           );
+        }else if( pIx->aiRowLogEst[pLoop->u.btree.nEq]>65 ){
+          pLoop->wsFlags |= WHERE_FLEX_SEARCH;
         }
       }
       pLevel->iIdxCur = iIndexCur;

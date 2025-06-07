@@ -660,5 +660,6 @@ void sqlite3WhereTabFuncArgs(Parse*, SrcItem*, WhereClause*);
 #define WHERE_COROUTINE    0x02000000  /* Implemented by co-routine.
                                        ** NB: False-negatives are possible */
 #define WHERE_EXPRIDX      0x04000000  /* Uses an index-on-expressions */
+#define WHERE_FLEX_SEARCH  0x08000000  /* Maybe decide to SCAN at runtime */
 
 #endif /* !defined(SQLITE_WHEREINT_H) */
