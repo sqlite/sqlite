@@ -1,5 +1,5 @@
-C Remove\sunnecessary\swhitespace\sand\sotherwise\simprove\scomments\sin\sthe\nwherecode.c\smodule.\s\sNo\scoding\schanges.
-D 2025-06-06T23:10:18.761
+C Adjustments\sto\sext/misc/fileio.c\sin\san\sattempt\sto\sget\sit\sto\sbuild\susing\smingw.
+D 2025-06-09T22:38:34.787
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f82
 F ext/misc/decimal.c 228d47e9ef4de60daf5851da19e3ac9ac1eda9e94432816914469501db6a1129
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c da9da28898d6b44402e9c1183dc774fa9fbb5f0155175bed6ca83d192e60312d
+F ext/misc/fileio.c 5e1aff478ea12455a76be25dff321e1e9517b189fffb1d547a019625c49c1880
 F ext/misc/fossildelta.c 0aeb099e9627eea693cf21ae47826ecd1e0319b93143bed23090838b2ef0c162
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
 F ext/misc/ieee754.c c9dd9d77c8e8e18e0a5706f8ffcccf4ccb6562073709f7453d4d73f5122f4362
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aba5c3135edf7de2798ad808fa0ff176fdba3f4a9b101f1f4210b441cba8e75d
-R ac8b37a15d3a3e6abc2fa2a5739fae73
+P 2eb4e9bf0f2df50324a62fb272a92bbd931b8b4e4b35bac0c05b676c97b61339
+R 03f6560dbd24618e624af3e65c53e572
 U drh
-Z 4dedbf1c2e3e515d1e9ff6981d7bf8bf
+Z 8fc12f4339a0bebdf37b8d0d53295fc6
 # Remove this line to create a well-formed Fossil manifest.
