@@ -1,5 +1,5 @@
-C Query\splanner\sidentifies\sloops\swhere\sit\smight\sbe\sadvantageous\sto\scheck\nthe\snumber\sof\smatching\srows\sand\sfall\sback\sto\sa\sfull\stable\sscan\sif\sthe\nnumber\sof\smatching\srows\sis\slarge.
-D 2025-06-07T16:45:05.884
+C Initial\simplementation\sof\ssqlite3BtreeEstimatedPosition()\swith\sthe\nest_rank()\sSQL\sfunction\sused\sfor\stesting.
+D 2025-06-09T16:32:26.471
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,8 +726,8 @@ F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 782cc29b42b47e7ec6348eb0aaf9ffe60063f498387e7249f458d445af4b53e9
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 53a9c7b243e94c992853d90f1dac0959028433b4b0d27e04409cee04e001b508
-F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
+F src/btree.c fe36ce9242cca45b6c313c2dbd07674ff64328cb02d4ea2623f95567306b5cf7
+F src/btree.h 70f5f4a2c4767fcada25a94c8ac1fbada4b416e3b18be48a4a090c3a5314505c
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 67c1db4c5e89a8519fe9b6dafc287f6bc3627696b5b8536dc5e06db570d8c05f
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
@@ -736,10 +736,10 @@ F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
 F src/dbpage.c b3e218f8ed74fcbb7fa805df8ca669a3718d397617b3d8a8aac3307dc315c4d6
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c f16fa5cbd849991462edf1d31bb7def5b970bb9611afcb4ea21c77e88e52a220
+F src/expr.c 083f478563cfa0163a8b7a2f5c8d74a45197e02f95cf3d61f0cde67578aa8996
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c 7686ea382b20e8bfe2ab9de76150c99ee7b6e83523561f3c7787e0f68cb435c2
+F src/func.c 19aa22584be26b56aa13e46a0a2078f49bc33036c93ed24e6a05578c3b7a049b
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -790,7 +790,7 @@ F src/shell.c.in b8d30c7c5423f471b1eeece90f3e893a236ee2a8ac1aa4489cd819d02aaca8f
 F src/sqlite.h.in 22882ddd3a70751aa8864c81993ee4562ed54c2c508b6270f75e223ffee38e1b
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
-F src/sqliteInt.h 0eeb2d363e7994aba3b482d3a9c88248b4d1fdad39cb65ff48621b2ae494a763
+F src/sqliteInt.h e1d940cfbb12f267405b8fe40d1c515202f89b5795579644b20366891f40522b
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -852,7 +852,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
-F src/vdbe.c 714fab7aa7c516edbcf5e4f653ae8f548a3e24c0ed19086d7383bb5851983992
+F src/vdbe.c 8a79078298fdc81f09201fac5b454adb97ee8bf30c6cf412a856a17dd144656d
 F src/vdbe.h 93761ed7c6b8bc19524912fd9b9b587d41bf4f1d0ade650a00dadc10518d8958
 F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
 F src/vdbeapi.c 613a6f29efacd6ed83e886b6e52db0fe52ba80a596b0a137608db1948bad90a9
@@ -2208,11 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2eb4e9bf0f2df50324a62fb272a92bbd931b8b4e4b35bac0c05b676c97b61339
-R 16380748532d26bf641e586e366b9cf8
-T *branch * flex-search
-T *sym-flex-search *
-T -sym-trunk *
+P 87fd19925752b52c767e1202f297a8ec24a6a9ab3d741b6af216b6ad5abd59d5
+R c2dcdf08cc3767193965f9116e1dbf68
 U drh
-Z f1c85fb7c5dc19e9a0264b78dab792cf
+Z 171140a59391c713fdc23831152d7994
 # Remove this line to create a well-formed Fossil manifest.

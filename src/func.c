@@ -2917,6 +2917,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     INLINE_FUNC(coalesce,       -4, INLINEFUNC_coalesce, 0 ),
     INLINE_FUNC(iif,            -4, INLINEFUNC_iif,      0 ),
     INLINE_FUNC(if,             -4, INLINEFUNC_iif,      0 ),
+    INLINE_FUNC(est_rank,        1, INLINEFUNC_est_rank, 0 ),
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();

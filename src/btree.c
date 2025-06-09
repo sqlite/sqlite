@@ -6236,9 +6236,39 @@ i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
 
   n = pCur->pPage->nCell;
   for(i=0; i<pCur->iPage; i++){
-    n *= pCur->apPage[i]->nCell;
+    n *= pCur->apPage[i]->nCell+1;
   }
   return n;
+}
+
+/*
+** Return an estimate for the number of rows in the table that pCur is
+** pointing to that are to the left of, or that come before, or that are
+** less than pCur.  Return a negative number if no estimate is currently
+** available.
+*/
+int sqlite3BtreeEstimatedPosition(BtCursor *pCur){
+  i64 nAll;    /* Estimated total number of rows */
+  i64 nLeft;   /* Estimated number of rows to the left */
+  int i;       /* Btree stack counter */
+
+  assert( cursorOwnsBtShared(pCur) );
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+
+  if( pCur->eState!=CURSOR_VALID ) return -1;
+
+  nAll = pCur->pPage->nCell;
+  nLeft = pCur->ix;
+  for(i=pCur->iPage-1; i>=0; i--){
+    nLeft = nLeft + nAll*pCur->aiIdx[i];
+    nAll *= pCur->apPage[i]->nCell+1;
+  }
+  if( NEVER(nAll==0) ) return 0;
+  if( nAll<10000000 ){
+    return (nLeft*100)/nAll;
+  }else{
+    return nLeft/(nAll/100);
+  }
 }
 
 /*

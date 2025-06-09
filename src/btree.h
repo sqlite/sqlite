@@ -342,6 +342,7 @@ int sqlite3BtreeIntegrityCheck(
 );
 struct Pager *sqlite3BtreePager(Btree*);
 i64 sqlite3BtreeRowCountEst(BtCursor*);
+int sqlite3BtreeEstimatedPosition(BtCursor*);
 
 #ifndef SQLITE_OMIT_INCRBLOB
 int sqlite3BtreePayloadChecked(BtCursor*, u32 offset, u32 amt, void*);

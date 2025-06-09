@@ -2053,6 +2053,7 @@ struct FuncDestructor {
 #define INLINEFUNC_affinity             4
 #define INLINEFUNC_iif                  5
 #define INLINEFUNC_sqlite_offset        6
+#define INLINEFUNC_est_rank             7
 #define INLINEFUNC_unlikely            99  /* Default case */
 
 /*

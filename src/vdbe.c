@@ -3757,6 +3757,40 @@ case OP_Count: {         /* out2 */
   goto check_for_interrupt;
 }
 
+/* Opcode: EstPos * P2 * * *
+**
+** If the immediately preceding opcode is an OP_Column using
+** cursor C, then write into r[P2] a number between 0 and 100
+** (inclusive) that is an estimate of the percentage of the
+** table or index associated with C that comes before the entry
+** that C is currently pointing to.
+**
+** If the previous opcode is not an OP_Column then r[P2] is set
+** to NULL.
+**
+** The opcode mnemonic is "ESTimated POSition".
+*/
+case OP_EstPos: {        /* out2 */
+  int iRes;
+  VdbeCursor *pCur;
+  BtCursor *pCrsr;
+
+  pOut = out2Prerelease(p, pOp);
+  pOut->flags = MEM_Null;
+  if( pOp[-1].opcode==OP_Column ){
+    pCur = p->apCsr[pOp[-1].p1];
+    if( pCur->eCurType==CURTYPE_BTREE ){
+      pCrsr = p->apCsr[pOp[-1].p1]->uc.pCursor;
+      iRes = sqlite3BtreeEstimatedPosition(pCrsr);
+      if( iRes>=0 ){
+        pOut->flags = MEM_Int;
+        pOut->u.i = iRes;
+      }
+    }
+  }
+  break;
+}
+
 /* Opcode: Savepoint P1 * * P4 *
 **
 ** Open, release or rollback the savepoint named by parameter P4, depending

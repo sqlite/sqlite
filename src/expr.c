@@ -4545,6 +4545,23 @@ static int exprCodeInlineFunction(
               (aff<=SQLITE_AFF_NONE) ? "none" : azAff[aff-SQLITE_AFF_BLOB]);
       break;
     }
+
+    case INLINEFUNC_est_rank: {
+      /* The EST_RANK(x) function returns an integer between 0 and 100 to
+      ** indicate how far along in the table or index currently being used
+      ** to access column x is the cursor used to do that access.  If the
+      ** argument is not a simple table column reference, the value is NULL.
+      */
+      Expr *pExpr = pFarg->a[0].pExpr;
+      Vdbe *v = pParse->pVdbe;
+      if( pExpr->op==TK_COLUMN ){
+        sqlite3ExprCodeTarget(pParse, pExpr, target);
+        sqlite3VdbeAddOp2(v, OP_EstPos, 0, target);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+      }
+      break;
+    }
 #endif /* !defined(SQLITE_UNTESTABLE) */
   }
   return target;
