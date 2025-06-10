@@ -311,7 +311,7 @@ static void showBitvec(Bitvec *p, int n, unsigned x){
     printf("NULL\n");
     return;
   }
-  printf("Bitvec 0x%p iSize=%d", p, p->iSize);
+  printf("Bitvec 0x%p iSize=%u", p, p->iSize);
   if( p->iSize<=BITVEC_NBIT ){
     printf(" bitmap\n");
     printf("%*s   bits:", n, "");
@@ -320,14 +320,14 @@ static void showBitvec(Bitvec *p, int n, unsigned x){
     }
     printf("\n");
   }else if( p->iDivisor==0 ){
-    printf(" hash with %d entries\n", p->nSet);
+    printf(" hash with %u entries\n", p->nSet);
     printf("%*s   bits:", n, "");
     for(i=0; i<BITVEC_NINT; i++){
       if( p->u.aHash[i] ) printf(" %u", x+(unsigned)p->u.aHash[i]);
     }
     printf("\n");
   }else{
-    printf(" sub-bitvec with iDivisor=%d\n", p->iDivisor);
+    printf(" sub-bitvec with iDivisor=%u\n", p->iDivisor);
     for(i=0; i<BITVEC_NPTR; i++){
       if( p->u.apSub[i]==0 ) continue;
       printf("%*s   apSub[%d]=", n, "", i);
@@ -406,7 +406,7 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
     pV = sqlite3MallocZero( (7+(i64)sz)/8 + 1 );
   }
   pTmpSpace = sqlite3_malloc64(BITVEC_SZ);
-  if( pBitvec==0 || pTmpSpace==0  ) goto bitvec_end;
+  if( pBitvec==0 || pTmpSpace==0 || (pV==0 && sz>0) ) goto bitvec_end;
 
   /* NULL pBitvec tests */
   sqlite3BitvecSet(0, 1);
@@ -420,7 +420,6 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
       if( op==6 ){
         sqlite3ShowBitvec(pBitvec);
       }else if( op==7 ){
-        unsigned x = (unsigned)aOp[++pc];
         printf("BITVEC_SZ     = %d (%d by sizeof)\n",
                BITVEC_SZ, (int)sizeof(Bitvec));
         printf("BITVEC_USIZE  = %d\n", (int)BITVEC_USIZE);
@@ -429,7 +428,6 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
         printf("BITVEC_NINT   = %d\n", (int)BITVEC_NINT);
         printf("BITVEC_MXHASH = %d\n", (int)BITVEC_MXHASH);
         printf("BITVEC_NPTR   = %d\n", (int)BITVEC_NPTR);
-        printf("hash(%u): %u\n", x, (unsigned)BITVEC_HASH(x));
       }
 #endif
       pc++;
