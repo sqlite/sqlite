@@ -1,5 +1,5 @@
-C Adjustments\sto\sext/misc/fileio.c\sin\san\sattempt\sto\sget\sit\sto\sbuild\susing\smingw.
-D 2025-06-10T16:56:02.161
+C Improved\sselection\sof\sthe\sdivisor\swhen\ssubdividing\snested\sBitvec\sobjects.\nThis\sfixes\sa\spotential\sstack\soverflow\sthat\scan\soccur\swhen\sthe\sdatabase\ssize\nis\swithin\s60\spages\sof\sthe\smaximum\sallowed\sby\sthe\sfile\sformat.
+D 2025-06-10T20:06:29.597
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -724,7 +724,7 @@ F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
 F src/attach.c 9af61b63b10ee702b1594ecd24fb8cea0839cfdb6addee52fba26fa879f5db9d
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
-F src/bitvec.c 782cc29b42b47e7ec6348eb0aaf9ffe60063f498387e7249f458d445af4b53e9
+F src/bitvec.c 203368f515a36e5537f1efc2a7f47903e9e44a6626e4fd0554f8feed981bba88
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c da98489a981c347cc3a3982ea2810bbb583511a73cc34762547f30dbb4cda7f0
 F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
@@ -2209,9 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b77dc5e0f596d2140d9ac682b2893ff65d3a4140aa86067a3efebe29dc914c95
-Q +96b14a3f1193de8f30e9fa704f87558dab8027a218868d32e47688cd5df497b7
-R 21fa488065b6920998f44ace86d07a2e
+P ac786b92e3e24e2f1c4f4093acc2c357da38b0e986f6e29fec858398c6ec04d9
+Q +f7ab764ed9df6d7a4a96cb0933d291f00174f33fed3d9951785078fe225adcb7
+R 7f447033484400f9e9474e22a1ab21e8
 U drh
-Z 7a32562ae3485d72d342f13ecc8d5bca
+Z da592251c7a263ba7d3d1e99d811dbce
 # Remove this line to create a well-formed Fossil manifest.
