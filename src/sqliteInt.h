@@ -4894,6 +4894,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3ShowWindow(const Window*);
   void sqlite3ShowWinFunc(const Window*);
 #endif
+  void sqlite3ShowBitvec(Bitvec*);
 #endif
 
 void sqlite3SetString(char **, sqlite3*, const char*);

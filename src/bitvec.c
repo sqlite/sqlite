@@ -107,6 +107,7 @@ struct Bitvec {
   } u;
 };
 
+
 /*
 ** Create a new bitmap object able to handle bits between 0 and iSize,
 ** inclusive.  Return a pointer to the new object.  Return NULL if
@@ -293,6 +294,52 @@ u32 sqlite3BitvecSize(Bitvec *p){
   return p->iSize;
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Show the content of a Bitvec option and its children.  Indent
+** everything by n spaces.  Add x to each bitvec value.
+**
+** From a debugger such as gdb, one can type:
+**
+**    call sqlite3ShowBitvec(p)
+**
+** For some Bitvec p and see a recursive view of the Bitvec's content.
+*/
+static void showBitvec(Bitvec *p, int n, unsigned x){
+  int i;
+  if( p==0 ){
+    printf("NULL\n");
+    return;
+  }
+  printf("Bitvec 0x%p iSize=%d", p, p->iSize);
+  if( p->iSize<=BITVEC_NBIT ){
+    printf(" bitmap\n");
+    printf("%*s   bits:", n, "");
+    for(i=1; i<=BITVEC_NBIT; i++){
+      if( sqlite3BitvecTest(p,i) ) printf(" %u", x+(unsigned)i);
+    }
+    printf("\n");
+  }else if( p->iDivisor==0 ){
+    printf(" hash with %d entries\n", p->nSet);
+    printf("%*s   bits:", n, "");
+    for(i=0; i<BITVEC_NINT; i++){
+      if( p->u.aHash[i] ) printf(" %u", x+(unsigned)p->u.aHash[i]);
+    }
+    printf("\n");
+  }else{
+    printf(" sub-bitvec with iDivisor=%d\n", p->iDivisor);
+    for(i=0; i<BITVEC_NPTR; i++){
+      if( p->u.apSub[i]==0 ) continue;
+      printf("%*s   apSub[%d]=", n, "", i);
+      showBitvec(p->u.apSub[i], n+4, i*p->iDivisor);
+    }
+  }
+}
+void sqlite3ShowBitvec(Bitvec *p){
+  showBitvec(p, 0, 0);
+}
+#endif
+
 #ifndef SQLITE_UNTESTABLE
 /*
 ** Let V[] be an array of unsigned characters sufficient to hold
@@ -304,6 +351,7 @@ u32 sqlite3BitvecSize(Bitvec *p){
 #define CLEARBIT(V,I)    V[I>>3] &= ~(BITVEC_TELEM)(1<<(I&7))
 #define TESTBIT(V,I)     (V[I>>3]&(1<<(I&7)))!=0
 
+
 /*
 ** This routine runs an extensive test of the Bitvec code.
 **
@@ -312,7 +360,7 @@ u32 sqlite3BitvecSize(Bitvec *p){
 ** by 0, 1, or 3 operands, depending on the opcode.  Another
 ** opcode follows immediately after the last operand.
 **
-** There are 6 opcodes numbered from 0 through 5.  0 is the
+** There are opcodes numbered starting with 0.  0 is the
 ** "halt" opcode and causes the test to end.
 **
 **    0          Halt and return the number of errors
@@ -321,12 +369,16 @@ u32 sqlite3BitvecSize(Bitvec *p){
 **    3 N        Set N randomly chosen bits
 **    4 N        Clear N randomly chosen bits
 **    5 N S X    Set N bits from S increment X in array only, not in bitvec
+**    6          Invoice sqlite3ShowBitvec() on the Bitvec object so far
+**    7 X        Show compile-time parameters and the hash of X         
 **
 ** The opcodes 1 through 4 perform set and clear operations are performed
 ** on both a Bitvec object and on a linear array of bits obtained from malloc.
 ** Opcode 5 works on the linear array only, not on the Bitvec.
 ** Opcode 5 is used to deliberately induce a fault in order to
-** confirm that error detection works.
+** confirm that error detection works.  Opcodes 6 and greater are
+** state output opcodes.  Opcodes 6 and greater are no-ops unless
+** SQLite has been compiled with SQLITE_DEBUG.
 **
 ** At the conclusion of the test the linear array is compared
 ** against the Bitvec object.  If there are any differences,
@@ -355,6 +407,26 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   /* Run the program */
   pc = i = 0;
   while( (op = aOp[pc])!=0 ){
+    if( op>=6 ){
+#ifdef SQLITE_DEBUG
+      if( op==6 ){
+        sqlite3ShowBitvec(pBitvec);
+      }else if( op==7 ){
+        unsigned x = (unsigned)aOp[++pc];
+        printf("BITVEC_SZ     = %d (%d by sizeof)\n",
+               BITVEC_SZ, (int)sizeof(Bitvec));
+        printf("BITVEC_USIZE  = %d\n", (int)BITVEC_USIZE);
+        printf("BITVEC_NELEM  = %d\n", (int)BITVEC_NELEM);
+        printf("BITVEC_NBIT   = %d\n", (int)BITVEC_NBIT);
+        printf("BITVEC_NINT   = %d\n", (int)BITVEC_NINT);
+        printf("BITVEC_MXHASH = %d\n", (int)BITVEC_MXHASH);
+        printf("BITVEC_NPTR   = %d\n", (int)BITVEC_NPTR);
+        printf("hash(%u): %u\n", x, (unsigned)BITVEC_HASH(x));
+      }
+#endif
+      pc++;
+      continue;
+    }
     switch( op ){
       case 1:
       case 2:

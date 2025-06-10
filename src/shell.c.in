@@ -11590,7 +11590,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     {"always",             SQLITE_TESTCTRL_ALWAYS, 1,     "BOOLEAN"         },
     {"assert",             SQLITE_TESTCTRL_ASSERT, 1,     "BOOLEAN"         },
   /*{"benign_malloc_hooks",SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS,1, ""        },*/
-  /*{"bitvec_test",        SQLITE_TESTCTRL_BITVEC_TEST, 1,  ""              },*/
+    {"bitvec_test",        SQLITE_TESTCTRL_BITVEC_TEST, 1, "SIZE INT-ARRAY"},
     {"byteorder",          SQLITE_TESTCTRL_BYTEORDER, 0,  ""                },
     {"extra_schema_checks",SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS,0,"BOOLEAN"  },
     {"fault_install",      SQLITE_TESTCTRL_FAULT_INSTALL, 1,"args..."       },
@@ -11928,6 +11928,49 @@ static int do_meta_command(char *zLine, ShellState *p){
           }
           sqlite3_test_control(testctrl, &rc2);
           break;
+        case SQLITE_TESTCTRL_BITVEC_TEST: {
+          /* Examples:
+          **   .testctrl bitvec_test 100   6,1       -- Show BITVEC constants
+          **   .testctrl bitvec_test 1000  1,12,7,3  -- Simple test
+          **                         ----  --------
+          **      size of Bitvec -----^        ^---  aOp array. 0 added at end.
+          **
+          ** See comments on sqlite3BitvecBuiltinTest() for more information
+          ** about the aOp[] array.
+          */
+          int iSize;
+          const char *zTestArg;
+          int nOp;
+          int ii, jj, x;
+          int *aOp;
+          if( nArg!=4 ){
+            sqlite3_fprintf(stderr,
+              "ERROR - should be:  \".testctrl bitvec_test SIZE  INT-ARRAY\"\n"
+            );
+            rc = 1;
+            goto meta_command_exit;
+          }
+          isOk = 3;
+          iSize = (int)integerValue(azArg[2]);
+          zTestArg = azArg[3];
+          nOp = (int)strlen(zTestArg)+1;
+          aOp = malloc( sizeof(int)*(nOp+1) );
+          shell_check_oom(aOp);
+          memset(aOp, 0, sizeof(int)*(nOp+1) );
+          for(ii = jj = x = 0; zTestArg[ii]!=0; ii++){
+            if( IsDigit(zTestArg[ii]) ){
+              x = x*10 + zTestArg[ii] - '0';
+            }else{
+              aOp[jj++] = x;
+              x = 0;
+            }
+          }
+          aOp[jj] = x;
+          x = sqlite3_test_control(testctrl, iSize, aOp);
+          sqlite3_fprintf(p->out, "result: %d\n", x);
+          free(aOp);
+          break;
+        }
         case SQLITE_TESTCTRL_FAULT_INSTALL: {
           int kk;
           int bShowHelp = nArg<=2;
