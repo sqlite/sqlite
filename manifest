@@ -1,5 +1,5 @@
-C Improved\sdiagnostics\sfor\sBitvec:\s\sAdd\sthe\ssqlite3ShowBitvec()\sroutine\sthat\ncan\sbe\scalled\sfrom\sa\sdebugger\s(only\savailable\swith\sSQLITE_DEBUG).\s\sAdd\snew\noutput\sopcodes\sfor\ssqlite3BitvecBuiltinTest().
-D 2025-06-10T16:02:29.157
+C Enhancements\sto\ssqlite3BitvecBuiltinTest()\sthat\sallow\stesting\scode\sto\ncreate\svery\slarge\sBitvec\sobjects\sthat\sdo\snot\suse\sthe\slinear\sarray\scross-check.
+D 2025-06-10T17:22:53.410
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -724,7 +724,7 @@ F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
 F src/attach.c 9af61b63b10ee702b1594ecd24fb8cea0839cfdb6addee52fba26fa879f5db9d
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
-F src/bitvec.c 248cfe775b6a6040615d59116fc7468de3568caf802a8ecb5fdedbe4b336357f
+F src/bitvec.c bf4516e0b64905315e41f6cd98fddf3321e1fa45b4639c58c1e33be3a36762f9
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 53a9c7b243e94c992853d90f1dac0959028433b4b0d27e04409cee04e001b508
 F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 96b14a3f1193de8f30e9fa704f87558dab8027a218868d32e47688cd5df497b7
-R 18009ba9dff94b8a020eccfe5001a554
+P dea1e37fa67ada6efc1533b449d9eb22338d9e58eec8f89b48c38319c212c8f4
+R f17be20aba33ae92effa44ccdc334f8f
 U drh
-Z 5261ad27d85df5b5801fdf97adab7f4f
+Z d746dc167462d800e8f34514e232eed7
 # Remove this line to create a well-formed Fossil manifest.

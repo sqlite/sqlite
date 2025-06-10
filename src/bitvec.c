@@ -385,6 +385,9 @@ void sqlite3ShowBitvec(Bitvec *p){
 ** an error is returned.  If they are the same, zero is returned.
 **
 ** If a memory allocation error occurs, return -1.
+**
+** sz is the size of the Bitvec.  Or if sz is negative, make the size
+** 2*(unsigned)(-sz) and disabled the linear vector check.
 */
 int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   Bitvec *pBitvec = 0;
@@ -395,10 +398,15 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
 
   /* Allocate the Bitvec to be tested and a linear array of
   ** bits to act as the reference */
-  pBitvec = sqlite3BitvecCreate( sz );
-  pV = sqlite3MallocZero( (7+(i64)sz)/8 + 1 );
+  if( sz<=0 ){
+    pBitvec = sqlite3BitvecCreate( 2*(unsigned)(-sz) );
+    pV = 0;
+  }else{
+    pBitvec = sqlite3BitvecCreate( sz );
+    pV = sqlite3MallocZero( (7+(i64)sz)/8 + 1 );
+  }
   pTmpSpace = sqlite3_malloc64(BITVEC_SZ);
-  if( pBitvec==0 || pV==0 || pTmpSpace==0  ) goto bitvec_end;
+  if( pBitvec==0 || pTmpSpace==0  ) goto bitvec_end;
 
   /* NULL pBitvec tests */
   sqlite3BitvecSet(0, 1);
@@ -448,12 +456,12 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
     pc += nx;
     i = (i & 0x7fffffff)%sz;
     if( (op & 1)!=0 ){
-      SETBIT(pV, (i+1));
+      if( pV ) SETBIT(pV, (i+1));
       if( op!=5 ){
         if( sqlite3BitvecSet(pBitvec, i+1) ) goto bitvec_end;
       }
     }else{
-      CLEARBIT(pV, (i+1));
+      if( pV ) CLEARBIT(pV, (i+1));
       sqlite3BitvecClear(pBitvec, i+1, pTmpSpace);
     }
   }
@@ -463,14 +471,18 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   ** match (rc==0).  Change rc to non-zero if a discrepancy
   ** is found.
   */
-  rc = sqlite3BitvecTest(0,0) + sqlite3BitvecTest(pBitvec, sz+1)
-          + sqlite3BitvecTest(pBitvec, 0)
-          + (sqlite3BitvecSize(pBitvec) - sz);
-  for(i=1; i<=sz; i++){
-    if(  (TESTBIT(pV,i))!=sqlite3BitvecTest(pBitvec,i) ){
-      rc = i;
-      break;
+  if( pV ){
+    rc = sqlite3BitvecTest(0,0) + sqlite3BitvecTest(pBitvec, sz+1)
+            + sqlite3BitvecTest(pBitvec, 0)
+            + (sqlite3BitvecSize(pBitvec) - sz);
+    for(i=1; i<=sz; i++){
+      if( (TESTBIT(pV,i))!=sqlite3BitvecTest(pBitvec,i) ){
+        rc = i;
+        break;
+      }
     }
+  }else{
+    rc = 0;
   }
 
   /* Free allocated structure */
