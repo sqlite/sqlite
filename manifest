@@ -1,5 +1,5 @@
-C Minor\scorrections\sto\sthe\snew\sBitvec\stesting\slogic.
-D 2025-06-10T18:26:09.286
+C Improved\sselection\sof\sthe\sdivisor\swhen\ssubdividing\snested\sBitvec\sobjects.\nThis\sfixes\sa\spotential\sstack\soverflow\sthat\scan\soccur\swhen\sthe\sdatabase\ssize\nis\swithin\s60\spages\sof\sthe\smaximum\sallowed\sby\sthe\sfile\sformat.
+D 2025-06-10T19:52:21.568
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -724,7 +724,7 @@ F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
 F src/attach.c 9af61b63b10ee702b1594ecd24fb8cea0839cfdb6addee52fba26fa879f5db9d
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
-F src/bitvec.c 997e671e5cda1cbed14af3b29c8a6155d78f52386ac5c52e177ded96536325f3
+F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 53a9c7b243e94c992853d90f1dac0959028433b4b0d27e04409cee04e001b508
 F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c5680672cae23f65637eebf66f3bb983a2864be03ea70378832034f3c89ef728
-R db1ba5a64ed30c3ee4db5bcae7781ac2
+P 77b79ca1277419b91589aff2c601d4abdd7107d48019a58f7f7c85d96c2a538e
+R bf66b7985c31cceb0c32df308099135b
 U drh
-Z 58131ae6c40b1aa64532119990f28d26
+Z a20e53dfcbadb1b77270bd825fc40efb
 # Remove this line to create a well-formed Fossil manifest.
