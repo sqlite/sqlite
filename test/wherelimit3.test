@@ -29,7 +29,7 @@ do_eqp_test 1.1 {
   SELECT * FROM t1 WHERE a>=100 AND a<300 ORDER BY b LIMIT 5;
 } {
   QUERY PLAN
-  |--SEARCH t1 USING INDEX t1a (a>? AND a<?)
+  |--FLEX-SEARCH t1 USING INDEX t1a (a>? AND a<?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 ifcapable stat4 {
@@ -46,7 +46,7 @@ do_eqp_test 1.3 {
   SELECT * FROM t1 WHERE a>=100 AND a<300 ORDER BY b LIMIT $::N;
 } {
   QUERY PLAN
-  |--SEARCH t1 USING INDEX t1a (a>? AND a<?)
+  |--FLEX-SEARCH t1 USING INDEX t1a (a>? AND a<?)
   `--USE TEMP B-TREE FOR ORDER BY
 }
 

@@ -95,7 +95,7 @@ ifcapable analyze {
     |  `--RECURSIVE STEP
     |     `--SCAN cnt
     |--SCAN cnt
-    `--SEARCH y1 USING INDEX y1a (a=?)
+    `--FLEX-SEARCH y1 USING INDEX y1a (a=?)
   }]
 
   do_eqp_test 3.1.3 {

@@ -3791,6 +3791,34 @@ case OP_EstPos: {        /* out2 */
   break;
 }
 
+/* Opcode: IfUseIndex P1 P2 P3 P4 *
+**
+** This opcode decides whether it will be faster to use the index
+** in cursor P1 or to do a full table scan on the original table.
+** If the index on cursor P1 should be used, a jump is made to P2.
+** (That is the usual case).  If it seems like it might be faster to
+** do a full table scan, then fall through.
+**
+** The P3 and P4 arguments define a key in the same format as OP_SeekGT
+** and similar.  That key is the last key in the range of index entries
+** that match the join condition.  This opcode works by estimating the
+** number of rows in the index P1 between the current row and the last
+** row that matches P3,P4.  If the number of rows that match is a significant
+** fraction of the total number of rows in the index, then it might be
+** faster to do a scan of the original table, and so this opcode falls.
+** If the estimated number of matching rows is small compared to the
+** total number of rows in the index, then the jump to P2 is taken
+** and cursor P1 is unchanged.
+*/
+case OP_IfUseIndex: {    /* jump */
+  /**** Temporary Hack:
+  ***** Take the jump if Tuning(0) is 0.  Fall through if non-zero.
+  ****/
+  if( Tuning(0) ) goto jump_to_p2;
+  break;
+}
+
+
 /* Opcode: Savepoint P1 * * P4 *
 **
 ** Open, release or rollback the savepoint named by parameter P4, depending
@@ -4899,15 +4927,19 @@ case OP_SeekGT: {       /* jump0, in3, group, ncycle */
     ** with the same key.
     */
     if( sqlite3BtreeCursorHasHint(pC->uc.pCursor, BTREE_SEEK_EQ) ){
-      eqOnly = 1;
+#ifdef SQLITE_DEBUG
+      VdbeOp *pNext = &pOp[1];
+      if( pNext->opcode==OP_IfUseIndex ) pNext = &p->aOp[pNext->p2];
       assert( pOp->opcode==OP_SeekGE || pOp->opcode==OP_SeekLE );
-      assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
-      assert( pOp->opcode==OP_SeekGE || pOp[1].opcode==OP_IdxLT );
-      assert( pOp->opcode==OP_SeekLE || pOp[1].opcode==OP_IdxGT );
-      assert( pOp[1].p1==pOp[0].p1 );
-      assert( pOp[1].p2==pOp[0].p2 );
-      assert( pOp[1].p3==pOp[0].p3 );
-      assert( pOp[1].p4.i==pOp[0].p4.i );
+      assert( pNext->opcode==OP_IdxLT || pNext->opcode==OP_IdxGT );
+      assert( pOp->opcode==OP_SeekGE || pNext->opcode==OP_IdxLT );
+      assert( pOp->opcode==OP_SeekLE || pNext->opcode==OP_IdxGT );
+      assert( pNext->p1==pOp[0].p1 );
+      assert( pNext->p2==pOp[0].p2 );
+      assert( pNext->p3==pOp[0].p3 );
+      assert( pNext->p4.i==pOp[0].p4.i );
+#endif /* SQLITE_DEBUG */
+      eqOnly = 1;
     }
 
     nField = pOp->p4.i;
@@ -4992,7 +5024,7 @@ seek_not_found:
   VdbeBranchTaken(res!=0,2);
   if( res ){
     goto jump_to_p2;
-  }else if( eqOnly ){
+  }else if( eqOnly && pOp[1].opcode!=OP_IfUseIndex ){
     assert( pOp[1].opcode==OP_IdxLT || pOp[1].opcode==OP_IdxGT );
     pOp++; /* Skip the OP_IdxLt or OP_IdxGT that follows */
   }

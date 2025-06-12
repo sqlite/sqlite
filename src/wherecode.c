@@ -149,7 +149,7 @@ void sqlite3WhereAddExplainText(
 
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     str.printfFlags = SQLITE_PRINTF_INTERNAL;
-#if 0
+#if 1
     if( (flags & WHERE_FLEX_SEARCH)!=0 && isSearch ){
       sqlite3_str_appendf(&str, "FLEX-SEARCH %S", pItem);
     }else
@@ -2146,6 +2146,15 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( zStartAff ) sqlite3DbNNFreeNN(db, zStartAff);
     if( zEndAff ) sqlite3DbNNFreeNN(db, zEndAff);
 
+    if( pLoop->wsFlags & WHERE_FLEX_SEARCH ){
+      int jIfIdx;
+      /*** First flex-search block ***/
+      jIfIdx = sqlite3VdbeAddOp4Int(v, OP_IfUseIndex, iIdxCur, 0,
+                                    regBase, nConstraint);
+      /*** Other stuff here ***/
+      sqlite3VdbeJumpHere(v, jIfIdx);
+    }
+
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
 
@@ -2243,6 +2252,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       assert( pLevel->p5==0 );
     }
     if( omitTable ) pIdx = 0;
+
+    /*** Insert flex-scan block 2 here ****/
+    /*** Fix-up pLevel->op and similar ****/
+
   }else
 
 #ifndef SQLITE_OMIT_OR_OPTIMIZATION

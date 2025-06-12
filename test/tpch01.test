@@ -189,7 +189,7 @@ order by
     revenue desc;
 } {
   QUERY PLAN
-  |--SEARCH orders USING INDEX odi (O_ORDERDATE>? AND O_ORDERDATE<?)
+  |--FLEX-SEARCH orders USING INDEX odi (O_ORDERDATE>? AND O_ORDERDATE<?)
   |--SEARCH customer USING INDEX cpki (C_CUSTKEY=?)
   |--SEARCH nation USING INDEX npki (N_NATIONKEY=?)
   |--SEARCH lineitem USING INDEX lpki (L_ORDERKEY=?)

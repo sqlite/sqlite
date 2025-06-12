@@ -7158,7 +7158,12 @@ WhereInfo *sqlite3WhereBegin(
           wherePartIdxExpr(
               pParse, pIx, pIx->pPartIdxWhere, 0, iIndexCur, pTabItem
           );
-        }else if( pIx->aiRowLogEst[pLoop->u.btree.nEq]>65 ){
+        }else if( pIx->aiRowLogEst[pLoop->u.btree.nEq]>65
+               && 0==(pLoop->wsFlags & (WHERE_AUTO_INDEX
+                                       |WHERE_IDX_ONLY
+                                       |WHERE_EXPRIDX))
+               && 0!=(pLoop->wsFlags & (WHERE_BOTH_LIMIT|WHERE_CONSTRAINT))
+        ){
           pLoop->wsFlags |= WHERE_FLEX_SEARCH;
         }
       }

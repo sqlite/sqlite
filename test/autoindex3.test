@@ -85,7 +85,7 @@ do_eqp_test 220 {
   select count(*) from u, v where u.b = v.b and v.e > 34;
 } {
   QUERY PLAN
-  |--SEARCH v USING INDEX ve (e>?)
+  |--FLEX-SEARCH v USING INDEX ve (e>?)
   |--BLOOM FILTER ON u (b=?)
   `--SEARCH u USING AUTOMATIC COVERING INDEX (b=?)
 }
@@ -119,10 +119,10 @@ do_eqp_test 310 {
   QUERY PLAN
   |--CO-ROUTINE children
   |  |--SETUP
-  |  |  `--SEARCH t2 USING INDEX x1 (pid=? AND rx=?)
+  |  |  `--FLEX-SEARCH t2 USING INDEX x1 (pid=? AND rx=?)
   |  `--RECURSIVE STEP
   |     |--SCAN children
-  |     `--SEARCH t2 USING INDEX x1 (pid=? AND rx=?)
+  |     `--FLEX-SEARCH t2 USING INDEX x1 (pid=? AND rx=?)
   `--SCAN children
 }  
 

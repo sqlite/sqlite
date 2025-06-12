@@ -93,7 +93,7 @@ do_eqp_test 1.1 {
   |--CO-ROUTINE (subquery-xxxxxx)
   |  |--SEARCH DS USING COVERING INDEX ds1 (name=?)
   |  |--SEARCH R USING COVERING INDEX rule2 (dsid=?)
-  |  |--SEARCH V USING INDEX v1 (rid=?)
+  |  |--FLEX-SEARCH V USING INDEX v1 (rid=?)
   |  `--USE TEMP B-TREE FOR ORDER BY
   `--SCAN (subquery-xxxxxx)
 }
