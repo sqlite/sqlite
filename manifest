@@ -1,5 +1,5 @@
-C Help\sext/wasm\s'make\ssnapshot'\sfind\sthe\swasm\sdocs\sdir\swhen\sit's\srun\sfrom\soutside\sof\smy\susual\scheckout\sstructure.
-D 2025-06-12T10:56:16.244
+C Have\ssqlite3_setlk_timeout()\stake\sthe\sdatabase\shandle\smutex.\sThis\sfixes\san\sassert()\sfailure\sthat\scould\soccur\sif\ssqlite3_setlk_timeout()\swere\scalled\son\sa\sthreadsafe\shandle.
+D 2025-06-12T13:27:10.003
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -749,7 +749,7 @@ F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
 F src/json.c cb87977b1ee25ee7d27505d65a9261b687395bf895342c8ba566b7c01aee2047
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d7edd8e671237539d795d30daaf888908a2c82e99bade4c78f3be021e8b7d655
-F src/main.c 07f78d917ffcdf327982840cfd8e855fd000527a2ea5ace372ce4febcbd0bf97
+F src/main.c eb46066bf2f0bec2dd89229572de5a9c479c47da134e2422e7a0056e9510cbee
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2034,7 +2034,7 @@ F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533442b
 F test/walsetlk.test 9079cd8ef82570b8cf0067f31e049a72bec353fb2d5f0cc88f1736dc42ba9704
-F test/walsetlk2.test 9097083633cdf55bf1098b694fb8651d0356d38fef28b869481d18029d7ceaf4
+F test/walsetlk2.test 4a67823b1e759ac5a4fe78a83c1f857c3c5761bf8d755421c8b55907957f23dd
 F test/walsetlk3.test 1b82bd92dea7e58f498b4399b0b3d26773dd8ac5c74205ce4a23c207cb8e85fe
 F test/walsetlk_recover.test adccbffc59e365063a4efd2da6b661ae2fcf15d775b6719fe46acd87face08ff
 F test/walsetlk_snapshot.test 86d5588380f9927d8fcbbd75133b0a34fddf959378d6823c6f164a390123f70a
@@ -2209,8 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b4577d83ca6a9f404300a719e1e0920dc40302d9cd9f30d1fc204b109e2726f
-R 4b695ce69f7528665d35b4d32eb8f431
-U stephan
-Z 9f2389381398effc878ae4135a87e223
+P 0e04136bc5a72b47b476258ac234364f677d7ee50e3f3710b23f3e2c6e163df5
+Q +a95d126e1330e1b83f42b51f97c4c216622cf38062f3b5d72ccb76313187e850
+R 6572927eeb6b53decfbb5e1e41e6f277
+U drh
+Z 930bf6367b0888b64174ea494be78943
 # Remove this line to create a well-formed Fossil manifest.
