@@ -1,5 +1,5 @@
-C Preliminary\scode\sgeneration\sfor\sflex-search.\s\sAdd\sa\sno-op\sIfUseIndex\sopcode\nas\sa\splaceholder.
-D 2025-06-12T19:02:54.531
+C Fix\stest\scases\son\sthe\sexpert\sextension.
+D 2025-06-13T00:25:01.521
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -71,7 +71,7 @@ F doc/wal-lock.md 7db0cd61e2000b545b78ce89b0c2a9a8dd8d64c097839258ac10d7c5c4156e
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test 1d2da6606623b57bb47064e02140823ce1daecd4cacbf402c73ad3473d7f000c
+F ext/expert/expert1.test b753c50cbb37da2b863f26ac5f8cc031f523ea3bc113af389c7d79fb62522f7b
 F ext/expert/sqlite3expert.c cf4b1e5584862f486a4c6014ddb081831f1c512065dcf35644638d57179979d6
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c c395134bd6d4efa594a7d26578a1cb624c4027b79b4b5fcd44736c5ef1f5f725
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 51c89c886f1846e297d249c85d18b047c76ba352ed998e48220e96a6a567b4a8
-R 5d5f07366627e69538d51ee50b1e88c9
+P 521948c64fc7a043e891e4dc3255bd59a76332c58b34d81057eecdf2fef31a63
+R 8e88dd6a43a25efd7e3b9bd889289e51
 U drh
-Z 57fa0baa0107ffc7b174660d67d1252c
+Z d1c6d043de1f71e24c9ca9590d378de8
 # Remove this line to create a well-formed Fossil manifest.

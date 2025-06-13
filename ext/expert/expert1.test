@@ -77,6 +77,7 @@ foreach {tn setup} {
       $expert destroy
 
       set tst [subst -nocommands {set {} [squish [join {$result}]]}]
+      set tst [string map {{FLEX-SEARCH} SEARCH} $tst]
       uplevel [list do_test $tn $tst [string trim [squish $res]]]
     }
   }
@@ -90,7 +91,7 @@ foreach {tn setup} {
     proc do_rec_test {tn sql res} {
       set res [squish [string trim $res]]
       set tst [subst -nocommands { 
-        squish [string trim [exec $::CLI test.db ".expert" {$sql;}]]
+        string map {{FLEX-SEARCH} SEARCH} [squish [string trim [exec $::CLI test.db ".expert" {$sql;}]]]
       }]
       uplevel [list do_test $tn $tst $res]
     }
