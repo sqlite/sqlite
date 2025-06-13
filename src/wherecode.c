@@ -176,7 +176,7 @@ void sqlite3WhereAddExplainText(
         explainIndexRange(&str, pLoop);
       }
       if( (flags & WHERE_FLEX_SEARCH)!=0 && isSearch ){
-        sqlite3_str_appendf(&str, " OR SCAN");
+        sqlite3_str_appendf(&str, ", OR SCAN %S", pItem);
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
       char cRangeOp;

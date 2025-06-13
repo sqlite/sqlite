@@ -110,7 +110,7 @@ do_eqp_test 5.3 {
   SELECT * FROM t2 WHERE x BETWEEN ? AND ? ORDER BY rowid;
 } {
   QUERY PLAN
-  |--SEARCH t2 USING INDEX t2i1 (x>? AND x<?) OR SCAN
+  |--SEARCH t2 USING INDEX t2i1 (x>? AND x<?), OR SCAN t2
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
