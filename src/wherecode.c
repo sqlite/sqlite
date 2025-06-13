@@ -149,14 +149,7 @@ void sqlite3WhereAddExplainText(
 
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     str.printfFlags = SQLITE_PRINTF_INTERNAL;
-#if 1
-    if( (flags & WHERE_FLEX_SEARCH)!=0 && isSearch ){
-      sqlite3_str_appendf(&str, "FLEX-SEARCH %S", pItem);
-    }else
-#endif
-    {
-      sqlite3_str_appendf(&str, "%s %S", isSearch ? "SEARCH" : "SCAN", pItem);
-    }
+    sqlite3_str_appendf(&str, "%s %S", isSearch ? "SEARCH" : "SCAN", pItem);
     if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
       const char *zFmt = 0;
       Index *pIdx;
@@ -181,6 +174,9 @@ void sqlite3WhereAddExplainText(
         sqlite3_str_append(&str, " USING ", 7);
         sqlite3_str_appendf(&str, zFmt, pIdx->zName);
         explainIndexRange(&str, pLoop);
+      }
+      if( (flags & WHERE_FLEX_SEARCH)!=0 && isSearch ){
+        sqlite3_str_appendf(&str, " OR SCAN");
       }
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
       char cRangeOp;
