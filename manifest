@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sdisable\sthe\sFlex-Search\soptimization\susing\nSQLITE_TESTCTRL_OPTIMIZATION.
-D 2025-06-14T13:18:58.423
+C Fix\sissues\swith\sexpression\sindexes\sfor\sflex-search\squeries.
+D 2025-06-14T14:46:39.866
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -867,7 +867,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b0f848cfba8dd057f77073493cdd542f9125b4cf87941f53e9d0db21604155c8
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 8007b70ca328df72237577503eed9006a24368ff9b1a718ababacb4a2363f01a
+F src/where.c 2a7ac07e5c288d15898f7910b810d556731818e32810778369261f8f94dd5722
 F src/whereInt.h b0c5487551dc7821426cac213fd5c194a558cab9dfd4e130d71f7afa6416463c
 F src/wherecode.c 45adf7743c305a89647f8278a71f3eba27e1d1f002c99cc3685254d7ae9e958f
 F src/whereexpr.c 2415c8eee5ff89a8b709d7d83d71c1ff986cd720d0520057e1d8a5371339012a
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9872df2b85cc19b2993fbe5d1303d902dea6ed825f7f775232ac32bfc4880824
-R abfd8b416c42c89f5fd0df000e3d5ae3
+P 5319a55ab2351288261ebf650bca5f18afbfd5a789f01b8976f8f6a1a7b299c0
+R 05e27b22638f8ae759cfda5e7881423d
 U drh
-Z 369712ad44288b8eff0e585206731d0c
+Z c7af01466156e21a9f84bc866f8f1d55
 # Remove this line to create a well-formed Fossil manifest.
