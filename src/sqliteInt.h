@@ -1924,6 +1924,7 @@ struct sqlite3 {
 #define SQLITE_OnePass        0x08000000 /* Single-pass DELETE and UPDATE */
 #define SQLITE_OrderBySubq    0x10000000 /* ORDER BY in subquery helps outer */
 #define SQLITE_StarQuery      0x20000000 /* Heurists for star queries */
+#define SQLITE_FlexSearch     0x40000000 /* Maybe scan instead of use index */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*

@@ -7163,6 +7163,7 @@ WhereInfo *sqlite3WhereBegin(
                                        |WHERE_IDX_ONLY
                                        |WHERE_EXPRIDX))
                && 0!=(pLoop->wsFlags & (WHERE_BOTH_LIMIT|WHERE_CONSTRAINT))
+               && OptimizationEnabled(db, SQLITE_FlexSearch)
         ){
           pLoop->wsFlags |= WHERE_FLEX_SEARCH;
         }
