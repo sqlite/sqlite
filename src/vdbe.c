@@ -3812,9 +3812,9 @@ case OP_EstPos: {        /* out2 */
 */
 case OP_IfUseIndex: {    /* jump */
   /**** Temporary Hack:
-  ***** Take the jump if Tuning(0) is 0.  Fall through if non-zero.
+  ***** Take the jump if Tuning(1) is 0.  Fall through if non-zero.
   ****/
-  if( Tuning(0) ) goto jump_to_p2;
+  if( Tuning(1)==0 ) goto jump_to_p2;
   break;
 }
 

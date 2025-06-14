@@ -1901,6 +1901,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     int omitTable;               /* True if we use the index only */
     int regBignull = 0;          /* big-null flag register */
     int addrSeekScan = 0;        /* Opcode of the OP_SeekScan, if any */
+    int addrGosub = 0;           /* Address of first OP_Gosub */
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
@@ -2143,11 +2144,21 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( zEndAff ) sqlite3DbNNFreeNN(db, zEndAff);
 
     if( pLoop->wsFlags & WHERE_FLEX_SEARCH ){
-      int jIfIdx;
-      /*** First flex-search block ***/
+      int jIfIdx, ii;
+      int labelScanCont = sqlite3VdbeMakeLabel(pParse);
       jIfIdx = sqlite3VdbeAddOp4Int(v, OP_IfUseIndex, iIdxCur, 0,
                                     regBase, nConstraint);
-      /*** Other stuff here ***/
+      sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur);
+      for(ii=0; ii<pLoop->nLTerm; ii++){
+        if( pLoop->aLTerm[ii] ){
+          sqlite3ExprIfFalse(pParse, pLoop->aLTerm[ii]->pExpr,
+                             labelScanCont, SQLITE_JUMPIFNULL);
+        }
+      }
+      addrGosub = sqlite3VdbeAddOp1(v, OP_Gosub, ++pParse->nMem);
+      sqlite3VdbeResolveLabel(v, labelScanCont);
+      sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, jIfIdx+2);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrBrk);
       sqlite3VdbeJumpHere(v, jIfIdx);
     }
 
@@ -2249,8 +2260,25 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
     if( omitTable ) pIdx = 0;
 
-    /*** Insert flex-scan block 2 here ****/
-    /*** Fix-up pLevel->op and similar ****/
+    if( addrGosub ){
+      /* This is a flex scan.
+      ** Generate a subroutine call to the both of this loop then terminate
+      ** this loop immediately.   Arrange for an OP_Return to occur after
+      ** the loop body.
+      */
+      int regRtnAddr = sqlite3VdbeGetOp(v, addrGosub)->p1;
+      int addrSub2 = sqlite3VdbeAddOp1(v, OP_Gosub, regRtnAddr);
+      sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
+      sqlite3VdbeChangeP5(v, pLevel->p5);
+      pLevel->op = OP_Return;
+      pLevel->p1 = regRtnAddr;
+      pLevel->p3 = 0;
+      pLevel->p5 = 0;
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrBrk);
+      sqlite3VdbeJumpHere(v, addrGosub);
+      sqlite3VdbeJumpHere(v, addrSub2);
+      pLevel->p2 = sqlite3VdbeCurrentAddr(v);
+    }
 
   }else
 
