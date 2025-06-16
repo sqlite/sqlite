@@ -1153,6 +1153,7 @@ extern u32 sqlite3TreeTrace;
 **   0x00020000     Transform DISTINCT into GROUP BY
 **   0x00040000     SELECT tree dump after all code has been generated
 **   0x00080000     NOT NULL strength reduction
+**   0x00100000     Pointers are all shown as zero
 */
 
 /*
@@ -1197,6 +1198,7 @@ extern u32 sqlite3WhereTrace;
 ** 0x00020000   Show WHERE terms returned from whereScanNext()
 ** 0x00040000   Solver overview messages
 ** 0x00080000   Star-query heuristic
+** 0x00100000   Pointers are all shown as zero
 */
 
 
