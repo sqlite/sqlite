@@ -1,5 +1,5 @@
-C Make\sthe\sshow-%p-az-zero\shack\sof\sthe\sprevious\scheck-in\sconfigurable\sat\nrun-time\susing\sthe\s0x100000\sbit\sof\seither\s.treetrace\sor\s.wheretrace.\nAs\sbefore,\sthis\sis\sall\sa\sno-op\sexcept\sfor\sdebugging\sbuilds.
-D 2025-06-16T15:34:26.728
+C Improved\sdebugging\soutput\sfor\sthe\stransitive\sconstraint\soptimization.
+D 2025-06-16T16:07:14.948
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -867,10 +867,10 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b0f848cfba8dd057f77073493cdd542f9125b4cf87941f53e9d0db21604155c8
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 45a3b496248a0b36d91ce34da3278d54f8fa20e9d3fbd36d45a42051d1118137
-F src/whereInt.h ecdbfb5551cf394f04ec7f0bc7ad963146d80eee3071405ac29aa84950128b8e
+F src/where.c a99fa3061a0155d2cb0e2c91df76dbf834750272a8d79ec5e2dce3ed4e6abad6
+F src/whereInt.h 02b646ea41a8342815b3628f8064c32618ea2e0f20b83216ea08cad11f0ac5aa
 F src/wherecode.c 9710e62379c000189476404f923d4d1b192d0def222fdd287b820cc085a0d555
-F src/whereexpr.c 2415c8eee5ff89a8b709d7d83d71c1ff986cd720d0520057e1d8a5371339012a
+F src/whereexpr.c e853a9e53397fbddd75df4dd49ecc77bc978746ff0a8fe69bb7420e1dfc3ce53
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 65e2704c0bc329f3dd248548a2d4edb7d3ace8ceaf0b82b8618b9b1b764884cd
-R 91b787ed4244ba2b7d9b4d2ef7cf2667
+P a29627d7e7f8344d9a099cc133bda85250b02dc5ee5f358ba59691e0816b5b2d
+R 34371f8634c67d772cafde5946603d67
 U drh
-Z 970dc6fd3f0ae61f2070bc0389069f99
+Z fb90426037785b3f69c83ee4d927ce82
 # Remove this line to create a well-formed Fossil manifest.

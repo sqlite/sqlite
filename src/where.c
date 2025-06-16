@@ -426,11 +426,11 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
             pScan->pWC = pWC;
             pScan->k = k+1;
 #ifdef WHERETRACE_ENABLED
-            if( sqlite3WhereTrace & 0x20000 ){
+            if( (sqlite3WhereTrace & 0x20000)!=0 && pScan->nEquiv>1 ){
               int ii;
-              sqlite3DebugPrintf("SCAN-TERM %p: nEquiv=%d",
-                 pTerm, pScan->nEquiv);
-              for(ii=0; ii<pScan->nEquiv; ii++){
+              sqlite3DebugPrintf("EQUIVALENT TO {%d:%d} (due to TERM-%d):",
+                 pScan->aiCur[0], pScan->aiColumn[0], pTerm->iTerm);
+              for(ii=1; ii<pScan->nEquiv; ii++){
                 sqlite3DebugPrintf(" {%d:%d}",
                    pScan->aiCur[ii], pScan->aiColumn[ii]);
               }
@@ -2385,6 +2385,7 @@ void sqlite3WhereTermPrint(WhereTerm *pTerm, int iTerm){
     }else{
       sqlite3_snprintf(sizeof(zLeft),zLeft,"left=%d", pTerm->leftCursor);
     }
+    iTerm = pTerm->iTerm = MAX(iTerm,pTerm->iTerm);
     sqlite3DebugPrintf(
        "TERM-%-3d %p %s %-12s op=%03x wtFlags=%04x",
        iTerm, pTerm, zType, zLeft, pTerm->eOperator, pTerm->wtFlags);

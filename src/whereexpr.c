@@ -1112,6 +1112,9 @@ static void exprAnalyze(
   }
   assert( pWC->nTerm > idxTerm );
   pTerm = &pWC->a[idxTerm];
+#ifdef SQLITE_DEBUG
+  pTerm->iTerm = idxTerm;
+#endif
   pMaskSet = &pWInfo->sMaskSet;
   pExpr = pTerm->pExpr;
   assert( pExpr!=0 ); /* Because malloc() has not failed */
