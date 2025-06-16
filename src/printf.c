@@ -416,6 +416,15 @@ void sqlite3_str_vappendf(
           }
           prefix = 0;
         }
+
+#if 0
+        /* Change the "#if 0" above to "#if 1" to cause all %p outputs
+        ** to be rendered as 0.  This is useful when comparing .treetrace
+        ** or .wheretrace outputs, as it means the  the pointer values
+        ** will compare equal. */
+        if( xtype==etPOINTER ) longvalue = 0;
+#endif
+
         if( longvalue==0 ) flag_alternateform = 0;
         if( flag_zeropad && precision<width-(prefix!=0) ){
           precision = width-(prefix!=0);
