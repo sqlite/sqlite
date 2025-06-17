@@ -1,5 +1,5 @@
-C Avoid\swriting\sframes\swith\sno\schecksums\sinto\sthe\swal\sfile\sif\sa\nsavepoint\sis\srolled\sback\safter\sdirty\spages\shave\salready\sbeen\nspilled\sinto\sthe\swal\sfile.
-D 2025-06-17T19:10:33.524
+C tea:\sremove\sthe\svsatisfies\s8.6-\senforcement\sfrom\sthe\sextension\sbecause\sat\sleast\sone\splatform\swith\stcl\s8.6\sis\sinexplicably\sfailing\sit.\s[forum:fde857fb8101a4be\s|\sForum\spost\sfde857fb8101a4be]
+D 2025-06-17T20:50:51.038
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -29,7 +29,7 @@ F autoconf/tea/auto.def ce95b9450e2fa4ba5dc857e208fe10f4e6f2d737796ac3278aee6079
 F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in e07da6b94561f4aa382bab65b1ccceb04701b97bf59d007c1d1f20a222b22d07
-F autoconf/tea/teaish.tcl a2224762a039ed30c45cc1ce4b2fde5667fb0aa2569bb56590f5cb5d45d7410b
+F autoconf/tea/teaish.tcl 81feb417e718ed75cdd7e2fdf6771f3da80dae97377a90c4d5b62b3754abbf1d
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
@@ -2208,9 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 336a59eb3afd80ce048de472368df6dfc32934ee783859d37663ed8f5cf169a5 0da16f6c625bff9f2ca5624afa6dce6b5a157f44c1d56b25b92946c13217ab02
-R 4f15daf1345886267fb9e7e113ac5ab2
-T +closed 0da16f6c625bff9f2ca5624afa6dce6b5a157f44c1d56b25b92946c13217ab02
-U drh
-Z 6c7c1ae528922d359a2a0f722b244029
+P 5973f9b9aa828ec9274b02a124b95f452c58235eaafffbdda1c32b4ae2d5616d
+R ffe4c4f9740764f19f045c7eccf51b70
+U stephan
+Z 2ac69cc1b6cde0471296c6efe62f4a19
 # Remove this line to create a well-formed Fossil manifest.
