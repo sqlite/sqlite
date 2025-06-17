@@ -3781,6 +3781,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
       if( iMax!=pWal->hdr.mxFrame ) walCleanupHash(pWal);
     }
     SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
+    pWal->iReCksum = 0;
   }
   return rc;
 }
@@ -3828,6 +3829,9 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
       walCleanupHash(pWal);
     }
     SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
+    if( pWal->iReCksum>pWal->hdr.mxFrame ){
+      pWal->iReCksum = 0;
+    }
   }
 
   return rc;
