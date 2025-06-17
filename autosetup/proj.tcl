@@ -885,7 +885,9 @@ proc proj-looks-like-windows {{key host}} {
 #
 proc proj-looks-like-mac {{key host}} {
   switch -glob -- [get-define $key] {
-    *apple* {
+    *-*-darwin {
+      # https://sqlite.org/forum/forumpost/7b218c3c9f207646
+      # There's at least one Linux out there which matches *apple*.
       return 1
     }
     default {
@@ -927,17 +929,13 @@ proc proj-exe-extension {} {
 #
 proc proj-dll-extension {} {
   set inner {{key} {
-    switch -glob -- [get-define $key] {
-      *apple* {
-        return ".dylib"
-      }
-      *-*-ming* - *-*-cygwin - *-*-msys {
-        return ".dll"
-      }
-      default {
-        return ".so"
-      }
+    if {[proj-looks-like-mac $key]} {
+      return ".dylib"
     }
+    if {[proj-looks-like-windows $key]} {
+      return ".dll"
+    }
+    return ".so"
   }}
   define BUILD_DLLEXT [apply $inner build]
   define TARGET_DLLEXT [apply $inner host]
@@ -2189,11 +2187,7 @@ proc proj-parse-flags {argvName tgtArrayName prototype} {
   upvar $argvName argv
   upvar $tgtArrayName outFlags
   array set flags {}; # staging area
-  array set scripts {};      # map of -flag=>script
-  array set consuming {};    # map of -flag=>1 for arg-consuming flags
-  array set multi {};        # map of -flag=>1 for multi-time flags
-  array set seen {};         # map of -flag=>number of times seen
-  array set call {};         # map of -flag=>1 for -call entries
+  array set blob {}; # holds markers for various per-key state and options
   set incrSkip 1; # 1 if we stop at the first non-flag, else 0
   # Parse $prototype for flag definitions...
   set n [llength $prototype]
@@ -2201,8 +2195,8 @@ proc proj-parse-flags {argvName tgtArrayName prototype} {
     #puts "**** checkProtoFlag #$i of $n k=$k fv=$fv"
     switch -exact -- $fv {
       -literal {
-        proj-assert {![info exists consuming($k)]}
-        set scripts($k) [list expr [lindex $prototype [incr i]]]
+        proj-assert {![info exists blob(${k}.consumes)]}
+        set blob(${k}.script) [list expr [lindex $prototype [incr i]]]
       }
       -apply {
         set fv [lindex $prototype [incr i]]
@@ -2210,16 +2204,16 @@ proc proj-parse-flags {argvName tgtArrayName prototype} {
           # Treat this as a lambda literal
           set fv [list $fv]
         }
-        lappend call($k) "apply $fv"
+        lappend blob(${k}.call) "apply $fv"
       }
       -call {
         # arg is either a proc name or {apply $aLambda}
         set fv [lindex $prototype [incr i]]
-        lappend call($k) $fv
+        lappend blob(${k}.call) $fv
       }
       default {
-        proj-assert {![info exists consuming($k)]}
-        set scripts($k) $fv
+        proj-assert {![info exists blob(${k}.consumes)]}
+        set blob(${k}.script) $fv
       }
     }
     if {$i >= $n} {
@@ -2244,7 +2238,7 @@ proc proj-parse-flags {argvName tgtArrayName prototype} {
     if {[string match {*\*} $k]} {
       # Re-map -foo* to -foo and flag -foo as a repeatable flag
       set k [string map {* ""} $k]
-      incr multi($k)
+      incr blob(${k}.multi)
     }
 
     if {[info exists flags($k)]} {
@@ -2258,7 +2252,7 @@ proc proj-parse-flags {argvName tgtArrayName prototype} {
         if {$i >= $n} {
           proj-error -up "[proj-scope]: Missing argument for $k => flag"
         }
-        incr consuming($k)
+        incr blob(${k}.consumes)
         set vi [lindex $prototype $i]
         if {$vi in {-apply -call}} {
           proj-error -up "[proj-scope]: Missing default value for $k flag"
@@ -2281,10 +2275,9 @@ proc proj-parse-flags {argvName tgtArrayName prototype} {
     set flags($k) $vi
   }
   #puts "-- flags"; parray flags
-  #puts "-- scripts"; parray scripts
-  #puts "-- calls"; parray call
+  #puts "-- blob"; parray blob
   set rc 0
-  set rv {}
+  set rv {}; # staging area for the target argv value
   set skipMode 0
   set n [llength $argv]
   # Now look for those flags in $argv...
@@ -2295,36 +2288,36 @@ proc proj-parse-flags {argvName tgtArrayName prototype} {
       lappend rv $arg
     } elseif {"--" eq $arg} {
       # "--" is the conventional way to end processing of args
-      if {[incr seen(--)] > 1} {
+      if {[incr blob(--)] > 1} {
         # Elide only the first one
         lappend rv $arg
       }
       incr skipMode $incrSkip
     } elseif {[info exists flags($arg)]} {
       # A known flag...
-      set isMulti [info exists multi($arg)]
-      incr seen($arg)
-      if {1 < $seen($arg) && !$isMulti} {
+      set isMulti [info exists blob(${arg}.multi)]
+      incr blob(${arg}.seen)
+      if {1 < $blob(${arg}.seen) && !$isMulti} {
         proj-error -up [proj-scope] "$arg flag was used multiple times"
       }
       set vMode 0; # 0=as-is, 1=eval, 2=call
-      set isConsuming [info exists consuming($arg)]
+      set isConsuming [info exists blob(${arg}.consumes)]
       if {$isConsuming} {
         incr i
         if {$i >= $n} {
           proj-error -up [proj-scope] "is missing argument for $arg flag"
         }
         set vv [lindex $argv $i]
-      } elseif {[info exists scripts($arg)]} {
+      } elseif {[info exists blob(${arg}.script)]} {
         set vMode 1
-        set vv $scripts($arg)
+        set vv $blob(${arg}.script)
       } else {
         set vv $flags($arg)
       }
 
-      if {[info exists call($arg)]} {
+      if {[info exists blob(${arg}.call)]} {
         set vMode 2
-        set vv [concat {*}$call($arg) $arg $vv]
+        set vv [concat {*}$blob(${arg}.call) $arg $vv]
       } elseif {$isConsuming} {
         proj-assert {!$vMode}
         # fall through
@@ -2351,7 +2344,7 @@ proc proj-parse-flags {argvName tgtArrayName prototype} {
         }
       }
       if {$isConsuming && $isMulti} {
-        if {1 == $seen($arg)} {
+        if {1 == $blob(${arg}.seen)} {
           # On the first hit, overwrite the default with a new list.
           set flags($arg) [list $vv]
         } else {
