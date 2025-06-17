@@ -1,5 +1,5 @@
-C Fix\sa\scorner-case\sfor\s[9441fff52cc4e19c].
-D 2025-06-17T18:57:07.066
+C Avoid\swriting\sframes\swith\sno\schecksums\sinto\sthe\swal\sfile\sif\sa\nsavepoint\sis\srolled\sback\safter\sdirty\spages\shave\salready\sbeen\nspilled\sinto\sthe\swal\sfile.
+D 2025-06-17T19:10:33.524
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -864,7 +864,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c b0f848cfba8dd057f77073493cdd542f9125b4cf87941f53e9d0db21604155c8
+F src/wal.c 20be6f0a25a80b7897cf2a5369bfd37ef198e6f0b6cdef16d83eee856056b159
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c a99fa3061a0155d2cb0e2c91df76dbf834750272a8d79ec5e2dce3ed4e6abad6
@@ -2014,7 +2014,7 @@ F test/wal_common.tcl 204d1721ac13c5e0c7fae6380315b5ab7f4e8423f580d826c5e9df1995
 F test/walbak.test 018d4e5a3d45c6298d11b99f09a8ef6876527946
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test 6bb472e82730e7e4e81395e907a01d8cfc2bd9e1f01f8a9184ca572e2955a4bf
-F test/walcksum.test ba02b4fe6d22cb42e57a323003cbae62f77a740983e1355b2b520e019ae261c7
+F test/walcksum.test 50e204500eed9c691b6045e467bb2923f49aa93d8adf315e2be135fdb202c1c2
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
 F test/walcrash3.test e426aa58122d20f2b9fbe9a507f9eb8cab85b8af
@@ -2208,8 +2208,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d960bd6f9256410ebc98125b0567380457e39bc8fe768fcd9ea05c6de1994df6
-R 768282280d19974f67085eeb22eac468
+P 336a59eb3afd80ce048de472368df6dfc32934ee783859d37663ed8f5cf169a5 0da16f6c625bff9f2ca5624afa6dce6b5a157f44c1d56b25b92946c13217ab02
+R 4f15daf1345886267fb9e7e113ac5ab2
+T +closed 0da16f6c625bff9f2ca5624afa6dce6b5a157f44c1d56b25b92946c13217ab02
 U drh
-Z 295da2559fc4cbe0676622891ffcd49a
+Z 6c7c1ae528922d359a2a0f722b244029
 # Remove this line to create a well-formed Fossil manifest.
