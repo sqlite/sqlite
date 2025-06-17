@@ -340,6 +340,7 @@ catch { db2 close }
 reset_db
 
 do_execsql_test 3.0 {
+  PRAGMA auto_vacuum = 0;
   PRAGMA synchronous = NORMAL;
   PRAGMA journal_mode = WAL;
   PRAGMA cache_size = 1;
@@ -387,6 +388,7 @@ catch { db2 close }
 reset_db
 
 do_execsql_test 4.0 {
+  PRAGMA auto_vacuum = 0;
   PRAGMA synchronous = NORMAL;
   PRAGMA journal_mode = WAL;
   PRAGMA cache_size = 1;
@@ -436,6 +438,7 @@ catch { db2 close }
 reset_db
 
 do_execsql_test 5.0 {
+  PRAGMA auto_vacuum = 0;
   PRAGMA synchronous = NORMAL;
   PRAGMA journal_mode = WAL;
   PRAGMA cache_size = 1;
