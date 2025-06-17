@@ -885,7 +885,7 @@ proc proj-looks-like-windows {{key host}} {
 #
 proc proj-looks-like-mac {{key host}} {
   switch -glob -- [get-define $key] {
-    *-*-darwin {
+    *-*-darwin* {
       # https://sqlite.org/forum/forumpost/7b218c3c9f207646
       # There's at least one Linux out there which matches *apple*.
       return 1

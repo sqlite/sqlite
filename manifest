@@ -1,5 +1,5 @@
-C Minor\sproj.tcl\sportability\sfixes\sand\scleanups\ssuggested\sin\s[forum:7b218c3c9f|forum\spost\s7b218c3c9f].\sTested\son\sLinux,\sMsys,\sCygwin,\sand\sHaiku.
-D 2025-06-17T14:56:30.786
+C Extend\s[b5c6cb13cff5]\sto\suse\sa\swildcard\son\sdarwin*\sbecause\ssome\sOSes\sreport\sa\sversion\snumber\sin\sthe\ssuffix.\s[forum:0c4bbc2962dfb06e\s|\sForum\spost\s0c4bbc2962dfb06e].
+D 2025-06-17T17:15:12.881
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -46,7 +46,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c 563b966c137a4ce3c9333e5196723b7ac0919140a9d7989eb440463cd855c367
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl d2428ea25745d25a090b938647737818accd5b802511776a186c9f1bcce53420
+F autosetup/proj.tcl 6aac1eb3059fc511c8e1659f33b96eb2a216a371ed9b28be6661374061be9b15
 F autosetup/sqlite-config.tcl ccda82e43e377b832aae72a1678b1dc17dcaff36ed0ebbd8f0cfc88612ae8de3
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
@@ -2208,9 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9441fff52cc4e19c44df1a77ffe474f409d519b270c7166ce17f99e6ea48fc1e 89552e9137b7ebba9600443720e936e8dc4f7ab021d2ac3f0bb01b74071e130c
-R 521cd36fd533b38f39517faf822f8bdc
-T +closed 89552e9137b7ebba9600443720e936e8dc4f7ab021d2ac3f0bb01b74071e130c Closed\sby\sintegrate-merge.
+P b5c6cb13cff53f4ba1e0e6a0d61389252bd004d9099727e7a9304217e3f81d80
+R c7582011c28848a526c236a8dec85b0f
 U stephan
-Z d60c264c2565ef677014a7902be7d205
+Z 4a549122aa2ea76acfc6883fa0995922
 # Remove this line to create a well-formed Fossil manifest.
