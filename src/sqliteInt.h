@@ -1271,7 +1271,7 @@ struct BusyHandler {
 ** pointer will work here as long as it is distinct from SQLITE_STATIC
 ** and SQLITE_TRANSIENT.
 */
-#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3OomClear)
+#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3RowSetClear)
 
 /*
 ** When SQLITE_OMIT_WSD is defined, it means that the target platform does

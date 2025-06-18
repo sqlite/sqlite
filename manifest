@@ -1,5 +1,5 @@
-C Add\sthe\s--tclConfig.sh\sFILE\sflag\sto\sbuildtclext.tcl\sto\seliminate\sthe\sdiscrepancy\sbetween\sthe\sconfigure-time-detected\stclConfig.sh\sand\sthe\sone\sauto-detected\sby\sthe\stclextension\sfamily\sof\smakefile\stargets.\sAdd\sthe\stclextension-all\starget\sto\srun\sall\sof\sthe\svarious\stclextension-...\stargets\sin\stheir\snatural\sorder\sto\sfacilitate\stesting\schanges\slike\sthis\sone.\sUpdate\sthe\s--help\stext\sto\snote\sthat\s--with-tclsh\sshould\sonly\sbe\sused\sif\sthere's\sa\sspecific\sneed,\sand\sthat\s--with-tcl\sis\sgenerall\spreferred.\sThis\sis\sin\sresponse\sto\s[https://github.com/termux/termux-packages/issues/23268\s|\sTermux\sticket\s23268].
-D 2025-06-18T11:11:30.607
+C Change\sthe\sdefinition\sof\sSQLITE_DYNAMIC\sto\sa\sfunction\sthat\shas\sexactly\nthe\ssame\stype\sas\ssqlite3_destructor_type,\sin\san\seffort\sto\swork\saround\npossible\slegacy\scompiler\sbugs.
+D 2025-06-18T14:14:46.007
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -790,7 +790,7 @@ F src/shell.c.in 4ae9ff8e8b23d9a309e50d5b5ef2768b9bb18f748ece2acc2641a3c23b71e2b
 F src/sqlite.h.in 22882ddd3a70751aa8864c81993ee4562ed54c2c508b6270f75e223ffee38e1b
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
-F src/sqliteInt.h 493202a7dec31d58ac246252b7f03645160e3709102255a79136b4aa8f863e74
+F src/sqliteInt.h 60172f8b15efb8e9ae37bcb5ce596f1c55fee01b555b80f1c9056e55a6ee7d28
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7331e32a76a8a41cc1bd1c84069219c9929e0e0f941c1d9e308cbbb7959373c5
-R 073926c4ac8b41c9d3a3f7869ab9b2ad
-U stephan
-Z a272224e2520e3c6144c7261f6f0a300
+P 928976abcb11f9d5abe1f7631002592c4af7bf83ecadba5b0763866d039c2270
+R b0e1bd933813958ce65bff166eef8a19
+U drh
+Z 560a12a583baccd030ed842ff9da9e35
 # Remove this line to create a well-formed Fossil manifest.
