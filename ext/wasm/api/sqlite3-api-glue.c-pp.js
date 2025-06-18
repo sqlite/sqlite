@@ -368,6 +368,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     );
   }/* sqlite3_set_authorizer() */
 
+  if( !!wasm.exports.sqlite3_column_origin_name ){
+    wasm.bindingSignatures.push(
+      ["sqlite3_column_database_name","string", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_origin_name","string", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_table_name","string", "sqlite3_stmt*", "int"]
+    );
+  }
+
   if(false && wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
     /* ^^^ "the problem" is that this is an optional feature and the
        build-time function-export list does not currently take
