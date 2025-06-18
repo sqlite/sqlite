@@ -1,5 +1,5 @@
-C Add\sthe\s--enable-column-metadata\sflag\sto\sthe\sconfigure\sscript\s(off\sby\sdefault).\sIt's\sonly\savailable\sin\sthe\scanonical\sbuild,\snot\sthe\sautoconf\sbuild,\sbecause\sit\schanges\show\ssqlite3.c\sgets\sgenerated.
-D 2025-06-18T15:22:50.023
+C Enforce\sjudgmental\styping\son\sSTORED\sgenerated\scolumns\sfor\sSTRICT\ntables.\s\s[forum:/forumpost/6caf195248a849e4|Forum\spost\s6caf195248].
+D 2025-06-18T16:17:00.665
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -745,7 +745,7 @@ F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c d05934dfab2c5c0c480fc6fd2038f11215661de08ea6ff38d2563216bd555c1b
+F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
 F src/json.c cb87977b1ee25ee7d27505d65a9261b687395bf895342c8ba566b7c01aee2047
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d7edd8e671237539d795d30daaf888908a2c82e99bade4c78f3be021e8b7d655
@@ -1701,7 +1701,7 @@ F test/statfault.test 064f43379e4992b5221b7d9ac887c313b3191f85cce605d78e416fc404
 F test/stmt.test 54ed2cc0764bf3e48a058331813c3dbd19fc1d0827c3d8369914a5d8f564ec75
 F test/stmtrand.test 340e2ea4841c5cdc02d36e33739769c5d907ab529b12bb535407def0e413ca17
 F test/stmtvtab1.test 6873dfb24f8e79cbb5b799b95c2e4349060eb7a3b811982749a84b359468e2d5
-F test/strict1.test 4d2b492152b984fd7e8196d23eb88e2ccb0ef9e46ca2f96c2ce7147ceef9d168
+F test/strict1.test 62db60132bb286429a36cd69a218184d78923990b066f131862ecb648105cee0
 F test/strict2.test b22c7a98b5000aef937f1990776497f0e979b1a23bc4f63e2d53b00e59b20070
 F test/subjournal.test 8d4e2572c0ee9a15549f0d8e40863161295107e52f07a3e8012a2e1fdd093c49
 F test/subquery.test 23087f9b1c15ab9cc5231d04946bdebc51db527c95eb9d7434a2222127e17a84
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7ca545fd3b460fcf92e117baef42655eb6e78ebb5bdc6302f8f1b5b8446c0a06
-R 764ba5d771ee5182bdcc0c7d367e5acd
-U stephan
-Z efc4f4269747f4f0c229bfede53f9649
+P 986b601db11a041d280eb61004723604bf4b6fd573b9832c97e3a9da9ea16e9a
+R c89b9ea3a77e2b240253ae60cc2ec713
+U drh
+Z 41ec114b4104be2c73f80a11e6cae501
 # Remove this line to create a well-formed Fossil manifest.
