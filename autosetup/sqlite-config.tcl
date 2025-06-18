@@ -217,6 +217,11 @@ proc sqlite-configure {buildMode configScript} {
           => {This legacy flag has no effect on the library but may influence
               the generated sqlite_cfg.h by adding #define HAVE_LFS}
       }
+      {canonical} {
+        column-metadata      => {Enable the column metadata APIs}
+        # ^^^ Affects how sqlite3.c is generated, so is not available in
+        # the autoconf build.
+      }
     }
 
     # Options for TCL support
@@ -769,7 +774,8 @@ proc sqlite-handle-common-feature-flags {} {
         sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
       }
     }
-    scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
+    scanstatus      -DSQLITE_ENABLE_STMT_SCANSTATUS {}
+    column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
   }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
