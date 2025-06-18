@@ -1966,13 +1966,14 @@ proc sqlite-check-tcl {} {
     # TCLLIBDIR from here, which will cause the canonical makefile to
     # use this one rather than to re-calculate it at make-time.
     set tcllibdir [get-env TCLLIBDIR ""]
+    set sq3Ver [get-define PACKAGE_VERSION]
     if {"" eq $tcllibdir} {
       # Attempt to extract TCLLIBDIR from TCL's $auto_path
       if {"" ne $with_tclsh &&
           [catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
         foreach i $result {
           if {[file isdir $i]} {
-            set tcllibdir $i/sqlite3
+            set tcllibdir $i/sqlite${sq3Ver}
             break
           }
         }
@@ -2108,9 +2109,26 @@ proc sqlite-determine-codegen-tcl {} {
 # sqlite-determine-codegen-tcl.
 proc sqlite-handle-tcl {} {
   sqlite-check-tcl
-  if {"canonical" eq $::sqliteConfig(build-mode)} {
-    msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
+  if {"canonical" ne $::sqliteConfig(build-mode)} return
+  msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
+
+  # Determine the base name of the Tcl extension's DLL
+  #
+  if {[get-define HAVE_TCL]} {
+    if {[string match *-cygwin [get-define host]]} {
+      set libname cyg
+    } else {
+      set libname lib
+    }
+    if {[get-define TCL_MAJOR_VERSION] > 8} {
+      append libname tcl9
+    }
+    append libname sqlite
+  } else {
+    set libname ""
   }
+  define TCL_EXT_DLL_BASENAME $libname
+  # The extension is added in the makefile
 }
 
 ########################################################################
