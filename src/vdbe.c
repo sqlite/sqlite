@@ -3239,6 +3239,15 @@ op_column_corrupt:
 ** Take the affinities from the Table object in P4.  If any value
 ** cannot be coerced into the correct type, then raise an error.
 **
+** If P3==0, then omit checking of VIRTUAL columns.
+**
+** If P3==1, then omit checking of all generated column, both VIRTUAL
+** and STORED.
+**
+** If P3>=2, then only check column number P3-2 in the table (which will
+** be a VIRTUAL column) against the value in reg[P1].  In this case,
+** P2 will be 1.
+**
 ** This opcode is similar to OP_Affinity except that this opcode
 ** forces the register type to the Table column type.  This is used
 ** to implement "strict affinity".
@@ -3252,8 +3261,8 @@ op_column_corrupt:
 **
 ** <ul>
 ** <li> P2 should be the number of non-virtual columns in the
-**      table of P4.
-** <li> Table P4 should be a STRICT table.
+**      table of P4 unless P3>1, in which case P2 will be 1.
+** <li> Table P4 is a STRICT table.
 ** </ul>
 **
 ** If any precondition is false, an assertion fault occurs.
@@ -3262,16 +3271,28 @@ case OP_TypeCheck: {
   Table *pTab;
   Column *aCol;
   int i;
+  int nCol;
 
   assert( pOp->p4type==P4_TABLE );
   pTab = pOp->p4.pTab;
   assert( pTab->tabFlags & TF_Strict );
-  assert( pTab->nNVCol==pOp->p2 );
+  assert( pOp->p3>=0 && pOp->p3<pTab->nCol+2 );
   aCol = pTab->aCol;
   pIn1 = &aMem[pOp->p1];
-  for(i=0; i<pTab->nCol; i++){
-    if( aCol[i].colFlags & COLFLAG_GENERATED ){
-      if( aCol[i].colFlags & COLFLAG_VIRTUAL ) continue;
+  if( pOp->p3<2 ){
+    assert( pTab->nNVCol==pOp->p2 );
+    i = 0;
+    nCol = pTab->nCol;
+  }else{
+    i = pOp->p3-2;
+    nCol = i+1;
+    assert( i<pTab->nCol );
+    assert( aCol[i].colFlags & COLFLAG_VIRTUAL );
+    assert( pOp->p2==1 );
+  }
+  for(; i<nCol; i++){
+    if( (aCol[i].colFlags & COLFLAG_GENERATED)!=0 && pOp->p3<2 ){
+      if( (aCol[i].colFlags & COLFLAG_VIRTUAL)!=0 ) continue;
       if( pOp->p3 ){ pIn1++; continue; }
     }
     assert( pIn1 < &aMem[pOp->p1+pOp->p2] );

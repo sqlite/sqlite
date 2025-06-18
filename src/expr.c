@@ -4269,7 +4269,12 @@ void sqlite3ExprCodeGeneratedColumn(
     iAddr = 0;
   }
   sqlite3ExprCodeCopy(pParse, sqlite3ColumnExpr(pTab,pCol), regOut);
-  if( pCol->affinity>=SQLITE_AFF_TEXT ){
+  if( (pCol->colFlags & COLFLAG_VIRTUAL)!=0
+   && (pTab->tabFlags & TF_Strict)!=0
+  ){
+    int p3 = 2+(int)(pCol - pTab->aCol);
+    sqlite3VdbeAddOp4(v, OP_TypeCheck, regOut, 1, p3, (char*)pTab, P4_TABLE);
+  }else if( pCol->affinity>=SQLITE_AFF_TEXT ){
     sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);
   }
   if( iAddr ) sqlite3VdbeJumpHere(v, iAddr);
