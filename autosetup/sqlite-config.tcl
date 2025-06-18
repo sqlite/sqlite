@@ -227,8 +227,6 @@ proc sqlite-configure {buildMode configScript} {
               This tree requires TCL for code generation but can use the in-tree
               copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
               test code require a canonical tclsh.}
-      }
-      {canonical} {
         with-tcl:DIR
           => {Directory containing tclConfig.sh or a directory one level up from
               that, from which we can derive a directory containing tclConfig.sh.
@@ -236,11 +234,10 @@ proc sqlite-configure {buildMode configScript} {
               the --prefix flag.}
         with-tclsh:PATH
           => {Full pathname of tclsh to use.  It is used for (A) trying to find
-              tclConfig.sh and (B) all TCL-based code generation.  Warning: if
-              its containing dir has multiple tclsh versions, it may select the
+              tclConfig.sh and (B) all TCL-based code generation. Use --with-tcl
+              unless you have a specific need for this flag. Warning: if its
+              containing dir has multiple tclsh versions, it may select the
               wrong tclConfig.sh!}
-      }
-      {canonical} {
         static-tclsqlite3=0
           => {Statically-link tclsqlite3. This only works if TCL support is
               enabled and all requisite libraries are available in

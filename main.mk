@@ -1671,34 +1671,47 @@ CFLAGS.tclextension = $(CFLAGS.intree_includes) $(CFLAGS.env) $(OPT_FEATURE_FLAG
 # by --with-tclsh=
 #
 tclextension: tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only --cc "$(T.cc)" $(CFLAGS.tclextension)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only \
+		--tclConfig.sh $(TCL_CONFIG_SH) --cc "$(T.cc)" $(CFLAGS.tclextension)
 
 #
 # Install the SQLite TCL extension in a way that is appropriate for $TCLSH_CMD
 # to find it.
 #
 tclextension-install: tclsqlite3.c
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --destdir "$(DESTDIR)" --cc "$(T.cc)" $(CFLAGS.tclextension)
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --destdir "$(DESTDIR)" \
+		--tclConfig.sh $(TCL_CONFIG_SH) --cc "$(T.cc)" $(CFLAGS.tclextension)
 
 #
 # Uninstall the SQLite TCL extension that is used by $TCLSH_CMD.
 #
 tclextension-uninstall:
-	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall
+	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --uninstall \
+		--tclConfig.sh $(TCL_CONFIG_SH)
 
 #
 # List all installed the SQLite TCL extensions that is are accessible
 # by $TCLSH_CMD, including prior versions.
 #
 tclextension-list:
-	@ $(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info
+	@ $(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --info \
+		--tclConfig.sh $(TCL_CONFIG_SH)
 
 # Verify that the SQLite TCL extension that is loaded by default
 # in $(TCLSH_CMD) is the same as the version of SQLite for the
 # current source tree
 #
 tclextension-verify: sqlite3.h
-	@ $(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --version-check
+	@ $(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --version-check \
+		--tclConfig.sh $(TCL_CONFIG_SH)
+
+# Run all of the tclextension targets in order, ending with uninstall.
+tclextension-all:
+	$(MAKE) tclextension
+	$(MAKE) tclextension-install
+	$(MAKE) tclextension-list
+	$(MAKE) tclextension-verify
+	$(MAKE) tclextension-uninstall
 
 #
 # FTS5 things

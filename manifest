@@ -1,5 +1,5 @@
-C tea:\sremove\sthe\svsatisfies\s8.6-\senforcement\sfrom\sthe\sextension\sbecause\sat\sleast\sone\splatform\swith\stcl\s8.6\sis\sinexplicably\sfailing\sit.\s[forum:fde857fb8101a4be\s|\sForum\spost\sfde857fb8101a4be]
-D 2025-06-17T20:50:51.038
+C Add\sthe\s--tclConfig.sh\sFILE\sflag\sto\sbuildtclext.tcl\sto\seliminate\sthe\sdiscrepancy\sbetween\sthe\sconfigure-time-detected\stclConfig.sh\sand\sthe\sone\sauto-detected\sby\sthe\stclextension\sfamily\sof\smakefile\stargets.\sAdd\sthe\stclextension-all\starget\sto\srun\sall\sof\sthe\svarious\stclextension-...\stargets\sin\stheir\snatural\sorder\sto\sfacilitate\stesting\schanges\slike\sthis\sone.\sUpdate\sthe\s--help\stext\sto\snote\sthat\s--with-tclsh\sshould\sonly\sbe\sused\sif\sthere's\sa\sspecific\sneed,\sand\sthat\s--with-tcl\sis\sgenerall\spreferred.\sThis\sis\sin\sresponse\sto\s[https://github.com/termux/termux-packages/issues/23268\s|\sTermux\sticket\s23268].
+D 2025-06-18T11:11:30.607
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c 563b966c137a4ce3c9333e5196723b7ac0919140a9d7989eb440463cd855c367
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 6aac1eb3059fc511c8e1659f33b96eb2a216a371ed9b28be6661374061be9b15
-F autosetup/sqlite-config.tcl ccda82e43e377b832aae72a1678b1dc17dcaff36ed0ebbd8f0cfc88612ae8de3
+F autosetup/sqlite-config.tcl 332ac1364fc2a30b09ba4625593bc1c45411ce26c1de72f60ba505938295a8f5
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl aee092fc71986d1272b835ea7492bb55ffc213a289502e4f14da80cf67b7e3c3
@@ -709,7 +709,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 68999f5bd8c489239592d59a420f8c627c99169bbd6fa16a404751f757b9f702
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 17744293e7af7c39936c3f220ebb8eaff4f0ad1be1e186efb584dbc34bbea2c1
+F main.mk 4e6adba7e0bd1f784d4ba236e63f0841a04b171c83230cab9ebb1985e91a260c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2124,7 +2124,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat 1960a7a3e5d8176c4329e31476f6e3dfa9543675355fa9020a569f4452628458 x
 F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
-F tool/buildtclext.tcl 85d1bcd5410d0a4c739e2d013106f03674d082cc4d573bcc57a68546b6db67cd
+F tool/buildtclext.tcl d09b753d7858314104eeaf5f4def85d35784470279809e47a633f142226f2b3f
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5973f9b9aa828ec9274b02a124b95f452c58235eaafffbdda1c32b4ae2d5616d
-R ffe4c4f9740764f19f045c7eccf51b70
+P 7331e32a76a8a41cc1bd1c84069219c9929e0e0f941c1d9e308cbbb7959373c5
+R 073926c4ac8b41c9d3a3f7869ab9b2ad
 U stephan
-Z 2ac69cc1b6cde0471296c6efe62f4a19
+Z a272224e2520e3c6144c7261f6f0a300
 # Remove this line to create a well-formed Fossil manifest.
