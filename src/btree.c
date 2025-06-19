@@ -5882,8 +5882,8 @@ moveto_table_finish:
 }
 
 /*
-** Compare the "idx"-th cell on the page the cursor pCur is currently
-** pointing to to pIdxKey using xRecordCompare.  Return negative or
+** Compare the "idx"-th cell on the page pPage against the key
+** pointing to by pIdxKey using xRecordCompare.  Return negative or
 ** zero if the cell is less than or equal pIdxKey.  Return positive
 ** if unknown.
 **
@@ -5898,12 +5898,11 @@ moveto_table_finish:
 ** a positive value as that will cause the optimization to be skipped.
 */
 static int indexCellCompare(
-  BtCursor *pCur,
+  MemPage *pPage,
   int idx,
   UnpackedRecord *pIdxKey,
   RecordCompare xRecordCompare
 ){
-  MemPage *pPage = pCur->pPage;
   int c;
   int nCell;  /* Size of the pCell cell in bytes */
   u8 *pCell = findCellPastPtr(pPage, idx);
@@ -6012,14 +6011,14 @@ int sqlite3BtreeIndexMoveto(
   ){
     int c;
     if( pCur->ix==pCur->pPage->nCell-1
-     && (c = indexCellCompare(pCur, pCur->ix, pIdxKey, xRecordCompare))<=0
+     && (c = indexCellCompare(pCur->pPage,pCur->ix,pIdxKey,xRecordCompare))<=0
      && pIdxKey->errCode==SQLITE_OK
     ){
       *pRes = c;
       return SQLITE_OK;  /* Cursor already pointing at the correct spot */
     }
     if( pCur->iPage>0
-     && indexCellCompare(pCur, 0, pIdxKey, xRecordCompare)<=0
+     && indexCellCompare(pCur->pPage, 0, pIdxKey, xRecordCompare)<=0
      && pIdxKey->errCode==SQLITE_OK
     ){
       pCur->curFlags &= ~(BTCF_ValidOvfl|BTCF_AtLast);
