@@ -1,5 +1,5 @@
-C Improve\sthe\saccuracy\sof\ssqlite3BtreeRowCountEst().
-D 2025-06-19T20:00:37.760
+C Fix\san\sout-of-order\slocal\svariable\sdeclaration\sin\sext/misc/fileio.c.
+D 2025-06-19T20:19:12.323
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f82
 F ext/misc/decimal.c 228d47e9ef4de60daf5851da19e3ac9ac1eda9e94432816914469501db6a1129
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c 5e1aff478ea12455a76be25dff321e1e9517b189fffb1d547a019625c49c1880
+F ext/misc/fileio.c 88cb2e5744296de6638af02ef6349fd468c2eb5e5f41ba405f88d9b4ad500f8e
 F ext/misc/fossildelta.c 0aeb099e9627eea693cf21ae47826ecd1e0319b93143bed23090838b2ef0c162
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
 F ext/misc/ieee754.c c9dd9d77c8e8e18e0a5706f8ffcccf4ccb6562073709f7453d4d73f5122f4362
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b305a7f5db183d8e0e5d62ca3c9c6260ad94bb954f7342bd3caabcd8308a21f5
-R b9fa557c7e44a05be3c71a518cf6b7fb
+P e553fb538ec1527457e2927edf9127dccf268a8a3b5918d4fb0d066ad9676094
+R 7c79e8bb36e976ad19d5d71631841b0f
 U drh
-Z 548bea0e6fdb7885d96c4967ed9bc696
+Z 197b4e4613cf3b0c0dc5630b8413a15b
 # Remove this line to create a well-formed Fossil manifest.

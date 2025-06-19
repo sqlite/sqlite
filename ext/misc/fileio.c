@@ -899,9 +899,9 @@ static int fsdirFilter(
 ){
   const char *zDir = 0;
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
+  int i;
   (void)idxStr;
   fsdirResetCursor(pCur);
-  int i;
 
   if( idxNum==0 ){
     fsdirSetErrmsg(pCur, "table function fsdir requires an argument");
