@@ -1,5 +1,5 @@
-C Expose\sthe\scolumn\smetadata\sAPIs\sto\sWASM\s(which\sdoes\snot\srequire\sa\snon-default\ssqlite3.c\sbuild,\scontrary\sto\smy\sprior\smistaken\sclaims).\sThis\sadds\sonly\s424\sbytes\sto\ssqlite3.wasm\sand\s660\sbytes\sto\ssqlite3.js.
-D 2025-06-19T10:25:50.035
+C Doc\stypo\sfixes\sfrom\s[forum:0bce273669\s|\sforum\spost\s0bce273669].
+D 2025-06-19T10:46:39.062
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -787,7 +787,7 @@ F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 882d739e0d5e6c7a8b46a3cca3ada37fe1a56301f1360d6b141312c666bbe482
 F src/shell.c.in 4ae9ff8e8b23d9a309e50d5b5ef2768b9bb18f748ece2acc2641a3c23b71e2b9
-F src/sqlite.h.in 22882ddd3a70751aa8864c81993ee4562ed54c2c508b6270f75e223ffee38e1b
+F src/sqlite.h.in bf1dc706f9d578f10152e0b8a2b1ffc564971a81e1fd4ccc8e96b770a0ef16a8
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h 60172f8b15efb8e9ae37bcb5ce596f1c55fee01b555b80f1c9056e55a6ee7d28
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b734c74e55acb26eb61b60937bef870f4b55b2e2e7560a22362f5f31ba2fcd03 59db3f639d1073678805dea26a4686eddfb238f055aa90bd429fc7fd33241502
-R ab8fa2fb89919a22483a598dd461931b
+P 3cf983816ccd167d93cb39c7a16b6db4b4f7ef2a64f4181d3bc4530cd0bd3b67
+R 1c5aecd507cb3e27e0181b8d2845edd7
 U stephan
-Z 9443050e9eecf19b6ea72972c2664e5d
+Z 9e51c0800fd302deeeca7238ecab7775
 # Remove this line to create a well-formed Fossil manifest.
