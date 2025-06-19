@@ -3302,7 +3302,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(true === await u3.removeVfs())
           .assert(false === await P3b.removeVfs());
       }
-    }/*OPFS SAH Pool sanity checks*/)
+    }/*OPFS SAH Pool sanity checks*/);
 
   ////////////////////////////////////////////////////////////////////////
   T.g('Misc. APIs')
@@ -3353,6 +3353,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert( 1===n )
         .assert( 0===capi.sqlite3_stmt_busy(stmt) )
         .assert( !stmt.isBusy() );
+
+      if( wasm.exports.sqlite3_column_origin_name ){
+        log("Column metadata APIs enabled");
+        T.assert( "t" === capi.sqlite3_column_table_name(stmt, 0))
+          .assert("a" === capi.sqlite3_column_origin_name(stmt, 0))
+          .assert("main" === capi.sqlite3_column_database_name(stmt, 0))
+      }else{
+        log("Column metadata APIs not enabled");
+      } // column metadata APIs
+
       stmt.finalize();
       db.close();
     })
@@ -3364,7 +3374,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       capi.sqlite3_interrupt(db);
       T.assert( 0!==capi.sqlite3_is_interrupted(db) );
       db.close();
-    })
+    });
 
   ////////////////////////////////////////////////////////////////////////
   T.g('Bug Reports')
