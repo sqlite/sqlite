@@ -1,5 +1,5 @@
-C Generalize\sthe\sindexCellCompare()\sso\sthat\sworks\son\sany\sindex\spage,\snot\sjust\nthe\scurrent\spage\sthat\sa\scursor\sis\spointing\sto.
-D 2025-06-19T19:33:06.009
+C Improve\sthe\saccuracy\sof\ssqlite3BtreeRowCountEst().
+D 2025-06-19T20:00:37.760
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 043eb4cab6b196a94b911fac6220c8bd8da43f4a8fe3df520b7b2a1d017f85a3
+F src/btree.c eb61daaf42aabf93e23fb497693041f162d62b168db03c834eee922af2cb04ef
 F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 67c1db4c5e89a8519fe9b6dafc287f6bc3627696b5b8536dc5e06db570d8c05f
@@ -2208,9 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0d6084a398edb013fcfb613eff8d75e2f86cbb5e3c8049328ede89e75db93cb3
-Q +eda518028f60efc7f879b8c10c900b4b1d4861b62f69a076051e98e61e5b1fee
-R a702dbe06d3054f532bd0e757076e3a5
+P b305a7f5db183d8e0e5d62ca3c9c6260ad94bb954f7342bd3caabcd8308a21f5
+R b9fa557c7e44a05be3c71a518cf6b7fb
 U drh
-Z 9780b45b609bb608342c4024374440da
+Z 548bea0e6fdb7885d96c4967ed9bc696
 # Remove this line to create a well-formed Fossil manifest.

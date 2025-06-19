@@ -6235,7 +6235,7 @@ i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
 
   n = pCur->pPage->nCell;
   for(i=0; i<pCur->iPage; i++){
-    n *= pCur->apPage[i]->nCell;
+    n *= pCur->apPage[i]->nCell+1;
   }
   return n;
 }
