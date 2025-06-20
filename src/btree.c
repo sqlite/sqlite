@@ -3074,6 +3074,10 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   sqlite3BtreeEnter(p);
   pBt->nReserveWanted = (u8)nReserve;
   x = pBt->pageSize - pBt->usableSize;
+  if( x==nReserve && (pageSize==0 || pageSize==pBt->pageSize) ){
+    sqlite3BtreeLeave(p);
+    return SQLITE_OK;
+  }
   if( nReserve<x ) nReserve = x;
   if( pBt->btsFlags & BTS_PAGESIZE_FIXED ){
     sqlite3BtreeLeave(p);
