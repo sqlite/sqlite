@@ -1,5 +1,5 @@
-C Give\soo1.Stmt.get()\ssimilar\streatment\sto\s[8c187140a60b].\sThis\sis\san\sinternal\schange\sonly\s-\sthe\sAPI\sis\sunaffected.
-D 2025-06-21T15:58:20.803
+C Reduce\sthe\smaximum\s--size\sflag\sfor\sJS\skvvfs\sspeedtest1\sfrom\s4\sto\s2,\sas\s--size\s3\sand\s4\sare\soverflowing\sthe\skvvfs\sstorage\slimits.
+D 2025-06-21T16:02:20.042
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -688,9 +688,9 @@ F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
 F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2d7c36218bb7d67379d
 F ext/wasm/speedtest1-wasmfs.mjs c77c7231338ed5c0e1ce16aa29106df8e5b5cf11a48319c49433490a8d3ded30
-F ext/wasm/speedtest1-worker.html 864b65ed78ce24847a348c180e7f267621a02ca027068a1863ec1c90187c1852
+F ext/wasm/speedtest1-worker.html d24d1e06caf3dcd83430c8c3d87761ff7555fd06eaeaf2fc02ce49cf45f0d032
 F ext/wasm/speedtest1-worker.js 95e549e13a4d35863a9a7fc66122b5f546c0130d3be7b06dfcc556eb66d24bde
-F ext/wasm/speedtest1.html ff048b4a623aa192e83e143e48f1ce2a899846dd42c023fdedc8772b6e3f07da
+F ext/wasm/speedtest1.html 217bf15d43065634a27a06dbd5c9a320f6da9932dbcdfc963d482bc2f99dbea9
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc001aa5ee978795c2ff670bea64db0b69b6bde98653769d9cede8825a28e698
-R f9b1fe5f263289fcf02ab968d38c2a06
+P f5a7abc0a447273de40dacc463d267d26d4b62be56ee15baf05825791c2a7a6e
+R 2c6a58e30115fe35ff481d39f54627f4
 U stephan
-Z 343fb7c72db97d4b2868b2c2bc4717a9
+Z 7cd969937c90c352602aa98c3053af8d
 # Remove this line to create a well-formed Fossil manifest.
