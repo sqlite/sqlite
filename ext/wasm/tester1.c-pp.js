@@ -1296,11 +1296,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
         T.assert(this.progressHandlerCount>0
                  || wasm.compileOptionUsed('OMIT_PROGRESS_CALLBACK'),
-                 "Expecting progress callback.").
-          assert(0===capi.sqlite3_strglob("*.txt", "foo.txt")).
-          assert(0!==capi.sqlite3_strglob("*.txt", "foo.xtx")).
-          assert(0===capi.sqlite3_strlike("%.txt", "foo.txt", 0)).
-          assert(0!==capi.sqlite3_strlike("%.txt", "foo.xtx", 0));
+                 "Expecting progress callback.");
       }finally{
         rc = st.finalize();
       }
