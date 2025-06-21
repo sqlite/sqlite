@@ -2673,50 +2673,70 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                       || "Only available in main thread."),
       test: function(sqlite3){
         this.kvvfsUnlink();
-        let db;
-        const encOpt1 = 1
-              ? {textkey: 'foo'}
-              : {key: 'foo'};
-        const encOpt2 = encOpt1.textkey
-              ? encOpt1
-              : {hexkey: new Uint8Array([0x66,0x6f,0x6f]/*==>"foo"*/)}
-        try{
-          db = new this.JDb({
-            filename: this.kvvfsDbFile,
-            ...encOpt1
-          });
-          db.exec([
-            "create table t(a,b);",
-            "insert into t(a,b) values(1,2),(3,4)"
-          ]);
-          db.close();
-          let err;
-          try{
-            db = new this.JDb({
-              filename: this.kvvfsDbFile,
-              flags: 'ct'
+        let initDb = true;
+        const tryKey = function(keyKey, key, expectCount){
+          let db;
+          //console.debug('tryKey()',arguments);
+          const ctoropt = {
+            filename: this.kvvfsDbFile
+            //vfs: 'kvvfs'
+            //,flags: 'ct'
+          };
+          try {
+            if (initDb) {
+              initDb = false;
+              db = new this.JDb({
+                ...ctoropt,
+                [keyKey]: key
+              });
+              db.exec([
+                "drop table if exists t;",
+                "create table t(a);"
+              ]);
+              db.close();
+              // Ensure that it's actually encrypted...
+              let err;
+              try {
+                db = new this.JDb(ctoropt);
+                T.assert(db, 'db opened') /* opening is fine, but... */;
+                db.exec("select 1 from sqlite_schema");
+                console.warn("(should not be reached) sessionStorage =", sessionStorage);
+              } catch (e) {
+                err = e;
+              } finally {
+                db.close()
+              }
+              T.assert(err, "Expecting an exception")
+                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
+                        "Expecting NOTADB");
+            }/*initDb*/
+            //console.debug('tryKey()',arguments);
+            db = new sqlite3.oo1.DB({
+              ...ctoropt,
+              vfs: 'kvvfs',
+              [keyKey]: key
             });
-            T.assert(db) /* opening is fine, but... */;
-            db.exec("select 1 from sqlite_schema");
-            console.warn("sessionStorage =",sessionStorage);
-          }catch(e){
-            err = e;
-          }finally{
-            db.close();
+            db.exec("insert into t(a) values (1),(2)");
+            T.assert(expectCount === db.selectValue('select sum(a) from t'));
+          } finally {
+            if (db) db.close();
           }
-          T.assert(err,"Expecting an exception")
-            .assert(sqlite3.capi.SQLITE_NOTADB==err.resultCode,
-                    "Expecting NOTADB");
-          db = new sqlite3.oo1.DB({
-            filename: this.kvvfsDbFile,
-            vfs: 'kvvfs',
-            ...encOpt2
-          });
-          T.assert( 4===db.selectValue('select sum(a) from t') );
-        }finally{
-          if( db ) db.close();
-          this.kvvfsUnlink();
-        }
+        }.bind(this);
+        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
+        tryKey('textkey', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('textkey', 'foo', 6);
+        this.kvvfsUnlink();
+        initDb = true;
+        tryKey('key', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('key', hexFoo, 6);
+        this.kvvfsUnlink();
+        initDb = true;
+        tryKey('hexkey', hexFoo, 3);
+        T.assert( !initDb );
+        tryKey('hexkey', hexFoo, 6);
+        this.kvvfsUnlink();
       }
     })/*kvvfs with SEE*/
 //#endif enable-see
