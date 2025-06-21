@@ -1345,7 +1345,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         .assert(pVfsDb > 0)
         .assert(pVfsMem !== pVfsDflt
                 /* memdb lives on top of the default vfs */)
-        .assert(pVfsDb === pVfsDflt || pVfsdb === pVfsMem)
+        .assert(pVfsDb === pVfsDflt || pVfsDb === pVfsMem)
       ;
       /*const vMem = new capi.sqlite3_vfs(pVfsMem),
         vDflt = new capi.sqlite3_vfs(pVfsDflt),
@@ -2188,7 +2188,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                 "back into JS because of the lack of 64-bit integer support.");
           }
         }finally{
-          const x = w.scopedAlloc(1), y = w.scopedAlloc(1), z = w.scopedAlloc(1);
+          //const x = w.scopedAlloc(1), y = w.scopedAlloc(1), z = w.scopedAlloc(1);
           //log("x=",x,"y=",y,"z=",z); // just looking at the alignment
           w.scopedAllocPop(stack);
         }
@@ -2851,6 +2851,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           },
           9
         );
+        T.assert( 0==rc );
         db.transaction((d)=>{
           d.exec([
             "create table t(a);",
@@ -2864,8 +2865,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(2 === countHook[capi.SQLITE_UPDATE])
           .assert(1 === countHook[capi.SQLITE_DELETE]);
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
-        db.close();
+        T.assert( !!capi.sqlite3_preupdate_hook(db, 0, 0) );
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
+        T.assert( !capi.sqlite3_preupdate_hook(db, 0, 0) );
+        db.close();
       }
     })/*pre-update hooks*/
   ;/*end hook API tests*/
@@ -3066,7 +3069,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(6 === db.selectValue('select count(*) from p')).
             assert( this.opfsImportSize == exp.byteLength );
           db.close();
-          const unlink = this.opfsUnlink =
+          this.opfsUnlink =
                 (fn=filename)=>sqlite3.util.sqlite3__wasm_vfs_unlink("opfs",fn);
           this.opfsUnlink(filename);
           T.assert(!(await sqlite3.opfs.entryExists(filename)));
@@ -3447,10 +3450,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           sql: "SELECT * FROM f order by path",
           rowMode: 'array'
         });
-        const dump = function(lbl){
+        /*const dump = function(lbl){
           let rc = fetchEm();
           log((lbl ? (lbl+' results') : ''),rc);
-        };
+        };*/
         //dump('Full fts table');
         let rc = fetchEm();
         T.assert(3===rc.length);

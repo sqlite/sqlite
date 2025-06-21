@@ -1,5 +1,5 @@
-C Remove\ssome\sduplicated\sJS\stests.
-D 2025-06-21T16:18:23.575
+C Minor\sJS\stest\scleanups\sprompted\sby\sa\slinter.
+D 2025-06-21T16:33:05.299
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -698,7 +698,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
-F ext/wasm/tester1.c-pp.js f1d5716afbce357b62f499cf9a122cfa2858ec48c3bf648977ffa16c75637e3b
+F ext/wasm/tester1.c-pp.js 766a2ba51a2619d41a49be7c6a1ad014c1d23fc97b67496e4f103038203eb17d
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b77b3adc828ce543e880e230701edd5e0ccb681e4c3c724ea8ad5ecbd69c73a6
-R a3f6d928e74b29e4c081c31344d3d11b
+P d1cb9ed79d806f667c22f5ba9861451d4d0765aa3072e085831045cf3a39f8b4
+R 15590cab672738df1152880b649ad09c
 U stephan
-Z b7cb84e3623cf8841c3eaae1a4ae5342
+Z cb0a3872dca8ee115c5d9ebe23218098
 # Remove this line to create a well-formed Fossil manifest.
