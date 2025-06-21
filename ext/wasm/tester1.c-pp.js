@@ -3323,6 +3323,44 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       db.close();
     })
 
+    /**
+       Ensure that certain Stmt members throw when called
+       via DB.exec().
+    */
+    .t('locked-by-exec() APIs', function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec("create table t(a);insert into t(a) values(1);");
+      let checkCount = 0;
+      const checkOp = function(op){
+        ++checkCount;
+        T.mustThrowMatching(() => {
+          db.exec({
+            sql: "select ?1",
+            bind: op,
+            callback: (row, stmt) => {
+              switch (row[0]) {
+                case 'bind': stmt.bind(1); break;
+                case 'finalize':
+                case 'clearBindings':
+                case 'reset':
+                case 'step': stmt[op](); break;
+              }
+            }
+          });
+        }, /^Operation is illegal when statement is locked.*/)
+      };
+      try{
+        checkOp('bind');
+        checkOp('finalize');
+        checkOp('clearBindings');
+        checkOp('reset');
+        checkOp('step');
+        T.assert(5===checkCount);
+      }finally{
+        db.close();
+      }
+    })
+
   ////////////////////////////////////////////////////////////////////
     .t("Misc. stmt_...", function(sqlite3){
       const db = new sqlite3.oo1.DB();

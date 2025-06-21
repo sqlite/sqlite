@@ -16,7 +16,6 @@
   and it installs its deliverable as globalThis.sqlite3.oo1.
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
-  const toss = (...args)=>{throw new Error(args.join(' '))};
   const toss3 = (...args)=>{throw new sqlite3.SQLite3Error(...args)};
 
   const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
@@ -1061,18 +1060,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               const cbArgCache = Object.create(null)
               /* 2nd arg for arg.cbArg, used by (at least) row-to-object
                  converter */;
-              for(; stmt.step(); stmt._lockedByExec = false){
+              for( ; stmt.step(); __execLock.delete(stmt) ){
                 if(0===gotColNames++){
                   stmt.getColumnNames(cbArgCache.columnNames = (opt.columnNames || []));
                 }
-                stmt._lockedByExec = true;
+                __execLock.add(stmt);
                 const row = arg.cbArg(stmt,cbArgCache);
                 if(resultRows) resultRows.push(row);
                 if(callback && false === callback.call(opt, row, stmt)){
                   break;
                 }
               }
-              stmt._lockedByExec = false;
+              __execLock.delete(stmt);
             }
             if(0===gotColNames){
               /* opt.columnNames was provided but we visited no result rows */
@@ -1094,7 +1093,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }*/finally{
         wasm.scopedAllocPop(stack);
         if(stmt){
-          delete stmt._lockedByExec;
+          __execLock.delete(stmt);
           stmt.finalize();
         }
       }
@@ -1388,7 +1387,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /**
        Starts a transaction, calls the given callback, and then either
-       rolls back or commits the savepoint, depending on whether the
+       rolls back or commits the transaction, depending on whether the
        callback throws. The callback is passed this db object as its
        only argument. On success, returns the result of the
        callback. Throws on error.
@@ -1511,7 +1510,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     If stmt._lockedByExec is truthy, this throws an exception
+     Each Stmt object which is "locked" by DB.exec() gets an entry
+     here to note that "lock".
+
+     The reason this is in place is because exec({callback:...})'s
+     callback gets access to the Stmt objects created internally by
+     exec() but it must not use certain Stmt APIs.
+  */
+  const __execLock = new Set();
+
+  /**
+     Stmt APIs which are prohibited on locked objects must call
+     affirmNotLockedByExec() before doing any work.
+
+     If __execLock.has(stmt) is truthy, this throws an exception
      complaining that the 2nd argument (an operation name,
      e.g. "bind()") is not legal while the statement is "locked".
      Locking happens before an exec()-like callback is passed a
@@ -1519,7 +1531,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      finalize the statement. If it does not throw, it returns stmt.
   */
   const affirmNotLockedByExec = function(stmt,currentOpName){
-    if(stmt._lockedByExec){
+    if(__execLock.has(stmt)){
       toss3("Operation is illegal when statement is locked:",currentOpName);
     }
     return stmt;
@@ -1627,9 +1639,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const rc = capi.sqlite3_finalize(this.pointer);
         delete __stmtMap.get(this.db)[this.pointer];
         __ptrMap.delete(this);
+        __execLock.delete(this);
         delete this._mayGet;
         delete this.parameterCount;
-        delete this._lockedByExec;
         delete this.db;
         return rc;
       }
