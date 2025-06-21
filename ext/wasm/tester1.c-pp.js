@@ -1263,7 +1263,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             capi.sqlite3_stmt_status(
               st, capi.SQLITE_STMTSTATUS_RUN, 0
             ) === 0)
-          .assert(!st._mayGet)
           .assert('a' === st.getColumnName(0))
           .mustThrowMatching(()=>st.columnCount=2,
                              /columnCount property is read-only/)
@@ -1287,9 +1286,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(1===st.get(0,capi.SQLITE_BLOB).length)
           .assert(st.getBlob(0) instanceof Uint8Array)
           .assert('3'.charCodeAt(0) === st.getBlob(0)[0])
-          .assert(st._mayGet)
           .assert(false===st.step())
-          .assert(!st._mayGet)
+          .mustThrowMatching(()=>st.get(0),
+                             "Stmt.step() has not (recently) returned true.")
           .assert(
             capi.sqlite3_stmt_status(
               st, capi.SQLITE_STMTSTATUS_RUN, 0

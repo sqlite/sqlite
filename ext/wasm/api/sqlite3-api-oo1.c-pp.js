@@ -1518,6 +1518,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      exec() but it must not use certain Stmt APIs.
   */
   const __execLock = new Set();
+  /**
+     This is a Stmt.get() counterpart of __execLock. Each time
+     Stmt.step() returns true, the statement is added to this set,
+     indicating that Stmt.get() is legal. Stmt APIs which invalidate
+     that status remove the Stmt object from this set, which will
+     cause Stmt.get() to throw with a descriptive error message
+     instead of a more generic "API misuse" if we were to allow that
+     call to reach the C API.
+  */
+  const __stmtMayGet = new Set();
 
   /**
      Stmt APIs which are prohibited on locked objects must call
@@ -1616,7 +1626,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           toss3("Unsupported bind() argument type: "+(typeof val));
     }
     if(rc) DB.checkRc(stmt.db.pointer, rc);
-    stmt._mayGet = false;
     return stmt;
   };
 
@@ -1640,7 +1649,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         delete __stmtMap.get(this.db)[this.pointer];
         __ptrMap.delete(this);
         __execLock.delete(this);
-        delete this._mayGet;
+        __stmtMayGet.delete(this);
         delete this.parameterCount;
         delete this.db;
         return rc;
@@ -1655,7 +1664,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     clearBindings: function(){
       affirmNotLockedByExec(affirmStmtOpen(this), 'clearBindings()')
       capi.sqlite3_clear_bindings(this.pointer);
-      this._mayGet = false;
+        __stmtMayGet.delete(this);
       return this;
     },
     /**
@@ -1681,7 +1690,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       affirmNotLockedByExec(this,'reset()');
       if(alsoClearBinds) this.clearBindings();
       const rc = capi.sqlite3_reset(affirmStmtOpen(this).pointer);
-      this._mayGet = false;
+      __stmtMayGet.delete(this);
       checkSqlite3Rc(this.db, rc);
       return this;
     },
@@ -1768,7 +1777,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }else if(!this.parameterCount){
         toss3("This statement has no bindable parameters.");
       }
-      this._mayGet = false;
+      __stmtMayGet.delete(this);
       if(null===arg){
         /* bind NULL */
         return bindOne(this, ndx, BindTypes.null, arg);
@@ -1833,14 +1842,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       affirmNotLockedByExec(this, 'step()');
       const rc = capi.sqlite3_step(affirmStmtOpen(this).pointer);
       switch(rc){
-          case capi.SQLITE_DONE: return this._mayGet = false;
-          case capi.SQLITE_ROW: return this._mayGet = true;
-          default:
-            this._mayGet = false;
-            sqlite3.config.warn("sqlite3_step() rc=",rc,
-                         capi.sqlite3_js_rc_str(rc),
-                         "SQL =", capi.sqlite3_sql(this.pointer));
-            DB.checkRc(this.db.pointer, rc);
+        case capi.SQLITE_DONE:
+          __stmtMayGet.delete(this);
+          return false;
+        case capi.SQLITE_ROW:
+          __stmtMayGet.add(this);
+          return true;
+        default:
+          __stmtMayGet.delete(this);
+          sqlite3.config.warn("sqlite3_step() rc=",rc,
+                              capi.sqlite3_js_rc_str(rc),
+                              "SQL =", capi.sqlite3_sql(this.pointer));
+          DB.checkRc(this.db.pointer, rc);
       }
     },
     /**
@@ -1925,7 +1938,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        getJSON() can be used for that.
     */
     get: function(ndx,asType){
-      if(!affirmStmtOpen(this)._mayGet){
+      if(!__stmtMayGet.has(affirmStmtOpen(this))){
         toss3("Stmt.step() has not (recently) returned true.");
       }
       if(Array.isArray(ndx)){
