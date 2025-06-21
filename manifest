@@ -1,5 +1,5 @@
-C Enhance\ssqlite3BtreeSetPageSize()\sso\sthat\sit\sdetects\searly\sif\sno\schanges\nare\sneeded\sand\sexists\swith\sSQLITE_OK.
-D 2025-06-20T13:12:55.485
+C Numerous\ssmall\sdoc\stypo\sfrom\sBrickViking.
+D 2025-06-21T06:07:13.675
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -787,7 +787,7 @@ F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 882d739e0d5e6c7a8b46a3cca3ada37fe1a56301f1360d6b141312c666bbe482
 F src/shell.c.in 4ae9ff8e8b23d9a309e50d5b5ef2768b9bb18f748ece2acc2641a3c23b71e2b9
-F src/sqlite.h.in eb5f6114beeb08698d1bdd3eee61dd0f331c6bb834ebdd47c9f184ac6a365711
+F src/sqlite.h.in 1c21a586272dda95624620c1928252ffa2da68aed33bee2fe39fee1fe662229a
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h 60172f8b15efb8e9ae37bcb5ce596f1c55fee01b555b80f1c9056e55a6ee7d28
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a88bb75288a06492a04ab1278e8a2101a74f4ba712d328b4c73e86ac01cb946d
-R cb90f0004c740d9c6313d27671232669
-U drh
-Z be2bda8b98ca78f843ae2248ce47a153
+P c978aed3b6f82b3d9d2e0ca0283c611351bca5e5496e86a9d5d0731ebcd27c84
+R 714065a090a6f7eddbb12d99b162de52
+U stephan
+Z cbd4eab64e0d2b9e7c3a78b27d31e046
 # Remove this line to create a well-formed Fossil manifest.

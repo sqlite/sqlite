@@ -168,9 +168,9 @@ extern "C" {
 ** assert( strcmp(sqlite3_libversion(),SQLITE_VERSION)==0 );
 ** </pre></blockquote>)^
 **
-** ^The sqlite3_version[] string constant contains the text of [SQLITE_VERSION]
-** macro.  ^The sqlite3_libversion() function returns a pointer to the
-** to the sqlite3_version[] string constant.  The sqlite3_libversion()
+** ^The sqlite3_version[] string constant contains the text of the
+** [SQLITE_VERSION] macro.  ^The sqlite3_libversion() function returns a
+** pointer to the sqlite3_version[] string constant.  The sqlite3_libversion()
 ** function is provided for use in DLLs since DLL users usually do not have
 ** direct access to string constants within the DLL.  ^The
 ** sqlite3_libversion_number() function returns an integer equal to
@@ -370,7 +370,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** without having to use a lot of C code.
 **
 ** ^The sqlite3_exec() interface runs zero or more UTF-8 encoded,
-** semicolon-separate SQL statements passed into its 2nd argument,
+** semicolon-separated SQL statements passed into its 2nd argument,
 ** in the context of the [database connection] passed in as its 1st
 ** argument.  ^If the callback function of the 3rd argument to
 ** sqlite3_exec() is not NULL, then it is invoked for each result row
@@ -403,7 +403,7 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** result row is NULL then the corresponding string pointer for the
 ** sqlite3_exec() callback is a NULL pointer.  ^The 4th argument to the
 ** sqlite3_exec() callback is an array of pointers to strings where each
-** entry represents the name of corresponding result column as obtained
+** entry represents the name of a corresponding result column as obtained
 ** from [sqlite3_column_name()].
 **
 ** ^If the 2nd parameter to sqlite3_exec() is a NULL pointer, a pointer
@@ -589,7 +589,7 @@ int sqlite3_exec(
 ** Note in particular that passing the SQLITE_OPEN_EXCLUSIVE flag into
 ** [sqlite3_open_v2()] does *not* cause the underlying database file
 ** to be opened using O_EXCL.  Passing SQLITE_OPEN_EXCLUSIVE into
-** [sqlite3_open_v2()] has historically be a no-op and might become an
+** [sqlite3_open_v2()] has historically been a no-op and might become an
 ** error in future versions of SQLite.
 */
 #define SQLITE_OPEN_READONLY         0x00000001  /* Ok for sqlite3_open_v2() */
@@ -683,7 +683,7 @@ int sqlite3_exec(
 ** SQLite uses one of these integer values as the second
 ** argument to calls it makes to the xLock() and xUnlock() methods
 ** of an [sqlite3_io_methods] object.  These values are ordered from
-** lest restrictive to most restrictive.
+** least restrictive to most restrictive.
 **
 ** The argument to xLock() is always SHARED or higher.  The argument to
 ** xUnlock is either SHARED or NONE.
@@ -999,7 +999,7 @@ struct sqlite3_io_methods {
 **
 ** <li>[[SQLITE_FCNTL_VFSNAME]]
 ** ^The [SQLITE_FCNTL_VFSNAME] opcode can be used to obtain the names of
-** all [VFSes] in the VFS stack.  The names are of all VFS shims and the
+** all [VFSes] in the VFS stack.  The names of all VFS shims and the
 ** final bottom-level VFS are written into memory obtained from
 ** [sqlite3_malloc()] and the result is stored in the char* variable
 ** that the fourth parameter of [sqlite3_file_control()] points to.
@@ -1013,7 +1013,7 @@ struct sqlite3_io_methods {
 ** ^The [SQLITE_FCNTL_VFS_POINTER] opcode finds a pointer to the top-level
 ** [VFSes] currently in use.  ^(The argument X in
 ** sqlite3_file_control(db,SQLITE_FCNTL_VFS_POINTER,X) must be
-** of type "[sqlite3_vfs] **".  This opcodes will set *X
+** of type "[sqlite3_vfs] **".  This opcode will set *X
 ** to a pointer to the top-level VFS.)^
 ** ^When there are multiple VFS shims in the stack, this opcode finds the
 ** upper-most shim only.
@@ -1203,7 +1203,7 @@ struct sqlite3_io_methods {
 ** <li>[[SQLITE_FCNTL_EXTERNAL_READER]]
 ** The EXPERIMENTAL [SQLITE_FCNTL_EXTERNAL_READER] opcode is used to detect
 ** whether or not there is a database client in another process with a wal-mode
-** transaction open on the database or not. It is only available on unix.The
+** transaction open on the database or not. It is only available on unix. The
 ** (void*) argument passed with this file-control should be a pointer to a
 ** value of type (int). The integer value is set to 1 if the database is a wal
 ** mode database and there exists at least one client in another process that
@@ -1628,7 +1628,7 @@ struct sqlite3_vfs {
 ** SQLite interfaces so that an application usually does not need to
 ** invoke sqlite3_initialize() directly.  For example, [sqlite3_open()]
 ** calls sqlite3_initialize() so the SQLite library will be automatically
-** initialized when [sqlite3_open()] is called if it has not be initialized
+** initialized when [sqlite3_open()] is called if it has not been initialized
 ** already.  ^However, if SQLite is compiled with the [SQLITE_OMIT_AUTOINIT]
 ** compile-time option, then the automatic calls to sqlite3_initialize()
 ** are omitted and the application must call sqlite3_initialize() directly
@@ -1885,21 +1885,21 @@ struct sqlite3_mem_methods {
 ** The [sqlite3_mem_methods]
 ** structure is filled with the currently defined memory allocation routines.)^
 ** This option can be used to overload the default memory allocation
-** routines with a wrapper that simulations memory allocation failure or
+** routines with a wrapper that simulates memory allocation failure or
 ** tracks memory usage, for example. </dd>
 **
 ** [[SQLITE_CONFIG_SMALL_MALLOC]] <dt>SQLITE_CONFIG_SMALL_MALLOC</dt>
-** <dd> ^The SQLITE_CONFIG_SMALL_MALLOC option takes single argument of
+** <dd> ^The SQLITE_CONFIG_SMALL_MALLOC option takes a single argument of
 ** type int, interpreted as a boolean, which if true provides a hint to
 ** SQLite that it should avoid large memory allocations if possible.
 ** SQLite will run faster if it is free to make large memory allocations,
-** but some application might prefer to run slower in exchange for
+** but some applications might prefer to run slower in exchange for
 ** guarantees about memory fragmentation that are possible if large
 ** allocations are avoided.  This hint is normally off.
 ** </dd>
 **
 ** [[SQLITE_CONFIG_MEMSTATUS]] <dt>SQLITE_CONFIG_MEMSTATUS</dt>
-** <dd> ^The SQLITE_CONFIG_MEMSTATUS option takes single argument of type int,
+** <dd> ^The SQLITE_CONFIG_MEMSTATUS option takes a single argument of type int,
 ** interpreted as a boolean, which enables or disables the collection of
 ** memory allocation statistics. ^(When memory allocation statistics are
 ** disabled, the following SQLite interfaces become non-operational:
@@ -1944,7 +1944,7 @@ struct sqlite3_mem_methods {
 ** ^If pMem is NULL and N is non-zero, then each database connection
 ** does an initial bulk allocation for page cache memory
 ** from [sqlite3_malloc()] sufficient for N cache lines if N is positive or
-** of -1024*N bytes if N is negative, . ^If additional
+** of -1024*N bytes if N is negative. ^If additional
 ** page cache memory is needed beyond what is provided by the initial
 ** allocation, then SQLite goes to [sqlite3_malloc()] separately for each
 ** additional cache line. </dd>
@@ -1973,7 +1973,7 @@ struct sqlite3_mem_methods {
 ** <dd> ^(The SQLITE_CONFIG_MUTEX option takes a single argument which is a
 ** pointer to an instance of the [sqlite3_mutex_methods] structure.
 ** The argument specifies alternative low-level mutex routines to be used
-** in place the mutex routines built into SQLite.)^  ^SQLite makes a copy of
+** in place of the mutex routines built into SQLite.)^  ^SQLite makes a copy of
 ** the content of the [sqlite3_mutex_methods] structure before the call to
 ** [sqlite3_config()] returns. ^If SQLite is compiled with
 ** the [SQLITE_THREADSAFE | SQLITE_THREADSAFE=0] compile-time option then
@@ -2015,7 +2015,7 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_CONFIG_GETPCACHE2]] <dt>SQLITE_CONFIG_GETPCACHE2</dt>
 ** <dd> ^(The SQLITE_CONFIG_GETPCACHE2 option takes a single argument which
-** is a pointer to an [sqlite3_pcache_methods2] object.  SQLite copies of
+** is a pointer to an [sqlite3_pcache_methods2] object.  SQLite copies off
 ** the current page cache implementation into that object.)^ </dd>
 **
 ** [[SQLITE_CONFIG_LOG]] <dt>SQLITE_CONFIG_LOG</dt>
@@ -2032,7 +2032,7 @@ struct sqlite3_mem_methods {
 ** the logger function is a copy of the first parameter to the corresponding
 ** [sqlite3_log()] call and is intended to be a [result code] or an
 ** [extended result code].  ^The third parameter passed to the logger is
-** log message after formatting via [sqlite3_snprintf()].
+** a log message after formatting via [sqlite3_snprintf()].
 ** The SQLite logging interface is not reentrant; the logger function
 ** supplied by the application must not invoke any SQLite interface.
 ** In a multi-threaded application, the application-defined logger
@@ -2223,7 +2223,7 @@ struct sqlite3_mem_methods {
 ** These constants are the available integer configuration options that
 ** can be passed as the second parameter to the [sqlite3_db_config()] interface.
 **
-** The [sqlite3_db_config()] interface is a var-args functions.  It takes a
+** The [sqlite3_db_config()] interface is a var-args function.  It takes a
 ** variable number of parameters, though always at least two.  The number of
 ** parameters passed into sqlite3_db_config() depends on which of these
 ** constants is given as the second parameter.  This documentation page
@@ -2357,8 +2357,8 @@ struct sqlite3_mem_methods {
 ** When the first argument to this interface is 1, then only the C-API is
 ** enabled and the SQL function remains disabled.  If the first argument to
 ** this interface is 0, then both the C-API and the SQL function are disabled.
-** If the first argument is -1, then no changes are made to state of either the
-** C-API or the SQL function.
+** If the first argument is -1, then no changes are made to the state of either
+** the C-API or the SQL function.
 ** The second parameter is a pointer to an integer into which
 ** is written 0 or 1 to indicate whether [sqlite3_load_extension()] interface
 ** is disabled or enabled following this call.  The second parameter may
@@ -2476,7 +2476,7 @@ struct sqlite3_mem_methods {
 ** [[SQLITE_DBCONFIG_LEGACY_ALTER_TABLE]]
 ** <dt>SQLITE_DBCONFIG_LEGACY_ALTER_TABLE</dt>
 ** <dd>The SQLITE_DBCONFIG_LEGACY_ALTER_TABLE option activates or deactivates
-** the legacy behavior of the [ALTER TABLE RENAME] command such it
+** the legacy behavior of the [ALTER TABLE RENAME] command such that it
 ** behaves as it did prior to [version 3.24.0] (2018-06-04).  See the
 ** "Compatibility Notice" on the [ALTER TABLE RENAME documentation] for
 ** additional information. This feature can also be turned on and off
