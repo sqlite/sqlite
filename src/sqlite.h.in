@@ -2525,7 +2525,7 @@ struct sqlite3_mem_methods {
 ** <dt>SQLITE_DBCONFIG_LEGACY_FILE_FORMAT</dt>
 ** <dd>The SQLITE_DBCONFIG_LEGACY_FILE_FORMAT option activates or deactivates
 ** the legacy file format flag.  When activated, this flag causes all newly
-** created database file to have a schema format version number (the 4-byte
+** created database files to have a schema format version number (the 4-byte
 ** integer found at offset 44 into the database header) of 1.  This in turn
 ** means that the resulting database file will be readable and writable by
 ** any SQLite version back to 3.0.0 ([dateof:3.0.0]).  Without this setting,
@@ -2552,7 +2552,7 @@ struct sqlite3_mem_methods {
 ** the database handle both when the SQL statement is prepared and when it
 ** is stepped. The flag is set (collection of statistics is enabled)
 ** by default. <p>This option takes two arguments: an integer and a pointer to
-** an integer..  The first argument is 1, 0, or -1 to enable, disable, or
+** an integer.  The first argument is 1, 0, or -1 to enable, disable, or
 ** leave unchanged the statement scanstatus option.  If the second argument
 ** is not NULL, then the value of the statement scanstatus setting after
 ** processing the first argument is written into the integer that the second
@@ -2595,8 +2595,8 @@ struct sqlite3_mem_methods {
 ** <dd>The SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE option enables or disables the
 ** ability of the [ATTACH DATABASE] SQL command to open a database for writing.
 ** This capability is enabled by default.  Applications can disable or
-** reenable this capability using the current DBCONFIG option.  If the
-** the this capability is disabled, the [ATTACH] command will still work,
+** reenable this capability using the current DBCONFIG option.  If
+** this capability is disabled, the [ATTACH] command will still work,
 ** but the database will be opened read-only.  If this option is disabled,
 ** then the ability to create a new database using [ATTACH] is also disabled,
 ** regardless of the value of the [SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE]
@@ -2630,7 +2630,7 @@ struct sqlite3_mem_methods {
 **
 ** <p>Most of the SQLITE_DBCONFIG options take two arguments, so that the
 ** overall call to [sqlite3_db_config()] has a total of four parameters.
-** The first argument (the third parameter to sqlite3_db_config()) is a integer.
+** The first argument (the third parameter to sqlite3_db_config()) is an integer.
 ** The second argument is a pointer to an integer.  If the first argument is 1,
 ** then the option becomes enabled.  If the first integer argument is 0, then the
 ** option is disabled.  If the first argument is -1, then the option setting
@@ -2920,7 +2920,7 @@ int sqlite3_is_interrupted(sqlite3*);
 ** ^These routines return 0 if the statement is incomplete.  ^If a
 ** memory allocation fails, then SQLITE_NOMEM is returned.
 **
-** ^These routines do not parse the SQL statements thus
+** ^These routines do not parse the SQL statements and thus
 ** will not detect syntactically incorrect SQL.
 **
 ** ^(If SQLite has not been initialized using [sqlite3_initialize()] prior
@@ -3037,7 +3037,7 @@ int sqlite3_busy_timeout(sqlite3*, int ms);
 ** indefinitely if possible. The results of passing any other negative value 
 ** are undefined.
 **
-** Internally, each SQLite database handle store two timeout values - the
+** Internally, each SQLite database handle stores two timeout values - the
 ** busy-timeout (used for rollback mode databases, or if the VFS does not
 ** support blocking locks) and the setlk-timeout (used for blocking locks
 ** on wal-mode databases). The sqlite3_busy_timeout() method sets both
@@ -3067,7 +3067,7 @@ int sqlite3_setlk_timeout(sqlite3*, int ms, int flags);
 ** This is a legacy interface that is preserved for backwards compatibility.
 ** Use of this interface is not recommended.
 **
-** Definition: A <b>result table</b> is memory data structure created by the
+** Definition: A <b>result table</b> is a memory data structure created by the
 ** [sqlite3_get_table()] interface.  A result table records the
 ** complete query results from one or more queries.
 **
@@ -3210,7 +3210,7 @@ char *sqlite3_vsnprintf(int,char*,const char*, va_list);
 ** ^Calling sqlite3_free() with a pointer previously returned
 ** by sqlite3_malloc() or sqlite3_realloc() releases that memory so
 ** that it might be reused.  ^The sqlite3_free() routine is
-** a no-op if is called with a NULL pointer.  Passing a NULL pointer
+** a no-op if it is called with a NULL pointer.  Passing a NULL pointer
 ** to sqlite3_free() is harmless.  After being freed, memory
 ** should neither be read nor written.  Even reading previously freed
 ** memory might result in a segmentation fault or other severe error.
@@ -3228,13 +3228,13 @@ char *sqlite3_vsnprintf(int,char*,const char*, va_list);
 ** sqlite3_free(X).
 ** ^sqlite3_realloc(X,N) returns a pointer to a memory allocation
 ** of at least N bytes in size or NULL if insufficient memory is available.
-** ^If M is the size of the prior allocation, then min(N,M) bytes
-** of the prior allocation are copied into the beginning of buffer returned
+** ^If M is the size of the prior allocation, then min(N,M) bytes of the
+** prior allocation are copied into the beginning of the buffer returned
 ** by sqlite3_realloc(X,N) and the prior allocation is freed.
 ** ^If sqlite3_realloc(X,N) returns NULL and N is positive, then the
 ** prior allocation is not freed.
 **
-** ^The sqlite3_realloc64(X,N) interfaces works the same as
+** ^The sqlite3_realloc64(X,N) interface works the same as
 ** sqlite3_realloc(X,N) except that N is a 64-bit unsigned integer instead
 ** of a 32-bit signed integer.
 **
@@ -3284,7 +3284,7 @@ sqlite3_uint64 sqlite3_msize(void*);
 ** was last reset.  ^The values returned by [sqlite3_memory_used()] and
 ** [sqlite3_memory_highwater()] include any overhead
 ** added by SQLite in its implementation of [sqlite3_malloc()],
-** but not overhead added by the any underlying system library
+** but not overhead added by any underlying system library
 ** routines that [sqlite3_malloc()] may call.
 **
 ** ^The memory high-water mark is reset to the current value of
@@ -3736,7 +3736,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** there is no harm in trying.)
 **
 ** ^(<dt>[SQLITE_OPEN_SHAREDCACHE]</dt>
-** <dd>The database is opened [shared cache] enabled, overriding
+** <dd>The database is opened with [shared cache] enabled, overriding
 ** the default shared cache setting provided by
 ** [sqlite3_enable_shared_cache()].)^
 ** The [use of shared cache mode is discouraged] and hence shared cache
@@ -3744,7 +3744,7 @@ void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** this option is a no-op.
 **
 ** ^(<dt>[SQLITE_OPEN_PRIVATECACHE]</dt>
-** <dd>The database is opened [shared cache] disabled, overriding
+** <dd>The database is opened with [shared cache] disabled, overriding
 ** the default shared cache setting provided by
 ** [sqlite3_enable_shared_cache()].)^
 **
