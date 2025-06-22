@@ -336,8 +336,8 @@ proc sqlite-configure {buildMode configScript} {
           => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }
       {canonical autoconf} {
-        # A potential TODO without a current use case:
-        #rpath=1 => {Disable use of the rpath linker flag}
+        rpath=1 => {Disable use of the rpath linker flag}
+
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
         soname:=legacy
           => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -2140,7 +2140,6 @@ proc sqlite-handle-tcl {} {
 ########################################################################
 # Handle the --enable/disable-rpath flag.
 proc sqlite-handle-rpath {} {
-  proj-check-rpath
   # autosetup/cc-shared.tcl sets the rpath flag definition in
   # [get-define SH_LINKRPATH], but it does so on a per-platform basis
   # rather than as a compiler check. Though we should do a proper
@@ -2149,12 +2148,13 @@ proc sqlite-handle-rpath {} {
   # for which sqlite-env-is-unix-on-windows returns a non-empty
   # string.
 
-#  if {[proj-opt-truthy rpath]} {
-#    proj-check-rpath
-#  } else {
-#    msg-result "Disabling use of rpath."
-#    define LDFLAGS_RPATH ""
-#  }
+  # https://sqlite.org/forum/forumpost/13cac3b56516f849
+  if {[proj-opt-truthy rpath]} {
+    proj-check-rpath
+  } else {
+    msg-result "Disabling use of rpath."
+    define LDFLAGS_RPATH ""
+  }
 }
 
 ########################################################################
