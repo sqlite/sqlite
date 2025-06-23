@@ -10805,7 +10805,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         sqlite3_free(zQarg);
       }
       if( bNoSystemTabs ){
-        appendText(&sSelect, "name NOT LIKE 'sqlite__%%' ESCALE '_' AND ", 0);
+        appendText(&sSelect, "name NOT LIKE 'sqlite__%%' ESCAPE '_' AND ", 0);
       }
       appendText(&sSelect, "sql IS NOT NULL"
                            " ORDER BY snum, rowid", 0);
