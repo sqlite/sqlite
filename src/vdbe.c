@@ -792,6 +792,36 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   return rc;
 }
 
+/*
+** Send a "statement aborts" message to the error log.
+*/
+static SQLITE_NOINLINE void sqlite3VdbeLogAbort(
+  Vdbe *p,     /* The statement that is running at the time of failure */
+  int rc,      /* Error code */
+  Op *pOp,     /* Opcode that filed */
+  Op *aOp      /* All opcodes */
+){
+  const char *zSql = p->zSql;   /* Original SQL text */
+  const char *zPrefix = "";     /* Prefix added to SQL text */
+  int pc;                       /* Opcode address */
+  char zXtra[100];              /* Buffer space to store zPrefix */
+
+  if( p->pFrame ){
+    assert( aOp[0].opcode==OP_Init );
+    if( aOp[0].p4.z!=0 ){
+      assert( aOp[0].p4.z[0]=='-' 
+           && aOp[0].p4.z[1]=='-' 
+           && aOp[0].p4.z[2]==' ' );
+      sqlite3_snprintf(sizeof(zXtra), zXtra,"/* %s */ ",aOp[0].p4.z+3);
+      zPrefix = zXtra;
+    }else{
+      zPrefix = "/* unknown trigger */ ";
+    }
+  }
+  pc = (int)(pOp - aOp);
+  sqlite3_log(rc, "statement aborts at %d: %s; [%s%s]",
+                   pc, p->zErrMsg, zPrefix, zSql);
+}
 
 /*
 ** Return the symbolic name for the data type of a pMem
@@ -1317,8 +1347,7 @@ case OP_Halt: {
     }else{
       sqlite3VdbeError(p, "%s", pOp->p4.z);
     }
-    pcx = (int)(pOp - aOp);
-    sqlite3_log(pOp->p1, "abort at %d: %s; [%s]", pcx, p->zErrMsg, p->zSql);
+    sqlite3VdbeLogAbort(p, pOp->p1, pOp, aOp);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );
@@ -9182,8 +9211,7 @@ abort_due_to_error:
   p->rc = rc;
   sqlite3SystemError(db, rc);
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  sqlite3_log(rc, "statement aborts at %d: %s; [%s]",
-                   (int)(pOp - aOp), p->zErrMsg, p->zSql);
+  sqlite3VdbeLogAbort(p, rc, pOp, aOp);
   if( p->eVdbeState==VDBE_RUN_STATE ) sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) sqlite3OomFault(db);
   if( rc==SQLITE_CORRUPT && db->autoCommit==0 ){
