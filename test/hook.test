@@ -488,6 +488,11 @@ proc preupdate_hook {args} {
   set type [lindex $args 0]
   eval lappend ::preupdate $args
   if {$type != "INSERT"} {
+    set x [catch {db preupdate old [db preupdate count]}]
+    if {!$x} {
+      lappend "ERROR: sqlite3_preupdate_old() accepted an out-of-bounds\
+               column index"
+    }
     for {set i 0} {$i < [db preupdate count]} {incr i} {
       lappend ::preupdate [db preupdate old $i]
     }
