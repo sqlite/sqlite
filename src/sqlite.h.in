@@ -4162,7 +4162,7 @@ void sqlite3_free_filename(sqlite3_filename);
 ** subsequent calls to other SQLite interface functions.)^
 **
 ** ^The sqlite3_errstr(E) interface returns the English-language text
-** that describes the [result code] E, as UTF-8, or NULL if E is not an
+** that describes the [result code] E, as UTF-8, or NULL if E is not a
 ** result code for which a text error message is available.
 ** ^(Memory to hold the error message string is managed internally
 ** and must not be freed by the application)^.
@@ -4170,7 +4170,7 @@ void sqlite3_free_filename(sqlite3_filename);
 ** ^If the most recent error references a specific token in the input
 ** SQL, the sqlite3_error_offset() interface returns the byte offset
 ** of the start of that token.  ^The byte offset returned by
-** sqlite3_error_offset() assumes that the input SQL is UTF8.
+** sqlite3_error_offset() assumes that the input SQL is UTF-8.
 ** ^If the most recent error does not reference a specific token in the input
 ** SQL, then the sqlite3_error_offset() function returns -1.
 **
@@ -4269,8 +4269,8 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** These constants define various performance limits
 ** that can be lowered at run-time using [sqlite3_limit()].
-** The synopsis of the meanings of the various limits is shown below.
-** Additional information is available at [limits | Limits in SQLite].
+** A concise description of these limits follows, and additional information
+** is available at [limits | Limits in SQLite].
 **
 ** <dl>
 ** [[SQLITE_LIMIT_LENGTH]] ^(<dt>SQLITE_LIMIT_LENGTH</dt>
@@ -4335,7 +4335,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 /*
 ** CAPI3REF: Prepare Flags
 **
-** These constants define various flags that can be passed into
+** These constants define various flags that can be passed into the
 ** "prepFlags" parameter of the [sqlite3_prepare_v3()] and
 ** [sqlite3_prepare16_v3()] interfaces.
 **
@@ -4422,7 +4422,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** there is a small performance advantage to passing an nByte parameter that
 ** is the number of bytes in the input string <i>including</i>
 ** the nul-terminator.
-** Note that nByte measure the length of the input in bytes, not
+** Note that nByte measures the length of the input in bytes, not
 ** characters, even for the UTF-16 interfaces.
 **
 ** ^If pzTail is not NULL then *pzTail is made to point to the first byte
@@ -4556,7 +4556,7 @@ int sqlite3_prepare16_v3(
 **
 ** ^The sqlite3_expanded_sql() interface returns NULL if insufficient memory
 ** is available to hold the result, or if the result would exceed the
-** the maximum string length determined by the [SQLITE_LIMIT_LENGTH].
+** maximum string length determined by the [SQLITE_LIMIT_LENGTH].
 **
 ** ^The [SQLITE_TRACE_SIZE_LIMIT] compile-time option limits the size of
 ** bound parameter expansions.  ^The [SQLITE_OMIT_TRACE] compile-time
@@ -4744,7 +4744,7 @@ typedef struct sqlite3_value sqlite3_value;
 **
 ** The context in which an SQL function executes is stored in an
 ** sqlite3_context object.  ^A pointer to an sqlite3_context object
-** is always first parameter to [application-defined SQL functions].
+** is always the first parameter to [application-defined SQL functions].
 ** The application-defined SQL function implementation will pass this
 ** pointer through into calls to [sqlite3_result_int | sqlite3_result()],
 ** [sqlite3_aggregate_context()], [sqlite3_user_data()],
@@ -5481,7 +5481,7 @@ int sqlite3_column_type(sqlite3_stmt*, int iCol);
 **
 ** ^The sqlite3_finalize() function is called to delete a [prepared statement].
 ** ^If the most recent evaluation of the statement encountered no errors
-** or if the statement is never been evaluated, then sqlite3_finalize() returns
+** or if the statement has never been evaluated, then sqlite3_finalize() returns
 ** SQLITE_OK.  ^If the most recent evaluation of statement S failed, then
 ** sqlite3_finalize(S) returns the appropriate [error code] or
 ** [extended error code].
@@ -5713,7 +5713,7 @@ int sqlite3_create_window_function(
 /*
 ** CAPI3REF: Text Encodings
 **
-** These constant define integer codes that represent the various
+** These constants define integer codes that represent the various
 ** text encodings supported by SQLite.
 */
 #define SQLITE_UTF8           1    /* IMP: R-37514-35566 */
@@ -5805,7 +5805,7 @@ int sqlite3_create_window_function(
 ** result.
 ** Every function that invokes [sqlite3_result_subtype()] should have this
 ** property.  If it does not, then the call to [sqlite3_result_subtype()]
-** might become a no-op if the function is used as term in an
+** might become a no-op if the function is used as a term in an
 ** [expression index].  On the other hand, SQL functions that never invoke
 ** [sqlite3_result_subtype()] should avoid setting this property, as the
 ** purpose of this property is to disable certain optimizations that are
@@ -5932,7 +5932,7 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** sqlite3_value_nochange(X) interface returns true if and only if
 ** the column corresponding to X is unchanged by the UPDATE operation
 ** that the xUpdate method call was invoked to implement and if
-** and the prior [xColumn] method call that was invoked to extracted
+** the prior [xColumn] method call that was invoked to extract
 ** the value for that column returned without setting a result (probably
 ** because it queried [sqlite3_vtab_nochange()] and found that the column
 ** was unchanging).  ^Within an [xUpdate] method, any value for which
