@@ -1,5 +1,5 @@
-C Similar\sfix\sto\sthe\sprevious\scheck-in,\sbut\sthis\stime\sfor\nsqlite3_preupdate_new().
-D 2025-06-24T18:27:59.008
+C Minor\sAPI\sdoc\sfixes\ssent\soff-list\sfrom\sbrickviking.
+D 2025-06-25T20:42:40.531
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -787,7 +787,7 @@ F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 882d739e0d5e6c7a8b46a3cca3ada37fe1a56301f1360d6b141312c666bbe482
 F src/shell.c.in 4f14a1f5196b6006abc8e73cc8fd6c1a62cf940396f8ba909d6711f35f074bb6
-F src/sqlite.h.in f09f476f04f25df07babfa551768035d0d4607766495c07fc55cde790e6f5986
+F src/sqlite.h.in 9408c1f6aac524556e9f067ae14f1b970c37c7bc1187d79b48b81bed3f9e8861
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h 60172f8b15efb8e9ae37bcb5ce596f1c55fee01b555b80f1c9056e55a6ee7d28
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6a5701e6c7be25cba93e55438f950966e1dacb32eb2b23a8acc8ac53da6f0a85
-R 8506853a6e76f6a429c728bba8084a80
-U drh
-Z 9667daa3442fb7e2ab81081e1de55912
+P 9aaff764d508cbd9823f23cdf0c510255721bc5c09be481ebc60bd8902ceb8c5
+R 14775dd1d47b5a2935b31c318dc0cd9f
+U stephan
+Z 13db96e398d5e233878b141c1be6eecb
 # Remove this line to create a well-formed Fossil manifest.
