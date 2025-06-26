@@ -1,5 +1,5 @@
-C Minor\sAPI\sdoc\sfixes\ssent\soff-list\sfrom\sbrickviking.
-D 2025-06-25T20:42:40.531
+C Work\saround\san\sapparent\sGCC\sUBSAN\sbug.\s\sSee\n[forum:/forumpost/1d7c25d4a2d6f5e2|forum\sthread\s1d7c25d4a2d]\sfor\sdetails.
+D 2025-06-26T18:57:20.534
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 127ddaf42e959c2406f41bd145e3ff5f4eb48a3e57fe39f63e985af965d315ca
+F src/btree.c 81fb44041929a605e293185bd4091cb24c468a108afe8ba1d93a81a8823de47f
 F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 67c1db4c5e89a8519fe9b6dafc287f6bc3627696b5b8536dc5e06db570d8c05f
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9aaff764d508cbd9823f23cdf0c510255721bc5c09be481ebc60bd8902ceb8c5
-R 14775dd1d47b5a2935b31c318dc0cd9f
-U stephan
-Z 13db96e398d5e233878b141c1be6eecb
+P cb4d05633a0c9cdf146f3108e1b4b10754cd79d72a425d8cc9cd21836037a01b
+R b5ab21a91f72a12c42b28c756d68efff
+U drh
+Z 9c0b1fc6a8f3819107260114d2f485eb
 # Remove this line to create a well-formed Fossil manifest.
