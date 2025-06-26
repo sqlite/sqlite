@@ -6038,7 +6038,7 @@ unsigned int sqlite3_value_subtype(sqlite3_value*);
 ** METHOD: sqlite3_value
 **
 ** ^The sqlite3_value_dup(V) interface makes a copy of the [sqlite3_value]
-** object D and returns a pointer to that copy.  ^The [sqlite3_value] returned
+** object V and returns a pointer to that copy.  ^The [sqlite3_value] returned
 ** is a [protected sqlite3_value] object even if the input is not.
 ** ^The sqlite3_value_dup(V) interface returns NULL if V is NULL or if a
 ** memory allocation fails. ^If V is a [pointer value], then the result
@@ -6076,7 +6076,7 @@ void sqlite3_value_free(sqlite3_value*);
 ** allocation error occurs.
 **
 ** ^(The amount of space allocated by sqlite3_aggregate_context(C,N) is
-** determined by the N parameter on first successful call.  Changing the
+** determined by the N parameter on the first successful call.  Changing the
 ** value of N in any subsequent call to sqlite3_aggregate_context() within
 ** the same aggregate function instance will not resize the memory
 ** allocation.)^  Within the xFinal callback, it is customary to set
@@ -6238,7 +6238,7 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 **
 ** Security Warning:  These interfaces should not be exposed in scripting
 ** languages or in other circumstances where it might be possible for an
-** an attacker to invoke them.  Any agent that can invoke these interfaces
+** attacker to invoke them.  Any agent that can invoke these interfaces
 ** can probably also take control of the process.
 ** 
 ** Database connection client data is only available for SQLite
@@ -6352,7 +6352,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** pointed to by the 2nd parameter are taken as the application-defined
 ** function result.  If the 3rd parameter is non-negative, then it
 ** must be the byte offset into the string where the NUL terminator would
-** appear if the string where NUL terminated.  If any NUL characters occur
+** appear if the string were NUL terminated.  If any NUL characters occur
 ** in the string at a byte offset that is less than the value of the 3rd
 ** parameter, then the resulting string will contain embedded NULs and the
 ** result of expressions operating on strings with embedded NULs is undefined.
@@ -6410,7 +6410,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** string and preferably a string literal. The sqlite3_result_pointer()
 ** routine is part of the [pointer passing interface] added for SQLite 3.20.0.
 **
-** If these routines are called from within the different thread
+** If these routines are called from within a different thread
 ** than the one containing the application-defined function that received
 ** the [sqlite3_context] pointer, the results are undefined.
 */
@@ -6816,7 +6816,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 ** METHOD: sqlite3
 **
 ** ^The sqlite3_db_name(D,N) interface returns a pointer to the schema name
-** for the N-th database on database connection D, or a NULL pointer of N is
+** for the N-th database on database connection D, or a NULL pointer if N is
 ** out of range.  An N value of 0 means the main database file.  An N of 1 is
 ** the "temp" schema.  Larger values of N correspond to various ATTACH-ed
 ** databases.
@@ -6911,7 +6911,7 @@ int sqlite3_txn_state(sqlite3*,const char *zSchema);
 ** <dd>The SQLITE_TXN_READ state means that the database is currently
 ** in a read transaction.  Content has been read from the database file
 ** but nothing in the database file has changed.  The transaction state
-** will advanced to SQLITE_TXN_WRITE if any changes occur and there are
+** will be advanced to SQLITE_TXN_WRITE if any changes occur and there are
 ** no other conflicting concurrent write transactions.  The transaction
 ** state will revert to SQLITE_TXN_NONE following a [ROLLBACK] or
 ** [COMMIT].</dd>
@@ -6920,7 +6920,7 @@ int sqlite3_txn_state(sqlite3*,const char *zSchema);
 ** <dd>The SQLITE_TXN_WRITE state means that the database is currently
 ** in a write transaction.  Content has been written to the database file
 ** but has not yet committed.  The transaction state will change to
-** to SQLITE_TXN_NONE at the next [ROLLBACK] or [COMMIT].</dd>
+** SQLITE_TXN_NONE at the next [ROLLBACK] or [COMMIT].</dd>
 */
 #define SQLITE_TXN_NONE  0
 #define SQLITE_TXN_READ  1
@@ -7201,7 +7201,7 @@ int sqlite3_db_release_memory(sqlite3*);
 ** CAPI3REF: Impose A Limit On Heap Size
 **
 ** These interfaces impose limits on the amount of heap memory that will be
-** by all database connections within a single process.
+** used by all database connections within a single process.
 **
 ** ^The sqlite3_soft_heap_limit64() interface sets and/or queries the
 ** soft limit on the amount of heap memory that may be allocated by SQLite.
@@ -7259,7 +7259,7 @@ int sqlite3_db_release_memory(sqlite3*);
 ** </ul>)^
 **
 ** The circumstances under which SQLite will enforce the heap limits may
-** changes in future releases of SQLite.
+** change in future releases of SQLite.
 */
 sqlite3_int64 sqlite3_soft_heap_limit64(sqlite3_int64 N);
 sqlite3_int64 sqlite3_hard_heap_limit64(sqlite3_int64 N);
