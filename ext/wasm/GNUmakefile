@@ -1193,9 +1193,11 @@ push-testing:
 ########################################################################
 # If we find a copy of the sqlite.org/wasm docs checked out, copy
 # certain files over to it, noting that some need automatable edits...
-wasm.docs.home ?= ../../../wasm
-wasm.docs.found = $(if $(wildcard $(wasm.docs.home)/api-index.md),\
-  $(wildcard $(wasm.docs.home)),)
+wasm.docs.home ?= $(firstword $(wildcard ../../../wasm $(HOME)/f/s/wasm))
+wasm.docs.found = $(if \
+  $(wildcard $(wasm.docs.home)/api-index.md),$(wildcard $(wasm.docs.home)),)
+# ^^^ don't split between the args there, else it can introduce an extra
+# space.
 .PHONY: update-docs
 ifeq (,$(wasm.docs.found))
 update-docs:

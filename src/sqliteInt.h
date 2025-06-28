@@ -1031,8 +1031,8 @@ typedef INT16_TYPE LogEst;
 ** assuming n is a signed integer type.  UMXV(n) is similar for unsigned
 ** integer types.
 */
-#define SMXV(n) ((((i64)1)<<(sizeof(n)-1))-1)
-#define UMXV(n) ((((i64)1)<<(sizeof(n)))-1)
+#define SMXV(n) ((((i64)1)<<(sizeof(n)*8-1))-1)
+#define UMXV(n) ((((i64)1)<<(sizeof(n)*8))-1)
 
 /*
 ** Round up a number to the next larger multiple of 8.  This is used
@@ -2900,7 +2900,7 @@ struct AggInfo {
                           ** from source tables rather than from accumulators */
   u8 useSortingIdx;       /* In direct mode, reference the sorting index rather
                           ** than the source table */
-  u16 nSortingColumn;     /* Number of columns in the sorting index */
+  u32 nSortingColumn;     /* Number of columns in the sorting index */
   int sortingIdx;         /* Cursor number of the sorting index */
   int sortingIdxPTab;     /* Cursor number of pseudo-table */
   int iFirstReg;          /* First register in range for aCol[] and aFunc[] */
@@ -2909,8 +2909,8 @@ struct AggInfo {
     Table *pTab;             /* Source table */
     Expr *pCExpr;            /* The original expression */
     int iTable;              /* Cursor number of the source table */
-    i16 iColumn;             /* Column number within the source table */
-    i16 iSorterColumn;       /* Column number in the sorting index */
+    int iColumn;             /* Column number within the source table */
+    int iSorterColumn;       /* Column number in the sorting index */
   } *aCol;
   int nColumn;            /* Number of used entries in aCol[] */
   int nAccumulator;       /* Number of columns that show through to the output.

@@ -1667,7 +1667,7 @@ static void concatFuncCore(
   int nSep,
   const char *zSep
 ){
-  i64 j, k, n = 0;
+  i64 j, n = 0;
   int i;
   char *z;
   for(i=0; i<argc; i++){
@@ -1681,8 +1681,8 @@ static void concatFuncCore(
   }
   j = 0;
   for(i=0; i<argc; i++){
-    k = sqlite3_value_bytes(argv[i]);
-    if( k>0 ){
+    if( sqlite3_value_type(argv[i])!=SQLITE_NULL ){
+      int k = sqlite3_value_bytes(argv[i]);
       const char *v = (const char*)sqlite3_value_text(argv[i]);
       if( v!=0 ){
         if( j>0 && nSep>0 ){
