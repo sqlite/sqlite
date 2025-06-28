@@ -931,30 +931,42 @@ static void exprAnalyzeOrTerm(
 **   1.  The SQLITE_Transitive optimization must be enabled
 **   2.  Must be either an == or an IS operator
 **   3.  Not originating in the ON clause of an OUTER JOIN
-**   4.  The affinities of A and B must be compatible
-**   5a. Both operands use the same collating sequence OR
-**   5b. The overall collating sequence is BINARY
+**   4.  The operator is not IS or else the query does not contain RIGHT JOIN
+**   5.  The affinities of A and B must be compatible
+**   6a. Both operands use the same collating sequence OR
+**   6b. The overall collating sequence is BINARY
 ** If this routine returns TRUE, that means that the RHS can be substituted
 ** for the LHS anyplace else in the WHERE clause where the LHS column occurs.
 ** This is an optimization.  No harm comes from returning 0.  But if 1 is
 ** returned when it should not be, then incorrect answers might result.
 */
-static int termIsEquivalence(Parse *pParse, Expr *pExpr){
+static int termIsEquivalence(Parse *pParse, Expr *pExpr, SrcList *pSrc){
   char aff1, aff2;
   CollSeq *pColl;
-  if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
-  if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
-  if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;
+  if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;  /* (1) */
+  if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;                 /* (2) */
+  if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;                   /* (3) */
+  assert( pSrc!=0 );
+  if( pExpr->op==TK_IS
+   && pSrc->nSrc
+   && (pSrc->a[0].fg.jointype & JT_LTORJ)!=0
+  ){
+    return 0;                                                          /* (4) */
+  }
   aff1 = sqlite3ExprAffinity(pExpr->pLeft);
   aff2 = sqlite3ExprAffinity(pExpr->pRight);
   if( aff1!=aff2
    && (!sqlite3IsNumericAffinity(aff1) || !sqlite3IsNumericAffinity(aff2))
   ){
-    return 0;
+    return 0;                                                          /* (5) */
   }
   pColl = sqlite3ExprCompareCollSeq(pParse, pExpr);
-  if( sqlite3IsBinary(pColl) ) return 1;
-  return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight);
+  if( !sqlite3IsBinary(pColl)
+   && !sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight)
+  ){
+    return 0;                                                          /* (6) */
+  }
+  return 1;
 }
 
 /*
@@ -1112,6 +1124,9 @@ static void exprAnalyze(
   }
   assert( pWC->nTerm > idxTerm );
   pTerm = &pWC->a[idxTerm];
+#ifdef SQLITE_DEBUG
+  pTerm->iTerm = idxTerm;
+#endif
   pMaskSet = &pWInfo->sMaskSet;
   pExpr = pTerm->pExpr;
   assert( pExpr!=0 ); /* Because malloc() has not failed */
@@ -1219,8 +1234,8 @@ static void exprAnalyze(
         if( op==TK_IS ) pNew->wtFlags |= TERM_IS;
         pTerm = &pWC->a[idxTerm];
         pTerm->wtFlags |= TERM_COPIED;
-
-        if( termIsEquivalence(pParse, pDup) ){
+        assert( pWInfo->pTabList!=0 );
+        if( termIsEquivalence(pParse, pDup, pWInfo->pTabList) ){
           pTerm->eOperator |= WO_EQUIV;
           eExtraOp = WO_EQUIV;
         }

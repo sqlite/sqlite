@@ -135,9 +135,12 @@
 
 /*
 ** If SQLITE_WASM_BARE_BONES is defined, undefine most of the ENABLE
-** macros.
+** macros. This will, when using the canonical makefile, also elide
+** any C functions from the WASM exports which are listed in
+** ./EXPORT_FUNCTIONS.sqlite3-extras.
 */
 #ifdef SQLITE_WASM_BARE_BONES
+#  undef  SQLITE_ENABLE_COLUMN_METADATA
 #  undef  SQLITE_ENABLE_DBPAGE_VTAB
 #  undef  SQLITE_ENABLE_DBSTAT_VTAB
 #  undef  SQLITE_ENABLE_EXPLAIN_COMMENTS
@@ -1157,7 +1160,7 @@ const char * sqlite3__wasm_enum_json(void){
     { /* Validate that the above struct sizeof()s match
       ** expectations. We could improve upon this by
       ** checking the offsetof() for each member. */
-      const sqlite3_index_info siiCheck;
+      const sqlite3_index_info siiCheck = {0};
 #define IndexSzCheck(T,M)           \
       (sizeof(T) == sizeof(*siiCheck.M))
       if(!IndexSzCheck(sqlite3_index_constraint,aConstraint)

@@ -224,7 +224,7 @@ install: install-lib
 #
 ENABLE_STATIC_SHELL = @ENABLE_STATIC_SHELL@
 sqlite3-shell-link-flags.1 = $(TOP)/sqlite3.c $(LDFLAGS.libsqlite3)
-sqlite3-shell-link-flags.0 = -L. -lsqlite3 $(LDFLAGS.zlib)
+sqlite3-shell-link-flags.0 = -L. -lsqlite3 $(LDFLAGS.zlib) $(LDFLAGS.math)
 sqlite3-shell-deps.1 = $(TOP)/sqlite3.c
 sqlite3-shell-deps.0 = $(libsqlite3.DLL)
 #

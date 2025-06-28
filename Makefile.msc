@@ -1623,7 +1623,6 @@ TESTSRC = \
   $(TOP)\src\test_thread.c \
   $(TOP)\src\test_vdbecov.c \
   $(TOP)\src\test_vfs.c \
-  $(TOP)\src\test_windirent.c \
   $(TOP)\src\test_window.c \
   $(TOP)\src\test_wsd.c \
   $(TOP)\ext\fts3\fts3_term.c \
@@ -2396,12 +2395,11 @@ SHELL_DEP = \
     $(TOP)\ext\misc\sqlite3_stdio.h \
     $(TOP)\ext\misc\uint.c \
     $(TOP)\ext\misc\vfstrace.c \
+    $(TOP)\ext\misc\windirent.h \
     $(TOP)\ext\misc\zipfile.c \
     $(TOP)\ext\recover\dbdata.c \
     $(TOP)\ext\recover\sqlite3recover.c \
-    $(TOP)\ext\recover\sqlite3recover.h \
-    $(TOP)\src\test_windirent.c \
-    $(TOP)\src\test_windirent.h
+    $(TOP)\ext\recover\sqlite3recover.h
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
@@ -2586,7 +2584,7 @@ sqlite_tcl.h:
 
 testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TCL_DEP)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
-		-DBUILD_sqlite -I$(TCLINCDIR) \
+		-DBUILD_sqlite -I$(TCLINCDIR) -I$(TOP)\ext\misc \
 		$(TESTFIXTURE_SRC) \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
@@ -2675,7 +2673,14 @@ srctree-check:	$(TOP)\tool\srctree-check.tcl
 
 # Testing for a release
 #
-releasetest:
+releasetest: verify-source
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
+
+# xdevtest is like releasetest, except that it skips the
+# dependency on verify-source so that xdevtest can be run from
+# a modified source tree.
+#
+xdevtest:	
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
 
 

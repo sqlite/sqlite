@@ -2023,10 +2023,10 @@ static char *msort(
     list = NEXT(list);
     NEXT(ep) = 0;
     for(i=0; i<LISTSIZE-1 && set[i]!=0; i++){
-      ep = merge(ep,set[i],cmp,offset);
+      ep = merge(set[i],ep,cmp,offset);
       set[i] = 0;
     }
-    set[i] = ep;
+    set[i] = merge(set[i],ep,cmp,offset);
   }
   ep = 0;
   for(i=0; i<LISTSIZE; i++) if( set[i] ) ep = merge(set[i],ep,cmp,offset);
@@ -5925,7 +5925,7 @@ struct state **State_arrayof(void)
 PRIVATE unsigned confighash(struct config *a)
 {
   unsigned h=0;
-  h = h*571 + a->rp->index*37 + a->dot;
+  h = a->rp->index*37 + a->dot;
   return h;
 }
 

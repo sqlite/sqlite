@@ -73,7 +73,9 @@ char sqlite3ExprAffinity(const Expr *pExpr){
           pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
       );
     }
-    if( op==TK_VECTOR ){
+    if( op==TK_VECTOR
+     || (op==TK_FUNCTION && pExpr->affExpr==SQLITE_AFF_DEFER)
+    ){
       assert( ExprUseXList(pExpr) );
       return sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
     }
@@ -266,7 +268,9 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
       p = p->pLeft;
       continue;
     }
-    if( op==TK_VECTOR ){
+    if( op==TK_VECTOR
+     || (op==TK_FUNCTION && p->affExpr==SQLITE_AFF_DEFER)
+    ){
       assert( ExprUseXList(p) );
       p = p->x.pList->a[0].pExpr;
       continue;
@@ -4265,7 +4269,12 @@ void sqlite3ExprCodeGeneratedColumn(
     iAddr = 0;
   }
   sqlite3ExprCodeCopy(pParse, sqlite3ColumnExpr(pTab,pCol), regOut);
-  if( pCol->affinity>=SQLITE_AFF_TEXT ){
+  if( (pCol->colFlags & COLFLAG_VIRTUAL)!=0
+   && (pTab->tabFlags & TF_Strict)!=0
+  ){
+    int p3 = 2+(int)(pCol - pTab->aCol);
+    sqlite3VdbeAddOp4(v, OP_TypeCheck, regOut, 1, p3, (char*)pTab, P4_TABLE);
+  }else if( pCol->affinity>=SQLITE_AFF_TEXT ){
     sqlite3VdbeAddOp4(v, OP_Affinity, regOut, 1, 0, &pCol->affinity, 1);
   }
   if( iAddr ) sqlite3VdbeJumpHere(v, iAddr);
@@ -7006,7 +7015,9 @@ static void findOrCreateAggInfoColumn(
 ){
   struct AggInfo_col *pCol;
   int k;
+  int mxTerm = pParse->db->aLimit[SQLITE_LIMIT_COLUMN];
 
+  assert( mxTerm <= SMXV(i16) );
   assert( pAggInfo->iFirstReg==0 );
   pCol = pAggInfo->aCol;
   for(k=0; k<pAggInfo->nColumn; k++, pCol++){
@@ -7023,6 +7034,10 @@ static void findOrCreateAggInfoColumn(
     /* OOM on resize */
     assert( pParse->db->mallocFailed );
     return;
+  }
+  if( k>mxTerm ){
+    sqlite3ErrorMsg(pParse, "more than %d aggregate terms", mxTerm);
+    k = mxTerm;
   }
   pCol = &pAggInfo->aCol[k];
   assert( ExprUseYTab(pExpr) );
@@ -7057,6 +7072,7 @@ fix_up_expr:
   if( pExpr->op==TK_COLUMN ){
     pExpr->op = TK_AGG_COLUMN;
   }
+  assert( k <= SMXV(pExpr->iAgg) );
   pExpr->iAgg = (i16)k;
 }
 
@@ -7141,13 +7157,19 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         ** function that is already in the pAggInfo structure
         */
         struct AggInfo_func *pItem = pAggInfo->aFunc;
+        int mxTerm = pParse->db->aLimit[SQLITE_LIMIT_COLUMN];
+        assert( mxTerm <= SMXV(i16) );
         for(i=0; i<pAggInfo->nFunc; i++, pItem++){
           if( NEVER(pItem->pFExpr==pExpr) ) break;
           if( sqlite3ExprCompare(0, pItem->pFExpr, pExpr, -1)==0 ){
             break;
           }
         }
-        if( i>=pAggInfo->nFunc ){
+        if( i>mxTerm ){
+          sqlite3ErrorMsg(pParse, "more than %d aggregate terms", mxTerm);
+          i = mxTerm;
+          assert( i<pAggInfo->nFunc );
+        }else if( i>=pAggInfo->nFunc ){
           /* pExpr is original.  Make a new entry in pAggInfo->aFunc[]
           */
           u8 enc = ENC(pParse->db);
@@ -7201,6 +7223,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         */
         assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
         ExprSetVVAProperty(pExpr, EP_NoReduce);
+        assert( i <= SMXV(pExpr->iAgg) );
         pExpr->iAgg = (i16)i;
         pExpr->pAggInfo = pAggInfo;
         return WRC_Prune;
