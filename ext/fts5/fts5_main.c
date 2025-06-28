@@ -3701,8 +3701,9 @@ static int fts5IntegrityMethod(
           " FTS5 table %s.%s: %s",
           zSchema, zTabname, sqlite3_errstr(rc));
     }
+  }else if( (rc&0xff)==SQLITE_CORRUPT ){
+    rc = SQLITE_OK;
   }
-
   sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
   pTab->p.pConfig->pzErrmsg = 0;
 

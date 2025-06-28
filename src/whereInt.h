@@ -280,6 +280,9 @@ struct WhereTerm {
   u8 eMatchOp;            /* Op for vtab MATCH/LIKE/GLOB/REGEXP terms */
   int iParent;            /* Disable pWC->a[iParent] when this term disabled */
   int leftCursor;         /* Cursor number of X in "X <op> <expr>" */
+#ifdef SQLITE_DEBUG
+  int iTerm;              /* Which WhereTerm is this, for debug purposes */
+#endif
   union {
     struct {
       int leftColumn;         /* Column number of X in "X <op> <expr>" */

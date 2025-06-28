@@ -118,7 +118,7 @@
             argv.push("--vfs", vfs);
             log2('',"Using VFS:",vfs);
             if('kvvfs' === vfs){
-                forceSize = 4 /* 5 uses approx. 4.96mb */;
+                forceSize = 2 /* 5 uses approx. 4.96mb */;
                 dbFile = 'session';
                 log2('warning',"kvvfs VFS: forcing --size",forceSize,
                      "and filename '"+dbFile+"'.");

@@ -135,9 +135,12 @@
 
 /*
 ** If SQLITE_WASM_BARE_BONES is defined, undefine most of the ENABLE
-** macros.
+** macros. This will, when using the canonical makefile, also elide
+** any C functions from the WASM exports which are listed in
+** ./EXPORT_FUNCTIONS.sqlite3-extras.
 */
 #ifdef SQLITE_WASM_BARE_BONES
+#  undef  SQLITE_ENABLE_COLUMN_METADATA
 #  undef  SQLITE_ENABLE_DBPAGE_VTAB
 #  undef  SQLITE_ENABLE_DBSTAT_VTAB
 #  undef  SQLITE_ENABLE_EXPLAIN_COMMENTS

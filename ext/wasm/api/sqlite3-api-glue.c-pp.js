@@ -20,7 +20,6 @@
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
-  const toss3 = sqlite3.SQLite3Error.toss;
   const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
   globalThis.WhWasmUtilInstaller(wasm);
   delete globalThis.WhWasmUtilInstaller;
@@ -367,6 +366,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ]]
     );
   }/* sqlite3_set_authorizer() */
+
+  if( !!wasm.exports.sqlite3_column_origin_name ){
+    wasm.bindingSignatures.push(
+      ["sqlite3_column_database_name","string", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_origin_name","string", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_table_name","string", "sqlite3_stmt*", "int"]
+    );
+  }
 
   if(false && wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
     /* ^^^ "the problem" is that this is an optional feature and the

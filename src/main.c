@@ -1861,6 +1861,7 @@ int sqlite3_setlk_timeout(sqlite3 *db, int ms, int flags){
 #endif
   if( ms<-1 ) return SQLITE_RANGE;
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  sqlite3_mutex_enter(db->mutex);
   db->setlkTimeout = ms;
   db->setlkFlags = flags;
   sqlite3BtreeEnterAll(db);
@@ -1872,6 +1873,7 @@ int sqlite3_setlk_timeout(sqlite3 *db, int ms, int flags){
     }
   }
   sqlite3BtreeLeaveAll(db);
+  sqlite3_mutex_leave(db->mutex);
 #endif
 #if !defined(SQLITE_ENABLE_API_ARMOR) && !defined(SQLITE_ENABLE_SETLK_TIMEOUT)
   UNUSED_PARAMETER(db);

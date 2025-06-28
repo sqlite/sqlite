@@ -428,7 +428,7 @@ do_execsql_test 15.1 {
 }
 do_catchsql_test 15.2 {
   INSERT INTO t1(t1) VALUES('integrity-check');
-} {1 {database disk image is malformed}}
+} {1 {fts5: checksum mismatch for table "t1"}}
 
 #-------------------------------------------------------------------------
 #

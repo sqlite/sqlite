@@ -260,7 +260,8 @@ SQLITE_OPT.full-featured := \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_SESSION \
   -DSQLITE_ENABLE_STMTVTAB \
-  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
+  -DSQLITE_ENABLE_COLUMN_METADATA
 
 ifeq (0,$(wasm-bare-bones))
   # The so-called canonical build is full-featured:

@@ -416,6 +416,14 @@ void sqlite3_str_vappendf(
           }
           prefix = 0;
         }
+
+#if WHERETRACE_ENABLED
+        if( xtype==etPOINTER && sqlite3WhereTrace & 0x100000 ) longvalue = 0;
+#endif
+#if TREETRACE_ENABLED
+        if( xtype==etPOINTER && sqlite3TreeTrace & 0x100000 ) longvalue = 0;
+#endif
+
         if( longvalue==0 ) flag_alternateform = 0;
         if( flag_zeropad && precision<width-(prefix!=0) ){
           precision = width-(prefix!=0);

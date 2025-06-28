@@ -1342,4 +1342,31 @@ do_execsql_test join-31.8 {
   SELECT * FROM t3 LEFT JOIN t2 ON true JOIN t4 ON true NATURAL LEFT JOIN t1;
 } {3 NULL 4 NULL}
 
+# 2025-06-16 https://sqlite.org/forum/forumpost/68f29a2005
+#
+# The transitive-constraint optimization was not working for RIGHT JOIN.
+#
+reset_db
+db null NULL
+do_execsql_test join-32.1 {
+  CREATE TABLE t0(w INT);
+  CREATE TABLE t1(x INT);
+  CREATE TABLE t2(y INT UNIQUE);
+  CREATE VIEW v0(z) AS SELECT CAST(x AS INT) FROM t1 LEFT JOIN t2 ON true;
+  INSERT INTO t1(x) VALUES(123);
+  INSERT INTO t2(y) VALUES(NULL);
+}
+do_execsql_test join-32.2 {
+  SELECT *
+  FROM t0 JOIN v0 ON w=z
+          RIGHT JOIN t1 ON true
+          INNER JOIN t2 ON y IS z;
+} {NULL NULL 123 NULL}
+do_execsql_test join-32.3 {
+  SELECT *
+  FROM t0 JOIN v0 ON w=z
+          RIGHT JOIN t1 ON true
+          INNER JOIN t2 ON +y IS z;
+} {NULL NULL 123 NULL}
+
 finish_test
