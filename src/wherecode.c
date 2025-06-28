@@ -110,7 +110,7 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop){
 }
 
 /*
-** This function sets the P4 value of an existing OP_Explain opcode to 
+** This function sets the P4 value of an existing OP_Explain opcode to
 ** text describing the loop in pLevel. If the OP_Explain opcode already has
 ** a P4 value, it is freed before it is overwritten.
 */
@@ -948,7 +948,7 @@ static int codeAllEqualityTerms(
       testcase( pIdx->aiColumn[j]==XN_EXPR );
       VdbeComment((v, "%s", explainIndexColumnName(pIdx, j)));
     }
-  }   
+  }
 
   /* Evaluate the equality constraints
   */
@@ -1289,7 +1289,7 @@ static void codeDeferredSeek(
 
   assert( iIdxCur>0 );
   assert( pIdx->aiColumn[pIdx->nColumn-1]==-1 );
- 
+
   pWInfo->bDeferredSeek = 1;
   sqlite3VdbeAddOp3(v, OP_DeferredSeek, iIdxCur, 0, iCur);
   if( (pWInfo->wctrlFlags & (WHERE_OR_SUBCLAUSE|WHERE_RIGHT_JOIN))
@@ -1443,14 +1443,14 @@ static SQLITE_NOINLINE void filterPullDown(
 }
 
 /*
-** Loop pLoop is a WHERE_INDEXED level that uses at least one IN(...) 
-** operator. Return true if level pLoop is guaranteed to visit only one 
+** Loop pLoop is a WHERE_INDEXED level that uses at least one IN(...)
+** operator. Return true if level pLoop is guaranteed to visit only one
 ** row for each key generated for the index.
 */
 static int whereLoopIsOneRow(WhereLoop *pLoop){
-  if( pLoop->u.btree.pIndex->onError 
-   && pLoop->nSkip==0 
-   && pLoop->u.btree.nEq==pLoop->u.btree.pIndex->nKeyCol 
+  if( pLoop->u.btree.pIndex->onError
+   && pLoop->nSkip==0
+   && pLoop->u.btree.nEq==pLoop->u.btree.pIndex->nKeyCol
   ){
     int ii;
     for(ii=0; ii<pLoop->u.btree.nEq; ii++){
@@ -1831,37 +1831,37 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
     }
   }else if( pLoop->wsFlags & WHERE_INDEXED ){
-    /* Case 4: A scan using an index.
+    /* Case 4: Search using an index.
     **
-    **         The WHERE clause may contain zero or more equality
-    **         terms ("==" or "IN" operators) that refer to the N
-    **         left-most columns of the index. It may also contain
-    **         inequality constraints (>, <, >= or <=) on the indexed
-    **         column that immediately follows the N equalities. Only
-    **         the right-most column can be an inequality - the rest must
-    **         use the "==" and "IN" operators. For example, if the
-    **         index is on (x,y,z), then the following clauses are all
-    **         optimized:
+    ** The WHERE clause may contain zero or more equality
+    ** terms ("==" or "IN" or "IS" operators) that refer to the N
+    ** left-most columns of the index. It may also contain
+    ** inequality constraints (>, <, >= or <=) on the indexed
+    ** column that immediately follows the N equalities. Only
+    ** the right-most column can be an inequality - the rest must
+    ** use the "==", "IN", or "IS" operators. For example, if the
+    ** index is on (x,y,z), then the following clauses are all
+    ** optimized:
     **
-    **            x=5
-    **            x=5 AND y=10
-    **            x=5 AND y<10
-    **            x=5 AND y>5 AND y<10
-    **            x=5 AND y=5 AND z<=10
+    **    x=5
+    **    x=5 AND y=10
+    **    x=5 AND y<10
+    **    x=5 AND y>5 AND y<10
+    **    x=5 AND y=5 AND z<=10
     **
-    **         The z<10 term of the following cannot be used, only
-    **         the x=5 term:
+    ** The z<10 term of the following cannot be used, only
+    ** the x=5 term:
     **
-    **            x=5 AND z<10
+    **    x=5 AND z<10
     **
-    **         N may be zero if there are inequality constraints.
-    **         If there are no inequality constraints, then N is at
-    **         least one.
+    ** N may be zero if there are inequality constraints.
+    ** If there are no inequality constraints, then N is at
+    ** least one.
     **
-    **         This case is also used when there are no WHERE clause
-    **         constraints but an index is selected anyway, in order
-    **         to force the output order to conform to an ORDER BY.
-    */ 
+    ** This case is also used when there are no WHERE clause
+    ** constraints but an index is selected anyway, in order
+    ** to force the output order to conform to an ORDER BY.
+    */
     static const u8 aStartOp[] = {
       0,
       0,
@@ -2015,7 +2015,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       }
       if( zStartAff ){
         updateRangeAffinityStr(pRight, nBtm, &zStartAff[nEq]);
-      } 
+      }
       nConstraint += nBtm;
       testcase( pRangeStart->wtFlags & TERM_VIRTUAL );
       if( sqlite3ExprIsVector(pRight)==0 ){
@@ -2201,12 +2201,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pLevel->iLeftJoin==0 ){
       /* If a partial index is driving the loop, try to eliminate WHERE clause
       ** terms from the query that must be true due to the WHERE clause of
-      ** the partial index.
+      ** the partial index.  This optimization does not work on an outer join,
+      ** as shown by:
       **
-      ** 2019-11-02 ticket 623eff57e76d45f6: This optimization does not work
-      ** for a LEFT JOIN.
+      ** 2019-11-02 ticket 623eff57e76d45f6      (LEFT JOIN)
+      ** 2025-05-29 forum post 7dee41d32506c4ae  (RIGHT JOIN)
       */
-      if( pIdx->pPartIdxWhere ){
+      if( pIdx->pPartIdxWhere && pLevel->pRJ==0 ){
         whereApplyPartialIndexConstraints(pIdx->pPartIdxWhere, iCur, pWC);
       }
     }else{
@@ -2216,7 +2217,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       ** a LEFT JOIN: */
       assert( (pWInfo->wctrlFlags & (WHERE_OR_SUBCLAUSE|WHERE_RIGHT_JOIN))==0 );
     }
- 
+
     /* Record the instruction used to terminate the loop. */
     if( (pLoop->wsFlags & WHERE_ONEROW)
      || (pLevel->u.in.nIn && regBignull==0 && whereLoopIsOneRow(pLoop))
@@ -2605,7 +2606,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   **
   ** iLoop==1: Code only expressions that are entirely covered by pIdx.
   ** iLoop==2: Code remaining expressions that do not contain correlated
-  **           sub-queries. 
+  **           sub-queries.
   ** iLoop==3: Code all remaining expressions.
   **
   ** An effort is made to skip unnecessary iterations of the loop.
@@ -2876,7 +2877,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
       pSubq = pRight->u4.pSubq;
       assert( pSubq->pSelect!=0 && pSubq->pSelect->pEList!=0 );
       sqlite3VdbeAddOp3(
-          v, OP_Null, 0, pSubq->regResult, 
+          v, OP_Null, 0, pSubq->regResult,
           pSubq->regResult + pSubq->pSelect->pEList->nExpr-1
       );
     }

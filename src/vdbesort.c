@@ -766,7 +766,7 @@ static int vdbeSorterCompareTail(
 ){
   UnpackedRecord *r2 = pTask->pUnpacked;
   if( *pbKey2Cached==0 ){
-    sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
+    sqlite3VdbeRecordUnpack(nKey2, pKey2, r2);
     *pbKey2Cached = 1;
   }
   return sqlite3VdbeRecordCompareWithSkip(nKey1, pKey1, r2, 1);
@@ -793,7 +793,7 @@ static int vdbeSorterCompare(
 ){
   UnpackedRecord *r2 = pTask->pUnpacked;
   if( !*pbKey2Cached ){
-    sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
+    sqlite3VdbeRecordUnpack(nKey2, pKey2, r2);
     *pbKey2Cached = 1;
   }
   return sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
@@ -833,6 +833,7 @@ static int vdbeSorterCompareText(
       );
     }
   }else{
+    assert( pTask->pSorter->pKeyInfo->aSortFlags!=0 );
     assert( !(pTask->pSorter->pKeyInfo->aSortFlags[0]&KEYINFO_ORDER_BIGNULL) );
     if( pTask->pSorter->pKeyInfo->aSortFlags[0] ){
       res = res * -1;
@@ -896,6 +897,7 @@ static int vdbeSorterCompareInt(
     }
   }
 
+  assert( pTask->pSorter->pKeyInfo->aSortFlags!=0 );
   if( res==0 ){
     if( pTask->pSorter->pKeyInfo->nKeyField>1 ){
       res = vdbeSorterCompareTail(
@@ -969,7 +971,8 @@ int sqlite3VdbeSorterInit(
   assert( pCsr->eCurType==CURTYPE_SORTER );
   assert( sizeof(KeyInfo) + UMXV(pCsr->pKeyInfo->nKeyField)*sizeof(CollSeq*)
                < 0x7fffffff );
-  szKeyInfo = SZ_KEYINFO(pCsr->pKeyInfo->nKeyField+1);
+  assert( pCsr->pKeyInfo->nKeyField<=pCsr->pKeyInfo->nAllField );
+  szKeyInfo = SZ_KEYINFO(pCsr->pKeyInfo->nAllField);
   sz = SZ_VDBESORTER(nWorker+1);
 
   pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);
@@ -983,7 +986,12 @@ int sqlite3VdbeSorterInit(
     pKeyInfo->db = 0;
     if( nField && nWorker==0 ){
       pKeyInfo->nKeyField = nField;
+      assert( nField<=pCsr->pKeyInfo->nAllField );
     }
+    /* It is OK that pKeyInfo reuses the aSortFlags field from pCsr->pKeyInfo,
+    ** since the pCsr->pKeyInfo->aSortFlags[] array is invariant and lives
+    ** longer that pSorter. */
+    assert( pKeyInfo->aSortFlags==pCsr->pKeyInfo->aSortFlags );
     sqlite3BtreeEnter(pBt);
     pSorter->pgsz = pgsz = sqlite3BtreeGetPageSize(pBt);
     sqlite3BtreeLeave(pBt);
@@ -2763,7 +2771,7 @@ int sqlite3VdbeSorterCompare(
   assert( r2->nField==nKeyCol );
 
   pKey = vdbeSorterRowkey(pSorter, &nKey);
-  sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, r2);
+  sqlite3VdbeRecordUnpack(nKey, pKey, r2);
   for(i=0; i<nKeyCol; i++){
     if( r2->aMem[i].flags & MEM_Null ){
       *pRes = -1;

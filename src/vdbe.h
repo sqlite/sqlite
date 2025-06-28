@@ -301,7 +301,7 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3BlobCompare(const Mem*, const Mem*);
 
-void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
+void sqlite3VdbeRecordUnpack(int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompareWithSkip(int, const void *, UnpackedRecord *, int);
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo*);

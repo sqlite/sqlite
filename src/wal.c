@@ -3062,7 +3062,6 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int *pCnt){
       rc = walIndexReadHdr(pWal, pChanged);
     }
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-    walDisableBlocking(pWal);
     if( rc==SQLITE_BUSY_TIMEOUT ){
       rc = SQLITE_BUSY;
       *pCnt |= WAL_RETRY_BLOCKED_MASK;
@@ -3077,6 +3076,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int *pCnt){
       ** WAL_RETRY this routine will be called again and will probably be
       ** right on the second iteration.
       */
+      (void)walEnableBlocking(pWal);
       if( pWal->apWiData[0]==0 ){
         /* This branch is taken when the xShmMap() method returns SQLITE_BUSY.
         ** We assume this is a transient condition, so return WAL_RETRY. The
@@ -3093,6 +3093,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int *pCnt){
         rc = SQLITE_BUSY_RECOVERY;
       }
     }
+    walDisableBlocking(pWal);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -3780,6 +3781,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
       if( iMax!=pWal->hdr.mxFrame ) walCleanupHash(pWal);
     }
     SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
+    pWal->iReCksum = 0;
   }
   return rc;
 }
@@ -3827,6 +3829,9 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
       walCleanupHash(pWal);
     }
     SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
+    if( pWal->iReCksum>pWal->hdr.mxFrame ){
+      pWal->iReCksum = 0;
+    }
   }
 
   return rc;

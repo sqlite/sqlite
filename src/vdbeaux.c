@@ -4204,30 +4204,22 @@ void sqlite3VdbeSerialGet(
   return;
 }
 /*
-** This routine is used to allocate sufficient space for an UnpackedRecord
-** structure large enough to be used with sqlite3VdbeRecordUnpack() if
-** the first argument is a pointer to KeyInfo structure pKeyInfo.
+** Allocate sufficient space for an UnpackedRecord structure large enough
+** to hold a decoded index record for pKeyInfo.
 **
-** The space is either allocated using sqlite3DbMallocRaw() or from within
-** the unaligned buffer passed via the second and third arguments (presumably
-** stack space). If the former, then *ppFree is set to a pointer that should
-** be eventually freed by the caller using sqlite3DbFree(). Or, if the
-** allocation comes from the pSpace/szSpace buffer, *ppFree is set to NULL
-** before returning.
-**
-** If an OOM error occurs, NULL is returned.
+** The space is allocated using sqlite3DbMallocRaw().  If an OOM error
+** occurs, NULL is returned.
 */
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   KeyInfo *pKeyInfo               /* Description of the record */
 ){
   UnpackedRecord *p;              /* Unpacked record to return */
-  int nByte;                      /* Number of bytes required for *p */
+  u64 nByte;                      /* Number of bytes required for *p */
   assert( sizeof(UnpackedRecord) + sizeof(Mem)*65536 < 0x7fffffff );
   nByte = ROUND8P(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nKeyField+1);
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
   if( !p ) return 0;
   p->aMem = (Mem*)&((char*)p)[ROUND8P(sizeof(UnpackedRecord))];
-  assert( pKeyInfo->aSortFlags!=0 );
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nKeyField + 1;
   return p;
@@ -4239,7 +4231,6 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
 ** contents of the decoded record.
 */
 void sqlite3VdbeRecordUnpack(
-  KeyInfo *pKeyInfo,     /* Information about the record format */
   int nKey,              /* Size of the binary record */
   const void *pKey,      /* The binary record */
   UnpackedRecord *p      /* Populate this structure before returning. */
@@ -4250,6 +4241,7 @@ void sqlite3VdbeRecordUnpack(
   u16 u;                          /* Unsigned loop counter */
   u32 szHdr;
   Mem *pMem = p->aMem;
+  KeyInfo *pKeyInfo = p->pKeyInfo;
 
   p->default_rc = 0;
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
@@ -4277,6 +4269,8 @@ void sqlite3VdbeRecordUnpack(
     ** warnings from MSAN. */
     sqlite3VdbeMemSetNull(pMem-1);
   }
+  testcase( u == pKeyInfo->nKeyField + 1 );
+  testcase( u < pKeyInfo->nKeyField + 1 );
   assert( u<=pKeyInfo->nKeyField + 1 );
   p->nField = u;
 }
@@ -5136,6 +5130,7 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
   ** The easiest way to enforce this limit is to consider only records with
   ** 13 fields or less. If the first field is an integer, the maximum legal
   ** header size is (12*5 + 1 + 1) bytes.  */
+  assert( p->pKeyInfo->aSortFlags!=0 );
   if( p->pKeyInfo->nAllField<=13 ){
     int flags = p->aMem[0].flags;
     if( p->pKeyInfo->aSortFlags[0] ){
@@ -5494,7 +5489,6 @@ void sqlite3VdbePreUpdateHook(
   i64 iKey2;
   PreUpdate preupdate;
   const char *zTbl = pTab->zName;
-  static const u8 fakeSortOrder = 0;
 #ifdef SQLITE_DEBUG
   int nRealCol;
   if( pTab->tabFlags & TF_WithoutRowid ){
@@ -5533,7 +5527,7 @@ void sqlite3VdbePreUpdateHook(
   preupdate.pKeyinfo->db = db;
   preupdate.pKeyinfo->enc = ENC(db);
   preupdate.pKeyinfo->nKeyField = pTab->nCol;
-  preupdate.pKeyinfo->aSortFlags = (u8*)&fakeSortOrder;
+  preupdate.pKeyinfo->aSortFlags = 0; /* Indicate .aColl, .nAllField uninit */
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.pTab = pTab;

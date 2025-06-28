@@ -2722,7 +2722,11 @@ static int winHandleLockTimeout(
       if( res==WAIT_OBJECT_0 ){
         ret = TRUE;
       }else if( res==WAIT_TIMEOUT ){
+#if SQLITE_ENABLE_SETLK_TIMEOUT==1
         rc = SQLITE_BUSY_TIMEOUT;
+#else
+        rc = SQLITE_BUSY;
+#endif
       }else{
         /* Some other error has occurred */
         rc = SQLITE_IOERR_LOCK;
@@ -4533,21 +4537,20 @@ static int winShmLock(
   /* Check that, if this to be a blocking lock, no locks that occur later
   ** in the following list than the lock being obtained are already held:
   **
-  **   1. Checkpointer lock (ofst==1).
-  **   2. Write lock (ofst==0).
-  **   3. Read locks (ofst>=3 && ofst<SQLITE_SHM_NLOCK).
+  **   1. Recovery lock (ofst==2).
+  **   2. Checkpointer lock (ofst==1).
+  **   3. Write lock (ofst==0).
+  **   4. Read locks (ofst>=3 && ofst<SQLITE_SHM_NLOCK).
   **
   ** In other words, if this is a blocking lock, none of the locks that
   ** occur later in the above list than the lock being obtained may be
   ** held.
-  **
-  ** It is not permitted to block on the RECOVER lock.
   */
 #if defined(SQLITE_ENABLE_SETLK_TIMEOUT) && defined(SQLITE_DEBUG)
   {
     u16 lockMask = (p->exclMask|p->sharedMask);
     assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
-          (ofst!=2)                                   /* not RECOVER */
+          (ofst!=2 || lockMask==0)
        && (ofst!=1 || lockMask==0 || lockMask==2)
        && (ofst!=0 || lockMask<3)
        && (ofst<3  || lockMask<(1<<ofst))

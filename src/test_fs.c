@@ -72,12 +72,8 @@
 #if !defined(_WIN32) || defined(__MSVCRT__)
 # include <unistd.h>
 # include <dirent.h>
-# ifndef DIRENT
-#  define DIRENT dirent
-# endif
 #else
-# include <io.h>
-# include "test_windirent.h"
+# include "windirent.h"
 # ifndef S_ISREG
 #  define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
 # endif
@@ -121,7 +117,7 @@ struct FsdirCsr {
   char *zDir;                     /* Buffer containing directory scanned */
   DIR *pDir;                      /* Open directory */
   sqlite3_int64 iRowid;
-  struct DIRENT *pEntry;
+  struct dirent *pEntry;
 };
 
 /*
@@ -483,9 +479,9 @@ static int fstreeFilter(
   char aWild[2] = { '\0', '\0' };
 
 #ifdef _WIN32
-  const char *zDrive = windirent_getenv("fstreeDrive");
+  const char *zDrive = getenv("fstreeDrive");
   if( zDrive==0 ){
-    zDrive = windirent_getenv("SystemDrive");
+    zDrive = getenv("SystemDrive");
   }
   zRoot = sqlite3_mprintf("%s%c", zDrive, '/');
   nRoot = sqlite3Strlen30(zRoot);

@@ -217,6 +217,11 @@ proc sqlite-configure {buildMode configScript} {
           => {This legacy flag has no effect on the library but may influence
               the generated sqlite_cfg.h by adding #define HAVE_LFS}
       }
+      {canonical} {
+        column-metadata      => {Enable the column metadata APIs}
+        # ^^^ Affects how sqlite3.c is generated, so is not available in
+        # the autoconf build.
+      }
     }
 
     # Options for TCL support
@@ -227,8 +232,6 @@ proc sqlite-configure {buildMode configScript} {
               This tree requires TCL for code generation but can use the in-tree
               copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
               test code require a canonical tclsh.}
-      }
-      {canonical} {
         with-tcl:DIR
           => {Directory containing tclConfig.sh or a directory one level up from
               that, from which we can derive a directory containing tclConfig.sh.
@@ -236,11 +239,10 @@ proc sqlite-configure {buildMode configScript} {
               the --prefix flag.}
         with-tclsh:PATH
           => {Full pathname of tclsh to use.  It is used for (A) trying to find
-              tclConfig.sh and (B) all TCL-based code generation.  Warning: if
-              its containing dir has multiple tclsh versions, it may select the
+              tclConfig.sh and (B) all TCL-based code generation. Use --with-tcl
+              unless you have a specific need for this flag. Warning: if its
+              containing dir has multiple tclsh versions, it may select the
               wrong tclConfig.sh!}
-      }
-      {canonical} {
         static-tclsqlite3=0
           => {Statically-link tclsqlite3. This only works if TCL support is
               enabled and all requisite libraries are available in
@@ -334,8 +336,8 @@ proc sqlite-configure {buildMode configScript} {
           => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }
       {canonical autoconf} {
-        # A potential TODO without a current use case:
-        #rpath=1 => {Disable use of the rpath linker flag}
+        rpath=1 => {Disable use of the rpath linker flag}
+
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
         soname:=legacy
           => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -772,7 +774,8 @@ proc sqlite-handle-common-feature-flags {} {
         sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
       }
     }
-    scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
+    scanstatus      -DSQLITE_ENABLE_STMT_SCANSTATUS {}
+    column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
   }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
@@ -1969,13 +1972,14 @@ proc sqlite-check-tcl {} {
     # TCLLIBDIR from here, which will cause the canonical makefile to
     # use this one rather than to re-calculate it at make-time.
     set tcllibdir [get-env TCLLIBDIR ""]
+    set sq3Ver [get-define PACKAGE_VERSION]
     if {"" eq $tcllibdir} {
       # Attempt to extract TCLLIBDIR from TCL's $auto_path
       if {"" ne $with_tclsh &&
           [catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
         foreach i $result {
           if {[file isdir $i]} {
-            set tcllibdir $i/sqlite3
+            set tcllibdir $i/sqlite${sq3Ver}
             break
           }
         }
@@ -2111,15 +2115,31 @@ proc sqlite-determine-codegen-tcl {} {
 # sqlite-determine-codegen-tcl.
 proc sqlite-handle-tcl {} {
   sqlite-check-tcl
-  if {"canonical" eq $::sqliteConfig(build-mode)} {
-    msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
+  if {"canonical" ne $::sqliteConfig(build-mode)} return
+  msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
+
+  # Determine the base name of the Tcl extension's DLL
+  #
+  if {[get-define HAVE_TCL]} {
+    if {[string match *-cygwin [get-define host]]} {
+      set libname cyg
+    } else {
+      set libname lib
+    }
+    if {[get-define TCL_MAJOR_VERSION] > 8} {
+      append libname tcl9
+    }
+    append libname sqlite
+  } else {
+    set libname ""
   }
+  define TCL_EXT_DLL_BASENAME $libname
+  # The extension is added in the makefile
 }
 
 ########################################################################
 # Handle the --enable/disable-rpath flag.
 proc sqlite-handle-rpath {} {
-  proj-check-rpath
   # autosetup/cc-shared.tcl sets the rpath flag definition in
   # [get-define SH_LINKRPATH], but it does so on a per-platform basis
   # rather than as a compiler check. Though we should do a proper
@@ -2128,12 +2148,13 @@ proc sqlite-handle-rpath {} {
   # for which sqlite-env-is-unix-on-windows returns a non-empty
   # string.
 
-#  if {[proj-opt-truthy rpath]} {
-#    proj-check-rpath
-#  } else {
-#    msg-result "Disabling use of rpath."
-#    define LDFLAGS_RPATH ""
-#  }
+  # https://sqlite.org/forum/forumpost/13cac3b56516f849
+  if {[proj-opt-truthy rpath]} {
+    proj-check-rpath
+  } else {
+    msg-result "Disabling use of rpath."
+    define LDFLAGS_RPATH ""
+  }
 }
 
 ########################################################################

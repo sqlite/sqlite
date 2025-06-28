@@ -765,7 +765,7 @@
 ** ourselves.
 */
 #ifndef offsetof
-#define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
 #endif
 
 /*
@@ -1031,8 +1031,8 @@ typedef INT16_TYPE LogEst;
 ** assuming n is a signed integer type.  UMXV(n) is similar for unsigned
 ** integer types.
 */
-#define SMXV(n) ((((i64)1)<<(sizeof(n)-1))-1)
-#define UMXV(n) ((((i64)1)<<(sizeof(n)))-1)
+#define SMXV(n) ((((i64)1)<<(sizeof(n)*8-1))-1)
+#define UMXV(n) ((((i64)1)<<(sizeof(n)*8))-1)
 
 /*
 ** Round up a number to the next larger multiple of 8.  This is used
@@ -1153,6 +1153,7 @@ extern u32 sqlite3TreeTrace;
 **   0x00020000     Transform DISTINCT into GROUP BY
 **   0x00040000     SELECT tree dump after all code has been generated
 **   0x00080000     NOT NULL strength reduction
+**   0x00100000     Pointers are all shown as zero
 */
 
 /*
@@ -1197,6 +1198,7 @@ extern u32 sqlite3WhereTrace;
 ** 0x00020000   Show WHERE terms returned from whereScanNext()
 ** 0x00040000   Solver overview messages
 ** 0x00080000   Star-query heuristic
+** 0x00100000   Pointers are all shown as zero
 */
 
 
@@ -1269,7 +1271,7 @@ struct BusyHandler {
 ** pointer will work here as long as it is distinct from SQLITE_STATIC
 ** and SQLITE_TRANSIENT.
 */
-#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3OomClear)
+#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3RowSetClear)
 
 /*
 ** When SQLITE_OMIT_WSD is defined, it means that the target platform does
@@ -2346,6 +2348,7 @@ struct CollSeq {
 #define SQLITE_AFF_INTEGER  0x44  /* 'D' */
 #define SQLITE_AFF_REAL     0x45  /* 'E' */
 #define SQLITE_AFF_FLEXNUM  0x46  /* 'F' */
+#define SQLITE_AFF_DEFER    0x58  /* 'X'  - defer computation until later */
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 
@@ -2664,9 +2667,15 @@ struct FKey {
 ** argument to sqlite3VdbeKeyCompare and is used to control the
 ** comparison of the two index keys.
 **
-** Note that aSortOrder[] and aColl[] have nField+1 slots.  There
-** are nField slots for the columns of an index then one extra slot
-** for the rowid at the end.
+** The aSortOrder[] and aColl[] arrays have nAllField slots each. There
+** are nKeyField slots for the columns of an index then extra slots
+** for the rowid or key at the end.  The aSortOrder array is located after
+** the aColl[] array.
+**
+** If SQLITE_ENABLE_PREUPDATE_HOOK is defined, then aSortFlags might be NULL
+** to indicate that this object is for use by a preupdate hook.  When aSortFlags
+** is NULL, then nAllField is uninitialized and no space is allocated for
+** aColl[], so those fields may not be used.
 */
 struct KeyInfo {
   u32 nRef;           /* Number of references to this KeyInfo object */
@@ -2678,8 +2687,17 @@ struct KeyInfo {
   CollSeq *aColl[FLEXARRAY]; /* Collating sequence for each term of the key */
 };
 
-/* The size (in bytes) of a KeyInfo object with up to N fields */
+/* The size (in bytes) of a KeyInfo object with up to N fields.  This includes
+** the main body of the KeyInfo object and the aColl[] array of N elements,
+** but does not count the memory used to hold aSortFlags[]. */
 #define SZ_KEYINFO(N)  (offsetof(KeyInfo,aColl) + (N)*sizeof(CollSeq*))
+
+/* The size of a bare KeyInfo with no aColl[] entries */
+#if FLEXARRAY+1 > 1
+# define SZ_KEYINFO_0   offsetof(KeyInfo,aColl)
+#else
+# define SZ_KEYINFO_0   sizeof(KeyInfo)
+#endif
 
 /*
 ** Allowed bit values for entries in the KeyInfo.aSortFlags[] array.
@@ -2699,9 +2717,8 @@ struct KeyInfo {
 **
 ** An instance of this object serves as a "key" for doing a search on
 ** an index b+tree. The goal of the search is to find the entry that
-** is closed to the key described by this object.  This object might hold
-** just a prefix of the key.  The number of fields is given by
-** pKeyInfo->nField.
+** is closest to the key described by this object.  This object might hold
+** just a prefix of the key.  The number of fields is given by nField.
 **
 ** The r1 and r2 fields are the values to return if this key is less than
 ** or greater than a key in the btree, respectively.  These are normally
@@ -2711,7 +2728,7 @@ struct KeyInfo {
 ** The key comparison functions actually return default_rc when they find
 ** an equals comparison.  default_rc can be -1, 0, or +1.  If there are
 ** multiple entries in the b-tree with the same key (when only looking
-** at the first pKeyInfo->nFields,) then default_rc can be set to -1 to
+** at the first nField elements) then default_rc can be set to -1 to
 ** cause the search to find the last match, or +1 to cause the search to
 ** find the first match.
 **
@@ -2723,8 +2740,8 @@ struct KeyInfo {
 ** b-tree.
 */
 struct UnpackedRecord {
-  KeyInfo *pKeyInfo;  /* Collation and sort-order information */
-  Mem *aMem;          /* Values */
+  KeyInfo *pKeyInfo;  /* Comparison info for the index that is unpacked */
+  Mem *aMem;          /* Values for columns of the index */
   union {
     char *z;            /* Cache of aMem[0].z for vdbeRecordCompareString() */
     i64 i;              /* Cache of aMem[0].u.i for vdbeRecordCompareInt() */
@@ -2899,7 +2916,7 @@ struct AggInfo {
                           ** from source tables rather than from accumulators */
   u8 useSortingIdx;       /* In direct mode, reference the sorting index rather
                           ** than the source table */
-  u16 nSortingColumn;     /* Number of columns in the sorting index */
+  u32 nSortingColumn;     /* Number of columns in the sorting index */
   int sortingIdx;         /* Cursor number of the sorting index */
   int sortingIdxPTab;     /* Cursor number of pseudo-table */
   int iFirstReg;          /* First register in range for aCol[] and aFunc[] */
@@ -2908,8 +2925,8 @@ struct AggInfo {
     Table *pTab;             /* Source table */
     Expr *pCExpr;            /* The original expression */
     int iTable;              /* Cursor number of the source table */
-    i16 iColumn;             /* Column number within the source table */
-    i16 iSorterColumn;       /* Column number in the sorting index */
+    int iColumn;             /* Column number within the source table */
+    int iSorterColumn;       /* Column number in the sorting index */
   } *aCol;
   int nColumn;            /* Number of used entries in aCol[] */
   int nAccumulator;       /* Number of columns that show through to the output.
@@ -4903,6 +4920,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3ShowWindow(const Window*);
   void sqlite3ShowWinFunc(const Window*);
 #endif
+  void sqlite3ShowBitvec(Bitvec*);
 #endif
 
 void sqlite3SetString(char **, sqlite3*, const char*);

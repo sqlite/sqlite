@@ -328,7 +328,7 @@ static void mk_lib_mode(const char *zName     /* build name */,
   pf("\t\t$(cflags.common) $(SQLITE_OPT) \\\n"
      "\t\t$(cflags.%s) $(cflags.%s.%s) \\\n"
      "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n", zName, zNM);
-  if( LIBMODE_ESM & flags ){
+  if( (LIBMODE_ESM & flags) || (LIBMODE_NODEJS & flags) ){
     /* TODO? Replace this $(call) with the corresponding makefile
     ** code.  OTOH, we also use this $(call) in the speedtest1-wasmfs
     ** build, which is not part of the rules emitted by this

@@ -21,7 +21,8 @@ if {[llength [lindex $::argv 0]] > 0} {
   # ----^^^^^^^ needed on Haiku when argv 0 is just a filename, else
   # load cannot find the file.
 }
-source -encoding utf-8 [lindex $::argv 2]; # teaish/tester.tcl
+set ::argv [lassign $argv - -]
+source -encoding utf-8 [lindex $::argv 0]; # teaish/tester.tcl
 @if TEAISH_PKGINIT_TCL
 apply {{file} {
   set dir [file dirname $::argv0]

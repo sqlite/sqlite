@@ -64,11 +64,17 @@ apply {{dir} {
     -name.pkg sqlite3
     -version $version
     -name.dist $distname
-    -vsatisfies 8.6-
     -libDir sqlite$version
     -pragmas $pragmas
+    -src generic/tclsqlite3.c
   }
+  # We should also have:
+  #    -vsatisfies 8.6-
+  # But at least one platform is failing this vsatisfies check
+  # for no apparent reason:
+  # https://sqlite.org/forum/forumpost/fde857fb8101a4be
 }} [teaish-get -dir]
+
 
 #
 # Must return either an empty string or a list in the form accepted by
@@ -118,8 +124,6 @@ proc teaish-options {} {
 #
 proc teaish-configure {} {
   use teaish/feature
-
-  teaish-src-add -dist -dir generic/tclsqlite3.c
 
   if {[proj-opt-was-provided override-sqlite-version]} {
     teaish-pkginfo-set -version [opt-val override-sqlite-version]

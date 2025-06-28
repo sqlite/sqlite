@@ -213,6 +213,13 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 #TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 #TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 #TCL_VERSION = @TCL_VERSION@
+TCL_MAJOR_VERSION = @TCL_MAJOR_VERSION@
+# ^^^ main.mk optionally uses this for determining the Tcl extension's
+# DLL name.
+TCL_EXT_DLL_BASENAME = @TCL_EXT_DLL_BASENAME@
+# ^^^ base name of the Tcl extension DLL. It varies by platform and
+# Tcl version.
+
 #
 # $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
 # is calculated at make-time by the targets which need it but we
