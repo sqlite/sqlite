@@ -2192,6 +2192,9 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   }
   if( p->pPk ){
     iStore = sqlite3TableColumnToIndex(p->pPk, iIdx);
+  }else if( iIdx >= p->pTab->nCol ){
+    rc = SQLITE_MISUSE_BKPT;
+    goto preupdate_old_out;
   }else{
     iStore = sqlite3TableColumnToStorage(p->pTab, iIdx);
   }
@@ -2347,6 +2350,8 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   }
   if( p->pPk && p->op!=SQLITE_UPDATE ){
     iStore = sqlite3TableColumnToIndex(p->pPk, iIdx);
+  }else if( iIdx >= p->pTab->nCol ){
+    return SQLITE_MISUSE_BKPT;
   }else{
     iStore = sqlite3TableColumnToStorage(p->pTab, iIdx);
   }
