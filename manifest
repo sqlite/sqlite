@@ -1,5 +1,5 @@
-C Raise\san\serror\sright\saway\sif\sthe\snumber\sof\saggregate\sterms\sin\sa\squery\nexceeds\sthe\smaximum\snumber\sof\scolumns.
-D 2025-06-27T19:56:00.714
+C Version\s3.50.2
+D 2025-06-28T14:00:48.788
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2209,9 +2209,10 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61135722473b72e9976e960fac70df6562574068203d2b10320cc59acb04e766
-Q +5508b56fd24016c13981ec280ecdd833007c9d8dd595edb295b984c2b487b5c8
+P 4ae45291e6aac984af49c6da8e03216cf96b97b2ca7b11d5bcdb90b1f827fdaf
 R de044a43142203d291ffaa11945f35d7
+T +sym-release *
+T +sym-version-3.50.2 *
 U drh
-Z 4be7514ca122797e98a7643d77ad4f73
+Z 74a7bf04be5e68b03e7a14d88f83dabb
 # Remove this line to create a well-formed Fossil manifest.
