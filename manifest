@@ -1,5 +1,5 @@
-C Version\s3.50.2
-D 2025-06-28T14:00:48.788
+C Minor\sAPI\sdoc\stypo\sfixes\sfrom\sbrickviking.
+D 2025-06-29T07:32:57.815
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -787,7 +787,7 @@ F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 7a21df5db6bb1a4c1bb6d9fb76c8e2485a22ff8306519ad69d8ddf0d5fa10903
 F src/shell.c.in ba53a52dafb167ac6320703da741386c34fbcabe8c078a188bb9f89808e3ef8f
-F src/sqlite.h.in 18897d0b0cc064c9d6139cb0f56682d5da9ad0cc098b04f492458cdc0fc30e01
+F src/sqlite.h.in f39442f258c4b3c822de94fdca3e84633d8e88fe7a46501c64f57880229f01c8
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h e29d71b90bde0b2e06c813bd40d2265d1292a2ad7062ef7b2a1b9207dc9ecd98
@@ -2209,10 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4ae45291e6aac984af49c6da8e03216cf96b97b2ca7b11d5bcdb90b1f827fdaf
-R de044a43142203d291ffaa11945f35d7
-T +sym-release *
-T +sym-version-3.50.2 *
-U drh
-Z 74a7bf04be5e68b03e7a14d88f83dabb
+P 2af157d77fb1304a74176eaee7fbc7c7e932d946bf25325e9c26c91db19e3079
+Q +c7cf9dcb69ce558ba6b81b2787f92ed7383e37f08b199faeb14f7adb4e494532
+R 4a6fe29f783932b541e882d52b209c36
+U stephan
+Z f5372170156bf3c8404d59dd26c4336f
 # Remove this line to create a well-formed Fossil manifest.
