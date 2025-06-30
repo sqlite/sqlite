@@ -7078,6 +7078,8 @@ WhereInfo *sqlite3WhereBegin(
     pLevel->addrBrk = sqlite3VdbeMakeLabel(pParse);
     if( ii==0 || (pTabItem[0].fg.jointype & JT_LEFT)!=0 ){
       pLevel->addrHalt = pLevel->addrBrk;
+    }else if( pWInfo->a[ii-1].pRJ ){
+      pLevel->addrHalt = pWInfo->a[ii-1].addrBrk;
     }else{
       pLevel->addrHalt = pWInfo->a[ii-1].addrHalt;
     }
@@ -7211,7 +7213,6 @@ WhereInfo *sqlite3WhereBegin(
      && (pLevel->pRJ = sqlite3WhereMalloc(pWInfo, sizeof(WhereRightJoin)))!=0
     ){
       WhereRightJoin *pRJ = pLevel->pRJ;
-      pLevel->addrHalt = pLevel->addrBrk;
       pRJ->iMatch = pParse->nTab++;
       pRJ->regBloom = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Blob, 65536, pRJ->regBloom);

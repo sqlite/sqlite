@@ -1545,17 +1545,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     VdbeComment((v, "init LEFT JOIN match flag"));
   }
 
-#ifdef SQLITE_DEBUG
-  /* Re-compute the address to jump to if we discover that the table for
-  ** this loop is empty and can never contribute content.  Verify that the
-  ** computation here agrees with the one in sqlite3WhereBegin(). */
-  for(j=iLevel; j>0; j--){
-    if( pWInfo->a[j].iLeftJoin ) break;
-    if( pWInfo->a[j].pRJ ) break;
-  }
-  assert( pWInfo->a[j].addrBrk==pLevel->addrHalt );
-#endif
-
   /* Special case of a FROM clause subquery implemented as a co-routine */
   if( pTabItem->fg.viaCoroutine ){
     int regYield;
