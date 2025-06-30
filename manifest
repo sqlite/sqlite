@@ -1,5 +1,5 @@
-C Preliminary\srefactoring\sof\sthe\sXDG_CONFIG_HOME\ssupport\sto\ssupport\sthe\spending\saddition\sof\sother\sXDG-configurable\soptions.\sIn\sresponse\sto\s[forum:31db1a23f9\s|\sforum\spost\s31db1a23f9].
-D 2025-06-30T11:46:10.395
+C Add\ssupport\sfor\susing\s$XDG_STATE_HOME/sqlite_history\sor\s~/.local/state/sqlite_history\sbefore\sfallback\sback\sto\sthe\shistorical\sdefault\sof\s~/.sqlite_history.\sUpdate\ssqlite3.1\s(man\spage)\swith\sthe\snew\ssemantics.
+D 2025-06-30T15:21:46.262
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -717,7 +717,7 @@ F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
 F mptest/mptest.c aa41ace6dbc5050d76b02548d3521e6bbccae4f0
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
-F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
+F sqlite3.1 9e426a150af072be26b0661bcd54567692d979e99bc7daf55b22b952ff8e41a6
 F sqlite3.pc.in 0977c03a4da7c4204bd60e784a0efb8d51a190448aba78a4e973fe7192bdaf03
 F src/alter.c fc7bbbeb9e89c7124bf5772ce474b333b7bdc18d6e080763211a40fde69fb1da
 F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
@@ -786,7 +786,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 882d739e0d5e6c7a8b46a3cca3ada37fe1a56301f1360d6b141312c666bbe482
-F src/shell.c.in 98cc5a8ef982e9c60e0d8146ed8c38774a0f80f23c104a115c27f05893d3641d
+F src/shell.c.in 1cf75c1b4aee3fb3dbcedb59c0512977450ada75d2ca00bb08df1adf0055db0b
 F src/sqlite.h.in 5c54f2461a1ea529bab8499148a2b238e2d4bb571d59e8ea5322d0c190abb693
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
@@ -2208,11 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b48d95191662e09659b5b55ae65cd462c9e1700c4f92dd9d40b59548f0797c02
-R 6309a1fd152193cda47202f25b8c3c35
-T *branch * shell-xdg-vars
-T *sym-shell-xdg-vars *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 69b9244e3ad95edae38d8e66cedafbc1d7724ae0dd72eeee0fdbff913983598e
+R b75f67e480beb6664bd060c4305917e3
 U stephan
-Z 195b94022bc466347bd2a5713b9a2796
+Z 13d46cdb1a0ac8d1c628b18b42886e33
 # Remove this line to create a well-formed Fossil manifest.
