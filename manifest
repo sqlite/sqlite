@@ -1,5 +1,5 @@
-C Slightly\ssmaller\sand\sfaster\sversion\sof\sthe\sprevious\scheck-in.
-D 2025-06-30T11:04:55.886
+C For\sall\sbinary\soperators,\stry\sto\savoid\scomputing\ssubquery\soperands\sif\sthe\nother\soperand\sis\sNULL.
+D 2025-06-30T12:14:47.305
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
 F src/dbpage.c b3e218f8ed74fcbb7fa805df8ca669a3718d397617b3d8a8aac3307dc315c4d6
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c bfcf223fec3118214c2cc41c6aa520c716cb0e67a673258cd6fab3d143724c15
+F src/expr.c d726acf67585c14473e354c3d1123a4290e357bdfd389056a05df15b70f66d49
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c de47a8295503aa130baae5e6d9868ecf4f7c4dbffa65d83ad1f70bdbac0ee2d6
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3c6c71bcea16443b82234414137dfa1b59e2ee8fe5097906c738fc1228fec4e6
-R 2d8283b273252189c8c03b9b869c5bf9
+P f6e6fd02f4ad49c390a2d3c9626d57f9b2fff1f67eb361b30074cc1f5121810e
+R 886172909745da80cda276284a701cfd
 U drh
-Z f639db3f82a44bb4f9d7dfb2e1c4da9d
+Z 78219ecf578f4ce2acfc88c5fa4f82e5
 # Remove this line to create a well-formed Fossil manifest.
