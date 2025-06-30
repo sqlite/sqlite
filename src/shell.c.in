@@ -12759,30 +12759,34 @@ static char *find_home_dir(int clearFlag){
 }
 
 /*
-** On non-Windows platforms, look for $XDG_CONFIG_HOME.
-** If ${XDG_CONFIG_HOME}/sqlite3/sqliterc is found, return
-** the path to it.  If there is no $(XDG_CONFIG_HOME) then
-** look for $(HOME)/.config/sqlite3/sqliterc and if found
-** return that.  If none of these are found, return 0.
+** On non-Windows platforms, look for $zEnvVar, which must be the name
+** of an XDG_... environment variable.  If ${zEnvVar}/${zBaseName} is
+** found, return the path to it.  If ${zEnvVar} is not set then look
+** for ${HOME}/${zSubdir}/${zBaseName} and if found return that.  If
+** none of these are found, return 0.
+**
+** Both zSubdir and zBaseName may contain subdirectory parts. zSubdir
+** will conventionally be ".config" or ".local".
 **
 ** The string returned is obtained from sqlite3_malloc() and
 ** should be freed by the caller.
 */
-static char *find_xdg_config(void){
+static char *find_xdg_file(const char *zEnvVar, const char *zSubdir,
+                           const char *zBaseName){
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN32_WCE) \
      || defined(__RTP__) || defined(_WRS_KERNEL)
   return 0;
 #else
   char *zConfig = 0;
-  const char *zXdgHome;
+  const char *zXdgDir;
 
-  zXdgHome = getenv("XDG_CONFIG_HOME");
-  if( zXdgHome==0 ){
+  zXdgDir = getenv(zEnvVar);
+  if( zXdgDir==0 ){
     const char *zHome = getenv("HOME");
     if( zHome==0 ) return 0;
-    zConfig = sqlite3_mprintf("%s/.config/sqlite3/sqliterc", zHome);
+    zConfig = sqlite3_mprintf("%s/%s/%s", zHome, zSubdir, zBaseName);
   }else{
-    zConfig = sqlite3_mprintf("%s/sqlite3/sqliterc", zXdgHome);
+    zConfig = sqlite3_mprintf("%s/%s", zXdgDir, zBaseName);
   }
   shell_check_oom(zConfig);
   if( access(zConfig,0)!=0 ){
@@ -12795,7 +12799,7 @@ static char *find_xdg_config(void){
 
 /*
 ** Read input from the file given by sqliterc_override.  Or if that
-** parameter is NULL, take input from the first of find_xdg_config()
+** parameter is NULL, take input from the first of find_xdg_file()
 ** or ~/.sqliterc which is found.
 **
 ** Returns the number of errors.
@@ -12811,7 +12815,8 @@ static void process_sqliterc(
   int savedLineno = p->lineno;
 
   if( sqliterc == NULL ){
-    sqliterc = zBuf = find_xdg_config();
+    sqliterc = zBuf = find_xdg_file("XDG_CONFIG_HOME",
+                                    ".config", "sqlite3/sqliterc");
   }
   if( sqliterc == NULL ){
     home_dir = find_home_dir(0);
