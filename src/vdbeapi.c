@@ -192,6 +192,28 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
     return sqlite3_value_text(pVal);
   }
 }
+int sqlite3_value_blob_v2(sqlite3_value *pVal, const void **pOut,
+                          int *pnOut){
+  Mem *p = (Mem*)pVal;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pVal==0 || pOut==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  if( p->flags & (MEM_Blob|MEM_Str) ){
+    if( ExpandBlob(p)!=SQLITE_OK ){
+      assert( p->flags==MEM_Null && p->z==0 );
+      return SQLITE_NOMEM_BKPT;
+    }
+    p->flags |= MEM_Blob;
+    *pOut = p->n ? p->z : 0;
+    if( pnOut ) *pnOut = p->n;
+    return 0;
+  }else{
+    return sqlite3_value_text_v2(pVal, (const unsigned char **)pOut,
+                                 pnOut);
+  }
+}
 int sqlite3_value_bytes(sqlite3_value *pVal){
   return sqlite3ValueBytes(pVal, SQLITE_UTF8);
 }
@@ -226,6 +248,18 @@ void *sqlite3_value_pointer(sqlite3_value *pVal, const char *zPType){
 }
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
   return (const unsigned char *)sqlite3ValueText(pVal, SQLITE_UTF8);
+}
+int sqlite3_value_text_v2(sqlite3_value *pVal,
+                          const unsigned char **pOut,
+                          int *pnOut){
+  int n = 0;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pOut==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  return sqlite3ValueTextV2(pVal, SQLITE_UTF8, (const void **)pOut,
+                            pnOut ? pnOut : &n);
 }
 #ifndef SQLITE_OMIT_UTF16
 const void *sqlite3_value_text16(sqlite3_value* pVal){

@@ -1356,6 +1356,62 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   }
 }
 
+/*
+** This works like valueToText() but returns its result using
+** different semantics. On success, return 0, set *pOut to a
+** zero-terminated version of that string, and set *pnOut (which must
+** not be NULL, to avoid an extra branch in this function) to the
+** string-length of that memory. On error, return non-0 and do not
+** modify pOut or pnOut.
+*/
+static SQLITE_NOINLINE int valueToTextV2(sqlite3_value* pVal, u8 enc,
+                                        const void **pOut, int *pnOut){
+  assert( pVal!=0 );
+  assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
+  assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
+  assert( !sqlite3VdbeMemIsRowSet(pVal) );
+  assert( (pVal->flags & (MEM_Null))==0 );
+  assert( pOut!=0 );
+  assert( pnOut!=0 );
+  if( pVal->flags & (MEM_Blob|MEM_Str) ){
+    if( ExpandBlob(pVal) ){
+      return SQLITE_NOMEM_BKPT;
+    }
+    pVal->flags |= MEM_Str;
+    if( pVal->enc != (enc & ~SQLITE_UTF16_ALIGNED) ){
+      sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
+    }
+    if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&SQLITE_PTR_TO_INT(pVal->z)) ){
+      assert( (pVal->flags & (MEM_Ephem|MEM_Static))!=0 );
+      const int rc = sqlite3VdbeMemMakeWriteable(pVal);
+      if( rc!=SQLITE_OK ){
+        assert( SQLITE_NOMEM==rc );
+        return SQLITE_NOMEM_BKPT;
+      }
+    }
+    sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
+  }else{
+    sqlite3VdbeMemStringify(pVal, enc, 0);
+    assert( 0==(1&SQLITE_PTR_TO_INT(pVal->z)) );
+  }
+  assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
+              || pVal->db->mallocFailed );
+#if 0
+  if( pVal->db && pVal->db->mallocFailed ){
+    return SQLITE_NOMEM_BKPT;
+  }
+#endif
+  if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
+    assert( sqlite3VdbeMemValidStrRep(pVal) );
+    *pOut = pVal->z;
+    *pnOut = pVal->n;
+    return 0;
+  }
+  return (pVal->db && pVal->db->mallocFailed)
+    ? SQLITE_NOMEM_BKPT
+    : SQLITE_ERROR;
+}
+
 /* This function is only available internally, it is not part of the
 ** external API. It works in a similar way to sqlite3_value_text(),
 ** except the data returned is in the encoding specified by the second
@@ -1379,6 +1435,41 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
     return 0;
   }
   return valueToText(pVal, enc);
+}
+
+/* This works similarly to sqlite3ValueText() but returns its result
+** with different semantics.
+**
+** On success, returns 0, sets *pOut to the underlying value (or NULL
+** in the case of NULL), and sets *pnOut to the memory's usable
+** length. On error, neither *pOut nor *pnOut are modified.
+**
+** Design note: pnOut must not be NULL to avoid an extra branch in
+** this function. It is thought (but is untested) that such a branch
+** would be more expensive than ensuring that pnOut is not NULL
+** will. Public APIs wrapping this may optionally accept a NULL pnOut,
+** but must not pass that NULL on to here.
+*/
+int sqlite3ValueTextV2(sqlite3_value* pVal, u8 enc,
+                       const void **pOut, int *pnOut){
+  if( !pVal ) return SQLITE_MISUSE_BKPT;
+  assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
+  assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
+  assert( !sqlite3VdbeMemIsRowSet(pVal) );
+  assert( pOut!=0 );
+  assert( pnOut!=0 );
+  if( (pVal->flags&(MEM_Str|MEM_Term))==(MEM_Str|MEM_Term) && pVal->enc==enc ){
+    assert( sqlite3VdbeMemValidStrRep(pVal) );
+    *pOut = pVal->z;
+    *pnOut = pVal->n;
+    return 0;
+  }
+  if( pVal->flags&MEM_Null ){
+    *pOut = 0;
+    *pnOut = 0;
+    return 0;
+  }
+  return valueToTextV2(pVal, enc, pOut, pnOut);
 }
 
 /* Return true if sqlit3_value object pVal is a string or blob value

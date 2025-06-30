@@ -1,5 +1,5 @@
-C Strive\sto\sskip\sthe\sevaluation\sof\sscalar\ssubqueries\sthat\sare\spart\sof\sa\nlarger\sexpression\sif\sthe\sresult\sfrom\sthe\sscalar\ssubquery\sdoes\snot\schange\sthe\nresult\sof\sthe\soverall\sexpression.
-D 2025-06-30T16:41:40.414
+C Restart\sthis\sbranch\susing\sa\sdifferent\stake:\sadd\snew\s"v2"\sroutines\sinstead\sof\srefactoring\sthe\sold\sones,\swhich\seliminating\sany\sperformance\simpact\sor\srisk\sof\sbehavior\schange\sfor\sexisting\sAPIs.\sNone\sof\sthis\scode\sis\sactually\scalled\sfrom\sanywhere\syet.
+D 2025-06-30T23:17:57.299
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -787,10 +787,10 @@ F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 882d739e0d5e6c7a8b46a3cca3ada37fe1a56301f1360d6b141312c666bbe482
 F src/shell.c.in 4f14a1f5196b6006abc8e73cc8fd6c1a62cf940396f8ba909d6711f35f074bb6
-F src/sqlite.h.in 5c54f2461a1ea529bab8499148a2b238e2d4bb571d59e8ea5322d0c190abb693
+F src/sqlite.h.in 90bdcd7266ccff161aa3aa050f1cff8a0997217466d3661b808ad63d88786aec
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
-F src/sqliteInt.h 005542f8760edf9b62f014abccb876cf64533b64475a40a89402054d62535288
+F src/sqliteInt.h 461d39b85ee97d8f1496388f5d6884e8a240cabaea26b915ac7fd59e7a2ef727
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -855,10 +855,10 @@ F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
 F src/vdbe.c 7e29623ca387880b8893e69135a0ff240c3dcaf0710f7a46a5f95b062cf93883
 F src/vdbe.h 93761ed7c6b8bc19524912fd9b9b587d41bf4f1d0ade650a00dadc10518d8958
 F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
-F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
+F src/vdbeapi.c bfd865e163fa1fa58ebe1cb469a6798e64d114c84dd855079b6605e6bda75967
 F src/vdbeaux.c fd2c6b19a8892c31a2adc719f156f313560f9cc490cdbd04ff08fdae5d7aedb7
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
-F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
+F src/vdbemem.c 4c4878f6b691650a484f8046015d9b4653a904113d90b1da5f019a8819eee5de
 F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecbe
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
@@ -2208,9 +2208,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b48d95191662e09659b5b55ae65cd462c9e1700c4f92dd9d40b59548f0797c02 d86eb16283c4b573c506d4faa422d5d9aeb6abc279d8e6a8e2104737162d417f
-R 9194e4789912b64a71b73947ca782430
-T +closed d86eb16283c4b573c506d4faa422d5d9aeb6abc279d8e6a8e2104737162d417f
-U drh
-Z 98e7e495521ce39084e96bf3212efc13
+P 0083d5169a46104a25355bdd9d5a2f4027b049191ebda571dd228477ec217296
+R 4239fe5683a0ec74248fc5c2088a43d0
+T *branch * column-text-blob-v2
+T *sym-column-text-blob-v2 *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z 25bc418674281d77a7472549ccb81773
 # Remove this line to create a well-formed Fossil manifest.

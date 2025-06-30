@@ -5978,11 +5978,13 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** other SQLite interface is called on the same [database connection].
 */
 const void *sqlite3_value_blob(sqlite3_value*);
+int sqlite3_value_blob_v2(sqlite3_value*, const void **, int*);
 double sqlite3_value_double(sqlite3_value*);
 int sqlite3_value_int(sqlite3_value*);
 sqlite3_int64 sqlite3_value_int64(sqlite3_value*);
 void *sqlite3_value_pointer(sqlite3_value*, const char*);
 const unsigned char *sqlite3_value_text(sqlite3_value*);
+int sqlite3_value_text_v2(sqlite3_value*, const unsigned char **, int*);
 const void *sqlite3_value_text16(sqlite3_value*);
 const void *sqlite3_value_text16le(sqlite3_value*);
 const void *sqlite3_value_text16be(sqlite3_value*);
