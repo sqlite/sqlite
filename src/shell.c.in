@@ -12759,7 +12759,7 @@ static char *find_home_dir(int clearFlag){
 }
 
 /*
-** On non-Windows platforms, look for the first file found out of:
+** On non-Windows platforms, look for:
 **
 ** - ${zEnvVar}/${zBaseName}
 ** - ${HOME}/${zSubdir}/${zBaseName}
@@ -12828,7 +12828,7 @@ static void process_sqliterc(
 
   if( sqliterc == NULL ){
     sqliterc = find_xdg_file("XDG_CONFIG_HOME",
-                             ".local/config",
+                             ".config",
                              "sqlite3/sqliterc");
   }
   if( sqliterc == NULL ){
