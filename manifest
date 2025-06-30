@@ -1,5 +1,5 @@
-C Improve\sthe\sbytecode\sgenerated\sfor\scomparisons\sso\sthat\sif\sone\soperand\sis\na\ssubquery\sand\sthe\sother\soperand\sevaluates\sto\sNULL,\sthe\ssubquery\soperand\nis\snot\seven\scomputed.\s\sThis\sfixes\s5\sof\sthe\s12\sslow\squeries\sdescribed\nin\s[forum:/forumpost/52651713ac|forum\spost\s52651713ac].
-D 2025-06-28T17:59:15.236
+C Factor\sout\sthe\scode\sthat\stries\sto\savoid\sevaluating\ssubquery\soperands\sif\sthe\nother\soperand\sis\sNULL\sinto\sa\ssubroutine,\sso\sthat\sit\scan\sbe\smore\seasily\sreused\nby\sother\sparts\sof\sthe\scode\sgenerator.
+D 2025-06-30T10:30:47.908
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
 F src/dbpage.c b3e218f8ed74fcbb7fa805df8ca669a3718d397617b3d8a8aac3307dc315c4d6
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c b46621069e36a2fbc966215691e4775134e2cc6c7a6e9e54b01cbb70b51d57a5
+F src/expr.c f007ab177a9900d10893a58bf6b756e89144df635bab61b25f37a17390f12778
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c de47a8295503aa130baae5e6d9868ecf4f7c4dbffa65d83ad1f70bdbac0ee2d6
@@ -2208,11 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5508b56fd24016c13981ec280ecdd833007c9d8dd595edb295b984c2b487b5c8
-R c5ec83310afc6f17c7231575eaf1e606
-T *branch * optimize-null-values
-T *sym-optimize-null-values *
-T -sym-trunk *
+P f147bc04776ac0056412f69dfc518016c0d5b4e9d964664e3d88f595fb29dbe0
+R 2a36b21b6d3bc1bf7db15e8f66e788a3
 U drh
-Z 4eeee81d77d56831be900c22e39d8eec
+Z 4ecc3e0b30247a36c4e1fea0e6dc5b85
 # Remove this line to create a well-formed Fossil manifest.

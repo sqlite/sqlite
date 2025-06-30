@@ -5831,6 +5831,67 @@ static void exprCodeBetween(
 }
 
 /*
+** Compute the two operands of a binary operator.
+**
+** If either operand contains a subquery, then the code strives to
+** compute the operand containing the subquery second.  If the other
+** operand evalutes to NULL, then a jump is made.  The address of the
+** IsNull operand that does this jump is returned.  The caller can use
+** this to optimize the computation so as to avoid doing the potentially
+** expensive subquery.
+**
+** If no optimization opportunities exist, return 0.
+*/
+static int exprComputeOperands(
+  Parse *pParse,     /* Parsing context */
+  Expr *pExpr,       /* The comparison expression */
+  int *pR1,          /* OUT: Register holding the left operand */
+  int *pR2,          /* OUT: Register holding the right operand */
+  int *pFree1,       /* OUT: Temp register to free if not zero */
+  int *pFree2        /* OUT: Another temp register to free if not zero */
+){
+  int addrIsNull;
+  int r1, r2;
+  Vdbe *v = pParse->pVdbe;
+
+  assert( v!=0 );
+  /*
+  ** If the left operand contains a (possibly expensive) subquery and the
+  ** right operand does not and the right operation might be NULL,
+  ** then compute the right operand first and do an IsNull jump if the
+  ** right operand evalutes to NULL.
+  */
+  if( ExprHasProperty(pExpr->pLeft, EP_Subquery)
+   && !ExprHasProperty(pExpr->pRight, EP_Subquery)
+   && sqlite3ExprCanBeNull(pExpr->pRight)
+  ){
+    r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, pFree2);
+    addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, r2);  VdbeCoverage(v);
+  }else{
+    addrIsNull = 0;
+  }
+  r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, pFree1);
+  if( addrIsNull==0 ){
+    /*
+    ** If the right operand contains a subquery and the left operand does not
+    ** and the left operand might be NULL, then check the left operand do
+    ** an IsNull check on the left operand before computing the right
+    ** operand.
+    */
+    if( ExprHasProperty(pExpr->pRight, EP_Subquery)
+     && sqlite3ExprCanBeNull(pExpr->pLeft)
+    ){
+      addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, r1);  VdbeCoverage(v);
+    }
+    r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, pFree2);
+  }
+  *pR1 = r1;
+  *pR2 = r2;
+  return addrIsNull;
+}
+
+
+/*
 ** Generate code for a boolean expression such that a jump is made
 ** to the label "dest" if the expression is true but execution
 ** continues straight thru if the expression is false.
@@ -6076,75 +6137,47 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_IS:
-    case TK_ISNOT:
+    case TK_ISNOT: {
       testcase( pExpr->op==TK_IS );
       testcase( pExpr->op==TK_ISNOT );
+      if( sqlite3ExprIsVector(pExpr->pLeft) ) goto default_expr;
       op = (pExpr->op==TK_IS) ? TK_NE : TK_EQ;
-      jumpIfNull = SQLITE_NULLEQ;
-      /* no break */ deliberate_fall_through
+      r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
+      r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
+      codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
+                  r1, r2, dest, SQLITE_NULLEQ,
+                  ExprHasProperty(pExpr,EP_Commuted));
+      testcase(op==OP_Eq); VdbeCoverageIf(v,op==OP_Eq);
+      testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
+      break;
+    }
     case TK_LT:
     case TK_LE:
     case TK_GT:
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      int r2Done = 0;
-      int addrBypass = 0;
+      int addrIsNull;
       if( sqlite3ExprIsVector(pExpr->pLeft) ) goto default_expr;
-      testcase( jumpIfNull==0 );
-      /*
-      ** If the left operand is a (possibly expensive) subquery and the
-      ** right operand is not and the right operation might be NULL and
-      ** the operator is not IS or IS NOT, then compute the right operand
-      ** first and skip the computation of the left operand if the right
-      ** operand is NULL.
-      */
-      if( jumpIfNull!=SQLITE_NULLEQ
-       && ExprHasProperty(pExpr->pLeft, EP_Subquery)
-       && !ExprHasProperty(pExpr->pRight, EP_Subquery)
-       && sqlite3ExprCanBeNull(pExpr->pRight)
-      ){
-        r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
-        addrBypass = sqlite3VdbeAddOp2(v, OP_IsNull, r2, dest);
-        VdbeCoverageIf(v, jumpIfNull==SQLITE_JUMPIFNULL);
-        VdbeCoverageIf(v, jumpIfNull!=SQLITE_JUMPIFNULL);
-        if( jumpIfNull==SQLITE_JUMPIFNULL ) addrBypass = 0;
-        r2Done = 1;
-      }
-      r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      if( !r2Done ){
-        /*
-        ** If the right operand is a subquery and the left operand is not
-        ** and the left operand might be NULL and the comparison operator
-        ** is not IS or IS NOT, then check the left operand to see if it is
-        ** NULL and skip the computation of the right operand if it is.
-        */
-        if( jumpIfNull!=SQLITE_NULLEQ
-         && ExprHasProperty(pExpr->pRight, EP_Subquery)
-         && sqlite3ExprCanBeNull(pExpr->pLeft)
-        ){
-          addrBypass = sqlite3VdbeAddOp2(v, OP_IsNull, r1, dest);
-          VdbeCoverageIf(v, jumpIfNull==SQLITE_JUMPIFNULL);
-          VdbeCoverageIf(v, jumpIfNull!=SQLITE_JUMPIFNULL);
-          if( jumpIfNull==SQLITE_JUMPIFNULL ) addrBypass = 0;
-        }
-        r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
-      }
+      addrIsNull = exprComputeOperands(pParse, pExpr,
+                                 &r1, &r2, &regFree1, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, dest, jumpIfNull,ExprHasProperty(pExpr,EP_Commuted));
       assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
       assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
       assert(TK_GT==OP_Gt); testcase(op==OP_Gt); VdbeCoverageIf(v,op==OP_Gt);
       assert(TK_GE==OP_Ge); testcase(op==OP_Ge); VdbeCoverageIf(v,op==OP_Ge);
-      assert(TK_EQ==OP_Eq); testcase(op==OP_Eq);
-      VdbeCoverageIf(v, op==OP_Eq && jumpIfNull!=SQLITE_NULLEQ);
-      VdbeCoverageIf(v, op==OP_Eq && jumpIfNull==SQLITE_NULLEQ);
-      assert(TK_NE==OP_Ne); testcase(op==OP_Ne);
-      VdbeCoverageIf(v, op==OP_Ne && jumpIfNull!=SQLITE_NULLEQ);
-      VdbeCoverageIf(v, op==OP_Ne && jumpIfNull==SQLITE_NULLEQ);
+      assert(TK_EQ==OP_Eq); testcase(op==OP_Eq); VdbeCoverageIf(v,op==OP_Eq);
+      assert(TK_NE==OP_Ne); testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
-      if( addrBypass ) sqlite3VdbeJumpHere(v, addrBypass);
+      if( addrIsNull ){
+        if( jumpIfNull ){
+          sqlite3VdbeChangeP2(v, addrIsNull, dest);
+        }else{
+          sqlite3VdbeJumpHere(v, addrIsNull);
+        }
+      }
       break;
     }
     case TK_ISNULL:
