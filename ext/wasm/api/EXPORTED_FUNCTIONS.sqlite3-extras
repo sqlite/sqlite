@@ -64,3 +64,5 @@ _sqlite3session_object_config
 _sqlite3session_patchset
 _sqlite3session_patchset_strm
 _sqlite3session_table_filter
+_sqlite3_value_blob_v2
+_sqlite3_value_text_v2

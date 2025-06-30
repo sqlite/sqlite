@@ -3341,6 +3341,56 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       db.close();
     })
 
+  ////////////////////////////////////////////////////////////////////
+    .t("value_text_v2() and friends...", function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec(["create table t(a,b); insert into t(a,b) ",
+               "values(1,123),(2,null),(3,'hi world'),(4,X'232A')"]);
+      const P = wasm.pstack;
+      const stack = P.pointer;
+      let q;
+      try {
+        let sv, rc;
+        q = db.prepare("select a, b from t order by a");
+        let [ppOut,pnOut] = P.allocPtr(2);
+        const next = ()=>{
+          T.assert( q.step() );
+          sv = capi.sqlite3_column_value(q, 1);
+          T.assert( sv );
+          wasm.pokePtr(ppOut, 0);
+          wasm.poke32(pnOut, 0);
+          rc = capi.sqlite3_value_text_v2(sv, ppOut, pnOut);
+          T.assert( 0===rc );
+          return sv;
+        };
+        next();
+        T.assert( wasm.peekPtr(ppOut) )
+          .assert( 3===wasm.peek32(pnOut) )
+          .assert( '123' === wasm.cstrToJs(wasm.peekPtr(ppOut)) );
+
+        next();
+        T.assert( !wasm.peekPtr(ppOut) )
+          .assert( 0===wasm.peek32(pnOut) );
+
+        next();
+        T.assert( wasm.peekPtr(ppOut) )
+          .assert( 8===wasm.peek32(pnOut) )
+          .assert( 'hi world' === wasm.cstrToJs(wasm.peekPtr(ppOut)) )
+        ;
+
+        next();
+        T.assert( wasm.peekPtr(ppOut) )
+          .assert( 2===wasm.peek32(pnOut) )
+          .assert( '#*' === wasm.cstrToJs(wasm.peekPtr(ppOut)) )
+        ;
+
+      }finally{
+        if( q ) q.finalize();
+        db.close();
+        P.restore(stack);
+      }
+    })
+
     /**
        Ensure that certain Stmt members throw when called
        via DB.exec().
