@@ -1,5 +1,5 @@
-C Strive\sto\sskip\sthe\sevaluation\sof\sscalar\ssubqueries\sthat\sare\spart\sof\sa\nlarger\sexpression\sif\sthe\sresult\sfrom\sthe\sscalar\ssubquery\sdoes\snot\schange\sthe\nresult\sof\sthe\soverall\sexpression.
-D 2025-06-30T16:41:40.414
+C Compute\sWhereLevel.addrBrk\sand\s.addrHalt\searly\sso\sthat\sthose\slabels\scan\sbe\nused\sto\sabort\sloops\searly.\s\sUse\sthis\sto\simprove\sperformance\son\stwo\smore\nof\sthe\scases\sdescribed\sby\s[forum:/forumpost/52651713ac|forum\spost\s52651713ac].
+D 2025-06-30T20:19:19.423
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -867,9 +867,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 20be6f0a25a80b7897cf2a5369bfd37ef198e6f0b6cdef16d83eee856056b159
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c a99fa3061a0155d2cb0e2c91df76dbf834750272a8d79ec5e2dce3ed4e6abad6
-F src/whereInt.h 02b646ea41a8342815b3628f8064c32618ea2e0f20b83216ea08cad11f0ac5aa
-F src/wherecode.c 9710e62379c000189476404f923d4d1b192d0def222fdd287b820cc085a0d555
+F src/where.c baedbf818b67006033204fd9814bf1dc80bec728ed0340cf49146be36ddd5f40
+F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
+F src/wherecode.c 0ee8afb68c04adaba81329f5c358010b2d8943d00a55161a34081acf830daa11
 F src/whereexpr.c 566ca4382e07a4ba1fd86c97ae0781cdf84004c7d9c59466bf5db75733548807
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2208,9 +2208,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b48d95191662e09659b5b55ae65cd462c9e1700c4f92dd9d40b59548f0797c02 d86eb16283c4b573c506d4faa422d5d9aeb6abc279d8e6a8e2104737162d417f
-R 9194e4789912b64a71b73947ca782430
-T +closed d86eb16283c4b573c506d4faa422d5d9aeb6abc279d8e6a8e2104737162d417f
+P 0083d5169a46104a25355bdd9d5a2f4027b049191ebda571dd228477ec217296
+R d7249f5cf7b6d480f743946f8ed64b97
+T *branch * empty-table-optimizations
+T *sym-empty-table-optimizations *
+T -sym-trunk *
 U drh
-Z 98e7e495521ce39084e96bf3212efc13
+Z 7f9eb68d1bb4b376d2d8134bae280e6b
 # Remove this line to create a well-formed Fossil manifest.
