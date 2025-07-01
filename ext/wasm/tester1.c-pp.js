@@ -3384,6 +3384,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         next(); cmp(null);
         next(); cmp('hi world');
         next(); cmp( '#*' );
+        /* The following only applies when built with
+           SQLITE_ENABLE_API_ARMOR: */
+        T.assert( capi.SQLITE_MISUSE ==
+                  capi.sqlite3_value_text_v2(sv, 0, pnOut) )
+          .assert( capi.SQLITE_MISUSE ==
+                   capi.sqlite3_value_text_v2(0, ppOut, pnOut) )
+        ;
+        /* But a 0 pnOut is always okay. */
+        T.assert( capi.SQLITE_OK ==
+                  capi.sqlite3_value_text_v2(sv, ppOut, 0) );
 
       }finally{
         if( q ) q.finalize();
@@ -3429,6 +3439,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         next(); cmp([]); // null
         next(); cmp([104,105]); // "hi"
         next(); cmp([0x23, 0, 0x2a]); // X'23002A'
+        /* The following only applies when built with
+           SQLITE_ENABLE_API_ARMOR: */
+        T.assert( capi.SQLITE_MISUSE ==
+                  capi.sqlite3_value_blob_v2(sv, 0, pnOut) )
+          .assert( capi.SQLITE_MISUSE ==
+                   capi.sqlite3_value_blob_v2(0, ppOut, pnOut) );
+        /* But a 0 pnOut is always okay. */
+        T.assert( capi.SQLITE_OK ==
+                  capi.sqlite3_value_blob_v2(sv, ppOut, 0) );
       }finally{
         if( q ) q.finalize();
         db.close();

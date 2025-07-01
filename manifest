@@ -1,5 +1,5 @@
-C Add\sJS\sbasic\stests\sfor\ssqlite3_value_blob_v2().\sSimplify\sthe\ssqlite3_value_text_v2()\stests\sa\sbit.
-D 2025-07-01T00:17:30.792
+C Add\sJS\stests\sfor\sSQLITE_ENABLE_API_ARMOR-shielded\ssqlite3_value_blob/text_v2()\smisuse.
+D 2025-07-01T00:34:15.974
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -698,7 +698,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
-F ext/wasm/tester1.c-pp.js 95caa21e4e181dea9fd374995c5ea6b46ac05d67144156b9f91edeefcc03bb0d
+F ext/wasm/tester1.c-pp.js b3c49abab7b650f9c0fcfc2a8ce77258ec69d8fae3b51d54f2f7a219ac0d61c2
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 096c745f38c487c29948e4578fea61085f4a324b187d5b6e9ab32d7b14e503c3
-R a348413e2332440fa5436b61dbafeeec
+P c371f92d5b42f2436d2dc92f244e11748fa8cf00e3818b613cce7ea0cfe09c87
+R 9fa80d600744868f0ca50b681ffc55cb
 U stephan
-Z f65c15bdf2e21882c134b29d5cffc932
+Z 3a38662a4da6c675804d7ca2bcbbd57b
 # Remove this line to create a well-formed Fossil manifest.
