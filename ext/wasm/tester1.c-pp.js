@@ -3363,27 +3363,72 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert( 0===rc );
           return sv;
         };
-        next();
-        T.assert( wasm.peekPtr(ppOut) )
-          .assert( 3===wasm.peek32(pnOut) )
-          .assert( '123' === wasm.cstrToJs(wasm.peekPtr(ppOut)) );
+        const cmp = function(expect){
+          const blob = wasm.peekPtr(ppOut);
+          const len = wasm.peek32(pnOut);
+          //log("blob=",wasm.cstrToJs(blob));
+          const str = wasm.cstrToJs(blob);
+          if( !blob ){
+            T.assert( null===expect )
+              .assert( 0===len );
+            return;
+          }
+          T.assert(len === expect.length,
+                   "Lengths don't match: got ["+str
+                   +"] expected ["+expect+"]")
+            .assert( str===expect, "String mismatch: got ["
+                     +str+"] expected ["+expect+"]");
+        };
 
-        next();
-        T.assert( !wasm.peekPtr(ppOut) )
-          .assert( 0===wasm.peek32(pnOut) );
+        next(); cmp('123');
+        next(); cmp(null);
+        next(); cmp('hi world');
+        next(); cmp( '#*' );
 
-        next();
-        T.assert( wasm.peekPtr(ppOut) )
-          .assert( 8===wasm.peek32(pnOut) )
-          .assert( 'hi world' === wasm.cstrToJs(wasm.peekPtr(ppOut)) )
-        ;
+      }finally{
+        if( q ) q.finalize();
+        db.close();
+        P.restore(stack);
+      }
+    })
 
-        next();
-        T.assert( wasm.peekPtr(ppOut) )
-          .assert( 2===wasm.peek32(pnOut) )
-          .assert( '#*' === wasm.cstrToJs(wasm.peekPtr(ppOut)) )
-        ;
-
+  ////////////////////////////////////////////////////////////////////
+    .t("value_blob_v2() and friends...", function(sqlite3){
+      const db = new sqlite3.oo1.DB();
+      db.exec(["create table t(a,b); insert into t(a,b) ",
+               "values(1,123),(2,null),(3,'hi'),(4,X'23002A')"]);
+      const P = wasm.pstack;
+      const stack = P.pointer;
+      let q;
+      try {
+        let sv, rc;
+        q = db.prepare("select a, b from t order by a");
+        let [ppOut,pnOut] = P.allocPtr(2);
+        const next = ()=>{
+          T.assert( q.step() );
+          sv = capi.sqlite3_column_value(q, 1);
+          T.assert( sv );
+          wasm.pokePtr(ppOut, 0);
+          wasm.poke32(pnOut, 0);
+          rc = capi.sqlite3_value_blob_v2(sv, ppOut, pnOut);
+          T.assert( 0===rc );
+          return sv;
+        };
+        const cmp = function(byteList){
+          const blob = wasm.peekPtr(ppOut);
+          const len = wasm.peek32(pnOut);
+          //log("blob=",wasm.cstrToJs(blob));
+          T.assert(len === byteList.length, "Lengths don't match");
+          for( let i = 0; i < len; ++i ){
+            T.assert( byteList[i] === wasm.peek8(blob+i),
+                      "mismatch at offset "+i+": "+byteList[i]
+                      +"!=="+wasm.peek8(blob+i) );
+          }
+        };
+        next(); cmp([49,50,51]); // 123
+        next(); cmp([]); // null
+        next(); cmp([104,105]); // "hi"
+        next(); cmp([0x23, 0, 0x2a]); // X'23002A'
       }finally{
         if( q ) q.finalize();
         db.close();
