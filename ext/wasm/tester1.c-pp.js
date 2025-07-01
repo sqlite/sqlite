@@ -3352,18 +3352,22 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       try {
         let sv, rc;
         q = db.prepare("select a, b from t order by a");
-        let [ppOut,pnOut] = P.allocPtr(2);
+        let [ppOut, pnOut, pType] = P.allocPtr(3);
+        const clearPtrs = ()=>{
+          wasm.pokePtr(ppOut, 0);
+          wasm.poke32(pnOut, 0);
+          wasm.poke32(pType, 0);
+        };
         const next = ()=>{
           T.assert( q.step() );
           sv = capi.sqlite3_column_value(q, 1);
           T.assert( sv );
-          wasm.pokePtr(ppOut, 0);
-          wasm.poke32(pnOut, 0);
-          rc = capi.sqlite3_value_text_v2(sv, ppOut, pnOut);
+          clearPtrs();
+          rc = capi.sqlite3_value_text_v2(sv, ppOut, pnOut, pType);
           T.assert( 0===rc );
           return sv;
         };
-        const cmp = function(expect){
+        const cmp = function(type,expect){
           const blob = wasm.peekPtr(ppOut);
           const len = wasm.peek32(pnOut);
           //log("blob=",wasm.cstrToJs(blob));
@@ -3379,22 +3383,20 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert( str===expect, "String mismatch: got ["
                      +str+"] expected ["+expect+"]");
         };
-        const cmp2 = (expect)=>{
+        const cmp2 = (type,expect)=>{
           next();
-          cmp(expect);
-          wasm.pokePtr(ppOut, 0);
-          wasm.poke32(pnOut, 0);
-          const rc = capi.sqlite3_column_text_v2(q, 1, ppOut, pnOut);
+          cmp(type,expect);
+          clearPtrs();
+          const rc = capi.sqlite3_column_text_v2(q, 1, ppOut, pnOut, pType);
           T.assert( 0==rc, "expecting column_text_v2() rc 0 but got "+rc );
-          cmp(expect);
+          cmp(type,expect);
         };
 
-        cmp2('123');
-        cmp2(null);
-        cmp2('hi world');
-        cmp2( '#*' );
-        cmp2( '' ); // empty strings are not null
-
+        cmp2(capi.SQLITE_INTEGER,'123');
+        cmp2(capi.SQLITE_NULL,null);
+        cmp2(capi.SQLITE_TEXT,'hi world');
+        cmp2(capi.SQLITE_BLOB, '#*');
+        cmp2(capi.SQLITE_TEXT, ''); // empty strings are not null
 
         const checkRc = (name, descr, rc)=>{
           T.assert( capi[name] === rc,
@@ -3408,22 +3410,24 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
         // This does not set a persistent error flag on q:
         checkRc('SQLITE_RANGE', "column_text_v2() bad index",
-                capi.sqlite3_column_text_v2(q, 11, ppOut, pnOut) );
+                capi.sqlite3_column_text_v2(q, 11, ppOut, pnOut, 0) );
         checkRc('SQLITE_OK', "column_text_v2() valid index",
-                capi.sqlite3_column_text_v2(q, 1, ppOut, 0));
+                capi.sqlite3_column_text_v2(q, 1, ppOut, 0, 0));
 
         checkRc('SQLITE_OK', "column null pnOut",
-                capi.sqlite3_column_text_v2(q, 1, ppOut, 0));
+                capi.sqlite3_column_text_v2(q, 1, ppOut, 0, 0));
 
+        /* Some of the following only applies because we build with
+           SQLITE_ENABLE_API_ARMOR. */
         checkRc('SQLITE_MISUSE', "value null ppOut",
-                capi.sqlite3_value_text_v2(sv, 0, pnOut));
+                capi.sqlite3_value_text_v2(sv, 0, pnOut, 0));
         checkRc('SQLITE_MISUSE', "value null arg0",
-                capi.sqlite3_value_text_v2(0, ppOut, pnOut));
+                capi.sqlite3_value_text_v2(0, ppOut, pnOut, 0));
         checkRc('SQLITE_MISUSE', "column null ppOut",
-                capi.sqlite3_column_text_v2(q, 1, 0, pnOut));
+                capi.sqlite3_column_text_v2(q, 1, 0, pnOut, 0));
         /* But a 0 pnOut is always okay. */
         checkRc('SQLITE_OK', "value null pnOut",
-                capi.sqlite3_value_text_v2(sv, ppOut, 0));
+                capi.sqlite3_value_text_v2(sv, ppOut, 0, 0));
 
       }finally{
         if( q ) q.finalize();
@@ -3443,18 +3447,23 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       try {
         let sv, rc;
         q = db.prepare("select a, b from t order by a");
-        let [ppOut,pnOut] = P.allocPtr(2);
+        let [ppOut, pnOut, pType] = P.allocPtr(3);
+        const clearPtrs = ()=>{
+          wasm.pokePtr(ppOut, 0);
+          wasm.poke32(pnOut, 0);
+          wasm.poke32(pType, 0);
+        };
+
         const next = ()=>{
           T.assert( q.step() );
           sv = capi.sqlite3_column_value(q, 1);
           T.assert( sv );
-          wasm.pokePtr(ppOut, 0);
-          wasm.poke32(pnOut, 0);
-          rc = capi.sqlite3_value_blob_v2(sv, ppOut, pnOut);
+          clearPtrs();
+          rc = capi.sqlite3_value_blob_v2(sv, ppOut, pnOut, pType);
           T.assert( 0==rc, "expecting value_blob_v2() rc 0 but got "+rc );
           return sv;
         };
-        const cmp = (byteList)=>{
+        const cmp = (type,byteList)=>{
           const blob = wasm.peekPtr(ppOut);
           const len = wasm.peek32(pnOut);
           //log("blob=",wasm.cstrToJs(blob));
@@ -3462,27 +3471,31 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert( len ? !!blob : !blob,
                     "Expecting len=non-0/blob=non-null or len=0/blob=null. "+
                     "Got len="+len+" blob=@"+blob );
+          T.assert( type === wasm.peek32(pType),
+                    "Expecting value_blob_v2 type "+type+" but got "
+                    +wasm.peek32(pType)+". Value="+wasm.cstrToJs(blob));
           for( let i = 0; i < len; ++i ){
             T.assert( byteList[i] === wasm.peek8(blob+i),
                       "mismatch at offset "+i+": "+byteList[i]
                       +"!=="+wasm.peek8(blob+i) );
           }
         };
-        const cmp2 = (byteList)=>{
+        const cmp2 = (type,byteList)=>{
           next();
-          cmp(byteList);
-          wasm.pokePtr(ppOut, 0);
-          wasm.poke32(pnOut, 0);
-          const rc = capi.sqlite3_column_blob_v2(q, 1, ppOut, pnOut);
-          T.assert( 0==rc, "expecting column_blob_v2() rc 0 but got "+rc );
-          cmp(byteList);
+          cmp(type,byteList);
+          clearPtrs();
+          const rc = capi.sqlite3_column_blob_v2(q, 1, ppOut, pnOut, pType);
+          T.assert( 0==rc, "expecting column_blob_v2() rc 0 but got "+rc);
+          cmp(type,byteList);
         };
 
-        cmp2([49,50,51]); // 123
-        cmp2([]); // null
-        cmp2([104,105]); // "hi"
-        cmp2([0x23, 0, 0x2a]); // X'23002A'
-        cmp2([]); // empty blobs are null
+        cmp2(capi.SQLITE_INTEGER, [49,50,51]); // 123
+        cmp2(capi.SQLITE_NULL, []); // null
+        cmp2(capi.SQLITE_TEXT, [104,105]); // "hi"
+        cmp2(capi.SQLITE_BLOB, [0x23, 0, 0x2a]); // X'23002A'
+        cmp2(capi.SQLITE_TEXT, []) /* length-0 non-NULL blobs are NULL
+                                      but this one has type TEXT */;
+
         /** Tests which cover the same code paths for both text_v2 and
             blob_v2 are in the previous test group. */
 

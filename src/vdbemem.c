@@ -1360,12 +1360,19 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
 ** This works like valueToText() but returns its result using
 ** different semantics. On success, return 0, set *pOut to a
 ** zero-terminated version of that string, and set *pnOut (which must
-** not be NULL, to avoid an extra branch in this function) to the
-** string-length of that memory. On error, return non-0 and do not
-** modify pOut or pnOut.
+** not be NULL to the string-length of that memory. If pType is not
+** NULL, it will be set to the sqlite3_value_type() of pVal.
+**
+** On error, return non-0 and do not modify pOut, pnOut, or pType.
+**
+** Maintenance note: this is almost a copy/paste clone of
+** valueToText(), but the two should probably not be consolidated. The
+** initial version of this API did so in [730c6a623e29b59b] and the
+** CPU cycles doubled.
 */
 static SQLITE_NOINLINE int valueToTextV2(sqlite3_value* pVal, u8 enc,
-                                        const void **pOut, int *pnOut){
+                                         const void **pOut, int *pnOut,
+                                         int *pType){
   assert( pVal!=0 );
   assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
@@ -1405,6 +1412,7 @@ static SQLITE_NOINLINE int valueToTextV2(sqlite3_value* pVal, u8 enc,
     assert( sqlite3VdbeMemValidStrRep(pVal) );
     *pOut = pVal->z;
     *pnOut = pVal->n;
+    if( pType ) *pType = sqlite3_value_type(pVal);
     return 0;
   }
   return (pVal->db && pVal->db->mallocFailed)
@@ -1442,17 +1450,17 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
 **
 ** On success, returns 0, sets *pOut to the underlying value (or NULL
 ** in the case of NULL), and sets *pnOut to the memory's usable
-** length. On error, neither *pOut nor *pnOut are modified.
+** length. If *pType is not NULL, it is set to the
+** sqlite3_value_type() of pVal. On error, neither *pOut nor *pnOut
+** nor *pType are modified.
 **
-** Design note: pnOut must not be NULL to avoid an extra branch in
-** this function. It is thought (but is untested) that such a branch
-** would be more expensive than ensuring that pnOut is not NULL
-** will. Public APIs wrapping this may optionally accept a NULL pnOut,
-** but must not pass that NULL on to here.
+** Results are undefined if pVal, pOut, or pnOut are NULL. pType may
+** be NULL.
 */
-int sqlite3ValueTextV2(sqlite3_value* pVal, u8 enc,
-                       const void **pOut, int *pnOut){
-  if( !pVal ) return SQLITE_MISUSE_BKPT;
+int sqlite3ValueTextV2(sqlite3_value* pVal, u8 enc, const void **pOut,
+                       int *pnOut, int *pType){
+  /*if( !pVal ) return SQLITE_MISUSE_BKPT;*/
+  assert( pVal!=0 );
   assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
   assert( !sqlite3VdbeMemIsRowSet(pVal) );
@@ -1462,14 +1470,16 @@ int sqlite3ValueTextV2(sqlite3_value* pVal, u8 enc,
     assert( sqlite3VdbeMemValidStrRep(pVal) );
     *pOut = pVal->z;
     *pnOut = pVal->n;
+    if( pType ) *pType = sqlite3_value_type( pVal );
     return 0;
   }
   if( pVal->flags&MEM_Null ){
     *pOut = 0;
     *pnOut = 0;
+    if( pType ) *pType = sqlite3_value_type( pVal );
     return 0;
   }
-  return valueToTextV2(pVal, enc, pOut, pnOut);
+  return valueToTextV2(pVal, enc, pOut, pnOut, pType);
 }
 
 /* Return true if sqlit3_value object pVal is a string or blob value
