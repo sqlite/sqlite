@@ -5888,11 +5888,13 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** <b>Summary:</b>
 ** <blockquote><table border=0 cellpadding=0 cellspacing=0>
 ** <tr><td><b>sqlite3_value_blob</b><td>&rarr;<td>BLOB value
+** <tr><td><b>sqlite3_value_blob_v2</b><td>&rarr;<td>BLOB value
 ** <tr><td><b>sqlite3_value_double</b><td>&rarr;<td>REAL value
 ** <tr><td><b>sqlite3_value_int</b><td>&rarr;<td>32-bit INTEGER value
 ** <tr><td><b>sqlite3_value_int64</b><td>&rarr;<td>64-bit INTEGER value
 ** <tr><td><b>sqlite3_value_pointer</b><td>&rarr;<td>Pointer value
 ** <tr><td><b>sqlite3_value_text</b><td>&rarr;<td>UTF-8 TEXT value
+** <tr><td><b>sqlite3_value_text_v2</b><td>&rarr;<td>UTF-8 TEXT value
 ** <tr><td><b>sqlite3_value_text16</b><td>&rarr;<td>UTF-16 TEXT value in
 ** the native byteorder
 ** <tr><td><b>sqlite3_value_text16be</b><td>&rarr;<td>UTF-16be TEXT value
@@ -5993,8 +5995,10 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** errors:
 **
 ** <ul>
+** <li> sqlite3_value_blob_v2()
 ** <li> sqlite3_value_blob()
 ** <li> sqlite3_value_text()
+** <li> sqlite3_value_text_v2()
 ** <li> sqlite3_value_text16()
 ** <li> sqlite3_value_text16le()
 ** <li> sqlite3_value_text16be()
@@ -6008,6 +6012,10 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** by invoking the [sqlite3_errcode()] immediately after the suspect
 ** return value is obtained and before any
 ** other SQLite interface is called on the same [database connection].
+**
+** The previous paragraph does not apply to the text_v2 and blob_v2
+** interfaces, which return SQLITE_NOMEM to the client for
+** out-of-memory conditions.
 */
 const void *sqlite3_value_blob(sqlite3_value*);
 int sqlite3_value_blob_v2(sqlite3_value*, const void **, int*, int*);
