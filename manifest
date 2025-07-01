@@ -1,5 +1,5 @@
-C Avoid\san\sassert()\sfailure\sin\sfts5\sthat\smay\soccur\swhen\sprocessing\scorrupt\srecords.
-D 2025-07-01T16:21:47.061
+C Cache\sand\sreuse\svirtual\stable\scursors\sin\sthe\sbytecode\sengine.
+D 2025-07-01T17:36:55.244
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -852,7 +852,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
-F src/vdbe.c 7e29623ca387880b8893e69135a0ff240c3dcaf0710f7a46a5f95b062cf93883
+F src/vdbe.c d2c13c0001f5ec40ec1f010a7f9badcff3ce09bbd7a78528682ad49d8566df54
 F src/vdbe.h 93761ed7c6b8bc19524912fd9b9b587d41bf4f1d0ade650a00dadc10518d8958
 F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
 F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77397bd67d918db57d5ac545d6d963194806fdabcdaa8f822b6b09e4cfe8b715
-R ee4381fcf8913d6297e7cb466e0d9225
-U dan
-Z 34708df4029e1ab6d72f50ff836e4341
+P 8afd6ca85724a69970181042d6aac53742ea2b76ded5966b2541c3afe1121fb9
+R a0d75f1fb250395135fba17ef3bc4dc0
+U drh
+Z 8fcf407f538f5f9f65ff8d90a37c91a0
 # Remove this line to create a well-formed Fossil manifest.

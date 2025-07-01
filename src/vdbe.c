@@ -8269,7 +8269,14 @@ case OP_VOpen: {             /* ncycle */
   const sqlite3_module *pModule;
 
   assert( p->bIsReader );
-  pCur = 0;
+  pCur = p->apCsr[pOp->p1];
+  if( pCur!=0
+   && ALWAYS( pCur->eCurType==CURTYPE_VTAB )
+   && ALWAYS( pCur->uc.pVCur->pVtab==pOp->p4.pVtab->pVtab )
+  ){
+    /* This opcode is a no-op if the cursor is already open */
+    break;
+  }
   pVCur = 0;
   pVtab = pOp->p4.pVtab->pVtab;
   if( pVtab==0 || NEVER(pVtab->pModule==0) ){
