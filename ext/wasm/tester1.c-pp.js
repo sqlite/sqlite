@@ -3345,7 +3345,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t("value_text_v2() and friends...", function(sqlite3){
       const db = new sqlite3.oo1.DB();
       db.exec(["create table t(a,b); insert into t(a,b) ",
-               "values(1,123),(2,null),(3,'hi world'),(4,X'232A')"]);
+               "values(1,123),(2,null),(3,'hi world'),(4,X'232A'),(5,'')"]);
       const P = wasm.pstack;
       const stack = P.pointer;
       let q;
@@ -3384,6 +3384,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         next(); cmp(null);
         next(); cmp('hi world');
         next(); cmp( '#*' );
+        next(); cmp( '' ); // empty strings are not null
         /* The following only applies when built with
            SQLITE_ENABLE_API_ARMOR: */
         T.assert( capi.SQLITE_MISUSE ==
@@ -3406,7 +3407,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t("value_blob_v2() and friends...", function(sqlite3){
       const db = new sqlite3.oo1.DB();
       db.exec(["create table t(a,b); insert into t(a,b) ",
-               "values(1,123),(2,null),(3,'hi'),(4,X'23002A')"]);
+               "values(1,123),(2,null),(3,'hi'),(4,X'23002A'),(5,'')"]);
       const P = wasm.pstack;
       const stack = P.pointer;
       let q;
@@ -3428,7 +3429,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const blob = wasm.peekPtr(ppOut);
           const len = wasm.peek32(pnOut);
           //log("blob=",wasm.cstrToJs(blob));
-          T.assert(len === byteList.length, "Lengths don't match");
+          T.assert(len === byteList.length, "Lengths don't match")
+          T.assert( len ? !!blob : !blob,
+                    "Expecting len=non-0/blob=non-null or len=0/blob=null. "+
+                    "Got len="+len+" blob=@"+blob );
           for( let i = 0; i < len; ++i ){
             T.assert( byteList[i] === wasm.peek8(blob+i),
                       "mismatch at offset "+i+": "+byteList[i]
@@ -3439,6 +3443,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         next(); cmp([]); // null
         next(); cmp([104,105]); // "hi"
         next(); cmp([0x23, 0, 0x2a]); // X'23002A'
+        next(); cmp([]); // empty blobs are null
+
         /* The following only applies when built with
            SQLITE_ENABLE_API_ARMOR: */
         T.assert( capi.SQLITE_MISUSE ==
@@ -3448,6 +3454,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         /* But a 0 pnOut is always okay. */
         T.assert( capi.SQLITE_OK ==
                   capi.sqlite3_value_blob_v2(sv, ppOut, 0) );
+
       }finally{
         if( q ) q.finalize();
         db.close();
