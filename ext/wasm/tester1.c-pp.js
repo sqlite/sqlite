@@ -3354,9 +3354,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         q = db.prepare("select a, b from t order by a");
         let [ppOut, pnOut, pType] = P.allocPtr(3);
         const clearPtrs = ()=>{
-          wasm.pokePtr(ppOut, 0);
-          wasm.poke32(pnOut, 0);
-          wasm.poke32(pType, 0);
+          wasm.pokePtr(ppOut, 0).poke32(pnOut, 0).poke32(pType, 0);
         };
         const next = ()=>{
           T.assert( q.step() );
@@ -3449,9 +3447,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         q = db.prepare("select a, b from t order by a");
         let [ppOut, pnOut, pType] = P.allocPtr(3);
         const clearPtrs = ()=>{
-          wasm.pokePtr(ppOut, 0);
-          wasm.poke32(pnOut, 0);
-          wasm.poke32(pType, 0);
+          wasm.pokePtr(ppOut, 0).poke32(pnOut, 0).poke32(pType, 0);
         };
 
         const next = ()=>{

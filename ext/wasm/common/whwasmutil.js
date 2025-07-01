@@ -10,7 +10,7 @@
 
   ***********************************************************************
 
-  The whwasmutil is developed in conjunction with the Jaccwabyt
+  whwasmutil.js is developed in conjunction with the Jaccwabyt
   project:
 
   https://fossil.wanderinghorse.net/r/jaccwabyt
@@ -40,7 +40,7 @@
    APIs such as its "FS" (virtual filesystem) API. Loading of such
    things still requires using Emscripten's glue, but the post-load
    utility APIs provided by this code are still usable as replacements
-   for their sub-optimally-documented Emscripten counterparts.
+   (not necessarily drop-in) for their Emscripten counterparts.
 
    Intended usage:
 
@@ -119,7 +119,7 @@
      - `memory`: a WebAssembly.Memory object representing the WASM
        memory. _Alternately_, the `memory` property can be set as
        `target.memory`, in particular if the WASM heap memory is
-       initialized in JS an _imported_ into WASM, as opposed to being
+       initialized in JS and _imported_ into WASM, as opposed to being
        initialized in WASM and exported to JS.
 
      - `__indirect_function_table`: the WebAssembly.Table object which
@@ -320,13 +320,13 @@ globalThis.WhWasmUtilInstaller = function(target){
      BigInt64Array/BigUint64Array, else it throws if passed 64 or one
      of those constructors.
 
-     Returns an integer-based TypedArray view of the WASM heap
-     memory buffer associated with the given block size. If passed
-     an integer as the first argument and unsigned is truthy then
-     the "U" (unsigned) variant of that view is returned, else the
-     signed variant is returned. If passed a TypedArray value, the
-     2nd argument is ignored. Note that Float32Array and
-     Float64Array views are not supported by this function.
+     Returns an integer-based TypedArray view of the WASM heap memory
+     buffer associated with the given block size. If passed an integer
+     as the first argument and unsigned is truthy then the "U"
+     (unsigned) variant of that view is returned, else the signed
+     variant is returned. If passed a TypedArray value, the 2nd
+     argument is ignored. Float32Array and Float64Array views are not
+     supported by this function.
 
      Note that growth of the heap will invalidate any references to
      this heap, so do not hold a reference longer than needed and do
@@ -342,8 +342,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.heapForSize = function(n,unsigned = true){
     let ctor;
-    const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
-          ? cache : heapWrappers();
+    const c = heapWrappers();
     switch(n){
         case Int8Array: return c.HEAP8; case Uint8Array: return c.HEAP8U;
         case Int16Array: return c.HEAP16; case Uint16Array: return c.HEAP16U;
@@ -407,7 +406,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      Supported letters:
 
      - `i` = int32
-     - `p` = int32 ("pointer")
+     - `p` = int32 ("pointer") unless configured for 64-bit pointers
      - `j` = int64
      - `f` = float32
      - `d` = float64
@@ -435,7 +434,7 @@ globalThis.WhWasmUtilInstaller = function(target){
       f._ = {
         // Map of signature letters to type IR values
         sigTypes: Object.assign(Object.create(null),{
-          i: 'i32', p: 'i32', P: 'i32', s: 'i32',
+          i: 'i32', p: ptrIR, P: ptrIR, s: ptrIR,
           j: 'i64', f: 'f32', d: 'f64'
         }),
         // Map of type IR values to WASM type code values
@@ -749,7 +748,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      method.
   */
   target.poke = function(ptr, value, type='i8'){
-    if (type.endsWith('*')) type = ptrIR;
+    if(type.endsWith('*')) type = ptrIR;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
     for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
