@@ -5291,13 +5291,13 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 **
 ** ^The sqlite3_column_text_v2() and sqlite3_column_blob_v2()
 ** interfaces deliver most of their output via their 3rd, 4th, and 5th
-** output-pointer arguments. The first is an output pointer to the
+** output-pointer arguments. The 3rd is an output pointer to the
 ** resulting memory (the same pointer which would be returned by their
-** non-v2 counterparts). The second is an integer pointer into which,
-** if it is not NULL, the length of the memory, in bytes, is
-** written. The 5th argument is an integer pointer which, if not NULL,
-** gets set to the [SQLITE_INTEGER | column's SQL type]. On success
-** these interfaces return 0. On error they do not modify any of their
+** non-v2 counterparts). The 4th is an integer pointer into which, if
+** it is not NULL, the length of the memory, in bytes, is written. The
+** 5th argument is an integer pointer which, if not NULL, gets set to
+** the [SQLITE_INTEGER | column's SQL type]. On success these
+** interfaces return 0. On error they do not modify any of their
 ** output pointers and return SQLITE_NOMEM on allocation error,
 ** SQLITE_MISUSE if either their first or third arguments are NULL,
 ** and SQLITE_RANGE if the given column index is out of range.
