@@ -3415,6 +3415,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         checkRc('SQLITE_OK', "column null pnOut",
                 capi.sqlite3_column_text_v2(q, 1, ppOut, 0, 0));
 
+        /* The MISUSE returns only apply because we build with
+           SQLITE_ENABLE_API_ARMOR. Without API_ARMOR, these result in
+           null pointer dereferences. */
         checkRc('SQLITE_MISUSE', "value null ppOut",
                 capi.sqlite3_value_text_v2(sv, 0, pnOut, 0));
         checkRc('SQLITE_MISUSE', "value null arg0",

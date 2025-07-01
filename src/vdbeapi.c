@@ -194,7 +194,9 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
 int sqlite3_value_blob_v2(sqlite3_value *pVal, const void **pOut,
                           int *pnOut, int *pType){
   Mem *p = (Mem*)pVal;
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( pVal==0 || pOut==0 ) return SQLITE_MISUSE_BKPT;
+#endif
   if( p->flags & (MEM_Blob|MEM_Str) ){
     if( ExpandBlob(p)!=SQLITE_OK ){
       assert( p->flags==MEM_Null && p->z==0 );
@@ -248,7 +250,9 @@ int sqlite3_value_text_v2(sqlite3_value *pVal,
                           const unsigned char **pOut,
                           int *pnOut, int *pType){
   int n = 0;
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( pVal==0 || pOut==0 ) return SQLITE_MISUSE_BKPT;
+#endif
   return sqlite3ValueTextV2(pVal, SQLITE_UTF8, (const void **)pOut,
                             pnOut ? pnOut : &n, pType);
 }
@@ -1380,7 +1384,9 @@ static int columnMemV2(sqlite3_stmt *pStmt, int iCol, int bBlob,
   int rc = 0;
   Vdbe * const pVm = (Vdbe*)pStmt;
 
+#ifdef SQLITE_ENABLE_API_ARMOR
   if( pVm==0 || pOut==0 ) return SQLITE_MISUSE_BKPT;
+#endif
   assert( pVm->db );
   sqlite3_mutex_enter(pVm->db->mutex);
   if( pVm->pResultRow!=0 && iCol<pVm->nResColumn && iCol>=0 ){

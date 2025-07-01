@@ -5298,9 +5298,9 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** 5th argument is an integer pointer which, if not NULL, gets set to
 ** the [SQLITE_INTEGER | column's SQL type]. On success these
 ** interfaces return 0. On error they do not modify any of their
-** output pointers and return SQLITE_NOMEM on allocation error,
-** SQLITE_MISUSE if either their first or third arguments are NULL,
-** and SQLITE_RANGE if the given column index is out of range.
+** output pointers and return SQLITE_NOMEM on allocation error and
+** SQLITE_RANGE if the given column index is out of range. Results are
+** undefined if either of their 1st or 3rd arguments are NULL.
 **
 ** If the SQL statement does not currently point to a valid row, or if the
 ** column index is out of range, the result is undefined.
