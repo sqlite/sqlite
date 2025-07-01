@@ -5259,10 +5259,12 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** <b>Summary:</b>
 ** <blockquote><table border=0 cellpadding=0 cellspacing=0>
 ** <tr><td><b>sqlite3_column_blob</b><td>&rarr;<td>BLOB result
+** <tr><td><b>sqlite3_column_blob_v2</b><td>&rarr;<td>BLOB result
 ** <tr><td><b>sqlite3_column_double</b><td>&rarr;<td>REAL result
 ** <tr><td><b>sqlite3_column_int</b><td>&rarr;<td>32-bit INTEGER result
 ** <tr><td><b>sqlite3_column_int64</b><td>&rarr;<td>64-bit INTEGER result
 ** <tr><td><b>sqlite3_column_text</b><td>&rarr;<td>UTF-8 TEXT result
+** <tr><td><b>sqlite3_column_text_v2</b><td>&rarr;<td>UTF-8 TEXT result
 ** <tr><td><b>sqlite3_column_text16</b><td>&rarr;<td>UTF-16 TEXT result
 ** <tr><td><b>sqlite3_column_value</b><td>&rarr;<td>The result as an
 ** [sqlite3_value|unprotected sqlite3_value] object.
@@ -5287,6 +5289,19 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** ^The number of columns in the result can be determined using
 ** [sqlite3_column_count()].
 **
+** ^The sqlite3_column_text_v2() and sqlite3_column_blob_v2()
+** interfaces deliver most of their output via their 3rd, 4th, and 5th
+** output-pointer arguments. The first is an output pointer to the
+** resulting memory (the same pointer which would be returned by their
+** non-v2 counterparts). The second is an integer pointer into which,
+** if it is not NULL, the length of the memory, in bytes, is
+** written. The 5th argument is an integer pointer which, if not NULL,
+** gets set to the [SQLITE_INTEGER | column's SQL type]. On success
+** these interfaces return 0. On error they do not modify any of their
+** output pointers and return SQLITE_NOMEM on allocation error,
+** SQLITE_MISUSE if either their first or third arguments are NULL,
+** and SQLITE_RANGE if the given column index is out of range.
+**
 ** If the SQL statement does not currently point to a valid row, or if the
 ** column index is out of range, the result is undefined.
 ** These routines may only be called when the most recent call to
@@ -5299,11 +5314,16 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** are called from a different thread while any of these routines
 ** are pending, then the results are undefined.
 **
-** The first six interfaces (_blob, _double, _int, _int64, _text, and _text16)
+** The interfaces (_blob, _double, _int, _int64, _text, and _text16)
 ** each return the value of a result column in a specific data format.  If
 ** the result column is not initially in the requested format (for example,
 ** if the query returns an integer but the sqlite3_column_text() interface
 ** is used to extract the value) then an automatic type conversion is performed.
+**
+** ^The interfaces (_text_v2, _blob_v2) interally function identically
+** to their non-_v2 counterparts but have different interfaces. Their
+** internal behaviors are the same for purposes of the following
+** documentation except where specifically noted otherwise.
 **
 ** ^The sqlite3_column_type() routine returns the
 ** [SQLITE_INTEGER | datatype code] for the initial data type
@@ -5312,7 +5332,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** The return value of sqlite3_column_type() can be used to decide which
 ** of the first six interface should be used to extract the column value.
 ** The value returned by sqlite3_column_type() is only meaningful if no
-** automatic type conversions have occurred for the value in question. 
+** automatic type conversions have occurred for the value in question.
 ** After a type conversion, the result of calling sqlite3_column_type()
 ** is undefined, though harmless.  Future
 ** versions of SQLite may change the behavior of sqlite3_column_type()
@@ -5437,6 +5457,10 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** sqlite3_column_bytes16(), and do not mix calls to sqlite3_column_text16()
 ** with calls to sqlite3_column_bytes().
 **
+** The sqlite3_column_text_v2() and sqlite3_column_blob_v2()
+** interfaces optionally return the byte length and column data type
+** via output pointers.
+**
 ** ^The pointers returned are valid until a type conversion occurs as
 ** described above, or until [sqlite3_step()] or [sqlite3_reset()] or
 ** [sqlite3_finalize()] is called.  ^The memory space used to hold strings
@@ -5451,7 +5475,9 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 **
 ** <ul>
 ** <li> sqlite3_column_blob()
+** <li> sqlite3_column_blob_v2()
 ** <li> sqlite3_column_text()
+** <li> sqlite3_column_text_v2()
 ** <li> sqlite3_column_text16()
 ** <li> sqlite3_column_bytes()
 ** <li> sqlite3_column_bytes16()
@@ -5463,6 +5489,10 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** by invoking the [sqlite3_errcode()] immediately after the suspect
 ** return value is obtained and before any
 ** other SQLite interface is called on the same [database connection].
+**
+** The previous paragraph does not apply to the text_v2 and blob_v2
+** interfaces, which return SQLITE_NOMEM to the client for
+** out-of-memory conditions.
 */
 const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
 int sqlite3_column_blob_v2(sqlite3_stmt*, int iCol, const void **, int*, int*);
