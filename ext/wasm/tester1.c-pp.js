@@ -3380,19 +3380,20 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                      +str+"] expected ["+expect+"]");
         };
         const cmp2 = (expect)=>{
+          next();
           cmp(expect);
           wasm.pokePtr(ppOut, 0);
           wasm.poke32(pnOut, 0);
           const rc = capi.sqlite3_column_text_v2(q, 1, ppOut, pnOut);
           T.assert( 0==rc, "expecting column_text_v2() rc 0 but got "+rc );
-          cmp(expecting);
+          cmp(expect);
         };
 
-        next(); cmp('123');
-        next(); cmp(null);
-        next(); cmp('hi world');
-        next(); cmp( '#*' );
-        next(); cmp( '' ); // empty strings are not null
+        cmp2('123');
+        cmp2(null);
+        cmp2('hi world');
+        cmp2( '#*' );
+        cmp2( '' ); // empty strings are not null
 
 
         const checkRc = (name, descr, rc)=>{
@@ -3468,6 +3469,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           }
         };
         const cmp2 = (byteList)=>{
+          next();
           cmp(byteList);
           wasm.pokePtr(ppOut, 0);
           wasm.poke32(pnOut, 0);
@@ -3476,11 +3478,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           cmp(byteList);
         };
 
-        next(); cmp2([49,50,51]); // 123
-        next(); cmp2([]); // null
-        next(); cmp2([104,105]); // "hi"
-        next(); cmp2([0x23, 0, 0x2a]); // X'23002A'
-        next(); cmp2([]); // empty blobs are null
+        cmp2([49,50,51]); // 123
+        cmp2([]); // null
+        cmp2([104,105]); // "hi"
+        cmp2([0x23, 0, 0x2a]); // X'23002A'
+        cmp2([]); // empty blobs are null
         /** Tests which cover the same code paths for both text_v2 and
             blob_v2 are in the previous test group. */
 

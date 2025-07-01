@@ -1,5 +1,5 @@
-C Initial\simplementations\sof\ssqlite3_column_text_v2(),\ssqlite3_column_blob_v2(),\sand\stheir\sJS/WASM\sbindings/tests.
-D 2025-07-01T13:01:07.058
+C Simplify\sthe\scolumn_text/blob_v2()\sJS\stests\sa\sbit\sand\scorrect\sthe\stext_v2()\stests\sto\scall\sinto\sboth\sthe\scolumn\sand\svalue\svariants.
+D 2025-07-01T14:44:12.721
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -698,7 +698,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
-F ext/wasm/tester1.c-pp.js 06f1e45f57e1edf6ecd72db061e2753604e542e8fdce959aa292336ae1f5cf9d
+F ext/wasm/tester1.c-pp.js 24ae5f3220ea4cac492e5e9ca28984b85a40560d20e313cdd5a037f9d53e72c7
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2e7cf00d161e151d49113928fd3ef05069ecbe0635eddd844e9220bd015fe6f9
-R 10973b3c2e461d7f6b754a70411e9121
+P 1d065231aba8080ffd024497ad858eed22ece45fe82a749494a3efaa10f91389
+R b36585780d88d89f92de02fb68417b16
 U stephan
-Z 8ed975b3c327a80cb9fefe919e115ce3
+Z a2d72b2958071e327f891d9e6a52fba4
 # Remove this line to create a well-formed Fossil manifest.
