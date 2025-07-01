@@ -3379,22 +3379,50 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert( str===expect, "String mismatch: got ["
                      +str+"] expected ["+expect+"]");
         };
+        const cmp2 = (expect)=>{
+          cmp(expect);
+          wasm.pokePtr(ppOut, 0);
+          wasm.poke32(pnOut, 0);
+          const rc = capi.sqlite3_column_text_v2(q, 1, ppOut, pnOut);
+          T.assert( 0==rc, "expecting column_text_v2() rc 0 but got "+rc );
+          cmp(expecting);
+        };
 
         next(); cmp('123');
         next(); cmp(null);
         next(); cmp('hi world');
         next(); cmp( '#*' );
         next(); cmp( '' ); // empty strings are not null
-        /* The following only applies when built with
-           SQLITE_ENABLE_API_ARMOR: */
-        T.assert( capi.SQLITE_MISUSE ==
-                  capi.sqlite3_value_text_v2(sv, 0, pnOut) )
-          .assert( capi.SQLITE_MISUSE ==
-                   capi.sqlite3_value_text_v2(0, ppOut, pnOut) )
-        ;
+
+
+        const checkRc = (name, descr, rc)=>{
+          T.assert( capi[name] === rc,
+                    descr+": expecting "+name+"("+
+                    capi[name]+") but got "+rc);
+        };
+
+        /** The following tests cover the same code paths
+            for both text_v2 and blob_v2, so are elided from
+            the blob_v2 checks in the next test group. */
+
+        // This does not set a persistent error flag on q:
+        checkRc('SQLITE_RANGE', "column_text_v2() bad index",
+                capi.sqlite3_column_text_v2(q, 11, ppOut, pnOut) );
+        checkRc('SQLITE_OK', "column_text_v2() valid index",
+                capi.sqlite3_column_text_v2(q, 1, ppOut, 0));
+
+        checkRc('SQLITE_OK', "column null pnOut",
+                capi.sqlite3_column_text_v2(q, 1, ppOut, 0));
+
+        checkRc('SQLITE_MISUSE', "value null ppOut",
+                capi.sqlite3_value_text_v2(sv, 0, pnOut));
+        checkRc('SQLITE_MISUSE', "value null arg0",
+                capi.sqlite3_value_text_v2(0, ppOut, pnOut));
+        checkRc('SQLITE_MISUSE', "column null ppOut",
+                capi.sqlite3_column_text_v2(q, 1, 0, pnOut));
         /* But a 0 pnOut is always okay. */
-        T.assert( capi.SQLITE_OK ==
-                  capi.sqlite3_value_text_v2(sv, ppOut, 0) );
+        checkRc('SQLITE_OK', "value null pnOut",
+                capi.sqlite3_value_text_v2(sv, ppOut, 0));
 
       }finally{
         if( q ) q.finalize();
@@ -3422,10 +3450,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           wasm.pokePtr(ppOut, 0);
           wasm.poke32(pnOut, 0);
           rc = capi.sqlite3_value_blob_v2(sv, ppOut, pnOut);
-          T.assert( 0===rc );
+          T.assert( 0==rc, "expecting value_blob_v2() rc 0 but got "+rc );
           return sv;
         };
-        const cmp = function(byteList){
+        const cmp = (byteList)=>{
           const blob = wasm.peekPtr(ppOut);
           const len = wasm.peek32(pnOut);
           //log("blob=",wasm.cstrToJs(blob));
@@ -3439,21 +3467,22 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                       +"!=="+wasm.peek8(blob+i) );
           }
         };
-        next(); cmp([49,50,51]); // 123
-        next(); cmp([]); // null
-        next(); cmp([104,105]); // "hi"
-        next(); cmp([0x23, 0, 0x2a]); // X'23002A'
-        next(); cmp([]); // empty blobs are null
+        const cmp2 = (byteList)=>{
+          cmp(byteList);
+          wasm.pokePtr(ppOut, 0);
+          wasm.poke32(pnOut, 0);
+          const rc = capi.sqlite3_column_blob_v2(q, 1, ppOut, pnOut);
+          T.assert( 0==rc, "expecting column_blob_v2() rc 0 but got "+rc );
+          cmp(byteList);
+        };
 
-        /* The following only applies when built with
-           SQLITE_ENABLE_API_ARMOR: */
-        T.assert( capi.SQLITE_MISUSE ==
-                  capi.sqlite3_value_blob_v2(sv, 0, pnOut) )
-          .assert( capi.SQLITE_MISUSE ==
-                   capi.sqlite3_value_blob_v2(0, ppOut, pnOut) );
-        /* But a 0 pnOut is always okay. */
-        T.assert( capi.SQLITE_OK ==
-                  capi.sqlite3_value_blob_v2(sv, ppOut, 0) );
+        next(); cmp2([49,50,51]); // 123
+        next(); cmp2([]); // null
+        next(); cmp2([104,105]); // "hi"
+        next(); cmp2([0x23, 0, 0x2a]); // X'23002A'
+        next(); cmp2([]); // empty blobs are null
+        /** Tests which cover the same code paths for both text_v2 and
+            blob_v2 are in the previous test group. */
 
       }finally{
         if( q ) q.finalize();

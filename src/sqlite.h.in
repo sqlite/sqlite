@@ -5465,10 +5465,12 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** other SQLite interface is called on the same [database connection].
 */
 const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
+int sqlite3_column_blob_v2(sqlite3_stmt*, int iCol, const void **, int*);
 double sqlite3_column_double(sqlite3_stmt*, int iCol);
 int sqlite3_column_int(sqlite3_stmt*, int iCol);
 sqlite3_int64 sqlite3_column_int64(sqlite3_stmt*, int iCol);
 const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
+int sqlite3_column_text_v2(sqlite3_stmt*, int iCol, const unsigned char **, int*);
 const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
 sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
 int sqlite3_column_bytes(sqlite3_stmt*, int iCol);

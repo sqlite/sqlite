@@ -174,7 +174,6 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
   return rc;
 }
 
-
 /**************************** sqlite3_value_  *******************************
 ** The following routines extract information from a Mem or sqlite3_value
 ** structure.
@@ -1337,7 +1336,7 @@ static const Mem *columnNullValue(void){
 ** Check to see if column iCol of the given statement is valid.  If
 ** it is, return a pointer to the Mem for the value of that column.
 ** If iCol is not valid, return a pointer to a Mem which has a value
-** of NULL.
+** of NULL and set the db's eror code to SQLITE_RANGE.
 */
 static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   Vdbe *pVm;
@@ -1357,10 +1356,59 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
 }
 
 /*
+** A variant of columnMem(pStmt,iCol) with the following differences:
+**
+** 1. On success it returns 0 and stores a pointer to the underlying
+**    memory in *pOut and its length to *pnOut (if not NULL). On error
+**    it returns non-0 and does not modifiy *pOut or *pnOut.
+**
+** 2. It does not record an out-of-bounds iCol as a persistent
+**    SQLITE_RANGE error.
+**
+** A NULL pStmt or pOut results in SQLITE_MISUSE but a NULL pnOut is
+** legal.
+**
+** If bBlob is true, sqlite3_value_blob_v2() is used for the
+** extraction, else sqlite3_value_text_v2() is used.
+**
+** This is expected to only be called by sqlite3_column_blob_v2(),
+** sqlite3_column_text_v2(), or APIs with similar semantics.
+**
+** Design notes: per /chat discussion:
+**
+** sqlite3_column_text/blob_v2() can report SQLITE_RANGE and
+** SQLITE_MISUSE, but must not perist those errors and must not take
+** prior error state into account (e.g. do not propagate a
+** SQLITE_RANGE error across calls). They unavoidably persist
+** SQLITE_NOMEM errors via deeper APIs. This routine specifically does
+** not call columnMallocFailure() to avoid calling sqlite3ApiExit().
+*/
+static int columnMemV2(sqlite3_stmt *pStmt, int iCol, int bBlob,
+                       const void **pOut, int * pnOut){
+  int rc = 0;
+  Vdbe * const pVm = (Vdbe*)pStmt;
+
+  if( pVm==0 || pOut==0 ) return SQLITE_MISUSE_BKPT;
+  assert( pVm->db );
+  sqlite3_mutex_enter(pVm->db->mutex);
+  if( pVm->pResultRow!=0 && iCol<pVm->nResColumn && iCol>=0 ){
+    Mem * const pMem = &pVm->pResultRow[iCol];
+    rc = bBlob
+      ? sqlite3_value_blob_v2(pMem, pOut, pnOut)
+      : sqlite3_value_text_v2(pMem, (const unsigned char **)pOut,
+                              pnOut);
+  }else{
+    rc = pVm->pResultRow==0 ? SQLITE_MISUSE_BKPT : SQLITE_RANGE;
+  }
+  sqlite3_mutex_leave(pVm->db->mutex);
+  return rc;
+}
+
+/*
 ** This function is called after invoking an sqlite3_value_XXX function on a
 ** column value (i.e. a value returned by evaluating an SQL expression in the
 ** select list of a SELECT statement) that may cause a malloc() failure. If
-** malloc() has failed, the threads mallocFailed flag is cleared and the result
+** malloc() has failed, the thread's mallocFailed flag is cleared and the result
 ** code of statement pStmt set to SQLITE_NOMEM.
 **
 ** Specifically, this is called from within:
@@ -1404,6 +1452,10 @@ const void *sqlite3_column_blob(sqlite3_stmt *pStmt, int i){
   columnMallocFailure(pStmt);
   return val;
 }
+int sqlite3_column_blob_v2(sqlite3_stmt *pStmt, int iCol,
+                           const void **pOut, int *pnOut){
+  return columnMemV2(pStmt, iCol, 1, pOut, pnOut);
+}
 int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
   int val = sqlite3_value_bytes( columnMem(pStmt,i) );
   columnMallocFailure(pStmt);
@@ -1433,6 +1485,11 @@ const unsigned char *sqlite3_column_text(sqlite3_stmt *pStmt, int i){
   const unsigned char *val = sqlite3_value_text( columnMem(pStmt,i) );
   columnMallocFailure(pStmt);
   return val;
+}
+int sqlite3_column_text_v2(sqlite3_stmt *pStmt, int iCol,
+                           const unsigned char **pOut,
+                           int *pnOut){
+  return columnMemV2(pStmt, iCol, 0, (const void **)pOut, pnOut);
 }
 sqlite3_value *sqlite3_column_value(sqlite3_stmt *pStmt, int i){
   Mem *pOut = columnMem(pStmt, i);

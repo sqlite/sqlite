@@ -113,6 +113,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],
     ["sqlite3_collation_needed", "int", "sqlite3*", "*", "*"/*=>v(ppis)*/],
     ["sqlite3_column_blob","*", "sqlite3_stmt*", "int"],
+    ["sqlite3_column_blob_v2", "int", "sqlite3_stmt*", "int", "**", "*"],
     ["sqlite3_column_bytes","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_count", "int", "sqlite3_stmt*"],
     ["sqlite3_column_decltype", "string", "sqlite3_stmt*", "int"],
@@ -120,6 +121,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_column_int","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],
     ["sqlite3_column_text","string", "sqlite3_stmt*", "int"],
+    ["sqlite3_column_text_v2", "int", "sqlite3_stmt*", "int", "**", "*"],
     ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_value","sqlite3_value*", "sqlite3_stmt*", "int"],
     ["sqlite3_commit_hook", "void*", [
