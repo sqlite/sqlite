@@ -1,5 +1,5 @@
-C Have\ssqlite3_value/column_text/blob_v2()\sreturn\sMISUSE\sfor\sa\sNULL\sinput\sobject\sor\soutput\starget\sonly\sif\sSQLITE_ENABLE_API_ARMOR\sis\sin\seffect,\sfor\sconsistency\swith\stheir\ssibling\sAPIs.
-D 2025-07-01T21:06:58.257
+C Remove\san\s#if\s0\sblock.
+D 2025-07-01T21:33:26.350
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -858,7 +858,7 @@ F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
 F src/vdbeapi.c 3dac6a9561aec2c02f2b10493f7c9a940b8a3989aaf0739daf8881efbdb07028
 F src/vdbeaux.c fd2c6b19a8892c31a2adc719f156f313560f9cc490cdbd04ff08fdae5d7aedb7
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
-F src/vdbemem.c 08633d0ac68585c83176bc9f336424d9e97fcb50827f71b3bce9746ad6950a56
+F src/vdbemem.c 96d0b3b38e7dad62e8a177ab4c4d175972b609a21d1f00a5c207339e73d1390f
 F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecbe
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c8edbfc7e8b57e7b1c9a4a5cdfdc00cd7216b6ccc36ff983f85ad94865f6288f
-R 138eac1c14c32444a14b6bb0beaf00e1
+P 6290a8eaddd97acd02ee417e28c2815e5f3af67acdfc1d97a2cd88b0aee823c0
+R a2e5a2d40c6748f7abef083fde88b1f9
 U stephan
-Z 97018cf14ef415b3e72b4bbea656140c
+Z f95681e9781d4a8b2c014ed9bd2d271e
 # Remove this line to create a well-formed Fossil manifest.

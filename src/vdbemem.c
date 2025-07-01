@@ -1403,11 +1403,6 @@ static SQLITE_NOINLINE int valueToTextV2(sqlite3_value* pVal, u8 enc,
   }
   assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
               || pVal->db->mallocFailed );
-#if 0
-  if( pVal->db && pVal->db->mallocFailed ){
-    return SQLITE_NOMEM_BKPT;
-  }
-#endif
   if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
     assert( sqlite3VdbeMemValidStrRep(pVal) );
     *pOut = pVal->z;
