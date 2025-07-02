@@ -3036,7 +3036,9 @@ static int multiSelect(
         int priorOp;     /* The SRT_ operation to apply to prior selects */
         Expr *pLimit;    /* Saved values of p->nLimit  */
         int addr;
+        int emptyBypass = 0;   /* IfEmpty opcode to bypass RHS */
         SelectDest uniondest;
+
  
         testcase( p->op==TK_EXCEPT );
         testcase( p->op==TK_UNION );
@@ -3075,6 +3077,8 @@ static int multiSelect(
         */
         if( p->op==TK_EXCEPT ){
           op = SRT_Except;
+          emptyBypass = sqlite3VdbeAddOp1(v, OP_IfEmpty, unionTab);
+          VdbeCoverage(v);
         }else{
           assert( p->op==TK_UNION );
           op = SRT_Union;
@@ -3117,6 +3121,7 @@ static int multiSelect(
           sqlite3VdbeResolveLabel(v, iCont);
           sqlite3VdbeAddOp2(v, OP_Next, unionTab, iStart); VdbeCoverage(v);
           sqlite3VdbeResolveLabel(v, iBreak);
+          if( emptyBypass ) sqlite3VdbeJumpHere(v, emptyBypass);
           sqlite3VdbeAddOp2(v, OP_Close, unionTab, 0);
         }
         break;
@@ -3128,6 +3133,7 @@ static int multiSelect(
         int addr;
         SelectDest intersectdest;
         int r1;
+        int emptyBypass;
  
         /* INTERSECT is different from the others since it requires
         ** two temporary tables.  Hence it has its own case.  Begin
@@ -3151,6 +3157,7 @@ static int multiSelect(
         if( rc ){
           goto multi_select_end;
         }
+        emptyBypass = sqlite3VdbeAddOp1(v, OP_IfEmpty, tab1); VdbeCoverage(v);
  
         /* Code the current SELECT into temporary table "tab2"
         */
@@ -3194,6 +3201,7 @@ static int multiSelect(
         sqlite3VdbeAddOp2(v, OP_Next, tab1, iStart); VdbeCoverage(v);
         sqlite3VdbeResolveLabel(v, iBreak);
         sqlite3VdbeAddOp2(v, OP_Close, tab2, 0);
+        sqlite3VdbeJumpHere(v, emptyBypass);
         sqlite3VdbeAddOp2(v, OP_Close, tab1, 0);
         break;
       }
