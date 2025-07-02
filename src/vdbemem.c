@@ -1394,10 +1394,15 @@ static SQLITE_NOINLINE int valueToTextV2(sqlite3_value* pVal, u8 enc,
         return SQLITE_NOMEM_BKPT;
       }
     }
-    sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
+    if ( sqlite3VdbeMemNulTerminate(pVal) ){ /* IMP: R-31275-44060 */
+      return SQLITE_NOMEM_BKPT;
+    }
   }else{
     sqlite3VdbeMemStringify(pVal, enc, 0);
     assert( 0==(1&SQLITE_PTR_TO_INT(pVal->z)) );
+  }
+  if( pVal->db && pVal->db->mallocFailed ){
+    return SQLITE_NOMEM_BKPT;
   }
   assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
               || pVal->db->mallocFailed );
@@ -1407,9 +1412,7 @@ static SQLITE_NOINLINE int valueToTextV2(sqlite3_value* pVal, u8 enc,
     *pnOut = pVal->n;
     return 0;
   }
-  return (pVal->db && pVal->db->mallocFailed)
-    ? SQLITE_NOMEM_BKPT
-    : SQLITE_ERROR;
+  return SQLITE_ERROR;
 }
 
 /* This function is only available internally, it is not part of the
