@@ -7139,6 +7139,7 @@ WhereInfo *sqlite3WhereBegin(
        && pLevel->addrHalt==pWInfo->a[0].addrHalt
       ){
         sqlite3VdbeAddOp2(v, OP_IfEmpty, pTabItem->iCursor, pLevel->addrHalt);
+        VdbeCoverage(v);
       }
     }else{
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);

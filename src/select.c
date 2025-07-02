@@ -3189,7 +3189,7 @@ static int multiSelect(
         iBreak = sqlite3VdbeMakeLabel(pParse);
         iCont = sqlite3VdbeMakeLabel(pParse);
         computeLimitRegisters(pParse, p, iBreak);
-        sqlite3VdbeAddOp2(v, OP_Rewind, tab1, iBreak); VdbeCoverage(v);
+        sqlite3VdbeAddOp1(v, OP_Rewind, tab1);
         r1 = sqlite3GetTempReg(pParse);
         iStart = sqlite3VdbeAddOp2(v, OP_RowData, tab1, r1);
         sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0);
