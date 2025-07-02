@@ -1,5 +1,5 @@
-C Add\stest1.c\stcl\sbindings\sfor\ssqlite3_column_text/blob_v2().\sReplace,\sessentially\srandomly,\ssome\sof\sthe\sv1\sAPI\scalls\sin\scapi2.test\sand\scapi2.test\swith\sthe\sv2\scalls\sto\sensure\sidentical\sresults.\sAdd\sa\scouple\snew\stests\scomparing\sresults\sbetween\sv1\sand\sv2.
-D 2025-07-02T07:52:30.801
+C Per\s/chat\sand\sforum\sdiscussions:\s(A)\sRemove\sthe\svalue\stype\soutput\spointer\sfrom\stext/blob_v2().\s(B)\sTeach\sblob_v2()\sto\sreturn\san\sopaque\snon-NULL\spointer\sfor\slength-0\sblobs.
+D 2025-07-02T13:24:50.303
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -640,7 +640,7 @@ F ext/wasm/api/post-js-footer.js 365405929f41ca0e6d389ed8a8da3f3c93e11d3ef43a90a
 F ext/wasm/api/post-js-header.js 53740d824e5d9027eb1e6fd59e216abbd2136740ce260ea5f0699ff2acb0a701
 F ext/wasm/api/pre-js.c-pp.js a614a2c82b12c4d96d8e3ba77330329efc53c4d56a8a7e60ade900f341866cfb
 F ext/wasm/api/sqlite3-api-cleanup.js 3ac1786e461ada63033143be8c3b00b26b939540661f3e839515bb92f2e35359
-F ext/wasm/api/sqlite3-api-glue.c-pp.js 2df4571b131726b1d9333d2ec8c8ce05d5b0872dad5ed08969791107d3b1616f
+F ext/wasm/api/sqlite3-api-glue.c-pp.js 0394eda4f8dc499d6fb77743a5d307d786991e599a552bdd5bc9e4b92e6f4ab1
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js c68d6da0088c2527156fca9163a721abe08e7bd077b15404fd8d292f4612adc1
 F ext/wasm/api/sqlite3-api-prologue.js 8708570165f5b4bce9a78ccd91bc9ddf8735970ac1c4d659e36c9a7d9a644bb4
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js f646a65257973b8c4481f8a6a216370b85644f23e64b126e7ae113570587c0ab
@@ -698,7 +698,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
-F ext/wasm/tester1.c-pp.js 43e1971f905bbb1bf2a13a80fbde41e579d051d2e008cfff1d0208e8aa48442c
+F ext/wasm/tester1.c-pp.js 485d73c57836684c0f447c44182ef36a1bb3f78b8dd65eae3fe95823597a1376
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -787,16 +787,16 @@ F src/resolve.c d40fe18d7c2fd0339f5846ffcf7d6809866e380acdf14c76fb2af87e9fe13f64
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 882d739e0d5e6c7a8b46a3cca3ada37fe1a56301f1360d6b141312c666bbe482
 F src/shell.c.in 4f14a1f5196b6006abc8e73cc8fd6c1a62cf940396f8ba909d6711f35f074bb6
-F src/sqlite.h.in e3301b5f2e2d9b50160c9f185a4dfd7c5e44abb754e8bd837a96a6678b5f91be
+F src/sqlite.h.in 48eb0bbedff52af04d86b74127bb6d7939e460f3ddbc9040a7482848d2057f65
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
-F src/sqliteInt.h 21c089759415895c86220d35c22cd17fdc6ca27653e1ec0c744d1e6808d0545a
+F src/sqliteInt.h 461d39b85ee97d8f1496388f5d6884e8a240cabaea26b915ac7fd59e7a2ef727
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c bcd021fadc242b29a5e3e5e552231ca87d1ccb87c282d3a4a2c6a4203eeed8f8
+F src/test1.c 73efbbb7dfbf4c8753064dab1ad14c4587d7fd58f6a0f77160dfc9663967df78
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -855,10 +855,10 @@ F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
 F src/vdbe.c 7e29623ca387880b8893e69135a0ff240c3dcaf0710f7a46a5f95b062cf93883
 F src/vdbe.h 93761ed7c6b8bc19524912fd9b9b587d41bf4f1d0ade650a00dadc10518d8958
 F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
-F src/vdbeapi.c 3dac6a9561aec2c02f2b10493f7c9a940b8a3989aaf0739daf8881efbdb07028
+F src/vdbeapi.c 8e147b96e11a72079788ac01080812fb272cdb10e58e2c123099ddda99f8b818
 F src/vdbeaux.c fd2c6b19a8892c31a2adc719f156f313560f9cc490cdbd04ff08fdae5d7aedb7
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
-F src/vdbemem.c 96d0b3b38e7dad62e8a177ab4c4d175972b609a21d1f00a5c207339e73d1390f
+F src/vdbemem.c 9f35b9363563c9f1816e776bc5f5571785116e86d8320d62d2ecb6165b90199a
 F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecbe
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0363c430b5ab8eb8cec526933da2b32263b1959c8a2210bb0e0b1529e72c6f63
-R 5cf8215b0655d83f9ed207972481e36d
+P a3ca0adbaf7da8d79341fa88919b11d49a040e5125c67962b93a98ea43f539c9
+R 7dd1e4528a9739c7b931a9c56ffcf3fd
 U stephan
-Z e957b7302d7d68762f67142fbbafbcac
+Z 82614930fab8dbf419d006977ce34bbd
 # Remove this line to create a well-formed Fossil manifest.

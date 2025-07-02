@@ -191,9 +191,10 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
     return sqlite3_value_text(pVal);
   }
 }
-int sqlite3_value_blob_v2(sqlite3_value *pVal, const void **pOut,
-                          int *pnOut, int *pType){
+int sqlite3_value_blob_v2(sqlite3_value *pVal, const void **pOut, int *pnOut){
+  static const unsigned char aZeroLength[] = {0,0};
   Mem *p = (Mem*)pVal;
+
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( pVal==0 || pOut==0 ) return SQLITE_MISUSE_BKPT;
 #endif
@@ -203,13 +204,11 @@ int sqlite3_value_blob_v2(sqlite3_value *pVal, const void **pOut,
       return SQLITE_NOMEM_BKPT;
     }
     p->flags |= MEM_Blob;
-    *pOut = p->n ? p->z : 0;
+    *pOut = p->n ? p->z : (const void *)&aZeroLength[0];
     if( pnOut ) *pnOut = p->n;
-    if( pType ) *pType = sqlite3_value_type(pVal);
     return 0;
   }
-  return sqlite3_value_text_v2(pVal, (const unsigned char **)pOut,
-                               pnOut, pType);
+  return sqlite3_value_text_v2(pVal, (const unsigned char **)pOut, pnOut);
 }
 int sqlite3_value_bytes(sqlite3_value *pVal){
   return sqlite3ValueBytes(pVal, SQLITE_UTF8);
@@ -246,15 +245,14 @@ void *sqlite3_value_pointer(sqlite3_value *pVal, const char *zPType){
 const unsigned char *sqlite3_value_text(sqlite3_value *pVal){
   return (const unsigned char *)sqlite3ValueText(pVal, SQLITE_UTF8);
 }
-int sqlite3_value_text_v2(sqlite3_value *pVal,
-                          const unsigned char **pOut,
-                          int *pnOut, int *pType){
+int sqlite3_value_text_v2(sqlite3_value *pVal, const unsigned char **pOut,
+                          int *pnOut){
   int n = 0;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( pVal==0 || pOut==0 ) return SQLITE_MISUSE_BKPT;
 #endif
   return sqlite3ValueTextV2(pVal, SQLITE_UTF8, (const void **)pOut,
-                            pnOut ? pnOut : &n, pType);
+                            pnOut ? pnOut : &n);
 }
 #ifndef SQLITE_OMIT_UTF16
 const void *sqlite3_value_text16(sqlite3_value* pVal){
@@ -1370,7 +1368,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
 ** This is expected to only be called by sqlite3_column_blob_v2(),
 ** sqlite3_column_text_v2(), or APIs with similar semantics.
 **
-** Design notes: per /chat discussion:
+** Design notes based on /chat discussions:
 **
 ** sqlite3_column_text/blob_v2() can report SQLITE_RANGE and
 ** SQLITE_MISUSE, but must not perist those errors and must not take
@@ -1380,7 +1378,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
 ** not call columnMallocFailure() to avoid calling sqlite3ApiExit().
 */
 static int columnMemV2(sqlite3_stmt *pStmt, int iCol, int bBlob,
-                       const void **pOut, int * pnOut, int *pType){
+                       const void **pOut, int * pnOut){
   int rc = 0;
   Vdbe * const pVm = (Vdbe*)pStmt;
 
@@ -1392,9 +1390,9 @@ static int columnMemV2(sqlite3_stmt *pStmt, int iCol, int bBlob,
   if( pVm->pResultRow!=0 && iCol<pVm->nResColumn && iCol>=0 ){
     Mem * const pMem = &pVm->pResultRow[iCol];
     rc = bBlob
-      ? sqlite3_value_blob_v2(pMem, pOut, pnOut, pType)
+      ? sqlite3_value_blob_v2(pMem, pOut, pnOut)
       : sqlite3_value_text_v2(pMem, (const unsigned char **)pOut,
-                              pnOut, pType);
+                              pnOut);
   }else{
     rc = pVm->pResultRow==0 ? SQLITE_MISUSE_BKPT : SQLITE_RANGE;
   }
@@ -1451,8 +1449,8 @@ const void *sqlite3_column_blob(sqlite3_stmt *pStmt, int i){
   return val;
 }
 int sqlite3_column_blob_v2(sqlite3_stmt *pStmt, int iCol,
-                           const void **pOut, int *pnOut, int *pType){
-  return columnMemV2(pStmt, iCol, 1, pOut, pnOut, pType);
+                           const void **pOut, int *pnOut){
+  return columnMemV2(pStmt, iCol, 1, pOut, pnOut);
 }
 int sqlite3_column_bytes(sqlite3_stmt *pStmt, int i){
   int val = sqlite3_value_bytes( columnMem(pStmt,i) );
@@ -1485,9 +1483,8 @@ const unsigned char *sqlite3_column_text(sqlite3_stmt *pStmt, int i){
   return val;
 }
 int sqlite3_column_text_v2(sqlite3_stmt *pStmt, int iCol,
-                           const unsigned char **pOut, int *pnOut,
-                           int *pType){
-  return columnMemV2(pStmt, iCol, 0, (const void **)pOut, pnOut, pType);
+                           const unsigned char **pOut, int *pnOut){
+  return columnMemV2(pStmt, iCol, 0, (const void **)pOut, pnOut);
 }
 sqlite3_value *sqlite3_column_value(sqlite3_stmt *pStmt, int i){
   Mem *pOut = columnMem(pStmt, i);

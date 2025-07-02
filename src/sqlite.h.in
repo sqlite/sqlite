@@ -5289,19 +5289,6 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** ^The number of columns in the result can be determined using
 ** [sqlite3_column_count()].
 **
-** ^The sqlite3_column_text_v2() and sqlite3_column_blob_v2()
-** interfaces deliver most of their output via their 3rd, 4th, and 5th
-** output-pointer arguments. The 3rd is an output pointer to the
-** resulting memory (the same pointer which would be returned by their
-** non-v2 counterparts). The 4th is an integer pointer into which, if
-** it is not NULL, the length of the memory, in bytes, is written. The
-** 5th argument is an integer pointer which, if not NULL, gets set to
-** the [SQLITE_INTEGER | column's SQL type]. On success these
-** interfaces return 0. On error they do not modify any of their
-** output pointers and return SQLITE_NOMEM on allocation error and
-** SQLITE_RANGE if the given column index is out of range. Results are
-** undefined if either of their 1st or 3rd arguments are NULL.
-**
 ** If the SQL statement does not currently point to a valid row, or if the
 ** column index is out of range, the result is undefined.
 ** These routines may only be called when the most recent call to
@@ -5320,10 +5307,10 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** if the query returns an integer but the sqlite3_column_text() interface
 ** is used to extract the value) then an automatic type conversion is performed.
 **
-** ^The interfaces (_text_v2, _blob_v2) interally function identically
-** to their non-_v2 counterparts but have different interfaces. Their
-** internal behaviors are the same for purposes of the following
-** documentation except where specifically noted otherwise.
+** ^The (_blob_v2, _text_v2) interfaces behave like
+** sqlite3_value_blob_v2() and sqlite3_value_text_v2(), with one
+** exception: they return SQLITE_RANGE if the column index is out of
+** bounds.
 **
 ** ^The sqlite3_column_type() routine returns the
 ** [SQLITE_INTEGER | datatype code] for the initial data type
@@ -5495,12 +5482,12 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** out-of-memory conditions.
 */
 const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
-int sqlite3_column_blob_v2(sqlite3_stmt*, int iCol, const void **, int*, int*);
+int sqlite3_column_blob_v2(sqlite3_stmt*, int iCol, const void **, int*);
 double sqlite3_column_double(sqlite3_stmt*, int iCol);
 int sqlite3_column_int(sqlite3_stmt*, int iCol);
 sqlite3_int64 sqlite3_column_int64(sqlite3_stmt*, int iCol);
 const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
-int sqlite3_column_text_v2(sqlite3_stmt*, int iCol, const unsigned char **, int*, int*);
+int sqlite3_column_text_v2(sqlite3_stmt*, int iCol, const unsigned char **, int*);
 const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
 sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
 int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
@@ -5954,6 +5941,16 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** SQLITE_TEXT.  Whether or not a persistent internal datatype conversion
 ** occurs is undefined and may change from one release of SQLite to the next.
 **
+** ^sqlite3_value_blob_v2() and sqlite3_value_text_v2() interfaces
+** return their content via their 2nd and 3rd arguments, output
+** pointers. They behave the same as their "v1" counterparts with one
+** exception: sqlite3_value_blob_v2() resolves length-0 blobs to an
+** opaque non-NULL pointer instead of NULL. Their 3rd argument, if not
+** NULL, will get the length of the returned blob assigned to it. If
+** these functions fail they return non-0 and do not modify their
+** output pointers. On success they return 0 and will update their 2nd
+** and (if not NULL) 3rd output pointer arguments.
+**
 ** ^(The sqlite3_value_numeric_type() interface attempts to apply
 ** numeric affinity to the value.  This means that an attempt is
 ** made to convert the value to an integer or floating point.  If
@@ -5981,10 +5978,11 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** or an expression, then sqlite3_value_frombind(X) returns zero.
 **
 ** Please pay particular attention to the fact that the pointer returned
-** from [sqlite3_value_blob()], [sqlite3_value_text()], or
+** from [sqlite3_value_blob()], [sqlite3_value_blob_v2()],
+** [sqlite3_value_text()], [sqlite3_value_text_v2()], or
 ** [sqlite3_value_text16()] can be invalidated by a subsequent call to
 ** [sqlite3_value_bytes()], [sqlite3_value_bytes16()], [sqlite3_value_text()],
-** or [sqlite3_value_text16()].
+** [sqlite3_value_text_v2()], or [sqlite3_value_text16()].
 **
 ** These routines must be called from the same thread as
 ** the SQL function that supplied the [sqlite3_value*] parameters.
@@ -6018,13 +6016,13 @@ SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),
 ** out-of-memory conditions.
 */
 const void *sqlite3_value_blob(sqlite3_value*);
-int sqlite3_value_blob_v2(sqlite3_value*, const void **, int*, int*);
+int sqlite3_value_blob_v2(sqlite3_value*, const void **, int*);
 double sqlite3_value_double(sqlite3_value*);
 int sqlite3_value_int(sqlite3_value*);
 sqlite3_int64 sqlite3_value_int64(sqlite3_value*);
 void *sqlite3_value_pointer(sqlite3_value*, const char*);
 const unsigned char *sqlite3_value_text(sqlite3_value*);
-int sqlite3_value_text_v2(sqlite3_value*, const unsigned char **, int*, int*);
+int sqlite3_value_text_v2(sqlite3_value*, const unsigned char **, int*);
 const void *sqlite3_value_text16(sqlite3_value*);
 const void *sqlite3_value_text16le(sqlite3_value*);
 const void *sqlite3_value_text16be(sqlite3_value*);

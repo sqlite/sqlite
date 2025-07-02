@@ -5634,7 +5634,7 @@ static int SQLITE_TCLAPI test_column_blob_v2(
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
 
-  rc = sqlite3_column_blob_v2(pStmt, col, &pBlob, &len, 0);
+  rc = sqlite3_column_blob_v2(pStmt, col, &pBlob, &len);
   if( rc ) return TCL_ERROR;
   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pBlob, len));
   return TCL_OK;
@@ -5755,7 +5755,7 @@ static int SQLITE_TCLAPI test_stmt_utf8_v2(
 
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
-  if( sqlite3_column_text_v2(pStmt, col, &zRet, &len, 0) ){
+  if( sqlite3_column_text_v2(pStmt, col, &zRet, &len) ){
     return TCL_ERROR;
   }
   if( zRet ){
