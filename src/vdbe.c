@@ -6417,7 +6417,8 @@ case OP_IfEmpty: {        /* jump */
   assert( pC->eCurType==CURTYPE_BTREE );
   pCrsr = pC->uc.pCursor;
   assert( pCrsr );
-  res = sqlite3BtreeIsEmpty(pCrsr);
+  rc = sqlite3BtreeIsEmpty(pCrsr, &res);
+  if( rc ) goto abort_due_to_error;
   VdbeBranchTaken(res!=0,2);
   if( res ) goto jump_to_p2;
   break;

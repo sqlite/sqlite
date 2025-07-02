@@ -3099,6 +3099,7 @@ static int multiSelect(
         if( p->op==TK_UNION ){
           p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
         }
+        if( emptyBypass ) sqlite3VdbeJumpHere(v, emptyBypass);
         sqlite3ExprDelete(db, p->pLimit);
         p->pLimit = pLimit;
         p->iLimit = 0;
@@ -3121,7 +3122,6 @@ static int multiSelect(
           sqlite3VdbeResolveLabel(v, iCont);
           sqlite3VdbeAddOp2(v, OP_Next, unionTab, iStart); VdbeCoverage(v);
           sqlite3VdbeResolveLabel(v, iBreak);
-          if( emptyBypass ) sqlite3VdbeJumpHere(v, emptyBypass);
           sqlite3VdbeAddOp2(v, OP_Close, unionTab, 0);
         }
         break;

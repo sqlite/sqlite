@@ -7134,6 +7134,12 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, pTabItem->iCursor, 0, 0,
                             (const u8*)&pTabItem->colUsed, P4_INT64);
 #endif
+      if( ii>=2
+       && (pTabItem[0].fg.jointype & (JT_LTORJ|JT_LEFT))==0 
+       && pLevel->addrHalt==pWInfo->a[0].addrHalt
+      ){
+        sqlite3VdbeAddOp2(v, OP_IfEmpty, pTabItem->iCursor, pLevel->addrHalt);
+      }
     }else{
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
     }

@@ -5667,21 +5667,28 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   return rc;
 }
 
-/* Return true if the BTree pointed to by cursor pCur contains zero
-** rows of content.  Return false if the table contains content or if
-** if there is some kind of error.  This routine is used as an optimization.
-** Returning false (a false negative) will always result in a correct
-** answer, though perhaps more slowly.  But a false positive (an incorrect
-** return of true) can yield an incorrect answer.
+/* Set *pRes to 1 (true) if the BTree pointed to by cursor pCur contains zero
+** rows of content.  Set *pRes to 0 (false) if the table contains content.
+** Return SQLITE_OK on success or some error code (ex: SQLITE_NOMEM) if
+** something goes wrong.
 */
-int sqlite3BtreeIsEmpty(BtCursor *pCur){
+int sqlite3BtreeIsEmpty(BtCursor *pCur, int *pRes){
   int rc;
 
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
-  if( pCur->eState==CURSOR_VALID ) return 0;
+  if( pCur->eState==CURSOR_VALID ){
+    *pRes = 0;
+    return SQLITE_OK;
+  }
   rc = moveToRoot(pCur);
-  return rc==SQLITE_EMPTY;
+  if( rc==SQLITE_EMPTY ){
+    *pRes = 1;
+    rc = SQLITE_OK;
+  }else{
+    *pRes = 0;
+  }
+  return rc;
 }
 
 #ifdef SQLITE_DEBUG
