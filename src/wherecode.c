@@ -135,6 +135,7 @@ void sqlite3WhereAddExplainText(
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_EXPLAIN)
     char *zMsg;                   /* Text to add to EQP output */
 #endif
+    const char *zFormat;
     StrAccum str;                 /* EQP output string */
     char zBuf[100];               /* Initial space for EQP output string */
 
@@ -149,7 +150,14 @@ void sqlite3WhereAddExplainText(
 
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     str.printfFlags = SQLITE_PRINTF_INTERNAL;
-    sqlite3_str_appendf(&str, "%s %S", isSearch ? "SEARCH" : "SCAN", pItem);
+    if( pItem->fg.fromExists ){
+      zFormat = "SINGLETON %S";
+    }else if( isSearch ){
+      zFormat = "SEARCH %S";
+    }else{
+      zFormat = "SCAN %S";
+    }
+    sqlite3_str_appendf(&str, zFormat, pItem);
     if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
       const char *zFmt = 0;
       Index *pIdx;

@@ -338,8 +338,7 @@ det 3.3.3 {
 } {
   QUERY PLAN
   |--SCAN t1
-  `--CORRELATED SCALAR SUBQUERY xxxxxx
-     `--SCAN t2
+  `--SINGLETON t2
 }
 
 #-------------------------------------------------------------------------

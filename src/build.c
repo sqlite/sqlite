@@ -5138,14 +5138,17 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 ** are deleted by this function.
 */
 SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
-  assert( p1 && p1->nSrc==1 );
+  assert( p1 );
   if( p2 ){
-    SrcList *pNew = sqlite3SrcListEnlarge(pParse, p1, p2->nSrc, 1);
+    int nOld = p1->nSrc;
+    SrcList *pNew = sqlite3SrcListEnlarge(pParse, p1, p2->nSrc, nOld);
     if( pNew==0 ){
       sqlite3SrcListDelete(pParse->db, p2);
     }else{
       p1 = pNew;
-      memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(SrcItem));
+      memcpy(&p1->a[nOld], p2->a, p2->nSrc*sizeof(SrcItem));
+      assert( nOld==1 || (p2->nSrc==1 && (p2->a[0].fg.jointype&JT_LTORJ)==0) );
+      assert( p1->nSrc>=2 );
       sqlite3DbFree(pParse->db, p2);
       p1->a[0].fg.jointype |= (JT_LTORJ & p1->a[1].fg.jointype);
     }
