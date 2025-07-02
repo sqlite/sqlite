@@ -1400,6 +1400,7 @@ static SQLITE_NOINLINE void filterPullDown(
   int addrNxt,         /* Jump here to bypass inner loops */
   Bitmask notReady     /* Loops that are not ready */
 ){
+  int saved_addrBrk;
   while( ++iLevel < pWInfo->nLevel ){
     WhereLevel *pLevel = &pWInfo->a[iLevel];
     WhereLoop *pLoop = pLevel->pWLoop;
@@ -1408,7 +1409,7 @@ static SQLITE_NOINLINE void filterPullDown(
     /*         ,--- Because sqlite3ConstructBloomFilter() has will not have set
     **  vvvvv--'    pLevel->regFilter if this were true. */
     if( NEVER(pLoop->prereq & notReady) ) continue;
-    assert( pLevel->addrBrk==0 );
+    saved_addrBrk = pLevel->addrBrk;
     pLevel->addrBrk = addrNxt;
     if( pLoop->wsFlags & WHERE_IPK ){
       WhereTerm *pTerm = pLoop->aLTerm[0];
@@ -1438,7 +1439,7 @@ static SQLITE_NOINLINE void filterPullDown(
       VdbeCoverage(pParse->pVdbe);
     }
     pLevel->regFilter = 0;
-    pLevel->addrBrk = 0;
+    pLevel->addrBrk = saved_addrBrk;
   }
 }
 
@@ -1485,7 +1486,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   sqlite3 *db;                    /* Database connection */
   SrcItem *pTabItem;              /* FROM clause term being coded */
   int addrBrk;                    /* Jump here to break out of the loop */
-  int addrHalt;                   /* addrBrk for the outermost loop */
   int addrCont;                   /* Jump here to continue with next cycle */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
@@ -1529,7 +1529,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   ** there are no IN operators in the constraints, the "addrNxt" label
   ** is the same as "addrBrk".
   */
-  addrBrk = pLevel->addrBrk = pLevel->addrNxt = sqlite3VdbeMakeLabel(pParse);
+  addrBrk = pLevel->addrNxt = pLevel->addrBrk;
   addrCont = pLevel->addrCont = sqlite3VdbeMakeLabel(pParse);
 
   /* If this is the right table of a LEFT OUTER JOIN, allocate and
@@ -1544,14 +1544,6 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, pLevel->iLeftJoin);
     VdbeComment((v, "init LEFT JOIN match flag"));
   }
-
-  /* Compute a safe address to jump to if we discover that the table for
-  ** this loop is empty and can never contribute content. */
-  for(j=iLevel; j>0; j--){
-    if( pWInfo->a[j].iLeftJoin ) break;
-    if( pWInfo->a[j].pRJ ) break;
-  }
-  addrHalt = pWInfo->a[j].addrBrk;
 
   /* Special case of a FROM clause subquery implemented as a co-routine */
   if( pTabItem->fg.viaCoroutine ){
@@ -1791,7 +1783,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       VdbeCoverageIf(v, pX->op==TK_GE);
       sqlite3ReleaseTempReg(pParse, rTemp);
     }else{
-      sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, addrHalt);
+      sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, pLevel->addrHalt);
       VdbeCoverageIf(v, bRev==0);
       VdbeCoverageIf(v, bRev!=0);
     }
@@ -2586,7 +2578,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       codeCursorHint(pTabItem, pWInfo, pLevel, 0);
       pLevel->op = aStep[bRev];
       pLevel->p1 = iCur;
-      pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrHalt);
+      pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev],iCur,pLevel->addrHalt);
       VdbeCoverageIf(v, bRev==0);
       VdbeCoverageIf(v, bRev!=0);
       pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
