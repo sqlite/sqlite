@@ -513,6 +513,12 @@ do_test $test.5 {
   set utf8
 } $strings
 
+do_test $test.5_v2 {
+  set utf8 [list]
+  foreach i $idxlist {lappend utf8 [sqlite3_column_blob_v2 $STMT $i]}
+  set utf8
+} $strings
+
 # UTF-8
 do_test $test.6 {
   set utf8 [list]
@@ -1261,7 +1267,9 @@ do_test 20.2 {
 do_test 20.3 { sqlite3_column_type $stmt 0 } {TEXT}
 do_test 20.4 { sqlite3_column_blob $stmt 0 } {abcdefghij}
 do_test 20.5 { sqlite3_column_type $stmt 0 } {TEXT}
-do_test 20.6 { sqlite3_finalize $stmt } SQLITE_OK
+do_test 20.6 { sqlite3_column_blob_v2 $stmt 0 } {abcdefghij}
+do_test 20.7 { sqlite3_column_type $stmt 0 } {TEXT}
+do_test 20.8 { sqlite3_finalize $stmt } SQLITE_OK
 
 
 # Tests of the interface when no VFS is registered.

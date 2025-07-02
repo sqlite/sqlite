@@ -5612,6 +5612,35 @@ static int SQLITE_TCLAPI test_column_blob(
 }
 
 /*
+** Usage: sqlite3_column_blob_v2 STMT column
+*/
+static int SQLITE_TCLAPI test_column_blob_v2(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+  int rc;
+  int len = 0;
+  const void *pBlob = 0;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT column");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+
+  rc = sqlite3_column_blob_v2(pStmt, col, &pBlob, &len, 0);
+  if( rc ) return TCL_ERROR;
+  Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pBlob, len));
+  return TCL_OK;
+}
+
+/*
 ** Usage: sqlite3_column_double STMT column
 **
 ** Return the data in column 'column' of the current row cast as a double.
@@ -5698,6 +5727,36 @@ static int SQLITE_TCLAPI test_stmt_utf8(
     zRet = xFunc(pStmt, col);
   }else{
     zRet = (const char*)xFuncU(pStmt, col);
+  }
+  if( zRet ){
+    Tcl_SetResult(interp, (char *)zRet, 0);
+  }
+  return TCL_OK;
+}
+
+/*
+** Usage: sqlite3_column_text_v2 STMT column
+*/
+static int SQLITE_TCLAPI test_stmt_utf8_v2(
+  void * clientData,        /* Pointer to SQLite API function to be invoke */
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int col;
+  int len = 0;
+  const unsigned char *zRet = 0;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT column");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &col) ) return TCL_ERROR;
+  if( sqlite3_column_text_v2(pStmt, col, &zRet, &len, 0) ){
+    return TCL_ERROR;
   }
   if( zRet ){
     Tcl_SetResult(interp, (char *)zRet, 0);
@@ -9021,12 +9080,14 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_data_count",            test_data_count    ,0 },
      { "sqlite3_column_type",           test_column_type   ,0 },
      { "sqlite3_column_blob",           test_column_blob   ,0 },
+     { "sqlite3_column_blob_v2",        test_column_blob_v2,0 },
      { "sqlite3_column_double",         test_column_double ,0 },
      { "sqlite3_column_int64",          test_column_int64  ,0 },
-     { "sqlite3_column_text",   test_stmt_utf8,  (void*)sqlite3_column_text },
-     { "sqlite3_column_name",   test_stmt_utf8,  (void*)sqlite3_column_name },
-     { "sqlite3_column_int",    test_stmt_int,   (void*)sqlite3_column_int  },
-     { "sqlite3_column_bytes",  test_stmt_int,   (void*)sqlite3_column_bytes},
+     { "sqlite3_column_text",    test_stmt_utf8,    (void*)sqlite3_column_text },
+     { "sqlite3_column_text_v2", test_stmt_utf8_v2, 0 },
+     { "sqlite3_column_name",    test_stmt_utf8,    (void*)sqlite3_column_name },
+     { "sqlite3_column_int",     test_stmt_int,     (void*)sqlite3_column_int  },
+     { "sqlite3_column_bytes",   test_stmt_int,     (void*)sqlite3_column_bytes},
 #ifndef SQLITE_OMIT_DECLTYPE
      { "sqlite3_column_decltype",test_stmt_utf8,(void*)sqlite3_column_decltype},
 #endif

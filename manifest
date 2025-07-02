@@ -1,5 +1,5 @@
-C Remove\san\s#if\s0\sblock.
-D 2025-07-01T21:33:26.350
+C Add\stest1.c\stcl\sbindings\sfor\ssqlite3_column_text/blob_v2().\sReplace,\sessentially\srandomly,\ssome\sof\sthe\sv1\sAPI\scalls\sin\scapi2.test\sand\scapi2.test\swith\sthe\sv2\scalls\sto\sensure\sidentical\sresults.\sAdd\sa\scouple\snew\stests\scomparing\sresults\sbetween\sv1\sand\sv2.
+D 2025-07-02T07:52:30.801
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -796,7 +796,7 @@ F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c 13cc07851f989141b29f7ca3c6c90f6d18f90081ab423c66716c8cb29d277d1f
+F src/test1.c bcd021fadc242b29a5e3e5e552231ca87d1ccb87c282d3a4a2c6a4203eeed8f8
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -992,8 +992,8 @@ F test/busy2.test 20823a5d7c42fb257d9f108c66312d90b1bb4ec3d80ba6b4e371073727560f
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/cacheflush.test af25bb1509df04c1da10e38d8f322d66eceedf61
 F test/cachespill.test 895997f84a25b323b166aecb69baab2d6380ea98f9e0bcc688c4493c535cfab9
-F test/capi2.test 4ee545824adc3eb33bf57ef89f77440b28188ec3da72e5425ff0fcdba32e8d5a
-F test/capi3.test ab90c548969613315605c555a8623f6b56e00e28d451c46a17ef73683c422c70
+F test/capi2.test fbcedffd51a60e518402ff9c461cfd4972ed3e1d2f5f4ec6f2e7a1ed71471332
+F test/capi3.test 55c421ef81f4d7cabca19bec8c42df805905a53366ef7f0a75cfea68d3fbcb8b
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 31d3a6778f2d06f2d9222bd7660c41a516d1518a059b069e96ebbeadb5a490f7
 F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233dfbde
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6290a8eaddd97acd02ee417e28c2815e5f3af67acdfc1d97a2cd88b0aee823c0
-R a2e5a2d40c6748f7abef083fde88b1f9
+P 0363c430b5ab8eb8cec526933da2b32263b1959c8a2210bb0e0b1529e72c6f63
+R 5cf8215b0655d83f9ed207972481e36d
 U stephan
-Z f95681e9781d4a8b2c014ed9bd2d271e
+Z e957b7302d7d68762f67142fbbafbcac
 # Remove this line to create a well-formed Fossil manifest.

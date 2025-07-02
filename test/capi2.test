@@ -18,13 +18,24 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Return the text values from the current row pointed at by STMT as a list.
-proc get_row_values {STMT} {
+# $getter is the column-get-text function to invoke.
+proc get_row_values_impl {getter STMT} {
   set VALUES [list]
   for {set i 0} {$i < [sqlite3_data_count $STMT]} {incr i} {
-    lappend VALUES [sqlite3_column_text $STMT $i]
+    lappend VALUES [$getter $STMT $i]
   }
   return $VALUES
 }
+
+proc get_row_values {STMT} {
+  get_row_values_impl sqlite3_column_text $STMT
+}
+
+# Must produce the same result as get_row_values().
+proc get_row_values_v2 {STMT} {
+  get_row_values_impl sqlite3_column_text_v2 $STMT
+}
+
 
 # Return the column names followed by declaration types for the result set
 # of the SQL statement STMT.
@@ -61,6 +72,9 @@ do_test capi2-1.3 {
 } {2}
 do_test capi2-1.4 {
   get_row_values $VM
+} {t1 1}
+do_test capi2-1.4_v2 {
+  get_row_values_v2 $VM
 } {t1 1}
 do_test capi2-1.5 {
   get_column_names $VM
@@ -124,7 +138,7 @@ do_test capi2-2.2 {
 do_test capi2-2.3 {
   set r [sqlite3_step $VM]
   lappend r [sqlite3_column_count $VM] \
-            [get_row_values $VM] \
+            [get_row_values_v2 $VM] \
             [get_column_names $VM]
 } {SQLITE_DONE 2 {} {name rowid TEXT INTEGER}}
 do_test capi2-2.4 {
@@ -191,7 +205,7 @@ do_test capi2-3.6 {
 do_test capi2-3.7 {
   list [sqlite3_step $VM] \
        [sqlite3_column_count $VM] \
-       [get_row_values $VM] \
+       [get_row_values_v2 $VM] \
        [get_column_names $VM]
 } {SQLITE_ROW 1 {{}} {5/0 {}}}
 do_test capi2-3.8 {
@@ -547,7 +561,7 @@ do_test capi2-6.25 {
 do_test capi2-6.26 {
   list [sqlite3_step $VM1] \
        [sqlite3_column_count $VM1] \
-       [get_row_values $VM1] \
+       [get_row_values_v2 $VM1] \
        [get_column_names $VM1]
 } {SQLITE_ROW 1 12 {x counter}}
 do_test capi2-6.27 {
@@ -559,7 +573,7 @@ do_test capi2-6.27 {
 do_test capi2-6.28 {
   list [sqlite3_step $VM1] \
        [sqlite3_column_count $VM1] \
-       [get_row_values $VM1] \
+       [get_row_values_v2 $VM1] \
        [get_column_names $VM1]
 } {SQLITE_ROW 1 13 {x counter}}
 do_test capi2-6.99 {
