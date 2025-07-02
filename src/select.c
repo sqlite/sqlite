@@ -3872,6 +3872,7 @@ typedef struct SubstContext {
   int iTable;               /* Replace references to this table */
   int iNewTable;            /* New table number */
   int isOuterJoin;          /* Add TK_IF_NULL_ROW opcodes on each replacement */
+  int nSelDepth;            /* Depth of sub-query recursion.  Top==1 */
   ExprList *pEList;         /* Replacement expressions */
   ExprList *pCList;         /* Collation sequences for replacement expr */
 } SubstContext;
@@ -3979,6 +3980,9 @@ static Expr *substExpr(
     if( pExpr->op==TK_IF_NULL_ROW && pExpr->iTable==pSubst->iTable ){
       pExpr->iTable = pSubst->iNewTable;
     }
+    if( pExpr->op==TK_AGG_FUNCTION && pExpr->op2>=pSubst->nSelDepth ){
+      pExpr->op2--;
+    }
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
     pExpr->pRight = substExpr(pSubst, pExpr->pRight);
     if( ExprUseXSelect(pExpr) ){
@@ -4016,6 +4020,7 @@ static void substSelect(
   SrcItem *pItem;
   int i;
   if( !p ) return;
+  pSubst->nSelDepth++;
   do{
     substExprList(pSubst, p->pEList);
     substExprList(pSubst, p->pGroupBy);
@@ -4033,6 +4038,7 @@ static void substSelect(
       }
     }
   }while( doPrior && (p = p->pPrior)!=0 );
+  pSubst->nSelDepth--;
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
@@ -4774,6 +4780,7 @@ static int flattenSubquery(
       x.iTable = iParent;
       x.iNewTable = iNewParent;
       x.isOuterJoin = isOuterJoin;
+      x.nSelDepth = 0;
       x.pEList = pSub->pEList;
       x.pCList = findLeftmostExprlist(pSub);
       substSelect(&x, pParent, 0);
