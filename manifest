@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sxBestIndex\soutput\sfrom\sthe\sext/misc/vtablog.c\nextension.
-D 2025-07-03T14:10:03.834
+C Make\shandling\sof\sLIMIT\sclauses\sin\scorrelated\ssub-queries\son\svirtual\stables\smore\sefficient.
+D 2025-07-03T14:28:47.394
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -870,7 +870,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c f58d41d0923eeb21cab8e4fc87a0b36c0724ff4f279ce95ab2731b4696b8e75a
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 504f3c1270c3ffd51ebcdf7a31de08aa51a63b33a2ccdf8f5736afe3dfa73d45
-F src/whereexpr.c 566ca4382e07a4ba1fd86c97ae0781cdf84004c7d9c59466bf5db75733548807
+F src/whereexpr.c c3ff4d8f1ae5cb9fb41460f9d960b1f519b6115585375790c53833e5642fc1f4
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -962,7 +962,7 @@ F test/bestindex8.test b63a4f171a2c83d481bb14c431a8b72e85d27b2ffdaa0435a95d58ca9
 F test/bestindex9.test 1a4b93db117fd8abe74ae9be982f86aa72f01e60cd4ac541e6ede39673a451a0
 F test/bestindexA.test e1b5def6b190797cacf008e6815ffb78fb30261999030d60a728d572eef44c7f
 F test/bestindexB.test 328b97b69cd1a20928d5997f9ecb04d2e00f1d18e19ab27f9e9adb44d7bc51ce
-F test/bestindexC.test 2df6ada16d8f00d9bb6a9664d9c323560aeed0e0ebc7a32b99d85d70037fd250
+F test/bestindexC.test d1e2cf074374fbfb665b0fc55668ccd6594ea1185311f8b10b36d76f7ff62145
 F test/bestindexD.test 6a8f6f84990bcf17dfa59652a1f935beddb7afd96f8302830fbc86b0a13df3c3
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
@@ -2208,8 +2208,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6db4703f1178fc808f3a75c355fb6638fb12c88f6e1ce7f579e200ced8089114
-R 50c4d2dc6029c61dab20b65ad02b720b
-U drh
-Z 46c80e4b7ddf6a82d5b12bfb66b8a7fe
+P 8b31acc0b18f38eb4af6efebd1ea25cd65a146651101579aee20afd9ec6dc2de
+R e658b60bbaff41edf3575ab8234dd2ce
+T *branch * vtab-limit-fixes
+T *sym-vtab-limit-fixes *
+T -sym-trunk *
+U dan
+Z 1a479787ca24abd6eb4307ae89399fce
 # Remove this line to create a well-formed Fossil manifest.
