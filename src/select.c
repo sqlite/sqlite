@@ -5366,6 +5366,7 @@ static int pushDownWhereTerms(
       x.iTable = pSrc->iCursor;
       x.iNewTable = pSrc->iCursor;
       x.isOuterJoin = 0;
+      x.nSelDepth = 0;
       x.pEList = pSubq->pEList;
       x.pCList = findLeftmostExprlist(pSubq);
       pNew = substExpr(&x, pNew);
