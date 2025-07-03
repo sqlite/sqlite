@@ -7437,7 +7437,7 @@ static SQLITE_NOINLINE void existsToJoin(
     else if( pWhere->op==TK_EXISTS ){
       Select *pSub = pWhere->x.pSelect;
       if( pSub->pSrc->nSrc==1 
-       && (pSub->selFlags & (SF_Aggregate|SF_Correlated))==SF_Correlated
+       && (pSub->selFlags & SF_Aggregate)==0
        && pSub->pWhere
       ){
         memset(pWhere, 0, sizeof(*pWhere));
