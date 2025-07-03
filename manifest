@@ -1,5 +1,5 @@
-C Make\shandling\sof\sLIMIT\sclauses\sin\scorrelated\ssub-queries\son\svirtual\stables\smore\sefficient.
-D 2025-07-03T14:28:47.394
+C Make\sthe\svalue\sof\san\sexplicit\sLIMIT\sclause\son\sa\sscalar\ssub-query\savailable\sto\sxBestIndex\sfor\ssimple\s"LIMIT\s0"\sand\s"LIMIT\s1"\squeries.
+D 2025-07-03T15:32:27.267
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
 F src/dbpage.c b3e218f8ed74fcbb7fa805df8ca669a3718d397617b3d8a8aac3307dc315c4d6
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c e3d3b6e60b86fac772bd4d4f0c6fe1d01bef3851754a9c1215d2f8574296cbd2
+F src/expr.c 3f460c3d98b33b57e7c4665b05542f1eff62f9a524108df6d47d2ffe19473dcf
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c de47a8295503aa130baae5e6d9868ecf4f7c4dbffa65d83ad1f70bdbac0ee2d6
@@ -962,7 +962,7 @@ F test/bestindex8.test b63a4f171a2c83d481bb14c431a8b72e85d27b2ffdaa0435a95d58ca9
 F test/bestindex9.test 1a4b93db117fd8abe74ae9be982f86aa72f01e60cd4ac541e6ede39673a451a0
 F test/bestindexA.test e1b5def6b190797cacf008e6815ffb78fb30261999030d60a728d572eef44c7f
 F test/bestindexB.test 328b97b69cd1a20928d5997f9ecb04d2e00f1d18e19ab27f9e9adb44d7bc51ce
-F test/bestindexC.test d1e2cf074374fbfb665b0fc55668ccd6594ea1185311f8b10b36d76f7ff62145
+F test/bestindexC.test 95b4a527b1a5d07951d731604a6d4cf7e5a806b39cea0e7819d4c9667e11c3fc
 F test/bestindexD.test 6a8f6f84990bcf17dfa59652a1f935beddb7afd96f8302830fbc86b0a13df3c3
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
@@ -2208,11 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8b31acc0b18f38eb4af6efebd1ea25cd65a146651101579aee20afd9ec6dc2de
-R e658b60bbaff41edf3575ab8234dd2ce
-T *branch * vtab-limit-fixes
-T *sym-vtab-limit-fixes *
-T -sym-trunk *
+P 7214cb2a5b35190a06a1040cd4c54f325d347f8d8e36a07fd76c0a421e266522
+R 27bb9d5812e0bc3cf60a3ade19ad2828
 U dan
-Z 1a479787ca24abd6eb4307ae89399fce
+Z 03a23b4c5763fbd269b6e68a8e19d37c
 # Remove this line to create a well-formed Fossil manifest.
