@@ -1,5 +1,5 @@
-C Make\sthe\svalue\sof\san\sexplicit\sLIMIT\sclause\son\sa\sscalar\ssub-query\savailable\sto\sxBestIndex\sfor\ssimple\s"LIMIT\s0"\sand\s"LIMIT\s1"\squeries.
-D 2025-07-03T15:32:27.267
+C Improvements\sto\ssqlite3_vtab_rhs_value()\slogging\sin\sthe\next/misc/vtablog.c\sextension.
+D 2025-07-03T15:50:18.737
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -456,7 +456,7 @@ F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c 0b23c0a69a2b63dc0ef0af44f9c1fc977300c480a1f7a9814500369d8211f56e
 F ext/misc/vfstrace.c 0e4b8b17ac0675ea90f6d168d8214687e06ca3efbc0060aad4814994d82b41fb
-F ext/misc/vtablog.c ee27ec6595751db0ce4b8c2a2b72f6eca4d018d9d33e139dbd477e8d173f7b0e
+F ext/misc/vtablog.c 62d54fb0f4ff9df72ffa44f4a226451a964e1d96ac550f2b8906feebdad00b58
 F ext/misc/vtshim.c e5bce24ab8c532f4fdc600148718fe1802cb6ed57417f1c1032d8961f72b0e8f
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7214cb2a5b35190a06a1040cd4c54f325d347f8d8e36a07fd76c0a421e266522
-R 27bb9d5812e0bc3cf60a3ade19ad2828
-U dan
-Z 03a23b4c5763fbd269b6e68a8e19d37c
+P 33b6a63caafccc61b3193714911cd8b5dd9b7f1798054b8c7845b23688d531f2
+R 03da53ec2c5bbfaf5954c2ff4dc81144
+U drh
+Z 144b12a9e1e61db61bb4478b5371f987
 # Remove this line to create a well-formed Fossil manifest.

@@ -485,32 +485,22 @@ static int vtablogBestIndex(
   printf("  nConstraint: %d\n", p->nConstraint);
   for(i=0; i<p->nConstraint; i++){
     sqlite3_value *pVal = 0;
-    int rc;
-    char zRhs[50];
-    rc = sqlite3_vtab_rhs_value(p, i, &pVal);
-    if( rc==SQLITE_OK ){
-      switch( sqlite3_value_type(pVal) ){
-        case SQLITE_NULL:     sqlite3_snprintf(50,zRhs,"NULL");  break;
-        case SQLITE_INTEGER:  sqlite3_snprintf(50,zRhs,"%lld",
-                                          sqlite3_value_int64(pVal)); break;
-        case SQLITE_FLOAT:    sqlite3_snprintf(50,zRhs,"%g",
-                                          sqlite3_value_double(pVal)); break;
-        case SQLITE_TEXT:     sqlite3_snprintf(50,zRhs,"TEXT");  break;
-        default:              sqlite3_snprintf(50,zRhs,"BLOB");  break;
-      }
-    }else{
-      sqlite3_snprintf(50,zRhs,"N/A");
-    }
+    int rc = sqlite3_vtab_rhs_value(p, i, &pVal);
     printf(
-      "  constraint[%d]: col=%d termid=%d op=%s usabled=%d coll=%s rhs=%s\n",
+      "  constraint[%d]: col=%d termid=%d op=%s usabled=%d coll=%s rhs=",
        i,
        p->aConstraint[i].iColumn,
        p->aConstraint[i].iTermOffset,
        vtablogOpName(p->aConstraint[i].op),
        p->aConstraint[i].usable,
-       sqlite3_vtab_collation(p,i),
-       zRhs
+       sqlite3_vtab_collation(p,i)
     );
+    if( rc==SQLITE_OK ){
+      vtablogQuote(pVal);
+      printf("\n");
+    }else{
+      printf("N/A\n");
+    }
   }
   printf("  nOrderBy: %d\n", p->nOrderBy);
   for(i=0; i<p->nOrderBy; i++){
