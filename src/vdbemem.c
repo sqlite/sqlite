@@ -1404,14 +1404,14 @@ static SQLITE_NOINLINE int valueToTextV2(sqlite3_value* pVal, u8 enc,
   if( pVal->db && pVal->db->mallocFailed ){
     return SQLITE_NOMEM_BKPT;
   }
-  assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
-              || pVal->db->mallocFailed );
-  if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
+  assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0);
+  if( ALWAYS(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED)) ){
     assert( sqlite3VdbeMemValidStrRep(pVal) );
     *pOut = pVal->z;
     *pnOut = pVal->n;
     return 0;
   }
+  assert( pVal->db==0 );
   return SQLITE_ERROR;
 }
 

@@ -1,5 +1,5 @@
-C Correct\smis-placed\sOOM\schecks\sin\svalueToTextV2().
-D 2025-07-02T15:29:11.203
+C Tweak\sfor\scoverage\stesting\sof\svalueToTextV2().\sThis\schanges\spasses\sthrough\scoverage\stesting\sbut\sdoesn't\slook\squite\sright\sto\sme,\sin\sthat\sthis\spart\snow\sdiffers\sfrom\sits\scounterpart\sin\svalueToText()\s(which\sdoesn't\sneed\sthis\sto\sget\scoverage\sfor\swhat\samounts\sto\sthe\ssame\spath).
+D 2025-07-04T10:10:32.331
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -858,7 +858,7 @@ F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
 F src/vdbeapi.c 8e147b96e11a72079788ac01080812fb272cdb10e58e2c123099ddda99f8b818
 F src/vdbeaux.c fd2c6b19a8892c31a2adc719f156f313560f9cc490cdbd04ff08fdae5d7aedb7
 F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
-F src/vdbemem.c 215049118fec969a3470eeedc631aa91ebbb8253e2ebbe3b1955be290276d387
+F src/vdbemem.c 8b5582eaa99d51d5df69f2a4e27fb99369aa09a206b669088388f537e68f03c3
 F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecbe
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c96539beb5ca3c6a467e5388b942767765a3f071e009c1767d3b4f1b0fb5da9c
-R f8d25a8ea053c38138b2625cb2d49cac
+P 9226a2a3c60a0f11fec9dd66cfa89ad8e625e9f0507e8d66ba2a06caafd65a9c
+R e8c7784d52c251b6569aa6faf611973a
 U stephan
-Z a6cf5f2dc1a4f00f3ea3e7610985f250
+Z 4203b1a7fb61abf75921bdc2a0618086
 # Remove this line to create a well-formed Fossil manifest.
