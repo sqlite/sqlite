@@ -7437,9 +7437,10 @@ static SQLITE_NOINLINE void existsToJoin(
     }
     else if( pWhere->op==TK_EXISTS ){
       Select *pSub = pWhere->x.pSelect;
-      if( pSub->pSrc->nSrc==1 
+      if( pSub->pSrc->nSrc==1
        && (pSub->selFlags & SF_Aggregate)==0
        && pSub->pWhere
+       && !pSub->pSrc->a[0].fg.isSubquery
       ){
         memset(pWhere, 0, sizeof(*pWhere));
         pWhere->op = TK_INTEGER;
