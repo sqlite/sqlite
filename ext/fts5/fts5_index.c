@@ -5847,7 +5847,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
   }
 
   nByte += (((i64)pStruct->nLevel)+1) * sizeof(Fts5StructureLevel);
-  assert( nByte==SZ_FTS5STRUCTURE(pStruct->nLevel+2) );
+  assert( nByte==(i64)SZ_FTS5STRUCTURE(pStruct->nLevel+2) );
   pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
 
   if( pNew ){
