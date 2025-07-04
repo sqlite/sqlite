@@ -1,10 +1,10 @@
-C Propagate\sthe\s-ldl\sand\s-lpthread\sflags,\sif\sneeded,\sinto\ssqlite3.pc,\sper\srequest\sin\s[forum:44a58c807353162f\s|\sforum\spost\s44a58c807353162f].
-D 2025-07-04T17:20:37.961
+C Add\s'reconfigure'\starget\sto\sMakefile.in\sto\sre-run\sthe\sconfigure\sscript\swith\sthe\ssame\sflags\sit\swas\sgenerated\swith.
+D 2025-07-04T18:32:18.912
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
-F Makefile.in d8bc4aee9fb645c9f2ff0e3a30585d17a0df076bb6a33f0f20bab4999abb45a0
+F Makefile.in a6c14b6906f5322920dd5d1ff9a84808337911068f2a6e777ec7088a87cbc3a8
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc ec2011bbdfc917d6a1c7c173dabb29c14ead0dd8e2e0b67278a00ae4ba576a77
 F README.md e28077cfbef795e99c9c75ed95aa7257a1166709b562076441a8506ac421b7c1
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13af4acebe09b047756c22b800136cffaba532e7fcaa448a4edf4fedb94e9bbc
-R 099a06c2d2154ffe42a8ab041db48e77
+P 64f5f14322349b47451b8cac03bf8cd6f1ae45a8822e7f1ddee3d0b265047501
+R 2e84b390408477c8e70efdd22e84c169
 U stephan
-Z 5b5dde027d1afefeb6302b541ead0c38
+Z a6be9728f4a0aec0de70108286e76b7e
 # Remove this line to create a well-formed Fossil manifest.
