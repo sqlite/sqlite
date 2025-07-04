@@ -1697,7 +1697,7 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
         WhereTerm *pParent = &pWC->a[ pWC->a[ii].iParent ];
         if( pParent->leftCursor==iCsr
          && pParent->prereqRight==0
-         && ALWAYS(pParent->nChild==1)
+         && pParent->nChild==1
         ){
           continue;
         }

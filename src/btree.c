@@ -1929,10 +1929,10 @@ static int freeSpace(MemPage *pPage, int iStart, int iSize){
   assert( pPage->pBt!=0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( CORRUPT_DB || iStart>=pPage->hdrOffset+6+pPage->childPtrSize );
-  assert( CORRUPT_DB || iEnd <= pPage->pBt->usableSize );
+  assert( CORRUPT_DB || iEnd <= (int)pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( iSize>=4 );   /* Minimum cell size is 4 */
-  assert( CORRUPT_DB || iStart<=pPage->pBt->usableSize-4 );
+  assert( CORRUPT_DB || iStart<=(int)pPage->pBt->usableSize-4 );
 
   /* The list of freeblocks must be in ascending order.  Find the
   ** spot on the list where iStart should be inserted.

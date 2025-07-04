@@ -2428,6 +2428,7 @@ static int exprComputeOperands(
     VdbeComment((v, "skip left operand"));
     VdbeCoverage(v);
   }else{
+    r2 = 0; /* Silence a false-positive uninit-var warning in MSVC */
     addrIsNull = 0;
   }
   r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, pFree1);
