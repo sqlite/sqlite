@@ -1144,7 +1144,7 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
     return pLeft;
   }else{
     u32 f = pLeft->flags | pRight->flags;
-    if( (f&(EP_OuterON|EP_InnerON|EP_IsFalse))==EP_IsFalse
+    if( (f&(EP_OuterON|EP_InnerON|EP_IsFalse|EP_HasFunc))==EP_IsFalse
      && !IN_RENAME_OBJECT
     ){
       sqlite3ExprDeferredDelete(pParse, pLeft);
@@ -2424,7 +2424,9 @@ static int exprComputeOperands(
   */
   if( exprEvalRhsFirst(pExpr) && sqlite3ExprCanBeNull(pExpr->pRight) ){
     r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, pFree2);
-    addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, r2);  VdbeCoverage(v);
+    addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, r2);
+    VdbeComment((v, "skip left operand"));
+    VdbeCoverage(v);
   }else{
     addrIsNull = 0;
   }
@@ -2439,7 +2441,9 @@ static int exprComputeOperands(
     if( ExprHasProperty(pExpr->pRight, EP_Subquery)
      && sqlite3ExprCanBeNull(pExpr->pLeft)
     ){
-      addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, r1);  VdbeCoverage(v);
+      addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, r1);
+      VdbeComment((v, "skip right operand"));
+      VdbeCoverage(v);
     }
     r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, pFree2);
   }
@@ -3892,17 +3896,23 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     VdbeComment((v, "Init EXISTS result"));
   }
   if( pSel->pLimit ){
-    /* The subquery already has a limit.  If the pre-existing limit is X
-    ** then make the new limit X<>0 so that the new limit is either 1 or 0 */
-    sqlite3 *db = pParse->db;
-    pLimit = sqlite3Expr(db, TK_INTEGER, "0");
-    if( pLimit ){
-      pLimit->affExpr = SQLITE_AFF_NUMERIC;
-      pLimit = sqlite3PExpr(pParse, TK_NE,
-                            sqlite3ExprDup(db, pSel->pLimit->pLeft, 0), pLimit);
+    /* The subquery already has a limit.  If the pre-existing limit X is 
+    ** not already integer value 1 or 0, then make the new limit X<>0 so that
+    ** the new limit is either 1 or 0 */
+    Expr *pLeft = pSel->pLimit->pLeft;
+    if( ExprHasProperty(pLeft, EP_IntValue)==0
+     || (pLeft->u.iValue!=1 && pLeft->u.iValue!=0)
+    ){
+      sqlite3 *db = pParse->db;
+      pLimit = sqlite3Expr(db, TK_INTEGER, "0");
+      if( pLimit ){
+        pLimit->affExpr = SQLITE_AFF_NUMERIC;
+        pLimit = sqlite3PExpr(pParse, TK_NE,
+            sqlite3ExprDup(db, pLeft, 0), pLimit);
+      }
+      sqlite3ExprDeferredDelete(pParse, pLeft);
+      pSel->pLimit->pLeft = pLimit;
     }
-    sqlite3ExprDeferredDelete(pParse, pSel->pLimit->pLeft);
-    pSel->pLimit->pLeft = pLimit;
   }else{
     /* If there is no pre-existing limit add a limit of 1 */
     pLimit = sqlite3Expr(pParse->db, TK_INTEGER, "1");
@@ -5112,6 +5122,7 @@ expr_code_doover:
         sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
         sqlite3VdbeJumpHere(v, addrIsNull);
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+        VdbeComment((v, "short-circut value"));
       }
       break;
     }

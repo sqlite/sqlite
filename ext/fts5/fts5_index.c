@@ -2481,18 +2481,20 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
     fts5DataRelease(pIter->pLeaf);
     pIter->pLeaf = pLast;
     pIter->iLeafPgno = pgnoLast;
-    iOff = fts5LeafFirstRowidOff(pLast);
-    if( iOff>pLast->szLeaf ){
-      FTS5_CORRUPT_ITER(p, pIter);
-      return;
-    }
-    iOff += fts5GetVarint(&pLast->p[iOff], (u64*)&pIter->iRowid);
-    pIter->iLeafOffset = iOff;
+    if( p->rc==SQLITE_OK ){
+      iOff = fts5LeafFirstRowidOff(pLast);
+      if( iOff>pLast->szLeaf ){
+        FTS5_CORRUPT_ITER(p, pIter);
+        return;
+      }
+      iOff += fts5GetVarint(&pLast->p[iOff], (u64*)&pIter->iRowid);
+      pIter->iLeafOffset = iOff;
 
-    if( fts5LeafIsTermless(pLast) ){
-      pIter->iEndofDoclist = pLast->nn+1;
-    }else{
-      pIter->iEndofDoclist = fts5LeafFirstTermOff(pLast);
+      if( fts5LeafIsTermless(pLast) ){
+        pIter->iEndofDoclist = pLast->nn+1;
+      }else{
+        pIter->iEndofDoclist = fts5LeafFirstTermOff(pLast);
+      }
     }
   }
 

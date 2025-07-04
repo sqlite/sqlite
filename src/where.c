@@ -1201,7 +1201,9 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     VdbeCoverage(v);
     VdbeComment((v, "next row of %s", pSrc->pSTab->zName));
   }else{
-    addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+    assert( pLevel->addrHalt );
+    addrTop = sqlite3VdbeAddOp2(v, OP_Rewind,pLevel->iTabCur,pLevel->addrHalt);
+    VdbeCoverage(v);
   }
   if( pPartial ){
     iContinue = sqlite3VdbeMakeLabel(pParse);
@@ -1229,11 +1231,14 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
                           pSrc->u4.pSubq->regResult, pLevel->iIdxCur);
     sqlite3VdbeGoto(v, addrTop);
     pSrc->fg.viaCoroutine = 0;
+    sqlite3VdbeJumpHere(v, addrTop);
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
     sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
+    if( (pSrc->fg.jointype & JT_LEFT)!=0 ){
+      sqlite3VdbeJumpHere(v, addrTop);
+    }
   }
-  sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
  
   /* Jump here when skipping the initialization */
@@ -7070,6 +7075,14 @@ WhereInfo *sqlite3WhereBegin(
     pTab = pTabItem->pSTab;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     pLoop = pLevel->pWLoop;
+    pLevel->addrBrk = sqlite3VdbeMakeLabel(pParse);
+    if( ii==0 || (pTabItem[0].fg.jointype & JT_LEFT)!=0 ){
+      pLevel->addrHalt = pLevel->addrBrk;
+    }else if( pWInfo->a[ii-1].pRJ ){
+      pLevel->addrHalt = pWInfo->a[ii-1].addrBrk;
+    }else{
+      pLevel->addrHalt = pWInfo->a[ii-1].addrHalt;
+    }
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || IsView(pTab) ){
       /* Do nothing */
     }else

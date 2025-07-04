@@ -3872,6 +3872,7 @@ typedef struct SubstContext {
   int iTable;               /* Replace references to this table */
   int iNewTable;            /* New table number */
   int isOuterJoin;          /* Add TK_IF_NULL_ROW opcodes on each replacement */
+  int nSelDepth;            /* Depth of sub-query recursion.  Top==1 */
   ExprList *pEList;         /* Replacement expressions */
   ExprList *pCList;         /* Collation sequences for replacement expr */
 } SubstContext;
@@ -3979,6 +3980,9 @@ static Expr *substExpr(
     if( pExpr->op==TK_IF_NULL_ROW && pExpr->iTable==pSubst->iTable ){
       pExpr->iTable = pSubst->iNewTable;
     }
+    if( pExpr->op==TK_AGG_FUNCTION && pExpr->op2>=pSubst->nSelDepth ){
+      pExpr->op2--;
+    }
     pExpr->pLeft = substExpr(pSubst, pExpr->pLeft);
     pExpr->pRight = substExpr(pSubst, pExpr->pRight);
     if( ExprUseXSelect(pExpr) ){
@@ -4016,6 +4020,7 @@ static void substSelect(
   SrcItem *pItem;
   int i;
   if( !p ) return;
+  pSubst->nSelDepth++;
   do{
     substExprList(pSubst, p->pEList);
     substExprList(pSubst, p->pGroupBy);
@@ -4033,6 +4038,7 @@ static void substSelect(
       }
     }
   }while( doPrior && (p = p->pPrior)!=0 );
+  pSubst->nSelDepth--;
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
@@ -4774,6 +4780,7 @@ static int flattenSubquery(
       x.iTable = iParent;
       x.iNewTable = iNewParent;
       x.isOuterJoin = isOuterJoin;
+      x.nSelDepth = 0;
       x.pEList = pSub->pEList;
       x.pCList = findLeftmostExprlist(pSub);
       substSelect(&x, pParent, 0);
@@ -5359,6 +5366,7 @@ static int pushDownWhereTerms(
       x.iTable = pSrc->iCursor;
       x.iNewTable = pSrc->iCursor;
       x.isOuterJoin = 0;
+      x.nSelDepth = 0;
       x.pEList = pSubq->pEList;
       x.pCList = findLeftmostExprlist(pSubq);
       pNew = substExpr(&x, pNew);
@@ -8537,12 +8545,12 @@ int sqlite3Select(
       ** for the next GROUP BY batch.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regOutputRow, addrOutputRow);
-      VdbeComment((v, "output one row"));
+      VdbeComment((v, "output one row of %d", p->selId));
       sqlite3ExprCodeMove(pParse, iBMem, iAMem, pGroupBy->nExpr);
       sqlite3VdbeAddOp2(v, OP_IfPos, iAbortFlag, addrEnd); VdbeCoverage(v);
       VdbeComment((v, "check abort flag"));
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      VdbeComment((v, "reset accumulator"));
+      VdbeComment((v, "reset accumulator %d", p->selId));
 
       /* Update the aggregate accumulators based on the content of
       ** the current row
@@ -8550,7 +8558,7 @@ int sqlite3Select(
       sqlite3VdbeJumpHere(v, addr1);
       updateAccumulator(pParse, iUseFlag, pAggInfo, eDist);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iUseFlag);
-      VdbeComment((v, "indicate data in accumulator"));
+      VdbeComment((v, "indicate data in accumulator %d", p->selId));
 
       /* End of the loop
       */
@@ -8567,7 +8575,7 @@ int sqlite3Select(
       /* Output the final row of result
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regOutputRow, addrOutputRow);
-      VdbeComment((v, "output final row"));
+      VdbeComment((v, "output final row of %d", p->selId));
 
       /* Jump over the subroutines
       */
@@ -8588,7 +8596,7 @@ int sqlite3Select(
       addrOutputRow = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp2(v, OP_IfPos, iUseFlag, addrOutputRow+2);
       VdbeCoverage(v);
-      VdbeComment((v, "Groupby result generator entry point"));
+      VdbeComment((v, "Groupby result generator entry point %d", p->selId));
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       finalizeAggFunctions(pParse, pAggInfo);
       sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
@@ -8596,14 +8604,14 @@ int sqlite3Select(
                       &sDistinct, pDest,
                       addrOutputRow+1, addrSetAbort);
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
-      VdbeComment((v, "end groupby result generator"));
+      VdbeComment((v, "end groupby result generator %d", p->selId));
 
       /* Generate a subroutine that will reset the group-by accumulator
       */
       sqlite3VdbeResolveLabel(v, addrReset);
       resetAccumulator(pParse, pAggInfo);
       sqlite3VdbeAddOp2(v, OP_Integer, 0, iUseFlag);
-      VdbeComment((v, "indicate accumulator empty"));
+      VdbeComment((v, "indicate accumulator %d empty", p->selId));
       sqlite3VdbeAddOp1(v, OP_Return, regReset);
 
       if( distFlag!=0 && eDist!=WHERE_DISTINCT_NOOP ){
