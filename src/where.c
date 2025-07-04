@@ -7139,7 +7139,7 @@ WhereInfo *sqlite3WhereBegin(
        && (pTabItem[0].fg.jointype & (JT_LTORJ|JT_LEFT))==0 
        && pLevel->addrHalt==pWInfo->a[0].addrHalt
       ){
-        sqlite3VdbeAddOp2(v, OP_IfEmpty, pTabItem->iCursor, pLevel->addrHalt);
+        sqlite3VdbeAddOp2(v, OP_IfEmpty, pTabItem->iCursor, pWInfo->iBreak);
         VdbeCoverage(v);
       }
     }else{
