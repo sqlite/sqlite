@@ -193,7 +193,7 @@ do_subquery_test 3.7 1 {
   4 4 4
 }    
 
-do_subquery_test 3.8 1 {
+do_subquery_test 3.8 0 {
   SELECT * FROM y1 WHERE EXISTS ( SELECT a+1 FROM y2 )
 } {
   1 1 1

@@ -7418,11 +7418,17 @@ static int fromClauseTermCanBeCoroutine(
 **
 **    SELECT name FROM sailors AS S, reserves AS R
 **      WHERE S.sid = R.sid AND R.day = '2022-10-25';
+**
+** **Approximately**.  Really, we have to ensure that the FROM-clause term
+** that was formerly inside the EXISTS is only executed once.  This is handled
+** by setting the SrcItem.fg.fromExists flag, which then causes code in
+** the where.c file to exit the corresponding loop after the first successful
+** match (if any).
 */
 static SQLITE_NOINLINE void existsToJoin(
-  Parse *pParse,
-  Select *p,
-  Expr *pWhere
+  Parse *pParse,  /* Parsing context */
+  Select *p,      /* The SELECT statement being optimized */
+  Expr *pWhere    /* part of the WHERE clause currently being examined */
 ){
   if( pWhere 
    && !ExprHasProperty(pWhere, EP_OuterON|EP_InnerON) 
@@ -7437,9 +7443,9 @@ static SQLITE_NOINLINE void existsToJoin(
     }
     else if( pWhere->op==TK_EXISTS ){
       Select *pSub = pWhere->x.pSelect;
+      Expr *pSubWhere = pSub->pWhere;
       if( pSub->pSrc->nSrc==1
        && (pSub->selFlags & SF_Aggregate)==0
-       && pSub->pWhere
        && !pSub->pSrc->a[0].fg.isSubquery
       ){
         memset(pWhere, 0, sizeof(*pWhere));
@@ -7451,9 +7457,10 @@ static SQLITE_NOINLINE void existsToJoin(
         pSub->pSrc->a[0].fg.fromExists = 1;
         pSub->pSrc->a[0].fg.jointype |= JT_CROSS;
         p->pSrc = sqlite3SrcListAppendList(pParse, p->pSrc, pSub->pSrc);
-        p->pWhere = sqlite3PExpr(pParse, TK_AND, p->pWhere, pSub->pWhere);
-
-        pSub->pWhere = 0;
+        if( pSubWhere ){
+          p->pWhere = sqlite3PExpr(pParse, TK_AND, p->pWhere, pSubWhere);
+          pSub->pWhere = 0;
+        }
         pSub->pSrc = 0;
         sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pSub);
 #if TREETRACE_ENABLED
@@ -7463,6 +7470,7 @@ static SQLITE_NOINLINE void existsToJoin(
           sqlite3TreeViewSelect(0, p, 0);
         }
 #endif
+        existsToJoin(pParse, p, pSubWhere);
       }
     }
   }
