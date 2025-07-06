@@ -533,7 +533,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     this.db = arguments[0];
     __ptrMap.set(this, arguments[1]);
-    if( arguments.length>3 && false===arguments[3] ){
+    if( arguments.length>3 && !!arguments[3] ){
       __doesNotOwnHandle.add(this);
     }
   };
@@ -728,10 +728,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     },
     /**
        Finalizes all open statements and closes this database
-       connection. This is a no-op if the db has already been
-       closed. After calling close(), `this.pointer` will resolve to
-       `undefined`, so that can be used to check whether the db
-       instance is still opened.
+       connection (with one exception noted below). This is a no-op if
+       the db has already been closed. After calling close(),
+       `this.pointer` will resolve to `undefined`, and that can be
+       used to check whether the db instance is still opened.
 
        If this.onclose.before is a function then it is called before
        any close-related cleanup.
@@ -751,6 +751,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        all, will never trigger close(), so onclose handlers are not a
        reliable way to implement close-time cleanup or maintenance of
        a db.
+
+       If this instance was created using DB.wrapHandle() and does not
+       own this.pointer then it does not close the db handle but it
+       does perform all other work, such as calling onclose callbacks
+       and disassociating this object from this.pointer.
     */
     close: function(){
       const pDb = this.pointer;
@@ -1491,10 +1496,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      The first argument must be either a non-NULL (sqlite3*) WASM
      pointer or a non-close()d instance of oo1.DB.
 
-     The second argument only applies if the first argument is a
-     (sqlite3*). If it is, the returned object will pass that pointer
-     to sqlite3_close() when its close() method is called, otherwise
-     it will not.
+     The second argument, defaulting to false, only applies if the
+     first argument is a (sqlite3*). If it is, the returned object
+     will pass that pointer to sqlite3_close() when its close() method
+     is called, otherwise it will not.
 
      If the first argument is a oo1.DB object, the second argument is
      disregarded and the returned object will be created as a
@@ -2267,12 +2272,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      The second argument must be a valid WASM (sqlite3_stmt*), as
      produced by sqlite3_prepare_v2() and sqlite3_prepare_v3().
 
-     The third argument specifies whether the returned Stmt object
-     takes over ownership of the underlying (sqlite3_stmt*). If true,
-     the returned object's finalize() method will finalize that
-     handle, else it will not. If it is false, ownership of stmtPtr is
-     unchanged and stmtPtr MUST outlive the returned object or results
-     are undefined.
+     The third argument, defaulting to false, specifies whether the
+     returned Stmt object takes over ownership of the underlying
+     (sqlite3_stmt*). If true, the returned object's finalize() method
+     will finalize that handle, else it will not. If it is false,
+     ownership of stmtPtr is unchanged and stmtPtr MUST outlive the
+     returned object or results are undefined.
 
      This function throws if the arguments are invalid. On success it
      returns a new Stmt object which wraps the given statement
