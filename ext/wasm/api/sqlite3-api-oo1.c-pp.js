@@ -38,6 +38,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const __ptrMap = new WeakMap();
   /**
+     A Set of oo1.DB objects which are proxies for (A) (sqlite3*) or
+     another oo1.DB object or (B) oo1.Stmt objects which are proxies
+     for (sqlite3_stmt*) pointers. Such objects do not own their
+     underlying handle and that handle must be guaranteed (by the
+     client) to outlive the proxy. These proxies are primarily
+     intended as a way to briefly wrap an (sqlite3[_stmt]*) object as
+     an oo1.DB/Stmt without taking over ownership.
+  */
+  const __doesNotOwnHandle = new Set();
+  /**
      Map of DB instances to objects, each object being a map of Stmt
      wasm pointers to Stmt objects.
   */
@@ -234,73 +244,89 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       };
     }
     const opt = ctor.normalizeArgs(...args);
-    let fn = opt.filename, vfsName = opt.vfs, flagsStr = opt.flags;
-    if(('string'!==typeof fn && 'number'!==typeof fn)
-       || 'string'!==typeof flagsStr
-       || (vfsName && ('string'!==typeof vfsName && 'number'!==typeof vfsName))){
-      sqlite3.config.error("Invalid DB ctor args",opt,arguments);
-      toss3("Invalid arguments for DB constructor.");
-    }
-    let fnJs = ('number'===typeof fn) ? wasm.cstrToJs(fn) : fn;
-    const vfsCheck = ctor._name2vfs[fnJs];
-    if(vfsCheck){
-      vfsName = vfsCheck.vfs;
-      fn = fnJs = vfsCheck.filename(fnJs);
-    }
-    let pDb, oflags = 0;
-    if( flagsStr.indexOf('c')>=0 ){
-      oflags |= capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
-    }
-    if( flagsStr.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
-    if( 0===oflags ) oflags |= capi.SQLITE_OPEN_READONLY;
-    oflags |= capi.SQLITE_OPEN_EXRESCODE;
-    const stack = wasm.pstack.pointer;
-    try {
-      const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
-      let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
-      pDb = wasm.peekPtr(pPtr);
-      checkSqlite3Rc(pDb, rc);
-      capi.sqlite3_extended_result_codes(pDb, 1);
-      if(flagsStr.indexOf('t')>=0){
-        capi.sqlite3_trace_v2(pDb, capi.SQLITE_TRACE_STMT,
-                              __dbTraceToConsole, pDb);
+    //sqlite3.config.debug("DB ctor",opt);
+    let pDb;
+    if( (pDb = opt['sqlite3*']) ){
+      /* This property ^^^^^ is very specifically NOT DOCUMENTED and
+         NOT part of the public API. This is a back door for functions
+         like DB.wrapDbHandle(). */
+      //sqlite3.config.debug("creating proxy db from",opt);
+      if( !opt['sqlite3*:takeOwnership'] ){
+        /* This is object does not own its handle. */
+        __doesNotOwnHandle.add(this);
       }
-    }catch( e ){
-      if( pDb ) capi.sqlite3_close_v2(pDb);
-      throw e;
-    }finally{
-      wasm.pstack.restore(stack);
+      this.filename = capi.sqlite3_db_filename(pDb,'main');
+    }else{
+      let fn = opt.filename, vfsName = opt.vfs, flagsStr = opt.flags;
+      if(('string'!==typeof fn && 'number'!==typeof fn)
+         || 'string'!==typeof flagsStr
+         || (vfsName && ('string'!==typeof vfsName && 'number'!==typeof vfsName))){
+        sqlite3.config.error("Invalid DB ctor args",opt,arguments);
+        toss3("Invalid arguments for DB constructor.");
+      }
+      let fnJs = ('number'===typeof fn) ? wasm.cstrToJs(fn) : fn;
+      const vfsCheck = ctor._name2vfs[fnJs];
+      if(vfsCheck){
+        vfsName = vfsCheck.vfs;
+        fn = fnJs = vfsCheck.filename(fnJs);
+      }
+      let oflags = 0;
+      if( flagsStr.indexOf('c')>=0 ){
+        oflags |= capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
+      }
+      if( flagsStr.indexOf('w')>=0 ) oflags |= capi.SQLITE_OPEN_READWRITE;
+      if( 0===oflags ) oflags |= capi.SQLITE_OPEN_READONLY;
+      oflags |= capi.SQLITE_OPEN_EXRESCODE;
+      const stack = wasm.pstack.pointer;
+      try {
+        const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
+        let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
+        pDb = wasm.peekPtr(pPtr);
+        checkSqlite3Rc(pDb, rc);
+        capi.sqlite3_extended_result_codes(pDb, 1);
+        if(flagsStr.indexOf('t')>=0){
+          capi.sqlite3_trace_v2(pDb, capi.SQLITE_TRACE_STMT,
+                                __dbTraceToConsole, pDb);
+        }
+      }catch( e ){
+        if( pDb ) capi.sqlite3_close_v2(pDb);
+        throw e;
+      }finally{
+        wasm.pstack.restore(stack);
+      }
+      this.filename = fnJs;
     }
-    this.filename = fnJs;
     __ptrMap.set(this, pDb);
     __stmtMap.set(this, Object.create(null));
-    try{
+    if( !opt['sqlite3*'] ){
+      try{
 //#if enable-see
-      dbCtorApplySEEKey(this,opt);
+        dbCtorApplySEEKey(this,opt);
 //#endif
-      // Check for per-VFS post-open SQL/callback...
-      const pVfs = capi.sqlite3_js_db_vfs(pDb)
-            || toss3("Internal error: cannot get VFS for new db handle.");
-      const postInitSql = __vfsPostOpenCallback[pVfs];
-      if(postInitSql){
-        /**
-           Reminder: if this db is encrypted and the client did _not_ pass
-           in the key, any init code will fail, causing the ctor to throw.
-           We don't actually know whether the db is encrypted, so we cannot
-           sensibly apply any heuristics which skip the init code only for
-           encrypted databases for which no key has yet been supplied.
-        */
-        if(postInitSql instanceof Function){
-          postInitSql(this, sqlite3);
-        }else{
-          checkSqlite3Rc(
-            pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
-          );
+        // Check for per-VFS post-open SQL/callback...
+        const pVfs = capi.sqlite3_js_db_vfs(pDb)
+              || toss3("Internal error: cannot get VFS for new db handle.");
+        const postInitSql = __vfsPostOpenCallback[pVfs];
+        if(postInitSql){
+          /**
+             Reminder: if this db is encrypted and the client did _not_ pass
+             in the key, any init code will fail, causing the ctor to throw.
+             We don't actually know whether the db is encrypted, so we cannot
+             sensibly apply any heuristics which skip the init code only for
+             encrypted databases for which no key has yet been supplied.
+          */
+          if(postInitSql instanceof Function){
+            postInitSql(this, sqlite3);
+          }else{
+            checkSqlite3Rc(
+              pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
+            );
+          }
         }
+      }catch(e){
+        this.close();
+        throw e;
       }
-    }catch(e){
-      this.close();
-      throw e;
     }
   };
 
@@ -486,26 +512,30 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - `db`: the DB object which created the statement.
 
      - `columnCount`: the number of result columns in the query, or 0
-     for queries which cannot return results. This property is a proxy
-     for sqlite3_column_count() and its use in loops should be avoided
-     because of the call overhead associated with that. The
-     `columnCount` is not cached when the Stmt is created because a
-     schema change made via a separate db connection between this
-     statement's preparation and when it is stepped may invalidate it.
+     for queries which cannot return results. This property is a
+     read-only proxy for sqlite3_column_count() and its use in loops
+     should be avoided because of the call overhead associated with
+     that. The `columnCount` is not cached when the Stmt is created
+     because a schema change made between this statement's preparation
+     and when it is stepped may invalidate it.
 
-     - `parameterCount`: the number of bindable parameters in the query.
+     - `parameterCount`: the number of bindable parameters in the
+     query.  Like `columnCount`, this property is ready-only and is a
+     proxy for a C API call.
 
      As a general rule, most methods of this class will throw if
      called on an instance which has been finalized. For brevity's
      sake, the method docs do not all repeat this warning.
   */
-  const Stmt = function(){
+  const Stmt = function(/*oo1db, stmtPtr, BindTypes [,takeOwnership=true] */){
     if(BindTypes!==arguments[2]){
       toss3(capi.SQLITE_MISUSE, "Do not call the Stmt constructor directly. Use DB.prepare().");
     }
     this.db = arguments[0];
     __ptrMap.set(this, arguments[1]);
-    this.parameterCount = capi.sqlite3_bind_parameter_count(this.pointer);
+    if( arguments.length>3 && false===arguments[3] ){
+      __doesNotOwnHandle.add(this);
+    }
   };
 
   /** Throws if the given DB has been closed, else it is returned. */
@@ -723,12 +753,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        a db.
     */
     close: function(){
-      if(this.pointer){
+      const pDb = this.pointer;
+      if(pDb){
         if(this.onclose && (this.onclose.before instanceof Function)){
           try{this.onclose.before(this)}
           catch(e){/*ignore*/}
         }
-        const pDb = this.pointer;
         Object.keys(__stmtMap.get(this)).forEach((k,s)=>{
           if(s && s.pointer){
             try{s.finalize()}
@@ -737,7 +767,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         });
         __ptrMap.delete(this);
         __stmtMap.delete(this);
-        capi.sqlite3_close_v2(pDb);
+        if( !__doesNotOwnHandle.delete(this) ){
+          capi.sqlite3_close_v2(pDb);
+        }
         if(this.onclose && (this.onclose.after instanceof Function)){
           try{this.onclose.after(this)}
           catch(e){/*ignore*/}
@@ -1450,9 +1482,87 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     checkRc: function(resultCode){
       return checkSqlite3Rc(this, resultCode);
-    }
+    },
   }/*DB.prototype*/;
 
+  /**
+     Returns a new oo1.DB instance which wraps the given db.
+
+     The first argument must be either a non-NULL (sqlite3*) WASM
+     pointer or a non-close()d instance of oo1.DB.
+
+     The second argument only applies if the first argument is a
+     (sqlite3*). If it is, the returned object will pass that pointer
+     to sqlite3_close() when its close() method is called, otherwise
+     it will not.
+
+     If the first argument is a oo1.DB object, the second argument is
+     disregarded and the returned object will be created as a
+     sqlite3.oo1.DB object (as opposed to the concrete derived DB
+     subclass from the first argument), so will not include any
+     derived-type behaviors,
+     e.g. JsStorageDb.prototype.clearStorage().
+
+     Throws if db cannot be resolved to one of the legal options.
+
+     The caller MUST GUARANTEE that the passed-in handle will outlive
+     the returned object, i.e. that it will not be closed. If it is closed,
+     this object will hold a stale pointer and results are undefined.
+
+     Aside from its lifetime, the proxy is to be treated as any other
+     DB instance, including the requirement of calling close() on
+     it. close() will free up internal resources owned by the proxy,
+     and disassociate the proxy from that handle, but will not
+     actually close the proxied db handle.
+
+     The following quirks and requirements apply when proxying another
+     DB instance, as opposed to a (sqlite3*):
+
+     - DO NOT call close() on the being-proxied instance while a proxy
+       is active.
+
+     - ALWAYS eventually call close() on the returned object BEFORE
+       the being-proxied handle is closed.
+
+    - For historical reasons, the filename property of the returned
+      object is captured at the time of this call, as opposed to being
+      dynamically proxied. e.g., if the filename property of the
+      being-proxied object is changed, this object will not reflect
+      that change. There is no good reason to ever modify that
+      property, so this distinction is not truly significant but it's
+      noted here because it's a client-visible discrepancy between the
+      proxy and its partner. (Sidebar: the filename property _should_
+      be a property access interceptor for sqlite3_db_filename(),
+      but making it so now may break existing code.)
+  */
+  DB.wrapHandle = function(db, takeOwnership=false){
+    let ptr, ctor = DB;
+    const oo1db = (db instanceof DB) ? db : undefined;
+    if( wasm.isPtr(db) ){
+      ptr = db;
+    }else if( oo1db ){
+      takeOwnership = false;
+      ptr = db.pointer;
+      //ctor = db.constructor;
+      // ^^^ that doesn't work, resulting in an Object-type value
+    }
+    //sqlite3.config.debug("wrapHandle()",'db',db,'ctor',ctor,
+    //'arguments',arguments,'db.constructor',db.constructor);
+    if( !ptr ){
+      throw new sqlite3.SQLite3Error(sqlite3.SQLITE_MISUSE,
+                                     "Argument must be a WASM sqlite3 "+
+                                     "pointer or an sqlite3.oo1.DB instance");
+    }
+    const dc = new ctor({
+      "sqlite3*": ptr,
+      "sqlite3*:takeOwnership": !!takeOwnership
+    });
+    if( oo1db ){
+      dc.filename = oo1db.filename;
+    }//else dc.filename was captured by the ctor for legacy consistency
+    //sqlite3.config.debug("wrapHandle() dc",dc);
+    return dc;
+  }/*DB.wrapHandle()*/;
 
   /** Throws if the given Stmt has been finalized, else stmt is
       returned. */
@@ -1641,12 +1751,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        This method always throws if called when it is illegal to do
        so. Namely, when triggered via a per-row callback handler of a
        DB.exec() call.
+
+       If Stmt does not own its underlying (sqlite3_stmt*) (see
+       Stmt.wrapHandle()) then this function will not pass it to
+       sqlite3_finalize().
     */
     finalize: function(){
-      if(this.pointer){
+      const ptr = this.pointer;
+      if(ptr){
         affirmNotLockedByExec(this,'finalize()');
-        const rc = capi.sqlite3_finalize(this.pointer);
-        delete __stmtMap.get(this.db)[this.pointer];
+        const rc = (__doesNotOwnHandle.delete(this)
+                    ? 0
+                    : capi.sqlite3_finalize(ptr));
+        delete __stmtMap.get(this.db)[ptr];
         __ptrMap.delete(this);
         __execLock.delete(this);
         __stmtMayGet.delete(this);
@@ -2133,6 +2250,60 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     get: function(){return capi.sqlite3_column_count(this.pointer)},
     set: ()=>toss3("The columnCount property is read-only.")
   });
+
+  Object.defineProperty(Stmt.prototype, 'parameterCount', {
+    enumerable: false,
+    get: function(){return capi.sqlite3_bind_parameter_count(this.pointer)},
+    set: ()=>toss3("The parameterCount property is read-only.")
+  });
+
+  /**
+     The Stmt counterpart of oo1.DB.wrapHandle(), this creates a Stmt
+     instance which wraps a WASM (sqlite3_stmt*) in the oo1 API with
+     or without taking over ownership of that pointer.
+
+     The first argument must be an oo1.DB instance[^1].
+
+     The second argument must be a valid WASM (sqlite3_stmt*), as
+     produced by sqlite3_prepare_v2() and sqlite3_prepare_v3().
+
+     The third argument specifies whether the returned Stmt object
+     takes over ownership of the underlying (sqlite3_stmt*). If true,
+     the returned object's finalize() method will finalize that
+     handle, else it will not. If it is false, ownership of stmtPtr is
+     unchanged and stmtPtr MUST outlive the returned object or results
+     are undefined.
+
+     This function throws if the arguments are invalid. On success it
+     returns a new Stmt object which wraps the given statement
+     pointer.
+
+     Like all Stmt objects, the finalize() method must eventually be
+     called on the returned object to free up internal resources,
+     regardless of whether this function's third argument is true or
+     not.
+
+     [^1]: The first argument cannot be a (sqlite3*) because the
+     resulting Stmt object requires a parent DB object. It is not yet
+     determined whether it would be of general benefit to refactor the
+     DB/Stmt pair internals to communicate in terms of the underlying
+     (sqlite3*) rather than a DB object. If so, we could laxen the
+     first argument's requirement and allow an (sqlite3*).
+  */
+  Stmt.wrapHandle = function(oo1db, stmtPtr, takeOwnership=false){
+    let ctor = Stmt;
+    if( !(oo1db instanceof DB) || !oo1db.pointer ){
+      throw new sqlite3.SQLite3Error(sqlite3.SQLITE_MISUSE,
+                                     "First argument must be an opened "+
+                                     "sqlite3.oo1.DB instance");
+    }
+    if( !stmtPtr || !wasm.isPtr(stmtPtr) ){
+      throw new sqlite3.SQLite3Error(sqlite3.SQLITE_MISUSE,
+                                     "Second argument must be a WASM "+
+                                     "sqlite3_stmt pointer");
+    }
+    return new Stmt(oo1db, stmtPtr, BindTypes, !!takeOwnership);
+  }
 
   /** The OO API's public namespace. */
   sqlite3.oo1 = {

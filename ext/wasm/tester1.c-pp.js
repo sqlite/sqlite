@@ -41,7 +41,7 @@
 
    ES6 worker module build:
 
-     ./c-pp -f tester1.c-pp.js -o tester1-esm.js -Dtarget=es6-module
+     ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget=es6-module
 */
 //#if target=es6-module
 import {default as sqlite3InitModule} from './jswasm/sqlite3.mjs';
@@ -1209,6 +1209,94 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     })
+
+  ////////////////////////////////////////////////////////////////////
+    .t({
+      name: "oo1.DB/Stmt.wrapDbHandle()",
+      test: function(sqlite3){
+        /* Maintenance reminder: this function is early in the list to
+           demonstrate that the wrappers for this.db created by this
+           function do not interfere with downstream tests, e.g. by
+           closing this.db.pointer. */
+        sqlite3.config.debug("Proxying",this.db);
+        let dw = sqlite3.oo1.DB.wrapHandle(this.db);
+        sqlite3.config.debug('dw',dw);
+        T.assert( dw, '!!dw' )
+          .assert( dw instanceof sqlite3.oo1.DB, 'dw is-a oo1.DB' )
+          .assert( dw.pointer, 'dw.pointer' )
+          .assert( dw.pointer === this.db.pointer, 'dw.pointer===db.pointer' )
+          .assert( dw.filename === this.db.filename, 'dw.filename===db.filename' );
+
+        T.assert( dw === dw.exec("select 1") );
+        let q;
+        try {
+          q = dw.prepare("select 1");
+          T.assert( q.step() )
+            .assert( !q.step() );
+        }finally{
+          if( q ) q.finalize();
+        }
+        dw.close();
+        T.assert( !dw.pointer )
+          .assert( this.db === this.db.exec("select 1") );
+        dw = undefined;
+
+        let pDb = 0, pStmt = 0;
+        const stack = wasm.pstack.pointer;
+        try {
+          const ppOut = wasm.pstack.allocPtr();
+          T.assert( 0===wasm.peekPtr(ppOut) );
+          let rc = capi.sqlite3_open_v2( ":memory:", ppOut,
+                                         capi.SQLITE_OPEN_CREATE
+                                         | capi.SQLITE_OPEN_READWRITE,
+                                         0);
+          T.assert( 0===rc, 'open_v2()' );
+          pDb = wasm.peekPtr(ppOut);
+          wasm.pokePtr(ppOut, 0);
+          T.assert( pDb>0, 'pDb>0' );
+          const pTmp = pDb;
+          dw = sqlite3.oo1.DB.wrapHandle(pDb, true);
+          pDb = 0;
+          //sqlite3.config.debug("dw",dw);
+          T.assert( pTmp===dw.pointer, 'pDb===dw.pointer' );
+          T.assert( dw.filename === "", "dw.filename == "+dw.filename );
+          let q = dw.prepare("select 1");
+          try {
+            T.assert( q.step(), "step()" );
+            T.assert( !q.step(), "!step()" );
+          }finally{
+            q.finalize();
+            q = undefined;
+          }
+          T.assert( dw===dw.exec("select 1") );
+          dw.affirmOpen();
+          rc = capi.sqlite3_prepare_v2( dw, "select 1", -1, ppOut, 0 );
+          T.assert( 0===rc, 'prepare_v2() rc='+rc );
+          pStmt = wasm.peekPtr(ppOut);
+          try {
+            q = sqlite3.oo1.Stmt.wrapHandle(dw, pStmt, false);
+            T.assert( q.step(), "step()" )
+              .assert( !q.step(), "!step()" );
+            q.finalize();
+            q = undefined;
+            q = sqlite3.oo1.Stmt.wrapHandle(dw, pStmt, true);
+            pStmt = 0;
+            q.reset();
+            T.assert( q.step(), "step()" )
+              .assert( !q.step(), "!step()" );
+          }finally{
+            if( pStmt ) capi.sqlite3_finalize(pStmt)
+            if( q ) q.finalize();
+          }
+
+        }finally{
+          wasm.pstack.restore(stack);
+          if( pDb ){ capi.sqlite3_close_v2(pDb); }
+          else if( dw ){ dw.close(); }
+        }
+      }
+    })/*oo1.DB/Stmt.wrapHandle()*/
+
   ////////////////////////////////////////////////////////////////////
     .t('sqlite3_db_config() and sqlite3_db_status()', function(sqlite3){
       let rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE, 0, 0);
