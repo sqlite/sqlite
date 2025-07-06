@@ -94,13 +94,13 @@ do_execsql_test 2.4.0 {
 
 do_eqp_test 2.4.1 {
   SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a);
-} {SCAN t1*SINGLETON t2}
+} {SCAN t1*t2 EXISTS}
 do_execsql_test 2.4.2 {
   ANALYZE;
 }
 do_eqp_test 2.4.3 {
   SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a);
-} {SCAN t1*SINGLETON t2}
+} {SCAN t1*t2 EXISTS}
 do_execsql_test 2.4.4 {
   SELECT count(*) FROM t1 WHERE EXISTS (SELECT 1 FROM t2 WHERE c=a);
 } {100}
