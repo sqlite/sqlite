@@ -1218,9 +1218,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
            demonstrate that the wrappers for this.db created by this
            function do not interfere with downstream tests, e.g. by
            closing this.db.pointer. */
-        sqlite3.config.debug("Proxying",this.db);
+        //sqlite3.config.debug("Proxying",this.db);
         let dw = sqlite3.oo1.DB.wrapHandle(this.db);
-        sqlite3.config.debug('dw',dw);
+        //sqlite3.config.debug('dw',dw);
         T.assert( dw, '!!dw' )
           .assert( dw instanceof sqlite3.oo1.DB, 'dw is-a oo1.DB' )
           .assert( dw.pointer, 'dw.pointer' )

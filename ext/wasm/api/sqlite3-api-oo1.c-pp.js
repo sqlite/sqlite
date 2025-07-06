@@ -429,7 +429,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - `vfs`: the VFS fname
 
 //#if enable-see
-
      SEE-capable builds optionally support ONE of the following
      additional options:
 
@@ -455,7 +454,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      is supplied and the database is encrypted, execution of the
      post-initialization SQL will fail, causing the constructor to
      throw.
-
 //#endif enable-see
 
      The `filename` and `vfs` arguments may be either JS strings or
@@ -483,8 +481,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /**
      Internal-use enum for mapping JS types to DB-bindable types.
      These do not (and need not) line up with the SQLITE_type
-     values. All values in this enum must be truthy and distinct
-     but they need not be numbers.
+     values. All values in this enum must be truthy and (mostly)
+     distinct but they need not be numbers.
   */
   const BindTypes = {
     null: 1,
@@ -493,7 +491,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     boolean: 4,
     blob: 5
   };
-  BindTypes['undefined'] == BindTypes.null;
   if(wasm.bigIntEnabled){
     BindTypes.bigint = BindTypes.number;
   }
@@ -1589,8 +1586,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         case BindTypes.string:
           return t;
         case BindTypes.bigint:
-          if(wasm.bigIntEnabled) return t;
-          /* else fall through */
+          return wasm.bigIntEnabled ? t : undefined;
         default:
           return util.isBindableTypedArray(v) ? BindTypes.blob : undefined;
     }
