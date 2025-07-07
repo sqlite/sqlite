@@ -1,5 +1,5 @@
-C Add\s'reconfigure'\starget\sto\sMakefile.in\sto\sre-run\sthe\sconfigure\sscript\swith\sthe\ssame\sflags\sit\swas\sgenerated\swith.
-D 2025-07-04T18:32:18.912
+C Fix\sparser\serror\sintroduced\sby\s[325e547a2195571e].\s\sSee\n[forum:/forumpost/095dbfc06e5b1f7e|forum\spost\s095dbfc06e5].
+D 2025-07-07T02:18:27.401
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -844,7 +844,7 @@ F src/test_vfs.c b4135c1308516adf0dfd494e6d6c33114e03732be899eace0502919b674586b
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 3e37ac2b6cbb9b0abe33827b0153c27595269afd7152b48019808974481aca2c
+F src/tokenize.c 8400646d2830afc2f2dc465a75e3a92e4bedeea623f19dbd79c0c12d0dd6dda2
 F src/treeview.c d85ce76e6d1498d781957c07cb234da6d77ce0ed2d196480d516f54dabc62279
 F src/trigger.c 3ffb8ed6b64dbcc0ccae6e82435d01be3bf547e13b814e2d46f7df9bef84748e
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 64f5f14322349b47451b8cac03bf8cd6f1ae45a8822e7f1ddee3d0b265047501
-R 2e84b390408477c8e70efdd22e84c169
-U stephan
-Z a6be9728f4a0aec0de70108286e76b7e
+P c60907e77b32824aaaf024d299cdaf161b5f64fc927ffe5d5455eeb5754e6b01
+R 9751f5fd5db45dc9854f3e80aaabd1b6
+U drh
+Z 4f27d9f9c6c0d2b5f41153ee565cb8ec
 # Remove this line to create a well-formed Fossil manifest.
