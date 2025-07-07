@@ -1,5 +1,5 @@
-C Work\saround\sthe\sEmscripten\s4.10\sregression\sdescribed\sin\s[https://github.com/emscripten-core/emscripten/issues/24656\s|\sEmscripten\sticket\s#24656].\sProblem\sreported\soff-list\sby\sBrickViking.
-D 2025-07-07T12:11:26.315
+C Rework\sthe\sfix\sto\sthe\sproblem\sdescribed\sby\n[forum:/forumpost/b9647a113b465950|forum\spost\sb9647a113b]\sso\sthat\sit\nprovides\sa\smore\scomplete\sfix\sthat\scovers\scases\sthat\swere\snot\sresolved\sby\nthe\soriginal\sfix,\sand\sso\sthat\sit\sdoes\snot\scause\sperformance\sregressions.
+D 2025-07-07T16:19:44.166
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -729,7 +729,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 783f9999f9ca56846619ba902f5970e181d897c23cc923c915fef225af6dda8a
 F src/btree.h 18e5e7b2124c23426a283523e5f31a4bff029131b795bb82391f9d2f3136fc50
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c 67c1db4c5e89a8519fe9b6dafc287f6bc3627696b5b8536dc5e06db570d8c05f
+F src/build.c 67159d31bfc565e5f23a7be8159325bae599bddd19fc584ac2511b947cf341d3
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
@@ -790,7 +790,7 @@ F src/shell.c.in 4f14a1f5196b6006abc8e73cc8fd6c1a62cf940396f8ba909d6711f35f074bb
 F src/sqlite.h.in 5c54f2461a1ea529bab8499148a2b238e2d4bb571d59e8ea5322d0c190abb693
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
-F src/sqliteInt.h 005542f8760edf9b62f014abccb876cf64533b64475a40a89402054d62535288
+F src/sqliteInt.h 72bf74887e551d8adf0140bf20fbc321fda7f3cef2c6dc0c5aeefa584cd713a1
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -867,9 +867,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 20be6f0a25a80b7897cf2a5369bfd37ef198e6f0b6cdef16d83eee856056b159
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c f58d41d0923eeb21cab8e4fc87a0b36c0724ff4f279ce95ab2731b4696b8e75a
+F src/where.c 21b768d47fe28aafc7607a97228c261d7ccdca5cd2bff2221418566ca608e2c5
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
-F src/wherecode.c 504f3c1270c3ffd51ebcdf7a31de08aa51a63b33a2ccdf8f5736afe3dfa73d45
+F src/wherecode.c 8e375f7c2191e2a797a89ad34fca687509dc10a012877bc07f464b3cf5f21eb7
 F src/whereexpr.c d007dc41364de5902181739632380afd671e14f0c5cc9978e64a2c6df8f28c6c
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1576,7 +1576,7 @@ F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190c
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test d27191b5ce794c05bf61081e8b2c546a1844c1641321dcaf7fb785234256cc8e
-F test/rowvalue.test 9c873b2f6e7ce72b24ef133f93515c07a6a7dac4846a344ebc2af7b8bfdf5147
+F test/rowvalue.test 8a3f0fea3a3cbbfc7cb9885b76185a774cd8d891e0c133e289567c755d39eb9f
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 103e9a224ca0548dd0d67e439f39c5dd16de4200221a333927372408c025324c
 F test/rowvalue4.test bac9326d1e886656650f67c0ec484eb5f452244a8209c6af508e9a862ace08ed
@@ -2208,8 +2208,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9f335b9a4e9e761a0c6afd6dc69665a24506141bde88530bf59fcbdf957ae881
-R 027d046a8c80c08284dcaad6a9d57a24
-U stephan
-Z c407d0bb15707ac8be6028e01680c96c
+P c385475b250f3364507a95c5832137098a9bb7c7fc12ab3bb116e1fad7bb7645 d2adf61f21a3ce901a2b08199ad0de191e88ef16e097c5f7a75c95ad958eff12
+R 82e9c3e3f384036ea2f7751db27154bc
+T +closed d2adf61f21a3ce901a2b08199ad0de191e88ef16e097c5f7a75c95ad958eff12
+U drh
+Z 1a6c8c788ec8f2b16f1cc6f88559d1db
 # Remove this line to create a well-formed Fossil manifest.
