@@ -804,5 +804,39 @@ do_execsql_test 34.1 {
     WHERE (Id, Item) IN (SELECT Id, Item FROM items);
   SELECT Id, Item, test FROM items ORDER BY id;
 } {1 2 ok 2 2 ok 3 3 ok 4 5 ok}
+db null NULL
+do_execsql_test 34.2 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+  CREATE INDEX idx ON t1(b,a);
+  INSERT INTO t1(a,b) VALUES (1, 22);
+  SELECT * FROM t1 INDEXED BY idx WHERE (b,a) IN (SELECT b,a FROM t1);
+} {1 22 NULL NULL}
+do_execsql_test 34.3 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a, b, c, d);
+  CREATE INDEX idx ON t1(b,a,a);
+  INSERT INTO t1(a,b) VALUES (1, 22);
+  SELECT * FROM t1 INDEXED BY idx WHERE (b,a) IN (SELECT b,a FROM t1);
+} {1 22 NULL NULL}
+do_execsql_test 34.4 {
+  DROP TABLE t1;
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, a INT);
+  CREATE INDEX t1a ON t1(a,id);  -- index includes PRIMARY KEY
+  CREATE TABLE t2(id INTEGER PRIMARY KEY);
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<100)
+    INSERT INTO t1(id,a) SELECT n, 777 FROM c;
+  INSERT INTO t2 SELECT id FROM t1;
+  SELECT *
+    FROM t1 JOIN t2 USING(id)
+   WHERE t1.a=777 AND t2.id>999
+   ORDER BY t1.id;
+} {}
+do_execsql_test 34.5 {
+  EXPLAIN QUERY PLAN
+  SELECT *
+    FROM t1 JOIN t2 USING(id)
+   WHERE t1.a=777 AND t2.id>999
+   ORDER BY t1.id;
+} {/SEARCH t1 USING COVERING INDEX t1a .a=. AND id>../}
 
 finish_test
