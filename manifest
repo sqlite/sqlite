@@ -1,5 +1,5 @@
-C Fix\sa\sparsing\serror\sintroduced\sby\sthe\saddition\sof\sthe\sability\sto\sdisable\ncomments.
-D 2025-07-07T02:23:40.123
+C Work\saround\sthe\sEmscripten\s4.10\sregression\sdescribed\sin\s[https://github.com/emscripten-core/emscripten/issues/24656\s|\sEmscripten\sticket\s#24656].
+D 2025-07-07T14:42:30.360
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -674,7 +674,7 @@ F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2
 F ext/wasm/demo-worker1.js 08720227e98fa5b44761cf6e219269cee3e9dd0421d8d91459535da776950314
 F ext/wasm/dist.make 92ef4ffe33022a50f92d602acabad10bd8dd91759f3eb7df27fc6d7d37072b96
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
-F ext/wasm/fiddle.make c6d7a3d6cc03bb5f21acb295c1233820d0dbf5c6a89b28dc2e093edcc001c45a
+F ext/wasm/fiddle.make 2df87f12bcbae2c966c2cef34ce71bb1584c440c69e14ca6d32f443d8d550dc5
 F ext/wasm/fiddle/fiddle-worker.js 850e66fce39b89d59e161d1abac43a181a4caa89ddeea162765d660277cd84ce
 F ext/wasm/fiddle/fiddle.js 2a2f27b4be2674f501fff61c4a09e44dcf2295731a26b5c28e439f3a573bd269
 F ext/wasm/fiddle/index.html 7fcfb221165183bef0e05d5af9ceb79b527e799b1708ab05de0ec0eaebd5b7bf
@@ -2209,9 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b4db6ddeed8e32e635f636afe3a4c7969e384d7cc0c14038f0c9eab2f4c9d97e
-Q +4eefab44941fc6e17742fa49c8734e7f00a2177d82bc572e596228add53aad39
-R 4c8160dadb32ec91a3c7804c12548f27
-U drh
-Z b3ee38d8e51e3804c7a8713a7192b014
+P 602f8a639c912d1c17bd9eba2f4e8834eb5a205ee525e5d94894468c759f14f2
+Q +c385475b250f3364507a95c5832137098a9bb7c7fc12ab3bb116e1fad7bb7645
+R 1974857cafc51e6b34fe99842f9a7f50
+U stephan
+Z c2543d871d74348aace3acdc63565967
 # Remove this line to create a well-formed Fossil manifest.
