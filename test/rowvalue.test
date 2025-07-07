@@ -788,6 +788,9 @@ do_execsql_test 33.3 {
 # INTEGER PRIMARY KEY, and the columns that UNIQUE constraint are
 # used in a rowvalue-IN operator constraint.
 #
+# 2025-07-07 Discovered that the original fix was incomplete and
+# new tests added.  See tag-20250707-01 in the code.
+#
 reset_db
 do_execsql_test 34.1 {
   CREATE TABLE items (

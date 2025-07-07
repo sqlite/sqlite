@@ -1,5 +1,5 @@
-C Back\sout\sthe\sfix\sat\s[ba7d5bad32ad6aac]\sbecause\sit\sdoes\snot\salways\swork\sand\sbecause\nit\scauses\sa\sperformance\sregression.\s\sAdd\snew\stest\scases\sfor\srow-value\slookups\sof\nindexes\sthat\scontain\sredundant\scolumns,\sthree\sof\swhich\sare\scurrently\sfailing.\s\sThis\nbranch\sis\sseeking\san\simproved\ssolution\sto\sthe\sredundant\sindex\scolumn\sproblem\sfor\nrow-value\slookups.
-D 2025-07-07T10:54:00.314
+C Simplifications\sto\sthe\srow-value\sIN\soperator\slogic.\s\sDo\snot\slet\sthe\squery\nplanner\saccept\sa\sWhereLoop\sfor\sa\srow-value\sIN\soperator\sthat\suses\sthe\ssame\nindex\scolumn\smore\sthan\sonce.
+D 2025-07-07T15:40:53.150
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -867,9 +867,9 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 20be6f0a25a80b7897cf2a5369bfd37ef198e6f0b6cdef16d83eee856056b159
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c da2ad25987070bc28722f115d5bd6cfb0c12331f351d7334ed51dab66841184d
+F src/where.c 21b768d47fe28aafc7607a97228c261d7ccdca5cd2bff2221418566ca608e2c5
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
-F src/wherecode.c 504f3c1270c3ffd51ebcdf7a31de08aa51a63b33a2ccdf8f5736afe3dfa73d45
+F src/wherecode.c ce9e2311186c14ef0f3a56bdc243f17f8bd43de70bd79841fe13ee8db0cd9ffa
 F src/whereexpr.c d007dc41364de5902181739632380afd671e14f0c5cc9978e64a2c6df8f28c6c
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1576,7 +1576,7 @@ F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190c
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test d27191b5ce794c05bf61081e8b2c546a1844c1641321dcaf7fb785234256cc8e
-F test/rowvalue.test dfc4c7004779d24d037644ce9d8e252a83042b1fb51b913ea5f833ccab241940
+F test/rowvalue.test 8a3f0fea3a3cbbfc7cb9885b76185a774cd8d891e0c133e289567c755d39eb9f
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 103e9a224ca0548dd0d67e439f39c5dd16de4200221a333927372408c025324c
 F test/rowvalue4.test bac9326d1e886656650f67c0ec484eb5f452244a8209c6af508e9a862ace08ed
@@ -2208,11 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4eefab44941fc6e17742fa49c8734e7f00a2177d82bc572e596228add53aad39
-R 18dc3afff00dcbf730d14200fa0306d6
-T *branch * redundant-idx-columns
-T *sym-redundant-idx-columns *
-T -sym-trunk *
+P ad8ddcefab5cc526b1cd77731e00939c672e61ca83350d28961b67635d20da03
+R 5a92e17b8b464622bfef81f8d59225e0
 U drh
-Z 32126d38005c3356359df43f9f9d9144
+Z d89bb9ed1d7ca89fa0bfcdcb21412c8b
 # Remove this line to create a well-formed Fossil manifest.
