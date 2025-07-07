@@ -1,5 +1,5 @@
-C Fix\sparser\serror\sintroduced\sby\s[325e547a2195571e].\s\sSee\n[forum:/forumpost/095dbfc06e5b1f7e|forum\spost\s095dbfc06e5].
-D 2025-07-07T02:18:27.401
+C Avoid\sinvoking\sthe\spreupdate\shook\sfrom\swithin\ssqlite3_blob_write()\sif\sthe\scursor\sis\salready\sinvalid.
+D 2025-07-07T11:37:55.009
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -857,7 +857,7 @@ F src/vdbe.h 93761ed7c6b8bc19524912fd9b9b587d41bf4f1d0ade650a00dadc10518d8958
 F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
 F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
 F src/vdbeaux.c fd2c6b19a8892c31a2adc719f156f313560f9cc490cdbd04ff08fdae5d7aedb7
-F src/vdbeblob.c b1b4032cac46b41e44b957c4d00aee9851f862dfd85ecb68116ba49884b03dfd
+F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
 F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecbe
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
@@ -1315,7 +1315,7 @@ F test/in7.test d9efdee00b074a60c6343993b2eda78bc369ab080dad864513c73f8aca89d566
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test 67621a04b3084113bf38ce03797d70eca012d9d8f948193b8f655df577b0da6f
-F test/incrblob4.test 21a52a6843a56cdcce968c6a86b72a7066d0e6ba
+F test/incrblob4.test 10f4537febe1774c02f8d490d393322b4a50898d4027868b67055e9c3adc22db
 F test/incrblob_err.test 89372a28f1d98254f03fed705f9efcd34ef61a674df16d2dbb4726944a2de5e9
 F test/incrblobfault.test de274b1e329169c2c3438f9528994807ea8201ebf38ae9f157d34bf3ec0cc549
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
@@ -2208,8 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c60907e77b32824aaaf024d299cdaf161b5f64fc927ffe5d5455eeb5754e6b01
-R 9751f5fd5db45dc9854f3e80aaabd1b6
-U drh
-Z 4f27d9f9c6c0d2b5f41153ee565cb8ec
+P 4eefab44941fc6e17742fa49c8734e7f00a2177d82bc572e596228add53aad39
+R 8dd2c3d3469e31d78df8ad758ebdebcb
+U dan
+Z 1af57e86c85e1876b1c7c9bf1cb0169c
 # Remove this line to create a well-formed Fossil manifest.
