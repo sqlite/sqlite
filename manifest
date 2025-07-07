@@ -1,5 +1,5 @@
-C Rework\sthe\sfix\sto\sthe\sproblem\sdescribed\sby\n[forum:/forumpost/b9647a113b465950|forum\spost\sb9647a113b]\sso\sthat\sit\nprovides\sa\smore\scomplete\sfix\sthat\scovers\scases\sthat\swere\snot\sresolved\sby\nthe\soriginal\sfix,\sand\sso\sthat\sit\sdoes\snot\scause\sperformance\sregressions.
-D 2025-07-07T16:19:44.166
+C Only\srun\spreupdate-hook\stests\sin\sincrblob4.test\sif\sthe\spreupdate-hook\sis\senabled\sin\sthe\sbuild.
+D 2025-07-07T20:47:23.343
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1315,7 +1315,7 @@ F test/in7.test d9efdee00b074a60c6343993b2eda78bc369ab080dad864513c73f8aca89d566
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test 67621a04b3084113bf38ce03797d70eca012d9d8f948193b8f655df577b0da6f
-F test/incrblob4.test 10f4537febe1774c02f8d490d393322b4a50898d4027868b67055e9c3adc22db
+F test/incrblob4.test 832045dda1148121a329bfb42abcca576b808e23a85cd3bedae9b7e1c89b3f1f
 F test/incrblob_err.test 89372a28f1d98254f03fed705f9efcd34ef61a674df16d2dbb4726944a2de5e9
 F test/incrblobfault.test de274b1e329169c2c3438f9528994807ea8201ebf38ae9f157d34bf3ec0cc549
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
@@ -2208,9 +2208,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c385475b250f3364507a95c5832137098a9bb7c7fc12ab3bb116e1fad7bb7645 d2adf61f21a3ce901a2b08199ad0de191e88ef16e097c5f7a75c95ad958eff12
-R 82e9c3e3f384036ea2f7751db27154bc
-T +closed d2adf61f21a3ce901a2b08199ad0de191e88ef16e097c5f7a75c95ad958eff12
-U drh
-Z 1a6c8c788ec8f2b16f1cc6f88559d1db
+P 28db0d152d90fb5e62d03ea5caceabe8901be98522aef3dc2b54564fbc35355d
+R 1e194882c201aa8b6f5e945d6a9a2830
+U dan
+Z 378fff7db2aa3a965f8f7be7342e2ca6
 # Remove this line to create a well-formed Fossil manifest.

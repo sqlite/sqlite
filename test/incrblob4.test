@@ -108,6 +108,8 @@ close $blob
 
 #-------------------------------------------------------------------------
 
+ifcapable preupdate {
+
 reset_db
 do_execsql_test 5.1 {
   CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
@@ -193,8 +195,10 @@ do_test 5.4.4 {
 catch { close $blob }
 catchsql { ROLLBACK }
 
-do_test 5.3.3 {
+do_test 5.4.5 {
   set ::preupdate_count
 } {2}
+
+}
 
 finish_test
