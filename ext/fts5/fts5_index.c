@@ -8298,12 +8298,15 @@ static void fts5TestTerm(
   u64 *pCksum,
   int *pbFail
 ){
-  int bRet = 0;
   int rc = p->rc;
   if( pPrev->n==0 ){
     fts5BufferSet(&rc, pPrev, n, (const u8*)z);
   }else
-  if( rc==SQLITE_OK && (pPrev->n!=n || memcmp(pPrev->p, z, n)) ){
+  if( *pbFail==0 
+   && rc==SQLITE_OK 
+   && (pPrev->n!=n || memcmp(pPrev->p, z, n)) 
+   && p->pHash->nEntry==0
+  ){
     u64 cksum3 = *pCksum;
     const char *zTerm = (const char*)&pPrev->p[1];  /* term sans prefix-byte */
     int nTerm = pPrev->n-1;            /* Size of zTerm in bytes */
