@@ -126,7 +126,6 @@ void sqlite3WhereAddExplainText(
 #endif
   {
     VdbeOp *pOp = sqlite3VdbeGetOp(pParse->pVdbe, addr);
-
     SrcItem *pItem = &pTabList->a[pLevel->iFrom];
     sqlite3 *db = pParse->db;     /* Database handle */
     int isSearch;                 /* True for a SEARCH. False for SCAN. */
@@ -149,7 +148,10 @@ void sqlite3WhereAddExplainText(
 
     sqlite3StrAccumInit(&str, db, zBuf, sizeof(zBuf), SQLITE_MAX_LENGTH);
     str.printfFlags = SQLITE_PRINTF_INTERNAL;
-    sqlite3_str_appendf(&str, "%s %S", isSearch ? "SEARCH" : "SCAN", pItem);
+    sqlite3_str_appendf(&str, "%s %S%s",
+       isSearch ? "SEARCH" : "SCAN",
+       pItem,
+       pItem->fg.fromExists ? " EXISTS" : "");
     if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0 ){
       const char *zFmt = 0;
       Index *pIdx;

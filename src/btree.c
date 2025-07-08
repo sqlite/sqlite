@@ -5667,6 +5667,30 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   return rc;
 }
 
+/* Set *pRes to 1 (true) if the BTree pointed to by cursor pCur contains zero
+** rows of content.  Set *pRes to 0 (false) if the table contains content.
+** Return SQLITE_OK on success or some error code (ex: SQLITE_NOMEM) if
+** something goes wrong.
+*/
+int sqlite3BtreeIsEmpty(BtCursor *pCur, int *pRes){
+  int rc;
+
+  assert( cursorOwnsBtShared(pCur) );
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+  if( pCur->eState==CURSOR_VALID ){
+    *pRes = 0;
+    return SQLITE_OK;
+  }
+  rc = moveToRoot(pCur);
+  if( rc==SQLITE_EMPTY ){
+    *pRes = 1;
+    rc = SQLITE_OK;
+  }else{
+    *pRes = 0;
+  }
+  return rc;
+}
+
 #ifdef SQLITE_DEBUG
 /* The cursors is CURSOR_VALID and has BTCF_AtLast set.  Verify that
 ** this flags are true for a consistent database.

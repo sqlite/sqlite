@@ -1358,11 +1358,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
+    case TK_EXISTS:
     case TK_SELECT:
-    case TK_EXISTS:  testcase( pExpr->op==TK_EXISTS );
 #endif
     case TK_IN: {
       testcase( pExpr->op==TK_IN );
+      testcase( pExpr->op==TK_EXISTS );
+      testcase( pExpr->op==TK_SELECT );
       if( ExprUseXSelect(pExpr) ){
         int nRef = pNC->nRef;
         testcase( pNC->ncFlags & NC_IsCheck );
@@ -1370,6 +1372,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pNC->ncFlags & NC_IdxExpr );
         testcase( pNC->ncFlags & NC_GenCol );
         assert( pExpr->x.pSelect );
+        if( pExpr->op==TK_EXISTS )  pParse->bHasExists = 1;
         if( pNC->ncFlags & NC_SelfRef ){
           notValidImpl(pParse, pNC, "subqueries", pExpr, pExpr);
         }else{

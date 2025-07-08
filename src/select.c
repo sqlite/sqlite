@@ -384,7 +384,7 @@ static int tableAndColumnIndex(
   int iEnd,            /* Last member of pSrc->a[] to check */
   const char *zCol,    /* Name of the column we are looking for */
   int *piTab,          /* Write index of pSrc->a[] here */
-  int *piCol,          /* Write index of pSrc->a[*piTab].pTab->aCol[] here */
+  int *piCol,          /* Write index of pSrc->a[*piTab].pSTab->aCol[] here */
   int bIgnoreHidden    /* Ignore hidden columns */
 ){
   int i;               /* For looping over tables in pSrc */
@@ -3036,7 +3036,9 @@ static int multiSelect(
         int priorOp;     /* The SRT_ operation to apply to prior selects */
         Expr *pLimit;    /* Saved values of p->nLimit  */
         int addr;
+        int emptyBypass = 0;   /* IfEmpty opcode to bypass RHS */
         SelectDest uniondest;
+
  
         testcase( p->op==TK_EXCEPT );
         testcase( p->op==TK_UNION );
@@ -3075,6 +3077,8 @@ static int multiSelect(
         */
         if( p->op==TK_EXCEPT ){
           op = SRT_Except;
+          emptyBypass = sqlite3VdbeAddOp1(v, OP_IfEmpty, unionTab);
+          VdbeCoverage(v);
         }else{
           assert( p->op==TK_UNION );
           op = SRT_Union;
@@ -3095,6 +3099,7 @@ static int multiSelect(
         if( p->op==TK_UNION ){
           p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
         }
+        if( emptyBypass ) sqlite3VdbeJumpHere(v, emptyBypass);
         sqlite3ExprDelete(db, p->pLimit);
         p->pLimit = pLimit;
         p->iLimit = 0;
@@ -3128,6 +3133,7 @@ static int multiSelect(
         int addr;
         SelectDest intersectdest;
         int r1;
+        int emptyBypass;
  
         /* INTERSECT is different from the others since it requires
         ** two temporary tables.  Hence it has its own case.  Begin
@@ -3151,6 +3157,7 @@ static int multiSelect(
         if( rc ){
           goto multi_select_end;
         }
+        emptyBypass = sqlite3VdbeAddOp1(v, OP_IfEmpty, tab1); VdbeCoverage(v);
  
         /* Code the current SELECT into temporary table "tab2"
         */
@@ -3182,7 +3189,7 @@ static int multiSelect(
         iBreak = sqlite3VdbeMakeLabel(pParse);
         iCont = sqlite3VdbeMakeLabel(pParse);
         computeLimitRegisters(pParse, p, iBreak);
-        sqlite3VdbeAddOp2(v, OP_Rewind, tab1, iBreak); VdbeCoverage(v);
+        sqlite3VdbeAddOp1(v, OP_Rewind, tab1);
         r1 = sqlite3GetTempReg(pParse);
         iStart = sqlite3VdbeAddOp2(v, OP_RowData, tab1, r1);
         sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0);
@@ -3194,6 +3201,7 @@ static int multiSelect(
         sqlite3VdbeAddOp2(v, OP_Next, tab1, iStart); VdbeCoverage(v);
         sqlite3VdbeResolveLabel(v, iBreak);
         sqlite3VdbeAddOp2(v, OP_Close, tab2, 0);
+        sqlite3VdbeJumpHere(v, emptyBypass);
         sqlite3VdbeAddOp2(v, OP_Close, tab1, 0);
         break;
       }
@@ -4650,7 +4658,7 @@ static int flattenSubquery(
   ** complete, since there may still exist Expr.pTab entries that
   ** refer to the subquery even after flattening.  Ticket #3346.
   **
-  ** pSubitem->pTab is always non-NULL by test restrictions and tests above.
+  ** pSubitem->pSTab is always non-NULL by test restrictions and tests above.
   */
   if( ALWAYS(pSubitem->pSTab!=0) ){
     Table *pTabToDel = pSubitem->pSTab;
@@ -5764,7 +5772,7 @@ With *sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
 ** CTE expression, through routine checks to see if the reference is
 ** a recursive reference to the CTE.
 **
-** If pFrom matches a CTE according to either of these two above, pFrom->pTab
+** If pFrom matches a CTE according to either of these two above, pFrom->pSTab
 ** and other fields are populated accordingly.
 **
 ** Return 0 if no match is found.
@@ -7392,6 +7400,82 @@ static int fromClauseTermCanBeCoroutine(
 }
 
 /*
+** Argument pWhere is the WHERE clause belonging to SELECT statement p. This
+** function attempts to transform expressions of the form:
+**
+**     EXISTS (SELECT ...)
+**
+** into joins. For example, given
+**
+**    CREATE TABLE sailors(sid INTEGER PRIMARY KEY, name TEXT);
+**    CREATE TABLE reserves(sid INT, day DATE, PRIMARY KEY(sid, day));
+**
+**    SELECT name FROM sailors AS S WHERE EXISTS (
+**      SELECT * FROM reserves AS R WHERE S.sid = R.sid AND R.day = '2022-10-25'
+**    );
+**
+** the SELECT statement may be transformed as follows:
+**
+**    SELECT name FROM sailors AS S, reserves AS R
+**      WHERE S.sid = R.sid AND R.day = '2022-10-25';
+**
+** **Approximately**.  Really, we have to ensure that the FROM-clause term
+** that was formerly inside the EXISTS is only executed once.  This is handled
+** by setting the SrcItem.fg.fromExists flag, which then causes code in
+** the where.c file to exit the corresponding loop after the first successful
+** match (if any).
+*/
+static SQLITE_NOINLINE void existsToJoin(
+  Parse *pParse,  /* Parsing context */
+  Select *p,      /* The SELECT statement being optimized */
+  Expr *pWhere    /* part of the WHERE clause currently being examined */
+){
+  if( pWhere 
+   && !ExprHasProperty(pWhere, EP_OuterON|EP_InnerON) 
+   && p->pSrc->nSrc<BMS
+   && pParse->db->mallocFailed==0 
+  ){
+    if( pWhere->op==TK_AND ){
+      Expr *pRight = pWhere->pRight;
+      existsToJoin(pParse, p, pWhere->pLeft);
+      existsToJoin(pParse, p, pRight);
+    }
+    else if( pWhere->op==TK_EXISTS ){
+      Select *pSub = pWhere->x.pSelect;
+      Expr *pSubWhere = pSub->pWhere;
+      if( pSub->pSrc->nSrc==1
+       && (pSub->selFlags & SF_Aggregate)==0
+       && !pSub->pSrc->a[0].fg.isSubquery
+      ){
+        memset(pWhere, 0, sizeof(*pWhere));
+        pWhere->op = TK_INTEGER;
+        pWhere->u.iValue = 1;
+        ExprSetProperty(pWhere, EP_IntValue);
+
+        assert( p->pWhere!=0 );
+        pSub->pSrc->a[0].fg.fromExists = 1;
+        pSub->pSrc->a[0].fg.jointype |= JT_CROSS;
+        p->pSrc = sqlite3SrcListAppendList(pParse, p->pSrc, pSub->pSrc);
+        if( pSubWhere ){
+          p->pWhere = sqlite3PExpr(pParse, TK_AND, p->pWhere, pSubWhere);
+          pSub->pWhere = 0;
+        }
+        pSub->pSrc = 0;
+        sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pSub);
+#if TREETRACE_ENABLED
+        if( sqlite3TreeTrace & 0x100000 ){
+          TREETRACE(0x100000,pParse,p,
+                    ("After EXISTS-to-JOIN optimization:\n"));
+          sqlite3TreeViewSelect(0, p, 0);
+        }
+#endif
+        existsToJoin(pParse, p, pSubWhere);
+      }
+    }
+  }
+}
+
+/*
 ** Generate byte-code for the SELECT statement given in the p argument. 
 **
 ** The results are returned according to the SelectDest structure.
@@ -7758,6 +7842,13 @@ int sqlite3Select(
     return rc;
   }
 #endif
+
+  /* If there may be an "EXISTS (SELECT ...)" in the WHERE clause, attempt
+  ** to change it into a join.  */
+  if( pParse->bHasExists && OptimizationEnabled(db,SQLITE_ExistsToJoin) ){
+    existsToJoin(pParse, p, p->pWhere);
+    pTabList = p->pSrc;
+  }
 
   /* Do the WHERE-clause constant propagation optimization if this is
   ** a join.  No need to spend time on this operation for non-join queries
