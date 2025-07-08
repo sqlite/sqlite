@@ -129,7 +129,8 @@ do_test 5.2.1 {
 
 do_test 5.2.2 {
   puts -nonewline $blob "world"
-  list [catch { flush $blob } msg] $msg
+  set rc [catch { flush $blob } msg]
+  list $rc [regsub {input/output} $msg {I/O}]
 } "1 {error flushing \"$blob\": I/O error}"
 catch { close $blob }
 
@@ -149,7 +150,8 @@ do_test 5.3.1 {
 
 do_test 5.3.2 {
   puts -nonewline $blob "world"
-  list [catch { flush $blob } msg] $msg
+  set rc [catch { flush $blob } msg]
+  list $rc [regsub {input/output} $msg {I/O}]
 } "1 {error flushing \"$blob\": I/O error}"
 catch { close $blob }
 
@@ -190,7 +192,8 @@ do_test 5.4.3 {
 
 do_test 5.4.4 {
   puts -nonewline $blob "world"
-  list [catch { flush $blob } msg] $msg
+  set rc [catch { flush $blob } msg]
+  list $rc [regsub {input/output} $msg {I/O}]
 } "1 {error flushing \"$blob\": I/O error}"
 catch { close $blob }
 catchsql { ROLLBACK }

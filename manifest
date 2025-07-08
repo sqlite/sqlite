@@ -1,5 +1,5 @@
-C New\soptimizations\sto\sdetect\searly\swhen\squeries\sreturn\sno\srows\sdue\sto\ntables\sbeing\sempty.\s\sThis\sincludes\sthe\sEXISTS-to-JOIN\soptimization\sthat\ntries\sto\stransform\sEXISTS\sconstraints\sinto\sadditional\sterms\sof\sthe\sFROM\nclause.
-D 2025-07-08T19:53:36.480
+C Adjustments\sto\stest/incrblob4.test\sso\sthat\sit\sworks\son\sboth\sLinux\sand\sMac\nin\sspite\sof\serror\smessage\sdifferences\sbetween\sthose\splatforms.\s\sMinor\schange\nto\stermIsEquivalent()\sto\sprovide\s100%\sMC/DC.
+D 2025-07-08T20:28:35.779
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -870,7 +870,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 6a9266dd1a559d48d8c7ca670a3e80143c7913153f7d1ceb0a4eca1087318951
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 2a2d2993fd98c46f525f71b3bfd330fde73d8613aa0ff3e20402dd1fc63470af
-F src/whereexpr.c d007dc41364de5902181739632380afd671e14f0c5cc9978e64a2c6df8f28c6c
+F src/whereexpr.c 0a7fe115adad30def38aeab6ac1d35fb67782cee92a43df7448136240accd4dd
 F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -1318,7 +1318,7 @@ F test/in7.test d9efdee00b074a60c6343993b2eda78bc369ab080dad864513c73f8aca89d566
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test 67621a04b3084113bf38ce03797d70eca012d9d8f948193b8f655df577b0da6f
-F test/incrblob4.test 832045dda1148121a329bfb42abcca576b808e23a85cd3bedae9b7e1c89b3f1f
+F test/incrblob4.test a8d6b5ff04055fcec747a50b78485ebf4fcd80074e0b3cedbe952bde346da54a
 F test/incrblob_err.test 89372a28f1d98254f03fed705f9efcd34ef61a674df16d2dbb4726944a2de5e9
 F test/incrblobfault.test de274b1e329169c2c3438f9528994807ea8201ebf38ae9f157d34bf3ec0cc549
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
@@ -2211,9 +2211,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 043ff54fb746c54bc6cfa6aa8c8a32c876c09d36163125916ad01024b98d447b 1b9b124f9a35ebd1ac4ea70ef1ee08a4c82c11da690d4164f6b785a6fd9730d9
-R f2382be8a4dd59640ba7d3e608aa0208
-T +closed 1b9b124f9a35ebd1ac4ea70ef1ee08a4c82c11da690d4164f6b785a6fd9730d9
+P e33da6d5dc964db817d1bc63c9083aecd93d49ee14d5198600b47eaf7c5b9331
+R 78682a3b3c6b0a6c29f5de1434b5f502
 U drh
-Z 2faf96645b8f6e620da8ad84b2b3ac57
+Z 9e6d5e7b5a33e381b6fe52bba2b5d309
 # Remove this line to create a well-formed Fossil manifest.
