@@ -6644,7 +6644,7 @@ do_test 48.0 {
 
 do_catchsql_test 48.1 {
   INSERT INTO t1(t1) VALUES('integrity-check');
-} {1 {database disk image is malformed}}
+} {1 {fts5: corruption on page 1, segment 1, table "t1"}}
 
 #--------------------------------------------------------------------------
 reset_db
@@ -10106,7 +10106,7 @@ do_test 68.0 {
 do_catchsql_test 68.1 { 
   PRAGMA reverse_unordered_selects=ON;
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {1 {database disk image is malformed}}
+} {1 {fts5: corruption on page 1, segment 1, table "t1"}}
 
 #-------------------------------------------------------------------------
 reset_db
@@ -16126,4 +16126,3 @@ do_catchsql_test 83.1 {
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test
-
