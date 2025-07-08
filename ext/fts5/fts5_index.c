@@ -8305,7 +8305,7 @@ static void fts5TestTerm(
   if( *pbFail==0 
    && rc==SQLITE_OK 
    && (pPrev->n!=n || memcmp(pPrev->p, z, n)) 
-   && p->pHash->nEntry==0
+   && (p->pHash==0 || p->pHash->nEntry==0)
   ){
     u64 cksum3 = *pCksum;
     const char *zTerm = (const char*)&pPrev->p[1];  /* term sans prefix-byte */
