@@ -7432,7 +7432,6 @@ static SQLITE_NOINLINE void existsToJoin(
 ){
   if( pWhere 
    && !ExprHasProperty(pWhere, EP_OuterON|EP_InnerON) 
-   && p->pSrc->nSrc>0
    && p->pSrc->nSrc<BMS
    && pParse->db->mallocFailed==0 
   ){

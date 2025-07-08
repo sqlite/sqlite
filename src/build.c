@@ -5138,6 +5138,9 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 */
 SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
   assert( p1 );
+  assert( p2 || pParse->nErr );
+  assert( p2==0 || p2->nSrc>=1 );
+  testcase( p1->nSrc==0 );
   if( p2 ){
     int nOld = p1->nSrc;
     SrcList *pNew = sqlite3SrcListEnlarge(pParse, p1, p2->nSrc, nOld);
@@ -5146,10 +5149,10 @@ SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
     }else{
       p1 = pNew;
       memcpy(&p1->a[nOld], p2->a, p2->nSrc*sizeof(SrcItem));
-      assert( nOld==1 || (p2->nSrc==1 && (p2->a[0].fg.jointype&JT_LTORJ)==0) );
-      assert( p1->nSrc>=2 );
+      assert( nOld==1 || (p2->a[0].fg.jointype & JT_LTORJ)==0 );
+      assert( p1->nSrc>=1 );
+      p1->a[0].fg.jointype |= (JT_LTORJ & p2->a[0].fg.jointype);
       sqlite3DbFree(pParse->db, p2);
-      p1->a[0].fg.jointype |= (JT_LTORJ & p1->a[1].fg.jointype);
     }
   }
   return p1;
