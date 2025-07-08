@@ -7430,10 +7430,11 @@ static SQLITE_NOINLINE void existsToJoin(
   Select *p,      /* The SELECT statement being optimized */
   Expr *pWhere    /* part of the WHERE clause currently being examined */
 ){
-  if( pWhere 
+  if( pParse->nErr==0
+   && pWhere!=0
    && !ExprHasProperty(pWhere, EP_OuterON|EP_InnerON) 
+   && ALWAYS(p->pSrc!=0)
    && p->pSrc->nSrc<BMS
-   && pParse->db->mallocFailed==0 
   ){
     if( pWhere->op==TK_AND ){
       Expr *pRight = pWhere->pRight;
