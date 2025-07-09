@@ -429,7 +429,7 @@ define SQLITE.CALL.C-PP.FILTER
 $(2): $(1) $$(MAKEFILE_LIST) $$(bin.c-pp)
 	@mkdir -p $$(dir $$@)
 	$$(bin.c-pp) -f $(1) -o $$@ $(3) $(SQLITE.CALL.C-PP.FILTER.global)
-#CLEAN_FILES += $(2)
+CLEAN_FILES += $(2)
 endef
 # /end SQLITE.CALL.C-PP.FILTER
 ########################################################################

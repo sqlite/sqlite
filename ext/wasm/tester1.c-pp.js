@@ -1356,6 +1356,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                              /columnCount property is read-only/)
           .assert(1===st.columnCount)
           .assert(0===st.parameterCount)
+          .assert(0===capi.sqlite3_bind_parameter_count(st))
           .mustThrow(()=>st.bind(1,null))
           .assert(true===st.step())
           .assert(3 === st.get(0))
@@ -1578,6 +1579,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       let st = db.prepare("update t set b=:b where a='blob'");
       try {
         T.assert(0===st.columnCount)
+          .assert(1===st.parameterCount)
+          .assert(1===capi.sqlite3_bind_parameter_count(st))
           .assert( false===st.isReadOnly() );
         const ndx = st.getParamIndex(':b');
         T.assert(1===ndx);
@@ -3417,6 +3420,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       db.exec("create table t(a)");
       const stmt = db.prepare("insert into t(a) values($a)");
       T.assert( 1===capi.sqlite3_bind_parameter_count(stmt) )
+        .assert( 1===stmt.parameterCount )
         .assert( 1===capi.sqlite3_bind_parameter_index(stmt, "$a") )
         .assert( 0===capi.sqlite3_bind_parameter_index(stmt, ":a") )
         .assert( 1===stmt.getParamIndex("$a") )
