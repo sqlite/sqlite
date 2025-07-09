@@ -221,7 +221,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       else if(filter instanceof Function) pass = filter(err);
       else if('string' === typeof filter) pass = (err.message === filter);
       if(!pass){
-        throw new Error(msg || ("Filter rejected this exception: "+err.message));
+        throw new Error(msg || ("Filter rejected this exception: <<"+err.message+">>"));
       }
       return this;
     },
@@ -1219,7 +1219,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
            function do not interfere with downstream tests, e.g. by
            closing this.db.pointer. */
         //sqlite3.config.debug("Proxying",this.db);
-        let dw = sqlite3.oo1.DB.wrapHandle(this.db);
+        const misuseMsg = "SQLITE_MISUSE: Argument must be a WASM sqlite3 pointer";
+        T.mustThrowMatching(()=>sqlite3.oo1.DB.wrapHandle(this.db), misuseMsg)
+          .mustThrowMatching(()=>sqlite3.oo1.DB.wrapHandle(0), misuseMsg);
+        let dw = sqlite3.oo1.DB.wrapHandle(this.db.pointer);
         //sqlite3.config.debug('dw',dw);
         T.assert( dw, '!!dw' )
           .assert( dw instanceof sqlite3.oo1.DB, 'dw is-a oo1.DB' )

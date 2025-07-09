@@ -38,13 +38,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const __ptrMap = new WeakMap();
   /**
-     A Set of oo1.DB objects which are proxies for (A) (sqlite3*) or
-     another oo1.DB object or (B) oo1.Stmt objects which are proxies
-     for (sqlite3_stmt*) pointers. Such objects do not own their
-     underlying handle and that handle must be guaranteed (by the
-     client) to outlive the proxy. These proxies are primarily
-     intended as a way to briefly wrap an (sqlite3[_stmt]*) object as
-     an oo1.DB/Stmt without taking over ownership.
+     A Set of oo1.DB or oo1.Stmt objects which are proxies for
+     (sqlite3*) resp. (sqlite3_stmt*) pointers. Such objects
+     optionally do not own their underlying handle and that handle
+     must be guaranteed (by the client) to outlive the proxy. These
+     proxies are primarily intended as a way to briefly wrap an
+     (sqlite3[_stmt]*) object as an oo1.DB/Stmt without taking over
+     ownership.
+
+     See DB.wrapHandle() and Stmt.wrapHandle().
   */
   const __doesNotOwnHandle = new Set();
   /**
@@ -1488,22 +1490,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*DB.prototype*/;
 
   /**
-     Returns a new oo1.DB instance which wraps the given db.
+     Returns a new oo1.DB instance which wraps the given (sqlite3*)
+     WASM pointer, optionally with or without taking over ownership of
+     that pointer.
 
      The first argument must be either a non-NULL (sqlite3*) WASM
-     pointer or a non-close()d instance of oo1.DB.
+     pointer.
 
-     The second argument, defaulting to false, only applies if the
-     first argument is a (sqlite3*). If it is, the returned object
-     will pass that pointer to sqlite3_close() when its close() method
-     is called, otherwise it will not.
-
-     If the first argument is a oo1.DB object, the second argument is
-     disregarded and the returned object will be created as a
-     sqlite3.oo1.DB object (as opposed to the concrete derived DB
-     subclass from the first argument), so will not include any
-     derived-type behaviors,
-     e.g. JsStorageDb.prototype.clearStorage().
+     The second argument, defaulting to false, specifies ownership of
+     the first argument. If it is truthy, the returned object will
+     pass that pointer to sqlite3_close() when its close() method is
+     called, otherwise it will not.
 
      Throws if db cannot be resolved to one of the legal options.
 
@@ -1515,56 +1512,38 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      DB instance, including the requirement of calling close() on
      it. close() will free up internal resources owned by the proxy,
      and disassociate the proxy from that handle, but will not
-     actually close the proxied db handle.
+     actually close the proxied db handle unless this function is
+     passed a thruthy second argument.
 
      The following quirks and requirements apply when proxying another
      DB instance, as opposed to a (sqlite3*):
 
-     - DO NOT call close() on the being-proxied instance while a proxy
-       is active.
+     - DO NOT call sqlite3_close() (or similar) on the being-proxied
+       instance while a proxy is active.
 
-     - ALWAYS eventually call close() on the returned object BEFORE
-       the being-proxied handle is closed.
+     - ALWAYS eventually call close() on the returned object. If the
+       proxy does not own the underlying handle then its MUST be
+       closed BEFORE the being-proxied handle is closed.
 
-    - For historical reasons, the filename property of the returned
-      object is captured at the time of this call, as opposed to being
-      dynamically proxied. e.g., if the filename property of the
-      being-proxied object is changed, this object will not reflect
-      that change. There is no good reason to ever modify that
-      property, so this distinction is not truly significant but it's
-      noted here because it's a client-visible discrepancy between the
-      proxy and its partner. (Sidebar: the filename property _should_
-      be a property access interceptor for sqlite3_db_filename(),
-      but making it so now may break existing code.)
+     Design notes:
+
+     - wrapHandle() "could" accept a DB object instance as its first
+       argument and proxy thatDb.pointer but there is currently no use
+       case where doing so would be useful, so it does not allow
+       that. That restriction may be lifted in a future version.
   */
-  DB.wrapHandle = function(db, takeOwnership=false){
-    let ptr, ctor = DB;
-    const oo1db = (db instanceof DB) ? db : undefined;
-    if( wasm.isPtr(db) ){
-      ptr = db;
-    }else if( oo1db ){
-      takeOwnership = false;
-      ptr = db.pointer;
-      //ctor = db.constructor;
-      // ^^^ that doesn't work, resulting in an Object-type value
+  DB.wrapHandle = function(pDb, takeOwnership=false){
+    if( !pDb || !wasm.isPtr(pDb) ){
+      throw new sqlite3.SQLite3Error(capi.SQLITE_MISUSE,
+                                     "Argument must be a WASM sqlite3 pointer");
     }
-    //sqlite3.config.debug("wrapHandle()",'db',db,'ctor',ctor,
-    //'arguments',arguments,'db.constructor',db.constructor);
-    if( !ptr ){
-      throw new sqlite3.SQLite3Error(sqlite3.SQLITE_MISUSE,
-                                     "Argument must be a WASM sqlite3 "+
-                                     "pointer or an sqlite3.oo1.DB instance");
-    }
-    const dc = new ctor({
-      "sqlite3*": ptr,
+    return new DB({
+      /* This ctor call style is very specifically internal-use-only.
+         It is not documented and may change at any time. */
+      "sqlite3*": pDb,
       "sqlite3*:takeOwnership": !!takeOwnership
     });
-    if( oo1db ){
-      dc.filename = oo1db.filename;
-    }//else dc.filename was captured by the ctor for legacy consistency
-    //sqlite3.config.debug("wrapHandle() dc",dc);
-    return dc;
-  }/*DB.wrapHandle()*/;
+  };
 
   /** Throws if the given Stmt has been finalized, else stmt is
       returned. */
@@ -2260,8 +2239,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      The Stmt counterpart of oo1.DB.wrapHandle(), this creates a Stmt
-     instance which wraps a WASM (sqlite3_stmt*) in the oo1 API with
-     or without taking over ownership of that pointer.
+     instance which wraps a WASM (sqlite3_stmt*) in the oo1 API,
+     optionally with or without taking over ownership of that pointer.
 
      The first argument must be an oo1.DB instance[^1].
 
@@ -2272,7 +2251,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      returned Stmt object takes over ownership of the underlying
      (sqlite3_stmt*). If true, the returned object's finalize() method
      will finalize that handle, else it will not. If it is false,
-     ownership of stmtPtr is unchanged and stmtPtr MUST outlive the
+     ownership of pStmt is unchanged and pStmt MUST outlive the
      returned object or results are undefined.
 
      This function throws if the arguments are invalid. On success it
@@ -2289,21 +2268,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      determined whether it would be of general benefit to refactor the
      DB/Stmt pair internals to communicate in terms of the underlying
      (sqlite3*) rather than a DB object. If so, we could laxen the
-     first argument's requirement and allow an (sqlite3*).
+     first argument's requirement and allow an (sqlite3*). Because
+     DB.wrapHandle() enables multiple DB objects to proxy the same
+     (sqlite3*), we cannot unambiguously translate the first arugment
+     from (sqlite3*) to DB instances for us with this function's first
+     argument.
   */
-  Stmt.wrapHandle = function(oo1db, stmtPtr, takeOwnership=false){
+  Stmt.wrapHandle = function(oo1db, pStmt, takeOwnership=false){
     let ctor = Stmt;
     if( !(oo1db instanceof DB) || !oo1db.pointer ){
       throw new sqlite3.SQLite3Error(sqlite3.SQLITE_MISUSE,
                                      "First argument must be an opened "+
                                      "sqlite3.oo1.DB instance");
     }
-    if( !stmtPtr || !wasm.isPtr(stmtPtr) ){
+    if( !pStmt || !wasm.isPtr(pStmt) ){
       throw new sqlite3.SQLite3Error(sqlite3.SQLITE_MISUSE,
                                      "Second argument must be a WASM "+
                                      "sqlite3_stmt pointer");
     }
-    return new Stmt(oo1db, stmtPtr, BindTypes, !!takeOwnership);
+    return new Stmt(oo1db, pStmt, BindTypes, !!takeOwnership);
   }
 
   /** The OO API's public namespace. */
