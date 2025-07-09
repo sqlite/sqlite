@@ -3130,7 +3130,7 @@ static int multiSelect(
         int tab1, tab2;
         int iCont, iBreak, iStart;
         Expr *pLimit;
-        int addr;
+        int addr, iLimit, iOffset;
         SelectDest intersectdest;
         int r1;
         int emptyBypass;
@@ -3157,6 +3157,11 @@ static int multiSelect(
         if( rc ){
           goto multi_select_end;
         }
+
+        /* Initialize LIMIT counters before checking to see if the LHS
+        ** is empty, in case the jump is taken */
+        iBreak = sqlite3VdbeMakeLabel(pParse);
+        computeLimitRegisters(pParse, p, iBreak);
         emptyBypass = sqlite3VdbeAddOp1(v, OP_IfEmpty, tab1); VdbeCoverage(v);
  
         /* Code the current SELECT into temporary table "tab2"
@@ -3164,9 +3169,17 @@ static int multiSelect(
         addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tab2, 0);
         assert( p->addrOpenEphm[1] == -1 );
         p->addrOpenEphm[1] = addr;
-        p->pPrior = 0;
+
+        /* Disable prior SELECTs and the LIMIT counters during the computation
+        ** of the RHS select */
         pLimit = p->pLimit;
+        iLimit = p->iLimit;
+        iOffset = p->iOffset;
+        p->pPrior = 0;
         p->pLimit = 0;
+        p->iLimit = 0;
+        p->iOffset = 0;
+
         intersectdest.iSDParm = tab2;
         ExplainQueryPlan((pParse, 1, "%s USING TEMP B-TREE",
                           sqlite3SelectOpName(p->op)));
@@ -3179,19 +3192,21 @@ static int multiSelect(
           p->nSelectRow = pPrior->nSelectRow;
         }
         sqlite3ExprDelete(db, p->pLimit);
+
+        /* Reinstate the LIMIT counters prior to running the final intersect */
         p->pLimit = pLimit;
+        p->iLimit = iLimit;
+        p->iOffset = iOffset;
  
         /* Generate code to take the intersection of the two temporary
         ** tables.
         */
         if( rc ) break;
         assert( p->pEList );
-        iBreak = sqlite3VdbeMakeLabel(pParse);
-        iCont = sqlite3VdbeMakeLabel(pParse);
-        computeLimitRegisters(pParse, p, iBreak);
         sqlite3VdbeAddOp1(v, OP_Rewind, tab1);
         r1 = sqlite3GetTempReg(pParse);
         iStart = sqlite3VdbeAddOp2(v, OP_RowData, tab1, r1);
+        iCont = sqlite3VdbeMakeLabel(pParse);
         sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0);
         VdbeCoverage(v);
         sqlite3ReleaseTempReg(pParse, r1);
