@@ -1502,7 +1502,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      pass that pointer to sqlite3_close() when its close() method is
      called, otherwise it will not.
 
-     Throws if db cannot be resolved to one of the legal options.
+     Throws if pDb is not a non-0 WASM pointer.
 
      The caller MUST GUARANTEE that the passed-in handle will outlive
      the returned object, i.e. that it will not be closed. If it is closed,
@@ -1510,16 +1510,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      Aside from its lifetime, the proxy is to be treated as any other
      DB instance, including the requirement of calling close() on
-     it. close() will free up internal resources owned by the proxy,
-     and disassociate the proxy from that handle, but will not
+     it. close() will free up internal resources owned by the proxy
+     and disassociate the proxy from that handle but will not
      actually close the proxied db handle unless this function is
      passed a thruthy second argument.
 
-     The following quirks and requirements apply when proxying another
-     DB instance, as opposed to a (sqlite3*):
+     To stress:
 
      - DO NOT call sqlite3_close() (or similar) on the being-proxied
-       instance while a proxy is active.
+       pointer while a proxy is active.
 
      - ALWAYS eventually call close() on the returned object. If the
        proxy does not own the underlying handle then its MUST be
