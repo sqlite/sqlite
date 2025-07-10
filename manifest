@@ -1,5 +1,5 @@
-C Fix\sthe\sempty-table\soptimization\son\sINTERSECT\sso\sthat\sit\sdoes\snot\stry\sto\nuse\san\suninitialized\sregister\sfor\sLIMIT\sprocessing.
-D 2025-07-09T20:11:49.196
+C Minor\sinternal\sdoc\scorrection\sin\svdbeInt.h.
+D 2025-07-10T09:27:57.540
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -854,7 +854,7 @@ F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
 F src/vdbe.c e505b8b879a330e8dafbe3ed9582eae2fc671b44a64748d1b58c07e4e0f527da
 F src/vdbe.h 93761ed7c6b8bc19524912fd9b9b587d41bf4f1d0ade650a00dadc10518d8958
-F src/vdbeInt.h 0bc581a9763be385e3af715e8c0a503ba8422c2b7074922faf4bb0d6ae31b15e
+F src/vdbeInt.h 626465ff6d673f73a2476dc230b7cd07bdaf4acea9d4ecceaa12a5174bb2c8d7
 F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
 F src/vdbeaux.c fd2c6b19a8892c31a2adc719f156f313560f9cc490cdbd04ff08fdae5d7aedb7
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
@@ -2211,8 +2211,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 498ee8d514e64cdc93a8d68e1971b6326c6132daf25067936bec921c42494caa
-R ebdf1d802e5dd88fbc80d28dd0639cd8
-U drh
-Z 51edd06328595496523194f72341809d
+P 6918ada008507b4564ca0dc5f4f6818c49a42eb14a16285b2074e21dcc8f2c3f
+R 8d36b737321e561e20f07d5b87981833
+U stephan
+Z b3f208b4a565eb9c2de3da1def14d617
 # Remove this line to create a well-formed Fossil manifest.
