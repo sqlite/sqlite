@@ -7,6 +7,18 @@ set testdir [file normalize [file dirname $argv0]]
 set saved $argv
 set argv [list]
 source [file join $testdir testrunner_data.tcl]
+
+# Estimated amount of work required by displaytype, relative to 'tcl'
+#
+set estwork(tcl)    1
+set estwork(fuzz)   22
+set estwork(bld)    66
+set estwork(make)   102
+
+set estworkfile [file join $testdir testrunner_estwork.tcl]
+if {[file readable $estworkfile]} {
+  source $estworkfile
+}
 source [file join $testdir permutations.test]
 set argv $saved
 cd $dir
@@ -92,6 +104,7 @@ Usage:
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
     $a0 halt
+    $a0 estwork
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
@@ -360,13 +373,6 @@ set TRG(schema) {
 }
 #-------------------------------------------------------------------------
 
-# Estimated amount of work required by displaytype, relative to 'tcl'
-#
-set estwork(tcl)    1
-set estwork(fuzz)   11
-set estwork(bld)    56
-set estwork(make)   97
-
 #--------------------------------------------------------------------------
 # Check if this script is being invoked to run a single file. If so,
 # run it.
@@ -449,6 +455,59 @@ if {[llength $argv]==1
   sqlite3 mydb $TRG(dbname)
   mydb eval {UPDATE jobs SET state='halt' WHERE state IN ('ready','')}
   mydb close
+  exit
+}
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# Check if this is the "estwork" command:
+#
+# Generate (on standard output) a set of estwork() values based on the lastest
+# test case, that can be used to replace the test/testrunner_estwork.tcl file.
+#
+if {[llength $argv]==1
+ && [string compare -nocase estwork [lindex $argv 0]]==0
+} {
+  sqlite3 mydb $TRG(dbname)
+  set njob [mydb one {SELECT count(*) FROM jobs WHERE state='done'}]
+  if {$njob<1000} {
+    puts "Too few completed jobs to do a work estimate."
+    puts "Have $njob but not need at least 1000."
+    mydb close
+    exit 1
+  }
+  set badjobs [mydb one {SELECT count(*) FROM jobs WHERE state<>'done'}]
+  if {$badjobs} {
+    puts "Database contains $badjobs incomplete jobs."
+    mydb close
+    exit 1
+  }
+  set half [mydb one {SELECT count(*)/2 FROM jobs WHERE displaytype='tcl'}]
+  set scale [mydb one {SELECT span FROM jobs WHERE displaytype='tcl'
+                        ORDER BY span LIMIT 1 OFFSET $half}]
+  mydb eval {
+     SELECT estkey, CAST(avg(span)/$scale AS INT) AS cost
+       FROM jobs
+      GROUP BY estkey
+      HAVING cost>=2
+  } {
+    set estwork($estkey) $cost
+  }
+  set avgtcl [mydb one {SELECT avg(span) FROM jobs WHERE displaytype='tcl'}]
+  set estwork(tcl) 1
+  foreach type {bld fuzz make} {
+    set avg [mydb one {SELECT avg(span) FROM jobs WHERE displaytype=$type}]
+    if {$avg!=""} {
+      set estwork($type) [expr {int($avg/$avgtcl)}]
+    }
+  }
+  mydb close
+  puts "# Estimated relative cost of various jobs, based on the \"estkey\" field."
+  puts "# Computed by the \"test/testrunner.tcl estwork\" command."
+  puts "#"
+  foreach key [lsort [array names estwork]] {
+    puts "set [list estwork($key)] $estwork($key)"
+  }
   exit
 }
 #--------------------------------------------------------------------------
@@ -563,8 +622,8 @@ proc show_status {db cls} {
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   set line "Running: $S(running) (max: $nJob)"
-  if {$S(running)>0 && $fin>10} {
-    set tmleft [expr {($tm/$fin)*($totalw-$fin)}]
+  if {$S(running)>0 && [set pct [expr {int(($fin*100.0)/$totalw)}]]>=4} {
+    set tmleft [expr {($tm/double($fin))*($totalw-$fin)}]
     if {$tmleft<0.02*$tm} {
       set tmleft [expr {$tm*0.02}]
     }
@@ -572,6 +631,7 @@ proc show_status {db cls} {
     if {[string length $line]+[string length $etc]<80} {
       append line $etc
     }
+    # append line " $pct%"
   }
   puts [format %-79.79s $line]
   if {$S(running)>0} {
@@ -1001,7 +1061,11 @@ proc add_job {args} {
       set ek [lindex $displayname end]
     }
   }
-  set ew $estwork($type)
+  if {[info exists estwork($ek)]} {
+    set ew $estwork($ek)
+  } else {
+    set ew $estwork($type)
+  }
 
   trdb eval {
     INSERT INTO jobs(
@@ -1603,12 +1667,13 @@ proc progress_report {} {
       }
     }
     set report "[elapsetime $tmms] [join $text { }]"
-    if {$wdone>0} {
-      set tmleft [expr {($tmms/$wdone)*($wtotal-$wdone)}]
-      set etc " ETC [elapsetime $tmleft]"
+    if {$wdone>0 && [set pct [expr {int(($wdone*100.0)/$wtotal)}]]>=4} {
+      set tmleft [expr {($tmms/double($wdone))*($wtotal-$wdone)}]
+      set etc " ETC [elapsetime $tmleft]"  
       if {[string length $report]+[string length $etc]<80} {
         append report $etc
       }
+      # append report " $pct%"
     }
     puts -nonewline [format %-79.79s $report]\r
     flush stdout
