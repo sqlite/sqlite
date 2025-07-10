@@ -1,5 +1,5 @@
-C Minor\sinternal\sdoc\scorrection\sin\svdbeInt.h.
-D 2025-07-10T09:27:57.540
+C Add\sthe\sestkey\scolumn\sto\sthe\sjobs\stable\sof\stestrunner.db.\s\sThe\splan\sis\sto\nuse\sthis\sto\scollect\smeasurements\sthat\swill\shelp\sgenerate\simproved\sETAs\sfor\na\stest\srun.
+D 2025-07-10T17:19:08.350
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1736,7 +1736,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
-F test/testrunner.tcl 614c4a28f7f730acd7bec53e17d76602fb480e0d538b6ec548169e03a093f92d x
+F test/testrunner.tcl 5f74064aa32ba192808d2c2a85c036c1db7efe570b433c390443241144075528 x
 F test/testrunner_data.tcl 02dd645b647d907c959fbf232b7ff7d869c2ae430d5117443fc1e16a0d32243a
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2211,8 +2211,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6918ada008507b4564ca0dc5f4f6818c49a42eb14a16285b2074e21dcc8f2c3f
-R 8d36b737321e561e20f07d5b87981833
-U stephan
-Z b3f208b4a565eb9c2de3da1def14d617
+P c3a2ef639c22255a298cbccb7fd871ec9b24929f82bf95d6982b12daf5c963d6
+R 8a638f7e150dac9b9d9c1a93839f5665
+U drh
+Z 0cbe7c5c0788898f8ac3fc8efc37b5f2
 # Remove this line to create a well-formed Fossil manifest.

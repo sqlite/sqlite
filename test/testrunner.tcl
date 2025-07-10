@@ -341,6 +341,7 @@ set TRG(schema) {
     endtime INTEGER,                    -- End time
     span INTEGER,                       -- Total run-time in milliseconds
     estwork INTEGER,                    -- Estimated amount of work
+    estkey TEXT,                        -- Key used to compute estwork
     state TEXT CHECK( state IN ('','ready','running','done','failed','omit','halt') ),
     ntest INT,                          -- Number of test cases run
     nerr INT,                           -- Number of errors reported
@@ -985,12 +986,27 @@ proc add_job {args} {
   set state ""
   if {$A(-depid)==""} { set state ready }
   set type $A(-displaytype)
+  set displayname $A(-displayname)
+  switch $type {
+    tcl {
+      set ek [file tail [lindex $displayname end]]
+    }
+    bld {
+      set ek [lindex $displayname end]
+    }
+    fuzz {
+      set ek [lrange $displayname 1 2]
+    }
+    make {
+      set ek [lindex $displayname end]
+    }
+  }
   set ew $estwork($type)
 
   trdb eval {
     INSERT INTO jobs(
-      displaytype, displayname, build, dirname, cmd, depid, priority, estwork,
-      state
+      displaytype, displayname, build, dirname, cmd, depid, priority,
+      estwork, estkey, state
     ) VALUES (
       $type,
       $A(-displayname),
@@ -1000,6 +1016,7 @@ proc add_job {args} {
       $A(-depid),
       $A(-priority),
       $ew,
+      $ek,
       $state
     )
   }
