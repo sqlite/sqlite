@@ -532,7 +532,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     this.db = arguments[0];
     __ptrMap.set(this, arguments[1]);
-    if( arguments.length>3 && !!arguments[3] ){
+    if( arguments.length>3 && !arguments[3] ){
       __doesNotOwnHandle.add(this);
     }
   };

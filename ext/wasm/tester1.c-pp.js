@@ -1273,15 +1273,22 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           }
           T.assert( dw===dw.exec("select 1") );
           dw.affirmOpen();
-          rc = capi.sqlite3_prepare_v2( dw, "select 1", -1, ppOut, 0 );
+          const select1 = "select 1";
+          rc = capi.sqlite3_prepare_v2( dw, select1, -1, ppOut, 0 );
           T.assert( 0===rc, 'prepare_v2() rc='+rc );
           pStmt = wasm.peekPtr(ppOut);
+          T.assert( pStmt && wasm.isPtr(pStmt), 'pStmt is valid?' );
           try {
+            //log( "capi.sqlite3_sql() =",capi.sqlite3_sql(pStmt));
+            T.assert( select1 === capi.sqlite3_sql(pStmt), 'SQL mismatch' );
             q = sqlite3.oo1.Stmt.wrapHandle(dw, pStmt, false);
+            //log("q@"+pStmt+" does not own handle");
             T.assert( q.step(), "step()" )
               .assert( !q.step(), "!step()" );
             q.finalize();
             q = undefined;
+            T.assert( select1 === capi.sqlite3_sql(pStmt), 'SQL mismatch'
+                    /* This will fail if we've mismanaged pStmt's lifetime */);
             q = sqlite3.oo1.Stmt.wrapHandle(dw, pStmt, true);
             pStmt = 0;
             q.reset();
