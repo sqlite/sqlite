@@ -948,7 +948,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr, SrcList *pSrc){
   if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;                   /* (3) */
   assert( pSrc!=0 );
   if( pExpr->op==TK_IS
-   && pSrc->nSrc
+   && pSrc->nSrc>=2
    && (pSrc->a[0].fg.jointype & JT_LTORJ)!=0
   ){
     return 0;                                                          /* (4) */
@@ -1697,7 +1697,7 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
         WhereTerm *pParent = &pWC->a[ pWC->a[ii].iParent ];
         if( pParent->leftCursor==iCsr
          && pParent->prereqRight==0
-         && ALWAYS(pParent->nChild==1)
+         && pParent->nChild==1
         ){
           continue;
         }

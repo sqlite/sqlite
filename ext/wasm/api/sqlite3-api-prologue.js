@@ -134,22 +134,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   const config = Object.assign(Object.create(null),{
     exports: undefined,
     memory: undefined,
-    bigIntEnabled: (()=>{
-      if('undefined'!==typeof Module){
-        /* Emscripten module will contain HEAPU64 when built with
-           -sWASM_BIGINT=1, else it will not.
-
-           As of emsdk 3.1.55, when building in strict mode, HEAPxyz
-           are only available if _explicitly_ included in the exports,
-           else they are not. We do not (as of 2024-03-04) use -sSTRICT
-           for the canonical builds.
-        */
-        if( !!Module.HEAPU64 ) return true;
-        /* Else fall through and hope for the best. Nobody _really_
-           builds this without BigInt support, do they? */
-      }
-      return !!globalThis.BigInt64Array;
-    })(),
+    bigIntEnabled: !!globalThis.BigInt64Array,
     debug: console.debug.bind(console),
     warn: console.warn.bind(console),
     error: console.error.bind(console),

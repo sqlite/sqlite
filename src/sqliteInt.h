@@ -1154,6 +1154,7 @@ extern u32 sqlite3TreeTrace;
 **   0x00040000     SELECT tree dump after all code has been generated
 **   0x00080000     NOT NULL strength reduction
 **   0x00100000     Pointers are all shown as zero
+**   0x00200000     EXISTS-to-JOIN optimization
 */
 
 /*
@@ -1926,6 +1927,7 @@ struct sqlite3 {
 #define SQLITE_OnePass        0x08000000 /* Single-pass DELETE and UPDATE */
 #define SQLITE_OrderBySubq    0x10000000 /* ORDER BY in subquery helps outer */
 #define SQLITE_StarQuery      0x20000000 /* Heurists for star queries */
+#define SQLITE_ExistsToJoin   0x40000000 /* The EXISTS-to-JOIN optimization */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -2808,7 +2810,6 @@ struct Index {
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
   unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
-  unsigned bIdxRowid:1;    /* One or more of the index keys is the ROWID */
   unsigned bHasVCol:1;     /* Index references one or more VIRTUAL columns */
   unsigned bHasExpr:1;     /* Index contains an expression, either a literal
                            ** expression, or a reference to a VIRTUAL column */
@@ -3370,6 +3371,7 @@ struct SrcItem {
     unsigned rowidUsed :1;     /* The ROWID of this table is referenced */
     unsigned fixedSchema :1;   /* Uses u4.pSchema, not u4.zDatabase */
     unsigned hadSchema :1;     /* Had u4.zDatabase before u4.pSchema */
+    unsigned fromExists :1;    /* Comes from WHERE EXISTS(...) */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   Bitmask colUsed;  /* Bit N set if column N used. Details above for N>62 */
@@ -3900,6 +3902,7 @@ struct Parse {
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
+  u8 bHasExists;       /* Has a correlated "EXISTS (SELECT ....)" expression */
   u8 mSubrtnSig;       /* mini Bloom filter on available SubrtnSig.selId */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
   u8 bReturning;       /* Coding a RETURNING trigger */

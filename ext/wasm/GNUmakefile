@@ -617,9 +617,9 @@ emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
 emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.api)
 emcc.exportedRuntimeMethods := \
-    -sEXPORTED_RUNTIME_METHODS=wasmMemory,HEAP8,HEAPU8,HEAP16,HEAPU16,HEAP32,HEAPU32,HEAP64,HEAPU64
+    -sEXPORTED_RUNTIME_METHODS=wasmMemory
 # wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
-# Emscripten 4.0.7 (2025-04-15) stops exporting HEAP* by default
+# Emscripten 4.0.7 (2025-04-15) stops exporting HEAP* by default.
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY

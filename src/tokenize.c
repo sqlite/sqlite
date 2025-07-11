@@ -199,7 +199,7 @@ static int getToken(const unsigned char **pz){
   int t;                          /* Token type to return */
   do {
     z += sqlite3GetToken(z, &t);
-  }while( t==TK_SPACE );
+  }while( t==TK_SPACE || t==TK_COMMENT );
   if( t==TK_ID 
    || t==TK_STRING 
    || t==TK_JOIN_KW 
