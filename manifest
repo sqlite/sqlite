@@ -1,5 +1,5 @@
-C Do\snot\sexport\sthe\snumerous\sEmscripten\sHEAPxy\ssymbols\sand\sremove\sthe\slast\sremaining\sJS\scode\swhich\sreferences\sthem.\sThey\shave\slong-since\sbeen\sreplaced\sby\sinternal\sequivalents\sand\sa\sspecific\sfeature\scheck\son\sone\sof\sthem\s(which\sis\salso\sno\slonger\sneeded)\sis\striggering\san\sexception\sfrom\sEmscripten.\sMore\sdetails\sare\sin\s[https://github.com/emscripten-core/emscripten/issues/24656\s|\sEmscripten\sticket\s#24656],\snoting\sthat\sthis\sis\snot\san\sEmscripten\sbug\sbut\san\sEmscripten\sbehavior\schange\sbrought\sit\sto\slight.
-D 2025-07-11T10:27:06.737
+C speedtest1:\sin\sWASM\sbuilds,\sdisable\sthe\s"app"\stest\sset\sby\sdefault\sbecause\sthat\sone\sset\sis\striggering\sfile-not-found\serrors\sfor\sthe\sdb\sfile\sfor\sreasons\snot\syet\sunderstood.
+D 2025-07-11T11:06:25.274
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1689,7 +1689,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
 F test/speedtest.md ee958457ae1b729d9715ae33c0320600000bf1d9ddea1a88dcf79f56729d6fad
 F test/speedtest.tcl 405411356fbc54af15987b7ffeec330a49138f71584220fb8fe1948b2f7ac907 x
-F test/speedtest1.c 64b8804b053a796eab22f8b23fb181000f05d7b3e2aa44f022117ea543bc5a2a
+F test/speedtest1.c a9b002a7bfed99ba3166c2a9b8ae45a95b4c2d37f891e1637c022f9e1d15e3f9
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a3f96cafdc0e1f2eeccc6509f1f9c26d2c48668953550f299cf2805a0a063014
-R a1e55e82ed031f25d914104fdc2c36ac
+P b9462dc1461c830466f4e1de4a4d3bf249e3f81aea363f13462ea915769878d9
+R e406216e09aca8ec86fc937423446783
 U stephan
-Z 397ec1f53e01f1452d38366e80f3e612
+Z c61801d5a56ae16f81bbbf5139f256d9
 # Remove this line to create a well-formed Fossil manifest.
