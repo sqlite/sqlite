@@ -39,12 +39,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const __ptrMap = new WeakMap();
   /**
      A Set of oo1.DB or oo1.Stmt objects which are proxies for
-     (sqlite3*) resp. (sqlite3_stmt*) pointers. Such objects
-     optionally do not own their underlying handle and that handle
-     must be guaranteed (by the client) to outlive the proxy. These
-     proxies are primarily intended as a way to briefly wrap an
-     (sqlite3[_stmt]*) object as an oo1.DB/Stmt without taking over
-     ownership.
+     (sqlite3*) resp. (sqlite3_stmt*) pointers which themselves are
+     owned elsewhere. Objects in this Set do not own their underlying
+     handle and that handle must be guaranteed (by the client) to
+     outlive the proxy. DB.close()/Stmt.finalize() methods will remove
+     the object from this Set _instead_ of closing/finalizing the
+     pointer. These proxies are primarily intended as a way to briefly
+     wrap an (sqlite3[_stmt]*) object as an oo1.DB/Stmt without taking
+     over ownership, to take advantage of simplifies usage compared to
+     the C API while not imposing any change of ownership.
 
      See DB.wrapHandle() and Stmt.wrapHandle().
   */
