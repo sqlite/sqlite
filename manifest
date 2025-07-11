@@ -1,5 +1,5 @@
-C speedtest1:\sin\sWASM\sbuilds,\sdisable\sthe\s"app"\stest\sset\sby\sdefault\sbecause\sthat\sone\sset\sis\striggering\sfile-not-found\serrors\sfor\sthe\sdb\sfile\sfor\sreasons\snot\syet\sunderstood.
-D 2025-07-11T11:06:25.274
+C Additional\sheader\scomment\sdocumentation\sin\sthe\sext/misc/vtablog.c\stest\sextension.
+D 2025-07-11T17:02:11.169
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -456,7 +456,7 @@ F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c 0b23c0a69a2b63dc0ef0af44f9c1fc977300c480a1f7a9814500369d8211f56e
 F ext/misc/vfstrace.c 0e4b8b17ac0675ea90f6d168d8214687e06ca3efbc0060aad4814994d82b41fb
-F ext/misc/vtablog.c 62d54fb0f4ff9df72ffa44f4a226451a964e1d96ac550f2b8906feebdad00b58
+F ext/misc/vtablog.c 9f7e02e9e8de585f3bfb48405db36c2eb4b680a23a67d7a4b738dd20f6ad7aec
 F ext/misc/vtshim.c e5bce24ab8c532f4fdc600148718fe1802cb6ed57417f1c1032d8961f72b0e8f
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
@@ -2212,8 +2212,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b9462dc1461c830466f4e1de4a4d3bf249e3f81aea363f13462ea915769878d9
-R e406216e09aca8ec86fc937423446783
-U stephan
-Z c61801d5a56ae16f81bbbf5139f256d9
+P 9d68971c58261bce72b49c574cf07ad31add62bee814c58840b927fed7eb87b1
+R 5643c35e4f11fb6cf54743a0885fc1f7
+U drh
+Z b5fe84fd8bb20fd9110a384dcfcde9c2
 # Remove this line to create a well-formed Fossil manifest.

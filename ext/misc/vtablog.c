@@ -14,6 +14,13 @@
 ** on stdout when its key interfaces are called.  This is intended for
 ** interactive analysis and debugging of virtual table interfaces.
 **
+** To build this extension as a separately loaded shared library or
+** DLL, use compiler command-lines similar to the following:
+**
+**   (linux)    gcc -fPIC -shared vtablog.c -o vtablog.so
+**   (mac)      clang -fPIC -dynamiclib vtablog.c -o vtablog.dylib
+**   (windows)  cl vtablog.c -link -dll -out:vtablog.dll
+**
 ** Usage example:
 **
 **     .load ./vtablog
