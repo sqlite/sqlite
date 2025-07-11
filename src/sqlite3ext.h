@@ -368,6 +368,12 @@ struct sqlite3_api_routines {
   int (*set_clientdata)(sqlite3*, const char*, void*, void(*)(void*));
   /* Version 3.50.0 and later */
   int (*setlk_timeout)(sqlite3*,int,int);
+  /* Version 3.51.0 and later */
+  int (*value_blob_v2)(sqlite3_value*, const void **, int *);
+  int (*value_text_v2)(sqlite3_value*, const unsigned char **, int *);
+  int (*column_blob_v2)(sqlite3_stmt*, int, const void **, int *);
+  int (*column_text_v2)(sqlite3_stmt*, int, const unsigned char **,
+                        int *);
 };
 
 /*
@@ -414,6 +420,7 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_collation_needed       sqlite3_api->collation_needed
 #define sqlite3_collation_needed16     sqlite3_api->collation_needed16
 #define sqlite3_column_blob            sqlite3_api->column_blob
+#define sqlite3_column_blob_v2         sqlite3_api->column_blob_v2
 #define sqlite3_column_bytes           sqlite3_api->column_bytes
 #define sqlite3_column_bytes16         sqlite3_api->column_bytes16
 #define sqlite3_column_count           sqlite3_api->column_count
@@ -431,6 +438,7 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_column_table_name      sqlite3_api->column_table_name
 #define sqlite3_column_table_name16    sqlite3_api->column_table_name16
 #define sqlite3_column_text            sqlite3_api->column_text
+#define sqlite3_column_text_v2         sqlite3_api->column_text_v2
 #define sqlite3_column_text16          sqlite3_api->column_text16
 #define sqlite3_column_type            sqlite3_api->column_type
 #define sqlite3_column_value           sqlite3_api->column_value
@@ -506,6 +514,7 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_update_hook            sqlite3_api->update_hook
 #define sqlite3_user_data              sqlite3_api->user_data
 #define sqlite3_value_blob             sqlite3_api->value_blob
+#define sqlite3_value_blob_v2          sqlite3_api->value_blob_v2
 #define sqlite3_value_bytes            sqlite3_api->value_bytes
 #define sqlite3_value_bytes16          sqlite3_api->value_bytes16
 #define sqlite3_value_double           sqlite3_api->value_double
@@ -513,6 +522,7 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_value_int64            sqlite3_api->value_int64
 #define sqlite3_value_numeric_type     sqlite3_api->value_numeric_type
 #define sqlite3_value_text             sqlite3_api->value_text
+#define sqlite3_value_text_v2          sqlite3_api->value_text_v2
 #define sqlite3_value_text16           sqlite3_api->value_text16
 #define sqlite3_value_text16be         sqlite3_api->value_text16be
 #define sqlite3_value_text16le         sqlite3_api->value_text16le
