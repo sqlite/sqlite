@@ -1,0 +1,160 @@
+# 2024-08-03
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# This file contains tests focused on virtual tables that set non-zero
+# sqlite3_index_info.estimatedSetup values from within xBestIndex.
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix bestindexE
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+register_tcl_module db
+
+proc vtab_command {tbl method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE x(tid, data)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+
+      set estSetup [$hdl estimatedSetup]
+      set iTidEq -1
+
+      #puts "estSetup is $estSetup"
+
+      set iCons 0
+      foreach c [$hdl constraints] {
+        array set C $c
+        if {$C(usable) && $C(op)=="eq" && $C(column)==0} {
+          set iTidEq $iCons
+        }
+        incr iCons
+      }
+
+      set nRow [db one "SELECT count(*) FROM $tbl"]
+      if {$tbl=="ee"} {
+        # Events table. Three strategies: 
+        #
+        #    1) Linear scan
+        #    2) Scan with tid=? constraint
+        #    3) Auto index on tid=? constraint
+        #
+        if {$iTidEq>=0} {
+          if {$estSetup<0.0} {
+            set ret "cost $nRow rows 1 idxStr by-rowid omit $iTidEq"
+          } else {
+            set ret "cost 10.0 rows 1 idxStr autoindex setup [expr $nRow*10] omit $iTidEq"
+          }
+        } else {
+          set ret "cost $nRow rows $nRow idxStr linear"
+        }
+
+      } else {
+        # Threads table. Two strategies: linear scan or fast lookup by rowid.
+        if {$iTidEq>=0} {
+          set ret "cost 10.0 rows 1 omit $iTidEq idxStr by-rowid"
+        } else {
+          set ret "cost $nRow rows $nRow idxStr linear"
+        }
+      }
+
+      return $ret
+    }
+
+    xFilter {
+      return "sql {SELECT a, * FROM $tbl}"
+    }
+  }
+
+  return {}
+}
+
+do_execsql_test 1.0 {
+  CREATE TABLE ee(a INTEGER PRIMARY KEY, e);
+  CREATE TABLE tt(a INTEGER PRIMARY KEY, t);
+
+  CREATE VIRTUAL TABLE event USING tcl(vtab_command ee);
+  CREATE VIRTUAL TABLE thread USING tcl(vtab_command tt);
+} {}
+
+proc insert_data {nThread nEvent} {
+  set nEvent [expr $nEvent]
+  set nThread [expr $nThread]
+
+  execsql {
+    DELETE FROM ee;
+    DELETE FROM tt;
+    WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$nEvent
+    )
+    INSERT INTO ee(e) SELECT hex(randomblob(10)) FROM s;
+
+    WITH s(i) AS (
+        SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$nThread
+    )
+    INSERT INTO tt(t) SELECT hex(randomblob(10)) FROM s;
+  }
+}
+
+#set sqlite_where_trace [expr 0x01]
+#puts [query_plan_graph "SELECT * FROM event e, thread t WHERE e.tid = t.tid;"]
+
+# Cost = (nThread + 10*nEvent + 10*nEvent)
+#
+insert_data 100 100000
+do_eqp_test 1.1 {
+  SELECT * FROM event e, thread t WHERE e.tid = t.tid;
+} {
+  QUERY PLAN
+  |--SCAN t VIRTUAL TABLE INDEX 0:linear
+  `--SCAN e VIRTUAL TABLE INDEX 0:autoindex
+}
+
+# Cost = (nThread + nThread * nEvent)
+#
+insert_data 3 100000
+do_eqp_test 1.2 {
+  SELECT * FROM event e, thread t WHERE e.tid = t.tid;
+} {
+  QUERY PLAN
+  |--SCAN t VIRTUAL TABLE INDEX 0:linear
+  `--SCAN e VIRTUAL TABLE INDEX 0:by-rowid
+}
+
+# Cost = nEvent + nEvent * 10
+#
+insert_data 1000 10000
+do_eqp_test 1.3 {
+  SELECT * FROM event e, thread t WHERE e.tid = t.tid;
+} {
+  QUERY PLAN
+  |--SCAN e VIRTUAL TABLE INDEX 0:linear
+  `--SCAN t VIRTUAL TABLE INDEX 0:by-rowid
+}
+
+
+#1) Scan(threads) + Rows(threads) * Scan(events)
+#2) Scan(threads) + Rows(threads) * Lookup(events) + BuildIndex(events)
+#3) Scan(events) + Rows(events) * Lookup(threads)
+
+
+
+
+finish_test
+
+

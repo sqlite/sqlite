@@ -4250,7 +4250,7 @@ static int allConstraintsUsed(
 ** Output parameter *pbIn is set to true if the plan added to pBuilder
 ** uses one or more WO_IN terms, or false otherwise.
 */
-static int whereLoopAddVirtualOne(
+static int whereLoopAddVirtualPlan(
   WhereLoopBuilder *pBuilder,
   Bitmask mPrereq,                /* Mask of tables that must be used. */
   Bitmask mUsable,                /* Mask of usable tables */
@@ -4408,7 +4408,7 @@ static int whereLoopAddVirtualOne(
   pNew->u.vtab.isOrdered = (i8)(pIdxInfo->orderByConsumed ?
       pIdxInfo->nOrderBy : 0);
   pNew->u.vtab.bIdxNumHex = (pIdxInfo->idxFlags&SQLITE_INDEX_SCAN_HEX)!=0;
-  pNew->rSetup = 0;
+  pNew->rSetup = sqlite3LogEstFromDouble(pIdxInfo->estimatedSetup);
   pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
   pNew->nOut = sqlite3LogEst(pIdxInfo->estimatedRows);
 
@@ -4428,6 +4428,43 @@ static int whereLoopAddVirtualOne(
                       *pbIn, (sqlite3_uint64)mPrereq,
                       (sqlite3_uint64)(pNew->prereq & ~mPrereq)));
 
+  return rc;
+}
+
+/*
+** This is a wrapper around whereLoopAddVirtualPlan(). All the arguments
+** passed to this function are passed directly through to
+** whereLoopAddVirtualPlan(). 
+**
+** This wrapper always invokes whereLoopAddVirtualPlan() at least once.
+** If that invocation returns a plan with a non-zero setup cost, it is
+** then invoked again with the same parameters, except with estimatedSetup
+** initialized to -1.0 (instead of 0.0) to indicate to the vtab implementation
+** that SQLite is requesting a plan with no setup cost.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
+static int whereLoopAddVirtualOne(
+  WhereLoopBuilder *pBuilder,
+  Bitmask mPrereq,                /* Mask of tables that must be used. */
+  Bitmask mUsable,                /* Mask of usable tables */
+  u16 mExclude,                   /* Exclude terms using these operators */
+  sqlite3_index_info *pIdxInfo,   /* Populated object for xBestIndex */
+  u16 mNoOmit,                    /* Do not omit these constraints */
+  int *pbIn,                      /* OUT: True if plan uses an IN(...) op */
+  int *pbRetryLimit               /* OUT: Retry without LIMIT/OFFSET */
+){
+  int rc;
+  pIdxInfo->estimatedSetup = (mUsable ? 0.0 : -1.0);
+  rc = whereLoopAddVirtualPlan(pBuilder, 
+      mPrereq, mUsable, mExclude, pIdxInfo, mNoOmit, pbIn, pbRetryLimit
+  );
+  if( rc==SQLITE_OK && pIdxInfo->estimatedSetup>0.0 ){
+    pIdxInfo->estimatedSetup = -1.0;
+    rc = whereLoopAddVirtualPlan(pBuilder, 
+        mPrereq, mUsable, mExclude, pIdxInfo, mNoOmit, pbIn, pbRetryLimit
+    );
+  }
   return rc;
 }
 

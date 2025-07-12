@@ -1,5 +1,5 @@
-C wasm:\sintroduce\sthe\ssqlite3.oo1.DB.wrapHandle()\sand\sStmt.wrapHandle()\sAPIs,\swhich\senable\sclients\sto\swrap\s(sqlite3*)\sresp.\s(sqlite3_stmt*)\spointers\sin\stheir\soo1\sAPI\scounterparts,\soptionally\swith\sor\swithout\staking\sover\sownership\sof\sthe\spointer.
-D 2025-07-11T19:52:36.729
+C Experimental\schange\sto\sallow\svirtual\stable\sxBestIndex()\smethods\sto\sspecify\san\sinitial\ssetup\scost\sfor\sa\splan.
+D 2025-07-12T16:35:54.980
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -787,7 +787,7 @@ F src/resolve.c d3ee7ed308d46f4ee6d3bb6316d8d6f87158f93a7fd616732138cc953cf364f0
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c fc003cad96a105765261f7b6c5f4596e505894262bb5593cb29e10b682800d12
 F src/shell.c.in 73c0eeb7c265d59b99219d5aa055f412f07842088d8036b6d259927d85dd1bbf
-F src/sqlite.h.in 5c54f2461a1ea529bab8499148a2b238e2d4bb571d59e8ea5322d0c190abb693
+F src/sqlite.h.in 1164b84f4cd0e9bcc78beafb7057e671bf88e91f1ec69b90dd915e3dbe1ee7ca
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h 9c99d7565a839ad342cdda504c4b7921bb1a24c07227b8f50b7b131245a20693
@@ -806,7 +806,7 @@ F src/test8.c 206d8f3cc73950d252906656e2646b5de0d580b07187b635fcb3edd8c2c5fbc0
 F src/test9.c df9ddc7db6ef1b8cf745866ee229090779728bcbe660c7f297d3127ab21d92af
 F src/test_autoext.c 14d4bbd3d0bd1eec0f6d16b29e28cf1e2d0b020d454835f0721a5f68121ac10f
 F src/test_backup.c a2bfd90d2ff2511b8635507bdb30fa9b605ade19c16b533066cae3077f5bdb72
-F src/test_bestindex.c 3401bee51665cbf7f9ed2552b5795452a8b86365e4c9ece745b54155a55670c6
+F src/test_bestindex.c 2d158de210513ee05b500502325558996788d7c19fbb4e27bfcde0f69976dfbe
 F src/test_blob.c 77b994e17f2c87055f44fd96c9a206c5a7155bae2cda2769af60c2f3582f962c
 F src/test_btree.c 28283787d32b8fa953eb77412ad0de2c9895260e4e5bd5a94b3c7411664f90d5
 F src/test_config.c 7f412406592794636d6226268e26d413850a9f799bc5f3c01afc2820b165fca8
@@ -867,7 +867,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 20be6f0a25a80b7897cf2a5369bfd37ef198e6f0b6cdef16d83eee856056b159
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 6a9266dd1a559d48d8c7ca670a3e80143c7913153f7d1ceb0a4eca1087318951
+F src/where.c 8b09a629d2467f76c0bfd3101e152565f5e2378edba0b79d5f4984c7fb8506b8
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 2a2d2993fd98c46f525f71b3bfd330fde73d8613aa0ff3e20402dd1fc63470af
 F src/whereexpr.c 0a7fe115adad30def38aeab6ac1d35fb67782cee92a43df7448136240accd4dd
@@ -964,6 +964,7 @@ F test/bestindexA.test e1b5def6b190797cacf008e6815ffb78fb30261999030d60a728d572e
 F test/bestindexB.test 328b97b69cd1a20928d5997f9ecb04d2e00f1d18e19ab27f9e9adb44d7bc51ce
 F test/bestindexC.test 95b4a527b1a5d07951d731604a6d4cf7e5a806b39cea0e7819d4c9667e11c3fc
 F test/bestindexD.test 6a8f6f84990bcf17dfa59652a1f935beddb7afd96f8302830fbc86b0a13df3c3
+F test/bestindexE.test 2d478da0354d0ec41fb35b85e1cd946906c03e43ad38f49807eff25039a15a44
 F test/between.test b9a65fb065391980119e8a781a7409d3fcf059d89968279c750e190a9a1d5263
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
@@ -2212,9 +2213,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3656acfaa3011321a6e17fb81e5bdedcfffeab6035f133ab89ae9589bf5bef72 53401b5435e30c4b47b6e203976b714d616246d734b5876a34f53f6388f872f8
-R 6e106d1cb56322541040e2b7c468c9ad
-T +closed 53401b5435e30c4b47b6e203976b714d616246d734b5876a34f53f6388f872f8 Closed\sby\sintegrate-merge.
-U stephan
-Z f91aebcbb3981855ba9f714a42d1af4f
+P e5d079549594ca44852773b8919894866394e47ad725dadc7f65242413a219d3
+R 80db240348dc2c230f228c85bb783dc6
+T *branch * vtab-setup-cost
+T *sym-vtab-setup-cost *
+T -sym-trunk *
+U dan
+Z 3e373c708a4d61112b8786e118f652a6
 # Remove this line to create a well-formed Fossil manifest.

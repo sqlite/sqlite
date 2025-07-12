@@ -525,6 +525,7 @@ static int SQLITE_TCLAPI testBestIndexObj(
     "in",                         /* 4 */
     "rhs_value",                  /* 5 */
     "collation",                  /* 6 */
+    "estimatedSetup",             /* 7 */
     0
   };
   int ii;
@@ -548,6 +549,10 @@ static int SQLITE_TCLAPI testBestIndexObj(
   }
   if( ii==5 && objc!=3 && objc!=4 ){
     Tcl_WrongNumArgs(interp, 2, objv, "INDEX ?DEFAULT?");
+    return TCL_ERROR;
+  }
+  if( ii==7 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "");
     return TCL_ERROR;
   }
 
@@ -616,6 +621,11 @@ static int SQLITE_TCLAPI testBestIndexObj(
       Tcl_SetObjResult(interp, Tcl_NewStringObj(zColl, -1));
       break;
     }
+
+    case 7: assert( sqlite3_stricmp(azSub[ii], "estimatedSetup")==0 ); {
+      Tcl_SetObjResult(interp, Tcl_NewDoubleObj(pIdxInfo->estimatedSetup));
+      break;
+    }
   }
 
   return TCL_OK;
@@ -674,6 +684,9 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         Tcl_Obj *p = apElem[ii+1];
         if( sqlite3_stricmp("cost", zCmd)==0 ){
           rc = Tcl_GetDoubleFromObj(interp, p, &pIdxInfo->estimatedCost);
+        }else
+        if( sqlite3_stricmp("setup", zCmd)==0 ){
+          rc = Tcl_GetDoubleFromObj(interp, p, &pIdxInfo->estimatedSetup);
         }else
         if( sqlite3_stricmp("orderby", zCmd)==0 ){
           rc = Tcl_GetIntFromObj(interp, p, &pIdxInfo->orderByConsumed);
