@@ -12,6 +12,24 @@
 #     sqlite3_analyzer        -- Space analyzer
 #     sqlite3_rsync           -- Remote db sync
 #
+# On Windows, add:
+#
+#     sqlite3.def
+#     sqlite3.dll
+#
+# Add the --snapshot option to generate a snapshot ZIP archive instead of
+# a release ZIP archive.
+#
+set bSnapshot 0
+for {set i 0} {$i<[llength $argv]} {incr i} {
+  set a [lindex $argv $i]
+  if {$a eq "-snapshot" || $a eq "--snapshot"} {
+    set bSnapshot 1
+    continue
+  }
+  puts stderr "unknown argument: $a"
+  exit 1
+} 
 switch $tcl_platform(os) {
   {Windows NT} {
     set OS win
@@ -49,11 +67,20 @@ switch $tcl_platform(machine) {
     set ARCH unk
   }
 }
-set in [open [file join [file dirname [file dirname [info script]]] VERSION]]
-set vers [read $in]
-close $in
-scan $vers %d.%d.%d v1 v2 v3
-set v2 [format 3%02d%02d00 $v2 $v3]
+if {$bSnapshot} {
+  set in [open [file join [file dirname [file dirname [info script]]] manifest]]
+  set manifest [read $in]
+  close $in
+  regexp {\nD (.{16})} $manifest all date
+  regsub -all {[-:T]} $date {} v2
+} else {
+  set in [open [file join [file dirname [file dirname [info script]]] VERSION]]
+  set vers [read $in]
+  close $in
+  scan $vers %d.%d.%d v1 v2 v3
+  set v2 [format 3%02d%02d00 $v2 $v3]
+}
+
 set name sqlite-tools-$OS-$ARCH-$v2.zip
 set filelist "sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE sqlite3_rsync$EXE"
 proc make_zip_archive {name filelist} {
