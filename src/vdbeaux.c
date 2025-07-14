@@ -5378,6 +5378,7 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+#ifndef SQLITE_OMIT_DATETIME_FUNCS
 /*
 ** Cause a function to throw an error if it was call from OP_PureFunc
 ** rather than OP_Function.
@@ -5411,6 +5412,7 @@ int sqlite3NotPureFunc(sqlite3_context *pCtx){
   }
   return 1;
 }
+#endif /* SQLITE_OMIT_DATETIME_FUNCS */
 
 #if defined(SQLITE_ENABLE_CURSOR_HINTS) && defined(SQLITE_DEBUG)
 /*

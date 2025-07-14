@@ -14,7 +14,7 @@
 #
 switch $tcl_platform(os) {
   {Windows NT} {
-    set OS win32
+    set OS win
     set EXE .exe
   }
   Linux {
@@ -55,7 +55,24 @@ close $in
 scan $vers %d.%d.%d v1 v2 v3
 set v2 [format 3%02d%02d00 $v2 $v3]
 set name sqlite-tools-$OS-$ARCH-$v2.zip
-set toollist "sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE sqlite3_rsync$EXE"
-puts "zip $name {*}$toollist"
-exec zip $name {*}$toollist
-puts "$name: [file size $name] bytes"
+set filelist "sqlite3$EXE sqldiff$EXE sqlite3_analyzer$EXE sqlite3_rsync$EXE"
+proc make_zip_archive {name filelist} {
+  file delete -force $name
+  puts "fossil test-filezip $name $filelist"
+  if {[catch {exec fossil test-filezip $name {*}$filelist}]} {
+    puts "^--- Unable.  Trying again as:"
+    puts "zip $name $filelist"
+    file delete -force $name
+    exec zip $name {*}$filelist
+  }
+  puts "$name: [file size $name] bytes"
+}
+make_zip_archive $name $filelist
+
+# On Windows, also try to construct a DLL
+#
+if {$OS eq "win" && [file exists sqlite3.dll] && [file exists sqlite3.def]} {
+  set name sqlite-dll-win-$ARCH-$v2.zip
+  set filelist [list sqlite3.def sqlite3.dll]
+  make_zip_archive $name $filelist
+}
