@@ -1,12 +1,12 @@
-C In\srtree.c,\sensure\sthat\sthe\spReadAux\sstatement\sis\sreset\swhenever\sthe\sbAuxValid\sflag\sis\scleared.\sFix\sfor\s[forum:/forumpost/3e45ed31d8\s|\sforum\spost\s3e45ed31d8].
-D 2025-07-14T15:40:25.099
+C Enhance\sthe\s"mktoolzip.tcl"\sscript\s(used\sby\sthe\s"tool-zip"\smakefile\starget)\sso\sthat\nit\suses\s"fossil\stest-filezip"\sto\sbuild\sthe\sZIP\sarchive\sif\savailable,\sand\sso\sthat\nit\salso\sgenerates\swindows-dll-*.zip\son\sWindows\splatforms.
+D 2025-07-14T16:05:59.333
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in a6c14b6906f5322920dd5d1ff9a84808337911068f2a6e777ec7088a87cbc3a8
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc ec2011bbdfc917d6a1c7c173dabb29c14ead0dd8e2e0b67278a00ae4ba576a77
+F Makefile.msc 495e61b4940984b3e25f654c1625115352d6f10af088a4a8d4d360e1c88c5898
 F README.md e28077cfbef795e99c9c75ed95aa7257a1166709b562076441a8506ac421b7c1
 F VERSION 16eddb43056a79c1977427ab7a05f3457c373fa159dcdced8754eb89ce7e06b8
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2173,7 +2173,7 @@ F tool/mksqlite3c.tcl f11b63445c4840509248bd4aa151a81aea25d5415fef71943c8d436eba
 F tool/mksqlite3h.tcl 989948c6a26e188e673d7c2f2f093ea3acd816ad6ac65bab596280075c8f3a45
 F tool/mksqlite3internalh.tcl 46ef6ed6ccd3c36e23051109dd25085d8edef3887635cea25afa81c4adf4d4db
 F tool/mksrczip.tcl 81efd9974dbb36005383f2cd655520057a2ae5aa85ac2441a80c7c28f803ac52
-F tool/mktoolzip.tcl 34b4e92be544f820e2cc26f143f7d5aec511e826ec394cc82969a5dcf7c7a27c
+F tool/mktoolzip.tcl 0beb5f0e58401ab85f71cc57e8de73a248ad481c0b1fbe5e577b440ee326f004
 F tool/mkvsix.tcl 67b40996a50f985a573278eea32fc5a5eb6110bdf14d33f1d8086e48c69e540a
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
 F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
@@ -2213,9 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 10ebd7a119ef1985755ef143a941fbaed1b5ca1c8a71e011c8bbc70e383fd337 1740f9a09850f6647fc1f6384353d89a1ac0b2b15c429b576b6014eada71937e
-R 99a507c70268ef6ceed5ff7684eef3c0
-T +closed 1740f9a09850f6647fc1f6384353d89a1ac0b2b15c429b576b6014eada71937e
-U dan
-Z e033e0bcf52e68a8125fc82a4c8db140
+P 3c0afda372cd688e9aff7be1c0a41f557c8c8819f5f47420166ce8255cd806c8
+R e290ca399c8e663ed9c1c500434c64ea
+U drh
+Z 55552671916a227c18ab9a99dcc87aef
 # Remove this line to create a well-formed Fossil manifest.
