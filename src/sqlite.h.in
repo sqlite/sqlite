@@ -7633,6 +7633,31 @@ struct sqlite3_module {
 ** ^The estimatedRows value is an estimate of the number of rows that
 ** will be returned by the strategy.
 **
+** The estimatedSetup field is used to specify the estimated one-time setup
+** cost of a query strategy, which is typically incurred during the first 
+** call to xFilter. In most cases, this value should be zero. However, if 
+** the strategy requires initialization of an internal index or data 
+** structure - similar to SQLite's native [automatic indexes] - a non-zero 
+** value may be used to reflect that overhead.
+**
+** A negative value for estimatedSetup is treated by SQLite as zero.
+**
+** When the xBestIndex method is invoked, estimatedSetup may be initialized
+** to either 0.0 or to a negative value. If it is set to a negative value,
+** then SQLite is requesting a strategy with no (or minimal) setup cost. The
+** virtual table implementation does not have to honor the request, but
+** it may be more efficient to do so.
+**
+** In practice, xBestIndex is usually invoked with estimatedSetup initialized
+** to 0.0. If the implementation then returns a strategy with estimatedSetup
+** set to a value greater than 0.0, then SQLite invokes the xBestIndex method 
+** a second time with the same parameters, except this time with estimatedSetup
+** initialized to a negative value. This allows the virtual table to present 
+** two different strategies - one with a higher setup cost and potentially
+** lower per-row cost, and another with minimal setup cost - enabling the 
+** query planner to make an informed decision based on query-specific 
+** tradeoffs.
+**
 ** The xBestIndex method may optionally populate the idxFlags field with a
 ** mask of SQLITE_INDEX_SCAN_* flags. One such flag is
 ** [SQLITE_INDEX_SCAN_HEX], which if set causes the [EXPLAIN QUERY PLAN]

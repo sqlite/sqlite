@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2025-07-14T18:03:23.184
+C Add\scomments\sto\ssqlite.h.in\sdescribing\sthe\schange\son\sthis\sbranch.
+D 2025-07-14T18:59:45.531
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -788,7 +788,7 @@ F src/resolve.c d3ee7ed308d46f4ee6d3bb6316d8d6f87158f93a7fd616732138cc953cf364f0
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c fc003cad96a105765261f7b6c5f4596e505894262bb5593cb29e10b682800d12
 F src/shell.c.in 73c0eeb7c265d59b99219d5aa055f412f07842088d8036b6d259927d85dd1bbf
-F src/sqlite.h.in 1164b84f4cd0e9bcc78beafb7057e671bf88e91f1ec69b90dd915e3dbe1ee7ca
+F src/sqlite.h.in 65939c73f3a0fa9cd2da409a1cc27b3abbf758621736c5ce8030dc072bf8affa
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h 984e80f6cfdb1cd65ab465d14d82b6b56af4f7dc308c4bc1da85074a5b4ca755
@@ -2214,8 +2214,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b67babf1ab44ff13aea5c644e03da7cbcd16b9f6b840375e41fe483261681b7c 63ddc215eb6106985c53d3c8d99f5445a92acf4359a6bb2681882c49583df871
-R 213e35af82c50282a7078971b7210637
+P 8f9d6acaf7e15ca593da466ee83e88da9b718f17579ae8626040f28f071aeb18
+R 672dc7971b629909624541e24505c083
 U dan
-Z 561cee1843624b72af8850fd14292987
+Z 50975b6812ff50105ef5988478dc3210
 # Remove this line to create a well-formed Fossil manifest.
