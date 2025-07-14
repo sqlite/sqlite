@@ -1,5 +1,5 @@
-C Add\snew\ssessions\sfunction\ssqlite3changeset_apply_v3()\sand\sits\sstreaming\sequivalent.\sThis\sallows\schangesets\sto\sbe\sfiltered\son\sa\sper-change\sbasis,\snot\sjust\sper-table.
-D 2025-07-14T14:51:43.802
+C In\srtree.c,\sensure\sthat\sthe\spReadAux\sstatement\sis\sreset\swhenever\sthe\sbAuxValid\sflag\sis\scleared.\sPossible\sfix\sfor\s[forum:/forumpost/3e45ed31d8\s|\sforum\spost\s3e45ed31d8].
+D 2025-07-14T15:34:11.166
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -539,7 +539,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c f0573d5109fdc658a180db0db6eec86ab2a1cf5ce58ec66cbf3356167ea757eb
-F ext/rtree/rtree.c a1f04a2013bc8f982307760615d1cee591355ac4723c74c3761c128d5c6954ab
+F ext/rtree/rtree.c 86967c5a501f895b9705366b8cd9c37f15a9ebdff770ceb719c7deeeb2c22b72
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -557,7 +557,7 @@ F ext/rtree/rtreeD.test fe46aa7f012e137bd58294409b16c0d43976c3bb92c8f710481e577c
 F ext/rtree/rtreeE.test e65d3fc625da1800b412fc8785817327d43ccfec5f5973912d8c9e471928caa9
 F ext/rtree/rtreeF.test 81ffa7ef51c4e4618d497a57328c265bf576990c7070633b623b23cd450ed331
 F ext/rtree/rtreeG.test 1b9ca6e3effb48f4161edaa463ddeaa8fca4b2526d084f9cbf5dbe4e0184939c
-F ext/rtree/rtreeH.test 0885151ee8429242625600ae47142cca935332c70a06737f35af53a7bd7aaf90
+F ext/rtree/rtreeH.test c304651ee87dbb60296366d2c802f3043c3d00506c79a5c85bd20f2c9274498b
 F ext/rtree/rtreeI.test 608e77f7fde9be5a12eae316baef640fffaafcfa90a3d67443e78123e19c4ca4
 F ext/rtree/rtreeJ.test 93227ccd4d6c328f5ac46a902b8880041509dd2d68f6ce71560f0d8ab5bb507a
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
@@ -2213,8 +2213,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e11fbf9fd630a7de2e0b0e4b67dded05b905b2a0ba04aa7e915ca9df2d9ebe21
-R 082d403ad4bd97cbce0234772b2da39f
+P 10ebd7a119ef1985755ef143a941fbaed1b5ca1c8a71e011c8bbc70e383fd337
+R 99a507c70268ef6ceed5ff7684eef3c0
+T *branch * rtree-aux-column-fix
+T *sym-rtree-aux-column-fix *
+T -sym-trunk *
 U dan
-Z 455b5bdcd48088e3f2c57d9eeedfc2e8
+Z 738adb27a795603794b0d94f34d74a91
 # Remove this line to create a well-formed Fossil manifest.

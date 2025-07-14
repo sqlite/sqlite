@@ -1135,6 +1135,12 @@ static void resetCursor(RtreeCursor *pCsr){
   pCsr->base.pVtab = (sqlite3_vtab*)pRtree;
   pCsr->pReadAux = pStmt;
 
+  /* The following will only fail if the previous sqlite3_step() call failed,
+  ** in which case the error has already been caught. This statement never
+  ** encounters an error within an sqlite3_column_xxx() function, as it
+  ** calls sqlite3_column_value(), which does not use malloc(). So it is safe
+  ** to ignore the error code here.  */
+  sqlite3_reset(pStmt);
 }
 
 /* 
