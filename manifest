@@ -1,5 +1,5 @@
-C Add\sthe\ssnapshot-zip\smakefile\stargets\sfor\sboth\sWindows\sand\sPosix.
-D 2025-07-14T18:27:32.150
+C Optimize\sallocation\sof\slarge\stombstone\sarrays\sin\sfts5.
+D 2025-07-15T14:06:15.269
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -113,7 +113,7 @@ F ext/fts5/fts5_buffer.c f1e6d0324d7c55329d340673befc26681a372a4d36086caa8d1ec7d
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
 F ext/fts5/fts5_expr.c be9e5f7f11d87e7bd3680832c93c13050fe351994b5052b0215c2ef40312c23a
 F ext/fts5/fts5_hash.c a6266cedd801ab7964fa9e74ebcdda6d30ec6a96107fa24148ec6b7b5b80f6e0
-F ext/fts5/fts5_index.c 8321944bcabdb3f3cac1c44867758ff9a9baaee5532debed2721d4d64d3c615d
+F ext/fts5/fts5_index.c c1ca58fbc4b323d2153ab42ed787d78d5beb64f5710d0dcb83d94c6ddd184492
 F ext/fts5/fts5_main.c e558225168845dc708abeb2ad10415696e5a3249bcba1810ba3c7ef80764962e
 F ext/fts5/fts5_storage.c 19bc7c4cbe1e6a2dd9849ef7d84b5ca1fcbf194cefc3e386b901e00e08bf05c2
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
@@ -167,7 +167,7 @@ F ext/fts5/test/fts5corrupt4.test dc08d19f5b8943e95a7778a7d8da592042504faf18dd93
 F ext/fts5/test/fts5corrupt5.test 73985d4fe6d8f0d5d5c7bcf79ae7c6522c376cd6ad710a0ff2f26e0c2e222abe
 F ext/fts5/test/fts5corrupt6.test 2d72db743db7b5d9c9a6d0cfef24d799ed1aa5e8192b66c40e871a37ed9eed06
 F ext/fts5/test/fts5corrupt7.test 814aab492d7a09abb5bfdd81cc66fc206d7f3868f9a3bae91876e02efc466fb3
-F ext/fts5/test/fts5corrupt8.test 7618b102b9b3a5a3494271f4975ab5837e2fb3f61f5adfcdeeb31772c859e6df
+F ext/fts5/test/fts5corrupt8.test 0b10750caf8aa23fa1c379ca4caf6130d41454505e4d5315590f4061eedcbe44
 F ext/fts5/test/fts5delete.test 2a5008f8b1174ef41d1974e606928c20e4f9da77d9f8347aed818994d89cced4
 F ext/fts5/test/fts5detail.test 54015e9c43ec4ba542cfb93268abdf280e0300f350efd08ee411284b03595cc4
 F ext/fts5/test/fts5determin.test 1b77879b2ae818b5b71c859e534ee334dac088b7cf3ff3bf76a2c82b1c788d11
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 63ddc215eb6106985c53d3c8d99f5445a92acf4359a6bb2681882c49583df871
-R d564e67ede86bc5b3c0bb80782639393
-U drh
-Z be924e4628c0fead0c508f3649455f46
+P 8c73c0c5935431556f687556bfdb459754609f07c6366c810a55bf7583ee303d
+R b9c1fa349127612acf8e4eeb19a5b3ea
+U dan
+Z 4f75a3bfe6c7ec1b805eacccf6dabec6
 # Remove this line to create a well-formed Fossil manifest.
