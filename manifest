@@ -1,5 +1,5 @@
-C Fix\sthe\sdate\sin\sbestindexE.test.
-D 2025-07-15T11:27:16.407
+C Have\sSQLite\srequest\sa\splan\swith\sno\ssetup-cost\sfrom\sxBestIndex\sif\sthe\splan\sin\squestion\smay\sonly\sbe\sused\sas\sthe\soutermost\sloop\sof\sthe\squery.
+D 2025-07-15T17:03:51.141
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -868,7 +868,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 20be6f0a25a80b7897cf2a5369bfd37ef198e6f0b6cdef16d83eee856056b159
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 8b09a629d2467f76c0bfd3101e152565f5e2378edba0b79d5f4984c7fb8506b8
+F src/where.c 7fab63d9b986ee9d6a1c496556d2afcb6435d81a9f3e75faaf8f2810ea7eb44a
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 2a2d2993fd98c46f525f71b3bfd330fde73d8613aa0ff3e20402dd1fc63470af
 F src/whereexpr.c 0a7fe115adad30def38aeab6ac1d35fb67782cee92a43df7448136240accd4dd
@@ -2214,8 +2214,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 19038620cd8326a4f4e7ef9dcceef3f93bfb47323df3c9cb7e881fdfc6b09c49
-R bfe4a2ffdd2c10e206a82db66d3ed04a
+P f3fdcfa1834411ea5dcb6bbc260c50e304feb50acebbd85a4fe554da797be7d5
+R 0fa274d8c077fb8b9e746584ff99fb65
 U dan
-Z 1f8632653a36aa233f6f078cc1a31c0f
+Z d274fd77be688740fb7252a55879eb6c
 # Remove this line to create a well-formed Fossil manifest.

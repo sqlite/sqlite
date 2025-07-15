@@ -4442,6 +4442,10 @@ static int whereLoopAddVirtualPlan(
 ** initialized to -1.0 (instead of 0.0) to indicate to the vtab implementation
 ** that SQLite is requesting a plan with no setup cost.
 **
+** Output variable (*pbIn) is set to true if the final call to
+** whereLoopAddVirtualPlan() made by this function returns a plan that uses
+** multiple xFilter() calls for an IN(...) constraint.
+**
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
 static int whereLoopAddVirtualOne(
@@ -4455,10 +4459,22 @@ static int whereLoopAddVirtualOne(
   int *pbRetryLimit               /* OUT: Retry without LIMIT/OFFSET */
 ){
   int rc;
-  pIdxInfo->estimatedSetup = (mUsable ? 0.0 : -1.0);
+
+  /* If this is guaranteed to be the outermost table in the join, either
+  ** because it is the only table in the join or because no prereq tables
+  ** are allowed, then request a plan with no setup-cost by setting
+  ** estimatedSetup to a negative value.  */
+  pIdxInfo->estimatedSetup = -1.0;
+  if( (mUsable|mPrereq) && pBuilder->pWInfo->pTabList->nSrc>1 ){
+    pIdxInfo->estimatedSetup = 0.0;
+  }
+
   rc = whereLoopAddVirtualPlan(pBuilder, 
       mPrereq, mUsable, mExclude, pIdxInfo, mNoOmit, pbIn, pbRetryLimit
   );
+
+  /* If the xBestIndex() method returned a plan with a setup-cost, request
+  ** one with a zero setup-cost as well.  */
   if( rc==SQLITE_OK && pIdxInfo->estimatedSetup>0.0 ){
     pIdxInfo->estimatedSetup = -1.0;
     rc = whereLoopAddVirtualPlan(pBuilder, 
