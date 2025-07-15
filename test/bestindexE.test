@@ -1,4 +1,4 @@
-# 2024-08-03
+# 2025-07-14
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -146,12 +146,6 @@ do_eqp_test 1.3 {
   |--SCAN e VIRTUAL TABLE INDEX 0:linear
   `--SCAN t VIRTUAL TABLE INDEX 0:by-rowid
 }
-
-
-#1) Scan(threads) + Rows(threads) * Scan(events)
-#2) Scan(threads) + Rows(threads) * Lookup(events) + BuildIndex(events)
-#3) Scan(events) + Rows(events) * Lookup(threads)
-
 
 
 
