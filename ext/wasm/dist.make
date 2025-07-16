@@ -11,7 +11,7 @@
 # distinctly different zip file and top directory name to distinguish
 # them from release builds.
 #######################################################################
-MAKEFILE.dist := $(lastword $(MAKEFILE_LIST))
+MAKEFILE.dist = $(lastword $(MAKEFILE_LIST))
 
 ########################################################################
 # Chicken/egg situation: we need $(bin.version-info) to get the
@@ -20,16 +20,16 @@ MAKEFILE.dist := $(lastword $(MAKEFILE_LIST))
 # have to use a temporary name for the archive until we can get
 # that binary built.
 ifeq (1,$(SQLITE_C_IS_SEE))
-dist-name-extra := -see
+dist-name-extra = -see
 else
-dist-name-extra :=
+dist-name-extra =
 endif
 ifeq (,$(filter snapshot,$(MAKECMDGOALS)))
-dist-name-prefix := sqlite-wasm$(dist-name-extra)
+dist-name-prefix = sqlite-wasm$(dist-name-extra)
 else
-dist-name-prefix := sqlite-wasm$(dist-name-extra)-snapshot-$(shell /usr/bin/date +%Y%m%d)
+dist-name-prefix = sqlite-wasm$(dist-name-extra)-snapshot-$(shell /usr/bin/date +%Y%m%d)
 endif
-dist-name := $(dist-name-prefix)-TEMP
+dist-name = $(dist-name-prefix)-TEMP
 
 ########################################################################
 # dist.build must be the name of a target which triggers the build of
@@ -45,10 +45,10 @@ dist-name := $(dist-name-prefix)-TEMP
 # reason not to.
 dist.build ?= oz
 
-dist-dir.top := $(dist-name)
-dist-dir.jswasm := $(dist-dir.top)/$(notdir $(dir.dout))
-dist-dir.common := $(dist-dir.top)/common
-dist.top.extras := \
+dist-dir.top = $(dist-name)
+dist-dir.jswasm = $(dist-dir.top)/$(notdir $(dir.dout))
+dist-dir.common = $(dist-dir.top)/common
+dist.top.extras = \
     demo-123.html demo-123-worker.html demo-123.js \
     tester1.html tester1-worker.html tester1-esm.html \
     tester1.js tester1.mjs \
@@ -56,9 +56,9 @@ dist.top.extras := \
     demo-worker1.html demo-worker1.js \
     demo-worker1-promiser.html demo-worker1-promiser.js \
     demo-worker1-promiser-esm.html demo-worker1-promiser.mjs
-dist.jswasm.extras := $(sqlite3.wasm) \
+dist.jswasm.extras = $(sqlite3.wasm) \
   $(sqlite3-api.ext.jses)
-dist.common.extras := \
+dist.common.extras = \
     $(wildcard $(dir.common)/*.css) \
     $(dir.common)/SqliteTestUtil.js
 
@@ -77,12 +77,12 @@ $(bin.stripccomments) $(2) < $(1) > $(dist-dir.jswasm)/$(notdir $(1)) || exit;
 endef
 # STRIP_K1.js = list of JS files which need to be passed through
 # $(bin.stripcomments) with a single -k flag.
-STRIP_K1.js := $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js) \
+STRIP_K1.js = $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js) \
   $(sqlite3-worker1-bundler-friendly.js) \
   $(sqlite3-api.ext.jses)
 # STRIP_K2.js = list of JS files which need to be passed through
 # $(bin.stripcomments) with two -k flags.
-STRIP_K2.js := $(sqlite3.js) $(sqlite3.mjs) \
+STRIP_K2.js = $(sqlite3.js) $(sqlite3.mjs) \
   $(sqlite3-bundler-friendly.mjs) $(sqlite3-node.mjs)
 ########################################################################
 # dist: create the end-user deliverable archive.
@@ -104,8 +104,8 @@ STRIP_K2.js := $(sqlite3.js) $(sqlite3.mjs) \
 # to know that it's in a regex or string literal. Because of that,
 # comment-stripping is currently disabled, which means the builds will
 # be significantly larger than before.
-#apply_comment_stripper := false
-apply_comment_stripper := true
+#apply_comment_stripper = false
+apply_comment_stripper = true
 # ^^^ shell command true or false
 dist: \
     $(bin.stripccomments) $(bin.version-info) \

@@ -1,5 +1,5 @@
-C wasm:\sremove\ssome\sextraneous\slevels\sof\smakefile\svar\sand\sfix\sthe\s(unsupported)\swasmfs\sspeedtest1\sbuild\sto\saccount\sfor\svar\srenaming\swhich\shappened\slong\sbefore\sthis.
-D 2025-07-16T13:22:38.693
+C In\sthe\swasm\smakefiles,\sreplace\sX:=Y\swith\sX=Y\sbecause\s:=\shas\sdifferent\ssemantics\sdepending\son\sthe\smake\simpl\sand\sits\suse\sis\sarguably\sa\sbad\smuscle-memory\shabit\sworth\sbreaking.\sThese\smakefiles\sare\svery\sspecifically\sfor\sGNU\smake,\sbut\slong-term\sit\swould\sbe\snice\sto\seliminate\sthat\srequirement.
+D 2025-07-16T14:51:23.528
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -622,7 +622,7 @@ F ext/session/sqlite3session.c 19e14bcca2fbc63a8022ffd708ea6e6986c4003a1e9bbca9b
 F ext/session/sqlite3session.h b81e8536ce4b83babafd700f4ff67017804b6c1d71df963b30d3972958e7f4a7
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 472720819d2cde9d7d4c957f2bfb8ebb0193fa75dca10a5c2ab0396ba0ef926b
+F ext/wasm/GNUmakefile b9217715b615bfe51a8c13f6fa9889fb7b734e0f26bffc656ff52652e9906cc1
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md b89605f65661cf35bf034ff6d43e448cc169b8017fc105d498e33b81218b482c
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -663,7 +663,7 @@ F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b5318317
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
 F ext/wasm/common/whwasmutil.js 5e7fe4a2547831e003356c201ca28d9a0d6a19ab1fe2c8f63f82464fecd2cef7
-F ext/wasm/config.make.in 4bc43443f768a61efd43cf995a5e618f58ac9afc0936706014193537d82c41cb
+F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
 F ext/wasm/demo-123.js c7b3cca50c55841c381a9ca4f9396e5bbdc6114273d0b10a43e378e32e7be5bf
@@ -673,9 +673,9 @@ F ext/wasm/demo-worker1-promiser.c-pp.html 635cf90685805e21772a5f7a35d1ace80f98a
 F ext/wasm/demo-worker1-promiser.c-pp.js af168699d3cab1c27ad2364ebe06cd49db300bdbf404e23b00d5742ed52816ba
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js 08720227e98fa5b44761cf6e219269cee3e9dd0421d8d91459535da776950314
-F ext/wasm/dist.make 92ef4ffe33022a50f92d602acabad10bd8dd91759f3eb7df27fc6d7d37072b96
+F ext/wasm/dist.make c29018b4db479a4c170569393e5399f0625446123a7eb6ffb0677495292bb954
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
-F ext/wasm/fiddle.make 2df87f12bcbae2c966c2cef34ce71bb1584c440c69e14ca6d32f443d8d550dc5
+F ext/wasm/fiddle.make 88885c5a2102e1516d0fb89e0cdb023e5b5d73baff9a8ebf97a657f6fb63668b
 F ext/wasm/fiddle/fiddle-worker.js 850e66fce39b89d59e161d1abac43a181a4caa89ddeea162765d660277cd84ce
 F ext/wasm/fiddle/fiddle.js 2a2f27b4be2674f501fff61c4a09e44dcf2295731a26b5c28e439f3a573bd269
 F ext/wasm/fiddle/index.html 7fcfb221165183bef0e05d5af9ceb79b527e799b1708ab05de0ec0eaebd5b7bf
@@ -683,7 +683,7 @@ F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf1
 F ext/wasm/index.html bcaa00eca521b372a6a62c7e7b17a870b0fcdf3e418a5921df1fd61e5344080d
 F ext/wasm/jaccwabyt/jaccwabyt.js 6e4f26d0edb5c2e7d381b7eff1924832a040a12274afab2d1e1789027e9f6c5c
 F ext/wasm/jaccwabyt/jaccwabyt.md 1128e3563e7eff90b5a373395251fc76cb32386fad1fea6075b0f34a8f1b9bdf
-F ext/wasm/mkwasmbuilds.c 5cf96c716367bb5958fd96caa924aca053df8d84081dd46092dd351d1af6ae90
+F ext/wasm/mkwasmbuilds.c f5c143c10aeb7a519f7c08f98f90927f43c1991af3373bc6f80d8631a58acd42
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -691,7 +691,7 @@ F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2
 F ext/wasm/speedtest1-wasmfs.mjs c77c7231338ed5c0e1ce16aa29106df8e5b5cf11a48319c49433490a8d3ded30
 F ext/wasm/speedtest1-worker.html d24d1e06caf3dcd83430c8c3d87761ff7555fd06eaeaf2fc02ce49cf45f0d032
 F ext/wasm/speedtest1-worker.js 95e549e13a4d35863a9a7fc66122b5f546c0130d3be7b06dfcc556eb66d24bde
-F ext/wasm/speedtest1.html 217bf15d43065634a27a06dbd5c9a320f6da9932dbcdfc963d482bc2f99dbea9
+F ext/wasm/speedtest1.html e2a0e0bd12243ca34b11235bf9f3c229f4574ea1125f2ecf2bf0589853d6f9c8
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
@@ -708,7 +708,7 @@ F ext/wasm/tests/opfs/sahpool/digest.html 206d08a34dc8bd570b2581d3d9ab3ecad3201b
 F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca01385e2732294b53f4c842328
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
-F ext/wasm/wasmfs.make 4f6a679c06b45039a4b0456a546e95c4f24bf6d33455073bb055cc17b6739550
+F ext/wasm/wasmfs.make d9da19b6b4b438a7d4b932093820882532802eb929f4320e8f032a2b722fcd67
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
 F main.mk a5d698cf8d38e4eb42a89f08a9521906b24f4acac61bbafa56d72cd9b39617b6
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a8ed16989dcd324bd9caa09aec7979249deaf59ca13bc377379ddd83c53379cd
-R 9ff9d7c107dd129efe8469b678cd73d7
+P 35b2315343e22ca12c6ee3f5be8741eba889bb6461e08fad0a8ae7db033319cb
+R 1b41f3a033df88a8072a18a3668f851c
 U stephan
-Z 9b2f15ac0469aa2bbb0879fb5bc3ce42
+Z af3ba49056e2f127c99be56e513ada3c
 # Remove this line to create a well-formed Fossil manifest.

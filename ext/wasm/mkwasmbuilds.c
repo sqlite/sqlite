@@ -84,8 +84,8 @@ struct BuildDef {
   const char *zMode;      /* Name from JS_BUILD_MODES */
   int flags;              /* Flags from LibModeFlags */
   const char *zJsOut;     /* Name of generated sqlite3.js/.mjs */
-  /* TODO: dynamically determine zApiJsOut and zJsOut based on zName, zMode,
-     and flags. */
+  /* TODO: dynamically determine zJsOut based on zName, zMode, and
+     flags. */
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Extra flags for emcc */
 };
@@ -94,7 +94,10 @@ typedef struct BuildDef BuildDef;
 /*
 ** The set of WASM builds for the library (as opposed to the apps
 ** (fiddle, speedtest1)). This array must end with an empty sentinel
-** entry, but their order is otherwise not significant.
+** entry. Their order is mostly insignificant, but some makefile vars
+** used by some builds are set up by prior builds. Because of that,
+** the (sqlite3, vanilla), (sqlite3, esm), and (sqlite3,
+** bundler-friendly) builds should be defined first (in that order).
 */
 const BuildDef aBuildDefs[] = {
   {/* Core build */
@@ -136,8 +139,14 @@ static void mk_prologue(void){
   /* A 0-terminated list of makefile vars which we expect to have been
   ** set up by this point in the build process. */
   char const * aRequiredVars[] = {
+    "dir.top",
     "dir.api", "dir.dout", "dir.tmp",
     "sqlite3-license-version.js",
+    "MAKEFILE", "MAKEFILE_LIST",
+    /* Fiddle... */
+    "dir.fiddle", "dir.fiddle-debug",
+    "MAKEFILE.fiddle",
+    "EXPORTED_FUNCTIONS.fiddle",
     /*"just-testing",*/
     0
   };
@@ -239,7 +248,6 @@ static void mk_prologue(void){
 */
 static void mk_pre_post(const char *zName  /* build name */,
                         const char *zMode  /* build mode */,
-                        int flags          /* LIBMODE_... mask */,
                         const char *zCmppD /* optional -D flags for c-pp for the
                                            ** --pre/--post-js files. */){
 /* Very common printf() args combo. */
@@ -307,13 +315,13 @@ static void mk_pre_post(const char *zName  /* build name */,
 
 /*
 ** Emits rules for the fiddle builds.
-**
 */
 static void mk_fiddle(void){
   int i = 0;
 
-  mk_pre_post("fiddle-module","vanilla", 0, 0);
+  mk_pre_post("fiddle-module","vanilla", 0);
   for( ; i < 2; ++i ){
+    /* 0==normal, 1==debug */
     const char *zTail = i ? ".debug" : "";
     const char *zDir = i ? "$(dir.fiddle-debug)" : "$(dir.fiddle)";
 
@@ -366,14 +374,14 @@ static void mk_lib_mode(const BuildDef * pB){
   assert( pB->zName );
   assert( pB->zMode );
   assert( pB->zJsOut );
-#define MT(X) ((X) ? (X) : "")
 /* Very common printf() args combo. */
 #define zNM pB->zName, pB->zMode
 
   pf("%s# Begin build [%s-%s]. flags=0x%02x\n", zBanner, zNM, pB->flags);
-  pf("# zJsOut=%s\n# zCmppD=%s\n", pB->zJsOut, MT(pB->zCmppD));
+  pf("# zJsOut=%s\n# zCmppD=%s\n", pB->zJsOut,
+     pB->zCmppD ? pB->zCmppD : "<none>");
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, pB->zJsOut);
-  mk_pre_post(zNM, pB->flags, pB->zCmppD);
+  mk_pre_post(zNM, pB->zCmppD);
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( pB->zEmcc && pB->zEmcc[0] ){
     pf("emcc.flags.%s.%s += %s\n", zNM, pB->zEmcc);
@@ -453,7 +461,6 @@ static void mk_lib_mode(const BuildDef * pB){
     pf("all: %s\n", pB->zJsOut);
   }
   pf("# End build [%s-%s]%s", zNM, zBanner);
-#undef MT
 #undef zNM
 }
 
@@ -466,8 +473,8 @@ int main(void){
     mk_lib_mode( pB );
   }
   mk_fiddle();
-  mk_pre_post("speedtest1","vanilla", 0, 0);
-  mk_pre_post("speedtest1-wasmfs","esm", 0,
+  mk_pre_post("speedtest1","vanilla", 0);
+  mk_pre_post("speedtest1-wasmfs","esm",
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs");
   return rc;
 }

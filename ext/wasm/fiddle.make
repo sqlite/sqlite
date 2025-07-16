@@ -3,13 +3,12 @@
 #
 # Intended to include'd by ./GNUmakefile.
 #######################################################################
-MAKEFILE.fiddle := $(lastword $(MAKEFILE_LIST))
 
 ########################################################################
 # shell.c and its build flags...
 ifneq (1,$(MAKING_CLEAN))
-  make-np-0 := make -C  $(dir.top) -n -p
-  make-np-1 := sed -e 's/(TOP)/(dir.top)/g'
+  make-np-0 = make -C  $(dir.top) -n -p
+  make-np-1 = sed -e 's/(TOP)/(dir.top)/g'
   # Extract SHELL_OPT and SHELL_DEP from the top-most makefile and import
   # them as vars here...
   $(eval $(shell $(make-np-0) | grep -e '^SHELL_OPT ' | $(make-np-1)))
@@ -27,7 +26,7 @@ endif
 # /shell.c
 ########################################################################
 
-EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
+EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 fiddle.emcc-flags = \
   $(emcc.cflags) $(emcc_opt_full) \
   --minify 0 \
@@ -52,12 +51,12 @@ fiddle.emcc-flags = \
 
 # Flags specifically for debug builds of fiddle. Performance suffers
 # greatly in debug builds.
-fiddle.emcc-flags.debug := $(fiddle.emcc-flags) \
+fiddle.emcc-flags.debug = $(fiddle.emcc-flags) \
   -DSQLITE_DEBUG \
   -DSQLITE_ENABLE_SELECTTRACE \
   -DSQLITE_ENABLE_WHERETRACE
 
-fiddle.EXPORTED_FUNCTIONS.in := \
+fiddle.EXPORTED_FUNCTIONS.in = \
     EXPORTED_FUNCTIONS.fiddle.in \
     $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core \
     $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
@@ -66,7 +65,7 @@ $(EXPORTED_FUNCTIONS.fiddle): $(MKDIR.bld) $(fiddle.EXPORTED_FUNCTIONS.in) \
     $(MAKEFILE.fiddle)
 	sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 
-fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
+fiddle.cses = $(dir.top)/shell.c $(sqlite3-wasm.c)
 
 fiddle: $(fiddle-module.js) $(fiddle-module.js.debug)
 fiddle.debug: $(fiddle-module.js.debug)
@@ -83,10 +82,9 @@ clean-fiddle:
 all: fiddle
 
 ########################################################################
-# fiddle_remote is the remote destination for the fiddle app. It
-# must be a [user@]HOST:/path for rsync.
-# Note that the target "should probably" contain a symlink of
-# index.html -> fiddle.html.
+# fiddle_remote is the remote destination for the fiddle app. It must
+# be a [user@]HOST:/path for rsync.  The target "should probably"
+# contain a symlink of index.html -> fiddle.html.
 fiddle_remote ?=
 ifeq (,$(fiddle_remote))
 ifneq (,$(wildcard /home/stephan))
@@ -153,11 +151,6 @@ push-fiddle: fiddle
 #  because certain execution environments disallow those constructs.
 #  This flag is not strictly necessary, however.
 #
-# -sWASM_BIGINT is UNTESTED but "should" allow the int64-using C APIs
-#  to work with JS/wasm, insofar as the JS environment supports the
-#  BigInt type. That support requires an extremely recent browser:
-#  Safari didn't get that support until late 2020.
-#
 # --no-entry: for compiling library code with no main(). If this is
 #  not supplied and the code has a main(), it is called as part of the
 #  module init process. Note that main() is #if'd out of shell.c
@@ -179,14 +172,15 @@ push-fiddle: fiddle
 #  minification makes little difference in terms of overall
 #  distributable size.
 #
-# --minify 0: disables minification of the generated JS code,
-#  regardless of optimization level. Minification of the JS has
-#  minimal overall effect in the larger scheme of things and results
-#  in JS files which can neither be edited nor viewed as text files in
-#  Fossil (which flags them as binary because of their extreme line
-#  lengths). Interestingly, whether or not the comments in the
-#  generated JS file get stripped is unaffected by this setting and
-#  depends entirely on the optimization level. Higher optimization
+# --minify 0: supposedly disables minification of the generated JS
+#  code, regardless of optimization level, but that's not quite true:
+#  search the main makefile for wasm-strip for details. Minification
+#  of the JS has minimal overall effect in the larger scheme of things
+#  and results in JS files which can neither be edited nor viewed as
+#  text files in Fossil (which flags them as binary because of their
+#  extreme line lengths). Interestingly, whether or not the comments
+#  in the generated JS file get stripped is unaffected by this setting
+#  and depends entirely on the optimization level. Higher optimization
 #  levels reduce the size of the JS considerably even without
 #  minification.
 #

@@ -22,14 +22,14 @@ sqlite3-wasmfs.wasm   = $(dir.wasmfs)/sqlite3-wasmfs.wasm
 
 ########################################################################
 # emcc flags for .c/.o.
-cflags.sqlite3-wasmfs :=
+cflags.sqlite3-wasmfs =
 cflags.sqlite3-wasmfs += -std=c99 -fPIC
 cflags.sqlite3-wasmfs += -pthread
 cflags.sqlite3-wasmfs += -DSQLITE_ENABLE_WASMFS
 
 ########################################################################
 # emcc flags specific to building the final .js/.wasm file...
-emcc.flags.sqlite3-wasmfs :=
+emcc.flags.sqlite3-wasmfs =
 emcc.flags.sqlite3-wasmfs += \
   -sEXPORTED_RUNTIME_METHODS=wasmMemory
                           # wasmMemory ==> for -sIMPORTED_MEMORY
@@ -53,7 +53,7 @@ emcc.flags.sqlite3-wasmfs += -sALLOW_MEMORY_GROWTH=0
 #   USE_PTHREADS + ALLOW_MEMORY_GROWTH may run non-wasm code slowly,
 #   see https://github.com/WebAssembly/design/issues/1271 [-Wpthreads-mem-growth]
 # And, indeed, it runs slowly if memory is permitted to grow.
-#emcc.flags.sqlite3-wasmfs.vanilla :=
+#emcc.flags.sqlite3-wasmfs.vanilla =
 #emcc.flags.sqlite3-wasmfs.esm = -sEXPORT_ES6 -sUSE_ES6_IMPORT_META
 $(sqlite3-wasmfs.js) $(dir.wasmfs)/sqlite3-wasmfs.mjs: $(MAKEFILE.wasmfs)
 ########################################################################
