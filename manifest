@@ -1,5 +1,5 @@
-C Remove\ssome\sstray\smakefile\sdebug\soutput.
-D 2025-07-16T16:56:33.482
+C Fix\svtabH.test\sso\sthat\sit\sworks\son\swindows\seven\sif\sthere\sare\sfiles\sthat\sbegin\swith\s"$"\sin\sthe\sroot\sdirectory.
+D 2025-07-16T17:24:31.516
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1994,7 +1994,7 @@ F test/vtabC.test 4528f459a13136f982e75614d120aef165f17292
 F test/vtabD.test 05b3f1d77117271671089e48719524b676842e96
 F test/vtabE.test 2a143fe75a11275781d1fd1988d86b66a3f69cb98f4add62e3da8fd0f637b45f
 F test/vtabF.test 1918844c7c902f6a16c8dacf1ec8f84886d6e78b
-F test/vtabH.test a9417d92111629e2c33e0f3b06cc84bcd611753d0fc017b3ce6ae96572bc2f2f
+F test/vtabH.test 3fe4c1cbc93a85971990f379116255e2d4f14b583be4d0b9cca67e90226041f1
 F test/vtabI.test 751b07636700dbdea328e4265b6077ccd6811a3f
 F test/vtabJ.test a6aef49d558af90fae10565b29501f82a95781cb4f797f2d13e2d19f9b6bc77b
 F test/vtabK.test 13293177528fada1235c0112db0d187d754af1355c5a39371abd365104e3afbf
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d4203311a2f39189ed8f30d519468aed8983af7772a5b247e7557d3e1936064e
-R ba4aacc796c389ef7dfc5c4dcd68fec3
-U stephan
-Z 4b13663095b96ba0896611543740e3b6
+P 7ef22c3d11088210d2267375ec188bd352b067614200394b9877f2e40dc12bb2
+R 3ef038ae9187f207008c5c09bc7a42a8
+U dan
+Z 562bf6bcb2e06809b99eb8ab4d03b298
 # Remove this line to create a well-formed Fossil manifest.
