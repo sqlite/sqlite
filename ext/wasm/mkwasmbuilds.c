@@ -83,7 +83,6 @@ struct BuildDef {
   const char *zName;      /* Name from JS_BUILD_NAMES */
   const char *zMode;      /* Name from JS_BUILD_MODES */
   int flags;              /* Flags from LibModeFlags */
-  const char *zApiJsOut;  /* Name of generated sqlite3-api.js/.mjs */
   const char *zJsOut;     /* Name of generated sqlite3.js/.mjs */
   /* TODO: dynamically determine zApiJsOut and zJsOut based on zName, zMode,
      and flags. */
@@ -99,25 +98,21 @@ typedef struct BuildDef BuildDef;
 */
 const BuildDef aBuildDefs[] = {
   {/* Core build */
-    "sqlite3", "vanilla", LIBMODE_PLAIN,
-    "$(dir.dout)/sqlite3-api.js", "$(sqlite3.js)", 0, 0},
+    "sqlite3", "vanilla", LIBMODE_PLAIN, "$(sqlite3.js)", 0, 0},
 
   {/* Core ESM */
-   "sqlite3", "esm", LIBMODE_ESM,
-   "$(dir.dout)/sqlite3-api.mjs", "$(sqlite3.mjs)",
+   "sqlite3", "esm", LIBMODE_ESM, "$(sqlite3.mjs)",
    "-Dtarget=es6-module", 0},
 
   {/* Core bundler-friend. Untested and "not really" supported, but
    ** required by the downstream npm subproject. */
     "sqlite3", "bundler-friendly",
     LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
-    "$(dir.dout)/sqlite3-api-bundler-friendly.mjs",
     "$(sqlite3-bundler-friendly.mjs)",
     "$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly", 0},
 
   {/* node.js mode. Untested and unsupported. */
     "sqlite3", "node", LIBMODE_NODEJS | LIBMODE_DONT_ADD_TO_ALL,
-    "$(dir.dout)/sqlite3-api-node.mjs",
     "$(sqlite3-node.mjs)",
     "$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node", 0},
 
@@ -126,12 +121,11 @@ const BuildDef aBuildDefs[] = {
    ** here. */
     "sqlite3-wasmfs", "esm" ,
     LIBMODE_WASMFS | LIBMODE_ESM | LIBMODE_DONT_ADD_TO_ALL,
-    "$(dir.tmp)/sqlite3-api-wasmfs.mjs",
     "$(sqlite3-wasmfs.mjs)",
     "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
     "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"},
 
-  {/*End-of-list sentinel*/0,0,0,0,0,0,0}
+  {/*End-of-list sentinel*/0,0,0,0,0,0}
 };
 
 /*
@@ -354,26 +348,22 @@ static void mk_lib_mode(const BuildDef * pB){
     ** post-processing after Emscripten generates X.wasm. */;
   assert( pB->zName );
   assert( pB->zMode );
-  assert( pB->zApiJsOut );
   assert( pB->zJsOut );
 #define MT(X) ((X) ? (X) : "")
 /* Very common printf() args combo. */
 #define zNM pB->zName, pB->zMode
 
-  pf("%s# Begin build [%s-%s]\n", zBanner, zNM);
-  pf("# zApiJsOut=%s\n# zJsOut=%s\n# zCmppD=%s\n",
-     pB->zApiJsOut, pB->zJsOut, MT(pB->zCmppD));
+  pf("%s# Begin build [%s-%s]. flags=0x%02x\n", zBanner, zNM, pB->flags);
+  pf("# zJsOut=%s\n# zCmppD=%s\n", pB->zJsOut, MT(pB->zCmppD));
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, pB->zJsOut);
   mk_pre_post(zNM, pB->flags, pB->zCmppD);
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( pB->zEmcc && pB->zEmcc[0] ){
     pf("emcc.flags.%s.%s += %s\n", zNM, pB->zEmcc);
   }
-  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER, $(sqlite3-api.js.in), %s, %s))\n",
-     pB->zApiJsOut, MT(pB->zCmppD));
 
   /* target pB->zJsOut */
-  pf("%s: %s $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
+  pf("%s: $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
      "$(pre-post-%s-%s.deps) "
      "$(sqlite3-api.ext.jses)"
      /* ^^^ maintenance reminder: we set these as deps so that they
@@ -382,7 +372,7 @@ static void mk_lib_mode(const BuildDef * pB){
         are still compiling, which is especially helpful when running
         builds with long build times (like -Oz). */
      "\n",
-     pB->zJsOut, pB->zApiJsOut, zNM);
+     pB->zJsOut, zNM);
   pf("\t@echo \"Building $@ ...\"\n");
   pf("\t$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
   pf("\t\t$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.%s) \\\n",
@@ -404,7 +394,7 @@ static void mk_lib_mode(const BuildDef * pB){
      "\t\t$(maybe-wasm-strip) %s;\n",
      zWasmOut, zWasmOut);
   pf("\t@$(call SQLITE.CALL.WASM-OPT,%s)\n", zWasmOut);
-  pf("\t@sed -i -e '/^var _sqlite3.*createExportWrapper/d' %s || exit; \\\n"
+  pf("\t@sed -i -e '/^.*= *_sqlite.*= *createExportWrapper/d' %s || exit; \\\n"
      /*  ^^^^^^ reminder: Mac/BSD sed has no -i flag */
      "\t\techo 'Stripped out createExportWrapper() parts.'\n",
      pB->zJsOut) /* Our JS code installs bindings of each WASM export. The

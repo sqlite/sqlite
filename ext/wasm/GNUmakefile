@@ -573,12 +573,7 @@ $(SOAP.js.bld): $(SOAP.js)
 # Sidebar: some of the imports are used soley by the Emscripten glue,
 # which the sqlite3 JS code does not rely on.
 #
-# We build $(sqlite3-api*.*) "because we can" and because it might be
-# a useful point of experimentation for some clients, but the
-# above-described caveat may well make them unusable for real-life
-# clients.
-#
-# sqlite3-api.js.in = the generated sqlite3-api.js before it gets
+# sqlite3-api.js.in = the amalgamated sqlite3-api.js before it gets
 # preprocessed. It contains all of $(sqlite3-api.jses) but none of the
 # Emscripten-specific headers and footers.
 sqlite3-api.js.in := $(dir.tmp)/sqlite3-api.c-pp.js
