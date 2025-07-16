@@ -1,5 +1,5 @@
-C In\sthe\swasm\smakefiles,\sreplace\sX:=Y\swith\sX=Y\sbecause\s:=\shas\sdifferent\ssemantics\sdepending\son\sthe\smake\simpl\sand\sits\suse\sis\sarguably\sa\sbad\smuscle-memory\shabit\sworth\sbreaking.\sThese\smakefiles\sare\svery\sspecifically\sfor\sGNU\smake,\sbut\slong-term\sit\swould\sbe\snice\sto\seliminate\sthat\srequirement.
-D 2025-07-16T14:51:23.528
+C Remove\ssome\sstray\smakefile\sdebug\soutput.
+D 2025-07-16T16:56:33.482
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -708,7 +708,7 @@ F ext/wasm/tests/opfs/sahpool/digest.html 206d08a34dc8bd570b2581d3d9ab3ecad3201b
 F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca01385e2732294b53f4c842328
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
-F ext/wasm/wasmfs.make d9da19b6b4b438a7d4b932093820882532802eb929f4320e8f032a2b722fcd67
+F ext/wasm/wasmfs.make bde552956ae47f21c3eb1bb727e5fd416a6df19758f96b77ba72b20612359b8a
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
 F main.mk a5d698cf8d38e4eb42a89f08a9521906b24f4acac61bbafa56d72cd9b39617b6
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 35b2315343e22ca12c6ee3f5be8741eba889bb6461e08fad0a8ae7db033319cb
-R 1b41f3a033df88a8072a18a3668f851c
+P d4203311a2f39189ed8f30d519468aed8983af7772a5b247e7557d3e1936064e
+R ba4aacc796c389ef7dfc5c4dcd68fec3
 U stephan
-Z af3ba49056e2f127c99be56e513ada3c
+Z 4b13663095b96ba0896611543740e3b6
 # Remove this line to create a well-formed Fossil manifest.

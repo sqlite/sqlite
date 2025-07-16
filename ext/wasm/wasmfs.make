@@ -86,7 +86,7 @@ emcc.flags.speedtest1-wasmfs = $(sqlite3-wasmfs.fsflags)
 emcc.flags.speedtest1-wasmfs += $(SQLITE_OPT)
 emcc.flags.speedtest1-wasmfs += -sALLOW_MEMORY_GROWTH=0
 emcc.flags.speedtest1-wasmfs += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.128)
-$(info speedtest DEPS=pre-post-sqlite3-wasmfs-esm.deps=$(pre-post-sqlite3-wasmfs-esm.deps))
+#$(info speedtest DEPS=pre-post-sqlite3-wasmfs-esm.deps=$(pre-post-sqlite3-wasmfs-esm.deps))
 $(speedtest1-wasmfs.mjs): $(speedtest1.cfiles) $(sqlite3-wasmfs.js) \
   $(MAKEFILE) $(MAKEFILE.wasmfs) $(pre-post-sqlite3-wasmfs-esm.deps) \
   $(EXPORTED_FUNCTIONS.speedtest1)
