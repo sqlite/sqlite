@@ -958,11 +958,11 @@ all: $(dir.dout)/sqlite3-worker1.js \
     $(dir.dout)/sqlite3-worker1-promiser.js $(dir.dout)/sqlite3-worker1-promiser.mjs
 
 demo-worker1-promiser.html: $(dir.dout)/sqlite3-worker1-promiser.js demo-worker1-promiser.js
-demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
+demo-worker1-promiser-esm.html: $(dir.dout)/sqlite3-worker1-promiser.mjs demo-worker1-promiser.mjs
 all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
 
 sqlite3-api.ext.jses += \
-  $(sqlite3-worker1-promiser.mjs) \
+  $(dir.dout)/sqlite3-worker1-promiser.mjs \
   $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
   $(dir.dout)/sqlite3-worker1.js
 all quick: $(sqlite3-api.ext.jses)

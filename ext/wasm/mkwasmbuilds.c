@@ -91,8 +91,8 @@ struct BuildDef {
   const char *zMode;      /* Name from JS_BUILD_MODES */
   int flags;              /* Flags from LibModeFlags */
   const char *zJsOut;     /* Base name of generated sqlite3.js/.mjs */
-  /* TODO: dynamically determine zJsOut based on zName, zMode, and
-     flags. */
+  /* TODO? dynamically determine zJsOut based on zName, zMode, and
+  ** flags. */
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Extra flags for emcc */
 };
@@ -397,17 +397,22 @@ static void mk_lib_mode(const BuildDef * pB){
   snprintf(aOutBuf, sizeof(aOutBuf), "$(dir.tmp)/%s-%s", zNM);
 
   /* Set up build-specific output dir. Several of the builds generate
-     a file named sqlite3.wasm, which precludes us building them in
-     parallel. We use a build-specific dir to enable parallization of
-     those builds. All such builds will generate a byte-for-byte
-     identical sqlite3.wasm so long as all Emscripten-related flags
-     which influence that file are the same (i.e. where pB->zEmcc is
-     the same), which is the case for most of the affected builds. */
+  ** a file named sqlite3.wasm, which precludes us building them in
+  ** parallel. We use a build-specific dir to enable parallization of
+  ** those builds. All such builds will generate a byte-for-byte
+  ** identical sqlite3.wasm so long as all Emscripten-related flags
+  ** which influence that file are the same (i.e. where pB->zEmcc is
+  ** the same), which is the case for most of the affected builds. */
   pf("dir.tmp.%s-%s = %s\n", zNM, aOutBuf);
-  pf("$(dir.tmp.%s-%s)/.mkdir:\n\tmkdir -p $(dir.tmp.%s-%s)\n\ttouch $@\n",
-     zNM, zNM);
+  pf("$(dir.tmp.%s-%s):\n\tmkdir -p $@\n", zNM);
+#if 0
+  /* We don't need to add cleanup rules so long as these dirs are
+  ** under $(dir.tmp), as that dir will be cleaned up by 'make
+  ** clean'. If these dirs move somewhere else, we'll want to add a
+  ** rule like...*/
   pf("clean-%s-%s:\n\trm -fr $(dir.tmp.%s-%s)\n"
-     "clean: clean-%s-%s\n", zNM, zNM, zNM);
+    "clean: clean-%s-%s\n", zNM, zNM, zNM);
+#endif
 
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( pB->zEmcc && pB->zEmcc[0] ){
@@ -416,15 +421,15 @@ static void mk_lib_mode(const BuildDef * pB){
 
   /* target pB->zJsOut */
   pf("$(dir.tmp.%s-%s)/%s: "
-     "$(dir.tmp.%s-%s)/.mkdir "
+     "$(dir.tmp.%s-%s) "
      "$(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
      "$(pre-post-%s-%s.deps) "
      "$(sqlite3-api.ext.jses)"
      /* ^^^ maintenance reminder: we set these as deps so that they
-        get copied into place early. That allows the developer to
-        reload the base-most test pages while the later-stage builds
-        are still compiling, which is especially helpful when running
-        builds with long build times (like -Oz). */
+     ** get copied into place early. That allows the developer to
+     ** reload the base-most test pages while the later-stage builds
+     ** are still compiling, which is especially helpful when running
+     ** builds with long build times (like -Oz). */
      "\n",
      zNM, pB->zJsOut, zNM, zNM);
   pf("\t@echo \"Building [%s-%s] %s ...\"\n", zNM, pB->zJsOut);
@@ -448,15 +453,15 @@ static void mk_lib_mode(const BuildDef * pB){
      "\t\t$(maybe-wasm-strip) %s;\n",
      zWasmOut, zWasmOut)
     /* For whatever reasons, .wasm files get built with their +x bit
-       set. That upsets althttpd, which uses +x as an indication that
-       the file is a CGI script. There's no apparent useful reason to
-       have +x set on these, so we -x them. */;
+    ** set. That upsets althttpd, which uses +x as an indication that
+    ** the file is a CGI script. There's no apparent useful reason to
+    ** have +x set on these, so we -x them. */;
   pf("\t@$(call SQLITE.CALL.WASM-OPT,%s)\n", zWasmOut);
   pf(/* Our JS code installs bindings of each WASM export. The
-        generated Emscripten JS file does the same using its own
-        framework, but we don't use those results and can speed up lib
-        init, and reduce memory cost a bit, by stripping them out. Of
-        of this writing, this strips approximately 25kb of JS code. */
+     ** generated Emscripten JS file does the same using its own
+     ** framework, but we don't use those results and can speed up lib
+     ** init, and reduce memory cost a bit, by stripping them out. Of
+     ** of this writing, this strips approximately 25kb of JS code. */
     "\t@sed -i -e '/^.*= *_sqlite.*= *createExportWrapper/d' $@ || exit; \\\n"
     /*  ^^^^^^ reminder: Mac/BSD sed has no -i flag */
     "\t\techo 'Stripped out createExportWrapper() parts.'\n");
