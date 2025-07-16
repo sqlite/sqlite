@@ -11,18 +11,17 @@
 *************************************************************************
 **
 ** This app's single purpose is to emit parts of the Makefile code for
-** building sqlite3's WASM build. The main motivation is to generate
-** code which "can" be created via GNU Make's eval command but is
+** sqlite3's canonical WASM build. The main motivation is to generate
+** code which "could" be created via GNU Make's eval command but is
 ** highly illegible when constructed that way. Attempts to write this
-** app in Bash and TCL have suffered from the problem that both
-** require escaping $ symbols, making the resulting script code as
-** illegible as the eval spaghetti we want to get away from. Writing
-** it in C is, somewhat surprisingly, _slightly_ less illegible than
-** writing it in bash, tcl, or native Make code.
+** app in Bash and TCL have suffered from the problem that those
+** languages require escaping $ symbols, making the resulting script
+** code as illegible as the eval spaghetti we want to get away
+** from. Maintaining it in C is, somewhat surprisingly, _slightly_
+** less illegible than writing it in bash, tcl, or native Make code.
 **
 ** The emitted makefile code is not standalone - it depends on
 ** variables and $(call)able functions from the main makefile.
-**
 */
 
 #undef NDEBUG
@@ -35,15 +34,19 @@
 #define ps puts
 
 /*
-** Valid names for the zName arguments.
+** Valid build names. Each build is a combination of one of these and
+** one of JS_BUILD_MODES, but only certain combinations are legal.
+** This macro and JS_BUILD_MODES exist solely for documentation
+** purposes: they are not expanded into code anywhere.
 */
 #define JS_BUILD_NAMES sqlite3 sqlite3-wasmfs
 /*
-** Valid names for the zMode arguments of the "sqlite3" build. For the
-** "sqlite3-wasmfs" build, only "esm" (ES6 Module) is legal.
+** Valid build modes. For the "sqlite3-wasmfs" build, only "esm" (ES6
+** Module) is legal.
 */
 #define JS_BUILD_MODES vanilla esm bundler-friendly node
-/* Separator to help eyeballs find the different sections */
+
+/* Separator to help eyeballs find the different output sections */
 static const char * zBanner =
   "\n########################################################################\n";
 
@@ -82,6 +85,8 @@ struct BuildDef {
   int flags;              /* Flags from LibModeFlags */
   const char *zApiJsOut;  /* Name of generated sqlite3-api.js/.mjs */
   const char *zJsOut;     /* Name of generated sqlite3.js/.mjs */
+  /* TODO: dynamically determine zApiJsOut and zJsOut based on zName, zMode,
+     and flags. */
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Extra flags for emcc */
 };
@@ -95,24 +100,25 @@ typedef struct BuildDef BuildDef;
 const BuildDef aBuildDefs[] = {
   {/* Core build */
     "sqlite3", "vanilla", LIBMODE_PLAIN,
-    "$(sqlite3-api.js)", "$(sqlite3.js)", 0, 0},
+    "$(dir.dout)/sqlite3-api.js", "$(sqlite3.js)", 0, 0},
 
   {/* Core ESM */
    "sqlite3", "esm", LIBMODE_ESM,
-   "$(sqlite3-api.mjs)", "$(sqlite3.mjs)",
+   "$(dir.dout)/sqlite3-api.mjs", "$(sqlite3.mjs)",
    "-Dtarget=es6-module", 0},
 
   {/* Core bundler-friend. Untested and "not really" supported, but
    ** required by the downstream npm subproject. */
     "sqlite3", "bundler-friendly",
     LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
-    "$(sqlite3-api-bundler-friendly.mjs)",
+    "$(dir.dout)/sqlite3-api-bundler-friendly.mjs",
     "$(sqlite3-bundler-friendly.mjs)",
     "$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly", 0},
 
   {/* node.js mode. Untested and unsupported. */
     "sqlite3", "node", LIBMODE_NODEJS | LIBMODE_DONT_ADD_TO_ALL,
-    "$(sqlite3-api-node.mjs)", "$(sqlite3-node.mjs)",
+    "$(dir.dout)/sqlite3-api-node.mjs",
+    "$(sqlite3-node.mjs)",
     "$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node", 0},
 
   {/* The wasmfs build is optional, untested, unsupported, and
@@ -120,7 +126,8 @@ const BuildDef aBuildDefs[] = {
    ** here. */
     "sqlite3-wasmfs", "esm" ,
     LIBMODE_WASMFS | LIBMODE_ESM | LIBMODE_DONT_ADD_TO_ALL,
-    "$(sqlite3-api-wasmfs.mjs)", "$(sqlite3-wasmfs.mjs)",
+    "$(dir.tmp)/sqlite3-api-wasmfs.mjs",
+    "$(sqlite3-wasmfs.mjs)",
     "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
     "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"},
 

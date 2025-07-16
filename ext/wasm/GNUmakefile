@@ -860,15 +860,10 @@ if [ x1 = x$(1) ]; then \
 fi
 endef
 
-sqlite3-api.js := $(dir.dout)/sqlite3-api.js
 sqlite3.js := $(dir.dout)/sqlite3.js
-sqlite3-api.mjs := $(dir.dout)/sqlite3-api.mjs
 sqlite3.mjs := $(dir.dout)/sqlite3.mjs
-sqlite3-api-bundler-friendly.mjs := $(dir.dout)/sqlite3-api-bundler-friendly.mjs
 sqlite3-bundler-friendly.mjs := $(dir.dout)/sqlite3-bundler-friendly.mjs
-sqlite3-api-node.mjs := $(dir.dout)/sqlite3-api-node.mjs
 sqlite3-node.mjs := $(dir.dout)/sqlite3-node.mjs
-sqlite3-api-wasmfs.mjs := $(dir.tmp)/sqlite3-api-wasmfs.mjs
 sqlite3-wasmfs.mjs    := $(dir.wasmfs)/sqlite3-wasmfs.mjs
 EXPORTED_FUNCTIONS.fiddle := $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 
@@ -913,7 +908,9 @@ $(sqlite3-node.mjs): $(sqlite3.mjs)
 # bundler-friendly build. Concretely, any supplemental JS files which
 # themselves use importScripts() or Workers or URL() constructors
 # which refer to other in-tree (m)JS files require a bundler-friendly
-# copy.
+# copy. Bundler-friendly builds replace certain references to string
+# vars/expressions with string literals, as bundler tools are static
+# code analyzers and cannot cope with the former.
 sqlite3-worker1.js.in := $(dir.api)/sqlite3-worker1.c-pp.js
 sqlite3-worker1-promiser.js.in := $(dir.api)/sqlite3-worker1-promiser.c-pp.js
 sqlite3-worker1.js := $(dir.dout)/sqlite3-worker1.js
