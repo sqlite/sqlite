@@ -59,19 +59,26 @@ static const char * zBanner =
 ** to breakage in some of the flag checks.
 */
 enum LibModeFlags {
-  /* Sentinel value */
-  LIBMODE_PLAIN = 0,
+  /* The canonical build */
+  LIBMODE_MAIN = 0x01,
   /* Indicates an ESM module build. */
-  LIBMODE_ESM = 0x01,
+  LIBMODE_ESM = 0x02,
   /* Indicates a "bundler-friendly" build mode. */
-  LIBMODE_BUNDLER_FRIENDLY = 0x02,
-  /* Indicates to _not_ add this build to the 'all' target. */
-  LIBMODE_DONT_ADD_TO_ALL = 0x04,
+  LIBMODE_BUNDLER_FRIENDLY = 0x04,
+  /* Indicates that this is an unsupported build mode. These builds
+     are not added to the 'all' target. */
+  LIBMODE_UNSUPPORTED = 0x08,
   /* Indicates a node.js-for-node.js build (untested and
   ** unsupported). */
-  LIBMODE_NODEJS = 0x08,
+  LIBMODE_NODEJS = 0x10,
   /* Indicates a wasmfs build (untested and unsupported). */
-  LIBMODE_WASMFS = 0x10
+  LIBMODE_WASMFS = 0x20,
+  /* Indicates that this build creates a file named "sqlite3.wasm" as
+     a side-effect of creating the .js/.mjs file. */
+  LIBMODE_SQLITE3_WASM = 0x40,
+  /* Indicates that the generated .js/.mjs file needs to be patched to
+     rename its reference to "sqlite3-XYZ.wasm" to "sqlite3.wasm". */
+  LIBMODE_PATCH_WASM_NAME = 0x80
 };
 
 /*
@@ -83,7 +90,7 @@ struct BuildDef {
   const char *zName;      /* Name from JS_BUILD_NAMES */
   const char *zMode;      /* Name from JS_BUILD_MODES */
   int flags;              /* Flags from LibModeFlags */
-  const char *zJsOut;     /* Name of generated sqlite3.js/.mjs */
+  const char *zJsOut;     /* Base name of generated sqlite3.js/.mjs */
   /* TODO: dynamically determine zJsOut based on zName, zMode, and
      flags. */
   const char *zCmppD;     /* Extra -D... flags for c-pp */
@@ -101,30 +108,31 @@ typedef struct BuildDef BuildDef;
 */
 const BuildDef aBuildDefs[] = {
   {/* Core build */
-    "sqlite3", "vanilla", LIBMODE_PLAIN, "$(sqlite3.js)", 0, 0},
+    "sqlite3", "vanilla", LIBMODE_MAIN | LIBMODE_SQLITE3_WASM,
+    "sqlite3.js", 0, 0},
 
   {/* Core ESM */
-   "sqlite3", "esm", LIBMODE_ESM, "$(sqlite3.mjs)",
-   "-Dtarget=es6-module", 0},
+   "sqlite3", "esm", LIBMODE_ESM | LIBMODE_SQLITE3_WASM,
+   "sqlite3.mjs",  "-Dtarget=es6-module", 0},
 
   {/* Core bundler-friend. Untested and "not really" supported, but
    ** required by the downstream npm subproject. */
     "sqlite3", "bundler-friendly",
-    LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
-    "$(dir.dout)/sqlite3-bundler-friendly.mjs",
+    LIBMODE_BUNDLER_FRIENDLY | LIBMODE_PATCH_WASM_NAME | LIBMODE_ESM,
+    "sqlite3-bundler-friendly.mjs",
     "$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly", 0},
 
   {/* node.js mode. Untested and unsupported. */
-    "sqlite3", "node", LIBMODE_NODEJS | LIBMODE_DONT_ADD_TO_ALL,
-    "$(dir.dout)/sqlite3-node.mjs",
+    "sqlite3", "node", LIBMODE_NODEJS | LIBMODE_UNSUPPORTED,
+    "sqlite3-node.mjs",
     "$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node", 0},
 
   {/* The wasmfs build is optional, untested, unsupported, and
    ** needs to be invoked conditionally using info we don't have
    ** here. */
     "sqlite3-wasmfs", "esm" ,
-    LIBMODE_WASMFS | LIBMODE_ESM | LIBMODE_DONT_ADD_TO_ALL,
-    "$(dir.wasmfs)/sqlite3-wasmfs.mjs",
+    LIBMODE_WASMFS | LIBMODE_ESM | LIBMODE_UNSUPPORTED,
+    "sqlite3-wasmfs.mjs",
     "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
     "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"},
 
@@ -137,7 +145,9 @@ const BuildDef aBuildDefs[] = {
 */
 static void mk_prologue(void){
   /* A 0-terminated list of makefile vars which we expect to have been
-  ** set up by this point in the build process. */
+  ** set up by this point in the build process. There are some which
+  ** we can't check here because they are not defined until after
+  ** these rules are included, but this set covers the basics. */
   char const * aRequiredVars[] = {
     "dir.top",
     "dir.api", "dir.dout", "dir.tmp",
@@ -367,6 +377,7 @@ static void mk_fiddle(void){
 ** from JS_BUILD_NAMES resp. JS_BUILD_MODES.
 */
 static void mk_lib_mode(const BuildDef * pB){
+  char aOutBuf[1024] = {0};
   const char * zWasmOut = "$(basename $@).wasm"
     /* The various targets named X.js or X.mjs (zJsOut) also generate
     ** X.wasm, and we need that part of the name to perform some
@@ -382,13 +393,31 @@ static void mk_lib_mode(const BuildDef * pB){
      pB->zCmppD ? pB->zCmppD : "<none>");
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, pB->zJsOut);
   mk_pre_post(zNM, pB->zCmppD);
+
+  snprintf(aOutBuf, sizeof(aOutBuf), "$(dir.tmp)/%s-%s", zNM);
+
+  /* Set up build-specific output dir. Several of the builds generate
+     a file named sqlite3.wasm, which precludes us building them in
+     parallel. We use a build-specific dir to enable parallization of
+     those builds. All such builds will generate a byte-for-byte
+     identical sqlite3.wasm so long as all Emscripten-related flags
+     which influence that file are the same (i.e. where pB->zEmcc is
+     the same), which is the case for most of the affected builds. */
+  pf("dir.tmp.%s-%s = %s\n", zNM, aOutBuf);
+  pf("$(dir.tmp.%s-%s)/.mkdir:\n\tmkdir -p $(dir.tmp.%s-%s)\n\ttouch $@\n",
+     zNM, zNM);
+  pf("clean-%s-%s:\n\trm -fr $(dir.tmp.%s-%s)\n"
+     "clean: clean-%s-%s\n", zNM, zNM, zNM);
+
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
   if( pB->zEmcc && pB->zEmcc[0] ){
     pf("emcc.flags.%s.%s += %s\n", zNM, pB->zEmcc);
   }
 
   /* target pB->zJsOut */
-  pf("%s: $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
+  pf("$(dir.tmp.%s-%s)/%s: "
+     "$(dir.tmp.%s-%s)/.mkdir "
+     "$(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
      "$(pre-post-%s-%s.deps) "
      "$(sqlite3-api.ext.jses)"
      /* ^^^ maintenance reminder: we set these as deps so that they
@@ -397,8 +426,8 @@ static void mk_lib_mode(const BuildDef * pB){
         are still compiling, which is especially helpful when running
         builds with long build times (like -Oz). */
      "\n",
-     pB->zJsOut, zNM);
-  pf("\t@echo \"Building $@ ...\"\n");
+     zNM, pB->zJsOut, zNM, zNM);
+  pf("\t@echo \"Building [%s-%s] %s ...\"\n", zNM, pB->zJsOut);
   pf("\t$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
   pf("\t\t$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.%s) \\\n",
      pB->zMode);
@@ -417,26 +446,29 @@ static void mk_lib_mode(const BuildDef * pB){
   }
   pf("\t@chmod -x %s; \\\n"
      "\t\t$(maybe-wasm-strip) %s;\n",
-     zWasmOut, zWasmOut);
+     zWasmOut, zWasmOut)
+    /* For whatever reasons, .wasm files get built with their +x bit
+       set. That upsets althttpd, which uses +x as an indication that
+       the file is a CGI script. There's no apparent useful reason to
+       have +x set on these, so we -x them. */;
   pf("\t@$(call SQLITE.CALL.WASM-OPT,%s)\n", zWasmOut);
-  pf("\t@sed -i -e '/^.*= *_sqlite.*= *createExportWrapper/d' %s || exit; \\\n"
-     /*  ^^^^^^ reminder: Mac/BSD sed has no -i flag */
-     "\t\techo 'Stripped out createExportWrapper() parts.'\n",
-     pB->zJsOut) /* Our JS code installs bindings of each WASM export. The
-                generated Emscripten JS file does the same using its
-                own framework, but we don't use those results and can
-                speed up lib init, and reduce memory cost
-                considerably, by stripping them out. */;
+  pf(/* Our JS code installs bindings of each WASM export. The
+        generated Emscripten JS file does the same using its own
+        framework, but we don't use those results and can speed up lib
+        init, and reduce memory cost a bit, by stripping them out. Of
+        of this writing, this strips approximately 25kb of JS code. */
+    "\t@sed -i -e '/^.*= *_sqlite.*= *createExportWrapper/d' $@ || exit; \\\n"
+    /*  ^^^^^^ reminder: Mac/BSD sed has no -i flag */
+    "\t\techo 'Stripped out createExportWrapper() parts.'\n");
   /*
-  ** The above $(bin.emcc) call will write zJsOut and will create a
-  ** like-named .wasm file (zWasmOut). That .wasm file name gets
+  ** The above $(bin.emcc) call will write pB->zJsOut and will create
+  ** a like-named .wasm file (zWasmOut). That .wasm file name gets
   ** hard-coded into zJsOut so we need to, for some cases, patch
   ** zJsOut to use the name sqlite3.wasm instead. Note that the
-  ** resulting .wasm file is identical for all builds for which zEmcc
-  ** is empty.
+  ** resulting .wasm file is identical for all builds for which
+  ** pB->zEmcc is empty.
   */
-  if( (LIBMODE_BUNDLER_FRIENDLY & pB->flags)
-      || (LIBMODE_NODEJS & pB->flags) ){
+  if( (LIBMODE_PATCH_WASM_NAME & pB->flags) ){
     pf("\t@echo 'Patching $@ for %s.wasm...'; \\\n", pB->zName);
     pf("\t\trm -f %s; \\\n", zWasmOut);
     pf("\t\tsed -i -e 's/%s-%s.wasm/%s.wasm/g' $@ || exit;\n",
@@ -457,9 +489,15 @@ static void mk_lib_mode(const BuildDef * pB){
   }else{
     pf("\t@ls -la %s $@\n", zWasmOut);
   }
-  if( 0==(LIBMODE_DONT_ADD_TO_ALL & pB->flags) ){
-    pf("all: %s\n", pB->zJsOut);
+  pf("\n$(dir.dout)/%s: $(dir.tmp.%s-%s)/%s\n", pB->zJsOut, zNM, pB->zJsOut);
+  pf("\t@cp -p $(dir.tmp.%s-%s)/%s $(dir.dout)/.\n", zNM, pB->zJsOut);
+  if( (LIBMODE_SQLITE3_WASM & pB->flags) ){
+    pf("\t@cp -p $(dir.tmp.%s-%s)/*.wasm $(dir.dout)/.\n", zNM);
   }
+  if( 0==(LIBMODE_UNSUPPORTED & pB->flags) ){
+    pf("all: $(dir.dout)/%s\n", pB->zJsOut);
+  }
+  pf("%s-%s: $(dir.tmp.%s-%s)/%s\n", zNM, zNM, pB->zJsOut);
   pf("# End build [%s-%s]%s", zNM, zBanner);
 #undef zNM
 }

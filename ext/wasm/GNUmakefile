@@ -47,6 +47,7 @@ MAKING_CLEAN = $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
 .PHONY: clean distclean
 clean:
 	-rm -f $(CLEAN_FILES)
+	-rm -fr $(CLEAN_DIRS)
 distclean: clean
 	-rm -f $(DISTCLEAN_FILES)
 
@@ -165,12 +166,14 @@ dir.dout = $(dir.wasm)/jswasm
 dir.tmp = $(dir.wasm)/bld
 dir.wasmfs = $(dir.dout)
 
+MKDIR.dout = $(dir.dout)
 MKDIR.bld = $(dir.tmp)
-$(MKDIR.bld):
-	@mkdir -p $@ $(dir.dout)
+$(MKDIR.bld) $(MKDIR.dout):
+	@mkdir -p $@
 
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
-  $(dir.fiddle-debug)/* $(dir.dout)/* $(dir.tmp)/*
+  $(dir.fiddle-debug)/*
+CLEAN_DIRS = $(dir.tmp) $(dir.dout)
 
 ########################################################################
 # Set up sqlite3.c and sqlite3.h...
@@ -552,7 +555,7 @@ SOAP.js.bld = $(dir.dout)/$(notdir $(SOAP.js))
 #   not part of the amalgamation.
 #
 sqlite3-api.ext.jses = $(SOAP.js.bld)
-$(SOAP.js.bld): $(SOAP.js)
+$(SOAP.js.bld): $(SOAP.js) $(MKDIR.dout)
 	cp $< $@
 
 ########################################################################
@@ -887,10 +890,10 @@ EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 # together. i.e.  we're building $(sqlite3.wasm) multiple times, but
 # that's unavoidable (and harmless, but is a significant waste of
 # build time).
-$(sqlite3.wasm): $(sqlite3.js)
-$(sqlite3.mjs): $(sqlite3.js)
-$(dir.dout)/sqlite3-bundler-friendly.mjs: $(sqlite3.mjs)
-$(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
+#$(sqlite3.wasm): $(sqlite3.js)
+#$(sqlite3.mjs): $(sqlite3.js)
+#$(dir.dout)/sqlite3-bundler-friendly.mjs: $(sqlite3.mjs)
+#$(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 #CLEAN_FILES += $(sqlite3.wasm)
 
 ifneq (1,$(MAKING_CLEAN))
