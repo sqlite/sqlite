@@ -108,12 +108,12 @@ const BuildDef aBuildDefs[] = {
    ** required by the downstream npm subproject. */
     "sqlite3", "bundler-friendly",
     LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
-    "$(sqlite3-bundler-friendly.mjs)",
+    "$(dir.dout)/sqlite3-bundler-friendly.mjs",
     "$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly", 0},
 
   {/* node.js mode. Untested and unsupported. */
     "sqlite3", "node", LIBMODE_NODEJS | LIBMODE_DONT_ADD_TO_ALL,
-    "$(sqlite3-node.mjs)",
+    "$(dir.dout)/sqlite3-node.mjs",
     "$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node", 0},
 
   {/* The wasmfs build is optional, untested, unsupported, and
@@ -121,7 +121,7 @@ const BuildDef aBuildDefs[] = {
    ** here. */
     "sqlite3-wasmfs", "esm" ,
     LIBMODE_WASMFS | LIBMODE_ESM | LIBMODE_DONT_ADD_TO_ALL,
-    "$(sqlite3-wasmfs.mjs)",
+    "$(dir.wasmfs)/sqlite3-wasmfs.mjs",
     "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
     "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"},
 
@@ -133,17 +133,34 @@ const BuildDef aBuildDefs[] = {
 ** needed by makefile code outside of these generated pieces).
 */
 static void mk_prologue(void){
+  /* A 0-terminated list of makefile vars which we expect to have been
+  ** set up by this point in the build process. */
+  char const * aRequiredVars[] = {
+    "dir.api", "dir.dout", "dir.tmp",
+    "sqlite3-license-version.js",
+    /*"just-testing",*/
+    0
+  };
+  char const * zVar;
+  int i;
+  pf("%s# Build setup sanity checks...\n", zBanner);
+  for( i = 0; (zVar = aRequiredVars[i]); ++i ){
+    pf("ifeq (,$(%s))\n", zVar);
+    pf("  $(error build process error: expecting make var $$(%s) to "
+       "have been set up by now)\n", zVar);
+    ps("endif");
+  }
   pf("%s", zBanner);
   ps("# extern-post-js* and extern-pre-js* are files for use with");
   ps("# Emscripten's --extern-pre-js and --extern-post-js flags.");
-  ps("extern-pre-js.js := $(dir.api)/extern-pre-js.js");
-  ps("extern-post-js.js.in := $(dir.api)/extern-post-js.c-pp.js");
+  ps("extern-pre-js.js = $(dir.api)/extern-pre-js.js");
+  ps("extern-post-js.js.in = $(dir.api)/extern-post-js.c-pp.js");
   ps("# Emscripten flags for --[extern-][pre|post]-js=... for the");
   ps("# various builds.");
-  ps("pre-post-common.flags := --extern-pre-js=$(sqlite3-license-version.js)");
-  ps("# pre-post-jses.deps.* = a list of dependencies for the");
-  ps("# --[extern-][pre/post]-js files.");
-  ps("pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)");
+  ps("pre-post-common.flags = --extern-pre-js=$(sqlite3-license-version.js)");
+  ps("# pre-post-jses.deps.* = a list of dependencies for the\n"
+     "# --[extern-][pre/post]-js files.");
+  ps("pre-post-jses.deps.common = $(extern-pre-js.js) $(sqlite3-license-version.js)");
 
   {
     /* SQLITE.CALL.WASM-OPT = shell code to run $(1) (source wasm file
@@ -229,20 +246,20 @@ static void mk_pre_post(const char *zName  /* build name */,
 #define zNM zName, zMode
 
   pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zNM);
-  pf("c-pp.D.%s-%s := %s\n", zNM, zCmppD ? zCmppD : "");
+  pf("c-pp.D.%s-%s = %s\n", zNM, zCmppD ? zCmppD : "");
   pf("pre-post-%s-%s.flags ?=\n", zNM);
 
   /* --pre-js=... */
-  pf("pre-js.js.%s-%s := $(dir.tmp)/pre-js.%s-%s.js\n",
+  pf("pre-js.js.%s-%s = $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM);
-  pf("$(pre-js.js.%s-%s): $(MAKEFILE_LIST)\n", zNM);
+  pf("$(pre-js.js.%s-%s): $(MAKEFILE_LIST) $(sqlite3-license-version.js)\n", zNM);
 #if 1
   pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 #else
   /* This part is needed if/when we re-enable the custom
   ** Module.instantiateModule() impl in api/pre-js.c-pp.js. */
-  pf("pre-js.js.%s-%s.intermediary := $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
+  pf("pre-js.js.%s-%s.intermediary = $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
      zNM, zNM);
   pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
      "$(c-pp.D.%s-%s) -Dcustom-Module.instantiateModule))\n", zNM, zNM);
@@ -260,17 +277,17 @@ static void mk_pre_post(const char *zName  /* build name */,
 #endif
 
   /* --post-js=... */
-  pf("post-js.js.%s-%s := $(dir.tmp)/post-js.%s-%s.js\n", zNM, zNM);
+  pf("post-js.js.%s-%s = $(dir.tmp)/post-js.%s-%s.js\n", zNM, zNM);
   pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(post-js.js.in),"
      "$(post-js.js.%s-%s),$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
   /* --extern-post-js=... */
-  pf("extern-post-js.js.%s-%s := $(dir.tmp)/extern-post-js.%s-%s.js\n", zNM, zNM);
+  pf("extern-post-js.js.%s-%s = $(dir.tmp)/extern-post-js.%s-%s.js\n", zNM, zNM);
   pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(extern-post-js.js.in),$(extern-post-js.js.%s-%s),"
      "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
   /* Combined flags for use with emcc... */
-  pf("pre-post-common.flags.%s-%s := "
+  pf("pre-post-common.flags.%s-%s = "
      "$(pre-post-common.flags) "
      "--post-js=$(post-js.js.%s-%s) "
      "--extern-post-js=$(extern-post-js.js.%s-%s)\n", zNM, zNM, zNM);
@@ -279,10 +296,10 @@ static void mk_pre_post(const char *zName  /* build name */,
      "--pre-js=$(pre-js.js.%s-%s)\n", zNM, zNM, zNM);
 
   /* Set up deps... */
-  pf("pre-post-jses.%s-%s.deps := $(pre-post-jses.deps.common) "
+  pf("pre-post-jses.%s-%s.deps = $(pre-post-jses.deps.common) "
      "$(post-js.js.%s-%s) $(extern-post-js.js.%s-%s)\n",
      zNM, zNM, zNM);
-  pf("pre-post-%s-%s.deps := $(pre-post-jses.%s-%s.deps) $(dir.tmp)/pre-js.%s-%s.js\n",
+  pf("pre-post-%s-%s.deps = $(pre-post-jses.%s-%s.deps) $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM, zNM);
   pf("# End --pre/--post flags for %s-%s%s", zNM, zBanner);
 #undef zNM
@@ -301,8 +318,8 @@ static void mk_fiddle(void){
     const char *zDir = i ? "$(dir.fiddle-debug)" : "$(dir.fiddle)";
 
     pf("%s# Begin fiddle%s\n", zBanner, zTail);
-    pf("fiddle-module.js%s := %s/fiddle-module.js\n", zTail, zDir);
-    pf("fiddle-module.wasm%s := "
+    pf("fiddle-module.js%s = %s/fiddle-module.js\n", zTail, zDir);
+    pf("fiddle-module.wasm%s = "
        "$(subst .js,.wasm,$(fiddle-module.js%s))\n", zTail, zTail);
     pf("$(fiddle-module.js%s):%s $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
        "$(EXPORTED_FUNCTIONS.fiddle) "
