@@ -12822,7 +12822,7 @@ static void process_sqliterc(
   const char *sqliterc_override   /* Name of config file. NULL to use default */
 ){
   char *home_dir = NULL;
-  char *sqliterc = sqliterc_override;
+  char *sqliterc = (char*)sqliterc_override;
   FILE *inSaved = p->in;
   int savedLineno = p->lineno;
 
