@@ -67,9 +67,6 @@ $(EXPORTED_FUNCTIONS.fiddle): $(MKDIR.bld) $(fiddle.EXPORTED_FUNCTIONS.in) \
 
 fiddle.cses = $(dir.top)/shell.c $(sqlite3-wasm.c)
 
-fiddle: $(fiddle-module.js) $(fiddle-module.js.debug)
-fiddle.debug: $(fiddle-module.js.debug)
-
 clean: clean-fiddle
 clean-fiddle:
 	rm -f $(dir.fiddle)/fiddle-module.js \

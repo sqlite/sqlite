@@ -457,6 +457,21 @@ else
   emcc_opt ?= -Oz
 endif
 
+# Our JS code installs bindings of each sqlite3_...() WASM export. The
+# generated Emscripten JS file does the same using its own framework,
+# but we don't use those results and can speed up lib init, and reduce
+# memory cost a bit, by stripping them out. Emscripten-side changes
+# can "break" this, causing this to be a no-op, but the worst that can
+# happen in that case is that it doesn't actually strip anything,
+# leading to slightly larger JS files.
+#
+# This snippet is intended to be used in makefile targets which
+# generate an Emscripten module and where $@ is the module's .js/.mjs
+# file.
+SQLITE.strip-createExportWrapper = \
+  sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]* = createExportWrapper/d' $@ || exit; \
+  echo '(Probably) stripped out extraneous createExportWrapper() parts.'
+
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...
 emcc_opt_full = $(emcc_opt) -g3
@@ -598,7 +613,7 @@ emcc.cflags =
 emcc.cflags += -std=c99 -fPIC
 # -------------^^^^^^^^ we need c99 for $(sqlite3-wasm.c), primarily
 # for variadic macros and snprintf() to implement
-# sqlite3_wasm_enum_json().
+# sqlite3__wasm_enum_json().
 emcc.cflags += -I. -I$(dir.top)
 ########################################################################
 # emcc flags specific to building .js/.wasm files...
@@ -943,23 +958,24 @@ $(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.j
 $(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
     $(dir.dout)/sqlite3-worker1-promiser.mjs,\
     -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
-$(dir.dout)/sqlite3-bundler-friendly.mjs: $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
-    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
 $(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
     -Dtarget=es6-module))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
     -Dtarget=es6-module))
-all: $(dir.dout)/sqlite3-worker1.js \
-    $(dir.dout)/sqlite3-worker1-promiser.js $(dir.dout)/sqlite3-worker1-promiser.mjs
+
+$(dir.dout)/sqlite3-bundler-friendly.mjs: \
+    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
+    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
 
 demo-worker1-promiser.html: $(dir.dout)/sqlite3-worker1-promiser.js demo-worker1-promiser.js
 demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
 all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
 
 sqlite3-api.ext.jses += \
-  $(sqlite3-worker1-promiser.mjs) \
+  $(dir.dout)/sqlite3-worker1-promiser.mjs \
+  $(dir.dout)/sqlite3-worker1-promiser.js \
   $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
   $(dir.dout)/sqlite3-worker1.js
 all quick: $(sqlite3-api.ext.jses)
@@ -1039,7 +1055,6 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.core)
 	@echo "Making $@ ..."
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
 speedtest1.js = $(dir.dout)/speedtest1.js
-speedtest1.wasm = $(dir.dout)/speedtest1.wasm
 emcc.flags.speedtest1-vanilla = $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
 speedtest1.cfiles = $(speedtest1.c) $(sqlite3-wasm.c)
 $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
@@ -1055,14 +1070,13 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
         -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cfiles) -lm
-	$(maybe-wasm-strip) $(speedtest1.wasm)
-	sed -i -e '/^var _sqlite3.*createExportWrapper/d' $@
-	chmod -x $(speedtest1.wasm)
-	ls -la $@ $(speedtest1.wasm)
+	@chmod -x $(basename $@).wasm
+	@$(maybe-wasm-strip) $(basename $@).wasm
+	@$(SQLITE.strip-createExportWrapper)
+	@ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(speedtest1.js)
 all: speedtest1
-#CLEAN_FILES += $(speedtest1.js) $(speedtest1.wasm)
 # end speedtest1.js
 ########################################################################
 

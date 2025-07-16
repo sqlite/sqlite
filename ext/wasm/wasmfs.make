@@ -10,10 +10,7 @@ MAKEFILE.wasmfs = $(lastword $(MAKEFILE_LIST))
 # $(warning) alignment!
 ifneq (1,$(MAKING_CLEAN))
   $(warning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
-  $(warning !! The WASMFS build is not well-supported. WASMFS is a proverbial)
-  $(warning !! moving target, sometimes changing in incompatible ways between)
-  $(warning !! Emscripten versions. This build is provided for adventurous folks)
-  $(warning !! and is not a supported deliverable of the SQLite project.)
+  $(warning !! The WASMFS build is unsupported. Use at your own risk.
   $(warning !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
 endif
 
