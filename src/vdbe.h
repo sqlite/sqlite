@@ -314,7 +314,9 @@ int sqlite3VdbeHasSubProgram(Vdbe*);
 
 void sqlite3MemSetArrayInt64(sqlite3_value *aMem, int iIdx, i64 val);
 
+#ifndef SQLITE_OMIT_DATETIME_FUNCS
 int sqlite3NotPureFunc(sqlite3_context*);
+#endif
 #ifdef SQLITE_ENABLE_BYTECODE_VTAB
 int sqlite3VdbeBytecodeVtabInit(sqlite3*);
 #endif
