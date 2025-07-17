@@ -1201,7 +1201,9 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     VdbeCoverage(v);
     VdbeComment((v, "next row of %s", pSrc->pSTab->zName));
   }else{
-    addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
+    assert( pLevel->addrHalt );
+    addrTop = sqlite3VdbeAddOp2(v, OP_Rewind,pLevel->iTabCur,pLevel->addrHalt);
+    VdbeCoverage(v);
   }
   if( pPartial ){
     iContinue = sqlite3VdbeMakeLabel(pParse);
@@ -1229,11 +1231,14 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
                           pSrc->u4.pSubq->regResult, pLevel->iIdxCur);
     sqlite3VdbeGoto(v, addrTop);
     pSrc->fg.viaCoroutine = 0;
+    sqlite3VdbeJumpHere(v, addrTop);
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
     sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
+    if( (pSrc->fg.jointype & JT_LEFT)!=0 ){
+      sqlite3VdbeJumpHere(v, addrTop);
+    }
   }
-  sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
  
   /* Jump here when skipping the initialization */
@@ -3234,6 +3239,7 @@ static int whereLoopAddBtreeIndex(
       if( ExprUseXSelect(pExpr) ){
         /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
         int i;
+        int bRedundant = 0;
         nIn = 46;  assert( 46==sqlite3LogEst(25) );
 
         /* The expression may actually be of the form (x, y) IN (SELECT...).
@@ -3242,7 +3248,20 @@ static int whereLoopAddBtreeIndex(
         ** for each such term. The following loop checks that pTerm is the
         ** first such term in use, and sets nIn back to 0 if it is not. */
         for(i=0; i<pNew->nLTerm-1; i++){
-          if( pNew->aLTerm[i] && pNew->aLTerm[i]->pExpr==pExpr ) nIn = 0;
+          if( pNew->aLTerm[i] && pNew->aLTerm[i]->pExpr==pExpr ){
+            nIn = 0;
+            if( pNew->aLTerm[i]->u.x.iField == pTerm->u.x.iField ){
+              /* Detect when two or more columns of an index match the same 
+              ** column of a vector IN operater, and avoid adding the column
+              ** to the WhereLoop more than once.  See tag-20250707-01
+              ** in test/rowvalue.test */
+              bRedundant = 1;
+            }
+          }
+        }
+        if( bRedundant ){
+          pNew->nLTerm--;
+          continue;
         }
       }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
         /* "x IN (value, value, ...)" */
@@ -3474,7 +3493,7 @@ static int whereLoopAddBtreeIndex(
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
      && pNew->u.btree.nEq<pProbe->nColumn
      && (pNew->u.btree.nEq<pProbe->nKeyCol ||
-          (pProbe->idxType!=SQLITE_IDXTYPE_PRIMARYKEY && !pProbe->bIdxRowid))
+          pProbe->idxType!=SQLITE_IDXTYPE_PRIMARYKEY)
     ){
       if( pNew->u.btree.nEq>3 ){
         sqlite3ProgressCheck(pParse);
@@ -3513,6 +3532,7 @@ static int whereLoopAddBtreeIndex(
    && pProbe->hasStat1!=0
    && OptimizationEnabled(db, SQLITE_SkipScan)
    && pProbe->aiRowLogEst[saved_nEq+1]>=42  /* TUNING: Minimum for skip-scan */
+   && pSrc->fg.fromExists==0
    && (rc = whereLoopResize(db, pNew, pNew->nLTerm+1))==SQLITE_OK
   ){
     LogEst nIter;
@@ -7070,6 +7090,14 @@ WhereInfo *sqlite3WhereBegin(
     pTab = pTabItem->pSTab;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     pLoop = pLevel->pWLoop;
+    pLevel->addrBrk = sqlite3VdbeMakeLabel(pParse);
+    if( ii==0 || (pTabItem[0].fg.jointype & JT_LEFT)!=0 ){
+      pLevel->addrHalt = pLevel->addrBrk;
+    }else if( pWInfo->a[ii-1].pRJ ){
+      pLevel->addrHalt = pWInfo->a[ii-1].addrBrk;
+    }else{
+      pLevel->addrHalt = pWInfo->a[ii-1].addrHalt;
+    }
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || IsView(pTab) ){
       /* Do nothing */
     }else
@@ -7121,6 +7149,13 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, pTabItem->iCursor, 0, 0,
                             (const u8*)&pTabItem->colUsed, P4_INT64);
 #endif
+      if( ii>=2
+       && (pTabItem[0].fg.jointype & (JT_LTORJ|JT_LEFT))==0 
+       && pLevel->addrHalt==pWInfo->a[0].addrHalt
+      ){
+        sqlite3VdbeAddOp2(v, OP_IfEmpty, pTabItem->iCursor, pWInfo->iBreak);
+        VdbeCoverage(v);
+      }
     }else{
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
     }
@@ -7377,6 +7412,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeAddOp2(v, OP_Goto, 1, pLevel->p2);
       }
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
+      if( pTabList->a[pLevel->iFrom].fg.fromExists ){
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
+      }
       /* The common case: Advance to the next row */
       if( pLevel->addrCont ) sqlite3VdbeResolveLabel(v, pLevel->addrCont);
       sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);

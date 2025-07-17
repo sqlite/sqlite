@@ -6398,6 +6398,32 @@ case OP_Rewind: {        /* jump0, ncycle */
   break;
 }
 
+/* Opcode: IfEmpty P1 P2 * * *
+** Synopsis: if( empty(P1) ) goto P2
+**
+** Check to see if the b-tree table that cursor P1 references is empty
+** and jump to P2 if it is.
+*/
+case OP_IfEmpty: {        /* jump */
+  VdbeCursor *pC;
+  BtCursor *pCrsr;
+  int res;
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( pOp->p2>=0 && pOp->p2<p->nOp );
+
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  assert( pC->eCurType==CURTYPE_BTREE );
+  pCrsr = pC->uc.pCursor;
+  assert( pCrsr );
+  rc = sqlite3BtreeIsEmpty(pCrsr, &res);
+  if( rc ) goto abort_due_to_error;
+  VdbeBranchTaken(res!=0,2);
+  if( res ) goto jump_to_p2;
+  break;
+}
+
 /* Opcode: Next P1 P2 P3 * P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
@@ -8282,7 +8308,14 @@ case OP_VOpen: {             /* ncycle */
   const sqlite3_module *pModule;
 
   assert( p->bIsReader );
-  pCur = 0;
+  pCur = p->apCsr[pOp->p1];
+  if( pCur!=0
+   && ALWAYS( pCur->eCurType==CURTYPE_VTAB )
+   && ALWAYS( pCur->uc.pVCur->pVtab==pOp->p4.pVtab->pVtab )
+  ){
+    /* This opcode is a no-op if the cursor is already open */
+    break;
+  }
   pVCur = 0;
   pVtab = pOp->p4.pVtab->pVtab;
   if( pVtab==0 || NEVER(pVtab->pModule==0) ){

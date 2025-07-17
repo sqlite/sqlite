@@ -23,11 +23,10 @@
     </figure>
     <div class="emscripten" id="module-status">Downloading...</div>
     <div class="emscripten">
-      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>
     </div><!-- /emscripten bits -->
     <div class='warning'>This page starts running the main exe when it loads, which will
-      block the UI until it finishes! Adding UI controls to manually configure and start it
-      are TODO.</div>
+      block the UI until it finishes!</div>
     </div>
     <div class='warning'>Achtung: running it with the dev tools open may
       <em>drastically</em> slow it down. For faster results, keep the dev
@@ -118,7 +117,7 @@
             argv.push("--vfs", vfs);
             log2('',"Using VFS:",vfs);
             if('kvvfs' === vfs){
-                forceSize = 2 /* 5 uses approx. 4.96mb */;
+                forceSize = 2 /* >2 is too big as of mid-2025 */;
                 dbFile = 'session';
                 log2('warning',"kvvfs VFS: forcing --size",forceSize,
                      "and filename '"+dbFile+"'.");
