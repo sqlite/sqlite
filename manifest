@@ -1,5 +1,5 @@
-C Diverse\swasm\sbuild\scleanups.
-D 2025-07-16T20:50:40.841
+C Pedantic\sinternal\sbuild\sdoc\sfix.
+D 2025-07-17T19:18:01.321
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -46,7 +46,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c 563b966c137a4ce3c9333e5196723b7ac0919140a9d7989eb440463cd855c367
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 6aac1eb3059fc511c8e1659f33b96eb2a216a371ed9b28be6661374061be9b15
+F autosetup/proj.tcl 7eaa83ccb6f5b250ee9192fa914918b0e2075edacf984c75fbf82cc2a6449c6c
 F autosetup/sqlite-config.tcl 3177dedd7bd49465fa06677fd743c4966eee5702a9ddf4914c2c1af5e5972a52
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 19a79219a7d52272102ff09d19e6b9b87e88e0070592fd7e6040bd8ce66ad238
-R 30226b4a55673400a1aa3c71febc4b89
+P 14ca18f72a7edde7c65a6c6b23fdc3f5ed6860371795926045c987f7b2c75e1b
+R 0b4adce6a943b41acc2e8bb2b3588d1f
 U stephan
-Z 7a7ad60cbd528275276e18c6ff4c005a
+Z 34c7bd606279d40db5c4d57cf244243a
 # Remove this line to create a well-formed Fossil manifest.

@@ -1604,7 +1604,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
 #
 # Similar modifications may be made for --mandir.
 #
-# Returns 1 if it modifies the environment, else 0.
+# Returns >0 if it modifies the environment, else 0.
 #
 proc proj-tweak-default-env-dirs {} {
   set rc 0
