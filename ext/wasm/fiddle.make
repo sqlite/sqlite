@@ -40,9 +40,8 @@ fiddle.emcc-flags = \
   -sWASM_BIGINT=$(emcc.WASM_BIGINT) \
   -sEXPORT_NAME=$(sqlite3.js.init-func) \
   -Wno-limited-postlink-optimizations \
-  $(emcc.exportedRuntimeMethods) \
+  $(emcc.exportedRuntimeMethods),FS \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
-  -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
   $(SQLITE_OPT.full-featured) \
   $(SQLITE_OPT.common) \
   $(SHELL_OPT) \

@@ -90,5 +90,58 @@ do_execsql_test 3.7 {
   SELECT * FROM sqlite_schema
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+proc hex_to_blob {hex} {
+  binary encode hex $hex
+}
+db func hex_to_blob hex_to_blob
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x, content='', contentless_delete=1);
+  BEGIN;
+    INSERT INTO x1(rowid, x) VALUES(1, 'a b c d e f g h');
+    INSERT INTO x1(rowid, x) VALUES(2, 'a b c d e f g h');
+  COMMIT;
+  DELETE FROM x1 WHERE rowid=1;
+}
+
+do_execsql_test 4.1 {
+  SELECT hex(block) FROM x1_data WHERE id=10
+} {
+  00000000FF00000101010200010101010101010102
+}
+
+do_execsql_test 4.2.1 {
+  UPDATE x1_data SET block=
+      X'00000000FF00000101010200010101010101819C9B95A8000102'
+   WHERE id=10;
+}
+
+do_catchsql_test 4.2.2 {
+  SELECT * FROM x1('c d e');
+} {1 {out of memory}}
+
+do_execsql_test 4.3.1 {
+  UPDATE x1_data SET block=
+      X'00000000FF000001010102000101010101019282AFF9A0000102'
+  WHERE id=10;
+} 
+
+do_catchsql_test 4.3.2 {
+  SELECT * FROM x1('c d e');
+} {1 {out of memory}}
+
+do_execsql_test 4.4.1 {
+  UPDATE x1_data SET block=
+      X'00000000FF000001010102000101010101018181808080130102'
+  WHERE id=10;
+}
+
+do_catchsql_test 4.3.2 {
+  SELECT * FROM x1('c d e');
+} {1 {out of memory}}
+
 finish_test
 
