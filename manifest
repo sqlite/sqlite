@@ -1,5 +1,5 @@
-C Optimize\sallocation\sof\slarge\stombstone\sarrays\sin\sfts5.
-D 2025-07-15T14:21:08.840
+C Version\s3.50.3
+D 2025-07-17T13:25:10.611
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2209,9 +2209,10 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4084ac20f425bb992e567cff9cc6e304504c5198a41a9ce1304920c6411b7989
-Q +0fcc3cbdfa21adf97aed01fa76991cccf9380e2755b0182a9e2c94e3c8fb38d7
+P 63595b74956a9391f03a273204c80ecd0ba946846b7aa0195b9095fe8b6a78e5
 R 987003a9608f543153f11a48f885adf4
+T +sym-release *
+T +sym-version-3.50.3 *
 U drh
-Z 10131405839d48a54092ee42bb8e0184
+Z 351123ab09d4bd77e28a506f711aa720
 # Remove this line to create a well-formed Fossil manifest.
