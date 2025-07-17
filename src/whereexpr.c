@@ -948,7 +948,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr, SrcList *pSrc){
   if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;                   /* (3) */
   assert( pSrc!=0 );
   if( pExpr->op==TK_IS
-   && pSrc->nSrc
+   && pSrc->nSrc>=2
    && (pSrc->a[0].fg.jointype & JT_LTORJ)!=0
   ){
     return 0;                                                          /* (4) */
@@ -1541,7 +1541,7 @@ static void exprAnalyze(
         idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
         pNewTerm = &pWC->a[idxNew];
-        pNewTerm->prereqRight = prereqExpr;
+        pNewTerm->prereqRight = prereqExpr | extraRight;
         pNewTerm->leftCursor = pLeft->iTable;
         pNewTerm->u.x.leftColumn = pLeft->iColumn;
         pNewTerm->eOperator = WO_AUX;
@@ -1652,7 +1652,7 @@ static void whereAddLimitExpr(
 **
 **   1. The SELECT statement has a LIMIT clause, and
 **   2. The SELECT statement is not an aggregate or DISTINCT query, and
-**   3. The SELECT statement has exactly one object in its from clause, and
+**   3. The SELECT statement has exactly one object in its FROM clause, and
 **      that object is a virtual table, and
 **   4. There are no terms in the WHERE clause that will not be passed
 **      to the virtual table xBestIndex method.
@@ -1689,8 +1689,22 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
         ** (leftCursor==iCsr) test below.  */
         continue;
       }
-      if( pWC->a[ii].leftCursor!=iCsr ) return;
-      if( pWC->a[ii].prereqRight!=0 ) return;
+      if( pWC->a[ii].leftCursor==iCsr && pWC->a[ii].prereqRight==0 ) continue;
+
+      /* If this term has a parent with exactly one child, and the parent will
+      ** be passed through to xBestIndex, then this term can be ignored.  */
+      if( pWC->a[ii].iParent>=0 ){
+        WhereTerm *pParent = &pWC->a[ pWC->a[ii].iParent ];
+        if( pParent->leftCursor==iCsr
+         && pParent->prereqRight==0
+         && pParent->nChild==1
+        ){
+          continue;
+        }
+      }
+
+      /* This term will not be passed through. Do not add a LIMIT clause. */
+      return;
     }
 
     /* Check condition (5). Return early if it is not met. */

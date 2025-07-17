@@ -14,6 +14,13 @@
 ** on stdout when its key interfaces are called.  This is intended for
 ** interactive analysis and debugging of virtual table interfaces.
 **
+** To build this extension as a separately loaded shared library or
+** DLL, use compiler command-lines similar to the following:
+**
+**   (linux)    gcc -fPIC -shared vtablog.c -o vtablog.so
+**   (mac)      clang -fPIC -dynamiclib vtablog.c -o vtablog.dylib
+**   (windows)  cl vtablog.c -link -dll -out:vtablog.dll
+**
 ** Usage example:
 **
 **     .load ./vtablog
@@ -436,6 +443,39 @@ static int vtablogFilter(
 }
 
 /*
+** Return an sqlite3_index_info operator name in static space.
+** The name is possibly overwritten on subsequent calls.
+*/
+static char *vtablogOpName(unsigned char op){
+  static char zUnknown[30];
+  char *zOut;
+  switch( op ){
+    case SQLITE_INDEX_CONSTRAINT_EQ:        zOut = "EQ";        break;
+    case SQLITE_INDEX_CONSTRAINT_GT:        zOut = "GT";        break;
+    case SQLITE_INDEX_CONSTRAINT_LE:        zOut = "LE";        break;
+    case SQLITE_INDEX_CONSTRAINT_LT:        zOut = "LT";        break;
+    case SQLITE_INDEX_CONSTRAINT_GE:        zOut = "GE";        break;
+    case SQLITE_INDEX_CONSTRAINT_MATCH:     zOut = "MATCH";     break;
+    case SQLITE_INDEX_CONSTRAINT_LIKE:      zOut = "LIKE";      break;
+    case SQLITE_INDEX_CONSTRAINT_GLOB:      zOut = "GLOB";      break;
+    case SQLITE_INDEX_CONSTRAINT_REGEXP:    zOut = "REGEXP";    break;
+    case SQLITE_INDEX_CONSTRAINT_NE:        zOut = "NE";        break;
+    case SQLITE_INDEX_CONSTRAINT_ISNOT:     zOut = "ISNOT";     break;
+    case SQLITE_INDEX_CONSTRAINT_ISNOTNULL: zOut = "ISNOTNULL"; break;
+    case SQLITE_INDEX_CONSTRAINT_ISNULL:    zOut = "ISNULL";    break;
+    case SQLITE_INDEX_CONSTRAINT_IS:        zOut = "IS";        break;
+    case SQLITE_INDEX_CONSTRAINT_LIMIT:     zOut = "LIMIT";     break;
+    case SQLITE_INDEX_CONSTRAINT_OFFSET:    zOut = "OFFSET";    break;
+    case SQLITE_INDEX_CONSTRAINT_FUNCTION:  zOut = "FUNCTION";  break;
+    default:
+      sqlite3_snprintf(sizeof(zUnknown),zUnknown,"%d",op);
+      zOut = zUnknown;
+      break;
+  }
+  return zOut;
+}
+
+/*
 ** SQLite will invoke this method one or more times while planning a query
 ** that uses the vtablog virtual table.  This routine needs to create
 ** a query plan for each invocation and compute an estimated cost for that
@@ -451,14 +491,23 @@ static int vtablogBestIndex(
   printf("  colUsed: 0x%016llx\n", p->colUsed);
   printf("  nConstraint: %d\n", p->nConstraint);
   for(i=0; i<p->nConstraint; i++){
+    sqlite3_value *pVal = 0;
+    int rc = sqlite3_vtab_rhs_value(p, i, &pVal);
     printf(
-       "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
+      "  constraint[%d]: col=%d termid=%d op=%s usabled=%d coll=%s rhs=",
        i,
        p->aConstraint[i].iColumn,
        p->aConstraint[i].iTermOffset,
-       p->aConstraint[i].op,
+       vtablogOpName(p->aConstraint[i].op),
        p->aConstraint[i].usable,
-       sqlite3_vtab_collation(p,i));
+       sqlite3_vtab_collation(p,i)
+    );
+    if( rc==SQLITE_OK ){
+      vtablogQuote(pVal);
+      printf("\n");
+    }else{
+      printf("N/A\n");
+    }
   }
   printf("  nOrderBy: %d\n", p->nOrderBy);
   for(i=0; i<p->nOrderBy; i++){

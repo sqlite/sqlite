@@ -385,7 +385,7 @@ static int blobReadWrite(
   int iOffset, 
   int (*xCall)(BtCursor*, u32, u32, void*)
 ){
-  int rc;
+  int rc = SQLITE_OK;
   Incrblob *p = (Incrblob *)pBlob;
   Vdbe *v;
   sqlite3 *db;
@@ -425,17 +425,32 @@ static int blobReadWrite(
       ** using the incremental-blob API, this works. For the sessions module
       ** anyhow.
       */
-      sqlite3_int64 iKey;
-      iKey = sqlite3BtreeIntegerKey(p->pCsr);
-      assert( v->apCsr[0]!=0 );
-      assert( v->apCsr[0]->eCurType==CURTYPE_BTREE );
-      sqlite3VdbePreUpdateHook(
-          v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1, p->iCol
-      );
+      if( sqlite3BtreeCursorIsValidNN(p->pCsr)==0 ){
+        /* If the cursor is not currently valid, try to reseek it. This 
+        ** always either fails or finds the correct row - the cursor will
+        ** have been marked permanently CURSOR_INVALID if the open row has
+        ** been deleted.  */
+        int bDiff = 0;
+        rc = sqlite3BtreeCursorRestore(p->pCsr, &bDiff);
+        assert( bDiff==0 || sqlite3BtreeCursorIsValidNN(p->pCsr)==0 );
+      }
+      if( sqlite3BtreeCursorIsValidNN(p->pCsr) ){
+        sqlite3_int64 iKey;
+        iKey = sqlite3BtreeIntegerKey(p->pCsr);
+        assert( v->apCsr[0]!=0 );
+        assert( v->apCsr[0]->eCurType==CURTYPE_BTREE );
+        sqlite3VdbePreUpdateHook(
+            v, v->apCsr[0], SQLITE_DELETE, p->zDb, p->pTab, iKey, -1, p->iCol
+        );
+      }
     }
+    if( rc==SQLITE_OK ){
+      rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
+    }
+#else
+    rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
 #endif
 
-    rc = xCall(p->pCsr, iOffset+p->iOffset, n, z);
     sqlite3BtreeLeaveCursor(p->pCsr);
     if( rc==SQLITE_ABORT ){
       sqlite3VdbeFinalize(v);

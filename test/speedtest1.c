@@ -159,6 +159,12 @@ static void fatal_error(const char *zMsg, ...){
   va_start(ap, zMsg);
   vfprintf(stderr, zMsg, ap);
   va_end(ap);
+#ifdef SQLITE_SPEEDTEST1_WASM
+  /* Emscripten complains when exit() is called and anything is left
+     in the I/O buffers. */
+  fflush(stdout);
+  fflush(stderr);
+#endif
   exit(1);
 }
 
@@ -2994,7 +3000,13 @@ int main(int argc, char **argv){
 
   /* "mix1" is a macro testset: */
   static char zMix1Tests[] =
-         "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10,star,app";
+    "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10,star"
+#if !defined(SQLITE_SPEEDTEST1_WASM)
+    ",app"
+    /* This test misbehaves in WASM builds: sqlite3_open_v2() is
+       failing to find the db file for reasons not yet understood. */
+#endif
+    ;
 
 #ifdef SQLITE_SPEEDTEST1_WASM
   /* Resetting all state is important for the WASM build, which may
