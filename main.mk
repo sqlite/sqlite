@@ -2115,6 +2115,10 @@ tool-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
             sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe) $(TOP)/tool/mktoolzip.tcl
 	strip sqlite3$(T.exe) sqldiff$(T.exe) sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe)
 	./testfixture$(T.exe) $(TOP)/tool/mktoolzip.tcl
+snapshot-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
+            sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe) $(TOP)/tool/mktoolzip.tcl
+	strip sqlite3$(T.exe) sqldiff$(T.exe) sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe)
+	./testfixture$(T.exe) $(TOP)/tool/mktoolzip.tcl --snapshot
 clean-tool-zip:
 	rm -f sqlite-tools-*.zip
 clean: clean-tool-zip

@@ -2169,10 +2169,10 @@ static int freeSpace(MemPage *pPage, int iStart, int iSize){
   assert( pPage->pBt!=0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( CORRUPT_DB || iStart>=pPage->hdrOffset+6+pPage->childPtrSize );
-  assert( CORRUPT_DB || iEnd <= pPage->pBt->usableSize );
+  assert( CORRUPT_DB || iEnd <= (int)pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( iSize>=4 );   /* Minimum cell size is 4 */
-  assert( CORRUPT_DB || iStart<=pPage->pBt->usableSize-4 );
+  assert( CORRUPT_DB || iStart<=(int)pPage->pBt->usableSize-4 );
 
   /* The list of freeblocks must be in ascending order.  Find the
   ** spot on the list where iStart should be inserted.
@@ -6144,6 +6144,30 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
     assert( pCur->pgnoRoot==0 || (pCur->pPage!=0 && pCur->pPage->nCell==0) );
     *pRes = 1;
     rc = SQLITE_OK;
+  }
+  return rc;
+}
+
+/* Set *pRes to 1 (true) if the BTree pointed to by cursor pCur contains zero
+** rows of content.  Set *pRes to 0 (false) if the table contains content.
+** Return SQLITE_OK on success or some error code (ex: SQLITE_NOMEM) if
+** something goes wrong.
+*/
+int sqlite3BtreeIsEmpty(BtCursor *pCur, int *pRes){
+  int rc;
+
+  assert( cursorOwnsBtShared(pCur) );
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+  if( pCur->eState==CURSOR_VALID ){
+    *pRes = 0;
+    return SQLITE_OK;
+  }
+  rc = moveToRoot(pCur);
+  if( rc==SQLITE_EMPTY ){
+    *pRes = 1;
+    rc = SQLITE_OK;
+  }else{
+    *pRes = 0;
   }
   return rc;
 }

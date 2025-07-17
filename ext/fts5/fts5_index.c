@@ -1986,9 +1986,9 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
 ** leave an error in the Fts5Index object.
 */
 static void fts5SegIterAllocTombstone(Fts5Index *p, Fts5SegIter *pIter){
-  const int nTomb = pIter->pSeg->nPgTombstone;
+  const i64 nTomb = (i64)pIter->pSeg->nPgTombstone;
   if( nTomb>0 ){
-    int nByte = SZ_FTS5TOMBSTONEARRAY(nTomb+1);
+    i64 nByte = SZ_FTS5TOMBSTONEARRAY(nTomb+1);
     Fts5TombstoneArray *pNew;
     pNew = (Fts5TombstoneArray*)sqlite3Fts5MallocZero(&p->rc, nByte);
     if( pNew ){
@@ -2481,18 +2481,20 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
     fts5DataRelease(pIter->pLeaf);
     pIter->pLeaf = pLast;
     pIter->iLeafPgno = pgnoLast;
-    iOff = fts5LeafFirstRowidOff(pLast);
-    if( iOff>pLast->szLeaf ){
-      FTS5_CORRUPT_ITER(p, pIter);
-      return;
-    }
-    iOff += fts5GetVarint(&pLast->p[iOff], (u64*)&pIter->iRowid);
-    pIter->iLeafOffset = iOff;
+    if( p->rc==SQLITE_OK ){
+      iOff = fts5LeafFirstRowidOff(pLast);
+      if( iOff>pLast->szLeaf ){
+        FTS5_CORRUPT_ITER(p, pIter);
+        return;
+      }
+      iOff += fts5GetVarint(&pLast->p[iOff], (u64*)&pIter->iRowid);
+      pIter->iLeafOffset = iOff;
 
-    if( fts5LeafIsTermless(pLast) ){
-      pIter->iEndofDoclist = pLast->nn+1;
-    }else{
-      pIter->iEndofDoclist = fts5LeafFirstTermOff(pLast);
+      if( fts5LeafIsTermless(pLast) ){
+        pIter->iEndofDoclist = pLast->nn+1;
+      }else{
+        pIter->iEndofDoclist = fts5LeafFirstTermOff(pLast);
+      }
     }
   }
 
@@ -5845,7 +5847,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
   }
 
   nByte += (((i64)pStruct->nLevel)+1) * sizeof(Fts5StructureLevel);
-  assert( nByte==SZ_FTS5STRUCTURE(pStruct->nLevel+2) );
+  assert( nByte==(i64)SZ_FTS5STRUCTURE(pStruct->nLevel+2) );
   pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
 
   if( pNew ){
@@ -8284,19 +8286,27 @@ static int fts5TestUtf8(const char *z, int n){
 /*
 ** This function is also purely an internal test. It does not contribute to 
 ** FTS functionality, or even the integrity-check, in any way.
+**
+** This function sets output variable (*pbFail) to true if the test fails. Or
+** leaves it unchanged if the test succeeds.
 */
 static void fts5TestTerm(
   Fts5Index *p, 
   Fts5Buffer *pPrev,              /* Previous term */
   const char *z, int n,           /* Possibly new term to test */
   u64 expected,
-  u64 *pCksum
+  u64 *pCksum,
+  int *pbFail
 ){
   int rc = p->rc;
   if( pPrev->n==0 ){
     fts5BufferSet(&rc, pPrev, n, (const u8*)z);
   }else
-  if( rc==SQLITE_OK && (pPrev->n!=n || memcmp(pPrev->p, z, n)) ){
+  if( *pbFail==0 
+   && rc==SQLITE_OK 
+   && (pPrev->n!=n || memcmp(pPrev->p, z, n)) 
+   && (p->pHash==0 || p->pHash->nEntry==0)
+  ){
     u64 cksum3 = *pCksum;
     const char *zTerm = (const char*)&pPrev->p[1];  /* term sans prefix-byte */
     int nTerm = pPrev->n-1;            /* Size of zTerm in bytes */
@@ -8346,7 +8356,7 @@ static void fts5TestTerm(
     fts5BufferSet(&rc, pPrev, n, (const u8*)z);
 
     if( rc==SQLITE_OK && cksum3!=expected ){
-      rc = FTS5_CORRUPT;
+      *pbFail = 1;
     }
     *pCksum = cksum3;
   }
@@ -8355,7 +8365,7 @@ static void fts5TestTerm(
  
 #else
 # define fts5TestDlidxReverse(x,y,z)
-# define fts5TestTerm(u,v,w,x,y,z)
+# define fts5TestTerm(t,u,v,w,x,y,z)
 #endif
 
 /*
@@ -8613,6 +8623,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
   /* Used by extra internal tests only run if NDEBUG is not defined */
   u64 cksum3 = 0;                 /* Checksum based on contents of indexes */
   Fts5Buffer term = {0,0,0};      /* Buffer used to hold most recent term */
+  int bTestFail = 0;
 #endif
   const int flags = FTS5INDEX_QUERY_NOOUTPUT;
   
@@ -8655,7 +8666,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
     char *z = (char*)fts5MultiIterTerm(pIter, &n);
 
     /* If this is a new term, query for it. Update cksum3 with the results. */
-    fts5TestTerm(p, &term, z, n, cksum2, &cksum3);
+    fts5TestTerm(p, &term, z, n, cksum2, &cksum3, &bTestFail);
     if( p->rc ) break;
 
     if( eDetail==FTS5_DETAIL_NONE ){
@@ -8673,7 +8684,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
       }
     }
   }
-  fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3);
+  fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3, &bTestFail);
 
   fts5MultiIterFree(pIter);
   if( p->rc==SQLITE_OK && bUseCksum && cksum!=cksum2 ){
@@ -8682,11 +8693,17 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
         "fts5: checksum mismatch for table \"%s\"", p->pConfig->zName
     );
   }
-
-  fts5StructureRelease(pStruct);
 #ifdef SQLITE_DEBUG
+  /* In SQLITE_DEBUG builds, expensive extra checks were run as part of
+  ** the integrity-check above. If no other errors were detected, but one
+  ** of these tests failed, set the result to SQLITE_CORRUPT_VTAB here. */
+  if( p->rc==SQLITE_OK && bTestFail ){
+    p->rc = FTS5_CORRUPT;
+  }
   fts5BufferFree(&term);
 #endif
+
+  fts5StructureRelease(pStruct);
   fts5BufferFree(&poslist);
   return fts5IndexReturn(p);
 }

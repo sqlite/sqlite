@@ -288,7 +288,7 @@ struct sqlite3_value {
 **                             MEM_Int, MEM_Real, and MEM_IntReal.
 **
 **  *  MEM_Blob|MEM_Zero       A blob in Mem.z of length Mem.n plus
-**                             MEM.u.i extra 0x00 bytes at the end.
+**                             Mem.u.nZero extra 0x00 bytes at the end.
 **
 **  *  MEM_Int                 Integer stored in Mem.u.i.
 **

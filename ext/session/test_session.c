@@ -524,6 +524,65 @@ static int test_obj_eq_string(Tcl_Obj *p, const char *z){
   return (nObj==n && (n==0 || 0==memcmp(zObj, z, n)));
 }
 
+static Tcl_Obj *testIterData(sqlite3_changeset_iter *pIter){
+  Tcl_Obj *pVar = 0;
+  int nCol;                       /* Number of columns in table */
+  int nCol2;                      /* Number of columns in table */
+  int op;                         /* SQLITE_INSERT, UPDATE or DELETE */
+  const char *zTab;               /* Name of table change applies to */
+  Tcl_Obj *pOld;                  /* Vector of old.* values */
+  Tcl_Obj *pNew;                  /* Vector of new.* values */
+  int bIndirect;
+    
+  char *zPK;
+  unsigned char *abPK;
+  int i;
+
+  sqlite3changeset_op(pIter, &zTab, &nCol, &op, &bIndirect);
+  pVar = Tcl_NewObj();
+
+  Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(
+        op==SQLITE_INSERT ? "INSERT" :
+        op==SQLITE_UPDATE ? "UPDATE" : 
+        "DELETE", -1
+  ));
+
+  Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(zTab, -1));
+  Tcl_ListObjAppendElement(0, pVar, Tcl_NewBooleanObj(bIndirect));
+
+  zPK = ckalloc(nCol+1);
+  memset(zPK, 0, nCol+1);
+  sqlite3changeset_pk(pIter, &abPK, &nCol2);
+  assert( nCol==nCol2 );
+  for(i=0; i<nCol; i++){
+    zPK[i] = (abPK[i] ? 'X' : '.');
+  }
+  Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(zPK, -1));
+  ckfree(zPK);
+
+  pOld = Tcl_NewObj();
+  if( op!=SQLITE_INSERT ){
+    for(i=0; i<nCol; i++){
+      sqlite3_value *pVal;
+      sqlite3changeset_old(pIter, i, &pVal);
+      test_append_value(pOld, pVal);
+    }
+  }
+  pNew = Tcl_NewObj();
+  if( op!=SQLITE_DELETE ){
+    for(i=0; i<nCol; i++){
+      sqlite3_value *pVal;
+      sqlite3changeset_new(pIter, i, &pVal);
+      test_append_value(pNew, pVal);
+    }
+  }
+  Tcl_ListObjAppendElement(0, pVar, pOld);
+  Tcl_ListObjAppendElement(0, pVar, pNew);
+
+  return pVar;
+}
+
+
 static int test_filter_handler(
   void *pCtx,                     /* Pointer to TestConflictHandler structure */
   const char *zTab                /* Table name */
@@ -538,6 +597,29 @@ static int test_filter_handler(
 
   if( TCL_OK!=Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(zTab, -1))
    || TCL_OK!=Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL) 
+   || TCL_OK!=Tcl_GetIntFromObj(interp, Tcl_GetObjResult(interp), &res)
+  ){
+    Tcl_BackgroundError(interp);
+  }
+
+  Tcl_DecrRefCount(pEval);
+  return res;
+}  
+
+static int test_filter_v3_handler(
+  void *pCtx,                     /* Pointer to TestConflictHandler structure */
+  sqlite3_changeset_iter *pIter
+){
+  TestConflictHandler *p = (TestConflictHandler *)pCtx;
+  int res = 1;
+  Tcl_Obj *pEval = 0;
+  Tcl_Interp *interp = p->interp;
+
+  pEval = Tcl_DuplicateObj(p->pFilterScript);
+  Tcl_IncrRefCount(pEval);
+  Tcl_ListObjAppendElement(0, pEval, testIterData(pIter));
+
+  if( TCL_OK!=Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL) 
    || TCL_OK!=Tcl_GetIntFromObj(interp, Tcl_GetObjResult(interp), &res)
   ){
     Tcl_BackgroundError(interp);
@@ -780,7 +862,7 @@ static int testStreamInput(
 
 
 static int SQLITE_TCLAPI testSqlite3changesetApply(
-  int bV2,
+  int iVersion,
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -797,11 +879,13 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
   int nRebase = 0;
   int flags = 0;                  /* Flags for apply_v2() */
 
+  assert( iVersion==1 || iVersion==2 || iVersion==3 );
+
   memset(&sStr, 0, sizeof(sStr));
   sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
 
   /* Check for the -nosavepoint, -invert or -ignorenoop switches */
-  if( bV2 ){
+  if( iVersion==2 || iVersion==3 ){
     while( objc>1 ){
       const char *z1 = Tcl_GetString(objv[1]);
       int n = (int)strlen(z1);
@@ -826,7 +910,7 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
 
   if( objc!=4 && objc!=5 ){
     const char *zMsg;
-    if( bV2 ){
+    if( iVersion==2 || iVersion==3  ){
       zMsg = "?-nosavepoint? ?-inverse? ?-ignorenoop? "
         "DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?";
     }else{
@@ -846,30 +930,49 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
   ctx.interp = interp;
 
   if( sStr.nStream==0 ){
-    if( bV2==0 ){
-      rc = sqlite3changeset_apply(db, (int)nChangeset, pChangeset, 
-          (objc==5)?test_filter_handler:0, test_conflict_handler, (void *)&ctx
-      );
-    }else{
-      rc = sqlite3changeset_apply_v2(db, (int)nChangeset, pChangeset, 
-          (objc==5)?test_filter_handler:0, test_conflict_handler, (void *)&ctx,
-          &pRebase, &nRebase, flags
-      );
+    switch( iVersion ){
+      case 1:
+        rc = sqlite3changeset_apply(db, (int)nChangeset, pChangeset, 
+            (objc==5)?test_filter_handler:0, test_conflict_handler, (void*)&ctx
+        );
+        break;
+      case 2:
+        rc = sqlite3changeset_apply_v2(db, (int)nChangeset, pChangeset, 
+            (objc==5)?test_filter_handler:0, test_conflict_handler, (void*)&ctx,
+            &pRebase, &nRebase, flags
+        );
+        break;
+      case 3:
+        rc = sqlite3changeset_apply_v3(db, (int)nChangeset, pChangeset, 
+            (objc==5)?test_filter_v3_handler:0, test_conflict_handler, 
+            (void*)&ctx, &pRebase, &nRebase, flags
+        );
+        break;
     }
   }else{
     sStr.aData = (unsigned char*)pChangeset;
     sStr.nData = (int)nChangeset;
-    if( bV2==0 ){
-      rc = sqlite3changeset_apply_strm(db, testStreamInput, (void*)&sStr,
-          (objc==5) ? test_filter_handler : 0, 
-          test_conflict_handler, (void *)&ctx
-      );
-    }else{
-      rc = sqlite3changeset_apply_v2_strm(db, testStreamInput, (void*)&sStr,
-          (objc==5) ? test_filter_handler : 0, 
-          test_conflict_handler, (void *)&ctx,
-          &pRebase, &nRebase, flags
-      );
+    switch( iVersion ){
+      case 1:
+        rc = sqlite3changeset_apply_strm(db, testStreamInput, (void*)&sStr,
+            (objc==5) ? test_filter_handler : 0, 
+            test_conflict_handler, (void *)&ctx
+        );
+        break;
+      case 2:
+        rc = sqlite3changeset_apply_v2_strm(db, testStreamInput, (void*)&sStr,
+            (objc==5) ? test_filter_handler : 0, 
+            test_conflict_handler, (void *)&ctx,
+            &pRebase, &nRebase, flags
+        );
+        break;
+      case 3:
+        rc = sqlite3changeset_apply_v3_strm(db, testStreamInput, (void*)&sStr,
+            (objc==5) ? test_filter_v3_handler : 0, 
+            test_conflict_handler, (void *)&ctx,
+            &pRebase, &nRebase, flags
+        );
+        break;
     }
   }
 
@@ -877,7 +980,7 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
     return test_session_error(interp, rc, 0);
   }else{
     Tcl_ResetResult(interp);
-    if( bV2 && pRebase ){
+    if( (iVersion==2 || iVersion==3) && pRebase ){
       Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pRebase, nRebase));
     }
   }
@@ -894,7 +997,7 @@ static int SQLITE_TCLAPI test_sqlite3changeset_apply(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  return testSqlite3changesetApply(0, clientData, interp, objc, objv);
+  return testSqlite3changesetApply(1, clientData, interp, objc, objv);
 }
 /*
 ** sqlite3changeset_apply_v2 DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?
@@ -905,7 +1008,18 @@ static int SQLITE_TCLAPI test_sqlite3changeset_apply_v2(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  return testSqlite3changesetApply(1, clientData, interp, objc, objv);
+  return testSqlite3changesetApply(2, clientData, interp, objc, objv);
+}
+/*
+** sqlite3changeset_apply_v3 DB CHANGESET CONFLICT-SCRIPT ?FILTER-SCRIPT?
+*/
+static int SQLITE_TCLAPI test_sqlite3changeset_apply_v3(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  return testSqlite3changesetApply(3, clientData, interp, objc, objv);
 }
 
 /*
@@ -1036,64 +1150,6 @@ static int SQLITE_TCLAPI test_sqlite3changeset_concat(
   }
   sqlite3_free(sOut.p);
   return rc;
-}
-
-static Tcl_Obj *testIterData(sqlite3_changeset_iter *pIter){
-  Tcl_Obj *pVar = 0;
-  int nCol;                       /* Number of columns in table */
-  int nCol2;                      /* Number of columns in table */
-  int op;                         /* SQLITE_INSERT, UPDATE or DELETE */
-  const char *zTab;               /* Name of table change applies to */
-  Tcl_Obj *pOld;                  /* Vector of old.* values */
-  Tcl_Obj *pNew;                  /* Vector of new.* values */
-  int bIndirect;
-    
-  char *zPK;
-  unsigned char *abPK;
-  int i;
-
-  sqlite3changeset_op(pIter, &zTab, &nCol, &op, &bIndirect);
-  pVar = Tcl_NewObj();
-
-  Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(
-        op==SQLITE_INSERT ? "INSERT" :
-        op==SQLITE_UPDATE ? "UPDATE" : 
-        "DELETE", -1
-  ));
-
-  Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(zTab, -1));
-  Tcl_ListObjAppendElement(0, pVar, Tcl_NewBooleanObj(bIndirect));
-
-  zPK = ckalloc(nCol+1);
-  memset(zPK, 0, nCol+1);
-  sqlite3changeset_pk(pIter, &abPK, &nCol2);
-  assert( nCol==nCol2 );
-  for(i=0; i<nCol; i++){
-    zPK[i] = (abPK[i] ? 'X' : '.');
-  }
-  Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(zPK, -1));
-  ckfree(zPK);
-
-  pOld = Tcl_NewObj();
-  if( op!=SQLITE_INSERT ){
-    for(i=0; i<nCol; i++){
-      sqlite3_value *pVal;
-      sqlite3changeset_old(pIter, i, &pVal);
-      test_append_value(pOld, pVal);
-    }
-  }
-  pNew = Tcl_NewObj();
-  if( op!=SQLITE_DELETE ){
-    for(i=0; i<nCol; i++){
-      sqlite3_value *pVal;
-      sqlite3changeset_new(pIter, i, &pVal);
-      test_append_value(pNew, pVal);
-    }
-  }
-  Tcl_ListObjAppendElement(0, pVar, pOld);
-  Tcl_ListObjAppendElement(0, pVar, pNew);
-
-  return pVar;
 }
 
 /*
@@ -1876,6 +1932,7 @@ int TestSession_Init(Tcl_Interp *interp){
     { "sqlite3changeset_concat", test_sqlite3changeset_concat },
     { "sqlite3changeset_apply", test_sqlite3changeset_apply },
     { "sqlite3changeset_apply_v2", test_sqlite3changeset_apply_v2 },
+    { "sqlite3changeset_apply_v3", test_sqlite3changeset_apply_v3 },
     { "sqlite3changeset_apply_replace_all", 
       test_sqlite3changeset_apply_replace_all },
     { "sql_exec_changeset", test_sql_exec_changeset },
