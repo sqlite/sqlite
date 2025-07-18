@@ -926,8 +926,8 @@ static void notValidImpl(
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
-** Return 1024 times this value.  Or return -1 if p is not a floating point
-** value between 1.0 and 0.0.
+** Return 134,217,728 (2^27) times this value.  Or return -1 if p is not
+** a floating point value between 1.0 and 0.0.
 */
 static int exprProbability(Expr *p){
   double r = -1.0;
