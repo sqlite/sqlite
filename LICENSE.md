@@ -30,7 +30,7 @@ The public domain source files usually contain a header comment
 similar to the following to make it clear that the software is
 public domain.
 
-> ~~~
+~~~
 The author disclaims copyright to this source code.  In place of
 a legal notice, here is a blessing:
 
@@ -49,7 +49,7 @@ This repository contains a (relatively) small amount of non-public-domain
 code used to help implement the configuration and build logic.  In other
 words, there are some non-public-domain files used to implement:
 
-> ~~~
+~~~
 ./configure && make
 ~~~
 
@@ -83,7 +83,7 @@ The following unix shell command is can be run from the top-level
 of this source repository in order to remove all non-public-domain
 code:
 
-> ~~~
+~~~
 rm -rf configure autosetup autoconf
 ~~~
 
