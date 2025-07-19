@@ -2994,10 +2994,12 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   if( 0==sqlite3Strlen30(sqlite3BtreeGetFilename(db->aDb[0].pBt))
    || nTrans<=1
   ){
-    for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
-      Btree *pBt = db->aDb[i].pBt;
-      if( pBt ){
-        rc = sqlite3BtreeCommitPhaseOne(pBt, 0);
+    if( needXcommit ){
+      for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+        Btree *pBt = db->aDb[i].pBt;
+        if( sqlite3BtreeTxnState(pBt)>=SQLITE_TXN_WRITE ){
+          rc = sqlite3BtreeCommitPhaseOne(pBt, 0);
+        }
       }
     }
 
@@ -3008,7 +3010,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     */
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
-      if( pBt ){
+      int txn = sqlite3BtreeTxnState(pBt);
+      if( txn!=SQLITE_TXN_NONE ){
+        assert( needXcommit || txn==SQLITE_TXN_READ );
         rc = sqlite3BtreeCommitPhaseTwo(pBt, 0);
       }
     }
