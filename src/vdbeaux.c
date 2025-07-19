@@ -3267,28 +3267,31 @@ int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
 
 
 /*
-** This function is called when a transaction opened by the database
+** These functions are called when a transaction opened by the database
 ** handle associated with the VM passed as an argument is about to be
-** committed. If there are outstanding deferred foreign key constraint
-** violations, return SQLITE_ERROR. Otherwise, SQLITE_OK.
+** committed. If there are outstanding foreign key constraint violations
+** return an error code. Otherwise, SQLITE_OK.
 **
 ** If there are outstanding FK violations and this function returns
-** SQLITE_ERROR, set the result of the VM to SQLITE_CONSTRAINT_FOREIGNKEY
-** and write an error message to it. Then return SQLITE_ERROR.
+** non-zero, set the result of the VM to SQLITE_CONSTRAINT_FOREIGNKEY
+** and write an error message to it.
 */
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
+static SQLITE_NOINLINE int vdbeFkError(Vdbe *p){
+  p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
+  p->errorAction = OE_Abort;
+  sqlite3VdbeError(p, "FOREIGN KEY constraint failed");
+  if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)==0 ) return SQLITE_ERROR;
+  return SQLITE_CONSTRAINT_FOREIGNKEY;
+}
+int sqlite3VdbeCheckFkImmediate(Vdbe *p){
+  if( p->nFkConstraint==0 ) return SQLITE_OK;
+  return vdbeFkError(p);
+}
+int sqlite3VdbeCheckFkDeferred(Vdbe *p){
   sqlite3 *db = p->db;
-  if( (deferred && (db->nDeferredCons+db->nDeferredImmCons)>0)
-   || (!deferred && p->nFkConstraint>0)
-  ){
-    p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
-    p->errorAction = OE_Abort;
-    sqlite3VdbeError(p, "FOREIGN KEY constraint failed");
-    if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)==0 ) return SQLITE_ERROR;
-    return SQLITE_CONSTRAINT_FOREIGNKEY;
-  }
-  return SQLITE_OK;
+  if( (db->nDeferredCons+db->nDeferredImmCons)==0 ) return SQLITE_OK;
+  return vdbeFkError(p);
 }
 #endif
 
@@ -3382,7 +3385,7 @@ int sqlite3VdbeHalt(Vdbe *p){
 
     /* Check for immediate foreign key violations. */
     if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
-      (void)sqlite3VdbeCheckFk(p, 0);
+      (void)sqlite3VdbeCheckFkImmediate(p);
     }
 
     /* If the auto-commit flag is set and this is the only active writer
@@ -3396,7 +3399,7 @@ int sqlite3VdbeHalt(Vdbe *p){
      && db->nVdbeWrite==(p->readOnly==0)
     ){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
-        rc = sqlite3VdbeCheckFk(p, 1);
+        rc = sqlite3VdbeCheckFkDeferred(p);
         if( rc!=SQLITE_OK ){
           if( NEVER(p->readOnly) ){
             sqlite3VdbeLeave(p);

@@ -721,9 +721,11 @@ int sqlite3VdbeCheckMemInvariants(Mem*);
 #endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-int sqlite3VdbeCheckFk(Vdbe *, int);
+int sqlite3VdbeCheckFkImmediate(Vdbe*);
+int sqlite3VdbeCheckFkDeferred(Vdbe*);
 #else
-# define sqlite3VdbeCheckFk(p,i) 0
+# define sqlite3VdbeCheckFkImmediate(p) 0
+# define sqlite3VdbeCheckFkDeferred(p) 0
 #endif
 
 #ifdef SQLITE_DEBUG
