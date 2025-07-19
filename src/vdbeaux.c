@@ -4264,15 +4264,15 @@ void sqlite3VdbeRecordUnpack(
     pMem->z = 0;
     sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     d += sqlite3VdbeSerialTypeLen(serial_type);
-    pMem++;
     if( (++u)>=p->nField ) break;
+    pMem++;
   }
   if( d>(u32)nKey && u ){
     assert( CORRUPT_DB );
     /* In a corrupt record entry, the last pMem might have been set up using
     ** uninitialized memory. Overwrite its value with NULL, to prevent
     ** warnings from MSAN. */
-    sqlite3VdbeMemSetNull(pMem-1);
+    sqlite3VdbeMemSetNull(pMem-(u<p->nField));
   }
   testcase( u == pKeyInfo->nKeyField + 1 );
   testcase( u < pKeyInfo->nKeyField + 1 );

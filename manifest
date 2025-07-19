@@ -1,5 +1,5 @@
-C Split\sthe\s(internal)\ssqlite3VdbeCheckFk()\sroutine\sinto\stwo\svariants,\nsqlite3VdbeCheckFkImmediate()\sand\ssqlite3VdbeCheckFkDeferred(),\swhich\nrun\sfaster\sthan\sthe\scombined\sgeneral-purpose\svariant.
-D 2025-07-19T18:46:03.562
+C Small\sperformance\soptimization\sin\ssqlite3VdbeRecordUnpack().
+D 2025-07-19T19:54:44.334
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -857,7 +857,7 @@ F src/vdbe.c a5873cd566a0e2a0344a86dd946add9d34fae3feeae8b126277ef7af8dc11f91
 F src/vdbe.h ea1f1b52f0efe422f80d88da3c57e4eadc72856e29a22f1ff08e502ec6ba5f08
 F src/vdbeInt.h d604607ce8c958fb66b8cb5a6915ba2f09a352c7dc38fee7e3157b951c84eac5
 F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
-F src/vdbeaux.c 3561afec5a01566ce2ded6cd213b54c8e892cbe910982b601458bf86dcb507d0
+F src/vdbeaux.c 01193486aa0981036c13c273bce4f15ff10a4e3929532a2c01ee208499652038
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
 F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecbe
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 861e55656abb208b4f1f2c8808c76c0454427af85a8930ab53f9c053605f39c7
-R 71d278a50d9f151128c82b71a7f4f17d
+P 872b1b52ed93ef85911c2ef87b15673f9e102aef564f208e0a916af62671df93
+R 4246d37a682cbc8ba602315d42a01886
 U drh
-Z 773a4a3987f3155f05d8ed62835821fe
+Z 855a391ab5fed2279d013bd12273cbc3
 # Remove this line to create a well-formed Fossil manifest.
