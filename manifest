@@ -1,5 +1,5 @@
-C Factor\sout\sthe\sunusual\sencoding-change\scase\sfrom\svdbeCompareMemString()\sfor\na\sperformance\simprovement\sin\sthe\scommon\scase,\sand\sa\ssmall\ssize\sreduction.
-D 2025-07-19T20:10:07.198
+C Teach\sautoconf/tea/configure\sto\sbe\sable\sto\srun\sfrom\sthe\scanonical\ssource\stree\sso\sthat\sa\ssnapshot\sbuild\sor\sappropriate\ssymlinks\sare\snot\snecessary\sin\sorder\sto\stest\sthe\sextension.
+D 2025-07-20T18:05:45.088
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -26,7 +26,7 @@ F autoconf/tea/Makefile.in bf6b43eafcd18766d81a8f0085cfc9cb051d8abae9031a8e7c3f5
 F autoconf/tea/README.txt 23475876343498ef2b514cc7510e8f1559a17e8e03fbc7a41c1c8a3b89e7b7e3
 F autoconf/tea/_teaish.tester.tcl.in 8253b44be88e2e3f21de95a65d3a90c2be8e70b7bdd08a5b80e337ba7402f8f1
 F autoconf/tea/auto.def ce95b9450e2fa4ba5dc857e208fe10f4e6f2d737796ac3278aee6079db417529
-F autoconf/tea/configure d0b12b984edca6030d1976375b80157ac78b5b90a5b4f0dcee39357f63f4a80b x
+F autoconf/tea/configure 993eb27dafb35253965f9c0eb0eeefd113cae0508361c8fd90a4b58c3caf14ec x
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in e07da6b94561f4aa382bab65b1ccceb04701b97bf59d007c1d1f20a222b22d07
 F autoconf/tea/teaish.tcl 81feb417e718ed75cdd7e2fdf6771f3da80dae97377a90c4d5b62b3754abbf1d
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eae168def2ff11f57f730f8a3bd86748b0943077e37b2709c10de0aecff664ec
-R 657b20316a29fe916e58f39ea638cc42
-U drh
-Z fe88cda3a10f1d9d2ca9e40a67c11d18
+P cbd46ab8a8b4622f42dd9f87f28b812c1d6fa5ea73a4e8f1253514455f397783
+R 52118a7ed2ddd135bf27484472b6e0f1
+U stephan
+Z 508393a0763d9277db13f96f52131a12
 # Remove this line to create a well-formed Fossil manifest.
