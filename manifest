@@ -1,5 +1,5 @@
-C Ensure\sthat\scertain\slocal\sfiles\sare\snot\sinadvertently\scarried\sover\sinto\sthe\ssnapshot\starball\sand\scausing\sconfusing\sbuild\sresults.
-D 2025-07-20T18:29:35.262
+C Apply\s[ebb346c5aa]'s\schange\sto\ssqlite3.1,\sas\sreported\sin\s[forum:bf92f78344\s|\sforum\spost\sbf92f78344].
+D 2025-07-21T18:00:44.918
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -718,7 +718,7 @@ F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
 F mptest/mptest.c aa41ace6dbc5050d76b02548d3521e6bbccae4f0
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
-F sqlite3.1 9e426a150af072be26b0661bcd54567692d979e99bc7daf55b22b952ff8e41a6
+F sqlite3.1 1b9c24374a85dfc7eb8fa7c4266ee0db4f9609cceecfc5481cd8307e5af04366
 F sqlite3.pc.in e6dee284fba59ef500092fdc1843df3be8433323a3733c91da96690a50a5b398
 F src/alter.c fc7bbbeb9e89c7124bf5772ce474b333b7bdc18d6e080763211a40fde69fb1da
 F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 71b9365b848d9b2bc75336ebbec815eba3a7ed5168798759753a990a1b706fc8
-R 92b878f9110115c0a116eb9ef0976c9a
+P 47fdf7ed2cad7ec56118cf4f77297b1178cd2104a21b19d4afad46437a944378
+R a08a78e61f4be090bddaf0f7f9bf3317
 U stephan
-Z c5f3fbd5079b89d562aee514bc8edf44
+Z 7b3360069663cda53c53c1ca79802b20
 # Remove this line to create a well-formed Fossil manifest.
