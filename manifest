@@ -1,5 +1,5 @@
-C Fix\sa\spotentially\suninitialized\sfield\sin\sthe\sWhereLoop\sobject\sthat\sis\sused\nas\spart\sof\sthe\sskip-ahead-distinct\soptimization.\s\sThis\sfixes\svarious\n[forum:/timeline?ymd=20250722&u=yxchen&vfx|recent\sforum\sreports\sfrom\syxchen].
-D 2025-07-22T15:51:41.542
+C Add\sa\scall\sto\sTcl_Init()\sin\stclsqlite3's\ssetup.\sThis\sactivates\smany\sof\sthe\sotherwise-missing\sTcl\sstandard\scommands\sand\sis\sbelieved\sto\sbe\sbenign\son\ssystems\swhere\sthose\scannot\sbe\sloaded,\sbut\swhether\sit\struly\sis\srequires\ssome\sexperimentation\son\saffected\ssystems.
+D 2025-07-22T20:17:06.508
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -795,7 +795,7 @@ F src/sqliteInt.h a54f83985985655d1276e9e356dd6ae19b8d0b62c2abc75cc9e8f402ea1412
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
+F src/tclsqlite.c c3c31f4e8c2506d356d1439fa57d922cb0a25831491837dad3bf74abf8965d84
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
 F src/test1.c 13cc07851f989141b29f7ca3c6c90f6d18f90081ab423c66716c8cb29d277d1f
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
@@ -2213,8 +2213,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 477211be60cd873d078293f0dd767506c069c3dd83bc1759ae7258d4d3dff359
-R f8ba680ce9b1657fae69f61ff9d57d1d
-U drh
-Z c9346dfa43d7f5c186a9a25b6a8a2164
+P c10f9970c6a3ffacaef0f0728fc7ff11011686835dc78ca43035c0493e0af319
+R 11f6c064f36bf2f7bad7605af200ebb4
+T *branch * tcl-init
+T *sym-tcl-init *
+T -sym-trunk *
+U stephan
+Z a3562105013d390229c1a25d7432081c
 # Remove this line to create a well-formed Fossil manifest.
