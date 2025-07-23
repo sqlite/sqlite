@@ -7462,6 +7462,7 @@ static SQLITE_NOINLINE void existsToJoin(
       if( pSub->pSrc->nSrc==1
        && (pSub->selFlags & SF_Aggregate)==0
        && !pSub->pSrc->a[0].fg.isSubquery
+       && pSub->pLimit==0
       ){
         memset(pWhere, 0, sizeof(*pWhere));
         pWhere->op = TK_INTEGER;
