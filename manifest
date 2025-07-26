@@ -1,5 +1,5 @@
-C Do\snot\sapply\sthe\s[/info/e33da6d5dc964db8|EXISTS-to-JOIN\soptimization]\sif\nthe\ssubquery\scontains\sa\sLIMIT\sclause.\n[forum:/forumpost/2025-07-23T10:59:14z|forum\spost\s2025-07-23T10:59:14z].
-D 2025-07-23T12:48:16.339
+C Add\snew\sextended\serror\scodes\sto\sSQLITE_ERROR\sand\sSQLITE_IOERR,\sfor\suse\nby\sextensions.
+D 2025-07-26T12:51:18.374
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -788,7 +788,7 @@ F src/resolve.c e344c0ff75db05acd80a81ab090547d28d0e990f6f411a428d429183a7c73927
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c a6be657216e1fb72f85dad7df0dba0eb79fe76527c08caa65da8fe44f0e4db44
 F src/shell.c.in 7918c9355667b3b348e5850f0dad9095476ef942ee3b96ee9b8bc2710adda1da
-F src/sqlite.h.in 5c54f2461a1ea529bab8499148a2b238e2d4bb571d59e8ea5322d0c190abb693
+F src/sqlite.h.in 6fba714744f9b2b43c210d8ff27543c19119f822e7046f65efd7014b1b498484
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h a54f83985985655d1276e9e356dd6ae19b8d0b62c2abc75cc9e8f402ea141207
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c10f9970c6a3ffacaef0f0728fc7ff11011686835dc78ca43035c0493e0af319
-R 2a1458b5adcdacd64c8e9eb75b91b34a
+P 314c493f273a34dff7b9f954e7553bc540bbcf5b913f779ef9ce0b9ba11acf7a
+R 3d41e6626e07254fb9af4fd2ea23cc72
 U drh
-Z 924a5281dd1a8b6cec0c51ca10e1c48a
+Z 0dd2224134c81eeea0ec181b7b4a34f4
 # Remove this line to create a well-formed Fossil manifest.
