@@ -1,5 +1,5 @@
-C Add\snew\sextended\serror\scodes\sto\sSQLITE_ERROR\sand\sSQLITE_IOERR,\sfor\suse\nby\sextensions.
-D 2025-07-26T12:51:18.374
+C Fix\sSQLITE_OMIT_WAL\sbuilds\son\swindows.
+D 2025-07-29T11:04:32.082
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -772,7 +772,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 04e054ab86d86a7be99ebe5265922687791a40df5afc781d059beb47f4a40acd
-F src/os_win.c b8d3cfdf2f40e2f9715b7d8df64f3c0c7ee18743a2dd0c4fc70c1d57fa1aadc7
+F src/os_win.c 7ac69df49d2ff0432b9c96fd2d9a17a100cced6860479e584cd3337e18d09334
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 23c0f17deb892da6b32fef1f465507df7ab5cd01d774288cb43695658a649259
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 314c493f273a34dff7b9f954e7553bc540bbcf5b913f779ef9ce0b9ba11acf7a
-R 3d41e6626e07254fb9af4fd2ea23cc72
-U drh
-Z 0dd2224134c81eeea0ec181b7b4a34f4
+P 02b241bc4ce72d50a8d7621a663e759443b532a5ff9354fc3266ad6bb9433ed4
+R 1e3435bd8556ee014a650c41831f11d3
+U dan
+Z 62500e94d9c68e3a0eb8d9b15d9a338e
 # Remove this line to create a well-formed Fossil manifest.
