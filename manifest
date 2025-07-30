@@ -1,5 +1,5 @@
-C Fix\sa\spotentially\suninitialized\sfield\sin\sthe\sWhereLoop\sobject\sthat\sis\sused\nas\spart\sof\sthe\sskip-ahead-distinct\soptimization.
-D 2025-07-22T16:02:52.004
+C Version\s3.50.4
+D 2025-07-30T19:33:53.432
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2209,9 +2209,10 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 53711bf9f6d10d527298e7a59e1eaa2347ae26cd04636e4849ae8a0c4c7e0591
-Q +c10f9970c6a3ffacaef0f0728fc7ff11011686835dc78ca43035c0493e0af319
+P f39a0865d336d4a964627d4819ce7ba8dafd43a0e8e2a4431ea431ef73dd96c3
 R 5c3da0295a5c868b2c70cbb25c7978d3
+T +sym-release *
+T +sym-version-3.50.4 *
 U drh
-Z 2b6e01bb3c05583da4181054f148677f
+Z e0e73bda1cca0dba2213fe2c15c764d6
 # Remove this line to create a well-formed Fossil manifest.
