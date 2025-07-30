@@ -1,5 +1,5 @@
-C Move\sthe\sflexarray\sunion\smembers\sfrom\s[527bbc1676a85a9]\sto\sthe\send\sof\stheir\srespective\sobjects.
-D 2025-07-30T21:34:47.039
+C Back\sout\s[e283d817e3a9]\sbecause\sfurther\stesting\shas\sproven\sit\sunnecessary.
+D 2025-07-30T21:39:27.912
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -791,7 +791,7 @@ F src/shell.c.in 7918c9355667b3b348e5850f0dad9095476ef942ee3b96ee9b8bc2710adda1d
 F src/sqlite.h.in 6fba714744f9b2b43c210d8ff27543c19119f822e7046f65efd7014b1b498484
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
-F src/sqliteInt.h e6588674d61b9a9774ecf40df79bc7d5f7bdae2ba0646e6d7bd19b19ab41daee
+F src/sqliteInt.h a54f83985985655d1276e9e356dd6ae19b8d0b62c2abc75cc9e8f402ea141207
 F src/sqliteLimit.h 6d817c28a8f19af95e6f4921933b7fbbca48a962bce0eb0ec81e8bb3ef38e68b
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 527bbc1676a85a927352cd10a292afe041a72692ec0b1360e5a1ccaa19a32fcb
-R 00821c919df363d35d3aadb90bd89ed6
+P 3082e07926695863bd5ef51c3c4803fbe267dc0d9b6ac9a717c225459f8988ba
+R 508f80f0ad399669c54950f9a1e3c37c
 U stephan
-Z 5544f0c534d5ebbfc15a076526ec0de5
+Z 173cf587e0a224d898f03eadc44d54f4
 # Remove this line to create a well-formed Fossil manifest.
