@@ -296,7 +296,7 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
    after calling the original function and will reject if that
    function throws.
 */
-sqlite3Worker1Promiser.v2 = function(config){
+globalThis.sqlite3Worker1Promiser.v2 = function(config){
   let oldFunc;
   if( 'function' == typeof config ){
     oldFunc = config;
@@ -330,6 +330,9 @@ sqlite3Worker1Promiser.v2 = function(config){
       recommended to delete globalThis.sqlite3Worker1Promiser. */
   original: sqlite3Worker1Promiser
 });
+
+globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
+  globalThis.sqlite3Worker1Promiser.defaultConfig;
 
 //#if target=es6-module
 /**

@@ -1,5 +1,5 @@
-C Adjust\sthe\sprevious\scheck-in\sto\sreplace\sthe\sdb's\sWASM\saddress\swith\syet\sanother\srandom\snumber,\sand\sincrease\sthe\srange\sof\srandom\snumbers,\sreducing\sthe\schance\sof\scross-worker\sdb\sID\scollision\sto\s1\sin\smany\sbillions.
-D 2025-07-30T15:02:32.895
+C JS:\sensure\sthat\ssqlite3WorkerPromiser.v2.defaultConfig\sinitially\srefers\sto\ssqlite3WorkerPromiser.defaultConfig.\sThis\sfixes\sa\slongstanding\soversight\srather\sthan\sa\sknown\sin-the-wild\sproblem.
+D 2025-07-30T16:17:14.491
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -652,7 +652,7 @@ F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 0f68a64e508598910e7c01214ae27d60
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 4ab0704ee198de7d1059eccedc7703c931510b588d10af0ee36ea5b3ebbac284
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js e809739d71e8b35dfe1b55d24d91f02d04239e6aef7ca1ea92a15a29e704f616
 F ext/wasm/api/sqlite3-wasm.c 292db8be42a6ba29a7df2cc2723553a47627853d7c1fdcf8fa37743cf5d85497
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bc65debfe43b81fc39fb25c40ad0cc1946bd82580fbf644351107b544d6177ee
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 77c97e8e91ce1c97def3715df63f20a18381135b92066a3713e99fe57bce7b14
 F ext/wasm/api/sqlite3-worker1.c-pp.js 5e8706c2c4af2a57fbcdc02f4e7ef79869971bc21bb8ede777687786ce1c92d5
 F ext/wasm/batch-runner-sahpool.html e9a38fdeb36a13eac7b50241dfe7ae066fe3f51f5c0b0151e7baee5fce0d07a7
 F ext/wasm/batch-runner-sahpool.js 54a3ac228e6c4703fe72fb65c897e19156263a51fe9b7e21d2834a45e876aabd
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6d2a43075fda9c4eae28f9ca4aaf459c41d305c861947a47fb2cbd513249c4b9
-R f915f285b72eb6ae8f21e175cf12c94f
+P f5e2a72c57e802c5042ab8343e5009ba9f22ca7138a1c78f4b8201ab9b4fd395
+R 8c371ecac0a6a7acf2b8a57c93367701
 U stephan
-Z 50a318d35c1473bfa60947fbe8367fb4
+Z 8271d416ee5da042bfbdb9ea76cb8cf5
 # Remove this line to create a well-formed Fossil manifest.
