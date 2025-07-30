@@ -1,5 +1,5 @@
-C Fix\sSQLITE_OMIT_WAL\sbuilds\son\swindows.
-D 2025-07-29T11:04:32.082
+C Enhance\sthe\sprintf\sformatter\sfor\s%#f\ssuch\sthat\sthe\sminus\ssign\sis\somitted\nif\sthe\s'+'\sis\smissing\sand\sall\sdigits\sshown\sin\sthe\srendering\sare\szero.\nThus,\sfor\sexample,\s'%#.2f'\srenders\s-0.004\sas\s"0.00"\sinstead\sof\s"-0.00".
+D 2025-07-30T13:37:49.658
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -782,7 +782,7 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
 F src/pragma.c 30b535d0a66348df844ee36f890617b4cf45e9a22dcbc47ec3ca92909c50aaf1
 F src/prepare.c 1832be043fce7d489959aae6f994c452d023914714c4d5457beaed51c0f3d126
-F src/printf.c 71b6d3a0093bf23f473e25480ca0024e8962681506c75f4ffd3d343a3f0ab113
+F src/printf.c 5f0c957af9699e849d786e8fbaa3baab648ca5612230dc17916434c14bc8698f
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c e344c0ff75db05acd80a81ab090547d28d0e990f6f411a428d429183a7c73927
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02b241bc4ce72d50a8d7621a663e759443b532a5ff9354fc3266ad6bb9433ed4
-R 1e3435bd8556ee014a650c41831f11d3
-U dan
-Z 62500e94d9c68e3a0eb8d9b15d9a338e
+P 575271c3ae53c64784a2aa1e9b7c6cdcb0402022967155dd176a6b1f1e560b50
+R da2d87335cfe87b22f4e2c237c3ffa0c
+U drh
+Z 40e2e6d0c71b15c3369bf3e06e4b43eb
 # Remove this line to create a well-formed Fossil manifest.
