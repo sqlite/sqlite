@@ -541,9 +541,12 @@ static void blobListLoadFromDb(
   int n = 0;
   int rc;
   char *z2;
-  unsigned char tmp[SZ_BLOB(8)];
+  union {
+    unsigned char tmp[SZ_BLOB(8)];
+    Blob * sBlob;
+  } uBlob;
 
-  head = (Blob*)tmp;
+  head = &uBlob.sBlob;
   if( firstId>0 ){
     z2 = sqlite3_mprintf("%s WHERE rowid BETWEEN %d AND %d", zSql,
                          firstId, lastId);

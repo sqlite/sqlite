@@ -6822,10 +6822,13 @@ int sqlite3Fts5IndexRollback(Fts5Index *p){
 */
 int sqlite3Fts5IndexReinit(Fts5Index *p){
   Fts5Structure *pTmp;
-  u8 tmpSpace[SZ_FTS5STRUCTURE(1)];
+  union {
+    u8 tmpSpace[SZ_FTS5STRUCTURE(1)];
+    Fts5Structure sFts;
+  } uFts;
   fts5StructureInvalidate(p);
   fts5IndexDiscardData(p);
-  pTmp = (Fts5Structure*)tmpSpace;
+  pTmp = &uFts.sFts;
   memset(pTmp, 0, SZ_FTS5STRUCTURE(1));
   if( p->pConfig->bContentlessDelete ){
     pTmp->nOriginCntr = 1;
