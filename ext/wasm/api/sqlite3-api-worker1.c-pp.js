@@ -385,8 +385,9 @@ sqlite3.initWorker1API = function(){
   const getDbId = function(db){
     let id = wState.idMap.get(db);
     if(id) return id;
-    id = 'db#'+(++wState.idSeq)+'@'+db.pointer+':'+
-      Math.floor(Math.random() * 10000000);
+    id = 'db#'+(++wState.idSeq)+':'+
+      Math.floor(Math.random() * 100000000)+':'+
+      Math.floor(Math.random() * 100000000);
     /** ^^^ can't simply use db.pointer b/c closing/opening may re-use
         the same address, which could map pending messages to a wrong
         instance.
