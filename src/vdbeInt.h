@@ -558,8 +558,8 @@ struct PreUpdate {
   Index *pPk;                     /* PK index if pTab is WITHOUT ROWID */
   sqlite3_value **apDflt;         /* Array of default values, if required */
   union {
-    u8 keyinfoSpace[SZ_KEYINFO_0];  /* Space to hold pKeyinfo[0] content */
     KeyInfo sKey;
+    u8 keyinfoSpace[SZ_KEYINFO_0];  /* Space to hold pKeyinfo[0] content */
   } uKey;
 };
 

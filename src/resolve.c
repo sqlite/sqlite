@@ -2284,8 +2284,8 @@ int sqlite3ResolveSelfReference(
   NameContext sNC;                /* Name context for pParse->pNewTable */
   int rc;
   union {
-    u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
     SrcList sSrc;
+    u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
   } uSrc;
 
   assert( type==0 || pTab!=0 );

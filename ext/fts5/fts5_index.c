@@ -6823,8 +6823,8 @@ int sqlite3Fts5IndexRollback(Fts5Index *p){
 int sqlite3Fts5IndexReinit(Fts5Index *p){
   Fts5Structure *pTmp;
   union {
-    u8 tmpSpace[SZ_FTS5STRUCTURE(1)];
     Fts5Structure sFts;
+    u8 tmpSpace[SZ_FTS5STRUCTURE(1)];
   } uFts;
   fts5StructureInvalidate(p);
   fts5IndexDiscardData(p);

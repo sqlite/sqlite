@@ -1041,8 +1041,8 @@ static void codeReturningTrigger(
   Select sSelect;
   SrcList *pFrom;
   union {
-    u8 fromSpace[SZ_SRCLIST_1];
     SrcList sSrc;
+    u8 fromSpace[SZ_SRCLIST_1];
   } uSrc;
 
   assert( v!=0 );

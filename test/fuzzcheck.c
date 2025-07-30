@@ -542,8 +542,8 @@ static void blobListLoadFromDb(
   int rc;
   char *z2;
   union {
-    unsigned char tmp[SZ_BLOB(8)];
     Blob * sBlob;
+    unsigned char tmp[SZ_BLOB(8)];
   } uBlob;
 
   head = &uBlob.sBlob;

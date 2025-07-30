@@ -2846,8 +2846,8 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   SrcItem *pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
   SrcList *pFrom;
   union {
-    u8 fromSpace[SZ_SRCLIST_1];
     SrcList sSrc;
+    u8 fromSpace[SZ_SRCLIST_1];
   } uSrc;
   Bitmask mAll = 0;
   int k;
