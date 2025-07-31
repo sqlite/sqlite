@@ -130,12 +130,10 @@
 
    Notable shortcomings:
 
-   - This API was not designed with ES6 modules in mind. Neither Firefox
-     nor Safari support, as of March 2023, the {type:"module"} flag to the
-     Worker constructor, so that particular usage is not something we're going
-     to target for the time being:
-
-     https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker
+   - "v1" of this this API is not suitable for use as an ESM module
+     because ESM worker modules were not widely supported when it was
+     developed. For use as an ESM module, see the "v2" interface later
+     on in this file.
 */
 globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   // Inspired by: https://stackoverflow.com/a/52439530
@@ -296,7 +294,7 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
    after calling the original function and will reject if that
    function throws.
 */
-globalThis.sqlite3Worker1Promiser.v2 = function(config){
+globalThis.sqlite3Worker1Promiser.v2 = function callee(config = callee.defaultConfig){
   let oldFunc;
   if( 'function' == typeof config ){
     oldFunc = config;
@@ -326,8 +324,8 @@ globalThis.sqlite3Worker1Promiser.v2 = function(config){
   }
   return p;
 }.bind({
-   /* We do this because clients are
-      recommended to delete globalThis.sqlite3Worker1Promiser. */
+   /* We do this because clients are recommended to delete
+      globalThis.sqlite3Worker1Promiser. */
   original: sqlite3Worker1Promiser
 });
 
