@@ -1,5 +1,5 @@
-C On\sMacOS,\swhen\sincreasing\sthe\ssize\sof\sfiles\son\sFAT\sfilesystems\sfrom\s0\sto\n1\sbyte\sin\sorder\sto\spreserve\stheir\sinode\snumbers,\sbe\ssure\sto\sfsync()\sthe\sfile.
-D 2025-07-31T09:45:20.542
+C Generic\sJS\sdoc\stouchups.\sNo\sfunctional\schanges.
+D 2025-07-31T09:54:09.266
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -662,7 +662,7 @@ F ext/wasm/c-pp.c cca55c5b55ebd8d29916adbedb0e40baa12caa9a2e8429f812683c308f9b0e
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js 5e7fe4a2547831e003356c201ca28d9a0d6a19ab1fe2c8f63f82464fecd2cef7
+F ext/wasm/common/whwasmutil.js ea50e847cf08c2a96694f87d00b49fb97ee5fe62c15439cc269c8e1d9ab74c0a
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 690a7273226df361f3eaa90f9b693ba554ed9d9456c19c5d3a12e812eca49eab
-R d4aef54d6dd43fb593bc4cad266b8b5b
-U drh
-Z f5883cbd9c5a53d83efc790037082370
+P 727efa8559852012cf3381baf5fcb1da198ff27d8856ce7b813920b99367dee5
+R b91243d3d9641ec901267c036e6a595b
+U stephan
+Z 944bd25e3ef8093c9459c88bcc01d927
 # Remove this line to create a well-formed Fossil manifest.
