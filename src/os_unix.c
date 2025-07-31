@@ -1452,6 +1452,10 @@ static int findInodeInfo(
       storeLastErrno(pFile, errno);
       return SQLITE_IOERR;
     }
+    if( fsync(fd) ){
+      storeLastErrno(pFile, errno);
+      return SQLITE_IOERR_FSYNC;
+    }
     rc = osFstat(fd, &statbuf);
     if( rc!=0 ){
       storeLastErrno(pFile, errno);

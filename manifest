@@ -1,5 +1,5 @@
-C Minor\sdoc\sand\sconsistency\simprovements\sto\s[cf7163f82ca380958].
-D 2025-07-31T07:44:18.230
+C On\sMacOS,\swhen\sincreasing\sthe\ssize\sof\sfiles\son\sFAT\sfilesystems\sfrom\s0\sto\n1\sbyte\sin\sorder\sto\spreserve\stheir\sinode\snumbers,\sbe\ssure\sto\sfsync()\sthe\sfile.
+D 2025-07-31T09:45:20.542
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -771,7 +771,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 04e054ab86d86a7be99ebe5265922687791a40df5afc781d059beb47f4a40acd
+F src/os_unix.c 690107e26cc4e9809eeb9826c0efdbff4a42b9cc59d0f0b855ca3e6021e1ae73
 F src/os_win.c 7ac69df49d2ff0432b9c96fd2d9a17a100cced6860479e584cd3337e18d09334
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 23c0f17deb892da6b32fef1f465507df7ab5cd01d774288cb43695658a649259
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cf7163f82ca380958a79350473b2c5a2cebda7496d6d575fa2835c362010fea1
-R 2fb5a5547d7841f7e1b05f828cb9ca9e
-U stephan
-Z 230623fec1b50327337a38141f51cf96
+P 690a7273226df361f3eaa90f9b693ba554ed9d9456c19c5d3a12e812eca49eab
+R d4aef54d6dd43fb593bc4cad266b8b5b
+U drh
+Z f5883cbd9c5a53d83efc790037082370
 # Remove this line to create a well-formed Fossil manifest.
