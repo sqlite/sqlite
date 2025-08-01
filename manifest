@@ -1,5 +1,5 @@
-C Make\sthe\sUPDATE\smethod\sof\sthe\ssqlite_dbpage\svirtual\stable\srebust\sagainst\nOOM\serrors.\s\s[forum:/forumpost/bbcf0dd6ca|Forum\spost\sbbcf0dd6ca].\s\sTest\scase\nin\sTH3.
-D 2022-10-31T18:11:12.230
+C Fix\sthe\ssame\spotential\sinteger\soverflow\sproblem\sthat\swas\sjust\sfixed\sin\sthe\n3.32\sbranch,\sbut\sin\sthe\s3.39\sbranch\sthis\stime.\s\sAlso\sincrease\sthe\spatch\nlevel\shere\sin\sthe\s3.39\sbranch.
+D 2025-08-01T13:22:00.727
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 4e1cacdce04497567464116cf5798674e8a21e15b4d44838ceaa8a49c527028c
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc de7cb3e095ce2fdc33513ccd76ebdaeda1483d0ddab0410fe65cbdeadd4c0ee1
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
-F VERSION efb20175b80d1d5a2bd37eb34527741d1bf1b10e1ea5f666f405d2bfaacb9697
+F VERSION e497e7563e6a44e22251d937ed737b69a51ca737057d688d652b0e16ee2230ff
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -34,7 +34,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.h.in 6376abec766e9a0785178b1823b5a587e9f1ccbc
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure c99d423ee68ba30155a435788b0ca0495ca9869d87ebb5be02d3941de7979938 x
+F configure c8216ef9c49441ea95be67e60aa063cf2a85387feac688a09e66867b9db36bac x
 F configure.ac 3ef6eeff4387585bfcab76b0c3f6e15a0618587bb90245dd5d44e4378141bb35
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -521,7 +521,7 @@ F src/date.c 15082566229d4b1e5f24fdb490bf9bcc68824b911d70e3573ef075a1b9e2d26f
 F src/dbpage.c 45da60c5d9a635fd911cc9cceb49ec6179f63820a64e3d204e603420e58687bf
 F src/dbstat.c 861e08690fcb0f2ee1165eff0060ea8d4f3e2ea10f80dab7d32ad70443a6ff2d
 F src/delete.c a8e844af211a48b13b5b358be77a12c860c6a557c21990ad51a548e2536500ce
-F src/expr.c 4907afcb86d72b5525d8767515ce425ec53c7a2d3664441b46cef5b376ee0cba
+F src/expr.c 79e1423d289b92ed278749574db149ec7186cf34611a41ae7bb38bf80ab23b64
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c d965ede15d8360c09ed59348940649ee647b192e784466837d7aefa836d1d91e
 F src/func.c 8b7ac5934fa3dde84ce1fcb82824cb26366097adb91a6739644b7686cc3750ff
@@ -1980,9 +1980,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d6893183c281301e1b2feb13e321694a5c16d1eccb8ca527e2b3bce5b5a8b753
-Q +d15c9a4a323b825eb80e706e12e9df95e5db458024f51e6e537940efc8234d8b
-R dc348a7f4184bc9a5a36ff0b44c5b7cd
+P 852f2c95833e3e853016aaaa15dd2a8c7b2cd886f6e6bee2f38e34536b093819
+Q +ff6b0ddf04e61de143afcd9867ee35317f92e83dfcae98bdd47dddc70d4ca44f
+R a8a598c518d4ca3e0fa9b5a48c3ef847
 U drh
-Z a1ffb12a875b558426b139aadfd0b50d
+Z 66555c85f7a5461113e0dba426883caa
 # Remove this line to create a well-formed Fossil manifest.

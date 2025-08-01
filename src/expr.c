@@ -6242,7 +6242,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             ExprSetVVAProperty(pExpr, EP_NoReduce);
             pExpr->pAggInfo = pAggInfo;
             pExpr->op = TK_AGG_COLUMN;
-            pExpr->iAgg = (i16)k;
+            pExpr->iAgg = (i16)(k&0x7fff);
             break;
           } /* endif pExpr->iTable==pItem->iCursor */
         } /* end loop over pSrcList */
