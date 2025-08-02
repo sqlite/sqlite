@@ -13,7 +13,7 @@
       /* The following styles are for app-level use. */
       :root {
           --sqlite-blue: #044a64;
-          --textarea-color1: #044a64;
+          --textarea-color1: #000 /*044a64 is nice too*/;
           --textarea-color2: white;
       }
       textarea {
@@ -170,6 +170,17 @@
           display: flex;
           flex-direction: column-reverse;
       }
+      #view-about {
+        flex: auto;
+        overflow: auto;
+      }
+      #view-about h1:first-child {
+        display: flex;
+      }
+      #view-about h1:first-child > button {
+        align-self: center;
+        margin-left: 1em;
+      }
 
       /* emcscript-related styling, used during the module load/intialization processes... */
       .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
@@ -215,7 +226,7 @@
     </figure>
     <div class="emscripten" id="module-status">Downloading...</div>
     <div class="emscripten">
-      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>
     </div><!-- /emscripten bits -->
 
     <div id='view-terminal' class='app-view hidden initially-hidden'>
@@ -261,6 +272,9 @@
           <span class='labeled-input'>
             <button id='btn-reset'>Reset DB</button>
           </span>
+          <span class='labeled-input'>
+            <button id='btn-about'>About...</button>
+          </span>
         </div>
       </fieldset><!-- .options -->
       <div id='main-wrapper' class=''>
@@ -295,8 +309,55 @@
           <div><textarea id="output" readonly
                          placeholder="Shell output."></textarea></div>
         </fieldset>
-      </div>
+      </div><!-- #main-wrapper -->
+
+<div class='hidden' id='view-about'>
+  <h1>About SQLite Fiddle <button id='btn-about-close'>close</button></h1>
+
+  <p>Fiddle is a JavaScript application wrapping a <a href='https://webassembly.org'>WebAssembly</a>
+    build of <a href="https://sqlite.org/cli.html">the SQLite CLI shell</a>, slightly
+    modified to account for browser-based user input. Aside from the different layout,
+    it works just like the CLI shell. This copy was built with SQLite version
+    <a id='sqlite-version-link'></a>.
+  </p>
+
+  <p>This app is provided in the hope that it may prove interesting or useful
+    but it is not an officially-supported deliverable of the SQLite project.
+    It is subject to any number of changes or outright removal at any time.
+    That said, for as long as it's online we do respond to support requests
+    in <a href="https://sqlite.org/forum">the SQLite forum</a>.
+  </p>
+
+  <p>This app runs on your device. After loading, it does not interact
+    with the remote server at all. Similarly, this app does not use any
+    HTTP cookies.</p>
+
+  <p>Fiddle databases are transient in-memory databases unless they
+    specifically use a persistent storage option (if available, help
+    text in the SQL result output area will indicate how to use
+    persistent storage when this app starts up).
+  </p>
+
+  <h1>Usage Summary</h1>
+
+  <ul>
+    <li>Input can be run with either the Run button or tapping one of
+      Ctrl-enter or Shift-enter from within the text input field.
+      If a portion of the input field is selected, only that portion will be run.
+    </li>
+    <li>The various toggle checkboxes can be used to tweak the layout.
+      Those toggles are persistent if the JS environment allows it.</li>
+    <li>Databases can be imported and exported using the buttons in
+      the Options toolbar. No specific limit for imported database
+      sizes is imposed, but large databases may cause it to fail with
+      an out-of-memory error.</li>
+    <!--li></li-->
+  </ul>
+
+</div><!-- #view-about -->
+
     </div> <!-- #view-split -->
-    <script src="fiddle.js"></script>
+
+<script src="fiddle.js"></script>
   </body>
 </html>

@@ -329,6 +329,21 @@
   SF.worker = new Worker('fiddle-worker.js'+self.location.search);
   SF.worker.onmessage = (ev)=>SF.runMsgHandlers(ev.data);
   SF.addMsgHandler(['stdout', 'stderr'], (ev)=>SF.echo(ev.data));
+  SF.addMsgHandler('sqlite-version', (ev)=>{
+    const v = ev.data;
+    const a = E('#sqlite-version-link');
+    const li = v.srcId.split(' ')/*DATE TIME HASH*/;
+    a.setAttribute('href',
+                   //'https://sqlite.org/src/timeline/?c='+li[2].substr(0,20)
+                   'https://sqlite.org/src/info/'+li[2].substr(0,20)
+                  );
+    a.setAttribute('target', '_blank');
+    a.innerText = [
+      v.lib,
+      v.srcId.substr(0,34)
+    ].join(' ');
+    SF.echo("SQLite version",a.innerText);
+  });
 
   /* querySelectorAll() proxy */
   const EAll = function(/*[element=document,] cssSelector*/){
@@ -391,6 +406,16 @@
     self.onSFLoaded();
   });
 
+
+  /** Toggle the "About" view on and off. */
+  SF.toggleAbout = function(){
+    this.eOther.classList.toggle('hidden');
+    this.eAbout.classList.toggle('hidden');
+  }.bind({
+    eOther: E("#main-wrapper"),
+    eAbout: E("#view-about")
+  });
+
   /**
      Performs all app initialization which must wait until after the
      worker module is loaded. This function removes itself when it's
@@ -400,7 +425,13 @@
     delete this.onSFLoaded;
     // Unhide all elements which start out hidden
     EAll('.initially-hidden').forEach((e)=>e.classList.remove('initially-hidden'));
+    if( (new URL(self.location.href).searchParams).has('about') ){
+      SF.toggleAbout() /* for use while editing the About page */;
+    }
     E('#btn-reset').addEventListener('click',()=>SF.resetDb());
+    EAll('#btn-about, #btn-about-close').forEach((e)=>{
+      e.addEventListener('click',()=>SF.toggleAbout())
+    });
     const taInput = E('#input');
     const btnClearIn = E('#btn-clear');
     const selectExamples = E('#select-examples');
@@ -810,10 +841,6 @@
       }, false);
       btnToggleView.click()/*default to terminal view*/;
     }
-    SF.echo('This experimental app is provided in the hope that it',
-            'may prove interesting or useful but is not an officially',
-            'supported deliverable of the sqlite project. It is subject to',
-            'any number of changes or outright removal at any time.\n');
     const urlParams = new URL(self.location.href).searchParams;
     SF.dbExec(urlParams.get('sql') || null);
     delete ForceResizeKludge.$disabled;
