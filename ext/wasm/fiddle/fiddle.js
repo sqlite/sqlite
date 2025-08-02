@@ -857,6 +857,12 @@
         prompt: 'sqlite> ',
         greetings: false /* note that the docs incorrectly call this 'greeting' */
       });
+      EAll('.unhide-if-terminal-available').forEach(e=>{
+        e.classList.remove('hidden');
+      });
+      EAll('.remove-if-terminal-available').forEach(e=>{
+        e.parentElement.removeChild(e);
+      });
       /* Set up a button to toggle the views... */
       const ePlaceholder = E('#terminal-button-placeholder');
       ePlaceholder.classList.add('labeled-input');

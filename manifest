@@ -1,5 +1,5 @@
-C Fiddle:\smake\sthe\stoolbar\svisible\sin\sterminal\smode\sand\shide\snon-terminal-mode\soptions\swhen\sin\sterminal\smode.\sMove\sthe\sterminal/split-view\stoggle\sbutton\sinto\sthe\stoolbar.\sImprove\sthe\sview-switching\shandling.
-D 2025-08-02T14:50:01.640
+C Fiddle:\smove\sthe\sAbout\sbutton\sinto\sthe\smain\stoolbar.\sExtend\sthe\sAbout\stext\swith\ssome\sinfo\swhich\sonly\sshows\sup\s(or\sis\sonly\shidden)\swhen\sterminal\smode\sis\savailable.
+D 2025-08-02T15:04:50.593
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -677,8 +677,8 @@ F ext/wasm/dist.make c29018b4db479a4c170569393e5399f0625446123a7eb6ffb0677495292
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make ea505d11aa2a89551e1693ed4c71ee6a163364ca14f806dda295d0beb26ec0ea
 F ext/wasm/fiddle/fiddle-worker.js 50d3edf54c0c0e3657e876724ec2c10069f55f3e40af20864d72f6f6e9ad00f8
-F ext/wasm/fiddle/fiddle.js 7d98ce039cdaf0e34772361ef79ee72a608554770d9391d9aeadd117607c3aa5
-F ext/wasm/fiddle/index.html b9b8bdc37214f966a414ec566bacebeac2b425fc9658c53f45ae210e2039936a
+F ext/wasm/fiddle/fiddle.js f0b96f978c7c77fea8d092aa79c77849ce111d7b1ba60ffba07675009682184e
+F ext/wasm/fiddle/index.html 17c7d6b21f40fbf462162c4311b63d760b065e419d9f5a96534963b0e52af940
 F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf188f024b3730
 F ext/wasm/index.html bcaa00eca521b372a6a62c7e7b17a870b0fcdf3e418a5921df1fd61e5344080d
 F ext/wasm/jaccwabyt/jaccwabyt.js 6e4f26d0edb5c2e7d381b7eff1924832a040a12274afab2d1e1789027e9f6c5c
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9639382c5478115df7c1584c14a52c176fe747df73078419be4ab276374a704b
-R 8d2d94cbe7f96cac1102d564c99cc715
+P 711bf423d213a2c468c32a48c0b09927cdfdffce36e5e4a3b35a32bfa055ff82
+R 78d40edece46f48f12d0d08dcbfbca72
 U stephan
-Z 882bf2c74441b066f7345e22ae8890dc
+Z be5d83daca712789271a5e58183726be
 # Remove this line to create a well-formed Fossil manifest.

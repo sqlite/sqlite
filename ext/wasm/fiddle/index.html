@@ -225,7 +225,6 @@
       <span id='titlebar-buttons'>
         <span class='powered-by'>Powered by
           <a href='https://sqlite.org'>SQLite3</a></span>
-        <button id='btn-about'>About...</button>
       </span>
     </header>
     <!-- emscripten bits -->
@@ -314,12 +313,24 @@
   <h1>Usage Summary</h1>
 
   <ul>
-    <li>Input can be run with either the Run button or tapping one of
-      Ctrl-enter or Shift-enter from within the text input field.
-      If a portion of the input field is selected, only that portion will be run.
+    <li class='hidden unhide-if-terminal-available'>In "terminal
+      mode" it accepts input just like the CLI shell does.</li>
+    <li>In split-view mode:
+      <ul>
+        <li>Input can be executed with either the Run
+          button or tapping one of Ctrl-enter or Shift-enter from within
+          the text input field.  If a portion of the input field is
+          selected, only that portion will be run.
+        </li>
+        <li>The various toggle checkboxes can be used to tweak the layout
+          and behaviors. Those toggles are persistent if the JS environment
+          allows it.
+        </li>
+      </ul>
     </li>
-    <li>The various toggle checkboxes can be used to tweak the layout.
-      Those toggles are persistent if the JS environment allows it.</li>
+    <li class='remove-if-terminal-available'>"Terminal mode" is
+      not available in this deployment.
+    </li>
     <li>Databases can be imported and exported using the buttons in
       the Options toolbar. No specific limit for imported database
       sizes is imposed, but large databases may cause it to fail with
@@ -343,6 +354,9 @@
       <button id='btn-reset'>Reset DB</button>
     </span>
     <span id='terminal-button-placeholder' class='hidden'></span>
+    <span class='labeled-input'>
+      <button id='btn-about'>About...</button>
+    </span>
     <span class='labeled-input hide-in-terminal'>
       <input type='checkbox' id='opt-cb-sbs'
              data-csstgt='#main-wrapper'
