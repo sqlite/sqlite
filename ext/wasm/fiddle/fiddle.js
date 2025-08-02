@@ -406,18 +406,142 @@
     self.onSFLoaded();
   });
 
+  SF.e ={
+    about: E('#view-about'),
+    split: E('#view-split'),
+    terminal: E('#view-terminal'),
+    hideInTerminal: EAll('.hide-in-terminal'
+                         /* Elements to hide when in terminal mode */)
+  };
+  SF.eViews = EAll('.app-view');
+  SF.setMainView = function(eMain){
+    if( SF.e.main === eMain ) return;
+    SF.eViews.forEach((e)=>{
+      if( e===eMain ) e.classList.remove('hidden');
+      else e.classList.add('hidden');
+    });
+    SF.e.hideInTerminal.forEach(e=>{
+      if( eMain === SF.e.terminal ) e.classList.add('hidden');
+      else e.classList.remove('hidden');
+    });
+    SF.e.main = eMain;
+    SF.ForceResizeKludge();
+  };
+
   /** Toggle the "About" view on and off. */
   SF.toggleAbout = function(){
-    if( document.body.classList.toggle('about') ){
-      this.eAbout.classList.remove('hidden');
-      SF.eMainView.classList.add('hidden');
+    if( SF.e.about.classList.contains('hidden') ){
+      SF.e.about.$returnTo = SF.e.main;
+      SF.setMainView( SF.e.about );
     }else{
-      this.eAbout.classList.add('hidden');
-      SF.eMainView.classList.remove('hidden');
+      const e = SF.e.about.$returnTo;
+      delete SF.e.about.$returnTo;
+      SF.setMainView( e );
     }
-  }.bind({
-    eAbout: E("#view-about")
-  });
+  };
+
+  /**
+     Given a DOM element, this routine measures its "effective
+     height", which is the bounding top/bottom range of this element
+     and all of its children, recursively. For some DOM structure
+     cases, a parent may have a reported height of 0 even though
+     children have non-0 sizes.
+
+     Returns 0 if !e or if the element really has no height.
+  */
+  const effectiveHeight = function f(e){
+    if(!e) return 0;
+    if(!f.measure){
+      f.measure = function callee(e, depth){
+        if(!e) return;
+        const m = e.getBoundingClientRect();
+        if(0===depth){
+          callee.top = m.top;
+          callee.bottom = m.bottom;
+        }else{
+          callee.top = m.top ? Math.min(callee.top, m.top) : callee.top;
+          callee.bottom = Math.max(callee.bottom, m.bottom);
+        }
+        Array.prototype.forEach.call(e.children,(e)=>callee(e,depth+1));
+        if(0===depth){
+          //console.debug("measure() height:",e.className, callee.top, callee.bottom, (callee.bottom - callee.top));
+          f.extra += callee.bottom - callee.top;
+        }
+        return f.extra;
+      };
+    }
+    f.extra = 0;
+    f.measure(e,0);
+    return f.extra;
+  };
+
+  /**
+     Returns a function, that, as long as it continues to be invoked,
+     will not be triggered. The function will be called after it stops
+     being called for N milliseconds. If `immediate` is passed, call
+     the callback immediately and hinder future invocations until at
+     least the given time has passed.
+
+     If passed only 1 argument, or passed a falsy 2nd argument,
+     the default wait time set in this function's $defaultDelay
+     property is used.
+
+     Source: underscore.js, by way of https://davidwalsh.name/javascript-debounce-function
+  */
+  const debounce = function f(func, wait, immediate) {
+    var timeout;
+    if(!wait) wait = f.$defaultDelay;
+    return function() {
+      const context = this, args = Array.prototype.slice.call(arguments);
+      const later = function() {
+        timeout = undefined;
+        if(!immediate) func.apply(context, args);
+      };
+      const callNow = immediate && !timeout;
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+      if(callNow) func.apply(context, args);
+    };
+  };
+  debounce.$defaultDelay = 500 /*arbitrary*/;
+
+  SF.ForceResizeKludge = (function(){
+    /* Workaround for Safari mayhem regarding use of vh CSS
+       units....  We cannot use vh units to set the main view
+       size because Safari chokes on that, so we calculate
+       that height here. Larger than ~95% is too big for
+       Firefox on Android, causing the input area to move
+       off-screen. */
+    const eVisibles = EAll('.app-view');
+    const elemsToCount = [
+      /* Elements which we need to always count in the
+         visible body size. */
+      E('body > header'),
+      E('body > footer'),
+      E('body > fieldset.options')
+    ];
+    const resized = function f(){
+      if(f.$disabled) return;
+      const wh = window.innerHeight;
+      var ht;
+      var extra = 0;
+      elemsToCount.forEach((e)=>e ? extra += effectiveHeight(e) : false);
+      ht = wh - extra;
+      eVisibles.forEach(function(e){
+        e.style.height =
+          e.style.maxHeight = [
+            "calc(", (ht>=100 ? ht : 100), "px",
+            " - 2em"/*fudge value*/,")"
+            /* ^^^^ hypothetically not needed, but both
+               Chrome/FF on Linux will force scrollbars on the
+               body if this value is too small. */
+          ].join('');
+      });
+    };
+    resized.$disabled = true/*gets deleted when setup is finished*/;
+    window.addEventListener('resize', debounce(resized, 250), false);
+    return resized;
+  })();
 
   /**
      Performs all app initialization which must wait until after the
@@ -426,9 +550,10 @@
   */
   self.onSFLoaded = function(){
     delete this.onSFLoaded;
+
     // Unhide all elements which start out hidden
     EAll('.initially-hidden').forEach((e)=>e.classList.remove('initially-hidden'));
-    SF.eMainView = EAll('.app-view:not(.hidden)')[0]
+    SF.e.main = EAll('.app-view:not(.hidden)')[0]
         /** The main view widget. Initially the first non-hidden
             .app-view element. */;
     if( (new URL(self.location.href).searchParams).has('about') ){
@@ -655,108 +780,6 @@
       }, false);
     });
 
-    /**
-       Given a DOM element, this routine measures its "effective
-       height", which is the bounding top/bottom range of this element
-       and all of its children, recursively. For some DOM structure
-       cases, a parent may have a reported height of 0 even though
-       children have non-0 sizes.
-
-       Returns 0 if !e or if the element really has no height.
-    */
-    const effectiveHeight = function f(e){
-      if(!e) return 0;
-      if(!f.measure){
-        f.measure = function callee(e, depth){
-          if(!e) return;
-          const m = e.getBoundingClientRect();
-          if(0===depth){
-            callee.top = m.top;
-            callee.bottom = m.bottom;
-          }else{
-            callee.top = m.top ? Math.min(callee.top, m.top) : callee.top;
-            callee.bottom = Math.max(callee.bottom, m.bottom);
-          }
-          Array.prototype.forEach.call(e.children,(e)=>callee(e,depth+1));
-          if(0===depth){
-            //console.debug("measure() height:",e.className, callee.top, callee.bottom, (callee.bottom - callee.top));
-            f.extra += callee.bottom - callee.top;
-          }
-          return f.extra;
-        };
-      }
-      f.extra = 0;
-      f.measure(e,0);
-      return f.extra;
-    };
-
-    /**
-       Returns a function, that, as long as it continues to be invoked,
-       will not be triggered. The function will be called after it stops
-       being called for N milliseconds. If `immediate` is passed, call
-       the callback immediately and hinder future invocations until at
-       least the given time has passed.
-
-       If passed only 1 argument, or passed a falsy 2nd argument,
-       the default wait time set in this function's $defaultDelay
-       property is used.
-
-       Source: underscore.js, by way of https://davidwalsh.name/javascript-debounce-function
-    */
-    const debounce = function f(func, wait, immediate) {
-      var timeout;
-      if(!wait) wait = f.$defaultDelay;
-      return function() {
-        const context = this, args = Array.prototype.slice.call(arguments);
-        const later = function() {
-          timeout = undefined;
-          if(!immediate) func.apply(context, args);
-        };
-        const callNow = immediate && !timeout;
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-        if(callNow) func.apply(context, args);
-      };
-    };
-    debounce.$defaultDelay = 500 /*arbitrary*/;
-
-    const ForceResizeKludge = (function(){
-      /* Workaround for Safari mayhem regarding use of vh CSS
-         units....  We cannot use vh units to set the main view
-         size because Safari chokes on that, so we calculate
-         that height here. Larger than ~95% is too big for
-         Firefox on Android, causing the input area to move
-         off-screen. */
-      const appViews = EAll('.app-view');
-      const elemsToCount = [
-        /* Elements which we need to always count in the
-           visible body size. */
-        E('body > header'),
-        E('body > footer')
-      ];
-      const resized = function f(){
-        if(f.$disabled) return;
-        const wh = window.innerHeight;
-        var ht;
-        var extra = 0;
-        elemsToCount.forEach((e)=>e ? extra += effectiveHeight(e) : false);
-        ht = wh - extra;
-        appViews.forEach(function(e){
-          e.style.height =
-            e.style.maxHeight = [
-              "calc(", (ht>=100 ? ht : 100), "px",
-              " - 2em"/*fudge value*/,")"
-              /* ^^^^ hypothetically not needed, but both
-                 Chrome/FF on Linux will force scrollbars on the
-                 body if this value is too small. */
-            ].join('');
-        });
-      };
-      resized.$disabled = true/*gets deleted when setup is finished*/;
-      window.addEventListener('resize', debounce(resized, 250), false);
-      return resized;
-    })();
-
     /** Set up a selection list of examples */
     (function(){
       const xElem = E('#select-examples');
@@ -827,38 +850,29 @@
     })()/* example queries */;
 
     //SF.echo(null/*clear any output generated by the init process*/);
-    if(window.jQuery && window.jQuery.terminal){
+    if(window.jQuery && window.jQuery.terminal && SF.e.terminal){
       /* Set up the terminal-style view... */
-      const eTerm = E('#view-terminal');
-      const jqeTerm = window.jQuery(eTerm).empty();
+      const jqeTerm = window.jQuery(SF.e.terminal).empty();
       SF.jqTerm = jqeTerm.terminal(SF.dbExec.bind(SF),{
         prompt: 'sqlite> ',
         greetings: false /* note that the docs incorrectly call this 'greeting' */
       });
       /* Set up a button to toggle the views... */
-      const head = E('#titlebar-buttons');
+      const ePlaceholder = E('#terminal-button-placeholder');
+      ePlaceholder.classList.add('labeled-input');
+      ePlaceholder.classList.remove('hidden');
       const btnToggleView = document.createElement('button');
-      btnToggleView.appendChild(document.createTextNode("Toggle View"));
-      head.appendChild(btnToggleView);
-      const eOthers = EAll('.app-view:not(#view-terminal)');
-      const eOtherMain = E('#view-split');
+      btnToggleView.innerText = "Toggle view";
+      ePlaceholder.appendChild( btnToggleView );
       btnToggleView.addEventListener('click',function f(){
-        document.body.classList.remove('about');
-        if(document.body.classList.toggle('terminal-mode')){
-          eOthers.forEach((e)=>e.classList.add('hidden'));
-          SF.eMainView = eTerm;
-        }else{
-          eTerm.classList.add('hidden');
-          SF.eMainView = eOtherMain;
-        }
-        SF.eMainView.classList.remove('hidden');
-        ForceResizeKludge();
+        const terminalOn = document.body.classList.toggle('terminal-mode');
+        SF.setMainView( terminalOn ? SF.e.terminal : SF.e.split );
       }, false);
       btnToggleView.click()/*default to terminal view*/;
     }
     const urlParams = new URL(self.location.href).searchParams;
     SF.dbExec(urlParams.get('sql') || null);
-    delete ForceResizeKludge.$disabled;
-    ForceResizeKludge();
+    delete SF.ForceResizeKludge.$disabled;
+    SF.ForceResizeKludge();
   }/*onSFLoaded()*/;
 })();

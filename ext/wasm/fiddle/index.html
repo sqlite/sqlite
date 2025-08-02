@@ -249,45 +249,6 @@
     </div>
 
     <div id='view-split' class='app-view initially-hidden'>
-      <fieldset class='options collapsible'>
-        <legend><button class='fieldset-toggle'>Options</button></legend>
-        <div class=''>
-          <span class='labeled-input'>
-            <input type='checkbox' id='opt-cb-sbs'
-                   data-csstgt='#main-wrapper'
-                   data-cssclass='side-by-side'
-                   data-config='sideBySide'>
-            <label for='opt-cb-sbs'>Side-by-side</label>
-          </span>
-          <span class='labeled-input'>
-            <input type='checkbox' id='opt-cb-swapio'
-                   data-csstgt='#main-wrapper'
-                   data-cssclass='swapio'
-                   data-config='swapInOut'>
-            <label for='opt-cb-swapio'>Swap in/out</label>
-          </span>
-          <span class='labeled-input'>
-            <input type='checkbox' id='opt-cb-autoscroll'
-                   data-config='autoScrollOutput'>
-            <label for='opt-cb-autoscroll'>Auto-scroll output</label>
-          </span>
-          <span class='labeled-input'>
-            <input type='checkbox' id='opt-cb-autoclear'
-                   data-config='autoClearOutput'>
-            <label for='opt-cb-autoclear'>Auto-clear output</label>
-          </span>
-          <span class='labeled-input'>
-            <input type='file' id='load-db' class='hidden'/>
-            <button id='btn-load-db'>Load DB...</button>
-          </span>
-          <span class='labeled-input'>
-            <button id='btn-export'>Download DB</button>
-          </span>
-          <span class='labeled-input'>
-            <button id='btn-reset'>Reset DB</button>
-          </span>
-        </div>
-      </fieldset><!-- .options -->
       <div id='main-wrapper' class=''>
         <fieldset class='zone-wrapper input'>
           <legend><div class='button-bar'>
@@ -367,6 +328,50 @@
   </ul>
 
 </div><!-- #view-about -->
+
+<fieldset class='options'>
+  <legend>Options</legend>
+  <div class=''>
+    <span class='labeled-input'>
+      <input type='file' id='load-db' class='hidden'/>
+      <button id='btn-load-db'>Load DB...</button>
+    </span>
+    <span class='labeled-input'>
+      <button id='btn-export'>Download DB</button>
+    </span>
+    <span class='labeled-input'>
+      <button id='btn-reset'>Reset DB</button>
+    </span>
+    <span id='terminal-button-placeholder' class='hidden'></span>
+    <span class='labeled-input hide-in-terminal'>
+      <input type='checkbox' id='opt-cb-sbs'
+             data-csstgt='#main-wrapper'
+             data-cssclass='side-by-side'
+             data-config='sideBySide'
+             >
+      <label for='opt-cb-sbs'>Side-by-side</label>
+    </span>
+    <span class='labeled-input hide-in-terminal'>
+      <input type='checkbox' id='opt-cb-swapio'
+             data-csstgt='#main-wrapper'
+             data-cssclass='swapio'
+             data-config='swapInOut'
+             >
+      <label for='opt-cb-swapio'>Swap in/out</label>
+    </span>
+    <span class='labeled-input hide-in-terminal'>
+      <input type='checkbox' id='opt-cb-autoscroll'
+             data-config='autoScrollOutput'
+             >
+      <label for='opt-cb-autoscroll'>Auto-scroll output</label>
+    </span>
+    <span class='labeled-input hide-in-terminal'>
+      <input type='checkbox' id='opt-cb-autoclear'
+             data-config='autoClearOutput'>
+      <label for='opt-cb-autoclear'>Auto-clear output</label>
+    </span>
+  </div>
+</fieldset><!-- .options -->
 
 <script src="fiddle.js"></script>
   </body>
