@@ -5,16 +5,27 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>SQLite3 Fiddle</title>
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
-    <!-- to add a toggleable terminal-style view, uncomment the following
-         two lines and ensure that these files are on the web server. -->
+    <!--
+        To add a terminal-style view using jquery.terminal[^1],
+        uncomment the following two HTML lines and ensure that these
+        files are on the web server.
+
+        jquery-bundle.min.js is a concatenation of jquery.min.js from
+        [^2] and jquery.terminal.min.js from [^1].
+        jquery.terminal.min.css is from [^1].
+
+        [^1]: https://github.com/jcubic/jquery.terminal
+        [^2]: https://jquery.com
+    -->
     <!--script src="jqterm/jqterm-bundle.min.js"></script>
-    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/-->
+    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"-->
     <style>
       /* The following styles are for app-level use. */
       :root {
           --sqlite-blue: #044a64;
           --textarea-color1: #000 /*044a64 is nice too*/;
           --textarea-color2: white;
+          --size: 1.25 /* used by jqterm to calculate font size and the default is too tiny.*/;
       }
       textarea {
           font-family: monospace;
@@ -211,8 +222,11 @@
   <body>
     <header id='titlebar'>
       <span>SQLite3 Fiddle</span>
-      <span class='powered-by'>Powered by
-        <a href='https://sqlite.org'>SQLite3</a></span>
+      <span id='titlebar-buttons'>
+        <span class='powered-by'>Powered by
+          <a href='https://sqlite.org'>SQLite3</a></span>
+        <button id='btn-about'>About...</button>
+      </span>
     </header>
     <!-- emscripten bits -->
     <figure id="module-spinner">
@@ -272,9 +286,6 @@
           <span class='labeled-input'>
             <button id='btn-reset'>Reset DB</button>
           </span>
-          <span class='labeled-input'>
-            <button id='btn-about'>About...</button>
-          </span>
         </div>
       </fieldset><!-- .options -->
       <div id='main-wrapper' class=''>
@@ -310,8 +321,9 @@
                          placeholder="Shell output."></textarea></div>
         </fieldset>
       </div><!-- #main-wrapper -->
+    </div> <!-- #view-split -->
 
-<div class='hidden' id='view-about'>
+<div class='hidden app-view' id='view-about'>
   <h1>About SQLite Fiddle <button id='btn-about-close'>close</button></h1>
 
   <p>Fiddle is a JavaScript application wrapping a <a href='https://webassembly.org'>WebAssembly</a>
@@ -355,8 +367,6 @@
   </ul>
 
 </div><!-- #view-about -->
-
-    </div> <!-- #view-split -->
 
 <script src="fiddle.js"></script>
   </body>

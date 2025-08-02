@@ -1,5 +1,5 @@
-C Fiddle:\sadd\san\sabout/info/help\sview\sand\sa\sbutton\sto\stoggle\sit.\sChange\sthe\scolor\sschema\sto\sa\smore\sconventional\sblack/white.\sForce\simported\sdatabases\sout\sof\sWAL\smode,\swhich\sdoesn't\swork\sin\sfiddle.
-D 2025-08-02T12:06:37.203
+C Fiddle:\smove\sthe\sAbout\sbutton\sinto\sthe\sheader\sbar\sand\sget\sit\sworking\stogether\swith\sthe\soptional\sjquery.terminal\sconsole\smode.
+D 2025-08-02T13:21:07.208
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -677,8 +677,8 @@ F ext/wasm/dist.make c29018b4db479a4c170569393e5399f0625446123a7eb6ffb0677495292
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make ea505d11aa2a89551e1693ed4c71ee6a163364ca14f806dda295d0beb26ec0ea
 F ext/wasm/fiddle/fiddle-worker.js 50d3edf54c0c0e3657e876724ec2c10069f55f3e40af20864d72f6f6e9ad00f8
-F ext/wasm/fiddle/fiddle.js 03b2cdd2a935d5dd085dccd7c8e6ce1b64bf0f9c3c1290ca80d72542f1b86de0
-F ext/wasm/fiddle/index.html 37fd85cc878f461cc072f47c0f37ab1d8cd9404295536e1bd7b2684085d38b76
+F ext/wasm/fiddle/fiddle.js 384048afaf938680ce8bf4f7295256dd43ced7943c1172373742d34e379c8530
+F ext/wasm/fiddle/index.html 63051ab7ae7489f3b30dff7fd048f00b7bb7ba2bd6d8b2340fdaf646c18341f8
 F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf188f024b3730
 F ext/wasm/index.html bcaa00eca521b372a6a62c7e7b17a870b0fcdf3e418a5921df1fd61e5344080d
 F ext/wasm/jaccwabyt/jaccwabyt.js 6e4f26d0edb5c2e7d381b7eff1924832a040a12274afab2d1e1789027e9f6c5c
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1cccea0508f5c8b8ff751f407873713adc33f8642dcb6cdd495fd2d72ebcbdd3
-R d5f4dc4132df6c16c8a5582596913945
+P 27d1d0100c0cb6e5c0c576be0f99209bb905f302008d8c257039adf8c5402f7d
+R c1c07ea01fe59d26da505e28561c5adc
 U stephan
-Z 1d4cd24556abd41e13f5fd162512c056
+Z 413b972a6b543fbfac24c1068223678c
 # Remove this line to create a well-formed Fossil manifest.
