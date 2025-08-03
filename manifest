@@ -1,5 +1,5 @@
-C Tag\sa\scondition\sin\sos_unix.c\sas\sunreachable.
-D 2025-08-02T17:37:59.821
+C Add\sa\snote\sto\ssqlite3_deserialize()\sthat\sa\sschema\sname\sof\sNULL\simplies\sthe\smain\sdb,\sa\sformer\sshortcoming\spointed\sout\sin\s[forum:0543d8aa8e|forum\spost\s0543d8aa8e].
+D 2025-08-03T08:56:16.176
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -788,7 +788,7 @@ F src/resolve.c 1fba451b87114182213ead347113d15c845dac4e61755754600c85595ec92244
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c a6be657216e1fb72f85dad7df0dba0eb79fe76527c08caa65da8fe44f0e4db44
 F src/shell.c.in 7918c9355667b3b348e5850f0dad9095476ef942ee3b96ee9b8bc2710adda1da
-F src/sqlite.h.in 6fba714744f9b2b43c210d8ff27543c19119f822e7046f65efd7014b1b498484
+F src/sqlite.h.in aa4b705018c98d135b1218e163abbde5b1c333952338eb7ed5adb3dcb5a65682
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h a54f83985985655d1276e9e356dd6ae19b8d0b62c2abc75cc9e8f402ea141207
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P da524d6c61330fb004dade810c5ad84bb6d37625786c1d0fd473593f2448d904
-R c303b43701dfa2d38e761b2e55ef3dfb
-U drh
-Z 7981436be4cfd903027816d6aefa1e28
+P 151844ad5451295104f18f4823d2fdaf041f22bc09099f1fa3f90898aafa7ea5
+R 1cf1f2645c543450d31a39fdf17ac6c9
+U stephan
+Z 06aecccd60e9c60ab47bbf7f5227e018
 # Remove this line to create a well-formed Fossil manifest.
