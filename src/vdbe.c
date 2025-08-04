@@ -4128,6 +4128,7 @@ case OP_Transaction: {
         p->rc = rc;
         goto vdbe_return;
       }
+      db->errSchema = pOp->p1+1;
       goto abort_due_to_error;
     }
 
@@ -4190,7 +4191,10 @@ case OP_Transaction: {
     ** reprepared, changeCntOn will be set again. */
     p->changeCntOn = 0;
   }
-  if( rc ) goto abort_due_to_error;
+  if( rc ){
+    db->errSchema = pOp->p1+1;
+    goto abort_due_to_error;
+  }
   break;
 }
 

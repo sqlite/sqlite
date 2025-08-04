@@ -1685,6 +1685,7 @@ struct sqlite3 {
   u8 dfltLockMode;              /* Default locking-mode for attached dbs */
   signed char nextAutovac;      /* Autovac setting after VACUUM if >=0 */
   u8 suppressErr;               /* Do not issue error messages if true */
+  u8 errSchema;                 /* Schema in which error occurs */
   u8 vtabOnConflict;            /* Value to return for s3_vtab_on_conflict() */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
   u8 mTrace;                    /* zero or more SQLITE_TRACE flags */
@@ -1815,11 +1816,6 @@ struct sqlite3 {
 ** C-compilers still do not accept LL integer literals.
 */
 #define HI(X)  ((u64)(X)<<32)
-
-/*
-** Combine a schema index with an error code.
-*/
-#define ERRCODE_WITH_SCHEMA(E,X)  (((X)<<24)|(E))
 
 /*
 ** Possible values for the sqlite3.flags.

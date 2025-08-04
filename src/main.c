@@ -2798,23 +2798,18 @@ int sqlite3_system_errno(sqlite3 *db){
 /*
 ** Return the name of the database schema ("main", "temp", or the name of
 ** an ATTACH-ed database) to which the latest error applies.  Return NULL
-** if the error does not apply to a specific schema.
-**
-** This routine will typically return a string for errors like SQLITE_READONLY,
-** or SQLITE_CORRUPT, or SQLITE_BUSY.  It will return NULL for errors
-** like SQLITE_NOMEM.
+** if the error does not apply to a specific schema or if there have been
+** no errors reported.
 */
 const char *sqlite3_error_schema(sqlite3 *db){
-  int iDb;
   if( db && !sqlite3SafetyCheckSickOrOk(db) ){
     return 0;
   }
-  if( !db || db->mallocFailed ){
+  if( !db || db->mallocFailed || db->errSchema==0 ){
     return 0;
   }
-  iDb = ((db->errCode >> 24) & 0x7f) - 1;
-  if( iDb<0 ) return 0;
-  return db->aDb[iDb].zDbSName;
+  assert( db->errSchema>0 && db->errSchema<=db->nDb );
+  return db->aDb[db->errSchema-1].zDbSName;
 } 
 
 /*
@@ -3377,7 +3372,7 @@ static int openDatabase(
     }
   }
   sqlite3_mutex_enter(db->mutex);
-  db->errMask = (flags & SQLITE_OPEN_EXRESCODE)!=0 ? 0x00ffffff : 0xff;
+  db->errMask = (flags & SQLITE_OPEN_EXRESCODE)!=0 ? 0xffffffff : 0xff;
   db->nDb = 2;
   db->eOpenState = SQLITE_STATE_BUSY;
   db->aDb = db->aDbStatic;
@@ -4111,7 +4106,7 @@ int sqlite3_extended_result_codes(sqlite3 *db, int onoff){
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
   sqlite3_mutex_enter(db->mutex);
-  db->errMask = onoff ? 0x00ffffff : 0xff;
+  db->errMask = onoff ? 0xffffffff : 0xff;
   sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }

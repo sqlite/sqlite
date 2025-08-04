@@ -145,6 +145,7 @@ void sqlite3ErrorClear(sqlite3 *db){
   assert( db!=0 );
   db->errCode = SQLITE_OK;
   db->errByteOffset = -1;
+  db->errSchema = 0;
   if( db->pErr ) sqlite3ValueSetNull(db->pErr);
 }
 
