@@ -1059,8 +1059,8 @@ static void codeReturningTrigger(
     return;
   }
   memset(&sSelect, 0, sizeof(sSelect));
+  memset(&uSrc, 0, sizeof(uSrc));
   pFrom = &uSrc.sSrc;
-  memset(pFrom, 0, SZ_SRCLIST_1);
   sSelect.pEList = sqlite3ExprListDup(db, pReturning->pReturnEL, 0);
   sSelect.pSrc = pFrom;
   pFrom->nSrc = 1;

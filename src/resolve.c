@@ -2292,8 +2292,8 @@ int sqlite3ResolveSelfReference(
   assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr
           || type==NC_GenCol || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
+  memset(&uSrc, 0, sizeof(uSrc));
   pSrc = &uSrc.sSrc;
-  memset(pSrc, 0, SZ_SRCLIST_1);
   if( pTab ){
     pSrc->nSrc = 1;
     pSrc->a[0].zName = pTab->zName;
