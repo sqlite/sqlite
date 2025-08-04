@@ -4155,6 +4155,7 @@ void sqlite3_free_filename(sqlite3_filename);
 ** <li> sqlite3_errmsg()
 ** <li> sqlite3_errmsg16()
 ** <li> sqlite3_error_offset()
+** <li> sqlite3_error_schema()
 ** </ul>
 **
 ** ^The sqlite3_errmsg() and sqlite3_errmsg16() return English-language
@@ -4199,6 +4200,19 @@ const char *sqlite3_errmsg(sqlite3*);
 const void *sqlite3_errmsg16(sqlite3*);
 const char *sqlite3_errstr(int);
 int sqlite3_error_offset(sqlite3 *db);
+
+/*
+** CAPI3REF: Schema associated with an error
+**
+** The sqlite3_error_schema(D) interface returns the name of a database schema
+** that was the origin of the most recent error.  The database schema is the
+** name assigned to the database, such as "main" or "temp" or the name associated
+** with an attached database.  The sqlite3_error_schema(D) interface returns
+** NULL if the most recent error is generic and is not associated with a
+** particular database file (for example if the error is SQLITE_NOMEM), or if
+** there have been no errors, or if the error code has been reset.
+*/
+const char *sqlite3_error_schema(sqlite3 *db);
 
 /*
 ** CAPI3REF: Prepared Statement Object

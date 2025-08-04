@@ -1817,6 +1817,11 @@ struct sqlite3 {
 #define HI(X)  ((u64)(X)<<32)
 
 /*
+** Combine a schema index with an error code.
+*/
+#define ERRCODE_WITH_SCHEMA(E,X)  (((X)<<24)|(E))
+
+/*
 ** Possible values for the sqlite3.flags.
 **
 ** Value constraints (enforced via assert()):
