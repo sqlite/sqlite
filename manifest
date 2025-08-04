@@ -1,5 +1,5 @@
-C The\ssqlite3_error_schema()\sinterface\snow\sworks\sfor\serrors\sdiscovered\nduring\sOP_Transaction.
-D 2025-08-04T13:55:58.341
+C Fixes\sto\ssqlite3_error_schema().
+D 2025-08-04T17:45:42.502
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -750,7 +750,7 @@ F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
 F src/json.c cb87977b1ee25ee7d27505d65a9261b687395bf895342c8ba566b7c01aee2047
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d7edd8e671237539d795d30daaf888908a2c82e99bade4c78f3be021e8b7d655
-F src/main.c 0b78e9b8939978697a65e33ef04a632fc2945e0909bdeec69b428a1a32f67b41
+F src/main.c 464d3f12b728294240b71f659df9f76e08d79ad2010b112234622f9376db27f4
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 715cb6035ea1b8b74c2a19180bbee9027ab8b57e9f2b55be5b512a983d79ba6a
-R 5e1b2e7bd346e05bda9945b69c72dde5
+P 560f899662fb974f5ad844709c803ce50a628d3381fe26d4481a1e00c92dd3e5
+R 08061ea3651a9e3318bbdfe53f73de1e
 U drh
-Z 3f225359ec1b9fd0a33b4cb754e30b47
+Z 5bc897eb3aa61abe0cab154c11fbedc4
 # Remove this line to create a well-formed Fossil manifest.

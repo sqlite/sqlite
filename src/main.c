@@ -2639,9 +2639,12 @@ int sqlite3Checkpoint(sqlite3 *db, int iDb, int eMode, int *pnLog, int *pnCkpt){
       rc = sqlite3BtreeCheckpoint(db->aDb[i].pBt, eMode, pnLog, pnCkpt);
       pnLog = 0;
       pnCkpt = 0;
-      if( rc==SQLITE_BUSY ){
-        bBusy = 1;
-        rc = SQLITE_OK;
+      if( rc!=SQLITE_OK ){
+        db->errSchema = i+1;
+        if( rc==SQLITE_BUSY ){
+          bBusy = 1;
+          rc = SQLITE_OK;
+        }
       }
     }
   }
@@ -2802,10 +2805,12 @@ int sqlite3_system_errno(sqlite3 *db){
 ** no errors reported.
 */
 const char *sqlite3_error_schema(sqlite3 *db){
-  if( db && !sqlite3SafetyCheckSickOrOk(db) ){
-    return 0;
-  }
-  if( !db || db->mallocFailed || db->errSchema==0 ){
+  if( db==0 
+   || !sqlite3SafetyCheckSickOrOk(db)
+   || db->mallocFailed
+   || db->errSchema==0        /* Schema information not available */
+   || db->errSchema>db->nDb   /* nDb might have reduced since error occurred */
+  ){
     return 0;
   }
   assert( db->errSchema>0 && db->errSchema<=db->nDb );
