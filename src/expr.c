@@ -4091,6 +4091,7 @@ static void sqlite3ExprCodeIN(
     int r2, regToFree;
     int regCkNull = 0;
     int ii;
+    assert( nVector==1 );
     assert( ExprUseXList(pExpr) );
     pList = pExpr->x.pList;
     pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
