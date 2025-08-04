@@ -542,7 +542,7 @@ static void blobListLoadFromDb(
   int rc;
   char *z2;
   union {
-    Blob * sBlob;
+    Blob sBlob;
     unsigned char tmp[SZ_BLOB(8)];
   } uBlob;
 

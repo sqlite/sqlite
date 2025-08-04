@@ -1,5 +1,5 @@
-C When\sdoing\san\sindexed\srow-value\scomparison\susing\san\sIN\soperator\swhere\sthe\norder\sof\sthe\scolumns\sin\sthe\srow-value\sneed\sto\sbe\srearranged\sin\sorder\sto\smatch\nthe\sindex,\sbe\ssure\sto\smake\saffinity\sconversions\sbefore\sthe\srearranging\sof\ncolumns\sso\sthat\sthe\scorrect\saffinity\sis\sapplied.\s\sFix\sfor\sthe\sbug\nreported\sby\s[forum:/forumpost/eab63506cf|forum\spost\seab63506cf].\s\sThis\nproblem\sgoes\sback\salmost\snine\syears\sto\s[ddb5f0558c445699].
-D 2025-08-04T23:05:35.780
+C Fix\sa\sbug\sin\sthe\sfuzzcheck.c\stest\sprogram\sintroduced\sby\s[1cccea0508f5c8b8].
+D 2025-08-04T23:37:48.784
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1285,7 +1285,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c d425d07adcb31160d07f3070420ff217d30566c62eb9cf5fae61c0348bc7abed
+F test/fuzzcheck.c da9767e7cbb8da0a06cb4e9df03c9d3d388160b4c59200013cebef338880cd5d
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 49c587c6d204841a3d26f183812913ebd585006259040fdf7ba68346cc75580a
-R 64b6e924a5fc7fed7701e41de1b05a1b
+P 8800c13deca3717c8a9bed42ef5f09752e4ca8a31adfb4ab0545e0e2b5684bd0
+R e9e6d776f66165949a5e56b5097b0491
 U drh
-Z faa32d3890811b77a985bf7f6316cfdc
+Z 35410414945a551fb963edc5a6222b0d
 # Remove this line to create a well-formed Fossil manifest.
