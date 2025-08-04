@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sverify\sthat\sIN_INDEX_NOOP\sis\snot\sused\sfor\svector\soperations.
-D 2025-08-04T20:48:37.387
+C When\sdoing\san\sindexed\srow-value\scomparison\susing\san\sIN\soperator\swhere\sthe\norder\sof\sthe\scolumns\sin\sthe\srow-value\sneed\sto\sbe\srearranged\sin\sorder\sto\smatch\nthe\sindex,\sbe\ssure\sto\smake\saffinity\sconversions\sbefore\sthe\srearranging\sof\ncolumns\sso\sthat\sthe\scorrect\saffinity\sis\sapplied.\s\sFix\sfor\sthe\sbug\nreported\sby\s[forum:/forumpost/eab63506cf|forum\spost\seab63506cf].\s\sThis\nproblem\sgoes\sback\salmost\snine\syears\sto\s[ddb5f0558c445699].
+D 2025-08-04T23:05:35.780
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -737,7 +737,7 @@ F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
 F src/dbpage.c b3e218f8ed74fcbb7fa805df8ca669a3718d397617b3d8a8aac3307dc315c4d6
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c edfea9b79ebe060c39bfed020191b54ad2cde12650d84be04d462352fe00bb33
+F src/expr.c 12aeb13773920b48831d7b53018d5cc79e47b3bd8ae7c0fdfd28e6aab977821a
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c de47a8295503aa130baae5e6d9868ecf4f7c4dbffa65d83ad1f70bdbac0ee2d6
@@ -1580,7 +1580,7 @@ F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190c
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test d27191b5ce794c05bf61081e8b2c546a1844c1641321dcaf7fb785234256cc8e
-F test/rowvalue.test 8a3f0fea3a3cbbfc7cb9885b76185a774cd8d891e0c133e289567c755d39eb9f
+F test/rowvalue.test 93474d8e1c496e970bdcc3a7f54ac835adda667d2fd971957b4bce0c0b11707b
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 103e9a224ca0548dd0d67e439f39c5dd16de4200221a333927372408c025324c
 F test/rowvalue4.test bac9326d1e886656650f67c0ec484eb5f452244a8209c6af508e9a862ace08ed
@@ -2213,8 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 015dc43f628a6f5054152b05b20eb03b6a1153231f824c910a4416792af05272
-R 1aa062c2476e7fc9ca0fc6d41ca4ebc2
-U dan
-Z 06fff9166b4bc1e296209f5612a7d6fc
+P 49c587c6d204841a3d26f183812913ebd585006259040fdf7ba68346cc75580a
+R 64b6e924a5fc7fed7701e41de1b05a1b
+U drh
+Z faa32d3890811b77a985bf7f6316cfdc
 # Remove this line to create a well-formed Fossil manifest.
