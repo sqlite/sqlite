@@ -1,5 +1,5 @@
-C Version\s3.50.4
-D 2025-07-30T19:33:53.432
+C When\sdoing\san\sindexed\srow-value\scomparison\susing\san\sIN\soperator\swhere\sthe\norder\sof\sthe\scolumns\sin\sthe\srow-value\sneed\sto\sbe\srearranged\sin\sorder\sto\smatch\nthe\sindex,\sbe\ssure\sto\smake\saffinity\sconversions\sbefore\sthe\srearranging\sof\nthe\srow-value\scolumns.
+D 2025-08-05T00:13:48.110
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
 F src/dbpage.c fcb1aafe00872a8aff9a7aa0ef7ff1b01e5817ec7bbd521f8f3e1e674ac8d609
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 72e7cddcb2ea06de48f40ee301b81608d86a17b73781e42901ce585f53074589
+F src/expr.c d966479195c66a36c06196daadf6ecc587ec7bad7081026f7b168d80cfddf659
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c de47a8295503aa130baae5e6d9868ecf4f7c4dbffa65d83ad1f70bdbac0ee2d6
@@ -1577,7 +1577,7 @@ F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190c
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test d27191b5ce794c05bf61081e8b2c546a1844c1641321dcaf7fb785234256cc8e
-F test/rowvalue.test 8a3f0fea3a3cbbfc7cb9885b76185a774cd8d891e0c133e289567c755d39eb9f
+F test/rowvalue.test 93474d8e1c496e970bdcc3a7f54ac835adda667d2fd971957b4bce0c0b11707b
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 103e9a224ca0548dd0d67e439f39c5dd16de4200221a333927372408c025324c
 F test/rowvalue4.test bac9326d1e886656650f67c0ec484eb5f452244a8209c6af508e9a862ace08ed
@@ -2209,10 +2209,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f39a0865d336d4a964627d4819ce7ba8dafd43a0e8e2a4431ea431ef73dd96c3
-R 5c3da0295a5c868b2c70cbb25c7978d3
-T +sym-release *
-T +sym-version-3.50.4 *
+P 4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3
+Q +8800c13deca3717c8a9bed42ef5f09752e4ca8a31adfb4ab0545e0e2b5684bd0
+R 8d48b80a08ef22d0535d6e4ce4cb3405
 U drh
-Z e0e73bda1cca0dba2213fe2c15c764d6
+Z 2b0fe259242f3b3bb6c5c3fa70f40050
 # Remove this line to create a well-formed Fossil manifest.
