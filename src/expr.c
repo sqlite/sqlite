@@ -6460,7 +6460,7 @@ fix_up_expr:
   if( pExpr->op==TK_COLUMN ){
     pExpr->op = TK_AGG_COLUMN;
   }
-  pExpr->iAgg = (i16)k;
+  pExpr->iAgg = (i16)(k&0x7fff);
 }
 
 /*
