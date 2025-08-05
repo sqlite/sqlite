@@ -1,5 +1,5 @@
-C Back\sout\sa\srecently\sadded\sNEVER().
-D 2025-08-05T00:16:40.912
+C Improved\sdefenses\sagainst\scorrupt\sZIP\sarchives\sin\sthe\szipfile\sextension.
+D 2025-08-05T01:53:03.565
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -460,7 +460,7 @@ F ext/misc/vtablog.c 9f7e02e9e8de585f3bfb48405db36c2eb4b680a23a67d7a4b738dd20f6a
 F ext/misc/vtshim.c e5bce24ab8c532f4fdc600148718fe1802cb6ed57417f1c1032d8961f72b0e8f
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
-F ext/misc/zipfile.c b62147ac4985eaac4e368d529b1f4f43ad6bc9ac13d6805d907fff3afdac64d3
+F ext/misc/zipfile.c 360cc8e0b13398a27abae2baa5d136462718994053ef918e86f4e2dd238657c7
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2213,9 +2213,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 90b217e11c988785d19b8efbba435250c120837492f430cf16d6d4524dd55136
-Q -151844ad5451295104f18f4823d2fdaf041f22bc09099f1fa3f90898aafa7ea5
-R ac63291f5fa9999322d3bbe61bb20590
+P 4fcdd5bdb061d550b4a35594eb16c9a1699c76caf1d906f1781b4f9cb29ac80c
+R 124958b837aa8476fe348da681b7d6d6
 U drh
-Z 255b01ba1d4492bda75d5ca964997970
+Z 9661b63357db3c578107f6e9b8ce7e30
 # Remove this line to create a well-formed Fossil manifest.
