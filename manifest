@@ -1,5 +1,5 @@
-C Remove\sthe\s<i>experimental</i>\slsm1\sextension\sfrom\strunk,\sin\sas\smuch\sas\nreaders\swere\sthinking\sthat\sthis\swas\sa\ssupported\sextension\sand\swere\sreporting\nbugs\sagainst\sit.
-D 2025-08-05T12:01:43.031
+C Fix\sa\spossible\sprintf()\sof\sa\sNULL\sstring\sin\sfuzzcheck.\s\s(Passing\sa\sNULL\sto\n"%s"\sin\sSQLite's\sinternal\sprintf()\sprints\sthe\stext\n"NULL",\sbut\sit\sapparently\ssegfaults\sglibc.\s\sWhatever.)\n[forum:/forumpost/e07d56579b|Forum\spost\se07d56579b].
+D 2025-08-05T23:01:31.334
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1240,7 +1240,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c da9767e7cbb8da0a06cb4e9df03c9d3d388160b4c59200013cebef338880cd5d
+F test/fuzzcheck.c c2d8a1fd5762bc3bea337360cbd98f481137f533ae9db563a1e581dfbe2901ba
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2168,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6bb717acf706e6ffd4671660ca78237e6a42863f344518e6d21065bf735f971e
-R 445eb33101f9b4070d3e8b64677babdc
+P ae9d7c9c922bb241363aa690b42b9664c4ad6e76ed5ce474daf1ab44461bc6a3
+R 8b47b9bd61b54c94afdf5fabe8653f59
 U drh
-Z e2734277847ebf981ba375e5cddb7301
+Z bbf4b84c82e3def5532a80b930cdbf65
 # Remove this line to create a well-formed Fossil manifest.

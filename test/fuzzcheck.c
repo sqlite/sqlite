@@ -1023,7 +1023,7 @@ extern int sqlite3_dbdata_init(sqlite3*,const char**,void*);
 ** print the supplied SQL statement to stdout.
 */
 static int recoverSqlCb(void *pCtx, const char *zSql){
-  if( eVerbosity>=2 ){
+  if( eVerbosity>=2 && zSql ){
     printf("%s\n", zSql);
   }
   return SQLITE_OK;
