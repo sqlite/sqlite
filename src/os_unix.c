@@ -5358,7 +5358,7 @@ static void unixRemapfile(
 #endif
 
     /* The attempt to extend the existing mapping failed. Free it. */
-    if( pNew==MAP_FAILED || NEVER(pNew==0) ){
+    if( pNew==MAP_FAILED || pNew==0 ){
       osMunmap(pOrig, nReuse);
     }
   }

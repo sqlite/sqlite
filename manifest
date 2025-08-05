@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sfuzzcheck.c\stest\sprogram\sintroduced\sby\s[1cccea0508f5c8b8].
-D 2025-08-04T23:37:48.784
+C Back\sout\sa\srecently\sadded\sNEVER().
+D 2025-08-05T00:16:40.912
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -771,7 +771,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 39f317c26d02bad0da7f9e8c8f42eee4c8ffaee3514369f03c17eb4095195956
+F src/os_unix.c 690107e26cc4e9809eeb9826c0efdbff4a42b9cc59d0f0b855ca3e6021e1ae73
 F src/os_win.c 7ac69df49d2ff0432b9c96fd2d9a17a100cced6860479e584cd3337e18d09334
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 23c0f17deb892da6b32fef1f465507df7ab5cd01d774288cb43695658a649259
@@ -2213,8 +2213,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8800c13deca3717c8a9bed42ef5f09752e4ca8a31adfb4ab0545e0e2b5684bd0
-R e9e6d776f66165949a5e56b5097b0491
+P 90b217e11c988785d19b8efbba435250c120837492f430cf16d6d4524dd55136
+Q -151844ad5451295104f18f4823d2fdaf041f22bc09099f1fa3f90898aafa7ea5
+R ac63291f5fa9999322d3bbe61bb20590
 U drh
-Z 35410414945a551fb963edc5a6222b0d
+Z 255b01ba1d4492bda75d5ca964997970
 # Remove this line to create a well-formed Fossil manifest.
