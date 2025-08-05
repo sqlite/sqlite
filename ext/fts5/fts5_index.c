@@ -1349,9 +1349,9 @@ static int fts5DlidxLvlNext(Fts5DlidxLvl *pLvl){
     }
 
     if( iOff<pData->nn ){
-      i64 iVal;
+      u64 iVal;
       pLvl->iLeafPgno += (iOff - pLvl->iOff) + 1;
-      iOff += fts5GetVarint(&pData->p[iOff], (u64*)&iVal);
+      iOff += fts5GetVarint(&pData->p[iOff], &iVal);
       pLvl->iRowid += iVal;
       pLvl->iOff = iOff;
     }else{
@@ -3910,7 +3910,7 @@ static void fts5WriteDlidxAppend(
     }
 
     if( pDlidx->bPrevValid ){
-      iVal = iRowid - pDlidx->iPrev;
+      iVal = (u64)iRowid - (u64)pDlidx->iPrev;
     }else{
       i64 iPgno = (i==0 ? pWriter->writer.pgno : pDlidx[-1].pgno);
       assert( pDlidx->buf.n==0 );
