@@ -4693,7 +4693,7 @@ static int sessionBindRow(
 ** iterator pIter points to to the SELECT and attempts to seek to the table
 ** entry. If a row is found, the SELECT statement left pointing at the row 
 ** and SQLITE_ROW is returned. Otherwise, if no row is found and no error
-** has occured, the statement is reset and SQLITE_OK is returned. If an
+** has occurred, the statement is reset and SQLITE_OK is returned. If an
 ** error occurs, the statement is reset and an SQLite error code is returned.
 **
 ** If this function returns SQLITE_ROW, the caller must eventually reset() 
