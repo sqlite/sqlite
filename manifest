@@ -1,5 +1,5 @@
-C Add\sbounds\schecking\sand\serror\smessages\sand\simproved\scomments\nto\sthe\s(unused)\szorder\sextension\sfunction.\n[forum:/forumpost/e3f1ede174|Forum\spost\se3f1ede174]
-D 2025-08-05T10:54:56.919
+C Minor\spatch\sto\sLSM1\sin\san\sattempt\sto\sget\sit\sto\sbuild\son\sMac.
+D 2025-08-05T12:04:22.845
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -390,7 +390,7 @@ F ext/lsm1/lsm_shared.c c67282a4f2c91e2a3362bdd40a81f9041cd587973ffc4bca8b8fbdab
 F ext/lsm1/lsm_sorted.c 1bae85469458793adf753f7c5e695d8d15e33f28bc0ca07ebc9f1b58e853c56c
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
-F ext/lsm1/lsm_unix.c 11e0a5c19d754a4e1d93dfad06de8cc201f10f886b8e61a4c599ed34e334fc24
+F ext/lsm1/lsm_unix.c b3471d01cfbcd9adfbf17a03b120729d97d828f7a903a3a4523148707172696a
 F ext/lsm1/lsm_varint.c fe134ad7b2db1ecd99b6a155d2f3625cfd497730e227ae18892452e457b73327
 F ext/lsm1/lsm_vtab.c 0bc7d2702150e9d5513118f23fdb5d7f3642884e6c0dde332da08b016857887a
 F ext/lsm1/lsm_win32.c 0a4acbd7e8d136dd3a5753f0a9e7a9802263a9d96cef3278cf120bcaa724db7c
@@ -2213,8 +2213,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 642e89191deaf75db236102248c662aeef65bcd3dcbdfea694256583556be75f
-R bc0ed57214c2790343d9a5ba7eec2712
+P 6bb717acf706e6ffd4671660ca78237e6a42863f344518e6d21065bf735f971e
+R 523bbb2e02227eb0f87e2b18bf0cb3c1
+T *branch * lsm1-experimental
+T *sym-lsm1-experimental *
+T -sym-trunk *
 U drh
-Z e5f5abe0bb299cabb1135d9f96b6d9a9
+Z 0d18267ded3509704471a0d71e13406f
 # Remove this line to create a well-formed Fossil manifest.

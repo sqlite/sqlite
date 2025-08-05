@@ -42,7 +42,7 @@
 #include "lsmInt.h"
 
 /* There is no fdatasync() call on Android */
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__APPLE__)
 # define fdatasync(x) fsync(x)
 #endif
 
