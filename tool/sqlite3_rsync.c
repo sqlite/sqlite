@@ -566,7 +566,8 @@ int append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
 */
 void add_path_argument(sqlite3_str *pStr){
   append_escaped_arg(pStr,
-     "PATH=$HOME/bin:/usr/local/bin:/opt/homebrew/bin:$PATH", 0);
+     "PATH=$HOME/bin:/usr/local/bin:/opt/homebrew/bin"
+     ":/opt/local/bin:$PATH", 0);
 }
 
 /*****************************************************************************

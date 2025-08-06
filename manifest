@@ -1,5 +1,5 @@
-C Minor\sbug\sfixes\sin\sthe\sscript\sadded\sby\sthe\sprevious\scheck-in
-D 2025-08-06T12:47:58.093
+C Extend\sthe\ssqlite3_rsync\sPATH\sto\sinclude\s/opt/local/bin,\sper\srequest\sin\s[forum:ca3c1bb7ca8e03\s|\sforum\spost\sca3c1bb7ca8e03].
+D 2025-08-06T15:57:44.691
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2151,7 +2151,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 4969fd642dad0ea483e4e104163021d92baf98f6a8eac981fe48525f9b873430
 F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
-F tool/sqlite3_rsync.c c1e1a737ebb458a4ccbbaa21e5eaa878448fef1aaa71b879b9a685785e28987f
+F tool/sqlite3_rsync.c 1d6dbf77a798ff1bfb198d2c210d5670aa9123e08154fe927078396d885d45a4
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c 6c655d9a8d6b30f3648fc78a79bf3838ed68f8543869d380c43ea9f17b3b8501
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2d5b74b84a9c778183a11070623e89b553ba9cde905b779dbf115ea95aa0ca9b
-R 19e134fbd32077eab8f090e7fa328e3e
-U drh
-Z d598329a9a795a1628af4e14f9637139
+P 2e1a2db3f92b0bd484d979b422fe28e86732121594d190b76dbf46f5d7533643
+R 0c12baa9ca920cf4f51c1084a13b0ce6
+U stephan
+Z 58a38c015f30418abbf7661438090d64
 # Remove this line to create a well-formed Fossil manifest.
