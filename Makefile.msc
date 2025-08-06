@@ -2485,24 +2485,6 @@ FTS5_SRC = \
    $(TOP)\ext\fts5\fts5_varint.c \
    $(TOP)\ext\fts5\fts5_vocab.c
 
-LSM1_SRC = \
-   $(TOP)\ext\lsm1\lsm.h \
-   $(TOP)\ext\lsm1\lsmInt.h \
-   $(TOP)\ext\lsm1\lsm_ckpt.c \
-   $(TOP)\ext\lsm1\lsm_file.c \
-   $(TOP)\ext\lsm1\lsm_log.c \
-   $(TOP)\ext\lsm1\lsm_main.c \
-   $(TOP)\ext\lsm1\lsm_mem.c \
-   $(TOP)\ext\lsm1\lsm_mutex.c \
-   $(TOP)\ext\lsm1\lsm_shared.c \
-   $(TOP)\ext\lsm1\lsm_sorted.c \
-   $(TOP)\ext\lsm1\lsm_str.c \
-   $(TOP)\ext\lsm1\lsm_tree.c \
-   $(TOP)\ext\lsm1\lsm_unix.c \
-   $(TOP)\ext\lsm1\lsm_varint.c \
-   $(TOP)\ext\lsm1\lsm_vtab.c \
-   $(TOP)\ext\lsm1\lsm_win32.c
-
 fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 	copy /Y $(TOP)\ext\fts5\fts5parse.y .
 	copy /B fts5parse.y +,,
@@ -2515,11 +2497,6 @@ fts5.c:	$(FTS5_SRC) $(JIM_TCLSH)
 	$(JIM_TCLSH) $(TOP)\ext\fts5\tool\mkfts5c.tcl
 	copy /Y $(TOP)\ext\fts5\fts5.h .
 	copy /B fts5.h +,,
-
-lsm1.c:	$(LSM1_SRC) $(JIM_TCLSH)
-	$(JIM_TCLSH) $(TOP)\ext\lsm1\tool\mklsm1c.tcl
-	copy /Y $(TOP)\ext\lsm1\lsm.h .
-	copy /B lsm.h +,,
 
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c fts5.c
@@ -2827,9 +2804,6 @@ tcl-env:
 	@echo JIM_TCLSH = $(JIM_TCLSH)
 	@echo VISUALSTUDIOVERSION = $(VISUALSTUDIOVERSION)
 
-LSMDIR=$(TOP)\ext\lsm1
-!INCLUDE $(LSMDIR)\Makefile.msc
-
 moreclean:	clean
 	del /Q $(SQLITE3C) $(SQLITE3H) 2>NUL
 # <</mark>>
@@ -2871,7 +2845,6 @@ clean:
 	del /Q kvtest.exe ossshell.exe scrub.exe 2>NUL
 	del /Q showshm.exe sqlite3_checker.* sqlite3_expert.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
-	del /Q lsm.h lsm1.c 2>NUL
 	del /q src-verify.exe 2>NUL
 	del /q jimsh.exe jimsh0.exe 2>NUL
 # <</mark>>

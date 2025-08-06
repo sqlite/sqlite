@@ -1,12 +1,12 @@
-C Add\s*.obj\sto\sthe\smake\sclean\starget\sfor\sthe\ssake\sof\sthe\sUnix-on-Windows\senvironments.
-D 2025-08-06T16:51:12.817
+C Fix\sWindows\smakefile\sbreakage\scaused\sby\s[ae9d7c9c922bb241].
+D 2025-08-06T19:05:39.163
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
 F Makefile.in a6c14b6906f5322920dd5d1ff9a84808337911068f2a6e777ec7088a87cbc3a8
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc e17608035fb75d3e5b322f846c6c3cbe80a5f34abf5df9e400c40dd55436dc14
+F Makefile.msc b87ac9041d87f61fabd6074e6d8b71dd7f78c884a2307bbb9301f9d436ce9242
 F README.md e28077cfbef795e99c9c75ed95aa7257a1166709b562076441a8506ac421b7c1
 F VERSION 16eddb43056a79c1977427ab7a05f3457c373fa159dcdced8754eb89ce7e06b8
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 79a14a5ebd0e8a0aa7f7bb180fcaa348a3ecd046662e3ee05a34f2c9a7db3dd6
-R f2300cb4a5c3a2f67beb54bf4058ec3c
-U stephan
-Z 2b29c52956948fb2b524de581d85b394
+P da07e0c02fe7de7b67f2564c29f49f251ae2374c0e269d246bd13e68a9a73328
+R b5216907e49e2b01f564bdbfd4b1e713
+U drh
+Z dea4777b257de656f41a34569efd6ff5
 # Remove this line to create a well-formed Fossil manifest.
