@@ -1412,39 +1412,50 @@ proc sqlite-handle-icu {} {
 # Makes the following environment changes:
 #
 # - defines LDFLAGS_DLOPEN to any linker flags needed for this
-#   feature.  It may legally be empty on some systems where dlopen()
-#   is in libc.
+#   feature.  It may legally be empty on (A) some systems where
+#   dlopen() is in libc and (B) certain Unix-esque Windows
+#   environments which identify as Windows for SQLite's purposes so
+#   use LoadLibrary().
 #
 # - If the feature is not available, adds
 #   -DSQLITE_OMIT_LOAD_EXTENSION=1 to the feature flags list.
 proc sqlite-handle-load-extension {} {
   define LDFLAGS_DLOPEN ""
   set found 0
+  set suffix ""
   proj-if-opt-truthy load-extension {
-    set found [proj-check-function-in-lib dlopen dl]
-    if {$found} {
-      define LDFLAGS_DLOPEN [get-define lib_dlopen]
-      undefine lib_dlopen
-    } else {
-      if {[proj-opt-was-provided load-extension]} {
-        # Explicit --enable-load-extension: fail if not found
-        proj-indented-notice -error {
-          --enable-load-extension was provided but dlopen()
-          not found. Use --disable-load-extension to bypass this
-          check.
-        }
-      } else {
-        # It was implicitly enabled: warn if not found
-        proj-indented-notice {
-          WARNING: dlopen() not found, so loadable module support will
-          be disabled. Use --disable-load-extension to bypass this
-          check.
+    switch -glob -- [get-define host] {
+      *-*-mingw* - *windows* {
+        incr found
+        set suffix "Using LoadLibrary()"
+      }
+      default {
+        set found [proj-check-function-in-lib dlopen dl]
+        if {$found} {
+          set suffix [define LDFLAGS_DLOPEN [get-define lib_dlopen]]
+          undefine lib_dlopen
+        } else {
+          if {[proj-opt-was-provided load-extension]} {
+            # Explicit --enable-load-extension: fail if not found
+            proj-indented-notice -error {
+              --enable-load-extension was provided but dlopen()
+              not found. Use --disable-load-extension to bypass this
+              check.
+            }
+          } else {
+            # It was implicitly enabled: warn if not found
+            proj-indented-notice {
+              WARNING: dlopen() not found, so loadable module support will
+              be disabled. Use --disable-load-extension to bypass this
+              check.
+            }
+          }
         }
       }
     }
   }
   if {$found} {
-    msg-result "Loadable extension support enabled."
+    msg-result "Loadable extension support enabled. $suffix"
   } else {
     msg-result "Disabling loadable extension support. Use --enable-load-extension to enable them."
     sqlite-add-feature-flag -DSQLITE_OMIT_LOAD_EXTENSION=1
