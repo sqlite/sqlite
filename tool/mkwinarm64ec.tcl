@@ -36,9 +36,10 @@ set in [open VERSION rb]
 set VERSION [read $in]
 close $in
 regexp {3.(\d+).(\d+)} $VERSION all minor patch
-set filename [format sqlite-win-arm64ec-3%02d%02d00 $minor $patch]
+set filename [format sqlite-win-arm64ec-3%02d%02d00.zip $minor $patch]
 
 puts "Constructing $filename..."
+file delete -force $filename
 exec fossil test-filezip $filename sqlite3.def sqlite3.dll sqlite3.exe sqldiff.exe sqlite3_rsync.exe >@ stdout 2>@ stderr
 puts "$filename: [file size $filename] bytes"
 exec fossil test-filezip -l $filename >@ stdout 2>@ stderr
