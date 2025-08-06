@@ -1,5 +1,5 @@
-C Fix\sa\spossible\sprintf()\sof\sa\sNULL\sstring\sin\sfuzzcheck.\s\s(Passing\sa\sNULL\sto\n"%s"\sin\sSQLite's\sinternal\sprintf()\sprints\sthe\stext\n"NULL",\sbut\sit\sapparently\ssegfaults\sglibc.\s\sWhatever.)\n[forum:/forumpost/e07d56579b|Forum\spost\se07d56579b].
-D 2025-08-05T23:01:31.334
+C Add\sa\sscript\sto\sbuild\sARM64EC\sbinaries\son\sWindows11\sfor\sARM64.
+D 2025-08-06T12:43:06.426
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2130,6 +2130,7 @@ F tool/mksqlite3internalh.tcl 46ef6ed6ccd3c36e23051109dd25085d8edef3887635cea25a
 F tool/mksrczip.tcl 81efd9974dbb36005383f2cd655520057a2ae5aa85ac2441a80c7c28f803ac52
 F tool/mktoolzip.tcl c9f388b2b0751982aef29a0c1d80f7959dbe38065ebb4421c39844e92622b086
 F tool/mkvsix.tcl 67b40996a50f985a573278eea32fc5a5eb6110bdf14d33f1d8086e48c69e540a
+F tool/mkwinarm64ec.tcl c6fb6ca0311d186717e10de4671d3b7f733de77dcc3ab4194db9eebaed9134d4
 F tool/offsets.c 8ed2b344d33f06e71366a9b93ccedaa38c096cc1dbd4c3c26ad08c6115285845
 F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d7221492abc08
 F tool/omittest.tcl bec70ef0e16255c8d9eb06ecd7edf823c07a60a836186cdbce3528fb34b67995
@@ -2168,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ae9d7c9c922bb241363aa690b42b9664c4ad6e76ed5ce474daf1ab44461bc6a3
-R 8b47b9bd61b54c94afdf5fabe8653f59
+P 4ec69baf4f2a75585b92388cbc352836116381dce3f2d44a3b0f7d3360a17cf0
+R a564d6d7434fe8725c39442de9668b7a
 U drh
-Z bbf4b84c82e3def5532a80b930cdbf65
+Z e0b59ca34b9c8462da51eecece7aeb91
 # Remove this line to create a well-formed Fossil manifest.
