@@ -1239,6 +1239,11 @@ void sqlite3ExprAddFunctionOrderBy(
     sqlite3ExprListDelete(db, pOrderBy);
     return;
   }
+  if( pOrderBy->nExpr>db->aLimit[SQLITE_LIMIT_COLUMN] ){
+    sqlite3ErrorMsg(pParse, "too many terms in ORDER BY clause");
+    sqlite3ExprListDelete(db, pOrderBy);
+    return;
+  }
 
   pOB = sqlite3ExprAlloc(db, TK_ORDER, 0, 0);
   if( pOB==0 ){
