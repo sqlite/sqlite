@@ -1,5 +1,5 @@
-C The\soff-by-one\sfix\sat\s[3e627d66ebdef8df]\sis\sinsufficient.\s\sAn\sindex\ncan\shold\stwice\sas\smany\scolumns\sas\sa\stable,\sif\sthe\stable\sis\sa\sWITHOUT\sROWID\ntable.\s\sThe\slimit\sshould\sbe\stwice\sthe\smaximum,\snot\sjust\sone\smore\sthan\sthe\nmaximum.\s\sProblem\sdiscovered\sby\sOSSFuzz.
-D 2025-08-11T13:17:10.528
+C Fix\sa\sproblem\swith\sreading\swal\smode\sdatabases\sfrom\sUNC\sshares\son\swindows\sintroduced\sby\s[e88212b10a7829ff].
+D 2025-08-12T19:02:48.857
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -727,7 +727,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 690107e26cc4e9809eeb9826c0efdbff4a42b9cc59d0f0b855ca3e6021e1ae73
-F src/os_win.c 7ac69df49d2ff0432b9c96fd2d9a17a100cced6860479e584cd3337e18d09334
+F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 23c0f17deb892da6b32fef1f465507df7ab5cd01d774288cb43695658a649259
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -752,7 +752,7 @@ F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c 13cc07851f989141b29f7ca3c6c90f6d18f90081ab423c66716c8cb29d277d1f
+F src/test1.c 82d8aab7162a758d030728cab6ae6011785234854b7d6d2aebd877f985d1016a
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -1493,7 +1493,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
 F test/percentile.test 52ba89d6ee6b65f770972b67dace358bab7cdbd532803d3db157845268e789cd
-F test/permutations.test 5260363b43b3fad4becb49b58d0b53e6024e1c18dc169b154d0b98db5630bbf2
+F test/permutations.test e6de4f5777f7785737ac3d1d964b8656e5477a134665b2fe8a91884ab9b685b3
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 7d07b7bb76e273215d6a20c4f83c3062cc28976c737ccb70a686025801e86c8f
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -1693,7 +1693,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
 F test/testrunner.tcl b42f7736968cafc9e69bb5d0b87fc81b375fb4c3f44e19b472cccd91d41a416a x
-F test/testrunner_data.tcl 02dd645b647d907c959fbf232b7ff7d869c2ae430d5117443fc1e16a0d32243a
+F test/testrunner_data.tcl c507a9afa911c03446ed90442ffd4a98aca02882c3d51bd1177c24795674def8
 F test/testrunner_estwork.tcl 7927a84327259a32854926f68a75292e33a61e7e052fdbfcb01f18696c99c724
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6711110b1c7589311f012deee4d4dd5b771fa44ad328b471c9ef583960795199
-R ffd1b43def206d8533a9903db4ae6946
-U drh
-Z 06d9bb457d494361f7d646119e184d0a
+P a836126bbec5c14432ed7fc7e9e6f8ebcd5dd1116d3ac8a9a0d25c8f62cc51fe 9e6fa73467892eb2333c0a94ca38b66b7cc0432326de93ff131ecde4c165114e
+R 18674a1a51901a5d53c84c6dfa4ba3a6
+U dan
+Z 42097e4404b87bcc5b9a7240b577b022
 # Remove this line to create a well-formed Fossil manifest.

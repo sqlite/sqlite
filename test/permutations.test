@@ -1119,6 +1119,18 @@ test_suite "maindbname" -prefix "" -description {
   dbconfig_maindbname_icecube $::dbhandle
 }
 
+test_suite "win_unc_locking" -prefix "" -description {
+  Run the "wal*" tests with UNC style single fd locking.
+} -files [
+  test_set                                      \
+      {*}[glob [file join $testdir wal*]]       \
+      -exclude *fault* *malloc* *crash* *slow* walsetlk.test
+] -initialize {
+  set sqlite3_win_test_unc_locking 1
+} -shutdown {
+  set sqlite3_win_test_unc_locking 0
+}
+
 # End of tests
 #############################################################################
 
