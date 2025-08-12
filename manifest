@@ -1,5 +1,5 @@
-C On\swindows,\swhen\sopening\sa\sUNC\spath,\sfall\sback\sto\susing\sa\ssingle\sfile\shandle\sshared\sbetween\sall\sconnections\sfor\slocking.
-D 2025-08-12T17:55:34.071
+C Fix\sa\sproblem\sbuilding\stestfixture\son\snon\sSQLITE_OS_WIN\splatforms.
+D 2025-08-12T18:57:02.694
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -752,7 +752,7 @@ F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 65e2c761446e1c9fa0342b7d2612a703483643c8b6a316d12a65b745a4727395
-F src/test1.c c55dee15ea54c6e012df823cddbec068291adfa46c6e837a8fc2d3729dd14d7e
+F src/test1.c 82d8aab7162a758d030728cab6ae6011785234854b7d6d2aebd877f985d1016a
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -2169,11 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6711110b1c7589311f012deee4d4dd5b771fa44ad328b471c9ef583960795199
-R 9c8bd9825359e182db79f50fb2b7a597
-T *branch * win-unc-fix
-T *sym-win-unc-fix *
-T -sym-trunk *
+P 5c0202d96c3a20a2cbcd38eba5e62371606894a0cbc2da4f60e10a1b5fa7bd04
+R 57aa9619c0758306406e2ed77b97a234
 U dan
-Z 86752bc54d7f0a99414d23fa683cb261
+Z c231b421c1351ad11aaf295d66bfc2c6
 # Remove this line to create a well-formed Fossil manifest.
