@@ -9158,6 +9158,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_pager_readdb_count;
   extern int sqlite3_pager_writedb_count;
   extern int sqlite3_pager_writej_count;
+  extern int sqlite3_win_test_unc_locking;
 #if SQLITE_OS_WIN
   extern LONG volatile sqlite3_os_type;
 #endif
@@ -9262,5 +9263,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   Tcl_LinkVar(interp, "sqlite_fts3_enable_parentheses",
       (char*)&sqlite3_fts3_enable_parentheses, TCL_LINK_INT);
 #endif
+  Tcl_LinkVar(interp, "sqlite3_win_test_unc_locking",
+      (char*)&sqlite3_win_test_unc_locking, TCL_LINK_INT);
   return TCL_OK;
 }
