@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sreading\swal\smode\sdatabases\sfrom\sUNC\sshares\son\swindows\sintroduced\sby\s[e88212b10a7829ff].
-D 2025-08-12T19:02:48.857
+C Doc\scleanups\sin\smain.mk.\sNo\sfunctional\schanges.
+D 2025-08-13T11:46:05.360
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -665,7 +665,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 411dd94b40406572caddf88392a1ccc4deed0f88d260516e59ca6e0c887ee861
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk db007da34d6529993138c8445ef9610318ba3db5ef5166b545072b93ab27f5c5
+F main.mk d83e31f37ba77f7a5398d96629a486b3f6b8c9cc5417f92a2e55f3857324894e
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a836126bbec5c14432ed7fc7e9e6f8ebcd5dd1116d3ac8a9a0d25c8f62cc51fe 9e6fa73467892eb2333c0a94ca38b66b7cc0432326de93ff131ecde4c165114e
-R 18674a1a51901a5d53c84c6dfa4ba3a6
-U dan
-Z 42097e4404b87bcc5b9a7240b577b022
+P f341e7812984b41acd7dd2dd795a1716a8826af4326578dcdf7d7fdd55124ceb
+R e32cc38c3ce8f20f725baa66d3c12e90
+U stephan
+Z 76cf94dc64de248e58289319551a4731
 # Remove this line to create a well-formed Fossil manifest.
