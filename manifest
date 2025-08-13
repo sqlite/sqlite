@@ -1,5 +1,5 @@
-C Move\sthe\sforced\sNDEBUG\sin\sfts3Int.h\sup\sabove\sthe\s#include\sof\sassert.h,\sas\sreported\sin\s[forum:8f16dd9480aad85f\s|\sforum\spost\s8f16dd9480aad85f].
-D 2025-08-13T17:58:47.165
+C Minor\sautosetup/README.md\stweaks.
+D 2025-08-13T18:30:42.027
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -33,7 +33,7 @@ F autoconf/tea/teaish.tcl 81feb417e718ed75cdd7e2fdf6771f3da80dae97377a90c4d5b62b
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md f324bb9f9bf1cc787122034df53fbfdfed28ee2657e6652b763d992ab0d04829
+F autosetup/README.md ce0f95980a687bb861bd830b76bc4b48513567be5cf5ee7004f4f3439ffe3841
 F autosetup/autosetup 74a9782b68d07934510190fbd03fc6ad92e63f0ea3b5cbffa5f0bd271ad60f01 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 47c4a2ddd1966aa8564e105fc1f2ba3c9c1668b44d4979424f65148d7976064c
-R 535ae5d0d23c8a7af5c0b79576ef139c
+P 3b06d1c9b6c03f38029a8b98fef6253647878c0f8b05447ec0c8122f189c90dc
+R 48d5cc70c03a653161ab38251c85b829
 U stephan
-Z 0c743bf66d471ff0c6bc4888ae9baf86
+Z 136f0cc4707441ee6428a1013d4e4c6d
 # Remove this line to create a well-formed Fossil manifest.
