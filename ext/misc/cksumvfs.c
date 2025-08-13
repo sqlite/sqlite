@@ -433,6 +433,7 @@ static int cksmRead(
   pFile = ORIGFILE(pFile);
   rc = pFile->pMethods->xRead(pFile, zBuf, iAmt, iOfst);
   if( rc==SQLITE_OK ){
+    assert( iAmt==100 || (iAmt & (iAmt-1))==0 );
     if( iOfst==0 && iAmt>=100 && (
           memcmp(zBuf,"SQLite format 3",16)==0 || memcmp(zBuf,"ZV-",3)==0 
     )){
@@ -446,7 +447,7 @@ static int cksmRead(
     **    (2) checksum verification is enabled
     **    (3) we are not in the middle of checkpoint
     */
-    if( iAmt>=512 && (iAmt & (iAmt-1))==0   /* (1) */
+    if( iAmt>=512                           /* (1) */
      && p->verifyCksm                       /* (2) */
      && !p->inCkpt                          /* (3) */
     ){
@@ -611,8 +612,10 @@ static int cksmSectorSize(sqlite3_file *pFile){
 ** Return the device characteristic flags supported by a cksm-file.
 */
 static int cksmDeviceCharacteristics(sqlite3_file *pFile){
+  int devchar = 0;
   pFile = ORIGFILE(pFile);
-  return pFile->pMethods->xDeviceCharacteristics(pFile);
+  devchar = pFile->pMethods->xDeviceCharacteristics(pFile);
+  return (devchar & ~SQLITE_IOCAP_SUBPAGE_READ);
 }
 
 /* Create a shared memory file mapping */
