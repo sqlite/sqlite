@@ -1,5 +1,5 @@
-C Doc\supdates\sin\sthe\sconfigure\sscript.\sNo\sfunctional\schanges.
-D 2025-08-13T16:49:55.791
+C Move\sthe\sforced\sNDEBUG\sin\sfts3Int.h\sup\sabove\sthe\s#include\sof\sassert.h,\sas\sreported\sin\s[forum:8f16dd9480aad85f\s|\sforum\spost\s8f16dd9480aad85f].
+D 2025-08-13T17:58:47.165
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -81,7 +81,7 @@ F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 4f02858ab845a97bedf06e6cc1fba49a81fe5e00a26df68d0ad0f00a5814fa70
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h d0f70d602be987501cf6eff86a06a0b5d0389929c6abe24972d59594e6f4cb03
+F ext/fts3/fts3Int.h ed9b8bc5ed5be402069651e49d4855cb849af706cf3fe68548f58a2c21eefc7f
 F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
 F ext/fts3/fts3_expr.c 5c13796638d8192c388777166075cdc8bc4b6712024cd5b72c31acdbefce5984
 F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641814672a
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7b7ce5f17fd63932a050b917b4356c23eec6040d1c4f51136393d7c6e3d40a63
-R c2023e6f4f5cb66676dc8d4499f8e079
+P 47c4a2ddd1966aa8564e105fc1f2ba3c9c1668b44d4979424f65148d7976064c
+R 535ae5d0d23c8a7af5c0b79576ef139c
 U stephan
-Z b196e77561dc3bdad4b4d6b8962155a4
+Z 0c743bf66d471ff0c6bc4888ae9baf86
 # Remove this line to create a well-formed Fossil manifest.
