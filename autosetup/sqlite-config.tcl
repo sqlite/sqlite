@@ -1,7 +1,7 @@
 # This file holds functions for autosetup which are specific to the
 # sqlite build tree.  They are in this file, instead of auto.def, so
 # that they can be reused in the autoconf sub-tree. This file requires
-# functions from proj.tcl.
+# functions from the project-agnostic proj.tcl.
 
 if {[string first " " $autosetup(srcdir)] != -1} {
   user-error "The pathname of the source tree\
@@ -11,7 +11,7 @@ if {[string first " " $autosetup(builddir)] != -1} {
   user-error "The pathname of the build directory\
               may not contain space characters"
 }
-#parray ::autosetup; exit 0
+
 use proj
 #
 # We want the package version info to be emitted early on, but doing
@@ -69,7 +69,8 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 
   #
   # Default value for the --all flag. Can hypothetically be modified
-  # by non-canonical builds.
+  # by non-canonical builds (it was added for a Tcl extension build
+  # mode which was eventually removed).
   #
   all-flag-default 0
 }]]
@@ -92,7 +93,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 #  sqlite-configure BUILD_NAME { build-specific configure script }
 #
 # There are snippets of build-mode-specific decision-making in
-# [sqlite-configure-finalize]
+# [sqlite-configure-finalize], which gets run after $configScript.
 proc sqlite-configure {buildMode configScript} {
   proj-assert {$::sqliteConfig(build-mode) eq "unknown"} \
     "sqlite-configure must not be called more than once"
@@ -112,8 +113,10 @@ proc sqlite-configure {buildMode configScript} {
   #
   # Reference: https://msteveb.github.io/autosetup/developer/
   #
-  # All configure flags must be described in an 'options' call. The
-  # general syntax is:
+  # All configure flags must be described in one or more calls to
+  # autosetup's [options] and [options-add] functions. The general
+  # syntax of the single argument to those functions is a list contain
+  # a mapping of flags to help text:
   #
   #  FLAG => {Help text}
   #
@@ -164,13 +167,18 @@ proc sqlite-configure {buildMode configScript} {
   ########################################################################
   set allFlags {
     # Structure: a list of M {Z} pairs, where M is a descriptive
-    # option group name  and Z is a list of X Y pairs. X is a list of
+    # option group name and Z is a list of X Y pairs. X is a list of
     # $buildMode name(s) to which the Y flags apply, or {*} to apply
     # to all builds. Y is a {block} in the form expected by
-    # autosetup's [options] command.  Each block which is applicable
-    # to $buildMode is appended to a new list before that list is
-    # passed on to [options]. The order of each Y and sub-Y is
-    # retained, which is significant for rendering of --help.
+    # autosetup's [options] and [options-add] command.  Each block
+    # which is applicable to $buildMode is passed on to
+    # [options-add]. The order of each Y and sub-Y is retained, which
+    # is significant for rendering of --help.
+    #
+    # Maintenance note: [options] does not support comments in
+    # options, but we filter this object through
+    # [proj-strip-hash-comments] to remove them before passing them on
+    # to [options].
 
     # When writing {help text blocks}, be aware that:
     #
@@ -180,7 +188,7 @@ proc sqlite-configure {buildMode configScript} {
     # pretty-printed.
     #
     # B) Vars and commands are NOT expanded, but we use a [subst] call
-    # below which will replace (only) var refs.
+    # below which will replace (only) $var refs.
 
     # Options for how to build the library
     build-modes {
@@ -337,7 +345,6 @@ proc sqlite-configure {buildMode configScript} {
       }
       {canonical autoconf} {
         rpath=1 => {Disable use of the rpath linker flag}
-
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
         soname:=legacy
           => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
