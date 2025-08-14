@@ -1,5 +1,5 @@
-C Minor\sinternal\scleanups\sin\sthe\sconfigure\sscript.\sNo\sbehavioral\schanges.
-D 2025-08-13T19:59:37.600
+C Avoid\sdepending\son\sHAVE_STDINT_H\sand\sSQLITE_PTRSIZE\sand\sother\sthings\sin\snon-amalgamation\sbuilds\sof\sfts5.
+D 2025-08-14T19:36:59.997
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -107,7 +107,7 @@ F ext/fts3/unicode/mkunicode.tcl cbf5f7b5c8ce8014bad731f246f2e520eece908465de477
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
 F ext/fts5/fts5.h ff5d3cc88b29e41612bfb29eb723e29e38973de62ca75ba3e8f94ccb67f5b5f2
-F ext/fts5/fts5Int.h cc1e6ed28e1fbde71e4427ba6d15b0c73a4f8f119adeb4f7bcc97e3336fbbeac
+F ext/fts5/fts5Int.h 97f373ecedf024fa7bf23989c3e529132225c169e440fe1f48e9b28dfed05ddc
 F ext/fts5/fts5_aux.c da4a7a9a11ec15c6df0699d908915a209bcde48f0b04101461316b59f71abffb
 F ext/fts5/fts5_buffer.c f1e6d0324d7c55329d340673befc26681a372a4d36086caa8d1ec7d7c53066c7
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e3bd1feccaee8ff2f68b7b863769dd739e8a434fd32fed73deeeec885628311c
-R 2c28c08a4556fb45eadedd8aaf45163d
-U stephan
-Z 39cd47253f80814b5b6a2012d224171f
+P c42269e5ce3688fccee16cf35e1101f36afc3ccc19bef57b177d46c84db2435a
+R bb354e50187c94f5a16b3def751bd582
+U dan
+Z c951f603dce3b316aeb76e69c04be775
 # Remove this line to create a well-formed Fossil manifest.
