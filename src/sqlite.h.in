@@ -6210,6 +6210,7 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 ** or a NULL pointer if there were no prior calls to
 ** sqlite3_set_clientdata() with the same values of D and N.
 ** Names are compared using strcmp() and are thus case sensitive.
+** It returns 0 on success and SQLITE_NOMEM on allocation failure.
 **
 ** If P and X are both non-NULL, then the destructor X is invoked with
 ** argument P on the first of the following occurrences:
@@ -6245,7 +6246,7 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 ** languages or in other circumstances where it might be possible for an
 ** attacker to invoke them.  Any agent that can invoke these interfaces
 ** can probably also take control of the process.
-** 
+**
 ** Database connection client data is only available for SQLite
 ** version 3.44.0 ([dateof:3.44.0]) and later.
 **
