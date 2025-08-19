@@ -174,6 +174,45 @@ do_test 3.5 {
   {INSERT sqlite_stat1 CONFLICT {t xyz t sqlite_autoindex_xyz_1 t {100 1 1}} {t xyz t sqlite_autoindex_xyz_1 t {200 1 1}}} 
 }]
 
+#-------------------------------------------------------------------------
+set ::conflict_list [list]
+proc xConflict {args} {
+  lappend ::conflict_list $args
+  return "OMIT"
+}
+
+forcedelete test.db2
+do_execsql_test 4.0 {
+  CREATE TABLE x1(a, b, c, PRIMARY KEY(a)) WITHOUT ROWID;
+  INSERT INTO x1 VALUES(1, 'one', 'i');
+  INSERT INTO x1 VALUES(2, 'two', 'ii');
+  INSERT INTO x1 VALUES(3, 'three', 'iii');
+  VACUUM INTO 'test.db2';
+}
+
+set C [changeset_from_sql {
+  DELETE FROM x1 WHERE a=2;
+}]
+
+sqlite3 db2 test.db2
+do_execsql_test -db db2 4.1 {
+  UPDATE x1 SET b='four hundred' WHERE a=2;
+}
+
+do_test 4.2.1 {
+  set ::conflict_list [list]
+  sqlite3changeset_apply_v2 db2 $C xConflict
+  set ::conflict_list
+} [list {*}{
+  {DELETE x1 DATA {i 2 t two t ii} {i 2 t {four hundred} t ii}}
+}]
+do_test 4.2.2 {
+  set ::conflict_list [list]
+  sqlite3changeset_apply_v2 -ignorenoop db2 $C xConflict
+  set ::conflict_list
+} [list {*}{
+  {DELETE x1 DATA {i 2 t two t ii} {i 2 t {four hundred} t ii}}
+}]
 
 
 finish_test
