@@ -4870,7 +4870,9 @@ static int sessionConflictHandler(
       int nBlob = pIter->in.iNext - pIter->in.iCurrent;
       sessionAppendBlob(&p->constraints, aBlob, nBlob, &rc);
       return SQLITE_OK;
-    }else if( p->bIgnoreNoop==0 || op!=SQLITE_DELETE ){
+    }else if( p->bIgnoreNoop==0 || op!=SQLITE_DELETE 
+           || eType==SQLITE_CHANGESET_CONFLICT 
+    ){
       /* No other row with the new.* primary key. */
       res = xConflict(pCtx, eType+1, pIter);
       if( res==SQLITE_CHANGESET_REPLACE ) rc = SQLITE_MISUSE;
