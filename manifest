@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\san\sSQLITE_CHANGESET_DATA\sconflict\sof\sa\sDELETE\soperation\sto\sbe\sincorrectly\signored\sif\sthe\sSQLITE_CHANGESETAPPLY_IGNORENOOP\sis\sspecified.
-D 2025-08-19T21:35:23.154
+C In\sbuilds\swithout\sHAVE_FCHMOD\s(e.g.\sWASI),\smake\sthe\schmod()\sof\stemp\sfiles\sa\sno-op,\sanalog\sto\show\slack\sof\sHAVE_FCHOWN\sis\shandled,\sas\sdiscussed\sin\s[forum:98d5158d3fdd7a41\s|\sforum\spost\s98d5158d3f].
+D 2025-08-20T09:43:15.813
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 690107e26cc4e9809eeb9826c0efdbff4a42b9cc59d0f0b855ca3e6021e1ae73
+F src/os_unix.c 44f5fa0fa67595c9308a0ce4ae9e01ae2b2dcee0f6c7c2f5e8473ecd23e0216a
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 23c0f17deb892da6b32fef1f465507df7ab5cd01d774288cb43695658a649259
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c664cee321fc449283ecfc073c45057c078299be33dc0c170b156d81a6698b55
-R d2e2b61077873ad999793e9f0f5fdf47
-U dan
-Z 9282b014ea51abf55d96fd4bea24c74c
+P 78b543f85ac6643f3b69bf1250c6362f00e030f93f460ef7d04902682ef64ee9
+R a71f49d8d9f654e8f455c5338b9ab922
+U stephan
+Z 08af4145a8110bad977817d5c75cc90c
 # Remove this line to create a well-formed Fossil manifest.
