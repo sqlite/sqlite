@@ -5663,14 +5663,19 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     }
     if( pParse->nErr ){
       assert( pParse->rc==SQLITE_ERROR_MISSING_COLLSEQ );
-      if( pIdx->bNoQuery==0 ){
+      if( pIdx->bNoQuery==0 
+       && sqlite3HashFind(&pIdx->pSchema->idxHash, pIdx->zName)
+      ){
         /* Deactivate the index because it contains an unknown collating
         ** sequence.  The only way to reactive the index is to reload the
         ** schema.  Adding the missing collating sequence later does not
         ** reactive the index.  The application had the chance to register
         ** the missing index using the collation-needed callback.  For
         ** simplicity, SQLite will not give the application a second chance.
-        */
+        **
+        ** Except, do not do this if the index is not in the schema hash
+        ** table. In this case the index is currently being constructed
+        ** by a CREATE INDEX statement, and retrying will not help.  */
         pIdx->bNoQuery = 1;
         pParse->rc = SQLITE_ERROR_RETRY;
       }
