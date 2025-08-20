@@ -1532,6 +1532,9 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_OK:                 zName = "SQLITE_OK";                break;
       case SQLITE_ERROR:              zName = "SQLITE_ERROR";             break;
       case SQLITE_ERROR_SNAPSHOT:     zName = "SQLITE_ERROR_SNAPSHOT";    break;
+      case SQLITE_ERROR_RETRY:        zName = "SQLITE_ERROR_RETRY";       break;
+      case SQLITE_ERROR_MISSING_COLLSEQ:
+                                zName = "SQLITE_ERROR_MISSING_COLLSEQ";   break;
       case SQLITE_INTERNAL:           zName = "SQLITE_INTERNAL";          break;
       case SQLITE_PERM:               zName = "SQLITE_PERM";              break;
       case SQLITE_ABORT:              zName = "SQLITE_ABORT";             break;
