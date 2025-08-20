@@ -864,6 +864,7 @@ static int sqlite3LockAndPrepare(
   }while( (rc==SQLITE_ERROR_RETRY && ALWAYS(cnt<=SQLITE_MAX_PREPARE_RETRY))
        || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt)==1) );
   sqlite3BtreeLeaveAll(db);
+  assert( rc!=SQLITE_ERROR_RETRY );
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
   db->busyHandler.nBusy = 0;
