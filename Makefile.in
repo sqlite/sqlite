@@ -15,13 +15,6 @@ all:
 # Known TODOs/FIXMEs/TOIMPROVEs for the autosetup port, in no
 # particular order...
 #
-# - TEA pieces.
-#
-# - Replace the autotools-specific distribution deliverable(s).
-#
-# - Confirm whether cross-compilation works and patch it
-# appropriately.
-#
 # Maintenance reminders:
 #
 # - This makefile should remain as POSIX-make-compatible as possible:
