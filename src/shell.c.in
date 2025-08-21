@@ -1905,7 +1905,7 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 ** Output the given string as a quoted string using SQL quoting conventions:
 **
 **   (1)   Single quotes (') within the string are doubled
-**   (2)   The whle string is enclosed in '...'
+**   (2)   The while string is enclosed in '...'
 **   (3)   Control characters other than \n, \t, and \r\n are escaped
 **         using \u00XX notation and if such substitutions occur,
 **         the whole string is enclosed in unistr('...') instead of '...'.
@@ -2151,7 +2151,7 @@ static void output_json_string(FILE *out, const char *z, i64 n){
 ** other than \t, \n, and \r\n
 **
 ** If no escaping is needed (the common case) then set *ppFree to NULL
-** and return the original string.  If escapingn is needed, write the
+** and return the original string.  If escaping is needed, write the
 ** escaped string into memory obtained from sqlite3_malloc64() or the
 ** equivalent, and return the new string and set *ppFree to the new string
 ** as well.
