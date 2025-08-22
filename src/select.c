@@ -443,8 +443,7 @@ void sqlite3SetJoinExpr(Expr *p, int iTable, u32 joinFlag){
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetVVAProperty(p, EP_NoReduce);
     p->w.iJoin = iTable;
-    if( p->op==TK_FUNCTION ){
-      assert( ExprUseXList(p) );
+    if( ExprUseXList(p) ){
       if( p->x.pList ){
         int i;
         for(i=0; i<p->x.pList->nExpr; i++){
