@@ -697,7 +697,12 @@ static int lookupName(
     /* Advance to the next name context.  The loop will exit when either
     ** we have a match (cnt>0) or when we run out of name contexts.
     */
-    if( cnt ) break;
+    if( cnt ){
+      if( pNC->pOn && cnt==1 && pNC->pOn->w.iJoin<pExpr->iTable ){
+        sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
+      }
+      break;
+    }
     pNC = pNC->pNext;
     nSubquery++;
   }while( pNC );
@@ -1455,6 +1460,53 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 }
 
 /*
+** True if the SrcList passed as the only argument contains a RIGHT JOIN.
+*/
+#define hasRightJoin(pSrc) (((pSrc)->a[0].fg.jointype && JT_LTORJ)!=0)
+
+/*
+** Like resolveExprStep(), except this version does some special handling
+** of ON expressions to ensure they do not illegally refer to tables 
+** to the right of them within the FROM clause.
+*/
+static int resolveOnStep(Walker *pWalker, Expr *pExpr){
+  NameContext *pNC = pWalker->u.pNC;
+  int res;
+
+  /* SQLite raises an error if an ON clause refers to tables to the right
+  ** of itself in its join if either:
+  **
+  **   + the join the ON is attached to is an OUTER JOIN, or
+  **   + the FROM clause in question features at least one FULL or RIGHT join.
+  **
+  ** SQLite versions 3.0-3.38 treated a ON clause on an INNER JOIN as 
+  ** equivalent to part of the WHERE clause, and so it was not an error for
+  ** them refer to tables to the right of themselves. Starting with 3.39,
+  ** SQLite will raise an error in the second case enumerated above as well.
+  ** This makes SQLite more like other systems while preserving legacy
+  ** behavior.
+  **
+  ** So, if this expression is an ON clause and either of the above are true,
+  ** then set NameContext.pOn to point to the expression before resolving
+  ** its descendants. lookupName() will generate an error if any descendant
+  ** expression refers to a table to the right of this ON clause in the current
+  ** query.  */
+  if( pNC->pOn==0 && (
+      (ExprHasProperty(pExpr, EP_OuterON))
+   || (ExprHasProperty(pExpr, EP_InnerON) && hasRightJoin(pNC->pSrcList))
+  )){
+    pNC->pOn = pExpr;
+    res = sqlite3WalkExprNN(pWalker, pExpr);
+    if( res==WRC_Continue ) res = WRC_Prune;
+    pNC->pOn = 0;
+  }else{
+    res = resolveExprStep(pWalker, pExpr);
+  }
+  
+  return res;
+}
+
+/*
 ** pEList is a list of expressions which are really the result set of the
 ** a SELECT statement.  pE is a term in an ORDER BY or GROUP BY clause.
 ** This routine checks to see if pE is a simple identifier which corresponds
@@ -1936,6 +1988,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
           pItem->fg.isCorrelated = (pOuterNC->nRef>nRef);
         }
       }
+      if( pItem->fg.isOn ) sNC.ncFlags |= NC_On;
     }
     if( pOuterNC && ALWAYS(pOuterNC->nNestedSelect>0) ){
       pOuterNC->nNestedSelect--;
@@ -1944,7 +1997,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     /* Set up the local name-context to pass to sqlite3ResolveExprNames() to
     ** resolve the result-set expression list.
     */
-    sNC.ncFlags = NC_AllowAgg|NC_AllowWin;
+    sNC.ncFlags |= (NC_AllowAgg|NC_AllowWin);
     sNC.pSrcList = p->pSrc;
     sNC.pNext = pOuterNC;
  
@@ -1985,7 +2038,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     }
     sNC.ncFlags |= NC_Where;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
-    sNC.ncFlags &= ~NC_Where;
+    sNC.ncFlags &= ~(NC_Where);
 
     /* Resolve names in table-valued-function arguments */
     for(i=0; i<p->pSrc->nSrc; i++){
@@ -2151,7 +2204,11 @@ int sqlite3ResolveExprNames(
   savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin|NC_OrderAgg);
   pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin|NC_OrderAgg);
   w.pParse = pNC->pParse;
-  w.xExprCallback = resolveExprStep;
+  if( (pNC->ncFlags & (NC_On|NC_Where))==(NC_On|NC_Where) ){
+    w.xExprCallback = resolveOnStep;
+  }else{
+    w.xExprCallback = resolveExprStep;
+  }
   w.xSelectCallback = (pNC->ncFlags & NC_NoSelect) ? 0 : resolveSelectStep;
   w.xSelectCallback2 = 0;
   w.u.pNC = pNC;

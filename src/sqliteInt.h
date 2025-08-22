@@ -3496,6 +3496,7 @@ struct SrcList {
 struct NameContext {
   Parse *pParse;       /* The parser */
   SrcList *pSrcList;   /* One or more tables used to resolve names */
+  Expr *pOn;           /* Currently inside this ON(...) clause */
   union {
     ExprList *pEList;    /* Optional list of result-set columns */
     AggInfo *pAggInfo;   /* Information about aggregates at this level */
@@ -3541,6 +3542,7 @@ struct NameContext {
 #define NC_FromDDL   0x040000 /* SQL text comes from sqlite_schema */
 #define NC_NoSelect  0x080000 /* Do not descend into sub-selects */
 #define NC_Where     0x100000 /* Processing WHERE clause of a SELECT */
+#define NC_On        0x200000 /* Requires EP_OuterOn|EP_InnerOn processing */
 #define NC_OrderAgg 0x8000000 /* Has an aggregate other than count/min/max */
 
 /*
