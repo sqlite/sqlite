@@ -1,4 +1,4 @@
-# 2022 May 17
+# 2025-08-22
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -9,7 +9,8 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library.
-#
+# 
+# Tests arising from https://sqlite.org/forum/forumpost/ccfb3b5052
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

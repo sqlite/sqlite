@@ -1,5 +1,5 @@
-C Disable\sthe\squery\sflattener\sif\sthe\ssubquery\sis\sa\sjoin\sand\sthe\ssubquery\nis\sanywhere\sto\sthe\sright\sof\sa\sRIGHT\sJOIN\sand\sif\sthere\sis\san\sON\sclause\non\sthe\ssubquery.
-D 2025-08-22T22:02:11.709
+C Minor\stweaks\sto\sthis\soption,\sto\smake\sit\sready\sto\sland\son\strunk,\sif\swe\ndecide\sto\sdo\sso.
+D 2025-08-22T23:06:00.404
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -741,7 +741,7 @@ F src/printf.c 5f0c957af9699e849d786e8fbaa3baab648ca5612230dc17916434c14bc8698f
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c 71ac1e6f0e25f52627acd5f76e775cc58e6d150ff46e0e1bbd4a8c934b3e7c62
+F src/select.c 6f42fdb7e6ae71296d04bc2869792ab8b76685e4318f432d32b9ed90269d5e3c
 F src/shell.c.in 0636915df0dbac6c780f04959f5d1055f206fb281b2c8fc8b113fe7bfc7d44ef
 F src/sqlite.h.in ebfc0358de0e18aabee7fa918f2f846894e23bebc74160fbe265c99046ee61b8
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
@@ -1335,7 +1335,7 @@ F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
 F test/joinH.test fd76024ff104baec16417db5cafc0894ad4e0863e70803e63c1bba0322706339
-F test/joinI.test 78cae6f746a78f32d8aedb8cf7b93bcd802c245db0986330844dfb1a6700ebab
+F test/joinI.test 12ed46dd4c60dba12cdf4aa3c343c769bc05d857496efd353c8a6d929f90c12c
 F test/journal1.test bc61a4228db11bffca118bd358ba4b868524bf080f3532749de6c539656e20fa
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test e5aeff93a7776cf644dbc48dec277655cff80a1cd24689036abc87869b120ea6
@@ -2170,11 +2170,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a4107c947c03ed48de3ab3f516cec8a3c092cec8ee19145fb564152e5cd16c85
-R 710203d1160026cd91e17ea747025dc3
-T *branch * on-clause-option-4
-T *sym-on-clause-option-4 *
-T -sym-trunk *
+P 7776ab3f5a2ae2b25686f57500ea6045f3b38df938a4261b918400b3dabad7e8
+R faf380023e0e4ab582c3fa399e33f11d
 U drh
-Z 74f7441c4400484a4d62f492ad0af3ec
+Z 29b35a9271d7f1002434fc3f28121e74
 # Remove this line to create a well-formed Fossil manifest.

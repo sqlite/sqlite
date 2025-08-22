@@ -4403,7 +4403,9 @@ static int compoundHasDifferentAffinities(Select *p){
 **
 **  (29)  The subquery may not be to the right of a RIGHT JOIN if the
 **        subquery is a join and if there is an ON clause on the subquery.
-**
+**        TODO:  This constraint could be relaxed using changes found in
+**        branch on-clause-error-fix circa 2025-08-22  This constraint arises
+**        from the problem reported by Forum post 2025-0821T14:14:03z
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
