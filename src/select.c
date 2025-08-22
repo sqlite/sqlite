@@ -660,6 +660,7 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
       p->pWhere = sqlite3ExprAnd(pParse, p->pWhere, pRight->u3.pOn);
       pRight->u3.pOn = 0;
       pRight->fg.isOn = 1;
+      p->selFlags |= SF_OnToWhere;
     }
   }
   return 0;
@@ -7496,6 +7497,50 @@ static SQLITE_NOINLINE void existsToJoin(
 }
 
 /*
+** The xExpr and xSelect callbacks for the search of invalid ON clause terms.
+*/
+static int selectCheckOnClausesExpr(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN 
+   && ExprHasProperty(pExpr, EP_OuterON|EP_InnerON)
+  ){
+    if( pExpr->w.iJoin<pExpr->iTable ){
+      if( ExprHasProperty(pExpr, EP_OuterON) || pWalker->eCode ){
+        sqlite3ErrorMsg(pWalker->pParse,
+            "ON clause references tables to its right");
+        return WRC_Abort;
+      }
+    }
+  }
+  return WRC_Continue;
+}
+static int selectCheckOnClausesSelect(Walker *pWalker, Select *pSelect){
+  UNUSED_PARAMETER(pWalker);
+  if( (pSelect->selFlags & SF_OnToWhere)==0 ){
+    return WRC_Prune;
+  }else{
+    return WRC_Continue;
+  }
+}
+
+/*
+** Check all ON clauses in pSelect to verify that they do not reference
+** columns to the right.
+*/
+static void selectCheckOnClauses(Parse *pParse, Select *pSelect){
+  Walker w;
+
+  assert( pSelect->selFlags & SF_OnToWhere );
+  assert( pSelect->pSrc!=0 && pSelect->pSrc->nSrc>=2 );
+  memset(&w, 0, sizeof(w));
+  w.pParse = pParse;
+  w.eCode = (pSelect->pSrc->a[0].fg.jointype & JT_LTORJ)!=0;
+  w.xExprCallback = selectCheckOnClausesExpr;
+  w.xSelectCallback = selectCheckOnClausesSelect;
+  sqlite3WalkSelect(&w, pSelect);
+  pSelect->selFlags &= ~SF_OnToWhere;
+}
+
+/*
 ** Generate byte-code for the SELECT statement given in the p argument. 
 **
 ** The results are returned according to the SelectDest structure.
@@ -7621,6 +7666,18 @@ int sqlite3Select(
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
+
+  /* If the SELECT statement contains ON clauses that were moved into
+  ** into the WHERE clause, go through and verify that none of the terms
+  ** in the ON clauses reference tables to the right of the ON clause.
+  ** Do this now, after name resolution, but before query flattening
+  */
+  if( p->selFlags & SF_OnToWhere ){
+    selectCheckOnClauses(pParse, p);
+    if( pParse->nErr ){
+      goto select_end;
+    }
+  }
 
   /* If the SF_UFSrcCheck flag is set, then this function is being called
   ** as part of populating the temp table for an UPDATE...FROM statement.
