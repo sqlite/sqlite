@@ -4401,6 +4401,9 @@ static int compoundHasDifferentAffinities(Select *p){
 **  (28)  The subquery is not a MATERIALIZED CTE.  (This is handled
 **        in the caller before ever reaching this routine.)
 **
+**  (29)  The subquery may not be to the right of a RIGHT JOIN if the
+**        subquery is a join and if there is an ON clause on the subquery.
+**
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
@@ -4464,6 +4467,12 @@ static int flattenSubquery(
     return 0;                                            /* Restriction (15) */
   }
   if( pSubSrc->nSrc==0 ) return 0;                       /* Restriction (7)  */
+  if( pSubSrc->nSrc>1
+   && pSubitem->fg.isOn
+   && (pSrc->a[0].fg.jointype & JT_LTORJ)!=0
+  ){
+    return 0;                                            /* Restriction (29) */
+  }
   if( pSub->selFlags & SF_Distinct ) return 0;           /* Restriction (4)  */
   if( pSub->pLimit && (pSrc->nSrc>1 || isAgg) ){
      return 0;         /* Restrictions (8)(9) */
