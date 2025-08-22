@@ -1,5 +1,5 @@
-C Fix\sa\sminor\stypo\sin\sa\scomment.
-D 2025-08-21T18:47:01.547
+C Enhance\streeview\sso\sthat\sit\sshows\sthe\scontents\sof\sON\sclauses\swhile\nthey\sare\sstill\sattached\sto\sthe\sSrcItem\sobject\sand\sbefore\sthey\sare\nmoved\sinto\sthe\sWHERE\sclause.
+D 2025-08-22T18:19:26.194
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -801,7 +801,7 @@ F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 8400646d2830afc2f2dc465a75e3a92e4bedeea623f19dbd79c0c12d0dd6dda2
-F src/treeview.c d85ce76e6d1498d781957c07cb234da6d77ce0ed2d196480d516f54dabc62279
+F src/treeview.c 3ce7ac9835d2d70cc1c868b01b747ae8a062322e155701e58e3d62ca79aada7a
 F src/trigger.c d5cf2541ff048f30b6a0507eb3d1ec4e695c53584e3b2298a5bf248714fe185e
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9f15182776b30676c9aae9bcb5d4ad7580359fbdd607c2a9227c9cf2c81a4054
-R e87d0e2ec7db35078d5f7c68106ae850
+P 9ada44eb6d26532e45cdd2ed8d5707f1734d0177a13b493ff9cf070e0a992522
+R 6e697a296e1f3201fc9a77e474a82c56
 U drh
-Z a3b0bda8d54e990d1d0f3efd38f275ec
+Z ad617721d7c7f540adf02c29a96cfdc3
 # Remove this line to create a well-formed Fossil manifest.
