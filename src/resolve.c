@@ -697,12 +697,7 @@ static int lookupName(
     /* Advance to the next name context.  The loop will exit when either
     ** we have a match (cnt>0) or when we run out of name contexts.
     */
-    if( cnt ){
-      if( pNC->pOn && cnt==1 && pNC->pOn->w.iJoin<pExpr->iTable ){
-        sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
-      }
-      break;
-    }
+    if( cnt ) break;
     pNC = pNC->pNext;
     nSubquery++;
   }while( pNC );
@@ -1501,6 +1496,26 @@ static int resolveOnStep(Walker *pWalker, Expr *pExpr){
     pNC->pOn = 0;
   }else{
     res = resolveExprStep(pWalker, pExpr);
+    if( pExpr->op==TK_COLUMN && pWalker->pParse->nErr==0 ){
+      /* A reference to a table column has just been resolved. Find the
+      ** name-context that it matched against: */
+      int iTab = pExpr->iTable;
+      do {
+        SrcList *p = pNC->pSrcList;
+        if( iTab>=p->a[0].iCursor && iTab<=p->a[p->nSrc-1].iCursor ) break;
+        pNC = pNC->pNext;
+      }while( pNC );
+
+      /* If the name-context that was matched against is currently inside
+      ** an ON expression, check that the specific FROM object within the
+      ** name-context was not to the right of the ON clause. If it was,
+      ** it is an error.  */
+      if( pNC && pNC->pOn && pNC->pOn->w.iJoin<pExpr->iTable ){
+        sqlite3ErrorMsg(
+            pWalker->pParse, "ON clause references tables to its right"
+        );
+      }
+    }
   }
   
   return res;
@@ -1960,7 +1975,12 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
  
     /* Recursively resolve names in all subqueries in the FROM clause
     */
-    if( pOuterNC ) pOuterNC->nNestedSelect++;
+    if( pOuterNC ){
+      pOuterNC->nNestedSelect++;
+      if( pOuterNC->pOn ){
+        sNC.ncFlags |= NC_On;
+      }
+    }
     for(i=0; i<p->pSrc->nSrc; i++){
       SrcItem *pItem = &p->pSrc->a[i];
       assert( pItem->zName!=0
@@ -2204,11 +2224,7 @@ int sqlite3ResolveExprNames(
   savedHasAgg = pNC->ncFlags & (NC_HasAgg|NC_MinMaxAgg|NC_HasWin|NC_OrderAgg);
   pNC->ncFlags &= ~(NC_HasAgg|NC_MinMaxAgg|NC_HasWin|NC_OrderAgg);
   w.pParse = pNC->pParse;
-  if( (pNC->ncFlags & (NC_On|NC_Where))==(NC_On|NC_Where) ){
-    w.xExprCallback = resolveOnStep;
-  }else{
-    w.xExprCallback = resolveExprStep;
-  }
+  w.xExprCallback = (pNC->ncFlags & NC_On) ? resolveOnStep : resolveExprStep;
   w.xSelectCallback = (pNC->ncFlags & NC_NoSelect) ? 0 : resolveSelectStep;
   w.xSelectCallback2 = 0;
   w.u.pNC = pNC;
@@ -2249,7 +2265,7 @@ int sqlite3ResolveExprListNames(
   Walker w;
   if( pList==0 ) return SQLITE_OK;
   w.pParse = pNC->pParse;
-  w.xExprCallback = resolveExprStep;
+  w.xExprCallback = (pNC->ncFlags & NC_On) ? resolveOnStep : resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
   w.xSelectCallback2 = 0;
   w.u.pNC = pNC;
@@ -2304,7 +2320,7 @@ void sqlite3ResolveSelectNames(
   Walker w;
 
   assert( p!=0 );
-  w.xExprCallback = resolveExprStep;
+  w.xExprCallback = 0;
   w.xSelectCallback = resolveSelectStep;
   w.xSelectCallback2 = 0;
   w.pParse = pParse;
