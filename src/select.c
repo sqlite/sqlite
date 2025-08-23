@@ -4705,17 +4705,12 @@ static int flattenSubquery(
   pSub = pSub1;
   for(pParent=p; pParent; pParent=pParent->pPrior, pSub=pSub->pPrior){
     int nSubSrc;
-    u8 jointype = 0;
-    u8 ltorj = pSrc->a[iFrom].fg.jointype & JT_LTORJ;
+    u8 jointype = pSubitem->fg.jointype;
     assert( pSub!=0 );
     pSubSrc = pSub->pSrc;     /* FROM clause of subquery */
     nSubSrc = pSubSrc->nSrc;  /* Number of terms in subquery FROM clause */
     pSrc = pParent->pSrc;     /* FROM clause of the outer query */
 
-    if( pParent==p ){
-      jointype = pSubitem->fg.jointype;     /* First time through the loop */
-    }
-   
     /* The subquery uses a single slot of the FROM clause of the outer
     ** query.  If the subquery has more than one element in its FROM clause,
     ** then expand the outer query to make space for it to hold all elements
@@ -4735,6 +4730,7 @@ static int flattenSubquery(
       pSrc = sqlite3SrcListEnlarge(pParse, pSrc, nSubSrc-1,iFrom+1);
       if( pSrc==0 ) break;
       pParent->pSrc = pSrc;
+      pSubitem = &pSrc->a[iFrom];
     }
 
     /* Transfer the FROM clause terms from the subquery into the
@@ -4749,11 +4745,10 @@ static int flattenSubquery(
            || pItem->u4.zDatabase==0 );
       if( pItem->fg.isUsing ) sqlite3IdListDelete(db, pItem->u3.pUsing);
       *pItem = pSubSrc->a[i];
-      pItem->fg.jointype |= ltorj;
+      pItem->fg.jointype |= (jointype & JT_LTORJ);
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));
     }
-    pSrc->a[iFrom].fg.jointype &= JT_LTORJ;
-    pSrc->a[iFrom].fg.jointype |= jointype | ltorj;
+    pSubitem->fg.jointype |= jointype;
  
     /* Now begin substituting subquery result set expressions for
     ** references to the iParent in the outer query.
