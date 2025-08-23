@@ -7497,28 +7497,91 @@ static SQLITE_NOINLINE void existsToJoin(
 }
 
 /*
-** The xExpr and xSelect callbacks for the search of invalid ON clause terms.
+** Type used for Walker callbacks by selectCheckOnClauses().
+*/
+typedef struct CheckOnCtx CheckOnCtx;
+struct CheckOnCtx {
+  SrcList *pSrc;                  /* SrcList for this context */
+  int iJoin;                      /* Cursor numbers must be =< than this */
+  CheckOnCtx *pParent;            /* Parent context */
+};
+
+/*
+** True if the SrcList passed as the only argument contains at least
+** one RIGHT or FULL JOIN. False otherwise.  
+*/
+#define hasRightJoin(pSrc) (((pSrc)->a[0].fg.jointype & JT_LTORJ)!=0)
+
+/*
+** The xExpr callback for the search of invalid ON clause terms.
 */
 static int selectCheckOnClausesExpr(Walker *pWalker, Expr *pExpr){
-  if( pExpr->op==TK_COLUMN 
-   && ExprHasProperty(pExpr, EP_OuterON|EP_InnerON)
+  CheckOnCtx *pCtx = pWalker->u.pCheckOnCtx;
+
+  /* Check if pExpr is root or near-root of an ON clause constraint that needs
+  ** to be checked to ensure that it does not refer to tables in its FROM
+  ** clause to the right of itself. i.e. it is either:
+  **
+  **   + an ON clause on an OUTER join, or
+  **   + an ON clause on an INNER join within a FROM that features at
+  **     least one RIGHT or FULL join.
+  */
+  if( (ExprHasProperty(pExpr, EP_OuterON))
+   || (ExprHasProperty(pExpr, EP_InnerON) && hasRightJoin(pCtx->pSrc))
   ){
-    if( pExpr->w.iJoin<pExpr->iTable ){
-      if( ExprHasProperty(pExpr, EP_OuterON) || pWalker->eCode ){
-        sqlite3ErrorMsg(pWalker->pParse,
-            "ON clause references tables to its right");
-        return WRC_Abort;
-      }
+    /* If CheckOnCtx.iJoin is already set, then fall through and process
+    ** this expression node as normal. Or, if CheckOnCtx.iJoin is still 0,
+    ** set it to the cursor number of the RHS of the join to which this
+    ** ON expression was attached and then iterate through the entire 
+    ** expression.  */
+    assert( pCtx->iJoin==0 || pCtx->iJoin==pExpr->w.iJoin );
+    if( pCtx->iJoin==0 ){
+      pCtx->iJoin = pExpr->w.iJoin;
+      sqlite3WalkExprNN(pWalker, pExpr);
+      pCtx->iJoin = 0;
+      return WRC_Prune;
     }
+  }
+
+  if( pExpr->op==TK_COLUMN ){
+    /* A column expression. Find the SrcList (if any) to which it refers.
+    ** Then, if CheckOnCtx.iJoin indicates that this expression is part of an
+    ** ON clause from that SrcList (i.e. if iJoin is non-zero), check that it
+    ** does not refer to a table to the right of CheckOnCtx.iJoin. */
+    do {
+      SrcList *pSrc = pCtx->pSrc;
+      int iTab = pExpr->iTable;
+      if( iTab>=pSrc->a[0].iCursor && iTab<=pSrc->a[pSrc->nSrc-1].iCursor ){
+        if( pCtx->iJoin && iTab>pCtx->iJoin ){
+          sqlite3ErrorMsg(pWalker->pParse, 
+              "ON clause references tables to its right");
+          return WRC_Abort;
+        }
+        break;
+      }
+      pCtx = pCtx->pParent;
+    }while( pCtx );
   }
   return WRC_Continue;
 }
+
+/*
+** The xSelect callback for the search of invalid ON clause terms.
+*/
 static int selectCheckOnClausesSelect(Walker *pWalker, Select *pSelect){
-  UNUSED_PARAMETER(pWalker);
-  if( (pSelect->selFlags & SF_OnToWhere)==0 ){
-    return WRC_Prune;
-  }else{
+  CheckOnCtx *pCtx = pWalker->u.pCheckOnCtx;
+  if( pSelect->pSrc==pCtx->pSrc || pSelect->pSrc->nSrc==0 ){
     return WRC_Continue;
+  }else{
+    CheckOnCtx sCtx;
+    memset(&sCtx, 0, sizeof(sCtx));
+    sCtx.pSrc = pSelect->pSrc;
+    sCtx.pParent = pCtx;
+    pWalker->u.pCheckOnCtx = &sCtx;
+    sqlite3WalkSelect(pWalker, pSelect);
+    pWalker->u.pCheckOnCtx = pCtx;
+    pSelect->selFlags &= ~SF_OnToWhere;
+    return WRC_Prune;
   }
 }
 
@@ -7528,15 +7591,17 @@ static int selectCheckOnClausesSelect(Walker *pWalker, Select *pSelect){
 */
 static void selectCheckOnClauses(Parse *pParse, Select *pSelect){
   Walker w;
-
+  CheckOnCtx sCtx;
   assert( pSelect->selFlags & SF_OnToWhere );
   assert( pSelect->pSrc!=0 && pSelect->pSrc->nSrc>=2 );
   memset(&w, 0, sizeof(w));
   w.pParse = pParse;
-  w.eCode = (pSelect->pSrc->a[0].fg.jointype & JT_LTORJ)!=0;
   w.xExprCallback = selectCheckOnClausesExpr;
   w.xSelectCallback = selectCheckOnClausesSelect;
-  sqlite3WalkSelect(&w, pSelect);
+  w.u.pCheckOnCtx = &sCtx;
+  memset(&sCtx, 0, sizeof(sCtx));
+  sCtx.pSrc = pSelect->pSrc;
+  sqlite3WalkExprNN(&w, pSelect->pWhere);
   pSelect->selFlags &= ~SF_OnToWhere;
 }
 

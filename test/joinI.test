@@ -93,4 +93,19 @@ do_catchsql_test 3.6 {
   ) CROSS JOIN t4;
 } {1 {ON clause references tables to its right}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE parent1(parent1key, child1key, Child2key, child3key);
+  CREATE TABLE child1 ( child1key NVARCHAR, value NVARCHAR );
+  CREATE TABLE child2 ( child2key NVARCHAR, value NVARCHAR );
+}
+
+do_execsql_test 4.1 {
+  SELECT parent1.parent1key, child1.value, child2.value
+    FROM parent1
+    LEFT OUTER JOIN child1 ON child1.child1key = parent1.child1key
+    INNER JOIN child2 ON child2.child2key = parent1.child2key;
+}
+
 finish_test
