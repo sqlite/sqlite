@@ -66,7 +66,7 @@ do_execsql_test 1.5 {
 
 do_execsql_test 1.6 {
   PRAGMA wal_checkpoint;
-} {0 26 26}
+} {/0 # #/}
 
 do_execsql_test 1.7 {
   WITH s(i) AS (
@@ -91,4 +91,3 @@ do_execsql_test 1.9 {
 } {100}
 
 finish_test
-
