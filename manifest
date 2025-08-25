@@ -1,5 +1,5 @@
-C Fix\sthe\scases\sin\sjoinI.test\son\sthis\sbranch.
-D 2025-08-23T16:26:36.004
+C Add\stest\scase\sto\sthis\sbranch\sto\sshow\sthat\sit\shandles\scases\swhere\sON\sclauses\suse\sselect-list\saliases\sto\srefer\sto\scolumns\sto\stheir\sright.
+D 2025-08-25T11:47:15.389
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1335,7 +1335,7 @@ F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
 F test/joinH.test fd76024ff104baec16417db5cafc0894ad4e0863e70803e63c1bba0322706339
-F test/joinI.test c30a1096c80a1300f088feb64fd356309cd14059d78352426550d2676f015ab4
+F test/joinI.test fc7d24a2b1e444979b83bd92c30ebb975cebb5b9eae4442ce94969bd8d083053
 F test/journal1.test bc61a4228db11bffca118bd358ba4b868524bf080f3532749de6c539656e20fa
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test e5aeff93a7776cf644dbc48dec277655cff80a1cd24689036abc87869b120ea6
@@ -2170,8 +2170,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d163535ec8d463d74112d38a606fa4d900e66deb1a414c947973cd1880e41526
-R 690bd5803e72eefc9593af834d5d854a
+P 23ac2377315af02b73db6ae37bfeeda1453e41efb702a6b707346956c2d41a9d
+R c3ddbbb4a589ad57ccdec20fe5b32da9
 U dan
-Z fa70e0c9e7cfdd60641dd6afc4b1e883
+Z 8e4e007df157011db9caa6d47ae4eeb7
 # Remove this line to create a well-formed Fossil manifest.

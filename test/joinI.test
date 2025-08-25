@@ -96,12 +96,25 @@ do_catchsql_test 3.6 {
 #-------------------------------------------------------------------------
 reset_db
 do_execsql_test 4.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  CREATE TABLE t3(c, d);
+}
+
+do_catchsql_test 4.1 {
+  SELECT c+d AS cd FROM t1 LEFT JOIN t2 ON (cd=5) CROSS JOIN t3;
+} {1 {ON clause references tables to its right}}
+
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
   CREATE TABLE parent1(parent1key, child1key, Child2key, child3key);
   CREATE TABLE child1 ( child1key NVARCHAR, value NVARCHAR );
   CREATE TABLE child2 ( child2key NVARCHAR, value NVARCHAR );
 }
 
-do_execsql_test 4.1 {
+do_execsql_test 5.1 {
   SELECT parent1.parent1key, child1.value, child2.value
     FROM parent1
     LEFT OUTER JOIN child1 ON child1.child1key = parent1.child1key
@@ -109,3 +122,4 @@ do_execsql_test 4.1 {
 }
 
 finish_test
+
