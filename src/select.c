@@ -7727,7 +7727,7 @@ int sqlite3Select(
 #endif
 
   /* If the SELECT statement contains ON clauses that were moved into
-  ** into the WHERE clause, go through and verify that none of the terms
+  ** the WHERE clause, go through and verify that none of the terms
   ** in the ON clauses reference tables to the right of the ON clause.
   ** Do this now, after name resolution, but before query flattening
   */
