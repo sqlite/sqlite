@@ -1,5 +1,5 @@
-C Version\s3.42.0
-D 2023-05-16T12:36:15.536
+C Add\sthe\sSQLITE_JSON_MAX_DEPTH\scompile-time\soption.\s\sCopied\nfrom\s[59446dc0bd009157].
+D 2025-08-27T17:37:13.579
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 764f2e3e8fb4ae1c8dfe03e65b2b3b01bd1fc57edf78ec2cab3a1301e90e1905
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc ce7bea7931e1ef96b0f44c0362074a8bb62e61a0e7cfdb05afebd928adaacc2b
 F README.md e05bd8fcb45da04ab045c37f79a98654e8aa3b3b8f302cfbba80a0d510df75f7
-F VERSION 17f95ae2fdf21f0e9575eb0b0511ea63f15d71dfff431b21c2b4adbfa70cfbbf
+F VERSION b8cf9ef55303fbe6d886a659f4de82cc71de0ebd1fb471647cc69b2a9e99175e
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -596,7 +596,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h b638809e083b601b618df877b2e89cb87c2a47a01f4def10be4c4ebb54664ac7
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c a8de1db43335fc4946370a7a7e47d89975ad678ddb15078a150e993ba2fb37d4
-F src/json.c 39b1c7527f3111923e65f168a87b03b591f12a41400a63d05c119794bee36620
+F src/json.c 451f6ed80bded893fab93055b193d112923891b5709f7b2c0cfbc0a32078da3d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c be5af440f3192c58681b5d43167dbca3ccbfce394d89faa22378a14264781136
 F src/main.c 035be2e9ba2a0fc1701a8ab1880af3001a968a24556433538a6c073558ee4341
@@ -2070,10 +2070,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4254f086419892634c80b0b915e14edea365adc6a45bcc75eecba889da274ac3
-R 5363a07f3e1462ec2f4570a33edb7167
-T +sym-release *
-T +sym-version-3.42.0 *
+P 831d0fb2836b71c9bc51067c49fee4b8f18047814f2ff22d817d25195cf350b0
+R 108eb2869061318665e49974b779998f
+T *branch * branch-3.42.0
+T *sym-branch-3.42.0 *
+T -sym-trunk *
 U drh
-Z 0ee8e0816fa6ac728bed7565aed4ec35
+Z 62e1f8fc227c8e1e70964447524afb7b
 # Remove this line to create a well-formed Fossil manifest.

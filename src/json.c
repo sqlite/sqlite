@@ -147,7 +147,11 @@ struct JsonParse {
 ** descent parser.  A depth of 1000 is far deeper than any sane JSON
 ** should go.  Historical note: This limit was 2000 prior to version 3.42.0
 */
-#define JSON_MAX_DEPTH  1000
+#ifndef SQLITE_JSON_MAX_DEPTH
+# define JSON_MAX_DEPTH  1000
+#else
+# define JSON_MAX_DEPTH SQLITE_JSON_MAX_DEPTH
+#endif
 
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
