@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment.
-D 2025-08-25T16:41:04.178
+C Add\stest\sto\sensure\sthat\schanging\sthe\snumber\sof\sreserved\sbytes\sin\sa\sdatabase\susing\sVACUUM\sdoes\snot\sconfuse\sother\sconnections\sin\sstock\sSQLite.
+D 2025-08-27T11:21:44.274
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1525,6 +1525,7 @@ F test/recover.test c76d05f33f0271fba0f0752170e03b0ab5952dc61dcea7ab3ba40df03c4c
 F test/regexp1.test 8f2a8bc1569666e29a4cee6c1a666cd224eb6d50e2470d1dc1df995170f3e0f1
 F test/regexp2.test 55ed41da802b0e284ac7e2fe944be3948f93ff25abbca0361a609acfed1368b5
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
+F test/reservebytes.test 7040eb21db538e7ae57b5919727e95ddae0195e7471830ad0036aedf05cc49fd
 F test/resetdb.test 54c06f18bc832ac6d6319e5ab23d5c8dd49fdbeec7c696d791682a8006bd5fc3
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/returning1.test 212cd4111bb941a60abf608f20250db666c21eb1bc4d49217e96c87ff3ab9d1a
@@ -2170,8 +2171,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e0beda7ffe92abf6322db8314c42940adab7f89a35d38124355cb3464ee70b9f
-R fe44d18666c30821b06b0ab2fbf6c5ce
+P d2a74d5c36f600fa8d7dc03f6914482a2afca6e4ff557a0007d14f4304645ba1
+R 6a78a2f416b052365db58a75e4ea3e3c
 U dan
-Z fb101a1c6edf9be0db3963039dec263e
+Z a9cef546beee29297752d3d77982bd8f
 # Remove this line to create a well-formed Fossil manifest.
