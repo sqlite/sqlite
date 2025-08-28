@@ -5538,7 +5538,7 @@ void sqlite3VdbePreUpdateHook(
   preupdate.pCsr = pCsr;
   preupdate.op = op;
   preupdate.iNewReg = iReg;
-  preupdate.pKeyinfo = (KeyInfo*)&preupdate.keyinfoSpace;
+  preupdate.pKeyinfo = &preupdate.uKey.sKey;
   preupdate.pKeyinfo->db = db;
   preupdate.pKeyinfo->enc = ENC(db);
   preupdate.pKeyinfo->nKeyField = pTab->nCol;

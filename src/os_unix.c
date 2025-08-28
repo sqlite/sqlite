@@ -498,10 +498,11 @@ static struct unix_syscall {
 
 #if defined(HAVE_FCHMOD)
   { "fchmod",       (sqlite3_syscall_ptr)fchmod,          0  },
+#define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 #else
   { "fchmod",       (sqlite3_syscall_ptr)0,               0  },
+#define osFchmod(FID,MODE) 0
 #endif
-#define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
   { "fallocate",    (sqlite3_syscall_ptr)posix_fallocate,  0 },
@@ -1451,6 +1452,10 @@ static int findInodeInfo(
     if( rc!=1 ){
       storeLastErrno(pFile, errno);
       return SQLITE_IOERR;
+    }
+    if( fsync(fd) ){
+      storeLastErrno(pFile, errno);
+      return SQLITE_IOERR_FSYNC;
     }
     rc = osFstat(fd, &statbuf);
     if( rc!=0 ){

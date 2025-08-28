@@ -1905,7 +1905,7 @@ static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
 ** Output the given string as a quoted string using SQL quoting conventions:
 **
 **   (1)   Single quotes (') within the string are doubled
-**   (2)   The whle string is enclosed in '...'
+**   (2)   The while string is enclosed in '...'
 **   (3)   Control characters other than \n, \t, and \r\n are escaped
 **         using \u00XX notation and if such substitutions occur,
 **         the whole string is enclosed in unistr('...') instead of '...'.
@@ -2151,7 +2151,7 @@ static void output_json_string(FILE *out, const char *z, i64 n){
 ** other than \t, \n, and \r\n
 **
 ** If no escaping is needed (the common case) then set *ppFree to NULL
-** and return the original string.  If escapingn is needed, write the
+** and return the original string.  If escaping is needed, write the
 ** escaped string into memory obtained from sqlite3_malloc64() or the
 ** equivalent, and return the new string and set *ppFree to the new string
 ** as well.
@@ -13240,11 +13240,19 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-pagecache")==0 ){
       sqlite3_int64 n, sz;
       sz = integerValue(cmdline_option_value(argc,argv,++i));
-      if( sz>70000 ) sz = 70000;
+      if( sz>65536 ) sz = 65536;
       if( sz<0 ) sz = 0;
       n = integerValue(cmdline_option_value(argc,argv,++i));
       if( sz>0 && n>0 && 0xffffffffffffLL/sz<n ){
         n = 0xffffffffffffLL/sz;
+      }
+      if( sz>0 && (sz & (sz-1))==0 ){
+        /* If SIZE is a power of two, round it up by the PCACHE_HDRSZ */
+        int szHdr = 0;
+        sqlite3_config(SQLITE_CONFIG_PCACHE_HDRSZ, &szHdr);
+        sz += szHdr;
+        sqlite3_fprintf(stdout, "Page cache size increased to %d to accommodate"
+                        " the %d-byte headers\n", (int)sz, szHdr);
       }
       verify_uninitialized();
       sqlite3_config(SQLITE_CONFIG_PAGECACHE,

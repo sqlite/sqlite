@@ -1040,7 +1040,10 @@ static void codeReturningTrigger(
   Returning *pReturning;
   Select sSelect;
   SrcList *pFrom;
-  u8 fromSpace[SZ_SRCLIST_1];
+  union {
+    SrcList sSrc;
+    u8 fromSpace[SZ_SRCLIST_1];
+  } uSrc;
 
   assert( v!=0 );
   if( !pParse->bReturning ){
@@ -1056,8 +1059,8 @@ static void codeReturningTrigger(
     return;
   }
   memset(&sSelect, 0, sizeof(sSelect));
-  pFrom = (SrcList*)fromSpace;
-  memset(pFrom, 0, SZ_SRCLIST_1);
+  memset(&uSrc, 0, sizeof(uSrc));
+  pFrom = &uSrc.sSrc;
   sSelect.pEList = sqlite3ExprListDup(db, pReturning->pReturnEL, 0);
   sSelect.pSrc = pFrom;
   pFrom->nSrc = 1;

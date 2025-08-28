@@ -163,9 +163,11 @@
         fiddleModule.isDead = true;
         return false;
       }
-      stdout("SQLite version", capi.sqlite3_libversion(),
-             capi.sqlite3_sourceid().substr(0,19));
-      stdout('Welcome to the "fiddle" shell.');
+      wMsg('sqlite-version', {
+        lib: capi.sqlite3_libversion(),
+        srcId: capi.sqlite3_sourceid()
+      });
+      stdout('Welcome to the "fiddle" shell. Tap the About button for more info.');
       if(capi.sqlite3_vfs_find("opfs")){
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
                "  .open file:name?vfs=opfs\n\nbut note that some",
@@ -281,6 +283,7 @@
             stderr("'open' expects {buffer:Uint8Array} containing an uploaded db.");
             return;
           }
+          buffer.set([1,1], 18)/*force db out of WAL mode*/;
           const fn = (
             opt.filename
               ? opt.filename.split(/[/\\]/).pop().replace('"','_')

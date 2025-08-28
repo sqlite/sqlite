@@ -2283,14 +2283,17 @@ int sqlite3ResolveSelfReference(
   SrcList *pSrc;                  /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
   int rc;
-  u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
+  union {
+    SrcList sSrc;
+    u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
+  } uSrc;
 
   assert( type==0 || pTab!=0 );
   assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr
           || type==NC_GenCol || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
-  pSrc = (SrcList*)srcSpace;
-  memset(pSrc, 0, SZ_SRCLIST_1);
+  memset(&uSrc, 0, sizeof(uSrc));
+  pSrc = &uSrc.sSrc;
   if( pTab ){
     pSrc->nSrc = 1;
     pSrc->a[0].zName = pTab->zName;

@@ -12,6 +12,11 @@
 #
 # JimTCL: https://jim.tcl.tk
 #
+# Code-diver notes: APIs names starting with "sqlite-" are specific to
+# this project and can be found in autosetup/sqlite-config.tcl. Names
+# starting with "proj-" are project-agnostic and found in
+# autosetup/proj.tcl.
+#
 use sqlite-config
 sqlite-configure canonical {
   proj-if-opt-truthy dev {

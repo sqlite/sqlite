@@ -378,8 +378,8 @@ proc proj-bin-define {binName {defName {}}} {
 #
 # Despite using cc-path-progs to do the search, this function clears
 # any define'd name that function stores for the result (because the
-# caller has no sensible way of knowing which result it was unless
-# they pass only a single argument).
+# caller has no sensible way of knowing which [define] name it has
+# unless they pass only a single argument).
 #
 proc proj-first-bin-of {args} {
   set rc ""
@@ -451,7 +451,9 @@ proc proj-opt-set {flag {val 1}} {
 # @proj-opt-exists flag
 #
 # Returns 1 if the given flag has been defined as a legal configure
-# option, else returns 0.
+# option, else returns 0. Options set via proj-opt-set "exist" for
+# this purpose even if they were not defined via autosetup's
+# [options] function.
 #
 proc proj-opt-exists {flag} {
   expr {$flag in $::autosetup(options)};
@@ -1643,7 +1645,11 @@ proc proj-tweak-default-env-dirs {} {
 # processing the file. In the context of that script, the vars
 # $dotInsIn and $dotInsOut will be set to the input and output file
 # names.  This can be used, for example, to make the output file
-# executable or perform validation on its contents.
+# executable or perform validation on its contents:
+#
+##  proj-dot-ins-append my.sh.in my.sh {
+##    catch {exec chmod u+x $dotInsOut}
+##  }
 #
 # See [proj-dot-ins-process], [proj-dot-ins-list]
 #
