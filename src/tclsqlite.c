@@ -4187,7 +4187,16 @@ int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   sqlite3_shutdown();
 
   Tcl_FindExecutable(argv[0]);
+#if TCL_MAJOR_VERSION > 8 && (!defined(_WIN32) || defined(UNICODE))
+  /* Tcl 9.0. Does not work on Windows without UNICODE because it
+  ** requires a WCHAR string for argv[0] here.  Also, for
+  ** statically-linked tcl9 this only works if this binary has tcl9's
+  ** main library ZIP file attached to it somehow (and the canonical
+  ** build does not do that). */
+  TclZipfs_AppHook(&argc, &argv);
+#endif
   Tcl_SetSystemEncoding(NULL, "utf-8");
+
   interp = Tcl_CreateInterp();
   Sqlite3_Init(interp);
   Tcl_Init(interp);

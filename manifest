@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\stcl-init\sbranch.
-D 2025-08-28T12:04:24.366
+C Get\sTcl_Init()\sworking\sfor\sTcl9,\sthe\smajor\scaveat\sbeing\sthat\sfor\sstatically-linked\sbuilds\sthis\sonly\sworks\sif\sthe\sTcl9\smain\slib\sZIP\sfile\s(part\sof\sits\ssource\sbuild\sbut\snot\sinstalled)\sgets\sconcatenated\sto\sthe\sresulting\scustom\sshell's\sbinary.\sThanks\sto\sJan\sNijtmans\sfor\shis\shelp\swith\sthis.
+D 2025-08-28T14:21:18.899
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -750,7 +750,7 @@ F src/sqliteInt.h 27c73e48878d31ef230ba867d1f8c3af6aed357fd93ccc605d3f1aae007ea6
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c c3c31f4e8c2506d356d1439fa57d922cb0a25831491837dad3bf74abf8965d84
+F src/tclsqlite.c 43db3e50e674d715fce53957d6607f8833a261f1e241d3df5647bd789cdeac5d
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
 F src/test1.c 82d8aab7162a758d030728cab6ae6011785234854b7d6d2aebd877f985d1016a
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
@@ -2171,8 +2171,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9eb5c91c897f8820affb30f8571eb927423c7831161f5df0043715e7f0a729d7 6bf54bbc4d503e8ebeb804dfb318383770e85d434dacbbbd8f6dadc7595b1856
-R b8ab2b652bc2f13b08ccb29fd908e6b3
+P 64c802ca1057ba538d9132ddcdda40f9452c80fac8ec1468661c34174c65db7f
+R bb6ccca120a51cf92d1112a6136bf4a8
 U stephan
-Z 1e97fd690c7294fd8e0391a007db7353
+Z 8a9eb4a5089b199530be54b854c32f89
 # Remove this line to create a well-formed Fossil manifest.
