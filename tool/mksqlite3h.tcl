@@ -110,17 +110,14 @@ if {![file exists manifest.tags]} {
   set zBranch "unknown"
   set zTags "unknown"
 } else {
-  # Read the list of tags from manifest.test
-  #set zTags [lindex [file-content manifest.tags] 1]; # just the branch name
+  # Read the list of branch/tags from manifest.tags
   set content [file-content manifest.tags];
-#  puts "content=$content"; exit 1
   set zTags {}
   foreach {x tag} [lassign $content - zBranch] {
     if {$tag eq $zBranch} continue
     lappend zTags $tag
   }
 }
-#puts "zTags=$zTags zSourceId=$zSourceId;"; exit 1
 
 cd $PWD
 
