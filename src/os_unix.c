@@ -1626,18 +1626,42 @@ static int osSetPosixAdvisoryLock(
   struct flock *pLock,  /* The description of the lock */
   unixFile *pFile       /* Structure holding timeout value */
 ){
-  int tm = pFile->iBusyTimeout;
-  int rc = osFcntl(h,F_SETLK,pLock);
-  while( rc<0 && tm>0 ){
-    /* On systems that support some kind of blocking file lock with a timeout,
-    ** make appropriate changes here to invoke that blocking file lock.  On
-    ** generic posix, however, there is no such API.  So we simply try the
-    ** lock once every millisecond until either the timeout expires, or until
-    ** the lock is obtained. */
-    unixSleep(0,1000);
+  int rc = 0;
+
+  if( pFile->iBusyTimeout==0 ){
+    /* unixFile->iBusyTimeout is set to 0. In this case, attempt a 
+    ** non-blocking lock. */
     rc = osFcntl(h,F_SETLK,pLock);
-    tm--;
+  }else{
+    /* unixFile->iBusyTimeout is set to greater than zero. In this case,
+    ** attempt a blocking-lock with a unixFile->iBusyTimeout ms timeout.
+    **
+    ** On systems that support some kind of blocking file lock operation,
+    ** this block should be replaced by code to attempt a blocking lock
+    ** with a timeout of unixFile->iBusyTimeout ms. The code below is 
+    ** placeholder code. If SQLITE_TEST is defined, the placeholder code
+    ** retries the lock once every 1ms until it succeeds or the timeout
+    ** is reached. Or, if SQLITE_TEST is not defined, the placeholder
+    ** code attempts a non-blocking lock and sets unixFile->iBusyTimeout
+    ** to 0. This causes the caller to return SQLITE_BUSY, instead of
+    ** SQLITE_BUSY_TIMEOUT to SQLite - as required by a VFS that does not 
+    ** support blocking locks.
+    */
+#ifdef SQLITE_TEST
+    int tm = pFile->iBusyTimeout;
+    while( tm>0 ){
+      rc = osFcntl(h,F_SETLK,pLock);
+      if( rc==0 ) break;
+      unixSleep(0,1000);
+      tm--;
+    }
+#else
+    rc = osFcntl(h,F_SETLK,pLock);
+    pFile->iBusyTimeout = 0;
+#endif
+    /* End of code to replace with real blocking-locks code. */
   }
+
   return rc;
 }
 #endif /* SQLITE_ENABLE_SETLK_TIMEOUT */

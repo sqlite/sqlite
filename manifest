@@ -1,5 +1,5 @@
-C Add\s'from\sa\scheck-out'\sto\sthe\smksqlite3h.tcl\smanifest\sinstructions.
-D 2025-08-29T11:21:08.413
+C Ensure\sPOSIX\sbuilds\swork\sas\sexpected\s(no\sextra\susleep()\scalls)\sif\sSQLITE_ENABLE_SETLK_TIMEOUT\sis\sdefined.
+D 2025-08-29T15:56:38.874
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 44f5fa0fa67595c9308a0ce4ae9e01ae2b2dcee0f6c7c2f5e8473ecd23e0216a
+F src/os_unix.c e5760f2c43c7d7cf9e409abe6ac82d0cd327c2d748f0d65e4a430ac8f5774dc6
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 23c0f17deb892da6b32fef1f465507df7ab5cd01d774288cb43695658a649259
@@ -2171,8 +2171,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 127f0ab16370fe02b4456669bf60e45ce8c96c4e24b2db3080eaf376d77e0df8
-R cf12b06b1cb282d4bc491e9e25cfffe7
-U stephan
-Z 55910f9718746bcea81e6f6152eb04fb
+P 7728a74ca87934c333a66e46dc1f88ce572473e345d9ff20e5d566c0e26da82d
+R e4577bacd26454779a757871ad9d1ca2
+U dan
+Z dd7501a0ae431165d2d204bc3b7c1202
 # Remove this line to create a well-formed Fossil manifest.
