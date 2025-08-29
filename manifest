@@ -1,5 +1,5 @@
-C Remove\ssome\scommented-out\sdebugging\slines\sand\sfix\sa\sdoc\stypo.\sNo\scode\schanges.
-D 2025-08-28T17:10:44.990
+C Fix\sthe\smksqlite3h.tcl\sSQLITE_SCM_...\schanges\sto\swork\sfrom\sout-of-tree\sbuilds.\sProblem\sreported\sin\s[forum:812f8d6ff4|forum\spost\s812f8d6ff4].
+D 2025-08-29T11:09:20.468
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2127,7 +2127,7 @@ F tool/mkshellc.tcl bab0a72a68384181a5706712dfdf6815f6526446d4e8aacace2de5e80cda
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mksqlite3c-noext.tcl 351c55256213154cabb051a3c870ef9f4487de905015141ae50dc7578a901b84
 F tool/mksqlite3c.tcl f11b63445c4840509248bd4aa151a81aea25d5415fef71943c8d436eba4f3b3c
-F tool/mksqlite3h.tcl 60a6627bb55047c128ca9e656a42484f8ac242b5c1641c4ba467db04cf3208f8
+F tool/mksqlite3h.tcl 33e06bb4a7022b5e9777b8b7c37f95e7d7836b52b6c25365e130f02a92f4d886
 F tool/mksqlite3internalh.tcl 46ef6ed6ccd3c36e23051109dd25085d8edef3887635cea25afa81c4adf4d4db
 F tool/mksrczip.tcl 81efd9974dbb36005383f2cd655520057a2ae5aa85ac2441a80c7c28f803ac52
 F tool/mktoolzip.tcl c9f388b2b0751982aef29a0c1d80f7959dbe38065ebb4421c39844e92622b086
@@ -2171,8 +2171,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P db6b6240ad465f865dd2ca8fa0cdfba8b5315c45041b91b76efade6427c213e1
-R 30f05b801af105c8b7fd4203003dd3e7
+P af32cb3e30ee527a89768b98d8646e2b25d3fb642e61e805187bb3e4613b0960
+Q +db6b6240ad465f865dd2ca8fa0cdfba8b5315c45041b91b76efade6427c213e1
+R 6d95926bb311c1c2ec82766b3b32321e
 U stephan
-Z 67b72ec39ef69c16fffae7d94305af3e
+Z 3f3f7771c0985977c1701acee107ed7f
 # Remove this line to create a well-formed Fossil manifest.
