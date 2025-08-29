@@ -1,5 +1,5 @@
-C Ensure\sPOSIX\sbuilds\swork\sas\sexpected\s(no\sextra\susleep()\scalls)\sif\sSQLITE_ENABLE_SETLK_TIMEOUT\sis\sdefined.
-D 2025-08-29T15:56:38.874
+C Update\stest\sscript\sreservebytes.test\sso\sthat\sit\sworks\swith\sthe\s"prepare"\spermutation.
+D 2025-08-29T16:51:16.029
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1525,7 +1525,7 @@ F test/recover.test c76d05f33f0271fba0f0752170e03b0ab5952dc61dcea7ab3ba40df03c4c
 F test/regexp1.test 8f2a8bc1569666e29a4cee6c1a666cd224eb6d50e2470d1dc1df995170f3e0f1
 F test/regexp2.test 55ed41da802b0e284ac7e2fe944be3948f93ff25abbca0361a609acfed1368b5
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
-F test/reservebytes.test 7040eb21db538e7ae57b5919727e95ddae0195e7471830ad0036aedf05cc49fd
+F test/reservebytes.test 6163640b5a5120c0dee6591481e673a0fa0bf0d12d4da7513bad692c1a49a162
 F test/resetdb.test 54c06f18bc832ac6d6319e5ab23d5c8dd49fdbeec7c696d791682a8006bd5fc3
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/returning1.test 212cd4111bb941a60abf608f20250db666c21eb1bc4d49217e96c87ff3ab9d1a
@@ -2171,8 +2171,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7728a74ca87934c333a66e46dc1f88ce572473e345d9ff20e5d566c0e26da82d
-R e4577bacd26454779a757871ad9d1ca2
+P f04a826bac1620b28c32252fa2ceaccc5dfbb21405a6a98942f95d3d1ca89acb
+R 87e6488b6c353ca89af36ac87a0c9304
 U dan
-Z dd7501a0ae431165d2d204bc3b7c1202
+Z 666f3b9990a6df9c120045dccad47a75
 # Remove this line to create a well-formed Fossil manifest.
