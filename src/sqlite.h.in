@@ -10989,15 +10989,15 @@ unsigned char *sqlite3_serialize(
 /*
 ** CAPI3REF: Deserialize a database
 **
-** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the [database
-** connection] D to disconnect from database S and then reopen S as an
-** in-memory database based on the serialization contained in P.  If S
-** is a NULL pointer, the main database is used. The serialized
-** database P is N bytes in size.  M is the size of the buffer P,
-** which might be larger than N.  If M is larger than N, and the
-** SQLITE_DESERIALIZE_READONLY bit is not set in F, then SQLite is
-** permitted to add content to the in-memory database as long as the
-** total size does not exceed M bytes.
+** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the
+** [database connection] D to disconnect from database S and then
+** reopen S as an in-memory database based on the serialization
+** contained in P.  If S is a NULL pointer, the main database is
+** used. The serialized database P is N bytes in size.  M is the size
+** of the buffer P, which might be larger than N.  If M is larger than
+** N, and the SQLITE_DESERIALIZE_READONLY bit is not set in F, then
+** SQLite is permitted to add content to the in-memory database as
+** long as the total size does not exceed M bytes.
 **
 ** If the SQLITE_DESERIALIZE_FREEONCLOSE bit is set in F, then SQLite will
 ** invoke sqlite3_free() on the serialization buffer when the database
