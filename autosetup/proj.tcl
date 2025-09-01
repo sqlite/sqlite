@@ -706,11 +706,20 @@ proc proj-file-write {args} {
 }
 
 #
-# @proj-check-compile-commands ?configFlag?
+# @proj-check-compile-commands ?-assume-for-clang? ?configFlag?
 #
-# Checks the compiler for compile_commands.json support. If passed an
-# argument it is assumed to be the name of an autosetup boolean config
-# which controls whether to run/skip this check.
+# Checks the compiler for compile_commands.json support. If
+# $configFlag is not empty then it is assumed to be the name of an
+# autosetup boolean config which controls whether to run/skip this
+# check.
+#
+# If -assume-for-clang is provided and $configFlag is not empty and CC
+# matches *clang* and no --$configFlag was explicitly provided to the
+# configure script then behave as if --$configFlag had been provided.
+# To disable that assumption, either don't pass -assume-for-clang or
+# pass --$configFlag=0 to the configure script. (The reason for this
+# behavior is that clang supports compile-commands but some other
+# compilers report false positives with these tests.)
 #
 # Returns 1 if supported, else 0, and defines HAVE_COMPILE_COMMANDS to
 # that value. Defines MAKE_COMPILATION_DB to "yes" if supported, "no"
@@ -718,12 +727,38 @@ proc proj-file-write {args} {
 # HAVE_COMPILE_COMMANDS is preferred.
 #
 # ACHTUNG: this test has a long history of false positive results
-# because of compilers reacting differently to the -MJ flag.
+# because of compilers reacting differently to the -MJ flag.  Because
+# of this, it is recommended that this support be an opt-in feature,
+# rather than an on-by-default default one. That is: in the
+# configure script define the option as
+# {--the-flag-name=0 => {Enable ....}}
 #
-proc proj-check-compile-commands {{configFlag {}}} {
+proc proj-check-compile-commands {args} {
+  set i 0
+  set configFlag {}
+  set fAssumeForClang 0
+  set doAssume 0
   msg-checking "compile_commands.json support... "
-  if {"" ne $configFlag && ![proj-opt-truthy $configFlag]} {
-    msg-result "explicitly disabled"
+  if {"-assume-for-clang" eq [lindex $args 0]} {
+    lassign $args - configFlag
+    incr fAssumeForClang
+  } elseif {1 == [llength $args]} {
+    lassign $args configFlag
+  } else {
+    proj-error "Invalid arguments"
+  }
+  if {1 == $fAssumeForClang && "" ne $configFlag} {
+    if {[string match *clang* [get-define CC]]
+        && ![proj-opt-was-provided $configFlag]
+        && ![proj-opt-truthy $configFlag]} {
+      proj-indented-notice [subst -nocommands -nobackslashes {
+        CC appears to be clang, so assuming that --$configFlag is likely
+        to work. To disable this assumption use --$configFlag=0.}]
+      incr doAssume
+    }
+  }
+  if {!$doAssume && "" ne $configFlag && ![proj-opt-truthy $configFlag]} {
+    msg-result "check disabled. Use --${configFlag} to enable it."
     define HAVE_COMPILE_COMMANDS 0
     define MAKE_COMPILATION_DB no
     return 0
@@ -732,7 +767,7 @@ proc proj-check-compile-commands {{configFlag {}}} {
       # This test reportedly incorrectly succeeds on one of
       # Martin G.'s older systems. drh also reports a false
       # positive on an unspecified older Mac system.
-      msg-result "compiler supports compile_commands.json"
+      msg-result "compiler supports -MJ. Assuming it's useful for compile_commands.json"
       define MAKE_COMPILATION_DB yes; # deprecated
       define HAVE_COMPILE_COMMANDS 1
       return 1
