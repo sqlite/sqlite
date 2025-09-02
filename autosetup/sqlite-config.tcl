@@ -402,6 +402,10 @@ proc sqlite-configure {buildMode configScript} {
           => {Comma- or space-separated list of -fsanitize flags for use with the
               fuzzcheck-asan tool. Only those which the compiler claims to support
               will actually be used. May be provided multiple times.}
+        compile-commands=0
+          => {Enable the check for compile_commands.json support,
+              noting that it may detects a false positive. If CC is clang
+              then it defaults to on instead of off.}
       }
       {*} {
         dump-defines=0
@@ -483,6 +487,19 @@ proc sqlite-configure-phase1 {buildMode} {
   } else {
     define SQLITE_OS_UNIX 1
     define SQLITE_OS_WIN 0
+  }
+  #
+  # --compile-commands must be checked relatively early or else flags
+  # added later, like -Werror, break it.
+  #
+  if {![proj-check-compile-commands -assume-for-clang compile-commands]} {
+    if {[proj-opt-was-provided compile-commands] && [opt-bool compile-commands]} {
+      proj-indented-notice -error {
+        --compile-commands was provided but the compiler does not
+        support it. Use --compile-commands=0 to proceed without that
+        support.
+      }
+    }
   }
   sqlite-setup-default-cflags
   define HAVE_LFS 0

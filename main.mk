@@ -406,7 +406,12 @@ T.cc.sqlite.extras = -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite $(T.cc.TARGET_DEBUG)
 # will normally get initially populated with flags by the
 # configure-generated makefile.
 #
-T.cc.sqlite ?= $(T.compile) $(T.cc.sqlite.extras)
+# This is split into $(T.cc.sqlite) and $(T.cc.sqlite.common) so
+# that we can add compile-commands flags to $(T.cc.sqlite) without
+# having $(T.link) inherit those.
+#
+T.cc.sqlite.common ?= $(T.compile) $(T.cc.sqlite.extras)
+T.cc.sqlite = $(T.cc.sqlite.common) $(CFLAGS.compile_commands)
 
 #
 # $(CFLAGS.intree_includes) = -I... flags relevant specifically to
@@ -417,7 +422,7 @@ CFLAGS.intree_includes = \
     -I. -I$(TOP)/src -I$(TOP)/ext/rtree -I$(TOP)/ext/icu \
     -I$(TOP)/ext/fts3 -I$(TOP)/ext/session \
     -I$(TOP)/ext/misc
-T.cc.sqlite += $(CFLAGS.intree_includes)
+T.cc.sqlite.common += $(CFLAGS.intree_includes)
 
 #
 # $(T.cc.extension) = compiler invocation for loadable extensions.
@@ -431,7 +436,7 @@ T.cc.extension = $(T.compile) -I. -I$(TOP)/src $(T.cc.sqlite.extras) -DSQLITE_CO
 # $(T.link.gcov) = optional config-specific flags for $(T.link),
 # intended for use with gcov-related flags.
 #
-T.link = $(T.cc.sqlite) $(T.link.gcov)
+T.link = $(T.cc.sqlite.common) $(T.link.gcov)
 #
 # $(T.link.shared) = $(T.link) invocation specifically for shared libraries
 #
@@ -571,6 +576,8 @@ LIBOBJS1 = sqlite3.o
 #
 LIBOBJ = $(LIBOBJS$(USE_AMALGAMATION))
 $(LIBOBJ): $(MAKE_SANITY_CHECK)
+
+compile_commands.json: $(LIBOBJ)
 
 #
 # All of the source code files.

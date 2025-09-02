@@ -117,6 +117,7 @@ LDFLAGS.libsqlite3.os-specific = \
 # - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
 # - https://sqlite.org/forum/forumpost/0c7fc097b2
 # - https://sqlite.org/forum/forumpost/5651662b8875ec0a
+CFLAGS.compile_commands =
 
 libsqlite3.DLL.basename = @SQLITE_DLL_BASENAME@
 # DLL.basename: see https://sqlite.org/forum/forumpost/828fdfe904
@@ -335,5 +336,22 @@ distclean: distclean-autosetup
 #
 version-info$(T.exe): $(TOP)/tool/version-info.c Makefile sqlite3.h
 	$(T.link) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c
+
+@if HAVE_COMPILE_COMMANDS
+########################################################################
+# <compile_commands>
+CFLAGS.compile_commands = -MJ $@.json
+compile_commands.json: # deps are set up in main.mk
+	@rm -f $@
+	@{ echo -n '['; cat *.o.json | tr '\n' ' ' | sed -e 's/, $$//'; echo ']'; } > $@
+	@echo "Generated $@"
+all: compile_commands.json
+clean: clean-compile_commands
+clean-compile_commands:
+	rm -f compile_commands.json *.o.json
+# </compile_commands>
+########################################################################
+@endif # HAVE_COMPILE_COMMANDS
+
 
 include $(TOP)/main.mk
