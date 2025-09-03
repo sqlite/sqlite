@@ -23,7 +23,7 @@ sqlite3InitModuleState.debugModule('globalThis.location =',globalThis.location);
    1) If URL param named the same as `path` is set, it is returned.
 
    2) If sqlite3InitModuleState.sqlite3Dir is set, then (thatName + path)
-      is returned (note that it's assumed to end with '/').
+      is returned (it's assumed to end with '/').
 
    3) If this code is running in the main UI thread AND it was loaded
       from a SCRIPT tag, the directory part of that URL is used
