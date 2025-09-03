@@ -1,5 +1,5 @@
-C Random\swasm\sinternal\sdoc\scleanups.\sNo\scode\schanges.
-D 2025-09-03T13:39:15.597
+C Fix\sa\stypo\sin\sa\scomment\sin\scarray.h.
+D 2025-09-03T21:19:11.784
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -362,7 +362,7 @@ F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c 8f5e6da2c82ec2f06ee0216e922370a436dafdbb06ffa7a552203515ff9e7ddf
 F ext/misc/carray.c 34fac63770971611c5285de0a9f0ac67d504eaf66be891f637add9290f1c76a5
-F ext/misc/carray.h 503209952ccf2431c7fd899ebb92bf46bf7635b38aace42ec8aa1b8d7b6e98a5
+F ext/misc/carray.h 4bef8af4e9ddda024f5540cc4d456c3e4a4a7624d6315edf85dce1ce8419beb8
 F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001259913
 F ext/misc/closure.c 5559daf1daf742228431db929d1aa86dd535a4224cc634a81d2fd0d1e6ad7839
 F ext/misc/completion.c c3c8b3cc1293c34f04f8746a3adfbfedb43f00d113f8c984a1ed09433317e507
@@ -2172,8 +2172,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13c80e903ee7f178528918716b11fc0b57fc50b923dcd8aeabf9e6e04e93cdae
-R d4bf7edf1868ff7033014bf0bf84ebaf
-U stephan
-Z d6448a1531d4b5bb134ac998a221cb98
+P 70923a00cfca2c64b7c7c824325ab75cdd05d452b79d2eaf43297898af891c47
+R fcce32c4245aa91fb3a6f09448c3b1c5
+U dan
+Z 01f3d671913ddaeee1abf21e08db30f2
 # Remove this line to create a well-formed Fossil manifest.
