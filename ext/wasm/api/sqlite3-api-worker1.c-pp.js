@@ -385,10 +385,19 @@ sqlite3.initWorker1API = function(){
   const getDbId = function(db){
     let id = wState.idMap.get(db);
     if(id) return id;
-    id = 'db#'+(++wState.idSeq)+'@'+db.pointer;
+    id = 'db#'+(++wState.idSeq)+':'+
+      Math.floor(Math.random() * 100000000)+':'+
+      Math.floor(Math.random() * 100000000);
     /** ^^^ can't simply use db.pointer b/c closing/opening may re-use
         the same address, which could map pending messages to a wrong
-        instance. */
+        instance.
+
+        2025-07: https://github.com/sqlite/sqlite-wasm/issues/113
+        demonstrates that two Worker1s can end up with the same IDs,
+        despite using different instances of the library, so we need
+        to add some randomness to the IDs instead of relying on the
+        pointer addresses.
+    */
     wState.idMap.set(db, id);
     return id;
   };

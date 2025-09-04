@@ -11,8 +11,8 @@
 #  POSIX Make compatible. "bmake" (BSD make) is available on most
 #  Linux systems, so compatibility is relatively easy to test.  As a
 #  harmless exception, this file sometimes uses $(MAKEFILE_LIST) as a
-#  dependency. That var, in GNU Make, lists all of the makefile
-#  currently loaded.
+#  dependency. That var, in GNU Make, holds a list of all of the
+#  makefiles currently loaded.
 #
 # The variables listed below must be defined before this script is
 # invoked. This file will use defaults, very possibly invalid, for any
@@ -62,8 +62,8 @@ AR.flags ?= cr
 #
 # $(B.exe) =
 #
-# File extension for executables on the build platform. ".exe" for
-# Windows and "" everywhere else.
+# File extension for executables on the build platform:. .exe for
+# Windows and empty everywhere else.
 #
 B.exe ?=
 #
@@ -76,8 +76,8 @@ B.lib ?= .a
 #
 # $(T.exe) =
 #
-# File extension for executables on the target platform. ".exe" for
-# Windows and "" everywhere else.
+# File extension for executables on the target platform: .exe for
+# Windows and empty everywhere else.
 #
 T.exe ?= $(B.exe)
 #
@@ -100,7 +100,7 @@ TCLSH_CMD ?= tclsh
 #
 # JimTCL is part of the autosetup suite and is suitable for all
 # current in-tree code-generation TCL jobs, but it requires that we
-# build it with non-default flags. Note that the build tree will, if
+# build it with non-default flags. The canonical build tree will, if
 # no system-level tclsh is found, also have a ./jimsh0 binary. That
 # one is a bare-bones build for the configure process, whereas we need
 # to build it with another option enabled for use with the various
@@ -118,9 +118,10 @@ JIMSH ?= ./jimsh$(T.exe)
 # $(B.tclsh) =
 #
 # The TCL interpreter for in-tree code generation. May be either the
-# in-tree JimTCL ($(JIMSH)) or the canonical TCL ($(TCLSH_CMD). If
+# in-tree JimTCL ($(JIMSH)) or the canonical TCL ($(TCLSH_CMD)). If
 # it's JimTCL, it must be compiled with -DHAVE_REALPATH (Unix) or
-# -DHAVE__FULLPATH (Windows).
+# -DHAVE__FULLPATH (Windows) so that the Tcl function [file normalize]
+# can work.
 #
 B.tclsh ?= $(JIMSH)
 
@@ -253,20 +254,20 @@ EXTRA_SRC ?=
 # and ENABLE flags must be passed to the LEMON parser generator and
 # the mkkeywordhash tool as well. This is normally set by the
 # configure process, and passing a custom value to a
-# coonfigure-filtered Makefile may not work.
+# configure-filtered Makefile may not work.
 #
 # When using the canonical makefile, add $(OPTIONS)=... on the make
 # command line to append additional options to the
-# $(OPT_FEATURE_FLAGS). Note that some flags, because they influence
-# generation of the SQL parser, only work if the build is specifically
-# configured to account for them. Adding them later, when compiling
-# the amalgamation separately, may or may not work.
+# $(OPT_FEATURE_FLAGS). Some flags, because they influence generation
+# of the SQL parser, only work if the build is specifically configured
+# to account for them. Adding them later, when compiling the
+# amalgamation separately, may or may not work.
 #
 # $(OPTS)=... is another way of influencing C compilation. It is
 # distinctly separate from $(OPTIONS) and $(OPT_FEATURE_FLAGS) but,
 # like those, $(OPTS) applies to all invocations of $(T.cc) (and some
-# invocations of $(B.cc). The configure process does not set either of
-# $(OPTIONS) or $(OPTS).
+# invocations of $(B.cc)). The configure process does not set either
+# of $(OPTIONS) or $(OPTS).
 #
 OPT_FEATURE_FLAGS ?=
 #
@@ -1125,7 +1126,9 @@ libsqlite3.LIB = libsqlite3$(T.lib)
 
 #
 # libsqlite3.DLL.install-rules => the suffix of the symoblic name of
-# the makefile rules for installing the DLL.
+# the makefile rules for installing the DLL. Must be one of
+# (unix-generic, msys, mingw, cygwin, darwin) and a target named
+# install-dll-THATNAME is responsible for DLL installation.
 libsqlite3.DLL.install-rules ?= unix-generic
 
 # Rules to build the LEMON compiler generator
@@ -1688,7 +1691,7 @@ CFLAGS.tclextension = $(CFLAGS.intree_includes) $(CFLAGS.env) $(OPT_FEATURE_FLAG
 #
 # Build the SQLite TCL extension in a way that make it compatible
 # with whatever version of TCL is running as $TCLSH_CMD, possibly defined
-# by --with-tclsh=
+# by --with-tclsh=/path/to/tclsh.
 #
 tclextension: tclsqlite3.c
 	$(TCLSH_CMD) $(TOP)/tool/buildtclext.tcl --build-only \
@@ -1800,7 +1803,7 @@ TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 testfixture$(T.exe):	$(T.tcl.env.sh) has_tclsh85 $(TESTFIXTURE_SRC)
 	$(T.link.tcl) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) \
-		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC \
+		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC $$TCL_LIBS \
 		$(LDFLAGS.libsqlite3)
 
 coretestprogs:	testfixture$(B.exe) sqlite3$(B.exe)
@@ -1962,7 +1965,7 @@ xbin: sqltclsh$(T.exe) sqlite3_analyzer$(T.exe)
 
 sqlite3_expert$(T.exe): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
                        $(TOP)/ext/expert/expert.c sqlite3.c
-	$(T.link) $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqlite3expert.c \
+	$(T.link) $(TOP)/ext/expert/sqlite3expert.c \
 		$(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS.libsqlite3)
 xbin: sqlite3_expert$(T.exe)
 
@@ -2481,7 +2484,7 @@ help:
 #
 #
 tidy:
-	rm -f *.o *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(T.exe)
+	rm -f *.o *.obj *.c *.da *.bb *.bbg gmon.* *.rws sqlite3$(T.exe)
 	rm -f fts5.h keywordhash.h opcodes.h sqlite3.h sqlite3ext.h sqlite3session.h
 	rm -rf .libs .deps tsrc .target_source
 	rm -f lemon$(B.exe) sqlite*.tar.gz

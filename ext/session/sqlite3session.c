@@ -4864,7 +4864,7 @@ static int sessionConflictHandler(
   void *pCtx,                     /* First argument for conflict handler */
   int *pbReplace                  /* OUT: Set to true if PK row is found */
 ){
-  int res = 0;                    /* Value returned by conflict handler */
+  int res = SQLITE_CHANGESET_OMIT;/* Value returned by conflict handler */
   int rc;
   int nCol;
   int op;
@@ -4885,11 +4885,9 @@ static int sessionConflictHandler(
 
   if( rc==SQLITE_ROW ){
     /* There exists another row with the new.* primary key. */
-    if( p->bIgnoreNoop 
-     && sqlite3_column_int(p->pSelect, sqlite3_column_count(p->pSelect)-1)
+    if( 0==p->bIgnoreNoop
+     || 0==sqlite3_column_int(p->pSelect, sqlite3_column_count(p->pSelect)-1)
     ){
-      res = SQLITE_CHANGESET_OMIT;
-    }else{
       pIter->pConflict = p->pSelect;
       res = xConflict(pCtx, eType, pIter);
       pIter->pConflict = 0;
@@ -4903,7 +4901,9 @@ static int sessionConflictHandler(
       int nBlob = pIter->in.iNext - pIter->in.iCurrent;
       sessionAppendBlob(&p->constraints, aBlob, nBlob, &rc);
       return SQLITE_OK;
-    }else{
+    }else if( p->bIgnoreNoop==0 || op!=SQLITE_DELETE 
+           || eType==SQLITE_CHANGESET_CONFLICT 
+    ){
       /* No other row with the new.* primary key. */
       res = xConflict(pCtx, eType+1, pIter);
       if( res==SQLITE_CHANGESET_REPLACE ) rc = SQLITE_MISUSE;
@@ -5001,7 +5001,7 @@ static int sessionApplyOneOp(
 
     sqlite3_step(p->pDelete);
     rc = sqlite3_reset(p->pDelete);
-    if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 && p->bIgnoreNoop==0 ){
+    if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 ){
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_DATA, p, pIter, xConflict, pCtx, pbRetry
       );

@@ -1773,10 +1773,10 @@ globalThis.WhWasmUtilInstaller = function(target){
       does not have a stable interface. */
   xArg.FuncPtrAdapter.warnOnUse = false;
 
-  /** If true, convertArg() will FuncPtrAdapter.debugOut() when it
-      (un)installs a function binding to/from WASM. Note that
-      deinstallation of bindScope=transient bindings happens
-      via scopedAllocPop() so will not be output. */
+  /** If true, convertArg() will call FuncPtrAdapter.debugOut() when
+      it (un)installs a function binding to/from WASM. Note that
+      deinstallation of bindScope=transient bindings happens via
+      scopedAllocPop() so will not be output. */
   xArg.FuncPtrAdapter.debugFuncInstall = false;
 
   /** Function used for debug output. */
@@ -1827,9 +1827,8 @@ globalThis.WhWasmUtilInstaller = function(target){
      The first argument must be one of:
 
      - A JavaScript function.
-     - The name of a WASM-exported function. In the latter case xGet()
-       is used to fetch the exported function, which throws if it's not
-       found.
+     - The name of a WASM-exported function. xGet() is used to fetch
+       the exported function, which throws if it's not found.
      - A pointer into the indirect function table. e.g. a pointer
        returned from target.installFunction().
 
@@ -1874,9 +1873,6 @@ globalThis.WhWasmUtilInstaller = function(target){
        which convert their argument to an integer and truncate it to
        the given bit length.
 
-     - `N*` (args): a type name in the form `N*`, where N is a numeric
-       type name, is treated the same as WASM pointer.
-
      - `*` and `pointer` (args): are assumed to be WASM pointer values
        and are returned coerced to an appropriately-sized pointer
        value (i32 or i64). Non-numeric values will coerce to 0 and
@@ -1887,7 +1883,15 @@ globalThis.WhWasmUtilInstaller = function(target){
        WASM pointer numeric type.
 
      - `**` (args): is simply a descriptive alias for the WASM pointer
-       type. It's primarily intended to mark output-pointer arguments.
+       type. It's primarily intended to mark output-pointer arguments,
+       noting that JS's view of WASM does not distinguish between
+       pointers and pointers-to-pointers, so all such interpretation
+       of `**`, as distinct from `*`, necessarily happens at the
+       client level.
+
+     - `NumType*` (args): a type name in this form, where T is
+       the name of a numeric mapping, e.g. 'int16' or 'double',
+       is treated like `*`.
 
      - `i64` (args and results): passes the value to BigInt() to
        convert it to an int64. Only available if bigIntEnabled is
@@ -1916,7 +1920,7 @@ globalThis.WhWasmUtilInstaller = function(target){
          UTF-8-encoded C-string to pass to the exported function,
          cleaning it up before the wrapper returns. If a long-lived
          C-string pointer is required, that requires client-side code
-         to create the string, then pass its pointer to the function.
+         to create the string then pass its pointer to the function.
 
        - Else the arg is assumed to be a pointer to a string the
          client has already allocated and it's passed on as
@@ -2091,8 +2095,8 @@ globalThis.WhWasmUtilInstaller = function(target){
      easily convert, e.g., to C-strings, and have them cleaned up
      automatically before the wrapper returns to the caller. Likewise,
      if a _result_ adapter uses scoped allocation, the result will be
-     freed before because they would be freed before the wrapper
-     returns, leading to chaos and undefined behavior.
+     freed before the wrapper returns, leading to chaos and undefined
+     behavior.
 
      Except when called as a getter, this function returns itself.
   */

@@ -1726,7 +1726,7 @@ case OP_IntCopy: {            /* out2 */
 ** RETURNING clause.
 */
 case OP_FkCheck: {
-  if( (rc = sqlite3VdbeCheckFk(p,0))!=SQLITE_OK ){
+  if( (rc = sqlite3VdbeCheckFkImmediate(p))!=SQLITE_OK ){
     goto abort_due_to_error;
   }
   break;
@@ -3911,7 +3911,7 @@ case OP_Savepoint: {
       int isTransaction = pSavepoint->pNext==0 && db->isTransactionSavepoint;
       assert( db->eConcurrent==0 || db->isTransactionSavepoint==0 );
       if( isTransaction && p1==SAVEPOINT_RELEASE ){
-        if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
+        if( (rc = sqlite3VdbeCheckFkDeferred(p))!=SQLITE_OK ){
           goto vdbe_return;
         }
         db->autoCommit = 1;
@@ -4044,7 +4044,7 @@ case OP_AutoCommit: {
                           "SQL statements in progress");
       rc = SQLITE_BUSY;
       goto abort_due_to_error;
-    }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
+    }else if( (rc = sqlite3VdbeCheckFkDeferred(p))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
