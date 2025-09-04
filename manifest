@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sin\scarray.h.
-D 2025-09-03T21:19:11.784
+C Use\sPgno\sinstead\sof\sint\sfor\sthe\spgno\sfield\sin\sthe\sDbpageCursor\sobject.\nThe\ssame\smachine\scode\sis\sgenerated,\sbut\susing\san\sunsigned\svalue\sseems\nsafer\sin\sthe\slong\srun.\n[forum:/forumpost/ccec20a858|Forum\spost\sccec20a858].
+D 2025-09-04T09:26:53.665
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -689,7 +689,7 @@ F src/build.c 213a9d24c931ef4694564894cda8dac8dbeb1519d428fd2d7ae622ac357c05a5
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
-F src/dbpage.c b3e218f8ed74fcbb7fa805df8ca669a3718d397617b3d8a8aac3307dc315c4d6
+F src/dbpage.c a6f7f16fde5656686b05705d41a4cb339db8262dc4d11699b7b40ba503db624e
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 0cad74107489c688449d7fec47b605c61a75c6da707031dfc4c76d1ac75667b3
@@ -2172,8 +2172,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 70923a00cfca2c64b7c7c824325ab75cdd05d452b79d2eaf43297898af891c47
-R fcce32c4245aa91fb3a6f09448c3b1c5
-U dan
-Z 01f3d671913ddaeee1abf21e08db30f2
+P a4e137de0e82fbba890c2a608578f02f3666d2c25fb76f95ddf2d6a096a30e6c
+R 74a121566763b43ba4139274c7ec5d78
+U drh
+Z d147c8b5254b99458119dadcc21fa7d0
 # Remove this line to create a well-formed Fossil manifest.
