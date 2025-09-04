@@ -1,5 +1,5 @@
-C Use\sPgno\sinstead\sof\sint\sfor\sthe\spgno\sfield\sin\sthe\sDbpageCursor\sobject.\nThe\ssame\smachine\scode\sis\sgenerated,\sbut\susing\san\sunsigned\svalue\sseems\nsafer\sin\sthe\slong\srun.\n[forum:/forumpost/ccec20a858|Forum\spost\sccec20a858].
-D 2025-09-04T09:26:53.665
+C Generic\sdoc\supdates\sin\sext/wasm's\smakefiles.\sNo\sfunctional\schanges.
+D 2025-09-04T18:00:53.260
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -577,7 +577,7 @@ F ext/session/sqlite3session.c 9205e6e8f389ea44a8118082ce3832374da92284a60e4fb3e
 F ext/session/sqlite3session.h b81e8536ce4b83babafd700f4ff67017804b6c1d71df963b30d3972958e7f4a7
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 35e730a01b32481f5483ea5bd72c3d4609e25f34cb5aab9f85eb3eba6f0c4935
+F ext/wasm/GNUmakefile 89e18d6e4783841a5236930b988df27e02317b3ac440a1a5571de4a79df3c8e7
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -628,7 +628,7 @@ F ext/wasm/demo-worker1-promiser.c-pp.html 635cf90685805e21772a5f7a35d1ace80f98a
 F ext/wasm/demo-worker1-promiser.c-pp.js af168699d3cab1c27ad2364ebe06cd49db300bdbf404e23b00d5742ed52816ba
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js 08720227e98fa5b44761cf6e219269cee3e9dd0421d8d91459535da776950314
-F ext/wasm/dist.make c29018b4db479a4c170569393e5399f0625446123a7eb6ffb0677495292bb954
+F ext/wasm/dist.make 57f5da2f0de5a297b5a0bc39ffec736380050578240ab24d864c2ff1b3634a3b
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make ea505d11aa2a89551e1693ed4c71ee6a163364ca14f806dda295d0beb26ec0ea
 F ext/wasm/fiddle/fiddle-worker.js 50d3edf54c0c0e3657e876724ec2c10069f55f3e40af20864d72f6f6e9ad00f8
@@ -2172,8 +2172,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a4e137de0e82fbba890c2a608578f02f3666d2c25fb76f95ddf2d6a096a30e6c
-R 74a121566763b43ba4139274c7ec5d78
-U drh
-Z d147c8b5254b99458119dadcc21fa7d0
+P 26ecdde06cce063143144a79c0b4979ed5ec27548da6f127176a420c1c3f17ce
+R c906f44fce625506b02efa9aa8f0e11e
+U stephan
+Z a1c51bbc3308c27ff98d60395e238267
 # Remove this line to create a well-formed Fossil manifest.
