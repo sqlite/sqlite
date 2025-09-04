@@ -7960,6 +7960,7 @@ case OP_Checkpoint: {
        || pOp->p2==SQLITE_CHECKPOINT_FULL
        || pOp->p2==SQLITE_CHECKPOINT_RESTART
        || pOp->p2==SQLITE_CHECKPOINT_TRUNCATE
+       || pOp->p2==SQLITE_CHECKPOINT_NOOP
   );
   rc = sqlite3Checkpoint(db, pOp->p1, pOp->p2, &aRes[1], &aRes[2]);
   if( rc ){

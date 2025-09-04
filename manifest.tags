@@ -1,2 +1,2 @@
-branch trunk
-tag trunk
+branch wal-checkpoint-noop
+tag wal-checkpoint-noop

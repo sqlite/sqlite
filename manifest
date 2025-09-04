@@ -1,5 +1,5 @@
-C Generic\sdoc\supdates\sin\sext/wasm's\smakefiles.\sNo\sfunctional\schanges.
-D 2025-09-04T18:00:53.260
+C Add\s"PRAGMA\swal_checkpoint\s=\snoop"\sand\sSQLITE_CHECKPOINT_NOOP.\sTo\srequest\sa\scheckpoint\sthat\scheckpoints\szero\sframes.
+D 2025-09-04T19:33:23.379
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -729,13 +729,13 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c e5760f2c43c7d7cf9e409abe6ac82d0cd327c2d748f0d65e4a430ac8f5774dc6
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
-F src/pager.c 23c0f17deb892da6b32fef1f465507df7ab5cd01d774288cb43695658a649259
+F src/pager.c ee48e0cc9ae4abfd7c37b838bff62a14d520a9fa311007fa57929ac7cc5d609c
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y 619c3e92a54686c5e47923688c4b9bf7ec534a4690db5677acc28b299c403250
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
-F src/pragma.c 30b535d0a66348df844ee36f890617b4cf45e9a22dcbc47ec3ca92909c50aaf1
+F src/pragma.c 20847ce727fa0efe64de13f54427d44d25df7a00c806f198463dc37041aeeed0
 F src/prepare.c 2af0b5c1ec787c8eebd21baa9d79caf4a4dc3a18e76ce2edbf2027d706bca37a
 F src/printf.c 5f0c957af9699e849d786e8fbaa3baab648ca5612230dc17916434c14bc8698f
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
@@ -743,7 +743,7 @@ F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
 F src/shell.c.in 51c8452b3e6b9a0dfa3df853dd16f147e5e4ae2002deb775cf8a2fccf01c3c6c
-F src/sqlite.h.in 7ceea612f0b54f53676e082890a175c6ff247191671d90d20843fde3d6f7b663
+F src/sqlite.h.in dac8234e04ca6aa6bc76384b1568c4f70418f18a9177a05eab42dd5d097f8f6c
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h 27c73e48878d31ef230ba867d1f8c3af6aed357fd93ccc605d3f1aae007ea62b
@@ -808,7 +808,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
-F src/vdbe.c a5873cd566a0e2a0344a86dd946add9d34fae3feeae8b126277ef7af8dc11f91
+F src/vdbe.c 07084aa0152c8d4e74e7b86c0cf744732f0f9b1fd62bd7098252cadb741c630a
 F src/vdbe.h ea1f1b52f0efe422f80d88da3c57e4eadc72856e29a22f1ff08e502ec6ba5f08
 F src/vdbeInt.h 52896dd4d5b62190c53db14b09fc2484434eb594c963df0fa66eb8a94527b02e
 F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
@@ -820,7 +820,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 20be6f0a25a80b7897cf2a5369bfd37ef198e6f0b6cdef16d83eee856056b159
+F src/wal.c a278339ecf5f194fd71fff1f0da1368de50e3a32edc3e9944e1ee1f4610476ff
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c f2f075bd17065922235632feb368efe92a7f03d42797eb575267574fbf6d4218
@@ -1977,6 +1977,7 @@ F test/wal_common.tcl 204d1721ac13c5e0c7fae6380315b5ab7f4e8423f580d826c5e9df1995
 F test/walbak.test 018d4e5a3d45c6298d11b99f09a8ef6876527946
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test 6bb472e82730e7e4e81395e907a01d8cfc2bd9e1f01f8a9184ca572e2955a4bf
+F test/walckptnoop.test 5d40e7959a6ef4bdc7aaf773f86c8f210e2a1e6d0ca5c9ad1389311665741bef
 F test/walcksum.test 50e204500eed9c691b6045e467bb2923f49aa93d8adf315e2be135fdb202c1c2
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -2172,8 +2173,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 26ecdde06cce063143144a79c0b4979ed5ec27548da6f127176a420c1c3f17ce
-R c906f44fce625506b02efa9aa8f0e11e
-U stephan
-Z a1c51bbc3308c27ff98d60395e238267
+P 02721457cea255a5117a46b77cc87d2e09acb64340ce94089c5b5e6edc5b5033
+R bcde52a0b300b3cfba71e6f86713b592
+T *branch * wal-checkpoint-noop
+T *sym-wal-checkpoint-noop *
+T -sym-trunk *
+U dan
+Z 69b6d3520e79695082c094b1d62c1d31
 # Remove this line to create a well-formed Fossil manifest.

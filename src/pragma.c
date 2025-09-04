@@ -2372,6 +2372,8 @@ void sqlite3Pragma(
         eMode = SQLITE_CHECKPOINT_RESTART;
       }else if( sqlite3StrICmp(zRight, "truncate")==0 ){
         eMode = SQLITE_CHECKPOINT_TRUNCATE;
+      }else if( sqlite3StrICmp(zRight, "noop")==0 ){
+        eMode = SQLITE_CHECKPOINT_NOOP;
       }
     }
     pParse->nMem = 3;
