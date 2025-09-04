@@ -238,9 +238,13 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     n = 0;
     if( pItem->fg.isSubquery ) n++;
     if( pItem->fg.isTabFunc ) n++;
-    if( pItem->fg.isUsing ) n++;
+    if( pItem->fg.isUsing || pItem->u3.pOn!=0 ) n++;
     if( pItem->fg.isUsing ){
       sqlite3TreeViewIdList(pView, pItem->u3.pUsing, (--n)>0, "USING");
+    }else if( pItem->u3.pOn!=0 ){
+      sqlite3TreeViewItem(pView, "ON", (--n)>0);
+      sqlite3TreeViewExpr(pView, pItem->u3.pOn, 0);
+      sqlite3TreeViewPop(&pView);
     }
     if( pItem->fg.isSubquery ){
       assert( n==1 );

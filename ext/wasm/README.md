@@ -98,10 +98,10 @@ which (almost) all of the test and demo applications can be accessed.
 real utility when it's used in conjunction with the project's
 proprietary test suite, which most users don't have access to.)
 
-Note that when serving this app via [althttpd][], it must be a version
-from 2022-09-26 or newer so that it recognizes the `--enable-sab`
-flag, which causes althttpd to emit two HTTP response headers which
-are required to enable JavaScript's `SharedArrayBuffer` and `Atomics`
+When serving this app via [althttpd][], it must be a version from
+2022-09-26 or newer so that it recognizes the `--enable-sab` flag,
+which causes althttpd to emit two HTTP response headers which are
+required to enable JavaScript's `SharedArrayBuffer` and `Atomics`
 APIs. Those APIs are required in order to enable the [OPFS][]-related
 features in the apps which use them.
 

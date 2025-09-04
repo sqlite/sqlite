@@ -149,6 +149,9 @@ extern "C" {
 #define SQLITE_VERSION        "--VERS--"
 #define SQLITE_VERSION_NUMBER --VERSION-NUMBER--
 #define SQLITE_SOURCE_ID      "--SOURCE-ID--"
+#define SQLITE_SCM_BRANCH     "--SCM-BRANCH--"
+#define SQLITE_SCM_TAGS       "--SCM-TAGS--"
+#define SQLITE_SCM_DATETIME   "--SCM-DATETIME--"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -497,6 +500,9 @@ int sqlite3_exec(
 #define SQLITE_ERROR_MISSING_COLLSEQ   (SQLITE_ERROR | (1<<8))
 #define SQLITE_ERROR_RETRY             (SQLITE_ERROR | (2<<8))
 #define SQLITE_ERROR_SNAPSHOT          (SQLITE_ERROR | (3<<8))
+#define SQLITE_ERROR_RESERVESIZE       (SQLITE_ERROR | (4<<8))
+#define SQLITE_ERROR_KEY               (SQLITE_ERROR | (5<<8))
+#define SQLITE_ERROR_UNABLE            (SQLITE_ERROR | (6<<8))
 #define SQLITE_IOERR_READ              (SQLITE_IOERR | (1<<8))
 #define SQLITE_IOERR_SHORT_READ        (SQLITE_IOERR | (2<<8))
 #define SQLITE_IOERR_WRITE             (SQLITE_IOERR | (3<<8))
@@ -531,6 +537,8 @@ int sqlite3_exec(
 #define SQLITE_IOERR_DATA              (SQLITE_IOERR | (32<<8))
 #define SQLITE_IOERR_CORRUPTFS         (SQLITE_IOERR | (33<<8))
 #define SQLITE_IOERR_IN_PAGE           (SQLITE_IOERR | (34<<8))
+#define SQLITE_IOERR_BADKEY            (SQLITE_IOERR | (35<<8))
+#define SQLITE_IOERR_CODEC             (SQLITE_IOERR | (36<<8))
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
 #define SQLITE_LOCKED_VTAB             (SQLITE_LOCKED |  (2<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
@@ -6205,6 +6213,7 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 ** or a NULL pointer if there were no prior calls to
 ** sqlite3_set_clientdata() with the same values of D and N.
 ** Names are compared using strcmp() and are thus case sensitive.
+** It returns 0 on success and SQLITE_NOMEM on allocation failure.
 **
 ** If P and X are both non-NULL, then the destructor X is invoked with
 ** argument P on the first of the following occurrences:
@@ -6240,7 +6249,7 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 ** languages or in other circumstances where it might be possible for an
 ** attacker to invoke them.  Any agent that can invoke these interfaces
 ** can probably also take control of the process.
-** 
+**
 ** Database connection client data is only available for SQLite
 ** version 3.44.0 ([dateof:3.44.0]) and later.
 **
@@ -10787,7 +10796,7 @@ typedef struct sqlite3_snapshot {
 ** The [sqlite3_snapshot_get()] interface is only available when the
 ** [SQLITE_ENABLE_SNAPSHOT] compile-time option is used.
 */
-SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(
+int sqlite3_snapshot_get(
   sqlite3 *db,
   const char *zSchema,
   sqlite3_snapshot **ppSnapshot
@@ -10836,7 +10845,7 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_get(
 ** The [sqlite3_snapshot_open()] interface is only available when the
 ** [SQLITE_ENABLE_SNAPSHOT] compile-time option is used.
 */
-SQLITE_EXPERIMENTAL int sqlite3_snapshot_open(
+int sqlite3_snapshot_open(
   sqlite3 *db,
   const char *zSchema,
   sqlite3_snapshot *pSnapshot
@@ -10853,7 +10862,7 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_open(
 ** The [sqlite3_snapshot_free()] interface is only available when the
 ** [SQLITE_ENABLE_SNAPSHOT] compile-time option is used.
 */
-SQLITE_EXPERIMENTAL void sqlite3_snapshot_free(sqlite3_snapshot*);
+void sqlite3_snapshot_free(sqlite3_snapshot*);
 
 /*
 ** CAPI3REF: Compare the ages of two snapshot handles.
@@ -10880,7 +10889,7 @@ SQLITE_EXPERIMENTAL void sqlite3_snapshot_free(sqlite3_snapshot*);
 ** This interface is only available if SQLite is compiled with the
 ** [SQLITE_ENABLE_SNAPSHOT] option.
 */
-SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
+int sqlite3_snapshot_cmp(
   sqlite3_snapshot *p1,
   sqlite3_snapshot *p2
 );
@@ -10908,7 +10917,7 @@ SQLITE_EXPERIMENTAL int sqlite3_snapshot_cmp(
 ** This interface is only available if SQLite is compiled with the
 ** [SQLITE_ENABLE_SNAPSHOT] option.
 */
-SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
+int sqlite3_snapshot_recover(sqlite3 *db, const char *zDb);
 
 /*
 ** CAPI3REF: Serialize a database
@@ -10982,12 +10991,13 @@ unsigned char *sqlite3_serialize(
 **
 ** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the
 ** [database connection] D to disconnect from database S and then
-** reopen S as an in-memory database based on the serialization contained
-** in P.  The serialized database P is N bytes in size.  M is the size of
-** the buffer P, which might be larger than N.  If M is larger than N, and
-** the SQLITE_DESERIALIZE_READONLY bit is not set in F, then SQLite is
-** permitted to add content to the in-memory database as long as the total
-** size does not exceed M bytes.
+** reopen S as an in-memory database based on the serialization
+** contained in P.  If S is a NULL pointer, the main database is
+** used. The serialized database P is N bytes in size.  M is the size
+** of the buffer P, which might be larger than N.  If M is larger than
+** N, and the SQLITE_DESERIALIZE_READONLY bit is not set in F, then
+** SQLite is permitted to add content to the in-memory database as
+** long as the total size does not exceed M bytes.
 **
 ** If the SQLITE_DESERIALIZE_FREEONCLOSE bit is set in F, then SQLite will
 ** invoke sqlite3_free() on the serialization buffer when the database

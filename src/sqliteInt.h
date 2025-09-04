@@ -3082,6 +3082,7 @@ struct Expr {
     Table *pTab;           /* TK_COLUMN: Table containing column. Can be NULL
                            ** for a column of an index on an expression */
     Window *pWin;          /* EP_WinFunc: Window/Filter defn for a function */
+    int nReg;              /* TK_NULLS: Number of registers to NULL out */
     struct {               /* TK_IN, TK_SELECT, and TK_EXISTS */
       int iAddr;             /* Subroutine entry address */
       int regReturn;         /* Register used to hold return address */
@@ -3659,6 +3660,7 @@ struct Select {
 #define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
 #define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
 #define SF_Correlated   0x20000000 /* True if references the outer context */
+#define SF_OnToWhere    0x40000000 /* One or more ON clauses moved to WHERE */
 
 /* True if SrcItem X is a subquery that has SF_NestedFrom */
 #define IsNestedFrom(X) \
@@ -4412,6 +4414,7 @@ struct Walker {
     SrcItem *pSrcItem;                        /* A single FROM clause item */
     DbFixer *pFix;                            /* See sqlite3FixSelect() */
     Mem *aMem;                                /* See sqlite3BtreeCursorHint() */
+    struct CheckOnCtx *pCheckOnCtx;           /* See selectCheckOnClauses() */
   } u;
 };
 
@@ -5119,6 +5122,7 @@ void sqlite3ExprCodeGeneratedColumn(Parse*, Table*, Column*, int);
 void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);
 int sqlite3ExprCodeRunJustOnce(Parse*, Expr*, int);
+void sqlite3ExprNullRegisterRange(Parse*, int, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);
 int sqlite3ExprCodeExprList(Parse*, ExprList*, int, int, u8);

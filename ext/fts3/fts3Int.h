@@ -14,16 +14,19 @@
 #ifndef _FTSINT_H
 #define _FTSINT_H
 
+/*
+** Activate assert() only if SQLITE_TEST is enabled.
+*/
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
+# define NDEBUG 1
+#endif
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
-# define NDEBUG 1
-#endif
 
 /* FTS3/FTS4 require virtual tables */
 #ifdef SQLITE_OMIT_VIRTUALTABLE
@@ -44,7 +47,7 @@
 
 /* If not building as part of the core, include sqlite3ext.h. */
 #ifndef SQLITE_CORE
-# include "sqlite3ext.h" 
+# include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
 #endif
 
@@ -185,13 +188,6 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 ** Macro used to suppress compiler warnings for unused parameters.
 */
 #define UNUSED_PARAMETER(x) (void)(x)
-
-/*
-** Activate assert() only if SQLITE_TEST is enabled.
-*/
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
-# define NDEBUG 1
-#endif
 
 /*
 ** The TESTONLY macro is used to enclose variable declarations or

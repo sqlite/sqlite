@@ -541,9 +541,12 @@ static void blobListLoadFromDb(
   int n = 0;
   int rc;
   char *z2;
-  unsigned char tmp[SZ_BLOB(8)];
+  union {
+    Blob sBlob;
+    unsigned char tmp[SZ_BLOB(8)];
+  } uBlob;
 
-  head = (Blob*)tmp;
+  head = &uBlob.sBlob;
   if( firstId>0 ){
     z2 = sqlite3_mprintf("%s WHERE rowid BETWEEN %d AND %d", zSql,
                          firstId, lastId);
@@ -1020,7 +1023,7 @@ extern int sqlite3_dbdata_init(sqlite3*,const char**,void*);
 ** print the supplied SQL statement to stdout.
 */
 static int recoverSqlCb(void *pCtx, const char *zSql){
-  if( eVerbosity>=2 ){
+  if( eVerbosity>=2 && zSql ){
     printf("%s\n", zSql);
   }
   return SQLITE_OK;

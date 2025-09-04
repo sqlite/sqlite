@@ -939,6 +939,7 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_INNOCUOUS);
     DefInt(SQLITE_SUBTYPE);
     DefInt(SQLITE_RESULT_SUBTYPE);
+    DefInt(SQLITE_SELFORDER1);
   } _DefGroup;
 
   DefGroup(version) {
