@@ -1,5 +1,5 @@
-C Add\stests\sto\scheck\sthat\sSQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER\sis\sworking.
-D 2025-09-05T11:20:11.669
+C Build\sportability\sfixes\sfor\sHP-UX,\sreported\sin\s[forum:d80ecdaddd885149\s|\sforum\spost\sd80ecdaddd8].\sThe\sfull\sfix\salso\srequires\sa\spatch\sto\sautosetup/cc-shared.tcl,\sbut\sthat's\spending\sbecause\sit's\supstream\scode.
+D 2025-09-05T12:14:22.499
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -17,7 +17,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in d0926d2309e563b5ebdfd711e5c218533acab79829a05eef4e97c3a92e17bf42
+F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
 F autoconf/Makefile.msc f15ad424ca2820df8e39d9157965710af0a64d87773706706a12ea4f96e3a0d8
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
@@ -46,7 +46,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c 563b966c137a4ce3c9333e5196723b7ac0919140a9d7989eb440463cd855c367
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl 0582bccdd45ae01f4f6874bdc84109648869b1e09c9746402de176f63cd8044e
+F autosetup/proj.tcl ec30c4bc301b6e9eb937655744a7315f863f804fc66400d975bcf9352ac96a1d
 F autosetup/sqlite-config.tcl f2d2cf0917a17068ab2897b2009e31a05a4481a0786cd6ea15f643fef325bbe3
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
@@ -2173,8 +2173,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 02721457cea255a5117a46b77cc87d2e09acb64340ce94089c5b5e6edc5b5033
-R 26f54bfe6c4276aca1cf86f77dc2e1d0
-U dan
-Z 6d55ec4bbf370fd1d9d59964043fa3e8
+P beb092d8105e5a1ce95339527bf96799e2ce073591b055f71a5f1dc1d0a0c49c
+R f303889c257e7fa0fec97b62b6958c2c
+U stephan
+Z e83b488810313398f18cc656e4a5ff98
 # Remove this line to create a well-formed Fossil manifest.

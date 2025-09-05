@@ -1170,6 +1170,10 @@ proc proj-check-rpath {} {
       if {"" eq $wl} {
         set wl [proj-cc-check-Wl-flag -R$lp]
       }
+      if {"" eq $wl} {
+        # HP-UX: https://sqlite.org/forum/forumpost/d80ecdaddd
+        set wl [proj-cc-check-Wl-flag +b $lp]
+      }
       define LDFLAGS_RPATH $wl
     }
   }
@@ -1179,7 +1183,7 @@ proc proj-check-rpath {} {
 #
 # @proj-check-soname ?libname?
 #
-# Checks whether CC supports the -Wl,soname,lib... flag. If so, it
+# Checks whether CC supports the -Wl,-soname,lib... flag. If so, it
 # returns 1 and defines LDFLAGS_SONAME_PREFIX to the flag's prefix, to
 # which the client would need to append "libwhatever.N".  If not, it
 # returns 0 and defines LDFLAGS_SONAME_PREFIX to an empty string.
@@ -1194,6 +1198,10 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
   cc-with {-link 1} {
     if {[cc-check-flags "-Wl,-soname,${libname}"]} {
       define LDFLAGS_SONAME_PREFIX "-Wl,-soname,"
+      return 1
+    } elseif {[cc-check-flags "-Wl,+h,${libname}"]} {
+      # HP-UX: https://sqlite.org/forum/forumpost/d80ecdaddd
+      define LDFLAGS_SONAME_PREFIX "-Wl,+h,"
       return 1
     } else {
       define LDFLAGS_SONAME_PREFIX ""
