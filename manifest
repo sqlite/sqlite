@@ -1,5 +1,5 @@
-C Generic\sdoc\supdates\sin\sext/wasm's\smakefiles.\sNo\sfunctional\schanges.
-D 2025-09-04T18:00:53.260
+C Add\stests\sto\scheck\sthat\sSQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER\sis\sworking.
+D 2025-09-05T11:20:11.669
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1147,6 +1147,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test 266989148fec6d9f1bb6c5382f7aa3dcea0e9cd444576e28dd2b9287ac7dd220
 F test/fts3atoken.test dc2078ce464914efe3a8dfc545dd034a0fc14f2ab425c240471d5a5f1c721400
+F test/fts3atoken2.test aa6664d26277064844ead962f5988c28b091c51b112f36d30fa33bd83fecf906
 F test/fts3auto.test 649aa4c198d7acc5cd6355e19ee073d051c40d9e88a43fc3d88af46bdf3e99d5
 F test/fts3aux1.test 1880eaa75c586cd10f53080479a2b819b3915ae7ce55c4e0ba8f1fe05ac0a6a7
 F test/fts3aux2.test 2459e7fa3e22734aed237d1e2ae192f5541c4d8b218956ad2d90754977bf907f
@@ -2172,8 +2173,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 26ecdde06cce063143144a79c0b4979ed5ec27548da6f127176a420c1c3f17ce
-R c906f44fce625506b02efa9aa8f0e11e
-U stephan
-Z a1c51bbc3308c27ff98d60395e238267
+P 02721457cea255a5117a46b77cc87d2e09acb64340ce94089c5b5e6edc5b5033
+R 26f54bfe6c4276aca1cf86f77dc2e1d0
+U dan
+Z 6d55ec4bbf370fd1d9d59964043fa3e8
 # Remove this line to create a well-formed Fossil manifest.
