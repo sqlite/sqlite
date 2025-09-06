@@ -2343,17 +2343,20 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER</dt>
-** <dd> ^This option is used to enable or disable the
-** [fts3_tokenizer()] function which is part of the
-** [FTS3] full-text search engine extension.
-** There must be two additional arguments.
-** The first argument is an integer which is 0 to disable fts3_tokenizer() or
-** positive to enable fts3_tokenizer() or negative to leave the setting
-** unchanged.
-** The second parameter is a pointer to an integer into which
-** is written 0 or 1 to indicate whether fts3_tokenizer is disabled or enabled
-** following this call.  The second parameter may be a NULL pointer, in
-** which case the new setting is not reported back. </dd>
+** <dd> ^This option is used to enable or disable using the
+** [fts3_tokenizer()] function - part of the [FTS3] full-text search engine
+** extension - without using bound parameters as the parameters. Doing so
+** is disabled by default. There must be two additional arguments. The first
+** argument is an integer. If it is passed 0, then using fts3_tokenizer()
+** without bound parameters is disabled. If it is passed a positive value, 
+** then calling fts3_tokenizer without bound parameters is enabled. If it 
+** is passed a negative value, this setting is not modified - this can be 
+** used to query for the current setting. The second parameter is a pointer 
+** to an integer into which is written 0 or 1 to indicate the current value 
+** of this setting (after it is modified, if applicable).  The second 
+** parameter may be a NULL pointer, in which case the value of the setting 
+** is not reported back. Refer to [FTS3] documentation for further details.
+** </dd> 
 **
 ** [[SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION]]
 ** <dt>SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION</dt>

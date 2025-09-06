@@ -1,5 +1,5 @@
-C WAL\sAPI\sdoc\stweaks\sbased\son\ssuggestions\sfrom\s[forum:16e94b4bdcfbdc57|forum\spost\s16e94b4bdcf].
-D 2025-09-05T13:26:24.094
+C Improve\sdocumentation\sof\sSQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER.
+D 2025-09-06T15:27:01.079
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -743,7 +743,7 @@ F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
 F src/shell.c.in 51c8452b3e6b9a0dfa3df853dd16f147e5e4ae2002deb775cf8a2fccf01c3c6c
-F src/sqlite.h.in 812ba2b78404e491c5621bbcd1c608b62679c826a7bd8b010b57e7cd4b80a8c1
+F src/sqlite.h.in e060225b46f67663484dcb1a8d3bfb084b1f8350f9e19a7f9d90c4bcedb6cd3d
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0bfd049bb2088cc44c2ad54f2079d1c6e43091a4e1ce8868779b75f6c1484f1e
 F src/sqliteInt.h 27c73e48878d31ef230ba867d1f8c3af6aed357fd93ccc605d3f1aae007ea62b
@@ -2173,8 +2173,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5f38c8aa8fe9993cafde69a85e96e32c283a6bc142238a9d10f3637c93cd474b
-R 5d99d60f3e53d42ca70bc1c985846a54
-U stephan
-Z 2e8d2150f6aa36e3c0200df3af3cad3e
+P 1bb7eaf784687cd877c5c0552bb511659767670259e64bc108e7972e356d3cfc
+R f0800e32321ff4c2d1c276620d834c12
+U dan
+Z ca287400f072acffceb9fb16c223b773
 # Remove this line to create a well-formed Fossil manifest.
