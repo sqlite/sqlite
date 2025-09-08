@@ -6029,6 +6029,9 @@ static const char *unixTempFileDir(void){
 
   while(1){
     if( zDir!=0
+#if OS_VXWORKS
+     && zDir[0]=='/'
+#endif
      && osStat(zDir, &buf)==0
      && S_ISDIR(buf.st_mode)
      && osAccess(zDir, 03)==0
@@ -6543,8 +6546,11 @@ static int unixOpen(
   }
 #endif
 
-  assert( zPath==0 || zPath[0]=='/'
-      || eType==SQLITE_OPEN_SUPER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL
+  assert( zPath==0
+       || zPath[0]=='/'
+       || eType==SQLITE_OPEN_SUPER_JOURNAL
+       || eType==SQLITE_OPEN_MAIN_JOURNAL
+       || eType==SQLITE_OPEN_TEMP_JOURNAL
   );
   rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
 
