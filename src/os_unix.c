@@ -5982,10 +5982,16 @@ static int fillInUnixFile(
   storeLastErrno(pNew, 0);
 #if OS_VXWORKS
   if( rc!=SQLITE_OK ){
-    if( h>=0 ) robust_close(pNew, h, __LINE__);
-    h = -1;
+    if( h>=0 ){
+      robust_close(pNew, h, __LINE__);
+      h = -1;
+    }
     osUnlink(zFilename);
     pNew->ctrlFlags |= UNIXFILE_DELETE;
+    if( pNew->pId ){
+      vxworksReleaseFileId(pNew->pId);
+      pNew->pId = 0;
+    }
   }
 #endif
   if( rc!=SQLITE_OK ){
