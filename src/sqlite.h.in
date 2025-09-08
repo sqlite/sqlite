@@ -9916,6 +9916,11 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 **   ^This mode works the same way as SQLITE_CHECKPOINT_RESTART with the
 **   addition that it also truncates the log file to zero bytes just prior
 **   to a successful return.
+**
+** <dt>SQLITE_CHECKPOINT_NOOP<dd>
+**   ^This mode always checkpoints zero frames. The only reason to invoke
+**   a NOOP checkpoint is to access the values returned by
+**   sqlite3_wal_checkpoint_v2() via output parameters *pnLog and *pnCkpt.
 ** </dl>
 **
 ** ^If pnLog is not NULL, then *pnLog is set to the total number of frames in
@@ -9986,6 +9991,7 @@ int sqlite3_wal_checkpoint_v2(
 ** See the [sqlite3_wal_checkpoint_v2()] documentation for details on the
 ** meaning of each of these checkpoint modes.
 */
+#define SQLITE_CHECKPOINT_NOOP    -1  /* Do no work at all */
 #define SQLITE_CHECKPOINT_PASSIVE  0  /* Do as much as possible w/o blocking */
 #define SQLITE_CHECKPOINT_FULL     1  /* Wait for writers, then checkpoint */
 #define SQLITE_CHECKPOINT_RESTART  2  /* Like FULL but wait for readers */
