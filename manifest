@@ -1,5 +1,5 @@
-C Add\s"PRAGMA\swal_checkpoint\s=\snoop"\sand\sSQLITE_CHECKPOINT_NOOP.\sTo\srequest\sa\scheckpoint\sthat\scheckpoints\szero\sframes.
-D 2025-09-08T15:15:24.745
+C Add\sthe\sability\sto\scompile\swith\s-DOS_VXWORKS=1\son\sLinux\ssystems,\sin\san\neffort\sto\sdebug\sthe\sVxWorks\scapabilities\swithout\sactually\shaving\sto\nrun\sVxWorks.
+D 2025-09-08T17:52:17.463
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -819,7 +819,7 @@ F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecb
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
-F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
+F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c a278339ecf5f194fd71fff1f0da1368de50e3a32edc3e9944e1ee1f4610476ff
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
@@ -2174,8 +2174,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d7b2fb5363203f475887f277aed4a91e5a83440c169a86b3bf1e4fdf130bbaed 3bac76a86baae830d4fdc9e4055470d84549fde56b4cf217ebd96cb486554461
-R 2812d107bd7816cef0e6e9da5e6ce373
-U dan
-Z 8032dd3d169dd71c128be64fd4083e19
+P 4384ad8918801780f2660817dead919020423eb94aa880fff9b04f2d5f5d932f
+R 7d2fd16c23bb8e3e1ac21dbfa249e14f
+T *branch * vxworks
+T *sym-vxworks *
+T -sym-trunk *
+U drh
+Z 67c601469857ad735371f6931571c137
 # Remove this line to create a well-formed Fossil manifest.
