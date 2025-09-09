@@ -6352,6 +6352,12 @@ static int unixOpen(
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
+#if OS_VXWORKS
+  /* The file-ID mechanism used in Vxworks requires that all pathnames
+  ** provided to unixOpen must be absolute pathnames. */
+  if( zPath!=0 && zPath[0]!='/' ){ return SQLITE_CANTOPEN; }
+#endif
+
   /* Detect a pid change and reset the PRNG.  There is a race condition
   ** here such that two or more threads all trying to open databases at
   ** the same instant might all reset the PRNG.  But multiple resets

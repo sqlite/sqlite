@@ -1,5 +1,5 @@
-C Fix\sa\spotential\smemory\sleak\sin\sthe\sVxWorks\sVFS\sthat\scan\soccur\sfollowing\nan\sOOM\sor\sI/O\serror\sduring\sxOpen().
-D 2025-09-08T19:56:14.451
+C Do\snot\sallow\sattempts\sto\sopen\sfiles\sin\sVxWorks\sunless\sthe\sfull\spathname\sis\nprovided.
+D 2025-09-09T17:39:28.868
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c c775163235cbb059653911fb7aece04556c8be4683a1877e212e60b5b8daa7dc
+F src/os_unix.c f04137f2d709048c2c22384bdbbe594be36d84f88a0c4b06b666d8c71bf87d42
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c ee48e0cc9ae4abfd7c37b838bff62a14d520a9fa311007fa57929ac7cc5d609c
@@ -2174,8 +2174,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1fc94becc5971812c3a91fb1410cb54f6ecb9e50da2d30863dc840cbf4e6c1f5
-R f2c71ab27bcd4917cc1551d07ff94fab
+P cb880145d899832cca0612b89024a54d188ed706600fa812ea74587d69c261be
+R d6116e7a1ac97419abe73b087e6a1104
 U drh
-Z cd23f29e7ac5df50fa7933e5c9aed5ef
+Z 149c7f76da9dbd587256f92be3d9fd4f
 # Remove this line to create a well-formed Fossil manifest.
