@@ -5986,8 +5986,9 @@ static int fillInUnixFile(
       robust_close(pNew, h, __LINE__);
       h = -1;
     }
-    osUnlink(zFilename);
-    pNew->ctrlFlags |= UNIXFILE_DELETE;
+    if( pNew->ctrlFlags & UNIXFILE_DELETE ){
+      osUnlink(zFilename);
+    }
     if( pNew->pId ){
       vxworksReleaseFileId(pNew->pId);
       pNew->pId = 0;
