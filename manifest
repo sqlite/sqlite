@@ -1,5 +1,5 @@
-C The\sGetSystemTimePreciseAsFileTime()\sAPI\sdoes\snot\sexist\son\s32-bit\swindows.\nAdjust\s[c5dbe93114d318fe]\sso\sthat\sit\sworks\swith\sthis\slimitation.
-D 2025-09-10T14:28:07.926
+C Change\sthe\sorder\sof\ssome\sparagraphs\swithin\sdocumentation\scomments\sin\ssqlite3session.h.
+D 2025-09-10T16:57:57.582
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -574,7 +574,7 @@ F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63b
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
 F ext/session/sqlite3session.c 9205e6e8f389ea44a8118082ce3832374da92284a60e4fb3ea6b1b421f0dbc54
-F ext/session/sqlite3session.h b81e8536ce4b83babafd700f4ff67017804b6c1d71df963b30d3972958e7f4a7
+F ext/session/sqlite3session.h 6641184274b1d46594e450793d39aa96053916043234fb9e653c661160a166a7
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/GNUmakefile 89e18d6e4783841a5236930b988df27e02317b3ac440a1a5571de4a79df3c8e7
@@ -2174,8 +2174,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f31711591c56f3896fb6f092752fb82c4ea646bf8e5838dfbe55302994ea091
-R 92f5496970f9c5f8107276d283e96509
-U drh
-Z d1a933d782194f41c167cb8645e06e10
+P 61d9e204c5801a94811fdb0afe2c04f9814e08f2e141afa6dbda0fa45f026f70
+R d8755f44b21067203a0a069002adacd3
+U dan
+Z 6cdd1ad3eb141cf3111598f67de03305
 # Remove this line to create a well-formed Fossil manifest.
