@@ -1,5 +1,5 @@
-C If\sopen\sfiles\sin\sVxWorks,\sdo\snot\sunlink\sthe\sfile\sunless\sthe\sfile\swas\smarked\nas\sdelete-on-close.
-D 2025-09-09T19:00:55.004
+C Use\sa\sseparate\smutex\s(SQLITE_MUTEX_STATIC_VFS2)\sfor\sthe\sVxWorks\sfile\slist\nin\sos_unix.c.
+D 2025-09-10T18:34:09.319
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 7210cc026cbe8a5da0258dc9eb005cf24074ad770ab368bff7e70dc3db4ed75a
+F src/os_unix.c b3da55bc4bb214b2bfb1e430b10e9d3ebcf6b11741921ab044c9b9539c8fcc4f
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c ee48e0cc9ae4abfd7c37b838bff62a14d520a9fa311007fa57929ac7cc5d609c
@@ -2174,8 +2174,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4720205249214c01f6e63738e4927c0f53c853346cc2dfa45522aaa469f4d702
-R 28cd361ab09796e13d6919ca761a942b
+P bb6114dbbf3bfbea57cd9be21666299663e94576b0175f6aeefd1d0f7107398e
+R 014427910e7a9ddec7a51b8b4173351b
 U drh
-Z 60929786cacc94424cefe1a0e89c6c19
+Z c33f9a334f3b1502222626b4f7b7e337
 # Remove this line to create a well-formed Fossil manifest.
