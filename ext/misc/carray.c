@@ -52,10 +52,12 @@
 ** as the number of elements in the array.  The virtual table steps through
 ** the array, element by element.
 */
-#include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
-#include <assert.h>
-#include <string.h>
+#ifndef SQLITE3_H
+# include "sqlite3ext.h"
+  SQLITE_EXTENSION_INIT1
+# include <assert.h>
+# include <string.h>
+#endif
 #ifdef _WIN32
   struct iovec {
     void *iov_base;
@@ -547,7 +549,9 @@ SQLITE_API int sqlite3_carray_init(
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;
+#ifdef SQLITE_EXTENSION_INIT2
   SQLITE_EXTENSION_INIT2(pApi);
+#endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "carray", &carrayModule, 0);
 #ifdef SQLITE_TEST

@@ -1,5 +1,5 @@
-C Change\sthe\sorder\sof\ssome\sparagraphs\swithin\sdocumentation\scomments\sin\ssqlite3session.h.
-D 2025-09-10T16:57:57.582
+C Minor\s#ifdef\schanges\sto\sthe\scarray.c\sextension\sso\sthat\sthe\ssource\sfile\scan\nbe\smore\seasily\simported\sinto\sa\slarger\sprogram\s(such\sas\sTH3).
+D 2025-09-10T20:28:57.123
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -361,7 +361,7 @@ F ext/misc/base85.c a70c885c5c9350261ea6e7b166038eab21a09cf4fceae856ce41fae9c221
 F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c 8f5e6da2c82ec2f06ee0216e922370a436dafdbb06ffa7a552203515ff9e7ddf
-F ext/misc/carray.c 34fac63770971611c5285de0a9f0ac67d504eaf66be891f637add9290f1c76a5
+F ext/misc/carray.c 1d32a060f60127ad38d5abd071b28443b77885b143da946a10ca16812e0f851e
 F ext/misc/carray.h 4bef8af4e9ddda024f5540cc4d456c3e4a4a7624d6315edf85dce1ce8419beb8
 F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001259913
 F ext/misc/closure.c 5559daf1daf742228431db929d1aa86dd535a4224cc634a81d2fd0d1e6ad7839
@@ -2174,8 +2174,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61d9e204c5801a94811fdb0afe2c04f9814e08f2e141afa6dbda0fa45f026f70
-R d8755f44b21067203a0a069002adacd3
-U dan
-Z 6cdd1ad3eb141cf3111598f67de03305
+P f0102d7b25d854b5a937eb7de5e25f52c2ecf904234857c96bd1995f5dde0b66
+R c7eb6b1e8cd44e93df75a68f285b175e
+U drh
+Z 1ef21896e4781ab17effa4ada205704d
 # Remove this line to create a well-formed Fossil manifest.
