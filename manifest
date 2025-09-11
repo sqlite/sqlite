@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sCLI.\s\sGcc\sgenerates\sidentical\nmachine\scode\sbefore\sand\safter\sthis\schange.\n[forum:/forumpost/8bda0d896f|Forum\spost\s8bda0d896f].
-D 2025-09-11T10:37:01.169
+C Improved\ssupport\sfor\sVxWorks.
+D 2025-09-11T10:43:57.858
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c e5760f2c43c7d7cf9e409abe6ac82d0cd327c2d748f0d65e4a430ac8f5774dc6
+F src/os_unix.c b3da55bc4bb214b2bfb1e430b10e9d3ebcf6b11741921ab044c9b9539c8fcc4f
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c ee48e0cc9ae4abfd7c37b838bff62a14d520a9fa311007fa57929ac7cc5d609c
@@ -819,7 +819,7 @@ F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecb
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
-F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
+F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c a278339ecf5f194fd71fff1f0da1368de50e3a32edc3e9944e1ee1f4610476ff
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
@@ -2174,8 +2174,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d2352a16cc0990037710b4a666f2f3b039c1973e0af29990d67d70bcdba0600
-R 9ec1e1cb2b9ab190325dd6df66ff9342
+P dbca4fe34467653d083de42d0c75746cf171e96ee3867abe67a47ab88437fa71 8f45f1a9d9208fbf124c4087092718b83cd653126bc1ed5f388e3577561f615b
+R cb98674127336ab3518a805305423038
+T +closed 8f45f1a9d9208fbf124c4087092718b83cd653126bc1ed5f388e3577561f615b
 U drh
-Z 407034b93755910a492a5ce711f8ff20
+Z f743699d00c12c2bf4dc6dc92e6fbad5
 # Remove this line to create a well-formed Fossil manifest.
