@@ -501,6 +501,7 @@ proc sqlite-configure-phase1 {buildMode} {
   if {[file exists $srcdir/sqlite3.pc.in]} {
     proj-dot-ins-append $srcdir/sqlite3.pc.in
   }
+  sqlite-handle-hpux; # must be relatively early so that other config tests can work
 }; # sqlite-configure-phase1
 
 ########################################################################
@@ -1543,6 +1544,19 @@ proc sqlite-handle-mac-install-name {} {
     }
   }
   return $rc
+}
+
+#
+# Checks specific to HP-UX.
+#
+proc sqlite-handle-hpux {} {
+  switch -glob -- [get-define host] {
+    *hpux* {
+      if {[cc-check-flags "-Ae"]} {
+        define-append CFLAGS -Ae
+      }
+    }
+  }
 }
 
 ########################################################################
