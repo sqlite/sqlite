@@ -4207,6 +4207,21 @@ const char *sqlite3_errstr(int);
 int sqlite3_error_offset(sqlite3 *db);
 
 /*
+** CAPI3REF: Set Error Codes And Message
+** METHOD: sqlite3
+**
+** Set the error code of the database handle passed as the first argument
+** to errcode, and the error message to a copy of nul-terminated string
+** zErrMsg. If zErrMsg is passed NULL, then the error message is set to
+** the default message associated with the supplied error code.
+**
+** This function returns SQLITE_OK if the error code and error message are
+** successfully set, SQLITE_NOMEM if an OOM occurs, and SQLITE_MISUSE if
+** the database handle is NULL or invalid.
+*/
+int sqlite3_set_errmsg(sqlite3 *db, int errcode, const char *zErrMsg);
+
+/*
 ** CAPI3REF: Prepared Statement Object
 ** KEYWORDS: {prepared statement} {prepared statements}
 **
