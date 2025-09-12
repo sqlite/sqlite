@@ -4222,14 +4222,14 @@ int sqlite3_error_offset(sqlite3 *db);
 ** successfully set, SQLITE_NOMEM if an OOM occurs, and SQLITE_MISUSE if
 ** the database handle is NULL or invalid.
 **
-** The error code and message set by this routine remains in affect until
+** The error code and message set by this routine remains in effect until
 ** they are changed, either by another call to this routine or until they are
 ** changed to by SQLite itself to reflect the result of some subsquent
 ** API call.
 **
 ** This function is intended for use by SQLite extensions or wrappers.  The
 ** idea is that an extension or wrapper can use this routine to set error
-** messages and error codes and thus behave more like a core core SQLite
+** messages and error codes and thus behave more like a core SQLite
 ** feature from the point of view of an application.
 */
 int sqlite3_set_errmsg(sqlite3 *db, int errcode, const char *zErrMsg);
