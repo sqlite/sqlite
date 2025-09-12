@@ -2717,6 +2717,29 @@ const char *sqlite3_errmsg(sqlite3 *db){
 }
 
 /*
+** Set the error code and error message associated with the database handle.
+**
+** This routine is intended to be called by outside extensions (ex: the
+** Session extension). Internal logic should invoke sqlite3Error() or
+** sqlite3ErrorWithMsg() directly.
+*/
+int sqlite3_set_errmsg(sqlite3 *db, int errcode, const char *zMsg){
+  int rc = SQLITE_OK;
+  if( !sqlite3SafetyCheckSickOrOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+  sqlite3_mutex_enter(db->mutex);
+  if( zMsg ){
+    sqlite3ErrorWithMsg(db, errcode, "%s", zMsg);
+  }else{
+    sqlite3Error(db, errcode);
+  }
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
+/*
 ** Return the byte offset of the most recent error
 */
 int sqlite3_error_offset(sqlite3 *db){

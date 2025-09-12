@@ -1118,7 +1118,10 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** If any other error (aside from a constraint failure when attempting to
 ** write to the target database) occurs, then the savepoint transaction is
 ** rolled back, restoring the target database to its original state, and an 
-** SQLite error code returned.
+** SQLite error code returned. Additionally, starting with version 3.51.0,
+** an error code and error message that may be accessed using the
+** [sqlite3_errcode()] and [sqlite3_errmsg()] APIs are left in the database
+** handle.
 **
 ** The fourth argument (xFilter) passed to these functions is the "filter
 ** callback". This may be passed NULL, in which case all changes in the
