@@ -4213,11 +4213,24 @@ int sqlite3_error_offset(sqlite3 *db);
 ** Set the error code of the database handle passed as the first argument
 ** to errcode, and the error message to a copy of nul-terminated string
 ** zErrMsg. If zErrMsg is passed NULL, then the error message is set to
-** the default message associated with the supplied error code.
+** the default message associated with the supplied error code.  Subsequent
+** calls to [sqlite3_errcode()] and [sqlite3_errmsg()] and similar will
+** return the values set by this routine in place of what was previously
+** set by SQLite itself.
 **
 ** This function returns SQLITE_OK if the error code and error message are
 ** successfully set, SQLITE_NOMEM if an OOM occurs, and SQLITE_MISUSE if
 ** the database handle is NULL or invalid.
+**
+** The error code and message set by this routine remains in affect until
+** they are changed, either by another call to this routine or until they are
+** changed to by SQLite itself to reflect the result of some subsquent
+** API call.
+**
+** This function is intended for use by SQLite extensions or wrappers.  The
+** idea is that an extension or wrapper can use this routine to set error
+** messages and error codes and thus behave more like a core core SQLite
+** feature from the point of view of an application.
 */
 int sqlite3_set_errmsg(sqlite3 *db, int errcode, const char *zErrMsg);
 

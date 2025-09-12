@@ -2718,6 +2718,10 @@ const char *sqlite3_errmsg(sqlite3 *db){
 
 /*
 ** Set the error code and error message associated with the database handle.
+**
+** This routine is intended to be called by outside extensions (ex: the
+** Session extension). Internal logic should invoke sqlite3Error() or
+** sqlite3ErrorWithMsg() directly.
 */
 int sqlite3_set_errmsg(sqlite3 *db, int errcode, const char *zMsg){
   int rc = SQLITE_OK;
