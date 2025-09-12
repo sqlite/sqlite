@@ -228,9 +228,9 @@
 
 /*
 ** Which sqlite3.c we're using needs to be configurable to enable
-** building against a custom copy, e.g. the SEE variant. Note that we
-** #include the .c file, rather than the header, so that the WASM
-** extensions have access to private API internals.
+** building against a custom copy, e.g. the SEE variant. We #include
+** the .c file, rather than the header, so that the WASM extensions
+** have access to private API internals.
 **
 ** The caveat here is that custom variants need to account for
 ** exporting any necessary symbols (e.g. sqlite3_activate_see()).  We
@@ -374,6 +374,10 @@ SQLITE_WASM_EXPORT int sqlite3__wasm_pstack_quota(void){
 ** from client code.
 **
 ** Returns err_code.
+**
+** TODO: checkin [4d5b60a1e57448f03af2] adds sqlite3_set_errmsg(),
+** which serves the same purpose as this one. We can replace this one
+** with that one.
 */
 SQLITE_WASM_EXPORT
 int sqlite3__wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
