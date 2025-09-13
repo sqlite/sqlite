@@ -5104,6 +5104,10 @@ static i8 wherePathSatisfiesOrderBy(
        && ((wctrlFlags&(WHERE_DISTINCTBY|WHERE_SORTBYGROUP))!=WHERE_DISTINCTBY)
       ){
         obSat = obDone;
+      }else{
+        /* No further ORDER BY terms may be matched. So this call should
+        ** return >=0, not -1. Clear isOrderDistinct to ensure it does so. */
+        isOrderDistinct = 0;
       }
       break;
     }
@@ -6151,7 +6155,10 @@ static SQLITE_NOINLINE void whereInterstageHeuristic(WhereInfo *pWInfo){
   for(i=0; i<pWInfo->nLevel; i++){
     WhereLoop *p = pWInfo->a[i].pWLoop;
     if( p==0 ) break;
-    if( (p->wsFlags & WHERE_VIRTUALTABLE)!=0 ) continue;
+    if( (p->wsFlags & WHERE_VIRTUALTABLE)!=0 ){
+      /* Treat a vtab scan as similar to a full-table scan */
+      break;
+    }
     if( (p->wsFlags & (WHERE_COLUMN_EQ|WHERE_COLUMN_NULL|WHERE_COLUMN_IN))!=0 ){
       u8 iTab = p->iTab;
       WhereLoop *pLoop;
