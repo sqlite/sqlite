@@ -271,6 +271,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           contextKey: (argv, argIndex)=>argv[0/* sqlite3_context* */]
         })
     ]],
+    ['sqlite3_set_errmsg', 'int', 'sqlite3*', 'int', 'string'],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
     ["sqlite3_sql", "string", "sqlite3_stmt*"],
@@ -859,42 +860,38 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        implicitly making it part of the public interface. */
     delete wasm.bindingSignatures;
 
-    if(wasm.exports.sqlite3__wasm_db_error){
-      const __db_err = wasm.xWrap(
-        'sqlite3__wasm_db_error', 'int', 'sqlite3*', 'int', 'string'
-      );
-      /**
-         Sets the given db's error state. Accepts:
+    /**
+       Sets the given db's error state. Accepts:
 
-         - (sqlite3*, int code, string msg)
-         - (sqlite3*, Error e [,string msg = ''+e])
+       - (sqlite3*, int code, string msg)
+       - (sqlite3*, Error e [,string msg = ''+e])
 
-         If passed a WasmAllocError, the message is ignored and the
-         result code is SQLITE_NOMEM. If passed any other Error type,
-         the result code defaults to SQLITE_ERROR unless the Error
-         object has a resultCode property, in which case that is used
-         (e.g. SQLite3Error has that). If passed a non-WasmAllocError
-         exception, the message string defaults to theError.message.
+       If passed a WasmAllocError, the message is ignored and the
+       result code is SQLITE_NOMEM. If passed any other Error type,
+       the result code defaults to SQLITE_ERROR unless the Error
+       object has a resultCode property, in which case that is used
+       (e.g. SQLite3Error has that). If passed a non-WasmAllocError
+       exception, the message string defaults to ''+theError.
 
-         Returns the resulting code. Pass (pDb,0,0) to clear the error
-         state.
-       */
-      util.sqlite3__wasm_db_error = function(pDb, resultCode, message){
-        if(resultCode instanceof sqlite3.WasmAllocError){
-          resultCode = capi.SQLITE_NOMEM;
-          message = 0 /*avoid allocating message string*/;
-        }else if(resultCode instanceof Error){
-          message = message || ''+resultCode;
-          resultCode = (resultCode.resultCode || capi.SQLITE_ERROR);
-        }
-        return pDb ? __db_err(pDb, resultCode, message) : resultCode;
-      };
-    }else{
-      util.sqlite3__wasm_db_error = function(pDb,errCode,msg){
-        console.warn("sqlite3__wasm_db_error() is not exported.",arguments);
-        return errCode;
-      };
-    }
+       Returns either the final result code, capi.SQLITE_NOMEM if
+       setting the message string triggers an OOM, or
+       capi.SQLITE_MISUSE if pDb is NULL or invalid (with the caveat
+       that behavior in the later case is undefined if pDb is not
+       "valid enough").
+
+       Pass (pDb,0,0) to clear the error state.
+    */
+    util.sqlite3__wasm_db_error = function(pDb, resultCode, message){
+      if( !pDb ) return capi.SQLITE_MISUSE;
+      if(resultCode instanceof sqlite3.WasmAllocError){
+        resultCode = capi.SQLITE_NOMEM;
+        message = 0 /*avoid allocating message string*/;
+      }else if(resultCode instanceof Error){
+        message = message || ''+resultCode;
+        resultCode = (resultCode.resultCode || capi.SQLITE_ERROR);
+      }
+      return capi.sqlite3_set_errmsg(pDb, resultCode, message) || resultCode;
+    };
   }/*xWrap() bindings*/
 
   {/* Import C-level constants and structs... */

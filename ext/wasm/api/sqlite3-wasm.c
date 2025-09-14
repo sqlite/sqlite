@@ -361,39 +361,6 @@ SQLITE_WASM_EXPORT int sqlite3__wasm_pstack_quota(void){
   return (int)(PStack.pEnd - PStack.pBegin);
 }
 
-/*
-** This function is NOT part of the sqlite3 public API. It is strictly
-** for use by the sqlite project's own JS/WASM bindings.
-**
-** For purposes of certain hand-crafted C/Wasm function bindings, we
-** need a way of reporting errors which is consistent with the rest of
-** the C API, as opposed to throwing JS exceptions. To that end, this
-** internal-use-only function is a thin proxy around
-** sqlite3ErrorWithMessage(). The intent is that it only be used from
-** Wasm bindings such as sqlite3_prepare_v2/v3(), and definitely not
-** from client code.
-**
-** Returns err_code.
-**
-** TODO: checkin [4d5b60a1e57448f03af2] adds sqlite3_set_errmsg(),
-** which serves the same purpose as this one. We can replace this one
-** with that one.
-*/
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
-  if( db!=0 ){
-    if( 0!=zMsg ){
-      const int nMsg = sqlite3Strlen30(zMsg);
-      sqlite3_mutex_enter(sqlite3_db_mutex(db));
-      sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
-      sqlite3_mutex_leave(sqlite3_db_mutex(db));
-    }else{
-      sqlite3ErrorWithMsg(db, err_code, NULL);
-    }
-  }
-  return err_code;
-}
-
 #if SQLITE_WASM_ENABLE_C_TESTS
 struct WasmTestStruct {
   int v4;

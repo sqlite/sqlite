@@ -3532,9 +3532,36 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       capi.sqlite3_interrupt(db);
       T.assert( 0!==capi.sqlite3_is_interrupted(db) );
       db.close();
-    });
+    })
 
-  ////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+    .t("sqlite3_set_errmsg()", function(sqlite3){
+      /* Added in 3.51.0 */
+      const db = new sqlite3.oo1.DB();//(':memory:','wt');
+      try{
+        const capi = sqlite3.capi;
+        const sse = capi.sqlite3_set_errmsg,
+              sec = capi.sqlite3_errcode,
+              sem = capi.sqlite3_errmsg;
+        T.assert( 0===sec(db) )
+          .assert( "not an error"===sem(db) );
+        let rc = sse(db, capi.SQLITE_RANGE, "nope");
+        T.assert( 0==rc )
+          .assert( capi.SQLITE_RANGE===sec(db) )
+          .assert( "nope"===sem(db) );
+        rc = sse(0, 0, 0);
+        T.assert( capi.SQLITE_MISUSE===rc );
+        rc = sse(db, 0, 0);
+        T.assert( 0===rc )
+          .assert( 0===sec(db) )
+          .assert( "not an error"===sem(db) );
+      }finally{
+        db.close();
+      }
+    });
+  ;
+
+  ////////////////////////////////////////////////////////////////////
   T.g('Bug Reports')
     .t({
       name: 'Delete via bound parameter in subquery',
