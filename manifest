@@ -1,5 +1,5 @@
-C Expose\sthe\snew\ssqlite3_set_errmsg()\sto\swasm.\sRefactor\sJS's\ssqlite3__wasm_db_error()\sto\swrap\sthat\sinstead\sof\sthe\sWASM-specific\sroutine\swhich\spreviously\sdid\sthat\sjob.\sThis\sresolves\sthe\sTODO\sadded\sin\s[ead8a3a94e].
-D 2025-09-14T12:14:42.698
+C Expose\ssqlite3_set_errmsg()\sto\sthe\sJNI\sbindings.
+D 2025-09-14T12:55:57.217
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -288,8 +288,8 @@ F ext/intck/test_intck.c 4f9eaadaedccb9df1d26ba41116a0a8e5b0c5556dc3098c8ff68633
 F ext/jni/GNUmakefile 8a94e3a1953b88cf117fb2a5380480feada8b4f5316f02572cab425030a720b4
 F ext/jni/README.md e3fbd47c774683539b7fdc95a667eb9cd6e64d8510f3ee327e7fa0c61c8aa787
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 74c35473c1fb1756ee911468d5027e4f989eea6764dff429b1214f76d78c431d
-F ext/jni/src/c/sqlite3-jni.h cc5fc5cefe2d63f461a4bad90735b34be0d85e5fe6778ae7ba992fae4d223cdf
+F ext/jni/src/c/sqlite3-jni.c 3d84a0176af779737ae977ba1c90d2ffe2537b8299c5d9f6552620493f12ac4b
+F ext/jni/src/c/sqlite3-jni.h ac180ba9b21978727006c790d3006a95a2402a4c3ec7a0def92707ed89b79945
 F ext/jni/src/org/sqlite/jni/annotation/Experimental.java 8603498634e41d0f7c70f661f64e05df64376562ea8f126829fd1e0cdd47e82b
 F ext/jni/src/org/sqlite/jni/annotation/NotNull.java be6cc3e8e114485822331630097cc0f816377e8503af2fc02f9305ff2b353917
 F ext/jni/src/org/sqlite/jni/annotation/Nullable.java 56e3dee1f3f703a545dfdeddc1c3d64d1581172b1ad01ffcae95c18547fafd90
@@ -299,7 +299,7 @@ F ext/jni/src/org/sqlite/jni/capi/AggregateFunction.java 0e28a0df51368c7127e505f
 F ext/jni/src/org/sqlite/jni/capi/AuthorizerCallback.java c045a5b47e02bb5f1af91973814a905f12048c428a3504fbc5266d1c1be3de5a
 F ext/jni/src/org/sqlite/jni/capi/AutoExtensionCallback.java 74cc4998a73d6563542ecb90804a3c4f4e828cb4bd69e61226d1a51f4646e759
 F ext/jni/src/org/sqlite/jni/capi/BusyHandlerCallback.java 7b8e19810c42b0ad21a04b5d8c804b32ee5905d137148703f16a75b612c380ca
-F ext/jni/src/org/sqlite/jni/capi/CApi.java 09f3a8cf500ecb6fc9df37044bc157d27c17d34db0eec7d9fb7116edeead5a36
+F ext/jni/src/org/sqlite/jni/capi/CApi.java 3d275f5f4fbdbe4fff15f4d42cf5ff559f9a4897e7373fa99f3b1dc9cf7f849c
 F ext/jni/src/org/sqlite/jni/capi/CallbackProxy.java 1b3baf5b772f266e8baf8f35f0ddc5bd87fc8c4927ec69115c46fd6fba6701c3
 F ext/jni/src/org/sqlite/jni/capi/CollationCallback.java e29bcfc540fdd343e2f5cca4d27235113f2886acb13380686756d5cabdfd065a
 F ext/jni/src/org/sqlite/jni/capi/CollationNeededCallback.java 5bfa226a8e7a92e804fd52d6e42b4c7b875fa7a94f8e2c330af8cc244a8920ab
@@ -317,7 +317,7 @@ F ext/jni/src/org/sqlite/jni/capi/SQLFunction.java 0d1e9afc9ff8a2adb94a155b72385
 F ext/jni/src/org/sqlite/jni/capi/SQLTester.java 3c0babc067d8560627a9ed1b07979f9d4393464e2282c2fca4832052e982c7bc
 F ext/jni/src/org/sqlite/jni/capi/ScalarFunction.java 93b9700fca4c68075ccab12fe0fbbc76c91cafc9f368e835b9bd7cd7732c8615
 F ext/jni/src/org/sqlite/jni/capi/TableColumnMetadata.java 9133bb7685901d2edf07801191284975e33b5583ce09dce1c05202ff91e7bb99
-F ext/jni/src/org/sqlite/jni/capi/Tester1.java 9f4f0041e30712b92a86ddb7e1faf956a0c89a7fb0d5daf88cbae9ec263d8453
+F ext/jni/src/org/sqlite/jni/capi/Tester1.java 4c3d16fdf6e979f839b2ecdb14d0a0c04bd3d0e41500fc9e8110b588883b140b
 F ext/jni/src/org/sqlite/jni/capi/TraceV2Callback.java 0a25e117a0daae3394a77f24713e36d7b44c67d6e6d30e9e1d56a63442eef723
 F ext/jni/src/org/sqlite/jni/capi/UpdateHookCallback.java c8bdf7848e6599115d601bcc9427ff902cb33129b9be32870ac6808e04b6ae56
 F ext/jni/src/org/sqlite/jni/capi/ValueHolder.java 2ce069f3e007fdbbe1f4e507a5a407fc9679da31a0aa40985e6317ed4d5ec7b5
@@ -2174,8 +2174,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 031a43ae2bb06adefb3f66bf7d1cdae0020b25a1eeee7c3a3dd4447014b9d3f7
-R 85200d12b43710f3e14debee0d52afbe
+P e447a50f3a3791c264a68000948daa64edb1857d51d256fbd1ff0f2c2b330d5e
+R 914e412c108c33985260767ddbccf671
 U stephan
-Z f9ce59b284b260a4b8c00c4241fe38e1
+Z fb5496b4e64823b519fcbc93dbe57147
 # Remove this line to create a well-formed Fossil manifest.
