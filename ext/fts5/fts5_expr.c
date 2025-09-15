@@ -1549,7 +1549,13 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise. It
 ** is not considered an error if the query does not match any documents.
 */
-int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, i64 iFirst, int bDesc){
+int sqlite3Fts5ExprFirst(
+  Fts5Expr *p, 
+  Fts5Index *pIdx, 
+  i64 iFirst, 
+  i64 iLast, 
+  int bDesc
+){
   Fts5ExprNode *pRoot = p->pRoot;
   int rc;                         /* Return code */
 
@@ -1570,6 +1576,9 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, i64 iFirst, int bDesc){
   while( pRoot->bNomatch && rc==SQLITE_OK ){
     assert( pRoot->bEof==0 );
     rc = fts5ExprNodeNext(p, pRoot, 0, 0);
+  }
+  if( fts5RowidCmp(p, pRoot->iRowid, iLast)>0 ){
+    pRoot->bEof = 1;
   }
   return rc;
 }
