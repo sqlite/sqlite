@@ -228,9 +228,9 @@
 
 /*
 ** Which sqlite3.c we're using needs to be configurable to enable
-** building against a custom copy, e.g. the SEE variant. Note that we
-** #include the .c file, rather than the header, so that the WASM
-** extensions have access to private API internals.
+** building against a custom copy, e.g. the SEE variant. We #include
+** the .c file, rather than the header, so that the WASM extensions
+** have access to private API internals.
 **
 ** The caveat here is that custom variants need to account for
 ** exporting any necessary symbols (e.g. sqlite3_activate_see()).  We
@@ -359,35 +359,6 @@ SQLITE_WASM_EXPORT int sqlite3__wasm_pstack_remaining(void){
 */
 SQLITE_WASM_EXPORT int sqlite3__wasm_pstack_quota(void){
   return (int)(PStack.pEnd - PStack.pBegin);
-}
-
-/*
-** This function is NOT part of the sqlite3 public API. It is strictly
-** for use by the sqlite project's own JS/WASM bindings.
-**
-** For purposes of certain hand-crafted C/Wasm function bindings, we
-** need a way of reporting errors which is consistent with the rest of
-** the C API, as opposed to throwing JS exceptions. To that end, this
-** internal-use-only function is a thin proxy around
-** sqlite3ErrorWithMessage(). The intent is that it only be used from
-** Wasm bindings such as sqlite3_prepare_v2/v3(), and definitely not
-** from client code.
-**
-** Returns err_code.
-*/
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
-  if( db!=0 ){
-    if( 0!=zMsg ){
-      const int nMsg = sqlite3Strlen30(zMsg);
-      sqlite3_mutex_enter(sqlite3_db_mutex(db));
-      sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
-      sqlite3_mutex_leave(sqlite3_db_mutex(db));
-    }else{
-      sqlite3ErrorWithMsg(db, err_code, NULL);
-    }
-  }
-  return err_code;
 }
 
 #if SQLITE_WASM_ENABLE_C_TESTS
