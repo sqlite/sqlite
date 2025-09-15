@@ -79,252 +79,336 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        // elements instead: [x,y,z] is equivalent to x,y,z
      ]
 
-     Note that support for the API-specific data types in the
-     result/argument type strings gets plugged in at a later phase in
-     the API initialization process.
+     Support for the API-specific data types in the result/argument
+     type strings gets plugged in at a later phase in the API
+     initialization process.
   */
-  wasm.bindingSignatures = [
-    // Please keep these sorted by function name!
-    ["sqlite3_aggregate_context","void*", "sqlite3_context*", "int"],
-    /* sqlite3_auto_extension() has a hand-written binding. */
-    /* sqlite3_bind_blob() and sqlite3_bind_text() have hand-written
-       bindings to permit more flexible inputs. */
-    ["sqlite3_bind_double","int", "sqlite3_stmt*", "int", "f64"],
-    ["sqlite3_bind_int","int", "sqlite3_stmt*", "int", "int"],
-    ["sqlite3_bind_null",undefined, "sqlite3_stmt*", "int"],
-    ["sqlite3_bind_parameter_count", "int", "sqlite3_stmt*"],
-    ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
-    ["sqlite3_bind_parameter_name", "string", "sqlite3_stmt*", "int"],
-    ["sqlite3_bind_pointer", "int",
-     "sqlite3_stmt*", "int", "*", "string:static", "*"],
-    ["sqlite3_busy_handler","int", [
-      "sqlite3*",
-      new wasm.xWrap.FuncPtrAdapter({
-        signature: 'i(pi)',
-        contextKey: (argv,argIndex)=>argv[0/* sqlite3* */]
-      }),
-      "*"
-    ]],
-    ["sqlite3_busy_timeout","int", "sqlite3*", "int"],
-    /* sqlite3_cancel_auto_extension() has a hand-written binding. */
-    /* sqlite3_close_v2() is implemented by hand to perform some
-       extra work. */
-    ["sqlite3_changes", "int", "sqlite3*"],
-    ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],
-    ["sqlite3_collation_needed", "int", "sqlite3*", "*", "*"/*=>v(ppis)*/],
-    ["sqlite3_column_blob","*", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_bytes","int", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_count", "int", "sqlite3_stmt*"],
-    ["sqlite3_column_decltype", "string", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_double","f64", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_int","int", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_text","string", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_value","sqlite3_value*", "sqlite3_stmt*", "int"],
-    ["sqlite3_commit_hook", "void*", [
-      "sqlite3*",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: 'sqlite3_commit_hook',
-        signature: 'i(p)',
-        contextKey: (argv)=>argv[0/* sqlite3* */]
-      }),
-      '*'
-    ]],
-    ["sqlite3_compileoption_get", "string", "int"],
-    ["sqlite3_compileoption_used", "int", "string"],
-    ["sqlite3_complete", "int", "string:flexible"],
-    ["sqlite3_context_db_handle", "sqlite3*", "sqlite3_context*"],
-    /* sqlite3_create_collation() and sqlite3_create_collation_v2()
-       use hand-written bindings to simplify passing of the callback
-       function. */
-    /* sqlite3_create_function(), sqlite3_create_function_v2(), and
-       sqlite3_create_window_function() use hand-written bindings to
-       simplify handling of their function-type arguments. */
-    ["sqlite3_data_count", "int", "sqlite3_stmt*"],
-    ["sqlite3_db_filename", "string", "sqlite3*", "string"],
-    ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
-    ["sqlite3_db_name", "string", "sqlite3*", "int"],
-    ["sqlite3_db_readonly", "int", "sqlite3*", "string"],
-    ["sqlite3_db_status", "int", "sqlite3*", "int", "*", "*", "int"],
-    ["sqlite3_errcode", "int", "sqlite3*"],
-    ["sqlite3_errmsg", "string", "sqlite3*"],
-    ["sqlite3_error_offset", "int", "sqlite3*"],
-    ["sqlite3_errstr", "string", "int"],
-    ["sqlite3_exec", "int", [
-      "sqlite3*", "string:flexible",
-      new wasm.xWrap.FuncPtrAdapter({
-        signature: 'i(pipp)',
-        bindScope: 'transient',
-        callProxy: (callback)=>{
-          let aNames;
-          return (pVoid, nCols, pColVals, pColNames)=>{
-            try {
-              const aVals = wasm.cArgvToJs(nCols, pColVals);
-              if(!aNames) aNames = wasm.cArgvToJs(nCols, pColNames);
-              return callback(aVals, aNames) | 0;
-            }catch(e){
-              /* If we set the db error state here, the higher-level
-                 exec() call replaces it with its own, so we have no way
-                 of reporting the exception message except the console. We
-                 must not propagate exceptions through the C API. Though
-                 we make an effort to report OOM here, sqlite3_exec()
-                 translates that into SQLITE_ABORT as well. */
-              return e.resultCode || capi.SQLITE_ERROR;
+  const bindingSignatures = {
+    core: [
+      // Please keep these sorted by function name!
+      ["sqlite3_aggregate_context","void*", "sqlite3_context*", "int"],
+      /* sqlite3_auto_extension() has a hand-written binding. */
+      /* sqlite3_bind_blob() and sqlite3_bind_text() have hand-written
+         bindings to permit more flexible inputs. */
+      ["sqlite3_bind_double","int", "sqlite3_stmt*", "int", "f64"],
+      ["sqlite3_bind_int","int", "sqlite3_stmt*", "int", "int"],
+      ["sqlite3_bind_null",undefined, "sqlite3_stmt*", "int"],
+      ["sqlite3_bind_parameter_count", "int", "sqlite3_stmt*"],
+      ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
+      ["sqlite3_bind_parameter_name", "string", "sqlite3_stmt*", "int"],
+      ["sqlite3_bind_pointer", "int",
+       "sqlite3_stmt*", "int", "*", "string:static", "*"],
+      ["sqlite3_busy_handler","int", [
+        "sqlite3*",
+        new wasm.xWrap.FuncPtrAdapter({
+          signature: 'i(pi)',
+          contextKey: (argv,argIndex)=>argv[0/* sqlite3* */]
+        }),
+        "*"
+      ]],
+      ["sqlite3_busy_timeout","int", "sqlite3*", "int"],
+      /* sqlite3_cancel_auto_extension() has a hand-written binding. */
+      /* sqlite3_close_v2() is implemented by hand to perform some
+         extra work. */
+      ["sqlite3_changes", "int", "sqlite3*"],
+      ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],
+      ["sqlite3_collation_needed", "int", "sqlite3*", "*", "*"/*=>v(ppis)*/],
+      ["sqlite3_column_blob","*", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_bytes","int", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_count", "int", "sqlite3_stmt*"],
+      ["sqlite3_column_decltype", "string", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_double","f64", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_int","int", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_text","string", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
+      ["sqlite3_column_value","sqlite3_value*", "sqlite3_stmt*", "int"],
+      ["sqlite3_commit_hook", "void*", [
+        "sqlite3*",
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'sqlite3_commit_hook',
+          signature: 'i(p)',
+          contextKey: (argv)=>argv[0/* sqlite3* */]
+        }),
+        '*'
+      ]],
+      ["sqlite3_compileoption_get", "string", "int"],
+      ["sqlite3_compileoption_used", "int", "string"],
+      ["sqlite3_complete", "int", "string:flexible"],
+      ["sqlite3_context_db_handle", "sqlite3*", "sqlite3_context*"],
+      /* sqlite3_create_collation() and sqlite3_create_collation_v2()
+         use hand-written bindings to simplify passing of the callback
+         function. */
+      /* sqlite3_create_function(), sqlite3_create_function_v2(), and
+         sqlite3_create_window_function() use hand-written bindings to
+         simplify handling of their function-type arguments. */
+      ["sqlite3_data_count", "int", "sqlite3_stmt*"],
+      ["sqlite3_db_filename", "string", "sqlite3*", "string"],
+      ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
+      ["sqlite3_db_name", "string", "sqlite3*", "int"],
+      ["sqlite3_db_readonly", "int", "sqlite3*", "string"],
+      ["sqlite3_db_status", "int", "sqlite3*", "int", "*", "*", "int"],
+      ["sqlite3_errcode", "int", "sqlite3*"],
+      ["sqlite3_errmsg", "string", "sqlite3*"],
+      ["sqlite3_error_offset", "int", "sqlite3*"],
+      ["sqlite3_errstr", "string", "int"],
+      ["sqlite3_exec", "int", [
+        "sqlite3*", "string:flexible",
+        new wasm.xWrap.FuncPtrAdapter({
+          signature: 'i(pipp)',
+          bindScope: 'transient',
+          callProxy: (callback)=>{
+            let aNames;
+            return (pVoid, nCols, pColVals, pColNames)=>{
+              try {
+                const aVals = wasm.cArgvToJs(nCols, pColVals);
+                if(!aNames) aNames = wasm.cArgvToJs(nCols, pColNames);
+                return callback(aVals, aNames) | 0;
+              }catch(e){
+                /* If we set the db error state here, the higher-level
+                   exec() call replaces it with its own, so we have no way
+                   of reporting the exception message except the console. We
+                   must not propagate exceptions through the C API. Though
+                   we make an effort to report OOM here, sqlite3_exec()
+                   translates that into SQLITE_ABORT as well. */
+                return e.resultCode || capi.SQLITE_ERROR;
+              }
             }
           }
-        }
-      }),
-      "*", "**"
-    ]],
-    ["sqlite3_expanded_sql", "string", "sqlite3_stmt*"],
-    ["sqlite3_extended_errcode", "int", "sqlite3*"],
-    ["sqlite3_extended_result_codes", "int", "sqlite3*", "int"],
-    ["sqlite3_file_control", "int", "sqlite3*", "string", "int", "*"],
-    ["sqlite3_finalize", "int", "sqlite3_stmt*"],
-    ["sqlite3_free", undefined,"*"],
-    ["sqlite3_get_autocommit", "int", "sqlite3*"],
-    ["sqlite3_get_auxdata", "*", "sqlite3_context*", "int"],
-    ["sqlite3_initialize", undefined],
-    ["sqlite3_interrupt", undefined, "sqlite3*"],
-    ["sqlite3_is_interrupted", "int", "sqlite3*"],
-    ["sqlite3_keyword_count", "int"],
-    ["sqlite3_keyword_name", "int", ["int", "**", "*"]],
-    ["sqlite3_keyword_check", "int", ["string", "int"]],
-    ["sqlite3_libversion", "string"],
-    ["sqlite3_libversion_number", "int"],
-    ["sqlite3_limit", "int", ["sqlite3*", "int", "int"]],
-    ["sqlite3_malloc", "*","int"],
-    ["sqlite3_open", "int", "string", "*"],
-    ["sqlite3_open_v2", "int", "string", "*", "int", "string"],
-    /* sqlite3_prepare_v2() and sqlite3_prepare_v3() are handled
-       separately due to us requiring two different sets of semantics
-       for those, depending on how their SQL argument is provided. */
-    /* sqlite3_randomness() uses a hand-written wrapper to extend
-       the range of supported argument types. */
-    ["sqlite3_realloc", "*","*","int"],
-    ["sqlite3_reset", "int", "sqlite3_stmt*"],
-    /* sqlite3_reset_auto_extension() has a hand-written binding. */
-    ["sqlite3_result_blob", undefined, "sqlite3_context*", "*", "int", "*"],
-    ["sqlite3_result_double", undefined, "sqlite3_context*", "f64"],
-    ["sqlite3_result_error", undefined, "sqlite3_context*", "string", "int"],
-    ["sqlite3_result_error_code", undefined, "sqlite3_context*", "int"],
-    ["sqlite3_result_error_nomem", undefined, "sqlite3_context*"],
-    ["sqlite3_result_error_toobig", undefined, "sqlite3_context*"],
-    ["sqlite3_result_int", undefined, "sqlite3_context*", "int"],
-    ["sqlite3_result_null", undefined, "sqlite3_context*"],
-    ["sqlite3_result_pointer", undefined,
-     "sqlite3_context*", "*", "string:static", "*"],
-    ["sqlite3_result_subtype", undefined, "sqlite3_value*", "int"],
-    ["sqlite3_result_text", undefined, "sqlite3_context*", "string", "int", "*"],
-    ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
-    ["sqlite3_rollback_hook", "void*", [
-      "sqlite3*",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: 'sqlite3_rollback_hook',
-        signature: 'v(p)',
-        contextKey: (argv)=>argv[0/* sqlite3* */]
-      }),
-      '*'
-    ]],
-    /**
-       We do not have a way to automatically clean up destructors
-       which are automatically converted from JS functions via the
-       final argument to sqlite3_set_auxdata(). Because of that,
-       automatic function conversion is not supported for this
-       function.  Clients should use wasm.installFunction() to create
-       such callbacks, then pass that pointer to
-       sqlite3_set_auxdata(). Relying on automated conversions here
-       would lead to leaks of JS/WASM proxy functions because
-       sqlite3_set_auxdata() is frequently called in UDFs.
-
-       The sqlite3.oo1.DB class's onclose handlers can be used for this
-       purpose. For example:
-
-       const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
-         //free ptr
-       });
-       myDb.onclose = {
-         after: ()=>{
-           wasm.uninstallFunction(pAuxDtor);
-         }
-       };
-
-       Then pass pAuxDtor as the final argument to appropriate
-       sqlite3_set_auxdata() calls.
-
-       Note that versions prior to 3.49.0 ostensibly had automatic
-       function conversion here but a typo prevented it from
-       working.  Rather than fix it, it was removed because testing the
-       fix brought the huge potential for memory leaks to the
-       forefront.
-    */
-    ["sqlite3_set_auxdata", undefined, [
-      "sqlite3_context*", "int", "*",
-      true
-        ? "*"
-        : new wasm.xWrap.FuncPtrAdapter({
-          /* If we can find a way to automate their cleanup, JS functions can
-             be auto-converted with this. */
-          name: 'xDestroyAuxData',
+        }),
+        "*", "**"
+      ]],
+      ["sqlite3_expanded_sql", "string", "sqlite3_stmt*"],
+      ["sqlite3_extended_errcode", "int", "sqlite3*"],
+      ["sqlite3_extended_result_codes", "int", "sqlite3*", "int"],
+      ["sqlite3_file_control", "int", "sqlite3*", "string", "int", "*"],
+      ["sqlite3_finalize", "int", "sqlite3_stmt*"],
+      ["sqlite3_free", undefined,"*"],
+      ["sqlite3_get_autocommit", "int", "sqlite3*"],
+      ["sqlite3_get_auxdata", "*", "sqlite3_context*", "int"],
+      ["sqlite3_initialize", undefined],
+      ["sqlite3_interrupt", undefined, "sqlite3*"],
+      ["sqlite3_is_interrupted", "int", "sqlite3*"],
+      ["sqlite3_keyword_count", "int"],
+      ["sqlite3_keyword_name", "int", ["int", "**", "*"]],
+      ["sqlite3_keyword_check", "int", ["string", "int"]],
+      ["sqlite3_libversion", "string"],
+      ["sqlite3_libversion_number", "int"],
+      ["sqlite3_limit", "int", ["sqlite3*", "int", "int"]],
+      ["sqlite3_malloc", "*","int"],
+      ["sqlite3_open", "int", "string", "*"],
+      ["sqlite3_open_v2", "int", "string", "*", "int", "string"],
+      /* sqlite3_prepare_v2() and sqlite3_prepare_v3() are handled
+         separately due to us requiring two different sets of semantics
+         for those, depending on how their SQL argument is provided. */
+      /* sqlite3_randomness() uses a hand-written wrapper to extend
+         the range of supported argument types. */
+      ["sqlite3_realloc", "*","*","int"],
+      ["sqlite3_reset", "int", "sqlite3_stmt*"],
+      /* sqlite3_reset_auto_extension() has a hand-written binding. */
+      ["sqlite3_result_blob", undefined, "sqlite3_context*", "*", "int", "*"],
+      ["sqlite3_result_double", undefined, "sqlite3_context*", "f64"],
+      ["sqlite3_result_error", undefined, "sqlite3_context*", "string", "int"],
+      ["sqlite3_result_error_code", undefined, "sqlite3_context*", "int"],
+      ["sqlite3_result_error_nomem", undefined, "sqlite3_context*"],
+      ["sqlite3_result_error_toobig", undefined, "sqlite3_context*"],
+      ["sqlite3_result_int", undefined, "sqlite3_context*", "int"],
+      ["sqlite3_result_null", undefined, "sqlite3_context*"],
+      ["sqlite3_result_pointer", undefined,
+       "sqlite3_context*", "*", "string:static", "*"],
+      ["sqlite3_result_subtype", undefined, "sqlite3_value*", "int"],
+      ["sqlite3_result_text", undefined, "sqlite3_context*", "string", "int", "*"],
+      ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
+      ["sqlite3_rollback_hook", "void*", [
+        "sqlite3*",
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'sqlite3_rollback_hook',
           signature: 'v(p)',
-          contextKey: (argv, argIndex)=>argv[0/* sqlite3_context* */]
-        })
-    ]],
-    ['sqlite3_set_errmsg', 'int', 'sqlite3*', 'int', 'string'],
-    ["sqlite3_shutdown", undefined],
-    ["sqlite3_sourceid", "string"],
-    ["sqlite3_sql", "string", "sqlite3_stmt*"],
-    ["sqlite3_status", "int", "int", "*", "*", "int"],
-    ["sqlite3_step", "int", "sqlite3_stmt*"],
-    ["sqlite3_stmt_busy", "int", "sqlite3_stmt*"],
-    ["sqlite3_stmt_readonly", "int", "sqlite3_stmt*"],
-    ["sqlite3_stmt_status", "int", "sqlite3_stmt*", "int", "int"],
-    ["sqlite3_strglob", "int", "string","string"],
-    ["sqlite3_stricmp", "int", "string", "string"],
-    ["sqlite3_strlike", "int", "string", "string","int"],
-    ["sqlite3_strnicmp", "int", "string", "string", "int"],
-    ["sqlite3_table_column_metadata", "int",
-     "sqlite3*", "string", "string", "string",
-     "**", "**", "*", "*", "*"],
-    ["sqlite3_total_changes", "int", "sqlite3*"],
-    ["sqlite3_trace_v2", "int", [
-      "sqlite3*", "int",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: 'sqlite3_trace_v2::callback',
-        signature: 'i(ippp)',
-        contextKey: (argv,argIndex)=>argv[0/* sqlite3* */]
-      }),
-      "*"
-    ]],
-    ["sqlite3_txn_state", "int", ["sqlite3*","string"]],
-    /* Note that sqlite3_uri_...() have very specific requirements for
-       their first C-string arguments, so we cannot perform any value
-       conversion on those. */
-    ["sqlite3_uri_boolean", "int", "sqlite3_filename", "string", "int"],
-    ["sqlite3_uri_key", "string", "sqlite3_filename", "int"],
-    ["sqlite3_uri_parameter", "string", "sqlite3_filename", "string"],
-    ["sqlite3_user_data","void*", "sqlite3_context*"],
-    ["sqlite3_value_blob", "*", "sqlite3_value*"],
-    ["sqlite3_value_bytes","int", "sqlite3_value*"],
-    ["sqlite3_value_double","f64", "sqlite3_value*"],
-    ["sqlite3_value_dup", "sqlite3_value*", "sqlite3_value*"],
-    ["sqlite3_value_free", undefined, "sqlite3_value*"],
-    ["sqlite3_value_frombind", "int", "sqlite3_value*"],
-    ["sqlite3_value_int","int", "sqlite3_value*"],
-    ["sqlite3_value_nochange", "int", "sqlite3_value*"],
-    ["sqlite3_value_numeric_type", "int", "sqlite3_value*"],
-    ["sqlite3_value_pointer", "*", "sqlite3_value*", "string:static"],
-    ["sqlite3_value_subtype", "int", "sqlite3_value*"],
-    ["sqlite3_value_text", "string", "sqlite3_value*"],
-    ["sqlite3_value_type", "int", "sqlite3_value*"],
-    ["sqlite3_vfs_find", "*", "string"],
-    ["sqlite3_vfs_register", "int", "sqlite3_vfs*", "int"],
-    ["sqlite3_vfs_unregister", "int", "sqlite3_vfs*"]
-  ]/*wasm.bindingSignatures*/;
+          contextKey: (argv)=>argv[0/* sqlite3* */]
+        }),
+        '*'
+      ]],
+      /**
+         We do not have a way to automatically clean up destructors
+         which are automatically converted from JS functions via the
+         final argument to sqlite3_set_auxdata(). Because of that,
+         automatic function conversion is not supported for this
+         function.  Clients should use wasm.installFunction() to create
+         such callbacks, then pass that pointer to
+         sqlite3_set_auxdata(). Relying on automated conversions here
+         would lead to leaks of JS/WASM proxy functions because
+         sqlite3_set_auxdata() is frequently called in UDFs.
+
+         The sqlite3.oo1.DB class's onclose handlers can be used for this
+         purpose. For example:
+
+         const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
+         //free ptr
+         });
+         myDb.onclose = {
+         after: ()=>{
+         wasm.uninstallFunction(pAuxDtor);
+         }
+         };
+
+         Then pass pAuxDtor as the final argument to appropriate
+         sqlite3_set_auxdata() calls.
+
+         Note that versions prior to 3.49.0 ostensibly had automatic
+         function conversion here but a typo prevented it from
+         working.  Rather than fix it, it was removed because testing the
+         fix brought the huge potential for memory leaks to the
+         forefront.
+      */
+      ["sqlite3_set_auxdata", undefined, [
+        "sqlite3_context*", "int", "*",
+        true
+          ? "*"
+          : new wasm.xWrap.FuncPtrAdapter({
+            /* If we can find a way to automate their cleanup, JS functions can
+               be auto-converted with this. */
+            name: 'xDestroyAuxData',
+            signature: 'v(p)',
+            contextKey: (argv, argIndex)=>argv[0/* sqlite3_context* */]
+          })
+      ]],
+      ['sqlite3_set_errmsg', 'int', 'sqlite3*', 'int', 'string'],
+      ["sqlite3_shutdown", undefined],
+      ["sqlite3_sourceid", "string"],
+      ["sqlite3_sql", "string", "sqlite3_stmt*"],
+      ["sqlite3_status", "int", "int", "*", "*", "int"],
+      ["sqlite3_step", "int", "sqlite3_stmt*"],
+      ["sqlite3_stmt_busy", "int", "sqlite3_stmt*"],
+      ["sqlite3_stmt_readonly", "int", "sqlite3_stmt*"],
+      ["sqlite3_stmt_status", "int", "sqlite3_stmt*", "int", "int"],
+      ["sqlite3_strglob", "int", "string","string"],
+      ["sqlite3_stricmp", "int", "string", "string"],
+      ["sqlite3_strlike", "int", "string", "string","int"],
+      ["sqlite3_strnicmp", "int", "string", "string", "int"],
+      ["sqlite3_table_column_metadata", "int",
+       "sqlite3*", "string", "string", "string",
+       "**", "**", "*", "*", "*"],
+      ["sqlite3_total_changes", "int", "sqlite3*"],
+      ["sqlite3_trace_v2", "int", [
+        "sqlite3*", "int",
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'sqlite3_trace_v2::callback',
+          signature: 'i(ippp)',
+          contextKey: (argv,argIndex)=>argv[0/* sqlite3* */]
+        }),
+        "*"
+      ]],
+      ["sqlite3_txn_state", "int", ["sqlite3*","string"]],
+      /* sqlite3_uri_...() have very specific requirements for their
+         first C-string arguments, so we cannot perform any
+         string-type conversion on their first argument. */
+      ["sqlite3_uri_boolean", "int", "sqlite3_filename", "string", "int"],
+      ["sqlite3_uri_key", "string", "sqlite3_filename", "int"],
+      ["sqlite3_uri_parameter", "string", "sqlite3_filename", "string"],
+      ["sqlite3_user_data","void*", "sqlite3_context*"],
+      ["sqlite3_value_blob", "*", "sqlite3_value*"],
+      ["sqlite3_value_bytes","int", "sqlite3_value*"],
+      ["sqlite3_value_double","f64", "sqlite3_value*"],
+      ["sqlite3_value_dup", "sqlite3_value*", "sqlite3_value*"],
+      ["sqlite3_value_free", undefined, "sqlite3_value*"],
+      ["sqlite3_value_frombind", "int", "sqlite3_value*"],
+      ["sqlite3_value_int","int", "sqlite3_value*"],
+      ["sqlite3_value_nochange", "int", "sqlite3_value*"],
+      ["sqlite3_value_numeric_type", "int", "sqlite3_value*"],
+      ["sqlite3_value_pointer", "*", "sqlite3_value*", "string:static"],
+      ["sqlite3_value_subtype", "int", "sqlite3_value*"],
+      ["sqlite3_value_text", "string", "sqlite3_value*"],
+      ["sqlite3_value_type", "int", "sqlite3_value*"],
+      ["sqlite3_vfs_find", "*", "string"],
+      ["sqlite3_vfs_register", "int", "sqlite3_vfs*", "int"],
+      ["sqlite3_vfs_unregister", "int", "sqlite3_vfs*"]
+
+      /* This list gets extended below */
+    ]/*.core*/,
+    /**
+       Functions which require BigInt (int64) support are separated
+       from the others because we need to conditionally bind them or
+       apply dummy impls, depending on the capabilities of the
+       environment.  (That said: we never actually build without
+       BigInt support, and such builds are untested.)
+
+       Not all of these functions directly require int64 but are only
+       for use with APIs which require int64. For example, the
+       vtab-related functions.
+    */
+    int64: [
+      ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
+      ["sqlite3_changes64","i64", ["sqlite3*"]],
+      ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
+      ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
+      /* Careful! Short version: de/serialize() are problematic because they
+         might use a different allocator than the user for managing the
+         deserialized block. de/serialize() are ONLY safe to use with
+         sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. Because
+         of this, the canonical builds of sqlite3.wasm/js guarantee that
+         sqlite3.wasm.alloc() and friends use those allocators. Custom builds
+         may not guarantee that, however. */,
+      ["sqlite3_last_insert_rowid", "i64", ["sqlite3*"]],
+      ["sqlite3_malloc64", "*","i64"],
+      ["sqlite3_msize", "i64", "*"],
+      ["sqlite3_overload_function", "int", ["sqlite3*","string","int"]],
+      ["sqlite3_realloc64", "*","*", "i64"],
+      ["sqlite3_result_int64", undefined, "*", "i64"],
+      ["sqlite3_result_zeroblob64", "int", "*", "i64"],
+      ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
+      ["sqlite3_set_last_insert_rowid", undefined, ["sqlite3*", "i64"]],
+      ["sqlite3_status64", "int", "int", "*", "*", "int"],
+      ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
+      ["sqlite3_update_hook", "*", [
+        "sqlite3*",
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'sqlite3_update_hook',
+          signature: "v(iippj)",
+          contextKey: (argv)=>argv[0/* sqlite3* */],
+          callProxy: (callback)=>{
+            return (p,op,z0,z1,rowid)=>{
+              callback(p, op, wasm.cstrToJs(z0), wasm.cstrToJs(z1), rowid);
+            };
+          }
+        }),
+        "*"
+      ]],
+      ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
+      ["sqlite3_value_int64","i64", "sqlite3_value*"]
+      /* This list gets extended below */
+    ]/*.int64*/,
+    /**
+       Functions which are intended solely for API-internal use by the
+       WASM components, not client code. These get installed into
+       sqlite3.util. Some of them get exposed to clients via variants
+       in sqlite3_js_...().
+
+       2024-01-11: these were renamed, with two underscores in the
+       prefix, to ensure that clients do not accidentally depend on
+       them.  They have always been documented as internal-use-only,
+       so no clients "should" be depending on the old names.
+    */
+    wasmInternal: [
+      ["sqlite3__wasm_db_reset", "int", "sqlite3*"],
+      ["sqlite3__wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
+      [/* DO NOT USE. This is deprecated since 2023-08-11 because it
+          can trigger assert() in debug builds when used with file
+          sizes which are not an exact multiple of a valid db page
+          size.  This function is retained only so that
+          sqlite3_js_vfs_create_file() can continue to work (for a
+          given value of work), but that function emits a
+          config.warn() log message directing the reader to
+          alternatives. */
+        "sqlite3__wasm_vfs_create_file", "int", "sqlite3_vfs*","string","*", "int"
+      ],
+      ["sqlite3__wasm_posix_create_file", "int", "string","*", "int"],
+      ["sqlite3__wasm_vfs_unlink", "int", "sqlite3_vfs*","string"],
+      ["sqlite3__wasm_qfmt_token","string:dealloc", "string","int"]
+    ]/*.wasmInternal*/
+  } /*bindingSignatures*/;
 
   if( !!wasm.exports.sqlite3_progress_handler ){
-    wasm.bindingSignatures.push(
+    bindingSignatures.core.push(
       ["sqlite3_progress_handler", undefined, [
         "sqlite3*", "int", new wasm.xWrap.FuncPtrAdapter({
           name: 'xProgressHandler',
@@ -337,14 +421,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }
 
   if( !!wasm.exports.sqlite3_stmt_explain ){
-    wasm.bindingSignatures.push(
+    bindingSignatures.core.push(
       ["sqlite3_stmt_explain", "int", "sqlite3_stmt*", "int"],
       ["sqlite3_stmt_isexplain", "int", "sqlite3_stmt*"]
     );
   }
 
   if( !!wasm.exports.sqlite3_set_authorizer ){
-    wasm.bindingSignatures.push(
+    bindingSignatures.core.push(
       ["sqlite3_set_authorizer", "int", [
         "sqlite3*",
         new wasm.xWrap.FuncPtrAdapter({
@@ -369,7 +453,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/* sqlite3_set_authorizer() */
 
   if( !!wasm.exports.sqlite3_column_origin_name ){
-    wasm.bindingSignatures.push(
+    bindingSignatures.core.push(
       ["sqlite3_column_database_name","string", "sqlite3_stmt*", "int"],
       ["sqlite3_column_origin_name","string", "sqlite3_stmt*", "int"],
       ["sqlite3_column_table_name","string", "sqlite3_stmt*", "int"]
@@ -380,11 +464,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* ^^^ "the problem" is that this is an optional feature and the
        build-time function-export list does not currently take
        optional features into account. */
-    wasm.bindingSignatures.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);
+    bindingSignatures.core.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);
   }
 
 //#if enable-see
-  if(wasm.exports.sqlite3_key_v2 instanceof Function){
+  if( !!wasm.exports.sqlite3_key_v2 ){
     /**
        This code is capable of using an SEE build but note that an SEE
        WASM build is generally incompatible with SEE's license
@@ -393,7 +477,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        exposing an SEE build of sqlite3.wasm effectively provides all
        clients with a working copy of the commercial SEE code.
     */
-    wasm.bindingSignatures.push(
+    bindingSignatures.core.push(
       ["sqlite3_key", "int", "sqlite3*", "string", "int"],
       ["sqlite3_key_v2","int","sqlite3*","string","*","int"],
       ["sqlite3_rekey", "int", "sqlite3*", "string", "int"],
@@ -403,60 +487,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }
 //#endif enable-see
 
-  /**
-     Functions which require BigInt (int64) support are separated from
-     the others because we need to conditionally bind them or apply
-     dummy impls, depending on the capabilities of the environment.
-     (That said: we never actually build without BigInt support,
-     and such builds are untested.)
-
-     Note that not all of these functions directly require int64
-     but are only for use with APIs which require int64. For example,
-     the vtab-related functions.
-  */
-  wasm.bindingSignatures.int64 = [
-    ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
-    ["sqlite3_changes64","i64", ["sqlite3*"]],
-    ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
-    ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
-    /* Careful! Short version: de/serialize() are problematic because they
-       might use a different allocator than the user for managing the
-       deserialized block. de/serialize() are ONLY safe to use with
-       sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. Because
-       of this, the canonical builds of sqlite3.wasm/js guarantee that
-       sqlite3.wasm.alloc() and friends use those allocators. Custom builds
-       may not guarantee that, however. */,
-    ["sqlite3_last_insert_rowid", "i64", ["sqlite3*"]],
-    ["sqlite3_malloc64", "*","i64"],
-    ["sqlite3_msize", "i64", "*"],
-    ["sqlite3_overload_function", "int", ["sqlite3*","string","int"]],
-    ["sqlite3_realloc64", "*","*", "i64"],
-    ["sqlite3_result_int64", undefined, "*", "i64"],
-    ["sqlite3_result_zeroblob64", "int", "*", "i64"],
-    ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
-    ["sqlite3_set_last_insert_rowid", undefined, ["sqlite3*", "i64"]],
-    ["sqlite3_status64", "int", "int", "*", "*", "int"],
-    ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
-    ["sqlite3_update_hook", "*", [
-      "sqlite3*",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: 'sqlite3_update_hook',
-        signature: "v(iippj)",
-        contextKey: (argv)=>argv[0/* sqlite3* */],
-        callProxy: (callback)=>{
-          return (p,op,z0,z1,rowid)=>{
-            callback(p, op, wasm.cstrToJs(z0), wasm.cstrToJs(z1), rowid);
-          };
-        }
-      }),
-      "*"
-    ]],
-    ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
-    ["sqlite3_value_int64","i64", "sqlite3_value*"]
-  ];
-
   if( wasm.bigIntEnabled && !!wasm.exports.sqlite3_declare_vtab ){
-    wasm.bindingSignatures.int64.push(
+    bindingSignatures.int64.push(
       ["sqlite3_create_module", "int",
        ["sqlite3*","string","sqlite3_module*","*"]],
       ["sqlite3_create_module_v2", "int",
@@ -477,7 +509,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/* virtual table APIs */
 
   if(wasm.bigIntEnabled && !!wasm.exports.sqlite3_preupdate_hook){
-    wasm.bindingSignatures.int64.push(
+    bindingSignatures.int64.push(
       ["sqlite3_preupdate_blobwrite", "int", "sqlite3*"],
       ["sqlite3_preupdate_count", "int", "sqlite3*"],
       ["sqlite3_preupdate_depth", "int", "sqlite3*"],
@@ -522,7 +554,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     };
 
-    wasm.bindingSignatures.int64.push(...[
+    bindingSignatures.int64.push(
       ['sqlite3changegroup_add', 'int', ['sqlite3_changegroup*', 'int', 'void*']],
       ['sqlite3changegroup_add_strm', 'int', [
         'sqlite3_changegroup*',
@@ -677,36 +709,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }),
         '*'
       ]]
-    ]);
+    );
   }/*session/changeset APIs*/
 
   /**
-     Functions which are intended solely for API-internal use by the
-     WASM components, not client code. These get installed into
-     sqlite3.util. Some of them get exposed to clients via variants
-     in sqlite3_js_...().
-
-     2024-01-11: these were renamed, with two underscores in the
-     prefix, to ensure that clients do not accidentally depend on
-     them.  They have always been documented as internal-use-only, so
-     no clients "should" be depending on the old names.
-  */
-  wasm.bindingSignatures.wasmInternal = [
-    ["sqlite3__wasm_db_reset", "int", "sqlite3*"],
-    ["sqlite3__wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
-    [/* DO NOT USE. This is deprecated since 2023-08-11 because it can
-        trigger assert() in debug builds when used with file sizes
-        which are not sizes to a multiple of a valid db page size. */
-      "sqlite3__wasm_vfs_create_file", "int", "sqlite3_vfs*","string","*", "int"
-    ],
-    ["sqlite3__wasm_posix_create_file", "int", "string","*", "int"],
-    ["sqlite3__wasm_vfs_unlink", "int", "sqlite3_vfs*","string"],
-    ["sqlite3__wasm_qfmt_token","string:dealloc", "string","int"]
-  ];
-
-  /**
      Install JS<->C struct bindings for the non-opaque struct types we
-     need... */
+     need...
+  */
   sqlite3.StructBinder = globalThis.Jaccwabyt({
     heap: 0 ? wasm.memory : wasm.heap8u,
     alloc: wasm.alloc,
@@ -759,10 +768,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /**
        Add some descriptive xWrap() aliases for '*' intended to (A)
-       initially improve readability/correctness of
-       wasm.bindingSignatures and (B) provide automatic conversion
-       from higher-level representations, e.g. capi.sqlite3_vfs to
-       `sqlite3_vfs*` via capi.sqlite3_vfs.pointer.
+       improve readability/correctness of bindingSignatures and (B)
+       provide automatic conversion from higher-level representations,
+       e.g. capi.sqlite3_vfs to `sqlite3_vfs*` via (capi.sqlite3_vfs
+       instance).pointer.
     */
     const __xArgPtr = wasm.xWrap.argAdapter('*');
     const nilType = function(){
@@ -834,10 +843,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         "Disabling sqlite3.wasm.xWrap.doArgcCheck due to environmental quirks."
       );
     }
-    for(const e of wasm.bindingSignatures){
+    for(const e of bindingSignatures.core){
       capi[e[0]] = wasm.xWrap.apply(null, e);
     }
-    for(const e of wasm.bindingSignatures.wasmInternal){
+    for(const e of bindingSignatures.wasmInternal){
       util[e[0]] = wasm.xWrap.apply(null, e);
     }
 
@@ -850,15 +859,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return ()=>toss(fname+"() is unavailable due to lack",
                       "of BigInt support in this build.");
     };
-    for(const e of wasm.bindingSignatures.int64){
+    for(const e of bindingSignatures.int64){
       capi[e[0]] = wasm.bigIntEnabled
         ? wasm.xWrap.apply(null, e)
         : fI64Disabled(e[0]);
     }
 
-    /* There's no need to expose bindingSignatures to clients,
-       implicitly making it part of the public interface. */
-    delete wasm.bindingSignatures;
+    /* We don't need these anymore... */
+    delete bindingSignatures.core;
+    delete bindingSignatures.int64;
+    delete bindingSignatures.wasmInternal;
 
     /**
        Sets the given db's error state. Accepts:
@@ -913,7 +923,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                           'sqlite3Status',
                           'stmtStatus', 'syncFlags',
                           'trace', 'txnState', 'udfFlags',
-                          'version' ];
+                          'version'];
     if(wasm.bigIntEnabled){
       defineGroups.push('serialize', 'session', 'vtab');
     }
@@ -1098,10 +1108,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         continue;
       }
       closeArgs.length = x.length/*==argument count*/
-      /* recall that undefined entries translate to 0 when passed to
-         WASM. */;
+        || 1 /* Recall that: (A) undefined entries translate to 0 when
+                passed to WASM and (B) Safari wraps wasm.exports.* in
+                nullary functions so x.length is 0 there. */;
       try{ capi[name](...closeArgs) }
       catch(e){
+        /* This "cannot happen" unless something is well and truly sideways. */
         sqlite3.config.warn("close-time call of",name+"(",closeArgs,") threw:",e);
       }
     }
@@ -1203,10 +1215,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        2) It accepts JS functions for its function-pointer arguments,
           for which it will install WASM-bound proxies. The bindings
-          are "permanent," in that they will stay in the WASM environment
-          until it shuts down unless the client calls this again with the
-          same collation name and a value of 0 or null for the
-          the function pointer(s).
+          are "permanent," in that they will stay in the WASM
+          environment until it shuts down unless the client calls this
+          again with the same collation name and a value of 0 or null
+          for the the function pointer(s). sqlite3_close_v2() will
+          also clean up such automatically-installed WASM functions.
 
        For consistency with the C API, it requires the same number of
        arguments. It returns capi.SQLITE_MISUSE if passed any other
@@ -1447,11 +1460,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       sqlite3_prepare_v3() */
 
     /**
-       Helper for string:flexible conversions which require a
+       Helper for string:flexible conversions which requires a
        byte-length counterpart argument. Passed a value and its
        ostensible length, this function returns [V,N], where V is
-       either v or a transformed copy of v and N is either n, -1, or
-       the byte length of v (if it's a byte array or ArrayBuffer).
+       either v or a transformed copy of v and N is either n (if v is
+       a WASM pointer), -1 (if v is a string or Array), or the byte
+       length of v (if it's a byte array or ArrayBuffer).
     */
     const __flexiString = (v,n)=>{
       if('string'===typeof v){
@@ -1484,15 +1498,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                 "int", "**",
                                 "**"/*MUST be 0 or null or undefined!*/]),
       /**
-         Impl which requires that the 2nd argument be a pointer
-         to the SQL string, instead of being converted to a
-         string. This variant is necessary for cases where we
-         require a non-NULL value for the final argument
-         (exec()'ing multiple statements from one input
-         string). For simpler cases, where only the first
-         statement in the SQL string is required, the wrapper
-         named sqlite3_prepare_v2() is sufficient and easier to
-         use because it doesn't require dealing with pointers.
+         Impl which requires that the 2nd argument be a pointer to the
+         SQL string, instead of being converted to a JS string. This
+         variant is necessary for cases where we require a non-NULL
+         value for the final argument (prepare/step of multiple
+         statements from one input string). For simpler cases, where
+         only the first statement in the SQL string is required, the
+         wrapper named sqlite3_prepare_v2() is sufficient and easier
+         to use because it doesn't require dealing with pointers.
       */
       full: wasm.xWrap('sqlite3_prepare_v3',
                        "int", ["sqlite3*", "*", "int", "int",
