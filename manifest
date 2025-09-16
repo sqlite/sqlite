@@ -1,5 +1,5 @@
-C Updates\sto\swhere.c\sto\shandle\svtabs\sin\sjoins\smore\ssimilarly\sto\sregular\stables.
-D 2025-09-15T17:06:35.698
+C If\sthe\sfile-system\ssupports\sf2fs\sstyle\satomic-writes,\ssync\sthe\sdirectory\safter\sdeleting\sa\sjournal\sfile\sin\sjournal_mode=DELETE\smode\sin\ssynchronous=NORMAL\sor\ssynchronous=FULL\smodes\s(as\swell\sas\ssynchronous=EXTRA).
+D 2025-09-16T19:52:12.259
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -730,7 +730,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c b3da55bc4bb214b2bfb1e430b10e9d3ebcf6b11741921ab044c9b9539c8fcc4f
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
-F src/pager.c ee48e0cc9ae4abfd7c37b838bff62a14d520a9fa311007fa57929ac7cc5d609c
+F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y 619c3e92a54686c5e47923688c4b9bf7ec534a4690db5677acc28b299c403250
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2175,9 +2175,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fabbc8b6d184d52a513e80fabd900f578424fc8a8055e3d64fac54b9e28ea18a 0bb8c42951ed4fcda60f195b9cc84c80d5b8c0ff77c7517243708f43ba09cfdd
-R 9502f6e7264c20624ab1f1c21d99c7f4
-T +closed 0bb8c42951ed4fcda60f195b9cc84c80d5b8c0ff77c7517243708f43ba09cfdd
+P 9138223013505d3e0f1f2b40b51d521184aabd50732fdf4f6bed393cfa9475fc
+R 6a748d33dfa097183d985d232641282a
+T *branch * atomic-write-fix
+T *sym-atomic-write-fix *
+T -sym-trunk *
 U dan
-Z 939227077ed9365e5216a5e46be0b58b
+Z 3cf994dabbced355a33fb9bebf555eb9
 # Remove this line to create a well-formed Fossil manifest.

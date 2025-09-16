@@ -3612,14 +3612,27 @@ void sqlite3PagerSetFlags(
   unsigned pgFlags      /* Various flags */
 ){
   unsigned level = pgFlags & PAGER_SYNCHRONOUS_MASK;
-  if( pPager->tempFile ){
+  if( pPager->tempFile || level==PAGER_SYNCHRONOUS_OFF ){
     pPager->noSync = 1;
     pPager->fullSync = 0;
     pPager->extraSync = 0;
   }else{
-    pPager->noSync =  level==PAGER_SYNCHRONOUS_OFF ?1:0;
+    pPager->noSync =  0;
     pPager->fullSync = level>=PAGER_SYNCHRONOUS_FULL ?1:0;
-    pPager->extraSync = level==PAGER_SYNCHRONOUS_EXTRA ?1:0;
+
+    /* Set Pager.extraSync if "PRAGMA synchronous=EXTRA" is requested, or 
+    ** if the file-system supports F2FS style atomic writes. If this flag
+    ** is set, SQLite syncs the directory to disk immediately after deleting 
+    ** a journal file in "PRAGMA journal_mode=DELETE" mode.  */
+    if( level==PAGER_SYNCHRONOUS_EXTRA 
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+     || (sqlite3OsDeviceCharacteristics(pPager->fd) & SQLITE_IOCAP_BATCH_ATOMIC)
+#endif
+    ){
+      pPager->extraSync = 1;
+    }else{
+      pPager->extraSync = 0;
+    }
   }
   if( pPager->noSync ){
     pPager->syncFlags = 0;
