@@ -1,5 +1,5 @@
-C Remove\snewly\sunreachable\scode\sin\sthe\ssolver\sof\sthe\squery\splanner.
-D 2025-09-17T17:09:07.209
+C Improve\sthe\squote-stripping\swhen\simporting\sa\sdb\sinto\sfiddle,\sas\sreported\sin\s[forum:264050a3f3\s|\sforum\spost\s264050a3f3].
+D 2025-09-17T20:05:12.597
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -632,7 +632,7 @@ F ext/wasm/demo-worker1.js 08720227e98fa5b44761cf6e219269cee3e9dd0421d8d91459535
 F ext/wasm/dist.make 57f5da2f0de5a297b5a0bc39ffec736380050578240ab24d864c2ff1b3634a3b
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make ea505d11aa2a89551e1693ed4c71ee6a163364ca14f806dda295d0beb26ec0ea
-F ext/wasm/fiddle/fiddle-worker.js 50d3edf54c0c0e3657e876724ec2c10069f55f3e40af20864d72f6f6e9ad00f8
+F ext/wasm/fiddle/fiddle-worker.js b5da00e3b13e8a33c8cbd53a0f90a24c3540751bd069908b98879587ebc3bb7e
 F ext/wasm/fiddle/fiddle.js f0b96f978c7c77fea8d092aa79c77849ce111d7b1ba60ffba07675009682184e
 F ext/wasm/fiddle/index.html 17c7d6b21f40fbf462162c4311b63d760b065e419d9f5a96534963b0e52af940
 F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf188f024b3730
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b7a5babf0843c4b3ce93d26f1447218585ce645ec3acd942ac649204e16675a
-R c4d7c0664f61638db0cb05b5995d6ac5
-U drh
-Z 1c130d86b402705871af8ae469e01493
+P 9abaa0ac2b3049341f36ff683ff6eebb589698bd910624aa24f11398d557b3c2
+R 2e9c6e31ed45fdb3f25a4abad6195bd9
+U stephan
+Z 47d7a42ee3111d975aa9b48d64fb9880
 # Remove this line to create a well-formed Fossil manifest.
