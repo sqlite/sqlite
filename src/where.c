@@ -6011,18 +6011,14 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     aFrom = pFrom;
     nFrom = nTo;
   }
+  assert( nFrom==0 || nFrom==1 );
 
   if( nFrom==0 ){
     sqlite3ErrorMsg(pParse, "no query solution");
     sqlite3StackFreeNN(pParse->db, pSpace);
     return SQLITE_ERROR;
   }
- 
-  /* Find the lowest cost path.  pFrom will be left pointing to that path */
   pFrom = aFrom;
-  for(ii=1; ii<nFrom; ii++){
-    if( pFrom->rCost>aFrom[ii].rCost ) pFrom = &aFrom[ii];
-  }
   assert( pWInfo->nLevel==nLoop );
   /* Load the lowest cost path into pWInfo */
   for(iLoop=0; iLoop<nLoop; iLoop++){

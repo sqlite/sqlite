@@ -1,5 +1,5 @@
-C In\sthe\sdate/time\sfunctions,\sa\stimezone\ssuffix\sof\s"+00:00"\sshould\swork\nthe\ssame\sas\s"Z".\n[forum:/forumpost/2025-09-17T10:12:14z|Forum\spost\s2025-09-17T10:12:14z].
-D 2025-09-17T14:55:47.836
+C Remove\snewly\sunreachable\scode\sin\sthe\ssolver\sof\sthe\squery\splanner.
+D 2025-09-17T17:09:07.209
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -824,7 +824,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c a278339ecf5f194fd71fff1f0da1368de50e3a32edc3e9944e1ee1f4610476ff
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 9d7b4095ae0a34d9604c3e185c65cdf6eca5f2e8707403c526eed798867cece4
+F src/where.c 8188fac428a8d8e50e133563b59a2be3108fb6723004829c8297c4648784daee
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 71c5c6804b7f882dec8ec858758accae02fcfca13df3cc720f1f258e663ec7c5
 F src/whereexpr.c 403a44eeec1a0f0914fccc6a59376b6924bc00ef6728fe6ffce4cf3051b320fc
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9138223013505d3e0f1f2b40b51d521184aabd50732fdf4f6bed393cfa9475fc
-R 67a59d36158adb193d7083dc4e23b2e2
+P 3b7a5babf0843c4b3ce93d26f1447218585ce645ec3acd942ac649204e16675a
+R c4d7c0664f61638db0cb05b5995d6ac5
 U drh
-Z 32ba102ae1fce889e13407d87dea843b
+Z 1c130d86b402705871af8ae469e01493
 # Remove this line to create a well-formed Fossil manifest.
