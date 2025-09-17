@@ -1,5 +1,5 @@
-C Remove\snewly\sunreachable\scode\sin\sthe\ssolver\sof\sthe\squery\splanner.
-D 2025-09-17T17:09:07.209
+C Add\sthe\ssqlite3_db_status64()\sinterface.
+D 2025-09-17T19:19:52.225
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -744,12 +744,12 @@ F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
 F src/shell.c.in 458c1a24d19251db547770fac50ae9c94dca42c310f8ecc937e3c587cd76ac8d
-F src/sqlite.h.in 5732519a2acb09066032ceac21f25996eb3f28f807a4468e30633c7c70faae1c
+F src/sqlite.h.in 131a18ff5e648447b8412ee6a0de757ce025e061d3ddd737a5fe72d7001b24d1
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 3f0c4ed6934e7309a61c6f3c30f70a30a5b869f785bb3d9f721a36c5e4359126
 F src/sqliteInt.h 27c73e48878d31ef230ba867d1f8c3af6aed357fd93ccc605d3f1aae007ea62b
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
-F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
+F src/status.c 03d441b856391f7863da28cf1d59f61a38e24782ac4b75b0454dba42f8f6cdf7
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
@@ -2175,8 +2175,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b7a5babf0843c4b3ce93d26f1447218585ce645ec3acd942ac649204e16675a
-R c4d7c0664f61638db0cb05b5995d6ac5
+P 9abaa0ac2b3049341f36ff683ff6eebb589698bd910624aa24f11398d557b3c2
+R 805db115b49d544ce20e2219bf55f575
+T *branch * db-status64
+T *sym-db-status64 *
+T -sym-trunk *
 U drh
-Z 1c130d86b402705871af8ae469e01493
+Z aa94c20ffd25bd9873ab760178273927
 # Remove this line to create a well-formed Fossil manifest.
