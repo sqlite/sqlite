@@ -1,5 +1,5 @@
-C Updates\sto\swhere.c\sto\shandle\svtabs\sin\sjoins\smore\ssimilarly\sto\sregular\stables.
-D 2025-09-15T17:06:35.698
+C In\sthe\sdate/time\sfunctions,\sa\stimezone\ssuffix\sof\s"+00:00"\sshould\swork\nthe\ssame\sas\s"Z".\n[forum:/forumpost/2025-09-17T10:12:14z|Forum\spost\s2025-09-17T10:12:14z].
+D 2025-09-17T14:55:47.836
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -689,7 +689,7 @@ F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc9388
 F src/build.c 213a9d24c931ef4694564894cda8dac8dbeb1519d428fd2d7ae622ac357c05a5
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
-F src/date.c 9db4d604e699a73e10b8e85a44db074a1f04c0591a77e2abfd77703f50dce1e9
+F src/date.c b6f92001f4b1f73f21774927488661d28f4dac9cd9701ed96486d96b44f5b058
 F src/dbpage.c 081c59d84f187aa0eb48d98faf9578a00bde360f68438d646a86b618653d2479
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
@@ -1030,7 +1030,7 @@ F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c47
 F test/cursorhint.test 05cf0febe5c5f8a31f199401fd1c9322249e753950d55f26f9d5aca61408a270
 F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee9ae9c42f
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
-F test/date.test 180301372ed42520ff2d1c9bfa1d2aa726a0530d32452bd3f88f0a1c40f3c21e
+F test/date.test 328ed63091d34c8a6e8dcec4f999a031ce310f24395b8f0f67f07eaf36cbfd1f
 F test/date2.test 7e12ec14aaf4d5e6294b4ba140445b0eca06ea50062a9c3a69c4ee13d0b6f8b1
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
@@ -2175,9 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fabbc8b6d184d52a513e80fabd900f578424fc8a8055e3d64fac54b9e28ea18a 0bb8c42951ed4fcda60f195b9cc84c80d5b8c0ff77c7517243708f43ba09cfdd
-R 9502f6e7264c20624ab1f1c21d99c7f4
-T +closed 0bb8c42951ed4fcda60f195b9cc84c80d5b8c0ff77c7517243708f43ba09cfdd
-U dan
-Z 939227077ed9365e5216a5e46be0b58b
+P 9138223013505d3e0f1f2b40b51d521184aabd50732fdf4f6bed393cfa9475fc
+R 67a59d36158adb193d7083dc4e23b2e2
+U drh
+Z 32ba102ae1fce889e13407d87dea843b
 # Remove this line to create a well-formed Fossil manifest.
