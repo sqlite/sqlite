@@ -1,5 +1,5 @@
-C Try\sto\smake\sthe\scarray\sextension\seasier\sto\scompile\son\sVxWorks.
-D 2025-09-18T19:59:56.466
+C Fix\sthe\snew\swalckptnoop.test\stest\smodule\sso\sthat\sit\sworks\sin\svarious\nalignments.
+D 2025-09-18T23:23:50.129
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1979,7 +1979,7 @@ F test/wal_common.tcl 204d1721ac13c5e0c7fae6380315b5ab7f4e8423f580d826c5e9df1995
 F test/walbak.test 018d4e5a3d45c6298d11b99f09a8ef6876527946
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test 6bb472e82730e7e4e81395e907a01d8cfc2bd9e1f01f8a9184ca572e2955a4bf
-F test/walckptnoop.test 5d40e7959a6ef4bdc7aaf773f86c8f210e2a1e6d0ca5c9ad1389311665741bef
+F test/walckptnoop.test a66e79e9afd5b4b46c65bfc77e57ed37259cedef91e4bd60ae7f64ff9f2e1962
 F test/walcksum.test 50e204500eed9c691b6045e467bb2923f49aa93d8adf315e2be135fdb202c1c2
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1626b6082d06c6fd66ff0a6d9fb3641c936ee8db326275e4fddfecf172c5a6eb
-R 4dbf5921569ab84c095eb6a05ccc8304
+P 1a34c3f49ec48b551098f6781a3a6355aa3c9fd47fd9ebaef01f254b1dcafc9d
+R 40ecae7d6707f20d8bbcd209cf4f2465
 U drh
-Z 4e59be6b563fcfbec0b3b0a3ae941023
+Z f0e2337e7b3f7b03fa0bb01341400b97
 # Remove this line to create a well-formed Fossil manifest.
