@@ -9029,6 +9029,10 @@ int sqlite3_db_status64(sqlite3*,int,sqlite3_int64*,sqlite3_int64*,int);
 ** If an IO or other error occurs while writing a page to disk, the effect
 ** on subsequent SQLITE_DBSTATUS_CACHE_WRITE requests is undefined.)^ ^The
 ** highwater mark associated with SQLITE_DBSTATUS_CACHE_WRITE is always 0.
+** <p>
+** ^(There is overlap between the quantities measured by this parameter
+** (SQLITE_DBSTATUS_CACHE_WRITE) and SQLITE_DBSTATUS_SPILL.  Resetting one
+** will reduce the other.)^
 ** </dd>
 **
 ** [[SQLITE_DBSTATUS_CACHE_SPILL]] ^(<dt>SQLITE_DBSTATUS_CACHE_SPILL</dt>
@@ -9052,6 +9056,10 @@ int sqlite3_db_status64(sqlite3*,int,sqlite3_int64*,sqlite3_int64*,int);
 ** are part of complex queries, external sorts that spill to disk, and
 ** writes to TEMP tables.)^
 ** ^The highwater mark is always 0.
+** <p>
+** ^(There is overlap between the quantities measured by this parameter
+** (SQLITE_DBSTATUS_SPILL) and SQLITE_DBSTATUS_CACHE_WRITE.  Resetting one
+** will reduce the other.)^
 ** </dd>
 ** </dl>
 */

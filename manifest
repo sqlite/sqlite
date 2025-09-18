@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\sSQLITE_DBSTATUS_SPILL.\s\sDoes\snot\syet\stake\sinto\naccount\ssorters\sor\stransient\stables.
-D 2025-09-18T14:51:23.014
+C Include\sI/O\sconsumed\sby\sephermeral\scursors\sin\sthe\sSQLITE_DBSTATUS_SPILL\nvalues.\s\sStill\sneed\sto\sadd\ssorter.
+D 2025-09-18T18:56:55.622
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -744,7 +744,7 @@ F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
 F src/shell.c.in 6ca902bb9aa56ae7f83769b39652b975fd0b347f984ab13f4565de80e4ecb3e9
-F src/sqlite.h.in 31dcc6e5a55e308438034faf80ebca13d7331ac5a87136d5caa0baff957fe13f
+F src/sqlite.h.in 9fca8150225467bef7a1c378f00f5ef8f795e20cb450df67f82963e62fafcbe3
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 3f0c4ed6934e7309a61c6f3c30f70a30a5b869f785bb3d9f721a36c5e4359126
 F src/sqliteInt.h 87418f40cbdd986b4a58c649e598fd6cde89e98d3b5c770d2899b5f6c755ebb9
@@ -813,7 +813,7 @@ F src/vdbe.c 07084aa0152c8d4e74e7b86c0cf744732f0f9b1fd62bd7098252cadb741c630a
 F src/vdbe.h ea1f1b52f0efe422f80d88da3c57e4eadc72856e29a22f1ff08e502ec6ba5f08
 F src/vdbeInt.h 52896dd4d5b62190c53db14b09fc2484434eb594c963df0fa66eb8a94527b02e
 F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
-F src/vdbeaux.c b701e5920fe74b907eb8211d1f63fef96adc65dfd6e1ad6ed0843c71d8c65205
+F src/vdbeaux.c a0718e0ff1e336f7d9b4df5a7fe38fc6eb9b3779871e3768d060fa88a76b8d14
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
 F src/vdbesort.c cb6f472e83ca12c46aa7de0ac0a9d11458b357986f2617a1c90dfb19a542ecbe
@@ -2175,11 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bb5b982dba774e6b8011e6c980d34131c378967fadc59a18fed1cefda596449a
-R bf295d84b4712b604b76c3297c606f19
-T *branch * dbstatus-spill
-T *sym-dbstatus-spill *
-T -sym-db-status64 *
+P 4e63ee20f80e486ecc4aa4523afa43f994c267e638f8f084f0d6df369aa74a1d
+R 23ddf07861ed9bfd32891e000fdd4062
 U drh
-Z 8d1169484e2c5669b92530153307ed69
+Z aaf208a8aa761385255c814551acbbd3
 # Remove this line to create a well-formed Fossil manifest.
