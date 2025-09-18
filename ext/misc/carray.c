@@ -58,7 +58,7 @@
 # include <assert.h>
 # include <string.h>
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__RTP__) || defined(_WRS_KERNEL)
   struct iovec {
     void *iov_base;
     size_t iov_len;

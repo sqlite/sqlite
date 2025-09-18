@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\sthe\sCLI.\n[forum:/forumpost/ffdcdaba19|Forum\spost\sffdcdaba19].
-D 2025-09-18T16:48:37.721
+C Try\sto\smake\sthe\scarray\sextension\seasier\sto\scompile\son\sVxWorks.
+D 2025-09-18T19:59:56.466
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -362,7 +362,7 @@ F ext/misc/base85.c a70c885c5c9350261ea6e7b166038eab21a09cf4fceae856ce41fae9c221
 F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c 8f5e6da2c82ec2f06ee0216e922370a436dafdbb06ffa7a552203515ff9e7ddf
-F ext/misc/carray.c 1d32a060f60127ad38d5abd071b28443b77885b143da946a10ca16812e0f851e
+F ext/misc/carray.c 6fd2be4dfa3e9ecf227221d92d808454e18710c123034fbb74999f6625f9143f
 F ext/misc/carray.h 4bef8af4e9ddda024f5540cc4d456c3e4a4a7624d6315edf85dce1ce8419beb8
 F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001259913
 F ext/misc/closure.c 5559daf1daf742228431db929d1aa86dd535a4224cc634a81d2fd0d1e6ad7839
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1a87c16fddf174380deba9bbe58079328baf9f9ca95210f63bc628e3ef3eeb26
-R 11c5a53507cc518db8aae6d2dca3c37b
+P 1626b6082d06c6fd66ff0a6d9fb3641c936ee8db326275e4fddfecf172c5a6eb
+R 4dbf5921569ab84c095eb6a05ccc8304
 U drh
-Z caba9c5c36641af983c591b22bee0974
+Z 4e59be6b563fcfbec0b3b0a3ae941023
 # Remove this line to create a well-formed Fossil manifest.
