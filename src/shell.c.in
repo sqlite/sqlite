@@ -838,14 +838,24 @@ static int isVt100(const unsigned char *z){
 ** Take into account zero-width and double-width Unicode characters.
 ** In other words, a zero-width character does not count toward the
 ** the w limit.  A double-width character counts as two.
+**
+** w should normally be a small number.  A couple hundred at most.  This
+** routine caps w at 100 million to avoid integer overflow issues.
 */
 static void utf8_width_print(FILE *out, int w, const char *zUtf){
   const unsigned char *a = (const unsigned char*)zUtf;
+  static const int mxW = 10000000;
   unsigned char c;
   int i = 0;
   int n = 0;
   int k;
-  int aw = w<0 ? -w : w;
+  int aw;
+  if( w<-mxW ){
+    w = -mxW;
+  }else if( w>mxW ){
+    w= mxW;
+  }
+  aw = w<0 ? -w : w;
   if( zUtf==0 ) zUtf = "";
   while( (c = a[i])!=0 ){
     if( (c&0xc0)==0xc0 ){
