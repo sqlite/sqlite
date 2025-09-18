@@ -382,6 +382,26 @@ int sqlite3_db_status64(
       break;
     }
 
+    /* Set *pCurrent to the number of bytes that the db database connection
+    ** has spilled to the filesystem in temporary files that could have been
+    ** stored in memory, had sufficient memory been available.
+    ** The *pHighwater is always set to zero.
+    */
+    case SQLITE_DBSTATUS_SPILL: {
+      u64 nRet = 0;
+      if( db->aDb[1].pBt ){
+        Pager *pPager = sqlite3BtreePager(db->aDb[1].pBt);
+        sqlite3PagerCacheStat(pPager, SQLITE_DBSTATUS_CACHE_WRITE,
+                              resetFlag, &nRet);
+        nRet *= sqlite3BtreeGetPageSize(db->aDb[1].pBt);
+      }
+      nRet += db->nSpill;
+      if( resetFlag ) db->nSpill = 0;
+      *pHighwtr = 0;
+      *pCurrent = nRet;
+      break;
+    }
+
     /* Set *pCurrent to non-zero if there are unresolved deferred foreign
     ** key constraints.  Set *pCurrent to zero if all foreign key constraints
     ** have been satisfied.  The *pHighwtr is always set to zero.

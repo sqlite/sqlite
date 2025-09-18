@@ -3412,8 +3412,8 @@ static int display_stats(
   ShellState *pArg,           /* Pointer to ShellState */
   int bReset                  /* True to reset the stats */
 ){
-  int iCur;
-  int iHiwtr;
+  int iCur, iHiwtr;
+  sqlite3_int64 iCur64, iHiwtr64;
   FILE *out;
   if( pArg==0 || pArg->out==0 ) return 0;
   out = pArg->out;
@@ -3502,6 +3502,8 @@ static int display_stats(
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
            "Page cache misses:                   %d\n", iCur);
+    iHiwtr64 = iCur64 = -1;
+    sqlite3_db_status64(db, SQLITE_DBSTATUS_SPILL, &iCur64, &iHiwtr64, 0);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
@@ -3510,6 +3512,9 @@ static int display_stats(
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_SPILL, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
            "Page cache spills:                   %d\n", iCur);
+    sqlite3_fprintf(out,
+           "Temporary data spilled to disk:      %lld\n", iCur64);
+    sqlite3_db_status64(db, SQLITE_DBSTATUS_SPILL, &iCur64, &iHiwtr64, 1);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
     sqlite3_fprintf(out,
