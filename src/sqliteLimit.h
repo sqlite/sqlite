@@ -196,7 +196,7 @@
 ** Maximum number of pages in one database file.
 **
 ** This is really just the default value for the max_page_count pragma.
-** This value can be lowered (or raised) at run-time using that the
+** This value can be lowered (or raised) at run-time using the
 ** max_page_count macro.
 */
 #ifndef SQLITE_MAX_PAGE_COUNT

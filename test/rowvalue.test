@@ -842,4 +842,17 @@ do_execsql_test 34.5 {
    ORDER BY t1.id;
 } {/SEARCH t1 USING COVERING INDEX t1a .a=. AND id>../}
 
+# 2025-08-04 forum post eab63506cf
+#
+do_execsql_test 35.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(c1 TEXT, c2 INTEGER, PRIMARY KEY(c1, c2));
+  INSERT INTO t1(c1, c2) VALUES ('a', 1);
+  SELECT ('a', 1) IN (SELECT c1, c2 from t1);
+} 1
+do_execsql_test 35.1 {
+  SELECT (1, 'a') IN (SELECT c2, c1 from t1);
+} 1
+
+
 finish_test

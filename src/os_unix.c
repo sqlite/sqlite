@@ -498,10 +498,11 @@ static struct unix_syscall {
 
 #if defined(HAVE_FCHMOD)
   { "fchmod",       (sqlite3_syscall_ptr)fchmod,          0  },
+#define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 #else
   { "fchmod",       (sqlite3_syscall_ptr)0,               0  },
+#define osFchmod(FID,MODE) 0
 #endif
-#define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
   { "fallocate",    (sqlite3_syscall_ptr)posix_fallocate,  0 },
@@ -759,9 +760,8 @@ static int robust_open(const char *z, int f, mode_t m){
 
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
-** global mutex is used to protect the unixInodeInfo and
-** vxworksFileId objects used by this file, all of which may be
-** shared by multiple threads.
+** global mutex is used to protect the unixInodeInfo objects used by
+** this file, all of which may be shared by multiple threads.
 **
 ** Function unixMutexHeld() is used to assert() that the global mutex
 ** is held when required. This function is only used as part of assert()
@@ -963,6 +963,7 @@ struct vxworksFileId {
 ** variable:
 */
 static struct vxworksFileId *vxworksFileList = 0;
+static sqlite3_mutex *vxworksMutex = 0;
 
 /*
 ** Simplify a filename into its canonical form
@@ -1028,14 +1029,14 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
   ** If found, increment the reference count and return a pointer to
   ** the existing file ID.
   */
-  unixEnterMutex();
+  sqlite3_mutex_enter(vxworksMutex);
   for(pCandidate=vxworksFileList; pCandidate; pCandidate=pCandidate->pNext){
     if( pCandidate->nName==n
      && memcmp(pCandidate->zCanonicalName, pNew->zCanonicalName, n)==0
     ){
        sqlite3_free(pNew);
        pCandidate->nRef++;
-       unixLeaveMutex();
+       sqlite3_mutex_leave(vxworksMutex);
        return pCandidate;
     }
   }
@@ -1045,7 +1046,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
   pNew->nName = n;
   pNew->pNext = vxworksFileList;
   vxworksFileList = pNew;
-  unixLeaveMutex();
+  sqlite3_mutex_leave(vxworksMutex);
   return pNew;
 }
 
@@ -1054,7 +1055,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
 ** the object when the reference count reaches zero.
 */
 static void vxworksReleaseFileId(struct vxworksFileId *pId){
-  unixEnterMutex();
+  sqlite3_mutex_enter(vxworksMutex);
   assert( pId->nRef>0 );
   pId->nRef--;
   if( pId->nRef==0 ){
@@ -1064,7 +1065,7 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
     *pp = pId->pNext;
     sqlite3_free(pId);
   }
-  unixLeaveMutex();
+  sqlite3_mutex_leave(vxworksMutex);
 }
 #endif /* OS_VXWORKS */
 /*************** End of Unique File ID Utility Used By VxWorks ****************
@@ -1452,6 +1453,10 @@ static int findInodeInfo(
       storeLastErrno(pFile, errno);
       return SQLITE_IOERR;
     }
+    if( fsync(fd) ){
+      storeLastErrno(pFile, errno);
+      return SQLITE_IOERR_FSYNC;
+    }
     rc = osFstat(fd, &statbuf);
     if( rc!=0 ){
       storeLastErrno(pFile, errno);
@@ -1621,18 +1626,42 @@ static int osSetPosixAdvisoryLock(
   struct flock *pLock,  /* The description of the lock */
   unixFile *pFile       /* Structure holding timeout value */
 ){
-  int tm = pFile->iBusyTimeout;
-  int rc = osFcntl(h,F_SETLK,pLock);
-  while( rc<0 && tm>0 ){
-    /* On systems that support some kind of blocking file lock with a timeout,
-    ** make appropriate changes here to invoke that blocking file lock.  On
-    ** generic posix, however, there is no such API.  So we simply try the
-    ** lock once every millisecond until either the timeout expires, or until
-    ** the lock is obtained. */
-    unixSleep(0,1000);
+  int rc = 0;
+
+  if( pFile->iBusyTimeout==0 ){
+    /* unixFile->iBusyTimeout is set to 0. In this case, attempt a 
+    ** non-blocking lock. */
     rc = osFcntl(h,F_SETLK,pLock);
-    tm--;
+  }else{
+    /* unixFile->iBusyTimeout is set to greater than zero. In this case,
+    ** attempt a blocking-lock with a unixFile->iBusyTimeout ms timeout.
+    **
+    ** On systems that support some kind of blocking file lock operation,
+    ** this block should be replaced by code to attempt a blocking lock
+    ** with a timeout of unixFile->iBusyTimeout ms. The code below is 
+    ** placeholder code. If SQLITE_TEST is defined, the placeholder code
+    ** retries the lock once every 1ms until it succeeds or the timeout
+    ** is reached. Or, if SQLITE_TEST is not defined, the placeholder
+    ** code attempts a non-blocking lock and sets unixFile->iBusyTimeout
+    ** to 0. This causes the caller to return SQLITE_BUSY, instead of
+    ** SQLITE_BUSY_TIMEOUT to SQLite - as required by a VFS that does not 
+    ** support blocking locks.
+    */
+#ifdef SQLITE_TEST
+    int tm = pFile->iBusyTimeout;
+    while( tm>0 ){
+      rc = osFcntl(h,F_SETLK,pLock);
+      if( rc==0 ) break;
+      unixSleep(0,1000);
+      tm--;
+    }
+#else
+    rc = osFcntl(h,F_SETLK,pLock);
+    pFile->iBusyTimeout = 0;
+#endif
+    /* End of code to replace with real blocking-locks code. */
   }
+
   return rc;
 }
 #endif /* SQLITE_ENABLE_SETLK_TIMEOUT */
@@ -5953,10 +5982,17 @@ static int fillInUnixFile(
   storeLastErrno(pNew, 0);
 #if OS_VXWORKS
   if( rc!=SQLITE_OK ){
-    if( h>=0 ) robust_close(pNew, h, __LINE__);
-    h = -1;
-    osUnlink(zFilename);
-    pNew->ctrlFlags |= UNIXFILE_DELETE;
+    if( h>=0 ){
+      robust_close(pNew, h, __LINE__);
+      h = -1;
+    }
+    if( pNew->ctrlFlags & UNIXFILE_DELETE ){
+      osUnlink(zFilename);
+    }
+    if( pNew->pId ){
+      vxworksReleaseFileId(pNew->pId);
+      pNew->pId = 0;
+    }
   }
 #endif
   if( rc!=SQLITE_OK ){
@@ -6000,6 +6036,9 @@ static const char *unixTempFileDir(void){
 
   while(1){
     if( zDir!=0
+#if OS_VXWORKS
+     && zDir[0]=='/'
+#endif
      && osStat(zDir, &buf)==0
      && S_ISDIR(buf.st_mode)
      && osAccess(zDir, 03)==0
@@ -6314,6 +6353,12 @@ static int unixOpen(
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
+#if OS_VXWORKS
+  /* The file-ID mechanism used in Vxworks requires that all pathnames
+  ** provided to unixOpen must be absolute pathnames. */
+  if( zPath!=0 && zPath[0]!='/' ){ return SQLITE_CANTOPEN; }
+#endif
+
   /* Detect a pid change and reset the PRNG.  There is a race condition
   ** here such that two or more threads all trying to open databases at
   ** the same instant might all reset the PRNG.  But multiple resets
@@ -6514,8 +6559,11 @@ static int unixOpen(
   }
 #endif
 
-  assert( zPath==0 || zPath[0]=='/'
-      || eType==SQLITE_OPEN_SUPER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL
+  assert( zPath==0
+       || zPath[0]=='/'
+       || eType==SQLITE_OPEN_SUPER_JOURNAL
+       || eType==SQLITE_OPEN_MAIN_JOURNAL
+       || eType==SQLITE_OPEN_TEMP_JOURNAL
   );
   rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
 
@@ -8244,6 +8292,9 @@ int sqlite3_os_init(void){
   sqlite3KvvfsInit();
 #endif
   unixBigLock = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
+#if OS_VXWORKS
+  vxworksMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS2);
+#endif
 
 #ifndef SQLITE_OMIT_WAL
   /* Validate lock assumptions */
@@ -8278,6 +8329,9 @@ int sqlite3_os_init(void){
 */
 int sqlite3_os_end(void){
   unixBigLock = 0;
+#if OS_VXWORKS
+  vxworksMutex = 0;
+#endif
   return SQLITE_OK;
 }
 

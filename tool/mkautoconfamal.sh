@@ -62,10 +62,6 @@ cp $TOP/main.mk           $TMPSPACE
 
 cd $TMPSPACE
 
-# Clean up emacs-generated backup files from the target
-rm -f ./autosetup/*~ ./autosetup/teaish/*~
-rm -f ./*~
-
 #if true; then
   # Clean up *~ files (emacs-generated backups).
   # This bit is only for use during development of
@@ -83,10 +79,14 @@ cat <<EOF > tea/generic/tclsqlite3.c
 EOF
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
-find . -type f -name '*~' -exec rm -f \{} \;
-find . -type f -name '#*#' -exec rm -f \{} \;
+# Clean up some local remnants from the tarball.
+rm -f tea/.env-* # autosetup environment overrides
+find . -type f -name '*~' -exec rm -f \{} \;  # backup files
+find . -type f -name '#*#' -exec rm -f \{} \; # emacs lock files
+find . -type f -name '*.o' -exec rm -f \{} \;
+find . -type f -name '*.so' -exec rm -f \{} \;
 
-./configure && make dist
+./configure && ${MAKE-make} dist
 tar xzf sqlite-$VERSION.tar.gz
 mv sqlite-$VERSION $TARBALLNAME
 tar czf $TARBALLNAME.tar.gz $TARBALLNAME

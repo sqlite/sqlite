@@ -1097,7 +1097,7 @@ int sqlite3TableColumnToIndex(Index *pIdx, int iCol){
   int i;
   i16 iCol16;
   assert( iCol>=(-1) && iCol<=SQLITE_MAX_COLUMN );
-  assert( pIdx->nColumn<=SQLITE_MAX_COLUMN+1 );
+  assert( pIdx->nColumn<=SQLITE_MAX_COLUMN*2 );
   iCol16 = iCol;
   for(i=0; i<pIdx->nColumn; i++){
     if( iCol16==pIdx->aiColumn[i] ){
@@ -1394,6 +1394,8 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp3(v, OP_Insert, 0, reg3, reg1);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);
+  }else if( db->init.imposterTable ){
+    pTable->tabFlags |= TF_Readonly | TF_Imposter;
   }
 
   /* Normal (non-error) return. */
@@ -5691,14 +5693,19 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     }
     if( pParse->nErr ){
       assert( pParse->rc==SQLITE_ERROR_MISSING_COLLSEQ );
-      if( pIdx->bNoQuery==0 ){
+      if( pIdx->bNoQuery==0 
+       && sqlite3HashFind(&pIdx->pSchema->idxHash, pIdx->zName)
+      ){
         /* Deactivate the index because it contains an unknown collating
         ** sequence.  The only way to reactive the index is to reload the
         ** schema.  Adding the missing collating sequence later does not
         ** reactive the index.  The application had the chance to register
         ** the missing index using the collation-needed callback.  For
         ** simplicity, SQLite will not give the application a second chance.
-        */
+        **
+        ** Except, do not do this if the index is not in the schema hash
+        ** table. In this case the index is currently being constructed
+        ** by a CREATE INDEX statement, and retrying will not help.  */
         pIdx->bNoQuery = 1;
         pParse->rc = SQLITE_ERROR_RETRY;
       }

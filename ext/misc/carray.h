@@ -32,7 +32,7 @@ SQLITE_API int sqlite3_carray_bind(
   void *aData,                /* Pointer to array data */
   int nData,                  /* Number of data elements */
   int mFlags,                 /* CARRAY flags */
-  void (*xDel)(void*)         /* Destructgor for aData*/
+  void (*xDel)(void*)         /* Destructor for aData */
 );
 
 /* Allowed values for the mFlags parameter to sqlite3_carray_bind().

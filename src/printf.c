@@ -536,7 +536,21 @@ void sqlite3_str_vappendf(
           }
         }
         if( s.sign=='-' ){
-          prefix = '-';
+          if( flag_alternateform
+           && !flag_prefix
+           && xtype==etFLOAT
+           && s.iDP<=iRound
+          ){
+            /* Suppress the minus sign if all of the following are true:
+            **   *  The value displayed is zero
+            **   *  The '#' flag is used
+            **   *  The '+' flag is not used, and
+            **   *  The format is %f
+            */
+            prefix = 0;
+          }else{
+            prefix = '-';
+          }
         }else{
           prefix = flag_prefix;
         }

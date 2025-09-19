@@ -421,6 +421,12 @@ do_execsql_test 7.0 {
   2 {}
 }
 
-
+# https://sqlite.org/forum/forumpost/2025-07-23T10:59:14z
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t0 (c0 INT);  INSERT INTO t0(c0) VALUES (1);
+  CREATE TABLE t1(c0 INT);   INSERT INTO t1(c0) VALUES (2);
+  SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t0 LIMIT 0);
+} {}
 
 finish_test

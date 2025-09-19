@@ -1544,6 +1544,9 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_OK:                 zName = "SQLITE_OK";                break;
       case SQLITE_ERROR:              zName = "SQLITE_ERROR";             break;
       case SQLITE_ERROR_SNAPSHOT:     zName = "SQLITE_ERROR_SNAPSHOT";    break;
+      case SQLITE_ERROR_RETRY:        zName = "SQLITE_ERROR_RETRY";       break;
+      case SQLITE_ERROR_MISSING_COLLSEQ:
+                                zName = "SQLITE_ERROR_MISSING_COLLSEQ";   break;
       case SQLITE_INTERNAL:           zName = "SQLITE_INTERNAL";          break;
       case SQLITE_PERM:               zName = "SQLITE_PERM";              break;
       case SQLITE_ABORT:              zName = "SQLITE_ABORT";             break;
@@ -2723,6 +2726,29 @@ const char *sqlite3_errmsg(sqlite3 *db){
   }
   sqlite3_mutex_leave(db->mutex);
   return z;
+}
+
+/*
+** Set the error code and error message associated with the database handle.
+**
+** This routine is intended to be called by outside extensions (ex: the
+** Session extension). Internal logic should invoke sqlite3Error() or
+** sqlite3ErrorWithMsg() directly.
+*/
+int sqlite3_set_errmsg(sqlite3 *db, int errcode, const char *zMsg){
+  int rc = SQLITE_OK;
+  if( !sqlite3SafetyCheckSickOrOk(db) ){
+    return SQLITE_MISUSE_BKPT;
+  }
+  sqlite3_mutex_enter(db->mutex);
+  if( zMsg ){
+    sqlite3ErrorWithMsg(db, errcode, "%s", zMsg);
+  }else{
+    sqlite3Error(db, errcode);
+  }
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }
 
 /*

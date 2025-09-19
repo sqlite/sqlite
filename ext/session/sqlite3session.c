@@ -2815,6 +2815,19 @@ static int sessionAppendDelete(
   return rc;
 }
 
+static int sessionPrepare(
+  sqlite3 *db, 
+  sqlite3_stmt **pp, 
+  char **pzErrmsg,
+  const char *zSql
+){
+  int rc = sqlite3_prepare_v2(db, zSql, -1, pp, 0);
+  if( pzErrmsg && rc!=SQLITE_OK ){
+    *pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+  }
+  return rc;
+}
+
 /*
 ** Formulate and prepare a SELECT statement to retrieve a row from table
 ** zTab in database zDb based on its primary key. i.e.
@@ -2836,12 +2849,12 @@ static int sessionSelectStmt(
   int nCol,                       /* Number of columns in table */
   const char **azCol,             /* Names of table columns */
   u8 *abPK,                       /* PRIMARY KEY  array */
-  sqlite3_stmt **ppStmt           /* OUT: Prepared SELECT statement */
+  sqlite3_stmt **ppStmt,          /* OUT: Prepared SELECT statement */
+  char **pzErrmsg                 /* OUT: Error message */
 ){
   int rc = SQLITE_OK;
   char *zSql = 0;
   const char *zSep = "";
-  int nSql = -1;
   int i;
 
   SessionBuffer cols = {0, 0, 0};
@@ -2921,7 +2934,7 @@ static int sessionSelectStmt(
 #endif
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, zSql, nSql, ppStmt, 0);
+    rc = sessionPrepare(db, ppStmt, pzErrmsg, zSql);
   }
   sqlite3_free(zSql);
   sqlite3_free(nooptest.aBuf);
@@ -3085,7 +3098,7 @@ static int sessionGenerateChangeset(
       /* Build and compile a statement to execute: */
       if( rc==SQLITE_OK ){
         rc = sessionSelectStmt(db, 0, pSession->zDb, 
-            zName, pTab->bRowid, pTab->nCol, pTab->azCol, pTab->abPK, &pSel
+            zName, pTab->bRowid, pTab->nCol, pTab->azCol, pTab->abPK, &pSel, 0
         );
       }
 
@@ -4294,6 +4307,7 @@ struct SessionApplyCtx {
   u8 bRebase;                     /* True to collect rebase information */
   u8 bIgnoreNoop;                 /* True to ignore no-op conflicts */
   int bRowid;
+  char *zErr;                     /* Error message, if any */
 };
 
 /* Number of prepared UPDATE statements to cache. */
@@ -4519,7 +4533,7 @@ static int sessionDeleteRow(
   }
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pDelete, 0);
+    rc = sessionPrepare(db, &p->pDelete, &p->zErr, (char*)buf.aBuf);
   }
   sqlite3_free(buf.aBuf);
 
@@ -4546,7 +4560,7 @@ static int sessionSelectRow(
 ){
   /* TODO */
   return sessionSelectStmt(db, p->bIgnoreNoop,
-      "main", zTab, p->bRowid, p->nCol, p->azCol, p->abPK, &p->pSelect
+      "main", zTab, p->bRowid, p->nCol, p->azCol, p->abPK, &p->pSelect, &p->zErr
   );
 }
 
@@ -4583,14 +4597,10 @@ static int sessionInsertRow(
   sessionAppendStr(&buf, ")", &rc);
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pInsert, 0);
+    rc = sessionPrepare(db, &p->pInsert, &p->zErr, (char*)buf.aBuf);
   }
   sqlite3_free(buf.aBuf);
   return rc;
-}
-
-static int sessionPrepare(sqlite3 *db, sqlite3_stmt **pp, const char *zSql){
-  return sqlite3_prepare_v2(db, zSql, -1, pp, 0);
 }
 
 /*
@@ -4602,14 +4612,14 @@ static int sessionPrepare(sqlite3 *db, sqlite3_stmt **pp, const char *zSql){
 static int sessionStat1Sql(sqlite3 *db, SessionApplyCtx *p){
   int rc = sessionSelectRow(db, "sqlite_stat1", p);
   if( rc==SQLITE_OK ){
-    rc = sessionPrepare(db, &p->pInsert,
+    rc = sessionPrepare(db, &p->pInsert, 0,
         "INSERT INTO main.sqlite_stat1 VALUES(?1, "
         "CASE WHEN length(?2)=0 AND typeof(?2)='blob' THEN NULL ELSE ?2 END, "
         "?3)"
     );
   }
   if( rc==SQLITE_OK ){
-    rc = sessionPrepare(db, &p->pDelete,
+    rc = sessionPrepare(db, &p->pDelete, 0,
         "DELETE FROM main.sqlite_stat1 WHERE tbl=?1 AND idx IS "
         "CASE WHEN length(?2)=0 AND typeof(?2)='blob' THEN NULL ELSE ?2 END "
         "AND (?4 OR stat IS ?3)"
@@ -4833,7 +4843,7 @@ static int sessionConflictHandler(
   void *pCtx,                     /* First argument for conflict handler */
   int *pbReplace                  /* OUT: Set to true if PK row is found */
 ){
-  int res = 0;                    /* Value returned by conflict handler */
+  int res = SQLITE_CHANGESET_OMIT;/* Value returned by conflict handler */
   int rc;
   int nCol;
   int op;
@@ -4854,11 +4864,9 @@ static int sessionConflictHandler(
 
   if( rc==SQLITE_ROW ){
     /* There exists another row with the new.* primary key. */
-    if( p->bIgnoreNoop 
-     && sqlite3_column_int(p->pSelect, sqlite3_column_count(p->pSelect)-1)
+    if( 0==p->bIgnoreNoop
+     || 0==sqlite3_column_int(p->pSelect, sqlite3_column_count(p->pSelect)-1)
     ){
-      res = SQLITE_CHANGESET_OMIT;
-    }else{
       pIter->pConflict = p->pSelect;
       res = xConflict(pCtx, eType, pIter);
       pIter->pConflict = 0;
@@ -4872,7 +4880,9 @@ static int sessionConflictHandler(
       int nBlob = pIter->in.iNext - pIter->in.iCurrent;
       sessionAppendBlob(&p->constraints, aBlob, nBlob, &rc);
       return SQLITE_OK;
-    }else{
+    }else if( p->bIgnoreNoop==0 || op!=SQLITE_DELETE 
+           || eType==SQLITE_CHANGESET_CONFLICT 
+    ){
       /* No other row with the new.* primary key. */
       res = xConflict(pCtx, eType+1, pIter);
       if( res==SQLITE_CHANGESET_REPLACE ) rc = SQLITE_MISUSE;
@@ -4970,7 +4980,7 @@ static int sessionApplyOneOp(
 
     sqlite3_step(p->pDelete);
     rc = sqlite3_reset(p->pDelete);
-    if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 && p->bIgnoreNoop==0 ){
+    if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 ){
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_DATA, p, pIter, xConflict, pCtx, pbRetry
       );
@@ -5392,6 +5402,11 @@ static int sessionChangesetApply(
     db->flags &= ~((u64)SQLITE_FkNoAction);
     db->aDb[0].pSchema->schema_cookie -= 32;
   }
+
+  assert( rc!=SQLITE_OK || sApply.zErr==0 );
+  sqlite3_set_errmsg(db, rc, sApply.zErr);
+  sqlite3_free(sApply.zErr);
+
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
   return rc;
 }

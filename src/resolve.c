@@ -926,8 +926,8 @@ static void notValidImpl(
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
-** Return 1024 times this value.  Or return -1 if p is not a floating point
-** value between 1.0 and 0.0.
+** Return 134,217,728 (2^27) times this value.  Or return -1 if p is not
+** a floating point value between 1.0 and 0.0.
 */
 static int exprProbability(Expr *p){
   double r = -1.0;
@@ -2283,14 +2283,17 @@ int sqlite3ResolveSelfReference(
   SrcList *pSrc;                  /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
   int rc;
-  u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
+  union {
+    SrcList sSrc;
+    u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
+  } uSrc;
 
   assert( type==0 || pTab!=0 );
   assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr
           || type==NC_GenCol || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
-  pSrc = (SrcList*)srcSpace;
-  memset(pSrc, 0, SZ_SRCLIST_1);
+  memset(&uSrc, 0, sizeof(uSrc));
+  pSrc = &uSrc.sSrc;
   if( pTab ){
     pSrc->nSrc = 1;
     pSrc->a[0].zName = pTab->zName;
