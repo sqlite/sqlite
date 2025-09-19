@@ -230,6 +230,47 @@ globalThis.WhWasmUtilInstaller = function(target){
         ('i32'===ptrIR ? 4
          : ('i64'===ptrIR
             ? 8 : toss("Unhandled ptrSizeof:",ptrIR)));
+
+  /**
+     If target.pointerIR=='i32' then this is equivalent to
+     Number(v) else it's equivalent to BigInt(v||0).
+
+     Why? Because Number(null)===0, but BigInt(null) throws.
+  */
+  const __asPtrType = ('i32'==ptrIR)
+        ? Number
+        : (target.bigIntEnabled
+           ? ((v)=>BigInt(v || 0))
+           : toss("Missing BigInt support"));
+
+  target.asPtrType = __asPtrType;
+
+  /**
+     Expects any number of numeric arguments, each one of either type
+     Number or BigInt. It sums them up (from an implicit starting
+     point of 0 or 0n) and returns them as a number of the same type
+     which target.asPtrType() uses.
+
+     This is a workaround for not being able to mix Number/BigInt in
+     addition/subtraction expressions (which we frequently need for
+     calculating pointer offsets).
+  */
+  const __ptrAdd = function(...args){
+    let rc = __asPtrType(0);
+    for( let i = 0; i < args.length; ++i ){
+      rc += __asPtrType(args[i]);
+    }
+    return rc;
+  };
+
+  target.ptrAdd = __ptrAdd;
+
+  /**
+     The number 0 as either type Number or BigInt, depending on
+     target.pointerIR.
+  */
+  target.NullPtr = __asPtrType(0);
+
   /** Stores various cached state. */
   const cache = Object.create(null);
   /** Previously-recorded size of cache.memory.buffer, noted so that
@@ -389,7 +430,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.functionEntry = function(fptr){
     const ft = target.functionTable();
-    return fptr < ft.length ? ft.get(fptr) : undefined;
+    return fptr < ft.length ? ft.get(__asPtrType(fptr)) : undefined;
   };
 
   /**
@@ -555,7 +596,7 @@ globalThis.WhWasmUtilInstaller = function(target){
     }
     if(!ptr){
       ptr = oldLen;
-      ft.grow(1);
+      ft.grow(__asPtrType(1));
     }
     try{
       /*this will only work if func is a WASM-exported function*/
@@ -713,16 +754,17 @@ globalThis.WhWasmUtilInstaller = function(target){
     let rc;
     do{
       if(list) ptr = arguments[0].shift();
+      const pNumber = Number(ptr);
       switch(type){
           case 'i1':
-          case 'i8': rc = c.HEAP8[ptr>>0]; break;
-          case 'i16': rc = c.HEAP16[ptr>>1]; break;
-          case 'i32': rc = c.HEAP32[ptr>>2]; break;
-          case 'float': case 'f32': rc = c.HEAP32F[ptr>>2]; break;
-          case 'double': case 'f64': rc = Number(c.HEAP64F[ptr>>3]); break;
+          case 'i8': rc = c.HEAP8[pNumber>>0]; break;
+          case 'i16': rc = c.HEAP16[pNumber>>1]; break;
+          case 'i32': rc = c.HEAP32[pNumber>>2]; break;
+          case 'float': case 'f32': rc = c.HEAP32F[pNumber>>2]; break;
+          case 'double': case 'f64': rc = Number(c.HEAP64F[pNumber>>3]); break;
           case 'i64':
             if(target.bigIntEnabled){
-              rc = BigInt(c.HEAP64[ptr>>3]);
+              rc = BigInt(c.HEAP64[pNumber>>3]);
               break;
             }
             /* fallthru */
@@ -758,16 +800,17 @@ globalThis.WhWasmUtilInstaller = function(target){
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
     for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
+      const pNumber = Number(p)/*tag:64bit*/;
       switch (type) {
           case 'i1':
-          case 'i8': c.HEAP8[p>>0] = value; continue;
-          case 'i16': c.HEAP16[p>>1] = value; continue;
-          case 'i32': c.HEAP32[p>>2] = value; continue;
-          case 'float': case 'f32': c.HEAP32F[p>>2] = value; continue;
-          case 'double': case 'f64': c.HEAP64F[p>>3] = value; continue;
+          case 'i8': c.HEAP8[pNumber>>0] = value; continue;
+          case 'i16': c.HEAP16[pNumber>>1] = value; continue;
+          case 'i32': c.HEAP32[pNumber>>2] = value; continue;
+          case 'float': case 'f32': c.HEAP32F[pNumber>>2] = value; continue;
+          case 'double': case 'f64': c.HEAP64F[pNumber>>3] = value; continue;
           case 'i64':
             if(c.HEAP64){
-              c.HEAP64[p>>3] = BigInt(value);
+              c.HEAP64[pNumber>>3] = BigInt(value);
               continue;
             }
             /* fallthru */
@@ -850,13 +893,23 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.isPtr32 = (ptr)=>('number'===typeof ptr && (ptr===(ptr|0)) && ptr>=0);
 
+  /* UNTESTED */
+  target.isPtr64 = (ptr)=>{
+    if( 'bigint'===typeof ptr ){
+      return ptr >= 0;
+    }
+    return ('number'===typeof ptr && (ptr===(ptr|0)) && ptr>=0);
+  };
+
   /**
      isPtr() is an alias for isPtr32(). If/when 64-bit WASM pointer
      support becomes widespread, it will become an alias for either
      isPtr32() or the as-yet-hypothetical isPtr64(), depending on a
      configuration option.
   */
-  target.isPtr = target.isPtr32;
+  target.isPtr = ('i32'==ptrIR)
+    ? target.isPtr32
+    : target.isPtr64;
 
   /**
      Expects ptr to be a pointer into the WASM heap memory which
@@ -867,7 +920,9 @@ globalThis.WhWasmUtilInstaller = function(target){
      target.heap8u().
   */
   target.cstrlen = function(ptr){
-    if(!ptr || !target.isPtr(ptr)) return null;
+    if(!ptr) return null;
+    ptr = Number(ptr) /*tag:64bit*/;
+    if(!target.isPtr(ptr)) return null;
     const h = heapWrappers().HEAP8U;
     let pos = ptr;
     for( ; h[pos] !== 0; ++pos ){}
@@ -894,6 +949,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      ptr is falsy or not a pointer, `null` is returned.
   */
   target.cstrToJs = function(ptr){
+    ptr = Number(ptr) /*tag:64bit*/;
     const n = target.cstrlen(ptr);
     return n ? __utf8Decode(heapWrappers().HEAP8U, ptr, ptr+n) : (null===n ? n : "");
   };
@@ -1028,10 +1084,11 @@ globalThis.WhWasmUtilInstaller = function(target){
     else if(!(n>0)) return 0;
     const heap = target.heap8u();
     let i = 0, ch;
-    for(; i < n && (ch = heap[srcPtr+i]); ++i){
-      heap[tgtPtr+i] = ch;
+    const tgtNumber = Number(tgtPtr), srcNumber = Number(srcPtr)/*tag:64bit*/;
+    for(; i < n && (ch = heap[srcNumber+i]); ++i){
+      heap[tgtNumber+i] = ch;
     }
-    if(i<n) heap[tgtPtr + i++] = 0;
+    if(i<n) heap[tgtNumber + i++] = 0;
     return i;
   };
 
@@ -1089,8 +1146,9 @@ globalThis.WhWasmUtilInstaller = function(target){
       const u = cache.utf8Encoder.encode(jstr),
             ptr = allocator(u.length+1),
             heap = heapWrappers().HEAP8U;
-      heap.set(u, ptr);
-      heap[ptr + u.length] = 0;
+      //console.warn("ptr =",ptr);
+      heap.set(u, Number(ptr));
+      heap[__ptrAdd(ptr, u.length)] = 0;
       return returnWithLength ? [ptr, u.length] : ptr;
     }
   };
@@ -1214,7 +1272,8 @@ globalThis.WhWasmUtilInstaller = function(target){
     if(!cache.scopedAlloc.length){
       toss("No scopedAllocPush() scope is active.");
     }
-    return cache.scopedAlloc.pushPtr(target.alloc(n));
+    const p = __asPtrType(target.alloc(n));
+    return cache.scopedAlloc.pushPtr(p);
   };
 
   Object.defineProperty(target.scopedAlloc, 'level', {
@@ -1424,10 +1483,9 @@ globalThis.WhWasmUtilInstaller = function(target){
   const xArg = cache.xWrap.convert.arg, xResult = cache.xWrap.convert.result;
 
   if(target.bigIntEnabled){
-    xArg.set('i64', (i)=>BigInt(i));
+    xArg.set('i64', (i)=>BigInt(i || 0));
   }
-  const __xArgPtr = ('i32' === ptrIR)
-        ? ((i)=>(i | 0)) : ((i)=>(BigInt(i) | BigInt(0)));
+  const __xArgPtr = __asPtrType;
   xArg.set('i32', (i)=>(i | 0) )
     .set('i16', (i)=>((i | 0) & 0xFFFF))
     .set('i8', (i)=>((i | 0) & 0xFF))
@@ -1480,7 +1538,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   const __xArgString = function(v){
     if('string'===typeof v) return target.scopedAllocCString(v);
-    return v ? __xArgPtr(v) : null;
+    return __asPtrType(v);
   };
   xArg.set('string', __xArgString)
     .set('utf8', __xArgString)
@@ -2083,6 +2141,7 @@ globalThis.WhWasmUtilInstaller = function(target){
         for(; i < args.length; ++i) args[i] = cxw.convertArgNoCheck(
           argTypes[i], args[i], args, i
         );
+        //console.warn("resultType ",resultType, 'xf',xf,"argTypes",argTypes,"args",args);
         return cxw.convertResultNoCheck(resultType, xf.apply(null,args));
       }finally{
         target.scopedAllocPop(scope);

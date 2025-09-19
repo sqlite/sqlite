@@ -405,7 +405,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert(wasm.realloc.impl === wasm.exports.realloc);
         }else{
           T.assert(wasm.alloc.impl === wasm.exports.sqlite3_malloc)
-            .assert(wasm.dealloc === wasm.exports.sqlite3_free)
+            .assert(wasm.dealloc.impl === wasm.exports.sqlite3_free)
             .assert(wasm.realloc.impl === wasm.exports.sqlite3_realloc);
         }
       }
@@ -502,7 +502,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let m = w.alloc(14);
         let m2 = w.realloc(m, 16);
         T.assert(m === m2/* because of alignment */);
-        T.assert(0 === w.realloc(m, 0));
+        let x = w.realloc(m, 0);
+        T.assert(w.NullPtr === x);
         m = m2 = 0;
 
         // Check allocation limits and allocator's responses...
@@ -511,24 +512,26 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const tooMuch = sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE + 1,
                 isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
           T.mustThrowMatching(()=>w.alloc(tooMuch), isAllocErr)
-            .assert(0 === w.alloc.impl(tooMuch))
+            .assert(w.NullPtr === w.alloc.impl(tooMuch))
             .mustThrowMatching(()=>w.realloc(0, tooMuch), isAllocErr)
-            .assert(0 === w.realloc.impl(0, tooMuch));
+            .assert(w.NullPtr === w.realloc.impl(wasm.NullPtr, tooMuch));
         }
 
         // Check allocFromTypedArray()...
         const byteList = [11,22,33]
         const u = new Uint8Array(byteList);
         m = w.allocFromTypedArray(u);
+        let mAsNumber = Number(m);
         for(let i = 0; i < u.length; ++i){
           T.assert(u[i] === byteList[i])
-            .assert(u[i] === w.peek8(m + i));
+            .assert(u[i] === w.peek8(mAsNumber + i));
         }
         w.dealloc(m);
         m = w.allocFromTypedArray(u.buffer);
+        mAsNumber = Number(m);
         for(let i = 0; i < u.length; ++i){
           T.assert(u[i] === byteList[i])
-            .assert(u[i] === w.peek8(m + i));
+            .assert(u[i] === w.peek8(mAsNumber + i));
         }
 
         w.dealloc(m);
@@ -623,18 +626,19 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         try {
           let cStr = w.scopedAllocCString("hello");
           const n = w.cstrlen(cStr);
+          const nPtr = w.asPtrType(n);
           let cpy = w.scopedAlloc(n+10);
           let rc = w.cstrncpy(cpy, cStr, n+10);
           T.assert(n+1 === rc).
             assert("hello" === w.cstrToJs(cpy)).
-            assert(chr('o') === w.peek8(cpy+n-1)).
-            assert(0 === w.peek8(cpy+n));
+            assert(chr('o') === w.peek8( w.ptrAdd(cpy,nPtr, -1))).
+            assert(0 === w.peek8( w.ptrAdd(cpy,nPtr) ) );
           let cStr2 = w.scopedAllocCString("HI!!!");
           rc = w.cstrncpy(cpy, cStr2, 3);
           T.assert(3===rc).
             assert("HI!lo" === w.cstrToJs(cpy)).
-            assert(chr('!') === w.peek8(cpy+2)).
-            assert(chr('l') === w.peek8(cpy+3));
+            assert(chr('!') === w.peek8( w.ptrAdd(cpy, 2) )).
+            assert(chr('l') === w.peek8( w.ptrAdd(cpy, 3) ) );
         }finally{
           w.scopedAllocPop(scope);
         }
@@ -657,8 +661,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const jstr = "hällo, world!";
         const [cstr, n] = w.allocCString(jstr, true);
         T.assert(14 === n)
-          .assert(0===w.peek8(cstr+n))
-          .assert(chr('!')===w.peek8(cstr+n-1));
+          .assert(0===w.peek8(w.ptrAdd(cstr,n)))
+          .assert(chr('!')===w.peek8(w.ptrAdd(cstr,n,-1)));
         w.dealloc(cstr);
       }
 

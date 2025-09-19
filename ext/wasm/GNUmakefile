@@ -443,7 +443,7 @@ cflags.common =  -I. -I$(dir $(sqlite3.c))
 # disables certain features if BigInt is not enabled and such builds
 # _are not tested_ on any regular basis.
 emcc.WASM_BIGINT ?= 1
-emcc.MEMORY64 ?= 0
+emcc.MEMORY64 ?= 1
 ########################################################################
 # https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
 #
@@ -465,14 +465,12 @@ emcc.MEMORY64 ?= 0
 # Notes related to getting it working with MEMORY64 with emcc
 # versions 4.0.11-15:
 #
-# - sqlite3-wasm.c:sqlite3__wasm_enum_json() mysteriously fails
-#   (returns 0) with MEMORY64=2. That call is critical to the
-#   library bootstrapping process.
-#
-# - MEMORY64=1 fails to compile with: "tables may not be 64-bit" with
+# - MEMORY64=1 fails to build with: "tables may not be 64-bit" with
 #   emcc 4.0.11, but no location information about where that error is
 #   coming from. The only reference to it on the web is:
 #   https://chromium.googlesource.com/external/github.com/WebAssembly/wabt/+/refs/tags/1.0.20/src/binary-reader.cc
+#   It turns out that we need a newer wasm-strip for this (1.0.36 does
+#   the job).
 #
 # [^wasm3]: https://webassembly.org/news/2025-09-17-wasm-3.0/
 ########################################################################

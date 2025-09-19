@@ -21,6 +21,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
+//#if 64bit
+  wasm.pointerIR = 'i64';
+//#else
+  wasm.pointerIR = 'i32';
+//#endif
   globalThis.WhWasmUtilInstaller(wasm);
   delete globalThis.WhWasmUtilInstaller;
 
@@ -913,7 +918,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       toss("Maintenance required: increase sqlite3__wasm_enum_json()'s",
            "static buffer size!");
     }
-    //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
     wasm.ctype = JSON.parse(wasm.cstrToJs(cJson));
     // Groups of SQLITE_xyz macros...
     const defineGroups = ['access', 'authorizer',

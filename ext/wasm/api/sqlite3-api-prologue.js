@@ -953,7 +953,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     affirmBindableTypedArray(srcTypedArray);
     const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
     wasm.heapForSize(srcTypedArray.constructor).set(
-      srcTypedArray.byteLength ? srcTypedArray : [0], pRet
+      srcTypedArray.byteLength ? srcTypedArray : [0], Number(pRet)
     );
     return pRet;
   };
@@ -973,11 +973,15 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     };
     wasm.alloc.impl = wasm.exports[keyAlloc];
     wasm.realloc = function f(m,n){
+      m = wasm.asPtrType(m)/*tag:64bit*/;
       const m2 = f.impl(m,n);
-      return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : 0;
+      return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : wasm.NullPtr;
     };
     wasm.realloc.impl = wasm.exports[keyRealloc];
-    wasm.dealloc = wasm.exports[keyDealloc];
+    wasm.dealloc = function f(m){
+      f.impl(wasm.asPtrType(m)/*tag:64bit*/);
+    };
+    wasm.dealloc.impl = wasm.exports[keyDealloc];
   }
 
   /**
@@ -1354,7 +1358,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.sqlite3_js_vfs_list = function(){
     const rc = [];
-    let pVfs = capi.sqlite3_vfs_find(0);
+    let pVfs = capi.sqlite3_vfs_find(wasm.asPtrType(0));
     while(pVfs){
       const oVfs = new capi.sqlite3_vfs(pVfs);
       rc.push(wasm.cstrToJs(oVfs.$zName));

@@ -67,6 +67,11 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         ptrSizeof = config.ptrSizeof || 4,
         ptrIR = config.ptrIR || 'i32'
   ;
+  const __asPtrType = ('i32'==ptrIR)
+        ? Number
+        : (target.bigIntEnabled
+           ? (v)=>BigInt(v || 0)
+           : toss("Missing BigInt support"));
 
   if(!SBF.debugFlags){
     SBF.__makeDebugFlags = function(deriveFrom=null){
@@ -275,7 +280,9 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
             ctor.structName,"instance:",
             ctor.structInfo.sizeof,"bytes @"+m);
       }
-      if(fill) heap().fill(0, m, m + ctor.structInfo.sizeof);
+      if(fill){
+        heap().fill(0, Number(m), Number(m) + ctor.structInfo.sizeof);
+      }
       __instancePointerMap.set(obj, m);
     }catch(e){
       __freeStruct(ctor, obj, m);
@@ -500,7 +507,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
       return __setMemberCString(this, memberName, str);
     })
   });
-  // Function-type non-Property inherited members 
+  // Function-type non-Property inherited members
   Object.assign(StructType.prototype,{
     addOnDispose: function(...v){
       __addOnDispose(this,...v);
@@ -518,7 +525,12 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     memberKey: __memberKeyProp
   });
 
-  const isNumericValue = (v)=>Number.isFinite(v) || (v instanceof (BigInt || Number));
+  const isNumericValue = (v)=>{
+    return Number.isFinite(v) || (v instanceof Number)
+      || (bigIntEnabled
+          ? ('bigint'===typeof v /*does not work: v instanceof BigInt*/)
+          : false);
+  };
 
   /**
      Pass this a StructBinder-generated prototype, and the struct
@@ -574,7 +586,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
             xPropName,'@', this.pointer,'+',descr.offset,'sz',descr.sizeof);
       }
       let rc = (
-        new DataView(heap().buffer, this.pointer + descr.offset, descr.sizeof)
+        new DataView(heap().buffer, Number(this.pointer) + descr.offset, descr.sizeof)
       )[f._.getters[sigGlyph]](0, isLittleEndian);
       if(dbg.getter) log("debug.getter:",xPropName,"result =",rc);
       return rc;
@@ -601,13 +613,13 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
           toss("Invalid value for pointer-type",xPropName+'.');
         }
         (
-          new DataView(heap().buffer, this.pointer + descr.offset, descr.sizeof)
+          new DataView(heap().buffer, Number(this.pointer) + descr.offset, descr.sizeof)
         )[f._.setters[sigGlyph]](0, f._.sw[sigGlyph](v), isLittleEndian);
       };
     }
     Object.defineProperty(ctor.prototype, key, prop);
   }/*makeMemberWrapper*/;
-  
+
   /**
      The main factory function which will be returned to the
      caller.
@@ -652,11 +664,13 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     }
     const debugFlags = rop(SBF.__makeDebugFlags(StructBinder.debugFlags));
     /** Constructor for the StructCtor. */
+    const zeroAsPtr = __asPtrType(0);
     const StructCtor = function StructCtor(externalMemory){
+      externalMemory = __asPtrType(externalMemory);
       if(!(this instanceof StructCtor)){
         toss("The",structName,"constructor may only be called via 'new'.");
       }else if(arguments.length){
-        if(externalMemory!==(externalMemory|0) || externalMemory<=0){
+        if(externalMemory<=zeroAsPtr){
           toss("Invalid pointer value for",structName,"constructor.");
         }
         __allocStruct(StructCtor, this, externalMemory);
