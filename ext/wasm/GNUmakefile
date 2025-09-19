@@ -1,11 +1,10 @@
 #######################################################################
-# This GNU makefile drives the build of the sqlite3 WASM
-# components. It is not part of the canonical build process.
+# This GNU makefile creates the canonical sqlite3 WASM builds.
 #
 # This build assumes a Linux platform and is not intended for
 # general-purpose client-level use, except for creating builds with
-# custom configurations. It is primarily intended for the sqlite
-# project's own development of the JS/WASM components.
+# custom configurations. It is primarily intended for the SQLite
+# project's own development of its JS/WASM components.
 #
 # Primary targets:
 #
@@ -134,7 +133,10 @@ JS_BUILD_NAMES = sqlite3 sqlite3-wasmfs
 # - bundler-friendly = esm slightly tweaked for "bundler"
 #   tools. Bundlers are invariably based on node.js, so these builds
 #   are intended to be read at build-time by node.js but with a final
-#   target of browsers.
+#   target of browsers. All bundler-friendly builds are UNTESTED.
+#   They are provided primarily for use by the community-supported
+#   subproject which hosts npm builds of sqlite3, and they are
+#   actively supported only to the extent needed by that subproject.
 #
 # - node = for use by node.js for node.js, as opposed to by node.js on
 #   behalf of browser-side code (use bundler-friendly for that). Note
@@ -451,6 +453,8 @@ emcc.WASM_BIGINT ?= 1
 # has shown -Oz to produce the smallest deliverables with only a
 # roughly 10% performance hit in the resulting WASM file compared to
 # -O2 (which consistently creates the fastest-running deliverables).
+# Build time suffers greatly compared to -O0, which is why -O0 is the
+# default.
 ifeq (,$(filter $(OPTIMIZED_TARGETS),$(MAKECMDGOALS)))
   emcc_opt ?= -O0
 else
@@ -499,7 +503,7 @@ emcc_opt_full = $(emcc_opt) -g3
 #
 # Much practice has demonstrated that -O2 consistently gives the best
 # runtime speeds, but not by a large enough factor to rule out use of
-# -Oz when small deliverable size is a priority.
+# -Oz when smaller deliverable size is a priority.
 ########################################################################
 
 ########################################################################
@@ -583,8 +587,19 @@ $(SOAP.js.bld): $(SOAP.js)
 # them. Tools like wasm-objdump can be used to find the list of
 # imports but it's questionable whether a non-Emscripten tool could
 # realistically use that info to provide proper implementations.
+#
 # Sidebar: some of the imports are used soley by the Emscripten glue,
 # which the sqlite3 JS code does not rely on.
+#
+# 2025-09-04: the most significant WASM imports sqlite3.wasm relies on
+# are (A) sqlite3_malloc/sqlite3_free() (the memory-management APIs
+# used by the whole library) and (B) the libc proxies for POSIX I/O
+# emulation (arguably one of Emscripten's most convenient features
+# when building C code for WASM). If we eliminate the POSIX I/O
+# emulation then we could hypothetically eliminate all, or maybe all
+# but one, Emscripten import dependency. We would either need to add
+# our own POSIX emulation layer (not a trivial effort) or restrict the
+# library to use of only in-memory VFSes and the JS-side VFSes.
 #
 # sqlite3-api.js.in = the amalgamated sqlite3-api.js before it gets
 # preprocessed. It contains all of $(sqlite3-api.jses) but none of the
@@ -648,26 +663,27 @@ emcc.jsflags += -sSTRICT_JS=0
 # -sSTRICT=1 Causes failures about unknown symbols which the build
 # tools should be installing, e.g. __syscall_geteuid32
 
-# -sENVIRONMENT values for the various build modes:
+# emcc -sENVIRONMENT values for the various build modes:
 emcc.environment.vanilla = web,worker
 emcc.environment.bundler-friendly = $(emcc.environment.vanilla)
 emcc.environment.esm = $(emcc.environment.vanilla)
 emcc.environment.node = node
-# Note that adding ",node" to the list for the other builds causes
-# Emscripten to generate code which confuses node: it cannot reliably
-# determine whether the build is for a browser or for node.
+# Adding ",node" to the list for the other builds causes Emscripten to
+# generate code which confuses node: it cannot reliably determine
+# whether the build is for a browser or for node. We neither build nor
+# test node builds on a regular basis. They are fully unsupported.
 
 ########################################################################
 # -sINITIAL_MEMORY: How much memory we need to start with is governed
 # at least in part by whether -sALLOW_MEMORY_GROWTH is enabled. If so,
 # we can start with less. If not, we need as much as we'll ever
-# possibly use (which, of course, we can't know for sure).  Note,
-# however, that speedtest1 shows that performance for even moderate
-# workloads MAY suffer considerably if we start small and have to grow
-# at runtime. e.g. OPFS-backed (speedtest1 --size 75) take MAY take X
-# time with 16mb+ memory and 3X time when starting with 8MB. However,
-# such test results are inconsistent due to browser internals which
-# are opaque to us.
+# possibly use (which, of course, we can't know for sure).  speedtest1
+# shows that performance for even moderate workloads MAY suffer
+# considerably if we start small and have to grow at runtime.
+# e.g. OPFS-backed (speedtest1 --size 75) take MAY take X time with
+# 16mb+ memory and 3X time when starting with 8MB. However, such test
+# results are inconsistent due to browser internals which are opaque
+# to us.
 #
 # 2024-03-04: emsdk 3.1.55 replaces INITIAL_MEMORY with INITIAL_HEAP,
 # but also says (in its changelog): "Note that it is currently not
@@ -892,6 +908,8 @@ EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 #    part, as it's unable to reliably determine whether the target is
 #    a browser or node.
 #
+# We repeat: all node.js builds are 100% untested and unsupported.
+#
 ########################################################################
 ########################################################################
 # We have to ensure that we do not build $(sqlite3*.*js) in parallel
@@ -921,8 +939,8 @@ ifneq (1,$(MAKING_CLEAN))
 # native makefile code. Somewhat surprisingly, moving that code generation
 # to C makes it slightly less illegible than the previous 3 options.
 #
-# Maintenance note: the various $(c-pp.D.XYZ) vars are defined in this
-# step.
+# Maintenance note: the various $(c-pp.D.XYZ) vars are defined via
+# $(bin.mkwb).
 bin.mkwb = ./mkwasmbuilds
 $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
 	$(CC) -o $@ $<
@@ -1101,7 +1119,7 @@ $(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.sqlit
 $(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1.html))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.sqlite3-esm)))
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
-# Note that we do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
+# We do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
 # because bundlers are client-specific.
 all quick: tester1
 quick: $(sqlite3.js)
@@ -1140,7 +1158,7 @@ oz: clean
 ########################################################################
 # Sub-makes...
 
-# sqlite.org/fiddle application...
+# https://sqlite.org/fiddle application...
 include $(MAKEFILE.fiddle)
 
 # Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
@@ -1195,8 +1213,8 @@ push-testing:
     echo "SSH failed: it's likely that stale content will be served via old gzip files."
 
 ########################################################################
-# If we find a copy of the sqlite.org/wasm docs checked out, copy
-# certain files over to it, noting that some need automatable edits...
+# If we find a copy of https://sqlite.org/wasm checked out, copy
+# certain files over to it, applying some automated edits...
 wasm.docs.home ?= ../../../wasm
 wasm.docs.found = $(if $(wildcard $(wasm.docs.home)/api-index.md),\
   $(wildcard $(wasm.docs.home)),)

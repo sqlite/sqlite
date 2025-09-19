@@ -1261,7 +1261,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           dw = sqlite3.oo1.DB.wrapHandle(pDb, true);
           pDb = 0;
           //sqlite3.config.debug("dw",dw);
-          T.assert( pTmp===dw.pointer, 'pDb===dw.pointer' );
+          T.assert( pTmp===dw.pointer, 'pTmp===dw.pointer' );
           T.assert( dw.filename === "", "dw.filename == "+dw.filename );
           let q = dw.prepare("select 1");
           try {
@@ -3532,17 +3532,47 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       capi.sqlite3_interrupt(db);
       T.assert( 0!==capi.sqlite3_is_interrupted(db) );
       db.close();
-    });
+    })
 
-  ////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+    .t("sqlite3_set_errmsg()", function(sqlite3){
+      /* Added in 3.51.0 */
+      const db = new sqlite3.oo1.DB();//(':memory:','wt');
+      try{
+        const capi = sqlite3.capi;
+        const sse = capi.sqlite3_set_errmsg,
+              sec = capi.sqlite3_errcode,
+              sem = capi.sqlite3_errmsg;
+        T.assert( 0===sec(db) )
+          .assert( "not an error"===sem(db) );
+        let rc = sse(db, capi.SQLITE_RANGE, "nope");
+        T.assert( 0==rc )
+          .assert( capi.SQLITE_RANGE===sec(db) )
+          .assert( "nope"===sem(db) );
+        rc = sse(0, 0, 0);
+        T.assert( capi.SQLITE_MISUSE===rc );
+        rc = sse(db, 0, 0);
+        T.assert( 0===rc )
+          .assert( 0===sec(db) )
+          .assert( "not an error"===sem(db) );
+      }finally{
+        db.close();
+      }
+    });
+  ;
+
+  ////////////////////////////////////////////////////////////////////
   T.g('Bug Reports')
     .t({
       name: 'Delete via bound parameter in subquery',
       predicate: ()=>wasm.compileOptionUsed('ENABLE_FTS5') || "Missing FTS5",
       test: function(sqlite3){
-        // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
-        // with the exception that that post uses "external content"
-        // for the FTS index.
+        /**
+           Testing https://sqlite.org/forum/forumpost/40ce55bdf5 with
+           the exception that that post uses "external content" for
+           the FTS index. This isn't testing a fix, just confirming
+           that the bug report is not really a bug.
+        */
         const db = new sqlite3.oo1.DB();//(':memory:','wt');
         db.exec([
           "create virtual table f using fts5 (path);",
@@ -3559,10 +3589,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         //dump('Full fts table');
         let rc = fetchEm();
         T.assert(3===rc.length);
-        db.exec(`
-          delete from f where rowid in (
-          select rowid from f where path = :path
-           )`,
+        db.exec(
+          ["delete from f where rowid in (",
+           "select rowid from f where path = :path",
+           ")"],
           {bind: {":path": "def"}}
         );
         //dump('After deleting one entry via subquery');

@@ -65,7 +65,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
   # The list of feature --flags which the --all flag implies. This
   # requires special handling in a few places.
   #
-  all-flag-enables {fts4 fts5 rtree geopoly session}
+  all-flag-enables {fts4 fts5 rtree geopoly session dbpage dbstat}
 
   #
   # Default value for the --all flag. Can hypothetically be modified
@@ -220,6 +220,8 @@ proc sqlite-configure {buildMode configScript} {
         geopoly              => {Enable the GEOPOLY extension}
         rtree                => {Enable the RTREE extension}
         session              => {Enable the SESSION extension}
+        dbpage               => {Enable the sqlite3_dbpage extension}
+        dbstat               => {Enable the sqlite3_dbstat extension}
         all=$::sqliteConfig(all-flag-default) => {$allFlagHelp}
         largefile=1
           => {This legacy flag has no effect on the library but may influence
@@ -501,6 +503,7 @@ proc sqlite-configure-phase1 {buildMode} {
   if {[file exists $srcdir/sqlite3.pc.in]} {
     proj-dot-ins-append $srcdir/sqlite3.pc.in
   }
+  sqlite-handle-hpux; # must be relatively early so that other config tests can work
 }; # sqlite-configure-phase1
 
 ########################################################################
@@ -785,6 +788,8 @@ proc sqlite-handle-common-feature-flags {} {
     }
     scanstatus      -DSQLITE_ENABLE_STMT_SCANSTATUS {}
     column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
+    dbpage          -DSQLITE_ENABLE_DBPAGE_VTAB {}
+    dbstat          -DSQLITE_ENABLE_DBSTAT_VTAB {}
   }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
@@ -1543,6 +1548,19 @@ proc sqlite-handle-mac-install-name {} {
     }
   }
   return $rc
+}
+
+#
+# Checks specific to HP-UX.
+#
+proc sqlite-handle-hpux {} {
+  switch -glob -- [get-define host] {
+    *hpux* {
+      if {[cc-check-flags "-Ae"]} {
+        define-append CFLAGS -Ae
+      }
+    }
+  }
 }
 
 ########################################################################

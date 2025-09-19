@@ -188,6 +188,10 @@ static int parseTimezone(const char *zDate, DateTime *p){
   }
   zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
+  if( p->tz==0 ){   /* Forum post 2025-09-17T10:12:14z */
+    p->isLocal = 0;
+    p->isUtc = 1;
+  }
 zulu_time:
   while( sqlite3Isspace(*zDate) ){ zDate++; }
   return *zDate!=0;

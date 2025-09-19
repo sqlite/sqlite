@@ -1368,6 +1368,8 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp3(v, OP_Insert, 0, reg3, reg1);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);
+  }else if( db->init.imposterTable ){
+    pTable->tabFlags |= TF_Readonly | TF_Imposter;
   }
 
   /* Normal (non-error) return. */
