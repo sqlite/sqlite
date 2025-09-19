@@ -657,7 +657,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
           nSeenMatch++;
           idxStr[iIdxStr++] = 'M';
           sqlite3_snprintf(6, &idxStr[iIdxStr], "%d", iCol);
-          iIdxStr += strlen(&idxStr[iIdxStr]);
+          iIdxStr += (int)strlen(&idxStr[iIdxStr]);
           assert( idxStr[iIdxStr]=='\0' );
         }
         pInfo->aConstraintUsage[i].argvIndex = ++iCons;
