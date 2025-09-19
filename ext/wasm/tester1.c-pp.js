@@ -1261,7 +1261,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           dw = sqlite3.oo1.DB.wrapHandle(pDb, true);
           pDb = 0;
           //sqlite3.config.debug("dw",dw);
-          T.assert( pTmp===dw.pointer, 'pDb===dw.pointer' );
+          T.assert( pTmp===dw.pointer, 'pTmp===dw.pointer' );
           T.assert( dw.filename === "", "dw.filename == "+dw.filename );
           let q = dw.prepare("select 1");
           try {
@@ -3567,9 +3567,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'Delete via bound parameter in subquery',
       predicate: ()=>wasm.compileOptionUsed('ENABLE_FTS5') || "Missing FTS5",
       test: function(sqlite3){
-        // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
-        // with the exception that that post uses "external content"
-        // for the FTS index.
+        /**
+           Testing https://sqlite.org/forum/forumpost/40ce55bdf5 with
+           the exception that that post uses "external content" for
+           the FTS index. This isn't testing a fix, just confirming
+           that the bug report is not really a bug.
+        */
         const db = new sqlite3.oo1.DB();//(':memory:','wt');
         db.exec([
           "create virtual table f using fts5 (path);",
@@ -3586,10 +3589,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         //dump('Full fts table');
         let rc = fetchEm();
         T.assert(3===rc.length);
-        db.exec(`
-          delete from f where rowid in (
-          select rowid from f where path = :path
-           )`,
+        db.exec(
+          ["delete from f where rowid in (",
+           "select rowid from f where path = :path",
+           ")"],
           {bind: {":path": "def"}}
         );
         //dump('After deleting one entry via subquery');

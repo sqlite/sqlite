@@ -1352,7 +1352,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      The reason for the 2nd argument is...
 
      When one of the returned pointers will refer to a 64-bit value,
-     e.g. a double or int64, an that value must be written or fetched,
+     e.g. a double or int64, and that value must be written or fetched,
      e.g. using poke() or peek(), it is important that
      the pointer in question be aligned to an 8-byte boundary or else
      it will not be fetched or written properly and will corrupt or
@@ -1401,9 +1401,11 @@ globalThis.WhWasmUtilInstaller = function(target){
   target.xCall = function(fname, ...args){
     const f = (fname instanceof Function) ? fname : target.xGet(fname);
     if(!(f instanceof Function)) toss("Exported symbol",fname,"is not a function.");
-    if(f.length!==args.length) __argcMismatch(((f===fname) ? f.name : fname),f.length)
-    /* This is arguably over-pedantic but we want to help clients keep
-       from shooting themselves in the foot when calling C APIs. */;
+    if(f.length!==args.length){
+      __argcMismatch(((f===fname) ? f.name : fname),f.length)
+      /* This is arguably over-pedantic but we want to help clients keep
+         from shooting themselves in the foot when calling C APIs. */;
+    }
     return (2===arguments.length && Array.isArray(arguments[1]))
       ? f.apply(null, arguments[1])
       : f.apply(null, args);
@@ -1418,14 +1420,15 @@ globalThis.WhWasmUtilInstaller = function(target){
   cache.xWrap.convert.arg = new Map;
   /** Map of type names to return result conversion functions. */
   cache.xWrap.convert.result = new Map;
+  /** Scope-local convenience aliases. */
   const xArg = cache.xWrap.convert.arg, xResult = cache.xWrap.convert.result;
 
   if(target.bigIntEnabled){
     xArg.set('i64', (i)=>BigInt(i));
   }
-  const __xArgPtr = 'i32' === ptrIR
+  const __xArgPtr = ('i32' === ptrIR)
         ? ((i)=>(i | 0)) : ((i)=>(BigInt(i) | BigInt(0)));
-  xArg.set('i32', __xArgPtr )
+  xArg.set('i32', (i)=>(i | 0) )
     .set('i16', (i)=>((i | 0) & 0xFFFF))
     .set('i8', (i)=>((i | 0) & 0xFF))
     .set('f32', (i)=>Number(i).valueOf())
@@ -1445,8 +1448,8 @@ globalThis.WhWasmUtilInstaller = function(target){
     .set(null, xResult.get('null'));
 
   { /* Copy xArg[...] handlers to xResult[...] for cases which have
-       identical semantics. Also add pointer-style variants of
-       them. */
+       identical semantics. Also add pointer-style variants of those
+       xArg entries to both xArg and xResult. */
     const copyToResult = ['i8', 'i16', 'i32', 'int',
                           'f32', 'float', 'f64', 'double'];
     if(target.bigIntEnabled) copyToResult.push('i64');
@@ -1905,11 +1908,11 @@ globalThis.WhWasmUtilInstaller = function(target){
        which convert their argument to an integer and truncate it to
        the given bit length.
 
-     - `*` and `pointer` (args): are assumed to be WASM pointer values
-       and are returned coerced to an appropriately-sized pointer
-       value (i32 or i64). Non-numeric values will coerce to 0 and
-       out-of-range values will have undefined results (just as with
-       any pointer misuse).
+     - `*`, `**`, and `pointer` (args): are assumed to be WASM pointer
+       values and are returned coerced to an appropriately-sized
+       pointer value (i32 or i64). Non-numeric values will coerce to 0
+       and out-of-range values will have undefined results (just as
+       with any pointer misuse).
 
      - `*` and `pointer` (results): aliases for the current
        WASM pointer numeric type.
@@ -1934,9 +1937,9 @@ globalThis.WhWasmUtilInstaller = function(target){
        distinguish between the two types of floating-point numbers.
 
      - `number` (results): converts the result to a JS Number using
-       Number(theValue).valueOf(). Note that this is for result
-       conversions only, as it's not possible to generically know
-       which type of number to convert arguments to.
+       Number(theValue). This is for result conversions only, as it's
+       not possible to generically know which type of number to
+       convert arguments to.
 
      Non-numeric conversions include:
 
@@ -1948,7 +1951,7 @@ globalThis.WhWasmUtilInstaller = function(target){
        to accommodate various uses of certain C APIs
        (e.g. output-style strings)...
 
-       - If the arg is a string, it creates a _temporary_
+       - If the arg is a JS string, it creates a _temporary_
          UTF-8-encoded C-string to pass to the exported function,
          cleaning it up before the wrapper returns. If a long-lived
          C-string pointer is required, that requires client-side code
@@ -1965,10 +1968,10 @@ globalThis.WhWasmUtilInstaller = function(target){
      - `string:dealloc` or `utf8:dealloc` (results): treats the result
        value as a non-const UTF-8 C-string, ownership of which has
        just been transfered to the caller. It copies the C-string to a
-       JS string, frees the C-string, and returns the JS string. If
-       such a result value is NULL, the JS result is `null`. Achtung:
-       when using an API which returns results from a specific
-       allocator, e.g. `my_malloc()`, this conversion _is not
+       JS string, frees the C-string using dealloc(), and returns the
+       JS string. If such a result value is NULL, the JS result is
+       `null`. Achtung: when using an API which returns results from a
+       specific allocator, e.g. `my_malloc()`, this conversion _is not
        legal_. Instead, an equivalent conversion which uses the
        appropriate deallocator is required. For example:
 

@@ -300,7 +300,10 @@ SQLITE_WASM_EXPORT void * sqlite3__wasm_stack_alloc(int n){
 ** enough for general-purpose string conversions because some of our
 ** tests use input files (strings) of 16MB+.
 */
-static unsigned char PStack_mem[512 * 8] = {0};
+static unsigned char PStack_mem[
+  1024 * 4 /* API docs guaranty at least 2kb and it's been set at 4kb
+              since it was introduced. */
+] = {0};
 static struct {
   unsigned const char * const pBegin;/* Start (inclusive) of memory */
   unsigned const char * const pEnd;  /* One-after-the-end of memory */
@@ -401,7 +404,10 @@ void sqlite3__wasm_test_struct(WasmTestStruct * s){
 */
 SQLITE_WASM_EXPORT
 const char * sqlite3__wasm_enum_json(void){
-  static char aBuffer[1024 * 20] = {0} /* where the JSON goes */;
+  static char aBuffer[1024 * 20] =
+    {0} /* where the JSON goes. 2025-09-19: output size=19295, but
+           that can vary slightly from build to build, so a little
+           leeway is needed here. */;
   int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
   char * zPos = &aBuffer[1] /* skip first byte for now to help protect
@@ -971,8 +977,8 @@ const char * sqlite3__wasm_enum_json(void){
   **   }
   ** }
   **
-  ** Detailed documentation for those bits are in the docs for the
-  ** Jaccwabyt JS-side component.
+  ** Detailed documentation for those bits are in the Jaccwabyt
+  ** JS-side component.
   */
 
   /** Macros for emitting StructBinder description. */
