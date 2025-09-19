@@ -11748,7 +11748,7 @@ static int do_meta_command(char *zLine, ShellState *p){
             { 0x00000080, 1, "Transitive" },
             { 0x00000100, 1, "OmitNoopJoin" },
             { 0x00000200, 1, "CountOfView" },
-            { 0x00000400, 1, "CurosrHints" },
+            { 0x00000400, 1, "CursorHints" },
             { 0x00000800, 1, "Stat4" },
             { 0x00001000, 1, "PushDown" },
             { 0x00002000, 1, "SimplifyJoin" },
