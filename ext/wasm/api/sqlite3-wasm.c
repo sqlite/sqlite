@@ -230,7 +230,8 @@
 ** Which sqlite3.c we're using needs to be configurable to enable
 ** building against a custom copy, e.g. the SEE variant. We #include
 ** the .c file, rather than the header, so that the WASM extensions
-** have access to private API internals.
+** have access to private API internals (namely for kvvfs and
+** SQLTester pieces).
 **
 ** The caveat here is that custom variants need to account for
 ** exporting any necessary symbols (e.g. sqlite3_activate_see()).  We
@@ -1753,7 +1754,7 @@ int sqlite3__wasm_init_wasmfs(const char *zMountPoint){
 SQLITE_WASM_EXPORT
 int sqlite3__wasm_init_wasmfs(const char *zUnused){
   //emscripten_console_warn("WASMFS OPFS is not compiled in.");
-  if(zUnused){/*unused*/}
+  (void)zUnused;
   return SQLITE_NOTFOUND;
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_ENABLE_WASMFS */
