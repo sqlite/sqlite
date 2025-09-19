@@ -1,5 +1,5 @@
-C Diverse\scleanups\sand\sdocs\sin\sthe\sJS\sand\skvvfs\spieces.\sFunctional\schanges:\s(A)\sensure\sthat\sthe\s'i32'\sJS/WASM\sfunc\sarg/result\sconversion\sworks\sproperly\swith\sa\s64-bit-memory\sWASM\sbuild\s(which\swe\sneither\suse\snor\stest\sbut\s[https://webassembly.org/news/2025-09-17-wasm-3.0/\s|\sthe\snewly-ratified\sWASM\s3.0]\sbrings\swithin\spotential\sreach).\s(B)\sFix\ssqlite3_js_posix_create_file()\sto\snot\sdeallocate\sits\sinput\sarray\sif\sthe\sclient\spasses\sin\sraw\smemory\s(the\slibrary\shas\snever\sused\sit\sthat\sway\sbut\sthe\sAPI\spermits\sit).
-D 2025-09-19T17:24:47.155
+C Improve\simposter\stables:\s(1)\sRead-only\sunless\swriteable_schema=ON\n(2)\s--unsafe-testing\sno\slonger\srequired\s(3)\sDoes\snot\sinterfere\swith\nPRAGMA\sintegrity_check.
+D 2025-09-19T17:33:29.757
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -277,8 +277,8 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 1f8d76e10d2385fc77914a14ccd99acfbaf68111dfcf26a360ad9063787f57fb
 F ext/icu/icu.c 9837f4611915baad1edbe38222f3ee7d1b5e118ab16fec9ba603720f72c78b2a
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/intck/intck1.test f3a3cba14b6aeff145ffa5515546dd22f7510dad91512e519f43b92b56514012
-F ext/intck/intck2.test d2457c7e5e5b688046d15ebe08a1e1427cc5e7a6dc8d6af215f42e8bcaf67304
+F ext/intck/intck1.test 53d885075abeb45aeb1eeffeaa8560b329060835ade4af5c44cf5fcb581c1e63
+F ext/intck/intck2.test a29343a8e65c5c3400e10747f394924f3df95a5b2de94f46e9b5c9b97f5e7339
 F ext/intck/intck_common.tcl a61fd2697ae55b0a3d89847ca0b590c6e0d8ff64bebb70920d93724799894159
 F ext/intck/intckbusy.test d5ed4ef85a4b1dc1dee2484bd14a4bb68529659cca743327df0c775f005fa387
 F ext/intck/intckcorrupt.test f6c302792326fb3db9dcfc70b554c55369bc4b52882eaaf039cfe0b74c821029
@@ -686,7 +686,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c cb5b8ceb9baa02a63a2f83dec09c4153e1cfbdf9c2adef5c62c26d2160eeb067
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c 213a9d24c931ef4694564894cda8dac8dbeb1519d428fd2d7ae622ac357c05a5
+F src/build.c 9c95d5bd5969be8962bcbebe651a5b664f92fc5d6c9e8bf0d9e6e008ad3c99d3
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c b6f92001f4b1f73f21774927488661d28f4dac9cd9701ed96486d96b44f5b058
@@ -736,18 +736,18 @@ F src/parse.y 619c3e92a54686c5e47923688c4b9bf7ec534a4690db5677acc28b299c403250
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
-F src/pragma.c 20847ce727fa0efe64de13f54427d44d25df7a00c806f198463dc37041aeeed0
+F src/pragma.c ecec75795c1821520266e4f93fa8840cce48979af532db06f085e36a7813860f
 F src/prepare.c 2af0b5c1ec787c8eebd21baa9d79caf4a4dc3a18e76ce2edbf2027d706bca37a
 F src/printf.c 5f0c957af9699e849d786e8fbaa3baab648ca5612230dc17916434c14bc8698f
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
-F src/shell.c.in 07e33255efbf18de49e7afa2ebc70ab3602aa7fb86bba35416c5a95a6574e94d
+F src/shell.c.in 4fe89ea95c2ea05b1fc98ee8e27aa03dd080ae12dfe201334cc7f338f4ece7e2
 F src/sqlite.h.in 5732519a2acb09066032ceac21f25996eb3f28f807a4468e30633c7c70faae1c
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 3f0c4ed6934e7309a61c6f3c30f70a30a5b869f785bb3d9f721a36c5e4359126
-F src/sqliteInt.h 27c73e48878d31ef230ba867d1f8c3af6aed357fd93ccc605d3f1aae007ea62b
+F src/sqliteInt.h 5f6db0908f0e1d5cbae56955cc119bf85e92f3bdd1bcffe22190d6775efac7b4
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1266,7 +1266,7 @@ F test/hook.test 2d89bf9480646feb8093be3a58ea502d6521906779ed960de31dd9c4502c054
 F test/hook2.test b9ff3b8c6519fb67f33192f1afe86e7782ee4ac8
 F test/icu.test 8da7d52cd9722c82f33b0466ed915460cb03c23a38f18a9a2d3ff97da9a4a8c0
 F test/ieee754.test b0945d12be7d255f3dfa18e2511b17ca37e0edd2b803231c52d05b86c04ab26e
-F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
+F test/imposter1.test 5a20b2cdeb53e65fc57cdb10a33750bd4ef6259909eaf1972253b9e79f7a3fb2
 F test/in.test edf979bff3244b9e47849e2b43886631354c8213791f42da92216f08012141af
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
@@ -2175,8 +2175,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5e5139c2a162562cee0071d03954ebc0b8938da0b045ec3f5eba32dc8e19604d
-R 39374a1a28932b274e07d195dbea9d94
-U stephan
-Z 8c740e2b096da4198cfd5683f58d6ede
+P 79af65a694fbbb3d501fb2ebd835c259ca644e0dafdd71eeb9f0a7c0e9128a1e ad152ddc4bcf6cfe840b9a36ab76a5ec36afdb1dd96eb7697e4b3df1bf63b00d
+R 40cb735bce42a3fc7ea066af39f44a8e
+T +closed ad152ddc4bcf6cfe840b9a36ab76a5ec36afdb1dd96eb7697e4b3df1bf63b00d
+U drh
+Z 249a850104d161bbd5ac157b5bff477d
 # Remove this line to create a well-formed Fossil manifest.
