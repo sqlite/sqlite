@@ -447,10 +447,6 @@ emcc.MEMORY64 ?= 0
 ########################################################################
 # https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
 #
-# -sMEMORY64=1 fails to load, erroring with:
-#  invalid memory limits flags 0x5
-#    (enable via --experimental-wasm-memory64)
-#
 # -sMEMORY64=2 builds and loads but dies when we do things like:
 #
 #  new Uint8Array(wasm.heap8u().buffer, ptr, n)
@@ -466,11 +462,26 @@ emcc.MEMORY64 ?= 0
 # seem to pose no inherent problems. The hard part will be finding all
 # such cases.
 #
+# Notes related to getting it working with MEMORY64 with emcc
+# versions 4.0.11-15:
+#
+# - sqlite3-wasm.c:sqlite3__wasm_enum_json() mysteriously fails
+#   (returns 0) with MEMORY64=2. That call is critical to the
+#   library bootstrapping process.
+#
+# - MEMORY64=1 fails to compile with: "tables may not be 64-bit" with
+#   emcc 4.0.11, but no location information about where that error is
+#   coming from. The only reference to it on the web is:
+#   https://chromium.googlesource.com/external/github.com/WebAssembly/wabt/+/refs/tags/1.0.20/src/binary-reader.cc
+#
 # [^wasm3]: https://webassembly.org/news/2025-09-17-wasm-3.0/
 ########################################################################
 
 ifneq (0,$(emcc.MEMORY64))
+  $(info WARNING: MEMORY64 mode is known to not work)
   SQLITE.CALL.C-PP.FILTER.global += -D64bit
+  emcc.WASM_BIGINT = 1
+  # -sMEMORY64=1+ assumes -sWASM_BIGINT=1, so we'll make it explicit
 endif
 
 # emcc_opt = optimization-related flags. These are primarily used by

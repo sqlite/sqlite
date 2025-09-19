@@ -401,6 +401,11 @@ void sqlite3__wasm_test_struct(WasmTestStruct * s){
 ** If this function returns NULL then it means that the internal
 ** buffer is not large enough for the generated JSON and needs to be
 ** increased. In debug builds that will trigger an assert().
+**
+** 2025-09-19: for reasons entirely not understood, building with emcc
+** -sMEMORY64=2 causes this function to fail (return 0). -sMEMORY64=1
+** fails to compile with "tables may not be 64-bit" but does not tell
+** us where it's happening.
 */
 SQLITE_WASM_EXPORT
 const char * sqlite3__wasm_enum_json(void){
