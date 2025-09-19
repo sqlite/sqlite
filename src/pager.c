@@ -7527,7 +7527,7 @@ int sqlite3PagerCheckpoint(
   }
   if( pPager->pWal ){
     rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
-        (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
+        (eMode<=SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt

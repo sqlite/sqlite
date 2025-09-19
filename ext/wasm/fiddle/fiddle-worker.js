@@ -286,7 +286,7 @@
           buffer.set([1,1], 18)/*force db out of WAL mode*/;
           const fn = (
             opt.filename
-              ? opt.filename.split(/[/\\]/).pop().replace('"','_')
+              ? opt.filename.split(/[/\\]/).pop().replace(/["']/g,'_')
               : ("db-"+((Math.random() * 10000000) | 0)+
                  "-"+((Math.random() * 10000000) | 0)+".sqlite3")
           );

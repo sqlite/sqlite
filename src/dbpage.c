@@ -47,7 +47,7 @@ typedef struct DbpageCursor DbpageCursor;
 struct DbpageCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
   Pgno pgno;                      /* Current page number */
-  int mxPgno;                     /* Last page to visit on this scan */
+  Pgno mxPgno;                    /* Last page to visit on this scan */
   Pager *pPager;                  /* Pager being read/written */
   DbPage *pPage1;                 /* Page 1 of the database */
   int iDb;                        /* Index of database to analyze */

@@ -1197,10 +1197,15 @@ public final class CApi {
 
   public static native String sqlite3_errmsg(@NotNull sqlite3 db);
 
+  /** Added in 3.51.0. */
+  public static native int sqlite3_set_errmsg(@NotNull sqlite3 db,
+                                              int resultCode,
+                                              String msg);
+
   private static native int sqlite3_error_offset(@NotNull long ptrToDb);
 
   /**
-     Note that the returned byte offset values assume UTF-8-encoded
+     Caveat: the returned byte offset values assume UTF-8-encoded
      inputs, so won't always match character offsets in Java Strings.
   */
   public static int sqlite3_error_offset(@NotNull sqlite3 db){

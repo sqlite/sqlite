@@ -2494,6 +2494,7 @@ struct Table {
 #define TF_Ephemeral      0x00004000 /* An ephemeral table */
 #define TF_Eponymous      0x00008000 /* An eponymous virtual table */
 #define TF_Strict         0x00010000 /* STRICT mode */
+#define TF_Imposter       0x00020000 /* An imposter table */
 
 /*
 ** Allowed values for Table.eTabType

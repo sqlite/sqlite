@@ -86,7 +86,7 @@ find . -type f -name '#*#' -exec rm -f \{} \; # emacs lock files
 find . -type f -name '*.o' -exec rm -f \{} \;
 find . -type f -name '*.so' -exec rm -f \{} \;
 
-./configure && make dist
+./configure && ${MAKE-make} dist
 tar xzf sqlite-$VERSION.tar.gz
 mv sqlite-$VERSION $TARBALLNAME
 tar czf $TARBALLNAME.tar.gz $TARBALLNAME

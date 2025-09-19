@@ -511,6 +511,17 @@ static void fts5SetUniqueFlag(sqlite3_index_info *pIdxInfo){
 #endif
 }
 
+static void fts5SetEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
+#if SQLITE_VERSION_NUMBER>=3008002
+#ifndef SQLITE_CORE
+  if( sqlite3_libversion_number()>=3008002 )
+#endif
+  {
+    pIdxInfo->estimatedRows = nRow;
+  }
+#endif
+}
+
 static int fts5UsePatternMatch(
   Fts5Config *pConfig, 
   struct sqlite3_index_constraint *p
@@ -646,7 +657,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
           nSeenMatch++;
           idxStr[iIdxStr++] = 'M';
           sqlite3_snprintf(6, &idxStr[iIdxStr], "%d", iCol);
-          idxStr += strlen(&idxStr[iIdxStr]);
+          iIdxStr += (int)strlen(&idxStr[iIdxStr]);
           assert( idxStr[iIdxStr]=='\0' );
         }
         pInfo->aConstraintUsage[i].argvIndex = ++iCons;
@@ -665,6 +676,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
         idxStr[iIdxStr++] = '=';
         bSeenEq = 1;
         pInfo->aConstraintUsage[i].argvIndex = ++iCons;
+        pInfo->aConstraintUsage[i].omit = 1;
       }
     }
   }
@@ -712,17 +724,21 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 
   /* Calculate the estimated cost based on the flags set in idxFlags. */
   if( bSeenEq ){
-    pInfo->estimatedCost = nSeenMatch ? 1000.0 : 10.0;
-    if( nSeenMatch==0 ) fts5SetUniqueFlag(pInfo);
-  }else if( bSeenLt && bSeenGt ){
-    pInfo->estimatedCost = nSeenMatch ? 5000.0 : 250000.0;
-  }else if( bSeenLt || bSeenGt ){
-    pInfo->estimatedCost = nSeenMatch ? 7500.0 : 750000.0;
+    pInfo->estimatedCost = nSeenMatch ? 1000.0 : 25.0;
+    fts5SetUniqueFlag(pInfo);
+    fts5SetEstimatedRows(pInfo, 1);
   }else{
-    pInfo->estimatedCost = nSeenMatch ? 10000.0 : 1000000.0;
-  }
-  for(i=1; i<nSeenMatch; i++){
-    pInfo->estimatedCost *= 0.4;
+    if( bSeenLt && bSeenGt ){
+      pInfo->estimatedCost = nSeenMatch ? 5000.0 :   750000.0;
+    }else if( bSeenLt || bSeenGt ){
+      pInfo->estimatedCost = nSeenMatch ? 7500.0 :  2250000.0;
+    }else{
+      pInfo->estimatedCost = nSeenMatch ? 10000.0 : 3000000.0;
+    }
+    for(i=1; i<nSeenMatch; i++){
+      pInfo->estimatedCost *= 0.4;
+    }
+    fts5SetEstimatedRows(pInfo, (i64)(pInfo->estimatedCost / 4.0));
   }
 
   pInfo->idxNum = idxFlags;
@@ -921,7 +937,9 @@ static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
     int bDesc = pCsr->bDesc;
     i64 iRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
 
-    rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->p.pIndex, iRowid, bDesc);
+    rc = sqlite3Fts5ExprFirst(
+        pCsr->pExpr, pTab->p.pIndex, iRowid, pCsr->iLastRowid, bDesc
+    );
     if( rc==SQLITE_OK &&  iRowid!=sqlite3Fts5ExprRowid(pCsr->pExpr) ){
       *pbSkip = 1;
     }
@@ -1093,7 +1111,9 @@ static int fts5CursorFirstSorted(
 static int fts5CursorFirst(Fts5FullTable *pTab, Fts5Cursor *pCsr, int bDesc){
   int rc;
   Fts5Expr *pExpr = pCsr->pExpr;
-  rc = sqlite3Fts5ExprFirst(pExpr, pTab->p.pIndex, pCsr->iFirstRowid, bDesc);
+  rc = sqlite3Fts5ExprFirst(
+      pExpr, pTab->p.pIndex, pCsr->iFirstRowid, pCsr->iLastRowid, bDesc
+  );
   if( sqlite3Fts5ExprEof(pExpr) ){
     CsrFlagSet(pCsr, FTS5CSR_EOF);
   }

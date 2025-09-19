@@ -1854,7 +1854,7 @@ static void replicaSide(SQLiteRsync *p){
             nRPage);
         }else{
           runSql(p,"INSERT INTO sendHash VALUES(1,1)");
-          subdivideHashRange(p, 2, nRPage);
+          subdivideHashRange(p, 2, nRPage-1);
         }
         sendHashMessages(p, 1, 1);
         runSql(p, "PRAGMA writable_schema=ON");
