@@ -443,6 +443,35 @@ cflags.common =  -I. -I$(dir $(sqlite3.c))
 # disables certain features if BigInt is not enabled and such builds
 # _are not tested_ on any regular basis.
 emcc.WASM_BIGINT ?= 1
+emcc.MEMORY64 ?= 0
+########################################################################
+# https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
+#
+# -sMEMORY64=1 fails to load, erroring with:
+#  invalid memory limits flags 0x5
+#    (enable via --experimental-wasm-memory64)
+#
+# -sMEMORY64=2 builds and loads but dies when we do things like:
+#
+#  new Uint8Array(wasm.heap8u().buffer, ptr, n)
+#
+# because ptr is now a BigInt, so is invalid for passing to arguments
+# which have strict must-be-a-Number requirements. That aspect will
+# make any eventual port to 64-bit address space painful, as such
+# constructs are found all over the place in the source code. We can
+# potentially replace all such uses with Number(ptr) as a
+# workaround. WASM 3.0[^wasm3] says that browsers will be limited to
+# 16gb, which is still well, well within range of
+# Number.MAX_SAFE_INTEGER. i.e. such a hack, though unsightly, would
+# seem to pose no inherent problems. The hard part will be finding all
+# such cases.
+#
+# [^wasm3]: https://webassembly.org/news/2025-09-17-wasm-3.0/
+########################################################################
+
+ifneq (0,$(emcc.MEMORY64))
+  SQLITE.CALL.C-PP.FILTER.global += -D64bit
+endif
 
 # emcc_opt = optimization-related flags. These are primarily used by
 # the various oX targets. build times for -O levels higher than 0 are
@@ -703,6 +732,7 @@ endif
 emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 # /INITIAL_MEMORY
 ########################################################################
+emcc.jsflags += -sMEMORY64=$(emcc.MEMORY64)
 
 emcc.jsflags += $(emcc.environment)
 emcc.jsflags += -sSTACK_SIZE=512KB
@@ -750,21 +780,6 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 #emcc.jsflags += --unresolved-symbols=import-dynamic --experimental-pic
 #emcc.jsflags += --experimental-pic --unresolved-symbols=ingore-all --import-undefined
 #emcc.jsflags += --unresolved-symbols=ignore-all
-
-########################################################################
-# -sMEMORY64=1 fails to load, erroring with:
-#  invalid memory limits flags 0x5
-#    (enable via --experimental-wasm-memory64)
-#
-# ^^^^ MEMORY64=2 builds and loads but dies when we do things like:
-#
-#  new Uint8Array(wasm.heap8u().buffer, ptr, n)
-#
-# because ptr is now a BigInt, so is invalid for passing to arguments
-# which have strict must-be-a-Number requirements. That aspect will
-# make any eventual port to 64-bit address space extremely painful, as
-# such constructs are found all over the place in the source code.
-########################################################################
 
 ########################################################################
 # -sSINGLE_FILE:
@@ -1050,10 +1065,12 @@ emcc.speedtest1.common += -sDYNAMIC_EXECUTION=0
 emcc.speedtest1.common += --minify 0
 emcc.speedtest1.common += -sEXPORT_NAME=$(sqlite3.js.init-func)
 emcc.speedtest1.common += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
+emcc.speedtest1.common += -sMEMORY64=$(emcc.MEMORY64)
+
 speedtest1.exit-runtime0 = -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get
-# this error from emscripten:
+# this error from Emscripten:
 #
 # > native function `free` called after runtime exit (use
 # NO_EXIT_RUNTIME to keep it alive after main() exits))
