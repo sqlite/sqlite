@@ -1,5 +1,5 @@
-C Fix\sthe\sdecimal_cmp()\sextension\sfunction\sto\sgive\scorrect\sresults\sin\ncorner\scases\ssuch\sas\snegative\szero\sand\stwo\sequivalent\svalues\swhere\sone\nhas\sextra\strailing\szeros\sto\sthe\sright\sof\sthe\sdecimal\spoint.\n[forum:/forumpost/367c770224|Forum\spost\s367c770224].
-D 2025-09-20T14:32:12.484
+C If\sthe\sfile-system\ssupports\sf2fs\sstyle\satomic-writes,\ssync\sthe\sdirectory\safter\sdeleting\sa\sjournal\sfile\sin\sjournal_mode=DELETE\smode\sin\ssynchronous=NORMAL\sor\ssynchronous=FULL\smodes\s(as\swell\sas\ssynchronous=EXTRA).
+D 2025-09-20T14:48:08.773
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -730,7 +730,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c b3da55bc4bb214b2bfb1e430b10e9d3ebcf6b11741921ab044c9b9539c8fcc4f
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
-F src/pager.c ee48e0cc9ae4abfd7c37b838bff62a14d520a9fa311007fa57929ac7cc5d609c
+F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y 619c3e92a54686c5e47923688c4b9bf7ec534a4690db5677acc28b299c403250
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2175,8 +2175,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0b14fd35ca37075bb65b2ab398f3324dc851347b1c042566eac23724013653f8
-R 39cc89ef66d5372714cdb7332df3f093
-U drh
-Z 90c3dcff7458cea56006e076b89ffebe
+P 25b3626a018fa5916d0e129ee057c3f709c6e4d0b84a1a3102cad127a39a3db9 c1e37cb70a8e93368c19ba0fdb987f0616abac028e3541d793a4e6f005b0e513
+R b7781ceecaf9ef4d5073dc7f7fcdbdd8
+T +closed c1e37cb70a8e93368c19ba0fdb987f0616abac028e3541d793a4e6f005b0e513
+U dan
+Z fec53c22feb086f8ac2bc8ff38fc9894
 # Remove this line to create a well-formed Fossil manifest.
