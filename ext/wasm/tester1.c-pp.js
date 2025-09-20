@@ -160,6 +160,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   const roundMs = (ms)=>Math.round(ms*100)/100;
 
+  const looksLikePtr = (v)=> v>=0;
+
   /**
      Helpers for writing sqlite3-specific tests.
   */
@@ -685,21 +687,21 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const p1 = w.scopedAlloc(16),
                 p2 = w.scopedAlloc(16);
           T.assert(1===w.scopedAlloc.level)
-            .assert(Number.isFinite(p1))
-            .assert(Number.isFinite(p2))
+            .assert(looksLikePtr(p1))
+            .assert(looksLikePtr(p2))
             .assert(asc[0] === p1)
             .assert(asc[1]===p2);
           asc2 = w.scopedAllocPush();
           const p3 = w.scopedAlloc(16);
           T.assert(2===w.scopedAlloc.level)
-            .assert(Number.isFinite(p3))
+            .assert(looksLikePtr(p3))
             .assert(2===asc.length)
             .assert(p3===asc2[0]);
 
           const [z1, z2, z3] = w.scopedAllocPtr(3);
-          T.assert('number'===typeof z1).assert(z2>z1).assert(z3>z2)
-            .assert(0===w.peek32(z1), 'allocPtr() must zero the targets')
-            .assert(0===w.peek32(z3));
+          T.assert(typeof w.NullPtr===typeof z1).assert(z2>z1).assert(z3>z2)
+            .assert(w.NullPtr===w.peekPtr(z1), 'allocPtr() must zero the targets')
+            .assert(w.NullPtr===w.peekPtr(z3));
         }finally{
           // Pop them in "incorrect" order to make sure they behave:
           w.scopedAllocPop(asc);
@@ -719,15 +721,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(1===w.scopedAlloc.level);
           const [cstr, n] = w.scopedAllocCString("hello, world", true);
           T.assert(12 === n)
-            .assert(0===w.peek8(cstr+n))
-            .assert(chr('d')===w.peek8(cstr+n-1));
+            .assert(0===w.peek8( w.ptrAdd(cstr,n) ))
+            .assert(chr('d')===w.peek8( w.ptrAdd(cstr, n, -1) ));
         });
       }/*scopedAlloc()*/
 
       //log("xCall()...");
       {
         const pJson = w.xCall('sqlite3__wasm_enum_json');
-        T.assert(Number.isFinite(pJson)).assert(w.cstrlen(pJson)>300);
+        T.assert(looksLikePtr(pJson)).assert(w.cstrlen(pJson)>300);
       }
 
       //log("xWrap()...");
@@ -741,7 +743,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let rc = fw();
         T.assert('string'===typeof rc).assert(rc.length>5);
         rc = w.xCallWrapped('sqlite3__wasm_enum_json','*');
-        T.assert(rc>0 && Number.isFinite(rc));
+        T.assert(rc>0 && looksLikePtr(rc));
         rc = w.xCallWrapped('sqlite3__wasm_enum_json','utf8');
         T.assert('string'===typeof rc).assert(rc.length>300);
 
@@ -840,8 +842,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             T.assert(12n===rc);
 
             w.scopedAllocCall(function(){
-              const pI1 = w.scopedAlloc(8), pI2 = pI1+4;
-              w.pokePtr([pI1, pI2], 0);
+              const pI1 = w.scopedAlloc(8), pI2 = w.ptrAdd(pI1, 4);
+              w.pokePtr([pI1, pI2], w.NullPtr);
               const f = w.xWrap('sqlite3__wasm_test_int64_minmax',undefined,['i64*','i64*']);
               const [r1, r2] = w.peek64([pI1, pI2]);
               T.assert(!Number.isSafeInteger(r1)).assert(!Number.isSafeInteger(r2));
@@ -859,23 +861,34 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         const S = sqlite3, W = S.wasm;
         const MyStructDef = {
-          sizeof: 16,
-          members: {
-            p4: {offset: 0, sizeof: 4, signature: "i"},
-            pP: {offset: 4, sizeof: 4, signature: "P"},
-            ro: {offset: 8, sizeof: 4, signature: "i", readOnly: true},
-            cstr: {offset: 12, sizeof: 4, signature: "s"}
-          }
+          sizeof: 0, members: {}
         };
+        const addMember = function(tgt, name, member){
+          member.offset = tgt.sizeof;
+          tgt.sizeof += member.sizeof;
+          tgt.members[name] = member;
+        };
+        const msd = MyStructDef;
+        addMember(msd, 'p4', {sizeof: 4, signature: "i"});
+        addMember(msd, 'pP', {sizeof: wasm.ptrSizeof, signature: "P"});
+        addMember(msd, 'ro', {
+          sizeof: 4,
+          signature: "i",
+          readOnly: true
+        });
+        addMember(msd, 'cstr', {
+          sizeof: wasm.ptrSizeof,
+          signature: "s"
+        });
         if(W.bigIntEnabled){
-          const m = MyStructDef;
-          m.members.p8 = {offset: m.sizeof, sizeof: 8, signature: "j"};
-          m.sizeof += m.members.p8.sizeof;
+          addMember(msd, 'p8', {sizeof: 8, signature: "j"});
         }
         const StructType = S.StructBinder.StructType;
         const K = S.StructBinder('my_struct',MyStructDef);
         T.mustThrowMatching(()=>K(), /via 'new'/).
-          mustThrowMatching(()=>new K('hi'), /^Invalid pointer/);
+          mustThrowMatching(()=>new K('hi'), (err)=>{
+            return /^Invalid pointer/.test(err.message) || /.*bigint.*/i.test(err.message);
+          });
         const k1 = new K(), k2 = new K();
         try {
           T.assert(k1.constructor === K).
@@ -895,10 +908,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                      "for "+key+" but got: "+k1[key]+
                      " from "+k1.memoryDump());
           });
-          T.assert('number' === typeof k1.pointer).
+          T.assert(looksLikePtr(k1.pointer)).
             mustThrowMatching(()=>k1.pointer = 1, /pointer/);
           k1.$p4 = 1; k1.$pP = 2;
-          T.assert(1 === k1.$p4).assert(2 === k1.$pP);
+          T.assert(1 == k1.$p4).assert(2 == k1.$pP);
           if(MyStructDef.members.$p8){
             k1.$p8 = 1/*must not throw despite not being a BigInt*/;
             k1.$p8 = BigInt(Number.MAX_SAFE_INTEGER * 2);

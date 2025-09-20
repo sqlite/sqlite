@@ -269,7 +269,9 @@ globalThis.WhWasmUtilInstaller = function(target){
      The number 0 as either type Number or BigInt, depending on
      target.pointerIR.
   */
-  target.NullPtr = __asPtrType(0);
+  const __NullPtr = __asPtrType(0);
+
+  target.NullPtr = __NullPtr;
 
   /** Stores various cached state. */
   const cache = Object.create(null);
@@ -1379,9 +1381,9 @@ globalThis.WhWasmUtilInstaller = function(target){
     }
     const a = [m];
     for(let i = 1; i < howMany; ++i){
-      m += (safePtrSize ? 8 : ptrSizeof);
+      m = __ptrAdd(m, (safePtrSize ? 8 : ptrSizeof));
       a[i] = m;
-      target.poke(m, 0, pIr);
+      target.poke(m, __NullPtr, pIr);
     }
     return a;
   };

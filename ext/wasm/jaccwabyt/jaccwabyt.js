@@ -64,14 +64,32 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         BigInt = globalThis['BigInt'],
         BigInt64Array = globalThis['BigInt64Array'],
         /* Undocumented (on purpose) config options: */
-        ptrSizeof = config.ptrSizeof || 4,
-        ptrIR = config.ptrIR || 'i32'
+        ptrIR = config.ptrIR || 'i32',
+        ptrSizeof = config.ptrSizeof || ('i32'===ptrIR ? 4 : 8)
   ;
   const __asPtrType = ('i32'==ptrIR)
         ? Number
-        : (target.bigIntEnabled
+        : (bigIntEnabled
            ? (v)=>BigInt(v || 0)
            : toss("Missing BigInt support"));
+  const __NullPtr = __asPtrType(0);
+  /**
+     Expects any number of numeric arguments, each one of either type
+     Number or BigInt. It sums them up (from an implicit starting
+     point of 0 or 0n) and returns them as a number of the same type
+     which target.asPtrType() uses.
+
+     This is a workaround for not being able to mix Number/BigInt in
+     addition/subtraction expressions (which we frequently need for
+     calculating pointer offsets).
+  */
+  const __ptrAdd = function(...args){
+    let rc = __NullPtr;
+    for( let i = 0; i < args.length; ++i ){
+      rc += __asPtrType(args[i]);
+    }
+    return rc;
+  };
 
   if(!SBF.debugFlags){
     SBF.__makeDebugFlags = function(deriveFrom=null){
@@ -293,7 +311,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   const __memoryDump = function(){
     const p = this.pointer;
     return p
-      ? new Uint8Array(heap().slice(p, p+this.structInfo.sizeof))
+      ? new Uint8Array(heap().slice(Number(p), Number(p) + this.structInfo.sizeof))
       : null;
   };
 
@@ -667,11 +685,12 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     const zeroAsPtr = __asPtrType(0);
     const StructCtor = function StructCtor(externalMemory){
       externalMemory = __asPtrType(externalMemory);
+      //console.warn("externalMemory",externalMemory,arguments[0]);
       if(!(this instanceof StructCtor)){
         toss("The",structName,"constructor may only be called via 'new'.");
       }else if(arguments.length){
-        if(externalMemory<=zeroAsPtr){
-          toss("Invalid pointer value for",structName,"constructor.");
+        if(Number.isNaN(externalMemory) || externalMemory<=zeroAsPtr){
+          toss("Invalid pointer value",arguments[0],"for",structName,"constructor.");
         }
         __allocStruct(StructCtor, this, externalMemory);
       }else{

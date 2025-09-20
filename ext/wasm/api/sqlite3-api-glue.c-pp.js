@@ -732,6 +732,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     alloc: wasm.alloc,
     dealloc: wasm.dealloc,
     bigIntEnabled: wasm.bigIntEnabled,
+    ptrIR: wasm.pointerIR,
     memberPrefix: /* Never change this: this prefix is baked into any
                      amount of code and client-facing docs. (Much
                      later: it probably should have been '$$', but see
