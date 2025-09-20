@@ -408,6 +408,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(0===mod.$iVersion){
         let v;
         if('number'===typeof opt.iVersion) v = opt.iVersion;
+        else if(mod.$xIntegrity) v = 4;
         else if(mod.$xShadowName) v = 3;
         else if(mod.$xSavePoint || mod.$xRelease || mod.$xRollbackTo) v = 2;
         else v = 1;

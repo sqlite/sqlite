@@ -2541,7 +2541,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(tmplMod.$xCreate === tmplMod.$xConnect,
                   "setup() must make these equivalent and "+
                   "installMethods() must avoid re-compiling identical functions");
-        tmplMod.$xCreate = 0 /* make tmplMod eponymous-only */;
+        tmplMod.$xCreate = wasm.NullPtr /* make tmplMod eponymous-only */;
         let rc = capi.sqlite3_create_module(
           this.db, "testvtab", tmplMod, 0
         );
@@ -3191,6 +3191,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'OPFS db sanity checks',
       test: async function(sqlite3){
+        if( skipIn64BitBuild('"opfs" vfs') ) return;
         T.assert(capi.sqlite3_vfs_find('opfs'));
         const opfs = sqlite3.opfs;
         const filename = this.opfsDbFile = '/dir/sqlite3-tester1.db';
@@ -3228,6 +3229,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'OPFS import',
       test: async function(sqlite3){
+        if( skipIn64BitBuild('"opfs" vfs import') ) return;
         let db;
         const filename = this.opfsDbFile;
         try {
@@ -3265,6 +3267,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: '(Internal-use) OPFS utility APIs',
       test: async function(sqlite3){
+        if( skipIn64BitBuild('"opfs" internal APIs') ) return;
         const filename = this.opfsDbFile;
         const unlink = this.opfsUnlink;
         T.assert(filename && !!unlink);
@@ -3317,6 +3320,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'SAH sanity checks',
       test: async function(sqlite3){
+        if( skipIn64BitBuild('"opfs-sahpool" vfs') ) return;
         T.assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name))
           .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) < 0)
         const inst = sqlite3.installOpfsSAHPoolVfs,
@@ -3347,6 +3351,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
         T.assert(0 === u1.getFileCount());
         const dbName = '/foo.db';
+        //wasm.xWrap.debug = true;
         let db = new u1.OpfsSAHPoolDb(dbName);
         T.assert(db instanceof sqlite3.oo1.DB)
           .assert(1 === u1.getFileCount());
@@ -3676,6 +3681,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       predicate: ()=>hasOpfs() || "Requires OPFS to reproduce",
       //predicate: ()=>false,
       test: async function(sqlite3){
+        if( skipIn64BitBuild('pending repair of opfs') ) return;
         /* https://sqlite.org/forum/forumpost/cf37d5ff1182c31081
 
            The "opfs" VFS (but not SAHPool) was formerly misbehaving

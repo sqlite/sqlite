@@ -1028,8 +1028,8 @@ const char * sqlite3__wasm_enum_json(void){
       M(xDelete,           "i(ppi)");
       M(xAccess,           "i(ppip)");
       M(xFullPathname,     "i(ppip)");
-      M(xDlOpen,           "p(pp)");
-      M(xDlError,          "p(pip)");
+      M(xDlOpen,           "v(pp)");
+      M(xDlError,          "v(pip)");
       M(xDlSym,            "p()");
       M(xDlClose,          "v(pp)");
       M(xRandomness,       "i(pip)");
@@ -1082,7 +1082,6 @@ const char * sqlite3__wasm_enum_json(void){
     } _StructBinder;
 #undef CurrentStruct
 
-
 #if SQLITE_WASM_HAS_VTAB
 #define CurrentStruct sqlite3_vtab
     StructBinder {
@@ -1126,6 +1125,8 @@ const char * sqlite3__wasm_enum_json(void){
       M(xRollbackTo,    "i(pi)");
       // ^^^ v2. v3+ follows...
       M(xShadowName,    "i(s)");
+      // ^^^ v3. v4+ follows...
+      M(xIntegrity,     "i(pppip)");
     } _StructBinder;
 #undef CurrentStruct
 
