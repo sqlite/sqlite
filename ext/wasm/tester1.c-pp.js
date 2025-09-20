@@ -73,9 +73,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       && navigator?.storage?.getDirectory;
   };
 
-  const skipIn64BitBuild = function(){
+  const skipIn64BitBuild = function(msg=''){
 //#if sMEMORY64=1
-    error("Skipping known-broken tests for 64-bit build"); return true;
+    error("Skipping known-broken tests for 64-bit build.",msg); return true;
 //#else
     return false;
 //#endif
@@ -2353,7 +2353,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'virtual table #1: eponymous w/ manual exception handling',
       predicate: (sqlite3)=>(!!sqlite3.capi.sqlite3_vtab || "Missing vtab support"),
       test: function(sqlite3){
-        if( skipIn64BitBuild() ) return;
+        if( skipIn64BitBuild('virtual table #1') ) return;
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
           A: 0, B: 1
@@ -2562,7 +2562,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
       predicate: (sqlite3)=>!!sqlite3.capi.sqlite3_vtab || "Missing vtab support",
       test: function(sqlite3){
-        if( skipIn64BitBuild() ) return;
+        if( skipIn64BitBuild('virtual table #2') ) return;
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
           A: 0, B: 1
@@ -2909,7 +2909,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: "sqlite3_commit/rollback/update_hook()",
       predicate: ()=>wasm.bigIntEnabled || "Update hook requires int64",
       test: function(sqlite3){
-        if( skipIn64BitBuild() ) return;
         let countCommit = 0, countRollback = 0;;
         const db = new sqlite3.oo1.DB(':memory:',1 ? 'c' : 'ct');
         let rc = capi.sqlite3_commit_hook(db, (p)=>{
@@ -2932,6 +2931,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           d.exec("create table t(a)");
         });
         T.assert(2 === countCommit);
+        T.assert(17 == capi.sqlite3_commit_hook(db, 0, 0));
 
         // Rollback hook:
         rc = capi.sqlite3_rollback_hook(db, (p)=>{
@@ -2955,13 +2955,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           return capi.SQLITE_FULL === e.resultCode
         });
         T.assert(1 === countRollback);
+        T.assert(21 == capi.sqlite3_rollback_hook(db, 0, 0));
 
         // Update hook...
         const countUpdate = Object.create(null);
         capi.sqlite3_update_hook(db, (p,op,dbName,tbl,rowid)=>{
           T.assert('main' === dbName.toLowerCase())
             .assert('t' === tbl.toLowerCase())
-            .assert(3===p)
+            .assert(33==p)
             .assert('bigint' === typeof rowid);
           switch(op){
               case capi.SQLITE_INSERT:
@@ -2971,26 +2972,23 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                 break;
               default: toss("Unexpected hook operator:",op);
           }
-        }, 3);
-        //wasm.xWrap.debug = true;
+        }, 33);
         db.transaction((d)=>{
-          d.exec([
+          db.exec([
             "insert into t(a) values(1);",
             "update t set a=2;",
             "update t set a=3;",
-            "delete from t where a=3"
+            "delete from t where a=3;"
             // update hook is not called for an unqualified DELETE
           ]);
         });
         T.assert(1 === countRollback)
-          .assert(3 === countCommit)
+          .assert(2 === countCommit)
           .assert(1 === countUpdate[capi.SQLITE_INSERT])
           .assert(2 === countUpdate[capi.SQLITE_UPDATE])
           .assert(1 === countUpdate[capi.SQLITE_DELETE]);
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
-        T.assert(1 === capi.sqlite3_commit_hook(db, 0, 0));
-        T.assert(2 === capi.sqlite3_rollback_hook(db, 0, 0));
-        T.assert(3 === capi.sqlite3_update_hook(db, 0, 0));
+        T.assert(33 == capi.sqlite3_update_hook(db, 0, 0));
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
         db.close();
       }
@@ -3201,6 +3199,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           'create table p(a);',
           'insert into p(a) values(1),(2),(3)'
         ];
+        wasm.xWrap.debug = true;
         let db = new sqlite3.oo1.OpfsDb(fileUri);
         try {
           db.exec(initSql);

@@ -362,8 +362,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_update_hook", "*", [
         "sqlite3*",
         new wasm.xWrap.FuncPtrAdapter({
-          name: 'sqlite3_update_hook',
-          signature: "v(iippj)",
+          name: 'sqlite3_update_hook::callback',
+          signature: "v(pippj)",
           contextKey: (argv)=>argv[0/* sqlite3* */],
           callProxy: (callback)=>{
             return (p,op,z0,z1,rowid)=>{
