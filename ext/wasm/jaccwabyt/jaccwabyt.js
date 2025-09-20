@@ -629,18 +629,19 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         if(!this.pointer){
           toss("Cannot set struct property on disposed instance.");
         }
-        if(null===v) v = 0;
+        if(null===v) v = __NullPtr;
         else while(!isNumericValue(v)){
           if(isAutoPtrSig(descr.signature) && (v instanceof StructType)){
             // It's a struct instance: let's store its pointer value!
-            v = v.pointer || 0;
+            v = v.pointer || __NullPtr;
             if(dbg.setter) log("debug.setter:",xPropName,"resolved to",v);
             break;
           }
           toss("Invalid value for pointer-type",xPropName+'.');
         }
         (
-          new DataView(heap().buffer, Number(this.pointer) + descr.offset, descr.sizeof)
+          new DataView(heap().buffer, Number(this.pointer) + descr.offset,
+                       descr.sizeof)
         )[f._.setters[sigGlyph]](0, f._.sw[sigGlyph](v), isLittleEndian);
       };
     }

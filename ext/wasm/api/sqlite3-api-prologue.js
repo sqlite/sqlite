@@ -1413,7 +1413,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     let pOut;
     try{
       const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.pointerSizeof);
-      const ppOut = pSize + 8;
+      const ppOut = wasm.ptrAdd(pSize, 8);
       /**
          Maintenance reminder, since this cost a full hour of grief
          and confusion: if the order of pSize/ppOut are reversed in
@@ -1423,7 +1423,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       */
       const zSchema = schema
             ? (wasm.isPtr(schema) ? schema : wasm.scopedAllocCString(''+schema))
-            : 0;
+            : wasm.NullPtr;
       let rc = wasm.exports.sqlite3__wasm_db_serialize(
         pDb, zSchema, ppOut, pSize, 0
       );
@@ -1434,7 +1434,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       pOut = wasm.peekPtr(ppOut);
       const nOut = wasm.peek(pSize, 'i64');
       rc = nOut
-        ? wasm.heap8u().slice(pOut, pOut + Number(nOut))
+        ? wasm.heap8u().slice(Number(pOut), Number(pOut) + Number(nOut))
         : new Uint8Array();
       return rc;
     }finally{
@@ -1828,7 +1828,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           if(n && !pBlob) sqlite3.WasmAllocError.toss(
             "Cannot allocate memory for blob argument of",n,"byte(s)"
           );
-          arg = n ? wasm.heap8u().slice(pBlob, pBlob + Number(n)) : null;
+          arg = n
+            ? wasm.heap8u().slice(Number(pBlob), Number(pBlob) + Number(n))
+            : null;
           break;
         }
         case capi.SQLITE_NULL:
@@ -1862,7 +1864,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          do not.
       */
       tgt.push(capi.sqlite3_value_to_js(
-        wasm.peekPtr(pArgv + (wasm.pointerSizeof * i)),
+        wasm.peekPtr(wasm.ptrAdd(pArgv, wasm.pointerSizeof * i)),
         throwIfCannotConvert
       ));
     }

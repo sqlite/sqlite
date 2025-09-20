@@ -1846,7 +1846,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name:'Scalar UDFs',
       test: function(sqlite3){
         const db = this.db;
-        db.createFunction("foo",(pCx,a,b)=>a+b);
+        db.createFunction(
+          "foo",
+          1 ? (pCx,a,b)=>a+b
+            : (pCx,a,b)=>{
+              /*return sqlite3.capi.sqlite3_result_error_js(
+                db, sqlite3.capi.SQLITE_ERROR, "foo???"
+              );*/
+              console.debug("foo UDF", pCx, a, b);
+              return Number(a)+Number(b);
+            }
+        );
         T.assert(7===db.selectValue("select foo(3,4)")).
           assert(5===db.selectValue("select foo(3,?)",2)).
           assert(5===db.selectValue("select foo(?,?2)",[1,4])).
@@ -2186,7 +2196,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(wasm.isPtr(pVoid))
           .assert(wasm.isPtr(aVals))
           .assert(wasm.isPtr(aCols))
-          .assert(+wasm.cstrToJs(wasm.peekPtr(aVals + wasm.pointerSizeof))
+          .assert(+wasm.cstrToJs(wasm.peekPtr(wasm.ptrAdd(aVals, wasm.pointerSizeof)))
                   === 2 * +wasm.cstrToJs(wasm.peekPtr(aVals)));
         return 0;
       });
@@ -2293,7 +2303,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                                            in the call :/ */));
 
             const pMin = w.scopedAlloc(16);
-            const pMax = pMin + 8;
+            const pMax = w.ptrAdd(pMin, 8);
             const g64 = (p)=>w.peek64(p);
             w.poke64([pMin, pMax], 0);
             const minMaxI64 = [
@@ -2344,7 +2354,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
            ext/misc/templatevtab.c.
         */
         const tmplMod = new sqlite3.capi.sqlite3_module();
-        T.assert(0===tmplMod.$xUpdate);
+        T.assert(!tmplMod.$xUpdate);
         tmplMod.setupModule({
           catchExceptions: false,
           methods: {
@@ -2506,7 +2516,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           }
         });
         this.db.onclose.disposeAfter.push(tmplMod);
-        T.assert(0===tmplMod.$xUpdate)
+        T.assert(!tmplMod.$xUpdate)
           .assert(tmplMod.$xCreate)
           .assert(tmplMod.$xCreate === tmplMod.$xConnect,
                   "setup() must make these equivalent and "+

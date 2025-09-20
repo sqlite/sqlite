@@ -738,14 +738,14 @@ globalThis.WhWasmUtilInstaller = function(target){
      be a pointer type and is treated as the WASM numeric type
      appropriate for the pointer size (==this.pointerIR).
 
-     While likely not obvious, this routine and its poke()
-     counterpart are how pointer-to-value _output_ parameters
-     in WASM-compiled C code can be interacted with:
+     While possibly not obvious, this routine and its poke()
+     counterpart are how pointer-to-value _output_ parameters in
+     WASM-compiled C code can be interacted with:
 
      ```
      const ptr = alloc(4);
      poke32(ptr, 0); // clear the ptr's value
-     aCFuncWithOutputPtrToInt32Arg( ptr ); // e.g. void foo(int *x);
+     aCFuncWithOutputPtrToInt32Arg(ptr); // e.g. void foo(int *x);
      const result = peek32(ptr); // fetch ptr's value
      dealloc(ptr);
      ```
@@ -759,7 +759,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      try{
        const ptr = scopedAlloc(4);
        poke32(ptr, 0);
-       aCFuncWithOutputPtrArg( ptr );
+       aCFuncWithOutputPtrArg(ptr);
        result = peek32(ptr);
      }finally{
        scopedAllocPop(scope);
@@ -773,6 +773,12 @@ globalThis.WhWasmUtilInstaller = function(target){
      ACHTUNG: calling this often, e.g. in a loop, can have a noticably
      painful impact on performance. Rather than doing so, use
      heapForSize() to fetch the heap object and read directly from it.
+
+     ACHTUNG #2: ptr may be a BigInt (and generally will be in 64-bit
+     builds) but this function must coerce it into a Number in order
+     to access the heap's contents. Ergo: BitInts outside of the
+     (extrardinarily genereous) address range exposed to browser-side
+     WASM may cause misbehavior.
 
      See also: poke()
   */
@@ -818,11 +824,9 @@ globalThis.WhWasmUtilInstaller = function(target){
 
      Returns `this`. (Prior to 2022-12-09 it returned this function.)
 
-     ACHTUNG: calling this often, e.g. in a loop to populate a large
-     chunk of memory, can have a noticably painful impact on
-     performance. Rather than doing so, use heapForSize() to fetch the
-     heap object and assign directly to it or use the heap's set()
-     method.
+     ACHTUNG #1: see peek()'s ACHTUNG #1.
+
+     ACHTUNG #2: see peek()'s ACHTUNG #2.
   */
   target.poke = function(ptr, value, type='i8'){
     if (type.endsWith('*')) type = ptrIR;
@@ -1385,7 +1389,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   target.cArgvToJs = (argc, pArgv)=>{
     const list = [];
     for(let i = 0; i < argc; ++i){
-      const arg = target.peekPtr(pArgv + (target.pointerSizeof * i));
+      const arg = target.peekPtr(__ptrAdd(pArgv, target.pointerSizeof * i));
       list.push( arg ? target.cstrToJs(arg) : null );
     }
     return list;
@@ -1529,7 +1533,9 @@ globalThis.WhWasmUtilInstaller = function(target){
     /* This Number(i) is unsatisfying but it enables i32-type args which
        are inadvertently passed a BigInt (which is easy to do) to
        play along instead of causing an exception about lack of implicit
-       conversions from BigInt to Number. */
+       conversions from BigInt to Number. Or, more cryptically, a
+       function signature mismatch error without much context to track
+       it down. */
       : (i)=>i|0
   );
   xArg

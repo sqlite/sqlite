@@ -1487,7 +1487,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         v = v.join("");
         n = -1;
       }/*else if( 'bigint'===typeof n ){
-        // tag:64-bit A workaround for when a stray BigInt, possibly
+        // tag:64bit A workaround for when a stray BigInt, possibly
         // calculated via a pointer range, gets passed in here. This
         // has been seen to happen in sqlite3_prepare_v3() via
         // oo1.DB.exec().

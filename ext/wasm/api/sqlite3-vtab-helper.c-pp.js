@@ -34,7 +34,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   sii.prototype.nthConstraint = function(n, asPtr=false){
     if(n<0 || n>=this.$nConstraint) return false;
-    const ptr = this.$aConstraint + (
+    const ptr = wasm.ptrAdd(
+      this.$aConstraint,
       sii.sqlite3_index_constraint.structInfo.sizeof * n
     );
     return asPtr ? ptr : new sii.sqlite3_index_constraint(ptr);
@@ -48,7 +49,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   sii.prototype.nthConstraintUsage = function(n, asPtr=false){
     if(n<0 || n>=this.$nConstraint) return false;
-    const ptr = this.$aConstraintUsage + (
+    const ptr = wasm.ptrAdd(
+      this.$aConstraintUsage,
       sii.sqlite3_index_constraint_usage.structInfo.sizeof * n
     );
     return asPtr ? ptr : new sii.sqlite3_index_constraint_usage(ptr);
@@ -64,7 +66,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   sii.prototype.nthOrderBy = function(n, asPtr=false){
     if(n<0 || n>=this.$nOrderBy) return false;
-    const ptr = this.$aOrderBy + (
+    const ptr = wasm.ptrAdd(
+      this.$aOrderBy,
       sii.sqlite3_index_orderby.structInfo.sizeof * n
     );
     return asPtr ? ptr : new sii.sqlite3_index_orderby(ptr);
