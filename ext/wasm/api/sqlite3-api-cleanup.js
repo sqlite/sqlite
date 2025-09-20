@@ -21,16 +21,28 @@
 'use strict';
 if('undefined' !== typeof Module){ // presumably an Emscripten build
   /**
-     Install a suitable default configuration for sqlite3ApiBootstrap().
+     The WASM-environment-specific configuration pieces
+     for sqlite3ApiBootstrap().
   */
   const SABC = Object.assign(
-    Object.create(null), {
+    Object.create(null),
+    globalThis.sqlite3ApiConfig || {},
+    {
       exports: ('undefined'===typeof wasmExports)
         ? Module['asm']/* emscripten <=3.1.43 */
         : wasmExports  /* emscripten >=3.1.44 */,
-      memory: Module.wasmMemory /* gets set if built with -sIMPORTED_MEMORY */
-    },
-    globalThis.sqlite3ApiConfig || {}
+      memory: Module.wasmMemory /* gets set if built with -sIMPORTED_MEMORY */,
+//#if sMEMORY64=1
+      wasmPtrSizeof: 8,
+      wasmPtrIR: 'i64',
+//#elif sMEMORY64=2
+      wasmPtrSizeof: 8/*???*/,
+      wasmPtrIR: 'i64'/*???*/,
+//#else
+      wasmPtrSizeof: 4,
+      wasmPtrIR: 'i32',
+//#endif
+    }
   );
 
   /**
@@ -44,10 +56,11 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
      able to provide the necessary configuration state.
   */
   //console.warn("globalThis.sqlite3ApiConfig = ",globalThis.sqlite3ApiConfig);
-  globalThis.sqlite3ApiConfig = SABC;
-  let sqlite3;
   try{
-    sqlite3 = globalThis.sqlite3ApiBootstrap();
+    Module.sqlite3 = globalThis.sqlite3ApiBootstrap(SABC)
+      /* Our customized sqlite3InitModule() in extern-post-js.js needs
+         this to be able to pass the sqlite3 object off to the
+         client. */;
   }catch(e){
     console.error("sqlite3ApiBootstrap() error:",e);
     throw e;
@@ -56,8 +69,6 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
     delete globalThis.sqlite3ApiConfig;
   }
 
-  Module.sqlite3 = sqlite3 /* Needed for customized sqlite3InitModule() to be able to
-                              pass the sqlite3 object off to the client. */;
 }else{
   console.warn("This is not running in an Emscripten module context, so",
                "globalThis.sqlite3ApiBootstrap() is _not_ being called due to lack",

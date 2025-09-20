@@ -14,6 +14,10 @@
 
   https://fossil.wanderinghorse.net/r/jaccwabyt
 
+  More specifically:
+
+  https://fossil.wanderinghorse.net/r/jaccwabyt/file/common/whwasmutil.js
+
   and SQLite:
 
   https://sqlite.org
@@ -32,11 +36,11 @@
    utility APIs provided by this code are still usable as replacements
    for their Emscripten counterparts.
 
-   Forewarning: this API explicitly targets only browser
-   environments. If a given non-browser environment has the
-   capabilities needed for a given feature (e.g. TextEncoder), great,
-   but it does not go out of its way to account for them and does not
-   provide compatibility crutches for them.
+   Forewarning: this API explicitly targets only browser environments.
+   If a given non-browser environment has the capabilities needed for
+   a given feature (e.g. TextEncoder), great, but it does not go out
+   of its way to account for them and does not provide compatibility
+   crutches for them.
 
    Intended usage:
 
@@ -162,20 +166,22 @@
 
    - `pointerIR`: an IR-format string for the WASM environment's
       pointer size. If set it must be either 'i32' or 'i64'. If not
-      set, it defaults to whatever this code thinks the pointer size
+      set, it gets set to whatever this code thinks the pointer size
       is.  Modifying it after this call has no effect.
-      target.pointerSizeof gets set to either 4 or 8, depending on
-      this option.
 
+   - `pointerSizeof`: if set, it must be one of 4 or 8 and must
+      correspond to the value of `pointerIR`. If not set, it gets set
+      to whatever this code thinks the pointer size is (4 unless
+      `pointerIR` is 'i64'). If `pointerSizeof` is set but `pointerIR`
+      is not, `pointerIR` gets set appropriately, and vice versa.
 
-   This code is developed and maintained in conjunction with the
-   Jaccwabyt project:
+   When building with Emscripten's -sMEMORY64=1, `pointerIR` must be
+   set to 'i64' and/or `pointerSizeof` must be set to 8.
 
-   https://fossil.wanderinghorse.net/r/jaccwabyt
+   Design notes:
 
-   More specifically:
-
-   https://fossil.wanderinghorse.net/r/jaccwabyt/file/common/whwasmutil.js
+   - It should probably take a config object and return the
+     target. The current approach seemed better at the time.
 */
 globalThis.WhWasmUtilInstaller = function(target){
   'use strict';
@@ -187,12 +193,53 @@ globalThis.WhWasmUtilInstaller = function(target){
       all args with a space between each. */
   const toss = (...args)=>{throw new Error(args.join(' '))};
 
-  if(!target.exports){
-    Object.defineProperty(target, 'exports', {
-      enumerable: true, configurable: true,
-      get: ()=>(target.instance && target.instance.exports)
-    });
+  /**
+     Pointers in WASM are currently assumed to be 32-bit, but someday
+     that will certainly change.
+
+     2025-09-19: work has started in getting this library to work with
+     Emscripten's -sMEMORY64=1.
+  */
+  if( target.pointerSizeof && !target.pointerIR ){
+    target.pointerIR = (4===target.pointerSizeof ? 'i32' : 'i64');
   }
+  const ptrIR = (target.pointerIR ??= 'i32');
+  const ptrSizeof = (target.pointerSizeof ??=
+                     ('i32'===ptrIR ? 4 : ('i64'===ptrIR ? 8 : 0)));
+
+  if( 'i32'!==ptrIR && 'i64'!==ptrIR ){
+    toss("Invalid pointerIR:",ptrIR);
+  }
+  if( 8!==ptrSizeof && 4!==ptrSizeof ){
+    toss("Invalid pointerSizeof:",ptrSizeof);
+  }
+
+  /**
+     If target.pointerIR=='i32' then this is equivalent to
+     Number(v) else it's equivalent to BigInt(v||0).
+
+     Why? Because Number(null)===0, but BigInt(null) throws.
+  */
+  const __asPtrType = (4===ptrSizeof)
+        ? Number
+        : (target.bigIntEnabled
+           ? ((v)=>BigInt(v || 0))
+           : toss("Missing BigInt support"));
+
+  target.asPtrType = __asPtrType;
+
+  /**
+     The number 0 as either type Number or BigInt, depending on
+     target.pointerIR.
+  */
+  const __NullPtr = __asPtrType(0);
+
+  target.NullPtr = __NullPtr;
+
+  /**
+     The typeof X value for target.NullPtr
+  */
+  //target.pointerTypeof = typeof __NullPtr;
 
   /*********
     alloc()/dealloc() auto-install...
@@ -224,30 +271,6 @@ globalThis.WhWasmUtilInstaller = function(target){
   }*******/
 
   /**
-     Pointers in WASM are currently assumed to be 32-bit, but someday
-     that will certainly change.
-  */
-  const ptrIR = target.pointerIR || (target.pointerIR = 'i32');
-  const ptrSizeof = target.pointerSizeof =
-        ('i32'===ptrIR ? 4
-         : ('i64'===ptrIR
-            ? 8 : toss("Unhandled pointerIR:",ptrIR)));
-
-  /**
-     If target.pointerIR=='i32' then this is equivalent to
-     Number(v) else it's equivalent to BigInt(v||0).
-
-     Why? Because Number(null)===0, but BigInt(null) throws.
-  */
-  const __asPtrType = ('i32'==ptrIR)
-        ? Number
-        : (target.bigIntEnabled
-           ? ((v)=>BigInt(v || 0))
-           : toss("Missing BigInt support"));
-
-  target.asPtrType = __asPtrType;
-
-  /**
      Expects any number of numeric arguments, each one of either type
      Number or BigInt. It sums them up (from an implicit starting
      point of 0 or 0n) and returns them as a number of the same type
@@ -267,13 +290,13 @@ globalThis.WhWasmUtilInstaller = function(target){
 
   target.ptrAdd = __ptrAdd;
 
-  /**
-     The number 0 as either type Number or BigInt, depending on
-     target.pointerIR.
-  */
-  const __NullPtr = __asPtrType(0);
 
-  target.NullPtr = __NullPtr;
+  if(!target.exports){
+    Object.defineProperty(target, 'exports', {
+      enumerable: true, configurable: true,
+      get: ()=>(target?.instance?.exports)
+    });
+  }
 
   /** Stores various cached state. */
   const cache = Object.create(null);
@@ -898,12 +921,11 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.isPtr32 = (ptr)=>('number'===typeof ptr && (ptr===(ptr|0)) && ptr>=0);
 
-  /* UNTESTED */
   target.isPtr64 = (ptr)=>{
     if( 'bigint'===typeof ptr ){
       return ptr >= 0;
     }
-    return ('number'===typeof ptr && (ptr===(ptr|0)) && ptr>=0);
+    return ('number'===typeof ptr && ptr>=0 && (ptr===(ptr|0)));
   };
 
   /**
@@ -1034,6 +1056,8 @@ globalThis.WhWasmUtilInstaller = function(target){
     if(!tgt || (!(tgt instanceof Int8Array) && !(tgt instanceof Uint8Array))){
       toss("jstrcpy() target must be an Int8Array or Uint8Array.");
     }
+    maxBytes = Number(maxBytes)/*tag:64bit*/;
+    offset = Number(offset)/*tag:64bit*/;
     if(maxBytes<0) maxBytes = tgt.length - offset;
     if(!(maxBytes>0) || !(offset>=0)) return 0;
     let i = 0, max = jstr.length;
@@ -1498,7 +1522,17 @@ globalThis.WhWasmUtilInstaller = function(target){
     xArg.set('i64', (i)=>BigInt(i || 0));
   }
   const __xArgPtr = __asPtrType;
-  xArg.set('i32', (i)=>(i | 0) )
+  xArg.set(
+    'i32',
+    0
+      ? (i)=>Number(i) | 0
+    /* This Number(i) is unsatisfying but it enables i32-type args which
+       are inadvertently passed a BigInt (which is easy to do) to
+       play along instead of causing an exception about lack of implicit
+       conversions from BigInt to Number. */
+      : (i)=>i|0
+  );
+  xArg
     .set('i16', (i)=>((i | 0) & 0xFFFF))
     .set('i8', (i)=>((i | 0) & 0xFF))
     .set('f32', (i)=>Number(i).valueOf())
@@ -1796,13 +1830,19 @@ globalThis.WhWasmUtilInstaller = function(target){
        exactly the 2nd and 3rd arguments are.
     */
     convertArg(v,argv,argIndex){
-      //FuncPtrAdapter.debugOut("FuncPtrAdapter.convertArg()",this.name,this.signature,this.transient,v);
       let pair = this.singleton;
       if(!pair && this.isContext){
         pair = this.contextMap(this.contextKey(argv,argIndex));
         //FuncPtrAdapter.debugOut(this.name, this.signature, "contextKey() =",this.contextKey(argv,argIndex), pair);
       }
-      if(pair && pair[0]===v){
+      if( 0 ){
+        FuncPtrAdapter.debugOut("FuncPtrAdapter.convertArg()",this.name,
+                                'signature =',this.signature,
+                                'transient ?=',this.transient,
+                                'pair =',pair,
+                                'v =',v);
+      }
+      if(pair && 2===pair.length && pair[0]===v){
         /* We have already handled this function. */
         return pair[1];
       }
@@ -1838,23 +1878,22 @@ globalThis.WhWasmUtilInstaller = function(target){
             }
             catch(e){/*ignored*/}
           }
-          pair[0] = arguments[0]/*the original v*/;
+          pair[0] = arguments[0] || __NullPtr/*the original v*/;
           pair[1] = fp;
         }
         return fp;
       }else if(target.isPtr(v) || null===v || undefined===v){
-        //FuncPtrAdapter.debugOut("FuncPtrAdapter.convertArg()",this.name,this.signature,this.transient,v,pair);
         if(pair && pair[1] && pair[1]!==v){
           /* uninstall stashed mapping and replace stashed mapping with v. */
           if(FuncPtrAdapter.debugFuncInstall){
             FuncPtrAdapter.debugOut("FuncPtrAdapter uninstalling", this,
                                     this.contextKey(argv,argIndex), '@'+pair[1], v);
           }
-          try{ cache.scopedAlloc.pushPtr(pair[1]); }
+          try{cache.scopedAlloc.pushPtr(pair[1]);/*see notes above*/}
           catch(e){/*ignored*/}
-          pair[0] = pair[1] = (v | 0);
+          pair[0] = pair[1] = (v || __NullPtr);
         }
-        return v || 0;
+        return v || __NullPtr;
       }else{
         throw new TypeError("Invalid FuncPtrAdapter argument type. "+
                             "Expecting a function pointer or a "+
@@ -2150,6 +2189,9 @@ globalThis.WhWasmUtilInstaller = function(target){
           https://sqlite.org/forum/forumpost/b549992634b55104
         */
         let i = 0;
+        if( callee.debug ){
+          console.debug("xWrap() preparing: resultType ",resultType, 'xf',xf,"argTypes",argTypes,"args",args);
+        }
         for(; i < args.length; ++i) args[i] = cxw.convertArgNoCheck(
           argTypes[i], args[i], args, i
         );
@@ -2327,28 +2369,26 @@ globalThis.WhWasmUtilInstaller = function(target){
 
    - `uri`: required URI of the WASM file to load.
 
-   - `onload(loadResult,config)`: optional callback. The first
-     argument is the result object from
-     WebAssembly.instantiate[Streaming](). The 2nd is the config
-     object passed to this function. Described in more detail below.
+   - `onload(loadResult)`: optional callback. Its argument is an
+     object described in more detail below.
 
    - `imports`: optional imports object for
-     WebAssembly.instantiate[Streaming](). The default is an empty set
-     of imports. If the module requires any imports, this object
+     WebAssembly.instantiate[Streaming]().  The default is an empty
+     set of imports. If the module requires any imports, this object
      must include them.
 
    - `wasmUtilTarget`: optional object suitable for passing to
      WhWasmUtilInstaller(). If set, it gets passed to that function
-     after the promise resolves. This function sets several properties
-     on it before passing it on to that function (which sets many
-     more):
+     before the returned promise resolves. This function sets several
+     properties on it before passing it on to that function (which
+     sets many more):
 
      - `module`, `instance`: the properties from the
        instantiate[Streaming]() result.
 
      - If `instance.exports.memory` is _not_ set then it requires that
        `config.imports.env.memory` be set (else it throws), and
-       assigns that to `target.memory`.
+       assigns that to `wasmUtilTarget.memory`.
 
      - If `wasmUtilTarget.alloc` is not set and
        `instance.exports.malloc` is, it installs
@@ -2357,14 +2397,15 @@ globalThis.WhWasmUtilInstaller = function(target){
 
    It returns a function which, when called, initiates loading of the
    module and returns a Promise. When that Promise resolves, it calls
-   the `config.onload` callback (if set) and passes it
-   `(loadResult,config)`, where `loadResult` is the result of
-   WebAssembly.instantiate[Streaming](): an object in the form:
+   the `config.onload` callback (if set) and passes it `(loadResult)`,
+   where `loadResult` is derived from the result of
+   WebAssembly.instantiate[Streaming](), an object in the form:
 
    ```
    {
      module: a WebAssembly.Module,
-     instance: a WebAssembly.Instance
+     instance: a WebAssembly.Instance,
+     config: the config arg to this function
    }
    ```
 
@@ -2392,8 +2433,7 @@ globalThis.WhWasmUtilInstaller.yawl = function(config){
            (exported from WASM) or tgt.memory (JS-provided memory
            imported into WASM).
         */
-        tgt.memory = (config.imports && config.imports.env
-                      && config.imports.env.memory)
+        tgt.memory = config?.imports?.env?.memory
           || toss("Missing 'memory' object!");
       }
       if(!tgt.alloc && arg.instance.exports.malloc){
@@ -2405,7 +2445,8 @@ globalThis.WhWasmUtilInstaller.yawl = function(config){
       }
       wui(tgt);
     }
-    if(config.onload) config.onload(arg,config);
+    arg.config = config;
+    if(config.onload) config.onload(arg);
     return arg /* for any then() handler attached to
                   yetAnotherWasmLoader()'s return value */;
   };

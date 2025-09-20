@@ -1051,14 +1051,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         let sqlByteLen = isTA ? arg.sql.byteLength : wasm.jstrlen(arg.sql);
         const ppStmt  = wasm.scopedAlloc(
           /* output (sqlite3_stmt**) arg and pzTail */
-          (2 * wasm.ptrSizeof) + (sqlByteLen + 1/* SQL + NUL */)
+          (2 * wasm.pointerSizeof) + (sqlByteLen + 1/* SQL + NUL */)
         );
-        const pzTail = ppStmt + wasm.ptrSizeof /* final arg to sqlite3_prepare_v2() */;
-        let pSql = pzTail + wasm.ptrSizeof;
-        const pSqlEnd = pSql + sqlByteLen;
+        const pzTail = wasm.ptrAdd(ppStmt, wasm.pointerSizeof) /* final arg to sqlite3_prepare_v2() */;
+        let pSql = wasm.ptrAdd(pzTail, wasm.pointerSizeof);
+        const pSqlEnd = wasm.ptrAdd(pSql, sqlByteLen);
         if(isTA) wasm.heap8().set(arg.sql, pSql);
         else wasm.jstrcpy(arg.sql, wasm.heap8(), pSql, sqlByteLen, false);
-        wasm.poke(pSql + sqlByteLen, 0/*NUL terminator*/);
+        wasm.poke(wasm.ptrAdd(pSql, sqlByteLen), 0/*NUL terminator*/);
         while(pSql && wasm.peek(pSql, 'i8')
               /* Maintenance reminder:^^^ _must_ be 'i8' or else we
                  will very likely cause an endless loop. What that's
@@ -1073,7 +1073,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           ));
           const pStmt = wasm.peekPtr(ppStmt);
           pSql = wasm.peekPtr(pzTail);
-          sqlByteLen = pSqlEnd - pSql;
+          sqlByteLen = Number(wasm.ptrAdd(pSqlEnd,-pSql));
           if(!pStmt) continue;
           if(saveSql) saveSql.push(capi.sqlite3_sql(pStmt).trim());
           stmt = new Stmt(this, pStmt, BindTypes);
@@ -2091,15 +2091,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const n = capi.sqlite3_column_bytes(this.pointer, ndx),
                   ptr = capi.sqlite3_column_blob(this.pointer, ndx),
                   rc = new Uint8Array(n);
-            //heap = n ? wasm.heap8() : false;
-            if(n) rc.set(wasm.heap8u().slice(ptr, ptr+n), 0);
-            //for(let i = 0; i < n; ++i) rc[i] = heap[ptr + i];
-            if(n && this.db._blobXfer instanceof Array){
-              /* This is an optimization soley for the
-                 Worker-based API. These values will be
-                 transfered to the main thread directly
-                 instead of being copied. */
-              this.db._blobXfer.push(rc.buffer);
+            if(n){
+              rc.set(wasm.heap8u().slice(Number(ptr), Number(ptr)+n), 0);
+              if(this.db._blobXfer instanceof Array){
+                /* This is an optimization soley for the Worker1 API. It
+                   will transfer these to the main thread directly
+                   instead of copying them. */
+                this.db._blobXfer.push(rc.buffer);
+              }
             }
             return rc;
           }

@@ -150,18 +150,23 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        it becomes significant with, e.g., sqlite3_deserialize() and
        certain wasm.xWrap.resultAdapter()s.
     */
-    useStdAlloc: false
+    useStdAlloc: false,
+    /*
+      sqlite3-api-cleanup.js sets wasmPtrSizeof and wasmPtrIR
+    */
+    wasmPtrSizeof: 4,
+    wasmPtrIR: 'i32'
   }, apiConfig || {});
 
   Object.assign(config, {
     allocExportName: config.useStdAlloc ? 'malloc' : 'sqlite3_malloc',
     deallocExportName: config.useStdAlloc ? 'free' : 'sqlite3_free',
     reallocExportName: config.useStdAlloc ? 'realloc' : 'sqlite3_realloc'
-  }, config);
+  });
 
   [
     // If any of these config options are functions, replace them with
-    // the result of calling that function...
+    // the result of calling that function. They must not be async.
     'exports', 'memory', 'wasmfsOpfsDir'
   ].forEach((k)=>{
     if('function' === typeof config[k]){
@@ -846,6 +851,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
   }/*util*/;
 
+  /**
+     wasm.X properties which are used for configuring the wasm
+     environment via whwashutil.js.
+  */
   Object.assign(wasm, {
     /**
        Emscripten APIs have a deep-seated assumption that all pointers
@@ -853,13 +862,13 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        the case and will use this constant in places where we might
        otherwise use a hard-coded 4.
     */
-    ptrSizeof: config.wasmPtrSizeof || 4,
+    pointerSizeof: config.wasmPtrSizeof,
     /**
        The WASM IR (Intermediate Representation) value for
        pointer-type values. It MUST refer to a value type of the
-       size described by this.ptrSizeof.
+       size described by this.pointerSizeof.
     */
-    ptrIR: config.wasmPtrIR || "i32",
+    pointerIR: config.wasmPtrIR,
     /**
        True if BigInt support was enabled via (e.g.) the
        Emscripten -sWASM_BIGINT flag, else false. When
@@ -1156,14 +1165,14 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         WasmAllocError.toss("Invalid size value for allocChunks(",arguments[1],")");
       }
       const mem = wasm.pstack.alloc(n * sz);
-      const rc = [];
-      let i = 0, offset = 0;
+      const rc = [mem];
+      let i = 1, offset = sz;
       for(; i < n; ++i, offset += sz) rc.push(wasm.ptrAdd(mem, offset));
       return rc;
     },
     /**
        A convenience wrapper for allocChunks() which sizes each chunk
-       as either 8 bytes (safePtrSize is truthy) or wasm.ptrSizeof (if
+       as either 8 bytes (safePtrSize is truthy) or wasm.pointerSizeof (if
        safePtrSize is falsy).
 
        How it returns its result differs depending on its first
@@ -1182,8 +1191,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     allocPtr: (n=1,safePtrSize=true)=>{
       return 1===n
-        ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.ptrSizeof)
-        : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.ptrSizeof);
+        ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.pointerSizeof)
+        : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.pointerSizeof);
     },
 
     /**
@@ -1403,7 +1412,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     const scope = wasm.scopedAllocPush();
     let pOut;
     try{
-      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.ptrSizeof);
+      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.pointerSizeof);
       const ppOut = pSize + 8;
       /**
          Maintenance reminder, since this cost a full hour of grief
@@ -1853,7 +1862,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          do not.
       */
       tgt.push(capi.sqlite3_value_to_js(
-        wasm.peekPtr(pArgv + (wasm.ptrSizeof * i)),
+        wasm.peekPtr(pArgv + (wasm.pointerSizeof * i)),
         throwIfCannotConvert
       ));
     }

@@ -1084,7 +1084,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(P.pointer === stack);
       try {
         const [p1, p2, p3] = P.allocChunks(3,'i32');
-        T.assert(P.pointer == Number(stack)-16/*always rounded to multiple of 8*/)
+        let sPos = wasm.ptrAdd(stack,-16)/*pstack alloc always rounds to multiple of 8*/;
+        T.assert(P.pointer === sPos)
+          .assert(p1 === sPos)
           .assert(p2 == Number(p1) + 4)
           .assert(p3 == Number(p2) + 4);
         T.mustThrowMatching(()=>P.allocChunks(1024, 1024 * 16),
@@ -1096,12 +1098,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(P.pointer === stack);
       try {
         let [p1, p2, p3] = P.allocPtr(3,false);
-        let sPos = Number(stack)-16/*always rounded to multiple of 8*/;
-        T.assert(P.pointer == sPos)
-          .assert(p2 == Number(p1) + 4)
-          .assert(p3 == Number(p2) + 4);
+        let sPos = wasm.ptrAdd(stack,
+                               -(4===wasm.pointerSizeof
+                                 ? 16/*pstack alloc always rounds to multiple of 8*/
+                                 : 24));
+        T.assert(P.pointer === p1)
+          .assert(p1 === sPos)
+          .assert(p2 == Number(p1) + wasm.pointerSizeof)
+          .assert(p3 == Number(p2) + wasm.pointerSizeof);
         [p1, p2, p3] = P.allocPtr(3);
-        T.assert(P.pointer == sPos-24/*3 x 8 bytes*/)
+        T.assert(P.pointer === wasm.ptrAdd(sPos, -24)/*3 x 8 bytes*/)
           .assert(p2 == Number(p1) + 8)
           .assert(p3 == Number(p2) + 8);
         p1 = P.allocPtr();
@@ -1119,8 +1125,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       try{
         const n = 520;
         const p = wasm.pstack.alloc(n);
-        T.assert(0===wasm.peek8(p))
-          .assert(0===wasm.peek8(wasm.ptrAdd(p,n,-1)));
+        T.assert(0==wasm.peek8(p))
+          .assert(0==wasm.peek8(wasm.ptrAdd(p,n,-1)));
         T.assert(undefined === capi.sqlite3_randomness(n - 10, p));
         let j, check = 0;
         const heap = wasm.heap8u();
@@ -1275,7 +1281,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const stack = wasm.pstack.pointer;
         try {
           const ppOut = wasm.pstack.allocPtr();
-          T.assert( 0===wasm.peekPtr(ppOut) );
+          T.assert( 0==wasm.peekPtr(ppOut) );
           let rc = capi.sqlite3_open_v2( ":memory:", ppOut,
                                          capi.SQLITE_OPEN_CREATE
                                          | capi.SQLITE_OPEN_READWRITE,
@@ -1488,6 +1494,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       const db = this.db;
       let list = [];
       this.progressHandlerCount = 0;
+      //wasm.xWrap.debug = true;
       let rc = db.exec({
         sql:['CREATE TABLE t(a,b);',
              // ^^^ using TEMP TABLE breaks the db export test

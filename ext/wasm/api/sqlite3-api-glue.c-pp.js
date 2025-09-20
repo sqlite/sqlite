@@ -21,13 +21,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
-//#if sMEMORY64=1
-  wasm.pointerIR = 'i64';
-//#elif sMEMORY64=2
-  wasm.pointerIR = 'i64'/*???*/;
-//#else
-  wasm.pointerIR = 'i32';
-//#endif
   globalThis.WhWasmUtilInstaller(wasm);
   delete globalThis.WhWasmUtilInstaller;
 
@@ -1099,7 +1092,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        wasm.uninstallFunction() any WASM function bindings it has
        installed for pDb.
     */
-    const closeArgs = [pDb];
     for(const name of [
       'sqlite3_busy_handler',
       'sqlite3_commit_hook',
@@ -1119,15 +1111,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         /* assume it was built without this API */
         continue;
       }
+      const closeArgs = [pDb];
       closeArgs.length = x.length/*==argument count*/
         || 1 /* Recall that: (A) undefined entries translate to 0 when
                 passed to WASM and (B) Safari wraps wasm.exports.* in
                 nullary functions so x.length is 0 there. */;
+      //console.debug(closeArgs, name,"()", capi[name]);
+      //wasm.xWrap.debug = true;
       try{ capi[name](...closeArgs) }
       catch(e){
         /* This "cannot happen" unless something is well and truly sideways. */
         sqlite3.config.warn("close-time call of",name+"(",closeArgs,") threw:",e);
       }
+      //wasm.xWrap.debug = false;
     }
     const m = __dbCleanupMap(pDb, 0);
     if(!m) return;
@@ -1475,9 +1471,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Helper for string:flexible conversions which requires a
        byte-length counterpart argument. Passed a value and its
        ostensible length, this function returns [V,N], where V is
-       either v or a transformed copy of v and N is either n (if v is
-       a WASM pointer), -1 (if v is a string or Array), or the byte
-       length of v (if it's a byte array or ArrayBuffer).
+       either v or a transformed copy of v and N is either Number(n)
+       (if v is a WASM pointer), -1 (if v is a string or Array), or
+       the byte length of v (if it's a byte array or ArrayBuffer).
     */
     const __flexiString = (v,n)=>{
       if('string'===typeof v){
@@ -1490,7 +1486,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }else if(Array.isArray(v)){
         v = v.join("");
         n = -1;
-      }
+      }/*else if( 'bigint'===typeof n ){
+        // tag:64-bit A workaround for when a stray BigInt, possibly
+        // calculated via a pointer range, gets passed in here. This
+        // has been seen to happen in sqlite3_prepare_v3() via
+        // oo1.DB.exec().
+        n = Number(n);
+      }*/
       return [v, n];
     };
 
@@ -1531,13 +1533,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       const [xSql, xSqlLen] = __flexiString(sql, sqlLen);
       switch(typeof xSql){
-          case 'string': return __prepare.basic(pDb, xSql, xSqlLen, prepFlags, ppStmt, null);
-          case 'number': return __prepare.full(pDb, xSql, xSqlLen, prepFlags, ppStmt, pzTail);
-          default:
-            return util.sqlite3__wasm_db_error(
-              pDb, capi.SQLITE_MISUSE,
-              "Invalid SQL argument type for sqlite3_prepare_v2/v3()."
-            );
+        case 'string': return __prepare.basic(pDb, xSql, xSqlLen, prepFlags, ppStmt, null);
+        case (typeof wasm.NullPtr):
+          return __prepare.full(pDb, xSql, xSqlLen, prepFlags, ppStmt, pzTail);
+        default:
+          return util.sqlite3__wasm_db_error(
+            pDb, capi.SQLITE_MISUSE,
+            "Invalid SQL argument type for sqlite3_prepare_v2/v3(). typeof="+(typeof xSql)
+          );
       }
     };
 
