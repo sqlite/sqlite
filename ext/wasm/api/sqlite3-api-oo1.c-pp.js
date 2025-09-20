@@ -747,12 +747,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        closed when onclose.after is called. If this db is not opened
        when close() is called, neither of the handlers are called. Any
        exceptions the handlers throw are ignored because "destructors
-       must not throw."
+       must not throw".
 
-       Note that garbage collection of a db handle, if it happens at
-       all, will never trigger close(), so onclose handlers are not a
-       reliable way to implement close-time cleanup or maintenance of
-       a db.
+       Garbage collection of a db handle, if it happens at all, will
+       never trigger close(), so onclose handlers are not a reliable
+       way to implement close-time cleanup or maintenance of a db.
 
        If this instance was created using DB.wrapHandle() and does not
        own this.pointer then it does not close the db handle but it

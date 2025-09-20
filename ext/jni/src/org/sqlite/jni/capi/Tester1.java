@@ -1874,6 +1874,20 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
+  private void testSetErrmsg(){
+    final sqlite3 db = createNewDb();
+
+    int rc = sqlite3_set_errmsg(db, SQLITE_RANGE, "nope");
+    affirm( 0==rc );
+    affirm( SQLITE_MISUSE == sqlite3_set_errmsg(null, 0, null) );
+    affirm( "nope".equals(sqlite3_errmsg(db)) );
+    affirm( SQLITE_RANGE == sqlite3_errcode(db) );
+    rc = sqlite3_set_errmsg(db, 0, null);
+    affirm( "not an error".equals(sqlite3_errmsg(db)) );
+    affirm( 0 == sqlite3_errcode(db) );
+    sqlite3_close_v2(db);
+  }
+
   /* Copy/paste/rename this to add new tests. */
   private void _testTemplate(){
     final sqlite3 db = createNewDb();

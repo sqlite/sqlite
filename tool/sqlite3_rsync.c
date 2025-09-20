@@ -20,7 +20,7 @@
 #include <stdarg.h>
 #include "sqlite3.h"
 
-static const char zUsage[] = 
+static const char zUsage[] =
   "sqlite3_rsync ORIGIN REPLICA ?OPTIONS?\n"
   "\n"
   "One of ORIGIN or REPLICA is a pathname to a database on the local\n"
@@ -566,7 +566,8 @@ int append_escaped_arg(sqlite3_str *pStr, const char *zIn, int isFilename){
 */
 void add_path_argument(sqlite3_str *pStr){
   append_escaped_arg(pStr,
-     "PATH=$HOME/bin:/usr/local/bin:/opt/homebrew/bin:$PATH", 0);
+     "PATH=$HOME/bin:/usr/local/bin:/opt/homebrew/bin"
+     ":/opt/local/bin:$PATH", 0);
 }
 
 /*****************************************************************************
@@ -1853,7 +1854,7 @@ static void replicaSide(SQLiteRsync *p){
             nRPage);
         }else{
           runSql(p,"INSERT INTO sendHash VALUES(1,1)");
-          subdivideHashRange(p, 2, nRPage);
+          subdivideHashRange(p, 2, nRPage-1);
         }
         sendHashMessages(p, 1, 1);
         runSql(p, "PRAGMA writable_schema=ON");
@@ -2064,6 +2065,7 @@ int main(int argc, char const * const *argv){
 #define cli_opt_val cmdline_option_value(argc, argv, ++i)
   memset(&ctx, 0, sizeof(ctx));
   ctx.iProtocol = PROTOCOL_VERSION;
+  sqlite3_initialize();
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='-' && z[1]=='-' && z[2]!=0 ) z++;
@@ -2390,5 +2392,6 @@ int main(int argc, char const * const *argv){
   if( pIn!=0 && pOut!=0 ){
     pclose2(pIn, pOut, childPid);
   }
+  sqlite3_shutdown();
   return ctx.nErr;
 }

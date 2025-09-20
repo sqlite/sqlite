@@ -1127,6 +1127,15 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** update the "main" database attached to handle db with the changes found in
 ** the changeset passed via the second and third arguments. 
 **
+** All changes made by these functions are enclosed in a savepoint transaction.
+** If any other error (aside from a constraint failure when attempting to
+** write to the target database) occurs, then the savepoint transaction is
+** rolled back, restoring the target database to its original state, and an 
+** SQLite error code returned. Additionally, starting with version 3.51.0,
+** an error code and error message that may be accessed using the
+** [sqlite3_errcode()] and [sqlite3_errmsg()] APIs are left in the database
+** handle.
+**
 ** The fourth argument (xFilter) passed to these functions is the "filter
 ** callback". This may be passed NULL, in which case all changes in the
 ** changeset are applied to the database. For sqlite3changeset_apply() and
@@ -1263,12 +1272,6 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** table that the callback related to, from within the xConflict callback.
 ** This can be used to further customize the application's conflict
 ** resolution strategy.
-**
-** All changes made by these functions are enclosed in a savepoint transaction.
-** If any other error (aside from a constraint failure when attempting to
-** write to the target database) occurs, then the savepoint transaction is
-** rolled back, restoring the target database to its original state, and an 
-** SQLite error code returned.
 **
 ** If the output parameters (ppRebase) and (pnRebase) are non-NULL and
 ** the input is a changeset (not a patchset), then sqlite3changeset_apply_v2()

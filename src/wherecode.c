@@ -2845,7 +2845,10 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   WhereLoop *pLoop = pLevel->pWLoop;
   SrcItem *pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
   SrcList *pFrom;
-  u8 fromSpace[SZ_SRCLIST_1];
+  union {
+    SrcList sSrc;
+    u8 fromSpace[SZ_SRCLIST_1];
+  } uSrc;
   Bitmask mAll = 0;
   int k;
 
@@ -2889,7 +2892,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
                                  sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
     }
   }
-  pFrom = (SrcList*)fromSpace;
+  pFrom = &uSrc.sSrc;
   pFrom->nSrc = 1;
   pFrom->nAlloc = 1;
   memcpy(&pFrom->a[0], pTabItem, sizeof(SrcItem));

@@ -378,8 +378,8 @@ proc proj-bin-define {binName {defName {}}} {
 #
 # Despite using cc-path-progs to do the search, this function clears
 # any define'd name that function stores for the result (because the
-# caller has no sensible way of knowing which result it was unless
-# they pass only a single argument).
+# caller has no sensible way of knowing which [define] name it has
+# unless they pass only a single argument).
 #
 proc proj-first-bin-of {args} {
   set rc ""
@@ -451,7 +451,9 @@ proc proj-opt-set {flag {val 1}} {
 # @proj-opt-exists flag
 #
 # Returns 1 if the given flag has been defined as a legal configure
-# option, else returns 0.
+# option, else returns 0. Options set via proj-opt-set "exist" for
+# this purpose even if they were not defined via autosetup's
+# [options] function.
 #
 proc proj-opt-exists {flag} {
   expr {$flag in $::autosetup(options)};
@@ -704,11 +706,20 @@ proc proj-file-write {args} {
 }
 
 #
-# @proj-check-compile-commands ?configFlag?
+# @proj-check-compile-commands ?-assume-for-clang? ?configFlag?
 #
-# Checks the compiler for compile_commands.json support. If passed an
-# argument it is assumed to be the name of an autosetup boolean config
-# which controls whether to run/skip this check.
+# Checks the compiler for compile_commands.json support. If
+# $configFlag is not empty then it is assumed to be the name of an
+# autosetup boolean config which controls whether to run/skip this
+# check.
+#
+# If -assume-for-clang is provided and $configFlag is not empty and CC
+# matches *clang* and no --$configFlag was explicitly provided to the
+# configure script then behave as if --$configFlag had been provided.
+# To disable that assumption, either don't pass -assume-for-clang or
+# pass --$configFlag=0 to the configure script. (The reason for this
+# behavior is that clang supports compile-commands but some other
+# compilers report false positives with these tests.)
 #
 # Returns 1 if supported, else 0, and defines HAVE_COMPILE_COMMANDS to
 # that value. Defines MAKE_COMPILATION_DB to "yes" if supported, "no"
@@ -716,12 +727,38 @@ proc proj-file-write {args} {
 # HAVE_COMPILE_COMMANDS is preferred.
 #
 # ACHTUNG: this test has a long history of false positive results
-# because of compilers reacting differently to the -MJ flag.
+# because of compilers reacting differently to the -MJ flag.  Because
+# of this, it is recommended that this support be an opt-in feature,
+# rather than an on-by-default default one. That is: in the
+# configure script define the option as
+# {--the-flag-name=0 => {Enable ....}}
 #
-proc proj-check-compile-commands {{configFlag {}}} {
+proc proj-check-compile-commands {args} {
+  set i 0
+  set configFlag {}
+  set fAssumeForClang 0
+  set doAssume 0
   msg-checking "compile_commands.json support... "
-  if {"" ne $configFlag && ![proj-opt-truthy $configFlag]} {
-    msg-result "explicitly disabled"
+  if {"-assume-for-clang" eq [lindex $args 0]} {
+    lassign $args - configFlag
+    incr fAssumeForClang
+  } elseif {1 == [llength $args]} {
+    lassign $args configFlag
+  } else {
+    proj-error "Invalid arguments"
+  }
+  if {1 == $fAssumeForClang && "" ne $configFlag} {
+    if {[string match *clang* [get-define CC]]
+        && ![proj-opt-was-provided $configFlag]
+        && ![proj-opt-truthy $configFlag]} {
+      proj-indented-notice [subst -nocommands -nobackslashes {
+        CC appears to be clang, so assuming that --$configFlag is likely
+        to work. To disable this assumption use --$configFlag=0.}]
+      incr doAssume
+    }
+  }
+  if {!$doAssume && "" ne $configFlag && ![proj-opt-truthy $configFlag]} {
+    msg-result "check disabled. Use --${configFlag} to enable it."
     define HAVE_COMPILE_COMMANDS 0
     define MAKE_COMPILATION_DB no
     return 0
@@ -730,7 +767,7 @@ proc proj-check-compile-commands {{configFlag {}}} {
       # This test reportedly incorrectly succeeds on one of
       # Martin G.'s older systems. drh also reports a false
       # positive on an unspecified older Mac system.
-      msg-result "compiler supports compile_commands.json"
+      msg-result "compiler supports -MJ. Assuming it's useful for compile_commands.json"
       define MAKE_COMPILATION_DB yes; # deprecated
       define HAVE_COMPILE_COMMANDS 1
       return 1
@@ -1133,6 +1170,10 @@ proc proj-check-rpath {} {
       if {"" eq $wl} {
         set wl [proj-cc-check-Wl-flag -R$lp]
       }
+      if {"" eq $wl} {
+        # HP-UX: https://sqlite.org/forum/forumpost/d80ecdaddd
+        set wl [proj-cc-check-Wl-flag +b $lp]
+      }
       define LDFLAGS_RPATH $wl
     }
   }
@@ -1142,7 +1183,7 @@ proc proj-check-rpath {} {
 #
 # @proj-check-soname ?libname?
 #
-# Checks whether CC supports the -Wl,soname,lib... flag. If so, it
+# Checks whether CC supports the -Wl,-soname,lib... flag. If so, it
 # returns 1 and defines LDFLAGS_SONAME_PREFIX to the flag's prefix, to
 # which the client would need to append "libwhatever.N".  If not, it
 # returns 0 and defines LDFLAGS_SONAME_PREFIX to an empty string.
@@ -1157,6 +1198,10 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
   cc-with {-link 1} {
     if {[cc-check-flags "-Wl,-soname,${libname}"]} {
       define LDFLAGS_SONAME_PREFIX "-Wl,-soname,"
+      return 1
+    } elseif {[cc-check-flags "-Wl,+h,${libname}"]} {
+      # HP-UX: https://sqlite.org/forum/forumpost/d80ecdaddd
+      define LDFLAGS_SONAME_PREFIX "-Wl,+h,"
       return 1
     } else {
       define LDFLAGS_SONAME_PREFIX ""
@@ -1604,7 +1649,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
 #
 # Similar modifications may be made for --mandir.
 #
-# Returns 1 if it modifies the environment, else 0.
+# Returns >0 if it modifies the environment, else 0.
 #
 proc proj-tweak-default-env-dirs {} {
   set rc 0
@@ -1643,7 +1688,11 @@ proc proj-tweak-default-env-dirs {} {
 # processing the file. In the context of that script, the vars
 # $dotInsIn and $dotInsOut will be set to the input and output file
 # names.  This can be used, for example, to make the output file
-# executable or perform validation on its contents.
+# executable or perform validation on its contents:
+#
+##  proj-dot-ins-append my.sh.in my.sh {
+##    catch {exec chmod u+x $dotInsOut}
+##  }
 #
 # See [proj-dot-ins-process], [proj-dot-ins-list]
 #

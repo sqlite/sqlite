@@ -4,10 +4,9 @@
    a blank line for a sed-based kludge for the ES6 build. */
 /* extern-post-js.js must be appended to the resulting sqlite3.js
    file. It gets its name from being used as the value for the
-   --extern-post-js=... Emscripten flag. Note that this code, unlike
-   most of the associated JS code, runs outside of the
-   Emscripten-generated module init scope, in the current
-   global scope. */
+   --extern-post-js=... Emscripten flag. This code, unlike most of the
+   associated JS code, runs outside of the Emscripten-generated module
+   init scope, in the current global scope. */
 //#if target=es6-module
 const toExportForESM =
 //#endif
@@ -78,9 +77,9 @@ const toExportForESM =
          EmscriptenModule['ENVIRONMENT_IS_PTHREAD']){
         /** Workaround for wasmfs-generated worker, which calls this
             routine from each individual thread and requires that its
-            argument be returned. The conditional criteria above are
-            fragile, based solely on inspection of the offending code,
-            not public Emscripten details. */
+            argument be returned. The if() condition above is fragile,
+            based solely on inspection of the offending code, not
+            public Emscripten details. */
         //console.warn("sqlite3InitModule() returning E-module.",EmscriptenModule);
         return EmscriptenModule;
       }
