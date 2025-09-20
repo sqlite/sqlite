@@ -434,7 +434,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.functionEntry = function(fptr){
     const ft = target.functionTable();
-    console.debug("functionEntry(",arguments,")", __asPtrType(fptr));
+    //console.debug("functionEntry(",arguments,")", __asPtrType(fptr));
     //-sMEMORY64=1: we get a BigInt fptr and ft.get() wants a BigInt.
     //-sMEMORY64=2: we get a Number fptr and ft.get() wants a Number.
     return fptr < ft.length ? ft.get(__asPtrType(fptr)) : undefined;
@@ -939,10 +939,12 @@ globalThis.WhWasmUtilInstaller = function(target){
   const __SAB = ('undefined'===typeof SharedArrayBuffer)
         ? function(){} : SharedArrayBuffer;
   const __utf8Decode = function(arrayBuffer, begin, end){
-    if( 8===ptrSizeof ){
+    //if( 'bigint'===typeof begin ) begin = Number(begin);
+    //if( 'bigint'===typeof end ) end = Number(end);
+    /*if( 8===ptrSizeof ){
       begin = Number(begin);
       end = Number(end);
-    }
+    }*/
     return cache.utf8Decoder.decode(
       (arrayBuffer.buffer instanceof __SAB)
         ? arrayBuffer.slice(begin, end)
@@ -958,9 +960,10 @@ globalThis.WhWasmUtilInstaller = function(target){
      ptr is falsy or not a pointer, `null` is returned.
   */
   target.cstrToJs = function(ptr){
-    ptr = Number(ptr) /*tag:64bit*/;
     const n = target.cstrlen(ptr);
-    return n ? __utf8Decode(heapWrappers().HEAP8U, ptr, ptr+n) : (null===n ? n : "");
+    return n
+      ? __utf8Decode(heapWrappers().HEAP8U, Number(ptr), Number(ptr)+n)
+      : (null===n ? n : "");
   };
 
   /**

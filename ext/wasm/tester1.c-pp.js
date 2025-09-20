@@ -759,8 +759,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
         // 'string:flexible' argAdapter() sanity checks...
         w.scopedAllocCall(()=>{
-          const argAd = w.xWrap.argAdapter('string:flexible');
-          const cj = (v)=>w.cstrToJs(argAd(v));
+          const toFlexStr = w.xWrap.argAdapter('string:flexible');
+          const cj = (v)=>w.cstrToJs(toFlexStr(v));
+          //console.debug("toFlexStr(new Uint8Array([72, 73]))",toFlexStr(new Uint8Array([72, 73])));
           T.assert('Hi' === cj('Hi'))
             .assert('hi' === cj(['h','i']))
             .assert('HI' === cj(new Uint8Array([72, 73])));
@@ -979,8 +980,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           }
           wts.$v4 = 10; wts.$v8 = 20;
           wts.$xFunc = W.installFunction(wtsFunc, wts.memberSignature('xFunc'))
-          console.debug("wts.memberSignature('xFunc')",wts.memberSignature('xFunc'));
-          console.debug("wts.$xFunc",wts.$xFunc, W.functionEntry(wts.$xFunc));
+          //console.debug("wts.memberSignature('xFunc')",wts.memberSignature('xFunc'));
+          //console.debug("wts.$xFunc",wts.$xFunc, W.functionEntry(wts.$xFunc));
           T.assert(0===counter).assert(10 === wts.$v4).assert(20n === wts.$v8)
             .assert(0 == wts.$ppV).assert(looksLikePtr(wts.$xFunc))
             .assert(0 == wts.$cstr)
@@ -995,8 +996,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
              buffer, so merely reading them back is actually part of
              testing the struct-wrapping API. */
 
-          console.debug("wts",wts,"wts.pointer",wts.pointer,
-                        "testFunc",testFunc/*FF v142 emits the wrong function here!*/);
+          if( 0 ){
+            console.debug("wts",wts,"wts.pointer",wts.pointer,
+                          "testFunc",testFunc/*FF v142 emits the wrong function here!*/);
+          }
           testFunc(wts.pointer);
           //log("wts.pointer, wts.$ppV",wts.pointer, wts.$ppV);
           T.assert(1===counter).assert(20 === wts.$v4).assert(40n === wts.$v8)
@@ -1117,18 +1120,18 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const n = 520;
         const p = wasm.pstack.alloc(n);
         T.assert(0===wasm.peek8(p))
-          .assert(0===wasm.peek8(p+n-1));
+          .assert(0===wasm.peek8(wasm.ptrAdd(p,n,-1)));
         T.assert(undefined === capi.sqlite3_randomness(n - 10, p));
         let j, check = 0;
         const heap = wasm.heap8u();
         for(j = 0; j < 10 && 0===check; ++j){
-          check += heap[p + j];
+          check += heap[wasm.ptrAdd(p, j)];
         }
         T.assert(check > 0);
         check = 0;
         // Ensure that the trailing bytes were not modified...
         for(j = n - 10; j < n && 0===check; ++j){
-          check += heap[p + j];
+          check += heap[wasm.ptrAdd(p, j)];
         }
         T.assert(0===check);
       }finally{

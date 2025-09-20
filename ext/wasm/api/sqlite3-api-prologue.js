@@ -49,7 +49,8 @@
 
    - `exports`[^1]: the "exports" object for the current WASM
      environment. In an Emscripten-based build, this should be set to
-     `Module['asm']`.
+     `Module['asm']` (versions <=3.1.43) or `wasmExports` (versions
+     >=3.1.44).
 
    - `memory`[^1]: optional WebAssembly.Memory object, defaulting to
      `exports.memory`. In Emscripten environments this should be set
@@ -113,7 +114,9 @@
    called, an alternative option for setting the configuration is to
    define globalThis.sqlite3ApiConfig to an object. If it is set, it
    is used instead of sqlite3ApiBootstrap.defaultConfig if
-   sqlite3ApiBootstrap() is called without arguments.
+   sqlite3ApiBootstrap() is called without arguments. Setting the
+   `exports` and `memory` parts require already having loaded the WASM
+   module, though.
 
    Both sqlite3ApiBootstrap.defaultConfig and
    globalThis.sqlite3ApiConfig get deleted by sqlite3ApiBootstrap()
@@ -340,22 +343,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   const isSharedTypedArray = (aTypedArray)=>(aTypedArray.buffer instanceof __SAB);
 
   /**
-     Returns either aTypedArray.slice(begin,end) (if
-     aTypedArray.buffer is a SharedArrayBuffer) or
-     aTypedArray.subarray(begin,end) (if it's not).
-
-     This distinction is important for APIs which don't like to
-     work on SABs, e.g. TextDecoder, and possibly for our
-     own APIs which work on memory ranges which "might" be
-     modified by other threads while they're working.
-  */
-  const typedArrayPart = (aTypedArray, begin, end)=>{
-    return isSharedTypedArray(aTypedArray)
-      ? aTypedArray.slice(begin, end)
-      : aTypedArray.subarray(begin, end);
-  };
-
-  /**
      Returns true if v appears to be one of our bind()-able TypedArray
      types: Uint8Array or Int8Array or ArrayBuffer. Support for
      TypedArrays with element sizes >1 is a potential TODO just
@@ -391,18 +378,45 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       || toss3("Value is not of a supported TypedArray type.");
   };
 
+  /**
+     Returns either aTypedArray.slice(begin,end) (if
+     aTypedArray.buffer is a SharedArrayBuffer) or
+     aTypedArray.subarray(begin,end) (if it's not).
+
+     This distinction is important for APIs which don't like to
+     work on SABs, e.g. TextDecoder, and possibly for our
+     own APIs which work on memory ranges which "might" be
+     modified by other threads while they're working.
+  */
+  const typedArrayPart = (aTypedArray, begin, end)=>{
+    // slice() and subarray() do not like BigInt args.
+    if( 'bigint'===typeof begin ) begin = Number(begin);
+    if( 'bigint'===typeof end ) end = Number(end);
+    /*if( 8===wasm.pointerSizeof ){
+      begin = Number(begin);
+      end = Number(end);
+    }*/
+    return isSharedTypedArray(aTypedArray)
+      ? aTypedArray.slice(begin, end)
+      : aTypedArray.subarray(begin, end);
+  };
+
   const utf8Decoder = new TextDecoder('utf-8');
 
   /**
-     Uses TextDecoder to decode the given half-open range of the
-     given TypedArray to a string. This differs from a simple
-     call to TextDecoder in that it accounts for whether the
-     first argument is backed by a SharedArrayBuffer or not,
-     and can work more efficiently if it's not (TextDecoder
-     refuses to act upon an SAB).
+     Uses TextDecoder to decode the given half-open range of the given
+     TypedArray to a string. This differs from a simple call to
+     TextDecoder in that it accounts for whether the first argument is
+     backed by a SharedArrayBuffer or not, and can work more
+     efficiently if it's not (TextDecoder refuses to act upon an SAB).
+
+     If begin/end are not provided or are falsy then each defaults to
+     the start/end of the string.
   */
   const typedArrayToString = function(typedArray, begin, end){
-    return utf8Decoder.decode(typedArrayPart(typedArray, begin,end));
+    return utf8Decoder.decode(
+      typedArrayPart(typedArray, begin || 0, end || typedArray.length)
+    );
   };
 
   /**
@@ -414,7 +428,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   const flexibleString = function(v){
     if(isSQLableTypedArray(v)){
       return typedArrayToString(
-        (v instanceof ArrayBuffer) ? new Uint8Array(v) : v
+        (v instanceof ArrayBuffer) ? new Uint8Array(v) : v,
+        0, v.length
       );
     }
     else if(Array.isArray(v)) return v.join("");
@@ -1227,7 +1242,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        && 1===args[0].BYTES_PER_ELEMENT){
       const ta = args[0];
       if(0===ta.byteLength){
-        wasm.exports.sqlite3_randomness(0,0);
+        wasm.exports.sqlite3_randomness(0,wasm.NullPtr);
         return ta;
       }
       const stack = wasm.pstack.pointer;
@@ -1240,7 +1255,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         do{
           const j = (n>nAlloc ? nAlloc : n);
           r(j, ptr);
-          ta.set(typedArrayPart(heap, ptr, ptr+j), offset);
+          ta.set(typedArrayPart(heap, ptr, wasm.ptrAdd(ptr,j)), offset);
           n -= j;
           offset += j;
         } while(n > 0);

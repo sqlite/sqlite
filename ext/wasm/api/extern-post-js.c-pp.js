@@ -62,8 +62,8 @@ const toExportForESM =
   globalThis.sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
-      //console.warn("originalInit() then() arg =",EmscriptenModule);
-      //console.warn("initModuleState =",initModuleState);
+      console.warn("originalInit() then() arg =",EmscriptenModule);
+      console.warn("initModuleState =",initModuleState);
       EmscriptenModule.runSQLite3PostLoadInit(EmscriptenModule);
       const s = EmscriptenModule.sqlite3;
       s.scriptInfo = initModuleState;

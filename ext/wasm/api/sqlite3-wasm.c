@@ -377,7 +377,10 @@ typedef struct WasmTestStruct WasmTestStruct;
 SQLITE_WASM_EXPORT
 void sqlite3__wasm_test_struct(WasmTestStruct * s){
   if(s){
-    if( 1 ){
+    if( 0 ){
+      /* Do not be alarmed by the small (and odd) pointer values.
+         Function pointers in WASM are their index into the
+         indirect function table, not their address. */
       fprintf(stderr,"%s:%s()@%p s=@%p xFunc=@%p\n",
               __FILE__, __func__,
               (void*)sqlite3__wasm_test_struct,
