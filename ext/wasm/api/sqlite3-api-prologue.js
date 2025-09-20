@@ -1143,7 +1143,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       const mem = wasm.pstack.alloc(n * sz);
       const rc = [];
       let i = 0, offset = 0;
-      for(; i < n; ++i, offset += sz) rc.push(mem + offset);
+      for(; i < n; ++i, offset += sz) rc.push(wasm.ptrAdd(mem, offset));
       return rc;
     },
     /**

@@ -21,8 +21,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
-//#if 64bit
+//#if sMEMORY64=1
   wasm.pointerIR = 'i64';
+//#elif sMEMORY64=2
+  wasm.pointerIR = 'i64'/*???*/;
 //#else
   wasm.pointerIR = 'i32';
 //#endif
@@ -732,7 +734,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     alloc: wasm.alloc,
     dealloc: wasm.dealloc,
     bigIntEnabled: wasm.bigIntEnabled,
-    ptrIR: wasm.pointerIR,
+    pointerIR: wasm.pointerIR,
+    pointerSizeof: wasm.pointerSizeof,
     memberPrefix: /* Never change this: this prefix is baked into any
                      amount of code and client-facing docs. (Much
                      later: it probably should have been '$$', but see

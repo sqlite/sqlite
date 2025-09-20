@@ -160,7 +160,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   const roundMs = (ms)=>Math.round(ms*100)/100;
 
-  const looksLikePtr = (v)=> v>=0;
+  const looksLikePtr = (v,positive=true)=> positive ? v>0 : v>=0;
 
   /**
      Helpers for writing sqlite3-specific tests.
@@ -842,7 +842,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             T.assert(12n===rc);
 
             w.scopedAllocCall(function(){
-              const pI1 = w.scopedAlloc(8), pI2 = w.ptrAdd(pI1, 4);
+              const pI1 = w.scopedAlloc(w.pointerSizeof), pI2 = w.ptrAdd(pI1, w.pointerSizeof);
               w.pokePtr([pI1, pI2], w.NullPtr);
               const f = w.xWrap('sqlite3__wasm_test_int64_minmax',undefined,['i64*','i64*']);
               const [r1, r2] = w.peek64([pI1, pI2]);
@@ -870,14 +870,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         };
         const msd = MyStructDef;
         addMember(msd, 'p4', {sizeof: 4, signature: "i"});
-        addMember(msd, 'pP', {sizeof: wasm.ptrSizeof, signature: "P"});
+        addMember(msd, 'pP', {sizeof: wasm.pointerSizeof, signature: "P"});
         addMember(msd, 'ro', {
           sizeof: 4,
           signature: "i",
           readOnly: true
         });
         addMember(msd, 'cstr', {
-          sizeof: wasm.ptrSizeof,
+          sizeof: wasm.pointerSizeof,
           signature: "s"
         });
         if(W.bigIntEnabled){
@@ -885,9 +885,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
         const StructType = S.StructBinder.StructType;
         const K = S.StructBinder('my_struct',MyStructDef);
+        //K.debugFlags(0x03);
         T.mustThrowMatching(()=>K(), /via 'new'/).
           mustThrowMatching(()=>new K('hi'), (err)=>{
-            return /^Invalid pointer/.test(err.message) || /.*bigint.*/i.test(err.message);
+            return /^Invalid pointer/.test(err.message)/*32-bit*/
+              || /.*bigint.*/i.test(err.message)/*64-bit*/;
           });
         const k1 = new K(), k2 = new K();
         try {
@@ -921,12 +923,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           k1.setMemberCString('cstr', "A C-string.");
           T.assert(Array.isArray(k1.ondispose)).
             assert(k1.ondispose[0] === k1.$cstr).
-            assert('number' === typeof k1.$cstr).
+            assert(looksLikePtr(k1.$cstr)).
             assert('A C-string.' === k1.memberToJsString('cstr'));
           k1.$pP = k2;
           T.assert(k1.$pP === k2.pointer);
           k1.$pP = null/*null is special-cased to 0.*/;
-          T.assert(0===k1.$pP);
+          T.assert(0==k1.$pP);
           let ptr = k1.pointer;
           k1.dispose();
           T.assert(undefined === k1.pointer).
@@ -960,10 +962,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             assert(wts instanceof WTStruct).
             assert(wts instanceof StructType).
             assert(StructType.isA(wts)).
-            assert(wts.pointer>0).assert(0===wts.$v4).assert(0n===wts.$v8).
-            assert(0===wts.$ppV).assert(0===wts.$xFunc);
-          const testFunc =
-                W.xGet('sqlite3__wasm_test_struct'/*name gets mangled in -O3 builds!*/);
+            assert(looksLikePtr(wts.pointer)).assert(0==wts.$v4).assert(0n===wts.$v8).
+            assert(0==wts.$ppV).assert(0==wts.$xFunc);
+          const testFunc = 1
+                ? W.xGet('sqlite3__wasm_test_struct'/*name gets mangled in -O3 builds!*/)
+                : W.xWrap('sqlite3__wasm_test_struct', undefined, '*');
           let counter = 0;
           //log("wts.pointer =",wts.pointer);
           const wtsFunc = function(arg){
@@ -976,9 +979,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           }
           wts.$v4 = 10; wts.$v8 = 20;
           wts.$xFunc = W.installFunction(wtsFunc, wts.memberSignature('xFunc'))
+          console.debug("wts.memberSignature('xFunc')",wts.memberSignature('xFunc'));
+          console.debug("wts.$xFunc",wts.$xFunc, W.functionEntry(wts.$xFunc));
           T.assert(0===counter).assert(10 === wts.$v4).assert(20n === wts.$v8)
-            .assert(0 === wts.$ppV).assert('number' === typeof wts.$xFunc)
-            .assert(0 === wts.$cstr)
+            .assert(0 == wts.$ppV).assert(looksLikePtr(wts.$xFunc))
+            .assert(0 == wts.$cstr)
             .assert(wts.memberIsString('$cstr'))
             .assert(!wts.memberIsString('$v4'))
             .assert(null === wts.memberToJsString('$cstr'))
@@ -990,6 +995,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
              buffer, so merely reading them back is actually part of
              testing the struct-wrapping API. */
 
+          console.debug("wts",wts,"wts.pointer",wts.pointer,
+                        "testFunc",testFunc/*FF v142 emits the wrong function here!*/);
           testFunc(wts.pointer);
           //log("wts.pointer, wts.$ppV",wts.pointer, wts.$ppV);
           T.assert(1===counter).assert(20 === wts.$v4).assert(40n === wts.$v8)
@@ -1043,7 +1050,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       const P = wasm.pstack;
       const isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
       const stack = P.pointer;
-      T.assert(0===stack % 8 /* must be 8-byte aligned */);
+      T.assert(0===Number(stack) % 8 /* must be 8-byte aligned */);
       try{
         const remaining = P.remaining;
         T.assert(P.quota >= 4096)
@@ -1056,16 +1063,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           );
         ;
         let p1 = P.alloc(12);
-        T.assert(p1 === stack - 16/*8-byte aligned*/)
+        T.assert(p1 == Number(stack) - 16/*8-byte aligned*/)
           .assert(P.pointer === p1);
         let p2 = P.alloc(7);
-        T.assert(p2 === p1-8/*8-byte aligned, stack grows downwards*/)
+        T.assert(p2 == Number(p1)-8/*8-byte aligned, stack grows downwards*/)
           .mustThrowMatching(()=>P.alloc(remaining), isAllocErr)
-          .assert(24 === stack - p2)
+          .assert(24 == Number(stack) - Number(p2))
           .assert(P.pointer === p2);
-        let n = remaining - (stack - p2);
+        let n = remaining - (Number(stack) - Number(p2));
         let p3 = P.alloc(n);
-        T.assert(p3 === stack-remaining)
+        T.assert(p3 == Number(stack)-Number(remaining))
           .mustThrowMatching(()=>P.alloc(1), isAllocErr);
       }finally{
         P.restore(stack);
@@ -1074,9 +1081,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(P.pointer === stack);
       try {
         const [p1, p2, p3] = P.allocChunks(3,'i32');
-        T.assert(P.pointer === stack-16/*always rounded to multiple of 8*/)
-          .assert(p2 === p1 + 4)
-          .assert(p3 === p2 + 4);
+        T.assert(P.pointer == Number(stack)-16/*always rounded to multiple of 8*/)
+          .assert(p2 == Number(p1) + 4)
+          .assert(p3 == Number(p2) + 4);
         T.mustThrowMatching(()=>P.allocChunks(1024, 1024 * 16),
                             (e)=>e instanceof sqlite3.WasmAllocError)
       }finally{
@@ -1086,16 +1093,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(P.pointer === stack);
       try {
         let [p1, p2, p3] = P.allocPtr(3,false);
-        let sPos = stack-16/*always rounded to multiple of 8*/;
-        T.assert(P.pointer === sPos)
-          .assert(p2 === p1 + 4)
-          .assert(p3 === p2 + 4);
+        let sPos = Number(stack)-16/*always rounded to multiple of 8*/;
+        T.assert(P.pointer == sPos)
+          .assert(p2 == Number(p1) + 4)
+          .assert(p3 == Number(p2) + 4);
         [p1, p2, p3] = P.allocPtr(3);
-        T.assert(P.pointer === sPos-24/*3 x 8 bytes*/)
-          .assert(p2 === p1 + 8)
-          .assert(p3 === p2 + 8);
+        T.assert(P.pointer == sPos-24/*3 x 8 bytes*/)
+          .assert(p2 == Number(p1) + 8)
+          .assert(p3 == Number(p2) + 8);
         p1 = P.allocPtr();
-        T.assert('number'===typeof p1);
+        T.assert(looksLikePtr(p1));
       }finally{
         P.restore(stack);
       }
@@ -2169,7 +2176,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(wasm.isPtr(pVoid))
           .assert(wasm.isPtr(aVals))
           .assert(wasm.isPtr(aCols))
-          .assert(+wasm.cstrToJs(wasm.peekPtr(aVals + wasm.ptrSizeof))
+          .assert(+wasm.cstrToJs(wasm.peekPtr(aVals + wasm.pointerSizeof))
                   === 2 * +wasm.cstrToJs(wasm.peekPtr(aVals)));
         return 0;
       });

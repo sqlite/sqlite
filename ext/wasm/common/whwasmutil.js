@@ -163,7 +163,9 @@
    - `pointerIR`: an IR-format string for the WASM environment's
       pointer size. If set it must be either 'i32' or 'i64'. If not
       set, it defaults to whatever this code thinks the pointer size
-      is. Modifying it after this call has no effect.
+      is.  Modifying it after this call has no effect.
+      target.pointerSizeof gets set to either 4 or 8, depending on
+      this option.
 
 
    This code is developed and maintained in conjunction with the
@@ -225,11 +227,11 @@ globalThis.WhWasmUtilInstaller = function(target){
      Pointers in WASM are currently assumed to be 32-bit, but someday
      that will certainly change.
   */
-  const ptrIR = target.pointerIR || 'i32';
-  const ptrSizeof = target.ptrSizeof =
+  const ptrIR = target.pointerIR || (target.pointerIR = 'i32');
+  const ptrSizeof = target.pointerSizeof =
         ('i32'===ptrIR ? 4
          : ('i64'===ptrIR
-            ? 8 : toss("Unhandled ptrSizeof:",ptrIR)));
+            ? 8 : toss("Unhandled pointerIR:",ptrIR)));
 
   /**
      If target.pointerIR=='i32' then this is equivalent to
@@ -304,7 +306,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      For the given IR-like string in the set ('i8', 'i16', 'i32',
      'f32', 'float', 'i64', 'f64', 'double', '*'), or any string value
      ending in '*', returns the sizeof for that value
-     (target.ptrSizeof in the latter case). For any other value, it
+     (target.pointerSizeof in the latter case). For any other value, it
      returns the undefined value.
   */
   target.sizeofIR = (n)=>{
@@ -432,6 +434,9 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.functionEntry = function(fptr){
     const ft = target.functionTable();
+    console.debug("functionEntry(",arguments,")", __asPtrType(fptr));
+    //-sMEMORY64=1: we get a BigInt fptr and ft.get() wants a BigInt.
+    //-sMEMORY64=2: we get a Number fptr and ft.get() wants a Number.
     return fptr < ft.length ? ft.get(__asPtrType(fptr)) : undefined;
   };
 
@@ -483,7 +488,7 @@ globalThis.WhWasmUtilInstaller = function(target){
       f._ = {
         // Map of signature letters to type IR values
         sigTypes: Object.assign(Object.create(null),{
-          i: 'i32', p: 'i32', P: 'i32', s: 'i32',
+          i: 'i32', p: ptrIR, P: ptrIR, s: ptrIR,
           j: 'i64', f: 'f32', d: 'f64'
         }),
         // Map of type IR values to WASM type code values
@@ -756,17 +761,16 @@ globalThis.WhWasmUtilInstaller = function(target){
     let rc;
     do{
       if(list) ptr = arguments[0].shift();
-      const pNumber = Number(ptr);
       switch(type){
           case 'i1':
-          case 'i8': rc = c.HEAP8[pNumber>>0]; break;
-          case 'i16': rc = c.HEAP16[pNumber>>1]; break;
-          case 'i32': rc = c.HEAP32[pNumber>>2]; break;
-          case 'float': case 'f32': rc = c.HEAP32F[pNumber>>2]; break;
-          case 'double': case 'f64': rc = Number(c.HEAP64F[pNumber>>3]); break;
+          case 'i8': rc = c.HEAP8[Number(ptr/*tag:64bit*/)>>0]; break;
+          case 'i16': rc = c.HEAP16[Number(ptr/*tag:64bit*/)>>1]; break;
+          case 'i32': rc = c.HEAP32[Number(ptr/*tag:64bit*/)>>2]; break;
+          case 'float': case 'f32': rc = c.HEAP32F[Number(ptr/*tag:64bit*/)>>2]; break;
+          case 'double': case 'f64': rc = Number(c.HEAP64F[Number(ptr/*tag:64bit*/)>>3]); break;
           case 'i64':
             if(target.bigIntEnabled){
-              rc = BigInt(c.HEAP64[pNumber>>3]);
+              rc = BigInt(c.HEAP64[Number(ptr/*tag:64bit*/)>>3]);
               break;
             }
             /* fallthru */
@@ -802,17 +806,16 @@ globalThis.WhWasmUtilInstaller = function(target){
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
     for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
-      const pNumber = Number(p)/*tag:64bit*/;
       switch (type) {
           case 'i1':
-          case 'i8': c.HEAP8[pNumber>>0] = value; continue;
-          case 'i16': c.HEAP16[pNumber>>1] = value; continue;
-          case 'i32': c.HEAP32[pNumber>>2] = value; continue;
-          case 'float': case 'f32': c.HEAP32F[pNumber>>2] = value; continue;
-          case 'double': case 'f64': c.HEAP64F[pNumber>>3] = value; continue;
+          case 'i8': c.HEAP8[Number(p/*tag:64bit*/)>>0] = value; continue;
+          case 'i16': c.HEAP16[Number(p/*tag:64bit*/)>>1] = value; continue;
+          case 'i32': c.HEAP32[Number(p/*tag:64bit*/)>>2] = value; continue;
+          case 'float': case 'f32': c.HEAP32F[Number(p/*tag:64bit*/)>>2] = value; continue;
+          case 'double': case 'f64': c.HEAP64F[Number(p/*tag:64bit*/)>>3] = value; continue;
           case 'i64':
             if(c.HEAP64){
-              c.HEAP64[pNumber>>3] = BigInt(value);
+              c.HEAP64[Number(p/*tag:64bit*/)>>3] = BigInt(value);
               continue;
             }
             /* fallthru */
@@ -936,6 +939,10 @@ globalThis.WhWasmUtilInstaller = function(target){
   const __SAB = ('undefined'===typeof SharedArrayBuffer)
         ? function(){} : SharedArrayBuffer;
   const __utf8Decode = function(arrayBuffer, begin, end){
+    if( 8===ptrSizeof ){
+      begin = Number(begin);
+      end = Number(end);
+    }
     return cache.utf8Decoder.decode(
       (arrayBuffer.buffer instanceof __SAB)
         ? arrayBuffer.slice(begin, end)
@@ -1298,15 +1305,15 @@ globalThis.WhWasmUtilInstaller = function(target){
   const __allocMainArgv = function(isScoped, list){
     const pList = target[
       isScoped ? 'scopedAlloc' : 'alloc'
-    ]((list.length + 1) * target.ptrSizeof);
+    ]((list.length + 1) * target.pointerSizeof);
     let i = 0;
     list.forEach((e)=>{
-      target.pokePtr(pList + (target.ptrSizeof * i++),
+      target.pokePtr(pList + (target.pointerSizeof * i++),
                          target[
                            isScoped ? 'scopedAllocCString' : 'allocCString'
                          ](""+e));
     });
-    target.pokePtr(pList + (target.ptrSizeof * i), 0);
+    target.pokePtr(pList + (target.pointerSizeof * i), 0);
     return pList;
   };
 
@@ -1351,7 +1358,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   target.cArgvToJs = (argc, pArgv)=>{
     const list = [];
     for(let i = 0; i < argc; ++i){
-      const arg = target.peekPtr(pArgv + (target.ptrSizeof * i));
+      const arg = target.peekPtr(pArgv + (target.pointerSizeof * i));
       list.push( arg ? target.cstrToJs(arg) : null );
     }
     return list;
@@ -1383,7 +1390,7 @@ globalThis.WhWasmUtilInstaller = function(target){
     for(let i = 1; i < howMany; ++i){
       m = __ptrAdd(m, (safePtrSize ? 8 : ptrSizeof));
       a[i] = m;
-      target.poke(m, __NullPtr, pIr);
+      target.poke(m, 0, pIr);
     }
     return a;
   };
@@ -2085,7 +2092,7 @@ globalThis.WhWasmUtilInstaller = function(target){
        abstracting it into this API (and taking on the associated
        costs) may well not make good sense.
   */
-  target.xWrap = function(fArg, resultType, ...argTypes){
+  target.xWrap = function callee(fArg, resultType, ...argTypes){
     if(3===arguments.length && Array.isArray(arguments[2])){
       argTypes = arguments[2];
     }
@@ -2143,7 +2150,9 @@ globalThis.WhWasmUtilInstaller = function(target){
         for(; i < args.length; ++i) args[i] = cxw.convertArgNoCheck(
           argTypes[i], args[i], args, i
         );
-        //console.warn("resultType ",resultType, 'xf',xf,"argTypes",argTypes,"args",args);
+        if( callee.debug ){
+          console.debug("xWrap() calling: resultType ",resultType, 'xf',xf,"argTypes",argTypes,"args",args);
+        }
         return cxw.convertResultNoCheck(resultType, xf.apply(null,args));
       }finally{
         target.scopedAllocPop(scope);

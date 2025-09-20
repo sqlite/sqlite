@@ -64,8 +64,12 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         BigInt = globalThis['BigInt'],
         BigInt64Array = globalThis['BigInt64Array'],
         /* Undocumented (on purpose) config options: */
-        ptrIR = config.ptrIR || 'i32',
-        ptrSizeof = config.ptrSizeof || ('i32'===ptrIR ? 4 : 8)
+        ptrIR = config.pointerIR
+        || config.ptrIR/*deprecated*/
+        || 'i32',
+        ptrSizeof = config.pointerSizeof
+        || config.ptrSizeof/*deprecated*/
+        || ('i32'===ptrIR ? 4 : 8)
   ;
   const __asPtrType = ('i32'==ptrIR)
         ? Number
@@ -375,12 +379,17 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   const __SAB = ('undefined'===typeof SharedArrayBuffer)
         ? function(){} : SharedArrayBuffer;
   const __utf8Decode = function(arrayBuffer, begin, end){
+    if( 8===ptrSizeof ){
+      begin = Number(begin);
+      end = Number(end);
+    }
     return __utf8Decoder.decode(
       (arrayBuffer.buffer instanceof __SAB)
         ? arrayBuffer.slice(begin, end)
         : arrayBuffer.subarray(begin, end)
     );
   };
+
   /**
      Uses __lookupMember() to find the given obj.structInfo key.
      Returns that member if it is a string, else returns false. If the
@@ -455,8 +464,8 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     const h = heap();
     //let i = 0;
     //for( ; i < u.length; ++i ) h[mem + i] = u[i];
-    h.set(u, mem);
-    h[mem + u.length] = 0;
+    h.set(u, Number(mem));
+    h[__ptrAdd(mem, u.length)] = 0;
     //log("allocCString @",mem," =",u);
     return mem;
   };

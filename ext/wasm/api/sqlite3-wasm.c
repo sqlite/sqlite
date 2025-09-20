@@ -377,13 +377,18 @@ typedef struct WasmTestStruct WasmTestStruct;
 SQLITE_WASM_EXPORT
 void sqlite3__wasm_test_struct(WasmTestStruct * s){
   if(s){
+    if( 1 ){
+      fprintf(stderr,"%s:%s()@%p s=@%p xFunc=@%p\n",
+              __FILE__, __func__,
+              (void*)sqlite3__wasm_test_struct,
+              s, (void*)s->xFunc);
+    }
     s->v4 *= 2;
     s->v8 = s->v4 * 2;
     s->ppV = s;
     s->cstr = __FILE__;
     if(s->xFunc) s->xFunc(s);
   }
-  return;
 }
 #endif /* SQLITE_WASM_ENABLE_C_TESTS */
 
