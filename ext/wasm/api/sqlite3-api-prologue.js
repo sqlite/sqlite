@@ -150,12 +150,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        it becomes significant with, e.g., sqlite3_deserialize() and
        certain wasm.xWrap.resultAdapter()s.
     */
-    useStdAlloc: false,
-    /*
-      sqlite3-api-cleanup.js sets wasmPtrSizeof and wasmPtrIR
-    */
-    wasmPtrSizeof: 4,
-    wasmPtrIR: 'i32'
+    useStdAlloc: false
   }, apiConfig || {});
 
   Object.assign(config, {

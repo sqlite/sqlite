@@ -26,24 +26,27 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
   */
   const SABC = Object.assign(
     Object.create(null),
-    globalThis.sqlite3ApiConfig || {},
-    {
+    globalThis.sqlite3ApiConfig || {}, {
       exports: ('undefined'===typeof wasmExports)
         ? Module['asm']/* emscripten <=3.1.43 */
         : wasmExports  /* emscripten >=3.1.44 */,
-      memory: Module.wasmMemory /* gets set if built with -sIMPORTED_MEMORY */,
-//#if sMEMORY64=1
-      wasmPtrSizeof: 8,
-      wasmPtrIR: 'i64',
-//#elif sMEMORY64=2
-      wasmPtrSizeof: 8/*???*/,
-      wasmPtrIR: 'i64'/*???*/,
-//#else
-      wasmPtrSizeof: 4,
-      wasmPtrIR: 'i32',
-//#endif
+      memory: Module.wasmMemory /* gets set if built with -sIMPORTED_MEMORY */
     }
   );
+
+  /** Figure out if this is a 32- or 64-bit WASM build. */
+  switch( typeof SABC.exports.sqlite3_libversion() ){
+    case 'number':
+      SABC.wasmPtrIR = 'i32';
+      SABC.wasmPtrSizeof = 4;
+      break;
+    case 'bigint':
+      SABC.wasmPtrIR = 'i64';
+      SABC.wasmPtrSizeof = 8;
+      break;
+    default:
+      throw new Error("Cannot determine whether this is a 32- or 64-bit build");
+  }
 
   /**
      For current (2022-08-22) purposes, automatically call

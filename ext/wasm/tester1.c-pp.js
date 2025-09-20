@@ -73,12 +73,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       && navigator?.storage?.getDirectory;
   };
 
+  let SQLite3 /* populated after module load */;
+
   const skipIn64BitBuild = function(msg=''){
-//#if sMEMORY64=1
-    error("Skipping known-broken tests for 64-bit build.",msg); return true;
-//#else
+    if( 8===SQLite3.wasm.pointerSizeof ){
+      error("Skipping known-broken tests for 64-bit build.",msg); return true;
+    }
     return false;
-//#endif
   };
 
   {
@@ -3859,6 +3860,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       logClass('warning',"sqlite3__wasm_test_...() APIs unavailable.");
     }
     log("registered vfs list =",capi.sqlite3_js_vfs_list().join(', '));
+    SQLite3 = sqlite3;
     TestUtil.runTests(sqlite3);
   });
 })(self);
