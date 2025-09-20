@@ -263,11 +263,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       this.filename = capi.sqlite3_db_filename(pDb,'main');
     }else{
       let fn = opt.filename, vfsName = opt.vfs, flagsStr = opt.flags;
-      if(('string'!==typeof fn && 'number'!==typeof fn)
-         || 'string'!==typeof flagsStr
-         || (vfsName && ('string'!==typeof vfsName && 'number'!==typeof vfsName))){
+      if( ('string'!==typeof fn && !wasm.isPtr(fn))
+          || 'string'!==typeof flagsStr
+          || (vfsName && ('string'!==typeof vfsName && !wasm.isPtr(vfsName))) ){
         sqlite3.config.error("Invalid DB ctor args",opt,arguments);
-        toss3("Invalid arguments for DB constructor.");
+        toss3("Invalid arguments for DB constructor:", arguments, "opts:", opt);
       }
       let fnJs = ('number'===typeof fn) ? wasm.cstrToJs(fn) : fn;
       const vfsCheck = ctor._name2vfs[fnJs];
@@ -285,7 +285,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const stack = wasm.pstack.pointer;
       try {
         const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
-        let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
+        let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || wasm.NullPtr);
         pDb = wasm.peekPtr(pPtr);
         checkSqlite3Rc(pDb, rc);
         capi.sqlite3_extended_result_codes(pDb, 1);
@@ -1075,7 +1075,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           pSql = wasm.peekPtr(pzTail);
           sqlByteLen = Number(wasm.ptrAdd(pSqlEnd,-pSql));
           if(!pStmt) continue;
-          sqlite3.config.debug("exec() pSql =",capi.sqlite3_sql(pStmt));
+          //sqlite3.config.debug("exec() pSql =",capi.sqlite3_sql(pStmt));
           if(saveSql) saveSql.push(capi.sqlite3_sql(pStmt).trim());
           stmt = new Stmt(this, pStmt, BindTypes);
           if(bind && stmt.parameterCount){

@@ -188,7 +188,7 @@
     exec: function f(sql){
       if(!f._){
         if(!this.runMain()) return;
-        f._ = sqlite3.wasm.xWrap('fiddle_exec', null, ['string']);
+        f._ = sqlite3.wasm.xWrap('fiddle_exec', undefined, ['string']);
       }
       if(fiddleModule.isDead){
         stderr("shell module has exit()ed. Cannot run SQL.");
@@ -201,7 +201,9 @@
         }else if(sql){
           if(Array.isArray(sql)) sql = sql.join('');
           f._running = true;
+          //stdout("calling _()",sql);
           f._(sql);
+          //stdout("returned _()",sql);
         }
       }finally{
         delete f._running;
@@ -209,7 +211,7 @@
       }
     },
     resetDb: function f(){
-      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_reset_db', null);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_reset_db', undefined);
       stdout("Resetting database.");
       f._();
       stdout("Reset",this.dbFilename());
@@ -217,7 +219,7 @@
     /* Interrupt can't work: this Worker is tied up working, so won't get the
        interrupt event which would be needed to perform the interrupt. */
     interrupt: function f(){
-      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_interrupt', null);
+      if(!f._) f._ = sqlite3.wasm.xWrap('fiddle_interrupt', undefined);
       stdout("Requesting interrupt.");
       f._();
     }
@@ -317,7 +319,7 @@
           return;
         }
     };
-    console.warn("Unknown fiddle-worker message type:",ev);
+    sqlite3.config.warn("Unknown fiddle-worker message type:",ev);
   };
 
   /**
@@ -372,8 +374,8 @@
   */
   sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
     sqlite3 = _sqlite3;
-    console.warn("Installing sqlite3 module globally (in Worker)",
-                 "for use in the dev console.", sqlite3);
+    sqlite3.config.warn("Installing sqlite3 module globally (in Worker)",
+                        "for use in the dev console.", sqlite3);
     globalThis.sqlite3 = sqlite3;
     const dbVfs = sqlite3.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
     fiddleModule.fsUnlink = (fn)=>fiddleModule.FS.unlink(fn);
