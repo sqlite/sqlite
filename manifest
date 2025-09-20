@@ -1,5 +1,5 @@
 C Add\smissing\ssqlite3_vtab::xIntegrity\swasm\smapping.\sCorrect\ssignatures\sfor\sthe\s(unused)\sxDlOpen\sand\sxDlError\sbindings.\sDisable\sOPFS-related\stests\sin\stester1.js\sin\s64-bit\sbuilds.
-D 2025-09-20T22:10:59.665
+D 2025-09-20T22:11:19.139
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c582513a77cd1d1d9479e5a4518ddf15ef5a213bed1bfb6af9bd21bf3be41f8a
+P a106be90a2dba7476e54dbb4bdf47d0999031dae0ca82d73e51a48dadd6bcdc0
 R 471bdd32696386c08a96366c6671e4f4
 U stephan
-Z f9103108aed0b2ced38cae0ee697d90a
+Z cfa14257c2b2c2977ba5b99a4e6bbe72
 # Remove this line to create a well-formed Fossil manifest.
