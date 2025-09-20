@@ -1339,12 +1339,12 @@ globalThis.WhWasmUtilInstaller = function(target){
     ]((list.length + 1) * target.pointerSizeof);
     let i = 0;
     list.forEach((e)=>{
-      target.pokePtr(pList + (target.pointerSizeof * i++),
-                         target[
-                           isScoped ? 'scopedAllocCString' : 'allocCString'
-                         ](""+e));
+      target.pokePtr(__ptrAdd(pList, target.pointerSizeof * i++),
+                     target[
+                       isScoped ? 'scopedAllocCString' : 'allocCString'
+                     ](""+e));
     });
-    target.pokePtr(pList + (target.pointerSizeof * i), 0);
+    target.pokePtr(__ptrAdd(pList, target.pointerSizeof * i), 0);
     return pList;
   };
 

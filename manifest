@@ -1,5 +1,5 @@
-C Improve\sdeps\shandling\sof\sfiddle's\sgzipped\soutput\sfiles\sto\shelp\savoid\sstale\sgz\sfiles\sduring\sdevelopment\s(althttpd\swill\sprefer\sthose\sover\sthe\suncompressed\sones).\sOnly\scompress\sthe\slarger\sfiles,\snot\sthe\ssmall\shtml/js\spieces.
-D 2025-09-20T20:17:17.324
+C Get\sspeedtest1's\swasm\sbuild\sworking.
+D 2025-09-20T20:19:18.399
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -618,7 +618,7 @@ F ext/wasm/c-pp.c cca55c5b55ebd8d29916adbedb0e40baa12caa9a2e8429f812683c308f9b0e
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js 091c3f0c669e4b151a159c3974dc2302875d282688118156606b536bb180d60a
+F ext/wasm/common/whwasmutil.js b06a7770c32dd7a847f30cd6f76e5b1818c862ec4d28245ad2aac1f42d800bcf
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c135d9743698b3331e56f72160e2b78840aa2c8fa1a70daea9d4a0952dbda186
-R afe932b854b12451748559bdd186148b
+P bb945f52909caa2577de38711883a79ca918b3716e5e0c2fed6e6ef12e19aeef
+R 2f4878ae4946d7f0892d608a75da930a
 U stephan
-Z 226325d06f124d8e9e57ca1ae44660cd
+Z cb6555b6dfc22d3f177e7adb2e55dfc1
 # Remove this line to create a well-formed Fossil manifest.
