@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\senhancements\sinto\sthe\sbegin-concurrent\sbranch.\nAfter\sthis\smerge,\sthere\sare\ssome\serrors\sin\sthe\snew\swalckptnoop.test\smodule,\nwhich\sneed\sto\sbe\sfixed\sby\sa\sfollow-on\spatch.
-D 2025-09-20T10:14:56.182
+C Fix\sthe\sbuild\sfor\stestfixture.\s\sFix\sthe\swalckptnoop.test\sscript.
+D 2025-09-20T10:34:44.110
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -671,7 +671,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 411dd94b40406572caddf88392a1ccc4deed0f88d260516e59ca6e0c887ee861
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 36142d6c5f95e3faa5fa45d761203b98c5738a3606b7067e083e85fa4eb95421
+F main.mk df12eba3fcd95d574e4645781fa6d0ef6c34e6db8ea6687ba582c9b054481ef2
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -1996,7 +1996,7 @@ F test/wal_common.tcl 204d1721ac13c5e0c7fae6380315b5ab7f4e8423f580d826c5e9df1995
 F test/walbak.test 018d4e5a3d45c6298d11b99f09a8ef6876527946
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test 6bb472e82730e7e4e81395e907a01d8cfc2bd9e1f01f8a9184ca572e2955a4bf
-F test/walckptnoop.test a66e79e9afd5b4b46c65bfc77e57ed37259cedef91e4bd60ae7f64ff9f2e1962
+F test/walckptnoop.test be8f95eaabea34e45b09bd2bd378c17f974eaff6d2a3f67853bded473832128f
 F test/walcksum.test 50e204500eed9c691b6045e467bb2923f49aa93d8adf315e2be135fdb202c1c2
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -2192,8 +2192,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0b2979f0c032859d8b080e58faf490d936dba08ecb67861537d7cd89e0d0ae25 0b14fd35ca37075bb65b2ab398f3324dc851347b1c042566eac23724013653f8
-R 841d5b6867bcf3ee5cc626a077f86488
+P 2d54e221b81e93e52243e6f60de8143efbb83df0631e72c3444f725181806409
+R d4b5f1bd2df831d62f13dc3965ca949d
 U drh
-Z 17335537fbdb63a42d2e0b105b8b37b3
+Z 5b96f550c10deaa782adfa3db3fff4fc
 # Remove this line to create a well-formed Fossil manifest.
