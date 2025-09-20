@@ -349,10 +349,17 @@ static void mk_fiddle(void){
          "$(dir.fiddle)/fiddle-worker.js "
          "$(dir $@)\n");
     }
-    pf("\t@for i in %s/*.*js %s/*.html %s/*.wasm; do \\\n"
-       "\t\ttest -f $${i} || continue; \\\n"
-       "\t\tgzip < $${i} > $${i}.gz; \\\n"
-       "\tdone\n", zDir, zDir, zDir);
+    /* Compress fiddle files. We handle each file separately, rather
+       than compressing them in a loop in the previous target, to help
+       avoid that hand-edited files, like fiddle-worker.js, do not end
+       up with stale .gz files (which althttpd will then serve instead
+       of the up-to-date uncompressed one). */
+    pf("%s/fiddle-module.js.gz: %s/fiddle-module.js\n", zDir, zDir);
+    ps("\tgzip < $< > $@");
+    pf("%s/fiddle-module.wasm.gz: %s/fiddle-module.wasm\n", zDir, zDir);
+    ps("\tgzip < $< > $@");
+    pf("fiddle%s: %s/fiddle-module.js.gz %s/fiddle-module.wasm.gz\n",
+       i ? "-debug" : "", zDir, zDir);
     if( 0==i ){
       ps("fiddle: $(fiddle-module.js)");
     }else{
