@@ -1075,6 +1075,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           pSql = wasm.peekPtr(pzTail);
           sqlByteLen = Number(wasm.ptrAdd(pSqlEnd,-pSql));
           if(!pStmt) continue;
+          sqlite3.config.debug("exec() pSql =",capi.sqlite3_sql(pStmt));
           if(saveSql) saveSql.push(capi.sqlite3_sql(pStmt).trim());
           stmt = new Stmt(this, pStmt, BindTypes);
           if(bind && stmt.parameterCount){

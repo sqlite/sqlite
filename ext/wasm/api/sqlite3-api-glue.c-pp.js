@@ -1748,9 +1748,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const jKey = wasm.cstrToJs(zXKey);
             const jV = kvvfsStorage(zClass).getItem(jKey);
             if(!jV) return -1;
-            const nV = jV.length /* Note that we are relying 100% on v being
-                                    ASCII so that jV.length is equal to the
-                                    C-string's byte length. */;
+            const nV = jV.length /* We are relying 100% on v being
+                                    ASCII so that jV.length is equal
+                                    to the C-string's byte length. */;
             if(nBuf<=0) return nV;
             else if(1===nBuf){
               wasm.poke(zBuf, 0);
@@ -1758,11 +1758,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
             const zV = wasm.scopedAllocCString(jV);
             if(nBuf > nV + 1) nBuf = nV + 1;
-            wasm.heap8u().copyWithin(zBuf, zV, zV + nBuf - 1);
-            wasm.poke(zBuf + nBuf - 1, 0);
+            wasm.heap8u().copyWithin(
+              Number(zBuf), Number(zV), Number(wasm.ptrAdd(zV, nBuf,- 1))
+            );
+            wasm.poke(wasm.ptrAdd(zBuf, nBuf, -1), 0);
             return nBuf - 1;
           }catch(e){
-            console.error("kvstorageRead()",e);
+            sqlite3.config.error("kvstorageRead()",e);
             return -2;
           }finally{
             pstack.restore(stack);
@@ -1778,7 +1780,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             kvvfsStorage(zClass).setItem(jKey, wasm.cstrToJs(zData));
             return 0;
           }catch(e){
-            console.error("kvstorageWrite()",e);
+            sqlite3.config.error("kvstorageWrite()",e);
             return capi.SQLITE_IOERR;
           }finally{
             pstack.restore(stack);
@@ -1792,7 +1794,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             kvvfsStorage(zClass).removeItem(wasm.cstrToJs(zXKey));
             return 0;
           }catch(e){
-            console.error("kvstorageDelete()",e);
+            sqlite3.config.error("kvstorageDelete()",e);
             return capi.SQLITE_IOERR;
           }finally{
             pstack.restore(stack);

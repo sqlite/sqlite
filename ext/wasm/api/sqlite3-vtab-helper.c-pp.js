@@ -249,7 +249,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     else if(err instanceof sqlite3.SQLite3Error) rc = err.resultCode;
     return rc || capi.SQLITE_ERROR;
   };
-  vtab.xError.errorReporter = 1 ? console.error.bind(console) : false;
+  vtab.xError.errorReporter = 1 ? sqlite3.config.error.bind(sqlite3.config) : false;
 
   /**
      A helper for sqlite3_vtab::xRowid() and xUpdate()
