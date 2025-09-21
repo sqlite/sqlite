@@ -513,8 +513,9 @@ endif
 # generate an Emscripten module and where $@ is the module's .js/.mjs
 # file.
 SQLITE.strip-createExportWrapper = \
-  sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]* = createExportWrapper/d' $@ || exit; \
-  echo '(Probably) stripped out extraneous createExportWrapper() parts.'
+  sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
+  -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
+  echo '(Probably) stripped out createExportWrapper() and makeInvalidEarlyAccess() parts.'
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...

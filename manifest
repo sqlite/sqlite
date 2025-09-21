@@ -1,5 +1,5 @@
-C If\sthe\sfile-system\ssupports\sf2fs\sstyle\satomic-writes,\ssync\sthe\sdirectory\safter\sdeleting\sa\sjournal\sfile\sin\sjournal_mode=DELETE\smode\sin\ssynchronous=NORMAL\sor\ssynchronous=FULL\smodes\s(as\swell\sas\ssynchronous=EXTRA).
-D 2025-09-20T14:48:08.773
+C Reduce\ssqlite3.js\sbuild\ssize\sby\sabout\s30kb\sby\sstripping\sout\sEmscripten's\smakeInvalidEarlyAccess()\swrappers.
+D 2025-09-21T11:49:23.880
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/session/sqlite3session.c 9cd47bfefb23c114b7a5d9ee5822d941398902f30516bf0dd
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 851ab585ec165066d971d371b265f7d468d326e27107d611f403b5cac170eebb
+F ext/wasm/GNUmakefile c193003494afc640a712dcbffd7d0c852d9390e2043f455953685f0c438b780a
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2175,9 +2175,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 25b3626a018fa5916d0e129ee057c3f709c6e4d0b84a1a3102cad127a39a3db9 c1e37cb70a8e93368c19ba0fdb987f0616abac028e3541d793a4e6f005b0e513
-R b7781ceecaf9ef4d5073dc7f7fcdbdd8
-T +closed c1e37cb70a8e93368c19ba0fdb987f0616abac028e3541d793a4e6f005b0e513
-U dan
-Z fec53c22feb086f8ac2bc8ff38fc9894
+P e24b21699644a5b49181f2e63961b6a3fccb85605d0b6d109a6043341c194d99
+Q +9fafe075d6f4c49fca45963b142f3e0f0e60d79cb462b7e24f9ed0b9a9677f28
+R 4d0ad76da491258639f4857442c84ef8
+U stephan
+Z 94861414c31bda45ebe82ecdecdb5824
 # Remove this line to create a well-formed Fossil manifest.
