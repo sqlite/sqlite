@@ -960,21 +960,25 @@ globalThis.WhWasmUtilInstaller = function(target){
      validated except to ensure that it is a 32-bit integer with a
      value of 0 or greater. Likewise, it cannot verify whether the
      value actually refers to allocated memory in the WASM heap.
-  */
-  target.isPtr32 = (ptr)=>('number'===typeof ptr && (ptr===(ptr|0)) && ptr>=0);
 
-  target.isPtr64 = (ptr)=>{
-    if( 'bigint'===typeof ptr ){
-      return ptr >= 0;
-    }
-    return ('number'===typeof ptr && ptr>=0 && (ptr===(ptr|0)));
-  };
+     Whether or not null or undefined are legal are context-dependent.
+     They generally are legal but this function does not treat them as
+     such because they're not strictly legal for passing as-is as WASM
+     integer arguments.
+  */
+  target.isPtr32 = (ptr)=>(
+    'number'===typeof ptr && ptr>=0 && ptr===(ptr|0)
+  );
+
+  /** 64-bit counterpart of isPtr32() and falls back to that function
+      if ptr is not a BigInt. */
+  target.isPtr64 = (ptr)=>(
+    ('bigint'===typeof ptr) ? ptr >= 0 : target.isPtr32(ptr)
+  );
 
   /**
-     isPtr() is an alias for isPtr32(). If/when 64-bit WASM pointer
-     support becomes widespread, it will become an alias for either
-     isPtr32() or the as-yet-hypothetical isPtr64(), depending on a
-     configuration option.
+     isPtr() is an alias for isPtr32() or isPtr64(), depending on the
+     value of target.ptr.size.
   */
   target.isPtr = (4===__ptrSize) ? target.isPtr32 : target.isPtr64;
 
@@ -987,15 +991,13 @@ globalThis.WhWasmUtilInstaller = function(target){
      target.heap8u().
   */
   target.cstrlen = function(ptr){
-    if(!ptr) return null;
+    if(!ptr || !target.isPtr(ptr)) return null;
     ptr = Number(ptr) /*tag:64bit*/;
-    if(!target.isPtr(ptr)) return null;
     const h = heapWrappers().HEAP8U;
     let pos = ptr;
     for( ; h[pos] !== 0; ++pos ){}
     return Number(pos - ptr);
   };
-
 
   /** Internal helper to use in operations which need to distinguish
       between TypedArrays which are backed by a SharedArrayBuffer
