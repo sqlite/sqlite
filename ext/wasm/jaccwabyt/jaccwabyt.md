@@ -23,6 +23,14 @@ Firefox and Chrome on Linux and all claims of Safari compatibility
 are based solely on feature compatibility tables provided at
 [MDN][].
 
+**Non-browser compatibility**: this code does not target non-browser
+JS engines and is completely untested on them. That said, it "might
+work".
+
+**64-bit WASM:** as of 2025-09-21 this API supports 64-bit WASM builds
+but it has to be configured for it (see [](#api-binderfactory) for
+details).
+
 **Formalities:**
 
 - Author: [Stephan Beal][sgb]
@@ -43,9 +51,9 @@ project was spawned:
 > The author disclaims copyright to this source code.  In place of a
 > legal notice, here is a blessing:
 >
->    May you do good and not evil.
->    May you find forgiveness for yourself and forgive others.
->    May you share freely, never taking more than you give.
+> -  May you do good and not evil.
+> -  May you find forgiveness for yourself and forgive others.
+> -  May you share freely, never taking more than you give.
 
 -----
 
@@ -200,9 +208,11 @@ const MyBinder = StructBinderFactory({
         a Uint8Array or Int8Array view of the WASM memory,
   alloc:   function(howMuchMemory){...},
   dealloc: function(pointerToFree){...},
-  pointerIR: 'i32' or 'i64' (WASM pointer type)
+  pointerIR: 'i32' or 'i64' // WASM pointer type - default = 'i32'
 });
 ```
+
+See [](#api-binderfactory) for full details about the config options.
 
 It also offers a number of other settings, but all are optional except
 for the ones shown above. Those three config options abstract away
@@ -316,12 +326,13 @@ Noting that:
 - **All of these types are numeric**. Attempting to set any
   struct-bound property to a non-numeric value will trigger an
   exception except in cases explicitly noted otherwise.
-- **"Char" types**: WASM does not define an `int8` type, nor does it
-  distinguish between signed and unsigned. This API treats `c` as
-  `int8` and `C` as `uint8` for purposes of getting and setting values
-  when using the `DataView` class. It is _not_ recommended that client
-  code use these types in new WASM-capable code, but they were added
-  for the sake of binding some immutable legacy code to WASM.
+- **"Char" types**: WASM does not define an `int8` type, nor does its
+  JS representation distinguish between signed and unsigned. This API
+  treats `c` as `int8` and `C` as `uint8` for purposes of getting and
+  setting values when using the `DataView` class. It is _not_
+  recommended that client code use these types in new WASM-capable
+  code, but they were added for the sake of binding some immutable
+  legacy code to WASM.
 
 > Sidebar: Emscripten's public docs do not mention `p`, but their
 generated code includes `p` as an alias for `i`, presumably to mean
@@ -329,11 +340,9 @@ generated code includes `p` as an alias for `i`, presumably to mean
 is more descriptive, so this framework encourages the use of `p` for
 pointer-type members. Using `p` for pointers also helps future-proof
 the signatures against the eventuality that WASM eventually supports
-64-bit pointers. Note that sometimes `p` really means
-pointer-to-pointer, but the Emscripten JS/WASM glue does not offer
-that level of expressiveness in these signatures. We simply have to be
-aware of when we need to deal with pointers and pointers-to-pointers
-in JS code.
+64-bit pointers. Note that sometimes `p` _really_ means a
+pointer-to-pointer. We simply have to be aware of when we need to deal
+with pointers and pointers-to-pointers in JS code.
 
 > Trivia: this API treates `p` as distinctly different from `i` in
 some contexts, so its use is encouraged for pointer types.
@@ -357,17 +366,17 @@ signature.replace(/[^vipPsjfdcC]/g,'').replace(/[pPscC]/g,'i');
 *This support is experimental and subject to change.*
 
 The method signature letter `p` means "pointer," which, in WASM, means
-"integer." `p` is treated as an integer for most contexts, while still
-also being a separate type (analog to how pointers in C are just a
-special use of unsigned numbers). A capital `P` changes the semantics
-of plain member pointers (but not, as of this writing, function
-pointer members) as follows:
+either int32 or int64. `p` is treated as a point for most contexts,
+while still also being a separate type for function signature purposes
+(analog to how pointers in C are just a special use of unsigned
+numbers). A capital `P` changes the semantics of plain member pointers
+(but not, as of this writing, function pointer members) as follows:
 
-- When a `P`-type member is **set** via `myStruct.x=y`, if
-  [`(y instanceof StructType)`][StructType] then the value of `y.pointer` is
-  stored in `myStruct.x`. If `y` is neither a number nor
-  a [StructType][], an exception is triggered (regardless of whether
-  `p` or `P` is used).
+When a `P`-type member is **set** via `myStruct.x=y`, if
+[`(y instanceof StructType)`][StructType] then the value of `y.pointer` is
+stored in `myStruct.x`. If `y` is neither a pointer nor a
+[StructType][], an exception is triggered (regardless of whether `p`
+or `P` is used).
 
 
 <a name='step-3'></a>
@@ -474,15 +483,19 @@ It returns a function which these docs refer to as a [StructBinder][]
 The binder factory supports the following options in its
 configuration object argument:
 
+- `pointerIR` (Added 2025-09-21)  
+  Optionally specify the WASM pointer size with the string `'i32'` or
+  `'i64'`, defaulting to the former. When using with 64-bit WASM
+  builds, this must be set to `'i64'` by the client. Any other value
+  triggers an exception.
 
 - `heap`  
   Must be either a `WebAssembly.Memory` instance representing the WASM
   heap memory OR a function which returns an Int8Array or Uint8Array
   view of the WASM heap. In the latter case the function should, if
   appropriate for the environment, account for the heap being able to
-  grow. Jaccwabyt uses this property in such a way that it "should" be
-  okay for the WASM heap to grow at runtime (that case is, however,
-  untested).
+  grow. Jaccwabyt uses this property in such a way that it is legal
+  for the WASM heap to grow at runtime.
 
 - `alloc`  
   Must be a function semantically compatible with Emscripten's
@@ -524,11 +537,10 @@ configuration object argument:
 
 - `log`  
   Optional function used for debugging output. By default
-  `console.log` is used but by default no debug output is generated.
+  `console.debug` is used but by default no debug output is generated.
   This API assumes that the function will space-separate each argument
-  (like `console.log` does). See [Appendix D](#appendix-d) for info
+  (like `console.debug` does). See [Appendix D](#appendix-d) for info
   about enabling debugging output.
-
 
 <a name='api-structbinder'></a>
 API: Struct Binder
@@ -689,9 +701,12 @@ legally be called on concrete struct instances unless noted otherwise:
 - `memoryDump()`  
   Returns a Uint8Array which contains the current state of this
   object's raw memory buffer. Potentially useful for debugging, but
-  not much else. Note that the memory is necessarily, for
-  compatibility with C, written in the host platform's endianness and
-  is thus not useful as a persistent/portable serialization format.
+  not much else. The memory is necessarily, for compatibility with C,
+  written in the host platform's endianness. Since all WASM is
+  little-endian, it's the same everywhere. Even so: it should not be
+  used as a persistent serialization format because (A) any changes to
+  the struct will invalidate older serialized data and (B) serializing
+  member pointers is useless.
 
 - `setMemberCString(memberName,str)`  
   Uses `StructType.allocCString()` to allocate a new C-style string,

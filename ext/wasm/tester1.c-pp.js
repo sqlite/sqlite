@@ -75,13 +75,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   let SQLite3 /* populated after module load */;
 
-  const skipIn64BitBuild = function(msg=''){
-    if( 8===SQLite3.wasm.ptr.size ){
-      error("Skipping known-broken tests for 64-bit build.",msg); return true;
-    }
-    return false;
-  };
-
   {
     const mapToString = (v)=>{
       switch(typeof v){
@@ -2354,7 +2347,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'virtual table #1: eponymous w/ manual exception handling',
       predicate: (sqlite3)=>(!!sqlite3.capi.sqlite3_vtab || "Missing vtab support"),
       test: function(sqlite3){
-        //if( skipIn64BitBuild('virtual table #1') ) return;
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
           A: 0, B: 1
@@ -2564,7 +2556,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
       predicate: (sqlite3)=>!!sqlite3.capi.sqlite3_vtab || "Missing vtab support",
       test: function(sqlite3){
-        //if( skipIn64BitBuild('virtual table #2') ) return;
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
           A: 0, B: 1
@@ -3193,7 +3184,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'OPFS db sanity checks',
       test: async function(sqlite3){
-        //if( skipIn64BitBuild('"opfs" vfs') ) return;
         T.assert(capi.sqlite3_vfs_find('opfs'));
         const opfs = sqlite3.opfs;
         const filename = this.opfsDbFile = '/dir/sqlite3-tester1.db';
@@ -3230,7 +3220,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'OPFS import',
       test: async function(sqlite3){
-        //if( skipIn64BitBuild('"opfs" vfs import') ) return;
         let db;
         const filename = this.opfsDbFile;
         try {
@@ -3268,7 +3257,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: '(Internal-use) OPFS utility APIs',
       test: async function(sqlite3){
-        //if( skipIn64BitBuild('"opfs" internal APIs') ) return;
         const filename = this.opfsDbFile;
         const unlink = this.opfsUnlink;
         T.assert(filename && !!unlink);
@@ -3321,7 +3309,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'SAH sanity checks',
       test: async function(sqlite3){
-        //if( skipIn64BitBuild('"opfs-sahpool" vfs') ) return;
         T.assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name))
           .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) < 0)
         const inst = sqlite3.installOpfsSAHPoolVfs,
@@ -3682,7 +3669,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       predicate: ()=>hasOpfs() || "Requires OPFS to reproduce",
       //predicate: ()=>false,
       test: async function(sqlite3){
-        //if( skipIn64BitBuild('pending repair of opfs') ) return;
         /* https://sqlite.org/forum/forumpost/cf37d5ff1182c31081
 
            The "opfs" VFS (but not SAHPool) was formerly misbehaving
