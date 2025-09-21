@@ -38,11 +38,11 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
   switch( typeof SABC.exports.sqlite3_libversion() ){
     case 'number':
       SABC.wasmPtrIR = 'i32';
-      SABC.wasmPtrSizeof = 4;
+      SABC.wasmPtrSize = 4;
       break;
     case 'bigint':
       SABC.wasmPtrIR = 'i64';
-      SABC.wasmPtrSizeof = 8;
+      SABC.wasmPtrSize = 8;
       break;
     default:
       throw new Error("Cannot determine whether this is a 32- or 64-bit build");

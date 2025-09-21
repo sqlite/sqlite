@@ -67,8 +67,8 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         ptrIR = config.pointerIR
         || config.ptrIR/*deprecated*/
         || 'i32',
-        ptrSizeof = config.pointerSizeof
-        || config.ptrSizeof/*deprecated*/
+        ptrSize = config.pointerSize
+        || config.ptrSize/*deprecated*/
         || ('i32'===ptrIR ? 4 : 8)
   ;
   const __asPtrType = ('i32'==ptrIR)
@@ -167,7 +167,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   const sigDVGetter = function(s){
     switch(sigLetter(s)) {
         case 'p': case 'P': case 's': {
-          switch(ptrSizeof){
+          switch(ptrSize){
               case 4: return 'getInt32';
               case 8: return affirmBigIntArray() && 'getBigInt64';
           }
@@ -187,7 +187,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   const sigDVSetter = function(s){
     switch(sigLetter(s)){
         case 'p': case 'P': case 's': {
-          switch(ptrSizeof){
+          switch(ptrSize){
               case 4: return 'setInt32';
               case 8: return affirmBigIntArray() && 'setBigInt64';
           }
@@ -212,7 +212,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         case 'i': case 'f': case 'c': case 'C': case 'd': return Number;
         case 'j': return affirmBigIntArray() && BigInt;
         case 'p': case 'P': case 's':
-          switch(ptrSizeof){
+          switch(ptrSize){
               case 4: return Number;
               case 8: return affirmBigIntArray() && BigInt;
           }
@@ -379,7 +379,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   const __SAB = ('undefined'===typeof SharedArrayBuffer)
         ? function(){} : SharedArrayBuffer;
   const __utf8Decode = function(arrayBuffer, begin, end){
-    if( 8===ptrSizeof ){
+    if( 8===ptrSize ){
       begin = Number(begin);
       end = Number(end);
     }

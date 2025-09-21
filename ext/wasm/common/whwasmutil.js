@@ -169,20 +169,20 @@
       set, it gets set to whatever this code thinks the pointer size
       is.  Modifying it after this call has no effect.
 
-   - `pointerSizeof`: if set, it must be one of 4 or 8 and must
+   - `pointerSize`: if set, it must be one of 4 or 8 and must
       correspond to the value of `pointerIR`. If not set, it gets set
       to whatever this code thinks the pointer size is (4 unless
-      `pointerIR` is 'i64'). If `pointerSizeof` is set but `pointerIR`
+      `pointerIR` is 'i64'). If `pointerSize` is set but `pointerIR`
       is not, `pointerIR` gets set appropriately, and vice versa.
 
    When building with Emscripten's -sMEMORY64=1, `pointerIR` must be
-   set to 'i64' and/or `pointerSizeof` must be set to 8.
+   set to 'i64' and/or `pointerSize` must be set to 8.
 
-   After calling this, the pointerIR and pointerSizeof properties are
+   After calling this, the pointerIR and pointerSize properties are
    replaced with a read-only Object member named target.ptr. It
    contains the following read-only properties:
 
-   - .size = pointerSizeof
+   - .size = pointerSize
 
    - .ir = pointerIR
 
@@ -215,19 +215,19 @@ globalThis.WhWasmUtilInstaller = function(target){
      As of 2025-09-21, this library works with 64-bit WASM modules
      built with Emscripten's -sMEMORY64=1.
   */
-  if( target.pointerSizeof && !target.pointerIR ){
-    target.pointerIR = (4===target.pointerSizeof ? 'i32' : 'i64');
+  if( target.pointerSize && !target.pointerIR ){
+    target.pointerIR = (4===target.pointerSize ? 'i32' : 'i64');
   }
   const __ptrIR = (target.pointerIR ??= 'i32');
-  const __ptrSize = (target.pointerSizeof ??=
+  const __ptrSize = (target.pointerSize ??=
                      ('i32'===__ptrIR ? 4 : ('i64'===__ptrIR ? 8 : 0)));
-  delete target.pointerSizeof;
+  delete target.pointerSize;
   delete target.pointerIR;
 
   if( 'i32'!==__ptrIR && 'i64'!==__ptrIR ){
     toss("Invalid pointerIR:",__ptrIR);
   }else if( 8!==__ptrSize && 4!==__ptrSize ){
-    toss("Invalid pointerSizeof:",__ptrSize);
+    toss("Invalid pointerSize:",__ptrSize);
   }
 
   /**

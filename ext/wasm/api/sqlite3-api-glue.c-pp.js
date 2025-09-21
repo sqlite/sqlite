@@ -723,12 +723,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      need...
   */
   sqlite3.StructBinder = globalThis.Jaccwabyt({
-    heap: 0 ? wasm.memory : wasm.heap8u,
+    heap: wasm.heap8u,
     alloc: wasm.alloc,
     dealloc: wasm.dealloc,
     bigIntEnabled: wasm.bigIntEnabled,
     pointerIR: wasm.pointerIR,
-    pointerSizeof: wasm.ptr.size,
+    pointerSize: wasm.ptr.size,
     memberPrefix: /* Never change this: this prefix is baked into any
                      amount of code and client-facing docs. (Much
                      later: it probably should have been '$$', but see

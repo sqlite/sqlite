@@ -857,11 +857,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        the case and will use this constant in places where we might
        otherwise use a hard-coded 4.
     */
-    pointerSizeof: config.wasmPtrSizeof,
+    pointerSize: config.wasmPtrSize,
     /**
        The WASM IR (Intermediate Representation) value for
        pointer-type values. It MUST refer to a value type of the
-       size described by this.pointerSizeof.
+       size described by this.pointerSize.
     */
     pointerIR: config.wasmPtrIR,
     /**
