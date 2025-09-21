@@ -249,7 +249,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   /** Either BigInt or, if !target.bigIntEnabled, a function which
       throws complaining that BigInt is not enabled. */
   const __BigInt = target.bigIntEnabled
-        ? BigInt
+        ? (v)=>BigInt(v || 0)
         : (v)=>toss("BigInt support is disabled in this build.");
 
   /**
@@ -259,7 +259,7 @@ globalThis.WhWasmUtilInstaller = function(target){
 
      Why? Because Number(null)===0, but BigInt(null) throws.
   */
-  const __asPtrType = (4===__ptrSize) ? Number : (v)=>__BigInt(v||0);
+  const __asPtrType = (4===__ptrSize) ? Number : __BigInt;
 
   /**
      The number 0 as either type Number or BigInt, depending on
@@ -1534,7 +1534,7 @@ globalThis.WhWasmUtilInstaller = function(target){
 
   const __xArgPtr = __asPtrType;
   xArg
-    .set('i64', (i)=>__BigInt(i || 0))
+    .set('i64', __BigInt)
     .set('i32', (i)=>i|0)
     .set('i16', (i)=>((i | 0) & 0xFFFF))
     .set('i8', (i)=>((i | 0) & 0xFF))

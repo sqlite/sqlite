@@ -16,7 +16,6 @@
   Project homes:
   - https://fossil.wanderinghorse.net/r/jaccwabyt
   - https://sqlite.org/src/dir/ext/wasm/jaccwabyt
-
 */
 'use strict';
 globalThis.Jaccwabyt = function StructBinderFactory(config){
@@ -59,24 +58,28 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         log = config.log || console.log.bind(console),
         memberPrefix = (config.memberPrefix || ""),
         memberSuffix = (config.memberSuffix || ""),
-        bigIntEnabled = (undefined===config.bigIntEnabled
-                         ? !!globalThis['BigInt64Array'] : !!config.bigIntEnabled),
         BigInt = globalThis['BigInt'],
         BigInt64Array = globalThis['BigInt64Array'],
+        bigIntEnabled = config.bigIntEnabled ?? !!BigInt64Array,
         /* Undocumented (on purpose) config options: */
         ptrIR = config.pointerIR
         || config.ptrIR/*deprecated*/
         || 'i32',
-        ptrSize = config.pointerSize
-        || config.ptrSize/*deprecated*/
+        ptrSize = config.ptrSize/*deprecated*/
         || ('i32'===ptrIR ? 4 : 8)
   ;
-  const __asPtrType = ('i32'==ptrIR)
-        ? Number
-        : (bigIntEnabled
-           ? (v)=>BigInt(v || 0)
-           : toss("Missing BigInt support"));
+
+  if(ptrIR!=='i32' && ptrIR!=='i64') toss("Invalid pointer representation:",ptrIR);
+  if(ptrSize!==4 && ptrSize!==8) toss("Invalid pointer size:",ptrSize);
+
+  /** Either BigInt or, if !bigIntEnabled, a function which
+      throws complaining that BigInt is not enabled. */
+  const __BigInt = (bigIntEnabled && BigInt)
+        ? (v)=>BigInt(v || 0)
+        : (v)=>toss("BigInt support is disabled in this build.");
+  const __asPtrType = ('i32'==ptrIR) ? Number : __BigInt;
   const __NullPtr = __asPtrType(0);
+
   /**
      Expects any number of numeric arguments, each one of either type
      Number or BigInt. It sums them up (from an implicit starting
@@ -210,11 +213,11 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   const sigDVSetWrapper = function(s){
     switch(sigLetter(s)) {
         case 'i': case 'f': case 'c': case 'C': case 'd': return Number;
-        case 'j': return affirmBigIntArray() && BigInt;
+        case 'j': return __BigInt;
         case 'p': case 'P': case 's':
           switch(ptrSize){
               case 4: return Number;
-              case 8: return affirmBigIntArray() && BigInt;
+              case 8: return __BigInt;
           }
           break;
     }

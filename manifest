@@ -1,5 +1,5 @@
-C Remove\ssome\sdead\scode\sand\sstray\sdebug\soutput.\sFix\s(again)\sthe\sJS\sSQLTester\sfor\s64-bit\s(the\sprevious\sbuild\swas\sset\sto\s32-bit).
-D 2025-09-21T19:01:15.620
+C General\scleanups\sand\sdead\scode\sremoval.
+D 2025-09-21T19:39:06.527
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -597,7 +597,7 @@ F ext/wasm/api/post-js-footer.js 365405929f41ca0e6d389ed8a8da3f3c93e11d3ef43a90a
 F ext/wasm/api/post-js-header.js 53740d824e5d9027eb1e6fd59e216abbd2136740ce260ea5f0699ff2acb0a701
 F ext/wasm/api/pre-js.c-pp.js 58f823de197e2c10d76179aa05410a593b7ae03e1ece983bb42ffd818e8857e1
 F ext/wasm/api/sqlite3-api-cleanup.js d4f1a5e665afaf84015f6ef0ddd766f638cb28501c4569b1d4b527c4b5a2b9a4
-F ext/wasm/api/sqlite3-api-glue.c-pp.js 5fb52fb190519e2d9cd8507c5f6c7a9827c80aa254f16ec682e1d2c26ccd0fbd
+F ext/wasm/api/sqlite3-api-glue.c-pp.js 814bdccd7e7c28520cd9a2480785fda027529061e9187460d7155775034afd0f
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js 831ce373495f6a5d9230f31a1e09e8995e317828926e736d58c9e7091c6b1d07
 F ext/wasm/api/sqlite3-api-prologue.js bdf8e553c2142916fd7a2382e1becfed7a5755da95f585f632336634e5728448
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js 760191cd13416e6f5adfd9fcc8a97fed5645c9e0a5fbac213a2d4ce2d79a4334
@@ -618,7 +618,7 @@ F ext/wasm/c-pp.c cca55c5b55ebd8d29916adbedb0e40baa12caa9a2e8429f812683c308f9b0e
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js a2c7482ee0c07087a4a6878830a38acefacb0ee4399fab25073b8a3ce99cfacd
+F ext/wasm/common/whwasmutil.js aff84dc5b7bf1f06a567d4ab43d28422447f5806487210f805d4d85b400b82b8
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -637,8 +637,8 @@ F ext/wasm/fiddle/fiddle.js f0b96f978c7c77fea8d092aa79c77849ce111d7b1ba60ffba076
 F ext/wasm/fiddle/index.html 17c7d6b21f40fbf462162c4311b63d760b065e419d9f5a96534963b0e52af940
 F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf188f024b3730
 F ext/wasm/index.html bcaa00eca521b372a6a62c7e7b17a870b0fcdf3e418a5921df1fd61e5344080d
-F ext/wasm/jaccwabyt/jaccwabyt.js 663a4f1a45c21c725884de810c797fdcf2e58f15446c507539fb107f0b5c2b7d
-F ext/wasm/jaccwabyt/jaccwabyt.md 1128e3563e7eff90b5a373395251fc76cb32386fad1fea6075b0f34a8f1b9bdf
+F ext/wasm/jaccwabyt/jaccwabyt.js a5809f1b9c4be24fdc5abc436f3ab978f93da626b044db92861db48d67bdd151
+F ext/wasm/jaccwabyt/jaccwabyt.md 3eb94b708090edcaba435aa15dc8346553162e0d01ba3eae7b7bf34c92d263b7
 F ext/wasm/mkwasmbuilds.c b722a3a44edc1498575d935939dfcbe23172f98b0f40d068998e0950707e749d
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0fa1830540bcb86f5c59b1a6a9ffd8727c194a64a131d9d362023c84a3b820cb
-R dc2d67fd32c35033587eba9e2fc11a68
+P a6b9567001dad0293dc6a7fe9a7ec1a220e41d9426448e2ab91dbd551948be15
+R b1a746924c607bfa0934fa2cb810d7b7
 U stephan
-Z 79efec95b48f9fbd6fa325e464638c1d
+Z 193b461c45ffcc12495a77014d8c0df4
 # Remove this line to create a well-formed Fossil manifest.

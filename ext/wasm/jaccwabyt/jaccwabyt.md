@@ -199,7 +199,8 @@ const MyBinder = StructBinderFactory({
   heap: WebAssembly.Memory instance or a function which returns
         a Uint8Array or Int8Array view of the WASM memory,
   alloc:   function(howMuchMemory){...},
-  dealloc: function(pointerToFree){...}
+  dealloc: function(pointerToFree){...},
+  pointerIR: 'i32' or 'i64' (WASM pointer type)
 });
 ```
 
@@ -212,7 +213,7 @@ a conventional Emscripten setup, that config might simply look like:
 >  
 ```javascript
 {
-    heap:    Module['asm']['memory'],
+    heap:    Module?.asm?.memory || Module['wasmMemory'],
     //Or:
     // heap: ()=>Module['HEAP8'],
     alloc:   (n)=>Module['_malloc'](n),

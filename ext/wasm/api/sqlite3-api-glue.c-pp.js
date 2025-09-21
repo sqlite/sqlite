@@ -727,8 +727,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     alloc: wasm.alloc,
     dealloc: wasm.dealloc,
     bigIntEnabled: wasm.bigIntEnabled,
-    pointerIR: wasm.pointerIR,
-    pointerSize: wasm.ptr.size,
+    pointerIR: wasm.ptr.ir,
     memberPrefix: /* Never change this: this prefix is baked into any
                      amount of code and client-facing docs. (Much
                      later: it probably should have been '$$', but see
@@ -1471,9 +1470,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Helper for string:flexible conversions which requires a
        byte-length counterpart argument. Passed a value and its
        ostensible length, this function returns [V,N], where V is
-       either v or a transformed copy of v and N is either Number(n)
-       (if v is a WASM pointer), -1 (if v is a string or Array), or
-       the byte length of v (if it's a byte array or ArrayBuffer).
+       either v or a transformed copy of v and N is either (if v is a
+       WASM pointer, in which case n might be a BigInt), -1 (if v is a
+       string or Array), or the byte length of v (if it's a byte array
+       or ArrayBuffer).
     */
     const __flexiString = (v,n)=>{
       if('string'===typeof v){
@@ -1486,13 +1486,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }else if(Array.isArray(v)){
         v = v.join("");
         n = -1;
-      }/*else if( 'bigint'===typeof n ){
-        // tag:64bit A workaround for when a stray BigInt, possibly
-        // calculated via a pointer range, gets passed in here. This
-        // has been seen to happen in sqlite3_prepare_v3() via
-        // oo1.DB.exec().
-        n = Number(n);
-      }*/
+      }
       return [v, n];
     };
 
@@ -1531,11 +1525,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(f.length!==arguments.length){
         return __dbArgcMismatch(pDb,"sqlite3_prepare_v3",f.length);
       }
-      const [xSql, xSqlLen] = __flexiString(sql, sqlLen);
+      const [xSql, xSqlLen] = __flexiString(sql, Number(sqlLen));
       switch(typeof xSql){
         case 'string': return __prepare.basic(pDb, xSql, xSqlLen, prepFlags, ppStmt, null);
         case (typeof wasm.ptr.null):
-          return __prepare.full(pDb, xSql, xSqlLen, prepFlags, ppStmt, pzTail);
+          return __prepare.full(pDb, wasm.ptr.coerce(xSql), xSqlLen, prepFlags,
+                                ppStmt, pzTail);
         default:
           return util.sqlite3__wasm_db_error(
             pDb, capi.SQLITE_MISUSE,
@@ -1921,7 +1916,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       tgt[memKey] = fProxy;
     }else{
-      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, false));
+      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name));
       tgt[memKey] = pFunc;
       if(!tgt.ondispose || !tgt.ondispose.__removeFuncList){
         tgt.addOnDispose('ondispose.__removeFuncList handler',
