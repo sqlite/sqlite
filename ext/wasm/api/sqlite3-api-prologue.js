@@ -389,13 +389,13 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      modified by other threads while they're working.
   */
   const typedArrayPart = (aTypedArray, begin, end)=>{
+    //if( 8===wasm..ptr.size ){
     // slice() and subarray() do not like BigInt args.
     if( 'bigint'===typeof begin ) begin = Number(begin);
     if( 'bigint'===typeof end ) end = Number(end);
-    /*if( 8===wasm.pointerSizeof ){
-      begin = Number(begin);
-      end = Number(end);
-    }*/
+    begin = Number(begin);
+    end = Number(end);
+    //}
     return isSharedTypedArray(aTypedArray)
       ? aTypedArray.slice(begin, end)
       : aTypedArray.subarray(begin, end);
@@ -884,7 +884,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        the other way around. In this case, the memory is not
        available via this.exports.memory.
     */
-    memory: config.memory || config.exports['memory']
+    memory: config.memory
+      || config.exports['memory']
       || toss3("API config object requires a WebAssembly.Memory object",
               "in either config.exports.memory (exported)",
               "or config.memory (imported)."),
@@ -992,13 +993,13 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     };
     wasm.alloc.impl = wasm.exports[keyAlloc];
     wasm.realloc = function f(m,n){
-      m = wasm.asPtrType(m)/*tag:64bit*/;
+      m = wasm.ptr.coerce(m)/*tag:64bit*/;
       const m2 = f.impl(m,n);
-      return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : wasm.NullPtr;
+      return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : wasm.ptr.null;
     };
     wasm.realloc.impl = wasm.exports[keyRealloc];
     wasm.dealloc = function f(m){
-      f.impl(wasm.asPtrType(m)/*tag:64bit*/);
+      f.impl(wasm.ptr.coerce(m)/*tag:64bit*/);
     };
     wasm.dealloc.impl = wasm.exports[keyDealloc];
   }
@@ -1162,12 +1163,12 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       const mem = wasm.pstack.alloc(n * sz);
       const rc = [mem];
       let i = 1, offset = sz;
-      for(; i < n; ++i, offset += sz) rc.push(wasm.ptrAdd(mem, offset));
+      for(; i < n; ++i, offset += sz) rc.push(wasm.ptr.add(mem, offset));
       return rc;
     },
     /**
        A convenience wrapper for allocChunks() which sizes each chunk
-       as either 8 bytes (safePtrSize is truthy) or wasm.pointerSizeof (if
+       as either 8 bytes (safePtrSize is truthy) or wasm.ptr.size (if
        safePtrSize is falsy).
 
        How it returns its result differs depending on its first
@@ -1186,8 +1187,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     allocPtr: (n=1,safePtrSize=true)=>{
       return 1===n
-        ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.pointerSizeof)
-        : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.pointerSizeof);
+        ? wasm.pstack.alloc(safePtrSize ? 8 : wasm.ptr.size)
+        : wasm.pstack.allocChunks(n, safePtrSize ? 8 : wasm.ptr.size);
     },
 
     /**
@@ -1246,7 +1247,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        && 1===args[0].BYTES_PER_ELEMENT){
       const ta = args[0];
       if(0===ta.byteLength){
-        wasm.exports.sqlite3_randomness(0,wasm.NullPtr);
+        wasm.exports.sqlite3_randomness(0,wasm.ptr.null);
         return ta;
       }
       const stack = wasm.pstack.pointer;
@@ -1259,7 +1260,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         do{
           const j = (n>nAlloc ? nAlloc : n);
           r(j, ptr);
-          ta.set(typedArrayPart(heap, ptr, wasm.ptrAdd(ptr,j)), offset);
+          ta.set(typedArrayPart(heap, ptr, wasm.ptr.add(ptr,j)), offset);
           n -= j;
           offset += j;
         } while(n > 0);
@@ -1377,7 +1378,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   */
   capi.sqlite3_js_vfs_list = function(){
     const rc = [];
-    let pVfs = capi.sqlite3_vfs_find(wasm.asPtrType(0));
+    let pVfs = capi.sqlite3_vfs_find(wasm.ptr.coerce(0));
     while(pVfs){
       const oVfs = new capi.sqlite3_vfs(pVfs);
       rc.push(wasm.cstrToJs(oVfs.$zName));
@@ -1407,8 +1408,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     const scope = wasm.scopedAllocPush();
     let pOut;
     try{
-      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.pointerSizeof);
-      const ppOut = wasm.ptrAdd(pSize, 8);
+      const pSize = wasm.scopedAlloc(8/*i64*/ + wasm.ptr.size);
+      const ppOut = wasm.ptr.add(pSize, 8);
       /**
          Maintenance reminder, since this cost a full hour of grief
          and confusion: if the order of pSize/ppOut are reversed in
@@ -1418,7 +1419,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       */
       const zSchema = schema
             ? (wasm.isPtr(schema) ? schema : wasm.scopedAllocCString(''+schema))
-            : wasm.NullPtr;
+            : wasm.ptr.null;
       let rc = wasm.exports.sqlite3__wasm_db_serialize(
         pDb, zSchema, ppOut, pSize, 0
       );
@@ -1859,7 +1860,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          do not.
       */
       tgt.push(capi.sqlite3_value_to_js(
-        wasm.peekPtr(wasm.ptrAdd(pArgv, wasm.pointerSizeof * i)),
+        wasm.peekPtr(wasm.ptr.add(pArgv, wasm.ptr.size * i)),
         throwIfCannotConvert
       ));
     }

@@ -178,6 +178,24 @@
    When building with Emscripten's -sMEMORY64=1, `pointerIR` must be
    set to 'i64' and/or `pointerSizeof` must be set to 8.
 
+   After calling this, the pointerIR and pointerSizeof properties are
+   replaced with a read-only Object member named target.ptr. It
+   contains the following read-only properties:
+
+   - .size = pointerSizeof
+
+   - .ir = pointerIR
+
+   - .null = a "null" pointer of type Number or BigInt.
+
+   - .coerce = a function which behaves like target.asPtrType()
+
+   - .add = a substitute for pointer arithmetic (which does not work
+     in 64-bit builds). Adds up all of its arguments and returns
+     either a Number or BigInt, depending on this.size.
+
+   - .addn = like .add() but returns its result as a Number.
+
    Design notes:
 
    - It should probably take a config object and return the
@@ -200,23 +218,25 @@ globalThis.WhWasmUtilInstaller = function(target){
   if( target.pointerSizeof && !target.pointerIR ){
     target.pointerIR = (4===target.pointerSizeof ? 'i32' : 'i64');
   }
-  const ptrIR = (target.pointerIR ??= 'i32');
-  const ptrSizeof = (target.pointerSizeof ??=
-                     ('i32'===ptrIR ? 4 : ('i64'===ptrIR ? 8 : 0)));
+  const __ptrIR = (target.pointerIR ??= 'i32');
+  const __ptrSize = (target.pointerSizeof ??=
+                     ('i32'===__ptrIR ? 4 : ('i64'===__ptrIR ? 8 : 0)));
+  delete target.pointerSizeof;
+  delete target.pointerIR;
 
-  if( 'i32'!==ptrIR && 'i64'!==ptrIR ){
-    toss("Invalid pointerIR:",ptrIR);
-  }else if( 8!==ptrSizeof && 4!==ptrSizeof ){
-    toss("Invalid pointerSizeof:",ptrSizeof);
+  if( 'i32'!==__ptrIR && 'i64'!==__ptrIR ){
+    toss("Invalid pointerIR:",__ptrIR);
+  }else if( 8!==__ptrSize && 4!==__ptrSize ){
+    toss("Invalid pointerSizeof:",__ptrSize);
   }
 
   /**
-     If target.pointerIR=='i32' then this is equivalent to
+     If target.ptr.ir=='i32' then this is equivalent to
      Number(v) else it's equivalent to BigInt(v||0).
 
      Why? Because Number(null)===0, but BigInt(null) throws.
   */
-  const __asPtrType = (4===ptrSizeof)
+  const __asPtrType = (4===__ptrSize)
         ? Number
         : (target.bigIntEnabled
            ? ((v)=>BigInt(v || 0))
@@ -226,11 +246,9 @@ globalThis.WhWasmUtilInstaller = function(target){
 
   /**
      The number 0 as either type Number or BigInt, depending on
-     target.pointerIR.
+     target.ptr.ir.
   */
   const __NullPtr = __asPtrType(0);
-
-  target.NullPtr = __NullPtr;
 
   /**
      Expects any number of numeric arguments, each one of either type
@@ -248,7 +266,24 @@ globalThis.WhWasmUtilInstaller = function(target){
     return rc;
   };
 
-  target.ptrAdd = __ptrAdd;
+  const __ptr = Object.assign(Object.create(null),{
+    coerce: __asPtrType,
+    add: __ptrAdd,
+    addn: (4===__ptrIR) ? __ptrAdd : (...args)=>Number(__ptrAdd(...args))
+  });
+  Object.defineProperty(target, 'ptr', {
+    enumerable: true,
+    get: ()=>__ptr,
+    set: ()=>toss("The ptr property is read-only.")
+  });
+  (function f(name, val){
+    Object.defineProperty(__ptr, name, {
+      enumerable: true,
+      get: ()=>val,
+      set: ()=>toss("ptr["+name+"] is read-only.")
+    });
+    return f;
+  })( 'null', __NullPtr )( 'size', __ptrSize )( 'ir', __ptrIR );
 
   if(!target.exports){
     Object.defineProperty(target, 'exports', {
@@ -288,7 +323,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      For the given IR-like string in the set ('i8', 'i16', 'i32',
      'f32', 'float', 'i64', 'f64', 'double', '*'), or any string value
      ending in '*', returns the sizeof for that value
-     (target.pointerSizeof in the latter case). For any other value, it
+     (target.ptr.size in the latter case). For any other value, it
      returns the undefined value.
   */
   target.sizeofIR = (n)=>{
@@ -297,9 +332,9 @@ globalThis.WhWasmUtilInstaller = function(target){
         case 'i16': return 2;
         case 'i32': case 'f32': case 'float': return 4;
         case 'i64': case 'f64': case 'double': return 8;
-        case '*': return ptrSizeof;
+        case '*': return __ptrSize;
         default:
-          return (''+n).endsWith('*') ? ptrSizeof : undefined;
+          return (''+n).endsWith('*') ? __ptrSize : undefined;
     }
   };
 
@@ -470,7 +505,7 @@ globalThis.WhWasmUtilInstaller = function(target){
       f._ = {
         // Map of signature letters to type IR values
         sigTypes: Object.assign(Object.create(null),{
-          i: 'i32', p: ptrIR, P: ptrIR, s: ptrIR,
+          i: 'i32', p: __ptrIR, P: __ptrIR, s: __ptrIR,
           j: 'i64', f: 'f32', d: 'f64'
         }),
         // Map of type IR values to WASM type code values
@@ -699,7 +734,7 @@ globalThis.WhWasmUtilInstaller = function(target){
 
      As a special case, if type ends with a `*`, it is considered to
      be a pointer type and is treated as the WASM numeric type
-     appropriate for the pointer size (==this.pointerIR).
+     appropriate for the pointer size (==this.ptr.ir).
 
      While possibly not obvious, this routine and its poke()
      counterpart are how pointer-to-value _output_ parameters in
@@ -746,7 +781,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      See also: poke()
   */
   target.peek = function f(ptr, type='i8'){
-    if(type.endsWith('*')) type = ptrIR;
+    if(type.endsWith('*')) type = __ptrIR;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
     const list = Array.isArray(ptr) ? [] : undefined;
@@ -780,7 +815,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      bytes are written. Throws if given an invalid type. See peek()
      for details about the `type` argument. If the 3rd argument ends
      with `*` then it is treated as a pointer type and this function
-     behaves as if the 3rd argument were this.pointerIR.
+     behaves as if the 3rd argument were this.ptr.ir.
 
      If the first argument is an array, it is treated like a list
      of pointers and the given value is written to each one.
@@ -792,7 +827,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      ACHTUNG #2: see peek()'s ACHTUNG #2.
   */
   target.poke = function(ptr, value, type='i8'){
-    if (type.endsWith('*')) type = ptrIR;
+    if (type.endsWith('*')) type = __ptrIR;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
     for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
@@ -823,7 +858,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      multiple arguments, or a single array of arguments, it returns an
      array of their values.
   */
-  target.peekPtr = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), ptrIR );
+  target.peekPtr = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), __ptrIR );
 
   /**
      A variant of poke() intended for setting pointer-to-pointer
@@ -831,7 +866,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      value of 0 and (2) it always writes to the pointer-sized heap
      view.
   */
-  target.pokePtr = (ptr, value=0)=>target.poke(ptr, value, ptrIR);
+  target.pokePtr = (ptr, value=0)=>target.poke(ptr, value, __ptrIR);
 
   /**
      Convenience form of peek() intended for fetching i8 values. If
@@ -901,7 +936,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      isPtr32() or the as-yet-hypothetical isPtr64(), depending on a
      configuration option.
   */
-  target.isPtr = ('i32'==ptrIR)
+  target.isPtr = ('i32'==__ptrIR)
     ? target.isPtr32
     : target.isPtr64;
 
@@ -930,7 +965,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   const __utf8Decode = function(arrayBuffer, begin, end){
     //if( 'bigint'===typeof begin ) begin = Number(begin);
     //if( 'bigint'===typeof end ) end = Number(end);
-    /*if( 8===ptrSizeof ){
+    /*if( 8===__ptrSize ){
       begin = Number(begin);
       end = Number(end);
     }*/
@@ -1299,15 +1334,15 @@ globalThis.WhWasmUtilInstaller = function(target){
   const __allocMainArgv = function(isScoped, list){
     const pList = target[
       isScoped ? 'scopedAlloc' : 'alloc'
-    ]((list.length + 1) * target.pointerSizeof);
+    ]((list.length + 1) * target.ptr.size);
     let i = 0;
     list.forEach((e)=>{
-      target.pokePtr(__ptrAdd(pList, target.pointerSizeof * i++),
+      target.pokePtr(__ptrAdd(pList, target.ptr.size * i++),
                      target[
                        isScoped ? 'scopedAllocCString' : 'allocCString'
                      ](""+e));
     });
-    target.pokePtr(__ptrAdd(pList, target.pointerSizeof * i), 0);
+    target.pokePtr(__ptrAdd(pList, target.ptr.size * i), 0);
     return pList;
   };
 
@@ -1352,7 +1387,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   target.cArgvToJs = (argc, pArgv)=>{
     const list = [];
     for(let i = 0; i < argc; ++i){
-      const arg = target.peekPtr(__ptrAdd(pArgv, target.pointerSizeof * i));
+      const arg = target.peekPtr(__ptrAdd(pArgv, target.ptr.size * i));
       list.push( arg ? target.cstrToJs(arg) : null );
     }
     return list;
@@ -1374,15 +1409,15 @@ globalThis.WhWasmUtilInstaller = function(target){
   /** Internal impl for allocPtr() and scopedAllocPtr(). */
   const __allocPtr = function(howMany, safePtrSize, method){
     __affirmAlloc(target, method);
-    const pIr = safePtrSize ? 'i64' : ptrIR;
-    let m = target[method](howMany * (safePtrSize ? 8 : ptrSizeof));
+    const pIr = safePtrSize ? 'i64' : __ptrIR;
+    let m = target[method](howMany * (safePtrSize ? 8 : __ptrSize));
     target.poke(m, 0, pIr)
     if(1===howMany){
       return m;
     }
     const a = [m];
     for(let i = 1; i < howMany; ++i){
-      m = __ptrAdd(m, (safePtrSize ? 8 : ptrSizeof));
+      m = __ptrAdd(m, (safePtrSize ? 8 : __ptrSize));
       a[i] = m;
       target.poke(m, 0, pIr);
     }
@@ -1526,7 +1561,7 @@ globalThis.WhWasmUtilInstaller = function(target){
     const copyToResult = ['i8', 'i16', 'i32', 'int',
                           'f32', 'float', 'f64', 'double'];
     if(target.bigIntEnabled) copyToResult.push('i64');
-    const adaptPtr = xArg.get(ptrIR);
+    const adaptPtr = xArg.get(__ptrIR);
     for(const t of copyToResult){
       xArg.set(t+'*', adaptPtr);
       xResult.set(t+'*', adaptPtr);
@@ -1544,7 +1579,8 @@ globalThis.WhWasmUtilInstaller = function(target){
      - If v is a string, scopeAlloc() a new C-string from it and return
        that temp string's pointer.
 
-     - Else return the value from the arg adapter defined for `ptrIR`.
+     - Else return the value from the arg adapter defined for
+       target.ptr.ir.
 
      TODO? Permit an Int8Array/Uint8Array and convert it to a string?
      Would that be too much magic concentrated in one place, ready to

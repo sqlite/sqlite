@@ -285,7 +285,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const stack = wasm.pstack.pointer;
       try {
         const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
-        let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || wasm.NullPtr);
+        let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || wasm.ptr.null);
         pDb = wasm.peekPtr(pPtr);
         checkSqlite3Rc(pDb, rc);
         capi.sqlite3_extended_result_codes(pDb, 1);
@@ -1051,14 +1051,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         let sqlByteLen = isTA ? arg.sql.byteLength : wasm.jstrlen(arg.sql);
         const ppStmt  = wasm.scopedAlloc(
           /* output (sqlite3_stmt**) arg and pzTail */
-          (2 * wasm.pointerSizeof) + (sqlByteLen + 1/* SQL + NUL */)
+          (2 * wasm.ptr.size) + (sqlByteLen + 1/* SQL + NUL */)
         );
-        const pzTail = wasm.ptrAdd(ppStmt, wasm.pointerSizeof) /* final arg to sqlite3_prepare_v2() */;
-        let pSql = wasm.ptrAdd(pzTail, wasm.pointerSizeof);
-        const pSqlEnd = wasm.ptrAdd(pSql, sqlByteLen);
+        const pzTail = wasm.ptr.add(ppStmt, wasm.ptr.size) /* final arg to sqlite3_prepare_v2() */;
+        let pSql = wasm.ptr.add(pzTail, wasm.ptr.size);
+        const pSqlEnd = wasm.ptr.add(pSql, sqlByteLen);
         if(isTA) wasm.heap8().set(arg.sql, pSql);
         else wasm.jstrcpy(arg.sql, wasm.heap8(), pSql, sqlByteLen, false);
-        wasm.poke(wasm.ptrAdd(pSql, sqlByteLen), 0/*NUL terminator*/);
+        wasm.poke(wasm.ptr.add(pSql, sqlByteLen), 0/*NUL terminator*/);
         while(pSql && wasm.peek(pSql, 'i8')
               /* Maintenance reminder:^^^ _must_ be 'i8' or else we
                  will very likely cause an endless loop. What that's
@@ -1073,7 +1073,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           ));
           const pStmt = wasm.peekPtr(ppStmt);
           pSql = wasm.peekPtr(pzTail);
-          sqlByteLen = Number(wasm.ptrAdd(pSqlEnd,-pSql));
+          sqlByteLen = Number(wasm.ptr.add(pSqlEnd,-pSql));
           if(!pStmt) continue;
           //sqlite3.config.debug("exec() pSql =",capi.sqlite3_sql(pStmt));
           if(saveSql) saveSql.push(capi.sqlite3_sql(pStmt).trim());

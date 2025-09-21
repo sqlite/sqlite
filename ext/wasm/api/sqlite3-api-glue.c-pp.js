@@ -728,7 +728,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     dealloc: wasm.dealloc,
     bigIntEnabled: wasm.bigIntEnabled,
     pointerIR: wasm.pointerIR,
-    pointerSizeof: wasm.pointerSizeof,
+    pointerSizeof: wasm.ptr.size,
     memberPrefix: /* Never change this: this prefix is baked into any
                      amount of code and client-facing docs. (Much
                      later: it probably should have been '$$', but see
@@ -1534,7 +1534,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const [xSql, xSqlLen] = __flexiString(sql, sqlLen);
       switch(typeof xSql){
         case 'string': return __prepare.basic(pDb, xSql, xSqlLen, prepFlags, ppStmt, null);
-        case (typeof wasm.NullPtr):
+        case (typeof wasm.ptr.null):
           return __prepare.full(pDb, xSql, xSqlLen, prepFlags, ppStmt, pzTail);
         default:
           return util.sqlite3__wasm_db_error(
@@ -1759,9 +1759,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const zV = wasm.scopedAllocCString(jV);
             if(nBuf > nV + 1) nBuf = nV + 1;
             wasm.heap8u().copyWithin(
-              Number(zBuf), Number(zV), Number(wasm.ptrAdd(zV, nBuf,- 1))
+              Number(zBuf), Number(zV), wasm.ptr.addn(zV, nBuf,- 1)
             );
-            wasm.poke(wasm.ptrAdd(zBuf, nBuf, -1), 0);
+            wasm.poke(wasm.ptr.add(zBuf, nBuf, -1), 0);
             return nBuf - 1;
           }catch(e){
             sqlite3.config.error("kvstorageRead()",e);

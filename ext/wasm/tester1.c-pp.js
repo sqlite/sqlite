@@ -76,7 +76,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   let SQLite3 /* populated after module load */;
 
   const skipIn64BitBuild = function(msg=''){
-    if( 8===SQLite3.wasm.pointerSizeof ){
+    if( 8===SQLite3.wasm.ptr.size ){
       error("Skipping known-broken tests for 64-bit build.",msg); return true;
     }
     return false;
@@ -514,7 +514,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let m2 = w.realloc(m, 16);
         T.assert(m === m2/* because of alignment */);
         let x = w.realloc(m, 0);
-        T.assert(w.NullPtr === x);
+        T.assert(w.ptr.null === x);
         m = m2 = 0;
 
         // Check allocation limits and allocator's responses...
@@ -523,9 +523,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const tooMuch = sqlite3.capi.SQLITE_MAX_ALLOCATION_SIZE + 1,
                 isAllocErr = (e)=>e instanceof sqlite3.WasmAllocError;
           T.mustThrowMatching(()=>w.alloc(tooMuch), isAllocErr)
-            .assert(w.NullPtr === w.alloc.impl(tooMuch))
+            .assert(w.ptr.null === w.alloc.impl(tooMuch))
             .mustThrowMatching(()=>w.realloc(0, tooMuch), isAllocErr)
-            .assert(w.NullPtr === w.realloc.impl(wasm.NullPtr, tooMuch));
+            .assert(w.ptr.null === w.realloc.impl(wasm.ptr.null, tooMuch));
         }
 
         // Check allocFromTypedArray()...
@@ -637,19 +637,19 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         try {
           let cStr = w.scopedAllocCString("hello");
           const n = w.cstrlen(cStr);
-          const nPtr = w.asPtrType(n);
+          const nPtr = w.ptr.coerce(n);
           let cpy = w.scopedAlloc(n+10);
           let rc = w.cstrncpy(cpy, cStr, n+10);
           T.assert(n+1 === rc).
             assert("hello" === w.cstrToJs(cpy)).
-            assert(chr('o') === w.peek8( w.ptrAdd(cpy,nPtr, -1))).
-            assert(0 === w.peek8( w.ptrAdd(cpy,nPtr) ) );
+            assert(chr('o') === w.peek8( w.ptr.add(cpy,nPtr, -1))).
+            assert(0 === w.peek8( w.ptr.add(cpy,nPtr) ) );
           let cStr2 = w.scopedAllocCString("HI!!!");
           rc = w.cstrncpy(cpy, cStr2, 3);
           T.assert(3===rc).
             assert("HI!lo" === w.cstrToJs(cpy)).
-            assert(chr('!') === w.peek8( w.ptrAdd(cpy, 2) )).
-            assert(chr('l') === w.peek8( w.ptrAdd(cpy, 3) ) );
+            assert(chr('!') === w.peek8( w.ptr.add(cpy, 2) )).
+            assert(chr('l') === w.peek8( w.ptr.add(cpy, 3) ) );
         }finally{
           w.scopedAllocPop(scope);
         }
@@ -672,8 +672,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const jstr = "hällo, world!";
         const [cstr, n] = w.allocCString(jstr, true);
         T.assert(14 === n)
-          .assert(0===w.peek8(w.ptrAdd(cstr,n)))
-          .assert(chr('!')===w.peek8(w.ptrAdd(cstr,n,-1)));
+          .assert(0===w.peek8(w.ptr.add(cstr,n)))
+          .assert(chr('!')===w.peek8(w.ptr.add(cstr,n,-1)));
         w.dealloc(cstr);
       }
 
@@ -708,9 +708,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert(p3===asc2[0]);
 
           const [z1, z2, z3] = w.scopedAllocPtr(3);
-          T.assert(typeof w.NullPtr===typeof z1).assert(z2>z1).assert(z3>z2)
-            .assert(w.NullPtr===w.peekPtr(z1), 'allocPtr() must zero the targets')
-            .assert(w.NullPtr===w.peekPtr(z3));
+          T.assert(typeof w.ptr.null===typeof z1).assert(z2>z1).assert(z3>z2)
+            .assert(w.ptr.null===w.peekPtr(z1), 'allocPtr() must zero the targets')
+            .assert(w.ptr.null===w.peekPtr(z3));
         }finally{
           // Pop them in "incorrect" order to make sure they behave:
           w.scopedAllocPop(asc);
@@ -730,8 +730,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(1===w.scopedAlloc.level);
           const [cstr, n] = w.scopedAllocCString("hello, world", true);
           T.assert(12 === n)
-            .assert(0===w.peek8( w.ptrAdd(cstr,n) ))
-            .assert(chr('d')===w.peek8( w.ptrAdd(cstr, n, -1) ));
+            .assert(0===w.peek8( w.ptr.add(cstr,n) ))
+            .assert(chr('d')===w.peek8( w.ptr.add(cstr, n, -1) ));
         });
       }/*scopedAlloc()*/
 
@@ -852,8 +852,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             T.assert(12n===rc);
 
             w.scopedAllocCall(function(){
-              const pI1 = w.scopedAlloc(w.pointerSizeof), pI2 = w.ptrAdd(pI1, w.pointerSizeof);
-              w.pokePtr([pI1, pI2], w.NullPtr);
+              const pI1 = w.scopedAlloc(w.ptr.size), pI2 = w.ptr.add(pI1, w.ptr.size);
+              w.pokePtr([pI1, pI2], w.ptr.null);
               const f = w.xWrap('sqlite3__wasm_test_int64_minmax',undefined,['i64*','i64*']);
               const [r1, r2] = w.peek64([pI1, pI2]);
               T.assert(!Number.isSafeInteger(r1)).assert(!Number.isSafeInteger(r2));
@@ -880,14 +880,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         };
         const msd = MyStructDef;
         addMember(msd, 'p4', {sizeof: 4, signature: "i"});
-        addMember(msd, 'pP', {sizeof: wasm.pointerSizeof, signature: "P"});
+        addMember(msd, 'pP', {sizeof: wasm.ptr.size, signature: "P"});
         addMember(msd, 'ro', {
           sizeof: 4,
           signature: "i",
           readOnly: true
         });
         addMember(msd, 'cstr', {
-          sizeof: wasm.pointerSizeof,
+          sizeof: wasm.ptr.size,
           signature: "s"
         });
         if(W.bigIntEnabled){
@@ -1093,7 +1093,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(P.pointer === stack);
       try {
         const [p1, p2, p3] = P.allocChunks(3,'i32');
-        let sPos = wasm.ptrAdd(stack,-16)/*pstack alloc always rounds to multiple of 8*/;
+        let sPos = wasm.ptr.add(stack,-16)/*pstack alloc always rounds to multiple of 8*/;
         T.assert(P.pointer === sPos)
           .assert(p1 === sPos)
           .assert(p2 == Number(p1) + 4)
@@ -1107,16 +1107,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(P.pointer === stack);
       try {
         let [p1, p2, p3] = P.allocPtr(3,false);
-        let sPos = wasm.ptrAdd(stack,
-                               -(4===wasm.pointerSizeof
+        let sPos = wasm.ptr.add(stack,
+                               -(4===wasm.ptr.size
                                  ? 16/*pstack alloc always rounds to multiple of 8*/
                                  : 24));
         T.assert(P.pointer === p1)
           .assert(p1 === sPos)
-          .assert(p2 == Number(p1) + wasm.pointerSizeof)
-          .assert(p3 == Number(p2) + wasm.pointerSizeof);
+          .assert(p2 == Number(p1) + wasm.ptr.size)
+          .assert(p3 == Number(p2) + wasm.ptr.size);
         [p1, p2, p3] = P.allocPtr(3);
-        T.assert(P.pointer === wasm.ptrAdd(sPos, -24)/*3 x 8 bytes*/)
+        T.assert(P.pointer === wasm.ptr.add(sPos, -24)/*3 x 8 bytes*/)
           .assert(p2 == Number(p1) + 8)
           .assert(p3 == Number(p2) + 8);
         p1 = P.allocPtr();
@@ -1135,18 +1135,18 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const n = 520;
         const p = wasm.pstack.alloc(n);
         T.assert(0==wasm.peek8(p))
-          .assert(0==wasm.peek8(wasm.ptrAdd(p,n,-1)));
+          .assert(0==wasm.peek8(wasm.ptr.add(p,n,-1)));
         T.assert(undefined === capi.sqlite3_randomness(n - 10, p));
         let j, check = 0;
         const heap = wasm.heap8u();
         for(j = 0; j < 10 && 0===check; ++j){
-          check += heap[wasm.ptrAdd(p, j)];
+          check += heap[wasm.ptr.add(p, j)];
         }
         T.assert(check > 0);
         check = 0;
         // Ensure that the trailing bytes were not modified...
         for(j = n - 10; j < n && 0===check; ++j){
-          check += heap[wasm.ptrAdd(p, j)];
+          check += heap[wasm.ptr.add(p, j)];
         }
         T.assert(0===check);
       }finally{
@@ -2205,7 +2205,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(wasm.isPtr(pVoid))
           .assert(wasm.isPtr(aVals))
           .assert(wasm.isPtr(aCols))
-          .assert(+wasm.cstrToJs(wasm.peekPtr(wasm.ptrAdd(aVals, wasm.pointerSizeof)))
+          .assert(+wasm.cstrToJs(wasm.peekPtr(wasm.ptr.add(aVals, wasm.ptr.size)))
                   === 2 * +wasm.cstrToJs(wasm.peekPtr(aVals)));
         return 0;
       });
@@ -2312,7 +2312,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                                            in the call :/ */));
 
             const pMin = w.scopedAlloc(16);
-            const pMax = w.ptrAdd(pMin, 8);
+            const pMax = w.ptr.add(pMin, 8);
             const g64 = (p)=>w.peek64(p);
             w.poke64([pMin, pMax], 0);
             const minMaxI64 = [
@@ -2543,7 +2543,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(tmplMod.$xCreate === tmplMod.$xConnect,
                   "setup() must make these equivalent and "+
                   "installMethods() must avoid re-compiling identical functions");
-        tmplMod.$xCreate = wasm.NullPtr /* make tmplMod eponymous-only */;
+        tmplMod.$xCreate = wasm.ptr.null /* make tmplMod eponymous-only */;
         let rc = capi.sqlite3_create_module(
           this.db, "testvtab", tmplMod, 0
         );
@@ -2918,7 +2918,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           ++countCommit;
           return (17 == p) ? 0 : capi.SQLITE_ERROR;
         }, 17);
-        T.assert( wasm.NullPtr === rc );
+        T.assert( wasm.ptr.null === rc );
 
         // Commit hook...
         T.assert( 0!=capi.sqlite3_get_autocommit(db) );
@@ -2940,7 +2940,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           ++countRollback;
           T.assert( 21 == p );
         }, 21);
-        T.assert( wasm.NullPtr===rc );
+        T.assert( wasm.ptr.null===rc );
         T.mustThrowMatching(()=>{
           db.transaction('drop table t',()=>{})
         }, (e)=>{
@@ -3854,7 +3854,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }else{
       logClass('warning',"BigInt/int64 support is disabled.");
     }
-    log("WASM pointer size:",wasm.pointerSizeof,"bytes");
+    log("WASM pointer size:",wasm.ptr.size,"bytes");
     if(haveWasmCTests()){
       log("sqlite3__wasm_test_...() APIs are available.");
     }else{

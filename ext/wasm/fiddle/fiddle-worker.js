@@ -167,6 +167,7 @@
         lib: capi.sqlite3_libversion(),
         srcId: capi.sqlite3_sourceid()
       });
+      stdout("WASM pointer size: "+wasm.ptr.size);
       stdout('Welcome to the "fiddle" shell. Tap the About button for more info.');
       if(capi.sqlite3_vfs_find("opfs")){
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
