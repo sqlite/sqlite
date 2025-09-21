@@ -68,7 +68,10 @@ const toExportForESM =
       const s = EmscriptenModule.sqlite3;
       s.scriptInfo = initModuleState;
       //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
-      if(ff.__isUnderTest) s.__isUnderTest = true;
+      if(ff.__isUnderTest){
+        s.__isUnderTest = true;
+        s.emscripten = EmscriptenModule;
+      }
       const f = s.asyncPostInit;
       delete s.asyncPostInit;
       const rv = f();

@@ -28,13 +28,9 @@
    The primary goal of this function is to replace, where possible,
    Emscripten-generated glue code with equivalent utility code which
    can be used in arbitrary WASM environments built with toolchains
-   other than Emscripten. As of this writing, this code is capable of
-   acting as a replacement for Emscripten's generated glue code
-   _except_ that the latter installs handlers for Emscripten-provided
-   APIs such as its "FS" (virtual filesystem) API. Loading of such
-   things still requires using Emscripten's glue, but the post-load
-   utility APIs provided by this code are still usable as replacements
-   for their Emscripten counterparts.
+   other than Emscripten. To that end, it populates the given object
+   with various WASM-specific APIs. These APIs work with both 32- and
+   64-bit WASM builds.
 
    Forewarning: this API explicitly targets only browser environments.
    If a given non-browser environment has the capabilities needed for
@@ -50,8 +46,9 @@
    delete globalThis.WhWasmUtilInstaller;
    ```
 
-   The `target` object then holds the APIs. It may have certain
-   properties set to configure it, as documented below.
+   The `target` object then holds the APIs. The caller may set certain
+   properties on it, before calling this, to configure it, as
+   documented below.
 
    The global-scope symbol for this function is intended only to
    provide an easy way to make it available to 3rd-party scripts and
@@ -98,9 +95,11 @@
 
    How to install...
 
-   Passing an object to this function will install the functionality
-   into that object. Afterwards, client code "should" delete the global
-   symbol.
+   Passing an object to this function will install this library's
+   functionality into that object. It returns its argument.
+
+   After installation, client code "should" delete this function's
+   global symbol (if any).
 
    This code requires that the target object have the following
    properties, though they needn't be available until the first time
@@ -125,6 +124,12 @@
        holds WASM-exported functions. This API does not strictly
        require that the table be able to grow but it will throw if its
        `installFunction()` is called and the table cannot grow.
+
+   - `functionTable`: WebAssembly.Table object holding the indirect
+     function call table.  If not set then
+     `exports.__indirect_function_table` is assumed. Achtung: this
+     property gets replaced by a function with the same name (because
+     this API used that name before this config option was added).
 
    In order to simplify downstream usage, if `target.exports` is not
    set when this is called then a property access interceptor
@@ -167,7 +172,9 @@
    - `pointerIR`: an IR-format string for the WASM environment's
       pointer size. If set it must be either 'i32' or 'i64'. If not
       set, it gets set to whatever this code thinks the pointer size
-      is.  Modifying it after this call has no effect.
+      is.  Modifying it after this call has no effect. A reliable
+      way to get this value is (typeof X()), where X is a function
+      from target.exports which returns an innocuous pointer.
 
    - `pointerSize`: if set, it must be one of 4 or 8 and must
       correspond to the value of `pointerIR`. If not set, it gets set
@@ -180,26 +187,35 @@
 
    After calling this, the pointerIR and pointerSize properties are
    replaced with a read-only Object member named target.ptr. It
-   contains the following read-only properties:
+   contains the following read-only helper methods and properties to
+   assist in using WASM pointers without having to know what type they
+   are:
 
-   - .size = pointerSize
+   - `size` = pointerSize
 
-   - .ir = pointerIR
+   - `ir` = pointerIR
 
-   - .null = a "null" pointer of type Number or BigInt.
+   - `null` = a "null" pointer of type Number or BigInt. Equivalent to
+     one of Number(0) or BigInt(0). This value compares === to
+     WASM NULL pointers.
 
-   - .coerce = a function which behaves like target.asPtrType()
+   - `coerce(arg)` = equivalent to one of Number(arg) or BigInt(arg||0).
 
-   - .add = a substitute for pointer arithmetic (which does not work
-     in 64-bit builds). Adds up all of its arguments and returns
-     either a Number or BigInt, depending on this.size.
+   - `add(...args)` = performs "pointer arithmetic" (`wasmPtr+offset`
+     does not work in 64-bit builds unless all operands are of type
+     BigInt). Adds up all of its arguments, accounting for whether
+     each is a Number of BigInt, and returns either a Number or
+     BigInt.
 
-   - .addn = like .add() but returns its result as a Number.
+   - `addn(...args)` = like `add()` but always returns its result as a
+     Number. Equivalent to Number(add(...)).
 
+   ------------------------------------------------------------
    Design notes:
 
-   - It should probably take a config object and return the
-     target. The current approach seemed better at the time.
+   - This function should probably take a config object and return the
+     newly-created (or config-provided) target. The current approach
+     seemed better at the time.
 */
 globalThis.WhWasmUtilInstaller = function(target){
   'use strict';
@@ -230,19 +246,20 @@ globalThis.WhWasmUtilInstaller = function(target){
     toss("Invalid pointerSize:",__ptrSize);
   }
 
+  /** Either BigInt or, if !target.bigIntEnabled, a function which
+      throws complaining that BigInt is not enabled. */
+  const __BigInt = target.bigIntEnabled
+        ? BigInt
+        : (v)=>toss("BigInt support is disabled in this build.");
+
   /**
-     If target.ptr.ir=='i32' then this is equivalent to
-     Number(v) else it's equivalent to BigInt(v||0).
+     If target.ptr.ir==='i32' then this is equivalent to
+     Number(v) else it's equivalent to BigInt(v||0), throwing
+     if BigInt support is disabled.
 
      Why? Because Number(null)===0, but BigInt(null) throws.
   */
-  const __asPtrType = (4===__ptrSize)
-        ? Number
-        : (target.bigIntEnabled
-           ? ((v)=>BigInt(v || 0))
-           : toss("Missing BigInt support"));
-
-  target.asPtrType = __asPtrType;
+  const __asPtrType = (4===__ptrSize) ? Number : (v)=>__BigInt(v||0);
 
   /**
      The number 0 as either type Number or BigInt, depending on
@@ -254,7 +271,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      Expects any number of numeric arguments, each one of either type
      Number or BigInt. It sums them up (from an implicit starting
      point of 0 or 0n) and returns them as a number of the same type
-     which target.asPtrType() uses.
+     which target.ptr.coerce() uses.
 
      This is a workaround for not being able to mix Number/BigInt in
      addition/subtraction expressions (which we frequently need for
@@ -266,24 +283,35 @@ globalThis.WhWasmUtilInstaller = function(target){
     return rc;
   };
 
-  const __ptr = Object.assign(Object.create(null),{
-    coerce: __asPtrType,
-    add: __ptrAdd,
-    addn: (4===__ptrIR) ? __ptrAdd : (...args)=>Number(__ptrAdd(...args))
-  });
-  Object.defineProperty(target, 'ptr', {
-    enumerable: true,
-    get: ()=>__ptr,
-    set: ()=>toss("The ptr property is read-only.")
-  });
-  (function f(name, val){
-    Object.defineProperty(__ptr, name, {
+  /** Set up target.ptr... */
+  {
+    const __ptr = Object.create(null);
+    Object.defineProperty(target, 'ptr', {
       enumerable: true,
-      get: ()=>val,
-      set: ()=>toss("ptr["+name+"] is read-only.")
+      get: ()=>__ptr,
+      set: ()=>toss("The ptr property is read-only.")
     });
-    return f;
-  })( 'null', __NullPtr )( 'size', __ptrSize )( 'ir', __ptrIR );
+    (function f(name, val){
+      Object.defineProperty(__ptr, name, {
+        enumerable: true,
+        get: ()=>val,
+        set: ()=>toss("ptr["+name+"] is read-only.")
+      });
+      return f;
+    })(
+      'null', __NullPtr
+    )(
+      'size', __ptrSize
+    )(
+      'ir', __ptrIR
+    )(
+      'coerce', __asPtrType
+    )(
+      'add', __ptrAdd
+    )(
+      'addn', (4===__ptrIR) ? __ptrAdd : (...args)=>Number(__ptrAdd(...args))
+    );
+  }
 
   if(!target.exports){
     Object.defineProperty(target, 'exports', {
@@ -355,10 +383,14 @@ globalThis.WhWasmUtilInstaller = function(target){
     cache.HEAP8 = new Int8Array(b); cache.HEAP8U = new Uint8Array(b);
     cache.HEAP16 = new Int16Array(b); cache.HEAP16U = new Uint16Array(b);
     cache.HEAP32 = new Int32Array(b); cache.HEAP32U = new Uint32Array(b);
-    if(target.bigIntEnabled){
-      cache.HEAP64 = new BigInt64Array(b); cache.HEAP64U = new BigUint64Array(b);
-    }
     cache.HEAP32F = new Float32Array(b); cache.HEAP64F = new Float64Array(b);
+    if(target.bigIntEnabled){
+      if( 'undefined'!==typeof BigInt64Array ){
+        cache.HEAP64 = new BigInt64Array(b); cache.HEAP64U = new BigUint64Array(b);
+      }else{
+        toss("BigInt support is enabled, but the BigInt64Array type is missing.");
+      }
+    }
     cache.heapSize = b.byteLength;
     return cache;
   };
@@ -432,17 +464,23 @@ globalThis.WhWasmUtilInstaller = function(target){
          "or (if BigInt is enabled) 64.");
   };
 
+  const __funcTable = target.functionTable;
+  delete target.functionTable;
+
   /**
-     Returns the WASM-exported "indirect function table."
+     Returns the WASM-exported "indirect function table".
   */
-  target.functionTable = function(){
-    return target.exports.__indirect_function_table;
+  target.functionTable = __funcTable
+    ? ()=>__funcTable
+    : ()=>target.exports.__indirect_function_table
     /** -----------------^^^^^ "seems" to be a standardized export name.
         From Emscripten release notes from 2020-09-10:
         - Use `__indirect_function_table` as the import name for the
         table, which is what LLVM does.
-    */
-  };
+
+        We must delay access to target.exports until after the library
+        is bootstrapped.
+    */;
 
   /**
      Given a function pointer, returns the WASM function table entry
@@ -467,17 +505,16 @@ globalThis.WhWasmUtilInstaller = function(target){
      - Emscripten: `"x..."`, where the first x is a letter representing
        the result type and subsequent letters represent the argument
        types. Functions with no arguments have only a single
-       letter. See below.
+       letter.
 
      - Jaccwabyt: `"x(...)"` where `x` is the letter representing the
        result type and letters in the parens (if any) represent the
-       argument types. Functions with no arguments use `x()`. See
-       below.
+       argument types. Functions with no arguments use `x()`.
 
      Supported letters:
 
      - `i` = int32
-     - `p` = int32 or int64 ("pointer")
+     - `p` = int32 or int64 ("pointer"), depending on target.ptr.size
      - `j` = int64
      - `f` = float32
      - `d` = float64
@@ -503,15 +540,17 @@ globalThis.WhWasmUtilInstaller = function(target){
         call-local functions and superfluous temporary arrays. */
     if(!f._){/*static init...*/
       f._ = {
-        // Map of signature letters to type IR values
+        /* Map of signature letters to type IR values */
         sigTypes: Object.assign(Object.create(null),{
           i: 'i32', p: __ptrIR, P: __ptrIR, s: __ptrIR,
           j: 'i64', f: 'f32', d: 'f64'
         }),
-        // Map of type IR values to WASM type code values
+
+        /* Map of type IR values to WASM type code values */
         typeCodes: Object.assign(Object.create(null),{
           f64: 0x7c, f32: 0x7d, i64: 0x7e, i32: 0x7f
         }),
+
         /** Encodes n, which must be <2^14 (16384), into target array
             tgt, as a little-endian value, using the given method
             ('push' or 'unshift'). */
@@ -519,21 +558,28 @@ globalThis.WhWasmUtilInstaller = function(target){
           if(n<128) tgt[method](n);
           else tgt[method]( (n % 128) | 128, n>>7);
         },
+
         /** Intentionally-lax pattern for Jaccwabyt-format function
             pointer signatures, the intent of which is simply to
             distinguish them from Emscripten-format signatures. The
             downstream checks are less lax. */
         rxJSig: /^(\w)\((\w*)\)$/,
+
         /** Returns the parameter-value part of the given signature
             string. */
         sigParams: (sig)=>{
           const m = f._.rxJSig.exec(sig);
           return m ? m[2] : sig.substr(1);
         },
+
         /** Returns the IR value for the given letter or throws
             if the letter is invalid. */
-
         letterType: (x)=>f._.sigTypes[x] || toss("Invalid signature letter:",x),
+
+        /** Pushes the WASM data type code for the given signature
+            letter to the given target array. Throws if letter is
+            invalid. */
+        pushSigType: (dest, letter)=>dest.push(f._.typeCodes[f._.letterType(letter)])
 
         /** Returns an object describing the result type and parameter
             type(s) of the given function signature, or throws if the
@@ -548,11 +594,6 @@ globalThis.WhWasmUtilInstaller = function(target){
           }
           return rc;
         },************/
-        /** Pushes the WASM data type code for the given signature
-            letter to the given target array. Throws if letter is
-            invalid. */
-
-        pushSigType: (dest, letter)=>dest.push(f._.typeCodes[f._.letterType(letter)])
       };
     }/*static init*/
     if('string'===typeof func){
@@ -611,7 +652,7 @@ globalThis.WhWasmUtilInstaller = function(target){
            "or (signature,function).");
     }
     const ft = target.functionTable();
-    const oldLen = ft.length;
+    const oldLen = __asPtrType(ft.length);
     let ptr;
     while(cache.freeFuncIndexes.length){
       ptr = cache.freeFuncIndexes.pop();
@@ -660,8 +701,8 @@ globalThis.WhWasmUtilInstaller = function(target){
      available slot of this.functionTable(), and returns the
      function's index in that table (which acts as a pointer to that
      function). The returned pointer can be passed to
-     uninstallFunction() to uninstall it and free up the table slot for
-     reuse.
+     uninstallFunction() to uninstall it and free up the table slot
+     for reuse.
 
      If passed (string,function) arguments then it treats the first
      argument as the signature and second as the function.
@@ -672,9 +713,8 @@ globalThis.WhWasmUtilInstaller = function(target){
 
      This function will propagate an exception if
      WebAssembly.Table.grow() throws or this.jsFuncToWasm() throws.
-     The former case can happen in an Emscripten-compiled
-     environment when building without Emscripten's
-     `-sALLOW_TABLE_GROWTH` flag.
+     The former case can happen in an Emscripten-compiled environment
+     when building without Emscripten's `-sALLOW_TABLE_GROWTH` flag.
 
      Sidebar: this function differs from Emscripten's addFunction()
      _primarily_ in that it does not share that function's
@@ -796,8 +836,8 @@ globalThis.WhWasmUtilInstaller = function(target){
           case 'float': case 'f32': rc = c.HEAP32F[Number(ptr/*tag:64bit*/)>>2]; break;
           case 'double': case 'f64': rc = Number(c.HEAP64F[Number(ptr/*tag:64bit*/)>>3]); break;
           case 'i64':
-            if(target.bigIntEnabled){
-              rc = BigInt(c.HEAP64[Number(ptr/*tag:64bit*/)>>3]);
+            if(c.HEAP64){
+              rc = __BigInt(c.HEAP64[Number(ptr/*tag:64bit*/)>>3]);
               break;
             }
             /* fallthru */
@@ -840,7 +880,7 @@ globalThis.WhWasmUtilInstaller = function(target){
           case 'double': case 'f64': c.HEAP64F[Number(p/*tag:64bit*/)>>3] = value; continue;
           case 'i64':
             if(c.HEAP64){
-              c.HEAP64[Number(p/*tag:64bit*/)>>3] = BigInt(value);
+              c.HEAP64[Number(p/*tag:64bit*/)>>3] = __BigInt(value);
               continue;
             }
             /* fallthru */
@@ -936,9 +976,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      isPtr32() or the as-yet-hypothetical isPtr64(), depending on a
      configuration option.
   */
-  target.isPtr = ('i32'==__ptrIR)
-    ? target.isPtr32
-    : target.isPtr64;
+  target.isPtr = (4===__ptrSize) ? target.isPtr32 : target.isPtr64;
 
   /**
      Expects ptr to be a pointer into the WASM heap memory which
@@ -955,7 +993,7 @@ globalThis.WhWasmUtilInstaller = function(target){
     const h = heapWrappers().HEAP8U;
     let pos = ptr;
     for( ; h[pos] !== 0; ++pos ){}
-    return pos - ptr;
+    return Number(pos - ptr);
   };
 
   /** Internal helper to use in operations which need to distinguish
@@ -1137,31 +1175,6 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.jstrToUintArray = (str, addNul=false)=>{
     return cache.utf8Encoder.encode(addNul ? (str+"\0") : str);
-    // Or the hard way...
-    /** Attribution: derived from Emscripten's stringToUTF8Array() */
-    //const a = [], max = str.length;
-    //let i = 0, pos = 0;
-    //for(; i < max; ++i){
-    //  let u = str.charCodeAt(i);
-    //  if(u>=0xd800 && u<=0xdfff){
-    //    u = 0x10000 + ((u & 0x3FF) << 10) | (str.charCodeAt(++i) & 0x3FF);
-    //  }
-    //  if(u<=0x7f) a[pos++] = u;
-    //  else if(u<=0x7ff){
-    //    a[pos++] = 0xC0 | (u >> 6);
-    //    a[pos++] = 0x80 | (u & 63);
-    //  }else if(u<=0xffff){
-    //    a[pos++] = 0xe0 | (u >> 12);
-    //    a[pos++] = 0x80 | ((u >> 6) & 63);
-    //    a[pos++] = 0x80 | (u & 63);
-    //  }else{
-    //    a[pos++] = 0xf0 | (u >> 18);
-    //    a[pos++] = 0x80 | ((u >> 12) & 63);
-    //    a[pos++] = 0x80 | ((u >> 6) & 63);
-    //    a[pos++] = 0x80 | (u & 63);
-    //  }
-    // }
-    // return new Uint8Array(a);
   };
 
   const __affirmAlloc = (obj,funcName)=>{
@@ -1175,19 +1188,17 @@ globalThis.WhWasmUtilInstaller = function(target){
   const __allocCStr = function(jstr, returnWithLength, allocator, funcName){
     __affirmAlloc(target, funcName);
     if('string'!==typeof jstr) return null;
-    if(0){/* older impl, possibly more widely compatible? */
-      const n = target.jstrlen(jstr),
-            ptr = allocator(n+1);
-      target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
-      return returnWithLength ? [ptr, n] : ptr;
-    }else{/* newer, (probably) faster and (certainly) simpler impl */
-      const u = cache.utf8Encoder.encode(jstr),
-            ptr = allocator(u.length+1),
-            heap = heapWrappers().HEAP8U;
-      //console.warn("ptr =",ptr);
+    const u = cache.utf8Encoder.encode(jstr),
+          ptr = allocator(u.length+1);
+    let toFree = ptr;
+    try{
+      const heap = heapWrappers().HEAP8U;
       heap.set(u, Number(ptr));
       heap[__ptrAdd(ptr, u.length)] = 0;
+      toFree = __NullPtr;
       return returnWithLength ? [ptr, u.length] : ptr;
+    }finally{
+      if( toFree ) target.dealloc(toFree);
     }
   };
 
@@ -1328,7 +1339,8 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   target.scopedAllocCString =
     (jstr, returnWithLength=false)=>__allocCStr(jstr, returnWithLength,
-                                                target.scopedAlloc, 'scopedAllocCString()');
+                                                target.scopedAlloc,
+                                                'scopedAllocCString()');
 
   // impl for allocMainArgv() and scopedAllocMainArgv().
   const __allocMainArgv = function(isScoped, list){
@@ -1520,23 +1532,10 @@ globalThis.WhWasmUtilInstaller = function(target){
   /** Scope-local convenience aliases. */
   const xArg = cache.xWrap.convert.arg, xResult = cache.xWrap.convert.result;
 
-  if(target.bigIntEnabled){
-    xArg.set('i64', (i)=>BigInt(i || 0));
-  }
   const __xArgPtr = __asPtrType;
-  xArg.set(
-    'i32',
-    0
-      ? (i)=>Number(i) | 0
-    /* This Number(i) is unsatisfying but it enables i32-type args which
-       are inadvertently passed a BigInt (which is easy to do) to
-       play along instead of causing an exception about lack of implicit
-       conversions from BigInt to Number. Or, more cryptically, a
-       function signature mismatch error without much context to track
-       it down. */
-      : (i)=>i|0
-  );
   xArg
+    .set('i64', (i)=>__BigInt(i || 0))
+    .set('i32', (i)=>i|0)
     .set('i16', (i)=>((i | 0) & 0xFFFF))
     .set('i8', (i)=>((i | 0) & 0xFF))
     .set('f32', (i)=>Number(i).valueOf())
@@ -1547,26 +1546,30 @@ globalThis.WhWasmUtilInstaller = function(target){
     .set('null', (i)=>i)
     .set(null, xArg.get('null'))
     .set('**', __xArgPtr)
-    .set('*', __xArgPtr);
+    .set('*', __xArgPtr)
+  ;
   xResult.set('*', __xArgPtr)
     .set('pointer', __xArgPtr)
     .set('number', (v)=>Number(v))
     .set('void', (v)=>undefined)
+    .set(undefined, xResult.get('void'))
     .set('null', (v)=>v)
-    .set(null, xResult.get('null'));
+    .set(null, xResult.get('null'))
+  ;
 
-  { /* Copy xArg[...] handlers to xResult[...] for cases which have
-       identical semantics. Also add pointer-style variants of those
-       xArg entries to both xArg and xResult. */
-    const copyToResult = ['i8', 'i16', 'i32', 'int',
-                          'f32', 'float', 'f64', 'double'];
-    if(target.bigIntEnabled) copyToResult.push('i64');
-    const adaptPtr = xArg.get(__ptrIR);
-    for(const t of copyToResult){
-      xArg.set(t+'*', adaptPtr);
-      xResult.set(t+'*', adaptPtr);
-      xResult.set(t, (xArg.get(t) || toss("Missing arg converter:",t)));
-    }
+  /* Copy xArg[...] handlers to xResult[...] for cases which have
+     identical semantics. Also add pointer-style variants of those
+     xArg entries to both xArg and xResult. */
+  for(const t of [
+    'i8', 'i16', 'i32', 'i64', 'int',
+    'f32', 'float', 'f64', 'double'
+  ]){
+    xArg.set(t+'*', __xArgPtr);
+    xResult.set(t+'*', __xArgPtr);
+    xResult.set(
+      t, xArg.get(t)
+        || toss("Maintenance required: missing arg converter for",t)
+    );
   }
 
   /**
@@ -1587,16 +1590,19 @@ globalThis.WhWasmUtilInstaller = function(target){
      backfire? We handle that at the client level in sqlite3 with a
      custom argument converter.
   */
-  const __xArgString = function(v){
-    if('string'===typeof v) return target.scopedAllocCString(v);
-    return __asPtrType(v);
+  const __xArgString = (v)=>{
+    return ('string'===typeof v)
+      ? target.scopedAllocCString(v)
+      : __asPtrType(v);
   };
+
   xArg.set('string', __xArgString)
     .set('utf8', __xArgString)
-    .set('pointer', __xArgString);
-  //xArg.set('*', __xArgString);
+    // (much later: why did we do this?) .set('pointer', __xArgString)
+  ;
 
-  xResult.set('string', (i)=>target.cstrToJs(i))
+  xResult
+    .set('string', (i)=>target.cstrToJs(i))
     .set('utf8', xResult.get('string'))
     .set('string:dealloc', (i)=>{
       try { return i ? target.cstrToJs(i) : null }
@@ -1705,18 +1711,19 @@ globalThis.WhWasmUtilInstaller = function(target){
 
      - contextKey (function): is only used if bindScope is 'context'
        or if bindScope is not set and this function is, in which case
-       'context' is assumed. This function gets bound to this object,
-       so its "this" is this object. It gets passed (argv,argIndex),
-       where argIndex is the index of _this_ function pointer in its
-       _wrapping_ function's arguments and argv is the _current_
-       still-being-xWrap()-processed args array. All arguments to the
-       left of argIndex will have been processed by xWrap() by the
-       time this is called. argv[argIndex] will be the value the user
-       passed in to the xWrap()'d function for the argument this
-       FuncPtrAdapter is mapped to. Arguments to the right of
-       argv[argIndex] will not yet have been converted before this is
-       called. The function must return a key which uniquely
-       identifies this function mapping context for _this_
+       a bindScope of 'context' is assumed. This function gets bound
+       to this object, so its "this" is this object. It gets passed
+       (argv,argIndex), where argIndex is the index of _this_ function
+       in its _wrapping_ function's arguments, and argv is the
+       _current_ still-being-xWrap()-processed args array. (Got all
+       that?) When thisFunc(argv,argIndex) is called by xWrap(), all
+       arguments in argv to the left of argIndex will have been
+       processed by xWrap() by the time this is called. argv[argIndex]
+       will be the value the user passed in to the xWrap()'d function
+       for the argument this FuncPtrAdapter is mapped to. Arguments to
+       the right of argv[argIndex] will not yet have been converted
+       before this is called. The function must return a key which
+       uniquely identifies this function mapping context for _this_
        FuncPtrAdapter instance (other instances are not considered),
        taking into account that C functions often take some sort of
        state object as one or more of their arguments. As an example,
@@ -2011,12 +2018,14 @@ globalThis.WhWasmUtilInstaller = function(target){
      same arity as the being-wrapped function (as defined by its
      `length` property) and it will throw if that is not the case.
      Similarly, the created wrapper will throw if passed a differing
-     argument count.
+     argument count. The intent of that strictness is to help catch
+     coding errors in using JS-bound WASM functions earlier rather
+     than laer.
 
      Type names are symbolic names which map the arguments to an
      adapter function to convert, if needed, the value before passing
      it on to WASM or to convert a return result from WASM. The list
-     of built-in names:
+     of pre-defined names:
 
      - `i8`, `i16`, `i32` (args and results): all integer conversions
        which convert their argument to an integer and truncate it to
@@ -2043,8 +2052,8 @@ globalThis.WhWasmUtilInstaller = function(target){
        is treated like `*`.
 
      - `i64` (args and results): passes the value to BigInt() to
-       convert it to an int64. Only available if bigIntEnabled is
-       true.
+       convert it to an int64. This conversion will if bigIntEnabled
+       is falsy.
 
      - `f32` (`float`), `f64` (`double`) (args and results): pass
        their argument to Number(). i.e. the adapter does not currently
@@ -2151,12 +2160,13 @@ globalThis.WhWasmUtilInstaller = function(target){
     const xf = fIsFunc ? fArg : target.xGet(fArg);
     if(fIsFunc) fArg = xf.name || 'unnamed function';
     if(argTypes.length!==xf.length) __argcMismatch(fArg, xf.length);
-    if((null===resultType) && 0===xf.length){
+    if( 0===xf.length
+        && (null===resultType || 'null'===resultType) ){
       /* Func taking no args with an as-is return. We don't need a wrapper. */
       return xf;
     }
     /*Verify the arg type conversions are valid...*/;
-    if(undefined!==resultType && null!==resultType) __xResultAdapterCheck(resultType);
+    __xResultAdapterCheck(resultType);
     for(const t of argTypes){
       if(t instanceof AbstractArgAdapter) xArg.set(t, (...args)=>t.convertArg(...args));
       else __xArgAdapterCheck(t);
