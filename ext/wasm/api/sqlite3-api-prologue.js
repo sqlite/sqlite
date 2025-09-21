@@ -214,7 +214,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /** Internal helper for SQLite3Error ctor. */
-  const __isInt = (n)=>'number'===typeof n && n===(n | 0);
+  const isInt32 = (n)=>
+        'number'===typeof n
+        && n===(n | 0)
+        && n<=2147483647 && n>=-2147483648;
 
   /**
      An Error subclass specifically for reporting DB-level errors and
@@ -248,7 +251,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     constructor(...args){
       let rc;
       if(args.length){
-        if(__isInt(args[0])){
+        if(isInt32(args[0])){
           rc = args[0];
           if(1===args.length){
             super(__rcStr(args[0]));
@@ -292,16 +295,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }
 
   /**
-     Returns true if n is a 32-bit (signed) integer, else
-     false. This is used for determining when we need to switch to
-     double-type DB operations for integer values in order to keep
-     more precision.
-  */
-  const isInt32 = (n)=>{
-    return ('bigint'!==typeof n /*TypeError: can't convert BigInt to number*/)
-      && !!(n===(n|0) && n<=2147483647 && n>=-2147483648);
-  };
-  /**
      Returns true if the given BigInt value is small enough to fit
      into an int64 value, else false.
   */
@@ -336,16 +329,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return (v && v.constructor && isInt32(v.constructor.BYTES_PER_ELEMENT)) ? v : false;
   };
 
-
-  /** Internal helper to use in operations which need to distinguish
-      between TypedArrays which are backed by a SharedArrayBuffer
-      from those which are not. */
-  const __SAB = ('undefined'===typeof SharedArrayBuffer)
-        ? function(){} : SharedArrayBuffer;
-  /** Returns true if the given TypedArray object is backed by a
-      SharedArrayBuffer, else false. */
-  const isSharedTypedArray = (aTypedArray)=>(aTypedArray.buffer instanceof __SAB);
-
   /**
      Returns true if v appears to be one of our bind()-able TypedArray
      types: Uint8Array or Int8Array or ArrayBuffer. Support for
@@ -354,11 +337,10 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      property can be used to pass them as an ArrayBuffer. If it's not
      a bindable array type, a falsy value is returned.
   */
-  const isBindableTypedArray = (v)=>{
-    return v && (v instanceof Uint8Array
-                 || v instanceof Int8Array
-                 || v instanceof ArrayBuffer);
-  };
+  const isBindableTypedArray = (v)=>
+        v && (v instanceof Uint8Array
+              || v instanceof Int8Array
+              || v instanceof ArrayBuffer);
 
   /**
      Returns true if v appears to be one of the TypedArray types
@@ -369,69 +351,29 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      and friends to the isBindableTypedArray() list but not to the
      isSQLableTypedArray() list.
   */
-  const isSQLableTypedArray = (v)=>{
-    return v && (v instanceof Uint8Array
-                 || v instanceof Int8Array
-                 || v instanceof ArrayBuffer);
-  };
+  const isSQLableTypedArray = (v)=>
+        v && (v instanceof Uint8Array
+              || v instanceof Int8Array
+              || v instanceof ArrayBuffer);
 
   /** Returns true if isBindableTypedArray(v) does, else throws with a message
       that v is not a supported TypedArray value. */
-  const affirmBindableTypedArray = (v)=>{
-    return isBindableTypedArray(v)
-      || toss3("Value is not of a supported TypedArray type.");
-  };
-
-  /**
-     Returns either aTypedArray.slice(begin,end) (if
-     aTypedArray.buffer is a SharedArrayBuffer) or
-     aTypedArray.subarray(begin,end) (if it's not).
-
-     This distinction is important for APIs which don't like to
-     work on SABs, e.g. TextDecoder, and possibly for our
-     own APIs which work on memory ranges which "might" be
-     modified by other threads while they're working.
-  */
-  const typedArrayPart = (aTypedArray, begin, end)=>{
-    //if( 8===wasm..ptr.size ){
-    // slice() and subarray() do not like BigInt args.
-    if( 'bigint'===typeof begin ) begin = Number(begin);
-    if( 'bigint'===typeof end ) end = Number(end);
-    begin = Number(begin);
-    end = Number(end);
-    //}
-    return isSharedTypedArray(aTypedArray)
-      ? aTypedArray.slice(begin, end)
-      : aTypedArray.subarray(begin, end);
-  };
-
-  const utf8Decoder = new TextDecoder('utf-8');
-
-  /**
-     Uses TextDecoder to decode the given half-open range of the given
-     TypedArray to a string. This differs from a simple call to
-     TextDecoder in that it accounts for whether the first argument is
-     backed by a SharedArrayBuffer or not, and can work more
-     efficiently if it's not (TextDecoder refuses to act upon an SAB).
-
-     If begin/end are not provided or are falsy then each defaults to
-     the start/end of the string.
-  */
-  const typedArrayToString = function(typedArray, begin, end){
-    return utf8Decoder.decode(
-      typedArrayPart(typedArray, begin || 0, end || typedArray.length)
-    );
-  };
+  const affirmBindableTypedArray = (v)=>
+        isBindableTypedArray(v)
+        || toss3("Value is not of a supported TypedArray type.");
 
   /**
      If v is-a Array, its join("") result is returned.  If
-     isSQLableTypedArray(v) is true then typedArrayToString(v) is
+     isSQLableTypedArray(v) is true then wasm.typedArrayToString(v) is
      returned. If it looks like a WASM pointer, wasm.cstrToJs(v) is
      returned. Else v is returned as-is.
+
+     Reminder to self: the "return as-is" instead of returning ''+v is
+     arguably a design mistake but changing it is risky at this point.
   */
   const flexibleString = function(v){
     if(isSQLableTypedArray(v)){
-      return typedArrayToString(
+      return wasm.typedArrayToString(
         (v instanceof ArrayBuffer) ? new Uint8Array(v) : v,
         0, v.length
       );
@@ -806,13 +748,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     bigIntFits32, bigIntFits64, bigIntFitsDouble,
     isBindableTypedArray,
     isInt32, isSQLableTypedArray, isTypedArray,
-    typedArrayToString,
     isUIThread: ()=>(globalThis.window===globalThis && !!globalThis.document),
     // is this true for ESM?: 'undefined'===typeof WorkerGlobalScope
-    isSharedTypedArray,
     toss: function(...args){throw new Error(args.join(' '))},
     toss3,
-    typedArrayPart,
+    typedArrayPart: wasm.typedArrayPart,
     /**
        Given a byte array or ArrayBuffer, this function throws if the
        lead bytes of that buffer do not hold a SQLite3 database header,
@@ -1270,7 +1210,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         do{
           const j = (n>nAlloc ? nAlloc : n);
           r(j, ptr);
-          ta.set(typedArrayPart(heap, ptr, wasm.ptr.add(ptr,j)), offset);
+          ta.set(wasm.typedArrayPart(heap, ptr, wasm.ptr.add(ptr,j)), offset);
           n -= j;
           offset += j;
         } while(n > 0);

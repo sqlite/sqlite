@@ -1470,17 +1470,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Helper for string:flexible conversions which requires a
        byte-length counterpart argument. Passed a value and its
        ostensible length, this function returns [V,N], where V is
-       either v or a transformed copy of v and N is either (if v is a
-       WASM pointer, in which case n might be a BigInt), -1 (if v is a
-       string or Array), or the byte length of v (if it's a byte array
-       or ArrayBuffer).
+       either v or a to-string transformed copy of v and N is either n
+       (if v is a WASM pointer, in which case n might be a BigInt), -1
+       (if v is a string or Array), or the byte length of v (if it's a
+       byte array or ArrayBuffer).
     */
     const __flexiString = (v,n)=>{
       if('string'===typeof v){
         n = -1;
       }else if(util.isSQLableTypedArray(v)){
         n = v.byteLength;
-        v = util.typedArrayToString(
+        v = wasm.typedArrayToString(
           (v instanceof ArrayBuffer) ? new Uint8Array(v) : v
         );
       }else if(Array.isArray(v)){

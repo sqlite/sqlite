@@ -269,7 +269,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         sqlite3.config.error("Invalid DB ctor args",opt,arguments);
         toss3("Invalid arguments for DB constructor:", arguments, "opts:", opt);
       }
-      let fnJs = ('number'===typeof fn) ? wasm.cstrToJs(fn) : fn;
+      let fnJs = wasm.isPtr(fn) ? wasm.cstrToJs(fn) : fn;
       const vfsCheck = ctor._name2vfs[fnJs];
       if(vfsCheck){
         vfsName = vfsCheck.vfs;
@@ -1283,9 +1283,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         toss3("xValue must be provided if xInverse is.");
       }
       const pApp = opt.pApp;
-      if(undefined!==pApp &&
-         null!==pApp &&
-         (('number'!==typeof pApp) || !util.isInt32(pApp))){
+      if( undefined!==pApp
+          && null!==pApp
+          && !wasm.isPtr(pApp) ){
         toss3("Invalid value for pApp property. Must be a legal WASM pointer value.");
       }
       const xDestroy = opt.xDestroy || 0;
@@ -1586,18 +1586,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      If key is a number and within range of stmt's bound parameter
      count, key is returned.
 
-     If key is not a number then it is checked against named
-     parameters. If a match is found, its index is returned.
+     If key is not a number then it must be a JS string (not a WASM
+     string) and it is checked against named parameters. If a match is
+     found, its index is returned.
 
      Else it throws.
   */
   const affirmParamIndex = function(stmt,key){
     const n = ('number'===typeof key)
           ? key : capi.sqlite3_bind_parameter_index(stmt.pointer, key);
-    if(0===n || !util.isInt32(n)){
-      toss3("Invalid bind() parameter name: "+key);
-    }
-    else if(n<1 || n>stmt.parameterCount) toss3("Bind index",key,"is out of range.");
+    if( 0===n || !util.isInt32(n) ) toss3("Invalid bind() parameter name: "+key);
+    else if( n<1 || n>stmt.parameterCount ) toss3("Bind index",key,"is out of range.");
     return n;
   };
 

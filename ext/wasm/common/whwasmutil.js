@@ -996,23 +996,60 @@ globalThis.WhWasmUtilInstaller = function(target){
     return Number(pos - ptr);
   };
 
+
   /** Internal helper to use in operations which need to distinguish
-      between SharedArrayBuffer heap memory and non-shared heap. */
+      between TypedArrays which are backed by a SharedArrayBuffer
+      from those which are not. */
   const __SAB = ('undefined'===typeof SharedArrayBuffer)
-        ? function(){} : SharedArrayBuffer;
-  const __utf8Decode = function(arrayBuffer, begin, end){
-    //if( 'bigint'===typeof begin ) begin = Number(begin);
-    //if( 'bigint'===typeof end ) end = Number(end);
-    /*if( 8===__ptrSize ){
-      begin = Number(begin);
-      end = Number(end);
-    }*/
-    return cache.utf8Decoder.decode(
-      (arrayBuffer.buffer instanceof __SAB)
-        ? arrayBuffer.slice(begin, end)
-        : arrayBuffer.subarray(begin, end)
-    );
+        ? function(){/*dummy class*/} : SharedArrayBuffer;
+  /** Returns true if the given TypedArray object is backed by a
+      SharedArrayBuffer, else false. */
+  const isSharedTypedArray = (aTypedArray)=>(aTypedArray.buffer instanceof __SAB);
+
+  target.isSharedTypedArray = isSharedTypedArray;
+
+  /**
+     Returns either aTypedArray.slice(begin,end) (if
+     aTypedArray.buffer is a SharedArrayBuffer) or
+     aTypedArray.subarray(begin,end) (if it's not).
+
+     This distinction is important for APIs which don't like to
+     work on SABs, e.g. TextDecoder, and possibly for our
+     own APIs which work on memory ranges which "might" be
+     modified by other threads while they're working.
+
+     begin and end may be of type Number or (in 64-bit builds) BigInt
+     (which get coerced to Numbers).
+  */
+  const typedArrayPart = (aTypedArray, begin, end)=>{
+    if( 8===__ptrSize ){
+      // slice() and subarray() do not like BigInt args.
+      if( 'bigint'===typeof begin ) begin = Number(begin);
+      if( 'bigint'===typeof end ) end = Number(end);
+    }
+    return isSharedTypedArray(aTypedArray)
+      ? aTypedArray.slice(begin, end)
+      : aTypedArray.subarray(begin, end);
   };
+
+  target.typedArrayPart = typedArrayPart;
+
+  /**
+     Uses TextDecoder to decode the given half-open range of the given
+     TypedArray to a string. This differs from a simple call to
+     TextDecoder in that it accounts for whether the first argument is
+     backed by a SharedArrayBuffer or not, and can work more
+     efficiently if it's not (TextDecoder refuses to act upon an SAB).
+
+     If begin/end are not provided or are falsy then each defaults to
+     the start/end of the array.
+  */
+  const typedArrayToString = (typedArray, begin, end)=>
+        cache.utf8Decoder.decode(
+          typedArrayPart(typedArray, begin, end)
+        );
+
+  target.typedArrayToString = typedArrayToString;
 
   /**
      Expects ptr to be a pointer into the WASM heap memory which
@@ -1024,7 +1061,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   target.cstrToJs = function(ptr){
     const n = target.cstrlen(ptr);
     return n
-      ? __utf8Decode(heapWrappers().HEAP8U, Number(ptr), Number(ptr)+n)
+      ? typedArrayToString(heapWrappers().HEAP8U, Number(ptr), Number(ptr)+n)
       : (null===n ? n : "");
   };
 
