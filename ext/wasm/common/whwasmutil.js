@@ -282,9 +282,7 @@ globalThis.WhWasmUtilInstaller = function(target){
   */
   const __ptrAdd = function(...args){
     let rc = __asPtrType(0);
-    for( let i = 0; i < args.length; ++i ){
-      rc += __asPtrType(args[i]);
-    }
+    for(const v of args) rc += __asPtrType(v);
     return rc;
   };
 
