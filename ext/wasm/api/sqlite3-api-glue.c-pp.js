@@ -1091,31 +1091,32 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        wasm.uninstallFunction() any WASM function bindings it has
        installed for pDb.
     */
-    for(const name of [
-      'sqlite3_busy_handler',
-      'sqlite3_commit_hook',
-      'sqlite3_preupdate_hook',
-      'sqlite3_progress_handler',
-      'sqlite3_rollback_hook',
-      'sqlite3_set_authorizer',
-      'sqlite3_trace_v2',
-      'sqlite3_update_hook'
+    for(const obj of [
+      /* pairs of [funcName, itsArityInC] */
+      ['sqlite3_busy_handler',3],
+      ['sqlite3_commit_hook',3],
+      ['sqlite3_preupdate_hook',3],
+      ['sqlite3_progress_handler',4],
+      ['sqlite3_rollback_hook',3],
+      ['sqlite3_set_authorizer',3],
+      ['sqlite3_trace_v2', 4],
+      ['sqlite3_update_hook',3]
       /*
         We do not yet have a way to clean up automatically-converted
         sqlite3_set_auxdata() finalizers.
       */
-    ]) {
+    ]){
+      const [name, arity] = obj;
       const x = wasm.exports[name];
       if( !x ){
         /* assume it was built without this API */
         continue;
       }
       const closeArgs = [pDb];
-      closeArgs.length = x.length/*==argument count*/
-        || 1 /* Recall that: (A) undefined entries translate to 0 when
-                passed to WASM and (B) Safari wraps wasm.exports.* in
-                nullary functions so x.length is 0 there. */;
-      //console.debug(closeArgs, name,"()", capi[name]);
+      closeArgs.length = arity
+      /* Recall that: (A) undefined entries translate to 0 when
+         passed to WASM and (B) Safari wraps wasm.exports.* in
+         nullary functions so x.length is 0 there. */;
       //wasm.xWrap.debug = true;
       try{ capi[name](...closeArgs) }
       catch(e){
