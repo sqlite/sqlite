@@ -63,16 +63,6 @@ if( 0 && globalThis.WorkerGlobalScope ){
     });
   }
 }
-
-const wPost = (function(){
-  return (('undefined'===typeof WorkerGlobalScope)
-          ? ()=>{}
-          : (type, payload)=>{
-            postMessage({type, payload});
-          });
-})();
-//log("WorkerGlobalScope",globalThis.WorkerGlobalScope);
-
 // Return a new enum entry value
 const newE = ()=>Object.create(null);
 
@@ -522,6 +512,8 @@ class SQLTester {
   }
 
   runTests(){
+    this.outln("SQLite version ", sqlite3.capi.sqlite3_libversion()," with ",
+               sqlite3.wasm.ptr.size, "-byte WASM pointers");
     const tStart = (new Date()).getTime();
     let isVerbose = this.verbosity();
     this.metrics.failedScripts.length = 0;
@@ -638,15 +630,15 @@ class SQLTester {
     const sb = (ResultBufferMode.NONE===appendMode) ? null : this.#resultBuffer;
     let rc = 0;
     wasm.scopedAllocCall(function(){
-      let sqlByteLen = sql.byteLength;
+      let sqlByteLen = Number(sql.byteLength);
       const ppStmt = wasm.scopedAlloc(
-        /* output (sqlite3_stmt**) arg and pzTail */
-        (2 * wasm.ptr.size) + (sqlByteLen + 1/* SQL + NUL */)
+        (2 * wasm.ptr.size) /* output (sqlite3_stmt**) arg and pzTail */
+        + (sqlByteLen + 1/* SQL + NUL */)
       );
-      const pzTail = ppStmt + wasm.ptr.size /* final arg to sqlite3_prepare_v2() */;
-      let pSql = pzTail + wasm.ptr.size;
+      const pzTail = wasm.ptr.add(ppStmt, wasm.ptr.size) /* final arg to sqlite3_prepare_v2() */;
+      let pSql = wasm.ptr.add(pzTail, wasm.ptr.size);
       const pSqlEnd = wasm.ptr.add(pSql, sqlByteLen);
-      wasm.heap8().set(sql, pSql);
+      wasm.heap8().set(sql, Number(pSql));
       wasm.poke8(pSqlEnd, 0/*NUL terminator*/);
       let pos = 0, n = 1, spacing = 0;
       while( pSql && wasm.peek8(pSql) ){
@@ -664,7 +656,7 @@ class SQLTester {
         }
         const pStmt = wasm.peekPtr(ppStmt);
         pSql = wasm.peekPtr(pzTail);
-        sqlByteLen = pSqlEnd - pSql;
+        sqlByteLen = Number(pSqlEnd - pSql);
         if(!pStmt) continue /* only whitespace or comments */;
         if( sb ){
           const nCol = capi.sqlite3_column_count(pStmt);

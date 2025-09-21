@@ -443,7 +443,7 @@ cflags.common =  -I. -I$(dir $(sqlite3.c))
 # disables certain features if BigInt is not enabled and such builds
 # _are not tested_ on any regular basis.
 emcc.WASM_BIGINT ?= 1
-emcc.MEMORY64 ?= 0
+emcc.MEMORY64 ?= 1
 ########################################################################
 # https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
 #
