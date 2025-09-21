@@ -1,5 +1,5 @@
-C Generic\scleanups\sand\ssimplifications\sin\sJS\scode.
-D 2025-09-21T17:55:23.130
+C Update\sthe\sJS\sSQLTester\sfor\srecent\ssqlite3.wasm\schanges.
+D 2025-09-21T18:42:25.933
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -582,7 +582,7 @@ F ext/wasm/GNUmakefile 2ec39c303c9d50fd25db97a986565c09cbbea7b08e61977b1b5c8a079
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
-F ext/wasm/SQLTester/SQLTester.mjs 66e1adc3d79467b68e3e40614fd42c1a577c7e219ec0985db966eded52a941e5
+F ext/wasm/SQLTester/SQLTester.mjs 0fdfa2c4ebcb040a1a7468005909e580554d017b9b09e6efea84330748937805
 F ext/wasm/SQLTester/SQLTester.run.mjs 57f2adb33f43f2784abbf8026c1bfd049d8013af1998e7dcb8b50c89ffc332e0
 F ext/wasm/SQLTester/index.html 64f3435084c7d6139b08d1f2a713828a73f68de2ae6a3112cbb5980d991ba06f
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2cd8ba740f9b14dc1408b62632c603076b070dc412bf7cbfb3b525f0c4912371
-R 25f70763d7952a028a3fd18d711e95fa
+P 074cf4e6c1775900204bb0d920111ee19601d5c63690e79e988e7fe6b040a647
+R 7b87cd439eaa1396eced3d3cc2518965
 U stephan
-Z ac93091de705f89e3c49ed92d286b8f4
+Z a1a3809a1520792410b21f678cbcd51f
 # Remove this line to create a well-formed Fossil manifest.

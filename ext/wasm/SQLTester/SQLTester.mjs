@@ -641,13 +641,13 @@ class SQLTester {
       let sqlByteLen = sql.byteLength;
       const ppStmt = wasm.scopedAlloc(
         /* output (sqlite3_stmt**) arg and pzTail */
-        (2 * wasm.ptrSizeof) + (sqlByteLen + 1/* SQL + NUL */)
+        (2 * wasm.ptr.size) + (sqlByteLen + 1/* SQL + NUL */)
       );
-      const pzTail = ppStmt + wasm.ptrSizeof /* final arg to sqlite3_prepare_v2() */;
-      let pSql = pzTail + wasm.ptrSizeof;
-      const pSqlEnd = pSql + sqlByteLen;
+      const pzTail = ppStmt + wasm.ptr.size /* final arg to sqlite3_prepare_v2() */;
+      let pSql = pzTail + wasm.ptr.size;
+      const pSqlEnd = wasm.ptr.add(pSql, sqlByteLen);
       wasm.heap8().set(sql, pSql);
-      wasm.poke8(pSql + sqlByteLen, 0/*NUL terminator*/);
+      wasm.poke8(pSqlEnd, 0/*NUL terminator*/);
       let pos = 0, n = 1, spacing = 0;
       while( pSql && wasm.peek8(pSql) ){
         wasm.pokePtr([ppStmt, pzTail], 0);
