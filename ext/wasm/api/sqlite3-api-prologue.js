@@ -938,8 +938,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     };
     wasm.alloc.impl = wasm.exports[keyAlloc];
     wasm.realloc = function f(m,n){
-      m = wasm.ptr.coerce(m)/*tag:64bit*/;
-      const m2 = f.impl(m,n);
+      const m2 = f.impl(wasm.ptr.coerce(m)/*tag:64bit*/,n);
       return n ? (m2 || WasmAllocError.toss("Failed to reallocate",n," bytes.")) : wasm.ptr.null;
     };
     wasm.realloc.impl = wasm.exports[keyRealloc];
