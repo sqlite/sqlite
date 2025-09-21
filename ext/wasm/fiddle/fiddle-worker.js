@@ -201,9 +201,9 @@
         }else if(sql){
           if(Array.isArray(sql)) sql = sql.join('');
           f._running = true;
-          stdout("calling native exec:",sql);
+          //stdout("calling native exec:",sql);
           f._(sql);
-          stdout("returned from native exec",sql);
+          //stdout("returned from native exec",sql);
         }
       }finally{
         delete f._running;
