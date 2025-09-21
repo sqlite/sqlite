@@ -194,11 +194,8 @@ globalThis.WhWasmUtilInstaller = function(target){
   const toss = (...args)=>{throw new Error(args.join(' '))};
 
   /**
-     Pointers in WASM are currently assumed to be 32-bit, but someday
-     that will certainly change.
-
-     2025-09-19: work has started in getting this library to work with
-     Emscripten's -sMEMORY64=1.
+     As of 2025-09-21, this library works with 64-bit WASM modules
+     built with Emscripten's -sMEMORY64=1.
   */
   if( target.pointerSizeof && !target.pointerIR ){
     target.pointerIR = (4===target.pointerSizeof ? 'i32' : 'i64');
@@ -209,8 +206,7 @@ globalThis.WhWasmUtilInstaller = function(target){
 
   if( 'i32'!==ptrIR && 'i64'!==ptrIR ){
     toss("Invalid pointerIR:",ptrIR);
-  }
-  if( 8!==ptrSizeof && 4!==ptrSizeof ){
+  }else if( 8!==ptrSizeof && 4!==ptrSizeof ){
     toss("Invalid pointerSizeof:",ptrSizeof);
   }
 
@@ -237,40 +233,6 @@ globalThis.WhWasmUtilInstaller = function(target){
   target.NullPtr = __NullPtr;
 
   /**
-     The typeof X value for target.NullPtr
-  */
-  //target.pointerTypeof = typeof __NullPtr;
-
-  /*********
-    alloc()/dealloc() auto-install...
-
-    This would be convenient but it can also cause us to pick up
-    malloc() even when the client code is using a different exported
-    allocator (who, me?), which is bad. malloc() may be exported even
-    if we're not explicitly using it and overriding the malloc()
-    function, linking ours first, is not always feasible when using a
-    malloc() proxy, as it can lead to recursion and stack overflow
-    (who, me?). So... we really need the downstream code to set up
-    target.alloc/dealloc() itself.
-  ******/
-  /******
-  if(target.exports){
-    //Maybe auto-install alloc()/dealloc()...
-    if(!target.alloc && target.exports.malloc){
-      target.alloc = function(n){
-        const m = this(n);
-        return m || toss("Allocation of",n,"byte(s) failed.");
-      }.bind(target.exports.malloc);
-    }
-
-    if(!target.dealloc && target.exports.free){
-      target.dealloc = function(ptr){
-        if(ptr) this(ptr);
-      }.bind(target.exports.free);
-    }
-  }*******/
-
-  /**
      Expects any number of numeric arguments, each one of either type
      Number or BigInt. It sums them up (from an implicit starting
      point of 0 or 0n) and returns them as a number of the same type
@@ -288,11 +250,10 @@ globalThis.WhWasmUtilInstaller = function(target){
 
   target.ptrAdd = __ptrAdd;
 
-
   if(!target.exports){
     Object.defineProperty(target, 'exports', {
       enumerable: true, configurable: true,
-      get: ()=>(target?.instance?.exports)
+      get: ()=>(target.instance?.exports)
     });
   }
 
