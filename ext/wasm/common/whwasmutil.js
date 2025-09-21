@@ -483,7 +483,7 @@ globalThis.WhWasmUtilInstaller = function(target){
      Supported letters:
 
      - `i` = int32
-     - `p` = int32 ("pointer")
+     - `p` = int32 or int64 ("pointer")
      - `j` = int64
      - `f` = float32
      - `d` = float64
@@ -521,7 +521,7 @@ globalThis.WhWasmUtilInstaller = function(target){
         /** Encodes n, which must be <2^14 (16384), into target array
             tgt, as a little-endian value, using the given method
             ('push' or 'unshift'). */
-        uleb128Encode: function(tgt, method, n){
+        uleb128Encode: (tgt, method, n)=>{
           if(n<128) tgt[method](n);
           else tgt[method]( (n % 128) | 128, n>>7);
         },
@@ -532,13 +532,15 @@ globalThis.WhWasmUtilInstaller = function(target){
         rxJSig: /^(\w)\((\w*)\)$/,
         /** Returns the parameter-value part of the given signature
             string. */
-        sigParams: function(sig){
+        sigParams: (sig)=>{
           const m = f._.rxJSig.exec(sig);
           return m ? m[2] : sig.substr(1);
         },
         /** Returns the IR value for the given letter or throws
             if the letter is invalid. */
+
         letterType: (x)=>f._.sigTypes[x] || toss("Invalid signature letter:",x),
+
         /** Returns an object describing the result type and parameter
             type(s) of the given function signature, or throws if the
             signature is invalid. */
@@ -555,6 +557,7 @@ globalThis.WhWasmUtilInstaller = function(target){
         /** Pushes the WASM data type code for the given signature
             letter to the given target array. Throws if letter is
             invalid. */
+
         pushSigType: (dest, letter)=>dest.push(f._.typeCodes[f._.letterType(letter)])
       };
     }/*static init*/
@@ -563,16 +566,17 @@ globalThis.WhWasmUtilInstaller = function(target){
       sig = func;
       func = x;
     }
-    const sigParams = f._.sigParams(sig);
+    const _ = f._;
+    const sigParams = _.sigParams(sig);
     const wasmCode = [0x01/*count: 1*/, 0x60/*function*/];
-    f._.uleb128Encode(wasmCode, 'push', sigParams.length);
-    for(const x of sigParams) f._.pushSigType(wasmCode, x);
+    _.uleb128Encode(wasmCode, 'push', sigParams.length);
+    for(const x of sigParams) _.pushSigType(wasmCode, x);
     if('v'===sig[0]) wasmCode.push(0);
     else{
       wasmCode.push(1);
-      f._.pushSigType(wasmCode, sig[0]);
+      _.pushSigType(wasmCode, sig[0]);
     }
-    f._.uleb128Encode(wasmCode, 'unshift', wasmCode.length)/* type section length */;
+    _.uleb128Encode(wasmCode, 'unshift', wasmCode.length)/* type section length */;
     wasmCode.unshift(
       0x00, 0x61, 0x73, 0x6d, /* magic: "\0asm" */
       0x01, 0x00, 0x00, 0x00, /* version: 1 */
@@ -625,7 +629,7 @@ globalThis.WhWasmUtilInstaller = function(target){
       }
     }
     if(!ptr){
-      ptr = oldLen;
+      ptr = __asPtrType(oldLen);
       ft.grow(__asPtrType(1));
     }
     try{

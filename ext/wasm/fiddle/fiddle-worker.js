@@ -201,9 +201,9 @@
         }else if(sql){
           if(Array.isArray(sql)) sql = sql.join('');
           f._running = true;
-          //stdout("calling _()",sql);
+          stdout("calling native exec:",sql);
           f._(sql);
-          //stdout("returned _()",sql);
+          stdout("returned from native exec",sql);
         }
       }finally{
         delete f._running;
@@ -288,7 +288,7 @@
           buffer.set([1,1], 18)/*force db out of WAL mode*/;
           const fn = (
             opt.filename
-              ? opt.filename.split(/[/\\]/).pop().replace(/["']/g,'_')
+              ? opt.filename.split(/[/\\]/).pop().replace(/["'\s]/g,'_')
               : ("db-"+((Math.random() * 10000000) | 0)+
                  "-"+((Math.random() * 10000000) | 0)+".sqlite3")
           );
@@ -307,7 +307,7 @@
               fiddleModule.FS.unlink(fnAbs);
             }
             fiddleModule.FS.createDataFile("/", fn, buffer, true, true);
-            Sqlite3Shell.exec('.open "'+fnAbs+'"');
+            Sqlite3Shell.exec('.open '+fnAbs);
             if(oldName && oldName!==fnAbs){
               try{fiddleModule.fsUnlink(oldName)}
               catch(e){/*ignored*/}

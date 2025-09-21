@@ -805,7 +805,7 @@ const installOpfsVfs = function callee(options){
                Because the heap is _not_ a SharedArrayBuffer, we have
                to copy the results. TypedArray.set() seems to be the
                fastest way to copy this. */
-            wasm.heap8u().set(f.sabView.subarray(0, n), pDest);
+            wasm.heap8u().set(f.sabView.subarray(0, n), Number(pDest));
           }
         }catch(e){
           error("xRead(",arguments,") failed:",e,f);

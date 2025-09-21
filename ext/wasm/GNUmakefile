@@ -475,7 +475,6 @@ emcc.MEMORY64 ?= 1
 ########################################################################
 
 ifneq (0,$(emcc.MEMORY64))
-  $(info WARNING: MEMORY64 mode is known to not work)
   emcc.WASM_BIGINT = 1
   # -sMEMORY64=1+ assumes -sWASM_BIGINT=1, so we'll make it explicit
 #  SQLITE.CALL.C-PP.FILTER.global += -DsMEMORY64=$(emcc.MEMORY64)

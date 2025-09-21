@@ -553,7 +553,8 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   });
 
   const isNumericValue = (v)=>{
-    return Number.isFinite(v) || (v instanceof Number)
+    return (v instanceof Number)
+      || Number.isFinite(v)
       || (bigIntEnabled
           ? ('bigint'===typeof v /*does not work: v instanceof BigInt*/)
           : false);
