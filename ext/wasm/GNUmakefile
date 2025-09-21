@@ -447,31 +447,8 @@ emcc.MEMORY64 ?= 1
 ########################################################################
 # https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
 #
-# -sMEMORY64=2 builds and loads but dies when we do things like:
-#
-#  new Uint8Array(wasm.heap8u().buffer, ptr, n)
-#
-# because ptr is now a BigInt, so is invalid for passing to arguments
-# which have strict must-be-a-Number requirements. That aspect will
-# make any eventual port to 64-bit address space painful, as such
-# constructs are found all over the place in the source code. We can
-# potentially replace all such uses with Number(ptr) as a
-# workaround. WASM 3.0[^wasm3] says that browsers will be limited to
-# 16gb, which is still well, well within range of
-# Number.MAX_SAFE_INTEGER. i.e. such a hack, though unsightly, would
-# seem to pose no inherent problems. The hard part will be finding all
-# such cases.
-#
-# Notes related to getting it working with MEMORY64 with emcc
-# versions 4.0.11-15:
-#
-# WebAssembly.Table.get(ARG) wants BigInt if MEMORY64=1 but a number
-# if MEMORY64=2.
-#
-# Requires wasm-strip 1.0.36 (maybe 1.0.35, but not 1.0.34) or
-# will fail to strip with "tables may not be 64-bit".
-#
-# [^wasm3]: https://webassembly.org/news/2025-09-17-wasm-3.0/
+# 64-bit build requires wasm-strip 1.0.36 (maybe 1.0.35, but not
+# 1.0.34) or will fail to strip with "tables may not be 64-bit".
 ########################################################################
 
 ifneq (0,$(emcc.MEMORY64))
@@ -735,7 +712,7 @@ emcc.INITIAL_MEMORY.64  = 67108864
 emcc.INITIAL_MEMORY.32  = 33554432
 emcc.INITIAL_MEMORY.16  = 16777216
 emcc.INITIAL_MEMORY.8   = 8388608
-emcc.INITIAL_MEMORY ?= 16
+emcc.INITIAL_MEMORY ?= 8
 ifeq (,$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY)))
 $(error emcc.INITIAL_MEMORY must be one of: 8, 16, 32, 64, 96, 128 (megabytes))
 endif
