@@ -252,14 +252,19 @@ globalThis.WhWasmUtilInstaller = function(target){
         ? (v)=>BigInt(v || 0)
         : (v)=>toss("BigInt support is disabled in this build.");
 
+  const __Number = (v)=>Number(v||0)/*treat undefined the same as null*/;
+
   /**
      If target.ptr.ir==='i32' then this is equivalent to
-     Number(v) else it's equivalent to BigInt(v||0), throwing
+     Number(v||0) else it's equivalent to BigInt(v||0), throwing
      if BigInt support is disabled.
 
-     Why? Because Number(null)===0, but BigInt(null) throws.
+     Why? Because Number(null)===0, but BigInt(null) throws.  We
+     perform the same for Number to allow the undefined value to be
+     treated as a NULL WASM pointer, primarily to reduce friction in
+     many SQLite3 bindings which have long relied on that.
   */
-  const __asPtrType = (4===__ptrSize) ? Number : __BigInt;
+  const __asPtrType = (4===__ptrSize) ? __Number : __BigInt;
 
   /**
      The number 0 as either type Number or BigInt, depending on
