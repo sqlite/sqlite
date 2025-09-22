@@ -3,8 +3,8 @@
    post-js.js for use with Emscripten's --post-js flag. This code
    requires that it be running in that context. The Emscripten
    environment must have been set up already but it will not have
-   loaded its WASM when the code in this file is run. The function it
-   installs will be run after the WASM module is loaded, at which
+   loaded its WASM when the code in this file is run. The function this
+   file installs will be run after the WASM module is loaded, at which
    point the sqlite3 JS API bits will get set up.
 */
 Module.runSQLite3PostLoadInit = function(EmscriptenModule/*the Emscripten-style module object*/){
@@ -18,7 +18,7 @@ Module.runSQLite3PostLoadInit = function(EmscriptenModule/*the Emscripten-style 
   /* This function will contain at least the following:
 
      - post-js-header.js          => this file
-       - sqlite3-api-prologue.js  => Bootstrapping bits to attach the following files to
+       - sqlite3-api-prologue.js  => Bootstrapping bits for the following files
        - common/whwasmutil.js     => Generic JS/WASM glue
        - jaccwabyt/jaccwabyt.js   => C struct-binding glue
        - sqlite3-api-glue.js      => glues previous parts together
@@ -28,7 +28,7 @@ Module.runSQLite3PostLoadInit = function(EmscriptenModule/*the Emscripten-style 
        - sqlite3-vtab-helper.c-pp.js => Utilities for virtual table impls
        - sqlite3-vfs-opfs.c-pp.js => OPFS VFS
        - sqlite3-vfs-opfs-sahpool.c-pp.js => OPFS SAHPool VFS
-       - sqlite3-api-cleanup.js   => final API cleanup
+       - sqlite3-api-cleanup.js   => final bootstrapping phase
      - post-js-footer.js          => this file's epilogue
 
      And all of that gets sandwiched between extern-pre-js.js and

@@ -2,9 +2,18 @@
    BEGIN FILE: api/pre-js.js
 
    This file is intended to be prepended to the sqlite3.js build using
-   Emscripten's --pre-js=THIS_FILE flag (or equivalent).
+   Emscripten's --pre-js=THIS_FILE flag (or equivalent). It is run
+   from inside of sqlite3InitModule(), after Emscripten's Module is
+   defined, but early enough that we can ammend, or even outright
+   replace, Module from here.
+
+   Because this runs in-between Emscripten's own bootstrapping and
+   Emscripten's main work, we must be careful with file-local symbol
+   names. e.g. don't overwrite anything Emscripten defines and do not
+   use 'const' for local symbols which Emscripten might try to use for
+   itself. i.e. try to keep file-local symbol names obnoxiously
+   collision-resistant.
 */
-// See notes in extern-post-js.js
 const sIMS =
       globalThis.sqlite3InitModuleState/*from extern-post-js.c-pp.js*/
       || Object.assign(Object.create(null),{
@@ -63,6 +72,8 @@ Module['locateFile'] = function(path, prefix) {
 
 //#if custom-Module.instantiateWasm
 /**
+   Override Module.instantiateWasm().
+
    Bug warning: a custom Module.instantiateWasm() does not work
    in WASMFS builds:
 
@@ -70,18 +81,17 @@ Module['locateFile'] = function(path, prefix) {
 
    In such builds we must disable this.
 */
-const xNameOfInstantiateWasm =
+Module[
 //#if wasmfs
-    false
+  'emscripten-bug-17951'
 //#else
-    true /* This works, but it does not have the testing coverage in
-            the wild which Emscripten's default impl does, so we'll
-            save this option until we really need a custom
-            Module.instantiateWasm(). */
+  'instantiateWasm'
+  /* This works, but it does not have the testing coverage in
+     the wild which Emscripten's default impl does, so we'll
+     save this option until we really need a custom
+     Module.instantiateWasm(). */
 //#endif
-  ? 'instantiateWasm'
-  : 'emscripten-bug-17951';
-Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
+] = function callee(imports,onSuccess){
   const sims = this;
   const uri = Module.locateFile(
     sims.wasmFilename, (
@@ -96,7 +106,7 @@ Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
         .instantiateStreaming(wfetch(), imports)
         .then((arg)=>{
           arg.imports = imports;
-          sims.intantiateWasm = arg;
+          sims.instantiateWasm = arg /* used by extern-post-js.c-pp.js */;
           onSuccess(arg.instance, arg.module);
         })
         : async ()=>// Safari < v15
@@ -105,12 +115,11 @@ Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
         .then(bytes => WebAssembly.instantiate(bytes, imports))
         .then((arg)=>{
           arg.imports = imports;
-          sims.intantiateWasm = arg;
+          sims.instantiateWasm = arg;
           onSuccess(arg.instance, arg.module);
         })
   ;
   return loadWasm();
-  //return {};
 }.bind(sIMS);
 /*
   It is literally impossible to reliably get the name of _this_
@@ -123,8 +132,7 @@ Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
 */
 sIMS.wasmFilename = 'sqlite3.wasm';
 //#endif custom-Module.instantiateWasm
-/* Automation may append ".x = y" to this file, for some value of x and y.
-
-   END FILE: api/pre-js.js, noting that the build process may add a
-   line after this one to change the above .uri to a build-specific
-   one. */
+/*
+  END FILE: api/pre-js.js, noting that the build process may append
+  "sIMS.wasmFilename = x;" to this file, for some value of x.
+*/

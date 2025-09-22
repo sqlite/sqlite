@@ -126,6 +126,15 @@
    globalThis.sqlite3ApiConfig get deleted by sqlite3ApiBootstrap()
    because any changes to them made after that point would have no
    useful effect.
+
+   This function bootstraps only the _synchronous_ pieces of the
+   library.  After calling this, sqlite3.asyncPostInit() must be
+   called to initialize any async pieces (most notably the
+   OPFS-related pieces) and should then delete sqlite3.asyncPostInit.
+   That function is NOT part of the public interface, but is rather a
+   side-effect of how we need to finalize initialization. If we
+   include that part of the init from here, this function will need to
+   return a Promise instead of being synchronous.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
@@ -2002,7 +2011,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     WasmAllocError: WasmAllocError,
     SQLite3Error: SQLite3Error,
     capi,
-    util,
+    util /* internal: will get removed after library init */,
     wasm,
     config,
     /**
@@ -2067,6 +2076,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
              clients build their own sqlite3.wasm which contains their
              own C struct types. */
           delete sqlite3.StructBinder;
+          delete sqlite3.scriptInfo;
+          delete sqlite3.emscripten;
         }
         return sqlite3;
       };

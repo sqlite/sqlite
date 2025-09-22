@@ -15,17 +15,26 @@
   that it can finalize any setup and clean up any global symbols
   temporarily used for setting up the API's various subsystems.
 
-  In Emscripten builds it's run in the context of a Module.postRun
-  handler.
+  In Emscripten builds it's run in the context of what amounts to a
+  Module.postRun handler, though it's no longer actually a postRun
+  handler because Emscripten 4.0 changed postRun semantics in an
+  incompatible way.
+
+  In terms of amalgamation code placement, this file is appended
+  immediately after the final sqlite3-api-*.js piece. Those files
+  cooperate to prepare sqlite3ApiBootstrap() and this file calls it.
+  It is run within a context which gives it access to Emscripten's
+  Module object, after sqlite3.wasm is loaded but before
+  sqlite3ApiBootstrap() has been called.
 */
 'use strict';
 if( 'undefined' !== typeof Module ){ // presumably an Emscripten build
   try{
-    /**
-       The WASM-environment-dependent configuration for
-       sqlite3ApiBootstrap().
-    */
     const SABC = Object.assign(
+      /**
+         The WASM-environment-dependent configuration for
+         sqlite3ApiBootstrap().
+      */
       Object.create(null),
       globalThis.sqlite3ApiConfig || {}, {
         memory: ('undefined'!==typeof wasmMemory)

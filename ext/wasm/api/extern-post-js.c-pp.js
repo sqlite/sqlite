@@ -62,19 +62,31 @@ const toExportForESM =
   globalThis.sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
-      //console.warn("originalInit() then() arg =",EmscriptenModule);
-      //console.warn("sqlite3InitModule(): sIMS =",sIMS);
-      EmscriptenModule.runSQLite3PostLoadInit(EmscriptenModule);
+      sIMS.debugModule("sqlite3InitModule() sIMS =",sIMS);
+      sIMS.debugModule("sqlite3InitModule() EmscriptenModule =",EmscriptenModule);
+      EmscriptenModule.runSQLite3PostLoadInit(
+        EmscriptenModule /* see post-js-header/footer.js */
+      );
+      delete EmscriptenModule.runSQLite3PostLoadInit;
       const s = EmscriptenModule.sqlite3;
-      s.scriptInfo = sIMS;
-      //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
+      delete EmscriptenModule.sqlite3;
+      s.scriptInfo = sIMS /* needed by async init below */;
       if(ff.__isUnderTest){
         s.__isUnderTest = true;
         s.emscripten = EmscriptenModule;
+//#if custom-Module.instantiateWasm
+        const iw = sIMS.instantiateWasm;
+        if( iw ){
+          /* Metadata injected by the custom Module.instantiateWasm()
+             in pre-js.c-pp.js. */
+          s.wasm.module = iw.module;
+          s.wasm.instance = iw.instance;
+          s.wasm.imports = iw.imports;
+        }
+//#endif custom-Module.instantiateWasm
       }
-      const f = s.asyncPostInit;
+      const rv = s.asyncPostInit();
       delete s.asyncPostInit;
-      const rv = f();
 //#if wasmfs
       if('undefined'!==typeof WorkerGlobalScope &&
          EmscriptenModule['ENVIRONMENT_IS_PTHREAD']){

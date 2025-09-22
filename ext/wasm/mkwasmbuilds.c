@@ -98,6 +98,13 @@ typedef struct BuildDef BuildDef;
 #  undef WASM_CUSTOM_INSTANTIATE
 #  define WASM_CUSTOM_INSTANTIATE 0
 #endif
+
+#if WASM_CUSTOM_INSTANTIATE
+#define C_PP_D_CUSTOM_INSTANTIATE " -Dcustom-Module.instantiateWasm "
+#else
+#define C_PP_D_CUSTOM_INSTANTIATE
+#endif
+
 /*
 ** The set of WASM builds for the library (as opposed to the apps
 ** (fiddle, speedtest1)). This array must end with an empty sentinel
@@ -268,27 +275,26 @@ static void mk_pre_post(const char *zName  /* build name */,
   /* --pre-js=... */
   pf("pre-js.js.%s-%s = $(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM);
-  pf("$(pre-js.js.%s-%s): $(MAKEFILE_LIST) $(sqlite3-license-version.js)\n", zNM);
-#if !WASM_CUSTOM_INSTANTIATE
-  (void)zWasmOut;
-  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s),"
-     "$(c-pp.D.%s-%s)))\n", zNM, zNM);
-#else
-  /* This part is needed if/when we re-enable the custom
-  ** Module.instantiateModule() impl in api/pre-js.c-pp.js. */
-  pf("pre-js.js.%s-%s.intermediary = $(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
-     zNM, zNM);
-  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.%s-%s.intermediary),"
-     "$(c-pp.D.%s-%s) -Dcustom-Module.instantiateWasm))\n", zNM, zNM);
-  pf("$(pre-js.js.%s-%s): $(pre-js.js.%s-%s.intermediary)\n", zNM, zNM);
-  pf("\tcp $(pre-js.js.%s-%s.intermediary) $@\n", zNM);
-
-  /* Amend $(pre-js.js.zName-zMode) for all targets except the plain
-  ** "sqlite3" and the "sqlite3-wasmfs" builds... */
-  if( zWasmOut ){
-    pf("\t@echo 'sIMS.wasmFilename = \"%s\";' >> $@\n", zWasmOut);
+  pf("$(pre-js.js.%s-%s): $(MAKEFILE_LIST) "
+     "$(sqlite3-license-version.js)\n", zNM);
+  if( 0==WASM_CUSTOM_INSTANTIATE || 0==zWasmOut ){
+    pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),"
+       "$(pre-js.js.%s-%s),"
+       C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s-%s)))\n", zNM, zNM);
+  }else{
+    /* This part is needed for builds which have to rename the wasm file
+       in zJsOut so that the loader can find it. */
+    pf("pre-js.js.%s-%s.intermediary = "
+       "$(dir.tmp)/pre-js.%s-%s.intermediary.js\n",
+       zNM, zNM);
+    pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),"
+       "$(pre-js.js.%s-%s.intermediary),"
+       C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s-%s)))\n", zNM, zNM);
+    pf("$(pre-js.js.%s-%s): $(pre-js.js.%s-%s.intermediary)\n", zNM, zNM);
+    pf("\tcp $(pre-js.js.%s-%s.intermediary) $@\n", zNM);
+    pf("\t@echo 'sIMS.wasmFilename = \"%s\";' >> $@\n", zWasmOut)
+      /* see api/pre-js.c-pp.js:Module.instantiateModule() */;
   }
-#endif
 
   /* --post-js=... */
   pf("post-js.js.%s-%s = $(dir.tmp)/post-js.%s-%s.js\n", zNM, zNM);
@@ -296,9 +302,11 @@ static void mk_pre_post(const char *zName  /* build name */,
      "$(post-js.js.%s-%s),$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
   /* --extern-post-js=... */
-  pf("extern-post-js.js.%s-%s = $(dir.tmp)/extern-post-js.%s-%s.js\n", zNM, zNM);
-  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(extern-post-js.js.in),$(extern-post-js.js.%s-%s),"
-     "$(c-pp.D.%s-%s)))\n", zNM, zNM);
+  pf("extern-post-js.js.%s-%s = $(dir.tmp)/extern-post-js.%s-%s.js\n",
+     zNM, zNM);
+  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(extern-post-js.js.in),"
+     "$(extern-post-js.js.%s-%s),"
+     C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s-%s)))\n", zNM, zNM);
 
   /* Combined flags for use with emcc... */
   pf("pre-post-common.flags.%s-%s = "
@@ -313,7 +321,8 @@ static void mk_pre_post(const char *zName  /* build name */,
   pf("pre-post-jses.%s-%s.deps = $(pre-post-jses.deps.common) "
      "$(post-js.js.%s-%s) $(extern-post-js.js.%s-%s)\n",
      zNM, zNM, zNM);
-  pf("pre-post-%s-%s.deps = $(pre-post-jses.%s-%s.deps) $(dir.tmp)/pre-js.%s-%s.js\n",
+  pf("pre-post-%s-%s.deps = $(pre-post-jses.%s-%s.deps) "
+     "$(dir.tmp)/pre-js.%s-%s.js\n",
      zNM, zNM, zNM);
   pf("# End --pre/--post flags for %s-%s%s", zNM, zBanner);
 #undef zNM
@@ -391,8 +400,9 @@ static void mk_lib_mode(const BuildDef * pB){
 #define zNM pB->zName, pB->zMode
 
   pf("%s# Begin build [%s-%s]. flags=0x%02x\n", zBanner, zNM, pB->flags);
-  pf("# zJsOut=%s\n# zCmppD=%s\n", pB->zJsOut,
-     pB->zCmppD ? pB->zCmppD : "<none>");
+  pf("# zJsOut=%s\n# zCmppD=%s\n# zWasmOut=%s\n", pB->zJsOut,
+     pB->zCmppD ? pB->zCmppD : "<none>",
+     pB->zWasmOut ? pB->zWasmOut : "");
   pf("$(info Setting up build [%s-%s]: %s)\n", zNM, pB->zJsOut);
   mk_pre_post(zNM, pB->zCmppD, pB->zWasmOut);
   pf("\nemcc.flags.%s.%s ?=\n", zNM);
