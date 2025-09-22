@@ -377,13 +377,21 @@ typedef struct WasmTestStruct WasmTestStruct;
 SQLITE_WASM_EXPORT
 void sqlite3__wasm_test_struct(WasmTestStruct * s){
   if(s){
+    if( 0 ){
+      /* Do not be alarmed by the small (and odd) pointer values.
+         Function pointers in WASM are their index into the
+         indirect function table, not their address. */
+      fprintf(stderr,"%s:%s()@%p s=@%p xFunc=@%p\n",
+              __FILE__, __func__,
+              (void*)sqlite3__wasm_test_struct,
+              s, (void*)s->xFunc);
+    }
     s->v4 *= 2;
     s->v8 = s->v4 * 2;
     s->ppV = s;
     s->cstr = __FILE__;
     if(s->xFunc) s->xFunc(s);
   }
-  return;
 }
 #endif /* SQLITE_WASM_ENABLE_C_TESTS */
 
@@ -1020,8 +1028,8 @@ const char * sqlite3__wasm_enum_json(void){
       M(xDelete,           "i(ppi)");
       M(xAccess,           "i(ppip)");
       M(xFullPathname,     "i(ppip)");
-      M(xDlOpen,           "p(pp)");
-      M(xDlError,          "p(pip)");
+      M(xDlOpen,           "v(pp)");
+      M(xDlError,          "v(pip)");
       M(xDlSym,            "p()");
       M(xDlClose,          "v(pp)");
       M(xRandomness,       "i(pip)");
@@ -1074,7 +1082,6 @@ const char * sqlite3__wasm_enum_json(void){
     } _StructBinder;
 #undef CurrentStruct
 
-
 #if SQLITE_WASM_HAS_VTAB
 #define CurrentStruct sqlite3_vtab
     StructBinder {
@@ -1118,6 +1125,8 @@ const char * sqlite3__wasm_enum_json(void){
       M(xRollbackTo,    "i(pi)");
       // ^^^ v2. v3+ follows...
       M(xShadowName,    "i(s)");
+      // ^^^ v3. v4+ follows...
+      M(xIntegrity,     "i(pppip)");
     } _StructBinder;
 #undef CurrentStruct
 

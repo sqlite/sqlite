@@ -232,11 +232,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       pool.log(`xRead ${file.path} ${n} @ ${offset64}`);
       try {
         const nRead = file.sah.read(
-          wasm.heap8u().subarray(pDest, pDest+n),
+          wasm.heap8u().subarray(Number(pDest), Number(pDest)+n),
           {at: HEADER_OFFSET_DATA + Number(offset64)}
         );
         if(nRead < n){
-          wasm.heap8u().fill(0, pDest + nRead, pDest + n);
+          wasm.heap8u().fill(0, Number(pDest) + nRead, Number(pDest) + n);
           return capi.SQLITE_IOERR_SHORT_READ;
         }
         return 0;
@@ -287,7 +287,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       pool.log(`xWrite ${file.path} ${n} ${offset64}`);
       try{
         const nBytes = file.sah.write(
-          wasm.heap8u().subarray(pSrc, pSrc+n),
+          wasm.heap8u().subarray(Number(pSrc), Number(pSrc)+n),
           { at: HEADER_OFFSET_DATA + Number(offset64) }
         );
         return n===nBytes ? 0 : toss("Unknown write() failure.");
@@ -452,7 +452,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       vfsMethods.xRandomness = function(pVfs, nOut, pOut){
         const heap = wasm.heap8u();
         let i = 0;
-        for(; i < nOut; ++i) heap[pOut + i] = (Math.random()*255000) & 0xFF;
+        const npOut = Number(pOut);
+        for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
         return i;
       };
     }

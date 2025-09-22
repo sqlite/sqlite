@@ -113,6 +113,7 @@
     log("Loaded speedtest1 module. Setting up...");
     App.pDir = wasmfsDir(S.wasm);
     App.wasm = S.wasm;
+    log("WASM pointer size:",App.wasm.ptr.size);
     //if(App.pDir) log("Persistent storage:",pDir);
     //else log("Using transient storage.");
     mPost('ready',true);

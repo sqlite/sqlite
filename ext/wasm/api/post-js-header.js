@@ -17,6 +17,7 @@ Module.runSQLite3PostLoadInit = function(EmscriptenModule/*the Emscripten-style 
   //console.warn("This is the start of Module.runSQLite3PostLoadInit()");
   /* This function will contain at least the following:
 
+     - extern-pre-js.js         => out-of-Emscripten prologue
      - post-js-header.js        => this file
      - sqlite3-api-prologue.js  => Bootstrapping bits to attach the rest to
      - common/whwasmutil.js     => Replacements for much of Emscripten's glue
@@ -29,5 +30,6 @@ Module.runSQLite3PostLoadInit = function(EmscriptenModule/*the Emscripten-style 
      - sqlite3-vfs-opfs.c-pp.js => OPFS VFS
      - sqlite3-vfs-opfs-sahpool.c-pp.js => OPFS SAHPool VFS
      - sqlite3-api-cleanup.js   => final API cleanup
-     - post-js-footer.js        => closes this function
+     - post-js-footer.js        => this file's epilogue
+     - extern-post-js.js        => out-of-Emscripten epilogue
   */

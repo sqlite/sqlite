@@ -32,6 +32,7 @@ fiddle.emcc-flags = \
   --minify 0 \
   -sALLOW_TABLE_GROWTH \
   -sMEMORY64=$(emcc.MEMORY64) \
+  -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.8) \
   -sABORTING_MALLOC \
   -sSTRICT_JS=0 \
   -sENVIRONMENT=web,worker \

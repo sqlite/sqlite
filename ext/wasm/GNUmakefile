@@ -381,6 +381,15 @@ $(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
 	$(CC) -o $@ $<
 DISTCLEAN_FILES += $(bin.stripccomments)
 
+#
+# If $(WASM_CUSTOM_INSTANTIATE) is 1 then mkwasmbuilds will add
+# -Dcustom-Module.instantiateWasm to some of the builds. This is
+# experimental.
+#
+# Changing this may require a clean rebuild.
+#
+WASM_CUSTOM_INSTANTIATE = 0
+
 ########################################################################
 # SQLITE.CALL.C-PP.FILTER: a $(call)able to transform $(1) to $(2) via:
 #
@@ -447,41 +456,16 @@ emcc.MEMORY64 ?= 0
 ########################################################################
 # https://emscripten.org/docs/tools_reference/settings_reference.html#memory64
 #
-# -sMEMORY64=2 builds and loads but dies when we do things like:
-#
-#  new Uint8Array(wasm.heap8u().buffer, ptr, n)
-#
-# because ptr is now a BigInt, so is invalid for passing to arguments
-# which have strict must-be-a-Number requirements. That aspect will
-# make any eventual port to 64-bit address space painful, as such
-# constructs are found all over the place in the source code. We can
-# potentially replace all such uses with Number(ptr) as a
-# workaround. WASM 3.0[^wasm3] says that browsers will be limited to
-# 16gb, which is still well, well within range of
-# Number.MAX_SAFE_INTEGER. i.e. such a hack, though unsightly, would
-# seem to pose no inherent problems. The hard part will be finding all
-# such cases.
-#
-# Notes related to getting it working with MEMORY64 with emcc
-# versions 4.0.11-15:
-#
-# - sqlite3-wasm.c:sqlite3__wasm_enum_json() mysteriously fails
-#   (returns 0) with MEMORY64=2. That call is critical to the
-#   library bootstrapping process.
-#
-# - MEMORY64=1 fails to compile with: "tables may not be 64-bit" with
-#   emcc 4.0.11, but no location information about where that error is
-#   coming from. The only reference to it on the web is:
-#   https://chromium.googlesource.com/external/github.com/WebAssembly/wabt/+/refs/tags/1.0.20/src/binary-reader.cc
-#
-# [^wasm3]: https://webassembly.org/news/2025-09-17-wasm-3.0/
+# 64-bit build requires wasm-strip 1.0.36 (maybe 1.0.35, but not
+# 1.0.34) or will fail to strip with "tables may not be 64-bit".
 ########################################################################
 
 ifneq (0,$(emcc.MEMORY64))
-  $(info WARNING: MEMORY64 mode is known to not work)
-  SQLITE.CALL.C-PP.FILTER.global += -D64bit
   emcc.WASM_BIGINT = 1
   # -sMEMORY64=1+ assumes -sWASM_BIGINT=1, so we'll make it explicit
+#  SQLITE.CALL.C-PP.FILTER.global += -DsMEMORY64=$(emcc.MEMORY64)
+# ^^ we no longer need build-time filtering for this but if we do,
+# just uncomment that line.
 endif
 
 # emcc_opt = optimization-related flags. These are primarily used by
@@ -737,7 +721,7 @@ emcc.INITIAL_MEMORY.64  = 67108864
 emcc.INITIAL_MEMORY.32  = 33554432
 emcc.INITIAL_MEMORY.16  = 16777216
 emcc.INITIAL_MEMORY.8   = 8388608
-emcc.INITIAL_MEMORY ?= 16
+emcc.INITIAL_MEMORY ?= 8
 ifeq (,$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY)))
 $(error emcc.INITIAL_MEMORY must be one of: 8, 16, 32, 64, 96, 128 (megabytes))
 endif
@@ -953,7 +937,6 @@ $(dir.dout)/sqlite3-bundler-friendly.mjs: $(sqlite3.mjs)
 $(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 #CLEAN_FILES += $(sqlite3.wasm)
 
-ifneq (1,$(MAKING_CLEAN))
 # This block MUST come between the above definitions of
 # sqlite3-...js/mjs and the $(eval) calls below this block which use
 # SQLITE.CALL.C-PP.FILTER.
@@ -969,16 +952,17 @@ ifneq (1,$(MAKING_CLEAN))
 # Maintenance note: the various $(c-pp.D.XYZ) vars are defined via
 # $(bin.mkwb).
 bin.mkwb = ./mkwasmbuilds
+ifneq (1,$(MAKING_CLEAN))
 $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
-	$(CC) -o $@ $<
-DISTCLEAN_FILES += $(bin.mkwb)
+	$(CC) -o $@ $< -DWASM_CUSTOM_INSTANTIATE=$(WASM_CUSTOM_INSTANTIATE)
+
 .wasmbuilds.make: $(bin.mkwb)
 	@rm -f $@
 	$(bin.mkwb) > $@
 	@chmod -w $@
 -include .wasmbuilds.make
 endif
-DISTCLEAN_FILES += .wasmbuilds.make
+CLEAN_FILES += .wasmbuilds.make $(bin.mkwb)
 
 ########################################################################
 # We need separate copies of certain supplementary JS files for the

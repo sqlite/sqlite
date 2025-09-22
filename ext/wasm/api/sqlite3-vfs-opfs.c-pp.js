@@ -805,7 +805,7 @@ const installOpfsVfs = function callee(options){
                Because the heap is _not_ a SharedArrayBuffer, we have
                to copy the results. TypedArray.set() seems to be the
                fastest way to copy this. */
-            wasm.heap8u().set(f.sabView.subarray(0, n), pDest);
+            wasm.heap8u().set(f.sabView.subarray(0, n), Number(pDest));
           }
         }catch(e){
           error("xRead(",arguments,") failed:",e,f);
@@ -844,7 +844,9 @@ const installOpfsVfs = function callee(options){
         const f = __openFiles[pFile];
         let rc;
         try {
-          f.sabView.set(wasm.heap8u().subarray(pSrc, pSrc+n));
+          f.sabView.set(wasm.heap8u().subarray(
+            Number(pSrc), Number(pSrc) + n
+          ));
           rc = opRun('xWrite', pFile, n, Number(offset64));
         }catch(e){
           error("xWrite(",arguments,") failed:",e,f);
@@ -951,7 +953,8 @@ const installOpfsVfs = function callee(options){
       vfsSyncWrappers.xRandomness = function(pVfs, nOut, pOut){
         const heap = wasm.heap8u();
         let i = 0;
-        for(; i < nOut; ++i) heap[pOut + i] = (Math.random()*255000) & 0xFF;
+        const npOut = Number(pOut);
+        for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
         return i;
       };
     }
