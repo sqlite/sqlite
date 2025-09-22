@@ -2505,15 +2505,13 @@ globalThis.WhWasmUtilInstaller.yawl = function(config){
                   yetAnotherWasmLoader()'s return value */;
   };
   const loadWasm = WebAssembly.instantiateStreaming
-        ? function loadWasmStreaming(){
-          return WebAssembly.instantiateStreaming(wfetch(), config.imports||{})
-            .then(finalThen);
-        }
-        : function loadWasmOldSchool(){ // Safari < v15
-          return wfetch()
-            .then(response => response.arrayBuffer())
-            .then(bytes => WebAssembly.instantiate(bytes, config.imports||{}))
-            .then(finalThen);
-        };
+        ? ()=>WebAssembly
+        .instantiateStreaming(wfetch(), config.imports||{})
+        .then(finalThen)
+        : ()=> wfetch()// Safari < v15
+        .then(response => response.arrayBuffer())
+        .then(bytes => WebAssembly.instantiate(bytes, config.imports||{}))
+        .then(finalThen)
+  ;
   return loadWasm;
 }.bind(globalThis.WhWasmUtilInstaller)/*yawl()*/;

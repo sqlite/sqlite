@@ -38,7 +38,7 @@ const toExportForESM =
      into the global scope and delete it when sqlite3InitModule()
      is called.
   */
-  const initModuleState = globalThis.sqlite3InitModuleState = Object.assign(Object.create(null),{
+  const sIMS = globalThis.sqlite3InitModuleState = Object.assign(Object.create(null),{
     moduleScript: globalThis?.document?.currentScript,
     isWorker: ('undefined' !== typeof WorkerGlobalScope),
     location: globalThis.location,
@@ -46,27 +46,27 @@ const toExportForESM =
       ? new URL(globalThis.location.href).searchParams
       : new URLSearchParams()
   });
-  initModuleState.debugModule =
-    initModuleState.urlParams.has('sqlite3.debugModule')
+  sIMS.debugModule =
+    sIMS.urlParams.has('sqlite3.debugModule')
     ? (...args)=>console.warn('sqlite3.debugModule:',...args)
     : ()=>{};
 
-  if(initModuleState.urlParams.has('sqlite3.dir')){
-    initModuleState.sqlite3Dir = initModuleState.urlParams.get('sqlite3.dir') +'/';
-  }else if(initModuleState.moduleScript){
-    const li = initModuleState.moduleScript.src.split('/');
+  if(sIMS.urlParams.has('sqlite3.dir')){
+    sIMS.sqlite3Dir = sIMS.urlParams.get('sqlite3.dir') +'/';
+  }else if(sIMS.moduleScript){
+    const li = sIMS.moduleScript.src.split('/');
     li.pop();
-    initModuleState.sqlite3Dir = li.join('/') + '/';
+    sIMS.sqlite3Dir = li.join('/') + '/';
   }
 
   globalThis.sqlite3InitModule = function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
       //console.warn("originalInit() then() arg =",EmscriptenModule);
-      //console.warn("initModuleState =",initModuleState);
+      //console.warn("sqlite3InitModule(): sIMS =",sIMS);
       EmscriptenModule.runSQLite3PostLoadInit(EmscriptenModule);
       const s = EmscriptenModule.sqlite3;
-      s.scriptInfo = initModuleState;
+      s.scriptInfo = sIMS;
       //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
       if(ff.__isUnderTest){
         s.__isUnderTest = true;
@@ -95,13 +95,12 @@ const toExportForESM =
   };
   globalThis.sqlite3InitModule.ready = originalInit.ready;
 
-  if(globalThis.sqlite3InitModuleState.moduleScript){
-    const sim = globalThis.sqlite3InitModuleState;
-    let src = sim.moduleScript.src.split('/');
+  if(sIMS.moduleScript){
+    let src = sIMS.moduleScript.src.split('/');
     src.pop();
-    sim.scriptDir = src.join('/') + '/';
+    sIMS.scriptDir = src.join('/') + '/';
   }
-  initModuleState.debugModule('sqlite3InitModuleState =',initModuleState);
+  sIMS.debugModule('extern-post-js.c-pp.js sqlite3InitModuleState =',sIMS);
   if(0){
     console.warn("Replaced sqlite3InitModule()");
     console.warn("globalThis.location.href =",globalThis.location.href);

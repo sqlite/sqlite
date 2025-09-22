@@ -381,6 +381,15 @@ $(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
 	$(CC) -o $@ $<
 DISTCLEAN_FILES += $(bin.stripccomments)
 
+#
+# If $(WASM_CUSTOM_INSTANTIATE) is 1 then mkwasmbuilds will add
+# -Dcustom-Module.instantiateWasm to some of the builds. This is
+# experimental.
+#
+# Changing this may require a clean rebuild.
+#
+WASM_CUSTOM_INSTANTIATE = 0
+
 ########################################################################
 # SQLITE.CALL.C-PP.FILTER: a $(call)able to transform $(1) to $(2) via:
 #
@@ -928,7 +937,6 @@ $(dir.dout)/sqlite3-bundler-friendly.mjs: $(sqlite3.mjs)
 $(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 #CLEAN_FILES += $(sqlite3.wasm)
 
-ifneq (1,$(MAKING_CLEAN))
 # This block MUST come between the above definitions of
 # sqlite3-...js/mjs and the $(eval) calls below this block which use
 # SQLITE.CALL.C-PP.FILTER.
@@ -944,16 +952,17 @@ ifneq (1,$(MAKING_CLEAN))
 # Maintenance note: the various $(c-pp.D.XYZ) vars are defined via
 # $(bin.mkwb).
 bin.mkwb = ./mkwasmbuilds
+ifneq (1,$(MAKING_CLEAN))
 $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
-	$(CC) -o $@ $<
-DISTCLEAN_FILES += $(bin.mkwb)
+	$(CC) -o $@ $< -DWASM_CUSTOM_INSTANTIATE=$(WASM_CUSTOM_INSTANTIATE)
+
 .wasmbuilds.make: $(bin.mkwb)
 	@rm -f $@
 	$(bin.mkwb) > $@
 	@chmod -w $@
 -include .wasmbuilds.make
 endif
-DISTCLEAN_FILES += .wasmbuilds.make
+CLEAN_FILES += .wasmbuilds.make $(bin.mkwb)
 
 ########################################################################
 # We need separate copies of certain supplementary JS files for the
