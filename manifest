@@ -1,5 +1,5 @@
-C Rework\sthe\sJS/WASM\spieces\sfor\scompatibility\swith\sboth\s32-bit\sand\s64-bit\sWASM\senvironments.\sThis\saffects\sonly\sthe\sbrowser-side\scomponents,\snot\sthe\s--with-wasi-sdk\sbuild\snor\sthe\score\slibrary.
-D 2025-09-22T11:41:15.296
+C Minor\sdoc\supdates.\sNo\sfunctional\schanges.
+D 2025-09-22T11:52:06.578
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/session/sqlite3session.c 9cd47bfefb23c114b7a5d9ee5822d941398902f30516bf0dd
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile feb9f6bf36e8b694b7b3a44837361e5117bb54230ac28c1cd89ebc71489308ab
+F ext/wasm/GNUmakefile d0c2209a0800e6ac95901a737ff5ea88f22578c825737f9cedb6b16171874ecc
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -594,7 +594,7 @@ F ext/wasm/api/README.md 7f029c5fe83b3493931d2fb915e2febd3536267d538a56408a6fef2
 F ext/wasm/api/extern-post-js.c-pp.js 6d058dd44164f3d3055299979db92f8a5821ac79cfd89635ef44363cfd82c64d
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/post-js-footer.js e617e5f81a907362de152576323155f02d24642e625fc05fb801b86b6a269444
-F ext/wasm/api/post-js-header.js 935c4ff097dd2579217918ccbaaffa445e83f82f91cdd7ad68c8363080fa6913
+F ext/wasm/api/post-js-header.js 2cb240ad1a7dc3a3a788f23b8b505665d585b61b7462c41789a0214c1ffa886d
 F ext/wasm/api/pre-js.c-pp.js d52f4a8e900927ac6f5f3608f322b2ad42cad181ec405b2ac8619d2cbf143bd2
 F ext/wasm/api/sqlite3-api-cleanup.js d4f1a5e665afaf84015f6ef0ddd766f638cb28501c4569b1d4b527c4b5a2b9a4
 F ext/wasm/api/sqlite3-api-glue.c-pp.js 12f5b36775fab1e7bf5385689fded2b2a9f77360562515e9849acb5e66602e2d
@@ -2175,9 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f3e845cf38fc364bfa3f8d433b668f884d11286c823d87ee0ed124a991c94e14 e5f0256feab95c30a8e3e1e69963fb3e25ed2da296aff5bc6646fe96a76c0b81
-R 5aac0a7c073e272ebb5d7968de6231f4
-T +closed e5f0256feab95c30a8e3e1e69963fb3e25ed2da296aff5bc6646fe96a76c0b81 Closed\sby\sintegrate-merge.
+P 8ac367686fecd2e3ff1f4b4565e9f206a64237744e381704693df2e6efbe235a
+R c7473722f649ce741b998c43467cc34d
 U stephan
-Z 8e4880f8ac5d327d6bc427bc6e6b1480
+Z 724707217daa9a8f6c1d855a49d7a1d7
 # Remove this line to create a well-formed Fossil manifest.

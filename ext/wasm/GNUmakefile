@@ -463,9 +463,12 @@ emcc.MEMORY64 ?= 0
 ifneq (0,$(emcc.MEMORY64))
   emcc.WASM_BIGINT = 1
   # -sMEMORY64=1+ assumes -sWASM_BIGINT=1, so we'll make it explicit
-#  SQLITE.CALL.C-PP.FILTER.global += -DsMEMORY64=$(emcc.MEMORY64)
-# ^^ we no longer need build-time filtering for this but if we do,
-# just uncomment that line.
+
+  # SQLITE.CALL.C-PP.FILTER.global += -D64bit
+  # ^^ We no longer need build-time code filtering for 64-bit but if
+  # we ever do again, just uncomment that line or, if it's just needed
+  # in specific builds, update that build's -D flags in
+  # mkwasmbuilds.c.
 endif
 
 # emcc_opt = optimization-related flags. These are primarily used by
