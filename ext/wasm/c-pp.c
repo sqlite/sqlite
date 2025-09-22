@@ -39,13 +39,13 @@
 *  - `#stderr` outputs its file name, line number, and the remainder
 **   of that line to stderr.
 **
-** - `#//` acts as a single-line comment, noting that there must be as
+** - `#//` acts as a single-line comment, noting that there must be no
 **   space after the `//` part because `//` is (despite appearances)
 **   parsed like a keyword.
 **
-** Note that "#" above is symbolic. The keyword delimiter is
-** configurable and defaults to "##". Define CMPP_DEFAULT_DELIM to a
-** string when compiling to define the default at build-time.
+** The "#" above is symbolic. The keyword delimiter is configurable
+** and defaults to "##". Define CMPP_DEFAULT_DELIM to a string when
+** compiling to define the default at build-time.
 **
 ** This preprocessor does no expansion of content except within the
 ** bounds of its `#keywords`.

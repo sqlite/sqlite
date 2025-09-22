@@ -64,29 +64,13 @@ const toExportForESM =
     return originalInit(...args).then((EmscriptenModule)=>{
       sIMS.debugModule("sqlite3InitModule() sIMS =",sIMS);
       sIMS.debugModule("sqlite3InitModule() EmscriptenModule =",EmscriptenModule);
-      EmscriptenModule.runSQLite3PostLoadInit(
-        EmscriptenModule /* see post-js-header/footer.js */
+      const s = EmscriptenModule.runSQLite3PostLoadInit(
+        sIMS,
+        EmscriptenModule /* see post-js-header/footer.js */,
+        !!ff.__isUnderTest
       );
-      delete EmscriptenModule.runSQLite3PostLoadInit;
-      const s = EmscriptenModule.sqlite3;
-      delete EmscriptenModule.sqlite3;
-      s.scriptInfo = sIMS /* needed by async init below */;
-      if(ff.__isUnderTest){
-        s.__isUnderTest = true;
-        s.emscripten = EmscriptenModule;
-//#if custom-Module.instantiateWasm
-        const iw = sIMS.instantiateWasm;
-        if( iw ){
-          /* Metadata injected by the custom Module.instantiateWasm()
-             in pre-js.c-pp.js. */
-          s.wasm.module = iw.module;
-          s.wasm.instance = iw.instance;
-          s.wasm.imports = iw.imports;
-        }
-//#endif custom-Module.instantiateWasm
-      }
-      const rv = s.asyncPostInit();
-      delete s.asyncPostInit;
+      //const rv = s.asyncPostInit();
+      //delete s.asyncPostInit;
 //#if wasmfs
       if('undefined'!==typeof WorkerGlobalScope &&
          EmscriptenModule['ENVIRONMENT_IS_PTHREAD']){
@@ -99,7 +83,7 @@ const toExportForESM =
         return EmscriptenModule;
       }
 //#endif
-      return rv;
+      return s;
     }).catch((e)=>{
       console.error("Exception loading sqlite3 module:",e);
       throw e;
@@ -129,6 +113,9 @@ const toExportForESM =
      glue... */
   if (typeof exports === 'object' && typeof module === 'object'){
     module.exports = sqlite3InitModule;
+    module.exports.default = sqlite3InitModule;
+  }else if( 'function'===typeof define && define.amd ){
+    define([], ()=>sqlite3InitModule);
   }else if (typeof exports === 'object'){
     exports["sqlite3InitModule"] = sqlite3InitModule;
   }

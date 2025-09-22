@@ -127,17 +127,12 @@
    because any changes to them made after that point would have no
    useful effect.
 
-   This function bootstraps only the _synchronous_ pieces of the
-   library.  After calling this, sqlite3.asyncPostInit() must be
-   called to initialize any async pieces (most notably the
-   OPFS-related pieces) and should then delete sqlite3.asyncPostInit.
-   That function is NOT part of the public interface, but is rather a
-   side-effect of how we need to finalize initialization. If we
-   include that part of the init from here, this function will need to
-   return a Promise instead of being synchronous.
+   This function returns a Promise to the sqlite3 namespace object,
+   which resolves after the async pieces of the library init are
+   complete.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
+globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   apiConfig = (globalThis.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
   if(sqlite3ApiBootstrap.sqlite3){ /* already initialized */
@@ -2076,8 +2071,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
              clients build their own sqlite3.wasm which contains their
              own C struct types. */
           delete sqlite3.StructBinder;
-          delete sqlite3.scriptInfo;
-          delete sqlite3.emscripten;
         }
         return sqlite3;
       };
@@ -2122,7 +2115,33 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }
   delete sqlite3ApiBootstrap.initializers;
   sqlite3ApiBootstrap.sqlite3 = sqlite3;
-  return sqlite3;
+  delete globalThis.sqlite3ApiBootstrap;
+  delete globalThis.sqlite3ApiConfig;
+  sqlite3InitScriptInfo.debugModule(
+    "sqlite3ApiBootstrap() complete", sqlite3
+  );
+  sqlite3.scriptInfo /* used by some async init code */ =
+    sqlite3InitScriptInfo /* from post-js-header.js */;
+  if( (sqlite3.__isUnderTest = sqlite3IsUnderTest) ){
+    sqlite3.config.emscripten = EmscriptenModule;
+    const iw = sqlite3InitScriptInfo.instantiateWasm;
+    if( iw ){
+      /* Metadata injected by the custom Module.instantiateWasm()
+         in pre-js.c-pp.js. */
+      sqlite3.wasm.module = iw.module;
+      sqlite3.wasm.instance = iw.instance;
+      sqlite3.wasm.imports = iw.imports;
+    }
+  }
+  return sqlite3.asyncPostInit().then((s)=>{
+    sqlite3InitScriptInfo.debugModule(
+      "sqlite3.asyncPostInit() complete", sqlite3
+    );
+    delete s.asyncPostInit;
+    delete s.scriptInfo;
+    delete s.emscripten;
+    return s;
+  });
 }/*sqlite3ApiBootstrap()*/;
 
 /**

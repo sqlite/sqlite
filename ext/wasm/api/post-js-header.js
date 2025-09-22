@@ -1,19 +1,26 @@
 /**
    post-js-header.js is to be prepended to other code to create
-   post-js.js for use with Emscripten's --post-js flag. This code
-   requires that it be running in that context. The Emscripten
-   environment must have been set up already but it will not have
-   loaded its WASM when the code in this file is run. The function this
-   file installs will be run after the WASM module is loaded, at which
-   point the sqlite3 JS API bits will get set up.
+   post-js.js for use with Emscripten's --post-js flag, so it gets
+   injected in the earliest stages of sqlite3InitModule().
+
+   This function wraps the whole SQLite3 library but does not
+   bootstrap it.
+
+   Running this function will bootstrap the library and return
+   a Promise to the sqlite3 namespace object.
 */
-Module.runSQLite3PostLoadInit = function(EmscriptenModule/*the Emscripten-style module object*/){
+Module.runSQLite3PostLoadInit = function(
+  sqlite3InitScriptInfo /* populated by extern-post-js.c-pp.js */,
+  EmscriptenModule/*the Emscripten-style module object*/,
+  sqlite3IsUnderTest
+){
   /** ^^^ Don't use Module.postRun, as that runs a different time
       depending on whether this file is built with emcc 3.1.x or
       4.0.x. This function name is intentionally obnoxiously verbose to
       ensure that we don't collide with current and future Emscripten
       symbol names. */
   'use strict';
+  delete EmscriptenModule.runSQLite3PostLoadInit;
   //console.warn("This is the start of Module.runSQLite3PostLoadInit()");
   /* This function will contain at least the following:
 

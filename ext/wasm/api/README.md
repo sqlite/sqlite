@@ -148,7 +148,7 @@ build-generated `sqlite3.js` along with `sqlite3-api.js`.
   most of its work.
 - **`post-js-header.js`**\  
   Emscripten-specific header for the `--post-js` input. It opens up,
-  but does not close, a function.
+  but does not close, a function used for initializing the library.
 - (**`sqlite3-api.js`** gets sandwiched between these &uarr; two
   &darr; files.)
 - **`post-js-footer.js`**\  

@@ -17,7 +17,9 @@
 const sIMS =
       globalThis.sqlite3InitModuleState/*from extern-post-js.c-pp.js*/
       || Object.assign(Object.create(null),{
-        debugModule: ()=>{}
+        debugModule: ()=>{
+          console.warn("globalThis.sqlite3InitModuleState is missing");
+        }
       });
 delete globalThis.sqlite3InitModuleState;
 sIMS.debugModule('pre-js.js sqlite3InitModuleState =',sIMS);

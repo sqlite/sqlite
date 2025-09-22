@@ -26,56 +26,57 @@
   It is run within a context which gives it access to Emscripten's
   Module object, after sqlite3.wasm is loaded but before
   sqlite3ApiBootstrap() has been called.
+
+  Because this code resides (after building) inside the function
+  installed by post-js-header.js, it has access to the
 */
 'use strict';
-if( 'undefined' !== typeof Module ){ // presumably an Emscripten build
-  try{
-    const SABC = Object.assign(
-      /**
-         The WASM-environment-dependent configuration for
-         sqlite3ApiBootstrap().
-      */
-      Object.create(null),
-      globalThis.sqlite3ApiConfig || {}, {
-        memory: ('undefined'!==typeof wasmMemory)
-          ? wasmMemory
-          : Module['wasmMemory'],
-        exports: ('undefined'!==typeof wasmExports)
-          ? wasmExports /* emscripten >=3.1.44 */
-          : (Object.prototype.hasOwnProperty.call(Module,'wasmExports')
-             ? Module['wasmExports']
-             : Module['asm']/* emscripten <=3.1.43 */)
-      },
-    );
-
-    /** Figure out if this is a 32- or 64-bit WASM build. */
-    SABC.wasmPtrIR = 'number'===(typeof SABC.exports.sqlite3_libversion())
-      ?  'i32' :'i64';
-
-    /**
-       For current (2022-08-22) purposes, automatically call
-       sqlite3ApiBootstrap().  That decision will be revisited at some
-       point, as we really want client code to be able to call this to
-       configure certain parts. Clients may modify
-       globalThis.sqlite3ApiBootstrap.defaultConfig to tweak the default
-       configuration used by a no-args call to sqlite3ApiBootstrap(),
-       but must have first loaded their WASM module in order to be
-       able to provide the necessary configuration state.
-    */
-    //console.warn("globalThis.sqlite3ApiConfig = ",globalThis.sqlite3ApiConfig);
-    Module.sqlite3 = globalThis.sqlite3ApiBootstrap(SABC)
-    /* Our customized sqlite3InitModule() in extern-post-js.js needs
-       this to be able to pass the sqlite3 object off to the
-       client. */;
-    delete globalThis.sqlite3ApiBootstrap;
-    delete globalThis.sqlite3ApiConfig;
-  }catch(e){
-    console.error("sqlite3ApiBootstrap() error:",e);
-    throw e;
-  }
-}else{
-  console.warn("This is not running in an Emscripten module context, so",
-               "globalThis.sqlite3ApiBootstrap() is _not_ being called due to lack",
-               "of config info for the WASM environment.",
-               "It must be called manually.");
+if( 'undefined' === typeof EmscriptenModule/*from post-js-header.js*/ ){
+  console.warn("This is not running in the context of Module.runSQLite3PostLoadInit()");
+  throw new Error("sqlite3-api-cleanup.js expects to be running in the "+
+                  "context of its Emscripten module loader.");
 }
+
+try{
+  /* Config options for sqlite3ApiBootstrap(). */
+  const bootstrapConfig = Object.assign(
+    Object.create(null),
+    globalThis.sqlite3ApiBootstrap.defaultConfig, // default options
+    globalThis.sqlite3ApiConfig || {}, // optional client-provided options
+    /** The WASM-environment-dependent configuration for sqlite3ApiBootstrap() */
+    {
+      memory: ('undefined'!==typeof wasmMemory)
+        ? wasmMemory
+        : EmscriptenModule['wasmMemory'],
+      exports: ('undefined'!==typeof wasmExports)
+        ? wasmExports /* emscripten >=3.1.44 */
+        : (Object.prototype.hasOwnProperty.call(EmscriptenModule,'wasmExports')
+           ? EmscriptenModule['wasmExports']
+           : EmscriptenModule['asm']/* emscripten <=3.1.43 */)
+    }
+  );
+
+  /** Figure out if this is a 32- or 64-bit WASM build. */
+  bootstrapConfig.wasmPtrIR =
+    'number'===(typeof bootstrapConfig.exports.sqlite3_libversion())
+    ?  'i32' :'i64';
+
+  /**
+     For purposes of the Emscripten build, call sqlite3ApiBootstrap().
+     Ideally clients should be able to inject their own config here,
+     but that's not practical in this particular build constellation
+     because of the order everything happens in.  Clients may either
+     define globalThis.sqlite3ApiConfig or modify
+     globalThis.sqlite3ApiBootstrap.defaultConfig to tweak the default
+     configuration used by a no-args call to sqlite3ApiBootstrap(),
+     but must have first loaded their WASM module in order to be able
+     to provide the necessary configuration state.
+  */
+  const p = globalThis.sqlite3ApiBootstrap(bootstrapConfig);
+  delete globalThis.sqlite3ApiBootstrap;
+  return p;
+}catch(e){
+  console.error("sqlite3ApiBootstrap() error:",e);
+  throw e;
+}
+throw new Error("Maintenance required: this line should never be reached");
