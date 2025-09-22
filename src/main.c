@@ -4563,13 +4563,15 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
-    /*  sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, db, dbName, onOff, tnum);
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_IMPOSTER, db, dbName, mode, tnum);
     **
     ** This test control is used to create imposter tables.  "db" is a pointer
     ** to the database connection.  dbName is the database name (ex: "main" or
-    ** "temp") which will receive the imposter.  "onOff" turns imposter mode on
-    ** or off.  "tnum" is the root page of the b-tree to which the imposter
-    ** table should connect.
+    ** "temp") which will receive the imposter.  "mode" turns imposter mode on
+    ** or off.  mode==0 means imposter mode is off.  mode==1 means imposter mode
+    ** is on.  mode==2 means imposter mode is on but results in an imposter
+    ** table that is read-only unless writable_schema is on.  "tnum" is the
+    ** root page of the b-tree to which the imposter table should connect.
     **
     ** Enable imposter mode only when the schema has already been parsed.  Then
     ** run a single CREATE TABLE statement to construct the imposter table in
