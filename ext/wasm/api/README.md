@@ -23,9 +23,41 @@ this writing, but is not set in stone forever and may change at any
 time. This doc targets maintainers of this code and those wanting to
 dive in to the details, not end user.
 
-The overall idea is that the following files get concatenated
-together, in the listed order, and the resulting file is loaded by a
-browser client:
+First off, a pikchr of the proverbial onion:
+
+```pikchr toggle center
+scale = 0.85
+D0: dot invis
+define matryoshka {
+  $rad = $rad + $2
+  circle with se at D0.c radius $rad
+  text at last.nw $1 below ljust
+#  $anchor = last circle.e
+}
+$rad = 5mm
+C0: circle with se at D0.c "sqlite3-api.js" fit
+$rad = C0.width / 2
+matryoshka("--pre-js",5mm)
+matryoshka("Emscripten",6mm)
+matryoshka("--extern-js",6mm)
+matryoshka("sqlite3.js",6mm)
+
+#CX: last circle
+right
+
+CW: file with w at 15mm e of 3rd circle.ne "sqlite3.wasm" fit
+arrow from CW.w to 3rd circle.ne
+
+CC: circle with e at 1cm w of last circle.w "End User" fit
+arrow <- from CC.e to 5th circle.w
+```
+
+(Actually, `sqlite3.js` and `--extern-js` are the same. The former is
+what the client sees and the latter is how it looks from a code
+maintenance point of view.)
+
+At the center of the onion is `sqlite3-api.js`, which gets generated
+by concatenating the following files together in their listed order:
 
 - **`sqlite3-api-prologue.js`**\  
   Contains the initial bootstrap setup of the sqlite3 API
