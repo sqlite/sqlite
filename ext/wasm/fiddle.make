@@ -27,7 +27,7 @@ endif
 ########################################################################
 
 EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
-fiddle.emcc-flags = \
+emcc.flags.fiddle = \
   $(emcc.cflags) $(emcc_opt_full) \
   --minify 0 \
   -sALLOW_TABLE_GROWTH \
@@ -53,7 +53,7 @@ fiddle.emcc-flags = \
 
 # Flags specifically for debug builds of fiddle. Performance suffers
 # greatly in debug builds.
-fiddle.emcc-flags.debug = $(fiddle.emcc-flags) \
+emcc.flags.fiddle.debug = $(emcc.flags.fiddle) \
   -DSQLITE_DEBUG \
   -DSQLITE_ENABLE_SELECTTRACE \
   -DSQLITE_ENABLE_WHERETRACE

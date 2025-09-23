@@ -493,6 +493,8 @@ endif
 # This snippet is intended to be used in makefile targets which
 # generate an Emscripten module and where $@ is the module's .js/.mjs
 # file.
+#
+# $1 = an optional log message prefix
 SQLITE.strip-emcc-js-cruft = \
   sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
   -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
@@ -1062,7 +1064,7 @@ speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # which runs speedtest1 multiple times.
 
 $(EXPORTED_FUNCTIONS.speedtest1): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.core)
-	@echo "Making $@ ..."
+	@echo "$(emo.compile) Making $@ ..."
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
 speedtest1.js = $(dir.dout)/speedtest1.js
 emcc.flags.speedtest1-vanilla = $(cflags.common) -DSQLITE_SPEEDTEST1_WASM

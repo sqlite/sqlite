@@ -286,6 +286,8 @@ static void mk_prologue(void){
   }
 
   ps(zBanner
+     "emoji ?= 1\n"
+     "ifneq (0,$(emoji))\n"
      "emo.disk = 💾\n"
      "emo.fire = 🔥\n"
      "emo.done = 🏆\n" /*🏁*/
@@ -298,6 +300,7 @@ static void mk_prologue(void){
      "emo.stop =🛑\n"
      "emo.strip =🪚\n" /*🔪*/
      "emo.garbage =🗑\n"
+     "endif\n"
   );
 
   ps(zBanner
@@ -409,16 +412,16 @@ static void mk_prologue(void){
   );
 
   ps(zBanner
-    "emcc.loud ?= 0\n"
-    "ifeq (1,$(emcc.loud))\n"
-    "$(info $(emo.megaphone) Emitting loud build info."
-    " Pass emcc.loud=0 to disable it.)\n"
-    "emcc.squelch =\n"
-    "else\n"
-    "$(info $(emo.mute) Eliding loud build info."
-    " Pass emcc.loud=1 to enable it.)\n"
-    "emcc.squelch = @\n"
-    "endif\n"
+     "loud ?= 0\n"
+     "ifeq (1,$(loud))\n"
+     "$(info $(emo.megaphone) Emitting loud build info."
+     " Pass loud=0 to disable it.)\n"
+     "cmd.loud =\n"
+     "else\n"
+     "$(info $(emo.mute) Eliding loud build info."
+     " Pass emcc.loud=1 to enable it.)\n"
+     "cmd.loud = @\n"
+     "endif\n"
   );
 
   ps(zBanner
@@ -539,8 +542,7 @@ static void mk_prologue(void){
 ** --post-js=FILE, and --extern-post-js=FILE emcc flags, as well as
 ** populating those files.
 */
-static void mk_pre_post(char const *zBuildName,
-                        BuildDef const * pB ){
+static void mk_pre_post(char const *zBuildName){
 /* Very common printf() args combo. */
 
   pf("%s# Begin --pre/--post flags for %s\n", zBanner, zBuildName);
@@ -624,62 +626,27 @@ static void mk_pre_post(char const *zBuildName,
   pf("# End --pre/--post flags for %s%s", zBuildName, zBanner);
 }
 
-#if 0
-/*
-** Emits rules for the fiddle builds.
-*/
-static void mk_fiddle(void){
-  int i = 0;
-
-  mk_pre_post("fiddle-module", 0, "fiddle-module.wasm");
-  for( ; i < 2; ++i ){
-    /* 0==normal, 1==debug */
-    const char *zTail = i ? ".debug" : "";
-    const char *zDir = i ? "$(dir.fiddle-debug)" : "$(dir.fiddle)";
-
-    pf("%s# Begin fiddle%s\n", zBanner, zTail);
-    pf("fiddle-module.js%s = %s/fiddle-module.js\n", zTail, zDir);
-    pf("$(fiddle-module.js%s):%s $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
-       "$(EXPORTED_FUNCTIONS.fiddle) "
-       "$(fiddle.cses) $(pre-post-fiddle-module-vanilla.deps) "
-       "$(SOAP.js)\n",
-       zTail, (i ? " $(fiddle-module.js)" : ""));
-    if( 1==i ){/*fiddle.debug*/
-      pf("\t@test -d \"$(dir $@)\" || mkdir -p \"$(dir $@)\"\n");
-    }
-    pf("\t$(bin.emcc) -o $@ $(fiddle.emcc-flags%s) "
-       "$(pre-post-fiddle-module-vanilla.flags) $(fiddle.cses)\n",
-       zTail);
-    ps("\t@chmod -x $(basename $@).wasm");
-    pf("\t@$(call b.do.wasm-strip,%s)\n", zBuildName);
-    ps("\t@$(call SQLITE.strip-emcc-js-cruft,NAME_GOES_HERE)");
-    pf("\t@cp -p $(SOAP.js) $(dir $@)\n");
-    if( 1==i ){/*fiddle.debug*/
-      pf("\tcp -p $(dir.fiddle)/index.html "
-         "$(dir.fiddle)/fiddle.js "
-         "$(dir.fiddle)/fiddle-worker.js "
-         "$(dir $@)\n");
-    }
-    /* Compress fiddle files. We handle each file separately, rather
-       than compressing them in a loop in the previous target, to help
-       avoid that hand-edited files, like fiddle-worker.js, do not end
-       up with stale .gz files (which althttpd will then serve instead
-       of the up-to-date uncompressed one). */
-    pf("%s/fiddle-module.js.gz: %s/fiddle-module.js\n", zDir, zDir);
-    ps("\tgzip < $< > $@");
-    pf("%s/fiddle-module.wasm.gz: %s/fiddle-module.wasm\n", zDir, zDir);
-    ps("\tgzip < $< > $@");
-    pf("fiddle%s: %s/fiddle-module.js.gz %s/fiddle-module.wasm.gz\n",
-       i ? "-debug" : "", zDir, zDir);
-    if( 0==i ){
-      ps("fiddle: $(fiddle-module.js)");
-    }else{
-      ps("fiddle-debug: $(fiddle-module.js.debug)");
-    }
-    pf("# End fiddle%s%s", zTail, zBanner);
-  }
+static char const * BuildDef_jsext(const BuildDef * pB){
+  return (F_ESM & pB->flags) ? ".mjs" : ".js";
 }
-#endif
+
+static char const * BuildDef_basename(const BuildDef * pB){
+  return pB->zBaseName ? pB->zBaseName : oBuildDefs.vanilla.zBaseName;
+}
+
+static void emit_core_vars(char const *zBuildName,
+                           const BuildDef * pB){
+  const char * zJsExt = BuildDef_jsext(pB);
+  char const * const zBaseName = BuildDef_basename(pB);
+  pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
+  pf("out.%s.base ?= $(dir.dout.%s)/%s\n",
+     zBuildName, zBuildName, zBaseName);
+  pf("out.%s.js ?= $(dir.dout.%s)/%s%s\n",
+     zBuildName, zBuildName, zBaseName, zJsExt);
+  pf("out.%s.wasm ?= $(dir.dout.%s)/%s.wasm\n",
+     //"$(basename $@).wasm"
+     zBuildName, zBuildName, zBaseName);
+}
 
 /*
 ** Emits makefile code for one build of the library.
@@ -688,10 +655,8 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     /* The various targets named X.js or X.mjs also generate X.wasm,
     ** and we need that part of the name to perform some
     ** post-processing after Emscripten generates X.wasm. */;
-  const char * zJsExt = (F_ESM & pB->flags)
-    ? ".mjs" : ".js";
-  char const * const zBaseName = pB->zBaseName
-    ? pB->zBaseName : oBuildDefs.vanilla.zBaseName;
+  const char * zJsExt = BuildDef_jsext(pB);
+  char const * const zBaseName = BuildDef_basename(pB);
 
   assert( oBuildDefs.vanilla.zEnv );
   assert( zBaseName );
@@ -701,25 +666,26 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   pf("# zCmppD=%s\n# zBaseName=%s\n",
      pB->zCmppD ? pB->zCmppD : "", zBaseName);
 
-  pf("logtag.%s = [%s %s $@]:\n", zBuildName, pB->zEmo, zBuildName);
+  pf("logtag.%s ?= [%s %s $@]:\n", zBuildName, pB->zEmo, zBuildName);
   if( pB->zIfCond ){
     pf("%s\n", pB->zIfCond );
   }
   pf("$(info $(logtag.%s) Setting up target b-%s)\n",
      zBuildName, zBuildName );
 
+  emit_core_vars(zBuildName, pB);
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
-  pf("out.%s.base = $(dir.dout.%s)/%s\n",
+  pf("out.%s.base ?= $(dir.dout.%s)/%s\n",
      zBuildName, zBuildName, zBaseName);
-  pf("out.%s.js = $(dir.dout.%s)/%s%s\n",
+  pf("out.%s.js ?= $(dir.dout.%s)/%s%s\n",
      zBuildName, zBuildName, zBaseName, zJsExt);
-  pf("out.%s.wasm = $(dir.dout.%s)/%s.wasm\n",
+  pf("out.%s.wasm ?= $(dir.dout.%s)/%s.wasm\n",
      //"$(basename $@).wasm"
      zBuildName, zBuildName, zBaseName);
-  pf("c-pp.D.%s = %s\n", zBuildName, pB->zCmppD ? pB->zCmppD : "");
-  pf("emcc.environment.%s = %s\n", zBuildName,
+  pf("c-pp.D.%s ?= %s\n", zBuildName, pB->zCmppD ? pB->zCmppD : "");
+  pf("emcc.environment.%s ?= %s\n", zBuildName,
      pB->zEnv ? pB->zEnv : oBuildDefs.vanilla.zEnv);
-  pf("emcc.flags.%s = %s\n", zBuildName, pB->zEmcc ? pB->zEmcc : "");
+  pf("emcc.flags.%s ?= %s\n", zBuildName, pB->zEmcc ? pB->zEmcc : "");
 
   { /* Create sqlite3-api.*.js */
     pf("sqlite3-api.%s.c-pp.js = $(dir.tmp)/sqlite3-api.%s.c-pp%s\n",
@@ -751,7 +717,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
        zBuildName, zBuildName);
   }
 
-  mk_pre_post(zBuildName, pB);
+  mk_pre_post(zBuildName);
 
   { /* build it... */
     pf(zBanner
@@ -766,7 +732,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
        "\n",
        zBuildName, zBuildName, zBuildName);
 
-    pf("\t@echo '$(logtag.%s) $(emo.compile) building $@ ...'\n"
+    pf("\t@echo '$(logtag.%s) $(emo.compile) building ...'\n"
        "\t@mkdir -p $(dir $@);\n",
        zBuildName);
 
@@ -774,7 +740,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@echo '$(logtag.%s) $(emo.fire)$(emo.fire)$(emo.fire): "
          "unsupported build. Use at your own risk.'\n", zBuildName);
     }
-    pf("\t$(emcc.squelch)$(call b.do.emcc,%s)\n", zBuildName);
+    pf("\t$(cmd.loud)$(call b.do.emcc,%s)\n", zBuildName);
 
     { /* Post-compilation transformations and copying to
          $(dir.dout)... */
@@ -880,6 +846,93 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   pf("# End build [%s]%s", zBuildName, zBanner);
 }
 
+/*
+** Emits rules for the fiddle builds.
+*/
+void mk_fiddle(void){
+  //BuildDef bdF = oBuildDefs.vanilla;
+
+  //mk_pre_post("fiddle-module");
+  //mk_pre_post("fiddle-module.debug");
+  pf("emo.fiddle = 🎻\n");
+  for(int i = 0; i < 2; ++i ){
+    /* 0==normal, 1==debug */
+    int const isDebug = i>0;
+    const char * const zBuildName = i ? "fiddle.debug" : "fiddle";
+    //const char *zDir = i ? "$(dir.fiddle-debug)" : "$(dir.fiddle)";
+
+    pf("%s# Begin %s\n", zBanner, zBuildName);
+    if( isDebug ){
+      pf("emo.%s = $(emo.fiddle)$(emo.bug)\n", zBuildName);
+    }
+    pf("logtag.%s ?= [$(emo.%s) %s $@]:\n",
+       zBuildName, zBuildName, zBuildName);
+    pf("$(info $(logtag.%s) Setting up target %s)\n",
+       zBuildName, zBuildName );
+
+    //bdF.zBaseName = "fiddle-module";
+    //bdF.zEmcc = i ? "$(fiddle.emcc-flags.debug)" : "$(fiddle.emcc-flags)";
+
+    pf("dir.%s = %s\n"
+       "out.%s.js = $(dir.%s)/fiddle-module.js\n"
+       "out.%s.wasm = $(dir.%s)/fiddle-module.wasm\n"
+       "$(out.%s.wasm): $(out.%s.js)\n",
+       zBuildName, zBuildName,
+       zBuildName, zBuildName,
+       zBuildName, zBuildName,
+       zBuildName, zBuildName);
+
+    {/* emcc */
+      pf("$(out.%s.js): $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
+         "$(EXPORTED_FUNCTIONS.fiddle) "
+         "$(fiddle.cses) %s "
+         "$(SOAP.js)\n",
+         zBuildName,
+         (i ? " $(out.fiddle.js)" : ""));
+      pf("\t@echo '$(logtag.%s) $(emo.compile) building ...'\n",
+         zBuildName);
+      if( isDebug ){
+        pf("\t@test -d \"$(dir $@)\" || mkdir -p \"$(dir $@)\"\n");
+      }
+      pf("\t$(bin.emcc) -o $@ $(emcc.flags.%s) "
+         /* emcc.flags.X is set in fiddle.make */
+         //"$(pre-post-fiddle-module.flags) "
+         "$(fiddle.cses)\n",
+         zBuildName);
+      pf("\t@chmod -x $(out.%s.wasm)\n", zBuildName);
+      pf("\t@$(call b.do.wasm-strip,%s)\n", zBuildName);
+      pf("\t@$(call SQLITE.strip-emcc-js-cruft,$(logtag.%s))\n",zBuildName);
+      pf("\t@cp -p $(SOAP.js) $(dir $@)\n");
+      if( isDebug ){
+        ps("\tcp -p $(dir.fiddle)/index.html "
+           "$(dir.fiddle)/fiddle.js "
+           "$(dir.fiddle)/fiddle-worker.js "
+           "$(dir $@)");
+      }
+    }
+    if( !isDebug ){
+      pf("all: $(out.%s.wasm)\n", zBuildName);
+    }
+
+    /* Compress fiddle files. We handle each file separately, rather
+       than compressing them in a loop in the previous target, to help
+       avoid that hand-edited files, like fiddle-worker.js, do not end
+       up with stale .gz files (which althttpd will then serve instead
+       of the up-to-date uncompressed one). */
+    pf("\n$(out.%s.js).gz: $(out.%s.js)\n"
+       "\tgzip < $< > $@\n", zBuildName, zBuildName);
+    pf("\n$(out.%s.wasm).gz: $(out.%s.wasm)\n"
+       "\tgzip < $< > $@\n", zBuildName, zBuildName);
+
+    pf("\n%s: $(out.%s.js).gz $(out.%s.wasm).gz\n",
+       zBuildName, zBuildName, zBuildName);
+    if( isDebug ){
+      ps("fiddle-debug: fiddle.debug");
+    }
+    pf("# End %s%s", zBuildName, zBanner);
+  }
+}
+
 int main(void){
   int rc = 0;
   const BuildDef *pB;
@@ -900,8 +953,8 @@ int main(void){
      "b-esm: $(dir.dout)/sqlite3.mjs\n"
      "b-esm64: $(dir.dout)/sqlite3-64bit.mjs\n"
   );
-#if 0
   mk_fiddle();
+#if 0
   mk_pre_post(0, "speedtest1","vanilla", 0, "speedtest1.wasm");
   mk_pre_post(0, "speedtest1-wasmfs", "esm",
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
