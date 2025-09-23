@@ -443,7 +443,7 @@ ifeq (1,$(SQLITE_C_IS_SEE))
 endif
 define SQLITE.CALL.C-PP.FILTER
 # Create $2 from $1 using $(bin.c-pp)
-# $1 = Input file: c-pp -f $(1).js
+# $1 = Input file(s): cat $(1) | c-pp ...
 # $2 = Output file: c-pp -o $(2).js
 # $3 = optional c-pp -D... flags
 $(2): $(1) $$(MAKEFILE_LIST) $$(bin.c-pp)
@@ -510,7 +510,7 @@ endif
 SQLITE.strip-emcc-js-cruft = \
   sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
   -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
-  echo '$(1) (Probably) stripped out createExportWrapper() and makeInvalidEarlyAccess() parts.'
+  echo '$(1) $(emo.disk) (Probably) /createExportWrapper()/d and /makeInvalidEarlyAccess()/d.'
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...
@@ -630,6 +630,8 @@ emcc.cflags += -I. -I$(dir.top)
 ########################################################################
 # emcc flags specific to building .js/.wasm files...
 emcc.jsflags = -fPIC
+#emcc.jsflags += -Wno-gcc-install-dir-libstdcxx
+#emcc is not passing ^^^ this on to clang
 emcc.jsflags += --no-entry
 emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 emcc.jsflags += -sMODULARIZE
@@ -659,18 +661,6 @@ emcc.jsflags += -sSTRICT_JS=0
 # emcc.jsflags += -sSTRICT=1
 # -sSTRICT=1 Causes failures about unknown symbols which the build
 # tools should be installing, e.g. __syscall_geteuid32
-
-# emcc -sENVIRONMENT values for the various build modes:
-emcc.environment.vanilla = web,worker
-emcc.environment.vanilla64 = $(emcc.environment.vanilla)
-emcc.environment.bundler-friendly = $(emcc.environment.vanilla)
-emcc.environment.esm = $(emcc.environment.vanilla)
-emcc.environment.esm64 = $(emcc.environment.vanilla)
-emcc.environment.node = node
-# Adding ",node" to the list for the other builds causes Emscripten to
-# generate code which confuses node: it cannot reliably determine
-# whether the build is for a browser or for node. We neither build nor
-# test node builds on a regular basis. They are fully unsupported.
 
 ########################################################################
 # -sINITIAL_MEMORY: How much memory we need to start with is governed
@@ -836,7 +826,7 @@ sqlite3-wasmfs.cfiles = $(sqlite3-wasm.cfiles)
 # use awk instead of sed for this.
 define SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT
 if [ x1 = x$(1) ]; then \
-		echo "[$@]: Fragile workaround for emscripten/issues/18237." \
+		echo "$(3) $(emo.bug) Fragile workaround for emscripten/issues/18237." \
 		"See SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT."; \
 		{\
 			awk '/^export default/ && !f{f=1; next} 1' $@ > $@.tmp && mv $@.tmp $@; \
@@ -1078,7 +1068,7 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
         -o $@ $(speedtest1.cfiles) -lm
 	@chmod -x $(basename $@).wasm
 	@$(maybe-wasm-strip) $(basename $@).wasm
-	@$(SQLITE.strip-emcc-js-cruft)
+	@$(call SQLITE.strip-emcc-js-cruft)
 	@ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(speedtest1.js)
@@ -1102,13 +1092,13 @@ speedtest1: $(speedtest1.js)
 #  tester1.mjs: cases 3 and 4
 #
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.js,$(c-pp.D.canonical)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1.html,$(c-pp.D.canonical)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
 # We do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
-# because bundlers are client-specific.
+# because bundlers are client-specific. We don't use any of them.
 all quick: tester1
 quick: $(sqlite3.js)
 

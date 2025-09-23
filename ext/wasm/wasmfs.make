@@ -97,7 +97,7 @@ $(speedtest1-wasmfs.mjs): $(speedtest1.cfiles) $(sqlite3-wasmfs.js) \
         $(emcc.flags.sqlite3-wasmfs) \
         $(emcc.flags.speedtest1-wasmfs) \
         -o $@ $(speedtest1.cfiles) -lm
-	@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,1)
+	@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,1,$(logtag.wasmfs))
 	$(maybe-wasm-strip) $(speedtest1-wasmfs.wasm)
 	chmod -x $(speedtest1-wasmfs.wasm)
 	ls -la $@ $(speedtest1-wasmfs.wasm)
