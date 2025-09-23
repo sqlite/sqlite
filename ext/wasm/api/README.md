@@ -37,9 +37,10 @@ define matryoshka {
 $rad = 5mm
 C0: circle with se at D0.c "sqlite3-api.js" fit
 $rad = C0.width / 2
-matryoshka("--pre-js",5mm)
-matryoshka("Emscripten",6mm)
-matryoshka("--extern-js",6mm)
+matryoshka("--post-js",5mm)
+matryoshka("Emscripten",12mm)
+circle with nw at 7mm s of 3mm e of last circle.nw "--pre-js" fit
+matryoshka("--extern-pre/post-js",9mm)
 matryoshka("sqlite3.js",6mm)
 
 #CX: last circle
@@ -48,13 +49,13 @@ right
 CW: file with w at 15mm e of 3rd circle.ne "sqlite3.wasm" fit
 arrow from CW.w to 3rd circle.ne
 
-CC: circle with e at 1cm w of last circle.w "End User" fit
-arrow <- from CC.e to 5th circle.w
+CC: circle with e at 1cm w of last circle.w "End User" fit radius 1cm
+arrow <- from CC.e to 6th circle.w
 ```
 
-(Actually, `sqlite3.js` and `--extern-js` are the same. The former is
+Actually, `sqlite3.js` and `--extern-js` are the same. The former is
 what the client sees and the latter is how it looks from a code
-maintenance point of view.)
+maintenance point of view.
 
 At the center of the onion is `sqlite3-api.js`, which gets generated
 by concatenating the following files together in their listed order:
