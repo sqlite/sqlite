@@ -510,7 +510,7 @@ endif
 SQLITE.strip-emcc-js-cruft = \
   sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
   -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
-  echo '[$@]: (Probably) stripped out createExportWrapper() and makeInvalidEarlyAccess() parts.'
+  echo '$(1) (Probably) stripped out createExportWrapper() and makeInvalidEarlyAccess() parts.'
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...

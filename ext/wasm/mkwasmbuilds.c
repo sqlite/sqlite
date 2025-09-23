@@ -81,6 +81,17 @@ struct BuildDef {
      Base name of output JS and WASM files.
   */
   const char *zBaseName;
+  /**
+     A glyph to use in log messages for this build, intended to help
+     the eyes distinguish the build lines more easily in parallel
+     builds.
+  */
+  const char *zEmo;
+  /**
+     If the build needs its x.wasm renamed in its x.{js,mjs}
+     then this must hold the base name to rename it to.
+     Typically "sqlite3" or "sqlite3-64bit".
+  */
   const char *zDotWasm;
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Extra flags for emcc */
@@ -130,7 +141,8 @@ const BuildDefs oBuildDefs = {
   .vanilla = {
     /* This one's zBaseName and zEnv MUST be non-NULL so it can be
        used as a default for all others. */
-    .zBaseName   ="sqlite3",
+    .zEmo        = "🍦",
+    .zBaseName   = "sqlite3",
     .zDotWasm    = 0,
     .zCmppD      = 0,
     .zEmcc       = 0,
@@ -139,6 +151,7 @@ const BuildDefs oBuildDefs = {
   },
 
   .vanilla64 = {
+    .zEmo        = "🍨",
     .zBaseName   = "sqlite3-64bit",
     .zDotWasm    = 0,
     .zCmppD      = 0,
@@ -148,6 +161,7 @@ const BuildDefs oBuildDefs = {
   },
 
   .esm = {
+    .zEmo        = "🍬",
     .zBaseName   = "sqlite3",
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=es6-module",
@@ -157,6 +171,7 @@ const BuildDefs oBuildDefs = {
   },
 
   .esm64 = {
+    .zEmo        = "🍫",
     .zBaseName   = "sqlite3-64bit",
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=es6-module",
@@ -171,6 +186,7 @@ const BuildDefs oBuildDefs = {
     ** Testing these would require special-purpose node-based tools and
     ** custom test apps. Or we can pass them off as-is to the npm
     ** subproject and they spot failures pretty quickly ;). */
+    .zEmo        = "👛",
     .zBaseName   = "sqlite3-bundler-friendly",
     .zDotWasm    = "sqlite3",
     .zCmppD      = "$(c-pp.D.esm) -Dtarget=es6-bundler-friendly",
@@ -180,6 +196,7 @@ const BuildDefs oBuildDefs = {
   },
 
   .bundler64 = {
+    .zEmo        = "👜",
     .zBaseName   = "sqlite3",
     .zDotWasm    = 0,
     .zCmppD      = "$(c-pp.D.bundler)",
@@ -189,9 +206,9 @@ const BuildDefs oBuildDefs = {
   },
 
 #if 0
-
   /* Entirely unsupported. */
   .node = {
+    .zEmo        = "",
     .zBaseName   = "sqlite3-node",
     .zDotWasm    = 0,
     .zCmppD      = "$(c-pp.D.bundler)",
@@ -202,6 +219,7 @@ const BuildDefs oBuildDefs = {
 
   /* Entirely unsupported. */
   .wasmfs = {
+    .zEmo        = "",
     .zBaseName   = "sqlite3-wasmfs",
     .zDotWasm    = 0,
     .zCmppD      = "$(c-pp.D.bundler)",
@@ -387,22 +405,22 @@ static void mk_prologue(void){
     ps("else");
     {
       ps("define SQLITE.CALL.WASM-OPT"
-         /* $1 = $@, $2 = build name*/
+         /* $1 = build name, $2 = emoji*/
       );
       pf(
-        "echo '[$@]: Applying $(bin.wasm-opt)';\\\n"
-        "\trm -f wasm-opt-tmp.$(2).wasm;\\\n"
+        "echo '[$(2)$@]: Applying $(bin.wasm-opt)';\\\n"
+        "\trm -f wasm-opt-tmp.$(1).wasm;\\\n"
         /* It's very likely that the set of wasm-opt flags varies from
         ** version to version, so we'll ignore any errors here. */
-        "\tif $(bin.wasm-opt) $(1) -o wasm-opt-tmp.$(2).wasm \\\n"
+        "\tif $(bin.wasm-opt) $@ -o wasm-opt-tmp.$(1).wasm \\\n"
         "\t\t%s; then \\\n"
-        "\t\tmv wasm-opt-tmp.$(2).wasm $(1); \\\n"
+        "\t\tmv wasm-opt-tmp.$(1).wasm $@; \\\n"
 #if 0
         "\t\techo -n 'After wasm-opt: '; \\\n"
         "\t\tls -l $(1); \\\n"
 #endif
         "\telse \\\n"
-        "\t\techo 'WARNING: ignoring wasm-opt failure for $(1)'; \\\n"
+        "\t\techo '[$(2)$@]: WARNING: ignoring wasm-opt failure'; \\\n"
         "\tfi\n",
         zOptFlags
       );
@@ -521,7 +539,7 @@ static void mk_fiddle(void){
        zTail);
     ps("\t@chmod -x $(basename $@).wasm");
     ps("\t@$(maybe-wasm-strip) $(basename $@).wasm");
-    ps("\t@$(SQLITE.strip-emcc-js-cruft)");
+    ps("\t@$(call SQLITE.strip-emcc-js-cruft,NAME_GOES_HERE)");
     pf("\t@cp -p $(SOAP.js) $(dir $@)\n");
     if( 1==i ){/*fiddle.debug*/
       pf("\tcp -p $(dir.fiddle)/index.html "
@@ -566,10 +584,12 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   assert( oBuildDefs.vanilla.zEnv );
   assert( zBaseName );
 
-  pf("%s# Begin build [%s]. flags=0x%02x\n", zBanner, zBuildName, pB->flags);
+  pf("%s# Begin build [%s%s]. flags=0x%02x\n", zBanner,
+     pB->zEmo, zBuildName, pB->flags);
   pf("# zCmppD=%s\n# zBaseName=%s\n",
      pB->zCmppD ? pB->zCmppD : "", zBaseName);
 
+  pf("logtag.%s = [%s$@]:\n", zBuildName, pB->zEmo);
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
   pf("out.%s.base = $(dir.dout.%s)/%s\n",
      zBuildName, zBuildName, zBaseName);
@@ -624,10 +644,10 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
        ** running builds with long build times (like -Oz). */
        "\n",
        zBuildName, zBuildName, zBuildName);
-    pf("\t@echo '[$@]: building ...'\n");
+    pf("\t@echo '$(logtag.%s) building ...'\n", zBuildName);
     if( F_UNSUPPORTED & pB->flags ){
-      ps("\t@echo '[$@]: ACHTUNG: unsupported build type. "
-         "Use at your own risk.'");
+      pf("\t@echo '$(logtag.%s) ACHTUNG: unsupported build type. "
+         "Use at your own risk.'\n", zBuildName);
     }
     pf("\t$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
     pf("\t\t$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.%s) \\\n",
@@ -650,17 +670,19 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     }
     pf("\t@chmod -x %s\n", zWasmOut);
     pf("\t@$(maybe-wasm-strip) %s\n", zWasmOut);
-    pf("\t@$(call SQLITE.CALL.WASM-OPT,%s,%s)\n", zWasmOut, zBuildName);
-    ps("\t@$(SQLITE.strip-emcc-js-cruft)");
+    pf("\t@$(call SQLITE.CALL.WASM-OPT,%s,%s)\n",
+       zBuildName, pB->zEmo);
+    pf("\t@$(call SQLITE.strip-emcc-js-cruft,$(logtag.%s))\n", zBuildName);
     if( CP_JS & pB->flags && !(pB->zDotWasm/*handled below*/) ){
-      ps("\t@cp -f $@ $(dir.dout)/. || exit; \\\n"
-         "echo '[$@]: ==> $(dir.dout)/$(notdir $@).'"
+      pf("\t@cp -f $@ $(dir.dout)/. || exit; \\\n"
+         "echo '$(logtag.%s) ==> $(dir.dout)/$(notdir $@).'\n",
+         zBuildName
       );
     }
     if( CP_WASM & pB->flags ){
       pf("\t@cp -f %s $(dir.dout)/. || exit; \\\n"
-         "echo '[%s]: ==> $(dir.dout)/$(notdir %s)'\n",
-         zWasmOut, zWasmOut, zWasmOut);
+         "echo '$(logtag.%s) ==> $(dir.dout)/$(notdir %s)'\n",
+         zWasmOut, zBuildName, zWasmOut);
     }
     /*
     ** The above $(bin.emcc) call will write out $@, and will create a
@@ -673,13 +695,14 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     ** pB->zDotWasm when copying to $(dir.dout).
     */
     if( pB->zDotWasm && (CP_JS & pB->flags) ){
-      pf("\t@echo '[$@]: Replacing \"%s.wasm\" in "
+      pf("\t@echo '$(logtag.%s) Replacing \"%s.wasm\" in "
          "$(dir.dout)/$(notdir $@) with \"%s.wasm\"'; \\\n"
          "sed "
          "-e 's/\"%s.wasm\"/\"%s.wasm\"/g' "
          "-e \"s/'%s.wasm'/'%s.wasm'/g\" "
          "$@ > $(dir.dout)/$(notdir $@)\n"
          "\t@ls -la $(dir.dout)/$(notdir $@)\n",
+         zBuildName,
          zBaseName, pB->zDotWasm,
          zBaseName, pB->zDotWasm,
          zBaseName, pB->zDotWasm);
