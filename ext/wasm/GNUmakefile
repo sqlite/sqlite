@@ -440,7 +440,7 @@ define SQLITE.CALL.C-PP.FILTER
 # $3 = optional c-pp -D... flags
 $(2): $(1) $$(MAKEFILE_LIST) $$(bin.c-pp)
 	@mkdir -p $$(dir $$@)
-	$$(bin.c-pp) -f $(1) -o $$@ $(3) $(SQLITE.CALL.C-PP.FILTER.global)
+	cat $(1) | $$(bin.c-pp) -o $$@ $(3) $(SQLITE.CALL.C-PP.FILTER.global)
 CLEAN_FILES += $(2)
 endef
 # /end SQLITE.CALL.C-PP.FILTER
@@ -550,56 +550,17 @@ $(EXPORTED_FUNCTIONS.api): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 
 ########################################################################
-# sqlite3-license-version.js = generated JS file with the license
-# header and version info.
-sqlite3-license-version.js = $(dir.tmp)/sqlite3-license-version.js
-# sqlite3-api-build-version.js = generated JS file which populates the
-# sqlite3.version object using $(bin.version-info).
-sqlite3-api-build-version.js = $(dir.tmp)/sqlite3-api-build-version.js
-# sqlite3-api.jses = the list of JS files which make up
-# $(sqlite3-api.js.in), in the order they need to be assembled.
-sqlite3-api.jses = $(sqlite3-license-version.js)
-# sqlite3-api-prologue.js: initial bootstrapping bits:
-sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
-# whwhasm.js and jaccwabyt.js: Low-level utils, mostly replacing
-# Emscripten glue:
-sqlite3-api.jses += $(dir.common)/whwasmutil.js
-sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
-# sqlite3-api-glue Glues the previous part together with sqlite:
-sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.c-pp.js
-# $(sqlite3-api-build-version.js) = library version info
-sqlite3-api.jses += $(sqlite3-api-build-version.js)
-# sqlite3-api-oo1 = the oo1 API:
-sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js
-# sqlite3-api-worker = the Worker1 API:
-sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js
-# sqlite3-vfs-helper = helper APIs for VFSes:
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
-ifeq (0,$(wasm-bare-bones))
-  # sqlite3-vtab-helper = helper APIs for VTABLEs:
-  sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
-endif
-# sqlite3-vfs-opfs = the first OPFS VFS:
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
-# sqlite3-vfs-opfs-sahpool = the second OPFS VFS:
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
-# sqlite3-api-cleanup.js = "finalizes" the build and cleans up
-# any extraneous global symbols which are needed temporarily
-# by the previous files.
-sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
-
-########################################################################
 # SOAP.js is an external API file which is part of our distribution
 # but not part of the sqlite3-api.js amalgamation. It's a component of
 # the first OPFS VFS and necessarily an external file.
 SOAP.js = $(dir.api)/sqlite3-opfs-async-proxy.js
-SOAP.js.bld = $(dir.dout)/$(notdir $(SOAP.js))
+SOAP.js.out = $(dir.dout)/sqlite3-opfs-async-proxy.js
 #
 # $(sqlite3-api.ext.jses) = API-related files which are standalone files,
 #   not part of the amalgamation.
 #
-sqlite3-api.ext.jses = $(SOAP.js.bld)
-$(SOAP.js.bld): $(SOAP.js)
+sqlite3-api.ext.jses = $(SOAP.js.out)
+$(SOAP.js.out): $(SOAP.js)
 	cp $< $@
 
 ########################################################################
@@ -807,26 +768,6 @@ $(sqlite3-api-build-version.js): $(MKDIR.bld) $(bin.version-info) $(MAKEFILE)
   } > $@
 
 ########################################################################
-# $(sqlite3-license-version.js) contains the license header and
-# in-comment build version info.
-#
-# Maintenance reminder: there are awk binaries out there which do not
-# support -e SCRIPT.
-$(sqlite3-license-version.js): $(MKDIR.bld) $(sqlite3.h) \
-  $(dir.api)/sqlite3-license-version-header.js $(MAKEFILE)
-	@echo "Making $@..."; { \
-    cat $(dir.api)/sqlite3-license-version-header.js; \
-    echo '/*'; \
-    echo '** This code was built from sqlite3 version...'; \
-    echo "**"; \
-    awk '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' $(sqlite3.h); \
-    awk '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
-    echo "**"; \
-    echo "** with the help of Emscripten SDK version $(emcc.version)."; \
-    echo '*/'; \
-   } > $@
-
-########################################################################
 # --post-js and --pre-js are emcc flags we use to append/prepend JS to
 # the generated emscripten module file. These rules set up the core
 # pre/post files for use by the various builds. --pre-js is used to
@@ -990,39 +931,47 @@ CLEAN_FILES += .wasmbuilds.make $(bin.mkwb)
 # code analyzers and cannot cope with the former.
 #
 # Most of what follows is the generation of those copies.
+
 $(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1.c-pp.js,\
     $(dir.dout)/sqlite3-worker1.js))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs,\
-    $(c-pp.D.sqlite3-bundler-friendly)))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser.js))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js,\
-    $(c-pp.D.sqlite3-bundler-friendly)))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1.js
+
 $(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
     $(dir.dout)/sqlite3-worker1-promiser.mjs,\
     -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.mjs
+
+$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1-promiser.js))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.js
+
 $(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
     -Dtarget=es6-module))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
 $(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
     -Dtarget=es6-module))
+demo-worker1-promiser.html: $(dir.dout)/sqlite3-worker1-promiser.js demo-worker1-promiser.js
+demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
+all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
+
+ifeq (0,1)
+$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs,\
+    $(c-pp.D.sqlite3-bundler-friendly)))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
+
+$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js,\
+    $(c-pp.D.sqlite3-bundler-friendly)))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-promiser-bundler-friendly.js
 
 $(dir.dout)/sqlite3-bundler-friendly.mjs: \
     $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
     $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
 
-demo-worker1-promiser.html: $(dir.dout)/sqlite3-worker1-promiser.js demo-worker1-promiser.js
-demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
-all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
+endif
 
-sqlite3-api.ext.jses += \
-  $(dir.dout)/sqlite3-worker1-promiser.mjs \
-  $(dir.dout)/sqlite3-worker1-promiser.js \
-  $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
-  $(dir.dout)/sqlite3-worker1.js
 all quick: $(sqlite3-api.ext.jses)
 q: quick
 64bit: # populated by $(bin.mkwb)
@@ -1124,7 +1073,7 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
 	@ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(speedtest1.js)
-all: speedtest1
+#xxx#all: speedtest1
 # end speedtest1.js
 ########################################################################
 
@@ -1144,10 +1093,10 @@ all: speedtest1
 #  tester1.mjs: cases 3 and 4
 #
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.js))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.sqlite3-esm)))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1.html))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.sqlite3-esm)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.js,$(c-pp.D.canonical)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1.html,$(c-pp.D.canonical)))
+$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
 # We do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
 # because bundlers are client-specific.
