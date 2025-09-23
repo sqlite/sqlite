@@ -1,5 +1,5 @@
-C Add\smakefile\starget\s'64bit'\sto\sext/wasm/GNUmakefile\sto\sbuild\sthe\s64-bit\sbundles.\sIt\sdoes\snot\syet\sgenerate\scopies\sof\sthe\stest\sapps\sto\sload/test\sthem,\spending\sother\sreworking\sof\sthe\sbuild.
-D 2025-09-23T02:04:07.278
+C In\sthe\sieee754\sextension,\srender\s-0.0\sas\s'ieee754(-1,-3071)'\sinstead\sof\n'ieee754(1,-3071)'\sas\sthat\smakes\sthe\ssign\sclearer.\s\sBoth\sstrings\sstill\nconvert\sback\sto\s-0.0.\s\sNote\sthat\snegative\szero\nand\spositive\szero\sare\sdistinct\svalues\sin\sieee754.\n[forum:/forumpost/1eab7e4a08|Forum\spost\s1eab7e4a08].
+D 2025-09-23T16:01:45.255
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -376,7 +376,7 @@ F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a562918
 F ext/misc/fileio.c 88cb2e5744296de6638af02ef6349fd468c2eb5e5f41ba405f88d9b4ad500f8e
 F ext/misc/fossildelta.c 0aeb099e9627eea693cf21ae47826ecd1e0319b93143bed23090838b2ef0c162
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
-F ext/misc/ieee754.c c9dd9d77c8e8e18e0a5706f8ffcccf4ccb6562073709f7453d4d73f5122f4362
+F ext/misc/ieee754.c 26f16623dff7e8ba23b969df5caa45764017315355369f228533b17423c308c8
 F ext/misc/memstat.c 43705d795090efb78c85c736b89251e743c291e23daaa8382fe7a0df2c6a283d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
@@ -1265,7 +1265,7 @@ F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test 2d89bf9480646feb8093be3a58ea502d6521906779ed960de31dd9c4502c0541
 F test/hook2.test b9ff3b8c6519fb67f33192f1afe86e7782ee4ac8
 F test/icu.test 8da7d52cd9722c82f33b0466ed915460cb03c23a38f18a9a2d3ff97da9a4a8c0
-F test/ieee754.test b0945d12be7d255f3dfa18e2511b17ca37e0edd2b803231c52d05b86c04ab26e
+F test/ieee754.test 0d3ab84ab2069c9994c833a7cd820ee6037f0cf888e206a4a7fc05f735d5790a
 F test/imposter1.test 5a20b2cdeb53e65fc57cdb10a33750bd4ef6259909eaf1972253b9e79f7a3fb2
 F test/in.test edf979bff3244b9e47849e2b43886631354c8213791f42da92216f08012141af
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6455af2703e78fb9b6df19cf4b46873d98ec91c3302dc0093a362d03ac48da91
-R 58099e236bc56168160faf964fe1137e
-U stephan
-Z 27a67ec5dfd92ddefa13deed0e4dc8eb
+P 3e2ea990ad76f9e68d514568f53eaa692a1eb11695fceb1bcc58cea00605fff9
+R a1bfea50eaa52e8e7630755765498738
+U drh
+Z 9e57b7314c831918edecc68ae3eb7ff2
 # Remove this line to create a well-formed Fossil manifest.

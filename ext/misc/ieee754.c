@@ -134,6 +134,9 @@ static void ieee754func(
     if( a==0 ){
       e = 0;
       m = 0;
+    }else if( a==0x8000000000000000LL ){
+      e = -1996;
+      m = -1;
     }else{
       e = a>>52;
       m = a & ((((sqlite3_int64)1)<<52)-1);
