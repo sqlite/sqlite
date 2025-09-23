@@ -96,6 +96,7 @@ struct BuildDef {
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Extra flags for emcc */
   const char *zEnv;       /* emcc -sENVIRONMENT=X flag */
+  const char *zIfCond;    /* "ifeq (...)" or similar */
   int flags;              /* Flags from LibModeFlags */
 };
 typedef struct BuildDef BuildDef;
@@ -146,6 +147,7 @@ const BuildDefs oBuildDefs = {
     .zCmppD      = 0,
     .zEmcc       = 0,
     .zEnv        = "web,worker",
+    .zIfCond     = 0,
     .flags       = CP_ALL
   },
 
@@ -156,7 +158,8 @@ const BuildDefs oBuildDefs = {
     .zCmppD      = 0,
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
-    .flags       = CP_ALL | F_64BIT // | F_NOT_IN_ALL
+    .zIfCond     = 0,
+    .flags       = CP_ALL | F_64BIT// | F_NOT_IN_ALL
   },
 
   .esm = {
@@ -166,6 +169,7 @@ const BuildDefs oBuildDefs = {
     .zCmppD      = "-Dtarget=es6-module",
     .zEmcc       = 0,
     .zEnv        = 0,
+    .zIfCond     = 0,
     .flags       = CP_JS | F_ESM
   },
 
@@ -176,6 +180,7 @@ const BuildDefs oBuildDefs = {
     .zCmppD      = "-Dtarget=es6-module",
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
+    .zIfCond     = 0,
     .flags       = CP_JS | F_ESM | F_64BIT // | F_NOT_IN_ALL
   },
 
@@ -191,16 +196,18 @@ const BuildDefs oBuildDefs = {
     .zCmppD      = "$(c-pp.D.esm) -Dtarget=es6-bundler-friendly",
     .zEmcc       = 0,
     .zEnv        = 0,
+    .zIfCond     = 0,
     .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM
   },
 
   .bundler64 = {
     .zEmo        = "📦",
-    .zBaseName   = "sqlite3",
+    .zBaseName   = "sqlite3-bundler-friendly",
     .zDotWasm    = 0,
     .zCmppD      = "$(c-pp.D.bundler)",
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
+    .zIfCond     = 0,
     .flags       = CP_JS | F_ESM | F_BUNDLER_FRIENDLY | F_64BIT
   },
 
@@ -218,6 +225,7 @@ const BuildDefs oBuildDefs = {
       Emscripten to generate code which confuses node: it cannot
       reliably determine whether the build is for a browser or for
       node.  */
+    .zIfCond     = 0,
     .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS
   },
 
@@ -229,6 +237,7 @@ const BuildDefs oBuildDefs = {
     .zCmppD      = "-Dtarget=node $(c-pp.D.bundler)",
     .zEmcc       = 0,
     .zEnv        = "node",
+    .zIfCond     = 0,
     .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS | F_64BIT
   },
 
@@ -240,6 +249,7 @@ const BuildDefs oBuildDefs = {
     .zCmppD      = "$(c-pp.D.bundler)",
     .zEmcc       = "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META",
     .zEnv        = 0,
+    .zIfCond     = "ifeq (1,$(HAVE_WASMFS))",
     .flags       = CP_ALL | F_UNSUPPORTED | F_WASMFS
   }
 };
@@ -274,6 +284,41 @@ static void mk_prologue(void){
        "have been set up by now)\n", zVar);
     ps("endif");
   }
+
+  ps(zBanner
+     "emo.disk = 💾\n"
+     "emo.fire = 🔥\n"
+     "emo.done = 🏆\n" /*🏁*/
+     "emo.bug = 🐞\n"
+     "emo.megaphone = 📣\n"
+     "emo.mute = 🔇\n"
+     "emo.tool = 🔨\n"
+     "emo.compile = ⏳\n"
+     "emo.info =\n"
+     "emo.stop =🛑\n"
+     "emo.strip =🪚\n" /*🔪*/
+     "emo.garbage =🗑\n"
+  );
+
+  ps(zBanner
+     /** $1 = build name
+         $2 = Input file(s): cat $(2) | c-pp ...
+         $3 = Output file: c-pp -o $(3)
+         $4 = optional c-pp -D... flags */
+     "define b.do.c-pp\n"
+     "$(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)\n"
+     "\t@echo '$$(logtag.$(1)) $$(emo.disk) $(4)'; mkdir -p $$(dir $$@)\n"
+     "\t@cat $(2) | $$(bin.c-pp) -o $(3) $(4) $$(SQLITE.CALL.C-PP.FILTER.global) || exit $$$$?\n"
+     "\nCLEAN_FILES += $(2)\n"
+     "endef\n"
+  );
+
+  ps(zBanner
+     /** $1 = build name */
+     "b.do.wasm-strip = "
+     "echo '$(logtag.$(1)) $(emo.strip) wasm-strip $(out.$(1).wasm)'; "
+     "$(bin.wasm-strip) $(out.$(1).wasm)\n"
+  );
 
   ps(zBanner
      "# Inputs for the sqlite3-api.js family.\n"
@@ -324,7 +369,7 @@ static void mk_prologue(void){
      "# support -e SCRIPT.\n"
      "$(sqlite3-license-version.js): $(MKDIR.bld) $(sqlite3.h) "
      "$(dir.api)/sqlite3-license-version-header.js $(MAKEFILE)\n"
-     "\t@echo 'Making $@...'; { \\\n"
+     "\t@echo '$(emo.disk) $@'; { \\\n"
      "\t\tcat $(dir.api)/sqlite3-license-version-header.js;  \\\n"
      "\t\techo '/*'; \\\n"
      "\t\techo '** This code was built from sqlite3 version...'; \\\n"
@@ -341,7 +386,7 @@ static void mk_prologue(void){
      "# $(sqlite3-api-build-version.js) injects the build version info into\n"
      "# the bundle in JSON form.\n"
      "$(sqlite3-api-build-version.js): $(MKDIR.bld) $(bin.version-info) $(MAKEFILE)\n"
-     "\t@echo 'Making $@...'; { \\\n"
+     "\t@echo '$(emo.disk) $@'; { \\\n"
      "\t\techo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \\\n"
      "\t\techo -n '  sqlite3.version = '; \\\n"
      "\t\t$(bin.version-info) --json; \\\n"
@@ -354,7 +399,7 @@ static void mk_prologue(void){
      "# extern-post-js* and extern-pre-js* are files for use with\n"
      "# Emscripten's --extern-pre-js and --extern-post-js flags.\n"
      "extern-pre-js.js = $(dir.api)/extern-pre-js.js\n"
-     "extern-post-js.js.in = $(dir.api)/extern-post-js.c-pp.js\n"
+     "extern-post-js.in.js = $(dir.api)/extern-post-js.c-pp.js\n"
      "# Emscripten flags for --[extern-][pre|post]-js=... for the\n"
      "# various builds.\n"
      "# pre-post-jses.*.deps = lists of dependencies for the\n"
@@ -363,30 +408,8 @@ static void mk_prologue(void){
      "$(extern-pre-js.js) $(sqlite3-license-version.js)"
   );
 
-  pf(zBanner
-     "define emcc.do.build\n"
-     /* $1 = build name */
-     "$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) "
-     "$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.$(1)) "
-     "\t\t$(pre-post.$(1).flags) "
-     "\t\t$(emcc.flags.$(1)) "
-     "\t\t$(cflags.common) $(cflags.$(1)) "
-     "\t\t$(SQLITE_OPT) "
-     "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n"
-     "endef\n"
-  );
-
   ps(zBanner
-     "emo.disk = 💾\n"
-     "emo.fire = 🔥\n"
-     "emo.done = 🏆\n" /*🏁*/
-     "emo.bug = 🐞\n"
-     "emo.megaphone = 📣\n"
-     "emo.mute = 🔇\n"
-     "emo.tool = 🔨\n"
-  );
-  ps(
-    "emcc.loud ?= 1\n"
+    "emcc.loud ?= 0\n"
     "ifeq (1,$(emcc.loud))\n"
     "$(info $(emo.megaphone) Emitting loud build info."
     " Pass emcc.loud=0 to disable it.)\n"
@@ -396,6 +419,38 @@ static void mk_prologue(void){
     " Pass emcc.loud=1 to enable it.)\n"
     "emcc.squelch = @\n"
     "endif\n"
+  );
+
+  ps(zBanner
+     "# --post-js and --pre-js are emcc flags we use to append/prepend JS to\n"
+     "# the generated emscripten module file. These rules set up the core\n"
+     "# pre/post files for use by the various builds. --pre-js is used to\n"
+     "# inject code which needs to run as part of the pre-WASM-load phase.\n"
+     "# --post-js injects code which runs after the WASM module is loaded\n"
+     "# and includes the entirety of the library plus some\n"
+     "# Emscripten-specific post-bootstrapping code.\n"
+     "pre-js.in.js = $(dir.api)/pre-js.c-pp.js\n"
+     "post-js.in.js = $(dir.tmp)/post-js.c-pp.js\n"
+     "post-jses.js = $(dir.api)/post-js-header.js $(sqlite3-api.js.in) $(dir.api)/post-js-footer.js\n"
+     "$(post-js.in.js): $(MKDIR.bld) $(post-jses.js) $(MAKEFILE)\n"
+     "	@echo '$(emo.disk) $@'\n"
+     "	@for i in $(post-jses.js); do \\n"
+     "		echo \"/* BEGIN FILE: $$i */\"; \\n"
+     "		cat $$i; \\n"
+     "		echo \"/* END FILE: $$i */\"; \\n"
+     "	done > $@\n"
+  );
+  pf(zBanner
+     "define b.do.emcc\n"
+     /* $1 = build name */
+     "$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) "
+     "$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.$(1)) "
+     "\t\t$(pre-post.$(1).flags) "
+     "\t\t$(emcc.flags.$(1)) "
+     "\t\t$(cflags.common) $(cflags.$(1)) "
+     "\t\t$(SQLITE_OPT) "
+     "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n"
+     "endef\n"
   );
 
   {
@@ -469,7 +524,7 @@ static void mk_prologue(void){
         "\t\tls -l $(1); \\\n"
 #endif
         "\telse \\\n"
-        "\t\techo '$(2) 🔥 ignoring wasm-opt failure'; \\\n"
+        "\t\techo '$(2) $(emo.fire) ignoring wasm-opt failure'; \\\n"
         "\tfi\n",
         zOptFlags
       );
@@ -489,7 +544,6 @@ static void mk_pre_post(char const *zBuildName,
 /* Very common printf() args combo. */
 
   pf("%s# Begin --pre/--post flags for %s\n", zBanner, zBuildName);
-  pf("c-pp.D.%s = %s\n", zBuildName, pB->zCmppD ? pB->zCmppD : "");
 
   ps("\n# --pre-js=...");
   pf("pre-js.%s.js = $(dir.tmp)/pre-js.%s.js\n"
@@ -501,8 +555,9 @@ static void mk_pre_post(char const *zBuildName,
      zBuildName);
 
   if( 0==WASM_CUSTOM_INSTANTIATE ){
-    pf("\tcat $(pre-js.js.in) | $(bin.c-pp) -o $@ $(c-pp.D.%s)\n",
-       zBuildName);
+    pf("\t@echo '$(logtag.%s) $(emo.disk) $(c-pp.D.%s)'; "
+       "cat $(pre-js.in.js) | $(bin.c-pp) -o $@ $(c-pp.D.%s)\n",
+       zBuildName, zBuildName, zBuildName);
   }else{
 #if 0
     fixme;
@@ -511,14 +566,15 @@ static void mk_pre_post(char const *zBuildName,
     pf("pre-js.%s.js.intermediary = "
        "$(dir.tmp)/pre-js.%s.intermediary.js\n",
        zBuildName, zBuildName);
-    pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),"
+    pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.in.js),"
        "$(pre-js.%s.js.intermediary),"
        C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s)))\n",
        zBuildName, zBuildName);
     pf("$(pre-js.%s.js): $(pre-js.%s.js.intermediary)\n",
        zBuildName, zBuildName);
     pf("\tcp $(pre-js.%s.js.intermediary) $@\n", zBuildName);
-    pf("\t@echo 'sIMS.wasmFilename = \"%s\";' >> $@\n", zWasmOut)
+    pf("\t@echo 'sIMS.wasmFilename = \"$(out.%s.wasm)\";' >> $@\n",
+       zBuildName)
       /* see api/pre-js.c-pp.js:Module.instantiateModule() */;
 #endif
   }
@@ -531,17 +587,23 @@ static void mk_pre_post(char const *zBuildName,
      "$(sqlite3-api.%s.js) "
      "$(dir.api)/post-js-footer.js\n",
      zBuildName, zBuildName);
-  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(post-jses.%s),"
-     "$(post-js.%s.js),$(c-pp.D.%s)))\n",
-     zBuildName, zBuildName, zBuildName);
+  pf("$(eval $(call b.do.c-pp,"
+     "%s,"
+     "$(post-jses.%s),"
+     "$(post-js.%s.js),"
+     "$(c-pp.D.%s)"
+     "))\n",
+     zBuildName, zBuildName, zBuildName, zBuildName);
 
   ps("\n# --extern-post-js=...");
   pf("extern-post-js.%s.js = $(dir.tmp)/extern-post-js.%s.js\n",
      zBuildName, zBuildName);
-  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(extern-post-js.js.in),"
+  pf("$(eval $(call b.do.c-pp,"
+     "%s,"
+     "$(extern-post-js.in.js),"
      "$(extern-post-js.%s.js),"
      C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s)))\n",
-     zBuildName, zBuildName);
+     zBuildName, zBuildName, zBuildName);
 
   ps("\n# --pre/post misc...");
   /* Combined flags for use with emcc... */
@@ -589,7 +651,7 @@ static void mk_fiddle(void){
        "$(pre-post-fiddle-module-vanilla.flags) $(fiddle.cses)\n",
        zTail);
     ps("\t@chmod -x $(basename $@).wasm");
-    ps("\t@$(maybe-wasm-strip) $(basename $@).wasm");
+    pf("\t@$(call b.do.wasm-strip,%s)\n", zBuildName);
     ps("\t@$(call SQLITE.strip-emcc-js-cruft,NAME_GOES_HERE)");
     pf("\t@cp -p $(SOAP.js) $(dir $@)\n");
     if( 1==i ){/*fiddle.debug*/
@@ -623,7 +685,6 @@ static void mk_fiddle(void){
 ** Emits makefile code for one build of the library.
 */
 void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
-  const char * zWasmOut = "$(basename $@).wasm"
     /* The various targets named X.js or X.mjs also generate X.wasm,
     ** and we need that part of the name to perform some
     ** post-processing after Emscripten generates X.wasm. */;
@@ -641,16 +702,21 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      pB->zCmppD ? pB->zCmppD : "", zBaseName);
 
   pf("logtag.%s = [%s %s $@]:\n", zBuildName, pB->zEmo, zBuildName);
+  if( pB->zIfCond ){
+    pf("%s\n", pB->zIfCond );
+  }
+  pf("$(info $(logtag.%s) Setting up target b-%s)\n",
+     zBuildName, zBuildName );
+
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
   pf("out.%s.base = $(dir.dout.%s)/%s\n",
      zBuildName, zBuildName, zBaseName);
   pf("out.%s.js = $(dir.dout.%s)/%s%s\n",
      zBuildName, zBuildName, zBaseName, zJsExt);
   pf("out.%s.wasm = $(dir.dout.%s)/%s.wasm\n",
+     //"$(basename $@).wasm"
      zBuildName, zBuildName, zBaseName);
-  pf("$(info $(logtag.%s) Setting up build. "
-     "Use the 'b-%s' target to build just this.)\n",
-     zBuildName, zBuildName );
+  pf("c-pp.D.%s = %s\n", zBuildName, pB->zCmppD ? pB->zCmppD : "");
   pf("emcc.environment.%s = %s\n", zBuildName,
      pB->zEnv ? pB->zEnv : oBuildDefs.vanilla.zEnv);
   pf("emcc.flags.%s = %s\n", zBuildName, pB->zEmcc ? pB->zEmcc : "");
@@ -664,7 +730,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     pf("c-pp.D.%s = %s\n", zBuildName, pB->zCmppD ? pB->zCmppD: "" );
 
     pf("$(sqlite3-api.%s.c-pp.js): $(sqlite3-api.jses)\n"
-       "\t@echo '$(logtag.%s) Making $@ ...'; \\\n"
+       "\t@echo '$(logtag.%s) $(emo.disk)'; \\\n"
        "\tmkdir -p $(dir.dout.%s); \\\n"
        "\tfor i in $(sqlite3-api.jses); do \\\n"
        "\t\techo \"/* BEGIN FILE: $$i */\"; \\\n"
@@ -673,14 +739,16 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
        "\tdone > $@\n",
        zBuildName, zBuildName, zBuildName);
 
-    pf("$(sqlite3-api.%s.js): $(sqlite3-api.%s.c-pp.js)\n",
-       zBuildName, zBuildName);
-    pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,"
-       "$(sqlite3-api.%s.c-pp.js), " /* $1 = src(es) */
-       "$(sqlite3-api.%s.js), "      /* $2 = tgt */
-       "$(c-pp.D.%s)"                /* $3 = c-pp -Dx=Y flags */
+    pf("$(sqlite3-api.%s.js): $(sqlite3-api.%s.c-pp.js)\n"
+       "$(eval $(call b.do.c-pp,"
+       "%s,"
+       "$(sqlite3-api.%s.c-pp.js),"
+       "$(sqlite3-api.%s.js),"
+       "$(c-pp.D.%s)"
        "))\n",
-       zBuildName, zBuildName, zBuildName);
+       zBuildName, zBuildName,
+       zBuildName, zBuildName,
+       zBuildName, zBuildName);
   }
 
   mk_pre_post(zBuildName, pB);
@@ -698,7 +766,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
        "\n",
        zBuildName, zBuildName, zBuildName);
 
-    pf("\t@echo '$(logtag.%s) building ...'\n"
+    pf("\t@echo '$(logtag.%s) $(emo.compile) building $@ ...'\n"
        "\t@mkdir -p $(dir $@);\n",
        zBuildName);
 
@@ -706,7 +774,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@echo '$(logtag.%s) $(emo.fire)$(emo.fire)$(emo.fire): "
          "unsupported build. Use at your own risk.'\n", zBuildName);
     }
-    pf("\t$(emcc.squelch)$(call emcc.do.build,%s)\n", zBuildName);
+    pf("\t$(emcc.squelch)$(call b.do.emcc,%s)\n", zBuildName);
 
     { /* Post-compilation transformations and copying to
          $(dir.dout)... */
@@ -721,11 +789,12 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
         );
       }
 
-      pf("\t@chmod -x %s\n", zWasmOut
+      pf("\t@chmod -x $(out.%s.wasm)\n", zBuildName
          /* althttpd will automatically try to execute wasm files
             if they have the +x bit set. Why that bit is set
             at all is a mystery. */);
-      pf("\t@$(maybe-wasm-strip) %s\n", zWasmOut);
+      pf("\t@$(call b.do.wasm-strip,%s)\n", zBuildName);
+
       pf("\t@$(call SQLITE.CALL.WASM-OPT,%s,$(logtag.%s))\n",
          zBuildName, zBuildName);
       pf("\t@$(call SQLITE.strip-emcc-js-cruft,$(logtag.%s))\n", zBuildName);
@@ -737,9 +806,10 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
         );
       }
       if( CP_WASM & pB->flags ){
-        pf("\t@cp -f %s $(dir.dout)/. || exit; \\\n"
-           "\techo '$(logtag.%s) $(emo.disk) $(dir.dout)/$(notdir %s)'\n",
-           zWasmOut, zBuildName, zWasmOut);
+        pf("\t@cp -f $(out.%s.wasm) $(dir.dout)/. || exit; \\\n"
+           "\techo '[%s %s $(out.%s.wasm)] $(emo.disk) "
+           "$(dir.dout)/$(notdir $(out.%s.wasm))'\n",
+           zBuildName, pB->zEmo, zBuildName, zBuildName, zBuildName);
       }
       /*
       ** $(bin.emcc) will write out $@ and will create a like-named
@@ -754,7 +824,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       if( pB->zDotWasm && (CP_JS & pB->flags) ){
         pf("\t@echo '$(logtag.%s) $(emo.disk) "
            "s/\"%s.wasm\"/\"%s.wasm\"/g "
-           "$(dir.dout)/$(notdir $@)'; \\\n"
+           "in $(dir.dout)/$(notdir $@)'; \\\n"
            "sed "
            "-e 's/\"%s.wasm\"/\"%s.wasm\"/g' "
            "-e \"s/'%s.wasm'/'%s.wasm'/g\" "
@@ -779,15 +849,34 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   pf("\t@echo '$(logtag.%s) $(emo.done)'\n", zBuildName);
 
   pf("\n%dbit: $(out.%s.js)\n"
-     "b-%s: $(out.%s.js)\n",
-     (F_64BIT & pB->flags) ? 64 : 32,
+     "$(out.%s.wasm): $(out.%s.js)\n"
+     "b-%s: $(out.%s.js) $(out.%s.wasm)\n",
+     (F_64BIT & pB->flags) ? 64 : 32, zBuildName,
+     zBuildName, zBuildName,
      zBuildName, zBuildName, zBuildName);
+
+  if( CP_JS & pB->flags ){
+    pf("$(dir.dout)/%s%s: $(out.%s.js)\n",
+       pB->zBaseName, zJsExt, zBuildName
+    );
+  }
+  if( CP_WASM & pB->flags ){
+    pf("$(dir.dout)/%s.wasm: $(out.%s.wasm)\n",
+       pB->zBaseName, zBuildName
+    );
+  }
 
   if( 0==(F_NOT_IN_ALL & pB->flags)
       && 0==(F_UNSUPPORTED & pB->flags) ){
     pf("all: $(out.%s.js)\n", zBuildName);
   }
 
+  if( pB->zIfCond ){
+    pf("else\n"
+       "$(info $(logtag.%s) $(emo.stop) disabled by condition: %s)\n"
+       "endif\n",
+       zBuildName, pB->zIfCond);
+  }
   pf("# End build [%s]%s", zBuildName, zBanner);
 }
 
@@ -799,6 +888,18 @@ int main(void){
 #define E(N) mk_lib_mode(# N, &oBuildDefs.N);
   BuildDefs_map(E)
 #undef E
+  pf(zBanner
+     "$(dir.dout)/sqlite3.js: $(out.vanilla.js)\n"
+     "$(dir.dout)/sqlite3.mjs: $(out.esm.js)\n"
+     "$(dir.dout)/sqlite3.wasm: $(out.vanilla.wasm)\n"
+     "$(dir.dout)/sqlite3-64bit.js: $(out.vanilla64.js)\n"
+     "$(dir.dout)/sqlite3-64bit.mjs: $(out.esm64.js)\n"
+     "$(dir.dout)/sqlite3-64bit.wasm: $(out.vanilla64.wasm)\n"
+     "b-vanilla: $(dir.dout)/sqlite3.wasm\n"
+     "b-vanilla64: $(dir.dout)/sqlite3-64bit.wasm\n"
+     "b-esm: $(dir.dout)/sqlite3.mjs\n"
+     "b-esm64: $(dir.dout)/sqlite3-64bit.mjs\n"
+  );
 #if 0
   mk_fiddle();
   mk_pre_post(0, "speedtest1","vanilla", 0, "speedtest1.wasm");

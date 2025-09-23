@@ -224,20 +224,6 @@ $(sqlite3.h):
 #	$(MAKE) -C $(dir.top) sqlite3.c
 $(sqlite3.c): $(sqlite3.h)
 
-########################################################################
-# barebones=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
-# goal being to create a WASM file with only the core APIs.
-ifeq (1,$(barebones))
-  wasm-bare-bones = 1
-  $(info ==============================================================)
-  $(info == This is a bare-bones build. It trades away features for)
-  $(info == a smaller .wasm file.)
-  $(info ==============================================================)
-else
-  wasm-bare-bones = 0
-endif
-# undefine barebones # relatively new gmake feature, not ubiquitous
-
 # Common options for building sqlite3-wasm.c and speedtest1.c.
 # Explicit ENABLEs...
 SQLITE_OPT.common = \
@@ -510,7 +496,7 @@ endif
 SQLITE.strip-emcc-js-cruft = \
   sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
   -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
-  echo '$(1) $(emo.disk) (Probably) /createExportWrapper()/d and /makeInvalidEarlyAccess()/d.'
+  echo '$(1) $(emo.garbage) (Probably) /createExportWrapper()/d and /makeInvalidEarlyAccess()/d.'
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...
@@ -765,28 +751,6 @@ $(sqlite3-api-build-version.js): $(MKDIR.bld) $(bin.version-info) $(MAKEFILE)
     echo '});'; \
   } > $@
 
-########################################################################
-# --post-js and --pre-js are emcc flags we use to append/prepend JS to
-# the generated emscripten module file. These rules set up the core
-# pre/post files for use by the various builds. --pre-js is used to
-# inject code which needs to run as part of the pre-WASM-load phase.
-# --post-js injects code which runs after the WASM module is loaded
-# and includes the entirety of the library plus some
-# Emscripten-specific post-bootstrapping code.
-pre-js.js.in = $(dir.api)/pre-js.c-pp.js
-post-js.js.in = $(dir.tmp)/post-js.c-pp.js
-post-jses.js = \
-  $(dir.api)/post-js-header.js \
-  $(sqlite3-api.js.in) \
-  $(dir.api)/post-js-footer.js
-$(post-js.js.in): $(MKDIR.bld) $(post-jses.js) $(MAKEFILE)
-	@echo "Making $@..."
-	@for i in $(post-jses.js); do \
-		echo "/* BEGIN FILE: $$i */"; \
-		cat $$i; \
-		echo "/* END FILE: $$i */"; \
-	done > $@
-
 
 # Undocumented Emscripten feature: if the target file extension is
 # "mjs", it defaults to ES6 module builds:
@@ -892,6 +856,56 @@ EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 #$(dir.dout)/sqlite3-bundler-friendly.mjs: $(sqlite3.mjs)
 #$(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 #CLEAN_FILES += $(sqlite3.wasm)
+
+
+########################################################################
+# barebones=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
+# goal being to create a WASM file with only the core APIs.
+ifeq (1,$(barebones))
+  wasm-bare-bones = 1
+  $(info ==============================================================)
+  $(info == This is a bare-bones build. It trades away features for)
+  $(info == a smaller .wasm file.)
+  $(info ==============================================================)
+else
+  wasm-bare-bones = 0
+endif
+# undefine barebones # relatively new gmake feature, not ubiquitous
+
+#
+# Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
+#
+ifneq (,$(filter wasmfs,$(MAKECMDGOALS)))
+wasmfs.enable ?= 1
+else
+# Unconditionally enable wasmfs for [dist]clean so that the wasmfs
+# sub-make can clean up.
+wasmfs.enable ?= $(MAKING_CLEAN)
+endif
+ifeq (1,$(wasmfs.enable))
+# wasmfs build disabled 2022-10-19 per /chat discussion.
+# OPFS-over-wasmfs was initially a stopgap measure and a convenient
+# point of comparison for the OPFS sqlite3_vfs's performance, but it
+# currently doubles our deliverables and build maintenance burden for
+# little benefit.
+#
+########################################################################
+# Some platforms do not support the WASMFS build. Raspberry Pi OS is
+# one of them (or was when that comment was initially written). As
+# such platforms are discovered, add their (uname -m) name to
+# PLATFORMS_WITH_NO_WASMFS to exclude the wasmfs build parts.
+PLATFORMS_WITH_NO_WASMFS = aarch64 # add any others here
+THIS_ARCH = $(shell /usr/bin/uname -m)
+ifneq (,$(filter $(THIS_ARCH),$(PLATFORMS_WITH_NO_WASMFS)))
+$(info This platform does not support the WASMFS build.)
+HAVE_WASMFS = 0
+else
+HAVE_WASMFS = 1
+endif
+endif
+# /wasmfs
+########################################################################
+
 
 # This block MUST come between the above definitions of
 # sqlite3-...js/mjs and the $(eval) calls below this block which use
@@ -1138,39 +1152,6 @@ oz: clean
 
 # https://sqlite.org/fiddle application...
 include $(MAKEFILE.fiddle)
-
-# Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
-ifneq (,$(filter wasmfs,$(MAKECMDGOALS)))
-wasmfs.enable ?= 1
-else
-# Unconditionally enable wasmfs for [dist]clean so that the wasmfs
-# sub-make can clean up.
-wasmfs.enable ?= $(MAKING_CLEAN)
-endif
-ifeq (1,$(wasmfs.enable))
-# wasmfs build disabled 2022-10-19 per /chat discussion.
-# OPFS-over-wasmfs was initially a stopgap measure and a convenient
-# point of comparison for the OPFS sqlite3_vfs's performance, but it
-# currently doubles our deliverables and build maintenance burden for
-# little benefit.
-#
-########################################################################
-# Some platforms do not support the WASMFS build. Raspberry Pi OS is
-# one of them (or was when that comment was initially written). As
-# such platforms are discovered, add their (uname -m) name to
-# PLATFORMS_WITH_NO_WASMFS to exclude the wasmfs build parts.
-PLATFORMS_WITH_NO_WASMFS = aarch64 # add any others here
-THIS_ARCH = $(shell /usr/bin/uname -m)
-ifneq (,$(filter $(THIS_ARCH),$(PLATFORMS_WITH_NO_WASMFS)))
-$(info This platform does not support the WASMFS build.)
-HAVE_WASMFS = 0
-else
-HAVE_WASMFS = 1
-include wasmfs.make
-endif
-endif
-# /wasmfs
-########################################################################
 
 ########################################################################
 # Push files to public wasm-testing.sqlite.org server
