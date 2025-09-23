@@ -44,7 +44,8 @@
 ** Valid build modes. For the "sqlite3-wasmfs" build, only "esm" (ES6
 ** Module) is legal.
 */
-#define JS_BUILD_MODES vanilla esm bundler-friendly node
+#define JS_BUILD_MODES \
+  vanilla vanilla64 esm esm64 bundler-friendly bundler-friendly64 node
 
 /* Separator to help eyeballs find the different output sections */
 static const char * zBanner =
@@ -67,11 +68,14 @@ enum LibModeFlags {
   ** added to the 'all' target. The unsupported builds exist primarily
   ** for experimentation's sake. */
   LIBMODE_UNSUPPORTED = 0x04,
+  /* Elide this build from the 'all' target. */
+  LIBMODE_NOT_IN_ALL = 0x08,
+  LIBMODE_64BIT = 0x10,
   /* Indicates a node.js-for-node.js build (untested and
   ** unsupported). */
-  LIBMODE_NODEJS = 0x08,
+  LIBMODE_NODEJS = 0x20,
   /* Indicates a wasmfs build (untested and unsupported). */
-  LIBMODE_WASMFS = 0x10
+  LIBMODE_WASMFS = 0x40
 };
 
 /*
@@ -84,9 +88,10 @@ struct BuildDef {
   const char *zMode;      /* Name from JS_BUILD_MODES */
   int flags;              /* Flags from LibModeFlags */
   const char *zJsOut;     /* Name of generated sqlite3.js/.mjs */
-  /* TODO: dynamically determine zJsOut based on zName, zMode, and
+  /* TODO?: dynamically determine zJsOut based on zName, zMode, and
      flags. */
-  const char *zWasmOut;   /* zJsOut w/ .wasm extension if it needs to be renamed */
+  const char *zWasmOut;   /* zJsOut w/ .wasm extension if it needs to
+                             be renamed.  Do we still need this? */
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Extra flags for emcc */
 };
@@ -105,44 +110,111 @@ typedef struct BuildDef BuildDef;
 #define C_PP_D_CUSTOM_INSTANTIATE
 #endif
 
+/* List of distinct library builds. See next comment block. */
+#define BuildDefs_map(E) \
+  E(canonical)   \
+  E(canonical64) \
+  E(esm) \
+  E(esm64) \
+  E(bundler) \
+  E(bundler64) \
+  E(node) \
+  E(wasmfs)
+
 /*
 ** The set of WASM builds for the library (as opposed to the apps
-** (fiddle, speedtest1)). This array must end with an empty sentinel
-** entry. Their order is mostly insignificant, but some makefile vars
-** used by some builds are set up by prior builds. Because of that,
-** the (sqlite3, vanilla), (sqlite3, esm), and (sqlite3,
-** bundler-friendly) builds should be defined first (in that order).
+** (fiddle, speedtest1)). Their order in BuildDefs_map is mostly
+** insignificant, but some makefile vars used by some builds are set
+** up by prior builds. Because of that, the (sqlite3, vanilla),
+** (sqlite3, esm), and (sqlite3, bundler-friendly) builds should be
+** defined first (in that order).
 */
-const BuildDef aBuildDefs[] = {
-  {/* Core build */
-    "sqlite3", "vanilla", 0, "$(sqlite3.js)", 0, 0, 0},
+struct BuildDefs {
+#define E(N) BuildDef N;
+  BuildDefs_map(E)
+#undef E
+};
+typedef struct BuildDefs BuildDefs;
 
-  {/* Core ESM */
-    "sqlite3", "esm", LIBMODE_ESM, "$(sqlite3.mjs)", 0,
-    "-Dtarget=es6-module", 0},
+const BuildDefs oBuildDefs = {
+  .canonical = {
+    .zName ="sqlite3", .zMode = "vanilla",
+    .flags = 0,
+    .zJsOut ="$(sqlite3.js)",
+    .zWasmOut = 0,
+    .zCmppD = 0,
+    .zEmcc =0
+  },
 
-  {/* Core bundler-friendly build. Untested and "not really"
-   ** supported, but required by the downstream npm subproject.
-   ** Testing these would require special-purpose node-based tools and
-   ** custom test apps. Or we can pass them off as-is to the npm
-   ** subproject and they spot failures pretty quickly ;). */
-    "sqlite3", "bundler-friendly",
-    LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
-    "$(dir.dout)/sqlite3-bundler-friendly.mjs", 0,
-    "$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly", 0},
+  .canonical64 = {
+    .zName="sqlite3", .zMode= "vanilla64",
+    .flags= LIBMODE_NOT_IN_ALL | LIBMODE_64BIT,
+    .zJsOut="$(sqlite3-64bit.js)",
+    .zWasmOut=0,
+    .zCmppD=0,
+    .zEmcc="-sMEMORY64=1"
+  },
 
-  {/* node.js mode. Untested and unsupported. */
-    "sqlite3", "node", LIBMODE_UNSUPPORTED | LIBMODE_NODEJS,
-    "$(dir.dout)/sqlite3-node.mjs", "sqlite3-node.wasm",
-    "$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node", 0},
+  .esm = {
+    .zName="sqlite3", .zMode= "esm",
+    .flags= LIBMODE_ESM,
+    .zJsOut="$(sqlite3.mjs)",
+    .zWasmOut=0,
+    .zCmppD= "-Dtarget=es6-module",
+    .zEmcc=0
+  },
 
-  {/* Wasmfs build. Fully unsupported and largely untested. */
-    "sqlite3-wasmfs", "esm" ,
-    LIBMODE_UNSUPPORTED | LIBMODE_WASMFS | LIBMODE_ESM,
-    "$(dir.wasmfs)/sqlite3-wasmfs.mjs", "sqlite3-wasmfs.wasm",
-    "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
-    "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"},
-  {/*End-of-list sentinel*/0,0,0,0,0,0,0}
+  .esm64 = {
+    .zName="sqlite3", .zMode= "esm64",
+    .flags= LIBMODE_NOT_IN_ALL | LIBMODE_64BIT,
+    .zJsOut="$(sqlite3-64bit.mjs)",
+    .zWasmOut=0,
+    .zCmppD=0,
+    .zEmcc="-sMEMORY64=1"
+  },
+
+  .bundler = {
+    /* Core bundler-friendly build. Untested and "not really"
+    ** supported, but required by the downstream npm subproject.
+    ** Testing these would require special-purpose node-based tools and
+    ** custom test apps. Or we can pass them off as-is to the npm
+    ** subproject and they spot failures pretty quickly ;). */
+    .zName="sqlite3", .zMode= "bundler-friendly",
+    .flags=LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
+    .zJsOut="$(dir.dout)/sqlite3-bundler-friendly.mjs",
+    .zWasmOut=0,
+    .zCmppD="$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly",
+    .zEmcc=0
+  },
+
+  .bundler64 = {
+    .zName="sqlite3", .zMode= "bundler-friendly64",
+    .flags= LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM,
+    .zJsOut="$(dir.dout)/sqlite3-bundler-friendly-64bit.mjs",
+    .zWasmOut=0,
+    .zCmppD="$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly",
+    .zEmcc="-sMEMORY64=1"
+  },
+
+  /* Entirely unsupported. */
+  .node = {
+    .zName="sqlite3", .zMode= "node",
+    .flags= LIBMODE_UNSUPPORTED | LIBMODE_NODEJS,
+    .zJsOut="$(dir.dout)/sqlite3-node.mjs",
+    .zWasmOut="sqlite3-node.wasm",
+    .zCmppD="$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node",
+    .zEmcc=0
+  },
+
+  /* Entirely unsupported. */
+  .wasmfs = {
+    .zName="sqlite3-wasmfs", .zMode= "esm" ,
+    .flags= LIBMODE_UNSUPPORTED | LIBMODE_WASMFS | LIBMODE_ESM,
+    .zJsOut="$(dir.wasmfs)/sqlite3-wasmfs.mjs",
+    .zWasmOut="sqlite3-wasmfs.wasm",
+    .zCmppD="$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
+    .zEmcc="-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"
+  }
 };
 
 /*
@@ -161,6 +233,9 @@ static void mk_prologue(void){
     "dir.fiddle", "dir.fiddle-debug",
     "MAKEFILE.fiddle",
     "EXPORTED_FUNCTIONS.fiddle",
+    /* Some core JS files... */
+    "sqlite3.js", "sqlite3.mjs",
+    "sqlite3-64bit.js", "sqlite3-64bit.mjs",
     /*"just-testing",*/
     0
   };
@@ -269,7 +344,9 @@ static void mk_pre_post(const char *zName  /* build name */,
 #define zNM zName, zMode
 
   pf("%s# Begin --pre/--post flags for %s-%s\n", zBanner, zNM);
-  pf("c-pp.D.%s-%s = %s\n", zNM, zCmppD ? zCmppD : "");
+  if( zCmppD && *zCmppD ){
+    pf("c-pp.D.%s-%s = %s\n", zNM, zCmppD ? zCmppD : "");
+  }
   pf("pre-post-%s-%s.flags ?=\n", zNM);
 
   /* --pre-js=... */
@@ -384,13 +461,11 @@ static void mk_fiddle(void){
 }
 
 /*
-** Emits makefile code for one build of the library, primarily defined
-** by the combination of zName and zMode, each of which must be values
-** from JS_BUILD_NAMES resp. JS_BUILD_MODES.
+** Emits makefile code for one build of the library.
 */
 static void mk_lib_mode(const BuildDef * pB){
   const char * zWasmOut = "$(basename $@).wasm"
-    /* The various targets named X.js or X.mjs (zJsOut) also generate
+    /* The various targets named X.js or X.mjs (pB->zJsOut) also generate
     ** X.wasm, and we need that part of the name to perform some
     ** post-processing after Emscripten generates X.wasm. */;
   assert( pB->zName );
@@ -449,11 +524,11 @@ static void mk_lib_mode(const BuildDef * pB){
   ps("\t@$(SQLITE.strip-createExportWrapper)");
   /*
   ** The above $(bin.emcc) call will write pB->zJsOut, a.k.a. $@, and
-  ** will create a like-named .wasm file (zWasmOut). That .wasm file
-  ** name gets hard-coded into $@ so we need to, for some cases, patch
-  ** zJsOut to use the name sqlite3.wasm instead.  Note that the
-  ** resulting .wasm file is identical for all builds for which zEmcc
-  ** is empty.
+  ** will create a like-named .wasm file (pB->zWasmOut). That .wasm
+  ** file name gets hard-coded into $@ so we need to, for some cases,
+  ** patch zJsOut to use the name sqlite3.wasm instead.  The resulting
+  ** .wasm file is identical for all builds for which pB->zEmcc is
+  ** empty.
   */
   if( (LIBMODE_BUNDLER_FRIENDLY & pB->flags) ){
     pf("\t@echo 'Patching $@ for %s.wasm...'; \\\n", pB->zName);
@@ -476,7 +551,11 @@ static void mk_lib_mode(const BuildDef * pB){
   }else{
     pf("\t@ls -la %s $@\n", zWasmOut);
   }
-  if( 0==(LIBMODE_UNSUPPORTED & pB->flags) ){
+
+  if( LIBMODE_64BIT & pB->flags ){
+    pf("64bit: %s\n", pB->zJsOut);
+  }else if( 0==(LIBMODE_NOT_IN_ALL & pB->flags)
+            && 0==(LIBMODE_UNSUPPORTED & pB->flags) ){
     pf("all: %s\n", pB->zJsOut);
   }
   pf("# End build [%s-%s]%s", zNM, zBanner);
@@ -485,15 +564,15 @@ static void mk_lib_mode(const BuildDef * pB){
 
 int main(void){
   int rc = 0;
-  const BuildDef *pB = &aBuildDefs[0];
+  const BuildDef *pB;
   pf("# What follows was GENERATED by %s. Edit at your own risk.\n", __FILE__);
   mk_prologue();
-  for( ; pB->zName; ++pB ){
-    mk_lib_mode( pB );
-  }
+#define E(N) mk_lib_mode(&oBuildDefs.N);
+  BuildDefs_map(E)
+#undef E
   mk_fiddle();
   mk_pre_post("speedtest1","vanilla", 0, "speedtest1.wasm");
-  mk_pre_post("speedtest1-wasmfs","esm",
+  mk_pre_post("speedtest1-wasmfs", "esm",
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
               "speetest1-wasmfs.wasm");
   return rc;

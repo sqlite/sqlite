@@ -693,8 +693,10 @@ emcc.jsflags += -sSTRICT_JS=0
 
 # emcc -sENVIRONMENT values for the various build modes:
 emcc.environment.vanilla = web,worker
+emcc.environment.vanilla64 = $(emcc.environment.vanilla)
 emcc.environment.bundler-friendly = $(emcc.environment.vanilla)
 emcc.environment.esm = $(emcc.environment.vanilla)
+emcc.environment.esm64 = $(emcc.environment.vanilla)
 emcc.environment.node = node
 # Adding ",node" to the list for the other builds causes Emscripten to
 # generate code which confuses node: it cannot reliably determine
@@ -731,7 +733,7 @@ endif
 emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 # /INITIAL_MEMORY
 ########################################################################
-emcc.jsflags += -sMEMORY64=$(emcc.MEMORY64)
+#emcc.jsflags += -sMEMORY64=$(emcc.MEMORY64)
 
 emcc.jsflags += $(emcc.environment)
 emcc.jsflags += -sSTACK_SIZE=512KB
@@ -898,8 +900,16 @@ if [ x1 = x$(1) ]; then \
 fi
 endef
 
+#
+# We define these to assist in deps handling to avoid concurrent
+# builds (more notes on that below).
+#
 sqlite3.js = $(dir.dout)/sqlite3.js
 sqlite3.mjs = $(dir.dout)/sqlite3.mjs
+sqlite3.wasm = $(dir.dout)/sqlite3.wasm
+sqlite3-64bit.js = $(dir.dout)/sqlite3-64bit.js
+sqlite3-64bit.mjs = $(dir.dout)/sqlite3-64bit.mjs
+sqlite3-64bit.wasm = $(dir.dout)/sqlite3-64bit.wasm
 EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 
 # The various -D... values used by *.c-pp.js include:
@@ -925,6 +935,7 @@ EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 # We repeat: all node.js builds are 100% untested and unsupported.
 #
 ########################################################################
+
 ########################################################################
 # We have to ensure that we do not build $(sqlite3*.*js) in parallel
 # for any builds which result in the creation of $(sqlite3.wasm). We
@@ -936,6 +947,8 @@ EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 # build time).
 $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
+$(sqlite3-64bit.wasm): $(sqlite3-64bit.js)
+$(sqlite3-64bit.mjs): $(sqlite3-64bit.js)
 $(dir.dout)/sqlite3-bundler-friendly.mjs: $(sqlite3.mjs)
 $(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 #CLEAN_FILES += $(sqlite3.wasm)
@@ -944,7 +957,7 @@ $(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 # sqlite3-...js/mjs and the $(eval) calls below this block which use
 # SQLITE.CALL.C-PP.FILTER.
 ########################################################################
-# bin.mkwb is used for generating some of the makefile code for the
+# bin.mkwb is used for generating much of the makefile code for the
 # various wasm builds. It used to be generated in this makefile via a
 # difficult-to-read/maintain block of $(eval)'d code. Attempts were
 # made to generate it from tcl and bash (shell) but having to escape
@@ -957,7 +970,7 @@ $(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 bin.mkwb = ./mkwasmbuilds
 ifneq (1,$(MAKING_CLEAN))
 $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
-	$(CC) -o $@ $< -DWASM_CUSTOM_INSTANTIATE=$(WASM_CUSTOM_INSTANTIATE)
+	$(CC) -g -std=c99 -o $@ $< -DWASM_CUSTOM_INSTANTIATE=$(WASM_CUSTOM_INSTANTIATE)
 
 .wasmbuilds.make: $(bin.mkwb)
 	@rm -f $@
@@ -1012,6 +1025,7 @@ sqlite3-api.ext.jses += \
   $(dir.dout)/sqlite3-worker1.js
 all quick: $(sqlite3-api.ext.jses)
 q: quick
+64bit: # populated by $(bin.mkwb)
 
 ########################################################################
 # batch-runner.js is part of one of the test apps which reads in SQL
