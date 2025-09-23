@@ -210,10 +210,18 @@ endif
 ########################################################################@
 # It's important that sqlite3.h be built to completion before any
 # other parts of the build run, thus we use .NOTPARALLEL to disable
-# parallel build of that file and its dependants.
+# parallel build of that file and its dependants. However, that makes
+# the whole build non-parallelizable because everything has a dep on
+# sqlite3.h/c. The alternative is to force the user to run (make
+# sqlite3.c) from the top of the tree before running this build.
+#
 #.NOTPARALLEL: $(sqlite3.h)
 $(sqlite3.h):
-	$(MAKE) -C $(dir.top) sqlite3.c
+	@echo "$(sqlite3.h) is out of date. "; \
+	echo "To avoid problems with parallel builds, we're exiting now. Please do:"; \
+	echo "  $(MAKE) -C $(dir.top) sqlite3.c"; \
+	echo "and try again."; exit 1
+#	$(MAKE) -C $(dir.top) sqlite3.c
 $(sqlite3.c): $(sqlite3.h)
 
 ########################################################################
@@ -367,7 +375,6 @@ endif
 # info from $(bin.version-info) which differ from their runtime-emitted
 # version info (e.g. from sqlite3_libversion()).
 bin.version-info = $(dir.top)/version-info
-#.NOTPARALLEL: $(bin.version-info)
 $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 	$(MAKE) -C $(dir.top) version-info
 
@@ -394,7 +401,7 @@ WASM_CUSTOM_INSTANTIATE = 0
 ########################################################################
 # SQLITE.CALL.C-PP.FILTER: a $(call)able to transform $(1) to $(2) via:
 #
-#   ./c-pp -f $(1) -o $(2) $(3)
+#   cat $(1) | ./c-pp -o $(2) $(3)
 #
 # Historical notes:
 #
@@ -500,10 +507,10 @@ endif
 # This snippet is intended to be used in makefile targets which
 # generate an Emscripten module and where $@ is the module's .js/.mjs
 # file.
-SQLITE.strip-createExportWrapper = \
+SQLITE.strip-emcc-js-cruft = \
   sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
   -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
-  echo '(Probably) stripped out createExportWrapper() and makeInvalidEarlyAccess() parts.'
+  echo '[$@]: (Probably) stripped out createExportWrapper() and makeInvalidEarlyAccess() parts.'
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...
@@ -829,7 +836,8 @@ sqlite3-wasmfs.cfiles = $(sqlite3-wasm.cfiles)
 # use awk instead of sed for this.
 define SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT
 if [ x1 = x$(1) ]; then \
-		echo "Fragile workaround for emscripten/issues/18237. See SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT."; \
+		echo "[$@]: Fragile workaround for emscripten/issues/18237." \
+		"See SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT."; \
 		{\
 			awk '/^export default/ && !f{f=1; next} 1' $@ > $@.tmp && mv $@.tmp $@; \
 		} || exit $$?; \
@@ -1070,7 +1078,7 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
         -o $@ $(speedtest1.cfiles) -lm
 	@chmod -x $(basename $@).wasm
 	@$(maybe-wasm-strip) $(basename $@).wasm
-	@$(SQLITE.strip-createExportWrapper)
+	@$(SQLITE.strip-emcc-js-cruft)
 	@ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(speedtest1.js)

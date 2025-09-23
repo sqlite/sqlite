@@ -33,14 +33,6 @@
 #define pf printf
 #define ps puts
 
-/*
-** Valid build names. Each build is a combination of one of these and
-** one of JS_BUILD_MODES, but only certain combinations are legal.
-** This macro and JS_BUILD_MODES exist solely for documentation
-** purposes: they are not expanded into code anywhere.
-*/
-#define JS_BUILD_NAMES sqlite3 sqlite3-wasmfs
-
 /* Separator to help eyeballs find the different output sections */
 #define zBanner \
   "\n########################################################################\n"
@@ -50,39 +42,46 @@
 ** mk_pre_post().
 **
 ** Maintenance reminder: do not combine flags within this enum,
-** e.g. LIBMODE_BUNDLER_FRIENDLY=0x02|LIBMODE_ESM, as that will lead
+** e.g. F_BUNDLER_FRIENDLY=0x02|F_ESM, as that will lead
 ** to breakage in some of the flag checks.
 */
-enum LibModeFlags {
+enum {
   /* Indicates an ESM module build. */
-  LIBMODE_ESM = 0x01,
+  F_ESM              = 0x01,
   /* Indicates a "bundler-friendly" build mode. */
-  LIBMODE_BUNDLER_FRIENDLY = 0x02,
+  F_BUNDLER_FRIENDLY = 1<<1,
   /* Indicates that this build is unsupported. Such builds are not
   ** added to the 'all' target. The unsupported builds exist primarily
   ** for experimentation's sake. */
-  LIBMODE_UNSUPPORTED = 0x04,
+  F_UNSUPPORTED      = 1<<2,
   /* Elide this build from the 'all' target. */
-  LIBMODE_NOT_IN_ALL = 0x08,
-  LIBMODE_64BIT = 0x10,
+  F_NOT_IN_ALL       = 1<<3,
+  F_64BIT            = 1<<4,
   /* Indicates a node.js-for-node.js build (untested and
   ** unsupported). */
-  LIBMODE_NODEJS = 0x20,
+  F_NODEJS           = 1<<5,
   /* Indicates a wasmfs build (untested and unsupported). */
-  LIBMODE_WASMFS = 0x40
+  F_WASMFS           = 1<<6,
+
+
+  /**
+     Which compiled files from $(dir.dout)/buildName/*.{js,mjs,wasm}
+     to copy to $(dir.dout) after creating them.
+  */
+  CP_JS              = 1 << 30,
+  CP_WASM            = 1 << 31,
+  CP_ALL             = CP_JS | CP_WASM
 };
 
 /*
-** Info needed for building one combination of JS_BUILD_NAMES and
-** JS_BUILD_MODE, noting that only a subset of those combinations are
-** legal/sensical.
+** Info needed for building one concrete JS/WASM combination..
 */
 struct BuildDef {
   /**
      Base name of output JS and WASM files.
   */
   const char *zBaseName;
-  const char *zReuseThis;
+  const char *zDotWasm;
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Extra flags for emcc */
   const char *zEnv;       /* emcc -sENVIRONMENT=X flag */
@@ -104,11 +103,11 @@ typedef struct BuildDef BuildDef;
 #endif
 
 /* List of distinct library builds. See next comment block. */
-#define BuildDefs_map(E) \
-  E(vanilla) E(vanilla64) E(esm) E(esm64)
+#define BuildDefs_map(E)  \
+  E(vanilla) E(vanilla64) \
+  E(esm) E(esm64)         \
+  E(bundler) E(bundler64)
 /*
-  E(bundler) \
-  E(bundler64) \
   E(node) \
   E(wasmfs)
 */
@@ -132,41 +131,39 @@ const BuildDefs oBuildDefs = {
     /* This one's zBaseName and zEnv MUST be non-NULL so it can be
        used as a default for all others. */
     .zBaseName   ="sqlite3",
-    .zReuseThis  = 0,
+    .zDotWasm    = 0,
     .zCmppD      = 0,
     .zEmcc       = 0,
     .zEnv        = "web,worker",
-    .flags       = 0
+    .flags       = CP_ALL
   },
 
   .vanilla64 = {
-    .zBaseName   = "sqlite3",
-    .zReuseThis  = 0,
+    .zBaseName   = "sqlite3-64bit",
+    .zDotWasm    = 0,
     .zCmppD      = 0,
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
-    .flags       = LIBMODE_64BIT // | LIBMODE_NOT_IN_ALL
+    .flags       = CP_ALL | F_64BIT // | F_NOT_IN_ALL
   },
 
   .esm = {
     .zBaseName   = "sqlite3",
-    .zReuseThis  = 0,
+    .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=es6-module",
     .zEmcc       = 0,
     .zEnv        = 0,
-    .flags       = LIBMODE_ESM
+    .flags       = CP_JS | F_ESM
   },
 
   .esm64 = {
-    .zBaseName   = 0,
-    .zReuseThis  = 0,
+    .zBaseName   = "sqlite3-64bit",
+    .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=es6-module",
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
-    .flags       = LIBMODE_ESM | LIBMODE_64BIT // | LIBMODE_NOT_IN_ALL
+    .flags       = CP_JS | F_ESM | F_64BIT // | F_NOT_IN_ALL
   },
-
-#if 0
 
   .bundler = {
     /* Core bundler-friendly build. Untested and "not really"
@@ -174,46 +171,43 @@ const BuildDefs oBuildDefs = {
     ** Testing these would require special-purpose node-based tools and
     ** custom test apps. Or we can pass them off as-is to the npm
     ** subproject and they spot failures pretty quickly ;). */
-    .zBaseName="sqlite3",
-    .zReuseThis=0,
-    .zCmppD="$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly",
-    .zEmcc=0,
-    .zEnv = 0,
-    .flags=LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM
+    .zBaseName   = "sqlite3-bundler-friendly",
+    .zDotWasm    = "sqlite3",
+    .zCmppD      = "$(c-pp.D.esm) -Dtarget=es6-bundler-friendly",
+    .zEmcc       = 0,
+    .zEnv        = 0,
+    .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM
   },
 
   .bundler64 = {
-    .zBaseName="sqlite3",
-    .zReuseThis=0,
-    .zCmppD="$(c-pp.D.sqlite3-esm) -Dtarget=es6-bundler-friendly",
-    .zEmcc="-sMEMORY64=1",
-    .zEnv = 0,
-    .flags= LIBMODE_BUNDLER_FRIENDLY | LIBMODE_ESM
+    .zBaseName   = "sqlite3",
+    .zDotWasm    = 0,
+    .zCmppD      = "$(c-pp.D.bundler)",
+    .zEmcc       = "-sMEMORY64=1",
+    .zEnv        = 0,
+    .flags       = CP_JS | F_ESM | F_BUNDLER_FRIENDLY
   },
+
+#if 0
 
   /* Entirely unsupported. */
   .node = {
-    .zBaseName="sqlite3-node",
-    .zReuseThis=0,
-    .zCmppD="$(c-pp.D.sqlite3-bundler-friendly) -Dtarget=node",
-    .zEmcc=0,
-    .zEnv = "node"
-    /* Adding ",node" to the list for the other -sENVIRONMENT values
-       causes Emscripten to generate code which confuses node: it
-       cannot reliably determine whether the build is for a browser or
-       for node. We neither build nor test node builds on a regular
-       basis. They are fully unsupported. */,
-    .flags= LIBMODE_UNSUPPORTED | LIBMODE_NODEJS
+    .zBaseName   = "sqlite3-node",
+    .zDotWasm    = 0,
+    .zCmppD      = "$(c-pp.D.bundler)",
+    .zEmcc       = 0,
+    .zEnv        = "node",
+    .flags       = CP_BOTH | F_UNSUPPORTED | F_NODEJS
   },
 
   /* Entirely unsupported. */
   .wasmfs = {
-    .zBaseName="sqlite3-wasmfs",
-    .zReuseThis=0,
-    .zCmppD="$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
-    .zEmcc="-sEXPORT_ES6 -sUSE_ES6_IMPORT_META",
-    .zEnv = 0,
-    .flags= LIBMODE_UNSUPPORTED | LIBMODE_WASMFS | LIBMODE_ESM
+    .zBaseName   = "sqlite3-wasmfs",
+    .zDotWasm    = 0,
+    .zCmppD      = "$(c-pp.D.bundler)",
+    .zEmcc       = 0,
+    .zEnv        = "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META",
+    .flags       = CP_BOTH | F_UNSUPPORTED | F_WASMFS
   }
 #endif
 };
@@ -392,20 +386,25 @@ static void mk_prologue(void){
     }
     ps("else");
     {
-      ps("define SQLITE.CALL.WASM-OPT");
-      pf("echo -n 'Before wasm-opt:'; ls -l $(1);\\\n"
-         "\trm -f wasm-opt-tmp.wasm;\\\n"
-         /* It's very likely that the set of wasm-opt flags varies from
-         ** version to version, so we'll ignore any errors here. */
-         "\tif $(bin.wasm-opt) $(1) -o wasm-opt-tmp.wasm \\\n"
-         "\t\t%s; then \\\n"
-         "\t\tmv wasm-opt-tmp.wasm $(1); \\\n"
-         "\t\techo -n 'After wasm-opt: '; \\\n"
-         "\t\tls -l $(1); \\\n"
-         "\telse \\\n"
-         "\t\techo 'WARNING: ignoring wasm-opt failure for $(1)'; \\\n"
-         "\tfi\n",
-         zOptFlags
+      ps("define SQLITE.CALL.WASM-OPT"
+         /* $1 = $@, $2 = build name*/
+      );
+      pf(
+        "echo '[$@]: Applying $(bin.wasm-opt)';\\\n"
+        "\trm -f wasm-opt-tmp.$(2).wasm;\\\n"
+        /* It's very likely that the set of wasm-opt flags varies from
+        ** version to version, so we'll ignore any errors here. */
+        "\tif $(bin.wasm-opt) $(1) -o wasm-opt-tmp.$(2).wasm \\\n"
+        "\t\t%s; then \\\n"
+        "\t\tmv wasm-opt-tmp.$(2).wasm $(1); \\\n"
+#if 0
+        "\t\techo -n 'After wasm-opt: '; \\\n"
+        "\t\tls -l $(1); \\\n"
+#endif
+        "\telse \\\n"
+        "\t\techo 'WARNING: ignoring wasm-opt failure for $(1)'; \\\n"
+        "\tfi\n",
+        zOptFlags
       );
       ps("endef");
     }
@@ -433,13 +432,13 @@ static void mk_pre_post(char const *zBuildName,
   if( 0==WASM_CUSTOM_INSTANTIATE ){
     pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.js.in),"
        "$(pre-js.%s.js),"
-       C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s)))\n",
+       "$(c-pp.D.%s)))\n",
        zBuildName, zBuildName);
   }else{
 #if 0
     fixme;
     /* This part is needed for builds which have to rename the wasm file
-       in zReuseThis so that the loader can find it. */
+       in zDotWasm so that the loader can find it. */
     pf("pre-js.%s.js.intermediary = "
        "$(dir.tmp)/pre-js.%s.intermediary.js\n",
        zBuildName, zBuildName);
@@ -522,7 +521,7 @@ static void mk_fiddle(void){
        zTail);
     ps("\t@chmod -x $(basename $@).wasm");
     ps("\t@$(maybe-wasm-strip) $(basename $@).wasm");
-    ps("\t@$(SQLITE.strip-createExportWrapper)");
+    ps("\t@$(SQLITE.strip-emcc-js-cruft)");
     pf("\t@cp -p $(SOAP.js) $(dir $@)\n");
     if( 1==i ){/*fiddle.debug*/
       pf("\tcp -p $(dir.fiddle)/index.html "
@@ -559,7 +558,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     /* The various targets named X.js or X.mjs also generate X.wasm,
     ** and we need that part of the name to perform some
     ** post-processing after Emscripten generates X.wasm. */;
-  const char * zJsExt = (LIBMODE_ESM & pB->flags)
+  const char * zJsExt = (F_ESM & pB->flags)
     ? ".mjs" : ".js";
   char const * const zBaseName = pB->zBaseName
     ? pB->zBaseName : oBuildDefs.vanilla.zBaseName;
@@ -569,8 +568,7 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
 
   pf("%s# Begin build [%s]. flags=0x%02x\n", zBanner, zBuildName, pB->flags);
   pf("# zCmppD=%s\n# zBaseName=%s\n",
-     pB->zCmppD ? pB->zCmppD : "<none>",
-     zBaseName);
+     pB->zCmppD ? pB->zCmppD : "", zBaseName);
 
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
   pf("out.%s.base = $(dir.dout.%s)/%s\n",
@@ -584,98 +582,108 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      pB->zEnv ? pB->zEnv : oBuildDefs.vanilla.zEnv);
   pf("emcc.flags.%s = %s\n", zBuildName, pB->zEmcc ? pB->zEmcc : "");
 
-  pf("sqlite3-api.%s.c-pp.js = $(dir.tmp)/sqlite3-api.%s.c-pp%s\n",
-     zBuildName, zBuildName, zJsExt);
+  { /* Create sqlite3-api.*.js */
+    pf("sqlite3-api.%s.c-pp.js = $(dir.tmp)/sqlite3-api.%s.c-pp%s\n",
+       zBuildName, zBuildName, zJsExt);
 
-  pf("sqlite3-api.%s.js = $(dir.tmp)/sqlite3-api.%s%s\n",
-     zBuildName, zBuildName, zJsExt);
-  if( pB->zCmppD ){
-    pf("c-pp.D.%s = %s\n", zBuildName, pB->zCmppD );
+    pf("sqlite3-api.%s.js = $(dir.tmp)/sqlite3-api.%s%s\n",
+       zBuildName, zBuildName, zJsExt);
+    pf("c-pp.D.%s = %s\n", zBuildName, pB->zCmppD ? pB->zCmppD: "" );
+
+    pf("$(sqlite3-api.%s.c-pp.js): $(sqlite3-api.jses)\n"
+       "\t@echo 'Making $@ ...'; \\\n"
+       "\tmkdir -p $(dir.dout.%s); \\\n"
+       "\tfor i in $(sqlite3-api.jses); do \\\n"
+       "\t\techo \"/* BEGIN FILE: $$i */\"; \\\n"
+       "\t\tcat $$i; \\\n"
+       "\t\techo \"/* END FILE: $$i */\"; \\\n"
+       "\tdone > $@\n",
+       zBuildName, zBuildName);
+
+    pf("$(sqlite3-api.%s.js): $(sqlite3-api.%s.c-pp.js)\n",
+       zBuildName, zBuildName);
+    pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,"
+       "$(sqlite3-api.%s.c-pp.js), " /* $1 = src(es) */
+       "$(sqlite3-api.%s.js), "      /* $2 = tgt */
+       "$(c-pp.D.%s)"                /* $3 = c-pp -Dx=Y flags */
+       "))\n",
+       zBuildName, zBuildName, zBuildName);
   }
-  pf("$(sqlite3-api.%s.c-pp.js): $(sqlite3-api.jses)\n"
-     "\t@echo 'Making $@ ...'; \\\n"
-     "\tmkdir -p $(dir.dout.%s); \\\n"
-     "\tfor i in $(sqlite3-api.jses); do \\\n"
-     "\t\techo \"/* BEGIN FILE: $$i */\"; \\\n"
-     "\t\tcat $$i; \\\n"
-     "\t\techo \"/* END FILE: $$i */\"; \\\n"
-     "\tdone > $@\n",
-     zBuildName, zBuildName);
-
-  pf("$(sqlite3-api.%s.js): $(sqlite3-api.%s.c-pp.js)\n",
-     zBuildName, zBuildName);
-  pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,"
-     "$(sqlite3-api.%s.c-pp.js), " /* $1 = src */
-     "$(sqlite3-api.%s.js), "     /* $2 = tgt */
-     "$(c-pp.D.%s)"           /* $3 = c-pp -Dx=Y flags */
-     "))\n",
-     zBuildName, zBuildName, zBuildName);
 
   mk_pre_post(zBuildName, pB);
 
-  /* target pB->zReuseThis */
-  pf(zBanner
-     "# Build $(out.%s.js)\n"
-     "$(out.%s.js): $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api) "
-     "$(bin.mkwb) "
-     "$(pre-post.%s.deps) "
-     "$(sqlite3-api.ext.jses)"
-     /* ^^^ maintenance reminder: we set these as deps so that they
-     ** get copied into place early. That allows the developer to
-     ** reload the base-most test pages while the later-stage builds
-     ** are still compiling, which is especially helpful when running
-     ** builds with long build times (like -Oz). */
-     "\n",
-     zBuildName, zBuildName, zBuildName);
-  pf("\t@echo \"Building $@ ...\"\n");
-  if( LIBMODE_UNSUPPORTED & pB->flags ){
-    ps("\t@echo 'ACHTUNG: $@ is an unsupported build. "
-       "Use at your own risk.'");
-  }
-  pf("\t$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
-  pf("\t\t$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.%s) \\\n",
-     zBuildName);
-  pf("\t\t$(pre-post.%s.flags) \\\n", zBuildName);
-  if( pB->zEmcc ){
-    pf("\t\t$(emcc.%s.flags) \\\n", zBuildName);
-  }
-  pf("\t\t$(cflags.common) $(cflags.%s) \\\n"
-     "\t\t$(SQLITE_OPT) \\\n"
-     "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n",
-     zBuildName);
-  if( (LIBMODE_ESM & pB->flags) || (LIBMODE_NODEJS & pB->flags) ){
-    /* TODO? Replace this $(call) with the corresponding makefile
-    ** code.  OTOH, we also use this $(call) in the speedtest1-wasmfs
-    ** build, which is not part of the rules emitted by this
-    ** program. */
-    pf("\t@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,%d)\n",
-       (LIBMODE_WASMFS & pB->flags) ? 1 : 0);
-  }
-  pf("\t@chmod -x %s\n", zWasmOut);
-  pf("\t@$(maybe-wasm-strip) %s\n", zWasmOut);
-  pf("\t@$(call SQLITE.CALL.WASM-OPT,%s)\n", zWasmOut);
-  ps("\t@$(SQLITE.strip-createExportWrapper)");
-  /*
-  ** The above $(bin.emcc) call will write out $@, and will create a
-  ** like-named .wasm file. That .wasm file name gets hard-coded into
-  ** $@ so we need to, for some cases, patch zReuseThis to use the name
-  ** sqlite3.wasm instead.  The resulting .wasm file is identical for
-  ** all builds for which pB->zEmcc is empty.
-  */
-  if( (LIBMODE_BUNDLER_FRIENDLY & pB->flags) ){
-#if 1
-    pf("\t@echo 'FIXME: missing build pieces for build %s'; exit 1\n",
+  { /* build it... */
+    pf(zBanner
+       "# Build $(out.%s.js)\n"
+       "$(out.%s.js): $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles) $(EXPORTED_FUNCTIONS.api)"
+       " $(bin.mkwb) $(pre-post.%s.deps) $(sqlite3-api.ext.jses)"
+       /* maintenance reminder: we set these ^^^^ as deps so that they
+       ** get copied into place early. That allows the developer to
+       ** reload the base-most test pages while the later-stage builds
+       ** are still compiling, which is especially helpful when
+       ** running builds with long build times (like -Oz). */
+       "\n",
+       zBuildName, zBuildName, zBuildName);
+    pf("\t@echo '[$@]: building ...'\n");
+    if( F_UNSUPPORTED & pB->flags ){
+      ps("\t@echo '[$@]: ACHTUNG: unsupported build type. "
+         "Use at your own risk.'");
+    }
+    pf("\t$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) \\\n");
+    pf("\t\t$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.%s) \\\n",
        zBuildName);
-#else
-    fixme;
-    pf("\t@echo 'Patching $@ for %s.wasm...'; \\\n", zBaseName);
-    pf("\t\trm -f %s; \\\n", zWasmOut);
-    pf("\t\tsed -i -e 's/\"%s.wasm\"/\"%s.wasm\"/g' $@ || exit;\n",
-       /* ^^^^^^ reminder: Mac/BSD sed has no -i flag but this
-       ** build process explicitly requires a Linux system. */
-       zNM, zBaseName);
-    pf("\t@ls -la $@\n");
-    if( LIBMODE_BUNDLER_FRIENDLY & pB->flags ){
+    pf("\t\t$(pre-post.%s.flags) \\\n", zBuildName);
+    if( pB->zEmcc ){
+      pf("\t\t$(emcc.flags.%s) \\\n", zBuildName);
+    }
+    pf("\t\t$(cflags.common) $(cflags.%s) \\\n"
+       "\t\t$(SQLITE_OPT) \\\n"
+       "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n",
+       zBuildName);
+    if( (F_ESM & pB->flags) || (F_NODEJS & pB->flags) ){
+      /* TODO? Replace this $(call) with the corresponding makefile
+      ** code.  OTOH, we also use this $(call) in the speedtest1-wasmfs
+      ** build, which is not part of the rules emitted by this
+      ** program. */
+      pf("\t@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,%d)\n",
+         (F_WASMFS & pB->flags) ? 1 : 0);
+    }
+    pf("\t@chmod -x %s\n", zWasmOut);
+    pf("\t@$(maybe-wasm-strip) %s\n", zWasmOut);
+    pf("\t@$(call SQLITE.CALL.WASM-OPT,%s,%s)\n", zWasmOut, zBuildName);
+    ps("\t@$(SQLITE.strip-emcc-js-cruft)");
+    if( CP_JS & pB->flags && !(pB->zDotWasm/*handled below*/) ){
+      ps("\t@cp -f $@ $(dir.dout)/. || exit; \\\n"
+         "echo '[$@]: ==> $(dir.dout)/$(notdir $@).'"
+      );
+    }
+    if( CP_WASM & pB->flags ){
+      pf("\t@cp -f %s $(dir.dout)/. || exit; \\\n"
+         "echo '[%s]: ==> $(dir.dout)/$(notdir %s)'\n",
+         zWasmOut, zWasmOut, zWasmOut);
+    }
+    /*
+    ** The above $(bin.emcc) call will write out $@, and will create a
+    ** like-named .wasm file. The resulting .wasm and .js/.mjs files
+    ** are identical across all builds which have the same pB->zEmcc.
+    **
+    ** We copy one or both of those files to $(dir.dout) (the top-most
+    ** build target dir), but: that .wasm file name gets hard-coded
+    ** into $@ so we need, for some cases, to patch the name to
+    ** pB->zDotWasm when copying to $(dir.dout).
+    */
+    if( pB->zDotWasm && (CP_JS & pB->flags) ){
+      pf("\t@echo '[$@]: Replacing \"%s.wasm\" in "
+         "$(dir.dout)/$(notdir $@) with \"%s.wasm\"'; \\\n"
+         "sed "
+         "-e 's/\"%s.wasm\"/\"%s.wasm\"/g' "
+         "-e \"s/'%s.wasm'/'%s.wasm'/g\" "
+         "$@ > $(dir.dout)/$(notdir $@)\n"
+         "\t@ls -la $(dir.dout)/$(notdir $@)\n",
+         zBaseName, pB->zDotWasm,
+         zBaseName, pB->zDotWasm,
+         zBaseName, pB->zDotWasm);
+
       /* Avoid a 3rd occurrence of the bug fixed by 65798c09a00662a3,
       ** which was (in two cases) caused by makefile refactoring and
       ** not recognized until after a release was made with the broken
@@ -684,19 +692,21 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@if grep -e '^ *importScripts(' $@; "
          "then echo 'ERROR: bug fixed in 65798c09a00662a3 has re-appeared'; "
          "exit 1; fi;\n");
+    }else{
+      pf("\t@ls -la %s $@\n", zWasmOut);
     }
-#endif
-  }else{
-    pf("\t@ls -la %s $@\n", zWasmOut);
   }
 
-  if( LIBMODE_64BIT & pB->flags ){
-    pf("64bit: $(out.%s.js)\n", zBuildName);
-  }
-  if( 0==(LIBMODE_NOT_IN_ALL & pB->flags)
-      && 0==(LIBMODE_UNSUPPORTED & pB->flags) ){
+  pf("\n%dbit: $(out.%s.js)\n"
+     "b-%s: $(out.%s.js)\n",
+     (F_64BIT & pB->flags) ? 64 : 32,
+     zBuildName, zBuildName, zBuildName);
+
+  if( 0==(F_NOT_IN_ALL & pB->flags)
+      && 0==(F_UNSUPPORTED & pB->flags) ){
     pf("all: $(out.%s.js)\n", zBuildName);
   }
+
   pf("# End build [%s]%s", zBuildName, zBanner);
 }
 
