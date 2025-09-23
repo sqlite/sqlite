@@ -46,6 +46,8 @@ MAKING_CLEAN = $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
 .PHONY: clean distclean
 clean:
 	-rm -f $(CLEAN_FILES)
+	-rm -fr $(dir.fiddle-debug) $(dir.dout) $(dir.dout) $(dir.tmp)
+
 distclean: clean
 	-rm -f $(DISTCLEAN_FILES)
 
@@ -172,7 +174,6 @@ $(MKDIR.bld):
 	@mkdir -p $@ $(dir.dout)
 
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
-  $(dir.fiddle-debug)/* $(dir.dout)/* $(dir.tmp)/*
 
 ########################################################################
 # Set up sqlite3.c and sqlite3.h...
@@ -210,7 +211,7 @@ endif
 # It's important that sqlite3.h be built to completion before any
 # other parts of the build run, thus we use .NOTPARALLEL to disable
 # parallel build of that file and its dependants.
-.NOTPARALLEL: $(sqlite3.h)
+#.NOTPARALLEL: $(sqlite3.h)
 $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 $(sqlite3.c): $(sqlite3.h)
@@ -366,7 +367,7 @@ endif
 # info from $(bin.version-info) which differ from their runtime-emitted
 # version info (e.g. from sqlite3_libversion()).
 bin.version-info = $(dir.top)/version-info
-.NOTPARALLEL: $(bin.version-info)
+#.NOTPARALLEL: $(bin.version-info)
 $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 	$(MAKE) -C $(dir.top) version-info
 
@@ -886,12 +887,12 @@ EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 # together. i.e.  we're building $(sqlite3.wasm) multiple times, but
 # that's unavoidable (and harmless, but is a significant waste of
 # build time).
-$(sqlite3.wasm): $(sqlite3.js)
-$(sqlite3.mjs): $(sqlite3.js)
-$(sqlite3-64bit.wasm): $(sqlite3-64bit.js)
-$(sqlite3-64bit.mjs): $(sqlite3-64bit.js)
-$(dir.dout)/sqlite3-bundler-friendly.mjs: $(sqlite3.mjs)
-$(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
+#$(sqlite3.wasm): $(sqlite3.js)
+#$(sqlite3.mjs): $(sqlite3.js)
+#$(sqlite3-64bit.wasm): $(sqlite3-64bit.js)
+#$(sqlite3-64bit.mjs): $(sqlite3-64bit.js)
+#$(dir.dout)/sqlite3-bundler-friendly.mjs: $(sqlite3.mjs)
+#$(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 #CLEAN_FILES += $(sqlite3.wasm)
 
 # This block MUST come between the above definitions of
