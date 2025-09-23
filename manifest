@@ -1,5 +1,5 @@
-C In\sthe\sieee754\sextension,\srender\s-0.0\sas\s'ieee754(-1,-3071)'\sinstead\sof\n'ieee754(1,-3071)'\sas\sthat\smakes\sthe\ssign\sclearer.\s\sBoth\sstrings\sstill\nconvert\sback\sto\s-0.0.\s\sNote\sthat\snegative\szero\nand\spositive\szero\sare\sdistinct\svalues\sin\sieee754.\n[forum:/forumpost/1eab7e4a08|Forum\spost\s1eab7e4a08].
-D 2025-09-23T16:01:45.255
+C Improvements\sto\sshort-circuit\sevaluation\sof\sAND\sand\sOR\soperators.\nThis\sis\sa\spartial\sand\sincomplete\sresponse\sto\n[forum:/forumpost/f5adeb59ff77c056|forum\spost\sf5adeb59ff77c056].
+D 2025-09-23T17:00:53.262
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -693,7 +693,7 @@ F src/date.c b6f92001f4b1f73f21774927488661d28f4dac9cd9701ed96486d96b44f5b058
 F src/dbpage.c 081c59d84f187aa0eb48d98faf9578a00bde360f68438d646a86b618653d2479
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 0cad74107489c688449d7fec47b605c61a75c6da707031dfc4c76d1ac75667b3
+F src/expr.c f232f02788453abfec1d580b83c893b3cbc21f025d39b6ff09b98d9645892b2f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c de47a8295503aa130baae5e6d9868ecf4f7c4dbffa65d83ad1f70bdbac0ee2d6
@@ -1068,7 +1068,7 @@ F test/e_createtable.test 31b9bcb6ac8876bc7ec342d86d9c231a84c62b442093a6651dfd0f
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 235c610f8bf8ec44513e222b9085c7e49fad65ad0c1975ac2577109dd06fd8fa
 F test/e_dropview.test 74e405df7fa0f762e0c9445b166fe03955856532e2bb234c372f7c51228d75e7
-F test/e_expr.test 4faef475076f676e2a009270dbd3a7658db30d12dc3d21e4b85cab5f50be18c5
+F test/e_expr.test 57a50ffd09c274b066883a59272efaf32a955c73af9f176d1c8889f0125bd2db
 F test/e_fkey.test feeba6238aeff9d809fb6236b351da8df4ae9bda89e088e54526b31a0cbfeec5
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e2ea990ad76f9e68d514568f53eaa692a1eb11695fceb1bcc58cea00605fff9
-R a1bfea50eaa52e8e7630755765498738
+P 136188c161a8a2d5166798fcbd341bd1d3f81da7291011f806d6b2153544832c
+R 059545ebba6f51ae2a79e5b9f333f6cb
 U drh
-Z 9e57b7314c831918edecc68ae3eb7ff2
+Z b177d9578188ffcb6fd2a4da951dd184
 # Remove this line to create a well-formed Fossil manifest.

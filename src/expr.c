@@ -5104,7 +5104,14 @@ expr_code_doover:
       break;
     }
     case TK_AND:
-    case TK_OR:
+    case TK_OR: {
+      Expr *pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
+      if( pAlt!=pExpr ){
+        pExpr = pAlt;
+        goto expr_code_doover;
+      }
+      /* no break */ deliberate_fall_through
+    }
     case TK_PLUS:
     case TK_STAR:
     case TK_MINUS:
