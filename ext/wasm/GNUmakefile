@@ -498,7 +498,7 @@ endif
 SQLITE.strip-emcc-js-cruft = \
   sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
   -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
-  echo '$(1) $(emo.garbage) (Probably) /createExportWrapper()/d and /makeInvalidEarlyAccess()/d.'
+  echo '$(1) $(emo.garbage) (Probably) /createExportWrapper()/d and /makeInvalidEarlyAccess()/d'
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...
@@ -1076,7 +1076,7 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
 	$(bin.emcc) \
         $(emcc.speedtest1) \
         $(emcc.speedtest1.common) \
-        $(emcc.flags.speedtest1-vanilla) $(pre-post-speedtest1-vanilla.flags) \
+        $(emcc.flags.speedtest1-vanilla) $(pre-post.speedtest1-vanilla.flags) \
         $(SQLITE_OPT) \
         -USQLITE_WASM_BARE_BONES \
         -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c) \
