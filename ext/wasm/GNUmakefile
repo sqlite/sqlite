@@ -992,17 +992,17 @@ speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # which runs speedtest1 multiple times.
 
 $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
-	@echo "$(emo.compile) Making $@ ..."
+	@echo "Making $@ ..."
 	@$(call b.call.mkdir@)
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
-speedtest1.js = $(dir.dout)/speedtest1.js
 emcc.flags.speedtest1-vanilla = $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
 speedtest1.cfiles = $(speedtest1.c) $(sqlite3-wasm.c)
-$(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
-    $(pre-post-speedtest1-vanilla.deps) \
+$(out.speedtest1-vanilla.js): $(MAKEFILE) $(speedtest1.cfiles) \
+    $(pre-post.speedtest1-vanilla.deps) \
     $(EXPORTED_FUNCTIONS.speedtest1)
-	@echo "Building $@ ..."
-	$(bin.emcc) \
+	@$(call b.echo,speedtest1-vanilla,$(emo.compile) building ...)
+	@$(call b.call.mkdir@)
+	@$(call b.cmd@)$(bin.emcc) \
         $(emcc.speedtest1) \
         $(emcc.speedtest1.common) \
         $(emcc.flags.speedtest1-vanilla) $(pre-post.speedtest1-vanilla.flags) \
@@ -1012,11 +1012,12 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cfiles) -lm
 	@chmod -x $(basename $@).wasm
-	@$(maybe-wasm-strip) $(basename $@).wasm
-	@$(call SQLITE.strip-emcc-js-cruft)
+	@$(call b.call.wasm-strip,speedtest1-vanilla)
+	@$(call b.do.wasm-opt,speedtest1-vanilla)
+	@$(call b.call.strip-emcc-js-cruft,$(logtag.speedtest1-vanilla))
 	@ls -la $@ $(speedtest1.wasm)
 
-speedtest1: $(speedtest1.js)
+speedtest1: $(out.speedtest1-vanilla.js)
 #xxx#all: speedtest1
 # end speedtest1.js
 ########################################################################

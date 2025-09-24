@@ -9,10 +9,10 @@
 loud ?= 0
 ifeq (1,$(loud))
   $(info $(emo.megaphone) Emitting loud build info. Pass loud=0 to disable it.)
-  b.cmd.loud =
+  b.cmd@ =
 else
   $(info $(emo.mute) Eliding loud build info. Pass loud=1 to enable it.)
-  b.cmd.loud = @
+  b.cmd@ = @
 endif
 
 #

@@ -38,8 +38,7 @@
   "\n########################################################################\n"
 
 /*
-** Flags for use with BuildDef::flags and the 3rd argument to
-** mk_pre_post().
+** Flags for use with BuildDef::flags.
 **
 ** Maintenance reminder: do not combine flags within this enum,
 ** e.g. F_BUNDLER_FRIENDLY=0x02|F_ESM, as that will lead
@@ -343,6 +342,7 @@ static void mk_prologue(void){
      "$(sqlite3-license-version.js): $(sqlite3.h) "
      "$(dir.api)/sqlite3-license-version-header.js $(MAKEFILE)\n"
      "\t@echo '$(logtag.@) $(emo.disk)'; { \\\n"
+     "\t\t$(call b.call.mkdir@); \\\n"
      "\t\tcat $(dir.api)/sqlite3-license-version-header.js || exit $$?;  \\\n"
      "\t\techo '/*'; \\\n"
      "\t\techo '** This code was built from sqlite3 version...'; \\\n"
@@ -358,8 +358,9 @@ static void mk_prologue(void){
   ps(zBanner
      "# $(sqlite3-api-build-version.js) injects the build version info into\n"
      "# the bundle in JSON form.\n"
-     "$(sqlite3-api-build-version.js): $(MKDIR.bld) $(bin.version-info) $(MAKEFILE)\n"
+     "$(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)\n"
      "\t@echo '$(logtag.@) $(emo.disk)'; { \\\n"
+     "\t\t$(call b.call.mkdir@); \\\n"
      "\t\techo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \\\n"
      "\t\techo -n '  sqlite3.version = '; \\\n"
      "\t\t$(bin.version-info) --json; \\\n"
@@ -367,18 +368,6 @@ static void mk_prologue(void){
      "\t\techo '});'; \\\n"
      "\t} > $@"
   );
-
-#if 0
-  ps(zBanner
-     "$(sqlite3-api.js.in): $(MKDIR.bld) $(sqlite3-api.jses) $(MAKEFILE)\n"
-     "\t@echo 'Making $@ ...'\n"
-     "\t@for i in $(sqlite3-api.jses); do \\\n"
-     "\t\techo \"/* BEGIN FILE: $$i */\"; \\\n"
-     "\t\tcat $$i; \\\n"
-     "echo \"/* END FILE: $$i */\"; \\\n"
-     "\tdone > $@\n"
-  );
-#endif
 
   ps(zBanner
      "# extern-post-js* and extern-pre-js* are files for use with\n"
@@ -513,7 +502,9 @@ static void mk_prologue(void){
 /*
 ** Emits makefile code for setting up values for the --pre-js=FILE,
 ** --post-js=FILE, and --extern-post-js=FILE emcc flags, as well as
-** populating those files.
+** populating those files. This is necessary for any builds which
+** embed the library's JS parts of this build (as opposed to parts
+** which do not use the library-level code).
 */
 static void mk_pre_post(char const *zBuildName){
 /* Very common printf() args combo. */
@@ -562,6 +553,7 @@ static void mk_pre_post(char const *zBuildName){
      " $(sqlite3-api.%s.js)"
      " $(dir.api)/post-js-footer.js\n",
      zBuildName, zBuildName);
+
   pf("$(eval $(call b.eval.c-pp,"
      "%s,"
      "$(post-js.%s.in),"
@@ -569,6 +561,9 @@ static void mk_pre_post(char const *zBuildName){
      "$(c-pp.D.%s)"
      "))\n",
      zBuildName, zBuildName, zBuildName, zBuildName);
+
+  pf("$(post-js.%s.js): $(post-js.%s.in)\n",
+     zBuildName, zBuildName);
 
   ps("\n# --extern-post-js=...");
   pf("extern-post-js.%s.js = $(dir.tmp)/extern-post-js.%s.js\n",
@@ -613,6 +608,10 @@ static void emit_compile_start(char const *zBuildName){
      zBuildName);
 }
 
+/**
+   Emit rules for sqlite3-api.${zBuildName}.js.  zCmppD is optional
+   flags for $(bin.c-pp).
+*/
 static void emit_api_js(char const *zBuildName,
                         char const *zCmppD){
   pf("c-pp.D.%s ?= %s\n"
@@ -675,7 +674,6 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      pB->zEnv ? pB->zEnv : oBuildDefs.vanilla.zEnv);
   pf("emcc.flags.%s ?= %s\n", zBuildName, pB->zEmcc ? pB->zEmcc : "");
 
-  /* Create sqlite3-api.*.js */
   emit_api_js(zBuildName, pB->zCmppD);
   mk_pre_post(zBuildName);
 
@@ -699,7 +697,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@echo '$(logtag.%s) $(emo.fire)$(emo.fire)$(emo.fire): "
          "unsupported build. Use at your own risk.'\n", zBuildName);
     }
-    pf("\t$(b.cmd.loud)$(call b.do.emcc,%s)\n", zBuildName);
+    pf("\t$(b.cmd@)$(call b.do.emcc,%s)\n", zBuildName);
 
     { /* Post-compilation transformations and copying to
          $(dir.dout)... */
@@ -854,7 +852,7 @@ static void mk_fiddle(void){
          "$(SOAP.js)\n",
          zBuildName, zBuildName);
       emit_compile_start(zBuildName);
-      pf("\t$(b.cmd.loud)$(bin.emcc) -o $@"
+      pf("\t$(b.cmd@)$(bin.emcc) -o $@"
          " $(emcc.flags.%s)" /* set in fiddle.make */
          " $(pre-post.%s.flags)"
          " $(fiddle.cses)"
@@ -898,6 +896,42 @@ static void mk_fiddle(void){
   }
 }
 
+static void mk_speedtest1(void){
+  char const *zBuildName = "speedtest1-vanilla";
+  pf(zBanner "# Begin build %s\n", zBuildName);
+  pf("emo.%s ="
+     "🛼" // roller skates
+     /*"🏎" //racecar doesn't show up well in my emacs or terminal */
+     "\n",
+     zBuildName);
+  pf("logtag.%s = [$(emo.%s) [%s] $@]:\n"
+     "$(info $(logtag.%s) Setting up target speedtest1)\n"
+     "all: speedtest1\n",
+     zBuildName, zBuildName, zBuildName,
+     zBuildName );
+
+  pf("out.%s.js = $(dir.dout)/speedtest1.js\n"
+     "out.%s.wasm = $(dir.dout)/speedtest1.wasm\n",
+     zBuildName, zBuildName);
+
+  emit_api_js(zBuildName, 0);
+  mk_pre_post(zBuildName);
+
+#if 0
+  mk_pre_post("speedtest1-vanilla");
+  ps(zBanner "ifeq (1,$(HAVE_WASMFS))");
+  mk_pre_post("speedtest1-wasmfs");
+  ps("endif\n# ^^^ HAVE_WASMFS" zBanner);
+#endif
+#if 0
+  mk_pre_post(0, "speedtest1","vanilla", 0, "speedtest1.wasm");
+  mk_pre_post(0, "speedtest1-wasmfs", "esm",
+              "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
+              "speetest1-wasmfs.wasm");
+#endif
+
+}
+
 int main(void){
   int rc = 0;
   const BuildDef *pB;
@@ -919,17 +953,6 @@ int main(void){
      "b-esm64: $(dir.dout)/sqlite3-64bit.mjs\n"
   );
   mk_fiddle();
-#if 0
-  mk_pre_post("speedtest1-vanilla");
-  ps(zBanner "ifeq (1,$(HAVE_WASMFS))");
-  mk_pre_post("speedtest1-wasmfs");
-  ps("endif\n# ^^^ HAVE_WASMFS" zBanner);
-#endif
-#if 0
-  mk_pre_post(0, "speedtest1","vanilla", 0, "speedtest1.wasm");
-  mk_pre_post(0, "speedtest1-wasmfs", "esm",
-              "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
-              "speetest1-wasmfs.wasm");
-#endif
+  mk_speedtest1();
   return rc;
 }
