@@ -137,8 +137,18 @@ typedef struct BuildDef BuildDef;
 #define C_PP_D_CUSTOM_INSTANTIATE
 #endif
 
-/* List of distinct library builds. Each one has to be set up in
-** oBuildDefs. See the next comment block. */
+/*
+** List of distinct library builds. Each one has to be set up in
+** oBuildDefs. See the next comment block.
+**
+** Many makefile vars use these identifiers for naming stuff, e.g.:
+**
+**  out.NAME.js   = output file NAME.js or NAME.mjs
+**  out.NAME.wasm = output file NAME.wasm
+**  logtag.NAME   = Used for decorating log output
+**
+** etc.
+***/
 #define BuildDefs_map(E)  \
   E(vanilla) E(vanilla64) \
   E(esm)     E(esm64)     \
@@ -232,7 +242,8 @@ const BuildDefs oBuildDefs = {
     .zEmcc       = 0,
     .zEnv        = 0,
     .zIfCond     = 0,
-    .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM | F_NOT_IN_ALL
+    .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM
+    //| F_NOT_IN_ALL
   },
 
   /* 64-bit bundler-friendly. */
@@ -244,7 +255,8 @@ const BuildDefs oBuildDefs = {
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
     .zIfCond     = 0,
-    .flags       = CP_JS | F_ESM | F_BUNDLER_FRIENDLY | F_64BIT | F_NOT_IN_ALL
+    .flags       = CP_JS | F_ESM | F_BUNDLER_FRIENDLY | F_64BIT
+    //| F_NOT_IN_ALL
   },
 
   /*

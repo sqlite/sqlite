@@ -841,57 +841,6 @@ endif
 ########################################################################
 
 ########################################################################
-# We need separate copies of certain supplementary JS files for the
-# bundler-friendly build. Concretely, any supplemental JS files which
-# themselves use importScripts() or Workers or URL() constructors
-# which refer to other in-tree (m)JS files require a bundler-friendly
-# copy. Bundler-friendly builds replace certain references to string
-# vars/expressions with string literals, as bundler tools are static
-# code analyzers and cannot cope with the former.
-#
-# Most of what follows is the generation of those copies.
-
-$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1.js))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1.js
-
-$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser.mjs,\
-    -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.mjs
-
-$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser.js))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.js
-
-$(eval $(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
-$(eval $(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
-    -Dtarget=es6-module))
-$(eval $(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
-$(eval $(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
-    -Dtarget=es6-module))
-demo-worker1-promiser.html: $(dir.dout)/sqlite3-worker1-promiser.js demo-worker1-promiser.js
-demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
-all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
-
-ifeq (0,1)
-$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs,\
-    $(c-pp.D.sqlite3-bundler-friendly)))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
-
-$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js,\
-    $(c-pp.D.sqlite3-bundler-friendly)))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-promiser-bundler-friendly.js
-
-$(dir.dout)/sqlite3-bundler-friendly.mjs: \
-    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
-    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
-
-endif
-
-########################################################################
 # bin.mkwb is used for generating much of the makefile code for the
 # various wasm builds. It used to be generated in this makefile via a
 # difficult-to-read/maintain block of $(eval)'d code. Attempts were
@@ -919,6 +868,67 @@ CLEAN_FILES += .wasmbuilds.make $(bin.mkwb)
 all quick: $(sqlite3-api.ext.jses)
 q: quick
 64bit: # populated by $(bin.mkwb)
+
+
+########################################################################
+# We need separate copies of certain supplementary JS files for the
+# bundler-friendly build. Concretely, any supplemental JS files which
+# themselves use importScripts() or Workers or URL() constructors
+# which refer to other in-tree (m)JS files require a bundler-friendly
+# copy. Bundler-friendly builds replace certain references to string
+# vars/expressions with string literals, as bundler tools are static
+# code analyzers and cannot cope with the former.
+#
+# Most of what follows is the generation of those copies.
+
+#
+# sqlite3-worker1*.*
+# TODO: 64-bit
+#
+define gen-worker1
+# $1 = X.ext part of sqlite3-worker1X.ext
+# $2 = $(c-pp.D.NAME)
+$(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1$(1),$(2))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1$(1)
+all: $(dir.dout)/sqlite3-worker1$(1)
+endef
+
+$(eval $(call gen-worker1,.js,$(c-pp.D.vanilla)))
+$(eval $(call gen-worker1,.mjs,$(c-pp.D.esm)))
+$(eval $(call gen-worker1,-bundler-friendly.mjs,$(c-pp.D.bundler)))
+
+#
+# sqlite3-worker1-promiser*.*
+# TODO: 64-bit
+#
+define gen-promiser
+# $1 = X.ext part of sqlite3-worker1-promiserX.ext
+# $2 = $(c-pp.D.NAME)
+$(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1-promiser$(1),$(2))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser$(1)
+all: $(dir.dout)/sqlite3-worker1-promiser$(1)
+endef
+
+$(eval $(call gen-promiser,.js,$(c-pp.D.vanilla)))
+$(eval $(call gen-promiser,.mjs,$(c-pp.D.esm)))
+$(eval $(call gen-promiser,-bundler-friendly.mjs,$(c-pp.D.bundler)))
+
+#
+# demo1-worker-*.*:
+# $1 = .js or .mjs
+# $2 = .html or -esm.html
+# $3 = -D... flags for $(bin.c-pp)
+#
+define gen-dwp
+$(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.js,demo-worker1-promiser$(1),$(3))
+$(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.html,demo-worker1-promiser$(2),$(3))
+all: demo-worker1-promiser$(1) demo-worker1-promiser$(2)
+endef
+$(eval $(call gen-dwp,.js,.html,$(c-pp.D.vanilla)))
+$(eval $(call gen-dwp,.mjs,-esm.html,$(c-pp.D.esm)))
+
 
 ########################################################################
 # batch-runner.js is part of one of the test apps which reads in SQL
@@ -1042,20 +1052,32 @@ speedtest1: $(out.speedtest1-vanilla.js)
 #
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
 c-pp.D.64bit = -D64bit
+
+# tester1.js variants:
 $(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
 $(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1-64bit.js,$(c-pp.D.vanilla64) $(c-pp.D.64bit)))
 $(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
 $(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1-64bit.mjs,$(c-pp.D.esm64) $(c-pp.D.64bit)))
+
+# tester1.html variants:
 $(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
 $(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-64bit.html,$(c-pp.D.vanilla64) $(c-pp.D.64bit)))
 $(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
 $(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-esm-64bit.html,$(c-pp.D.esm64) $(c-pp.D.64bit)))
+
+# tester1-worker.html variants:
+# There is no ESM variant. Instead, that page accepts a ?esm URL flag to switch
+# to ESM mode.
+$(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker.html))
+$(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
+
 tester1.js: $(out.vanilla.wasm)
 tester1.mjs: $(out.esm.wasm)
 tester1-64bit.js: $(out.vanilla64.wasm)
 tester1-64bit.mjs: $(out.esm64.wasm)
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
 tester1: tester1-64bit.js tester1-64bit.mjs tester1-64bit.html tester1-esm-64bit.html
+tester1: tester1-worker.html tester1-worker-64bit.html
 # We do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
 # because bundlers are client-specific. We don't use any of them.
 all quick: tester1

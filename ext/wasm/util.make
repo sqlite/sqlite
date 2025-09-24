@@ -1,9 +1,9 @@
 #
-# Common vars and utilities for the SQLite WASM build.
+# Common vars and $(call)able utilities for the SQLite WASM build.
 #
 # The "b." prefix on some APIs is for "build". It was initially used
-# only for build-specific features, but that's no longer the came, but
-# the naming convention has stuck.
+# only for build-specific features. That's no longer the case, but the
+# naming convention has stuck.
 #
 
 #
@@ -16,6 +16,7 @@ emo.done = 🏆
 emo.fire = 🔥
 emo.folder = 📁
 emo.garbage =🗑
+emo.lock =🔒
 emo.megaphone = 📣
 emo.mute = 🔇
 emo.stop =🛑
@@ -28,9 +29,11 @@ loud ?= 0
 ifeq (1,$(loud))
   $(info $(emo.megaphone) Emitting loud build info. Pass loud=0 to disable it.)
   b.cmd@ =
+  loud.if = 1
 else
   $(info $(emo.mute) Eliding loud build info. Pass loud=1 to enable it.)
   b.cmd@ = @
+  loud.if =
 endif
 
 #
@@ -54,7 +57,7 @@ b.echo = echo $(logtag.$(1)) $(2)
 #
 b.call.mkdir@ = if [ ! -d $(dir $@) ]; then \
   echo '[$(emo.folder)+] $(if $(1),$(logtag.$(1)),[$(dir $@)])'; \
-  mkdir -p $(dir $@) || exit $$?; fi
+  mkdir -p $(dir $@) || exit; fi
 
 #
 # $(call b.call.cp,@,src,dest)
@@ -62,7 +65,7 @@ b.call.mkdir@ = if [ ! -d $(dir $@) ]; then \
 # $1 = build name, $2 = src file(s). $3 = dest dir
 b.call.cp = $(call b.call.mkdir@); \
   echo '$(logtag.$(1)) $(emo.disk) $(2) ==> $3'; \
-  cp -p $(2) $(3) || exit $$$$?
+  cp -p $(2) $(3) || exit
 
 #
 # $(eval $(call b.eval.c-pp,@,src,dest,-Dx=y...))
@@ -75,9 +78,10 @@ b.call.cp = $(call b.call.mkdir@); \
 define b.eval.c-pp
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	@$$(call b.call.mkdir@); \
-	echo '$$(logtag.$(1)) $$(emo.disk) $$(bin.c-pp) $(4) $(2)'; \
-	$$(bin.c-pp) -o $(3) $(4) $(2) $$(SQLITE.CALL.C-PP.FILTER.global) \
-		|| exit $$$$?\n
+	$$(call b.echo,$(1),$$(emo.disk)$$(emo.lock) $$(bin.c-pp) $(4) $(if $(loud.if),$(2))); \
+	rm -f $(3); \
+	$$(bin.c-pp) -o $(3) $(4) $(2) $$(SQLITE.CALL.C-PP.FILTER.global) || exit; \
+	chmod -w $(3)
 CLEAN_FILES += $(3)
 endef
 
