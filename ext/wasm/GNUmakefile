@@ -205,6 +205,21 @@ else
   endif
 endif
 
+
+########################################################################
+# barebones=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
+# goal being to create a WASM file with only the core APIs.
+ifeq (1,$(barebones))
+  wasm-bare-bones = 1
+  $(info ==============================================================)
+  $(info == This is a bare-bones build. It trades away features for)
+  $(info == a smaller .wasm file.)
+  $(info ==============================================================)
+else
+  wasm-bare-bones = 0
+endif
+# undefine barebones # relatively new gmake feature, not ubiquitous
+
 ########################################################################@
 # It's important that sqlite3.h be built to completion before any
 # other parts of the build run, thus we use .NOTPARALLEL to disable
@@ -791,21 +806,6 @@ EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 #$(dir.dout)/sqlite3-node.mjs: $(sqlite3.mjs)
 #CLEAN_FILES += $(sqlite3.wasm)
 
-
-########################################################################
-# barebones=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
-# goal being to create a WASM file with only the core APIs.
-ifeq (1,$(barebones))
-  wasm-bare-bones = 1
-  $(info ==============================================================)
-  $(info == This is a bare-bones build. It trades away features for)
-  $(info == a smaller .wasm file.)
-  $(info ==============================================================)
-else
-  wasm-bare-bones = 0
-endif
-# undefine barebones # relatively new gmake feature, not ubiquitous
-
 #
 # Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
 #
@@ -1002,7 +1002,7 @@ $(out.speedtest1-vanilla.js): $(MAKEFILE) $(speedtest1.cfiles) \
     $(EXPORTED_FUNCTIONS.speedtest1)
 	@$(call b.echo,speedtest1-vanilla,$(emo.compile) building ...)
 	@$(call b.call.mkdir@)
-	@$(call b.cmd@)$(bin.emcc) \
+	$(b.cmd@)$(bin.emcc) \
         $(emcc.speedtest1) \
         $(emcc.speedtest1.common) \
         $(emcc.flags.speedtest1-vanilla) $(pre-post.speedtest1-vanilla.flags) \

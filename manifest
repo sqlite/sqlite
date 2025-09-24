@@ -1,5 +1,5 @@
-C In\sspeedtest1,\salways\suse\sfatal_error()\sto\sexit\sfatally,\sinstead\sof\san\sfprintf/exit()\spair,\sso\sthat\sstdout/stderr\sget\sflushed\sconsistently\s(which\sis\ssignificant\sfor\sthe\sWASM\sbuild).
-D 2025-09-24T06:59:47.707
+C Fix\sthe\spositioning\sof\sthe\swasm-bare-bones\sflag\sinit.
+D 2025-09-24T07:00:37.024
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/session/sqlite3session.c 9cd47bfefb23c114b7a5d9ee5822d941398902f30516bf0dd
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 662d8e6e5bccd2573ebc807797845ab7ded3de5b84ecbb5bca071eee5dd57710
+F ext/wasm/GNUmakefile 2f2a1f8f0b4ded6dbbe161e77aa205d9b0a0865e5e6872517dcf1ba04aba772d
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2176,8 +2176,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5434307dcd927686ce827da22de55020c4b431f888ac81ae3634d458ad0b563d
-R 210a5efe2316b682abbf20d611101f1a
+P 1bd15cb343f6ce57f108291a8ed0f3ee2046932591d44edec133fe3ea43a2ef0
+R 09d2735ca3b72850c85c60bedbf86c5d
 U stephan
-Z e73e364b64b2fa236a8e0866f4233e8c
+Z d3aebee6e955c04e7803a19d2d111588
 # Remove this line to create a well-formed Fossil manifest.
