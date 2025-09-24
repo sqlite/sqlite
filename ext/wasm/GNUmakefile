@@ -51,6 +51,8 @@ clean:
 distclean: clean
 	-rm -f $(DISTCLEAN_FILES)
 
+more: all
+include util.make
 
 ########################################################################
 # Special-case builds for which we require certain pre-conditions
@@ -168,10 +170,6 @@ dir.dout = $(dir.wasm)/jswasm
 # end-user deliverables.
 dir.tmp = $(dir.wasm)/bld
 dir.wasmfs = $(dir.dout)
-
-MKDIR.bld = $(dir.tmp)
-$(MKDIR.bld):
-	@mkdir -p $@ $(dir.dout)
 
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
 
@@ -415,7 +413,7 @@ WASM_CUSTOM_INSTANTIATE = 0
 # JS/WASM build. They are solely for use with $(bin.c-pp) itself.
 #
 # -D... flags which should be included in all invocations should be
-# appended to $(SQLITE.CALL.C-PP.FILTER.global).
+# appended to $(b.eval.c-pp.flags).
 bin.c-pp = ./c-pp
 $(bin.c-pp): c-pp.c $(sqlite3.c) # $(MAKEFILE)
 	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
@@ -423,9 +421,9 @@ $(bin.c-pp): c-pp.c $(sqlite3.c) # $(MAKEFILE)
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
 		-DSQLITE_TEMP_STORE=3
 DISTCLEAN_FILES += $(bin.c-pp)
-SQLITE.CALL.C-PP.FILTER.global ?=
+b.eval.c-pp.flags ?=
 ifeq (1,$(SQLITE_C_IS_SEE))
-  SQLITE.CALL.C-PP.FILTER.global += -Denable-see
+  b.eval.c-pp.flags += -Denable-see
 endif
 define SQLITE.CALL.C-PP.FILTER
 # Create $2 from $1 using $(bin.c-pp)
@@ -433,8 +431,8 @@ define SQLITE.CALL.C-PP.FILTER
 # $2 = Output file: c-pp -o $(2).js
 # $3 = optional c-pp -D... flags
 $(2): $(1) $$(MAKEFILE_LIST) $$(bin.c-pp)
-	@mkdir -p $$(dir $$@)
-	cat $(1) | $$(bin.c-pp) -o $$@ $(3) $(SQLITE.CALL.C-PP.FILTER.global)
+	@$$(call b.call.mkdir@)
+	cat $(1) | $$(bin.c-pp) -o $$@ $(3) $(b.eval.c-pp.flags)
 CLEAN_FILES += $(2)
 endef
 # /end SQLITE.CALL.C-PP.FILTER
@@ -458,7 +456,7 @@ ifneq (0,$(emcc.MEMORY64))
   emcc.WASM_BIGINT = 1
   # -sMEMORY64=1+ assumes -sWASM_BIGINT=1, so we'll make it explicit
 
-  # SQLITE.CALL.C-PP.FILTER.global += -D64bit
+  # b.eval.c-pp.flags += -D64bit
   # ^^ We no longer need build-time code filtering for 64-bit but if
   # we ever do again, just uncomment that line or, if it's just needed
   # in specific builds, update that build's -D flags in
@@ -482,23 +480,8 @@ else
   emcc_opt ?= -Oz
 endif
 
-# Our JS code installs bindings of each sqlite3_...() WASM export. The
-# generated Emscripten JS file does the same using its own framework,
-# but we don't use those results and can speed up lib init, and reduce
-# memory cost a bit, by stripping them out. Emscripten-side changes
-# can "break" this, causing this to be a no-op, but the worst that can
-# happen in that case is that it doesn't actually strip anything,
-# leading to slightly larger JS files.
-#
-# This snippet is intended to be used in makefile targets which
-# generate an Emscripten module and where $@ is the module's .js/.mjs
-# file.
-#
-# $1 = an optional log message prefix
-SQLITE.strip-emcc-js-cruft = \
-  sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
-  -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
-  echo '$(1) $(emo.garbage) (Probably) /createExportWrapper()/d and /makeInvalidEarlyAccess()/d'
+# old name - to remove
+SQLITE.strip-emcc-js-cruft = $(b.call.strip-emcc-js-cruft)
 
 # When passing emcc_opt from the CLI, += and re-assignment have no
 # effect, so emcc_opt+=-g3 doesn't work. So...
@@ -542,22 +525,23 @@ ifeq (0,$(wasm-bare-bones))
   EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 endif
 EXPORTED_FUNCTIONS.api = $(dir.tmp)/EXPORTED_FUNCTIONS.api
-$(EXPORTED_FUNCTIONS.api): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
+$(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
+	@$(call b.call.mkdir@)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 
 ########################################################################
 # SOAP.js is an external API file which is part of our distribution
 # but not part of the sqlite3-api.js amalgamation. It's a component of
 # the first OPFS VFS and necessarily an external file.
-SOAP.js = $(dir.api)/sqlite3-opfs-async-proxy.js
-SOAP.js.out = $(dir.dout)/sqlite3-opfs-async-proxy.js
+SOAP.js.in = $(dir.api)/sqlite3-opfs-async-proxy.js
+SOAP.js = $(dir.dout)/sqlite3-opfs-async-proxy.js
+$(SOAP.js): $(SOAP.js.in)
+	@$(call b.call.cp,@,$<,$@)
 #
-# $(sqlite3-api.ext.jses) = API-related files which are standalone files,
-#   not part of the amalgamation.
+# $(sqlite3-api.ext.jses) = API-related files which are standalone
+# files, not part of the amalgamation.
 #
-sqlite3-api.ext.jses = $(SOAP.js.out)
-$(SOAP.js.out): $(SOAP.js)
-	cp $< $@
+sqlite3-api.ext.jses = $(SOAP.js)
 
 ########################################################################
 # emcc flags for .c/.o/.wasm/.js.
@@ -856,10 +840,56 @@ endif
 # /wasmfs
 ########################################################################
 
+########################################################################
+# We need separate copies of certain supplementary JS files for the
+# bundler-friendly build. Concretely, any supplemental JS files which
+# themselves use importScripts() or Workers or URL() constructors
+# which refer to other in-tree (m)JS files require a bundler-friendly
+# copy. Bundler-friendly builds replace certain references to string
+# vars/expressions with string literals, as bundler tools are static
+# code analyzers and cannot cope with the former.
+#
+# Most of what follows is the generation of those copies.
+$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1.js))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1.js
 
-# This block MUST come between the above definitions of
-# sqlite3-...js/mjs and the $(eval) calls below this block which use
-# SQLITE.CALL.C-PP.FILTER.
+$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1-promiser.mjs,\
+    -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.mjs
+
+$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1-promiser.js))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.js
+
+$(eval $(call b.eval.c-pp,@,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
+$(eval $(call b.eval.c-pp,@,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
+    -Dtarget=es6-module))
+$(eval $(call b.eval.c-pp,@,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
+$(eval $(call b.eval.c-pp,@,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
+    -Dtarget=es6-module))
+demo-worker1-promiser.html: $(dir.dout)/sqlite3-worker1-promiser.js demo-worker1-promiser.js
+demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
+all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
+
+ifeq (0,1)
+$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs,\
+    $(c-pp.D.sqlite3-bundler-friendly)))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
+
+$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js,\
+    $(c-pp.D.sqlite3-bundler-friendly)))
+sqlite3-api.ext.jses += $(dir.dout)/sqlite3-promiser-bundler-friendly.js
+
+$(dir.dout)/sqlite3-bundler-friendly.mjs: \
+    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
+    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
+
+endif
+
 ########################################################################
 # bin.mkwb is used for generating much of the makefile code for the
 # various wasm builds. It used to be generated in this makefile via a
@@ -884,57 +914,7 @@ $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
 endif
 CLEAN_FILES += .wasmbuilds.make $(bin.mkwb)
 
-########################################################################
-# We need separate copies of certain supplementary JS files for the
-# bundler-friendly build. Concretely, any supplemental JS files which
-# themselves use importScripts() or Workers or URL() constructors
-# which refer to other in-tree (m)JS files require a bundler-friendly
-# copy. Bundler-friendly builds replace certain references to string
-# vars/expressions with string literals, as bundler tools are static
-# code analyzers and cannot cope with the former.
-#
-# Most of what follows is the generation of those copies.
-
-$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1.js))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1.js
-
-$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser.mjs,\
-    -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.mjs
-
-$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser.js))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.js
-
-$(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
-    -Dtarget=es6-module))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
-    -Dtarget=es6-module))
-demo-worker1-promiser.html: $(dir.dout)/sqlite3-worker1-promiser.js demo-worker1-promiser.js
-demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
-all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
-
-ifeq (0,1)
-$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs,\
-    $(c-pp.D.sqlite3-bundler-friendly)))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
-
-$(eval $(call SQLITE.CALL.C-PP.FILTER,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js,\
-    $(c-pp.D.sqlite3-bundler-friendly)))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-promiser-bundler-friendly.js
-
-$(dir.dout)/sqlite3-bundler-friendly.mjs: \
-    $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs \
-    $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
-
-endif
-
+#$(error sqlite3-api.ext.jses=$(sqlite3-api.ext.jses))
 all quick: $(sqlite3-api.ext.jses)
 q: quick
 64bit: # populated by $(bin.mkwb)
@@ -1011,8 +991,9 @@ speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # -sEXIT_RUNTIME=1 but we need EXIT_RUNTIME=0 for the worker-based app
 # which runs speedtest1 multiple times.
 
-$(EXPORTED_FUNCTIONS.speedtest1): $(MKDIR.bld) $(EXPORTED_FUNCTIONS.api.core)
+$(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
 	@echo "$(emo.compile) Making $@ ..."
+	@$(call b.call.mkdir@)
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
 speedtest1.js = $(dir.dout)/speedtest1.js
 emcc.flags.speedtest1-vanilla = $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
@@ -1056,10 +1037,10 @@ speedtest1: $(speedtest1.js)
 #  tester1.mjs: cases 3 and 4
 #
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
-$(eval $(call SQLITE.CALL.C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
+$(eval $(call b.eval.c-pp,@,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
+$(eval $(call b.eval.c-pp,@,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
+$(eval $(call b.eval.c-pp,@,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
+$(eval $(call b.eval.c-pp,@,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
 # We do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
 # because bundlers are client-specific. We don't use any of them.
