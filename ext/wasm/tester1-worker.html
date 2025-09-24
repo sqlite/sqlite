@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
-    <link rel="stylesheet" href="../common/emscripten.css"/>
-    <link rel="stylesheet" href="../common/testing.css"/>
+    <link rel="stylesheet" href="common/emscripten.css"/>
+    <link rel="stylesheet" href="common/testing.css"/>
     <title>sqlite3 tester #1: Worker thread</title>
     <style></style>
   </head>
@@ -35,17 +35,21 @@
         logTarget.append(ln);
       };
       const cbReverse = document.querySelector('#cb-log-reverse');
+      const cbReverseKey = 'tester1:cb-log-reverse';
       const cbReverseIt = ()=>{
         logTarget.classList[cbReverse.checked ? 'add' : 'remove']('reverse');
+        localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
       };
       cbReverse.addEventListener('change',cbReverseIt,true);
+      if(localStorage.getItem(cbReverseKey)){
+        cbReverse.checked = !!(+localStorage.getItem(cbReverseKey));
+      }
       cbReverseIt();
       const urlParams = new URL(self.location.href).searchParams;
       const workerArgs = [];
       if(urlParams.has('esm')){
           logHtml('warning',"Attempting to run an ES6 Worker Module, "+
-                  "which is not supported by all browsers! "+
-                  "e.g. Firefox (as of 2023-05) cannot do this.");
+                  "which is not supported by all browsers!.");
         workerArgs.push("tester1.mjs",{type:"module"});
         document.querySelectorAll('title,#color-target').forEach((e)=>{
           e.innerText = "sqlite3 tester #1: ES6 Worker Module";

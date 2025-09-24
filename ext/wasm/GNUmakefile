@@ -1019,7 +1019,6 @@ $(out.speedtest1-vanilla.js): $(MAKEFILE) $(speedtest1.cfiles) \
 	@ls -la $@ $(speedtest1.wasm)
 
 speedtest1: $(out.speedtest1-vanilla.js)
-#xxx#all: speedtest1
 # end speedtest1.js
 ########################################################################
 
@@ -1038,12 +1037,25 @@ speedtest1: $(out.speedtest1-vanilla.js)
 #  tester1.js: cases 1 and 2
 #  tester1.mjs: cases 3 and 4
 #
+# Then we need those again in 64-bit builds, which require a 64-bit
+# pair of js/wasm files.
+#
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
-$(eval $(call b.eval.c-pp,filter,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
-$(eval $(call b.eval.c-pp,filter,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
-$(eval $(call b.eval.c-pp,filter,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
-$(eval $(call b.eval.c-pp,filter,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
+c-pp.D.64bit = -D64bit
+$(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
+$(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1-64bit.js,$(c-pp.D.vanilla64) $(c-pp.D.64bit)))
+$(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
+$(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1-64bit.mjs,$(c-pp.D.esm64) $(c-pp.D.64bit)))
+$(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
+$(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-64bit.html,$(c-pp.D.vanilla64) $(c-pp.D.64bit)))
+$(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
+$(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-esm-64bit.html,$(c-pp.D.esm64) $(c-pp.D.64bit)))
+tester1.js: $(out.vanilla.wasm)
+tester1.mjs: $(out.esm.wasm)
+tester1-64bit.js: $(out.vanilla64.wasm)
+tester1-64bit.mjs: $(out.esm64.wasm)
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
+tester1: tester1-64bit.js tester1-64bit.mjs tester1-64bit.html tester1-esm-64bit.html
 # We do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
 # because bundlers are client-specific. We don't use any of them.
 all quick: tester1

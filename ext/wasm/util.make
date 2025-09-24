@@ -6,15 +6,6 @@
 # the naming convention has stuck.
 #
 
-loud ?= 0
-ifeq (1,$(loud))
-  $(info $(emo.megaphone) Emitting loud build info. Pass loud=0 to disable it.)
-  b.cmd@ =
-else
-  $(info $(emo.mute) Eliding loud build info. Pass loud=1 to enable it.)
-  b.cmd@ = @
-endif
-
 #
 # Emoji for log messages.
 #
@@ -29,8 +20,18 @@ emo.megaphone = 📣
 emo.mute = 🔇
 emo.stop =🛑
 emo.strip =🪚
+emo.test =🧪
 emo.tool = 🔨
  # 👷🪄🧮🧫🧪🧽🍿⛽🚧🎱
+
+loud ?= 0
+ifeq (1,$(loud))
+  $(info $(emo.megaphone) Emitting loud build info. Pass loud=0 to disable it.)
+  b.cmd@ =
+else
+  $(info $(emo.mute) Eliding loud build info. Pass loud=1 to enable it.)
+  b.cmd@ = @
+endif
 
 #
 # logtag.X value for log context labeling. longtag.OTHERX can be
@@ -39,6 +40,7 @@ emo.tool = 🔨
 #
 logtag.@ = [$@]
 logtag.filter = [🚧 $@]
+logtag.test = [$(emo.test) $@]
 
 #
 # $(call b.echo,LOGTAG,msg)
@@ -73,8 +75,8 @@ b.call.cp = $(call b.call.mkdir@); \
 define b.eval.c-pp
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	@$$(call b.call.mkdir@); \
-	echo '$$(logtag.$(1)) $$(emo.disk) $$(bin.c-pp) $(4)'; \
-	cat $(2) | $$(bin.c-pp) -o $(3) $(4) $$(SQLITE.CALL.C-PP.FILTER.global) \
+	echo '$$(logtag.$(1)) $$(emo.disk) $$(bin.c-pp) $(4) $(2)'; \
+	$$(bin.c-pp) -o $(3) $(4) $(2) $$(SQLITE.CALL.C-PP.FILTER.global) \
 		|| exit $$$$?\n
 CLEAN_FILES += $(3)
 endef

@@ -44,7 +44,13 @@
      ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget=es6-module
 */
 //#if target=es6-module
-import {default as sqlite3InitModule} from './jswasm/sqlite3.mjs';
+import {default as sqlite3InitModule} from
+//#if 64bit
+'./jswasm/sqlite3-64bit.mjs'
+//#else
+'./jswasm/sqlite3.mjs'
+//#endif
+;
 globalThis.sqlite3InitModule = sqlite3InitModule;
 //#else
 'use strict';
@@ -108,16 +114,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         logTarget.append(ln);
       };
       const cbReverse = document.querySelector('#cb-log-reverse');
-      //cbReverse.setAttribute('checked','checked');
       const cbReverseKey = 'tester1:cb-log-reverse';
       const cbReverseIt = ()=>{
         logTarget.classList[cbReverse.checked ? 'add' : 'remove']('reverse');
-        //localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
+        localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
       };
       cbReverse.addEventListener('change', cbReverseIt, true);
-      /*if(localStorage.getItem(cbReverseKey)){
+      if(localStorage.getItem(cbReverseKey)){
         cbReverse.checked = !!(+localStorage.getItem(cbReverseKey));
-      }*/
+      }
       cbReverseIt();
     }else{ /* Worker thread */
       console.log("Running in a Worker thread.");
@@ -3807,7 +3812,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       are simply lost, and such scripts see the globalThis.location of
       _this_ script.
     */
+//#if 64bit
+    let sqlite3Js = 'sqlite3-64bit.js';
+//#else
     let sqlite3Js = 'sqlite3.js';
+//#endif
     const urlParams = new URL(globalThis.location.href).searchParams;
     if(urlParams.has('sqlite3.dir')){
       sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;
