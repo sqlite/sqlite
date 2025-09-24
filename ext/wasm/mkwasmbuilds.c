@@ -349,43 +349,27 @@ static void mk_prologue(void){
   );
 
   ps(zBanner
-     "# Inputs for the sqlite3-api.js family.\n"
+     "# Inputs/outputs for the sqlite3-api.js family.\n"
      "#\n"
-     "# sqlite3-license-version.js = generated JS file with the license\n"
-     "# header and version info.\n"
      "sqlite3-license-version.js = $(dir.tmp)/sqlite3-license-version.js\n"
-     "# $(sqlite3-api-build-version.js) = generated JS file which populates the\n"
-     "# sqlite3.version object using $(bin.version-info).\n"
      "sqlite3-api-build-version.js = $(dir.tmp)/sqlite3-api-build-version.js\n"
      "# sqlite3-api.jses = the list of JS files which make up\n"
      "# $(sqlite3-api.js.in), in the order they need to be assembled.\n"
+     "sqlite3-api.js.in = $(dir.tmp)/sqlite3-api.c-pp.js\n"
      "sqlite3-api.jses = $(sqlite3-license-version.js)\n"
-     "# sqlite3-api-prologue.js: initial bootstrapping bits:\n"
      "sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js\n"
-     "# whwhasm.js and jaccwabyt.js: Low-level utils, mostly replacing\n"
-     "# Emscripten glue:\n"
      "sqlite3-api.jses += $(dir.common)/whwasmutil.js\n"
      "sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js\n"
-     "# sqlite3-api-glue Glues the previous part together with sqlite:\n"
      "sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.c-pp.js\n"
      "sqlite3-api.jses += $(sqlite3-api-build-version.js)\n"
-     "# sqlite3-api-oo1 = the oo1 API:\n"
      "sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js\n"
-     "# sqlite3-api-worker = the Worker1 API:\n"
      "sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js\n"
-     "# sqlite3-vfs-helper = helper APIs for VFSes:\n"
      "sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js\n"
      "ifeq (0,$(wasm-bare-bones))\n"
-     "  # sqlite3-vtab-helper = helper APIs for VTABLEs:\n"
      "  sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js\n"
      "endif\n"
-     "# sqlite3-vfs-opfs = the first OPFS VFS:\n"
      "sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js\n"
-     "# sqlite3-vfs-opfs-sahpool = the second OPFS VFS:\n"
      "sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js\n"
-     "# sqlite3-api-cleanup.js = \"finalizes\" the build and cleans up\n"
-     "# any extraneous global symbols which are needed temporarily\n"
-     "# by the previous files.\n"
      "sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js"
   );
 
@@ -398,7 +382,7 @@ static void mk_prologue(void){
      "$(sqlite3-license-version.js): $(MKDIR.bld) $(sqlite3.h) "
      "$(dir.api)/sqlite3-license-version-header.js $(MAKEFILE)\n"
      "\t@echo '$(logtag.@) $(emo.disk)'; { \\\n"
-     "\t\tcat $(dir.api)/sqlite3-license-version-header.js;  \\\n"
+     "\t\tcat $(dir.api)/sqlite3-license-version-header.js || exit $$?;  \\\n"
      "\t\techo '/*'; \\\n"
      "\t\techo '** This code was built from sqlite3 version...'; \\\n"
      "\t\techo '**'; \\\n"
@@ -421,6 +405,16 @@ static void mk_prologue(void){
      "\t\techo ';'; \\\n"
      "\t\techo '});'; \\\n"
      "\t} > $@"
+  );
+
+  ps(zBanner
+     "$(sqlite3-api.js.in): $(MKDIR.bld) $(sqlite3-api.jses) $(MAKEFILE)\n"
+     "\t@echo 'Making $@ ...'\n"
+     "\t@for i in $(sqlite3-api.jses); do \\\n"
+     "\t\techo \"/* BEGIN FILE: $$i */\"; \\\n"
+     "\t\tcat $$i; \\\n"
+     "echo \"/* END FILE: $$i */\"; \\\n"
+     "\tdone > $@\n"
   );
 
   ps(zBanner
@@ -459,12 +453,15 @@ static void mk_prologue(void){
      "# Emscripten-specific post-bootstrapping code.\n"
      "pre-js.in.js = $(dir.api)/pre-js.c-pp.js\n"
      "post-js.in.js = $(dir.tmp)/post-js.c-pp.js\n"
-     "post-jses.js = $(dir.api)/post-js-header.js $(sqlite3-api.js.in) $(dir.api)/post-js-footer.js\n"
+     "post-jses.js ="
+     " $(dir.api)/post-js-header.js"
+     " $(sqlite3-api.js.in)"
+     " $(dir.api)/post-js-footer.js\n"
      "$(post-js.in.js): $(MKDIR.bld) $(post-jses.js) $(MAKEFILE)\n"
      "	@echo '$(logtag.@) $(emo.disk)'\n"
      "	@for i in $(post-jses.js); do \\n"
      "		echo \"/* BEGIN FILE: $$i */\"; \\n"
-     "		cat $$i; \\n"
+     "		cat $$i || exit $$?; \\n"
      "		echo \"/* END FILE: $$i */\"; \\n"
      "	done > $@\n"
   );
@@ -576,14 +573,14 @@ static void mk_pre_post(char const *zBuildName){
   pf("pre-js.%s.js = $(dir.tmp)/pre-js.%s.js\n"
      "CLEAN_FILES += $(pre-js.%s.js)\n"
      "$(pre-js.%s.js): "
-     "$(MAKEFILE_LIST) $(sqlite3-license-version.js)\n",
+     "$(MAKEFILE_LIST) $(pre-js.in.js)\n",
      zBuildName, zBuildName,
      zBuildName,
      zBuildName);
 
   if( 0==WASM_CUSTOM_INSTANTIATE ){
     pf("\t@echo '$(logtag.%s) $(emo.disk) $(c-pp.D.%s)'; "
-       "cat $(pre-js.in.js) | $(bin.c-pp) -o $@ $(c-pp.D.%s)\n",
+       "cat $(pre-js.in.js) | $(bin.c-pp) -o $@ $(c-pp.D.%s) || exit $$?\n",
        zBuildName, zBuildName, zBuildName);
   }else{
 #if 0
@@ -609,14 +606,14 @@ static void mk_pre_post(char const *zBuildName){
   ps("\n# --post-js=...");
   pf("post-js.%s.js = $(dir.tmp)/post-js.%s.js\n",
      zBuildName, zBuildName);
-  pf("post-jses.%s = "
-     "$(dir.api)/post-js-header.js "
-     "$(sqlite3-api.%s.js) "
-     "$(dir.api)/post-js-footer.js\n",
+  pf("post-js.%s.in ="
+     " $(dir.api)/post-js-header.js"
+     " $(sqlite3-api.%s.js)"
+     " $(dir.api)/post-js-footer.js\n",
      zBuildName, zBuildName);
   pf("$(eval $(call b.do.c-pp,"
      "%s,"
-     "$(post-jses.%s),"
+     "$(post-js.%s.in),"
      "$(post-js.%s.js),"
      "$(c-pp.D.%s)"
      "))\n",
@@ -667,34 +664,17 @@ static void emit_target_start(char const *zBuildName){
 
 static void emit_api_js(char const *zBuildName,
                         char const *zCmppD){
-  pf("sqlite3-api.%s.c-pp.js = $(dir.tmp)/sqlite3-api.%s.c-pp.js\n",
+  pf("c-pp.D.%s ?= %s\n"
+     "sqlite3-api.%s.js = $(dir.tmp)/sqlite3-api.%s.js\n",
+     zBuildName, zCmppD ? zCmppD: "",
      zBuildName, zBuildName);
-
-  pf("sqlite3-api.%s.js = $(dir.tmp)/sqlite3-api.%s.js\n",
-     zBuildName, zBuildName);
-  pf("c-pp.D.%s = %s\n", zBuildName, zCmppD ? zCmppD: "" );
-
-  pf("$(sqlite3-api.%s.c-pp.js): $(sqlite3-api.jses)\n"
-     "\t@$(call b.do.mkdir@); \\\n"
-     "\techo '$(logtag.%s) $(emo.disk)'; \\\n"
-     "\tfor i in $(sqlite3-api.jses); do \\\n"
-     "\t\techo \"/* BEGIN FILE: $$i */\"; \\\n"
-     "\t\tcat $$i; \\\n"
-     "\t\techo \"/* END FILE: $$i */\"; \\\n"
-     "\tdone > $@\n",
-     zBuildName, zBuildName);
-
-  pf("$(sqlite3-api.%s.js): $(sqlite3-api.%s.c-pp.js)\n"
-     "$(eval $(call b.do.c-pp,"
+  pf("$(eval $(call b.do.c-pp,"
      "%s,"
-     "$(sqlite3-api.%s.c-pp.js),"
+     "$(sqlite3-api.js.in),"
      "$(sqlite3-api.%s.js),"
-     "$(c-pp.D.%s)"
+     "$(c-pp.D.%s) %s"
      "))\n",
-     zBuildName, zBuildName,
-     zBuildName, zBuildName,
-     zBuildName, zBuildName);
-
+     zBuildName, zBuildName, zBuildName, zCmppD ? zCmppD : "");
   pf("$(out.%s.js): $(sqlite3-api.%s.js)\n",
      zBuildName, zBuildName);
 }
@@ -800,8 +780,8 @@ void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
         );
       }
       if( CP_WASM & pB->flags ){
-        pf("\t@$(call b.do.cp,@,$(out.%s.wasm),$(dir.dout)/.)\n",
-           zBuildName
+        pf("\t@$(call b.do.cp,%s,$(out.%s.wasm),$(dir.dout)/.)\n",
+           zBuildName, zBuildName
            //"\techo '[%s $(out.%s.wasm)] $(emo.disk) $(dir.dout)/$(notdir $(out.%s.wasm))'
            //pB->zEmo, zBuildName
         );
@@ -915,7 +895,7 @@ static void mk_fiddle(void){
          "$(SOAP.js)\n",
          zBuildName, zBuildName);
       emit_target_start(zBuildName);
-      pf("\t$(bin.emcc) -o $@"
+      pf("\t$(cmd.loud)$(bin.emcc) -o $@"
          " $(emcc.flags.%s)" /* set in fiddle.make */
          " $(pre-post.%s.flags)"
          " $(fiddle.cses)"

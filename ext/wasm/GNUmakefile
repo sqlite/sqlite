@@ -560,45 +560,6 @@ $(SOAP.js.out): $(SOAP.js)
 	cp $< $@
 
 ########################################################################
-# $(sqlite3-api*.*js) contain the core library code but not the
-# Emscripten-related glue which deals with loading sqlite3.wasm. In
-# theory they can be used by arbitrary build environments and WASM
-# loaders, but in practice that breaks down because the WASM loader
-# has to be able to provide all of the necessary "imports" to
-# sqlite3.wasm, and that list of imports is unknown until sqlite3.wasm
-# is compiled, at which point Emscripten sets up the imports
-# appropriately. Abstractly speaking, it's impossible for other build
-# environments to know exactly which imports are needed and provide
-# them. Tools like wasm-objdump can be used to find the list of
-# imports but it's questionable whether a non-Emscripten tool could
-# realistically use that info to provide proper implementations.
-#
-# Sidebar: some of the imports are used soley by the Emscripten glue,
-# which the sqlite3 JS code does not rely on.
-#
-# 2025-09-04: the most significant WASM imports sqlite3.wasm relies on
-# are (A) sqlite3_malloc/sqlite3_free() (the memory-management APIs
-# used by the whole library) and (B) the libc proxies for POSIX I/O
-# emulation (arguably one of Emscripten's most convenient features
-# when building C code for WASM). If we eliminate the POSIX I/O
-# emulation then we could hypothetically eliminate all, or maybe all
-# but one, Emscripten import dependency. We would either need to add
-# our own POSIX emulation layer (not a trivial effort) or restrict the
-# library to use of only in-memory VFSes and the JS-side VFSes.
-#
-# sqlite3-api.js.in = the amalgamated sqlite3-api.js before it gets
-# preprocessed. It contains all of $(sqlite3-api.jses) but none of the
-# Emscripten-specific headers and footers.
-sqlite3-api.js.in = $(dir.tmp)/sqlite3-api.c-pp.js
-$(sqlite3-api.js.in): $(MKDIR.bld) $(sqlite3-api.jses) $(MAKEFILE)
-	@echo "Making $@ ..."
-	@for i in $(sqlite3-api.jses); do \
-		echo "/* BEGIN FILE: $$i */"; \
-		cat $$i; \
-		echo "/* END FILE: $$i */"; \
-	done > $@
-
-########################################################################
 # emcc flags for .c/.o/.wasm/.js.
 emcc.flags =
 ifeq (1,$(emcc.verbose))
@@ -739,19 +700,6 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 # file. The result is that the generated JS file is, because of the
 # -g3 debugging info, _huge_.
 ########################################################################
-
-########################################################################
-# $(sqlite3-api-build-version.js) injects the build version info into
-# the bundle in JSON form.
-$(sqlite3-api-build-version.js): $(MKDIR.bld) $(bin.version-info) $(MAKEFILE)
-	@echo "Making $@..."
-	@{ \
-    echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
-    echo -n '  sqlite3.version = '; \
-    $(bin.version-info) --json; \
-    echo ';'; \
-    echo '});'; \
-  } > $@
 
 
 # Undocumented Emscripten feature: if the target file extension is
