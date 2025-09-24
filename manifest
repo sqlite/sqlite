@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sfix\sa\sharmless\scompiler\swarning\sin\sthe\ssession\sextension.
-D 2025-09-24T20:09:48.941
+C Fix\sthe\smakefile\sso\sthat\s"<tt>test/testrunner.tcl\srelease\s--buildonly</tt>"\nworks\son\smac.\s\sApparently\sbroken\sby\s[b7751d144330593b].
+D 2025-09-24T20:44:33.762
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -666,7 +666,7 @@ F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F ext/wasm/wasmfs.make 411dd94b40406572caddf88392a1ccc4deed0f88d260516e59ca6e0c887ee861
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 20fe7a151708fc6b1f8cd0fdcc73622701cff5959131cfb73e1f75d33e687bf8
+F main.mk fd45a3578989f38bbeb2564a63883f6f6c077105c9f1361c3eac411d31f3afbd
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 89f8d02075a7b265b1f0226a0f878903e1dce27ff1ac2e8a2d62d450b9b4ec76
-R 899443c4b3a66552dcfb6fb96fbf4ef0
+P d77b8ad96c695594668cd7019c7f607fe5efa5474dde0ece8b621051cf88a0b5
+R d3d3827aa937777d334e6c0d974945e8
 U drh
-Z 9b3c0623924694839ad027757052b08d
+Z 4aefb538d372027ea7fd4e97fd0cd05e
 # Remove this line to create a well-formed Fossil manifest.
