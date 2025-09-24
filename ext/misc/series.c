@@ -567,6 +567,10 @@ static int seriesFilter(
     }
     if( iLimit>=0 ){
       sqlite3_int64 iTerm;
+      sqlite3_int64 mxLimit;
+      assert( pCur->ss.iStep>0 );
+      mxLimit = (LARGEST_INT64 - pCur->ss.iBase)/pCur->ss.iStep;
+      if( iLimit>mxLimit ) iLimit = mxLimit;
       iTerm = pCur->ss.iBase + (iLimit - 1)*pCur->ss.iStep;
       if( pCur->ss.iStep<0 ){
         if( iTerm>pCur->ss.iTerm ) pCur->ss.iTerm = iTerm;
