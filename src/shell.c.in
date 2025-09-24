@@ -3204,28 +3204,12 @@ static void createSelftestTable(ShellState *p){
 ** table name.
 */
 static void set_table_name(ShellState *p, const char *zName){
-  int i, n;
-  char cQuote;
-  char *z;
-
   if( p->zDestTable ){
-    free(p->zDestTable);
+    sqlite3_free(p->zDestTable);
     p->zDestTable = 0;
   }
   if( zName==0 ) return;
-  cQuote = quoteChar(zName);
-  n = strlen30(zName);
-  if( cQuote ) n += n+2;
-  z = p->zDestTable = malloc( n+1 );
-  shell_check_oom(z);
-  n = 0;
-  if( cQuote ) z[n++] = cQuote;
-  for(i=0; zName[i]; i++){
-    z[n++] = zName[i];
-    if( zName[i]==cQuote ) z[n++] = cQuote;
-  }
-  if( cQuote ) z[n++] = cQuote;
-  z[n] = 0;
+  p->zDestTable = sqlite3_mprintf("\"%w\"", zName);
 }
 
 /*
