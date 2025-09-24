@@ -624,7 +624,7 @@ static Decimal *decimalFromDouble(double r){
     isNeg = 0;
   }
   memcpy(&a,&r,sizeof(a));
-  if( a==0 ){
+  if( a==0 || a==(sqlite3_int64)0x8000000000000000LL){
     e = 0;
     m = 0;
   }else{
