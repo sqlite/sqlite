@@ -4872,14 +4872,10 @@ static SQLITE_NOINLINE int exprCodeTargetAndOr(
   }
   sqlite3VdbeAddOp3(v, op, r2, r1, target);
   testcase( (*pTmpReg)==0 );
-  if( addrSkip==0 ){
-    /* no-op */
-  }else if( regSS==target ){
-    sqlite3VdbeJumpHere(v, addrSkip);
-  }else{
+  if( addrSkip ){
     sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
     sqlite3VdbeJumpHere(v, addrSkip);
-    sqlite3VdbeAddOp3(v, OP_Move, regSS, target, 1);
+    sqlite3VdbeAddOp3(v, OP_Or, regSS, regSS, target);
     VdbeComment((v, "short-circut value"));
   }
   return target;
