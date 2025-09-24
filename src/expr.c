@@ -4811,21 +4811,26 @@ static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
 }
 
 /*
-** This is the code to implement sqlite3ExprCodeTarget() for the
-** case of an AND or OR operator.  It is factored out for performance
-** and legibility.
+** Generate code that evaluates an AND or OR operator leaving a
+** boolean result in a register.  pExpr is the AND/OR expression.
+** Store the result in the "target" register.  Use short-circuit
+** evaluation to avoid computing both operands, if possible.
+**
+** The code generated might require the use of a temporary register.
+** If it does, then write the number of that temporary register
+** into *pTmpReg.  If not, leave *pTmpReg unchanged.
 */
 static SQLITE_NOINLINE int exprCodeTargetAndOr(
   Parse *pParse,     /* Parsing context */
   Expr *pExpr,       /* AND or OR expression to be coded */
   int target,        /* Put result in this register, guaranteed */
-  int *pTmpReg       /* Number of a temporary register */
+  int *pTmpReg       /* Write a temporary register here */
 ){
   int op;            /* The opcode.  TK_AND or TK_OR */
   int skipOp;        /* Opcode for the branch that skips one operand */
   int addrSkip;      /* Branch instruction that skips one of the operands */
-  int regSS = 0;
-  int r1, r2;        /* Registers holding left and right operands */
+  int regSS = 0;     /* Register holding computed operand when other omitted */
+  int r1, r2;        /* Registers for left and right operands, respectively */
   Expr *pAlt;        /* Alternative, simplified expression */
   Vdbe *v;           /* statement being coded */
 
@@ -4842,20 +4847,26 @@ static SQLITE_NOINLINE int exprCodeTargetAndOr(
   v = pParse->pVdbe;
   skipOp = op==TK_AND ? OP_IfNot : OP_If;
   if( exprEvalRhsFirst(pExpr) ){
+    /* Compute the right operand first.  Skip the computation of the left
+    ** operand if the right operand fully determines the result */
     r2 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pRight, target);
     addrSkip = sqlite3VdbeAddOp1(v, skipOp, r2);
     VdbeComment((v, "skip left operand"));
     VdbeCoverage(v); 
+    r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, pTmpReg);
   }else{
-    r2 = 0;
-    addrSkip = 0;
-  }
-  r1 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
-  if( addrSkip==0 ){
+    /* Compute the left operand first */
+    r1 = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
     if( ExprHasProperty(pExpr->pRight, EP_Subquery) ){
+      /* Skip over the computation of the right operand if the right
+      ** operand is a subquery and the left operand completely determines
+      ** the result */
+      regSS = r1;
       addrSkip = sqlite3VdbeAddOp1(v, skipOp, r1);
       VdbeComment((v, "skip right operand"));
       VdbeCoverage(v);
+    }else{
+      addrSkip = regSS = 0;
     }
     r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, pTmpReg);
   }
