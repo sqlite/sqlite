@@ -512,17 +512,16 @@ static void mk_pre_post(char const *zBuildName){
   pf("%s# Begin --pre/--post flags for %s\n", zBanner, zBuildName);
 
   ps("# --pre-js=...");
-  pf("pre-js.%s.js = $(dir.tmp)/pre-js.%s.js\n"
-     "CLEAN_FILES += $(pre-js.%s.js)\n"
-     "$(pre-js.%s.js): "
-     "$(MAKEFILE_LIST) $(pre-js.in.js)\n",
-     zBuildName, zBuildName,
-     zBuildName,
-     zBuildName);
+  pf("pre-js.%s.js = $(dir.tmp)/pre-js.%s.js\n",
+     zBuildName, zBuildName);
 
   if( 0==WASM_CUSTOM_INSTANTIATE ){
-    pf("\t@echo '$(logtag.%s) $(emo.disk) $(c-pp.D.%s)'; "
-       "cat $(pre-js.in.js) | $(bin.c-pp) -o $@ $(c-pp.D.%s) || exit $$?\n",
+    pf("$(eval $(call b.eval.c-pp,"
+       "%s,"
+       "$(pre-js.in.js),"
+       "$(pre-js.%s.js),"
+       "$(c-pp.D.%s)"
+       "))",
        zBuildName, zBuildName, zBuildName);
   }else{
 #if 0

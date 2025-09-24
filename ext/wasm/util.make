@@ -30,12 +30,15 @@ emo.mute = 🔇
 emo.stop =🛑
 emo.strip =🪚
 emo.tool = 🔨
+ # 👷🪄🧮🧫🧪🧽🍿⛽🚧🎱
 
 #
 # logtag.X value for log context labeling. longtag.OTHERX can be
-# assigned to customize it for a given X.
+# assigned to customize it for a given X. This tag is used by the
+# b.call.X and b.eval.X for logging.
 #
 logtag.@ = [$@]
+logtag.filter = [🚧 $@]
 
 #
 # $(call b.call.mkdir@)
@@ -65,7 +68,7 @@ b.call.cp = $(call b.call.mkdir@); \
 define b.eval.c-pp
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	@$$(call b.call.mkdir@); \
-	echo '$$(logtag.$(1)) $$(emo.disk) $(4)'; \
+	echo '$$(logtag.$(1)) $$(emo.disk) $$(bin.c-pp) $(4)'; \
 	cat $(2) | $$(bin.c-pp) -o $(3) $(4) $$(SQLITE.CALL.C-PP.FILTER.global) \
 		|| exit $$$$?\n
 CLEAN_FILES += $(3)

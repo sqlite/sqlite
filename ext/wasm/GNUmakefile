@@ -850,36 +850,37 @@ endif
 # code analyzers and cannot cope with the former.
 #
 # Most of what follows is the generation of those copies.
-$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1.c-pp.js,\
+
+$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
     $(dir.dout)/sqlite3-worker1.js))
 sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1.js
 
-$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
     $(dir.dout)/sqlite3-worker1-promiser.mjs,\
     -Dtarget=es6-module -Dtarget=es6-bundler-friendly))
 sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.mjs
 
-$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
     $(dir.dout)/sqlite3-worker1-promiser.js))
 sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser.js
 
-$(eval $(call b.eval.c-pp,@,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
-$(eval $(call b.eval.c-pp,@,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
+$(eval $(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.js))
+$(eval $(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.js,demo-worker1-promiser.mjs,\
     -Dtarget=es6-module))
-$(eval $(call b.eval.c-pp,@,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
-$(eval $(call b.eval.c-pp,@,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
+$(eval $(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.html,demo-worker1-promiser.html))
+$(eval $(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.html,demo-worker1-promiser-esm.html,\
     -Dtarget=es6-module))
 demo-worker1-promiser.html: $(dir.dout)/sqlite3-worker1-promiser.js demo-worker1-promiser.js
 demo-worker1-promiser-esm.html: $(sqlite3-worker1-promiser.mjs) demo-worker1-promiser.mjs
 all: demo-worker1-promiser.html demo-worker1-promiser-esm.html
 
 ifeq (0,1)
-$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1.c-pp.js,\
+$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
     $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs,\
     $(c-pp.D.sqlite3-bundler-friendly)))
 sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-bundler-friendly.mjs
 
-$(eval $(call b.eval.c-pp,@,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+$(eval $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
     $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js,\
     $(c-pp.D.sqlite3-bundler-friendly)))
 sqlite3-api.ext.jses += $(dir.dout)/sqlite3-promiser-bundler-friendly.js
@@ -1038,10 +1039,10 @@ speedtest1: $(out.speedtest1-vanilla.js)
 #  tester1.mjs: cases 3 and 4
 #
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
-$(eval $(call b.eval.c-pp,@,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
-$(eval $(call b.eval.c-pp,@,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
-$(eval $(call b.eval.c-pp,@,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
-$(eval $(call b.eval.c-pp,@,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
+$(eval $(call b.eval.c-pp,filter,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
+$(eval $(call b.eval.c-pp,filter,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
+$(eval $(call b.eval.c-pp,filter,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
+$(eval $(call b.eval.c-pp,filter,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
 # We do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
 # because bundlers are client-specific. We don't use any of them.
