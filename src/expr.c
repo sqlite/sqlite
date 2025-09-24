@@ -2440,9 +2440,8 @@ static int exprComputeOperands(
   if( addrIsNull==0 ){
     /*
     ** If the right operand contains a subquery and the left operand does not
-    ** and the left operand might be NULL, then check the left operand do
-    ** an IsNull check on the left operand before computing the right
-    ** operand.
+    ** and the left operand might be NULL, then do an IsNull check
+    ** check on the left operand before computing the right operand.
     */
     if( ExprHasProperty(pExpr->pRight, EP_Subquery)
      && sqlite3ExprCanBeNull(pExpr->pLeft)
@@ -5099,18 +5098,54 @@ expr_code_doover:
         }
         testcase( regFree1==0 );
         testcase( regFree2==0 );
-    
       }
       break;
     }
     case TK_AND:
     case TK_OR: {
-      Expr *pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
+      int addrSkip, skipOp, regSS = 0;
+      Expr *pAlt;
+
+      assert( TK_AND==OP_And );            testcase( op==TK_AND );
+      assert( TK_OR==OP_Or );              testcase( op==TK_OR );
+      pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
       if( pAlt!=pExpr ){
         pExpr = pAlt;
         goto expr_code_doover;
       }
-      /* no break */ deliberate_fall_through
+      skipOp = op==TK_AND ? OP_IfNot : OP_If;
+      if( exprEvalRhsFirst(pExpr) ){
+        r2 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pRight, target);
+        addrSkip = sqlite3VdbeAddOp1( v, skipOp, r2);
+        VdbeComment((v, "skip left operand"));
+        VdbeCoverage(v); 
+      }else{
+        r2 = 0;
+        addrSkip = 0;
+      }
+      r1 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+      if( addrSkip==0 ){
+        if( ExprHasProperty(pExpr->pRight, EP_Subquery) ){
+          addrSkip = sqlite3VdbeAddOp1(v, skipOp, r1);
+          VdbeComment((v, "skip right operand"));
+          VdbeCoverage(v);
+        }
+        r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree1);
+      }
+      sqlite3VdbeAddOp3(v, op, r2, r1, target);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
+      if( addrSkip==0 ){
+        /* no-op */
+      }else if( regSS==target ){
+        sqlite3VdbeJumpHere(v, addrSkip);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
+        sqlite3VdbeJumpHere(v, addrSkip);
+        sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+        VdbeComment((v, "short-circut value"));
+      }
+      break;
     }
     case TK_PLUS:
     case TK_STAR:
@@ -5123,8 +5158,6 @@ expr_code_doover:
     case TK_RSHIFT:
     case TK_CONCAT: {
       int addrIsNull;
-      assert( TK_AND==OP_And );            testcase( op==TK_AND );
-      assert( TK_OR==OP_Or );              testcase( op==TK_OR );
       assert( TK_PLUS==OP_Add );           testcase( op==TK_PLUS );
       assert( TK_MINUS==OP_Subtract );     testcase( op==TK_MINUS );
       assert( TK_REM==OP_Remainder );      testcase( op==TK_REM );
