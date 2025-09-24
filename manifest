@@ -1,5 +1,5 @@
-C Fix\sincorrect\sbuffer\ssize\scomputation\sfor\sthe\sbase64()\sextension\sfunction.\n[forum:/forumpost/b1993c858f|Forum\spost\sb1993c858f].
-D 2025-09-24T12:01:50.339
+C Improve\sperformance\sof\swindow\sfunction\squeries\sthat\suse\s"BETWEEN\s:x\sFOLLOWING\sAND\s:y\sFOLLOWING"\swhere\s:y\sis\sa\svery\slarge\snumber.
+D 2025-09-24T16:10:46.290
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -828,7 +828,7 @@ F src/where.c 8188fac428a8d8e50e133563b59a2be3108fb6723004829c8297c4648784daee
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 71c5c6804b7f882dec8ec858758accae02fcfca13df3cc720f1f258e663ec7c5
 F src/whereexpr.c 403a44eeec1a0f0914fccc6a59376b6924bc00ef6728fe6ffce4cf3051b320fc
-F src/window.c d01227141f622f24fbe36ca105fbe6ef023f9fd98f1ccd65da95f88886565db5
+F src/window.c 538195bbc75bb924e18e368fbd4ed731a3fe3f901351b44f6466ec486f53affe
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
 F test/affinity3.test 9b7d1133e11d5edd7805573c4ab6f3ba73b0b74a1f280d5b130d4bf3506a93ff
@@ -2040,7 +2040,7 @@ F test/win32heap.test 1ec2ce646aee491ec23bfcdfd005b33c79f13bf91467966f374a76ffe7
 F test/win32lock.test e56d7a9b6cf9d5f3867c2dd19ff36c5326881e4038c6867610ecb3a9868ea4eb
 F test/win32longpath.test 0f9837039b306735c13521c5f25b6ed42937b600dace58e28a3d2f8baf429b6a
 F test/win32nolock.test 95854dc0206b8a95e4aee15a76acc082767b38f079b2e24676aed6cbb0f32798
-F test/window1.test 2a6970e27fd1084c6ded139b0fcd451e116c63f5df3868fdf10abe037d29bd4d
+F test/window1.test b46d28b9698559e66aa4adafd8074b940faee498bf0c4fbdb62548bfcccc67e7
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 266aacb4759945f7cf7a258014620f21225261246edc08e6e71ff5292baf22f3
-R 0a0f16718818548d8452975f7aa78b05
-U drh
-Z afb732169626b03857ab9ccd3d311615
+P 603efcd404f0013559ca5bd936fc39481a3aa33a10340bac27b751b6b286d0b7
+R 95743675368d4f6a3912dba856f83c08
+U dan
+Z 89606198da319ca0b89cf241910a5524
 # Remove this line to create a well-formed Fossil manifest.
