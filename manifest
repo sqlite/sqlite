@@ -1,5 +1,5 @@
-C Additional\sshort-circuit\soptimizations\sfor\sAND/OR\soperators.\s\sAlso\sfix\nbugs\sin\sprior\simplementations\s(such\sas\s[0083d5169a46104a]).
-D 2025-09-24T17:07:15.918
+C Fix\sa\sharmless\scompiler\swarning\sin\sIEEE754.
+D 2025-09-24T17:38:13.296
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -376,7 +376,7 @@ F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a562918
 F ext/misc/fileio.c 88cb2e5744296de6638af02ef6349fd468c2eb5e5f41ba405f88d9b4ad500f8e
 F ext/misc/fossildelta.c 0aeb099e9627eea693cf21ae47826ecd1e0319b93143bed23090838b2ef0c162
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
-F ext/misc/ieee754.c 26f16623dff7e8ba23b969df5caa45764017315355369f228533b17423c308c8
+F ext/misc/ieee754.c 176c061c94857b543313959289cb60cf777c999fd002f82b53d194b95e9f347a
 F ext/misc/memstat.c 43705d795090efb78c85c736b89251e743c291e23daaa8382fe7a0df2c6a283d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
@@ -2175,8 +2175,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1f0b7143575634929c0f77bafa888f0be2dd83f0c6c3deadd8299ac4ab8a8c01 7be555a3b8500c43c2f30171af26bcda9bcb68f41992b792228218a56315e7c4
-R e1662554a531b66547b4a82f6ce2a4ae
+P 63b686fe4cb1d5d82dd3a399aaafd1dfcbda533ca83b46ed2bc2750baa7f251d
+R 2693e3ba2dabefa0ec4660a2332c9420
 U drh
-Z 548f4322499a54c12107c5f0d03754fb
+Z f0e389957d8e83b86db175d0a85094bb
 # Remove this line to create a well-formed Fossil manifest.
