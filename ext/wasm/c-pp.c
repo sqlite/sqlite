@@ -1504,7 +1504,8 @@ int main(int argc, char const * const * argv){
       ARGVAL;
       do_infile:
       if( nFile>=sizeof(zFileList)/sizeof(zFileList[0]) ){
-        fatal("Too many file arguments");
+        fatal("Too many file arguments. Max is %d.",
+              (int)(sizeof(zFileList)/sizeof(zFileList[0])));
       }
       zFileList[nFile++] = zArg;
     }

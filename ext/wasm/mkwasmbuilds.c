@@ -63,7 +63,6 @@ enum {
   /* Indicates a wasmfs build (untested and unsupported). */
   F_WASMFS           = 1<<6,
 
-
   /**
      Which compiled files from $(dir.dout)/buildName/*.{js,mjs,wasm}
      to copy to $(dir.dout) after creating them.
@@ -195,7 +194,7 @@ const BuildDefs oBuildDefs = {
     .zBaseName   = "sqlite3-64bit",
     .zDotWasm    = 0,
     .zCmppD      = 0,
-    .zEmcc       = "-sMEMORY64=1",
+    .zEmcc       = "-sMEMORY64=1 -sWASM_BIGINT=1",
     .zEnv        = 0,
     .zIfCond     = 0,
     .flags       = CP_ALL | F_64BIT
@@ -219,7 +218,7 @@ const BuildDefs oBuildDefs = {
     .zBaseName   = "sqlite3-64bit",
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=es6-module",
-    .zEmcc       = "-sMEMORY64=1",
+    .zEmcc       = "-sMEMORY64=1 -sWASM_BIGINT=1",
     .zEnv        = 0,
     .zIfCond     = 0,
     .flags       = CP_JS | F_ESM | F_64BIT
@@ -249,14 +248,13 @@ const BuildDefs oBuildDefs = {
   /* 64-bit bundler-friendly. */
   .bundler64 = {
     .zEmo        = "📦",
-    .zBaseName   = "sqlite3-bundler-friendly",
-    .zDotWasm    = 0,
+    .zBaseName   = "sqlite3-bundler-friendlyu",
+    .zDotWasm    = "sqlite3-64bit",
     .zCmppD      = "$(c-pp.D.bundler)",
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
     .zIfCond     = 0,
-    .flags       = CP_JS | F_ESM | F_BUNDLER_FRIENDLY | F_64BIT
-    //| F_NOT_IN_ALL
+    .flags       = CP_JS | F_ESM | F_BUNDLER_FRIENDLY | F_64BIT | F_NOT_IN_ALL
   },
 
   /*
@@ -336,118 +334,11 @@ static void mk_prologue(void){
     ps("endif");
   }
 
-#if 0
-  ps(zBanner
-     /** $1 = build name. */
-     "b.call.mkdir@ = "
-     "if [ ! -d $(dir $@) ]; then"
-     " echo '[$(emo.folder)+] $(if $(1),$(logtag.$(1)),[$(dir $@)])';"
-     " mkdir -p $(dir $@) || exit $$?;"
-     "fi"
-  );
-#endif
-
   ps(zBanner
      /** $1 = build name */
      "b.call.wasm-strip = "
-     "echo '$(logtag.$(1)) $(emo.strip) wasm-strip $(out.$(1).wasm)'; "
+     "echo '[$(emo.b.$(1)) $(out.$(1).wasm)] $(emo.strip) wasm-strip'; "
      "$(bin.wasm-strip) $(out.$(1).wasm)\n"
-  );
-
-  ps(zBanner
-     "# Inputs/outputs for the sqlite3-api.js family.\n"
-     "#\n"
-     "sqlite3-license-version.js = $(dir.tmp)/sqlite3-license-version.js\n"
-     "sqlite3-api-build-version.js = $(dir.tmp)/sqlite3-api-build-version.js\n"
-     "# sqlite3-api.jses = the list of JS files which make up\n"
-     "# sqlite3-api.js, in the order they need to be assembled.\n"
-     "sqlite3-api.jses = $(sqlite3-license-version.js)\n"
-     "sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js\n"
-     "sqlite3-api.jses += $(dir.common)/whwasmutil.js\n"
-     "sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js\n"
-     "sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.c-pp.js\n"
-     "sqlite3-api.jses += $(sqlite3-api-build-version.js)\n"
-     "sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js\n"
-     "sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js\n"
-     "sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js\n"
-     "ifeq (0,$(wasm-bare-bones))\n"
-     "  sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js\n"
-     "endif\n"
-     "sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js\n"
-     "sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js\n"
-     "sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js"
-  );
-
-  ps(zBanner
-     "# $(sqlite3-license-version.js) contains the license header and\n"
-     "# in-comment build version info.\n"
-     "#\n"
-     "# Maintenance reminder: there are awk binaries out there which do not\n"
-     "# support -e SCRIPT.\n"
-     "$(sqlite3-license-version.js): $(sqlite3.h) "
-     "$(dir.api)/sqlite3-license-version-header.js $(MAKEFILE)\n"
-     "\t@echo '$(logtag.@) $(emo.disk)'; { \\\n"
-     "\t\t$(call b.call.mkdir@); \\\n"
-     "\t\tcat $(dir.api)/sqlite3-license-version-header.js || exit $$?;  \\\n"
-     "\t\techo '/*'; \\\n"
-     "\t\techo '** This code was built from sqlite3 version...'; \\\n"
-     "\t\techo '**'; \\\n"
-     "\t\tawk '/define SQLITE_VERSION/{$$1=\"\"; print \"**\" $$0}' $(sqlite3.h); \\\n"
-     "\t\tawk '/define SQLITE_SOURCE_ID/{$$1=\"\"; print \"**\" $$0}' $(sqlite3.h); \\\n"
-     "\t\techo '**'; \\\n"
-     "\t\techo '** with the help of Emscripten SDK version $(emcc.version).'; \\\n"
-     "\t\techo '*/'; \\\n"
-     "\t} > $@"
-  );
-
-  ps(zBanner
-     "# $(sqlite3-api-build-version.js) injects the build version info into\n"
-     "# the bundle in JSON form.\n"
-     "$(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)\n"
-     "\t@echo '$(logtag.@) $(emo.disk)'; { \\\n"
-     "\t\t$(call b.call.mkdir@); \\\n"
-     "\t\techo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \\\n"
-     "\t\techo -n '  sqlite3.version = '; \\\n"
-     "\t\t$(bin.version-info) --json; \\\n"
-     "\t\techo ';'; \\\n"
-     "\t\techo '});'; \\\n"
-     "\t} > $@"
-  );
-
-  ps(zBanner
-     "# extern-post-js* and extern-pre-js* are files for use with\n"
-     "# Emscripten's --extern-pre-js and --extern-post-js flags.\n"
-     "extern-pre-js.js = $(dir.api)/extern-pre-js.js\n"
-     "extern-post-js.in.js = $(dir.api)/extern-post-js.c-pp.js\n"
-     "# Emscripten flags for --[extern-][pre|post]-js=... for the\n"
-     "# various builds.\n"
-     "# pre-post-jses.*.deps = lists of dependencies for the\n"
-     "# --[extern-][pre/post]-js files.\n"
-     "pre-post-jses.common.deps = "
-     "$(extern-pre-js.js) $(sqlite3-license-version.js)"
-  );
-
-  ps(zBanner
-     "# --post-js and --pre-js are emcc flags we use to append/prepend JS to\n"
-     "# the generated emscripten module file. These rules set up the core\n"
-     "# pre/post files for use by the various builds. --pre-js is used to\n"
-     "# inject code which needs to run as part of the pre-WASM-load phase.\n"
-     "# --post-js injects code which runs after the WASM module is loaded\n"
-     "# and includes the entirety of the library plus some\n"
-     "# Emscripten-specific post-bootstrapping code.\n"
-     "pre-js.in.js = $(dir.api)/pre-js.c-pp.js\n"
-     "post-js.in.js = $(dir.tmp)/post-js.c-pp.js\n"
-     "post-jses.js ="
-     " $(dir.api)/post-js-header.js"
-     " $(sqlite3-api.jses)"
-     " $(dir.api)/post-js-footer.js\n"
-     "$(post-js.in.js): $(MKDIR.bld) $(post-jses.js) $(MAKEFILE)\n"
-     "\t@echo '$(logtag.@) $(emo.disk)'\n"
-     "\t@for i in $(post-jses.js); do \\n"
-     "\t\techo \"/* BEGIN FILE: $$i */\"; \\n"
-     "\t\tcat $$i || exit $$?; \\n"
-     "\t\techo \"/* END FILE: $$i */\"; \\n"
-     "\tdone > $@\n"
   );
 
   pf(zBanner
@@ -510,30 +401,30 @@ static void mk_prologue(void){
       ;
     ps(zBanner
        "# post-compilation WASM file optimization");
-    ps("ifeq (,$(bin.wasm-opt))");
-    {
-      ps("define b.do.wasm-opt");
-      ps("echo '$(logtag.$(1)) wasm-opt not available'");
-      ps("endef");
+
+    /* b.do.wasm-opt $1 = build name*/
+    ps("ifeq (,$(bin.wasm-opt))"); {
+      ps("b.do.wasm-opt = echo '$(logtag.$(1)) wasm-opt not available'");
     }
-    ps("else");
-    {
+    ps("else"); {
       ps("define b.do.wasm-opt"
-         /* $1 = build name*/
       );
       pf(
-        "echo '$(logtag.$(1)) $(emo.tool) Applying $(bin.wasm-opt)';\\\n"
-        "\trm -f wasm-opt-tmp.$(1).wasm;\\\n"
-        /* It's very likely that the set of wasm-opt flags varies from
-        ** version to version, so we'll ignore any errors here. */
-        "\tif $(bin.wasm-opt) $(out.$(1).wasm) -o wasm-opt-tmp.$(1).wasm \\\n"
+        "echo '[$(emo.b.$(1)) $(out.$(1).wasm)] $(emo.wasm-opt) $(bin.wasm-opt)';\\\n"
+        "\ttmpfile=$(dir.dout.$(1))/wasm-opt-tmp.$(1).wasm; \\\n"
+        "\trm -f $$tmpfile; \\\n"
+        "\tif $(bin.wasm-opt) $(out.$(1).wasm) "
+        "-o $$tmpfile \\\n"
         "\t\t%s; then \\\n"
-        "\t\tmv wasm-opt-tmp.$(1).wasm $(out.$(1).wasm); \\\n"
+        "\t\tmv $$tmpfile $(out.$(1).wasm); \\\n"
 #if 0
         "\t\techo -n 'After wasm-opt: '; \\\n"
         "\t\tls -l $(1); \\\n"
 #endif
+        /* It's very likely that the set of wasm-opt flags varies from
+        ** version to version, so we'll ignore any errors here. */
         "\telse \\\n"
+        "\t\trm -f $$tmpfile; \\\n"
         "\t\techo '$(2) $(emo.fire) ignoring wasm-opt failure'; \\\n"
         "\tfi\n",
         zOptFlags
@@ -658,7 +549,7 @@ static void emit_compile_start(char const *zBuildName){
 */
 static void emit_api_js(char const *zBuildName,
                         char const *zCmppD){
-  pf("c-pp.D.%s ?= %s\n"
+  pf("c-pp.D.%s = %s\n"
      "sqlite3-api.%s.js = $(dir.tmp)/sqlite3-api.%s.js\n",
      zBuildName, zCmppD ? zCmppD: "",
      zBuildName, zBuildName);
@@ -666,9 +557,9 @@ static void emit_api_js(char const *zBuildName,
      "%s,"
      "$(sqlite3-api.jses),"
      "$(sqlite3-api.%s.js),"
-     "$(c-pp.D.%s) %s"
+     "$(c-pp.D.%s)"
      "))\n",
-     zBuildName, zBuildName, zBuildName, zCmppD ? zCmppD : "");
+     zBuildName, zBuildName, zBuildName);
   pf("$(out.%s.js): $(sqlite3-api.%s.js)\n",
      zBuildName, zBuildName);
 }
@@ -687,6 +578,12 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      pB->zEmo, zBuildName, pB->flags);
   pf("# zCmppD=%s\n# zBaseName=%s\n",
      pB->zCmppD ? pB->zCmppD : "", zBaseName);
+
+  pf(
+    "b.names += %s\n"
+    "emo.b.%s = %s\n",
+    zBuildName, zBuildName, pB->zEmo);
+  pf("b.names += %s\n", zBuildName);
 
   pf("logtag.%s ?= [%s [%s] $@]:\n", zBuildName, pB->zEmo, zBuildName);
   if( pB->zIfCond ){
@@ -725,13 +622,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     pf(zBanner
        "$(out.%s.js): $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles)"
        " $(EXPORTED_FUNCTIONS.api)"
-       " $(bin.mkwb) $(pre-post.%s.deps) "
-       " $(sqlite3-api.ext.jses)"
-       /* maintenance reminder: we set these ^^^^ as deps so that they
-       ** get copied into place early. That allows the developer to
-       ** reload the base-most test pages while the later-stage builds
-       ** are still compiling, which is especially helpful when
-       ** running builds with long build times (like -Oz). */
+       " $(bin.mkwb) $(pre-post.%s.deps)"
        "\n",
        zBuildName, zBuildName);
 
@@ -750,7 +641,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
         ** code.  OTOH, we also use this $(call) in the speedtest1-wasmfs
         ** build, which is not part of the rules emitted by this
         ** program. */
-        pf("\t@$(call SQLITE.CALL.xJS.ESM-EXPORT-DEFAULT,1,%d,$(logtag.%s))\n",
+        pf("\t@$(call b.call.patch-export-default,1,%d,$(logtag.%s))\n",
            (F_WASMFS & pB->flags) ? 1 : 0,
            zBuildName
         );
@@ -766,13 +657,13 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@$(call b.call.strip-js-cruft,$(logtag.%s))\n", zBuildName);
 
       if( CP_JS & pB->flags && !(pB->zDotWasm/*handled below*/) ){
-        pf("\t@$(call b.call.cp,%s,$@,$(dir.dout)/.)\n",
+        pf("\t@$(call b.call.cp,%s,$@,$(dir.dout))\n",
            zBuildName
         );
       }
       if( CP_WASM & pB->flags ){
-        pf("\t@$(call b.call.cp,%s,$(out.%s.wasm),$(dir.dout)/.)\n",
-           zBuildName, zBuildName
+        pf("\t@$(call b.call.cp,%s,$(basename $@).wasm,$(dir.dout))\n",
+           zBuildName
            //"\techo '[%s $(out.%s.wasm)] $(emo.disk) $(dir.dout)/$(notdir $(out.%s.wasm))'
            //pB->zEmo, zBuildName
         );
@@ -812,7 +703,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
          "exit 1; fi;\n", zBuildName);
     }
   }
-  pf("\t@echo '$(logtag.%s) $(emo.done)'\n", zBuildName);
+  pf("\t@$(call b.echo,%s,$(emo.done) done!)\n", zBuildName);
 
   pf("\n%dbit: $(out.%s.js)\n"
      "$(out.%s.wasm): $(out.%s.js)\n"
@@ -892,8 +783,7 @@ static void mk_fiddle(void){
       pf("$(out.%s.js): $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
          "$(EXPORTED_FUNCTIONS.fiddle) "
          "$(fiddle.cses) "
-         "$(pre-post.%s.deps) "
-         "$(SOAP.js)\n",
+         "$(pre-post.%s.deps)\n",
          zBuildName, zBuildName);
       emit_compile_start(zBuildName);
       pf("\t$(b.cmd@)$(bin.emcc) -o $@"
@@ -905,7 +795,10 @@ static void mk_fiddle(void){
       pf("\t@chmod -x $(out.%s.wasm)\n", zBuildName);
       pf("\t@$(call b.call.wasm-strip,%s)\n", zBuildName);
       pf("\t@$(call b.call.strip-js-cruft,$(logtag.%s))\n", zBuildName);
-      pf("\t@$(call b.call.cp,%s,$(SOAP.js),$(dir $@))\n", zBuildName);
+      pf("\t@$(call b.call.cp,"
+         "%s,"
+         "$(dir.api)/sqlite3-opfs-async-proxy.js,"
+         "$(dir $@))\n", zBuildName);
       if( isDebug ){
         pf("\t@$(call b.call.cp,%s,"
            "$(dir.fiddle)/index.html "
