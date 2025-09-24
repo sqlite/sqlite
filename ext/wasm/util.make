@@ -9,21 +9,23 @@
 #
 # Emoji for log messages.
 #
-emo.bug = 🐞
-emo.compile = ⏳
-emo.disk = 💾
-emo.done = 🏆
-emo.fire = 🔥
-emo.folder = 📁
-emo.garbage =🗑
-emo.lock =🔒
+emo.bug       = 🐞
+emo.compile   = ⏳
+emo.roadblock = 🚧
+emo.disk      = 💾
+emo.done      = 🏆
+emo.fire      = 🔥
+emo.folder    = 📁
+emo.garbage   = 🗑
+emo.lock      = 🔒
+emo.magic     = 🧙
 emo.megaphone = 📣
-emo.mute = 🔇
-emo.stop =🛑
-emo.strip =🪚
-emo.test =🧪
-emo.tool = 🔨
- # 👷🪄🧮🧫🧪🧽🍿⛽🚧🎱
+emo.mute      = 🔇
+emo.stop      = 🛑
+emo.strip     = 💈
+emo.test      = 🧪
+emo.tool      = 🔨
+# 👷🪄🧮🧫🧽🍿⛽🚧🎱🪚
 
 loud ?= 0
 ifeq (1,$(loud))
@@ -42,7 +44,7 @@ endif
 # b.call.X and b.eval.X for logging.
 #
 logtag.@ = [$@]
-logtag.filter = [🚧 $@]
+logtag.filter = [$(emo.magic) $@]
 logtag.test = [$(emo.test) $@]
 
 #

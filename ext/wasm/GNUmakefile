@@ -922,8 +922,8 @@ $(eval $(call gen-promiser,-bundler-friendly.mjs,$(c-pp.D.bundler)))
 # $3 = -D... flags for $(bin.c-pp)
 #
 define gen-dwp
-$(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.js,demo-worker1-promiser$(1),$(3))
-$(call b.eval.c-pp,filter,demo-worker1-promiser.c-pp.html,demo-worker1-promiser$(2),$(3))
+$(call b.eval.c-pp,test,demo-worker1-promiser.c-pp.js,demo-worker1-promiser$(1),$(3))
+$(call b.eval.c-pp,test,demo-worker1-promiser.c-pp.html,demo-worker1-promiser$(2),$(3))
 all: demo-worker1-promiser$(1) demo-worker1-promiser$(2)
 endef
 $(eval $(call gen-dwp,.js,.html,$(c-pp.D.vanilla)))
