@@ -4810,6 +4810,71 @@ static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
   return 0;
 }
 
+/*
+** This is the code to implement sqlite3ExprCodeTarget() for the
+** case of an AND or OR operator.  It is factored out for performance
+** and legibility.
+*/
+static SQLITE_NOINLINE int exprCodeTargetAndOr(
+  Parse *pParse,     /* Parsing context */
+  Expr *pExpr,       /* AND or OR expression to be coded */
+  int target,        /* Put result in this register, guaranteed */
+  int *pTmpReg       /* Number of a temporary register */
+){
+  int op;            /* The opcode.  TK_AND or TK_OR */
+  int skipOp;        /* Opcode for the branch that skips one operand */
+  int addrSkip;      /* Branch instruction that skips one of the operands */
+  int regSS = 0;
+  int r1, r2;        /* Registers holding left and right operands */
+  Expr *pAlt;        /* Alternative, simplified expression */
+  Vdbe *v;           /* statement being coded */
+
+  assert( pExpr!=0 );
+  op = pExpr->op;
+  assert( op==TK_AND || op==TK_OR );
+  assert( TK_AND==OP_And );            testcase( op==TK_AND );
+  assert( TK_OR==OP_Or );              testcase( op==TK_OR );
+  pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
+  if( pAlt!=pExpr ){
+    return sqlite3ExprCodeTarget(pParse, pAlt, target);
+  }
+  assert( pParse->pVdbe!=0 );
+  v = pParse->pVdbe;
+  skipOp = op==TK_AND ? OP_IfNot : OP_If;
+  if( exprEvalRhsFirst(pExpr) ){
+    r2 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pRight, target);
+    addrSkip = sqlite3VdbeAddOp1(v, skipOp, r2);
+    VdbeComment((v, "skip left operand"));
+    VdbeCoverage(v); 
+  }else{
+    r2 = 0;
+    addrSkip = 0;
+  }
+  r1 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+  if( addrSkip==0 ){
+    if( ExprHasProperty(pExpr->pRight, EP_Subquery) ){
+      addrSkip = sqlite3VdbeAddOp1(v, skipOp, r1);
+      VdbeComment((v, "skip right operand"));
+      VdbeCoverage(v);
+    }
+    r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, pTmpReg);
+  }
+  sqlite3VdbeAddOp3(v, op, r2, r1, target);
+  testcase( (*pTmpReg)==0 );
+  if( addrSkip==0 ){
+    /* no-op */
+  }else if( regSS==target ){
+    sqlite3VdbeJumpHere(v, addrSkip);
+  }else{
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
+    sqlite3VdbeJumpHere(v, addrSkip);
+    sqlite3VdbeAddOp3(v, OP_Move, regSS, target, 1);
+    VdbeComment((v, "short-circut value"));
+  }
+  return target;
+}
+
+
 
 /*
 ** Generate code into the current Vdbe to evaluate the given
@@ -5103,48 +5168,7 @@ expr_code_doover:
     }
     case TK_AND:
     case TK_OR: {
-      int addrSkip, skipOp, regSS = 0;
-      Expr *pAlt;
-
-      assert( TK_AND==OP_And );            testcase( op==TK_AND );
-      assert( TK_OR==OP_Or );              testcase( op==TK_OR );
-      pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
-      if( pAlt!=pExpr ){
-        pExpr = pAlt;
-        goto expr_code_doover;
-      }
-      skipOp = op==TK_AND ? OP_IfNot : OP_If;
-      if( exprEvalRhsFirst(pExpr) ){
-        r2 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pRight, target);
-        addrSkip = sqlite3VdbeAddOp1( v, skipOp, r2);
-        VdbeComment((v, "skip left operand"));
-        VdbeCoverage(v); 
-      }else{
-        r2 = 0;
-        addrSkip = 0;
-      }
-      r1 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
-      if( addrSkip==0 ){
-        if( ExprHasProperty(pExpr->pRight, EP_Subquery) ){
-          addrSkip = sqlite3VdbeAddOp1(v, skipOp, r1);
-          VdbeComment((v, "skip right operand"));
-          VdbeCoverage(v);
-        }
-        r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree1);
-      }
-      sqlite3VdbeAddOp3(v, op, r2, r1, target);
-      testcase( regFree1==0 );
-      testcase( regFree2==0 );
-      if( addrSkip==0 ){
-        /* no-op */
-      }else if( regSS==target ){
-        sqlite3VdbeJumpHere(v, addrSkip);
-      }else{
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
-        sqlite3VdbeJumpHere(v, addrSkip);
-        sqlite3VdbeAddOp2(v, OP_Null, 0, target);
-        VdbeComment((v, "short-circut value"));
-      }
+      inReg = exprCodeTargetAndOr(pParse, pExpr, target, &regFree1);
       break;
     }
     case TK_PLUS:
