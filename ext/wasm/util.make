@@ -41,9 +41,14 @@ logtag.@ = [$@]
 logtag.filter = [🚧 $@]
 
 #
+# $(call b.echo,LOGTAG,msg)
+#
+b.echo = echo $(logtag.$(1)) $(2)
+
+#
 # $(call b.call.mkdir@)
 #
-# $1 = optional build name
+# $1 = optional LOGTAG
 #
 b.call.mkdir@ = if [ ! -d $(dir $@) ]; then \
   echo '[$(emo.folder)+] $(if $(1),$(logtag.$(1)),[$(dir $@)])'; \

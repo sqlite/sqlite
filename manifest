@@ -1,5 +1,5 @@
-C Cosmetic\sbuild\stweaks.
-D 2025-09-24T07:31:19.910
+C Add\sdocs\sto\smkwasmbuilds.c\sexplaining\sthe\spurpose\sof\seach\sof\sthe\sbuilds.\sRemove\ssome\sinadvertent\scopy/paste\shard\stabs\sin\ssome\sC-side\smakefile\scode.
+D 2025-09-24T13:59:53.888
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -639,7 +639,7 @@ F ext/wasm/index-dist.html 56132399702b15d70c474c3f1952541e25cb0922942868f70daf1
 F ext/wasm/index.html bcaa00eca521b372a6a62c7e7b17a870b0fcdf3e418a5921df1fd61e5344080d
 F ext/wasm/jaccwabyt/jaccwabyt.js bbac67bc7a79dca34afe6215fd16b27768d84e22273507206f888c117e2ede7d
 F ext/wasm/jaccwabyt/jaccwabyt.md 167fc0b624c9bc2c477846e336de9403842d81b1a24fc4d3b24317cb9eba734f
-F ext/wasm/mkwasmbuilds.c a276249935c02dabe5aa8fc61d3b06a479aeeddef188bc5d89f7574ba371b269
+F ext/wasm/mkwasmbuilds.c 8737ff705bd060a088609edd4cbc908e0bc89dcfc1fa48605bd339aa51dcc709
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -664,7 +664,7 @@ F ext/wasm/tests/opfs/sahpool/digest.html 206d08a34dc8bd570b2581d3d9ab3ecad3201b
 F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca01385e2732294b53f4c842328
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
-F ext/wasm/util.make ecee9e8ee4cd05d8877550831d7d3176efb08a62d65ac2eb05e0cafac24bf841
+F ext/wasm/util.make 02f29bd0821d8fbf6fa7a02e1ecc32d9866bf9c2ebab6f06d0de4ba1cf84fd79
 F ext/wasm/wasmfs.make 5de02751b3e9e79b81a52ab4fe0ed6aa6a23311a90db58fea98c1c4e2845e562
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
 F main.mk 20fe7a151708fc6b1f8cd0fdcc73622701cff5959131cfb73e1f75d33e687bf8
@@ -2176,8 +2176,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f5167fb3615efc180e69333f99d82d6afc1d190e7f37b6a701895de00502d8c8
-R d9fca2e8597730588fac07bc64a8e3d3
+P 431725330d6c63575dbf3404664a7af33d4d87c569560e99c18de93eb4d73935
+R e3af3db66eb0d4f51c1b04cbc2314c0b
 U stephan
-Z 93780c2d051edfca4443bf188fca31ca
+Z 77ec6416fddbe3c006d4bdaeedea1332
 # Remove this line to create a well-formed Fossil manifest.

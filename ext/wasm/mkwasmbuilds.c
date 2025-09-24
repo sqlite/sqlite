@@ -81,26 +81,48 @@ struct BuildDef {
      Base name of output JS and WASM files.
   */
   const char *zBaseName;
-  /**
-     A glyph to use in log messages for this build, intended to help
-     the eyes distinguish the build lines more easily in parallel
-     builds.
+  /*
+  ** A glyph to use in log messages for this build, intended to help
+  ** the eyes distinguish the build lines more easily in parallel
+  **  builds.
+  **
+  ** The convention for 32- vs 64-bit pairs is to give them similar
+  ** emoji, e.g. a cookie for 32-bit and a donut or cake for 64.
+  ** Alternately, the same emoji a "64" suffix, excep that that throws
+  ** off the output alignment in parallel builds ;).
   */
   const char *zEmo;
-  /**
-     If the build needs its x.wasm renamed in its x.{js,mjs}
-     then this must hold the base name to rename it to.
-     Typically "sqlite3" or "sqlite3-64bit".
+  /*
+  ** If the build needs its x.wasm renamed in its x.{js,mjs} then this
+  ** must hold the base name to rename it to.  Typically "sqlite3" or
+  ** "sqlite3-64bit". This is the case for builds which are named
+  ** something like sqlite3-foo-bar but can use the vanilla
+  ** sqlite3.wasm file. In such cases we don't need the extra
+  ** sqlite3-foo-bar.wasm which Emscripten (necessarily) creates when
+  ** compiling the module, so we patch (at build-time) the JS file to
+  ** use this name instead sqlite3-foo-bar.
   */
   const char *zDotWasm;
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Extra flags for emcc */
-  const char *zEnv;       /* emcc -sENVIRONMENT=X flag */
-  const char *zIfCond;    /* "ifeq (...)" or similar */
+  const char *zEnv;       /* emcc -sENVIRONMENT=... value */
+  /*
+  ** Makefile code "ifeq (...)". If set, this build is enclosed in a
+  ** $zIfCond/endif block.
+  */
+  const char *zIfCond;    /* makefile "ifeq (...)" or similar */
   int flags;              /* Flags from LibModeFlags */
 };
 typedef struct BuildDef BuildDef;
 
+/*
+** WASM_CUSTOM_INSTANTIATE changes how the JS pieces load the .wasm
+** file from the .js file. When set, our JS takes over that step from
+** Emscripten. Both modes are functionally equivalent but
+** customization gives us access to wasm module state which we don't
+** otherwise have. That said, the library also does not _need_ that
+** state, so we don't _need_ to customize that step.
+*/
 #if !defined(WASM_CUSTOM_INSTANTIATE)
 #  define WASM_CUSTOM_INSTANTIATE 0
 #elif (WASM_CUSTOM_INSTANTIATE+0)==0
@@ -109,17 +131,19 @@ typedef struct BuildDef BuildDef;
 #endif
 
 #if WASM_CUSTOM_INSTANTIATE
+/* c-pp -D... flags for the custom instantiateWasm(). */
 #define C_PP_D_CUSTOM_INSTANTIATE " -Dcustom-Module.instantiateWasm "
 #else
 #define C_PP_D_CUSTOM_INSTANTIATE
 #endif
 
-/* List of distinct library builds. See next comment block. */
+/* List of distinct library builds. Each one has to be set up in
+** oBuildDefs. See the next comment block. */
 #define BuildDefs_map(E)  \
   E(vanilla) E(vanilla64) \
-  E(esm) E(esm64)         \
+  E(esm)     E(esm64)     \
   E(bundler) E(bundler64) \
-  E(node) E(node64) \
+  E(node)    E(node64)    \
   E(wasmfs)
 
 /*
@@ -138,9 +162,13 @@ struct BuildDefs {
 typedef struct BuildDefs BuildDefs;
 
 const BuildDefs oBuildDefs = {
+  /*
+  ** The canonical build, against which all others are compared and
+  ** contrasted.  This is the one we post downloads for.
+  */
   .vanilla = {
     /* This one's zBaseName and zEnv MUST be non-NULL so it can be
-       used as a default for all others. */
+    ** used as a default for all others. */
     .zEmo        = "🍦",
     .zBaseName   = "sqlite3",
     .zDotWasm    = 0,
@@ -151,6 +179,7 @@ const BuildDefs oBuildDefs = {
     .flags       = CP_ALL
   },
 
+  /* The canonical build in 64-bit. */
   .vanilla64 = {
     .zEmo        = "🍨",
     .zBaseName   = "sqlite3-64bit",
@@ -159,9 +188,10 @@ const BuildDefs oBuildDefs = {
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_64BIT | F_NOT_IN_ALL
+    .flags       = CP_ALL | F_64BIT
   },
 
+  /* The canonical esm build. */
   .esm = {
     .zEmo        = "🍬",
     .zBaseName   = "sqlite3",
@@ -173,6 +203,7 @@ const BuildDefs oBuildDefs = {
     .flags       = CP_JS | F_ESM
   },
 
+  /* The canonical esm build in 64-bit. */
   .esm64 = {
     .zEmo        = "🍫",
     .zBaseName   = "sqlite3-64bit",
@@ -181,15 +212,19 @@ const BuildDefs oBuildDefs = {
     .zEmcc       = "-sMEMORY64=1",
     .zEnv        = 0,
     .zIfCond     = 0,
-    .flags       = CP_JS | F_ESM | F_64BIT | F_NOT_IN_ALL
+    .flags       = CP_JS | F_ESM | F_64BIT
   },
 
+  /*
+  ** Core bundler-friendly build. Untested and "not really" supported,
+  ** but required by the downstream npm subproject.
+  **
+  ** Testing these requires special-purpose node-based tools and
+  ** custom test apps, none of which we have/use. So we can pass them
+  ** off as-is to the npm subproject and they spot failures pretty
+  ** quickly ;).
+  */
   .bundler = {
-    /* Core bundler-friendly build. Untested and "not really"
-    ** supported, but required by the downstream npm subproject.
-    ** Testing these would require special-purpose node-based tools and
-    ** custom test apps. Or we can pass them off as-is to the npm
-    ** subproject and they spot failures pretty quickly ;). */
     .zEmo        = "👛",
     .zBaseName   = "sqlite3-bundler-friendly",
     .zDotWasm    = "sqlite3",
@@ -200,6 +235,7 @@ const BuildDefs oBuildDefs = {
     .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM | F_NOT_IN_ALL
   },
 
+  /* 64-bit bundler-friendly. */
   .bundler64 = {
     .zEmo        = "📦",
     .zBaseName   = "sqlite3-bundler-friendly",
@@ -211,25 +247,27 @@ const BuildDefs oBuildDefs = {
     .flags       = CP_JS | F_ESM | F_BUNDLER_FRIENDLY | F_64BIT | F_NOT_IN_ALL
   },
 
-  /* We neither build nor test node builds on a regular basis. They
-     are fully unsupported. */
+  /*
+  ** We neither build node builds on a regular basis nor test them at
+  ** all. They are fully unsupported. Also, our JS targets only
+  ** browsers.
+  */
   .node = {
     .zEmo        = "🍟",
     .zBaseName   = "sqlite3-node",
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=node $(c-pp.D.bundler)",
     .zEmcc       = 0,
-    .zEnv        = "node",
-    /*
-      Adding ",node" to the list for the other builds causes
-      Emscripten to generate code which confuses node: it cannot
-      reliably determine whether the build is for a browser or for
-      node.  */
+    .zEnv        = "node"
+    /* Adding ",node" to the zEnv list for the other builds causes
+    ** Emscripten to generate code which confuses node: it cannot
+    ** reliably determine whether the build is for a browser or for
+    ** node. */,
     .zIfCond     = 0,
     .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS
   },
 
-  /* Entirely unsupported. */
+  /* 64-bit node. */
   .node64 = {
     .zEmo        = "🍔",
     .zBaseName   = "sqlite3-node-64bit",
@@ -285,11 +323,6 @@ static void mk_prologue(void){
        "have been set up by now)\n", zVar);
     ps("endif");
   }
-
-  ps(zBanner
-  );
-
-  ps("b.echo = echo '$(logtag.$(1))' '$(2)'");
 
 #if 0
   ps(zBanner
@@ -397,12 +430,12 @@ static void mk_prologue(void){
      " $(sqlite3-api.jses)"
      " $(dir.api)/post-js-footer.js\n"
      "$(post-js.in.js): $(MKDIR.bld) $(post-jses.js) $(MAKEFILE)\n"
-     "	@echo '$(logtag.@) $(emo.disk)'\n"
-     "	@for i in $(post-jses.js); do \\n"
-     "		echo \"/* BEGIN FILE: $$i */\"; \\n"
-     "		cat $$i || exit $$?; \\n"
-     "		echo \"/* END FILE: $$i */\"; \\n"
-     "	done > $@\n"
+     "\t@echo '$(logtag.@) $(emo.disk)'\n"
+     "\t@for i in $(post-jses.js); do \\n"
+     "\t\techo \"/* BEGIN FILE: $$i */\"; \\n"
+     "\t\tcat $$i || exit $$?; \\n"
+     "\t\techo \"/* END FILE: $$i */\"; \\n"
+     "\tdone > $@\n"
   );
 
   pf(zBanner
