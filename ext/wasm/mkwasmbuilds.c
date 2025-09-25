@@ -103,7 +103,9 @@ struct BuildDef {
   */
   const char *zDotWasm;
   const char *zCmppD;     /* Extra -D... flags for c-pp */
-  const char *zEmcc;      /* Extra flags for emcc */
+  const char *zEmcc;      /* Full flags for emcc. Normally NULL for default. */
+  const char *zEmccExtra; /* Extra flags for emcc */
+  const char *zDeps;      /* Extra deps */
   const char *zEnv;       /* emcc -sENVIRONMENT=... value */
   /*
   ** Makefile code "ifeq (...)". If set, this build is enclosed in a
@@ -152,6 +154,7 @@ typedef struct BuildDef BuildDef;
   E(vanilla) E(vanilla64) \
   E(esm)     E(esm64)     \
   E(bundler) E(bundler64) \
+  E(speedtest1)           \
   E(node)    E(node64)    \
   E(wasmfs)
 
@@ -183,7 +186,9 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = 0,
     .zCmppD      = 0,
     .zEmcc       = 0,
+    .zEmccExtra  = 0,
     .zEnv        = "web,worker",
+    .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_ALL
   },
@@ -194,8 +199,10 @@ const BuildDefs oBuildDefs = {
     .zBaseName   = "sqlite3-64bit",
     .zDotWasm    = 0,
     .zCmppD      = 0,
-    .zEmcc       = "-sMEMORY64=1 -sWASM_BIGINT=1",
+    .zEmcc       = 0,
+    .zEmccExtra  = "-sMEMORY64=1 -sWASM_BIGINT=1",
     .zEnv        = 0,
+    .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_ALL | F_64BIT
   },
@@ -207,7 +214,9 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=es6-module",
     .zEmcc       = 0,
+    .zEmccExtra  = 0,
     .zEnv        = 0,
+    .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_JS | F_ESM
   },
@@ -218,10 +227,39 @@ const BuildDefs oBuildDefs = {
     .zBaseName   = "sqlite3-64bit",
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=es6-module",
-    .zEmcc       = "-sMEMORY64=1 -sWASM_BIGINT=1",
+    .zEmcc       = 0,
+    .zEmccExtra  = "-sMEMORY64=1 -sWASM_BIGINT=1",
     .zEnv        = 0,
+    .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_JS | F_ESM | F_64BIT
+  },
+
+  /* speedtest1, our primary benchmarking tool */
+  .speedtest1 = {
+    .zEmo        = "🛼",
+    .zBaseName   = "speedtest1",
+    .zDotWasm    = 0,
+    .zCmppD      = 0,
+    .zEmcc       =
+    "$(emcc.speedtest1)"
+    " $(emcc.speedtest1.common)"
+    " $(pre-post.speedtest1.flags)"
+    " $(cflags.common)"
+    " -DSQLITE_SPEEDTEST1_WASM"
+    " $(SQLITE_OPT)"
+    " -USQLITE_WASM_BARE_BONES"
+    " -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c)"
+    " $(speedtest1.exit-runtime0)"
+    " $(speedtest1.c.in)"
+    " -lm",
+    .zEmccExtra  = 0,
+    .zEnv        = 0,
+    .zDeps       =
+    "$(speedtest1.c.in)"
+    " $(EXPORTED_FUNCTIONS.speedtest1)",
+    .zIfCond     = 0,
+    .flags       = CP_ALL
   },
 
   /*
@@ -239,7 +277,9 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = "sqlite3",
     .zCmppD      = "$(c-pp.D.esm) -Dtarget=es6-bundler-friendly",
     .zEmcc       = 0,
+    .zEmccExtra  = 0,
     .zEnv        = 0,
+    .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM
     //| F_NOT_IN_ALL
@@ -251,8 +291,10 @@ const BuildDefs oBuildDefs = {
     .zBaseName   = "sqlite3-bundler-friendlyu",
     .zDotWasm    = "sqlite3-64bit",
     .zCmppD      = "$(c-pp.D.bundler)",
-    .zEmcc       = "-sMEMORY64=1",
+    .zEmcc       = 0,
+    .zEmccExtra  = "-sMEMORY64=1",
     .zEnv        = 0,
+    .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_JS | F_ESM | F_BUNDLER_FRIENDLY | F_64BIT | F_NOT_IN_ALL
   },
@@ -268,11 +310,13 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=node $(c-pp.D.bundler)",
     .zEmcc       = 0,
+    .zEmccExtra  = 0,
     .zEnv        = "node"
     /* Adding ",node" to the zEnv list for the other builds causes
     ** Emscripten to generate code which confuses node: it cannot
     ** reliably determine whether the build is for a browser or for
     ** node. */,
+    .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS
   },
@@ -284,7 +328,9 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = 0,
     .zCmppD      = "-Dtarget=node $(c-pp.D.bundler)",
     .zEmcc       = 0,
+    .zEmccExtra  = 0,
     .zEnv        = "node",
+    .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS | F_64BIT
   },
@@ -295,8 +341,10 @@ const BuildDefs oBuildDefs = {
     .zBaseName   = "sqlite3-wasmfs",
     .zDotWasm    = 0,
     .zCmppD      = "$(c-pp.D.bundler)",
-    .zEmcc       = "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META",
+    .zEmcc       = 0,
+    .zEmccExtra  = "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META",
     .zEnv        = 0,
+    .zDeps       = 0,
     .zIfCond     = "ifeq (1,$(HAVE_WASMFS))",
     .flags       = CP_ALL | F_UNSUPPORTED | F_WASMFS
   }
@@ -592,6 +640,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      zBuildName, zBuildName );
 
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
+
   pf("out.%s.base ?= $(dir.dout.%s)/%s\n",
      zBuildName, zBuildName, zBaseName);
   pf("out.%s.js ?= $(dir.dout.%s)/%s%s\n",
@@ -599,20 +648,21 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   pf("out.%s.wasm ?= $(dir.dout.%s)/%s.wasm\n",
      //"$(basename $@).wasm"
      zBuildName, zBuildName, zBaseName);
-
 
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
   pf("out.%s.base ?= $(dir.dout.%s)/%s\n",
      zBuildName, zBuildName, zBaseName);
-  pf("out.%s.js ?= $(dir.dout.%s)/%s%s\n",
-     zBuildName, zBuildName, zBaseName, zJsExt);
-  pf("out.%s.wasm ?= $(dir.dout.%s)/%s.wasm\n",
-     //"$(basename $@).wasm"
-     zBuildName, zBuildName, zBaseName);
+
+  if( pB->zDeps ){
+    pf("deps.%s += %s\n", zBuildName, pB->zDeps);
+  }
+
   pf("c-pp.D.%s ?= %s\n", zBuildName, pB->zCmppD ? pB->zCmppD : "");
   pf("emcc.environment.%s ?= %s\n", zBuildName,
      pB->zEnv ? pB->zEnv : oBuildDefs.vanilla.zEnv);
-  pf("emcc.flags.%s ?= %s\n", zBuildName, pB->zEmcc ? pB->zEmcc : "");
+  if( pB->zEmccExtra ){
+    pf("emcc.flags.%s = %s\n", zBuildName, pB->zEmccExtra);
+  }
 
   emit_api_js(zBuildName, pB->zCmppD);
   if( pB->flags & F_64BIT ){
@@ -623,10 +673,10 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   { /* build it... */
     pf(zBanner
        "$(out.%s.js): $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles)"
-       " $(EXPORTED_FUNCTIONS.api)"
+       " $(EXPORTED_FUNCTIONS.api) $(deps.%s)"
        " $(bin.mkwb) $(pre-post.%s.deps)"
        "\n",
-       zBuildName, zBuildName);
+       zBuildName, zBuildName, zBuildName);
 
     emit_compile_start(zBuildName);
 
@@ -634,7 +684,27 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@echo '$(logtag.%s) $(emo.fire)$(emo.fire)$(emo.fire): "
          "unsupported build. Use at your own risk.'\n", zBuildName);
     }
-    pf("\t$(b.cmd@)$(call b.do.emcc,%s)\n", zBuildName);
+
+    /* emcc ... */
+    {
+      pf("\t$(b.cmd@)$(bin.emcc) -o $@ ");
+      if( pB->zEmcc ){
+        pf("%s $(emcc.flags.%s)\n",
+           pB->zEmcc, zBuildName);
+      }else{
+        pf("$(emcc_opt_full) $(emcc.flags)"
+           " $(emcc.jsflags)"
+           " -sENVIRONMENT=$(emcc.environment.%s)"
+           " $(pre-post.%s.flags)"
+           " $(emcc.flags.%s)"
+           " $(cflags.common)"
+           " $(cflags.%s)"
+           " $(SQLITE_OPT)"
+           " $(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n",
+           zBuildName, zBuildName, zBuildName, zBuildName
+        );
+      }
+    }
 
     { /* Post-compilation transformations and copying to
          $(dir.dout)... */
@@ -669,7 +739,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       /*
       ** $(bin.emcc) will write out $@ and will create a like-named
       ** .wasm file. The resulting .wasm and .js/.mjs files are
-      ** identical across all builds which have the same pB->zEmcc.
+      ** identical across all builds which have the same pB->zEmccExtra.
       **
       ** We copy one or both of those files to $(dir.dout) (the top-most
       ** build target dir), but: that .wasm file name gets hard-coded
@@ -831,6 +901,7 @@ static void mk_fiddle(void){
   }
 }
 
+#if 0
 static void mk_speedtest1(void){
   char const *zBuildName = "speedtest1";
   pf(zBanner "# Begin build %s\n", zBuildName);
@@ -867,30 +938,53 @@ static void mk_speedtest1(void){
               "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
               "speetest1-wasmfs.wasm");
 #endif
-
 }
+#endif
 
-int main(void){
+int main(int argc, char const ** argv){
   int rc = 0;
   const BuildDef *pB;
   pf("# What follows was GENERATED by %s. Edit at your own risk.\n", __FILE__);
-  mk_prologue();
-#define E(N) mk_lib_mode(# N, &oBuildDefs.N);
-  BuildDefs_map(E)
+
+  if(argc>1){
+    /*
+    ** Only emit the rules for the given list of builds, sans
+    ** prologue. Only for debugging, not makefile generation.
+    */
+    for( int i = 1; i < argc; ++i ){
+      char const * const zArg = argv[i];
+#define E(N) if(0==strcmp(#N, zArg)) {mk_lib_mode(# N, &oBuildDefs.N);} else /**/
+      BuildDefs_map(E) {
+        fprintf(stderr,"Unkown build name: %s\n", zArg);
+        rc = 1;
+        break;
+      }
 #undef E
-  pf(zBanner
-     "$(dir.dout)/sqlite3.js: $(out.vanilla.js)\n"
-     "$(dir.dout)/sqlite3.mjs: $(out.esm.js)\n"
-     "$(dir.dout)/sqlite3.wasm: $(out.vanilla.wasm)\n"
-     "$(dir.dout)/sqlite3-64bit.js: $(out.vanilla64.js)\n"
-     "$(dir.dout)/sqlite3-64bit.mjs: $(out.esm64.js)\n"
-     "$(dir.dout)/sqlite3-64bit.wasm: $(out.vanilla64.wasm)\n"
-     "b-vanilla: $(dir.dout)/sqlite3.wasm\n"
-     "b-vanilla64: $(dir.dout)/sqlite3-64bit.wasm\n"
-     "b-esm: $(dir.dout)/sqlite3.mjs\n"
-     "b-esm64: $(dir.dout)/sqlite3-64bit.mjs\n"
-  );
-  mk_fiddle();
-  mk_speedtest1();
+    }
+  }else{
+    /*
+    ** Emit the whole shebang...
+    */
+    mk_prologue();
+#define E(N) mk_lib_mode(# N, &oBuildDefs.N);
+    BuildDefs_map(E)
+#undef E
+#if 0
+    pf(zBanner
+       "$(dir.dout)/sqlite3.js: $(out.vanilla.js)\n"
+       "$(dir.dout)/sqlite3.mjs: $(out.esm.js)\n"
+       "$(dir.dout)/sqlite3.wasm: $(out.vanilla.wasm)\n"
+       "$(dir.dout)/sqlite3-64bit.js: $(out.vanilla64.js)\n"
+       "$(dir.dout)/sqlite3-64bit.mjs: $(out.esm64.js)\n"
+       "$(dir.dout)/sqlite3-64bit.wasm: $(out.vanilla64.wasm)\n"
+       "b-vanilla: $(dir.dout)/sqlite3.wasm\n"
+       "b-vanilla64: $(dir.dout)/sqlite3-64bit.wasm\n"
+       "b-esm: $(dir.dout)/sqlite3.mjs\n"
+       "b-esm64: $(dir.dout)/sqlite3-64bit.mjs\n"
+    );
+#endif
+    mk_fiddle();
+    //mk_speedtest1();
+  }
   return rc;
 }
