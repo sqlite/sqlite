@@ -386,11 +386,11 @@ static void mk_prologue(void){
      /* $1 = build name */
      "$(bin.emcc) -o $@ $(emcc_opt_full) $(emcc.flags) "
      "$(emcc.jsflags) -sENVIRONMENT=$(emcc.environment.$(1)) "
-     "\t\t$(pre-post.$(1).flags) "
-     "\t\t$(emcc.flags.$(1)) "
-     "\t\t$(cflags.common) $(cflags.$(1)) "
-     "\t\t$(SQLITE_OPT) "
-     "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.c.in)\n"
+     " $(pre-post.$(1).flags) "
+     " $(emcc.flags.$(1)) "
+     " $(cflags.common) $(cflags.$(1)) "
+     " $(SQLITE_OPT) "
+     " $(cflags.wasm_extra_init) $(sqlite3-wasm.c.in)\n"
      "endef\n"
   );
 
@@ -949,13 +949,16 @@ int main(int argc, char const ** argv){
 
   if(argc>1){
     /*
-    ** Only emit the rules for the given list of builds, sans
-    ** prologue. Only for debugging, not makefile generation.
+    ** Only emit the rules for the given list of builds, sans prologue
+    ** (unless the arg "prologue" is given). Intended only for
+    ** debugging, not actual makefile generation.
     */
     for( int i = 1; i < argc; ++i ){
       char const * const zArg = argv[i];
 #define E(N) if(0==strcmp(#N, zArg)) {mk_lib_mode(# N, &oBuildDefs.N);} else /**/
-      BuildDefs_map(E) {
+      BuildDefs_map(E) if( 0==strcmp("prologue",zArg) ){
+        mk_prologue();
+      }else {
         fprintf(stderr,"Unkown build name: %s\n", zArg);
         rc = 1;
         break;
