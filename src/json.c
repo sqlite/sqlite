@@ -2303,7 +2303,7 @@ static u32 jsonTranslateBlobToText(
             jsonAppendChar(pOut, '\'');
             break;
           case 'v':
-            jsonAppendRawNZ(pOut, "\\u0009", 6);
+            jsonAppendRawNZ(pOut, "\\u000b", 6);
             break;
           case 'x':
             if( sz2<4 ){
