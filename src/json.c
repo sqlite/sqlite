@@ -3153,19 +3153,27 @@ static void jsonReturnTextJsonFromBlob(
 **
 ** If the value is a primitive, return it as an SQL value.
 ** If the value is an array or object, return it as either
-** JSON text or the BLOB encoding, depending on the JSON_B flag
-** on the userdata.
+** JSON text or the BLOB encoding, depending on the eMode flag
+** as follows:
+**
+**     eMode==0     JSONB if the JSON_B flag is set in userdata or
+**                  text if the JSON_B flag is omitted from userdata.
+**
+**     eMode==1     Text
+**
+**     eMode==2     JSONB
 */
 static void jsonReturnFromBlob(
   JsonParse *pParse,          /* Complete JSON parse tree */
   u32 i,                      /* Index of the node */
   sqlite3_context *pCtx,      /* Return value for this function */
-  int textOnly                /* return text JSON.  Disregard user-data */
+  int eMode                   /* Format of return: text of JSONB */
 ){
   u32 n, sz;
   int rc;
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
 
+  assert( eMode>=0 && eMode<=2 );
   n = jsonbPayloadSize(pParse, i, &sz);
   if( n==0 ){
     sqlite3_result_error(pCtx, "malformed JSON", -1);
@@ -3284,8 +3292,14 @@ static void jsonReturnFromBlob(
     }
     case JSONB_ARRAY:
     case JSONB_OBJECT: {
-      int flags = textOnly ? 0 : SQLITE_PTR_TO_INT(sqlite3_user_data(pCtx));
-      if( flags & JSON_BLOB ){
+      if( eMode==0 ){
+        if( (SQLITE_PTR_TO_INT(sqlite3_user_data(pCtx)) & JSON_BLOB)!=0 ){
+          eMode = 2;
+        }else{
+          eMode = 1;
+        }
+      }
+      if( eMode==2 ){
         sqlite3_result_blob(pCtx, &pParse->aBlob[i], sz+n, SQLITE_TRANSIENT);
       }else{
         jsonReturnTextJsonFromBlob(pCtx, &pParse->aBlob[i], sz+n);
@@ -4932,6 +4946,7 @@ struct JsonEachCursor {
   u32 nRoot;                 /* Size of the root path in bytes */
   u8 eType;                  /* Type of the container for element i */
   u8 bRecursive;             /* True for json_tree().  False for json_each() */
+  u8 eMode;                  /* 1 for json_each().  2 for jsonb_each() */
   u32 nParent;               /* Current nesting depth */
   u32 nParentAlloc;          /* Space allocated for aParent[] */
   JsonParent *aParent;       /* Parent elements of i */
@@ -4943,6 +4958,8 @@ typedef struct JsonEachConnection JsonEachConnection;
 struct JsonEachConnection {
   sqlite3_vtab base;         /* Base class - must be first */
   sqlite3 *db;               /* Database connection */
+  u8 eMode;                  /* 1 for json_each().  2 for jsonb_each() */
+  u8 bRecursive;             /* True for json_tree().  False for json_each() */
 };
 
 
@@ -4985,6 +5002,8 @@ static int jsonEachConnect(
     if( pNew==0 ) return SQLITE_NOMEM;
     sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
     pNew->db = db;
+    pNew->eMode = argv[0][4]=='b' ? 2 : 1;
+    pNew->bRecursive = argv[0][4+pNew->eMode]=='t';
   }
   return rc;
 }
@@ -4996,8 +5015,8 @@ static int jsonEachDisconnect(sqlite3_vtab *pVtab){
   return SQLITE_OK;
 }
 
-/* constructor for a JsonEachCursor object for json_each(). */
-static int jsonEachOpenEach(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
+/* constructor for a JsonEachCursor object for json_each()/json_tree(). */
+static int jsonEachOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   JsonEachConnection *pVtab = (JsonEachConnection*)p;
   JsonEachCursor *pCur;
 
@@ -5005,19 +5024,11 @@ static int jsonEachOpenEach(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   pCur = sqlite3DbMallocZero(pVtab->db, sizeof(*pCur));
   if( pCur==0 ) return SQLITE_NOMEM;
   pCur->db = pVtab->db;
+  pCur->eMode = pVtab->eMode;
+  pCur->bRecursive = pVtab->bRecursive;
   jsonStringZero(&pCur->path);
   *ppCursor = &pCur->base;
   return SQLITE_OK;
-}
-
-/* constructor for a JsonEachCursor object for json_tree(). */
-static int jsonEachOpenTree(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
-  int rc = jsonEachOpenEach(p, ppCursor);
-  if( rc==SQLITE_OK ){
-    JsonEachCursor *pCur = (JsonEachCursor*)*ppCursor;
-    pCur->bRecursive = 1;
-  }
-  return rc;
 }
 
 /* Reset a JsonEachCursor back to its original state.  Free any memory
@@ -5224,7 +5235,7 @@ static int jsonEachColumn(
     }
     case JEACH_VALUE: {
       u32 i = jsonSkipLabel(p);
-      jsonReturnFromBlob(&p->sParse, i, ctx, 1);
+      jsonReturnFromBlob(&p->sParse, i, ctx, p->eMode);
       if( (p->sParse.aBlob[i] & 0x0f)>=JSONB_ARRAY ){
         sqlite3_result_subtype(ctx, JSON_SUBTYPE);
       }
@@ -5468,36 +5479,7 @@ static sqlite3_module jsonEachModule = {
   jsonEachBestIndex,         /* xBestIndex */
   jsonEachDisconnect,        /* xDisconnect */
   0,                         /* xDestroy */
-  jsonEachOpenEach,          /* xOpen - open a cursor */
-  jsonEachClose,             /* xClose - close a cursor */
-  jsonEachFilter,            /* xFilter - configure scan constraints */
-  jsonEachNext,              /* xNext - advance a cursor */
-  jsonEachEof,               /* xEof - check for end of scan */
-  jsonEachColumn,            /* xColumn - read data */
-  jsonEachRowid,             /* xRowid - read data */
-  0,                         /* xUpdate */
-  0,                         /* xBegin */
-  0,                         /* xSync */
-  0,                         /* xCommit */
-  0,                         /* xRollback */
-  0,                         /* xFindMethod */
-  0,                         /* xRename */
-  0,                         /* xSavepoint */
-  0,                         /* xRelease */
-  0,                         /* xRollbackTo */
-  0,                         /* xShadowName */
-  0                          /* xIntegrity */
-};
-
-/* The methods of the json_tree virtual table. */
-static sqlite3_module jsonTreeModule = {
-  0,                         /* iVersion */
-  0,                         /* xCreate */
-  jsonEachConnect,           /* xConnect */
-  jsonEachBestIndex,         /* xBestIndex */
-  jsonEachDisconnect,        /* xDisconnect */
-  0,                         /* xDestroy */
-  jsonEachOpenTree,          /* xOpen - open a cursor */
+  jsonEachOpen,              /* xOpen - open a cursor */
   jsonEachClose,             /* xClose - close a cursor */
   jsonEachFilter,            /* xFilter - configure scan constraints */
   jsonEachNext,              /* xNext - advance a cursor */
@@ -5590,16 +5572,12 @@ void sqlite3RegisterJsonFunctions(void){
 */
 int sqlite3JsonTableFunctions(sqlite3 *db){
   int rc = SQLITE_OK;
-  static const struct {
-    const char *zName;
-    sqlite3_module *pModule;
-  } aMod[] = {
-    { "json_each",            &jsonEachModule               },
-    { "json_tree",            &jsonTreeModule               },
+  int i;
+  static const char *azModule[] = {
+    "json_each", "json_tree", "jsonb_each", "jsonb_tree"
   };
-  unsigned int i;
-  for(i=0; i<sizeof(aMod)/sizeof(aMod[0]) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_module(db, aMod[i].zName, aMod[i].pModule, 0);
+  for(i=0; i<sizeof(azModule)/sizeof(azModule[0]) && rc==SQLITE_OK; i++){
+    rc = sqlite3_create_module(db, azModule[i], &jsonEachModule, 0);
   }
   return rc;
 }
