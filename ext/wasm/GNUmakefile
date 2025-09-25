@@ -178,19 +178,19 @@ logtag.test = [$(emo.test) $@]
 b.echo = echo $(logtag.$(1)) $(2)
 
 #
-# $(call b.call.mkdir@)
+# $(call b.mkdir@)
 #
 # $1 = optional LOGTAG
 #
-b.call.mkdir@ = if [ ! -d $(dir $@) ]; then \
+b.mkdir@ = if [ ! -d $(dir $@) ]; then \
   echo '[$(emo.folder)+] $(if $(1),$(logtag.$(1)),[$(dir $@)])'; \
   mkdir -p $(dir $@) || exit; fi
 
 #
-# $(call b.call.cp,@,src,dest)
+# $(call b.cp,@,src,dest)
 #
 # $1 = build name, $2 = src file(s). $3 = dest dir
-b.call.cp = $(call b.call.mkdir@); \
+b.cp = $(call b.mkdir@); \
   echo '$(logtag.$(1)) $(emo.disk) $(2) ==> $3'; \
   cp -p $(2) $(3) || exit
 
@@ -204,7 +204,7 @@ b.call.cp = $(call b.call.mkdir@); \
 #
 define b.eval.c-pp
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
-	@$$(call b.call.mkdir@); \
+	@$$(call b.mkdir@); \
 	$$(call b.echo,$(1),$$(emo.disk)$$(emo.lock) $$(bin.c-pp) $(4) $(if $(loud.if),$(2))); \
 	rm -f $(3); \
 	$$(bin.c-pp) -o $(3) $(4) $(2) || exit; \
@@ -215,7 +215,7 @@ endef
 c-pp.D.64bit = -D64bit
 
 #
-# $(call b.call.strip-emcc-js-cruft)
+# $(call b.strip-js-emcc-bindings)
 #
 # Our JS code installs bindings of each sqlite3_...() WASM export. The
 # generated Emscripten JS file does the same using its own framework,
@@ -230,7 +230,7 @@ c-pp.D.64bit = -D64bit
 # file.
 #
 # $1 = an optional log message prefix
-b.call.strip-emcc-js-cruft = \
+b.strip-js-emcc-bindings = \
   sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
   -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
   echo '$(1) $(emo.garbage) (Probably) /createExportWrapper()/d and /makeInvalidEarlyAccess()/d'
@@ -579,7 +579,7 @@ ifeq (0,$(wasm-bare-bones))
 endif
 EXPORTED_FUNCTIONS.api = $(dir.tmp)/EXPORTED_FUNCTIONS.api
 $(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
-	@$(call b.call.mkdir@)
+	@$(call b.mkdir@)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 
 ########################################################################
@@ -739,8 +739,8 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 # https://github.com/emscripten-core/emscripten/issues/14383
 sqlite3.wasm = $(dir.dout)/sqlite3.wasm
 sqlite3-wasm.c = $(dir.api)/sqlite3-wasm.c
-sqlite3-wasm.cfiles = $(sqlite3-wasm.c) $(sqlite3_wasm_extra_init.c)
-sqlite3-wasmfs.cfiles = $(sqlite3-wasm.cfiles)
+sqlite3-wasm.c.in = $(sqlite3-wasm.c) $(sqlite3_wasm_extra_init.c)
+sqlite3-wasmfs.c.in = $(sqlite3-wasm.c.in)
 # sqlite3-wasm.o vs sqlite3-wasm.c: building against the latter
 # (predictably) results in a slightly faster binary. We're close
 # enough to the target speed requirements that the 500ms makes a
@@ -773,10 +773,12 @@ sqlite3-wasmfs.cfiles = $(sqlite3-wasm.cfiles)
 #
 define b.call.patch-export-default
 if [ x1 = x$(1) ]; then \
-		echo "$(if $(3),$(3),$(logtag.@)) $(emo.bug) Fragile workaround for emscripten/issues/18237." \
+		echo "$(if $(3),$(3),$(logtag.@)) $(emo.bug) Fragile" \
+			"workaround for emscripten/issues/18237." \
 		"See b.call.patch-export-default."; \
 		{\
-			awk '/^export default/ && !f{f=1; next} 1' $@ > $@.tmp && mv $@.tmp $@; \
+			awk '/^export default/ && !f{f=1; next} 1' $@ \
+				> $@.tmp && mv $@.tmp $@; \
 		} || exit; \
 		if [ x1 = x$(2) ]; then \
 			if ! grep -q '^export default' $@; then \
@@ -786,18 +788,6 @@ if [ x1 = x$(1) ]; then \
 		fi; \
 fi
 endef
-
-#
-# We may not need these anymore in this file. They're primarily for
-# use in mkwasmbuilds.c.
-#
-sqlite3.js = $(dir.dout)/sqlite3.js
-sqlite3.mjs = $(dir.dout)/sqlite3.mjs
-sqlite3.wasm = $(dir.dout)/sqlite3.wasm
-sqlite3-64bit.js = $(dir.dout)/sqlite3-64bit.js
-sqlite3-64bit.mjs = $(dir.dout)/sqlite3-64bit.mjs
-sqlite3-64bit.wasm = $(dir.dout)/sqlite3-64bit.wasm
-EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 
 #
 # The various -D... values used by *.c-pp.js include:
@@ -889,7 +879,7 @@ sqlite3-license-version.js = $(dir.tmp)/sqlite3-license-version.js
 $(sqlite3-license-version.js): $(bin.version-info) \
   $(dir.api)/sqlite3-license-version-header.js
 	@echo '$(logtag.@) $(emo.disk)'; { \
-		$(call b.call.mkdir@); \
+		$(call b.mkdir@); \
 		cat $(dir.api)/sqlite3-license-version-header.js || exit $$?;  \
 		echo '/*'; \
 		echo '** This code was built from sqlite3 version...'; \
@@ -908,7 +898,7 @@ $(sqlite3-license-version.js): $(bin.version-info) \
 sqlite3-api-build-version.js = $(dir.tmp)/sqlite3-api-build-version.js
 $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	@echo '$(logtag.@) $(emo.disk)'; { \
-		$(call b.call.mkdir@); \
+		$(call b.mkdir@); \
 		echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
 		echo -n '  sqlite3.version = '; \
 		$(bin.version-info) --json; \
@@ -1055,7 +1045,7 @@ all: demos
 #
 sqlite3.ext.js += $(dir.dout)/sqlite3-opfs-async-proxy.js
 $(dir.dout)/sqlite3-opfs-async-proxy.js: $(dir.api)/sqlite3-opfs-async-proxy.js
-	@$(call b.call.cp,@,$<,$@)
+	@$(call b.cp,@,$<,$@)
 
 #
 # Add a dep of $(sqlite3.ext.js) on every build's JS file.
@@ -1117,7 +1107,7 @@ speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 
 $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
 	@echo "Making $@ ..."
-	@$(call b.call.mkdir@)
+	@$(call b.mkdir@)
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
 speedtest1: $(out.speedtest1.js)
 # end speedtest1.js
@@ -1260,10 +1250,10 @@ update-docs:
 	exit 127
 else
 wasm.docs.jswasm = $(wasm.docs.home)/jswasm
-update-docs: $(bin.stripccomments) $(sqlite3.js) $(sqlite3.wasm)
+update-docs: $(bin.stripccomments) $(out.sqlite3.js) $(out.sqlite3.wasm)
 	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!"
 	cp $(sqlite3.wasm) $(wasm.docs.jswasm)/.
-	$(bin.stripccomments) -k -k < $(sqlite3.js) \
+	$(bin.stripccomments) -k -k < $(out.sqlite3.js) \
 		| sed -e '/^[ \t]*$$/d' > $(wasm.docs.jswasm)/sqlite3.js
 	cp demo-123.js demo-123.html demo-123-worker.html $(wasm.docs.home)
 	sed -n -e '/EXTRACT_BEGIN/,/EXTRACT_END/p' \

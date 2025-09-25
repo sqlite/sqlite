@@ -360,14 +360,7 @@ static void mk_prologue(void){
   char const * aRequiredVars[] = {
     "dir.top",
     "dir.api", "dir.dout", "dir.tmp",
-    "MAKEFILE", "MAKEFILE_LIST",
-    /* Fiddle... */
     "dir.fiddle", "dir.fiddle.debug",
-    "EXPORTED_FUNCTIONS.fiddle",
-    /* Some core JS files... */
-    // todo: we don't need these anymore
-    "sqlite3.js", "sqlite3.mjs",
-    "sqlite3-64bit.js", "sqlite3-64bit.mjs",
     /*"just-testing",*/
     0
   };
@@ -397,7 +390,7 @@ static void mk_prologue(void){
      "\t\t$(emcc.flags.$(1)) "
      "\t\t$(cflags.common) $(cflags.$(1)) "
      "\t\t$(SQLITE_OPT) "
-     "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n"
+     "\t\t$(cflags.wasm_extra_init) $(sqlite3-wasm.c.in)\n"
      "endef\n"
   );
 
@@ -586,7 +579,7 @@ static char const * BuildDef_basename(const BuildDef * pB){
 }
 
 static void emit_compile_start(char const *zBuildName){
-  pf("\t@$(call b.call.mkdir@);"
+  pf("\t@$(call b.mkdir@);"
      " $(call b.echo,%s,$(emo.compile) building ...)\n",
      zBuildName);
 }
@@ -627,15 +620,17 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   pf("# zCmppD=%s\n# zBaseName=%s\n",
      pB->zCmppD ? pB->zCmppD : "", zBaseName);
 
-  pf(
-    "b.names += %s\n"
-    "emo.b.%s = %s\n",
-    zBuildName, zBuildName, pB->zEmo);
+  pf("b.names += %s\n"
+     "emo.b.%s = %s\n",
+     zBuildName, zBuildName, pB->zEmo);
 
-  pf("logtag.%s ?= [%s [%s] $@]:\n", zBuildName, pB->zEmo, zBuildName);
+  pf("logtag.%s ?= [%s [%s] $@]:\n",
+     zBuildName, pB->zEmo, zBuildName);
+
   if( pB->zIfCond ){
     pf("%s\n", pB->zIfCond );
   }
+
   pf("$(info $(logtag.%s) Setting up target b-%s)\n",
      zBuildName, zBuildName );
 
@@ -672,7 +667,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
 
   { /* build it... */
     pf(zBanner
-       "$(out.%s.js): $(MAKEFILE_LIST) $(sqlite3-wasm.cfiles)"
+       "$(out.%s.js): $(MAKEFILE_LIST) $(sqlite3-wasm.c.in)"
        " $(EXPORTED_FUNCTIONS.api) $(deps.%s)"
        " $(bin.mkwb) $(pre-post.%s.deps)"
        "\n",
@@ -700,7 +695,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
            " $(cflags.common)"
            " $(cflags.%s)"
            " $(SQLITE_OPT)"
-           " $(cflags.wasm_extra_init) $(sqlite3-wasm.cfiles)\n",
+           " $(cflags.wasm_extra_init) $(sqlite3-wasm.c.in)\n",
            zBuildName, zBuildName, zBuildName, zBuildName
         );
       }
@@ -722,15 +717,15 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@$(call b.call.wasm-strip,%s)\n", zBuildName);
 
       pf("\t@$(call b.do.wasm-opt,%s)\n", zBuildName);
-      pf("\t@$(call b.call.strip-js-cruft,$(logtag.%s))\n", zBuildName);
+      pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n", zBuildName);
 
       if( CP_JS & pB->flags && !(pB->zDotWasm/*handled below*/) ){
-        pf("\t@$(call b.call.cp,%s,$@,$(dir.dout))\n",
+        pf("\t@$(call b.cp,%s,$@,$(dir.dout))\n",
            zBuildName
         );
       }
       if( CP_WASM & pB->flags ){
-        pf("\t@$(call b.call.cp,%s,$(basename $@).wasm,$(dir.dout))\n",
+        pf("\t@$(call b.cp,%s,$(basename $@).wasm,$(dir.dout))\n",
            zBuildName
            //"\techo '[%s $(out.%s.wasm)] $(emo.disk) $(dir.dout)/$(notdir $(out.%s.wasm))'
            //pB->zEmo, zBuildName
@@ -850,25 +845,26 @@ static void mk_fiddle(void){
     {/* emcc */
       pf("$(out.%s.js): $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
          "$(EXPORTED_FUNCTIONS.fiddle) "
-         "$(fiddle.cses) "
+         "$(fiddle.c.in) "
          "$(pre-post.%s.deps)\n",
          zBuildName, zBuildName);
       emit_compile_start(zBuildName);
       pf("\t$(b.cmd@)$(bin.emcc) -o $@"
          " $(emcc.flags.%s)" /* set in fiddle.make */
          " $(pre-post.%s.flags)"
-         " $(fiddle.cses)"
+         " $(fiddle.c.in)"
          "\n",
          zBuildName, zBuildName);
       pf("\t@chmod -x $(out.%s.wasm)\n", zBuildName);
       pf("\t@$(call b.call.wasm-strip,%s)\n", zBuildName);
-      pf("\t@$(call b.call.strip-js-cruft,$(logtag.%s))\n", zBuildName);
-      pf("\t@$(call b.call.cp,"
+      pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n",
+         zBuildName);
+      pf("\t@$(call b.cp,"
          "%s,"
          "$(dir.api)/sqlite3-opfs-async-proxy.js,"
          "$(dir $@))\n", zBuildName);
       if( isDebug ){
-        pf("\t@$(call b.call.cp,%s,"
+        pf("\t@$(call b.cp,%s,"
            "$(dir.fiddle)/index.html "
            "$(dir.fiddle)/fiddle.js "
            "$(dir.fiddle)/fiddle-worker.js,"
@@ -876,6 +872,7 @@ static void mk_fiddle(void){
            ")\n",
            zBuildName);
       }
+      pf("\t@$(call b.echo,%s,$(emo.done) done!)\n", zBuildName);
     }
 
     pf("\n%s: $(out.%s.wasm)\n", isDebug ? "more" : "all", zBuildName);

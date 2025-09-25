@@ -69,7 +69,7 @@ $(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) \
 	@sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 	@echo $(logtag.@) $(emo.disk)
 
-fiddle.cses = $(dir.top)/shell.c $(sqlite3-wasm.c)
+fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
 
 clean: clean-fiddle
 clean-fiddle:
