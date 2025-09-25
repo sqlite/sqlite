@@ -254,7 +254,7 @@ b.strip-js-emcc-bindings = \
 bin.version-info = $(dir.top)/version-info
 $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 	$(MAKE) -C $(dir.top) version-info
-
+t-version-info: $(bin.version-info)
 #
 # bin.stripcomments is used for stripping C/C++-style comments from JS
 # files. The JS files contain large chunks of documentation which we
@@ -264,6 +264,7 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 bin.stripccomments = $(dir.tool)/stripccomments
 $(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
 	$(CC) -o $@ $<
+t-stripccomments: $(bin.stripccomments)
 DISTCLEAN_FILES += $(bin.stripccomments)
 
 
@@ -1239,8 +1240,8 @@ define gen-tester1.js
 # $3 = c-pp flags
 $(call b.eval.c-pp,test,tester1.c-pp.js,tester1$(2),$(3))
 tester1$(2): $(sqlite3.ext.js) $(out.$(1).wasm)
-tester1: tester1$(2)
 tester1-$(1): tester1$(2)
+tester1: tester1$(2)
 endef
 
 $(eval $(call gen-tester1.js,vanilla,.js,$(c-pp.D.vanilla)))
@@ -1260,7 +1261,7 @@ endef
 
 $(eval $(call gen-tester1.html,vanilla,,$(c-pp.D.vanilla)))
 $(eval $(call gen-tester1.html,vanilla64,-64bit,$(c-pp.D.vanilla64)))
-$(eval $(call gen-tester1.html,esm,-esm,$(c-pp.D.esm64)))
+$(eval $(call gen-tester1.html,esm,-esm,$(c-pp.D.esm)))
 $(eval $(call gen-tester1.html,esm64,-esm-64bit,$(c-pp.D.esm64)))
 
 # tester1-worker.html variants:
@@ -1268,7 +1269,7 @@ $(eval $(call gen-tester1.html,esm64,-esm-64bit,$(c-pp.D.esm64)))
 # ?esm URL flag to switch to ESM mode.
 $(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker.html))
 $(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
-tester: tester1-worker.html tester1-worker-64bit.html
+tester1: tester1-worker.html tester1-worker-64bit.html
 
 all: tester1
 # end tester1
@@ -1371,12 +1372,6 @@ endif
 # end /wasm docs
 ########################################################################
 
-########################################################################
-# Create main client downloadable zip file:
-ifneq (,$(filter dist snapshot,$(MAKECMDGOALS)))
-include dist.make
-endif
-
 # Run local web server for the test/demo pages.
 httpd:
 	althttpd -max-age 1 -enable-sab 1 -page index.html
@@ -1411,6 +1406,24 @@ distclean: clean
 	-rm -f $(DISTCLEAN_FILES)
 
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
+
+########################################################################
+# Create main client downloadable zip file:
+ifneq (,$(filter dist snapshot,$(MAKECMDGOALS)))
+ifeq (1,$(SQLITE_C_IS_SEE))
+dist-name-extra = -see
+else
+dist-name-extra =
+endif
+dist-name-prefix = sqlite-wasm$(dist-name-extra)
+.PHONY: dist
+dist:
+	./mkdist.sh $(dist-name-prefix)
+snapshot:
+	./mkdist.sh $(dist-name-prefix)-snapshot-$(shell /usr/bin/date +%Y%m%d)
+endif
+# ^^^ making dist/snapshot
+CLEAN_FILES += $(wildcard sqlite-wasm-*.zip)
 
 ########################################################################
 # Explanation of, and some commentary on, various emcc build flags
