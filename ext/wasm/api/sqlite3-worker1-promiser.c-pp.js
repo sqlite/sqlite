@@ -252,10 +252,12 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
 
 globalThis.sqlite3Worker1Promiser.defaultConfig = {
   worker: function(){
-//#if target=es6-module
+//#if target=es6-bundler-friendly
     return new Worker(new URL("sqlite3-worker1-bundler-friendly.mjs", import.meta.url),{
       type: 'module'
     });
+//#elif target=es6-module
+    return new Worker(new URL("sqlite3-worker1.js", import.meta.url));
 //#else
     let theJs = "sqlite3-worker1.js";
     if(this.currentScript){

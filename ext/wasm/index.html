@@ -49,20 +49,23 @@
       <ul id='test-list'>
         <li>Core-most tests
           <ul>
-            <li><a href='tester1.html'>tester1</a>: Core unit and
+            <li>tester1 (<a href='tester1.html'>32-bit</a>
+              <a href='tester1-64bit.html'>64-bit</a>): Core unit and
               regression tests for the various APIs and surrounding
               utility code.</li>
-            <li><a href='tester1-worker.html'>tester1-worker</a>: same thing
-              but running in a Worker.</li>
-            <li><a href='tester1-esm.html'>tester1-esm</a>: same as
+            <li>tester1-esm (<a href='tester1-esm.html'>32-bit</a>
+              <a href='tester1-esm-64bit.html'>64-bit</a>): same as
               <code>tester1</code> but loads sqlite3 in the main thread via
               an ES6 module.
             </li>
-            <li><a href='tester1-worker.html?esm'>tester1-worker?esm</a>:
-              same as <code>tester1-esm</code> but loads a Worker Module which
-              then loads the sqlite3 API via an ES6 module. Note that
-              not all browsers permit loading modules in Worker
-              threads.
+            <li>tester1-worker (<a href='tester1-worker.html'>32-bit</a>
+              <a href='tester1-worker-64bit.html'>64-bit</a>): same thing
+              but running in a Worker.</li>
+            <li>tester1-worker ESM (<a href='tester1-worker.html?esm'>32-bit</a>
+              <a href='tester1-worker-64bit.html?esm'>64-bit</a>): same as
+              tester1-worker but loads a Worker Module which then
+              loads the sqlite3 API via an ES6 module. Not all
+              browsers permit loading modules in Worker threads.
             </li>
           </ul>
         </li>
@@ -122,6 +125,13 @@
             <li><a href='tests/opfs/sahpool/index.html'>OPFS SAHPool cooperative semi-concurrency</a>
               demonstrates usage of the OPFS SAHPool VFS's "pause" feature to coordinate
               access to a database.
+            </li>
+            <li><a href='SQLTester/index.html'>SQLTester</a> is
+              another testing tool for the library but making use of
+              it requires tests from an external, proprietary
+              project. Despite not being useful to the general public,
+              a link to it is in this list so that its developer has
+              easy access to it.
             </li>
           </ul>
         </li>

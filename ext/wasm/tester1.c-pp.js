@@ -44,7 +44,13 @@
      ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget=es6-module
 */
 //#if target=es6-module
-import {default as sqlite3InitModule} from './jswasm/sqlite3.mjs';
+import {default as sqlite3InitModule} from
+//#if 64bit
+'./jswasm/sqlite3-64bit.mjs'
+//#else
+'./jswasm/sqlite3.mjs'
+//#endif
+;
 globalThis.sqlite3InitModule = sqlite3InitModule;
 //#else
 'use strict';
@@ -108,16 +114,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         logTarget.append(ln);
       };
       const cbReverse = document.querySelector('#cb-log-reverse');
-      //cbReverse.setAttribute('checked','checked');
       const cbReverseKey = 'tester1:cb-log-reverse';
       const cbReverseIt = ()=>{
         logTarget.classList[cbReverse.checked ? 'add' : 'remove']('reverse');
-        //localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
+        localStorage.setItem(cbReverseKey, cbReverse.checked ? 1 : 0);
       };
       cbReverse.addEventListener('change', cbReverseIt, true);
-      /*if(localStorage.getItem(cbReverseKey)){
+      if(localStorage.getItem(cbReverseKey)){
         cbReverse.checked = !!(+localStorage.getItem(cbReverseKey));
-      }*/
+      }
       cbReverseIt();
     }else{ /* Worker thread */
       console.log("Running in a Worker thread.");
@@ -138,6 +143,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }else{
       postMessage({type:'test-result', payload:{pass}});
     }
+    TestUtil.checkHeapSize(true);
   };
   const log = (...args)=>{
     //console.log(...args);
@@ -298,6 +304,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             logClass(['faded','one-test-summary'],
                      TestUtil.counter - tc, 'assertion(s) in',
                      roundMs(then-now),'ms');
+            TestUtil.checkHeapSize();
           }
           logClass(['green','group-end'],
                    "#"+this.number+":",
@@ -348,6 +355,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           reportFinalTestStatus(false);
         }
       }.bind(this));
+    },
+
+    checkHeapSize: function(force=false){
+      const heapSize = SQLite3.wasm.heap8().byteLength;
+      if( force || heapSize !== TestUtil.lastHeapSize ){
+        TestUtil.lastHeapSize = heapSize;
+        log('WASM heap size:', heapSize,'bytes');
+      }
     }
   }/*TestUtil*/;
   const T = TestUtil;
@@ -3807,7 +3822,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       are simply lost, and such scripts see the globalThis.location of
       _this_ script.
     */
+//#if 64bit
+    let sqlite3Js = 'sqlite3-64bit.js';
+//#else
     let sqlite3Js = 'sqlite3.js';
+//#endif
     const urlParams = new URL(globalThis.location.href).searchParams;
     if(urlParams.has('sqlite3.dir')){
       sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;
@@ -3840,7 +3859,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }else{
       logClass('warning',"BigInt/int64 support is disabled.");
     }
-    log("WASM pointer size:",wasm.ptr.size,"bytes");
     if(haveWasmCTests()){
       log("sqlite3__wasm_test_...() APIs are available.");
     }else{
@@ -3848,6 +3866,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }
     log("registered vfs list =",capi.sqlite3_js_vfs_list().join(', '));
     SQLite3 = sqlite3;
+    log("WASM pointer size:",wasm.ptr.size,"bytes.");
+    TestUtil.checkHeapSize();
     TestUtil.runTests(sqlite3);
   });
 })(self);

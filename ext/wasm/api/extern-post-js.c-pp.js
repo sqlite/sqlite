@@ -69,6 +69,7 @@ const toExportForESM =
         EmscriptenModule /* see post-js-header/footer.js */,
         !!ff.__isUnderTest
       );
+      sIMS.debugModule("sqlite3InitModule() sqlite3 =",s);
       //const rv = s.asyncPostInit();
       //delete s.asyncPostInit;
 //#if wasmfs

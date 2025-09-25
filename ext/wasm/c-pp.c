@@ -278,6 +278,8 @@ void fatalv(char const *zFmt, va_list va){
     vfprintf(stderr, zFmt, va);
   }
   fputc('\n', stderr);
+  fflush(stdout);
+  fflush(stderr);
   exit(1);
 }
 
@@ -1417,15 +1419,16 @@ void cmpp_process_keyword(CmppTokenizer * const t){
 void cmpp_process_file(const char * zName){
   FileWrapper fw = FileWrapper_empty;
   CmppTokenizer ct = CmppTokenizer_empty;
-
   FileWrapper_open(&fw, zName, "r");
   FileWrapper_slurp(&fw);
   g_debug(1,("Read %u byte(s) from [%s]\n", fw.nContent, fw.zName));
-  ct.zName = zName;
-  ct.zBegin = fw.zContent;
-  ct.zEnd = fw.zContent + fw.nContent;
-  while(cmpp_next_keyword_line(&ct)){
-    cmpp_process_keyword(&ct);
+  if( fw.zContent ){
+    ct.zName = zName;
+    ct.zBegin = fw.zContent;
+    ct.zEnd = fw.zContent + fw.nContent;
+    while(cmpp_next_keyword_line(&ct)){
+      cmpp_process_keyword(&ct);
+    }
   }
   FileWrapper_close(&fw);
   if(0!=ct.level.ndx){
@@ -1438,13 +1441,13 @@ void cmpp_process_file(const char * zName){
 static void usage(int isErr){
   FILE * const fOut = isErr ? stderr : stdout;
   fprintf(fOut,
-          "Usage: %s [flags] [infile]\n"
+          "Usage: %s [flags] [infile...]\n"
           "Flags:\n",
           g.zArgv0);
 #define arg(F,D) fprintf(fOut,"  %s\n      %s\n",F, D)
   arg("-f|--file FILE","Read input from FILE (default=- (stdin)).\n"
-      "      Alternately, the first non-flag argument is assumed to "
-      "be the input file.");
+      "      Alternately, non-flag arguments are assumed to "
+      "be the input files.");
   arg("-o|--outfile FILE","Send output to FILE (default=- (stdout))");
   arg("-DXYZ","Define XYZ to true");
   arg("-UXYZ","Undefine XYZ (equivalent to false)");
@@ -1459,13 +1462,16 @@ int main(int argc, char const * const * argv){
   int rc = 0;
   int i;
   int inclCount = 0;
-  const char * zInfile = 0;
+  int nFile = 0;
+  char const *zFileList[128] = {0};
 #define M(X) (0==strcmp(X,zArg))
 #define ISFLAG(X) else if(M(X))
 #define ISFLAG2(X,Y) else if(M(X) || M(Y))
 #define ARGVAL \
   if(i+1>=argc) fatal("Missing value for flag '%s'", zArg);  \
   zArg = argv[++i]
+
+  memset(zFileList, 0, sizeof(zFileList));
   g.zArgv0 = argv[0];
   atexit(cmpp_atexit);
   cmpp_initdb();
@@ -1497,8 +1503,11 @@ int main(int argc, char const * const * argv){
     ISFLAG2("f","file"){
       ARGVAL;
       do_infile:
-      if(zInfile) fatal("Cannot use -i more than once.");
-      zInfile = zArg;
+      if( nFile>=sizeof(zFileList)/sizeof(zFileList[0]) ){
+        fatal("Too many file arguments. Max is %d.",
+              (int)(sizeof(zFileList)/sizeof(zFileList[0])));
+      }
+      zFileList[nFile++] = zArg;
     }
     ISFLAG2("d","delimiter"){
       ARGVAL;
@@ -1508,17 +1517,21 @@ int main(int argc, char const * const * argv){
     }
     ISFLAG("debug"){
       ++g.doDebug;
-    }else if(!zInfile && '-'!=argv[i][0]){
+    }else if('-'!=*zArg){
       goto do_infile;
     }else{
       fatal("Unhandled flag: %s", argv[i]);
     }
   }
-  if(!zInfile) zInfile = "-";
+  if(!nFile){
+    zFileList[nFile++] = "-";
+  }
   if(!g.out.zName) g.out.zName = "-";
   if(!inclCount) db_include_dir_add(".");
   FileWrapper_open(&g.out, g.out.zName, "w");
-  cmpp_process_file(zInfile);
+  for(i = 0; i < nFile; ++i){
+    cmpp_process_file(zFileList[i]);
+  }
   FileWrapper_close(&g.out);
   end:
   return rc ? EXIT_FAILURE : EXIT_SUCCESS;

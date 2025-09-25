@@ -8,9 +8,13 @@
     <link rel="stylesheet" href="common/testing.css"/>
     <title>sqlite3 tester #1:
 //#if target=es6-module
-ES6 Module in UI thread
+ES6 Module in
+//#endif
+ UI thread
+//#if 64bit
+ (64-bit WASM)
 //#else
-UI thread
+ (32-bit WASM)
 //#endif
     </title>
     <style></style>
@@ -32,10 +36,19 @@ UI thread
         document.querySelector('title').innerHTML;
     })();</script>
 //#if target=es6-module
+//#if 64bit
+    <script src="tester1-64bit.mjs" type="module"></script>
+//#else
     <script src="tester1.mjs" type="module"></script>
+//#endif
+//#else
+//#if 64bit
+    <script src="jswasm/sqlite3-64bit.js"></script>
+    <script src="tester1-64bit.js"></script>
 //#else
     <script src="jswasm/sqlite3.js"></script>
     <script src="tester1.js"></script>
 //#endif
+//#endif target=es6-module
   </body>
 </html>

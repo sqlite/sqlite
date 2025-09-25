@@ -34,6 +34,8 @@
 */
 //#if target=es6-bundler-friendly
 import {default as sqlite3InitModule} from './sqlite3-bundler-friendly.mjs';
+//#elif target=es6-module
+    return new Worker(new URL("sqlite3.js", import.meta.url));
 //#else
 "use strict";
 {

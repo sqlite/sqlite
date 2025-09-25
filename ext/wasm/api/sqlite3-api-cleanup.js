@@ -36,7 +36,6 @@ if( 'undefined' === typeof EmscriptenModule/*from post-js-header.js*/ ){
   throw new Error("sqlite3-api-cleanup.js expects to be running in the "+
                   "context of its Emscripten module loader.");
 }
-
 try{
   /* Config options for sqlite3ApiBootstrap(). */
   const bootstrapConfig = Object.assign(
@@ -60,6 +59,8 @@ try{
   bootstrapConfig.wasmPtrIR =
     'number'===(typeof bootstrapConfig.exports.sqlite3_libversion())
     ?  'i32' :'i64';
+  const sIMS = sqlite3InitScriptInfo;
+  sIMS.debugModule("Bootstrapping lib config", sIMS);
 
   /**
      For purposes of the Emscripten build, call sqlite3ApiBootstrap().
