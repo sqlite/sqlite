@@ -843,7 +843,7 @@ static void mk_fiddle(void){
     mk_pre_post(zBuildName);
 
     {/* emcc */
-      pf("$(out.%s.js): $(MAKEFILE_LIST) $(MAKEFILE.fiddle) "
+      pf("$(out.%s.js): $(MAKEFILE_LIST) "
          "$(EXPORTED_FUNCTIONS.fiddle) "
          "$(fiddle.c.in) "
          "$(pre-post.%s.deps)\n",

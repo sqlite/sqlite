@@ -34,18 +34,17 @@
 ########################################################################
 default: all
 MAKEFILE = $(lastword $(MAKEFILE_LIST))
-MAKEFILE.fiddle = fiddle.make
 CLEAN_FILES =
 DISTCLEAN_FILES = config.make
 MAKING_CLEAN = $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
 
+#
+# dir.X = various directory names.
+#
 # dir.top = the top dir of the canonical build tree, where
 # sqlite3.[ch] live.
+#
 dir.top = ../..
-# Maintenance reminder: some Emscripten flags require absolute paths
-# but we want relative paths for most stuff simply to reduce
-# noise. The $(abspath...) GNU make function can transform relative
-# paths to absolute.
 dir.wasm = $(patsubst %/,%,$(dir $(MAKEFILE)))
 dir.api = api
 dir.jacc = jaccwabyt
@@ -145,11 +144,11 @@ endif
 # ^^^ end of are-we-MAKING_CLEAN
 
 #
-# Common vars and $(call)able utilities for the SQLite WASM build.
+# Common vars and $(call)/$(eval)able utilities.
 #
 # The "b." prefix on some APIs is for "build". It was initially used
-# only for build-specific features. That's no longer the case, but the
-# naming convention has stuck.
+# only for features specific to each distinct js/wasm build. That's no
+# longer the case, but the naming convention has stuck.
 #
 
 loud ?= 0
@@ -165,12 +164,19 @@ endif
 
 #
 # logtag.X value for log context labeling. logtag.OTHERX can be
-# assigned to customize it for a given X. This tag is used by the
-# b.call.X and b.eval.X for logging.
+# assigned to customize it for a given X. This tag is used by
+# b.call.X, b.eval.X, etc. for logging. There motivation for this is
+# adding a build-specific prefix to messages so that the output of
+# parallel builds is easier to sort through. We use emoji for the
+# prefixes because it's far easier for my eyes to sort through than
+# using only each build's name as the prefix.
 #
-logtag.@ = [$@]
+# Each distinct build sets up its own logtag.BUILDNAME.
+#
+logtag.@      = [$@]
 logtag.filter = [$(emo.disk) $@]
-logtag.test = [$(emo.test) $@]
+logtag.test   = [$(emo.test) $@]
+logtag.cp     = [$(emo.disk) $@]
 
 #
 # $(call b.echo,LOGTAG,msg)
@@ -201,7 +207,6 @@ b.cp = $(call b.mkdir@); \
 # $2 = Input file(s): cat $(2) | $(bin.c-pp) ...
 # $3 = Output file: $(bin.c-pp) -o $(3)
 # $4 = optional $(bin.c-pp) -D... flags */
-#
 define b.eval.c-pp
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	@$$(call b.mkdir@); \
@@ -217,19 +222,18 @@ c-pp.D.64bit = -D64bit
 #
 # $(call b.strip-js-emcc-bindings)
 #
+# $1 = an optional log message prefix
+#
 # Our JS code installs bindings of each sqlite3_...() WASM export. The
 # generated Emscripten JS file does the same using its own framework,
 # but we don't use those results and can speed up lib init, and reduce
-# memory cost a bit, by stripping them out. Emscripten-side changes
-# can "break" this, causing this to be a no-op, but the worst that can
-# happen in that case is that it doesn't actually strip anything,
-# leading to slightly larger JS files.
+# memory cost a bit, by stripping them out. Emscripten code-generation
+# changes can "break" this, causing this to be a no-op, but (probably)
+# the worst that can happen in that case is that it doesn't actually
+# strip anything, leading to slightly larger JS files.
 #
-# This snippet is intended to be used in makefile targets which
-# generate an Emscripten module and where $@ is the module's .js/.mjs
-# file.
-#
-# $1 = an optional log message prefix
+# This is intended to be used in makefile targets which generate an
+# Emscripten module and where $@ is the module's .js/.mjs file.
 b.strip-js-emcc-bindings = \
   sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
   -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
@@ -952,6 +956,88 @@ speedtest1.c.in = $(speedtest1.c) $(sqlite3-wasm.c)
 EXPORTED_FUNCTIONS.speedtest1 = $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtest1)
 
 #
+# fiddle build flags
+#
+# Flags specifically for debug builds of fiddle. Performance suffers
+# greatly in debug builds.
+########################################################################
+# shell.c and its build flags...
+#
+# We should ideally collect these from ../../configure and past
+# them in ./config.make. The problem with that is that SHELL_OPT is
+# generated at make-time, not configure-time.
+ifneq (1,$(MAKING_CLEAN))
+  make-np-0 = make -C  $(dir.top) -n -p
+  make-np-1 = sed -e 's/(TOP)/(dir.top)/g'
+  # Extract SHELL_OPT and SHELL_DEP from the top-most makefile and import
+  # them as vars here...
+  $(eval $(shell $(make-np-0) | grep -e '^SHELL_OPT ' | $(make-np-1)))
+  $(eval $(shell $(make-np-0) | grep -e '^SHELL_DEP ' | $(make-np-1)))
+  # ^^^ can't do that in 1 invocation b/c newlines get stripped
+  ifeq (,$(SHELL_OPT))
+  $(error Could not parse SHELL_OPT from $(dir.top)/Makefile.)
+  endif
+  ifeq (,$(SHELL_DEP))
+  $(error Could not parse SHELL_DEP from $(dir.top)/Makefile.)
+  endif
+$(dir.top)/shell.c: $(SHELL_DEP) $(dir.tool)/mkshellc.tcl $(sqlite3.c)
+	$(MAKE) -C $(dir.top) shell.c
+endif
+# /shell.c
+########################################################################
+
+EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
+$(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE_LIST)
+	@$(b.call.mkdir@)
+	@sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
+	@echo $(logtag.@) $(emo.disk)
+
+emcc.flags.fiddle = \
+  $(emcc.cflags) $(emcc_opt_full) \
+  --minify 0 \
+  -sALLOW_TABLE_GROWTH \
+  -sMEMORY64=$(emcc.MEMORY64) \
+  -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.8) \
+  -sABORTING_MALLOC \
+  -sSTRICT_JS=0 \
+  -sENVIRONMENT=web,worker \
+  -sMODULARIZE \
+  -sDYNAMIC_EXECUTION=0 \
+  -sWASM_BIGINT=$(emcc.WASM_BIGINT) \
+  -sEXPORT_NAME=$(sqlite3.js.init-func) \
+  -Wno-limited-postlink-optimizations \
+  $(emcc.exportedRuntimeMethods),FS \
+  -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
+  $(SQLITE_OPT.full-featured) \
+  $(SQLITE_OPT.common) \
+  $(SHELL_OPT) \
+  -UHAVE_READLINE -UHAVE_EDITLINE -UHAVE_LINENOISE \
+  -USQLITE_HAVE_ZLIB \
+  -USQLITE_WASM_BARE_BONES \
+  -DSQLITE_SHELL_FIDDLE
+
+clean: clean-fiddle
+clean-fiddle:
+	rm -f $(dir.fiddle)/fiddle-module.js \
+        $(dir.fiddle)/*.wasm \
+        $(dir.fiddle)/sqlite3-opfs-*.js \
+        $(dir.fiddle)/*.gz \
+        EXPORTED_FUNCTIONS.fiddle
+	rm -fr $(dir.fiddle-debug)
+
+emcc.flags.fiddle.debug = $(emcc.flags.fiddle) \
+  -DSQLITE_DEBUG \
+  -DSQLITE_ENABLE_SELECTTRACE \
+  -DSQLITE_ENABLE_WHERETRACE
+
+fiddle.EXPORTED_FUNCTIONS.in = \
+    EXPORTED_FUNCTIONS.fiddle.in \
+    $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core \
+    $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
+
+fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
+
+#
 # bin.mkwb is used for generating much of the makefile code for the
 # various wasm builds. It used to be generated in this makefile via a
 # difficult-to-read/maintain block of $(eval)'d code. Attempts were
@@ -964,6 +1050,10 @@ EXPORTED_FUNCTIONS.speedtest1 = $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtes
 #
 # - Ordering of this block within this file is fragile. The generated
 #   makefile sets up many vars which are useful for the other targets.
+#
+# - Vars which are used by $(bin.mkwb) in dependency lists and such
+#   need to be defined before this is included. Those used in recipies
+#   do not.
 #
 bin.mkwb = ./mkwasmbuilds
 ifneq (1,$(MAKING_CLEAN))
@@ -978,6 +1068,13 @@ $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
 endif
 CLEAN_FILES += .wasmbuilds.make $(bin.mkwb)
 
+#
+# $(sqlite3.ext.js) = API-related files which are standalone
+# files, not part of the amalgamation. This list holds
+# the name of each such _output_ file.
+#
+sqlite3.ext.js =
+
 ########################################################################
 # We need separate copies of certain supplementary JS files for the
 # bundler-friendly build. Concretely, any supplemental JS files which
@@ -986,8 +1083,6 @@ CLEAN_FILES += .wasmbuilds.make $(bin.mkwb)
 # copy. Bundler-friendly builds replace certain references to string
 # vars/expressions with string literals, as bundler tools are static
 # code analyzers and cannot cope with the former.
-#
-# Most of what follows is the generation of those copies.
 
 #
 # sqlite3-worker1*.*
@@ -1037,30 +1132,34 @@ endef
 $(eval $(call gen-dwp,.js,.html,$(c-pp.D.vanilla)))
 $(eval $(call gen-dwp,.mjs,-esm.html,$(c-pp.D.esm)))
 all: demos
+# End worker/promiser generation
+#######################################################################
 
 #
-# $(sqlite3.ext.in) = API-related files which are standalone
-# files, not part of the amalgamation. This list holds
-# the name of each such _output_ file.
+# "SOAP" is a static file which is not part of the amalgamation but
+# gets copied into the build output folder and into each of the fiddle
+# builds.
 #
 sqlite3.ext.js += $(dir.dout)/sqlite3-opfs-async-proxy.js
 $(dir.dout)/sqlite3-opfs-async-proxy.js: $(dir.api)/sqlite3-opfs-async-proxy.js
 	@$(call b.cp,@,$<,$@)
 
 #
-# Add a dep of $(sqlite3.ext.js) on every build's JS file.
-# The primary purpose of this is to force them to be copied early
-# in the build process, which is sometimes a time-saver during
+# Add a dep of $(sqlite3.ext.js) on every individual build's JS file.
+# The primary purpose of this is to force them to be copied early in
+# the build process, which is sometimes a time-saver during
 # development, allowing the developer to reload a test page while
-# other parts of the build are still running.
+# other parts of the build are still running. Another reason is that
+# we don't otherwise have a great place to attach them such that
+# they're always copied when we need them.
 #
 $(foreach B,$(b.names),$(eval $(out.$(B).js): $(sqlite3.ext.js)))
 
-########################################################################
-# Wasmified speedtest1 is our primary benchmarking tool.
+#
+# speedtest1 is our primary benchmarking tool.
 #
 # emcc.speedtest1.common = emcc flags used by multiple builds of speedtest1
-# emcc.speedtest1 = emcc flags used by main build of speedtest1
+# emcc.speedtest1 = emcc flags used by the main build of speedtest1
 #
 # These flags get applied via $(bin.mkwb).
 emcc.speedtest1.common = $(emcc_opt_full)
@@ -1113,7 +1212,7 @@ speedtest1: $(out.speedtest1.js)
 # end speedtest1.js
 ########################################################################
 
-########################################################################
+#
 # tester1 is the main unit and regression test application and needs
 # to be able to run in 4 separate modes to cover the primary
 # client-side use cases:
@@ -1131,18 +1230,19 @@ speedtest1: $(out.speedtest1.js)
 # Then we need those again in 64-bit builds, which require a 64-bit
 # pair of js/wasm files.
 #
-# To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
+# To create those, we filter tester1.c-pp.js/html with $(bin.c-pp)...
 
 # tester1.js variants:
 define gen-tester1.js
-# $1=build name to have dep on
-# $2=suffix for tester1SUFFIX JS
-# $3=c-pp flags
+# $1 = build name to have dep on
+# $2 = suffix for tester1SUFFIX JS
+# $3 = c-pp flags
 $(call b.eval.c-pp,test,tester1.c-pp.js,tester1$(2),$(3))
 tester1$(2): $(sqlite3.ext.js) $(out.$(1).wasm)
 tester1: tester1$(2)
 tester1-$(1): tester1$(2)
 endef
+
 $(eval $(call gen-tester1.js,vanilla,.js,$(c-pp.D.vanilla)))
 $(eval $(call gen-tester1.js,vanilla64,-64bit.js,$(c-pp.D.vanilla64)))
 $(eval $(call gen-tester1.js,esm,.mjs,$(c-pp.D.esm)))
@@ -1150,31 +1250,39 @@ $(eval $(call gen-tester1.js,esm64,-64bit.mjs,$(c-pp.D.esm64)))
 
 # tester1.html variants:
 define gen-tester1.html
+# $1 = build name to have a dep on
+# $2 = file suffix: empty, -64bit, -esm, esm-64bit
+# $3 = c-pp -D flags.
 $(call b.eval.c-pp,test,tester1.c-pp.html,tester1$(2).html,$(3))
 tester1$(2).html: tester1-$(1)
 tester1: tester1$(2).html
 endef
+
 $(eval $(call gen-tester1.html,vanilla,,$(c-pp.D.vanilla)))
 $(eval $(call gen-tester1.html,vanilla64,-64bit,$(c-pp.D.vanilla64)))
 $(eval $(call gen-tester1.html,esm,-esm,$(c-pp.D.esm64)))
 $(eval $(call gen-tester1.html,esm64,-esm-64bit,$(c-pp.D.esm64)))
 
-
 # tester1-worker.html variants:
-# There is no ESM variant. Instead, that page accepts a ?esm URL flag to switch
-# to ESM mode.
+# There is no ESM variant of this file. Instead, that page accepts a
+# ?esm URL flag to switch to ESM mode.
 $(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker.html))
 $(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
 tester: tester1-worker.html tester1-worker-64bit.html
 
 all: tester1
-
+# end tester1
 ########################################################################
+
+#
 # Convenience rules to rebuild with various -Ox levels. Much
 # experimentation shows -O2 to be the clear winner in terms of speed.
-# Note that build times with anything higher than -O0 are somewhat
-# painful.
-
+# -Oz results are significantly smaller and only slightly slower than
+# -O2 (very roughly 10% in highly unscientific tests), so -Oz is the
+# shipping configuration.
+#
+# Achtung: build times with anything higher than -O0 are somewhat
+# painful, which is why -O0 is the default.
 .PHONY: o0 o1 o2 o3 os oz
 emcc-opt-extra =
 #ifeq (1,$(wasm-bare-bones))
@@ -1200,14 +1308,15 @@ os: clean
 oz: clean
 	$(MAKE) -e "emcc_opt=-Oz $(emcc-opt-extra)"
 
-########################################################################
-# Sub-makes...
-
-# https://sqlite.org/fiddle application...
-include $(MAKEFILE.fiddle)
-
-########################################################################
-# Push files to public wasm-testing.sqlite.org server
+#
+# Push files to the public wasm-testing.sqlite.org server.
+#
+# Ideally only -Oz builds should be pushed, so the practice has become:
+#
+#   make clean
+#   make -j4 for-testing
+#   make push-testing
+#
 wasm-testing.include = *.js *.mjs *.html \
   ./tests \
   $(dir.dout) $(dir.common) $(dir.fiddle) $(dir.fiddle.debug) $(dir.jacc)
@@ -1224,10 +1333,10 @@ push-testing:
 		ssh wasm-testing 'cd $(wasm-testing.dir) && bash .gzip' || \
     echo "SSH failed: it's likely that stale content will be served via old gzip files."
 
+# build everything needed by push-testing with -Oz
 .PHONY: for-testing
 for-testing: emcc_opt=-Oz
 for-testing: loud=1
-#$(foreach B,$(b.names),$(eval for-testing: $(out.$(B).js)))
 for-testing.deps = \
   tester1 demos \
   b-vanilla b-vanilla64 \
@@ -1251,11 +1360,11 @@ update-docs:
 else
 wasm.docs.jswasm = $(wasm.docs.home)/jswasm
 update-docs: $(bin.stripccomments) $(out.sqlite3.js) $(out.sqlite3.wasm)
-	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!"
-	cp $(sqlite3.wasm) $(wasm.docs.jswasm)/.
-	$(bin.stripccomments) -k -k < $(out.sqlite3.js) \
+	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!";
+	cp -p $(sqlite3.wasm) $(wasm.docs.jswasm)/.
+	$(bin.stripccomments) -k -k < $(out.vanilla.js) \
 		| sed -e '/^[ \t]*$$/d' > $(wasm.docs.jswasm)/sqlite3.js
-	cp demo-123.js demo-123.html demo-123-worker.html $(wasm.docs.home)
+	cp -p demo-123.js demo-123.html demo-123-worker.html $(wasm.docs.home)/.
 	sed -n -e '/EXTRACT_BEGIN/,/EXTRACT_END/p' \
 		module-symbols.html > $(wasm.docs.home)/module-symbols.html
 endif
@@ -1272,13 +1381,116 @@ endif
 httpd:
 	althttpd -max-age 1 -enable-sab 1 -page index.html
 
+########################################################################
+# fiddle_remote is the remote destination for the fiddle app. It must
+# be a [user@]HOST:/path for rsync.  The target "should probably"
+# contain a symlink of index.html -> fiddle.html.
+fiddle_remote ?=
+ifeq (,$(fiddle_remote))
+ifneq (,$(wildcard /home/stephan))
+  fiddle_remote = wh:www/wasm-testing/fiddle/.
+else ifneq (,$(wildcard /home/drh))
+  #fiddle_remote = if appropriate, add that user@host:/path here
+endif
+endif
+push-fiddle: fiddle
+	@if [ x = "x$(fiddle_remote)" ]; then \
+		echo "fiddle_remote must be a [user@]HOST:/path for rsync"; \
+		exit 1; \
+	fi
+	rsync -va fiddle/ $(fiddle_remote)
+# end fiddle remote push
+########################################################################
 
 .PHONY: clean distclean
 clean:
 	-rm -f $(CLEAN_FILES)
-	-rm -fr $(dir.fiddle.debug) $(dir.dout) $(dir.tmp)
+	-rm -fr $(dir.dout) $(dir.tmp)
 
 distclean: clean
 	-rm -f $(DISTCLEAN_FILES)
 
 CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
+
+########################################################################
+# Explanation of, and some commentary on, various emcc build flags
+# follows. Full docs for these can be found at:
+#
+#  https://github.com/emscripten-core/emscripten/blob/main/src/settings.js
+#
+# -sENVIRONMENT=web: elides bootstrap code related to non-web JS
+#  environments like node.js. Removing this makes the output a tiny
+#  tick larger but hypothetically makes it more portable to
+#  non-browser JS environments.
+#
+# -sMODULARIZE: changes how the generated code is structured to avoid
+#  declaring a global Module object and instead installing a function
+#  which loads and initializes the module. The function is named...
+#
+# -sEXPORT_NAME=jsFunctionName (see -sMODULARIZE)
+#
+# -sEXPORTED_RUNTIME_METHODS=@/absolute/path/to/file: a file
+#  containing a list of emscripten-supplied APIs, one per line, which
+#  must be exported into the generated JS. Must be an absolute path!
+#
+# -sEXPORTED_FUNCTIONS=@/absolute/path/to/file: a file containing a
+#  list of C functions, one per line, which must be exported via wasm
+#  so they're visible to JS. C symbols names in that file must all
+#  start with an underscore for reasons known only to the emcc
+#  developers. e.g., _sqlite3_open_v2 and _sqlite3_finalize. Must be
+#  an absolute path!
+#
+# -sSTRICT_JS ensures that the emitted JS code includes the 'use
+#  strict' option. Note that -sSTRICT is more broadly-scoped and
+#  results in build errors.
+#
+# -sALLOW_TABLE_GROWTH is required for (at a minimum) the UDF-binding
+#  feature. Without it, JS functions cannot be made to proxy C-side
+#  callbacks.
+#
+# -sABORTING_MALLOC causes the JS-bound _malloc() to abort rather than
+#  return 0 on OOM. If set to 0 then all code which uses _malloc()
+#  must, just like in C, check the result before using it, else
+#  they're likely to corrupt the JS/WASM heap by writing to its
+#  address of 0. It is, as of this writing, enabled in Emscripten by
+#  default but we enable it explicitly in case that default changes.
+#
+# -sDYNAMIC_EXECUTION=0 disables eval() and the Function constructor.
+#  If the build runs without these, it's preferable to use this flag
+#  because certain execution environments disallow those constructs.
+#  This flag is not strictly necessary, however.
+#
+# --no-entry: for compiling library code with no main(). If this is
+#  not supplied and the code has a main(), it is called as part of the
+#  module init process. Note that main() is #if'd out of shell.c
+#  (renamed) when building in wasm mode.
+#
+# --pre-js/--post-js=FILE relative or absolute paths to JS files to
+#  prepend/append to the emcc-generated bootstrapping JS. It's
+#  easier/faster to develop with separate JS files (reduces rebuilding
+#  requirements) but certain configurations, namely -sMODULARIZE, may
+#  require using at least a --pre-js file. They can be used
+#  individually and need not be paired.
+#
+# -O0..-O3 and -Oz: optimization levels affect not only C-style
+#  optimization but whether or not the resulting generated JS code
+#  gets minified. -O0 compiles _much_ more quickly than -O3 or -Oz,
+#  and doesn't minimize any JS code, so is recommended for
+#  development. -O3 or -Oz are recommended for deployment, but
+#  primarily because -Oz will shrink the wasm file notably. JS-side
+#  minification makes little difference in terms of overall
+#  distributable size.
+#
+# --minify 0: supposedly disables minification of the generated JS
+#  code, regardless of optimization level, but that's not quite true:
+#  search the main makefile for wasm-strip for details. Minification
+#  of the JS has minimal overall effect in the larger scheme of things
+#  and results in JS files which can neither be edited nor viewed as
+#  text files in Fossil (which flags them as binary because of their
+#  extreme line lengths). Interestingly, whether or not the comments
+#  in the generated JS file get stripped is unaffected by this setting
+#  and depends entirely on the optimization level. Higher optimization
+#  levels reduce the size of the JS considerably even without
+#  minification.
+#
+########################################################################
