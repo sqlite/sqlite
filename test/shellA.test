@@ -219,23 +219,23 @@ do_test_with_ansi_output shellA-4.2 {
 #
 do_test shellA-5.1 {
  exec {*}$CLI test.db {.mode insert t1 --escape ascii} \
-    {SELECT a, x FROM "t1" WHERE a IN (1,2,6,7,8)}
+    {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-INSERT INTO "t1" VALUES(1,'line with '' single quote');
-INSERT INTO "t1" VALUES(2,unistr('\u001b[31mVT-100 codes\u001b[0m'));
-INSERT INTO "t1" VALUES(6,unistr('new\u000aline'));
-INSERT INTO "t1" VALUES(7,unistr('carriage\u000dreturn'));
-INSERT INTO "t1" VALUES(8,'last line');
+INSERT INTO t1 VALUES(1,'line with '' single quote');
+INSERT INTO t1 VALUES(2,unistr('\u001b[31mVT-100 codes\u001b[0m'));
+INSERT INTO t1 VALUES(6,unistr('new\u000aline'));
+INSERT INTO t1 VALUES(7,unistr('carriage\u000dreturn'));
+INSERT INTO t1 VALUES(8,'last line');
 }
 do_test shellA-5.2 {
  exec {*}$CLI test.db {.mode insert t1 --escape symbol} \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-INSERT INTO "t1" VALUES(1,'line with '' single quote');
-INSERT INTO "t1" VALUES(2,unistr('\u001b[31mVT-100 codes\u001b[0m'));
-INSERT INTO "t1" VALUES(6,unistr('new\u000aline'));
-INSERT INTO "t1" VALUES(7,unistr('carriage\u000dreturn'));
-INSERT INTO "t1" VALUES(8,'last line');
+INSERT INTO t1 VALUES(1,'line with '' single quote');
+INSERT INTO t1 VALUES(2,unistr('\u001b[31mVT-100 codes\u001b[0m'));
+INSERT INTO t1 VALUES(6,unistr('new\u000aline'));
+INSERT INTO t1 VALUES(7,unistr('carriage\u000dreturn'));
+INSERT INTO t1 VALUES(8,'last line');
 }
 do_test shellA-5.3 {
   file delete -force out.txt
@@ -246,12 +246,12 @@ do_test shellA-5.3 {
   close $fd
   string trim [string map [list \r\n \n] $res]
 } "
-INSERT INTO \"t1\" VALUES(1,'line with '' single quote');
-INSERT INTO \"t1\" VALUES(2,'\033\13331mVT-100 codes\033\1330m');
-INSERT INTO \"t1\" VALUES(6,'new
+INSERT INTO t1 VALUES(1,'line with '' single quote');
+INSERT INTO t1 VALUES(2,'\033\13331mVT-100 codes\033\1330m');
+INSERT INTO t1 VALUES(6,'new
 line');
-INSERT INTO \"t1\" VALUES(7,'carriage\rreturn');
-INSERT INTO \"t1\" VALUES(8,'last line');
+INSERT INTO t1 VALUES(7,'carriage\rreturn');
+INSERT INTO t1 VALUES(8,'last line');
 "
 
 finish_test

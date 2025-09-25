@@ -1141,9 +1141,9 @@ integer_overflow:
 */
 typedef struct ShellText ShellText;
 struct ShellText {
-  char *z;
-  i64 n;
-  i64 nAlloc;
+  char *zTxt;       /* The text */
+  i64 n;            /* Number of bytes of zTxt[] actually used */
+  i64 nAlloc;       /* Number of bytes allocated for zTxt[] */
 };
 
 /*
@@ -1153,7 +1153,7 @@ static void initText(ShellText *p){
   memset(p, 0, sizeof(*p));
 }
 static void freeText(ShellText *p){
-  free(p->z);
+  sqlite3_free(p->zTxt);
   initText(p);
 }
 
@@ -1178,26 +1178,26 @@ static void appendText(ShellText *p, const char *zAppend, char quote){
     }
   }
 
-  if( p->z==0 || p->n+len>=p->nAlloc ){
+  if( p->zTxt==0 || p->n+len>=p->nAlloc ){
     p->nAlloc = p->nAlloc*2 + len + 20;
-    p->z = realloc(p->z, p->nAlloc);
-    shell_check_oom(p->z);
+    p->zTxt = sqlite3_realloc64(p->zTxt, p->nAlloc);
+    shell_check_oom(p->zTxt);
   }
 
   if( quote ){
-    char *zCsr = p->z+p->n;
+    char *zCsr = p->zTxt+p->n;
     *zCsr++ = quote;
     for(i=0; i<nAppend; i++){
       *zCsr++ = zAppend[i];
       if( zAppend[i]==quote ) *zCsr++ = quote;
     }
     *zCsr++ = quote;
-    p->n = (int)(zCsr - p->z);
+    p->n = (i64)(zCsr - p->zTxt);
     *zCsr = '\0';
   }else{
-    memcpy(p->z+p->n, zAppend, nAppend);
+    memcpy(p->zTxt+p->n, zAppend, nAppend);
     p->n += nAppend;
-    p->z[p->n] = '\0';
+    p->zTxt[p->n] = '\0';
   }
 }
 
@@ -1222,6 +1222,9 @@ static char quoteChar(const char *zName){
 /*
 ** Construct a fake object name and column list to describe the structure
 ** of the view, virtual table, or table valued function zSchema.zName.
+**
+** The returned string comes from sqlite3_mprintf() and should be freed
+** by the caller using sqlite3_free().
 */
 static char *shellFakeSchema(
   sqlite3 *db,            /* The database connection containing the vtab */
@@ -1262,9 +1265,9 @@ static char *shellFakeSchema(
   sqlite3_finalize(pStmt);
   if( nRow==0 ){
     freeText(&s);
-    s.z = 0;
+    s.zTxt = 0;
   }
-  return s.z;
+  return s.zTxt;
 }
 
 /*
@@ -1367,7 +1370,7 @@ static void shellAddSchemaName(
           }else{
             z = sqlite3_mprintf("%z\n/* %s */", z, zFake);
           }
-          free(zFake);
+          sqlite3_free(zFake);
         }
         if( z ){
           sqlite3_result_text(pCtx, z, -1, sqlite3_free);
@@ -3209,7 +3212,12 @@ static void set_table_name(ShellState *p, const char *zName){
     p->zDestTable = 0;
   }
   if( zName==0 ) return;
-  p->zDestTable = sqlite3_mprintf("\"%w\"", zName);
+  if( quoteChar(zName) ){
+    p->zDestTable = sqlite3_mprintf("\"%w\"", zName);
+  }else{
+    p->zDestTable = sqlite3_mprintf("%s", zName);
+  }
+  shell_check_oom(p->zDestTable);
 }
 
 /*
@@ -5016,13 +5024,13 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
 
     savedDestTable = p->zDestTable;
     savedMode = p->mode;
-    p->zDestTable = sTable.z;
+    p->zDestTable = sTable.zTxt;
     p->mode = p->cMode = MODE_Insert;
-    rc = shell_exec(p, sSelect.z, 0);
+    rc = shell_exec(p, sSelect.zTxt, 0);
     if( (rc&0xff)==SQLITE_CORRUPT ){
       sqlite3_fputs("/****** CORRUPTION ERROR *******/\n", p->out);
       toggleSelectOrder(p->db);
-      shell_exec(p, sSelect.z, 0);
+      shell_exec(p, sSelect.zTxt, 0);
       toggleSelectOrder(p->db);
     }
     p->zDestTable = savedDestTable;
@@ -5759,7 +5767,7 @@ static void shellModuleSchema(
   if( zFake ){
     sqlite3_result_text(pCtx, sqlite3_mprintf("/* %s */", zFake),
                         -1, sqlite3_free);
-    free(zFake);
+    sqlite3_free(zFake);
   }
 }
 
@@ -10843,9 +10851,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       appendText(&sSelect, "sql IS NOT NULL"
                            " ORDER BY snum, rowid", 0);
       if( bDebug ){
-        sqlite3_fprintf(p->out, "SQL: %s;\n", sSelect.z);
+        sqlite3_fprintf(p->out, "SQL: %s;\n", sSelect.zTxt);
       }else{
-        rc = sqlite3_exec(p->db, sSelect.z, callback, &data, &zErrMsg);
+        rc = sqlite3_exec(p->db, sSelect.zTxt, callback, &data, &zErrMsg);
       }
       freeText(&sSelect);
     }
@@ -11169,22 +11177,22 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( cli_strcmp(zOp,"run")==0 ){
           char *zErrMsg = 0;
           str.n = 0;
-          str.z[0] = 0;
+          str.zTxt[0] = 0;
           rc = sqlite3_exec(p->db, zSql, captureOutputCallback, &str, &zErrMsg);
           nTest++;
           if( bVerbose ){
-            sqlite3_fprintf(p->out, "Result: %s\n", str.z);
+            sqlite3_fprintf(p->out, "Result: %s\n", str.zTxt);
           }
           if( rc || zErrMsg ){
             nErr++;
             rc = 1;
             sqlite3_fprintf(p->out, "%d: error-code-%d: %s\n", tno, rc,zErrMsg);
             sqlite3_free(zErrMsg);
-          }else if( cli_strcmp(zAns,str.z)!=0 ){
+          }else if( cli_strcmp(zAns,str.zTxt)!=0 ){
             nErr++;
             rc = 1;
             sqlite3_fprintf(p->out, "%d: Expected: [%s]\n", tno, zAns);
-            sqlite3_fprintf(p->out, "%d:      Got: [%s]\n", tno, str.z);
+            sqlite3_fprintf(p->out, "%d:      Got: [%s]\n", tno, str.zTxt);
           }
         }
         else{
@@ -11300,7 +11308,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         appendText(&sQuery, " ORDER BY tbl, idx, rowid;\n", 0);
       }
       appendText(&sSql, zSep, 0);
-      appendText(&sSql, sQuery.z, '\'');
+      appendText(&sSql, sQuery.zTxt, '\'');
       sQuery.n = 0;
       appendText(&sSql, ",", 0);
       appendText(&sSql, zTab, '\'');
@@ -11312,13 +11320,13 @@ static int do_meta_command(char *zLine, ShellState *p){
           "%s))"
           " SELECT lower(hex(sha3_query(a,%d))) AS hash, b AS label"
           "   FROM [sha3sum$query]",
-          sSql.z, iSize);
+          sSql.zTxt, iSize);
     }else{
       zSql = sqlite3_mprintf(
           "%s))"
           " SELECT lower(hex(sha3_query(group_concat(a,''),%d))) AS hash"
           "   FROM [sha3sum$query]",
-          sSql.z, iSize);
+          sSql.zTxt, iSize);
     }
     shell_check_oom(zSql);
     freeText(&sQuery);
@@ -11518,7 +11526,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     for(ii=0; sqlite3_step(pStmt)==SQLITE_ROW; ii++){
       const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
       if( zDbName==0 ) continue;
-      if( s.z && s.z[0] ) appendText(&s, " UNION ALL ", 0);
+      if( s.zTxt && s.zTxt[0] ) appendText(&s, " UNION ALL ", 0);
       if( sqlite3_stricmp(zDbName, "main")==0 ){
         appendText(&s, "SELECT name FROM ", 0);
       }else{
@@ -11540,7 +11548,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     rc = sqlite3_finalize(pStmt);
     if( rc==SQLITE_OK ){
       appendText(&s, " ORDER BY 1", 0);
-      rc = sqlite3_prepare_v2(p->db, s.z, -1, &pStmt, 0);
+      rc = sqlite3_prepare_v2(p->db, s.zTxt, -1, &pStmt, 0);
     }
     freeText(&s);
     if( rc ) return shellDatabaseError(p->db);
