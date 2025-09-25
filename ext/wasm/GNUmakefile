@@ -1420,7 +1420,7 @@ dist-name-prefix = sqlite-wasm$(dist-name-extra)
 dist:
 	./mkdist.sh $(dist-name-prefix)
 snapshot:
-	./mkdist.sh $(dist-name-prefix)-snapshot-$(shell /usr/bin/date +%Y%m%d)
+	./mkdist.sh $(dist-name-prefix) --snapshot
 endif
 # ^^^ making dist/snapshot
 CLEAN_FILES += $(wildcard sqlite-wasm-*.zip)

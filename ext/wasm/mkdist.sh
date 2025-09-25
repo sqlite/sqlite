@@ -1,7 +1,26 @@
 #!/usr/bin/env bash
+###
 #
-# Creates the zip bundle for the sqlite3 wasm builds.
-# $1 is a build name, defaulting to sqlite-wasm.
+# Builds the SQLite JS/WASM distribution zip file.
+#
+# Usage: $0 build-name ?flags?
+#
+# build-name is the dir/archive name prefix for the
+# build and defaults to sqlite-wasm.
+#
+# -?|--help = Show this text
+#
+# -0    = Use -O0 instead of ${optFlag}
+#
+# -1    = Use make -j1 instead of ${makeFlag}
+#
+# -64   = Include 64-bit builds
+#
+# --noclean = do not run 'make clean' first
+#
+# --snapshot = gives the archive name a distinctive suffix
+#
+###
 
 function die(){
     local rc=$1
@@ -10,16 +29,56 @@ function die(){
     exit $rc
 }
 
-buildName=${1-sqlite-wasm}
+dirTop=../..
+buildName=
+b64=0
+optFlag=-Oz
+clean=1
+makeFlag=-j4
+snapshotSuffix=
+for arg in $@; do
+    case $arg in
+
+        -64) b64=1
+             ;;
+
+        -0) optFlag=-O0
+            ;;
+
+        -1) makeFlag=
+            ;;
+
+        --noclean) clean=0
+                   ;;
+
+        --snapshot)
+            snapshotSuffix=$(date +%Y%m%d)
+            ;;
+
+        -?|--help)
+            sed -n -e '2,/^###/p' $0
+            exit
+            ;;
+
+        *) if [[ x != x${buildName} ]]; then
+               die 1 "Unhandled argument: $arg"
+           fi
+           buildName=$arg
+           ;;
+    esac
+done
 
 make=
 for i in gmake make; do
     make=$(which $i 2>/dev/null)
-    [[ x != x$make ]] && break
+    [[ x != x${make} ]] && break
 done
 [[ x = x$make ]] && die 127 "Cannot find make"
 
-dirTop=../..
+
+[[ x = x${buildName} ]] && buildName=sqlite-wasm
+
+buildName=${buildName}${snapshotSuffix}
 
 echo "Creating the SQLite wasm dist bundle..."
 
@@ -28,23 +87,30 @@ echo "Creating the SQLite wasm dist bundle..."
 # neaded for the dist bundle.
 #
 tgtFiles=(
-    tester1.html
-    tester1-worker.html
-    tester1-esm.html
-    tester1.js tester1.mjs
     demo-worker1-promiser.html
     demo-worker1-promiser.js
     demo-worker1-promiser-esm.html
     demo-worker1-promiser.mjs
+
+    tester1.html
+    tester1-esm.html
+    tester1-worker.html
+    tester1.js
+    tester1.mjs
 )
 
-if false; then
-    optFlag=-O0
-else
-    optFlag=-Oz
-    $make clean
+if [[ 1 = $b64 ]]; then
+    tgtFiles+=(
+        tester1-64bit.html
+        tester1-esm-64bit.html
+        tester1-worker-64bit.html
+        tester1-64bit.js
+        tester1-64bit.mjs
+    )
 fi
-$make -j4 \
+
+[[ 1 = $clean ]] && $make clean
+$make $makeFlag \
       t-version-info t-stripccomments \
       ${tgtFiles[@]} \
       "emcc_opt=${optFlag}" || die $?
@@ -54,14 +120,19 @@ rm -fr $dirTmp
 mkdir -p $dirTmp/jswasm || die $?
 mkdir -p $dirTmp/common || die $?
 
-# Files for the top-most dir:
+# Static files for the top-most dir:
 fTop=(
+    demo-123.html
+    demo-123-worker.html
+    demo-123.js
+
     demo-worker1.html
     demo-worker1.js
+
     demo-jsstorage.html
     demo-jsstorage.js
-    demo-123.html
-    demo-123-worker.html demo-123.js
+
+    module-symbols.html
 )
 
 # Files for the jswasm subdir sans jswasm prefix:
@@ -82,8 +153,15 @@ fJ2=(
     sqlite3.mjs
 )
 
+# fW = list of wasm files to copy from jswasm/.
+fW=(sqlite3.wasm)
+if [[ 1 = $b64 ]]; then
+    fW+=(sqlite3-64bit.wasm)
+fi
+
 function fcp() {
     cp -p $@ || die $?
+    chmod +w ${@: -1}
 }
 
 function scc(){
@@ -95,10 +173,13 @@ fcp ${tgtFiles[@]} $dirTmp/.
 fcp README-dist.txt $dirTmp/README.txt
 fcp index-dist.html $dirTmp/index.html
 fcp common/*.css common/SqliteTestUtil.js $dirTmp/common/.
-fcp $jw/sqlite3.wasm $dirTmp/$jw/.
 
 for i in ${fTop[@]}; do
     fcp $i $dirTmp/.
+done
+
+for i in ${fW[@]}; do
+    fcp $jw/$i $dirTmp/$jw/.
 done
 
 for i in ${fJ1[@]}; do
@@ -112,13 +193,17 @@ done
 #
 # Done copying files. Now zip it up...
 #
-
 svi=${dirTop}/version-info
 vnum=$($svi --download-version)
 vdir=${buildName}-${vnum}
 fzip=${vdir}.zip
 rm -fr ${vdir} ${fzip}
 mv $dirTmp $vdir || die $?
-zip -rq $fzip $(find $vdir -type f | sort) || die $?
+zip -rq9 $fzip $(find $vdir -type f | sort) || die $?
 ls -la $fzip
 unzip -lv $fzip || die $?
+cat <<EOF
+**
+** Unzipped files are in $vdir
+**
+EOF
