@@ -314,8 +314,7 @@ static void mk_prologue(void){
     "dir.api", "dir.dout", "dir.tmp",
     "MAKEFILE", "MAKEFILE_LIST",
     /* Fiddle... */
-    "dir.fiddle", "dir.fiddle-debug",
-    "MAKEFILE.fiddle",
+    "dir.fiddle", "dir.fiddle.debug",
     "EXPORTED_FUNCTIONS.fiddle",
     /* Some core JS files... */
     // todo: we don't need these anymore
@@ -407,8 +406,7 @@ static void mk_prologue(void){
       ps("b.do.wasm-opt = echo '$(logtag.$(1)) wasm-opt not available'");
     }
     ps("else"); {
-      ps("define b.do.wasm-opt"
-      );
+      ps("define b.do.wasm-opt");
       pf(
         "echo '[$(emo.b.$(1)) $(out.$(1).wasm)] $(emo.wasm-opt) $(bin.wasm-opt)';\\\n"
         "\ttmpfile=$(dir.dout.$(1))/wasm-opt-tmp.$(1).wasm; \\\n"
@@ -433,6 +431,8 @@ static void mk_prologue(void){
     }
     ps("endif");
   }
+
+  ps("more: all");
 }
 
 /*
@@ -583,7 +583,6 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     "b.names += %s\n"
     "emo.b.%s = %s\n",
     zBuildName, zBuildName, pB->zEmo);
-  pf("b.names += %s\n", zBuildName);
 
   pf("logtag.%s ?= [%s [%s] $@]:\n", zBuildName, pB->zEmo, zBuildName);
   if( pB->zIfCond ){
@@ -616,6 +615,9 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   pf("emcc.flags.%s ?= %s\n", zBuildName, pB->zEmcc ? pB->zEmcc : "");
 
   emit_api_js(zBuildName, pB->zCmppD);
+  if( pB->flags & F_64BIT ){
+    pf("c-pp.D.%s +=  $(c-pp.D.64bit)\n", zBuildName);
+  }
   mk_pre_post(zBuildName);
 
   { /* build it... */
@@ -637,10 +639,6 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     { /* Post-compilation transformations and copying to
          $(dir.dout)... */
       if( (F_ESM & pB->flags) || (F_NODEJS & pB->flags) ){
-        /* TODO? Replace this $(call) with the corresponding makefile
-        ** code.  OTOH, we also use this $(call) in the speedtest1-wasmfs
-        ** build, which is not part of the rules emitted by this
-        ** program. */
         pf("\t@$(call b.call.patch-export-default,1,%d,$(logtag.%s))\n",
            (F_WASMFS & pB->flags) ? 1 : 0,
            zBuildName
@@ -834,7 +832,7 @@ static void mk_fiddle(void){
 }
 
 static void mk_speedtest1(void){
-  char const *zBuildName = "speedtest1-vanilla";
+  char const *zBuildName = "speedtest1";
   pf(zBanner "# Begin build %s\n", zBuildName);
   pf("emo.%s ="
      "🛼" // roller skates
@@ -843,16 +841,19 @@ static void mk_speedtest1(void){
      zBuildName);
   pf("logtag.%s = [$(emo.%s) [%s] $@]:\n"
      "$(info $(logtag.%s) Setting up target speedtest1)\n"
-     "all: speedtest1\n",
+     "all: %s\n",
      zBuildName, zBuildName, zBuildName,
-     zBuildName );
+     zBuildName, zBuildName );
 
+  pf("dir.dout.%s ?= $(dir.dout)\n", zBuildName);
   pf("out.%s.js = $(dir.dout)/speedtest1.js\n"
      "out.%s.wasm = $(dir.dout)/speedtest1.wasm\n",
      zBuildName, zBuildName);
 
   emit_api_js(zBuildName, 0);
   mk_pre_post(zBuildName);
+
+  /* Main rules are in the makefile */
 
 #if 0
   mk_pre_post("speedtest1-vanilla");

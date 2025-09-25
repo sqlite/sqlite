@@ -38,15 +38,6 @@ MAKEFILE.fiddle = fiddle.make
 CLEAN_FILES =
 DISTCLEAN_FILES = config.make
 MAKING_CLEAN = $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
-.PHONY: clean distclean
-clean:
-	-rm -f $(CLEAN_FILES)
-	-rm -fr $(dir.fiddle-debug) $(dir.dout) $(dir.tmp)
-
-distclean: clean
-	-rm -f $(DISTCLEAN_FILES)
-
-more: all
 
 # dir.top = the top dir of the canonical build tree, where
 # sqlite3.[ch] live.
@@ -60,7 +51,7 @@ dir.api = api
 dir.jacc = jaccwabyt
 dir.common = common
 dir.fiddle = fiddle
-dir.fiddle-debug = fiddle-debug
+dir.fiddle.debug = fiddle-debug
 dir.tool = $(dir.top)/tool
 # dir.dout = output dir for deliverables
 dir.dout = $(dir.wasm)/jswasm
@@ -68,8 +59,6 @@ dir.dout = $(dir.wasm)/jswasm
 # end-user deliverables.
 dir.tmp = $(dir.wasm)/bld
 dir.wasmfs = $(dir.dout)
-
-CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
 
 #
 # Emoji for log messages.
@@ -222,6 +211,8 @@ $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	chmod -w $(3)
 CLEAN_FILES += $(3)
 endef
+
+c-pp.D.64bit = -D64bit
 
 #
 # $(call b.call.strip-emcc-js-cruft)
@@ -591,12 +582,6 @@ $(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
 	@$(call b.call.mkdir@)
 	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 
-#
-# $(sqlite3-api.ext.jses) = API-related files which are standalone
-# files, not part of the amalgamation.
-#
-sqlite3-api.ext.jses = $(dir.api)/sqlite3-opfs-async-proxy.js
-
 ########################################################################
 # emcc flags for .c/.o/.wasm/.js.
 emcc.flags =
@@ -785,6 +770,7 @@ sqlite3-wasmfs.cfiles = $(sqlite3-wasm.cfiles)
 #
 # Maintenance reminder: Mac sed works differently than GNU sed, so we
 # use awk instead of sed for this.
+#
 define b.call.patch-export-default
 if [ x1 = x$(1) ]; then \
 		echo "$(if $(3),$(3),$(logtag.@)) $(emo.bug) Fragile workaround for emscripten/issues/18237." \
@@ -1013,7 +999,7 @@ define gen-worker1
 # $2 = $(c-pp.D.NAME)
 $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
     $(dir.dout)/sqlite3-worker1$(1),$(2))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1$(1)
+sqlite3.ext.js += $(dir.dout)/sqlite3-worker1$(1)
 all: $(dir.dout)/sqlite3-worker1$(1)
 endef
 
@@ -1030,7 +1016,7 @@ define gen-promiser
 # $2 = $(c-pp.D.NAME)
 $(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
     $(dir.dout)/sqlite3-worker1-promiser$(1),$(2))
-sqlite3-api.ext.jses += $(dir.dout)/sqlite3-worker1-promiser$(1)
+sqlite3.ext.js += $(dir.dout)/sqlite3-worker1-promiser$(1)
 all: $(dir.dout)/sqlite3-worker1-promiser$(1)
 endef
 
@@ -1047,20 +1033,43 @@ $(eval $(call gen-promiser,-bundler-friendly.mjs,$(c-pp.D.bundler)))
 define gen-dwp
 $(call b.eval.c-pp,test,demo-worker1-promiser.c-pp.js,demo-worker1-promiser$(1),$(3))
 $(call b.eval.c-pp,test,demo-worker1-promiser.c-pp.html,demo-worker1-promiser$(2),$(3))
-all: demo-worker1-promiser$(1) demo-worker1-promiser$(2)
+demos: demo-worker1-promiser$(1) demo-worker1-promiser$(2)
 endef
 $(eval $(call gen-dwp,.js,.html,$(c-pp.D.vanilla)))
 $(eval $(call gen-dwp,.mjs,-esm.html,$(c-pp.D.esm)))
+all: demos
+
 
 #
-# Add a dep of $(sqlite3-api.ext.jses) on every build's JS file.
+# $(sqlite3.ext.in) = API-related files which are standalone
+# files, not part of the amalgamation. This list holds
+# the name of each such _output_ file.
+#
+sqlite3.ext.js += $(dir.dout)/sqlite3-opfs-async-proxy.js
+$(dir.dout)/sqlite3-opfs-async-proxy.js: $(dir.api)/sqlite3-opfs-async-proxy.js
+	@$(call b.call.cp,@,$<,$@)
+
+
+#
+# Copy "external" files - those which are not part of the amalgamation
+# - to $(dir.dout).
+#
+#define gen-extjs
+#sqlite3.ext.js += $(dir.dout)/$(notdir $(1))
+#$(dir.dout)/$(notdir $(1)): $(1)
+#	@$(call b.cp,@,$(1),$@)
+#endef
+#sqlite3.ext.js =
+#$(foreach X,$(sqlite3.ext.js.in),$(eval $(call gen-extjs,$(X))))
+
+#
+# Add a dep of $(sqlite3.ext.js) on every build's JS file.
 # The primary purpose of this is to force them to be copied early
 # in the build process, which is sometimes a time-saver during
 # development, allowing the developer to reload a test page while
 # other parts of the build are still running.
 #
-$(foreach B,$(b.names),$(eval $(out.$(B).js): $(sqlite3-api.ext.jses)))
-
+$(foreach B,$(b.names),$(eval $(out.$(B).js): $(sqlite3.ext.js)))
 
 ########################################################################
 # batch-runner.js is part of one of the test apps which reads in SQL
@@ -1138,29 +1147,29 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
 	@echo "Making $@ ..."
 	@$(call b.call.mkdir@)
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
-emcc.flags.speedtest1-vanilla = $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
+emcc.flags.speedtest1 = $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
 speedtest1.cfiles = $(speedtest1.c) $(sqlite3-wasm.c)
-$(out.speedtest1-vanilla.js): $(MAKEFILE) $(speedtest1.cfiles) \
-    $(pre-post.speedtest1-vanilla.deps) \
+$(out.speedtest1.js): $(MAKEFILE) $(speedtest1.cfiles) \
+    $(pre-post.speedtest1.deps) \
     $(EXPORTED_FUNCTIONS.speedtest1)
-	@$(call b.echo,speedtest1-vanilla,$(emo.compile) building ...)
+	@$(call b.echo,speedtest1,$(emo.compile) building ...)
 	@$(call b.call.mkdir@)
 	$(b.cmd@)$(bin.emcc) \
         $(emcc.speedtest1) \
         $(emcc.speedtest1.common) \
-        $(emcc.flags.speedtest1-vanilla) $(pre-post.speedtest1-vanilla.flags) \
+        $(emcc.flags.speedtest1) $(pre-post.speedtest1.flags) \
         $(SQLITE_OPT) \
         -USQLITE_WASM_BARE_BONES \
         -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cfiles) -lm
 	@chmod -x $(basename $@).wasm
-	@$(call b.call.wasm-strip,speedtest1-vanilla)
-	@$(call b.do.wasm-opt,speedtest1-vanilla)
-	@$(call b.call.strip-emcc-js-cruft,$(logtag.speedtest1-vanilla))
+	@$(call b.call.wasm-strip,speedtest1)
+	@$(call b.do.wasm-opt,speedtest1)
+	@$(call b.call.strip-emcc-js-cruft,$(logtag.speedtest1))
 	@ls -la $@ $(speedtest1.wasm)
 
-speedtest1: $(out.speedtest1-vanilla.js)
+speedtest1: $(out.speedtest1.js)
 # end speedtest1.js
 ########################################################################
 
@@ -1183,36 +1192,42 @@ speedtest1: $(out.speedtest1-vanilla.js)
 # pair of js/wasm files.
 #
 # To create those, we filter tester1.c-pp.js with $(bin.c-pp)...
-c-pp.D.64bit = -D64bit
 
 # tester1.js variants:
-$(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1.js,$(c-pp.D.vanilla)))
-$(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1-64bit.js,$(c-pp.D.vanilla64) $(c-pp.D.64bit)))
-$(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
-$(eval $(call b.eval.c-pp,test,tester1.c-pp.js,tester1-64bit.mjs,$(c-pp.D.esm64) $(c-pp.D.64bit)))
+define gen-tester1.js
+# $1=build name to have dep on
+# $2=suffix for tester1SUFFIX JS
+# $3=c-pp flags
+$(call b.eval.c-pp,test,tester1.c-pp.js,tester1$(2),$(3))
+tester1$(2): $(sqlite3.ext.js) $(out.$(1).wasm)
+tester1: tester1$(2)
+tester1-$(1): tester1$(2)
+endef
+$(eval $(call gen-tester1.js,vanilla,.js,$(c-pp.D.vanilla)))
+$(eval $(call gen-tester1.js,vanilla64,-64bit.js,$(c-pp.D.vanilla64)))
+$(eval $(call gen-tester1.js,esm,.mjs,$(c-pp.D.esm)))
+$(eval $(call gen-tester1.js,esm64,-64bit.mjs,$(c-pp.D.esm64)))
 
 # tester1.html variants:
-$(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1.html,$(c-pp.D.vanilla)))
-$(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-64bit.html,$(c-pp.D.vanilla64) $(c-pp.D.64bit)))
-$(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
-$(eval $(call b.eval.c-pp,test,tester1.c-pp.html,tester1-esm-64bit.html,$(c-pp.D.esm64) $(c-pp.D.64bit)))
+define gen-tester1.html
+$(call b.eval.c-pp,test,tester1.c-pp.html,tester1$(2).html,$(3))
+tester1$(2).html: tester1-$(1)
+tester1: tester1$(2).html
+endef
+$(eval $(call gen-tester1.html,vanilla,,$(c-pp.D.vanilla)))
+$(eval $(call gen-tester1.html,vanilla64,-64bit,$(c-pp.D.vanilla64)))
+$(eval $(call gen-tester1.html,esm,-esm,$(c-pp.D.esm64)))
+$(eval $(call gen-tester1.html,esm64,-esm-64bit,$(c-pp.D.esm64)))
+
 
 # tester1-worker.html variants:
 # There is no ESM variant. Instead, that page accepts a ?esm URL flag to switch
 # to ESM mode.
 $(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker.html))
 $(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
+tester: tester1-worker.html tester1-worker-64bit.html
 
-tester1.js: $(out.vanilla.wasm)
-tester1.mjs: $(out.esm.wasm)
-tester1-64bit.js: $(out.vanilla64.wasm)
-tester1-64bit.mjs: $(out.esm64.wasm)
-tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
-tester1: tester1-64bit.js tester1-64bit.mjs tester1-64bit.html tester1-esm-64bit.html
-tester1: tester1-worker.html tester1-worker-64bit.html
-# We do not include $(dir.dout)/sqlite3-bundler-friendly.mjs in this
-# because bundlers are client-specific. We don't use any of them.
-all: tester1
+all: tester
 
 ########################################################################
 # Convenience rules to rebuild with various -Ox levels. Much
@@ -1236,14 +1251,14 @@ o0: clean
 o1: clean
 	$(MAKE) -e "emcc_opt=-O1 $(emcc-opt-extra)"
 o2: clean
-	$(MAKE) -j2 -e "emcc_opt=-O2 $(emcc-opt-extra)"
+	$(MAKE) -e "emcc_opt=-O2 $(emcc-opt-extra)"
 o3: clean
 	$(MAKE) -e "emcc_opt=-O3 $(emcc-opt-extra)"
 os: clean
 	@echo "$(emo.fire)WARNING$(emo.fire): -Os can result in a build with mysteriously missing pieces!"
 	$(MAKE) -e "emcc_opt=-Os $(emcc-opt-extra)"
 oz: clean
-	$(MAKE) -j2 -e "emcc_opt=-Oz $(emcc-opt-extra)"
+	$(MAKE) -e "emcc_opt=-Oz $(emcc-opt-extra)"
 
 ########################################################################
 # Sub-makes...
@@ -1255,8 +1270,8 @@ include $(MAKEFILE.fiddle)
 # Push files to public wasm-testing.sqlite.org server
 wasm-testing.include = *.js *.mjs *.html \
   ./tests \
-  $(dir.dout) $(dir.common) $(dir.fiddle) $(dir.fiddle-debug) $(dir.jacc)
-wasm-testing.exclude = sql/speedtest1.sql
+  $(dir.dout) $(dir.common) $(dir.fiddle) $(dir.fiddle.debug) $(dir.jacc)
+wasm-testing.exclude = sql/speedtest1.sql jswasm/*/*
 wasm-testing.dir     = /jail/sites/wasm-testing
 wasm-testing.dest   ?= wasm-testing:$(wasm-testing.dir)
 # ---------------------^^^^^^^^^^^^ ssh alias
@@ -1268,6 +1283,18 @@ push-testing:
 	@echo "Updating gzipped copies..."; \
 		ssh wasm-testing 'cd $(wasm-testing.dir) && bash .gzip' || \
     echo "SSH failed: it's likely that stale content will be served via old gzip files."
+
+.PHONY: for-testing
+for-testing: emcc_opt=-Oz
+for-testing: loud=1
+#$(foreach B,$(b.names),$(eval for-testing: $(out.$(B).js)))
+for-testing.deps = \
+  tester1 demos \
+  b-vanilla b-vanilla64 \
+  b-esm b-esm64 \
+  b-fiddle b-fiddle.debug \
+  speedtest1
+for-testing: $(for-testing.deps)
 
 ########################################################################
 # If we find a copy of https://sqlite.org/wasm checked out, copy
@@ -1304,3 +1331,14 @@ endif
 # Run local web server for the test/demo pages.
 httpd:
 	althttpd -max-age 1 -enable-sab 1 -page index.html
+
+
+.PHONY: clean distclean
+clean:
+	-rm -f $(CLEAN_FILES)
+	-rm -fr $(dir.fiddle.debug) $(dir.dout) $(dir.tmp)
+
+distclean: clean
+	-rm -f $(DISTCLEAN_FILES)
+
+CLEAN_FILES += *~ $(dir.jacc)/*~ $(dir.api)/*~ $(dir.common)/*~ $(dir.fiddle)/*~ \
