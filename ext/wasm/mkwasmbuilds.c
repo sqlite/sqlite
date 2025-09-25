@@ -395,8 +395,12 @@ static void mk_prologue(void){
   );
 
   {
-    /* b.do.wasm-opt = shell code to run $(1) (source wasm file
-    ** name) through $(bin.wasm-opt) */
+    /* b.do.wasm-opt
+    **
+    ** $1 = build name
+    **
+    ** Runs $(out.$(1).wasm) through $(bin.wasm-opt)
+    */
     const char * zOptFlags =
       /*
       ** Flags for wasm-opt. It has many, many, MANY "passes" options
@@ -464,7 +468,7 @@ static void mk_prologue(void){
         ** version to version, so we'll ignore any errors here. */
         "\telse \\\n"
         "\t\trm -f $$tmpfile; \\\n"
-        "\t\techo '$(2) $(emo.fire) ignoring wasm-opt failure'; \\\n"
+        "\t\techo '$(logtag.$(1)) $(emo.fire) ignoring wasm-opt failure'; \\\n"
         "\tfi\n",
         zOptFlags
       );
@@ -890,7 +894,7 @@ static void mk_fiddle(void){
        zBuildName, zBuildName, zBuildName,
        zBuildName, zBuildName);
     if( isDebug ){
-      ps("fiddle-debug: fiddle.debug");
+      ps("fiddle-debug: fiddle.debug"); /* older name */
     }else{
       ps("all: b-fiddle");
     }
