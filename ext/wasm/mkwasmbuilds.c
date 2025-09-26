@@ -693,6 +693,18 @@ static void emit_compile_start(char const *zBuildName){
      zBuildName);
 }
 
+static void emit_logtag(char const *zBuildName){
+#if 1
+  pf("logtag.%s ?= [$(emo.b.%s)$(if $@, $@,)]:\n",
+     zBuildName, zBuildName);
+#else
+  pf("logtag.%s ?= [$(emo.b.%s) [%s] $@]:\n",
+     zBuildName, zBuildName, zBuildName);
+#endif
+  pf("$(info $(logtag.%s) Setting up target b-%s)\n",
+     zBuildName, zBuildName );
+}
+
 /**
    Emit rules for sqlite3-api.${zBuildName}.js.  zCmppD is optional
    flags for $(bin.c-pp).
@@ -733,18 +745,11 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      "emo.b.%s = %s\n",
      zBuildName, zBuildName, pB->zEmo);
 
-#if 1
-  pf("logtag.%s ?= [%s $@]:\n", zBuildName, pB->zEmo);
-#else
-  pf("logtag.%s ?= [%s [%s] $@]:\n", zBuildName, pB->zEmo, zBuildName);
-#endif
+  emit_logtag(zBuildName);
 
   if( pB->zIfCond ){
     pf("%s\n", pB->zIfCond );
   }
-
-  pf("$(info $(logtag.%s) Setting up target b-%s)\n",
-     zBuildName, zBuildName );
 
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
 
@@ -949,14 +954,11 @@ static void mk_fiddle(void){
 
     pf(zBanner "# Begin build %s\n", zBuildName);
     if( isDebug ){
-      pf("emo.%s = $(emo.fiddle)$(emo.bug)\n", zBuildName);
+      pf("emo.b.%s = $(emo.b.fiddle)$(emo.bug)\n", zBuildName);
     }else{
-      pf("emo.fiddle = 🎻\n");
+      pf("emo.b.fiddle = 🎻\n");
     }
-    pf("logtag.%s = [$(emo.%s) [%s] $@]:\n",
-       zBuildName, zBuildName, zBuildName);
-    pf("$(info $(logtag.%s) Setting up target b-%s)\n",
-       zBuildName, zBuildName );
+    emit_logtag(zBuildName);
 
     pf("dir.%s = %s\n"
        "out.%s.js = $(dir.%s)/fiddle-module.js\n"
