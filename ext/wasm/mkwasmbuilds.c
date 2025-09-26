@@ -63,9 +63,18 @@ enum {
   /* Indicates a wasmfs build (untested and unsupported). */
   F_WASMFS           = 1<<6,
 
-  /**
-     Which compiled files from $(dir.dout)/buildName/*.{js,mjs,wasm}
-     to copy to $(dir.dout) after creating them.
+  /*
+  ** Which compiled files from $(dir.dout)/buildName/*.{js,mjs,wasm}
+  ** to copy to $(dir.dout) after creating them. This should only be
+  ** applied to builds which result in end-user deliverables.  Some
+  ** builds, like the bundler-friendly ones, are a hybrid: we keep
+  ** only their JS file and patch their JS to use the WASM file from a
+  ** canonical build which uses that same WASM file. Reusing X.wasm
+  ** that way can only work for builds which are processed identically
+  ** by Emscripten. For a given set of C flags (as opposed to
+  ** JS-influencing flags), all builds of X.js and Y.js will produce
+  ** identical X.wasm and Y.wasm files. Their JS files may well
+  ** differ, however.
   */
   CP_JS              = 1 << 30,
   CP_WASM            = 1 << 31,
@@ -74,6 +83,24 @@ enum {
 
 /*
 ** Info needed for building one concrete JS/WASM combination..
+**
+** Notes about Emscripten builds...
+**
+** When emcc processes X.js it also generates X.wasm and hard-codes
+** the name "X.wasm" into the JS file (it has to - there's no reliable
+** way to derive that name at runtime for certain modes of loading the
+** WASM file). Because we only need two sqlite3.wasm files (one each
+** for 32- and 64-bit), the build then copies just those into the
+** final build directory $(dir.dout).
+**
+** To keep parallel builds from stepping on each other, each distinct
+** build goes into its own subdir $(dir.dout.BuildName)[^1], i.e.
+** $(dir.dout)/BuildName.  Builds which produce deliverables we'd like
+** to keep/distribute copy their final results into the build dir
+** $(dir.dout). See the notes for the CP_JS enum entry for more
+** details on that.
+**
+** [^1]: The legal BuildNames are in this file's BuildDef_map macro.
 */
 struct BuildDef {
   /**
@@ -117,28 +144,6 @@ struct BuildDef {
 typedef struct BuildDef BuildDef;
 
 /*
-** WASM_CUSTOM_INSTANTIATE changes how the JS pieces load the .wasm
-** file from the .js file. When set, our JS takes over that step from
-** Emscripten. Both modes are functionally equivalent but
-** customization gives us access to wasm module state which we don't
-** otherwise have. That said, the library also does not _need_ that
-** state, so we don't _need_ to customize that step.
-*/
-#if !defined(WASM_CUSTOM_INSTANTIATE)
-#  define WASM_CUSTOM_INSTANTIATE 0
-#elif (WASM_CUSTOM_INSTANTIATE+0)==0
-#  undef WASM_CUSTOM_INSTANTIATE
-#  define WASM_CUSTOM_INSTANTIATE 0
-#endif
-
-#if WASM_CUSTOM_INSTANTIATE
-/* c-pp -D... flags for the custom instantiateWasm(). */
-#define C_PP_D_CUSTOM_INSTANTIATE " -Dcustom-Module.instantiateWasm "
-#else
-#define C_PP_D_CUSTOM_INSTANTIATE
-#endif
-
-/*
 ** List of distinct library builds. Each one has to be set up in
 ** oBuildDefs. See the next comment block.
 **
@@ -154,7 +159,7 @@ typedef struct BuildDef BuildDef;
   E(vanilla) E(vanilla64) \
   E(esm)     E(esm64)     \
   E(bundler) E(bundler64) \
-  E(speedtest1)           \
+  E(speedtest1) E(speedtest164) \
   E(node)    E(node64)    \
   E(wasmfs)
 
@@ -235,7 +240,7 @@ const BuildDefs oBuildDefs = {
     .flags       = CP_JS | F_ESM | F_64BIT
   },
 
-  /* speedtest1, our primary benchmarking tool */
+ /* speedtest1, our primary benchmarking tool */
   .speedtest1 = {
     .zEmo        = "🛼",
     .zBaseName   = "speedtest1",
@@ -260,6 +265,35 @@ const BuildDefs oBuildDefs = {
     " $(EXPORTED_FUNCTIONS.speedtest1)",
     .zIfCond     = 0,
     .flags       = CP_ALL
+  },
+
+ /* speedtest1, 64-bit */
+  .speedtest164 = {
+    .zEmo        = "🛼64",
+    .zBaseName   = "speedtest1-64bit",
+    .zDotWasm    = 0,
+    .zCmppD      = "-D64bit",
+    .zEmcc       =
+    "$(emcc.speedtest1)"
+    " $(emcc.speedtest1.common)"
+    " -sMEMORY64=1 -sWASM_BIGINT=1"
+    " $(pre-post.speedtest1.flags)"
+    " $(cflags.common)"
+    " -DSQLITE_SPEEDTEST1_WASM"
+    " $(SQLITE_OPT)"
+    " -USQLITE_WASM_BARE_BONES"
+    " -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c)"
+    " $(speedtest1.exit-runtime0)"
+    " $(speedtest1.c.in)"
+    " -lm",
+    .zEmccExtra  = 0,
+    .zEmccExtra  = 0,
+    .zEnv        = 0,
+    .zDeps       =
+    "$(speedtest1.c.in)"
+    " $(EXPORTED_FUNCTIONS.speedtest1)",
+    .zIfCond     = 0,
+    .flags       = CP_ALL | F_NOT_IN_ALL
   },
 
   /*
@@ -479,6 +513,28 @@ static void mk_prologue(void){
 
   ps("more: all");
 }
+
+/*
+** WASM_CUSTOM_INSTANTIATE changes how the JS pieces load the .wasm
+** file from the .js file. When set, our JS takes over that step from
+** Emscripten. Both modes are functionally equivalent but
+** customization gives us access to wasm module state which we don't
+** otherwise have. That said, the library also does not _need_ that
+** state, so we don't _need_ to customize that step.
+*/
+#if !defined(WASM_CUSTOM_INSTANTIATE)
+#  define WASM_CUSTOM_INSTANTIATE 0
+#elif (WASM_CUSTOM_INSTANTIATE+0)==0
+#  undef WASM_CUSTOM_INSTANTIATE
+#  define WASM_CUSTOM_INSTANTIATE 0
+#endif
+
+#if WASM_CUSTOM_INSTANTIATE
+/* c-pp -D... flags for the custom instantiateWasm(). */
+#define C_PP_D_CUSTOM_INSTANTIATE " -Dcustom-Module.instantiateWasm "
+#else
+#define C_PP_D_CUSTOM_INSTANTIATE
+#endif
 
 /*
 ** Emits makefile code for setting up values for the --pre-js=FILE,

@@ -1517,7 +1517,7 @@ int main(int argc, char const * const * argv){
     }
     ISFLAG("debug"){
       ++g.doDebug;
-    }else if('-'!=*zArg){
+    }else if(zArg==argv[i]/*not a flag*/){
       goto do_infile;
     }else{
       fatal("Unhandled flag: %s", argv[i]);

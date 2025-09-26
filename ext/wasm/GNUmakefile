@@ -468,7 +468,7 @@ endif
 #
 # Changing this may require a clean rebuild.
 #
-WASM_CUSTOM_INSTANTIATE = 0
+WASM_CUSTOM_INSTANTIATE = 1
 
 ########################################################################
 # $(bin.c-pp): a minimal text file preprocessor. Like C's but much
