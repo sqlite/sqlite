@@ -73,6 +73,7 @@ Module['locateFile'] = function(path, prefix) {
 //#endif ifnot target=es6-bundler-friendly
 
 //#if custom-Module.instantiateWasm
+//#if !wasmfs
 /**
    Override Module.instantiateWasm().
 
@@ -83,16 +84,11 @@ Module['locateFile'] = function(path, prefix) {
 
    In such builds we must disable this.
 */
-Module[
-//#if wasmfs
-  'emscripten-bug-17951'
-//#else
-  'instantiateWasm'
+Module['instantiateWasm'
   /* This works, but it does not have the testing coverage in
      the wild which Emscripten's default impl does, so we'll
      save this option until we really need a custom
      Module.instantiateWasm(). */
-//#endif
 ] = function callee(imports,onSuccess){
   const sims = this;
   const uri = Module.locateFile(
@@ -133,6 +129,7 @@ Module[
   into their glue scripts.
 */
 sIMS.wasmFilename = 'sqlite3.wasm';
+//#endif !wasmfs
 //#endif custom-Module.instantiateWasm
 /*
   END FILE: api/pre-js.js, noting that the build process may append

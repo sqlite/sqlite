@@ -486,8 +486,10 @@ static void mk_prologue(void){
 ** populating those files. This is necessary for any builds which
 ** embed the library's JS parts of this build (as opposed to parts
 ** which do not use the library-level code).
+**
+** pB may be NULL.
 */
-static void mk_pre_post(char const *zBuildName){
+static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
 /* Very common printf() args combo. */
 
   pf("%s# Begin --pre/--post flags for %s\n", zBanner, zBuildName);
@@ -496,7 +498,7 @@ static void mk_pre_post(char const *zBuildName){
   pf("pre-js.%s.js = $(dir.tmp)/pre-js.%s.js\n",
      zBuildName, zBuildName);
 
-  if( 0==WASM_CUSTOM_INSTANTIATE ){
+  if( 0==WASM_CUSTOM_INSTANTIATE || !pB || !pB->zDotWasm ){
     pf("$(eval $(call b.eval.c-pp,"
        "%s,"
        "$(pre-js.in.js),"
@@ -505,23 +507,32 @@ static void mk_pre_post(char const *zBuildName){
        "))",
        zBuildName, zBuildName, zBuildName);
   }else{
+    assert( pB && pB->zDotWasm );
 #if 0
-    fixme;
+    pf("$(error fix the bit near %s:%d)\n",
+       __FILE__, __LINE__);
+#else
     /* This part is needed for builds which have to rename the wasm file
        in zDotWasm so that the loader can find it. */
-    pf("pre-js.%s.js.intermediary = "
+    pf("pre-js.%s.intermediary = "
        "$(dir.tmp)/pre-js.%s.intermediary.js\n",
        zBuildName, zBuildName);
-    pf("$(eval $(call SQLITE.CALL.C-PP.FILTER,$(pre-js.in.js),"
-       "$(pre-js.%s.js.intermediary),"
+    pf("$(eval $(call b.eval.c-pp,"
+       "%s,"
+       "$(pre-js.in.js),"
+       "$(pre-js.%s.intermediary),"
        C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s)))\n",
+       zBuildName, zBuildName, zBuildName);
+    pf("$(pre-js.%s.js): $(pre-js.%s.intermediary)"
+       " $(out.dout)/%s\n" /* from a different build */
+       "\t$(call b.cp,%s,cp $(pre-js.%s.intermediary) $@\n",
+       zBuildName, zBuildName,
+       pB->zDotWasm,
        zBuildName, zBuildName);
-    pf("$(pre-js.%s.js): $(pre-js.%s.js.intermediary)\n",
-       zBuildName, zBuildName);
-    pf("\tcp $(pre-js.%s.js.intermediary) $@\n", zBuildName);
-    pf("\t@echo 'sIMS.wasmFilename = \"$(out.%s.wasm)\";' >> $@\n",
-       zBuildName)
-      /* see api/pre-js.c-pp.js:Module.instantiateModule() */;
+    pf("\t@echo 'sIMS.wasmFilename = \"%s\";' >> $@\n",
+       pB->zDotWasm
+      /* see api/pre-js.c-pp.js:Module.instantiateModule() */
+    );
 #endif
   }
 
@@ -667,7 +678,8 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   if( pB->flags & F_64BIT ){
     pf("c-pp.D.%s +=  $(c-pp.D.64bit)\n", zBuildName);
   }
-  mk_pre_post(zBuildName);
+
+  mk_pre_post(zBuildName, pB);
 
   { /* build it... */
     pf(zBanner
@@ -844,7 +856,7 @@ static void mk_fiddle(void){
        zBuildName, zBuildName);
 
     emit_api_js(zBuildName, 0);
-    mk_pre_post(zBuildName);
+    mk_pre_post(zBuildName, 0);
 
     {/* emcc */
       pf("$(out.%s.js): $(MAKEFILE_LIST) "
@@ -901,46 +913,6 @@ static void mk_fiddle(void){
     pf("# End %s" zBanner, zBuildName);
   }
 }
-
-#if 0
-static void mk_speedtest1(void){
-  char const *zBuildName = "speedtest1";
-  pf(zBanner "# Begin build %s\n", zBuildName);
-  pf("emo.%s ="
-     "🛼" // roller skates
-     /*"🏎" //racecar doesn't show up well in my emacs or terminal */
-     "\n",
-     zBuildName);
-  pf("logtag.%s = [$(emo.%s) [%s] $@]:\n"
-     "$(info $(logtag.%s) Setting up target speedtest1)\n"
-     "all: %s\n",
-     zBuildName, zBuildName, zBuildName,
-     zBuildName, zBuildName );
-
-  pf("dir.dout.%s ?= $(dir.dout)\n", zBuildName);
-  pf("out.%s.js = $(dir.dout)/speedtest1.js\n"
-     "out.%s.wasm = $(dir.dout)/speedtest1.wasm\n",
-     zBuildName, zBuildName);
-
-  emit_api_js(zBuildName, 0);
-  mk_pre_post(zBuildName);
-
-  /* Main rules are in the makefile */
-
-#if 0
-  mk_pre_post("speedtest1-vanilla");
-  ps(zBanner "ifeq (1,$(HAVE_WASMFS))");
-  mk_pre_post("speedtest1-wasmfs");
-  ps("endif\n# ^^^ HAVE_WASMFS" zBanner);
-#endif
-#if 0
-  mk_pre_post(0, "speedtest1","vanilla", 0, "speedtest1.wasm");
-  mk_pre_post(0, "speedtest1-wasmfs", "esm",
-              "$(c-pp.D.sqlite3-bundler-friendly) -Dwasmfs",
-              "speetest1-wasmfs.wasm");
-#endif
-}
-#endif
 
 int main(int argc, char const ** argv){
   int rc = 0;

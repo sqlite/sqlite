@@ -195,7 +195,7 @@ b.mkdir@ = if [ ! -d $(dir $@) ]; then \
 #
 # $(call b.cp,@,src,dest)
 #
-# $1 = build name, $2 = src file(s). $3 = dest dir
+# $1 = logtag, $2 = src file(s). $3 = dest dir
 b.cp = $(call b.mkdir@); \
   echo '$(logtag.$(1)) $(emo.disk) $(2) ==> $3'; \
   cp -p $(2) $(3) || exit
@@ -206,7 +206,7 @@ b.cp = $(call b.mkdir@); \
 # $1 = build name
 # $2 = Input file(s): cat $(2) | $(bin.c-pp) ...
 # $3 = Output file: $(bin.c-pp) -o $(3)
-# $4 = optional $(bin.c-pp) -D... flags */
+# $4 = optional $(bin.c-pp) -D... flags
 define b.eval.c-pp
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	@$$(call b.mkdir@); \
@@ -458,6 +458,9 @@ ifneq (,$(sqlite3_wasm_extra_init.c))
   cflags.wasm_extra_init = -DSQLITE_WASM_EXTRA_INIT
 endif
 
+#
+# Experimental and not known to work since the build upheaval in
+# 2025-09.
 #
 # If $(WASM_CUSTOM_INSTANTIATE) is 1 then mkwasmbuilds will add
 # -Dcustom-Module.instantiateWasm to some of the builds. This is

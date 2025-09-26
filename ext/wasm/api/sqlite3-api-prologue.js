@@ -2122,7 +2122,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   );
   sqlite3.scriptInfo /* used by some async init code */ =
     sqlite3InitScriptInfo /* from post-js-header.js */;
-  if( (sqlite3.__isUnderTest = sqlite3IsUnderTest) ){
+  if( (sqlite3.__isUnderTest = sqlite3IsUnderTest /* from post-js-header.js */) ){
     sqlite3.config.emscripten = EmscriptenModule;
     const iw = sqlite3InitScriptInfo.instantiateWasm;
     if( iw ){

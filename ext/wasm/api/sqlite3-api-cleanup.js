@@ -75,7 +75,7 @@ try{
   */
   const p = globalThis.sqlite3ApiBootstrap(bootstrapConfig);
   delete globalThis.sqlite3ApiBootstrap;
-  return p;
+  return p /* the eventual result of globalThis.sqlite3InitModule() */;
 }catch(e){
   console.error("sqlite3ApiBootstrap() error:",e);
   throw e;
