@@ -26,7 +26,7 @@
 **     X*      zero or more occurrences of X
 **     X+      one or more occurrences of X
 **     X?      zero or one occurrences of X
-**     X{p,q}  between p and q occurrences of X
+**     X{p,q}  between p and q occurrences of X,   0 <= p,q <= 999
 **     (X)     match X
 **     X|Y     X or Y
 **     ^X      X occurring at the beginning of the string
@@ -55,11 +55,18 @@
 ** to p copies of X following by q-p copies of X? and that the size of the
 ** regular expression in the O(N*M) performance bound is computed after
 ** this expansion.
+**
+** To help prevent DoS attacks, the values of p and q in the "{p,q}" syntax
+** are limited to SQLITE_MAX_REGEXP_REPEAT, default 999.
 */
 #include <string.h>
 #include <stdlib.h>
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
+
+#ifndef SQLITE_MAX_REGEXP_REPEAT
+# define SQLITE_MAX_REGEXP_REPEAT 999
+#endif
 
 /*
 ** The following #defines change the names of some functions implemented in
@@ -566,12 +573,20 @@ static const char *re_subcompile_string(ReCompiled *p){
         unsigned int m = 0, n = 0;
         unsigned int sz, j;
         if( iPrev<0 ) return "'{m,n}' without operand";
-        while( (c=rePeek(p))>='0' && c<='9' ){ m = m*10 + c - '0'; p->sIn.i++; }
+        while( (c=rePeek(p))>='0' && c<='9' ){
+          m = m*10 + c - '0';
+          if( m>SQLITE_MAX_REGEXP_REPEAT ) return "integer too large";
+          p->sIn.i++;
+        }
         n = m;
         if( c==',' ){
           p->sIn.i++;
           n = 0;
-          while( (c=rePeek(p))>='0' && c<='9' ){ n = n*10 + c-'0'; p->sIn.i++; }
+          while( (c=rePeek(p))>='0' && c<='9' ){
+            n = n*10 + c-'0';
+            if( n>SQLITE_MAX_REGEXP_REPEAT ) return "integer too large";
+            p->sIn.i++;
+          }
         }
         if( c!='}' ) return "unmatched '{'";
         if( n<m ) return "n less than m in '{m,n}'";
