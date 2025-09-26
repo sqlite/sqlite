@@ -5572,7 +5572,7 @@ void sqlite3RegisterJsonFunctions(void){
 ** pointer to its Module object.  Return NULL if something goes wrong.
 */
 Module *sqlite3JsonVtabRegister(sqlite3 *db, const char *zName){
-  int i;
+  unsigned int i;
   static const char *azModule[] = {
     "json_each", "json_tree", "jsonb_each", "jsonb_tree"
   };

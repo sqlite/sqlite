@@ -1,5 +1,5 @@
-C On-demand\sloading\sof\sJSON\svirtual\stables.
-D 2025-09-26T10:29:07.156
+C Fix\sa\sharmless\scompiler\swarning.
+D 2025-09-26T11:28:01.506
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -698,7 +698,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
-F src/json.c 9f20fe0c5340e576607036ad2ffa95981300294210dfb1356d7f1ad47bec4d1e
+F src/json.c 0f11267c9dbe83e4cdca56d213f021b0e9516d31317e485e3508687cfb65bf36
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 3326993a09553c6b38cc52d4f9cc2e47dcfc8736ffd853fcb0cb49bc9e3d523c
 F src/main.c ce69a2650e3d359ed6a8a2867ccafb27ac62ce1d39f3120a84ff513320952a6c
@@ -2170,8 +2170,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2f8b461c636ce2c0e7970c00d1e6ea62cdef72273150fea6aabe4e9292724977
-R 4c4b4754e5e560616cf33dd688d0812a
+P 118f97ddcd8f888715825a623c02d42b92a82737a316f7bee4cd66f570945346
+R e1531d0f131fb3867141bb1e24c14f34
 U drh
-Z a66b270f99e73bb4ae16db5d49fcd519
+Z 93dadbf666221c7bdbecb74355913b33
 # Remove this line to create a well-formed Fossil manifest.
