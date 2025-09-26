@@ -433,6 +433,11 @@ Table *sqlite3LocateTable(
       if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
+#ifndef SQLITE_OMIT_JSON
+      if( pMod==0 && sqlite3_strnicmp(zName, "json", 4)==0 ){
+        pMod = sqlite3JsonVtabRegister(db, zName);
+      }
+#endif
       if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
         testcase( pMod->pEpoTab==0 );
         return pMod->pEpoTab;
