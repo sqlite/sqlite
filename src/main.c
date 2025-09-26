@@ -74,9 +74,6 @@ static int (*const sqlite3BuiltinExtensions[])(sqlite3*) = {
   sqlite3DbstatRegister,
 #endif
   sqlite3TestExtInit,
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON)
-  sqlite3JsonTableFunctions,
-#endif
 #ifdef SQLITE_ENABLE_STMTVTAB
   sqlite3StmtVtabInit,
 #endif

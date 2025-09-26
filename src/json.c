@@ -5568,17 +5568,20 @@ void sqlite3RegisterJsonFunctions(void){
 
 #if  !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON)
 /*
-** Register the JSON table-valued functions
+** Register the JSON table-valued function named zName and return a
+** pointer to its Module object.  Return NULL if something goes wrong.
 */
-int sqlite3JsonTableFunctions(sqlite3 *db){
-  int rc = SQLITE_OK;
+Module *sqlite3JsonVtabRegister(sqlite3 *db, const char *zName){
   int i;
   static const char *azModule[] = {
     "json_each", "json_tree", "jsonb_each", "jsonb_tree"
   };
-  for(i=0; i<sizeof(azModule)/sizeof(azModule[0]) && rc==SQLITE_OK; i++){
-    rc = sqlite3_create_module(db, azModule[i], &jsonEachModule, 0);
+  assert( sqlite3HashFind(&db->aModule, zName)==0 );
+  for(i=0; i<sizeof(azModule)/sizeof(azModule[0]); i++){
+    if( sqlite3StrICmp(azModule[i],zName)==0 ){
+      return sqlite3VtabCreateModule(db, azModule[i], &jsonEachModule, 0, 0);
+    }
   }
-  return rc;
+  return 0;
 }
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON) */

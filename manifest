@@ -1,5 +1,5 @@
-C Add\sJSON\stable-valued\sfunctions\sjsonb_each()\sand\sjsonb_tree().
-D 2025-09-25T23:32:23.992
+C On-demand\sloading\sof\sJSON\svirtual\stables.
+D 2025-09-26T10:29:07.156
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -681,7 +681,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c cb5b8ceb9baa02a63a2f83dec09c4153e1cfbdf9c2adef5c62c26d2160eeb067
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c 1ba7a4f00f0e7281131eb0a83218b2a6a952840303e48ac8059ae1a6271c7ab2
+F src/build.c f3c5f5b6b4b6654d3680c15b31a1a2ba4fdf0c3b1e8bea10cb20233c5423972f
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c b6f92001f4b1f73f21774927488661d28f4dac9cd9701ed96486d96b44f5b058
@@ -698,10 +698,10 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
-F src/json.c 5338c81c3d0a1472c10a2bca2bc8c89ace613d1ce6b76ef0ef5905dfbc762187
+F src/json.c 9f20fe0c5340e576607036ad2ffa95981300294210dfb1356d7f1ad47bec4d1e
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 3326993a09553c6b38cc52d4f9cc2e47dcfc8736ffd853fcb0cb49bc9e3d523c
-F src/main.c 4315e426f5898d994f47a5a17169b48120cd440307ab6d07850ff3d1eabf3726
+F src/main.c ce69a2650e3d359ed6a8a2867ccafb27ac62ce1d39f3120a84ff513320952a6c
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -742,7 +742,7 @@ F src/shell.c.in 175630658a5fce0277cddf4991c56931ed061b3af36061be3e56ef113588452
 F src/sqlite.h.in 5732519a2acb09066032ceac21f25996eb3f28f807a4468e30633c7c70faae1c
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 3f0c4ed6934e7309a61c6f3c30f70a30a5b869f785bb3d9f721a36c5e4359126
-F src/sqliteInt.h 01ab337beb08582828b8db542034eaf832778aa670ae6ade7e70f1d998ebdf17
+F src/sqliteInt.h 673c7c5d7e77552452b21499717233329809f252458f77a798977737f51b31b8
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2170,11 +2170,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e9a6391b377b6964620285192262a4dc9fe1712799f7aa8a8b37c5f718544ed2
-R 124e90bed91fdad6bd23f672ef76cd75
-T *branch * jsonb_each
-T *sym-jsonb_each *
-T -sym-trunk *
+P 2f8b461c636ce2c0e7970c00d1e6ea62cdef72273150fea6aabe4e9292724977
+R 4c4b4754e5e560616cf33dd688d0812a
 U drh
-Z 64aeb0af1a54113541748e99c409d44e
+Z a66b270f99e73bb4ae16db5d49fcd519
 # Remove this line to create a well-formed Fossil manifest.
