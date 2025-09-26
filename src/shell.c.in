@@ -5644,10 +5644,10 @@ int deduceDatabaseType(const char *zName, int dfltZip){
 static unsigned char *readHexDb(ShellState *p, int *pnData){
   unsigned char *a = 0;
   int nLine;
-  int n = 0;
+  int n = 0;                      /* Size of db per first line of hex dump */
+  i64 sz = 0;                     /* n rounded up to nearest page boundary */
   int pgsz = 0;
-  int iOffset = 0;
-  int j, k;
+  i64 iOffset = 0;
   int rc;
   FILE *in;
   const char *zDbFilename = p->pAuxDb->zDbFilename;
@@ -5671,16 +5671,17 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   rc = sscanf(zLine, "| size %d pagesize %d", &n, &pgsz);
   if( rc!=2 ) goto readHexDb_error;
   if( n<0 ) goto readHexDb_error;
-  if( pgsz<512 || pgsz>65536 || (pgsz&(pgsz-1))!=0 ) goto readHexDb_error;
-  n = (n+pgsz-1)&~(pgsz-1);  /* Round n up to the next multiple of pgsz */
-  a = sqlite3_malloc( n ? n : 1 );
-  shell_check_oom(a);
-  memset(a, 0, n);
   if( pgsz<512 || pgsz>65536 || (pgsz & (pgsz-1))!=0 ){
     sqlite3_fputs("invalid pagesize\n", stderr);
     goto readHexDb_error;
   }
+  sz = ((i64)n+pgsz-1)&~(pgsz-1); /* Round up to nearest multiple of pgsz */
+  a = sqlite3_malloc( sz ? sz : 1 );
+  shell_check_oom(a);
+  memset(a, 0, sz);
   for(nLine++; sqlite3_fgets(zLine, sizeof(zLine), in)!=0; nLine++){
+    int j = 0;                    /* Page number from "| page" line */
+    int k = 0;                    /* Offset from "| page" line */
     rc = sscanf(zLine, "| page %d offset %d", &j, &k);
     if( rc==2 ){
       iOffset = k;
@@ -5693,14 +5694,14 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
                 &j, &x[0], &x[1], &x[2], &x[3], &x[4], &x[5], &x[6], &x[7],
                 &x[8], &x[9], &x[10], &x[11], &x[12], &x[13], &x[14], &x[15]);
     if( rc==17 ){
-      k = iOffset+j;
-      if( k+16<=n && k>=0 ){
+      i64 iOff = iOffset+j;
+      if( iOff+16<=sz && iOff>=0 ){
         int ii;
-        for(ii=0; ii<16; ii++) a[k+ii] = x[ii]&0xff;
+        for(ii=0; ii<16; ii++) a[iOff+ii] = x[ii]&0xff;
       }
     }
   }
-  *pnData = n;
+  *pnData = sz;
   if( in!=p->in ){
     fclose(in);
   }else{
