@@ -1163,7 +1163,8 @@ static CMPP_NORETURN void cmpp_kwd__misuse(CmppKeyword const * pKw,
 
 /* No-op cmpp_keyword_f() impl. */
 static void cmpp_kwd_noop(CmppKeyword const * pKw, CmppTokenizer *t){
-  if(t || pKw){/*unused*/}
+  (void)pKw;
+  (void)t;
 }
 
 /* #error impl. */
@@ -1372,7 +1373,7 @@ static void cmpp_kwd_stderr(CmppKeyword const * pKw, CmppTokenizer *t){
 #if 0
 /* Impl. for dummy placeholder. */
 static void cmpp_kwd_todo(CmppKeyword const * pKw, CmppTokenizer *t){
-  if(t){/*unused*/}
+  (void)t;
   g_debug(0,("TODO: keyword handler for %s\n", pKw->zName));
 }
 #endif
