@@ -26,7 +26,7 @@
 **     X*      zero or more occurrences of X
 **     X+      one or more occurrences of X
 **     X?      zero or one occurrences of X
-**     X{p,q}  between p and q occurrences of X,   0 <= p,q <= 999
+**     X{p,q}  between p and q occurrences of X
 **     (X)     match X
 **     X|Y     X or Y
 **     ^X      X occurring at the beginning of the string
@@ -56,16 +56,16 @@
 ** regular expression in the O(N*M) performance bound is computed after
 ** this expansion.
 **
-** To help prevent DoS attacks, the values of p and q in the "{p,q}" syntax
-** are limited to SQLITE_MAX_REGEXP_REPEAT, default 999.
+** To help prevent DoS attacks, the size of the NFA is limit to
+** SQLITE_MAX_REGEXP states, default 9999.
 */
 #include <string.h>
 #include <stdlib.h>
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
-#ifndef SQLITE_MAX_REGEXP_REPEAT
-# define SQLITE_MAX_REGEXP_REPEAT 999
+#ifndef SQLITE_MAX_REGEXP
+# define SQLITE_MAX_REGEXP 9999
 #endif
 
 /*
@@ -165,6 +165,7 @@ struct ReCompiled {
   int nInit;                  /* Number of bytes in zInit */
   unsigned nState;            /* Number of entries in aOp[] and aArg[] */
   unsigned nAlloc;            /* Slots allocated for aOp[] and aArg[] */
+  unsigned mxAlloc;           /* Complexity limit */
 };
 
 /* Add a state to the given state set if it is not already there */
@@ -382,11 +383,12 @@ re_match_end:
 static int re_resize(ReCompiled *p, int N){
   char *aOp;
   int *aArg;
+  if( N>p->mxAlloc ){ p->zErr = "REGEXP pattern too big"; return 1; }
   aOp = sqlite3_realloc64(p->aOp, N*sizeof(p->aOp[0]));
-  if( aOp==0 ) return 1;
+  if( aOp==0 ){ p->zErr = "out of memory"; return 1; }
   p->aOp = aOp;
   aArg = sqlite3_realloc64(p->aArg, N*sizeof(p->aArg[0]));
-  if( aArg==0 ) return 1;
+  if( aArg==0 ){ p->zErr = "out of memory"; return 1; }
   p->aArg = aArg;
   p->nAlloc = N;
   return 0;
@@ -575,7 +577,7 @@ static const char *re_subcompile_string(ReCompiled *p){
         if( iPrev<0 ) return "'{m,n}' without operand";
         while( (c=rePeek(p))>='0' && c<='9' ){
           m = m*10 + c - '0';
-          if( m>SQLITE_MAX_REGEXP_REPEAT ) return "integer too large";
+          if( m*2>p->mxAlloc ) return "REGEXP pattern too big";
           p->sIn.i++;
         }
         n = m;
@@ -584,7 +586,7 @@ static const char *re_subcompile_string(ReCompiled *p){
           n = 0;
           while( (c=rePeek(p))>='0' && c<='9' ){
             n = n*10 + c-'0';
-            if( n>SQLITE_MAX_REGEXP_REPEAT ) return "integer too large";
+            if( n*2>p->mxAlloc ) return "REGEXP pattern too big";
             p->sIn.i++;
           }
         }
@@ -605,7 +607,7 @@ static const char *re_subcompile_string(ReCompiled *p){
           re_copy(p, iPrev, sz);
         }
         if( n==0 && m>0 ){
-          re_append(p, RE_OP_FORK, -sz);
+          re_append(p, RE_OP_FORK, -(int)sz);
         }
         break;
       }
@@ -686,7 +688,12 @@ static void re_free(void *p){
 ** compiled regular expression in *ppRe.  Return NULL on success or an
 ** error message if something goes wrong.
 */
-static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
+static const char *re_compile(
+  ReCompiled **ppRe,      /* OUT: write compiled NFA here */
+  const char *zIn,        /* Input regular expression */
+  int mxRe,               /* Complexity limit */
+  int noCase              /* True for caseless comparisons */
+){
   ReCompiled *pRe;
   const char *zErr;
   int i, j;
@@ -698,9 +705,11 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
   }
   memset(pRe, 0, sizeof(*pRe));
   pRe->xNextChar = noCase ? re_next_char_nocase : re_next_char;
+  pRe->mxAlloc = mxRe;
   if( re_resize(pRe, 30) ){
+    zErr = pRe->zErr;
     re_free(pRe);
-    return "out of memory";
+    return zErr;
   }
   if( zIn[0]=='^' ){
     zIn++;
@@ -754,6 +763,14 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
 }
 
 /*
+** Compute a reasonable limit on the length of the REGEXP NFA.
+*/
+static int re_maxlen(sqlite3_context *context){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  return 75 + sqlite3_limit(db, SQLITE_LIMIT_LIKE_PATTERN_LENGTH,-1)/2;
+}
+
+/*
 ** Implementation of the regexp() SQL function.  This function implements
 ** the build-in REGEXP operator.  The first argument to the function is the
 ** pattern and the second argument is the string.  So, the SQL statements:
@@ -778,7 +795,8 @@ static void re_sql_func(
   if( pRe==0 ){
     zPattern = (const char*)sqlite3_value_text(argv[0]);
     if( zPattern==0 ) return;
-    zErr = re_compile(&pRe, zPattern, sqlite3_user_data(context)!=0);
+    zErr = re_compile(&pRe, zPattern, re_maxlen(context),
+                      sqlite3_user_data(context)!=0);
     if( zErr ){
       re_free(pRe);
       sqlite3_result_error(context, zErr, -1);
@@ -823,7 +841,8 @@ static void re_bytecode_func(
 
   zPattern = (const char*)sqlite3_value_text(argv[0]);
   if( zPattern==0 ) return;
-  zErr = re_compile(&pRe, zPattern, sqlite3_user_data(context)!=0);
+  zErr = re_compile(&pRe, zPattern, re_maxlen(context),
+                    sqlite3_user_data(context)!=0);
   if( zErr ){
     re_free(pRe);
     sqlite3_result_error(context, zErr, -1);

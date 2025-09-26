@@ -145,14 +145,14 @@ do_execsql_test 5.0 {
   SELECT 'abc' REGEXP 'a{1,999}bc';
 } 1
 do_catchsql_test 5.1 {
-  SELECT 'abc' REGEXP 'a{1,1000}bc';
-} {1 {integer too large}}
+  SELECT 'abc' REGEXP 'a{1,25000}bc';
+} {1 {REGEXP pattern too big}}
 do_execsql_test 5.2 {
   SELECT 'abc' REGEXP 'a{999}bc';
 } 0
 do_catchsql_test 5.3 {
-  SELECT 'abc' REGEXP 'a{1000}bc';
-} {1 {integer too large}}
+  SELECT 'abc' REGEXP 'a{25000}bc';
+} {1 {REGEXP pattern too big}}
 
 
 
