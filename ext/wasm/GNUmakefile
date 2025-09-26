@@ -466,9 +466,9 @@ endif
 # -Dcustom-Module.instantiateWasm to some of the builds. This is
 # experimental.
 #
-# Changing this may require a clean rebuild.
+# Changing this may require a clean rebuild. It also might not work.
 #
-WASM_CUSTOM_INSTANTIATE = 1
+WASM_CUSTOM_INSTANTIATE = 0
 
 ########################################################################
 # $(bin.c-pp): a minimal text file preprocessor. Like C's but much
@@ -514,7 +514,7 @@ ifeq (1,$(SQLITE_C_IS_SEE))
 endif
 
 # cflags.common = C compiler flags for all builds
-cflags.common =  -I. -I$(dir $(sqlite3.c))
+cflags.common =  -I. -I$(dir $(sqlite3.c)) -std=c99 -fPIC
 # emcc.WASM_BIGINT = 1 for BigInt (C int64) support, else 0.  The API
 # disables certain features if BigInt is not enabled and such builds
 # _are not tested_ on any regular basis.
@@ -822,40 +822,6 @@ endef
 ########################################################################
 
 #
-# Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
-#
-ifneq (,$(filter wasmfs,$(MAKECMDGOALS)))
-wasmfs.enable ?= 1
-else
-# Unconditionally enable wasmfs for [dist]clean so that the wasmfs
-# sub-make can clean up.
-wasmfs.enable ?= $(MAKING_CLEAN)
-endif
-ifeq (1,$(wasmfs.enable))
-# wasmfs build disabled 2022-10-19 per /chat discussion.
-# OPFS-over-wasmfs was initially a stopgap measure and a convenient
-# point of comparison for the OPFS sqlite3_vfs's performance, but it
-# currently doubles our deliverables and build maintenance burden for
-# little benefit.
-#
-########################################################################
-# Some platforms do not support the WASMFS build. Raspberry Pi OS is
-# one of them (or was when that comment was initially written). As
-# such platforms are discovered, add their (uname -m) name to
-# PLATFORMS_WITH_NO_WASMFS to exclude the wasmfs build parts.
-PLATFORMS_WITH_NO_WASMFS = aarch64 # add any others here
-THIS_ARCH = $(shell /usr/bin/uname -m)
-ifneq (,$(filter $(THIS_ARCH),$(PLATFORMS_WITH_NO_WASMFS)))
-$(info This platform does not support the WASMFS build.)
-HAVE_WASMFS = 0
-else
-HAVE_WASMFS = 1
-endif
-endif
-# /wasmfs
-########################################################################
-
-#
 # Inputs/outputs for the sqlite3-api.js family.
 #
 # sqlite3-api.jses = the list of JS files which make up
@@ -1040,6 +1006,25 @@ fiddle.EXPORTED_FUNCTIONS.in = \
     $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 
 fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
+
+#
+# Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
+#
+ifneq (,$(filter wasmfs b-wasmfs,$(MAKECMDGOALS)))
+wasmfs.enable ?= 1
+else
+# Unconditionally enable wasmfs for [dist]clean so that the wasmfs
+# sub-make can clean up.
+wasmfs.enable ?= $(MAKING_CLEAN)
+endif
+#
+# WASMFS build - unsupported and untested. We used WASMFS
+# to jumpstart development early on, but it has always been
+# a moving target, in that Emscripten updates have broken
+# our build often enough that we no longer actively support it.
+# It's interesting to keep around, though.
+#
+cflags.wasmfs = -DSQLITE_ENABLE_WASMFS
 
 #
 # bin.mkwb is used for generating much of the makefile code for the

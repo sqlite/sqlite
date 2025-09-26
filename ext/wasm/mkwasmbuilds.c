@@ -112,10 +112,13 @@ enum BuildDefFlags {
 ** within the body of sqlite3InitModule().
 **
 ** --extern-pre-js = gets injected before sqlite3InitModule(), in the
-** global scope.
+** global scope. We inject the license and version info here.
 **
-** --extern-pre-js = gets injected immediately after
-** sqlite3InitModule(), in the global scope.
+** --extern-post-js = gets injected immediately after
+** sqlite3InitModule(), in the global scope. In this step we replace
+** sqlite3InitModule() with a slightly customized, the main purpose of
+** which is to (A) give us (not Emscripten) control over the arguments
+** it accepts and (B) to run the library bootstrap step.
 **
 ** Then there's sqlite3-api.BuildName.js, which is the entire SQLite3
 ** JS API (generated from the list defined in $(sqlite3-api.jses)). It
@@ -402,11 +405,16 @@ const BuildDefs oBuildDefs = {
     .zDotWasm    = 0,
     .zCmppD      = "$(c-pp.D.bundler)",
     .zEmcc       = 0,
-    .zEmccExtra  = "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META",
+    .zEmccExtra  =
+    "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"
+    " -sUSE_CLOSURE_COMPILER=0"
+    " -pthread -sWASMFS -sPTHREAD_POOL_SIZE=1"
+    " -sERROR_ON_UNDEFINED_SYMBOLS=0 -sLLD_REPORT_UNDEFINED"
+    ,
     .zEnv        = 0,
     .zDeps       = 0,
-    .zIfCond     = "ifeq (1,$(HAVE_WASMFS))",
-    .flags       = CP_ALL | F_UNSUPPORTED | F_WASMFS
+    .zIfCond     = 0,
+    .flags       = CP_ALL | F_UNSUPPORTED | F_WASMFS | F_ESM
   }
 };
 
