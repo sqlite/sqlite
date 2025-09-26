@@ -1150,6 +1150,10 @@ $(dir.dout)/sqlite3-opfs-async-proxy.js: $(dir.api)/sqlite3-opfs-async-proxy.js
 # they're always copied when we need them.
 #
 $(foreach B,$(b.names),$(eval $(out.$(B).js): $(sqlite3.ext.js)))
+#
+# b-all: builds all available js/wasm builds.
+#
+$(foreach B,$(b.names),$(eval b-all: $(out.$(B).js)))
 
 #
 # speedtest1 is our primary benchmarking tool.

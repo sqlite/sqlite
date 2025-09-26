@@ -740,11 +740,9 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      pB->zEmo, zBuildName, pB->flags);
   pf("# zCmppD=%s\n# zBaseName=%s\n",
      pB->zCmppD ? pB->zCmppD : "", zBaseName);
-
   pf("b.names += %s\n"
      "emo.b.%s = %s\n",
      zBuildName, zBuildName, pB->zEmo);
-
   emit_logtag(zBuildName);
 
   if( pB->zIfCond ){
@@ -848,12 +846,11 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@$(call b.do.wasm-opt,%s)\n", zBuildName);
       pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n", zBuildName);
       { /* Replace @sqlite3.wasm@ with the proper wasm file name. */
-        char const *zWF = pB->zDotWasm ? pB->zDotWasm : pB->zBaseName;
         pf("\t@echo '"
            "$(logtag.%s) $(emo.disk) s/@sqlite.wasm@/%s.wasm/g"
            "'; "
            "sed -i -e 's/@sqlite3.wasm@/%s.wasm/g' $@ || exit\n",
-           zBuildName, zWF, zWF);
+           zBuildName, pB->zBaseName, pB->zBaseName);
       }
 
       if( CP_JS & pB->flags ){
