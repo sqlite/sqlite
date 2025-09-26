@@ -45,7 +45,18 @@ const toExportForESM =
     location: globalThis.location,
     urlParams:  globalThis?.location?.href
       ? new URL(globalThis.location.href).searchParams
-      : new URLSearchParams()
+      : new URLSearchParams(),
+    /*
+      It is literally impossible to reliably get the name of _this_ script
+      at runtime, so impossible to reliably derive X.wasm from script name
+      X.js. (This is apparently why Emscripten hard-codes the name of the
+      wasm file into their output.)  Thus we need, at build-time, to set
+      the name of the WASM file which our custom instantiateWasm() should to
+      load. The build process populates this.
+
+      Module.instantiateWasm() is found in pre-js.c-pp.js.
+    */
+    wasmFilename: '@sqlite3.wasm@' /* replaced by the build process */
   });
   sIMS.debugModule =
     sIMS.urlParams.has('sqlite3.debugModule')

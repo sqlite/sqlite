@@ -14,124 +14,102 @@
    itself. i.e. try to keep file-local symbol names obnoxiously
    collision-resistant.
 */
-const sIMS =
-      globalThis.sqlite3InitModuleState/*from extern-post-js.c-pp.js*/
-      || Object.assign(Object.create(null),{
-        debugModule: ()=>{
-          console.warn("globalThis.sqlite3InitModuleState is missing");
-        }
-      });
-delete globalThis.sqlite3InitModuleState;
-sIMS.debugModule('pre-js.js sqlite3InitModuleState =',sIMS);
+(function(Module){
+  const sIMS =
+        globalThis.sqlite3InitModuleState/*from extern-post-js.c-pp.js*/
+        || Object.assign(Object.create(null),{
+          debugModule: ()=>{
+            console.warn("globalThis.sqlite3InitModuleState is missing");
+          }
+        });
+  delete globalThis.sqlite3InitModuleState;
+  sIMS.debugModule('pre-js.js sqlite3InitModuleState =',sIMS);
 
-//#ifnot target=es6-bundler-friendly
-/**
-   This custom locateFile() tries to figure out where to load `path`
-   from. The intent is to provide a way for foo/bar/X.js loaded from a
-   Worker constructor or importScripts() to be able to resolve
-   foo/bar/X.wasm (in the latter case, with some help):
+  /**
+     This custom locateFile() tries to figure out where to load `path`
+     from. The intent is to provide a way for foo/bar/X.js loaded from a
+     Worker constructor or importScripts() to be able to resolve
+     foo/bar/X.wasm (in the latter case, with some help):
 
-   1) If URL param named the same as `path` is set, it is returned.
+     1) If URL param named the same as `path` is set, it is returned.
 
-   2) If sqlite3InitModuleState.sqlite3Dir is set, then (thatName + path)
-   is returned (it's assumed to end with '/').
+     2) If sqlite3InitModuleState.sqlite3Dir is set, then (thatName + path)
+     is returned (it's assumed to end with '/').
 
-   3) If this code is running in the main UI thread AND it was loaded
-   from a SCRIPT tag, the directory part of that URL is used
-   as the prefix. (This form of resolution unfortunately does not
-   function for scripts loaded via importScripts().)
+     3) If this code is running in the main UI thread AND it was loaded
+     from a SCRIPT tag, the directory part of that URL is used
+     as the prefix. (This form of resolution unfortunately does not
+     function for scripts loaded via importScripts().)
 
-   4) If none of the above apply, (prefix+path) is returned.
+     4) If none of the above apply, (prefix+path) is returned.
 
-   None of the above apply in ES6 builds.
-*/
-Module['locateFile'] = function(path, prefix) {
+     None of the above apply in ES6 builds, which uses a much simpler
+     approach.
+  */
+  Module['locateFile'] = function(path, prefix) {
 //#if target=es6-module
-  return new URL(path, import.meta.url).href;
+    return new URL(path, import.meta.url).href;
 //#else
-  'use strict';
-  let theFile;
-  const up = this.urlParams;
-  if(up.has(path)){
-    theFile = up.get(path);
-  }else if(this.sqlite3Dir){
-    theFile = this.sqlite3Dir + path;
-  }else if(this.scriptDir){
-    theFile = this.scriptDir + path;
-  }else{
-    theFile = prefix + path;
-  }
-  this.debugModule(
-    "locateFile(",arguments[0], ',', arguments[1],")",
-    'sqlite3InitModuleState.scriptDir =',this.scriptDir,
-    'up.entries() =',Array.from(up.entries()),
-    "result =", theFile
-  );
-  return theFile;
+    'use strict';
+    let theFile;
+    const up = this.urlParams;
+    if(up.has(path)){
+      theFile = up.get(path);
+    }else if(this.sqlite3Dir){
+      theFile = this.sqlite3Dir + path;
+    }else if(this.scriptDir){
+      theFile = this.scriptDir + path;
+    }else{
+      theFile = prefix + path;
+    }
+    this.debugModule(
+      "locateFile(",arguments[0], ',', arguments[1],")",
+      'sqlite3InitModuleState.scriptDir =',this.scriptDir,
+      'up.entries() =',Array.from(up.entries()),
+      "result =", theFile
+    );
+    return theFile;
 //#endif target=es6-module
-}.bind(sIMS);
-//#endif ifnot target=es6-bundler-friendly
+  }.bind(sIMS);
 
-//#if custom-Module.instantiateWasm
-//#if !wasmfs
-/**
-   Override Module.instantiateWasm().
+//#if Module.instantiateWasm
+//#ifnot wasmfs
+  /**
+     Override Module.instantiateWasm().
 
-   Bug warning: a custom Module.instantiateWasm() does not work
-   in WASMFS builds:
+     A custom Module.instantiateWasm() does not work in WASMFS builds:
 
-   https://github.com/emscripten-core/emscripten/issues/17951
+     https://github.com/emscripten-core/emscripten/issues/17951
 
-   In such builds we must disable this.
-*/
-Module['instantiateWasm'
-  /* This works, but it does not have the testing coverage in
-     the wild which Emscripten's default impl does, so we'll
-     save this option until we really need a custom
-     Module.instantiateWasm(). */
-] = function callee(imports,onSuccess){
-  const sims = this;
-  const uri = Module.locateFile(
-    sims.wasmFilename, (
-      ('undefined'===typeof scriptDirectory/*var defined by Emscripten glue*/)
-        ? "" : scriptDirectory)
-  );
-  sims.debugModule("instantiateWasm() uri =", uri, "sIMS =",this);
-  const wfetch = ()=>fetch(uri, {credentials: 'same-origin'});
-  const loadWasm = WebAssembly.instantiateStreaming
-        ? async ()=>
-        WebAssembly
-        .instantiateStreaming(wfetch(), imports)
-        .then((arg)=>{
-          arg.imports = imports;
-          sims.instantiateWasm = arg /* used by extern-post-js.c-pp.js */;
-          onSuccess(arg.instance, arg.module);
-        })
-        : async ()=>// Safari < v15
-        wfetch()
-        .then(response => response.arrayBuffer())
-        .then(bytes => WebAssembly.instantiate(bytes, imports))
-        .then((arg)=>{
-          arg.imports = imports;
-          sims.instantiateWasm = arg;
-          onSuccess(arg.instance, arg.module);
-        })
-  ;
-  return loadWasm();
-}.bind(sIMS);
-/*
-  It is literally impossible to reliably get the name of _this_
-  script at runtime, so impossible to derive X.wasm from script name
-  X.js. Thus we need, at build-time, to redefine
-  sIMS.uri by appending it to a build-specific
-  copy of this file with the name of the wasm file. This is
-  apparently why Emscripten hard-codes the name of the wasm file
-  into their glue scripts.
-*/
-sIMS.wasmFilename = 'sqlite3.wasm';
-//#endif !wasmfs
-//#endif custom-Module.instantiateWasm
-/*
-  END FILE: api/pre-js.js, noting that the build process may append
-  "sIMS.wasmFilename = x;" to this file, for some value of x.
-*/
+     In such builds we must disable this.
+  */
+  Module['instantiateWasm'] = function callee(imports,onSuccess){
+    const sims = this;
+    const uri = Module.locateFile(
+      sims.wasmFilename, (
+        ('undefined'===typeof scriptDirectory/*var defined by Emscripten glue*/)
+          ? "" : scriptDirectory)
+    );
+    sims.debugModule("instantiateWasm() uri =", uri, "sIMS =",this);
+    const wfetch = ()=>fetch(uri, {credentials: 'same-origin'});
+    const finalThen = (arg)=>{
+      arg.imports = imports;
+      sims.instantiateWasm = arg /* used by sqlite3-api-prologue.c-pp.js */;
+      onSuccess(arg.instance, arg.module);
+    };
+    const loadWasm = WebAssembly.instantiateStreaming
+          ? async ()=>
+          WebAssembly
+          .instantiateStreaming(wfetch(), imports)
+          .then(finalThen)
+          : async ()=>// Safari < v15
+          wfetch()
+          .then(response => response.arrayBuffer())
+          .then(bytes => WebAssembly.instantiate(bytes, imports))
+          .then(finalThen)
+    return loadWasm();
+  }.bind(sIMS);
+//#endif ifnot wasmfs
+//#endif Module.instantiateWasm
+})(Module);
+/* END FILE: api/pre-js.js. */

@@ -74,6 +74,7 @@ emo.lock      = 🔒
 emo.magic     = 🧙
 emo.megaphone = 📣
 emo.mute      = 🔇
+emo.edit      = ✏️
 emo.stop      = 🛑
 emo.strip     = 💈
 emo.test      = 🧪
@@ -201,13 +202,35 @@ b.cp = $(call b.mkdir@); \
   cp -p $(2) $(3) || exit
 
 #
-# $(eval $(call b.eval.c-pp,@,src,dest,-Dx=y...))
+# $(call b.c-pp.shcmd,LOGTAG,src,dest,-Dx=y...)
+#
+# Resolves to shell code to create $(3) from $(2) and $(4) using
+# $(bin.c-pp).
 #
 # $1 = build name
-# $2 = Input file(s): cat $(2) | $(bin.c-pp) ...
-# $3 = Output file: $(bin.c-pp) -o $(3)
-# $4 = optional $(bin.c-pp) -D... flags
-define b.eval.c-pp
+# $2 = Input file(s)
+# $3 = Output file
+# $4 = optional $(bin.c-pp) flags
+define b.c-pp.shcmd
+$(call b.mkdir@); \
+$(call b.echo,$(1),$(emo.disk)$(emo.lock) $(bin.c-pp) $(4) $(if $(loud.if),$(2))); \
+rm -f $(3); \
+$(bin.c-pp) -o $(3) $(4) $(2) || exit; \
+chmod -w $(3)
+endef
+
+#
+# $(eval $(call b.c-pp.target,LOGTAG,src,dest,-Dx=y...))
+#
+# Creates target $(3) using $(bin.c-pp) $(2) $(4).
+#
+# Args: as for $(b.c-pp.shcmd).
+define b.c-pp.target
+$(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
+	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4))
+CLEAN_FILES += $(3)
+endef
+define xxxb.c-pp.target
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	@$$(call b.mkdir@); \
 	$$(call b.echo,$(1),$$(emo.disk)$$(emo.lock) $$(bin.c-pp) $(4) $(if $(loud.if),$(2))); \
@@ -459,16 +482,17 @@ ifneq (,$(sqlite3_wasm_extra_init.c))
 endif
 
 #
-# Experimental and not known to work since the build upheaval in
-# 2025-09.
+# Actitivates (or not) a custom Module.instantiateWasm() override for
+# Emscripten. That override gives us more control over exactly which
+# WASM file is in use.
 #
 # If $(WASM_CUSTOM_INSTANTIATE) is 1 then mkwasmbuilds will add
 # -Dcustom-Module.instantiateWasm to some of the builds. This is
-# experimental.
+# experimental but works on all browsers tested by its developer.
 #
 # Changing this may require a clean rebuild. It also might not work.
 #
-WASM_CUSTOM_INSTANTIATE = 0
+WASM_CUSTOM_INSTANTIATE = 1
 
 ########################################################################
 # $(bin.c-pp): a minimal text file preprocessor. Like C's but much
@@ -500,7 +524,7 @@ WASM_CUSTOM_INSTANTIATE = 0
 # build. They are solely for use with $(bin.c-pp) itself.
 #
 # -D... flags which should be included in all invocations should be
-# appended to $(b.eval.c-pp.flags).
+# appended to $(b.c-pp.target.flags).
 bin.c-pp = ./c-pp
 $(bin.c-pp): c-pp.c $(sqlite3.c) # $(MAKEFILE)
 	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
@@ -508,9 +532,9 @@ $(bin.c-pp): c-pp.c $(sqlite3.c) # $(MAKEFILE)
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
 		-DSQLITE_TEMP_STORE=3
 DISTCLEAN_FILES += $(bin.c-pp)
-b.eval.c-pp.flags ?=
+b.c-pp.target.flags ?=
 ifeq (1,$(SQLITE_C_IS_SEE))
-  b.eval.c-pp.flags += -Denable-see
+  b.c-pp.target.flags += -Denable-see
 endif
 
 # cflags.common = C compiler flags for all builds
@@ -742,19 +766,9 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 ########################################################################
 
 
-# Undocumented Emscripten feature: if the target file extension is
-# "mjs", it defaults to ES6 module builds:
-# https://github.com/emscripten-core/emscripten/issues/14383
 sqlite3.wasm = $(dir.dout)/sqlite3.wasm
 sqlite3-wasm.c = $(dir.api)/sqlite3-wasm.c
 sqlite3-wasm.c.in = $(sqlite3-wasm.c) $(sqlite3_wasm_extra_init.c)
-sqlite3-wasmfs.c.in = $(sqlite3-wasm.c.in)
-# sqlite3-wasm.o vs sqlite3-wasm.c: building against the latter
-# (predictably) results in a slightly faster binary. We're close
-# enough to the target speed requirements that the 500ms makes a
-# difference, so we build all binaries against sqlite3-wasm.c instead
-# of building a shared copy of sqlite3-wasm.o to link against.
-########################################################################
 
 #
 # b.call.patch-export-default is used by mkwasmbuilds.c and the
@@ -1008,6 +1022,12 @@ fiddle.EXPORTED_FUNCTIONS.in = \
 fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
 
 #
+# WASMFS build - unsupported and untested. We used WASMFS
+# to jumpstart development early on, but it has always been
+# a moving target, in that Emscripten updates have broken
+# our build often enough that we no longer actively support it.
+# It's interesting to keep around, though.
+#
 # Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
 #
 ifneq (,$(filter wasmfs b-wasmfs,$(MAKECMDGOALS)))
@@ -1017,23 +1037,19 @@ else
 # sub-make can clean up.
 wasmfs.enable ?= $(MAKING_CLEAN)
 endif
-#
-# WASMFS build - unsupported and untested. We used WASMFS
-# to jumpstart development early on, but it has always been
-# a moving target, in that Emscripten updates have broken
-# our build often enough that we no longer actively support it.
-# It's interesting to keep around, though.
-#
 cflags.wasmfs = -DSQLITE_ENABLE_WASMFS
+# end wasmfs (the rest is in mkwasmbuilds.c)
+#
 
 #
-# bin.mkwb is used for generating much of the makefile code for the
+# $(bin.mkwb) is used for generating much of the makefile code for the
 # various wasm builds. It used to be generated in this makefile via a
 # difficult-to-read/maintain block of $(eval)'d code. Attempts were
 # made to generate it from tcl and bash (shell) but having to escape
 # the $ references in those languages made it just as illegible as the
-# native makefile code. Somewhat surprisingly, moving that code generation
-# to C makes it slightly less illegible than the previous 3 options.
+# native makefile code. Somewhat surprisingly, moving that code
+# generation to C makes it slightly less illegible than the previous 3
+# options.
 #
 # Maintenance notes:
 #
@@ -1042,7 +1058,7 @@ cflags.wasmfs = -DSQLITE_ENABLE_WASMFS
 #
 # - Vars which are used by $(bin.mkwb) in dependency lists and such
 #   need to be defined before this is included. Those used in recipies
-#   do not.
+#   may be defined after this step.
 #
 bin.mkwb = ./mkwasmbuilds
 ifneq (1,$(MAKING_CLEAN))
@@ -1080,7 +1096,7 @@ sqlite3.ext.js =
 define gen-worker1
 # $1 = X.ext part of sqlite3-worker1X.ext
 # $2 = $(c-pp.D.NAME)
-$(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
+$(call b.c-pp.target,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
     $(dir.dout)/sqlite3-worker1$(1),$(2))
 sqlite3.ext.js += $(dir.dout)/sqlite3-worker1$(1)
 all: $(dir.dout)/sqlite3-worker1$(1)
@@ -1097,7 +1113,7 @@ $(eval $(call gen-worker1,-bundler-friendly.mjs,$(c-pp.D.bundler)))
 define gen-promiser
 # $1 = X.ext part of sqlite3-worker1-promiserX.ext
 # $2 = $(c-pp.D.NAME)
-$(call b.eval.c-pp,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+$(call b.c-pp.target,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
     $(dir.dout)/sqlite3-worker1-promiser$(1),$(2))
 sqlite3.ext.js += $(dir.dout)/sqlite3-worker1-promiser$(1)
 all: $(dir.dout)/sqlite3-worker1-promiser$(1)
@@ -1114,8 +1130,8 @@ $(eval $(call gen-promiser,-bundler-friendly.mjs,$(c-pp.D.bundler)))
 # $3 = -D... flags for $(bin.c-pp)
 #
 define gen-dwp
-$(call b.eval.c-pp,test,demo-worker1-promiser.c-pp.js,demo-worker1-promiser$(1),$(3))
-$(call b.eval.c-pp,test,demo-worker1-promiser.c-pp.html,demo-worker1-promiser$(2),$(3))
+$(call b.c-pp.target,test,demo-worker1-promiser.c-pp.js,demo-worker1-promiser$(1),$(3))
+$(call b.c-pp.target,test,demo-worker1-promiser.c-pp.html,demo-worker1-promiser$(2),$(3))
 demos: demo-worker1-promiser$(1) demo-worker1-promiser$(2)
 endef
 $(eval $(call gen-dwp,.js,.html,$(c-pp.D.vanilla)))
@@ -1226,7 +1242,7 @@ define gen-tester1.js
 # $1 = build name to have dep on
 # $2 = suffix for tester1SUFFIX JS
 # $3 = c-pp flags
-$(call b.eval.c-pp,test,tester1.c-pp.js,tester1$(2),$(3))
+$(call b.c-pp.target,test,tester1.c-pp.js,tester1$(2),$(3))
 tester1$(2): $(sqlite3.ext.js) $(out.$(1).wasm)
 tester1-$(1): tester1$(2)
 tester1: tester1$(2)
@@ -1242,7 +1258,7 @@ define gen-tester1.html
 # $1 = build name to have a dep on
 # $2 = file suffix: empty, -64bit, -esm, esm-64bit
 # $3 = c-pp -D flags.
-$(call b.eval.c-pp,test,tester1.c-pp.html,tester1$(2).html,$(3))
+$(call b.c-pp.target,test,tester1.c-pp.html,tester1$(2).html,$(3))
 tester1$(2).html: tester1-$(1)
 tester1: tester1$(2).html
 endef
@@ -1255,8 +1271,8 @@ $(eval $(call gen-tester1.html,esm64,-esm-64bit,$(c-pp.D.esm64)))
 # tester1-worker.html variants:
 # There is no ESM variant of this file. Instead, that page accepts a
 # ?esm URL flag to switch to ESM mode.
-$(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker.html))
-$(eval $(call b.eval.c-pp,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
+$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,tester1-worker.html))
+$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
 tester1: tester1-worker.html tester1-worker-64bit.html
 
 all: tester1

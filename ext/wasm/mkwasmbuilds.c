@@ -211,10 +211,11 @@ const BuildDefs oBuildDefs = {
   /*
   ** The canonical build, against which all others are compared and
   ** contrasted.  This is the one we post downloads for.
+  **
+  ** This one's zBaseName and zEnv MUST be non-NULL so it can be used
+  ** as a default for all others
   */
   .vanilla = {
-    /* This one's zBaseName and zEnv MUST be non-NULL so it can be
-    ** used as a default for all others. */
     .zEmo        = "🍦",
     .zBaseName   = "sqlite3",
     .zDotWasm    = 0,
@@ -351,7 +352,7 @@ const BuildDefs oBuildDefs = {
   /* 64-bit bundler-friendly. */
   .bundler64 = {
     .zEmo        = "📦",
-    .zBaseName   = "sqlite3-bundler-friendlyu",
+    .zBaseName   = "sqlite3-bundler-friendly-64bit",
     .zDotWasm    = "sqlite3-64bit",
     .zCmppD      = "$(c-pp.D.bundler)",
     .zEmcc       = 0,
@@ -413,7 +414,7 @@ const BuildDefs oBuildDefs = {
     ,
     .zEnv        = 0,
     .zDeps       = 0,
-    .zIfCond     = 0,
+    .zIfCond     = "ifeq (1,$(wasmfs.enable))",
     .flags       = CP_ALL | F_UNSUPPORTED | F_WASMFS | F_ESM
   }
 };
@@ -565,7 +566,7 @@ static void mk_prologue(void){
 
 #if WASM_CUSTOM_INSTANTIATE
 /* c-pp -D... flags for the custom instantiateWasm(). */
-#define C_PP_D_CUSTOM_INSTANTIATE " -Dcustom-Module.instantiateWasm "
+#define C_PP_D_CUSTOM_INSTANTIATE " -DModule.instantiateWasm "
 #else
 #define C_PP_D_CUSTOM_INSTANTIATE
 #endif
@@ -588,8 +589,8 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
   pf("pre-js.%s.js = $(dir.tmp)/pre-js.%s.js\n",
      zBuildName, zBuildName);
 
-  if( 0==WASM_CUSTOM_INSTANTIATE || !pB || !pB->zDotWasm ){
-    pf("$(eval $(call b.eval.c-pp,"
+  if( 0==WASM_CUSTOM_INSTANTIATE || !pB ){
+    pf("$(eval $(call b.c-pp.target,"
        "%s,"
        "$(pre-js.in.js),"
        "$(pre-js.%s.js),"
@@ -597,33 +598,36 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
        "))",
        zBuildName, zBuildName, zBuildName);
   }else{
-    assert( pB && pB->zDotWasm );
-#if 0
-    pf("$(error fix the bit near %s:%d)\n",
-       __FILE__, __LINE__);
-#else
-    /* This part is needed for builds which have to rename the wasm file
-       in zDotWasm so that the loader can find it. */
-    pf("pre-js.%s.intermediary = "
-       "$(dir.tmp)/pre-js.%s.intermediary.js\n",
-       zBuildName, zBuildName);
-    pf("$(eval $(call b.eval.c-pp,"
+    char const *zWasmFile = pB->zDotWasm
+      ? pB->zDotWasm
+      : pB->zBaseName;
+    /*
+    ** See BuildDef::zDotWasm for _why_ we do this. _What_ we're doing
+    ** is generate $(pre-js.BUILDNAME.js) as above, but:
+    **
+    ** 1) Add an extra -D... flag to activate the custom
+    **    Module.intantiateWasm() in the JS code.
+    **
+    ** 2) Amend the generated pre-js.js with the name of the WASM
+    **    file which should be loaded. That tells the custom
+    **    Module.instantiateWasm() to use that file instead of
+    **    the default.
+    */
+    pf("$(pre-js.%s.js): $(pre-js.in.js) $(MAKEFILE_LIST)", zBuildName);
+    if( pB->zDotWasm ){
+      pf(" $(dir.dout)/%s.wasm" /* This .wasm is from some other
+                                   build, so this may trigger a full
+                                   build of the reference copy. */,
+         pB->zDotWasm);
+    }
+    ps("");
+    pf("\t@$(call b.c-pp.shcmd,"
        "%s,"
        "$(pre-js.in.js),"
-       "$(pre-js.%s.intermediary),"
-       C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s)))\n",
+       "$(pre-js.%s.js),"
+       "$(c-pp.D.%s)" C_PP_D_CUSTOM_INSTANTIATE
+       ")\n",
        zBuildName, zBuildName, zBuildName);
-    pf("$(pre-js.%s.js): $(pre-js.%s.intermediary)"
-       " $(out.dout)/%s\n" /* from a different build */
-       "\t$(call b.cp,%s,cp $(pre-js.%s.intermediary) $@\n",
-       zBuildName, zBuildName,
-       pB->zDotWasm,
-       zBuildName, zBuildName);
-    pf("\t@echo 'sIMS.wasmFilename = \"%s\";' >> $@\n",
-       pB->zDotWasm
-      /* see api/pre-js.c-pp.js:Module.instantiateModule() */
-    );
-#endif
   }
 
   ps("\n# --post-js=...");
@@ -635,7 +639,7 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
      " $(dir.api)/post-js-footer.js\n",
      zBuildName, zBuildName);
 
-  pf("$(eval $(call b.eval.c-pp,"
+  pf("$(eval $(call b.c-pp.target,"
      "%s,"
      "$(post-js.%s.in),"
      "$(post-js.%s.js),"
@@ -649,11 +653,11 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
   ps("\n# --extern-post-js=...");
   pf("extern-post-js.%s.js = $(dir.tmp)/extern-post-js.%s.js\n",
      zBuildName, zBuildName);
-  pf("$(eval $(call b.eval.c-pp,"
+  pf("$(eval $(call b.c-pp.target,"
      "%s,"
      "$(extern-post-js.in.js),"
      "$(extern-post-js.%s.js),"
-     C_PP_D_CUSTOM_INSTANTIATE "$(c-pp.D.%s)))\n",
+     "$(c-pp.D.%s)))\n",
      zBuildName, zBuildName, zBuildName);
 
   ps("\n# --pre/post misc...");
@@ -699,7 +703,7 @@ static void emit_api_js(char const *zBuildName,
      "sqlite3-api.%s.js = $(dir.tmp)/sqlite3-api.%s.js\n",
      zBuildName, zCmppD ? zCmppD: "",
      zBuildName, zBuildName);
-  pf("$(eval $(call b.eval.c-pp,"
+  pf("$(eval $(call b.c-pp.target,"
      "%s,"
      "$(sqlite3-api.jses),"
      "$(sqlite3-api.%s.js),"
@@ -809,6 +813,17 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
 
     { /* Post-compilation transformations and copying to
          $(dir.dout)... */
+
+      /* Avoid a 3rd occurrence of the bug fixed by 65798c09a00662a3,
+      ** which was (in two cases) caused by makefile refactoring and
+      ** not recognized until after a release was made with the broken
+      ** sqlite3-bundler-friendly.mjs (which is used by the npm
+      ** subproject but is otherwise untested/unsupported): */
+      pf("\t@if grep -e '^ *importScripts(' $@; "
+         "then echo '$(logtag.%s) $(emo.bug)$(emo.fire): "
+         "bug fixed in 65798c09a00662a3 has re-appeared'; "
+         "exit 1; fi;\n", zBuildName);
+
       if( (F_ESM & pB->flags) || (F_NODEJS & pB->flags) ){
         pf("\t@$(call b.call.patch-export-default,1,%d,$(logtag.%s))\n",
            (F_WASMFS & pB->flags) ? 1 : 0,
@@ -824,11 +839,47 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
 
       pf("\t@$(call b.do.wasm-opt,%s)\n", zBuildName);
       pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n", zBuildName);
+      { /* Replace @sqlite3.wasm@ with the proper wasm file name. */
+        char const *zWF = pB->zDotWasm ? pB->zDotWasm : pB->zBaseName;
+        pf("\t@echo '"
+           "$(logtag.%s) $(emo.disk) s/@sqlite.wasm@/%s.wasm/g"
+           "'; "
+           "sed -i -e 's/@sqlite3.wasm@/%s.wasm/g' $@ || exit\n",
+           zBuildName, zWF, zWF);
+      }
 
-      if( CP_JS & pB->flags && !(pB->zDotWasm/*handled below*/) ){
-        pf("\t@$(call b.cp,%s,$@,$(dir.dout))\n",
-           zBuildName
-        );
+      if( CP_JS & pB->flags ){
+        /*
+        ** $(bin.emcc) will write out $@ and will create a like-named
+        ** .wasm file. The resulting .wasm and .js/.mjs files are
+        ** identical across all builds which have the same pB->zEmmc
+        ** and/or pB->zEmccExtra.
+        **
+        ** For the final deliverables we copy one or both of those
+        ** js/wasm files to $(dir.dout) (the top-most build target
+        ** dir). We only copy the wasm file for the "base-most" builds
+        ** and recycle those for the rest of the builds. The catch is:
+        ** that .wasm file name gets hard-coded into $@ so we need,
+        ** for cases in which we "recycle" a .wasm file from another
+        ** build, to patch the name to pB->zDotWasm when copying to
+        ** $(dir.dout).
+        */
+        if( pB->zDotWasm ){
+          pf("\t@echo '$(logtag.%s) $(emo.disk) "
+             "s/\"%s.wasm\"/\"%s.wasm\"/g "
+             "in $(dir.dout)/$(notdir $@)'; \\\n"
+             "sed"
+             " -e 's/\"%s.wasm\"/\"%s.wasm\"/g'"
+             " -e \"s/'%s.wasm'/'%s.wasm'/g\""
+             " $@ > $(dir.dout)/$(notdir $@);\n",
+             zBuildName,
+             zBaseName, pB->zDotWasm,
+             zBaseName, pB->zDotWasm,
+             zBaseName, pB->zDotWasm);
+        }else{
+          pf("\t@$(call b.cp,%s,$@,$(dir.dout))\n",
+             zBuildName);
+        }
       }
       if( CP_WASM & pB->flags ){
         pf("\t@$(call b.cp,%s,$(basename $@).wasm,$(dir.dout))\n",
@@ -837,39 +888,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
            //pB->zEmo, zBuildName
         );
       }
-      /*
-      ** $(bin.emcc) will write out $@ and will create a like-named
-      ** .wasm file. The resulting .wasm and .js/.mjs files are
-      ** identical across all builds which have the same pB->zEmccExtra.
-      **
-      ** We copy one or both of those files to $(dir.dout) (the top-most
-      ** build target dir), but: that .wasm file name gets hard-coded
-      ** into $@ so we need, for some cases, to patch the name to
-      ** pB->zDotWasm when copying to $(dir.dout).
-      */
-      if( pB->zDotWasm && (CP_JS & pB->flags) ){
-        pf("\t@echo '$(logtag.%s) $(emo.disk) "
-           "s/\"%s.wasm\"/\"%s.wasm\"/g "
-           "in $(dir.dout)/$(notdir $@)'; \\\n"
-           "sed "
-           "-e 's/\"%s.wasm\"/\"%s.wasm\"/g' "
-           "-e \"s/'%s.wasm'/'%s.wasm'/g\" "
-           "$@ > $(dir.dout)/$(notdir $@)\n",
-           zBuildName,
-           zBaseName, pB->zDotWasm,
-           zBaseName, pB->zDotWasm,
-           zBaseName, pB->zDotWasm);
-      }
 
-      /* Avoid a 3rd occurrence of the bug fixed by 65798c09a00662a3,
-      ** which was (in two cases) caused by makefile refactoring and
-      ** not recognized until after a release was made with the broken
-      ** sqlite3-bundler-friendly.mjs (which is used by the npm
-      ** subproject but is otherwise untested/unsupported): */
-      pf("\t@if grep -e '^ *importScripts(' $@; "
-         "then echo '$(logtag.%s) $(emo.bug)$(emo.fire): "
-         "bug fixed in 65798c09a00662a3 has re-appeared'; "
-         "exit 1; fi;\n", zBuildName);
     }
   }
   pf("\t@$(call b.echo,%s,$(emo.done) done!)\n", zBuildName);
