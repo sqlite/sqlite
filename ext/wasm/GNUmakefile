@@ -1200,27 +1200,27 @@ speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # which runs speedtest1 multiple times.
 
 $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
-	@echo "Making $@ ..."
-	@$(call b.mkdir@)
-	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
-speedtest1: $(out.speedtest1.js)
+	@$(call b.echo,@,$(emo.disk)); \
+	$(call b.mkdir@); \
+	{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } 	> $@ || exit
+speedtest1: b-speedtest1
 
-speedtest1-64bit.html: speedtest1.html
-	@$(call b.echo,speedtest164,Creating from $<)
-	@rm -f $@; \
-	sed -e 's/speedtest1\.js/speedtest1-64bit\.js/' < $< > $@
+#
+# Generate 64-bit variants of speedtest1*.{js,html}
+#
+define gen-st64
+$(2): $(1)
+	@$$(call b.echo,speedtest164,$$(emo.disk)$(emo.lock) Creating from $$<)
+	@rm -f $$@; \
+	sed -e 's/$(3)\.js/$(3)-64bit\.js/' < $$< > $$@; \
+	chmod -w $$@
+b-speedtest164: $(2)
+CLEAN_FILES += $(2)
+endef
 
-speedtest1-worker-64bit.html: speedtest1-worker.html
-	@$(call b.echo,speedtest164,Creating from $<)
-	@rm -f $@; \
-	sed -e 's/speedtest1-worker\.js/speedtest1-worker-64bit\.js/' < $< > $@
-
-speedtest1-worker-64bit.js: speedtest1-worker.js
-	@$(call b.echo,speedtest164,Creating from $<)
-	@rm -f $@; \
-	sed -e 's/speedtest1\.js/speedtest1-64bit\.js/' < $< > $@
-
-b-speedtest164: speedtest1-64bit.html speedtest1-worker-64bit.js speedtest1-worker-64bit.html
+$(eval $(call gen-st64,speedtest1.html,speedtest1-64bit.html,speedtest1))
+$(eval $(call gen-st64,speedtest1-worker.html,speedtest1-worker-64bit.html,speedtest1-worker))
+$(eval $(call gen-st64,speedtest1-worker.js,speedtest1-worker-64bit.js,speedtest1-worker))
 # end speedtest1.js
 ########################################################################
 
@@ -1356,7 +1356,7 @@ for-testing.deps = \
   b-vanilla b-vanilla64 \
   b-esm b-esm64 \
   b-fiddle b-fiddle.debug \
-  speedtest1
+  b-speedtest1 b-speedtest164
 for-testing: $(for-testing.deps)
 
 ########################################################################

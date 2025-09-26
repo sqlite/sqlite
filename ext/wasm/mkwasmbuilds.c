@@ -733,8 +733,11 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      "emo.b.%s = %s\n",
      zBuildName, zBuildName, pB->zEmo);
 
-  pf("logtag.%s ?= [%s [%s] $@]:\n",
-     zBuildName, pB->zEmo, zBuildName);
+#if 1
+  pf("logtag.%s ?= [%s $@]:\n", zBuildName, pB->zEmo);
+#else
+  pf("logtag.%s ?= [%s [%s] $@]:\n", zBuildName, pB->zEmo, zBuildName);
+#endif
 
   if( pB->zIfCond ){
     pf("%s\n", pB->zIfCond );

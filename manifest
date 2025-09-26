@@ -1,5 +1,5 @@
-C Get\s64-bit\sbuilds\sof\sspeedtest1.wasm\srunning\sin\sorder\sto\sbetter\scompare\s32-/64-bit\sperformance\s(spoiler\salert:\sthe\slatter\sis\sconsistently\sroughly\s10%\sslower).\sAdd\sWASM\sheap\susage\sinfo\sto\sspeedtest1.
-D 2025-09-26T18:29:00.141
+C Clean\sup\show\sthe\sspeedtest1\s64-bit\stest/demo\sfiles\sare\sgenerated.\sMake\slog\soutput\svery\sslightly\sless\sverbose.
+D 2025-09-26T19:19:35.085
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/session/sqlite3session.c b3de195ce668cace9b324599bf6255a70290cbfb5451e826e
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile e5f1081c0f07b0073dc6b005309ce59dd93c312ed793a25b46d0d889210ccad6
+F ext/wasm/GNUmakefile 7764a91525b21be837173e3907f6d2d3b17afc2d86b2888f90f906ba4736e1c7
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -634,7 +634,7 @@ F ext/wasm/index.html 1b06cef70db4b2d5c0af1f9e6e32b27c1ca298cde97365a887926d501f
 F ext/wasm/jaccwabyt/jaccwabyt.js bbac67bc7a79dca34afe6215fd16b27768d84e22273507206f888c117e2ede7d
 F ext/wasm/jaccwabyt/jaccwabyt.md 167fc0b624c9bc2c477846e336de9403842d81b1a24fc4d3b24317cb9eba734f
 F ext/wasm/mkdist.sh 29f8a37a7aba41fa5df8e89b1fab02b83b35c43473c5cf808584872e022514b8 x
-F ext/wasm/mkwasmbuilds.c 852f008d7cbe2ccdf2be53c449c34b5fa4e7fb4428c40b893c312497c676f8d6
+F ext/wasm/mkwasmbuilds.c 54be38759216693a5afa1604fd7766bbb04ae5fcdcb454b2b1f118507af996d2
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e878ffd2eaa87e2978c44fcd03a1eb6114a9ae31e31101898d682f43cf81000f
-R ab805d7d8e634566f9f6c48749b1ee11
+P 70b944cc0189309c2265b184381f2f050bced7b83f204d57b912def6e203982a
+R cdf67da6d9ea8326da6d3edd3f66f912
 U stephan
-Z 49947c134dd71848d5f3e8b1b4a55ee5
+Z 0b0d6ed86cb9331997dcfa522b9261fe
 # Remove this line to create a well-formed Fossil manifest.
