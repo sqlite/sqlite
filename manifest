@@ -1,5 +1,5 @@
-C Fix\ssome\sinteger\soverflow\sproblems\swhen\shandling\scorrupt\shexdb\sdumps\sin\sthe\sshell\stool.\s[forum:/forumpost/82b513b116\s|\sForum\spost\s82b513b116].
-D 2025-09-26T11:45:13.976
+C Docs\sand\sdead\scode\sremoval\sin\smkwasmbuilds.c.
+D 2025-09-26T11:47:13.381
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -634,7 +634,7 @@ F ext/wasm/index.html 1b329fb63e057c02a17ce178308d6b06aac62d92af7dd6d821fb0e183e
 F ext/wasm/jaccwabyt/jaccwabyt.js bbac67bc7a79dca34afe6215fd16b27768d84e22273507206f888c117e2ede7d
 F ext/wasm/jaccwabyt/jaccwabyt.md 167fc0b624c9bc2c477846e336de9403842d81b1a24fc4d3b24317cb9eba734f
 F ext/wasm/mkdist.sh 29f8a37a7aba41fa5df8e89b1fab02b83b35c43473c5cf808584872e022514b8 x
-F ext/wasm/mkwasmbuilds.c e3f9e1d4b86498d621397f3a617816df51df019191ee259f9178705300225c07
+F ext/wasm/mkwasmbuilds.c 91624cea0a0e7b9b0c96bfb682f5a89c46d4f804a116b209dcbc808001a2c97f
 F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2170,8 +2170,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dfc41cb3aad7fedd834baaaba0d8e3aeb55a249af4f0934397652ea9c59dc9fc
-R bfd736fdadafc7a2e091ac2f8e9afb8f
-U dan
-Z 38301d6866f451ade983b3377617b51b
+P 730323f95d126162fd2867dbee1e1f1fc1d6e05b8a905a6767c4ab1cb43dacff
+R faa2ab647662f02d7597fe8c7adf751b
+U stephan
+Z 5abc90edeae288fecddcb4d9b9371ac5
 # Remove this line to create a well-formed Fossil manifest.

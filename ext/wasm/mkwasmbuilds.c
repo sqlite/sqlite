@@ -44,7 +44,7 @@
 ** e.g. F_BUNDLER_FRIENDLY=0x02|F_ESM, as that will lead
 ** to breakage in some of the flag checks.
 */
-enum {
+enum BuildDefFlags {
   /* Indicates an ESM module build. */
   F_ESM              = 0x01,
   /* Indicates a "bundler-friendly" build mode. */
@@ -100,17 +100,43 @@ enum {
 ** $(dir.dout). See the notes for the CP_JS enum entry for more
 ** details on that.
 **
+** The final result of each build is a pair of JS/WASM files, but
+** getting there requires generation of several files, primarily as
+** inputs for specific Emscripten flags:
+**
+** --pre-js = file gets injected after Emscripten's earliest starting
+** point, enabling limited customization of Emscripten's
+** behavior. This code lives/runs within the generated sqlite3InitModule().
+**
+** --post-js = gets injected after Emscripten's main work, but still
+** within the body of sqlite3InitModule().
+**
+** --extern-pre-js = gets injected before sqlite3InitModule(), in the
+** global scope.
+**
+** --extern-pre-js = gets injected immediately after
+** sqlite3InitModule(), in the global scope.
+**
+** Then there's sqlite3-api.BuildName.js, which is the entire SQLite3
+** JS API (generated from the list defined in $(sqlite3-api.jses)). It
+** gets sandwitched inside --post-js.
+**
+** Each of those inputs has to be generated before passing them on to
+** Emscripten so that any build-specific capabilities can get filtered
+** in or out (using ./c-pp.c).
+**
 ** [^1]: The legal BuildNames are in this file's BuildDef_map macro.
 */
 struct BuildDef {
-  /**
-     Base name of output JS and WASM files.
+  /*
+  ** Base name of output JS and WASM files. The X part of X.js and
+  ** X.wasm.
   */
   const char *zBaseName;
   /*
   ** A glyph to use in log messages for this build, intended to help
   ** the eyes distinguish the build lines more easily in parallel
-  **  builds.
+  ** builds.
   **
   ** The convention for 32- vs 64-bit pairs is to give them similar
   ** emoji, e.g. a cookie for 32-bit and a donut or cake for 64.
@@ -139,7 +165,7 @@ struct BuildDef {
   ** $zIfCond/endif block.
   */
   const char *zIfCond;    /* makefile "ifeq (...)" or similar */
-  int flags;              /* Flags from LibModeFlags */
+  int flags;              /* Flags from BuildDefFlags */
 };
 typedef struct BuildDef BuildDef;
 
@@ -149,8 +175,8 @@ typedef struct BuildDef BuildDef;
 **
 ** Many makefile vars use these identifiers for naming stuff, e.g.:
 **
-**  out.NAME.js   = output file NAME.js or NAME.mjs
-**  out.NAME.wasm = output file NAME.wasm
+**  out.NAME.js   = output JS file for the build named NAME
+**  out.NAME.wasm = output WASM file for the build named NAME
 **  logtag.NAME   = Used for decorating log output
 **
 ** etc.
@@ -267,7 +293,7 @@ const BuildDefs oBuildDefs = {
     .flags       = CP_ALL
   },
 
- /* speedtest1, 64-bit */
+ /* speedtest1 64-bit */
   .speedtest164 = {
     .zEmo        = "🛼64",
     .zBaseName   = "speedtest1-64bit",
@@ -873,12 +899,12 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
 
 
 static void emit_gz(char const *zBuildName,
-                    char const *zOutDotSExt){
+                    char const *zFileExt){
   pf("\n$(out.%s.%s).gz: $(out.%s.%s)\n"
      "\t@$(call b.echo,%s,$(emo.disk))\n"
      "\t@gzip < $< > $@\n",
-     zBuildName, zOutDotSExt,
-     zBuildName, zOutDotSExt,
+     zBuildName, zFileExt,
+     zBuildName, zFileExt,
      zBuildName);
 }
 
@@ -1001,22 +1027,7 @@ int main(int argc, char const ** argv){
 #define E(N) mk_lib_mode(# N, &oBuildDefs.N);
     BuildDefs_map(E)
 #undef E
-#if 0
-    pf(zBanner
-       "$(dir.dout)/sqlite3.js: $(out.vanilla.js)\n"
-       "$(dir.dout)/sqlite3.mjs: $(out.esm.js)\n"
-       "$(dir.dout)/sqlite3.wasm: $(out.vanilla.wasm)\n"
-       "$(dir.dout)/sqlite3-64bit.js: $(out.vanilla64.js)\n"
-       "$(dir.dout)/sqlite3-64bit.mjs: $(out.esm64.js)\n"
-       "$(dir.dout)/sqlite3-64bit.wasm: $(out.vanilla64.wasm)\n"
-       "b-vanilla: $(dir.dout)/sqlite3.wasm\n"
-       "b-vanilla64: $(dir.dout)/sqlite3-64bit.wasm\n"
-       "b-esm: $(dir.dout)/sqlite3.mjs\n"
-       "b-esm64: $(dir.dout)/sqlite3-64bit.mjs\n"
-    );
-#endif
     mk_fiddle();
-    //mk_speedtest1();
   }
   return rc;
 }
