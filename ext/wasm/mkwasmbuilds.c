@@ -307,7 +307,7 @@ const BuildDefs oBuildDefs = {
     "$(emcc.speedtest1)"
     " $(emcc.speedtest1.common)"
     " -sMEMORY64=1 -sWASM_BIGINT=1"
-    " $(pre-post.speedtest1.flags)"
+    " $(pre-post.speedtest164.flags)"
     " $(cflags.common)"
     " -DSQLITE_SPEEDTEST1_WASM"
     " $(SQLITE_OPT)"

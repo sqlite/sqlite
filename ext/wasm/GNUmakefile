@@ -230,15 +230,6 @@ $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4))
 CLEAN_FILES += $(3)
 endef
-define xxxb.c-pp.target
-$(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
-	@$$(call b.mkdir@); \
-	$$(call b.echo,$(1),$$(emo.disk)$$(emo.lock) $$(bin.c-pp) $(4) $(if $(loud.if),$(2))); \
-	rm -f $(3); \
-	$$(bin.c-pp) -o $(3) $(4) $(2) || exit; \
-	chmod -w $(3)
-CLEAN_FILES += $(3)
-endef
 
 c-pp.D.64bit = -D64bit
 
@@ -1171,7 +1162,7 @@ emcc.speedtest1.common = $(emcc_opt_full)
 emcc.speedtest1 = -I. -I$(dir $(sqlite3.canonical.c))
 emcc.speedtest1 += -sENVIRONMENT=web
 emcc.speedtest1 += -sALLOW_MEMORY_GROWTH
-emcc.speedtest1 += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
+emcc.speedtest1 += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.32)
 emcc.speedtest1.common += -sINVOKE_RUN=0
 emcc.speedtest1.common += --no-entry
 emcc.speedtest1.common += -sABORTING_MALLOC
@@ -1189,7 +1180,6 @@ emcc.speedtest1.common += -sDYNAMIC_EXECUTION=0
 emcc.speedtest1.common += --minify 0
 emcc.speedtest1.common += -sEXPORT_NAME=$(sqlite3.js.init-func)
 emcc.speedtest1.common += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
-emcc.speedtest1.common += -sMEMORY64=$(emcc.MEMORY64)
 speedtest1.exit-runtime0 = -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get
@@ -1214,6 +1204,23 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
 	@$(call b.mkdir@)
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } > $@
 speedtest1: $(out.speedtest1.js)
+
+speedtest1-64bit.html: speedtest1.html
+	@$(call b.echo,speedtest164,Creating from $<)
+	@rm -f $@; \
+	sed -e 's/speedtest1\.js/speedtest1-64bit\.js/' < $< > $@
+
+speedtest1-worker-64bit.html: speedtest1-worker.html
+	@$(call b.echo,speedtest164,Creating from $<)
+	@rm -f $@; \
+	sed -e 's/speedtest1-worker\.js/speedtest1-worker-64bit\.js/' < $< > $@
+
+speedtest1-worker-64bit.js: speedtest1-worker.js
+	@$(call b.echo,speedtest164,Creating from $<)
+	@rm -f $@; \
+	sed -e 's/speedtest1\.js/speedtest1-64bit\.js/' < $< > $@
+
+b-speedtest164: speedtest1-64bit.html speedtest1-worker-64bit.js speedtest1-worker-64bit.html
 # end speedtest1.js
 ########################################################################
 
@@ -1241,7 +1248,7 @@ speedtest1: $(out.speedtest1.js)
 define gen-tester1.js
 # $1 = build name to have dep on
 # $2 = suffix for tester1SUFFIX JS
-# $3 = c-pp flags
+# $3 = $(bin.c-pp) flags
 $(call b.c-pp.target,test,tester1.c-pp.js,tester1$(2),$(3))
 tester1$(2): $(sqlite3.ext.js) $(out.$(1).wasm)
 tester1-$(1): tester1$(2)
@@ -1256,8 +1263,8 @@ $(eval $(call gen-tester1.js,esm64,-64bit.mjs,$(c-pp.D.esm64)))
 # tester1.html variants:
 define gen-tester1.html
 # $1 = build name to have a dep on
-# $2 = file suffix: empty, -64bit, -esm, esm-64bit
-# $3 = c-pp -D flags.
+# $2 = filename suffix: empty, -64bit, -esm, esm-64bit
+# $3 = $(bin.c-pp) flags
 $(call b.c-pp.target,test,tester1.c-pp.html,tester1$(2).html,$(3))
 tester1$(2).html: tester1-$(1)
 tester1: tester1$(2).html
@@ -1274,6 +1281,8 @@ $(eval $(call gen-tester1.html,esm64,-esm-64bit,$(c-pp.D.esm64)))
 $(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,tester1-worker.html))
 $(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
 tester1: tester1-worker.html tester1-worker-64bit.html
+tester1-worker.html: tester1.mjs
+tester1-worker-64bit.html: tester1-64bit.mjs
 
 all: tester1
 # end tester1
