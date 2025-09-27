@@ -1,5 +1,5 @@
-C Avoid\sinteger\soverflow\sin\smemory\sallocation\sfor\sthe\n".import\s--csv"\scommand\sin\sthe\sCLI.
-D 2025-09-27T12:29:28.616
+C Fix\sa\sbug\sin\sthe\s".dbtotxt"\scommand\sof\sthe\sCLI\sthat\scauses\sa\sNULL\spointer\ndereference\sif\srun\son\san\sin-memory\sdatabase.
+D 2025-09-27T12:35:25.533
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -737,7 +737,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
-F src/shell.c.in af1ba89ace1aa694b926b12867986051a1923b6ca3fa7cbfc826a65dbf9dac9b
+F src/shell.c.in 55d5d7828b6dc81dda64972949f2849b6a76462824381dbd1aae6af914baea76
 F src/sqlite.h.in 5732519a2acb09066032ceac21f25996eb3f28f807a4468e30633c7c70faae1c
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 3f0c4ed6934e7309a61c6f3c30f70a30a5b869f785bb3d9f721a36c5e4359126
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b34b750b5528b6dda195bc1a3895dc3fe46e70cbf992a78111316e2726c1ade
-R ba5a8ad6d78215c0f171f1bcb866f04a
+P a8093d45e0f59fd55ea4cba515e9e2eb3683bb0a4f4c062747cfb4074ae3db73
+R 3cc13d1240f97a4dacee1c0779f36f7a
 U drh
-Z 911cd55213e1d8de707e86bbef7f67b6
+Z db1677511b380f07639c77d73f13747a
 # Remove this line to create a well-formed Fossil manifest.
