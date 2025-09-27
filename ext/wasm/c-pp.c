@@ -36,7 +36,12 @@
 ** - `#pragma` is in place for adding "meta-commands", but it does not
 **   yet have any concrete list of documented commands.
 **
-*  - `#stderr` outputs its file name, line number, and the remainder
+** - `#savepoint` takes one argument: begin, commit, rollback. Each
+**    corresponds to the similarly-named SQLite savepoint feature.
+**    (What we're calling "commit" is called "release" in savepoint
+**    terminology.)
+**
+** - `#stderr` outputs its file name, line number, and the remainder
 **   of that line to stderr.
 **
 ** - `#//` acts as a single-line comment, noting that there must be no
@@ -453,6 +458,7 @@ TT_IfNot,
 TT_Include,
 TT_Line,
 TT_Pragma,
+TT_Savepoint,
 TT_Stderr,
 TT_Undef
 };
@@ -596,11 +602,15 @@ enum AtPolicy {
 };
 typedef enum AtPolicy AtPolicy;
 
-static AtPolicy AtPolicy_fromStr(char const *z){
+static AtPolicy AtPolicy_fromStr(char const *z, int bEnforce){
   if( 0==strcmp(z, "retain") ) return AT_RETAIN;
   if( 0==strcmp(z, "elide") ) return AT_ELIDE;
   if( 0==strcmp(z, "error") ) return AT_ERROR;
   if( 0==strcmp(z, "off") ) return AT_OFF;
+  if( bEnforce ){
+    fatal("Invalid @ policy value: %s. "
+          "Try one of retain|elide|error|off.", z);
+  }
   return AT_invalid;
 }
 
@@ -633,16 +643,29 @@ static struct Global {
     const unsigned char chAt;
   } delim;
   struct {
-    sqlite3_stmt * defIns;
-    sqlite3_stmt * defDel;
-    sqlite3_stmt * defHas;
-    sqlite3_stmt * defGet;
-    sqlite3_stmt * defGetBool;
-    sqlite3_stmt * inclIns;
-    sqlite3_stmt * inclDel;
-    sqlite3_stmt * inclHas;
-    sqlite3_stmt * inclPathAdd;
-    sqlite3_stmt * inclSearch;
+#define GStmt_map(E)               \
+    E(defIns,"INSERT OR REPLACE INTO def(k,v) VALUES(?,?)") \
+    E(defDel,"DELETE FROM def WHERE k GLOB ?")    \
+    E(defHas,"SELECT 1 FROM def WHERE k GLOB ?")      \
+    E(defGet,"SELECT k,v FROM def WHERE k GLOB ?")        \
+    E(defGetBool, \
+    "SELECT 1 FROM def WHERE k = ?1"                   \
+    " AND v IS NOT NULL"                               \
+    " AND '0'!=v AND ''!=v")                           \
+    E(inclIns,"INSERT OR FAIL INTO incl(file,srcFile,srcLine) VALUES(?,?,?)") \
+    E(inclDel,"DELETE FROM incl WHERE file=?") \
+    E(inclHas,"SELECT 1 FROM incl WHERE file=?") \
+    E(inclPathAdd,"INSERT OR FAIL INTO inclpath(seq,dir) VALUES(?,?)") \
+    E(inclSearch, \
+    "SELECT ?1 fn WHERE fileExists(fn) " \
+    "UNION ALL SELECT * FROM (" \
+    "SELECT replace(dir||'/'||?1, '//','/') AS fn "            \
+    "FROM inclpath WHERE fileExists(fn) ORDER BY seq"             \
+    ")")
+
+#define E(N,S) sqlite3_stmt * N;
+    GStmt_map(E)
+#undef E
   } stmt;
   struct {
     FILE * pFile;
@@ -688,6 +711,37 @@ static struct Global {
   }
 };
 
+/** Distinct IDs for each g.stmt member. */
+enum GStmt_e {
+  GStmt_e_none = 0,
+#define E(N,S) GStmt_e_ ## N,
+  GStmt_map(E)
+#undef E
+};
+
+/*
+** Returns the g.stmt.X corresponding to `which`, initializing it if
+** needed. It does not return NULL - it fails fatally on error.
+*/
+static sqlite3_stmt * g_stmt(enum GStmt_e which){
+  sqlite3_stmt ** q = 0;
+  char const * zSql = 0;
+  switch(which){
+    case GStmt_e_none:
+      fatal("GStmt_e_none is not a valid statement handle");
+      return NULL;
+#define E(N,S) case GStmt_e_ ## N: zSql = S; q = &g.stmt.N; break;
+    GStmt_map(E)
+#undef E
+  }
+  assert( q );
+  assert( zSql && *zSql );
+  if( !*q ){
+    db_prepare(q, "%s", zSql);
+    assert( *q );
+  }
+  return *q;
+}
 
 #if 0
 /*
@@ -868,20 +922,13 @@ void db_free(void *m){
   sqlite3_free(m);
 }
 
-static sqlite3_stmt * db__prep_add(void){
-  if(!g.stmt.defIns){
-    db_prepare(&g.stmt.defIns,
-               "INSERT OR REPLACE INTO def(k,v) VALUES(?,?)");
-  }
-  return g.stmt.defIns;
-}
-
 void db_define_add(const char * zKey){
   int rc;
   char const * zEq = 0;
   unsigned nVal = 0;
   char const * zVal = cmpp_val_part(zKey, -1, '=', &nVal, &zEq);
-  sqlite3_stmt * const q = db__prep_add();
+  sqlite3_stmt * const q = g_stmt(GStmt_e_defIns);
+  assert( q );
   //g_stderr("zKey=%s\nzVal=%s\nzEq=%s\n", zKey, zVal, zEq);
   if( zEq ){
     db_bind_textn(q, 1, zKey, (zEq-zKey));
@@ -920,7 +967,7 @@ static void db_define_add_file(const char * zKey){
   FileWrapper fw = FileWrapper_empty;
   FileWrapper_open(&fw, zVal, "r");
   FileWrapper_slurp(&fw);
-  q = db__prep_add();
+  q = g_stmt(GStmt_e_defIns);
   //g_stderr("zKey=%s\nzVal=%s\nzEq=%s\n", zKey, zVal, zEq);
   db_bind_textn(q, 1, zKey, (zEq-zKey));
   if( g.flags.chompF ){
@@ -953,11 +1000,7 @@ static void db_define_add_file(const char * zKey){
 
 int db_define_has(const char * zName){
   int rc;
-  sqlite3_stmt * q = g.stmt.defHas;
-  if(!q){
-    db_prepare(&q, "SELECT 1 FROM def WHERE k GLOB ?");
-    g.stmt.defHas = q;
-  }
+  sqlite3_stmt * const q = g_stmt(GStmt_e_defHas);
   db_bind_text(q, 1, zName);
   rc = db_step(q);
   if(SQLITE_ROW == rc){
@@ -973,17 +1016,8 @@ int db_define_has(const char * zName){
 }
 
 int db_define_get_bool(const char * zName, int nName){
-  sqlite3_stmt * q = g.stmt.defGetBool;
+  sqlite3_stmt * const q = g_stmt(GStmt_e_defGetBool);
   int rc = 0;
-  if(!q){
-    db_prepare(
-      &q,
-      "SELECT 1 FROM def WHERE k = ?1"
-      " AND v IS NOT NULL"
-      " AND '0'!=v AND ''!=v"
-    );
-    g.stmt.defGetBool = q;
-  }
   if( nName<0 ) nName=(int)strlen(zName);
   db_bind_textn(q, 1, zName, nName);
   rc = db_step(q);
@@ -1003,21 +1037,16 @@ int db_define_get_bool(const char * zName, int nName){
 
 int db_define_get(const char * zName, int nName,
                   char **zVal, unsigned int *nVal){
-  sqlite3_stmt * q = g.stmt.defGet;
-  int rc = 0;
-  int n = 0;
-  if(!q){
-    db_prepare(&q, "SELECT k,v FROM def WHERE k GLOB ?");
-    g.stmt.defGet = q;
-  }
+  sqlite3_stmt * q = g_stmt(GStmt_e_defGet);
   if( nName<0 ) nName=(int)strlen(zName);
   db_bind_textn(q, 1, zName, nName);
-  rc = db_step(q);
+  int n = 0;
+  int rc = db_step(q);
   if(SQLITE_ROW == rc){
     const unsigned char * z = sqlite3_column_text(q, 1);
     n = sqlite3_column_bytes(q,1);
     if( nVal ) *nVal = (unsigned)n;
-    *zVal = n ? sqlite3_mprintf("%.*s", n, z) : 0;
+    *zVal = sqlite3_mprintf("%.*s", n, z);
     if( n && z ) check__oom(*zVal);
     if( SQLITE_ROW==sqlite3_step(q) ){
       db_free(*zVal);
@@ -1042,80 +1071,64 @@ int db_define_get(const char * zName, int nName,
 void db_define_rm(const char * zKey){
   int rc;
   int n = 0;
-  if(!g.stmt.defDel){
-    db_prepare(&g.stmt.defDel, "DELETE FROM def WHERE k GLOB ?");
-  }
-  db_bind_text(g.stmt.defDel, 1, zKey);
-  rc = db_step(g.stmt.defDel);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_defDel);
+  db_bind_text(q, 1, zKey);
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping DELETE on def");
   }
   g_debug(2,("undefine: %.*s\n",n, zKey));
-  sqlite3_clear_bindings(g.stmt.defDel);
-  sqlite3_reset(g.stmt.defDel);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 void db_including_add(const char * zKey, const char * zSrc, int srcLine){
   int rc;
-  if(!g.stmt.inclIns){
-    db_prepare(&g.stmt.inclIns,
-               "INSERT OR FAIL INTO incl(file,srcFile,srcLine) VALUES(?,?,?)");
-  }
-  db_bind_text(g.stmt.inclIns, 1, zKey);
-  db_bind_text(g.stmt.inclIns, 2, zSrc);
-  db_bind_int(g.stmt.inclIns, 3, srcLine);
-  rc = db_step(g.stmt.inclIns);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclIns);
+  db_bind_text(q, 1, zKey);
+  db_bind_text(q, 2, zSrc);
+  db_bind_int(q, 3, srcLine);
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping INSERT on incl");
   }
   g_debug(2,("is-including-file add [%s] from [%s]:%d\n", zKey, zSrc, srcLine));
-  sqlite3_clear_bindings(g.stmt.inclIns);
-  sqlite3_reset(g.stmt.inclIns);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 void db_include_rm(const char * zKey){
   int rc;
-  if(!g.stmt.inclDel){
-    db_prepare(&g.stmt.inclDel, "DELETE FROM incl WHERE file=?");
-  }
-  db_bind_text(g.stmt.inclDel, 1, zKey);
-  rc = db_step(g.stmt.inclDel);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclDel);
+  db_bind_text(q, 1, zKey);
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping DELETE on incl");
   }
   g_debug(2,("inclpath rm [%s]\n", zKey));
-  sqlite3_clear_bindings(g.stmt.inclDel);
-  sqlite3_reset(g.stmt.inclDel);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 char * db_include_search(const char * zKey){
   char * zName = 0;
-  if(!g.stmt.inclSearch){
-    db_prepare(&g.stmt.inclSearch,
-               "SELECT ?1 fn WHERE fileExists(fn) "
-               "UNION ALL SELECT * FROM ("
-               "SELECT replace(dir||'/'||?1, '//','/') AS fn "
-               "FROM inclpath WHERE fileExists(fn) ORDER BY seq"
-               ")");
-  }
-  db_bind_text(g.stmt.inclSearch, 1, zKey);
-  if(SQLITE_ROW==db_step(g.stmt.inclSearch)){
-    const unsigned char * z = sqlite3_column_text(g.stmt.inclSearch, 0);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclSearch);
+  db_bind_text(q, 1, zKey);
+  if(SQLITE_ROW==db_step(q)){
+    const unsigned char * z = sqlite3_column_text(q, 0);
     zName = z ? sqlite3_mprintf("%s", z) : 0;
     if(!zName) fatal("Alloc failed");
   }
-  sqlite3_clear_bindings(g.stmt.inclSearch);
-  sqlite3_reset(g.stmt.inclSearch);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
   return zName;
 }
 
 static int db_including_has(const char * zName){
   int rc;
-  if(!g.stmt.inclHas){
-    db_prepare(&g.stmt.inclHas, "SELECT 1 FROM incl WHERE file=?");
-  }
-  db_bind_text(g.stmt.inclHas, 1, zName);
-  rc = db_step(g.stmt.inclHas);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclHas);
+  db_bind_text(q, 1, zName);
+  rc = db_step(q);
   if(SQLITE_ROW == rc){
     rc = 1;
   }else{
@@ -1123,8 +1136,8 @@ static int db_including_has(const char * zName){
     rc = 0;
   }
   g_debug(2,("inclpath has [%s] = %d\n",zName, rc));
-  sqlite3_clear_bindings(g.stmt.inclHas);
-  sqlite3_reset(g.stmt.inclHas);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
   return rc;
 }
 
@@ -1143,28 +1156,22 @@ void db_including_check(const char * zName){
 void db_include_dir_add(const char * zDir){
   static int seq = 0;
   int rc;
-  if(!g.stmt.inclPathAdd){
-    db_prepare(&g.stmt.inclPathAdd,
-               "INSERT OR FAIL INTO inclpath(seq,dir) VALUES(?,?)");
-  }
-  db_bind_int(g.stmt.inclPathAdd, 1, ++seq);
-  db_bind_text(g.stmt.inclPathAdd, 2, zDir);
-  rc = db_step(g.stmt.inclPathAdd);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclPathAdd);
+  db_bind_int(q, 1, ++seq);
+  db_bind_text(q, 2, zDir);
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping INSERT on inclpath");
   }
   g_debug(2,("inclpath add #%d: %s\n",seq, zDir));
-  sqlite3_clear_bindings(g.stmt.inclPathAdd);
-  sqlite3_reset(g.stmt.inclPathAdd);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 static void cmpp_atexit(void){
-#define FINI(M) if(g.stmt.M) sqlite3_finalize(g.stmt.M)
-  FINI(defIns); FINI(defDel);
-  FINI(defHas); FINI(defGet); FINI(defGetBool);
-  FINI(inclIns); FINI(inclDel); FINI(inclHas);
-  FINI(inclPathAdd); FINI(inclSearch);
-#undef FINI
+#define E(N,S) sqlite3_finalize(g.stmt.N);
+  GStmt_map(E)
+#undef E
   FileWrapper_close(&g.out);
   if(g.db) sqlite3_close(g.db);
 }
@@ -1195,8 +1202,8 @@ static int cmpp__db_sq3TraceV2(unsigned t,void*c,void*p,void*x){
     case SQLITE_TRACE_STMT:{
       FILE * const fp = g.sqlTrace.pFile;
       if( fp ){
-        char const * zSql = (char const *)x;
-        char * zExp = g.sqlTrace.expandSql
+        char const * const zSql = (char const *)x;
+        char * const zExp = g.sqlTrace.expandSql
           ? sqlite3_expanded_sql((sqlite3_stmt*)p)
           : 0;
         fprintf(fp, "SQL TRACE #%u: %s\n",
@@ -1230,6 +1237,7 @@ static void cmpp_initdb(void){
       "seq INTEGER UNIQUE ON CONFLICT IGNORE, "
       "dir TEXT PRIMARY KEY NOT NULL ON CONFLICT IGNORE"
     ");"
+    "BEGIN;"
     ;
   assert(0==g.db);
   if(g.db) return;
@@ -1723,8 +1731,8 @@ static void cmpp_kwd_include(CmppKeyword const * pKw, CmppTokenizer *t){
 static void cmpp_kwd_pragma(CmppKeyword const * pKw, CmppTokenizer *t){
   const char * zArg;
   if(CT_skip(t)) return;
-  else if(t->args.argc!=2){
-    cmpp_kwd__misuse(pKw, t, "Expecting one argument");
+  else if(t->args.argc<2){
+    cmpp_kwd__misuse(pKw, t, "Expecting an argument");
   }
   zArg = (const char *)t->args.argv[1];
 #define M(X) 0==strcmp(zArg,X)
@@ -1733,13 +1741,18 @@ static void cmpp_kwd_pragma(CmppKeyword const * pKw, CmppTokenizer *t){
     db_prepare(&q, "SELECT k FROM def ORDER BY k");
     g_stderr("cmpp defines:\n");
     while(SQLITE_ROW==db_step(q)){
-      int const n = sqlite3_column_bytes(q, 0);
       const char * z = (const char *)sqlite3_column_text(q, 0);
+      int const n = sqlite3_column_bytes(q, 0);
       g_stderr("\t%.*s\n", n, z);
     }
     db_finalize(q);
   }else if(M("@")){
-    g.flags.atPolicy = AT_RETAIN;
+    if(t->args.argc>2){
+      g.flags.atPolicy =
+        AtPolicy_fromStr((char const *)t->args.argv[2], 1);
+    }else{
+      g.flags.atPolicy = AT_DEFAULT;
+    }
   }else if(M("no-@")){
     g.flags.atPolicy = AT_OFF;
   }else if(M("chomp-F")){
@@ -1749,6 +1762,41 @@ static void cmpp_kwd_pragma(CmppKeyword const * pKw, CmppTokenizer *t){
   }else{
     cmpp_kwd__misuse(pKw, t, "Unknown pragma: %s", zArg);
   }
+#undef M
+}
+
+/* Impl. for #savepoint. */
+static void cmpp_kwd_savepoint(CmppKeyword const * pKw, CmppTokenizer *t){
+  const char * zArg;
+  if(CT_skip(t)) return;
+  else if(t->args.argc!=2){
+    cmpp_kwd__misuse(pKw, t, "Expecting one argument");
+  }
+  zArg = (const char *)t->args.argv[1];
+#define SP_NAME " cmpp /*" __FILE__ "*/;"
+#define M(X) 0==strcmp(zArg,X)
+  if(M("begin")){
+    db_affirm_rc(sqlite3_exec(g.db, "SAVEPOINT" SP_NAME, 0, 0, 0),
+                 "Starting a savepoint");
+  }else if(M("rollback")){
+    db_affirm_rc(
+      sqlite3_exec(g.db,
+                   "ROLLBACK TO SAVEPOINT" SP_NAME
+                   "RELEASE SAVEPOINT" SP_NAME,
+                   0, 0, 0
+      ), "Rolling back a savepoint"
+    );
+  }else if(M("commit")){
+    db_affirm_rc(
+      sqlite3_exec(g.db,
+                   "RELEASE" SP_NAME,
+                   0, 0, 0
+      ), "Committing a savepoint"
+    );
+  }else{
+    cmpp_kwd__misuse(pKw, t, "Unknown savepoint option: %s", zArg);
+  }
+#undef SP_NAME
 #undef M
 }
 
@@ -1789,6 +1837,7 @@ CmppKeyword aKeywords[] = {
   {"ifnot", 5, 1, TT_IfNot, cmpp_kwd_if},
   {"include", 7, 0, TT_Include, cmpp_kwd_include},
   {"pragma", 6, 1, TT_Pragma, cmpp_kwd_pragma},
+  {"savepoint", 9, 1, TT_Savepoint, cmpp_kwd_savepoint},
   {"stderr", 6, 0, TT_Stderr, cmpp_kwd_stderr},
   {"undef", 5, 1, TT_Undef, cmpp_kwd_define},
   {0,0,TT_Invalid, 0}
@@ -2053,10 +2102,7 @@ int main(int argc, char const * const * argv){
       ISFLAG("@-policy"){
         AtPolicy aup;
         ARGVAL;
-        aup = AtPolicy_fromStr(zVal);
-        if( AT_invalid==aup ){
-          fatal("Invalid --@-policy. Try one of retain|elide|error|off.");
-        }
+        aup = AtPolicy_fromStr(zVal, 1);
         DOIT {
           g.flags.atPolicy = aup;
         }

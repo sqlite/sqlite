@@ -1,5 +1,5 @@
-C Use\ssqlite3_malloc64()\sand\ssqlite3_realloc64()\severywhere\sin\sthe\sCLI.
-D 2025-09-27T13:00:37.088
+C ext/wasm/c-pp.c:\sadd\s#savepoint\ssupport.\sConsolidate\show\sthe\sdiverse\ssqlite3_stmt\shandles\sare\smanaged.
+D 2025-09-27T13:34:02.718
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -610,7 +610,7 @@ F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72
 F ext/wasm/api/sqlite3-wasm.c ff2dc011e17b06186b8b35e408626d7ace69a362b92c197a34d78bef25c7105a
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 8fb6adfbae6270344f43f2652e63780df3f86521755bde8f92cf6b809ba7891d
 F ext/wasm/api/sqlite3-worker1.c-pp.js 69483df1df2d0988e708390f7b1feda769c16e9e9efd4683557f8e7197099cc0
-F ext/wasm/c-pp.c 3c84267ad9c9018f8eb0c83952b1b37eac08e0c614d6771fba5cf7640641525b
+F ext/wasm/c-pp.c c0c48f2d302d13d1c9f340aa8ace68b36de2cf5a9b4f6e9ce1c3b20e3554c46f
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 865352499223c3bdc5cb01a2f984d6e3fe74a028ab6a0cf2d92fec49383633f6
-R 8bd4bde493e0eb54d65eb66f6ba457ae
-U drh
-Z c33262b9d6d9f5e2eac9a7be85ed3b9e
+P b05c47009120840f74955114082f3a9c1206a81bd935a503fc359b5bde61c996
+R 5c9bc3e1c5ff8428ad8c5e411548be45
+U stephan
+Z 0c4774a9e741ee60e5e425d698f46673
 # Remove this line to create a well-formed Fossil manifest.
