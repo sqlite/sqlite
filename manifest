@@ -1,5 +1,5 @@
-C Add\sOOM\sinjection\stests\sfor\snew\scommands\son\sthis\sbranch.
-D 2025-09-27T18:25:27.728
+C Add\stest\scases\sfor\sALTER\sTABLE\sand\sattached\sdatabases.
+D 2025-09-27T19:17:08.692
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -839,7 +839,7 @@ F test/alter4.test 37cafe164067a6590a0ee4cec780bddbbaa33dc50b11542dcfbe0e6562649
 F test/alterauth.test 63442ba61ceb0c1eeb63aac1f4f5cebfa509d352276059d27106ae256bafc959
 F test/alterauth2.test 4b74fa8f184f4736497317feb587b65759eb87d87acfe3a8ef433d4d18bb002b
 F test/altercol.test b43fb5725332f4cf8cff0280605202c1672e808281accea60a066d2ccc5129e5
-F test/altercons.test b40249578a58d5b5fb8abbb2c557b7f20497474c1afafec515a4b3ef7160de32
+F test/altercons.test 0d6fe564b65a1ed36564c2d3ffd99de92dc5d1abc4391806637b0772caaed77c
 F test/altercorrupt.test 2e1d705342cf9d7de884518ddbb053fd52d7e60d2b8869b7b63b2fda68435c12
 F test/alterdropcol.test a653a3945f964d26845ec0cd0a8e74189f46de3119a984c5bc45457da392612e
 F test/alterdropcol2.test 527fce683b200d620f560f666c44ae33e22728e990a10a48a543280dfd4b4d41
@@ -2170,8 +2170,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 55cad8d15040bc01300bfe5efcc7225dd9695c2972c0f9b4bbd311ed57188e1f
-R 1925728f632793892ec8bd7723a805ea
+P 34b47c9b1be8a6ead917c6e9a85f8a295b14640cde177d8f1384b15f8bc692bb
+R d2caa87b8c36831673e0953b3d0f88d4
 U dan
-Z 71b3a1665a17736a9a9d0ea34e9cd95b
+Z 9b0b3eab4eaaea4032a0321b3993a0ad
 # Remove this line to create a well-formed Fossil manifest.

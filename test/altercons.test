@@ -317,4 +317,61 @@ do_execsql_test 8.2.3 {
   SELECT * FROM t1 WHERE a=3;
 } {3 3 3 3}
 
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+do_execsql_test 9.0 {
+  CREATE TABLE t1(x, y, z);
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t1(x, y, z);
+  INSERT INTO aux.t1 VALUES(1, 1, 1);
+  INSERT INTO aux.t1 VALUES(2, 2, 2);
+  INSERT INTO aux.t1 VALUES(3, 3, NULL);
+
+  CREATE TABLE aux.t2(x, y, z);
+}
+
+do_catchsql_test 9.1.1 {
+  ALTER TABLE aux.t1 ALTER COLUMN z SET NOT NULL
+} {1 {constraint failed}}
+do_execsql_test 9.1.2 {
+  UPDATE aux.t1 SET z=x;
+  ALTER TABLE aux.t1 ALTER COLUMN z SET NOT NULL;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t1';
+} {{CREATE TABLE t1(x, y, z NOT NULL)}}
+do_execsql_test 9.1.3 {
+  ALTER TABLE aux.t1 ALTER z DROP NOT NULL;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t1';
+} {{CREATE TABLE t1(x, y, z)}}
+do_execsql_test 9.1.4 {
+  ALTER TABLE t2 ALTER x SET NOT NULL;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t2';
+} {{CREATE TABLE t2(x NOT NULL, y, z)}}
+do_execsql_test 9.1.5 {
+  ALTER TABLE t2 ALTER x DROP NOT NULL;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t2';
+} {{CREATE TABLE t2(x, y, z)}}
+
+do_catchsql_test 9.2.1 {
+  ALTER TABLE aux.t1 ADD CONSTRAINT bill CHECK (y!=2);
+} {1 {constraint failed}}
+do_execsql_test 9.2.2 {
+  UPDATE aux.t1 SET y=4 WHERE y=2;
+  ALTER TABLE aux.t1 ADD CONSTRAINT bill CHECK (y!=2);
+  SELECT sql FROM aux.sqlite_schema WHERE name='t1';
+} {{CREATE TABLE t1(x, y, z, CONSTRAINT bill CHECK (y!=2))}}
+do_execsql_test 9.2.3 {
+  ALTER TABLE aux.t1 DROP CONSTRAINT bill;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t1';
+} {{CREATE TABLE t1(x, y, z)}}
+do_execsql_test 9.2.4 {
+  ALTER TABLE t2 ADD CONSTRAINT william CHECK (z!='');
+  SELECT sql FROM aux.sqlite_schema WHERE name='t2';
+} {{CREATE TABLE t2(x, y, z, CONSTRAINT william CHECK (z!=''))}}
+do_execsql_test 9.2.5 {
+  ALTER TABLE t2 DROP CONSTRAINT william;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t2';
+} {{CREATE TABLE t2(x, y, z)}}
+
 finish_test
+
