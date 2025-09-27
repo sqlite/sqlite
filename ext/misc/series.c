@@ -164,6 +164,28 @@ typedef struct SequenceSpec {
 } SequenceSpec;
 
 /*
+** Return the number of steps between pSS->iBase and pSS->iTerm if
+** the step width is pSS->iStep.
+*/
+static sqlite3_uint64 seriesSteps(SequenceSpec *pSS){
+  sqlite3_uint64 uBase, uTerm, uStep, uSpan;
+  assert( pSS->iStep!=0 );
+  assert( sizeof(uBase)==sizeof(&pSS->iBase) );
+  assert( sizeof(uTerm)==sizeof(&pSS->iTerm) );
+  assert( sizeof(uStep)==sizeof(&pSS->iStep) );
+  memcpy(&uBase, &pSS->iBase, sizeof(uBase));
+  memcpy(&uTerm, &pSS->iTerm, sizeof(uTerm));
+  memcpy(&uStep, &pSS->iStep, sizeof(uStep));
+  if( pSS->iStep>0 ){
+    uSpan = uTerm - uBase;
+  }else{
+    uSpan = uBase - uTerm;
+    uStep = 1 + ~uStep;
+  }
+  return uSpan/uStep;
+}
+
+/*
 ** Prepare a SequenceSpec for use in generating an integer series
 ** given initialized iBase, iTerm and iStep values. Sequence is
 ** initialized per given isReversing. Other members are computed.
@@ -547,7 +569,7 @@ static int seriesFilter(
       if( pCur->ss.iTerm>iMax ){
         pCur->ss.iTerm = iMax;
       }
-    }else{
+    }else if( pCur->ss.iStep>SMALLEST_INT64 ){
       sqlite3_int64 szStep = -pCur->ss.iStep;
       assert( szStep>0 );
       if( pCur->ss.iBase>iMax ){
@@ -561,22 +583,21 @@ static int seriesFilter(
   }
 
   /* Apply LIMIT and OFFSET constraints, if any */
+  assert( pCur->ss.iStep!=0 );
   if( idxNum & 0x20 ){
+    sqlite3_uint64 nStep;
     if( iOffset>0 ){
-      pCur->ss.iBase += pCur->ss.iStep*iOffset;
-    }
-    if( iLimit>=0 ){
-      sqlite3_int64 iTerm;
-      sqlite3_int64 mxLimit;
-      assert( pCur->ss.iStep>0 );
-      mxLimit = (LARGEST_INT64 - pCur->ss.iBase)/pCur->ss.iStep;
-      if( iLimit>mxLimit ) iLimit = mxLimit;
-      iTerm = pCur->ss.iBase + (iLimit - 1)*pCur->ss.iStep;
-      if( pCur->ss.iStep<0 ){
-        if( iTerm>pCur->ss.iTerm ) pCur->ss.iTerm = iTerm;
+      if( seriesSteps(&pCur->ss) < (sqlite3_uint64)iOffset ){
+        returnNoRows = 1;
+        iLimit = -1;
       }else{
-        if( iTerm<pCur->ss.iTerm ) pCur->ss.iTerm = iTerm;
+        pCur->ss.iBase += pCur->ss.iStep*iOffset;
       }
+    }
+    if( iLimit>=0
+     && (nStep = seriesSteps(&pCur->ss)) > (sqlite3_uint64)iLimit
+    ){
+      pCur->ss.iTerm = pCur->ss.iBase + (iLimit - 1)*pCur->ss.iStep;
     }
   }
 

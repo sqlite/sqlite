@@ -418,6 +418,66 @@ do_execsql_test tabfunc01-920 {
   ) LIMIT -1 OFFSET 0;
 } {1 2 3 4 5 6 7 8 9 10 101 102 103 104}
 
+# Also:  https://sqlite.org/forum/forumpost/ce1a06c2c8
+#
+do_execsql_test tabfunc01-930 {
+  SELECT * FROM generate_series(9223372036854775807,
+                                -9223372036854775808,
+                                -9223372036854775808);
+} {9223372036854775807 -1}
+do_execsql_test tabfunc01-931 {
+  SELECT * FROM generate_series(9223372036854775807,
+                                -9223372036854775808,
+                                -9223372036854775808)
+   LIMIT 100 OFFSET 1;
+} {-1}
+do_execsql_test tabfunc01-932 {
+  SELECT * FROM generate_series(9223372036854775807,
+                                -9223372036854775808,
+                                -9223372036854775808)
+   LIMIT 100 OFFSET 2;
+} {}
+do_execsql_test tabfunc01-933 {
+  SELECT * FROM generate_series(9223372036854775807,
+                                -9223372036854775808,
+                                -9223372036854775808)
+   LIMIT 100 OFFSET 9223372036854775807;
+} {}
+do_execsql_test tabfunc01-940 {
+  SELECT * FROM generate_series(1,11,2);
+} {1 3 5 7 9 11}
+do_execsql_test tabfunc01-941 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 4;
+} {9 11}
+do_execsql_test tabfunc01-942 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 5;
+} {11}
+do_execsql_test tabfunc01-943 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 6;
+} {}
+do_execsql_test tabfunc01-944 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 7;
+} {}
+do_execsql_test tabfunc01-945 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 9223372036854775807;
+} {}
+do_execsql_test tabfunc01-950 {
+  SELECT * FROM generate_series(1,11,1) LIMIT 100 OFFSET 10;
+} {11}
+do_execsql_test tabfunc01-951 {
+  SELECT * FROM generate_series(1,11,2) LIMIT 100 OFFSET 9223372036854775807;
+} {}
+do_execsql_test tabfunc01-952 {
+  SELECT * FROM generate_series(11,1,-1) LIMIT 100 OFFSET 10;
+} {1}
+do_execsql_test tabfunc01-953 {
+  SELECT * FROM generate_series(11,1,-1) LIMIT 100 OFFSET 9223372036854775807;
+} {}
+do_execsql_test tabfunc01-954 {
+  SELECT * FROM generate_series(1,11,1) LIMIT 3 OFFSET 3;
+} {4 5 6}
+
+
 #-------------------------------------------------------------------------
 # Forum post https://sqlite.org/forum/forumpost/e7c3ae1215
 #
