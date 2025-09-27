@@ -228,6 +228,14 @@ do_execsql_test 6.4.1 {
   SELECT sql FROM sqlite_schema WHERE tbl_name='b1'
 } {{CREATE TABLE b1(a, b, CONSTRAINT abc CHECK (a!=2))}}
 
+do_execsql_test 6.5 {
+  CREATE TABLE abc(x,y);
+}
+
+do_catchsql_test 6.6 {
+  ALTER TABLE abc ADD CHECK (z>=0);
+} {1 {no such column: z}}
+
 #-------------------------------------------------------------------------
 # Try attaching a NOT NULL to a generated column.
 #
@@ -269,5 +277,44 @@ do_catchsql_test 7.8 {
 do_catchsql_test 7.9 {
   ALTER TABLE v1 ALTER a DROP NOT NULL
 } {1 {cannot edit constraints of view "v1"}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b NOT NULL, c CHECK (c!=555), d);
+  INSERT INTO t1 VALUES(1, 1, 1, 1);
+  INSERT INTO t1 VALUES(2, 2, 2, 2);
+  INSERT INTO t1 VALUES(3, 3, 3, 3);
+}
+
+do_execsql_test 8.1.1 {
+  ALTER TABLE t1 ALTER a SET NOT NULL;
+  ALTER TABLE t1 ALTER b SET NOT NULL;
+  ALTER TABLE t1 ALTER c SET NOT NULL;
+  ALTER TABLE t1 ALTER d SET NOT NULL;
+}
+
+do_execsql_test 8.1.2 {
+  SELECT sql FROM sqlite_schema WHERE tbl_name = 't1'
+} {{CREATE TABLE t1(a INTEGER PRIMARY KEY NOT NULL, b NOT NULL, c CHECK (c!=555) NOT NULL, d NOT NULL)}}
+
+do_execsql_test 8.1.3 {
+  SELECT * FROM t1 WHERE a=2;
+} {2 2 2 2}
+
+do_execsql_test 8.2.1 {
+  ALTER TABLE t1 ALTER a DROP NOT NULL;
+  ALTER TABLE t1 ALTER b DROP NOT NULL;
+  ALTER TABLE t1 ALTER c DROP NOT NULL;
+  ALTER TABLE t1 ALTER d DROP NOT NULL;
+}
+
+do_execsql_test 8.2.2 {
+  SELECT sql FROM sqlite_schema WHERE tbl_name = 't1'
+} {{CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c CHECK (c!=555), d)}}
+
+do_execsql_test 8.2.3 {
+  SELECT * FROM t1 WHERE a=3;
+} {3 3 3 3}
 
 finish_test
