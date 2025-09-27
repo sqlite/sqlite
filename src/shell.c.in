@@ -4819,7 +4819,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
   sqlite3_stmt *pStmt;
   char *zSql;
   int nCol = 0;
-  int nAlloc = 0;
+  i64 nAlloc = 0;
   int nPK = 0;       /* Number of PRIMARY KEY columns seen */
   int isIPK = 0;     /* True if one PRIMARY KEY column of type INTEGER */
   int preserveRowid = ShellHasFlag(p, SHFLG_PreserveRowid);
@@ -4833,7 +4833,7 @@ static char **tableColumnList(ShellState *p, const char *zTab){
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     if( nCol>=nAlloc-2 ){
       nAlloc = nAlloc*2 + nCol + 10;
-      azCol = sqlite3_realloc(azCol, nAlloc*sizeof(azCol[0]));
+      azCol = sqlite3_realloc64(azCol, nAlloc*sizeof(azCol[0]));
       shell_check_oom(azCol);
     }
     azCol[++nCol] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 1));
@@ -5676,7 +5676,7 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
     goto readHexDb_error;
   }
   sz = ((i64)n+pgsz-1)&~(pgsz-1); /* Round up to nearest multiple of pgsz */
-  a = sqlite3_malloc( sz ? sz : 1 );
+  a = sqlite3_malloc64( sz ? sz : 1 );
   shell_check_oom(a);
   memset(a, 0, sz);
   for(nLine++; sqlite3_fgets(zLine, sizeof(zLine), in)!=0; nLine++){
@@ -8932,7 +8932,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         const char *zSchema = (const char *)sqlite3_column_text(pStmt,1);
         const char *zFile = (const char*)sqlite3_column_text(pStmt,2);
         if( zSchema==0 || zFile==0 ) continue;
-        azName = sqlite3_realloc(azName, (nName+1)*2*sizeof(char*));
+        azName = sqlite3_realloc64(azName, (nName+1)*2*sizeof(char*));
         shell_check_oom(azName);
         azName[nName*2] = strdup(zSchema);
         azName[nName*2+1] = strdup(zFile);
@@ -10990,7 +10990,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     ** Set a list of GLOB patterns of table names to be excluded.
     */
     if( cli_strcmp(azCmd[0], "filter")==0 ){
-      int ii, nByte;
+      int ii;
+      i64 nByte;
       if( nCmd<2 ) goto session_syntax_error;
       if( pAuxDb->nSession ){
         for(ii=0; ii<pSession->nFilter; ii++){
@@ -10998,7 +10999,7 @@ static int do_meta_command(char *zLine, ShellState *p){
         }
         sqlite3_free(pSession->azFilter);
         nByte = sizeof(pSession->azFilter[0])*(nCmd-1);
-        pSession->azFilter = sqlite3_malloc( nByte );
+        pSession->azFilter = sqlite3_malloc64( nByte );
         shell_check_oom( pSession->azFilter );
         for(ii=1; ii<nCmd; ii++){
           char *x = pSession->azFilter[ii-1] = sqlite3_mprintf("%s", azCmd[ii]);
