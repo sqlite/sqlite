@@ -1,5 +1,5 @@
-C Teach\sc-pp\show\sto\sreplace\sconfigure-script-like\s@tokens@,\sgiving\sus\sa\smuch\ssimpler\sway\sto\sget\sthe\sproper\sWASM\sfile\sname\sinjected\sinto\seach\sJS\sbuild.
-D 2025-09-27T11:38:35.546
+C Additional\scleanup\sand\srefinement\sof\sthe\sregexp.c\sextension.
+D 2025-09-27T11:54:49.147
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -389,7 +389,7 @@ F ext/misc/percentile.c 72e05a21db20a2fa85264b99515941f00ae698824c9db82d7edfbb16
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
-F ext/misc/regexp.c b92da686f6d6915887758803b30c33fdd628aab055bbf6e1075ae579186be626
+F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e0c6b
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1fa7e32d264f8329a8c9b0b5b469f1fc7ccadee86696d65e05df7fa3868af158
-R 3a56e0912785d2ab6d25423374f2119c
-U stephan
-Z 11190564f62030b343ceea51d93a998a
+P ffd5c8eaa89250a043b573c3eb66693dfec087a5b5eef184ae6d7bfbcf61235a
+R f2066338af0e932fc00c7fa52cabf422
+U drh
+Z ee84a7ef3181f55c87a3d826046de9a2
 # Remove this line to create a well-formed Fossil manifest.

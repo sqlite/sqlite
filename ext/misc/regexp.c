@@ -56,17 +56,12 @@
 ** regular expression in the O(N*M) performance bound is computed after
 ** this expansion.
 **
-** To help prevent DoS attacks, the size of the NFA is limit to
-** SQLITE_MAX_REGEXP states, default 9999.
+** To help prevent DoS attacks, the maximum size of the NFA is restricted.
 */
 #include <string.h>
 #include <stdlib.h>
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
-
-#ifndef SQLITE_MAX_REGEXP
-# define SQLITE_MAX_REGEXP 9999
-#endif
 
 /*
 ** The following #defines change the names of some functions implemented in
@@ -102,32 +97,6 @@ SQLITE_EXTENSION_INIT1
 #define RE_OP_NOTSPACE   16    /* Not a digit */
 #define RE_OP_BOUNDARY   17    /* Boundary between word and non-word */
 #define RE_OP_ATSTART    18    /* Currently at the start of the string */
-
-#if defined(SQLITE_DEBUG)
-/* Opcode names used for symbolic debugging */
-static const char *ReOpName[] = {
-  "EOF",
-  "MATCH",
-  "ANY",
-  "ANYSTAR",
-  "FORK",
-  "GOTO",
-  "ACCEPT",
-  "CC_INC",
-  "CC_EXC",
-  "CC_VALUE",
-  "CC_RANGE",
-  "WORD",
-  "NOTWORD",
-  "DIGIT",
-  "NOTDIGIT",
-  "SPACE",
-  "NOTSPACE",
-  "BOUNDARY",
-  "ATSTART",
-};
-#endif /* SQLITE_DEBUG */
-
 
 /* Each opcode is a "state" in the NFA */
 typedef unsigned short ReStateNumber;
@@ -380,7 +349,7 @@ re_match_end:
 
 /* Resize the opcode and argument arrays for an RE under construction.
 */
-static int re_resize(ReCompiled *p, int N){
+static int re_resize(ReCompiled *p, unsigned int N){
   char *aOp;
   int *aArg;
   if( N>p->mxAlloc ){ p->zErr = "REGEXP pattern too big"; return 1; }
@@ -419,7 +388,7 @@ static int re_append(ReCompiled *p, int op, int arg){
 /* Make a copy of N opcodes starting at iStart onto the end of the RE
 ** under construction.
 */
-static void re_copy(ReCompiled *p, int iStart, int N){
+static void re_copy(ReCompiled *p, int iStart, unsigned int N){
   if( p->nState+N>=p->nAlloc && re_resize(p, p->nAlloc*2+N) ) return;
   memcpy(&p->aOp[p->nState], &p->aOp[iStart], N*sizeof(p->aOp[0]));
   memcpy(&p->aArg[p->nState], &p->aArg[iStart], N*sizeof(p->aArg[0]));
@@ -673,8 +642,7 @@ static const char *re_subcompile_string(ReCompiled *p){
 ** regular expression.  Applications should invoke this routine once
 ** for every call to re_compile() to avoid memory leaks.
 */
-static void re_free(void *p){
-  ReCompiled *pRe = (ReCompiled*)p;
+static void re_free(ReCompiled *pRe){
   if( pRe ){
     sqlite3_free(pRe->aOp);
     sqlite3_free(pRe->aArg);
@@ -838,6 +806,27 @@ static void re_bytecode_func(
   int n;
   char *z;
   (void)argc;
+  static const char *ReOpName[] = {
+    "EOF",
+    "MATCH",
+    "ANY",
+    "ANYSTAR",
+    "FORK",
+    "GOTO",
+    "ACCEPT",
+    "CC_INC",
+    "CC_EXC",
+    "CC_VALUE",
+    "CC_RANGE",
+    "WORD",
+    "NOTWORD",
+    "DIGIT",
+    "NOTDIGIT",
+    "SPACE",
+    "NOTSPACE",
+    "BOUNDARY",
+    "ATSTART",
+  };
 
   zPattern = (const char*)sqlite3_value_text(argv[0]);
   if( zPattern==0 ) return;
