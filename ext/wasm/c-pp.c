@@ -500,12 +500,14 @@ struct CmppTokenizer {
 #define CT_skipLevel(t) CT_level(t).skipLevel
 #define CLvl_skip(lvl) ((lvl)->skipLevel || ((lvl)->flags & CmppLevel_F_ELIDE))
 #define CT_skip(t) CLvl_skip(&CT_level(t))
-#define CmppTokenizer_empty_m {                 \
-    0,0,0,0,0,1U/*lineNo*/,                     \
-    TS_Start,                                 \
-    CmppToken_empty_m,                        \
-    {/*level*/0U,{CmppLevel_empty_m}},       \
-    {/*args*/0,0,{0},{0}}                \
+#define CmppTokenizer_empty_m {               \
+    .zName=0, .zBegin=0, .zEnd=0, .zAnchor=0, \
+    .zPos=0,                                  \
+    .lineNo=1U,                               \
+    .pstate = TS_Start,                       \
+    .token = CmppToken_empty_m,               \
+    .level = {0U,{CmppLevel_empty_m}},        \
+    .args = {0,0,{0},{0}}                     \
   }
 static const CmppTokenizer CmppTokenizer_empty = CmppTokenizer_empty_m;
 
@@ -555,18 +557,31 @@ static struct Global {
     sqlite3_stmt * inclPathAdd;
     sqlite3_stmt * inclSearch;
   } stmt;
+  struct {
+    FILE * pFile;
+    int expandSql;
+  } sqlTrace;
 } g = {
-"?",
-CMPP_DEFAULT_DELIM/*zDelim*/,
-(unsigned short) sizeof(CMPP_DEFAULT_DELIM)-1/*nDelim*/,
-0/*doDebug*/,
-0/*db*/,
-FileWrapper_empty_m/*out*/,
-{/*stmt*/
-  0/*defIns*/, 0/*defDel*/, 0/*defHas*/,
-  0/*inclIns*/, 0/*inclDel*/, 0/*inclHas*/,
-  0/*inclPathAdd*/
-}
+  .zArgv0 = "?",
+  .zDelim = CMPP_DEFAULT_DELIM,
+  .nDelim = (unsigned short) sizeof(CMPP_DEFAULT_DELIM)-1,
+  .doDebug = 0,
+  .db = 0,
+  .out = FileWrapper_empty_m,
+  .stmt = {
+    .defIns =   0,
+    .defDel = 0,
+    .defHas = 0,
+    .inclIns =   0,
+    .inclDel =   0,
+    .inclHas =   0,
+    .inclPathAdd =   0,
+    .inclSearch =   0
+  },
+  .sqlTrace = {
+    .pFile = 0,
+    .expandSql = 0
+  }
 };
 
 
@@ -790,11 +805,19 @@ int db_define_has(const char * zName){
 void db_define_rm(const char * zKey){
   int rc;
   int n = 0;
-  const char *zPos = zKey;
-  if(!g.stmt.defDel){
-    db_prepare(&g.stmt.defDel, "DELETE FROM def WHERE k=?");
+  //const char *zPos = zKey;
+#if 0
+  if( !zKey ){
+    if( g.db ){
+      sqlite3_exec(g.db, "DELETE FROM def", 0, 0, 0);
+    }
+    return;
   }
-  for( ; *zPos && '='!=*zPos; ++n, ++zPos) {}
+#endif
+  if(!g.stmt.defDel){
+    db_prepare(&g.stmt.defDel, "DELETE FROM def WHERE k GLOB ?");
+  }
+  //for( ; *zPos && '='!=*zPos; ++n, ++zPos) {}
   db_bind_text(g.stmt.defDel, 1, zKey);
   rc = db_step(g.stmt.defDel);
   if(SQLITE_DONE != rc){
@@ -818,7 +841,7 @@ void db_including_add(const char * zKey, const char * zSrc, int srcLine){
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping INSERT on incl");
   }
-  g_debug(2,("inclpath add [%s] from [%s]:%d\n", zKey, zSrc, srcLine));
+  g_debug(2,("is-including-file add [%s] from [%s]:%d\n", zKey, zSrc, srcLine));
   sqlite3_clear_bindings(g.stmt.inclIns);
   sqlite3_reset(g.stmt.inclIns);
 }
@@ -934,6 +957,31 @@ static void udf_file_exists(
   sqlite3_result_int(context, 0==access(zName, 0));
 }
 
+/**
+   This sqlite3_trace_v2() callback outputs tracing info using
+   whut_output().
+*/
+static int cmpp__db_sq3TraceV2(unsigned t,void*c,void*p,void*x){
+  static unsigned int counter = 0;
+  switch(t){
+    case SQLITE_TRACE_STMT:{
+      FILE * const fp = g.sqlTrace.pFile;
+      char const * zSql = (char const *)x;
+      char * zExp = g.sqlTrace.expandSql
+        ? sqlite3_expanded_sql((sqlite3_stmt*)p)
+        : 0;
+      //MARKER(("mask=%08x isExp=%d\n", db->impl.event.maskIds, isExp));
+      assert( fp );
+      fprintf(fp, "SQL TRACE #%u: %s\n",
+              ++counter, zExp ? zExp : zSql);
+      sqlite3_free(zExp);
+      break;
+    }
+  }
+  return 0;
+}
+
+
 /* Initialize g.db, failing fatally on error. */
 static void cmpp_initdb(void){
   int rc;
@@ -951,7 +999,7 @@ static void cmpp_initdb(void){
     ") WITHOUT ROWID;"
     /* ^^^ files currently being included */
     "CREATE TABLE inclpath("
-      "seq INTEGER UNIQUE, "
+      "seq INTEGER UNIQUE ON CONFLICT IGNORE, "
       "dir TEXT PRIMARY KEY NOT NULL ON CONFLICT IGNORE"
     ")"
     /* ^^^ include path */
@@ -960,9 +1008,12 @@ static void cmpp_initdb(void){
   if(g.db) return;
   rc = sqlite3_open_v2(":memory:", &g.db, SQLITE_OPEN_READWRITE, 0);
   if(rc) fatal("Error opening :memory: db.");
+  if( g.sqlTrace.pFile ){
+    sqlite3_trace_v2(g.db, SQLITE_TRACE_STMT, cmpp__db_sq3TraceV2, 0);
+  }
   rc = sqlite3_exec(g.db, zSchema, 0, 0, &zErr);
   if(rc) fatal("Error initializing database: %s", zErr);
-  rc = sqlite3_create_function(g.db, "fileExists", 1, 
+  rc = sqlite3_create_function(g.db, "fileExists", 1,
                                SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                udf_file_exists, 0, 0);
   db_affirm_rc(rc, "UDF registration failed.");
@@ -1439,32 +1490,41 @@ void cmpp_process_file(const char * zName){
   }
 }
 
+#undef CT_level
+#undef CT_pstate
+#undef CT_skipLevel
+#undef CT_skip
+#undef CLvl_skip
+
 static void usage(int isErr){
   FILE * const fOut = isErr ? stderr : stdout;
+  fprintf(fOut, "Usage: %s [flags] [infile...]\n", g.zArgv0);
   fprintf(fOut,
-          "Usage: %s [flags] [infile...]\n"
-          "Flags:\n",
-          g.zArgv0);
+          "Flags and filenames may be in any order and "
+          "they are processed in that order.\n"
+          "\nFlags:\n\n");
+
 #define arg(F,D) fprintf(fOut,"  %s\n      %s\n",F, D)
+  arg("-o|--outfile FILE","Send output to FILE (default=- (stdout)). "
+      "    Because arguments are processed in order, this should "
+      "    normally be given before -f.");
   arg("-f|--file FILE","Read input from FILE (default=- (stdin)).\n"
-      "      Alternately, non-flag arguments are assumed to "
-      "be the input files.");
-  arg("-o|--outfile FILE","Send output to FILE (default=- (stdout))");
+      "    All non-flag arguments are assumed to be the input files.");
   arg("-DXYZ","Define XYZ to true");
-  arg("-UXYZ","Undefine XYZ (equivalent to false)");
+  arg("-UXYZ","Undefine all matching glob XYZ");
   arg("-IXYZ","Add dir XYZ to include path");
   arg("-d|--delimiter VALUE", "Set keyword delimiter to VALUE "
       "(default=" CMPP_DEFAULT_DELIM ")");
+  arg("--sql-trace", "Send a trace of all SQL to stderr");
+  arg("--sql-trace-x", "Like --sql-trace but expand the SQL");
 #undef arg
   fputs("",fOut);
 }
 
 int main(int argc, char const * const * argv){
   int rc = 0;
-  int i;
   int inclCount = 0;
   int nFile = 0;
-  char const *zFileList[128] = {0};
 #define M(X) (0==strcmp(X,zArg))
 #define ISFLAG(X) else if(M(X))
 #define ISFLAG2(X,Y) else if(M(X) || M(Y))
@@ -1472,74 +1532,112 @@ int main(int argc, char const * const * argv){
   if(i+1>=argc) fatal("Missing value for flag '%s'", zArg);  \
   zArg = argv[++i]
 
-  memset(zFileList, 0, sizeof(zFileList));
   g.zArgv0 = argv[0];
-  atexit(cmpp_atexit);
-  cmpp_initdb();
-  for(i = 1; i < argc; ++i){
-    char const * zArg = argv[i];
-    while('-'==*zArg) ++zArg;
-    if(M("?") || M("help")) {
-      usage(0);
-      goto end;
-    }else if('D'==*zArg){
-      ++zArg;
-      if(!*zArg) fatal("Missing key for -D");
-      db_define_add(zArg);
-    }else if('U'==*zArg){
-      ++zArg;
-      if(!*zArg) fatal("Missing key for -U");
-      db_define_rm(zArg);
-    }else if('I'==*zArg){
-      ++zArg;
-      if(!*zArg) fatal("Missing directory for -I");
-      db_include_dir_add(zArg);
-      ++inclCount;
+#define DOIT if(doIt)
+  for(int doIt = 0; doIt<2; ++doIt){
+    /**
+       Loop through the flags twice. The first time we just validate
+       and look for --help/-?. The second time we process the flags.
+       This approach allows us to easily chain multiple files and
+       flags:
+
+       ./c-pp -Dfoo -o foo x.y -Ufoo -Dbar -o bar x.y
+    */
+    DOIT{
+      atexit(cmpp_atexit);
+      cmpp_initdb();
     }
-    ISFLAG2("o","outfile"){
-      ARGVAL;
-      if(g.out.zName) fatal("Cannot use -o more than once.");
-      g.out.zName = zArg;
-    }
-    ISFLAG2("f","file"){
-      ARGVAL;
-      do_infile:
-      if( nFile>=sizeof(zFileList)/sizeof(zFileList[0]) ){
-        fatal("Too many file arguments. Max is %d.",
-              (int)(sizeof(zFileList)/sizeof(zFileList[0])));
+    for(int i = 1; i < argc; ++i){
+      char const * zArg = argv[i];
+      while('-'==*zArg) ++zArg;
+      if(zArg==argv[i]/*not a flag*/){
+        goto do_infile;
+      }ISFLAG2("?","help"){
+        usage(0);
+        goto end;
+      }else if('D'==*zArg){
+        ++zArg;
+        if(!*zArg) fatal("Missing key for -D");
+        DOIT {
+          db_define_add(zArg);
+        }
+      }else if('U'==*zArg){
+        ++zArg;
+        if(!*zArg) fatal("Missing key for -U");
+        DOIT {
+          db_define_rm(zArg);
+        }
+      }else if('I'==*zArg){
+        ++zArg;
+        if(!*zArg) fatal("Missing directory for -I");
+        DOIT {
+          db_include_dir_add(zArg);
+          ++inclCount;
+        }
       }
-      zFileList[nFile++] = zArg;
+      ISFLAG2("o","outfile"){
+        ARGVAL;
+        DOIT {
+          FileWrapper_open(&g.out, zArg, "w");
+        }
+      }
+      ISFLAG2("f","file"){
+        ARGVAL;
+      do_infile:
+        DOIT {
+          ++nFile;
+          if(!g.out.pFile) FileWrapper_open(&g.out, "-", "w");
+          if(!inclCount){
+            db_include_dir_add(".");
+            ++inclCount;
+          }
+          cmpp_process_file(zArg);
+        }
+      }
+      ISFLAG2("d","delimiter"){
+        ARGVAL;
+        if( !doIt ){
+          g.zDelim = zArg;
+          g.nDelim = (unsigned short)strlen(zArg);
+          if(!g.nDelim) fatal("Keyword delimiter may not be empty.");
+        }
+      }
+      ISFLAG("debug"){
+        DOIT {
+          ++g.doDebug;
+        }
+      }
+      ISFLAG("sql-trace"){
+        if( !doIt ){
+          /* Needs to be set before the start of the second pass, when
+             the db is inited. */
+          g.sqlTrace.pFile = stderr;
+          g.sqlTrace.expandSql = 0;
+        }
+      }
+      ISFLAG("sql-trace-x"){
+        if( !doIt ){
+          g.sqlTrace.pFile = stderr;
+          g.sqlTrace.expandSql = 1;
+        }
+      }
+      else{
+        fatal("Unhandled flag: %s", argv[i]);
+      }
     }
-    ISFLAG2("d","delimiter"){
-      ARGVAL;
-      g.zDelim = zArg;
-      g.nDelim = (unsigned short)strlen(zArg);
-      if(!g.nDelim) fatal("Keyword delimiter may not be empty.");
-    }
-    ISFLAG("debug"){
-      ++g.doDebug;
-    }else if(zArg==argv[i]/*not a flag*/){
-      goto do_infile;
-    }else{
-      fatal("Unhandled flag: %s", argv[i]);
+    DOIT {
+      if(!nFile){
+        if(!g.out.zName) g.out.zName = "-";
+        if(!inclCount){
+          db_include_dir_add(".");
+          ++inclCount;
+        }
+        FileWrapper_open(&g.out, g.out.zName, "w");
+        cmpp_process_file("-");
+      }
     }
   }
-  if(!nFile){
-    zFileList[nFile++] = "-";
-  }
-  if(!g.out.zName) g.out.zName = "-";
-  if(!inclCount) db_include_dir_add(".");
-  FileWrapper_open(&g.out, g.out.zName, "w");
-  for(i = 0; i < nFile; ++i){
-    cmpp_process_file(zFileList[i]);
-  }
-  FileWrapper_close(&g.out);
   end:
+  FileWrapper_close(&g.out);
   return rc ? EXIT_FAILURE : EXIT_SUCCESS;
 }
-
-#undef CT_level
-#undef CT_pstate
-#undef CT_skipLevel
-#undef CT_skip
-#undef CLvl_skip
