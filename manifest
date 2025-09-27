@@ -1,5 +1,5 @@
-C Latest\supstream\sc-pp.c\sfor\sthe\sability\sto\sprocess\smultiple\sinputs\sand\soutputs\sin\sa\ssingle\sinvocation.
-D 2025-09-27T00:04:28.087
+C Add\swasm.ptr\sto\sthe\smodule-symbols.html\soutput.
+D 2025-09-27T00:05:13.685
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -635,7 +635,7 @@ F ext/wasm/jaccwabyt/jaccwabyt.js bbac67bc7a79dca34afe6215fd16b27768d84e22273507
 F ext/wasm/jaccwabyt/jaccwabyt.md 167fc0b624c9bc2c477846e336de9403842d81b1a24fc4d3b24317cb9eba734f
 F ext/wasm/mkdist.sh 29f8a37a7aba41fa5df8e89b1fab02b83b35c43473c5cf808584872e022514b8 x
 F ext/wasm/mkwasmbuilds.c d86a3e178c4b17d3a430fd9579de3eb4f6575514237f22a03f5b83b077f36ed2
-F ext/wasm/module-symbols.html dc476b403369b26a1a23773e13b80f41b9a49f0825e81435fe3600a7cfbbe337
+F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
 F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2d7c36218bb7d67379d
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a4edaecc9b0b649df53a99e05d9abfbc5bdb40d45c7c6940a50b24fa30dca158
-R bef2f9129a58747558af60f4197c21ac
+P c7633373046ceb94f293b8fbd4f436a1eb281c2744d97334c6e7e3a803d8eac2
+R e699419a5849cd6a35397119dd2aa2cd
 U stephan
-Z 316e05b3238d4a7d73024ef26d080321
+Z dc10f4ddf336f50a96ae4aa285dfedf3
 # Remove this line to create a well-formed Fossil manifest.
