@@ -2416,6 +2416,7 @@ static int getConstraint(const u8 *z){
 }
 
 static int quotedCompare(
+  sqlite3_context *ctx,
   const u8 *zQuote, 
   int nQuote, 
   const u8 *zCmp,
@@ -2425,6 +2426,7 @@ static int quotedCompare(
 
   zCopy = sqlite3MallocZero(nQuote+1);
   if( zCopy==0 ){
+    sqlite3_result_error_nomem(ctx);
     return SQLITE_NOMEM_BKPT;
   }
   memcpy(zCopy, zQuote, nQuote);
@@ -2509,7 +2511,7 @@ static void dropConstraintFunc(
         ** the constraint being dropped.  */
         nTok = getConstraintToken(&zSql[iOff], &t);
         if( zCons ){
-          if( quotedCompare(&zSql[iOff], nTok, zCons, &cmp) ) return;
+          if( quotedCompare(ctx, &zSql[iOff], nTok, zCons, &cmp) ) return;
         }
         iOff += nTok;
 
@@ -2851,7 +2853,7 @@ static void findConstraintFunc(
       int cmp = 0;
       iOff += getWhitespace(&zSql[iOff]);
       nTok = getConstraintToken(&zSql[iOff], &t);
-      if( quotedCompare(&zSql[iOff], nTok, zCons, &cmp) ) return;
+      if( quotedCompare(ctx, &zSql[iOff], nTok, zCons, &cmp) ) return;
       if( cmp==0 ){
         sqlite3_result_int(ctx, 1);
         return;
