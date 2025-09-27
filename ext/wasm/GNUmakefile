@@ -207,7 +207,7 @@ b.cp = $(call b.mkdir@); \
 # Resolves to shell code to create $(3) from $(2) and $(4) using
 # $(bin.c-pp).
 #
-# $1 = build name
+# $1 = build name/logtag
 # $2 = Input file(s)
 # $3 = Output file
 # $4 = optional $(bin.c-pp) flags
@@ -517,7 +517,7 @@ WASM_CUSTOM_INSTANTIATE = 1
 # -D... flags which should be included in all invocations should be
 # appended to $(b.c-pp.target.flags).
 bin.c-pp = ./c-pp
-$(bin.c-pp): c-pp.c $(sqlite3.c) # $(MAKEFILE)
+$(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
 	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
@@ -1054,7 +1054,7 @@ cflags.wasmfs = -DSQLITE_ENABLE_WASMFS
 bin.mkwb = ./mkwasmbuilds
 ifneq (1,$(MAKING_CLEAN))
 $(bin.mkwb): $(bin.mkwb).c $(MAKEFILE)
-	$(CC) -g -std=c99 -o $@ $< -DWASM_CUSTOM_INSTANTIATE=$(WASM_CUSTOM_INSTANTIATE)
+	$(CC) -O0 -g -std=c99 -o $@ $< -DWASM_CUSTOM_INSTANTIATE=$(WASM_CUSTOM_INSTANTIATE)
 
 .wasmbuilds.make: $(bin.mkwb)
 	@rm -f $@
