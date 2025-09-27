@@ -1050,6 +1050,25 @@ static RenameToken *renameColumnTokenNext(RenameCtx *pCtx){
 }
 
 /*
+** Set the error message of the context passed as the first argument to
+** the result of formatting zFmt using printf() style formatting.
+*/
+static void errorMPrintf(sqlite3_context *pCtx, const char *zFmt, ...){
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  char *zErr = 0;
+  va_list ap;
+  va_start(ap, zFmt);
+  zErr = sqlite3VMPrintf(db, zFmt, ap);
+  va_end(ap);
+  if( zErr ){
+    sqlite3_result_error(pCtx, zErr, -1);
+    sqlite3DbFree(db, zErr);
+  }else{
+    sqlite3_result_error_nomem(pCtx);
+  }
+}
+
+/*
 ** An error occurred while parsing or otherwise processing a database
 ** object (either pParse->pNewTable, pNewIndex or pNewTrigger) as part of an
 ** ALTER TABLE RENAME COLUMN program. The error message emitted by the
@@ -2314,6 +2333,582 @@ exit_drop_column:
 }
 
 /*
+** Return the number of bytes of leading whitespace in string z.
+*/
+static int getWhitespace(const u8 *z){
+  int nRet = 0;
+  while( 1 ){
+    int t = 0;
+    int n = sqlite3GetToken(&z[nRet], &t);
+    if( t!=TK_SPACE ) break;
+    nRet += n;
+  }
+  return nRet;
+}
+
+
+/*
+** Skip over any leading whitespace, then read the first token from the
+** string passed as the first argument. Set *piToken to the type of the
+** token before returning the total number of bytes consumed (including 
+** any whitespace).
+*/
+static int getConstraintToken(const u8 *z, int *piToken){
+  int iOff = 0;
+  int t = 0;
+  do {
+    iOff += sqlite3GetToken(&z[iOff], &t);
+  }while( t==TK_SPACE );
+
+  *piToken = t;
+
+  if( t==TK_LP ){
+    int nNest = 1;
+    while( nNest>0 ){
+      iOff += sqlite3GetToken(&z[iOff], &t);
+      if( t==TK_LP ){
+        nNest++;
+      }else if( t==TK_RP ){
+        t = TK_LP;
+        nNest--;
+      }else if( t==TK_ILLEGAL ){
+        break;
+      }
+    }
+  }
+
+  *piToken = t;
+  return iOff;
+}
+
+/*
+** Argument z points into the body of a constraint - specifically the 
+** token following the first of the 
+** of bytes in string z to the end of the current constraint.
+*/
+static int getConstraint(const u8 *z){
+  int iOff = 0;
+  int t = 0;
+
+  /* Now, the current constraint proceeds until the next occurence of one 
+  ** of the following tokens: 
+  **
+  **   CONSTRAINT, PRIMARY, NOT, UNIQUE, CHECK, DEFAULT, 
+  **   COLLATE, REFERENCES, RP, COMMA
+  **
+  ** Also exit the loop if ILLEGAL turns up.
+  */
+  while( 1 ){
+    int n = getConstraintToken(&z[iOff], &t);
+    if( t==TK_CONSTRAINT || t==TK_PRIMARY || t==TK_NOT || t==TK_UNIQUE
+     || t==TK_CHECK || t==TK_DEFAULT || t==TK_COLLATE || t==TK_REFERENCES
+     || t==TK_RP || t==TK_COMMA || t==TK_ILLEGAL
+    ){
+      break;
+    }
+    iOff += n;
+  }
+  
+  return iOff;
+}
+
+static int quotedCompare(
+  const u8 *zQuote, 
+  int nQuote, 
+  const u8 *zCmp,
+  int *pRes
+){
+  char *zCopy = 0;
+
+  zCopy = sqlite3MallocZero(nQuote+1);
+  if( zCopy==0 ){
+    return SQLITE_NOMEM_BKPT;
+  }
+  memcpy(zCopy, zQuote, nQuote);
+  sqlite3Dequote(zCopy);
+  *pRes = sqlite3_stricmp((const char*)zCopy, (const char*)zCmp);
+  sqlite3_free(zCopy);
+  return SQLITE_OK;
+}
+
+/*
+** The second argument is passed a CREATE TABLE statement. This function
+** attempts to find the offset of the first token of the first column
+** definition in the table. If successful, it sets (*piOff) to the offset
+** and return SQLITE_OK. Otherwise, if an error occurs, it leaves an
+** error code and message in the context handle passed as the first argument
+** and returns SQLITE_ERROR.
+*/
+static int skipCreateTable(sqlite3_context *ctx, const u8 *zSql, int *piOff){
+  int iOff = 0;
+
+  /* Jump past the "CREATE TABLE" bit. */
+  while( 1 ){
+    int t = 0;
+    iOff += sqlite3GetToken(&zSql[iOff], &t);
+    if( t==TK_LP ) break;
+    if( t==TK_ILLEGAL ){
+      sqlite3_result_error_code(ctx, SQLITE_CORRUPT_BKPT);
+      return SQLITE_ERROR;
+    }
+  }
+
+  *piOff = iOff;
+  return SQLITE_OK;
+}
+
+/*
+** The implementation of internal function sqlite3_drop_constraint().
+*/
+static void dropConstraintFunc(
+  sqlite3_context *ctx,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  const char *zSpace = " ";
+  const u8 *zSql = sqlite3_value_text(argv[0]);
+  const u8 *zCons = 0;
+  int iNotNull = -1;
+  int ii;
+  int iOff = 0;
+  int iStart = 0;
+  int iEnd = 0;
+  char *zNew = 0;
+  int t = 0;
+
+  /* Jump past the "CREATE TABLE" bit. */
+  if( skipCreateTable(ctx, zSql, &iOff) ) return;
+
+  if( sqlite3_value_type(argv[1])==SQLITE_INTEGER ){
+    iNotNull = sqlite3_value_int(argv[1]);
+  }else{
+    zCons = sqlite3_value_text(argv[1]);
+  }
+
+  /* Search for the named constraint within column definitions. */
+  for(ii=0; iEnd==0; ii++){
+  
+    /* Now parse the column or table constraint definition. Search
+    ** for the token CONSTRAINT if this is a DROP CONSTRAINT command, or
+    ** NOT in the right column if this is a DROP NOT NULL. */
+    iStart = iOff - 1;
+    while( 1 ){
+      iOff += getConstraintToken(&zSql[iOff], &t);
+      if( t==TK_CONSTRAINT && (zCons || iNotNull==ii) ){
+        /* Check if this is the constraint we are searching for. */
+        int nTok = 0;
+        int cmp = 1;
+
+        /* Skip past any whitespace. */
+        iOff += getWhitespace(&zSql[iOff]);
+
+        /* Compare the next token - which may be quoted - with the name of
+        ** the constraint being dropped.  */
+        nTok = getConstraintToken(&zSql[iOff], &t);
+        if( zCons ){
+          if( quotedCompare(&zSql[iOff], nTok, zCons, &cmp) ) return;
+        }
+        iOff += nTok;
+
+        /* The first token of the constraint definition. */
+        iOff += getConstraintToken(&zSql[iOff], &t);
+        iOff += getConstraint(&zSql[iOff]);
+
+        if( cmp==0 || (iNotNull>=0 && t==TK_NOT) ){
+          if( t!=TK_NOT && t!=TK_CHECK ){
+            errorMPrintf(ctx, "constraint may not be dropped: %s", zCons);
+            return;
+          }
+          iEnd = iOff;
+          break;
+        }
+
+      }else if( t==TK_NOT && iNotNull==ii ){
+        iEnd = iOff + getConstraint(&zSql[iOff]);
+        break;
+      }else if( t==TK_RP || t==TK_ILLEGAL ){
+        iEnd = -1;
+        break;
+      }else if( t==TK_COMMA ){
+        break;
+      }
+      iStart = iOff;
+    }
+  }
+
+  /* If the constraint has not been found it is an error. */
+  if( iEnd<=0 ){
+    if( zCons ){
+      errorMPrintf(ctx, "no such constraint: %s", zCons);
+    }else{
+      /* SQLite follows postgres in that a DROP NOT NULL on a column that is
+      ** not NOT NULL is not an error. So just return the original SQL here. */
+      sqlite3_result_text(ctx, (const char*)zSql, -1, SQLITE_TRANSIENT);
+    }
+  }else{
+    /* Figure out if an extra space is required following the constraint. */
+    sqlite3GetToken(&zSql[iEnd], &t);
+    if( t==TK_RP || t==TK_SPACE || t==TK_COMMA ){
+      zSpace = "";
+    }
+
+    zNew = sqlite3_mprintf("%.*s%s%s", iStart, zSql, zSpace, &zSql[iEnd]);
+    if( zNew==0 ){
+      sqlite3_result_error_nomem(ctx);
+    }else{
+      sqlite3_result_text(ctx, zNew, -1, SQLITE_TRANSIENT);
+      sqlite3_free(zNew);
+    }
+  }
+}
+
+/*
+** Implementation of internal SQL function:
+**
+**     sqlite_add_constraint(SQL, CONSTRAINT-TEXT, ICOL)
+*/
+static void addConstraintFunc(
+  sqlite3_context *ctx,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  const u8 *zSql = sqlite3_value_text(argv[0]);
+  const char *zCons = (const char*)sqlite3_value_text(argv[1]);
+  int iCol = sqlite3_value_int(argv[2]);
+  int iOff = 0;
+  int ii;
+  char *zNew = 0;
+  int t = 0;
+
+  if( skipCreateTable(ctx, zSql, &iOff) ) return;
+  
+  for(ii=0; ii<=iCol || (iCol<0 && t!=TK_RP); ii++){
+    iOff += getConstraintToken(&zSql[iOff], &t);
+    while( 1 ){
+      int nTok = getConstraintToken(&zSql[iOff], &t);
+      if( t==TK_COMMA || t==TK_RP ) break;
+      if( t==TK_ILLEGAL ){
+        sqlite3_result_error_code(ctx, SQLITE_CORRUPT_BKPT);
+        return;
+      }
+      iOff += nTok;
+    }
+  }
+
+  iOff += getWhitespace(&zSql[iOff]);
+
+  if( iCol<0 ){
+    zNew = sqlite3_mprintf("%.*s, %s%s", iOff, zSql, zCons, &zSql[iOff]);
+  }else{
+    zNew = sqlite3_mprintf("%.*s %s%s", iOff, zSql, zCons, &zSql[iOff]);
+  }
+
+  if( zNew==0 ){
+    sqlite3_result_error_nomem(ctx);
+  }else{
+    sqlite3_result_text(ctx, zNew, -1, SQLITE_TRANSIENT);
+    sqlite3_free(zNew);
+  }
+}
+
+/*
+** Find a column named pCol in table pTab. If successful, set output 
+** parameter *piCol to the index of the column in the table and return
+** SQLITE_OK. Otherwise, set *piCol to -1 and return an SQLite error
+** code.
+*/
+static int alterFindCol(Parse *pParse, Table *pTab, Token *pCol, int *piCol){
+  sqlite3 *db = pParse->db;
+  char *zName = sqlite3NameFromToken(db, pCol);
+  int rc = SQLITE_NOMEM;
+  int iCol = -1;
+
+  if( zName ){
+    iCol = sqlite3ColumnIndex(pTab, zName);
+    if( iCol<0 ){
+      sqlite3ErrorMsg(pParse, "no such column: %s", zName);
+      rc = SQLITE_ERROR;
+    }else{
+      rc = SQLITE_OK;
+    }
+  }
+
+  sqlite3DbFree(db, zName);
+  *piCol = iCol;
+  return rc;
+}
+
+void alterDropConstraint(
+  Parse *pParse, 
+  SrcList *pSrc, 
+  Token *pCons, 
+  Token *pCol
+){
+  sqlite3 *db = pParse->db;
+  Table *pTab = 0;
+  int iDb = 0;
+  const char *zDb = 0;
+  char *zArg = 0;
+
+  /* Look up the table being altered. */
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
+  if( !pTab ) goto exit_drop_cons;
+
+  /* Make sure this is not an attempt to ALTER a view, virtual table or
+  ** system table. */
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ) goto exit_drop_cons;
+  if( SQLITE_OK!=isRealTable(pParse, pTab, 1) ) goto exit_drop_cons;
+
+  /* Edit the sqlite_schema table */
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  assert( iDb>=0 );
+  zDb = db->aDb[iDb].zDbSName;
+
+  if( pCons ){
+    zArg = sqlite3MPrintf(db, "%.*Q", pCons->n, pCons->z);
+  }else{
+    int iCol;
+    if( alterFindCol(pParse, pTab, pCol, &iCol) ) goto exit_drop_cons;
+    zArg = sqlite3MPrintf(db, "%d", iCol);
+  }
+
+  /* Edit the SQL for the named table. */
+  sqlite3NestedParse(pParse,
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
+      "sql = sqlite_drop_constraint(sql, %s) "
+      "WHERE type='table' AND tbl_name=%Q COLLATE nocase"
+      , zDb, zArg, pTab->zName
+  );
+  sqlite3DbFree(db, zArg);
+
+  /* Finally, reload the database schema. */
+  renameReloadSchema(pParse, iDb, INITFLAG_AlterDropCons);
+
+ exit_drop_cons:
+  sqlite3SrcListDelete(db, pSrc);
+}
+
+
+/*
+** Prepare a statement of the form:
+**
+**   ALTER TABLE pSrc DROP CONSTRAINT pCons
+*/
+void sqlite3AlterDropConstraint(Parse *pParse, SrcList *pSrc, Token *pCons){
+  return alterDropConstraint(pParse, pSrc, pCons, 0);
+}
+
+/*
+** Prepare a statement of the form:
+**
+**   ALTER TABLE pSrc ALTER pCol DROP NOT NULL
+*/
+void sqlite3AlterDropNotNull(Parse *pParse, SrcList *pSrc, Token *pCol){
+  return alterDropConstraint(pParse, pSrc, 0, pCol);
+}
+
+/*
+** The implementation of SQL function sqlite_fail(MSG). This takes a single
+** argument, and returns it as an error message with the error code set to
+** SQLITE_CONSTRAINT.
+*/
+static void failConstraintFunc(
+  sqlite3_context *ctx,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  const char *zText = (const char*)sqlite3_value_text(argv[0]);
+  int err = sqlite3_value_int(argv[1]);
+  sqlite3_result_error(ctx, zText, -1);
+  sqlite3_result_error_code(ctx, err);
+}
+
+/*
+** Find the table named by the first entry in source list pSrc. If successful,
+** return a pointer to the Table structure and set output variable (*pzDb)
+** to point to the name of the database containin the table (i.e. "main",
+** "temp" or the name of an attached database). 
+**
+** If the table cannot be located, return NULL. The value of the two output
+** parameters is undefined in this case.
+*/
+static Table *alterFindTable(
+  Parse *pParse, 
+  SrcList *pSrc, 
+  int *piDb,
+  const char **pzDb
+){
+  sqlite3 *db = pParse->db;
+  Table *pTab = 0;
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
+  sqlite3SrcListDelete(db, pSrc);
+  if( pTab ){
+    int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    *pzDb = db->aDb[iDb].zDbSName;
+    *piDb = iDb;
+  }
+  return pTab;
+}
+
+/*
+** Prepare a statement of the form:
+**
+**   ALTER TABLE pSrc ALTER pCol SET NOT NULL
+*/
+void sqlite3AlterSetNotNull(
+  Parse *pParse, 
+  SrcList *pSrc, 
+  Token *pCol
+){
+  Table *pTab = 0;
+  int iCol = 0;
+  int iDb = 0;
+  const char *zDb = 0;
+  const char *pCons = 0;
+  int nCons = 0;
+  int t = 0;
+
+  /* Look up the table being altered. */
+  pTab = alterFindTable(pParse, pSrc, &iDb, &zDb);
+  if( !pTab ) return;
+
+  /* Find the column being altered. */
+  if( alterFindCol(pParse, pTab, pCol, &iCol) ){
+    return;
+  }
+
+  /* Find the start of the constraint definition */
+  pCons = &pCol->z[pCol->n];
+  pCons += getConstraintToken((const u8*)pCons, &t);
+  pCons += getWhitespace((const u8*)pCons);
+
+  /* Find the length in bytes of the constraint definition */
+  nCons = pParse->sLastToken.z - pCons;
+  if( pCons[nCons-1]==';' ) nCons--;
+  while( sqlite3Isspace(pCons[nCons-1]) ) nCons--;
+
+  /* Search for a constraint violation. Throw an exception if one is found. */
+  sqlite3NestedParse(pParse,
+      "SELECT sqlite_fail('constraint failed', %d) "
+      "FROM %Q.%Q AS x WHERE x.%.*s IS NULL", 
+      SQLITE_CONSTRAINT, zDb, pTab->zName, (int)pCol->n, pCol->z
+  );
+
+  /* Edit the SQL for the named table. */
+  sqlite3NestedParse(pParse,
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
+      "sql = sqlite_add_constraint(sqlite_drop_constraint(sql, %d), %.*Q, %d) "
+      "WHERE type='table' AND tbl_name=%Q COLLATE nocase"
+      , zDb, iCol, nCons, pCons, iCol, pTab->zName
+  );
+
+  /* Finally, reload the database schema. */
+  renameReloadSchema(pParse, iDb, INITFLAG_AlterDropCons);
+}
+
+/*
+** Implementation of internal SQL function:
+**
+**     sqlite_find_constraint(SQL, CONSTRAINT-NAME)
+**
+** This function returns true if the SQL passed as the first argument is a
+** CREATE TABLE that contains a constraint with the name CONSTRAINT-NAME,
+** or false otherwise.
+*/
+static void findConstraintFunc(
+  sqlite3_context *ctx,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  const u8 *zSql = 0;
+  const u8 *zCons = 0;
+  int iOff = 0;
+  int t = 0;
+
+  zSql = sqlite3_value_text(argv[0]);
+  zCons = sqlite3_value_text(argv[1]);
+
+  while( t!=TK_LP && t!=TK_ILLEGAL ){
+    iOff += sqlite3GetToken(&zSql[iOff], &t);
+  }
+
+  while( 1 ){
+    iOff += getConstraintToken(&zSql[iOff], &t);
+    if( t==TK_CONSTRAINT ){
+      int nTok = 0;
+      int cmp = 0;
+      iOff += getWhitespace(&zSql[iOff]);
+      nTok = getConstraintToken(&zSql[iOff], &t);
+      if( quotedCompare(&zSql[iOff], nTok, zCons, &cmp) ) return;
+      if( cmp==0 ){
+        sqlite3_result_int(ctx, 1);
+        return;
+      }
+    }else if( t==TK_ILLEGAL ){
+      break;
+    }
+  }
+
+  sqlite3_result_int(ctx, 0);
+}
+
+void sqlite3AlterAddConstraint(
+  Parse *pParse,                  /* Parse context */
+  SrcList *pSrc,                  /* Table to add constraint to */
+  Token *pFirst,                  /* First token of new constraint */
+  Token *pCons,                   /* Name of new constraint */
+  const char *pExpr,              /* Text of CHECK expression */
+  int nExpr                       /* Size of pExpr in bytes */
+){ 
+  Table *pTab = 0;
+  int iDb = 0;
+  const char *zDb = 0;
+  int nCons;
+
+  /* Look up the table being altered. */
+  pTab = alterFindTable(pParse, pSrc, &iDb, &zDb);
+  if( !pTab ) return;
+
+  /* If this new constraint has a name, check that it is not a duplicate of
+  ** an existing constraint. It is an error if it is.  */
+  if( pCons ){
+    char *zName = sqlite3NameFromToken(pParse->db, pCons);
+
+    sqlite3NestedParse(pParse,
+        "SELECT sqlite_fail('constraint '||%Q||' already exists', %d) "
+        "FROM \"%w\"." LEGACY_SCHEMA_TABLE " "
+        "WHERE type='table' AND tbl_name=%Q COLLATE nocase "
+        "AND sqlite_find_constraint(sql, %Q)",
+        zName, SQLITE_ERROR, zDb, pTab->zName, zName
+    );
+    sqlite3DbFree(pParse->db, zName);
+  }
+
+  /* Search for a constraint violation. Throw an exception if one is found. */
+  sqlite3NestedParse(pParse,
+      "SELECT sqlite_fail('constraint failed', %d) "
+      "FROM %Q.%Q WHERE (%.*s) IS NOT TRUE", 
+      SQLITE_CONSTRAINT, zDb, pTab->zName, nExpr, pExpr
+  );
+
+  /* Edit the SQL for the named table. */
+  nCons = pParse->sLastToken.z - pFirst->z;
+  if( pFirst->z[nCons-1]==';' ) nCons--;
+  while( sqlite3Isspace(pFirst->z[nCons-1]) ) nCons--;
+  sqlite3NestedParse(pParse,
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
+      "sql = sqlite_add_constraint(sql, %.*Q, -1) "
+      "WHERE type='table' AND tbl_name=%Q COLLATE nocase"
+      , zDb, nCons, pFirst->z, pTab->zName
+  );
+
+  /* Finally, reload the database schema. */
+  renameReloadSchema(pParse, iDb, INITFLAG_AlterDropCons);
+}
+
+/*
 ** Register built-in functions used to help implement ALTER TABLE
 */
 void sqlite3AlterFunctions(void){
@@ -2323,6 +2918,10 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_rename_test,    7, renameTableTest),
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_quotefix,2, renameQuotefixFunc),
+    INTERNAL_FUNCTION(sqlite_drop_constraint,2, dropConstraintFunc),
+    INTERNAL_FUNCTION(sqlite_fail,           2, failConstraintFunc),
+    INTERNAL_FUNCTION(sqlite_add_constraint, 3, addConstraintFunc),
+    INTERNAL_FUNCTION(sqlite_find_constraint,2, findConstraintFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
