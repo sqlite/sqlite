@@ -5451,7 +5451,7 @@ void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*);
 void sqlite3AlterDropConstraint(Parse*, SrcList*, Token*);
 void sqlite3AlterDropNotNull(Parse*, SrcList*, Token*);
 void sqlite3AlterAddConstraint(Parse*,SrcList*,Token*,Token*,const char*,int);
-void sqlite3AlterSetNotNull(Parse*, SrcList*, Token*);
+void sqlite3AlterSetNotNull(Parse*, SrcList*, Token*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);

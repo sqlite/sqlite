@@ -1856,8 +1856,8 @@ cmd ::= ALTER TABLE fullname(X) DROP CONSTRAINT nm(Y). {
 cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) DROP NOT NULL. {
   sqlite3AlterDropNotNull(pParse, X, &Y);
 }
-cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) SET NOT NULL onconf. {
-  sqlite3AlterSetNotNull(pParse, X, &Y);
+cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) SET NOT(Z) NULL onconf. {
+  sqlite3AlterSetNotNull(pParse, X, &Y, &Z);
 }
 
 cmd ::= ALTER TABLE fullname(X) ADD CONSTRAINT(Y) nm(Z) CHECK LP(A) expr RP(B) onconf. {

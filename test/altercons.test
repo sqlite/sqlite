@@ -228,4 +228,46 @@ do_execsql_test 6.4.1 {
   SELECT sql FROM sqlite_schema WHERE tbl_name='b1'
 } {{CREATE TABLE b1(a, b, CONSTRAINT abc CHECK (a!=2))}}
 
+#-------------------------------------------------------------------------
+# Try attaching a NOT NULL to a generated column.
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE x1(a, b AS (a+1));
+  INSERT INTO x1 VALUES(1), (2), (3), (NULL);
+}
+
+do_catchsql_test 7.1 {
+  ALTER TABLE x1 ALTER b SET NOT NULL;
+} {1 {constraint failed}}
+
+do_catchsql_test 7.2 {
+  DELETE FROM x1 WHERE b IS NULL;
+  ALTER TABLE x1 ALTER b SET NOT NULL;
+} {0 {}}
+
+do_execsql_test 7.3 {
+  SELECT b FROM x1
+} {2 3 4}
+
+do_catchsql_test 7.4 {
+  ALTER TABLE x1 ALTER rowid SET NOT NULL;
+} {1 {no such column: rowid}}
+
+do_execsql_test 7.5 {
+  CREATE VIEW v1 AS SELECT a, b FROM x1;
+}
+do_catchsql_test 7.6 {
+  ALTER TABLE v1 RENAME a TO c;
+} {1 {cannot rename columns of view "v1"}}
+do_catchsql_test 7.7 {
+  ALTER TABLE v1 ALTER a SET NOT NULL;
+} {1 {cannot edit constraints of view "v1"}}
+do_catchsql_test 7.8 {
+  ALTER TABLE sqlite_schema ALTER sql SET NOT NULL;
+} {1 {table sqlite_master may not be altered}}
+do_catchsql_test 7.9 {
+  ALTER TABLE v1 ALTER a DROP NOT NULL
+} {1 {cannot edit constraints of view "v1"}}
+
 finish_test

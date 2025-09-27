@@ -563,7 +563,7 @@ exit_begin_add_column:
 ** Or, if pTab is not a view or virtual table, zero is returned.
 */
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
-static int isRealTable(Parse *pParse, Table *pTab, int bDrop){
+static int isRealTable(Parse *pParse, Table *pTab, int iOp){
   const char *zType = 0;
 #ifndef SQLITE_OMIT_VIEW
   if( IsView(pTab) ){
@@ -576,9 +576,12 @@ static int isRealTable(Parse *pParse, Table *pTab, int bDrop){
   }
 #endif
   if( zType ){
+    const char *azMsg[] = {
+      "rename columns of", "drop column from", "edit constraints of"
+    };
+    assert( iOp>=0 && iOp<ArraySize(azMsg) );
     sqlite3ErrorMsg(pParse, "cannot %s %s \"%s\"",
-        (bDrop ? "drop column from" : "rename columns of"),
-        zType, pTab->zName
+        azMsg[iOp], zType, pTab->zName
     );
     return 1;
   }
@@ -2633,9 +2636,62 @@ static int alterFindCol(Parse *pParse, Table *pTab, Token *pCol, int *piCol){
     }
   }
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  if( rc==SQLITE_OK ){
+    const char *zDb = db->aDb[sqlite3SchemaToIndex(db, pTab->pSchema)].zDbSName;
+    const char *zCol = pTab->aCol[iCol].zCnName;
+    if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, zCol) ){
+      pTab = 0;
+    }
+  }
+#endif
+
   sqlite3DbFree(db, zName);
   *piCol = iCol;
   return rc;
+}
+
+
+/*
+** Find the table named by the first entry in source list pSrc. If successful,
+** return a pointer to the Table structure and set output variable (*pzDb)
+** to point to the name of the database containin the table (i.e. "main",
+** "temp" or the name of an attached database). 
+**
+** If the table cannot be located, return NULL. The value of the two output
+** parameters is undefined in this case.
+*/
+static Table *alterFindTable(
+  Parse *pParse, 
+  SrcList *pSrc, 
+  int *piDb,
+  const char **pzDb,
+  int bAuth
+){
+  sqlite3 *db = pParse->db;
+  Table *pTab = 0;
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
+  if( pTab ){
+    int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    *pzDb = db->aDb[iDb].zDbSName;
+    *piDb = iDb;
+
+    if( SQLITE_OK!=isRealTable(pParse, pTab, 2) 
+     || SQLITE_OK!=isAlterableTable(pParse, pTab) 
+    ){
+      pTab = 0;
+    }
+  }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  if( pTab && bAuth ){
+    if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, *pzDb, pTab->zName, 0) ){
+      pTab = 0;
+    }
+  }
+#endif
+  sqlite3SrcListDelete(db, pSrc);
+  return pTab;
 }
 
 void alterDropConstraint(
@@ -2650,26 +2706,14 @@ void alterDropConstraint(
   const char *zDb = 0;
   char *zArg = 0;
 
-  /* Look up the table being altered. */
-  assert( sqlite3BtreeHoldsAllMutexes(db) );
-  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
-  if( !pTab ) goto exit_drop_cons;
-
-  /* Make sure this is not an attempt to ALTER a view, virtual table or
-  ** system table. */
-  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ) goto exit_drop_cons;
-  if( SQLITE_OK!=isRealTable(pParse, pTab, 1) ) goto exit_drop_cons;
-
-  /* Edit the sqlite_schema table */
-  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-  assert( iDb>=0 );
-  zDb = db->aDb[iDb].zDbSName;
+  pTab = alterFindTable(pParse, pSrc, &iDb, &zDb, pCons!=0);
+  if( !pTab ) return;
 
   if( pCons ){
     zArg = sqlite3MPrintf(db, "%.*Q", pCons->n, pCons->z);
   }else{
     int iCol;
-    if( alterFindCol(pParse, pTab, pCol, &iCol) ) goto exit_drop_cons;
+    if( alterFindCol(pParse, pTab, pCol, &iCol) ) return;
     zArg = sqlite3MPrintf(db, "%d", iCol);
   }
 
@@ -2684,9 +2728,6 @@ void alterDropConstraint(
 
   /* Finally, reload the database schema. */
   renameReloadSchema(pParse, iDb, INITFLAG_AlterDropCons);
-
- exit_drop_cons:
-  sqlite3SrcListDelete(db, pSrc);
 }
 
 
@@ -2725,34 +2766,6 @@ static void failConstraintFunc(
 }
 
 /*
-** Find the table named by the first entry in source list pSrc. If successful,
-** return a pointer to the Table structure and set output variable (*pzDb)
-** to point to the name of the database containin the table (i.e. "main",
-** "temp" or the name of an attached database). 
-**
-** If the table cannot be located, return NULL. The value of the two output
-** parameters is undefined in this case.
-*/
-static Table *alterFindTable(
-  Parse *pParse, 
-  SrcList *pSrc, 
-  int *piDb,
-  const char **pzDb
-){
-  sqlite3 *db = pParse->db;
-  Table *pTab = 0;
-  assert( sqlite3BtreeHoldsAllMutexes(db) );
-  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
-  sqlite3SrcListDelete(db, pSrc);
-  if( pTab ){
-    int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-    *pzDb = db->aDb[iDb].zDbSName;
-    *piDb = iDb;
-  }
-  return pTab;
-}
-
-/*
 ** Prepare a statement of the form:
 **
 **   ALTER TABLE pSrc ALTER pCol SET NOT NULL
@@ -2760,7 +2773,8 @@ static Table *alterFindTable(
 void sqlite3AlterSetNotNull(
   Parse *pParse, 
   SrcList *pSrc, 
-  Token *pCol
+  Token *pCol,
+  Token *pFirst
 ){
   Table *pTab = 0;
   int iCol = 0;
@@ -2771,7 +2785,7 @@ void sqlite3AlterSetNotNull(
   int t = 0;
 
   /* Look up the table being altered. */
-  pTab = alterFindTable(pParse, pSrc, &iDb, &zDb);
+  pTab = alterFindTable(pParse, pSrc, &iDb, &zDb, 0);
   if( !pTab ) return;
 
   /* Find the column being altered. */
@@ -2779,12 +2793,8 @@ void sqlite3AlterSetNotNull(
     return;
   }
 
-  /* Find the start of the constraint definition */
-  pCons = &pCol->z[pCol->n];
-  pCons += getConstraintToken((const u8*)pCons, &t);
-  pCons += getWhitespace((const u8*)pCons);
-
   /* Find the length in bytes of the constraint definition */
+  pCons = pFirst->z;
   nCons = pParse->sLastToken.z - pCons;
   if( pCons[nCons-1]==';' ) nCons--;
   while( sqlite3Isspace(pCons[nCons-1]) ) nCons--;
@@ -2868,7 +2878,7 @@ void sqlite3AlterAddConstraint(
   int nCons;
 
   /* Look up the table being altered. */
-  pTab = alterFindTable(pParse, pSrc, &iDb, &zDb);
+  pTab = alterFindTable(pParse, pSrc, &iDb, &zDb, 1);
   if( !pTab ) return;
 
   /* If this new constraint has a name, check that it is not a duplicate of
