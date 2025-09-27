@@ -958,8 +958,8 @@ static void udf_file_exists(
 }
 
 /**
-   This sqlite3_trace_v2() callback outputs tracing info using
-   whut_output().
+ ** This sqlite3_trace_v2() callback outputs tracing info using
+ ** g.sqlTrace.pFile.
 */
 static int cmpp__db_sq3TraceV2(unsigned t,void*c,void*p,void*x){
   static unsigned int counter = 0;
@@ -970,7 +970,6 @@ static int cmpp__db_sq3TraceV2(unsigned t,void*c,void*p,void*x){
       char * zExp = g.sqlTrace.expandSql
         ? sqlite3_expanded_sql((sqlite3_stmt*)p)
         : 0;
-      //MARKER(("mask=%08x isExp=%d\n", db->impl.event.maskIds, isExp));
       assert( fp );
       fprintf(fp, "SQL TRACE #%u: %s\n",
               ++counter, zExp ? zExp : zSql);
