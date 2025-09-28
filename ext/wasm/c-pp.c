@@ -61,7 +61,7 @@
 **   space after the `//` part because `//` is (despite appearances)
 **   parsed like a keyword.
 **
-** - `#@policy@ NAME` sets the policy for handling `@tokens@` in
+** - `#@policy NAME` sets the policy for handling `@tokens@` in
 **   the content parts of the input (as opposed to the keyword
 **   lines like this one). @
 **
@@ -69,8 +69,11 @@
 ** and defaults to "##". Define CMPP_DEFAULT_DELIM to a string when
 ** compiling to define the default at build-time.
 **
-** This preprocessor does no expansion of content except within the
-** bounds of its `#keywords`.
+** This preprocessor has only minimal support for replacement of tokens
+** which live in the "content" blocks of inputs (that is, the pieces
+** which are not prepocessor lines).
+**
+** See this file's README.md for details.
 **
 ** Design note: this code makes use of sqlite3. Though not _strictly_
 ** needed in order to implement it, this tool was specifically created
@@ -82,6 +85,15 @@
 ** Author(s):
 **
 ** - Stephan Beal <https://wanderinghorse.net/home/stephan/>
+**
+** Canonical homes:
+**
+** - https://fossil.wanderinghorse.net/r/c-pp
+** - https://sqlite.org/src/file/ext/wasm/c-pp.c
+**
+** With the former hosting this app's SCM and the latter being the
+** single known deployment of c-pp.c, where much of its development
+** happens.
 */
 
 #include <stdlib.h>
@@ -1942,7 +1954,7 @@ static void cmpp_kwd_todo(CmppKeyword const * pKw, CmppTokenizer *t){
 CmppKeyword aKeywords[] = {
 /* Keep these sorted by zName */
   {"//", 2, 0, TT_Comment, cmpp_kwd_noop},
-  {"@policy@", 8, 1, TT_AtPolicy, cmpp_kwd_at_policy},
+  {"@policy", 7, 1, TT_AtPolicy, cmpp_kwd_at_policy},
   {"assert", 3, 1, TT_Assert, cmpp_kwd_if},
   {"define", 6, 1, TT_Define, cmpp_kwd_define},
   {"elif", 4, 1, TT_Elif, cmpp_kwd_if},
