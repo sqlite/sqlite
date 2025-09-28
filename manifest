@@ -1,5 +1,5 @@
-C Fix\sharmless\stypo\sin\sa\scomment.
-D 2025-09-28T08:59:16.147
+C Refactor\sthe\sgenerate_series\sextension.\s\sCompiles\sbut\sdoes\snot\syet\swork.
+D 2025-09-28T09:25:07.699
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -393,7 +393,7 @@ F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c 31437e7253fbcc4cc62e9d419b6528e1a83802e6abfd5b12c90d90e044d5dda3
+F ext/misc/series.c b407972ed56875dde2391f9bc6f9b97a747c6773e0c24b3c0bef90c7abf6d241
 F ext/misc/sha1.c cb5002148c2661b5946f34561701e9105e9d339b713ec8ac057fd888b196dcb9
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -2169,8 +2169,11 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0d6ed44278a513b062539f32da49fa43952fcdf0bc1bba7b24ef3749bc4525a5
-R 122fe78829f8fbc951acb9fd5e10b15b
+P 1f6deabfff2fc2fed5fbff48d2637b48245e5a946a442c4bcc9b9ecb7c4848b9
+R 4e452204986d0c45df27a97046f3f517
+T *branch * series-refactor
+T *sym-series-refactor *
+T -sym-trunk *
 U drh
-Z aef55af468fbb2a272262a36e7436bc2
+Z 071d8b62d426a1558a72e68c9afcf0d6
 # Remove this line to create a well-formed Fossil manifest.

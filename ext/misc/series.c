@@ -30,19 +30,20 @@
 **      SELECT * FROM generate_series(0,100,5);
 **
 ** The query above returns integers from 0 through 100 counting by steps
-** of 5.
+** of 5.  In other words, 0, 5, 10, 15, ..., 90, 95, 100.  There are a total
+** of 21 rows.
 **
 **      SELECT * FROM generate_series(0,100);
 **
-** Integers from 0 through 100 with a step size of 1.
+** Integers from 0 through 100 with a step size of 1.  101 rows.
 **
 **      SELECT * FROM generate_series(20) LIMIT 10;
 **
-** Integers 20 through 29.
+** Integers 20 through 29.  10 rows.
 **
 **      SELECT * FROM generate_series(0,-100,-5);
 **
-** Integers 0 -5 -10 ... -100.
+** Integers 0 -5 -10 ... -100.  21 rows.
 **
 **      SELECT * FROM generate_series(0,-1);
 **
@@ -118,161 +119,88 @@ SQLITE_EXTENSION_INIT1
 #include <math.h>
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/*
-** Return that member of a generate_series(...) sequence whose 0-based
-** index is ix. The 0th member is given by smBase. The sequence members
-** progress per ix increment by smStep.
-*/
-static sqlite3_int64 genSeqMember(
-  sqlite3_int64 smBase,
-  sqlite3_int64 smStep,
-  sqlite3_uint64 ix
-){
-  static const sqlite3_uint64 mxI64 =
-      ((sqlite3_uint64)0x7fffffff)<<32 | 0xffffffff;
-  if( ix>=mxI64 ){
-    /* Get ix into signed i64 range. */
-    ix -= mxI64;
-    /* With 2's complement ALU, this next can be 1 step, but is split into
-     * 2 for UBSAN's satisfaction (and hypothetical 1's complement ALUs.) */
-    smBase += (mxI64/2) * smStep;
-    smBase += (mxI64 - mxI64/2) * smStep;
-  }
-  /* Under UBSAN (or on 1's complement machines), must do this last term
-   * in steps to avoid the dreaded (and harmless) signed multiply overflow. */
-  if( ix>=2 ){
-    sqlite3_int64 ix2 = (sqlite3_int64)ix/2;
-    smBase += ix2*smStep;
-    ix -= ix2;
-  }
-  return smBase + ((sqlite3_int64)ix)*smStep;
-}
-
-typedef unsigned char u8;
-
-typedef struct SequenceSpec {
-  sqlite3_int64 iOBase;        /* Original starting value ("start") */
-  sqlite3_int64 iOTerm;        /* Original terminal value ("stop") */
-  sqlite3_int64 iBase;         /* Starting value to actually use */
-  sqlite3_int64 iTerm;         /* Terminal value to actually use */
-  sqlite3_int64 iStep;         /* Increment ("step") */
-  sqlite3_uint64 uSeqIndexMax; /* maximum sequence index (aka "n") */
-  sqlite3_uint64 uSeqIndexNow; /* Current index during generation */
-  sqlite3_int64 iValueNow;     /* Current value during generation */
-  u8 isNotEOF;                 /* Sequence generation not exhausted */
-  u8 isReversing;              /* Sequence is being reverse generated */
-} SequenceSpec;
-
-/*
-** Return the number of steps between pSS->iBase and pSS->iTerm if
-** the step width is pSS->iStep.
-*/
-static sqlite3_uint64 seriesSteps(SequenceSpec *pSS){
-  sqlite3_uint64 uBase, uTerm, uStep, uSpan;
-  assert( pSS->iStep!=0 );
-  assert( sizeof(uBase)==sizeof(&pSS->iBase) );
-  assert( sizeof(uTerm)==sizeof(&pSS->iTerm) );
-  assert( sizeof(uStep)==sizeof(&pSS->iStep) );
-  memcpy(&uBase, &pSS->iBase, sizeof(uBase));
-  memcpy(&uTerm, &pSS->iTerm, sizeof(uTerm));
-  memcpy(&uStep, &pSS->iStep, sizeof(uStep));
-  if( pSS->iStep>0 ){
-    uSpan = uTerm - uBase;
-  }else{
-    uSpan = uBase - uTerm;
-    uStep = 1 + ~uStep;
-  }
-  return uSpan/uStep;
-}
-
-/*
-** Prepare a SequenceSpec for use in generating an integer series
-** given initialized iBase, iTerm and iStep values. Sequence is
-** initialized per given isReversing. Other members are computed.
-*/
-static void setupSequence( SequenceSpec *pss ){
-  int bSameSigns;
-  pss->uSeqIndexMax = 0;
-  pss->isNotEOF = 0;
-  bSameSigns = (pss->iBase < 0)==(pss->iTerm < 0);
-  if( pss->iTerm < pss->iBase ){
-    sqlite3_uint64 nuspan = 0;
-    if( bSameSigns ){
-      nuspan = (sqlite3_uint64)(pss->iBase - pss->iTerm);
-    }else{
-      /* Under UBSAN (or on 1's complement machines), must do this in steps.
-       * In this clause, iBase>=0 and iTerm<0 . */
-      nuspan = 1;
-      nuspan += pss->iBase;
-      nuspan += -(pss->iTerm+1);
-    }
-    if( pss->iStep<0 ){
-      pss->isNotEOF = 1;
-      if( nuspan==ULONG_MAX ){
-        pss->uSeqIndexMax = ( pss->iStep>LLONG_MIN )? nuspan/-pss->iStep : 1;
-      }else if( pss->iStep>LLONG_MIN ){
-        pss->uSeqIndexMax = nuspan/-pss->iStep;
-      }
-    }
-  }else if( pss->iTerm > pss->iBase ){
-    sqlite3_uint64 puspan = 0;
-    if( bSameSigns ){
-      puspan = (sqlite3_uint64)(pss->iTerm - pss->iBase);
-    }else{
-      /* Under UBSAN (or on 1's complement machines), must do this in steps.
-       * In this clause, iTerm>=0 and iBase<0 . */
-      puspan = 1;
-      puspan += pss->iTerm;
-      puspan += -(pss->iBase+1);
-    }
-    if( pss->iStep>0 ){
-      pss->isNotEOF = 1;
-      pss->uSeqIndexMax = puspan/pss->iStep;
-    }
-  }else if( pss->iTerm == pss->iBase ){
-      pss->isNotEOF = 1;
-      pss->uSeqIndexMax = 0;
-  }
-  pss->uSeqIndexNow = (pss->isReversing)? pss->uSeqIndexMax : 0;
-  pss->iValueNow = (pss->isReversing)
-    ? genSeqMember(pss->iBase, pss->iStep, pss->uSeqIndexMax)
-    : pss->iBase;
-}
-
-/*
-** Progress sequence generator to yield next value, if any.
-** Leave its state to either yield next value or be at EOF.
-** Return whether there is a next value, or 0 at EOF.
-*/
-static int progressSequence( SequenceSpec *pss ){
-  if( !pss->isNotEOF ) return 0;
-  if( pss->isReversing ){
-    if( pss->uSeqIndexNow > 0 ){
-      pss->uSeqIndexNow--;
-      pss->iValueNow -= pss->iStep;
-    }else{
-      pss->isNotEOF = 0;
-    }
-  }else{
-    if( pss->uSeqIndexNow < pss->uSeqIndexMax ){
-      pss->uSeqIndexNow++;
-      pss->iValueNow += pss->iStep;
-    }else{
-      pss->isNotEOF = 0;
-    }
-  }
-  return pss->isNotEOF;
-}
 
 /* series_cursor is a subclass of sqlite3_vtab_cursor which will
 ** serve as the underlying representation of a cursor that scans
-** over rows of the result
+** over rows of the result.
+**
+** iOBase, iOTerm, and iOStep are the original values of the
+** start=, stop=, and step= constraints on the query.  These are
+** the values reported by the start, stop, and step columns of the
+** virtual table.
+**
+** iBase, iTerm, iStep, and bDescp are the actual values used to generate
+** the sequence.  These might be different from the iOxxxx values.
+** For example in
+**
+**   SELECT value FROM generate_series(1,11,2)
+**    WHERE value BETWEEN 4 AND 8;
+**
+** The iOBase is 1, but the iBase is 5.  iOTerm is 11 but iTerm is 7.
+** Another example:
+**
+**   SELECT value FROM generate_series(1,15,3) ORDER BY value DESC;
+**
+** The cursor initialization for the above query is:
+**
+**   iOBase = 1        iBase = 13
+**   iOTerm = 15       iTerm = 1
+**   iOStep = 3        iStep = 3      bDesc = 1
+**
+** The actual step size is unsigned so that can have a value of
+** +9223372036854775808 which is needed for querys like this:
+**
+**   SELECT value
+**     FROM generate_series(9223372036854775807,
+**                          -9223372036854775808,
+**                          -9223372036854775808)
+**    ORDER BY value ASC;
+**
+** The setup for the previous query will be:
+**
+**   iOBase = 9223372036854775807    iBase = -1
+**   iOTerm = -9223372036854775808   iTerm = 9223372036854775807
+**   iOStep = -9223372036854775808   iStep = 9223372036854775808  bDesc = 0
 */
+typedef unsigned char u8;
 typedef struct series_cursor series_cursor;
 struct series_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
-  SequenceSpec ss;           /* (this) Derived class data */
+  sqlite3_int64 iOBase;      /* Original starting value ("start") */
+  sqlite3_int64 iOTerm;      /* Original terminal value ("stop") */
+  sqlite3_int64 iOStep;      /* Original step value */
+  sqlite3_int64 iBase;       /* Starting value to actually use */
+  sqlite3_int64 iTerm;       /* Terminal value to actually use */
+  sqlite3_uint64 iStep;      /* The step size */
+  sqlite3_int64 iValue;      /* Current value */
+  u8 bDesc;                  /* iStep is really negative */
+  u8 bDone;                  /* True if stepped past last element */
 };
+
+/*
+** Computed the difference between two 64-bit signed integers using a
+** convoluted computation designed to work around the silly restriction
+** against signed integer overflow in C.
+*/
+static sqlite3_uint64 span64(sqlite3_int64 a, sqlite3_int64 b){
+  assert( a>=b );
+  return (*(sqlite3_uint64*)&a) - (*(sqlite3_uint64*)&b);
+}  
+
+/*
+** Add or substract an unsigned 64-bit integer from a signed 64-bit integer
+** and return the new signed 64-bit integer.
+*/
+static sqlite3_int64 add64(sqlite3_int64 a, sqlite3_uint64 b){
+  sqlite3_uint64 x = *(sqlite3_uint64*)&a;
+  x += b;
+  return *(sqlite3_int64*)&x;
+}
+static sqlite3_int64 sub64(sqlite3_int64 a, sqlite3_uint64 b){
+  sqlite3_uint64 x = *(sqlite3_uint64*)&a;
+  x -= b;
+  return *(sqlite3_int64*)&x;
+}
 
 /*
 ** The seriesConnect() method is invoked to create a new
@@ -354,7 +282,15 @@ static int seriesClose(sqlite3_vtab_cursor *cur){
 */
 static int seriesNext(sqlite3_vtab_cursor *cur){
   series_cursor *pCur = (series_cursor*)cur;
-  progressSequence( & pCur->ss );
+  if( pCur->iValue==pCur->iTerm ){
+    pCur->bDone = 1;
+  }else if( pCur->bDesc ){
+    pCur->iValue = sub64(pCur->iValue, pCur->iStep);
+    assert( pCur->iValue>=pCur->iTerm );
+  }else{
+    pCur->iValue = add64(pCur->iValue, pCur->iStep);
+    assert( pCur->iValue<=pCur->iTerm );
+  }
   return SQLITE_OK;
 }
 
@@ -370,10 +306,10 @@ static int seriesColumn(
   series_cursor *pCur = (series_cursor*)cur;
   sqlite3_int64 x = 0;
   switch( i ){
-    case SERIES_COLUMN_START:  x = pCur->ss.iOBase;     break;
-    case SERIES_COLUMN_STOP:   x = pCur->ss.iOTerm;     break;
-    case SERIES_COLUMN_STEP:   x = pCur->ss.iStep;      break;
-    default:                   x = pCur->ss.iValueNow;  break;
+    case SERIES_COLUMN_START:  x = pCur->iOBase;     break;
+    case SERIES_COLUMN_STOP:   x = pCur->iOTerm;     break;
+    case SERIES_COLUMN_STEP:   x = pCur->iOStep;     break;
+    default:                   x = pCur->iValue;     break;
   }
   sqlite3_result_int64(ctx, x);
   return SQLITE_OK;
@@ -390,7 +326,7 @@ static int seriesColumn(
 */
 static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   series_cursor *pCur = (series_cursor*)cur;
-  *pRowid = pCur->ss.iValueNow;
+  *pRowid = pCur->iValue;
   return SQLITE_OK;
 }
 
@@ -400,7 +336,7 @@ static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 */
 static int seriesEof(sqlite3_vtab_cursor *cur){
   series_cursor *pCur = (series_cursor*)cur;
-  return !pCur->ss.isNotEOF;
+  return pCur->bDone;
 }
 
 /* True to cause run-time checking of the start=, stop=, and/or step=
@@ -410,6 +346,20 @@ static int seriesEof(sqlite3_vtab_cursor *cur){
 #ifndef SQLITE_SERIES_CONSTRAINT_VERIFY
 # define SQLITE_SERIES_CONSTRAINT_VERIFY 0
 #endif
+
+/*
+** Return the number of steps between pCur->iBase and pCur->iTerm if
+** the step width is pCur->iStep.
+*/
+static sqlite3_uint64 seriesSteps(series_cursor *pCur){
+  if( pCur->bDesc ){
+    assert( pCur->iBase >= pCur->iTerm );
+    return span64(pCur->iBase, pCur->iTerm)/pCur->iStep;
+  }else{
+    assert( pCur->iBase <= pCur->iTerm );
+    return span64(pCur->iTerm, pCur->iBase)/pCur->iStep;
+  }
+}
 
 /*
 ** This method is called to "rewind" the series_cursor object back
@@ -444,33 +394,41 @@ static int seriesFilter(
   int argc, sqlite3_value **argv
 ){
   series_cursor *pCur = (series_cursor *)pVtabCursor;
-  int i = 0;
-  int returnNoRows = 0;
-  sqlite3_int64 iMin = SMALLEST_INT64;
-  sqlite3_int64 iMax = LARGEST_INT64;
-  sqlite3_int64 iLimit = 0;
-  sqlite3_int64 iOffset = 0;
+  int iArg = 0;                         /* Arguments used so far */
+  int i;                                /* Loop counter */
+  sqlite3_int64 iMin = SMALLEST_INT64;  /* Smallest allowed output value */
+  sqlite3_int64 iMax = LARGEST_INT64;   /* Largest allowed output value */
+  sqlite3_int64 iLimit = 0;             /* if >0, the value of the LIMIT */
+  sqlite3_int64 iOffset = 0;            /* if >0, the value of the OFFSET */
 
   (void)idxStrUnused;
+
+  /* If any constraints have a NULL value, then return no rows.
+  ** See ticket https://sqlite.org/src/info/fac496b61722daf2
+  */
+  for(i=0; i<argc; i++){
+    if( sqlite3_value_type(argv[i])==SQLITE_NULL ){
+      goto series_no_rows;
+    }
+  }
+
+  /* Capture the three HIDDEN parameters to the virtual table and insert
+  ** default values for any parameters that are omitted.
+  */
   if( idxNum & 0x01 ){
-    pCur->ss.iBase = sqlite3_value_int64(argv[i++]);
+    pCur->iOBase = sqlite3_value_int64(argv[iArg++]);
   }else{
-    pCur->ss.iBase = 0;
+    pCur->iOBase = 0;
   }
   if( idxNum & 0x02 ){
-    pCur->ss.iTerm = sqlite3_value_int64(argv[i++]);
+    pCur->iOTerm = sqlite3_value_int64(argv[iArg++]);
   }else{
-    pCur->ss.iTerm = 0xffffffff;
+    pCur->iOTerm = 0xffffffff;
   }
   if( idxNum & 0x04 ){
-    pCur->ss.iStep = sqlite3_value_int64(argv[i++]);
-    if( pCur->ss.iStep==0 ){
-      pCur->ss.iStep = 1;
-    }else if( pCur->ss.iStep<0 ){
-      if( (idxNum & 0x10)==0 ) idxNum |= 0x08;
-    }
+    pCur->iOStep = sqlite3_value_int64(argv[iArg++]);
   }else{
-    pCur->ss.iStep = 1;
+    pCur->iOStep = 1;
   }
 
   /* If there are constraints on the value column but there are
@@ -480,72 +438,91 @@ static int seriesFilter(
   ** further below.
   */
   if( (idxNum & 0x05)==0 && (idxNum & 0x0380)!=0 ){
-    pCur->ss.iBase = SMALLEST_INT64;
+    pCur->iOBase = SMALLEST_INT64;
   }
   if( (idxNum & 0x06)==0 && (idxNum & 0x3080)!=0 ){
-    pCur->ss.iTerm = LARGEST_INT64;
+    pCur->iOTerm = LARGEST_INT64;
   }
-  pCur->ss.iOBase = pCur->ss.iBase;
-  pCur->ss.iOTerm = pCur->ss.iTerm;
+  pCur->iBase = pCur->iOBase;
+  pCur->iTerm = pCur->iOTerm;
+  if( pCur->iOStep>0 ){  
+    pCur->iStep = pCur->iOStep;
+  }else if( pCur->iOStep>SMALLEST_INT64 ){
+    pCur->iStep = -pCur->iOStep;
+  }else{
+    pCur->iStep = LARGEST_INT64;
+    pCur->iStep++;
+  }
+  pCur->bDesc = pCur->iOStep<0;
+  if( pCur->bDesc==0 && pCur->iBase>pCur->iTerm ){
+    goto series_no_rows;
+  }
+  if( pCur->bDesc!=0 && pCur->iBase<pCur->iTerm ){
+    goto series_no_rows;
+  }
 
   /* Extract the LIMIT and OFFSET values, but do not apply them yet.
   ** The range must first be constrained by the limits on value.
   */
   if( idxNum & 0x20 ){
-    iLimit = sqlite3_value_int64(argv[i++]);
+    iLimit = sqlite3_value_int64(argv[iArg++]);
     if( idxNum & 0x40 ){
-      iOffset = sqlite3_value_int64(argv[i++]);
+      iOffset = sqlite3_value_int64(argv[iArg++]);
     }
   }
 
+  /* Narrow the range of iMin and iMax (the minimum and maximum outputs)
+  ** based on equality and inequality constraints on the "value" column.
+  */
   if( idxNum & 0x3380 ){
-    /* Extract the maximum range of output values determined by
-    ** constraints on the "value" column.
-    */
-    if( idxNum & 0x0080 ){
-      if( sqlite3_value_numeric_type(argv[i])==SQLITE_FLOAT ){
-        double r = sqlite3_value_double(argv[i++]);
-        if( r==ceil(r) ){
+    if( idxNum & 0x0080 ){    /* value=X */
+      if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+        double r = sqlite3_value_double(argv[iArg++]);
+        if( r==ceil(r) && r>=SMALLEST_INT64 && r<=LARGEST_INT64 ){
           iMin = iMax = (sqlite3_int64)r;
         }else{
-          returnNoRows = 1;
+          goto series_no_rows;
         }
       }else{
-        iMin = iMax = sqlite3_value_int64(argv[i++]);
+        iMin = iMax = sqlite3_value_int64(argv[iArg++]);
       }
     }else{
-      if( idxNum & 0x0300 ){
-        if( sqlite3_value_numeric_type(argv[i])==SQLITE_FLOAT ){
-          double r = sqlite3_value_double(argv[i++]);
-          if( idxNum & 0x0200 && r==ceil(r) ){
+      if( idxNum & 0x0300 ){  /* value>X or value>=X */
+        if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+          double r = sqlite3_value_double(argv[iArg++]);
+          if( r<SMALLEST_INT64 ){
+            iMin = SMALLEST_INT64;
+          }else if( (idxNum & 0x0200)!=0 && r==ceil(r) ){
             iMin = (sqlite3_int64)ceil(r+1.0);
           }else{
             iMin = (sqlite3_int64)ceil(r);
           }
         }else{
-          iMin = sqlite3_value_int64(argv[i++]);
-          if( idxNum & 0x0200 ){
+          iMin = sqlite3_value_int64(argv[iArg++]);
+          if( (idxNum & 0x0200)!=0 ){
             if( iMin==LARGEST_INT64 ){
-              returnNoRows = 1;
+              goto series_no_rows;
             }else{
               iMin++;
             }
           }
         }
       }
-      if( idxNum & 0x3000 ){
-        if( sqlite3_value_numeric_type(argv[i])==SQLITE_FLOAT ){
-          double r = sqlite3_value_double(argv[i++]);
-          if( (idxNum & 0x2000)!=0 && r==floor(r) ){
+      if( idxNum & 0x3000 ){   /* value<X or value<=X */
+        if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
+          double r = sqlite3_value_double(argv[iArg++]);
+          if( r>LARGEST_INT64 ){
+            iMax = LARGEST_INT64;
+          }else if( (idxNum & 0x2000)!=0 && r==floor(r) ){
             iMax = (sqlite3_int64)(r-1.0);
           }else{
             iMax = (sqlite3_int64)floor(r);
           }
         }else{
-          iMax = sqlite3_value_int64(argv[i++]);
+          iMax = sqlite3_value_int64(argv[iArg++]);
           if( idxNum & 0x2000 ){
             if( iMax==SMALLEST_INT64 ){
-              returnNoRows = 1;
+              goto series_no_rows;
             }else{
               iMax--;
             }
@@ -553,75 +530,91 @@ static int seriesFilter(
         }
       }
       if( iMin>iMax ){
-        returnNoRows = 1;
+        goto series_no_rows;
       }
     }
 
     /* Try to reduce the range of values to be generated based on
     ** constraints on the "value" column.
     */
-    if( pCur->ss.iStep>0 ){
-      sqlite3_int64 szStep = pCur->ss.iStep;
-      if( pCur->ss.iBase<iMin ){
-        sqlite3_uint64 d = iMin - pCur->ss.iBase;
-        pCur->ss.iBase += ((d+szStep-1)/szStep)*szStep;
+    if( pCur->bDesc==0 ){
+      if( pCur->iBase<iMin ){
+        sqlite3_uint64 span = span64(iMin,pCur->iBase);
+        pCur->iBase = add64(pCur->iBase, (span/pCur->iStep)*pCur->iStep);
+        if( pCur->iBase<iMin ){
+          if( pCur->iBase > LARGEST_INT64 - pCur->iStep ){
+            goto series_no_rows;
+          }
+          pCur->iBase = add64(pCur->iBase, pCur->iStep);
+        }
       }
-      if( pCur->ss.iTerm>iMax ){
-        pCur->ss.iTerm = iMax;
+      if( pCur->iTerm>iMax ){
+        pCur->iTerm = iMax;
       }
-    }else if( pCur->ss.iStep>SMALLEST_INT64 ){
-      sqlite3_int64 szStep = -pCur->ss.iStep;
-      assert( szStep>0 );
-      if( pCur->ss.iBase>iMax ){
-        sqlite3_uint64 d = pCur->ss.iBase - iMax;
-        pCur->ss.iBase -= ((d+szStep-1)/szStep)*szStep;
+      if( pCur->iBase>pCur->iTerm ){
+        goto series_no_rows;
       }
-      if( pCur->ss.iTerm<iMin ){
-        pCur->ss.iTerm = iMin;
+      pCur->iTerm = sub64(pCur->iTerm,
+                          span64(pCur->iTerm,pCur->iBase) % pCur->iStep);
+    }else{
+      if( pCur->iBase>iMax ){
+        sqlite3_uint64 span = span64(pCur->iBase,iMax);
+        pCur->iBase = sub64(pCur->iBase, (span/pCur->iStep)*pCur->iStep);
+        if( pCur->iBase<iMax ){
+          if( pCur->iBase < SMALLEST_INT64 + pCur->iStep ){
+            goto series_no_rows;
+          }
+          pCur->iBase = sub64(pCur->iBase, pCur->iStep);
+        }
       }
+      if( pCur->iTerm<iMin ){
+        pCur->iTerm = iMin;
+      }
+      if( pCur->iBase<pCur->iTerm ){
+        goto series_no_rows;
+      }
+      pCur->iTerm = add64(pCur->iTerm,
+                          span64(pCur->iBase,pCur->iTerm) % pCur->iStep);
     }
+  }
+
+  /* Transform the series generator to output values in the requested
+  ** order.
+  */
+  if( ((idxNum & 0x0008)!=0 && pCur->bDesc==0)
+   || ((idxNum & 0x0010)!=0 && pCur->bDesc!=0)
+  ){
+    sqlite3_int64 tmp = pCur->iBase;
+    pCur->iBase = pCur->iTerm;
+    pCur->iTerm = tmp;
+    pCur->bDesc = ~pCur->bDesc;
   }
 
   /* Apply LIMIT and OFFSET constraints, if any */
-  assert( pCur->ss.iStep!=0 );
+  assert( pCur->iStep!=0 );
   if( idxNum & 0x20 ){
     sqlite3_uint64 nStep;
     if( iOffset>0 ){
-      if( seriesSteps(&pCur->ss) < (sqlite3_uint64)iOffset ){
-        returnNoRows = 1;
-        iLimit = -1;
+      if( seriesSteps(pCur) < (sqlite3_uint64)iOffset ){
+        goto series_no_rows;
       }else{
-        pCur->ss.iBase += pCur->ss.iStep*iOffset;
+        pCur->iBase += pCur->iStep*iOffset;
       }
     }
-    if( iLimit>=0
-     && (nStep = seriesSteps(&pCur->ss)) > (sqlite3_uint64)iLimit
-    ){
-      pCur->ss.iTerm = pCur->ss.iBase + (iLimit - 1)*pCur->ss.iStep;
+    if( iLimit>=0 && (nStep = seriesSteps(pCur)) > (sqlite3_uint64)iLimit ){
+      pCur->iTerm = pCur->iBase + (iLimit - 1)*pCur->iStep;
     }
   }
 
-
-  for(i=0; i<argc; i++){
-    if( sqlite3_value_type(argv[i])==SQLITE_NULL ){
-      /* If any of the constraints have a NULL value, then return no rows.
-      ** See ticket https://sqlite.org/src/info/fac496b61722daf2 */
-      returnNoRows = 1;
-      break;
-    }
-  }
-  if( returnNoRows ){
-    pCur->ss.iBase = 1;
-    pCur->ss.iTerm = 0;
-    pCur->ss.iStep = 1;
-  }
-  if( idxNum & 0x08 ){
-    pCur->ss.isReversing = pCur->ss.iStep > 0;
-  }else{
-    pCur->ss.isReversing = pCur->ss.iStep < 0;
-  }
-  setupSequence( &pCur->ss );
   return SQLITE_OK;
+
+series_no_rows:
+  pCur->iBase = 0;
+  pCur->iTerm = 0;
+  pCur->iStep = 1;
+  pCur->bDesc = 0;
+  pCur->bDone = 1;
+  return SQLITE_OK;  
 }
 
 /*
