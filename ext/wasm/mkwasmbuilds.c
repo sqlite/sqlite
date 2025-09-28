@@ -404,13 +404,14 @@ const BuildDefs oBuildDefs = {
     .zEmo        = "💿",
     .zBaseName   = "sqlite3-wasmfs",
     .zDotWasm    = 0,
-    .zCmppD      = "$(c-pp.D.bundler)",
+    .zCmppD      = "$(c-pp.D.bundler) -Dwasmfs",
     .zEmcc       = 0,
     .zEmccExtra  =
     "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"
     " -sUSE_CLOSURE_COMPILER=0"
     " -pthread -sWASMFS -sPTHREAD_POOL_SIZE=1"
     " -sERROR_ON_UNDEFINED_SYMBOLS=0 -sLLD_REPORT_UNDEFINED"
+    " -DSQLITE_ENABLE_WASMFS"
     ,
     .zEnv        = 0,
     .zDeps       = 0,

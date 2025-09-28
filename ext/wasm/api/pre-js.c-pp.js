@@ -73,7 +73,7 @@
   }.bind(sIMS);
 
 //#if Module.instantiateWasm
-//#ifnot wasmfs
+//#if not wasmfs
   /**
      Override Module.instantiateWasm().
 
@@ -109,7 +109,7 @@
           .then(finalThen)
     return loadWasm();
   }.bind(sIMS);
-//#endif ifnot wasmfs
+//#endif not wasmfs
 //#endif Module.instantiateWasm
 })(Module);
 /* END FILE: api/pre-js.js. */

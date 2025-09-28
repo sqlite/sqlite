@@ -1021,7 +1021,7 @@ fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
 #
 # Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
 #
-ifneq (,$(filter wasmfs b-wasmfs,$(MAKECMDGOALS)))
+ifneq (,$(filter wasmfs b-wasmfs for-testing,$(MAKECMDGOALS)))
 wasmfs.enable ?= 1
 else
 # Unconditionally enable wasmfs for [dist]clean so that the wasmfs
@@ -1390,7 +1390,8 @@ for-testing.deps = \
   b-vanilla b-vanilla64 \
   b-esm b-esm64 \
   b-fiddle b-fiddle.debug \
-  b-speedtest1 b-speedtest164
+  b-speedtest1 b-speedtest164 \
+  b-wasmfs
 for-testing: $(for-testing.deps)
 
 ########################################################################

@@ -3817,7 +3817,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       are simply lost, and such scripts see the globalThis.location of
       _this_ script.
     */
-    let sqlite3Js = '@sqlite3.js@'.split('/').pop()/*build-injected name has a path part*/;
+    let sqlite3Js = '@sqlite3.js@'
+        .split('/').pop()/*the build-injected name has a dir part and
+                           we specifically want to test the following
+                           support for locating the wasm, so remove
+                           that dir part. */;
     const urlParams = new URL(globalThis.location.href).searchParams;
     if(urlParams.has('sqlite3.dir')){
       sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;
