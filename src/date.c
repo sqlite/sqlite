@@ -1387,8 +1387,8 @@ static int daysAfterSunday(DateTime *pDate){
 **   %l  hour  1-12  (leading zero converted to space)
 **   %m  month 01-12
 **   %M  minute 00-59
-**   %p  "am" or "pm"
-**   %P  "AM" or "PM"
+**   %p  "AM" or "PM"
+**   %P  "am" or "pm"
 **   %R  time as HH:MM
 **   %s  seconds since 1970-01-01
 **   %S  seconds 00-59
