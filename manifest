@@ -1,5 +1,5 @@
-C Remove\sthe\slong-defunct\swasmfs\sbuild\sof\sspeedtest1\sfrom\sindex.html\sand\sre-enable\sthe\swasmfs\sscratchpad\sapp\s(which\sstill\sworks).\sFix\sthe\sCFLAGS\sfor\sthe\swasmfs\sbuild\sand\sthe\spath\sto\sthe\swasm\sfile\sfor\sone\sof\sthe\sJS.
-D 2025-09-28T18:03:29.667
+C Revamp\sthe\simplementation\sof\sgenerate_series\sto\ssimplify\sand\simprove\nlong-term\smaintainability.
+D 2025-09-28T18:25:59.467
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -393,7 +393,7 @@ F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c 31437e7253fbcc4cc62e9d419b6528e1a83802e6abfd5b12c90d90e044d5dda3
+F ext/misc/series.c 42f4d9acd8c497a147363dcd69208d09ba9173f448811ccfb8d26765394d3d25
 F ext/misc/sha1.c cb5002148c2661b5946f34561701e9105e9d339b713ec8ac057fd888b196dcb9
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1678,7 +1678,7 @@ F test/sync.test a619e407ede58a7b6e3e44375328628559fc9695a9c24c47cb5690a866b0031
 F test/sync2.test 06152269ed73128782c450c355988fe8dd794d305833af75e1a5e79edd4dae47
 F test/syscall.test a067468b43b8cb2305e9f9fe414e5f40c875bb5d2cba5f00b8154396e95fcf37
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test f9a612a6a021e9f0d8df7d182762fea55dff671c29a5a15100cad4388e08151c
+F test/tabfunc01.test be36fc7f6d221482216f7f1032d6a4595ac542cf427132f4728a65697830ab9c
 F test/table.test e87294bf1c80bfd7792142b84ab32ea5beb4f3f71e535d7fb263a6b2068377bf
 F test/tableapi.test e37c33e6be2276e3a96bb54b00eea7f321277115d10e5b30fdb52a112b432750
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -2169,8 +2169,9 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f7cab028c97b2c9ac9b561a4c33475aadd3f71cbd48ec4dd6e09c1bb19ec00cb
-R 111bf66cecc5d4d8dbf7a19268f337ee
-U stephan
-Z 6cfd7d970babb3978d704fe1297979dc
+P acaaf8cce9e780bf937436b4c987ed284aa0bba6f5ca9508d9dbad598af2991d 86dcc68d1816d970d8d5fb158696c3fe6c5ddcac2c255823110d656372503885
+R 762cba5cbbf74e8c3ba8ca4699030460
+T +closed 86dcc68d1816d970d8d5fb158696c3fe6c5ddcac2c255823110d656372503885
+U drh
+Z e1db3f0aba6773a2fe5bbd6bf6414138
 # Remove this line to create a well-formed Fossil manifest.
