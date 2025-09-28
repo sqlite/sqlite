@@ -555,7 +555,7 @@ static int seriesFilter(
       if( pCur->iBase>iMax ){
         sqlite3_uint64 span = span64(pCur->iBase,iMax);
         pCur->iBase = sub64(pCur->iBase, (span/pCur->iStep)*pCur->iStep);
-        if( pCur->iBase<iMax ){
+        if( pCur->iBase>iMax ){
           if( pCur->iBase < add64(SMALLEST_INT64, pCur->iStep) ){
             goto series_no_rows;
           }
@@ -593,7 +593,7 @@ static int seriesFilter(
     sqlite3_int64 tmp = pCur->iBase;
     pCur->iBase = pCur->iTerm;
     pCur->iTerm = tmp;
-    pCur->bDesc = ~pCur->bDesc;
+    pCur->bDesc = !pCur->bDesc;
   }
 
   /* Apply LIMIT and OFFSET constraints, if any */
