@@ -614,6 +614,7 @@ static int seriesFilter(
     }
   }
   pCur->iValue = pCur->iBase;
+  pCur->bDone = 0;
   return SQLITE_OK;
 
 series_no_rows:

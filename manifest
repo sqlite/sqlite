@@ -1,5 +1,5 @@
-C The\sgenerate_series\srewrite\sis\sworking\sbetter\snow,\sbut\sis\sstill\snot\ncompletely\scorrect.
-D 2025-09-28T10:36:23.742
+C All\slegacy\stests\sare\spassing.\s\sWant\sto\sadd\snew\stest\scases\sbefore\smerging.
+D 2025-09-28T11:01:05.075
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -393,7 +393,7 @@ F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c e9b38d6f5211fb26cb27b57c8dea11f52761581a51b756bd1a79bfb47b069224
+F ext/misc/series.c 508f68964de59b6924fd551cd57922d2dc18707f9f14deb93aed4750cb1fbd3c
 F ext/misc/sha1.c cb5002148c2661b5946f34561701e9105e9d339b713ec8ac057fd888b196dcb9
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 25e395a82f14513bf23c1e913fe24be77ad74fec1540f524e709f9cdfeb3dc56
-R 3e4f52140b7d0e3340a0452564ef8f35
+P 6c41d14707e6890ca6d0460c72178ccb710d7f41dead76f222f1382c5cbd5a9a
+R 91d517b97245f2e69e93e148ba5c472f
 U drh
-Z 95aa644c466b7b35cab0cc48602bf168
+Z 1a8e51c4fce049925b4ae5730e3a44f2
 # Remove this line to create a well-formed Fossil manifest.
