@@ -778,4 +778,20 @@ do_execsql_test where2-14.1 {
   SELECT x FROM t14a WHERE x NOT IN (SELECT x FROM t14b);
 } {}
 
+# Demonstrate that the code removed by
+# https://sqlite.org/src/info/2025-09-17T17:09:07Z is in fact
+# necessary.  Answer confirmed by PostgreSQL
+#
+do_execsql_test where2-15.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY,b INT);
+  INSERT INTO t1 VALUES(12,34),(56,78),(90,12);
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(x INT UNIQUE);
+  INSERT INTO t2 VALUES(78),(12);
+  SELECT a,b,quote(x),'|'
+    FROM t1 LEFT JOIN (SELECT x FROM t2) AS s1 ON t1.b=s1.x
+   ORDER BY a,EXISTS(SELECT 1 FROM t1 LEFT JOIN (SELECT x AS y FROM t2) AS s2 ON t1.b=s2.y),x;
+} {12 34 NULL | 56 78 78 | 90 12 12 |}
+
 finish_test
