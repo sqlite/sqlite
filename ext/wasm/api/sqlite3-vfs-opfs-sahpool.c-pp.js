@@ -1,4 +1,4 @@
-//#ifnot target=node
+//#ifnot target:node
 /*
   2023-07-14
 
@@ -1460,4 +1460,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   The OPFS SAH Pool VFS parts are elided from builds targeting
   node.js.
 */
-//#endif target=node
+//#endif target:node

@@ -805,18 +805,18 @@ endef
 #
 # The various -D... values used by *.c-pp.js include:
 #
-# -Dtarget=es6-module: for all ESM module builds
+# -Dtarget:es6-module: for all ESM module builds
 #
-# -Dtarget=node: for node.js builds
+# -Dtarget:node: for node.js builds
 #
-# -Dtarget=es6-module -Dtarget=es6-bundler-friendly: intended for
+# -Dtarget:es6-module -Dtarget:es6-bundler-friendly: intended for
 #    "bundler-friendly" ESM module build. These have some restrictions
 #    on how URL() objects are constructed in some contexts: URLs which
 #    refer to files which are part of this project must be referenced
 #    as string literals so that bundlers' static-analysis tools can
 #    find those files and include them in their bundles.
 #
-# -Dtarget=es6-module -Dtarget=node: is intended for use by node.js
+# -Dtarget:es6-module -Dtarget:node: is intended for use by node.js
 #    for node.js, as opposed to by node.js on behalf of a
 #    browser. Mixing -sENVIRONMENT=web and -sENVIRONMENT=node leads to
 #    ambiguity and confusion on node's part, as it's unable to

@@ -41,9 +41,9 @@
 
    ES6 worker module build:
 
-     ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget=es6-module
+     ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget:es6-module
 */
-//#if target=es6-module
+//#if target:es6-module
 import {default as sqlite3InitModule} from
 //#if 64bit
 './jswasm/sqlite3-64bit.mjs'
@@ -3805,7 +3805,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       error: ()=>{}
     }
   }
-//#ifnot target=es6-module
+//#ifnot target:es6-module
   if(!globalThis.sqlite3InitModule && !isUIThread()){
     /* Vanilla worker, as opposed to an ES6 module worker */
     /*

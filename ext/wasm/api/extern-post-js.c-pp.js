@@ -12,7 +12,7 @@
    At the time this is run, the global-scope sqlite3InitModule
    function will have just been defined.
 */
-//#if target=es6-module
+//#if target:es6-module
 const toExportForESM =
 //#endif
 (function(){
@@ -110,7 +110,7 @@ const toExportForESM =
     sIMS.scriptDir = src.join('/') + '/';
   }
   sIMS.debugModule('extern-post-js.c-pp.js sqlite3InitModuleState =',sIMS);
-//#ifnot target=es6-module
+//#ifnot target:es6-module
 // Emscripten does not inject these module-loader bits in ES6 module
 // builds and including them here breaks JS bundlers, so elide them
 // from ESM builds.
@@ -126,10 +126,10 @@ const toExportForESM =
   }
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
-//#endif // !target=es6-module
+//#endif // !target:es6-module
   return sIM;
 })();
-//#if target=es6-module
+//#if target:es6-module
 sqlite3InitModule = toExportForESM;
 export default sqlite3InitModule;
 //#endif

@@ -16,13 +16,24 @@
 ** minimal preprocessor with only the most basic functionality of a C
 ** preprocessor, namely:
 **
-** - Limited `#if`, where its one argument is a macro name which
-**   resolves to true if it's defined, false if it's not. Likewise,
-**   `#ifnot` is the inverse. Includes `#else` and `#elif` and
-**   `#elifnot`. Such chains are terminated with `#endif`.
+** - Limited `#if`, where its one argument is a macro name or a
+**   name=value pair. If just the name is used, it's considered true
+**   if it has a non-empty value which is not '0', else it's false. If
+**   name=value is used then it resolves to true if the value matches,
+**   noting that value is treated like a glob.  Likewise, `#ifnot` is
+**   the inverse. Includes `#else` and `#elif` and `#elifnot`. Such
+**   chains are terminated with `#endif`.  More simply (and more
+**   recently) `#if` and `#elif` support two modifer words: `not` and
+**   `defined`, so can be used like: `#if not defined x` or
+**   `#if defined y`.
 **
-** - `#define` accepts one or more arguments, the names of
-**   macros. Each one is implicitly true.
+** - `#assert` compares its arguments like `#if` but throws a fatal
+**   error if it's condition is falsy. Unlike `#if`, it does not
+**   open a new block.
+**
+** - `#define` accepts one or more arguments, the names or name=value
+**   list of macros. Each one with no explicit value defaults to a
+**   value of 1..
 **
 ** - `#undef` undefine one or more macros.
 **
@@ -39,7 +50,9 @@
 ** - `#savepoint` takes one argument: begin, commit, rollback. Each
 **    corresponds to the similarly-named SQLite savepoint feature.
 **    (What we're calling "commit" is called "release" in savepoint
-**    terminology.)
+**    terminology.) Savepoints apply ONLY to the db-side data (namely
+**    #define and friends), not to content blocks. (Might that not
+**    be interesting, though?)
 **
 ** - `#stderr` outputs its file name, line number, and the remainder
 **   of that line to stderr.
@@ -47,6 +60,10 @@
 ** - `#//` acts as a single-line comment, noting that there must be no
 **   space after the `//` part because `//` is (despite appearances)
 **   parsed like a keyword.
+**
+** - `#@policy@ NAME` sets the policy for handling `@tokens@` in
+**   the content parts of the input (as opposed to the keyword
+**   lines like this one). @
 **
 ** The "#" above is symbolic. The keyword delimiter is configurable
 ** and defaults to "##". Define CMPP_DEFAULT_DELIM to a string when
@@ -197,12 +214,12 @@ static void db_free(void *m);
 ** any duplicates. Fails fatally on error.
 */
 static void db_define_add(const char * zKey);
+
 /*
 ** Returns true if the given key is already in the `#define` list,
 ** else false. Fails fatally on db error.
 */
-//static
-int db_define_has(const char * zName);
+static int db_define_has(const char * zName);
 
 /*
 ** Returns true if the given key is already in the `#define` list, and
@@ -308,9 +325,12 @@ typedef struct FileWrapper FileWrapper;
 #define FileWrapper_empty_m {0,0,0,0}
 static const FileWrapper FileWrapper_empty = FileWrapper_empty_m;
 
-/* Proxy for FILE_close(). */
+/*
+** Proxy for FILE_close() and frees all memory owned by p. A no-op if
+** p is already closed.
+*/
 static void FileWrapper_close(FileWrapper * p);
-/* Proxy for FILE_open(). */
+/* Proxy for FILE_open(). Closes p first if it's currently opened. */
 static void FileWrapper_open(FileWrapper * p, const char * zName, const char *zMode);
 /* Proxy for FILE_slurp(). */
 static void FileWrapper_slurp(FileWrapper * p);
@@ -446,6 +466,8 @@ TS_Error
 typedef enum CmppParseState CmppParseState;
 enum CmppTokenType {
 TT_Invalid = 0,
+TT_Assert,
+TT_AtPolicy,
 TT_Comment,
 TT_Define,
 TT_Elif,
@@ -480,7 +502,8 @@ static const CmppToken CmppToken_empty = CmppToken_empty_m;
 /*
 ** CmppLevel represents one "level" of tokenization, starting at the
 ** top of the main input, incrementing once for each level of `#if`,
-** and decrementing for each `#endif`.
+** and decrementing for each `#endif`. Similarly, `#include`
+** pushes a level.
 */
 typedef struct CmppLevel CmppLevel;
 struct CmppLevel {
@@ -794,20 +817,23 @@ void CmppLevel_push(CmppTokenizer * const t){
           g.delim.z, CmppLevel_Max);
   }
   pPrev = &CT_level(t);
-  g_debug(3,("push from tokenizer level=%u flags=%04x\n", t->level.ndx, pPrev->flags));
+  g_debug(3,("push from tokenizer level=%u flags=%04x\n",
+             t->level.ndx, pPrev->flags));
   p = &t->level.stack[++t->level.ndx];
   *p = CmppLevel_empty;
   p->token = t->token;
   p->flags = (CmppLevel_F_INHERIT_MASK & pPrev->flags);
   if(CLvl_skip(pPrev)) p->flags |= CmppLevel_F_ELIDE;
-  g_debug(3,("push to tokenizer level=%u flags=%04x\n", t->level.ndx, p->flags));
+  g_debug(3,("push to tokenizer level=%u flags=%04x\n",
+             t->level.ndx, p->flags));
 }
 
 void CmppLevel_pop(CmppTokenizer * const t){
   if(!t->level.ndx){
     fatal("Internal error: CmppLevel_pop() at the top of the stack");
   }
-  g_debug(3,("pop from tokenizer level=%u, flags=%04x skipLevel?=%d\n", t->level.ndx,
+  g_debug(3,("pop from tokenizer level=%u, flags=%04x skipLevel?=%d\n",
+             t->level.ndx,
              t->level.stack[t->level.ndx].flags, CT_skipLevel(t)));
   g_debug(3,("CT_skipLevel() ?= %d\n",CT_skipLevel(t)));
   g_debug(3,("CT_skip() ?= %d\n",CT_skip(t)));
@@ -825,6 +851,7 @@ CmppLevel * CmppLevel_get(CmppTokenizer * const t){
 
 void db_affirm_rc(int rc, const char * zMsg){
   if(rc){
+    assert( g.db );
     fatal("Db error #%d %s: %s", rc, zMsg,
           sqlite3_errmsg(g.db));
   }
@@ -836,8 +863,12 @@ void db_finalize(sqlite3_stmt *pStmt){
 
 int db_step(sqlite3_stmt *pStmt){
   int const rc = sqlite3_step(pStmt);
-  if(SQLITE_ROW!=rc && SQLITE_DONE!=rc){
-    db_affirm_rc(rc, "from db_step()");
+  switch( rc ){
+    case SQLITE_ROW:
+    case SQLITE_DONE:
+      break;
+    default:
+      db_affirm_rc(rc, "from db_step()");
   }
   return rc;
 }
@@ -1522,7 +1553,8 @@ static int cmpp_next_keyword_line(CmppTokenizer * const t){
   return isDelim;
 }
 
-static void cmpp_kwd__err_prefix(CmppKeyword const * pKw, CmppTokenizer *t,
+static void cmpp_kwd__err_prefix(CmppKeyword const * pKw,
+                                 CmppTokenizer const *t,
                                  char const *zPrefix){
   g_stderr("%s%s%s @ %s line %u: ",
            zPrefix ? zPrefix : "",
@@ -1531,9 +1563,9 @@ static void cmpp_kwd__err_prefix(CmppKeyword const * pKw, CmppTokenizer *t,
 }
 
 /* Internal error reporting helper for cmpp_keyword_f() impls. */
-static CMPP_NORETURN void cmpp_kwd__misuse(CmppKeyword const * pKw,
-                                           CmppTokenizer *t,
-                                           char const *zFmt, ...){
+static CMPP_NORETURN void cmpp_kwd__err(CmppKeyword const * pKw,
+                                        CmppTokenizer const *t,
+                                        char const *zFmt, ...){
   va_list va;
   cmpp_kwd__err_prefix(pKw, t, "Fatal error");
   va_start(va, zFmt);
@@ -1563,7 +1595,7 @@ static void cmpp_kwd_error(CmppKeyword const * pKw, CmppTokenizer *t){
 static void cmpp_kwd_define(CmppKeyword const * pKw, CmppTokenizer *t){
   if(CT_skip(t)) return;
   if(t->args.argc<2){
-    cmpp_kwd__misuse(pKw, t, "Expecting one or more arguments");
+    cmpp_kwd__err(pKw, t, "Expecting one or more arguments");
   }else{
     int i = 1;
     void (*func)(const char *) = TT_Define==pKw->ttype
@@ -1578,58 +1610,128 @@ static void cmpp_kwd_define(CmppKeyword const * pKw, CmppTokenizer *t){
 static void cmpp_kwd_if(CmppKeyword const * pKw, CmppTokenizer *t){
   int buul = 0;
   CmppParseState tmpState = TS_Start;
-  if(t->args.argc!=2){
-    cmpp_kwd__misuse(pKw, t, "Expecting exactly 1 argument");
+  /**
+     TT_If: accept args:
+
+     - "not" = negates the operation
+
+     - "defined" == is-defined op
+  */
+  int bCheckDefined = 0;
+  int bNot = 0;
+  char const * zKey = 0;
+  char const *zEq = 0;
+
+  assert( TT_If==pKw->ttype
+          || TT_IfNot==pKw->ttype
+          || TT_Elif==pKw->ttype
+          || TT_ElifNot==pKw->ttype
+          || TT_Assert==pKw->ttype);
+  if(t->args.argc<2){
+    cmpp_kwd__err(pKw, t, "Expecting an argument");
   }
-  /*g_debug(0,("%s %s level %u pstate=%d\n", pKw->zName,
-             (char const *)t->args.argv[1],
-             t->level.ndx, (int)CT_pstate(t)));*/
+  switch( pKw->ttype ){
+    case TT_IfNot:
+    case TT_ElifNot: bNot = 1;
+      /* fall through */
+    case TT_If:
+    case TT_Assert:
+    case TT_Elif:
+      for( int i = 1; i < t->args.argc; ++i ){
+        char const * z = (char const *)t->args.argv[i];
+        if( 0==strcmp(z, "not") ){
+          bNot = !bNot;
+        }else if( 0==strcmp(z,"defined") ){
+          if( bCheckDefined ){
+            cmpp_kwd__err(pKw, t,
+                          "Cannot use 'defined' more than once");
+          }
+          bCheckDefined = 1;
+        }else if( !zKey ){
+          zKey = (char const *)t->args.argv[i];
+        }else{
+          cmpp_kwd__err(pKw, t, "Unhandled argument: %s", z);
+        }
+      }
+      if( !zKey ){
+        cmpp_kwd__err(pKw, t, "Missing key argument");
+      }
+      break;
+    default:
+      if(t->args.argc!=2){
+        cmpp_kwd__err(pKw, t, "Expecting exactly 1 argument");
+      }
+      zKey = (char const *)t->args.argv[1];
+  }
+  /*g_debug(0,("%s %s level %u pstate=%d bNot=%d bCheckDefined=%d\n",
+             pKw->zName, zKey, t->level.ndx, (int)CT_pstate(t),
+             bNot, bCheckDefined));*/
   switch(pKw->ttype){
     case TT_Elif:
     case TT_ElifNot:
       switch(CT_pstate(t)){
         case TS_If: break;
         case TS_IfPassed: CT_level(t).flags |= CmppLevel_F_ELIDE; return;
-        default: goto misuse;
+        default:
+          cmpp_kwd__err(pKw, t, "'%s' used out of context",
+                        pKw->zName);
       }
       break;
     case TT_If:
     case TT_IfNot:
       CmppLevel_push(t);
       break;
+    case TT_Assert:
+      break;
     default:
-      cmpp_kwd__misuse(pKw, t, "Unexpected keyword token type");
+      assert(!"cannot happen");
+      cmpp_kwd__err(pKw, t, "Unexpected keyword token type");
       break;
   }
-  char const * const zKey = (char const *)t->args.argv[1];
-  char const * zEq = 0;
   unsigned nValPart = 0;
   char const * zValPart = cmpp_val_part(zKey, -1, '=', &nValPart, &zEq);
+  /*g_debug(0,("%s %s level %u pstate=%d bNot=%d bCheckDefined=%d "
+             "nValPart=%u zValPart=%s\n",
+             pKw->zName, zKey, t->level.ndx, (int)CT_pstate(t),
+             bNot, bCheckDefined, nValPart, zValPart));*/
   if( zValPart ){
+    if( bCheckDefined ){
+      cmpp_kwd__err(pKw, t, "Value part is not legal with %s: %s",
+                    pKw->zName, zKey);
+    }
     unsigned nVal = 0;
     char * zVal = 0;
     buul = db_define_get(zKey, (zEq-zKey), &zVal, &nVal);
+    //g_debug(0,("checking key[%.*s]=%.*s\n", (zEq-zKey), zKey, nVal, zVal));
     if( nVal ){
       /* FIXME? do this with a query */
-      g_debug(1,("if get-define %.*s=%.*s zValPart=%s\n",
+      /*g_debug(0,("if get-define [%.*s]=[%.*s] zValPart=%s\n",
                  (zEq-zKey), zKey,
-                 nVal, zVal, zValPart));
+                 nVal, zVal, zValPart));*/
       buul = 0==sqlite3_strglob(zValPart,zVal);
+      //g_debug(0,("buul=%d\n", buul));
     }
     db_free(zVal);
   }else{
-    buul = db_define_get_bool(zKey, -1);
+    if( bCheckDefined ){
+      buul = db_define_has(zKey);
+    }else{
+      buul = db_define_get_bool(zKey, -1);
+    }
   }
-  if(TT_IfNot==pKw->ttype || TT_ElifNot==pKw->ttype) buul = !buul;
-  if(buul){
+  //if( bNot ) buul = !buul;
+  if( bNot ? !buul : buul ){
     CT_pstate(t) = tmpState = TS_IfPassed;
     CT_skipLevel(t) = 0;
   }else{
+    if( TT_Assert==pKw->ttype ){
+      cmpp_kwd__err(pKw, t, "Assertion failed: %s", zKey);
+    }
     CT_pstate(t) = TS_If /* also for TT_IfNot, TT_Elif, TT_ElifNot */;
     CT_skipLevel(t) = 1;
     g_debug(3,("setting CT_skipLevel = 1 @ level %d\n", t->level.ndx));
   }
-  if(TT_If==pKw->ttype || TT_IfNot==pKw->ttype){
+  if( TT_If==pKw->ttype || TT_IfNot==pKw->ttype ){
     unsigned const lvlIf = t->level.ndx;
     CmppToken const lvlToken = CT_level(t).token;
     while(cmpp_next_keyword_line(t)){
@@ -1647,29 +1749,25 @@ static void cmpp_kwd_if(CmppKeyword const * pKw, CmppTokenizer *t){
 #endif
     }
     if(lvlIf <= t->level.ndx){
-      cmpp_kwd__err_prefix(pKw, t, NULL);
-      fatal("Input ended inside an unterminated %sif "
-            "opened at [%s] line %u",
-            g.delim.z, t->zName, lvlToken.lineNo);
+      cmpp_kwd__err(pKw, t,
+                    "Input ended inside an unterminated %sif "
+                    "opened at [%s] line %u",
+                    g.delim.z, t->zName, lvlToken.lineNo);
     }
   }
-  return;
-  misuse:
-  cmpp_kwd__misuse(pKw, t, "'%s' used out of context",
-                   pKw->zName);
 }
 
 /* Impl. for #else. */
 static void cmpp_kwd_else(CmppKeyword const * pKw, CmppTokenizer *t){
   if(t->args.argc>1){
-    cmpp_kwd__misuse(pKw, t, "Expecting no arguments");
+    cmpp_kwd__err(pKw, t, "Expecting no arguments");
   }
   switch(CT_pstate(t)){
     case TS_IfPassed: CT_skipLevel(t) = 1; break;
     case TS_If: CT_skipLevel(t) = 0; break;
     default:
-      cmpp_kwd__misuse(pKw, t, "'%s' with no matching 'if'",
-                      pKw->zName);
+      cmpp_kwd__err(pKw, t, "'%s' with no matching 'if'",
+                    pKw->zName);
   }
   /*g_debug(0,("else flags=0x%02x skipLevel=%u\n",
     CT_level(t).flags, CT_level(t).skipLevel));*/
@@ -1690,8 +1788,8 @@ static void cmpp_kwd_endif(CmppKeyword const * pKw, CmppTokenizer *t){
     case TS_IfPassed:
       break;
     default:
-      cmpp_kwd__misuse(pKw, t, "'%s' with no matching 'if'",
-                       pKw->zName);
+      cmpp_kwd__err(pKw, t, "'%s' with no matching 'if'",
+                    pKw->zName);
   }
   CmppLevel_pop(t);
 }
@@ -1702,7 +1800,7 @@ static void cmpp_kwd_include(CmppKeyword const * pKw, CmppTokenizer *t){
   char * zResolved;
   if(CT_skip(t)) return;
   else if(t->args.argc!=2){
-    cmpp_kwd__misuse(pKw, t, "Expecting exactly 1 filename argument");
+    cmpp_kwd__err(pKw, t, "Expecting exactly 1 filename argument");
   }
   zFile = (const char *)t->args.argv[1];
   if(db_including_has(zFile)){
@@ -1732,7 +1830,7 @@ static void cmpp_kwd_pragma(CmppKeyword const * pKw, CmppTokenizer *t){
   const char * zArg;
   if(CT_skip(t)) return;
   else if(t->args.argc<2){
-    cmpp_kwd__misuse(pKw, t, "Expecting an argument");
+    cmpp_kwd__err(pKw, t, "Expecting an argument");
   }
   zArg = (const char *)t->args.argv[1];
 #define M(X) 0==strcmp(zArg,X)
@@ -1746,7 +1844,15 @@ static void cmpp_kwd_pragma(CmppKeyword const * pKw, CmppTokenizer *t){
       g_stderr("\t%.*s\n", n, z);
     }
     db_finalize(q);
-  }else if(M("@")){
+  }
+  else if(M("chomp-F")){
+    g.flags.chompF = 1;
+  }else if(M("no-chomp-F")){
+    g.flags.chompF = 0;
+  }
+#if 0
+  /* now done by cmpp_kwd_at_policy() */
+  else if(M("@")){
     if(t->args.argc>2){
       g.flags.atPolicy =
         AtPolicy_fromStr((char const *)t->args.argv[2], 1);
@@ -1755,12 +1861,10 @@ static void cmpp_kwd_pragma(CmppKeyword const * pKw, CmppTokenizer *t){
     }
   }else if(M("no-@")){
     g.flags.atPolicy = AT_OFF;
-  }else if(M("chomp-F")){
-    g.flags.chompF = 1;
-  }else if(M("no-chomp-F")){
-    g.flags.chompF = 0;
-  }else{
-    cmpp_kwd__misuse(pKw, t, "Unknown pragma: %s", zArg);
+  }
+#endif
+  else{
+    cmpp_kwd__err(pKw, t, "Unknown pragma: %s", zArg);
   }
 #undef M
 }
@@ -1770,7 +1874,7 @@ static void cmpp_kwd_savepoint(CmppKeyword const * pKw, CmppTokenizer *t){
   const char * zArg;
   if(CT_skip(t)) return;
   else if(t->args.argc!=2){
-    cmpp_kwd__misuse(pKw, t, "Expecting one argument");
+    cmpp_kwd__err(pKw, t, "Expecting one argument");
   }
   zArg = (const char *)t->args.argv[1];
 #define SP_NAME " cmpp /*" __FILE__ "*/;"
@@ -1794,7 +1898,7 @@ static void cmpp_kwd_savepoint(CmppKeyword const * pKw, CmppTokenizer *t){
       ), "Committing a savepoint"
     );
   }else{
-    cmpp_kwd__misuse(pKw, t, "Unknown savepoint option: %s", zArg);
+    cmpp_kwd__err(pKw, t, "Unknown savepoint option: %s", zArg);
   }
 #undef SP_NAME
 #undef M
@@ -1816,6 +1920,17 @@ static void cmpp_kwd_stderr(CmppKeyword const * pKw, CmppTokenizer *t){
   }
 }
 
+/* Impl. for the @ policy. */
+static void cmpp_kwd_at_policy(CmppKeyword const * pKw, CmppTokenizer *t){
+  if(CT_skip(t)) return;
+  else if(t->args.argc<2){
+    g.flags.atPolicy = AT_DEFAULT;
+  }else{
+    g.flags.atPolicy = AtPolicy_fromStr((char const*)t->args.argv[1], 1);
+  }
+}
+
+
 #if 0
 /* Impl. for dummy placeholder. */
 static void cmpp_kwd_todo(CmppKeyword const * pKw, CmppTokenizer *t){
@@ -1827,6 +1942,8 @@ static void cmpp_kwd_todo(CmppKeyword const * pKw, CmppTokenizer *t){
 CmppKeyword aKeywords[] = {
 /* Keep these sorted by zName */
   {"//", 2, 0, TT_Comment, cmpp_kwd_noop},
+  {"@policy@", 8, 1, TT_AtPolicy, cmpp_kwd_at_policy},
+  {"assert", 3, 1, TT_Assert, cmpp_kwd_if},
   {"define", 6, 1, TT_Define, cmpp_kwd_define},
   {"elif", 4, 1, TT_Elif, cmpp_kwd_if},
   {"elifnot", 7, 1, TT_ElifNot, cmpp_kwd_if},
@@ -1987,8 +2104,11 @@ static int arg_is_flag( char const *zFlag, char const *zArg,
   if( z && z>zArg ){
     /* compare the part before the '=' */
     if( 0==strncmp(zFlag, zArg, z-zArg) ){
-      *zValIfEqX = z+1;
-      return 1;
+      if( !zFlag[z-zArg] ){
+        *zValIfEqX = z+1;
+        return 1;
+      }
+      /* Else it was a prefix match. */
     }
   }
   return 0;
