@@ -542,7 +542,7 @@ static int seriesFilter(
         sqlite3_uint64 span = span64(iMin,pCur->iBase);
         pCur->iBase = add64(pCur->iBase, (span/pCur->iStep)*pCur->iStep);
         if( pCur->iBase<iMin ){
-          if( pCur->iBase > LARGEST_INT64 - pCur->iStep ){
+          if( pCur->iBase > sub64(LARGEST_INT64, pCur->iStep) ){
             goto series_no_rows;
           }
           pCur->iBase = add64(pCur->iBase, pCur->iStep);
@@ -551,17 +551,12 @@ static int seriesFilter(
       if( pCur->iTerm>iMax ){
         pCur->iTerm = iMax;
       }
-      if( pCur->iBase>pCur->iTerm ){
-        goto series_no_rows;
-      }
-      pCur->iTerm = sub64(pCur->iTerm,
-                          span64(pCur->iTerm,pCur->iBase) % pCur->iStep);
     }else{
       if( pCur->iBase>iMax ){
         sqlite3_uint64 span = span64(pCur->iBase,iMax);
         pCur->iBase = sub64(pCur->iBase, (span/pCur->iStep)*pCur->iStep);
         if( pCur->iBase<iMax ){
-          if( pCur->iBase < SMALLEST_INT64 + pCur->iStep ){
+          if( pCur->iBase < add64(SMALLEST_INT64, pCur->iStep) ){
             goto series_no_rows;
           }
           pCur->iBase = sub64(pCur->iBase, pCur->iStep);
@@ -570,12 +565,23 @@ static int seriesFilter(
       if( pCur->iTerm<iMin ){
         pCur->iTerm = iMin;
       }
-      if( pCur->iBase<pCur->iTerm ){
-        goto series_no_rows;
-      }
-      pCur->iTerm = add64(pCur->iTerm,
-                          span64(pCur->iBase,pCur->iTerm) % pCur->iStep);
     }
+  }
+
+  /* Adjust iTerm so that it is exactly the last value of the series.
+  */
+  if( pCur->bDesc==0 ){
+    if( pCur->iBase>pCur->iTerm ){
+      goto series_no_rows;
+    }
+    pCur->iTerm = sub64(pCur->iTerm,
+                        span64(pCur->iTerm,pCur->iBase) % pCur->iStep);
+  }else{
+    if( pCur->iBase<pCur->iTerm ){
+      goto series_no_rows;
+    }
+    pCur->iTerm = add64(pCur->iTerm,
+                        span64(pCur->iBase,pCur->iTerm) % pCur->iStep);
   }
 
   /* Transform the series generator to output values in the requested
@@ -597,15 +603,17 @@ static int seriesFilter(
     if( iOffset>0 ){
       if( seriesSteps(pCur) < (sqlite3_uint64)iOffset ){
         goto series_no_rows;
+      }else if( pCur->bDesc ){
+        pCur->iBase = sub64(pCur->iBase, pCur->iStep*iOffset);
       }else{
-        pCur->iBase += pCur->iStep*iOffset;
+        pCur->iBase = add64(pCur->iBase, pCur->iStep*iOffset);
       }
     }
     if( iLimit>=0 && (nStep = seriesSteps(pCur)) > (sqlite3_uint64)iLimit ){
-      pCur->iTerm = pCur->iBase + (iLimit - 1)*pCur->iStep;
+      pCur->iTerm = add64(pCur->iBase, (iLimit - 1)*pCur->iStep);
     }
   }
-
+  pCur->iValue = pCur->iBase;
   return SQLITE_OK;
 
 series_no_rows:
