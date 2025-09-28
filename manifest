@@ -1,5 +1,5 @@
-C Fix\sharmless\stypo\sin\sa\scomment.
-D 2025-09-28T08:59:16.147
+C Use\snew\sc-pp\sfeatures\sto\ssimplify\sgeneration\sof\sthe\stester1\sfamily\sof\sfiles.
+D 2025-09-28T12:47:09.995
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/session/sqlite3session.c b3de195ce668cace9b324599bf6255a70290cbfb5451e826e
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile e06543750e8ed35baa8bba31ad3e357bb13f2dc8fe75cb491fe2d6f2167110a2
+F ext/wasm/GNUmakefile 41f3a91a48816a9825e4e42bbbd449f16d68c4e1ca1dcf4c8827497a743ec4e2
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -648,9 +648,9 @@ F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d826
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
-F ext/wasm/tester1-worker.c-pp.html b240b59cd313427434190d5795f57986b9add1a08df53921311fc0b8221b672a
-F ext/wasm/tester1.c-pp.html 93fbedb6b15eaad9b03df0524c702a81896e358785655ae2c751e30ef8202e54
-F ext/wasm/tester1.c-pp.js 79bd0476f5c27bf064e3ee996f4c68cf2f6e013f51e455480c66c5ce9812069a
+F ext/wasm/tester1-worker.c-pp.html 883881eeac14eeeecc8ff22acf9fe0f18a97cacb48be08ebb0bae891ceded584
+F ext/wasm/tester1.c-pp.html 949920126dcf477925d8d540093d9cc374d3ab4c4ddee920c1dcadcf37917306
+F ext/wasm/tester1.c-pp.js 762682ad29de847aa353adac7f47e8615941b2afc50550fa8c90c14551bc4746
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0d6ed44278a513b062539f32da49fa43952fcdf0bc1bba7b24ef3749bc4525a5
-R 122fe78829f8fbc951acb9fd5e10b15b
-U drh
-Z aef55af468fbb2a272262a36e7436bc2
+P 1f6deabfff2fc2fed5fbff48d2637b48245e5a946a442c4bcc9b9ecb7c4848b9
+R 61ab22384b67899649f53dae2a4d1679
+U stephan
+Z 8b6f19bade66e7c98d4e04557c2db4bb
 # Remove this line to create a well-formed Fossil manifest.

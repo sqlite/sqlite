@@ -1259,10 +1259,18 @@ tester1-$(1): tester1$(2)
 tester1: tester1$(2)
 endef
 
-$(eval $(call gen-tester1.js,vanilla,.js,$(c-pp.D.vanilla)))
-$(eval $(call gen-tester1.js,vanilla64,-64bit.js,$(c-pp.D.vanilla64)))
-$(eval $(call gen-tester1.js,esm,.mjs,$(c-pp.D.esm)))
-$(eval $(call gen-tester1.js,esm64,-64bit.mjs,$(c-pp.D.esm64)))
+$(eval $(call gen-tester1.js,vanilla,.js, \
+  $(c-pp.D.vanilla) \
+  -Dsqlite3.js=$(dir.dout)/sqlite3.js))
+$(eval $(call gen-tester1.js,vanilla64,-64bit.js, \
+  $(c-pp.D.vanilla64) \
+  -Dsqlite3.js=$(dir.dout)/sqlite3-64bit.js))
+$(eval $(call gen-tester1.js,esm,.mjs, \
+  $(c-pp.D.esm) \
+  -Dsqlite3.js=$(dir.dout)/sqlite3.mjs))
+$(eval $(call gen-tester1.js,esm64,-64bit.mjs, \
+  $(c-pp.D.esm64) \
+  -Dsqlite3.js=$(dir.dout)/sqlite3-64bit.mjs))
 
 # tester1.html variants:
 define gen-tester1.html
@@ -1274,16 +1282,38 @@ tester1$(2).html: tester1-$(1)
 tester1: tester1$(2).html
 endef
 
-$(eval $(call gen-tester1.html,vanilla,,$(c-pp.D.vanilla)))
-$(eval $(call gen-tester1.html,vanilla64,-64bit,$(c-pp.D.vanilla64)))
-$(eval $(call gen-tester1.html,esm,-esm,$(c-pp.D.esm)))
-$(eval $(call gen-tester1.html,esm64,-esm-64bit,$(c-pp.D.esm64)))
+$(eval $(call gen-tester1.html,vanilla,,\
+  $(c-pp.D.vanilla) \
+  -Dbitness=32 \
+  -Dtitle="UI thread" \
+  -Dtester1.js=tester1.js \
+  -Dsqlite3.js=$(dir.dout)/sqlite3.js))
+$(eval $(call gen-tester1.html,vanilla64,-64bit,\
+  $(c-pp.D.vanilla64) \
+  -Dbitness=64 \
+  -Dtitle="UI thread" \
+  -Dtester1.js=tester1-64bit.js \
+  -Dsqlite3.js=$(dir.dout)/sqlite3-64bit.js))
+$(eval $(call gen-tester1.html,esm,-esm,\
+  $(c-pp.D.esm) \
+  -Dbitness=32 \
+  -Dtitle="ES6 Module in UI thread" \
+  -Dtester1.js=tester1.mjs \
+  -Dsqlite3.js=$(dir.dout)/sqlite3.mjs))
+$(eval $(call gen-tester1.html,esm64,-esm-64bit,\
+  $(c-pp.D.esm64) \
+  -Dbitness=64 \
+  -Dtitle="ES6 Module in UI thread" \
+  -Dtester1.js=tester1-64bit.mjs \
+  -Dsqlite3.js=$(dir.dout)/sqlite3-64bit.mjs))
 
 # tester1-worker.html variants:
 # There is no ESM variant of this file. Instead, that page accepts a
 # ?esm URL flag to switch to ESM mode.
-$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,tester1-worker.html))
-$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
+$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,\
+  tester1-worker.html,-Dbitness=32))
+$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,\
+  tester1-worker-64bit.html,$(c-pp.D.64bit) -Dbitness=64))
 tester1: tester1-worker.html tester1-worker-64bit.html
 tester1-worker.html: tester1.mjs
 tester1-worker-64bit.html: tester1-64bit.mjs
