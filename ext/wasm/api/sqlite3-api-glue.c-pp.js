@@ -243,21 +243,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          purpose. For example:
 
          const pAuxDtor = wasm.installFunction('v(p)', function(ptr){
-         //free ptr
+           //free ptr
          });
          myDb.onclose = {
-         after: ()=>{
-         wasm.uninstallFunction(pAuxDtor);
-         }
+           after: ()=>{
+             wasm.uninstallFunction(pAuxDtor);
+           }
          };
 
          Then pass pAuxDtor as the final argument to appropriate
          sqlite3_set_auxdata() calls.
 
-         Note that versions prior to 3.49.0 ostensibly had automatic
+         Prior to 3.49.0 this binding ostensibly had automatic
          function conversion here but a typo prevented it from
-         working.  Rather than fix it, it was removed because testing the
-         fix brought the huge potential for memory leaks to the
+         working.  Rather than fix it, it was removed because testing
+         the fix brought the huge potential for memory leaks to the
          forefront.
       */
       ["sqlite3_set_auxdata", undefined, [
@@ -323,7 +323,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_vfs_register", "int", "sqlite3_vfs*", "int"],
       ["sqlite3_vfs_unregister", "int", "sqlite3_vfs*"]
 
-      /* This list gets extended below */
+      /* This list gets extended with optional pieces below */
     ]/*.core*/,
     /**
        Functions which require BigInt (int64) support are separated
@@ -362,8 +362,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_update_hook", "*", [
         "sqlite3*",
         new wasm.xWrap.FuncPtrAdapter({
-          name: 'sqlite3_update_hook',
-          signature: "v(iippj)",
+          name: 'sqlite3_update_hook::callback',
+          signature: "v(pippj)",
           contextKey: (argv)=>argv[0/* sqlite3* */],
           callProxy: (callback)=>{
             return (p,op,z0,z1,rowid)=>{
@@ -375,7 +375,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ]],
       ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
       ["sqlite3_value_int64","i64", "sqlite3_value*"]
-      /* This list gets extended below */
+      /* This list gets extended with optional pieces below */
     ]/*.int64*/,
     /**
        Functions which are intended solely for API-internal use by the
@@ -435,12 +435,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           name: "sqlite3_set_authorizer::xAuth",
           signature: "i(pi"+"ssss)",
           contextKey: (argv, argIndex)=>argv[0/*(sqlite3*)*/],
+          /**
+             We use callProxy here to ensure (A) that exceptions
+             thrown from callback() have well-defined behavior and (B)
+             that its result is coerced to an integer.
+          */
           callProxy: (callback)=>{
             return (pV, iCode, s0, s1, s2, s3)=>{
               try{
                 s0 = s0 && wasm.cstrToJs(s0); s1 = s1 && wasm.cstrToJs(s1);
                 s2 = s2 && wasm.cstrToJs(s2); s3 = s3 && wasm.cstrToJs(s3);
-                return callback(pV, iCode, s0, s1, s2, s3) || 0;
+                return callback(pV, iCode, s0, s1, s2, s3) | 0;
               }catch(e){
                 return e.resultCode || capi.SQLITE_ERROR;
               }
@@ -470,12 +475,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 //#if enable-see
   if( !!wasm.exports.sqlite3_key_v2 ){
     /**
-       This code is capable of using an SEE build but note that an SEE
-       WASM build is generally incompatible with SEE's license
-       conditions. It is permitted for use internally in organizations
-       which have licensed SEE, but not for public sites because
-       exposing an SEE build of sqlite3.wasm effectively provides all
-       clients with a working copy of the commercial SEE code.
+       This code is capable of using an SEE build but an SEE WASM
+       build is generally incompatible with SEE's license conditions.
+       The project's official stance on WASM builds of SEE is: it is
+       permitted for use internally within organizations which have
+       licensed SEE, but not for public sites because exposing an SEE
+       build of sqlite3.wasm effectively provides all clients with a
+       working copy of SEE.
     */
     bindingSignatures.core.push(
       ["sqlite3_key", "int", "sqlite3*", "string", "int"],
@@ -496,12 +502,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_declare_vtab", "int", ["sqlite3*", "string:flexible"]],
       ["sqlite3_drop_modules", "int", ["sqlite3*", "**"]],
       ["sqlite3_vtab_collation","string","sqlite3_index_info*","int"],
+      /*["sqlite3_vtab_config" is variadic and requires a hand-written
+        proxy.] */
       ["sqlite3_vtab_distinct","int", "sqlite3_index_info*"],
       ["sqlite3_vtab_in","int", "sqlite3_index_info*", "int", "int"],
       ["sqlite3_vtab_in_first", "int", "sqlite3_value*", "**"],
       ["sqlite3_vtab_in_next", "int", "sqlite3_value*", "**"],
-      /*["sqlite3_vtab_config" is variadic and requires a hand-written
-        proxy.] */
       ["sqlite3_vtab_nochange","int", "sqlite3_context*"],
       ["sqlite3_vtab_on_conflict","int", "sqlite3*"],
       ["sqlite3_vtab_rhs_value","int", "sqlite3_index_info*", "int", "**"]
@@ -713,16 +719,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*session/changeset APIs*/
 
   /**
-     Install JS<->C struct bindings for the non-opaque struct types we
+     Prepare JS<->C struct bindings for the non-opaque struct types we
      need...
   */
   sqlite3.StructBinder = globalThis.Jaccwabyt({
-    heap: 0 ? wasm.memory : wasm.heap8u,
+    heap: wasm.heap8u,
     alloc: wasm.alloc,
     dealloc: wasm.dealloc,
     bigIntEnabled: wasm.bigIntEnabled,
+    pointerIR: wasm.ptr.ir,
     memberPrefix: /* Never change this: this prefix is baked into any
-                     amount of code and client-facing docs. */ '$'
+                     amount of code and client-facing docs. (Much
+                     later: it probably should have been '$$', but see
+                     the previous sentence.) */ '$'
   });
   delete globalThis.Jaccwabyt;
 
@@ -745,16 +754,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - Anything else: gets coerced to a JS string for use as a map
          key. If a matching entry is found (as described next), it is
          returned, else wasm.allocCString() is used to create a a new
-         string, map its pointer to (''+v) for the remainder of the
-         application's life, and returns that pointer value for this
-         call and all future calls which are passed a
+         string, map its pointer to a copy of (''+v) for the remainder
+         of the application's life, and returns that pointer value for
+         this call and all future calls which are passed a
          string-equivalent argument.
 
-       Use case: sqlite3_bind_pointer() and sqlite3_result_pointer()
-       call for "a static string and preferably a string
-       literal." This converter is used to ensure that the string
-       value seen by those functions is long-lived and behaves as they
-       need it to.
+       Use case: sqlite3_bind_pointer(), sqlite3_result_pointer(), and
+       sqlite3_value_pointer() call for "a static string and
+       preferably a string literal". This converter is used to ensure
+       that the string value seen by those functions is long-lived and
+       behaves as they need it to, at the cost of a one-time leak of
+       each distinct key.
     */
     wasm.xWrap.argAdapter(
       'string:static',
@@ -822,6 +832,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       );
     }
 
+    /**
+       Alias `T*` to `*` for return type conversions for common T
+       types, primarily to improve legibility of their binding
+       signatures.
+    */
     const __xRcPtr = wasm.xWrap.resultAdapter('*');
     wasm.xWrap.resultAdapter('sqlite3*', __xRcPtr)
     ('sqlite3_context*', __xRcPtr)
@@ -834,15 +849,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Populate api object with sqlite3_...() by binding the "raw" wasm
        exports into type-converting proxies using wasm.xWrap().
     */
-    if(0 === wasm.exports.sqlite3_step.length){
-      /* This environment wraps exports in nullary functions, which means
-         we must disable the arg-count validation we otherwise perform
-         on the wrappers. */
-      wasm.xWrap.doArgcCheck = false;
-      sqlite3.config.warn(
-        "Disabling sqlite3.wasm.xWrap.doArgcCheck due to environmental quirks."
-      );
-    }
     for(const e of bindingSignatures.core){
       capi[e[0]] = wasm.xWrap.apply(null, e);
     }
@@ -854,18 +860,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        wasm.bigIntEnabled is true, install a bogus impl which throws
        if called when bigIntEnabled is false. The alternative would be
        to elide these functions altogether, which seems likely to
-       cause more confusion. */
-    const fI64Disabled = function(fname){
-      return ()=>toss(fname+"() is unavailable due to lack",
-                      "of BigInt support in this build.");
-    };
+       cause more confusion, as documented APIs would resolve to the
+       undefined value in incompatible builds. */
     for(const e of bindingSignatures.int64){
       capi[e[0]] = wasm.bigIntEnabled
         ? wasm.xWrap.apply(null, e)
-        : fI64Disabled(e[0]);
+        : ()=>toss(e[0]+"() is unavailable due to lack",
+                   "of BigInt support in this build.");
     }
 
-    /* We don't need these anymore... */
+    /* We're done with bindingSignatures but it's const, so... */
     delete bindingSignatures.core;
     delete bindingSignatures.int64;
     delete bindingSignatures.wasmInternal;
@@ -910,7 +914,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       toss("Maintenance required: increase sqlite3__wasm_enum_json()'s",
            "static buffer size!");
     }
-    //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
     wasm.ctype = JSON.parse(wasm.cstrToJs(cJson));
     // Groups of SQLITE_xyz macros...
     const defineGroups = ['access', 'authorizer',
@@ -949,6 +952,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        string, or undefined if no such mapping is found.
     */
     capi.sqlite3_js_rc_str = (rc)=>__rcMap[rc];
+
     /* Bind all registered C-side structs... */
     const notThese = Object.assign(Object.create(null),{
       // For each struct to NOT register, map its name to true:
@@ -968,7 +972,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     if(capi.sqlite3_index_info){
       /* Move these inner structs into sqlite3_index_info.  Binding
-      ** them to WASM requires that we create global-scope structs to
+      ** them to WASM requires that we create top-level structs to
       ** model them with, but those are no longer needed after we've
       ** passed them to StructBinder. */
       for(const k of ['sqlite3_index_constraint',
@@ -1087,35 +1091,39 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        wasm.uninstallFunction() any WASM function bindings it has
        installed for pDb.
     */
-    const closeArgs = [pDb];
-    for(const name of [
-      'sqlite3_busy_handler',
-      'sqlite3_commit_hook',
-      'sqlite3_preupdate_hook',
-      'sqlite3_progress_handler',
-      'sqlite3_rollback_hook',
-      'sqlite3_set_authorizer',
-      'sqlite3_trace_v2',
-      'sqlite3_update_hook'
+    for(const obj of [
+      /* pairs of [funcName, itsArityInC] */
+      ['sqlite3_busy_handler',3],
+      ['sqlite3_commit_hook',3],
+      ['sqlite3_preupdate_hook',3],
+      ['sqlite3_progress_handler',4],
+      ['sqlite3_rollback_hook',3],
+      ['sqlite3_set_authorizer',3],
+      ['sqlite3_trace_v2', 4],
+      ['sqlite3_update_hook',3]
       /*
         We do not yet have a way to clean up automatically-converted
         sqlite3_set_auxdata() finalizers.
       */
-    ]) {
+    ]){
+      const [name, arity] = obj;
       const x = wasm.exports[name];
       if( !x ){
         /* assume it was built without this API */
         continue;
       }
-      closeArgs.length = x.length/*==argument count*/
-        || 1 /* Recall that: (A) undefined entries translate to 0 when
-                passed to WASM and (B) Safari wraps wasm.exports.* in
-                nullary functions so x.length is 0 there. */;
+      const closeArgs = [pDb];
+      closeArgs.length = arity
+      /* Recall that: (A) undefined entries translate to 0 when
+         passed to WASM and (B) Safari wraps wasm.exports.* in
+         nullary functions so x.length is 0 there. */;
+      //wasm.xWrap.debug = true;
       try{ capi[name](...closeArgs) }
       catch(e){
         /* This "cannot happen" unless something is well and truly sideways. */
         sqlite3.config.warn("close-time call of",name+"(",closeArgs,") threw:",e);
       }
+      //wasm.xWrap.debug = false;
     }
     const m = __dbCleanupMap(pDb, 0);
     if(!m) return;
@@ -1463,16 +1471,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Helper for string:flexible conversions which requires a
        byte-length counterpart argument. Passed a value and its
        ostensible length, this function returns [V,N], where V is
-       either v or a transformed copy of v and N is either n (if v is
-       a WASM pointer), -1 (if v is a string or Array), or the byte
-       length of v (if it's a byte array or ArrayBuffer).
+       either v or a to-string transformed copy of v and N is either n
+       (if v is a WASM pointer, in which case n might be a BigInt), -1
+       (if v is a string or Array), or the byte length of v (if it's a
+       byte array or ArrayBuffer).
     */
     const __flexiString = (v,n)=>{
       if('string'===typeof v){
         n = -1;
       }else if(util.isSQLableTypedArray(v)){
         n = v.byteLength;
-        v = util.typedArrayToString(
+        v = wasm.typedArrayToString(
           (v instanceof ArrayBuffer) ? new Uint8Array(v) : v
         );
       }else if(Array.isArray(v)){
@@ -1517,15 +1526,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(f.length!==arguments.length){
         return __dbArgcMismatch(pDb,"sqlite3_prepare_v3",f.length);
       }
-      const [xSql, xSqlLen] = __flexiString(sql, sqlLen);
+      const [xSql, xSqlLen] = __flexiString(sql, Number(sqlLen));
       switch(typeof xSql){
-          case 'string': return __prepare.basic(pDb, xSql, xSqlLen, prepFlags, ppStmt, null);
-          case 'number': return __prepare.full(pDb, xSql, xSqlLen, prepFlags, ppStmt, pzTail);
-          default:
-            return util.sqlite3__wasm_db_error(
-              pDb, capi.SQLITE_MISUSE,
-              "Invalid SQL argument type for sqlite3_prepare_v2/v3()."
-            );
+        case 'string': return __prepare.basic(pDb, xSql, xSqlLen, prepFlags, ppStmt, null);
+        case (typeof wasm.ptr.null):
+          return __prepare.full(pDb, wasm.ptr.coerce(xSql), xSqlLen, prepFlags,
+                                ppStmt, pzTail);
+        default:
+          return util.sqlite3__wasm_db_error(
+            pDb, capi.SQLITE_MISUSE,
+            "Invalid SQL argument type for sqlite3_prepare_v2/v3(). typeof="+(typeof xSql)
+          );
       }
     };
 
@@ -1733,9 +1744,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const jKey = wasm.cstrToJs(zXKey);
             const jV = kvvfsStorage(zClass).getItem(jKey);
             if(!jV) return -1;
-            const nV = jV.length /* Note that we are relying 100% on v being
-                                    ASCII so that jV.length is equal to the
-                                    C-string's byte length. */;
+            const nV = jV.length /* We are relying 100% on v being
+                                    ASCII so that jV.length is equal
+                                    to the C-string's byte length. */;
             if(nBuf<=0) return nV;
             else if(1===nBuf){
               wasm.poke(zBuf, 0);
@@ -1743,11 +1754,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
             const zV = wasm.scopedAllocCString(jV);
             if(nBuf > nV + 1) nBuf = nV + 1;
-            wasm.heap8u().copyWithin(zBuf, zV, zV + nBuf - 1);
-            wasm.poke(zBuf + nBuf - 1, 0);
+            wasm.heap8u().copyWithin(
+              Number(zBuf), Number(zV), wasm.ptr.addn(zV, nBuf,- 1)
+            );
+            wasm.poke(wasm.ptr.add(zBuf, nBuf, -1), 0);
             return nBuf - 1;
           }catch(e){
-            console.error("kvstorageRead()",e);
+            sqlite3.config.error("kvstorageRead()",e);
             return -2;
           }finally{
             pstack.restore(stack);
@@ -1763,7 +1776,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             kvvfsStorage(zClass).setItem(jKey, wasm.cstrToJs(zData));
             return 0;
           }catch(e){
-            console.error("kvstorageWrite()",e);
+            sqlite3.config.error("kvstorageWrite()",e);
             return capi.SQLITE_IOERR;
           }finally{
             pstack.restore(stack);
@@ -1777,7 +1790,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             kvvfsStorage(zClass).removeItem(wasm.cstrToJs(zXKey));
             return 0;
           }catch(e){
-            console.error("kvstorageDelete()",e);
+            sqlite3.config.error("kvstorageDelete()",e);
             return capi.SQLITE_IOERR;
           }finally{
             pstack.restore(stack);
@@ -1874,7 +1887,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         if(this.ondispose.__removeFuncList){
           this.ondispose.__removeFuncList.forEach(
             (v,ndx)=>{
-              if('number'===typeof v){
+              if(wasm.isPtr(v)){
                 try{wasm.uninstallFunction(v)}
                 catch(e){/*ignore*/}
               }
@@ -1904,7 +1917,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       tgt[memKey] = fProxy;
     }else{
-      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
+      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name));
       tgt[memKey] = pFunc;
       if(!tgt.ondispose || !tgt.ondispose.__removeFuncList){
         tgt.addOnDispose('ondispose.__removeFuncList handler',

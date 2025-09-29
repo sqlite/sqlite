@@ -24,6 +24,10 @@ set testprefix walckpotnoop
 ifcapable !wal {finish_test ; return }
 
 do_execsql_test 1.0 {
+  PRAGMA page_size=1024;
+  PRAGMA auto_vacuum=NONE;
+  PRAGMA secure_delete=OFF;
+  VACUUM;
   CREATE TABLE t1(x INTEGER PRIMARY KEY, y TEXT);
   CREATE INDEX i1 ON t1(y);
   PRAGMA journal_mode = wal;
@@ -32,7 +36,7 @@ do_execsql_test 1.0 {
     SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
   )
   INSERT INTO t1 SELECT NULL, hex(randomblob(64)) FROM s;
-} {wal}
+} {0 wal}
 
 do_execsql_test 1.1 {
   PRAGMA wal_checkpoint = noop;
@@ -55,6 +59,10 @@ do_execsql_test 1.5 {
 
 db close
 sqlite3 db test.db
+db eval {
+  PRAGMA auto_vacuum=NONE;
+  PRAGMA secure_delete=OFF;
+}
 do_execsql_test 1.6 {
   PRAGMA wal_checkpoint = noop;
 } {0 0 0}
@@ -80,4 +88,3 @@ do_execsql_test 1.9 {
 } {delete 0 -1 -1}
 
 finish_test
-

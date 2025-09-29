@@ -263,13 +263,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       this.filename = capi.sqlite3_db_filename(pDb,'main');
     }else{
       let fn = opt.filename, vfsName = opt.vfs, flagsStr = opt.flags;
-      if(('string'!==typeof fn && 'number'!==typeof fn)
-         || 'string'!==typeof flagsStr
-         || (vfsName && ('string'!==typeof vfsName && 'number'!==typeof vfsName))){
+      if( ('string'!==typeof fn && !wasm.isPtr(fn))
+          || 'string'!==typeof flagsStr
+          || (vfsName && ('string'!==typeof vfsName && !wasm.isPtr(vfsName))) ){
         sqlite3.config.error("Invalid DB ctor args",opt,arguments);
-        toss3("Invalid arguments for DB constructor.");
+        toss3("Invalid arguments for DB constructor:", arguments, "opts:", opt);
       }
-      let fnJs = ('number'===typeof fn) ? wasm.cstrToJs(fn) : fn;
+      let fnJs = wasm.isPtr(fn) ? wasm.cstrToJs(fn) : fn;
       const vfsCheck = ctor._name2vfs[fnJs];
       if(vfsCheck){
         vfsName = vfsCheck.vfs;
@@ -285,7 +285,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const stack = wasm.pstack.pointer;
       try {
         const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
-        let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
+        let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || wasm.ptr.null);
         pDb = wasm.peekPtr(pPtr);
         checkSqlite3Rc(pDb, rc);
         capi.sqlite3_extended_result_codes(pDb, 1);
@@ -747,12 +747,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        closed when onclose.after is called. If this db is not opened
        when close() is called, neither of the handlers are called. Any
        exceptions the handlers throw are ignored because "destructors
-       must not throw."
+       must not throw".
 
-       Note that garbage collection of a db handle, if it happens at
-       all, will never trigger close(), so onclose handlers are not a
-       reliable way to implement close-time cleanup or maintenance of
-       a db.
+       Garbage collection of a db handle, if it happens at all, will
+       never trigger close(), so onclose handlers are not a reliable
+       way to implement close-time cleanup or maintenance of a db.
 
        If this instance was created using DB.wrapHandle() and does not
        own this.pointer then it does not close the db handle but it
@@ -1052,14 +1051,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         let sqlByteLen = isTA ? arg.sql.byteLength : wasm.jstrlen(arg.sql);
         const ppStmt  = wasm.scopedAlloc(
           /* output (sqlite3_stmt**) arg and pzTail */
-          (2 * wasm.ptrSizeof) + (sqlByteLen + 1/* SQL + NUL */)
+          (2 * wasm.ptr.size) + (sqlByteLen + 1/* SQL + NUL */)
         );
-        const pzTail = ppStmt + wasm.ptrSizeof /* final arg to sqlite3_prepare_v2() */;
-        let pSql = pzTail + wasm.ptrSizeof;
-        const pSqlEnd = pSql + sqlByteLen;
+        const pzTail = wasm.ptr.add(ppStmt, wasm.ptr.size) /* final arg to sqlite3_prepare_v2() */;
+        let pSql = wasm.ptr.add(pzTail, wasm.ptr.size);
+        const pSqlEnd = wasm.ptr.add(pSql, sqlByteLen);
         if(isTA) wasm.heap8().set(arg.sql, pSql);
         else wasm.jstrcpy(arg.sql, wasm.heap8(), pSql, sqlByteLen, false);
-        wasm.poke(pSql + sqlByteLen, 0/*NUL terminator*/);
+        wasm.poke(wasm.ptr.add(pSql, sqlByteLen), 0/*NUL terminator*/);
         while(pSql && wasm.peek(pSql, 'i8')
               /* Maintenance reminder:^^^ _must_ be 'i8' or else we
                  will very likely cause an endless loop. What that's
@@ -1074,8 +1073,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           ));
           const pStmt = wasm.peekPtr(ppStmt);
           pSql = wasm.peekPtr(pzTail);
-          sqlByteLen = pSqlEnd - pSql;
+          sqlByteLen = Number(wasm.ptr.add(pSqlEnd,-pSql));
           if(!pStmt) continue;
+          //sqlite3.config.debug("exec() pSql =",capi.sqlite3_sql(pStmt));
           if(saveSql) saveSql.push(capi.sqlite3_sql(pStmt).trim());
           stmt = new Stmt(this, pStmt, BindTypes);
           if(bind && stmt.parameterCount){
@@ -1283,9 +1283,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         toss3("xValue must be provided if xInverse is.");
       }
       const pApp = opt.pApp;
-      if(undefined!==pApp &&
-         null!==pApp &&
-         (('number'!==typeof pApp) || !util.isInt32(pApp))){
+      if( undefined!==pApp
+          && null!==pApp
+          && !wasm.isPtr(pApp) ){
         toss3("Invalid value for pApp property. Must be a legal WASM pointer value.");
       }
       const xDestroy = opt.xDestroy || 0;
@@ -1586,18 +1586,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      If key is a number and within range of stmt's bound parameter
      count, key is returned.
 
-     If key is not a number then it is checked against named
-     parameters. If a match is found, its index is returned.
+     If key is not a number then it must be a JS string (not a WASM
+     string) and it is checked against named parameters. If a match is
+     found, its index is returned.
 
      Else it throws.
   */
   const affirmParamIndex = function(stmt,key){
     const n = ('number'===typeof key)
           ? key : capi.sqlite3_bind_parameter_index(stmt.pointer, key);
-    if(0===n || !util.isInt32(n)){
-      toss3("Invalid bind() parameter name: "+key);
-    }
-    else if(n<1 || n>stmt.parameterCount) toss3("Bind index",key,"is out of range.");
+    if( 0===n || !util.isInt32(n) ) toss3("Invalid bind() parameter name: "+key);
+    else if( n<1 || n>stmt.parameterCount ) toss3("Bind index",key,"is out of range.");
     return n;
   };
 
@@ -1708,7 +1707,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                   "that it be a string, Uint8Array, Int8Array, or ArrayBuffer.");
           }
           const pBlob = wasm.alloc(val.byteLength || 1);
-          wasm.heap8().set(val.byteLength ? val : [0], pBlob)
+          wasm.heap8().set(val.byteLength ? val : [0], Number(pBlob))
           rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
                                       capi.SQLITE_WASM_DEALLOC);
           break;
@@ -2092,15 +2091,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const n = capi.sqlite3_column_bytes(this.pointer, ndx),
                   ptr = capi.sqlite3_column_blob(this.pointer, ndx),
                   rc = new Uint8Array(n);
-            //heap = n ? wasm.heap8() : false;
-            if(n) rc.set(wasm.heap8u().slice(ptr, ptr+n), 0);
-            //for(let i = 0; i < n; ++i) rc[i] = heap[ptr + i];
-            if(n && this.db._blobXfer instanceof Array){
-              /* This is an optimization soley for the
-                 Worker-based API. These values will be
-                 transfered to the main thread directly
-                 instead of being copied. */
-              this.db._blobXfer.push(rc.buffer);
+            if(n){
+              rc.set(wasm.heap8u().slice(Number(ptr), Number(ptr)+n), 0);
+              if(this.db._blobXfer instanceof Array){
+                /* This is an optimization soley for the Worker1 API. It
+                   will transfer these to the main thread directly
+                   instead of copying them. */
+                this.db._blobXfer.push(rc.buffer);
+              }
             }
             return rc;
           }

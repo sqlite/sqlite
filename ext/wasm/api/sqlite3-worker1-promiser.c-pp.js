@@ -252,10 +252,12 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
 
 globalThis.sqlite3Worker1Promiser.defaultConfig = {
   worker: function(){
-//#if target=es6-module
+//#if target:es6-bundler-friendly
     return new Worker(new URL("sqlite3-worker1-bundler-friendly.mjs", import.meta.url),{
       type: 'module'
     });
+//#elif target:es6-module
+    return new Worker(new URL("sqlite3-worker1.js", import.meta.url));
 //#else
     let theJs = "sqlite3-worker1.js";
     if(this.currentScript){
@@ -273,7 +275,7 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
     return new Worker(theJs + globalThis.location.search);
 //#endif
   }
-//#ifnot target=es6-module
+//#ifnot target:es6-module
   .bind({
     currentScript: globalThis?.document?.currentScript
   })
@@ -332,7 +334,7 @@ globalThis.sqlite3Worker1Promiser.v2 = function callee(config = callee.defaultCo
 globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
   globalThis.sqlite3Worker1Promiser.defaultConfig;
 
-//#if target=es6-module
+//#if target:es6-module
 /**
   When built as a module, we export sqlite3Worker1Promiser.v2()
   instead of sqlite3Worker1Promise() because (A) its interface is more
@@ -341,7 +343,7 @@ globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
   incompatibility.
 */
 export default sqlite3Worker1Promiser.v2;
-//#endif /* target=es6-module */
+//#endif /* target:es6-module */
 //#else
 /* Built with the omit-oo1 flag. */
 //#endif ifnot omit-oo1

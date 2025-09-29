@@ -5385,6 +5385,7 @@ static int sessionChangesetApply(
 
   assert( sApply.bRebase || sApply.rebase.nBuf==0 );
   if( rc==SQLITE_OK && bPatchset==0 && sApply.bRebase ){
+    assert( ppRebase!=0 && pnRebase!=0 );
     *ppRebase = (void*)sApply.rebase.aBuf;
     *pnRebase = sApply.rebase.nBuf;
     sApply.rebase.aBuf = 0;

@@ -6829,7 +6829,7 @@ int sqlite3Fts5IndexReinit(Fts5Index *p){
   fts5StructureInvalidate(p);
   fts5IndexDiscardData(p);
   pTmp = &uFts.sFts;
-  memset(pTmp, 0, SZ_FTS5STRUCTURE(1));
+  memset(uFts.tmpSpace, 0, sizeof(uFts.tmpSpace));
   if( p->pConfig->bContentlessDelete ){
     pTmp->nOriginCntr = 1;
   }

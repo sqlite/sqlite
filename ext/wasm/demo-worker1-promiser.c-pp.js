@@ -13,7 +13,7 @@
   Demonstration of the sqlite3 Worker API #1 Promiser: a Promise-based
   proxy for for the sqlite3 Worker #1 API.
 */
-//#if target=es6-module
+//#if target:es6-module
 import {default as promiserFactory} from "./jswasm/sqlite3-worker1-promiser.mjs";
 //#else
 "use strict";
@@ -40,7 +40,7 @@ delete globalThis.sqlite3Worker1Promiser;
   };
 
   const promiserConfig = {
-//#ifnot target=es6-module
+//#ifnot target:es6-module
     /**
        The v1 interfaces uses an onready function. The v2 interface optionally
        accepts one but does not require it. If provided, it is called _before_
