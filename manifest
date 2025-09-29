@@ -1,5 +1,5 @@
-C Change\sthe\sname\sto\sSQLITE_DBSTATUS_TEMPBUF_SPILL.
-D 2025-09-29T19:57:43.996
+C Fix\sa\sproblem\swith\sthe\smerge\sat\s[cb604efdb40da95a].
+D 2025-09-29T20:40:50.106
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -807,7 +807,7 @@ F src/vdbe.c 07084aa0152c8d4e74e7b86c0cf744732f0f9b1fd62bd7098252cadb741c630a
 F src/vdbe.h ea1f1b52f0efe422f80d88da3c57e4eadc72856e29a22f1ff08e502ec6ba5f08
 F src/vdbeInt.h 52896dd4d5b62190c53db14b09fc2484434eb594c963df0fa66eb8a94527b02e
 F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
-F src/vdbeaux.c a0718e0ff1e336f7d9b4df5a7fe38fc6eb9b3779871e3768d060fa88a76b8d14
+F src/vdbeaux.c b701e5920fe74b907eb8211d1f63fef96adc65dfd6e1ad6ed0843c71d8c65205
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cb604efdb40da95a759e2eeb9d73608859a94acde9d9782ca82757d3a1c15303
-R 44a17949ad19c28e191bb515d6911a97
+P 4a60a9c63534f5d2f16af2c3c6581abe7ecf7adfdb39f17e557e73997ae03396
+R ff49973770f3b1442f670b3248502ede
 U drh
-Z 1a3aee299427390bc288bdacd51b5191
+Z 622be629b849f760eacc6bb90d092595
 # Remove this line to create a well-formed Fossil manifest.

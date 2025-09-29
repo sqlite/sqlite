@@ -2758,47 +2758,30 @@ static SQLITE_NOINLINE void freeCursorWithCache(Vdbe *p, VdbeCursor *pCx){
   sqlite3DbFree(p->db, pCache);
   sqlite3VdbeFreeCursorNN(p, pCx);
 }
-static SQLITE_NOINLINE void freeCursorEphemeral(Vdbe *p, VdbeCursor *pCx){
-  u64 nByte = 0;
-  Pager *pPager;
-  assert( pCx->eCurType==CURTYPE_BTREE );
-  assert( pCx->isEphemeral );
-  if( pCx->ub.pBtx ){
-    pPager = sqlite3BtreePager(pCx->ub.pBtx);
-    sqlite3PagerCacheStat(pPager, SQLITE_DBSTATUS_CACHE_WRITE, 0, &nByte);
-    nByte *= sqlite3BtreeGetPageSize(pCx->ub.pBtx);
-    p->db->nSpill += nByte;
-  }
-  pCx->isEphemeral = 0;
-  sqlite3VdbeFreeCursorNN(p, pCx);
-}
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-static SQLITE_NOINLINE void freeCursorVTab(Vdbe *p, VdbeCursor *pCx){
-  sqlite3_vtab_cursor *pVCur;
-  const sqlite3_module *pModule;
-  assert( pCx->eCurType==CURTYPE_VTAB );
-  pVCur = pCx->uc.pVCur;
-  pModule = pVCur->pVtab->pModule;
-  assert( pVCur->pVtab->nRef>0 );
-  pVCur->pVtab->nRef--;
-  pModule->xClose(pVCur);
-}
-#endif
 void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
   if( pCx->colCache ){
     freeCursorWithCache(p, pCx);
-  }else if( pCx->eCurType==CURTYPE_BTREE ){
-    if( pCx->isEphemeral ){
-      freeCursorEphemeral(p,pCx);
-    }else{
+    return;
+  }
+  switch( pCx->eCurType ){
+    case CURTYPE_SORTER: {
+      sqlite3VdbeSorterClose(p->db, pCx);
+      break;
+    }
+    case CURTYPE_BTREE: {
       assert( pCx->uc.pCursor!=0 );
       sqlite3BtreeCloseCursor(pCx->uc.pCursor);
+      break;
     }
-  }else if( pCx->eCurType==CURTYPE_SORTER ){    
-    sqlite3VdbeSorterClose(p->db, pCx);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  }else if( pCx->eCurType==CURTYPE_VTAB ){
-    freeCursorVTab(p, pCx);
+    case CURTYPE_VTAB: {
+      sqlite3_vtab_cursor *pVCur = pCx->uc.pVCur;
+      const sqlite3_module *pModule = pVCur->pVtab->pModule;
+      assert( pVCur->pVtab->nRef>0 );
+      pVCur->pVtab->nRef--;
+      pModule->xClose(pVCur);
+      break;
+    }
 #endif
   }
 }
