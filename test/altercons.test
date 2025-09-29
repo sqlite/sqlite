@@ -42,6 +42,21 @@ foreach {tn before after} {
   6 { CREATE TABLE t1(a, b,CONSTRAINT abc CHECK(t1.a != t1.b),PRIMARY KEY(a))}
     { CREATE TABLE t1(a, b,PRIMARY KEY(a)) }
 
+  7 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) CONSTRAINT def UNIQUE) }
+    { CREATE TABLE t1(a, b CONSTRAINT def UNIQUE) }
+
+  8 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) CHECK (123)) }
+    { CREATE TABLE t1(a, b CHECK (123)) }
+
+  9 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) DEFAULT NULL) }
+    { CREATE TABLE t1(a, b DEFAULT NULL) }
+
+ 10 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) COLLATE nocase) }
+    { CREATE TABLE t1(a, b COLLATE nocase) }
+
+ 11 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) REFERENCES t2) }
+    { CREATE TABLE t1(a, b REFERENCES t2) }
+
 } {
   reset_db
 
@@ -91,6 +106,12 @@ foreach {tn col before after} {
 
   7 b { CREATE TABLE t1(a, b NOT NULL PRIMARY KEY) }
       { CREATE TABLE t1(a, b PRIMARY KEY) }
+
+  8 b { CREATE TABLE t1(a, b CHECK ((b+a) IS NOT NULL) NOT NULL PRIMARY KEY) }
+      { CREATE TABLE t1(a, b CHECK ((b+a) IS NOT NULL) PRIMARY KEY) }
+
+  9 b { CREATE TABLE t1(a, b CONSTRAINT nn CHECK (b IS NOT NULL) NOT NULL) }
+      { CREATE TABLE t1(a, b CONSTRAINT nn CHECK (b IS NOT NULL)) }
 } {
   reset_db
 

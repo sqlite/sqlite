@@ -58,4 +58,18 @@ foreach {tn sql} {
   }
 }
 
+# Test an OOM when returning an error.
+#
+do_faultsim_test 2.e -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    ALTER TABLE x1 DROP CONSTRAINT nosuchconstraint
+  }
+} -test {
+  faultsim_test_result                           \
+      {1 {no such constraint: nosuchconstraint}} \
+      {1 {SQL logic error}}
+}
+
 finish_test

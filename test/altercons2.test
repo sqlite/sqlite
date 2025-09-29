@@ -1,0 +1,112 @@
+# 2025 September 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix altercons2
+
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
+foreach {tn newsql alter res final} {
+  1 "CREATE TABLE t1(a, b"
+    "ALTER TABLE t1 ALTER c SET NOT NULL"
+    {1 {database disk image is malformed}}
+    "CREATE TABLE t1(a, b"
+
+  2 "CREATE TABLE t1(a, b, "
+    "ALTER TABLE t1 ALTER c DROP NOT NULL"
+    {0 {}}
+    "CREATE TABLE t1(a, b, "
+
+  3 "CREATE TABLE t1(a, b, CHECK( ..."
+    "ALTER TABLE t1 ALTER c DROP NOT NULL"
+    {0 {}}
+    "CREATE TABLE t1(a, b, CHECK( ..."
+
+  4 "CREATE TABLE t1(a, b, c NOT NULL"
+    "ALTER TABLE t1 ALTER c DROP NOT NULL"
+    {0 {}}
+    "CREATE TABLE t1(a, b, c "
+
+  5 "CREATE TABLE"
+    "ALTER TABLE t1 ALTER c DROP NOT NULL"
+    {1 {database disk image is malformed}}
+    "CREATE TABLE"
+
+  6 "CREATE TABLE"
+    "ALTER TABLE t1 ADD CONSTRAINT nn CHECK (a!=0)"
+    {1 {database disk image is malformed}}
+    "CREATE TABLE"
+
+} {
+  reset_db
+  do_execsql_test 1.$tn.0 {
+    CREATE TABLE t1(a, b, c NOT NULL, CONSTRAINT xyz CHECK( a!=0 ));
+  }
+  do_execsql_test 1.$tn.1 {
+    PRAGMA writable_schema = 1;
+    UPDATE sqlite_schema SET sql = $::newsql
+  }
+  do_catchsql_test 1.$tn.2 $alter $res
+
+  do_execsql_test 1.$tn.3 {
+    SELECT sql FROM sqlite_schema WHERE name='t1'
+  } [list $final]
+}
+
+#-------------------------------------------------------------------------
+
+reset_db
+proc xAuth {t args} {
+  if {$t=="SQLITE_ALTER_TABLE"} {
+    return "SQLITE_DENY"
+  }
+  return "SQLITE_OK"
+}
+sqlite3 db test.db
+db auth xAuth
+
+do_execsql_test 2.0 {
+  CREATE TABLE x1(a PRIMARY KEY, b CHECK(a!=b) NOT NULL, c);
+}
+
+do_catchsql_test 2.1.1 {
+  ALTER TABLE x1 ADD CONSTRAINT ccc CHECK (a!='a')
+} {1 {not authorized}}
+do_execsql_test 2.1.2 {
+  SELECT sql FROM sqlite_schema WHERE name='x1'
+} {{CREATE TABLE x1(a PRIMARY KEY, b CHECK(a!=b) NOT NULL, c)}}
+
+do_catchsql_test 2.2.1 {
+  ALTER TABLE x1 ALTER c SET NOT NULL
+} {1 {not authorized}}
+do_execsql_test 2.2.2 {
+  SELECT sql FROM sqlite_schema WHERE name='x1'
+} {{CREATE TABLE x1(a PRIMARY KEY, b CHECK(a!=b) NOT NULL, c)}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(x);
+}
+
+breakpoint
+do_execsql_test 3.1 {
+  ALTER TABLE t1 ALTER x SET NOT NULL;
+}
+
+finish_test
+

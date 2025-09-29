@@ -2798,7 +2798,6 @@ void sqlite3AlterSetNotNull(
   /* Find the length in bytes of the constraint definition */
   pCons = pFirst->z;
   nCons = pParse->sLastToken.z - pCons;
-  if( pCons[nCons-1]==';' ) nCons--;
   while( sqlite3Isspace(pCons[nCons-1]) ) nCons--;
 
   /* Search for a constraint violation. Throw an exception if one is found. */
@@ -2907,7 +2906,6 @@ void sqlite3AlterAddConstraint(
 
   /* Edit the SQL for the named table. */
   nCons = pParse->sLastToken.z - pFirst->z;
-  if( pFirst->z[nCons-1]==';' ) nCons--;
   while( sqlite3Isspace(pFirst->z[nCons-1]) ) nCons--;
   sqlite3NestedParse(pParse,
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
