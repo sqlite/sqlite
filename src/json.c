@@ -3214,7 +3214,19 @@ static void jsonReturnFromBlob(
       rc = sqlite3DecOrHexToI64(z, &iRes);
       sqlite3DbFree(db, z);
       if( rc==0 ){
-        sqlite3_result_int64(pCtx, bNeg ? -iRes : iRes);
+        if( iRes<0 ){
+          /* A hexadecimal literal with 16 significant digits and with the
+          ** high-order bit set is a negative integer in SQLite (and hence
+          ** iRes comes back as negative) but should be interpreted as a
+          ** positive value if it occurs within JSON.  The value is too
+          ** large to appear as an SQLite integer so it must be converted
+          ** into floating point. */
+          double r;
+          r = (double)*(sqlite3_uint64*)&iRes;
+          sqlite3_result_double(pCtx, bNeg ? -r : r);
+        }else{
+          sqlite3_result_int64(pCtx, bNeg ? -iRes : iRes);
+        }
       }else if( rc==3 && bNeg ){
         sqlite3_result_int64(pCtx, SMALLEST_INT64);
       }else if( rc==1 ){
