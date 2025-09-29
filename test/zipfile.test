@@ -887,4 +887,8 @@ do_test 19.1 {
 } {}
 forcedelete zipfile19.zip
 
+do_catchsql_test 20.0 {
+  SELECT * FROM zipfile(X'504b050600000000010001004000000000a3e1110000');
+} {1 {database disk image is malformed}}
+
 finish_test
