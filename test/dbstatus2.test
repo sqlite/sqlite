@@ -42,7 +42,7 @@ proc db_spill {db {reset 0}} {
 }
 
 proc db_temp_spill {db {reset 0}} {
-  sqlite3_db_status $db SPILL $reset
+  sqlite3_db_status $db TEMPBUF_SPILL $reset
 }
 
 do_test 1.1 {

@@ -3505,7 +3505,8 @@ static int display_stats(
     sqlite3_fprintf(out,
            "Page cache misses:                   %d\n", iCur);
     iHiwtr64 = iCur64 = -1;
-    sqlite3_db_status64(db, SQLITE_DBSTATUS_SPILL, &iCur64, &iHiwtr64, 0);
+    sqlite3_db_status64(db, SQLITE_DBSTATUS_TEMPBUF_SPILL, &iCur64, &iHiwtr64,
+                        0);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
@@ -3516,7 +3517,8 @@ static int display_stats(
            "Page cache spills:                   %d\n", iCur);
     sqlite3_fprintf(out,
            "Temporary data spilled to disk:      %lld\n", iCur64);
-    sqlite3_db_status64(db, SQLITE_DBSTATUS_SPILL, &iCur64, &iHiwtr64, 1);
+    sqlite3_db_status64(db, SQLITE_DBSTATUS_TEMPBUF_SPILL, &iCur64, &iHiwtr64,
+                        1);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
     sqlite3_fprintf(out,

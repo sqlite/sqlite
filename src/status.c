@@ -387,7 +387,7 @@ int sqlite3_db_status64(
     ** stored in memory, had sufficient memory been available.
     ** The *pHighwater is always set to zero.
     */
-    case SQLITE_DBSTATUS_SPILL: {
+    case SQLITE_DBSTATUS_TEMPBUF_SPILL: {
       u64 nRet = 0;
       if( db->aDb[1].pBt ){
         Pager *pPager = sqlite3BtreePager(db->aDb[1].pBt);
