@@ -16,13 +16,24 @@
 ** minimal preprocessor with only the most basic functionality of a C
 ** preprocessor, namely:
 **
-** - Limited `#if`, where its one argument is a macro name which
-**   resolves to true if it's defined, false if it's not. Likewise,
-**   `#ifnot` is the inverse. Includes `#else` and `#elif` and
-**   `#elifnot`. Such chains are terminated with `#endif`.
+** - Limited `#if`, where its one argument is a macro name or a
+**   name=value pair. If just the name is used, it's considered true
+**   if it has a non-empty value which is not '0', else it's false. If
+**   name=value is used then it resolves to true if the value matches,
+**   noting that value is treated like a glob.  Likewise, `#ifnot` is
+**   the inverse. Includes `#else` and `#elif` and `#elifnot`. Such
+**   chains are terminated with `#endif`.  More simply (and more
+**   recently) `#if` and `#elif` support two modifer words: `not` and
+**   `defined`, so can be used like: `#if not defined x` or
+**   `#if defined y`.
 **
-** - `#define` accepts one or more arguments, the names of
-**   macros. Each one is implicitly true.
+** - `#assert` compares its arguments like `#if` but throws a fatal
+**   error if it's condition is falsy. Unlike `#if`, it does not
+**   open a new block.
+**
+** - `#define` accepts one or more arguments, the names or name=value
+**   list of macros. Each one with no explicit value defaults to a
+**   value of 1..
 **
 ** - `#undef` undefine one or more macros.
 **
@@ -36,19 +47,33 @@
 ** - `#pragma` is in place for adding "meta-commands", but it does not
 **   yet have any concrete list of documented commands.
 **
-*  - `#stderr` outputs its file name, line number, and the remainder
+** - `#savepoint` takes one argument: begin, commit, rollback. Each
+**    corresponds to the similarly-named SQLite savepoint feature.
+**    (What we're calling "commit" is called "release" in savepoint
+**    terminology.) Savepoints apply ONLY to the db-side data (namely
+**    #define and friends), not to content blocks. (Might that not
+**    be interesting, though?)
+**
+** - `#stderr` outputs its file name, line number, and the remainder
 **   of that line to stderr.
 **
-** - `#//` acts as a single-line comment, noting that there must be as
+** - `#//` acts as a single-line comment, noting that there must be no
 **   space after the `//` part because `//` is (despite appearances)
 **   parsed like a keyword.
 **
-** Note that "#" above is symbolic. The keyword delimiter is
-** configurable and defaults to "##". Define CMPP_DEFAULT_DELIM to a
-** string when compiling to define the default at build-time.
+** - `#@policy NAME` sets the policy for handling `@tokens@` in
+**   the content parts of the input (as opposed to the keyword
+**   lines like this one). @
 **
-** This preprocessor does no expansion of content except within the
-** bounds of its `#keywords`.
+** The "#" above is symbolic. The keyword delimiter is configurable
+** and defaults to "##". Define CMPP_DEFAULT_DELIM to a string when
+** compiling to define the default at build-time.
+**
+** This preprocessor has only minimal support for replacement of tokens
+** which live in the "content" blocks of inputs (that is, the pieces
+** which are not prepocessor lines).
+**
+** See this file's README.md for details.
 **
 ** Design note: this code makes use of sqlite3. Though not _strictly_
 ** needed in order to implement it, this tool was specifically created
@@ -60,6 +85,15 @@
 ** Author(s):
 **
 ** - Stephan Beal <https://wanderinghorse.net/home/stephan/>
+**
+** Canonical homes:
+**
+** - https://fossil.wanderinghorse.net/r/c-pp
+** - https://sqlite.org/src/file/ext/wasm/c-pp.c
+**
+** With the former hosting this app's SCM and the latter being the
+** single known deployment of c-pp.c, where much of its development
+** happens.
 */
 
 #include <stdlib.h>
@@ -86,6 +120,10 @@
 #define CMPP_DEFAULT_DELIM "##"
 #endif
 
+#ifndef CMPP_ATSIGN
+#define CMPP_ATSIGN (unsigned char)'@'
+#endif
+
 #if 1
 #  define CMPP_NORETURN __attribute__((noreturn))
 #else
@@ -104,6 +142,11 @@ static void * cmpp_realloc(void * p, unsigned n);
 /** A malloc() proxy which dies fatally on allocation error. */
 static void * cmpp_malloc(unsigned n);
 #endif
+
+static void check__oom2(void const *p, char const *zFile, int line){
+  if(!p) fatal("Alloc failed at %s:%d", zFile, line);
+}
+#define check__oom(P) check__oom2((P), __FILE__, __LINE__)
 
 /*
 ** If p is stdin or stderr then this is a no-op, else it is a
@@ -154,12 +197,10 @@ static int db_step(sqlite3_stmt *pStmt);
 ** Proxy for sqlite3_bind_int() which fails fatally on error.
 */
 static void db_bind_int(sqlite3_stmt *pStmt, int col, int val);
-#if 0
 /*
 ** Proxy for sqlite3_bind_null() which fails fatally on error.
 */
 static void db_bind_null(sqlite3_stmt *pStmt, int col);
-#endif
 /*
 ** Proxy for sqlite3_bind_text() which fails fatally on error.
 */
@@ -185,11 +226,36 @@ static void db_free(void *m);
 ** any duplicates. Fails fatally on error.
 */
 static void db_define_add(const char * zKey);
+
 /*
 ** Returns true if the given key is already in the `#define` list,
 ** else false. Fails fatally on db error.
 */
 static int db_define_has(const char * zName);
+
+/*
+** Returns true if the given key is already in the `#define` list, and
+** it has a truthy value (is not empty and not equal to '0'), else
+** false. Fails fatally on db error.
+**
+** nName is the length of zName, or <0 to use strlen() to figure
+** it out.
+*/
+static int db_define_get_bool(const char * zName, int nName);
+
+/*
+** Searches for a define where (k GLOB zName). If one is found, a copy
+** of it is assigned to *zVal (the caller must eventually db_free()
+** it)), *nVal (if nVal is not NULL) is assigned its strlen, and
+** returns non-0. If no match is found, 0 is returned and neither
+** *zVal nor *nVal are modified. If more than one result matches, a
+** fatal error is triggered.
+**
+** It is legal for *zVal to be NULL (and *nVal to be 0) if it returns
+** non-0. That just means that the key was defined with no value part.
+*/
+static int db_define_get(const char * zName, int nName, char **zVal, unsigned int *nVal);
+
 /*
 ** Removes the given `#define` macro name from the list of
 ** macros. Fails fatally on error.
@@ -230,6 +296,23 @@ static void db_prepare(sqlite3_stmt **pStmt, const char * zSql, ...);
 static void cmpp_process_file(const char * zName);
 
 /*
+ ** If the first nKey bytes of zKey contain a chEq character then:
+ **
+ ** - Assigns *nVal to the strlen() of the part after that (may be 0).
+ ** - If zEq is not NULL, it is set to the position of the chEq.
+ ** - Returns the part one byte after that chEq.
+ **
+ ** Else returns NULL and does not modify *len or *zEq.
+ **
+ ** If nKey is negative then strlen() is used to calculate it.
+ */
+static char const * cmpp_val_part(char const *zKey,
+                                  int nKey,
+                                  char chEq,
+                                  unsigned * nVal,
+                                  char const **zEq);
+
+/*
 ** Returns the number newline characters between the given starting
 ** point and inclusive ending point. Results are undefined if zFrom is
 ** greater than zTo.
@@ -254,12 +337,20 @@ typedef struct FileWrapper FileWrapper;
 #define FileWrapper_empty_m {0,0,0,0}
 static const FileWrapper FileWrapper_empty = FileWrapper_empty_m;
 
-/* Proxy for FILE_close(). */
+/*
+** Proxy for FILE_close() and frees all memory owned by p. A no-op if
+** p is already closed.
+*/
 static void FileWrapper_close(FileWrapper * p);
-/* Proxy for FILE_open(). */
+/* Proxy for FILE_open(). Closes p first if it's currently opened. */
 static void FileWrapper_open(FileWrapper * p, const char * zName, const char *zMode);
 /* Proxy for FILE_slurp(). */
 static void FileWrapper_slurp(FileWrapper * p);
+/*
+** If p->zContent ends in \n or \r\n, that part is replaced with 0 and
+** p->nContent is adjusted. Returns true if it chomps, else false.
+*/
+int FileWrapper_chomp(FileWrapper * p);
 
 /*
 ** Outputs a printf()-formatted message to stderr.
@@ -270,37 +361,22 @@ static void g_stderr(char const *zFmt, ...);
 */
 static void g_stderrv(char const *zFmt, va_list);
 #define g_debug(lvl,pfexpr)                                          \
-  if(lvl<=g.doDebug) g_stderr("%s @ %s:%d: ",g.zArgv0,__FILE__,__LINE__); \
-  if(lvl<=g.doDebug) g_stderr pfexpr
-
-void fatalv(char const *zFmt, va_list va){
-  if(zFmt && *zFmt){
-    vfprintf(stderr, zFmt, va);
-  }
-  fputc('\n', stderr);
-  exit(1);
-}
-
-void fatal(char const *zFmt, ...){
-  va_list va;
-  va_start(va, zFmt);
-  fatalv(zFmt, va);
-  va_end(va);
-}
+  if(lvl<=g.flags.doDebug) g_stderr("%s @ %s():%d: ",g.zArgv0,__func__,__LINE__); \
+  if(lvl<=g.flags.doDebug) g_stderr pfexpr
 
 void cmpp_free(void *p){
-  free(p);
+  sqlite3_free(p);
 }
 
 void * cmpp_realloc(void * p, unsigned n){
-  void * const rc = realloc(p, n);
+  void * const rc = sqlite3_realloc(p, n);
   if(!rc) fatal("realloc(P,%u) failed", n);
   return rc;
 }
 
 #if 0
 void * cmpp_malloc(unsigned n){
-  void * const rc = malloc(n);
+  void * const rc = sqlite3_alloc(n);
   if(!rc) fatal("malloc(%u) failed", n);
   return rc;
 }
@@ -367,6 +443,17 @@ void FileWrapper_slurp(FileWrapper * p){
   FILE_slurp(p->pFile, &p->zContent, &p->nContent);
 }
 
+int FileWrapper_chomp(FileWrapper * p){
+  if( p->nContent && '\n'==p->zContent[p->nContent-1] ){
+    p->zContent[--p->nContent] = 0;
+    if( p->nContent && '\r'==p->zContent[p->nContent-1] ){
+      p->zContent[--p->nContent] = 0;
+    }
+    return 1;
+  }
+  return 0;
+}
+
 unsigned count_lines(unsigned char const * zFrom, unsigned char const *zTo){
   unsigned ln = 0;
   unsigned char const *zPos = zFrom;
@@ -391,6 +478,8 @@ TS_Error
 typedef enum CmppParseState CmppParseState;
 enum CmppTokenType {
 TT_Invalid = 0,
+TT_Assert,
+TT_AtPolicy,
 TT_Comment,
 TT_Define,
 TT_Elif,
@@ -403,6 +492,7 @@ TT_IfNot,
 TT_Include,
 TT_Line,
 TT_Pragma,
+TT_Savepoint,
 TT_Stderr,
 TT_Undef
 };
@@ -424,7 +514,8 @@ static const CmppToken CmppToken_empty = CmppToken_empty_m;
 /*
 ** CmppLevel represents one "level" of tokenization, starting at the
 ** top of the main input, incrementing once for each level of `#if`,
-** and decrementing for each `#endif`.
+** and decrementing for each `#endif`. Similarly, `#include`
+** pushes a level.
 */
 typedef struct CmppLevel CmppLevel;
 struct CmppLevel {
@@ -498,12 +589,14 @@ struct CmppTokenizer {
 #define CT_skipLevel(t) CT_level(t).skipLevel
 #define CLvl_skip(lvl) ((lvl)->skipLevel || ((lvl)->flags & CmppLevel_F_ELIDE))
 #define CT_skip(t) CLvl_skip(&CT_level(t))
-#define CmppTokenizer_empty_m {                 \
-    0,0,0,0,0,1U/*lineNo*/,                     \
-    TS_Start,                                 \
-    CmppToken_empty_m,                        \
-    {/*level*/0U,{CmppLevel_empty_m}},       \
-    {/*args*/0,0,{0},{0}}                \
+#define CmppTokenizer_empty_m {               \
+    .zName=0, .zBegin=0, .zEnd=0, .zAnchor=0, \
+    .zPos=0,                                  \
+    .lineNo=1U,                               \
+    .pstate = TS_Start,                       \
+    .token = CmppToken_empty_m,               \
+    .level = {0U,{CmppLevel_empty_m}},        \
+    .args = {0,0,{0},{0}}                     \
   }
 static const CmppTokenizer CmppTokenizer_empty = CmppTokenizer_empty_m;
 
@@ -525,48 +618,165 @@ static void CmppLevel_pop(CmppTokenizer * const t);
 */
 static CmppLevel * CmppLevel_get(CmppTokenizer * const t);
 
+#define CMPPLEVEL_GET
 /*
-** Global app state singleton. */
+** Policies for how to handle undefined @tokens@ when performing
+** content filtering.
+*/
+enum AtPolicy {
+  AT_invalid = -1,
+  /** Turn off @foo@ parsing. */
+  AT_OFF = 0,
+  /** Retain undefined @foo@ - emit it as-is. */
+  AT_RETAIN,
+  /** Elide undefined @foo@. */
+  AT_ELIDE,
+  /** Error for undefined @foo@. */
+  AT_ERROR,
+  AT_DEFAULT = AT_ERROR
+};
+typedef enum AtPolicy AtPolicy;
+
+static AtPolicy AtPolicy_fromStr(char const *z, int bEnforce){
+  if( 0==strcmp(z, "retain") ) return AT_RETAIN;
+  if( 0==strcmp(z, "elide") ) return AT_ELIDE;
+  if( 0==strcmp(z, "error") ) return AT_ERROR;
+  if( 0==strcmp(z, "off") ) return AT_OFF;
+  if( bEnforce ){
+    fatal("Invalid @ policy value: %s. "
+          "Try one of retain|elide|error|off.", z);
+  }
+  return AT_invalid;
+}
+
+/*
+** Global app state singleton.
+*/
 static struct Global {
   /* main()'s argv[0]. */
   const char * zArgv0;
-  /*
-  ** Bytes of the keyword delimiter/prefix. Owned
-  ** elsewhere.
-  */
-  const char * zDelim;
-  /* Byte length of this->zDelim. */
-  unsigned short nDelim;
-  /* If true, enables certain debugging output. */
-  int doDebug;
   /* App's db instance. */
   sqlite3 * db;
+  /* Current tokenizer (for error reporting purposes). */
+  CmppTokenizer const * tok;
   /* Output channel. */
   FileWrapper out;
   struct {
-    sqlite3_stmt * defIns;
-    sqlite3_stmt * defDel;
-    sqlite3_stmt * defHas;
-    sqlite3_stmt * inclIns;
-    sqlite3_stmt * inclDel;
-    sqlite3_stmt * inclHas;
-    sqlite3_stmt * inclPathAdd;
-    sqlite3_stmt * inclSearch;
+    /*
+    ** Bytes of the keyword delimiter/prefix. Owned
+    ** elsewhere.
+    */
+    const char * z;
+    /* Byte length of this->zDelim. */
+    unsigned short n;
+    /*
+    ** The @token@ delimiter.
+    **
+    ** Potential TODO is replace this with a pair of opener/closer
+    ** strings, e.g. "{{" and "}}".
+    */
+    const unsigned char chAt;
+  } delim;
+  struct {
+#define GStmt_map(E)               \
+    E(defIns,"INSERT OR REPLACE INTO def(k,v) VALUES(?,?)") \
+    E(defDel,"DELETE FROM def WHERE k GLOB ?")    \
+    E(defHas,"SELECT 1 FROM def WHERE k GLOB ?")      \
+    E(defGet,"SELECT k,v FROM def WHERE k GLOB ?")        \
+    E(defGetBool, \
+    "SELECT 1 FROM def WHERE k = ?1"                   \
+    " AND v IS NOT NULL"                               \
+    " AND '0'!=v AND ''!=v")                           \
+    E(inclIns,"INSERT OR FAIL INTO incl(file,srcFile,srcLine) VALUES(?,?,?)") \
+    E(inclDel,"DELETE FROM incl WHERE file=?") \
+    E(inclHas,"SELECT 1 FROM incl WHERE file=?") \
+    E(inclPathAdd,"INSERT OR FAIL INTO inclpath(seq,dir) VALUES(?,?)") \
+    E(inclSearch, \
+    "SELECT ?1 fn WHERE fileExists(fn) " \
+    "UNION ALL SELECT * FROM (" \
+    "SELECT replace(dir||'/'||?1, '//','/') AS fn "            \
+    "FROM inclpath WHERE fileExists(fn) ORDER BY seq"             \
+    ")")
+
+#define E(N,S) sqlite3_stmt * N;
+    GStmt_map(E)
+#undef E
   } stmt;
+  struct {
+    FILE * pFile;
+    int expandSql;
+  } sqlTrace;
+  struct {
+    AtPolicy atPolicy;
+    /* If true, enables certain debugging output. */
+    char doDebug;
+    /* If true, chomp() files read via -Fx=file. */
+    char chompF;
+  } flags;
 } g = {
-"?",
-CMPP_DEFAULT_DELIM/*zDelim*/,
-(unsigned short) sizeof(CMPP_DEFAULT_DELIM)-1/*nDelim*/,
-0/*doDebug*/,
-0/*db*/,
-FileWrapper_empty_m/*out*/,
-{/*stmt*/
-  0/*defIns*/, 0/*defDel*/, 0/*defHas*/,
-  0/*inclIns*/, 0/*inclDel*/, 0/*inclHas*/,
-  0/*inclPathAdd*/
-}
+  .zArgv0 = "?",
+  .db = 0,
+  .tok = 0,
+  .out = FileWrapper_empty_m,
+  .delim = {
+    .z = CMPP_DEFAULT_DELIM,
+    .n = (unsigned short) sizeof(CMPP_DEFAULT_DELIM)-1,
+    .chAt = '@'
+  },
+  .stmt = {
+    .defIns =   0,
+    .defDel = 0,
+    .defHas = 0,
+    .defGet = 0,
+    .defGetBool = 0,
+    .inclIns =   0,
+    .inclDel =   0,
+    .inclHas =   0,
+    .inclPathAdd =   0,
+    .inclSearch =   0
+  },
+  .sqlTrace = {
+    .pFile = 0,
+    .expandSql = 0
+  },
+  .flags = {
+    .atPolicy = AT_OFF,
+    .doDebug = 0,
+    .chompF = 0
+  }
 };
 
+/** Distinct IDs for each g.stmt member. */
+enum GStmt_e {
+  GStmt_e_none = 0,
+#define E(N,S) GStmt_e_ ## N,
+  GStmt_map(E)
+#undef E
+};
+
+/*
+** Returns the g.stmt.X corresponding to `which`, initializing it if
+** needed. It does not return NULL - it fails fatally on error.
+*/
+static sqlite3_stmt * g_stmt(enum GStmt_e which){
+  sqlite3_stmt ** q = 0;
+  char const * zSql = 0;
+  switch(which){
+    case GStmt_e_none:
+      fatal("GStmt_e_none is not a valid statement handle");
+      return NULL;
+#define E(N,S) case GStmt_e_ ## N: zSql = S; q = &g.stmt.N; break;
+    GStmt_map(E)
+#undef E
+  }
+  assert( q );
+  assert( zSql && *zSql );
+  if( !*q ){
+    db_prepare(q, "%s", zSql);
+    assert( *q );
+  }
+  return *q;
+}
 
 #if 0
 /*
@@ -582,7 +792,6 @@ void g_outf(char const *zFmt, ...){
 }
 #endif
 
-#if 0
 /* Outputs n bytes from z to c-pp's global output channel. */
 static void g_out(void const *z, unsigned int n);
 void g_out(void const *z, unsigned int n){
@@ -591,7 +800,6 @@ void g_out(void const *z, unsigned int n){
     fatal("fwrite() output failed with errno #%d", err);
   }
 }
-#endif
 
 void g_stderrv(char const *zFmt, va_list va){
   vfprintf(stderr, zFmt, va);
@@ -604,15 +812,13 @@ void g_stderr(char const *zFmt, ...){
   va_end(va);
 }
 
+/*
+** Emits n bytes of z if CT_skip(t) is false.
+*/
 void cmpp_t_out(CmppTokenizer * t, void const *z, unsigned int n){
   g_debug(3,("CT_skipLevel() ?= %d\n",CT_skipLevel(t)));
   g_debug(3,("CT_skip() ?= %d\n",CT_skip(t)));
-  if(!CT_skip(t)){
-    if(1!=fwrite(z, n, 1, g.out.pFile)){
-      int const err = errno;
-      fatal("fwrite() output failed with errno #%d", err);
-    }
-  }
+  if(!CT_skip(t)) g_out(z, n);
 }
 
 void CmppLevel_push(CmppTokenizer * const t){
@@ -620,23 +826,26 @@ void CmppLevel_push(CmppTokenizer * const t){
   CmppLevel * p;
   if(t->level.ndx+1 == (unsigned)CmppLevel_Max){
     fatal("%sif nesting level is too deep. Max=%d\n",
-          g.zDelim, CmppLevel_Max);
+          g.delim.z, CmppLevel_Max);
   }
   pPrev = &CT_level(t);
-  g_debug(3,("push from tokenizer level=%u flags=%04x\n", t->level.ndx, pPrev->flags));
+  g_debug(3,("push from tokenizer level=%u flags=%04x\n",
+             t->level.ndx, pPrev->flags));
   p = &t->level.stack[++t->level.ndx];
   *p = CmppLevel_empty;
   p->token = t->token;
   p->flags = (CmppLevel_F_INHERIT_MASK & pPrev->flags);
   if(CLvl_skip(pPrev)) p->flags |= CmppLevel_F_ELIDE;
-  g_debug(3,("push to tokenizer level=%u flags=%04x\n", t->level.ndx, p->flags));
+  g_debug(3,("push to tokenizer level=%u flags=%04x\n",
+             t->level.ndx, p->flags));
 }
 
 void CmppLevel_pop(CmppTokenizer * const t){
   if(!t->level.ndx){
     fatal("Internal error: CmppLevel_pop() at the top of the stack");
   }
-  g_debug(3,("pop from tokenizer level=%u, flags=%04x skipLevel?=%d\n", t->level.ndx,
+  g_debug(3,("pop from tokenizer level=%u, flags=%04x skipLevel?=%d\n",
+             t->level.ndx,
              t->level.stack[t->level.ndx].flags, CT_skipLevel(t)));
   g_debug(3,("CT_skipLevel() ?= %d\n",CT_skipLevel(t)));
   g_debug(3,("CT_skip() ?= %d\n",CT_skip(t)));
@@ -654,7 +863,9 @@ CmppLevel * CmppLevel_get(CmppTokenizer * const t){
 
 void db_affirm_rc(int rc, const char * zMsg){
   if(rc){
-    fatal("Db error #%d %s: %s", rc, zMsg, sqlite3_errmsg(g.db));
+    assert( g.db );
+    fatal("Db error #%d %s: %s", rc, zMsg,
+          sqlite3_errmsg(g.db));
   }
 }
 
@@ -664,8 +875,12 @@ void db_finalize(sqlite3_stmt *pStmt){
 
 int db_step(sqlite3_stmt *pStmt){
   int const rc = sqlite3_step(pStmt);
-  if(SQLITE_ROW!=rc && SQLITE_DONE!=rc){
-    db_affirm_rc(rc, "from db_step()");
+  switch( rc ){
+    case SQLITE_ROW:
+    case SQLITE_DONE:
+      break;
+    default:
+      db_affirm_rc(rc, "from db_step()");
   }
   return rc;
 }
@@ -705,23 +920,23 @@ void db_prepare(sqlite3_stmt **pStmt, const char * zSql, ...){
 }
 
 void db_bind_int(sqlite3_stmt *pStmt, int col, int val){
-  int const rc = sqlite3_bind_int(pStmt, col, val);
-  db_affirm_rc(rc,"from db_bind_int()");
+  db_affirm_rc(sqlite3_bind_int(pStmt, col, val),
+               "from db_bind_int()");
 }
 
-#if 0
 void db_bind_null(sqlite3_stmt *pStmt, int col){
-  int const rc = sqlite3_bind_null(pStmt, col);
-  db_affirm_rc(rc,"from db_bind_null()");
+  db_affirm_rc(sqlite3_bind_null(pStmt, col),
+               "from db_bind_null()");
 }
-#endif
 
 void db_bind_textn(sqlite3_stmt *pStmt, int col,
                    const char * zStr, int n){
-  int const rc = zStr
+  db_affirm_rc(
+    (zStr && n)
     ? sqlite3_bind_text(pStmt, col, zStr, n, SQLITE_TRANSIENT)
-    : sqlite3_bind_null(pStmt, col);
-  db_affirm_rc(rc,"from db_bind_textn()");
+    : sqlite3_bind_null(pStmt, col),
+    "from db_bind_textn()"
+  );
 }
 
 void db_bind_text(sqlite3_stmt *pStmt, int col,
@@ -752,26 +967,85 @@ void db_free(void *m){
 
 void db_define_add(const char * zKey){
   int rc;
-  if(!g.stmt.defIns){
-    db_prepare(&g.stmt.defIns,
-               "INSERT OR REPLACE INTO def(k) VALUES(?)");
+  char const * zEq = 0;
+  unsigned nVal = 0;
+  char const * zVal = cmpp_val_part(zKey, -1, '=', &nVal, &zEq);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_defIns);
+  assert( q );
+  //g_stderr("zKey=%s\nzVal=%s\nzEq=%s\n", zKey, zVal, zEq);
+  if( zEq ){
+    db_bind_textn(q, 1, zKey, (zEq-zKey));
+  }else{
+    db_bind_text(q, 1, zKey);
   }
-  db_bind_text(g.stmt.defIns, 1, zKey);
-  rc = db_step(g.stmt.defIns);
+  if( zEq ){
+    if( zVal && nVal ){
+      db_bind_text(q, 2, zVal);
+    }else{
+      db_bind_null(q, 2);
+    }
+  }else{
+    db_bind_int(q, 2, 1);
+  }
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping INSERT on def");
   }
-  g_debug(2,("define: %s\n",zKey));
-  sqlite3_reset(g.stmt.defIns);
+  g_debug(2,("define: %s%s%s\n",
+             zKey,
+             zVal ? " with value " : "",
+             zVal ? zVal : ""));
+  sqlite3_reset(q);
+}
+
+static void db_define_add_file(const char * zKey){
+  int rc;
+  char const * zEq = 0;
+  unsigned nVal = 0;
+  char const * zVal = cmpp_val_part(zKey, -1, '=', &nVal, &zEq);
+  if( !zVal || !nVal ){
+    fatal("Invalid filename: %s", zKey);
+  }
+  sqlite3_stmt * q = 0;
+  FileWrapper fw = FileWrapper_empty;
+  FileWrapper_open(&fw, zVal, "r");
+  FileWrapper_slurp(&fw);
+  q = g_stmt(GStmt_e_defIns);
+  //g_stderr("zKey=%s\nzVal=%s\nzEq=%s\n", zKey, zVal, zEq);
+  db_bind_textn(q, 1, zKey, (zEq-zKey));
+  if( g.flags.chompF ){
+    FileWrapper_chomp(&fw);
+  }
+  if( fw.nContent ){
+    db_affirm_rc(
+      sqlite3_bind_text(q, 2,
+                        (char const *)fw.zContent,
+                        (int)fw.nContent, sqlite3_free),
+      "binding file content");
+    fw.zContent = 0 /* transfered ownership */;
+    fw.nContent = 0;
+  }else{
+    db_affirm_rc( sqlite3_bind_null(q, 2),
+                  "binding empty file content");
+  }
+  FileWrapper_close(&fw);
+  rc = db_step(q);
+  if(SQLITE_DONE != rc){
+    db_affirm_rc(rc, "stepping INSERT on def");
+  }
+  g_debug(2,("define: %s%s%s\n",
+             zKey,
+             zVal ? " with value " : "",
+             zVal ? zVal : ""));
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 int db_define_has(const char * zName){
   int rc;
-  if(!g.stmt.defHas){
-    db_prepare(&g.stmt.defHas, "SELECT 1 FROM def WHERE k=?");
-  }
-  db_bind_text(g.stmt.defHas, 1, zName);
-  rc = db_step(g.stmt.defHas);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_defHas);
+  db_bind_text(q, 1, zName);
+  rc = db_step(q);
   if(SQLITE_ROW == rc){
     rc = 1;
   }else{
@@ -779,91 +1053,125 @@ int db_define_has(const char * zName){
     rc = 0;
   }
   g_debug(1,("defined [%s] ?= %d\n",zName, rc));
-  sqlite3_clear_bindings(g.stmt.defHas);
-  sqlite3_reset(g.stmt.defHas);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
   return rc;
 }
 
+int db_define_get_bool(const char * zName, int nName){
+  sqlite3_stmt * const q = g_stmt(GStmt_e_defGetBool);
+  int rc = 0;
+  if( nName<0 ) nName=(int)strlen(zName);
+  db_bind_textn(q, 1, zName, nName);
+  rc = db_step(q);
+  if(SQLITE_ROW == rc){
+    if( SQLITE_ROW==sqlite3_step(q) ){
+      fatal("Key is ambiguous: %s", zName);
+    }
+    rc = 1;
+  }else{
+    assert(SQLITE_DONE==rc);
+    rc = 0;
+  }
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
+  return rc;
+}
+
+int db_define_get(const char * zName, int nName,
+                  char **zVal, unsigned int *nVal){
+  sqlite3_stmt * q = g_stmt(GStmt_e_defGet);
+  if( nName<0 ) nName=(int)strlen(zName);
+  db_bind_textn(q, 1, zName, nName);
+  int n = 0;
+  int rc = db_step(q);
+  if(SQLITE_ROW == rc){
+    const unsigned char * z = sqlite3_column_text(q, 1);
+    n = sqlite3_column_bytes(q,1);
+    if( nVal ) *nVal = (unsigned)n;
+    *zVal = sqlite3_mprintf("%.*s", n, z);
+    if( n && z ) check__oom(*zVal);
+    if( SQLITE_ROW==sqlite3_step(q) ){
+      db_free(*zVal);
+      *zVal = 0;
+      fatal("Key is ambiguous: %.*s\n",
+            nName, zName);
+    }
+    rc = 1;
+  }else{
+    assert(SQLITE_DONE==rc);
+    rc = 0;
+  }
+  g_debug(1,("define [%.*s] ?= %d %.*s\n",
+             nName, zName, rc,
+             *zVal ? n : 0,
+             *zVal ? *zVal : "<NULL>"));
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
+  return rc;
+}
 
 void db_define_rm(const char * zKey){
   int rc;
   int n = 0;
-  const char *zPos = zKey;
-  if(!g.stmt.defDel){
-    db_prepare(&g.stmt.defDel, "DELETE FROM def WHERE k=?");
-  }
-  for( ; *zPos && '='!=*zPos; ++n, ++zPos) {}
-  db_bind_text(g.stmt.defDel, 1, zKey);
-  rc = db_step(g.stmt.defDel);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_defDel);
+  db_bind_text(q, 1, zKey);
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping DELETE on def");
   }
   g_debug(2,("undefine: %.*s\n",n, zKey));
-  sqlite3_clear_bindings(g.stmt.defDel);
-  sqlite3_reset(g.stmt.defDel);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 void db_including_add(const char * zKey, const char * zSrc, int srcLine){
   int rc;
-  if(!g.stmt.inclIns){
-    db_prepare(&g.stmt.inclIns,
-               "INSERT OR FAIL INTO incl(file,srcFile,srcLine) VALUES(?,?,?)");
-  }
-  db_bind_text(g.stmt.inclIns, 1, zKey);
-  db_bind_text(g.stmt.inclIns, 2, zSrc);
-  db_bind_int(g.stmt.inclIns, 3, srcLine);
-  rc = db_step(g.stmt.inclIns);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclIns);
+  db_bind_text(q, 1, zKey);
+  db_bind_text(q, 2, zSrc);
+  db_bind_int(q, 3, srcLine);
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping INSERT on incl");
   }
-  g_debug(2,("inclpath add [%s] from [%s]:%d\n", zKey, zSrc, srcLine));
-  sqlite3_clear_bindings(g.stmt.inclIns);
-  sqlite3_reset(g.stmt.inclIns);
+  g_debug(2,("is-including-file add [%s] from [%s]:%d\n", zKey, zSrc, srcLine));
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 void db_include_rm(const char * zKey){
   int rc;
-  if(!g.stmt.inclDel){
-    db_prepare(&g.stmt.inclDel, "DELETE FROM incl WHERE file=?");
-  }
-  db_bind_text(g.stmt.inclDel, 1, zKey);
-  rc = db_step(g.stmt.inclDel);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclDel);
+  db_bind_text(q, 1, zKey);
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping DELETE on incl");
   }
   g_debug(2,("inclpath rm [%s]\n", zKey));
-  sqlite3_clear_bindings(g.stmt.inclDel);
-  sqlite3_reset(g.stmt.inclDel);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 char * db_include_search(const char * zKey){
   char * zName = 0;
-  if(!g.stmt.inclSearch){
-    db_prepare(&g.stmt.inclSearch,
-               "SELECT ?1 fn WHERE fileExists(fn) "
-               "UNION ALL SELECT * FROM ("
-               "SELECT replace(dir||'/'||?1, '//','/') AS fn "
-               "FROM inclpath WHERE fileExists(fn) ORDER BY seq"
-               ")");
-  }
-  db_bind_text(g.stmt.inclSearch, 1, zKey);
-  if(SQLITE_ROW==db_step(g.stmt.inclSearch)){
-    const unsigned char * z = sqlite3_column_text(g.stmt.inclSearch, 0);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclSearch);
+  db_bind_text(q, 1, zKey);
+  if(SQLITE_ROW==db_step(q)){
+    const unsigned char * z = sqlite3_column_text(q, 0);
     zName = z ? sqlite3_mprintf("%s", z) : 0;
     if(!zName) fatal("Alloc failed");
   }
-  sqlite3_clear_bindings(g.stmt.inclSearch);
-  sqlite3_reset(g.stmt.inclSearch);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
   return zName;
 }
 
 static int db_including_has(const char * zName){
   int rc;
-  if(!g.stmt.inclHas){
-    db_prepare(&g.stmt.inclHas, "SELECT 1 FROM incl WHERE file=?");
-  }
-  db_bind_text(g.stmt.inclHas, 1, zName);
-  rc = db_step(g.stmt.inclHas);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclHas);
+  db_bind_text(q, 1, zName);
+  rc = db_step(q);
   if(SQLITE_ROW == rc){
     rc = 1;
   }else{
@@ -871,8 +1179,8 @@ static int db_including_has(const char * zName){
     rc = 0;
   }
   g_debug(2,("inclpath has [%s] = %d\n",zName, rc));
-  sqlite3_clear_bindings(g.stmt.inclHas);
-  sqlite3_reset(g.stmt.inclHas);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
   return rc;
 }
 
@@ -891,27 +1199,22 @@ void db_including_check(const char * zName){
 void db_include_dir_add(const char * zDir){
   static int seq = 0;
   int rc;
-  if(!g.stmt.inclPathAdd){
-    db_prepare(&g.stmt.inclPathAdd,
-               "INSERT OR FAIL INTO inclpath(seq,dir) VALUES(?,?)");
-  }
-  db_bind_int(g.stmt.inclPathAdd, 1, ++seq);
-  db_bind_text(g.stmt.inclPathAdd, 2, zDir);
-  rc = db_step(g.stmt.inclPathAdd);
+  sqlite3_stmt * const q = g_stmt(GStmt_e_inclPathAdd);
+  db_bind_int(q, 1, ++seq);
+  db_bind_text(q, 2, zDir);
+  rc = db_step(q);
   if(SQLITE_DONE != rc){
     db_affirm_rc(rc, "Stepping INSERT on inclpath");
   }
   g_debug(2,("inclpath add #%d: %s\n",seq, zDir));
-  sqlite3_clear_bindings(g.stmt.inclPathAdd);
-  sqlite3_reset(g.stmt.inclPathAdd);
+  sqlite3_clear_bindings(q);
+  sqlite3_reset(q);
 }
 
 static void cmpp_atexit(void){
-#define FINI(M) if(g.stmt.M) sqlite3_finalize(g.stmt.M)
-  FINI(defIns); FINI(defDel); FINI(defHas);
-  FINI(inclIns); FINI(inclDel); FINI(inclHas);
-  FINI(inclPathAdd); FINI(inclSearch);
-#undef FINI
+#define E(N,S) sqlite3_finalize(g.stmt.N);
+  GStmt_map(E)
+#undef E
   FileWrapper_close(&g.out);
   if(g.db) sqlite3_close(g.db);
 }
@@ -932,35 +1235,61 @@ static void udf_file_exists(
   sqlite3_result_int(context, 0==access(zName, 0));
 }
 
+/**
+ ** This sqlite3_trace_v2() callback outputs tracing info using
+ ** g.sqlTrace.pFile.
+*/
+static int cmpp__db_sq3TraceV2(unsigned t,void*c,void*p,void*x){
+  static unsigned int counter = 0;
+  switch(t){
+    case SQLITE_TRACE_STMT:{
+      FILE * const fp = g.sqlTrace.pFile;
+      if( fp ){
+        char const * const zSql = (char const *)x;
+        char * const zExp = g.sqlTrace.expandSql
+          ? sqlite3_expanded_sql((sqlite3_stmt*)p)
+          : 0;
+        fprintf(fp, "SQL TRACE #%u: %s\n",
+                ++counter, zExp ? zExp : zSql);
+        sqlite3_free(zExp);
+      }
+      break;
+    }
+  }
+  return 0;
+}
+
 /* Initialize g.db, failing fatally on error. */
 static void cmpp_initdb(void){
   int rc;
   char * zErr = 0;
   const char * zSchema =
     "CREATE TABLE def("
-      "k TEXT PRIMARY KEY NOT NULL"
-    /*"v INTEGER DEFAULT 1"*/
-    ") WITHOUT ROWID;"
     /* ^^^ defines */
+      "k TEXT PRIMARY KEY NOT NULL,"
+      "v TEXT DEFAULT NULL"
+    ") WITHOUT ROWID;"
     "CREATE TABLE incl("
+    /* ^^^ files currently being included */
       "file TEXT PRIMARY KEY NOT NULL,"
       "srcFile TEXT DEFAULT NULL,"
       "srcLine INTEGER DEFAULT 0"
     ") WITHOUT ROWID;"
-    /* ^^^ files currently being included */
     "CREATE TABLE inclpath("
-      "seq INTEGER UNIQUE, "
-      "dir TEXT PRIMARY KEY NOT NULL ON CONFLICT IGNORE"
-    ")"
     /* ^^^ include path */
+      "seq INTEGER UNIQUE ON CONFLICT IGNORE, "
+      "dir TEXT PRIMARY KEY NOT NULL ON CONFLICT IGNORE"
+    ");"
+    "BEGIN;"
     ;
   assert(0==g.db);
   if(g.db) return;
   rc = sqlite3_open_v2(":memory:", &g.db, SQLITE_OPEN_READWRITE, 0);
   if(rc) fatal("Error opening :memory: db.");
+  sqlite3_trace_v2(g.db, SQLITE_TRACE_STMT, cmpp__db_sq3TraceV2, 0);
   rc = sqlite3_exec(g.db, zSchema, 0, 0, &zErr);
   if(rc) fatal("Error initializing database: %s", zErr);
-  rc = sqlite3_create_function(g.db, "fileExists", 1, 
+  rc = sqlite3_create_function(g.db, "fileExists", 1,
                                SQLITE_UTF8|SQLITE_DIRECTONLY, 0,
                                udf_file_exists, 0, 0);
   db_affirm_rc(rc, "UDF registration failed.");
@@ -968,8 +1297,8 @@ static void cmpp_initdb(void){
 
 /*
 ** For position zPos, which must be in the half-open range
-** [zBegin,zEnd), returns g.nDelim if it is at the start of a line and
-** starts with g.zDelim, else returns 0.
+** [zBegin,zEnd), returns g.delim.n if it is at the start of a line and
+** starts with g.delim.z, else returns 0.
 */
 static unsigned short cmpp_is_delim(unsigned char const *zBegin,
                                     unsigned char const *zEnd,
@@ -979,13 +1308,108 @@ static unsigned short cmpp_is_delim(unsigned char const *zBegin,
   assert(zPos>=zBegin);
   if(zPos>zBegin &&
      ('\n'!=*(zPos - 1)
-      || ((unsigned)(zEnd - zPos) <= g.nDelim))){
+      || ((unsigned)(zEnd - zPos) <= g.delim.n))){
     return 0;
-  }else if(0==memcmp(zPos, g.zDelim, g.nDelim)){
-    return g.nDelim;
+  }else if(0==memcmp(zPos, g.delim.z, g.delim.n)){
+    return g.delim.n;
   }else{
     return 0;
   }
+}
+
+static char const * cmpp_val_part(char const *zKey,
+                                  int nKey,
+                                  char chEq,
+                                  unsigned * len,
+                                  char const **zEq){
+  const char *zPos = zKey;
+  if( nKey<0 ) nKey = (int)strlen(zKey);
+  const char * const zEnd = zPos + nKey;
+  for( ; *zPos && zPos<zEnd ; ++zPos) {
+    if( chEq==*zPos ){
+      if( zEq ) *zEq = zPos;
+      ++zPos;
+      *len = (unsigned)(zEnd - zPos);
+      return zPos;
+    }
+  }
+  return 0;
+}
+
+static void cmpp_t_out_expand(CmppTokenizer * const t,
+                              unsigned char const * zFrom,
+                              unsigned int n){
+  unsigned char const *zLeft = zFrom;
+  unsigned char const * const zEnd = zFrom + n;
+  unsigned char const *z = AT_OFF==g.flags.atPolicy ? zEnd : zLeft;
+  unsigned char const chEol = (unsigned char)'\n';
+  int state = 0 /* 0==looking for opening @
+                ** 1==looking for closing @ */;
+#define tflush \
+  if(zLeft<z){ cmpp_t_out(t, zLeft, (z-zLeft)); } zLeft = z
+  for( ; z<zEnd; ++z ){
+    zLeft = z;
+    for( ;z<zEnd; ++z ){
+      if( chEol==*z ){
+        state = 0;
+        ++z /*ensure that we flush the EOL now*/;
+        tflush;
+        --z/*And make sure that zLeft does the right thing*/;
+        break;
+      }
+      if( g.delim.chAt==*z ){
+        if( 0==state ){
+          tflush;
+          state = 1;
+        }else{ /* process chAt...chAt */
+          char *zVal = 0;
+          unsigned int nVal = 0;
+          assert( 1==state );
+          assert( g.delim.chAt==*zLeft );
+          assert( zLeft<z );
+          if( z==zLeft+1 ){
+            tflush;
+          }else{
+            char const *zKey = (char const*)zLeft+1;
+            int const nKey = (z-zLeft-1);
+            if( db_define_get(zKey, nKey, &zVal, &nVal) ){
+              if( nVal ){
+                cmpp_t_out(t, (unsigned char const*)zVal, nVal);
+              }else{
+                /* Elide it */
+              }
+              zLeft = z+1/*skip closing g.delim.chAt*/;
+              db_free(zVal);
+            }else{
+              assert( !zVal );
+              /* No match. Emit it as-is. */
+              switch( g.flags.atPolicy ){
+                case AT_RETAIN:
+                  tflush;
+                  break;
+                case AT_ERROR:
+                  fatal("Undefined key: %c%.*s%c",
+                        g.delim.chAt, nKey, zKey, g.delim.chAt );
+                  break;
+                case AT_ELIDE:
+                  zLeft = z+1;
+                  break;
+                case AT_invalid:
+                case AT_OFF:
+                  fatal("Unhandled g.flags.atPolicy #%d!",
+                        g.flags.atPolicy);
+                  break;
+              }
+            }
+            state = 0;
+          }
+        }/* process chAt...chAt */
+      }/*g.delim.chAt*/
+    }/*per-line loop*/
+  }/*outer loop*/
+  tflush;
+#undef tflush
+  return;
 }
 
 /*
@@ -1014,9 +1438,10 @@ static int cmpp_next_keyword_line(CmppTokenizer * const t){
   }
   if(z>zStart){
     /* We passed up content */
-    cmpp_t_out(t, zStart, (unsigned)(z - zStart));
+    //cmpp_t_out(t, zStart, (unsigned)(z - zStart));
+    cmpp_t_out_expand(t, zStart, (unsigned)(z - zStart));
   }
-  assert(isDelim==0 || isDelim==g.nDelim);
+  assert(isDelim==0 || isDelim==g.delim.n);
   tok->lineNo = t->lineNo += count_lines(zStart, z);
   if(isDelim){
     /* Handle backslash-escaped newlines */
@@ -1056,8 +1481,8 @@ static int cmpp_next_keyword_line(CmppTokenizer * const t){
 
     assert(TT_Line==tok->ttype);
     if((unsigned)sizeof(t->args.lineBuf) < tokLen + 1){
-      fatal("Keyword line is unreasonably long: %.*s",
-            tokLen, tok->zBegin);
+      fatal("Keyword line #%u is unreasonably long: %.*s",
+            tok->lineNo, tokLen, tok->zBegin);
     }else if(!tokLen){
       fatal("Line #%u has no keyword after delimiter", tok->lineNo);
     }
@@ -1105,7 +1530,7 @@ static int cmpp_next_keyword_line(CmppTokenizer * const t){
     for( ++zz ; *zz && isspace(*zz); ++zz ){}
     if(t->args.pKw->bTokenize){
       for( ; *zz; prevChar = *zz, ++zz ){
-        /* Split string into word-shaped tokens. 
+        /* Split string into word-shaped tokens.
         ** TODO ?= quoted strings, for the sake of the
         ** #error keyword. */
         if(isspace(*zz)){
@@ -1125,7 +1550,7 @@ static int cmpp_next_keyword_line(CmppTokenizer * const t){
       if(*zz) t->args.argv[argc++] = zz;
     }
     tok->ttype = t->args.pKw->ttype;
-    if(g.doDebug>1){
+    if(g.flags.doDebug>1){
       for(i = 0; i < argc; ++i){
         g_debug(0,("line %u arg #%d=%s\n",
                    tok->lineNo, i,
@@ -1140,7 +1565,8 @@ static int cmpp_next_keyword_line(CmppTokenizer * const t){
   return isDelim;
 }
 
-static void cmpp_kwd__err_prefix(CmppKeyword const * pKw, CmppTokenizer *t,
+static void cmpp_kwd__err_prefix(CmppKeyword const * pKw,
+                                 CmppTokenizer const *t,
                                  char const *zPrefix){
   g_stderr("%s%s%s @ %s line %u: ",
            zPrefix ? zPrefix : "",
@@ -1149,9 +1575,9 @@ static void cmpp_kwd__err_prefix(CmppKeyword const * pKw, CmppTokenizer *t,
 }
 
 /* Internal error reporting helper for cmpp_keyword_f() impls. */
-static CMPP_NORETURN void cmpp_kwd__misuse(CmppKeyword const * pKw,
-                                           CmppTokenizer *t,
-                                           char const *zFmt, ...){
+static CMPP_NORETURN void cmpp_kwd__err(CmppKeyword const * pKw,
+                                        CmppTokenizer const *t,
+                                        char const *zFmt, ...){
   va_list va;
   cmpp_kwd__err_prefix(pKw, t, "Fatal error");
   va_start(va, zFmt);
@@ -1161,7 +1587,8 @@ static CMPP_NORETURN void cmpp_kwd__misuse(CmppKeyword const * pKw,
 
 /* No-op cmpp_keyword_f() impl. */
 static void cmpp_kwd_noop(CmppKeyword const * pKw, CmppTokenizer *t){
-  if(t || pKw){/*unused*/}
+  (void)pKw;
+  (void)t;
 }
 
 /* #error impl. */
@@ -1180,7 +1607,7 @@ static void cmpp_kwd_error(CmppKeyword const * pKw, CmppTokenizer *t){
 static void cmpp_kwd_define(CmppKeyword const * pKw, CmppTokenizer *t){
   if(CT_skip(t)) return;
   if(t->args.argc<2){
-    cmpp_kwd__misuse(pKw, t, "Expecting one or more arguments");
+    cmpp_kwd__err(pKw, t, "Expecting one or more arguments");
   }else{
     int i = 1;
     void (*func)(const char *) = TT_Define==pKw->ttype
@@ -1193,42 +1620,130 @@ static void cmpp_kwd_define(CmppKeyword const * pKw, CmppTokenizer *t){
 
 /* Impl. for #if, #ifnot, #elif, #elifnot. */
 static void cmpp_kwd_if(CmppKeyword const * pKw, CmppTokenizer *t){
-  int buul;
+  int buul = 0;
   CmppParseState tmpState = TS_Start;
-  if(t->args.argc!=2){
-    cmpp_kwd__misuse(pKw, t, "Expecting exactly 1 argument");
+  /**
+     TT_If: accept args:
+
+     - "not" = negates the operation
+
+     - "defined" == is-defined op
+  */
+  int bCheckDefined = 0;
+  int bNot = 0;
+  char const * zKey = 0;
+  char const *zEq = 0;
+
+  assert( TT_If==pKw->ttype
+          || TT_IfNot==pKw->ttype
+          || TT_Elif==pKw->ttype
+          || TT_ElifNot==pKw->ttype
+          || TT_Assert==pKw->ttype);
+  if(t->args.argc<2){
+    cmpp_kwd__err(pKw, t, "Expecting an argument");
   }
-  /*g_debug(0,("%s %s level %u pstate=%d\n", pKw->zName,
-             (char const *)t->args.argv[1],
-             t->level.ndx, (int)CT_pstate(t)));*/
+  switch( pKw->ttype ){
+    case TT_IfNot:
+    case TT_ElifNot: bNot = 1;
+      /* fall through */
+    case TT_If:
+    case TT_Assert:
+    case TT_Elif:
+      for( int i = 1; i < t->args.argc; ++i ){
+        char const * z = (char const *)t->args.argv[i];
+        if( 0==strcmp(z, "not") ){
+          bNot = !bNot;
+        }else if( 0==strcmp(z,"defined") ){
+          if( bCheckDefined ){
+            cmpp_kwd__err(pKw, t,
+                          "Cannot use 'defined' more than once");
+          }
+          bCheckDefined = 1;
+        }else if( !zKey ){
+          zKey = (char const *)t->args.argv[i];
+        }else{
+          cmpp_kwd__err(pKw, t, "Unhandled argument: %s", z);
+        }
+      }
+      if( !zKey ){
+        cmpp_kwd__err(pKw, t, "Missing key argument");
+      }
+      break;
+    default:
+      if(t->args.argc!=2){
+        cmpp_kwd__err(pKw, t, "Expecting exactly 1 argument");
+      }
+      zKey = (char const *)t->args.argv[1];
+  }
+  /*g_debug(0,("%s %s level %u pstate=%d bNot=%d bCheckDefined=%d\n",
+             pKw->zName, zKey, t->level.ndx, (int)CT_pstate(t),
+             bNot, bCheckDefined));*/
   switch(pKw->ttype){
     case TT_Elif:
     case TT_ElifNot:
       switch(CT_pstate(t)){
         case TS_If: break;
         case TS_IfPassed: CT_level(t).flags |= CmppLevel_F_ELIDE; return;
-        default: goto misuse;
+        default:
+          cmpp_kwd__err(pKw, t, "'%s' used out of context",
+                        pKw->zName);
       }
       break;
     case TT_If:
     case TT_IfNot:
       CmppLevel_push(t);
       break;
+    case TT_Assert:
+      break;
     default:
-      cmpp_kwd__misuse(pKw, t, "Unexpected keyword token type");
+      assert(!"cannot happen");
+      cmpp_kwd__err(pKw, t, "Unexpected keyword token type");
       break;
   }
-  buul = db_define_has((char const *)t->args.argv[1]);
-  if(TT_IfNot==pKw->ttype || TT_ElifNot==pKw->ttype) buul = !buul;
-  if(buul){
+  unsigned nValPart = 0;
+  char const * zValPart = cmpp_val_part(zKey, -1, '=', &nValPart, &zEq);
+  /*g_debug(0,("%s %s level %u pstate=%d bNot=%d bCheckDefined=%d "
+             "nValPart=%u zValPart=%s\n",
+             pKw->zName, zKey, t->level.ndx, (int)CT_pstate(t),
+             bNot, bCheckDefined, nValPart, zValPart));*/
+  if( zValPart ){
+    if( bCheckDefined ){
+      cmpp_kwd__err(pKw, t, "Value part is not legal with %s: %s",
+                    pKw->zName, zKey);
+    }
+    unsigned nVal = 0;
+    char * zVal = 0;
+    buul = db_define_get(zKey, (zEq-zKey), &zVal, &nVal);
+    //g_debug(0,("checking key[%.*s]=%.*s\n", (zEq-zKey), zKey, nVal, zVal));
+    if( nVal ){
+      /* FIXME? do this with a query */
+      /*g_debug(0,("if get-define [%.*s]=[%.*s] zValPart=%s\n",
+                 (zEq-zKey), zKey,
+                 nVal, zVal, zValPart));*/
+      buul = 0==sqlite3_strglob(zValPart,zVal);
+      //g_debug(0,("buul=%d\n", buul));
+    }
+    db_free(zVal);
+  }else{
+    if( bCheckDefined ){
+      buul = db_define_has(zKey);
+    }else{
+      buul = db_define_get_bool(zKey, -1);
+    }
+  }
+  //if( bNot ) buul = !buul;
+  if( bNot ? !buul : buul ){
     CT_pstate(t) = tmpState = TS_IfPassed;
     CT_skipLevel(t) = 0;
   }else{
+    if( TT_Assert==pKw->ttype ){
+      cmpp_kwd__err(pKw, t, "Assertion failed: %s", zKey);
+    }
     CT_pstate(t) = TS_If /* also for TT_IfNot, TT_Elif, TT_ElifNot */;
     CT_skipLevel(t) = 1;
     g_debug(3,("setting CT_skipLevel = 1 @ level %d\n", t->level.ndx));
   }
-  if(TT_If==pKw->ttype || TT_IfNot==pKw->ttype){
+  if( TT_If==pKw->ttype || TT_IfNot==pKw->ttype ){
     unsigned const lvlIf = t->level.ndx;
     CmppToken const lvlToken = CT_level(t).token;
     while(cmpp_next_keyword_line(t)){
@@ -1246,29 +1761,25 @@ static void cmpp_kwd_if(CmppKeyword const * pKw, CmppTokenizer *t){
 #endif
     }
     if(lvlIf <= t->level.ndx){
-      cmpp_kwd__err_prefix(pKw, t, NULL);
-      fatal("Input ended inside an unterminated %sif "
-            "opened at [%s] line %u",
-            g.zDelim, t->zName, lvlToken.lineNo);
+      cmpp_kwd__err(pKw, t,
+                    "Input ended inside an unterminated %sif "
+                    "opened at [%s] line %u",
+                    g.delim.z, t->zName, lvlToken.lineNo);
     }
   }
-  return;
-  misuse:
-  cmpp_kwd__misuse(pKw, t, "'%s' used out of context",
-                   pKw->zName);
 }
 
 /* Impl. for #else. */
 static void cmpp_kwd_else(CmppKeyword const * pKw, CmppTokenizer *t){
   if(t->args.argc>1){
-    cmpp_kwd__misuse(pKw, t, "Expecting no arguments");
+    cmpp_kwd__err(pKw, t, "Expecting no arguments");
   }
   switch(CT_pstate(t)){
     case TS_IfPassed: CT_skipLevel(t) = 1; break;
     case TS_If: CT_skipLevel(t) = 0; break;
     default:
-      cmpp_kwd__misuse(pKw, t, "'%s' with no matching 'if'",
-                      pKw->zName);
+      cmpp_kwd__err(pKw, t, "'%s' with no matching 'if'",
+                    pKw->zName);
   }
   /*g_debug(0,("else flags=0x%02x skipLevel=%u\n",
     CT_level(t).flags, CT_level(t).skipLevel));*/
@@ -1289,8 +1800,8 @@ static void cmpp_kwd_endif(CmppKeyword const * pKw, CmppTokenizer *t){
     case TS_IfPassed:
       break;
     default:
-      cmpp_kwd__misuse(pKw, t, "'%s' with no matching 'if'",
-                       pKw->zName);
+      cmpp_kwd__err(pKw, t, "'%s' with no matching 'if'",
+                    pKw->zName);
   }
   CmppLevel_pop(t);
 }
@@ -1301,7 +1812,7 @@ static void cmpp_kwd_include(CmppKeyword const * pKw, CmppTokenizer *t){
   char * zResolved;
   if(CT_skip(t)) return;
   else if(t->args.argc!=2){
-    cmpp_kwd__misuse(pKw, t, "Expecting exactly 1 filename argument");
+    cmpp_kwd__err(pKw, t, "Expecting exactly 1 filename argument");
   }
   zFile = (const char *)t->args.argv[1];
   if(db_including_has(zFile)){
@@ -1330,8 +1841,8 @@ static void cmpp_kwd_include(CmppKeyword const * pKw, CmppTokenizer *t){
 static void cmpp_kwd_pragma(CmppKeyword const * pKw, CmppTokenizer *t){
   const char * zArg;
   if(CT_skip(t)) return;
-  else if(t->args.argc!=2){
-    cmpp_kwd__misuse(pKw, t, "Expecting one argument");
+  else if(t->args.argc<2){
+    cmpp_kwd__err(pKw, t, "Expecting an argument");
   }
   zArg = (const char *)t->args.argv[1];
 #define M(X) 0==strcmp(zArg,X)
@@ -1340,14 +1851,68 @@ static void cmpp_kwd_pragma(CmppKeyword const * pKw, CmppTokenizer *t){
     db_prepare(&q, "SELECT k FROM def ORDER BY k");
     g_stderr("cmpp defines:\n");
     while(SQLITE_ROW==db_step(q)){
-      int const n = sqlite3_column_bytes(q, 0);
       const char * z = (const char *)sqlite3_column_text(q, 0);
+      int const n = sqlite3_column_bytes(q, 0);
       g_stderr("\t%.*s\n", n, z);
     }
     db_finalize(q);
-  }else{
-    cmpp_kwd__misuse(pKw, t, "Unknown pragma");
   }
+  else if(M("chomp-F")){
+    g.flags.chompF = 1;
+  }else if(M("no-chomp-F")){
+    g.flags.chompF = 0;
+  }
+#if 0
+  /* now done by cmpp_kwd_at_policy() */
+  else if(M("@")){
+    if(t->args.argc>2){
+      g.flags.atPolicy =
+        AtPolicy_fromStr((char const *)t->args.argv[2], 1);
+    }else{
+      g.flags.atPolicy = AT_DEFAULT;
+    }
+  }else if(M("no-@")){
+    g.flags.atPolicy = AT_OFF;
+  }
+#endif
+  else{
+    cmpp_kwd__err(pKw, t, "Unknown pragma: %s", zArg);
+  }
+#undef M
+}
+
+/* Impl. for #savepoint. */
+static void cmpp_kwd_savepoint(CmppKeyword const * pKw, CmppTokenizer *t){
+  const char * zArg;
+  if(CT_skip(t)) return;
+  else if(t->args.argc!=2){
+    cmpp_kwd__err(pKw, t, "Expecting one argument");
+  }
+  zArg = (const char *)t->args.argv[1];
+#define SP_NAME " cmpp /*" __FILE__ "*/;"
+#define M(X) 0==strcmp(zArg,X)
+  if(M("begin")){
+    db_affirm_rc(sqlite3_exec(g.db, "SAVEPOINT" SP_NAME, 0, 0, 0),
+                 "Starting a savepoint");
+  }else if(M("rollback")){
+    db_affirm_rc(
+      sqlite3_exec(g.db,
+                   "ROLLBACK TO SAVEPOINT" SP_NAME
+                   "RELEASE SAVEPOINT" SP_NAME,
+                   0, 0, 0
+      ), "Rolling back a savepoint"
+    );
+  }else if(M("commit")){
+    db_affirm_rc(
+      sqlite3_exec(g.db,
+                   "RELEASE" SP_NAME,
+                   0, 0, 0
+      ), "Committing a savepoint"
+    );
+  }else{
+    cmpp_kwd__err(pKw, t, "Unknown savepoint option: %s", zArg);
+  }
+#undef SP_NAME
 #undef M
 }
 
@@ -1362,15 +1927,26 @@ static void cmpp_kwd_stderr(CmppKeyword const * pKw, CmppTokenizer *t){
     }else{
       g_stderr("%s:%u: (no %.*s%s argument)\n",
                t->zName, t->token.lineNo,
-               g.nDelim, g.zDelim, pKw->zName);
+               g.delim.n, g.delim.z, pKw->zName);
     }
   }
 }
 
+/* Impl. for the @ policy. */
+static void cmpp_kwd_at_policy(CmppKeyword const * pKw, CmppTokenizer *t){
+  if(CT_skip(t)) return;
+  else if(t->args.argc<2){
+    g.flags.atPolicy = AT_DEFAULT;
+  }else{
+    g.flags.atPolicy = AtPolicy_fromStr((char const*)t->args.argv[1], 1);
+  }
+}
+
+
 #if 0
 /* Impl. for dummy placeholder. */
 static void cmpp_kwd_todo(CmppKeyword const * pKw, CmppTokenizer *t){
-  if(t){/*unused*/}
+  (void)t;
   g_debug(0,("TODO: keyword handler for %s\n", pKw->zName));
 }
 #endif
@@ -1378,6 +1954,8 @@ static void cmpp_kwd_todo(CmppKeyword const * pKw, CmppTokenizer *t){
 CmppKeyword aKeywords[] = {
 /* Keep these sorted by zName */
   {"//", 2, 0, TT_Comment, cmpp_kwd_noop},
+  {"@policy", 7, 1, TT_AtPolicy, cmpp_kwd_at_policy},
+  {"assert", 3, 1, TT_Assert, cmpp_kwd_if},
   {"define", 6, 1, TT_Define, cmpp_kwd_define},
   {"elif", 4, 1, TT_Elif, cmpp_kwd_if},
   {"elifnot", 7, 1, TT_ElifNot, cmpp_kwd_if},
@@ -1388,6 +1966,7 @@ CmppKeyword aKeywords[] = {
   {"ifnot", 5, 1, TT_IfNot, cmpp_kwd_if},
   {"include", 7, 0, TT_Include, cmpp_kwd_include},
   {"pragma", 6, 1, TT_Pragma, cmpp_kwd_pragma},
+  {"savepoint", 9, 1, TT_Savepoint, cmpp_kwd_savepoint},
   {"stderr", 6, 0, TT_Stderr, cmpp_kwd_stderr},
   {"undef", 5, 1, TT_Undef, cmpp_kwd_define},
   {0,0,TT_Invalid, 0}
@@ -1416,16 +1995,19 @@ void cmpp_process_keyword(CmppTokenizer * const t){
 
 void cmpp_process_file(const char * zName){
   FileWrapper fw = FileWrapper_empty;
+  CmppTokenizer const * const oldTok = g.tok;
   CmppTokenizer ct = CmppTokenizer_empty;
-
+  g.tok = &ct;
   FileWrapper_open(&fw, zName, "r");
   FileWrapper_slurp(&fw);
   g_debug(1,("Read %u byte(s) from [%s]\n", fw.nContent, fw.zName));
-  ct.zName = zName;
-  ct.zBegin = fw.zContent;
-  ct.zEnd = fw.zContent + fw.nContent;
-  while(cmpp_next_keyword_line(&ct)){
-    cmpp_process_keyword(&ct);
+  if( fw.zContent ){
+    ct.zName = zName;
+    ct.zBegin = fw.zContent;
+    ct.zEnd = fw.zContent + fw.nContent;
+    while(cmpp_next_keyword_line(&ct)){
+      cmpp_process_keyword(&ct);
+    }
   }
   FileWrapper_close(&fw);
   if(0!=ct.level.ndx){
@@ -1433,95 +2015,34 @@ void cmpp_process_file(const char * zName){
     fatal("Input ended inside an unterminated nested construct"
           "opened at [%s] line %u", zName, lv->token.lineNo);
   }
+  g.tok = oldTok;
 }
 
-static void usage(int isErr){
-  FILE * const fOut = isErr ? stderr : stdout;
-  fprintf(fOut,
-          "Usage: %s [flags] [infile]\n"
-          "Flags:\n",
-          g.zArgv0);
-#define arg(F,D) fprintf(fOut,"  %s\n      %s\n",F, D)
-  arg("-f|--file FILE","Read input from FILE (default=- (stdin)).\n"
-      "      Alternately, the first non-flag argument is assumed to "
-      "be the input file.");
-  arg("-o|--outfile FILE","Send output to FILE (default=- (stdout))");
-  arg("-DXYZ","Define XYZ to true");
-  arg("-UXYZ","Undefine XYZ (equivalent to false)");
-  arg("-IXYZ","Add dir XYZ to include path");
-  arg("-d|--delimiter VALUE", "Set keyword delimiter to VALUE "
-      "(default=" CMPP_DEFAULT_DELIM ")");
-#undef arg
-  fputs("",fOut);
-}
 
-int main(int argc, char const * const * argv){
-  int rc = 0;
-  int i;
-  int inclCount = 0;
-  const char * zInfile = 0;
-#define M(X) (0==strcmp(X,zArg))
-#define ISFLAG(X) else if(M(X))
-#define ISFLAG2(X,Y) else if(M(X) || M(Y))
-#define ARGVAL \
-  if(i+1>=argc) fatal("Missing value for flag '%s'", zArg);  \
-  zArg = argv[++i]
-  g.zArgv0 = argv[0];
-  atexit(cmpp_atexit);
-  cmpp_initdb();
-  for(i = 1; i < argc; ++i){
-    char const * zArg = argv[i];
-    while('-'==*zArg) ++zArg;
-    if(M("?") || M("help")) {
-      usage(0);
-      goto end;
-    }else if('D'==*zArg){
-      ++zArg;
-      if(!*zArg) fatal("Missing key for -D");
-      db_define_add(zArg);
-    }else if('U'==*zArg){
-      ++zArg;
-      if(!*zArg) fatal("Missing key for -U");
-      db_define_rm(zArg);
-    }else if('I'==*zArg){
-      ++zArg;
-      if(!*zArg) fatal("Missing directory for -I");
-      db_include_dir_add(zArg);
-      ++inclCount;
-    }
-    ISFLAG2("o","outfile"){
-      ARGVAL;
-      if(g.out.zName) fatal("Cannot use -o more than once.");
-      g.out.zName = zArg;
-    }
-    ISFLAG2("f","file"){
-      ARGVAL;
-      do_infile:
-      if(zInfile) fatal("Cannot use -i more than once.");
-      zInfile = zArg;
-    }
-    ISFLAG2("d","delimiter"){
-      ARGVAL;
-      g.zDelim = zArg;
-      g.nDelim = (unsigned short)strlen(zArg);
-      if(!g.nDelim) fatal("Keyword delimiter may not be empty.");
-    }
-    ISFLAG("debug"){
-      ++g.doDebug;
-    }else if(!zInfile && '-'!=argv[i][0]){
-      goto do_infile;
-    }else{
-      fatal("Unhandled flag: %s", argv[i]);
-    }
+void fatalv(char const *zFmt, va_list va){
+  fflush(stdout);
+  fputc('\n', stderr);
+  if( g.tok ){
+    fprintf(stderr,"%s: @%s:%d: ",
+            g.zArgv0,
+            (g.tok->zName && 0==strcmp("-",g.tok->zName))
+            ? "<stdin>"
+            : g.tok->zName,
+            g.tok->lineNo);
   }
-  if(!zInfile) zInfile = "-";
-  if(!g.out.zName) g.out.zName = "-";
-  if(!inclCount) db_include_dir_add(".");
-  FileWrapper_open(&g.out, g.out.zName, "w");
-  cmpp_process_file(zInfile);
-  FileWrapper_close(&g.out);
-  end:
-  return rc ? EXIT_FAILURE : EXIT_SUCCESS;
+  if(zFmt && *zFmt){
+    vfprintf(stderr, zFmt, va);
+  }
+  fputc('\n', stderr);
+  fflush(stderr);
+  exit(1);
+}
+
+void fatal(char const *zFmt, ...){
+  va_list va;
+  va_start(va, zFmt);
+  fatalv(zFmt, va);
+  va_end(va);
 }
 
 #undef CT_level
@@ -1529,3 +2050,250 @@ int main(int argc, char const * const * argv){
 #undef CT_skipLevel
 #undef CT_skip
 #undef CLvl_skip
+
+static void usage(int isErr){
+  FILE * const fOut = isErr ? stderr : stdout;
+  fprintf(fOut, "Usage: %s [flags] [infile...]\n", g.zArgv0);
+  fprintf(fOut,
+          "Flags and filenames may be in any order and "
+          "they are processed in that order.\n"
+          "\nFlags:\n");
+#define GAP "     "
+#define arg(F,D) fprintf(fOut,"\n  %s\n" GAP "%s\n",F, D)
+  arg("-o|--outfile FILE","Send output to FILE (default=- (stdout)).\n"
+      GAP "Because arguments are processed in order, this should\n"
+      GAP "normally be given before -f.");
+  arg("-f|--file FILE","Read input from FILE (default=- (stdin)).\n"
+      "     All non-flag arguments are assumed to be the input files.");
+  arg("-DXYZ[=value]","Define XYZ to the given value (default=1).");
+  arg("-UXYZ","Undefine all defines matching glob XYZ.");
+  arg("-IXYZ","Add dir XYZ to the " CMPP_DEFAULT_DELIM "include path.");
+  arg("-FXYZ=filename",
+      "Define XYZ to the raw contents of the given file.\n"
+      GAP "The file is not processed as by " CMPP_DEFAULT_DELIM"include\n"
+      GAP "Maybe it should be. Or maybe we need a new flag for that.");
+  arg("-d|--delimiter VALUE", "Set keyword delimiter to VALUE "
+      "(default=" CMPP_DEFAULT_DELIM ").");
+  arg("--@-policy retain|elide|error|off",
+      "Specifies how to handle @tokens@ (default=off).\n"
+      GAP "off    = do not look for @tokens@\n"
+      GAP "retain = parse @tokens@ and retain any undefined ones\n"
+      GAP "elide  = parse @tokens@ and elide any undefined ones\n"
+      GAP "error  = parse @tokens@ and error for any undefined ones"
+  );
+  arg("-@", "Equivalent to --@-policy=error.");
+  arg("-no-@", "Equivalent to --@-policy=off (the default).");
+  arg("--sql-trace", "Send a trace of all SQL to stderr.");
+  arg("--sql-trace-x",
+      "Like --sql-trace but expand all bound values in the SQL.");
+  arg("--no-sql-trace", "Disable SQL tracing (default).");
+  arg("--chomp-F", "One trailing newline is trimmed from files "
+      "read via -FXYZ=filename.");
+  arg("--no-chomp-F", "Disable --chomp-F (default).");
+#undef arg
+#undef GAP
+  fputs("\n",fOut);
+}
+
+static void get_flag_val(int argc, char const * const * argv, int * ndx,
+                    char const **zVal){
+  char const * zEq = strchr(argv[*ndx], '=');
+  if( zEq ){
+    *zVal = zEq+1;
+    return;
+  }
+  if(*ndx+1>=argc){
+    fatal("Missing value for flag '%s'", argv[*ndx]);
+  }
+  *zVal = argv[++*ndx];
+}
+
+static int arg_is_flag( char const *zFlag, char const *zArg,
+                        char const **zValIfEqX ){
+  *zValIfEqX = 0;
+  if( 0==strcmp(zFlag, zArg) ) return 1;
+  char const * z = strchr(zArg,'=');
+  if( z && z>zArg ){
+    /* compare the part before the '=' */
+    if( 0==strncmp(zFlag, zArg, z-zArg) ){
+      if( !zFlag[z-zArg] ){
+        *zValIfEqX = z+1;
+        return 1;
+      }
+      /* Else it was a prefix match. */
+    }
+  }
+  return 0;
+}
+
+int main(int argc, char const * const * argv){
+  int rc = 0;
+  int inclCount = 0;
+  int nFile = 0;
+  int ndxTrace = 0;
+  int expandMode = 0;
+  char const * zVal = 0;
+#define ARGVAL if( !zVal ) get_flag_val(argc, argv, &i, &zVal)
+#define M(X) arg_is_flag(X, zArg, &zVal)
+#define ISFLAG(X) else if(M(X))
+#define ISFLAG2(X,Y) else if(M(X) || M(Y))
+#define NOVAL if( zVal ) fatal("Unexpected value for %s", zArg)
+
+  g.zArgv0 = argv[0];
+#define DOIT if(doIt)
+  for(int doIt = 0; doIt<2; ++doIt){
+    /**
+       Loop through the flags twice. The first time we just validate
+       and look for --help/-?. The second time we process the flags.
+       This approach allows us to easily chain multiple files and
+       flags:
+
+       ./c-pp -Dfoo -o foo x.y -Ufoo -Dbar -o bar x.y
+    */
+    DOIT{
+      atexit(cmpp_atexit);
+      if( 1==ndxTrace ){
+        /* Ensure that we start with tracing in the early stage if
+           --sql-trace is the first arg, in order to log schema
+           setup. */
+        g.sqlTrace.pFile = stderr;
+        g.sqlTrace.expandSql = expandMode;
+      }
+      cmpp_initdb();
+    }
+    for(int i = 1; i < argc; ++i){
+      int negate = 0;
+      char const * zArg = argv[i];
+      //g_stderr("i=%d zArg=%s\n", i, zArg);
+      zVal = 0;
+      while('-'==*zArg) ++zArg;
+      if(zArg==argv[i]/*not a flag*/){
+        zVal = zArg;
+        goto do_infile;
+      }
+      if( 0==strncmp(zArg,"no-",3) ){
+        zArg += 3;
+        negate = 1;
+      }
+      ISFLAG2("?","help"){
+        NOVAL;
+        usage(0);
+        goto end;
+      }else if('D'==*zArg){
+        ++zArg;
+        if(!*zArg) fatal("Missing key for -D");
+        DOIT {
+          db_define_add(zArg);
+        }
+      }else if('F'==*zArg){
+        ++zArg;
+        if(!*zArg) fatal("Missing key for -F");
+        DOIT {
+          db_define_add_file(zArg);
+        }
+      }else if('U'==*zArg){
+        ++zArg;
+        if(!*zArg) fatal("Missing key for -U");
+        DOIT {
+          db_define_rm(zArg);
+        }
+      }else if('I'==*zArg){
+        ++zArg;
+        if(!*zArg) fatal("Missing directory for -I");
+        DOIT {
+          db_include_dir_add(zArg);
+          ++inclCount;
+        }
+      }
+      ISFLAG2("o","outfile"){
+        ARGVAL;
+        DOIT {
+          FileWrapper_open(&g.out, zVal, "w");
+        }
+      }
+      ISFLAG2("f","file"){
+        ARGVAL;
+      do_infile:
+        DOIT {
+          ++nFile;
+          if(!g.out.pFile) FileWrapper_open(&g.out, "-", "w");
+          if(!inclCount){
+            db_include_dir_add(".");
+            ++inclCount;
+          }
+          cmpp_process_file(zVal);
+        }
+      }
+      ISFLAG("@"){
+        NOVAL;
+        DOIT {
+          assert( AT_DEFAULT!=AT_OFF );
+          g.flags.atPolicy = negate ? AT_OFF : AT_DEFAULT;
+        }
+      }
+      ISFLAG("@-policy"){
+        AtPolicy aup;
+        ARGVAL;
+        aup = AtPolicy_fromStr(zVal, 1);
+        DOIT {
+          g.flags.atPolicy = aup;
+        }
+      }
+      ISFLAG("debug"){
+        NOVAL;
+        g.flags.doDebug += negate ? -1 : 1;
+      }
+      ISFLAG("sql-trace"){
+        NOVAL;
+        /* Needs to be set before the start of the second pass, when
+           the db is inited. */
+        g.sqlTrace.expandSql = 0;
+        DOIT {
+          g.sqlTrace.pFile = negate ? (FILE*)0 : stderr;
+        }else if( !ndxTrace && !negate ){
+          ndxTrace = i;
+          expandMode = 0;
+        }
+      }
+      ISFLAG("sql-trace-x"){
+        NOVAL;
+        g.sqlTrace.expandSql = 1;
+        DOIT {
+          g.sqlTrace.pFile = negate ? (FILE*)0 : stderr;
+        }else if( !ndxTrace && !negate ){
+          ndxTrace = i;
+          expandMode = 1;
+        }
+      }
+      ISFLAG("chomp-F"){
+        NOVAL;
+        DOIT g.flags.chompF = !negate;
+      }
+      ISFLAG2("d","delimiter"){
+        ARGVAL;
+        if( !doIt ){
+          g.delim.z = zVal;
+          g.delim.n = (unsigned short)strlen(zVal);
+          if(!g.delim.n) fatal("Keyword delimiter may not be empty.");
+        }
+      }
+      else{
+        fatal("Unhandled flag: %s", argv[i]);
+      }
+    }
+    DOIT {
+      if(!nFile){
+        if(!g.out.zName) g.out.zName = "-";
+        if(!inclCount){
+          db_include_dir_add(".");
+          ++inclCount;
+        }
+        FileWrapper_open(&g.out, g.out.zName, "w");
+        cmpp_process_file("-");
+      }
+    }
+  }
+  end:
+  FileWrapper_close(&g.out);
+  return rc ? EXIT_FAILURE : EXIT_SUCCESS;
+}
