@@ -344,6 +344,15 @@
     ].join(' ');
     SF.echo("SQLite version",a.innerText);
   });
+  SF.addMsgHandler('wasm-info', (ev)=>{
+    const v = ev.data;
+    SF.e.wasmInfo.innerText = 'WASM: '+(
+      4===v.pointerSize ? 32 : 64
+    )+'-bit'
+    //+' heap size: '+Number(v.heapSize)
+    // Heap size is not changing even when loading a huge db?
+    ;
+  });
 
   /* querySelectorAll() proxy */
   const EAll = function(/*[element=document,] cssSelector*/){
@@ -409,6 +418,7 @@
   SF.e ={
     about: E('#view-about'),
     split: E('#view-split'),
+    wasmInfo: E('#opt-wasm-info'),
     terminal: E('#view-terminal'),
     hideInTerminal: EAll('.hide-in-terminal'
                          /* Elements to hide when in terminal mode */)
@@ -633,13 +643,13 @@
 
     SF.addMsgHandler('working',function f(ev){
       switch(ev.data){
-          case 'start': /* See notes in preStartWork(). */; return;
-          case 'end':
-            preStartWork._.pageTitle.innerText = preStartWork._.pageTitleOrig;
-            btnShellExec.innerText = preStartWork._.btnLabel;
-            btnShellExec.removeAttribute('disabled');
-            btnInterrupt.setAttribute('disabled','disabled');
-            return;
+        case 'start': /* See notes in preStartWork(). */; return;
+        case 'end':
+          preStartWork._.pageTitle.innerText = preStartWork._.pageTitleOrig;
+          btnShellExec.innerText = preStartWork._.btnLabel;
+          btnShellExec.removeAttribute('disabled');
+          btnInterrupt.setAttribute('disabled','disabled');
+          return;
       }
       console.warn("Unhandled 'working' event:",ev.data);
     });

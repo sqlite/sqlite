@@ -3622,9 +3622,9 @@ static void fts5LocaleFunc(
   sqlite3_value **apArg           /* Function arguments */
 ){
   const char *zLocale = 0;
-  int nLocale = 0;
+  i64 nLocale = 0;
   const char *zText = 0;
-  int nText = 0;
+  i64 nText = 0;
 
   assert( nArg==2 );
   UNUSED_PARAM(nArg);
@@ -3641,10 +3641,10 @@ static void fts5LocaleFunc(
     Fts5Global *p = (Fts5Global*)sqlite3_user_data(pCtx);
     u8 *pBlob = 0;
     u8 *pCsr = 0;
-    int nBlob = 0;
+    i64 nBlob = 0;
 
     nBlob = FTS5_LOCALE_HDR_SIZE + nLocale + 1 + nText;
-    pBlob = (u8*)sqlite3_malloc(nBlob);
+    pBlob = (u8*)sqlite3_malloc64(nBlob);
     if( pBlob==0 ){
       sqlite3_result_error_nomem(pCtx);
       return;
