@@ -449,6 +449,11 @@ Table *sqlite3LocateTable(
       if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
+#ifndef SQLITE_OMIT_JSON
+      if( pMod==0 && sqlite3_strnicmp(zName, "json", 4)==0 ){
+        pMod = sqlite3JsonVtabRegister(db, zName);
+      }
+#endif
       if( pMod ){
         if( IsSharedSchema(db) && pParse->nErr==0 ){
           int bDummy = 0;
@@ -1395,7 +1400,8 @@ void sqlite3StartTable(
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);
   }else if( db->init.imposterTable ){
-    pTable->tabFlags |= TF_Readonly | TF_Imposter;
+    pTable->tabFlags |= TF_Imposter;
+    if( db->init.imposterTable>=2 ) pTable->tabFlags |= TF_Readonly;
   }
 
   /* Normal (non-error) return. */
