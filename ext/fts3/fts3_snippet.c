@@ -17,10 +17,6 @@
 #include <string.h>
 #include <assert.h>
 
-#ifndef SQLITE_AMALGAMATION
-typedef sqlite3_int64 i64;
-#endif
-
 /*
 ** Characters that may appear in the second argument to matchinfo().
 */

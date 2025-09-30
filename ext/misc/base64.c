@@ -207,7 +207,8 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
 
 /* This function does the work for the SQLite base64(x) UDF. */
 static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
-  int nb, nc, nv = sqlite3_value_bytes(av[0]);
+  int nb, nv = sqlite3_value_bytes(av[0]);
+  sqlite3_int64 nc;
   int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
@@ -216,7 +217,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
   switch( sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
     nb = nv;
-    nc = 4*(nv+2/3); /* quads needed */
+    nc = 4*((nv+2)/3); /* quads needed */
     nc += (nc+(B64_DARK_MAX-1))/B64_DARK_MAX + 1; /* LFs and a 0-terminator */
     if( nvMax < nc ){
       sqlite3_result_error(context, "blob expanded to base64 too big", -1);

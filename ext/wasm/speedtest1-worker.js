@@ -80,6 +80,9 @@
       }
       App.wasm.xCall('wasm_main', argv.length,
                      App.wasm.scopedAllocMainArgv(argv));
+      log("WASM heap size:",App.wasm.heap8().byteLength,"bytes");
+      log("WASM pointer size:",App.wasm.ptr.size);
+
     }catch(e){
       mPost('error',e.message);
     }finally{
@@ -113,6 +116,8 @@
     log("Loaded speedtest1 module. Setting up...");
     App.pDir = wasmfsDir(S.wasm);
     App.wasm = S.wasm;
+    log("WASM heap size:",sqlite3.wasm.heap8().byteLength,"bytes");
+    log("WASM pointer size:",sqlite3.wasm.ptr.size);
     //if(App.pDir) log("Persistent storage:",pDir);
     //else log("Using transient storage.");
     mPost('ready',true);
