@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sin\sthe\szipfile\sextension\scode.
-D 2025-09-29T18:55:05.384
+C Strengthen\sthe\sfts5_locale()\sfunction\sagainst\sinteger\soverflow\sattacks,\neven\swhen\sSQLite\sis\scompiled\swith\soversize\svalues\sfor\nSQLITE_MAX_LENGTH.
+D 2025-09-30T10:11:44.070
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -114,7 +114,7 @@ F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773
 F ext/fts5/fts5_expr.c b8c32da1127bafaf10d6b4768b0dcb92285798524bed2d87a8686f99a8e8d259
 F ext/fts5/fts5_hash.c a6266cedd801ab7964fa9e74ebcdda6d30ec6a96107fa24148ec6b7b5b80f6e0
 F ext/fts5/fts5_index.c 1e5009261966215b61bbe3b46d79916346efac775b57c1487a478f684c971111
-F ext/fts5/fts5_main.c e1e5a0ce1bceb5d47ed4cc83ed4f45795035ae300343bcddd0a5785a6862053a
+F ext/fts5/fts5_main.c 42025174a556257287071e90516d3ab8115daf1dd525a301883544469a260014
 F ext/fts5/fts5_storage.c 19bc7c4cbe1e6a2dd9849ef7d84b5ca1fcbf194cefc3e386b901e00e08bf05c2
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
 F ext/fts5/fts5_test_mi.c 4308d5658cb1f5eee5998dcbaac7d5bdf7a2ef43c8192ca6e0c843f856ccee26
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ae303dab2f534e2c5132112b61fa5a097e7010fd8b652badee669fbe9df5cf53
-R 3e1c617d71503e0e1b101bd0d30072ee
-U dan
-Z cefe1c02eda63fc79f0227d3b0e9e5fc
+P 70c2c99b6f12a3467c23b44adcaf2d7d780ba8317b72de2f6730b1d892cf0c85
+R 4cb04df9c91d13599952a40b78ff9557
+U drh
+Z eac1cf93f851d848376a93c3c3d4d2aa
 # Remove this line to create a well-formed Fossil manifest.
