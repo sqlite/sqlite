@@ -134,5 +134,45 @@ do_catchsql_test 5.1 {
   CREATE TABLE def(CONSTRAINT abc CHECK( b!=c ), a, b, c);
 } {1 {near "CONSTRAINT": syntax error}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE abc(a, b CONSTRAINT two COLLATE nocase CHECK (a!=b), c CONSTRAINT one DEFAULT 'abc');
+}
+
+do_execsql_test 6.1 {
+  ALTER TABLE abc DROP CONSTRAINT one;
+  ALTER TABLE abc DROP CONSTRAINT two;
+}
+
+do_execsql_test 6.2 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE abc(a, b COLLATE nocase CHECK (a!=b), c DEFAULT 'abc')}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE abc(a, b, c, CONSTRAINT one CHECK (a>b) FOREIGN KEY(a) REFERENCES abc);
+}
+do_execsql_test 7.1 {
+  ALTER TABLE abc DROP CONSTRAINT one
+}
+do_execsql_test 7.2 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE abc(a, b, c, FOREIGN KEY(a) REFERENCES abc)}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE abc(a, b, c, CONSTRAINT one FOREIGN KEY(a) REFERENCES abc);
+}
+do_catchsql_test 8.1 {
+  ALTER TABLE abc DROP CONSTRAINT one
+} {1 {constraint may not be dropped: one}}
+
 finish_test
 

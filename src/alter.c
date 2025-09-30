@@ -2397,7 +2397,7 @@ static int getConstraint(const u8 *z){
   ** of the following tokens: 
   **
   **   CONSTRAINT, PRIMARY, NOT, UNIQUE, CHECK, DEFAULT, 
-  **   COLLATE, REFERENCES, RP, COMMA
+  **   COLLATE, REFERENCES, FOREIGN, RP, or COMMA
   **
   ** Also exit the loop if ILLEGAL turns up.
   */
@@ -2405,7 +2405,7 @@ static int getConstraint(const u8 *z){
     int n = getConstraintToken(&z[iOff], &t);
     if( t==TK_CONSTRAINT || t==TK_PRIMARY || t==TK_NOT || t==TK_UNIQUE
      || t==TK_CHECK || t==TK_DEFAULT || t==TK_COLLATE || t==TK_REFERENCES
-     || t==TK_RP || t==TK_COMMA || t==TK_ILLEGAL
+     || t==TK_FOREIGN || t==TK_RP || t==TK_COMMA || t==TK_ILLEGAL
     ){
       break;
     }
@@ -2518,8 +2518,9 @@ static void dropConstraintFunc(
         ** definition. This is enough to tell the type of the constraint - 
         ** TK_NOT means it is a NOT NULL, TK_CHECK a CHECK constraint etc.
         **
-        ** There is also the chance that the next token is TK_CONSTRAINT,
-        ** for example if a table has been created as follows:
+        ** There is also the chance that the next token is TK_CONSTRAINT
+        ** (or TK_DEFAULT or TK_COLLATE), for example if a table has been
+        ** created as follows:
         **
         **    CREATE TABLE t1(cols, CONSTRAINT one CONSTRAINT two NOT NULL);
         **
@@ -2528,7 +2529,9 @@ static void dropConstraintFunc(
         ** the next iteration of the loop with &zSql[iOff] still pointing
         ** to the CONSTRAINT keyword.  */
         nTok = getConstraintToken(&zSql[iOff], &t);
-        if( t==TK_CONSTRAINT || t==TK_COMMA || t==TK_RP ){
+        if( t==TK_CONSTRAINT || t==TK_DEFAULT || t==TK_COLLATE 
+         || t==TK_COMMA || t==TK_RP 
+        ){
           t = TK_CHECK;
         }else{
           iOff += nTok;
