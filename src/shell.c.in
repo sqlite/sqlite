@@ -1116,8 +1116,8 @@ static sqlite3_int64 integerValue(const char *zArg){
     }
   }else{
     while( IsDigit(zArg[0]) ){
-      if( v>=922337203685477580 ){
-        if( v>922337203685477580 || zArg[0]>='8' ) goto integer_overflow;
+      if( v>=922337203685477580LL ){
+        if( v>922337203685477580LL || zArg[0]>='8' ) goto integer_overflow;
       }
       v = v*10 + (zArg[0] - '0');
       zArg++;

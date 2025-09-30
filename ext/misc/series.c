@@ -316,9 +316,9 @@ static int seriesColumn(
 }
 
 #ifndef LARGEST_UINT64
-#define LARGEST_INT64  (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
-#define LARGEST_UINT64 (0xffffffff|(((sqlite3_uint64)0xffffffff)<<32))
-#define SMALLEST_INT64 (((sqlite3_int64)-1) - LARGEST_INT64)
+#define LARGEST_INT64  ((sqlite3_int64)0x7fffffffffffffffLL)
+#define LARGEST_UINT64 ((sqlite3_uint64)0xffffffffffffffffULL)
+#define SMALLEST_INT64 ((sqlite3_int64)0x8000000000000000LL)
 #endif
 
 /*
@@ -479,7 +479,10 @@ static int seriesFilter(
     if( idxNum & 0x0080 ){    /* value=X */
       if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
         double r = sqlite3_value_double(argv[iArg++]);
-        if( r==ceil(r) && r>=SMALLEST_INT64 && r<=LARGEST_INT64 ){
+        if( r==ceil(r)
+         && r>=(double)SMALLEST_INT64
+         && r<=(double)LARGEST_INT64
+        ){
           iMin = iMax = (sqlite3_int64)r;
         }else{
           goto series_no_rows;
@@ -491,7 +494,7 @@ static int seriesFilter(
       if( idxNum & 0x0300 ){  /* value>X or value>=X */
         if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
-          if( r<SMALLEST_INT64 ){
+          if( r<(double)SMALLEST_INT64 ){
             iMin = SMALLEST_INT64;
           }else if( (idxNum & 0x0200)!=0 && r==ceil(r) ){
             iMin = (sqlite3_int64)ceil(r+1.0);
@@ -512,7 +515,7 @@ static int seriesFilter(
       if( idxNum & 0x3000 ){   /* value<X or value<=X */
         if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
-          if( r>LARGEST_INT64 ){
+          if( r>(double)LARGEST_INT64 ){
             iMax = LARGEST_INT64;
           }else if( (idxNum & 0x2000)!=0 && r==floor(r) ){
             iMax = (sqlite3_int64)(r-1.0);
