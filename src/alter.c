@@ -2343,7 +2343,7 @@ static int getWhitespace(const u8 *z){
   while( 1 ){
     int t = 0;
     int n = sqlite3GetToken(&z[nRet], &t);
-    if( t!=TK_SPACE ) break;
+    if( t!=TK_SPACE && t!=TK_COMMENT ) break;
     nRet += n;
   }
   return nRet;
@@ -2361,7 +2361,7 @@ static int getConstraintToken(const u8 *z, int *piToken){
   int t = 0;
   do {
     iOff += sqlite3GetToken(&z[iOff], &t);
-  }while( t==TK_SPACE );
+  }while( t==TK_SPACE || t==TK_COMMENT );
 
   *piToken = t;
 
@@ -2386,8 +2386,8 @@ static int getConstraintToken(const u8 *z, int *piToken){
 
 /*
 ** Argument z points into the body of a constraint - specifically the 
-** token following the first of the 
-** of bytes in string z to the end of the current constraint.
+** second token of the constraint definition. Return the number of bytes
+** until the end of the constraint. 
 */
 static int getConstraint(const u8 *z){
   int iOff = 0;
@@ -2470,7 +2470,6 @@ static void dropConstraintFunc(
   int NotUsed,
   sqlite3_value **argv
 ){
-  const char *zSpace = " ";
   const u8 *zSql = sqlite3_value_text(argv[0]);
   const u8 *zCons = 0;
   int iNotNull = -1;
@@ -2496,8 +2495,8 @@ static void dropConstraintFunc(
     /* Now parse the column or table constraint definition. Search
     ** for the token CONSTRAINT if this is a DROP CONSTRAINT command, or
     ** NOT in the right column if this is a DROP NOT NULL. */
-    iStart = iOff - 1;
     while( 1 ){
+      iStart = iOff;
       iOff += getConstraintToken(&zSql[iOff], &t);
       if( t==TK_CONSTRAINT && (zCons || iNotNull==ii) ){
         /* Check if this is the constraint we are searching for. */
@@ -2515,9 +2514,26 @@ static void dropConstraintFunc(
         }
         iOff += nTok;
 
-        /* The first token of the constraint definition. */
-        iOff += getConstraintToken(&zSql[iOff], &t);
-        iOff += getConstraint(&zSql[iOff]);
+        /* The next token is usually the first token of the constraint
+        ** definition. This is enough to tell the type of the constraint - 
+        ** TK_NOT means it is a NOT NULL, TK_CHECK a CHECK constraint etc.
+        **
+        ** There is also the chance that the next token is TK_CONSTRAINT,
+        ** for example if a table has been created as follows:
+        **
+        **    CREATE TABLE t1(cols, CONSTRAINT one CONSTRAINT two NOT NULL);
+        **
+        ** In this case, allow the "CONSTRAINT one" bit to be dropped by
+        ** this command if that is what is requested, or to advance to
+        ** the next iteration of the loop with &zSql[iOff] still pointing
+        ** to the CONSTRAINT keyword.  */
+        nTok = getConstraintToken(&zSql[iOff], &t);
+        if( t==TK_CONSTRAINT || t==TK_COMMA || t==TK_RP ){
+          t = TK_CHECK;
+        }else{
+          iOff += nTok;
+          iOff += getConstraint(&zSql[iOff]);
+        }
 
         if( cmp==0 || (iNotNull>=0 && t==TK_NOT) ){
           if( t!=TK_NOT && t!=TK_CHECK ){
@@ -2537,7 +2553,6 @@ static void dropConstraintFunc(
       }else if( t==TK_COMMA ){
         break;
       }
-      iStart = iOff;
     }
   }
 
@@ -2551,10 +2566,16 @@ static void dropConstraintFunc(
       sqlite3_result_text(ctx, (const char*)zSql, -1, SQLITE_TRANSIENT);
     }
   }else{
-    /* Figure out if an extra space is required following the constraint. */
+
+    /* Figure out if an extra space should be inserted after the constraint
+    ** is removed. And if an additional comma preceding the constraint 
+    ** should be removed. */
+    const char *zSpace = " ";
+    iEnd += getWhitespace(&zSql[iEnd]);
     sqlite3GetToken(&zSql[iEnd], &t);
-    if( t==TK_RP || t==TK_SPACE || t==TK_COMMA ){
+    if( t==TK_RP || t==TK_COMMA ){
       zSpace = "";
+      if( zSql[iStart-1]==',' ) iStart--;
     }
 
     zNew = sqlite3_mprintf("%.*s%s%s", iStart, zSql, zSpace, &zSql[iEnd]);

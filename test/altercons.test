@@ -57,6 +57,25 @@ foreach {tn before after} {
  11 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) REFERENCES t2) }
     { CREATE TABLE t1(a, b REFERENCES t2) }
 
+ 12 { CREATE TABLE t1(a, b, c, CONSTRAINT one CONSTRAINT abc CHECK(a!=b) CONSTRAINT three) }
+    { CREATE TABLE t1(a, b, c, CONSTRAINT one CONSTRAINT three) }
+
+ 13 { CREATE TABLE t1(a, b, c, CONSTRAINT abc CONSTRAINT one CHECK(a!=b) CONSTRAINT three) }
+    { CREATE TABLE t1(a, b, c, CONSTRAINT one CHECK(a!=b) CONSTRAINT three) }
+
+ 14 { CREATE TABLE t1(a, b, c, CONSTRAINT abc) }
+    { CREATE TABLE t1(a, b, c) }
+
+ 15 { CREATE TABLE t1(a, b, c,      
+                      CONSTRAINT abc, CHECK( a!=b )) }
+    { CREATE TABLE t1(a, b, c, CHECK( a!=b )) }
+
+ 16 { CREATE TABLE t1(a, b, c, CONSTRAINT abc /* hello */ CHECK( a!=b )) }
+    { CREATE TABLE t1(a, b, c) }
+
+ 17 { CREATE TABLE t1(a, b, c, /* world */ CONSTRAINT abc CHECK( a!=b )) }
+    { CREATE TABLE t1(a, b, c) }
+
 } {
   reset_db
 

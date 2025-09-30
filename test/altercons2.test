@@ -102,11 +102,37 @@ reset_db
 do_execsql_test 3.0 {
   CREATE TABLE t1(x);
 }
-
-breakpoint
 do_execsql_test 3.1 {
   ALTER TABLE t1 ALTER x SET NOT NULL;
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE abc(a, b, c, CONSTRAINT one CONSTRAINT two CHECK (b!=c));
+}
+do_execsql_test 4.1 {
+  ALTER TABLE abc DROP CONSTRAINT one
+}
+do_execsql_test 4.2 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE abc(a, b, c, CONSTRAINT two CHECK (b!=c))}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+# The columns must come before the table constraints in a CREATE TABLE
+# statement. This is useful, as it means the DROP CONSTRAINT code does
+# not have to handle the constraint immediately following the '(' at
+# the start of the column-list.
+do_catchsql_test 5.0 {
+  CREATE TABLE abc(a, b, c, CONSTRAINT two CHECK (b!=c), d)
+} {1 {near "d": syntax error}}
+do_catchsql_test 5.1 {
+  CREATE TABLE def(CONSTRAINT abc CHECK( b!=c ), a, b, c);
+} {1 {near "CONSTRAINT": syntax error}}
 
 finish_test
 
