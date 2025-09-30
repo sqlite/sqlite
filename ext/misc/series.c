@@ -427,6 +427,7 @@ static int seriesFilter(
   }
   if( idxNum & 0x04 ){
     pCur->iOStep = sqlite3_value_int64(argv[iArg++]);
+    if( pCur->iOStep==0 ) pCur->iOStep = 1;
   }else{
     pCur->iOStep = 1;
   }

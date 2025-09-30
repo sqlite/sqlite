@@ -664,6 +664,10 @@ do_execsql_test 1364 {
    ORDER BY value ASC LIMIT 10 OFFSET 40000000;
 } {}
 
+do_execsql_test 1370 {
+  SELECT * FROM generate_series(0,0,0);
+} {}
+
 
 
 # Free up memory allocations
