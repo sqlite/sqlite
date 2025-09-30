@@ -1,5 +1,5 @@
-C Strengthen\sthe\sfts5_locale()\sfunction\sagainst\sinteger\soverflow\sattacks,\neven\swhen\sSQLite\sis\scompiled\swith\soversize\svalues\sfor\nSQLITE_MAX_LENGTH.
-D 2025-09-30T10:11:44.070
+C Fix\sanother\spotential\sbuffer\soverread\sin\sthe\szipfile\sextension.
+D 2025-09-30T11:17:40.625
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -416,7 +416,7 @@ F ext/misc/vtablog.c 9f7e02e9e8de585f3bfb48405db36c2eb4b680a23a67d7a4b738dd20f6a
 F ext/misc/vtshim.c e5bce24ab8c532f4fdc600148718fe1802cb6ed57417f1c1032d8961f72b0e8f
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
-F ext/misc/zipfile.c 67bd456f614b290371ecd1c2bdae858166983ffb16237299953cc2caae6d1aad
+F ext/misc/zipfile.c e29a32f1697e3828b1ba596a8aac50b5a2703ea6d1d37ff734222858b34bf884
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2076,7 +2076,7 @@ F test/writecrash.test 13520af28f376bfc8c0bcd130efc1fff20bb165198e8b94cf153f1f75
 F test/zeroblob.test 7b74cefc7b281dfa2b07cd237987fbe94b4a2037a7771e9e83f2d5f608b1d99e
 F test/zeroblobfault.test 861d8191a0d944dfebb3cb4d2c5b4e46a5a119eaec5a63dd996c2389f8063441
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 61ec316df6149b515dbfd570e7cd4a4a18dae037b2a5cdd5769b6f44f6132acf
+F test/zipfile.test 82d402903199d193073af2c3c56b3c6839d229160fdc9ba437fa959db8da3ecc
 F test/zipfile2.test 6df5f5ef9d247756f7200066f43e7f3f52cffff47f0c02cbefe4ce9c3284cb10
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 70c2c99b6f12a3467c23b44adcaf2d7d780ba8317b72de2f6730b1d892cf0c85
-R 4cb04df9c91d13599952a40b78ff9557
-U drh
-Z eac1cf93f851d848376a93c3c3d4d2aa
+P f0dbd9d22f558dd002e2132381de3c82d55a670399b3e527b5962b025141676a
+R 03c7246cb86679cba7e1e177172ca761
+U dan
+Z bc4b5e983cf59dadaa265b2fa6f831d6
 # Remove this line to create a well-formed Fossil manifest.
