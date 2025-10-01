@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverread\sin\sdemo\scode\sin\sext/misc/memvfs.c.
-D 2025-10-01T14:28:48.678
+C Prevent\sembedded\s0x00\scharacters\sin\sthe\soutput\sstrings\sfrom\sconfusing\nthe\scompletion\sextension\sand\scausing\sit\sto\sread\spast\sthe\send\sof\san\sarray.\n[forum:/forumpost/88a08b3201|Forum\spost\s88a08b3201].
+D 2025-10-01T19:01:19.592
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -366,7 +366,7 @@ F ext/misc/carray.c 6fd2be4dfa3e9ecf227221d92d808454e18710c123034fbb74999f6625f9
 F ext/misc/carray.h 4bef8af4e9ddda024f5540cc4d456c3e4a4a7624d6315edf85dce1ce8419beb8
 F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001259913
 F ext/misc/closure.c 5559daf1daf742228431db929d1aa86dd535a4224cc634a81d2fd0d1e6ad7839
-F ext/misc/completion.c c3c8b3cc1293c34f04f8746a3adfbfedb43f00d113f8c984a1ed09433317e507
+F ext/misc/completion.c c27b64fdd0943c1b7f152376599814cee2641f7d67a7bb9bd2b957c2a64a5591
 F ext/misc/compress.c 2c79a74330e0e0ba6cb3f7397f8ba5af12d46377ef5d3ee075e12dd8a6ed57f0
 F ext/misc/csv.c 7cae8c2666a058a58fb8994ed2457339a06c97d31c251d9a8445cdd966629890
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P afb2feb38043fef3c286030f9d1238c132f338e54233f2e4655323b388455c72
-R d381d5c8727a15a4d58824d798ff6d73
-U dan
-Z 780e0bbd35862bb5985abafddb9bc9fd
+P 90f7318308ca8372cbd9f183d88ff6cb884446f6df0695294c9a9955c5109f72
+R 5e5e89dd59f0bc5083897f9a01f819fd
+U drh
+Z bbcedf6ac724dcefe9f6d93f09a2453f
 # Remove this line to create a well-formed Fossil manifest.
