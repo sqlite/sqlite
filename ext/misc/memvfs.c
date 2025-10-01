@@ -38,6 +38,13 @@
 ** then it defaults to the sz= value.  Parameter values can be in either
 ** decimal or hexadecimal.  The filename in the URI is ignored.
 */
+
+/*************************************************************************
+** WARNING: THIS FILE CONTAINS UNTESTED CODE. The code in this file is for
+** demonstration purposes only. It has been tested informally only and is
+** not considered production ready.
+*************************************************************************/
+
 #include <sqlite3ext.h>
 SQLITE_EXTENSION_INIT1
 #include <string.h>
@@ -171,8 +178,19 @@ static int memRead(
   sqlite_int64 iOfst
 ){
   MemFile *p = (MemFile *)pFile;
-  memcpy(zBuf, p->aData+iOfst, iAmt);
-  return SQLITE_OK;
+  int nCopy = iAmt;
+  int rc = SQLITE_OK;
+
+  if( iOfst+iAmt>p->szMax ){
+    memset(zBuf, 0, iAmt);
+    nCopy = (iOfst<p->szMax ? (p->szMax - iOfst) : 0);
+    rc = SQLITE_IOERR_SHORT_READ;
+  }
+  if( nCopy>0 ){
+    memcpy(zBuf, p->aData+iOfst, nCopy);
+  }
+
+  return rc;
 }
 
 /*

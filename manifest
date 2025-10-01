@@ -1,5 +1,5 @@
-C Enable\sthe\sCLI\sto\sbe\scompiled\swith\sSQLITE_OMIT_AUTHORIZATION.
-D 2025-09-30T19:11:00.195
+C Fix\sa\sbuffer\soverread\sin\sdemo\scode\sin\sext/misc/memvfs.c.
+D 2025-10-01T14:28:48.678
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -379,7 +379,7 @@ F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777
 F ext/misc/ieee754.c 176c061c94857b543313959289cb60cf777c999fd002f82b53d194b95e9f347a
 F ext/misc/memstat.c 43705d795090efb78c85c736b89251e743c291e23daaa8382fe7a0df2c6a283d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
-F ext/misc/memvfs.c 7dffa8cc89c7f2d73da4bd4ccea1bcbd2bd283e3bb4cea398df7c372a197291b
+F ext/misc/memvfs.c 88b0caf4d56ac6fe7fca924b219e21182cd2e8e04277e0110fc933687e034b0f
 F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
 F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58f34edd
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 24ee6c25b4745c8fd671d845b48b9ab98a787ccb348d560ad70f19d035e7990e
-R 862c34b03180ba76c25e4a2e5f7e007e
-U drh
-Z 016b04b51188121692a1619ad13c9e26
+P afb2feb38043fef3c286030f9d1238c132f338e54233f2e4655323b388455c72
+R d381d5c8727a15a4d58824d798ff6d73
+U dan
+Z 780e0bbd35862bb5985abafddb9bc9fd
 # Remove this line to create a well-formed Fossil manifest.
