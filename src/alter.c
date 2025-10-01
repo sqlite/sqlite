@@ -2397,7 +2397,7 @@ static int getConstraint(const u8 *z){
   ** of the following tokens: 
   **
   **   CONSTRAINT, PRIMARY, NOT, UNIQUE, CHECK, DEFAULT, 
-  **   COLLATE, REFERENCES, FOREIGN, RP, or COMMA
+  **   COLLATE, REFERENCES, FOREIGN, GENERATED, AS, RP, or COMMA
   **
   ** Also exit the loop if ILLEGAL turns up.
   */
@@ -2406,6 +2406,7 @@ static int getConstraint(const u8 *z){
     if( t==TK_CONSTRAINT || t==TK_PRIMARY || t==TK_NOT || t==TK_UNIQUE
      || t==TK_CHECK || t==TK_DEFAULT || t==TK_COLLATE || t==TK_REFERENCES
      || t==TK_FOREIGN || t==TK_RP || t==TK_COMMA || t==TK_ILLEGAL
+     || t==TK_AS || t==TK_GENERATED
     ){
       break;
     }
@@ -2530,7 +2531,7 @@ static void dropConstraintFunc(
         ** to the CONSTRAINT keyword.  */
         nTok = getConstraintToken(&zSql[iOff], &t);
         if( t==TK_CONSTRAINT || t==TK_DEFAULT || t==TK_COLLATE 
-         || t==TK_COMMA || t==TK_RP 
+         || t==TK_COMMA || t==TK_RP || t==TK_GENERATED || t==TK_AS 
         ){
           t = TK_CHECK;
         }else{

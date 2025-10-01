@@ -174,5 +174,37 @@ do_catchsql_test 8.1 {
   ALTER TABLE abc DROP CONSTRAINT one
 } {1 {constraint may not be dropped: one}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE abc(a, b NOT NULL AS (a+1))
+}
+do_execsql_test 9.1 {
+  ALTER TABLE abc ALTER b DROP NOT NULL;
+  SELECT sql FROM sqlite_schema;
+} {{CREATE TABLE abc(a, b AS (a+1))}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 10.0 {
+  CREATE TABLE abc(a, b GENERATED ALWAYS AS (a+1));
+  INSERT INTO abc VALUES(1), (2);
+  SELECT * FROM abc;
+} {1 2   2 3}
+
+do_execsql_test 10.1 {
+  ALTER TABLE abc ALTER b SET NOT NULL;
+}
+do_catchsql_test 10.2 {
+  INSERT INTO abc VALUES(NULL);
+} {1 {NOT NULL constraint failed: abc.b}}
+do_execsql_test 10.3 {
+  INSERT INTO abc VALUES(3);
+  ALTER TABLE abc ALTER COLUMN b DROP NOT NULL;
+}
+do_execsql_test 10.4 {
+  INSERT INTO abc VALUES(NULL);
+}
+
 finish_test
 

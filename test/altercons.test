@@ -76,6 +76,25 @@ foreach {tn before after} {
  17 { CREATE TABLE t1(a, b, c, /* world */ CONSTRAINT abc CHECK( a!=b )) }
     { CREATE TABLE t1(a, b, c) }
 
+ 18 { CREATE TABLE t1(a, b, c -- comment
+  CONSTRAINT abc NOT NULL
+  ) }
+    { CREATE TABLE t1(a, b, c) }
+
+ 19 { CREATE TABLE t1(a, b, c, -- comment
+  CONSTRAINT abc CHECK (a>b) CONSTRAINT two
+  ) }
+    { CREATE TABLE t1(a, b, c, CONSTRAINT two
+  ) }
+
+ 20 { CREATE TABLE t1(a, b, c, CONSTRAINT one CONSTRAINT abc CHECK (a>b)CONSTRAINT two) }
+    { CREATE TABLE t1(a, b, c, CONSTRAINT one CONSTRAINT two) }
+
+ 21 { CREATE TABLE t1(a, b, c CONSTRAINT abc AS (b+1)) }
+    { CREATE TABLE t1(a, b, c AS (b+1)) }
+
+ 22 { CREATE TABLE t1(a, b, c CONSTRAINT abc GENERATED ALWAYS AS (b+1) STORED) }
+    { CREATE TABLE t1(a, b, c GENERATED ALWAYS AS (b+1) STORED) }
 } {
   reset_db
 
@@ -131,6 +150,12 @@ foreach {tn col before after} {
 
   9 b { CREATE TABLE t1(a, b CONSTRAINT nn CHECK (b IS NOT NULL) NOT NULL) }
       { CREATE TABLE t1(a, b CONSTRAINT nn CHECK (b IS NOT NULL)) }
+
+ 10 b { CREATE TABLE t1(a, b NOT NULL AS (a+1)) }
+      { CREATE TABLE t1(a, b AS (a+1)) }
+
+ 11 b { CREATE TABLE t1(a, b NOT NULL GENERATED ALWAYS AS (a+1)) }
+      { CREATE TABLE t1(a, b GENERATED ALWAYS AS (a+1)) }
 } {
   reset_db
 
