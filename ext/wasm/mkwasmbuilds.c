@@ -247,7 +247,7 @@ const BuildDefs oBuildDefs = {
     .zEmo        = "🍬",
     .zBaseName   = "sqlite3",
     .zDotWasm    = 0,
-    .zCmppD      = "-Dtarget=es6-module",
+    .zCmppD      = "-Dtarget:es6-module",
     .zEmcc       = 0,
     .zEmccExtra  = 0,
     .zEnv        = 0,
@@ -261,7 +261,7 @@ const BuildDefs oBuildDefs = {
     .zEmo        = "🍫",
     .zBaseName   = "sqlite3-64bit",
     .zDotWasm    = 0,
-    .zCmppD      = "-Dtarget=es6-module",
+    .zCmppD      = "-Dtarget:es6-module",
     .zEmcc       = 0,
     .zEmccExtra  = "-sMEMORY64=1 -sWASM_BIGINT=1",
     .zEnv        = 0,
@@ -339,7 +339,7 @@ const BuildDefs oBuildDefs = {
     .zEmo        = "👛",
     .zBaseName   = "sqlite3-bundler-friendly",
     .zDotWasm    = "sqlite3",
-    .zCmppD      = "$(c-pp.D.esm) -Dtarget=es6-bundler-friendly",
+    .zCmppD      = "$(c-pp.D.esm) -Dtarget:es6-bundler-friendly",
     .zEmcc       = 0,
     .zEmccExtra  = 0,
     .zEnv        = 0,
@@ -372,7 +372,7 @@ const BuildDefs oBuildDefs = {
     .zEmo        = "🍟",
     .zBaseName   = "sqlite3-node",
     .zDotWasm    = 0,
-    .zCmppD      = "-Dtarget=node $(c-pp.D.bundler)",
+    .zCmppD      = "-Dtarget:node $(c-pp.D.bundler)",
     .zEmcc       = 0,
     .zEmccExtra  = 0,
     .zEnv        = "node"
@@ -390,7 +390,7 @@ const BuildDefs oBuildDefs = {
     .zEmo        = "🍔",
     .zBaseName   = "sqlite3-node-64bit",
     .zDotWasm    = 0,
-    .zCmppD      = "-Dtarget=node $(c-pp.D.bundler)",
+    .zCmppD      = "-Dtarget:node $(c-pp.D.bundler)",
     .zEmcc       = 0,
     .zEmccExtra  = 0,
     .zEnv        = "node",
@@ -404,13 +404,14 @@ const BuildDefs oBuildDefs = {
     .zEmo        = "💿",
     .zBaseName   = "sqlite3-wasmfs",
     .zDotWasm    = 0,
-    .zCmppD      = "$(c-pp.D.bundler)",
+    .zCmppD      = "$(c-pp.D.bundler) -Dwasmfs",
     .zEmcc       = 0,
     .zEmccExtra  =
     "-sEXPORT_ES6 -sUSE_ES6_IMPORT_META"
     " -sUSE_CLOSURE_COMPILER=0"
     " -pthread -sWASMFS -sPTHREAD_POOL_SIZE=1"
     " -sERROR_ON_UNDEFINED_SYMBOLS=0 -sLLD_REPORT_UNDEFINED"
+    " -DSQLITE_ENABLE_WASMFS"
     ,
     .zEnv        = 0,
     .zDeps       = 0,

@@ -41,16 +41,11 @@
 
    ES6 worker module build:
 
-     ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget=es6-module
+     ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget:es6-module
 */
-//#if target=es6-module
-import {default as sqlite3InitModule} from
-//#if 64bit
-'./jswasm/sqlite3-64bit.mjs'
-//#else
-'./jswasm/sqlite3.mjs'
-//#endif
-;
+//#@policy error
+//#if target:es6-module
+import {default as sqlite3InitModule} from "@sqlite3.js@";
 globalThis.sqlite3InitModule = sqlite3InitModule;
 //#else
 'use strict';
@@ -3805,7 +3800,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       error: ()=>{}
     }
   }
-//#ifnot target=es6-module
+//#if not target:es6-module
   if(!globalThis.sqlite3InitModule && !isUIThread()){
     /* Vanilla worker, as opposed to an ES6 module worker */
     /*
@@ -3822,11 +3817,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       are simply lost, and such scripts see the globalThis.location of
       _this_ script.
     */
-//#if 64bit
-    let sqlite3Js = 'sqlite3-64bit.js';
-//#else
-    let sqlite3Js = 'sqlite3.js';
-//#endif
+    let sqlite3Js = '@sqlite3.js@'
+        .split('/').pop()/*the build-injected name has a dir part and
+                           we specifically want to test the following
+                           support for locating the wasm, so remove
+                           that dir part. */;
     const urlParams = new URL(globalThis.location.href).searchParams;
     if(urlParams.has('sqlite3.dir')){
       sqlite3Js = urlParams.get('sqlite3.dir') + '/' + sqlite3Js;

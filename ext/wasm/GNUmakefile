@@ -805,18 +805,18 @@ endef
 #
 # The various -D... values used by *.c-pp.js include:
 #
-# -Dtarget=es6-module: for all ESM module builds
+# -Dtarget:es6-module: for all ESM module builds
 #
-# -Dtarget=node: for node.js builds
+# -Dtarget:node: for node.js builds
 #
-# -Dtarget=es6-module -Dtarget=es6-bundler-friendly: intended for
+# -Dtarget:es6-module -Dtarget:es6-bundler-friendly: intended for
 #    "bundler-friendly" ESM module build. These have some restrictions
 #    on how URL() objects are constructed in some contexts: URLs which
 #    refer to files which are part of this project must be referenced
 #    as string literals so that bundlers' static-analysis tools can
 #    find those files and include them in their bundles.
 #
-# -Dtarget=es6-module -Dtarget=node: is intended for use by node.js
+# -Dtarget:es6-module -Dtarget:node: is intended for use by node.js
 #    for node.js, as opposed to by node.js on behalf of a
 #    browser. Mixing -sENVIRONMENT=web and -sENVIRONMENT=node leads to
 #    ambiguity and confusion on node's part, as it's unable to
@@ -1021,7 +1021,7 @@ fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
 #
 # Only add wasmfs if wasmfs.enable=1 or we're running (dist)clean
 #
-ifneq (,$(filter wasmfs b-wasmfs,$(MAKECMDGOALS)))
+ifneq (,$(filter wasmfs b-wasmfs for-testing,$(MAKECMDGOALS)))
 wasmfs.enable ?= 1
 else
 # Unconditionally enable wasmfs for [dist]clean so that the wasmfs
@@ -1259,10 +1259,18 @@ tester1-$(1): tester1$(2)
 tester1: tester1$(2)
 endef
 
-$(eval $(call gen-tester1.js,vanilla,.js,$(c-pp.D.vanilla)))
-$(eval $(call gen-tester1.js,vanilla64,-64bit.js,$(c-pp.D.vanilla64)))
-$(eval $(call gen-tester1.js,esm,.mjs,$(c-pp.D.esm)))
-$(eval $(call gen-tester1.js,esm64,-64bit.mjs,$(c-pp.D.esm64)))
+$(eval $(call gen-tester1.js,vanilla,.js, \
+  $(c-pp.D.vanilla) \
+  -Dsqlite3.js=$(dir.dout)/sqlite3.js))
+$(eval $(call gen-tester1.js,vanilla64,-64bit.js, \
+  $(c-pp.D.vanilla64) \
+  -Dsqlite3.js=$(dir.dout)/sqlite3-64bit.js))
+$(eval $(call gen-tester1.js,esm,.mjs, \
+  $(c-pp.D.esm) \
+  -Dsqlite3.js=$(dir.dout)/sqlite3.mjs))
+$(eval $(call gen-tester1.js,esm64,-64bit.mjs, \
+  $(c-pp.D.esm64) \
+  -Dsqlite3.js=$(dir.dout)/sqlite3-64bit.mjs))
 
 # tester1.html variants:
 define gen-tester1.html
@@ -1274,16 +1282,38 @@ tester1$(2).html: tester1-$(1)
 tester1: tester1$(2).html
 endef
 
-$(eval $(call gen-tester1.html,vanilla,,$(c-pp.D.vanilla)))
-$(eval $(call gen-tester1.html,vanilla64,-64bit,$(c-pp.D.vanilla64)))
-$(eval $(call gen-tester1.html,esm,-esm,$(c-pp.D.esm)))
-$(eval $(call gen-tester1.html,esm64,-esm-64bit,$(c-pp.D.esm64)))
+$(eval $(call gen-tester1.html,vanilla,,\
+  $(c-pp.D.vanilla) \
+  -Dbitness=32 \
+  -Dtitle="UI thread" \
+  -Dtester1.js=tester1.js \
+  -Dsqlite3.js=$(dir.dout)/sqlite3.js))
+$(eval $(call gen-tester1.html,vanilla64,-64bit,\
+  $(c-pp.D.vanilla64) \
+  -Dbitness=64 \
+  -Dtitle="UI thread" \
+  -Dtester1.js=tester1-64bit.js \
+  -Dsqlite3.js=$(dir.dout)/sqlite3-64bit.js))
+$(eval $(call gen-tester1.html,esm,-esm,\
+  $(c-pp.D.esm) \
+  -Dbitness=32 \
+  -Dtitle="ES6 Module in UI thread" \
+  -Dtester1.js=tester1.mjs \
+  -Dsqlite3.js=$(dir.dout)/sqlite3.mjs))
+$(eval $(call gen-tester1.html,esm64,-esm-64bit,\
+  $(c-pp.D.esm64) \
+  -Dbitness=64 \
+  -Dtitle="ES6 Module in UI thread" \
+  -Dtester1.js=tester1-64bit.mjs \
+  -Dsqlite3.js=$(dir.dout)/sqlite3-64bit.mjs))
 
 # tester1-worker.html variants:
 # There is no ESM variant of this file. Instead, that page accepts a
 # ?esm URL flag to switch to ESM mode.
-$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,tester1-worker.html))
-$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,tester1-worker-64bit.html,$(c-pp.D.64bit)))
+$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,\
+  tester1-worker.html,-Dbitness=32))
+$(eval $(call b.c-pp.target,test,tester1-worker.c-pp.html,\
+  tester1-worker-64bit.html,$(c-pp.D.64bit) -Dbitness=64))
 tester1: tester1-worker.html tester1-worker-64bit.html
 tester1-worker.html: tester1.mjs
 tester1-worker-64bit.html: tester1-64bit.mjs
@@ -1360,7 +1390,8 @@ for-testing.deps = \
   b-vanilla b-vanilla64 \
   b-esm b-esm64 \
   b-fiddle b-fiddle.debug \
-  b-speedtest1 b-speedtest164
+  b-speedtest1 b-speedtest164 \
+  b-wasmfs
 for-testing: $(for-testing.deps)
 
 ########################################################################

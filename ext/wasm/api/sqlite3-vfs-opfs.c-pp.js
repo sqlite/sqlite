@@ -1,4 +1,4 @@
-//#ifnot target=node
+//#ifnot target:node
 /*
   2022-09-18
 
@@ -209,9 +209,9 @@ const installOpfsVfs = function callee(options){
       return promiseResolve_(sqlite3);
     };
     const W =
-//#if target=es6-bundler-friendly
+//#if target:es6-bundler-friendly
     new Worker(new URL("sqlite3-opfs-async-proxy.js", import.meta.url));
-//#elif target=es6-module
+//#elif target:es6-module
     new Worker(new URL(options.proxyUri, import.meta.url));
 //#else
     new Worker(options.proxyUri);
@@ -1457,4 +1457,4 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
 }/*sqlite3ApiBootstrap.initializers.push()*/);
 //#else
 /* The OPFS VFS parts are elided from builds targeting node.js. */
-//#endif target=node
+//#endif target:node

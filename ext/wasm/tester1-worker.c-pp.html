@@ -1,4 +1,5 @@
 <!doctype html>
+//#@policy error
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
@@ -6,23 +7,11 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
-    <title>sqlite3 tester #1: Worker thread
-//#if 64bit
- (64-bit WASM)
-//#else
- (32-bit WASM)
-//#endif
-    </title>
+    <title>sqlite3 tester #1: Worker thread (@bitness@-bit WASM)</title>
     <style></style>
   </head>
   <body>
-    <h1 id='color-target'>sqlite3 tester #1: Worker thread
-//#if 64bit
- (64-bit WASM)
-//#else
- (32-bit WASM)
-//#endif
-    </h1>
+    <h1 id='color-target'>sqlite3 tester #1: Worker thread (@bitness@-bit WASM)</h1>
     <div>Variants:
       <a href='tester1.html' target='tester1.html'>conventional UI thread</a>,
       <a href='tester1-worker.html' target='tester1-worker.html'>conventional worker</a>,
@@ -59,27 +48,14 @@
       cbReverseIt();
       const urlParams = new URL(self.location.href).searchParams;
       const workerArgs = [];
-      const baseName =
-//#if 64bit
-  'tester1-64bit'
-//#else
-  'tester1'
-//#endif
-  ;
-  if(urlParams.has('esm')){
+      const baseName = "64"==="@bitness@" ? 'tester1-64bit' : 'tester1';
+      if(urlParams.has('esm')){
         logHtml('warning',"Attempting to run an ES6 Worker Module, "+
                 "which is not supported by all browsers!.");
-    workerArgs.push(baseName+'.mjs', {type:"module"});
-        const bitness =
-//#if 64bit
-        64
-//#else
-        32
-//#endif
-        ;
+        workerArgs.push(baseName+'.mjs', {type:"module"});
         document.querySelectorAll('title,#color-target').forEach((e)=>{
           e.innerText =
-            "sqlite3 tester #1: ES6 Worker Module ("+bitness+"-bit WASM)";
+            "sqlite3 tester #1: ES6 Worker Module (@bitness@-bit WASM)";
         });
       }else{
         workerArgs.push(baseName+'.js?sqlite3.dir=jswasm');

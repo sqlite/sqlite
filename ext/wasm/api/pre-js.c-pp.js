@@ -47,7 +47,7 @@
      approach.
   */
   Module['locateFile'] = function(path, prefix) {
-//#if target=es6-module
+//#if target:es6-module
     return new URL(path, import.meta.url).href;
 //#else
     'use strict';
@@ -69,11 +69,11 @@
       "result =", theFile
     );
     return theFile;
-//#endif target=es6-module
+//#endif target:es6-module
   }.bind(sIMS);
 
 //#if Module.instantiateWasm
-//#ifnot wasmfs
+//#if not wasmfs
   /**
      Override Module.instantiateWasm().
 
@@ -109,7 +109,7 @@
           .then(finalThen)
     return loadWasm();
   }.bind(sIMS);
-//#endif ifnot wasmfs
+//#endif not wasmfs
 //#endif Module.instantiateWasm
 })(Module);
 /* END FILE: api/pre-js.js. */
