@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sprevious\scheck-in.\s\sRemove\ssurplus\send-of-line\swhitespace\nfrom\sthe\sext/misc/fossildelta.c\sextension.
-D 2025-10-02T19:35:58.513
+C Remove\sthe\smemvfs.c\sextension,\sto\sprevent\sit\sfrom\sbeing\smisused.\nSee\s[forum:/forumpost/91811439aa|forum\spost\s91811439aa]\sfor\sthe\scomplaint\nthat\sprompted\sme\sto\stake\sdown\sthis\sdemonstration\scode.\s\sI\shave\sother\sthings\nto\sdo\srather\sthan\sargue\sabout\sposts\ssuch\sas\sthe\sforegoing,\sso\sit\sis\seasier\nto\sjust\stake\sthe\scode\sdown.\s\sIf\syou\sneed\sthis\scode,\syou\scan\sdownloading\solder\ncheck-ins.\s\sThe\sbeauty\sof\sDAG-based\sversion\scontrol\ssystems\slike\sFossil\n(and\sGit)\sis\sthat\snothing\sis\sever\slost;\sit\sis\sjust\sstops\sappearing\son\ntrunk.
+D 2025-10-02T22:48:08.892
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -353,7 +353,7 @@ F ext/jni/src/org/sqlite/jni/wrapper1/WindowFunction.java c7d1452f9ff26175b3c19b
 F ext/jni/src/tests/000-000-sanity.test c3427a0e0ac84d7cbe4c95fdc1cd4b61f9ddcf43443408f3000139478c4dc745
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
 F ext/jni/src/tests/900-001-fts.test bf0ce17a8d082773450e91f2388f5bbb2dfa316d0b676c313c637a91198090f0
-F ext/misc/README.md af13c3bf4405709eb1e2e1e3a39c3be6a15c3189ab8a0642bb107c6eb223b298
+F ext/misc/README.md de71b57b507ab78c03f0d2aceb85fef88a658119d314700391b35a59648cf5f0
 F ext/misc/amatch.c 2db45b1499b275d8340af6337a13d6216e4ceb2ddb41f4042b9801be7b5e593d
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
@@ -379,7 +379,6 @@ F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777
 F ext/misc/ieee754.c 176c061c94857b543313959289cb60cf777c999fd002f82b53d194b95e9f347a
 F ext/misc/memstat.c 43705d795090efb78c85c736b89251e743c291e23daaa8382fe7a0df2c6a283d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
-F ext/misc/memvfs.c 88b0caf4d56ac6fe7fca924b219e21182cd2e8e04277e0110fc933687e034b0f
 F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
 F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58f34edd
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
@@ -2169,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4be6deee646f2c0f591ba81f902182ca9302050a7fb2729c7f64981307058b8b
-R 67dcf2d323809c1d06da9ecba1f58a10
+P cc87551805dc1fcb05598339e526b304401b64a4eaaa2148a9d837b1423484ce
+R ca384b7909ce10e89a392402577a2916
 U drh
-Z f9bb3126d60dd8cb638f9ddaf13c8fa9
+Z 8df096434ded574ea20fd566f513d0f2
 # Remove this line to create a well-formed Fossil manifest.
