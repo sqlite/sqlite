@@ -2480,6 +2480,7 @@ static void dropConstraintFunc(
   int iEnd = 0;
   char *zNew = 0;
   int t = 0;
+  UNUSED_PARAMETER(NotUsed);
 
   /* Jump past the "CREATE TABLE" bit. */
   if( skipCreateTable(ctx, zSql, &iOff) ) return;
@@ -2609,6 +2610,7 @@ static void addConstraintFunc(
   int ii;
   char *zNew = 0;
   int t = 0;
+  UNUSED_PARAMETER(NotUsed);
 
   if( skipCreateTable(ctx, zSql, &iOff) ) return;
   
@@ -2764,7 +2766,7 @@ void alterDropConstraint(
 **   ALTER TABLE pSrc DROP CONSTRAINT pCons
 */
 void sqlite3AlterDropConstraint(Parse *pParse, SrcList *pSrc, Token *pCons){
-  return alterDropConstraint(pParse, pSrc, pCons, 0);
+  alterDropConstraint(pParse, pSrc, pCons, 0);
 }
 
 /*
@@ -2773,7 +2775,7 @@ void sqlite3AlterDropConstraint(Parse *pParse, SrcList *pSrc, Token *pCons){
 **   ALTER TABLE pSrc ALTER pCol DROP NOT NULL
 */
 void sqlite3AlterDropNotNull(Parse *pParse, SrcList *pSrc, Token *pCol){
-  return alterDropConstraint(pParse, pSrc, 0, pCol);
+  alterDropConstraint(pParse, pSrc, 0, pCol);
 }
 
 /*
@@ -2788,6 +2790,7 @@ static void failConstraintFunc(
 ){
   const char *zText = (const char*)sqlite3_value_text(argv[0]);
   int err = sqlite3_value_int(argv[1]);
+  (void)NotUsed;
   sqlite3_result_error(ctx, zText, -1);
   sqlite3_result_error_code(ctx, err);
 }
@@ -2809,7 +2812,6 @@ void sqlite3AlterSetNotNull(
   const char *zDb = 0;
   const char *pCons = 0;
   int nCons = 0;
-  int t = 0;
 
   /* Look up the table being altered. */
   pTab = alterFindTable(pParse, pSrc, &iDb, &zDb, 0);
@@ -2863,6 +2865,7 @@ static void findConstraintFunc(
   int iOff = 0;
   int t = 0;
 
+  (void)NotUsed;
   zSql = sqlite3_value_text(argv[0]);
   zCons = sqlite3_value_text(argv[1]);
 
