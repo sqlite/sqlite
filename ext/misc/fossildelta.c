@@ -27,7 +27,7 @@
 ** This delta format is used by the RBU extension, which is the main
 ** reason that these routines are included in the extension library.
 ** RBU does not use this extension directly.  Rather, this extension is
-** provided as a convenience to developers who want to analyze RBU files 
+** provided as a convenience to developers who want to analyze RBU files
 ** that contain deltas.
 */
 #include <string.h>
@@ -874,7 +874,7 @@ static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
     return SQLITE_OK;
   }
   z = pCur->aDelta + pCur->iCursor;
-  pCur->a2 = deltaGetInt(&z, &i);
+  pCur->a1 = deltaGetInt(&z, &i);
   switch( z[0] ){
     case '@': {
       z++;
@@ -882,7 +882,7 @@ static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
         pCur->eOp = DELTAPARSE_OP_ERROR;
         pCur->iNext = pCur->nDelta;
         break;
-      }        
+      }
       pCur->a2 = deltaGetInt(&z, &i);
       pCur->eOp = DELTAPARSE_OP_COPY;
       pCur->iNext = (int)(&z[1] - pCur->aDelta);
@@ -975,11 +975,11 @@ static int deltaparsevtabEof(sqlite3_vtab_cursor *cur){
 /*
 ** This method is called to "rewind" the deltaparsevtab_cursor object back
 ** to the first row of output.  This method is always called at least
-** once prior to any call to deltaparsevtabColumn() or deltaparsevtabRowid() or 
+** once prior to any call to deltaparsevtabColumn() or deltaparsevtabRowid() or
 ** deltaparsevtabEof().
 */
 static int deltaparsevtabFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
+  sqlite3_vtab_cursor *pVtabCursor,
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
@@ -1045,7 +1045,7 @@ static int deltaparsevtabBestIndex(
 }
 
 /*
-** This following structure defines all the methods for the 
+** This following structure defines all the methods for the
 ** virtual table.
 */
 static sqlite3_module deltaparsevtabModule = {
@@ -1082,8 +1082,8 @@ static sqlite3_module deltaparsevtabModule = {
 __declspec(dllexport)
 #endif
 int sqlite3_fossildelta_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
   static const int enc = SQLITE_UTF8|SQLITE_INNOCUOUS;
