@@ -1,5 +1,5 @@
-C Correction\sto\s[ae303dab2f534e2c]\sto\suse\sthe\sright\sloop\sover\sthe\ssolver.
-D 2025-10-02T11:28:27.740
+C Fix\s-DSQLITE_OS_OTHER=0\sbuilds.
+D 2025-10-02T14:48:27.422
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
-F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
+F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c b3da55bc4bb214b2bfb1e430b10e9d3ebcf6b11741921ab044c9b9539c8fcc4f
 F src/os_win.c f81a7cffdfe8c593a840895b3f64290714f0186b06302d2c397012252d830374
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
@@ -2169,8 +2169,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c284fda848038a61972fd1df5796f608a24ead109170aafe562a5d5787c46488
-R 24b23e720c35472c425756c76fcbcde5
-U drh
-Z 6c4321a33c3970e8f3f049d33c14aa68
+P 22b2700ac20bb8e5883d484bfd0aee7a0fbc99b92696d8ca850cd129e2ccbb43
+R 399a433d692825e6557f7aa80a566057
+U dan
+Z 1d09f435c80c1e511337c9686eefb17c
 # Remove this line to create a well-formed Fossil manifest.
