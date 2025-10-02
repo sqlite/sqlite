@@ -868,11 +868,21 @@ static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
   int i = 0;
 
   pCur->iCursor = pCur->iNext;
+  if( pCur->iCursor >= pCur->nDelta ){
+    pCur->eOp = DELTAPARSE_OP_ERROR;
+    pCur->iNext = pCur->nDelta;
+    return SQLITE_OK;
+  }
   z = pCur->aDelta + pCur->iCursor;
-  pCur->a1 = deltaGetInt(&z, &i);
+  pCur->a2 = deltaGetInt(&z, &i);
   switch( z[0] ){
     case '@': {
       z++;
+      if( pCur->iNext>=pCur->nDelta ){
+        pCur->eOp = DELTAPARSE_OP_ERROR;
+        pCur->iNext = pCur->nDelta;
+        break;
+      }        
       pCur->a2 = deltaGetInt(&z, &i);
       pCur->eOp = DELTAPARSE_OP_COPY;
       pCur->iNext = (int)(&z[1] - pCur->aDelta);
@@ -926,8 +936,12 @@ static int deltaparsevtabColumn(
       if( pCur->eOp==DELTAPARSE_OP_COPY ){
         sqlite3_result_int(ctx, pCur->a2);
       }else if( pCur->eOp==DELTAPARSE_OP_INSERT ){
-        sqlite3_result_blob(ctx, pCur->aDelta+pCur->a2, pCur->a1,
-                            SQLITE_TRANSIENT);
+        if( pCur->a2 + pCur->a1 > pCur->nDelta ){
+          sqlite3_result_zeroblob(ctx, pCur->a1);
+        }else{
+          sqlite3_result_blob(ctx, pCur->aDelta+pCur->a2, pCur->a1,
+                              SQLITE_TRANSIENT);
+        }
       }
       break;
     }
@@ -955,7 +969,7 @@ static int deltaparsevtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 */
 static int deltaparsevtabEof(sqlite3_vtab_cursor *cur){
   deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor*)cur;
-  return pCur->eOp==DELTAPARSE_OP_EOF;
+  return pCur->eOp==DELTAPARSE_OP_EOF || pCur->iCursor>=pCur->nDelta;
 }
 
 /*
