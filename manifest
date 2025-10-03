@@ -1,5 +1,5 @@
-C Remove\sthe\smemvfs.c\sextension,\sto\sprevent\sit\sfrom\sbeing\smisused.\nSee\s[forum:/forumpost/91811439aa|forum\spost\s91811439aa]\sfor\sthe\scomplaint\nthat\sprompted\sme\sto\stake\sdown\sthis\sdemonstration\scode.\s\sI\shave\sother\sthings\nto\sdo\srather\sthan\sargue\sabout\sposts\ssuch\sas\sthe\sforegoing,\sso\sit\sis\seasier\nto\sjust\stake\sthe\scode\sdown.\s\sIf\syou\sneed\sthis\scode,\syou\scan\sdownloading\solder\ncheck-ins.\s\sThe\sbeauty\sof\sDAG-based\sversion\scontrol\ssystems\slike\sFossil\n(and\sGit)\sis\sthat\snothing\sis\sever\slost;\sit\sis\sjust\sstops\sappearing\son\ntrunk.
-D 2025-10-02T22:48:08.892
+C Minor\sclarifications\sto\sthe\sJSONB\sformat\sdocumentation.
+D 2025-10-03T18:17:13.185
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -59,7 +59,7 @@ F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-unix.md c9dce1ddd4bf0d25efccc5c63eb047e78c01ce06a6ff29c73e0a8af4a0f4adbc
 F doc/compile-for-windows.md 5141661e783c9ca9e3fd30e813345898712f5c311d71316f183db87038fa28a6
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
-F doc/jsonb.md ede3238186e3a90bb79d20b2a6a06d0f9429a38e069e9da0efbad0f2ed48b924
+F doc/jsonb.md acd77fc3a709f51242655ad7803510c886aa8304202fa9cf2abc5f5c4e9d7ae5
 F doc/lemon.html 89ea833a6f71773ab1a9063fbb7fb9b32147bc0b1057b53ecab94a3b30c0aef5
 F doc/pager-invariants.txt 83aa3a4724b2d7970cc3f3461f0295c46d4fc19a835a5781cbb35cb52feb0577
 F doc/tcl-extension-testing.md b88861804fc1eaf83249f8e206334189b61e150c360e1b80d0dcf91af82354f5
@@ -2168,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cc87551805dc1fcb05598339e526b304401b64a4eaaa2148a9d837b1423484ce
-R ca384b7909ce10e89a392402577a2916
+P eb79110dcac80dde3bcca0929d67a8f8f6d2eea5695184b2b7c6788283f06902
+R 991fbc2cb2f5387b9235b4d7ccf65681
 U drh
-Z 8df096434ded574ea20fd566f513d0f2
+Z d1ea643473c6b647420094620d7ace86
 # Remove this line to create a well-formed Fossil manifest.
