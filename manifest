@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sbedrock\sbranch.
-D 2025-09-30T19:45:46.061
+C Add\sa\stest\scase\sto\sensure\sthat\scommitting\sa\sconcurrent\stransaction\sfails\swith\sSQLITE_BUSY,\ssubsequent\sattempts\sto\scommit\sthe\stransaction\salso\sfail.
+D 2025-10-04T17:28:29.572
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -656,7 +656,7 @@ F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d826
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
-F ext/wasm/tester1-worker.c-pp.html 883881eeac14eeeecc8ff22acf9fe0f18a97cacb48be08ebb0bae891ceded584 w ext/wasm/tester1-worker.html
+F ext/wasm/tester1-worker.c-pp.html 883881eeac14eeeecc8ff22acf9fe0f18a97cacb48be08ebb0bae891ceded584
 F ext/wasm/tester1.c-pp.html 949920126dcf477925d8d540093d9cc374d3ab4c4ddee920c1dcadcf37917306
 F ext/wasm/tester1.c-pp.js 23fc1223e75228f054148eeb8469ad114e9b2881b9f437fa291b8da06d021ce3
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
@@ -996,7 +996,7 @@ F test/concurrent5.test 5031c87134fee85352ac33ad33c81c6ec4f07d5547fe2429e1d38492
 F test/concurrent6.test a7860e9ca13bb5fb76bcf41c5524fbfa9c37e6e258ecf84ffb5748a272488c67
 F test/concurrent7.test b96fa5c4cfdf8d5c0bc66b6934214500bad0260884a736f054ccc76e81aae85d
 F test/concurrent8.test b93937e74a8efb8b84f2fea7595b53418c5f29777bbe9cbdb5dc219b3dd72a7d
-F test/concurrent9.test 25b6db3a56ee87208144a3793678d0dce5e10c5a600b1a13d4befb4ef19780c6
+F test/concurrent9.test 4b59e327c524d09c992f94b5cc7202cfed124ecbb85823c30308b5e1c7e16dca
 F test/conflict.test 3307ffdf988e04b01c4e942d8aa369a977f085bf629f43a627c9a77f39d65926
 F test/conflict2.test 5557909ce683b1073982f5d1b61dfb1d41e369533bfdaf003180c5bc87282dd1
 F test/conflict3.test 81865d9599609aca394fb3b9cd5f561d4729ea5b176bece3644f6ecb540f88ac
@@ -2206,8 +2206,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7cbab6ea6c0fc9ab70cb6816c3534c49c6e4096d7870ea35275977cc8ced9753 83fa6234091abc001136b1ce168ece0da086e440ab32db9a51887ec0229e761c
-R f7a252c60385ba4ada5b983c92f9ef0b
-U drh
-Z 38fde395e7d4e90378debca282d21f68
+P 399cada13519f6d8b6b445b625857a9a655fb15892678829d351d40c73953e40
+R 983b443156bd8238ef005246af53af0f
+U dan
+Z 0f48d61b8ae9486d1642700a133d6676
 # Remove this line to create a well-formed Fossil manifest.

@@ -115,6 +115,38 @@ do_execsql_test 2.8 {
   PRAGMA integrity_check;
 } {ok}
 
+db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+} {wal2}
+
+sqlite3 db2 test.db
+
+do_execsql_test -db db2 3.1 {
+  BEGIN CONCURRENT;
+    UPDATE t1 SET b=3;
+}
+
+do_execsql_test 3.2 {
+  INSERT INTO t1 VALUES(3, 4);
+}
+
+do_test 3.3 {
+  list [catch { db2 eval COMMIT } msg] $msg
+} {1 {database is locked}}
+
+do_test 3.4 {
+  list [catch { db2 eval COMMIT } msg] $msg
+} {1 {database is locked}}
+
+db2 close
+
+
 finish_test
 
 
