@@ -54,6 +54,7 @@ typedef struct et_info {   /* Information about each format field */
   etByte type;             /* Conversion paradigm */
   etByte charset;          /* Offset into aDigits[] of the digits string */
   etByte prefix;           /* Offset into aPrefix[] of the prefix string */
+  char iNxt;               /* Next with same hash, or 0 for end of chain */
 } et_info;
 
 /*
@@ -62,44 +63,62 @@ typedef struct et_info {   /* Information about each format field */
 #define FLAG_SIGNED    1     /* True if the value to convert is signed */
 #define FLAG_STRING    4     /* Allow infinite precision */
 
-
 /*
-** The following table is searched linearly, so it is good to put the
-** most frequently used conversion types first.
+** The table is searched by hash.  In the case of %C where C is the character
+** and that character has ASCII value j, then the hash is j%23.
+**
+** The order of the entries in fmtinfo[] and the hash chain was entered
+** manually, but based on the output of the following TCL script:
 */
+#if 0  /*****  Beginning of script ******/
+foreach c {d s g z q Q w c o u x X f e E G i n % p T S r} {
+  scan $c %c x
+  set n($c) $x
+}
+set mx [llength [array names n]]
+puts "count: $mx"
+
+set mx 27
+  puts "*********** mx=$mx ************"
+  for {set r 0} {$r<$mx} {incr r} {
+    puts -nonewline [format %2d: $r]
+    foreach c [array names n] {
+      if {($n($c))%$mx==$r} {puts -nonewline " $c"}
+    }
+    puts ""
+  }
+}
+#endif /***** End of script ********/
+
 static const char aDigits[] = "0123456789ABCDEF0123456789abcdef";
 static const char aPrefix[] = "-x0\000X0";
-static const et_info fmtinfo[] = {
-  {  'd', 10, 1, etDECIMAL,    0,  0 },
-  {  's',  0, 4, etSTRING,     0,  0 },
-  {  'g',  0, 1, etGENERIC,    30, 0 },
-  {  'z',  0, 4, etDYNSTRING,  0,  0 },
-  {  'q',  0, 4, etESCAPE_q,   0,  0 },
-  {  'Q',  0, 4, etESCAPE_Q,   0,  0 },
-  {  'w',  0, 4, etESCAPE_w,   0,  0 },
-  {  'c',  0, 0, etCHARX,      0,  0 },
-  {  'o',  8, 0, etRADIX,      0,  2 },
-  {  'u', 10, 0, etDECIMAL,    0,  0 },
-  {  'x', 16, 0, etRADIX,      16, 1 },
-  {  'X', 16, 0, etRADIX,      0,  4 },
-#ifndef SQLITE_OMIT_FLOATING_POINT
-  {  'f',  0, 1, etFLOAT,      0,  0 },
-  {  'e',  0, 1, etEXP,        30, 0 },
-  {  'E',  0, 1, etEXP,        14, 0 },
-  {  'G',  0, 1, etGENERIC,    14, 0 },
-#endif
-  {  'i', 10, 1, etDECIMAL,    0,  0 },
-  {  'n',  0, 0, etSIZE,       0,  0 },
-  {  '%',  0, 0, etPERCENT,    0,  0 },
-  {  'p', 16, 0, etPOINTER,    0,  1 },
-
-  /* All the rest are undocumented and are for internal use only */
-  {  'T',  0, 0, etTOKEN,      0,  0 },
-  {  'S',  0, 0, etSRCITEM,    0,  0 },
-  {  'r', 10, 1, etORDINAL,    0,  0 },
+static const et_info fmtinfo[23] = {
+  /*  0 */  {  's',  0, 4, etSTRING,     0,  0,  1 },
+  /*  1 */  {  'E',  0, 1, etEXP,        14, 0,  0 },  /* Hash: 0 */
+  /*  2 */  {  'u', 10, 0, etDECIMAL,    0,  0,  3 },
+  /*  3 */  {  'G',  0, 1, etGENERIC,    14, 0,  0 },  /* Hash: 2 */
+  /*  4 */  {  'w',  0, 4, etESCAPE_w,   0,  0,  0 },
+  /*  5 */  {  'x', 16, 0, etRADIX,      16, 1,  0 },
+  /*  6 */  {  'c',  0, 0, etCHARX,      0,  0,  0 },  /* Hash: 7 */
+  /*  7 */  {  'z',  0, 4, etDYNSTRING,  0,  0,  6 },
+  /*  8 */  {  'd', 10, 1, etDECIMAL,    0,  0,  0 },
+  /*  9 */  {  'e',  0, 1, etEXP,        30, 0,  0 },
+  /* 10 */  {  'f',  0, 1, etFLOAT,      0,  0,  0 },
+  /* 11 */  {  'g',  0, 1, etGENERIC,    30, 0,  0 },
+  /* 12 */  {  'Q',  0, 4, etESCAPE_Q,   0,  0,  0 },
+  /* 13 */  {  'i', 10, 1, etDECIMAL,    0,  0,  0 },
+  /* 14 */  {  '%',  0, 0, etPERCENT,    0,  0, 16 },
+  /* 15 */  {  'T',  0, 0, etTOKEN,      0,  0,  0 },
+  /* 16 */  {  'S',  0, 0, etSRCITEM,    0,  0,  0 },  /* Hash: 14 */
+  /* 17 */  {  'X', 16, 0, etRADIX,      0,  4,  0 },  /* Hash: 19 */
+  /* 18 */  {  'n',  0, 0, etSIZE,       0,  0,  0 },
+  /* 19 */  {  'o',  8, 0, etRADIX,      0,  2, 17 },
+  /* 20 */  {  'p', 16, 0, etPOINTER,    0,  1,  0 },
+  /* 21 */  {  'q',  0, 4, etESCAPE_q,   0,  0,  0 },
+  /* 22 */  {  'r', 10, 1, etORDINAL,    0,  0,  0 }
 };
 
-/* Notes:
+/* Additional Notes:
 **
 **    %S    Takes a pointer to SrcItem.  Shows name or database.name
 **    %!S   Like %S but prefer the zName over the zAlias
@@ -340,6 +359,9 @@ void sqlite3_str_vappendf(
     }while( !done && (c=(*++fmt))!=0 );
 
     /* Fetch the info entry for the field */
+#ifdef SQLITE_EBCDIC
+    /* The hash table only works for ASCII.  For EBCDIC, we need to do
+    ** a linear search of the table */
     infop = &fmtinfo[0];
     xtype = etINVALID;
     for(idx=0; idx<ArraySize(fmtinfo); idx++){
@@ -349,6 +371,20 @@ void sqlite3_str_vappendf(
         break;
       }
     }
+#else
+    /* Fast hash-table lookup */
+    assert( ArraySize(fmtinfo)==23 );
+    idx = ((unsigned)c) % 23;
+    if( fmtinfo[idx].fmttype==c
+     || fmtinfo[idx = fmtinfo[idx].iNxt].fmttype==c
+    ){
+      infop = &fmtinfo[idx];
+      xtype = infop->type;
+    }else{
+      infop = &fmtinfo[0];
+      xtype = etINVALID;
+    }
+#endif
 
     /*
     ** At this point, variables are initialized as follows:
