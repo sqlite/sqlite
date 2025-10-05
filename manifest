@@ -1,5 +1,5 @@
-C Fix\sa\ssyntax\serror\sin\sthe\stcl\sscript\spart\sof\s[199b6567bb41cd].
-D 2025-10-05T19:56:57.248
+C Another\ssmall\sperformance\sincrease\sin\sthe\stext\sformat\sby\susing\sstrchr()\sto\nsearch\sfor\s'%'.
+D 2025-10-05T22:41:32.252
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -731,7 +731,7 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
 F src/pragma.c ecec75795c1821520266e4f93fa8840cce48979af532db06f085e36a7813860f
 F src/prepare.c 2af0b5c1ec787c8eebd21baa9d79caf4a4dc3a18e76ce2edbf2027d706bca37a
-F src/printf.c 479179b10359d4c4ba2dd6e2cf0bef2e5b89eebb2b8bf9c525f7dcdd4932bc15
+F src/printf.c 7297c2aeed4d90d80c5ba82920d9e57b7bfad04b3466be1d7e042db382fe296e
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -2168,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 199b6567bb41cd41977e28b3e06e8c26c3300b3873f226a4699ec251a7bf8883
-R 26a76c4ff240b858c2a1fcfa22c06fcf
-U stephan
-Z 78ac269b2d343b66b3accd41136ea37b
+P a7ed85f27066b74263dbd3dfcefe5d378e524cc56cd3abac4032bc23f83b5d21
+R 5525d1f4d8f0df599d3573a4f5d0fc12
+U drh
+Z 299695479d4dba6d70d99e341c4e9259
 # Remove this line to create a well-formed Fossil manifest.
