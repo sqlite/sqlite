@@ -79,14 +79,13 @@ set mx [llength [array names n]]
 puts "count: $mx"
 
 set mx 27
-  puts "*********** mx=$mx ************"
-  for {set r 0} {$r<$mx} {incr r} {
-    puts -nonewline [format %2d: $r]
-    foreach c [array names n] {
-      if {($n($c))%$mx==$r} {puts -nonewline " $c"}
-    }
-    puts ""
+puts "*********** mx=$mx ************"
+for {set r 0} {$r<$mx} {incr r} {
+  puts -nonewline [format %2d: $r]
+  foreach c [array names n] {
+    if {($n($c))%$mx==$r} {puts -nonewline " $c"}
   }
+  puts ""
 }
 #endif /***** End of script ********/
 

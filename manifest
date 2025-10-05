@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\stext\sformatter\sby\susing\sa\shash\stable\sto\slook\sup\nthe\soperator\scharacter\sthat\sfollows\s%-subsitutions.
-D 2025-10-05T19:30:05.081
+C Fix\sa\ssyntax\serror\sin\sthe\stcl\sscript\spart\sof\s[199b6567bb41cd].
+D 2025-10-05T19:56:57.248
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -731,7 +731,7 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
 F src/pragma.c ecec75795c1821520266e4f93fa8840cce48979af532db06f085e36a7813860f
 F src/prepare.c 2af0b5c1ec787c8eebd21baa9d79caf4a4dc3a18e76ce2edbf2027d706bca37a
-F src/printf.c 72ae164ed72c952702442bea0e19f7988ed735fbdacdbfd754ca2dad4544bae6
+F src/printf.c 479179b10359d4c4ba2dd6e2cf0bef2e5b89eebb2b8bf9c525f7dcdd4932bc15
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -2168,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0fc708b41fe99b315b32e4a6ac8d48d8250195f7de1ab1d9f6eaf50290781286
-R ddb62de0b6c48aaa549ba67aa1bd3740
-U drh
-Z 7a034118be294f2b4d8fced63e14a852
+P 199b6567bb41cd41977e28b3e06e8c26c3300b3873f226a4699ec251a7bf8883
+R 26a76c4ff240b858c2a1fcfa22c06fcf
+U stephan
+Z 78ac269b2d343b66b3accd41136ea37b
 # Remove this line to create a well-formed Fossil manifest.
