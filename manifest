@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\s"testprefix"\sfor\swalckptnoop.test
-D 2025-10-06T16:23:31.511
+C Add\sinfo\sfrom\sthe\sSQLITE_SCM_...\smacros\sto\stool/version-info.c's\s--json\soutput,\sprompted\sby\s[forum:0c513ae3fca7d55c|forum\spost\s0c513ae3fc].
+D 2025-10-06T16:54:45.049
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2164,12 +2164,12 @@ F tool/tclConfigShToMake.sh 7c065d81c2d178e15e45a77372c6e5a38b5a1b08755301cd6f20
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab72920c088
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
-F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
+F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6ddf2700c
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8ea2e097b731514c284f255f12b08e15f63c7f49641a698e61ee7e47cc9d3c45
-R 75c8a149a031bb9c67e5255eee4254ac
-U drh
-Z 524f4550b908fd8edfb1f78307bb0eb2
+P ff205f29934417e8150b5243245fb70389717b219e35bd8d60791a8485b69b33
+R c5215d6a00cf42fcefb4df1fe832eb2d
+U stephan
+Z 38b40a4e997f28d1589ce439baf12b59
 # Remove this line to create a well-formed Fossil manifest.
