@@ -1,5 +1,5 @@
-C Another\ssmall\sperformance\sincrease\sin\sthe\stext\sformat\sby\susing\sstrchr()\sto\nsearch\sfor\s'%'.
-D 2025-10-05T22:41:32.252
+C Fix\sa\ssubtle\sproblem\swith\sshort-circuit\sevaluation\sintroduced\sby\n[cea8bf79e18d55a8]\sand\sdetected\sby\sthe\sdbsqlfuzz\sfuzzer.\s\sTest\scases\nin\sTH3.
+D 2025-10-06T11:50:35.171
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -686,7 +686,7 @@ F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
 F src/dbpage.c 081c59d84f187aa0eb48d98faf9578a00bde360f68438d646a86b618653d2479
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c aae36a5fbd17e256caf37b03bdaf4d27fd080d83578953c746d542340b37457e
+F src/expr.c 4d63c8f6d50fe20637de8bdaf57757a0e424e4ac5e2c3313e621d64727a48a1c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c de47a8295503aa130baae5e6d9868ecf4f7c4dbffa65d83ad1f70bdbac0ee2d6
@@ -2168,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a7ed85f27066b74263dbd3dfcefe5d378e524cc56cd3abac4032bc23f83b5d21
-R 5525d1f4d8f0df599d3573a4f5d0fc12
+P 59ad89ba07dd7b127f03f62a647f7328f08dbc0aa1b88b2b4529eb5b4c677775
+R 64d213a1164bb514373890e234bd865b
 U drh
-Z 299695479d4dba6d70d99e341c4e9259
+Z ddac3d70bcdd0f2d91634b5f6fc6814d
 # Remove this line to create a well-formed Fossil manifest.
