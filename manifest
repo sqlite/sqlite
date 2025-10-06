@@ -1,5 +1,5 @@
-C Avoid\susing\srandomblob()\sin\swalckptnoop.test,\sas\sit\sproduces\sdifferent\sresults\sfor\sdifferent\stest\spermutations.
-D 2025-10-06T17:20:26.942
+C Avoid\sattempting\sto\sdelete\sa\sfile\sthat\sis\sstill\sopen\sin\ssessionnoop2.test.
+D 2025-10-06T17:52:52.671
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -567,7 +567,7 @@ F ext/session/sessioninvert.test 9018f6a7387ac745084b6374c5e1aa14d648b372e6e1181
 F ext/session/sessionmem.test f2a735db84a3e9e19f571033b725b0b2daf847f3f28b1da55a0c1a4e74f1de09
 F ext/session/sessionnoact.test 4c7ae5c7d351cb5323bca62b6b095592ad24bd90a6713c178b62ab0063d23e19
 F ext/session/sessionnoop.test a9366a36a95ef85f8a3687856ebef46983df399541174cb1ede2ee53b8011bc7
-F ext/session/sessionnoop2.test 5beecd3ffcfbc1ef199d3536e91cc3186b438d587531ff334b6b0fc9b7d8ef10
+F ext/session/sessionnoop2.test 2d8146321785bdc7cee8966d984560184cfca83fd46da2ff81ea883d6e977b36
 F ext/session/sessionrebase.test 702378bdcb5062f1106e74457beca8797d09c113a81768734a58b197b5b334e2
 F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a80600a44396f7363
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
@@ -2168,8 +2168,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e205f87f5cf97b82781af690da1a3fbf3dc75f590783074e5a72c1d7e3bebbad
-R 4096c89fbdcc373f82b1a50b1532477b
+P 94ceb0f0cfef1da89ea2a7420f508024897d9b7c19ef9be9af88d3e6f48c297c
+R d3d6b62d35a4f82f9856c153606e3686
 U dan
-Z 87e998b27dddacc44b55da048af86b72
+Z 20f7418c1f5e33f317cb9d9cddb43d4f
 # Remove this line to create a well-formed Fossil manifest.

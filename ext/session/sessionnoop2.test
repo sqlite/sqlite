@@ -189,6 +189,7 @@ foreach {tn wo} {
   2 " WITHOUT ROWID "
 } {
   reset_db
+  catch { db2 close }
   forcedelete test.db2
   do_execsql_test 4.$tn.0 "
     CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c) $wo;
@@ -229,6 +230,7 @@ foreach {tn wo} {
   2 " WITHOUT ROWID "
 } {
   reset_db
+  catch { db2 close }
   forcedelete test.db2
   do_execsql_test 5.$tn.0 "
     PRAGMA foreign_keys = ON;
@@ -275,6 +277,7 @@ foreach {tn wo} {
   2 " WITHOUT ROWID "
 } {
   reset_db
+  catch { db2 close }
   forcedelete test.db2
   do_execsql_test 6.$tn.0 "
     CREATE TABLE x1(a INTEGER PRIMARY KEY, b, c) $wo;
