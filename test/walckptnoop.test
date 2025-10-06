@@ -19,7 +19,7 @@ source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 
-set testprefix walckpotnoop
+set testprefix walckptnoop
 
 ifcapable !wal {finish_test ; return }
 

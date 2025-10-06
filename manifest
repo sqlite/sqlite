@@ -1,5 +1,5 @@
-C New\stestrunner.tcl\soption\s"--case\sDISPLAYLNAME"\sonly\sruns\sthe\ssingle\scase\n(and\sits\sbuild\sdependencies)\sthat\sexactly\smatches\sDISPLAYNAME.
-D 2025-10-06T15:53:52.416
+C Fix\stypo\sin\sthe\s"testprefix"\sfor\swalckptnoop.test
+D 2025-10-06T16:23:31.511
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1972,7 +1972,7 @@ F test/wal_common.tcl 204d1721ac13c5e0c7fae6380315b5ab7f4e8423f580d826c5e9df1995
 F test/walbak.test 018d4e5a3d45c6298d11b99f09a8ef6876527946
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test 6bb472e82730e7e4e81395e907a01d8cfc2bd9e1f01f8a9184ca572e2955a4bf
-F test/walckptnoop.test a66e79e9afd5b4b46c65bfc77e57ed37259cedef91e4bd60ae7f64ff9f2e1962
+F test/walckptnoop.test 683b16efdc0fd253708dae0ec9c2de37551191ec611d953d20e4d5d8f4838503
 F test/walcksum.test 50e204500eed9c691b6045e467bb2923f49aa93d8adf315e2be135fdb202c1c2
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -2168,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 441a759c225d4e710a693339402624e7ba52852c08aa64439ed4568c193ad529
-R e90b90f4d394350c07286abfd5e6ecff
+P 8ea2e097b731514c284f255f12b08e15f63c7f49641a698e61ee7e47cc9d3c45
+R 75c8a149a031bb9c67e5255eee4254ac
 U drh
-Z 378abedcb519a363b3577a7db41694b7
+Z 524f4550b908fd8edfb1f78307bb0eb2
 # Remove this line to create a well-formed Fossil manifest.
