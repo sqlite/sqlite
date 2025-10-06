@@ -875,7 +875,7 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
     } elseif {$n>2 && [string match "$a*" --omit]} {
       incr ii
       set TRG(omitconfig) [lindex $argv $ii]
-    } elseif {$n>2 && [string match "$a*" --cases)} {
+    } elseif {$n>2 && [string match "$a*" --cases]} {
       incr ii
       set TRG(case) [lindex $argv $ii]
     } elseif {$n>2 && [string match "$a*" --fuzzdb]} {
