@@ -1,5 +1,5 @@
-C Avoid\sattempting\sto\sdelete\sa\sfile\sthat\sis\sstill\sopen\sin\ssessionnoop2.test.
-D 2025-10-06T17:52:52.671
+C Fix\sa\sminor\sproblem\swith\sbuilding\ssqlite3.c\swithout\smanifest.tags.
+D 2025-10-06T20:11:18.233
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2124,7 +2124,7 @@ F tool/mkshellc.tcl bab0a72a68384181a5706712dfdf6815f6526446d4e8aacace2de5e80cda
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mksqlite3c-noext.tcl 351c55256213154cabb051a3c870ef9f4487de905015141ae50dc7578a901b84
 F tool/mksqlite3c.tcl f11b63445c4840509248bd4aa151a81aea25d5415fef71943c8d436eba4f3b3c
-F tool/mksqlite3h.tcl 7b8de72c29b17b338acde81c389f3af04bf34fd25e96c5f29743d1dd285ed49e
+F tool/mksqlite3h.tcl ef6831c97e6e638d2324863e8125306baea239b23defd75da77edffa3b620e81
 F tool/mksqlite3internalh.tcl 46ef6ed6ccd3c36e23051109dd25085d8edef3887635cea25afa81c4adf4d4db
 F tool/mksrczip.tcl 81efd9974dbb36005383f2cd655520057a2ae5aa85ac2441a80c7c28f803ac52
 F tool/mktoolzip.tcl c9f388b2b0751982aef29a0c1d80f7959dbe38065ebb4421c39844e92622b086
@@ -2168,8 +2168,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 94ceb0f0cfef1da89ea2a7420f508024897d9b7c19ef9be9af88d3e6f48c297c
-R d3d6b62d35a4f82f9856c153606e3686
+P 56f6d6c538fd4e0da8a7c4e4c4d1bd0b8cd83ffd126ae24daaf30fdf808e1a78
+R 20d62e28be548b1a5af474351cc93cdb
 U dan
-Z 20f7418c1f5e33f317cb9d9cddb43d4f
+Z 7359802023ce6bc0827407fb2686474b
 # Remove this line to create a well-formed Fossil manifest.
