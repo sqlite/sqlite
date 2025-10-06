@@ -93,7 +93,7 @@ if {[info commands clock_milliseconds]==""} {
 proc usage {} {
   set a0 [file tail $::argv0]
 
-  puts stderr [string trim [subst -nocommands {
+  puts [string trim [subst -nocommands {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
