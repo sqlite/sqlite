@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\s"testprefix"\sfor\swalckptnoop.test
-D 2025-10-06T16:23:31.511
+C Update\stestrunner.tcl\sso\sthat\sthe\snew\soption\sis\s--cases\srather\sthan\ssingular\n--case,\sand\sso\sthat\sit\sis\sa\sglob\spattern.
+D 2025-10-06T16:50:37.011
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1690,7 +1690,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
-F test/testrunner.tcl 66d14fc27a154de22c214a9db4b7dcab6aed2b4d84972ffce760d470b8191b7d x
+F test/testrunner.tcl 3534413457f0886b5234bbb2bb897b13520f8361131d1f5c9af884fdbc0b21e6 x
 F test/testrunner_data.tcl c507a9afa911c03446ed90442ffd4a98aca02882c3d51bd1177c24795674def8
 F test/testrunner_estwork.tcl 7927a84327259a32854926f68a75292e33a61e7e052fdbfcb01f18696c99c724
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2168,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8ea2e097b731514c284f255f12b08e15f63c7f49641a698e61ee7e47cc9d3c45
-R 75c8a149a031bb9c67e5255eee4254ac
+P ff205f29934417e8150b5243245fb70389717b219e35bd8d60791a8485b69b33
+R 686c4b13eb48b58cdb29870a249dd5ee
 U drh
-Z 524f4550b908fd8edfb1f78307bb0eb2
+Z 7f7d64b45be4de10b7d6ec47deaef59e
 # Remove this line to create a well-formed Fossil manifest.
