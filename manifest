@@ -1,5 +1,5 @@
-C Fix\stestrunner.tcl\sso\sthat\s--help\soutput\sgoes\sto\sstdout,\snot\sstderr.
-D 2025-10-06T14:30:22.167
+C New\stestrunner.tcl\soption\s"--case\sDISPLAYLNAME"\sonly\sruns\sthe\ssingle\scase\n(and\sits\sbuild\sdependencies)\sthat\sexactly\smatches\sDISPLAYNAME.
+D 2025-10-06T15:53:52.416
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1690,7 +1690,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
-F test/testrunner.tcl 6d238aa684188ed9c40de5eaba9ba520045df9ac64877248543e44ae4555b9eb x
+F test/testrunner.tcl 66d14fc27a154de22c214a9db4b7dcab6aed2b4d84972ffce760d470b8191b7d x
 F test/testrunner_data.tcl c507a9afa911c03446ed90442ffd4a98aca02882c3d51bd1177c24795674def8
 F test/testrunner_estwork.tcl 7927a84327259a32854926f68a75292e33a61e7e052fdbfcb01f18696c99c724
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2168,8 +2168,8 @@ F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd7227350
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d71cd722c478288601c70df8cec8c242cc623d2147b30f4f68dad57c75b3ee4a
-R 3c756745369c530a639ff29c23ffa763
+P 441a759c225d4e710a693339402624e7ba52852c08aa64439ed4568c193ad529
+R e90b90f4d394350c07286abfd5e6ecff
 U drh
-Z e37f86978f05cd5d329c04e26e755a80
+Z 378abedcb519a363b3577a7db41694b7
 # Remove this line to create a well-formed Fossil manifest.

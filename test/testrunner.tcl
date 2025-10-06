@@ -108,6 +108,7 @@ Usage:
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
+    --case DISPLAYNAME       Only run the one test identified by DISPLAYNAME
     --config CONFIGS         Only use configs on comma-separate list CONFIGS
     --dryrun                 Write what would have happened to testrunner.log
     --explain                Write summary to stdout
@@ -239,6 +240,7 @@ set TRG(explain) 0                  ;# True for the --explain option
 set TRG(stopOnError) 0              ;# Stop running at first failure
 set TRG(stopOnCore) 0               ;# Stop on a core-dump
 set TRG(fullstatus) 0               ;# Full "status" report while running
+set TRG(case) {}                    ;# Only run this one case
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -873,6 +875,9 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
     } elseif {($n>2 && [string match "$a*" --omit]) || $a=="-c"} {
       incr ii
       set TRG(omitconfig) [lindex $argv $ii]
+    } elseif {($n>2 && [string match "$a*" --case]) || $a=="-c"} {
+      incr ii
+      set TRG(case) [lindex $argv $ii]
     } elseif {($n>2 && [string match "$a*" --fuzzdb])} {
       incr ii
       set env(FUZZDB) [lindex $argv $ii]
@@ -1442,6 +1447,31 @@ proc add_jobs_from_cmdline {patternlist} {
       }
     }
   }
+
+  # If the "--case DISPLAYNAME" option appears on the command-line, mark
+  # all tests other than DISPLAYNAME as 'omit'.
+  #
+  if {[info exists TRG(case)] && $TRG(case) ne ""} {
+    set jid [trdb one {
+      SELECT jobid FROM jobs WHERE displayname=$TRG(case)
+    }]
+    if {$jid eq ""} {
+      puts "ERROR: No jobs match \"$TRG(case)\"."
+      puts "The argument to --case must exactly match the jobs.displayname column"
+      puts "of the testrunner.db database."
+      trdb eval {UPDATE jobs SET state='omit'}
+    } else {
+      trdb eval {
+        WITH RECURSIVE keepers(jid,did) AS (
+           SELECT jobid,depid FROM jobs
+            WHERE displayname GLOB $TRG(case)
+           UNION
+           SELECT jobid,depid FROM jobs, keepers WHERE jobid=did
+        )
+        DELETE FROM jobs WHERE jobid NOT IN (SELECT jid FROM keepers);
+      }
+    }
+  }
 }
 
 proc make_new_testset {} {
@@ -1711,6 +1741,7 @@ proc run_testset {} {
   }
   close $TRG(log)
   progress_report
+  puts ""
 
   r_write_db {
     set tm [clock_milliseconds]
@@ -1730,7 +1761,7 @@ proc run_testset {} {
     }
   }
 
-  puts "\nTest database is $TRG(dbname)"
+  puts "Test database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
   if {[info exists TRG(FUZZDB)]} {
     puts "Extra fuzzcheck data taken from $TRG(FUZZDB)"
