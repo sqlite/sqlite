@@ -1,5 +1,5 @@
-C Change\sthe\stestrunner.tcl\soption\sfrom\s"--case"\s(singular)\sto\s"--cases".\nAllow\sthe\sargument\sto\sbe\sa\sglob\spattern,\sto\spick\sup\smultiple\scases.
-D 2025-10-06T16:57:49.314
+C Avoid\susing\srandomblob()\sin\swalckptnoop.test,\sas\sit\sproduces\sdifferent\sresults\sfor\sdifferent\stest\spermutations.
+D 2025-10-06T17:20:26.942
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1972,7 +1972,7 @@ F test/wal_common.tcl 204d1721ac13c5e0c7fae6380315b5ab7f4e8423f580d826c5e9df1995
 F test/walbak.test 018d4e5a3d45c6298d11b99f09a8ef6876527946
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test 6bb472e82730e7e4e81395e907a01d8cfc2bd9e1f01f8a9184ca572e2955a4bf
-F test/walckptnoop.test 683b16efdc0fd253708dae0ec9c2de37551191ec611d953d20e4d5d8f4838503
+F test/walckptnoop.test b13a2c3140f2c913cfd422d9a224544757d04b8b14ab4c267ab9910467c0b9be
 F test/walcksum.test 50e204500eed9c691b6045e467bb2923f49aa93d8adf315e2be135fdb202c1c2
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -2168,9 +2168,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 951882aa4e1684b7b0f7e10590de81eae1ddb8c5ac21588e3f9b9cd4cb9f0f51 797664700701effefbf4d87a791febae3bb68544bac23470351a11bcb3a87651
-R 1df6a63fe7e340ae1fe1ba56f6af0f00
-T +closed 797664700701effefbf4d87a791febae3bb68544bac23470351a11bcb3a87651
-U drh
-Z 4fb0fd94ca69c9afd2e1d94fdd12baef
+P e205f87f5cf97b82781af690da1a3fbf3dc75f590783074e5a72c1d7e3bebbad
+R 4096c89fbdcc373f82b1a50b1532477b
+U dan
+Z 87e998b27dddacc44b55da048af86b72
 # Remove this line to create a well-formed Fossil manifest.
