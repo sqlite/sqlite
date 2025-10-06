@@ -1,5 +1,5 @@
-C Add\sinfo\sfrom\sthe\sSQLITE_SCM_...\smacros\sto\stool/version-info.c's\s--json\soutput,\sprompted\sby\s[forum:0c513ae3fca7d55c|forum\spost\s0c513ae3fc].
-D 2025-10-06T16:54:45.049
+C Change\sthe\stestrunner.tcl\soption\sfrom\s"--case"\s(singular)\sto\s"--cases".\nAllow\sthe\sargument\sto\sbe\sa\sglob\spattern,\sto\spick\sup\smultiple\scases.
+D 2025-10-06T16:57:49.314
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1690,7 +1690,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
-F test/testrunner.tcl 66d14fc27a154de22c214a9db4b7dcab6aed2b4d84972ffce760d470b8191b7d x
+F test/testrunner.tcl 9da764507f6bc752961555c0beb58eb6584b9fb0f989342c7eaab3336380f560 x
 F test/testrunner_data.tcl c507a9afa911c03446ed90442ffd4a98aca02882c3d51bd1177c24795674def8
 F test/testrunner_estwork.tcl 7927a84327259a32854926f68a75292e33a61e7e052fdbfcb01f18696c99c724
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2168,8 +2168,9 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ff205f29934417e8150b5243245fb70389717b219e35bd8d60791a8485b69b33
-R c5215d6a00cf42fcefb4df1fe832eb2d
-U stephan
-Z 38b40a4e997f28d1589ce439baf12b59
+P 951882aa4e1684b7b0f7e10590de81eae1ddb8c5ac21588e3f9b9cd4cb9f0f51 797664700701effefbf4d87a791febae3bb68544bac23470351a11bcb3a87651
+R 1df6a63fe7e340ae1fe1ba56f6af0f00
+T +closed 797664700701effefbf4d87a791febae3bb68544bac23470351a11bcb3a87651
+U drh
+Z 4fb0fd94ca69c9afd2e1d94fdd12baef
 # Remove this line to create a well-formed Fossil manifest.

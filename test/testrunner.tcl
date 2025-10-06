@@ -108,7 +108,7 @@ Usage:
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
-    --case DISPLAYNAME       Only run the one test identified by DISPLAYNAME
+    --cases DISPLAYNAME      Only run test that match DISPLAYNAME
     --config CONFIGS         Only use configs on comma-separate list CONFIGS
     --dryrun                 Write what would have happened to testrunner.log
     --explain                Write summary to stdout
@@ -240,7 +240,7 @@ set TRG(explain) 0                  ;# True for the --explain option
 set TRG(stopOnError) 0              ;# Stop running at first failure
 set TRG(stopOnCore) 0               ;# Stop on a core-dump
 set TRG(fullstatus) 0               ;# Full "status" report while running
-set TRG(case) {}                    ;# Only run this one case
+set TRG(case) {}                    ;# Only run cases matching this GLOB pattern
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -872,13 +872,13 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       set TRG(dryrun) 1
     } elseif {($n>2 && [string match "$a*" --explain]) || $a=="-e"} {
       set TRG(explain) 1
-    } elseif {($n>2 && [string match "$a*" --omit]) || $a=="-c"} {
+    } elseif {$n>2 && [string match "$a*" --omit]} {
       incr ii
       set TRG(omitconfig) [lindex $argv $ii]
-    } elseif {($n>2 && [string match "$a*" --case]) || $a=="-c"} {
+    } elseif {$n>2 && [string match "$a*" --cases]} {
       incr ii
       set TRG(case) [lindex $argv $ii]
-    } elseif {($n>2 && [string match "$a*" --fuzzdb])} {
+    } elseif {$n>2 && [string match "$a*" --fuzzdb]} {
       incr ii
       set env(FUZZDB) [lindex $argv $ii]
     } elseif {[string match "$a*" --stop-on-error]} {
@@ -1453,11 +1453,11 @@ proc add_jobs_from_cmdline {patternlist} {
   #
   if {[info exists TRG(case)] && $TRG(case) ne ""} {
     set jid [trdb one {
-      SELECT jobid FROM jobs WHERE displayname=$TRG(case)
+      SELECT jobid FROM jobs WHERE displayname GLOB $TRG(case)
     }]
     if {$jid eq ""} {
       puts "ERROR: No jobs match \"$TRG(case)\"."
-      puts "The argument to --case must exactly match the jobs.displayname column"
+      puts "The argument to --cases must GLOB match the jobs.displayname column"
       puts "of the testrunner.db database."
       trdb eval {UPDATE jobs SET state='omit'}
     } else {
@@ -1818,20 +1818,7 @@ proc explain_layer {indent depid} {
       puts "${indent}$displayname in $dirname"
       explain_layer "${indent}   " $jobid
     } elseif {$showtests} {
-      if {[lindex $displayname end-3] eq "--slice"} {
-        set M [lindex $displayname end-2]
-        set N [lindex $displayname end-1]
-        set tail "[lindex $displayname end] (slice $M/$N)"
-      } else {
-        set tail [lindex $displayname end]
-      }
-      set e1 [lindex $displayname 1]
-      if {[string match config=* $e1]} {
-        set cfg [string range $e1 7 end]
-        puts "${indent}($cfg) $tail"
-      } else {
-        puts "${indent}$tail"
-      }
+      puts "${indent}$displayname"
     }
   }
 }
