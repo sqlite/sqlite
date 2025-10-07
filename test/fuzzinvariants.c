@@ -303,6 +303,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   int bDistinct = 0;
   int bOrderBy = 0;
   int nParam = sqlite3_bind_parameter_count(pStmt);
+  int hasGroupBy = 0;
 
   switch( iCnt % 4 ){
     case 1:  bDistinct = 1;              break;
@@ -327,6 +328,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     sqlite3_finalize(pBase);
     pBase = pStmt;
   }
+  hasGroupBy = sqlite3_strlike("%GROUP BY%",zIn,0)==0;
   bindDebugParameters(pBase);
   for(i=0; i<sqlite3_column_count(pStmt); i++){
     const char *zColName = sqlite3_column_name(pBase,i);
@@ -351,7 +353,8 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     if( iCnt>1 && i+2!=iCnt ) continue;
     if( zColName==0 ) continue;
     if( sqlite3_column_type(pStmt, i)==SQLITE_NULL ){
-      sqlite3_str_appendf(pTest, " %s \"%w\" ISNULL", zAnd, zColName);
+      const char *zPlus = hasGroupBy ? "+" : "";
+      sqlite3_str_appendf(pTest, " %s %s\"%w\" ISNULL", zAnd, zPlus, zColName);
     }else{
       sqlite3_str_appendf(pTest, " %s \"%w\"=?%d", zAnd, zColName, 
                           i+1+nParam);
