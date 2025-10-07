@@ -1,5 +1,5 @@
-C Improve\sthe\sinvariant\schecker\smodule\sso\sthat\sso\sthat\sit\sadded\s"+"\sbefore\n"column\sISNULL"\sin\squeries\swhere\sthe\sbase\squery\scontains\sa\sGROUP\sBY,\sto\nprevent\sthe\sISNULL\sterm\sfrom\sbeing\spushed\sdown\sinto\sthe\ssubquery,\ssince\nthat\scan\scause\sambiguities\sif\scolumn\sis\sUNIQUE.
-D 2025-10-07T18:06:05.110
+C Initial\sprototype\sspec\sfor\sthe\sSQLite\sQuery\sResult\sFormatter.
+D 2025-10-07T20:11:19.383
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -390,6 +390,7 @@ F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e0c6b
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
+F ext/misc/resfmt.md 33cf7edf5860e13e0fc17445e6b53e2f2a009f24d20a1d8d653066bfd1af8616
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c cbbec483aa0246661e7656971ce4de8e62ecc3151be94218306206fe4f5b7a9e
@@ -2168,8 +2169,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 06b4bd2aba22c57f5a5fed606c3bee225dee6fdc13bb16cc58194040ef0d7d85
-R 453915b0b72d47b5291d37cc0a19ae2f
+P b4ff920fbeef9a8590219596d73c09976da3da53c08a685be56f6b2cd2cdc70c
+R 51927445b0466af2ada0962ee88c55c2
+T *branch * resfmt
+T *sym-resfmt *
+T -sym-trunk *
 U drh
-Z 1eb68a79b24ce28ad8c3cdcce7ce295e
+Z eb3a746c4a23932f9916a7ae201a8054
 # Remove this line to create a well-formed Fossil manifest.
