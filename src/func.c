@@ -1156,7 +1156,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
 */
 static int isNHex(const char *z, int N, u32 *pVal){
   int i;
-  int v = 0;
+  u32 v = 0;
   for(i=0; i<N; i++){
     if( !sqlite3Isxdigit(z[i]) ) return 0;
     v = (v<<4) + sqlite3HexToInt(z[i]);

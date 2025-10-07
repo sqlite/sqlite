@@ -50,4 +50,8 @@ do_execsql_test func9-220 {
   SELECT format('%#Q',unistr('G\u00e4ste'));
 } {'Gäste'}
 
+do_execsql_test func9-300 {
+  SELECT hex( unistr('\UFFFFFFFF') )
+} {F7BFBFBF}
+
 finish_test
