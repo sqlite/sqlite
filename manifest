@@ -1,5 +1,5 @@
-C Improve\sthe\sinvariant\schecker\smodule\sso\sthat\sso\sthat\sit\sadded\s"+"\sbefore\n"column\sISNULL"\sin\squeries\swhere\sthe\sbase\squery\scontains\sa\sGROUP\sBY,\sto\nprevent\sthe\sISNULL\sterm\sfrom\sbeing\spushed\sdown\sinto\sthe\ssubquery,\ssince\nthat\scan\scause\sambiguities\sif\scolumn\sis\sUNIQUE.
-D 2025-10-07T18:06:05.110
+C Add\stest\scases\sfor\sthe\scarray\smodule.
+D 2025-10-07T21:02:37.621
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -362,7 +362,7 @@ F ext/misc/base85.c ff54cc676c6ec86231f75ecc86ea45416fcb69751dfb79690d5f5da5f7d3
 F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c 8f5e6da2c82ec2f06ee0216e922370a436dafdbb06ffa7a552203515ff9e7ddf
-F ext/misc/carray.c 6fd2be4dfa3e9ecf227221d92d808454e18710c123034fbb74999f6625f9143f
+F ext/misc/carray.c 9f7f838b3343660256c519f05aae05303d54a62770f64e8e4bbad255d5c78c94
 F ext/misc/carray.h 4bef8af4e9ddda024f5540cc4d456c3e4a4a7624d6315edf85dce1ce8419beb8
 F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001259913
 F ext/misc/closure.c 5559daf1daf742228431db929d1aa86dd535a4224cc634a81d2fd0d1e6ad7839
@@ -746,7 +746,7 @@ F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c 82d8aab7162a758d030728cab6ae6011785234854b7d6d2aebd877f985d1016a
+F src/test1.c ce9ccd92d48e4980ebd1924be3131739cfa70ac535059474155b596cdb4a529e
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -950,6 +950,8 @@ F test/capi3c.test 31d3a6778f2d06f2d9222bd7660c41a516d1518a059b069e96ebbeadb5a49
 F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233dfbde
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/carray01.test 23ed7074307c4a829ba5ff2970993a9d87db7c5cdbbe1a2cbef672d0df6d6e31
+F test/carray02.test 6df8d1bf95f7c5f41f80b81e47f14332222ac820cf3de50af10ec2fb989a903c
+F test/carrayfault.test 52ef4956acbcb7b34eb177167e7af2b5ac8d9cbb80213ef4a3a9d7efb1a1f4be
 F test/cast.test a2a3b32df86e3c0601ffa2e9f028a18796305d251801efea807092dbf374a040
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/changes.test 4377d202a487f66fc2822c1bf57c46798c8b2caf7446f4f701723b1dbb6b86f6
@@ -2168,8 +2170,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 06b4bd2aba22c57f5a5fed606c3bee225dee6fdc13bb16cc58194040ef0d7d85
-R 453915b0b72d47b5291d37cc0a19ae2f
-U drh
-Z 1eb68a79b24ce28ad8c3cdcce7ce295e
+P b4ff920fbeef9a8590219596d73c09976da3da53c08a685be56f6b2cd2cdc70c
+R 1dda2a73403b3668fbe9a0e2c83e251e
+U dan
+Z 20b6eca0d0874b62c280c82aff95f36b
 # Remove this line to create a well-formed Fossil manifest.

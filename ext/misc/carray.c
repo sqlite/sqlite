@@ -236,10 +236,11 @@ static int carrayColumn(
           sqlite3_result_text(ctx, p[pCur->iRowid-1], -1, SQLITE_TRANSIENT);
           return SQLITE_OK;
         }
-        case CARRAY_BLOB: {
+        default: {
           const struct iovec *p = (struct iovec*)pCur->pPtr;
+          assert( pCur->eType==CARRAY_BLOB );
           sqlite3_result_blob(ctx, p[pCur->iRowid-1].iov_base,
-                               (int)p[pCur->iRowid-1].iov_len, SQLITE_TRANSIENT);
+                              (int)p[pCur->iRowid-1].iov_len, SQLITE_TRANSIENT);
           return SQLITE_OK;
         }
       }
@@ -441,42 +442,53 @@ SQLITE_API int sqlite3_carray_bind(
   int mFlags,
   void (*xDestroy)(void*)
 ){
-  carray_bind *pNew;
+  carray_bind *pNew = 0;
   int i;
+  int rc = SQLITE_OK;
+  
+  /* Ensure that the mFlags value is acceptable. */
+  assert( CARRAY_INT32==0 && CARRAY_INT64==1 && CARRAY_DOUBLE==2 );
+  assert( CARRAY_TEXT==3 && CARRAY_BLOB==4 );
+  if( mFlags<CARRAY_INT32 || mFlags>CARRAY_BLOB ){
+    rc = SQLITE_ERROR;
+    goto carray_bind_error;
+  }
+
   pNew = sqlite3_malloc64(sizeof(*pNew));
   if( pNew==0 ){
-    if( xDestroy!=SQLITE_STATIC && xDestroy!=SQLITE_TRANSIENT ){
-      xDestroy(aData);
-    }
-    return SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
+    goto carray_bind_error;
   }
+
   pNew->nData = nData;
   pNew->mFlags = mFlags;
   if( xDestroy==SQLITE_TRANSIENT ){
     sqlite3_int64 sz = nData;
-    switch( mFlags & 0x07 ){
+    switch( mFlags ){
       case CARRAY_INT32:   sz *= 4;                     break;
       case CARRAY_INT64:   sz *= 8;                     break;
       case CARRAY_DOUBLE:  sz *= 8;                     break;
       case CARRAY_TEXT:    sz *= sizeof(char*);         break;
-      case CARRAY_BLOB:    sz *= sizeof(struct iovec);  break;
+      default:             sz *= sizeof(struct iovec);  break;
     }
-    if( (mFlags & 0x07)==CARRAY_TEXT ){
+    if( mFlags==CARRAY_TEXT ){
       for(i=0; i<nData; i++){
         const char *z = ((char**)aData)[i];
         if( z ) sz += strlen(z) + 1;
       }
-    }else if( (mFlags & 0x07)==CARRAY_BLOB ){
+    }else if( mFlags==CARRAY_BLOB ){
       for(i=0; i<nData; i++){
         sz += ((struct iovec*)aData)[i].iov_len;
       }
     } 
+
     pNew->aData = sqlite3_malloc64( sz );
     if( pNew->aData==0 ){
-      sqlite3_free(pNew);
-      return SQLITE_NOMEM;
+      rc = SQLITE_NOMEM;
+      goto carray_bind_error;
     }
-    if( (mFlags & 0x07)==CARRAY_TEXT ){
+
+    if( mFlags==CARRAY_TEXT ){
       char **az = (char**)pNew->aData;
       char *z = (char*)&az[nData];
       for(i=0; i<nData; i++){
@@ -491,7 +503,7 @@ SQLITE_API int sqlite3_carray_bind(
         memcpy(z, zData, n+1);
         z += n+1;
       }
-    }else if( (mFlags & 0x07)==CARRAY_BLOB ){
+    }else if( mFlags==CARRAY_BLOB ){
       struct iovec *p = (struct iovec*)pNew->aData;
       unsigned char *z = (unsigned char*)&p[nData];
       for(i=0; i<nData; i++){
@@ -510,6 +522,13 @@ SQLITE_API int sqlite3_carray_bind(
     pNew->xDel = xDestroy;
   }
   return sqlite3_bind_pointer(pStmt, idx, pNew, "carray-bind", carrayBindDel);
+ 
+ carray_bind_error:
+  if( xDestroy!=SQLITE_STATIC && xDestroy!=SQLITE_TRANSIENT ){
+    xDestroy(aData);
+  }
+  sqlite3_free(pNew);
+  return rc;
 }
 
 
