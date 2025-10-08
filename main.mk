@@ -809,7 +809,6 @@ TESTSRC += \
   $(TOP)/ext/misc/mmapwarm.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/normalize.c \
-  $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/prefixes.c \
   $(TOP)/ext/misc/qpvtab.c \
   $(TOP)/ext/misc/randomjson.c \
@@ -1011,7 +1010,6 @@ FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
 FUZZCHECK_SRC += $(TOP)/ext/recover/dbdata.c
 FUZZCHECK_SRC += $(TOP)/ext/recover/sqlite3recover.c
 FUZZCHECK_SRC += $(TOP)/test/vt02.c
-FUZZCHECK_SRC += $(TOP)/ext/misc/percentile.c
 FUZZCHECK_SRC += $(TOP)/ext/misc/randomjson.c
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
@@ -2362,7 +2360,6 @@ SHELL_DEP = \
     $(TOP)/ext/misc/ieee754.c \
     $(TOP)/ext/misc/memtrace.c \
     $(TOP)/ext/misc/pcachetrace.c \
-    $(TOP)/ext/misc/percentile.c \
     $(TOP)/ext/misc/regexp.c \
     $(TOP)/ext/misc/series.c \
     $(TOP)/ext/misc/sha1.c \

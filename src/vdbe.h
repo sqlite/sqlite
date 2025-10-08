@@ -300,6 +300,7 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 #endif
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3BlobCompare(const Mem*, const Mem*);
+const char *sqlite3VdbeFuncName(const sqlite3_context*);
 
 void sqlite3VdbeRecordUnpack(int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);

@@ -8298,7 +8298,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
-  extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   extern int sqlite3_prefixes_init(sqlite3*,char**,const sqlite3_api_routines*);
 #endif
@@ -8331,7 +8330,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },
     { "nextchar",              sqlite3_nextchar_init             },
-    { "percentile",            sqlite3_percentile_init           },
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     { "prefixes",              sqlite3_prefixes_init             },
 #endif

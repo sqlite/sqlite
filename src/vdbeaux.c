@@ -5571,3 +5571,12 @@ void sqlite3VdbePreUpdateHook(
   }
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+/*
+** Return the name of an SQL function associated with the sqlite3_context.
+*/
+const char *sqlite3VdbeFuncName(const sqlite3_context *pCtx){
+  assert( pCtx!=0 );
+  assert( pCtx->pFunc!=0 );
+  return pCtx->pFunc->zName;
+}
