@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** This file demonstrates how to create a table-valued-function that
+** This file implements a table-valued-function that
 ** returns the values in a C-language array.
 ** Examples:
 **
@@ -52,12 +52,8 @@
 ** as the number of elements in the array.  The virtual table steps through
 ** the array, element by element.
 */
-#ifndef SQLITE3_H
-# include "sqlite3ext.h"
-  SQLITE_EXTENSION_INIT1
-# include <assert.h>
-# include <string.h>
-#endif
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_CARRAY)
+#include "sqliteInt.h"
 #if defined(_WIN32) || defined(__RTP__) || defined(_WRS_KERNEL)
   struct iovec {
     void *iov_base;
@@ -66,27 +62,6 @@
 #else
 # include <sys/uio.h>
 #endif
- 
-/* Allowed values for the mFlags parameter to sqlite3_carray_bind().
-** Must exactly match the definitions in carray.h.
-*/
-#ifndef CARRAY_INT32
-# define CARRAY_INT32     0      /* Data is 32-bit signed integers */
-# define CARRAY_INT64     1      /* Data is 64-bit signed integers */
-# define CARRAY_DOUBLE    2      /* Data is doubles */
-# define CARRAY_TEXT      3      /* Data is char* */
-# define CARRAY_BLOB      4      /* Data is struct iovec* */
-#endif
-
-#ifndef SQLITE_API
-# ifdef _WIN32
-#  define SQLITE_API __declspec(dllexport)
-# else
-#  define SQLITE_API
-# endif
-#endif
-
-#ifndef SQLITE_OMIT_VIRTUALTABLE
 
 /*
 ** Names of allowed datatypes
@@ -531,54 +506,11 @@ SQLITE_API int sqlite3_carray_bind(
   return rc;
 }
 
-
 /*
-** For testing purpose in the TCL test harness, we need a method for
-** setting the pointer value.  The inttoptr(X) SQL function accomplishes
-** this.  Tcl script will bind an integer to X and the inttoptr() SQL
-** function will use sqlite3_result_pointer() to convert that integer into
-** a pointer.
-**
-** This is for testing on TCL only.
+** Invoke this routine to register the carray() function.
 */
-#ifdef SQLITE_TEST
-static void inttoptrFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  void *p;
-  sqlite3_int64 i64;
-  i64 = sqlite3_value_int64(argv[0]);
-  if( sizeof(i64)==sizeof(p) ){
-    memcpy(&p, &i64, sizeof(p));
-  }else{
-    int i32 = i64 & 0xffffffff;
-    memcpy(&p, &i32, sizeof(p));
-  }
-  sqlite3_result_pointer(context, p, "carray", 0);
+Module *sqlite3CarrayRegister(sqlite3 *db){
+  return sqlite3VtabCreateModule(db, "carray", &carrayModule, 0, 0);
 }
-#endif /* SQLITE_TEST */
 
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
-
-SQLITE_API int sqlite3_carray_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
-  int rc = SQLITE_OK;
-#ifdef SQLITE_EXTENSION_INIT2
-  SQLITE_EXTENSION_INIT2(pApi);
-#endif
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3_create_module(db, "carray", &carrayModule, 0);
-#ifdef SQLITE_TEST
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "inttoptr", 1, SQLITE_UTF8, 0,
-                                 inttoptrFunc, 0, 0);
-  }
-#endif /* SQLITE_TEST */
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
-  return rc;
-}
+#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_CARRAY) */

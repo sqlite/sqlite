@@ -9,11 +9,6 @@ Each source file contains a description in its header comment.  See the
 header comments for details about each extension.  Additional notes are
 as follows:
 
-  *  **carray.c** &mdash;  This module implements the
-     [carray](https://sqlite.org/carray.html) table-valued function.
-     It is a good example of how to go about implementing a custom
-     [table-valued function](https://sqlite.org/vtab.html#tabfunc2).
-
   *  **csv.c** &mdash;  A [virtual table](https://sqlite.org/vtab.html)
      for reading 
      [Comma-Separated-Value (CSV) files](https://en.wikipedia.org/wiki/Comma-separated_values).

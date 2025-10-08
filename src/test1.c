@@ -1060,6 +1060,30 @@ static void shellDtostr(
   sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
 }
 
+/*
+** We need a method for setting the pointer values created by the
+** intarray_addr, int64array_addr, doublearray_addr, and textarray_addr
+** routines below.  The inttoptr(X) SQL function accomplishes
+** this.  Tcl scripts will bind an array address as an integer X and
+** the inttoptr() SQL function will use sqlite3_result_pointer() to
+** convert that integer into a pointer usable by carray().
+*/
+static void inttoptrFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  void *p;
+  sqlite3_int64 i64;
+  i64 = sqlite3_value_int64(argv[0]);
+  if( sizeof(i64)==sizeof(p) ){
+    memcpy(&p, &i64, sizeof(p));
+  }else{
+    int i32 = i64 & 0xffffffff;
+    memcpy(&p, &i32, sizeof(p));
+  }
+  sqlite3_result_pointer(context, p, "carray", 0);
+}
 
 /*
 ** Usage:  sqlite3_create_function DB
@@ -1074,7 +1098,8 @@ static void shellDtostr(
 **
 ** The original motivation for this routine was to be able to call the
 ** sqlite3_create_function function while a query is in progress in order
-** to test the SQLITE_MISUSE detection logic.
+** to test the SQLITE_MISUSE detection logic.  It is now also used to register
+** a bunch of SQL functions that are useful for testing.
 */
 static int SQLITE_TCLAPI test_create_function(
   void *NotUsed,
@@ -1168,6 +1193,10 @@ static int SQLITE_TCLAPI test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "dtostr", 2, SQLITE_UTF8, 0,
                                  shellDtostr, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "inttoptr", 1, SQLITE_UTF8, 0,
+                                 inttoptrFunc, 0, 0);
   }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -3830,7 +3859,7 @@ static int SQLITE_TCLAPI test_intarray_addr(
   return TCL_OK;
 }
 /*
-** Usage:   intarray_addr  INT  ...
+** Usage:   int64array_addr  INT  ...
 **
 ** Return the address of a C-language array of 32-bit integers.
 **
@@ -3932,7 +3961,6 @@ static int SQLITE_TCLAPI test_textarray_addr(
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
   return TCL_OK;
 }
-
 
 /*
 ** Usage:   sqlite3_bind_int64  STMT N VALUE
@@ -4457,14 +4485,6 @@ static int SQLITE_TCLAPI test_carray_bind(
   static void *aStaticData = 0;
   static int nStaticData = 0;
   static int eStaticType = 0;
-  extern int sqlite3_carray_bind(
-    sqlite3_stmt *pStmt,
-    int i,
-    void *aData,
-    int nData,
-    int mFlags,
-    void (*xDestroy)(void*)
-  );
   
   if( aStaticData ){
     /* Always clear preexisting static data on every call */
@@ -8297,7 +8317,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_amatch_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_appendvfs_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_basexx_init(sqlite3*,char**,const sqlite3_api_routines*);
-  extern int sqlite3_carray_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -8307,7 +8326,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
-  extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   extern int sqlite3_prefixes_init(sqlite3*,char**,const sqlite3_api_routines*);
 #endif
@@ -8331,7 +8349,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "amatch",                sqlite3_amatch_init               },
     { "appendvfs",             sqlite3_appendvfs_init            },
     { "basexx",                sqlite3_basexx_init               },
-    { "carray",                sqlite3_carray_init               },
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
     { "decimal",               sqlite3_decimal_init              },
@@ -8341,7 +8358,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },
     { "nextchar",              sqlite3_nextchar_init             },
-    { "percentile",            sqlite3_percentile_init           },
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     { "prefixes",              sqlite3_prefixes_init             },
 #endif
