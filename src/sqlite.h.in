@@ -144,7 +144,7 @@ extern "C" {
 **
 ** See also: [sqlite3_libversion()],
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
-** [sqlite_version()] and [sqlite_source_id()].
+** [sqlite_version()] and [sqlite_sourceid()].
 */
 #define SQLITE_VERSION        "--VERS--"
 #define SQLITE_VERSION_NUMBER --VERSION-NUMBER--
@@ -183,7 +183,7 @@ extern "C" {
 ** using an edited copy of [the amalgamation], then the last four characters
 ** of the hash might be different from [SQLITE_SOURCE_ID].)^
 **
-** See also: [sqlite_version()] and [sqlite_source_id()].
+** See also: [sqlite_version()] and [sqlite_sourceid()].
 */
 SQLITE_EXTERN const char sqlite3_version[];
 const char *sqlite3_libversion(void);
