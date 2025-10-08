@@ -13373,7 +13373,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       if( n<0 ) n = 0;
       verify_uninitialized();
       sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, n);
-      if( sz*n==0 ) data.shellFlgs &= ~SHFLG_Lookaside;
+      if( (i64)sz*(i64)n==0 ) data.shellFlgs &= ~SHFLG_Lookaside;
     }else if( cli_strcmp(z,"-threadsafe")==0 ){
       int n;
       n = (int)integerValue(cmdline_option_value(argc,argv,++i));
