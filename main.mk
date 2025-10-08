@@ -535,7 +535,7 @@ clean: clean-sanity-check
 #
 LIBOBJS0 = alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
-         callback.o complete.o ctime.o \
+         callback.o carray.o complete.o ctime.o \
          date.o dbpage.o dbstat.o delete.o \
          expr.o fault.o fkey.o \
          fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o \
@@ -588,6 +588,7 @@ SRC = \
   $(TOP)/src/btreeInt.h \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
+  $(TOP)/src/carray.c \
   $(TOP)/src/complete.c \
   ctime.c \
   $(TOP)/src/date.c \
@@ -793,7 +794,6 @@ TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
   $(TOP)/ext/misc/appendvfs.c \
   $(TOP)/ext/misc/basexx.c \
-  $(TOP)/ext/misc/carray.c \
   $(TOP)/ext/misc/cksumvfs.c \
   $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/csv.c \
@@ -809,7 +809,6 @@ TESTSRC += \
   $(TOP)/ext/misc/mmapwarm.c \
   $(TOP)/ext/misc/nextchar.c \
   $(TOP)/ext/misc/normalize.c \
-  $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/prefixes.c \
   $(TOP)/ext/misc/qpvtab.c \
   $(TOP)/ext/misc/randomjson.c \
@@ -832,6 +831,7 @@ TESTSRC2 = \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
+  $(TOP)/src/carray.c \
   ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/dbpage.c \
@@ -969,6 +969,7 @@ SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+SHELL_OPT += -DSQLITE_ENABLE_PERCENTILE
 SHELL_OPT += -DSQLITE_STRICT_SUBTYPE=1
 FUZZERSHELL_OPT =
 FUZZCHECK_OPT += -I$(TOP)/test
@@ -988,6 +989,7 @@ FUZZCHECK_OPT += \
   -DSQLITE_ENABLE_MEMSYS5 \
   -DSQLITE_ENABLE_NORMALIZE \
   -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
+  -DSQLITE_ENABLE_PERCENTILE \
   -DSQLITE_ENABLE_PREUPDATE_HOOK \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_SESSION \
@@ -1010,7 +1012,6 @@ FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
 FUZZCHECK_SRC += $(TOP)/ext/recover/dbdata.c
 FUZZCHECK_SRC += $(TOP)/ext/recover/sqlite3recover.c
 FUZZCHECK_SRC += $(TOP)/test/vt02.c
-FUZZCHECK_SRC += $(TOP)/ext/misc/percentile.c
 FUZZCHECK_SRC += $(TOP)/ext/misc/randomjson.c
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
@@ -1206,6 +1207,9 @@ build.o:	$(TOP)/src/build.c $(DEPS_OBJ_COMMON)
 
 callback.o:	$(TOP)/src/callback.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/callback.c
+
+carray.o:	$(TOP)/src/carray.c $(DEPS_OBJ_COMMON)
+	$(T.cc.sqlite) -c $(TOP)/src/carray.c
 
 complete.o:	$(TOP)/src/complete.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/complete.c
@@ -1788,6 +1792,8 @@ TESTFIXTURE_FLAGS += -DSQLITE_DEFAULT_PAGE_SIZE=1024
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_STMTVTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_DBPAGE_VTAB
 TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_BYTECODE_VTAB
+TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_CARRAY
+TESTFIXTURE_FLAGS += -DSQLITE_ENABLE_PERCENTILE
 TESTFIXTURE_FLAGS += -DSQLITE_CKSUMVFS_STATIC
 TESTFIXTURE_FLAGS += -DSQLITE_STATIC_RANDOMJSON
 TESTFIXTURE_FLAGS += -DSQLITE_STRICT_SUBTYPE=1
@@ -2358,7 +2364,6 @@ SHELL_DEP = \
     $(TOP)/ext/misc/ieee754.c \
     $(TOP)/ext/misc/memtrace.c \
     $(TOP)/ext/misc/pcachetrace.c \
-    $(TOP)/ext/misc/percentile.c \
     $(TOP)/ext/misc/regexp.c \
     $(TOP)/ext/misc/series.c \
     $(TOP)/ext/misc/sha1.c \

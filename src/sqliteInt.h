@@ -5227,6 +5227,8 @@ int sqlite3SafetyCheckSickOrOk(sqlite3*);
 void sqlite3ChangeCookie(Parse*, int);
 With *sqlite3WithDup(sqlite3 *db, With *p);
 
+Module *sqlite3CarrayRegister(sqlite3*);
+
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
 void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
 #endif

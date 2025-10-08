@@ -1398,7 +1398,6 @@ INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/sha1.c
 INCLUDE ../ext/misc/uint.c
 INCLUDE ../ext/misc/decimal.c
-INCLUDE ../ext/misc/percentile.c
 #undef sqlite3_base_init
 #define sqlite3_base_init sqlite3_base64_init
 INCLUDE ../ext/misc/base64.c
@@ -5873,7 +5872,6 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_uint_init(p->db, 0, 0);
     sqlite3_stmtrand_init(p->db, 0, 0);
     sqlite3_decimal_init(p->db, 0, 0);
-    sqlite3_percentile_init(p->db, 0, 0);
     sqlite3_base64_init(p->db, 0, 0);
     sqlite3_base85_init(p->db, 0, 0);
     sqlite3_regexp_init(p->db, 0, 0);
@@ -9184,6 +9182,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='d' && n>=3 && cli_strncmp(azArg[0], "dbtotxt", n)==0 ){
+    open_db(p, 0);
     rc = shell_dbtotxt_command(p, nArg, azArg);
   }else
 
@@ -13372,7 +13371,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       if( n<0 ) n = 0;
       verify_uninitialized();
       sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, n);
-      if( sz*n==0 ) data.shellFlgs &= ~SHFLG_Lookaside;
+      if( (i64)sz*(i64)n==0 ) data.shellFlgs &= ~SHFLG_Lookaside;
     }else if( cli_strcmp(z,"-threadsafe")==0 ){
       int n;
       n = (int)integerValue(cmdline_option_value(argc,argv,++i));
