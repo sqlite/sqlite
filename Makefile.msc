@@ -1343,7 +1343,7 @@ LTLIBS = $(LTLIBS) $(LIBICU)
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo ctime.lo \
+         callback.lo carray.lo complete.lo ctime.lo \
          date.lo dbpage.lo dbstat.lo delete.lo \
          expr.lo fault.lo fkey.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
@@ -1405,6 +1405,7 @@ SRC00 = \
   $(TOP)\src\btree.c \
   $(TOP)\src\build.c \
   $(TOP)\src\callback.c \
+  $(TOP)\src\carray.c \
   $(TOP)\src\complete.c \
   ctime.c \
   $(TOP)\src\date.c \
@@ -2100,6 +2101,9 @@ build.lo:	$(TOP)\src\build.c $(HDR)
 
 callback.lo:	$(TOP)\src\callback.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\callback.c
+
+carray.lo:	$(TOP)\src\carray.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\carray.c
 
 complete.lo:	$(TOP)\src\complete.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\complete.c

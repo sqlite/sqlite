@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** This file demonstrates how to create a table-valued-function that
+** This file implements a table-valued-function that
 ** returns the values in a C-language array.
 ** Examples:
 **
@@ -52,12 +52,7 @@
 ** as the number of elements in the array.  The virtual table steps through
 ** the array, element by element.
 */
-#ifndef SQLITE3_H
-# include "sqlite3ext.h"
-  SQLITE_EXTENSION_INIT1
-# include <assert.h>
-# include <string.h>
-#endif
+#include "sqliteInt.h"
 #if defined(_WIN32) || defined(__RTP__) || defined(_WRS_KERNEL)
   struct iovec {
     void *iov_base;
@@ -562,23 +557,13 @@ static void inttoptrFunc(
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-SQLITE_API int sqlite3_carray_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
-  int rc = SQLITE_OK;
-#ifdef SQLITE_EXTENSION_INIT2
-  SQLITE_EXTENSION_INIT2(pApi);
-#endif
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3_create_module(db, "carray", &carrayModule, 0);
+/*
+** Invoke this routine to register the carray() function.
+*/
+Module *sqlite3CarrayRegister(sqlite3 *db){
 #ifdef SQLITE_TEST
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "inttoptr", 1, SQLITE_UTF8, 0,
+  (void)sqlite3_create_function(db, "inttoptr", 1, SQLITE_UTF8, 0,
                                  inttoptrFunc, 0, 0);
-  }
-#endif /* SQLITE_TEST */
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
-  return rc;
+#endif
+  return sqlite3VtabCreateModule(db, "carray", &carrayModule, 0, 0);
 }

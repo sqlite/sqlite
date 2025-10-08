@@ -4457,14 +4457,6 @@ static int SQLITE_TCLAPI test_carray_bind(
   static void *aStaticData = 0;
   static int nStaticData = 0;
   static int eStaticType = 0;
-  extern int sqlite3_carray_bind(
-    sqlite3_stmt *pStmt,
-    int i,
-    void *aData,
-    int nData,
-    int mFlags,
-    void (*xDestroy)(void*)
-  );
   
   if( aStaticData ){
     /* Always clear preexisting static data on every call */
@@ -8297,7 +8289,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_amatch_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_appendvfs_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_basexx_init(sqlite3*,char**,const sqlite3_api_routines*);
-  extern int sqlite3_carray_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -8331,7 +8322,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "amatch",                sqlite3_amatch_init               },
     { "appendvfs",             sqlite3_appendvfs_init            },
     { "basexx",                sqlite3_basexx_init               },
-    { "carray",                sqlite3_carray_init               },
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
     { "decimal",               sqlite3_decimal_init              },
