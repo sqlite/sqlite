@@ -1,5 +1,5 @@
-C The\s".dbtotxt"\scommand\sin\sthe\sCLI\sshould\snot\sfail\sif\sthe\sdatabase\sis\nuninitialized.\s\sIt\sshould\sinstead\sbe\sa\sno-op.
-D 2025-10-08T09:52:52.459
+C Fix\san\suninitialized\svariable\sproblem\sin\stest1.c.
+D 2025-10-08T11:00:04.188
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/status.c 0e72e4f6be6ccfde2488eb63210297e75f569f3ce9920f6c3d77590ec6ce5ffd
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c ce9ccd92d48e4980ebd1924be3131739cfa70ac535059474155b596cdb4a529e
+F src/test1.c ed505d52b164be9db8c5a4b4501c0a58affe010a5b38a30ffa81036878dd516f
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -2170,8 +2170,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 03c3f12853163ce542239a98bdf8e830db2fc7ccf1edb2f9c783fcfdca858879
-R a249efafd2f986e4ce644c42ac90ab37
-U drh
-Z 55f6af74a4a07ed4e6b262fa5cca530e
+P 2818ef64d9233095b065101392768071fbd95729cde060b954f48ea821fc549a
+R ffbcde789a3e1473a52096b1942ff114
+U dan
+Z eb37d3133b4ecf41ffca7e9be3a2135a
 # Remove this line to create a well-formed Fossil manifest.

@@ -4452,7 +4452,7 @@ static int SQLITE_TCLAPI test_carray_bind(
   int isMalloc = 0;               /* True to use custom xDel function */
   int idx;
   int i, j;
-  int rc;
+  int rc = SQLITE_OK;
   void (*xDel)(void*) = sqlite3_free;
   static void *aStaticData = 0;
   static int nStaticData = 0;
