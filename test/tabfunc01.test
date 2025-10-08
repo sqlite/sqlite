@@ -277,6 +277,7 @@ do_execsql_test tabfunc01-600 {
 
 do_test tabfunc01-700 {
   set PTR1 [intarray_addr 5 7 13 17 23]
+  sqlite3_create_function db
   db eval {
     SELECT b FROM t600, carray(inttoptr($PTR1),5) WHERE a=value;
   }

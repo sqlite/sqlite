@@ -2636,6 +2636,7 @@ static void signFunc(
   sqlite3_result_int(context, x<0.0 ? -1 : x>0.0 ? +1 : 0);
 }
 
+#if defined(SQLITE_ENABLE_PERCENTILE)
 /***********************************************************************
 ** This section implements the percentile(Y,P) SQL function and similar.
 ** Requirements:
@@ -3078,6 +3079,7 @@ static void percentValue(sqlite3_context *pCtx){
   percentCompute(pCtx, 0);
 }
 /****** End of percentile family of functions ******/
+#endif /* SQLITE_ENABLE_PERCENTILE */
 
 
 #ifdef SQLITE_DEBUG
@@ -3310,6 +3312,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(string_agg,   2, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
 
+#ifdef SQLITE_ENABLE_PERCENTILE
     WAGGREGATE(median,          1,   0,0, percentStep,
         percentFinal, percentValue, percentInverse,
         SQLITE_INNOCUOUS|SQLITE_SELFORDER1),
@@ -3322,6 +3325,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     WAGGREGATE(percentile_disc, 2, 0x1,0, percentStep,
         percentFinal, percentValue, percentInverse,
         SQLITE_INNOCUOUS|SQLITE_SELFORDER1),
+#endif /* SQLITE_ENABLE_PERCENTILE */
  
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
 #ifdef SQLITE_CASE_SENSITIVE_LIKE
@@ -3374,7 +3378,6 @@ void sqlite3RegisterBuiltinFunctions(void){
     INLINE_FUNC(coalesce,       -4, INLINEFUNC_coalesce, 0 ),
     INLINE_FUNC(iif,            -4, INLINEFUNC_iif,      0 ),
     INLINE_FUNC(if,             -4, INLINEFUNC_iif,      0 ),
-    
   };
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
