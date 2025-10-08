@@ -9184,6 +9184,7 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 
   if( c=='d' && n>=3 && cli_strncmp(azArg[0], "dbtotxt", n)==0 ){
+    open_db(p, 0);
     rc = shell_dbtotxt_command(p, nArg, azArg);
   }else
 
