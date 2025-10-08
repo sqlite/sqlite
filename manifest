@@ -1,5 +1,5 @@
-C Add\sENABLE\scompile-time\soptions\sto\senable\scarray()\sand\smedian().\s\sHence\nthere\sis\sno\snew\scode\sand\sno\sincrease\sin\slibrary\ssize\swithout\sthe\sENABLE\nmacros.
-D 2025-10-08T18:11:37.915
+C Make\suse\sof\sthe\snew\sSQLITE_ENABLE_PERCENTILE\sin\sthe\swasm\sbuild.
+D 2025-10-08T18:17:19.872
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -575,7 +575,7 @@ F ext/session/sqlite3session.c b3de195ce668cace9b324599bf6255a70290cbfb5451e826e
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile c532444c786b2b5fadb6482b328a193ee93db0e2040e6bbeddf3780b1626d64d
+F ext/wasm/GNUmakefile 8c75ec005c07c131df362596addf63a95db275d9eadc7d7b3f48b45fa331342b
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -604,7 +604,7 @@ F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js f78ba02f7855355513f271d0955a01a7f86a2a8884c278053f578662b2a3b268
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 17f172182ff2fd4ad5dc2c2d79aef339b307cb2fa345b0521864baf20262fe6e
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72a76124213cbc9469d757676da86
-F ext/wasm/api/sqlite3-wasm.c ff2dc011e17b06186b8b35e408626d7ace69a362b92c197a34d78bef25c7105a
+F ext/wasm/api/sqlite3-wasm.c 929d4c5619a321fa2fb9ef921ec8e4ccfdac27745df543062b267f9f928de3a7
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js a72cb1f2a4170e79a595a8d420fac02e4eec8e2a65aefa9eed081b30845c44c7
 F ext/wasm/api/sqlite3-worker1.c-pp.js fa330c5c9e14277ce85e65c0fdb5d28ee983fcf664d29e23451ac184c1771ec9
 F ext/wasm/c-pp.c 7396bfe57800d54a560702b9379bb9ede2db94af7eabf919b476e8b1d92a2d2f
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c2cfc9c92e35105e26a4c0887b0401ace15a874fd18046135de4b375ba968795
-R a7efabdfa76f9705559ea3bc9382d14b
-U drh
-Z b689aba05c98bc433c71ed8ca204053d
+P 7dec290b413ca1bc67694743d8b771e1634fd85251f1a23d60aaf36c63f0f366
+R 351f19fa5cbfda56438e507d530f2e7b
+U stephan
+Z 669052b66286b8f3176ff708638c289c
 # Remove this line to create a well-formed Fossil manifest.
