@@ -11123,10 +11123,11 @@ int sqlite3_deserialize(
 ** S parameter is a pointer to the [prepared statement] that uses the carray()
 ** functions.  I is the parameter index to be bound.  P is a pointer to the
 ** array to be bound, and N is the number of eements in the array.  The
-** F argument is one of constants [CARRAY_INT32], [CARRAY_INT64], [CARRAY_DOUBLE],
-** [CARRAY_TEXT], or [CARRAY_BLOB] to indicate the datatype of the array
-** being bound.  The X argument is not a NULL pointer, then SQLite will
-** invoke the function X on the P parameter after it has finished using P.
+** F argument is one of constants [SQLITE_CARRAY_INT32], [SQLITE_CARRAY_INT64],
+** [SQLITE_CARRAY_DOUBLE], [SQLITE_CARRAY_TEXT], or [SQLITE_CARRAY_BLOB] to
+** indicate the datatype of the array being bound.  The X argument is not a
+** NULL pointer, then SQLite will invoke the function X on the P parameter
+** after it has finished using P.
 */
 SQLITE_API int sqlite3_carray_bind(
   sqlite3_stmt *pStmt,        /* Statement to be bound */
@@ -11143,6 +11144,16 @@ SQLITE_API int sqlite3_carray_bind(
 ** The fifth argument to the [sqlite3_carray_bind()] interface musts be
 ** one of the following constants, to specify the datatype of the array
 ** that is being bound into the [carray table-valued function].
+*/
+#define SQLITE_CARRAY_INT32     0    /* Data is 32-bit signed integers */
+#define SQLITE_CARRAY_INT64     1    /* Data is 64-bit signed integers */
+#define SQLITE_CARRAY_DOUBLE    2    /* Data is doubles */
+#define SQLITE_CARRAY_TEXT      3    /* Data is char* */
+#define SQLITE_CARRAY_BLOB      4    /* Data is struct iovec */
+
+/*
+** Versions of the above #defines that omit the initial SQLITE_, for
+** legacy compatibility.
 */
 #define CARRAY_INT32     0    /* Data is 32-bit signed integers */
 #define CARRAY_INT64     1    /* Data is 64-bit signed integers */

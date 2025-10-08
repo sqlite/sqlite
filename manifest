@@ -1,5 +1,5 @@
-C Make\suse\sof\sthe\snew\sSQLITE_ENABLE_PERCENTILE\sin\sthe\swasm\sbuild.
-D 2025-10-08T18:17:19.872
+C Add\sthe\sSQLITE_\sprefix\sto\sthe\stype\sconstants\sused\sby\ssqlite3_carray_bind().
+D 2025-10-08T18:51:15.981
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
 F src/shell.c.in 03c988b6b089628fd0333fb517cf579453e464851941757cf249371332a5edbc
-F src/sqlite.h.in 5e15c4eec691b4e26a7a740627b4ebe0dc8f75565e6484500992c62fe528674b
+F src/sqlite.h.in 5706a425081d1712be81b31456801919c5760087cf3de32bbf86885994db26fe
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 3f0c4ed6934e7309a61c6f3c30f70a30a5b869f785bb3d9f721a36c5e4359126
 F src/sqliteInt.h c188da4652be436ced01aa29bcbcf8be7069fc640cad5ac872af6641af4d26fd
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7dec290b413ca1bc67694743d8b771e1634fd85251f1a23d60aaf36c63f0f366
-R 351f19fa5cbfda56438e507d530f2e7b
-U stephan
-Z 669052b66286b8f3176ff708638c289c
+P 937c084c2d9b20fde2d54e48257cb7018bd8c36d6f00ed6f1659b5ecc2f48ed4
+R 3a53b839014ceb3d5c2e0c7c02022d2f
+U drh
+Z cd22709d7f779e1de85210a4e921aebe
 # Remove this line to create a well-formed Fossil manifest.
