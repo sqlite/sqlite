@@ -59,6 +59,7 @@ struct ResfmtSpec {
   const char *zTableName;     /* Output table name */
   int nWidth;                 /* Number of column width parameters */
   int *aWidth;                /* Column widths */
+  char *(*pRender)(void*,sqlite3_value*);                 /* Render a value */
   ssize_t (*pWrite)(void*,const unsigned char*,ssize_t);  /* Write callback */
   void *pWriteArg;            /* First argument to write callback */
   char **pzOutput;            /* Storage location for output string */
@@ -155,6 +156,21 @@ absolute value is the minimum of the corresponding column.
 The ResfmtSpec.nWidth field is the number of values in the aWidth[]
 array.  Any column beyond the nWidth-th column are assumed to have
 a minimum width of 0.
+
+### 2.10 Optional Value Rendering Callback
+
+If the ResfmtSpec.pRender field is not NULL, then each rendered
+sqlite3_value is first passed to the pRender function, giving it
+an opportunity to render the results.  If pRender chooses to render,
+it should write the rendering into memory obtained from sqlite3_malloc()
+and return a pointer to that memory.  The pRender function can decline
+to render (for example, based on the sqlite3_value_type() or other
+characteristics of the value) in which case it can simply return a
+NULL pointer and the usual default rendering will be used instead.
+
+The result rendering subsystem will take responsibility for the
+returned string and will pass the returned string to sqlite3_free()
+when it has finished with it.
 
 ## 3.0 The `sqlite3_resfmt_begin()` Interface
 
