@@ -1,4 +1,4 @@
-//#ifnot omit-oo1
+//#if not omit-oo1
 /*
   2022-08-24
 
@@ -275,7 +275,7 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
     return new Worker(theJs + globalThis.location.search);
 //#endif
   }
-//#ifnot target:es6-module
+//#if not target:es6-module
   .bind({
     currentScript: globalThis?.document?.currentScript
   })
@@ -346,4 +346,4 @@ export default sqlite3Worker1Promiser.v2;
 //#endif /* target:es6-module */
 //#else
 /* Built with the omit-oo1 flag. */
-//#endif ifnot omit-oo1
+//#endif if not omit-oo1
