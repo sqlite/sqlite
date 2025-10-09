@@ -12347,7 +12347,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
     if( p->nWidth ) p->actualWidth = &p->colWidth[p->nWidth];
     for(j=1; j<nArg; j++){
-      p->colWidth[j-1] = (int)integerValue(azArg[j]);
+      i64 w = integerValue(azArg[j]);
+      if( w < -30000 ) w = -30000;
+      if( w > +30000 ) w = +30000;
+      p->colWidth[j-1] = (int)w;
     }
   }else
 
