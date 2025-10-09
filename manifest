@@ -1,5 +1,5 @@
-C Add\sthe\spRender\scallback\sto\sthe\squery\sresult\sformatter\sspec.
-D 2025-10-08T20:10:01.576
+C Update\sthe\sresult\sformatter\sspec\ssuch\sthat\scolumn\swidth\sare\sstored\nin\s16-bit\ssigned\sintegers.
+D 2025-10-09T14:14:14.849
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -388,7 +388,7 @@ F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e0c6b
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
-F ext/misc/resfmt.md 9c9429289d45c3f346138ef62ad8bf1793b0248af049f42cb92ff4e0af0d20b1
+F ext/misc/resfmt.md 676af474a6598dceb2e786f407917fd08f88891525929569c365c9b9dcb718e7
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c cbbec483aa0246661e7656971ce4de8e62ecc3151be94218306206fe4f5b7a9e
@@ -2170,8 +2170,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 550c48f7c3da30743b994c044ecacc20c434c5251dac8959a96550397056d0a2
-R 4aa122dcf8ac1a894030d96f8bb71b36
+P 642cf4568abaf91e2a6177b874c869661907a2c594ed90c3175847926a82a365
+R faa0975cfafd6afab1699e38623664fe
 U drh
-Z cc6ee2d4c29330b60f383a60141d1825
+Z b90543e84b837f9b9d4e7e60a11ace7a
 # Remove this line to create a well-formed Fossil manifest.

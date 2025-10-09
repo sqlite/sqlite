@@ -58,7 +58,7 @@ struct ResfmtSpec {
   const char *zRowSep;        /* Alternative row separator */
   const char *zTableName;     /* Output table name */
   int nWidth;                 /* Number of column width parameters */
-  int *aWidth;                /* Column widths */
+  short int *aWidth;          /* Column widths */
   char *(*pRender)(void*,sqlite3_value*);                 /* Render a value */
   ssize_t (*pWrite)(void*,const unsigned char*,ssize_t);  /* Write callback */
   void *pWriteArg;            /* First argument to write callback */
@@ -148,10 +148,13 @@ when the MODE_Insert output mode is used.
 
 ### 2.9 Column Widths And Alignments
 
-The ResfmtSpec.aWidth[] array, if specified, is an array of integers
-that specify the minimum column width and the alignment for all columns
-in columnar output modes.  Negative values mean right-justify.  The
+The ResfmtSpec.aWidth[] array, if specified, is an array of 
+16-bit signed integers that specify the minimum column width and
+the alignment for all columns in columnar output modes.  Negative
+values mean right-justify.  The
 absolute value is the minimum of the corresponding column.
+These widths are deliberately stored in a 16-bit signed integer
+as no good can come from having column widths greater than 32767.
 
 The ResfmtSpec.nWidth field is the number of values in the aWidth[]
 array.  Any column beyond the nWidth-th column are assumed to have
