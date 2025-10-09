@@ -765,7 +765,7 @@
 ** ourselves.
 */
 #ifndef offsetof
-#define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
 #endif
 
 /*
@@ -1031,8 +1031,8 @@ typedef INT16_TYPE LogEst;
 ** assuming n is a signed integer type.  UMXV(n) is similar for unsigned
 ** integer types.
 */
-#define SMXV(n) ((((i64)1)<<(sizeof(n)-1))-1)
-#define UMXV(n) ((((i64)1)<<(sizeof(n)))-1)
+#define SMXV(n) ((((i64)1)<<(sizeof(n)*8-1))-1)
+#define UMXV(n) ((((i64)1)<<(sizeof(n)*8))-1)
 
 /*
 ** Round up a number to the next larger multiple of 8.  This is used
@@ -1153,6 +1153,8 @@ extern u32 sqlite3TreeTrace;
 **   0x00020000     Transform DISTINCT into GROUP BY
 **   0x00040000     SELECT tree dump after all code has been generated
 **   0x00080000     NOT NULL strength reduction
+**   0x00100000     Pointers are all shown as zero
+**   0x00200000     EXISTS-to-JOIN optimization
 */
 
 /*
@@ -1197,6 +1199,7 @@ extern u32 sqlite3WhereTrace;
 ** 0x00020000   Show WHERE terms returned from whereScanNext()
 ** 0x00040000   Solver overview messages
 ** 0x00080000   Star-query heuristic
+** 0x00100000   Pointers are all shown as zero
 */
 
 
@@ -1269,7 +1272,7 @@ struct BusyHandler {
 ** pointer will work here as long as it is distinct from SQLITE_STATIC
 ** and SQLITE_TRANSIENT.
 */
-#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3OomClear)
+#define SQLITE_DYNAMIC   ((sqlite3_destructor_type)sqlite3RowSetClear)
 
 /*
 ** When SQLITE_OMIT_WSD is defined, it means that the target platform does
@@ -1698,7 +1701,7 @@ struct sqlite3 {
     u8 iDb;                     /* Which db file is being initialized */
     u8 busy;                    /* TRUE if currently initializing */
     unsigned orphanTrigger : 1; /* Last statement is orphaned TEMP trigger */
-    unsigned imposterTable : 1; /* Building an imposter table */
+    unsigned imposterTable : 2; /* Building an imposter table */
     unsigned reopenMemdb : 1;   /* ATTACH is really a reopen using MemDB */
     const char **azInit;        /* "type", "name", and "tbl_name" columns */
   } init;
@@ -1924,6 +1927,7 @@ struct sqlite3 {
 #define SQLITE_OnePass        0x08000000 /* Single-pass DELETE and UPDATE */
 #define SQLITE_OrderBySubq    0x10000000 /* ORDER BY in subquery helps outer */
 #define SQLITE_StarQuery      0x20000000 /* Heurists for star queries */
+#define SQLITE_ExistsToJoin   0x40000000 /* The EXISTS-to-JOIN optimization */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -2162,7 +2166,7 @@ struct FuncDestructor {
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
   {nArg, SQLITE_FUNC_BUILTIN|\
    SQLITE_FUNC_SLOCHNG|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
-   pArg, 0, xFunc, 0, 0, 0, #zName, }
+   pArg, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define LIKEFUNC(zName, nArg, arg, flags) \
   {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
    (void *)arg, 0, likeFunc, 0, 0, 0, #zName, {0} }
@@ -2329,6 +2333,7 @@ struct CollSeq {
 #define SQLITE_AFF_INTEGER  0x44  /* 'D' */
 #define SQLITE_AFF_REAL     0x45  /* 'E' */
 #define SQLITE_AFF_FLEXNUM  0x46  /* 'F' */
+#define SQLITE_AFF_DEFER    0x58  /* 'X'  - defer computation until later */
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 
@@ -2489,6 +2494,7 @@ struct Table {
 #define TF_Ephemeral      0x00004000 /* An ephemeral table */
 #define TF_Eponymous      0x00008000 /* An eponymous virtual table */
 #define TF_Strict         0x00010000 /* STRICT mode */
+#define TF_Imposter       0x00020000 /* An imposter table */
 
 /*
 ** Allowed values for Table.eTabType
@@ -2644,9 +2650,15 @@ struct FKey {
 ** argument to sqlite3VdbeKeyCompare and is used to control the
 ** comparison of the two index keys.
 **
-** Note that aSortOrder[] and aColl[] have nField+1 slots.  There
-** are nField slots for the columns of an index then one extra slot
-** for the rowid at the end.
+** The aSortOrder[] and aColl[] arrays have nAllField slots each. There
+** are nKeyField slots for the columns of an index then extra slots
+** for the rowid or key at the end.  The aSortOrder array is located after
+** the aColl[] array.
+**
+** If SQLITE_ENABLE_PREUPDATE_HOOK is defined, then aSortFlags might be NULL
+** to indicate that this object is for use by a preupdate hook.  When aSortFlags
+** is NULL, then nAllField is uninitialized and no space is allocated for
+** aColl[], so those fields may not be used.
 */
 struct KeyInfo {
   u32 nRef;           /* Number of references to this KeyInfo object */
@@ -2658,8 +2670,17 @@ struct KeyInfo {
   CollSeq *aColl[FLEXARRAY]; /* Collating sequence for each term of the key */
 };
 
-/* The size (in bytes) of a KeyInfo object with up to N fields */
+/* The size (in bytes) of a KeyInfo object with up to N fields.  This includes
+** the main body of the KeyInfo object and the aColl[] array of N elements,
+** but does not count the memory used to hold aSortFlags[]. */
 #define SZ_KEYINFO(N)  (offsetof(KeyInfo,aColl) + (N)*sizeof(CollSeq*))
+
+/* The size of a bare KeyInfo with no aColl[] entries */
+#if FLEXARRAY+1 > 1
+# define SZ_KEYINFO_0   offsetof(KeyInfo,aColl)
+#else
+# define SZ_KEYINFO_0   sizeof(KeyInfo)
+#endif
 
 /*
 ** Allowed bit values for entries in the KeyInfo.aSortFlags[] array.
@@ -2679,9 +2700,8 @@ struct KeyInfo {
 **
 ** An instance of this object serves as a "key" for doing a search on
 ** an index b+tree. The goal of the search is to find the entry that
-** is closed to the key described by this object.  This object might hold
-** just a prefix of the key.  The number of fields is given by
-** pKeyInfo->nField.
+** is closest to the key described by this object.  This object might hold
+** just a prefix of the key.  The number of fields is given by nField.
 **
 ** The r1 and r2 fields are the values to return if this key is less than
 ** or greater than a key in the btree, respectively.  These are normally
@@ -2691,7 +2711,7 @@ struct KeyInfo {
 ** The key comparison functions actually return default_rc when they find
 ** an equals comparison.  default_rc can be -1, 0, or +1.  If there are
 ** multiple entries in the b-tree with the same key (when only looking
-** at the first pKeyInfo->nFields,) then default_rc can be set to -1 to
+** at the first nField elements) then default_rc can be set to -1 to
 ** cause the search to find the last match, or +1 to cause the search to
 ** find the first match.
 **
@@ -2703,8 +2723,8 @@ struct KeyInfo {
 ** b-tree.
 */
 struct UnpackedRecord {
-  KeyInfo *pKeyInfo;  /* Collation and sort-order information */
-  Mem *aMem;          /* Values */
+  KeyInfo *pKeyInfo;  /* Comparison info for the index that is unpacked */
+  Mem *aMem;          /* Values for columns of the index */
   union {
     char *z;            /* Cache of aMem[0].z for vdbeRecordCompareString() */
     i64 i;              /* Cache of aMem[0].u.i for vdbeRecordCompareInt() */
@@ -2789,10 +2809,8 @@ struct Index {
   unsigned isCovering:1;   /* True if this is a covering index */
   unsigned noSkipScan:1;   /* Do not try to use skip-scan if true */
   unsigned hasStat1:1;     /* aiRowLogEst values come from sqlite_stat1 */
-  unsigned bLowQual:1;     /* sqlite_stat1 says this is a low-quality index */
   unsigned bNoQuery:1;     /* Do not use this index to optimize queries */
   unsigned bAscKeyBug:1;   /* True if the bba7b69f9849b5bf bug applies */
-  unsigned bIdxRowid:1;    /* One or more of the index keys is the ROWID */
   unsigned bHasVCol:1;     /* Index references one or more VIRTUAL columns */
   unsigned bHasExpr:1;     /* Index contains an expression, either a literal
                            ** expression, or a reference to a VIRTUAL column */
@@ -2880,7 +2898,7 @@ struct AggInfo {
                           ** from source tables rather than from accumulators */
   u8 useSortingIdx;       /* In direct mode, reference the sorting index rather
                           ** than the source table */
-  u16 nSortingColumn;     /* Number of columns in the sorting index */
+  u32 nSortingColumn;     /* Number of columns in the sorting index */
   int sortingIdx;         /* Cursor number of the sorting index */
   int sortingIdxPTab;     /* Cursor number of pseudo-table */
   int iFirstReg;          /* First register in range for aCol[] and aFunc[] */
@@ -2889,8 +2907,8 @@ struct AggInfo {
     Table *pTab;             /* Source table */
     Expr *pCExpr;            /* The original expression */
     int iTable;              /* Cursor number of the source table */
-    i16 iColumn;             /* Column number within the source table */
-    i16 iSorterColumn;       /* Column number in the sorting index */
+    int iColumn;             /* Column number within the source table */
+    int iSorterColumn;       /* Column number in the sorting index */
   } *aCol;
   int nColumn;            /* Number of used entries in aCol[] */
   int nAccumulator;       /* Number of columns that show through to the output.
@@ -3065,6 +3083,7 @@ struct Expr {
     Table *pTab;           /* TK_COLUMN: Table containing column. Can be NULL
                            ** for a column of an index on an expression */
     Window *pWin;          /* EP_WinFunc: Window/Filter defn for a function */
+    int nReg;              /* TK_NULLS: Number of registers to NULL out */
     struct {               /* TK_IN, TK_SELECT, and TK_EXISTS */
       int iAddr;             /* Subroutine entry address */
       int regReturn;         /* Register used to hold return address */
@@ -3354,6 +3373,7 @@ struct SrcItem {
     unsigned rowidUsed :1;     /* The ROWID of this table is referenced */
     unsigned fixedSchema :1;   /* Uses u4.pSchema, not u4.zDatabase */
     unsigned hadSchema :1;     /* Had u4.zDatabase before u4.pSchema */
+    unsigned fromExists :1;    /* Comes from WHERE EXISTS(...) */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
   Bitmask colUsed;  /* Bit N set if column N used. Details above for N>62 */
@@ -3641,6 +3661,7 @@ struct Select {
 #define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
 #define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
 #define SF_Correlated   0x20000000 /* True if references the outer context */
+#define SF_OnToWhere    0x40000000 /* One or more ON clauses moved to WHERE */
 
 /* True if SrcItem X is a subquery that has SF_NestedFrom */
 #define IsNestedFrom(X) \
@@ -3884,6 +3905,7 @@ struct Parse {
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
+  u8 bHasExists;       /* Has a correlated "EXISTS (SELECT ....)" expression */
   u8 mSubrtnSig;       /* mini Bloom filter on available SubrtnSig.selId */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
   u8 bReturning;       /* Coding a RETURNING trigger */
@@ -4393,6 +4415,7 @@ struct Walker {
     SrcItem *pSrcItem;                        /* A single FROM clause item */
     DbFixer *pFix;                            /* See sqlite3FixSelect() */
     Mem *aMem;                                /* See sqlite3BtreeCursorHint() */
+    struct CheckOnCtx *pCheckOnCtx;           /* See selectCheckOnClauses() */
   } u;
 };
 
@@ -4880,6 +4903,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
   void sqlite3ShowWindow(const Window*);
   void sqlite3ShowWinFunc(const Window*);
 #endif
+  void sqlite3ShowBitvec(Bitvec*);
 #endif
 
 void sqlite3SetString(char **, sqlite3*, const char*);
@@ -5099,6 +5123,7 @@ void sqlite3ExprCodeGeneratedColumn(Parse*, Table*, Column*, int);
 void sqlite3ExprCodeCopy(Parse*, Expr*, int);
 void sqlite3ExprCodeFactorable(Parse*, Expr*, int);
 int sqlite3ExprCodeRunJustOnce(Parse*, Expr*, int);
+void sqlite3ExprNullRegisterRange(Parse*, int, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);
 int sqlite3ExprCodeExprList(Parse*, ExprList*, int, int, u8);
@@ -5195,12 +5220,14 @@ void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterJsonFunctions(void);
 void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3*);
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_JSON)
-  int sqlite3JsonTableFunctions(sqlite3*);
+  Module *sqlite3JsonVtabRegister(sqlite3*,const char*);
 #endif
 int sqlite3SafetyCheckOk(sqlite3*);
 int sqlite3SafetyCheckSickOrOk(sqlite3*);
 void sqlite3ChangeCookie(Parse*, int);
 With *sqlite3WithDup(sqlite3 *db, With *p);
+
+Module *sqlite3CarrayRegister(sqlite3*);
 
 #if !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER)
 void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);

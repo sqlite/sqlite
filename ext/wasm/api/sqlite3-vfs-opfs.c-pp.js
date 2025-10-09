@@ -1,4 +1,4 @@
-//#ifnot target=node
+//#if not target:node
 /*
   2022-09-18
 
@@ -209,9 +209,9 @@ const installOpfsVfs = function callee(options){
       return promiseResolve_(sqlite3);
     };
     const W =
-//#if target=es6-bundler-friendly
+//#if target:es6-bundler-friendly
     new Worker(new URL("sqlite3-opfs-async-proxy.js", import.meta.url));
-//#elif target=es6-module
+//#elif target:es6-module
     new Worker(new URL(options.proxyUri, import.meta.url));
 //#else
     new Worker(options.proxyUri);
@@ -805,7 +805,7 @@ const installOpfsVfs = function callee(options){
                Because the heap is _not_ a SharedArrayBuffer, we have
                to copy the results. TypedArray.set() seems to be the
                fastest way to copy this. */
-            wasm.heap8u().set(f.sabView.subarray(0, n), pDest);
+            wasm.heap8u().set(f.sabView.subarray(0, n), Number(pDest));
           }
         }catch(e){
           error("xRead(",arguments,") failed:",e,f);
@@ -844,7 +844,9 @@ const installOpfsVfs = function callee(options){
         const f = __openFiles[pFile];
         let rc;
         try {
-          f.sabView.set(wasm.heap8u().subarray(pSrc, pSrc+n));
+          f.sabView.set(wasm.heap8u().subarray(
+            Number(pSrc), Number(pSrc) + n
+          ));
           rc = opRun('xWrite', pFile, n, Number(offset64));
         }catch(e){
           error("xWrite(",arguments,") failed:",e,f);
@@ -951,7 +953,8 @@ const installOpfsVfs = function callee(options){
       vfsSyncWrappers.xRandomness = function(pVfs, nOut, pOut){
         const heap = wasm.heap8u();
         let i = 0;
-        for(; i < nOut; ++i) heap[pOut + i] = (Math.random()*255000) & 0xFF;
+        const npOut = Number(pOut);
+        for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
         return i;
       };
     }
@@ -1195,7 +1198,7 @@ const installOpfsVfs = function callee(options){
         sah.truncate(0);
         while( undefined !== (chunk = await callback()) ){
           if(chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
-          if( 0===nWrote && chunk.byteLength>=15 ){
+          if( !checkedHeader && 0===nWrote && chunk.byteLength>=15 ){
             util.affirmDbHeader(chunk);
             checkedHeader = true;
           }
@@ -1454,4 +1457,4 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
 }/*sqlite3ApiBootstrap.initializers.push()*/);
 //#else
 /* The OPFS VFS parts are elided from builds targeting node.js. */
-//#endif target=node
+//#endif target:node

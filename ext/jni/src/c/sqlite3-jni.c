@@ -168,6 +168,10 @@
 ** Creates a verbose JNI function name. Suffix must be
 ** the JNI-mangled form of the function's name, minus the
 ** prefix seen in this macro.
+**
+** If you get java.lang.UnsatisfiedLinkError when calling newly-added
+** native bindings, be sure that the mangled name is correct. It can
+** be found in the generated sqlite3-jni.h.
 */
 #define JniFuncName(Suffix) \
   Java_org_sqlite_jni_capi_CApi_sqlite3_ ## Suffix
@@ -177,10 +181,10 @@
   JNIEXPORT ReturnType JNICALL JniFuncName(Suffix)
 
 /*
-** S3JniApi's intent is that CFunc be the C API func(s) the
-** being-declared JNI function is wrapping, making it easier to find
-** that function's JNI-side entry point. The other args are for JniDecl.
-** See the many examples in this file.
+** S3JniApi's intent is that CFunc be the name(s) of the C API func(s)
+** the being-declared JNI function is wrapping, making it easier to
+** find those bindings' JNI-side entry points. The other args are for
+** JniDecl.  See the many examples in this file.
 */
 #define S3JniApi(CFunc,ReturnType,Suffix) JniDecl(ReturnType,Suffix)
 
@@ -3854,6 +3858,19 @@ S3JniApi(sqlite3_errmsg(),jstring,1errmsg)(
     /* We don't use errmsg16() directly only because it would cause an
        additional level of internal encoding in sqlite3. The end
        effect should be identical to using errmsg16(), however. */;
+}
+
+S3JniApi(sqlite3_set_errmsg(),jint,1set_1errmsg)(
+  JniArgsEnvClass, jobject jpDb, jint errCode, jstring msg
+){
+  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
+  const char *zUtf8;
+  jint rc;
+  if( !pDb ) return SQLITE_MISUSE;
+  zUtf8 = msg ? s3jni_jstring_to_mutf8(msg) : NULL;
+  rc = sqlite3_set_errmsg(pDb, (int)errCode, zUtf8);
+  s3jni_mutf8_release(msg, zUtf8);
+  return rc;
 }
 
 S3JniApi(sqlite3_errstr(),jstring,1errstr)(

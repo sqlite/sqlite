@@ -171,8 +171,6 @@ static struct GlobalVars {
 */
 extern int sqlite3_vt02_init(sqlite3*,char**,const sqlite3_api_routines*);
 extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
-extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
-
 
 /*
 ** Print an error message and quit.
@@ -541,9 +539,12 @@ static void blobListLoadFromDb(
   int n = 0;
   int rc;
   char *z2;
-  unsigned char tmp[SZ_BLOB(8)];
+  union {
+    Blob sBlob;
+    unsigned char tmp[SZ_BLOB(8)];
+  } uBlob;
 
-  head = (Blob*)tmp;
+  head = &uBlob.sBlob;
   if( firstId>0 ){
     z2 = sqlite3_mprintf("%s WHERE rowid BETWEEN %d AND %d", zSql,
                          firstId, lastId);
@@ -1020,7 +1021,7 @@ extern int sqlite3_dbdata_init(sqlite3*,const char**,void*);
 ** print the supplied SQL statement to stdout.
 */
 static int recoverSqlCb(void *pCtx, const char *zSql){
-  if( eVerbosity>=2 ){
+  if( eVerbosity>=2 && zSql ){
     printf("%s\n", zSql);
   }
   return SQLITE_OK;
@@ -1359,7 +1360,6 @@ int runCombinedDbSqlInput(
   sqlite3_vt02_init(cx.db, 0, 0);
 
   /* Activate extensions */
-  sqlite3_percentile_init(cx.db, 0, 0);
   sqlite3_randomjson_init(cx.db, 0, 0);
 
   /* Add support for sqlite_dbdata and sqlite_dbptr virtual tables used

@@ -62,7 +62,7 @@ while {1} {
       if {[regexp {^# *include "sqlite} $lx]} {
         set lx "/* $lx */"
       }
-      if {[regexp {^# *include "test_windirent.h"} $lx]} {
+      if {[regexp {^# *include "windirent.h"} $lx]} {
         set lx "/* $lx */"
       }
       set lx [string map [list __declspec(dllexport) {}] $lx]

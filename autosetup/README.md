@@ -380,8 +380,9 @@ and its own special handling of `--enable-...` flags makes `--debug`
 an alias for `--enable-debug`. As this project has a long history of
 using `--enable-debug`, we patch autosetup to use the name
 `--autosetup-debug` in place of `--debug`. That requires (as of this
-writing) four small edits in [](/file/autosetup/autosetup), as
-demonstrated in [check-in 3296c8d3](/info/3296c8d3).
+writing) four small edits in
+[/autosetup/autosetup](/file/autosetup/autosetup), as demonstrated in
+[check-in 3296c8d3](/info/3296c8d3).
 
 If autosetup is upgraded and this patch is _not_ applied the invoking
 `./configure` will fail loudly because of the declaration of the
@@ -426,7 +427,7 @@ proc sqlite-custom-flags {} {
 ```
 
 That function must return either an empty string or a list in the form
-used internally by `sqlite-config.tcl:sqlite-configure`.
+used internally by [sqlite-config.tcl][]'s `sqlite-configure`.
 
 Next, define:
 

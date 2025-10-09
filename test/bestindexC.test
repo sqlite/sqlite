@@ -349,4 +349,78 @@ do_execsql_test 5.9 {
   three six seven
 }
 
+#--------------------------------------------------------------------------
+
+reset_db
+register_tcl_module db
+
+proc quote {str} {
+  return "'[string map {' ''} $str]'"
+}
+
+proc vtab_command {lVal method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a, b, c, d)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+
+      set idx 0
+      set idxnum 0
+
+      foreach c $clist {
+        array set a $c
+        if {$a(usable)==0} continue
+
+        if {$a(op)=="limit"} {
+          set idxnum [$hdl rhs_value $idx 555]
+        }
+
+        incr idx
+      }
+
+      return "cost 1000 rows 1000 idxnum $idxnum"
+
+    }
+
+    xFilter {
+      foreach {idxnum idxstr lArg} $args {}
+      return [list sql "SELECT 0, $idxnum, $idxnum, $idxnum, $idxnum"]
+    }
+  }
+
+  return {}
+}
+
+do_execsql_test 6.0 {
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES(2, 2);
+  CREATE VIRTUAL TABLE x1 USING tcl(vtab_command t1);
+}
+
+do_execsql_test 6.1 { SELECT * FROM x1 LIMIT 50 } {50 50 50 50}
+
+do_execsql_test 6.2 { SELECT * FROM x1 WHERE b=c LIMIT 5 } {0 0 0 0}
+
+do_execsql_test 6.3 { 
+  SELECT (SELECT a FROM x1 WHERE t1.x=t1.y LIMIT 10) FROM t1
+} {0}
+
+do_execsql_test 6.4 { 
+  SELECT (SELECT a FROM x1 WHERE x1.a=1) FROM t1
+} {1}
+
+do_execsql_test 6.5 { 
+  SELECT (SELECT a FROM x1 WHERE x1.a=1 LIMIT 1) FROM t1
+} {1}
+
+do_execsql_test 6.6 { 
+  SELECT (SELECT a FROM x1 WHERE x1.a=555 LIMIT 2) FROM t1
+} {555}
+
 finish_test
+
+

@@ -14,16 +14,19 @@
 #ifndef _FTSINT_H
 #define _FTSINT_H
 
+/*
+** Activate assert() only if SQLITE_TEST is enabled.
+*/
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
+# define NDEBUG 1
+#endif
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
-# define NDEBUG 1
-#endif
 
 /* FTS3/FTS4 require virtual tables */
 #ifdef SQLITE_OMIT_VIRTUALTABLE
@@ -44,7 +47,7 @@
 
 /* If not building as part of the core, include sqlite3ext.h. */
 #ifndef SQLITE_CORE
-# include "sqlite3ext.h" 
+# include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
 #endif
 
@@ -187,13 +190,6 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 #define UNUSED_PARAMETER(x) (void)(x)
 
 /*
-** Activate assert() only if SQLITE_TEST is enabled.
-*/
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
-# define NDEBUG 1
-#endif
-
-/*
 ** The TESTONLY macro is used to enclose variable declarations or
 ** other bits of code that are needed to support the arguments
 ** within testcase() and assert() macros.
@@ -213,7 +209,7 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 ** Macros needed to provide flexible arrays in a portable way
 */
 #ifndef offsetof
-# define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
 #endif
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define FLEXARRAY

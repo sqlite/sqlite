@@ -433,6 +433,16 @@ Table *sqlite3LocateTable(
       if( pMod==0 && sqlite3_strnicmp(zName, "pragma_", 7)==0 ){
         pMod = sqlite3PragmaVtabRegister(db, zName);
       }
+#ifndef SQLITE_OMIT_JSON
+      if( pMod==0 && sqlite3_strnicmp(zName, "json", 4)==0 ){
+        pMod = sqlite3JsonVtabRegister(db, zName);
+      }
+#endif
+#ifdef SQLITE_ENABLE_CARRAY
+      if( pMod==0 && sqlite3_stricmp(zName, "carray")==0 ){
+        pMod = sqlite3CarrayRegister(db);
+      }
+#endif
       if( pMod && sqlite3VtabEponymousTableInit(pParse, pMod) ){
         testcase( pMod->pEpoTab==0 );
         return pMod->pEpoTab;
@@ -1071,7 +1081,7 @@ int sqlite3TableColumnToIndex(Index *pIdx, int iCol){
   int i;
   i16 iCol16;
   assert( iCol>=(-1) && iCol<=SQLITE_MAX_COLUMN );
-  assert( pIdx->nColumn<=SQLITE_MAX_COLUMN+1 );
+  assert( pIdx->nColumn<=SQLITE_MAX_COLUMN*2 );
   iCol16 = iCol;
   for(i=0; i<pIdx->nColumn; i++){
     if( iCol16==pIdx->aiColumn[i] ){
@@ -1368,6 +1378,9 @@ void sqlite3StartTable(
     sqlite3VdbeAddOp3(v, OP_Insert, 0, reg3, reg1);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeAddOp0(v, OP_Close);
+  }else if( db->init.imposterTable ){
+    pTable->tabFlags |= TF_Imposter;
+    if( db->init.imposterTable>=2 ) pTable->tabFlags |= TF_Readonly;
   }
 
   /* Normal (non-error) return. */
@@ -4219,7 +4232,6 @@ void sqlite3CreateIndex(
       assert( j<=0x7fff );
       if( j<0 ){
         j = pTab->iPKey;
-        pIndex->bIdxRowid = 1;
       }else{
         if( pTab->aCol[j].notNull==0 ){
           pIndex->uniqNotNull = 0;
@@ -5138,16 +5150,22 @@ void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
 ** are deleted by this function.
 */
 SrcList *sqlite3SrcListAppendList(Parse *pParse, SrcList *p1, SrcList *p2){
-  assert( p1 && p1->nSrc==1 );
+  assert( p1 );
+  assert( p2 || pParse->nErr );
+  assert( p2==0 || p2->nSrc>=1 );
+  testcase( p1->nSrc==0 );
   if( p2 ){
-    SrcList *pNew = sqlite3SrcListEnlarge(pParse, p1, p2->nSrc, 1);
+    int nOld = p1->nSrc;
+    SrcList *pNew = sqlite3SrcListEnlarge(pParse, p1, p2->nSrc, nOld);
     if( pNew==0 ){
       sqlite3SrcListDelete(pParse->db, p2);
     }else{
       p1 = pNew;
-      memcpy(&p1->a[1], p2->a, p2->nSrc*sizeof(SrcItem));
+      memcpy(&p1->a[nOld], p2->a, p2->nSrc*sizeof(SrcItem));
+      assert( nOld==1 || (p2->a[0].fg.jointype & JT_LTORJ)==0 );
+      assert( p1->nSrc>=1 );
+      p1->a[0].fg.jointype |= (JT_LTORJ & p2->a[0].fg.jointype);
       sqlite3DbFree(pParse->db, p2);
-      p1->a[0].fg.jointype |= (JT_LTORJ & p1->a[1].fg.jointype);
     }
   }
   return p1;
@@ -5658,14 +5676,19 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
     }
     if( pParse->nErr ){
       assert( pParse->rc==SQLITE_ERROR_MISSING_COLLSEQ );
-      if( pIdx->bNoQuery==0 ){
+      if( pIdx->bNoQuery==0 
+       && sqlite3HashFind(&pIdx->pSchema->idxHash, pIdx->zName)
+      ){
         /* Deactivate the index because it contains an unknown collating
         ** sequence.  The only way to reactive the index is to reload the
         ** schema.  Adding the missing collating sequence later does not
         ** reactive the index.  The application had the chance to register
         ** the missing index using the collation-needed callback.  For
         ** simplicity, SQLite will not give the application a second chance.
-        */
+        **
+        ** Except, do not do this if the index is not in the schema hash
+        ** table. In this case the index is currently being constructed
+        ** by a CREATE INDEX statement, and retrying will not help.  */
         pIdx->bNoQuery = 1;
         pParse->rc = SQLITE_ERROR_RETRY;
       }

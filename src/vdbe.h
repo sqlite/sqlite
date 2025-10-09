@@ -300,8 +300,11 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 #endif
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3BlobCompare(const Mem*, const Mem*);
+#ifdef SQLITE_ENABLE_PERCENTILE
+  const char *sqlite3VdbeFuncName(const sqlite3_context*);
+#endif
 
-void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
+void sqlite3VdbeRecordUnpack(int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompareWithSkip(int, const void *, UnpackedRecord *, int);
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo*);
@@ -314,7 +317,9 @@ int sqlite3VdbeHasSubProgram(Vdbe*);
 
 void sqlite3MemSetArrayInt64(sqlite3_value *aMem, int iIdx, i64 val);
 
+#ifndef SQLITE_OMIT_DATETIME_FUNCS
 int sqlite3NotPureFunc(sqlite3_context*);
+#endif
 #ifdef SQLITE_ENABLE_BYTECODE_VTAB
 int sqlite3VdbeBytecodeVtabInit(sqlite3*);
 #endif

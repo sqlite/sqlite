@@ -1,4 +1,4 @@
-//#ifnot omit-oo1
+//#if not omit-oo1
 /*
   2022-08-24
 
@@ -130,12 +130,10 @@
 
    Notable shortcomings:
 
-   - This API was not designed with ES6 modules in mind. Neither Firefox
-     nor Safari support, as of March 2023, the {type:"module"} flag to the
-     Worker constructor, so that particular usage is not something we're going
-     to target for the time being:
-
-     https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker
+   - "v1" of this this API is not suitable for use as an ESM module
+     because ESM worker modules were not widely supported when it was
+     developed. For use as an ESM module, see the "v2" interface later
+     on in this file.
 */
 globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   // Inspired by: https://stackoverflow.com/a/52439530
@@ -254,10 +252,12 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
 
 globalThis.sqlite3Worker1Promiser.defaultConfig = {
   worker: function(){
-//#if target=es6-module
+//#if target:es6-bundler-friendly
     return new Worker(new URL("sqlite3-worker1-bundler-friendly.mjs", import.meta.url),{
       type: 'module'
     });
+//#elif target:es6-module
+    return new Worker(new URL("sqlite3-worker1.js", import.meta.url));
 //#else
     let theJs = "sqlite3-worker1.js";
     if(this.currentScript){
@@ -275,7 +275,7 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
     return new Worker(theJs + globalThis.location.search);
 //#endif
   }
-//#ifnot target=es6-module
+//#if not target:es6-module
   .bind({
     currentScript: globalThis?.document?.currentScript
   })
@@ -296,7 +296,7 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
    after calling the original function and will reject if that
    function throws.
 */
-sqlite3Worker1Promiser.v2 = function(config){
+globalThis.sqlite3Worker1Promiser.v2 = function callee(config = callee.defaultConfig){
   let oldFunc;
   if( 'function' == typeof config ){
     oldFunc = config;
@@ -326,12 +326,15 @@ sqlite3Worker1Promiser.v2 = function(config){
   }
   return p;
 }.bind({
-   /* We do this because clients are
-      recommended to delete globalThis.sqlite3Worker1Promiser. */
+   /* We do this because clients are recommended to delete
+      globalThis.sqlite3Worker1Promiser. */
   original: sqlite3Worker1Promiser
 });
 
-//#if target=es6-module
+globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
+  globalThis.sqlite3Worker1Promiser.defaultConfig;
+
+//#if target:es6-module
 /**
   When built as a module, we export sqlite3Worker1Promiser.v2()
   instead of sqlite3Worker1Promise() because (A) its interface is more
@@ -340,7 +343,7 @@ sqlite3Worker1Promiser.v2 = function(config){
   incompatibility.
 */
 export default sqlite3Worker1Promiser.v2;
-//#endif /* target=es6-module */
+//#endif /* target:es6-module */
 //#else
 /* Built with the omit-oo1 flag. */
-//#endif ifnot omit-oo1
+//#endif if not omit-oo1

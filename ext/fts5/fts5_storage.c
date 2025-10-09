@@ -40,16 +40,16 @@
 **   This is necessary - using sqlite3_value_nochange() instead of just having
 **   SQLite pass the original value back via xUpdate() - so as not to discard
 **   any locale information associated with such values.
-**
 */
 struct Fts5Storage {
   Fts5Config *pConfig;
   Fts5Index *pIndex;
+  int db_enc;                     /* Database encoding */
   int bTotalsValid;               /* True if nTotalRow/aTotalSize[] are valid */
   i64 nTotalRow;                  /* Total number of rows in FTS table */
   i64 *aTotalSize;                /* Total sizes of each column */ 
   sqlite3_stmt *pSavedRow;
-  sqlite3_stmt *aStmt[12];
+  sqlite3_stmt *aStmt[13];
 };
 
 
@@ -72,6 +72,7 @@ struct Fts5Storage {
 #define FTS5_STMT_LOOKUP_DOCSIZE  9
 #define FTS5_STMT_REPLACE_CONFIG 10
 #define FTS5_STMT_SCAN           11
+#define FTS5_STMT_ENC_CONVERT    12
 
 /*
 ** Prepare the two insert statements - Fts5Storage.pInsertContent and
@@ -113,6 +114,7 @@ static int fts5StorageGetStmt(
 
       "REPLACE INTO %Q.'%q_config' VALUES(?,?)",        /* REPLACE_CONFIG */
       "SELECT %s FROM %s AS T",                         /* SCAN */
+      "SELECT substr(?, 1)",                            /* ENC_CONVERT */
     };
     Fts5Config *pC = p->pConfig;
     char *zSql = 0;
@@ -334,6 +336,36 @@ int sqlite3Fts5CreateTable(
 }
 
 /*
+** Set the value of Fts5Storage.db_enc to the db encoding. Return SQLITE_OK
+** if successful, or an SQLite error code otherwise.
+*/
+static int fts5StorageFindDbEnc(Fts5Storage *p){
+  const char *zSql = "PRAGMA encoding";
+  sqlite3_stmt *pStmt = 0;
+  int rc = SQLITE_OK;
+
+  rc = sqlite3_prepare(p->pConfig->db, zSql, -1, &pStmt, 0);
+  if( rc==SQLITE_OK ){
+    if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      static const char *aEnc[] = {
+        "UTF-8", "UTF-16le", "UTF-16be"
+      };
+      const char *zEnc = (const char*)sqlite3_column_text(pStmt, 0);
+      int ii;
+      for(ii=0; ii<ArraySize(aEnc); ii++){
+        if( sqlite3_stricmp(aEnc[ii], zEnc)==0 ){
+          p->db_enc = ii+1;
+          break;
+        }
+      }
+    }
+    rc = sqlite3_finalize(pStmt);
+  }
+
+  return rc;
+}
+
+/*
 ** Open a new Fts5Index handle. If the bCreate argument is true, create
 ** and initialize the underlying tables 
 **
@@ -361,7 +393,9 @@ int sqlite3Fts5StorageOpen(
   p->pConfig = pConfig;
   p->pIndex = pIndex;
 
-  if( bCreate ){
+  rc = fts5StorageFindDbEnc(p);
+
+  if( rc==SQLITE_OK && bCreate ){
     if( pConfig->eContent==FTS5_CONTENT_NORMAL 
      || pConfig->eContent==FTS5_CONTENT_UNINDEXED 
     ){
@@ -539,6 +573,7 @@ static int fts5StorageDeleteFromIndex(
   for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
     if( pConfig->abUnindexed[iCol-1]==0 ){
       sqlite3_value *pVal = 0;
+      sqlite3_value *pFree = 0;
       const char *pText = 0;
       int nText = 0;
       const char *pLoc = 0;
@@ -555,11 +590,22 @@ static int fts5StorageDeleteFromIndex(
       if( pConfig->bLocale && sqlite3Fts5IsLocaleValue(pConfig, pVal) ){
         rc = sqlite3Fts5DecodeLocaleValue(pVal, &pText, &nText, &pLoc, &nLoc);
       }else{
-        pText = (const char*)sqlite3_value_text(pVal);
-        nText = sqlite3_value_bytes(pVal);
-        if( pConfig->bLocale && pSeek ){
-          pLoc = (const char*)sqlite3_column_text(pSeek, iCol + pConfig->nCol);
-          nLoc = sqlite3_column_bytes(pSeek, iCol + pConfig->nCol);
+        if( sqlite3_value_type(pVal)!=SQLITE_TEXT ){
+          /* Make a copy of the value to work with. This is because the call
+          ** to sqlite3_value_text() below forces the type of the value to
+          ** SQLITE_TEXT, and we may need to use it again later. */
+          pFree = pVal = sqlite3_value_dup(pVal);
+          if( pVal==0 ){
+            rc = SQLITE_NOMEM;
+          }
+        }
+        if( rc==SQLITE_OK ){
+          pText = (const char*)sqlite3_value_text(pVal);
+          nText = sqlite3_value_bytes(pVal);
+          if( pConfig->bLocale && pSeek ){
+            pLoc = (const char*)sqlite3_column_text(pSeek, iCol+pConfig->nCol);
+            nLoc = sqlite3_column_bytes(pSeek, iCol + pConfig->nCol);
+          }
         }
       }
 
@@ -575,6 +621,7 @@ static int fts5StorageDeleteFromIndex(
         }
         sqlite3Fts5ClearLocale(pConfig);
       }
+      sqlite3_value_free(pFree);
     }
   }
   if( rc==SQLITE_OK && p->nTotalRow<1 ){
@@ -1019,6 +1066,59 @@ int sqlite3Fts5StorageContentInsert(
 }
 
 /*
+** Argument pVal is a blob value for which the internal encoding does not
+** match the database encoding. This happens when using sqlite3_bind_blob()
+** (which always sets encoding=utf8) with a utf-16 database. The problem
+** is that fts5 is about to call sqlite3_column_text() on the value to
+** obtain text for tokenization. And the conversion between text and blob
+** must take place assuming the blob is encoded in database encoding -
+** otherwise it won't match the text extracted from the same blob if it
+** is read from the db later on.
+**
+** This function attempts to create a new value containing a copy of
+** the blob in pVal, but with the encoding set to the database encoding.
+** If successful, it sets (*ppOut) to point to the new value and returns
+** SQLITE_OK. It is the responsibility of the caller to eventually free 
+** this value using sqlite3_value_free(). Or, if an error occurs, (*ppOut)
+** is set to NULL and an SQLite error code returned.
+*/
+static int fts5EncodingFix(
+  Fts5Storage *p, 
+  sqlite3_value *pVal, 
+  sqlite3_value **ppOut
+){
+  sqlite3_stmt *pStmt = 0;
+  int rc = fts5StorageGetStmt(
+      p, FTS5_STMT_ENC_CONVERT, &pStmt, p->pConfig->pzErrmsg
+  );
+  if( rc==SQLITE_OK ){
+    sqlite3_value *pDup = 0;
+    const char *pBlob = sqlite3_value_blob(pVal);
+    int nBlob = sqlite3_value_bytes(pVal);
+
+    sqlite3_bind_blob(pStmt, 1, pBlob, nBlob, SQLITE_STATIC);
+
+    if( SQLITE_ROW==sqlite3_step(pStmt) ){
+      sqlite3_value *p = sqlite3_column_value(pStmt, 0);
+      pDup = sqlite3_value_dup(p);
+      if( pDup==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        *ppOut = p;
+      }
+    }
+    rc = sqlite3_reset(pStmt);
+    if( rc!=SQLITE_OK ){
+      sqlite3_value_free(pDup);
+    }else{
+      *ppOut = pDup;
+    }
+  }
+
+  return rc;
+}
+
+/*
 ** Insert new entries into the FTS index and %_docsize table.
 */
 int sqlite3Fts5StorageIndexInsert(
@@ -1045,6 +1145,7 @@ int sqlite3Fts5StorageIndexInsert(
       const char *pText = 0;      /* Pointer to buffer containing text value */
       int nLoc = 0;               /* Size of pText in bytes */
       const char *pLoc = 0;       /* Pointer to buffer containing text value */
+      sqlite3_value *pFree = 0;
 
       sqlite3_value *pVal = apVal[ctx.iCol+2];
       if( p->pSavedRow && sqlite3_value_nochange(pVal) ){
@@ -1061,6 +1162,15 @@ int sqlite3Fts5StorageIndexInsert(
       if( pConfig->bLocale && sqlite3Fts5IsLocaleValue(pConfig, pVal) ){
         rc = sqlite3Fts5DecodeLocaleValue(pVal, &pText, &nText, &pLoc, &nLoc);
       }else{
+        if( sqlite3_value_type(pVal)==SQLITE_BLOB 
+         && sqlite3_value_encoding(pVal)!=p->db_enc
+        ){
+          rc = fts5EncodingFix(p, pVal, &pFree);
+          if( pFree ){
+            assert( rc==SQLITE_OK );
+            pVal = pFree;
+          }
+        }
         pText = (const char*)sqlite3_value_text(pVal);
         nText = sqlite3_value_bytes(pVal);
       }
@@ -1072,6 +1182,9 @@ int sqlite3Fts5StorageIndexInsert(
             fts5StorageInsertCallback
         );
         sqlite3Fts5ClearLocale(pConfig);
+      }
+      if( pFree ){
+        sqlite3_value_free(pFree);
       }
     }
     sqlite3Fts5BufferAppendVarint(&rc, &buf, ctx.szCol);

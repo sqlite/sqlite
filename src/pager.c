@@ -700,6 +700,9 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  sqlite3 *dbWal;
+#endif
 };
 
 /*
@@ -3609,14 +3612,27 @@ void sqlite3PagerSetFlags(
   unsigned pgFlags      /* Various flags */
 ){
   unsigned level = pgFlags & PAGER_SYNCHRONOUS_MASK;
-  if( pPager->tempFile ){
+  if( pPager->tempFile || level==PAGER_SYNCHRONOUS_OFF ){
     pPager->noSync = 1;
     pPager->fullSync = 0;
     pPager->extraSync = 0;
   }else{
-    pPager->noSync =  level==PAGER_SYNCHRONOUS_OFF ?1:0;
+    pPager->noSync =  0;
     pPager->fullSync = level>=PAGER_SYNCHRONOUS_FULL ?1:0;
-    pPager->extraSync = level==PAGER_SYNCHRONOUS_EXTRA ?1:0;
+
+    /* Set Pager.extraSync if "PRAGMA synchronous=EXTRA" is requested, or 
+    ** if the file-system supports F2FS style atomic writes. If this flag
+    ** is set, SQLite syncs the directory to disk immediately after deleting 
+    ** a journal file in "PRAGMA journal_mode=DELETE" mode.  */
+    if( level==PAGER_SYNCHRONOUS_EXTRA 
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+     || (sqlite3OsDeviceCharacteristics(pPager->fd) & SQLITE_IOCAP_BATCH_ATOMIC)
+#endif
+    ){
+      pPager->extraSync = 1;
+    }else{
+      pPager->extraSync = 0;
+    }
   }
   if( pPager->noSync ){
     pPager->syncFlags = 0;
@@ -7509,7 +7525,7 @@ int sqlite3PagerCheckpoint(
   }
   if( pPager->pWal ){
     rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
-        (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
+        (eMode<=SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt
@@ -7581,6 +7597,11 @@ static int pagerOpenWal(Pager *pPager){
         pPager->fd, pPager->zWal, pPager->exclusiveMode,
         pPager->journalSizeLimit, &pPager->pWal
     );
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    if( rc==SQLITE_OK ){
+      sqlite3WalDb(pPager->pWal, pPager->dbWal);
+    }
+#endif
   }
   pagerFixMaplimit(pPager);
 
@@ -7700,6 +7721,7 @@ int sqlite3PagerWalWriteLock(Pager *pPager, int bLock){
 ** blocking locks are required.
 */
 void sqlite3PagerWalDb(Pager *pPager, sqlite3 *db){
+  pPager->dbWal = db;
   if( pagerUseWal(pPager) ){
     sqlite3WalDb(pPager->pWal, db);
   }

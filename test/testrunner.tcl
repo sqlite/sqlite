@@ -7,6 +7,18 @@ set testdir [file normalize [file dirname $argv0]]
 set saved $argv
 set argv [list]
 source [file join $testdir testrunner_data.tcl]
+
+# Estimated amount of work required by displaytype, relative to 'tcl'
+#
+set estwork(tcl)    1
+set estwork(fuzz)   22
+set estwork(bld)    66
+set estwork(make)   102
+
+set estworkfile [file join $testdir testrunner_estwork.tcl]
+if {[file readable $estworkfile]} {
+  source $estworkfile
+}
 source [file join $testdir permutations.test]
 set argv $saved
 cd $dir
@@ -81,7 +93,7 @@ if {[info commands clock_milliseconds]==""} {
 proc usage {} {
   set a0 [file tail $::argv0]
 
-  puts stderr [string trim [subst -nocommands {
+  puts [string trim [subst -nocommands {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
@@ -92,9 +104,11 @@ Usage:
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
     $a0 halt
+    $a0 estwork
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
+    --cases DISPLAYNAME      Only run test that match DISPLAYNAME
     --config CONFIGS         Only use configs on comma-separate list CONFIGS
     --dryrun                 Write what would have happened to testrunner.log
     --explain                Write summary to stdout
@@ -226,6 +240,7 @@ set TRG(explain) 0                  ;# True for the --explain option
 set TRG(stopOnError) 0              ;# Stop running at first failure
 set TRG(stopOnCore) 0               ;# Stop on a core-dump
 set TRG(fullstatus) 0               ;# Full "status" report while running
+set TRG(case) {}                    ;# Only run cases matching this GLOB pattern
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -341,6 +356,7 @@ set TRG(schema) {
     endtime INTEGER,                    -- End time
     span INTEGER,                       -- Total run-time in milliseconds
     estwork INTEGER,                    -- Estimated amount of work
+    estkey TEXT,                        -- Key used to compute estwork
     state TEXT CHECK( state IN ('','ready','running','done','failed','omit','halt') ),
     ntest INT,                          -- Number of test cases run
     nerr INT,                           -- Number of errors reported
@@ -358,13 +374,6 @@ set TRG(schema) {
   CREATE INDEX i2 ON jobs(depid);
 }
 #-------------------------------------------------------------------------
-
-# Estimated amount of work required by displaytype, relative to 'tcl'
-#
-set estwork(tcl)    1
-set estwork(fuzz)   11
-set estwork(bld)    56
-set estwork(make)   97
 
 #--------------------------------------------------------------------------
 # Check if this script is being invoked to run a single file. If so,
@@ -448,6 +457,59 @@ if {[llength $argv]==1
   sqlite3 mydb $TRG(dbname)
   mydb eval {UPDATE jobs SET state='halt' WHERE state IN ('ready','')}
   mydb close
+  exit
+}
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# Check if this is the "estwork" command:
+#
+# Generate (on standard output) a set of estwork() values based on the lastest
+# test case, that can be used to replace the test/testrunner_estwork.tcl file.
+#
+if {[llength $argv]==1
+ && [string compare -nocase estwork [lindex $argv 0]]==0
+} {
+  sqlite3 mydb $TRG(dbname)
+  set njob [mydb one {SELECT count(*) FROM jobs WHERE state='done'}]
+  if {$njob<1000} {
+    puts "Too few completed jobs to do a work estimate."
+    puts "Have $njob but not need at least 1000."
+    mydb close
+    exit 1
+  }
+  set badjobs [mydb one {SELECT count(*) FROM jobs WHERE state<>'done'}]
+  if {$badjobs} {
+    puts "Database contains $badjobs incomplete jobs."
+    mydb close
+    exit 1
+  }
+  set half [mydb one {SELECT count(*)/2 FROM jobs WHERE displaytype='tcl'}]
+  set scale [mydb one {SELECT span FROM jobs WHERE displaytype='tcl'
+                        ORDER BY span LIMIT 1 OFFSET $half}]
+  mydb eval {
+     SELECT estkey, CAST(avg(span)/$scale AS INT) AS cost
+       FROM jobs
+      GROUP BY estkey
+      HAVING cost>=2
+  } {
+    set estwork($estkey) $cost
+  }
+  set avgtcl [mydb one {SELECT avg(span) FROM jobs WHERE displaytype='tcl'}]
+  set estwork(tcl) 1
+  foreach type {bld fuzz make} {
+    set avg [mydb one {SELECT avg(span) FROM jobs WHERE displaytype=$type}]
+    if {$avg!=""} {
+      set estwork($type) [expr {int($avg/$avgtcl)}]
+    }
+  }
+  mydb close
+  puts "# Estimated relative cost of various jobs, based on the \"estkey\" field."
+  puts "# Computed by the \"test/testrunner.tcl estwork\" command."
+  puts "#"
+  foreach key [lsort [array names estwork]] {
+    puts "set [list estwork($key)] $estwork($key)"
+  }
   exit
 }
 #--------------------------------------------------------------------------
@@ -562,8 +624,8 @@ proc show_status {db cls} {
 
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   set line "Running: $S(running) (max: $nJob)"
-  if {$S(running)>0 && $fin>10} {
-    set tmleft [expr {($tm/$fin)*($totalw-$fin)}]
+  if {$S(running)>0 && [set pct [expr {int(($fin*100.0)/$totalw)}]]>=4} {
+    set tmleft [expr {($tm/double($fin))*($totalw-$fin)}]
     if {$tmleft<0.02*$tm} {
       set tmleft [expr {$tm*0.02}]
     }
@@ -571,6 +633,7 @@ proc show_status {db cls} {
     if {[string length $line]+[string length $etc]<80} {
       append line $etc
     }
+    # append line " $pct%"
   }
   puts [format %-79.79s $line]
   if {$S(running)>0} {
@@ -809,10 +872,13 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       set TRG(dryrun) 1
     } elseif {($n>2 && [string match "$a*" --explain]) || $a=="-e"} {
       set TRG(explain) 1
-    } elseif {($n>2 && [string match "$a*" --omit]) || $a=="-c"} {
+    } elseif {$n>2 && [string match "$a*" --omit]} {
       incr ii
       set TRG(omitconfig) [lindex $argv $ii]
-    } elseif {($n>2 && [string match "$a*" --fuzzdb])} {
+    } elseif {$n>2 && [string match "$a*" --cases]} {
+      incr ii
+      set TRG(case) [lindex $argv $ii]
+    } elseif {$n>2 && [string match "$a*" --fuzzdb]} {
       incr ii
       set env(FUZZDB) [lindex $argv $ii]
     } elseif {[string match "$a*" --stop-on-error]} {
@@ -985,12 +1051,31 @@ proc add_job {args} {
   set state ""
   if {$A(-depid)==""} { set state ready }
   set type $A(-displaytype)
-  set ew $estwork($type)
+  set displayname $A(-displayname)
+  switch $type {
+    tcl {
+      set ek [file tail [lindex $displayname end]]
+    }
+    bld {
+      set ek [lindex $displayname end]
+    }
+    fuzz {
+      set ek [lrange $displayname 1 2]
+    }
+    make {
+      set ek [lindex $displayname end]
+    }
+  }
+  if {[info exists estwork($ek)]} {
+    set ew $estwork($ek)
+  } else {
+    set ew $estwork($type)
+  }
 
   trdb eval {
     INSERT INTO jobs(
-      displaytype, displayname, build, dirname, cmd, depid, priority, estwork,
-      state
+      displaytype, displayname, build, dirname, cmd, depid, priority,
+      estwork, estkey, state
     ) VALUES (
       $type,
       $A(-displayname),
@@ -1000,6 +1085,7 @@ proc add_job {args} {
       $A(-depid),
       $A(-priority),
       $ew,
+      $ek,
       $state
     )
   }
@@ -1361,6 +1447,31 @@ proc add_jobs_from_cmdline {patternlist} {
       }
     }
   }
+
+  # If the "--case DISPLAYNAME" option appears on the command-line, mark
+  # all tests other than DISPLAYNAME as 'omit'.
+  #
+  if {[info exists TRG(case)] && $TRG(case) ne ""} {
+    set jid [trdb one {
+      SELECT jobid FROM jobs WHERE displayname GLOB $TRG(case)
+    }]
+    if {$jid eq ""} {
+      puts "ERROR: No jobs match \"$TRG(case)\"."
+      puts "The argument to --cases must GLOB match the jobs.displayname column"
+      puts "of the testrunner.db database."
+      trdb eval {UPDATE jobs SET state='omit'}
+    } else {
+      trdb eval {
+        WITH RECURSIVE keepers(jid,did) AS (
+           SELECT jobid,depid FROM jobs
+            WHERE displayname GLOB $TRG(case)
+           UNION
+           SELECT jobid,depid FROM jobs, keepers WHERE jobid=did
+        )
+        DELETE FROM jobs WHERE jobid NOT IN (SELECT jid FROM keepers);
+      }
+    }
+  }
 }
 
 proc make_new_testset {} {
@@ -1586,12 +1697,13 @@ proc progress_report {} {
       }
     }
     set report "[elapsetime $tmms] [join $text { }]"
-    if {$wdone>0} {
-      set tmleft [expr {($tmms/$wdone)*($wtotal-$wdone)}]
-      set etc " ETC [elapsetime $tmleft]"
+    if {$wdone>0 && [set pct [expr {int(($wdone*100.0)/$wtotal)}]]>=4} {
+      set tmleft [expr {($tmms/double($wdone))*($wtotal-$wdone)}]
+      set etc " ETC [elapsetime $tmleft]"  
       if {[string length $report]+[string length $etc]<80} {
         append report $etc
       }
+      # append report " $pct%"
     }
     puts -nonewline [format %-79.79s $report]\r
     flush stdout
@@ -1629,6 +1741,7 @@ proc run_testset {} {
   }
   close $TRG(log)
   progress_report
+  puts ""
 
   r_write_db {
     set tm [clock_milliseconds]
@@ -1648,7 +1761,7 @@ proc run_testset {} {
     }
   }
 
-  puts "\nTest database is $TRG(dbname)"
+  puts "Test database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
   if {[info exists TRG(FUZZDB)]} {
     puts "Extra fuzzcheck data taken from $TRG(FUZZDB)"
@@ -1705,20 +1818,7 @@ proc explain_layer {indent depid} {
       puts "${indent}$displayname in $dirname"
       explain_layer "${indent}   " $jobid
     } elseif {$showtests} {
-      if {[lindex $displayname end-3] eq "--slice"} {
-        set M [lindex $displayname end-2]
-        set N [lindex $displayname end-1]
-        set tail "[lindex $displayname end] (slice $M/$N)"
-      } else {
-        set tail [lindex $displayname end]
-      }
-      set e1 [lindex $displayname 1]
-      if {[string match config=* $e1]} {
-        set cfg [string range $e1 7 end]
-        puts "${indent}($cfg) $tail"
-      } else {
-        puts "${indent}$tail"
-      }
+      puts "${indent}$displayname"
     }
   }
 }

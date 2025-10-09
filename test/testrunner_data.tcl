@@ -38,7 +38,7 @@ namespace eval trd {
   set tcltest(win.Windows-Win32Heap)      veryquick
   set tcltest(win.Windows-Sanitize)       veryquick
   set tcltest(win.Windows-WinRT)          veryquick
-  set tcltest(win.Default)                full
+  set tcltest(win.Default)                {full win_unc_locking}
 
   # Extra [make xyz] tests that should be run for various builds.
   #
@@ -458,16 +458,17 @@ proc trd_fuzztest_data {buildname} {
 
   if {$::tcl_platform(platform) eq "windows"} {
     return [list fuzzcheck.exe $lFuzzDb]
-  } elseif {[lsearch $sanBuilds $buildname]>=0} {
-    return [list [trd_get_bin_name fuzzcheck] $lFuzzDb \
-                 [trd_get_bin_name fuzzcheck-asan] $lFuzzDb \
-                 [trd_get_bin_name fuzzcheck-ubsan] $lFuzzDb \
-                 {sessionfuzz run} $lSessionDb]
   } else {
-    return [list [trd_get_bin_name fuzzcheck] $lFuzzDb \
-                 {sessionfuzz run} $lSessionDb]
+    set lRet [list [trd_get_bin_name fuzzcheck] $lFuzzDb]
+    if {[lsearch $sanBuilds $buildname]>=0} {
+      lappend lRet [trd_get_bin_name fuzzcheck-asan] $lFuzzDb 
+      if {$::tcl_platform(os) ne "OpenBSD"} {
+        lappend lRet [trd_get_bin_name fuzzcheck-ubsan] $lFuzzDb 
+      }
+    }
+    lappend lRet {sessionfuzz run} $lSessionDb
+    return $lRet
   }
-
 }
 
 

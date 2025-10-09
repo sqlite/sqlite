@@ -11,17 +11,6 @@
 #
 all:
 ########################################################################
-#
-# Known TODOs/FIXMEs/TOIMPROVEs for the autosetup port, in no
-# particular order...
-#
-# - TEA pieces.
-#
-# - Replace the autotools-specific distribution deliverable(s).
-#
-# - Confirm whether cross-compilation works and patch it
-# appropriately.
-#
 # Maintenance reminders:
 #
 # - This makefile should remain as POSIX-make-compatible as possible:
@@ -213,6 +202,13 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 #TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 #TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 #TCL_VERSION = @TCL_VERSION@
+TCL_MAJOR_VERSION = @TCL_MAJOR_VERSION@
+# ^^^ main.mk optionally uses this for determining the Tcl extension's
+# DLL name.
+TCL_EXT_DLL_BASENAME = @TCL_EXT_DLL_BASENAME@
+# ^^^ base name of the Tcl extension DLL. It varies by platform and
+# Tcl version.
+
 #
 # $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
 # is calculated at make-time by the targets which need it but we
@@ -257,7 +253,9 @@ AS_AUTO_DEF = $(TOP)/auto.def
 # invoked with to produce this makefile.
 #
 AS_AUTORECONFIG = @SQLITE_AUTORECONFIG@
-
+.PHONY: config reconfigure
+config reconfigure:
+	$(AS_AUTORECONFIG)
 USE_AMALGAMATION ?= @USE_AMALGAMATION@
 LINK_TOOLS_DYNAMICALLY ?= @LINK_TOOLS_DYNAMICALLY@
 AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
@@ -315,9 +313,8 @@ fiddle: sqlite3.c shell.c
 ./custom.rws: ./tool/custom.txt
 	@echo 'Updating custom dictionary from tool/custom.txt'
 	aspell --lang=en create master ./custom.rws < ./tool/custom.txt
-# Note that jimsh does not work here:
-# https://github.com/msteveb/jimtcl/issues/319
 misspell: ./custom.rws has_tclsh84
+# $(JIMSH) does not work with spellsift.tcl
 	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in
 
 #
@@ -334,7 +331,7 @@ distclean: distclean-autosetup
 
 #
 # tool/version-info: a utility for emitting sqlite3 version info
-# in various forms.
+# in various forms. It's used by ext/wasm/.
 #
 version-info$(T.exe): $(TOP)/tool/version-info.c Makefile sqlite3.h
 	$(T.link) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c

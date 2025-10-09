@@ -554,6 +554,36 @@ struct Fts5SegIter {
   u8 bDel;                        /* True if the delete flag is set */
 };
 
+static int fts5IndexCorruptRowid(Fts5Index *pIdx, i64 iRowid){
+  pIdx->rc = FTS5_CORRUPT;
+  sqlite3Fts5ConfigErrmsg(pIdx->pConfig, 
+      "fts5: corruption found reading blob %lld from table \"%s\"", 
+      iRowid, pIdx->pConfig->zName
+  );
+  return SQLITE_CORRUPT_VTAB;
+}
+#define FTS5_CORRUPT_ROWID(pIdx, iRowid) fts5IndexCorruptRowid(pIdx, iRowid)
+
+static int fts5IndexCorruptIter(Fts5Index *pIdx, Fts5SegIter *pIter){
+  pIdx->rc = FTS5_CORRUPT;
+  sqlite3Fts5ConfigErrmsg(pIdx->pConfig, 
+      "fts5: corruption on page %d, segment %d, table \"%s\"", 
+      pIter->iLeafPgno, pIter->pSeg->iSegid, pIdx->pConfig->zName
+  );
+  return SQLITE_CORRUPT_VTAB;
+}
+#define FTS5_CORRUPT_ITER(pIdx, pIter) fts5IndexCorruptIter(pIdx, pIter)
+
+static int fts5IndexCorruptIdx(Fts5Index *pIdx){
+  pIdx->rc = FTS5_CORRUPT;
+  sqlite3Fts5ConfigErrmsg(pIdx->pConfig, 
+      "fts5: corruption in table \"%s\"", pIdx->pConfig->zName
+  );
+  return SQLITE_CORRUPT_VTAB;
+}
+#define FTS5_CORRUPT_IDX(pIdx) fts5IndexCorruptIdx(pIdx)
+
+
 /*
 ** Array of tombstone pages. Reference counted.
 */
@@ -843,7 +873,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
     ** All the reasons those functions might return SQLITE_ERROR - missing
     ** table, missing row, non-blob/text in block column - indicate 
     ** backing store corruption.  */
-    if( rc==SQLITE_ERROR ) rc = FTS5_CORRUPT;
+    if( rc==SQLITE_ERROR ) rc = FTS5_CORRUPT_ROWID(p, iRowid);
 
     if( rc==SQLITE_OK ){
       u8 *aOut = 0;               /* Read blob data into this buffer */
@@ -893,7 +923,7 @@ static Fts5Data *fts5LeafRead(Fts5Index *p, i64 iRowid){
   Fts5Data *pRet = fts5DataRead(p, iRowid);
   if( pRet ){
     if( pRet->nn<4 || pRet->szLeaf>pRet->nn ){
-      p->rc = FTS5_CORRUPT;
+      FTS5_CORRUPT_ROWID(p, iRowid);
       fts5DataRelease(pRet);
       pRet = 0;
     }
@@ -1252,8 +1282,14 @@ static Fts5Structure *fts5StructureReadUncached(Fts5Index *p){
     /* TODO: Do we need this if the leaf-index is appended? Probably... */
     memset(&pData->p[pData->nn], 0, FTS5_DATA_PADDING);
     p->rc = fts5StructureDecode(pData->p, pData->nn, &iCookie, &pRet);
-    if( p->rc==SQLITE_OK && (pConfig->pgsz==0 || pConfig->iCookie!=iCookie) ){
-      p->rc = sqlite3Fts5ConfigLoad(pConfig, iCookie);
+    if( p->rc==SQLITE_OK ){
+      if( (pConfig->pgsz==0 || pConfig->iCookie!=iCookie) ){
+        p->rc = sqlite3Fts5ConfigLoad(pConfig, iCookie);
+      }
+    }else if( p->rc==SQLITE_CORRUPT_VTAB ){
+      sqlite3Fts5ConfigErrmsg(p->pConfig, 
+          "fts5: corrupt structure record for table \"%s\"", p->pConfig->zName
+      );
     }
     fts5DataRelease(pData);
     if( p->rc!=SQLITE_OK ){
@@ -1876,7 +1912,7 @@ static void fts5SegIterLoadRowid(Fts5Index *p, Fts5SegIter *pIter){
   while( iOff>=pIter->pLeaf->szLeaf ){
     fts5SegIterNextPage(p, pIter);
     if( pIter->pLeaf==0 ){
-      if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
+      if( p->rc==SQLITE_OK ) FTS5_CORRUPT_ITER(p, pIter);
       return;
     }
     iOff = 4;
@@ -1908,7 +1944,7 @@ static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
 
   iOff += fts5GetVarint32(&a[iOff], nNew);
   if( iOff+nNew>pIter->pLeaf->szLeaf || nKeep>pIter->term.n || nNew==0 ){
-    p->rc = FTS5_CORRUPT;
+    FTS5_CORRUPT_ITER(p, pIter);
     return;
   }
   pIter->term.n = nKeep;
@@ -1950,9 +1986,9 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
 ** leave an error in the Fts5Index object.
 */
 static void fts5SegIterAllocTombstone(Fts5Index *p, Fts5SegIter *pIter){
-  const int nTomb = pIter->pSeg->nPgTombstone;
+  const i64 nTomb = (i64)pIter->pSeg->nPgTombstone;
   if( nTomb>0 ){
-    int nByte = SZ_FTS5TOMBSTONEARRAY(nTomb+1);
+    i64 nByte = SZ_FTS5TOMBSTONEARRAY(nTomb+1);
     Fts5TombstoneArray *pNew;
     pNew = (Fts5TombstoneArray*)sqlite3Fts5MallocZero(&p->rc, nByte);
     if( pNew ){
@@ -2103,7 +2139,7 @@ static void fts5SegIterReverseNewPage(Fts5Index *p, Fts5SegIter *pIter){
         iRowidOff = fts5LeafFirstRowidOff(pNew);
         if( iRowidOff ){
           if( iRowidOff>=pNew->szLeaf ){
-            p->rc = FTS5_CORRUPT;
+            FTS5_CORRUPT_ITER(p, pIter);
           }else{
             pIter->pLeaf = pNew;
             pIter->iLeafOffset = iRowidOff;
@@ -2337,7 +2373,7 @@ static void fts5SegIterNext(
       }
       assert_nc( iOff<pLeaf->szLeaf );
       if( iOff>pLeaf->szLeaf ){
-        p->rc = FTS5_CORRUPT;
+        FTS5_CORRUPT_ITER(p, pIter);
         return;
       }
     }
@@ -2445,18 +2481,20 @@ static void fts5SegIterReverse(Fts5Index *p, Fts5SegIter *pIter){
     fts5DataRelease(pIter->pLeaf);
     pIter->pLeaf = pLast;
     pIter->iLeafPgno = pgnoLast;
-    iOff = fts5LeafFirstRowidOff(pLast);
-    if( iOff>pLast->szLeaf ){
-      p->rc = FTS5_CORRUPT;
-      return;
-    }
-    iOff += fts5GetVarint(&pLast->p[iOff], (u64*)&pIter->iRowid);
-    pIter->iLeafOffset = iOff;
+    if( p->rc==SQLITE_OK ){
+      iOff = fts5LeafFirstRowidOff(pLast);
+      if( iOff>pLast->szLeaf ){
+        FTS5_CORRUPT_ITER(p, pIter);
+        return;
+      }
+      iOff += fts5GetVarint(&pLast->p[iOff], (u64*)&pIter->iRowid);
+      pIter->iLeafOffset = iOff;
 
-    if( fts5LeafIsTermless(pLast) ){
-      pIter->iEndofDoclist = pLast->nn+1;
-    }else{
-      pIter->iEndofDoclist = fts5LeafFirstTermOff(pLast);
+      if( fts5LeafIsTermless(pLast) ){
+        pIter->iEndofDoclist = pLast->nn+1;
+      }else{
+        pIter->iEndofDoclist = fts5LeafFirstTermOff(pLast);
+      }
     }
   }
 
@@ -2526,7 +2564,7 @@ static void fts5LeafSeek(
   iPgidx += fts5GetVarint32(&a[iPgidx], iTermOff);
   iOff = iTermOff;
   if( iOff>n ){
-    p->rc = FTS5_CORRUPT;
+    FTS5_CORRUPT_ITER(p, pIter);
     return;
   }
 
@@ -2569,7 +2607,7 @@ static void fts5LeafSeek(
     iOff = iTermOff;
 
     if( iOff>=n ){
-      p->rc = FTS5_CORRUPT;
+      FTS5_CORRUPT_ITER(p, pIter);
       return;
     }
 
@@ -2591,7 +2629,7 @@ static void fts5LeafSeek(
         iPgidx = (u32)pIter->pLeaf->szLeaf;
         iPgidx += fts5GetVarint32(&pIter->pLeaf->p[iPgidx], iOff);
         if( iOff<4 || (i64)iOff>=pIter->pLeaf->szLeaf ){
-          p->rc = FTS5_CORRUPT;
+          FTS5_CORRUPT_ITER(p, pIter);
           return;
         }else{
           nKeep = 0;
@@ -2606,7 +2644,7 @@ static void fts5LeafSeek(
 
  search_success:
   if( (i64)iOff+nNew>n || nNew<1 ){
-    p->rc = FTS5_CORRUPT;
+    FTS5_CORRUPT_ITER(p, pIter);
     return;
   }
   pIter->iLeafOffset = iOff + nNew;
@@ -3071,7 +3109,7 @@ static void fts5SegIterGotoPage(
   assert( iLeafPgno>pIter->iLeafPgno );
 
   if( iLeafPgno>pIter->pSeg->pgnoLast ){
-    p->rc = FTS5_CORRUPT;
+    FTS5_CORRUPT_IDX(p);
   }else{
     fts5DataRelease(pIter->pNextLeaf);
     pIter->pNextLeaf = 0;
@@ -3086,7 +3124,7 @@ static void fts5SegIterGotoPage(
         u8 *a = pIter->pLeaf->p;
         int n = pIter->pLeaf->szLeaf;
         if( iOff<4 || iOff>=n ){
-          p->rc = FTS5_CORRUPT;
+          FTS5_CORRUPT_IDX(p);
         }else{
           iOff += fts5GetVarint(&a[iOff], (u64*)&pIter->iRowid);
           pIter->iLeafOffset = iOff;
@@ -3565,7 +3603,7 @@ static void fts5ChunkIterate(
     if( nRem<=0 ){
       break;
     }else if( pSeg->pSeg==0 ){
-      p->rc = FTS5_CORRUPT;
+      FTS5_CORRUPT_IDX(p);
       return;
     }else{
       pgno++;
@@ -4668,7 +4706,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
           ** a single page has been assigned to more than one segment. In
           ** this case a prior iteration of this loop may have corrupted the
           ** segment currently being trimmed.  */
-          p->rc = FTS5_CORRUPT;
+          FTS5_CORRUPT_ROWID(p, iLeafRowid);
         }else{
           fts5BufferZero(&buf);
           fts5BufferGrow(&p->rc, &buf, pData->nn);
@@ -5135,7 +5173,7 @@ static void fts5SecureDeleteOverflow(
     }else if( bDetailNone ){
       break;
     }else if( iNext>=pLeaf->szLeaf || pLeaf->nn<pLeaf->szLeaf || iNext<4 ){
-      p->rc = FTS5_CORRUPT;
+      FTS5_CORRUPT_ROWID(p, iRowid);
       break;
     }else{
       int nShift = iNext - 4;
@@ -5155,7 +5193,7 @@ static void fts5SecureDeleteOverflow(
 
         i1 += fts5GetVarint32(&aPg[i1], iFirst);
         if( iFirst<iNext ){
-          p->rc = FTS5_CORRUPT;
+          FTS5_CORRUPT_ROWID(p, iRowid);
           break;
         }
         aIdx = sqlite3Fts5MallocZero(&p->rc, (pLeaf->nn-pLeaf->szLeaf)+2);
@@ -5378,14 +5416,14 @@ static void fts5DoSecureDelete(
       nSuffix = (nPrefix2 + nSuffix2) - nPrefix;
 
       if( (iKeyOff+nSuffix)>iPgIdx || (iNextOff+nSuffix2)>iPgIdx ){
-        p->rc = FTS5_CORRUPT;
+        FTS5_CORRUPT_IDX(p);
       }else{
         if( iKey!=1 ){
           iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
         }
         iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
         if( nPrefix2>pSeg->term.n ){
-          p->rc = FTS5_CORRUPT;
+          FTS5_CORRUPT_IDX(p);
         }else if( nPrefix2>nPrefix ){
           memcpy(&aPg[iOff], &pSeg->term.p[nPrefix], nPrefix2-nPrefix);
           iOff += (nPrefix2-nPrefix);
@@ -5809,7 +5847,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
   }
 
   nByte += (((i64)pStruct->nLevel)+1) * sizeof(Fts5StructureLevel);
-  assert( nByte==SZ_FTS5STRUCTURE(pStruct->nLevel+2) );
+  assert( nByte==(i64)SZ_FTS5STRUCTURE(pStruct->nLevel+2) );
   pNew = (Fts5Structure*)sqlite3Fts5MallocZero(&p->rc, nByte);
 
   if( pNew ){
@@ -6178,7 +6216,7 @@ static void fts5MergePrefixLists(
       }
 
       if( pHead==0 || pHead->pNext==0 ){
-        p->rc = FTS5_CORRUPT;
+        FTS5_CORRUPT_IDX(p);
         break;
       }
 
@@ -6215,7 +6253,7 @@ static void fts5MergePrefixLists(
       assert_nc( tmp.n+nTail<=nTmp );
       assert( tmp.n+nTail<=nTmp+nMerge*10 );
       if( tmp.n+nTail>nTmp-FTS5_DATA_ZERO_PADDING ){
-        if( p->rc==SQLITE_OK ) p->rc = FTS5_CORRUPT;
+        if( p->rc==SQLITE_OK ) FTS5_CORRUPT_IDX(p);
         break;
       }
       fts5BufferSafeAppendVarint(&out, (tmp.n+nTail) * 2);
@@ -6784,11 +6822,14 @@ int sqlite3Fts5IndexRollback(Fts5Index *p){
 */
 int sqlite3Fts5IndexReinit(Fts5Index *p){
   Fts5Structure *pTmp;
-  u8 tmpSpace[SZ_FTS5STRUCTURE(1)];
+  union {
+    Fts5Structure sFts;
+    u8 tmpSpace[SZ_FTS5STRUCTURE(1)];
+  } uFts;
   fts5StructureInvalidate(p);
   fts5IndexDiscardData(p);
-  pTmp = (Fts5Structure*)tmpSpace;
-  memset(pTmp, 0, SZ_FTS5STRUCTURE(1));
+  pTmp = &uFts.sFts;
+  memset(uFts.tmpSpace, 0, sizeof(uFts.tmpSpace));
   if( p->pConfig->bContentlessDelete ){
     pTmp->nOriginCntr = 1;
   }
@@ -8248,19 +8289,27 @@ static int fts5TestUtf8(const char *z, int n){
 /*
 ** This function is also purely an internal test. It does not contribute to 
 ** FTS functionality, or even the integrity-check, in any way.
+**
+** This function sets output variable (*pbFail) to true if the test fails. Or
+** leaves it unchanged if the test succeeds.
 */
 static void fts5TestTerm(
   Fts5Index *p, 
   Fts5Buffer *pPrev,              /* Previous term */
   const char *z, int n,           /* Possibly new term to test */
   u64 expected,
-  u64 *pCksum
+  u64 *pCksum,
+  int *pbFail
 ){
   int rc = p->rc;
   if( pPrev->n==0 ){
     fts5BufferSet(&rc, pPrev, n, (const u8*)z);
   }else
-  if( rc==SQLITE_OK && (pPrev->n!=n || memcmp(pPrev->p, z, n)) ){
+  if( *pbFail==0 
+   && rc==SQLITE_OK 
+   && (pPrev->n!=n || memcmp(pPrev->p, z, n)) 
+   && (p->pHash==0 || p->pHash->nEntry==0)
+  ){
     u64 cksum3 = *pCksum;
     const char *zTerm = (const char*)&pPrev->p[1];  /* term sans prefix-byte */
     int nTerm = pPrev->n-1;            /* Size of zTerm in bytes */
@@ -8310,7 +8359,7 @@ static void fts5TestTerm(
     fts5BufferSet(&rc, pPrev, n, (const u8*)z);
 
     if( rc==SQLITE_OK && cksum3!=expected ){
-      rc = FTS5_CORRUPT;
+      *pbFail = 1;
     }
     *pCksum = cksum3;
   }
@@ -8319,7 +8368,7 @@ static void fts5TestTerm(
  
 #else
 # define fts5TestDlidxReverse(x,y,z)
-# define fts5TestTerm(u,v,w,x,y,z)
+# define fts5TestTerm(t,u,v,w,x,y,z)
 #endif
 
 /*
@@ -8344,14 +8393,17 @@ static void fts5IndexIntegrityCheckEmpty(
   for(i=iFirst; p->rc==SQLITE_OK && i<=iLast; i++){
     Fts5Data *pLeaf = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, i));
     if( pLeaf ){
-      if( !fts5LeafIsTermless(pLeaf) ) p->rc = FTS5_CORRUPT;
-      if( i>=iNoRowid && 0!=fts5LeafFirstRowidOff(pLeaf) ) p->rc = FTS5_CORRUPT;
+      if( !fts5LeafIsTermless(pLeaf)
+       || (i>=iNoRowid && 0!=fts5LeafFirstRowidOff(pLeaf))
+      ){
+        FTS5_CORRUPT_ROWID(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, i));
+      }
     }
     fts5DataRelease(pLeaf);
   }
 }
 
-static void fts5IntegrityCheckPgidx(Fts5Index *p, Fts5Data *pLeaf){
+static void fts5IntegrityCheckPgidx(Fts5Index *p, i64 iRowid, Fts5Data *pLeaf){
   i64 iTermOff = 0;
   int ii;
 
@@ -8369,12 +8421,12 @@ static void fts5IntegrityCheckPgidx(Fts5Index *p, Fts5Data *pLeaf){
     iOff = iTermOff;
 
     if( iOff>=pLeaf->szLeaf ){
-      p->rc = FTS5_CORRUPT;
+      FTS5_CORRUPT_ROWID(p, iRowid);
     }else if( iTermOff==nIncr ){
       int nByte;
       iOff += fts5GetVarint32(&pLeaf->p[iOff], nByte);
       if( (iOff+nByte)>pLeaf->szLeaf ){
-        p->rc = FTS5_CORRUPT;
+        FTS5_CORRUPT_ROWID(p, iRowid);
       }else{
         fts5BufferSet(&p->rc, &buf1, nByte, &pLeaf->p[iOff]);
       }
@@ -8383,7 +8435,7 @@ static void fts5IntegrityCheckPgidx(Fts5Index *p, Fts5Data *pLeaf){
       iOff += fts5GetVarint32(&pLeaf->p[iOff], nKeep);
       iOff += fts5GetVarint32(&pLeaf->p[iOff], nByte);
       if( nKeep>buf1.n || (iOff+nByte)>pLeaf->szLeaf ){
-        p->rc = FTS5_CORRUPT;
+        FTS5_CORRUPT_ROWID(p, iRowid);
       }else{
         buf1.n = nKeep;
         fts5BufferAppendBlob(&p->rc, &buf1, nByte, &pLeaf->p[iOff]);
@@ -8391,7 +8443,7 @@ static void fts5IntegrityCheckPgidx(Fts5Index *p, Fts5Data *pLeaf){
 
       if( p->rc==SQLITE_OK ){
         res = fts5BufferCompare(&buf1, &buf2);
-        if( res<=0 ) p->rc = FTS5_CORRUPT;
+        if( res<=0 ) FTS5_CORRUPT_ROWID(p, iRowid);
       }
     }
     fts5BufferSet(&p->rc, &buf2, buf1.n, buf1.p);
@@ -8452,7 +8504,7 @@ static void fts5IndexIntegrityCheckSegment(
         ** entry even if all the terms are removed from it by secure-delete 
         ** operations. */
       }else{
-        p->rc = FTS5_CORRUPT;
+        FTS5_CORRUPT_ROWID(p, iRow);
       }
 
     }else{
@@ -8464,15 +8516,15 @@ static void fts5IndexIntegrityCheckSegment(
       iOff = fts5LeafFirstTermOff(pLeaf);
       iRowidOff = fts5LeafFirstRowidOff(pLeaf);
       if( iRowidOff>=iOff || iOff>=pLeaf->szLeaf ){
-        p->rc = FTS5_CORRUPT;
+        FTS5_CORRUPT_ROWID(p, iRow);
       }else{
         iOff += fts5GetVarint32(&pLeaf->p[iOff], nTerm);
         res = fts5Memcmp(&pLeaf->p[iOff], zIdxTerm, MIN(nTerm, nIdxTerm));
         if( res==0 ) res = nTerm - nIdxTerm;
-        if( res<0 ) p->rc = FTS5_CORRUPT;
+        if( res<0 ) FTS5_CORRUPT_ROWID(p, iRow);
       }
 
-      fts5IntegrityCheckPgidx(p, pLeaf);
+      fts5IntegrityCheckPgidx(p, iRow, pLeaf);
     }
     fts5DataRelease(pLeaf);
     if( p->rc ) break;
@@ -8502,7 +8554,7 @@ static void fts5IndexIntegrityCheckSegment(
           iKey = FTS5_SEGMENT_ROWID(iSegid, iPg);
           pLeaf = fts5DataRead(p, iKey);
           if( pLeaf ){
-            if( fts5LeafFirstRowidOff(pLeaf)!=0 ) p->rc = FTS5_CORRUPT;
+            if( fts5LeafFirstRowidOff(pLeaf)!=0 ) FTS5_CORRUPT_ROWID(p, iKey);
             fts5DataRelease(pLeaf);
           }
         }
@@ -8517,12 +8569,12 @@ static void fts5IndexIntegrityCheckSegment(
           int iRowidOff = fts5LeafFirstRowidOff(pLeaf);
           ASSERT_SZLEAF_OK(pLeaf);
           if( iRowidOff>=pLeaf->szLeaf ){
-            p->rc = FTS5_CORRUPT;
+            FTS5_CORRUPT_ROWID(p, iKey);
           }else if( bSecureDelete==0 || iRowidOff>0 ){
             i64 iDlRowid = fts5DlidxIterRowid(pDlidx);
             fts5GetVarint(&pLeaf->p[iRowidOff], (u64*)&iRowid);
             if( iRowid<iDlRowid || (bSecureDelete==0 && iRowid!=iDlRowid) ){
-              p->rc = FTS5_CORRUPT;
+              FTS5_CORRUPT_ROWID(p, iKey);
             }
           }
           fts5DataRelease(pLeaf);
@@ -8574,6 +8626,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
   /* Used by extra internal tests only run if NDEBUG is not defined */
   u64 cksum3 = 0;                 /* Checksum based on contents of indexes */
   Fts5Buffer term = {0,0,0};      /* Buffer used to hold most recent term */
+  int bTestFail = 0;
 #endif
   const int flags = FTS5INDEX_QUERY_NOOUTPUT;
   
@@ -8616,7 +8669,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
     char *z = (char*)fts5MultiIterTerm(pIter, &n);
 
     /* If this is a new term, query for it. Update cksum3 with the results. */
-    fts5TestTerm(p, &term, z, n, cksum2, &cksum3);
+    fts5TestTerm(p, &term, z, n, cksum2, &cksum3, &bTestFail);
     if( p->rc ) break;
 
     if( eDetail==FTS5_DETAIL_NONE ){
@@ -8634,15 +8687,26 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
       }
     }
   }
-  fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3);
+  fts5TestTerm(p, &term, 0, 0, cksum2, &cksum3, &bTestFail);
 
   fts5MultiIterFree(pIter);
-  if( p->rc==SQLITE_OK && bUseCksum && cksum!=cksum2 ) p->rc = FTS5_CORRUPT;
-
-  fts5StructureRelease(pStruct);
+  if( p->rc==SQLITE_OK && bUseCksum && cksum!=cksum2 ){
+    p->rc = FTS5_CORRUPT;
+    sqlite3Fts5ConfigErrmsg(p->pConfig, 
+        "fts5: checksum mismatch for table \"%s\"", p->pConfig->zName
+    );
+  }
 #ifdef SQLITE_DEBUG
+  /* In SQLITE_DEBUG builds, expensive extra checks were run as part of
+  ** the integrity-check above. If no other errors were detected, but one
+  ** of these tests failed, set the result to SQLITE_CORRUPT_VTAB here. */
+  if( p->rc==SQLITE_OK && bTestFail ){
+    p->rc = FTS5_CORRUPT;
+  }
   fts5BufferFree(&term);
 #endif
+
+  fts5StructureRelease(pStruct);
   fts5BufferFree(&poslist);
   return fts5IndexReturn(p);
 }

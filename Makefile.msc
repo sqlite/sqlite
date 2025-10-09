@@ -884,7 +884,7 @@ RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
 !ENDIF
 
 !IF $(DEBUG)>2
-TCC = $(TCC) -DSQLITE_DEBUG=1
+TCC = $(TCC) -DSQLITE_DEBUG=1 -DSQLITE_USE_W32_FOR_CONSOLE_IO
 RCC = $(RCC) -DSQLITE_DEBUG=1
 !IF $(DYNAMIC_SHELL)==0
 TCC = $(TCC) -DSQLITE_ENABLE_WHERETRACE -DSQLITE_ENABLE_SELECTTRACE
@@ -1343,7 +1343,7 @@ LTLIBS = $(LTLIBS) $(LIBICU)
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          backup.lo bitvec.lo btmutex.lo btree.lo build.lo \
-         callback.lo complete.lo ctime.lo \
+         callback.lo carray.lo complete.lo ctime.lo \
          date.lo dbpage.lo dbstat.lo delete.lo \
          expr.lo fault.lo fkey.lo \
          fts3.lo fts3_aux.lo fts3_expr.lo fts3_hash.lo fts3_icu.lo \
@@ -1405,6 +1405,7 @@ SRC00 = \
   $(TOP)\src\btree.c \
   $(TOP)\src\build.c \
   $(TOP)\src\callback.c \
+  $(TOP)\src\carray.c \
   $(TOP)\src\complete.c \
   ctime.c \
   $(TOP)\src\date.c \
@@ -1623,7 +1624,6 @@ TESTSRC = \
   $(TOP)\src\test_thread.c \
   $(TOP)\src\test_vdbecov.c \
   $(TOP)\src\test_vfs.c \
-  $(TOP)\src\test_windirent.c \
   $(TOP)\src\test_window.c \
   $(TOP)\src\test_wsd.c \
   $(TOP)\ext\fts3\fts3_term.c \
@@ -1639,7 +1639,6 @@ TESTEXT = \
   $(TOP)\ext\misc\amatch.c \
   $(TOP)\ext\misc\appendvfs.c \
   $(TOP)\ext\misc\basexx.c \
-  $(TOP)\ext\misc\carray.c \
   $(TOP)\ext\misc\cksumvfs.c \
   $(TOP)\ext\misc\closure.c \
   $(TOP)\ext\misc\csv.c \
@@ -1655,7 +1654,6 @@ TESTEXT = \
   $(TOP)\ext\misc\mmapwarm.c \
   $(TOP)\ext\misc\nextchar.c \
   $(TOP)\ext\misc\normalize.c \
-  $(TOP)\ext\misc\percentile.c \
   $(TOP)\ext\misc\prefixes.c \
   $(TOP)\ext\misc\qpvtab.c \
   $(TOP)\ext\misc\randomjson.c \
@@ -1767,6 +1765,7 @@ SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_DQS=0
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_FTS4=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_EXPLAIN_COMMENTS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC=1
+SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_PERCENTILE=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_ENABLE_STMT_SCANSTATUS=1
 SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS) -DSQLITE_STRICT_SUBTYPE=1
@@ -1794,6 +1793,7 @@ FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_MATH_FUNCTIONS
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_MEMSYS5
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_NORMALIZE
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_PERCENTILE
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_PREUPDATE_HOOK
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_RTREE
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_SESSION
@@ -1824,7 +1824,6 @@ FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\fuzzinvariants.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\vt02.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\dbdata.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\sqlite3recover.c
-FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\percentile.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\randomjson.c
 
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
@@ -2101,6 +2100,9 @@ build.lo:	$(TOP)\src\build.c $(HDR)
 
 callback.lo:	$(TOP)\src\callback.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\callback.c
+
+carray.lo:	$(TOP)\src\carray.c $(HDR)
+	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\carray.c
 
 complete.lo:	$(TOP)\src\complete.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\complete.c
@@ -2385,7 +2387,6 @@ SHELL_DEP = \
     $(TOP)\ext\misc\ieee754.c \
     $(TOP)\ext\misc\memtrace.c \
     $(TOP)\ext\misc\pcachetrace.c \
-    $(TOP)\ext\misc\percentile.c \
     $(TOP)\ext\misc\regexp.c \
     $(TOP)\ext\misc\series.c \
     $(TOP)\ext\misc\sha1.c \
@@ -2395,12 +2396,11 @@ SHELL_DEP = \
     $(TOP)\ext\misc\sqlite3_stdio.h \
     $(TOP)\ext\misc\uint.c \
     $(TOP)\ext\misc\vfstrace.c \
+    $(TOP)\ext\misc\windirent.h \
     $(TOP)\ext\misc\zipfile.c \
     $(TOP)\ext\recover\dbdata.c \
     $(TOP)\ext\recover\sqlite3recover.c \
-    $(TOP)\ext\recover\sqlite3recover.h \
-    $(TOP)\src\test_windirent.c \
-    $(TOP)\src\test_windirent.h
+    $(TOP)\ext\recover\sqlite3recover.h
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
 #
@@ -2487,24 +2487,6 @@ FTS5_SRC = \
    $(TOP)\ext\fts5\fts5_varint.c \
    $(TOP)\ext\fts5\fts5_vocab.c
 
-LSM1_SRC = \
-   $(TOP)\ext\lsm1\lsm.h \
-   $(TOP)\ext\lsm1\lsmInt.h \
-   $(TOP)\ext\lsm1\lsm_ckpt.c \
-   $(TOP)\ext\lsm1\lsm_file.c \
-   $(TOP)\ext\lsm1\lsm_log.c \
-   $(TOP)\ext\lsm1\lsm_main.c \
-   $(TOP)\ext\lsm1\lsm_mem.c \
-   $(TOP)\ext\lsm1\lsm_mutex.c \
-   $(TOP)\ext\lsm1\lsm_shared.c \
-   $(TOP)\ext\lsm1\lsm_sorted.c \
-   $(TOP)\ext\lsm1\lsm_str.c \
-   $(TOP)\ext\lsm1\lsm_tree.c \
-   $(TOP)\ext\lsm1\lsm_unix.c \
-   $(TOP)\ext\lsm1\lsm_varint.c \
-   $(TOP)\ext\lsm1\lsm_vtab.c \
-   $(TOP)\ext\lsm1\lsm_win32.c
-
 fts5parse.c:	$(TOP)\ext\fts5\fts5parse.y lemon.exe
 	copy /Y $(TOP)\ext\fts5\fts5parse.y .
 	copy /B fts5parse.y +,,
@@ -2517,11 +2499,6 @@ fts5.c:	$(FTS5_SRC) $(JIM_TCLSH)
 	$(JIM_TCLSH) $(TOP)\ext\fts5\tool\mkfts5c.tcl
 	copy /Y $(TOP)\ext\fts5\fts5.h .
 	copy /B fts5.h +,,
-
-lsm1.c:	$(LSM1_SRC) $(JIM_TCLSH)
-	$(JIM_TCLSH) $(TOP)\ext\lsm1\tool\mklsm1c.tcl
-	copy /Y $(TOP)\ext\lsm1\lsm.h .
-	copy /B lsm.h +,,
 
 fts5.lo:	fts5.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) $(NO_WARN) -DSQLITE_CORE -c fts5.c
@@ -2550,6 +2527,8 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_DEFAULT_PAGE_SIZE=1024
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_STMTVTAB=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_DBPAGE_VTAB=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_BYTECODE_VTAB=1
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_CARRAY=1
+TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_ENABLE_PERCENTILE=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_CKSUMVFS_STATIC=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) $(TEST_CCONV_OPTS)
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_STATIC_RANDOMJSON
@@ -2585,7 +2564,7 @@ sqlite_tcl.h:
 
 testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TCL_DEP)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
-		-DBUILD_sqlite -I$(TCLINCDIR) \
+		-DBUILD_sqlite -I$(TCLINCDIR) -I$(TOP)\ext\misc \
 		$(TESTFIXTURE_SRC) \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
@@ -2598,8 +2577,11 @@ extensiontest:	testfixture.exe testloadext.dll
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\loadext.test $(TESTOPTS)
 
-tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe $(TOP)\tool\mktoolzip.tcl
+tool-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe sqlite3.dll $(TOP)\tool\mktoolzip.tcl
 	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl
+
+snapshot-zip:	testfixture.exe sqlite3.exe sqldiff.exe sqlite3_analyzer.exe sqlite3_rsync.exe sqlite3.dll $(TOP)\tool\mktoolzip.tcl
+	.\testfixture.exe $(TOP)\tool\mktoolzip.tcl --snapshot
 
 coretestprogs:	testfixture.exe sqlite3.exe
 
@@ -2674,7 +2656,14 @@ srctree-check:	$(TOP)\tool\srctree-check.tcl
 
 # Testing for a release
 #
-releasetest:
+releasetest: verify-source
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
+
+# xdevtest is like releasetest, except that it skips the
+# dependency on verify-source so that xdevtest can be run from
+# a modified source tree.
+#
+xdevtest:	
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release
 
 
@@ -2819,9 +2808,6 @@ tcl-env:
 	@echo JIM_TCLSH = $(JIM_TCLSH)
 	@echo VISUALSTUDIOVERSION = $(VISUALSTUDIOVERSION)
 
-LSMDIR=$(TOP)\ext\lsm1
-!INCLUDE $(LSMDIR)\Makefile.msc
-
 moreclean:	clean
 	del /Q $(SQLITE3C) $(SQLITE3H) 2>NUL
 # <</mark>>
@@ -2863,7 +2849,6 @@ clean:
 	del /Q kvtest.exe ossshell.exe scrub.exe 2>NUL
 	del /Q showshm.exe sqlite3_checker.* sqlite3_expert.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
-	del /Q lsm.h lsm1.c 2>NUL
 	del /q src-verify.exe 2>NUL
 	del /q jimsh.exe jimsh0.exe 2>NUL
 # <</mark>>

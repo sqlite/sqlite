@@ -66,7 +66,7 @@ do_vmstep_test 1.5.2 {
   SELECT count(*) FROM t2 WHERE EXISTS(
     SELECT 1 FROM t1 WHERE t1.a=450 AND t2.c IS NULL
   )
-} +8000 {0}
+} 4000 {0}
 
 #-------------------------------------------------------------------------
 reset_db

@@ -2725,7 +2725,11 @@ static int winHandleLockTimeout(
       if( res==WAIT_OBJECT_0 ){
         ret = TRUE;
       }else if( res==WAIT_TIMEOUT ){
+#if SQLITE_ENABLE_SETLK_TIMEOUT==1
         rc = SQLITE_BUSY_TIMEOUT;
+#else
+        rc = SQLITE_BUSY;
+#endif
       }else{
         /* Some other error has occurred */
         rc = SQLITE_IOERR_LOCK;
@@ -3989,6 +3993,103 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 */
 static SYSTEM_INFO winSysInfo;
 
+/*
+** Convert a UTF-8 filename into whatever form the underlying
+** operating system wants filenames in.  Space to hold the result
+** is obtained from malloc and must be freed by the calling
+** function
+**
+** On Cygwin, 3 possible input forms are accepted:
+** - If the filename starts with "<drive>:/" or "<drive>:\",
+**   it is converted to UTF-16 as-is.
+** - If the filename contains '/', it is assumed to be a
+**   Cygwin absolute path, it is converted to a win32
+**   absolute path in UTF-16.
+** - Otherwise it must be a filename only, the win32 filename
+**   is returned in UTF-16.
+** Note: If the function cygwin_conv_path() fails, only
+**   UTF-8 -> UTF-16 conversion will be done. This can only
+**   happen when the file path >32k, in which case winUtf8ToUnicode()
+**   will fail too.
+*/
+static void *winConvertFromUtf8Filename(const char *zFilename){
+  void *zConverted = 0;
+  if( osIsNT() ){
+#ifdef __CYGWIN__
+    int nChar;
+    LPWSTR zWideFilename;
+
+    if( osCygwin_conv_path && !(winIsDriveLetterAndColon(zFilename)
+        && winIsDirSep(zFilename[2])) ){
+      i64 nByte;
+      int convertflag = CCP_POSIX_TO_WIN_W;
+      if( !strchr(zFilename, '/') ) convertflag |= CCP_RELATIVE;
+      nByte = (i64)osCygwin_conv_path(convertflag,
+          zFilename, 0, 0);
+      if( nByte>0 ){
+        zConverted = sqlite3MallocZero(12+(u64)nByte);
+        if ( zConverted==0 ){
+          return zConverted;
+        }
+        zWideFilename = zConverted;
+        /* Filenames should be prefixed, except when converted
+         * full path already starts with "\\?\". */
+        if( osCygwin_conv_path(convertflag, zFilename,
+                             zWideFilename+4, nByte)==0 ){
+          if( (convertflag&CCP_RELATIVE) ){
+            memmove(zWideFilename, zWideFilename+4, nByte);
+          }else if( memcmp(zWideFilename+4, L"\\\\", 4) ){
+            memcpy(zWideFilename, L"\\\\?\\", 8);
+          }else if( zWideFilename[6]!='?' ){
+            memmove(zWideFilename+6, zWideFilename+4, nByte);
+            memcpy(zWideFilename, L"\\\\?\\UNC", 14);
+          }else{
+            memmove(zWideFilename, zWideFilename+4, nByte);
+          }
+          return zConverted;
+        }
+        sqlite3_free(zConverted);
+      }
+    }
+    nChar = osMultiByteToWideChar(CP_UTF8, 0, zFilename, -1, NULL, 0);
+    if( nChar==0 ){
+      return 0;
+    }
+    zWideFilename = sqlite3MallocZero( nChar*sizeof(WCHAR)+12 );
+    if( zWideFilename==0 ){
+      return 0;
+    }
+    nChar = osMultiByteToWideChar(CP_UTF8, 0, zFilename, -1,
+                                  zWideFilename, nChar);
+    if( nChar==0 ){
+      sqlite3_free(zWideFilename);
+      zWideFilename = 0;
+    }else if( nChar>MAX_PATH
+        && winIsDriveLetterAndColon(zFilename)
+        && winIsDirSep(zFilename[2]) ){
+      memmove(zWideFilename+4, zWideFilename, nChar*sizeof(WCHAR));
+      zWideFilename[2] = '\\';
+      memcpy(zWideFilename, L"\\\\?\\", 8);
+    }else if( nChar>MAX_PATH
+        && winIsDirSep(zFilename[0]) && winIsDirSep(zFilename[1])
+        && zFilename[2] != '?' ){
+      memmove(zWideFilename+6, zWideFilename, nChar*sizeof(WCHAR));
+      memcpy(zWideFilename, L"\\\\?\\UNC", 14);
+    }
+    zConverted = zWideFilename;
+#else
+    zConverted = winUtf8ToUnicode(zFilename);
+#endif /* __CYGWIN__ */
+  }
+#if defined(SQLITE_WIN32_HAS_ANSI) && defined(_WIN32)
+  else{
+    zConverted = winUtf8ToMbcs(zFilename, osAreFileApisANSI());
+  }
+#endif
+  /* caller will handle out of memory */
+  return zConverted;
+}
+
 #ifndef SQLITE_OMIT_WAL
 
 /*
@@ -4025,29 +4126,35 @@ static int winShmMutexHeld(void) {
 ** log-summary is opened only once per process.
 **
 ** winShmMutexHeld() must be true when creating or destroying
-** this object or while reading or writing the following fields:
+** this object, or while editing the global linked list that starts
+** at winShmNodeList.
 **
-**      nRef
-**      pNext
+** When reading or writing the linked list starting at winShmNode.pWinShmList,
+** pShmNode->mutex must be held.
 **
-** The following fields are read-only after the object is created:
+** The following fields are constant after the object is created:
 **
 **      zFilename
+**      hSharedShm
+**      mutex
+**      bUseSharedLockHandle
 **
-** Either winShmNode.mutex must be held or winShmNode.nRef==0 and
+** Either winShmNode.mutex must be held or winShmNode.pWinShmList==0 and
 ** winShmMutexHeld() is true when reading or writing any other field
 ** in this structure.
 **
-** File-handle hSharedShm is used to (a) take the DMS lock, (b) truncate
-** the *-shm file if the DMS-locking protocol demands it, and (c) map
-** regions of the *-shm file into memory using MapViewOfFile() or 
-** similar. Other locks are taken by individual clients using the
-** winShm.hShm handles.
+** File-handle hSharedShm is always used to (a) take the DMS lock, (b) 
+** truncate the *-shm file if the DMS-locking protocol demands it, and 
+** (c) map regions of the *-shm file into memory using MapViewOfFile() 
+** or similar. If bUseSharedLockHandle is true, then other locks are also 
+** taken on hSharedShm. Or, if bUseSharedLockHandle is false, then other 
+** locks are taken using each connection's winShm.hShm handles.
 */
 struct winShmNode {
   sqlite3_mutex *mutex;      /* Mutex to access this object */
   char *zFilename;           /* Name of the file */
   HANDLE hSharedShm;         /* File handle open on zFilename */
+  int bUseSharedLockHandle;  /* True to use hSharedShm for everything */
 
   int isUnlocked;            /* DMS lock has not yet been obtained */
   int isReadonly;            /* True if read-only */
@@ -4060,7 +4167,8 @@ struct winShmNode {
   } *aRegion;
   DWORD lastErrno;           /* The Windows errno from the last I/O error */
 
-  int nRef;                  /* Number of winShm objects pointing to this */
+  winShm *pWinShmList;       /* List of winShm objects with ptrs to this */
+
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 nextShmId;              /* Next available winShm.id value */
@@ -4088,6 +4196,7 @@ struct winShm {
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 id;                     /* Id of this connection with its winShmNode */
 #endif
+  winShm *pWinShmNext;       /* Next winShm object on same winShmNode */
 };
 
 /*
@@ -4101,7 +4210,7 @@ static int winOpen(sqlite3_vfs*,const char*,sqlite3_file*,int,int*);
 static int winDelete(sqlite3_vfs *,const char*,int);
 
 /*
-** Purge the winShmNodeList list of all entries with winShmNode.nRef==0.
+** Purge the winShmNodeList list of all entries with winShmNode.pWinShmList==0.
 **
 ** This is not a VFS shared-memory method; it is a utility function called
 ** by VFS shared-memory methods.
@@ -4114,7 +4223,7 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
            osGetCurrentProcessId(), deleteFlag));
   pp = &winShmNodeList;
   while( (p = *pp)!=0 ){
-    if( p->nRef==0 ){
+    if( p->pWinShmList==0 ){
       int i;
       if( p->mutex ){ sqlite3_mutex_free(p->mutex); }
       for(i=0; i<p->nRegion; i++){
@@ -4182,103 +4291,6 @@ static int winLockSharedMemory(winShmNode *pShmNode, DWORD nMs){
   return rc;
 }
 
-
-/*
-** Convert a UTF-8 filename into whatever form the underlying
-** operating system wants filenames in.  Space to hold the result
-** is obtained from malloc and must be freed by the calling
-** function
-**
-** On Cygwin, 3 possible input forms are accepted:
-** - If the filename starts with "<drive>:/" or "<drive>:\",
-**   it is converted to UTF-16 as-is.
-** - If the filename contains '/', it is assumed to be a
-**   Cygwin absolute path, it is converted to a win32
-**   absolute path in UTF-16.
-** - Otherwise it must be a filename only, the win32 filename
-**   is returned in UTF-16.
-** Note: If the function cygwin_conv_path() fails, only
-**   UTF-8 -> UTF-16 conversion will be done. This can only
-**   happen when the file path >32k, in which case winUtf8ToUnicode()
-**   will fail too.
-*/
-static void *winConvertFromUtf8Filename(const char *zFilename){
-  void *zConverted = 0;
-  if( osIsNT() ){
-#ifdef __CYGWIN__
-    int nChar;
-    LPWSTR zWideFilename;
-
-    if( osCygwin_conv_path && !(winIsDriveLetterAndColon(zFilename)
-        && winIsDirSep(zFilename[2])) ){
-      int nByte;
-      int convertflag = CCP_POSIX_TO_WIN_W;
-      if( !strchr(zFilename, '/') ) convertflag |= CCP_RELATIVE;
-      nByte = (int)osCygwin_conv_path(convertflag,
-          zFilename, 0, 0);
-      if( nByte>0 ){
-        zConverted = sqlite3MallocZero(nByte+12);
-        if ( zConverted==0 ){
-          return zConverted;
-        }
-        zWideFilename = zConverted;
-        /* Filenames should be prefixed, except when converted
-         * full path already starts with "\\?\". */
-        if( osCygwin_conv_path(convertflag, zFilename,
-                             zWideFilename+4, nByte)==0 ){
-          if( (convertflag&CCP_RELATIVE) ){
-            memmove(zWideFilename, zWideFilename+4, nByte);
-          }else if( memcmp(zWideFilename+4, L"\\\\", 4) ){
-            memcpy(zWideFilename, L"\\\\?\\", 8);
-          }else if( zWideFilename[6]!='?' ){
-            memmove(zWideFilename+6, zWideFilename+4, nByte);
-            memcpy(zWideFilename, L"\\\\?\\UNC", 14);
-          }else{
-            memmove(zWideFilename, zWideFilename+4, nByte);
-          }
-          return zConverted;
-        }
-        sqlite3_free(zConverted);
-      }
-    }
-    nChar = osMultiByteToWideChar(CP_UTF8, 0, zFilename, -1, NULL, 0);
-    if( nChar==0 ){
-      return 0;
-    }
-    zWideFilename = sqlite3MallocZero( nChar*sizeof(WCHAR)+12 );
-    if( zWideFilename==0 ){
-      return 0;
-    }
-    nChar = osMultiByteToWideChar(CP_UTF8, 0, zFilename, -1,
-                                  zWideFilename, nChar);
-    if( nChar==0 ){
-      sqlite3_free(zWideFilename);
-      zWideFilename = 0;
-    }else if( nChar>MAX_PATH
-        && winIsDriveLetterAndColon(zFilename)
-        && winIsDirSep(zFilename[2]) ){
-      memmove(zWideFilename+4, zWideFilename, nChar*sizeof(WCHAR));
-      zWideFilename[2] = '\\';
-      memcpy(zWideFilename, L"\\\\?\\", 8);
-    }else if( nChar>MAX_PATH
-        && winIsDirSep(zFilename[0]) && winIsDirSep(zFilename[1])
-        && zFilename[2] != '?' ){
-      memmove(zWideFilename+6, zWideFilename, nChar*sizeof(WCHAR));
-      memcpy(zWideFilename, L"\\\\?\\UNC", 14);
-    }
-    zConverted = zWideFilename;
-#else
-    zConverted = winUtf8ToUnicode(zFilename);
-#endif /* __CYGWIN__ */
-  }
-#if defined(SQLITE_WIN32_HAS_ANSI) && defined(_WIN32)
-  else{
-    zConverted = winUtf8ToMbcs(zFilename, osAreFileApisANSI());
-  }
-#endif
-  /* caller will handle out of memory */
-  return zConverted;
-}
 
 /*
 ** This function is used to open a handle on a *-shm file.
@@ -4375,6 +4387,60 @@ static int winHandleOpen(
   return rc;
 }
  
+/*
+** Close pDbFd's connection to shared-memory.  Delete the underlying
+** *-shm file if deleteFlag is true.
+*/
+static int winCloseSharedMemory(winFile *pDbFd, int deleteFlag){
+  winShm *p;            /* The connection to be closed */
+  winShm **pp;          /* Iterator for pShmNode->pWinShmList */
+  winShmNode *pShmNode; /* The underlying shared-memory file */
+
+  p = pDbFd->pShm;
+  if( p==0 ) return SQLITE_OK;
+  if( p->hShm!=INVALID_HANDLE_VALUE ){
+    osCloseHandle(p->hShm);
+  }
+
+  winShmEnterMutex();
+  pShmNode = p->pShmNode;
+
+  /* Remove this connection from the winShmNode.pWinShmList list */
+  sqlite3_mutex_enter(pShmNode->mutex);
+  for(pp=&pShmNode->pWinShmList; *pp!=p; pp=&(*pp)->pWinShmNext){}
+  *pp = p->pWinShmNext;
+  sqlite3_mutex_leave(pShmNode->mutex);
+
+  winShmPurge(pDbFd->pVfs, deleteFlag);
+  winShmLeaveMutex();
+
+  /* Free the connection p */
+  sqlite3_free(p);
+  pDbFd->pShm = 0;
+  return SQLITE_OK;
+}
+
+/*
+** testfixture builds may set this global variable to true via a
+** Tcl interface. This forces the VFS to use the locking normally
+** only used for UNC paths for all files.
+*/
+#ifdef SQLITE_TEST
+int sqlite3_win_test_unc_locking = 0;
+#else
+# define sqlite3_win_test_unc_locking 0
+#endif
+
+/*
+** Return true if the string passed as the only argument is likely
+** to be a UNC path. In other words, if it starts with "\\".
+*/
+static int winIsUNCPath(const char *zFile){
+  if( zFile[0]=='\\' && zFile[1]=='\\' ){
+    return 1;
+  }
+  return sqlite3_win_test_unc_locking;
+}
 
 /*
 ** Open the shared-memory area associated with database file pDbFd.
@@ -4401,14 +4467,9 @@ static int winOpenSharedMemory(winFile *pDbFd){
   pNew->zFilename = (char*)&pNew[1];
   pNew->hSharedShm = INVALID_HANDLE_VALUE;
   pNew->isUnlocked = 1;
+  pNew->bUseSharedLockHandle = winIsUNCPath(pDbFd->zPath);
   sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
   sqlite3FileSuffix3(pDbFd->zPath, pNew->zFilename);
-
-  /* Open a file-handle on the *-shm file for this connection. This file-handle
-  ** is only used for locking. The mapping of the *-shm file is created using
-  ** the shared file handle in winShmNode.hSharedShm.  */
-  p->bReadonly = sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0);
-  rc = winHandleOpen(pNew->zFilename, &p->bReadonly, &p->hShm);
 
   /* Look to see if there is an existing winShmNode that can be used.
   ** If no matching winShmNode currently exists, then create a new one.  */
@@ -4430,7 +4491,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
     /* Open a file-handle to use for mappings, and for the DMS lock. */
     if( rc==SQLITE_OK ){
       HANDLE h = INVALID_HANDLE_VALUE;
-      pShmNode->isReadonly = p->bReadonly;
+      pShmNode->isReadonly = sqlite3_uri_boolean(pDbFd->zPath,"readonly_shm",0);
       rc = winHandleOpen(pNew->zFilename, &pShmNode->isReadonly, &h);
       pShmNode->hSharedShm = h;
     }
@@ -4452,20 +4513,35 @@ static int winOpenSharedMemory(winFile *pDbFd){
   /* If no error has occurred, link the winShm object to the winShmNode and
   ** the winShm to pDbFd.  */
   if( rc==SQLITE_OK ){
+    sqlite3_mutex_enter(pShmNode->mutex);
     p->pShmNode = pShmNode;
-    pShmNode->nRef++;
+    p->pWinShmNext = pShmNode->pWinShmList;
+    pShmNode->pWinShmList = p;
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
     p->id = pShmNode->nextShmId++;
 #endif
     pDbFd->pShm = p;
+    sqlite3_mutex_leave(pShmNode->mutex);
   }else if( p ){
-    winHandleClose(p->hShm);
     sqlite3_free(p);
   }
 
   assert( rc!=SQLITE_OK || pShmNode->isUnlocked==0 || pShmNode->nRegion==0 );
   winShmLeaveMutex();
   sqlite3_free(pNew);
+
+  /* Open a file-handle on the *-shm file for this connection. This file-handle
+  ** is only used for locking. The mapping of the *-shm file is created using
+  ** the shared file handle in winShmNode.hSharedShm.  */
+  if( rc==SQLITE_OK && pShmNode->bUseSharedLockHandle==0 ){
+    p->bReadonly = sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0);
+    rc = winHandleOpen(pShmNode->zFilename, &p->bReadonly, &p->hShm);
+    if( rc!=SQLITE_OK ){
+      assert( p->hShm==INVALID_HANDLE_VALUE );
+      winCloseSharedMemory(pDbFd, 0);
+    }
+  }
+
   return rc;
 }
 
@@ -4477,33 +4553,7 @@ static int winShmUnmap(
   sqlite3_file *fd,          /* Database holding shared memory */
   int deleteFlag             /* Delete after closing if true */
 ){
-  winFile *pDbFd;       /* Database holding shared-memory */
-  winShm *p;            /* The connection to be closed */
-  winShmNode *pShmNode; /* The underlying shared-memory file */
-
-  pDbFd = (winFile*)fd;
-  p = pDbFd->pShm;
-  if( p==0 ) return SQLITE_OK;
-  if( p->hShm!=INVALID_HANDLE_VALUE ){
-    osCloseHandle(p->hShm);
-  }
-
-  pShmNode = p->pShmNode;
-  winShmEnterMutex();
-
-  /* If pShmNode->nRef has reached 0, then close the underlying
-  ** shared-memory file, too. */
-  assert( pShmNode->nRef>0 );
-  pShmNode->nRef--;
-  if( pShmNode->nRef==0 ){
-    winShmPurge(pDbFd->pVfs, deleteFlag);
-  }
-  winShmLeaveMutex();
-
-  /* Free the connection p */
-  sqlite3_free(p);
-  pDbFd->pShm = 0;
-  return SQLITE_OK;
+  return winCloseSharedMemory((winFile*)fd, deleteFlag);
 }
 
 /*
@@ -4536,21 +4586,20 @@ static int winShmLock(
   /* Check that, if this to be a blocking lock, no locks that occur later
   ** in the following list than the lock being obtained are already held:
   **
-  **   1. Checkpointer lock (ofst==1).
-  **   2. Write lock (ofst==0).
-  **   3. Read locks (ofst>=3 && ofst<SQLITE_SHM_NLOCK).
+  **   1. Recovery lock (ofst==2).
+  **   2. Checkpointer lock (ofst==1).
+  **   3. Write lock (ofst==0).
+  **   4. Read locks (ofst>=3 && ofst<SQLITE_SHM_NLOCK).
   **
   ** In other words, if this is a blocking lock, none of the locks that
   ** occur later in the above list than the lock being obtained may be
   ** held.
-  **
-  ** It is not permitted to block on the RECOVER lock.
   */
 #if defined(SQLITE_ENABLE_SETLK_TIMEOUT) && defined(SQLITE_DEBUG)
   {
     u16 lockMask = (p->exclMask|p->sharedMask);
     assert( (flags & SQLITE_SHM_UNLOCK) || pDbFd->iBusyTimeout==0 || (
-          (ofst!=2)                                   /* not RECOVER */
+          (ofst!=2 || lockMask==0)
        && (ofst!=1 || lockMask==0 || lockMask==2)
        && (ofst!=0 || lockMask<3)
        && (ofst<3  || lockMask<(1<<ofst))
@@ -4573,6 +4622,7 @@ static int winShmLock(
    || (flags==(SQLITE_SHM_SHARED|SQLITE_SHM_LOCK) && 0==(p->sharedMask & mask))
    || (flags==(SQLITE_SHM_EXCLUSIVE|SQLITE_SHM_LOCK))
   ){
+    HANDLE h = p->hShm;
 
     if( flags & SQLITE_SHM_UNLOCK ){
       /* Case (a) - unlock.  */
@@ -4581,7 +4631,27 @@ static int winShmLock(
       assert( !(flags & SQLITE_SHM_EXCLUSIVE) || (p->exclMask & mask)==mask );
       assert( !(flags & SQLITE_SHM_SHARED) || (p->sharedMask & mask)==mask );
 
-      rc = winHandleUnlock(p->hShm, ofst+WIN_SHM_BASE, n);
+      assert( !(flags & SQLITE_SHM_SHARED) || n==1 );
+      if( pShmNode->bUseSharedLockHandle ){
+        h = pShmNode->hSharedShm;
+        if( flags & SQLITE_SHM_SHARED ){
+          winShm *pShm;
+          sqlite3_mutex_enter(pShmNode->mutex);
+          for(pShm=pShmNode->pWinShmList; pShm; pShm=pShm->pWinShmNext){
+            if( pShm!=p && (pShm->sharedMask & mask) ){
+              /* Another connection within this process is also holding this
+              ** SHARED lock. So do not actually release the OS lock.  */
+              h = INVALID_HANDLE_VALUE;
+              break;
+            }
+          }
+          sqlite3_mutex_leave(pShmNode->mutex);
+        }
+      }
+
+      if( h!=INVALID_HANDLE_VALUE ){
+        rc = winHandleUnlock(h, ofst+WIN_SHM_BASE, n);
+      }
 
       /* If successful, also clear the bits in sharedMask/exclMask */
       if( rc==SQLITE_OK ){
@@ -4591,7 +4661,32 @@ static int winShmLock(
     }else{
       int bExcl = ((flags & SQLITE_SHM_EXCLUSIVE) ? 1 : 0);
       DWORD nMs = winFileBusyTimeout(pDbFd);
-      rc = winHandleLockTimeout(p->hShm, ofst+WIN_SHM_BASE, n, bExcl, nMs);
+
+      if( pShmNode->bUseSharedLockHandle ){
+        winShm *pShm;
+        h = pShmNode->hSharedShm;
+        sqlite3_mutex_enter(pShmNode->mutex);
+        for(pShm=pShmNode->pWinShmList; pShm; pShm=pShm->pWinShmNext){
+          if( bExcl ){
+            if( (pShm->sharedMask|pShm->exclMask) & mask ){
+              rc = SQLITE_BUSY;
+              h = INVALID_HANDLE_VALUE;
+            }
+          }else{
+            if( pShm->sharedMask & mask ){
+              h = INVALID_HANDLE_VALUE;
+            }else if( pShm->exclMask & mask ){
+              rc = SQLITE_BUSY;
+              h = INVALID_HANDLE_VALUE;
+            }
+          }
+        }
+        sqlite3_mutex_leave(pShmNode->mutex);
+      }
+
+      if( h!=INVALID_HANDLE_VALUE ){
+        rc = winHandleLockTimeout(h, ofst+WIN_SHM_BASE, n, bExcl, nMs);
+      }
       if( rc==SQLITE_OK ){
         if( bExcl ){
           p->exclMask = (p->exclMask | mask);
@@ -5100,27 +5195,6 @@ static winVfsAppData winNolockAppData = {
 ** sqlite3_vfs object.
 */
 
-#if 0 /* No longer necessary */
-/*
-** Convert a filename from whatever the underlying operating system
-** supports for filenames into UTF-8.  Space to hold the result is
-** obtained from malloc and must be freed by the calling function.
-*/
-static char *winConvertToUtf8Filename(const void *zFilename){
-  char *zConverted = 0;
-  if( osIsNT() ){
-    zConverted = winUnicodeToUtf8(zFilename);
-  }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    zConverted = winMbcsToUtf8(zFilename, osAreFileApisANSI());
-  }
-#endif
-  /* caller will handle out of memory */
-  return zConverted;
-}
-#endif
-
 /*
 ** This function returns non-zero if the specified UTF-8 string buffer
 ** ends with a directory separator character or one was successfully
@@ -5260,42 +5334,6 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
           break;
         }
         sqlite3_free(zConverted);
-#if 0 /* No longer necessary */
-      }else{
-        zConverted = sqlite3MallocZero( nMax+1 );
-        if( !zConverted ){
-          sqlite3_free(zBuf);
-          OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-          return SQLITE_IOERR_NOMEM_BKPT;
-        }
-        if( osCygwin_conv_path(
-                CCP_POSIX_TO_WIN_W, zDir,
-                zConverted, nMax+1)<0 ){
-          sqlite3_free(zConverted);
-          sqlite3_free(zBuf);
-          OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_CONVPATH\n"));
-          return winLogError(SQLITE_IOERR_CONVPATH, (DWORD)errno,
-                             "winGetTempname2", zDir);
-        }
-        if( winIsDir(zConverted) ){
-          /* At this point, we know the candidate directory exists and should
-          ** be used.  However, we may need to convert the string containing
-          ** its name into UTF-8 (i.e. if it is UTF-16 right now).
-          */
-          char *zUtf8 = winConvertToUtf8Filename(zConverted);
-          if( !zUtf8 ){
-            sqlite3_free(zConverted);
-            sqlite3_free(zBuf);
-            OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-            return SQLITE_IOERR_NOMEM_BKPT;
-          }
-          sqlite3_snprintf(nMax, zBuf, "%s", zUtf8);
-          sqlite3_free(zUtf8);
-          sqlite3_free(zConverted);
-          break;
-        }
-        sqlite3_free(zConverted);
-#endif /* No longer necessary */
       }
     }
   }
@@ -6194,34 +6232,6 @@ static int winFullPathnameNoMutex(
     }
   }
 #endif /* __CYGWIN__ */
-#if 0 /* This doesn't work correctly at all! See:
-  <https://marc.info/?l=sqlite-users&m=139299149416314&w=2>
-*/
-  SimulateIOError( return SQLITE_ERROR );
-  UNUSED_PARAMETER(nFull);
-  assert( nFull>=pVfs->mxPathname );
-  char *zOut = sqlite3MallocZero( pVfs->mxPathname+1 );
-  if( !zOut ){
-    return SQLITE_IOERR_NOMEM_BKPT;
-  }
-  if( osCygwin_conv_path(
-          CCP_POSIX_TO_WIN_W,
-          zRelative, zOut, pVfs->mxPathname+1)<0 ){
-    sqlite3_free(zOut);
-    return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
-                       "winFullPathname2", zRelative);
-  }else{
-    char *zUtf8 = winConvertToUtf8Filename(zOut);
-    if( !zUtf8 ){
-      sqlite3_free(zOut);
-      return SQLITE_IOERR_NOMEM_BKPT;
-    }
-    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zUtf8);
-    sqlite3_free(zUtf8);
-    sqlite3_free(zOut);
-  }
-  return SQLITE_OK;
-#endif
 
 #if (SQLITE_OS_WINCE || SQLITE_OS_WINRT) && defined(_WIN32)
   SimulateIOError( return SQLITE_ERROR );
@@ -6367,27 +6377,8 @@ static int winFullPathname(
 */
 static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   HANDLE h;
-#if 0 /* This doesn't work correctly at all! See:
-  <https://marc.info/?l=sqlite-users&m=139299149416314&w=2>
-*/
-  int nFull = pVfs->mxPathname+1;
-  char *zFull = sqlite3MallocZero( nFull );
-  void *zConverted = 0;
-  if( zFull==0 ){
-    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
-    return 0;
-  }
-  if( winFullPathname(pVfs, zFilename, nFull, zFull)!=SQLITE_OK ){
-    sqlite3_free(zFull);
-    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
-    return 0;
-  }
-  zConverted = winConvertFromUtf8Filename(zFull);
-  sqlite3_free(zFull);
-#else
   void *zConverted = winConvertFromUtf8Filename(zFilename);
   UNUSED_PARAMETER(pVfs);
-#endif
   if( zConverted==0 ){
     OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
     return 0;

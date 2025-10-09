@@ -288,7 +288,7 @@ struct sqlite3_value {
 **                             MEM_Int, MEM_Real, and MEM_IntReal.
 **
 **  *  MEM_Blob|MEM_Zero       A blob in Mem.z of length Mem.n plus
-**                             MEM.u.i extra 0x00 bytes at the end.
+**                             Mem.u.nZero extra 0x00 bytes at the end.
 **
 **  *  MEM_Int                 Integer stored in Mem.u.i.
 **
@@ -557,7 +557,10 @@ struct PreUpdate {
   Table *pTab;                    /* Schema object being updated */
   Index *pPk;                     /* PK index if pTab is WITHOUT ROWID */
   sqlite3_value **apDflt;         /* Array of default values, if required */
-  u8 keyinfoSpace[SZ_KEYINFO(0)]; /* Space to hold pKeyinfo[0] content */
+  union {
+    KeyInfo sKey;
+    u8 keyinfoSpace[SZ_KEYINFO_0];  /* Space to hold pKeyinfo[0] content */
+  } uKey;
 };
 
 /*
@@ -721,9 +724,11 @@ int sqlite3VdbeCheckMemInvariants(Mem*);
 #endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-int sqlite3VdbeCheckFk(Vdbe *, int);
+int sqlite3VdbeCheckFkImmediate(Vdbe*);
+int sqlite3VdbeCheckFkDeferred(Vdbe*);
 #else
-# define sqlite3VdbeCheckFk(p,i) 0
+# define sqlite3VdbeCheckFkImmediate(p) 0
+# define sqlite3VdbeCheckFkDeferred(p) 0
 #endif
 
 #ifdef SQLITE_DEBUG

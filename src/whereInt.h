@@ -75,6 +75,7 @@ struct WhereLevel {
   int iTabCur;          /* The VDBE cursor used to access the table */
   int iIdxCur;          /* The VDBE cursor used to access pIdx */
   int addrBrk;          /* Jump here to break out of the loop */
+  int addrHalt;         /* Abort the query due to empty table or similar */
   int addrNxt;          /* Jump here to start the next IN combination */
   int addrSkip;         /* Jump here for next iteration of skip-scan */
   int addrCont;         /* Jump here to continue with the next loop cycle */
@@ -280,6 +281,9 @@ struct WhereTerm {
   u8 eMatchOp;            /* Op for vtab MATCH/LIKE/GLOB/REGEXP terms */
   int iParent;            /* Disable pWC->a[iParent] when this term disabled */
   int leftCursor;         /* Cursor number of X in "X <op> <expr>" */
+#ifdef SQLITE_DEBUG
+  int iTerm;              /* Which WhereTerm is this, for debug purposes */
+#endif
   union {
     struct {
       int leftColumn;         /* Column number of X in "X <op> <expr>" */

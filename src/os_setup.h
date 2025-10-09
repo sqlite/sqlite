@@ -36,8 +36,8 @@
 ** must provide its own VFS implementation together with sqlite3_os_init()
 ** and sqlite3_os_end() routines.
 */
-#if !defined(SQLITE_OS_KV) && !defined(SQLITE_OS_OTHER) && \
-       !defined(SQLITE_OS_UNIX) && !defined(SQLITE_OS_WIN)
+#if SQLITE_OS_KV+1<=1  && SQLITE_OS_OTHER+1<=1 &&  \
+    SQLITE_OS_WIN+1<=1 && SQLITE_OS_UNIX+1<=1 
 #  if defined(__CYGWIN__)
 #    define SQLITE_OS_WIN 1
 #    define SQLITE_OS_UNIX 1

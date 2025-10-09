@@ -9,11 +9,6 @@ Each source file contains a description in its header comment.  See the
 header comments for details about each extension.  Additional notes are
 as follows:
 
-  *  **carray.c** &mdash;  This module implements the
-     [carray](https://sqlite.org/carray.html) table-valued function.
-     It is a good example of how to go about implementing a custom
-     [table-valued function](https://sqlite.org/vtab.html#tabfunc2).
-
   *  **csv.c** &mdash;  A [virtual table](https://sqlite.org/vtab.html)
      for reading 
      [Comma-Separated-Value (CSV) files](https://en.wikipedia.org/wiki/Comma-separated_values).
@@ -27,11 +22,6 @@ as follows:
      for processing JSON.  This extension is already built into the
      [SQLite amalgamation](https://sqlite.org/amalgamation.html).  See
      <https://sqlite.org/json1.html> for additional information.
-
-  *  **memvfs.c** &mdash;  This file implements a custom
-     [VFS](https://sqlite.org/vfs.html) that stores an entire database
-     file in a single block of RAM.  It serves as a good example of how
-     to implement a simple custom VFS.
 
   *  **rot13.c** &mdash;  This file implements the very simple rot13()
      substitution function.  This file makes a good template for implementing

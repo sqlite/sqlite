@@ -222,9 +222,12 @@ install: install-lib
 # Flags to link the shell app either directly against sqlite3.c
 # (ENABLE_STATIC_SHELL==1) or libsqlite3.so (ENABLE_STATIC_SHELL==0).
 #
+# Maintenance reminder: placement of $(LDFLAGS) is more relevant for
+# some platforms than others:
+# https://sqlite.org/forum/forumpost/d80ecdaddd
 ENABLE_STATIC_SHELL = @ENABLE_STATIC_SHELL@
-sqlite3-shell-link-flags.1 = $(TOP)/sqlite3.c $(LDFLAGS.libsqlite3)
-sqlite3-shell-link-flags.0 = -L. -lsqlite3 $(LDFLAGS.zlib)
+sqlite3-shell-link-flags.1 = $(TOP)/sqlite3.c $(LDFLAGS) $(LDFLAGS.libsqlite3)
+sqlite3-shell-link-flags.0 = $(LDFLAGS) -L. -lsqlite3 $(LDFLAGS.zlib) $(LDFLAGS.math)
 sqlite3-shell-deps.1 = $(TOP)/sqlite3.c
 sqlite3-shell-deps.0 = $(libsqlite3.DLL)
 #
@@ -245,7 +248,7 @@ sqlite3$(T.exe): $(TOP)/shell.c $(sqlite3-shell-deps.$(ENABLE_STATIC_SHELL))
 		$(sqlite3-shell-static.flags.$(STATIC_CLI_SHELL)) \
 		-I. $(OPT_FEATURE_FLAGS) $(SHELL_OPT) \
 		$(CFLAGS) $(CFLAGS.readline) $(CFLAGS.icu) \
-		$(LDFLAGS) $(LDFLAGS.readline)
+		$(LDFLAGS.readline)
 
 sqlite3$(T.exe)-1:
 sqlite3$(T.exe)-0: sqlite3$(T.exe)

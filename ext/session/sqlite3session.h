@@ -570,7 +570,7 @@ int sqlite3changeset_start_v2(
 ** The following flags may passed via the 4th parameter to
 ** [sqlite3changeset_start_v2] and [sqlite3changeset_start_v2_strm]:
 **
-** <dt>SQLITE_CHANGESETAPPLY_INVERT <dd>
+** <dt>SQLITE_CHANGESETSTART_INVERT <dd>
 **   Invert the changeset while iterating through it. This is equivalent to
 **   inverting a changeset using sqlite3changeset_invert() before applying it.
 **   It is an error to specify this flag with a patchset.
@@ -1114,14 +1114,32 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** update the "main" database attached to handle db with the changes found in
 ** the changeset passed via the second and third arguments. 
 **
+** All changes made by these functions are enclosed in a savepoint transaction.
+** If any other error (aside from a constraint failure when attempting to
+** write to the target database) occurs, then the savepoint transaction is
+** rolled back, restoring the target database to its original state, and an 
+** SQLite error code returned. Additionally, starting with version 3.51.0,
+** an error code and error message that may be accessed using the
+** [sqlite3_errcode()] and [sqlite3_errmsg()] APIs are left in the database
+** handle.
+**
 ** The fourth argument (xFilter) passed to these functions is the "filter
-** callback". If it is not NULL, then for each table affected by at least one
-** change in the changeset, the filter callback is invoked with
-** the table name as the second argument, and a copy of the context pointer
-** passed as the sixth argument as the first. If the "filter callback"
-** returns zero, then no attempt is made to apply any changes to the table.
-** Otherwise, if the return value is non-zero or the xFilter argument to
-** is NULL, all changes related to the table are attempted.
+** callback". This may be passed NULL, in which case all changes in the
+** changeset are applied to the database. For sqlite3changeset_apply() and
+** sqlite3_changeset_apply_v2(), if it is not NULL, then it is invoked once
+** for each table affected by at least one change in the changeset. In this
+** case the table name is passed as the second argument, and a copy of
+** the context pointer passed as the sixth argument to apply() or apply_v2()
+** as the first. If the "filter callback" returns zero, then no attempt is 
+** made to apply any changes to the table. Otherwise, if the return value is
+** non-zero, all changes related to the table are attempted.
+**
+** For sqlite3_changeset_apply_v3(), the xFilter callback is invoked once
+** per change. The second argument in this case is an sqlite3_changeset_iter 
+** that may be queried using the usual APIs for the details of the current
+** change. If the "filter callback" returns zero in this case, then no attempt
+** is made to apply the current change. If it returns non-zero, the change
+** is applied.
 **
 ** For each table that is not excluded by the filter callback, this function 
 ** tests that the target database contains a compatible table. A table is 
@@ -1142,11 +1160,11 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** one such warning is issued for each table in the changeset.
 **
 ** For each change for which there is a compatible table, an attempt is made 
-** to modify the table contents according to the UPDATE, INSERT or DELETE 
-** change. If a change cannot be applied cleanly, the conflict handler 
-** function passed as the fifth argument to sqlite3changeset_apply() may be 
-** invoked. A description of exactly when the conflict handler is invoked for 
-** each type of change is below.
+** to modify the table contents according to each UPDATE, INSERT or DELETE 
+** change that is not excluded by a filter callback. If a change cannot be
+** applied cleanly, the conflict handler function passed as the fifth argument
+** to sqlite3changeset_apply() may be invoked. A description of exactly when
+** the conflict handler is invoked for each type of change is below.
 **
 ** Unlike the xFilter argument, xConflict may not be passed NULL. The results
 ** of passing anything other than a valid function pointer as the xConflict
@@ -1242,12 +1260,6 @@ void sqlite3changegroup_delete(sqlite3_changegroup*);
 ** This can be used to further customize the application's conflict
 ** resolution strategy.
 **
-** All changes made by these functions are enclosed in a savepoint transaction.
-** If any other error (aside from a constraint failure when attempting to
-** write to the target database) occurs, then the savepoint transaction is
-** rolled back, restoring the target database to its original state, and an 
-** SQLite error code returned.
-**
 ** If the output parameters (ppRebase) and (pnRebase) are non-NULL and
 ** the input is a changeset (not a patchset), then sqlite3changeset_apply_v2()
 ** may set (*ppRebase) to point to a "rebase" that may be used with the 
@@ -1287,6 +1299,23 @@ int sqlite3changeset_apply_v2(
   int(*xFilter)(
     void *pCtx,                   /* Copy of sixth arg to _apply() */
     const char *zTab              /* Table name */
+  ),
+  int(*xConflict)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
+    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
+  ),
+  void *pCtx,                     /* First argument passed to xConflict */
+  void **ppRebase, int *pnRebase, /* OUT: Rebase data */
+  int flags                       /* SESSION_CHANGESETAPPLY_* flags */
+);
+int sqlite3changeset_apply_v3(
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int nChangeset,                 /* Size of changeset in bytes */
+  void *pChangeset,               /* Changeset blob */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    sqlite3_changeset_iter *p     /* Handle describing change */
   ),
   int(*xConflict)(
     void *pCtx,                   /* Copy of sixth arg to _apply() */
@@ -1706,6 +1735,23 @@ int sqlite3changeset_apply_v2_strm(
   int(*xFilter)(
     void *pCtx,                   /* Copy of sixth arg to _apply() */
     const char *zTab              /* Table name */
+  ),
+  int(*xConflict)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
+    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
+  ),
+  void *pCtx,                     /* First argument passed to xConflict */
+  void **ppRebase, int *pnRebase,
+  int flags
+);
+int sqlite3changeset_apply_v3_strm(
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
+  void *pIn,                                          /* First arg for xInput */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    sqlite3_changeset_iter *p
   ),
   int(*xConflict)(
     void *pCtx,                   /* Copy of sixth arg to _apply() */

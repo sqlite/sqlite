@@ -926,8 +926,8 @@ static void notValidImpl(
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
-** Return 1024 times this value.  Or return -1 if p is not a floating point
-** value between 1.0 and 0.0.
+** Return 134,217,728 (2^27) times this value.  Or return -1 if p is not
+** a floating point value between 1.0 and 0.0.
 */
 static int exprProbability(Expr *p){
   double r = -1.0;
@@ -1202,13 +1202,12 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ** sqlite_version() that might change over time cannot be used
           ** in an index or generated column.  Curiously, they can be used
           ** in a CHECK constraint.  SQLServer, MySQL, and PostgreSQL all
-          ** all this. */
+          ** allow this. */
           sqlite3ResolveNotValid(pParse, pNC, "non-deterministic functions",
                                  NC_IdxExpr|NC_PartIdx|NC_GenCol, 0, pExpr);
         }else{
           assert( (NC_SelfRef & 0xff)==NC_SelfRef ); /* Must fit in 8 bits */
           pExpr->op2 = pNC->ncFlags & NC_SelfRef;
-          if( pNC->ncFlags & NC_FromDDL ) ExprSetProperty(pExpr, EP_FromDDL);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
          && pParse->nested==0
@@ -1224,6 +1223,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0
          && !IN_RENAME_OBJECT
         ){
+          if( pNC->ncFlags & NC_FromDDL ) ExprSetProperty(pExpr, EP_FromDDL);
           sqlite3ExprFunctionUsable(pParse, pExpr, pDef);
         }
       }
@@ -1358,11 +1358,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
+    case TK_EXISTS:
     case TK_SELECT:
-    case TK_EXISTS:  testcase( pExpr->op==TK_EXISTS );
 #endif
     case TK_IN: {
       testcase( pExpr->op==TK_IN );
+      testcase( pExpr->op==TK_EXISTS );
+      testcase( pExpr->op==TK_SELECT );
       if( ExprUseXSelect(pExpr) ){
         int nRef = pNC->nRef;
         testcase( pNC->ncFlags & NC_IsCheck );
@@ -1370,6 +1372,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pNC->ncFlags & NC_IdxExpr );
         testcase( pNC->ncFlags & NC_GenCol );
         assert( pExpr->x.pSelect );
+        if( pExpr->op==TK_EXISTS )  pParse->bHasExists = 1;
         if( pNC->ncFlags & NC_SelfRef ){
           notValidImpl(pParse, pNC, "subqueries", pExpr, pExpr);
         }else{
@@ -2280,14 +2283,17 @@ int sqlite3ResolveSelfReference(
   SrcList *pSrc;                  /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
   int rc;
-  u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
+  union {
+    SrcList sSrc;
+    u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
+  } uSrc;
 
   assert( type==0 || pTab!=0 );
   assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr
           || type==NC_GenCol || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
-  pSrc = (SrcList*)srcSpace;
-  memset(pSrc, 0, SZ_SRCLIST_1);
+  memset(&uSrc, 0, sizeof(uSrc));
+  pSrc = &uSrc.sSrc;
   if( pTab ){
     pSrc->nSrc = 1;
     pSrc->a[0].zName = pTab->zName;

@@ -1306,6 +1306,9 @@ void sqlite3VdbeChangeP5(Vdbe *p, u16 p5){
 */
 void sqlite3VdbeTypeofColumn(Vdbe *p, int iDest){
   VdbeOp *pOp = sqlite3VdbeGetLastOp(p);
+#ifdef SQLITE_DEBUG
+  while( pOp->opcode==OP_ReleaseReg ) pOp--;
+#endif
   if( pOp->p3==iDest && pOp->opcode==OP_Column ){
     pOp->p5 |= OPFLAG_TYPEOFARG;
   }
@@ -2991,10 +2994,12 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   if( 0==sqlite3Strlen30(sqlite3BtreeGetFilename(db->aDb[0].pBt))
    || nTrans<=1
   ){
-    for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
-      Btree *pBt = db->aDb[i].pBt;
-      if( pBt ){
-        rc = sqlite3BtreeCommitPhaseOne(pBt, 0);
+    if( needXcommit ){
+      for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+        Btree *pBt = db->aDb[i].pBt;
+        if( sqlite3BtreeTxnState(pBt)>=SQLITE_TXN_WRITE ){
+          rc = sqlite3BtreeCommitPhaseOne(pBt, 0);
+        }
       }
     }
 
@@ -3005,7 +3010,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     */
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
-      if( pBt ){
+      int txn = sqlite3BtreeTxnState(pBt);
+      if( txn!=SQLITE_TXN_NONE ){
+        assert( needXcommit || txn==SQLITE_TXN_READ );
         rc = sqlite3BtreeCommitPhaseTwo(pBt, 0);
       }
     }
@@ -3260,28 +3267,31 @@ int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
 
 
 /*
-** This function is called when a transaction opened by the database
+** These functions are called when a transaction opened by the database
 ** handle associated with the VM passed as an argument is about to be
-** committed. If there are outstanding deferred foreign key constraint
-** violations, return SQLITE_ERROR. Otherwise, SQLITE_OK.
+** committed. If there are outstanding foreign key constraint violations
+** return an error code. Otherwise, SQLITE_OK.
 **
 ** If there are outstanding FK violations and this function returns
-** SQLITE_ERROR, set the result of the VM to SQLITE_CONSTRAINT_FOREIGNKEY
-** and write an error message to it. Then return SQLITE_ERROR.
+** non-zero, set the result of the VM to SQLITE_CONSTRAINT_FOREIGNKEY
+** and write an error message to it.
 */
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
+static SQLITE_NOINLINE int vdbeFkError(Vdbe *p){
+  p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
+  p->errorAction = OE_Abort;
+  sqlite3VdbeError(p, "FOREIGN KEY constraint failed");
+  if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)==0 ) return SQLITE_ERROR;
+  return SQLITE_CONSTRAINT_FOREIGNKEY;
+}
+int sqlite3VdbeCheckFkImmediate(Vdbe *p){
+  if( p->nFkConstraint==0 ) return SQLITE_OK;
+  return vdbeFkError(p);
+}
+int sqlite3VdbeCheckFkDeferred(Vdbe *p){
   sqlite3 *db = p->db;
-  if( (deferred && (db->nDeferredCons+db->nDeferredImmCons)>0)
-   || (!deferred && p->nFkConstraint>0)
-  ){
-    p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
-    p->errorAction = OE_Abort;
-    sqlite3VdbeError(p, "FOREIGN KEY constraint failed");
-    if( (p->prepFlags & SQLITE_PREPARE_SAVESQL)==0 ) return SQLITE_ERROR;
-    return SQLITE_CONSTRAINT_FOREIGNKEY;
-  }
-  return SQLITE_OK;
+  if( (db->nDeferredCons+db->nDeferredImmCons)==0 ) return SQLITE_OK;
+  return vdbeFkError(p);
 }
 #endif
 
@@ -3375,7 +3385,7 @@ int sqlite3VdbeHalt(Vdbe *p){
 
     /* Check for immediate foreign key violations. */
     if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
-      (void)sqlite3VdbeCheckFk(p, 0);
+      (void)sqlite3VdbeCheckFkImmediate(p);
     }
 
     /* If the auto-commit flag is set and this is the only active writer
@@ -3389,7 +3399,7 @@ int sqlite3VdbeHalt(Vdbe *p){
      && db->nVdbeWrite==(p->readOnly==0)
     ){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
-        rc = sqlite3VdbeCheckFk(p, 1);
+        rc = sqlite3VdbeCheckFkDeferred(p);
         if( rc!=SQLITE_OK ){
           if( NEVER(p->readOnly) ){
             sqlite3VdbeLeave(p);
@@ -4199,30 +4209,22 @@ void sqlite3VdbeSerialGet(
   return;
 }
 /*
-** This routine is used to allocate sufficient space for an UnpackedRecord
-** structure large enough to be used with sqlite3VdbeRecordUnpack() if
-** the first argument is a pointer to KeyInfo structure pKeyInfo.
+** Allocate sufficient space for an UnpackedRecord structure large enough
+** to hold a decoded index record for pKeyInfo.
 **
-** The space is either allocated using sqlite3DbMallocRaw() or from within
-** the unaligned buffer passed via the second and third arguments (presumably
-** stack space). If the former, then *ppFree is set to a pointer that should
-** be eventually freed by the caller using sqlite3DbFree(). Or, if the
-** allocation comes from the pSpace/szSpace buffer, *ppFree is set to NULL
-** before returning.
-**
-** If an OOM error occurs, NULL is returned.
+** The space is allocated using sqlite3DbMallocRaw().  If an OOM error
+** occurs, NULL is returned.
 */
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   KeyInfo *pKeyInfo               /* Description of the record */
 ){
   UnpackedRecord *p;              /* Unpacked record to return */
-  int nByte;                      /* Number of bytes required for *p */
+  u64 nByte;                      /* Number of bytes required for *p */
   assert( sizeof(UnpackedRecord) + sizeof(Mem)*65536 < 0x7fffffff );
   nByte = ROUND8P(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nKeyField+1);
   p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);
   if( !p ) return 0;
   p->aMem = (Mem*)&((char*)p)[ROUND8P(sizeof(UnpackedRecord))];
-  assert( pKeyInfo->aSortFlags!=0 );
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nKeyField + 1;
   return p;
@@ -4234,7 +4236,6 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
 ** contents of the decoded record.
 */
 void sqlite3VdbeRecordUnpack(
-  KeyInfo *pKeyInfo,     /* Information about the record format */
   int nKey,              /* Size of the binary record */
   const void *pKey,      /* The binary record */
   UnpackedRecord *p      /* Populate this structure before returning. */
@@ -4245,6 +4246,7 @@ void sqlite3VdbeRecordUnpack(
   u16 u;                          /* Unsigned loop counter */
   u32 szHdr;
   Mem *pMem = p->aMem;
+  KeyInfo *pKeyInfo = p->pKeyInfo;
 
   p->default_rc = 0;
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
@@ -4262,16 +4264,18 @@ void sqlite3VdbeRecordUnpack(
     pMem->z = 0;
     sqlite3VdbeSerialGet(&aKey[d], serial_type, pMem);
     d += sqlite3VdbeSerialTypeLen(serial_type);
-    pMem++;
     if( (++u)>=p->nField ) break;
+    pMem++;
   }
   if( d>(u32)nKey && u ){
     assert( CORRUPT_DB );
     /* In a corrupt record entry, the last pMem might have been set up using
     ** uninitialized memory. Overwrite its value with NULL, to prevent
     ** warnings from MSAN. */
-    sqlite3VdbeMemSetNull(pMem-1);
+    sqlite3VdbeMemSetNull(pMem-(u<p->nField));
   }
+  testcase( u == pKeyInfo->nKeyField + 1 );
+  testcase( u < pKeyInfo->nKeyField + 1 );
   assert( u<=pKeyInfo->nKeyField + 1 );
   p->nField = u;
 }
@@ -4439,6 +4443,32 @@ static void vdbeAssertFieldCountWithinLimits(
 ** or positive value if *pMem1 is less than, equal to or greater than
 ** *pMem2, respectively. Similar in spirit to "rc = (*pMem1) - (*pMem2);".
 */
+static SQLITE_NOINLINE int vdbeCompareMemStringWithEncodingChange(
+  const Mem *pMem1,
+  const Mem *pMem2,
+  const CollSeq *pColl,
+  u8 *prcErr                      /* If an OOM occurs, set to SQLITE_NOMEM */
+){
+  int rc;
+  const void *v1, *v2;
+  Mem c1;
+  Mem c2;
+  sqlite3VdbeMemInit(&c1, pMem1->db, MEM_Null);
+  sqlite3VdbeMemInit(&c2, pMem1->db, MEM_Null);
+  sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
+  sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
+  v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
+  v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
+  if( (v1==0 || v2==0) ){
+    if( prcErr ) *prcErr = SQLITE_NOMEM_BKPT;
+    rc = 0;
+  }else{
+    rc = pColl->xCmp(pColl->pUser, c1.n, v1, c2.n, v2);
+  }
+  sqlite3VdbeMemReleaseMalloc(&c1);
+  sqlite3VdbeMemReleaseMalloc(&c2);
+  return rc;
+}
 static int vdbeCompareMemString(
   const Mem *pMem1,
   const Mem *pMem2,
@@ -4450,25 +4480,7 @@ static int vdbeCompareMemString(
      ** comparison function directly */
     return pColl->xCmp(pColl->pUser,pMem1->n,pMem1->z,pMem2->n,pMem2->z);
   }else{
-    int rc;
-    const void *v1, *v2;
-    Mem c1;
-    Mem c2;
-    sqlite3VdbeMemInit(&c1, pMem1->db, MEM_Null);
-    sqlite3VdbeMemInit(&c2, pMem1->db, MEM_Null);
-    sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
-    sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
-    v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
-    v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
-    if( (v1==0 || v2==0) ){
-      if( prcErr ) *prcErr = SQLITE_NOMEM_BKPT;
-      rc = 0;
-    }else{
-      rc = pColl->xCmp(pColl->pUser, c1.n, v1, c2.n, v2);
-    }
-    sqlite3VdbeMemReleaseMalloc(&c1);
-    sqlite3VdbeMemReleaseMalloc(&c2);
-    return rc;
+    return vdbeCompareMemStringWithEncodingChange(pMem1,pMem2,pColl,prcErr);
   }
 }
 
@@ -5131,6 +5143,7 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
   ** The easiest way to enforce this limit is to consider only records with
   ** 13 fields or less. If the first field is an integer, the maximum legal
   ** header size is (12*5 + 1 + 1) bytes.  */
+  assert( p->pKeyInfo->aSortFlags!=0 );
   if( p->pKeyInfo->nAllField<=13 ){
     int flags = p->aMem[0].flags;
     if( p->pKeyInfo->aSortFlags[0] ){
@@ -5380,6 +5393,7 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+#ifndef SQLITE_OMIT_DATETIME_FUNCS
 /*
 ** Cause a function to throw an error if it was call from OP_PureFunc
 ** rather than OP_Function.
@@ -5413,6 +5427,7 @@ int sqlite3NotPureFunc(sqlite3_context *pCtx){
   }
   return 1;
 }
+#endif /* SQLITE_OMIT_DATETIME_FUNCS */
 
 #if defined(SQLITE_ENABLE_CURSOR_HINTS) && defined(SQLITE_DEBUG)
 /*
@@ -5489,7 +5504,6 @@ void sqlite3VdbePreUpdateHook(
   i64 iKey2;
   PreUpdate preupdate;
   const char *zTbl = pTab->zName;
-  static const u8 fakeSortOrder = 0;
 #ifdef SQLITE_DEBUG
   int nRealCol;
   if( pTab->tabFlags & TF_WithoutRowid ){
@@ -5524,11 +5538,11 @@ void sqlite3VdbePreUpdateHook(
   preupdate.pCsr = pCsr;
   preupdate.op = op;
   preupdate.iNewReg = iReg;
-  preupdate.pKeyinfo = (KeyInfo*)&preupdate.keyinfoSpace;
+  preupdate.pKeyinfo = &preupdate.uKey.sKey;
   preupdate.pKeyinfo->db = db;
   preupdate.pKeyinfo->enc = ENC(db);
   preupdate.pKeyinfo->nKeyField = pTab->nCol;
-  preupdate.pKeyinfo->aSortFlags = (u8*)&fakeSortOrder;
+  preupdate.pKeyinfo->aSortFlags = 0; /* Indicate .aColl, .nAllField uninit */
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.pTab = pTab;
@@ -5557,3 +5571,14 @@ void sqlite3VdbePreUpdateHook(
   }
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+#ifdef SQLITE_ENABLE_PERCENTILE
+/*
+** Return the name of an SQL function associated with the sqlite3_context.
+*/
+const char *sqlite3VdbeFuncName(const sqlite3_context *pCtx){
+  assert( pCtx!=0 );
+  assert( pCtx->pFunc!=0 );
+  return pCtx->pFunc->zName;
+}
+#endif /* SQLITE_ENABLE_PERCENTILE */

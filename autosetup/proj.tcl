@@ -60,10 +60,11 @@
 # $proj__Config is an internal-use-only array for storing whatever generic
 # internal stuff we need stored.
 #
-array set proj__Config {
-  self-tests 0
-}
-
+array set ::proj__Config [subst {
+  self-tests [get-env proj.self-tests 0]
+  verbose-assert [get-env proj.assert-verbose 0]
+  isatty [isatty? stdout]
+}]
 
 #
 # List of dot-in files to filter in the final stages of
@@ -74,8 +75,7 @@ array set proj__Config {
 #
 # See: proj-dot-ins-append and proj-dot-ins-process
 #
-set proj__Config(dot-in-files) [list]
-set proj__Config(isatty) [isatty? stdout]
+set ::proj__Config(dot-in-files) [list]
 
 #
 # @proj-warn msg
@@ -85,7 +85,27 @@ set proj__Config(isatty) [isatty? stdout]
 #
 proc proj-warn {args} {
   show-notices
-  puts stderr [join [list "WARNING: \[[proj-scope 1]\]: " {*}$args] " "]
+  puts stderr [join [list "WARNING:" \[ [proj-scope 1] \]: {*}$args] " "]
+}
+
+
+#
+# Internal impl of [proj-fatal] and [proj-error]. It must be called
+# using tailcall.
+#
+proc proj__faterr {failMode args} {
+  show-notices
+  set lvl 1
+  while {"-up" eq [lindex $args 0]} {
+    set args [lassign $args -]
+    incr lvl
+  }
+  if {$failMode} {
+    puts stderr [join [list "FATAL:" \[ [proj-scope $lvl] \]: {*}$args]]
+    exit 1
+  } else {
+    error [join [list in \[ [proj-scope $lvl] \]: {*}$args]]
+  }
 }
 
 #
@@ -99,29 +119,16 @@ proc proj-warn {args} {
 # additional level.
 #
 proc proj-fatal {args} {
-  show-notices
-  set lvl 1
-  while {"-up" eq [lindex $args 0]} {
-    set args [lassign $args -]
-    incr lvl
-  }
-  puts stderr [join [list "FATAL: \[[proj-scope $lvl]]: " {*}$args]]
-  exit 1
+  tailcall proj__faterr 1 {*}$args
 }
 
 #
 # @proj-error ?-up...? msg...
 #
-# Works like prop-fatal but uses [error] intead of [exit].
+# Works like proj-fatal but uses [error] intead of [exit].
 #
 proc proj-error {args} {
-  show-notices
-  set lvl 1
-  while {"-up" eq [lindex $args 0]} {
-    set args [lassign $args -]
-    incr lvl
-  }
-  error [join [list "\[[proj-scope $lvl]]:" {*}$args]]
+  tailcall proj__faterr 0 {*}$args
 }
 
 #
@@ -133,14 +140,14 @@ proc proj-error {args} {
 # used instead.
 #
 proc proj-assert {script {msg ""}} {
-  if {1 == [get-env proj-assert 0]} {
+  if {1 eq $::proj__Config(verbose-assert)} {
     msg-result [proj-bold "asserting: $script"]
   }
   if {![uplevel 1 [list expr $script]]} {
     if {"" eq $msg} {
       set msg $script
     }
-    proj-fatal "Assertion failed in \[[proj-scope 1]\]: $msg"
+    tailcall proj__faterr 1 "Assertion failed:" $msg
   }
 }
 
@@ -162,7 +169,9 @@ proc proj-bold {args} {
 # @proj-indented-notice ?-error? ?-notice? msg
 #
 # Takes a multi-line message and emits it with consistent indentation.
-# It does not perform any line-wrapping of its own.
+# It does not perform any line-wrapping of its own. Which output
+# routine it uses depends on its flags, defaulting to msg-result.
+# For -error and -notice it uses user-notice.
 #
 # If the -notice flag it used then it emits using [user-notice], which
 # means its rendering will (A) go to stderr and (B) be delayed until
@@ -176,7 +185,7 @@ proc proj-bold {args} {
 #
 proc proj-indented-notice {args} {
   set fErr ""
-  set outFunc "puts"
+  set outFunc "msg-result"
   while {[llength $args] > 1} {
     switch -exact -- [lindex $args 0] {
       -error  {
@@ -369,8 +378,8 @@ proc proj-bin-define {binName {defName {}}} {
 #
 # Despite using cc-path-progs to do the search, this function clears
 # any define'd name that function stores for the result (because the
-# caller has no sensible way of knowing which result it was unless
-# they pass only a single argument).
+# caller has no sensible way of knowing which [define] name it has
+# unless they pass only a single argument).
 #
 proc proj-first-bin-of {args} {
   set rc ""
@@ -442,7 +451,9 @@ proc proj-opt-set {flag {val 1}} {
 # @proj-opt-exists flag
 #
 # Returns 1 if the given flag has been defined as a legal configure
-# option, else returns 0.
+# option, else returns 0. Options set via proj-opt-set "exist" for
+# this purpose even if they were not defined via autosetup's
+# [options] function.
 #
 proc proj-opt-exists {flag} {
   expr {$flag in $::autosetup(options)};
@@ -632,7 +643,7 @@ proc proj-no-check-module-loader {} {
 }
 
 #
-# @proj-file-conent ?-trim? filename
+# @proj-file-content ?-trim? filename
 #
 # Opens the given file, reads all of its content, and returns it.  If
 # the first arg is -trim, the contents of the file named by the second
@@ -695,24 +706,60 @@ proc proj-file-write {args} {
 }
 
 #
-# @proj-check-compile-commands ?configFlag?
+# @proj-check-compile-commands ?-assume-for-clang? ?configFlag?
 #
-# Checks the compiler for compile_commands.json support. If passed an
-# argument it is assumed to be the name of an autosetup boolean config
-# which controls whether to run/skip this check.
+# Checks the compiler for compile_commands.json support. If
+# $configFlag is not empty then it is assumed to be the name of an
+# autosetup boolean config which controls whether to run/skip this
+# check.
 #
-# Returns 1 if supported, else 0. Defines MAKE_COMPILATION_DB to "yes"
-# if supported, "no" if not. The use of MAKE_COMPILATION_DB is
-# deprecated/discouraged. It also sets HAVE_COMPILE_COMMANDS to 0 or
-# 1, and that's the preferred usage.
+# If -assume-for-clang is provided and $configFlag is not empty and CC
+# matches *clang* and no --$configFlag was explicitly provided to the
+# configure script then behave as if --$configFlag had been provided.
+# To disable that assumption, either don't pass -assume-for-clang or
+# pass --$configFlag=0 to the configure script. (The reason for this
+# behavior is that clang supports compile-commands but some other
+# compilers report false positives with these tests.)
+#
+# Returns 1 if supported, else 0, and defines HAVE_COMPILE_COMMANDS to
+# that value. Defines MAKE_COMPILATION_DB to "yes" if supported, "no"
+# if not. The use of MAKE_COMPILATION_DB is deprecated/discouraged:
+# HAVE_COMPILE_COMMANDS is preferred.
 #
 # ACHTUNG: this test has a long history of false positive results
-# because of compilers reacting differently to the -MJ flag.
+# because of compilers reacting differently to the -MJ flag.  Because
+# of this, it is recommended that this support be an opt-in feature,
+# rather than an on-by-default default one. That is: in the
+# configure script define the option as
+# {--the-flag-name=0 => {Enable ....}}
 #
-proc proj-check-compile-commands {{configFlag {}}} {
+proc proj-check-compile-commands {args} {
+  set i 0
+  set configFlag {}
+  set fAssumeForClang 0
+  set doAssume 0
   msg-checking "compile_commands.json support... "
-  if {"" ne $configFlag && ![proj-opt-truthy $configFlag]} {
-    msg-result "explicitly disabled"
+  if {"-assume-for-clang" eq [lindex $args 0]} {
+    lassign $args - configFlag
+    incr fAssumeForClang
+  } elseif {1 == [llength $args]} {
+    lassign $args configFlag
+  } else {
+    proj-error "Invalid arguments"
+  }
+  if {1 == $fAssumeForClang && "" ne $configFlag} {
+    if {[string match *clang* [get-define CC]]
+        && ![proj-opt-was-provided $configFlag]
+        && ![proj-opt-truthy $configFlag]} {
+      proj-indented-notice [subst -nocommands -nobackslashes {
+        CC appears to be clang, so assuming that --$configFlag is likely
+        to work. To disable this assumption use --$configFlag=0.}]
+      incr doAssume
+    }
+  }
+  if {!$doAssume && "" ne $configFlag && ![proj-opt-truthy $configFlag]} {
+    msg-result "check disabled. Use --${configFlag} to enable it."
+    define HAVE_COMPILE_COMMANDS 0
     define MAKE_COMPILATION_DB no
     return 0
   } else {
@@ -720,7 +767,7 @@ proc proj-check-compile-commands {{configFlag {}}} {
       # This test reportedly incorrectly succeeds on one of
       # Martin G.'s older systems. drh also reports a false
       # positive on an unspecified older Mac system.
-      msg-result "compiler supports compile_commands.json"
+      msg-result "compiler supports -MJ. Assuming it's useful for compile_commands.json"
       define MAKE_COMPILATION_DB yes; # deprecated
       define HAVE_COMPILE_COMMANDS 1
       return 1
@@ -787,7 +834,12 @@ proc proj-make-from-dot-in {args} {
     catch { exec chmod u+w $fOut }
   }
   #puts "making template: $fIn ==> $fOut"
-  make-template $fIn $fOut
+  #define-push {top_srcdir} {
+    #puts "--- $fIn $fOut top_srcdir=[get-define top_srcdir]"
+    make-template $fIn $fOut
+    #puts "--- $fIn $fOut top_srcdir=[get-define top_srcdir]"
+    # make-template modifies top_srcdir
+  #}
   if {$touch} {
     proj-touch $fOut
   }
@@ -870,7 +922,9 @@ proc proj-looks-like-windows {{key host}} {
 #
 proc proj-looks-like-mac {{key host}} {
   switch -glob -- [get-define $key] {
-    *apple* {
+    *-*-darwin* {
+      # https://sqlite.org/forum/forumpost/7b218c3c9f207646
+      # There's at least one Linux out there which matches *apple*.
       return 1
     }
     default {
@@ -912,17 +966,13 @@ proc proj-exe-extension {} {
 #
 proc proj-dll-extension {} {
   set inner {{key} {
-    switch -glob -- [get-define $key] {
-      *apple* {
-        return ".dylib"
-      }
-      *-*-ming* - *-*-cygwin - *-*-msys {
-        return ".dll"
-      }
-      default {
-        return ".so"
-      }
+    if {[proj-looks-like-mac $key]} {
+      return ".dylib"
     }
+    if {[proj-looks-like-windows $key]} {
+      return ".dll"
+    }
+    return ".so"
   }}
   define BUILD_DLLEXT [apply $inner build]
   define TARGET_DLLEXT [apply $inner host]
@@ -1120,6 +1170,10 @@ proc proj-check-rpath {} {
       if {"" eq $wl} {
         set wl [proj-cc-check-Wl-flag -R$lp]
       }
+      if {"" eq $wl} {
+        # HP-UX: https://sqlite.org/forum/forumpost/d80ecdaddd
+        set wl [proj-cc-check-Wl-flag +b $lp]
+      }
       define LDFLAGS_RPATH $wl
     }
   }
@@ -1129,7 +1183,7 @@ proc proj-check-rpath {} {
 #
 # @proj-check-soname ?libname?
 #
-# Checks whether CC supports the -Wl,soname,lib... flag. If so, it
+# Checks whether CC supports the -Wl,-soname,lib... flag. If so, it
 # returns 1 and defines LDFLAGS_SONAME_PREFIX to the flag's prefix, to
 # which the client would need to append "libwhatever.N".  If not, it
 # returns 0 and defines LDFLAGS_SONAME_PREFIX to an empty string.
@@ -1144,6 +1198,10 @@ proc proj-check-soname {{libname "libfoo.so.0"}} {
   cc-with {-link 1} {
     if {[cc-check-flags "-Wl,-soname,${libname}"]} {
       define LDFLAGS_SONAME_PREFIX "-Wl,-soname,"
+      return 1
+    } elseif {[cc-check-flags "-Wl,+h,${libname}"]} {
+      # HP-UX: https://sqlite.org/forum/forumpost/d80ecdaddd
+      define LDFLAGS_SONAME_PREFIX "-Wl,+h,"
       return 1
     } else {
       define LDFLAGS_SONAME_PREFIX ""
@@ -1220,7 +1278,7 @@ proc proj-quote-str_ {value} {
 # the formatted value or the value $::proj__Config(defs-skip) if the caller
 # should skip emitting that value.
 #
-set proj__Config(defs-skip) "-proj-defs-format_ sentinel"
+set ::proj__Config(defs-skip) "-proj-defs-format_ sentinel"
 proc proj-defs-format_ {type value} {
   switch -exact -- $type {
     -bare {
@@ -1258,6 +1316,8 @@ proc proj-defs-format_ {type value} {
   return $value
 }
 
+#
+# @proj-dump-defs-json outfile ...flags
 #
 # This function works almost identically to autosetup's
 # make-config-header but emits its output in JSON form. It is not a
@@ -1589,7 +1649,7 @@ proc proj-tclConfig-sh-to-autosetup {tclConfigSh} {
 #
 # Similar modifications may be made for --mandir.
 #
-# Returns 1 if it modifies the environment, else 0.
+# Returns >0 if it modifies the environment, else 0.
 #
 proc proj-tweak-default-env-dirs {} {
   set rc 0
@@ -1628,7 +1688,11 @@ proc proj-tweak-default-env-dirs {} {
 # processing the file. In the context of that script, the vars
 # $dotInsIn and $dotInsOut will be set to the input and output file
 # names.  This can be used, for example, to make the output file
-# executable or perform validation on its contents.
+# executable or perform validation on its contents:
+#
+##  proj-dot-ins-append my.sh.in my.sh {
+##    catch {exec chmod u+x $dotInsOut}
+##  }
 #
 # See [proj-dot-ins-process], [proj-dot-ins-list]
 #
@@ -1648,7 +1712,7 @@ proc proj-dot-ins-append {fileIn args} {
       proj-fatal "Too many arguments: $fileIn $args"
     }
   }
-  #puts "******* [proj-scope]: adding $fileIn"
+  #puts "******* [proj-scope]: adding [llength $fileIn]-length item: $fileIn"
   lappend ::proj__Config(dot-in-files) $fileIn
 }
 
@@ -1686,17 +1750,18 @@ proc proj-dot-ins-list {} {
 #  makes proj-dot-ins-append available for re-use.
 #
 proc proj-dot-ins-process {args} {
-  proj-parse-simple-flags args flags {
+  proj-parse-flags args flags {
     -touch   "" {return "-touch"}
     -clear    0 {expr 1}
     -validate 0 {expr 1}
   }
+  #puts "args=$args"; parray flags
   if {[llength $args] > 0} {
     error "Invalid argument to [proj-scope]: $args"
   }
   foreach f $::proj__Config(dot-in-files) {
     proj-assert {3==[llength $f]} \
-      "Expecting proj-dot-ins-list to be stored in 3-entry lists"
+      "Expecting proj-dot-ins-list to be stored in 3-entry lists. Got: $f"
     lassign $f fIn fOut fScript
     #puts "DOING $fIn  ==> $fOut"
     proj-make-from-dot-in {*}$flags(-touch) $fIn $fOut
@@ -1736,7 +1801,7 @@ proc proj-validate-no-unresolved-ats {args} {
     set isMake [string match {*[Mm]ake*} $f]
     foreach line [proj-file-content-list $f] {
       if {!$isMake || ![string match "#*" [string trimleft $line]]} {
-        if {[regexp {(@[A-Za-z0-9_]+@)} $line match]} {
+        if {[regexp {(@[A-Za-z0-9_\.]+@)} $line match]} {
           error "Unresolved reference to $match at line $lnno of $f"
         }
       }
@@ -1876,7 +1941,7 @@ proc proj-define-amend {args} {
 #
 proc proj-define-to-cflag {args} {
   set rv {}
-  proj-parse-simple-flags args flags {
+  proj-parse-flags args flags {
     -list       0 {expr 1}
     -quote      0 {expr 1}
     -zero-undef 0 {expr 1}
@@ -1954,9 +2019,11 @@ if {0} {
 array set proj__Cache {}
 
 #
-# @proj-cache-key ?addLevel? arg
+# @proj-cache-key arg {addLevel 0}
 #
 # Helper to generate cache keys for [proj-cache-*].
+#
+# $addLevel should almost always be 0.
 #
 # Returns a cache key for the given argument:
 #
@@ -1965,12 +2032,9 @@ array set proj__Cache {}
 #   then used to generate the key. i.e. the default of 0 uses the
 #   calling scope's name as the key.
 #
-#   "-": same as 0
-#
 #   Anything else: returned as-is
 #
-proc proj-cache-key {{addLevel 0} arg} {
-  if {"-" eq $arg} {set arg 0}
+proc proj-cache-key {arg {addLevel 0}} {
   if {[string is integer -strict $arg]} {
     return [proj-scope [expr {$arg + $addLevel + 1}]]
   }
@@ -1978,14 +2042,19 @@ proc proj-cache-key {{addLevel 0} arg} {
 }
 
 #
-# @proj-cache-set ?key? ?addLevel? value
+# @proj-cache-set ?-key KEY? ?-level 0? value
 #
 # Sets a feature-check cache entry with the given key.
 #
-# See proj-cache-key for $key's and $addLevel's semantics, noting that
-# this function adds one to $addLevel for purposes of that call.
-proc proj-cache-set {{key 0} {addLevel 0} val} {
-  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+# See proj-cache-key for -key's and -level's semantics, noting that
+# this function adds one to -level for purposes of that call.
+proc proj-cache-set {args} {
+  proj-parse-flags args flags {
+    -key => 0
+    -level => 0
+  }
+  lassign $args val
+  set key [proj-cache-key $flags(-key) [expr {1 + $flags(-level)}]]
   #puts "** fcheck set $key = $val"
   set ::proj__Cache($key) $val
 }
@@ -1995,7 +2064,7 @@ proc proj-cache-set {{key 0} {addLevel 0} val} {
 #
 # Removes an entry from the proj-cache.
 proc proj-cache-remove {{key 0} {addLevel 0}} {
-  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+  set key [proj-cache-key $key [expr {1 + $addLevel}]]
   set rv ""
   if {[info exists ::proj__Cache($key)]} {
     set rv $::proj__Cache($key)
@@ -2005,7 +2074,7 @@ proc proj-cache-remove {{key 0} {addLevel 0}} {
 }
 
 #
-# @proj-cache-check ?$key? ?addLevel? tgtVarName
+# @proj-cache-check ?-key KEY? ?-level LEVEL? tgtVarName
 #
 # Checks for a feature-check cache entry with the given key.
 #
@@ -2015,10 +2084,15 @@ proc proj-cache-remove {{key 0} {addLevel 0}} {
 #
 # See proj-cache-key for $key's and $addLevel's semantics, noting that
 # this function adds one to $addLevel for purposes of that call.
-proc proj-cache-check {{key 0} {addLevel 0} tgtVar} {
+proc proj-cache-check {args} {
+  proj-parse-flags args flags {
+    -key => 0
+    -level => 0
+  }
+  lassign $args tgtVar
   upvar $tgtVar tgt
   set rc 0
-  set key [proj-cache-key [expr {1 + $addLevel}] $key]
+  set key [proj-cache-key $flags(-key) [expr {1 + $flags(-level)}]]
   #puts "** fcheck get key=$key"
   if {[info exists ::proj__Cache($key)]} {
     set tgt $::proj__Cache($key)
@@ -2044,159 +2118,327 @@ proc proj-coalesce {args} {
 }
 
 #
-# @proj-parse-simple-flags ...
-#
-# An experiment. Do not use.
+# @proj-parse-flags argvListName targetArrayName {prototype}
 #
 # A helper to parse flags from proc argument lists.
 #
-# Expects a list of arguments to parse, an array name to store any
-# -flag values to, and a prototype object which declares the flags.
+# The first argument is the name of a var holding the args to
+# parse. It will be overwritten, possibly with a smaller list.
 #
-# The prototype must be a list in one of the following forms:
+# The second argument is the name of an array variable to create in
+# the caller's scope.
 #
-#   -flag defaultValue {script}
+# The third argument, $prototype, is a description of how to handle
+# the flags. Each entry in that list must be in one of the
+# following forms:
 #
-#   -flag => defaultValue
-#   -----^--^ (with spaces there!)
+#   -flag  defaultValue ?-literal|-call|-apply?
+#                       script|number|incr|proc-name|{apply $aLambda}
 #
-# Repeated for each flag.
+#   -flag* ...as above...
 #
-# The first form represents a basic flag with no associated
-# following argument. The second form extracts its value
-# from the following argument in $argvName.
+#   -flag  => defaultValue ?-call proc-name-and-args|-apply lambdaExpr?
 #
-# The first argument to this function is the name of a var holding the
-# args to parse. It will be overwritten, possibly with a smaller list.
+#   -flag* => ...as above...
 #
-# The second argument the name of an array variable to create in the
-# caller's scope. (Pneumonic: => points to the next argument.)
+#   :PRAGMA
 #
-# For the first form of flag, $script is run in the caller's scope if
-# $argv contains -flag, and the result of that script is the new value
-# for $tgtArrayName(-flag). This function intercepts [return $val]
-# from $script. Any empty script will result in the flag having ""
-# assigned to it.
+# The first two forms represents a basic flag with no associated
+# following argument. The third and fourth forms, called arg-consuming
+# flags, extract the value from the following argument in $argvName
+# (pneumonic: => points to the next argument.). The :PRAGMA form
+# offers a way to configure certain aspects of this call.
 #
-# The args list is only inspected until the first argument which is
-# not described by $prototype. i.e. the first "non-flag" (not counting
-# values consumed for flags defined like --flag=>default).
+# If $argv contains any given flag from $prototype, its default value
+# is overridden depending on several factors:
+#
+#  - If the -literal flag is used, or the flag's script is a number,
+#    value is used verbatim.
+#
+#  - Else if the -call flag is used, the argument must be a proc name
+#    and any leading arguments, e.g. {apply $myLambda}.  The proc is passed
+#    the (flag, value) as arguments (non-consuming flags will get
+#    passed the flag's current/starting value and consuming flags will
+#    get the next argument).  Its result becomes the result of the
+#    flag.
+#
+#  - Else if -apply X is used, it's effectively shorthand for -call
+#    {apply X}. Its argument may either be a $lambaRef or a {{f v}
+#    {body}} construct.
+#
+#  - Else if $script is one of the following values, it is treated as
+#    the result of...
+#
+#    - incr: increments the current value of the flag.
+#
+#  - Else $script is eval'd to get its result value. That result
+#    becomes the new flag value for $tgtArrayName(-flag). This
+#    function intercepts [return $val] from eval'ing $script.  Any
+#    empty script will result in the flag having "" assigned to it.
+#
+# Unless the -flag has a trailing asterisk, e.g. -flag*, this function
+# assumes that each flag is unique, and using a flag more than once
+# causes an error to be triggered. the -flag* forms works similarly
+# except that may appear in $argv any number of times:
+#
+#  - For non-arg-consuming flags, each invocation of -flag causes the
+#    result of $script to overwrite the previous value. e.g. so
+#    {-flag* {x} {incr foo}} has a default value of x, but passing in
+#    -flag twice would change it to the result of incrementing foo
+#    twice. This form can be used to implement, e.g., increasing
+#    verbosity levels by passing -verbose multiple times.
+#
+#  - For arg-consuming flags, the given flag starts with value X, but
+#    if the flag is provided in $argv, the default is cleared, then
+#    each instance of -flag causes its value to be appended to the
+#    result, so {-flag* => {a b c}} defaults to {a b c}, but passing
+#    in -flag y -flag z would change it to {y z}, not {a b c y z}..
+#
+# By default, the args list is only inspected until the first argument
+# which is not described by $prototype. i.e. the first "non-flag" (not
+# counting values consumed for flags defined like -flag => default).
+# The :all-flags pragma (see below) can modify this behavior.
 #
 # If a "--" flag is encountered, no more arguments are inspected as
-# flags. If "--" is the first non-flag argument, the "--" flag is
-# removed from the results but all remaining arguments are passed
-# through. If "--" appears after the first non-flag, it is retained.
+# flags unless the :all-flags pragma (see below) is in effect. The
+# first instance of "--" is removed from the target result list but
+# all remaining instances of "--" are are passed through.
 #
-# This function assumes that each flag is unique, and using a flag
-# more than once behaves in a last-one-wins fashion.
+# Any argvName entries not described in $prototype are considered to
+# be "non-flags" for purposes of this function, even if they
+# ostensibly look like flags.
 #
-# Any argvName entries not described in $prototype are not treated as
-# flags.
-#
-# Returns the number of flags it processed in $argvName.
+# Returns the number of flags it processed in $argvName, not counting
+# "--".
 #
 # Example:
 #
-# set args [list -foo -bar {blah} 8 9 10]
-# set args [proj-parse-simple-flags args flags {
-#   -foo    0  {expr 1}
-#   -bar    => 0
-#   -no-baz 2  {return 0}
-# }
+## set args [list -foo -bar {blah} -z 8 9 10 -theEnd]
+## proj-parse-flags args flags {
+##   -foo    0  {expr 1}
+##   -bar    => 0
+##   -no-baz 1  {return 0}
+##   -z 0 2
+## }
 #
-# After that $flags would contain {-foo 1 -bar {blah} -no-baz 2}
-# and $args would be {8 9 10}.
+# After that $flags would contain {-foo 1 -bar {blah} -no-baz 1 -z 2}
+# and $args would be {8 9 10 -theEnd}.
 #
-# Potential TODOs: consider using lappend instead of set so that any
-# given flag can be used more than once. Or add a syntax to indicate
-# that.
+# Pragmas:
 #
-proc proj-parse-simple-flags {argvName tgtArrayName prototype} {
+# Passing :PRAGMAS to this function may modify how it works. The
+# following pragmas are supported (note the leading ":"):
+#
+#   :all-flags indicates that the whole input list should be scanned,
+#   not stopping at the first non-flag or "--".
+#
+proc proj-parse-flags {argvName tgtArrayName prototype} {
   upvar $argvName argv
-  upvar $tgtArrayName tgt
-  array set dflt {}
-  array set scripts {}
-  array set consuming {}
+  upvar $tgtArrayName outFlags
+  array set flags {}; # staging area
+  array set blob {}; # holds markers for various per-key state and options
+  set incrSkip 1; # 1 if we stop at the first non-flag, else 0
+  # Parse $prototype for flag definitions...
   set n [llength $prototype]
-  # Figure out what our flags are...
+  set checkProtoFlag {
+    #puts "**** checkProtoFlag #$i of $n k=$k fv=$fv"
+    switch -exact -- $fv {
+      -literal {
+        proj-assert {![info exists blob(${k}.consumes)]}
+        set blob(${k}.script) [list expr [lindex $prototype [incr i]]]
+      }
+      -apply {
+        set fv [lindex $prototype [incr i]]
+        if {2 == [llength $fv]} {
+          # Treat this as a lambda literal
+          set fv [list $fv]
+        }
+        lappend blob(${k}.call) "apply $fv"
+      }
+      -call {
+        # arg is either a proc name or {apply $aLambda}
+        set fv [lindex $prototype [incr i]]
+        lappend blob(${k}.call) $fv
+      }
+      default {
+        proj-assert {![info exists blob(${k}.consumes)]}
+        set blob(${k}.script) $fv
+      }
+    }
+    if {$i >= $n} {
+      proj-error -up "[proj-scope]: Missing argument for $k flag"
+    }
+  }
   for {set i 0} {$i < $n} {incr i} {
     set k [lindex $prototype $i]
     #puts "**** #$i of $n k=$k"
-    proj-assert {[string match -* $k]} \
-      "Invalid flag value: $k"
-    set v ""
-    set s ""
-    switch -exact -- [lindex $prototype [expr {$i + 1}]] {
-      => {
-        incr i 2
-        if {$i >= $n} {
-          proj-error "Missing argument for $k => flag"
-        }
-        set consuming($k) 1
-        set v [lindex $prototype $i]
-      }
-      default {
-        set v [lindex $prototype [incr i]]
-        set s [lindex $prototype [incr i]]
-        set scripts($k) $s
+
+    # Check for :PRAGMA...
+    switch -exact -- $k {
+      :all-flags {
+        set incrSkip 0
+        continue
       }
     }
-    #puts "**** #$i of $n k=$k v=$v s=$s"
-    set dflt($k) $v
+
+    proj-assert {[string match -* $k]} \
+      "Invalid argument: $k"
+
+    if {[string match {*\*} $k]} {
+      # Re-map -foo* to -foo and flag -foo as a repeatable flag
+      set k [string map {* ""} $k]
+      incr blob(${k}.multi)
+    }
+
+    if {[info exists flags($k)]} {
+      proj-error -up "[proj-scope]: Duplicated prototype for flag $k"
+    }
+
+    switch -exact -- [lindex $prototype [expr {$i + 1}]] {
+      => {
+        # -flag => DFLT ?-subflag arg?
+        incr i 2
+        if {$i >= $n} {
+          proj-error -up "[proj-scope]: Missing argument for $k => flag"
+        }
+        incr blob(${k}.consumes)
+        set vi [lindex $prototype $i]
+        if {$vi in {-apply -call}} {
+          proj-error -up "[proj-scope]: Missing default value for $k flag"
+        } else {
+          set fv [lindex $prototype [expr {$i + 1}]]
+          if {$fv in {-apply -call}} {
+            incr i
+            eval $checkProtoFlag
+          }
+        }
+      }
+      default {
+        # -flag VALUE ?flag? SCRIPT
+        set vi [lindex $prototype [incr i]]
+        set fv [lindex $prototype [incr i]]
+        eval $checkProtoFlag
+      }
+    }
+    #puts "**** #$i of $n k=$k vi=$vi"
+    set flags($k) $vi
   }
-  # Now look for those flags in the source list
-  array set tgt [array get dflt]
-  unset dflt
+  #puts "-- flags"; parray flags
+  #puts "-- blob"; parray blob
   set rc 0
-  set rv {}
+  set rv {}; # staging area for the target argv value
   set skipMode 0
   set n [llength $argv]
+  # Now look for those flags in $argv...
   for {set i 0} {$i < $n} {incr i} {
     set arg [lindex $argv $i]
+    #puts "-- [proj-scope] arg=$arg"
     if {$skipMode} {
       lappend rv $arg
     } elseif {"--" eq $arg} {
-      incr skipMode
-    } elseif {[info exists tgt($arg)]} {
-      if {[info exists consuming($arg)]} {
-        if {$i + 1 >= $n} {
-          proj-assert 0 {Cannot happen - bounds already checked}
+      # "--" is the conventional way to end processing of args
+      if {[incr blob(--)] > 1} {
+        # Elide only the first one
+        lappend rv $arg
+      }
+      incr skipMode $incrSkip
+    } elseif {[info exists flags($arg)]} {
+      # A known flag...
+      set isMulti [info exists blob(${arg}.multi)]
+      incr blob(${arg}.seen)
+      if {1 < $blob(${arg}.seen) && !$isMulti} {
+        proj-error -up [proj-scope] "$arg flag was used multiple times"
+      }
+      set vMode 0; # 0=as-is, 1=eval, 2=call
+      set isConsuming [info exists blob(${arg}.consumes)]
+      if {$isConsuming} {
+        incr i
+        if {$i >= $n} {
+          proj-error -up [proj-scope] "is missing argument for $arg flag"
         }
-        set tgt($arg) [lindex $argv [incr i]]
-      } elseif {"" eq $scripts($arg)} {
-        set tgt($arg) ""
+        set vv [lindex $argv $i]
+      } elseif {[info exists blob(${arg}.script)]} {
+        set vMode 1
+        set vv $blob(${arg}.script)
       } else {
-        #puts "**** running scripts($arg) $scripts($arg)"
-        set code [catch {uplevel 1 $scripts($arg)} xrc xopt]
-        #puts "**** tgt($arg)=$scripts($arg) code=$code rc=$rc"
-        if {$code in {0 2}} {
-          set tgt($arg) $xrc
-        } else {
-          return {*}$xopt $xrc
+        set vv $flags($arg)
+      }
+
+      if {[info exists blob(${arg}.call)]} {
+        set vMode 2
+        set vv [concat {*}$blob(${arg}.call) $arg $vv]
+      } elseif {$isConsuming} {
+        proj-assert {!$vMode}
+        # fall through
+      } elseif {"" eq $vv || [string is double -strict $vv]} {
+        set vMode 0
+      } elseif {$vv in {incr}} {
+        set vMode 0
+        switch -exact $vv {
+          incr {
+            set xx $flags($k); incr xx; set vv $xx; unset xx
+          }
+          default {
+            proj-error "Unhandled \$vv value $vv"
+          }
         }
+      } else {
+        set vv [list eval $vv]
+        set vMode 1
+      }
+      if {$vMode} {
+        set code [catch [list uplevel 1 $vv] vv xopt]
+        if {$code ni {0 2}} {
+          return {*}$xopt $vv
+        }
+      }
+      if {$isConsuming && $isMulti} {
+        if {1 == $blob(${arg}.seen)} {
+          # On the first hit, overwrite the default with a new list.
+          set flags($arg) [list $vv]
+        } else {
+          # On subsequent hits, append to the list.
+          lappend flags($arg) $vv
+        }
+      } else {
+        set flags($arg) $vv
       }
       incr rc
     } else {
-      incr skipMode
+      # Non-flag
+      incr skipMode $incrSkip
       lappend rv $arg
     }
   }
   set argv $rv
+  array set outFlags [array get flags]
+  #puts "-- rv=$rv argv=$argv flags="; parray flags
   return $rc
+}; # proj-parse-flags
+
+#
+# Older (deprecated) name of proj-parse-flags.
+#
+proc proj-parse-simple-flags {args} {
+  tailcall proj-parse-flags {*}$args
 }
 
 if {$::proj__Config(self-tests)} {
+  set __ova $::proj__Config(verbose-assert);
+  set ::proj__Config(verbose-assert) 1
+  puts "Running [info script] self-tests..."
+  # proj-cache...
   apply {{} {
-    proj-warn "Test code for proj-cache"
-    proj-assert {![proj-cache-check here check]}
+    #proj-warn "Test code for proj-cache"
+    proj-assert {![proj-cache-check -key here check]}
     proj-assert {"here" eq [proj-cache-key here]}
     proj-assert {"" eq $check}
-    proj-cache-set here thevalue
-    proj-assert {[proj-cache-check here check]}
+    proj-cache-set -key here thevalue
+    proj-assert {[proj-cache-check -key here check]}
     proj-assert {"thevalue" eq $check}
 
     proj-assert {![proj-cache-check check]}
-    #puts "*** key = ([proj-cache-key -])"
+    #puts "*** key = ([proj-cache-key 0])"
     proj-assert {"" eq $check}
     proj-cache-set abc
     proj-assert {[proj-cache-check check]}
@@ -2208,4 +2450,100 @@ if {$::proj__Config(self-tests)} {
     proj-assert {"" eq [proj-cache-remove]}
     proj-assert {"" eq $check}
   }}
-}
+
+  # proj-parse-flags ...
+  apply {{} {
+    set foo 3
+    set argv {-a "hi - world" -b -b -b -- -a {bye bye} -- -d -D c -a "" --}
+    proj-parse-flags argv flags {
+      :all-flags
+      -a* => "gets overwritten"
+      -b* 7 {incr foo}
+      -d 1 0
+      -D 0 1
+    }
+
+    #puts "-- argv = $argv"; parray flags;
+    proj-assert {"-- c --" eq $argv}
+    proj-assert {$flags(-a) eq "{hi - world} {bye bye} {}"}
+    proj-assert {$foo == 6}
+    proj-assert {$flags(-b) eq $foo}
+    proj-assert {$flags(-d) == 0}
+    proj-assert {$flags(-D) == 1}
+    set foo 0
+    foreach x $flags(-a) {
+      proj-assert {$x in {{hi - world} {bye bye} {}}}
+      incr foo
+    }
+    proj-assert {3 == $foo}
+
+    set argv {-a {hi world} -b -maybe -- -a {bye bye} -- -b c --}
+    set foo 0
+    proj-parse-flags argv flags {
+      -a => "aaa"
+      -b 0 {incr foo}
+      -maybe no -literal yes
+    }
+    #parray flags; puts "--- argv = $argv"
+    proj-assert {"-a {bye bye} -- -b c --" eq $argv}
+    proj-assert {$flags(-a) eq "hi world"}
+    proj-assert {1 == $flags(-b)}
+    proj-assert {"yes" eq $flags(-maybe)}
+
+    set argv {-f -g -a aaa -M -M -M -L -H -A AAA a b c}
+    set foo 0
+    set myLambda {{flag val} {
+      proj-assert {$flag in {-f -g -M}}
+      #puts "myLambda flag=$flag val=$val"
+      incr val
+    }}
+    proc myNonLambda {flag val} {
+      proj-assert {$flag in {-A -a}}
+      #puts "myNonLambda flag=$flag val=$val"
+      concat $val $val
+    }
+    proj-parse-flags argv flags {
+      -f 0 -call {apply $myLambda}
+      -g 2 -apply $myLambda
+      -h 3 -apply $myLambda
+      -H 30 33
+      -a => aAAAa -apply {{f v} {
+        set v
+      }}
+      -A => AaaaA -call myNonLambda
+      -B => 17 -call myNonLambda
+      -M* 0 -apply $myLambda
+      -L "" -literal $myLambda
+    }
+    rename myNonLambda ""
+    #puts "--- argv = $argv"; parray flags
+    proj-assert {$flags(-f) == 1}
+    proj-assert {$flags(-g) == 3}
+    proj-assert {$flags(-h) == 3}
+    proj-assert {$flags(-H) == 33}
+    proj-assert {$flags(-a) == {aaa}}
+    proj-assert {$flags(-A) eq "AAA AAA"}
+    proj-assert {$flags(-B) == 17}
+    proj-assert {$flags(-M) == 3}
+    proj-assert {$flags(-L) eq $myLambda}
+
+    set argv {-touch -validate}
+    proj-parse-flags argv flags {
+      -touch "" {return "-touch"}
+      -validate 0 1
+    }
+    #puts "----- argv = $argv"; parray flags
+    proj-assert {$flags(-touch) eq "-touch"}
+    proj-assert {$flags(-validate) == 1}
+    proj-assert {$argv eq {}}
+
+    set argv {-i -i -i}
+    proj-parse-flags argv flags {
+      -i* 0 incr
+    }
+    proj-assert {3 == $flags(-i)}
+  }}
+  set ::proj__Config(verbose-assert) $__ova
+  unset __ova
+  puts "Done running [info script] self-tests."
+}; # proj- API self-tests

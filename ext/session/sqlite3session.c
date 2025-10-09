@@ -2815,6 +2815,19 @@ static int sessionAppendDelete(
   return rc;
 }
 
+static int sessionPrepare(
+  sqlite3 *db, 
+  sqlite3_stmt **pp, 
+  char **pzErrmsg,
+  const char *zSql
+){
+  int rc = sqlite3_prepare_v2(db, zSql, -1, pp, 0);
+  if( pzErrmsg && rc!=SQLITE_OK ){
+    *pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+  }
+  return rc;
+}
+
 /*
 ** Formulate and prepare a SELECT statement to retrieve a row from table
 ** zTab in database zDb based on its primary key. i.e.
@@ -2836,12 +2849,12 @@ static int sessionSelectStmt(
   int nCol,                       /* Number of columns in table */
   const char **azCol,             /* Names of table columns */
   u8 *abPK,                       /* PRIMARY KEY  array */
-  sqlite3_stmt **ppStmt           /* OUT: Prepared SELECT statement */
+  sqlite3_stmt **ppStmt,          /* OUT: Prepared SELECT statement */
+  char **pzErrmsg                 /* OUT: Error message */
 ){
   int rc = SQLITE_OK;
   char *zSql = 0;
   const char *zSep = "";
-  int nSql = -1;
   int i;
 
   SessionBuffer cols = {0, 0, 0};
@@ -2921,7 +2934,7 @@ static int sessionSelectStmt(
 #endif
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, zSql, nSql, ppStmt, 0);
+    rc = sessionPrepare(db, ppStmt, pzErrmsg, zSql);
   }
   sqlite3_free(zSql);
   sqlite3_free(nooptest.aBuf);
@@ -3085,7 +3098,7 @@ static int sessionGenerateChangeset(
       /* Build and compile a statement to execute: */
       if( rc==SQLITE_OK ){
         rc = sessionSelectStmt(db, 0, pSession->zDb, 
-            zName, pTab->bRowid, pTab->nCol, pTab->azCol, pTab->abPK, &pSel
+            zName, pTab->bRowid, pTab->nCol, pTab->azCol, pTab->abPK, &pSel, 0
         );
       }
 
@@ -3396,14 +3409,15 @@ int sqlite3changeset_start_v2_strm(
 ** object and the buffer is full, discard some data to free up space.
 */
 static void sessionDiscardData(SessionInput *pIn){
-  if( pIn->xInput && pIn->iNext>=sessions_strm_chunk_size ){
-    int nMove = pIn->buf.nBuf - pIn->iNext;
+  if( pIn->xInput && pIn->iCurrent>=sessions_strm_chunk_size ){
+    int nMove = pIn->buf.nBuf - pIn->iCurrent;
     assert( nMove>=0 );
     if( nMove>0 ){
-      memmove(pIn->buf.aBuf, &pIn->buf.aBuf[pIn->iNext], nMove);
+      memmove(pIn->buf.aBuf, &pIn->buf.aBuf[pIn->iCurrent], nMove);
     }
-    pIn->buf.nBuf -= pIn->iNext;
-    pIn->iNext = 0;
+    pIn->buf.nBuf -= pIn->iCurrent;
+    pIn->iNext -= pIn->iCurrent;
+    pIn->iCurrent = 0;
     pIn->nData = pIn->buf.nBuf;
   }
 }
@@ -3757,8 +3771,8 @@ static int sessionChangesetNextOne(
   p->rc = sessionInputBuffer(&p->in, 2);
   if( p->rc!=SQLITE_OK ) return p->rc;
 
-  sessionDiscardData(&p->in);
   p->in.iCurrent = p->in.iNext;
+  sessionDiscardData(&p->in);
 
   /* If the iterator is already at the end of the changeset, return DONE. */
   if( p->in.iNext>=p->in.nData ){
@@ -4293,6 +4307,7 @@ struct SessionApplyCtx {
   u8 bRebase;                     /* True to collect rebase information */
   u8 bIgnoreNoop;                 /* True to ignore no-op conflicts */
   int bRowid;
+  char *zErr;                     /* Error message, if any */
 };
 
 /* Number of prepared UPDATE statements to cache. */
@@ -4518,7 +4533,7 @@ static int sessionDeleteRow(
   }
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pDelete, 0);
+    rc = sessionPrepare(db, &p->pDelete, &p->zErr, (char*)buf.aBuf);
   }
   sqlite3_free(buf.aBuf);
 
@@ -4545,7 +4560,7 @@ static int sessionSelectRow(
 ){
   /* TODO */
   return sessionSelectStmt(db, p->bIgnoreNoop,
-      "main", zTab, p->bRowid, p->nCol, p->azCol, p->abPK, &p->pSelect
+      "main", zTab, p->bRowid, p->nCol, p->azCol, p->abPK, &p->pSelect, &p->zErr
   );
 }
 
@@ -4582,14 +4597,10 @@ static int sessionInsertRow(
   sessionAppendStr(&buf, ")", &rc);
 
   if( rc==SQLITE_OK ){
-    rc = sqlite3_prepare_v2(db, (char *)buf.aBuf, buf.nBuf, &p->pInsert, 0);
+    rc = sessionPrepare(db, &p->pInsert, &p->zErr, (char*)buf.aBuf);
   }
   sqlite3_free(buf.aBuf);
   return rc;
-}
-
-static int sessionPrepare(sqlite3 *db, sqlite3_stmt **pp, const char *zSql){
-  return sqlite3_prepare_v2(db, zSql, -1, pp, 0);
 }
 
 /*
@@ -4601,14 +4612,14 @@ static int sessionPrepare(sqlite3 *db, sqlite3_stmt **pp, const char *zSql){
 static int sessionStat1Sql(sqlite3 *db, SessionApplyCtx *p){
   int rc = sessionSelectRow(db, "sqlite_stat1", p);
   if( rc==SQLITE_OK ){
-    rc = sessionPrepare(db, &p->pInsert,
+    rc = sessionPrepare(db, &p->pInsert, 0,
         "INSERT INTO main.sqlite_stat1 VALUES(?1, "
         "CASE WHEN length(?2)=0 AND typeof(?2)='blob' THEN NULL ELSE ?2 END, "
         "?3)"
     );
   }
   if( rc==SQLITE_OK ){
-    rc = sessionPrepare(db, &p->pDelete,
+    rc = sessionPrepare(db, &p->pDelete, 0,
         "DELETE FROM main.sqlite_stat1 WHERE tbl=?1 AND idx IS "
         "CASE WHEN length(?2)=0 AND typeof(?2)='blob' THEN NULL ELSE ?2 END "
         "AND (?4 OR stat IS ?3)"
@@ -4832,7 +4843,7 @@ static int sessionConflictHandler(
   void *pCtx,                     /* First argument for conflict handler */
   int *pbReplace                  /* OUT: Set to true if PK row is found */
 ){
-  int res = 0;                    /* Value returned by conflict handler */
+  int res = SQLITE_CHANGESET_OMIT;/* Value returned by conflict handler */
   int rc;
   int nCol;
   int op;
@@ -4853,11 +4864,9 @@ static int sessionConflictHandler(
 
   if( rc==SQLITE_ROW ){
     /* There exists another row with the new.* primary key. */
-    if( p->bIgnoreNoop 
-     && sqlite3_column_int(p->pSelect, sqlite3_column_count(p->pSelect)-1)
+    if( 0==p->bIgnoreNoop
+     || 0==sqlite3_column_int(p->pSelect, sqlite3_column_count(p->pSelect)-1)
     ){
-      res = SQLITE_CHANGESET_OMIT;
-    }else{
       pIter->pConflict = p->pSelect;
       res = xConflict(pCtx, eType, pIter);
       pIter->pConflict = 0;
@@ -4871,7 +4880,9 @@ static int sessionConflictHandler(
       int nBlob = pIter->in.iNext - pIter->in.iCurrent;
       sessionAppendBlob(&p->constraints, aBlob, nBlob, &rc);
       return SQLITE_OK;
-    }else{
+    }else if( p->bIgnoreNoop==0 || op!=SQLITE_DELETE 
+           || eType==SQLITE_CHANGESET_CONFLICT 
+    ){
       /* No other row with the new.* primary key. */
       res = xConflict(pCtx, eType+1, pIter);
       if( res==SQLITE_CHANGESET_REPLACE ) rc = SQLITE_MISUSE;
@@ -4969,7 +4980,7 @@ static int sessionApplyOneOp(
 
     sqlite3_step(p->pDelete);
     rc = sqlite3_reset(p->pDelete);
-    if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 && p->bIgnoreNoop==0 ){
+    if( rc==SQLITE_OK && sqlite3_changes(p->db)==0 ){
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_DATA, p, pIter, xConflict, pCtx, pbRetry
       );
@@ -5181,6 +5192,10 @@ static int sessionChangesetApply(
     void *pCtx,                   /* Copy of sixth arg to _apply() */
     const char *zTab              /* Table name */
   ),
+  int(*xFilterIter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    sqlite3_changeset_iter *p
+  ),
   int(*xConflict)(
     void *pCtx,                   /* Copy of fifth arg to _apply() */
     int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
@@ -5321,6 +5336,9 @@ static int sessionChangesetApply(
     ** next change. A log message has already been issued. */
     if( schemaMismatch ) continue;
 
+    /* If this is a call to apply_v3(), invoke xFilterIter here. */
+    if( xFilterIter && 0==xFilterIter(pCtx, pIter) ) continue;
+
     rc = sessionApplyOneWithRetry(db, pIter, &sApply, xConflict, pCtx);
   }
 
@@ -5367,6 +5385,7 @@ static int sessionChangesetApply(
 
   assert( sApply.bRebase || sApply.rebase.nBuf==0 );
   if( rc==SQLITE_OK && bPatchset==0 && sApply.bRebase ){
+    assert( ppRebase!=0 && pnRebase!=0 );
     *ppRebase = (void*)sApply.rebase.aBuf;
     *pnRebase = sApply.rebase.nBuf;
     sApply.rebase.aBuf = 0;
@@ -5384,7 +5403,93 @@ static int sessionChangesetApply(
     db->flags &= ~((u64)SQLITE_FkNoAction);
     db->aDb[0].pSchema->schema_cookie -= 32;
   }
+
+  assert( rc!=SQLITE_OK || sApply.zErr==0 );
+  sqlite3_set_errmsg(db, rc, sApply.zErr);
+  sqlite3_free(sApply.zErr);
+
   sqlite3_mutex_leave(sqlite3_db_mutex(db));
+  return rc;
+}
+
+/*
+** This function is called by all six sqlite3changeset_apply() variants:
+**
+**   +  sqlite3changeset_apply()
+**   +  sqlite3changeset_apply_v2()
+**   +  sqlite3changeset_apply_v3()
+**   +  sqlite3changeset_apply_strm()
+**   +  sqlite3changeset_apply_strm_v2()
+**   +  sqlite3changeset_apply_strm_v3()
+**
+** Arguments passed to this function are as follows:
+**
+** db:
+**   Database handle to apply changeset to main database of.
+**
+** nChangeset/pChangeset:
+**   These are both passed zero for the streaming variants. For the normal
+**   apply() functions, these are passed the size of and the buffer containing
+**   the changeset, respectively.
+**
+** xInput/pIn:
+**   These are both passed zero for the normal variants. For the streaming
+**   apply() functions, these are passed the input callback and context 
+**   pointer, respectively.
+**
+** xFilter:
+**   The filter function as passed to apply() or apply_v2() (to filter by
+**   table name), if any. This is always NULL for apply_v3() calls. 
+**
+** xFilterIter:
+**   The filter function as passed to apply_v3(), if any.
+**
+** xConflict:
+**   The conflict handler callback (must not be NULL).
+**
+** pCtx:
+**   The context pointer passed to the xFilter and xConflict handler callbacks.
+**
+** ppRebase, pnRebase:
+**   Zero for apply(). The rebase changeset output pointers, if any, for
+**   apply_v2() and apply_v3().
+**
+** flags:
+**   Zero for apply(). The flags parameter for apply_v2() and apply_v3().
+*/
+static int sessionChangesetApplyV23(
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int nChangeset,                 /* Size of changeset in bytes */
+  void *pChangeset,               /* Changeset blob */
+  int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
+  void *pIn,                                          /* First arg for xInput */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    const char *zTab              /* Table name */
+  ),
+  int(*xFilterIter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    sqlite3_changeset_iter *p     /* Handle describing current change */
+  ),
+  int(*xConflict)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
+    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
+  ),
+  void *pCtx,                     /* First argument passed to xConflict */
+  void **ppRebase, int *pnRebase,
+  int flags
+){
+  sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
+  int bInverse = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
+  int rc = sessionChangesetStart(
+      &pIter, xInput, pIn, nChangeset, pChangeset, bInverse, 1
+  );
+  if( rc==SQLITE_OK ){
+    rc = sessionChangesetApply(db, pIter, 
+        xFilter, xFilterIter, xConflict, pCtx, ppRebase, pnRebase, flags
+    );
+  }
   return rc;
 }
 
@@ -5409,17 +5514,39 @@ int sqlite3changeset_apply_v2(
   void **ppRebase, int *pnRebase,
   int flags
 ){
-  sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
-  int bInv = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
-  int rc = sessionChangesetStart(&pIter, 0, 0, nChangeset, pChangeset, bInv, 1);
+  return sessionChangesetApplyV23(db, 
+      nChangeset, pChangeset, 0, 0, 
+      xFilter, 0, xConflict, pCtx, 
+      ppRebase, pnRebase, flags
+  );
+}
 
-  if( rc==SQLITE_OK ){
-    rc = sessionChangesetApply(
-        db, pIter, xFilter, xConflict, pCtx, ppRebase, pnRebase, flags
-    );
-  }
-
-  return rc;
+/*
+** Apply the changeset passed via pChangeset/nChangeset to the main 
+** database attached to handle "db".
+*/
+int sqlite3changeset_apply_v3(
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int nChangeset,                 /* Size of changeset in bytes */
+  void *pChangeset,               /* Changeset blob */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    sqlite3_changeset_iter *p     /* Handle describing current change */
+  ),
+  int(*xConflict)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
+    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
+  ),
+  void *pCtx,                     /* First argument passed to xConflict */
+  void **ppRebase, int *pnRebase,
+  int flags
+){
+  return sessionChangesetApplyV23(db, 
+      nChangeset, pChangeset, 0, 0,
+      0, xFilter, xConflict, pCtx, 
+      ppRebase, pnRebase, flags
+  );
 }
 
 /*
@@ -5442,8 +5569,10 @@ int sqlite3changeset_apply(
   ),
   void *pCtx                      /* First argument passed to xConflict */
 ){
-  return sqlite3changeset_apply_v2(
-      db, nChangeset, pChangeset, xFilter, xConflict, pCtx, 0, 0, 0
+  return sessionChangesetApplyV23(db, 
+      nChangeset, pChangeset, 0, 0, 
+      xFilter, 0, xConflict, pCtx, 
+      0, 0, 0
   );
 }
 
@@ -5452,6 +5581,29 @@ int sqlite3changeset_apply(
 ** attached to handle "db". Invoke the supplied conflict handler callback
 ** to resolve any conflicts encountered while applying the change.
 */
+int sqlite3changeset_apply_v3_strm(
+  sqlite3 *db,                    /* Apply change to "main" db of this handle */
+  int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
+  void *pIn,                                          /* First arg for xInput */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    sqlite3_changeset_iter *p
+  ),
+  int(*xConflict)(
+    void *pCtx,                   /* Copy of sixth arg to _apply() */
+    int eConflict,                /* DATA, MISSING, CONFLICT, CONSTRAINT */
+    sqlite3_changeset_iter *p     /* Handle describing change and conflict */
+  ),
+  void *pCtx,                     /* First argument passed to xConflict */
+  void **ppRebase, int *pnRebase,
+  int flags
+){
+  return sessionChangesetApplyV23(db, 
+      0, 0, xInput, pIn, 
+      0, xFilter, xConflict, pCtx, 
+      ppRebase, pnRebase, flags
+  );
+}
 int sqlite3changeset_apply_v2_strm(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
   int (*xInput)(void *pIn, void *pData, int *pnData), /* Input function */
@@ -5469,15 +5621,11 @@ int sqlite3changeset_apply_v2_strm(
   void **ppRebase, int *pnRebase,
   int flags
 ){
-  sqlite3_changeset_iter *pIter;  /* Iterator to skip through changeset */  
-  int bInverse = !!(flags & SQLITE_CHANGESETAPPLY_INVERT);
-  int rc = sessionChangesetStart(&pIter, xInput, pIn, 0, 0, bInverse, 1);
-  if( rc==SQLITE_OK ){
-    rc = sessionChangesetApply(
-        db, pIter, xFilter, xConflict, pCtx, ppRebase, pnRebase, flags
-    );
-  }
-  return rc;
+  return sessionChangesetApplyV23(db, 
+      0, 0, xInput, pIn, 
+      xFilter, 0, xConflict, pCtx, 
+      ppRebase, pnRebase, flags
+  );
 }
 int sqlite3changeset_apply_strm(
   sqlite3 *db,                    /* Apply change to "main" db of this handle */
@@ -5494,8 +5642,10 @@ int sqlite3changeset_apply_strm(
   ),
   void *pCtx                      /* First argument passed to xConflict */
 ){
-  return sqlite3changeset_apply_v2_strm(
-      db, xInput, pIn, xFilter, xConflict, pCtx, 0, 0, 0
+  return sessionChangesetApplyV23(db, 
+      0, 0, xInput, pIn, 
+      xFilter, 0, xConflict, pCtx, 
+      0, 0, 0
   );
 }
 
@@ -6117,14 +6267,19 @@ int sqlite3changegroup_add_change(
   sqlite3_changegroup *pGrp,
   sqlite3_changeset_iter *pIter
 ){
+  int rc = SQLITE_OK;
+
   if( pIter->in.iCurrent==pIter->in.iNext 
    || pIter->rc!=SQLITE_OK 
    || pIter->bInvert
   ){
     /* Iterator does not point to any valid entry or is an INVERT iterator. */
-    return SQLITE_ERROR;
+    rc = SQLITE_ERROR;
+  }else{
+    pIter->in.bNoDiscard = 1;
+    rc = sessionOneChangeToHash(pGrp, pIter, 0);
   }
-  return sessionOneChangeToHash(pGrp, pIter, 0);
+  return rc;
 }
 
 /*

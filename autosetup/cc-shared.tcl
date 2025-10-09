@@ -89,13 +89,15 @@ switch -glob -- [get-define host] {
 			define SH_SOPREFIX -Wl,-h,
 		}
 	}
-	*-*-hpux {
-		# XXX: These haven't been tested
-		define SHOBJ_CFLAGS "+O3 +z"
+	*-*-hpux* {
+		define SHOBJ_CFLAGS +z
 		define SHOBJ_LDFLAGS -b
 		define SH_CFLAGS +z
+		define SH_LDFLAGS -b
 		define SH_LINKFLAGS -Wl,+s
-		define LD_LIBRARY_PATH SHLIB_PATH
+		define SH_LINKRPATH "-Wl,+b -Wl,%s"
+		define SH_SOPREFIX -Wl,+h,
+		define STRIPLIBFLAGS -Wl,-s
 	}
 	*-*-haiku {
 		define SHOBJ_CFLAGS ""

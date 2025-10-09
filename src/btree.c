@@ -872,7 +872,7 @@ static int btreeMoveto(
     assert( nKey==(i64)(int)nKey );
     pIdxKey = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
     if( pIdxKey==0 ) return SQLITE_NOMEM_BKPT;
-    sqlite3VdbeRecordUnpack(pKeyInfo, (int)nKey, pKey, pIdxKey);
+    sqlite3VdbeRecordUnpack((int)nKey, pKey, pIdxKey);
     if( pIdxKey->nField==0 || pIdxKey->nField>pKeyInfo->nAllField ){
       rc = SQLITE_CORRUPT_BKPT;
     }else{
@@ -1929,10 +1929,10 @@ static int freeSpace(MemPage *pPage, int iStart, int iSize){
   assert( pPage->pBt!=0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( CORRUPT_DB || iStart>=pPage->hdrOffset+6+pPage->childPtrSize );
-  assert( CORRUPT_DB || iEnd <= pPage->pBt->usableSize );
+  assert( CORRUPT_DB || iEnd <= (int)pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( iSize>=4 );   /* Minimum cell size is 4 */
-  assert( CORRUPT_DB || iStart<=pPage->pBt->usableSize-4 );
+  assert( CORRUPT_DB || iStart<=(int)pPage->pBt->usableSize-4 );
 
   /* The list of freeblocks must be in ascending order.  Find the
   ** spot on the list where iStart should be inserted.
@@ -2856,6 +2856,7 @@ static int removeFromSharingList(BtShared *pBt){
   sqlite3_mutex_leave(pMainMtx);
   return removed;
 #else
+  UNUSED_PARAMETER( pBt );
   return 1;
 #endif
 }
@@ -3073,6 +3074,10 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   sqlite3BtreeEnter(p);
   pBt->nReserveWanted = (u8)nReserve;
   x = pBt->pageSize - pBt->usableSize;
+  if( x==nReserve && (pageSize==0 || (u32)pageSize==pBt->pageSize) ){
+    sqlite3BtreeLeave(p);
+    return SQLITE_OK;
+  }
   if( nReserve<x ) nReserve = x;
   if( pBt->btsFlags & BTS_PAGESIZE_FIXED ){
     sqlite3BtreeLeave(p);
@@ -3697,6 +3702,13 @@ static SQLITE_NOINLINE int btreeBeginTrans(
       (void)sqlite3PagerWalWriteLock(pPager, 0);
       unlockBtreeIfUnused(pBt);
     }
+#if defined(SQLITE_ENABLE_SETLK_TIMEOUT)
+    if( rc==SQLITE_BUSY_TIMEOUT ){
+      /* If a blocking lock timed out, break out of the loop here so that
+      ** the busy-handler is not invoked.  */
+      break;
+    }
+#endif
   }while( (rc&0xFF)==SQLITE_BUSY && pBt->inTransaction==TRANS_NONE &&
           btreeInvokeBusyHandler(pBt) );
   sqlite3PagerWalDb(pPager, 0);
@@ -5655,6 +5667,30 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
   return rc;
 }
 
+/* Set *pRes to 1 (true) if the BTree pointed to by cursor pCur contains zero
+** rows of content.  Set *pRes to 0 (false) if the table contains content.
+** Return SQLITE_OK on success or some error code (ex: SQLITE_NOMEM) if
+** something goes wrong.
+*/
+int sqlite3BtreeIsEmpty(BtCursor *pCur, int *pRes){
+  int rc;
+
+  assert( cursorOwnsBtShared(pCur) );
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+  if( pCur->eState==CURSOR_VALID ){
+    *pRes = 0;
+    return SQLITE_OK;
+  }
+  rc = moveToRoot(pCur);
+  if( rc==SQLITE_EMPTY ){
+    *pRes = 1;
+    rc = SQLITE_OK;
+  }else{
+    *pRes = 0;
+  }
+  return rc;
+}
+
 #ifdef SQLITE_DEBUG
 /* The cursors is CURSOR_VALID and has BTCF_AtLast set.  Verify that
 ** this flags are true for a consistent database.
@@ -5874,8 +5910,8 @@ moveto_table_finish:
 }
 
 /*
-** Compare the "idx"-th cell on the page the cursor pCur is currently
-** pointing to to pIdxKey using xRecordCompare.  Return negative or
+** Compare the "idx"-th cell on the page pPage against the key
+** pointing to by pIdxKey using xRecordCompare.  Return negative or
 ** zero if the cell is less than or equal pIdxKey.  Return positive
 ** if unknown.
 **
@@ -5890,12 +5926,11 @@ moveto_table_finish:
 ** a positive value as that will cause the optimization to be skipped.
 */
 static int indexCellCompare(
-  BtCursor *pCur,
+  MemPage *pPage,
   int idx,
   UnpackedRecord *pIdxKey,
   RecordCompare xRecordCompare
 ){
-  MemPage *pPage = pCur->pPage;
   int c;
   int nCell;  /* Size of the pCell cell in bytes */
   u8 *pCell = findCellPastPtr(pPage, idx);
@@ -6004,14 +6039,14 @@ int sqlite3BtreeIndexMoveto(
   ){
     int c;
     if( pCur->ix==pCur->pPage->nCell-1
-     && (c = indexCellCompare(pCur, pCur->ix, pIdxKey, xRecordCompare))<=0
+     && (c = indexCellCompare(pCur->pPage,pCur->ix,pIdxKey,xRecordCompare))<=0
      && pIdxKey->errCode==SQLITE_OK
     ){
       *pRes = c;
       return SQLITE_OK;  /* Cursor already pointing at the correct spot */
     }
     if( pCur->iPage>0
-     && indexCellCompare(pCur, 0, pIdxKey, xRecordCompare)<=0
+     && indexCellCompare(pCur->pPage, 0, pIdxKey, xRecordCompare)<=0
      && pIdxKey->errCode==SQLITE_OK
     ){
       pCur->curFlags &= ~(BTCF_ValidOvfl|BTCF_AtLast);
@@ -6228,7 +6263,7 @@ i64 sqlite3BtreeRowCountEst(BtCursor *pCur){
 
   n = pCur->pPage->nCell;
   for(i=0; i<pCur->iPage; i++){
-    n *= pCur->apPage[i]->nCell;
+    n *= pCur->apPage[i]->nCell+1;
   }
   return n;
 }
@@ -8685,7 +8720,12 @@ static int balance_nonroot(
   ** of the right-most new sibling page is set to the value that was
   ** originally in the same field of the right-most old sibling page. */
   if( (pageFlags & PTF_LEAF)==0 && nOld!=nNew ){
-    MemPage *pOld = (nNew>nOld ? apNew : apOld)[nOld-1];
+    MemPage *pOld;
+    if( nNew>nOld ){
+      pOld = apNew[nOld-1];
+    }else{
+      pOld = apOld[nOld-1];
+    }
     memcpy(&apNew[nNew-1]->aData[8], &pOld->aData[8], 4);
   }
 
@@ -11317,6 +11357,7 @@ void *sqlite3BtreeSchema(Btree *p, int nBytes, void(*xFree)(void *)){
 */
 int sqlite3BtreeSchemaLocked(Btree *p){
   int rc;
+  UNUSED_PARAMETER(p);  /* only used in DEBUG builds */
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
   rc = querySharedCacheTableLock(p, SCHEMA_ROOT, READ_LOCK);
