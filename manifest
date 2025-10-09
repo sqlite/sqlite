@@ -1,5 +1,5 @@
-C Update\sc-pp.c\sand\srename\sit\sto\sc-pp-lite.c\sto\smatch\sits\snew\supstream\sname.\sAdapt\sthe\sJS\sfiles\sand\smkwasmbuilds.c\sfor\sc-pp\ssyntactic\schanges.
-D 2025-10-09T15:28:59.026
+C Fix\scarrayfault.test\sso\sthat\sit\sworks\swith\sthe\snew\sbuilt-in\sCARRAY.
+D 2025-10-09T19:23:01.514
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -607,7 +607,7 @@ F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72
 F ext/wasm/api/sqlite3-wasm.c 929d4c5619a321fa2fb9ef921ec8e4ccfdac27745df543062b267f9f928de3a7
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
-F ext/wasm/c-pp-lite.c 16250600fe18723e0cee4227161101ccb54f10fa6136bd208b479cf596df0f75 w ext/wasm/c-pp.c
+F ext/wasm/c-pp-lite.c 16250600fe18723e0cee4227161101ccb54f10fa6136bd208b479cf596df0f75
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
@@ -950,7 +950,7 @@ F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233df
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/carray01.test 49e2aedfdf2c715bc002d2773cdc1217166679639542c79c8aa4115f06421407
 F test/carray02.test 9d070b54f24a34d1f3b3c552ba34db0375a9d1c4219067416fb07d1595987c9d
-F test/carrayfault.test 52ef4956acbcb7b34eb177167e7af2b5ac8d9cbb80213ef4a3a9d7efb1a1f4be
+F test/carrayfault.test 6b9e2f4f12236d1cf70a37c49570b9518aec4dbf8b16b01e63fba2440a1b9787
 F test/cast.test a2a3b32df86e3c0601ffa2e9f028a18796305d251801efea807092dbf374a040
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/changes.test 4377d202a487f66fc2822c1bf57c46798c8b2caf7446f4f701723b1dbb6b86f6
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8bf26c956e199762d55c159392c2e3813a9e12b914d3ca33000bf332cd946cb0
-R de5988f0e29caae569a0c585e2f64ade
-U stephan
-Z a33d2ee1fb877041e46e669ea48ada3b
+P bb13e46ddfcd1d3ca73845430d9a91c0ea3913762d39bbd94127783d77e4f63b
+R 486d7d04c1d93d6170a16fce6a49cb98
+U drh
+Z 167303ba85fd122f69777a21c55ac08a
 # Remove this line to create a well-formed Fossil manifest.

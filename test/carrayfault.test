@@ -14,19 +14,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix carrayfault
 
-
-# Check that OOM faults in sqlite3_carray_init() are handled.
-#
-do_faultsim_test 1 -faults oom* -prep {
-  sqlite3 db test.db
-} -body {
-  load_static_extension db carray
-} -test {
-  faultsim_test_result {0 {}} {1 {initialization of carray failed: }}
-}
-
 sqlite3 db test.db
-load_static_extension db carray
 
 do_execsql_test 2.0 {
   CREATE TABLE t1(a);
@@ -82,7 +70,6 @@ do_faultsim_test 4 -faults oom* -prep {
 #
 do_faultsim_test 5 -faults oom* -prep {
   sqlite3 db test.db
-  load_static_extension db carray
 } -body {
   execsql "SELECT value FROM carray(?)"
 } -test {
