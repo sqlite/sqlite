@@ -320,12 +320,14 @@ static int carrayBestIndex(
   int ptrIdx = -1;       /* Index of the pointer= constraint, or -1 if none */
   int cntIdx = -1;       /* Index of the count= constraint, or -1 if none */
   int ctypeIdx = -1;     /* Index of the ctype= constraint, or -1 if none */
+  unsigned seen = 0;     /* Bitmask of == constrainted columns */
 
   const struct sqlite3_index_constraint *pConstraint;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->usable==0 ) continue;
     if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
+    if( pConstraint->iColumn>=0 ) seen |= 1 << pConstraint->iColumn;
+    if( pConstraint->usable==0 ) continue;
     switch( pConstraint->iColumn ){
       case CARRAY_COLUMN_POINTER:
         ptrIdx = i;
@@ -352,7 +354,15 @@ static int carrayBestIndex(
         pIdxInfo->aConstraintUsage[ctypeIdx].argvIndex = 3;
         pIdxInfo->aConstraintUsage[ctypeIdx].omit = 1;
         pIdxInfo->idxNum = 3;
+      }else if( seen & (1<<CARRAY_COLUMN_CTYPE) ){
+        /* In a three-argument carray(), we need to know the value of all
+        ** three arguments */
+        return SQLITE_CONSTRAINT;
       }
+    }else if( seen & (1<<CARRAY_COLUMN_COUNT) ){
+      /* In a two-argument carray(), we need to know the value of both
+      ** arguments */
+      return SQLITE_CONSTRAINT;
     }
   }else{
     pIdxInfo->estimatedCost = (double)2147483647;

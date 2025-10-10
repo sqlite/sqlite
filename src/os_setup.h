@@ -79,7 +79,7 @@
 #  define SQLITE_OS_KV 0
 #  undef SQLITE_OS_OTHER
 #  define SQLITE_OS_OTHER 0
-#  if !defined(__CYGWIN__)
+#  if !defined(__CYGWIN__) || !defined(SQLITE_OS_WIN)
 #  undef SQLITE_OS_WIN
 #  define SQLITE_OS_WIN 0
 #  endif
@@ -89,7 +89,7 @@
 #  define SQLITE_OS_KV 0
 #  undef SQLITE_OS_OTHER
 #  define SQLITE_OS_OTHER 0
-#  if !defined(__CYGWIN__)
+#  if !defined(__CYGWIN__) || !defined(SQLITE_OS_WIN)
 #  undef SQLITE_OS_UNIX
 #  define SQLITE_OS_UNIX 0
 #  endif

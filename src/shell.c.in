@@ -3921,6 +3921,36 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
         memcpy(zBuf, &zVar[6], szVar-5);
         sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, sqlite3_free, SQLITE_UTF8);
       }
+#ifdef SQLITE_ENABLE_CARRAY
+    }else if( strncmp(zVar, "$carray_", 8)==0 ){
+      static char *azColorNames[] = {
+        "azure", "black", "blue",   "brown", "cyan",   "fuchsia", "gold",
+        "gray",  "green", "indigo", "khaki", "lime",   "magenta", "maroon",
+        "navy",  "olive", "orange", "pink",  "purple", "red",     "silver",
+        "tan",   "teal",  "violet", "white", "yellow"
+      };
+      static int aPrimes[] = {
+        1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
+       53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+      };
+      /* Special bindings:  carray($carray_clr), carray($carray_primes)
+      ** with --unsafe-testing:  carray($carray_clr_p,26,'char*'),
+      **                         carray($carray_primes_p,26,'int32')
+      */
+      if( strcmp(zVar+8,"clr")==0 ){
+        sqlite3_carray_bind(pStmt,i,azColorNames,26,SQLITE_CARRAY_TEXT,0);
+      }else if( strcmp(zVar+8,"primes")==0 ){
+        sqlite3_carray_bind(pStmt,i,aPrimes,26,SQLITE_CARRAY_INT32,0);
+      }else if( strcmp(zVar+8,"clr_p")==0
+             && ShellHasFlag(pArg,SHFLG_TestingMode) ){
+        sqlite3_bind_pointer(pStmt,i,azColorNames,"carray",0);
+      }else if( strcmp(zVar+8,"primes_p")==0
+             && ShellHasFlag(pArg,SHFLG_TestingMode) ){
+        sqlite3_bind_pointer(pStmt,i,aPrimes,"carray",0);
+      }else{
+        sqlite3_bind_null(pStmt, i);
+      }
+#endif  
     }else{
       sqlite3_bind_null(pStmt, i);
     }
