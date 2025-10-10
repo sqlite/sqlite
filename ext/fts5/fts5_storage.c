@@ -1099,12 +1099,12 @@ static int fts5EncodingFix(
     sqlite3_bind_blob(pStmt, 1, pBlob, nBlob, SQLITE_STATIC);
 
     if( SQLITE_ROW==sqlite3_step(pStmt) ){
-      sqlite3_value *p = sqlite3_column_value(pStmt, 0);
-      pDup = sqlite3_value_dup(p);
+      sqlite3_value *pX = sqlite3_column_value(pStmt, 0);
+      pDup = sqlite3_value_dup(pX);
       if( pDup==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        *ppOut = p;
+        *ppOut = pX;
       }
     }
     rc = sqlite3_reset(pStmt);
