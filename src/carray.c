@@ -326,7 +326,7 @@ static int carrayBestIndex(
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
     if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    seen |= 1 << pConstraint->iColumn;
+    if( pConstraint->iColumn>=0 ) seen |= 1 << pConstraint->iColumn;
     if( pConstraint->usable==0 ) continue;
     switch( pConstraint->iColumn ){
       case CARRAY_COLUMN_POINTER:

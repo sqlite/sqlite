@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_bind_blob()\sinterface\sso\sthat\sit\ssets\sthe\sencoding\sof\sthe\nunderlying\ssqlite3_value\sobject\sto\sthe\sdatabase\sencoding.\s\sFix\sfor\sthe\nproblem\sreported\sby\n[forum:/forumpost/2025-10-07T12:47:25z|forum\spost\s2025-10-07T12:47:25z].
-D 2025-10-10T00:59:28.216
+C Avoid\s(apparently\sharmless)\sundefined\sbehavior\sin\sCARRAY\sif\sthe\srowid\nis\sused\sas\sa\sconstraint\sin\sthe\sWHERE\sclause.
+D 2025-10-10T10:40:37.616
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -679,7 +679,7 @@ F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 611e07299d72ff04bbcb9e7109183467e30925d203c3e121ef9bb3cf6876289b
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
-F src/carray.c 7112225fe41ec1717c8a6ada4ec5267a9b3ba514f4270fc263e1e82c108bc0ea
+F src/carray.c a6f26cb349ca700d706c0e76d5b2895d76e2a1c392a2b909cf543a0dd4d4d047
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
 F src/dbpage.c 081c59d84f187aa0eb48d98faf9578a00bde360f68438d646a86b618653d2479
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c8417b3261b2c9f20dcc38c482b9fc43acb97d933eb723c2f6698a7435a192eb
-R e62bedbe4ebd78d955eb9d4a08e67a9e
+P 8e7da8cf506059dde98000db2731b8c47951344263df680a12b7c95aaece2568
+R 2e24afe507e117cff2eccbac2a9985b7
 U drh
-Z aac9140f9d713f4fc0203b14dc184034
+Z c48365af4aa03de9f387522386e9a4b4
 # Remove this line to create a well-formed Fossil manifest.
