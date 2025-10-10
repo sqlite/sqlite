@@ -1,5 +1,5 @@
-C Fix\sthe\scarrayfault.test\sscript\sso\sthat\sit\sworks\sin\sconfigurations\sthat\ndo\snot\ssupport\svirtual\stables.
-D 2025-10-10T13:43:53.619
+C Regenerate\sautoconf/Makefile.msc\sto\ssquelch\sa\s'make\stest'\swarning.
+D 2025-10-10T14:00:27.843
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -18,7 +18,7 @@ F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
-F autoconf/Makefile.msc f15ad424ca2820df8e39d9157965710af0a64d87773706706a12ea4f96e3a0d8
+F autoconf/Makefile.msc 05b345da3a512c6c387d0e78d812deb0a42748962c115a6eac781c160a95d7cc
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 200b3c8f6cebf34428b0b41fc05f7361771dfee3592cfcdce512084abcc99713
-R 64a22bf76934766983a7b02a5431ca88
-U drh
-Z 04b534b446c62785db11884ab3ad6982
+P 767a667b91caff2e789179231f13a0d260c9837020c0ce1553b86e88cf9aa352
+R d7498807ae3cf83c51ba1d2dd5190500
+U stephan
+Z e4a83425b638919adf3527ae0aeea1f3
 # Remove this line to create a well-formed Fossil manifest.
