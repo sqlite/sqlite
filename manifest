@@ -1,5 +1,5 @@
-C Fix\scarrayfault.test\sso\sthat\sit\sworks\swith\sthe\snew\sbuilt-in\sCARRAY.
-D 2025-10-09T19:23:01.514
+C Fix\sthe\sxBestIndex\smethod\son\scarray\sso\sthat\sit\sgives\sa\scoherient\squery\splan\nin\sa\sjoin\swhen\ssome\sof\sthe\sarguments\sto\scarray()\scome\sfrom\sother\stable\nin\sthe\sjoin.
+D 2025-10-10T00:26:46.643
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -679,7 +679,7 @@ F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 611e07299d72ff04bbcb9e7109183467e30925d203c3e121ef9bb3cf6876289b
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
-F src/carray.c 9d489582fcb0f3a78e32baf48474a9c0e9603171f4929e7be5feddb0e281b8d3
+F src/carray.c 7112225fe41ec1717c8a6ada4ec5267a9b3ba514f4270fc263e1e82c108bc0ea
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
 F src/dbpage.c 081c59d84f187aa0eb48d98faf9578a00bde360f68438d646a86b618653d2479
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bb13e46ddfcd1d3ca73845430d9a91c0ea3913762d39bbd94127783d77e4f63b
-R 486d7d04c1d93d6170a16fce6a49cb98
+P 22f694682107036e68b67e48123d606aeff8cd8b7fedc8ab8ed9cc1a9cccd73f
+R e015417c9e052c0b39ffc92bd36a8b62
 U drh
-Z 167303ba85fd122f69777a21c55ac08a
+Z 8bb352561f711d41895ac5369503ea6b
 # Remove this line to create a well-formed Fossil manifest.
