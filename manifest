@@ -1,5 +1,5 @@
-C Fix\sthe\sxBestIndex\smethod\son\scarray\sso\sthat\sit\sgives\sa\scoherient\squery\splan\nin\sa\sjoin\swhen\ssome\sof\sthe\sarguments\sto\scarray()\scome\sfrom\sother\stable\nin\sthe\sjoin.
-D 2025-10-10T00:26:46.643
+C Fix\sthe\ssqlite3_bind_blob()\sinterface\sso\sthat\sit\ssets\sthe\sencoding\sof\sthe\nunderlying\ssqlite3_value\sobject\sto\sthe\sdatabase\sencoding.\s\sFix\sfor\sthe\nproblem\sreported\sby\n[forum:/forumpost/2025-10-07T12:47:25z|forum\spost\s2025-10-07T12:47:25z].
+D 2025-10-10T00:59:28.216
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -804,7 +804,7 @@ F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
 F src/vdbe.c 07084aa0152c8d4e74e7b86c0cf744732f0f9b1fd62bd7098252cadb741c630a
 F src/vdbe.h be33bd7b17f2ec92939642416030491508c51071f6c14e27cd195983fec56b63
 F src/vdbeInt.h 52896dd4d5b62190c53db14b09fc2484434eb594c963df0fa66eb8a94527b02e
-F src/vdbeapi.c f9a4881a9674fec3fa13da35044a1484d3c4b95f9ec891cc8ffb02ef2b7a41df
+F src/vdbeapi.c 869a0da5d855495055f4d35c6ada582f64ce995ce14b26ff9d336274d497266c
 F src/vdbeaux.c cb907297d03b374544a5a4f81ca981497ff4d09d13838f06de507118367f0b73
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 22f694682107036e68b67e48123d606aeff8cd8b7fedc8ab8ed9cc1a9cccd73f
-R e015417c9e052c0b39ffc92bd36a8b62
+P c8417b3261b2c9f20dcc38c482b9fc43acb97d933eb723c2f6698a7435a192eb
+R e62bedbe4ebd78d955eb9d4a08e67a9e
 U drh
-Z 8bb352561f711d41895ac5369503ea6b
+Z aac9140f9d713f4fc0203b14dc184034
 # Remove this line to create a well-formed Fossil manifest.
