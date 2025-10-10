@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2025-10-10T14:31:46.035
+C Back\sout\s[8bf26c956e].\sIt\sis\snot\srequired\sfollowing\s[8e7da8cf50].
+D 2025-10-10T16:04:19.837
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -115,7 +115,7 @@ F ext/fts5/fts5_expr.c b8c32da1127bafaf10d6b4768b0dcb92285798524bed2d87a8686f99a
 F ext/fts5/fts5_hash.c a6266cedd801ab7964fa9e74ebcdda6d30ec6a96107fa24148ec6b7b5b80f6e0
 F ext/fts5/fts5_index.c 1e5009261966215b61bbe3b46d79916346efac775b57c1487a478f684c971111
 F ext/fts5/fts5_main.c 42025174a556257287071e90516d3ab8115daf1dd525a301883544469a260014
-F ext/fts5/fts5_storage.c 58dc1798105e5e94bab80a821bcf000f8b36fa27b5d94a01ca0cd33e364b68de
+F ext/fts5/fts5_storage.c 19bc7c4cbe1e6a2dd9849ef7d84b5ca1fcbf194cefc3e386b901e00e08bf05c2
 F ext/fts5/fts5_tcl.c 7fb5a3d3404099075aaa2457307cb459bbc257c0de3dbd52b1e80a5b503e0329
 F ext/fts5/fts5_test_mi.c 4308d5658cb1f5eee5998dcbaac7d5bdf7a2ef43c8192ca6e0c843f856ccee26
 F ext/fts5/fts5_test_tok.c 3cb0a9b508b30d17ef025ccddd26ae3dc8ddffbe76c057616e59a9aa85d36f3b
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe9cf68b513d1e8cfcde90f1982a7f4123f54e3ebb004d961a99bdf6bec03a32
-R 65b5b05b740611e1c5fa9d03c6a586df
-U drh
-Z 4a0d1cb7f0b040e5a47482017cdef1be
+P 4966d7a1ce42af8b1c50fdd40e651e80d0eeb8cb62dd882950cab275f98aba88
+R b942099604595f11d845c663da1ef706
+U dan
+Z 13a143275403dfceaee76597c8ba1588
 # Remove this line to create a well-formed Fossil manifest.
