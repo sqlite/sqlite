@@ -642,7 +642,6 @@ static int seriesFilter(
   /* Apply LIMIT and OFFSET constraints, if any */
   assert( pCur->iStep!=0 );
   if( idxNum & 0x20 ){
-    sqlite3_uint64 nStep;
     if( iOffset>0 ){
       if( seriesSteps(pCur) < (sqlite3_uint64)iOffset ){
         goto series_no_rows;
@@ -652,7 +651,7 @@ static int seriesFilter(
         pCur->iBase = add64(pCur->iBase, pCur->iStep*iOffset);
       }
     }
-    if( iLimit>=0 && (nStep = seriesSteps(pCur)) > (sqlite3_uint64)iLimit ){
+    if( iLimit>=0 && seriesSteps(pCur) > (sqlite3_uint64)iLimit ){
       pCur->iTerm = add64(pCur->iBase, (iLimit - 1)*pCur->iStep);
     }
   }
