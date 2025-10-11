@@ -1,5 +1,5 @@
-C Merge\strunk\sand\san\soff-list\spatch\sfrom\sJan\sN.\sinto\sthe\scygwin-fixes\sbranch.
-D 2025-10-10T16:59:25.820
+C Merge\strunk\sinto\sthe\scygwin-fixes\sbranch.\sWith\stcl9\sthis\spasses\sall\sbut\sone\stest,\swhich\sfails\swith:\serror\scopying\s...:\sNo\serror
+D 2025-10-11T20:06:54.784
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -18,7 +18,7 @@ F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
-F autoconf/Makefile.msc 05b345da3a512c6c387d0e78d812deb0a42748962c115a6eac781c160a95d7cc
+F autoconf/Makefile.msc 803aa9e23b6a764751f6a91d0673620eefa46729fb80faf51391120e1d752966
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
@@ -390,7 +390,7 @@ F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c cbbec483aa0246661e7656971ce4de8e62ecc3151be94218306206fe4f5b7a9e
+F ext/misc/series.c 4017451155f1b792346f2601f3242132368f670f0a14db11b26170ad6baaeb60
 F ext/misc/sha1.c cb5002148c2661b5946f34561701e9105e9d339b713ec8ac057fd888b196dcb9
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5ca248f96d26778c863ffc65e3263084b10a70494548f640c81de2057cd09f1f ea29180797aa4bb25180432e75a372277a6f6e2262906a9e765a3bddf8ca79d7
-R 475d8dccf0a393275dd581eee60c1ca2
+P 38807d8bce50114fcaaa656bba0437fd3c3164c7051e9938a39c2791c8f4725b e6b9bfdb6f8f86d4d2891d65fee4274dcbc61c9e998d81f90232153c05788cab
+R a2360b58313ffdb82688d1798b44ecee
 U stephan
-Z 119f796f65476eefad0b2c385c690ee2
+Z eb375049ccc04e2e9e9409c5a07225cf
 # Remove this line to create a well-formed Fossil manifest.
