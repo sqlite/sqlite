@@ -363,32 +363,39 @@ static sqlite3_uint64 seriesSteps(series_cursor *pCur){
 
 #if defined(SQLITE_ENABLE_MATH_FUNCTIONS) || defined(_WIN32)
 /*
-** Use the ceil() and floor() from the standard math library.
+** Case 1 (the most common case):
+** The standard math library is available so use ceil() and floor() from there.
 */
 static double seriesCeil(double r){ return ceil(r); }
 static double seriesFloor(double r){ return floor(r); }
 #elif defined(__GNUC__) && !defined(SQLITE_DISABLE_INTRINSIC)
 /*
-** If the standard library is not available, try to use GCC builtins
+** Case 2 (2nd most common): Use GCC/Clang builtins
 */
 static double seriesCeil(double r){ return __builtin_ceil(r); }
 static double seriesFloor(double r){ return __builtin_floor(r); }
 #else
 /*
-** If there is no standard library and we are not using GCC, then
-** use an approximation.  Results are not exact, but
-** that is the best we can do.
+** Case 3 (rarely happens): Use home-grown ceil() and floor() routines.
 */
 static double seriesCeil(double r){
-  sqlite3_int64 x = (sqlite3_int64)r;
+  sqlite3_int64 x;
+  if( r!=r ) return r;
+  if( r<=(-4503599627370496.0) ) return r;
+  if( r>=(+4503599627370496.0) ) return r;
+  x = (sqlite3_int64)r;
   if( r==(double)x ) return r;
-  if( r<0.0 ) x++;
+  if( r>(double)x ) x++;
   return (double)x;
 }
 static double seriesFloor(double r){
-  sqlite3_int64 x = (sqlite3_int64)r;
+  sqlite3_int64 x;
+  if( r!=r ) return r;
+  if( r<=(-4503599627370496.0) ) return r;
+  if( r>=(+4503599627370496.0) ) return r;
+  x = (sqlite3_int64)r;
   if( r==(double)x ) return r;
-  if( r>0.0 ) x--;
+  if( r<(double)x ) x--;
   return (double)x;
 }
 #endif
