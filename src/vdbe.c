@@ -717,7 +717,7 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
 static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   VdbeCursor *pC,       /* The BTree cursor from which we are reading */
   int iCol,             /* The column to read */
-  int t,                /* The serial-type code for the column value */
+  u32 t,                /* The serial-type code for the column value */
   i64 iOffset,          /* Offset to the start of the content value */
   u32 cacheStatus,      /* Current Vdbe.cacheCtr value */
   u32 colCacheCtr,      /* Current value of the column cache counter */
