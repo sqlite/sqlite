@@ -1818,7 +1818,8 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
     if( sqlite3VdbeMemExpandBlob(pIn2) ) goto no_mem;
     flags2 = pIn2->flags & ~MEM_Str;
   }
-  nByte = pIn1->n + pIn2->n;
+  nByte = pIn1->n;
+  nByte += pIn2->n;
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }

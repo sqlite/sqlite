@@ -1,5 +1,5 @@
-C Remove\san\sunused\svariable\sfrom\sthe\sgenerate_series\simplementation.
-D 2025-10-11T18:44:54.873
+C Fix\sorder\sof\soperations\sin\sthe\sOP_Concat\soperator\sof\sthe\sbyte-code\sengine\nto\savoid\sany\spossibility\sof\san\sinteger\soverflow.
+D 2025-10-12T10:31:34.961
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -801,7 +801,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
-F src/vdbe.c a68232b2e63290463e3a50351f8433871b5e19234947fb1b870b7c5c5a45434c
+F src/vdbe.c 0c20fef4067540b0dde00c57b4970776b9e71a04205a7f609b189b79f317bd7a
 F src/vdbe.h be33bd7b17f2ec92939642416030491508c51071f6c14e27cd195983fec56b63
 F src/vdbeInt.h 52896dd4d5b62190c53db14b09fc2484434eb594c963df0fa66eb8a94527b02e
 F src/vdbeapi.c 869a0da5d855495055f4d35c6ada582f64ce995ce14b26ff9d336274d497266c
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e5ec5731f0c8c5f7da357c63d315aae5a2aca5c1b3567bc8c9386ccc2a798cf
-R 98484fb041640c835375b041fa658c37
+P a523e4adbf8e60ea8c3351f33aff793c6e425c594038e8578d12564bf47aac03
+R 7cf5cab46a8df75a29f2fe554d869c2d
 U drh
-Z 9cb0638cc070ec3cf8cc41e929705d80
+Z 0b6790171f6770b779a3f23996aa98c8
 # Remove this line to create a well-formed Fossil manifest.
