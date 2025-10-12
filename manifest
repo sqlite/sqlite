@@ -1,5 +1,5 @@
-C Fix\sorder\sof\soperations\sin\sthe\sOP_Concat\soperator\sof\sthe\sbyte-code\sengine\nto\savoid\sany\spossibility\sof\san\sinteger\soverflow.
-D 2025-10-12T10:31:34.961
+C Fix\sbroken\shyperlinks\sin\sthe\sdocumentation.
+D 2025-10-12T19:17:31.234
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
 F src/shell.c.in c63c9d77565c43c02a889164486edbfcdcdf4417fbad6780e4b0ec8aefa28d08
-F src/sqlite.h.in 5706a425081d1712be81b31456801919c5760087cf3de32bbf86885994db26fe
+F src/sqlite.h.in de35f306eb779cdfeb2878bcb16c800ef9ffb8d7c86042b5d647b51e0d9c6212
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 3f0c4ed6934e7309a61c6f3c30f70a30a5b869f785bb3d9f721a36c5e4359126
 F src/sqliteInt.h 9edbf62c1fd6bff720ed39eaf3fa28534dc445d936b1d78552c47d7b174d8cc3
@@ -2169,8 +2169,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a523e4adbf8e60ea8c3351f33aff793c6e425c594038e8578d12564bf47aac03
-R 7cf5cab46a8df75a29f2fe554d869c2d
+P 765e6569824ccc34292d6df16a6cd682e6503f20adebe0a43cd2118d69072a63
+R 4187980b14a14c6a4c62dad2057d8ef3
 U drh
-Z 0b6790171f6770b779a3f23996aa98c8
+Z 548e39a32bc932a248e926410aeddb95
 # Remove this line to create a well-formed Fossil manifest.
