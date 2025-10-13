@@ -877,9 +877,9 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
 
     if( rc==SQLITE_OK ){
       u8 *aOut = 0;               /* Read blob data into this buffer */
-      int nByte = sqlite3_blob_bytes(p->pReader);
-      int szData = (sizeof(Fts5Data) + 7) & ~7;
-      sqlite3_int64 nAlloc = szData + nByte + FTS5_DATA_PADDING;
+      i64 nByte = sqlite3_blob_bytes(p->pReader);
+      i64 szData = (sizeof(Fts5Data) + 7) & ~7;
+      i64 nAlloc = szData + nByte + FTS5_DATA_PADDING;
       pRet = (Fts5Data*)sqlite3_malloc64(nAlloc);
       if( pRet ){
         pRet->nn = nByte;
