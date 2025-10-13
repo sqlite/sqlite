@@ -5224,7 +5224,7 @@ static const char *(azHelp[]) = {
   "        input text.",
 #endif
 #ifndef SQLITE_OMIT_TEST_CONTROL
-  ",imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
+  ".imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
 #endif
   ".indexes ?TABLE?         Show names of indexes",
   "                           If TABLE is specified, only show indexes for",
