@@ -1669,6 +1669,7 @@ static void concatFuncCore(
 ){
   i64 j, n = 0;
   int i;
+  int bNotNull = 0;   /* True after at least NOT NULL argument seen */
   char *z;
   for(i=0; i<argc; i++){
     n += sqlite3_value_bytes(argv[i]);
@@ -1685,12 +1686,13 @@ static void concatFuncCore(
       int k = sqlite3_value_bytes(argv[i]);
       const char *v = (const char*)sqlite3_value_text(argv[i]);
       if( v!=0 ){
-        if( j>0 && nSep>0 ){
+        if( bNotNull && nSep>0 ){
           memcpy(&z[j], zSep, nSep);
           j += nSep;
         }
         memcpy(&z[j], v, k);
         j += k;
+        bNotNull = 1;
       }
     }
   }
