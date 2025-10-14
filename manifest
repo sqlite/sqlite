@@ -1,5 +1,5 @@
-C JS/WASM:\sExpose\ssqlite3_db_status64(),\ssqlite3changeset_apply_v3(),\ssqlite3changeset_apply_v3_strm(),\sand\sSQLITE_DBSTATUS_TEMPBUF_SPILL.
-D 2025-10-14T18:23:32.043
+C Reestablish\sAPIARMOR\sfor\sthe\ssqlite3_db_status()\sinterface.
+D 2025-10-14T19:21:46.782
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -742,7 +742,7 @@ F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c47
 F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
 F src/sqliteInt.h e16df0914718acba6fb7e5f03055f7cf519d0d61314c78ec2f5c9f6a45608d86
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
-F src/status.c d19dea65cdd7005b5a05a28949b9bf3c6b3922defd07957bdd97178e11a44aaa
+F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a9bd7ed6f77c5e53f9130eac7eb999c662e9158fb229a462d29f18653284d6d0
-R 79ea74d1968903146d623d1fd0caf775
-U stephan
-Z ff70f53026c32707e07c37eb737de1dd
+P b13eafc9b6820517b450041a7e2be573a896b5b9e88b2b28df9f15e3cb91e23d
+R 403733d8e52826cb8fde832a34128243
+U drh
+Z d822c2efc819b4fac870aadf1e2f6261
 # Remove this line to create a well-formed Fossil manifest.

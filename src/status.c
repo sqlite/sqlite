@@ -431,7 +431,13 @@ int sqlite3_db_status(
   int resetFlag            /* Reset high-water mark if true */
 ){
   sqlite3_int64 C = 0, H = 0;
-  int rc = sqlite3_db_status64(db, op, &C, &H, resetFlag);
+  int rc;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !sqlite3SafetyCheckOk(db) || pCurrent==0|| pHighwtr==0 ){
+    return SQLITE_MISUSE_BKPT;
+  }
+#endif
+  rc = sqlite3_db_status64(db, op, &C, &H, resetFlag);
   if( rc==0 ){
     *pCurrent = C & 0x7fffffff;
     *pHighwtr = H & 0x7fffffff;
