@@ -1693,8 +1693,12 @@ static int bindText(
     if( zData!=0 ){
       pVar = &p->aVar[i-1];
       rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
-      if( rc==SQLITE_OK && encoding!=0 ){
-        rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
+      if( rc==SQLITE_OK ){
+        if( encoding==0 ){
+          pVar->enc = ENC(p->db);
+        }else{
+          rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
+        }
       }
       if( rc ){
         sqlite3Error(p->db, rc);

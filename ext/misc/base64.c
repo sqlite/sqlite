@@ -207,7 +207,8 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
 
 /* This function does the work for the SQLite base64(x) UDF. */
 static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
-  int nb, nv = sqlite3_value_bytes(av[0]);
+  sqlite3_int64 nb;
+  sqlite3_int64 nv = sqlite3_value_bytes(av[0]);
   sqlite3_int64 nc;
   int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
                             SQLITE_LIMIT_LENGTH, -1);

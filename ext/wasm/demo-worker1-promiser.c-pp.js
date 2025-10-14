@@ -40,7 +40,7 @@ delete globalThis.sqlite3Worker1Promiser;
   };
 
   const promiserConfig = {
-//#ifnot target:es6-module
+//#if not target:es6-module
     /**
        The v1 interfaces uses an onready function. The v2 interface optionally
        accepts one but does not require it. If provided, it is called _before_

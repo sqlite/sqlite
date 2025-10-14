@@ -1304,4 +1304,22 @@ select base64(base64(cast('digity-doo' as blob))),
 }
 } {0 digity-doo|digity-doo}
 
+#----------------------------------------------------------------------------
+# Test cases shell1-11.*: 
+#
+do_test shell1-11.1 {
+  catchcmd :memory: {
+.mode list
+.header off
+select base64(zeroblob(2000000000));
+}
+} {/1.*too big.*/}
+do_test shell1-11.2 {
+  catchcmd :memory: {
+.mode list
+.header off
+select base85(zeroblob(2000000000));
+}
+} {/1.*too big.*/}
+
 finish_test

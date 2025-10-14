@@ -231,7 +231,7 @@ $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 CLEAN_FILES += $(3)
 endef
 
-c-pp.D.64bit = -D64bit
+c-pp.D.64bit = -Dbits64
 
 #
 # $(call b.strip-js-emcc-bindings)
@@ -383,7 +383,9 @@ SQLITE_OPT.full-featured = \
   -DSQLITE_ENABLE_SESSION \
   -DSQLITE_ENABLE_STMTVTAB \
   -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
-  -DSQLITE_ENABLE_COLUMN_METADATA
+  -DSQLITE_ENABLE_COLUMN_METADATA \
+  -DSQLITE_ENABLE_PERCENTILE=1
+
 
 ifeq (0,$(wasm-bare-bones))
   # The so-called canonical build is full-featured:
@@ -495,7 +497,7 @@ WASM_CUSTOM_INSTANTIATE = 1
 #   in the same way we would normally do C files, but C-specific quirks
 #   of each makes that untennable.
 #
-# - We implemented c-pp.c (the C-Minus Pre-processor) as a custom
+# - We implemented c-pp-lite.c (the C-Minus Pre-processor) as a custom
 #   generic/file-format-agnostic preprocessor to enable us to pack
 #   code for different target builds into the same JS files. Most
 #   notably, some ES6 module (a.k.a. ESM) features cannot legally be
@@ -504,11 +506,11 @@ WASM_CUSTOM_INSTANTIATE = 1
 #   of code where necessary for ESM and non-ESM (a.k.a. vanilla JS)
 #   require different implementations. The alternative to such
 #   preprocessing, would be to have separate source files for ES6
-#   builds, which would have a higher maintenance burden than c-pp.c
-#   seems likely to.
+#   builds, which would have a higher maintenance burden than
+#   c-pp-lite.c seems likely to.
 #
-# c-pp.c was written specifically for the sqlite project's JavaScript
-# builds but is maintained as a standalone project:
+# c-pp-lite.c was written specifically for the sqlite project's
+# JavaScript builds but is maintained as a standalone project:
 # https://fossil.wanderinghorse.net/r/c-pp
 #
 # The SQLITE_... build flags used here have NO EFFECT on the JS/WASM
@@ -516,9 +518,9 @@ WASM_CUSTOM_INSTANTIATE = 1
 #
 # -D... flags which should be included in all invocations should be
 # appended to $(b.c-pp.target.flags).
-bin.c-pp = ./c-pp
-$(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
-	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
+bin.c-pp = ./c-pp-lite
+$(bin.c-pp): c-pp-lite.c $(sqlite3.c) $(MAKEFILE)
+	$(CC) -O0 -o $@ c-pp-lite.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
 		-DSQLITE_TEMP_STORE=3

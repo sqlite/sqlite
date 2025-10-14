@@ -22,7 +22,6 @@ ifcapable !vtab {
   return
 }
 load_static_extension db series
-load_static_extension db carray
 load_static_extension db remember
 
 do_execsql_test tabfunc01-1.1 {
@@ -278,6 +277,7 @@ do_execsql_test tabfunc01-600 {
 
 do_test tabfunc01-700 {
   set PTR1 [intarray_addr 5 7 13 17 23]
+  sqlite3_create_function db
   db eval {
     SELECT b FROM t600, carray(inttoptr($PTR1),5) WHERE a=value;
   }
@@ -662,6 +662,10 @@ do_execsql_test 1363 {
 do_execsql_test 1364 {
   SELECT * FROM generate_series(0,-9223372036854775808,-9223372036854775808)
    ORDER BY value ASC LIMIT 10 OFFSET 40000000;
+} {}
+
+do_execsql_test 1370 {
+  SELECT * FROM generate_series(0,0,0);
 } {}
 
 

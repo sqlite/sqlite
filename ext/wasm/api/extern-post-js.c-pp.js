@@ -110,7 +110,7 @@ const toExportForESM =
     sIMS.scriptDir = src.join('/') + '/';
   }
   sIMS.debugModule('extern-post-js.c-pp.js sqlite3InitModuleState =',sIMS);
-//#ifnot target:es6-module
+//#if not target:es6-module
 // Emscripten does not inject these module-loader bits in ES6 module
 // builds and including them here breaks JS bundlers, so elide them
 // from ESM builds.

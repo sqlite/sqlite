@@ -302,7 +302,7 @@ const BuildDefs oBuildDefs = {
     .zEmo        = "🛼64",
     .zBaseName   = "speedtest1-64bit",
     .zDotWasm    = 0,
-    .zCmppD      = "-D64bit",
+    .zCmppD      = 0,
     .zEmcc       =
     "$(emcc.speedtest1)"
     " $(emcc.speedtest1.common)"
@@ -669,7 +669,7 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
        "%s,"
        "$(extern-post-js.in.js),"
        "$(extern-post-js.%s.js),"
-       "$(c-pp.D.%s) --@-policy=error -Dsqlite3.wasm=%s.wasm"
+       "$(c-pp.D.%s) --@policy=error -Dsqlite3.wasm=%s.wasm"
        "))",
        zBuildName, zBuildName, zBuildName,
        zBaseName);

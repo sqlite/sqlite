@@ -316,9 +316,9 @@ static int seriesColumn(
 }
 
 #ifndef LARGEST_UINT64
-#define LARGEST_INT64  (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
-#define LARGEST_UINT64 (0xffffffff|(((sqlite3_uint64)0xffffffff)<<32))
-#define SMALLEST_INT64 (((sqlite3_int64)-1) - LARGEST_INT64)
+#define LARGEST_INT64  ((sqlite3_int64)0x7fffffffffffffffLL)
+#define LARGEST_UINT64 ((sqlite3_uint64)0xffffffffffffffffULL)
+#define SMALLEST_INT64 ((sqlite3_int64)0x8000000000000000LL)
 #endif
 
 /*
@@ -360,6 +360,45 @@ static sqlite3_uint64 seriesSteps(series_cursor *pCur){
     return span64(pCur->iTerm, pCur->iBase)/pCur->iStep;
   }
 }
+
+#if defined(SQLITE_ENABLE_MATH_FUNCTIONS) || defined(_WIN32)
+/*
+** Case 1 (the most common case):
+** The standard math library is available so use ceil() and floor() from there.
+*/
+static double seriesCeil(double r){ return ceil(r); }
+static double seriesFloor(double r){ return floor(r); }
+#elif defined(__GNUC__) && !defined(SQLITE_DISABLE_INTRINSIC)
+/*
+** Case 2 (2nd most common): Use GCC/Clang builtins
+*/
+static double seriesCeil(double r){ return __builtin_ceil(r); }
+static double seriesFloor(double r){ return __builtin_floor(r); }
+#else
+/*
+** Case 3 (rarely happens): Use home-grown ceil() and floor() routines.
+*/
+static double seriesCeil(double r){
+  sqlite3_int64 x;
+  if( r!=r ) return r;
+  if( r<=(-4503599627370496.0) ) return r;
+  if( r>=(+4503599627370496.0) ) return r;
+  x = (sqlite3_int64)r;
+  if( r==(double)x ) return r;
+  if( r>(double)x ) x++;
+  return (double)x;
+}
+static double seriesFloor(double r){
+  sqlite3_int64 x;
+  if( r!=r ) return r;
+  if( r<=(-4503599627370496.0) ) return r;
+  if( r>=(+4503599627370496.0) ) return r;
+  x = (sqlite3_int64)r;
+  if( r==(double)x ) return r;
+  if( r<(double)x ) x--;
+  return (double)x;
+}
+#endif
 
 /*
 ** This method is called to "rewind" the series_cursor object back
@@ -427,6 +466,7 @@ static int seriesFilter(
   }
   if( idxNum & 0x04 ){
     pCur->iOStep = sqlite3_value_int64(argv[iArg++]);
+    if( pCur->iOStep==0 ) pCur->iOStep = 1;
   }else{
     pCur->iOStep = 1;
   }
@@ -478,7 +518,10 @@ static int seriesFilter(
     if( idxNum & 0x0080 ){    /* value=X */
       if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
         double r = sqlite3_value_double(argv[iArg++]);
-        if( r==ceil(r) && r>=SMALLEST_INT64 && r<=LARGEST_INT64 ){
+        if( r==seriesCeil(r)
+         && r>=(double)SMALLEST_INT64
+         && r<=(double)LARGEST_INT64
+        ){
           iMin = iMax = (sqlite3_int64)r;
         }else{
           goto series_no_rows;
@@ -490,12 +533,12 @@ static int seriesFilter(
       if( idxNum & 0x0300 ){  /* value>X or value>=X */
         if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
-          if( r<SMALLEST_INT64 ){
+          if( r<(double)SMALLEST_INT64 ){
             iMin = SMALLEST_INT64;
-          }else if( (idxNum & 0x0200)!=0 && r==ceil(r) ){
-            iMin = (sqlite3_int64)ceil(r+1.0);
+          }else if( (idxNum & 0x0200)!=0 && r==seriesCeil(r) ){
+            iMin = (sqlite3_int64)seriesCeil(r+1.0);
           }else{
-            iMin = (sqlite3_int64)ceil(r);
+            iMin = (sqlite3_int64)seriesCeil(r);
           }
         }else{
           iMin = sqlite3_value_int64(argv[iArg++]);
@@ -511,12 +554,12 @@ static int seriesFilter(
       if( idxNum & 0x3000 ){   /* value<X or value<=X */
         if( sqlite3_value_numeric_type(argv[iArg])==SQLITE_FLOAT ){
           double r = sqlite3_value_double(argv[iArg++]);
-          if( r>LARGEST_INT64 ){
+          if( r>(double)LARGEST_INT64 ){
             iMax = LARGEST_INT64;
-          }else if( (idxNum & 0x2000)!=0 && r==floor(r) ){
+          }else if( (idxNum & 0x2000)!=0 && r==seriesFloor(r) ){
             iMax = (sqlite3_int64)(r-1.0);
           }else{
-            iMax = (sqlite3_int64)floor(r);
+            iMax = (sqlite3_int64)seriesFloor(r);
           }
         }else{
           iMax = sqlite3_value_int64(argv[iArg++]);
@@ -599,7 +642,6 @@ static int seriesFilter(
   /* Apply LIMIT and OFFSET constraints, if any */
   assert( pCur->iStep!=0 );
   if( idxNum & 0x20 ){
-    sqlite3_uint64 nStep;
     if( iOffset>0 ){
       if( seriesSteps(pCur) < (sqlite3_uint64)iOffset ){
         goto series_no_rows;
@@ -609,7 +651,7 @@ static int seriesFilter(
         pCur->iBase = add64(pCur->iBase, pCur->iStep*iOffset);
       }
     }
-    if( iLimit>=0 && (nStep = seriesSteps(pCur)) > (sqlite3_uint64)iLimit ){
+    if( iLimit>=0 && seriesSteps(pCur) > (sqlite3_uint64)iLimit ){
       pCur->iTerm = add64(pCur->iBase, (iLimit - 1)*pCur->iStep);
     }
   }
