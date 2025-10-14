@@ -1,5 +1,5 @@
-C Fix\sa\smakefile\stypo\swhich\scaused\sa\sbuild\sdirectory\sto\snot\sget\smkdir'd\sfor\sthe\sfiddle\sbuild.
-D 2025-10-14T13:25:02.082
+C Add\sa\ssection\sto\sext/wasm/README.md\sabout\sthe\sdependency\son\swabt/wasm-strip\sfor\srelease\sbuilds.
+D 2025-10-14T13:47:40.907
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/GNUmakefile be5cbc4733403459589daf2e0784653c23e7ca8353e78398ef223565d63aa68b
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
-F ext/wasm/README.md 66ace67ae98a45e4116f2ca5425b716887bcee4d64febee804ff6398e1ae9ec7
+F ext/wasm/README.md 1af3a9a3bc359e8afa04d09063c1e9194d9a7beb9d576a25b2c2577178f0006c
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
 F ext/wasm/SQLTester/SQLTester.mjs 6b3c52ed36a5573ca4883176f326332a8d4c0cecf5efd80489528267fa5d9ed4
 F ext/wasm/SQLTester/SQLTester.run.mjs 57f2adb33f43f2784abbf8026c1bfd049d8013af1998e7dcb8b50c89ffc332e0
@@ -2170,8 +2170,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 27927519696dcb78ff72e245158ea6d33a1b2c3d4da314d4d0283c47d847c3da
-R 318c215b3d1245aa5a258ed58ca48b07
+P d98d5abf6d27c5359ff8c797ad57394b96074e47010bc4c24120ba69a967dc3c
+R 76d54a7a608a3f3da51434ba1a9bb1ba
 U stephan
-Z 3105ae37046f6b9a0aaf6e0785ac9266
+Z efcf9de719ad345452815fbe6955044e
 # Remove this line to create a well-formed Fossil manifest.
