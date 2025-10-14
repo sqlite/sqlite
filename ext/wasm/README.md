@@ -2,7 +2,7 @@ This directory houses the [Web Assembly (WASM)](https://en.wikipedia.org/wiki/We
 parts of the sqlite3 build.
 
 It requires [emscripten][] and that the build environment be set up
-for emscripten. _Release_ builds also require [the wabt tools][wabt],
+for emscripten. _Release_ builds also require [the wabt tools](#wabt),
 but dev builds do not. A mini-HOWTO for setting that up follows...
 
 First, install the Emscripten SDK, as documented
@@ -126,6 +126,7 @@ connection).  Since the web-server is on a different machine from the
 web-broser, the localhost requirement means that the connection must
 be tunneled using SSH.
 
+<a id="wabt"></a>
 # The wabt Tools
 
 _Release_ builds require the wabt tools:
@@ -137,7 +138,7 @@ several megabytes.
 
 Pre-built binaries can be downloaded from:
 
-https://github.com/WebAssembly/wabt/releases
+<https://github.com/WebAssembly/wabt/releases>
 
 As of 2025-10-14, versions 1.36.0 or higher are known to work and
 1.34.0 is known to not work with current Emscripten output.
