@@ -965,7 +965,7 @@ endif
 
 EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 $(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE_LIST)
-	@$(b.call.mkdir@)
+	@$(b.mkdir@)
 	@sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 	@echo $(logtag.@) $(emo.disk)
 
