@@ -1,5 +1,5 @@
-C Add\sa\ssection\sto\sext/wasm/README.md\sabout\sthe\sdependency\son\swabt/wasm-strip\sfor\srelease\sbuilds.
-D 2025-10-14T13:47:40.907
+C Extra\sdefenses\sagainst\sinteger\soverflow\sin\sthe\sdecimal\sextension.
+D 2025-10-14T14:03:09.126
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -369,7 +369,7 @@ F ext/misc/completion.c c27b64fdd0943c1b7f152376599814cee2641f7d67a7bb9bd2b957c2
 F ext/misc/compress.c 2c79a74330e0e0ba6cb3f7397f8ba5af12d46377ef5d3ee075e12dd8a6ed57f0
 F ext/misc/csv.c 7cae8c2666a058a58fb8994ed2457339a06c97d31c251d9a8445cdd966629890
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
-F ext/misc/decimal.c 96a0ccd0b5f28720271d8e4409066ad4e2804d6987a9c1042016774dded79df8
+F ext/misc/decimal.c d4883de142f6dcd36eda23da40b55e2b51374e7b01eb54a7173940191389fc5e
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
 F ext/misc/fileio.c 88cb2e5744296de6638af02ef6349fd468c2eb5e5f41ba405f88d9b4ad500f8e
@@ -2170,8 +2170,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d98d5abf6d27c5359ff8c797ad57394b96074e47010bc4c24120ba69a967dc3c
-R 76d54a7a608a3f3da51434ba1a9bb1ba
-U stephan
-Z efcf9de719ad345452815fbe6955044e
+P 0dbb13863b3ff1da1be664967ac05c79cf34f7a78def05fe4f6407c06cb4322a
+R 7e333075895f8edd4f7647c4292e64bd
+U drh
+Z 0373c2483e2c2a255425cc55e633179b
 # Remove this line to create a well-formed Fossil manifest.
