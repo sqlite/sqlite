@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_db_status64()\sinterface\sand\sthe\nSQLITE_DBSTATUS_TEMPSTORE_SPILL\soption\sfor\suse\sin\sthat\sinterface.
-D 2025-10-14T17:09:06.733
+C Add\sthe\stest/testloadext.c\sloadable\sextension\sto\stest\sthe\sability\sto\suse\nthe\slatest\sAPIs\susing\sthe\sloadable\sextension\smechanism.
+D 2025-10-14T17:50:55.573
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1692,6 +1692,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
+F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27 w test/test-ext.c
 F test/testrunner.tcl 9da764507f6bc752961555c0beb58eb6584b9fb0f989342c7eaab3336380f560 x
 F test/testrunner_data.tcl c507a9afa911c03446ed90442ffd4a98aca02882c3d51bd1177c24795674def8
 F test/testrunner_estwork.tcl 7927a84327259a32854926f68a75292e33a61e7e052fdbfcb01f18696c99c724
@@ -2170,9 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f96eaeaa8c51c20f8d389bfd6d0d6371e8bb29ff7e8eaf3a0bcb35cb2b73338 2ebd7330312f3ee4674c343b7a19b703f1f89611a6846a0e2be39867f9895522
-R 121000212212aa3f111559e6bc700918
-T +closed 2ebd7330312f3ee4674c343b7a19b703f1f89611a6846a0e2be39867f9895522
+P 9f8739ddea6ec6d8890d0e8f6a0143773a008e4f96bd02a48d4bfebb3f9b72fe
+R 3bcf978653b0a415b88bad0bfdf06784
 U drh
-Z 182d0b439b0bbac3a39e1ec11f805251
+Z b8c7c6f6653660ab0ef54150557725dd
 # Remove this line to create a well-formed Fossil manifest.
