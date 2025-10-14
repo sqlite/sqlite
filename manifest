@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\senhancements\sinto\sthe\sdbstatus-spill\sbranch.
-D 2025-10-14T11:18:45.824
+C Make\sthe\snew\ssqlite3_db_status64()\sAPI\saccessible\sto\sextensions.
+D 2025-10-14T16:57:50.116
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -608,7 +608,7 @@ F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72
 F ext/wasm/api/sqlite3-wasm.c 929d4c5619a321fa2fb9ef921ec8e4ccfdac27745df543062b267f9f928de3a7
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
-F ext/wasm/c-pp-lite.c 16250600fe18723e0cee4227161101ccb54f10fa6136bd208b479cf596df0f75 w ext/wasm/c-pp.c
+F ext/wasm/c-pp-lite.c 16250600fe18723e0cee4227161101ccb54f10fa6136bd208b479cf596df0f75
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
@@ -680,7 +680,7 @@ F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 611e07299d72ff04bbcb9e7109183467e30925d203c3e121ef9bb3cf6876289b
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
-F src/carray.c a6f26cb349ca700d706c0e76d5b2895d76e2a1c392a2b909cf543a0dd4d4d047 w ext/misc/carray.c
+F src/carray.c a6f26cb349ca700d706c0e76d5b2895d76e2a1c392a2b909cf543a0dd4d4d047
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
 F src/dbpage.c 081c59d84f187aa0eb48d98faf9578a00bde360f68438d646a86b618653d2479
@@ -698,7 +698,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
 F src/json.c fb031340edee159c07ad37dbe668ffe945ed86f525b0eb3822e4a67cbc498a72
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c 3326993a09553c6b38cc52d4f9cc2e47dcfc8736ffd853fcb0cb49bc9e3d523c
+F src/loadext.c a3bc9a2522dc3b960e38b7582d1818f6245a49289387c2c7b19f27bfeabf1e81
 F src/main.c ce69a2650e3d359ed6a8a2867ccafb27ac62ce1d39f3120a84ff513320952a6c
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -739,7 +739,7 @@ F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
 F src/shell.c.in 8f83f3568b5e0bea36a863f26a2a0b2ace99ee3b51513565b7fc27e2920b80f7
 F src/sqlite.h.in 10faecc456d3962c7cedae70d69305f7c80129f28dd8524bd8a06b3eac955e54
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
-F src/sqlite3ext.h 3f0c4ed6934e7309a61c6f3c30f70a30a5b869f785bb3d9f721a36c5e4359126
+F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
 F src/sqliteInt.h e16df0914718acba6fb7e5f03055f7cf519d0d61314c78ec2f5c9f6a45608d86
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c d19dea65cdd7005b5a05a28949b9bf3c6b3922defd07957bdd97178e11a44aaa
@@ -2170,8 +2170,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ee6102d4fe35b7b914aa2dc7c7dd37460910efedc9b2d192c2fb8cb0e6a1fd4e 27927519696dcb78ff72e245158ea6d33a1b2c3d4da314d4d0283c47d847c3da
-R 05ad14a6998e3772f6e71d8b936854bd
+P 55f2613c1bacddb05902d4d5dac3d2b49b91053e6249dd926bb953c763eafeb0
+R 02bd0dd448b3c2e1237f1b7020c30d38
 U drh
-Z 620674b773144c90fa717af768dc5d74
+Z 356971a1d1f288491d5eedfb4cf2b2fc
 # Remove this line to create a well-formed Fossil manifest.
