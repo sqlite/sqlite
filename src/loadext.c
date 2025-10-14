@@ -521,7 +521,8 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.50.0 and later */
   sqlite3_setlk_timeout,
   /* Version 3.51.0 and later */
-  sqlite3_set_errmsg
+  sqlite3_set_errmsg,
+  sqlite3_db_status64
 };
 
 /* True if x is the directory separator character
