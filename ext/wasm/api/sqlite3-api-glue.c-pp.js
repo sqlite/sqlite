@@ -480,9 +480,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        build is generally incompatible with SEE's license conditions.
        The project's official stance on WASM builds of SEE is: it is
        permitted for use internally within organizations which have
-       licensed SEE, but not for public sites because exposing an SEE
-       build of sqlite3.wasm effectively provides all clients with a
-       working copy of SEE.
+       licensed SEE, but not for sites made available to the public or
+       to unlicensed end users because exposing an SEE build of
+       sqlite3.wasm effectively provides all clients with a working
+       copy of SEE.
     */
     bindingSignatures.core.push(
       ["sqlite3_key", "int", "sqlite3*", "string", "int"],
