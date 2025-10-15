@@ -657,7 +657,6 @@ static void CmppLevel_pop(CmppTokenizer * const t);
 */
 static CmppLevel * CmppLevel_get(CmppTokenizer * const t);
 
-#define CMPPLEVEL_GET
 /*
 ** Policies for how to handle undefined @tokens@ when performing
 ** content filtering.
@@ -1101,6 +1100,7 @@ static void db_define_add_file(const char * zKey){
              kvp.v.z ? kvp.v.z : ""));
 }
 
+#define ustr_c(X) ((unsigned char const *)X)
 
 static inline unsigned int cmpp_strlen(char const *z, int n){
   return n<0 ? (int)strlen(z) : (unsigned)n;
@@ -1284,9 +1284,11 @@ void g_FileWrapper_close(FileWrapper *fp){
 }
 
 static void g_cleanup(int bCloseFileChain){
+  if( g.db ){
 #define E(N,S) sqlite3_finalize(g.stmt.N); g.stmt.N = 0;
   GStmt_map(E)
 #undef E
+  }
   if( bCloseFileChain ){
     FileWrapper * fpNext = 0;
     for( FileWrapper * fp=g.pFiles; fp; fp=fpNext ){
@@ -1296,7 +1298,10 @@ static void g_cleanup(int bCloseFileChain){
     }
   }
   FileWrapper_close(&g.out);
-  if(g.db) sqlite3_close(g.db);
+  if(g.db){
+    sqlite3_close(g.db);
+    g.db = 0;
+  }
 }
 
 static void cmpp_atexit(void){
@@ -1449,7 +1454,11 @@ static void cmpp_t_out_expand(CmppTokenizer * const t,
                               unsigned int n);
 
 static inline int cmpp__isspace(int ch){
-  return ' '==ch || '\n'==ch || '\t'==ch || '\r'==ch;
+  return ' '==ch || '\t'==ch;
+}
+
+static inline unsigned cmpp__strlenu(unsigned char const *z, int n){
+  return n<0 ? (unsigned)strlen((char const *)z) : (unsigned)n;
 }
 
 static inline void cmpp__skip_space_c( unsigned char const **p,
@@ -1493,26 +1502,51 @@ int CmppTokenizer__delim_search(CmppTokenizer * const t){
     cmpp_t_out_expand(t, zLeft, (unsigned)(z-zLeft)); \
   } zLeft = z
   while(z < zEnd){
-    size_t const nNl = strcspn((char const *)z, "\n");
-    unsigned char const * const zNl = (z + nNl > zEnd ? zEnd : z + nNl);
-    if( nNl >= CmppArgs_BufSize /* too long */
+    size_t nNlTotal = 0;
+    unsigned char const * zNl;
+    size_t nNl2 = strcspn((char const *)z, "\n");
+    zNl = (z + nNl2 >= zEnd ? zEnd : z + nNl2);
+    if( nNl2 >= CmppArgs_BufSize /* too long */
         //|| '\n'!=(char)*zNl   /* end of input */
         /* ^^^ we have to accept a missing trailing EOL for the
            sake of -e scripts. */
     ){
+      /* we'd like to error out here, but only if we know we're
+         reading reading a directive line. */
       ++t->lineNo;
       z = zNl + 1;
       tflush;
       continue;
     }
+    nNlTotal += nNl2;
     assert( '\n'==*zNl || !*zNl );
-    //g_stderr("input: zNl=%d z=<<<%.*s>>>\n", (int)*zNl, (zNl-z), z);
+    assert( '\n'==*zNl || zNl==zEnd );
+    //g_stderr("input: zNl=%d z=<<<%.*s>>>", (int)*zNl, (zNl-z), z);
     unsigned char const * const zBOL = z;
     cmpp__skip_space_c(&z, zNl);
     if( z+nD < zNl && 0==memcmp(z, zD, nD) ){
+      /* Found a directive delimiter. */
       if( zBOL!=z ){
-        /* Do not emit space which preceeds a delimiter */
+        /* Do not emit space from the same line which preceeds a
+           delimiter */
         zLeft = z;
+      }
+      while( zNl>z && zNl<zEnd
+             && '\n'==*zNl && '\\'==zNl[-1] ){
+        /* Backslash-escaped newline: extend the token
+           to consume it all. */
+        ++t->lineNo;
+        ++zNl;
+        nNl2 = strcspn((char const *)zNl, "\n");
+        if( !nNl2 ) break;
+        nNlTotal += nNl2;
+        zNl += nNl2;
+      }
+      assert( zNl<=zEnd && "Else our input was not NUL-terminated");
+      if( nNlTotal >= CmppArgs_BufSize ){
+        fatal("Directive line is too long (%u)",
+              (unsigned)(zNl-z));
+        break;
       }
       tflush;
       t->token.zBegin = z + nD;
@@ -1521,14 +1555,16 @@ int CmppTokenizer__delim_search(CmppTokenizer * const t){
       t->token.ttype = TT_Line;
       t->token.lineNo = t->lineNo++;
       t->zPos = t->token.zEnd + 1;
-
-      //g_stderr("token=%.*s\n", (zNl - t->token.zBegin), t->token.zBegin);
+      if( 0 ){
+        g_stderr("token=<<%.*s>>", (t->token.zEnd - t->token.zBegin),
+                 t->token.zBegin);
+      }
       return 1;
     }
     z = zNl+1;
     ++t->lineNo;
     tflush;
-    //g_stderr0("line #%d no match\n",(int)t->lineNO);
+    //g_stderr("line #%d no match\n",(int)t->lineNo);
   }
   tflush;
   t->zPos = z;
@@ -2379,31 +2415,38 @@ void cmpp_process_keyword(CmppTokenizer * const t){
   t->args.argc = 0;
 }
 
-void cmpp_process_file(const char * zName){
-  FileWrapper fw = FileWrapper_empty;
+void cmpp_process_string(const char * zName,
+                        unsigned char const * zIn,
+                        int nIn){
+  nIn = cmpp__strlenu(zIn, nIn);
+  if( !nIn ) return;
   CmppTokenizer const * const oldTok = g.tok;
   CmppTokenizer ct = CmppTokenizer_empty;
-  g.tok = &ct;
+  ct.zName = zName;
+  ct.zBegin = zIn;
+  ct.zEnd = zIn + nIn;
+  while(cmpp_next_keyword_line(&ct)){
+    cmpp_process_keyword(&ct);
+  }
+  if(0!=ct.level.ndx){
+    CmppLevel const * const lv = CmppLevel_get(&ct);
+    fatal("Input ended inside an unterminated nested construct "
+          "opened at [%s] line %u", zName, lv->token.lineNo);
+  }
+  CmppTokenizer_cleanup(&ct);
+  g.tok = oldTok;
+}
+
+void cmpp_process_file(const char * zName){
+  FileWrapper fw = FileWrapper_empty;
   FileWrapper_open(&fw, zName, "r");
   g_FileWrapper_link(&fw);
   FileWrapper_slurp(&fw);
   g_debug(1,("Read %u byte(s) from [%s]\n", fw.nContent, fw.zName));
   if( fw.zContent ){
-    ct.zName = zName;
-    ct.zBegin = fw.zContent;
-    ct.zEnd = fw.zContent + fw.nContent;
-    while(cmpp_next_keyword_line(&ct)){
-      cmpp_process_keyword(&ct);
-    }
+    cmpp_process_string(zName, fw.zContent, fw.nContent);
   }
   g_FileWrapper_close(&fw);
-  if(0!=ct.level.ndx){
-    CmppLevel * const lv = CmppLevel_get(&ct);
-    fatal("Input ended inside an unterminated nested construct"
-          "opened at [%s] line %u", zName, lv->token.lineNo);
-  }
-  CmppTokenizer_cleanup(&ct);
-  g.tok = oldTok;
 }
 
 
@@ -2542,6 +2585,9 @@ int main(int argc, char const * const * argv){
 #define ISFLAG(X) else if(M(X))
 #define ISFLAG2(X,Y) else if(M(X) || M(Y))
 #define NOVAL if( zVal ) fatal("Unexpected value for %s", zArg)
+#define g_out_open \
+  if(!g.out.pFile) FileWrapper_open(&g.out, "-", "w");    \
+  if(!inclCount){ db_include_dir_add("."); ++inclCount; } (void)0
 
   g.zArgv0 = argv[0];
 #define DOIT if(doIt)
@@ -2620,12 +2666,16 @@ int main(int argc, char const * const * argv){
       do_infile:
         DOIT {
           ++nFile;
-          if(!g.out.pFile) FileWrapper_open(&g.out, "-", "w");
-          if(!inclCount){
-            db_include_dir_add(".");
-            ++inclCount;
-          }
+          g_out_open;
           cmpp_process_file(zVal);
+        }
+      }
+      ISFLAG("e"){
+        ARGVAL;
+        DOIT {
+          ++nFile;
+          g_out_open;
+          cmpp_process_string("-e script", ustr_c(zVal), -1);
         }
       }
       ISFLAG("@"){
@@ -2705,6 +2755,6 @@ int main(int argc, char const * const * argv){
     }
   }
   end:
-  g_cleanup(0);
+  g_cleanup(1);
   return rc ? EXIT_FAILURE : EXIT_SUCCESS;
 }
