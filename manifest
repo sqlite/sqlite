@@ -1,5 +1,5 @@
-C Fix\san\soff-by-one\sin\sc-pp-lite.c\swhich\scould\scause\s@token@-processed\soutput\sto\sget\sone\sduplicated\sbyte.
-D 2025-10-16T01:44:03.950
+C In\sdbpage.c,\sdisable\struncation\son\sany\supdate\serror,\sincluding\serrors\nin\ssqlite3PagerWrite().
+D 2025-10-16T12:43:36.694
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -683,7 +683,7 @@ F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c85
 F src/carray.c a6f26cb349ca700d706c0e76d5b2895d76e2a1c392a2b909cf543a0dd4d4d047
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
-F src/dbpage.c 081c59d84f187aa0eb48d98faf9578a00bde360f68438d646a86b618653d2479
+F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 4d63c8f6d50fe20637de8bdaf57757a0e424e4ac5e2c3313e621d64727a48a1c
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc2a026901b1a12526b92fff36d7acc226e554c9f351e6261c7ffd4887bcc337
-R aefa3e1273932bb6964a1ffca99335de
-U stephan
-Z 1edba660befee7f8d8136758f8fe56d1
+P aa2f4c51604f4d4286c8a1ec7eaa6251892471e32087af695712513ee620ea46
+R 3c84ff97e4cc9cfa1f72b857c5c1cfd3
+U drh
+Z 61972ad5e68a5d0c8e25b8505d959124
 # Remove this line to create a well-formed Fossil manifest.
