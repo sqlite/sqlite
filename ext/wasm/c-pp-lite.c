@@ -386,6 +386,9 @@ static void g_stderrv(char const *zFmt, va_list);
   if(lvl<=g.flags.doDebug) g_stderr("%s @ %s():%d: ",g.zArgv0,__func__,__LINE__); \
   if(lvl<=g.flags.doDebug) g_stderr pfexpr
 
+#define g_warn(zFmt,...) g_stderr("%s:%d %s() " zFmt "\n", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define g_warn0(zMsg) g_stderr("%s:%d %s() %s\n", __FILE__, __LINE__, __func__, zMsg)
+
 void cmpp_free(void *p){
   sqlite3_free(p);
 }
@@ -1468,6 +1471,9 @@ static inline void cmpp__skip_space_c( unsigned char const **p,
   *p = z;
 }
 
+#define ustr_c(X) ((unsigned char const *)X)
+//#define ustr_nc(X) ((unsigned char *)X)
+
 /**
    Scan [t->zPos,t->zEnd) for a derective delimiter. Emits any
    non-delimiter output found along the way.
@@ -1477,7 +1483,7 @@ static inline void cmpp__skip_space_c( unsigned char const **p,
    If a delimiter is found, it updates t->token and returns 0.
    On no match returns 0.
 */
-//static
+static
 int CmppTokenizer__delim_search(CmppTokenizer * const t){
   if(!t->zPos) t->zPos = t->zBegin;
   if( t->zPos>=t->zEnd ){
@@ -1621,16 +1627,21 @@ static void cmpp_t_out_expand(CmppTokenizer * const t,
   unsigned char const chEol = (unsigned char)'\n';
   int state = 0 /* 0==looking for opening @
                 ** 1==looking for closing @ */;
+  if( 0 ){
+    g_warn("zLeft=%d %c", (int)*zLeft, *zLeft);
+  }
 #define tflush \
+  if(z>zEnd) z=zEnd; \
   if(zLeft<z){ cmpp_t_out(t, zLeft, (z-zLeft)); } zLeft = z
   for( ; z<zEnd; ++z ){
     zLeft = z;
     for( ;z<zEnd; ++z ){
       if( chEol==*z ){
         state = 0;
-        ++z /*ensure that we flush the EOL now*/;
+        //This ++z/--z thing breaks stuff.
+        //++z /*ensure that we flush the EOL now*/;
         tflush;
-        --z/*And make sure that zLeft does the right thing*/;
+        //--z/*And make sure that zLeft does the right thing*/;
         break;
       }
       if( g.delim.chAt==*z ){
