@@ -1,5 +1,5 @@
-C Improve\sperformance\sof\sthe\sshell\stool\s".ar"\scommand\swhen\sit\sis\sgiven\sa\slarge\snumber\sof\sarguments.
-D 2025-10-16T14:17:30.886
+C An\sattempted\sworkaround\sfor\sa\sMacOS-ism\swhich\scauses\sthe\sstrchrnul()\sfeature\stest\sto\sincorrectly\spass\sthough\sstrchrnul()\sis\snot\savailable.\sThis\snew\scheck\sworks\son\sLinux\sbut\sis\sas-yet\suntested\son\sthe\saffected\ssystems.\sSee\s[forum:95edc7a8d7d1de59|forum\spost\s95edc7a8d7d1de59].
+D 2025-10-16T17:17:13.261
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl ec30c4bc301b6e9eb937655744a7315f863f804fc66400d975bcf9352ac96a1d
-F autosetup/sqlite-config.tcl a616f2e33f1921a5bd7932312a88812a01f80af3d76250e479836e0e15ce9ee1
+F autosetup/sqlite-config.tcl caae4ad993b400c469b7e49f4a26c28c5d7ac1389d91906acaff6ed30bcd68af
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl aee092fc71986d1272b835ea7492bb55ffc213a289502e4f14da80cf67b7e3c3
@@ -2171,9 +2171,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eee5ba5d8a9d01000345185731c531eb84d3cb8e81bf429506c449d962aad843 0398897067ca5cdedfef0ce7a034ba6d5a2ce6104605ef4ed1c7549499435b44
-R 69bf9b07c2856ea5d1fb07b743ccfb05
-T +closed 0398897067ca5cdedfef0ce7a034ba6d5a2ce6104605ef4ed1c7549499435b44
-U dan
-Z 60e9460e62c753d142889cd911a84f95
+P 8fed9de84bce01e88e0e8237e245c0ff9fe9f46394c603887e360658f5ef1ac1
+R d8a8694a906e7164eca073d4d368c7c0
+T *branch * strchrnul-feature-test
+T *sym-strchrnul-feature-test *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z a4f130ab081bd7b121277382a8bf76e0
 # Remove this line to create a well-formed Fossil manifest.

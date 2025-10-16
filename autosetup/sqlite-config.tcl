@@ -616,6 +616,21 @@ proc sqlite-check-common-bins {} {
   }
 }
 
+# An attempt at a workaround for the strchrnul() check on some Mac
+# platforms: https://sqlite.org/forum/forumpost/95edc7a8d7d1de59
+proc sqlite-check-strchrnul {} {
+  msg-checking "Checking for strchrnul()... "
+  if {[cctest -link 1 \
+         -includes {<string.h>} \
+         -code {(void)strchrnul("foo",'f');}]} {
+    define HAVE_STRCHRNUL 1
+    msg-result yes
+  } else {
+    define HAVE_STRCHRNUL 0
+    msg-result no
+  }
+}
+
 ########################################################################
 # Run checks for system-level includes and libs which are common to
 # both the canonical build and the "autoconf" bundle.
@@ -631,7 +646,8 @@ proc sqlite-check-common-system-deps {} {
 
   # Check for needed/wanted functions
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
-    strchrnul usleep utime pread pread64 pwrite pwrite64
+    usleep utime pread pread64 pwrite pwrite64
+  sqlite-check-strchrnul
 
   apply {{} {
     set ldrt ""
