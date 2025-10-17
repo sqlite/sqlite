@@ -10447,6 +10447,7 @@ static int do_meta_command(char *zLine, ShellState *p){
                           "ERROR: unknown option: \"%s\". Usage:\n", azArg[i]);
           showHelp(p->out, azArg[0]);
           rc = 1;
+          sqlite3_free(zFile);
           goto meta_command_exit;
         }
       }else if( zFile==0 && eMode==0 ){
