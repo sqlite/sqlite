@@ -1,5 +1,5 @@
-C Increase\sthe\srange\sof\sinteger\sindexes\sin\sthe\sthe\smerge()\sfamily\sof\nSQL\sfunctions.
-D 2025-10-18T11:04:03.155
+C Use\s64-bit\smemory\sallocations\severywhere\sin\sthe\sexpert\sextension.
+D 2025-10-18T11:19:02.534
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -72,7 +72,7 @@ F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
 F ext/expert/expert1.test 1d2da6606623b57bb47064e02140823ce1daecd4cacbf402c73ad3473d7f000c
-F ext/expert/sqlite3expert.c cf4b1e5584862f486a4c6014ddb081831f1c512065dcf35644638d57179979d6
+F ext/expert/sqlite3expert.c 546010043fbec93544f762de5161b3d553165859e6bd853c4b85c05f93484260
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c c395134bd6d4efa594a7d26578a1cb624c4027b79b4b5fcd44736c5ef1f5f725
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d1044bc0616fd20c63ca3b627ad0a116256870a082a72da26f98fb0f59ca44fd
-R 173a686e3ee4f072a9a9c01363ab9ac0
+P 8d3943890ef3b533df35c4784c2a42c52503a4d9c3dbe67241510d8b70669b48
+R 30ca887e5892e08430dcd6d7675ed911
 U drh
-Z 67c06046027313715a3e1ac74b43000b
+Z d1efebe195cd18311bfce7ae9c07159a
 # Remove this line to create a well-formed Fossil manifest.
