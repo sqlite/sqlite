@@ -2750,8 +2750,8 @@ static void signFunc(
 */
 typedef struct Percentile Percentile;
 struct Percentile {
-  unsigned nAlloc;     /* Number of slots allocated for a[] */
-  unsigned nUsed;      /* Number of slots actually used in a[] */
+  u64 nAlloc;          /* Number of slots allocated for a[] */
+  u64 nUsed;           /* Number of slots actually used in a[] */
   char bSorted;        /* True if a[] is already in sorted order */
   char bKeepSorted;    /* True if advantageous to keep a[] sorted */
   char bPctValid;      /* True if rPct is valid */
@@ -2788,11 +2788,11 @@ static int percentSameValue(double a, double b){
 ** order.  The smallest return value in this case will be 0, and
 ** the largest return value will be p->nUsed.
 */
-static int percentBinarySearch(Percentile *p, double y, int bExact){
-  int iFirst = 0;              /* First element of search range */
-  int iLast = p->nUsed - 1;    /* Last element of search range */
+static i64 percentBinarySearch(Percentile *p, double y, int bExact){
+  i64 iFirst = 0;                   /* First element of search range */
+  i64 iLast = (i64)p->nUsed - 1;    /* Last element of search range */
   while( iLast>=iFirst ){
-    int iMid = (iFirst+iLast)/2;
+    i64 iMid = (iFirst+iLast)/2;
     double x = p->a[iMid];
     if( x<y ){
       iFirst = iMid + 1;
@@ -2895,7 +2895,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
 
   /* Allocate and store the Y */
   if( p->nUsed>=p->nAlloc ){
-    unsigned n = p->nAlloc*2 + 250;
+    u64 n = p->nAlloc*2 + 250;
     double *a = sqlite3_realloc64(p->a, sizeof(double)*n);
     if( a==0 ){
       sqlite3_free(p->a);
@@ -2912,7 +2912,7 @@ static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
   }else if( !p->bSorted || y>=p->a[p->nUsed-1] ){
     p->a[p->nUsed++] = y;
   }else if( p->bKeepSorted ){
-    int i;
+    i64 i;
     i = percentBinarySearch(p, y, 0);
     if( i<(int)p->nUsed ){
       memmove(&p->a[i+1], &p->a[i], (p->nUsed-i)*sizeof(p->a[0]));
@@ -2997,7 +2997,7 @@ static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
   Percentile *p;
   int eType;
   double y;
-  int i;
+  i64 i;
   assert( argc==2 || argc==1 );
 
   /* Allocate the session context. */
