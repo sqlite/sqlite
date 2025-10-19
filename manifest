@@ -1,5 +1,5 @@
-C Use\s64-bit\smemory\sallocations\severywhere\sin\sthe\sexpert\sextension.
-D 2025-10-18T11:19:02.534
+C Reduce\sthe\smaximum\ssize\sof\sLIKE\sand\sGLOB\spatterns\sin\sthe\sossfuzz.c\stest\nmodule\sto\savoid\sfalse-positive\sinfinite\sloop\sreports\sfrom\sOSS-Fuzz\sbased\non\slong\sand\scomplex\sfuzzer-generated\sLIKE/GLOB\spatterns\sthat\sare\snot\sactually\ninfinite\sloops,\sbut\swhich\sdo\stake\sa\slong\stime\sto\sresolve.
+D 2025-10-19T17:30:07.855
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1475,7 +1475,7 @@ F test/orderby9.test 87fb9548debcc2cd141c5299002dd94672fa76a3
 F test/orderbyA.test df608e59efc2ef50c1eddf1a773b272de3252e9401bfec86d04b52fd973866d5
 F test/orderbyB.test 32576c7b138105bc72f7fbf33bd320ca3a7d303641fc939e0e56af6cba884b3d
 F test/oserror.test ee3fad06ec8671c4d047c2c92a567fc2e0e8161caaec7edd6d48325c5ac97f30
-F test/ossfuzz.c 9636dad2092a05a32110df0ca06713038dd0c43dd89a77dabe4b8b0d71096715
+F test/ossfuzz.c b5d232d9717fc999a121c82c4880ae5b9d7fb3ae55d2d87a8da906bc80020906
 F test/ossshell.c f125c5bd16e537a2549aa579b328dd1c59905e7ab1338dfc210e755bb7b69f17
 F test/ovfl.test 199c482696defceacee8c8e0e0ef36da62726b2f
 F test/pager1.test b083c2d5d89df8e979658d9320bfc0b9d50b4ef8ae1d9e115a692ff0b9768393
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d3943890ef3b533df35c4784c2a42c52503a4d9c3dbe67241510d8b70669b48
-R 30ca887e5892e08430dcd6d7675ed911
+P 6caf793b8f406f5089e3811591bc69384646df16ee18d63bd63760eaaa95d122
+R 69fa379b6b2c39c2868c3ce3729f3859
 U drh
-Z d1efebe195cd18311bfce7ae9c07159a
+Z 34daa97b3470f94f840fcd2ff082eed1
 # Remove this line to create a well-formed Fossil manifest.
