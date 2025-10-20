@@ -14,6 +14,7 @@
 */
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "sqlite3.h"
 #include "resfmt.h"
 
@@ -44,7 +45,7 @@ static void tempFreeAll(void){
 }
 
 /* Allocate memory that will be freed all at once by freeall() */
-static void *tempMalloc(unsigned n){
+static void *tempMalloc(size_t n){
   memblock *p;
   if( n>0x10000000 ) checkOOM(0);
   p = sqlite3_malloc64( n+sizeof(memblock) );
@@ -52,6 +53,19 @@ static void *tempMalloc(unsigned n){
   p->pNext = pToFree;
   pToFree = p;
   return (void*)&pToFree[1];
+}
+
+/* Make a copy of a string using tempMalloc() */
+static char *tempStrdup(char *zIn){
+  size_t n;
+  char *z;
+  if( zIn==0 ) zIn = "";
+  n  = strlen(zIn);
+  if( n>0x10000000 ) checkOOM(0);
+  z = tempMalloc( n+1 );
+  checkOOM(z);
+  memcpy(z, zIn, n+1);
+  return z;
 }
 
 /* Function used for writing to the console */
@@ -67,6 +81,7 @@ int main(int argc, char **argv){
   sqlite3_stmt *pStmt;
   int rc;
   int lineNum = 0;
+  int bUseWriter = 1;
   sqlite3_resfmt_spec spec;
   char zLine[1000];
 
@@ -83,9 +98,15 @@ int main(int argc, char **argv){
   }
   memset(&spec, 0, sizeof(spec));
   spec.iVersion = 1;
-  spec.eFormat = RESFMT_Line;
+  spec.eFormat = RESFMT_List;
   spec.xWrite = testWriter;
   pBuf = sqlite3_str_new(0);
+  rc = sqlite3_open(":memory:", &db);
+  if( rc ){
+    fprintf(stderr, "unable to open an in-memory database: %s\n",
+            sqlite3_errmsg(db));
+    exit(1);
+  }
   while( fgets(zLine, sizeof(zLine), pSrc) ){
     size_t n = strlen(zLine);
     lineNum++;
@@ -104,38 +125,114 @@ int main(int argc, char **argv){
       }
     }else
     if( strcmp(zLine, "--go")==0 ){
-      char *zSql;
+      const char *zSql, *zTail;
       sqlite3_resfmt *pFmt;
       int iErr = 0;
       char *zErr = 0;
+      int n;
       if( db==0 ){
         fprintf(stderr, "%s:%d: database not open\n", zSrc, lineNum);
         exit(1);
       }
       zSql = sqlite3_str_value(pBuf);
       pStmt = 0;
-      rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-      if( rc || pStmt==0 ){
-        fprintf(stderr, "%s:%d: sqlite3_prepare() fails: %s\n",
-                zSrc, lineNum, sqlite3_errmsg(db));
+      while( zSql[0] ){
+        rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zTail);
+        if( rc || pStmt==0 ){
+          fprintf(stderr, "%s:%d: sqlite3_prepare() fails: %s\n",
+                  zSrc, lineNum, sqlite3_errmsg(db));
+          sqlite3_finalize(pStmt);
+          break;
+        }
+        zSql = sqlite3_sql(pStmt);
+        while( isspace(zSql[0]) ) zSql++;
+        n = (int)strlen(zSql);
+        while( n>0 && isspace(zSql[n-1]) ) n--;
+        if( n>0 ){
+          char *zOut = 0;
+          printf("/* %.*s */\n", n, zSql);
+          if( bUseWriter ){
+            spec.pzOutput = 0;
+            spec.xWrite = testWriter;
+          }else{
+            spec.pzOutput = &zOut;
+            spec.xWrite = 0;
+          }
+          pFmt = sqlite3_resfmt_begin(pStmt, &spec);
+          while( sqlite3_step(pStmt)==SQLITE_ROW ){
+            sqlite3_resfmt_row(pFmt);
+          }
+          rc = sqlite3_resfmt_finish(pFmt, &iErr, &zErr);
+          if( !bUseWriter && zOut ){
+            fputs(zOut, stdout);
+            sqlite3_free(zOut);
+          }
+          printf("/* rc=%d.  error-code=%d.  error-message=%s */\n",
+                 rc, iErr, zErr ? zErr : "NULL");
+          sqlite3_free(zErr);
+        }
+        sqlite3_finalize(pStmt);
+        pStmt = 0;
+        zSql = zTail;
       }
-      pFmt = sqlite3_resfmt_begin(pStmt, &spec);
-      while( sqlite3_step(pStmt)==SQLITE_ROW ){
-        sqlite3_resfmt_row(pFmt);
-      }
-      rc = sqlite3_resfmt_finish(pFmt, &iErr, &zErr);
-      printf("rc=%d.  error-code=%d.  error-message=%s\n",
-             rc, iErr, zErr ? zErr : "NULL");
-      sqlite3_free(zErr);
-      sqlite3_finalize(pStmt);
-      pStmt = 0;
       sqlite3_str_reset(pBuf);
+    }else
+    if( strncmp(zLine, "--eFormat=", 10)==0 ){
+      const struct { const char *zFmt; int eMode; } aFmt[] = {
+         { "line",     RESFMT_Line,     },
+         { "column",   RESFMT_Column,   },
+         { "list",     RESFMT_List,     },
+         { "html",     RESFMT_Html,     },
+         { "insert",   RESFMT_Insert,   },
+         { "tcl",      RESFMT_Tcl,      },
+         { "csv",      RESFMT_Csv,      },
+         { "explain",  RESFMT_Explain,  },
+         { "pretty",   RESFMT_Pretty,   },
+         { "eqp",      RESFMT_EQP,      },
+         { "json",     RESFMT_Json,     },
+         { "markdown", RESFMT_Markdown, },
+         { "table",    RESFMT_Table,    },
+         { "box",      RESFMT_Box,      },
+         { "count",    RESFMT_Count,    },
+         { "off",      RESFMT_Off,      },
+         { "scanexp",  RESFMT_ScanExp,  },
+         { "www",      RESFMT_Www,      },
+      };
+      int i;
+      for(i=0; i<sizeof(aFmt)/sizeof(aFmt[0]); i++){
+        if( strcmp(aFmt[i].zFmt,&zLine[10])==0 ){
+          spec.eFormat = aFmt[i].eMode;
+          break;
+        }
+      }
+      if( i>=sizeof(aFmt)/sizeof(aFmt[0]) ){
+        fprintf(stderr, "%s:%d: no such format: \"%s\"\n",
+                zSrc, lineNum, &zLine[10]);
+      }
+    }else
+    if( strncmp(zLine, "--bQuote=", 9)==0 ){
+      spec.bQuote = atoi(&zLine[9])!=0;
+    }else
+    if( strncmp(zLine, "--bShowCNames=", 14)==0 ){
+      spec.bShowCNames = atoi(&zLine[14])!=0;
+    }else
+    if( strncmp(zLine, "--zNull=", 8)==0 ){
+      spec.zNull = tempStrdup(&zLine[8]);
+    }else
+    if( strncmp(zLine, "--zColumnSep=", 13)==0 ){
+      spec.zColumnSep = tempStrdup(&zLine[13]);
+    }else
+    if( strncmp(zLine, "--zRowSep=", 10)==0 ){
+      spec.zRowSep = tempStrdup(&zLine[10]);
     }else
     if( strcmp(zLine, "--exit")==0 ){
       break;
     }else
+    if( strncmp(zLine, "--use-writer=",13)==0 ){
+      bUseWriter = atoi(&zLine[13])!=0;
+    }else
     {
-      if( sqlite3_str_length(pBuf) ) sqlite3_str_appendchar(pBuf, ' ', 1);
+      if( sqlite3_str_length(pBuf) ) sqlite3_str_append(pBuf, "\n", 1);
       sqlite3_str_appendall(pBuf, zLine);
     }
   }

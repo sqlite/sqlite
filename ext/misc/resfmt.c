@@ -41,25 +41,28 @@ static void resfmtFree(sqlite3_resfmt *p){
 }
 
 /*
-** Finish rendering the results
+** If xWrite is defined, send all content of pOut to xWrite and
+** reset pOut.
 */
-int sqlite3_resfmt_finish(sqlite3_resfmt *p, int *piErr, char **pzErrMsg){
-  if( p==0 ){
-    return SQLITE_OK;
+static void resfmtWrite(sqlite3_resfmt *p){
+  int n;
+  if( p->spec.xWrite && (n = sqlite3_str_length(p->pOut))>0 ){
+    p->spec.xWrite(p->spec.pWriteArg,
+               (const unsigned char*)sqlite3_str_value(p->pOut),
+               (size_t)n);
+    sqlite3_str_reset(p->pOut);
   }
-  if( p->spec.pzOutput ){
-    *p->spec.pzOutput = sqlite3_str_finish(p->pOut);
-    p->pOut = 0;
+}
+
+/*
+** Encode text appropriately and append it to p->pOut.
+*/
+static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
+  if( p->spec.bQuote ){
+    sqlite3_str_appendf(p->pOut, "%Q", zTxt);
+  }else{
+    sqlite3_str_appendall(p->pOut, zTxt);
   }
-  if( piErr ){
-    *piErr = p->iErr;
-  }
-  if( pzErrMsg ){
-    *pzErrMsg = sqlite3_str_finish(p->pErr);
-    p->pErr = 0;
-  }
-  resfmtFree(p); 
-  return SQLITE_OK;
 }
 
 /*
@@ -94,21 +97,26 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
       break;
     }
     case SQLITE_BLOB: {
-      int iStart = sqlite3_str_length(p->pOut);
-      int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
-      int i, j;
-      char *zVal;
-      const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
-      sqlite3_str_append(p->pOut, "x'", 2);
-      sqlite3_str_appendchar(p->pOut, nBlob, ' ');
-      sqlite3_str_appendchar(p->pOut, nBlob, ' ');
-      sqlite3_str_appendchar(p->pOut, 1, '\'');
-      if( sqlite3_str_errcode(p->pOut) ) return;
-      zVal = sqlite3_str_value(p->pOut);
-      for(i=0, j=iStart+2; i<nBlob; i++, j+=2){
-        unsigned char c = a[i];
-        zVal[j] = "0123456789abcdef"[(c>>4)&0xf];
-        zVal[j+1] = "0123456789abcdef"[(c)&0xf];
+      if( p->spec.bQuote ){
+        int iStart = sqlite3_str_length(p->pOut);
+        int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
+        int i, j;
+        char *zVal;
+        const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
+        sqlite3_str_append(p->pOut, "x'", 2);
+        sqlite3_str_appendchar(p->pOut, nBlob, ' ');
+        sqlite3_str_appendchar(p->pOut, nBlob, ' ');
+        sqlite3_str_appendchar(p->pOut, 1, '\'');
+        if( sqlite3_str_errcode(p->pOut) ) return;
+        zVal = sqlite3_str_value(p->pOut);
+        for(i=0, j=iStart+2; i<nBlob; i++, j+=2){
+          unsigned char c = a[i];
+          zVal[j] = "0123456789abcdef"[(c>>4)&0xf];
+          zVal[j+1] = "0123456789abcdef"[(c)&0xf];
+        }
+      }else{
+        const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
+        sqlite3_str_appendall(p->pOut, zTxt);
       }
       break;
     }
@@ -118,27 +126,9 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
     }
     case SQLITE_TEXT: {
       const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
-      if( p->spec.bQuote ){
-        sqlite3_str_appendf(p->pOut, "%Q", zTxt);
-      }else{
-        sqlite3_str_appendall(p->pOut, zTxt);
-      }
+      resfmtEncodeText(p, zTxt);
       break;
     }
-  }
-}
-
-/*
-** If xWrite is defined, send all content of pOut to xWrite and
-** reset pOut.
-*/
-static void resfmtWrite(sqlite3_resfmt *p){
-  int n;
-  if( p->spec.xWrite && (n = sqlite3_str_length(p->pOut))>0 ){
-    p->spec.xWrite(p->spec.pWriteArg,
-               (const unsigned char*)sqlite3_str_value(p->pOut),
-               (size_t)n);
-    sqlite3_str_reset(p->pOut);
   }
 }
 
@@ -172,8 +162,8 @@ sqlite3_resfmt *sqlite3_resfmt_begin(
   memcpy(&p->spec, pSpec, sz);
   if( p->spec.zNull==0 ) p->spec.zNull = "";
   switch( p->spec.eFormat ){
-    case RESFMT_Line: {
-      if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = ",";
+    case RESFMT_List: {
+      if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = "|";
       if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
       break;
     }
@@ -189,8 +179,21 @@ int sqlite3_resfmt_row(sqlite3_resfmt *p){
   int i;
   if( p==0 ) return SQLITE_DONE;
   switch( p->spec.eFormat ){
+    case RESFMT_Off:
+    case RESFMT_Count: {
+      /* No-op */
+      break;
+    }
     default: {  /* RESFMT_List */
-      sqlite3_str_reset(p->pOut);
+      if( p->nRow==0 && p->spec.bShowCNames ){
+        for(i=0; i<p->nCol; i++){
+          const char *zCName = sqlite3_column_name(p->pStmt, i);
+          if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
+          resfmtEncodeText(p, zCName);
+        }
+        sqlite3_str_appendall(p->pOut, p->spec.zRowSep);
+        resfmtWrite(p);
+      }
       for(i=0; i<p->nCol; i++){
         if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
         resfmtRenderValue(p, i);
@@ -200,5 +203,35 @@ int sqlite3_resfmt_row(sqlite3_resfmt *p){
       break;
     }
   }
+  p->nRow++;
   return rc;
+}
+
+/*
+** Finish rendering the results
+*/
+int sqlite3_resfmt_finish(sqlite3_resfmt *p, int *piErr, char **pzErrMsg){
+  if( p==0 ){
+    return SQLITE_OK;
+  }
+  switch( p->spec.eFormat ){
+    case RESFMT_Count: {
+      sqlite3_str_appendf(p->pOut, "%lld\n", p->nRow);
+      resfmtWrite(p);
+      break;
+    }
+  }
+  if( p->spec.pzOutput ){
+    *p->spec.pzOutput = sqlite3_str_finish(p->pOut);
+    p->pOut = 0;
+  }
+  if( piErr ){
+    *piErr = p->iErr;
+  }
+  if( pzErrMsg ){
+    *pzErrMsg = sqlite3_str_finish(p->pErr);
+    p->pErr = 0;
+  }
+  resfmtFree(p); 
+  return SQLITE_OK;
 }
