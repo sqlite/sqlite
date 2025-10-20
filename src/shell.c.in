@@ -3418,8 +3418,8 @@ static int display_stats(
   ShellState *pArg,           /* Pointer to ShellState */
   int bReset                  /* True to reset the stats */
 ){
-  int iCur;
-  int iHiwtr;
+  int iCur, iHiwtr;
+  sqlite3_int64 iCur64, iHiwtr64;
   FILE *out;
   if( pArg==0 || pArg->out==0 ) return 0;
   out = pArg->out;
@@ -3508,6 +3508,9 @@ static int display_stats(
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
            "Page cache misses:                   %d\n", iCur);
+    iHiwtr64 = iCur64 = -1;
+    sqlite3_db_status64(db, SQLITE_DBSTATUS_TEMPBUF_SPILL, &iCur64, &iHiwtr64,
+                        0);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
@@ -3516,6 +3519,10 @@ static int display_stats(
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_SPILL, &iCur, &iHiwtr, 1);
     sqlite3_fprintf(out,
            "Page cache spills:                   %d\n", iCur);
+    sqlite3_fprintf(out,
+           "Temporary data spilled to disk:      %lld\n", iCur64);
+    sqlite3_db_status64(db, SQLITE_DBSTATUS_TEMPBUF_SPILL, &iCur64, &iHiwtr64,
+                        1);
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHiwtr, bReset);
     sqlite3_fprintf(out,
@@ -3921,6 +3928,36 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
         memcpy(zBuf, &zVar[6], szVar-5);
         sqlite3_bind_text64(pStmt, i, zBuf, szVar-6, sqlite3_free, SQLITE_UTF8);
       }
+#ifdef SQLITE_ENABLE_CARRAY
+    }else if( strncmp(zVar, "$carray_", 8)==0 ){
+      static char *azColorNames[] = {
+        "azure", "black", "blue",   "brown", "cyan",   "fuchsia", "gold",
+        "gray",  "green", "indigo", "khaki", "lime",   "magenta", "maroon",
+        "navy",  "olive", "orange", "pink",  "purple", "red",     "silver",
+        "tan",   "teal",  "violet", "white", "yellow"
+      };
+      static int aPrimes[] = {
+        1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
+       53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+      };
+      /* Special bindings:  carray($carray_clr), carray($carray_primes)
+      ** with --unsafe-testing:  carray($carray_clr_p,26,'char*'),
+      **                         carray($carray_primes_p,26,'int32')
+      */
+      if( strcmp(zVar+8,"clr")==0 ){
+        sqlite3_carray_bind(pStmt,i,azColorNames,26,SQLITE_CARRAY_TEXT,0);
+      }else if( strcmp(zVar+8,"primes")==0 ){
+        sqlite3_carray_bind(pStmt,i,aPrimes,26,SQLITE_CARRAY_INT32,0);
+      }else if( strcmp(zVar+8,"clr_p")==0
+             && ShellHasFlag(pArg,SHFLG_TestingMode) ){
+        sqlite3_bind_pointer(pStmt,i,azColorNames,"carray",0);
+      }else if( strcmp(zVar+8,"primes_p")==0
+             && ShellHasFlag(pArg,SHFLG_TestingMode) ){
+        sqlite3_bind_pointer(pStmt,i,aPrimes,"carray",0);
+      }else{
+        sqlite3_bind_null(pStmt, i);
+      }
+#endif  
     }else{
       sqlite3_bind_null(pStmt, i);
     }
@@ -5194,7 +5231,7 @@ static const char *(azHelp[]) = {
   "        input text.",
 #endif
 #ifndef SQLITE_OMIT_TEST_CONTROL
-  ",imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
+  ".imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
 #endif
   ".indexes ?TABLE?         Show names of indexes",
   "                           If TABLE is specified, only show indexes for",
@@ -7836,25 +7873,41 @@ static void arWhereClause(
   char **pzWhere                  /* OUT: New WHERE clause */
 ){
   char *zWhere = 0;
-  const char *zSameOp = (pAr->bGlob)? "GLOB" : "=";
   if( *pRc==SQLITE_OK ){
     if( pAr->nArg==0 ){
       zWhere = sqlite3_mprintf("1");
     }else{
+      char *z1 = sqlite3_mprintf(pAr->bGlob ? "" : "name IN(");
+      char *z2 = sqlite3_mprintf("");
+      const char *zSep1 = "";
+      const char *zSep2 = "";
+
       int i;
-      const char *zSep = "";
-      for(i=0; i<pAr->nArg; i++){
+      for(i=0; i<pAr->nArg && z1 && z2; i++){
         const char *z = pAr->azArg[i];
-        zWhere = sqlite3_mprintf(
-          "%z%s name %s '%q' OR substr(name,1,%d) %s '%q/'",
-          zWhere, zSep, zSameOp, z, strlen30(z)+1, zSameOp, z
-        );
-        if( zWhere==0 ){
-          *pRc = SQLITE_NOMEM;
-          break;
+        int n = strlen30(z);
+
+        if( pAr->bGlob ){
+          z1 = sqlite3_mprintf("%z%sname GLOB '%q'", z1, zSep2, z);
+          z2 = sqlite3_mprintf(
+              "%z%ssubstr(name,1,%d) GLOB '%q/'", z2, zSep2, n+1,z
+          );
+        }else{
+          z1 = sqlite3_mprintf("%z%s'%q'", z1, zSep1, z);
+          z2 = sqlite3_mprintf("%z%ssubstr(name,1,%d) = '%q/'",z2,zSep2,n+1,z);
         }
-        zSep = " OR ";
+        zSep1 = ", ";
+        zSep2 = " OR ";
       }
+      if( z1==0 || z2==0 ){
+        *pRc = SQLITE_NOMEM;
+      }else{
+        zWhere = sqlite3_mprintf("(%s%s OR (name GLOB '*/*' AND (%s))) ",
+            z1, pAr->bGlob==0 ? ")" : "", z2
+        );
+      }
+      sqlite3_free(z1);
+      sqlite3_free(z2);
     }
   }
   *pzWhere = zWhere;
@@ -10394,6 +10447,7 @@ static int do_meta_command(char *zLine, ShellState *p){
                           "ERROR: unknown option: \"%s\". Usage:\n", azArg[i]);
           showHelp(p->out, azArg[0]);
           rc = 1;
+          sqlite3_free(zFile);
           goto meta_command_exit;
         }
       }else if( zFile==0 && eMode==0 ){
@@ -11634,10 +11688,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     while( sqlite3_step(pStmt)==SQLITE_ROW ){
       if( nRow>=nAlloc ){
         char **azNew;
-        int n2 = nAlloc*2 + 10;
+        sqlite3_int64 n2 = 2*(sqlite3_int64)nAlloc + 10;
         azNew = sqlite3_realloc64(azResult, sizeof(azResult[0])*n2);
         shell_check_oom(azNew);
-        nAlloc = n2;
+        nAlloc = (int)n2;
         azResult = azNew;
       }
       azResult[nRow] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
@@ -12347,7 +12401,10 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
     if( p->nWidth ) p->actualWidth = &p->colWidth[p->nWidth];
     for(j=1; j<nArg; j++){
-      p->colWidth[j-1] = (int)integerValue(azArg[j]);
+      i64 w = integerValue(azArg[j]);
+      if( w < -30000 ) w = -30000;
+      if( w > +30000 ) w = +30000;
+      p->colWidth[j-1] = (int)w;
     }
   }else
 

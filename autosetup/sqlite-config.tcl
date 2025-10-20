@@ -65,7 +65,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
   # The list of feature --flags which the --all flag implies. This
   # requires special handling in a few places.
   #
-  all-flag-enables {fts4 fts5 rtree geopoly session dbpage dbstat}
+  all-flag-enables {fts4 fts5 rtree geopoly session dbpage dbstat carray}
 
   #
   # Default value for the --all flag. Can hypothetically be modified
@@ -222,6 +222,7 @@ proc sqlite-configure {buildMode configScript} {
         session              => {Enable the SESSION extension}
         dbpage               => {Enable the sqlite3_dbpage extension}
         dbstat               => {Enable the sqlite3_dbstat extension}
+        carray=1             => {Disable the CARRAY extension}
         all=$::sqliteConfig(all-flag-default) => {$allFlagHelp}
         largefile=1
           => {This legacy flag has no effect on the library but may influence
@@ -615,6 +616,21 @@ proc sqlite-check-common-bins {} {
   }
 }
 
+# A workaround for the strchrnul() check on some Mac platforms:
+# https://sqlite.org/forum/forumpost/95edc7a8d7d1de59
+proc sqlite-check-strchrnul {} {
+  msg-checking "Checking for strchrnul()... "
+  if {[cctest -link 1 \
+         -includes {string.h} \
+         -code {(void)strchrnul("foo",'f');}]} {
+    define HAVE_STRCHRNUL 1
+    msg-result yes
+  } else {
+    define HAVE_STRCHRNUL 0
+    msg-result no
+  }
+}
+
 ########################################################################
 # Run checks for system-level includes and libs which are common to
 # both the canonical build and the "autoconf" bundle.
@@ -630,7 +646,8 @@ proc sqlite-check-common-system-deps {} {
 
   # Check for needed/wanted functions
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
-    strchrnul usleep utime pread pread64 pwrite pwrite64
+    usleep utime pread pread64 pwrite pwrite64
+  sqlite-check-strchrnul
 
   apply {{} {
     set ldrt ""
@@ -790,6 +807,7 @@ proc sqlite-handle-common-feature-flags {} {
     column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
     dbpage          -DSQLITE_ENABLE_DBPAGE_VTAB {}
     dbstat          -DSQLITE_ENABLE_DBSTAT_VTAB {}
+    carray          -DSQLITE_ENABLE_CARRAY {}
   }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
@@ -1488,7 +1506,7 @@ proc sqlite-handle-math {} {
     }
     define LDFLAGS_MATH [get-define lib_ceil]
     undefine lib_ceil
-    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS
+    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_ENABLE_PERCENTILE
     msg-result "Enabling math SQL functions"
   } {
     define LDFLAGS_MATH ""

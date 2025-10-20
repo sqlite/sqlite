@@ -1057,11 +1057,14 @@ static int recoverDatabase(sqlite3 *db){
   }
   return rc;
 }
+
 /*
 ** Special parameter binding, for testing and debugging purposes.
 **
-**     $int_NNN      ->   integer value NNN
-**     $text_TTTT    ->   floating point value TTT with destructor
+**     $int_NNN        ->   integer value NNN
+**     $text_TTTT      ->   floating point value TTT with destructor
+**     $carray_clr     ->   First argument to carray() for color names
+**     $carray_primes  ->   First argument to carray() for prime numbers
 */
 static void bindDebugParameters(sqlite3_stmt *pStmt){
   int nVar = sqlite3_bind_parameter_count(pStmt);
@@ -1069,6 +1072,24 @@ static void bindDebugParameters(sqlite3_stmt *pStmt){
   for(i=1; i<=nVar; i++){
     const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
     if( zVar==0 ) continue;
+#ifdef SQLITE_ENABLE_CARRAY
+    if( strcmp(zVar,"$carray_clr")==0 ){
+      static char *azColorNames[] = {
+        "azure", "black", "blue",   "brown", "cyan",   "fuchsia", "gold",
+        "gray",  "green", "indigo", "khaki", "lime",   "magenta", "maroon",
+        "navy",  "olive", "orange", "pink",  "purple", "red",     "silver",
+        "tan",   "teal",  "violet", "white", "yellow"
+      };
+      sqlite3_carray_bind(pStmt,i,azColorNames,26,SQLITE_CARRAY_TEXT,0);
+    }else
+    if( strcmp(zVar,"$carray_primes")==0 ){
+      static int aPrimes[] = {
+        1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
+       53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+      };
+      sqlite3_carray_bind(pStmt,i,aPrimes,26,SQLITE_CARRAY_INT32,0);
+    }else
+#endif
     if( strncmp(zVar, "$int_", 5)==0 ){
       sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
     }else

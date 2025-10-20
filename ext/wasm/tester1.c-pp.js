@@ -1353,7 +1353,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     })/*oo1.DB/Stmt.wrapHandle()*/
 
   ////////////////////////////////////////////////////////////////////
-    .t('sqlite3_db_config() and sqlite3_db_status()', function(sqlite3){
+    .t('sqlite3_db_config() and sqlite3_status()', function(sqlite3){
       let rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE, 0, 0);
       T.assert(0===rc);
       rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_MAX+1, 0);

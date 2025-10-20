@@ -613,6 +613,7 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_DBSTATUS_DEFERRED_FKS);
     DefInt(SQLITE_DBSTATUS_CACHE_USED_SHARED);
     DefInt(SQLITE_DBSTATUS_CACHE_SPILL);
+    DefInt(SQLITE_DBSTATUS_TEMPBUF_SPILL);
     DefInt(SQLITE_DBSTATUS_MAX);
   } _DefGroup;
 
