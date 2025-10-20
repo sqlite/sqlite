@@ -12,6 +12,7 @@
 ** Header file for the Result-Format or "resfmt" utility library for SQLite.
 ** See the resfmt.md documentation for additional information.
 */
+#include <stdlib.h>
 #include "sqlite3.h"
 
 /*
@@ -33,8 +34,8 @@ struct sqlite3_resfmt_spec {
   const char *zFloatFmt;      /* printf-style string for rendering floats */
   int nWidth;                 /* Number of column width parameters */
   short int *aWidth;          /* Column widths */
-  char *(*xRender)(void*,sqlite3_value*);                 /* Render a value */
-  ssize_t (*xWrite)(void*,const unsigned char*,ssize_t);  /* Write callback */
+  char *(*xRender)(void*,sqlite3_value*);                /* Render a value */
+  ssize_t (*xWrite)(void*,const unsigned char*,size_t);  /* Write callback */
   void *pRenderArg;           /* First argument to the xRender callback */
   void *pWriteArg;            /* First argument to the xWrite callback */
   char **pzOutput;            /* Storage location for output string */
@@ -50,7 +51,7 @@ typedef struct sqlite3_resfmt sqlite3_resfmt;
 ** Interfaces
 */
 sqlite3_resfmt *sqlite3_resfmt_begin(sqlite3_stmt*, sqlite3_resfmt_spec*);
-int sqlite3_resfmt_row(sqlite3_resfmt*)
+int sqlite3_resfmt_row(sqlite3_resfmt*);
 int sqlite3_resfmt_finish(sqlite3_resfmt*,int*,char**);
 
 /*

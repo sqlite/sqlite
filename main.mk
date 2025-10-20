@@ -2154,6 +2154,11 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(T.link) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest5
 
+resfmt-test:	sqlite3.o $(TOP)/ext/misc/resfmt-tester.c $(TOP)/ext/misc/resfmt.c $(TOP)/ext/misc/resfmt.h
+	$(T.link) -I$(TOP)/ext/misc -I. \
+		$(TOP)/ext/misc/resfmt-tester.c $(TOP)/ext/misc/resfmt.c sqlite3.o \
+		-o $@ $(LDFLAGS.libsqlite3)
+
 #
 # STATIC_CLI_SHELL = 1 to statically link sqlite3$(T.exe), else
 # 0. Requires static versions of all requisite libraries. Primarily

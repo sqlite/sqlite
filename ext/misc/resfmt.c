@@ -13,6 +13,7 @@
 ** See the resfmt.md documentation for additional information.
 */
 #include "resfmt.h"
+#include <string.h>
 
 /*
 ** Private state information.  Subject to change from one release to the
@@ -64,52 +65,63 @@ int sqlite3_resfmt_finish(sqlite3_resfmt *p, int *piErr, char **pzErrMsg){
 /*
 ** Render value pVal into p->pOut
 */
-static void resfmtRenderValue(sqlite3_resfmt *p, sqlite3_value *pVal){
-  if( p->xRender ){
-    char *z = p->xRender(p->pRenderArg, pVal);
+static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
+  if( p->spec.xRender ){
+    sqlite3_value *pVal;
+    char *z;
+    pVal = sqlite3_value_dup(sqlite3_column_value(p->pStmt,iCol));
+    z = p->spec.xRender(p->spec.pRenderArg, pVal);
+    sqlite3_value_free(pVal);
     if( z ){
       sqlite3_str_appendall(p->pOut, z);
       sqlite3_free(z);
       return;
     }
   }
-  switch( sqlite3_value_type(pVal) {
+  switch( sqlite3_column_type(p->pStmt,iCol) ){
     case SQLITE_INTEGER: {
-      sqlite3_str_appendf(p->pOut, "%lld", sqlite3_value_int64(pVal));
+      sqlite3_str_appendf(p->pOut, "%lld", sqlite3_column_int64(p->pStmt,iCol));
       break;
     }
     case SQLITE_FLOAT: {
-      sqlite3_str_appendf(p->pOut, p->zFloatFmt, sqlite3_value_double(pVal));
+      if( p->spec.zFloatFmt ){
+        double r = sqlite3_column_double(p->pStmt,iCol);
+        sqlite3_str_appendf(p->pOut, p->spec.zFloatFmt, r);
+      }else{
+        const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
+        sqlite3_str_appendall(p->pOut, zTxt);
+      }
       break;
     }
     case SQLITE_BLOB: {
       int iStart = sqlite3_str_length(p->pOut);
-      int nBlob = sqlite3_value_bytes(pVal);
+      int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
       int i, j;
       char *zVal;
-      unsigned char *a = sqlite3_value_blob(pVal);
+      const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
       sqlite3_str_append(p->pOut, "x'", 2);
       sqlite3_str_appendchar(p->pOut, nBlob, ' ');
       sqlite3_str_appendchar(p->pOut, nBlob, ' ');
       sqlite3_str_appendchar(p->pOut, 1, '\'');
-      if( sqlite3_str_errcode(p->pOut ) return;
+      if( sqlite3_str_errcode(p->pOut) ) return;
       zVal = sqlite3_str_value(p->pOut);
       for(i=0, j=iStart+2; i<nBlob; i++, j+=2){
         unsigned char c = a[i];
-        zVal[j] = "0123456789abcdef"[(c>>4)&0xf]);
-        zVal[j+1] = "0123456789abcdef"[(c)&0xf]);
+        zVal[j] = "0123456789abcdef"[(c>>4)&0xf];
+        zVal[j+1] = "0123456789abcdef"[(c)&0xf];
       }
       break;
     }
     case SQLITE_NULL: {
-      sqlite3_str_appendall(p->pOut, p->zNull);
+      sqlite3_str_appendall(p->pOut, p->spec.zNull);
       break;
     }
     case SQLITE_TEXT: {
+      const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
       if( p->spec.bQuote ){
-        sqlite3_str_appendf(p->pOut, "%Q", sqlite3_value_text(pVal));
+        sqlite3_str_appendf(p->pOut, "%Q", zTxt);
       }else{
-        sqlite3_str_appendall(p->pOut, sqlite3_value_text(pVal));
+        sqlite3_str_appendall(p->pOut, zTxt);
       }
       break;
     }
@@ -148,30 +160,26 @@ sqlite3_resfmt *sqlite3_resfmt_begin(
   p->pStmt = pStmt;
   p->db = sqlite3_db_handle(pStmt);
   p->pErr = 0;
-  p->pOut = 0;
-  p->pBuf = sqlite3_str_new(p->db);
-  if( p->pBuf==0 ){
-    reffmtFree(p);
+  p->pOut = sqlite3_str_new(p->db);
+  if( p->pOut==0 ){
+    resfmtFree(p);
     return 0;
-  }
-  if( pSpec->pzOutput ){
-    p->pOut = sqlite3_str_new(p->db);
-    if( p->pOut==0 ){
-      reffmtFree(p);
-      return 0;
-    }
   }
   p->iErr = 0;
   p->nCol = sqlite3_column_count(p->pStmt);
   p->nRow = 0;
-  sz = sizeof(sqlite3_resfmt_spec); break;
+  sz = sizeof(sqlite3_resfmt_spec);
   memcpy(&p->spec, pSpec, sz);
+  if( p->spec.zNull==0 ) p->spec.zNull = "";
+  switch( p->spec.eFormat ){
+    case RESFMT_Line: {
+      if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = ",";
+      if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
+      break;
+    }
+  }
   return p;
 }
-
-/*
-** Output text in the manner requested by the spec (either by direct
-** write to 
 
 /*
 ** Render a single row of output.
@@ -185,7 +193,7 @@ int sqlite3_resfmt_row(sqlite3_resfmt *p){
       sqlite3_str_reset(p->pOut);
       for(i=0; i<p->nCol; i++){
         if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
-        resfmtRenderValue(p, sqlite3_column_value(p->pStmt, i));
+        resfmtRenderValue(p, i);
       }
       sqlite3_str_appendall(p->pOut, p->spec.zRowSep);
       resfmtWrite(p);

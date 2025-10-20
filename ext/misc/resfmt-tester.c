@@ -1,0 +1,147 @@
+/*
+** 2025-10-20
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** A simple command-line program for testing the Result-Format or "resfmt"
+** utility library for SQLite.
+*/
+#include <stdio.h>
+#include <string.h>
+#include "sqlite3.h"
+#include "resfmt.h"
+
+/* Report out-of-memory and die if the argument is NULL */
+static void checkOOM(void *p){
+  if( p==0 ){
+    fprintf(stdout, "out-of-memory\n");
+    exit(1);
+  }
+}
+
+/* A block of memory */
+typedef struct memblock memblock;
+struct memblock {
+  memblock *pNext;
+};
+
+/* List of all memory to be freed */
+static memblock *pToFree = 0;
+
+/* Free all memory at exit */
+static void tempFreeAll(void){
+  while( pToFree ){
+    memblock *pNext = pToFree->pNext;
+    sqlite3_free(pToFree);
+    pToFree = pNext;
+  }
+}
+
+/* Allocate memory that will be freed all at once by freeall() */
+static void *tempMalloc(unsigned n){
+  memblock *p;
+  if( n>0x10000000 ) checkOOM(0);
+  p = sqlite3_malloc64( n+sizeof(memblock) );
+  checkOOM(p);
+  p->pNext = pToFree;
+  pToFree = p;
+  return (void*)&pToFree[1];
+}
+
+/* Function used for writing to the console */
+ssize_t testWriter(void *pContext, const unsigned char *p, size_t n){
+  return fwrite(p,1,n,stdout);
+}
+
+int main(int argc, char **argv){
+  char *zSrc;
+  FILE *pSrc;
+  sqlite3_str *pBuf;
+  sqlite3 *db = 0;
+  sqlite3_stmt *pStmt;
+  int rc;
+  int lineNum = 0;
+  sqlite3_resfmt_spec spec;
+  char zLine[1000];
+
+  if( argc<2 ){
+    zSrc = "<stdin>";
+    pSrc = stdin;
+  }else{
+    zSrc = argv[1];
+    pSrc = fopen(zSrc, "rb");
+    if( pSrc==0 ){
+      fprintf(stderr, "cannot open \"%s\" for reading\n", zSrc);
+      exit(1);
+    }
+  }
+  memset(&spec, 0, sizeof(spec));
+  spec.iVersion = 1;
+  spec.eFormat = RESFMT_Line;
+  spec.xWrite = testWriter;
+  pBuf = sqlite3_str_new(0);
+  while( fgets(zLine, sizeof(zLine), pSrc) ){
+    size_t n = strlen(zLine);
+    lineNum++;
+    while( n>0 && zLine[n-1]>0 && zLine[n-1]<=' ' ) n--;
+    zLine[n] = 0;
+    printf("%s\n", zLine);
+    if( strncmp(zLine, "--open=", 7)==0 ){
+      if( db ) sqlite3_close(db);
+      db = 0;
+      rc = sqlite3_open(&zLine[7], &db);
+      if( rc!=SQLITE_OK ){
+        fprintf(stderr, "%s:%d: cannot open \"%s\": %s\n",
+                zSrc, lineNum, &zLine[7],
+                sqlite3_errmsg(db));
+        exit(1);
+      }
+    }else
+    if( strcmp(zLine, "--go")==0 ){
+      char *zSql;
+      sqlite3_resfmt *pFmt;
+      int iErr = 0;
+      char *zErr = 0;
+      if( db==0 ){
+        fprintf(stderr, "%s:%d: database not open\n", zSrc, lineNum);
+        exit(1);
+      }
+      zSql = sqlite3_str_value(pBuf);
+      pStmt = 0;
+      rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+      if( rc || pStmt==0 ){
+        fprintf(stderr, "%s:%d: sqlite3_prepare() fails: %s\n",
+                zSrc, lineNum, sqlite3_errmsg(db));
+      }
+      pFmt = sqlite3_resfmt_begin(pStmt, &spec);
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        sqlite3_resfmt_row(pFmt);
+      }
+      rc = sqlite3_resfmt_finish(pFmt, &iErr, &zErr);
+      printf("rc=%d.  error-code=%d.  error-message=%s\n",
+             rc, iErr, zErr ? zErr : "NULL");
+      sqlite3_free(zErr);
+      sqlite3_finalize(pStmt);
+      pStmt = 0;
+      sqlite3_str_reset(pBuf);
+    }else
+    if( strcmp(zLine, "--exit")==0 ){
+      break;
+    }else
+    {
+      if( sqlite3_str_length(pBuf) ) sqlite3_str_appendchar(pBuf, ' ', 1);
+      sqlite3_str_appendall(pBuf, zLine);
+    }
+  }
+  if( db ) sqlite3_close(db);
+  sqlite3_free(sqlite3_str_finish(pBuf));
+  tempFreeAll();
+  if( pSrc!=stdin ) fclose(pSrc);
+  return 0;
+}

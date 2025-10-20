@@ -1,5 +1,5 @@
-C Notes\son\sthe\sresult-formatter\sutility.\s\sNone\sof\sthe\scode\sworks.\s\sThese\nare\sjust\sideas\sI\shave\sjotted\sdown\sas\sI\stry\sto\sfigure\sout\show\sto\sdo\sthis.
-D 2025-10-20T14:28:57.161
+C Add\stest\sprogram\sfor\sresfmt.c.\s\sNow\scompiles\sand\sruns.
+D 2025-10-20T17:19:30.111
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -389,8 +389,9 @@ F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e0c6b
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
-F ext/misc/resfmt.c 63285008be21bd71ac036f37e91b9c099e8c221613a25c437d1cf07c0d0d93c8
-F ext/misc/resfmt.h bac5dbf40c174d99d300ed34f3e94bea6854af73ea703d18d0897088c73473a9
+F ext/misc/resfmt-tester.c 51149ed2da237e5b927c1379cb6d5b9189191f60f4237d2bd5183a33a2b30776
+F ext/misc/resfmt.c 3c82b41fa33a3b05a60fb43e96c3b3926edda1eb45a3432e94b30d769d094cc1
+F ext/misc/resfmt.h 2cb13016806263897e4aad0689f26f07eb8b5b26619d09f07af5c64be3041f4b
 F ext/misc/resfmt.md 6f6cefd95fa11ce30e4f34ea84052e7a8291dd48b7e666352bd7cf2e22c22ec4
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -661,7 +662,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 00dd631c66c1f7922b2d691631163899eff1c3d1da780ff37a62f8d997b368e1
+F main.mk bf63775585a99e8e7158c4d67c30aeeae45b84572c474f9d41c7bba927788f46
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2174,8 +2175,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 20c79a2cc1f9eedea12cbac0a657301614d042e3487ddf37cd4b0316e6f84f21
-R 894750e947c3f45bc6ad26f6f95da410
+P c38f1c63247804486a6b368ead4c5122adaedd5c697487fadbed49e1acb155bc
+R c7be1ef7fe6eb1c112e628cf30c74761
 U drh
-Z 310d7ad8c0408f77d8a61f85297aa2df
+Z 01552c3fb5b64b22ab51e3ac81071bb9
 # Remove this line to create a well-formed Fossil manifest.
