@@ -136,6 +136,29 @@ static void resfmtEscape(
 }
 
 /*
+** If a field contains any character identified by a 1 in the following
+** array, then the string must be quoted for CSV.
+*/
+static const char resfmtCsvQuote[] = {
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 0, 1, 0, 0, 0, 0, 1,   0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1,
+};
+
+/*
 ** Encode text appropriately and append it to p->pOut.
 */
 static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
@@ -143,6 +166,51 @@ static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
   switch( p->spec.eQuote ){
     case RESFMT_Q_Sql: {
       sqlite3_str_appendf(p->pOut, "%Q", zTxt);
+      break;
+    }
+    case RESFMT_Q_Csv: {
+      unsigned int i;
+      for(i=0; zTxt[i]; i++){
+        if( resfmtCsvQuote[((const unsigned char*)zTxt)[i]] ){
+          i = 0;
+          break;
+        }
+      }
+      if( i==0 || strstr(zTxt, p->spec.zColumnSep)!=0 ){
+        sqlite3_str_appendf(p->pOut, "\"%w\"", zTxt);
+      }else{
+        sqlite3_str_appendall(p->pOut, zTxt);
+      }
+      break;
+    }
+    case RESFMT_Q_Html: {
+      while( *zTxt ){
+        unsigned int i;
+        for(i=0;   zTxt[i]
+                && zTxt[i]!='<'
+                && zTxt[i]!='&'
+                && zTxt[i]!='>'
+                && zTxt[i]!='\"'
+                && zTxt[i]!='\'';
+            i++){}
+        if( i>0 ){
+          sqlite3_str_append(p->pOut, zTxt, i);
+        }
+        if( zTxt[i]=='<' ){
+          sqlite3_str_append(p->pOut, "&lt;", 4);
+        }else if( zTxt[i]=='&' ){
+          sqlite3_str_append(p->pOut, "&amp;", 5);
+        }else if( zTxt[i]=='>' ){
+          sqlite3_str_append(p->pOut, "&gt;", 4);
+        }else if( zTxt[i]=='\"' ){
+          sqlite3_str_append(p->pOut, "&quot;", 6);
+        }else if( zTxt[i]=='\'' ){
+          sqlite3_str_append(p->pOut, "&#39;", 5);
+        }else{
+          break;
+        }
+        zTxt += i + 1;
+      }
       break;
     }
     default: {
