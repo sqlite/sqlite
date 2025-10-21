@@ -241,14 +241,10 @@ void sqlite3_str_vappendf(
   for(; (c=(*fmt))!=0; ++fmt){
     if( c!='%' ){
       bufpt = (char *)fmt;
-#if HAVE_STRCHRNUL
-      fmt = strchrnul(fmt, '%');
-#else
       fmt = strchr(fmt, '%');
       if( fmt==0 ){
         fmt = bufpt + strlen(bufpt);
       }
-#endif
       sqlite3_str_append(pAccum, bufpt, (int)(fmt - bufpt));
       if( *fmt==0 ) break;
     }
