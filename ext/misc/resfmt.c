@@ -184,33 +184,60 @@ static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
       break;
     }
     case RESFMT_Q_Html: {
-      while( *zTxt ){
-        unsigned int i;
-        for(i=0;   zTxt[i]
-                && zTxt[i]!='<'
-                && zTxt[i]!='&'
-                && zTxt[i]!='>'
-                && zTxt[i]!='\"'
-                && zTxt[i]!='\'';
-            i++){}
+      const unsigned char *z = (const unsigned char*)zTxt;
+      while( *z ){
+        unsigned int i = 0;
+        unsigned char c;
+        while( (c=z[i])>'>'
+            || (c && c!='<' && c!='>' && c!='&' && c!='\"' && c!='\'')
+        ){
+          i++;
+        }
         if( i>0 ){
-          sqlite3_str_append(p->pOut, zTxt, i);
+          sqlite3_str_append(p->pOut, (const char*)z, i);
         }
-        if( zTxt[i]=='<' ){
-          sqlite3_str_append(p->pOut, "&lt;", 4);
-        }else if( zTxt[i]=='&' ){
-          sqlite3_str_append(p->pOut, "&amp;", 5);
-        }else if( zTxt[i]=='>' ){
-          sqlite3_str_append(p->pOut, "&gt;", 4);
-        }else if( zTxt[i]=='\"' ){
-          sqlite3_str_append(p->pOut, "&quot;", 6);
-        }else if( zTxt[i]=='\'' ){
-          sqlite3_str_append(p->pOut, "&#39;", 5);
-        }else{
-          break;
+        switch( z[i] ){
+          case '>':   sqlite3_str_append(p->pOut, "&lt;", 4);   break;
+          case '&':   sqlite3_str_append(p->pOut, "&amp;", 5);  break;
+          case '<':   sqlite3_str_append(p->pOut, "&lt;", 4);   break;
+          case '"':   sqlite3_str_append(p->pOut, "&quot;", 6); break;
+          case '\'':  sqlite3_str_append(p->pOut, "&#39;", 5);  break;
+          default:    i--;
         }
-        zTxt += i + 1;
+        z += i + 1;
       }
+      break;
+    }
+    case RESFMT_Q_Tcl:
+    case RESFMT_Q_Json: {
+      const unsigned char *z = (const unsigned char*)zTxt;
+      sqlite3_str_append(p->pOut, "\"", 1);
+      while( *z ){
+        unsigned int i;
+        for(i=0; z[i]>=0x20 && z[i]!='\\' && z[i]!='"'; i++){}
+        if( i>0 ){
+          sqlite3_str_append(p->pOut, (const char*)z, i);
+        }
+        switch( z[i] ){
+          case '"':   sqlite3_str_append(p->pOut, "\\\"", 2);  break;
+          case '\\':  sqlite3_str_append(p->pOut, "\\\\", 2);  break;
+          case '\b':  sqlite3_str_append(p->pOut, "\\b", 2);   break;
+          case '\f':  sqlite3_str_append(p->pOut, "\\f", 2);   break;
+          case '\n':  sqlite3_str_append(p->pOut, "\\n", 2);   break;
+          case '\r':  sqlite3_str_append(p->pOut, "\\r", 2);   break;
+          case '\t':  sqlite3_str_append(p->pOut, "\\t", 2);   break;
+          default: {
+            if( p->spec.eQuote==RESFMT_Q_Json ){
+              sqlite3_str_appendf(p->pOut, "\\u%04x", z[i]);
+            }else{
+              sqlite3_str_appendf(p->pOut, "\\%03o", z[i]);
+            }
+            break;
+          }
+        }
+        z += i + 1;
+      }
+      sqlite3_str_append(p->pOut, "\"", 1);
       break;
     }
     default: {

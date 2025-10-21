@@ -71,8 +71,14 @@ static char *tempStrdup(char *zIn){
 }
 
 /* Function used for writing to the console */
-ssize_t testWriter(void *pContext, const unsigned char *p, size_t n){
+static ssize_t testWriter(void *pContext, const unsigned char *p, size_t n){
   return fwrite(p,1,n,stdout);
+}
+
+/* Render BLOB values as "(%d-byte-blob)". */
+static char *testBlobRender(void *pNotUsed, sqlite3_value *pVal){
+  if( sqlite3_value_type(pVal)!=SQLITE_BLOB ) return 0;
+  return sqlite3_mprintf("(%d-byte-blob)",sqlite3_value_bytes(pVal));
 }
 
 int main(int argc, char **argv){
@@ -308,6 +314,9 @@ int main(int argc, char **argv){
     }else
     if( strncmp(zLine, "--use-writer=",13)==0 ){
       bUseWriter = atoi(&zLine[13])!=0;
+    }else
+    if( strncmp(zLine, "--use-render=",13)==0 ){
+      spec.xRender = (atoi(&zLine[13])!=0) ? testBlobRender : 0;
     }else
     {
       if( sqlite3_str_length(pBuf) ) sqlite3_str_append(pBuf, "\n", 1);
