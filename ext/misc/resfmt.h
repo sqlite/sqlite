@@ -58,24 +58,19 @@ int sqlite3_resfmt_finish(sqlite3_resfmt*,int*,char**);
 /*
 ** Output styles:
 */
-#define RESFMT_Line      0 /* One column per line. */
-#define RESFMT_Column    1 /* One record per line in neat columns */
-#define RESFMT_List      2 /* One record per line with a separator */
-#define RESFMT_Html      3 /* Generate an XHTML table */
-#define RESFMT_Insert    4 /* Generate SQL "insert" statements */
-#define RESFMT_Tcl       5 /* Generate ANSI-C or TCL quoted elements */
-#define RESFMT_Csv       6 /* Quote strings, numbers are plain */
-#define RESFMT_Explain   7 /* Like RESFMT_Column, but do not truncate data */
-#define RESFMT_Pretty    8 /* Pretty-print schemas */
-#define RESFMT_EQP       9 /* Converts EXPLAIN QUERY PLAN output into a graph */
-#define RESFMT_Json     10 /* Output JSON */
-#define RESFMT_Markdown 11 /* Markdown formatting */
-#define RESFMT_Table    12 /* MySQL-style table formatting */
-#define RESFMT_Box      13 /* Unicode box-drawing characters */
-#define RESFMT_Count    14 /* Output only a count of the rows of output */
-#define RESFMT_Off      15 /* No query output shown */
-#define RESFMT_ScanExp  16 /* Like RESFMT_Explain, but for ".scanstats vm" */
-#define RESFMT_Www      17 /* Full web-page output */
+#define RESFMT_List      0 /* One record per line with a separator */
+#define RESFMT_Line      1 /* One column per line. */
+#define RESFMT_Html      2 /* Generate an XHTML table */
+#define RESFMT_Insert    3 /* Generate SQL "insert" statements */
+#define RESFMT_Explain   4 /* EXPLAIN output */
+#define RESFMT_ScanExp   5 /* EXPLAIN output with vm stats */
+#define RESFMT_EQP       6 /* Converts EXPLAIN QUERY PLAN output into a graph */
+#define RESFMT_Markdown  7 /* Markdown formatting */
+#define RESFMT_Column    8 /* One record per line in neat columns */
+#define RESFMT_Table     9 /* MySQL-style table formatting */
+#define RESFMT_Box      10 /* Unicode box-drawing characters */
+#define RESFMT_Count    11 /* Output only a count of the rows of output */
+#define RESFMT_Off      12 /* No query output shown */
 
 /*
 ** Quoting styles for text.
