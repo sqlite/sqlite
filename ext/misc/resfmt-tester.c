@@ -18,6 +18,8 @@
 #include "sqlite3.h"
 #include "resfmt.h"
 
+#define COUNT(X)  (sizeof(X)/sizeof(X[0]))
+
 /* Report out-of-memory and die if the argument is NULL */
 static void checkOOM(void *p){
   if( p==0 ){
@@ -178,40 +180,91 @@ int main(int argc, char **argv){
       sqlite3_str_reset(pBuf);
     }else
     if( strncmp(zLine, "--eFormat=", 10)==0 ){
-      const struct { const char *zFmt; int eMode; } aFmt[] = {
-         { "line",     RESFMT_Line,     },
+      const struct { const char *z; int e; } aFmt[] = {
+         { "box",      RESFMT_Box,      },
          { "column",   RESFMT_Column,   },
-         { "list",     RESFMT_List,     },
+         { "count",    RESFMT_Count,    },
+         { "csv",      RESFMT_Csv,      },
+         { "eqp",      RESFMT_EQP,      },
+         { "explain",  RESFMT_Explain,  },
          { "html",     RESFMT_Html,     },
          { "insert",   RESFMT_Insert,   },
-         { "tcl",      RESFMT_Tcl,      },
-         { "csv",      RESFMT_Csv,      },
-         { "explain",  RESFMT_Explain,  },
-         { "pretty",   RESFMT_Pretty,   },
-         { "eqp",      RESFMT_EQP,      },
          { "json",     RESFMT_Json,     },
+         { "line",     RESFMT_Line,     },
+         { "list",     RESFMT_List,     },
          { "markdown", RESFMT_Markdown, },
-         { "table",    RESFMT_Table,    },
-         { "box",      RESFMT_Box,      },
-         { "count",    RESFMT_Count,    },
          { "off",      RESFMT_Off,      },
+         { "pretty",   RESFMT_Pretty,   },
+         { "table",    RESFMT_Table,    },
+         { "tcl",      RESFMT_Tcl,      },
          { "scanexp",  RESFMT_ScanExp,  },
-         { "www",      RESFMT_Www,      },
       };
       int i;
-      for(i=0; i<sizeof(aFmt)/sizeof(aFmt[0]); i++){
-        if( strcmp(aFmt[i].zFmt,&zLine[10])==0 ){
-          spec.eFormat = aFmt[i].eMode;
+      for(i=0; i<COUNT(aFmt); i++){
+        if( strcmp(aFmt[i].z,&zLine[10])==0 ){
+          spec.eFormat = aFmt[i].e;
           break;
         }
       }
-      if( i>=sizeof(aFmt)/sizeof(aFmt[0]) ){
-        fprintf(stderr, "%s:%d: no such format: \"%s\"\n",
-                zSrc, lineNum, &zLine[10]);
+      if( i>=COUNT(aFmt) ){
+        sqlite3_str *pMsg = sqlite3_str_new(0);
+        for(i=0; i<COUNT(aFmt); i++){
+          sqlite3_str_appendf(pMsg, " %s", aFmt[i].z);
+        }
+        fprintf(stderr, "%s:%d: no such format: \"%s\"\nChoices: %s\n",
+                zSrc, lineNum, &zLine[10], sqlite3_str_value(pMsg));
+        sqlite3_free(sqlite3_str_finish(pMsg));
       }
     }else
-    if( strncmp(zLine, "--bQuote=", 9)==0 ){
-      spec.bQuote = atoi(&zLine[9])!=0;
+    if( strncmp(zLine, "--eQuote=", 9)==0 ){
+      const struct { const char *z; int e; } aQuote[] = {
+         { "c",        RESFMT_Q_C       },
+         { "csv",      RESFMT_Q_Csv     },
+         { "html",     RESFMT_Q_Html    },
+         { "json",     RESFMT_Q_Json    },
+         { "off",      RESFMT_Q_Off     },
+         { "sql",      RESFMT_Q_Sql     },
+         { "tcl",      RESFMT_Q_C       },
+      };
+      int i;
+      for(i=0; i<COUNT(aQuote); i++){
+        if( strcmp(aQuote[i].z,&zLine[9])==0 ){
+          spec.eQuote = aQuote[i].e;
+          break;
+        }
+      }
+      if( i>=COUNT(aQuote) ){
+        sqlite3_str *pMsg = sqlite3_str_new(0);
+        for(i=0; i<COUNT(aQuote); i++){
+          sqlite3_str_appendf(pMsg, " %s", aQuote[i].z);
+        }
+        fprintf(stderr, "%s:%d: no such quoting style: \"%s\"\nChoices: %s\n",
+                zSrc, lineNum, &zLine[9], sqlite3_str_value(pMsg));
+        sqlite3_free(sqlite3_str_finish(pMsg));
+      }
+    }else
+    if( strncmp(zLine, "--eEscape=", 10)==0 ){
+      const struct { const char *z; int e; } aEscape[] = {
+         { "off",       RESFMT_E_Off     },
+         { "unicode",   RESFMT_E_Unicode },
+         { "unix",      RESFMT_E_Unix    },
+      };
+      int i;
+      for(i=0; i<COUNT(aEscape); i++){
+        if( strcmp(aEscape[i].z,&zLine[10])==0 ){
+          spec.eEscape = aEscape[i].e;
+          break;
+        }
+      }
+      if( i>=COUNT(aEscape) ){
+        sqlite3_str *pMsg = sqlite3_str_new(0);
+        for(i=0; i<COUNT(aEscape); i++){
+          sqlite3_str_appendf(pMsg, " %s", aEscape[i].z);
+        }
+        fprintf(stderr, "%s:%d: no such escape mode: \"%s\"\nChoices: %s\n",
+                zSrc, lineNum, &zLine[10], sqlite3_str_value(pMsg));
+        sqlite3_free(sqlite3_str_finish(pMsg));
+      }
     }else
     if( strncmp(zLine, "--bShowCNames=", 14)==0 ){
       spec.bShowCNames = atoi(&zLine[14])!=0;

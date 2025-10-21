@@ -58,7 +58,7 @@ static void resfmtWrite(sqlite3_resfmt *p){
 ** Encode text appropriately and append it to p->pOut.
 */
 static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
-  if( p->spec.bQuote ){
+  if( p->spec.eQuote ){
     sqlite3_str_appendf(p->pOut, "%Q", zTxt);
   }else{
     sqlite3_str_appendall(p->pOut, zTxt);
@@ -97,7 +97,7 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
       break;
     }
     case SQLITE_BLOB: {
-      if( p->spec.bQuote ){
+      if( p->spec.eQuote ){
         int iStart = sqlite3_str_length(p->pOut);
         int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
         int i, j;

@@ -23,8 +23,8 @@ struct sqlite3_resfmt_spec {
   int iVersion;               /* Version number of this structure */
   int eFormat;                /* Output format */
   unsigned char bShowCNames;  /* True to show column names */
-  unsigned char eEscMode;     /* How to deal with control characters */
-  unsigned char bQuote;       /* Quote output values as SQL literals */
+  unsigned char eEscape;      /* How to deal with control characters */
+  unsigned char eQuote;       /* Quoting style */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   int mxWidth;                /* Maximum column width in columnar modes */
   const char *zColumnSep;     /* Alternative column separator */
@@ -75,3 +75,22 @@ int sqlite3_resfmt_finish(sqlite3_resfmt*,int*,char**);
 #define RESFMT_Off      15 /* No query output shown */
 #define RESFMT_ScanExp  16 /* Like RESFMT_Explain, but for ".scanstats vm" */
 #define RESFMT_Www      17 /* Full web-page output */
+
+/*
+** Quoting styles.
+** Allowed values for sqlite3_resfmt_spec.eQuote
+*/
+#define RESFMT_Q_Off     0 /* Literal text */
+#define RESFMT_Q_Sql     1 /* Quote as an SQL literal */
+#define RESFMT_Q_Csv     2 /* CSV-style quoting */
+#define RESFMT_Q_Html    3 /* HTML-style quoting */
+#define RESFMT_Q_C       4 /* C/Tcl quoting */
+#define RESFMT_Q_Json    5 /* JSON quoting */
+
+/*
+** Control-character escape modes.
+** Allowed values for sqlite3_resfmt_spec.eEscape
+*/
+#define RESFMT_E_Off     0 /* Do not escape control characters */
+#define RESFMT_E_Unix    1 /* Unix-style escapes.  Ex: U+0007 shows ^G */
+#define RESFMT_E_Unicode 2 /* Unicode escapes. Ex: U+0007 shows U+2407 */
