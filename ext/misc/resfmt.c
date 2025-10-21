@@ -55,13 +55,103 @@ static void resfmtWrite(sqlite3_resfmt *p){
 }
 
 /*
+** Escape the input string if it is needed and in accordance with
+** eEscape, which is either RESFMT_E_Ascii or RESFMT_E_Symbol.
+**
+** Escaping is needed if the string contains any control characters
+** other than \t, \n, and \r\n
+**
+** If no escaping is needed (the common case) then set *ppOut to NULL
+** and return 0.  If escaping is needed, write the escaped string into
+** memory obtained from sqlite3_malloc64() and make *ppOut point to that
+** memory and return 0.  If an error occurs, return non-zero.
+**
+** The caller is responsible for freeing *ppFree if it is non-NULL in order
+** to reclaim memory.
+*/
+static void resfmtEscape(
+  int eEscape,            /* RESFMT_E_Ascii or RESFMT_E_Symbol */
+  sqlite3_str *pStr,      /* String to be escaped */
+  int iStart              /* Begin escapding on this byte of pStr */
+){
+  sqlite3_int64 i, j;     /* Loop counters */
+  sqlite3_int64 sz;       /* Size of the string prior to escaping */
+  sqlite3_int64 nCtrl = 0;/* Number of control characters to escape */
+  unsigned char *zIn;     /* Text to be escaped */
+  unsigned char c;        /* A single character of the text */
+  unsigned char *zOut;    /* Where to write the results */
+
+  /* Find the text to be escaped */
+  zIn = (unsigned char*)sqlite3_str_value(pStr);
+  if( zIn==0 ) return;
+  zIn += iStart;
+
+  /* Count the control characters */
+  for(i=0; (c = zIn[i])!=0; i++){
+    if( c<=0x1f
+     && c!='\t'
+     && c!='\n'
+     && (c!='\r' || zIn[i+1]!='\n')
+    ){
+      nCtrl++;
+    }
+  }
+  if( nCtrl==0 ) return;  /* Early out if no control characters */
+
+  /* Make space to hold the escapes.  Copy the original text to the end
+  ** of the available space. */
+  sz = sqlite3_str_length(pStr) - iStart;
+  if( eEscape==RESFMT_E_Symbol ) nCtrl *= 2;
+  sqlite3_str_appendchar(pStr, nCtrl, ' ');
+  zOut = (unsigned char*)sqlite3_str_value(pStr);
+  if( zOut==0 ) return;
+  zOut += iStart;
+  zIn = zOut + nCtrl;
+  memmove(zIn,zOut,sz);
+
+  /* Convert the control characters */
+  for(i=j=0; (c = zIn[i])!=0; i++){
+    if( c>0x1f
+     || c=='\t'
+     || c=='\n'
+     || (c=='\r' && zIn[i+1]=='\n')
+    ){
+      continue;
+    }
+    if( i>0 ){
+      memmove(&zOut[j], zIn, i);
+      j += i;
+    }
+    zIn += i+1;
+    i = -1;
+    if( eEscape==RESFMT_E_Symbol ){
+      zOut[j++] = 0xe2;
+      zOut[j++] = 0x90;
+      zOut[j++] = 0x80+c;
+    }else{
+      zOut[j++] = '^';
+      zOut[j++] = 0x40+c;
+    }
+  }
+}
+
+/*
 ** Encode text appropriately and append it to p->pOut.
 */
 static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
-  if( p->spec.eQuote ){
-    sqlite3_str_appendf(p->pOut, "%Q", zTxt);
-  }else{
-    sqlite3_str_appendall(p->pOut, zTxt);
+  int iStart = sqlite3_str_length(p->pOut);
+  switch( p->spec.eQuote ){
+    case RESFMT_Q_Sql: {
+      sqlite3_str_appendf(p->pOut, "%Q", zTxt);
+      break;
+    }
+    default: {
+      sqlite3_str_appendall(p->pOut, zTxt);
+      break;
+    }
+  }
+  if( p->spec.eEscape!=RESFMT_E_Off ){
+    resfmtEscape(p->spec.eEscape, p->pOut, iStart);
   }
 }
 
@@ -97,26 +187,30 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
       break;
     }
     case SQLITE_BLOB: {
-      if( p->spec.eQuote ){
-        int iStart = sqlite3_str_length(p->pOut);
-        int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
-        int i, j;
-        char *zVal;
-        const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
-        sqlite3_str_append(p->pOut, "x'", 2);
-        sqlite3_str_appendchar(p->pOut, nBlob, ' ');
-        sqlite3_str_appendchar(p->pOut, nBlob, ' ');
-        sqlite3_str_appendchar(p->pOut, 1, '\'');
-        if( sqlite3_str_errcode(p->pOut) ) return;
-        zVal = sqlite3_str_value(p->pOut);
-        for(i=0, j=iStart+2; i<nBlob; i++, j+=2){
-          unsigned char c = a[i];
-          zVal[j] = "0123456789abcdef"[(c>>4)&0xf];
-          zVal[j+1] = "0123456789abcdef"[(c)&0xf];
+      switch( p->spec.eQuote ){
+        case RESFMT_Q_Sql: {
+          int iStart = sqlite3_str_length(p->pOut);
+          int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
+          int i, j;
+          char *zVal;
+          const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
+          sqlite3_str_append(p->pOut, "x'", 2);
+          sqlite3_str_appendchar(p->pOut, nBlob, ' ');
+          sqlite3_str_appendchar(p->pOut, nBlob, ' ');
+          sqlite3_str_appendchar(p->pOut, 1, '\'');
+          if( sqlite3_str_errcode(p->pOut) ) return;
+          zVal = sqlite3_str_value(p->pOut);
+          for(i=0, j=iStart+2; i<nBlob; i++, j+=2){
+            unsigned char c = a[i];
+            zVal[j] = "0123456789abcdef"[(c>>4)&0xf];
+            zVal[j+1] = "0123456789abcdef"[(c)&0xf];
+          }
+          break;
         }
-      }else{
-        const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
-        sqlite3_str_appendall(p->pOut, zTxt);
+        default: {
+          const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
+          resfmtEncodeText(p, zTxt);
+        }
       }
       break;
     }

@@ -92,5 +92,5 @@ int sqlite3_resfmt_finish(sqlite3_resfmt*,int*,char**);
 ** Allowed values for sqlite3_resfmt_spec.eEscape
 */
 #define RESFMT_E_Off     0 /* Do not escape control characters */
-#define RESFMT_E_Unix    1 /* Unix-style escapes.  Ex: U+0007 shows ^G */
-#define RESFMT_E_Unicode 2 /* Unicode escapes. Ex: U+0007 shows U+2407 */
+#define RESFMT_E_Ascii   1 /* Unix-style escapes.  Ex: U+0007 shows ^G */
+#define RESFMT_E_Symbol  2 /* Unicode escapes. Ex: U+0007 shows U+2407 */

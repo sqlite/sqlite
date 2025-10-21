@@ -245,9 +245,9 @@ int main(int argc, char **argv){
     }else
     if( strncmp(zLine, "--eEscape=", 10)==0 ){
       const struct { const char *z; int e; } aEscape[] = {
+         { "ascii",     RESFMT_E_Ascii   },
          { "off",       RESFMT_E_Off     },
-         { "unicode",   RESFMT_E_Unicode },
-         { "unix",      RESFMT_E_Unix    },
+         { "symbol",    RESFMT_E_Symbol  },
       };
       int i;
       for(i=0; i<COUNT(aEscape); i++){
