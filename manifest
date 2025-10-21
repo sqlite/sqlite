@@ -1,5 +1,5 @@
-C Reduce\sthe\smaximum\ssize\sof\sLIKE\sand\sGLOB\spatterns\sin\sthe\sossfuzz.c\stest\nmodule\sto\savoid\sfalse-positive\sinfinite\sloop\sreports\sfrom\sOSS-Fuzz\sbased\non\slong\sand\scomplex\sfuzzer-generated\sLIKE/GLOB\spatterns\sthat\sare\snot\sactually\ninfinite\sloops,\sbut\swhich\sdo\stake\sa\slong\stime\sto\sresolve.
-D 2025-10-19T17:30:07.855
+C Back\sout\s[b144f875d6bddce6]\sand\sremove\sthe\sformer\scheck\sfor\sstrchrnul()\sfrom\sthe\sconfigure\sscript.
+D 2025-10-21T16:15:53.543
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl ec30c4bc301b6e9eb937655744a7315f863f804fc66400d975bcf9352ac96a1d
-F autosetup/sqlite-config.tcl b530d62d05972c61933b6fc02658be0612ca667048bf64929f7a91ca8ecad2a5
+F autosetup/sqlite-config.tcl 5d779fce20c11fde3fe99d157dcd5b5569d729b301141b8dfb8d5aacf9d48cba
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl aee092fc71986d1272b835ea7492bb55ffc213a289502e4f14da80cf67b7e3c3
@@ -2171,8 +2171,9 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6caf793b8f406f5089e3811591bc69384646df16ee18d63bd63760eaaa95d122
-R 69fa379b6b2c39c2868c3ce3729f3859
-U drh
-Z 34daa97b3470f94f840fcd2ff082eed1
+P 53edea286b0a38f4f9c7017276f3a826037919144d517f8c89ef0f35b65af5f1
+Q -b144f875d6bddce62e8f2ad42bfe5dfa6c2434f2ef3edb86847fb4c23aa46814
+R d6bb6e56d6c267859faeecf3ec44d563
+U stephan
+Z d495461f50d66f9c0ed304cb4170629b
 # Remove this line to create a well-formed Fossil manifest.
