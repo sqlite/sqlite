@@ -20,20 +20,21 @@
 */
 typedef struct sqlite3_resfmt_spec sqlite3_resfmt_spec;
 struct sqlite3_resfmt_spec {
-  int iVersion;               /* Version number of this structure */
-  int eFormat;                /* Output format */
+  short int iVersion;         /* Version number of this structure */
+  unsigned char eFormat;      /* Output format */
   unsigned char bShowCNames;  /* True to show column names */
   unsigned char eEscape;      /* How to deal with control characters */
-  unsigned char eQuote;       /* Quoting style */
+  unsigned char eQuote;       /* Quoting style for text */
+  unsigned char eBlob;        /* Quoting style for BLOBs */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
-  int mxWidth;                /* Maximum column width in columnar modes */
+  short int mxWidth;          /* Maximum column width in columnar modes */
+  int nWidth;                 /* Number of column width parameters */
+  short int *aWidth;          /* Column widths */
   const char *zColumnSep;     /* Alternative column separator */
   const char *zRowSep;        /* Alternative row separator */
   const char *zTableName;     /* Output table name */
   const char *zNull;          /* Rendering of NULL */
   const char *zFloatFmt;      /* printf-style string for rendering floats */
-  int nWidth;                 /* Number of column width parameters */
-  short int *aWidth;          /* Column widths */
   char *(*xRender)(void*,sqlite3_value*);                /* Render a value */
   ssize_t (*xWrite)(void*,const unsigned char*,size_t);  /* Write callback */
   void *pRenderArg;           /* First argument to the xRender callback */
@@ -77,15 +78,26 @@ int sqlite3_resfmt_finish(sqlite3_resfmt*,int*,char**);
 #define RESFMT_Www      17 /* Full web-page output */
 
 /*
-** Quoting styles.
+** Quoting styles for text.
 ** Allowed values for sqlite3_resfmt_spec.eQuote
 */
 #define RESFMT_Q_Off     0 /* Literal text */
 #define RESFMT_Q_Sql     1 /* Quote as an SQL literal */
 #define RESFMT_Q_Csv     2 /* CSV-style quoting */
 #define RESFMT_Q_Html    3 /* HTML-style quoting */
-#define RESFMT_Q_C       4 /* C/Tcl quoting */
+#define RESFMT_Q_Tcl     4 /* C/Tcl quoting */
 #define RESFMT_Q_Json    5 /* JSON quoting */
+
+/*
+** Quoting styles for BLOBs
+** Allowed values for sqlite3_resfmt_spec.eBlob
+*/
+#define RESFMT_B_Auto    0 /* Determine BLOB quoting using eQuote */
+#define RESFMT_B_Text    1 /* Display content exactly as it is */
+#define RESFMT_B_Sql     2 /* Quote as an SQL literal */
+#define RESFMT_B_Hex     3 /* Hexadecimal representation */
+#define RESFMT_B_Tcl     4 /* "\000" notation */
+#define RESFMT_B_Json    5 /* A JSON string */
 
 /*
 ** Control-character escape modes.

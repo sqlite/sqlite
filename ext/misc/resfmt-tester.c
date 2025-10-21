@@ -218,13 +218,12 @@ int main(int argc, char **argv){
     }else
     if( strncmp(zLine, "--eQuote=", 9)==0 ){
       const struct { const char *z; int e; } aQuote[] = {
-         { "c",        RESFMT_Q_C       },
          { "csv",      RESFMT_Q_Csv     },
          { "html",     RESFMT_Q_Html    },
          { "json",     RESFMT_Q_Json    },
          { "off",      RESFMT_Q_Off     },
          { "sql",      RESFMT_Q_Sql     },
-         { "tcl",      RESFMT_Q_C       },
+         { "tcl",      RESFMT_Q_Tcl     },
       };
       int i;
       for(i=0; i<COUNT(aQuote); i++){
@@ -240,6 +239,32 @@ int main(int argc, char **argv){
         }
         fprintf(stderr, "%s:%d: no such quoting style: \"%s\"\nChoices: %s\n",
                 zSrc, lineNum, &zLine[9], sqlite3_str_value(pMsg));
+        sqlite3_free(sqlite3_str_finish(pMsg));
+      }
+    }else
+    if( strncmp(zLine, "--eBlob=", 8)==0 ){
+      const struct { const char *z; int e; } aBlob[] = {
+         { "auto",    RESFMT_B_Auto    },
+         { "hex",     RESFMT_B_Hex     },
+         { "json",    RESFMT_B_Json    },
+         { "tcl",     RESFMT_B_Tcl     },
+         { "text",    RESFMT_B_Text    },
+         { "sql",     RESFMT_B_Sql     },
+      };
+      int i;
+      for(i=0; i<COUNT(aBlob); i++){
+        if( strcmp(aBlob[i].z,&zLine[8])==0 ){
+          spec.eBlob = aBlob[i].e;
+          break;
+        }
+      }
+      if( i>=COUNT(aBlob) ){
+        sqlite3_str *pMsg = sqlite3_str_new(0);
+        for(i=0; i<COUNT(aBlob); i++){
+          sqlite3_str_appendf(pMsg, " %s", aBlob[i].z);
+        }
+        fprintf(stderr, "%s:%d: no such blob style: \"%s\"\nChoices: %s\n",
+                zSrc, lineNum, &zLine[8], sqlite3_str_value(pMsg));
         sqlite3_free(sqlite3_str_finish(pMsg));
       }
     }else

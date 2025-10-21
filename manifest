@@ -1,5 +1,5 @@
-C Control-character\sescaping
-D 2025-10-21T13:07:51.412
+C Add\sseparate\squoting\sstyle\sfor\sBLOB\svalues.
+D 2025-10-21T15:30:38.080
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -389,9 +389,9 @@ F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e0c6b
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
-F ext/misc/resfmt-tester.c 1cb1dae3f31caa13e4b7ef635eec05a5b1981aaa2202a72ca74cd995ceb5c677
-F ext/misc/resfmt.c cae8cff21efa71d0779999f715023488e96739d690c1f5bff17f947b7f43a10a
-F ext/misc/resfmt.h 54937535c8d7bfda506ec3ecd9c9e6fe247f3621c0645d067809f2eb9d4bb70e
+F ext/misc/resfmt-tester.c 4c493f3b74f1bc49c606a504ca8417e4a0c7bc114611c2b963df1e35f34f19bc
+F ext/misc/resfmt.c 40cc38e8ca5ba02f3ee03bfdd02f305e6dc0db151ce6929629365ac356702692
+F ext/misc/resfmt.h 0abf02956c5f03ff7823861d0134e541e435426ed5ba7209bf6dfb8b61e0cd0e
 F ext/misc/resfmt.md 6f6cefd95fa11ce30e4f34ea84052e7a8291dd48b7e666352bd7cf2e22c22ec4
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -2175,8 +2175,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3ee2a8775fcc557a53c36240ddc039024ff52e21d9ad9021d7cf5bf79f8b9ed4
-R 78c35db5d2e47632e3afeaff2a301639
+P fbb69764559f4333890860f4f3c010efa9cc994a82743766b948e7635fd079e8
+R 0b9bda5bbcc16ecc914edff675de2c46
 U drh
-Z dd3d4f12786ad3019ddd480d2d6b5f14
+Z 666fe7e2fd9d7f3f1b51180f13bf63cd
 # Remove this line to create a well-formed Fossil manifest.

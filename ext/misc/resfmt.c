@@ -187,23 +187,62 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
       break;
     }
     case SQLITE_BLOB: {
-      switch( p->spec.eQuote ){
-        case RESFMT_Q_Sql: {
-          int iStart = sqlite3_str_length(p->pOut);
+      switch( p->spec.eBlob ){
+        case RESFMT_B_Hex:
+        case RESFMT_B_Sql: {
+          int iStart;
           int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
           int i, j;
           char *zVal;
           const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
-          sqlite3_str_append(p->pOut, "x'", 2);
+          if( p->spec.eBlob==RESFMT_B_Sql ){
+            sqlite3_str_append(p->pOut, "x'", 2);
+          }
+          iStart = sqlite3_str_length(p->pOut);
           sqlite3_str_appendchar(p->pOut, nBlob, ' ');
           sqlite3_str_appendchar(p->pOut, nBlob, ' ');
-          sqlite3_str_appendchar(p->pOut, 1, '\'');
+          if( p->spec.eBlob==RESFMT_B_Sql ){
+            sqlite3_str_appendchar(p->pOut, 1, '\'');
+          }
           if( sqlite3_str_errcode(p->pOut) ) return;
           zVal = sqlite3_str_value(p->pOut);
-          for(i=0, j=iStart+2; i<nBlob; i++, j+=2){
+          for(i=0, j=iStart; i<nBlob; i++, j+=2){
             unsigned char c = a[i];
             zVal[j] = "0123456789abcdef"[(c>>4)&0xf];
             zVal[j+1] = "0123456789abcdef"[(c)&0xf];
+          }
+          break;
+        }
+        case RESFMT_B_Tcl:
+        case RESFMT_B_Json: {
+          int iStart;
+          int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
+          int i, j;
+          char *zVal;
+          const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
+          int szC = p->spec.eBlob==RESFMT_B_Json ? 6 : 4;
+          sqlite3_str_append(p->pOut, "\"", 1);
+          iStart = sqlite3_str_length(p->pOut);
+          for(i=szC; i>0; i--){
+            sqlite3_str_appendchar(p->pOut, nBlob, ' ');
+          }
+          sqlite3_str_appendchar(p->pOut, 1, '"');
+          if( sqlite3_str_errcode(p->pOut) ) return;
+          zVal = sqlite3_str_value(p->pOut);
+          for(i=0, j=iStart; i<nBlob; i++, j+=szC){
+            unsigned char c = a[i];
+            zVal[j] = '\\';
+            if( szC==4 ){
+              zVal[j+1] = '0' + ((c>>6)&3);
+              zVal[j+2] = '0' + ((c>>3)&7);
+              zVal[j+3] = '0' + (c&7);
+            }else{
+              zVal[j+1] = 'u';
+              zVal[j+2] = '0';
+              zVal[j+3] = '0';
+              zVal[j+4] = "0123456789abcdef"[(c>>4)&0xf];
+              zVal[j+5] = "0123456789abcdef"[(c)&0xf];
+            }
           }
           break;
         }
@@ -255,6 +294,15 @@ sqlite3_resfmt *sqlite3_resfmt_begin(
   sz = sizeof(sqlite3_resfmt_spec);
   memcpy(&p->spec, pSpec, sz);
   if( p->spec.zNull==0 ) p->spec.zNull = "";
+  if( p->spec.eBlob==RESFMT_B_Auto ){
+    switch( p->spec.eQuote ){
+      case RESFMT_Q_Sql:  p->spec.eBlob = RESFMT_B_Sql;  break;
+      case RESFMT_Q_Csv:  p->spec.eBlob = RESFMT_B_Tcl;  break;
+      case RESFMT_Q_Tcl:  p->spec.eBlob = RESFMT_B_Tcl;  break;
+      case RESFMT_Q_Json: p->spec.eBlob = RESFMT_B_Json; break;
+      default:            p->spec.eBlob = RESFMT_B_Text; break;
+    }
+  }
   switch( p->spec.eFormat ){
     case RESFMT_List: {
       if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = "|";
