@@ -2154,9 +2154,9 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(T.link) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest5
 
-resfmt-test:	sqlite3.o $(TOP)/ext/misc/resfmt-tester.c $(TOP)/ext/misc/resfmt.c $(TOP)/ext/misc/resfmt.h
-	$(T.link) -I$(TOP)/ext/misc -I. \
-		$(TOP)/ext/misc/resfmt-tester.c $(TOP)/ext/misc/resfmt.c sqlite3.o \
+qrf-tester:	sqlite3.o $(TOP)/ext/qrf/qrf-tester.c $(TOP)/ext/qrf/qrf.c $(TOP)/ext/qrf/qrf.h
+	$(T.link) -I$(TOP)/ext/qrf -I. \
+		$(TOP)/ext/qrf/qrf-tester.c $(TOP)/ext/qrf/qrf.c sqlite3.o \
 		-o $@ $(LDFLAGS.libsqlite3)
 
 #

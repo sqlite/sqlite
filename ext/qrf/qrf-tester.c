@@ -16,7 +16,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "sqlite3.h"
-#include "resfmt.h"
+#include "qrf.h"
 
 #define COUNT(X)  (sizeof(X)/sizeof(X[0]))
 
@@ -90,7 +90,7 @@ int main(int argc, char **argv){
   int rc;
   int lineNum = 0;
   int bUseWriter = 1;
-  sqlite3_resfmt_spec spec;
+  sqlite3_qrf_spec spec;
   char zLine[1000];
 
   if( argc<2 ){
@@ -106,7 +106,7 @@ int main(int argc, char **argv){
   }
   memset(&spec, 0, sizeof(spec));
   spec.iVersion = 1;
-  spec.eFormat = RESFMT_List;
+  spec.eFormat = QRF_MODE_List;
   spec.xWrite = testWriter;
   pBuf = sqlite3_str_new(0);
   rc = sqlite3_open(":memory:", &db);
@@ -184,20 +184,20 @@ int main(int argc, char **argv){
     }else
     if( strncmp(zLine, "--eFormat=", 10)==0 ){
       const struct { const char *z; int e; } aFmt[] = {
-         { "box",      RESFMT_Box,      },
-         { "column",   RESFMT_Column,   },
-         { "count",    RESFMT_Count,    },
-         { "eqp",      RESFMT_EQP,      },
-         { "explain",  RESFMT_Explain,  },
-         { "html",     RESFMT_Html,     },
-         { "insert",   RESFMT_Insert,   },
-         { "json",     RESFMT_Json,     },
-         { "line",     RESFMT_Line,     },
-         { "list",     RESFMT_List,     },
-         { "markdown", RESFMT_Markdown, },
-         { "off",      RESFMT_Off,      },
-         { "table",    RESFMT_Table,    },
-         { "scanexp",  RESFMT_ScanExp,  },
+         { "box",      QRF_MODE_Box,      },
+         { "column",   QRF_MODE_Column,   },
+         { "count",    QRF_MODE_Count,    },
+         { "eqp",      QRF_MODE_EQP,      },
+         { "explain",  QRF_MODE_Explain,  },
+         { "html",     QRF_MODE_Html,     },
+         { "insert",   QRF_MODE_Insert,   },
+         { "json",     QRF_MODE_Json,     },
+         { "line",     QRF_MODE_Line,     },
+         { "list",     QRF_MODE_List,     },
+         { "markdown", QRF_MODE_Markdown, },
+         { "off",      QRF_MODE_Off,      },
+         { "table",    QRF_MODE_Table,    },
+         { "scanexp",  QRF_MODE_ScanExp,  },
       };
       int i;
       for(i=0; i<COUNT(aFmt); i++){
@@ -218,12 +218,12 @@ int main(int argc, char **argv){
     }else
     if( strncmp(zLine, "--eQuote=", 9)==0 ){
       const struct { const char *z; int e; } aQuote[] = {
-         { "csv",      RESFMT_Q_Csv     },
-         { "html",     RESFMT_Q_Html    },
-         { "json",     RESFMT_Q_Json    },
-         { "off",      RESFMT_Q_Off     },
-         { "sql",      RESFMT_Q_Sql     },
-         { "tcl",      RESFMT_Q_Tcl     },
+         { "csv",      QRF_TXT_Csv     },
+         { "html",     QRF_TXT_Html    },
+         { "json",     QRF_TXT_Json    },
+         { "off",      QRF_TXT_Off     },
+         { "sql",      QRF_TXT_Sql     },
+         { "tcl",      QRF_TXT_Tcl     },
       };
       int i;
       for(i=0; i<COUNT(aQuote); i++){
@@ -244,12 +244,12 @@ int main(int argc, char **argv){
     }else
     if( strncmp(zLine, "--eBlob=", 8)==0 ){
       const struct { const char *z; int e; } aBlob[] = {
-         { "auto",    RESFMT_B_Auto    },
-         { "hex",     RESFMT_B_Hex     },
-         { "json",    RESFMT_B_Json    },
-         { "tcl",     RESFMT_B_Tcl     },
-         { "text",    RESFMT_B_Text    },
-         { "sql",     RESFMT_B_Sql     },
+         { "auto",    QRF_BLOB_Auto    },
+         { "hex",     QRF_BLOB_Hex     },
+         { "json",    QRF_BLOB_Json    },
+         { "tcl",     QRF_BLOB_Tcl     },
+         { "text",    QRF_BLOB_Text    },
+         { "sql",     QRF_BLOB_Sql     },
       };
       int i;
       for(i=0; i<COUNT(aBlob); i++){
@@ -270,9 +270,9 @@ int main(int argc, char **argv){
     }else
     if( strncmp(zLine, "--eEscape=", 10)==0 ){
       const struct { const char *z; int e; } aEscape[] = {
-         { "ascii",     RESFMT_E_Ascii   },
-         { "off",       RESFMT_E_Off     },
-         { "symbol",    RESFMT_E_Symbol  },
+         { "ascii",     QRF_ESC_Ascii   },
+         { "off",       QRF_ESC_Off     },
+         { "symbol",    QRF_ESC_Symbol  },
       };
       int i;
       for(i=0; i<COUNT(aEscape); i++){

@@ -12,15 +12,15 @@
 ** Implementation of the Result-Format or "resfmt" utility library for SQLite.
 ** See the resfmt.md documentation for additional information.
 */
-#include "resfmt.h"
+#include "qrf.h"
 #include <string.h>
 
 /*
 ** Private state information.  Subject to change from one release to the
 ** next.
 */
-typedef struct sqlite3_resfmt sqlite3_resfmt;
-struct sqlite3_resfmt {
+typedef struct Qrf Qrf;
+struct Qrf {
   sqlite3_stmt *pStmt;        /* The statement whose output is to be rendered */
   sqlite3 *db;                /* The corresponding database connection */
   char **pzErr;               /* Write error message here, if not NULL */
@@ -28,14 +28,14 @@ struct sqlite3_resfmt {
   int iErr;                   /* Error code */
   int nCol;                   /* Number of output columns */
   sqlite3_int64 nRow;         /* Number of rows handled so far */
-  sqlite3_resfmt_spec spec;   /* Copy of the original spec */
+  sqlite3_qrf_spec spec;   /* Copy of the original spec */
 };
 
 /*
 ** Set an error code and error message.
 */
 static void resfmtError(
-  sqlite3_resfmt *p,       /* Query result state */
+  Qrf *p,       /* Query result state */
   int iCode,               /* Error code */
   const char *zFormat,     /* Message format (or NULL) */
   ...
@@ -56,7 +56,7 @@ static void resfmtError(
 /*
 ** Out-of-memory error.
 */
-static void resfmtOom(sqlite3_resfmt *p){
+static void resfmtOom(Qrf *p){
   resfmtError(p, SQLITE_NOMEM, "out of memory");
 }
 
@@ -64,7 +64,7 @@ static void resfmtOom(sqlite3_resfmt *p){
 ** If xWrite is defined, send all content of pOut to xWrite and
 ** reset pOut.
 */
-static void resfmtWrite(sqlite3_resfmt *p){
+static void resfmtWrite(Qrf *p){
   int n;
   if( p->spec.xWrite && (n = sqlite3_str_length(p->pOut))>0 ){
     p->spec.xWrite(p->spec.pWriteArg,
@@ -76,7 +76,7 @@ static void resfmtWrite(sqlite3_resfmt *p){
 
 /*
 ** Escape the input string if it is needed and in accordance with
-** eEscape, which is either RESFMT_E_Ascii or RESFMT_E_Symbol.
+** eEscape, which is either QRF_ESC_Ascii or QRF_ESC_Symbol.
 **
 ** Escaping is needed if the string contains any control characters
 ** other than \t, \n, and \r\n
@@ -90,7 +90,7 @@ static void resfmtWrite(sqlite3_resfmt *p){
 ** to reclaim memory.
 */
 static void resfmtEscape(
-  int eEscape,            /* RESFMT_E_Ascii or RESFMT_E_Symbol */
+  int eEscape,            /* QRF_ESC_Ascii or QRF_ESC_Symbol */
   sqlite3_str *pStr,      /* String to be escaped */
   int iStart              /* Begin escapding on this byte of pStr */
 ){
@@ -121,7 +121,7 @@ static void resfmtEscape(
   /* Make space to hold the escapes.  Copy the original text to the end
   ** of the available space. */
   sz = sqlite3_str_length(pStr) - iStart;
-  if( eEscape==RESFMT_E_Symbol ) nCtrl *= 2;
+  if( eEscape==QRF_ESC_Symbol ) nCtrl *= 2;
   sqlite3_str_appendchar(pStr, nCtrl, ' ');
   zOut = (unsigned char*)sqlite3_str_value(pStr);
   if( zOut==0 ) return;
@@ -144,7 +144,7 @@ static void resfmtEscape(
     }
     zIn += i+1;
     i = -1;
-    if( eEscape==RESFMT_E_Symbol ){
+    if( eEscape==QRF_ESC_Symbol ){
       zOut[j++] = 0xe2;
       zOut[j++] = 0x90;
       zOut[j++] = 0x80+c;
@@ -181,14 +181,14 @@ static const char resfmtCsvQuote[] = {
 /*
 ** Encode text appropriately and append it to p->pOut.
 */
-static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
+static void resfmtEncodeText(Qrf *p, const char *zTxt){
   int iStart = sqlite3_str_length(p->pOut);
   switch( p->spec.eQuote ){
-    case RESFMT_Q_Sql: {
+    case QRF_TXT_Sql: {
       sqlite3_str_appendf(p->pOut, "%Q", zTxt);
       break;
     }
-    case RESFMT_Q_Csv: {
+    case QRF_TXT_Csv: {
       unsigned int i;
       for(i=0; zTxt[i]; i++){
         if( resfmtCsvQuote[((const unsigned char*)zTxt)[i]] ){
@@ -203,7 +203,7 @@ static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
       }
       break;
     }
-    case RESFMT_Q_Html: {
+    case QRF_TXT_Html: {
       const unsigned char *z = (const unsigned char*)zTxt;
       while( *z ){
         unsigned int i = 0;
@@ -228,8 +228,8 @@ static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
       }
       break;
     }
-    case RESFMT_Q_Tcl:
-    case RESFMT_Q_Json: {
+    case QRF_TXT_Tcl:
+    case QRF_TXT_Json: {
       const unsigned char *z = (const unsigned char*)zTxt;
       sqlite3_str_append(p->pOut, "\"", 1);
       while( *z ){
@@ -247,7 +247,7 @@ static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
           case '\r':  sqlite3_str_append(p->pOut, "\\r", 2);   break;
           case '\t':  sqlite3_str_append(p->pOut, "\\t", 2);   break;
           default: {
-            if( p->spec.eQuote==RESFMT_Q_Json ){
+            if( p->spec.eQuote==QRF_TXT_Json ){
               sqlite3_str_appendf(p->pOut, "\\u%04x", z[i]);
             }else{
               sqlite3_str_appendf(p->pOut, "\\%03o", z[i]);
@@ -265,7 +265,7 @@ static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
       break;
     }
   }
-  if( p->spec.eEscape!=RESFMT_E_Off ){
+  if( p->spec.eEscape!=QRF_ESC_Off ){
     resfmtEscape(p->spec.eEscape, p->pOut, iStart);
   }
 }
@@ -273,7 +273,7 @@ static void resfmtEncodeText(sqlite3_resfmt *p, const char *zTxt){
 /*
 ** Render value pVal into p->pOut
 */
-static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
+static void resfmtRenderValue(Qrf *p, int iCol){
   if( p->spec.xRender ){
     sqlite3_value *pVal;
     char *z;
@@ -303,20 +303,20 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
     }
     case SQLITE_BLOB: {
       switch( p->spec.eBlob ){
-        case RESFMT_B_Hex:
-        case RESFMT_B_Sql: {
+        case QRF_BLOB_Hex:
+        case QRF_BLOB_Sql: {
           int iStart;
           int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
           int i, j;
           char *zVal;
           const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
-          if( p->spec.eBlob==RESFMT_B_Sql ){
+          if( p->spec.eBlob==QRF_BLOB_Sql ){
             sqlite3_str_append(p->pOut, "x'", 2);
           }
           iStart = sqlite3_str_length(p->pOut);
           sqlite3_str_appendchar(p->pOut, nBlob, ' ');
           sqlite3_str_appendchar(p->pOut, nBlob, ' ');
-          if( p->spec.eBlob==RESFMT_B_Sql ){
+          if( p->spec.eBlob==QRF_BLOB_Sql ){
             sqlite3_str_appendchar(p->pOut, 1, '\'');
           }
           if( sqlite3_str_errcode(p->pOut) ) return;
@@ -328,14 +328,14 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
           }
           break;
         }
-        case RESFMT_B_Tcl:
-        case RESFMT_B_Json: {
+        case QRF_BLOB_Tcl:
+        case QRF_BLOB_Json: {
           int iStart;
           int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
           int i, j;
           char *zVal;
           const unsigned char *a = sqlite3_column_blob(p->pStmt,iCol);
-          int szC = p->spec.eBlob==RESFMT_B_Json ? 6 : 4;
+          int szC = p->spec.eBlob==QRF_BLOB_Json ? 6 : 4;
           sqlite3_str_append(p->pOut, "\"", 1);
           iStart = sqlite3_str_length(p->pOut);
           for(i=szC; i>0; i--){
@@ -381,12 +381,12 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
 }
 
 /*
-** Initialize the internal sqlite3_resfmt object.
+** Initialize the internal Qrf object.
 */
 static void resfmtInitialize(
-  sqlite3_resfmt *p,                 /* State object to be initialized */
+  Qrf *p,                 /* State object to be initialized */
   sqlite3_stmt *pStmt,               /* Query whose output to be formatted */
-  const sqlite3_resfmt_spec *pSpec,  /* Format specification */
+  const sqlite3_qrf_spec *pSpec,  /* Format specification */
   char **pzErr                       /* Write errors here */
 ){
   size_t sz;                  /* Size of pSpec[], based on pSpec->iVersion */
@@ -394,7 +394,7 @@ static void resfmtInitialize(
   p->pzErr = pzErr;
   if( pSpec->iVersion!=1 ){
     resfmtError(p, SQLITE_ERROR,
-       "unusable sqlite3_resfmt_spec.iVersion (%d)",
+       "unusable sqlite3_qrf_spec.iVersion (%d)",
        pSpec->iVersion);
     return;
   }
@@ -408,20 +408,20 @@ static void resfmtInitialize(
   p->iErr = 0;
   p->nCol = sqlite3_column_count(p->pStmt);
   p->nRow = 0;
-  sz = sizeof(sqlite3_resfmt_spec);
+  sz = sizeof(sqlite3_qrf_spec);
   memcpy(&p->spec, pSpec, sz);
   if( p->spec.zNull==0 ) p->spec.zNull = "";
-  if( p->spec.eBlob==RESFMT_B_Auto ){
+  if( p->spec.eBlob==QRF_BLOB_Auto ){
     switch( p->spec.eQuote ){
-      case RESFMT_Q_Sql:  p->spec.eBlob = RESFMT_B_Sql;  break;
-      case RESFMT_Q_Csv:  p->spec.eBlob = RESFMT_B_Tcl;  break;
-      case RESFMT_Q_Tcl:  p->spec.eBlob = RESFMT_B_Tcl;  break;
-      case RESFMT_Q_Json: p->spec.eBlob = RESFMT_B_Json; break;
-      default:            p->spec.eBlob = RESFMT_B_Text; break;
+      case QRF_TXT_Sql:  p->spec.eBlob = QRF_BLOB_Sql;  break;
+      case QRF_TXT_Csv:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
+      case QRF_TXT_Tcl:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
+      case QRF_TXT_Json: p->spec.eBlob = QRF_BLOB_Json; break;
+      default:            p->spec.eBlob = QRF_BLOB_Text; break;
     }
   }
   switch( p->spec.eFormat ){
-    case RESFMT_List: {
+    case QRF_MODE_List: {
       if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = "|";
       if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
       break;
@@ -432,15 +432,15 @@ static void resfmtInitialize(
 /*
 ** Render a single row of output.
 */
-static void resfmtDoOneRow(sqlite3_resfmt *p){
+static void resfmtDoOneRow(Qrf *p){
   int i;
   switch( p->spec.eFormat ){
-    case RESFMT_Off:
-    case RESFMT_Count: {
+    case QRF_MODE_Off:
+    case QRF_MODE_Count: {
       /* No-op */
       break;
     }
-    default: {  /* RESFMT_List */
+    default: {  /* QRF_MODE_List */
       if( p->nRow==0 && p->spec.bShowCNames ){
         for(i=0; i<p->nCol; i++){
           const char *zCName = sqlite3_column_name(p->pStmt, i);
@@ -465,9 +465,9 @@ static void resfmtDoOneRow(sqlite3_resfmt *p){
 /*
 ** Finish rendering the results
 */
-static void resfmtFinalize(sqlite3_resfmt *p){
+static void resfmtFinalize(Qrf *p){
   switch( p->spec.eFormat ){
-    case RESFMT_Count: {
+    case QRF_MODE_Count: {
       sqlite3_str_appendf(p->pOut, "%lld\n", p->nRow);
       resfmtWrite(p);
       break;
@@ -487,24 +487,24 @@ static void resfmtFinalize(sqlite3_resfmt *p){
 ** into *pzErr.
 */
 int sqlite3_format_query_result(
-  sqlite3_stmt *pStmt,                    /* Statement to evaluate */
-  const sqlite3_resfmt_spec *pSpec,       /* Format specification */
-  char **pzErr                            /* Write error message here */
+  sqlite3_stmt *pStmt,                 /* Statement to evaluate */
+  const sqlite3_qrf_spec *pSpec,       /* Format specification */
+  char **pzErr                         /* Write error message here */
 ){
-  sqlite3_resfmt fmt;         /* The new sqlite3_resfmt being created */
+  Qrf qrf;         /* The new Qrf being created */
 
   if( pStmt==0 ) return SQLITE_OK;       /* No-op */
   if( pSpec==0 ) return SQLITE_MISUSE;
-  resfmtInitialize(&fmt, pStmt, pSpec, pzErr);
-  while( fmt.iErr==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
-    resfmtDoOneRow(&fmt);
+  resfmtInitialize(&qrf, pStmt, pSpec, pzErr);
+  while( qrf.iErr==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+    resfmtDoOneRow(&qrf);
   }
-  if( fmt.iErr==SQLITE_OK ){
-    int rc = sqlite3_reset(fmt.pStmt);
+  if( qrf.iErr==SQLITE_OK ){
+    int rc = sqlite3_reset(qrf.pStmt);
     if( rc!=SQLITE_OK ){
-      resfmtError(&fmt, rc, "%s", sqlite3_errmsg(fmt.db));
+      resfmtError(&qrf, rc, "%s", sqlite3_errmsg(qrf.db));
     }
   }
-  resfmtFinalize(&fmt);
-  return fmt.iErr;
+  resfmtFinalize(&qrf);
+  return qrf.iErr;
 }

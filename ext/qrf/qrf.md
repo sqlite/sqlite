@@ -1,7 +1,7 @@
-# SQLite Result Formatting Subsystem
+# SQLite Query Result Formatting Subsystem
 
-The "resfmt" subsystem is a set of C-language subroutines that work
-together to format the output from an SQLite query.  The output format
+The "Query Result Formatter" or "QRF" subsystem is a set of C-language
+subroutines that formats the output from an SQLite query.  The output format
 is configurable.  The application can request CSV, or a table, or
 any of several other formats, according to needs.
 
@@ -13,56 +13,47 @@ bound and is ready to run.  Then to format the output from this
 prepared statement, use code similar to the following:
 
 > ~~~
-sqlite3_resfmt_spec spec;   /* Formatter spec */
-sqlite3_resfmt *pFmt;       /* Formatter object */
-int errCode;                /* Error code */
-char *zErrMsg;              /* Text error message (optional) */
+sqlite3_qrf_ spec;    /* Format specification */
+char *zErrMsg;        /* Text error message (optional) */
+int rc;               /* Result code */
 
 memset(&spec, 0, sizeof(spec));
-// Additional spec initialization here
-pFmt = sqlite3_resfmt_begin(pStmt, &spec);
-while( SQLITE_ROW==sqlite3_step(pStmt) ){
-  sqlite3_resfmt_row(pFmt, pStmt);
-}
-sqlite3_resfmt_finish(pFmt, &errCode, &zErrMsg);
-// Do something with errcode and zErrMsg
+// Fill out the spec object to describe the desired output format
+zErrMsg = 0;
+rc = sqlite3_format_query_result(pStmt, &spec, &zErrMsg);
+if( rc ) printf("Error (%d): %s\n", rc, zErrMsg);
 sqlite3_free(zErrMsg);
 ~~~
 
-The `sqlite3_resfmt_spec` structure (defined below) describes the desired
-output format.  The `pFmt` variable is a pointer to an opaque sqlite3_resfmt
-object that maintains the statement of the formatter.
-The pFmt object is used as the first parameter to two other
-routines, `sqlite3_resfmt_row()` and `sqlite3_resfmt_finish()`, and
-is not usable for any other purpose by the caller.  The
-`sqlite3_resfmt_finish()` interface serves as a destructor for
-the pFmt object.
+The `sqlite3_qrf_spec` object describes the desired output format
+and what to do with the generated output. Most of the work in using
+the QRF involves filling out the sqlite3_qrf_spec.
 
-## 2.0 The `sqlite3_resfmt_spec` object
+## 2.0 The `sqlite3_qrf_spec` object
 
-A pointer to an instance of the following structure is the second
-parameter to the `sqlite3_resfmt_begin()` interface.  This structure
-defines how the rules of the statement are to be formatted.
+This structure defines how the results of a query are to be
+formatted, and what to do with the formatted text.
 
 > ~~~
-typedef struct sqlite3_resfmt_spec sqlite3_resfmt_spec;
-struct sqlite3_resfmt_spec {
-  int iVersion;               /* Version number of this structure */
-  int eFormat;                /* Output format */
+typedef struct sqlite3_qrf_spec sqlite3_qrf_spec;
+struct sqlite3_qrf_spec {
+  unsigned char iVersion;     /* Version number of this structure */
+  unsigned char eFormat;      /* Output format */
   unsigned char bShowCNames;  /* True to show column names */
-  unsigned char eEscMode;     /* How to deal with control characters */
-  unsigned char bQuote;       /* Quote output values as SQL literals */
+  unsigned char eEscape;      /* How to deal with control characters */
+  unsigned char eQuote;       /* Quoting style for text */
+  unsigned char eBlob;        /* Quoting style for BLOBs */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
-  int mxWidth;                /* Maximum column width in columnar modes */
+  short int mxWidth;          /* Maximum width of any column */
+  int nWidth;                 /* Number of column width parameters */
+  short int *aWidth;          /* Column widths */
   const char *zColumnSep;     /* Alternative column separator */
   const char *zRowSep;        /* Alternative row separator */
   const char *zTableName;     /* Output table name */
   const char *zNull;          /* Rendering of NULL */
   const char *zFloatFmt;      /* printf-style string for rendering floats */
-  int nWidth;                 /* Number of column width parameters */
-  short int *aWidth;          /* Column widths */
-  char *(*xRender)(void*,sqlite3_value*);                 /* Render a value */
-  ssize_t (*xWrite)(void*,const unsigned char*,ssize_t);  /* Write callback */
+  char *(*xRender)(void*,sqlite3_value*);                /* Render a value */
+  ssize_t (*xWrite)(void*,const unsigned char*,size_t);  /* Write callback */
   void *pRenderArg;           /* First argument to the xRender callback */
   void *pWriteArg;            /* First argument to the xWrite callback */
   char **pzOutput;            /* Storage location for output string */
@@ -70,55 +61,49 @@ struct sqlite3_resfmt_spec {
 };
 ~~~
 
-The sqlite3_resfmt_spec object must be fully initialized prior
+The sqlite3_qrf_spec object must be fully initialized prior
 to calling `sqlite3_resfmt_begin()` and its value must not change
 by the application until after the corresponding call to
 `sqlite3_resfmt_finish()`.  Note that the result formatter itself
-might change values in the sqlite3_resfmt_spec object as it runs.
+might change values in the sqlite3_qrf_spec object as it runs.
 But the application should not try to change or use any fields of
-the sqlite3_resfmt_spec object while the formatter is running.
+the sqlite3_qrf_spec object while the formatter is running.
 
 ### 2.1 Structure Version Number
 
-The sqlite3_resfmt_spec.iVersion field must be 1.  Future enhancements to this
-subsystem might add new fields onto the bottom of the sqlite3_resfmt_spec
+The sqlite3_qrf_spec.iVersion field must be 1.  Future enhancements to 
+the QRF might add new fields onto the bottom of the sqlite3_qrf_spec
 object. Those new fields will only be accessible if the iVersion is greater
 than 1. Thus the iVersion field is used to support upgradability.
 
-### 2.2 Output Deposition
+### 2.2 Output Deposition (xWrite and pzOutput)
 
 The formatted output can either be sent to a callback function
 or accumulated into an output buffer in memory obtained
-from system malloc().  If the sqlite3_resfmt_spec.xWrite column is not NULL,
-then that function is invoked (using sqlite3_resfmt_spec.xWriteArg as its
+from system malloc().  If the sqlite3_qrf_spec.xWrite column is not NULL,
+then that function is invoked (using sqlite3_qrf_spec.xWriteArg as its
 first argument) to transmit the formatted output.  Or, if
-sqlite3_resfmt_spec.pzOutput points to a pointer to a character, then that
-pointer is made to point to memory obtained from malloc() that
+sqlite3_qrf_spec.pzOutput points to a pointer to a character, then that
+pointer is made to point to memory obtained from sqlite3_malloc() that
 contains the complete text of the formatted output.
 
-When `sqlite3_resfmt_begin()` is called,
-one of sqlite3_resfmt_spec.xWrite and sqlite3_resfmt_spec.pzOutput must be
+One of sqlite3_qrf_spec.xWrite and sqlite3_qrf_spec.pzOutput must be
 non-NULL and the other must be NULL.
-
-Output might be generated row by row, on each call to
-`sqlite3_resfmt_row()` or it might be written all at once
-on the final call to `sqlite3_resfmt_finish()`, depending
-on the output format.
 
 ### 2.3 Output Format
 
-The sqlite3_resfmt_spec.eFormat field is an integer code that defines the
+The sqlite3_qrf_spec.eFormat field is an integer code that defines the
 specific output format that will be generated.  See the
 output format describes below for additional detail.
 
 ### 2.4 Show Column Names
 
-The sqlite3_resfmt_spec.bShowCNames field is a boolean.  If true, then column
+The sqlite3_qrf_spec.bShowCNames field is a boolean.  If true, then column
 names appear in the output.  If false, column names are omitted.
 
 ### 2.5 Control Character Escapes
 
-The sqlite3_resfmt_spec.eEscMode determines how ASCII control characters are
+The sqlite3_qrf_spec.eEscMode determines how ASCII control characters are
 formatted in the output.  If this value is zero, then the control character
 with value X is displayed as ^Y where Y is X+0x40.  Hence, a
 backspace character (U+0008) is shown as "^H".  This is the default.
@@ -133,7 +118,7 @@ display values, regardless of this setting.
 
 ### 2.6 Render output as SQL literals
 
-If the sqlite3_resfmt_spec.bQuote field is non-zero (true), then outputs
+If the sqlite3_qrf_spec.bQuote field is non-zero (true), then outputs
 are rendered as SQL literal values.  String are written within `'...'`
 with appropriate escapes.  BLOBs are of the form `x'...'`.  NULL values
 come out as "NULL".
@@ -141,38 +126,38 @@ come out as "NULL".
 ### 2.7 Word Wrapping In Columnar Modes
 
 For output modes that attempt to display equal-width columns, the
-sqlite3_resfmt_spec.bWordWrap boolean determines whether long values
+sqlite3_qrf_spec.bWordWrap boolean determines whether long values
 are broken at word boundaries, or at arbitrary characters.  The
-sqlite3_resfmt_spec.mxWidth determines the maximum width of an output column.
+sqlite3_qrf_spec.mxWidth determines the maximum width of an output column.
 
 ### 2.8 Row and Column Separator Strings
 
-The sqlite3_resfmt_spec.zColumnSep and sqlite3_resfmt_spec.zRowSep strings
+The sqlite3_qrf_spec.zColumnSep and sqlite3_qrf_spec.zRowSep strings
 are alternative column and row separator character sequences.  If not
 specified (if these pointers are left as NULL) then appropriate defaults
 are used.
 
 ### 2.9 The Output Table Name
 
-The sqlite3_resfmt_spec.zTableName value is the name of the output table
+The sqlite3_qrf_spec.zTableName value is the name of the output table
 when the MODE_Insert output mode is used.
 
 ### 2.10 The Rendering Of NULL
 
-If a value is NULL and sqlite3_resfmt_spec.xRender() does not exist
+If a value is NULL and sqlite3_qrf_spec.xRender() does not exist
 or declines to provide a rendering, then show the NULL using the string
-found in sqlite3_resfmt_spec.zNull.  If zNull is itself a NULL pointer
+found in sqlite3_qrf_spec.zNull.  If zNull is itself a NULL pointer
 then NULL values are rendered as an empty string.
 
 ### 2.11 Floating Point Value Format
 
 If a value is a floating-point number other than Infinity or NaN, then
 the value is rendered using the printf-style format given by the
-sqlite3_resfmt_spec.zFloatFmt string.
+sqlite3_qrf_spec.zFloatFmt string.
 
 ### 2.12 Column Widths And Alignments
 
-The sqlite3_resfmt_spec.aWidth[] array, if specified, is an array of 
+The sqlite3_qrf_spec.aWidth[] array, if specified, is an array of 
 16-bit signed integers that specify the minimum column width and
 the alignment for all columns in columnar output modes.  Negative
 values mean right-justify.  The
@@ -180,13 +165,13 @@ absolute value is the minimum of the corresponding column.
 These widths are deliberately stored in a 16-bit signed integer
 as no good can come from having column widths greater than 32767.
 
-The sqlite3_resfmt_spec.nWidth field is the number of values in the aWidth[]
+The sqlite3_qrf_spec.nWidth field is the number of values in the aWidth[]
 array.  Any column beyond the nWidth-th column are assumed to have
 a minimum width of 0.
 
 ### 2.13 Optional Value Rendering Callback
 
-If the sqlite3_resfmt_spec.xRender field is not NULL, then each rendered
+If the sqlite3_qrf_spec.xRender field is not NULL, then each rendered
 sqlite3_value is first passed to the xRender function, giving it
 an opportunity to render the results.  If xRender chooses to render,
 it should write the rendering into memory obtained from sqlite3_malloc()
@@ -285,9 +270,9 @@ is pending.
 
 The SQLite result formatter is implemented in three source code files:
 
-   *  `resfmt.c` &rarr;  The implementation, written in portable C99
-   *  `resfmt.h` &rarr;  A header file defining interfaces
-   *  `resfmt.md` &rarr;  This documentation, in Markdown
+   *  `qrf.c` &rarr;  The implementation, written in portable C99
+   *  `qrf.h` &rarr;  A header file defining interfaces
+   *  `qrf.md` &rarr;  This documentation, in Markdown
 
-To use the SQLite result formatter, include the "`resfmt.h`" header file
-and link the application against the "`resfmt.c`" source file.
+To use the SQLite result formatter, include the "`qrf.h`" header file
+and link the application against the "`qrf.c`" source file.

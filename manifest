@@ -1,5 +1,5 @@
-C Simplify\sthe\sinterface\sto\suse\sjust\sa\ssingle\sAPI.
-D 2025-10-22T12:09:50.023
+C Refactor:\s\sName\schange\sto\s"query\sresult\sformatter"\sor\s"QRF".\s\sSimplify\snames.\nput\sall\sthe\scode\sinto\sits\sown\ssubdirectory\sof\sext/
+D 2025-10-22T12:33:59.118
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -389,10 +389,6 @@ F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 548151f3e57506fda678e6a65e85a763f4eece653287e1ad44e167f9485e0c6b
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
-F ext/misc/resfmt-tester.c 3188324e10f945429fd684c1d1a468a1bde43e1379af60f0d34c5411a04b0edc
-F ext/misc/resfmt.c 86c6e1a4e77a64423de38942fcbc1c07ba052b405be3550f1e72980173e0d7f1
-F ext/misc/resfmt.h ebb635f87324499a1487cdad812f64ab9f98a1b09accf0ba45fea0e274e2bd3b
-F ext/misc/resfmt.md 6f6cefd95fa11ce30e4f34ea84052e7a8291dd48b7e666352bd7cf2e22c22ec4
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c 22c6d8f00cc1b5089b1b37392e9097e9df9a5db53be86daf9a7669d95bb179f4
@@ -420,6 +416,10 @@ F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f6
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
+F ext/qrf/qrf-tester.c 59cb5b1ed889ba57836d0fbb07b583fdfdfe409b1344f4f119fc13dff3a7356a w ext/misc/resfmt-tester.c
+F ext/qrf/qrf.c 702769f174817330ebe92af2334e5f5529f6f5b6315ace318a359e3a9bde10ac w ext/misc/resfmt.c
+F ext/qrf/qrf.h e9585fbadc45e8182faf208a0f86984d5130d89742364424fd1c39f12457f013 w ext/misc/resfmt.h
+F ext/qrf/qrf.md 4eea619191dab7bbf483eff3fe3b074a07d7c8c50bc86070a4485797d386d1ff w ext/misc/resfmt.md
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
 F ext/rbu/rbu10.test 7c22caa32c2ff26983ca8320779a31495a6555737684af7aba3daaf762ef3363
@@ -662,7 +662,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk bf63775585a99e8e7158c4d67c30aeeae45b84572c474f9d41c7bba927788f46
+F main.mk e402d12e7c0f5cd3150679847c791b84018f72cd18bc96544b91a90a4651bb41
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2175,8 +2175,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1f364ea3c08badd555a9ce70bb96cb8f862d6cc6425e9ff41da228fdd2f29361
-R e9ac91203f0abef1ee5b35000bb54fe9
+P 82dc13ec4887f90995bd984ede9c2670fb7512962ccceb1848a7e9aab7891c00
+R 876ffc4381d775206ba278a9f63b44f7
+T *branch * qrf
+T *sym-qrf *
+T -sym-resfmt *
 U drh
-Z 7963d538858020e5fc3e5fc1a9ddc9f8
+Z c3eafc0dfedaee8eb5b7be16a8347846
 # Remove this line to create a well-formed Fossil manifest.
