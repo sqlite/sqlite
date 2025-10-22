@@ -1,9 +1,9 @@
-C Back\sout\s[b144f875d6bddce6]\sand\sremove\sthe\sformer\scheck\sfor\sstrchrnul()\sfrom\sthe\sconfigure\sscript.
-D 2025-10-21T16:15:53.543
+C Adjust\ssome\sof\sthe\smarkdown\sin\sthe\sLICENSE.md\sfile\sso\sthat\sit\swill\shopefully\nwork\sbetter\son\sGitHub.
+D 2025-10-22T00:38:28.584
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F LICENSE.md e108e1e69ae8e8a59e93c455654b8ac9356a11720d3345df2a4743e9590fb20d
+F LICENSE.md adfb19852dd401741652a7cb51b584608fc340da050072b1b6b5600df7d5938f
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 8dd676302f3165984c046f81af14b6676a334418fa30255efaf439f8033042fa
@@ -2171,9 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 53edea286b0a38f4f9c7017276f3a826037919144d517f8c89ef0f35b65af5f1
-Q -b144f875d6bddce62e8f2ad42bfe5dfa6c2434f2ef3edb86847fb4c23aa46814
-R d6bb6e56d6c267859faeecf3ec44d563
-U stephan
-Z d495461f50d66f9c0ed304cb4170629b
+P f4e059b2243c6db37b4dd201b03f0c1916baec5e9e1a660815fcd7eeaf530367
+R 659bc9c9c51898a1829d492b8aba7535
+U drh
+Z ad484df108334f9fa9bec26646946f87
 # Remove this line to create a well-formed Fossil manifest.
