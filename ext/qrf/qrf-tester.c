@@ -90,6 +90,7 @@ int main(int argc, char **argv){
   int rc;
   int lineNum = 0;
   int bUseWriter = 1;
+  short int aWidth[100];
   sqlite3_qrf_spec spec;
   char zLine[1000];
 
@@ -302,6 +303,29 @@ int main(int argc, char **argv){
     }else
     if( strncmp(zLine, "--zRowSep=", 10)==0 ){
       spec.zRowSep = tempStrdup(&zLine[10]);
+    }else
+    if( strncmp(zLine, "--mxWidth=", 10)==0 ){
+      spec.mxWidth = (short int)atoi(&zLine[10]);
+    }else
+    if( strncmp(zLine, "--aWidth=", 9)==0 ){
+      const char *zArg = &zLine[9];
+      int n = 0;
+      while( isspace(zArg[0]) ) zArg++;
+      while( zArg[0]!=0 && n<COUNT(aWidth) ){
+        int w = atoi(zArg);
+        if( w>QRF_MX_WIDTH ){
+          w = QRF_MX_WIDTH;
+        }else if( w<QRF_MN_WIDTH ){
+          w = QRF_MN_WIDTH;
+        }else if( w==0 && zArg[0]=='-' ){
+          w = QRF_MINUS_ZERO;
+        }
+        aWidth[n++] = w;
+        while( zArg[0] && !isspace(zArg[0]) ) zArg++;
+        while( isspace(zArg[0]) ) zArg++;
+      }
+      spec.aWidth = aWidth;
+      spec.nWidth = n;
     }else
     if( strcmp(zLine, "--exit")==0 ){
       break;

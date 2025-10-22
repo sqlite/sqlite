@@ -877,7 +877,10 @@ static void qrfColumnar(Qrf *p){
   if( p->actualWidth==0 ){ qrfOom(p); goto qrf_column_end; }
   for(i=0; i<p->spec.nWidth && i<nColumn; i++){
     int w = i<p->spec.nWidth ? p->spec.aWidth[i] : 0;
-    if( w<0 ) w = -w;
+    if( w<0 ){
+      if( w==QRF_MINUS_ZERO ){ w = 0; }
+      else{ w = -w; }
+    }
     p->actualWidth[i] = w;
   }
   while( i<nColumn ){
@@ -932,7 +935,7 @@ static void qrfColumnar(Qrf *p){
       nRow++;
       for(i=0; i<nColumn; i++){
         int wx = i<p->spec.nWidth ? p->spec.aWidth[i] : 0;
-        if( wx==0 ){
+        if( wx==0 || wx==QRF_MINUS_ZERO ){
           wx = p->spec.mxWidth;
         }
         if( wx<0 ) wx = -wx;

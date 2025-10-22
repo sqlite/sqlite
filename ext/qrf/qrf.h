@@ -44,6 +44,13 @@ struct sqlite3_qrf_spec {
 };
 
 /*
+** Range of values for sqlite3_qrf_spec.aWidth[] entries:
+*/
+#define QRF_MX_WIDTH    (10000)
+#define QRF_MN_WIDTH    (-10000)
+#define QRF_MINUS_ZERO  (-32768)    /* Special value meaning -0 */
+
+/*
 ** Interfaces
 */
 int sqlite3_format_query_result(
