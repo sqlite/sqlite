@@ -20,14 +20,14 @@
 */
 typedef struct sqlite3_resfmt_spec sqlite3_resfmt_spec;
 struct sqlite3_resfmt_spec {
-  short int iVersion;         /* Version number of this structure */
+  unsigned char iVersion;     /* Version number of this structure */
   unsigned char eFormat;      /* Output format */
   unsigned char bShowCNames;  /* True to show column names */
   unsigned char eEscape;      /* How to deal with control characters */
   unsigned char eQuote;       /* Quoting style for text */
   unsigned char eBlob;        /* Quoting style for BLOBs */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
-  short int mxWidth;          /* Maximum column width in columnar modes */
+  short int mxWidth;          /* Maximum width of any column */
   int nWidth;                 /* Number of column width parameters */
   short int *aWidth;          /* Column widths */
   const char *zColumnSep;     /* Alternative column separator */
@@ -44,16 +44,13 @@ struct sqlite3_resfmt_spec {
 };
 
 /*
-** Opaque state structure used by this library.
-*/
-typedef struct sqlite3_resfmt sqlite3_resfmt;
-
-/*
 ** Interfaces
 */
-sqlite3_resfmt *sqlite3_resfmt_begin(sqlite3_stmt*, sqlite3_resfmt_spec*);
-int sqlite3_resfmt_row(sqlite3_resfmt*);
-int sqlite3_resfmt_finish(sqlite3_resfmt*,int*,char**);
+int sqlite3_format_query_result(
+  sqlite3_stmt *pStmt,                /* SQL statement to run */
+  const sqlite3_resfmt_spec *pSpec,   /* Result format specification */
+  char **pzErr                        /* OUT: Write error message here */
+);
 
 /*
 ** Output styles:
@@ -61,16 +58,17 @@ int sqlite3_resfmt_finish(sqlite3_resfmt*,int*,char**);
 #define RESFMT_List      0 /* One record per line with a separator */
 #define RESFMT_Line      1 /* One column per line. */
 #define RESFMT_Html      2 /* Generate an XHTML table */
-#define RESFMT_Insert    3 /* Generate SQL "insert" statements */
-#define RESFMT_Explain   4 /* EXPLAIN output */
-#define RESFMT_ScanExp   5 /* EXPLAIN output with vm stats */
-#define RESFMT_EQP       6 /* Converts EXPLAIN QUERY PLAN output into a graph */
-#define RESFMT_Markdown  7 /* Markdown formatting */
-#define RESFMT_Column    8 /* One record per line in neat columns */
-#define RESFMT_Table     9 /* MySQL-style table formatting */
-#define RESFMT_Box      10 /* Unicode box-drawing characters */
-#define RESFMT_Count    11 /* Output only a count of the rows of output */
-#define RESFMT_Off      12 /* No query output shown */
+#define RESFMT_Json      3 /* Output is a list of JSON objects */
+#define RESFMT_Insert    4 /* Generate SQL "insert" statements */
+#define RESFMT_Explain   5 /* EXPLAIN output */
+#define RESFMT_ScanExp   6 /* EXPLAIN output with vm stats */
+#define RESFMT_EQP       7 /* Converts EXPLAIN QUERY PLAN output into a graph */
+#define RESFMT_Markdown  8 /* Markdown formatting */
+#define RESFMT_Column    9 /* One record per line in neat columns */
+#define RESFMT_Table    10 /* MySQL-style table formatting */
+#define RESFMT_Box      11 /* Unicode box-drawing characters */
+#define RESFMT_Count    12 /* Output only a count of the rows of output */
+#define RESFMT_Off      13 /* No query output shown */
 
 /*
 ** Quoting styles for text.

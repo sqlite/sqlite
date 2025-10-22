@@ -134,8 +134,6 @@ int main(int argc, char **argv){
     }else
     if( strcmp(zLine, "--go")==0 ){
       const char *zSql, *zTail;
-      sqlite3_resfmt *pFmt;
-      int iErr = 0;
       char *zErr = 0;
       int n;
       if( db==0 ){
@@ -166,17 +164,16 @@ int main(int argc, char **argv){
             spec.pzOutput = &zOut;
             spec.xWrite = 0;
           }
-          pFmt = sqlite3_resfmt_begin(pStmt, &spec);
-          while( sqlite3_step(pStmt)==SQLITE_ROW ){
-            sqlite3_resfmt_row(pFmt);
+          rc = sqlite3_format_query_result(pStmt, &spec, &zErr);
+          if( rc!=SQLITE_OK ){
+            fprintf(stderr, "%s:%d: Error %d: %s\n", zSrc, lineNum,
+                            rc, zErr);
+          }else{
+            if( !bUseWriter && zOut ){
+              fputs(zOut, stdout);
+              sqlite3_free(zOut);
+            }
           }
-          rc = sqlite3_resfmt_finish(pFmt, &iErr, &zErr);
-          if( !bUseWriter && zOut ){
-            fputs(zOut, stdout);
-            sqlite3_free(zOut);
-          }
-          printf("/* rc=%d.  error-code=%d.  error-message=%s */\n",
-                 rc, iErr, zErr ? zErr : "NULL");
           sqlite3_free(zErr);
         }
         sqlite3_finalize(pStmt);
@@ -190,7 +187,6 @@ int main(int argc, char **argv){
          { "box",      RESFMT_Box,      },
          { "column",   RESFMT_Column,   },
          { "count",    RESFMT_Count,    },
-         { "csv",      RESFMT_Csv,      },
          { "eqp",      RESFMT_EQP,      },
          { "explain",  RESFMT_Explain,  },
          { "html",     RESFMT_Html,     },
@@ -200,9 +196,7 @@ int main(int argc, char **argv){
          { "list",     RESFMT_List,     },
          { "markdown", RESFMT_Markdown, },
          { "off",      RESFMT_Off,      },
-         { "pretty",   RESFMT_Pretty,   },
          { "table",    RESFMT_Table,    },
-         { "tcl",      RESFMT_Tcl,      },
          { "scanexp",  RESFMT_ScanExp,  },
       };
       int i;

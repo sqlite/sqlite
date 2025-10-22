@@ -19,10 +19,11 @@
 ** Private state information.  Subject to change from one release to the
 ** next.
 */
+typedef struct sqlite3_resfmt sqlite3_resfmt;
 struct sqlite3_resfmt {
   sqlite3_stmt *pStmt;        /* The statement whose output is to be rendered */
   sqlite3 *db;                /* The corresponding database connection */
-  sqlite3_str *pErr;          /* Error message, or NULL */
+  char **pzErr;               /* Write error message here, if not NULL */
   sqlite3_str *pOut;          /* Accumulated output */
   int iErr;                   /* Error code */
   int nCol;                   /* Number of output columns */
@@ -30,14 +31,33 @@ struct sqlite3_resfmt {
   sqlite3_resfmt_spec spec;   /* Copy of the original spec */
 };
 
+/*
+** Set an error code and error message.
+*/
+static void resfmtError(
+  sqlite3_resfmt *p,       /* Query result state */
+  int iCode,               /* Error code */
+  const char *zFormat,     /* Message format (or NULL) */
+  ...
+){
+  p->iErr = iCode;
+  if( p->pzErr!=0 ){
+    sqlite3_free(*p->pzErr);
+    *p->pzErr = 0;
+    if( zFormat ){
+      va_list ap;
+      va_start(ap, zFormat);
+      *p->pzErr = sqlite3_mprintf(zFormat, ap);
+      va_end(ap);
+    }
+  }
+}
 
 /*
-** Free memory associated with pResfmt
+** Out-of-memory error.
 */
-static void resfmtFree(sqlite3_resfmt *p){
-  if( p->pErr ) sqlite3_free(sqlite3_str_finish(p->pErr));
-  if( p->pOut ) sqlite3_free(sqlite3_str_finish(p->pOut));
-  sqlite3_free(p);
+static void resfmtOom(sqlite3_resfmt *p){
+  resfmtError(p, SQLITE_NOMEM, "out of memory");
 }
 
 /*
@@ -361,27 +381,29 @@ static void resfmtRenderValue(sqlite3_resfmt *p, int iCol){
 }
 
 /*
-** Create a new rendering object
+** Initialize the internal sqlite3_resfmt object.
 */
-sqlite3_resfmt *sqlite3_resfmt_begin(
-  sqlite3_stmt *pStmt,
-  sqlite3_resfmt_spec *pSpec
+static void resfmtInitialize(
+  sqlite3_resfmt *p,                 /* State object to be initialized */
+  sqlite3_stmt *pStmt,               /* Query whose output to be formatted */
+  const sqlite3_resfmt_spec *pSpec,  /* Format specification */
+  char **pzErr                       /* Write errors here */
 ){
-  sqlite3_resfmt *p;          /* The new sqlite3_resfmt being created */
   size_t sz;                  /* Size of pSpec[], based on pSpec->iVersion */
-
-  if( pStmt==0 ) return 0;
-  if( pSpec==0 ) return 0;
-  if( pSpec->iVersion!=1 ) return 0;
-  p = sqlite3_malloc64( sizeof(*p) );
-  if( p==0 ) return 0;
+  memset(p, 0, sizeof(*p));
+  p->pzErr = pzErr;
+  if( pSpec->iVersion!=1 ){
+    resfmtError(p, SQLITE_ERROR,
+       "unusable sqlite3_resfmt_spec.iVersion (%d)",
+       pSpec->iVersion);
+    return;
+  }
   p->pStmt = pStmt;
   p->db = sqlite3_db_handle(pStmt);
-  p->pErr = 0;
   p->pOut = sqlite3_str_new(p->db);
   if( p->pOut==0 ){
-    resfmtFree(p);
-    return 0;
+    resfmtOom(p);
+    return;
   }
   p->iErr = 0;
   p->nCol = sqlite3_column_count(p->pStmt);
@@ -405,16 +427,13 @@ sqlite3_resfmt *sqlite3_resfmt_begin(
       break;
     }
   }
-  return p;
 }
 
 /*
 ** Render a single row of output.
 */
-int sqlite3_resfmt_row(sqlite3_resfmt *p){
-  int rc = SQLITE_OK;
+static void resfmtDoOneRow(sqlite3_resfmt *p){
   int i;
-  if( p==0 ) return SQLITE_DONE;
   switch( p->spec.eFormat ){
     case RESFMT_Off:
     case RESFMT_Count: {
@@ -441,16 +460,12 @@ int sqlite3_resfmt_row(sqlite3_resfmt *p){
     }
   }
   p->nRow++;
-  return rc;
 }
 
 /*
 ** Finish rendering the results
 */
-int sqlite3_resfmt_finish(sqlite3_resfmt *p, int *piErr, char **pzErrMsg){
-  if( p==0 ){
-    return SQLITE_OK;
-  }
+static void resfmtFinalize(sqlite3_resfmt *p){
   switch( p->spec.eFormat ){
     case RESFMT_Count: {
       sqlite3_str_appendf(p->pOut, "%lld\n", p->nRow);
@@ -460,15 +475,36 @@ int sqlite3_resfmt_finish(sqlite3_resfmt *p, int *piErr, char **pzErrMsg){
   }
   if( p->spec.pzOutput ){
     *p->spec.pzOutput = sqlite3_str_finish(p->pOut);
-    p->pOut = 0;
+  }else if( p->pOut ){
+    sqlite3_free(sqlite3_str_finish(p->pOut));
   }
-  if( piErr ){
-    *piErr = p->iErr;
+}
+
+/*
+** Run the prepared statement pStmt and format the results according
+** to the specification provided in pSpec.  Return an error code.
+** If pzErr is not NULL and if an error occurs, write an error message
+** into *pzErr.
+*/
+int sqlite3_format_query_result(
+  sqlite3_stmt *pStmt,                    /* Statement to evaluate */
+  const sqlite3_resfmt_spec *pSpec,       /* Format specification */
+  char **pzErr                            /* Write error message here */
+){
+  sqlite3_resfmt fmt;         /* The new sqlite3_resfmt being created */
+
+  if( pStmt==0 ) return SQLITE_OK;       /* No-op */
+  if( pSpec==0 ) return SQLITE_MISUSE;
+  resfmtInitialize(&fmt, pStmt, pSpec, pzErr);
+  while( fmt.iErr==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
+    resfmtDoOneRow(&fmt);
   }
-  if( pzErrMsg ){
-    *pzErrMsg = sqlite3_str_finish(p->pErr);
-    p->pErr = 0;
+  if( fmt.iErr==SQLITE_OK ){
+    int rc = sqlite3_reset(fmt.pStmt);
+    if( rc!=SQLITE_OK ){
+      resfmtError(&fmt, rc, "%s", sqlite3_errmsg(fmt.db));
+    }
   }
-  resfmtFree(p); 
-  return SQLITE_OK;
+  resfmtFinalize(&fmt);
+  return fmt.iErr;
 }
