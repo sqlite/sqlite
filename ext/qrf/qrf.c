@@ -876,7 +876,7 @@ static void qrfColumnar(Qrf *p){
   p->actualWidth = sqlite3_malloc64( sizeof(int)*nColumn );
   if( p->actualWidth==0 ){ qrfOom(p); goto qrf_column_end; }
   for(i=0; i<p->spec.nWidth && i<nColumn; i++){
-    int w = p->spec.aWidth[i];
+    int w = i<p->spec.nWidth ? p->spec.aWidth[i] : 0;
     if( w<0 ) w = -w;
     p->actualWidth[i] = w;
   }
@@ -951,6 +951,7 @@ static void qrfColumnar(Qrf *p){
         if( aiDspyWth[k]>p->actualWidth[i] ){
           p->actualWidth[i] = aiDspyWth[k];
         }
+        k++;
         if( azNextLine[i] ){
           bNextLine = 1;
           abRowDiv[nRow-1] = 0;
@@ -969,13 +970,13 @@ static void qrfColumnar(Qrf *p){
       if( p->spec.bShowCNames ){
         for(i=0; i<nColumn; i++){
           w = p->actualWidth[i];
-          if( p->spec.aWidth[i]<0 ) w = -w;
+          if( i<p->spec.nWidth && p->spec.aWidth[i]<0 ) w = -w;
           qrfWidthPrint(p, p->pOut, w, azData[i]);
-          sqlite3_str_append(p->pOut, i==nColumn-1?"\n":"  ", 1);
+          sqlite3_str_appendall(p->pOut, i==nColumn-1?"\n":"  ");
         }
         for(i=0; i<nColumn; i++){
           sqlite3_str_appendchar(p->pOut, p->actualWidth[i], '-');
-          sqlite3_str_append(p->pOut, i==nColumn-1?"\n":"  ", 1);
+          sqlite3_str_appendall(p->pOut, i==nColumn-1?"\n":"  ");
         }
       }
       break;
@@ -1039,7 +1040,7 @@ static void qrfColumnar(Qrf *p){
     z = azData[i];
     if( z==0 ) z = "";
     w = p->actualWidth[j];
-    if( p->spec.aWidth[j]<0 ) w = -w;
+    if( j<p->spec.nWidth && p->spec.aWidth[j]<0 ) w = -w;
     qrfWidthPrint(p, p->pOut, w, z);
     if( j==nColumn-1 ){
       sqlite3_str_appendall(p->pOut, rowSep);
@@ -1068,6 +1069,7 @@ static void qrfColumnar(Qrf *p){
   }else if( p->spec.eFormat==QRF_MODE_Box ){
     qrfBoxSeparator(p, BOX_12, BOX_124, BOX_14);
   }
+  qrfWrite(p);
 
 qrf_column_end:
   /* Free allocated memory */
