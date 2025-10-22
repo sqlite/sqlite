@@ -47,7 +47,7 @@ static void resfmtError(
     if( zFormat ){
       va_list ap;
       va_start(ap, zFormat);
-      *p->pzErr = sqlite3_mprintf(zFormat, ap);
+      *p->pzErr = sqlite3_vmprintf(zFormat, ap);
       va_end(ap);
     }
   }
