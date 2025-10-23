@@ -28,6 +28,8 @@ struct Qrf {
   sqlite3_str *pOut;          /* Accumulated output */
   int iErr;                   /* Error code */
   int nCol;                   /* Number of output columns */
+  int mxColWth;               /* Maximum size of any column name */
+  const char **azCol;         /* Names of output columns */
   sqlite3_int64 nRow;         /* Number of rows handled so far */
   int *actualWidth;           /* Actual width of each column */
   sqlite3_qrf_spec spec;      /* Copy of the original spec */
@@ -1131,6 +1133,11 @@ static void qrfInitialize(
       if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
       break;
     }
+    case QRF_MODE_Line: {
+      if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = "\n";
+      if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
+      break;
+    }
     case QRF_MODE_Json: {
       p->spec.zColumnSep = ",";
       p->spec.eQuote = QRF_TXT_Json;
@@ -1226,6 +1233,36 @@ static void qrfOneSimpleRow(Qrf *p){
       qrfWrite(p);
       break;
     }
+    case QRF_MODE_Line: {
+      if( p->azCol==0 ){
+        p->azCol = sqlite3_malloc64( p->nCol*sizeof(p->azCol[0]) );
+        if( p->azCol==0 ){
+          qrfOom(p);
+          break;
+        }
+        p->mxColWth = 0;
+        for(i=0; i<p->nCol; i++){
+          int sz;
+          p->azCol[i] = sqlite3_column_name(p->pStmt, i);
+          if( p->azCol[i]==0 ) p->azCol[i] = "unknown";
+          sz = qrfDisplayLength(p->azCol[i]);
+          if( sz > p->mxColWth ) p->mxColWth = sz;
+        }
+      }
+      if( p->nRow ) sqlite3_str_append(p->pOut, "\n", 1);
+      for(i=0; i<p->nCol; i++){
+        qrfWidthPrint(p, p->pOut, -p->mxColWth, p->azCol[i]);
+        sqlite3_str_append(p->pOut, " = ", 3);
+        qrfRenderValue(p, p->pOut, i);
+        if( i<p->nCol-1 ){
+          sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
+        }else{
+          sqlite3_str_appendall(p->pOut, p->spec.zRowSep);
+        }
+      }
+      qrfWrite(p);
+      break;
+    }
     default: {  /* QRF_MODE_List */
       if( p->nRow==0 && p->spec.bShowCNames ){
         for(i=0; i<p->nCol; i++){
@@ -1270,6 +1307,8 @@ static void qrfFinalize(Qrf *p){
     sqlite3_free(sqlite3_str_finish(p->pOut));
   }
   if( p->actualWidth ) sqlite3_free(p->actualWidth);
+  if( p->azCol ) sqlite3_free(p->azCol);
+
 }
 
 /*
