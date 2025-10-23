@@ -1,5 +1,5 @@
-C Adjust\ssome\sof\sthe\smarkdown\sin\sthe\sLICENSE.md\sfile\sso\sthat\sit\swill\shopefully\nwork\sbetter\son\sGitHub.
-D 2025-10-22T00:38:28.584
+C Fix\sa\sfaulty\serror\smessage\sin\sthe\sext/misc/fileio.c\sextension.
+D 2025-10-23T13:10:34.963
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -372,7 +372,7 @@ F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a0
 F ext/misc/decimal.c d4883de142f6dcd36eda23da40b55e2b51374e7b01eb54a7173940191389fc5e
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c 88cb2e5744296de6638af02ef6349fd468c2eb5e5f41ba405f88d9b4ad500f8e
+F ext/misc/fileio.c d4918ff3f59a26c447347b40ac5e5c41aef697dfa24ebb2ef61ebad3c32261f0
 F ext/misc/fossildelta.c 2fc2dd4f34f478df674887db62586b1071c4cd3c9e73ee40f9ee669670e482d1
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
 F ext/misc/ieee754.c 176c061c94857b543313959289cb60cf777c999fd002f82b53d194b95e9f347a
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f4e059b2243c6db37b4dd201b03f0c1916baec5e9e1a660815fcd7eeaf530367
-R 659bc9c9c51898a1829d492b8aba7535
+P 773f9d3dcf1ac7a9ce7f0911f46301f3e0e01d699f73a264cab692299a8d615e
+R 9e86a517f190f0147ea26baf4230c4a3
 U drh
-Z ad484df108334f9fa9bec26646946f87
+Z 537cb6aac24039a5a8a3cbc26e616f9b
 # Remove this line to create a well-formed Fossil manifest.
