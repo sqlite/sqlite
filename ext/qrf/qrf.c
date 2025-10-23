@@ -404,6 +404,7 @@ static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
         if( i>0 ){
           sqlite3_str_append(pOut, (const char*)z, i);
         }
+        if( z[i]==0 ) break;
         switch( z[i] ){
           case '"':   sqlite3_str_append(pOut, "\\\"", 2);  break;
           case '\\':  sqlite3_str_append(pOut, "\\\\", 2);  break;
@@ -1124,6 +1125,20 @@ static void qrfInitialize(
   sz = sizeof(sqlite3_qrf_spec);
   memcpy(&p->spec, pSpec, sz);
   if( p->spec.zNull==0 ) p->spec.zNull = "";
+  switch( p->spec.eFormat ){
+    case QRF_MODE_List: {
+      if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = "|";
+      if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
+      break;
+    }
+    case QRF_MODE_Json: {
+      p->spec.zColumnSep = ",";
+      p->spec.eQuote = QRF_TXT_Json;
+      p->spec.eBlob = QRF_BLOB_Json;
+      p->spec.zNull = "null";
+      break;
+    }
+  }
   if( p->spec.eBlob==QRF_BLOB_Auto ){
     switch( p->spec.eQuote ){
       case QRF_TXT_Sql:  p->spec.eBlob = QRF_BLOB_Sql;  break;
@@ -1151,6 +1166,22 @@ static void qrfOneSimpleRow(Qrf *p){
     case QRF_MODE_Off:
     case QRF_MODE_Count: {
       /* No-op */
+      break;
+    }
+    case QRF_MODE_Json: {
+      if( p->nRow==0 ){
+        sqlite3_str_append(p->pOut, "[{", 2);
+      }else{
+        sqlite3_str_append(p->pOut, "},\n{", 4);
+      }
+      for(i=0; i<p->nCol; i++){
+        const char *zCName = sqlite3_column_name(p->pStmt, i);
+        if( i>0 ) sqlite3_str_append(p->pOut, ",", 1);
+        qrfEncodeText(p, p->pOut, zCName);
+        sqlite3_str_append(p->pOut, ":", 1);
+        qrfRenderValue(p, p->pOut, i);
+      }
+      qrfWrite(p);
       break;
     }
     default: {  /* QRF_MODE_List */
@@ -1182,6 +1213,11 @@ static void qrfFinalize(Qrf *p){
   switch( p->spec.eFormat ){
     case QRF_MODE_Count: {
       sqlite3_str_appendf(p->pOut, "%lld\n", p->nRow);
+      qrfWrite(p);
+      break;
+    }
+    case QRF_MODE_Json: {
+      sqlite3_str_append(p->pOut, "}]\n", 3);
       qrfWrite(p);
       break;
     }
