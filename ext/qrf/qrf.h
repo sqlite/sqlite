@@ -68,15 +68,16 @@ int sqlite3_format_query_result(
 #define QRF_MODE_Json      3 /* Output is a list of JSON objects */
 #define QRF_MODE_Insert    4 /* Generate SQL "insert" statements */
 #define QRF_MODE_Csv       5 /* Comma-separated-value */
-#define QRF_MODE_Explain   6 /* EXPLAIN output */
-#define QRF_MODE_ScanExp   7 /* EXPLAIN output with vm stats */
-#define QRF_MODE_EQP       8 /* Format EXPLAIN QUERY PLAN output */
-#define QRF_MODE_Markdown  9 /* Markdown formatting */
-#define QRF_MODE_Column   10 /* One record per line in neat columns */
-#define QRF_MODE_Table    11 /* MySQL-style table formatting */
-#define QRF_MODE_Box      12 /* Unicode box-drawing characters */
-#define QRF_MODE_Count    13 /* Output only a count of the rows of output */
-#define QRF_MODE_Off      14 /* No query output shown */
+#define QRF_MODE_Quote     6 /* SQL-quoted, comma-separated */
+#define QRF_MODE_Explain   7 /* EXPLAIN output */
+#define QRF_MODE_ScanExp   8 /* EXPLAIN output with vm stats */
+#define QRF_MODE_EQP       9 /* Format EXPLAIN QUERY PLAN output */
+#define QRF_MODE_Markdown 10 /* Markdown formatting */
+#define QRF_MODE_Column   11 /* One record per line in neat columns */
+#define QRF_MODE_Table    12 /* MySQL-style table formatting */
+#define QRF_MODE_Box      13 /* Unicode box-drawing characters */
+#define QRF_MODE_Count    14 /* Output only a count of the rows of output */
+#define QRF_MODE_Off      15 /* No query output shown */
 
 /*
 ** Quoting styles for text.

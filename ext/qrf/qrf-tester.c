@@ -198,6 +198,7 @@ int main(int argc, char **argv){
          { "list",     QRF_MODE_List,     },
          { "markdown", QRF_MODE_Markdown, },
          { "off",      QRF_MODE_Off,      },
+         { "quote",    QRF_MODE_Quote,    },
          { "table",    QRF_MODE_Table,    },
          { "scanexp",  QRF_MODE_ScanExp,  },
       };

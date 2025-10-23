@@ -15,6 +15,7 @@
 #include "qrf.h"
 #include <string.h>
 #include <ctype.h>
+#include <assert.h>
 
 typedef sqlite3_int64 i64;
 
@@ -47,10 +48,17 @@ struct Qrf {
   sqlite3_str *pOut;          /* Accumulated output */
   int iErr;                   /* Error code */
   int nCol;                   /* Number of output columns */
-  int mxColWth;               /* Maximum size of any column name */
   union {
-    const char **azCol;         /* Names of output columns (MODE_Line) */
-    EQPGraph *pGraph;           /* EQP graph (MODE_EQP) */
+    struct {                  /* Content for QRF_MODE_Line */
+      int mxColWth;             /* Maximum display width of any column */
+      const char **azCol;       /* Names of output columns (MODE_Line) */
+    } sLine;
+    EQPGraph *pGraph;         /* EQP graph (MODE_EQP) */
+    struct {                  /* Content for QRF_MODE_Explain */
+      int nIndent;              /* Slots allocated for aiIndent */
+      int iIndent;              /* Current slot */
+      int *aiIndent;            /* Indentation for each opcode */
+    } sExpln;
   } u;
   sqlite3_int64 nRow;         /* Number of rows handled so far */
   int *actualWidth;           /* Actual width of each column */
@@ -85,6 +93,8 @@ static void qrfError(
 static void qrfOom(Qrf *p){
   qrfError(p, SQLITE_NOMEM, "out of memory");
 }
+
+
 
 /*
 ** Add a new entry to the EXPLAIN QUERY PLAN data
@@ -1222,6 +1232,177 @@ qrf_column_end:
 }
 
 /*
+** Parameter azArray points to a zero-terminated array of strings. zStr
+** points to a single nul-terminated string. Return non-zero if zStr
+** is equal, according to strcmp(), to any of the strings in the array.
+** Otherwise, return zero.
+*/
+static int qrfStringInArray(const char *zStr, const char **azArray){
+  int i;
+  if( zStr==0 ) return 0;
+  for(i=0; azArray[i]; i++){
+    if( 0==strcmp(zStr, azArray[i]) ) return 1;
+  }
+  return 0;
+}
+
+/*
+** Print out an EXPLAIN with indentation.  This is a two-pass algorithm.
+**
+** On the first pass, we compute aiIndent[iOp] which is the amount of
+** indentation to apply to the iOp-th opcode.  The output actually occurs
+** on the second pass.
+**
+** The indenting rules are:
+**
+**     * For each "Next", "Prev", "VNext" or "VPrev" instruction, indent
+**       all opcodes that occur between the p2 jump destination and the opcode
+**       itself by 2 spaces.
+**
+**     * Do the previous for "Return" instructions for when P2 is positive.
+**       See tag-20220407a in wherecode.c and vdbe.c.
+**
+**     * For each "Goto", if the jump destination is earlier in the program
+**       and ends on one of:
+**          Yield  SeekGt  SeekLt  RowSetRead  Rewind
+**       or if the P1 parameter is one instead of zero,
+**       then indent all opcodes between the earlier instruction
+**       and "Goto" by 2 spaces.
+*/
+static void qrfExplain(Qrf *p){
+  int *abYield = 0;     /* abYield[iOp] is rue if opcode iOp is an OP_Yield */
+  int *aiIndent = 0;    /* Indent the iOp-th opcode by aiIndent[iOp] */
+  i64 nAlloc = 0;       /* Allocated size of aiIndent[], abYield */
+  int nIndent;          /* Number of entries in aiIndent[] */
+  int iOp;              /* Opcode number */
+  int i;                /* Column loop counter */
+
+  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext",
+                           "Return", 0 };
+  const char *azYield[] = { "Yield", "SeekLT", "SeekGT", "RowSetRead",
+                            "Rewind", 0 };
+  const char *azGoto[] = { "Goto", 0 };
+
+  /* The caller guarantees that the leftmost 4 columns of the statement
+  ** passed to this function are equivalent to the leftmost 4 columns
+  ** of EXPLAIN statement output. In practice the statement may be
+  ** an EXPLAIN, or it may be a query on the bytecode() virtual table.  */
+  assert( sqlite3_column_count(p->pStmt)>=4 );
+  assert( 0==sqlite3_stricmp( sqlite3_column_name(p->pStmt, 0), "addr" ) );
+  assert( 0==sqlite3_stricmp( sqlite3_column_name(p->pStmt, 1), "opcode" ) );
+  assert( 0==sqlite3_stricmp( sqlite3_column_name(p->pStmt, 2), "p1" ) );
+  assert( 0==sqlite3_stricmp( sqlite3_column_name(p->pStmt, 3), "p2" ) );
+
+  for(iOp=0; SQLITE_ROW==sqlite3_step(p->pStmt); iOp++){
+    int i;
+    int iAddr = sqlite3_column_int(p->pStmt, 0);
+    const char *zOp = (const char*)sqlite3_column_text(p->pStmt, 1);
+    int p1 = sqlite3_column_int(p->pStmt, 2);
+    int p2 = sqlite3_column_int(p->pStmt, 3);
+
+    /* Assuming that p2 is an instruction address, set variable p2op to the
+    ** index of that instruction in the aiIndent[] array. p2 and p2op may be
+    ** different if the current instruction is part of a sub-program generated
+    ** by an SQL trigger or foreign key.  */
+    int p2op = (p2 + (iOp-iAddr));
+
+    /* Grow the aiIndent array as required */
+    if( iOp>=nAlloc ){
+      nAlloc += 100;
+      aiIndent = (int*)sqlite3_realloc64(aiIndent, nAlloc*sizeof(int));
+      abYield = (int*)sqlite3_realloc64(abYield, nAlloc*sizeof(int));
+      if( aiIndent==0 || abYield==0 ){
+        qrfOom(p);
+        sqlite3_free(aiIndent);
+        sqlite3_free(abYield);
+        return;
+      }
+    }
+
+    abYield[iOp] = qrfStringInArray(zOp, azYield);
+    aiIndent[iOp] = 0;
+    nIndent = iOp+1;
+    if( qrfStringInArray(zOp, azNext) && p2op>0 ){
+      for(i=p2op; i<iOp; i++) aiIndent[i] += 2;
+    }
+    if( qrfStringInArray(zOp, azGoto) && p2op<iOp && (abYield[p2op] || p1) ){
+      for(i=p2op; i<iOp; i++) aiIndent[i] += 2;
+    }
+  }
+  sqlite3_free(abYield);
+
+  /* Second pass.  Actually generate output */
+  sqlite3_reset(p->pStmt);
+  if( p->iErr==SQLITE_OK ){
+    static const int aExplainWidth[] = {4,       13, 4, 4, 4, 13, 2, 13};
+    static const int aExplainMap[] =   {0,       1,  2, 3, 4, 5,  6, 7 };
+    static const int aScanExpWidth[] = {4,15, 6, 13, 4, 4, 4, 13, 2, 13};
+    static const int aScanExpMap[] =   {0, 9, 8, 1,  2, 3, 4, 5,  6, 7 };
+    const int *aWidth = aExplainWidth;
+    const int *aMap = aExplainMap;
+    int nWidth = sizeof(aExplainWidth)/sizeof(int);
+    int iIndent = 1;
+    int nArg = p->nCol;
+    if( p->spec.eFormat==QRF_MODE_ScanExp ){
+      aWidth = aScanExpWidth;
+      aMap = aScanExpMap;
+      nWidth = sizeof(aScanExpWidth)/sizeof(int);
+      iIndent = 3;
+    }
+    if( nArg>nWidth ) nArg = nWidth;
+
+    for(iOp=0; sqlite3_step(p->pStmt)==SQLITE_ROW; iOp++){
+      /* If this is the first row seen, print out the headers */
+      if( iOp==0 ){
+        for(i=0; i<nArg; i++){
+          const char *zCol = sqlite3_column_name(p->pStmt, aMap[i]);
+          qrfWidthPrint(p,p->pOut, aWidth[i], zCol);
+          if( i==nArg-1 ){
+            sqlite3_str_append(p->pOut, "\n", 1);
+          }else{
+            sqlite3_str_append(p->pOut, "  ", 2);
+          }
+        }
+        for(i=0; i<nArg; i++){
+          sqlite3_str_appendf(p->pOut, "%.*c", aWidth[i], '-');
+          if( i==nArg-1 ){
+            sqlite3_str_append(p->pOut, "\n", 1);
+          }else{
+            sqlite3_str_append(p->pOut, "  ", 2);
+          }
+        }
+      }
+  
+      for(i=0; i<nArg; i++){
+        const char *zSep = "  ";
+        int w = aWidth[i];
+        const char *zVal = sqlite3_column_text(p->pStmt, aMap[i]);
+        int len;
+        if( i==nArg-1 ) w = 0;
+        if( zVal==0 ) zVal = "";
+        len = qrfDisplayLength(zVal);
+        if( len>w ){
+          w = len;
+          zSep = " ";
+        }
+        if( i==iIndent && aiIndent && iOp<nIndent ){
+          sqlite3_str_appendchar(p->pOut, aiIndent[iOp], ' ');
+        }
+        qrfWidthPrint(p, p->pOut, w, zVal);
+        if( i==nArg-1 ){
+          sqlite3_str_append(p->pOut, "\n", 1);
+        }else{
+          sqlite3_str_appendall(p->pOut, zSep);
+        }
+      }
+      p->nRow++;
+    }
+    qrfWrite(p);
+  }
+  sqlite3_free(aiIndent);
+}
+
+/*
 ** Initialize the internal Qrf object.
 */
 static void qrfInitialize(
@@ -1291,6 +1472,13 @@ static void qrfInitialize(
       p->spec.zRowSep = "\r\n";
       break;
     }
+    case QRF_MODE_Quote: {
+      p->spec.eQuote = QRF_TXT_Sql;
+      p->spec.eBlob = QRF_BLOB_Sql;
+      p->spec.zColumnSep = ",";
+      p->spec.zRowSep = "\n";
+      break;
+    }
     case QRF_MODE_EQP: {
       if( sqlite3_stmt_isexplain(p->pStmt)!=2 ){
         /* If EQP mode is requested, but the statement is not an EXPLAIN QUERY
@@ -1299,12 +1487,29 @@ static void qrfInitialize(
         ** mode is EQP, so do not leave the mode in EQP if the statement is
         ** not an EQP statement.
         */
-        p->spec.eFormat = QRF_MODE_List;
+        p->spec.eFormat = QRF_MODE_Quote;
+        p->spec.bShowCNames = 1;
         p->spec.eQuote = QRF_TXT_Sql;
         p->spec.eBlob = QRF_BLOB_Sql;
         p->spec.zColumnSep = ",";
         p->spec.zRowSep = "\n";
+      }
+      break;
+    }
+    case QRF_MODE_Explain: {
+      if( sqlite3_stmt_isexplain(p->pStmt)!=1 ){
+        /* If Explain mode is requested, but the statement is not an EXPLAIN
+        ** tatement, then convert the mode to a comma-separate list of
+        ** SQL-quoted values.  Downstream expects an Explain statement if the
+        ** mode is Explain, so do not leave the mode in Explain if the
+        ** statement is not an EXPLAIN statement.
+        */
+        p->spec.eFormat = QRF_MODE_Quote;
         p->spec.bShowCNames = 1;
+        p->spec.eQuote = QRF_TXT_Sql;
+        p->spec.eBlob = QRF_BLOB_Sql;
+        p->spec.zColumnSep = ",";
+        p->spec.zRowSep = "\n";
       }
       break;
     }
@@ -1384,24 +1589,24 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_MODE_Line: {
-      if( p->u.azCol==0 ){
-        p->u.azCol = sqlite3_malloc64( p->nCol*sizeof(p->u.azCol[0]) );
-        if( p->u.azCol==0 ){
+      if( p->u.sLine.azCol==0 ){
+        p->u.sLine.azCol = sqlite3_malloc64( p->nCol*sizeof(char*) );
+        if( p->u.sLine.azCol==0 ){
           qrfOom(p);
           break;
         }
-        p->mxColWth = 0;
+        p->u.sLine.mxColWth = 0;
         for(i=0; i<p->nCol; i++){
           int sz;
-          p->u.azCol[i] = sqlite3_column_name(p->pStmt, i);
-          if( p->u.azCol[i]==0 ) p->u.azCol[i] = "unknown";
-          sz = qrfDisplayLength(p->u.azCol[i]);
-          if( sz > p->mxColWth ) p->mxColWth = sz;
+          p->u.sLine.azCol[i] = sqlite3_column_name(p->pStmt, i);
+          if( p->u.sLine.azCol[i]==0 ) p->u.sLine.azCol[i] = "unknown";
+          sz = qrfDisplayLength(p->u.sLine.azCol[i]);
+          if( sz > p->u.sLine.mxColWth ) p->u.sLine.mxColWth = sz;
         }
       }
       if( p->nRow ) sqlite3_str_append(p->pOut, "\n", 1);
       for(i=0; i<p->nCol; i++){
-        qrfWidthPrint(p, p->pOut, -p->mxColWth, p->u.azCol[i]);
+        qrfWidthPrint(p, p->pOut, -p->u.sLine.mxColWth, p->u.sLine.azCol[i]);
         sqlite3_str_append(p->pOut, " = ", 3);
         qrfRenderValue(p, p->pOut, i);
         if( i<p->nCol-1 ){
@@ -1460,7 +1665,7 @@ static void qrfFinalize(Qrf *p){
       break;
     }
     case QRF_MODE_Line: {
-      if( p->u.azCol ) sqlite3_free(p->u.azCol);
+      if( p->u.sLine.azCol ) sqlite3_free(p->u.sLine.azCol);
       break;
     }
     case QRF_MODE_EQP: {
@@ -1501,6 +1706,10 @@ int sqlite3_format_query_result(
       /* Columnar modes require that the entire query be evaluated and the
       ** results stored in memory, so that we can compute column widths */
       qrfColumnar(&qrf);
+      break;
+    }
+    case QRF_MODE_Explain: {
+      qrfExplain(&qrf);
       break;
     }
     default: {
