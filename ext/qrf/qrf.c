@@ -1138,6 +1138,19 @@ static void qrfInitialize(
       p->spec.zNull = "null";
       break;
     }
+    case QRF_MODE_Html: {
+      p->spec.eQuote = QRF_TXT_Html;
+      p->spec.zNull = "null";
+      break;
+    }
+    case QRF_MODE_Insert: {
+      p->spec.eQuote = QRF_TXT_Sql;
+      p->spec.eBlob = QRF_BLOB_Sql;
+      if( p->spec.zTableName==0 || p->spec.zTableName[0]==0 ){
+        p->spec.zTableName = "tab";
+      }
+      break;
+    }
   }
   if( p->spec.eBlob==QRF_BLOB_Auto ){
     switch( p->spec.eQuote ){
@@ -1181,6 +1194,35 @@ static void qrfOneSimpleRow(Qrf *p){
         sqlite3_str_append(p->pOut, ":", 1);
         qrfRenderValue(p, p->pOut, i);
       }
+      qrfWrite(p);
+      break;
+    }
+    case QRF_MODE_Html: {
+      if( p->nRow==0 && p->spec.bShowCNames ){
+        sqlite3_str_append(p->pOut, "<TR>", 4);
+        for(i=0; i<p->nCol; i++){
+          const char *zCName = sqlite3_column_name(p->pStmt, i);
+          sqlite3_str_append(p->pOut, "\n<TH>", 5);
+          qrfEncodeText(p, p->pOut, zCName);
+        }
+        sqlite3_str_append(p->pOut, "\n</TR>\n", 7);
+      }
+      sqlite3_str_append(p->pOut, "<TR>", 4);
+      for(i=0; i<p->nCol; i++){
+        sqlite3_str_append(p->pOut, "\n<TD>", 5);
+        qrfRenderValue(p, p->pOut, i);
+      }
+      sqlite3_str_append(p->pOut, "\n</TR>\n", 7);
+      qrfWrite(p);
+      break;
+    }
+    case QRF_MODE_Insert: {
+      sqlite3_str_appendf(p->pOut,"INSERT INTO %s VALUES(",p->spec.zTableName);
+      for(i=0; i<p->nCol; i++){
+        if( i>0 ) sqlite3_str_append(p->pOut, ",", 1);
+        qrfRenderValue(p, p->pOut, i);
+      }
+      sqlite3_str_append(p->pOut, ");\n", 3);
       qrfWrite(p);
       break;
     }
