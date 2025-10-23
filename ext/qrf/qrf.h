@@ -34,7 +34,6 @@ struct sqlite3_qrf_spec {
   const char *zRowSep;        /* Alternative row separator */
   const char *zTableName;     /* Output table name */
   const char *zNull;          /* Rendering of NULL */
-  const char *zFloatFmt;      /* printf-style string for rendering floats */
   char *(*xRender)(void*,sqlite3_value*);                /* Render a value */
   ssize_t (*xWrite)(void*,const unsigned char*,size_t);  /* Write callback */
   void *pRenderArg;           /* First argument to the xRender callback */
@@ -54,9 +53,9 @@ struct sqlite3_qrf_spec {
 ** Interfaces
 */
 int sqlite3_format_query_result(
-  sqlite3_stmt *pStmt,                /* SQL statement to run */
+  sqlite3_stmt *pStmt,             /* SQL statement to run */
   const sqlite3_qrf_spec *pSpec,   /* Result format specification */
-  char **pzErr                        /* OUT: Write error message here */
+  char **pzErr                     /* OUT: Write error message here */
 );
 
 /*

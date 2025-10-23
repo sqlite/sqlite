@@ -1,9 +1,9 @@
 # SQLite Query Result Formatting Subsystem
 
-The "Query Result Formatter" or "QRF" subsystem is a set of C-language
-subroutines that formats the output from an SQLite query.  The output format
-is configurable.  The application can request CSV, or a table, or
-any of several other formats, according to needs.
+The "Query Result Formatter" or "QRF" subsystem is a C-language
+subroutine that formats the output from an SQLite query.  The
+output format is configurable.  The application can request CSV,
+or a table, or any of several other formats, according to needs.
 
 ## 1.0 Overview Of Operation
 
@@ -13,9 +13,9 @@ bound and is ready to run.  Then to format the output from this
 prepared statement, use code similar to the following:
 
 > ~~~
-sqlite3_qrf_ spec;    /* Format specification */
-char *zErrMsg;        /* Text error message (optional) */
-int rc;               /* Result code */
+sqlite3_qrf_spec spec;  /* Format specification */
+char *zErrMsg;          /* Text error message (optional) */
+int rc;                 /* Result code */
 
 memset(&spec, 0, sizeof(spec));
 // Fill out the spec object to describe the desired output format
@@ -62,12 +62,7 @@ struct sqlite3_qrf_spec {
 ~~~
 
 The sqlite3_qrf_spec object must be fully initialized prior
-to calling `sqlite3_resfmt_begin()` and its value must not change
-by the application until after the corresponding call to
-`sqlite3_resfmt_finish()`.  Note that the result formatter itself
-might change values in the sqlite3_qrf_spec object as it runs.
-But the application should not try to change or use any fields of
-the sqlite3_qrf_spec object while the formatter is running.
+to calling `sqlite3_format_query_result()`.
 
 ### 2.1 Structure Version Number
 
@@ -96,6 +91,9 @@ The sqlite3_qrf_spec.eFormat field is an integer code that defines the
 specific output format that will be generated.  See the
 output format describes below for additional detail.
 
+Other fields in sqlite3_qrf_spec may be used or may be
+ignored, depending on the value of eFormat.
+
 ### 2.4 Show Column Names
 
 The sqlite3_qrf_spec.bShowCNames field is a boolean.  If true, then column
@@ -103,172 +101,251 @@ names appear in the output.  If false, column names are omitted.
 
 ### 2.5 Control Character Escapes
 
-The sqlite3_qrf_spec.eEscMode determines how ASCII control characters are
-formatted in the output.  If this value is zero, then the control character
+The sqlite3_qrf_spec.eEscape determines how ASCII control characters are
+formatted when displaying TEXT values in the result.  These are the allowed
+values:
+
+> ~~~
+#define QRF_ESC_Ascii   0 /* Unix-style escapes.  Ex: U+0007 shows ^G */
+#define QRF_ESC_Symbol  1 /* Unicode escapes. Ex: U+0007 shows U+2407 */
+#define QRF_ESC_Off     2 /* Do not escape control characters */
+~~~
+
+If the value of eEscape is zero, then the control character
 with value X is displayed as ^Y where Y is X+0x40.  Hence, a
-backspace character (U+0008) is shown as "^H".  This is the default.
-If eEscMode is one, then control characters in the range of U+0001
+backspace character (U+0008) is shown as "^H".  This is an excellent
+default.
+
+If eEscape is one, then control characters in the range of U+0001
 through U+001f are mapped into U+2401 through U+241f, respectively.
-If eEscMode is 2, then control characters are output directly, with
-no translation.
+
+If the value of eEscape is two, then no translation occurs
+and control characters that appear in TEXT string are transmitted
+to the formatted output as-is.  This an be dangerous in applications,
+since an adversary who can control TEXT values might be able to
+inject ANSI cursor movement sequences to hide nefarious values.
 
 The TAB (U+0009), LF (U+000a) and CR-LF (U+000d,U+000a) character
 sequence are always output literally and are not mapped to alternative
 display values, regardless of this setting.
 
-### 2.6 Render output as SQL literals
+### 2.6 How to escape TEXT values
 
-If the sqlite3_qrf_spec.bQuote field is non-zero (true), then outputs
-are rendered as SQL literal values.  String are written within `'...'`
-with appropriate escapes.  BLOBs are of the form `x'...'`.  NULL values
-come out as "NULL".
+The sqlite3_qrf_spec.eQuote field can have one of the following values:
 
-### 2.7 Word Wrapping In Columnar Modes
+> ~~~
+#define QRF_TXT_Off     0 /* Literal text */
+#define QRF_TXT_Sql     1 /* Quote as an SQL literal */
+#define QRF_TXT_Csv     2 /* CSV-style quoting */
+#define QRF_TXT_Html    3 /* HTML-style quoting */
+#define QRF_TXT_Tcl     4 /* C/Tcl quoting */
+#define QRF_TXT_Json    5 /* JSON quoting */
+~~~
 
-For output modes that attempt to display equal-width columns, the
-sqlite3_qrf_spec.bWordWrap boolean determines whether long values
-are broken at word boundaries, or at arbitrary characters.  The
-sqlite3_qrf_spec.mxWidth determines the maximum width of an output column.
+A value of QRF_TXT_Off means that text value appear in the output exactly
+as they are found in the database file, with no translation.
 
-### 2.8 Row and Column Separator Strings
+A value of QRF_TXT_Sql means that text values are escaped so that they
+appears as SQL literals.  That means the value will be surrounded by
+single-quotes (U+0027) and any single-quotes contained within the text
+will be doubled.
+
+A value of QRF_TXT_Csv means that text values are escaped in accordance
+with RFC&nbsp;4180, which defines Comma-Separated-Value or CSV files.
+Text strings that contain no special values appears as-is.  Text strings
+that contain special values are contained in double-quotes (U+0022) and
+any double-quotes within the value are doubled.
+
+A value of QRF_TXT_Html means that text values are escaped for use in
+HTML.  Special characters "&lt;", "&amp;", "&gt;", "&quot;", and "&#39;"
+are displayed as "&amp;lt;", "&amp;amp;", "&amp;gt;", "&amp;quot;",
+and "&amp;#39;", respectively.
+
+A value of QRF_TXT_Tcl means that text values are displayed inside of
+double-quotes and special characters within the string are escaped using
+backslash escape, as in ANSI-C or TCL or Perl or other popular programming
+languages.
+
+A value of QRF_TXT_Json gives similar results as QRF_TXT_Tcl except that the
+rules are adjusted so that the displayed string is strictly conforming
+the JSON specification.
+
+### 2.7 How to escape BLOB values
+
+The sqlite3_qrf_spec.eBlob field determines out BLOB values are formatted
+for display.  This field can have one of the following values:
+
+> ~~~
+#define QRF_BLOB_Auto    0 /* Determine BLOB quoting using eQuote */
+#define QRF_BLOB_Text    1 /* Display content exactly as it is */
+#define QRF_BLOB_Sql     2 /* Quote as an SQL literal */
+#define QRF_BLOB_Hex     3 /* Hexadecimal representation */
+#define QRF_BLOB_Tcl     4 /* "\000" notation */
+#define QRF_BLOB_Json    5 /* A JSON string */
+~~~
+
+A value of QRF_BLOB_Auto means that display format is selected automatically
+by sqlite3_format_query_result() based on eFormat and eQuote.
+
+A value of QRF_BLOB_Text means that BLOB values are interpreted as UTF8
+text and are displayed using formatting results set by eEscape and
+eQuote.
+
+A value of QRF_BLOB_Sql means that BLOB values are shown as SQL BLOB
+literals: a prefix "`x'`" following by hexadecimal and ending with a
+final "`'`".
+
+A value of QRF_BLOB_Hex means that BLOB values are shown as pure
+hexadecimal text with no delimiters.
+
+A value of QRF_BLOB_Tcl means that BLOB values are shown as a
+C/Tcl/Perl string literal where every byte is an octal backslash
+escape.  So a BLOB of `x'052881f3'` would be displayed as
+`"\005\050\201\363"`.
+
+A value of QRF_BLOB_Json is similar to QRF_BLOB_Tcl except that is
+uses unicode backslash escapes, since JSON does not understand 
+the C/Tcl/Perl octal backslash escapes.  So the string from the
+previous paragraph would be shown as
+`"\u0005\u0028\u0081\u00f3"`.
+
+### 2.8 Word Wrapping In Columnar Modes (mxWidth and bWordWrap)
+
+When using columnar formatting modes (QRF_MODE_Box, QRF_MODE_Column,
+QRF_MODE_Markdown, or QRF_MODE_Table) and with sqlite3_qrf_spec.mxWidth
+set to some non-zero value, then when an output is two wide to be
+displayed in just mxWidth standard character widths, the output is
+split into multiple lines, where each line is a maximum of 
+mxWidth characters wide.  "Width" hear means the actual displayed
+width of the text on a fixed-pitch font.  The code takes into account
+zero-width and double-width characters when comput the display width.
+
+If the sqlite3_qrf_spec.bWordWrap flag is set, then the formatter
+attempts to split lines at whitespace or word boundaries.
+If the bWorkWrap flag is zero, then long lines can be split in the middle
+of words.
+
+### 2.9 Column width and alignment (nWidth and aWidth)
+
+The sqlite3_qrf_spec.aWidth field is a pointer to an array of
+signed 16-bit integers that control column widths and alignments
+in columnar output modes (QRF_MODE_Box, QRF_MODE_Column,
+QRF_MODE_Markdown, or QRF_MODE_Table).  The sqlite3_qrf_spec.nWidth
+field is the number of integers in the aWidth array.
+
+If aWidth is a NULL pointer or nWidth is zero, then the array is
+assumed to be all zeros.  If nWidth is less then the number of
+columns in the output, then zero is used for the width/alignment
+setting for all columns past then end of the aWidth array.
+
+The aWidth array is deliberately an array of 16-bit signed integers.
+16-bit because no good comes for having very large column widths.
+In fact, the interface defines several key width values:
+
+> ~~~
+#define QRF_MX_WIDTH    (10000)
+#define QRF_MN_WIDTH    (-10000)
+#define QRF_MINUS_ZERO  (-32768)    /* Special value meaning -0 */
+~~~
+
+A width less then QRF_MN_WIDTH is interpreted as QRF_MN_WIDTH and a width
+larger than QRF_MX_WIDTH is interpreted as QRF_MX_WIDTH.  Thus the maximum
+width of a column is 10000 characters, which is far wider than any
+human-readable column should be.
+
+And aWidth\[\] value of zero means the formatter should use a flexible
+width column (limited only by sqlite_qrf_spec.mxWidth) that is just
+big enough to hold the largest row, and the all rows should be left-justifed.
+The special value of QRF_MINUS_ZERO is interpreted as "-0" and work like
+zero, except that shorter rows a right-justifed instead of left-justifed.
+
+Value of aWidth that are not zero (and not QRF_MINUS_ZERO) determine the
+size of the column.  Negative values are used for right-justified columns
+and positive values are used for left-justified columns.
+
+### 2.10 Row and Column Separator Strings
 
 The sqlite3_qrf_spec.zColumnSep and sqlite3_qrf_spec.zRowSep strings
 are alternative column and row separator character sequences.  If not
 specified (if these pointers are left as NULL) then appropriate defaults
-are used.
+are used.  Some output modes have hard-coded column and row separators
+that cannot be overridden.
 
-### 2.9 The Output Table Name
+### 2.11 The Output Table Name
 
 The sqlite3_qrf_spec.zTableName value is the name of the output table
-when the MODE_Insert output mode is used.
+when eFormat is QRF_MODE_Insert.
 
-### 2.10 The Rendering Of NULL
+### 2.12 The Rendering Of NULL
 
 If a value is NULL and sqlite3_qrf_spec.xRender() does not exist
 or declines to provide a rendering, then show the NULL using the string
 found in sqlite3_qrf_spec.zNull.  If zNull is itself a NULL pointer
 then NULL values are rendered as an empty string.
 
-### 2.11 Floating Point Value Format
-
-If a value is a floating-point number other than Infinity or NaN, then
-the value is rendered using the printf-style format given by the
-sqlite3_qrf_spec.zFloatFmt string.
-
-### 2.12 Column Widths And Alignments
-
-The sqlite3_qrf_spec.aWidth[] array, if specified, is an array of 
-16-bit signed integers that specify the minimum column width and
-the alignment for all columns in columnar output modes.  Negative
-values mean right-justify.  The
-absolute value is the minimum of the corresponding column.
-These widths are deliberately stored in a 16-bit signed integer
-as no good can come from having column widths greater than 32767.
-
-The sqlite3_qrf_spec.nWidth field is the number of values in the aWidth[]
-array.  Any column beyond the nWidth-th column are assumed to have
-a minimum width of 0.
-
 ### 2.13 Optional Value Rendering Callback
 
-If the sqlite3_qrf_spec.xRender field is not NULL, then each rendered
-sqlite3_value is first passed to the xRender function, giving it
-an opportunity to render the results.  If xRender chooses to render,
-it should write the rendering into memory obtained from sqlite3_malloc()
-and return a pointer to that memory.  The xRender function can decline
+If the sqlite3_qrf_spec.xRender field is not NULL, then each
+sqlite3_value coming out of the query is first passed to the
+xRender function, giving that function an opportunity to render
+the results itself, using whatever custom format is desired.
+If xRender chooses to render, it should write the rendering
+into memory obtained from sqlite3_malloc() and return a pointer
+to that memory.  The xRender function can decline
 to render (for example, based on the sqlite3_value_type() or other
 characteristics of the value) in which case it can simply return a
 NULL pointer and the usual default rendering will be used instead.
 
-The result rendering subsystem will take responsibility for the
-returned string and will pass the returned string to sqlite3_free()
-when it has finished with it.
+The sqlite3_format_query_result() function (which calls xRender)
+will take responsibility for freeing the string returned by xRender
+after it has finished using it.
 
-The bQuote and eEscMode settings above become no-ops if the xRender
+The eQuote, eBlob, and eEscape settings above become no-ops if the xRender
 routine returns non-NULL.  In other words, the application-supplied
-xRender routine is expected to do its own bQuote and eEscMode processing
-if it chooses to render values.
+xRender routine is expected to do all of its own quoting and formatting.
 
-## 3.0 The `sqlite3_resfmt_begin()` Interface
+## 3.0 The `sqlite3_format_query_result()` Interface
 
-Invoke the `sqlite3_resfmt_begin(P,S)` interface to begin formatting
-the output of prepared statement P using format specification S.
-This routine returns a pointer to an opaque sqlite3_resfmt object that is
-the current state of the formatter.  The `sqlite3_resfmt_finish()`
-routine is the destructor for the sqlite3_resfmt object and must be called
-to prevent a memory leak.
+Invoke the `sqlite3_format_query_result(P,S,E)` interface to run
+the prepared statement P and format its results according to the
+specification found in S.  The sqlite3_format_query_result() function
+will return an SQLite result code, usually SQLITE_OK, but perhaps
+SQLITE_NOMEM or SQLITE_ERROR or similar.  If an error occurs and if
+the E parameter is not NULL, then error message text might be written
+into *E.  Any error message text will be stored in memory obtained
+from sqlite3_malloc() and it is the responsibility of the caller to
+free that memory by a subsequent call to sqlite3_free().
 
-If an out-of-memory fault occurs while allocating space for the
-sqlite3_resfmt object, then `sqlite3_resfmt_begin()` will return a NULL
-pointer.  The application need not check for this case as the
-other routines that use a pointer to the sqlite3_resfmt object all
-interpret a NULL parameter in place of the sqlite3_resfmt pointer as
-a harmless no-op.
+## 4.0 Output Modes
 
-## 4.0 The `sqlite3_resfmt_step()` Interface
-
-Invoke the `sqlite3_resfmt_step(F)` interface for each row
-in the prepared statement that is to be output.
-
-The formatter might choose to output some content as each row
-is processed, or it might accumulate the output and send it all
-at once when `sqlite3_resfmt_finish()` is called.  This is at
-the discretion of the output formatter.  Generally, rows are
-output one-by-one on each call to `sqlite3_resfmt_row()` when the
-output format is such that the row can be computed without knowing
-the value of subsequence, such as in CSV output mode, and
-the output is accumulated and sent all at once in columnar output
-modes where the complete output content is needed to compute column
-widths.
-
-### 5.0 The `sqlite3_resfmt_finish()` Interface
-
-Invoke the `sqlite3_resfmt_finish(F,C,E)` interface to finish
-the formatting.  C is an optional pointer to an integer.  If C
-is not a NULL pointer, then any error code associated with the
-formatting operation is written into *C.  E is an optional pointer
-to a human-readable text error message.  If E is not a NULL pointer,
-then an error message held in memory obtained from sqlite3_malloc()
-is written into *E.  It is the responsibility of the calling
-application to invoke sqlite3_free() on this error message to
-reclaim the space.
-
-If the F argument to `sqlite3_resfmt_finish(F,C,E)` is a NULL pointer,
-then this interface is a harmless no-op.
-
-### 6.0 Output Modes
-
-The result formatter supports a variety of output modes.  The
-set of supported output modes might increase in future versions.
+The result formatter supports a variety of output modes. The
+output mode used is determined by the eFormat setting of the
+sqlite3_qrf_spec object. The set of supported output modes
+might increase in future versions.
 The following output modes are currently defined:
 
 > ~~~
-#define RESFMT_Line      0 /* One column per line. */
-#define RESFMT_Column    1 /* One record per line in neat columns */
-#define RESFMT_List      2 /* One record per line with a separator */
-#define RESFMT_Html      3 /* Generate an XHTML table */
-#define RESFMT_Insert    4 /* Generate SQL "insert" statements */
-#define RESFMT_Tcl       5 /* Generate ANSI-C or TCL quoted elements */
-#define RESFMT_Csv       6 /* Quote strings, numbers are plain */
-#define RESFMT_Explain   7 /* Like RESFMT_Column, but do not truncate data */
-#define RESFMT_Pretty    8 /* Pretty-print schemas */
-#define RESFMT_EQP       9 /* Converts EXPLAIN QUERY PLAN output into a graph */
-#define RESFMT_Json     10 /* Output JSON */
-#define RESFMT_Markdown 11 /* Markdown formatting */
-#define RESFMT_Table    12 /* MySQL-style table formatting */
-#define RESFMT_Box      13 /* Unicode box-drawing characters */
-#define RESFMT_Count    14 /* Output only a count of the rows of output */
-#define RESFMT_Off      15 /* No query output shown */
-#define RESFMT_ScanExp  16 /* Like RESFMT_Explain, but for ".scanstats vm" */
-#define RESFMT_Www      17 /* Full web-page output */
+#define QRF_MODE_List      0 /* One record per line with a separator */
+#define QRF_MODE_Line      1 /* One column per line. */
+#define QRF_MODE_Html      2 /* Generate an XHTML table */
+#define QRF_MODE_Json      3 /* Output is a list of JSON objects */
+#define QRF_MODE_Insert    4 /* Generate SQL "insert" statements */
+#define QRF_MODE_Csv       5 /* Comma-separated-value */
+#define QRF_MODE_Quote     6 /* SQL-quoted, comma-separated */
+#define QRF_MODE_Explain   7 /* EXPLAIN output */
+#define QRF_MODE_ScanExp   8 /* EXPLAIN output with vm stats */
+#define QRF_MODE_EQP       9 /* Format EXPLAIN QUERY PLAN output */
+#define QRF_MODE_Markdown 10 /* Markdown formatting */
+#define QRF_MODE_Column   11 /* One record per line in neat columns */
+#define QRF_MODE_Table    12 /* MySQL-style table formatting */
+#define QRF_MODE_Box      13 /* Unicode box-drawing characters */
+#define QRF_MODE_Count    14 /* Output only a count of the rows of output */
+#define QRF_MODE_Off      15 /* No query output shown */
 ~~~
 
-Additional detail about the meaning of each of these output modes
-is pending.
+### 5.0 Source Code Files
 
-### 7.0 Source Code Files
-
-The SQLite result formatter is implemented in three source code files:
+The SQLite Query Result Formatter is implemented in three source code files:
 
    *  `qrf.c` &rarr;  The implementation, written in portable C99
    *  `qrf.h` &rarr;  A header file defining interfaces

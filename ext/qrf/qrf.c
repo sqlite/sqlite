@@ -596,13 +596,8 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       break;
     }
     case SQLITE_FLOAT: {
-      if( p->spec.zFloatFmt ){
-        double r = sqlite3_column_double(p->pStmt,iCol);
-        sqlite3_str_appendf(pOut, p->spec.zFloatFmt, r);
-      }else{
-        const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
-        sqlite3_str_appendall(pOut, zTxt);
-      }
+      const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
+      sqlite3_str_appendall(pOut, zTxt);
       break;
     }
     case SQLITE_BLOB: {
