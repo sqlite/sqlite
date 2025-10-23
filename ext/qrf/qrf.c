@@ -1158,6 +1158,14 @@ static void qrfInitialize(
       }
       break;
     }
+    case QRF_MODE_Csv: {
+      p->spec.eFormat = QRF_MODE_List;
+      p->spec.eQuote = QRF_TXT_Csv;
+      p->spec.eBlob = QRF_BLOB_Tcl;
+      p->spec.zColumnSep = ",";
+      p->spec.zRowSep = "\r\n";
+      break;
+    }
   }
   if( p->spec.eBlob==QRF_BLOB_Auto ){
     switch( p->spec.eQuote ){

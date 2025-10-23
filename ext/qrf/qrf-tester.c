@@ -186,6 +186,7 @@ int main(int argc, char **argv){
     if( strncmp(zLine, "--eFormat=", 10)==0 ){
       const struct { const char *z; int e; } aFmt[] = {
          { "box",      QRF_MODE_Box,      },
+         { "csv",      QRF_MODE_Csv,      },
          { "column",   QRF_MODE_Column,   },
          { "count",    QRF_MODE_Count,    },
          { "eqp",      QRF_MODE_EQP,      },
