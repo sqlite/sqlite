@@ -16,6 +16,25 @@
 #include <string.h>
 #include <ctype.h>
 
+typedef sqlite3_int64 i64;
+
+/* A single line in the EQP output */
+typedef struct EQPGraphRow EQPGraphRow;
+struct EQPGraphRow {
+  int iEqpId;           /* ID for this row */
+  int iParentId;        /* ID of the parent row */
+  EQPGraphRow *pNext;   /* Next row in sequence */
+  char zText[1];        /* Text to display for this row */
+};
+
+/* All EQP output is collected into an instance of the following */
+typedef struct EQPGraph EQPGraph;
+struct EQPGraph {
+  EQPGraphRow *pRow;    /* Linked list of all rows of the EQP output */
+  EQPGraphRow *pLast;   /* Last element of the pRow list */
+  char zPrefix[100];    /* Graph prefix */
+};
+
 /*
 ** Private state information.  Subject to change from one release to the
 ** next.
@@ -29,7 +48,10 @@ struct Qrf {
   int iErr;                   /* Error code */
   int nCol;                   /* Number of output columns */
   int mxColWth;               /* Maximum size of any column name */
-  const char **azCol;         /* Names of output columns */
+  union {
+    const char **azCol;         /* Names of output columns (MODE_Line) */
+    EQPGraph *pGraph;           /* EQP graph (MODE_EQP) */
+  } u;
   sqlite3_int64 nRow;         /* Number of rows handled so far */
   int *actualWidth;           /* Actual width of each column */
   sqlite3_qrf_spec spec;      /* Copy of the original spec */
@@ -62,6 +84,109 @@ static void qrfError(
 */
 static void qrfOom(Qrf *p){
   qrfError(p, SQLITE_NOMEM, "out of memory");
+}
+
+/*
+** Add a new entry to the EXPLAIN QUERY PLAN data
+*/
+static void qrfEqpAppend(Qrf *p, int iEqpId, int p2, const char *zText){
+  EQPGraphRow *pNew;
+  sqlite3_int64 nText;
+  if( zText==0 ) return;
+  if( p->u.pGraph==0 ){
+    p->u.pGraph = sqlite3_malloc64( sizeof(EQPGraph) );
+    if( p->u.pGraph==0 ){
+      qrfOom(p);
+      return;
+    }
+    memset(p->u.pGraph, 0, sizeof(EQPGraph) );
+  }
+  nText = strlen(zText);
+  pNew = sqlite3_malloc64( sizeof(*pNew) + nText );
+  if( pNew==0 ){
+    qrfOom(p);
+    return;
+  }
+  pNew->iEqpId = iEqpId;
+  pNew->iParentId = p2;
+  memcpy(pNew->zText, zText, nText+1);
+  pNew->pNext = 0;
+  if( p->u.pGraph->pLast ){
+    p->u.pGraph->pLast->pNext = pNew;
+  }else{
+    p->u.pGraph->pRow = pNew;
+  }
+  p->u.pGraph->pLast = pNew;
+}
+
+/*
+** Free and reset the EXPLAIN QUERY PLAN data that has been collected
+** in p->u.pGraph.
+*/
+static void qrfEqpReset(Qrf *p){
+  EQPGraphRow *pRow, *pNext;
+  if( p->u.pGraph ){
+    for(pRow = p->u.pGraph->pRow; pRow; pRow = pNext){
+      pNext = pRow->pNext;
+      sqlite3_free(pRow);
+    }
+    sqlite3_free(p->u.pGraph);
+    p->u.pGraph = 0;
+  }
+}
+
+/* Return the next EXPLAIN QUERY PLAN line with iEqpId that occurs after
+** pOld, or return the first such line if pOld is NULL
+*/
+static EQPGraphRow *qrfEqpNextRow(Qrf *p, int iEqpId, EQPGraphRow *pOld){
+  EQPGraphRow *pRow = pOld ? pOld->pNext : p->u.pGraph->pRow;
+  while( pRow && pRow->iParentId!=iEqpId ) pRow = pRow->pNext;
+  return pRow;
+}
+
+/* Render a single level of the graph that has iEqpId as its parent.  Called
+** recursively to render sublevels.
+*/
+static void qrfEqpRenderLevel(Qrf *p, int iEqpId){
+  EQPGraphRow *pRow, *pNext;
+  i64 n = strlen(p->u.pGraph->zPrefix);
+  char *z;
+  for(pRow = qrfEqpNextRow(p, iEqpId, 0); pRow; pRow = pNext){
+    pNext = qrfEqpNextRow(p, iEqpId, pRow);
+    z = pRow->zText;
+    sqlite3_str_appendf(p->pOut, "%s%s%s\n", p->u.pGraph->zPrefix,
+                            pNext ? "|--" : "`--", z);
+    if( n<(i64)sizeof(p->u.pGraph->zPrefix)-7 ){
+      memcpy(&p->u.pGraph->zPrefix[n], pNext ? "|  " : "   ", 4);
+      qrfEqpRenderLevel(p, pRow->iEqpId);
+      p->u.pGraph->zPrefix[n] = 0;
+    }
+  }
+}
+
+/*
+** Display and reset the EXPLAIN QUERY PLAN data
+*/
+static void qrfEqpRender(Qrf *p, i64 nCycle){
+  EQPGraphRow *pRow = p->u.pGraph->pRow;
+  if( pRow ){
+    if( pRow->zText[0]=='-' ){
+      if( pRow->pNext==0 ){
+        qrfEqpReset(p);
+        return;
+      }
+      sqlite3_str_appendf(p->pOut, "%s\n", pRow->zText+3);
+      p->u.pGraph->pRow = pRow->pNext;
+      sqlite3_free(pRow);
+    }else if( nCycle>0 ){
+      sqlite3_str_appendf(p->pOut, "QUERY PLAN (cycles=%lld [100%%])\n",nCycle);
+    }else{
+      sqlite3_str_appendall(p->pOut, "QUERY PLAN\n");
+    }
+    p->u.pGraph->zPrefix[0] = 0;
+    qrfEqpRenderLevel(p, 0);
+    qrfEqpReset(p);
+  }
 }
 
 /*
@@ -1166,6 +1291,23 @@ static void qrfInitialize(
       p->spec.zRowSep = "\r\n";
       break;
     }
+    case QRF_MODE_EQP: {
+      if( sqlite3_stmt_isexplain(p->pStmt)!=2 ){
+        /* If EQP mode is requested, but the statement is not an EXPLAIN QUERY
+        ** PLAN statement, then convert the mode to a comma-separate list of
+        ** SQL-quoted values.  Downstream expects an EQP statement if the
+        ** mode is EQP, so do not leave the mode in EQP if the statement is
+        ** not an EQP statement.
+        */
+        p->spec.eFormat = QRF_MODE_List;
+        p->spec.eQuote = QRF_TXT_Sql;
+        p->spec.eBlob = QRF_BLOB_Sql;
+        p->spec.zColumnSep = ",";
+        p->spec.zRowSep = "\n";
+        p->spec.bShowCNames = 1;
+      }
+      break;
+    }
   }
   if( p->spec.eBlob==QRF_BLOB_Auto ){
     switch( p->spec.eQuote ){
@@ -1242,24 +1384,24 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_MODE_Line: {
-      if( p->azCol==0 ){
-        p->azCol = sqlite3_malloc64( p->nCol*sizeof(p->azCol[0]) );
-        if( p->azCol==0 ){
+      if( p->u.azCol==0 ){
+        p->u.azCol = sqlite3_malloc64( p->nCol*sizeof(p->u.azCol[0]) );
+        if( p->u.azCol==0 ){
           qrfOom(p);
           break;
         }
         p->mxColWth = 0;
         for(i=0; i<p->nCol; i++){
           int sz;
-          p->azCol[i] = sqlite3_column_name(p->pStmt, i);
-          if( p->azCol[i]==0 ) p->azCol[i] = "unknown";
-          sz = qrfDisplayLength(p->azCol[i]);
+          p->u.azCol[i] = sqlite3_column_name(p->pStmt, i);
+          if( p->u.azCol[i]==0 ) p->u.azCol[i] = "unknown";
+          sz = qrfDisplayLength(p->u.azCol[i]);
           if( sz > p->mxColWth ) p->mxColWth = sz;
         }
       }
       if( p->nRow ) sqlite3_str_append(p->pOut, "\n", 1);
       for(i=0; i<p->nCol; i++){
-        qrfWidthPrint(p, p->pOut, -p->mxColWth, p->azCol[i]);
+        qrfWidthPrint(p, p->pOut, -p->mxColWth, p->u.azCol[i]);
         sqlite3_str_append(p->pOut, " = ", 3);
         qrfRenderValue(p, p->pOut, i);
         if( i<p->nCol-1 ){
@@ -1269,6 +1411,15 @@ static void qrfOneSimpleRow(Qrf *p){
         }
       }
       qrfWrite(p);
+      break;
+    }
+    case QRF_MODE_EQP: {
+      const char *zEqpLine = (const char*)sqlite3_column_text(p->pStmt,3);
+      int iEqpId = sqlite3_column_int(p->pStmt, 0);
+      int iParentId = sqlite3_column_int(p->pStmt, 1);
+      if( zEqpLine==0 ) zEqpLine = "";
+      if( zEqpLine[0]=='-' ) qrfEqpRender(p, 0);
+      qrfEqpAppend(p, iEqpId, iParentId, zEqpLine);
       break;
     }
     default: {  /* QRF_MODE_List */
@@ -1308,6 +1459,15 @@ static void qrfFinalize(Qrf *p){
       qrfWrite(p);
       break;
     }
+    case QRF_MODE_Line: {
+      if( p->u.azCol ) sqlite3_free(p->u.azCol);
+      break;
+    }
+    case QRF_MODE_EQP: {
+      qrfEqpRender(p, 0);
+      qrfWrite(p);
+      break;
+    }
   }
   if( p->spec.pzOutput ){
     *p->spec.pzOutput = sqlite3_str_finish(p->pOut);
@@ -1315,8 +1475,6 @@ static void qrfFinalize(Qrf *p){
     sqlite3_free(sqlite3_str_finish(p->pOut));
   }
   if( p->actualWidth ) sqlite3_free(p->actualWidth);
-  if( p->azCol ) sqlite3_free(p->azCol);
-
 }
 
 /*
