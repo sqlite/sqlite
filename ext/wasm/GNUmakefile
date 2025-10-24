@@ -283,8 +283,8 @@ sqlite3.h = $(dir $(sqlite3.c))/sqlite3.h
 bin.version-info = ./version-info
 $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 	$(CC) -o $@ -I$(dir $(sqlite3.h)) $(dir.tool)/version-info.c
-	$(MAKE) -C $(dir.top) version-info
 t-version-info: $(bin.version-info)
+DISTCLEAN_FILES += $(bin.version-info)
 #
 # bin.stripcomments is used for stripping C/C++-style comments from JS
 # files. The JS files contain large chunks of documentation which we
