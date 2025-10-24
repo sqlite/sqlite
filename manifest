@@ -1,5 +1,5 @@
-C Additional\sdefenses\sagainst\sover-sized\sinputs\sin\sthe\s(unused)\samatch.c\ndemonstration\scode.
-D 2025-10-23T14:05:58.481
+C Limit\sthe\ssize\sof\s--hexdb\sfiles\sin\sthe\sCLI\sto\s2\sbillion\slines,\sto\savoid\noverflowing\sthe\sline\snumber\scounter.
+D 2025-10-24T09:24:56.942
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
-F src/shell.c.in d8f5c8aeec7beff61b42ea13bfab96076809bd356a4f694983222ee5fcf6a244
+F src/shell.c.in cadd0ce691cbe9b2395ec227a4c07f1e71916493e3586ce69087efbe05b3a881
 F src/sqlite.h.in 10faecc456d3962c7cedae70d69305f7c80129f28dd8524bd8a06b3eac955e54
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1fdef271cd15d0960a7933253a10f288e26771cdcf34b5cd22adbc49d6341bc5
-R 537abc7063070e77324a7e69f8903f8f
+P b9f6ae0767ce5d9cbc6fca6d63c929f919473fa669e50a0a460627e5fde2628c
+R b2b173e55eb97deac1a2191959797ec4
 U drh
-Z 42ba1276aba4acb8513964466376ae02
+Z 5da8f7f5471d76d7be11073cb8c00949
 # Remove this line to create a well-formed Fossil manifest.

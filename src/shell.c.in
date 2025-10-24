@@ -5731,6 +5731,10 @@ static unsigned char *readHexDb(ShellState *p, int *pnData){
   for(nLine++; sqlite3_fgets(zLine, sizeof(zLine), in)!=0; nLine++){
     int j = 0;                    /* Page number from "| page" line */
     int k = 0;                    /* Offset from "| page" line */
+    if( nLine>=2000000000 ){
+      sqlite3_fprintf(stderr, "input too big\n");
+      goto readHexDb_error;
+    }
     rc = sscanf(zLine, "| page %d offset %d", &j, &k);
     if( rc==2 ){
       iOffset = k;
