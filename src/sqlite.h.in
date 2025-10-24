@@ -11159,7 +11159,7 @@ int sqlite3_deserialize(
 ** sqlite3_carray_bind() fails. The special-case finalizer
 ** SQLITE_TRANSIENT has no effect here.
 */
-SQLITE_API int sqlite3_carray_bind(
+int sqlite3_carray_bind(
   sqlite3_stmt *pStmt,        /* Statement to be bound */
   int i,                      /* Parameter index */
   void *aData,                /* Pointer to array data */
