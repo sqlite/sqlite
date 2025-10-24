@@ -4006,7 +4006,7 @@ static void unixProcFSLocks(int fd, sqlite3_str *pStr, sqlite3_uint64 iAssert){
   int in;
   ssize_t n;
   char *p, *pNext, *x;
-  char *zSp = "";
+  int nLock = 0;
   char z[2000];
 
   sqlite3_snprintf(sizeof(z), z, "/proc/%d/fdinfo/%d", getpid(), fd);
@@ -4040,8 +4040,21 @@ static void unixProcFSLocks(int fd, sqlite3_str *pStr, sqlite3_uint64 iAssert){
           if( x ){
             iFirst = strtoll(x+1, 0, 10);
             if( pStr ){
-              sqlite3_str_appendf(pStr,"%s%c %lld %lld",zSp,cType,iFirst,iLast);
-              zSp = " ";
+              const int shmBase = (22+SQLITE_SHM_NLOCK)*4;
+              if( (nLock++)>0 ) sqlite3_str_append(pStr," ",1);
+              sqlite3_str_appendf(pStr, "%c ", cType);
+              if( iFirst>=PENDING_BYTE ){
+                /*  "P+" stands for PENDING_BYTE+ */
+                sqlite3_str_appendf(pStr, "P+%lld", iFirst - PENDING_BYTE);
+              }else if( iFirst>=shmBase ){
+                /*  "B+" stands for UNIX_SHM_BASE+ */
+                sqlite3_str_appendf(pStr, "B+%lld", iFirst - shmBase);
+              }else{
+                sqlite3_str_appendf(pStr, "%lld", iFirst);
+              }
+              if( iLast>iFirst ){
+                sqlite3_str_appendf(pStr,"(%lld)", iLast-iFirst+1);
+              }
             }
             if( iAssert!=0 ){
               if( iAssert/4>=iFirst && iAssert/4<=iLast ){
