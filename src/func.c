@@ -3083,6 +3083,54 @@ static void percentValue(sqlite3_context *pCtx){
 /****** End of percentile family of functions ******/
 #endif /* SQLITE_ENABLE_PERCENTILE */
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+/*
+** Implementation of sqlite_file_info(SCHEMA).
+**
+** Return JSON text that describes low-level debug/diagnostic information
+** about the sqlite3_file object associated with SCHEMA.
+*/
+static void fileInfoFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  const char *zDbName;
+  sqlite3_str *pStr;
+  Btree *pBtree;
+
+  zDbName = (const char*)sqlite3_value_text(argv[0]);
+  pBtree = sqlite3DbNameToBtree(db, zDbName);
+  if( pBtree ){
+    Pager *pPager;
+    sqlite3_file *fd;
+    int rc;
+    sqlite3BtreeEnter(pBtree);
+    pPager = sqlite3BtreePager(pBtree);
+    assert( pPager!=0 );
+    fd = sqlite3PagerFile(pPager);
+    pStr = sqlite3_str_new(db);
+    if( pStr==0 ){
+      sqlite3_result_error_nomem(context);
+    }else{
+      sqlite3_str_append(pStr, "{\"db\":", 6);
+      rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_GET_INFO, pStr);
+      if( rc ) sqlite3_str_append(pStr, "null", 4);
+      fd = sqlite3PagerJrnlFile(pPager);
+      if( fd && fd->pMethods!=0 ){
+        sqlite3_str_appendall(pStr, ",\"journal\":");
+        rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_GET_INFO, pStr);
+        if( rc ) sqlite3_str_append(pStr, "null", 4);
+      }
+      sqlite3_str_append(pStr, "}", 1);
+      sqlite3_result_text(context, sqlite3_str_finish(pStr), -1,
+                          sqlite3_free);
+    }
+    sqlite3BtreeLeave(pBtree);
+  }
+}
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
 
 #ifdef SQLITE_DEBUG
 /*
@@ -3241,6 +3289,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     INLINE_FUNC(likely,          1, INLINEFUNC_unlikely, SQLITE_FUNC_UNLIKELY),
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
     INLINE_FUNC(sqlite_offset,   1, INLINEFUNC_sqlite_offset, 0 ),
+#endif
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+    FUNCTION(sqlite_file_info,   1, 0, 0, fileInfoFunc     ),
 #endif
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),

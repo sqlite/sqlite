@@ -4144,6 +4144,19 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
 #endif
     }
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+    case SQLITE_FCNTL_GET_INFO: {
+      static const char *azLock[] = { "NONE", "SHARED", "RESERVED",
+                                      "PENDING", "EXCLUSIVE" };
+      sqlite3_str *pStr = (sqlite3_str*)pArg;
+      sqlite3_str_appendf(pStr, "{\"h\":%d,", pFile->h);
+      sqlite3_str_appendf(pStr, "\"vfs\":\"%s\",", pFile->pVfs->zName);
+      sqlite3_str_appendf(pStr, "\"eFileLock\":\"%s\"}", 
+                                azLock[pFile->eFileLock]);
+      return SQLITE_OK;
+    }
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
   }
   return SQLITE_NOTFOUND;
 }
