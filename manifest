@@ -1,5 +1,5 @@
-C Easier\sto\sread\s/proc\slock\sinterpretation.
-D 2025-10-24T20:26:13.562
+C Improvements\sto\sthe\sdesign\sof\sthe\s/proc\slock\sanalysis.
+D 2025-10-24T23:12:33.738
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c b5f955d80854ffb836dc61aab2e3207cbe75fb1f75abe465af1e0fd6e4185c0c
+F src/os_unix.c ef2cab7e9adf8a9123fedf9570e517bee90afd5c28e0670665077cdcb1ead0eb
 F src/os_win.c 5b14841f9c3ab76841c06a4eca20ba3e7747f44253eba9dfd3d918797e753d49
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ce75111cced8a03f05cf47ef809b9f017f2dac3c64c6008d595f28dbfec32057
-R e81b72d89ea720b63d81165aacbbddaf
+P d7bcc54beb6463501c0559333455bd2a378798b58cb48f35590e9026d07acd2f
+R 8d33f28289c9578897478104576c4047
 U drh
-Z 2d238be892f323f949a2bd6e1256d798
+Z d0703c0dd028be4d90d4623b7127b76b
 # Remove this line to create a well-formed Fossil manifest.

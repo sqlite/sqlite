@@ -596,6 +596,108 @@ static struct unix_syscall {
 }; /* End of the overrideable system calls */
 
 
+#if __linux__  && \
+    (defined(SQLITE_DEBUG) \
+      || defined(SQLITE_ENABLE_FILE_INFO) \
+      || defined(SQLITE_ENABLE_PAL_ASSERT))
+                            /* ^^^--- Mnemonic: Posix Advisory Lock */
+/*
+** Examine locking information from the /proc/PID/fdinfo/FD pseudo-file.
+**
+** If pStr is not NULL, append text that describes the locks to pStr.
+**
+** if iAssert is not 0, then verify that the there exists an posix
+** advisory lock (PAL) on byte iAssert of the file that fd is pointing
+** to.
+**
+** This routine no-ops if /proc/PID/fdinfo/FD cannot be opened.
+**
+** This routine is intended for diagnostic purposes only and is not a part
+** of ordinary builds.
+*/
+static void unixProcFSLocks(
+  int fd,                 /* The file descriptor to analyze */
+  sqlite3_str *pStr,      /* Write a text description of PALs here */
+  sqlite3_uint64 iAssert  /* Assert that this lock is held */
+){
+  int in;
+  ssize_t n;
+  char *p, *pNext, *x;
+  int nLock = 0;
+  char z[2000];
+
+  sqlite3_snprintf(sizeof(z), z, "/proc/%d/fdinfo/%d", getpid(), fd);
+  in = open(z, O_RDONLY);
+  if( in<0 ){
+    if( pStr ) sqlite3_str_appendall(pStr,"(not-available)");
+    return;
+  }
+  n = read(in, z, sizeof(z)-1);
+  close(in);
+  if( n<=0 ) return;
+  z[n] = 0;
+  pNext = strstr(z, "lock:\t");
+  while( pNext ){
+    char cType = 0;
+    sqlite3_int64 iFirst, iLast;
+    p = pNext+6;
+    pNext = strstr(p, "lock:\t");
+    if( pNext ) pNext[-1] = 0;
+    if( strstr(p, " READ ")!=0 ){
+      cType = 'R';
+    }else if( strstr(p, " WRITE ")!=0 ){
+      cType = 'W';
+    }
+    if( cType==0 ) continue;
+    x = strrchr(p, ' ');
+    if( x==0 ) continue;
+    iLast = strtoll(x+1, 0, 10);
+    *x = 0;
+    x = strrchr(p, ' ');
+    if( x==0 ) continue;
+    iFirst = strtoll(x+1, 0, 10);
+    if( pStr ){
+      const int shmBase = (22+SQLITE_SHM_NLOCK)*4;
+      if( (nLock++)>0 ) sqlite3_str_append(pStr," ",1);
+      sqlite3_str_appendf(pStr, "%c ", cType);
+      if( iFirst>=PENDING_BYTE ){
+        /*  "P+" stands for PENDING_BYTE+ */
+        sqlite3_str_appendf(pStr, "P+%lld", iFirst - PENDING_BYTE);
+      }else if( iFirst>=shmBase ){
+        /*  "B+" stands for UNIX_SHM_BASE+ */
+        sqlite3_str_appendf(pStr, "B+%lld", iFirst - shmBase);
+      }else{
+        sqlite3_str_appendf(pStr, "%lld", iFirst);
+      }
+      if( iLast>iFirst ){
+        sqlite3_str_appendf(pStr,"(%lld)", iLast-iFirst+1);
+      }
+    }
+    if( iAssert>=iFirst && iAssert<=iLast ) iAssert = 0;
+  }
+#if defined(SQLITE_ENABLE_PAL_ASSERT) || defined(SQLITE_DEBUG)
+  if( iAssert ){
+    sqlite3_snprintf(sizeof(z), z,
+         "a Posix-advisory lock is missing from byte %lld of fd %d\n",
+         iAssert, fd);
+    write(2, z, strlen(z));
+    abort();
+  }
+#else
+  (void)iAssert;
+#endif
+}
+#else
+#  define unixProcFSLocks(A,B,C)  /* no-op */
+#endif /* __linux__ && (SQLITE_DEBUG || SQLITE_ENABLE_<various>) */
+
+/*
+** If compiled with -DSQLITE_ENABLE_PAL_ASSERT, then the ASSERT_PAL_HELD(X,Y)
+** macro will print an error on file descriptor 2 and abort if there is
+** no PAL on byte Y of file-descriptor x.
+*/
+#define ASSERT_PAL_HELD(fd,loc) unixProcFSLocks(fd,0,loc)
+
 /*
 ** On some systems, calls to fchown() will trigger a message in a security
 ** log if they come from non-root processes.  So avoid calling fchown() if
@@ -2119,6 +2221,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       lock.l_type = F_UNLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = lock.l_len = 0L;
+      /* ASSERT_PAL_HELD(pFile->h, PENDING_BYTE+2); */
       if( unixFileLock(pFile, &lock)==0 ){
         pInode->eFileLock = NO_LOCK;
       }else{
@@ -3981,119 +4084,6 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
   return SQLITE_OK;
 }
 
-#if __linux__  && \
-    (defined(SQLITE_DEBUG) \
-      || defined(SQLITE_ENABLE_FILE_INFO) \
-      || defined(SQLITE_ENABLE_PROC_ASSERT))
-/*
-** Examine locking information from the /proc/PID/fdinfo/FD pseudo-file.
-**
-** If pStr is not NULL, append text that describes the locks to pStr.
-**
-** if iAssert is not 0, then verify that the byte iAssert/4 is either:
-**
-**     *   No locks are held if iAssert%4==0
-**     *   A read-lock is held if iAssert%4==1
-**     *   A write-lock is held if iAssert%4==2
-**     *   Any lock is held if iAssert%4==3
-**
-** This routine no-ops if /proc/PID/fdinfo/FD cannot be opened.
-**
-** This routine is intended for diagnostic purposes only and is not a part
-** of ordinary builds.
-*/
-static void unixProcFSLocks(int fd, sqlite3_str *pStr, sqlite3_uint64 iAssert){
-  int in;
-  ssize_t n;
-  char *p, *pNext, *x;
-  int nLock = 0;
-  char z[2000];
-
-  sqlite3_snprintf(sizeof(z), z, "/proc/%d/fdinfo/%d", getpid(), fd);
-  in = open(z, O_RDONLY);
-  if( in<0 ){
-    if( pStr ) sqlite3_str_appendall(pStr,"(not-available)");
-    return;
-  }
-  n = read(in, z, sizeof(z)-1);
-  close(in);
-  if( n>0 ){
-    z[n] = 0;
-    pNext = strstr(z, "lock:\t");
-    while( pNext ){
-      char cType = 0;
-      sqlite3_int64 iFirst, iLast;
-      p = pNext+6;
-      pNext = strstr(p, "lock:\t");
-      if( pNext ) pNext[-1] = 0;
-      if( strstr(p, " READ ")!=0 ){
-        cType = 'R';
-      }else if( strstr(p, " WRITE ")!=0 ){
-        cType = 'W';
-      }
-      if( cType ){
-        x = strrchr(p, ' ');
-        if( x ){
-          iLast = strtoll(x+1, 0, 10);
-          *x = 0;
-          x = strrchr(p, ' ');
-          if( x ){
-            iFirst = strtoll(x+1, 0, 10);
-            if( pStr ){
-              const int shmBase = (22+SQLITE_SHM_NLOCK)*4;
-              if( (nLock++)>0 ) sqlite3_str_append(pStr," ",1);
-              sqlite3_str_appendf(pStr, "%c ", cType);
-              if( iFirst>=PENDING_BYTE ){
-                /*  "P+" stands for PENDING_BYTE+ */
-                sqlite3_str_appendf(pStr, "P+%lld", iFirst - PENDING_BYTE);
-              }else if( iFirst>=shmBase ){
-                /*  "B+" stands for UNIX_SHM_BASE+ */
-                sqlite3_str_appendf(pStr, "B+%lld", iFirst - shmBase);
-              }else{
-                sqlite3_str_appendf(pStr, "%lld", iFirst);
-              }
-              if( iLast>iFirst ){
-                sqlite3_str_appendf(pStr,"(%lld)", iLast-iFirst+1);
-              }
-            }
-            if( iAssert!=0 ){
-              if( iAssert/4>=iFirst && iAssert/4<=iLast ){
-                switch( iAssert%4 ){
-                  case 0:
-                    sqlite3_snprintf(sizeof(z), z,
-                        "byte %lld for fd %d should be unlocked\n",
-                        iAssert/4, fd);
-                    write(2, z, strlen(z));
-                    abort();
-                  case 1:
-                    if( cType=='R' ) iAssert = 0;
-                    break;
-                  case 2:
-                    if( cType=='W' ) iAssert = 0;
-                    break;
-                  case 3:
-                    iAssert = 0;
-                    break;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    if( iAssert ){
-      sqlite3_snprintf(sizeof(z), z,
-           "byte %lld of fd %d should be locked\n",
-           iAssert/4, fd);
-      write(2, z, strlen(z));
-      abort();
-    }
-  }
-}
-#else
-#  define verifyProcLocks(A,B,C)  /* no-op */
-#endif /* __linux__ && (SQLITE_DEBUG || SQLITE_ENABLE_<various>) */
-
 /*
 ** If *pArg is initially negative then this is a query.  Set *pArg to
 ** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
@@ -4635,6 +4625,9 @@ static int unixShmSystemLock(
        || (ofst>=UNIX_SHM_BASE && ofst+n<=(UNIX_SHM_BASE+SQLITE_SHM_NLOCK))
   );
   if( ofst==UNIX_SHM_DMS ){
+    if( lockType==F_UNLCK && pShmNode->hShm>=0 ){
+      ASSERT_PAL_HELD(pShmNode->hShm, ofst);
+    }
     assert( pShmNode->nRef>0 || unixMutexHeld() );
     assert( pShmNode->nRef==0 || sqlite3_mutex_held(pShmNode->pShmMutex) );
   }else{
