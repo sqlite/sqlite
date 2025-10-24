@@ -1,5 +1,5 @@
-C Update\sthe\sMSVC\smakefile\sfor\sthe\samalgamation\sdistribution.
-D 2025-10-24T13:23:43.179
+C Make\sexplicit\sthat\ssqlite3_bind_pointer()\sand\ssqlite3_carray_bind()\scall\sthe\sprovided\sdestructor\seven\sif\sthose\sroutines\sfail,\sper\s[forum:6d81b10952|forum\sfeedback].
+D 2025-10-24T14:30:42.743
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -737,7 +737,7 @@ F src/resolve.c f8d1d011aba0964ff1bdccd049d4d2c2fec217efd90d202a4bb775e926b2c25d
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c b95181711d59c36d9789e67f76c4cfec64b99f9629a50be5e6566e117b87d957
 F src/shell.c.in 8d218cb62f8badb58cb6d91302ca8b6ccdc93232dd2ba39a9ace2e41fd8495cb
-F src/sqlite.h.in 10faecc456d3962c7cedae70d69305f7c80129f28dd8524bd8a06b3eac955e54
+F src/sqlite.h.in 84b45d68953c7fab8392c8ff7055db4e398e496083b853dac61e787154913720
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
 F src/sqliteInt.h 88f7fc9ce1630d9a5f7e0a8e1f3287cdc63882fba985c18e7eee1b9f457f59aa
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4e713558f6c6ea3dfbc97d2eb0a328955ef6ad6f2ad05517efe9ed4a60181440
-R 0fcfe6c38d765341c4866b3b667e0b35
-U drh
-Z bdcd0255339b5b84488e0aa1144cbe00
+P 440ce1cff2b7519912fec87f440894592e901d730bf74cf99479e7b1d047bf02
+R 96b76ffc99b8e4156ec41163bd33020c
+U stephan
+Z 84de5de3825ba943849eab13baee19f5
 # Remove this line to create a well-formed Fossil manifest.

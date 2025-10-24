@@ -4907,9 +4907,10 @@ typedef struct sqlite3_context sqlite3_context;
 ** associated with the pointer P of type T.  ^D is either a NULL pointer or
 ** a pointer to a destructor function for P. ^SQLite will invoke the
 ** destructor D with a single argument of P when it is finished using
-** P.  The T parameter should be a static string, preferably a string
-** literal. The sqlite3_bind_pointer() routine is part of the
-** [pointer passing interface] added for SQLite 3.20.0.
+** P, even if the call to sqlite3_bind_pointer() fails.  The T
+** parameter should be a static string, preferably a string literal.
+** The sqlite3_bind_pointer() routine is part of the [pointer passing
+** interface] added for SQLite 3.20.0.
 **
 ** ^If any of the sqlite3_bind_*() routines are called with a NULL pointer
 ** for the [prepared statement] or with a prepared statement for which
@@ -11153,7 +11154,8 @@ int sqlite3_deserialize(
 ** [SQLITE_CARRAY_DOUBLE], [SQLITE_CARRAY_TEXT], or [SQLITE_CARRAY_BLOB] to
 ** indicate the datatype of the array being bound.  The X argument is not a
 ** NULL pointer, then SQLite will invoke the function X on the P parameter
-** after it has finished using P.
+** after it has finished using P, even if the call to
+** sqlite3_carray_bind() fails.
 */
 SQLITE_API int sqlite3_carray_bind(
   sqlite3_stmt *pStmt,        /* Statement to be bound */
