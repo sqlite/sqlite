@@ -227,7 +227,7 @@ endef
 # Args: as for $(b.c-pp.shcmd).
 define b.c-pp.target
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
-	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4))
+	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4) $(b.c-pp.target.flags))
 CLEAN_FILES += $(3)
 endef
 
@@ -255,34 +255,6 @@ b.strip-js-emcc-bindings = \
 
 
 #
-# bin.version-info = binary to output various sqlite3 version info for
-# embedding in the JS files and in building the distribution zip file.
-# It must NOT be in $(dir.tmp) because we need it to survive the
-# cleanup process for the dist build to work properly.
-#
-# Slight caveat: this uses the version info from the in-tree
-# sqlite3.c/h, which may diff from a user-provided $(sqlite3.c).  The
-# end result is that the generated JS files may have static version
-# info from $(bin.version-info) which differ from their runtime-emitted
-# version info (e.g. from sqlite3_libversion()).
-bin.version-info = $(dir.top)/version-info
-$(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
-	$(MAKE) -C $(dir.top) version-info
-t-version-info: $(bin.version-info)
-#
-# bin.stripcomments is used for stripping C/C++-style comments from JS
-# files. The JS files contain large chunks of documentation which we
-# don't need for all builds. That app's -k flag is of particular
-# importance here, as it allows us to retain the opening comment
-# block(s), which contain the license header and version info.
-bin.stripccomments = $(dir.tool)/stripccomments
-$(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
-	$(CC) -o $@ $<
-t-stripccomments: $(bin.stripccomments)
-DISTCLEAN_FILES += $(bin.stripccomments)
-
-
-#
 # Set up sqlite3.c and sqlite3.h...
 #
 # To build with SEE (https://sqlite.org/see), either put sqlite3-see.c
@@ -301,7 +273,30 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 # is required for certain utility and test code.
 sqlite3.canonical.c = $(dir.top)/sqlite3.c
 sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
-sqlite3.h = $(dir.top)/sqlite3.h
+sqlite3.h = $(dir $(sqlite3.c))/sqlite3.h
+
+#
+# bin.version-info = binary to output various sqlite3 version info for
+# embedding in the JS files and in building the distribution zip file.
+# It must NOT be in $(dir.tmp) because we need it to survive the
+# cleanup process for the dist build to work properly.
+bin.version-info = ./version-info
+$(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
+	$(CC) -o $@ -I$(dir $(sqlite3.h)) $(dir.tool)/version-info.c
+	$(MAKE) -C $(dir.top) version-info
+t-version-info: $(bin.version-info)
+#
+# bin.stripcomments is used for stripping C/C++-style comments from JS
+# files. The JS files contain large chunks of documentation which we
+# don't need for all builds. That app's -k flag is of particular
+# importance here, as it allows us to retain the opening comment
+# block(s), which contain the license header and version info.
+bin.stripccomments = $(dir.tool)/stripccomments
+$(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
+	$(CC) -o $@ $<
+t-stripccomments: $(bin.stripccomments)
+DISTCLEAN_FILES += $(bin.stripccomments)
+
 
 ifeq (1,$(MAKING_CLEAN))
   SQLITE_C_IS_SEE = 0
@@ -313,7 +308,6 @@ else
     $(info This is an SEE build)
   endif
 endif
-
 
 #
 # barebones=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
