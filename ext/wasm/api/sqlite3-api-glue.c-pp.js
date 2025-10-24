@@ -1836,6 +1836,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          for anything other than local/sessionStorage. It "can"
          be used that way but it's not really intended to be. */
       capi.sqlite3_vfs_unregister(pKvvfs);
+      delete capi.sqlite3_kvvfs_methods;
     }
   }/*pKvvfs*/
 
@@ -1944,7 +1945,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       tgt[memKey] = fProxy;
     }else{
-      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name));
+      const pFunc = wasm.installFunction(fProxy, sigN);
       tgt[memKey] = pFunc;
       if(!tgt.ondispose || !tgt.ondispose.__removeFuncList){
         tgt.addOnDispose('ondispose.__removeFuncList handler',
