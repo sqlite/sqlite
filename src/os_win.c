@@ -3956,9 +3956,21 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
 #if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
     case SQLITE_FCNTL_GET_INFO: {
       sqlite3_str *pStr = (sqlite3_str*)pArg;
-      sqlite3_str_appendf(pStr, "{\n  \"h\":%llu", (sqlite3_uint64)pFile->h);
-      sqlite3_str_appendf(pStr, ",\n  \"vfs\":\"%s\"", pFile->pVfs->zName);
-      sqlite3_str_append(pStr, ",\n}", 3);
+      sqlite3_str_appendf(pStr, "{\"h\":%llu", (sqlite3_uint64)pFile->h);
+      sqlite3_str_appendf(pStr, ",\"vfs\":\"%s\"", pFile->pVfs->zName);
+      if( pFile->locktype ){
+        static const char *azLock[] = { "SHARED", "RESERVED",
+                                      "PENDING", "EXCLUSIVE" };
+        sqlite3_str_appendf(pStr, ",\"locktype\":\"%s\"", 
+                                  azLock[pFile->locktype-1]);
+      }
+#if SQLITE_MAX_MMAP_SIZE>0
+      if( pFile->mmapSize ){
+        sqlite3_str_appendf(pStr, ",\"mmapSize\":%lld", pFile->mmapSize);
+        sqlite3_str_appendf(pStr, ",\"nFetchOut\":%d", pFile->nFetchOut);
+      }
+#endif
+      sqlite3_str_append(pStr, "}", 1);
       return SQLITE_OK;
     }
 #endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */

@@ -3981,6 +3981,106 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
   return SQLITE_OK;
 }
 
+#if __linux__  && \
+    (defined(SQLITE_DEBUG) \
+      || defined(SQLITE_ENABLE_FILE_INFO) \
+      || defined(SQLITE_ENABLE_PROC_ASSERT))
+/*
+** Examine locking information from the /proc/PID/fdinfo/FD pseudo-file.
+**
+** If pStr is not NULL, append text that describes the locks to pStr.
+**
+** if iAssert is not 0, then verify that the byte iAssert/4 is either:
+**
+**     *   No locks are held if iAssert%4==0
+**     *   A read-lock is held if iAssert%4==1
+**     *   A write-lock is held if iAssert%4==2
+**     *   Any lock is held if iAssert%4==3
+**
+** This routine no-ops if /proc/PID/fdinfo/FD cannot be opened.
+**
+** This routine is intended for diagnostic purposes only and is not a part
+** of ordinary builds.
+*/
+static void unixProcFSLocks(int fd, sqlite3_str *pStr, sqlite3_uint64 iAssert){
+  int in;
+  ssize_t n;
+  char *p, *pNext, *x;
+  char *zSp = "";
+  char z[2000];
+
+  sqlite3_snprintf(sizeof(z), z, "/proc/%d/fdinfo/%d", getpid(), fd);
+  in = open(z, O_RDONLY);
+  if( in<0 ){
+    if( pStr ) sqlite3_str_appendall(pStr,"(not-available)");
+    return;
+  }
+  n = read(in, z, sizeof(z)-1);
+  close(in);
+  if( n>0 ){
+    z[n] = 0;
+    pNext = strstr(z, "lock:\t");
+    while( pNext ){
+      char cType = 0;
+      sqlite3_int64 iFirst, iLast;
+      p = pNext+6;
+      pNext = strstr(p, "lock:\t");
+      if( pNext ) pNext[-1] = 0;
+      if( strstr(p, " READ ")!=0 ){
+        cType = 'R';
+      }else if( strstr(p, " WRITE ")!=0 ){
+        cType = 'W';
+      }
+      if( cType ){
+        x = strrchr(p, ' ');
+        if( x ){
+          iLast = strtoll(x+1, 0, 10);
+          *x = 0;
+          x = strrchr(p, ' ');
+          if( x ){
+            iFirst = strtoll(x+1, 0, 10);
+            if( pStr ){
+              sqlite3_str_appendf(pStr,"%s%c %lld %lld",zSp,cType,iFirst,iLast);
+              zSp = " ";
+            }
+            if( iAssert!=0 ){
+              if( iAssert/4>=iFirst && iAssert/4<=iLast ){
+                switch( iAssert%4 ){
+                  case 0:
+                    sqlite3_snprintf(sizeof(z), z,
+                        "byte %lld for fd %d should be unlocked\n",
+                        iAssert/4, fd);
+                    write(2, z, strlen(z));
+                    abort();
+                  case 1:
+                    if( cType=='R' ) iAssert = 0;
+                    break;
+                  case 2:
+                    if( cType=='W' ) iAssert = 0;
+                    break;
+                  case 3:
+                    iAssert = 0;
+                    break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    if( iAssert ){
+      sqlite3_snprintf(sizeof(z), z,
+           "byte %lld of fd %d should be locked\n",
+           iAssert/4, fd);
+      write(2, z, strlen(z));
+      abort();
+    }
+  }
+}
+#else
+#  define verifyProcLocks(A,B,C)  /* no-op */
+#endif /* __linux__ && (SQLITE_DEBUG || SQLITE_ENABLE_<various>) */
+
 /*
 ** If *pArg is initially negative then this is a query.  Set *pArg to
 ** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
@@ -4002,6 +4102,10 @@ static int unixGetTempname(int nBuf, char *zBuf);
 #if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
  static int unixFcntlExternalReader(unixFile*, int*);
 #endif
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+ static void unixDescribeShm(sqlite3_str*,unixShm*);
+#endif
+
 
 /*
 ** Information and control of an open file handle.
@@ -4147,13 +4251,31 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
     case SQLITE_FCNTL_GET_INFO: {
-      static const char *azLock[] = { "NONE", "SHARED", "RESERVED",
-                                      "PENDING", "EXCLUSIVE" };
       sqlite3_str *pStr = (sqlite3_str*)pArg;
-      sqlite3_str_appendf(pStr, "{\"h\":%d,", pFile->h);
-      sqlite3_str_appendf(pStr, "\"vfs\":\"%s\",", pFile->pVfs->zName);
-      sqlite3_str_appendf(pStr, "\"eFileLock\":\"%s\"}", 
-                                azLock[pFile->eFileLock]);
+      sqlite3_str_appendf(pStr, "{\"h\":%d", pFile->h);
+      sqlite3_str_appendf(pStr, ",\"vfs\":\"%s\"", pFile->pVfs->zName);
+      if( pFile->eFileLock ){
+        static const char *azLock[] = { "SHARED", "RESERVED",
+                                      "PENDING", "EXCLUSIVE" };
+        sqlite3_str_appendf(pStr, ",\"eFileLock\":\"%s\"", 
+                                  azLock[pFile->eFileLock-1]);
+      }
+#if __linux__
+      sqlite3_str_appendall(pStr, ",\"locks\":\"");
+      unixProcFSLocks(pFile->h, pStr, 0);
+      sqlite3_str_append(pStr, "\"", 1);
+#endif /* __linux__ */
+      if( pFile->pShm ){
+        sqlite3_str_appendall(pStr, ",\"shm\":");
+        unixDescribeShm(pStr, pFile->pShm);
+      }
+#if SQLITE_MAX_MMAP_SIZE>0
+      if( pFile->mmapSize ){
+        sqlite3_str_appendf(pStr, ",\"mmapSize\":%lld", pFile->mmapSize);
+        sqlite3_str_appendf(pStr, ",\"nFetchOut\":%d", pFile->nFetchOut);
+      }
+#endif
+      sqlite3_str_append(pStr, "}", 1);
       return SQLITE_OK;
     }
 #endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
@@ -4422,6 +4544,24 @@ struct unixShm {
 */
 #define UNIX_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
 #define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+/*
+** Describe the pShm object using JSON.  Used for diagnostics only.
+*/
+static void unixDescribeShm(sqlite3_str *pStr, unixShm *pShm){
+  unixShmNode *pNode = pShm->pShmNode;
+  sqlite3_str_appendf(pStr, "{\"sharedMask\":%d", pShm->sharedMask);
+  sqlite3_str_appendf(pStr, ",\"exclMask\":%d", pShm->exclMask);
+  sqlite3_str_appendf(pStr, ",\"hShm\":%d", pNode->hShm);
+#if __linux__
+  sqlite3_str_appendall(pStr, ",\"locks\":\"");
+  unixProcFSLocks(pNode->hShm, pStr, 0);
+  sqlite3_str_append(pStr, "\"", 1);
+#endif /* __linux__ */
+  sqlite3_str_append(pStr, "}", 1);
+}
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
 
 /*
 ** Use F_GETLK to check whether or not there are any readers with open
