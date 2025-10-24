@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\simproved\serror\smessages\son\sinput\serrors.\s\sLimit\sthe\ssize\sof\sa\nsingle\sSQL\sstatement\sto\sa\slittle\smore\sthan\s2GB.
-D 2025-10-24T12:32:32.322
+C Enhance\sthe\stokenizer\sso\sthat\sit\sis\sable\sto\sdeal\swith\sindividual\stokens\nlarger\sthan\s2GiB.
+D 2025-10-24T13:18:31.816
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -381,7 +381,7 @@ F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2
 F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
 F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58f34edd
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
-F ext/misc/normalize.c 4782be3b74b9bd9f67281036ff1f41e5edcad20ad486171a2d671c4bb2586011
+F ext/misc/normalize.c fbb144a861809686ff2b5b6eee8bb2e1207f9bf13ce7376e5273c700a1eafbd5
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
 F ext/misc/percentile.c 72e05a21db20a2fa85264b99515941f00ae698824c9db82d7edfbb16cea8ec80
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
@@ -493,7 +493,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c f0573d5109fdc658a180db0db6eec86ab2a1cf5ce58ec66cbf3356167ea757eb
-F ext/rtree/rtree.c 86967c5a501f895b9705366b8cd9c37f15a9ebdff770ceb719c7deeeb2c22b72
+F ext/rtree/rtree.c a884309b7d7f81ec2845a4a0f93885cd3a3de3278584d0cbee74c92711190869
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -740,7 +740,7 @@ F src/shell.c.in 8d218cb62f8badb58cb6d91302ca8b6ccdc93232dd2ba39a9ace2e41fd8495c
 F src/sqlite.h.in 10faecc456d3962c7cedae70d69305f7c80129f28dd8524bd8a06b3eac955e54
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
-F src/sqliteInt.h e16df0914718acba6fb7e5f03055f7cf519d0d61314c78ec2f5c9f6a45608d86
+F src/sqliteInt.h 88f7fc9ce1630d9a5f7e0a8e1f3287cdc63882fba985c18e7eee1b9f457f59aa
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -794,7 +794,7 @@ F src/test_vfs.c b4135c1308516adf0dfd494e6d6c33114e03732be899eace0502919b674586b
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c 8400646d2830afc2f2dc465a75e3a92e4bedeea623f19dbd79c0c12d0dd6dda2
+F src/tokenize.c cb3294cf23c11106b50d9af6998a6c1bf389b52e15b17698c9fab97bbaa9b37f
 F src/treeview.c 3ce7ac9835d2d70cc1c868b01b747ae8a062322e155701e58e3d62ca79aada7a
 F src/trigger.c d5cf2541ff048f30b6a0507eb3d1ec4e695c53584e3b2298a5bf248714fe185e
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
@@ -810,7 +810,7 @@ F src/vdbeaux.c cb907297d03b374544a5a4f81ca981497ff4d09d13838f06de507118367f0b73
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c e67d9c6484d868c879d20c70d00bf4a9058082f1d4058607ca15d50eb3aebc21
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
-F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
+F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b41
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2adfd0f47b028b8378e6cc08dc22abf1606036bbd285a7bc3a0de0eaf6feeb8f
-R 1cb5603af7ab9bea0b6181cf5c07b1e1
+P 0b50e7e10aae3d57f1cbd38d02be50cfbd2d5148ab4a9be712afd8678787b7bd
+R 12ad4680ceff58939b23031232c526dd
 U drh
-Z 8148667aee325651b978014f5189e836
+Z ef25866760ed6d5dd12ab7c0cb6034f8
 # Remove this line to create a well-formed Fossil manifest.

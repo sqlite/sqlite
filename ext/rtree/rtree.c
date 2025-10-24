@@ -62,7 +62,7 @@
 #else
   #include "sqlite3.h"
 #endif
-int sqlite3GetToken(const unsigned char*,int*); /* In the SQLite core */
+i64 sqlite3GetToken(const unsigned char*,int*); /* In the SQLite core */
 
 #include <stddef.h>
 
