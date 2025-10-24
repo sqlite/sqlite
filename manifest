@@ -1,5 +1,5 @@
-C Document\sminor\sdiscrepancies\sin\show\ssqlite3_bind_pointer()\sand\ssqlite3_carray_bind()\sreact\sto\sthe\sSQLITE_TRANSIENT\sand\sSQLITE_STATIC\sfinalizers.
-D 2025-10-24T15:18:13.630
+C Fix\s[4e713558f6c6ea3d]\sso\sthat\sit\ssupports\sseparate\sbuilds\sof\srtree.
+D 2025-10-24T16:01:55.945
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -493,7 +493,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c f0573d5109fdc658a180db0db6eec86ab2a1cf5ce58ec66cbf3356167ea757eb
-F ext/rtree/rtree.c a884309b7d7f81ec2845a4a0f93885cd3a3de3278584d0cbee74c92711190869
+F ext/rtree/rtree.c 95401e6812a399b5ef2e5de1249ab7e2844601cb4153ca2c3f14122ff3625569
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1fcb0b60798c708fec53d9d69a65cca2e37a9af7a5fa654c7b2bba97056cd461
-R 2cdd7a83325fc2e06d5a9b00c4543329
-U stephan
-Z 2cee7d18aca1190f67d9a599c75e64bc
+P b92478c389a9ff57302c021444ced09aef067ab55394dcda38cde97a3f2628d4
+R f5c01aa0313dd47389b9fc4484bf6d21
+U drh
+Z a2e9d8f94144911e9df51120edea5ff6
 # Remove this line to create a well-formed Fossil manifest.
