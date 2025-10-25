@@ -1,5 +1,5 @@
-C Adjust\sunixPosixAdvisorLocks()\sto\suse\sredirectable\ssystem\scalls\sso\sthat\nit\scan\sbe\stested.
-D 2025-10-25T18:40:18.437
+C Add\sadditional\sinformation\sabout\sunix\sfile\sdescriptors\sto\sthe\ssame\sdatabase\sfile\nin\sthe\ssqlite_file_info()\soutput.
+D 2025-10-25T19:26:16.953
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c 35ea3a2362b58390181bbb2450006558eb2fca72df31f6a933967ade4baa1172
+F src/os_unix.c 8259386c205ae2297f9487c4e14169474697ef9c4c78e5ef546787eb2221523b
 F src/os_win.c 5b14841f9c3ab76841c06a4eca20ba3e7747f44253eba9dfd3d918797e753d49
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 82f907016ee75ca288d8ac0664d5c147fbfad42c5f8222211acc3220bd0eb609
-R 72947327af2da3dba426a4fa276ec4a3
+P eafe88b782875cd839fc27da509830e3e1d95781c686e27242a2844910203a42
+R 7022e3a791fb52de409c6fc91d6ad96f
 U drh
-Z a63b0b7b05ef1a6b7c4fe4c0a7d92948
+Z 4dfb0e7c66571c44833f2e4abaab7a73
 # Remove this line to create a well-formed Fossil manifest.

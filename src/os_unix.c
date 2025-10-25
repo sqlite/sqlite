@@ -4266,17 +4266,19 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_FCNTL_GET_INFO: {
       sqlite3_str *pStr = (sqlite3_str*)pArg;
       char aLck[16];
+      unixInodeInfo *pInode;
+      static const char *azLock[] = { "SHARED", "RESERVED",
+                                      "PENDING", "EXCLUSIVE" };
       sqlite3_str_appendf(pStr, "{\"h\":%d", pFile->h);
       sqlite3_str_appendf(pStr, ",\"vfs\":\"%s\"", pFile->pVfs->zName);
       if( pFile->eFileLock ){
-        static const char *azLock[] = { "SHARED", "RESERVED",
-                                      "PENDING", "EXCLUSIVE" };
         sqlite3_str_appendf(pStr, ",\"eFileLock\":\"%s\"", 
                                   azLock[pFile->eFileLock-1]);
         if( unixPosixAdvisoryLocks(pFile->h, aLck)==SQLITE_OK ){
           sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
         }
       }
+      unixEnterMutex();
       if( pFile->pShm ){
         sqlite3_str_appendall(pStr, ",\"shm\":");
         unixDescribeShm(pStr, pFile->pShm);
@@ -4287,6 +4289,34 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
         sqlite3_str_appendf(pStr, ",\"nFetchOut\":%d", pFile->nFetchOut);
       }
 #endif
+      if( (pInode = pFile->pInode)!=0 ){
+        sqlite3_str_appendf(pStr, ",\"inode\":{\"nRef\":%d",pInode->nRef);
+        sqlite3_mutex_enter(pInode->pLockMutex);
+        sqlite3_str_appendf(pStr, ",\"nShared\":%d", pInode->nShared);
+        if( pInode->eFileLock ){
+          sqlite3_str_appendf(pStr, ",\"eFileLock\":\"%s\"", 
+                                  azLock[pInode->eFileLock-1]);
+        }
+        if( pInode->pUnused ){
+          char cSep = '[';
+          UnixUnusedFd *pUFd = pFile->pInode->pUnused;
+          sqlite3_str_appendall(pStr, ",\"unusedFd\":");
+          while( pUFd ){
+            sqlite3_str_appendf(pStr, "%c{\"fd\":%d,\"flags\":%d",
+                                cSep, pUFd->fd, pUFd->flags);
+            cSep = ',';
+            if( unixPosixAdvisoryLocks(pFile->h, aLck)==SQLITE_OK ){
+              sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
+            }
+            sqlite3_str_append(pStr, "}", 1);
+            pUFd = pUFd->pNext;
+          }
+          sqlite3_str_append(pStr, "]", 1);
+        }
+        sqlite3_mutex_leave(pInode->pLockMutex);
+        sqlite3_str_append(pStr, "}", 1);
+      }
+      unixLeaveMutex();
       sqlite3_str_append(pStr, "}", 1);
       return SQLITE_OK;
     }
@@ -4565,9 +4595,8 @@ static void unixDescribeShm(sqlite3_str *pStr, unixShm *pShm){
   unixShmNode *pNode = pShm->pShmNode;
   char aLck[16];
   sqlite3_str_appendf(pStr, "{\"h\":%d", pNode->hShm);
-  unixEnterMutex();
+  assert( unixMutexHeld() );
   sqlite3_str_appendf(pStr, ",\"nRef\":%d", pNode->nRef);
-  unixLeaveMutex();
   sqlite3_str_appendf(pStr, ",\"id\":%d", pShm->id);
   sqlite3_str_appendf(pStr, ",\"sharedMask\":%d", pShm->sharedMask);
   sqlite3_str_appendf(pStr, ",\"exclMask\":%d", pShm->exclMask);
