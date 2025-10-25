@@ -1,5 +1,5 @@
-C New\ssymbolic\srepresentation\sof\sposix\sadvisory\slocking\sinformation
-D 2025-10-25T12:53:03.679
+C The\ssqlite_file_info()\sfunction\sshould\salways\sreturn\sJSON,\sunless\sthere\nis\san\sOOM.
+D 2025-10-25T13:16:41.911
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -689,7 +689,7 @@ F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 4d63c8f6d50fe20637de8bdaf57757a0e424e4ac5e2c3313e621d64727a48a1c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
-F src/func.c 16a792b33ae9b64097ca14ab2b7977c909ff207d7813bbbb2684ab9cc181f0b5
+F src/func.c a2186f55bd641818bf699c31797fbd780ca8b57142b0f8f4e3883a3727f6c642
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 73e1e081e9f7fc0ece98222669d13abde16197f0befc3343246a9e7da7856f02
-R d02e1e5caa702fab091cddd2d527ec9a
+P b7d991ae04da1d6731b67fbdca65df996ec1c14a9530880fb7dbeeaef2575d14
+R 570d5be1cd34125ca3bc390e6ef1d11e
 U drh
-Z fc91506e75939b3bd259b47f9c0d4832
+Z 40701e0e55ab88fad095e5f82fc95c1f
 # Remove this line to create a well-formed Fossil manifest.

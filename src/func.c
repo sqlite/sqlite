@@ -3128,6 +3128,8 @@ static void fileInfoFunc(
                           sqlite3_free);
     }
     sqlite3BtreeLeave(pBtree);
+  }else{
+    sqlite3_result_text(context, "{}", 2, SQLITE_STATIC);
   }
 }
 #endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
