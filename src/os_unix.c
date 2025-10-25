@@ -648,12 +648,12 @@ static int unixPosixAdvisoryLocks(
         /*   012 4 678 01234 */
   memcpy(a, "---/-.---.-----", 16);
   sqlite3_snprintf(sizeof(z), z, "/proc/%d/fdinfo/%d", getpid(), fd);
-  in = open(z, O_RDONLY);
+  in = osOpen(z, O_RDONLY, 0);
   if( in<0 ){
     return SQLITE_ERROR_UNABLE;
   }
-  n = read(in, z, sizeof(z)-1);
-  close(in);
+  n = osRead(in, z, sizeof(z)-1);
+  osClose(in);
   if( n<=0 ) return SQLITE_ERROR_UNABLE;
   z[n] = 0;
 
