@@ -5650,17 +5650,25 @@ static int session_filter(void *pCtx, const char *zTab){
 ** the type cannot be determined from content.
 */
 int deduceDatabaseType(const char *zName, int dfltZip){
-  FILE *f = sqlite3_fopen(zName, "rb");
+  FILE *f;
   size_t n;
+  sqlite3 *db = 0;
+  sqlite3_stmt *pStmt = 0;
   int rc = SHELL_OPEN_UNSPEC;
   char zBuf[100];
-  if( f==0 ){
-    if( dfltZip && sqlite3_strlike("%.zip",zName,0)==0 ){
-       return SHELL_OPEN_ZIPFILE;
-    }else{
-       return SHELL_OPEN_NORMAL;
-    }
+  if( access(zName,0)!=0 ) goto database_type_by_name;
+  if( sqlite3_open_v2(zName, &db, SQLITE_OPEN_READONLY, 0)==SQLITE_OK
+   && sqlite3_prepare_v2(db,"SELECT count(*) FROM sqlite_schema",-1,&pStmt,0)
+           ==SQLITE_OK
+   && sqlite3_step(pStmt)==SQLITE_ROW
+  ){
+    rc = SHELL_OPEN_NORMAL;
   }
+  sqlite3_finalize(pStmt);
+  sqlite3_close(db);
+  if( rc==SHELL_OPEN_NORMAL ) return SHELL_OPEN_NORMAL;
+  f = sqlite3_fopen(zName, "rb");
+  if( f==0 ) goto database_type_by_name;
   n = fread(zBuf, 16, 1, f);
   if( n==1 && memcmp(zBuf, "SQLite format 3", 16)==0 ){
     fclose(f);
@@ -5681,6 +5689,14 @@ int deduceDatabaseType(const char *zName, int dfltZip){
     }
   }
   fclose(f);
+  return rc;
+
+database_type_by_name:
+  if( dfltZip && sqlite3_strlike("%.zip",zName,0)==0 ){
+    rc = SHELL_OPEN_ZIPFILE;
+  }else{
+    rc = SHELL_OPEN_NORMAL;
+  }
   return rc;
 }
 
