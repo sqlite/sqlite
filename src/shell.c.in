@@ -5308,6 +5308,7 @@ static const char *(azHelp[]) = {
   "        --maxsize N     Maximum size for --hexdb or --deserialized database",
 #endif
   "        --new           Initialize FILE to an empty database",
+  "        --normal        FILE is an ordinary SQLite database",
   "        --nofollow      Do not follow symbolic links",
   "        --readonly      Open FILE readonly",
   "        --zip           FILE is a ZIP archive",
@@ -5649,7 +5650,7 @@ static int session_filter(void *pCtx, const char *zTab){
 ** Otherwise, assume an ordinary database regardless of the filename if
 ** the type cannot be determined from content.
 */
-int deduceDatabaseType(const char *zName, int dfltZip){
+int deduceDatabaseType(const char *zName, int dfltZip, int openFlags){
   FILE *f;
   size_t n;
   sqlite3 *db = 0;
@@ -5657,7 +5658,7 @@ int deduceDatabaseType(const char *zName, int dfltZip){
   int rc = SHELL_OPEN_UNSPEC;
   char zBuf[100];
   if( access(zName,0)!=0 ) goto database_type_by_name;
-  if( sqlite3_open_v2(zName, &db, SQLITE_OPEN_READONLY, 0)==SQLITE_OK
+  if( sqlite3_open_v2(zName, &db, openFlags, 0)==SQLITE_OK
    && sqlite3_prepare_v2(db,"SELECT count(*) FROM sqlite_schema",-1,&pStmt,0)
            ==SQLITE_OK
    && sqlite3_step(pStmt)==SQLITE_ROW
@@ -5866,7 +5867,7 @@ static void open_db(ShellState *p, int openFlags){
         p->openMode = SHELL_OPEN_NORMAL;
       }else{
         p->openMode = (u8)deduceDatabaseType(zDbFilename,
-                             (openFlags & OPEN_DB_ZIPFILE)!=0);
+                             (openFlags & OPEN_DB_ZIPFILE)!=0, p->openFlags);
       }
     }
     if( (p->openFlags & (SQLITE_OPEN_READONLY|SQLITE_OPEN_READWRITE))==0 ){
@@ -8247,7 +8248,7 @@ static int arDotCommand(
     cmd.out = pState->out;
     cmd.db = pState->db;
     if( cmd.zFile ){
-      eDbType = deduceDatabaseType(cmd.zFile, 1);
+      eDbType = deduceDatabaseType(cmd.zFile, 1, 0);
     }else{
       eDbType = pState->openMode;
     }
@@ -10349,6 +10350,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         openMode = SHELL_OPEN_DESERIALIZE;
       }else if( optionMatch(z, "hexdb") ){
         openMode = SHELL_OPEN_HEXDB;
+      }else if( optionMatch(z, "normal") ){
+        openMode = SHELL_OPEN_NORMAL;
       }else if( optionMatch(z, "maxsize") && iName+1<nArg ){
         p->szMax = integerValue(azArg[++iName]);
 #endif /* SQLITE_OMIT_DESERIALIZE */
