@@ -4273,9 +4273,9 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
                                       "PENDING", "EXCLUSIVE" };
         sqlite3_str_appendf(pStr, ",\"eFileLock\":\"%s\"", 
                                   azLock[pFile->eFileLock-1]);
-      }
-      if( unixPosixAdvisoryLocks(pFile->h, aLck)==SQLITE_OK ){
-        sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
+        if( unixPosixAdvisoryLocks(pFile->h, aLck)==SQLITE_OK ){
+          sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
+        }
       }
       if( pFile->pShm ){
         sqlite3_str_appendall(pStr, ",\"shm\":");

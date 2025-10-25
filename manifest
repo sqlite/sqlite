@@ -1,5 +1,5 @@
-C The\ssqlite_file_info()\sfunction\sshould\salways\sreturn\sJSON,\sunless\sthere\nis\san\sOOM.
-D 2025-10-25T13:16:41.911
+C Do\snot\sattempt\sto\sshow\sposix-advisory-locking\sstatus\son\sjournal\sfiles.
+D 2025-10-25T13:55:49.988
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c 2fc3126f296960d16fe2a52ef3b77cdb5637e2ac036c28c586c90766c9a7123b
+F src/os_unix.c 4b6b00948711b2a6a2f7a257c4717a3af90df90c83671c25ce2abc5cf50b805e
 F src/os_win.c 5b14841f9c3ab76841c06a4eca20ba3e7747f44253eba9dfd3d918797e753d49
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b7d991ae04da1d6731b67fbdca65df996ec1c14a9530880fb7dbeeaef2575d14
-R 570d5be1cd34125ca3bc390e6ef1d11e
+P 65aed79c29bf1aac0934475c02b358b916f413b20d2475ec7b631011f21f4e2b
+R 9a8ca9b687914ba362065d8f906f5c86
 U drh
-Z 40701e0e55ab88fad095e5f82fc95c1f
+Z fdeb6188d5c16f9bcfa8e759db31012a
 # Remove this line to create a well-formed Fossil manifest.
