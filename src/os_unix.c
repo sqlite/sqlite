@@ -4564,9 +4564,13 @@ struct unixShm {
 static void unixDescribeShm(sqlite3_str *pStr, unixShm *pShm){
   unixShmNode *pNode = pShm->pShmNode;
   char aLck[16];
-  sqlite3_str_appendf(pStr, "{\"sharedMask\":%d", pShm->sharedMask);
+  sqlite3_str_appendf(pStr, "{\"h\":%d", pNode->hShm);
+  unixEnterMutex();
+  sqlite3_str_appendf(pStr, ",\"nRef\":%d", pNode->nRef);
+  unixLeaveMutex();
+  sqlite3_str_appendf(pStr, ",\"id\":%d", pShm->id);
+  sqlite3_str_appendf(pStr, ",\"sharedMask\":%d", pShm->sharedMask);
   sqlite3_str_appendf(pStr, ",\"exclMask\":%d", pShm->exclMask);
-  sqlite3_str_appendf(pStr, ",\"hShm\":%d", pNode->hShm);
   if( unixPosixAdvisoryLocks(pNode->hShm, aLck)==SQLITE_OK ){
     sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
   }
