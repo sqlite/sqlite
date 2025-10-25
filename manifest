@@ -1,5 +1,5 @@
-C New\s--normal\soption\sfor\sthe\s".open"\scommand\sin\sthe\sCLI.\s\sAlso,\swhen\sopening\nthe\sdatabase\sfor\sdeduceDatabaseType(),\suse\sthe\ssame\sopen-flags\sthat\swill\nbe\sused\ssubsequently\sfor\sthe\sofficial\sopen,\sto\savoid\screating\sunusable\nfile\sdescriptors\sthat\sneed\sto\sbe\sheld\suntil\sall\sdatabase\sinstances\sclose.
-D 2025-10-25T19:36:12.834
+C Fix\sa\sbug\sin\ssqlite_file_info()\soutput:\s\sIt\swas\sshowing\sthe\s"pal"\sfor\nthe\smain\sfile\sdescriptor\swhen\straversing\sother\sunused\sfile\sdescriptors\nfor\sthe\ssame\sinode.
+D 2025-10-25T19:51:16.580
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c 8259386c205ae2297f9487c4e14169474697ef9c4c78e5ef546787eb2221523b
+F src/os_unix.c 53c7636d5bec7884d7f5d02e78ac16dd43162e6d1e0c0dbd6d58805922b84bd7
 F src/os_win.c 5b14841f9c3ab76841c06a4eca20ba3e7747f44253eba9dfd3d918797e753d49
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 64045f0a4d71ef068d64f2f25799cf1ae79c3cdb94039c73f1066290e3dbc943
-R 8dad99d3cc73b12fe09f0f44e32c4e63
+P 5e20a0435b1bd84d90c9a419219afe794fdf8ea73213f4c7ae5612c0375bed55
+R c88309ce7fbaf9b7abfef05cefac35c2
 U drh
-Z 87cde9cae3dbd3e703e8129f211fb4d4
+Z 5cd0917bc0c47465253ea4be3bf810d7
 # Remove this line to create a well-formed Fossil manifest.

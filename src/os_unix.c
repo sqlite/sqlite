@@ -4305,7 +4305,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
             sqlite3_str_appendf(pStr, "%c{\"fd\":%d,\"flags\":%d",
                                 cSep, pUFd->fd, pUFd->flags);
             cSep = ',';
-            if( unixPosixAdvisoryLocks(pFile->h, aLck)==SQLITE_OK ){
+            if( unixPosixAdvisoryLocks(pUFd->fd, aLck)==SQLITE_OK ){
               sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
             }
             sqlite3_str_append(pStr, "}", 1);
