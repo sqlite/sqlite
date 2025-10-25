@@ -1,5 +1,5 @@
-C Merge\strunk\senhancements\sinto\sthe\sfile-info\sbranch.
-D 2025-10-25T11:47:04.114
+C New\ssymbolic\srepresentation\sof\sposix\sadvisory\slocking\sinformation
+D 2025-10-25T12:53:03.679
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c ec6d9ea99794f93b5f4a2ca5769f99c71e967741b574ff9debdea5825b5d5bd5
+F src/os_unix.c 2fc3126f296960d16fe2a52ef3b77cdb5637e2ac036c28c586c90766c9a7123b
 F src/os_win.c 5b14841f9c3ab76841c06a4eca20ba3e7747f44253eba9dfd3d918797e753d49
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f2809dd3b266c0a6a6eb4ed62812a907493fb4006d26f8905df7ff2b1ca01a5e ed01ed337c04cce4cdbb6e80628b6f716d537e072b80067bd2bd6c5d18a1454f
-R 7dd67122ca255adb0444f8e501e60504
+P 73e1e081e9f7fc0ece98222669d13abde16197f0befc3343246a9e7da7856f02
+R d02e1e5caa702fab091cddd2d527ec9a
 U drh
-Z 4ce899c38987e188b278f4b05ec7c492
+Z fc91506e75939b3bd259b47f9c0d4832
 # Remove this line to create a well-formed Fossil manifest.

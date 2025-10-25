@@ -596,46 +596,74 @@ static struct unix_syscall {
 }; /* End of the overrideable system calls */
 
 
-#if __linux__  && \
-    (defined(SQLITE_DEBUG) \
-      || defined(SQLITE_ENABLE_FILE_INFO) \
-      || defined(SQLITE_ENABLE_PAL_ASSERT))
-                            /* ^^^--- Mnemonic: Posix Advisory Lock */
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
 /*
-** Examine locking information from the /proc/PID/fdinfo/FD pseudo-file.
+** Extract Posix Advisory Locking information about file description fd
+** from the /proc/PID/fdinfo/FD pseudo-file.  Fill the string buffer a[16]
+** with characters to indicate which SQLite-relevant locks are held.
+** a[16] will be a 15-character zero-terminated string with the following
+** schema:
 **
-** If pStr is not NULL, append text that describes the locks to pStr.
+**     AAA/B.DDD.DDDDD
 **
-** if iAssert is not 0, then verify that the there exists an posix
-** advisory lock (PAL) on byte iAssert of the file that fd is pointing
-** to.
+** Each of character A-D will be "w" or "r" or "-" to indicate either a
+** write-lock, a read-lock, or no-lock, respectively.  The "." and "/"
+** characters are delimiters intended to make the string more easily
+** readable by humans.  Here are the meaning of the specific letters:
 **
-** This routine no-ops if /proc/PID/fdinfo/FD cannot be opened.
+**     AAA   ->    The main database locks.  PENDING_BYTE, RESERVED_BYTE,
+**                 and SHARED_FIRST, respectively.
 **
-** This routine is intended for diagnostic purposes only and is not a part
-** of ordinary builds.
+**     B     ->    The deadman switch lock.  Offset 128 of the -shm file.
+**
+**     CCC   ->    WAL locks:  WRITE, CKPT, RECOVER
+**
+**     DDDDD ->    WAL read-locks 0 through 5
+**
+** Note that elements before the "/" apply to the main database file and
+** elements after the "/" apply to the -shm file in WAL mode.
+**
+** Here is another way of thinking about the meaning of the result string:
+**
+**           AAA/B.CCC.DDDDD
+**           ||| | ||| \___/
+**  PENDING--'|| | |||   `----- READ 0-5
+**  RESERVED--'| | ||`---- RECOVER
+**  SHARED ----' | |`----- CKPT
+**     DMS ------' `------ WRITE
+**
+** Return SQLITE_OK on success and SQLITE_ERROR_UNABLE if the /proc
+** pseudo-filesystem is unavailable.
 */
-static void unixProcFSLocks(
-  int fd,                 /* The file descriptor to analyze */
-  sqlite3_str *pStr,      /* Write a text description of PALs here */
-  sqlite3_uint64 iAssert  /* Assert that this lock is held */
+static int unixPosixAdvisoryLocks(
+  int fd,        /* The file descriptor to analyze */
+  char a[16]     /* Write a text description of PALs here */
 ){
   int in;
   ssize_t n;
   char *p, *pNext, *x;
-  int nLock = 0;
   char z[2000];
 
+        /*             1     */
+        /*   012 4 678 01234 */
+  memcpy(a, "---/-.---.-----", 16);
   sqlite3_snprintf(sizeof(z), z, "/proc/%d/fdinfo/%d", getpid(), fd);
   in = open(z, O_RDONLY);
   if( in<0 ){
-    if( pStr ) sqlite3_str_appendall(pStr,"(not-available)");
-    return;
+    return SQLITE_ERROR_UNABLE;
   }
   n = read(in, z, sizeof(z)-1);
   close(in);
-  if( n<=0 ) return;
+  if( n<=0 ) return SQLITE_ERROR_UNABLE;
   z[n] = 0;
+
+  /* We are looking for lines that begin with "lock:\t".  Examples:
+  **
+  ** lock: 1: POSIX  ADVISORY  READ 494716 08:02:5277597 1073741826 1073742335
+  ** lock: 1: POSIX  ADVISORY  WRITE 494716 08:02:5282282 120 120
+  ** lock: 2: POSIX  ADVISORY  READ 494716 08:02:5282282 123 123
+  ** lock: 3: POSIX  ADVISORY  READ 494716 08:02:5282282 128 128
+  */
   pNext = strstr(z, "lock:\t");
   while( pNext ){
     char cType = 0;
@@ -643,60 +671,43 @@ static void unixProcFSLocks(
     p = pNext+6;
     pNext = strstr(p, "lock:\t");
     if( pNext ) pNext[-1] = 0;
-    if( strstr(p, " READ ")!=0 ){
-      cType = 'R';
-    }else if( strstr(p, " WRITE ")!=0 ){
-      cType = 'W';
+    if( (x = strstr(p, " READ "))!=0 ){
+      cType = 'r';
+      x += 6;
+    }else if( (x = strstr(p, " WRITE "))!=0 ){
+      cType = 'w';
+      x += 7;
+    }else{
+      continue;
     }
-    if( cType==0 ) continue;
-    x = strrchr(p, ' ');
+    x = strrchr(x, ' ');
     if( x==0 ) continue;
     iLast = strtoll(x+1, 0, 10);
     *x = 0;
     x = strrchr(p, ' ');
     if( x==0 ) continue;
     iFirst = strtoll(x+1, 0, 10);
-    if( pStr ){
-      const int shmBase = (22+SQLITE_SHM_NLOCK)*4;
-      if( (nLock++)>0 ) sqlite3_str_append(pStr," ",1);
-      sqlite3_str_appendf(pStr, "%c ", cType);
-      if( iFirst>=PENDING_BYTE ){
-        /*  "P+" stands for PENDING_BYTE+ */
-        sqlite3_str_appendf(pStr, "P+%lld", iFirst - PENDING_BYTE);
-      }else if( iFirst>=shmBase ){
-        /*  "B+" stands for UNIX_SHM_BASE+ */
-        sqlite3_str_appendf(pStr, "B+%lld", iFirst - shmBase);
-      }else{
-        sqlite3_str_appendf(pStr, "%lld", iFirst);
-      }
-      if( iLast>iFirst ){
-        sqlite3_str_appendf(pStr,"(%lld)", iLast-iFirst+1);
-      }
+    if( iLast>=PENDING_BYTE ){
+      if( iFirst<=PENDING_BYTE && iLast>=PENDING_BYTE )     a[0] = cType;
+      if( iFirst<=PENDING_BYTE+1 && iLast>=PENDING_BYTE+1 ) a[1] = cType;
+      if( iFirst<=PENDING_BYTE+2 && iLast>=PENDING_BYTE+510 ) a[2] = cType;
+    }else if( iLast<=128 ){
+      if( iFirst<=128 && iLast>=128 ) a[4] = cType;
+      if( iFirst<=120 && iLast>=120 ) a[6] = cType;
+      if( iFirst<=121 && iLast>=121 ) a[7] = cType;
+      if( iFirst<=122 && iLast>=122 ) a[8] = cType;
+      if( iFirst<=123 && iLast>=123 ) a[10] = cType;
+      if( iFirst<=124 && iLast>=124 ) a[11] = cType;
+      if( iFirst<=125 && iLast>=125 ) a[12] = cType;
+      if( iFirst<=126 && iLast>=126 ) a[13] = cType;
+      if( iFirst<=127 && iLast>=127 ) a[14] = cType;
     }
-    if( iAssert>=iFirst && iAssert<=iLast ) iAssert = 0;
   }
-#if defined(SQLITE_ENABLE_PAL_ASSERT) || defined(SQLITE_DEBUG)
-  if( iAssert ){
-    sqlite3_snprintf(sizeof(z), z,
-         "a Posix-advisory lock is missing from byte %lld of fd %d\n",
-         iAssert, fd);
-    write(2, z, strlen(z));
-    abort();
-  }
-#else
-  (void)iAssert;
-#endif
+  return SQLITE_OK;
 }
 #else
-#  define unixProcFSLocks(A,B,C)  /* no-op */
-#endif /* __linux__ && (SQLITE_DEBUG || SQLITE_ENABLE_<various>) */
-
-/*
-** If compiled with -DSQLITE_ENABLE_PAL_ASSERT, then the ASSERT_PAL_HELD(X,Y)
-** macro will print an error on file descriptor 2 and abort if there is
-** no PAL on byte Y of file-descriptor x.
-*/
-#define ASSERT_PAL_HELD(fd,loc) unixProcFSLocks(fd,0,loc)
+#  define unixPosixAdvisoryLocks(A,B) SQLITE_ERROR_UNABLE
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
 
 /*
 ** On some systems, calls to fchown() will trigger a message in a security
@@ -2221,7 +2232,6 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       lock.l_type = F_UNLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = lock.l_len = 0L;
-      /* ASSERT_PAL_HELD(pFile->h, PENDING_BYTE+2); */
       if( unixFileLock(pFile, &lock)==0 ){
         pInode->eFileLock = NO_LOCK;
       }else{
@@ -4255,6 +4265,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 #if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
     case SQLITE_FCNTL_GET_INFO: {
       sqlite3_str *pStr = (sqlite3_str*)pArg;
+      char aLck[16];
       sqlite3_str_appendf(pStr, "{\"h\":%d", pFile->h);
       sqlite3_str_appendf(pStr, ",\"vfs\":\"%s\"", pFile->pVfs->zName);
       if( pFile->eFileLock ){
@@ -4263,11 +4274,9 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
         sqlite3_str_appendf(pStr, ",\"eFileLock\":\"%s\"", 
                                   azLock[pFile->eFileLock-1]);
       }
-#if __linux__
-      sqlite3_str_appendall(pStr, ",\"locks\":\"");
-      unixProcFSLocks(pFile->h, pStr, 0);
-      sqlite3_str_append(pStr, "\"", 1);
-#endif /* __linux__ */
+      if( unixPosixAdvisoryLocks(pFile->h, aLck)==SQLITE_OK ){
+        sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
+      }
       if( pFile->pShm ){
         sqlite3_str_appendall(pStr, ",\"shm\":");
         unixDescribeShm(pStr, pFile->pShm);
@@ -4554,14 +4563,13 @@ struct unixShm {
 */
 static void unixDescribeShm(sqlite3_str *pStr, unixShm *pShm){
   unixShmNode *pNode = pShm->pShmNode;
+  char aLck[16];
   sqlite3_str_appendf(pStr, "{\"sharedMask\":%d", pShm->sharedMask);
   sqlite3_str_appendf(pStr, ",\"exclMask\":%d", pShm->exclMask);
   sqlite3_str_appendf(pStr, ",\"hShm\":%d", pNode->hShm);
-#if __linux__
-  sqlite3_str_appendall(pStr, ",\"locks\":\"");
-  unixProcFSLocks(pNode->hShm, pStr, 0);
-  sqlite3_str_append(pStr, "\"", 1);
-#endif /* __linux__ */
+  if( unixPosixAdvisoryLocks(pNode->hShm, aLck)==SQLITE_OK ){
+    sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
+  }
   sqlite3_str_append(pStr, "}", 1);
 }
 #endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
@@ -4625,9 +4633,6 @@ static int unixShmSystemLock(
        || (ofst>=UNIX_SHM_BASE && ofst+n<=(UNIX_SHM_BASE+SQLITE_SHM_NLOCK))
   );
   if( ofst==UNIX_SHM_DMS ){
-    if( lockType==F_UNLCK && pShmNode->hShm>=0 ){
-      ASSERT_PAL_HELD(pShmNode->hShm, ofst);
-    }
     assert( pShmNode->nRef>0 || unixMutexHeld() );
     assert( pShmNode->nRef==0 || sqlite3_mutex_held(pShmNode->pShmMutex) );
   }else{
