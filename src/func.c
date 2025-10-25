@@ -3083,14 +3083,14 @@ static void percentValue(sqlite3_context *pCtx){
 /****** End of percentile family of functions ******/
 #endif /* SQLITE_ENABLE_PERCENTILE */
 
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
 /*
-** Implementation of sqlite_file_info(SCHEMA).
+** Implementation of sqlite_filestat(SCHEMA).
 **
 ** Return JSON text that describes low-level debug/diagnostic information
 ** about the sqlite3_file object associated with SCHEMA.
 */
-static void fileInfoFunc(
+static void filestatFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
@@ -3115,12 +3115,12 @@ static void fileInfoFunc(
       sqlite3_result_error_nomem(context);
     }else{
       sqlite3_str_append(pStr, "{\"db\":", 6);
-      rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_GET_INFO, pStr);
+      rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_FILESTAT, pStr);
       if( rc ) sqlite3_str_append(pStr, "null", 4);
       fd = sqlite3PagerJrnlFile(pPager);
       if( fd && fd->pMethods!=0 ){
         sqlite3_str_appendall(pStr, ",\"journal\":");
-        rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_GET_INFO, pStr);
+        rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_FILESTAT, pStr);
         if( rc ) sqlite3_str_append(pStr, "null", 4);
       }
       sqlite3_str_append(pStr, "}", 1);
@@ -3132,7 +3132,7 @@ static void fileInfoFunc(
     sqlite3_result_text(context, "{}", 2, SQLITE_STATIC);
   }
 }
-#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
 
 #ifdef SQLITE_DEBUG
 /*
@@ -3292,8 +3292,8 @@ void sqlite3RegisterBuiltinFunctions(void){
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
     INLINE_FUNC(sqlite_offset,   1, INLINEFUNC_sqlite_offset, 0 ),
 #endif
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
-    FUNCTION(sqlite_file_info,   1, 0, 0, fileInfoFunc     ),
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+    FUNCTION(sqlite_filestat,    1, 0, 0, filestatFunc     ),
 #endif
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),

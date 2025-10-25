@@ -596,7 +596,7 @@ static struct unix_syscall {
 }; /* End of the overrideable system calls */
 
 
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
 /*
 ** Extract Posix Advisory Locking information about file description fd
 ** from the /proc/PID/fdinfo/FD pseudo-file.  Fill the string buffer a[16]
@@ -707,7 +707,7 @@ static int unixPosixAdvisoryLocks(
 }
 #else
 #  define unixPosixAdvisoryLocks(A,B) SQLITE_ERROR_UNABLE
-#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
 
 /*
 ** On some systems, calls to fchown() will trigger a message in a security
@@ -4115,7 +4115,7 @@ static int unixGetTempname(int nBuf, char *zBuf);
 #if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
  static int unixFcntlExternalReader(unixFile*, int*);
 #endif
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
  static void unixDescribeShm(sqlite3_str*,unixShm*);
 #endif
 
@@ -4262,8 +4262,8 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 #endif
     }
 
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
-    case SQLITE_FCNTL_GET_INFO: {
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+    case SQLITE_FCNTL_FILESTAT: {
       sqlite3_str *pStr = (sqlite3_str*)pArg;
       char aLck[16];
       unixInodeInfo *pInode;
@@ -4320,7 +4320,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       sqlite3_str_append(pStr, "}", 1);
       return SQLITE_OK;
     }
-#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
   }
   return SQLITE_NOTFOUND;
 }
@@ -4587,7 +4587,7 @@ struct unixShm {
 #define UNIX_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
 #define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
 
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
 /*
 ** Describe the pShm object using JSON.  Used for diagnostics only.
 */
@@ -4605,7 +4605,7 @@ static void unixDescribeShm(sqlite3_str *pStr, unixShm *pShm){
   }
   sqlite3_str_append(pStr, "}", 1);
 }
-#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
 
 /*
 ** Use F_GETLK to check whether or not there are any readers with open

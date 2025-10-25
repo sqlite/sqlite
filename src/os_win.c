@@ -3953,8 +3953,8 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
     }
 #endif /* SQLITE_ENABLE_SETLK_TIMEOUT */
 
-#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILE_INFO)
-    case SQLITE_FCNTL_GET_INFO: {
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+    case SQLITE_FCNTL_FILESTAT: {
       sqlite3_str *pStr = (sqlite3_str*)pArg;
       sqlite3_str_appendf(pStr, "{\"h\":%llu", (sqlite3_uint64)pFile->h);
       sqlite3_str_appendf(pStr, ",\"vfs\":\"%s\"", pFile->pVfs->zName);
@@ -3973,7 +3973,7 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       sqlite3_str_append(pStr, "}", 1);
       return SQLITE_OK;
     }
-#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILE_INFO */
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
 
   }
   OSTRACE(("FCNTL file=%p, rc=SQLITE_NOTFOUND\n", pFile->h));
