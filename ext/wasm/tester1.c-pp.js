@@ -3317,7 +3317,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         const dbFile = 'file:///sqlite3-see.edb';
         const dbCtor = sqlite3.oo1.OpfsDb;
-        //const tryKey = T.see.tryKey(dbCtor, dbFile);
         const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
         let initDb = true;
         const tryKey = function(keyKey, key, expectCount){
@@ -3325,7 +3324,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           //console.debug('tryKey()',arguments);
           const ctoropt = {
             filename: dbFile,
-            flags: 'ct'
+            flags: 'c'
           };
           try {
             if (initDb) {
@@ -3565,7 +3564,94 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(true === await u3.removeVfs())
           .assert(false === await P3b.removeVfs());
       }
-    }/*OPFS SAH Pool sanity checks*/);
+    }/*OPFS SAH Pool sanity checks*/)
+//#if enable-see
+    .t({
+      name: 'OPFS SAHPool with SEE encryption',
+      test: async function(sqlite3){
+        const inst = sqlite3.installOpfsSAHPoolVfs,
+              catcher = (e)=>{
+                error("Cannot load SAH pool VFS.",
+                      "This might not be a problem,",
+                      "depending on the environment.");
+                return false;
+              };
+        const poolConfig = {
+          name: 'opfs-sahpool-see',
+          clearOnInit: true,
+          initialCapacity: 6
+        }
+        let poolUtil;
+        const P1 = await inst(poolConfig).then(u=>poolUtil = u).catch(catcher);
+        const dbFile = '/sqlite3-see.edb';
+        const dbCtor = poolUtil.OpfsSAHPoolDb;
+        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
+        let initDb = true;
+        const tryKey = function(keyKey, key, expectCount){
+          let db;
+          //console.debug('tryKey()',arguments);
+          const ctoropt = {
+            filename: dbFile,
+            flags: 'c'
+          };
+          try {
+            if (initDb) {
+              initDb = false;
+              poolUtil.unlink(dbFile);
+              db = new dbCtor({
+                ...ctoropt,
+                [keyKey]: key
+              });
+              db.exec([
+                "drop table if exists t;",
+                "create table t(a);"
+              ]);
+              db.close();
+              // Ensure that it's actually encrypted...
+              let err;
+              try {
+                db = new dbCtor(ctoropt);
+                T.assert(db, 'db opened') /* opening is fine, but... */;
+                const rv = db.exec({
+                  sql:"select count(*) from sqlite_schema",
+                  returnValue: 'resultRows'
+                });
+                console.warn("(should not be reached) rv =",rv);
+              } catch (e) {
+                err = e;
+              } finally {
+                db.close()
+              }
+              T.assert(err, "Expecting an exception")
+                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
+                        "Expecting NOTADB");
+            }/*initDb*/
+            db = new dbCtor({
+              ...ctoropt,
+              [keyKey]: key
+            });
+            db.exec("insert into t(a) values (1),(2)");
+            T.assert(expectCount === db.selectValue('select sum(a) from t'));
+          } finally {
+            if (db) db.close();
+          }
+        };
+        tryKey('textkey', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('textkey', 'foo', 6);
+        initDb = true;
+        tryKey('key', 'foo', 3);
+        T.assert( !initDb );
+        tryKey('key', hexFoo, 6);
+        initDb = true;
+        tryKey('hexkey', hexFoo, 3);
+        T.assert( !initDb );
+        tryKey('hexkey', hexFoo, 6);
+        poolUtil.removeVfs();
+      }
+    })/*opfs-sahpool with SEE*/
+//#endif enable-see
+  ;
 
   ////////////////////////////////////////////////////////////////////////
   T.g('Misc. APIs')
