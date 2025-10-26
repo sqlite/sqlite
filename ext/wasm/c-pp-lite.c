@@ -1638,10 +1638,8 @@ static void cmpp_t_out_expand(CmppTokenizer * const t,
     for( ;z<zEnd; ++z ){
       if( chEol==*z ){
         state = 0;
-        //This ++z/--z thing breaks stuff.
-        //++z /*ensure that we flush the EOL now*/;
+        ++z /*flush the EOL now*/;
         tflush;
-        //--z/*And make sure that zLeft does the right thing*/;
         break;
       }
       if( g.delim.chAt==*z ){

@@ -1,5 +1,5 @@
-C Doc\stypo\sfix\sreported\sin\sthe\sforum.\sNo\scode\schanges.
-D 2025-10-26T12:34:13.558
+C c-pp-lite:\sFix\sanother\snewline-related\soff-by-one\swhich\scould\scause\snewlines\sto\sget\slost\sin\s@token@\sfiltering.\sProblem\sfound\sin\sout-of-tree\stesting.
+D 2025-10-26T17:59:30.924
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -608,7 +608,7 @@ F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72
 F ext/wasm/api/sqlite3-wasm.c dd7fc1d535281f0d5d2732bb1b662d1d403a762f07b63c2ea5663053377b2804
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
-F ext/wasm/c-pp-lite.c b2098c8abb8d42f061a53c6857fbc1863298dc8a2d9eb5f114fca67c36f39a68
+F ext/wasm/c-pp-lite.c 75e441e7e2f65911ca3fd08116188fa9671559daf4bf2e35fb94bf6367dbb7bf
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9870afcb2a360dff83e211009710bc85db238d9a6993afcc1eb38ca7699fb4a5
-R 6b84d583fd765df52d9156d527a58f59
+P 6e065b6aa099f31493cfea22a729f92bb312147d8584f663fb75630a25772e43
+R 8f84bde74758843ac7a14c8fe307b438
 U stephan
-Z cc85e67d3b11db862f0fb41e8ba24a02
+Z ad6e2d7437eca7b62f874d5700f87b91
 # Remove this line to create a well-formed Fossil manifest.
