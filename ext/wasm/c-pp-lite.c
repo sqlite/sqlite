@@ -1638,9 +1638,7 @@ static void cmpp_t_out_expand(CmppTokenizer * const t,
     for( ;z<zEnd; ++z ){
       if( chEol==*z ){
         state = 0;
-        ++z /*flush the EOL now*/;
-        tflush;
-        break;
+        continue;
       }
       if( g.delim.chAt==*z ){
         if( 0==state ){
