@@ -11179,7 +11179,7 @@ int sqlite3_carray_bind(
 );
 
 /*
-** CAPI3REF: Datatypes for the CARRAY table-valued funtion
+** CAPI3REF: Datatypes for the CARRAY table-valued function
 **
 ** The fifth argument to the [sqlite3_carray_bind()] interface musts be
 ** one of the following constants, to specify the datatype of the array
