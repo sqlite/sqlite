@@ -1,5 +1,5 @@
-C Implement\san\sexperimental\sdefensive\smeasure\sto\stry\sto\sprevent\sthe\s-wal\sand\n-shm\sfiles\sof\san\sactive\sWAL-mode\sdatabase\sconnection\sfrom\sbeing\sdeleted\sout\nfrom\sunder\sthe\sdatabase\sconnection\sin\sthe\scase\swhere\sthe\sdatabase\sSHARED\nlock\shas\sbeen\sreleased\sby\san\saccidental\scall\sto\sclose()\sin\sa\sdifferent\nthread,\sor\ssimilar.
-D 2025-10-27T14:24:02.623
+C The\sunixIsSharingShmNode()\sfunction\sshould\salways\sreturn\sfalse\sfor\sthe\nunix-excl\sVFS.
+D 2025-10-27T15:44:16.709
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c 02cbe89914a66f90913ffd96b366176d8a1e65b158cdf58f24734b55c472a308
+F src/os_unix.c cfd113c764b70342e1946d9fa5e9f3d308fa3e4ccdbd75295e96926fffd5eb52
 F src/os_win.c 27617f334168644b542c9d58ac6e5f051b318136273e78d243384b4eca2df6b3
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
@@ -2171,11 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1803cb9bb6a13fb66956f729066b6eae64c3a1c0715102fb1a9994e395c12ba9
-R fe548fc30b94a215f07ed244ccaa81d7
-T *branch * broken-lock-defense-1
-T *sym-broken-lock-defense-1 *
-T -sym-trunk *
+P ed1b9206640f66cb8abff444809ccab8a4a5157b5c90e9aacddc422210e63423
+R 76af13af3966faeb041abb063cdebfea
 U drh
-Z 5c21161c3da333e4ec22a3b174b7937b
+Z 53325053b0059fe0d79a20e4dca5544a
 # Remove this line to create a well-formed Fossil manifest.

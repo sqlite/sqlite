@@ -4656,6 +4656,7 @@ static int unixIsSharingShmNode(unixFile *pFile){
   int rc;
   unixShmNode *pShmNode;
   if( pFile->pShm==0 ) return 0;
+  if( pFile->ctrlFlags & UNIXFILE_EXCL ) return 0;
   pShmNode = pFile->pShm->pShmNode;
   rc = 1;
   unixEnterMutex();
