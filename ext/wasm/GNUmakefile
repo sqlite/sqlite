@@ -227,11 +227,11 @@ endef
 # Args: as for $(b.c-pp.shcmd).
 define b.c-pp.target
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
-	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4))
+	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4) $(b.c-pp.target.flags))
 CLEAN_FILES += $(3)
 endef
 
-c-pp.D.64bit = -D64bit
+c-pp.D.64bit = -Dbits64
 
 #
 # $(call b.strip-js-emcc-bindings)
@@ -255,34 +255,6 @@ b.strip-js-emcc-bindings = \
 
 
 #
-# bin.version-info = binary to output various sqlite3 version info for
-# embedding in the JS files and in building the distribution zip file.
-# It must NOT be in $(dir.tmp) because we need it to survive the
-# cleanup process for the dist build to work properly.
-#
-# Slight caveat: this uses the version info from the in-tree
-# sqlite3.c/h, which may diff from a user-provided $(sqlite3.c).  The
-# end result is that the generated JS files may have static version
-# info from $(bin.version-info) which differ from their runtime-emitted
-# version info (e.g. from sqlite3_libversion()).
-bin.version-info = $(dir.top)/version-info
-$(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
-	$(MAKE) -C $(dir.top) version-info
-t-version-info: $(bin.version-info)
-#
-# bin.stripcomments is used for stripping C/C++-style comments from JS
-# files. The JS files contain large chunks of documentation which we
-# don't need for all builds. That app's -k flag is of particular
-# importance here, as it allows us to retain the opening comment
-# block(s), which contain the license header and version info.
-bin.stripccomments = $(dir.tool)/stripccomments
-$(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
-	$(CC) -o $@ $<
-t-stripccomments: $(bin.stripccomments)
-DISTCLEAN_FILES += $(bin.stripccomments)
-
-
-#
 # Set up sqlite3.c and sqlite3.h...
 #
 # To build with SEE (https://sqlite.org/see), either put sqlite3-see.c
@@ -301,7 +273,30 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 # is required for certain utility and test code.
 sqlite3.canonical.c = $(dir.top)/sqlite3.c
 sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
-sqlite3.h = $(dir.top)/sqlite3.h
+sqlite3.h = $(dir $(sqlite3.c))/sqlite3.h
+
+#
+# bin.version-info = binary to output various sqlite3 version info for
+# embedding in the JS files and in building the distribution zip file.
+# It must NOT be in $(dir.tmp) because we need it to survive the
+# cleanup process for the dist build to work properly.
+bin.version-info = ./version-info
+$(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
+	$(CC) -o $@ -I$(dir $(sqlite3.h)) $(dir.tool)/version-info.c
+t-version-info: $(bin.version-info)
+DISTCLEAN_FILES += $(bin.version-info)
+#
+# bin.stripcomments is used for stripping C/C++-style comments from JS
+# files. The JS files contain large chunks of documentation which we
+# don't need for all builds. That app's -k flag is of particular
+# importance here, as it allows us to retain the opening comment
+# block(s), which contain the license header and version info.
+bin.stripccomments = $(dir.tool)/stripccomments
+$(bin.stripccomments): $(bin.stripccomments).c $(MAKEFILE)
+	$(CC) -o $@ $<
+t-stripccomments: $(bin.stripccomments)
+DISTCLEAN_FILES += $(bin.stripccomments)
+
 
 ifeq (1,$(MAKING_CLEAN))
   SQLITE_C_IS_SEE = 0
@@ -313,7 +308,6 @@ else
     $(info This is an SEE build)
   endif
 endif
-
 
 #
 # barebones=1 disables all "extraneous" stuff from sqlite3-wasm.c, the
@@ -383,7 +377,9 @@ SQLITE_OPT.full-featured = \
   -DSQLITE_ENABLE_SESSION \
   -DSQLITE_ENABLE_STMTVTAB \
   -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
-  -DSQLITE_ENABLE_COLUMN_METADATA
+  -DSQLITE_ENABLE_COLUMN_METADATA \
+  -DSQLITE_ENABLE_PERCENTILE=1
+
 
 ifeq (0,$(wasm-bare-bones))
   # The so-called canonical build is full-featured:
@@ -495,7 +491,7 @@ WASM_CUSTOM_INSTANTIATE = 1
 #   in the same way we would normally do C files, but C-specific quirks
 #   of each makes that untennable.
 #
-# - We implemented c-pp.c (the C-Minus Pre-processor) as a custom
+# - We implemented c-pp-lite.c (the C-Minus Pre-processor) as a custom
 #   generic/file-format-agnostic preprocessor to enable us to pack
 #   code for different target builds into the same JS files. Most
 #   notably, some ES6 module (a.k.a. ESM) features cannot legally be
@@ -504,11 +500,11 @@ WASM_CUSTOM_INSTANTIATE = 1
 #   of code where necessary for ESM and non-ESM (a.k.a. vanilla JS)
 #   require different implementations. The alternative to such
 #   preprocessing, would be to have separate source files for ES6
-#   builds, which would have a higher maintenance burden than c-pp.c
-#   seems likely to.
+#   builds, which would have a higher maintenance burden than
+#   c-pp-lite.c seems likely to.
 #
-# c-pp.c was written specifically for the sqlite project's JavaScript
-# builds but is maintained as a standalone project:
+# c-pp-lite.c was written specifically for the sqlite project's
+# JavaScript builds but is maintained as a standalone project:
 # https://fossil.wanderinghorse.net/r/c-pp
 #
 # The SQLITE_... build flags used here have NO EFFECT on the JS/WASM
@@ -516,9 +512,9 @@ WASM_CUSTOM_INSTANTIATE = 1
 #
 # -D... flags which should be included in all invocations should be
 # appended to $(b.c-pp.target.flags).
-bin.c-pp = ./c-pp
-$(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
-	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
+bin.c-pp = ./c-pp-lite
+$(bin.c-pp): c-pp-lite.c $(sqlite3.c) $(MAKEFILE)
+	$(CC) -O0 -o $@ c-pp-lite.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
 		-DSQLITE_TEMP_STORE=3
@@ -963,7 +959,7 @@ endif
 
 EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 $(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE_LIST)
-	@$(b.call.mkdir@)
+	@$(b.mkdir@)
 	@sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
 	@echo $(logtag.@) $(emo.disk)
 

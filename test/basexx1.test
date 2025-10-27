@@ -158,4 +158,11 @@ do_execsql_test 117 {
   SELECT num FROM bs WHERE base85(base85(b))!=b;
 } {}
 
+do_catchsql_test 118 {
+  SELECT base64(zeroblob(2000_000_000))
+} {/1.*too big.*/}
+do_catchsql_test 119 {
+  SELECT base85(zeroblob(2000_000_000))
+} {/1.*too big.*/}
+
 finish_test

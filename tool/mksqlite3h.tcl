@@ -108,7 +108,7 @@ if {![file exists $TOP/manifest.tags]} {
   puts stderr "a placeholder value. To remedy this, run the following command from a "
   puts stderr "check-out:\n"
   puts stderr "  fossil set manifest urt\n"
-  set zSourceId [string range $zSourceId 1 end-13]-experimental; # Keep SHA3 hash length
+  set zSourceId [string range $zSourceId 0 end-13]-experimental; # Keep SHA3 hash length
   set zBranch "unknown"
   set zTags "unknown"
 } else {
