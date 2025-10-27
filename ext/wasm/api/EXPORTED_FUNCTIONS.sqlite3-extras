@@ -32,6 +32,8 @@ _sqlite3changeset_apply
 _sqlite3changeset_apply_strm
 _sqlite3changeset_apply_v2
 _sqlite3changeset_apply_v2_strm
+_sqlite3changeset_apply_v3
+_sqlite3changeset_apply_v3_strm
 _sqlite3changeset_concat
 _sqlite3changeset_concat_strm
 _sqlite3changeset_conflict

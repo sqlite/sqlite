@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** This file demonstrates how to create a table-valued-function that
+** This file implements a table-valued-function that
 ** returns the values in a C-language array.
 ** Examples:
 **
@@ -52,12 +52,8 @@
 ** as the number of elements in the array.  The virtual table steps through
 ** the array, element by element.
 */
-#ifndef SQLITE3_H
-# include "sqlite3ext.h"
-  SQLITE_EXTENSION_INIT1
-# include <assert.h>
-# include <string.h>
-#endif
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_CARRAY)
+#include "sqliteInt.h"
 #if defined(_WIN32) || defined(__RTP__) || defined(_WRS_KERNEL)
   struct iovec {
     void *iov_base;
@@ -66,27 +62,6 @@
 #else
 # include <sys/uio.h>
 #endif
- 
-/* Allowed values for the mFlags parameter to sqlite3_carray_bind().
-** Must exactly match the definitions in carray.h.
-*/
-#ifndef CARRAY_INT32
-# define CARRAY_INT32     0      /* Data is 32-bit signed integers */
-# define CARRAY_INT64     1      /* Data is 64-bit signed integers */
-# define CARRAY_DOUBLE    2      /* Data is doubles */
-# define CARRAY_TEXT      3      /* Data is char* */
-# define CARRAY_BLOB      4      /* Data is struct iovec* */
-#endif
-
-#ifndef SQLITE_API
-# ifdef _WIN32
-#  define SQLITE_API __declspec(dllexport)
-# else
-#  define SQLITE_API
-# endif
-#endif
-
-#ifndef SQLITE_OMIT_VIRTUALTABLE
 
 /*
 ** Names of allowed datatypes
@@ -236,10 +211,11 @@ static int carrayColumn(
           sqlite3_result_text(ctx, p[pCur->iRowid-1], -1, SQLITE_TRANSIENT);
           return SQLITE_OK;
         }
-        case CARRAY_BLOB: {
+        default: {
           const struct iovec *p = (struct iovec*)pCur->pPtr;
+          assert( pCur->eType==CARRAY_BLOB );
           sqlite3_result_blob(ctx, p[pCur->iRowid-1].iov_base,
-                               (int)p[pCur->iRowid-1].iov_len, SQLITE_TRANSIENT);
+                              (int)p[pCur->iRowid-1].iov_len, SQLITE_TRANSIENT);
           return SQLITE_OK;
         }
       }
@@ -344,12 +320,14 @@ static int carrayBestIndex(
   int ptrIdx = -1;       /* Index of the pointer= constraint, or -1 if none */
   int cntIdx = -1;       /* Index of the count= constraint, or -1 if none */
   int ctypeIdx = -1;     /* Index of the ctype= constraint, or -1 if none */
+  unsigned seen = 0;     /* Bitmask of == constrainted columns */
 
   const struct sqlite3_index_constraint *pConstraint;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->usable==0 ) continue;
     if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
+    if( pConstraint->iColumn>=0 ) seen |= 1 << pConstraint->iColumn;
+    if( pConstraint->usable==0 ) continue;
     switch( pConstraint->iColumn ){
       case CARRAY_COLUMN_POINTER:
         ptrIdx = i;
@@ -376,7 +354,15 @@ static int carrayBestIndex(
         pIdxInfo->aConstraintUsage[ctypeIdx].argvIndex = 3;
         pIdxInfo->aConstraintUsage[ctypeIdx].omit = 1;
         pIdxInfo->idxNum = 3;
+      }else if( seen & (1<<CARRAY_COLUMN_CTYPE) ){
+        /* In a three-argument carray(), we need to know the value of all
+        ** three arguments */
+        return SQLITE_CONSTRAINT;
       }
+    }else if( seen & (1<<CARRAY_COLUMN_COUNT) ){
+      /* In a two-argument carray(), we need to know the value of both
+      ** arguments */
+      return SQLITE_CONSTRAINT;
     }
   }else{
     pIdxInfo->estimatedCost = (double)2147483647;
@@ -441,42 +427,53 @@ SQLITE_API int sqlite3_carray_bind(
   int mFlags,
   void (*xDestroy)(void*)
 ){
-  carray_bind *pNew;
+  carray_bind *pNew = 0;
   int i;
+  int rc = SQLITE_OK;
+  
+  /* Ensure that the mFlags value is acceptable. */
+  assert( CARRAY_INT32==0 && CARRAY_INT64==1 && CARRAY_DOUBLE==2 );
+  assert( CARRAY_TEXT==3 && CARRAY_BLOB==4 );
+  if( mFlags<CARRAY_INT32 || mFlags>CARRAY_BLOB ){
+    rc = SQLITE_ERROR;
+    goto carray_bind_error;
+  }
+
   pNew = sqlite3_malloc64(sizeof(*pNew));
   if( pNew==0 ){
-    if( xDestroy!=SQLITE_STATIC && xDestroy!=SQLITE_TRANSIENT ){
-      xDestroy(aData);
-    }
-    return SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
+    goto carray_bind_error;
   }
+
   pNew->nData = nData;
   pNew->mFlags = mFlags;
   if( xDestroy==SQLITE_TRANSIENT ){
     sqlite3_int64 sz = nData;
-    switch( mFlags & 0x07 ){
+    switch( mFlags ){
       case CARRAY_INT32:   sz *= 4;                     break;
       case CARRAY_INT64:   sz *= 8;                     break;
       case CARRAY_DOUBLE:  sz *= 8;                     break;
       case CARRAY_TEXT:    sz *= sizeof(char*);         break;
-      case CARRAY_BLOB:    sz *= sizeof(struct iovec);  break;
+      default:             sz *= sizeof(struct iovec);  break;
     }
-    if( (mFlags & 0x07)==CARRAY_TEXT ){
+    if( mFlags==CARRAY_TEXT ){
       for(i=0; i<nData; i++){
         const char *z = ((char**)aData)[i];
         if( z ) sz += strlen(z) + 1;
       }
-    }else if( (mFlags & 0x07)==CARRAY_BLOB ){
+    }else if( mFlags==CARRAY_BLOB ){
       for(i=0; i<nData; i++){
         sz += ((struct iovec*)aData)[i].iov_len;
       }
     } 
+
     pNew->aData = sqlite3_malloc64( sz );
     if( pNew->aData==0 ){
-      sqlite3_free(pNew);
-      return SQLITE_NOMEM;
+      rc = SQLITE_NOMEM;
+      goto carray_bind_error;
     }
-    if( (mFlags & 0x07)==CARRAY_TEXT ){
+
+    if( mFlags==CARRAY_TEXT ){
       char **az = (char**)pNew->aData;
       char *z = (char*)&az[nData];
       for(i=0; i<nData; i++){
@@ -491,7 +488,7 @@ SQLITE_API int sqlite3_carray_bind(
         memcpy(z, zData, n+1);
         z += n+1;
       }
-    }else if( (mFlags & 0x07)==CARRAY_BLOB ){
+    }else if( mFlags==CARRAY_BLOB ){
       struct iovec *p = (struct iovec*)pNew->aData;
       unsigned char *z = (unsigned char*)&p[nData];
       for(i=0; i<nData; i++){
@@ -510,56 +507,20 @@ SQLITE_API int sqlite3_carray_bind(
     pNew->xDel = xDestroy;
   }
   return sqlite3_bind_pointer(pStmt, idx, pNew, "carray-bind", carrayBindDel);
-}
-
-
-/*
-** For testing purpose in the TCL test harness, we need a method for
-** setting the pointer value.  The inttoptr(X) SQL function accomplishes
-** this.  Tcl script will bind an integer to X and the inttoptr() SQL
-** function will use sqlite3_result_pointer() to convert that integer into
-** a pointer.
-**
-** This is for testing on TCL only.
-*/
-#ifdef SQLITE_TEST
-static void inttoptrFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  void *p;
-  sqlite3_int64 i64;
-  i64 = sqlite3_value_int64(argv[0]);
-  if( sizeof(i64)==sizeof(p) ){
-    memcpy(&p, &i64, sizeof(p));
-  }else{
-    int i32 = i64 & 0xffffffff;
-    memcpy(&p, &i32, sizeof(p));
+ 
+ carray_bind_error:
+  if( xDestroy!=SQLITE_STATIC && xDestroy!=SQLITE_TRANSIENT ){
+    xDestroy(aData);
   }
-  sqlite3_result_pointer(context, p, "carray", 0);
-}
-#endif /* SQLITE_TEST */
-
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
-
-SQLITE_API int sqlite3_carray_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
-  const sqlite3_api_routines *pApi
-){
-  int rc = SQLITE_OK;
-#ifdef SQLITE_EXTENSION_INIT2
-  SQLITE_EXTENSION_INIT2(pApi);
-#endif
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3_create_module(db, "carray", &carrayModule, 0);
-#ifdef SQLITE_TEST
-  if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "inttoptr", 1, SQLITE_UTF8, 0,
-                                 inttoptrFunc, 0, 0);
-  }
-#endif /* SQLITE_TEST */
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
+  sqlite3_free(pNew);
   return rc;
 }
+
+/*
+** Invoke this routine to register the carray() function.
+*/
+Module *sqlite3CarrayRegister(sqlite3 *db){
+  return sqlite3VtabCreateModule(db, "carray", &carrayModule, 0, 0);
+}
+
+#endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_CARRAY) */

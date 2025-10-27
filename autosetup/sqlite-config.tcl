@@ -65,7 +65,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
   # The list of feature --flags which the --all flag implies. This
   # requires special handling in a few places.
   #
-  all-flag-enables {fts4 fts5 rtree geopoly session dbpage dbstat}
+  all-flag-enables {fts4 fts5 rtree geopoly session dbpage dbstat carray}
 
   #
   # Default value for the --all flag. Can hypothetically be modified
@@ -222,6 +222,7 @@ proc sqlite-configure {buildMode configScript} {
         session              => {Enable the SESSION extension}
         dbpage               => {Enable the sqlite3_dbpage extension}
         dbstat               => {Enable the sqlite3_dbstat extension}
+        carray=1             => {Disable the CARRAY extension}
         all=$::sqliteConfig(all-flag-default) => {$allFlagHelp}
         largefile=1
           => {This legacy flag has no effect on the library but may influence
@@ -630,7 +631,7 @@ proc sqlite-check-common-system-deps {} {
 
   # Check for needed/wanted functions
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
-    strchrnul usleep utime pread pread64 pwrite pwrite64
+    usleep utime pread pread64 pwrite pwrite64
 
   apply {{} {
     set ldrt ""
@@ -790,6 +791,7 @@ proc sqlite-handle-common-feature-flags {} {
     column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
     dbpage          -DSQLITE_ENABLE_DBPAGE_VTAB {}
     dbstat          -DSQLITE_ENABLE_DBSTAT_VTAB {}
+    carray          -DSQLITE_ENABLE_CARRAY {}
   }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
@@ -1488,7 +1490,7 @@ proc sqlite-handle-math {} {
     }
     define LDFLAGS_MATH [get-define lib_ceil]
     undefine lib_ceil
-    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS
+    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_ENABLE_PERCENTILE
     msg-result "Enabling math SQL functions"
   } {
     define LDFLAGS_MATH ""
