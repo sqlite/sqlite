@@ -602,7 +602,7 @@ struct WalIterator {
 
 /* Size (in bytes) of a WalIterator object suitable for N or fewer segments */
 #define SZ_WALITERATOR(N)  \
-     (offsetof(WalIterator,aSegment)*(N)*sizeof(struct WalSegment))
+     (offsetof(WalIterator,aSegment)+(N)*sizeof(struct WalSegment))
 
 /*
 ** Define the parameters of the hash tables in the wal-index file. There

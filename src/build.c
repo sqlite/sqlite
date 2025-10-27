@@ -454,6 +454,11 @@ Table *sqlite3LocateTable(
         pMod = sqlite3JsonVtabRegister(db, zName);
       }
 #endif
+#ifdef SQLITE_ENABLE_CARRAY
+      if( pMod==0 && sqlite3_stricmp(zName, "carray")==0 ){
+        pMod = sqlite3CarrayRegister(db);
+      }
+#endif
       if( pMod ){
         if( IsSharedSchema(db) && pParse->nErr==0 ){
           int bDummy = 0;

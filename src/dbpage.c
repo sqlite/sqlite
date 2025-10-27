@@ -418,7 +418,8 @@ static int dbpageUpdate(
       memcpy(aPage, pData, szPage);
       pTab->pgnoTrunc = 0;
     }
-  }else{
+  }
+  if( rc!=SQLITE_OK ){
     pTab->pgnoTrunc = 0;
   }
   sqlite3PagerUnref(pDbPage);

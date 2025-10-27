@@ -5870,7 +5870,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         testcase( nTo==0 );
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
           if( pTo->maskLoop==maskNew
-           && ( ((pTo->isOrdered^isOrdered)&0x80)==0 || ii==nFrom-1 )
+           && ( ((pTo->isOrdered^isOrdered)&0x80)==0 || iLoop==nLoop-1 )
           ){
             testcase( jj==nTo-1 );
             break;
