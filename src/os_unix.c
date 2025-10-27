@@ -1832,6 +1832,9 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
   return rc;
 }
 
+/* Forward reference */
+static int unixIsSharingShmNode(unixFile*);
+
 /*
 ** Lock the file with the lock specified by parameter eFileLock - one
 ** of the following:
@@ -2020,7 +2023,9 @@ static int unixLock(sqlite3_file *id, int eFileLock){
       pInode->nLock++;
       pInode->nShared = 1;
     }
-  }else if( eFileLock==EXCLUSIVE_LOCK && pInode->nShared>1 ){
+  }else if( (eFileLock==EXCLUSIVE_LOCK && pInode->nShared>1)
+         || unixIsSharingShmNode(pFile)
+  ){
     /* We are trying for an exclusive lock but another thread in this
     ** same process is still holding a shared lock. */
     rc = SQLITE_BUSY;
@@ -4640,6 +4645,33 @@ static int unixFcntlExternalReader(unixFile *pFile, int *piOut){
   return rc;
 }
 
+/*
+** If pFile has a -shm file open and it is sharing that file with some
+** other connection, either in the same process or in a separate process,
+** then return true.  Return false if either pFile does not have a -shm
+** file open or if it is the only connection to that -shm file across the
+** entire system.
+*/
+static int unixIsSharingShmNode(unixFile *pFile){
+  int rc;
+  unixShmNode *pShmNode;
+  if( pFile->pShm==0 ) return 0;
+  pShmNode = pFile->pShm->pShmNode;
+  rc = 1;
+  unixEnterMutex();
+  if( pShmNode->nRef==1 ){
+    struct flock lock;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = UNIX_SHM_DMS;
+    lock.l_len = 1;
+    lock.l_type = F_WRLCK;
+    if( osFcntl(pShmNode->hShm, F_GETLK, &lock)==0 && lock.l_type==F_UNLCK ){
+      rc = 0;
+    }
+  }
+  unixLeaveMutex();
+  return rc;
+}
 
 /*
 ** Apply posix advisory locks for all bytes from ofst through ofst+n-1.
