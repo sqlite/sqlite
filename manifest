@@ -1,5 +1,5 @@
-C Fix\ssanitizer\scomplaints\sin\sthe\sregexp\sextension.
-D 2025-10-27T11:20:47.152
+C Fix\sa\sminor\sover-allocation\sof\sheap\smemory\sin\swal.c.
+D 2025-10-27T11:39:07.586
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -814,7 +814,7 @@ F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 828221bdbeaaa6d62126ee6d07fd4ec0d09dcaea846f87ad01944d8b7e548859
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
-F src/wal.c a278339ecf5f194fd71fff1f0da1368de50e3a32edc3e9944e1ee1f4610476ff
+F src/wal.c 6bebee1a33f8b3b656de1bfa529513a2268584562b0bb8ff9c69cefba2506deb
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 7d17cd5cb883b2166097957e20c4aab2d0d98e0c1141002ef77b5f6b9deed844
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f8a4d7abf0d1c9c92fa102165d08aed76fd766d49615e3d347b5547580355574
-R 2bbfb2ca1511ad94efdab63ae0e98cdf
+P 6ff9ecb89d769bc2a27f8a57130f28ec7478979d3e35ba765c16017b5bdf775d
+R 4bcc5da65154a62685074a5874c60e20
 U dan
-Z 6cf9e0ef9a252c441bc09408e7c17e7b
+Z b3c584459b21dffccf981eba99e95d81
 # Remove this line to create a well-formed Fossil manifest.
