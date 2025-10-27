@@ -4660,13 +4660,14 @@ static int unixIsSharingShmNode(unixFile *pFile){
   pShmNode = pFile->pShm->pShmNode;
   rc = 1;
   unixEnterMutex();
-  if( pShmNode->nRef==1 ){
+  if( ALWAYS(pShmNode->nRef==1) ){
     struct flock lock;
     lock.l_whence = SEEK_SET;
     lock.l_start = UNIX_SHM_DMS;
     lock.l_len = 1;
     lock.l_type = F_WRLCK;
-    if( osFcntl(pShmNode->hShm, F_GETLK, &lock)==0 && lock.l_type==F_UNLCK ){
+    osFcntl(pShmNode->hShm, F_GETLK, &lock);
+    if( lock.l_type==F_UNLCK ){
       rc = 0;
     }
   }
