@@ -19,9 +19,33 @@ source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
 
-set testprefix walckpotnoop
+set testprefix walckptnoop
 
 ifcapable !wal {finish_test ; return }
+
+set VAL 123
+
+proc myrand {} {
+  global VAL
+
+  set A 1103515245
+  set C 12345
+  set M 2147483648
+
+  set VAL [expr {($A * $VAL + $C) % $M}]
+  return $VAL
+}
+
+proc myrandomblob {n} {
+  set l [list]
+  for {set i 0} {$i < $n} {incr i} {
+    lappend l [expr [myrand] % 256]
+  }
+  binary format c* $l
+}
+
+db func myrandomblob myrandomblob
+
 
 do_execsql_test 1.0 {
   PRAGMA page_size=1024;
@@ -35,7 +59,7 @@ do_execsql_test 1.0 {
   WITH s(i) AS (
     SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
   )
-  INSERT INTO t1 SELECT NULL, hex(randomblob(64)) FROM s;
+  INSERT INTO t1 SELECT NULL, hex(myrandomblob(64)) FROM s;
 } {0 wal}
 
 unset -nocomplain N
@@ -80,10 +104,6 @@ do_catchsql_test 1.8 {
   COMMIT;
   PRAGMA wal_checkpoint = noop;
 } {0 {0 5 0}}
-
-explain_i {
-  PRAGMA wal_checkpoint = noop;
-}
 
 do_execsql_test 1.9 {
   PRAGMA journal_mode = delete;

@@ -47,6 +47,7 @@ _sqlite3_db_handle
 _sqlite3_db_name
 _sqlite3_db_readonly
 _sqlite3_db_status
+_sqlite3_db_status64
 _sqlite3_deserialize
 _sqlite3_errcode
 _sqlite3_errmsg

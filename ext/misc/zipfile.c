@@ -115,8 +115,13 @@ static const char ZIPFILE_SCHEMA[] =
   ") WITHOUT ROWID;";
 
 #define ZIPFILE_F_COLUMN_IDX 7    /* Index of column "file" in the above */
-#define ZIPFILE_BUFFER_SIZE (64*1024)
 #define ZIPFILE_MX_NAME (250)     /* Windows limitation on filename size */
+
+/*
+** The buffer should be large enough to contain 3 65536 byte strings - the
+** filename, the extra field and the file comment.
+*/
+#define ZIPFILE_BUFFER_SIZE (200*1024)
 
 
 /*

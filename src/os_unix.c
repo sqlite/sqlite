@@ -596,6 +596,119 @@ static struct unix_syscall {
 }; /* End of the overrideable system calls */
 
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+/*
+** Extract Posix Advisory Locking information about file description fd
+** from the /proc/PID/fdinfo/FD pseudo-file.  Fill the string buffer a[16]
+** with characters to indicate which SQLite-relevant locks are held.
+** a[16] will be a 15-character zero-terminated string with the following
+** schema:
+**
+**     AAA/B.DDD.DDDDD
+**
+** Each of character A-D will be "w" or "r" or "-" to indicate either a
+** write-lock, a read-lock, or no-lock, respectively.  The "." and "/"
+** characters are delimiters intended to make the string more easily
+** readable by humans.  Here are the meaning of the specific letters:
+**
+**     AAA   ->    The main database locks.  PENDING_BYTE, RESERVED_BYTE,
+**                 and SHARED_FIRST, respectively.
+**
+**     B     ->    The deadman switch lock.  Offset 128 of the -shm file.
+**
+**     CCC   ->    WAL locks:  WRITE, CKPT, RECOVER
+**
+**     DDDDD ->    WAL read-locks 0 through 5
+**
+** Note that elements before the "/" apply to the main database file and
+** elements after the "/" apply to the -shm file in WAL mode.
+**
+** Here is another way of thinking about the meaning of the result string:
+**
+**           AAA/B.CCC.DDDDD
+**           ||| | ||| \___/
+**  PENDING--'|| | |||   `----- READ 0-5
+**  RESERVED--'| | ||`---- RECOVER
+**  SHARED ----' | |`----- CKPT
+**     DMS ------' `------ WRITE
+**
+** Return SQLITE_OK on success and SQLITE_ERROR_UNABLE if the /proc
+** pseudo-filesystem is unavailable.
+*/
+static int unixPosixAdvisoryLocks(
+  int fd,        /* The file descriptor to analyze */
+  char a[16]     /* Write a text description of PALs here */
+){
+  int in;
+  ssize_t n;
+  char *p, *pNext, *x;
+  char z[2000];
+
+        /*             1     */
+        /*   012 4 678 01234 */
+  memcpy(a, "---/-.---.-----", 16);
+  sqlite3_snprintf(sizeof(z), z, "/proc/%d/fdinfo/%d", getpid(), fd);
+  in = osOpen(z, O_RDONLY, 0);
+  if( in<0 ){
+    return SQLITE_ERROR_UNABLE;
+  }
+  n = osRead(in, z, sizeof(z)-1);
+  osClose(in);
+  if( n<=0 ) return SQLITE_ERROR_UNABLE;
+  z[n] = 0;
+
+  /* We are looking for lines that begin with "lock:\t".  Examples:
+  **
+  ** lock: 1: POSIX  ADVISORY  READ 494716 08:02:5277597 1073741826 1073742335
+  ** lock: 1: POSIX  ADVISORY  WRITE 494716 08:02:5282282 120 120
+  ** lock: 2: POSIX  ADVISORY  READ 494716 08:02:5282282 123 123
+  ** lock: 3: POSIX  ADVISORY  READ 494716 08:02:5282282 128 128
+  */
+  pNext = strstr(z, "lock:\t");
+  while( pNext ){
+    char cType = 0;
+    sqlite3_int64 iFirst, iLast;
+    p = pNext+6;
+    pNext = strstr(p, "lock:\t");
+    if( pNext ) pNext[-1] = 0;
+    if( (x = strstr(p, " READ "))!=0 ){
+      cType = 'r';
+      x += 6;
+    }else if( (x = strstr(p, " WRITE "))!=0 ){
+      cType = 'w';
+      x += 7;
+    }else{
+      continue;
+    }
+    x = strrchr(x, ' ');
+    if( x==0 ) continue;
+    iLast = strtoll(x+1, 0, 10);
+    *x = 0;
+    x = strrchr(p, ' ');
+    if( x==0 ) continue;
+    iFirst = strtoll(x+1, 0, 10);
+    if( iLast>=PENDING_BYTE ){
+      if( iFirst<=PENDING_BYTE && iLast>=PENDING_BYTE )     a[0] = cType;
+      if( iFirst<=PENDING_BYTE+1 && iLast>=PENDING_BYTE+1 ) a[1] = cType;
+      if( iFirst<=PENDING_BYTE+2 && iLast>=PENDING_BYTE+510 ) a[2] = cType;
+    }else if( iLast<=128 ){
+      if( iFirst<=128 && iLast>=128 ) a[4] = cType;
+      if( iFirst<=120 && iLast>=120 ) a[6] = cType;
+      if( iFirst<=121 && iLast>=121 ) a[7] = cType;
+      if( iFirst<=122 && iLast>=122 ) a[8] = cType;
+      if( iFirst<=123 && iLast>=123 ) a[10] = cType;
+      if( iFirst<=124 && iLast>=124 ) a[11] = cType;
+      if( iFirst<=125 && iLast>=125 ) a[12] = cType;
+      if( iFirst<=126 && iLast>=126 ) a[13] = cType;
+      if( iFirst<=127 && iLast>=127 ) a[14] = cType;
+    }
+  }
+  return SQLITE_OK;
+}
+#else
+#  define unixPosixAdvisoryLocks(A,B) SQLITE_ERROR_UNABLE
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
+
 /*
 ** On some systems, calls to fchown() will trigger a message in a security
 ** log if they come from non-root processes.  So avoid calling fchown() if
@@ -4021,6 +4134,10 @@ static int unixGetTempname(int nBuf, char *zBuf);
 #if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
  static int unixFcntlExternalReader(unixFile*, int*);
 #endif
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+ static void unixDescribeShm(sqlite3_str*,unixShm*);
+#endif
+
 
 /*
 ** Information and control of an open file handle.
@@ -4166,6 +4283,66 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
 #endif
     }
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+    case SQLITE_FCNTL_FILESTAT: {
+      sqlite3_str *pStr = (sqlite3_str*)pArg;
+      char aLck[16];
+      unixInodeInfo *pInode;
+      static const char *azLock[] = { "SHARED", "RESERVED",
+                                      "PENDING", "EXCLUSIVE" };
+      sqlite3_str_appendf(pStr, "{\"h\":%d", pFile->h);
+      sqlite3_str_appendf(pStr, ",\"vfs\":\"%s\"", pFile->pVfs->zName);
+      if( pFile->eFileLock ){
+        sqlite3_str_appendf(pStr, ",\"eFileLock\":\"%s\"", 
+                                  azLock[pFile->eFileLock-1]);
+        if( unixPosixAdvisoryLocks(pFile->h, aLck)==SQLITE_OK ){
+          sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
+        }
+      }
+      unixEnterMutex();
+      if( pFile->pShm ){
+        sqlite3_str_appendall(pStr, ",\"shm\":");
+        unixDescribeShm(pStr, pFile->pShm);
+      }
+#if SQLITE_MAX_MMAP_SIZE>0
+      if( pFile->mmapSize ){
+        sqlite3_str_appendf(pStr, ",\"mmapSize\":%lld", pFile->mmapSize);
+        sqlite3_str_appendf(pStr, ",\"nFetchOut\":%d", pFile->nFetchOut);
+      }
+#endif
+      if( (pInode = pFile->pInode)!=0 ){
+        sqlite3_str_appendf(pStr, ",\"inode\":{\"nRef\":%d",pInode->nRef);
+        sqlite3_mutex_enter(pInode->pLockMutex);
+        sqlite3_str_appendf(pStr, ",\"nShared\":%d", pInode->nShared);
+        if( pInode->eFileLock ){
+          sqlite3_str_appendf(pStr, ",\"eFileLock\":\"%s\"", 
+                                  azLock[pInode->eFileLock-1]);
+        }
+        if( pInode->pUnused ){
+          char cSep = '[';
+          UnixUnusedFd *pUFd = pFile->pInode->pUnused;
+          sqlite3_str_appendall(pStr, ",\"unusedFd\":");
+          while( pUFd ){
+            sqlite3_str_appendf(pStr, "%c{\"fd\":%d,\"flags\":%d",
+                                cSep, pUFd->fd, pUFd->flags);
+            cSep = ',';
+            if( unixPosixAdvisoryLocks(pUFd->fd, aLck)==SQLITE_OK ){
+              sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
+            }
+            sqlite3_str_append(pStr, "}", 1);
+            pUFd = pUFd->pNext;
+          }
+          sqlite3_str_append(pStr, "]", 1);
+        }
+        sqlite3_mutex_leave(pInode->pLockMutex);
+        sqlite3_str_append(pStr, "}", 1);
+      }
+      unixLeaveMutex();
+      sqlite3_str_append(pStr, "}", 1);
+      return SQLITE_OK;
+    }
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
   }
   return SQLITE_NOTFOUND;
 }
@@ -4432,6 +4609,26 @@ struct unixShm {
 #define UNIX_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
 #define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+/*
+** Describe the pShm object using JSON.  Used for diagnostics only.
+*/
+static void unixDescribeShm(sqlite3_str *pStr, unixShm *pShm){
+  unixShmNode *pNode = pShm->pShmNode;
+  char aLck[16];
+  sqlite3_str_appendf(pStr, "{\"h\":%d", pNode->hShm);
+  assert( unixMutexHeld() );
+  sqlite3_str_appendf(pStr, ",\"nRef\":%d", pNode->nRef);
+  sqlite3_str_appendf(pStr, ",\"id\":%d", pShm->id);
+  sqlite3_str_appendf(pStr, ",\"sharedMask\":%d", pShm->sharedMask);
+  sqlite3_str_appendf(pStr, ",\"exclMask\":%d", pShm->exclMask);
+  if( unixPosixAdvisoryLocks(pNode->hShm, aLck)==SQLITE_OK ){
+    sqlite3_str_appendf(pStr, ",\"pal\":\"%s\"", aLck);
+  }
+  sqlite3_str_append(pStr, "}", 1);
+}
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
+
 /*
 ** Use F_GETLK to check whether or not there are any readers with open
 ** wal-mode transactions in other processes on database file pFile. If
@@ -4510,7 +4707,8 @@ static int unixShmSystemLock(
 
   /* Locks are within range */
   assert( n>=1 && n<=SQLITE_SHM_NLOCK );
-  assert( ofst>=UNIX_SHM_BASE && ofst<=(UNIX_SHM_DMS+SQLITE_SHM_NLOCK) );
+  assert( ofst>=UNIX_SHM_BASE && ofst<=UNIX_SHM_DMS );
+  assert( ofst+n-1<=UNIX_SHM_DMS );
 
   if( pShmNode->hShm>=0 ){
     int res;
