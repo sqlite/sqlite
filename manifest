@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sqrf\sbranch.
-D 2025-10-28T19:35:26.003
+C Fix\sa\sharmless\scompiler\swarning.
+D 2025-10-28T19:37:18.472
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -418,7 +418,7 @@ F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md f98f1777446c7ae96c9a60f7d2042e3e8c8f80db75c4aa69f7314b1d27fb1814
 F ext/qrf/qrf-tester.c 7d72e3268db31a348c2e8002b174eac9a25d1f93350d845e1ef5f60dfddd95a9
-F ext/qrf/qrf.c 2212f0657f7b4ff1fe0ba0fa3aaf6f00cdd937a0cfc217c5b811ea2f6492551e
+F ext/qrf/qrf.c 2522d8a938875badb499e199c13fc68eaa9b9141ce4f4acf843e00e8d0d64d20
 F ext/qrf/qrf.h 68c7d03ece46d329d0df90e2bae2d08771bba32bb9affc368691249b7b605158
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2175,8 +2175,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0cda773e7665caafa46acbded0cf430d04e08e21d3c1333c1964e7f7fa200290 724f2299f206cc9e7f830f984c50a8fc4ac1c17210d71d9affe657b45252b060
-R 8bc2dca02e99e6ab40bfb8c8f726a48d
+P fa5661ea8b6b5ca368d719477bd82a954d2f979f4ab85fff2720cf7bb7cc427d
+R cd4e401ce66ee9cb501533b05e6c9f99
 U drh
-Z c525c5d5e9f4642126134c751514af5c
+Z d0bb32d0a0ee6a7455bdbcfecd272cc9
 # Remove this line to create a well-formed Fossil manifest.

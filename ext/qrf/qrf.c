@@ -1371,7 +1371,7 @@ static void qrfExplain(Qrf *p){
       for(i=0; i<nArg; i++){
         const char *zSep = "  ";
         int w = aWidth[i];
-        const char *zVal = sqlite3_column_text(p->pStmt, aMap[i]);
+        const char *zVal = (const char*)sqlite3_column_text(p->pStmt, aMap[i]);
         int len;
         if( i==nArg-1 ) w = 0;
         if( zVal==0 ) zVal = "";
