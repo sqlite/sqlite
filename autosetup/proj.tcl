@@ -557,7 +557,7 @@ proc proj-opt-define-bool {args} {
   if {$invert} {
     set rc [expr {!$rc}]
   }
-  msg-result $rc
+  msg-result [string map {0 no 1 yes} $rc]
   define $defName $rc
   return $rc
 }
