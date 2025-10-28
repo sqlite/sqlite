@@ -1,9 +1,9 @@
-C Fix\san\ssigned\sinteger\soverflow\sproblem\sthat\scan\soccur\swhen\susing\san\soversize\nvalue\sfor\sthe\sSQLITE_MAX_LENGTH\scompile-time\soption\stogether\swith\nmulti-gigabyte\soperands\sto\sthe\sOP_Concat\soperator.
-D 2025-10-28T13:24:50.858
+C Typo\sfixes\sin\sLICENSE.md\sfrom\sBrickViking.
+D 2025-10-28T19:57:15.947
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F LICENSE.md adfb19852dd401741652a7cb51b584608fc340da050072b1b6b5600df7d5938f
+F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 8dd676302f3165984c046f81af14b6676a334418fa30255efaf439f8033042fa
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6385a1962c69c69ca4775888f034a4eb892aa013689c000f3de6422da7c3c695
-R 9e200ff823d75d1d4e9517de47a3edad
-U drh
-Z b72961451b43171172d8a666ee282155
+P 724f2299f206cc9e7f830f984c50a8fc4ac1c17210d71d9affe657b45252b060
+R 8057e5c04966e9e7abd0a6ab24fe1a19
+U stephan
+Z 2863758481161091d4c848f4c2c75685
 # Remove this line to create a well-formed Fossil manifest.
