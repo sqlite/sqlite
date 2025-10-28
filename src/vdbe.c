@@ -1823,6 +1823,9 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
+#if SQLITE_MAX_LENGTH>2147483645
+  if( nByte>2147483645 ){ goto too_big; }
+#endif
   if( sqlite3VdbeMemGrow(pOut, (int)nByte+2, pOut==pIn2) ){
     goto no_mem;
   }
