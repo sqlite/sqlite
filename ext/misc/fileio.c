@@ -760,7 +760,7 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
     pCur->zPath = 0;
     pLvl->pDir = opendir(pLvl->zDir);
     if( pLvl->pDir==0 ){
-      fsdirSetErrmsg(pCur, "cannot read directory: %s", pCur->zPath);
+      fsdirSetErrmsg(pCur, "cannot read directory: %s", pLvl->zDir);
       return SQLITE_ERROR;
     }
   }

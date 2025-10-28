@@ -444,6 +444,11 @@ static void mk_prologue(void){
     ps("endif");
   }
 
+  ps("define label.unsupported-build\n"
+     "$(emo.fire)$(emo.fire)$(emo.fire)Unsupported build:"
+     " use at your own risk!\n"
+     "endef");
+
   ps(zBanner
      /** $1 = build name */
      "b.call.wasm-strip = "
@@ -624,7 +629,8 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
     **    Module.instantiateWasm() to use that file instead of
     **    the default.
     */
-    pf("$(pre-js.%s.js): $(pre-js.in.js) $(MAKEFILE_LIST)", zBuildName);
+    pf("$(pre-js.%s.js): $(pre-js.in.js) $(bin.c-pp) $(MAKEFILE_LIST)",
+       zBuildName);
     if( pB->zDotWasm ){
       pf(" $(dir.dout)/%s.wasm" /* This .wasm is from some other
                                    build, so this may trigger a full
@@ -658,7 +664,7 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
      "))\n",
      zBuildName, zBuildName, zBuildName, zBuildName);
 
-  pf("$(post-js.%s.js): $(post-js.%s.in)\n",
+  pf("$(post-js.%s.js): $(post-js.%s.in) $(bin.c-pp)\n",
      zBuildName, zBuildName);
 
   ps("\n# --extern-post-js=...");
@@ -803,8 +809,8 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
     emit_compile_start(zBuildName);
 
     if( F_UNSUPPORTED & pB->flags ){
-      pf("\t@echo '$(logtag.%s) $(emo.fire)$(emo.fire)$(emo.fire): "
-         "unsupported build. Use at your own risk.'\n", zBuildName);
+      pf("\t@echo '$(logtag.%s) $(label.unsupported-build)'\n",
+         zBuildName);
     }
 
     /* emcc ... */
@@ -900,7 +906,11 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
 
     }
   }
-  pf("\t@$(call b.echo,%s,$(emo.done) done!)\n", zBuildName);
+  pf("\t@$(call b.echo,%s,$(emo.done) done!%s)\n",
+     zBuildName,
+     (F_UNSUPPORTED & pB->flags)
+     ? " $(label.unsupported-build)"
+     : "");
 
   pf("\n%dbit: $(out.%s.js)\n"
      "$(out.%s.wasm): $(out.%s.js)\n"

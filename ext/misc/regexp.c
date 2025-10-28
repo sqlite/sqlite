@@ -651,6 +651,15 @@ static void re_free(ReCompiled *pRe){
 }
 
 /*
+** Version of re_free() that accepts a pointer of type (void*). Required
+** to satisfy sanitizers when the re_free() function is called via a
+** function pointer.
+*/
+static void re_free_voidptr(void *p){
+  re_free((ReCompiled*)p);
+}
+
+/*
 ** Compile a textual regular expression in zIn[] into a compiled regular
 ** expression suitable for us by re_match() and return a pointer to the
 ** compiled regular expression in *ppRe.  Return NULL on success or an
@@ -781,7 +790,7 @@ static void re_sql_func(
     sqlite3_result_int(context, re_match(pRe, zStr, -1));
   }
   if( setAux ){
-    sqlite3_set_auxdata(context, 0, pRe, (void(*)(void*))re_free);
+    sqlite3_set_auxdata(context, 0, pRe, re_free_voidptr);
   }
 }
 
