@@ -27,6 +27,7 @@ struct sqlite3_qrf_spec {
   unsigned char eQuote;       /* Quoting style for text */
   unsigned char eBlob;        /* Quoting style for BLOBs */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
+  unsigned char bTxtJsonb;    /* Render JSONB blobs as JSON text */
   short int mxWidth;          /* Maximum width of any column */
   int nWidth;                 /* Number of column width parameters */
   short int *aWidth;          /* Column widths */

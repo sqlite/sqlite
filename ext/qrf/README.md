@@ -44,6 +44,7 @@ struct sqlite3_qrf_spec {
   unsigned char eQuote;       /* Quoting style for text */
   unsigned char eBlob;        /* Quoting style for BLOBs */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
+  unsigned char bTxtJsonb;    /* Render JSONB blobs as JSON text */
   short int mxWidth;          /* Maximum width of any column */
   int nWidth;                 /* Number of column width parameters */
   short int *aWidth;          /* Column widths */
@@ -170,10 +171,16 @@ A value of QRF_TXT_Json gives similar results as QRF_TXT_Tcl except that the
 rules are adjusted so that the displayed string is strictly conforming
 the JSON specification.
 
-### 2.7 How to escape BLOB values
+### 2.7 How to escape BLOB values (eBlob and bTxtJsonb)
 
-The sqlite3_qrf_spec.eBlob field determines out BLOB values are formatted
-for display.  This field can have one of the following values:
+If the sqlite3_qrf_spec.bTxtJsonb flag is true and if the value to be
+displayed is JSONB, then the JSONB is translated into text JSON and the
+text is shown according to the sqlite3_qrf_spec.eQuote setting as
+described in the previous section.
+
+If the bTxtJsonb flag is false (the usual case) or if the BLOB value to
+be displayed is not JSONB, then the sqlite3_qrf_spec.eBlob field determines
+how the BLOB value is formatted.  The following options are available;
 
 > ~~~
 #define QRF_BLOB_Auto    0 /* Determine BLOB quoting using eQuote */

@@ -297,6 +297,9 @@ int main(int argc, char **argv){
     if( strncmp(zLine, "--bShowCNames=", 14)==0 ){
       spec.bShowCNames = atoi(&zLine[14])!=0;
     }else
+    if( strncmp(zLine, "--bTxtJsonb=", 12)==0 ){
+      spec.bTxtJsonb = atoi(&zLine[12])!=0;
+    }else
     if( strncmp(zLine, "--zNull=", 8)==0 ){
       spec.zNull = tempStrdup(&zLine[8]);
     }else

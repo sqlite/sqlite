@@ -44,6 +44,7 @@ typedef struct Qrf Qrf;
 struct Qrf {
   sqlite3_stmt *pStmt;        /* The statement whose output is to be rendered */
   sqlite3 *db;                /* The corresponding database connection */
+  sqlite3_stmt *pJTrans;      /* JSONB to JSON translator statement */
   char **pzErr;               /* Write error message here, if not NULL */
   sqlite3_str *pOut;          /* Accumulated output */
   int iErr;                   /* Error code */
@@ -575,6 +576,48 @@ static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
 }
 
 /*
+** The current iCol-th column of p->pStmt is known to be a BLOB.  Check
+** to see if that BLOB is really a JSONB blob.  If it is, then translate
+** it into a text JSON representation and return a pointer to that text JSON.
+**
+** The memory used to hold the JSON text is managed internally by the
+** "p" object and is overwritten and/or deallocated upon the next call
+** to this routine (with the same p argument) or when the p object is
+** finailized.
+*/
+static const char *qrfJsonbToJson(Qrf *p, int iCol){
+  int nByte;
+  const void *pBlob;
+  int rc;
+  if( p->pJTrans==0 ){
+    sqlite3 *db;
+    rc = sqlite3_open(":memory:",&db);
+    if( rc ){
+      sqlite3_close(db);
+      return 0;
+    }
+    rc = sqlite3_prepare_v2(db, "SELECT json(?1)", -1, &p->pJTrans, 0);
+    if( rc ){
+      sqlite3_finalize(p->pJTrans);
+      p->pJTrans = 0;
+      sqlite3_close(db);
+      return 0;
+    }
+  }else{
+    sqlite3_reset(p->pJTrans);
+  }
+  nByte = sqlite3_column_bytes(p->pStmt, iCol);
+  pBlob = sqlite3_column_blob(p->pStmt, iCol);
+  sqlite3_bind_blob(p->pJTrans, 1, (void*)pBlob, nByte, SQLITE_STATIC);
+  rc = sqlite3_step(p->pJTrans);
+  if( rc==SQLITE_ROW ){
+    return (const char*)sqlite3_column_text(p->pJTrans, 0);
+  }else{
+    return 0;
+  }
+}
+
+/*
 ** Render value pVal into pOut
 */
 static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
@@ -601,6 +644,13 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       break;
     }
     case SQLITE_BLOB: {
+      if( p->spec.bTxtJsonb ){
+        const char *zJson = qrfJsonbToJson(p, iCol);
+        if( zJson ){
+          qrfEncodeText(p, pOut, zJson);
+          break;
+        }
+      }
       switch( p->spec.eBlob ){
         case QRF_BLOB_Hex:
         case QRF_BLOB_Sql: {
@@ -1222,6 +1272,7 @@ qrf_column_end:
     sqlite3_free(azData[i]);
   }
   sqlite3_free(azData);
+  sqlite3_free(abRowDiv);
   
   return;
 }
@@ -1675,6 +1726,11 @@ static void qrfFinalize(Qrf *p){
     sqlite3_free(sqlite3_str_finish(p->pOut));
   }
   if( p->actualWidth ) sqlite3_free(p->actualWidth);
+  if( p->pJTrans ){
+    sqlite3 *db = sqlite3_db_handle(p->pJTrans);
+    sqlite3_finalize(p->pJTrans);
+    sqlite3_close(db);
+  }
 }
 
 /*
