@@ -4651,6 +4651,20 @@ static int unixFcntlExternalReader(unixFile *pFile, int *piOut){
 ** then return true.  Return false if either pFile does not have a -shm
 ** file open or if it is the only connection to that -shm file across the
 ** entire system.
+**
+** This routine is not required for correct operation.  It can always return
+** false and SQLite will continue to operate according to spec.  However,
+** when this routine does its job, it adds extra robustness in cases
+** where database file locks have been erroneously deleted in a WAL-mode
+** database by doing close(open(DATABASE_PATHNAME)) or similar.
+**
+** With false negatives, SQLite still operates to spec, though with less
+** robustness.  With false positives, the last database connection on a
+** WAL-mode database will fail to unlink the -wal and -shm files, which
+** is annoying but harmless.  False positives will also prevent a database
+** connection from running "PRAGMA journal_mode=DELETE" in order to take
+** the database out of WAL mode, which is perhaps more serious, but is
+** still not a disaster.
 */
 static int unixIsSharingShmNode(unixFile *pFile){
   int rc;
