@@ -1,5 +1,5 @@
-C Add\senhanced\sresistance\sto\scorruption\safter\sposix\sadvisory\slocks\son\sthe\ndatabase\sfile\sbeen\sunintentionally\sbroken\son\sunix\sby\srunning\nclose(open(DBFILE))\sfrom\sa\sseparate\sthread.
-D 2025-10-28T10:50:55.157
+C Fix\san\ssigned\sinteger\soverflow\sproblem\sthat\scan\soccur\swhen\susing\san\soversize\nvalue\sfor\sthe\sSQLITE_MAX_LENGTH\scompile-time\soption\stogether\swith\nmulti-gigabyte\soperands\sto\sthe\sOP_Concat\soperator.
+D 2025-10-28T13:24:50.858
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -802,7 +802,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
-F src/vdbe.c 92cc9c523cfe11ce117b3bfd8b33846cdb8084bfe3268ba567c95389da6404c8
+F src/vdbe.c b44c366e83412d3b8c190feb1f029b7d02e1bd69252a57b32f195107f0d03964
 F src/vdbe.h be33bd7b17f2ec92939642416030491508c51071f6c14e27cd195983fec56b63
 F src/vdbeInt.h 52896dd4d5b62190c53db14b09fc2484434eb594c963df0fa66eb8a94527b02e
 F src/vdbeapi.c 869a0da5d855495055f4d35c6ada582f64ce995ce14b26ff9d336274d497266c
@@ -2171,9 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5daebf2d6013e73d89c9feb796e15b67c39577e5a9e9c86fa260995f4118f04b 819fc87385fd5be8a847492478f4c4f247f64edf7c7161b641bfbac6b658bec5
-R da1eafeba35515ba40fda65d5ff3ec66
-T +closed 819fc87385fd5be8a847492478f4c4f247f64edf7c7161b641bfbac6b658bec5
+P 6385a1962c69c69ca4775888f034a4eb892aa013689c000f3de6422da7c3c695
+R 9e200ff823d75d1d4e9517de47a3edad
 U drh
-Z 14d2e925da00cbf7f490a0a0f413fd0f
+Z b72961451b43171172d8a666ee282155
 # Remove this line to create a well-formed Fossil manifest.
