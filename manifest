@@ -1,5 +1,5 @@
-C Tiny\scosmetic\stweak\sto\sconfigure\sscript\soutput.\sNo\sfunctional\schanges.
-D 2025-10-28T22:09:43.464
+C Fix\sa\slogic\serror\sintroduced\sby\s[cea8bf79e18d55a8]\swhich\scaused\n"0\sOR\s2"\sto\sbe\sevaluated\sas\s"2"\sinstead\sof\sas\s"1".\s\sProblem\sreported\sat\n[forum:/forumpost/d5f32040c5d50d2d|forum\spost\sd5f32040c].
+D 2025-10-29T20:47:01.603
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -686,7 +686,7 @@ F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
 F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 4d63c8f6d50fe20637de8bdaf57757a0e424e4ac5e2c3313e621d64727a48a1c
+F src/expr.c 17b0cbe08e004c1653030f5de9b6b050e84feaa112239f7f576af2dc5e53a5fb
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c 0b802107498048d3dcac0b757720bcb8506507ce02159e213ab8161458eb293b
@@ -1063,7 +1063,7 @@ F test/e_createtable.test 31b9bcb6ac8876bc7ec342d86d9c231a84c62b442093a6651dfd0f
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 235c610f8bf8ec44513e222b9085c7e49fad65ad0c1975ac2577109dd06fd8fa
 F test/e_dropview.test 74e405df7fa0f762e0c9445b166fe03955856532e2bb234c372f7c51228d75e7
-F test/e_expr.test 57a50ffd09c274b066883a59272efaf32a955c73af9f176d1c8889f0125bd2db
+F test/e_expr.test 0a1e175caddc78b27306647cb4ce2362c55790190f8cdd178b75fd6262eb8f76
 F test/e_fkey.test feeba6238aeff9d809fb6236b351da8df4ae9bda89e088e54526b31a0cbfeec5
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
@@ -1096,7 +1096,7 @@ F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
 F test/existsexpr.test 9c4b77c4729281cc2ae63b9b460d0598ce28cc7876135e3e2c21629bbc8d077a
 F test/existsexpr2.test dc23e76389eff3d29f6488ff733012a3560cd67ec8cfaecbecd52cced5d5af11
 F test/existsfault.test ff41c11f3052c1bbd4f8dd557802310026253d67d7c4e3a180c16d2f0862973e
-F test/expr.test 4ada8eb822c45ef27a36851a258004d43c1e95e7c82585a1217e732084e4482c
+F test/expr.test db981f8a85520e99ae20aab7ad2e9b5b0437ed09159b57ced434c672075d2e61
 F test/expr2.test c27327ae9c017a7ff6280123f67aff496f912da74d78c888926d68b46ec75fd8
 F test/exprfault.test da33606d799718e2f8e34efd0e5858884a1ad87f608774c552a7f5517cc27181
 F test/exprfault2.test c49e84273898969af5dbc4fe6a3f4335f14639799f343590336c9ddf84425965
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 26ddec291696dd99c7f84a21b2dd272ce9bf32598ca38413ac89432d45527f8d
-R 84e32fda291a8d058dbadfbda7579a4c
-U stephan
-Z bf4855b54f4310a4966a592dc20188b6
+P e2c20aa5929e5b79aabca8a51fb3e32e0533526d64d7576d3caf1c847fff58b4
+R 1a124afdb2635430b3fd6e2b8b70ff33
+U drh
+Z 0a36ac0dd51fe98fcc08d99ab2c27dbd
 # Remove this line to create a well-formed Fossil manifest.
