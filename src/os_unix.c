@@ -3561,6 +3561,11 @@ static int unixRead(
     }
     return SQLITE_IOERR_READ;
   }else{
+    if( amt>=512 ){
+      sqlite3_log(SQLITE_IOERR_SHORT_READ,
+        "Got only %d of %d bytes requested from offset %lld of file \"%s\"",
+        got, amt, offset, pFile->zPath);
+    }
     storeLastErrno(pFile, 0);   /* not a system error */
     /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[got], 0, amt-got);
