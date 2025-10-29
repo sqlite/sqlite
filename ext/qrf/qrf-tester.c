@@ -107,7 +107,7 @@ int main(int argc, char **argv){
   }
   memset(&spec, 0, sizeof(spec));
   spec.iVersion = 1;
-  spec.eFormat = QRF_MODE_List;
+  spec.eStyle = QRF_STYLE_List;
   spec.xWrite = testWriter;
   pBuf = sqlite3_str_new(0);
   rc = sqlite3_open(":memory:", &db);
@@ -183,54 +183,54 @@ int main(int argc, char **argv){
       }
       sqlite3_str_reset(pBuf);
     }else
-    if( strncmp(zLine, "--eFormat=", 10)==0 ){
-      const struct { const char *z; int e; } aFmt[] = {
-         { "box",      QRF_MODE_Box,      },
-         { "csv",      QRF_MODE_Csv,      },
-         { "column",   QRF_MODE_Column,   },
-         { "count",    QRF_MODE_Count,    },
-         { "eqp",      QRF_MODE_EQP,      },
-         { "explain",  QRF_MODE_Explain,  },
-         { "html",     QRF_MODE_Html,     },
-         { "insert",   QRF_MODE_Insert,   },
-         { "json",     QRF_MODE_Json,     },
-         { "line",     QRF_MODE_Line,     },
-         { "list",     QRF_MODE_List,     },
-         { "markdown", QRF_MODE_Markdown, },
-         { "off",      QRF_MODE_Off,      },
-         { "quote",    QRF_MODE_Quote,    },
-         { "table",    QRF_MODE_Table,    },
-         { "scanexp",  QRF_MODE_ScanExp,  },
+    if( strncmp(zLine, "--eStyle=", 9)==0 ){
+      const struct { const char *z; int e; } aStyle[] = {
+         { "box",      QRF_STYLE_Box,      },
+         { "csv",      QRF_STYLE_Csv,      },
+         { "column",   QRF_STYLE_Column,   },
+         { "count",    QRF_STYLE_Count,    },
+         { "eqp",      QRF_STYLE_EQP,      },
+         { "explain",  QRF_STYLE_Explain,  },
+         { "html",     QRF_STYLE_Html,     },
+         { "insert",   QRF_STYLE_Insert,   },
+         { "json",     QRF_STYLE_Json,     },
+         { "line",     QRF_STYLE_Line,     },
+         { "list",     QRF_STYLE_List,     },
+         { "markdown", QRF_STYLE_Markdown, },
+         { "off",      QRF_STYLE_Off,      },
+         { "quote",    QRF_STYLE_Quote,    },
+         { "table",    QRF_STYLE_Table,    },
+         { "scanexp",  QRF_STYLE_ScanExp,  },
       };
       int i;
-      for(i=0; i<COUNT(aFmt); i++){
-        if( strcmp(aFmt[i].z,&zLine[10])==0 ){
-          spec.eFormat = aFmt[i].e;
+      for(i=0; i<COUNT(aStyle); i++){
+        if( strcmp(aStyle[i].z,&zLine[9])==0 ){
+          spec.eStyle = aStyle[i].e;
           break;
         }
       }
-      if( i>=COUNT(aFmt) ){
+      if( i>=COUNT(aStyle) ){
         sqlite3_str *pMsg = sqlite3_str_new(0);
-        for(i=0; i<COUNT(aFmt); i++){
-          sqlite3_str_appendf(pMsg, " %s", aFmt[i].z);
+        for(i=0; i<COUNT(aStyle); i++){
+          sqlite3_str_appendf(pMsg, " %s", aStyle[i].z);
         }
-        fprintf(stderr, "%s:%d: no such format: \"%s\"\nChoices: %s\n",
-                zSrc, lineNum, &zLine[10], sqlite3_str_value(pMsg));
+        fprintf(stderr, "%s:%d: no such style: \"%s\"\nChoices: %s\n",
+                zSrc, lineNum, &zLine[9], sqlite3_str_value(pMsg));
         sqlite3_free(sqlite3_str_finish(pMsg));
       }
     }else
-    if( strncmp(zLine, "--eText=", 9)==0 ){
+    if( strncmp(zLine, "--eText=", 8)==0 ){
       const struct { const char *z; int e; } aQuote[] = {
-         { "csv",      QRF_TXT_Csv     },
-         { "html",     QRF_TXT_Html    },
-         { "json",     QRF_TXT_Json    },
-         { "off",      QRF_TXT_Off     },
-         { "sql",      QRF_TXT_Sql     },
-         { "tcl",      QRF_TXT_Tcl     },
+         { "csv",      QRF_TEXT_Csv     },
+         { "html",     QRF_TEXT_Html    },
+         { "json",     QRF_TEXT_Json    },
+         { "off",      QRF_TEXT_Off     },
+         { "sql",      QRF_TEXT_Sql     },
+         { "tcl",      QRF_TEXT_Tcl     },
       };
       int i;
       for(i=0; i<COUNT(aQuote); i++){
-        if( strcmp(aQuote[i].z,&zLine[9])==0 ){
+        if( strcmp(aQuote[i].z,&zLine[8])==0 ){
           spec.eText = aQuote[i].e;
           break;
         }
@@ -240,8 +240,8 @@ int main(int argc, char **argv){
         for(i=0; i<COUNT(aQuote); i++){
           sqlite3_str_appendf(pMsg, " %s", aQuote[i].z);
         }
-        fprintf(stderr, "%s:%d: no such quoting style: \"%s\"\nChoices: %s\n",
-                zSrc, lineNum, &zLine[9], sqlite3_str_value(pMsg));
+        fprintf(stderr, "%s:%d: no such text-style: \"%s\"\nChoices: %s\n",
+                zSrc, lineNum, &zLine[8], sqlite3_str_value(pMsg));
         sqlite3_free(sqlite3_str_finish(pMsg));
       }
     }else
@@ -266,12 +266,12 @@ int main(int argc, char **argv){
         for(i=0; i<COUNT(aBlob); i++){
           sqlite3_str_appendf(pMsg, " %s", aBlob[i].z);
         }
-        fprintf(stderr, "%s:%d: no such blob style: \"%s\"\nChoices: %s\n",
+        fprintf(stderr, "%s:%d: no such blob-style: \"%s\"\nChoices: %s\n",
                 zSrc, lineNum, &zLine[8], sqlite3_str_value(pMsg));
         sqlite3_free(sqlite3_str_finish(pMsg));
       }
     }else
-    if( strncmp(zLine, "--eEscape=", 10)==0 ){
+    if( strncmp(zLine, "--eEsc=", 7)==0 ){
       const struct { const char *z; int e; } aEscape[] = {
          { "ascii",     QRF_ESC_Ascii   },
          { "off",       QRF_ESC_Off     },
@@ -279,8 +279,8 @@ int main(int argc, char **argv){
       };
       int i;
       for(i=0; i<COUNT(aEscape); i++){
-        if( strcmp(aEscape[i].z,&zLine[10])==0 ){
-          spec.eEscape = aEscape[i].e;
+        if( strcmp(aEscape[i].z,&zLine[7])==0 ){
+          spec.eEsc = aEscape[i].e;
           break;
         }
       }
@@ -294,11 +294,11 @@ int main(int argc, char **argv){
         sqlite3_free(sqlite3_str_finish(pMsg));
       }
     }else
-    if( strncmp(zLine, "--bShowCNames=", 14)==0 ){
-      spec.bShowCNames = atoi(&zLine[14])!=0;
+    if( strncmp(zLine, "--bColumnNames=", 15)==0 ){
+      spec.bColumnNames = atoi(&zLine[15])!=0;
     }else
-    if( strncmp(zLine, "--bTxtJsonb=", 12)==0 ){
-      spec.bTxtJsonb = atoi(&zLine[12])!=0;
+    if( strncmp(zLine, "--bTextJsonb=", 13)==0 ){
+      spec.bTextJsonb = atoi(&zLine[13])!=0;
     }else
     if( strncmp(zLine, "--zNull=", 8)==0 ){
       spec.zNull = tempStrdup(&zLine[8]);
@@ -341,6 +341,10 @@ int main(int argc, char **argv){
     if( strncmp(zLine, "--use-render=",13)==0 ){
       spec.xRender = (atoi(&zLine[13])!=0) ? testBlobRender : 0;
     }else
+    if( strncmp(zLine, "--",2)==0 && !isspace(zLine[2]) ){
+      fprintf(stderr, "%s:%d: Unrecognized command: \"%s\"\n", 
+              zSrc, lineNum, zLine);
+    }else      
     {
       if( sqlite3_str_length(pBuf) ) sqlite3_str_append(pBuf, "\n", 1);
       sqlite3_str_appendall(pBuf, zLine);

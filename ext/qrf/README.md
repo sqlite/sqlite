@@ -38,13 +38,13 @@ formatted, and what to do with the formatted text.
 typedef struct sqlite3_qrf_spec sqlite3_qrf_spec;
 struct sqlite3_qrf_spec {
   unsigned char iVersion;     /* Version number of this structure */
-  unsigned char eFormat;      /* Output format */
-  unsigned char bShowCNames;  /* True to show column names */
-  unsigned char eEscape;      /* How to deal with control characters */
+  unsigned char eStyle;       /* Formatting style.  "box", "csv", etc... */
+  unsigned char eEsc;         /* How to escape control characters in text */
   unsigned char eText;        /* Quoting style for text */
   unsigned char eBlob;        /* Quoting style for BLOBs */
+  unsigned char bColumnNames; /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
-  unsigned char bTxtJsonb;    /* Render JSONB blobs as JSON text */
+  unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
   short int mxWidth;          /* Maximum width of any column */
   int nWidth;                 /* Number of column width parameters */
   short int *aWidth;          /* Column widths */
@@ -52,7 +52,6 @@ struct sqlite3_qrf_spec {
   const char *zRowSep;        /* Alternative row separator */
   const char *zTableName;     /* Output table name */
   const char *zNull;          /* Rendering of NULL */
-  const char *zFloatFmt;      /* printf-style string for rendering floats */
   char *(*xRender)(void*,sqlite3_value*);                /* Render a value */
   ssize_t (*xWrite)(void*,const unsigned char*,size_t);  /* Write callback */
   void *pRenderArg;           /* First argument to the xRender callback */
@@ -88,21 +87,21 @@ non-NULL and the other must be NULL.
 
 ### 2.3 Output Format
 
-The sqlite3_qrf_spec.eFormat field is an integer code that defines the
+The sqlite3_qrf_spec.eStyle field is an integer code that defines the
 specific output format that will be generated.  See the
 output format describes below for additional detail.
 
 Other fields in sqlite3_qrf_spec may be used or may be
-ignored, depending on the value of eFormat.
+ignored, depending on the value of eStyle.
 
-### 2.4 Show Column Names (bShowCNames)
+### 2.4 Show Column Names (bColumnNames)
 
-The sqlite3_qrf_spec.bShowCNames field is a boolean.  If true, then column
+The sqlite3_qrf_spec.bColumnNames field is a boolean.  If true, then column
 names appear in the output.  If false, column names are omitted.
 
-### 2.5 Control Character Escapes (eEscape)
+### 2.5 Control Character Escapes (eEsc)
 
-The sqlite3_qrf_spec.eEscape determines how ASCII control characters are
+The sqlite3_qrf_spec.eEsc determines how ASCII control characters are
 formatted when displaying TEXT values in the result.  These are the allowed
 values:
 
@@ -112,15 +111,15 @@ values:
 #define QRF_ESC_Off     2 /* Do not escape control characters */
 ~~~
 
-If the value of eEscape is zero, then the control character
+If the value of eEsc is zero, then the control character
 with value X is displayed as ^Y where Y is X+0x40.  Hence, a
 backspace character (U+0008) is shown as "^H".  This is the
 default.
 
-If eEscape is one, then control characters in the range of U+0001
+If eEsc is one, then control characters in the range of U+0001
 through U+001f are mapped into U+2401 through U+241f, respectively.
 
-If the value of eEscape is two, then no translation occurs
+If the value of eEsc is two, then no translation occurs
 and control characters that appear in TEXT string are transmitted
 to the formatted output as-is.  This an be dangerous in applications,
 since an adversary who can control TEXT values might be able to
@@ -135,50 +134,50 @@ display values, regardless of this setting.
 The sqlite3_qrf_spec.eText field can have one of the following values:
 
 > ~~~
-#define QRF_TXT_Off     0 /* Literal text */
-#define QRF_TXT_Sql     1 /* Quote as an SQL literal */
-#define QRF_TXT_Csv     2 /* CSV-style quoting */
-#define QRF_TXT_Html    3 /* HTML-style quoting */
-#define QRF_TXT_Tcl     4 /* C/Tcl quoting */
-#define QRF_TXT_Json    5 /* JSON quoting */
+#define QRF_TEXT_Off     0 /* Literal text */
+#define QRF_TEXT_Sql     1 /* Quote as an SQL literal */
+#define QRF_TEXT_Csv     2 /* CSV-style quoting */
+#define QRF_TEXT_Html    3 /* HTML-style quoting */
+#define QRF_TEXT_Tcl     4 /* C/Tcl quoting */
+#define QRF_TEXT_Json    5 /* JSON quoting */
 ~~~
 
-A value of QRF_TXT_Off means that text value appear in the output exactly
+A value of QRF_TEXT_Off means that text value appear in the output exactly
 as they are found in the database file, with no translation.
 
-A value of QRF_TXT_Sql means that text values are escaped so that they
+A value of QRF_TEXT_Sql means that text values are escaped so that they
 appears as SQL literals.  That means the value will be surrounded by
 single-quotes (U+0027) and any single-quotes contained within the text
 will be doubled.
 
-A value of QRF_TXT_Csv means that text values are escaped in accordance
+A value of QRF_TEXT_Csv means that text values are escaped in accordance
 with RFC&nbsp;4180, which defines Comma-Separated-Value or CSV files.
 Text strings that contain no special values appears as-is.  Text strings
 that contain special values are contained in double-quotes (U+0022) and
 any double-quotes within the value are doubled.
 
-A value of QRF_TXT_Html means that text values are escaped for use in
+A value of QRF_TEXT_Html means that text values are escaped for use in
 HTML.  Special characters "&lt;", "&amp;", "&gt;", "&quot;", and "&#39;"
 are displayed as "&amp;lt;", "&amp;amp;", "&amp;gt;", "&amp;quot;",
 and "&amp;#39;", respectively.
 
-A value of QRF_TXT_Tcl means that text values are displayed inside of
+A value of QRF_TEXT_Tcl means that text values are displayed inside of
 double-quotes and special characters within the string are escaped using
 backslash escape, as in ANSI-C or TCL or Perl or other popular programming
 languages.
 
-A value of QRF_TXT_Json gives similar results as QRF_TXT_Tcl except that the
+A value of QRF_TEXT_Json gives similar results as QRF_TEXT_Tcl except that the
 rules are adjusted so that the displayed string is strictly conforming
 the JSON specification.
 
-### 2.7 How to display BLOB values (eBlob and bTxtJsonb)
+### 2.7 How to display BLOB values (eBlob and bTextJsonb)
 
-If the sqlite3_qrf_spec.bTxtJsonb flag is true and if the value to be
+If the sqlite3_qrf_spec.bTextJsonb flag is true and if the value to be
 displayed is JSONB, then the JSONB is translated into text JSON and the
 text is shown according to the sqlite3_qrf_spec.eText setting as
 described in the previous section.
 
-If the bTxtJsonb flag is false (the usual case) or if the BLOB value to
+If the bTextJsonb flag is false (the usual case) or if the BLOB value to
 be displayed is not JSONB, then the sqlite3_qrf_spec.eBlob field determines
 how the BLOB value is formatted.  The following options are available;
 
@@ -192,10 +191,10 @@ how the BLOB value is formatted.  The following options are available;
 ~~~
 
 A value of QRF_BLOB_Auto means that display format is selected automatically
-by sqlite3_format_query_result() based on eFormat and eText.
+by sqlite3_format_query_result() based on eStyle and eText.
 
 A value of QRF_BLOB_Text means that BLOB values are interpreted as UTF8
-text and are displayed using formatting results set by eEscape and
+text and are displayed using formatting results set by eEsc and
 eText.
 
 A value of QRF_BLOB_Sql means that BLOB values are shown as SQL BLOB
@@ -218,8 +217,8 @@ previous paragraph would be shown as
 
 ### 2.8 Word Wrapping In Columnar Modes (mxWidth and bWordWrap)
 
-When using columnar formatting modes (QRF_MODE_Box, QRF_MODE_Column,
-QRF_MODE_Markdown, or QRF_MODE_Table) and with sqlite3_qrf_spec.mxWidth
+When using columnar formatting modes (QRF_STYLE_Box, QRF_STYLE_Column,
+QRF_STYLE_Markdown, or QRF_STYLE_Table) and with sqlite3_qrf_spec.mxWidth
 set to some non-zero value, then when an output is two wide to be
 displayed in just mxWidth standard character widths, the output is
 split into multiple lines, where each line is a maximum of 
@@ -236,8 +235,8 @@ of words.
 
 The sqlite3_qrf_spec.aWidth field is a pointer to an array of
 signed 16-bit integers that control column widths and alignments
-in columnar output modes (QRF_MODE_Box, QRF_MODE_Column,
-QRF_MODE_Markdown, or QRF_MODE_Table).  The sqlite3_qrf_spec.nWidth
+in columnar output modes (QRF_STYLE_Box, QRF_STYLE_Column,
+QRF_STYLE_Markdown, or QRF_STYLE_Table).  The sqlite3_qrf_spec.nWidth
 field is the number of integers in the aWidth array.
 
 If aWidth is a NULL pointer or nWidth is zero, then the array is
@@ -281,7 +280,7 @@ that cannot be overridden.
 ### 2.11 The Output Table Name
 
 The sqlite3_qrf_spec.zTableName value is the name of the output table
-when eFormat is QRF_MODE_Insert.
+when eStyle is QRF_STYLE_Insert.
 
 ### 2.12 The Rendering Of NULL
 
@@ -307,7 +306,7 @@ The sqlite3_format_query_result() function (which calls xRender)
 will take responsibility for freeing the string returned by xRender
 after it has finished using it.
 
-The eText, eBlob, and eEscape settings above become no-ops if the xRender
+The eText, eBlob, and eEsc settings above become no-ops if the xRender
 routine returns non-NULL.  In other words, the application-supplied
 xRender routine is expected to do all of its own quoting and formatting.
 
@@ -326,28 +325,28 @@ free that memory by a subsequent call to sqlite3_free().
 ## 4.0 Output Modes
 
 The result formatter supports a variety of output modes. The
-output mode used is determined by the eFormat setting of the
+output mode used is determined by the eStyle setting of the
 sqlite3_qrf_spec object. The set of supported output modes
 might increase in future versions.
 The following output modes are currently defined:
 
 > ~~~
-#define QRF_MODE_List      0 /* One record per line with a separator */
-#define QRF_MODE_Line      1 /* One column per line. */
-#define QRF_MODE_Html      2 /* Generate an XHTML table */
-#define QRF_MODE_Json      3 /* Output is a list of JSON objects */
-#define QRF_MODE_Insert    4 /* Generate SQL "insert" statements */
-#define QRF_MODE_Csv       5 /* Comma-separated-value */
-#define QRF_MODE_Quote     6 /* SQL-quoted, comma-separated */
-#define QRF_MODE_Explain   7 /* EXPLAIN output */
-#define QRF_MODE_ScanExp   8 /* EXPLAIN output with vm stats */
-#define QRF_MODE_EQP       9 /* Format EXPLAIN QUERY PLAN output */
-#define QRF_MODE_Markdown 10 /* Markdown formatting */
-#define QRF_MODE_Column   11 /* One record per line in neat columns */
-#define QRF_MODE_Table    12 /* MySQL-style table formatting */
-#define QRF_MODE_Box      13 /* Unicode box-drawing characters */
-#define QRF_MODE_Count    14 /* Output only a count of the rows of output */
-#define QRF_MODE_Off      15 /* No query output shown */
+#define QRF_STYLE_List      0 /* One record per line with a separator */
+#define QRF_STYLE_Line      1 /* One column per line. */
+#define QRF_STYLE_Html      2 /* Generate an XHTML table */
+#define QRF_STYLE_Json      3 /* Output is a list of JSON objects */
+#define QRF_STYLE_Insert    4 /* Generate SQL "insert" statements */
+#define QRF_STYLE_Csv       5 /* Comma-separated-value */
+#define QRF_STYLE_Quote     6 /* SQL-quoted, comma-separated */
+#define QRF_STYLE_Explain   7 /* EXPLAIN output */
+#define QRF_STYLE_ScanExp   8 /* EXPLAIN output with vm stats */
+#define QRF_STYLE_EQP       9 /* Format EXPLAIN QUERY PLAN output */
+#define QRF_STYLE_Markdown 10 /* Markdown formatting */
+#define QRF_STYLE_Column   11 /* One record per line in neat columns */
+#define QRF_STYLE_Table    12 /* MySQL-style table formatting */
+#define QRF_STYLE_Box      13 /* Unicode box-drawing characters */
+#define QRF_STYLE_Count    14 /* Output only a count of the rows of output */
+#define QRF_STYLE_Off      15 /* No query output shown */
 ~~~
 
 ### 5.0 Source Code Files
