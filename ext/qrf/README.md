@@ -41,7 +41,7 @@ struct sqlite3_qrf_spec {
   unsigned char eFormat;      /* Output format */
   unsigned char bShowCNames;  /* True to show column names */
   unsigned char eEscape;      /* How to deal with control characters */
-  unsigned char eQuote;       /* Quoting style for text */
+  unsigned char eText;        /* Quoting style for text */
   unsigned char eBlob;        /* Quoting style for BLOBs */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTxtJsonb;    /* Render JSONB blobs as JSON text */
@@ -95,12 +95,12 @@ output format describes below for additional detail.
 Other fields in sqlite3_qrf_spec may be used or may be
 ignored, depending on the value of eFormat.
 
-### 2.4 Show Column Names
+### 2.4 Show Column Names (bShowCNames)
 
 The sqlite3_qrf_spec.bShowCNames field is a boolean.  If true, then column
 names appear in the output.  If false, column names are omitted.
 
-### 2.5 Control Character Escapes
+### 2.5 Control Character Escapes (eEscape)
 
 The sqlite3_qrf_spec.eEscape determines how ASCII control characters are
 formatted when displaying TEXT values in the result.  These are the allowed
@@ -114,7 +114,7 @@ values:
 
 If the value of eEscape is zero, then the control character
 with value X is displayed as ^Y where Y is X+0x40.  Hence, a
-backspace character (U+0008) is shown as "^H".  This is an excellent
+backspace character (U+0008) is shown as "^H".  This is the
 default.
 
 If eEscape is one, then control characters in the range of U+0001
@@ -130,9 +130,9 @@ The TAB (U+0009), LF (U+000a) and CR-LF (U+000d,U+000a) character
 sequence are always output literally and are not mapped to alternative
 display values, regardless of this setting.
 
-### 2.6 How to escape TEXT values
+### 2.6 Display of TEXT values (eText)
 
-The sqlite3_qrf_spec.eQuote field can have one of the following values:
+The sqlite3_qrf_spec.eText field can have one of the following values:
 
 > ~~~
 #define QRF_TXT_Off     0 /* Literal text */
@@ -171,11 +171,11 @@ A value of QRF_TXT_Json gives similar results as QRF_TXT_Tcl except that the
 rules are adjusted so that the displayed string is strictly conforming
 the JSON specification.
 
-### 2.7 How to escape BLOB values (eBlob and bTxtJsonb)
+### 2.7 How to display BLOB values (eBlob and bTxtJsonb)
 
 If the sqlite3_qrf_spec.bTxtJsonb flag is true and if the value to be
 displayed is JSONB, then the JSONB is translated into text JSON and the
-text is shown according to the sqlite3_qrf_spec.eQuote setting as
+text is shown according to the sqlite3_qrf_spec.eText setting as
 described in the previous section.
 
 If the bTxtJsonb flag is false (the usual case) or if the BLOB value to
@@ -183,7 +183,7 @@ be displayed is not JSONB, then the sqlite3_qrf_spec.eBlob field determines
 how the BLOB value is formatted.  The following options are available;
 
 > ~~~
-#define QRF_BLOB_Auto    0 /* Determine BLOB quoting using eQuote */
+#define QRF_BLOB_Auto    0 /* Determine BLOB quoting using eText */
 #define QRF_BLOB_Text    1 /* Display content exactly as it is */
 #define QRF_BLOB_Sql     2 /* Quote as an SQL literal */
 #define QRF_BLOB_Hex     3 /* Hexadecimal representation */
@@ -192,11 +192,11 @@ how the BLOB value is formatted.  The following options are available;
 ~~~
 
 A value of QRF_BLOB_Auto means that display format is selected automatically
-by sqlite3_format_query_result() based on eFormat and eQuote.
+by sqlite3_format_query_result() based on eFormat and eText.
 
 A value of QRF_BLOB_Text means that BLOB values are interpreted as UTF8
 text and are displayed using formatting results set by eEscape and
-eQuote.
+eText.
 
 A value of QRF_BLOB_Sql means that BLOB values are shown as SQL BLOB
 literals: a prefix "`x'`" following by hexadecimal and ending with a
@@ -307,7 +307,7 @@ The sqlite3_format_query_result() function (which calls xRender)
 will take responsibility for freeing the string returned by xRender
 after it has finished using it.
 
-The eQuote, eBlob, and eEscape settings above become no-ops if the xRender
+The eText, eBlob, and eEscape settings above become no-ops if the xRender
 routine returns non-NULL.  In other words, the application-supplied
 xRender routine is expected to do all of its own quoting and formatting.
 

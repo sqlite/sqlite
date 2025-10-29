@@ -24,7 +24,7 @@ struct sqlite3_qrf_spec {
   unsigned char eFormat;      /* Output format */
   unsigned char bShowCNames;  /* True to show column names */
   unsigned char eEscape;      /* How to deal with control characters */
-  unsigned char eQuote;       /* Quoting style for text */
+  unsigned char eText;        /* Quoting style for text */
   unsigned char eBlob;        /* Quoting style for BLOBs */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTxtJsonb;    /* Render JSONB blobs as JSON text */
@@ -81,7 +81,7 @@ int sqlite3_format_query_result(
 
 /*
 ** Quoting styles for text.
-** Allowed values for sqlite3_qrf_spec.eQuote
+** Allowed values for sqlite3_qrf_spec.eText
 */
 #define QRF_TXT_Off     0 /* Literal text */
 #define QRF_TXT_Sql     1 /* Quote as an SQL literal */
@@ -94,7 +94,7 @@ int sqlite3_format_query_result(
 ** Quoting styles for BLOBs
 ** Allowed values for sqlite3_qrf_spec.eBlob
 */
-#define QRF_BLOB_Auto    0 /* Determine BLOB quoting using eQuote */
+#define QRF_BLOB_Auto    0 /* Determine BLOB quoting using eText */
 #define QRF_BLOB_Text    1 /* Display content exactly as it is */
 #define QRF_BLOB_Sql     2 /* Quote as an SQL literal */
 #define QRF_BLOB_Hex     3 /* Hexadecimal representation */

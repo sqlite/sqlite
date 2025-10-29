@@ -219,7 +219,7 @@ int main(int argc, char **argv){
         sqlite3_free(sqlite3_str_finish(pMsg));
       }
     }else
-    if( strncmp(zLine, "--eQuote=", 9)==0 ){
+    if( strncmp(zLine, "--eText=", 9)==0 ){
       const struct { const char *z; int e; } aQuote[] = {
          { "csv",      QRF_TXT_Csv     },
          { "html",     QRF_TXT_Html    },
@@ -231,7 +231,7 @@ int main(int argc, char **argv){
       int i;
       for(i=0; i<COUNT(aQuote); i++){
         if( strcmp(aQuote[i].z,&zLine[9])==0 ){
-          spec.eQuote = aQuote[i].e;
+          spec.eText = aQuote[i].e;
           break;
         }
       }

@@ -487,7 +487,7 @@ static const char qrfCsvQuote[] = {
 */
 static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
   int iStart = sqlite3_str_length(pOut);
-  switch( p->spec.eQuote ){
+  switch( p->spec.eText ){
     case QRF_TXT_Sql: {
       sqlite3_str_appendf(pOut, "%Q", zTxt);
       break;
@@ -552,7 +552,7 @@ static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
           case '\r':  sqlite3_str_append(pOut, "\\r", 2);   break;
           case '\t':  sqlite3_str_append(pOut, "\\t", 2);   break;
           default: {
-            if( p->spec.eQuote==QRF_TXT_Json ){
+            if( p->spec.eText==QRF_TXT_Json ){
               sqlite3_str_appendf(pOut, "\\u%04x", z[i]);
             }else{
               sqlite3_str_appendf(pOut, "\\%03o", z[i]);
@@ -1492,18 +1492,18 @@ static void qrfInitialize(
     }
     case QRF_MODE_Json: {
       p->spec.zColumnSep = ",";
-      p->spec.eQuote = QRF_TXT_Json;
+      p->spec.eText = QRF_TXT_Json;
       p->spec.eBlob = QRF_BLOB_Json;
       p->spec.zNull = "null";
       break;
     }
     case QRF_MODE_Html: {
-      p->spec.eQuote = QRF_TXT_Html;
+      p->spec.eText = QRF_TXT_Html;
       p->spec.zNull = "null";
       break;
     }
     case QRF_MODE_Insert: {
-      p->spec.eQuote = QRF_TXT_Sql;
+      p->spec.eText = QRF_TXT_Sql;
       p->spec.eBlob = QRF_BLOB_Sql;
       if( p->spec.zTableName==0 || p->spec.zTableName[0]==0 ){
         p->spec.zTableName = "tab";
@@ -1512,14 +1512,14 @@ static void qrfInitialize(
     }
     case QRF_MODE_Csv: {
       p->spec.eFormat = QRF_MODE_List;
-      p->spec.eQuote = QRF_TXT_Csv;
+      p->spec.eText = QRF_TXT_Csv;
       p->spec.eBlob = QRF_BLOB_Tcl;
       p->spec.zColumnSep = ",";
       p->spec.zRowSep = "\r\n";
       break;
     }
     case QRF_MODE_Quote: {
-      p->spec.eQuote = QRF_TXT_Sql;
+      p->spec.eText = QRF_TXT_Sql;
       p->spec.eBlob = QRF_BLOB_Sql;
       p->spec.zColumnSep = ",";
       p->spec.zRowSep = "\n";
@@ -1535,7 +1535,7 @@ static void qrfInitialize(
         */
         p->spec.eFormat = QRF_MODE_Quote;
         p->spec.bShowCNames = 1;
-        p->spec.eQuote = QRF_TXT_Sql;
+        p->spec.eText = QRF_TXT_Sql;
         p->spec.eBlob = QRF_BLOB_Sql;
         p->spec.zColumnSep = ",";
         p->spec.zRowSep = "\n";
@@ -1552,7 +1552,7 @@ static void qrfInitialize(
         */
         p->spec.eFormat = QRF_MODE_Quote;
         p->spec.bShowCNames = 1;
-        p->spec.eQuote = QRF_TXT_Sql;
+        p->spec.eText = QRF_TXT_Sql;
         p->spec.eBlob = QRF_BLOB_Sql;
         p->spec.zColumnSep = ",";
         p->spec.zRowSep = "\n";
@@ -1561,7 +1561,7 @@ static void qrfInitialize(
     }
   }
   if( p->spec.eBlob==QRF_BLOB_Auto ){
-    switch( p->spec.eQuote ){
+    switch( p->spec.eText ){
       case QRF_TXT_Sql:  p->spec.eBlob = QRF_BLOB_Sql;  break;
       case QRF_TXT_Csv:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
       case QRF_TXT_Tcl:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
