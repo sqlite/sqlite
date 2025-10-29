@@ -276,4 +276,119 @@ do_catchsql_test 6.3 {
 } {1 error}
 db2 close
 
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+
+do_execsql_test 7.0 {
+  CREATE TABLE m1(a, b);
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.a1(c, d);
+}
+
+do_execsql_test 7.1 {
+  CREATE TEMP TRIGGER tr1 AFTER INSERT ON m1 BEGIN
+    INSERT INTO a1 VALUES(new.a, new.b);
+  END;
+
+  INSERT INTO m1 VALUES(5, 6);
+  SELECT * FROM aux.a1;
+} {5 6}
+
+do_execsql_test 7.2 {
+  CREATE TABLE a1(e, f);
+  INSERT INTO m1 VALUES(7, 8);
+}
+
+do_execsql_test 7.3.1 { SELECT * FROM main.a1 } {7 8}
+do_execsql_test 7.3.2 { SELECT * FROM  aux.a1 } {5 6}
+
+do_execsql_test 7.4 {
+  DROP TRIGGER tr1;
+  CREATE TEMP TRIGGER tr1 AFTER INSERT ON m1 BEGIN
+    INSERT INTO a1 SELECT d, c FROM aux.a1;
+  END;
+
+  DELETE FROM aux.a1;
+  DELETE FROM main.a1;
+  INSERT INTO aux.a1 VALUES('hello', 'world');
+}
+
+do_execsql_test 7.5 {
+  INSERT INTO m1 VALUES(9, 10);
+  SELECT * FROM main.a1;
+} {world hello}
+
+do_catchsql_test 7.6 {
+  DROP TRIGGER tr1;
+  CREATE TRIGGER tr1 AFTER INSERT ON m1 BEGIN
+    INSERT INTO a1 SELECT d, c FROM aux.a1;
+  END;
+} {1 {trigger tr1 cannot reference objects in database aux}}
+
+#-------------------------------------------------------------------------
+# Check that temp triggers may INSERT/UPDATE/DELETE to fully qualified
+# table names.
+reset_db
+forcedelete test.db2
+do_execsql_test 8.0 {
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(c, d);
+  CREATE TABLE aux.t1(e, f);
+  CREATE TABLE aux.t2(g, h);
+}
+
+do_catchsql_test 8.1.1 {
+  CREATE TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+    INSERT INTO aux.t1 VALUES(new.c, new.d);
+  END;
+} {1 {qualified table names are not allowed on INSERT, UPDATE, and DELETE statements within triggers}}
+
+do_execsql_test 8.1.2 {
+  CREATE TEMP TRIGGER tr1 AFTER INSERT ON t2 BEGIN
+    INSERT INTO aux.t1 VALUES(new.c, new.d);
+  END;
+
+  INSERT INTO main.t2 VALUES('x', 'y');
+  SELECT * FROM aux.t1;
+} {x y}
+
+do_execsql_test 8.1.3 { SELECT * FROM t1 } {}
+
+do_catchsql_test 8.2.1 {
+  CREATE TRIGGER aux.tr2 AFTER UPDATE ON aux.t1 BEGIN
+    UPDATE main.t2 SET c=new.e, d=new.f;
+  END;
+} {1 {qualified table names are not allowed on INSERT, UPDATE, and DELETE statements within triggers}}
+
+do_execsql_test 8.2.2 {
+  CREATE TEMP TRIGGER tr2 AFTER UPDATE ON aux.t1 BEGIN
+    UPDATE main.t2 SET c=new.e, d=new.f;
+  END;
+
+  UPDATE aux.t1 SET e=1, f=2;
+  SELECT * FROM t2;
+} {1 2}
+
+do_execsql_test 8.2.3 { SELECT * FROM aux.t2 } {}
+
+do_catchsql_test 8.3.1 {
+  CREATE TRIGGER tr3 AFTER DELETE ON t2 BEGIN
+    DELETE FROM aux.t1;
+  END;
+} {1 {qualified table names are not allowed on INSERT, UPDATE, and DELETE statements within triggers}}
+
+do_execsql_test 8.3.2 {
+  INSERT INTO main.t1 VALUES('a', 'b');
+  CREATE TEMP TRIGGER tr3 AFTER DELETE ON t2 BEGIN
+    DELETE FROM aux.t1;
+  END;
+
+  DELETE FROM main.t2;
+  SELECT * FROM aux.t1;
+} {}
+
+do_execsql_test 8.3.3 { SELECT * FROM t1 } {a b}
+
 finish_test

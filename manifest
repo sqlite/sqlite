@@ -1,5 +1,5 @@
-C Fix\sa\slogic\serror\sintroduced\sby\s[cea8bf79e18d55a8]\swhich\scaused\n"0\sOR\s2"\sto\sbe\sevaluated\sas\s"2"\sinstead\sof\sas\s"1".\s\sProblem\sreported\sat\n[forum:/forumpost/d5f32040c5d50d2d|forum\spost\sd5f32040c].
-D 2025-10-29T20:47:01.603
+C Experimental\schange\sto\sallow\striggers\sin\sthe\stemp\sschema\sto\suse\sfully\squalified\stable\snames\sin\sINSERT/UPDATE/DELETE\sstatements.
+D 2025-10-29T20:57:44.300
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -668,9 +668,9 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 1b9c24374a85dfc7eb8fa7c4266ee0db4f9609cceecfc5481cd8307e5af04366
 F sqlite3.pc.in e6dee284fba59ef500092fdc1843df3be8433323a3733c91da96690a50a5b398
-F src/alter.c fc7bbbeb9e89c7124bf5772ce474b333b7bdc18d6e080763211a40fde69fb1da
+F src/alter.c a02edd673c242698f42eecf150a0c6eef11d1cc8ebf555d5c0e9f2847c0e9e9d
 F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
-F src/attach.c 9af61b63b10ee702b1594ecd24fb8cea0839cfdb6addee52fba26fa879f5db9d
+F src/attach.c 7cf07d4fa42b9fc8662237c60c40b730326c30aa90ae5fffc0b18b2d726ebf61
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
@@ -688,7 +688,7 @@ F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
 F src/expr.c 17b0cbe08e004c1653030f5de9b6b050e84feaa112239f7f576af2dc5e53a5fb
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
+F src/fkey.c c065da737307a29e4d240ac727758dbf4102cb3218a1f651eb689b6a6fa12531
 F src/func.c 0b802107498048d3dcac0b757720bcb8506507ce02159e213ab8161458eb293b
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
@@ -725,7 +725,7 @@ F src/os_win.c 27617f334168644b542c9d58ac6e5f051b318136273e78d243384b4eca2df6b3
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
-F src/parse.y 619c3e92a54686c5e47923688c4b9bf7ec534a4690db5677acc28b299c403250
+F src/parse.y 5ba60bd246219225ccb32c15bf692124327810f00128dd779155185848369865
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
@@ -740,7 +740,7 @@ F src/shell.c.in ce9953719b1e544e71cc47f3b9b699440e4f441418506c0913484c58a27b36b
 F src/sqlite.h.in f7944026ee89ea348f89aec56372d6d25b6cafc1d89df741278d6917e86326a3
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
-F src/sqliteInt.h 88f7fc9ce1630d9a5f7e0a8e1f3287cdc63882fba985c18e7eee1b9f457f59aa
+F src/sqliteInt.h 89e84b1a2e9de855282f2d7fc415105edc284529bad6bbe54018eef0c4e15456
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -796,7 +796,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c cb3294cf23c11106b50d9af6998a6c1bf389b52e15b17698c9fab97bbaa9b37f
 F src/treeview.c 3ce7ac9835d2d70cc1c868b01b747ae8a062322e155701e58e3d62ca79aada7a
-F src/trigger.c d5cf2541ff048f30b6a0507eb3d1ec4e695c53584e3b2298a5bf248714fe185e
+F src/trigger.c 4328fb185c81889299f41734b64ba59f25b571effa0d2f6ea284c611dca685bc
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
@@ -850,7 +850,7 @@ F test/alterqf.test 8ec03d776de9c391daa0078ea8f838903bdcfb11dfae4ba3576b48436834
 F test/altertab.test 8a2712f9076da5012a002d0b5cc0a421398a5bf61c25bab41b77c427586a7a27
 F test/altertab2.test 0889ba0700cc1cdb7bc7d25975aa61fece34f621de963d0886e2395716b38576
 F test/altertab3.test 471b8898d10bbc6488db9c23dc76811f405de6707d2d342b1b8b6fd1f13cd3c8
-F test/altertrig.test aacc980b657354fe2d3d4d3a004f07d04ccc1a93e5ef82d68a79088c274ddc6b
+F test/altertrig.test b1590647076add5a47aea0f2236c609ca0bc8a7a2462463edd3e5882c7894802
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 2fb21d7d64748636384e6cb8998dbf83968caf644c07fcb4f76c18f2e7ede94b
 F test/analyze3.test c5156cef33f04b90a6b9e9d5d0bbc273a0fb44147d4508407bf1080811e2c6c8
@@ -1072,7 +1072,7 @@ F test/e_resolve.test a61751c368b109db73df0f20fc75fb47e166b1d8
 F test/e_select.test 327a15f14068bbd6f647cedc67210f8680fcb2f05e481a0a855fccd2abfa1292
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_totalchanges.test c927f7499dc3aa28b9b556b7d6d115a2f0fe41f012b128d16bf1f3b30e9b41e4
-F test/e_update.test f46c2554d915c9197548681e8d8c33a267e84528
+F test/e_update.test 9f8bb82b8760ac66f2c9c2aadb78a418bd639d22f041d712570c9db56f20afda
 F test/e_uri.test 86564382132d9c453845eeb5293c7e375487b625900ab56c181a0464908417d8
 F test/e_vacuum.test 89fc48e8beee2f9dfd6de1fbb2edea6542dae9121dc0fbe6313764169e742104
 F test/e_wal.test db7c33642711cf3c7959714b5f012aca08cacfa78da0382f95e849eb3ba66aa4
@@ -1690,7 +1690,7 @@ F test/tempfault.test 0c0d349c9a99bf5f374655742577f8712c647900
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
-F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
+F test/temptrigger.test 62c0d29ff3fb7fa40c136dcfac3d992c5a6d3b1699459e65a4c1d0feb1258120
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
 F test/testrunner.tcl 9da764507f6bc752961555c0beb58eb6584b9fb0f989342c7eaab3336380f560 x
@@ -2171,8 +2171,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e2c20aa5929e5b79aabca8a51fb3e32e0533526d64d7576d3caf1c847fff58b4
-R 1a124afdb2635430b3fd6e2b8b70ff33
-U drh
-Z 0a36ac0dd51fe98fcc08d99ab2c27dbd
+P 095cc4f22e63c98cbb2acabdbcaf02e59e67ec6d3cc219b5f42a714e3d53a264
+R 85cd0d1d042f2b81ef8d0010c49c6487
+T *branch * temp-trigger-refs
+T *sym-temp-trigger-refs *
+T -sym-trunk *
+U dan
+Z 89ba63f7a028e73214265366183a56b0
 # Remove this line to create a well-formed Fossil manifest.

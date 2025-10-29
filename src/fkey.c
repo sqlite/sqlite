@@ -688,6 +688,7 @@ FKey *sqlite3FkReferences(Table *pTab){
 static void fkTriggerDelete(sqlite3 *dbMem, Trigger *p){
   if( p ){
     TriggerStep *pStep = p->step_list;
+    sqlite3SrcListDelete(dbMem, pStep->pSrc);
     sqlite3ExprDelete(dbMem, pStep->pWhere);
     sqlite3ExprListDelete(dbMem, pStep->pExprList);
     sqlite3SelectDelete(dbMem, pStep->pSelect);
@@ -1354,14 +1355,14 @@ static Trigger *fkActionTrigger(
 
     pTrigger = (Trigger *)sqlite3DbMallocZero(db, 
         sizeof(Trigger) +         /* struct Trigger */
-        sizeof(TriggerStep) +     /* Single step in trigger program */
-        nFrom + 1                 /* Space for pStep->zTarget */
+        sizeof(TriggerStep)       /* Single step in trigger program */
     );
     if( pTrigger ){
       pStep = pTrigger->step_list = (TriggerStep *)&pTrigger[1];
-      pStep->zTarget = (char *)&pStep[1];
-      memcpy((char *)pStep->zTarget, zFrom, nFrom);
-  
+      pStep->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
+      if( pStep->pSrc ){
+        pStep->pSrc->a[0].zName = sqlite3DbStrNDup(db, zFrom, nFrom);
+      }
       pStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
       pStep->pExprList = sqlite3ExprListDup(db, pList, EXPRDUP_REDUCE);
       pStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);

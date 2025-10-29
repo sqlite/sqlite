@@ -1346,8 +1346,8 @@ static int renameResolveTrigger(Parse *pParse){
       sqlite3SelectPrep(pParse, pStep->pSelect, &sNC);
       if( pParse->nErr ) rc = pParse->rc;
     }
-    if( rc==SQLITE_OK && pStep->zTarget ){
-      SrcList *pSrc = sqlite3TriggerStepSrc(pParse, pStep);
+    if( rc==SQLITE_OK && pStep->pSrc ){
+      SrcList *pSrc = sqlite3SrcListDup(db, pStep->pSrc, 0);
       if( pSrc ){
         Select *pSel = sqlite3SelectNew(
             pParse, pStep->pExprList, pSrc, 0, 0, 0, 0, 0, 0
@@ -1375,10 +1375,10 @@ static int renameResolveTrigger(Parse *pParse){
           pSel->pSrc = 0;
           sqlite3SelectDelete(db, pSel);
         }
-        if( pStep->pFrom ){
+        if( pStep->pSrc ){
           int i;
-          for(i=0; i<pStep->pFrom->nSrc && rc==SQLITE_OK; i++){
-            SrcItem *p = &pStep->pFrom->a[i];
+          for(i=0; i<pStep->pSrc->nSrc && rc==SQLITE_OK; i++){
+            SrcItem *p = &pStep->pSrc->a[i];
             if( p->fg.isSubquery ){
               assert( p->u4.pSubq!=0 );
               sqlite3SelectPrep(pParse, p->u4.pSubq->pSelect, 0);
@@ -1447,13 +1447,13 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
       sqlite3WalkExpr(pWalker, pUpsert->pUpsertWhere);
       sqlite3WalkExpr(pWalker, pUpsert->pUpsertTargetWhere);
     }
-    if( pStep->pFrom ){
+    if( pStep->pSrc ){
       int i;
-      SrcList *pFrom = pStep->pFrom;
-      for(i=0; i<pFrom->nSrc; i++){
-        if( pFrom->a[i].fg.isSubquery ){
-          assert( pFrom->a[i].u4.pSubq!=0 );
-          sqlite3WalkSelect(pWalker, pFrom->a[i].u4.pSubq->pSelect);
+      SrcList *pSrc = pStep->pSrc;
+      for(i=0; i<pSrc->nSrc; i++){
+        if( pSrc->a[i].fg.isSubquery ){
+          assert( pSrc->a[i].u4.pSubq!=0 );
+          sqlite3WalkSelect(pWalker, pSrc->a[i].u4.pSubq->pSelect);
         }
       }
     }
@@ -1624,8 +1624,8 @@ static void renameColumnFunc(
     if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
 
     for(pStep=sParse.pNewTrigger->step_list; pStep; pStep=pStep->pNext){
-      if( pStep->zTarget ){
-        Table *pTarget = sqlite3LocateTable(&sParse, 0, pStep->zTarget, zDb);
+      if( pStep->pSrc ){
+        Table *pTarget = sqlite3LocateTableItem(&sParse, 0, &pStep->pSrc->a[0]);
         if( pTarget==pTab ){
           if( pStep->pUpsert ){
             ExprList *pUpsertSet = pStep->pUpsert->pUpsertSet;
@@ -1636,7 +1636,6 @@ static void renameColumnFunc(
         }
       }
     }
-
 
     /* Find tokens to edit in UPDATE OF clause */
     if( sParse.pTriggerTab==pTab ){
@@ -1839,13 +1838,10 @@ static void renameTableFunc(
           if( rc==SQLITE_OK ){
             renameWalkTrigger(&sWalker, pTrigger);
             for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
-              if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
-                renameTokenFind(&sParse, &sCtx, pStep->zTarget);
-              }
-              if( pStep->pFrom ){
+              if( pStep->pSrc ){
                 int i;
-                for(i=0; i<pStep->pFrom->nSrc; i++){
-                  SrcItem *pItem = &pStep->pFrom->a[i];
+                for(i=0; i<pStep->pSrc->nSrc; i++){
+                  SrcItem *pItem = &pStep->pSrc->a[i];
                   if( 0==sqlite3_stricmp(pItem->zName, zOld) ){
                     renameTokenFind(&sParse, &sCtx, pItem->zName);
                   }

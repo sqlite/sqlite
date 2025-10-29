@@ -816,17 +816,10 @@ fullname(A) ::= nm(X) DOT nm(Y). {
 
 %type xfullname {SrcList*}
 %destructor xfullname {sqlite3SrcListDelete(pParse->db, $$);}
-xfullname(A) ::= nm(X).  
-   {A = sqlite3SrcListAppend(pParse,0,&X,0); /*A-overwrites-X*/}
-xfullname(A) ::= nm(X) DOT nm(Y).  
-   {A = sqlite3SrcListAppend(pParse,0,&X,&Y); /*A-overwrites-X*/}
-xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z).  {
-   A = sqlite3SrcListAppend(pParse,0,&X,&Y); /*A-overwrites-X*/
-   if( A ) A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
-}
-xfullname(A) ::= nm(X) AS nm(Z). {  
-   A = sqlite3SrcListAppend(pParse,0,&X,0); /*A-overwrites-X*/
-   if( A ) A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+xfullname(A) ::= fullname(X). { A=X; }
+xfullname(A) ::= fullname(X) AS nm(Z). {  
+  X->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+  A = X;
 }
 
 %type joinop {int}
@@ -1707,26 +1700,11 @@ when_clause(A) ::= WHEN expr(X). { A = X; }
 %type trigger_cmd_list {TriggerStep*}
 %destructor trigger_cmd_list {sqlite3DeleteTriggerStep(pParse->db, $$);}
 trigger_cmd_list(A) ::= trigger_cmd_list(A) trigger_cmd(X) SEMI. {
-  assert( A!=0 );
   A->pLast->pNext = X;
   A->pLast = X;
 }
 trigger_cmd_list(A) ::= trigger_cmd(A) SEMI. { 
-  assert( A!=0 );
   A->pLast = A;
-}
-
-// Disallow qualified table names on INSERT, UPDATE, and DELETE statements
-// within a trigger.  The table to INSERT, UPDATE, or DELETE is always in 
-// the same database as the table that the trigger fires on.
-//
-%type trnm {Token}
-trnm(A) ::= nm(A).
-trnm(A) ::= nm DOT nm(X). {
-  A = X;
-  sqlite3ErrorMsg(pParse, 
-        "qualified table names are not allowed on INSERT, UPDATE, and DELETE "
-        "statements within triggers");
 }
 
 // Disallow the INDEX BY and NOT INDEXED clauses on UPDATE and DELETE
@@ -1751,17 +1729,17 @@ tridxby ::= NOT INDEXED. {
 %destructor trigger_cmd {sqlite3DeleteTriggerStep(pParse->db, $$);}
 // UPDATE 
 trigger_cmd(A) ::=
-   UPDATE(B) orconf(R) trnm(X) tridxby SET setlist(Y) from(F) where_opt(Z) scanpt(E).  
-   {A = sqlite3TriggerUpdateStep(pParse, &X, F, Y, Z, R, B.z, E);}
+   UPDATE(B) orconf(R) xfullname(X) tridxby SET setlist(Y) from(F) where_opt(Z) scanpt(E).  
+   {A = sqlite3TriggerUpdateStep(pParse, X, F, Y, Z, R, B.z, E);}
 
 // INSERT
 trigger_cmd(A) ::= scanpt(B) insert_cmd(R) INTO
-                      trnm(X) idlist_opt(F) select(S) upsert(U) scanpt(Z). {
-   A = sqlite3TriggerInsertStep(pParse,&X,F,S,R,U,B,Z);/*A-overwrites-R*/
+                   xfullname(X) idlist_opt(F) select(S) upsert(U) scanpt(Z). {
+   A = sqlite3TriggerInsertStep(pParse,X,F,S,R,U,B,Z);/*A-overwrites-R*/
 }
 // DELETE
-trigger_cmd(A) ::= DELETE(B) FROM trnm(X) tridxby where_opt(Y) scanpt(E).
-   {A = sqlite3TriggerDeleteStep(pParse, &X, Y, B.z, E);}
+trigger_cmd(A) ::= DELETE(B) FROM xfullname(X) tridxby where_opt(Y) scanpt(E).
+   {A = sqlite3TriggerDeleteStep(pParse, X, Y, B.z, E);}
 
 // SELECT
 trigger_cmd(A) ::= scanpt(B) select(X) scanpt(E).
