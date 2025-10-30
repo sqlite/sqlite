@@ -1,5 +1,5 @@
-C Add\s(void)\sto\stwo\splaces\sfor\sthe\ssake\sof\sSQLITE_OMIT_WAL\sbuilds.\sWhy\sthese\sdo\snot\scomplain\son\stests\sin\sthis\stree,\sbut\sdo\son\sa\sdownstream\stree\s(same\smachine,\ssame\scompiler),\sis\sa\smystery.
-D 2025-10-30T18:46:03.639
+C Another\s(void),\sas\sper\s[dd6edfc09434].
+D 2025-10-30T18:48:19.840
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -723,7 +723,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 7945ede1e85b2d1b910e1b4af9ba342e964b1e30e79f4176480a60736445cb36
 F src/os_win.c 27617f334168644b542c9d58ac6e5f051b318136273e78d243384b4eca2df6b3
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
-F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
+F src/pager.c cd562b878ea1b44d021ba199abc9d3b54f6b3347500a9fed03f66d6000620945
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y 619c3e92a54686c5e47923688c4b9bf7ec534a4690db5677acc28b299c403250
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 617f8ac40e073c3fdc1144639b78617ad61113f4e873fc20c99399d2b60e1ceb
-R 6658ffc3f7aabffe6f81543b514c59bc
+P dd6edfc09434b0d170d5ab462053497043016a4ec6b91a46db565ccf646aee20
+R dbc9afd9d73a1232f82322829d75026d
 U stephan
-Z e6049977c01328ee76221cb2c7d03ac4
+Z 3492c1ab259b0d1dbd354cc6f430ef54
 # Remove this line to create a well-formed Fossil manifest.
