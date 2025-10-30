@@ -1,5 +1,5 @@
-C Updates\sto\sthe\stool/warnings.sh\sscript\sfor\sbetter\scompiler\swarnings.
-D 2025-10-30T18:32:32.234
+C Fix\sa\stypo\sand\simprove\swording\sin\sREADME.md
+D 2025-10-30T18:33:58.036
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -7,7 +7,7 @@ F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 8dd676302f3165984c046f81af14b6676a334418fa30255efaf439f8033042fa
-F README.md 49cb29e5d7cb7e4cf08a16d3e0e60dd0a97f60745a19bb6478400834dc9e6c22
+F README.md b27ebd157ff76ab1ed322e6c3e567ade5be5fa3cb05e9c47245ce1bb4a46e52c
 F VERSION 16eddb43056a79c1977427ab7a05f3457c373fa159dcdced8754eb89ce7e06b8
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f02cdf1d3ea8da8a09d115721845afeff5d6169dd7532ab486d3ed6db69cde2d
-R d5df981efd21c1c1ae68a32cd40f791b
+P c9c64892c76cb9f2efb58428b349d43b075e7595b6a391d4818a7e9fb68b85fd
+R cab704c27890e4c14d79ab7c553806cc
 U drh
-Z a36d0c26b04bcd445b08157c9c8a93c0
+Z c38859cd5675366e14f7f0453c8301ae
 # Remove this line to create a well-formed Fossil manifest.

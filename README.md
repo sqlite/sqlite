@@ -150,8 +150,8 @@ show what changes are needed.
 ## Compiling for Windows Using MSVC
 
 On Windows, everything can be compiled with MSVC.
-You will also need a working installation of TCL if you want to run tests,
-thought TCL is not required in order to build SQLite itself.
+You will also need a working installation of TCL if you want to run tests.
+TCL is not required if you just want to build SQLite itself.
 See the [compile-for-windows.md](doc/compile-for-windows.md) document for
 additional information about how to install MSVC and TCL and configure your
 build environment.
