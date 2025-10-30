@@ -861,6 +861,7 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
       pf("\t@$(call b.call.wasm-strip,%s)\n", zBuildName);
 
       pf("\t@$(call b.do.wasm-opt,%s)\n", zBuildName);
+      /* This breaks as of emsdk 4.0.16, causing missing exports. */
       pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n", zBuildName);
 
       if( CP_JS & pB->flags ){
