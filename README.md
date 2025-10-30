@@ -2,8 +2,8 @@
 
 This repository contains the complete source code for the
 [SQLite database engine](https://sqlite.org/), including
-many test scripts.  However, other test scripts
-and most of the documentation are managed separately.
+many tests.  Additional tests and most documentation
+are managed separately.
 
 See the [on-line documentation](https://sqlite.org/) for more information
 about what SQLite is and how it works from a user's perspective.  This
@@ -57,14 +57,12 @@ If you do not want to use Fossil, you can download tarballs or ZIP
 archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
 
   *  Latest trunk check-in as
-     [Tarball](https://sqlite.org/src/tarball/sqlite.tar.gz),
-     [ZIP-archive](https://sqlite.org/src/zip/sqlite.zip), or
-     [SQLite-archive](https://sqlite.org/src/sqlar/sqlite.sqlar).
+     [Tarball](https://sqlite.org/src/tarball/sqlite.tar.gz) or
+     [ZIP-archive](https://sqlite.org/src/zip/sqlite.zip).
 
   *  Latest release as
-     [Tarball](https://sqlite.org/src/tarball/sqlite.tar.gz?r=release),
-     [ZIP-archive](https://sqlite.org/src/zip/sqlite.zip?r=release), or
-     [SQLite-archive](https://sqlite.org/src/sqlar/sqlite.sqlar?r=release).
+     [Tarball](https://sqlite.org/src/tarball/sqlite.tar.gz?r=release) or
+     [ZIP-archive](https://sqlite.org/src/zip/sqlite.zip?r=release).
 
   *  For other check-ins, substitute an appropriate branch name or
      tag or hash prefix in place of "release" in the URLs of the previous
@@ -152,7 +150,8 @@ show what changes are needed.
 ## Compiling for Windows Using MSVC
 
 On Windows, everything can be compiled with MSVC.
-You will also need a working installation of TCL.
+You will also need a working installation of TCL if you want to run tests,
+thought TCL is not required in order to build SQLite itself.
 See the [compile-for-windows.md](doc/compile-for-windows.md) document for
 additional information about how to install MSVC and TCL and configure your
 build environment.
@@ -164,8 +163,8 @@ TCL library, using a command like this:
 
 SQLite uses "tclsh.exe" as part of the build process, and so that
 program will need to be somewhere on your %PATH%.  SQLite itself
-does not contain any TCL code, but it does use TCL to help with the
-build process and to run tests.  You may need to install TCL development
+does not contain any TCL code, but it does use TCL to run tests.
+You may need to install TCL development
 libraries in order to successfully complete some makefile targets.
 It is helpful, but is not required, to install the SQLite TCL extension
 (the "tclextension-install" target) prior to running tests.

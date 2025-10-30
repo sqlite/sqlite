@@ -1,5 +1,5 @@
-C Fix\sthe\sCLI\s".dump"\scommand\sso\sthat\sit\sdoes\snot\smake\sduplicate\nsqlite_sequence\stable\sentries\sas\sdescribed\sin\n[forum:/forumpost/b1674b56ad|forum\sthread\sb1674b56ad].
-D 2025-10-30T11:39:49.298
+C Updates\sto\sthe\smain\sREADME.md\sfile.
+D 2025-10-30T15:43:57.542
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -7,7 +7,7 @@ F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 8dd676302f3165984c046f81af14b6676a334418fa30255efaf439f8033042fa
-F README.md e28077cfbef795e99c9c75ed95aa7257a1166709b562076441a8506ac421b7c1
+F README.md 49cb29e5d7cb7e4cf08a16d3e0e60dd0a97f60745a19bb6478400834dc9e6c22
 F VERSION 16eddb43056a79c1977427ab7a05f3457c373fa159dcdced8754eb89ce7e06b8
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 247277d9373cb2614a1bc4c1e08b904315e5e8c0c2a7fbe9c2ac651481601642
-R ad4fa6006b8fe57ba4747be404a8634d
+P c833f26a6780f919551e50c67d308e96293cec8481899354411d805617481f24
+R e8dc5682ed4f2696bbc9bc3dffb6a68d
 U drh
-Z 65e039244d2f80115d8841c51c1920c6
+Z 9001bb5eea87d985aeb604bc8bd8046b
 # Remove this line to create a well-formed Fossil manifest.
