@@ -1,5 +1,5 @@
-C Macro\stweaks\sto\sget\sSQLITE_OMIT_WAL\sbuilding.\sRemove\ssome\snearby\sstray\sEOL\swhitespace.
-D 2025-10-30T18:38:14.852
+C wasm:\sre-add\sSQLITE_OMIT_WAL\sto\sthe\sc-pp-lite\sbuild\sflags.
+D 2025-10-30T18:39:28.154
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -576,7 +576,7 @@ F ext/session/sqlite3session.c b3de195ce668cace9b324599bf6255a70290cbfb5451e826e
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile b2c68abe6643a12a18b124cf524cebb133593dd11b76433bd72e08223f09b26f
+F ext/wasm/GNUmakefile 3dc01e673c456d3b752674c9407276e8fef35dec1d304b3cc1de362f019b2a09
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 34a662ce24930a5e1a142f0b3ce427c4b1b61a306537820dc5e72996f8080d86
-R 39137de62babf6cd474dcf38fa529dec
+P c31a944680f18a799c763238dbb0561f8b039905ce442533258905219b33b743
+R 80085560c53e8f40fafe5fae33b3e98c
 U stephan
-Z 20cca139c7904bef7e514c134cf4c889
+Z b003aa7839ffaf7118a3de9b8380e81d
 # Remove this line to create a well-formed Fossil manifest.
