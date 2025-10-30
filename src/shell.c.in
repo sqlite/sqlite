@@ -1516,7 +1516,7 @@ struct ShellState {
   int inputNesting;      /* Track nesting level of .read and other redirects */
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
-  int lineno;            /* Line number of last line read from in */
+  i64 lineno;            /* Line number of last line read from in */
   int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
   FILE *in;              /* Read commands from this stream */
   FILE *out;             /* Write results here */
@@ -1752,7 +1752,7 @@ static void failIfSafeMode(
     va_start(ap, zErrMsg);
     zMsg = sqlite3_vmprintf(zErrMsg, ap);
     va_end(ap);
-    sqlite3_fprintf(stderr, "line %d: %s\n", p->lineno, zMsg);
+    sqlite3_fprintf(stderr, "line %lld: %s\n", p->lineno, zMsg);
     exit(1);
   }
 }
@@ -4963,6 +4963,9 @@ static void toggleSelectOrder(sqlite3 *db){
   sqlite3_exec(db, zStmt, 0, 0, 0);
 }
 
+/* Forward reference */
+static int db_int(sqlite3 *db, const char *zSql, ...);
+
 /*
 ** This is a different callback routine used for dumping the database.
 ** Each row received by this callback consists of a table name,
@@ -4989,7 +4992,21 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
   noSys    = (p->shellFlgs & SHFLG_DumpNoSys)!=0;
 
   if( cli_strcmp(zTable, "sqlite_sequence")==0 && !noSys ){
-    /* no-op */
+    /* The sqlite_sequence table is repopulated last.  Delete content
+    ** in the sqlite_sequence table added by prior repopulations prior to
+    ** repopulating sqlite_sequence itself.  But only do this if the
+    ** table is non-empty, because if it is empty the table might not
+    ** have been recreated by prior repopulations. See forum posts:
+    ** 2024-10-13T17:10:01z and 2025-10-29T19:38:43z
+    */
+    if( db_int(p->db, "SELECT count(*) FROM sqlite_sequence")>0 ){
+      if( !p->writableSchema ){
+        sqlite3_fputs("PRAGMA writable_schema=ON;\n", p->out);
+        p->writableSchema = 1;
+      }
+      sqlite3_fputs("CREATE TABLE IF NOT EXISTS FROM sqlite_sequence;\n"
+                    "DELETE FROM sqlite_sequence;\n", p->out);
+    }
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
     if( !dataOnly ) sqlite3_fputs("ANALYZE sqlite_schema;\n", p->out);
   }else if( cli_strncmp(zTable, "sqlite_", 7)==0 ){
@@ -5709,7 +5726,7 @@ database_type_by_name:
 */
 static unsigned char *readHexDb(ShellState *p, int *pnData){
   unsigned char *a = 0;
-  int nLine;
+  i64 nLine;
   int n = 0;                      /* Size of db per first line of hex dump */
   i64 sz = 0;                     /* n rounded up to nearest page boundary */
   int pgsz = 0;
@@ -5790,7 +5807,7 @@ readHexDb_error:
     p->lineno = nLine;
   }
   sqlite3_free(a);
-  sqlite3_fprintf(stderr,"Error on line %d of --hexdb input\n", nLine);
+  sqlite3_fprintf(stderr,"Error on line %lld of --hexdb input\n", nLine);
   return 0;
 }
 #endif /* SQLITE_OMIT_DESERIALIZE */
@@ -9570,7 +9587,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     ImportCtx sCtx;             /* Reader context */
     char *(SQLITE_CDECL *xRead)(ImportCtx*); /* Func to read one value */
     int eVerbose = 0;           /* Larger for more console output */
-    int nSkip = 0;              /* Initial lines to skip */
+    i64 nSkip = 0;              /* Initial lines to skip */
     int useOutputMode = 1;      /* Use output mode to determine separators */
     char *zCreate = 0;          /* CREATE TABLE statement text */
 
@@ -9697,7 +9714,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       shell_out_of_memory();
     }
     /* Below, resources must be freed before exit. */
-    while( (nSkip--)>0 ){
+    while( nSkip>0 ){
+      nSkip--;
       while( xRead(&sCtx) && sCtx.cTerm==sCtx.cColSep ){}
     }
     import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
@@ -10295,7 +10313,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       eputz("Usage: .nonce NONCE\n");
       rc = 1;
     }else if( p->zNonce==0 || cli_strcmp(azArg[1],p->zNonce)!=0 ){
-      sqlite3_fprintf(stderr,"line %d: incorrect nonce: \"%s\"\n",
+      sqlite3_fprintf(stderr,"line %lld: incorrect nonce: \"%s\"\n",
             p->lineno, azArg[1]);
       exit(1);
     }else{
@@ -10754,7 +10772,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #ifndef SQLITE_SHELL_FIDDLE
   if( c=='r' && n>=3 && cli_strncmp(azArg[0], "read", n)==0 ){
     FILE *inSaved = p->in;
-    int savedLineno = p->lineno;
+    i64 savedLineno = p->lineno;
     failIfSafeMode(p, "cannot run .read in safe mode");
     if( nArg!=2 ){
       eputz("Usage: .read FILE\n");
@@ -12783,7 +12801,7 @@ static int process_input(ShellState *p, const char *zSrc){
 
   if( p->inputNesting==MAX_INPUT_NESTING ){
     /* This will be more informative in a later version. */
-    sqlite3_fprintf(stderr,"%s: Input nesting limit (%d) reached at line %d."
+    sqlite3_fprintf(stderr,"%s: Input nesting limit (%d) reached at line %lld."
           " Check recursion.\n", zSrc, MAX_INPUT_NESTING, p->lineno);
     return 1;
   }
@@ -13025,7 +13043,7 @@ static void process_sqliterc(
   char *home_dir = NULL;
   char *sqliterc = (char*)sqliterc_override;
   FILE *inSaved = p->in;
-  int savedLineno = p->lineno;
+  i64 savedLineno = p->lineno;
 
   if( sqliterc == NULL ){
     sqliterc = find_xdg_file("XDG_CONFIG_HOME",

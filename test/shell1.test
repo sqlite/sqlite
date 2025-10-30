@@ -945,6 +945,71 @@ do_test shell1-4.1.6 {
 
 }
 
+# DELETE content of sqlite_sequence prior to repopulating,
+# but only if the sqlite_sequence table is non-empty.
+# Forum: 2024-10-13T17:10:01z and 2025-10-29T19:38:43z
+#
+do_test shell1-4.1.7 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    INSERT INTO t1 VALUES(1,2),(20,21),(15,16);
+  }
+  catchcmd test2.db {.dump}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+INSERT INTO t1 VALUES(1,2);
+INSERT INTO t1 VALUES(15,16);
+INSERT INTO t1 VALUES(20,21);
+PRAGMA writable_schema=ON;
+CREATE TABLE IF NOT EXISTS FROM sqlite_sequence;
+DELETE FROM sqlite_sequence;
+INSERT INTO sqlite_sequence VALUES('t1',20);
+PRAGMA writable_schema=OFF;
+COMMIT;}}
+do_test shell1-4.1.8 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    INSERT INTO t1 VALUES(1,2),(20,21),(15,16);
+    CREATE TABLE t2(x,y);
+    INSERT INTO t2 VALUES(99,88);
+    DROP TABLE t1;
+  }
+  catchcmd test2.db {.dump}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t2(x,y);
+INSERT INTO t2 VALUES(99,88);
+COMMIT;}}
+do_test shell1-4.1.9 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    INSERT INTO t1 VALUES(1,2),(20,21),(15,16);
+    CREATE TABLE t2(x,y);
+    INSERT INTO t2 VALUES(99,88);
+    INSERT INTO sqlite_sequence VALUES('extra',999);
+    DROP TABLE t1;
+  }
+  catchcmd test2.db {.dump}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t2(x,y);
+INSERT INTO t2 VALUES(99,88);
+PRAGMA writable_schema=ON;
+CREATE TABLE IF NOT EXISTS FROM sqlite_sequence;
+DELETE FROM sqlite_sequence;
+INSERT INTO sqlite_sequence VALUES('extra',999);
+PRAGMA writable_schema=OFF;
+COMMIT;}}
 
 # Test the output of ".mode insert"
 #

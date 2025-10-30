@@ -1821,7 +1821,7 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
     }
   }else{
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-    if( pFile->bBlockOnConnect && pLock->l_type==F_RDLCK 
+    if( pFile->bBlockOnConnect && pLock->l_type==F_RDLCK
      && pLock->l_start==SHARED_FIRST && pLock->l_len==SHARED_SIZE
     ){
       rc = osFcntl(pFile->h, F_SETLKW, pLock);
@@ -1831,6 +1831,13 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
   }
   return rc;
 }
+
+#if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
+/* Forward reference */
+static int unixIsSharingShmNode(unixFile*);
+#else
+#define unixIsSharingShmNode(pFile) (0)
+#endif
 
 /*
 ** Lock the file with the lock specified by parameter eFileLock - one
@@ -2020,7 +2027,9 @@ static int unixLock(sqlite3_file *id, int eFileLock){
       pInode->nLock++;
       pInode->nShared = 1;
     }
-  }else if( eFileLock==EXCLUSIVE_LOCK && pInode->nShared>1 ){
+  }else if( (eFileLock==EXCLUSIVE_LOCK && pInode->nShared>1)
+         || unixIsSharingShmNode(pFile)
+  ){
     /* We are trying for an exclusive lock but another thread in this
     ** same process is still holding a shared lock. */
     rc = SQLITE_BUSY;
@@ -4640,6 +4649,49 @@ static int unixFcntlExternalReader(unixFile *pFile, int *piOut){
   return rc;
 }
 
+/*
+** If pFile has a -shm file open and it is sharing that file with some
+** other connection, either in the same process or in a separate process,
+** then return true.  Return false if either pFile does not have a -shm
+** file open or if it is the only connection to that -shm file across the
+** entire system.
+**
+** This routine is not required for correct operation.  It can always return
+** false and SQLite will continue to operate according to spec.  However,
+** when this routine does its job, it adds extra robustness in cases
+** where database file locks have been erroneously deleted in a WAL-mode
+** database by doing close(open(DATABASE_PATHNAME)) or similar.
+**
+** With false negatives, SQLite still operates to spec, though with less
+** robustness.  With false positives, the last database connection on a
+** WAL-mode database will fail to unlink the -wal and -shm files, which
+** is annoying but harmless.  False positives will also prevent a database
+** connection from running "PRAGMA journal_mode=DELETE" in order to take
+** the database out of WAL mode, which is perhaps more serious, but is
+** still not a disaster.
+*/
+static int unixIsSharingShmNode(unixFile *pFile){
+  int rc;
+  unixShmNode *pShmNode;
+  if( pFile->pShm==0 ) return 0;
+  if( pFile->ctrlFlags & UNIXFILE_EXCL ) return 0;
+  pShmNode = pFile->pShm->pShmNode;
+  rc = 1;
+  unixEnterMutex();
+  if( ALWAYS(pShmNode->nRef==1) ){
+    struct flock lock;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = UNIX_SHM_DMS;
+    lock.l_len = 1;
+    lock.l_type = F_WRLCK;
+    osFcntl(pShmNode->hShm, F_GETLK, &lock);
+    if( lock.l_type==F_UNLCK ){
+      rc = 0;
+    }
+  }
+  unixLeaveMutex();
+  return rc;
+}
 
 /*
 ** Apply posix advisory locks for all bytes from ofst through ofst+n-1.
@@ -4729,7 +4781,7 @@ static int unixShmSystemLock(
   }
 #endif
 
-  return rc;      
+  return rc;
 }
 
 /*
@@ -5218,7 +5270,7 @@ static int assertLockingArrayOk(unixShmNode *pShmNode){
   return (memcmp(pShmNode->aLock, aLock, sizeof(aLock))==0);
 #endif
 }
-#endif
+#endif /* !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL) */
 
 /*
 ** Change the lock state for a shared-memory segment.
