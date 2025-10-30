@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sand\simprove\swording\sin\sREADME.md
-D 2025-10-30T18:33:58.036
+C Macro\stweaks\sto\sget\sSQLITE_OMIT_WAL\sbuilding.\sRemove\ssome\snearby\sstray\sEOL\swhitespace.
+D 2025-10-30T18:38:14.852
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c d4fd1c9bd8948c07071fbf5e4ef827f249b9075f31d3706ecc6481ed4e0ba46d
+F src/os_unix.c 7945ede1e85b2d1b910e1b4af9ba342e964b1e30e79f4176480a60736445cb36
 F src/os_win.c 27617f334168644b542c9d58ac6e5f051b318136273e78d243384b4eca2df6b3
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c 113f9149092ccff6cf90e97c2611200e5a237f13d26c394bc9fd933377852764
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c9c64892c76cb9f2efb58428b349d43b075e7595b6a391d4818a7e9fb68b85fd
-R cab704c27890e4c14d79ab7c553806cc
-U drh
-Z c38859cd5675366e14f7f0453c8301ae
+P 34a662ce24930a5e1a142f0b3ce427c4b1b61a306537820dc5e72996f8080d86
+R 39137de62babf6cd474dcf38fa529dec
+U stephan
+Z 20cca139c7904bef7e514c134cf4c889
 # Remove this line to create a well-formed Fossil manifest.
