@@ -4966,7 +4966,6 @@ static void toggleSelectOrder(sqlite3 *db){
 /* Forward reference */
 static int db_int(sqlite3 *db, const char *zSql, ...);
 
-
 /*
 ** This is a different callback routine used for dumping the database.
 ** Each row received by this callback consists of a table name,
@@ -5001,7 +5000,12 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     ** 2024-10-13T17:10:01z and 2025-10-29T19:38:43z
     */
     if( db_int(p->db, "SELECT count(*) FROM sqlite_sequence")>0 ){
-      sqlite3_fputs("DELETE FROM sqlite_sequence;\n", p->out); 
+      if( !p->writableSchema ){
+        sqlite3_fputs("PRAGMA writable_schema=ON;\n", p->out);
+        p->writableSchema = 1;
+      }
+      sqlite3_fputs("CREATE TABLE IF NOT EXISTS FROM sqlite_sequence;\n"
+                    "DELETE FROM sqlite_sequence;\n", p->out);
     }
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
     if( !dataOnly ) sqlite3_fputs("ANALYZE sqlite_schema;\n", p->out);
