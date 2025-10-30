@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sassociated\swith\sflexarrays.
-D 2025-10-30T17:23:17.418
+C Updates\sto\sthe\stool/warnings.sh\sscript\sfor\sbetter\scompiler\swarnings.
+D 2025-10-30T18:32:32.234
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2169,10 +2169,10 @@ F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
 F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6ddf2700c
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
-F tool/warnings.sh 1ad0169b022b280bcaaf94a7fa231591be96b514230ab5c98fbf15cd7df842dd
+F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ab10c4cd9f9314bc62aa310ee796f63c82710c35659debe347e8ebcbf34d9e86
-R 13630b126d7ddf9fcef324f1c64b9b51
+P f02cdf1d3ea8da8a09d115721845afeff5d6169dd7532ab486d3ed6db69cde2d
+R d5df981efd21c1c1ae68a32cd40f791b
 U drh
-Z 3dce9d541e88bf36d9bad835082ef940
+Z a36d0c26b04bcd445b08157c9c8a93c0
 # Remove this line to create a well-formed Fossil manifest.
