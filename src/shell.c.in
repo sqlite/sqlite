@@ -9697,7 +9697,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       shell_out_of_memory();
     }
     /* Below, resources must be freed before exit. */
-    while( (nSkip--)>0 ){
+    while( nSkip>0 ){
+      nSkip--;
       while( xRead(&sCtx) && sCtx.cTerm==sCtx.cColSep ){}
     }
     import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
