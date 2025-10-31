@@ -1,5 +1,5 @@
-C Detect\ssome\scases\sof\sambiguous\scolumn\sreferences\sin\sUSING\sclauses\sthat\scan\scome\sup\swith\snested\sjoins.
-D 2025-10-31T16:07:31.438
+C Updates\sto\sthe\scompile-for-windows.md\sdocument.\s\sNo\schanges\sto\scode.
+D 2025-10-31T17:45:59.174
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -57,7 +57,7 @@ F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-unix.md c9dce1ddd4bf0d25efccc5c63eb047e78c01ce06a6ff29c73e0a8af4a0f4adbc
-F doc/compile-for-windows.md 5141661e783c9ca9e3fd30e813345898712f5c311d71316f183db87038fa28a6
+F doc/compile-for-windows.md f9e74d74da88f384edd5809f825035e071608f00f7f39c0e448df7b3982f979c
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md acd77fc3a709f51242655ad7803510c886aa8304202fa9cf2abc5f5c4e9d7ae5
 F doc/lemon.html 89ea833a6f71773ab1a9063fbb7fb9b32147bc0b1057b53ecab94a3b30c0aef5
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5afd815ada94d55c9c56efe339235d23ffbf1fb64511a5e460927a2c8deaaaf0
-R 9fce4c06730bd171aafe337c923d19bb
-U dan
-Z 084dcba51f165497628862393726ae33
+P 38c993c8b7137d6d5623d387292639634297c17da11befec9029f12a16a472f8
+R 3cb9ce706551ac114dc5d72e5b28db0b
+U drh
+Z 24219984f40a8b569cf830304fbcd4ea
 # Remove this line to create a well-formed Fossil manifest.
