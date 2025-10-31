@@ -411,4 +411,67 @@ do_execsql_test 15.2 {
   SELECT lower(x), quote(y) FROM x1 LEFT JOIN x2 USING (x) JOIN x3 USING (x) FULL JOIN t4;
 } {abc NULL}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t0_a (c0 INT);
+  CREATE TABLE t0_b (c0 INT);
+
+  CREATE TABLE t2 (c0 INT);
+  INSERT INTO t2 VALUES (1);
+}
+
+do_execsql_test 16.1 {
+  SELECT * FROM t2 LEFT JOIN t0_b
+} {1 {}}
+
+do_execsql_test 16.2.1 {
+  SELECT * FROM (t0_a RIGHT JOIN (              t2 LEFT JOIN t0_b))
+} {{} 1 {}}
+do_execsql_test 16.2.2 {
+  SELECT * FROM (t0_a RIGHT JOIN (SELECT * FROM t2 LEFT JOIN t0_b))
+} {{} 1 {}}
+
+  
+do_catchsql_test 16.3.1 {
+  SELECT * FROM (t0_a RIGHT JOIN (              t2 LEFT JOIN t0_b) USING (c0));
+} {1 {ambiguous column name: c0}}
+
+do_execsql_test 16.3.2 {
+  SELECT * FROM (t0_a RIGHT JOIN (SELECT * FROM t2 LEFT JOIN t0_b) USING (c0));
+} {1 {}}
+
+do_execsql_test 16.4.0 {
+  CREATE TABLE x0(a TEXT);
+  CREATE TABLE x1(a TEXT);
+  CREATE TABLE x2(a TEXT);
+
+  INSERT INTO x1 VALUES('blue');
+  INSERT INTO x2 VALUES('red');
+}
+
+do_catchsql_test 16.4.1 {
+  SELECT * FROM x0 RIGHT JOIN (              x1, x2) USING (a)
+} {1 {ambiguous column name: a}}
+
+do_execsql_test 16.4.2 {
+  SELECT * FROM x0 RIGHT JOIN (SELECT * FROM x1, x2) USING (a)
+} {blue red}
+
+reset_db
+do_execsql_test 16.5.0 {
+  CREATE TABLE t0 (c0 INT);
+  CREATE TABLE t1 (c0 INT);
+  CREATE TABLE t2 (c0 INT);
+
+  INSERT INTO t1(c0) VALUES (NULL);
+  INSERT INTO t2 VALUES (1);
+
+  CREATE VIEW v0(c0) AS SELECT 1 AS col_0 FROM t0;
+}
+
+do_catchsql_test 16.5.2 {
+  SELECT * FROM (t0 NATURAL RIGHT JOIN (t0 FULL JOIN (v0 NATURAL FULL JOIN t2) ON TRUE)) NATURAL FULL JOIN t1;
+} {1 {ambiguous column name: c0}}
+
 finish_test
