@@ -5004,7 +5004,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
         sqlite3_fputs("PRAGMA writable_schema=ON;\n", p->out);
         p->writableSchema = 1;
       }
-      sqlite3_fputs("CREATE TABLE IF NOT EXISTS FROM sqlite_sequence;\n"
+      sqlite3_fputs("CREATE TABLE IF NOT EXISTS sqlite_sequence(name,seq);\n"
                     "DELETE FROM sqlite_sequence;\n", p->out);
     }
   }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 && !noSys ){
