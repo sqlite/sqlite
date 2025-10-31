@@ -53,37 +53,32 @@ then no longer be fully in the public domain.
 
 ## Obtaining The SQLite Source Code
 
-If you do not want to use Fossil, you can download tarballs or ZIP
-archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
+Source code tarballs or ZIP archives are available at:
 
-  *  Latest trunk check-in as
-     [Tarball](https://sqlite.org/src/tarball/sqlite.tar.gz) or
-     [ZIP-archive](https://sqlite.org/src/zip/sqlite.zip).
+  *  [Latest trunk check-in](https://sqlite.org/src/rchvdwnld/trunk).
 
-  *  Latest release as
-     [Tarball](https://sqlite.org/src/tarball/sqlite.tar.gz?r=release) or
-     [ZIP-archive](https://sqlite.org/src/zip/sqlite.zip?r=release).
+  *  [Latest release](https://sqlite.org/src/rchvdwnld/release)
 
-  *  For other check-ins, substitute an appropriate branch name or
-     tag or hash prefix in place of "release" in the URLs of the previous
-     bullet.  Or browse the [timeline](https://sqlite.org/src/timeline)
-     to locate the check-in desired, click on its information page link,
-     then click on the "Tarball" or "ZIP Archive" links on the information
-     page.
+  *  For other check-ins, browse the
+     [project timeline](https://sqlite.org/src/timeline?y=ci) and
+     click on the check-in hash of the check-in you want to download.
+     On the resulting "info" page, click one of the options to the
+     right of the "**Downloads:**" label in the "**Overview**" section
+     near the top.
 
 To access sources directly using [Fossil](https://fossil-scm.org/home),
 first install Fossil version 2.0 or later.
-Source tarballs and precompiled binaries available at
+Source tarballs and precompiled binaries for Fossil are available at
 <https://fossil-scm.org/home/uv/download.html>.  Fossil is
 a stand-alone program.  To install, simply download or build the single
-executable file and put that file someplace on your $PATH.
+executable file and put that file someplace on your $PATH or %PATH%.
 Then run commands like this:
 
         mkdir -p ~/sqlite
         cd ~/sqlite
         fossil open https://sqlite.org/src
 
-The "fossil open" command will take two or three minutes.  Afterwards,
+The initial "fossil open" command will take two or three minutes.  Afterwards,
 you can do fast, bandwidth-efficient updates to the whatever versions
 of SQLite you like.  Some examples:
 

@@ -1,5 +1,5 @@
-C Fix\sthe\soutput\sof\s".dump"\sin\sthe\sCLI\sso\sthat\sthe\ssqlite_sequence\stable\nis\screated\susing\scorrect\ssyntax.
-D 2025-10-31T11:23:44.843
+C Update\sthe\smain\sREADME.md\sfile\sto\suse\sthe\srobot-safe\s/rchvdwnld\spage\son\sthe\nserver\sfor\sdownloads.
+D 2025-10-31T13:44:51.646
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -7,7 +7,7 @@ F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 8dd676302f3165984c046f81af14b6676a334418fa30255efaf439f8033042fa
-F README.md b27ebd157ff76ab1ed322e6c3e567ade5be5fa3cb05e9c47245ce1bb4a46e52c
+F README.md dae499194b75deed76a13a4a83c82493f2530331882d7dfe5754d63287d3f8f7
 F VERSION 16eddb43056a79c1977427ab7a05f3457c373fa159dcdced8754eb89ce7e06b8
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ba0c4bf072ed721a507855d68bde7f1c388396a19b69814b6e257b934f8b0fd9
-R dc2c055a491cfeda731c6a71c070426f
+P 4b9f2e1d4485ad3baf9285aa09b468469be929b18cb308f19af471d7aac66076
+R 00f4f769f52ce4921e191d7c332147de
 U drh
-Z b5b63e3506e216b6a89db91d058df73f
+Z 3533c324d01f03ab7da59b4703864132
 # Remove this line to create a well-formed Fossil manifest.
