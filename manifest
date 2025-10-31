@@ -1,5 +1,5 @@
-C Update\sthe\smain\sREADME.md\sfile\sto\suse\sthe\srobot-safe\s/rchvdwnld\spage\son\sthe\nserver\sfor\sdownloads.
-D 2025-10-31T13:44:51.646
+C Change\sthe\sname\sof\sa\sfile-scope\sconstant\sarray\sin\scarray.c\sso\sthat\sit\sdoes\nnot\sconflict\swith\sother\svariables\snames\sin\sother\sfiles\swhen\scarray.c\sis\namalgamated.\s\sThis\sis\sdown\sto\sresolve\sa\sharmless\scompiler\swarning.
+D 2025-10-31T15:18:29.031
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -680,7 +680,7 @@ F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 611e07299d72ff04bbcb9e7109183467e30925d203c3e121ef9bb3cf6876289b
 F src/callback.c acae8c8dddda41ee85cfdf19b926eefe830f371069f8aadca3aa39adf5b1c859
-F src/carray.c a6f26cb349ca700d706c0e76d5b2895d76e2a1c392a2b909cf543a0dd4d4d047
+F src/carray.c ff6081a31878fc34df8fa1052a9cbf17ddc22652544dcb3e2326886ed1053b55
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
 F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4b9f2e1d4485ad3baf9285aa09b468469be929b18cb308f19af471d7aac66076
-R 00f4f769f52ce4921e191d7c332147de
+P c1aa52361b8ede611f64b96f2394174389ce531b1d86b9cfec91d3b03c94f6ea
+R 9284ddf37ecd249fbdc59088c02b46df
 U drh
-Z 3533c324d01f03ab7da59b4703864132
+Z a8053b3b924d680e2231b0d1d7c51169
 # Remove this line to create a well-formed Fossil manifest.
