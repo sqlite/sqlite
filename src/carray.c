@@ -66,8 +66,9 @@
 /*
 ** Names of allowed datatypes
 */
-static const char *azType[] = { "int32", "int64", "double", "char*",
-                                "struct iovec" };
+static const char *azCarrayType[] = {
+  "int32", "int64", "double", "char*", "struct iovec"
+};
 
 /*
 ** Structure used to hold the sqlite3_carray_bind() information
@@ -186,7 +187,7 @@ static int carrayColumn(
     case CARRAY_COLUMN_POINTER:   return SQLITE_OK;
     case CARRAY_COLUMN_COUNT:     x = pCur->iCnt;   break;
     case CARRAY_COLUMN_CTYPE: {
-      sqlite3_result_text(ctx, azType[pCur->eType], -1, SQLITE_STATIC);
+      sqlite3_result_text(ctx, azCarrayType[pCur->eType], -1, SQLITE_STATIC);
       return SQLITE_OK;
     }
     default: {
@@ -274,10 +275,10 @@ static int carrayFilter(
       }else{
         unsigned char i;
         const char *zType = (const char*)sqlite3_value_text(argv[2]);
-        for(i=0; i<sizeof(azType)/sizeof(azType[0]); i++){
-          if( sqlite3_stricmp(zType, azType[i])==0 ) break;
+        for(i=0; i<sizeof(azCarrayType)/sizeof(azCarrayType[0]); i++){
+          if( sqlite3_stricmp(zType, azCarrayType[i])==0 ) break;
         }
-        if( i>=sizeof(azType)/sizeof(azType[0]) ){
+        if( i>=sizeof(azCarrayType)/sizeof(azCarrayType[0]) ){
           pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
             "unknown datatype: %Q", zType);
           return SQLITE_ERROR;

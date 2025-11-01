@@ -6823,6 +6823,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
       if( pFunc->bOBPayload ){
         /* extra columns for the function arguments */
         assert( ExprUseXList(pFunc->pFExpr) );
+        assert( pFunc->pFExpr->x.pList!=0 );
         nExtra += pFunc->pFExpr->x.pList->nExpr;
       }
       if( pFunc->bUseSubtype ){

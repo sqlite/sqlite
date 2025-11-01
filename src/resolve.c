@@ -373,10 +373,13 @@ static int lookupName(
               if( cnt>0 ){
                 if( pItem->fg.isUsing==0
                  || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
+                 || pMatch==pItem
                 ){
                   /* Two or more tables have the same column name which is
-                  ** not joined by USING.  This is an error.  Signal as much
-                  ** by clearing pFJMatch and letting cnt go above 1. */
+                  ** not joined by USING. Or, a single table has two columns
+                  ** that match a USING term (if pMatch==pItem). These are both
+                  ** "ambiguous column name" errors. Signal as much by clearing
+                  ** pFJMatch and letting cnt go above 1. */
                   sqlite3ExprListDelete(db, pFJMatch);
                   pFJMatch = 0;
                 }else
