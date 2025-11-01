@@ -1,5 +1,5 @@
-C Fix\sext/wasm/mkdist.sh\sto\suse\s./version-info\sinstead\sof\s../../version-info\s(a\srecent\sbuild\schange\smade\sto\sensure\sthat\sbuilds\swith\sa\scustom\ssqlite3.c\sembed\sthat\sversion\sinfo).
-D 2025-11-01T14:49:05.545
+C Update\sthe\stest/walthread.test\stesting\sscript\sso\sthat\sit\suses\sa\srandom\ndatabase\sname.
+D 2025-11-01T20:14:43.048
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2001,7 +2001,7 @@ F test/walsetlk_recover.test adccbffc59e365063a4efd2da6b661ae2fcf15d775b6719fe46
 F test/walsetlk_snapshot.test 86d5588380f9927d8fcbbd75133b0a34fddf959378d6823c6f164a390123f70a
 F test/walshared.test 42e3808582504878af237ea02c42ca793e8a0efaa19df7df26ac573370dbc7a3
 F test/walslow.test 0c51843836c9dcf40a5ac05aa781bfb977b396ee2c872d92bd48b79d5dd9aa23
-F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2af51747
+F test/walthread.test d562f51a61191ccfab64940df7aa1cef87c902fa5ab742590ef7f859dfe6a44b
 F test/walvfs.test e1a6ad0f3c78e98b55c3d5f0889cf366cc0d0a1cb2bccb44ac9ec67384adc4a1
 F test/where.test 5087c72d26fd075a1644c8512be9fe18de9bf2d2b0754f7fd9b74a1c6540c4fc
 F test/where2.test 52237a8cb27ebbf6583469429bb5733d1b94ac37d09c3dbd0f487952ed0ab3f8
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 652310a9f0ef2a870b5033029278b1fbef28c2ec15405d1b32bf1d51df28266c
-R 789639c165514ce3af810176f0997206
-U stephan
-Z 34036299517fa820aa962dad8e6384b2
+P d25a92d88923f880d6477a99f2a35528faea83e7db245f2b07db80613b4aeb8e
+R 90592ab746f3751e2ee7e35915c03115
+U drh
+Z e53fd1ab0932500170aad04e560ed29f
 # Remove this line to create a well-formed Fossil manifest.
