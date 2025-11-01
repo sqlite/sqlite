@@ -4844,7 +4844,7 @@ static SQLITE_NOINLINE int exprCodeTargetAndOr(
   pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
   if( pAlt!=pExpr ){
     r1 = sqlite3ExprCodeTarget(pParse, pAlt, target);
-    sqlite3VdbeAddOp3(v, OP_BitAnd, r1, r1, target);
+    sqlite3VdbeAddOp3(v, OP_And, r1, r1, target);
     return target;
   }
   skipOp = op==TK_AND ? OP_IfNot : OP_If;
