@@ -1832,7 +1832,7 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
     }
   }else{
 #ifdef SQLITE_ENABLE_SETLK_TIMEOUT
-    if( pFile->bBlockOnConnect && pLock->l_type==F_RDLCK 
+    if( pFile->bBlockOnConnect && pLock->l_type==F_RDLCK
      && pLock->l_start==SHARED_FIRST && pLock->l_len==SHARED_SIZE
     ){
       rc = osFcntl(pFile->h, F_SETLKW, pLock);
@@ -1843,8 +1843,12 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
   return rc;
 }
 
+#if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
 /* Forward reference */
 static int unixIsSharingShmNode(unixFile*);
+#else
+#define unixIsSharingShmNode(pFile) (0)
+#endif
 
 /*
 ** Lock the file with the lock specified by parameter eFileLock - one
@@ -4799,7 +4803,7 @@ static int unixShmSystemLock(
   }
 #endif
 
-  return rc;      
+  return rc;
 }
 
 /*
@@ -5288,7 +5292,7 @@ static int assertLockingArrayOk(unixShmNode *pShmNode){
   return (memcmp(pShmNode->aLock, aLock, sizeof(aLock))==0);
 #endif
 }
-#endif
+#endif /* !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL) */
 
 /*
 ** Change the lock state for a shared-memory segment.

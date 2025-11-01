@@ -1907,7 +1907,7 @@ static void pager_unlock(Pager *pPager){
       ** have sqlite3WalEndReadTransaction() drop the write-lock, as it once
       ** did, because this would break "BEGIN EXCLUSIVE" handling for
       ** SQLITE_ENABLE_SETLK_TIMEOUT builds.  */
-      sqlite3WalEndWriteTransaction(pPager->pWal);
+      (void)sqlite3WalEndWriteTransaction(pPager->pWal);
     }
     sqlite3WalEndReadTransaction(pPager->pWal);
     pPager->eState = PAGER_OPEN;

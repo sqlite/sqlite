@@ -2,8 +2,8 @@
 
 This repository contains the complete source code for the
 [SQLite database engine](https://sqlite.org/), including
-many test scripts.  However, other test scripts
-and most of the documentation are managed separately.
+many tests.  Additional tests and most documentation
+are managed separately.
 
 See the [on-line documentation](https://sqlite.org/) for more information
 about what SQLite is and how it works from a user's perspective.  This
@@ -53,39 +53,32 @@ then no longer be fully in the public domain.
 
 ## Obtaining The SQLite Source Code
 
-If you do not want to use Fossil, you can download tarballs or ZIP
-archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
+Source code tarballs or ZIP archives are available at:
 
-  *  Latest trunk check-in as
-     [Tarball](https://sqlite.org/src/tarball/sqlite.tar.gz),
-     [ZIP-archive](https://sqlite.org/src/zip/sqlite.zip), or
-     [SQLite-archive](https://sqlite.org/src/sqlar/sqlite.sqlar).
+  *  [Latest trunk check-in](https://sqlite.org/src/rchvdwnld/trunk).
 
-  *  Latest release as
-     [Tarball](https://sqlite.org/src/tarball/sqlite.tar.gz?r=release),
-     [ZIP-archive](https://sqlite.org/src/zip/sqlite.zip?r=release), or
-     [SQLite-archive](https://sqlite.org/src/sqlar/sqlite.sqlar?r=release).
+  *  [Latest release](https://sqlite.org/src/rchvdwnld/release)
 
-  *  For other check-ins, substitute an appropriate branch name or
-     tag or hash prefix in place of "release" in the URLs of the previous
-     bullet.  Or browse the [timeline](https://sqlite.org/src/timeline)
-     to locate the check-in desired, click on its information page link,
-     then click on the "Tarball" or "ZIP Archive" links on the information
-     page.
+  *  For other check-ins, browse the
+     [project timeline](https://sqlite.org/src/timeline?y=ci) and
+     click on the check-in hash of the check-in you want to download.
+     On the resulting "info" page, click one of the options to the
+     right of the "**Downloads:**" label in the "**Overview**" section
+     near the top.
 
 To access sources directly using [Fossil](https://fossil-scm.org/home),
 first install Fossil version 2.0 or later.
-Source tarballs and precompiled binaries available at
+Source tarballs and precompiled binaries for Fossil are available at
 <https://fossil-scm.org/home/uv/download.html>.  Fossil is
 a stand-alone program.  To install, simply download or build the single
-executable file and put that file someplace on your $PATH.
+executable file and put that file someplace on your $PATH or %PATH%.
 Then run commands like this:
 
         mkdir -p ~/sqlite
         cd ~/sqlite
         fossil open https://sqlite.org/src
 
-The "fossil open" command will take two or three minutes.  Afterwards,
+The initial "fossil open" command will take two or three minutes.  Afterwards,
 you can do fast, bandwidth-efficient updates to the whatever versions
 of SQLite you like.  Some examples:
 
@@ -152,7 +145,8 @@ show what changes are needed.
 ## Compiling for Windows Using MSVC
 
 On Windows, everything can be compiled with MSVC.
-You will also need a working installation of TCL.
+You will also need a working installation of TCL if you want to run tests.
+TCL is not required if you just want to build SQLite itself.
 See the [compile-for-windows.md](doc/compile-for-windows.md) document for
 additional information about how to install MSVC and TCL and configure your
 build environment.
@@ -164,8 +158,8 @@ TCL library, using a command like this:
 
 SQLite uses "tclsh.exe" as part of the build process, and so that
 program will need to be somewhere on your %PATH%.  SQLite itself
-does not contain any TCL code, but it does use TCL to help with the
-build process and to run tests.  You may need to install TCL development
+does not contain any TCL code, but it does use TCL to run tests.
+You may need to install TCL development
 libraries in order to successfully complete some makefile targets.
 It is helpful, but is not required, to install the SQLite TCL extension
 (the "tclextension-install" target) prior to running tests.

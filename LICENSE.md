@@ -65,7 +65,7 @@ third-party build scripts in order to compile SQLite.
 Non-public-domain code included in this respository includes:
 
   *  The ["autosetup"](http://msteveb.github.io/autosetup/) configuration
-     system that is contained (mostly) the autosetup/ directory, but also
+     system that is contained (mostly) in the autosetup/ directory, but also
      includes the "./configure" script at the top-level of this archive.
      Autosetup has a separate BSD-style license.  See the
      [autosetup/LICENSE](http://msteveb.github.io/autosetup/license/)
@@ -75,7 +75,7 @@ Non-public-domain code included in this respository includes:
      software found in the legacy autoconf/ directory and its
      subdirectories.
 
-The following unix shell command is can be run from the top-level
+The following unix shell command can be run from the top-level
 of this source repository in order to remove all non-public-domain
 code:
 
