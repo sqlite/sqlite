@@ -1,5 +1,5 @@
-C Adjust\sthe\sdbstatus2.test\smodule\sso\sthat\sit\sworks\son\s32-bit\sbuilds\sin\naddition\sto\s64-bit\sbuilds.
-D 2025-11-03T12:36:52.549
+C Add\snew\scolumn\s"cwd"\sto\sthe\sjobs\stable\sin\stestrunner.db.\sFor\srecording\sthe\sdirectory\sin\swhich\sthe\stest\sran\sor\sis\srunning.
+D 2025-11-03T15:29:51.626
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1693,7 +1693,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
-F test/testrunner.tcl 9da764507f6bc752961555c0beb58eb6584b9fb0f989342c7eaab3336380f560 x
+F test/testrunner.tcl 60d7efa1816c5dfc37df3e3454b94b9042c0c8c50b27ae296d4a797cd309ace6 x
 F test/testrunner_data.tcl c507a9afa911c03446ed90442ffd4a98aca02882c3d51bd1177c24795674def8
 F test/testrunner_estwork.tcl 7927a84327259a32854926f68a75292e33a61e7e052fdbfcb01f18696c99c724
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 382c8440d7a16eae49fa1644513ae045bfceb072d9b4005963f57f1a57fe94b2
-R 620d2da0d74086b6d0d72d3b95f59d97
-U drh
-Z a3b63a4bccbd2246cde017a3b91f5fb7
+P dcaaa71e750d56afde3e905aaf10729ec95e0ede00522e1b12af6b6345e744ac
+R 0d6f21c99fd56eec24d0fd10fe2e4182
+U dan
+Z e65cffb6706e6c2a85d0d3c82ec13b9f
 # Remove this line to create a well-formed Fossil manifest.
