@@ -129,7 +129,7 @@ if {$::TEMP_STORE<3} {
     CREATE TABLE data(a INTEGER, b BLOB);
 
     -- Insert 5-6 MB of data.
-    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<50000 )
+    WITH s(i) AS ( SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<75000 )
     INSERT INTO data SELECT i, hex(randomblob(50)) FROM s;
   }
 
@@ -138,7 +138,7 @@ if {$::TEMP_STORE<3} {
   do_test 4.4 {
     execsql { SELECT a, b FROM data ORDER BY a }
     set nTmpSpill [lindex [db_temp_spill db 1] 1]
-    expr {($nTmpSpill>5*1000*1000) && ($nTmpSpill<6*1000*1000)?"ok":$nTmpSpill}
+    expr {($nTmpSpill>7*1000*1000) && ($nTmpSpill<10*1000*1000)?"ok":$nTmpSpill}
   } ok
 
   # The previous test case reset the status value.
@@ -147,7 +147,7 @@ if {$::TEMP_STORE<3} {
   do_test 4.6 {
     execsql { CREATE INDEX i1 ON data(a) }
     set nTmpSpill [lindex [db_temp_spill db 1] 1]
-    expr {($nTmpSpill>256*1000) && ($nTmpSpill<512*1000)?"ok":$nTmpSpill}
+    expr {($nTmpSpill>384*1000) && ($nTmpSpill<768*1000)?"ok":$nTmpSpill}
   } ok
 
   # The previous test case reset the status value.
