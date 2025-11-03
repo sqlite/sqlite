@@ -1,5 +1,5 @@
-C Add\snew\scolumn\s"cwd"\sto\sthe\sjobs\stable\sin\stestrunner.db.\sFor\srecording\sthe\sdirectory\sin\swhich\sthe\stest\sran\sor\sis\srunning.
-D 2025-11-03T15:29:51.626
+C Use\sthe\ssame\scompile-time\soptions\sfor\sthe\sCLI\sin\sthe\sauto-setup\starball\nas\sare\sused\sin\sthe\scanonical\ssource\stree.\n[forum:/forumpost/8975130218|Forum\spost\s8975130218].
+D 2025-11-03T15:34:25.507
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -17,7 +17,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
+F autoconf/Makefile.in 118aa2c4d49173672d065fdda19eb8a28642e2c684212d7a626d6db5e6762521
 F autoconf/Makefile.msc 803aa9e23b6a764751f6a91d0673620eefa46729fb80faf51391120e1d752966
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dcaaa71e750d56afde3e905aaf10729ec95e0ede00522e1b12af6b6345e744ac
-R 0d6f21c99fd56eec24d0fd10fe2e4182
-U dan
-Z e65cffb6706e6c2a85d0d3c82ec13b9f
+P 334305a469a51ef0d768ba8443d8cab217f45394cc9f720748a489b10703193d
+R 9324db4aaf883cfc2983724be7d6c4b2
+U drh
+Z 52ac357f46f9e1cf28cebe3c731a47de
 # Remove this line to create a well-formed Fossil manifest.
