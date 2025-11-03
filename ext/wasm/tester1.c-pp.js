@@ -1549,6 +1549,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(blob instanceof Uint8Array).
         assert(0x68===blob[0] && 0x69===blob[1]);
       blob = null;
+      blob = db.selectValue("select ?1", new Uint8Array([97,0,98,0,99]),
+                            sqlite3.capi.SQLITE_TEXT);
+      T.assert("a\0b\0c"===blob, "Something is amiss with embedded NULs");
       let counter = 0, colNames = [];
       list.length = 0;
       db.exec(new TextEncoder('utf-8').encode("SELECT a a, b b FROM t"),{
@@ -3715,44 +3718,54 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t("Misc. stmt_...", function(sqlite3){
       const db = new sqlite3.oo1.DB();
       db.exec("create table t(a doggiebiscuits); insert into t(a) values(123)");
-      const stmt = db.prepare("select a, a+1 from t");
-      T.assert( stmt.isReadOnly() )
-        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) )
-        .assert( 0===capi.sqlite3_stmt_explain(stmt, 1) )
-        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
-        .assert( 0===capi.sqlite3_stmt_explain(stmt, 2) )
-        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
-        .assert( 0===capi.sqlite3_stmt_explain(stmt, 0) )
-        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) );
-      let n = 0;
-      while( capi.SQLITE_ROW === capi.sqlite3_step(stmt) ){
-        ++n;
-        T.assert( 0!==capi.sqlite3_stmt_explain(stmt, 1),
-                  "Because stmt is busy" )
-          .assert( capi.sqlite3_stmt_busy(stmt) )
-          .assert( stmt.isBusy() )
-          .assert( 0!==capi.sqlite3_stmt_readonly(stmt) )
-          .assert( true===stmt.isReadOnly() );
-        const sv = capi.sqlite3_column_value(stmt, 0);
-        T.assert( 123===capi.sqlite3_value_int(sv) )
-          .assert( "doggiebiscuits"===capi.sqlite3_column_decltype(stmt,0) )
-          .assert( null===capi.sqlite3_column_decltype(stmt,1) );
+      let stmt;
+      try{
+        stmt = db.prepare("select a, a+1 from t");
+        T.assert( stmt.isReadOnly() )
+          .assert( 0===capi.sqlite3_stmt_isexplain(stmt) )
+          .assert( 0===capi.sqlite3_stmt_explain(stmt, 1) )
+          .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+          .assert( 0===capi.sqlite3_stmt_explain(stmt, 2) )
+          .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+          .assert( 0===capi.sqlite3_stmt_explain(stmt, 0) )
+          .assert( 0===capi.sqlite3_stmt_isexplain(stmt) );
+        let n = 0;
+        while( capi.SQLITE_ROW === capi.sqlite3_step(stmt) ){
+          ++n;
+          T.assert( 0!==capi.sqlite3_stmt_explain(stmt, 1),
+                    "Because stmt is busy" )
+            .assert( capi.sqlite3_stmt_busy(stmt) )
+            .assert( stmt.isBusy() )
+            .assert( 0!==capi.sqlite3_stmt_readonly(stmt) )
+            .assert( true===stmt.isReadOnly() );
+          const sv = capi.sqlite3_column_value(stmt, 0);
+          T.assert( 123===capi.sqlite3_value_int(sv) )
+            .assert( "doggiebiscuits"===capi.sqlite3_column_decltype(stmt,0) )
+            .assert( null===capi.sqlite3_column_decltype(stmt,1) );
+        }
+        T.assert( 1===n )
+          .assert( 0===capi.sqlite3_stmt_busy(stmt) )
+          .assert( !stmt.isBusy() );
+
+        if( wasm.exports.sqlite3_column_origin_name ){
+          log("Column metadata APIs enabled");
+          T.assert( "t" === capi.sqlite3_column_table_name(stmt, 0))
+            .assert("a" === capi.sqlite3_column_origin_name(stmt, 0))
+            .assert("main" === capi.sqlite3_column_database_name(stmt, 0))
+        }else{
+          log("Column metadata APIs not enabled");
+        } // column metadata APIs
+        stmt.finalize();
+        stmt = null;
+        stmt = db.prepare("select ?1").bind(new Uint8Array([97,0,98,0,99]));
+        stmt.step();
+        const sv = capi.sqlite3_column_value(stmt,0);
+        T.assert("a\0b\0c"===capi.sqlite3_value_text(sv),
+                 "Expecting NULs to have survived.");
+      }finally{
+        if(stmt) stmt.finalize();
+        db.close();
       }
-      T.assert( 1===n )
-        .assert( 0===capi.sqlite3_stmt_busy(stmt) )
-        .assert( !stmt.isBusy() );
-
-      if( wasm.exports.sqlite3_column_origin_name ){
-        log("Column metadata APIs enabled");
-        T.assert( "t" === capi.sqlite3_column_table_name(stmt, 0))
-          .assert("a" === capi.sqlite3_column_origin_name(stmt, 0))
-          .assert("main" === capi.sqlite3_column_database_name(stmt, 0))
-      }else{
-        log("Column metadata APIs not enabled");
-      } // column metadata APIs
-
-      stmt.finalize();
-      db.close();
     })
 
   ////////////////////////////////////////////////////////////////////
