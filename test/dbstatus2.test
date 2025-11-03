@@ -138,8 +138,8 @@ if {$::TEMP_STORE<3} {
   do_test 4.4 {
     execsql { SELECT a, b FROM data ORDER BY a }
     set nTmpSpill [lindex [db_temp_spill db 1] 1]
-    expr ($nTmpSpill>5*1000*1000) && ($nTmpSpill<6*1000*1000)
-  } 1
+    expr {($nTmpSpill>5*1000*1000) && ($nTmpSpill<6*1000*1000)?"ok":$nTmpSpill}
+  } ok
 
   # The previous test case reset the status value.
   do_test 4.5 { db_temp_spill db 0 } {0 0 0}
@@ -147,8 +147,8 @@ if {$::TEMP_STORE<3} {
   do_test 4.6 {
     execsql { CREATE INDEX i1 ON data(a) }
     set nTmpSpill [lindex [db_temp_spill db 1] 1]
-    expr ($nTmpSpill>256*1000) && ($nTmpSpill<512*1000)
-  } 1
+    expr {($nTmpSpill>256*1000) && ($nTmpSpill<512*1000)?"ok":$nTmpSpill}
+  } ok
 
   # The previous test case reset the status value.
   do_test 4.7 { db_temp_spill db 0 } {0 0 0}

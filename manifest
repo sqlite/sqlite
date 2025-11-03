@@ -1,5 +1,5 @@
-C Fix\sthe\stest/speedtest.tcl\sscript\sso\sthat\sthe\sCC=\scommand-line\soption\sworks.
-D 2025-11-03T10:40:06.955
+C Update\stest\sresult\soutput\sfrom\stest/dbstatus2.test\smodule\sso\sthat\sit\nreports\sthe\sactual\svalue\sof\snTmpSpill\swhen\sthat\svalue\sis\sout\sof\srange.
+D 2025-11-03T11:35:13.149
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1039,7 +1039,7 @@ F test/dblwidth-a.sql eb4141518610e52f931a55a984310075e98dc31eee5a28ae806b1e3537
 F test/dbpage.test 63fab1eb026bada121107e53436fa749bbf83281dc9dea17af422f7a5c0f289f
 F test/dbpagefault.test ea39de2ca86041a9c6df1135645180a76d0a8da93ac159e2fafe38e39636530b
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
-F test/dbstatus2.test 28dffdc7c7b700c04fdf4f237e7e46eef4b0ead28879434358d161e45f5fc875
+F test/dbstatus2.test 802fea9bf7af4fd51eb3c1a42d67727e138ac152fb6c87994c24c0293a2e9d9b
 F test/decimal.test a11b87a2c3294eb4c11b55f3168aeac63d683fa8ada35921a6ec1d511eff7648
 F test/default.test c7124864cded213a3f118bc7e2e26f34b7c36dfa26cf6945cc8b7f5db1191277
 F test/delete.test 2686e1c98d552ef37d79ad55b17b93fe96fad9737786917ce3839767f734c48f
@@ -2171,8 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ab916bad188b150321e420ec0009d909c287e3790b5d6ec683e2df9ed457ff15
-R 8af4deb88d80a7a7231b07f5ebebdcae
+P 0de0ba878b9ec572d76d47112a0124df9f234fbb7a69c5f5a76ce8c439b11f6f
+R 1968274bbf1e417f86f9f4e6872cbb75
 U drh
-Z e76d757c0e49032fb37f5e98bd0b6190
+Z 527852511fb97d6bf2b02340d6820864
 # Remove this line to create a well-formed Fossil manifest.
