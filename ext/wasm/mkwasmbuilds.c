@@ -284,7 +284,7 @@ const BuildDefs oBuildDefs = {
     " -DSQLITE_SPEEDTEST1_WASM"
     " $(SQLITE_OPT)"
     " -USQLITE_WASM_BARE_BONES"
-    " -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c)"
+    " -USQLITE_C -DSQLITE_C=$(sqlite3.c)"
     " $(speedtest1.exit-runtime0)"
     " $(speedtest1.c.in)"
     " -lm",
@@ -312,7 +312,7 @@ const BuildDefs oBuildDefs = {
     " -DSQLITE_SPEEDTEST1_WASM"
     " $(SQLITE_OPT)"
     " -USQLITE_WASM_BARE_BONES"
-    " -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c)"
+    " -USQLITE_C -DSQLITE_C=$(sqlite3.c)"
     " $(speedtest1.exit-runtime0)"
     " $(speedtest1.c.in)"
     " -lm",

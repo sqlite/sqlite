@@ -592,9 +592,6 @@ EXPORTED_FUNCTIONS.c-pp.flags =
 ifeq (1,$(wasm-bare-bones))
   EXPORTED_FUNCTIONS.c-pp.flags += -Dbare-bones
 endif
-ifeq (1,$(SQLITE_C_IS_SEE))
-  EXPORTED_FUNCTIONS.c-pp.flags += -Denable-see
-endif
 $(eval $(call b.c-pp.target,filter,\
   $(EXPORTED_FUNCTIONS.api.in),\
   $(EXPORTED_FUNCTIONS.api),\
