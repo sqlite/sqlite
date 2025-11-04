@@ -193,8 +193,9 @@ done
 #
 # Done copying files. Now zip it up...
 #
-svi=${dirTop}/version-info
+svi=./version-info
 vnum=$($svi --download-version)
+[ "" = "$vnum" ] && die "version number is empty!"
 vdir=${buildName}-${vnum}
 fzip=${vdir}.zip
 rm -fr ${vdir} ${fzip}
