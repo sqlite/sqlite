@@ -1,5 +1,5 @@
-C Minor\swasm\sbuild\ssimplifications\sand\sextend\sthe\sJS\sbindings\sof\ssqlite3_column/value_text()\ssuch\sthat\sthey\sinclude\sembeded\sNUL\sbytes\sin\stheir\sresult\sstrings\srather\sthan\struncate\sthem\sat\sNUL.\sConsolidate\sthe\sshell.c\sbuild\sflags\sfrom\sthe\scanonical\sand\sautoconf\smakefiles\sinto\sthe\sconfigure\sscript.
-D 2025-11-04T22:01:55.830
+C Remove\sstale\scode\sfrom\sthe\sfileio.c\sextension.
+D 2025-11-04T23:47:49.248
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -372,7 +372,7 @@ F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a0
 F ext/misc/decimal.c d4883de142f6dcd36eda23da40b55e2b51374e7b01eb54a7173940191389fc5e
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c d4918ff3f59a26c447347b40ac5e5c41aef697dfa24ebb2ef61ebad3c32261f0
+F ext/misc/fileio.c 61af623160c073b605b4ff1f67d278c4c348956efa08f6201756577c7a050d17
 F ext/misc/fossildelta.c 2fc2dd4f34f478df674887db62586b1071c4cd3c9e73ee40f9ee669670e482d1
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
 F ext/misc/ieee754.c 176c061c94857b543313959289cb60cf777c999fd002f82b53d194b95e9f347a
@@ -2167,9 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fb2c931ae597f8d00a37574ff67aeed3eced4e5547f9120744ae4bfa8e74527b 8ac0bf125ddb6cc86a6825dcfe8895559835eca85ef14b5ad489f7c8159462e4
-R f6a6dc74b61ecf4b92fdf7025309e13a
-T +closed 8ac0bf125ddb6cc86a6825dcfe8895559835eca85ef14b5ad489f7c8159462e4 Closed\sby\sintegrate-merge.
-U stephan
-Z 6979379120c5ced749593cd4e2d1485e
+P cee2e2576f5e91911a019bff025ee6071850c0d75941e8746f10d57b56bd830a
+R f50630ad56c2ab7ac730655471c008d8
+U drh
+Z cb51f1063f705a6649fd576b7e138241
 # Remove this line to create a well-formed Fossil manifest.
