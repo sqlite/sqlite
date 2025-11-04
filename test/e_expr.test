@@ -144,7 +144,6 @@ foreach op1 $oplist {
 foreach op {* AND OR + || & |} { unset untested($op,$op) }
 unset untested(+,-)  ;#       Since    (a+b)-c == a+(b-c)
 unset untested(*,<<) ;#       Since    (a*b)<<c == a*(b<<c)
-foreach op {>> & * <<} {unset untested(AND,$op)}
 
 do_test e_expr-1.1 { array names untested } {}
 
