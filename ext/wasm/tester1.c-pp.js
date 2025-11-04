@@ -369,6 +369,88 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     clearOnInit: true,
     initialCapacity: 6
   };
+
+//#if enable-see
+  /**
+     Code consolidator for SEE sanity checks for various VFSes. ctor
+     is the VFS's oo1.DB-type constructor.  ctorOptFunc(bool) is a
+     function which must return a constructor args object for ctor. It
+     is passed true if the db needs to be cleaned up/unlinked before
+     opening it (OPFS) and false if not (how that is done is
+     VFS-dependent).  dbUnlink is a function which is expected to
+     unlink() the db file if the ctorOpfFunc does not do so when
+     passed true (kvvfs).
+
+     This function initializes the db described by ctorOptFunc(...),
+     writes some secret info into it, and re-opens it twice to
+     confirming that it can be read with an SEE key and cannot be read
+     without one.
+  */
+  T.seeBaseCheck = function(ctor, ctorOptFunc, dbUnlink){
+    let initDb = true;
+    const tryKey = function(keyKey, key, expectCount){
+      let db;
+      //console.debug('tryKey()',arguments);
+      try {
+        if (initDb) {
+          const ctoropt = ctorOptFunc(initDb);
+          initDb = false;
+          db = new ctor({
+            ...ctoropt,
+            [keyKey]: key
+          });
+          db.exec([
+            "drop table if exists t;",
+            "create table t(a);"
+          ]);
+          db.close();
+          db = null;
+          // Ensure that it's actually encrypted...
+          let err;
+          try {
+            db = new ctor(ctorOptFunc(false));
+            T.assert(db, 'db opened') /* opening is fine, but... */;
+            db.exec("select 1 from sqlite_schema");
+            console.warn("(should not be reached) sessionStorage =", sessionStorage);
+          } catch (e) {
+            err = e;
+          } finally {
+            db.close()
+            db = null;
+          }
+          T.assert(err, "Expecting an exception")
+            .assert(capi.SQLITE_NOTADB == err.resultCode,
+                    "Expecting NOTADB");
+        }/*initDb*/
+        db = new ctor({
+          ...ctorOptFunc(false),
+          [keyKey]: key
+        });
+        db.exec("insert into t(a) values (1),(2)");
+        T.assert(expectCount === db.selectValue('select sum(a) from t'));
+      } finally {
+        if (db) db.close();
+      }
+    };
+    const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
+    dbUnlink();
+    tryKey('textkey', 'foo', 3);
+    T.assert( !initDb );
+    tryKey('textkey', 'foo', 6);
+    dbUnlink();
+    initDb = true;
+    tryKey('key', 'foo', 3);
+    T.assert( !initDb );
+    tryKey('key', hexFoo, 6);
+    dbUnlink();
+    initDb = true;
+    tryKey('hexkey', hexFoo, 3);
+    T.assert( !initDb );
+    tryKey('hexkey', hexFoo, 6);
+    dbUnlink();
+  },
+//#endif enable-see
+
   ////////////////////////////////////////////////////////////////////////
   // End of infrastructure setup. Now define the tests...
   ////////////////////////////////////////////////////////////////////////
@@ -2839,71 +2921,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       predicate: ()=>(isUIThread()
                       || "Only available in main thread."),
       test: function(sqlite3){
-        this.kvvfsUnlink();
-        let initDb = true;
-        const tryKey = function(keyKey, key, expectCount){
-          let db;
-          //console.debug('tryKey()',arguments);
-          const ctoropt = {
-            filename: this.kvvfsDbFile
-            //vfs: 'kvvfs'
-            //,flags: 'ct'
-          };
-          try {
-            if (initDb) {
-              initDb = false;
-              db = new this.JDb({
-                ...ctoropt,
-                [keyKey]: key
-              });
-              db.exec([
-                "drop table if exists t;",
-                "create table t(a);"
-              ]);
-              db.close();
-              // Ensure that it's actually encrypted...
-              let err;
-              try {
-                db = new this.JDb(ctoropt);
-                T.assert(db, 'db opened') /* opening is fine, but... */;
-                db.exec("select 1 from sqlite_schema");
-                console.warn("(should not be reached) sessionStorage =", sessionStorage);
-              } catch (e) {
-                err = e;
-              } finally {
-                db.close()
-              }
-              T.assert(err, "Expecting an exception")
-                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
-                        "Expecting NOTADB");
-            }/*initDb*/
-            //console.debug('tryKey()',arguments);
-            db = new sqlite3.oo1.DB({
-              ...ctoropt,
-              vfs: 'kvvfs',
-              [keyKey]: key
-            });
-            db.exec("insert into t(a) values (1),(2)");
-            T.assert(expectCount === db.selectValue('select sum(a) from t'));
-          } finally {
-            if (db) db.close();
-          }
-        }.bind(this);
-        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
-        tryKey('textkey', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('textkey', 'foo', 6);
-        this.kvvfsUnlink();
-        initDb = true;
-        tryKey('key', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('key', hexFoo, 6);
-        this.kvvfsUnlink();
-        initDb = true;
-        tryKey('hexkey', hexFoo, 3);
-        T.assert( !initDb );
-        tryKey('hexkey', hexFoo, 6);
-        this.kvvfsUnlink();
+        T.seeBaseCheck(sqlite3.oo1.JsStorageDb, (isInit)=>{
+          return {filename: "session"};
+        }, ()=>this.kvvfsUnlink());
       }
     })/*kvvfs with SEE*/
 //#endif enable-see
@@ -3318,71 +3338,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'OPFS with SEE encryption',
       test: function(sqlite3){
-        const dbFile = 'file:///sqlite3-see.edb';
-        const dbCtor = sqlite3.oo1.OpfsDb;
-        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
-        let initDb = true;
-        const tryKey = function(keyKey, key, expectCount){
-          let db;
-          //console.debug('tryKey()',arguments);
-          const ctoropt = {
-            filename: dbFile,
-            flags: 'c'
-          };
-          try {
-            if (initDb) {
-              initDb = false;
-              const opt = {
-                ...ctoropt,
-                [keyKey]: key
-              };
-              opt.filename += '?delete-before-open=1';
-              db = new dbCtor(opt);
-              db.exec([
-                "drop table if exists t;",
-                "create table t(a);"
-              ]);
-              db.close();
-              // Ensure that it's actually encrypted...
-              let err;
-              try {
-                db = new dbCtor(ctoropt);
-                T.assert(db, 'db opened') /* opening is fine, but... */;
-                const rv = db.exec({
-                  sql:"select count(*) from sqlite_schema",
-                  returnValue: 'resultRows'
-                });
-                console.warn("(should not be reached) rv =",rv);
-              } catch (e) {
-                err = e;
-              } finally {
-                db.close()
-              }
-              T.assert(err, "Expecting an exception")
-                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
-                        "Expecting NOTADB");
-            }/*initDb*/
-            db = new dbCtor({
-              ...ctoropt,
-              [keyKey]: key
-            });
-            db.exec("insert into t(a) values (1),(2)");
-            T.assert(expectCount === db.selectValue('select sum(a) from t'));
-          } finally {
-            if (db) db.close();
-          }
-        };
-        tryKey('textkey', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('textkey', 'foo', 6);
-        initDb = true;
-        tryKey('key', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('key', hexFoo, 6);
-        initDb = true;
-        tryKey('hexkey', hexFoo, 3);
-        T.assert( !initDb );
-        tryKey('hexkey', hexFoo, 6);
+        T.seeBaseCheck(
+          sqlite3.oo1.OpfsDb,
+          function(isInit){
+            const opt = {filename: 'file:///sqlite3-see.edb'};
+            if( isInit ) opt.filename += '?delete-before-open=1';
+            return opt;
+          },
+          ()=>{});
       }
     })/*OPFS with SEE*/
 //#endif enable-see
@@ -3587,69 +3550,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let poolUtil;
         const P1 = await inst(poolConfig).then(u=>poolUtil = u).catch(catcher);
         const dbFile = '/sqlite3-see.edb';
-        const dbCtor = poolUtil.OpfsSAHPoolDb;
-        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
-        let initDb = true;
-        const tryKey = function(keyKey, key, expectCount){
-          let db;
-          //console.debug('tryKey()',arguments);
-          const ctoropt = {
-            filename: dbFile,
-            flags: 'c'
-          };
-          try {
-            if (initDb) {
-              initDb = false;
-              poolUtil.unlink(dbFile);
-              db = new dbCtor({
-                ...ctoropt,
-                [keyKey]: key
-              });
-              db.exec([
-                "drop table if exists t;",
-                "create table t(a);"
-              ]);
-              db.close();
-              // Ensure that it's actually encrypted...
-              let err;
-              try {
-                db = new dbCtor(ctoropt);
-                T.assert(db, 'db opened') /* opening is fine, but... */;
-                const rv = db.exec({
-                  sql:"select count(*) from sqlite_schema",
-                  returnValue: 'resultRows'
-                });
-                console.warn("(should not be reached) rv =",rv);
-              } catch (e) {
-                err = e;
-              } finally {
-                db.close()
-              }
-              T.assert(err, "Expecting an exception")
-                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
-                        "Expecting NOTADB");
-            }/*initDb*/
-            db = new dbCtor({
-              ...ctoropt,
-              [keyKey]: key
-            });
-            db.exec("insert into t(a) values (1),(2)");
-            T.assert(expectCount === db.selectValue('select sum(a) from t'));
-          } finally {
-            if (db) db.close();
-          }
-        };
-        tryKey('textkey', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('textkey', 'foo', 6);
-        initDb = true;
-        tryKey('key', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('key', hexFoo, 6);
-        initDb = true;
-        tryKey('hexkey', hexFoo, 3);
-        T.assert( !initDb );
-        tryKey('hexkey', hexFoo, 6);
+        T.seeBaseCheck(
+          poolUtil.OpfsSAHPoolDb,
+          (isInit)=>{return {filename: dbFile}},
+          ()=>poolUtil.unlink(dbFile)
+        );
         poolUtil.removeVfs();
       }
     })/*opfs-sahpool with SEE*/
