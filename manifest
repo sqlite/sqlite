@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\swasm-post-3.51\sto\sfor\ssome\sminor\sconfig\sscript\swork.
-D 2025-11-04T00:10:10.387
+C Move\sthe\shard-coded\sSHELL_OPT\smakefile\svalues\sfrom\sthe\stwo\smain\smakefiles\sinto\stheir\sshared\sconfigure\sscript.
+D 2025-11-04T00:15:51.888
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -17,7 +17,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 118aa2c4d49173672d065fdda19eb8a28642e2c684212d7a626d6db5e6762521
+F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
 F autoconf/Makefile.msc 803aa9e23b6a764751f6a91d0673620eefa46729fb80faf51391120e1d752966
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c a57c16e65dcffc9c76e496757cb3f7fb47e01ecbd1631a0a5e01751fc856f049
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 6fc14ef82b19b77a95788ffbcfad7989b4e3cb4ce96a21dcb5cf7312f362fba9
-F autosetup/sqlite-config.tcl 5d779fce20c11fde3fe99d157dcd5b5569d729b301141b8dfb8d5aacf9d48cba
+F autosetup/sqlite-config.tcl 1fd7c55394051fbfba2fb9fa9192c027ee7d74612dbf772b06e27feb9f1de5df
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl aee092fc71986d1272b835ea7492bb55ffc213a289502e4f14da80cf67b7e3c3
@@ -654,7 +654,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 00dd631c66c1f7922b2d691631163899eff1c3d1da780ff37a62f8d997b368e1
+F main.mk 29078d11f7545a8fae4347305b164bb4e777b801da16baeb48214014a8d63a06
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7d22ee947ddecb0dc6c640e79c9a09c0931f8b04f97d3ac89afdbf1736312bf7 ccabbe06d4e0650eecc91296d6a3040ed7fef06b47e4d63393a2367c8c8f55cf
-R dd4acbdab5ab8b657bc26c2eb8c6c91a
+P bf55a4220a74022e8be5f8a0cd7f4ca395a36e1666e14113e7e60c4a94cf0b3a
+R 13f21af781fee875bf882cdafc32741b
 U stephan
-Z 2e1ceb89db062ea493edc151d03892a7
+Z 05b6dbea240df8d044f64f1dacaeeeb7
 # Remove this line to create a well-formed Fossil manifest.
