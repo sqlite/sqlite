@@ -116,7 +116,7 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
     continue
   }
   if {[string match CC=* $arg]} {
-    set cc [lrange $arg 3 end]
+    set cc [string range $arg 3 end]
     continue
   }
   if {[string match *.c $arg]} {

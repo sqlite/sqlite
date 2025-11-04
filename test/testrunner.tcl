@@ -362,7 +362,8 @@ set TRG(schema) {
     nerr INT,                           -- Number of errors reported
     svers TEXT,                         -- Reported SQLite version
     pltfm TEXT,                         -- Host platform reported
-    output TEXT                         -- test output
+    output TEXT,                        -- test output
+    cwd TEXT                            -- working directory for test
   );
 
   CREATE TABLE config(
@@ -997,8 +998,15 @@ proc r_get_next_job {iJob} {
       set T($iJob) $tm
       set jobid $job(jobid)
 
+      set cwd $job(dirname) 
+      if {$cwd==""} {
+        set cwd [dirname $iJob]
+      }
+
       trdb eval {
-        UPDATE jobs SET starttime=$tm, state='running' WHERE jobid=$jobid
+        UPDATE jobs 
+        SET starttime=$tm, state='running', cwd=$cwd 
+        WHERE jobid=$jobid
       }
 
       set ret [array get job]
