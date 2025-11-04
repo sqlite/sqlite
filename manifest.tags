@@ -1,2 +1,5 @@
 branch trunk
 tag trunk
+tag release
+tag major-release
+tag version-3.51.0

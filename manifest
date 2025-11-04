@@ -1,5 +1,5 @@
-C Use\sthe\ssame\scompile-time\soptions\sfor\sthe\sCLI\sin\sthe\sauto-setup\starball\nas\sare\sused\sin\sthe\scanonical\ssource\stree.\n[forum:/forumpost/8975130218|Forum\spost\s8975130218].
-D 2025-11-03T15:34:25.507
+C Version\s3.51.0
+D 2025-11-04T19:38:17.314
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2171,8 +2171,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 334305a469a51ef0d768ba8443d8cab217f45394cc9f720748a489b10703193d
+P ccabbe06d4e0650eecc91296d6a3040ed7fef06b47e4d63393a2367c8c8f55cf
 R 9324db4aaf883cfc2983724be7d6c4b2
+T +sym-major-release *
+T +sym-release *
+T +sym-version-3.51.0 *
 U drh
-Z 52ac357f46f9e1cf28cebe3c731a47de
+Z bd3359fae465c4238136a20bd4edb791
 # Remove this line to create a well-formed Fossil manifest.
