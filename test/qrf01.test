@@ -1,0 +1,136 @@
+# 2025-11-05
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test cases for the Query Result Formatter (QRF)
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix qrf01
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1,2.5,'three'),(x'424c4f42',NULL,'Ἀμήν');
+}
+
+do_test 1.10 {
+  set result "\n[db format {SELECT * FROM t1}]"
+} {
+┌──────┬─────┬───────┐
+│  a   │  b  │   c   │
+├──────┼─────┼───────┤
+│ 1    │ 2.5 │ three │
+│ BLOB │     │ Ἀμήν  │
+└──────┴─────┴───────┘
+}
+
+do_test 1.20 {
+  set result "\n[db format -style box {SELECT * FROM t1}]"
+} {
+┌──────┬─────┬───────┐
+│  a   │  b  │   c   │
+├──────┼─────┼───────┤
+│ 1    │ 2.5 │ three │
+│ BLOB │     │ Ἀμήν  │
+└──────┴─────┴───────┘
+}
+
+do_test 1.30 {
+  set result "\n[db format -style table {SELECT * FROM t1}]"
+} {
++------+-----+-------+
+|  a   |  b  |   c   |
++------+-----+-------+
+| 1    | 2.5 | three |
+| BLOB |     | Ἀμήν  |
++------+-----+-------+
+}
+
+do_test 1.40 {
+  set result "\n[db format -style column {SELECT * FROM t1}]"
+} {
+1     2.5  three
+BLOB       Ἀμήν 
+}
+
+do_test 1.50 {
+  db format -style count {SELECT * FROM t1}
+} 2
+
+do_test 1.60 {
+  db format -style csv {SELECT * FROM t1}
+} "1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
+
+do_test 1.70 {
+  set result "\n[db format -style html {SELECT * FROM t1}]"
+} {
+<TR>
+<TD>1
+<TD>2.5
+<TD>three
+</TR>
+<TR>
+<TD>BLOB
+<TD>null
+<TD>Ἀμήν
+</TR>
+}
+
+do_test 1.80 {
+  set result "\n[db format -style insert {SELECT * FROM t1}]"
+} {
+INSERT INTO tab VALUES(1,2.5,'three');
+INSERT INTO tab VALUES(x'424c4f42',NULL,'Ἀμήν');
+}
+
+do_test 1.90 {
+  set result "\n[db format -style json {SELECT * FROM t1}]"
+} {
+[{"a":1,"b":2.5,"c":"three"},
+{"a":"\u0042\u004c\u004f\u0042","b":null,"c":"Ἀμήν"}]
+}
+
+do_test 1.100 {
+  set result "\n[db format -style line {SELECT * FROM t1}]"
+} {
+a = 1
+b = 2.5
+c = three
+
+a = BLOB
+b = 
+c = Ἀμήν
+}
+
+do_test 1.110 {
+  set result "\n[db format -style list {SELECT * FROM t1}]"
+} {
+1|2.5|three
+BLOB||Ἀμήν
+}
+
+do_test 1.120 {
+  set result "\n[db format -style markdown {SELECT * FROM t1}]"
+} {
+|  a   |  b  |   c   |
+|------|-----|-------|
+| 1    | 2.5 | three |
+| BLOB |     | Ἀμήν  |
+}
+
+do_test 1.130 {
+  set result "\n[db format -style quote {SELECT * FROM t1}]"
+} {
+1,2.5,'three'
+x'424c4f42',NULL,'Ἀμήν'
+}
+
+finish_test

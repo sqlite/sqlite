@@ -1515,6 +1515,7 @@ qrf_reinit:
     case QRF_STYLE_Insert: {
       p->spec.eText = QRF_TEXT_Sql;
       p->spec.eBlob = QRF_BLOB_Sql;
+      p->spec.zNull = "NULL";
       if( p->spec.zTableName==0 || p->spec.zTableName[0]==0 ){
         p->spec.zTableName = "tab";
       }
@@ -1531,6 +1532,7 @@ qrf_reinit:
     case QRF_STYLE_Quote: {
       p->spec.eText = QRF_TEXT_Sql;
       p->spec.eBlob = QRF_BLOB_Sql;
+      p->spec.zNull = "NULL";
       p->spec.zColumnSep = ",";
       p->spec.zRowSep = "\n";
       break;
