@@ -1,5 +1,5 @@
-C Remove\sstale\scode\sfrom\sthe\sfileio.c\sextension.
-D 2025-11-04T23:47:49.248
+C TEA\sextension:\sadd\s--tcl-stubs\sconfig\sflag,\sdefaulting\sto\szero,\sbecause\sthere\sdoes\snot\sseem\sto\sbe\sa\suniversally-valid\sdefault\sfor\sthat.\sAddresses\s[forum:cd6503fce2|forum\spost\scd6503fce2].
+D 2025-11-05T05:59:53.964
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -22,7 +22,7 @@ F autoconf/Makefile.msc 803aa9e23b6a764751f6a91d0673620eefa46729fb80faf51391120e
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
-F autoconf/tea/Makefile.in bf6b43eafcd18766d81a8f0085cfc9cb051d8abae9031a8e7c3f5f1246e8f166
+F autoconf/tea/Makefile.in 00e60cf3bf5580f31bfdcf3c914e9ba1831d676948363962de92ce65e5be4431
 F autoconf/tea/README.txt 23475876343498ef2b514cc7510e8f1559a17e8e03fbc7a41c1c8a3b89e7b7e3
 F autoconf/tea/_teaish.tester.tcl.in 8253b44be88e2e3f21de95a65d3a90c2be8e70b7bdd08a5b80e337ba7402f8f1
 F autoconf/tea/auto.def ce95b9450e2fa4ba5dc857e208fe10f4e6f2d737796ac3278aee6079db417529
@@ -50,7 +50,7 @@ F autosetup/proj.tcl 6fc14ef82b19b77a95788ffbcfad7989b4e3cb4ce96a21dcb5cf7312f36
 F autosetup/sqlite-config.tcl 1fd7c55394051fbfba2fb9fa9192c027ee7d74612dbf772b06e27feb9f1de5df
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
-F autosetup/teaish/core.tcl aee092fc71986d1272b835ea7492bb55ffc213a289502e4f14da80cf67b7e3c3
+F autosetup/teaish/core.tcl e014dd95900c7f9a34e8e0f460f47e94841059827bce8b4c49668b0c7ae3f1a0
 F autosetup/teaish/feature.tcl 18194fb79a24d30e5bbdeab40999616f39278b53a27525349ded033af2fd73be
 F autosetup/teaish/tester.tcl 1799514c2652db49561b3386c5242b94534d1663f2cfac861a955e071895fdd0
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cee2e2576f5e91911a019bff025ee6071850c0d75941e8746f10d57b56bd830a
-R f50630ad56c2ab7ac730655471c008d8
-U drh
-Z cb51f1063f705a6649fd576b7e138241
+P d26f115760f16cac1cd28c950d1c0eec199461d2c9a52baafb91ff6b8d5ec151
+R afd1c906690a6bd40f0f61c36bd3a447
+U stephan
+Z 18b0cf12b0044772273f934ac7557262
 # Remove this line to create a well-formed Fossil manifest.
