@@ -2050,6 +2050,43 @@ static void DbHookCmd(
 ** Based on provided options, format the results of the SQL statement(s)
 ** provided into human-readable form using the Query Result Formatter (QRF)
 ** and return the resuling text.
+**
+** Syntax:    db format OPTIONS SQL
+**
+** OPTIONS may be:
+**
+**     -style ("auto"|"box"|"column"|...)      Output style
+**     -esc ("auto"|"off"|"ascii"|"symbol")    How to deal with ctrl chars
+**     -text ("auto"|"off"|"sql"|"csv"|...)    How to escape TEXT values
+**     -blob ("auto"|"text"|"sql"|...)         How to escape BLOB values
+**     -columnnames ("auto"|"off"|"on")        Show column names?
+**     -wordwrap ("auto"|"off"|"on")           Try to wrap at word boundry?
+**     -textjsonb ("auto"|"off"|"on")          Auto-convert JSONB to text?
+**     -maxwidth NUMBER                        Default column width
+**     -widths LIST-OF-NUMBERS                 Widths for individual columns
+**     -columnsep TEXT                         Column separator text
+**     -rowsep TEXT                            Row separator text
+**     -tablename TEXT                         Table name for style "insert"
+**     -null TEXT                              Text for NULL values
+**
+** A mapping from TCL "format" command options to sqlite3_qrf_spec fields
+** is below.  Use this to reference the QRF documentation:
+**
+**     TCL Option        spec field
+**     ----------        ----------
+**     -style            eStyle
+**     -esc              eEsc
+**     -text             eText
+**     -blob             eBlob
+**     -columnnames      bColumnNames
+**     -wordwrap         bWordWrap
+**     -textjsonb        bTextJsonb
+**     -maxwidth         mxWidth
+**     -widths           nWidth, aWidth
+**     -columnsep        zColumnSep
+**     -rowsep           zRowSep
+**     -tablename        zTableName
+**     -null             zNull
 */
 static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
 #ifndef SQLITE_QRF_H
@@ -2098,21 +2135,54 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       };
       int style;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azStyles,
-                              "format style", 0, &style);
+                              "format style (-style)", 0, &style);
       if( rc ) goto format_failed;
       qrf.eStyle = aStyleMap[style];
       i++;
-    }else if( strcmp(zArg,"-null")==0 ){
-      qrf.zNull = Tcl_GetString(objv[i+1]);
+    }else if( strcmp(zArg,"-esc")==0 ){
+      static const char *azEsc[] = {
+        "ascii",        "auto",         "off",      "symbol",   0
+      };
+      static unsigned char aEscMap[] = {
+        QRF_ESC_Ascii,  QRF_ESC_Auto,   QRF_ESC_Off, QRF_ESC_Symbol
+      };
+      int esc;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azEsc,
+                              "control character escape (-esc)", 0, &esc);
+      if( rc ) goto format_failed;
+      qrf.eEsc = aEscMap[esc];
       i++;
-    }else if( strcmp(zArg,"-rowsep")==0 ){
-      qrf.zRowSep = Tcl_GetString(objv[i+1]);
+    }else if( strcmp(zArg,"-text")==0 ){
+      static const char *azText[] = {
+        "auto",             "csv",              "html",
+        "json",             "off",              "sql",
+        "tcl",              0
+      };
+      static unsigned char aTextMap[] = {
+        QRF_TEXT_Auto,      QRF_TEXT_Csv,       QRF_TEXT_Html,
+        QRF_TEXT_Json,      QRF_TEXT_Off,       QRF_TEXT_Sql,
+        QRF_TEXT_Tcl
+      };
+      int txt;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azText,
+                              "text encoding (-text)", 0, &txt);
+      if( rc ) goto format_failed;
+      qrf.eText = aTextMap[txt];
       i++;
-    }else if( strcmp(zArg,"-columnsep")==0 ){
-      qrf.zColumnSep = Tcl_GetString(objv[i+1]);
-      i++;
-    }else if( strcmp(zArg,"-tablename")==0 ){
-      qrf.zTableName = Tcl_GetString(objv[i+1]);
+    }else if( strcmp(zArg,"-blob")==0 ){
+      static const char *azBlob[] = {
+        "auto",             "hex",              "json",
+        "tcl",              "text",             "sql",      0
+      };
+      static unsigned char aBlobMap[] = {
+        QRF_BLOB_Auto,      QRF_BLOB_Hex,       QRF_BLOB_Json,
+        QRF_BLOB_Tcl,       QRF_BLOB_Text,      QRF_BLOB_Sql
+      };
+      int blob;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBlob,
+                              "BLOB encoding (-blob)", 0, &blob);
+      if( rc ) goto format_failed;
+      qrf.eBlob = aBlobMap[blob];
       i++;
     }else if( strcmp(zArg,"-columnnames")==0 ){
       int v = 0;
@@ -2178,6 +2248,18 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
           qrf.aWidth[jj] = v;
         }
       }
+      i++;
+    }else if( strcmp(zArg,"-columnsep")==0 ){
+      qrf.zColumnSep = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-rowsep")==0 ){
+      qrf.zRowSep = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-tablename")==0 ){
+      qrf.zTableName = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-null")==0 ){
+      qrf.zNull = Tcl_GetString(objv[i+1]);
       i++;
     }else{
       Tcl_AppendResult(pDb->interp, "unknown option: ", zArg, (char*)0);

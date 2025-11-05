@@ -31,7 +31,58 @@ do_test 1.10 {
 │ BLOB │     │ Ἀμήν  │
 └──────┴─────┴───────┘
 }
+do_test 1.11a {
+  set result "\n[db format -columnnames off {SELECT * FROM t1}]"
+} {
+┌──────┬─────┬───────┐
+│ 1    │ 2.5 │ three │
+│ BLOB │     │ Ἀμήν  │
+└──────┴─────┴───────┘
+}
+do_test 1.11b {
+  set result "\n[db format -text sql {SELECT * FROM t1}]"
+} {
+┌─────────────┬─────┬─────────┐
+│      a      │  b  │    c    │
+├─────────────┼─────┼─────────┤
+│ 1           │ 2.5 │ 'three' │
+│ x'424c4f42' │     │ 'Ἀμήν'  │
+└─────────────┴─────┴─────────┘
+}
+do_test 1.12 {
+  set result "\n[db format -text csv {SELECT * FROM t1}]"
+} {
+┌────────────────────┬─────┬────────┐
+│         a          │  b  │   c    │
+├────────────────────┼─────┼────────┤
+│ 1                  │ 2.5 │ three  │
+│ "\102\114\117\102" │     │ "Ἀμήν" │
+└────────────────────┴─────┴────────┘
+}
+do_test 1.13 {
+  set result "\n[db format -text csv -blob hex {SELECT * FROM t1}]"
+} {
+┌──────────┬─────┬────────┐
+│    a     │  b  │   c    │
+├──────────┼─────┼────────┤
+│ 1        │ 2.5 │ three  │
+│ 424c4f42 │     │ "Ἀμήν" │
+└──────────┴─────┴────────┘
+}
+do_test 1.14 {
+  catch {db format -text unk -blob hex {SELECT * FROM t1}} res
+  set res
+} {bad text encoding (-text) "unk": must be auto, csv, html, json, off, sql, or tcl}
+do_test 1.15 {
+  catch {db format -text sql -blob unk {SELECT * FROM t1}} res
+  set res
+} {bad BLOB encoding (-blob) "unk": must be auto, hex, json, tcl, text, or sql}
+do_test 1.16 {
+  catch {db format -text sql -style unk {SELECT * FROM t1}} res
+  set res
+} {bad format style (-style) "unk": must be auto, box, column, count, csv, eqp, explain, html, insert, json, line, list, markdown, quote, scanexp, or table}
 
+	
 do_test 1.20 {
   set result "\n[db format -style box {SELECT * FROM t1}]"
 } {
@@ -48,6 +99,14 @@ do_test 1.30 {
 } {
 +------+-----+-------+
 |  a   |  b  |   c   |
++------+-----+-------+
+| 1    | 2.5 | three |
+| BLOB |     | Ἀμήν  |
++------+-----+-------+
+}
+do_test 1.31 {
+  set result "\n[db format -style table -columnnames off {SELECT * FROM t1}]"
+} {
 +------+-----+-------+
 | 1    | 2.5 | three |
 | BLOB |     | Ἀμήν  |
@@ -79,6 +138,9 @@ do_test 1.60 {
 do_test 1.61 {
   db format -style csv -columnnames on {SELECT * FROM t1}
 } "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
+do_test 1.62 {
+  db format -style csv -columnnames on {SELECT a AS 'a x y', b, c FROM t1}
+} "\"a x y\",b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 
 do_test 1.70 {
   set result "\n[db format -style html {SELECT * FROM t1}]"
@@ -170,6 +232,18 @@ a = BLOB
 b = (NULL)
 c = Ἀμήν
 }
+do_test 1.102 {
+  set result "\n[db format -style line -null (NULL) \
+                 -text sql {SELECT * FROM t1}]"
+} {
+a = 1
+b = 2.5
+c = 'three'
+
+a = x'424c4f42'
+b = (NULL)
+c = 'Ἀμήν'
+}
 
 do_test 1.110 {
   set result "\n[db format -style list {SELECT * FROM t1}]"
@@ -185,6 +259,14 @@ a|b|c
 BLOB||Ἀμήν
 }
 do_test 1.112 {
+  set result "\n[db format -style list -columnnames on -text sql -null NULL \
+                 {SELECT * FROM t1}]"
+} {
+a|b|c
+1|2.5|'three'
+x'424c4f42'|NULL|'Ἀμήν'
+}
+do_test 1.118 {
   set rc [catch {db format -style list -columnnames unk {SELECT * FROM t1}} res]
   lappend rc $res
 } {1 {bad -columnnames "unk": must be auto, off, or on}}
@@ -198,6 +280,12 @@ do_test 1.120 {
 | 1    | 2.5 | three |
 | BLOB |     | Ἀμήν  |
 }
+do_test 1.121 {
+  set result "\n[db format -style markdown -columnnames off {SELECT * FROM t1}]"
+} {
+| 1    | 2.5 | three |
+| BLOB |     | Ἀμήν  |
+}
 
 do_test 1.130 {
   set result "\n[db format -style quote {SELECT * FROM t1}]"
@@ -208,7 +296,7 @@ x'424c4f42',NULL,'Ἀμήν'
 do_test 1.131 {
   set result "\n[db format -style quote -columnnames on {SELECT * FROM t1}]"
 } {
-'a','b','c'
+a,b,c
 1,2.5,'three'
 x'424c4f42',NULL,'Ἀμήν'
 }
@@ -219,15 +307,111 @@ do_execsql_test 2.0 {
   INSERT INTO t1 VALUES(1,2,'The quick fox jumps over the lazy brown dog.');
 }
 do_test 2.1 {
-  set result "\n[db format -widths {10 -10 22} -wordwrap off \
+  set result "\n[db format -widths {5 -5 19} -wordwrap on \
                  {SELECT * FROM t1}]"
 } {
-┌────────────┬────────────┬────────────────────────┐
-│     a      │     b      │           c            │
-├────────────┼────────────┼────────────────────────┤
-│ 1          │          2 │ The quick fox jumps ov │
-│            │            │ er the lazy brown dog. │
-└────────────┴────────────┴────────────────────────┘
+┌───────┬───────┬─────────────────────┐
+│   a   │   b   │          c          │
+├───────┼───────┼─────────────────────┤
+│ 1     │     2 │ The quick fox jumps │
+│       │       │ over the lazy brown │
+│       │       │ dog.                │
+└───────┴───────┴─────────────────────┘
 }
+do_test 2.2 {
+  set result "\n[db format -widths {5 -5 19} -wordwrap off \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬───────┬─────────────────────┐
+│   a   │   b   │          c          │
+├───────┼───────┼─────────────────────┤
+│ 1     │     2 │ The quick fox jumps │
+│       │       │ over the lazy brown │
+│       │       │ dog.                │
+└───────┴───────┴─────────────────────┘
+}
+do_test 2.3 {
+  set result "\n[db format -widths {5 -5 18} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬───────┬────────────────────┐
+│   a   │   b   │         c          │
+├───────┼───────┼────────────────────┤
+│ 1     │     2 │ The quick fox      │
+│       │       │ jumps over the     │
+│       │       │ lazy brown dog.    │
+└───────┴───────┴────────────────────┘
+}
+do_test 2.4 {
+  set result "\n[db format -widths {5 -5 -18} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬───────┬────────────────────┐
+│   a   │   b   │         c          │
+├───────┼───────┼────────────────────┤
+│ 1     │     2 │      The quick fox │
+│       │       │     jumps over the │
+│       │       │    lazy brown dog. │
+└───────┴───────┴────────────────────┘
+}
+do_test 2.5 {
+  set result "\n[db format -widths {5 -5 18} -wordwrap off \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬───────┬─────────────────────┐
+│   a   │   b   │          c          │
+├───────┼───────┼─────────────────────┤
+│ 1     │     2 │ The quick fox jumps │
+│       │       │  over the lazy brow │
+│       │       │ n dog.              │
+└───────┴───────┴─────────────────────┘
+}
+
+
+do_execsql_test 3.0 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(1,2,unistr('abc\u001b[1;31m123\u001b[0mxyz'));
+}
+do_test 3.1 {
+  set result "\n[db format {SELECT * FROM t1}]"
+} {
+┌───┬───┬────────────────────────┐
+│ a │ b │           c            │
+├───┼───┼────────────────────────┤
+│ 1 │ 2 │ abc^[[1;31m123^[[0mxyz │
+└───┴───┴────────────────────────┘
+}
+do_test 3.2 {
+  set result "\n[db format -esc off {SELECT * FROM t1}]"
+  string map [list \033 X] $result
+} {
+┌───┬───┬───────────┐
+│ a │ b │     c     │
+├───┼───┼───────────┤
+│ 1 │ 2 │ abcX[1;31m123X[0mxyz │
+└───┴───┴───────────┘
+}
+do_test 3.3 {
+  set result "\n[db format -esc symbol {SELECT * FROM t1}]"
+} {
+┌───┬───┬──────────────────────┐
+│ a │ b │          c           │
+├───┼───┼──────────────────────┤
+│ 1 │ 2 │ abc␛[1;31m123␛[0mxyz │
+└───┴───┴──────────────────────┘
+}
+do_test 3.4 {
+  set result "\n[db format -esc ascii {SELECT * FROM t1}]"
+} {
+┌───┬───┬────────────────────────┐
+│ a │ b │           c            │
+├───┼───┼────────────────────────┤
+│ 1 │ 2 │ abc^[[1;31m123^[[0mxyz │
+└───┴───┴────────────────────────┘
+}
+do_test 3.5 {
+  catch {db format -esc unk {SELECT * FROM t1}} res
+  set res
+} {bad control character escape (-esc) "unk": must be ascii, auto, off, or symbol}
 
 finish_test
