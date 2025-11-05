@@ -652,7 +652,7 @@ SRC = \
   $(TOP)/src/sqliteInt.h \
   $(TOP)/src/sqliteLimit.h \
   $(TOP)/src/table.c \
-  $(TOP)/src/tclsqlite.c \
+  tclsqlite-ex.c \
   $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/treeview.c \
@@ -1409,15 +1409,15 @@ whereexpr.o:	$(TOP)/src/whereexpr.c $(DEPS_OBJ_COMMON)
 window.o:	$(TOP)/src/window.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/window.c
 
-tclsqlite.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
+tclsqlite.o:	$(T.tcl.env.sh) tclsqlite-ex.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DUSE_TCL_STUBS=1 $$TCL_INCLUDE_SPEC \
-		-c $(TOP)/src/tclsqlite.c
+		-c tclsqlite-ex.c
 
-tclsqlite-shell.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
-	$(T.compile.tcl) -DTCLSH -o $@ -c $(TOP)/src/tclsqlite.c $$TCL_INCLUDE_SPEC
+tclsqlite-shell.o:	$(T.tcl.env.sh) tclsqlite-ex.c $(DEPS_OBJ_COMMON)
+	$(T.compile.tcl) -DTCLSH -o $@ -c tclsqlite-ex.c $$TCL_INCLUDE_SPEC
 
-tclsqlite-stubs.o:	$(T.tcl.env.sh) $(TOP)/src/tclsqlite.c $(DEPS_OBJ_COMMON)
-	$(T.compile.tcl) -DUSE_TCL_STUBS=1 -o $@ -c $(TOP)/src/tclsqlite.c $$TCL_INCLUDE_SPEC
+tclsqlite-stubs.o:	$(T.tcl.env.sh) tclsqlite-ex.c $(DEPS_OBJ_COMMON)
+	$(T.compile.tcl) -DUSE_TCL_STUBS=1 -o $@ -c tclsqlite-ex.c $$TCL_INCLUDE_SPEC
 
 #
 # STATIC_TCLSQLITE3 = 1 to statically link tclsqlite3, else
@@ -1661,11 +1661,19 @@ install-tcl-0 install-tcl-:
 install-tcl: install-tcl-$(HAVE_TCL)
 install: install-tcl
 
-tclsqlite3.c:	sqlite3.c
+TCLSQLITEEX = \
+  $(TOP)/ext/qrf/qrf.h \
+  $(TOP)/ext/qrf/qrf.c \
+  $(TOP)/src/tclsqlite.c
+
+tclsqlite-ex.c:	$(TCLSQLITEEX) $(TOP)/tool/mkcombo.tcl $(B.tclsh)
+	$(B.tclsh) $(TOP)/tool/mkcombo.tcl $(TCLSQLITEEX) -o $@
+
+tclsqlite3.c:	sqlite3.c tclsqlite-ex.c
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
-	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
+	cat tclsqlite-ex.c >>tclsqlite3.c
 
 #
 # $(CFLAGS.tclextension) = CFLAGS for the tclextension* targets.
@@ -1782,7 +1790,7 @@ TESTFIXTURE_FLAGS += -DSQLITE_STRICT_SUBTYPE=1
 
 TESTFIXTURE_SRC0 = $(TESTSRC2) $(libsqlite3.LIB)
 TESTFIXTURE_SRC1 = sqlite3.c
-TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c
+TESTFIXTURE_SRC = $(TESTSRC) tclsqlite-ex.c
 TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
 testfixture$(T.exe):	$(T.tcl.env.sh) has_tclsh85 $(TESTFIXTURE_SRC)
@@ -1912,7 +1920,7 @@ shelltest:
 #
 sqlite3_analyzer.c.flags.0 = -DINCLUDE_SQLITE3_C=1
 sqlite3_analyzer.c.flags.1 =
-sqlite3_analyzer.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl \
+sqlite3_analyzer.c: sqlite3.c tclsqlite-ex.c $(TOP)/tool/spaceanal.tcl \
                     $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqlite3_analyzer.c.in \
 		$(sqlite3_analyzer.c.flags.$(LINK_TOOLS_DYNAMICALLY)) \
@@ -1936,7 +1944,7 @@ sqlite3_analyzer$(T.exe): $(T.tcl.env.sh) sqlite3_analyzer.c \
 # can cause the $@ to link to an out-of-tree libsqlite3.so, which may
 # or may not fail or otherwise cause confusion.
 
-sqltclsh.c: sqlite3.c $(TOP)/src/tclsqlite.c $(TOP)/tool/sqltclsh.tcl \
+sqltclsh.c: sqlite3.c tclsqlite-ex.c $(TOP)/tool/sqltclsh.tcl \
             $(TOP)/ext/misc/appendvfs.c $(TOP)/tool/mkccode.tcl \
             $(TOP)/tool/sqltclsh.c.in
 	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/tool/sqltclsh.c.in >sqltclsh.c
@@ -1957,7 +1965,7 @@ xbin: sqlite3_expert$(T.exe)
 CHECKER_DEPS =\
   $(TOP)/tool/mkccode.tcl \
   sqlite3.c \
-  $(TOP)/src/tclsqlite.c \
+  tclsqlite-ex.c \
   $(TOP)/ext/repair/sqlite3_checker.tcl \
   $(TOP)/ext/repair/checkindex.c \
   $(TOP)/ext/repair/checkfreelist.c \

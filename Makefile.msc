@@ -1459,7 +1459,7 @@ SRC01 = \
   $(TOP)\src\status.c \
   $(TOP)\src\table.c \
   $(TOP)\src\threads.c \
-  $(TOP)\src\tclsqlite.c \
+  tclsqlite-ex.c \
   $(TOP)\src\tokenize.c \
   $(TOP)\src\treeview.c \
   $(TOP)\src\trigger.c \
@@ -2019,7 +2019,17 @@ sqlite3.c:	.target_source sqlite3ext.h sqlite3session.h $(MKSQLITE3C_TOOL) src-v
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl $(JIM_TCLSH)
 	$(JIM_TCLSH) $(TOP)\tool\split-sqlite3c.tcl
+
+TCLSQLITEEX = \
+  $(TOP)\ext\qrf\qrf.h \
+  $(TOP)\ext\qrf\qrf.c \
+  $(TOP)\src\tclsqlite.c
+
+tclsqlite-ex.c:	$(TCLSQLITEEX) $(TOP)\tool\mkcombo.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mkcombo.tcl $(TCLSQLITEEX) -o $@
 # <</mark>>
+
+tclsqlite-ex.c:
 
 # Rule to build the amalgamation
 #
@@ -2320,11 +2330,11 @@ whereexpr.lo:	$(TOP)\src\whereexpr.c $(HDR)
 window.lo:	$(TOP)\src\window.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\window.c
 
-tclsqlite.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
-	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
+tclsqlite.lo:	tclsqlite-ex.c $(HDR) $(SQLITE_TCL_DEP)
+	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c tclsqlite-ex.c
 
-tclsqlite-shell.lo:	$(TOP)\src\tclsqlite.c $(HDR) $(SQLITE_TCL_DEP)
-	$(LTCOMPILE) $(NO_WARN) -DTCLSH -DBUILD_sqlite -I$(TCLINCDIR) -c $(TOP)\src\tclsqlite.c
+tclsqlite-shell.lo:	tclsqlite-ex.c $(HDR) $(SQLITE_TCL_DEP)
+	$(LTCOMPILE) $(NO_WARN) -DTCLSH -DBUILD_sqlite -I$(TCLINCDIR) -c tclsqlite-ex.c
 
 tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
 	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
@@ -2540,9 +2550,9 @@ TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_STRICT_SUBTYPE=1
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2)
 TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)
 !IF $(USE_AMALGAMATION)==0
-TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
+TESTFIXTURE_SRC = $(TESTSRC) tclsqlite-ex.c $(TESTFIXTURE_SRC0)
 !ELSE
-TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC1)
+TESTFIXTURE_SRC = $(TESTSRC) tclsqlite-ex.c $(TESTFIXTURE_SRC1)
 !ENDIF
 
 !IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
@@ -2677,14 +2687,14 @@ smoketest:	$(TESTPROGS)
 shelltest: $(TESTPROGS)
 	.\testfixture.exe $(TOP)\test\permutations.test shell
 
-sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
+sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) tclsqlite-ex.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl -DINCLUDE_SQLITE3_C $(TOP)\tool\sqlite3_analyzer.c.in > $@
 
 sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
-sqltclsh.c: sqlite3.c $(TOP)\src\tclsqlite.c $(TOP)\tool\sqltclsh.tcl $(TOP)\ext\misc\appendvfs.c $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqltclsh.c.in
+sqltclsh.c: sqlite3.c tclsqlite-ex.c $(TOP)\tool\sqltclsh.tcl $(TOP)\ext\misc\appendvfs.c $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqltclsh.c.in
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqltclsh.c.in >sqltclsh.c
 
 sqltclsh.exe: sqltclsh.c  $(SHELL_CORE_DEP) $(LIBRESOBJS)
@@ -2697,7 +2707,7 @@ sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\exp
 CHECKER_DEPS =\
   $(TOP)\tool\mkccode.tcl \
   sqlite3.c \
-  $(TOP)\src\tclsqlite.c \
+  tclsqlite-ex.c \
   $(TOP)\ext\repair\sqlite3_checker.tcl \
   $(TOP)\ext\repair\checkindex.c \
   $(TOP)\ext\repair\checkfreelist.c \

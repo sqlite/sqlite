@@ -124,6 +124,15 @@
 /* Forward declaration */
 typedef struct SqliteDb SqliteDb;
 
+/* Add -DSQLITE_ENABLE_QRF_IN_TCL to add the Query Result Formatter (QRF)
+** into the build of the TCL extension, when building using separate
+** source files.  The QRF is included automatically when building from
+** the tclsqlite3.c amalgamation.
+*/
+#if defined(SQLITE_ENABLE_QRF_IN_TCL)
+#include "qrf.h"
+#endif
+
 /*
 ** New SQL functions can be created as TCL scripts.  Each such function
 ** is described by an instance of the following structure.
@@ -2036,6 +2045,23 @@ static void DbHookCmd(
 }
 
 /*
+** Implementation of the "db format" command.
+**
+** Based on provided options, format the results of the SQL statement(s)
+** provided into human-readable form using the Query Result Formatter (QRF)
+** and return the resuling text.
+*/
+static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
+#ifndef SQLITE_QRF_H
+  Tcl_SetResult(pDb->interp, "QRF not available in this build", TCL_VOLATILE);
+  return TCL_ERROR
+#else
+  Tcl_SetResult(pDb->interp, "Not yet implemented", TCL_VOLATILE);
+  return TCL_OK;
+#endif
+}
+
+/*
 ** The "sqlite" command below creates a new Tcl command for each
 ** connection it opens to an SQLite database.  This routine is invoked
 ** whenever one of those connection-specific commands is executed
@@ -2064,15 +2090,15 @@ static int SQLITE_TCLAPI DbObjCmd(
     "commit_hook",            "complete",              "config",
     "copy",                   "deserialize",           "enable_load_extension",
     "errorcode",              "erroroffset",           "eval",
-    "exists",                 "function",              "incrblob",
-    "interrupt",              "last_insert_rowid",     "nullvalue",
-    "onecolumn",              "preupdate",             "profile",
-    "progress",               "rekey",                 "restore",
-    "rollback_hook",          "serialize",             "status",
-    "timeout",                "total_changes",         "trace",
-    "trace_v2",               "transaction",           "unlock_notify",
-    "update_hook",            "version",               "wal_hook",
-    0
+    "exists",                 "format",                "function",
+    "incrblob",               "interrupt",             "last_insert_rowid",
+    "nullvalue",              "onecolumn",             "preupdate",
+    "profile",                "progress",              "rekey",
+    "restore",                "rollback_hook",         "serialize",
+    "status",                 "timeout",               "total_changes",
+    "trace",                  "trace_v2",              "transaction",
+    "unlock_notify",          "update_hook",           "version",
+    "wal_hook",               0                        
   };
   enum DB_enum {
     DB_AUTHORIZER,            DB_BACKUP,               DB_BIND_FALLBACK,
@@ -2081,14 +2107,15 @@ static int SQLITE_TCLAPI DbObjCmd(
     DB_COMMIT_HOOK,           DB_COMPLETE,             DB_CONFIG,
     DB_COPY,                  DB_DESERIALIZE,          DB_ENABLE_LOAD_EXTENSION,
     DB_ERRORCODE,             DB_ERROROFFSET,          DB_EVAL,
-    DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
-    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_NULLVALUE,
-    DB_ONECOLUMN,             DB_PREUPDATE,            DB_PROFILE,
-    DB_PROGRESS,              DB_REKEY,                DB_RESTORE,
-    DB_ROLLBACK_HOOK,         DB_SERIALIZE,            DB_STATUS,
-    DB_TIMEOUT,               DB_TOTAL_CHANGES,        DB_TRACE,
-    DB_TRACE_V2,              DB_TRANSACTION,          DB_UNLOCK_NOTIFY,
-    DB_UPDATE_HOOK,           DB_VERSION,              DB_WAL_HOOK,
+    DB_EXISTS,                DB_FORMAT,               DB_FUNCTION,
+    DB_INCRBLOB,              DB_INTERRUPT,            DB_LAST_INSERT_ROWID,
+    DB_NULLVALUE,             DB_ONECOLUMN,            DB_PREUPDATE,
+    DB_PROFILE,               DB_PROGRESS,             DB_REKEY,
+    DB_RESTORE,               DB_ROLLBACK_HOOK,        DB_SERIALIZE,
+    DB_STATUS,                DB_TIMEOUT,              DB_TOTAL_CHANGES,
+    DB_TRACE,                 DB_TRACE_V2,             DB_TRANSACTION,
+    DB_UNLOCK_NOTIFY,         DB_UPDATE_HOOK,          DB_VERSION,
+    DB_WAL_HOOK
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2975,6 +3002,18 @@ deserialize_error:
       cd2[1] = (void *)pScript;
       rc = DbEvalNextCmd(cd2, interp, TCL_OK);
     }
+    break;
+  }
+
+  /*
+  **     $db format [OPTIONS] SQL
+  **
+  ** Run the SQL statement(s) given as the final argument.  Use the
+  ** Query Result Formatter extension of SQLite to format the output as
+  ** text and return that text.
+  */
+  case DB_FORMAT: {
+    dbQrf(pDb, objc, objv);
     break;
   }
 

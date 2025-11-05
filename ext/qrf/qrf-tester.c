@@ -71,7 +71,11 @@ static char *tempStrdup(char *zIn){
 }
 
 /* Function used for writing to the console */
-static ssize_t testWriter(void *pContext, const unsigned char *p, size_t n){
+static sqlite3_int64 testWriter(
+  void *pContext,
+  const unsigned char *p,
+  sqlite3_int64 n
+){
   return fwrite(p,1,n,stdout);
 }
 

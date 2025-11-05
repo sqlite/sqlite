@@ -12,7 +12,9 @@
 ** Implementation of the Result-Format or "qrf" utility library for SQLite.
 ** See the qrf.md documentation for additional information.
 */
+#ifndef SQLITE_QRF_H
 #include "qrf.h"
+#endif
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
@@ -219,7 +221,7 @@ static void qrfWrite(Qrf *p){
   if( p->spec.xWrite && (n = sqlite3_str_length(p->pOut))>0 ){
     p->spec.xWrite(p->spec.pWriteArg,
                (const unsigned char*)sqlite3_str_value(p->pOut),
-               (size_t)n);
+               (sqlite3_int64)n);
     sqlite3_str_reset(p->pOut);
   }
 }
@@ -1059,7 +1061,7 @@ static void qrfColumnar(Qrf *p){
   p->actualWidth = sqlite3_malloc64( sizeof(int)*nColumn );
   if( p->actualWidth==0 ){ qrfOom(p); goto qrf_column_end; }
   for(i=0; i<p->spec.nWidth && i<nColumn; i++){
-    int w = i<p->spec.nWidth ? p->spec.aWidth[i] : 0;
+    w = i<p->spec.nWidth ? p->spec.aWidth[i] : 0;
     if( w<0 ){
       if( w==QRF_MINUS_ZERO ){ w = 0; }
       else{ w = -w; }
@@ -1319,7 +1321,7 @@ static void qrfExplain(Qrf *p){
   int *abYield = 0;     /* abYield[iOp] is rue if opcode iOp is an OP_Yield */
   int *aiIndent = 0;    /* Indent the iOp-th opcode by aiIndent[iOp] */
   i64 nAlloc = 0;       /* Allocated size of aiIndent[], abYield */
-  int nIndent;          /* Number of entries in aiIndent[] */
+  int nIndent = 0;      /* Number of entries in aiIndent[] */
   int iOp;              /* Opcode number */
   int i;                /* Column loop counter */
 
@@ -1340,7 +1342,6 @@ static void qrfExplain(Qrf *p){
   assert( 0==sqlite3_stricmp( sqlite3_column_name(p->pStmt, 3), "p2" ) );
 
   for(iOp=0; SQLITE_ROW==sqlite3_step(p->pStmt); iOp++){
-    int i;
     int iAddr = sqlite3_column_int(p->pStmt, 0);
     const char *zOp = (const char*)sqlite3_column_text(p->pStmt, 1);
     int p1 = sqlite3_column_int(p->pStmt, 2);

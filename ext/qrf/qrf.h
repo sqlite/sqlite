@@ -38,7 +38,7 @@ struct sqlite3_qrf_spec {
   const char *zTableName;     /* Output table name */
   const char *zNull;          /* Rendering of NULL */
   char *(*xRender)(void*,sqlite3_value*);                /* Render a value */
-  ssize_t (*xWrite)(void*,const unsigned char*,size_t);  /* Write callback */
+  sqlite3_int64 (*xWrite)(void*,const unsigned char*,sqlite3_int64);
   void *pRenderArg;           /* First argument to the xRender callback */
   void *pWriteArg;            /* First argument to the xWrite callback */
   char **pzOutput;            /* Storage location for output string */
