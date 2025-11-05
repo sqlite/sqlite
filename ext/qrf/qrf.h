@@ -114,4 +114,13 @@ int sqlite3_format_query_result(
 #define QRF_ESC_Ascii   2 /* Unix-style escapes.  Ex: U+0007 shows ^G */
 #define QRF_ESC_Symbol  3 /* Unicode escapes. Ex: U+0007 shows U+2407 */
 
+/*
+** Allowed values for "boolean" fields, such as "bColumnNames", "bWordWrap",
+** and "bTextJsonb".  There is an extra "auto" variants so these are actually
+** tri-state settings, not booleans.
+*/
+#define QRF_SW_Auto     0 /* Let QRF choose the best value */
+#define QRF_SW_Off      1 /* This setting is forced off */
+#define QRF_SW_On       2 /* This setting is forced on */
+
 #endif /* !defined(SQLITE_QRF_H) */

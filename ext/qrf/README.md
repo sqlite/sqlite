@@ -50,7 +50,7 @@ struct sqlite3_qrf_spec {
   unsigned char eEsc;         /* How to escape control characters in text */
   unsigned char eText;        /* Quoting style for text */
   unsigned char eBlob;        /* Quoting style for BLOBs */
-  unsigned char bColumnNames; /* True to show column names */
+  unsigned char bColumnNames; /* QRF_SW_On to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
   short int mxWidth;          /* Maximum width of any column */
@@ -112,8 +112,18 @@ ignored, depending on the value of eStyle.
 
 ### 2.4 Show Column Names (bColumnNames)
 
-The sqlite3_qrf_spec.bColumnNames field is a boolean.  If true, then column
-names appear in the output.  If false, column names are omitted.
+The sqlite3_qrf_spec.bColumnNames field can be either QRF_SW_Auto,
+QRF_SW_On, or QRF_SW_Off.
+
+> ~~~
+#define QRF_SW_Auto     0 /* Let QRF choose the best value */
+#define QRF_SW_Off      1 /* This setting is forced off */
+#define QRF_SW_On       2 /* This setting is forced on */
+~~~
+
+If the value is QRF_SW_On, then column names appear in the output.
+If the value is QRF_SW_Off, column names are omitted.  If the
+value is QRF_SW_Auto, then an appropriate default is chosen.
 
 ### 2.5 Control Character Escapes (eEsc)
 
@@ -196,12 +206,12 @@ the JSON specification.
 
 ### 2.7 How to display BLOB values (eBlob and bTextJsonb)
 
-If the sqlite3_qrf_spec.bTextJsonb flag is true and if the value to be
+If the sqlite3_qrf_spec.bTextJsonb flag is QRF_SW_On and if the value to be
 displayed is JSONB, then the JSONB is translated into text JSON and the
 text is shown according to the sqlite3_qrf_spec.eText setting as
 described in the previous section.
 
-If the bTextJsonb flag is false (the usual case) or if the BLOB value to
+If the bTextJsonb flag is QRF_SW_Off (the usual case) or if the BLOB value to
 be displayed is not JSONB, then the sqlite3_qrf_spec.eBlob field determines
 how the BLOB value is formatted.  The following options are available;
 
@@ -250,10 +260,10 @@ mxWidth characters wide.  "Width" hear means the actual displayed
 width of the text on a fixed-pitch font.  The code takes into account
 zero-width and double-width characters when comput the display width.
 
-If the sqlite3_qrf_spec.bWordWrap flag is set, then the formatter
-attempts to split lines at whitespace or word boundaries.
-If the bWorkWrap flag is zero, then long lines can be split in the middle
-of words.
+If the sqlite3_qrf_spec.bWordWrap flag is set to QRF_SW_On,
+then the formatter attempts to split lines at whitespace or word boundaries.
+If the bWorkWrap flag is set QRF_SW_Off, then long lines can be split in
+the middle of words.
 
 ### 2.9 Column width and alignment (nWidth and aWidth)
 

@@ -646,7 +646,7 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       break;
     }
     case SQLITE_BLOB: {
-      if( p->spec.bTextJsonb ){
+      if( p->spec.bTextJsonb==QRF_SW_On ){
         const char *zJson = qrfJsonbToJson(p, iCol);
         if( zJson ){
           qrfEncodeText(p, pOut, zJson);
@@ -1033,7 +1033,7 @@ static void qrfColumnar(Qrf *p){
   const unsigned char **azNextLine = 0;
   int bNextLine = 0;
   int bMultiLineRowExists = 0;
-  int bw = p->spec.bWordWrap;
+  int bw = p->spec.bWordWrap==QRF_SW_On;
   int nColumn = p->nCol;
 
   rc = sqlite3_step(p->pStmt);
@@ -1155,7 +1155,7 @@ static void qrfColumnar(Qrf *p){
     case QRF_STYLE_Column: {
       colSep = "  ";
       rowSep = "\n";
-      if( p->spec.bColumnNames ){
+      if( p->spec.bColumnNames==QRF_SW_On ){
         for(i=0; i<nColumn; i++){
           w = p->actualWidth[i];
           if( i<p->spec.nWidth && p->spec.aWidth[i]<0 ) w = -w;
@@ -1546,7 +1546,7 @@ qrf_reinit:
         ** not an EQP statement.
         */
         p->spec.eStyle = QRF_STYLE_Quote;
-        p->spec.bColumnNames = 1;
+        p->spec.bColumnNames = QRF_SW_On;
         p->spec.eText = QRF_TEXT_Sql;
         p->spec.eBlob = QRF_BLOB_Sql;
         p->spec.zColumnSep = ",";
@@ -1563,7 +1563,7 @@ qrf_reinit:
         ** statement is not an EXPLAIN statement.
         */
         p->spec.eStyle = QRF_STYLE_Quote;
-        p->spec.bColumnNames = 1;
+        p->spec.bColumnNames = QRF_SW_On;
         p->spec.eText = QRF_TEXT_Sql;
         p->spec.eBlob = QRF_BLOB_Sql;
         p->spec.zColumnSep = ",";
@@ -1587,6 +1587,46 @@ qrf_reinit:
       default:            p->spec.eBlob = QRF_BLOB_Text; break;
     }
   }
+  if( p->spec.bColumnNames==QRF_SW_Auto ){
+    switch( p->spec.eStyle ){
+      case QRF_STYLE_Box:
+      case QRF_STYLE_Csv:
+      case QRF_STYLE_Column:
+      case QRF_STYLE_Table:
+      case QRF_STYLE_Markdown:
+        p->spec.bColumnNames = QRF_SW_On;
+        break;
+      default:
+        p->spec.bColumnNames = QRF_SW_Off;
+        break;
+    }
+  }
+  if( p->spec.bWordWrap==QRF_SW_Auto ){
+    p->spec.bWordWrap = QRF_SW_On;
+  }
+  if( p->spec.bTextJsonb==QRF_SW_Auto ){
+    p->spec.bTextJsonb = QRF_SW_Off;
+  }
+}
+
+/*
+** Attempt to determine if identifier zName needs to be quoted, either
+** because it contains non-alphanumeric characters, or because it is an
+** SQLite keyword.  Be conservative in this estimate:  When in doubt assume
+** that quoting is required.
+**
+** Return 1 if quoting is required.  Return 0 if no quoting is required.
+*/
+
+static int qrf_need_quote(const char *zName){
+  int i;
+  const unsigned char *z = (const unsigned char*)zName;
+  if( z==0 ) return 1;
+  if( !isalpha(z[0]) && z[0]!='_' ) return 1;
+  for(i=0; z[i]; i++){
+    if( !isalnum(z[i]) && z[i]!='_' ) return 1;
+  }
+  return sqlite3_keyword_check(zName, i)!=0;
 }
 
 /*
@@ -1617,7 +1657,7 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_STYLE_Html: {
-      if( p->nRow==0 && p->spec.bColumnNames ){
+      if( p->nRow==0 && p->spec.bColumnNames==QRF_SW_On ){
         sqlite3_str_append(p->pOut, "<TR>", 4);
         for(i=0; i<p->nCol; i++){
           const char *zCName = sqlite3_column_name(p->pStmt, i);
@@ -1636,7 +1676,25 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_STYLE_Insert: {
-      sqlite3_str_appendf(p->pOut,"INSERT INTO %s VALUES(",p->spec.zTableName);
+      if( qrf_need_quote(p->spec.zTableName) ){
+        sqlite3_str_appendf(p->pOut,"INSERT INTO \"%w\"",p->spec.zTableName);
+      }else{
+        sqlite3_str_appendf(p->pOut,"INSERT INTO %s",p->spec.zTableName);
+      }
+      if( p->spec.bColumnNames==QRF_SW_On ){
+        for(i=0; i<p->nCol; i++){
+          const char *zCName = sqlite3_column_name(p->pStmt, i);
+          if( qrf_need_quote(zCName) ){
+            sqlite3_str_appendf(p->pOut, "%c\"%w\"",
+                                i==0 ? '(' : ',', zCName);
+          }else{
+            sqlite3_str_appendf(p->pOut, "%c%s",
+                                i==0 ? '(' : ',', zCName);
+          }
+        }
+        sqlite3_str_append(p->pOut, ")", 1);
+      }
+      sqlite3_str_append(p->pOut," VALUES(", 8);
       for(i=0; i<p->nCol; i++){
         if( i>0 ) sqlite3_str_append(p->pOut, ",", 1);
         qrfRenderValue(p, p->pOut, i);
@@ -1685,7 +1743,7 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     default: {  /* QRF_STYLE_List */
-      if( p->nRow==0 && p->spec.bColumnNames ){
+      if( p->nRow==0 && p->spec.bColumnNames==QRF_SW_On ){
         for(i=0; i<p->nCol; i++){
           const char *zCName = sqlite3_column_name(p->pStmt, i);
           if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);

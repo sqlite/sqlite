@@ -2067,16 +2067,26 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
   qrf.pzOutput = &zResult;
   for(i=2; i<objc; i++){
     const char *zArg = Tcl_GetString(objv[i]);
-    if( zArg[0]!='-' && zSql==0 ){
+    const char *azBool[] = { "auto", "off", "on", 0 };
+    if( zArg[0]!='-' ){
+      if( zSql ){
+        Tcl_AppendResult(pDb->interp, "unknown argument: ", zArg, (char*)0);
+        rc = TCL_ERROR;
+        goto format_failed;
+      }
       zSql  = zArg;
-    }else if( strcmp(zArg,"-style")==0 && i<objc-1 ){
+    }else if( i==objc-1 ){
+      Tcl_AppendResult(pDb->interp, "option has no argument: ", zArg, (char*)0);
+      rc = TCL_ERROR;
+      goto format_failed;
+    }else if( strcmp(zArg,"-style")==0 ){
       static const char *azStyles[] = {
         "auto",             "box",              "column",
         "count",            "csv",              "eqp",
         "explain",          "html",             "insert",
         "json",             "line",             "list",
         "markdown",         "quote",            "scanexp",
-        "table"
+        "table",            0
       };
       static unsigned char aStyleMap[] = {
         QRF_STYLE_Auto,     QRF_STYLE_Box,      QRF_STYLE_Column,
@@ -2087,13 +2097,92 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
         QRF_STYLE_Table
       };
       int style;
-      if( Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azStyles,
-                              "format style", 0, &style) ) return SQLITE_ERROR;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azStyles,
+                              "format style", 0, &style);
+      if( rc ) goto format_failed;
       qrf.eStyle = aStyleMap[style];
       i++;
+    }else if( strcmp(zArg,"-null")==0 ){
+      qrf.zNull = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-rowsep")==0 ){
+      qrf.zRowSep = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-columnsep")==0 ){
+      qrf.zColumnSep = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-tablename")==0 ){
+      qrf.zTableName = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-columnnames")==0 ){
+      int v = 0;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
+                              "-columnnames", 0, &v);
+      if( rc ) goto format_failed;
+      qrf.bColumnNames = v;
+      i++;
+    }else if( strcmp(zArg,"-wordwrap")==0 ){
+      int v = 0;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
+                              "-wordwrap", 0, &v);
+      if( rc ) goto format_failed;
+      qrf.bWordWrap = v;
+      i++;
+    }else if( strcmp(zArg,"-testjsonb")==0 ){
+      int v = 0;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
+                              "-testjsonb", 0, &v);
+      if( rc ) goto format_failed;
+      qrf.bTextJsonb = v;
+      i++;
+    }else if( strcmp(zArg,"-maxwidth")==0 ){
+      int v = 0;
+      rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
+      if( rc ) goto format_failed;
+      if( v<0 ){
+        v = 0;
+      }else if( v>QRF_MX_WIDTH ){
+        v = QRF_MX_WIDTH;
+      }
+      qrf.mxWidth = v;
+      i++;
+    }else if( strcmp(zArg,"-widths")==0 ){
+      int n = 0;
+      int jj;
+      rc = Tcl_ListObjLength(pDb->interp, objv[i+1], &n);
+      if( rc ) goto format_failed;
+      sqlite3_free(qrf.aWidth);
+      qrf.aWidth = sqlite3_malloc64( (n+1)*sizeof(qrf.aWidth[0]) );
+      if( qrf.aWidth==0 ){
+        Tcl_AppendResult(pDb->interp, "out of memory", (char*)0);
+        rc = TCL_ERROR;
+        goto format_failed;
+      }
+      memset(qrf.aWidth, 0, (n+1)*sizeof(qrf.aWidth[0]));
+      qrf.nWidth = n;
+      for(jj=0; jj<n; jj++){
+        Tcl_Obj *pTerm;
+        const char *zTerm;
+        rc = Tcl_ListObjIndex(pDb->interp, objv[i+1], jj, &pTerm);
+        if( rc ) goto format_failed;
+        zTerm = Tcl_GetString(pTerm);
+        if( strcmp(zTerm, "-0")==0 ){
+          qrf.aWidth[jj] = QRF_MINUS_ZERO;
+        }else{
+          int v = atoi(zTerm);
+          if( v<QRF_MN_WIDTH ){
+            v = QRF_MN_WIDTH;
+          }else if( v>QRF_MX_WIDTH ){
+            v = QRF_MX_WIDTH;
+          }
+          qrf.aWidth[jj] = v;
+        }
+      }
+      i++;
     }else{
-      Tcl_AppendResult(pDb->interp, "unknown argument: ", zArg, (char*)0);
-      return TCL_ERROR;
+      Tcl_AppendResult(pDb->interp, "unknown option: ", zArg, (char*)0);
+      rc = TCL_ERROR;
+      goto format_failed;
     }
   }
   while( zSql && zSql[0] ){
@@ -2113,10 +2202,11 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
     }
   }
   Tcl_SetResult(pDb->interp, zResult, TCL_VOLATILE);
-  sqlite3_free(zResult);
-  return TCL_OK;
-
+  rc = TCL_OK;
+  /* Fall through...*/
+  
 format_failed:
+  sqlite3_free(qrf.aWidth);
   sqlite3_free(zResult);
   return rc;
 
@@ -3075,7 +3165,7 @@ deserialize_error:
   ** text and return that text.
   */
   case DB_FORMAT: {
-    dbQrf(pDb, objc, objv);
+    rc = dbQrf(pDb, objc, objv);
     break;
   }
 

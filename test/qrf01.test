@@ -57,6 +57,14 @@ do_test 1.30 {
 do_test 1.40 {
   set result "\n[db format -style column {SELECT * FROM t1}]"
 } {
+a     b    c    
+----  ---  -----
+1     2.5  three
+BLOB       Ἀμήν 
+}
+do_test 1.41 {
+  set result "\n[db format -style column -columnnames off {SELECT * FROM t1}]"
+} {
 1     2.5  three
 BLOB       Ἀμήν 
 }
@@ -68,10 +76,32 @@ do_test 1.50 {
 do_test 1.60 {
   db format -style csv {SELECT * FROM t1}
 } "1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
+do_test 1.61 {
+  db format -style csv -columnnames on {SELECT * FROM t1}
+} "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 
 do_test 1.70 {
   set result "\n[db format -style html {SELECT * FROM t1}]"
 } {
+<TR>
+<TD>1
+<TD>2.5
+<TD>three
+</TR>
+<TR>
+<TD>BLOB
+<TD>null
+<TD>Ἀμήν
+</TR>
+}
+do_test 1.71 {
+  set result "\n[db format -style html -columnnames on {SELECT * FROM t1}]"
+} {
+<TR>
+<TH>a
+<TH>b
+<TH>c
+</TR>
 <TR>
 <TD>1
 <TD>2.5
@@ -89,6 +119,26 @@ do_test 1.80 {
 } {
 INSERT INTO tab VALUES(1,2.5,'three');
 INSERT INTO tab VALUES(x'424c4f42',NULL,'Ἀμήν');
+}
+do_test 1.81 {
+  set result "\n[db format -style insert -tablename t1 {SELECT * FROM t1}]"
+} {
+INSERT INTO t1 VALUES(1,2.5,'three');
+INSERT INTO t1 VALUES(x'424c4f42',NULL,'Ἀμήν');
+}
+do_test 1.82 {
+  set result "\n[db format -style insert -tablename t1 -columnnames on \
+      {SELECT * FROM t1}]"
+} {
+INSERT INTO t1(a,b,c) VALUES(1,2.5,'three');
+INSERT INTO t1(a,b,c) VALUES(x'424c4f42',NULL,'Ἀμήν');
+}
+do_test 1.83 {
+  set result "\n[db format -style insert -tablename drop -columnnames on \
+      {SELECT a AS "a-b", b, c AS "123" FROM t1}]"
+} {
+INSERT INTO "drop"("a-b",b,"123") VALUES(1,2.5,'three');
+INSERT INTO "drop"("a-b",b,"123") VALUES(x'424c4f42',NULL,'Ἀμήν');
 }
 
 do_test 1.90 {
@@ -109,6 +159,17 @@ a = BLOB
 b = 
 c = Ἀμήν
 }
+do_test 1.101 {
+  set result "\n[db format -style line -null (NULL) {SELECT * FROM t1}]"
+} {
+a = 1
+b = 2.5
+c = three
+
+a = BLOB
+b = (NULL)
+c = Ἀμήν
+}
 
 do_test 1.110 {
   set result "\n[db format -style list {SELECT * FROM t1}]"
@@ -116,6 +177,18 @@ do_test 1.110 {
 1|2.5|three
 BLOB||Ἀμήν
 }
+do_test 1.111 {
+  set result "\n[db format -style list -columnnames on {SELECT * FROM t1}]"
+} {
+a|b|c
+1|2.5|three
+BLOB||Ἀμήν
+}
+do_test 1.112 {
+  set rc [catch {db format -style list -columnnames unk {SELECT * FROM t1}} res]
+  lappend rc $res
+} {1 {bad -columnnames "unk": must be auto, off, or on}}
+
 
 do_test 1.120 {
   set result "\n[db format -style markdown {SELECT * FROM t1}]"
@@ -131,6 +204,30 @@ do_test 1.130 {
 } {
 1,2.5,'three'
 x'424c4f42',NULL,'Ἀμήν'
+}
+do_test 1.131 {
+  set result "\n[db format -style quote -columnnames on {SELECT * FROM t1}]"
+} {
+'a','b','c'
+1,2.5,'three'
+x'424c4f42',NULL,'Ἀμήν'
+}
+
+
+do_execsql_test 2.0 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(1,2,'The quick fox jumps over the lazy brown dog.');
+}
+do_test 2.1 {
+  set result "\n[db format -widths {10 -10 22} -wordwrap off \
+                 {SELECT * FROM t1}]"
+} {
+┌────────────┬────────────┬────────────────────────┐
+│     a      │     b      │           c            │
+├────────────┼────────────┼────────────────────────┤
+│ 1          │          2 │ The quick fox jumps ov │
+│            │            │ er the lazy brown dog. │
+└────────────┴────────────┴────────────────────────┘
 }
 
 finish_test
