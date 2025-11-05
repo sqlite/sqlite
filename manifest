@@ -1,5 +1,5 @@
-C The\sTCL\sinterface\sfor\sQRF\sis\snow\sfeature\scomplete\s(at\sleast\suntil\sI\sthink\nof\snew\sfeatures\sto\sadd).\s\sThere\sis\sstill\sa\slot\sof\stesting,\sbug-fixing,\nand\sdocumentation\sto\sbe\sdone,\showever.
-D 2025-11-05T18:27:18.151
+C The\sqrf-tester.c\sprogram\swas\sremoved\sin\sthe\sprevious\scheck-in,\sbut\sthe\nmakefile\srules\sto\sbuild\sit\swere\snot.\s\sThis\scheck-in\sfixes\sthat\soversight.
+D 2025-11-05T18:35:54.490
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -657,7 +657,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 22c554873b933652b0ab89a729d90493687a799ac24e8f940c16461aa9091ea3
+F main.mk 27873023570af57091768db5ed89e449e6a1a4ec9f72a43823871e435f89efea
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2172,8 +2172,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7200372ed2424d1ac4c88644e0b17a224539f170b9111ced9c88774edbd75261
-R c08f61440d4d487375dc477b759daec9
+P 633fe4fe584ae14ed6ced1ae137bf96a434a012423d70f0f93876737b0ca075c
+R 70942b4daded82313531eeb35df731ae
 U drh
-Z 6f4e493d857d3f3fb51f0ded7bd78aca
+Z 687a4d4793d1bb836e5c2deeb266cdf6
 # Remove this line to create a well-formed Fossil manifest.

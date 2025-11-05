@@ -2143,11 +2143,6 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(T.link) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
 xbin: threadtest5
 
-qrf-tester:	sqlite3.o $(TOP)/ext/qrf/qrf-tester.c $(TOP)/ext/qrf/qrf.c $(TOP)/ext/qrf/qrf.h
-	$(T.link) -I$(TOP)/ext/qrf -I. \
-		$(TOP)/ext/qrf/qrf-tester.c $(TOP)/ext/qrf/qrf.c sqlite3.o \
-		-o $@ $(LDFLAGS.libsqlite3)
-
 #
 # STATIC_CLI_SHELL = 1 to statically link sqlite3$(T.exe), else
 # 0. Requires static versions of all requisite libraries. Primarily
