@@ -2198,7 +2198,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       if( rc ) goto format_failed;
       qrf.bWordWrap = v;
       i++;
-    }else if( strcmp(zArg,"-testjsonb")==0 ){
+    }else if( strcmp(zArg,"-textjsonb")==0 ){
       int v = 0;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
                               "-testjsonb", 0, &v);

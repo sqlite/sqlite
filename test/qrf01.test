@@ -367,6 +367,23 @@ do_test 2.5 {
 └───────┴───────┴─────────────────────┘
 }
 
+do_execsql_test 2.10 {
+  UPDATE t1 SET c='Η γρήγορη αλεπού πηδάει πάνω από το τεμπέλικο καφέ σκυλί';
+}
+do_test 2.11 {
+  set result "\n[db format -widths {5 -5 18} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬───────┬────────────────────┐
+│   a   │   b   │         c          │
+├───────┼───────┼────────────────────┤
+│ 1     │     2 │ Η γρήγορη αλεπού   │
+│       │       │ πηδάει πάνω από το │
+│       │       │ τεμπέλικο καφέ     │
+│       │       │ σκυλί              │
+└───────┴───────┴────────────────────┘
+}
+
 
 do_execsql_test 3.0 {
   DELETE FROM t1;
@@ -413,5 +430,40 @@ do_test 3.5 {
   catch {db format -esc unk {SELECT * FROM t1}} res
   set res
 } {bad control character escape (-esc) "unk": must be ascii, auto, off, or symbol}
+
+do_execsql_test 4.0 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(json('{a:5,b:6}'), jsonb('{c:1,d:2}'), 99);
+}
+do_test 4.1 {
+  set result "\n[db format -text sql {SELECT * FROM t1}]"
+} {
+┌─────────────────┬───────────────────────┬────┐
+│        a        │           b           │ c  │
+├─────────────────┼───────────────────────┼────┤
+│ '{"a":5,"b":6}' │ x'8c1763133117641332' │ 99 │
+└─────────────────┴───────────────────────┴────┘
+}
+do_test 4.2 {
+  set result "\n[db format -text sql -textjsonb on {SELECT * FROM t1}]"
+} {
+┌─────────────────┬─────────────────┬────┐
+│        a        │        b        │ c  │
+├─────────────────┼─────────────────┼────┤
+│ '{"a":5,"b":6}' │ '{"c":1,"d":2}' │ 99 │
+└─────────────────┴─────────────────┴────┘
+}
+do_test 4.3 {
+  set result "\n[db format -text off -textjsonb on -maxwidth 10 \
+              {SELECT a AS json, b AS jsonb, c AS num FROM t1}]"
+} {
+┌─────────────┬─────────────┬─────┐
+│    json     │    jsonb    │ num │
+├─────────────┼─────────────┼─────┤
+│ {"a":5,"b": │ {"c":1,"d": │ 99  │
+│ 6}          │ 2}          │     │
+└─────────────┴─────────────┴─────┘
+}
+
 
 finish_test
