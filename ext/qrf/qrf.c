@@ -1131,7 +1131,7 @@ static void qrfColumnar(Qrf *p){
           sqlite3_str_reset(aCol[i]);
           qrfRenderValue(p, aCol[i], i);
           uz = (unsigned char*)sqlite3_str_value(aCol[i]);
-          if( uz==0 ){ qrfOom(p); goto qrf_column_end; }
+          if( uz==0 ) uz = (unsigned char*)"";
         }
         azData[k] = qrfTableCell(p, uz, &azNextLine[i], wx, bw);
         if( p->iErr ) goto qrf_column_end;
