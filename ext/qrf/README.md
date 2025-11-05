@@ -15,14 +15,22 @@ prepared statement, use code similar to the following:
 > ~~~
 sqlite3_qrf_spec spec;  /* Format specification */
 char *zErrMsg;          /* Text error message (optional) */
+char *zResult = 0;      /* Formatted output written here */
 int rc;                 /* Result code */
 
 memset(&spec, 0, sizeof(spec));
-// Fill out the spec object to describe the desired output format
+spec.iVersion = 1;
+spec.pzOutput = &zResult;
+// Optionally fill other settings in spec, as needed
 zErrMsg = 0;
 rc = sqlite3_format_query_result(pStmt, &spec, &zErrMsg);
-if( rc ) printf("Error (%d): %s\n", rc, zErrMsg);
-sqlite3_free(zErrMsg);
+if( rc ){
+  printf("Error (%d): %s\n", rc, zErrMsg);
+  sqlite3_free(zErrMsg);
+}else{
+  printf("%s", zResult);
+  sqlite3_free(zResult);
+}
 ~~~
 
 The `sqlite3_qrf_spec` object describes the desired output format
@@ -62,7 +70,12 @@ struct sqlite3_qrf_spec {
 ~~~
 
 The sqlite3_qrf_spec object must be fully initialized prior
-to calling `sqlite3_format_query_result()`.
+to calling `sqlite3_format_query_result()`.  Initialization can be mostly
+accomplished using memset() to zero the spec object, as most fields
+use a zero value as a reasonable default.  However, the iVersion
+field must be set to 1 and one of either the pzOutput or xWrite fields
+must be initialized to a non-NULL value to tell QRF where to send
+its output.
 
 ### 2.1 Structure Version Number
 
@@ -75,12 +88,15 @@ than 1. Thus the iVersion field is used to support upgradability.
 
 The formatted output can either be sent to a callback function
 or accumulated into an output buffer in memory obtained
-from system malloc().  If the sqlite3_qrf_spec.xWrite column is not NULL,
+from sqlite3_malloc().  If the sqlite3_qrf_spec.xWrite column is not NULL,
 then that function is invoked (using sqlite3_qrf_spec.xWriteArg as its
 first argument) to transmit the formatted output.  Or, if
 sqlite3_qrf_spec.pzOutput points to a pointer to a character, then that
 pointer is made to point to memory obtained from sqlite3_malloc() that
-contains the complete text of the formatted output.
+contains the complete text of the formatted output.  If spec.pzOutput\[0\]
+is initially non-NULL, then it is assumed to point to memory obtained
+from sqlite3_malloc().  In that case, the buffer is resized using
+sqlite3_realloc() and the new text is appended.
 
 One of sqlite3_qrf_spec.xWrite and sqlite3_qrf_spec.pzOutput must be
 non-NULL and the other must be NULL.
@@ -106,24 +122,28 @@ formatted when displaying TEXT values in the result.  These are the allowed
 values:
 
 > ~~~
-#define QRF_ESC_Ascii   0 /* Unix-style escapes.  Ex: U+0007 shows ^G */
-#define QRF_ESC_Symbol  1 /* Unicode escapes. Ex: U+0007 shows U+2407 */
-#define QRF_ESC_Off     2 /* Do not escape control characters */
+#define QRF_ESC_Auto    0 /* Choose the ctrl-char escape automatically */
+#define QRF_ESC_Off     1 /* Do not escape control characters */
+#define QRF_ESC_Ascii   2 /* Unix-style escapes.  Ex: U+0007 shows ^G */
+#define QRF_ESC_Symbol  3 /* Unicode escapes. Ex: U+0007 shows U+2407 */
 ~~~
 
-If the value of eEsc is zero, then the control character
+If the value of eEsc is QRF_ESC_Ascii, then the control character
 with value X is displayed as ^Y where Y is X+0x40.  Hence, a
-backspace character (U+0008) is shown as "^H".  This is the
-default.
+backspace character (U+0008) is shown as "^H".
 
-If eEsc is one, then control characters in the range of U+0001
+If eEsc is QRF_ESC_Symbol, then control characters in the range of U+0001
 through U+001f are mapped into U+2401 through U+241f, respectively.
 
-If the value of eEsc is two, then no translation occurs
+If the value of eEsc is QRF_ESC_Off, then no translation occurs
 and control characters that appear in TEXT string are transmitted
 to the formatted output as-is.  This an be dangerous in applications,
 since an adversary who can control TEXT values might be able to
 inject ANSI cursor movement sequences to hide nefarious values.
+
+The QRF_ESC_Auto value for eEsc means that the query result formatter
+gets to pick whichever control-character encoding it things is best for
+the situation.  This will usually be QRF_ESC_Ascii.
 
 The TAB (U+0009), LF (U+000a) and CR-LF (U+000d,U+000a) character
 sequence are always output literally and are not mapped to alternative
@@ -134,13 +154,17 @@ display values, regardless of this setting.
 The sqlite3_qrf_spec.eText field can have one of the following values:
 
 > ~~~
-#define QRF_TEXT_Off     0 /* Literal text */
-#define QRF_TEXT_Sql     1 /* Quote as an SQL literal */
-#define QRF_TEXT_Csv     2 /* CSV-style quoting */
-#define QRF_TEXT_Html    3 /* HTML-style quoting */
-#define QRF_TEXT_Tcl     4 /* C/Tcl quoting */
-#define QRF_TEXT_Json    5 /* JSON quoting */
+#define QRF_TEXT_Auto    0 /* Choose text encoding automatically */
+#define QRF_TEXT_Off     1 /* Literal text */
+#define QRF_TEXT_Sql     2 /* Quote as an SQL literal */
+#define QRF_TEXT_Csv     3 /* CSV-style quoting */
+#define QRF_TEXT_Html    4 /* HTML-style quoting */
+#define QRF_TEXT_Tcl     5 /* C/Tcl quoting */
+#define QRF_TEXT_Json    6 /* JSON quoting */
 ~~~
+
+A value of QRF_TEXT_Auto means that the query result formatter will choose
+what it things will be the best text encoding.
 
 A value of QRF_TEXT_Off means that text value appear in the output exactly
 as they are found in the database file, with no translation.
@@ -331,22 +355,23 @@ might increase in future versions.
 The following output modes are currently defined:
 
 > ~~~
-#define QRF_STYLE_List      0 /* One record per line with a separator */
-#define QRF_STYLE_Line      1 /* One column per line. */
-#define QRF_STYLE_Html      2 /* Generate an XHTML table */
-#define QRF_STYLE_Json      3 /* Output is a list of JSON objects */
-#define QRF_STYLE_Insert    4 /* Generate SQL "insert" statements */
-#define QRF_STYLE_Csv       5 /* Comma-separated-value */
-#define QRF_STYLE_Quote     6 /* SQL-quoted, comma-separated */
-#define QRF_STYLE_Explain   7 /* EXPLAIN output */
-#define QRF_STYLE_ScanExp   8 /* EXPLAIN output with vm stats */
-#define QRF_STYLE_EQP       9 /* Format EXPLAIN QUERY PLAN output */
-#define QRF_STYLE_Markdown 10 /* Markdown formatting */
-#define QRF_STYLE_Column   11 /* One record per line in neat columns */
-#define QRF_STYLE_Table    12 /* MySQL-style table formatting */
-#define QRF_STYLE_Box      13 /* Unicode box-drawing characters */
-#define QRF_STYLE_Count    14 /* Output only a count of the rows of output */
-#define QRF_STYLE_Off      15 /* No query output shown */
+#define QRF_STYLE_Auto      0 /* Choose a style automatically */
+#define QRF_STYLE_List      1 /* One record per line with a separator */
+#define QRF_STYLE_Line      2 /* One column per line. */
+#define QRF_STYLE_Html      3 /* Generate an XHTML table */
+#define QRF_STYLE_Json      4 /* Output is a list of JSON objects */
+#define QRF_STYLE_Insert    5 /* Generate SQL "insert" statements */
+#define QRF_STYLE_Csv       6 /* Comma-separated-value */
+#define QRF_STYLE_Quote     7 /* SQL-quoted, comma-separated */
+#define QRF_STYLE_Explain   8 /* EXPLAIN output */
+#define QRF_STYLE_ScanExp   9 /* EXPLAIN output with vm stats */
+#define QRF_STYLE_EQP      10 /* Format EXPLAIN QUERY PLAN output */
+#define QRF_STYLE_Markdown 11 /* Markdown formatting */
+#define QRF_STYLE_Column   12 /* One record per line in neat columns */
+#define QRF_STYLE_Table    13 /* MySQL-style table formatting */
+#define QRF_STYLE_Box      14 /* Unicode box-drawing characters */
+#define QRF_STYLE_Count    15 /* Output only a count of the rows of output */
+#define QRF_STYLE_Off      16 /* No query output shown */
 ~~~
 
 ### 5.0 Source Code Files

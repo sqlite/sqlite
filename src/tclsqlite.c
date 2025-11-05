@@ -2059,13 +2059,11 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
   char *zResult = 0;             /* Result to be returned */
   const char *zSql = 0;          /* SQL to run */
   int i;                         /* Loop counter */
-  sqlite3_str *pPrior = 0;       /* Prior results */
   int rc;                        /* Result code */
   sqlite3_qrf_spec qrf;          /* Formatting spec */
 
   memset(&qrf, 0, sizeof(qrf));
   qrf.iVersion = 1;
-  qrf.eStyle = QRF_STYLE_Box;
   qrf.pzOutput = &zResult;
   for(i=2; i<objc; i++){
     const char *zArg = Tcl_GetString(objv[i]);
@@ -2073,18 +2071,20 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       zSql  = zArg;
     }else if( strcmp(zArg,"-style")==0 && i<objc-1 ){
       static const char *azStyles[] = {
-        "box",            "column",           "count",
-        "csv",            "eqp",              "explain", 
-        "html",           "insert",           "json",
-        "line",           "list",             "markdown",
-        "quote",          "scanexp",          "table"
+        "auto",             "box",              "column",
+        "count",            "csv",              "eqp",
+        "explain",          "html",             "insert",
+        "json",             "line",             "list",
+        "markdown",         "quote",            "scanexp",
+        "table"
       };
       static unsigned char aStyleMap[] = {
-        QRF_STYLE_Box,    QRF_STYLE_Column,   QRF_STYLE_Count,
-        QRF_STYLE_Csv,    QRF_STYLE_EQP,      QRF_STYLE_Explain,
-        QRF_STYLE_Html,   QRF_STYLE_Insert,   QRF_STYLE_Json,
-        QRF_STYLE_Line,   QRF_STYLE_List,     QRF_STYLE_Markdown,
-        QRF_STYLE_Quote,  QRF_STYLE_ScanExp,  QRF_STYLE_Table
+        QRF_STYLE_Auto,     QRF_STYLE_Box,      QRF_STYLE_Column,
+        QRF_STYLE_Count,    QRF_STYLE_Csv,      QRF_STYLE_EQP,
+        QRF_STYLE_Explain,  QRF_STYLE_Html,     QRF_STYLE_Insert,
+        QRF_STYLE_Json,     QRF_STYLE_Line,     QRF_STYLE_List,
+        QRF_STYLE_Markdown, QRF_STYLE_Quote,    QRF_STYLE_ScanExp,
+        QRF_STYLE_Table
       };
       int style;
       if( Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azStyles,
@@ -2097,20 +2097,12 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
     }
   }
   while( zSql && zSql[0] ){
-    const char *zNext;                 /* Next statement after current */
     SqlPreparedStmt *pStmt = 0;        /* Next statement to run */
     char *zErr = 0;                    /* Error message from QRF */
 
-    rc = dbPrepareAndBind(pDb, zSql, &zNext, &pStmt);
+    rc = dbPrepareAndBind(pDb, zSql, &zSql, &pStmt);
     if( rc ) goto format_failed;
-    if( zResult ){
-      if( pPrior==0 ){
-        pPrior = sqlite3_str_new(pDb->db);
-        if( pPrior==0 ) goto format_oom;
-      }
-      sqlite3_str_appendall(pPrior, zResult);
-      zResult = 0;
-    }
+    if( pStmt==0 ) continue;
     rc = sqlite3_format_query_result(pStmt->pStmt, &qrf, &zErr);
     dbReleaseStmt(pDb, pStmt, 0);
     if( rc ){
@@ -2119,25 +2111,13 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       rc = TCL_ERROR;
       goto format_failed;
     }
-    zSql = zNext;
-  }
-
-  if( pPrior ){
-    sqlite3_str_appendall(pPrior, zResult);
-    sqlite3_free(zResult);
-    zResult = sqlite3_str_finish(pPrior);
-    pPrior = 0;
   }
   Tcl_SetResult(pDb->interp, zResult, TCL_VOLATILE);
   sqlite3_free(zResult);
   return TCL_OK;
 
-format_oom:
-  Tcl_AppendResult(pDb->interp, "out of memory", (char*)0);
-
 format_failed:
-  if( zResult ) sqlite3_free(zResult);
-  if( pPrior ) sqlite3_free(sqlite3_str_finish(pPrior));
+  sqlite3_free(zResult);
   return rc;
 
 #endif

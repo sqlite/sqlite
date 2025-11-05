@@ -1480,7 +1480,16 @@ static void qrfInitialize(
   sz = sizeof(sqlite3_qrf_spec);
   memcpy(&p->spec, pSpec, sz);
   if( p->spec.zNull==0 ) p->spec.zNull = "";
+qrf_reinit:
   switch( p->spec.eStyle ){
+    case QRF_STYLE_Auto: {
+      switch( sqlite3_stmt_isexplain(pStmt) ){
+        case 0:  p->spec.eStyle = QRF_STYLE_Box;      break;
+        case 1:  p->spec.eStyle = QRF_STYLE_Explain;  break;
+        default: p->spec.eStyle = QRF_STYLE_EQP;      break;
+      }
+      goto qrf_reinit;
+    }
     case QRF_STYLE_List: {
       if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = "|";
       if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
@@ -1561,20 +1570,19 @@ static void qrfInitialize(
       break;
     }
   }
+  if( p->spec.eEsc==QRF_ESC_Auto ){
+    p->spec.eEsc = QRF_ESC_Ascii;
+  }
+  if( p->spec.eText==QRF_TEXT_Auto ){
+    p->spec.eText = QRF_TEXT_Off;
+  }
   if( p->spec.eBlob==QRF_BLOB_Auto ){
     switch( p->spec.eText ){
       case QRF_TEXT_Sql:  p->spec.eBlob = QRF_BLOB_Sql;  break;
       case QRF_TEXT_Csv:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
       case QRF_TEXT_Tcl:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
       case QRF_TEXT_Json: p->spec.eBlob = QRF_BLOB_Json; break;
-      default:           p->spec.eBlob = QRF_BLOB_Text; break;
-    }
-  }
-  switch( p->spec.eStyle ){
-    case QRF_STYLE_List: {
-      if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = "|";
-      if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
-      break;
+      default:            p->spec.eBlob = QRF_BLOB_Text; break;
     }
   }
 }
@@ -1722,7 +1730,24 @@ static void qrfFinalize(Qrf *p){
     }
   }
   if( p->spec.pzOutput ){
-    *p->spec.pzOutput = sqlite3_str_finish(p->pOut);
+    if( p->spec.pzOutput[0] ){
+      sqlite3_int64 n, sz;
+      char *zCombined;
+      sz = strlen(p->spec.pzOutput[0]);
+      n = sqlite3_str_length(p->pOut);
+      zCombined = sqlite3_realloc(p->spec.pzOutput[0], sz+n+1);
+      if( zCombined==0 ){
+        sqlite3_free(p->spec.pzOutput[0]);
+        p->spec.pzOutput[0] = 0;
+        qrfOom(p);
+      }else{
+        p->spec.pzOutput[0] = zCombined;
+        memcpy(zCombined+sz, sqlite3_str_value(p->pOut), n+1);
+      }
+      sqlite3_free(sqlite3_str_finish(p->pOut));
+    }else{
+      p->spec.pzOutput[0] = sqlite3_str_finish(p->pOut);
+    }
   }else if( p->pOut ){
     sqlite3_free(sqlite3_str_finish(p->pOut));
   }

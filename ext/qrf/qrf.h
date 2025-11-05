@@ -64,33 +64,35 @@ int sqlite3_format_query_result(
 /*
 ** Output styles:
 */
-#define QRF_STYLE_List      0 /* One record per line with a separator */
-#define QRF_STYLE_Line      1 /* One column per line. */
-#define QRF_STYLE_Html      2 /* Generate an XHTML table */
-#define QRF_STYLE_Json      3 /* Output is a list of JSON objects */
-#define QRF_STYLE_Insert    4 /* Generate SQL "insert" statements */
-#define QRF_STYLE_Csv       5 /* Comma-separated-value */
-#define QRF_STYLE_Quote     6 /* SQL-quoted, comma-separated */
-#define QRF_STYLE_Explain   7 /* EXPLAIN output */
-#define QRF_STYLE_ScanExp   8 /* EXPLAIN output with vm stats */
-#define QRF_STYLE_EQP       9 /* Format EXPLAIN QUERY PLAN output */
-#define QRF_STYLE_Markdown 10 /* Markdown formatting */
-#define QRF_STYLE_Column   11 /* One record per line in neat columns */
-#define QRF_STYLE_Table    12 /* MySQL-style table formatting */
-#define QRF_STYLE_Box      13 /* Unicode box-drawing characters */
-#define QRF_STYLE_Count    14 /* Output only a count of the rows of output */
-#define QRF_STYLE_Off      15 /* No query output shown */
+#define QRF_STYLE_Auto      0 /* Choose a style automatically */
+#define QRF_STYLE_List      1 /* One record per line with a separator */
+#define QRF_STYLE_Line      2 /* One column per line. */
+#define QRF_STYLE_Html      3 /* Generate an XHTML table */
+#define QRF_STYLE_Json      4 /* Output is a list of JSON objects */
+#define QRF_STYLE_Insert    5 /* Generate SQL "insert" statements */
+#define QRF_STYLE_Csv       6 /* Comma-separated-value */
+#define QRF_STYLE_Quote     7 /* SQL-quoted, comma-separated */
+#define QRF_STYLE_Explain   8 /* EXPLAIN output */
+#define QRF_STYLE_ScanExp   9 /* EXPLAIN output with vm stats */
+#define QRF_STYLE_EQP      10 /* Format EXPLAIN QUERY PLAN output */
+#define QRF_STYLE_Markdown 11 /* Markdown formatting */
+#define QRF_STYLE_Column   12 /* One record per line in neat columns */
+#define QRF_STYLE_Table    13 /* MySQL-style table formatting */
+#define QRF_STYLE_Box      14 /* Unicode box-drawing characters */
+#define QRF_STYLE_Count    15 /* Output only a count of the rows of output */
+#define QRF_STYLE_Off      16 /* No query output shown */
 
 /*
 ** Quoting styles for text.
 ** Allowed values for sqlite3_qrf_spec.eText
 */
-#define QRF_TEXT_Off     0 /* Literal text */
-#define QRF_TEXT_Sql     1 /* Quote as an SQL literal */
-#define QRF_TEXT_Csv     2 /* CSV-style quoting */
-#define QRF_TEXT_Html    3 /* HTML-style quoting */
-#define QRF_TEXT_Tcl     4 /* C/Tcl quoting */
-#define QRF_TEXT_Json    5 /* JSON quoting */
+#define QRF_TEXT_Auto    0 /* Choose text encoding automatically */
+#define QRF_TEXT_Off     1 /* Literal text */
+#define QRF_TEXT_Sql     2 /* Quote as an SQL literal */
+#define QRF_TEXT_Csv     3 /* CSV-style quoting */
+#define QRF_TEXT_Html    4 /* HTML-style quoting */
+#define QRF_TEXT_Tcl     5 /* C/Tcl quoting */
+#define QRF_TEXT_Json    6 /* JSON quoting */
 
 /*
 ** Quoting styles for BLOBs
@@ -107,8 +109,9 @@ int sqlite3_format_query_result(
 ** Control-character escape modes.
 ** Allowed values for sqlite3_qrf_spec.eEscape
 */
-#define QRF_ESC_Off     0 /* Do not escape control characters */
-#define QRF_ESC_Ascii   1 /* Unix-style escapes.  Ex: U+0007 shows ^G */
-#define QRF_ESC_Symbol  2 /* Unicode escapes. Ex: U+0007 shows U+2407 */
+#define QRF_ESC_Auto    0 /* Choose the ctrl-char escape automatically */
+#define QRF_ESC_Off     1 /* Do not escape control characters */
+#define QRF_ESC_Ascii   2 /* Unix-style escapes.  Ex: U+0007 shows ^G */
+#define QRF_ESC_Symbol  3 /* Unicode escapes. Ex: U+0007 shows U+2407 */
 
 #endif /* !defined(SQLITE_QRF_H) */
