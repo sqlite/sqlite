@@ -65,24 +65,24 @@ int sqlite3_format_query_result(
 ** Output styles:
 */
 #define QRF_STYLE_Auto      0 /* Choose a style automatically */
-#define QRF_STYLE_List      1 /* One record per line with a separator */
-#define QRF_STYLE_Line      2 /* One column per line. */
-#define QRF_STYLE_Html      3 /* Generate an XHTML table */
-#define QRF_STYLE_Json      4 /* Output is a list of JSON objects */
-#define QRF_STYLE_Insert    5 /* Generate SQL "insert" statements */
-#define QRF_STYLE_Csv       6 /* Comma-separated-value */
-#define QRF_STYLE_Quote     7 /* SQL-quoted, comma-separated */
-#define QRF_STYLE_Explain   8 /* EXPLAIN output */
-#define QRF_STYLE_Eqp      10 /* Format EXPLAIN QUERY PLAN output */
-#define QRF_STYLE_Stats    11 /* EQP-like output but with performance stats */
-#define QRF_STYLE_StatsEst 12 /* EQP-like output with planner estimates */
-#define QRF_STYLE_StatsVm  13 /* EXPLAIN-like output with performance stats */
-#define QRF_STYLE_Markdown 14 /* Markdown formatting */
-#define QRF_STYLE_Column   15 /* One record per line in neat columns */
-#define QRF_STYLE_Table    16 /* MySQL-style table formatting */
-#define QRF_STYLE_Box      17 /* Unicode box-drawing characters */
-#define QRF_STYLE_Count    18 /* Output only a count of the rows of output */
-#define QRF_STYLE_Off      19 /* No query output shown */
+#define QRF_STYLE_Box       1 /* Unicode box-drawing characters */
+#define QRF_STYLE_Column    2 /* One record per line in neat columns */
+#define QRF_STYLE_Count     3 /* Output only a count of the rows of output */
+#define QRF_STYLE_Csv       4 /* Comma-separated-value */
+#define QRF_STYLE_Eqp       5 /* Format EXPLAIN QUERY PLAN output */
+#define QRF_STYLE_Explain   6 /* EXPLAIN output */
+#define QRF_STYLE_Html      7 /* Generate an XHTML table */
+#define QRF_STYLE_Insert    8 /* Generate SQL "insert" statements */
+#define QRF_STYLE_Json      9 /* Output is a list of JSON objects */
+#define QRF_STYLE_Line     10 /* One column per line. */
+#define QRF_STYLE_List     11 /* One record per line with a separator */
+#define QRF_STYLE_Markdown 12 /* Markdown formatting */
+#define QRF_STYLE_Off      13 /* No query output shown */
+#define QRF_STYLE_Quote    14 /* SQL-quoted, comma-separated */
+#define QRF_STYLE_Stats    15 /* EQP-like output but with performance stats */
+#define QRF_STYLE_StatsEst 16 /* EQP-like output with planner estimates */
+#define QRF_STYLE_StatsVm  17 /* EXPLAIN-like output with performance stats */
+#define QRF_STYLE_Table    18 /* MySQL-style table formatting */
 
 /*
 ** Quoting styles for text.
