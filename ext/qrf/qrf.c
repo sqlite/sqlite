@@ -1470,6 +1470,41 @@ static void qrfExplain(Qrf *p){
 }
 
 /*
+** Do a "scanstatus vm" style EXPLAIN listing on p->pStmt.
+**
+** p->pStmt is probably not an EXPLAIN query.  Instead, construct a
+** new query that is a bytecode() rendering of p->pStmt with extra
+** columns for the "scanstatus vm" outputs, and run the results of
+** that new query through the normal EXPLAIN formatting.
+*/
+static void qrfScanStatusVm(Qrf *p){
+  sqlite3_stmt *pOrigStmt = p->pStmt;
+  sqlite3_stmt *pExplain;
+  int rc;
+  static const char *zSql =
+      "  SELECT addr, opcode, p1, p2, p3, p4, p5, comment, nexec,"
+      "   format('% 6s (%.2f%%)',"
+      "      CASE WHEN ncycle<100_000 THEN ncycle || ' '"
+      "         WHEN ncycle<100_000_000 THEN (ncycle/1_000) || 'K'"
+      "         WHEN ncycle<100_000_000_000 THEN (ncycle/1_000_000) || 'M'"
+      "         ELSE (ncycle/1000_000_000) || 'G' END,"
+      "       ncycle*100.0/(sum(ncycle) OVER ())"
+      "   )  AS cycles"
+      "   FROM bytecode(?1)";
+  rc = sqlite3_prepare_v2(p->db, zSql, -1, &pExplain, 0);
+  if( rc ){
+    qrfError(p, rc, "%s", sqlite3_errmsg(p->db));
+    sqlite3_finalize(pExplain);
+    return;
+  }
+  sqlite3_bind_pointer(pExplain, 1, pOrigStmt, "stmt-pointer", 0);
+  p->pStmt = pExplain;
+  qrfExplain(p);
+  sqlite3_finalize(pExplain);
+  p->pStmt = pOrigStmt;
+}
+
+/*
 ** Initialize the internal Qrf object.
 */
 static void qrfInitialize(
@@ -1565,11 +1600,11 @@ qrf_reinit:
         ** mode is EQP, so do not leave the mode in EQP if the statement is
         ** not an EQP statement.
         */
-        p->spec.eStyle = QRF_STYLE_Quote;
+        p->spec.eStyle = QRF_STYLE_Column;
         p->spec.bColumnNames = QRF_SW_On;
         p->spec.eText = QRF_TEXT_Sql;
         p->spec.eBlob = QRF_BLOB_Sql;
-        p->spec.zColumnSep = ",";
+        p->spec.zColumnSep = "  ";
         p->spec.zRowSep = "\n";
       }
       break;
@@ -1582,11 +1617,11 @@ qrf_reinit:
         ** mode is Explain, so do not leave the mode in Explain if the
         ** statement is not an EXPLAIN statement.
         */
-        p->spec.eStyle = QRF_STYLE_Quote;
+        p->spec.eStyle = QRF_STYLE_Column;
         p->spec.bColumnNames = QRF_SW_On;
         p->spec.eText = QRF_TEXT_Sql;
         p->spec.eBlob = QRF_BLOB_Sql;
-        p->spec.zColumnSep = ",";
+        p->spec.zColumnSep = "  ";
         p->spec.zRowSep = "\n";
       }
       break;
@@ -1872,6 +1907,10 @@ int sqlite3_format_query_result(
     }
     case QRF_STYLE_Explain: {
       qrfExplain(&qrf);
+      break;
+    }
+    case QRF_STYLE_ScanExp: {
+      qrfScanStatusVm(&qrf);
       break;
     }
     default: {

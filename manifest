@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sqrf\sbranch.
-D 2025-11-06T13:25:40.029
+C Changes\sto\stry\sto\simprove\sEXPLAIN\scapabilities.\s\sThis\sis\sa\ssnapshot\nprior\sto\san\sattempt\sto\smake\ssweeping\schanges\sin\sthat\sarea\sof\sthe\ninterface.
+D 2025-11-06T17:28:34.534
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 5f12f91104d5df8ba8783e2240635698569ce54935e721b3a4e93abf4e00ddcb
-F ext/qrf/qrf.c 4286a30696a106a39f7fe43f65384a239157c2e1bb7e55b92600086799b5c00c
+F ext/qrf/qrf.c 598c793d08461d62ed4e74078f8542e2ff4a733ff4eeaa05de8dbd8c5829f311
 F ext/qrf/qrf.h 98e02eded10848c42053d37e56bd15ab69cb6fe9fc1f1ca05823d9047e9c8509
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2173,8 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9a9c4580772fa35a68b3e27a40fc9bc615144979dfd27b1054538e29a489c024 305bb022368bac9fafd7c2794762299324796903aaea270923d07f2127d8926c
-R 7930f95caf614489786b62ded9bfb23b
+P 4e2ada6ad8a56d00aeb73570dc4ee22c484b65b8100a42a7085414d0a4c68afd
+R ada052660ca6412932dab58de0554df7
 U drh
-Z 84a722bb644539f8dee173b588bffd78
+Z e00ad94c88d3ff9e91d08c82898645f1
 # Remove this line to create a well-formed Fossil manifest.
