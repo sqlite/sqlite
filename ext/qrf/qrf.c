@@ -51,12 +51,13 @@ struct Qrf {
   sqlite3_str *pOut;          /* Accumulated output */
   int iErr;                   /* Error code */
   int nCol;                   /* Number of output columns */
+  int expMode;                /* Original sqlite3_stmt_isexplain() plus 1 */
   union {
     struct {                  /* Content for QRF_STYLE_Line */
       int mxColWth;             /* Maximum display width of any column */
       const char **azCol;       /* Names of output columns (MODE_Line) */
     } sLine;
-    EQPGraph *pGraph;         /* EQP graph (MODE_EQP) */
+    EQPGraph *pGraph;         /* EQP graph (Eqp, Stats, and StatsEst) */
     struct {                  /* Content for QRF_STYLE_Explain */
       int nIndent;              /* Slots allocated for aiIndent */
       int iIndent;              /* Current slot */
@@ -181,8 +182,8 @@ static void qrfEqpRenderLevel(Qrf *p, int iEqpId){
 ** Display and reset the EXPLAIN QUERY PLAN data
 */
 static void qrfEqpRender(Qrf *p, i64 nCycle){
-  EQPGraphRow *pRow = p->u.pGraph->pRow;
-  if( pRow ){
+  EQPGraphRow *pRow;
+  if( p->u.pGraph!=0 && (pRow = p->u.pGraph->pRow)!=0 ){
     if( pRow->zText[0]=='-' ){
       if( pRow->pNext==0 ){
         qrfEqpReset(p);
@@ -201,6 +202,129 @@ static void qrfEqpRender(Qrf *p, i64 nCycle){
     qrfEqpReset(p);
   }
 }
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+/*
+** Helper function for qrfExpStats().
+**
+*/
+static int qrfStatsHeight(sqlite3_stmt *p, int iEntry){
+  int iPid = 0;
+  int ret = 1;
+  sqlite3_stmt_scanstatus_v2(p, iEntry,
+      SQLITE_SCANSTAT_SELECTID, SQLITE_SCANSTAT_COMPLEX, (void*)&iPid
+  );
+  while( iPid!=0 ){
+    int ii;
+    for(ii=0; 1; ii++){
+      int iId;
+      int res;
+      res = sqlite3_stmt_scanstatus_v2(p, ii,
+          SQLITE_SCANSTAT_SELECTID, SQLITE_SCANSTAT_COMPLEX, (void*)&iId
+      );
+      if( res ) break;
+      if( iId==iPid ){
+        sqlite3_stmt_scanstatus_v2(p, ii,
+            SQLITE_SCANSTAT_PARENTID, SQLITE_SCANSTAT_COMPLEX, (void*)&iPid
+        );
+      }
+    }
+    ret++;
+  }
+  return ret;
+}
+#endif /* SQLITE_ENABLE_STMT_SCANSTATUS */
+
+
+/*
+** Generate ".scanstatus est" style of EQP output.
+*/
+static void qrfEqpStats(Qrf *p){
+#ifndef SQLITE_ENABLE_STMT_SCANSTATUS
+  qrfError(p, SQLITE_ERROR, "not available in this build");
+#else
+  static const int f = SQLITE_SCANSTAT_COMPLEX;
+  sqlite3_stmt *pS = p->pStmt;
+  int i = 0;
+  i64 nTotal = 0;
+  int nWidth = 0;
+  sqlite3_str *pLine = sqlite3_str_new(p->db);
+  sqlite3_str *pStats = sqlite3_str_new(p->db);
+  qrfEqpReset(p);
+
+  for(i=0; 1; i++){
+    const char *z = 0;
+    int n = 0;
+    if( sqlite3_stmt_scanstatus_v2(pS,i,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&z) ){
+      break;
+    }
+    n = (int)strlen(z) + qrfStatsHeight(pS,i)*3;
+    if( n>nWidth ) nWidth = n;
+  }
+  nWidth += 4;
+
+  sqlite3_stmt_scanstatus_v2(pS,-1, SQLITE_SCANSTAT_NCYCLE, f, (void*)&nTotal);
+  for(i=0; 1; i++){
+    i64 nLoop = 0;
+    i64 nRow = 0;
+    i64 nCycle = 0;
+    int iId = 0;
+    int iPid = 0;
+    const char *zo = 0;
+    const char *zName = 0;
+    double rEst = 0.0;
+
+    if( sqlite3_stmt_scanstatus_v2(pS,i,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&zo) ){
+      break;
+    }
+    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_EST,f,(void*)&rEst);
+    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NLOOP,f,(void*)&nLoop);
+    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NVISIT,f,(void*)&nRow);
+    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NCYCLE,f,(void*)&nCycle);
+    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_SELECTID,f,(void*)&iId);
+    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_PARENTID,f,(void*)&iPid);
+    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NAME,f,(void*)&zName);
+
+    if( nCycle>=0 || nLoop>=0 || nRow>=0 ){
+      const char *zSp = "";
+      double rpl;
+      sqlite3_str_reset(pStats);
+      if( nCycle>=0 && nTotal>0 ){
+        sqlite3_str_appendf(pStats, "cycles=%lld [%d%%]",
+            nCycle, ((nCycle*100)+nTotal/2) / nTotal
+        );
+        zSp = " ";
+      }
+      if( nLoop>=0 ){
+        sqlite3_str_appendf(pStats, "%sloops=%lld", zSp, nLoop);
+        zSp = " ";
+      }
+      if( nRow>=0 ){
+        sqlite3_str_appendf(pStats, "%srows=%lld", zSp, nRow);
+        zSp = " ";
+      }
+
+      if( p->spec.eStyle==QRF_STYLE_StatsEst ){
+        rpl = (double)nRow / (double)nLoop;
+        sqlite3_str_appendf(pStats, "%srpl=%.1f est=%.1f", zSp, rpl, rEst);
+      }
+
+      sqlite3_str_appendf(pLine,
+          "% *s (%s)", -1*(nWidth-qrfStatsHeight(pS,i)*3), zo,
+          sqlite3_str_value(pStats)
+      );
+      sqlite3_str_reset(pStats);
+      qrfEqpAppend(p, iId, iPid, sqlite3_str_value(pLine));
+      sqlite3_str_reset(pLine);
+    }else{
+      qrfEqpAppend(p, iId, iPid, zo);
+    }
+  }
+  sqlite3_free(sqlite3_str_finish(pLine));
+  sqlite3_free(sqlite3_str_finish(pStats));
+#endif
+}
+
 
 /*
 ** Reset the prepared statement.
@@ -1410,7 +1534,7 @@ static void qrfExplain(Qrf *p){
     int nWidth = sizeof(aExplainWidth)/sizeof(int);
     int iIndent = 1;
     int nArg = p->nCol;
-    if( p->spec.eStyle==QRF_STYLE_ScanExp ){
+    if( p->spec.eStyle==QRF_STYLE_StatsVm ){
       aWidth = aScanExpWidth;
       aMap = aScanExpMap;
       nWidth = sizeof(aScanExpWidth)/sizeof(int);
@@ -1541,7 +1665,7 @@ qrf_reinit:
       switch( sqlite3_stmt_isexplain(pStmt) ){
         case 0:  p->spec.eStyle = QRF_STYLE_Box;      break;
         case 1:  p->spec.eStyle = QRF_STYLE_Explain;  break;
-        default: p->spec.eStyle = QRF_STYLE_EQP;      break;
+        default: p->spec.eStyle = QRF_STYLE_Eqp;      break;
       }
       goto qrf_reinit;
     }
@@ -1592,37 +1716,19 @@ qrf_reinit:
       p->spec.zRowSep = "\n";
       break;
     }
-    case QRF_STYLE_EQP: {
-      if( sqlite3_stmt_isexplain(p->pStmt)!=2 ){
-        /* If EQP mode is requested, but the statement is not an EXPLAIN QUERY
-        ** PLAN statement, then convert the mode to a comma-separate list of
-        ** SQL-quoted values.  Downstream expects an EQP statement if the
-        ** mode is EQP, so do not leave the mode in EQP if the statement is
-        ** not an EQP statement.
-        */
-        p->spec.eStyle = QRF_STYLE_Column;
-        p->spec.bColumnNames = QRF_SW_On;
-        p->spec.eText = QRF_TEXT_Sql;
-        p->spec.eBlob = QRF_BLOB_Sql;
-        p->spec.zColumnSep = "  ";
-        p->spec.zRowSep = "\n";
+    case QRF_STYLE_Eqp: {
+      int expMode = sqlite3_stmt_isexplain(p->pStmt);
+      if( expMode!=2 ){
+        sqlite3_stmt_explain(p->pStmt, 2);
+        p->expMode = expMode+1;
       }
       break;
     }
     case QRF_STYLE_Explain: {
-      if( sqlite3_stmt_isexplain(p->pStmt)!=1 ){
-        /* If Explain mode is requested, but the statement is not an EXPLAIN
-        ** tatement, then convert the mode to a comma-separate list of
-        ** SQL-quoted values.  Downstream expects an Explain statement if the
-        ** mode is Explain, so do not leave the mode in Explain if the
-        ** statement is not an EXPLAIN statement.
-        */
-        p->spec.eStyle = QRF_STYLE_Column;
-        p->spec.bColumnNames = QRF_SW_On;
-        p->spec.eText = QRF_TEXT_Sql;
-        p->spec.eBlob = QRF_BLOB_Sql;
-        p->spec.zColumnSep = "  ";
-        p->spec.zRowSep = "\n";
+      int expMode = sqlite3_stmt_isexplain(p->pStmt);
+      if( expMode!=1 ){
+        sqlite3_stmt_explain(p->pStmt, 1);
+        p->expMode = expMode+1;
       }
       break;
     }
@@ -1790,7 +1896,7 @@ static void qrfOneSimpleRow(Qrf *p){
       qrfWrite(p);
       break;
     }
-    case QRF_STYLE_EQP: {
+    case QRF_STYLE_Eqp: {
       const char *zEqpLine = (const char*)sqlite3_column_text(p->pStmt,3);
       int iEqpId = sqlite3_column_int(p->pStmt, 0);
       int iParentId = sqlite3_column_int(p->pStmt, 1);
@@ -1843,7 +1949,9 @@ static void qrfFinalize(Qrf *p){
       if( p->u.sLine.azCol ) sqlite3_free(p->u.sLine.azCol);
       break;
     }
-    case QRF_STYLE_EQP: {
+    case QRF_STYLE_Stats:
+    case QRF_STYLE_StatsEst:
+    case QRF_STYLE_Eqp: {
       qrfEqpRender(p, 0);
       qrfWrite(p);
       break;
@@ -1871,7 +1979,12 @@ static void qrfFinalize(Qrf *p){
   }else if( p->pOut ){
     sqlite3_free(sqlite3_str_finish(p->pOut));
   }
-  if( p->actualWidth ) sqlite3_free(p->actualWidth);
+  if( p->expMode>0 ){
+    sqlite3_stmt_explain(p->pStmt, p->expMode-1);
+  }
+  if( p->actualWidth ){
+    sqlite3_free(p->actualWidth);
+  }
   if( p->pJTrans ){
     sqlite3 *db = sqlite3_db_handle(p->pJTrans);
     sqlite3_finalize(p->pJTrans);
@@ -1909,8 +2022,13 @@ int sqlite3_format_query_result(
       qrfExplain(&qrf);
       break;
     }
-    case QRF_STYLE_ScanExp: {
+    case QRF_STYLE_StatsVm: {
       qrfScanStatusVm(&qrf);
+      break;
+    }
+    case QRF_STYLE_Stats:
+    case QRF_STYLE_StatsEst: {
+      qrfEqpStats(&qrf);
       break;
     }
     default: {

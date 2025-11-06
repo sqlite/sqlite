@@ -374,14 +374,16 @@ The following output modes are currently defined:
 #define QRF_STYLE_Csv       6 /* Comma-separated-value */
 #define QRF_STYLE_Quote     7 /* SQL-quoted, comma-separated */
 #define QRF_STYLE_Explain   8 /* EXPLAIN output */
-#define QRF_STYLE_ScanExp   9 /* EXPLAIN output with vm stats */
-#define QRF_STYLE_EQP      10 /* Format EXPLAIN QUERY PLAN output */
-#define QRF_STYLE_Markdown 11 /* Markdown formatting */
-#define QRF_STYLE_Column   12 /* One record per line in neat columns */
-#define QRF_STYLE_Table    13 /* MySQL-style table formatting */
-#define QRF_STYLE_Box      14 /* Unicode box-drawing characters */
-#define QRF_STYLE_Count    15 /* Output only a count of the rows of output */
-#define QRF_STYLE_Off      16 /* No query output shown */
+#define QRF_STYLE_Eqp      10 /* Format EXPLAIN QUERY PLAN output */
+#define QRF_STYLE_Stats    11 /* EQP-like output but with performance stats */
+#define QRF_STYLE_StatsEst 12 /* EQP-like output with planner estimates */
+#define QRF_STYLE_StatsVm  13 /* EXPLAIN-like output with performance stats */
+#define QRF_STYLE_Markdown 14 /* Markdown formatting */
+#define QRF_STYLE_Column   15 /* One record per line in neat columns */
+#define QRF_STYLE_Table    16 /* MySQL-style table formatting */
+#define QRF_STYLE_Box      17 /* Unicode box-drawing characters */
+#define QRF_STYLE_Count    18 /* Output only a count of the rows of output */
+#define QRF_STYLE_Off      19 /* No query output shown */
 ~~~
 
 ### 5.0 Source Code Files
@@ -390,7 +392,7 @@ The SQLite Query Result Formatter is implemented in three source code files:
 
    *  `qrf.c` &rarr;  The implementation, written in portable C99
    *  `qrf.h` &rarr;  A header file defining interfaces
-   *  `qrf.md` &rarr;  This documentation, in Markdown
+   *  `README.md` &rarr;  This documentation, in Markdown
 
 To use the SQLite result formatter, include the "`qrf.h`" header file
 and link the application against the "`qrf.c`" source file.
