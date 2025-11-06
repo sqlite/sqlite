@@ -1,12 +1,12 @@
-C Improvements\sto\sdocumentation\sfor\sstmt_scanstatus\sinterfaces.
-D 2025-11-06T12:25:26.504
+C Get\sthe\ssqlite3Hwtime()\sfunction\sworking\son\sARM.\s\sEnable\sscanstatus\sby\ndefault\son\sWindows\sCLI\sbuilds.
+D 2025-11-06T13:19:50.494
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 8dd676302f3165984c046f81af14b6676a334418fa30255efaf439f8033042fa
+F Makefile.msc 523bab2f6569e912a0aaf2d13e0b3f9bcb36d52310b236d950b354068c9de3f3
 F README.md dae499194b75deed76a13a4a83c82493f2530331882d7dfe5754d63287d3f8f7
 F VERSION 16eddb43056a79c1977427ab7a05f3457c373fa159dcdced8754eb89ce7e06b8
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -689,7 +689,7 @@ F src/func.c 0b802107498048d3dcac0b757720bcb8506507ce02159e213ab8161458eb293b
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 73934a7f7ab1cb110614a9388cb516893b0cf5b7b69e4fd1a0780ac4ce166be7
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
-F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
+F src/hwtime.h d4d1b98c1afdc56986a5c0eba882786ef017e2180a320da25b4231b8e7e463e8
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
 F src/json.c fb031340edee159c07ad37dbe668ffe945ed86f525b0eb3822e4a67cbc498a72
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2c8938f43f721a2592b0efe36f75ab87aa370654e1a22d646c0a17d58d643295
-R b4f2945fe5a28ad98eeaf0bc5024b7f3
+P 5f3e883d180d6fb7a1909df284713170f5431ea7afcc1a3eb5912c4620df42b2
+R 5e954180f1b873a8a9007a0afd69dc4d
 U drh
-Z 9209d3a102b8225465871c8a6fca117e
+Z 361ce28981b1f78be7d6cda7aa08e272
 # Remove this line to create a well-formed Fossil manifest.
