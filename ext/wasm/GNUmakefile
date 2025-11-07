@@ -249,9 +249,7 @@ c-pp.D.64bit = -Dbits64
 # This is intended to be used in makefile targets which generate an
 # Emscripten module and where $@ is the module's .js/.mjs file.
 b.strip-js-emcc-bindings = \
-  sed -i -e '/^.*= \(_sqlite3\|_fiddle\)[^=]*=.*createExportWrapper/d' \
-  -e '/^var \(_sqlite3\|_fiddle\)[^=]*=.*makeInvalidEarlyAccess/d' $@ || exit; \
-  echo '$(1) $(emo.garbage) (Probably) /createExportWrapper()/d and /makeInvalidEarlyAccess()/d'
+  echo '$(1) $(emo.bug) (disabled because it breaks emsdk 4.0.16+)'
 
 
 #
@@ -588,18 +586,16 @@ emcc_opt_full = $(emcc_opt) -g3
 ########################################################################
 # EXPORTED_FUNCTIONS.* = files for use with Emscripten's
 # -sEXPORTED_FUNCTION flag.
-EXPORTED_FUNCTIONS.api.core = $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core
-EXPORTED_FUNCTIONS.api.in = $(EXPORTED_FUNCTIONS.api.core)
-ifeq (1,$(SQLITE_C_IS_SEE))
-  EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-see
-endif
-ifeq (0,$(wasm-bare-bones))
-  EXPORTED_FUNCTIONS.api.in += $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
-endif
+EXPORTED_FUNCTIONS.api.in = $(dir.api)/EXPORTED_FUNCTIONS.c-pp
 EXPORTED_FUNCTIONS.api = $(dir.tmp)/EXPORTED_FUNCTIONS.api
-$(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
-	@$(call b.mkdir@)
-	cat $(EXPORTED_FUNCTIONS.api.in) > $@
+EXPORTED_FUNCTIONS.c-pp.flags =
+ifeq (1,$(wasm-bare-bones))
+  EXPORTED_FUNCTIONS.c-pp.flags += -Dbare-bones
+endif
+$(eval $(call b.c-pp.target,filter,\
+  $(EXPORTED_FUNCTIONS.api.in),\
+  $(EXPORTED_FUNCTIONS.api),\
+  $(EXPORTED_FUNCTIONS.c-pp.flags)))
 
 ########################################################################
 # emcc flags for .c/.o/.wasm/.js.
@@ -853,8 +849,8 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 sqlite3-license-version.js = $(dir.tmp)/sqlite3-license-version.js
 $(sqlite3-license-version.js): $(bin.version-info) \
   $(dir.api)/sqlite3-license-version-header.js
-	@echo '$(logtag.@) $(emo.disk)'; { \
-		$(call b.mkdir@); \
+	@echo '$(logtag.@) $(emo.disk)'; \
+	$(call b.mkdir@); { \
 		cat $(dir.api)/sqlite3-license-version-header.js || exit $$?;  \
 		echo '/*'; \
 		echo '** This code was built from sqlite3 version...'; \
@@ -958,9 +954,10 @@ endif
 ########################################################################
 
 EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
-$(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE_LIST)
+$(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE_LIST)
 	@$(b.mkdir@)
-	@sort -u $(fiddle.EXPORTED_FUNCTIONS.in) > $@
+	@$(call b.c-pp.shcmd,filter,$(EXPORTED_FUNCTIONS.api.in),\
+      $@,$(EXPORTED_FUNCTIONS.c-pp.flags) -Dfiddle)
 	@echo $(logtag.@) $(emo.disk)
 
 emcc.flags.fiddle = \
@@ -993,18 +990,13 @@ clean-fiddle:
         $(dir.fiddle)/*.wasm \
         $(dir.fiddle)/sqlite3-opfs-*.js \
         $(dir.fiddle)/*.gz \
-        EXPORTED_FUNCTIONS.fiddle
+        $(EXPORTED_FUNCTIONS.fiddle)
 	rm -fr $(dir.fiddle-debug)
 
 emcc.flags.fiddle.debug = $(emcc.flags.fiddle) \
   -DSQLITE_DEBUG \
   -DSQLITE_ENABLE_SELECTTRACE \
   -DSQLITE_ENABLE_WHERETRACE
-
-fiddle.EXPORTED_FUNCTIONS.in = \
-    EXPORTED_FUNCTIONS.fiddle.in \
-    $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-core \
-    $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-extras
 
 fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
 
@@ -1199,10 +1191,10 @@ speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # -sEXIT_RUNTIME=1 but we need EXIT_RUNTIME=0 for the worker-based app
 # which runs speedtest1 multiple times.
 
-$(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.core)
+$(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
 	@$(call b.echo,@,$(emo.disk)); \
 	$(call b.mkdir@); \
-	{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.core); } 	> $@ || exit
+	{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api); } 	> $@ || exit
 speedtest1: b-speedtest1
 
 #

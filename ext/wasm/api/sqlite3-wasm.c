@@ -326,7 +326,7 @@ SQLITE_WASM_EXPORT void * sqlite3__wasm_pstack_ptr(void){
 */
 SQLITE_WASM_EXPORT void sqlite3__wasm_pstack_restore(unsigned char * p){
   assert(p>=PStack.pBegin && p<=PStack.pEnd && p>=PStack.pPos);
-  assert(0==((unsigned long long)p & 0x7));
+  assert(0==((unsigned long long)p & 0x7) /* 8-byte aligned */);
   if(p>=PStack.pBegin && p<=PStack.pEnd /*&& p>=PStack.pPos*/){
     PStack.pPos = p;
   }
