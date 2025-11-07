@@ -220,7 +220,9 @@ proc teaish-configure-core {} {
       => {Full pathname of tclsh to use.  It is used for trying to find
           tclConfig.sh.  Warning: if its containing dir has multiple tclsh
           versions, it may select the wrong tclConfig.sh!
-          Defaults to the $TCLSH environment variable.}
+        Defaults to the $TCLSH environment variable.}
+
+    tcl-stubs=0 => {Enable use of Tcl stubs library.}
 
     # TEA has --with-tclinclude but it appears to only be useful for
     # building an extension against an uninstalled copy of TCL's own
@@ -497,6 +499,8 @@ proc teaish__configure_phase1 {} {
     teaish-configure
   }
   teaish-checks-run -post
+
+  define TEAISH_USE_STUBS [opt-bool tcl-stubs]
 
   apply {{} {
     # Set up "vsatisfies" code for pkgIndex.tcl.in,

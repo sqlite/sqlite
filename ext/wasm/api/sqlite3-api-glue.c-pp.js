@@ -120,7 +120,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_column_double","f64", "sqlite3_stmt*", "int"],
       ["sqlite3_column_int","int", "sqlite3_stmt*", "int"],
       ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],
+//#define proxy-text-apis=1
+//#if not proxy-text-apis
+/* Search this file for tag:proxy-text-apis to see what this is about. */
       ["sqlite3_column_text","string", "sqlite3_stmt*", "int"],
+//#endif
       ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
       ["sqlite3_column_value","sqlite3_value*", "sqlite3_stmt*", "int"],
       ["sqlite3_commit_hook", "void*", [
@@ -317,7 +321,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_value_numeric_type", "int", "sqlite3_value*"],
       ["sqlite3_value_pointer", "*", "sqlite3_value*", "string:static"],
       ["sqlite3_value_subtype", "int", "sqlite3_value*"],
+//#if not proxy-text-apis
       ["sqlite3_value_text", "string", "sqlite3_value*"],
+//#endif
       ["sqlite3_value_type", "int", "sqlite3_value*"],
       ["sqlite3_vfs_find", "*", "string"],
       ["sqlite3_vfs_register", "int", "sqlite3_vfs*", "int"],
@@ -358,6 +364,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
       ["sqlite3_set_last_insert_rowid", undefined, ["sqlite3*", "i64"]],
       ["sqlite3_status64", "int", "int", "*", "*", "int"],
+      ["sqlite3_db_status64", "int", "sqlite3*", "int", "*", "*", "int"],
       ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
       ["sqlite3_update_hook", "*", [
         "sqlite3*",
@@ -479,9 +486,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        build is generally incompatible with SEE's license conditions.
        The project's official stance on WASM builds of SEE is: it is
        permitted for use internally within organizations which have
-       licensed SEE, but not for public sites because exposing an SEE
-       build of sqlite3.wasm effectively provides all clients with a
-       working copy of SEE.
+       licensed SEE, but not for sites made available to the public or
+       to unlicensed end users because exposing an SEE build of
+       sqlite3.wasm effectively provides all clients with a working
+       copy of SEE.
     */
     bindingSignatures.core.push(
       ["sqlite3_key", "int", "sqlite3*", "string", "int"],
@@ -622,6 +630,31 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         'void*',
         new wasm.xWrap.FuncPtrAdapter({
           name: 'xFilter', bindScope: 'transient', ...__ipsProxy
+        }),
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
+        }),
+        'void*', '**', 'int*', 'int'
+      ]],
+      ['sqlite3changeset_apply_v3', 'int', [
+        'sqlite3*', 'int', 'void*',
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'xFilter', signature: 'i(pp)', bindScope: 'transient'
+        }),
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
+        }),
+        'void*', '**', 'int*', 'int'
+
+      ]],
+      ['sqlite3changeset_apply_v3_strm', 'int', [
+        'sqlite3*',
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'xInput', signature: 'i(ppp)', bindScope: 'transient'
+        }),
+        'void*',
+        new wasm.xWrap.FuncPtrAdapter({
+          name: 'xFilter', signature: 'i(pp)', bindScope: 'transient'
         }),
         new wasm.xWrap.FuncPtrAdapter({
           name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
@@ -1627,6 +1660,45 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   }/*sqlite3_bind_text/blob()*/
 
+//#if proxy-text-apis
+  if(!capi.sqlite3_column_text){
+    /*[tag:proxy-text-apis]
+      As discussed at:
+
+      https://sqlite.org/forum/forumpost/d77281aec2df9ada
+
+      Summary: there are opinions that sqlite3_column_text() and
+      sqlite3_value_text() should handle strings such that embedded
+      NULs are retained. This block does that. This block does _not_
+      apply that special-case behavior to any number of _other_
+      APIs which return C-strings. That discrepancy makes this
+      block highly arguable, but one can also argue that these two
+      specific functions can get away with such acrobatics without
+      it being called voodoo in a pejorative sense.
+    */
+    const argStmt  = wasm.xWrap.argAdapter('sqlite3_stmt*'),
+          argInt   = wasm.xWrap.argAdapter('int'),
+          argValue = wasm.xWrap.argAdapter('sqlite3_value*'),
+          newStr   =
+          (cstr,n)=>wasm.typedArrayToString(wasm.heap8u(),
+                                           Number(cstr), Number(cstr)+n)
+    capi.sqlite3_column_text = function(stmt, colIndex){
+      const a0 = argStmt(stmt), a1 = argInt(colIndex);
+      const cstr = wasm.exports.sqlite3_column_text(a0, a1);
+      return cstr
+        ? newStr(cstr,wasm.exports.sqlite3_column_bytes(a0, a1))
+        : null;
+    };
+    capi.sqlite3_value_text = function(val){
+      const a0 = argValue(val);
+      const cstr = wasm.exports.sqlite3_value_text(a0);
+      return cstr
+        ? newStr(cstr,wasm.exports.sqlite3_value_bytes(a0))
+        : null;
+    };
+  }/*text-return-related bindings*/
+//#endif proxy-text-apis
+
   {/* sqlite3_config() */
     /**
        Wraps a small subset of the C API's sqlite3_config() options.
@@ -1809,6 +1881,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          for anything other than local/sessionStorage. It "can"
          be used that way but it's not really intended to be. */
       capi.sqlite3_vfs_unregister(pKvvfs);
+      delete capi.sqlite3_kvvfs_methods;
     }
   }/*pKvvfs*/
 
@@ -1917,7 +1990,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       tgt[memKey] = fProxy;
     }else{
-      const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name));
+      const pFunc = wasm.installFunction(fProxy, sigN);
       tgt[memKey] = pFunc;
       if(!tgt.ondispose || !tgt.ondispose.__removeFuncList){
         tgt.addOnDispose('ondispose.__removeFuncList handler',

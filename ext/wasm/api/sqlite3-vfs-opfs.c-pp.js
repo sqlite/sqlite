@@ -1,4 +1,4 @@
-//#ifnot target:node
+//#if not target:node
 /*
   2022-09-18
 

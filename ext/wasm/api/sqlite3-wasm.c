@@ -146,6 +146,7 @@
 #  undef  SQLITE_ENABLE_EXPLAIN_COMMENTS
 #  undef  SQLITE_ENABLE_FTS5
 #  undef  SQLITE_ENABLE_OFFSET_SQL_FUNC
+#  undef  SQLITE_ENABLE_PERCENTILE
 #  undef  SQLITE_ENABLE_PREUPDATE_HOOK
 #  undef  SQLITE_ENABLE_RTREE
 #  undef  SQLITE_ENABLE_SESSION
@@ -325,7 +326,7 @@ SQLITE_WASM_EXPORT void * sqlite3__wasm_pstack_ptr(void){
 */
 SQLITE_WASM_EXPORT void sqlite3__wasm_pstack_restore(unsigned char * p){
   assert(p>=PStack.pBegin && p<=PStack.pEnd && p>=PStack.pPos);
-  assert(0==((unsigned long long)p & 0x7));
+  assert(0==((unsigned long long)p & 0x7) /* 8-byte aligned */);
   if(p>=PStack.pBegin && p<=PStack.pEnd /*&& p>=PStack.pPos*/){
     PStack.pPos = p;
   }
@@ -612,6 +613,7 @@ const char * sqlite3__wasm_enum_json(void){
     DefInt(SQLITE_DBSTATUS_DEFERRED_FKS);
     DefInt(SQLITE_DBSTATUS_CACHE_USED_SHARED);
     DefInt(SQLITE_DBSTATUS_CACHE_SPILL);
+    DefInt(SQLITE_DBSTATUS_TEMPBUF_SPILL);
     DefInt(SQLITE_DBSTATUS_MAX);
   } _DefGroup;
 

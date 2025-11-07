@@ -4839,12 +4839,14 @@ static SQLITE_NOINLINE int exprCodeTargetAndOr(
   assert( op==TK_AND || op==TK_OR );
   assert( TK_AND==OP_And );            testcase( op==TK_AND );
   assert( TK_OR==OP_Or );              testcase( op==TK_OR );
-  pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
-  if( pAlt!=pExpr ){
-    return sqlite3ExprCodeTarget(pParse, pAlt, target);
-  }
   assert( pParse->pVdbe!=0 );
   v = pParse->pVdbe;
+  pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
+  if( pAlt!=pExpr ){
+    r1 = sqlite3ExprCodeTarget(pParse, pAlt, target);
+    sqlite3VdbeAddOp3(v, OP_And, r1, r1, target);
+    return target;
+  }
   skipOp = op==TK_AND ? OP_IfNot : OP_If;
   if( exprEvalRhsFirst(pExpr) ){
     /* Compute the right operand first.  Skip the computation of the left

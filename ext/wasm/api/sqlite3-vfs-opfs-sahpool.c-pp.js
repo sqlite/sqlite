@@ -1,4 +1,4 @@
-//#ifnot target:node
+//#if not target:node
 /*
   2023-07-14
 
@@ -494,7 +494,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /* Maps SAH to an abstract File Object which contains
        various metadata about that handle. */
-    //#mapSAHToMeta = new Map();
 
     /** Buffer used by [sg]etAssociatedPath(). */
     #apBody = new Uint8Array(HEADER_CORPUS_SIZE);

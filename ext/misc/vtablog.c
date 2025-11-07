@@ -206,6 +206,10 @@ static int vtablogConnectCreate(
   }
   if( zSchema==0 ){
     zSchema = sqlite3_mprintf("%s","CREATE TABLE x(a,b);");
+    if( zSchema==0 ){
+      rc = SQLITE_NOMEM;
+      goto vtablog_end_connect;
+    }
   }
   printf("  schema = '%s'\n", zSchema);
   rc = sqlite3_declare_vtab(db, zSchema);
