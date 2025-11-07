@@ -30,7 +30,9 @@ struct sqlite3_qrf_spec {
   unsigned char bColumnNames; /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
-  short int mxWidth;          /* Maximum width of any column */
+  short int mxColWidth;       /* Maximum width of any individual column */
+  short int mxTotalWidth;     /* Maximum overall table width */
+  int mxLength;               /* Maximum content to display per element */
   int nWidth;                 /* Number of column width parameters */
   short int *aWidth;          /* Column widths */
   const char *zColumnSep;     /* Alternative column separator */
@@ -46,7 +48,8 @@ struct sqlite3_qrf_spec {
 };
 
 /*
-** Range of values for sqlite3_qrf_spec.aWidth[] entries:
+** Range of values for sqlite3_qrf_spec.aWidth[] entries and for
+** sqlite3_qrf_spec.mxColWidth and .mxTotalWidth
 */
 #define QRF_MX_WIDTH    (10000)
 #define QRF_MN_WIDTH    (-10000)

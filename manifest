@@ -1,5 +1,5 @@
-C Fix\san\serror-message\stest\scase\sbroken\sby\sthe\sprevious\scheck-in.
-D 2025-11-07T12:15:25.909
+C Rename\s"mxWidth"\sto\s"mxColWidth".\s\sAdd\s"mxTotalWidth"\sand\s"mxLength"\nsettings\sand\shook\sthem\sup\sto\sthe\sTCL\sinterface,\sbut\sthose\ssettings\sare\nnot\syet\simplemented.
+D 2025-11-07T13:11:16.220
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -416,9 +416,9 @@ F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f6
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
-F ext/qrf/README.md 251568600920db5f82524ec63fc07e2dfebf98697cbaa708271b4ac6055ffb58
-F ext/qrf/qrf.c 772c87f50d591d7fa6e82730856ce04ac4321c31169d5025eae8608df3adc9b9
-F ext/qrf/qrf.h 39ba5d895f123bcce155b40446ec6d2728055f1f8bf29fdf8221f1eb8835d56d
+F ext/qrf/README.md a8d288316000b17675400e8e141e5377a1e0bb0090d443421dbf062ef88e2bac
+F ext/qrf/qrf.c ca5394613a0e755f68db3622b33c4abae23aacd3c4c2544dcf355558220217c3
+F ext/qrf/qrf.h a02d156e54e05c5ef66012b66817beecd6e2c60327491d98eb11361e7c0a19e2
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
 F ext/rbu/rbu10.test 7c22caa32c2ff26983ca8320779a31495a6555737684af7aba3daaf762ef3363
@@ -743,7 +743,7 @@ F src/sqliteInt.h 88f7fc9ce1630d9a5f7e0a8e1f3287cdc63882fba985c18e7eee1b9f457f59
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c c180acb528411fcb468a2d5f925befdc53afe4c4f821bd7ca35d86826a6d4787
+F src/tclsqlite.c cb5e3f5de07367b5b83af046c4ee4abae6b12b61bcbcf0d5df5049c17e9131f8
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
 F src/test1.c f880ab766eeedf2c063662bd9538b923fd42c4341b7bfc2150a6d93ab8b9341c
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
@@ -1506,7 +1506,7 @@ F test/printf2.test 3f55c1871a5a65507416076f6eb97e738d5210aeda7595a74ee895f2224c
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/pushdown.test 46a626ef1c0ca79b85296ff2e078b9da20a50e9b804b38f441590c3987580ddd
-F test/qrf01.test 802e45eb9b106ad915ea561fafb709d626c8cb1bfee8e372bbcfd182002ddb77
+F test/qrf01.test 193a3ad8101975d3e574f0855eb7285928a554420fc354916a199600234e3d62
 F test/qrf02.test 39b4afdc000bedccdafc0aecf17638df67a67aaa2d2942865ae6abcc48ba0e92
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
@@ -2173,8 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7dfba841cfc515ac28401c4eb90ec24e04fd52cddaeae41be3cfa6967dac0eac
-R bcc8bcd428fc9db4943cd2c8ec4dbd87
+P fb040354901569915389c8c4c1530dfda8b724be7885adfde654e229d3e98eec
+R 07c0c21d8a92a6dbfbd7b3fed9158cb5
 U drh
-Z fa3fc5dd07b68cd8fbb8a0b772680d8e
+Z f2a96b5e64232cb1c60df6a68367fba5
 # Remove this line to create a well-formed Fossil manifest.

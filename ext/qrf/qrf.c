@@ -911,7 +911,7 @@ static char *qrfTableCell(
     return 0;
   }
   if( mxWidth<0 ) mxWidth = -mxWidth;
-  if( mxWidth==0 ) mxWidth = 1000000;
+  if( mxWidth==0 ) mxWidth = QRF_MX_WIDTH;
   i = j = n = 0;
   while( n<=mxWidth ){
     unsigned char c = z[i];
@@ -1213,7 +1213,7 @@ static void qrfColumnar(Qrf *p){
       const unsigned char *zNotUsed;
       int wx = p->actualWidth[i];
       if( wx==0 ){
-        wx = p->spec.mxWidth;
+        wx = p->spec.mxColWidth;
       }
       if( wx<0 ) wx = -wx;
       uz = (const unsigned char*)sqlite3_column_name(p->pStmt,i);
@@ -1259,7 +1259,7 @@ static void qrfColumnar(Qrf *p){
       for(i=0; i<nColumn; i++){
         int wx = i<p->spec.nWidth ? p->spec.aWidth[i] : 0;
         if( wx==0 || wx==QRF_MINUS_ZERO ){
-          wx = p->spec.mxWidth;
+          wx = p->spec.mxColWidth;
         }
         if( wx<0 ) wx = -wx;
         if( useNextLine ){

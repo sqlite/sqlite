@@ -60,10 +60,12 @@ struct sqlite3_qrf_spec {
   unsigned char eEsc;         /* How to escape control characters in text */
   unsigned char eText;        /* Quoting style for text */
   unsigned char eBlob;        /* Quoting style for BLOBs */
-  unsigned char bColumnNames; /* QRF_SW_On to show column names */
+  unsigned char bColumnNames; /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
-  short int mxWidth;          /* Maximum width of any column */
+  short int mxColWidth;       /* Maximum width of any individual column */
+  short int mxTotalWidth;     /* Maximum overall table width */
+  int mxLength;               /* Maximum content to display per element */
   int nWidth;                 /* Number of column width parameters */
   short int *aWidth;          /* Column widths */
   const char *zColumnSep;     /* Alternative column separator */
@@ -71,7 +73,7 @@ struct sqlite3_qrf_spec {
   const char *zTableName;     /* Output table name */
   const char *zNull;          /* Rendering of NULL */
   char *(*xRender)(void*,sqlite3_value*);                /* Render a value */
-  ssize_t (*xWrite)(void*,const unsigned char*,size_t);  /* Write callback */
+  sqlite3_int64 (*xWrite)(void*,const unsigned char*,sqlite3_int64);
   void *pRenderArg;           /* First argument to the xRender callback */
   void *pWriteArg;            /* First argument to the xWrite callback */
   char **pzOutput;            /* Storage location for output string */
@@ -259,24 +261,44 @@ the C/Tcl/Perl octal backslash escapes.  So the string from the
 previous paragraph would be shown as
 `"\u0005\u0028\u0081\u00f3"`.
 
-### 2.8 Word Wrapping In Columnar Modes (mxWidth and bWordWrap)
+### 2.8 Maximum displayed content length (mxLength)
+
+If the sqlite3_qrf_spec.mxLength setting is non-zero, then the formatter
+*attempts* to show only the first mxLength characters of each value.
+This limit is approximate.  The content length might exceed the limit
+by a few characters, especially if the limit is very small.
+
+Content length limits only apply to TEXT and BLOB values.  Numeric
+values and NULLs always display their full text regardless of the
+mxLength setting.
+
+### 2.9 Word Wrapping In Columnar Modes (mxColWidth, mxTotalWidth, bWordWrap)
 
 When using columnar formatting modes (QRF_STYLE_Box, QRF_STYLE_Column,
-QRF_STYLE_Markdown, or QRF_STYLE_Table) and with sqlite3_qrf_spec.mxWidth
-set to some non-zero value, then when an output is too wide to be
-displayed in just mxWidth standard character widths, the output is
-split into multiple lines, where each line is a maximum of 
-mxWidth characters wide.  "Width" hear means the actual displayed
-width of the text in a fixed-pitch font.  The code takes into account
-zero-width and double-width characters when computing the display width.
+QRF_STYLE_Markdown, or QRF_STYLE_Table), the formatter attempts to limit
+the width of any individual column to sqlite3_qrf_spec.mxColWidth characters
+if mxColWidth is non-zero.  A zero value for mxColWidth means "unlimited".
+The formatter also attempts to limit the width of the entire table to
+no more than sqlite3_qrf_spec.mxTotalWidth characters.  Again, a zero
+value means "no-limit".
 
-If the sqlite3_qrf_spec.bWordWrap flag is set to QRF_SW_On,
-then the formatter attempts to split lines at whitespace or word boundaries.
-If the bWorkWrap flag is set QRF_SW_Off, then the QRF makes not attempt
-to find good places to split lines and will usually split lines in the
-middle of words.
+The mxColWidth limit might be exceeded if the limit is very small.
+The mxTotalWidth is "best effort"; the formatter might go significantly
+beyond the mxTotalWidth if the table has too many columns
+to squeeze into the specified space.
 
-### 2.9 Column width and alignment (nWidth and aWidth)
+In order to keep individual columns, or the entire table, within
+requested length limits, it is sometimes necessary to wrap the content
+for a single row of a single column across multiple lines.  When this
+becomes necessary and if the bWordWrap setting is QRF_SW_On, then the
+formatter attempts to split the content on whitespace or at a word boundary.
+If bWordWrap is QRF_SW_Off, then the formatter is free to split content
+anywhere, including in the middle of a word.
+
+For narrow columns and wide words, it might sometimes be necessary to split
+a column in the middle of a word, even when bWordWrap is QRF_SW_On.
+
+### 2.10 Column width and alignment (nWidth and aWidth)
 
 The sqlite3_qrf_spec.aWidth field is a pointer to an array of
 signed 16-bit integers that control column widths and alignments
@@ -315,7 +337,7 @@ width of the corresponding column.  Negative values are used for
 right-justified columns and positive values are used for left-justified
 columns.
 
-### 2.10 Row and Column Separator Strings
+### 2.11 Row and Column Separator Strings
 
 The sqlite3_qrf_spec.zColumnSep and sqlite3_qrf_spec.zRowSep strings
 are alternative column and row separator character sequences.  If not
@@ -323,18 +345,18 @@ specified (if these pointers are left as NULL) then appropriate defaults
 are used.  Some output styles have hard-coded column and row separators
 and these settings are ignored for those styles.
 
-### 2.11 The Output Table Name
+### 2.12 The Output Table Name
 
 The sqlite3_qrf_spec.zTableName value is the name of the output table
 when eStyle is QRF_STYLE_Insert.
 
-### 2.12 The Rendering Of NULL
+### 2.13 The Rendering Of NULL
 
 If a value is NULL then show the NULL using the string
 found in sqlite3_qrf_spec.zNull.  If zNull is itself a NULL pointer
 then NULL values are rendered as an empty string.
 
-### 2.13 Optional Value Rendering Callback
+### 2.14 Optional Value Rendering Callback
 
 If the sqlite3_qrf_spec.xRender field is not NULL, then each
 sqlite3_value coming out of the query is first passed to the

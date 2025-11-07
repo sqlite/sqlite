@@ -466,7 +466,7 @@ do_test 4.2 {
 └─────────────────┴─────────────────┴────┘
 }
 do_test 4.3 {
-  set result "\n[db format -text off -textjsonb on -maxwidth 10 \
+  set result "\n[db format -text off -textjsonb on -maxcolwidth 10 \
               {SELECT a AS json, b AS jsonb, c AS num FROM t1}]"
 } {
 ┌─────────────┬─────────────┬─────┐

@@ -2062,7 +2062,9 @@ static void DbHookCmd(
 **     -columnnames ("auto"|"off"|"on")        Show column names?
 **     -wordwrap ("auto"|"off"|"on")           Try to wrap at word boundry?
 **     -textjsonb ("auto"|"off"|"on")          Auto-convert JSONB to text?
-**     -maxwidth NUMBER                        Default column width
+**     -maxcolwidth NUMBER                     Max width of any single column
+**     -maxwidth NUMBER                        Max width of the entire table
+**     -maxlength NUMBER                       Content truncated to this size
 **     -widths LIST-OF-NUMBERS                 Widths for individual columns
 **     -columnsep TEXT                         Column separator text
 **     -rowsep TEXT                            Row separator text
@@ -2081,7 +2083,9 @@ static void DbHookCmd(
 **     -columnnames      bColumnNames
 **     -wordwrap         bWordWrap
 **     -textjsonb        bTextJsonb
-**     -maxwidth         mxWidth
+**     -maxcolwidth      mxColWidth
+**     -maxwidth         mxTotalWidth
+**     -maxlength        mxLength
 **     -widths           nWidth, aWidth
 **     -columnsep        zColumnSep
 **     -rowsep           zRowSep
@@ -2207,7 +2211,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       if( rc ) goto format_failed;
       qrf.bTextJsonb = v;
       i++;
-    }else if( strcmp(zArg,"-maxwidth")==0 ){
+    }else if( strcmp(zArg,"-maxcolwidth")==0 || strcmp(zArg,"-maxwidth")==0 ){
       int v = 0;
       rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
       if( rc ) goto format_failed;
@@ -2216,7 +2220,18 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       }else if( v>QRF_MX_WIDTH ){
         v = QRF_MX_WIDTH;
       }
-      qrf.mxWidth = v;
+      if( zArg[4]=='c' ){
+        qrf.mxColWidth = v;
+      }else{
+        qrf.mxTotalWidth = v;
+      }
+      i++;
+    }else if( strcmp(zArg,"-maxlength")==0 ){
+      int v = 0;
+      rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
+      if( rc ) goto format_failed;
+      if( v<0 ) v = 0;
+      qrf.mxLength = v;
       i++;
     }else if( strcmp(zArg,"-widths")==0 ){
       Tcl_Size n = 0;
