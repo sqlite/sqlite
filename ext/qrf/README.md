@@ -72,8 +72,8 @@ struct sqlite3_qrf_spec {
   const char *zRowSep;        /* Alternative row separator */
   const char *zTableName;     /* Output table name */
   const char *zNull;          /* Rendering of NULL */
-  char *(*xRender)(void*,sqlite3_value*);                /* Render a value */
-  sqlite3_int64 (*xWrite)(void*,const unsigned char*,sqlite3_int64);
+  char *(*xRender)(void*,sqlite3_value*);           /* Render a value */
+  int (*xWrite)(void*,const char*,sqlite3_int64);   /* Write output */
   void *pRenderArg;           /* First argument to the xRender callback */
   void *pWriteArg;            /* First argument to the xWrite callback */
   char **pzOutput;            /* Storage location for output string */
@@ -112,6 +112,10 @@ sqlite3_realloc() and the new text is appended.
 
 One of either sqlite3_qrf_spec.xWrite and sqlite3_qrf_spec.pzOutput must be
 non-NULL and the other must be NULL.
+
+The return value from xWrite is an SQLITE result code.  The usual return
+should be SQLITE_OK.  But if for some reason the write fails, a different
+value might be returned.
 
 ### 2.3 Output Format
 

@@ -2332,7 +2332,7 @@ window.lo:	$(TOP)\src\window.c $(HDR)
 	$(LTCOMPILE) $(CORE_COMPILE_OPTS) -c $(TOP)\src\window.c
 
 tclsqlite.lo:	tclsqlite-ex.c $(HDR) $(SQLITE_TCL_DEP)
-	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c tclsqlite-ex.c
+	$(LTCOMPILE) $(NO_WARN) -DUSE_TCL_STUBS=1 -DBUILD_sqlite -I$(TCLINCDIR) -c tclsqlite-ex.c /OUT:tclsqlite.lo
 
 tclsqlite-shell.lo:	tclsqlite-ex.c $(HDR) $(SQLITE_TCL_DEP)
 	$(LTCOMPILE) $(NO_WARN) -DTCLSH -DBUILD_sqlite -I$(TCLINCDIR) -c tclsqlite-ex.c

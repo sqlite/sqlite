@@ -343,10 +343,13 @@ static void qrfResetStmt(Qrf *p){
 static void qrfWrite(Qrf *p){
   int n;
   if( p->spec.xWrite && (n = sqlite3_str_length(p->pOut))>0 ){
-    p->spec.xWrite(p->spec.pWriteArg,
-               (const unsigned char*)sqlite3_str_value(p->pOut),
-               (sqlite3_int64)n);
+    int rc = p->spec.xWrite(p->spec.pWriteArg,
+                 sqlite3_str_value(p->pOut),
+                 (sqlite3_int64)n);
     sqlite3_str_reset(p->pOut);
+    if( rc ){
+      qrfError(p, rc, "Failed to write %d bytes of output", n);
+    }
   }
 }
 
@@ -1624,6 +1627,7 @@ static void qrfScanStatusVm(Qrf *p){
   }
   sqlite3_bind_pointer(pExplain, 1, pOrigStmt, "stmt-pointer", 0);
   p->pStmt = pExplain;
+  p->nCol = 10;
   qrfExplain(p);
   sqlite3_finalize(pExplain);
   p->pStmt = pOrigStmt;

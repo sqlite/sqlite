@@ -803,14 +803,14 @@ INSERT INTO t1 VALUES('');
 INSERT INTO t1 VALUES(1);
 INSERT INTO t1 VALUES(2.25);
 INSERT INTO t1 VALUES('hello');
-INSERT INTO t1 VALUES(X'807f');
+INSERT INTO t1 VALUES(x'807f');
 CREATE TABLE t3(x,y);
 INSERT INTO t3 VALUES(1,NULL);
 INSERT INTO t3 VALUES(2,'');
 INSERT INTO t3 VALUES(3,1);
 INSERT INTO t3 VALUES(4,2.25);
 INSERT INTO t3 VALUES(5,'hello');
-INSERT INTO t3 VALUES(6,X'807f');
+INSERT INTO t3 VALUES(6,x'807f');
 COMMIT;}}
 
 
@@ -828,14 +828,14 @@ INSERT INTO t1(rowid,x) VALUES(2,'');
 INSERT INTO t1(rowid,x) VALUES(3,1);
 INSERT INTO t1(rowid,x) VALUES(4,2.25);
 INSERT INTO t1(rowid,x) VALUES(5,'hello');
-INSERT INTO t1(rowid,x) VALUES(6,X'807f');
+INSERT INTO t1(rowid,x) VALUES(6,x'807f');
 CREATE TABLE t3(x,y);
 INSERT INTO t3(rowid,x,y) VALUES(1,1,NULL);
 INSERT INTO t3(rowid,x,y) VALUES(2,2,'');
 INSERT INTO t3(rowid,x,y) VALUES(3,3,1);
 INSERT INTO t3(rowid,x,y) VALUES(4,4,2.25);
 INSERT INTO t3(rowid,x,y) VALUES(5,5,'hello');
-INSERT INTO t3(rowid,x,y) VALUES(6,6,X'807f');
+INSERT INTO t3(rowid,x,y) VALUES(6,6,x'807f');
 COMMIT;}}
 
 # If the table contains an INTEGER PRIMARY KEY, do not record a separate
@@ -859,7 +859,7 @@ INSERT INTO t1 VALUES(2,'');
 INSERT INTO t1 VALUES(3,1);
 INSERT INTO t1 VALUES(4,2.25);
 INSERT INTO t1 VALUES(5,'hello');
-INSERT INTO t1 VALUES(6,X'807f');
+INSERT INTO t1 VALUES(6,x'807f');
 COMMIT;}}
 
 # Verify that the table named [table] is correctly quoted and that
@@ -883,7 +883,7 @@ INSERT INTO "table"(rowid,x,y) VALUES(2,12,'');
 INSERT INTO "table"(rowid,x,y) VALUES(3,23,1);
 INSERT INTO "table"(rowid,x,y) VALUES(4,34,2.25);
 INSERT INTO "table"(rowid,x,y) VALUES(5,45,'hello');
-INSERT INTO "table"(rowid,x,y) VALUES(6,56,X'807f');
+INSERT INTO "table"(rowid,x,y) VALUES(6,56,x'807f');
 COMMIT;}}
 
 # Do not record rowids for a WITHOUT ROWID table.  Also check correct quoting
@@ -907,7 +907,7 @@ INSERT INTO "ta<>ble" VALUES(12,'');
 INSERT INTO "ta<>ble" VALUES(23,1);
 INSERT INTO "ta<>ble" VALUES(34,2.25);
 INSERT INTO "ta<>ble" VALUES(45,'hello');
-INSERT INTO "ta<>ble" VALUES(56,X'807f');
+INSERT INTO "ta<>ble" VALUES(56,x'807f');
 COMMIT;}}
 
 # Do not record rowids if the rowid is inaccessible
@@ -926,7 +926,7 @@ BEGIN TRANSACTION;
 CREATE TABLE t1(_ROWID_,rowid,oid);
 INSERT INTO t1 VALUES(1,NULL,'alpha');
 INSERT INTO t1 VALUES(12,'',99);
-INSERT INTO t1 VALUES(23,1,X'b0b1b2');
+INSERT INTO t1 VALUES(23,1,x'b0b1b2');
 COMMIT;}}
 
 } else {
@@ -1020,7 +1020,7 @@ INSERT INTO t1 VALUES('');
 INSERT INTO t1 VALUES(1);
 INSERT INTO t1 VALUES(2.25);
 INSERT INTO t1 VALUES('hello');
-INSERT INTO t1 VALUES(X'807f');}}
+INSERT INTO t1 VALUES(x'807f');}}
 
 # Test the output of ".mode insert" with headers
 #
@@ -1031,7 +1031,7 @@ INSERT INTO t1(x) VALUES('');
 INSERT INTO t1(x) VALUES(1);
 INSERT INTO t1(x) VALUES(2.25);
 INSERT INTO t1(x) VALUES('hello');
-INSERT INTO t1(x) VALUES(X'807f');}}
+INSERT INTO t1(x) VALUES(x'807f');}}
 
 # Test the output of ".mode insert"
 #
@@ -1042,7 +1042,7 @@ INSERT INTO t3 VALUES(2,'');
 INSERT INTO t3 VALUES(3,1);
 INSERT INTO t3 VALUES(4,2.25);
 INSERT INTO t3 VALUES(5,'hello');
-INSERT INTO t3 VALUES(6,X'807f');}}
+INSERT INTO t3 VALUES(6,x'807f');}}
 
 # Test the output of ".mode insert" with headers
 #
@@ -1053,7 +1053,7 @@ INSERT INTO t3(x,y) VALUES(2,'');
 INSERT INTO t3(x,y) VALUES(3,1);
 INSERT INTO t3(x,y) VALUES(4,2.25);
 INSERT INTO t3(x,y) VALUES(5,'hello');
-INSERT INTO t3(x,y) VALUES(6,X'807f');}}
+INSERT INTO t3(x,y) VALUES(6,x'807f');}}
 
 # Test the output of ".mode tcl"
 #
@@ -1115,7 +1115,7 @@ do_test shell1-4.6 {
 #
 do_test shell1-4.7 {
   catchcmd test.db ".mode quote\nselect x'0123456789ABCDEF';"
-} {0 X'0123456789abcdef'}
+} {0 x'0123456789abcdef'}
 
 # Test using arbitrary byte data with the shell via standard input/output.
 #

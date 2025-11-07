@@ -1360,23 +1360,6 @@ struct ExpertInfo {
 };
 #endif
 
-/* A single line in the EQP output */
-typedef struct EQPGraphRow EQPGraphRow;
-struct EQPGraphRow {
-  int iEqpId;           /* ID for this row */
-  int iParentId;        /* ID of the parent row */
-  EQPGraphRow *pNext;   /* Next row in sequence */
-  char zText[1];        /* Text to display for this row */
-};
-
-/* All EQP output is collected into an instance of the following */
-typedef struct EQPGraph EQPGraph;
-struct EQPGraph {
-  EQPGraphRow *pRow;    /* Linked list of all rows of the EQP output */
-  EQPGraphRow *pLast;   /* Last element of the pRow list */
-  char zPrefix[100];    /* Graph prefix */
-};
-
 /* Parameters affecting columnar mode result display (defaulting together) */
 typedef struct ColModeOpts {
   int iWrap;            /* In columnar modes, wrap lines reaching this limit */
@@ -1439,8 +1422,8 @@ struct ShellState {
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
   char colSepPrior[20];  /* Saved column separator */
   char rowSepPrior[20];  /* Saved row separator */
-  int *colWidth;         /* Requested width of each column in columnar modes */
-  int *actualWidth;      /* Actual width of each column */
+  short int *colWidth;   /* Requested width of each column in columnar modes */
+  short int *actualWidth;/* Actual width of each column */
   int nWidth;            /* Number of slots in colWidth[] and actualWidth[] */
   char nullValue[20];    /* The text to print when a NULL comes back from
                          ** the database */
@@ -1461,7 +1444,6 @@ struct ShellState {
   int nIndent;           /* Size of array aiIndent[] */
   int iIndent;           /* Index of current op in aiIndent[] */
   char *zNonce;          /* Nonce for temporary safe-mode escapes */
-  EQPGraph sGraph;       /* Information for the graphical EXPLAIN QUERY PLAN */
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
   ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
 #endif
@@ -1586,6 +1568,31 @@ static const char *modeDescr[] = {
   "off",
   "scanexp",
   "www",
+};
+
+/* Translation from legacy CLI output modes into QRF styles */
+static const unsigned char aQrfStyle[] = {
+  /* line */         QRF_STYLE_Line,
+  /* column */       QRF_STYLE_Column,
+  /* list */         QRF_STYLE_List,
+  /* semi */         101,
+  /* html */         QRF_STYLE_Html,
+  /* insert */       QRF_STYLE_Insert,
+  /* quote */        QRF_STYLE_Quote,
+  /* tcl */          102,
+  /* csv */          QRF_STYLE_Csv,
+  /* explain */      103,
+  /* ascii */        104,
+  /* prettyprint */  105,
+  /* eqp */          106,
+  /* json */         QRF_STYLE_Json,
+  /* markdown */     QRF_STYLE_Markdown,
+  /* table */        QRF_STYLE_Table,
+  /* box */          QRF_STYLE_Box,
+  /* count */        QRF_STYLE_Count,
+  /* off */          QRF_STYLE_Off,
+  /* scanexp */      107,
+  /* www */          108,
 };
 
 /*
@@ -2450,98 +2457,6 @@ static int wsToEol(const char *z){
   return 1;
 }
 
-/*
-** Add a new entry to the EXPLAIN QUERY PLAN data
-*/
-static void eqp_append(ShellState *p, int iEqpId, int p2, const char *zText){
-  EQPGraphRow *pNew;
-  i64 nText;
-  if( zText==0 ) return;
-  nText = strlen(zText);
-  if( p->autoEQPtest ){
-    sqlite3_fprintf(p->out, "%d,%d,%s\n", iEqpId, p2, zText);
-  }
-  pNew = sqlite3_malloc64( sizeof(*pNew) + nText );
-  shell_check_oom(pNew);
-  pNew->iEqpId = iEqpId;
-  pNew->iParentId = p2;
-  memcpy(pNew->zText, zText, nText+1);
-  pNew->pNext = 0;
-  if( p->sGraph.pLast ){
-    p->sGraph.pLast->pNext = pNew;
-  }else{
-    p->sGraph.pRow = pNew;
-  }
-  p->sGraph.pLast = pNew;
-}
-
-/*
-** Free and reset the EXPLAIN QUERY PLAN data that has been collected
-** in p->sGraph.
-*/
-static void eqp_reset(ShellState *p){
-  EQPGraphRow *pRow, *pNext;
-  for(pRow = p->sGraph.pRow; pRow; pRow = pNext){
-    pNext = pRow->pNext;
-    sqlite3_free(pRow);
-  }
-  memset(&p->sGraph, 0, sizeof(p->sGraph));
-}
-
-/* Return the next EXPLAIN QUERY PLAN line with iEqpId that occurs after
-** pOld, or return the first such line if pOld is NULL
-*/
-static EQPGraphRow *eqp_next_row(ShellState *p, int iEqpId, EQPGraphRow *pOld){
-  EQPGraphRow *pRow = pOld ? pOld->pNext : p->sGraph.pRow;
-  while( pRow && pRow->iParentId!=iEqpId ) pRow = pRow->pNext;
-  return pRow;
-}
-
-/* Render a single level of the graph that has iEqpId as its parent.  Called
-** recursively to render sublevels.
-*/
-static void eqp_render_level(ShellState *p, int iEqpId){
-  EQPGraphRow *pRow, *pNext;
-  i64 n = strlen(p->sGraph.zPrefix);
-  char *z;
-  for(pRow = eqp_next_row(p, iEqpId, 0); pRow; pRow = pNext){
-    pNext = eqp_next_row(p, iEqpId, pRow);
-    z = pRow->zText;
-    sqlite3_fprintf(p->out, "%s%s%s\n", p->sGraph.zPrefix,
-                            pNext ? "|--" : "`--", z);
-    if( n<(i64)sizeof(p->sGraph.zPrefix)-7 ){
-      memcpy(&p->sGraph.zPrefix[n], pNext ? "|  " : "   ", 4);
-      eqp_render_level(p, pRow->iEqpId);
-      p->sGraph.zPrefix[n] = 0;
-    }
-  }
-}
-
-/*
-** Display and reset the EXPLAIN QUERY PLAN data
-*/
-static void eqp_render(ShellState *p, i64 nCycle){
-  EQPGraphRow *pRow = p->sGraph.pRow;
-  if( pRow ){
-    if( pRow->zText[0]=='-' ){
-      if( pRow->pNext==0 ){
-        eqp_reset(p);
-        return;
-      }
-      sqlite3_fprintf(p->out, "%s\n", pRow->zText+3);
-      p->sGraph.pRow = pRow->pNext;
-      sqlite3_free(pRow);
-    }else if( nCycle>0 ){
-      sqlite3_fprintf(p->out, "QUERY PLAN (cycles=%lld [100%%])\n", nCycle);
-    }else{
-      sqlite3_fputs("QUERY PLAN\n", p->out);
-    }
-    p->sGraph.zPrefix[0] = 0;
-    eqp_render_level(p, 0);
-    eqp_reset(p);
-  }
-}
-
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /*
 ** Progress handler callback.
@@ -3020,7 +2935,6 @@ static int shell_callback(
       break;
     }
     case MODE_EQP: {
-      eqp_append(p, atoi(azArg[0]), atoi(azArg[1]), azArg[3]);
       break;
     }
   }
@@ -3113,11 +3027,7 @@ static void set_table_name(ShellState *p, const char *zName){
     p->zDestTable = 0;
   }
   if( zName==0 ) return;
-  if( quoteChar(zName) ){
-    p->zDestTable = sqlite3_mprintf("\"%w\"", zName);
-  }else{
-    p->zDestTable = sqlite3_mprintf("%s", zName);
-  }
+  p->zDestTable = sqlite3_mprintf("%s", zName);
   shell_check_oom(p->zDestTable);
 }
 
@@ -3473,266 +3383,7 @@ static int display_stats(
   return 0;
 }
 
-
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-static int scanStatsHeight(sqlite3_stmt *p, int iEntry){
-  int iPid = 0;
-  int ret = 1;
-  sqlite3_stmt_scanstatus_v2(p, iEntry,
-      SQLITE_SCANSTAT_SELECTID, SQLITE_SCANSTAT_COMPLEX, (void*)&iPid
-  );
-  while( iPid!=0 ){
-    int ii;
-    for(ii=0; 1; ii++){
-      int iId;
-      int res;
-      res = sqlite3_stmt_scanstatus_v2(p, ii,
-          SQLITE_SCANSTAT_SELECTID, SQLITE_SCANSTAT_COMPLEX, (void*)&iId
-      );
-      if( res ) break;
-      if( iId==iPid ){
-        sqlite3_stmt_scanstatus_v2(p, ii,
-            SQLITE_SCANSTAT_PARENTID, SQLITE_SCANSTAT_COMPLEX, (void*)&iPid
-        );
-      }
-    }
-    ret++;
-  }
-  return ret;
-}
-#endif
-
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-static void display_explain_scanstats(
-  sqlite3 *db,                    /* Database to query */
-  ShellState *pArg                /* Pointer to ShellState */
-){
-  static const int f = SQLITE_SCANSTAT_COMPLEX;
-  sqlite3_stmt *p = pArg->pStmt;
-  int ii = 0;
-  i64 nTotal = 0;
-  int nWidth = 0;
-  eqp_reset(pArg);
-
-  for(ii=0; 1; ii++){
-    const char *z = 0;
-    int n = 0;
-    if( sqlite3_stmt_scanstatus_v2(p,ii,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&z) ){
-      break;
-    }
-    n = (int)strlen(z) + scanStatsHeight(p, ii)*3;
-    if( n>nWidth ) nWidth = n;
-  }
-  nWidth += 4;
-
-  sqlite3_stmt_scanstatus_v2(p, -1, SQLITE_SCANSTAT_NCYCLE, f, (void*)&nTotal);
-  for(ii=0; 1; ii++){
-    i64 nLoop = 0;
-    i64 nRow = 0;
-    i64 nCycle = 0;
-    int iId = 0;
-    int iPid = 0;
-    const char *zo = 0;
-    const char *zName = 0;
-    char *zText = 0;
-    double rEst = 0.0;
-
-    if( sqlite3_stmt_scanstatus_v2(p,ii,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&zo) ){
-      break;
-    }
-    sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_EST,f,(void*)&rEst);
-    sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_NLOOP,f,(void*)&nLoop);
-    sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_NVISIT,f,(void*)&nRow);
-    sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_NCYCLE,f,(void*)&nCycle);
-    sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_SELECTID,f,(void*)&iId);
-    sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_PARENTID,f,(void*)&iPid);
-    sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_NAME,f,(void*)&zName);
-
-    zText = sqlite3_mprintf("%s", zo);
-    if( nCycle>=0 || nLoop>=0 || nRow>=0 ){
-      char *z = 0;
-      if( nCycle>=0 && nTotal>0 ){
-        z = sqlite3_mprintf("%zcycles=%lld [%d%%]", z,
-            nCycle, ((nCycle*100)+nTotal/2) / nTotal
-        );
-      }
-      if( nLoop>=0 ){
-        z = sqlite3_mprintf("%z%sloops=%lld", z, z ? " " : "", nLoop);
-      }
-      if( nRow>=0 ){
-        z = sqlite3_mprintf("%z%srows=%lld", z, z ? " " : "", nRow);
-      }
-
-      if( zName && pArg->scanstatsOn>1 ){
-        double rpl = (double)nRow / (double)nLoop;
-        z = sqlite3_mprintf("%z rpl=%.1f est=%.1f", z, rpl, rEst);
-      }
-
-      zText = sqlite3_mprintf(
-          "% *z (%z)", -1*(nWidth-scanStatsHeight(p, ii)*3), zText, z
-      );
-    }
-
-    eqp_append(pArg, iId, iPid, zText);
-    sqlite3_free(zText);
-  }
-
-  eqp_render(pArg, nTotal);
-}
-#endif
-
-
-/*
-** Parameter azArray points to a zero-terminated array of strings. zStr
-** points to a single nul-terminated string. Return non-zero if zStr
-** is equal, according to strcmp(), to any of the strings in the array.
-** Otherwise, return zero.
-*/
-static int str_in_array(const char *zStr, const char **azArray){
-  int i;
-  for(i=0; azArray[i]; i++){
-    if( 0==cli_strcmp(zStr, azArray[i]) ) return 1;
-  }
-  return 0;
-}
-
-/*
-** If compiled statement pSql appears to be an EXPLAIN statement, allocate
-** and populate the ShellState.aiIndent[] array with the number of
-** spaces each opcode should be indented before it is output.
-**
-** The indenting rules are:
-**
-**     * For each "Next", "Prev", "VNext" or "VPrev" instruction, indent
-**       all opcodes that occur between the p2 jump destination and the opcode
-**       itself by 2 spaces.
-**
-**     * Do the previous for "Return" instructions for when P2 is positive.
-**       See tag-20220407a in wherecode.c and vdbe.c.
-**
-**     * For each "Goto", if the jump destination is earlier in the program
-**       and ends on one of:
-**          Yield  SeekGt  SeekLt  RowSetRead  Rewind
-**       or if the P1 parameter is one instead of zero,
-**       then indent all opcodes between the earlier instruction
-**       and "Goto" by 2 spaces.
-*/
-static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
-  int *abYield = 0;               /* True if op is an OP_Yield */
-  int nAlloc = 0;                 /* Allocated size of p->aiIndent[], abYield */
-  int iOp;                        /* Index of operation in p->aiIndent[] */
-
-  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext",
-                           "Return", 0 };
-  const char *azYield[] = { "Yield", "SeekLT", "SeekGT", "RowSetRead",
-                            "Rewind", 0 };
-  const char *azGoto[] = { "Goto", 0 };
-
-  /* The caller guarantees that the leftmost 4 columns of the statement
-  ** passed to this function are equivalent to the leftmost 4 columns
-  ** of EXPLAIN statement output. In practice the statement may be
-  ** an EXPLAIN, or it may be a query on the bytecode() virtual table.  */
-  assert( sqlite3_column_count(pSql)>=4 );
-  assert( 0==sqlite3_stricmp( sqlite3_column_name(pSql, 0), "addr" ) );
-  assert( 0==sqlite3_stricmp( sqlite3_column_name(pSql, 1), "opcode" ) );
-  assert( 0==sqlite3_stricmp( sqlite3_column_name(pSql, 2), "p1" ) );
-  assert( 0==sqlite3_stricmp( sqlite3_column_name(pSql, 3), "p2" ) );
-
-  for(iOp=0; SQLITE_ROW==sqlite3_step(pSql); iOp++){
-    int i;
-    int iAddr = sqlite3_column_int(pSql, 0);
-    const char *zOp = (const char*)sqlite3_column_text(pSql, 1);
-    int p1 = sqlite3_column_int(pSql, 2);
-    int p2 = sqlite3_column_int(pSql, 3);
-
-    /* Assuming that p2 is an instruction address, set variable p2op to the
-    ** index of that instruction in the aiIndent[] array. p2 and p2op may be
-    ** different if the current instruction is part of a sub-program generated
-    ** by an SQL trigger or foreign key.  */
-    int p2op = (p2 + (iOp-iAddr));
-
-    /* Grow the p->aiIndent array as required */
-    if( iOp>=nAlloc ){
-      nAlloc += 100;
-      p->aiIndent = (int*)sqlite3_realloc64(p->aiIndent, nAlloc*sizeof(int));
-      shell_check_oom(p->aiIndent);
-      abYield = (int*)sqlite3_realloc64(abYield, nAlloc*sizeof(int));
-      shell_check_oom(abYield);
-    }
-
-    abYield[iOp] = str_in_array(zOp, azYield);
-    p->aiIndent[iOp] = 0;
-    p->nIndent = iOp+1;
-    if( str_in_array(zOp, azNext) && p2op>0 ){
-      for(i=p2op; i<iOp; i++) p->aiIndent[i] += 2;
-    }
-    if( str_in_array(zOp, azGoto) && p2op<iOp && (abYield[p2op] || p1) ){
-      for(i=p2op; i<iOp; i++) p->aiIndent[i] += 2;
-    }
-  }
-
-  p->iIndent = 0;
-  sqlite3_free(abYield);
-  sqlite3_reset(pSql);
-}
-
-/*
-** Free the array allocated by explain_data_prepare().
-*/
-static void explain_data_delete(ShellState *p){
-  sqlite3_free(p->aiIndent);
-  p->aiIndent = 0;
-  p->nIndent = 0;
-  p->iIndent = 0;
-}
-
 static void exec_prepared_stmt(ShellState*, sqlite3_stmt*);
-
-/*
-** Display scan stats.
-*/
-static void display_scanstats(
-  sqlite3 *db,                    /* Database to query */
-  ShellState *pArg                /* Pointer to ShellState */
-){
-#ifndef SQLITE_ENABLE_STMT_SCANSTATUS
-  UNUSED_PARAMETER(db);
-  UNUSED_PARAMETER(pArg);
-#else
-  if( pArg->scanstatsOn==3 ){
-    const char *zSql =
-      "  SELECT addr, opcode, p1, p2, p3, p4, p5, comment, nexec,"
-      "   format('% 6s (%.2f%%)',"
-      "      CASE WHEN ncycle<100_000 THEN ncycle || ' '"
-      "         WHEN ncycle<100_000_000 THEN (ncycle/1_000) || 'K'"
-      "         WHEN ncycle<100_000_000_000 THEN (ncycle/1_000_000) || 'M'"
-      "         ELSE (ncycle/1000_000_000) || 'G' END,"
-      "       ncycle*100.0/(sum(ncycle) OVER ())"
-      "   )  AS cycles"
-      "   FROM bytecode(?)";
-
-    int rc = SQLITE_OK;
-    sqlite3_stmt *pStmt = 0;
-    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-    if( rc==SQLITE_OK ){
-      sqlite3_stmt *pSave = pArg->pStmt;
-      pArg->pStmt = pStmt;
-      sqlite3_bind_pointer(pStmt, 1, pSave, "stmt-pointer", 0);
-
-      pArg->cnt = 0;
-      pArg->cMode = MODE_ScanExp;
-      explain_data_prepare(pArg, pStmt);
-      exec_prepared_stmt(pArg, pStmt);
-      explain_data_delete(pArg);
-
-      sqlite3_finalize(pStmt);
-      pArg->pStmt = pSave;
-    }
-  }else{
-    display_explain_scanstats(db, pArg);
-  }
-#endif
-}
 
 /*
 ** Disable and restore .wheretrace and .treetrace/.selecttrace settings.
@@ -4170,15 +3821,17 @@ static void exec_prepared_stmt_columnar(
   abRowDiv = sqlite3_malloc64( nAlloc/nColumn );
   shell_check_oom(abRowDiv);
   if( nColumn>p->nWidth ){
-    p->colWidth = realloc(p->colWidth, (nColumn+1)*2*sizeof(int));
+    sqlite3_int64 nByte = (nColumn+1)*2*(sizeof(short int));
+    p->colWidth = realloc(p->colWidth,	 nByte);
     shell_check_oom(p->colWidth);
     for(i=p->nWidth; i<nColumn; i++) p->colWidth[i] = 0;
     p->nWidth = nColumn;
     p->actualWidth = &p->colWidth[nColumn];
   }
-  memset(p->actualWidth, 0, nColumn*sizeof(int));
+  memset(p->actualWidth, 0, nColumn*sizeof(short int));
   for(i=0; i<nColumn; i++){
     w = p->colWidth[i];
+    if( w==QRF_MINUS_ZERO ) w = 0;
     if( w<0 ) w = -w;
     p->actualWidth[i] = w;
   }
@@ -4238,7 +3891,13 @@ static void exec_prepared_stmt_columnar(
     if( z==0 ) z = (char*)zEmpty;
     n = strlenChar(z);
     j = i%nColumn;
-    if( n>p->actualWidth[j] ) p->actualWidth[j] = n;
+    if( n>p->actualWidth[j] ){
+      if( n>QRF_MX_WIDTH ){
+        p->actualWidth[j] = QRF_MX_WIDTH;
+      }else {
+        p->actualWidth[j] = n;
+      }
+    }
   }
   if( seenInterrupt ) goto columnar_end;
   switch( p->cMode ){
@@ -4572,6 +4231,15 @@ static int expertDotCommand(
 #endif /* !SQLITE_OMIT_VIRTUALTABLE && !SQLITE_OMIT_AUTHORIZATION */
 
 /*
+** QRF write callback
+*/
+static int shellWriteQR(void *pX, const char *z, sqlite3_int64 n){
+  ShellState *pArg = (ShellState*)pX;
+  sqlite3_fprintf(pArg->out, "%.*s", (int)n, z);
+  return SQLITE_OK;
+}
+
+/*
 ** Execute a statement or set of statements.  Print
 ** any result rows/columns depending on the current mode
 ** set via the supplied callback.
@@ -4590,9 +4258,45 @@ static int shell_exec(
   int rc2;
   const char *zLeftover;          /* Tail of unprocessed SQL */
   sqlite3 *db = pArg->db;
+  unsigned char eStyle;
+  sqlite3_qrf_spec spec;
 
   if( pzErrMsg ){
     *pzErrMsg = NULL;
+  }
+  memset(&spec, 0, sizeof(spec));
+  spec.iVersion = 1;
+  spec.xWrite = shellWriteQR;
+  spec.pWriteArg = (void*)pArg;
+  spec.nWidth = pArg->nWidth;
+  spec.aWidth = pArg->colWidth;
+  spec.zRowSep = pArg->rowSeparator;
+  spec.zColumnSep = pArg->colSeparator;
+  spec.zNull = pArg->nullValue;
+  spec.zTableName = pArg->zDestTable;
+  spec.bWordWrap = pArg->cmOpts.bWordWrap;
+  spec.mxColWidth = pArg->cmOpts.iWrap;
+  switch( pArg->eEscMode ){
+    case SHELL_ESC_ASCII:  spec.eEsc = QRF_ESC_Ascii;  break;
+    case SHELL_ESC_SYMBOL: spec.eEsc = QRF_ESC_Symbol; break;
+    default:               spec.eEsc = QRF_ESC_Off;    break;
+  }
+  spec.bColumnNames = pArg->showHeader!=0 ? QRF_SW_On : QRF_SW_Off;
+  if( pArg->cMode==MODE_Box
+   || pArg->cMode==MODE_Table
+   || pArg->cMode==MODE_Markdown
+  ){
+    spec.bColumnNames = QRF_SW_On;
+  }
+  if( sqlite3_stmt_isexplain(pStmt) ){
+    eStyle = QRF_STYLE_Auto;
+  }else if( pArg->cMode>=0
+         && pArg->cMode<ArraySize(aQrfStyle)
+         && aQrfStyle[pArg->cMode]<100
+  ){
+    eStyle = aQrfStyle[pArg->cMode];
+  }else{
+    eStyle = 199;
   }
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
@@ -4628,41 +4332,16 @@ static int shell_exec(
 
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
       if( pArg && pArg->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
-        sqlite3_stmt *pExplain;
         int triggerEQP = 0;
         disable_debug_trace_modes();
         sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
         if( pArg->autoEQP>=AUTOEQP_trigger ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 1, 0);
         }
-        pExplain = pStmt;
-        sqlite3_reset(pExplain);
-        rc = sqlite3_stmt_explain(pExplain, 2);
-        if( rc==SQLITE_OK ){
-          bind_prepared_stmt(pArg, pExplain);
-          while( sqlite3_step(pExplain)==SQLITE_ROW ){
-            const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
-            int iEqpId = sqlite3_column_int(pExplain, 0);
-            int iParentId = sqlite3_column_int(pExplain, 1);
-            if( zEQPLine==0 ) zEQPLine = "";
-            if( zEQPLine[0]=='-' ) eqp_render(pArg, 0);
-            eqp_append(pArg, iEqpId, iParentId, zEQPLine);
-          }
-          eqp_render(pArg, 0);
-        }
-        if( pArg->autoEQP>=AUTOEQP_full ){
-          /* Also do an EXPLAIN for ".eqp full" mode */
-          sqlite3_reset(pExplain);
-          rc = sqlite3_stmt_explain(pExplain, 1);
-          if( rc==SQLITE_OK ){
-            pArg->cMode = MODE_Explain;
-            assert( sqlite3_stmt_isexplain(pExplain)==1 );
-            bind_prepared_stmt(pArg, pExplain);
-            explain_data_prepare(pArg, pExplain);
-            exec_prepared_stmt(pArg, pExplain);
-            explain_data_delete(pArg);
-          }
-        }
+        sqlite3_reset(pStmt);
+        spec.eStyle = QRF_STYLE_Auto;
+        sqlite3_stmt_explain(pStmt, 2-(pArg->autoEQP>=AUTOEQP_full));
+        sqlite3_format_query_result(pStmt, &spec, 0);
         if( pArg->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
         }
@@ -4671,29 +4350,13 @@ static int shell_exec(
         restore_debug_trace_modes();
       }
 
-      if( pArg ){
-        int bIsExplain = (sqlite3_stmt_isexplain(pStmt)==1);
-        pArg->cMode = pArg->mode;
-        if( pArg->autoExplain ){
-          if( bIsExplain ){
-            pArg->cMode = MODE_Explain;
-          }
-          if( sqlite3_stmt_isexplain(pStmt)==2 ){
-            pArg->cMode = MODE_EQP;
-          }
-        }
-
-        /* If the shell is currently in ".explain" mode, gather the extra
-        ** data required to add indents to the output.*/
-        if( pArg->cMode==MODE_Explain && bIsExplain ){
-          explain_data_prepare(pArg, pStmt);
-        }
-      }
-
       bind_prepared_stmt(pArg, pStmt);
-      exec_prepared_stmt(pArg, pStmt);
-      explain_data_delete(pArg);
-      eqp_render(pArg, 0);
+      if( eStyle<100 ){
+        spec.eStyle = eStyle;
+        sqlite3_format_query_result(pStmt, &spec, 0);
+      }else{
+        exec_prepared_stmt(pArg, pStmt);
+      }
 
       /* print usage stats if stats on */
       if( pArg && pArg->statsOn ){
@@ -4702,7 +4365,18 @@ static int shell_exec(
 
       /* print loop-counters if required */
       if( pArg && pArg->scanstatsOn ){
-        display_scanstats(db, pArg);
+        char *zErr = 0;
+        switch( pArg->scanstatsOn ){
+          case 1:   spec.eStyle = QRF_STYLE_Stats;     break;
+          case 2:   spec.eStyle = QRF_STYLE_StatsEst;  break;
+          default:  spec.eStyle = QRF_STYLE_StatsVm;   break;
+        }
+        sqlite3_reset(pStmt);
+        rc = sqlite3_format_query_result(pStmt, &spec, &zErr);
+        if( rc ){
+          sqlite3_fprintf(stderr, "Stats query failed: %s\n", zErr);
+          sqlite3_free(zErr);
+        }          
       }
 
       /* Finalize the statement just executed. If this fails, save a
@@ -4935,6 +4609,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     int i;
     char *savedDestTable;
     int savedMode;
+    int savedShowHdr;
 
     azCol = tableColumnList(p, zTable);
     if( azCol==0 ){
@@ -4979,8 +4654,10 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
 
     savedDestTable = p->zDestTable;
     savedMode = p->mode;
-    p->zDestTable = sTable.zTxt;
+    savedShowHdr = p->showHeader;
+    p->zDestTable = (char*)zTable;
     p->mode = p->cMode = MODE_Insert;
+    p->showHeader = 1;
     rc = shell_exec(p, sSelect.zTxt, 0);
     if( (rc&0xff)==SQLITE_CORRUPT ){
       sqlite3_fputs("/****** CORRUPTION ERROR *******/\n", p->out);
@@ -4990,6 +4667,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     }
     p->zDestTable = savedDestTable;
     p->mode = savedMode;
+    p->showHeader = savedShowHdr;
     freeText(&sTable);
     freeText(&sSelect);
     if( rc ) p->nErr++;
@@ -11534,7 +11212,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_fprintf(p->out, "%12.12s: %s\n","stats", zOut);
     sqlite3_fprintf(p->out, "%12.12s: ", "width");
     for (i=0;i<p->nWidth;i++) {
-      sqlite3_fprintf(p->out, "%d ", p->colWidth[i]);
+      sqlite3_fprintf(p->out, "%d ", (int)p->colWidth[i]);
     }
     sqlite3_fputs("\n", p->out);
     sqlite3_fprintf(p->out, "%12.12s: %s\n", "filename",
@@ -12335,14 +12013,14 @@ static int do_meta_command(char *zLine, ShellState *p){
     int j;
     assert( nArg<=ArraySize(azArg) );
     p->nWidth = nArg-1;
-    p->colWidth = realloc(p->colWidth, (p->nWidth+1)*sizeof(int)*2);
+    p->colWidth = realloc(p->colWidth, (p->nWidth+1)*sizeof(short int)*2);
     if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
     if( p->nWidth ) p->actualWidth = &p->colWidth[p->nWidth];
     for(j=1; j<nArg; j++){
       i64 w = integerValue(azArg[j]);
-      if( w < -30000 ) w = -30000;
-      if( w > +30000 ) w = +30000;
-      p->colWidth[j-1] = (int)w;
+      if( w < QRF_MN_WIDTH ) w = QRF_MN_WIDTH;
+      if( w > QRF_MX_WIDTH ) w = QRF_MX_WIDTH;
+      p->colWidth[j-1] = (short int)w;
     }
   }else
 
@@ -13535,6 +13213,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.mode = MODE_Line;
     }else if( cli_strcmp(z,"-column")==0 ){
       data.mode = MODE_Column;
+      if( (data.shellFlgs & SHFLG_HeaderSet)==0 ){
+        data.showHeader = 1;
+      }
     }else if( cli_strcmp(z,"-json")==0 ){
       data.mode = MODE_Json;
     }else if( cli_strcmp(z,"-markdown")==0 ){

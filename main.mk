@@ -1411,7 +1411,7 @@ window.o:	$(TOP)/src/window.c $(DEPS_OBJ_COMMON)
 
 tclsqlite.o:	$(T.tcl.env.sh) tclsqlite-ex.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DUSE_TCL_STUBS=1 $$TCL_INCLUDE_SPEC \
-		-c tclsqlite-ex.c
+		-c tclsqlite-ex.c -o tclsqlite.o
 
 tclsqlite-shell.o:	$(T.tcl.env.sh) tclsqlite-ex.c $(DEPS_OBJ_COMMON)
 	$(T.compile.tcl) -DTCLSH -o $@ -c tclsqlite-ex.c $$TCL_INCLUDE_SPEC
