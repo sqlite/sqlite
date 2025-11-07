@@ -1,5 +1,5 @@
-C Put\sthe\sstyle\sconstants\sin\salphabetic\sorder.\s\sImprovements\sto\ndocumentation.
-D 2025-11-06T23:34:30.813
+C Fix\sthe\ssize\sof\san\sinteger\sin\sthe\sTCL\sinterface.
+D 2025-11-07T00:05:44.203
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -743,7 +743,7 @@ F src/sqliteInt.h 88f7fc9ce1630d9a5f7e0a8e1f3287cdc63882fba985c18e7eee1b9f457f59
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c cf04173ac121e053b7cc30cd987c479af9eb027a5bcf1648b7a7dde8567c9ccb
+F src/tclsqlite.c 7232269f64f386ad3718f6a4e13f8fec4a81ce987a2cda60f7b6f2ebff7a7a03
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
 F src/test1.c f880ab766eeedf2c063662bd9538b923fd42c4341b7bfc2150a6d93ab8b9341c
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
@@ -2173,8 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 128f1149076ef00c567405ea2112be0ae665b12e81672ae5494d82af11633af5
-R fdc08a0bc00170e732a364b7e5ae5bd6
+P d5e891426f8b2a0c3326bf868f2d811c44a1f7e619f42b273c7445ab443d618c
+R d99d23dcb374c7d11bbf931dfdaab5ca
 U drh
-Z 43b31650a4a949b99a862db3738d7da9
+Z 92bea9d231151b2c0d2bdb00c6a35f42
 # Remove this line to create a well-formed Fossil manifest.

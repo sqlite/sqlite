@@ -2217,7 +2217,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       qrf.mxWidth = v;
       i++;
     }else if( strcmp(zArg,"-widths")==0 ){
-      int n = 0;
+      Tcl_Size n = 0;
       int jj;
       rc = Tcl_ListObjLength(pDb->interp, objv[i+1], &n);
       if( rc ) goto format_failed;
