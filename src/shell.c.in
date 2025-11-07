@@ -4274,7 +4274,7 @@ static int shell_exec(
   spec.zColumnSep = pArg->colSeparator;
   spec.zNull = pArg->nullValue;
   spec.zTableName = pArg->zDestTable;
-  spec.bWordWrap = pArg->cmOpts.bWordWrap;
+  spec.bWordWrap = pArg->cmOpts.bWordWrap!=0 ? QRF_SW_On : QRF_SW_Off;
   spec.mxColWidth = pArg->cmOpts.iWrap;
   switch( pArg->eEscMode ){
     case SHELL_ESC_ASCII:  spec.eEsc = QRF_ESC_Ascii;  break;
@@ -4282,11 +4282,19 @@ static int shell_exec(
     default:               spec.eEsc = QRF_ESC_Off;    break;
   }
   spec.bColumnNames = pArg->showHeader!=0 ? QRF_SW_On : QRF_SW_Off;
-  if( pArg->cMode==MODE_Box
-   || pArg->cMode==MODE_Table
-   || pArg->cMode==MODE_Markdown
-  ){
-    spec.bColumnNames = QRF_SW_On;
+  switch( pArg->cMode ){
+    case MODE_Insert: {
+      if( ShellHasFlag(pArg, SHFLG_PreserveRowid) ){
+        spec.bColumnNames = QRF_SW_On;
+      }
+      break;
+    }
+    case MODE_Box:
+    case MODE_Table:
+    case MODE_Markdown: {
+      spec.bColumnNames = QRF_SW_On;
+      break;
+    }
   }
   if( sqlite3_stmt_isexplain(pStmt) ){
     eStyle = QRF_STYLE_Auto;
@@ -4657,7 +4665,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     savedShowHdr = p->showHeader;
     p->zDestTable = (char*)zTable;
     p->mode = p->cMode = MODE_Insert;
-    p->showHeader = 1;
+//    p->showHeader = 1;
     rc = shell_exec(p, sSelect.zTxt, 0);
     if( (rc&0xff)==SQLITE_CORRUPT ){
       sqlite3_fputs("/****** CORRUPTION ERROR *******/\n", p->out);

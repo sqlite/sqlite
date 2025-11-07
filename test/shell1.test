@@ -854,12 +854,12 @@ do_test shell1-4.1.2 {
 } {0 {PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
-INSERT INTO t1 VALUES(1,NULL);
-INSERT INTO t1 VALUES(2,'');
-INSERT INTO t1 VALUES(3,1);
-INSERT INTO t1 VALUES(4,2.25);
-INSERT INTO t1 VALUES(5,'hello');
-INSERT INTO t1 VALUES(6,x'807f');
+INSERT INTO t1(x,y) VALUES(1,NULL);
+INSERT INTO t1(x,y) VALUES(2,'');
+INSERT INTO t1(x,y) VALUES(3,1);
+INSERT INTO t1(x,y) VALUES(4,2.25);
+INSERT INTO t1(x,y) VALUES(5,'hello');
+INSERT INTO t1(x,y) VALUES(6,x'807f');
 COMMIT;}}
 
 # Verify that the table named [table] is correctly quoted and that
@@ -902,12 +902,12 @@ do_test shell1-4.1.4 {
 } {0 {PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE [ta<>ble](x INTEGER PRIMARY KEY, y) WITHOUT ROWID;
-INSERT INTO "ta<>ble" VALUES(1,NULL);
-INSERT INTO "ta<>ble" VALUES(12,'');
-INSERT INTO "ta<>ble" VALUES(23,1);
-INSERT INTO "ta<>ble" VALUES(34,2.25);
-INSERT INTO "ta<>ble" VALUES(45,'hello');
-INSERT INTO "ta<>ble" VALUES(56,x'807f');
+INSERT INTO "ta<>ble"(x,y) VALUES(1,NULL);
+INSERT INTO "ta<>ble"(x,y) VALUES(12,'');
+INSERT INTO "ta<>ble"(x,y) VALUES(23,1);
+INSERT INTO "ta<>ble"(x,y) VALUES(34,2.25);
+INSERT INTO "ta<>ble"(x,y) VALUES(45,'hello');
+INSERT INTO "ta<>ble"(x,y) VALUES(56,x'807f');
 COMMIT;}}
 
 # Do not record rowids if the rowid is inaccessible
@@ -924,9 +924,9 @@ do_test shell1-4.1.5 {
 } {0 {PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE t1(_ROWID_,rowid,oid);
-INSERT INTO t1 VALUES(1,NULL,'alpha');
-INSERT INTO t1 VALUES(12,'',99);
-INSERT INTO t1 VALUES(23,1,x'b0b1b2');
+INSERT INTO t1(_ROWID_,rowid,oid) VALUES(1,NULL,'alpha');
+INSERT INTO t1(_ROWID_,rowid,oid) VALUES(12,'',99);
+INSERT INTO t1(_ROWID_,rowid,oid) VALUES(23,1,x'b0b1b2');
 COMMIT;}}
 
 } else {
@@ -1326,6 +1326,7 @@ do_test_with_ansi_output shell1-8.5 {
 create table t(a text, b int);
 insert into t values ('too long for one line', 1), ('shorter', NULL);
 .header on
+.mode box --wordwrap off
 .width 10 10
 .nullvalue NADA
 select * from t;}
