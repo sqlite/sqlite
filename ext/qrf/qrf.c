@@ -22,20 +22,20 @@
 typedef sqlite3_int64 i64;
 
 /* A single line in the EQP output */
-typedef struct EQPGraphRow EQPGraphRow;
-struct EQPGraphRow {
-  int iEqpId;           /* ID for this row */
-  int iParentId;        /* ID of the parent row */
-  EQPGraphRow *pNext;   /* Next row in sequence */
-  char zText[1];        /* Text to display for this row */
+typedef struct qrfEQPGraphRow qrfEQPGraphRow;
+struct qrfEQPGraphRow {
+  int iEqpId;            /* ID for this row */
+  int iParentId;         /* ID of the parent row */
+  qrfEQPGraphRow *pNext; /* Next row in sequence */
+  char zText[1];         /* Text to display for this row */
 };
 
 /* All EQP output is collected into an instance of the following */
-typedef struct EQPGraph EQPGraph;
-struct EQPGraph {
-  EQPGraphRow *pRow;    /* Linked list of all rows of the EQP output */
-  EQPGraphRow *pLast;   /* Last element of the pRow list */
-  char zPrefix[100];    /* Graph prefix */
+typedef struct qrfEQPGraph qrfEQPGraph;
+struct qrfEQPGraph {
+  qrfEQPGraphRow *pRow;  /* Linked list of all rows of the EQP output */
+  qrfEQPGraphRow *pLast; /* Last element of the pRow list */
+  char zPrefix[100];     /* Graph prefix */
 };
 
 /*
@@ -57,7 +57,7 @@ struct Qrf {
       int mxColWth;             /* Maximum display width of any column */
       const char **azCol;       /* Names of output columns (MODE_Line) */
     } sLine;
-    EQPGraph *pGraph;         /* EQP graph (Eqp, Stats, and StatsEst) */
+    qrfEQPGraph *pGraph;      /* EQP graph (Eqp, Stats, and StatsEst) */
     struct {                  /* Content for QRF_STYLE_Explain */
       int nIndent;              /* Slots allocated for aiIndent */
       int iIndent;              /* Current slot */
@@ -104,16 +104,16 @@ static void qrfOom(Qrf *p){
 ** Add a new entry to the EXPLAIN QUERY PLAN data
 */
 static void qrfEqpAppend(Qrf *p, int iEqpId, int p2, const char *zText){
-  EQPGraphRow *pNew;
+  qrfEQPGraphRow *pNew;
   sqlite3_int64 nText;
   if( zText==0 ) return;
   if( p->u.pGraph==0 ){
-    p->u.pGraph = sqlite3_malloc64( sizeof(EQPGraph) );
+    p->u.pGraph = sqlite3_malloc64( sizeof(qrfEQPGraph) );
     if( p->u.pGraph==0 ){
       qrfOom(p);
       return;
     }
-    memset(p->u.pGraph, 0, sizeof(EQPGraph) );
+    memset(p->u.pGraph, 0, sizeof(qrfEQPGraph) );
   }
   nText = strlen(zText);
   pNew = sqlite3_malloc64( sizeof(*pNew) + nText );
@@ -138,7 +138,7 @@ static void qrfEqpAppend(Qrf *p, int iEqpId, int p2, const char *zText){
 ** in p->u.pGraph.
 */
 static void qrfEqpReset(Qrf *p){
-  EQPGraphRow *pRow, *pNext;
+  qrfEQPGraphRow *pRow, *pNext;
   if( p->u.pGraph ){
     for(pRow = p->u.pGraph->pRow; pRow; pRow = pNext){
       pNext = pRow->pNext;
@@ -152,8 +152,8 @@ static void qrfEqpReset(Qrf *p){
 /* Return the next EXPLAIN QUERY PLAN line with iEqpId that occurs after
 ** pOld, or return the first such line if pOld is NULL
 */
-static EQPGraphRow *qrfEqpNextRow(Qrf *p, int iEqpId, EQPGraphRow *pOld){
-  EQPGraphRow *pRow = pOld ? pOld->pNext : p->u.pGraph->pRow;
+static qrfEQPGraphRow *qrfEqpNextRow(Qrf *p, int iEqpId, qrfEQPGraphRow *pOld){
+  qrfEQPGraphRow *pRow = pOld ? pOld->pNext : p->u.pGraph->pRow;
   while( pRow && pRow->iParentId!=iEqpId ) pRow = pRow->pNext;
   return pRow;
 }
@@ -162,7 +162,7 @@ static EQPGraphRow *qrfEqpNextRow(Qrf *p, int iEqpId, EQPGraphRow *pOld){
 ** recursively to render sublevels.
 */
 static void qrfEqpRenderLevel(Qrf *p, int iEqpId){
-  EQPGraphRow *pRow, *pNext;
+  qrfEQPGraphRow *pRow, *pNext;
   i64 n = strlen(p->u.pGraph->zPrefix);
   char *z;
   for(pRow = qrfEqpNextRow(p, iEqpId, 0); pRow; pRow = pNext){
@@ -182,7 +182,7 @@ static void qrfEqpRenderLevel(Qrf *p, int iEqpId){
 ** Display and reset the EXPLAIN QUERY PLAN data
 */
 static void qrfEqpRender(Qrf *p, i64 nCycle){
-  EQPGraphRow *pRow;
+  qrfEQPGraphRow *pRow;
   if( p->u.pGraph!=0 && (pRow = p->u.pGraph->pRow)!=0 ){
     if( pRow->zText[0]=='-' ){
       if( pRow->pNext==0 ){

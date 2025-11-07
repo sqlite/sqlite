@@ -129,4 +129,23 @@ int sqlite3_format_query_result(
 #define QRF_SW_Off      1 /* This setting is forced off */
 #define QRF_SW_On       2 /* This setting is forced on */
 
+/*
+** Auxiliary routines contined within this module that might be useful
+** in other contexts, and which are therefore exported.
+*/
+/*
+** Return an estimate of the width, in columns, for the single Unicode
+** character c.  For normal characters, the answer is always 1.  But the
+** estimate might be 0 or 2 for zero-width and double-width characters.
+**
+** Different display devices display unicode using different widths.  So
+** it is impossible to know that true display width with 100% accuracy.
+** Inaccuracies in the width estimates might cause columns to be misaligned.
+** Unfortunately, there is nothing we can do about that.
+*/
+int sqlite3_qrf_wcwidth(int c);
+
+
+
+
 #endif /* !defined(SQLITE_QRF_H) */
