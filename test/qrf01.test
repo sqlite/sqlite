@@ -207,7 +207,19 @@ do_test 1.90 {
   set result "\n[db format -style json {SELECT * FROM t1}]"
 } {
 [{"a":1,"b":2.5,"c":"three"},
-{"a":"\u0042\u004c\u004f\u0042","b":null,"c":"Ἀμήν"}]
+{"a":"\u0042\u004c\u004f\u0042","c":"Ἀμήν"}]
+}
+do_test 1.91 {
+  set result "\n[db format -style json-line {SELECT * FROM t1}]"
+} {
+{"a":1,"b":2.5,"c":"three"}
+{"a":"\u0042\u004c\u004f\u0042","c":"Ἀμήν"}
+}
+do_test 1.92 {
+  set result "\n[db format -style json-line {SELECT *, unistr('abc\u000a123\u000d\u000axyz') AS xyz FROM t1}]"
+} {
+{"a":1,"b":2.5,"c":"three","xyz":"abc\n123\r\nxyz"}
+{"a":"\u0042\u004c\u004f\u0042","c":"Ἀμήν","xyz":"abc\n123\r\nxyz"}
 }
 
 do_test 1.100 {

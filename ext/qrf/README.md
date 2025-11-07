@@ -386,15 +386,16 @@ The following output modes are currently defined:
 #define QRF_STYLE_Html      7 /* Generate an XHTML table */
 #define QRF_STYLE_Insert    8 /* Generate SQL "insert" statements */
 #define QRF_STYLE_Json      9 /* Output is a list of JSON objects */
-#define QRF_STYLE_Line     10 /* One column per line. */
-#define QRF_STYLE_List     11 /* One record per line with a separator */
-#define QRF_STYLE_Markdown 12 /* Markdown formatting */
-#define QRF_STYLE_Off      13 /* No query output shown */
-#define QRF_STYLE_Quote    14 /* SQL-quoted, comma-separated */
-#define QRF_STYLE_Stats    15 /* EQP-like output but with performance stats */
-#define QRF_STYLE_StatsEst 16 /* EQP-like output with planner estimates */
-#define QRF_STYLE_StatsVm  17 /* EXPLAIN-like output with performance stats */
-#define QRF_STYLE_Table    18 /* MySQL-style table formatting */
+#define QRF_STYLE_JsonLine 10 /* Independent JSON objects for each row */
+#define QRF_STYLE_Line     11 /* One column per line. */
+#define QRF_STYLE_List     12 /* One record per line with a separator */
+#define QRF_STYLE_Markdown 13 /* Markdown formatting */
+#define QRF_STYLE_Off      14 /* No query output shown */
+#define QRF_STYLE_Quote    15 /* SQL-quoted, comma-separated */
+#define QRF_STYLE_Stats    16 /* EQP-like output but with performance stats */
+#define QRF_STYLE_StatsEst 17 /* EQP-like output with planner estimates */
+#define QRF_STYLE_StatsVm  18 /* EXPLAIN-like output with performance stats */
+#define QRF_STYLE_Table    19 /* MySQL-style table formatting */
 ~~~
 
 In the following subsections, these styles will often be referred 
@@ -430,7 +431,7 @@ from the data below.  This is very similar to default output styling in
 psql.  The **Markdown** renders its result in the
 Markdown table format.
 
-### 4.3 Line-oriented Styles (Csv, Html, Insert, Json, Line, List, Quote)
+### 4.3 Line-oriented Styles
 
 The line-oriented styles output each row of result as it is received from
 the prepared statement.
@@ -460,8 +461,11 @@ that will inserts the data that is output into a table whose name is defined
 by the zTableName field of `sqlite3_qrf_spec`.  If zTableName is NULL,
 then a substitute name is used.
 
-The **Json** style generates JSON text for the query result.
-The JSON is an array of structures with on structure per row.
+The **Json** and **JsonLine** styles generates JSON text for the query result.
+The **Json** style produces a JSON array of structures with on 
+structure per row.  **JsonLine** outputs independent JSON objects, one per
+row, with each structure on a separate line all by itself, and not
+part of a larger array.
 
 Finally, the **Line** style paints each column of a row on a
 separate line with the column name on the left and a "`=`" separating the

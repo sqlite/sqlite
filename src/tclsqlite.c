@@ -2121,17 +2121,19 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
         "auto",             "box",              "column",
         "count",            "csv",              "eqp",
         "explain",          "html",             "insert",
-        "json",             "line",             "list",
-        "markdown",         "quote",            "stats",
-        "stats-est",        "stats-vm",         "table",            0
+        "json",             "json-line",        "line",
+        "list",             "markdown",         "quote",
+        "stats",            "stats-est",        "stats-vm",
+        "table",            0
       };
       static unsigned char aStyleMap[] = {
         QRF_STYLE_Auto,     QRF_STYLE_Box,      QRF_STYLE_Column,
         QRF_STYLE_Count,    QRF_STYLE_Csv,      QRF_STYLE_Eqp,
         QRF_STYLE_Explain,  QRF_STYLE_Html,     QRF_STYLE_Insert,
-        QRF_STYLE_Json,     QRF_STYLE_Line,     QRF_STYLE_List,
-        QRF_STYLE_Markdown, QRF_STYLE_Quote,    QRF_STYLE_Stats,
-        QRF_STYLE_StatsEst, QRF_STYLE_StatsVm,  QRF_STYLE_Table
+        QRF_STYLE_Json,     QRF_STYLE_JsonLine, QRF_STYLE_Line,
+        QRF_STYLE_List,     QRF_STYLE_Markdown, QRF_STYLE_Quote,
+        QRF_STYLE_Stats,    QRF_STYLE_StatsEst, QRF_STYLE_StatsVm,
+        QRF_STYLE_Table
       };
       int style;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azStyles,

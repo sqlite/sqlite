@@ -1679,8 +1679,8 @@ qrf_reinit:
       if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
       break;
     }
+    case QRF_STYLE_JsonLine:
     case QRF_STYLE_Json: {
-      p->spec.zColumnSep = ",";
       p->spec.eText = QRF_TEXT_Json;
       p->spec.eBlob = QRF_BLOB_Json;
       p->spec.zNull = "null";
@@ -1793,6 +1793,26 @@ static int qrf_need_quote(const char *zName){
 }
 
 /*
+** Helper function for QRF_STYLE_Json and QRF_STYLE_JsonLine.
+** The initial "{" for a JSON object that will contain row content
+** has been output.  Now output all the content.
+*/
+static void qrfOneJsonRow(Qrf *p){
+  int i, nItem; 
+  for(nItem=i=0; i<p->nCol; i++){
+    const char *zCName;
+    if( sqlite3_column_type(p->pStmt,i)==SQLITE_NULL ) continue;
+    zCName = sqlite3_column_name(p->pStmt, i);
+    if( nItem>0 ) sqlite3_str_append(p->pOut, ",", 1);
+    nItem++;
+    qrfEncodeText(p, p->pOut, zCName);
+    sqlite3_str_append(p->pOut, ":", 1);
+    qrfRenderValue(p, p->pOut, i);
+  }
+  qrfWrite(p);
+}
+
+/*
 ** Render a single row of output.
 */
 static void qrfOneSimpleRow(Qrf *p){
@@ -1809,14 +1829,16 @@ static void qrfOneSimpleRow(Qrf *p){
       }else{
         sqlite3_str_append(p->pOut, "},\n{", 4);
       }
-      for(i=0; i<p->nCol; i++){
-        const char *zCName = sqlite3_column_name(p->pStmt, i);
-        if( i>0 ) sqlite3_str_append(p->pOut, ",", 1);
-        qrfEncodeText(p, p->pOut, zCName);
-        sqlite3_str_append(p->pOut, ":", 1);
-        qrfRenderValue(p, p->pOut, i);
+      qrfOneJsonRow(p);
+      break;
+    }
+    case QRF_STYLE_JsonLine: {
+      if( p->nRow==0 ){
+        sqlite3_str_append(p->pOut, "{", 1);
+      }else{
+        sqlite3_str_append(p->pOut, "}\n{", 3);
       }
-      qrfWrite(p);
+      qrfOneJsonRow(p);
       break;
     }
     case QRF_STYLE_Html: {
@@ -1942,6 +1964,11 @@ static void qrfFinalize(Qrf *p){
     }
     case QRF_STYLE_Json: {
       sqlite3_str_append(p->pOut, "}]\n", 3);
+      qrfWrite(p);
+      break;
+    }
+    case QRF_STYLE_JsonLine: {
+      sqlite3_str_append(p->pOut, "}\n", 2);
       qrfWrite(p);
       break;
     }

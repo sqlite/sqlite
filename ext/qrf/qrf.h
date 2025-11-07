@@ -74,15 +74,16 @@ int sqlite3_format_query_result(
 #define QRF_STYLE_Html      7 /* Generate an XHTML table */
 #define QRF_STYLE_Insert    8 /* Generate SQL "insert" statements */
 #define QRF_STYLE_Json      9 /* Output is a list of JSON objects */
-#define QRF_STYLE_Line     10 /* One column per line. */
-#define QRF_STYLE_List     11 /* One record per line with a separator */
-#define QRF_STYLE_Markdown 12 /* Markdown formatting */
-#define QRF_STYLE_Off      13 /* No query output shown */
-#define QRF_STYLE_Quote    14 /* SQL-quoted, comma-separated */
-#define QRF_STYLE_Stats    15 /* EQP-like output but with performance stats */
-#define QRF_STYLE_StatsEst 16 /* EQP-like output with planner estimates */
-#define QRF_STYLE_StatsVm  17 /* EXPLAIN-like output with performance stats */
-#define QRF_STYLE_Table    18 /* MySQL-style table formatting */
+#define QRF_STYLE_JsonLine 10 /* Independent JSON objects for each row */
+#define QRF_STYLE_Line     11 /* One column per line. */
+#define QRF_STYLE_List     12 /* One record per line with a separator */
+#define QRF_STYLE_Markdown 13 /* Markdown formatting */
+#define QRF_STYLE_Off      14 /* No query output shown */
+#define QRF_STYLE_Quote    15 /* SQL-quoted, comma-separated */
+#define QRF_STYLE_Stats    16 /* EQP-like output but with performance stats */
+#define QRF_STYLE_StatsEst 17 /* EQP-like output with planner estimates */
+#define QRF_STYLE_StatsVm  18 /* EXPLAIN-like output with performance stats */
+#define QRF_STYLE_Table    19 /* MySQL-style table formatting */
 
 /*
 ** Quoting styles for text.
