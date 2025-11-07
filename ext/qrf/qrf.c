@@ -1354,7 +1354,8 @@ static void qrfColumnar(Qrf *p){
           sqlite3_str_appendchar(p->pOut, (w-n)/2, ' ');
           sqlite3_str_appendall(p->pOut, azData[i]);
           sqlite3_str_appendchar(p->pOut, (w-n+1)/2, ' ');
-          sqlite3_str_appendall(p->pOut, i==nColumn-1?" "BOX_13"\n":" "BOX_13" ");
+          sqlite3_str_appendall(p->pOut,
+                          i==nColumn-1 ? (" "BOX_13"\n"):(" "BOX_13" "));
         }
         qrfBoxSeparator(p, BOX_123, BOX_1234, BOX_134);
       }

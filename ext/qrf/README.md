@@ -272,6 +272,10 @@ Content length limits only apply to TEXT and BLOB values.  Numeric
 values and NULLs always display their full text regardless of the
 mxLength setting.
 
+*This setting is a place-holder.
+As for 2025-11-07, the mxLength constraint is not yet implemented.
+The current behavior is always as if mxLength where zero.*
+
 ### 2.9 Word Wrapping In Columnar Modes (mxColWidth, mxTotalWidth, bWordWrap)
 
 When using columnar formatting modes (QRF_STYLE_Box, QRF_STYLE_Column,
@@ -288,7 +292,7 @@ beyond the mxTotalWidth if the table has too many columns
 to squeeze into the specified space.
 
 In order to keep individual columns, or the entire table, within
-requested length limits, it is sometimes necessary to wrap the content
+requested width limits, it is sometimes necessary to wrap the content
 for a single row of a single column across multiple lines.  When this
 becomes necessary and if the bWordWrap setting is QRF_SW_On, then the
 formatter attempts to split the content on whitespace or at a word boundary.
@@ -297,6 +301,11 @@ anywhere, including in the middle of a word.
 
 For narrow columns and wide words, it might sometimes be necessary to split
 a column in the middle of a word, even when bWordWrap is QRF_SW_On.
+
+*The mxTotalWidth setting is a place-holder.
+As for 2025-11-07, the mxTotalWidth constraint is not yet implemented.
+The current behavior is always as if mxTotalWidth where zero.*
+
 
 ### 2.10 Column width and alignment (nWidth and aWidth)
 
