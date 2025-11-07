@@ -1,5 +1,5 @@
-C Get\sthe\ssqlite3Hwtime()\sfunction\sworking\son\sARM.\s\sEnable\sscanstatus\sby\ndefault\son\sWindows\sCLI\sbuilds.
-D 2025-11-06T13:19:50.494
+C Fix\sa\sharmless\sstatic-analyzer\swarning.
+D 2025-11-07T11:22:47.123
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -671,7 +671,7 @@ F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c cb5b8ceb9baa02a63a2f83dec09c4153e1cfbdf9c2adef5c62c26d2160eeb067
+F src/btree.c 0ad524883ec4ccac3221c97bdc2c5d5f6e149504e14cf269bbed31362c3f4393
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 611e07299d72ff04bbcb9e7109183467e30925d203c3e121ef9bb3cf6876289b
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5f3e883d180d6fb7a1909df284713170f5431ea7afcc1a3eb5912c4620df42b2
-R 5e954180f1b873a8a9007a0afd69dc4d
+P 305bb022368bac9fafd7c2794762299324796903aaea270923d07f2127d8926c
+R 521234d43a634b0700261a13575daf89
 U drh
-Z 361ce28981b1f78be7d6cda7aa08e272
+Z a352d7a2e1fb0e1c8bcd3a820e40d9c2
 # Remove this line to create a well-formed Fossil manifest.
