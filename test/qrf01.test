@@ -80,7 +80,7 @@ do_test 1.15 {
 do_test 1.16 {
   catch {db format -text sql -style unk {SELECT * FROM t1}} res
   set res
-} {bad format style (-style) "unk": must be auto, box, column, count, csv, eqp, explain, html, insert, json, line, list, markdown, quote, stats, stats-est, stats-vm, or table}
+} {bad format style (-style) "unk": must be auto, box, column, count, csv, eqp, explain, html, insert, json, json-line, line, list, markdown, quote, stats, stats-est, stats-vm, or table}
 
 	
 do_test 1.20 {
