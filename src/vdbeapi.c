@@ -736,6 +736,8 @@ static int doWalCallbacks(sqlite3 *db){
       }
     }
   }
+#else
+  UNUSED_PARAMETER(db);
 #endif
   return rc;
 }
