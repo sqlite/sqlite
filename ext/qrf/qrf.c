@@ -690,7 +690,11 @@ static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
   int iStart = sqlite3_str_length(pOut);
   switch( p->spec.eText ){
     case QRF_TEXT_Sql: {
-      sqlite3_str_appendf(pOut, "%Q", zTxt);
+      if( p->spec.eEsc==QRF_ESC_Off ){
+        sqlite3_str_appendf(pOut, "%Q", zTxt);
+      }else{
+        sqlite3_str_appendf(pOut, "%#Q", zTxt);
+      }
       break;
     }
     case QRF_TEXT_Csv: {
@@ -1221,11 +1225,20 @@ static void qrfBoxSeparator(
 static void qrfLoadAlignment(qrfColData *pData, Qrf *p){
   sqlite3_int64 i;
   memset(pData->aAlign, p->spec.eDfltAlign, pData->nCol);
-  for(i=0; i<pData->nCol && i<p->spec.nAlign; i++){
-    unsigned char ax = p->spec.aAlign[i];
-    if( (ax & QRF_ALIGN_HMASK)!=0 ){
-      pData->aAlign[i] = (ax & QRF_ALIGN_HMASK) |
-                          (pData->aAlign[i] & QRF_ALIGN_VMASK);
+  for(i=0; i<pData->nCol; i++){
+    if( i<p->spec.nAlign ){
+      unsigned char ax = p->spec.aAlign[i];
+      if( (ax & QRF_ALIGN_HMASK)!=0 ){
+        pData->aAlign[i] = (ax & QRF_ALIGN_HMASK) |
+                            (pData->aAlign[i] & QRF_ALIGN_VMASK);
+      }
+    }else if( i<p->spec.nWidth ){
+      if( p->spec.aWidth[i]<0 ){
+         pData->aAlign[i] = QRF_ALIGN_Right |
+                               (pData->aAlign[i] & QRF_ALIGN_VMASK);
+      }
+    }else{
+      break;
     }
   }
 }
@@ -1312,10 +1325,12 @@ static void qrfColumnar(Qrf *p){
   }
 
   /* Compute the width and alignment of every column */
-  if( p->spec.bColumnNames==QRF_Yes ){
-    memset(data.aAlign, p->spec.eTitleAlign, nColumn);
-  }else{
+  if( p->spec.bColumnNames==QRF_No ){
     qrfLoadAlignment(&data, p);
+  }else if( p->spec.eTitleAlign==QRF_Auto ){
+    memset(data.aAlign, QRF_ALIGN_Center, nColumn);
+  }else{
+    memset(data.aAlign, p->spec.eTitleAlign, nColumn);
   }
 
   for(i=0; i<nColumn; i++){
@@ -2004,7 +2019,7 @@ static void qrfOneSimpleRow(Qrf *p){
     default: {  /* QRF_STYLE_List */
       if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
         int saved_eText = p->spec.eText;
-        if( p->spec.eText!=QRF_TEXT_Csv ) p->spec.eText = QRF_TEXT_Off;
+        p->spec.eText = p->spec.eTitle;
         for(i=0; i<p->nCol; i++){
           const char *zCName = sqlite3_column_name(p->pStmt, i);
           if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);

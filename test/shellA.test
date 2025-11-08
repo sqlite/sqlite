@@ -116,8 +116,7 @@ do_test shellA-2.1 {
 } {
 1,'line with '' single quote'
 2,unistr('\u001b[31mVT-100 codes\u001b[0m')
-6,'new
-line'
+6,unistr('new\u000aline')
 7,unistr('carriage\u000dreturn')
 8,'last line'
 }
@@ -203,14 +202,9 @@ do_test_with_ansi_output shellA-4.2 {
 │ a │                     x                     │
 ├───┼───────────────────────────────────────────┤
 │ 1 │ 'line with '' single quote'               │
-├───┼───────────────────────────────────────────┤
 │ 2 │ unistr('\u001b[31mVT-100 codes\u001b[0m') │
-├───┼───────────────────────────────────────────┤
-│ 6 │ 'new                                      │
-│   │ line'                                     │
-├───┼───────────────────────────────────────────┤
+│ 6 │ unistr('new\u000aline')                   │
 │ 7 │ unistr('carriage\u000dreturn')            │
-├───┼───────────────────────────────────────────┤
 │ 8 │ 'last line'                               │
 └───┴───────────────────────────────────────────┘
 }

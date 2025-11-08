@@ -4276,6 +4276,9 @@ static int shell_exec(
   spec.zTableName = pArg->zDestTable;
   spec.bWordWrap = pArg->cmOpts.bWordWrap!=0 ? QRF_SW_On : QRF_SW_Off;
   spec.mxColWidth = pArg->cmOpts.iWrap;
+  if( pArg->cmOpts.bQuote ){
+    spec.eText = QRF_TEXT_Sql;
+  }
   switch( pArg->eEscMode ){
     case SHELL_ESC_ASCII:  spec.eEsc = QRF_ESC_Ascii;  break;
     case SHELL_ESC_SYMBOL: spec.eEsc = QRF_ESC_Symbol; break;
@@ -4361,7 +4364,7 @@ static int shell_exec(
       bind_prepared_stmt(pArg, pStmt);
       if( eStyle<100 ){
         spec.eStyle = eStyle;
-        sqlite3_format_query_result(pStmt, &spec, 0);
+        sqlite3_format_query_result(pStmt, &spec, pzErrMsg);
       }else{
         exec_prepared_stmt(pArg, pStmt);
       }
