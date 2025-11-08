@@ -2058,13 +2058,18 @@ static void DbHookCmd(
 **     -style ("auto"|"box"|"column"|...)      Output style
 **     -esc ("auto"|"off"|"ascii"|"symbol")    How to deal with ctrl chars
 **     -text ("auto"|"off"|"sql"|"csv"|...)    How to escape TEXT values
+**     -title ("auto"|"off"|"sql"|...)         How to escape column names
 **     -blob ("auto"|"text"|"sql"|...)         How to escape BLOB values
 **     -columnnames ("auto"|"off"|"on")        Show column names?
 **     -wordwrap ("auto"|"off"|"on")           Try to wrap at word boundry?
 **     -textjsonb ("auto"|"off"|"on")          Auto-convert JSONB to text?
+**     -defaultalign ("auto"|"left"|...)       Default alignment
+**     -titalalign ("auto"|"left"|"right"|...) Default column name alignment
 **     -maxcolwidth NUMBER                     Max width of any single column
-**     -maxwidth NUMBER                        Max width of the entire table
+**     -maxtotalwidth NUMBER                   Max width of the entire table
+**     -maxrowheight NUMBER                    Max height of a row in a table
 **     -maxlength NUMBER                       Content truncated to this size
+**     -align LIST-OF-ALIGNMENT                Alignment of columns
 **     -widths LIST-OF-NUMBERS                 Widths for individual columns
 **     -columnsep TEXT                         Column separator text
 **     -rowsep TEXT                            Row separator text
@@ -2079,13 +2084,18 @@ static void DbHookCmd(
 **     -style            eStyle
 **     -esc              eEsc
 **     -text             eText
+**     -title            eTitle
 **     -blob             eBlob
 **     -columnnames      bColumnNames
 **     -wordwrap         bWordWrap
 **     -textjsonb        bTextJsonb
+**     -defaultalign     eDfltAlign
+**     -titlealign       eTitleAlign
 **     -maxcolwidth      mxColWidth
-**     -maxwidth         mxTotalWidth
+**     -maxtotalwidth    mxTotalWidth
+**     -maxrowheight     mxRowHeight
 **     -maxlength        mxLength
+**     -align            nAlign, aAlign
 **     -widths           nWidth, aWidth
 **     -columnsep        zColumnSep
 **     -rowsep           zRowSep
@@ -2102,13 +2112,30 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
   int i;                         /* Loop counter */
   int rc;                        /* Result code */
   sqlite3_qrf_spec qrf;          /* Formatting spec */
+  static const char *azAlign[] = {
+    "auto",           "bottom",          "c",
+    "center",         "e",               "left",
+    "middle",         "n",               "ne",
+    "nw",             "right",           "s",
+    "se",             "sw",              "top",
+    "w",              0
+  };
+  static const unsigned char aAlignMap[] = {
+    QRF_ALIGN_Auto,   QRF_ALIGN_Bottom,  QRF_ALIGN_C,
+    QRF_ALIGN_Center, QRF_ALIGN_E,       QRF_ALIGN_Left,
+    QRF_ALIGN_Middle, QRF_ALIGN_N,       QRF_ALIGN_NE,
+    QRF_ALIGN_NW,     QRF_ALIGN_Right,   QRF_ALIGN_S,
+    QRF_ALIGN_SE,     QRF_ALIGN_SW,      QRF_ALIGN_Top,
+    QRF_ALIGN_W
+  };
 
   memset(&qrf, 0, sizeof(qrf));
   qrf.iVersion = 1;
   qrf.pzOutput = &zResult;
   for(i=2; i<objc; i++){
     const char *zArg = Tcl_GetString(objv[i]);
-    const char *azBool[] = { "auto", "off", "on", 0 };
+    const char *azBool[] = { "auto", "yes", "no", "on", "off", 0 };
+    const unsigned char aBoolMap[] = { 0, 2, 1, 2, 1 };
     if( zArg[0]!='-' ){
       if( zSql ){
         Tcl_AppendResult(pDb->interp, "unknown argument: ", zArg, (char*)0);
@@ -2158,7 +2185,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       if( rc ) goto format_failed;
       qrf.eEsc = aEscMap[esc];
       i++;
-    }else if( strcmp(zArg,"-text")==0 ){
+    }else if( strcmp(zArg,"-text")==0 || strcmp(zArg, "-title")==0 ){
       static const char *azText[] = {
         "auto",             "csv",              "html",
         "json",             "off",              "sql",
@@ -2171,9 +2198,14 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       };
       int txt;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azText,
-                              "text encoding (-text)", 0, &txt);
+                              zArg[2]=='e' ? "text encoding (-text)" :
+                                   "column-name encoding (-title)", 0, &txt);
       if( rc ) goto format_failed;
-      qrf.eText = aTextMap[txt];
+      if( zArg[2]=='e' ){
+        qrf.eText = aTextMap[txt];
+      }else{
+        qrf.eTitle = aTextMap[txt];
+      }
       i++;
     }else if( strcmp(zArg,"-blob")==0 ){
       static const char *azBlob[] = {
@@ -2195,30 +2227,43 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
                               "-columnnames", 0, &v);
       if( rc ) goto format_failed;
-      qrf.bColumnNames = v;
+      qrf.bColumnNames = aBoolMap[v];
       i++;
     }else if( strcmp(zArg,"-wordwrap")==0 ){
       int v = 0;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
                               "-wordwrap", 0, &v);
       if( rc ) goto format_failed;
-      qrf.bWordWrap = v;
+      qrf.bWordWrap = aBoolMap[v];
       i++;
     }else if( strcmp(zArg,"-textjsonb")==0 ){
       int v = 0;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
                               "-testjsonb", 0, &v);
       if( rc ) goto format_failed;
-      qrf.bTextJsonb = v;
+      qrf.bTextJsonb = aBoolMap[v];
+      i++;
+    }else if( strcmp(zArg,"-defaultalign")==0 || strcmp(zArg,"-titlealign")==0){
+      int ax = 0;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azAlign,
+                    zArg[1]=='d' ?  "default alignment (-dfltalign)" :
+                                    "title alignment (-titlealign)",
+                    0, &ax);
+      if( rc ) goto format_failed;
+      if( zArg[1]=='d' ){
+        qrf.eDfltAlign = aAlignMap[ax];
+      }else{
+        qrf.eTitleAlign = aAlignMap[ax];
+      }
       i++;
     }else if( strcmp(zArg,"-maxcolwidth")==0 || strcmp(zArg,"-maxwidth")==0 ){
       int v = 0;
       rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
       if( rc ) goto format_failed;
-      if( v<0 ){
-        v = 0;
-      }else if( v>QRF_MX_WIDTH ){
-        v = QRF_MX_WIDTH;
+      if( v<QRF_MIN_WIDTH ){
+        v = QRF_MIN_WIDTH;
+      }else if( v>QRF_MAX_WIDTH ){
+        v = QRF_MAX_WIDTH;
       }
       if( zArg[4]=='c' ){
         qrf.mxColWidth = v;
@@ -2232,6 +2277,31 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       if( rc ) goto format_failed;
       if( v<0 ) v = 0;
       qrf.mxLength = v;
+      i++;
+    }else if( strcmp(zArg,"-align")==0 ){
+      Tcl_Size n = 0;
+      int jj;
+      rc = Tcl_ListObjLength(pDb->interp, objv[i+1], &n);
+      if( rc ) goto format_failed;
+      sqlite3_free(qrf.aAlign);
+      qrf.aAlign = sqlite3_malloc64( (n+1)*sizeof(qrf.aAlign[0]) );
+      if( qrf.aAlign==0 ){
+        Tcl_AppendResult(pDb->interp, "out of memory", (char*)0);
+        rc = TCL_ERROR;
+        goto format_failed;
+      }
+      memset(qrf.aAlign, 0, (n+1)*sizeof(qrf.aAlign[0]));
+      qrf.nAlign = n;
+      for(jj=0; jj<n; jj++){
+        int x;
+        Tcl_Obj *pTerm;
+        rc = Tcl_ListObjIndex(pDb->interp, objv[i+1], jj, &pTerm);
+        if( rc ) goto format_failed;
+        rc = Tcl_GetIndexFromObj(pDb->interp, pTerm, azAlign,
+                          "column alignement (-align)", 0, &x);
+        if( rc ) goto format_failed;
+        qrf.aAlign[jj] = x;
+      }
       i++;
     }else if( strcmp(zArg,"-widths")==0 ){
       Tcl_Size n = 0;
@@ -2249,21 +2319,16 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       qrf.nWidth = n;
       for(jj=0; jj<n; jj++){
         Tcl_Obj *pTerm;
-        const char *zTerm;
+        int v;
         rc = Tcl_ListObjIndex(pDb->interp, objv[i+1], jj, &pTerm);
         if( rc ) goto format_failed;
-        zTerm = Tcl_GetString(pTerm);
-        if( strcmp(zTerm, "-0")==0 ){
-          qrf.aWidth[jj] = QRF_MINUS_ZERO;
-        }else{
-          int v = atoi(zTerm);
-          if( v<QRF_MN_WIDTH ){
-            v = QRF_MN_WIDTH;
-          }else if( v>QRF_MX_WIDTH ){
-            v = QRF_MX_WIDTH;
-          }
-          qrf.aWidth[jj] = v;
+        rc = Tcl_GetIntFromObj(pDb->interp, pTerm, &v);
+        if( v<(-QRF_MAX_WIDTH) ){
+          v = -QRF_MAX_WIDTH;
+        }else if( v>QRF_MAX_WIDTH ){
+          v = QRF_MAX_WIDTH;
         }
+        qrf.aWidth[jj] = (short int)v;
       }
       i++;
     }else if( strcmp(zArg,"-columnsep")==0 ){
@@ -2306,6 +2371,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
   
 format_failed:
   sqlite3_free(qrf.aWidth);
+  sqlite3_free(qrf.aAlign);
   sqlite3_free(zResult);
   return rc;
 

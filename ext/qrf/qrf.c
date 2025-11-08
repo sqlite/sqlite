@@ -845,7 +845,7 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       break;
     }
     case SQLITE_BLOB: {
-      if( p->spec.bTextJsonb==QRF_SW_On ){
+      if( p->spec.bTextJsonb==QRF_Yes ){
         const char *zJson = qrfJsonbToJson(p, iCol);
         if( zJson ){
           qrfEncodeText(p, pOut, zJson);
@@ -997,6 +997,7 @@ struct qrfColData {
   char **az;               /* Content of all cells */
   int *aiWth;              /* Width of each cell */
   int *aiCol;              /* Width of each column */
+  unsigned char *aAlign;   /* Alignment for each column */
 };
 
 /*
@@ -1240,12 +1241,13 @@ static void qrfColumnar(Qrf *p){
   /* Initialize the data container */
   memset(&data, 0, sizeof(data));
   data.nCol = p->nCol;
-  data.azThis = sqlite3_malloc64( nColumn*(sizeof(char*) + sizeof(int)) );
+  data.azThis = sqlite3_malloc64( nColumn*(sizeof(char*) + sizeof(int) + 1) );
   if( data.azThis==0 ){
     qrfOom(p);
     return;
   }
   data.aiCol = (int*)&data.azThis[nColumn];
+  data.aAlign = (unsigned char*)&data.aiCol[nColumn];
   qrfColDataEnlarge(&data);
   if( p->iErr ){
     qrfColDataFree(&data);
@@ -1253,9 +1255,9 @@ static void qrfColumnar(Qrf *p){
   }
 
   /* Load the column header names and all cell content into data */
-  if( p->spec.bColumnNames==QRF_SW_On ){
+  if( p->spec.bColumnNames==QRF_Yes ){
     unsigned char saved_eText = p->spec.eText;
-    p->spec.eText = QRF_TEXT_Off;
+    p->spec.eText = p->spec.eTitle;
     for(i=0; i<nColumn; i++){
       const char *z = (const char*)sqlite3_column_name(p->pStmt,i);
       int nNL = 0;
@@ -1298,15 +1300,25 @@ static void qrfColumnar(Qrf *p){
     return;
   }
 
-  /* Compute the width of every column */
+  /* Compute the width and alignment of every column */
+  memset(data.aAlign, p->spec.eDfltAlign, nColumn);
+  for(i=0; i<nColumn && i<p->spec.nAlign; i++){
+    data.aAlign[i] = p->spec.aAlign[i];
+  }
   for(i=0; i<nColumn; i++){
     int w = 0;
     if( i<p->spec.nWidth ){
       w = p->spec.aWidth[i];
-      if( w==QRF_MINUS_ZERO ){
+      if( w==(-32768) ){
         w = 0;
+        if( p->spec.nAlign>i && (p->spec.aAlign[i] & QRF_ALIGN_HMASK)==0 ){
+          data.aAlign[i] |= QRF_ALIGN_Right;
+        }
       }else if( w<0 ){
         w = -w;
+        if( p->spec.nAlign>i && (p->spec.aAlign[i] & QRF_ALIGN_HMASK)==0 ){
+          data.aAlign[i] |= QRF_ALIGN_Right;
+        }
       }
     }
     if( w==0 ){
@@ -1362,7 +1374,7 @@ static void qrfColumnar(Qrf *p){
   szRowSep = (int)strlen(rowSep);
   szColSep = (int)strlen(colSep);
 
-  bWW = (p->spec.bWordWrap==QRF_SW_On && data.bMultiRow);
+  bWW = (p->spec.bWordWrap==QRF_Yes && data.bMultiRow);
   for(i=0; i<data.n; i+=nColumn){
     int bMore;
     for(j=0; j<nColumn; j++){ data.azThis[j] = data.az[i+j]; }
@@ -1376,12 +1388,12 @@ static void qrfColumnar(Qrf *p){
         int nWS;
         qrfWrapLine(data.azThis[j], data.aiCol[j], bWW, &nThis, &nWide, &iNext);
         nWS = data.aiCol[j] - nWide;
-        if( bCenter ){
+        if( bCenter || (data.aAlign[j] & QRF_ALIGN_HMASK)==QRF_ALIGN_Center ){
           /* Center the text */
           sqlite3_str_appendchar(p->pOut, nWS/2, ' ');
           sqlite3_str_append(p->pOut, data.azThis[j], nThis);
           sqlite3_str_appendchar(p->pOut, nWS - nWS/2, ' ');
-        }else if( j<p->spec.nWidth && p->spec.aWidth[j]<0 ){
+        }else if( (data.aAlign[j] & QRF_ALIGN_HMASK)==QRF_ALIGN_Right){
           /* Right justify the text */
           sqlite3_str_appendchar(p->pOut, nWS, ' ');
           sqlite3_str_append(p->pOut, data.azThis[j], nThis);
@@ -1400,28 +1412,28 @@ static void qrfColumnar(Qrf *p){
       }
     }while( bMore );
     bCenter = 0;
-    if( i+nColumn<data.n ){
+    if( (i==0 || data.bMultiRow) && i+nColumn<data.n ){
       switch( p->spec.eStyle ){
         case QRF_STYLE_Table: {
-          if( (i==0 && p->spec.bColumnNames==QRF_SW_On) || data.bMultiRow ){
+          if( (i==0 && p->spec.bColumnNames==QRF_Yes) || data.bMultiRow ){
             qrfRowSeparator(p->pOut, &data, '+');
           }
           break;
         }
         case QRF_STYLE_Box: {
-          if( (i==0 && p->spec.bColumnNames==QRF_SW_On) || data.bMultiRow ){
+          if( (i==0 && p->spec.bColumnNames==QRF_Yes) || data.bMultiRow ){
             qrfBoxSeparator(p->pOut, &data, BOX_123, BOX_1234, BOX_134);
           }
           break;
         }
         case QRF_STYLE_Markdown: {
-          if( i==0 && p->spec.bColumnNames==QRF_SW_On ){
+          if( i==0 && p->spec.bColumnNames==QRF_Yes ){
             qrfRowSeparator(p->pOut, &data, '|');
           }
           break;
         }
         case QRF_STYLE_Column: {
-          if( i==0 && p->spec.bColumnNames==QRF_SW_On ){
+          if( i==0 && p->spec.bColumnNames==QRF_Yes ){
             for(j=0; j<nColumn; j++){
               sqlite3_str_appendchar(p->pOut, data.aiCol[j], '-');
               if( j<nColumn-1 ){
@@ -1693,7 +1705,7 @@ static void qrfInitialize(
   if( p->spec.zNull==0 ) p->spec.zNull = "";
 qrf_reinit:
   switch( p->spec.eStyle ){
-    case QRF_STYLE_Auto: {
+    case QRF_Auto: {
       switch( sqlite3_stmt_isexplain(pStmt) ){
         case 0:  p->spec.eStyle = QRF_STYLE_Box;      break;
         case 1:  p->spec.eStyle = QRF_STYLE_Explain;  break;
@@ -1760,13 +1772,25 @@ qrf_reinit:
       break;
     }
   }
-  if( p->spec.eEsc==QRF_ESC_Auto ){
+  if( p->spec.eEsc==QRF_Auto ){
     p->spec.eEsc = QRF_ESC_Ascii;
   }
-  if( p->spec.eText==QRF_TEXT_Auto ){
+  if( p->spec.eText==QRF_Auto ){
     p->spec.eText = QRF_TEXT_Off;
   }
-  if( p->spec.eBlob==QRF_BLOB_Auto ){
+  if( p->spec.eTitle==QRF_Auto ){
+    switch( p->spec.eStyle ){
+      case QRF_STYLE_Box:
+      case QRF_STYLE_Column:
+      case QRF_STYLE_Table:
+        p->spec.eTitle = QRF_TEXT_Off;
+        break;
+      default:
+        p->spec.eTitle = p->spec.eText;
+        break;
+    }
+  }
+  if( p->spec.eBlob==QRF_Auto ){
     switch( p->spec.eText ){
       case QRF_TEXT_Sql:  p->spec.eBlob = QRF_BLOB_Sql;  break;
       case QRF_TEXT_Csv:  p->spec.eBlob = QRF_BLOB_Tcl;  break;
@@ -1775,25 +1799,25 @@ qrf_reinit:
       default:            p->spec.eBlob = QRF_BLOB_Text; break;
     }
   }
-  if( p->spec.bColumnNames==QRF_SW_Auto ){
+  if( p->spec.bColumnNames==QRF_Auto ){
     switch( p->spec.eStyle ){
       case QRF_STYLE_Box:
       case QRF_STYLE_Csv:
       case QRF_STYLE_Column:
       case QRF_STYLE_Table:
       case QRF_STYLE_Markdown:
-        p->spec.bColumnNames = QRF_SW_On;
+        p->spec.bColumnNames = QRF_Yes;
         break;
       default:
-        p->spec.bColumnNames = QRF_SW_Off;
+        p->spec.bColumnNames = QRF_No;
         break;
     }
   }
-  if( p->spec.bWordWrap==QRF_SW_Auto ){
-    p->spec.bWordWrap = QRF_SW_On;
+  if( p->spec.bWordWrap==QRF_Auto ){
+    p->spec.bWordWrap = QRF_Yes;
   }
-  if( p->spec.bTextJsonb==QRF_SW_Auto ){
-    p->spec.bTextJsonb = QRF_SW_Off;
+  if( p->spec.bTextJsonb==QRF_Auto ){
+    p->spec.bTextJsonb = QRF_No;
   }
   if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = ",";
   if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
@@ -1869,7 +1893,7 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_STYLE_Html: {
-      if( p->nRow==0 && p->spec.bColumnNames==QRF_SW_On ){
+      if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
         sqlite3_str_append(p->pOut, "<TR>", 4);
         for(i=0; i<p->nCol; i++){
           const char *zCName = sqlite3_column_name(p->pStmt, i);
@@ -1893,7 +1917,7 @@ static void qrfOneSimpleRow(Qrf *p){
       }else{
         sqlite3_str_appendf(p->pOut,"INSERT INTO %s",p->spec.zTableName);
       }
-      if( p->spec.bColumnNames==QRF_SW_On ){
+      if( p->spec.bColumnNames==QRF_Yes ){
         for(i=0; i<p->nCol; i++){
           const char *zCName = sqlite3_column_name(p->pStmt, i);
           if( qrf_need_quote(zCName) ){
@@ -1951,7 +1975,7 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     default: {  /* QRF_STYLE_List */
-      if( p->nRow==0 && p->spec.bColumnNames==QRF_SW_On ){
+      if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
         int saved_eText = p->spec.eText;
         if( p->spec.eText!=QRF_TEXT_Csv ) p->spec.eText = QRF_TEXT_Off;
         for(i=0; i<p->nCol; i++){

@@ -3831,7 +3831,7 @@ static void exec_prepared_stmt_columnar(
   memset(p->actualWidth, 0, nColumn*sizeof(short int));
   for(i=0; i<nColumn; i++){
     w = p->colWidth[i];
-    if( w==QRF_MINUS_ZERO ) w = 0;
+    if( w==(-32768) ) w = 0;
     if( w<0 ) w = -w;
     p->actualWidth[i] = w;
   }
@@ -3892,8 +3892,8 @@ static void exec_prepared_stmt_columnar(
     n = strlenChar(z);
     j = i%nColumn;
     if( n>p->actualWidth[j] ){
-      if( n>QRF_MX_WIDTH ){
-        p->actualWidth[j] = QRF_MX_WIDTH;
+      if( n>QRF_MAX_WIDTH ){
+        p->actualWidth[j] = QRF_MAX_WIDTH;
       }else {
         p->actualWidth[j] = n;
       }
@@ -12026,8 +12026,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     if( p->nWidth ) p->actualWidth = &p->colWidth[p->nWidth];
     for(j=1; j<nArg; j++){
       i64 w = integerValue(azArg[j]);
-      if( w < QRF_MN_WIDTH ) w = QRF_MN_WIDTH;
-      if( w > QRF_MX_WIDTH ) w = QRF_MX_WIDTH;
+      if( w < -QRF_MAX_WIDTH ) w = -QRF_MAX_WIDTH;
+      if( w > QRF_MAX_WIDTH ) w = QRF_MAX_WIDTH;
       p->colWidth[j-1] = (short int)w;
     }
   }else

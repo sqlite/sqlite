@@ -26,15 +26,21 @@ struct sqlite3_qrf_spec {
   unsigned char eStyle;       /* Formatting style.  "box", "csv", etc... */
   unsigned char eEsc;         /* How to escape control characters in text */
   unsigned char eText;        /* Quoting style for text */
+  unsigned char eTitle;       /* Quating style for the text of column names */
   unsigned char eBlob;        /* Quoting style for BLOBs */
   unsigned char bColumnNames; /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
+  unsigned char eDfltAlign;   /* Default alignment, no covered by aAlignment */
+  unsigned char eTitleAlign;  /* Alignment for column headers */
   short int mxColWidth;       /* Maximum width of any individual column */
   short int mxTotalWidth;     /* Maximum overall table width */
+  short int mxRowHeight;      /* Maximum number of lines for any row */
   int mxLength;               /* Maximum content to display per element */
-  int nWidth;                 /* Number of column width parameters */
+  int nWidth;                 /* Number of entries in aWidth[] */
+  int nAlign;                 /* Number of entries in aAlignment[] */
   short int *aWidth;          /* Column widths */
+  unsigned char *aAlign;      /* Column alignments */
   const char *zColumnSep;     /* Alternative column separator */
   const char *zRowSep;        /* Alternative row separator */
   const char *zTableName;     /* Output table name */
@@ -48,14 +54,6 @@ struct sqlite3_qrf_spec {
 };
 
 /*
-** Range of values for sqlite3_qrf_spec.aWidth[] entries and for
-** sqlite3_qrf_spec.mxColWidth and .mxTotalWidth
-*/
-#define QRF_MX_WIDTH    (10000)
-#define QRF_MN_WIDTH    (-10000)
-#define QRF_MINUS_ZERO  (-32768)    /* Special value meaning -0 */
-
-/*
 ** Interfaces
 */
 int sqlite3_format_query_result(
@@ -63,6 +61,13 @@ int sqlite3_format_query_result(
   const sqlite3_qrf_spec *pSpec,   /* Result format specification */
   char **pzErr                     /* OUT: Write error message here */
 );
+
+/*
+** Range of values for sqlite3_qrf_spec.aWidth[] entries and for
+** sqlite3_qrf_spec.mxColWidth and .mxTotalWidth
+*/
+#define QRF_MAX_WIDTH    10000
+#define QRF_MIN_WIDTH    0
 
 /*
 ** Output styles:
@@ -128,6 +133,33 @@ int sqlite3_format_query_result(
 #define QRF_SW_Auto     0 /* Let QRF choose the best value */
 #define QRF_SW_Off      1 /* This setting is forced off */
 #define QRF_SW_On       2 /* This setting is forced on */
+#define QRF_Auto        0 /* Alternate spelling for QRF_*_Auto */
+#define QRF_No          1 /* Alternate spelling for QRF_SW_Off */
+#define QRF_Yes         2 /* Alternate spelling for QRF_SW_On */
+
+/*
+** Possible alignment values alignment settings
+**
+**                             Horizontal   Vertial
+**                             ----------   --------  */
+#define QRF_ALIGN_Auto    0 /*   auto        auto     */
+#define QRF_ALIGN_Left    1 /*   left        auto     */
+#define QRF_ALIGN_Center  2 /*   center      auto     */
+#define QRF_ALIGN_Right   3 /*   right       auto     */
+#define QRF_ALIGN_Top     4 /*   auto        top      */
+#define QRF_ALIGN_NW      5 /*   left        top      */
+#define QRF_ALIGN_N       6 /*   center      top      */
+#define QRF_ALIGN_NE      7 /*   right       top      */
+#define QRF_ALIGN_Middle  8 /*   auto        middle   */
+#define QRF_ALIGN_W       9 /*   left        middle   */
+#define QRF_ALIGN_C      10 /*   center      middle   */
+#define QRF_ALIGN_E      11 /*   right       middle   */
+#define QRF_ALIGN_Bottom 12 /*   auto        bottom   */
+#define QRF_ALIGN_SW     13 /*   left        bottom   */
+#define QRF_ALIGN_S      14 /*   center      bottom   */
+#define QRF_ALIGN_SE     15 /*   right       bottom   */
+#define QRF_ALIGN_HMASK   3 /* Horizontal alignment mask */
+#define QRF_ALIGN_VMASK  12 /* Vertical alignment mask */
 
 /*
 ** Auxiliary routines contined within this module that might be useful

@@ -1,9 +1,12 @@
 # SQLite Query Result Formatting Subsystem
 
 The "Query Result Formatter" or "QRF" subsystem is a C-language
-subroutine that formats the output from an SQLite query.  The
-output format is configurable.  The application can request CSV,
-or a table, or any of several other formats, according to needs.
+subroutine that formats the output from an SQLite query for display
+using a fix-width font, for example on a TTY or over an SSH connection.
+The output format is configurable.  The application can request various
+table formats, with flexible column widths and alignments, row-oriented
+formats, such as CSV and similar, as well as various special purpose formats
+like JSON.
 
 For the first 25 years of SQLite's existance, the
 [command-line interface](https://sqlite.org/cli.html) (CLI)
@@ -50,7 +53,14 @@ the QRF involves filling out the sqlite3_qrf_spec.
 
 The `sqlite3_qrf_spec` structure defines how the results of a query
 are to be formatted, and what to do with the formatted text.  The
-most recent definition of `sqlite3_qrf_spec` is as follows:
+most recent definition of `sqlite3_qrf_spec` is shown below.
+
+Do not be alarmed by the complexity of this structure.  You only have
+to understand the properties you want to modify.  Zero is always a good
+default for all of the attributes (except iVersion and pzOutput/xWrite)
+and so simply zeroing out the bulk of this structure is a good start.
+You can then slowly make adjustments to individual fields to get the
+results you desire.
 
 > ~~~
 typedef struct sqlite3_qrf_spec sqlite3_qrf_spec;
@@ -59,15 +69,21 @@ struct sqlite3_qrf_spec {
   unsigned char eStyle;       /* Formatting style.  "box", "csv", etc... */
   unsigned char eEsc;         /* How to escape control characters in text */
   unsigned char eText;        /* Quoting style for text */
+  unsigned char eTitle;       /* Quating style for the text of column names */
   unsigned char eBlob;        /* Quoting style for BLOBs */
+  unsigned char eDfltAlign;   /* Default alignment, no covered by aAlignment */
+  unsigned char eTitleAlign;  /* Alignment for column headers */
   unsigned char bColumnNames; /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
   short int mxColWidth;       /* Maximum width of any individual column */
   short int mxTotalWidth;     /* Maximum overall table width */
+  short int mxRowHeight;      /* Maximum number of lines for any row */
   int mxLength;               /* Maximum content to display per element */
-  int nWidth;                 /* Number of column width parameters */
+  int nWidth;                 /* Number of entries in aWidth[] */
+  int nAlignment;             /* Number of entries in aAlignment[]
   short int *aWidth;          /* Column widths */
+  unsigned char *aAlignment;  /* Column alignments */
   const char *zColumnSep;     /* Alternative column separator */
   const char *zRowSep;        /* Alternative row separator */
   const char *zTableName;     /* Output table name */
@@ -81,13 +97,16 @@ struct sqlite3_qrf_spec {
 };
 ~~~
 
-The `sqlite3_qrf_spec` object must be fully initialized prior
-to calling `sqlite3_format_query_result()`.  Initialization can be mostly
-accomplished using memset() to zero the spec object, as most fields
-use a zero value as a reasonable default.  However, the iVersion
-field must be set to 1 and one of either the pzOutput or xWrite fields
-must be initialized to a non-NULL value to tell QRF where to send
-its output.
+Again, the only fields that must initialized are:
+
+  *  `.iVersion`
+  *  One of `.pzOutput` or `.xWrite`.
+
+All other fields can be zeroed.  Or they can contain other values to
+alter the formatting of the query results.
+
+Further detail on the meanings of each of the fields in the
+`sqlite3_qrf_spec` object are described below.
 
 ### 2.1 Structure Version Number
 
@@ -129,17 +148,22 @@ ignored, depending on the value of eStyle.
 ### 2.4 Show Column Names (bColumnNames)
 
 The sqlite3_qrf_spec.bColumnNames field can be either QRF_SW_Auto,
-QRF_SW_On, or QRF_SW_Off.
+QRF_SW_On, or QRF_SW_Off.  Those three constants also have shorter
+alternative spellings: QRF_Auto, QRF_No, and
+QRF_Yes.
 
 > ~~~
 #define QRF_SW_Auto     0 /* Let QRF choose the best value */
 #define QRF_SW_Off      1 /* This setting is forced off */
 #define QRF_SW_On       2 /* This setting is forced on */
+#define QRF_Auto        0 /* Alternate spelling for QRF_SW_Auto and others */
+#define QRF_No          1 /* Alternate spelling for QRF_SW_Off */
+#define QRF_Yes         2 /* Alternate spelling for QRF_SW_On */
 ~~~
 
-If the value is QRF_SW_On, then column names appear in the output.
-If the value is QRF_SW_Off, column names are omitted.  If the
-value is QRF_SW_Auto, then an appropriate default is chosen.
+If the value is QRF_Yes, then column names appear in the output.
+If the value is QRF_No, column names are omitted.  If the
+value is QRF_Auto, then an appropriate default is chosen.
 
 ### 2.5 Control Character Escapes (eEsc)
 
@@ -175,9 +199,11 @@ The TAB (U+0009), LF (U+000a) and CR-LF (U+000d,U+000a) character
 sequence are always output literally and are not mapped to alternative
 display values, regardless of this setting.
 
-### 2.6 Display of TEXT values (eText)
+### 2.6 Display of TEXT values (eText, eTitle)
 
-The sqlite3_qrf_spec.eText field can have one of the following values:
+The sqlite3_qrf_spec.eText controls how text values are rendered in the
+display.  sqlite3_qrf_spec.eTitle controls how column names are rendered.
+Both fields can have one of the following values:
 
 > ~~~
 #define QRF_TEXT_Auto    0 /* Choose text encoding automatically */
@@ -280,7 +306,7 @@ mxLength setting.
 As for 2025-11-07, the mxLength constraint is not yet implemented.
 The current behavior is always as if mxLength where zero.*
 
-### 2.9 Word Wrapping In Columnar Modes (mxColWidth, mxTotalWidth, bWordWrap)
+### 2.9 Word Wrapping In Columnar Styles (mxColWidth, mxTotalWidth, bWordWrap)
 
 When using columnar formatting modes (QRF_STYLE_Box, QRF_STYLE_Column,
 QRF_STYLE_Markdown, or QRF_STYLE_Table), the formatter attempts to limit
@@ -310,47 +336,123 @@ a column in the middle of a word, even when bWordWrap is QRF_SW_On.
 As for 2025-11-07, the mxTotalWidth constraint is not yet implemented.
 The current behavior is always as if mxTotalWidth where zero.*
 
-
-### 2.10 Column width and alignment (nWidth and aWidth)
+### 2.10 Individual Column Width (nWidth and aWidth)
 
 The sqlite3_qrf_spec.aWidth field is a pointer to an array of
-signed 16-bit integers that control column widths and alignments
+signed 16-bit integers that control the width of individual columns
 in columnar output modes (QRF_STYLE_Box, QRF_STYLE_Column,
 QRF_STYLE_Markdown, or QRF_STYLE_Table).  The sqlite3_qrf_spec.nWidth
 field is the number of integers in the aWidth array.
 
 If aWidth is a NULL pointer or if nWidth is zero, then the array is
 assumed to be all zeros.  If nWidth is less then the number of
-columns in the output, then zero is used for the width/alignment
-setting for all columns past then end of the aWidth array.
+columns in the output, then zero is used for the width
+for all columns past then end of the aWidth array.
 
 The aWidth array is deliberately an array of 16-bit signed integers.
 Only 16 bits are used because no good comes for having very large
-column widths. In fact, the interface defines several key width values:
+column widths.  The range if further restricted as follows:
 
 > ~~~
-#define QRF_MX_WIDTH    (10000)
-#define QRF_MN_WIDTH    (-10000)
-#define QRF_MINUS_ZERO  (-32768)    /* Special value meaning -0 */
+#define QRF_MAX_WIDTH  10000    /* Maximum column width */
+#define QRF_MIN_WIDTH  0        /* Minimum column width */
 ~~~
 
-A width less then QRF_MN_WIDTH is interpreted as QRF_MN_WIDTH and a width
-larger than QRF_MX_WIDTH is interpreted as QRF_MX_WIDTH.  Thus the maximum
-width of a column is 10000 characters, which is far wider than any
-human-readable column should be.
+A width greater than then QRF_MAX_WIDTH is interpreted as QRF_MAX_WIDTH.
 
 Any aWidth\[\] value of zero means the formatter should use a flexible
 width column (limited only by sqlite_qrf_spec.mxWidth) that is just
-big enough to hold the largest row, and the all rows should be left-justifed.
-The special value of QRF_MINUS_ZERO is interpreted as "-0" and work like
-zero, except that shorter rows are right-justifed instead of left-justifed.
+big enough to hold the largest row.
 
-Values of aWidth that are not zero (and not QRF_MINUS_ZERO) determine the
-width of the corresponding column.  Negative values are used for
-right-justified columns and positive values are used for left-justified
-columns.
+For historical compatibility, aWidth\[\] can contain negative values,
+down to -QRF_MAX_WIDTH.  The column width used is the absolute value
+of the number in aWidth\[\].  The only difference is that negative
+values cause the default horizontal alignment to be QRF_ALIGN_Right.
+The sign of the aWidth\[\] values only affects alignment if the
+alignment is not otherwise specified by aAlign\[\] or eDfltAlign.
+Again, negative values for aWidth\[\] entries are supported for
+backwards compatibility only, and are not recommended for new
+applications.
 
-### 2.11 Row and Column Separator Strings
+### 2.11 Alignment (nAlignment, aAlignment, eDfltAlign, eTitleAlign)
+
+Some cells in a display table might contain a lot of text and thus
+be wide, or they might contain newline characters or be wrapped by
+width constraints so that they span many rows of text.  Other cells
+might be narrower and shorter.  In columnar formats, the display width
+of a cell is the maximum of the widest value in the same column, and the
+display height is the height of the tallest value in the same row.
+So some cells might be much taller and wider than necessary to hold
+their values.
+
+Alignment determines where smaller values are placed within larger cells.
+
+The sqlite3_qrf_spec.aAlign field points to an array of unsigned characters
+that specifies alignment (both vertical and horizontal) of individual
+columns within the table.  The sqlite3_qrf_spec.nAlign fields holds
+the number of entries in the aAlign\[\] array.
+
+If sqlite3_qrf_spec.aAlign is a NULL pointer or if sqlite3_qrf_spec.nAlign
+is zero, or for columns to the right of what are specified by
+sqlite3_qrf_spec.nAlign, the sqlite3_qrf_spec.eDfltAlign value is used
+for the alignment.  Column names can be (and often are) aligned
+differently, as specified by sqlite3_qrf_spec.eTitleAlign.
+
+Each alignment value specifies both vertical and horizontal alignment.
+Horizontal alignment can be left, center, right, or no preference.
+Vertical alignment can be top, middle, bottom, or no preference.
+Thus there are 16 possible alignment values, as follows:
+
+> ~~~
+/*
+**                             Horizontal   Vertial
+**                             ----------   --------  */
+#define QRF_ALIGN_Auto    0 /*   auto        auto     */
+#define QRF_ALIGN_Left    1 /*   left        auto     */
+#define QRF_ALIGN_Center  2 /*   center      auto     */
+#define QRF_ALIGN_Right   3 /*   right       auto     */
+#define QRF_ALIGN_Top     4 /*   auto        top      */
+#define QRF_ALIGN_NW      5 /*   left        top      */
+#define QRF_ALIGN_N       6 /*   center      top      */
+#define QRF_ALIGN_NE      7 /*   right       top      */
+#define QRF_ALIGN_Middle  8 /*   auto        middle   */
+#define QRF_ALIGN_W       9 /*   left        middle   */
+#define QRF_ALIGN_C      10 /*   center      middle   */
+#define QRF_ALIGN_E      11 /*   right       middle   */
+#define QRF_ALIGN_Bottom 12 /*   auto        bottom   */
+#define QRF_ALIGN_SW     13 /*   left        bottom   */
+#define QRF_ALIGN_S      14 /*   center      bottom   */
+#define QRF_ALIGN_SE     15 /*   right       bottom   */
+~~~
+
+Notice how alignment values with an unspecified horizontal
+or vertical component can be added to another alignment value
+for which that component is specified, to get a fully
+specified alignment.  For eample:
+
+> QRF_ALIGN_Center + QRF_ALIGN_Bottom == QRF_ALIGN_S.
+
+The alignment for column names is always determined by the
+eTitleAlign setting.  If eTitleAlign is QRF_Auto, then column
+names use center-bottom alignment, QRF_ALIGN_W, value 14.
+The aAlign\[\] and eDfltAlign settings have no affect on
+column names.
+
+For data in the first nAlign columns, the aAlign\[\] array
+entry for that column takes precedence.  If either the horizontal
+or vertical alignment has an "auto" value for that column or if
+a column is beyond the first nAlign entries, then eDfltAlign
+is used as a backup.  If neither aAlign\[\] nor eDfltAlign
+specify a horizontal alignment, then values are left-aligned
+(QRF_ALIGN_Left).  If neither aAlign\[\] nor eDfltAlign
+specify a vertical alignment, then values are top-aligned
+(QRF_ALIGN_Top).
+
+*As of 2025-11-08, only horizontal alignment is implemented.
+The vertical alignment settings are currently ignored and 
+the vertical alignment is always QRF_ALIGN_Top.*
+
+### 2.12 Row and Column Separator Strings
 
 The sqlite3_qrf_spec.zColumnSep and sqlite3_qrf_spec.zRowSep strings
 are alternative column and row separator character sequences.  If not
@@ -358,18 +460,18 @@ specified (if these pointers are left as NULL) then appropriate defaults
 are used.  Some output styles have hard-coded column and row separators
 and these settings are ignored for those styles.
 
-### 2.12 The Output Table Name
+### 2.13 The Output Table Name
 
 The sqlite3_qrf_spec.zTableName value is the name of the output table
 when eStyle is QRF_STYLE_Insert.
 
-### 2.13 The Rendering Of NULL
+### 2.14 The Rendering Of NULL
 
 If a value is NULL then show the NULL using the string
 found in sqlite3_qrf_spec.zNull.  If zNull is itself a NULL pointer
 then NULL values are rendered as an empty string.
 
-### 2.14 Optional Value Rendering Callback
+### 2.15 Optional Value Rendering Callback
 
 If the sqlite3_qrf_spec.xRender field is not NULL, then each
 sqlite3_value coming out of the query is first passed to the

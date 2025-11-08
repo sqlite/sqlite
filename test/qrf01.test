@@ -281,7 +281,7 @@ x'424c4f42'|NULL|'Ἀμήν'
 do_test 1.118 {
   set rc [catch {db format -style list -columnnames unk {SELECT * FROM t1}} res]
   lappend rc $res
-} {1 {bad -columnnames "unk": must be auto, off, or on}}
+} {1 {bad -columnnames "unk": must be auto, yes, no, on, or off}}
 
 
 do_test 1.120 {
@@ -396,6 +396,19 @@ do_execsql_test 2.10 {
 }
 do_test 2.11 {
   set result "\n[db format -widths {5 -5 18} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬───────┬────────────────────┐
+│   a   │   b   │         c          │
+├───────┼───────┼────────────────────┤
+│ 1     │     2 │ Η γρήγορη αλεπού   │
+│       │       │ πηδάει πάνω από το │
+│       │       │ τεμπέλικο καφέ     │
+│       │       │ σκυλί              │
+└───────┴───────┴────────────────────┘
+}
+do_test 2.12 {
+  set result "\n[db format -widths {5 5 18} -align {left center center} -wordwrap on \
                  {SELECT * FROM t1}]"
 } {
 ┌───────┬───────┬────────────────────┐
