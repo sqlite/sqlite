@@ -390,11 +390,53 @@ do_test 2.6 {
 │       │       │ own dog.           │
 └───────┴───────┴────────────────────┘
 }
+do_test 2.7 {
+  set result "\n[db format -widths {5 5 18} -wordwrap yes \
+                 -align {left center right} -titlealign right \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬───────┬────────────────────┐
+│     a │     b │                  c │
+├───────┼───────┼────────────────────┤
+│ 1     │   2   │      The quick fox │
+│       │       │     jumps over the │
+│       │       │    lazy brown dog. │
+└───────┴───────┴────────────────────┘
+}
+do_test 2.8 {
+  set result "\n[db format -widths {5 8 11} -wordwrap yes \
+                 -align {auto auto center} -titlealign left \
+                 -defaultalign right \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬──────────┬─────────────┐
+│ a     │ b        │ c           │
+├───────┼──────────┼─────────────┤
+│     1 │        2 │  The quick  │
+│       │          │  fox jumps  │
+│       │          │  over the   │
+│       │          │ lazy brown  │
+│       │          │    dog.     │
+└───────┴──────────┴─────────────┘
+}
+do_test 2.9 {
+  catch {db format -align {auto xyz 123} {SELECT * FROM t1}} res
+  set res
+} {bad column alignment (-align) "xyz": must be auto, bottom, c, center, e, left, middle, n, ne, nw, right, s, se, sw, top, or w}
+do_test 2.10 {
+  catch {db format -defaultalign xyz {SELECT * FROM t1}} res
+  set res
+} {bad default alignment (-defaultalign) "xyz": must be auto, bottom, c, center, e, left, middle, n, ne, nw, right, s, se, sw, top, or w}
+do_test 2.11 {
+  catch {db format -titlealign xyz {SELECT * FROM t1}} res
+  set res
+} {bad title alignment (-titlealign) "xyz": must be auto, bottom, c, center, e, left, middle, n, ne, nw, right, s, se, sw, top, or w}
 
-do_execsql_test 2.10 {
+
+do_execsql_test 2.30 {
   UPDATE t1 SET c='Η γρήγορη αλεπού πηδάει πάνω από το τεμπέλικο καφέ σκυλί';
 }
-do_test 2.11 {
+do_test 2.31 {
   set result "\n[db format -widths {5 -5 18} -wordwrap on \
                  {SELECT * FROM t1}]"
 } {
@@ -407,7 +449,7 @@ do_test 2.11 {
 │       │       │ σκυλί              │
 └───────┴───────┴────────────────────┘
 }
-do_test 2.12 {
+do_test 2.32 {
   set result "\n[db format -widths {5 5 18} -align {left center center} -wordwrap on \
                  {SELECT * FROM t1}]"
 } {

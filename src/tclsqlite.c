@@ -2246,7 +2246,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
     }else if( strcmp(zArg,"-defaultalign")==0 || strcmp(zArg,"-titlealign")==0){
       int ax = 0;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azAlign,
-                    zArg[1]=='d' ?  "default alignment (-dfltalign)" :
+                    zArg[1]=='d' ?  "default alignment (-defaultalign)" :
                                     "title alignment (-titlealign)",
                     0, &ax);
       if( rc ) goto format_failed;
@@ -2298,9 +2298,9 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
         rc = Tcl_ListObjIndex(pDb->interp, objv[i+1], jj, &pTerm);
         if( rc ) goto format_failed;
         rc = Tcl_GetIndexFromObj(pDb->interp, pTerm, azAlign,
-                          "column alignement (-align)", 0, &x);
+                          "column alignment (-align)", 0, &x);
         if( rc ) goto format_failed;
-        qrf.aAlign[jj] = x;
+        qrf.aAlign[jj] = aAlignMap[x];
       }
       i++;
     }else if( strcmp(zArg,"-widths")==0 ){

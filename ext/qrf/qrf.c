@@ -1216,22 +1216,36 @@ static void qrfBoxSeparator(
 }
 
 /*
+** Load into pData the default alignment for the body of a table.
+*/
+static void qrfLoadAlignment(qrfColData *pData, Qrf *p){
+  sqlite3_int64 i;
+  memset(pData->aAlign, p->spec.eDfltAlign, pData->nCol);
+  for(i=0; i<pData->nCol && i<p->spec.nAlign; i++){
+    unsigned char ax = p->spec.aAlign[i];
+    if( (ax & QRF_ALIGN_HMASK)!=0 ){
+      pData->aAlign[i] = (ax & QRF_ALIGN_HMASK) |
+                          (pData->aAlign[i] & QRF_ALIGN_VMASK);
+    }
+  }
+}
+
+/*
 ** Columnar modes require that the entire query be evaluated first, with
 ** results written into memory, so that we can compute appropriate column
 ** widths.
 */
 static void qrfColumnar(Qrf *p){
-  sqlite3_int64 i, j;
-  const char *colSep = 0;
-  const char *rowSep = 0;
-  const char *rowStart = 0;
-  int szColSep, szRowSep, szRowStart;
-  int rc;
-  int nColumn = p->nCol;
-  int bWW;
-  int bCenter;
-  sqlite3_str *pStr;
-  qrfColData data;
+  sqlite3_int64 i, j;                     /* Loop counters */
+  const char *colSep = 0;                 /* Column separator text */
+  const char *rowSep = 0;                 /* Row terminator text */
+  const char *rowStart = 0;               /* Row start text */
+  int szColSep, szRowSep, szRowStart;     /* Size in bytes of previous 3 */
+  int rc;                                 /* Result code */
+  int nColumn = p->nCol;                  /* Number of columns */
+  int bWW;                                /* True to do word-wrap */
+  sqlite3_str *pStr;                      /* Temporary rendering */
+  qrfColData data;                        /* Columnar layout data */
 
   rc = sqlite3_step(p->pStmt);
   if( rc!=SQLITE_ROW || nColumn==0 ){
@@ -1272,9 +1286,6 @@ static void qrfColumnar(Qrf *p){
     }
     p->spec.eText = saved_eText;
     p->nRow++;
-    bCenter = 1;
-  }else{
-    bCenter = 0;
   }
   do{
     if( data.n+nColumn > data.nAlloc ){
@@ -1301,10 +1312,12 @@ static void qrfColumnar(Qrf *p){
   }
 
   /* Compute the width and alignment of every column */
-  memset(data.aAlign, p->spec.eDfltAlign, nColumn);
-  for(i=0; i<nColumn && i<p->spec.nAlign; i++){
-    data.aAlign[i] = p->spec.aAlign[i];
+  if( p->spec.bColumnNames==QRF_Yes ){
+    memset(data.aAlign, p->spec.eTitleAlign, nColumn);
+  }else{
+    qrfLoadAlignment(&data, p);
   }
+
   for(i=0; i<nColumn; i++){
     int w = 0;
     if( i<p->spec.nWidth ){
@@ -1343,9 +1356,10 @@ static void qrfColumnar(Qrf *p){
     data.aiCol[i] = w;
   }
 
-  /* TBD: Narrow columns so that the total is less the p->spec.mxTotalWidth */
+  /* TBD: Narrow columns so that the total is less than p->spec.mxTotalWidth */
 
-  /* Draw the line across the top of the table */
+  /* Draw the line across the top of the table.  Also initialize
+  ** the row boundary and column separator texts. */
   switch( p->spec.eStyle ){
     case QRF_STYLE_Box:
       rowStart = BOX_13 " ";
@@ -1377,6 +1391,11 @@ static void qrfColumnar(Qrf *p){
   bWW = (p->spec.bWordWrap==QRF_Yes && data.bMultiRow);
   for(i=0; i<data.n; i+=nColumn){
     int bMore;
+
+    /* Draw a single row of the table.  This might be the title line
+    ** (if there is a title line) or a row in the body of the table.
+    ** The column number will be j.  The row number is i/nColumn.
+    */
     for(j=0; j<nColumn; j++){ data.azThis[j] = data.az[i+j]; }
     do{
       sqlite3_str_append(p->pOut, rowStart, szRowStart);
@@ -1388,7 +1407,7 @@ static void qrfColumnar(Qrf *p){
         int nWS;
         qrfWrapLine(data.azThis[j], data.aiCol[j], bWW, &nThis, &nWide, &iNext);
         nWS = data.aiCol[j] - nWide;
-        if( bCenter || (data.aAlign[j] & QRF_ALIGN_HMASK)==QRF_ALIGN_Center ){
+        if( (data.aAlign[j] & QRF_ALIGN_HMASK)==QRF_ALIGN_Center ){
           /* Center the text */
           sqlite3_str_appendchar(p->pOut, nWS/2, ' ');
           sqlite3_str_append(p->pOut, data.azThis[j], nThis);
@@ -1411,29 +1430,37 @@ static void qrfColumnar(Qrf *p){
         }
       }
     }while( bMore );
-    bCenter = 0;
+
+    /* Draw either (1) the separator between the title line and the body
+    ** of the table, or (2) separators between individual rows of the table
+    ** body.  isTitleDataSeparator will be true if we are doing (1).
+    */
     if( (i==0 || data.bMultiRow) && i+nColumn<data.n ){
+      int isTitleDataSeparator = (i==0 && p->spec.bColumnNames==QRF_Yes);
+      if( isTitleDataSeparator ){
+        qrfLoadAlignment(&data, p);
+      }
       switch( p->spec.eStyle ){
         case QRF_STYLE_Table: {
-          if( (i==0 && p->spec.bColumnNames==QRF_Yes) || data.bMultiRow ){
+          if( isTitleDataSeparator || data.bMultiRow ){
             qrfRowSeparator(p->pOut, &data, '+');
           }
           break;
         }
         case QRF_STYLE_Box: {
-          if( (i==0 && p->spec.bColumnNames==QRF_Yes) || data.bMultiRow ){
+          if( isTitleDataSeparator || data.bMultiRow ){
             qrfBoxSeparator(p->pOut, &data, BOX_123, BOX_1234, BOX_134);
           }
           break;
         }
         case QRF_STYLE_Markdown: {
-          if( i==0 && p->spec.bColumnNames==QRF_Yes ){
+          if( isTitleDataSeparator ){
             qrfRowSeparator(p->pOut, &data, '|');
           }
           break;
         }
         case QRF_STYLE_Column: {
-          if( i==0 && p->spec.bColumnNames==QRF_Yes ){
+          if( isTitleDataSeparator ){
             for(j=0; j<nColumn; j++){
               sqlite3_str_appendchar(p->pOut, data.aiCol[j], '-');
               if( j<nColumn-1 ){
