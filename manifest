@@ -1,5 +1,5 @@
-C Name\schanges.\s\sQRF_TEXT_Off\sbecomes\sQRF_TEXT_Plain.\s\smxTotalWidth\sbecomes\nnScreenWidth.
-D 2025-11-08T22:46:29.898
+C Remove\sabout\sa\sthousand\slines\sof\sdead\scode\sfrom\sshell.c.in.
+D 2025-11-08T23:35:57.752
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -735,7 +735,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 5616fbcf3b833c7c705b24371828215ad0925d0c0073216c4f153348d5753f0a
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c ba9cd07ffa3277883c1986085f6ddc4320f4d35d5f212ab58df79a7ecc1a576a
-F src/shell.c.in d355f1254c435152c65a3df76d117342bfe3ef84a94c05be84d1e246c2c8d5d2
+F src/shell.c.in b4c486e6ba11aa5639e8abe90b4e093b6b233d5b833d90c8c344ec959c7b0446
 F src/sqlite.h.in 43f60117ce68847b9d4e7fa43c2ac42bb324185e66b924d3114b24d4037fc263
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
@@ -1601,7 +1601,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 5b72afb03752278e18c7faeda7329e6118a04e07a4203837bea9d66866d2cd0b
+F test/shell1.test 25c90db401a323ab65c299728446ca6042388acdca3b4883a48e10e8aeda61ec
 F test/shell2.test d8da6a06dcce1d8f04f776f918d4d57c28ddc28c54f3a44f95429794892e3a91
 F test/shell3.test 603b448e917537cf77be0f265c05c6f63bc677c63a533c8e96aae923b56f4a0e
 F test/shell4.test 03593fa7908a55f255916ffeda707cdf55680c777736e3da62b1d78cde0d684d
@@ -2173,8 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 23ddc38cf19845a385c8b33002805c3c864ab9b2e36c3d609794444b06d20c89
-R b6f6aa554fc5421ef5be83514503ceb2
+P 871567e377e976e0bb191d466019d1d4abe126f2da1880f1e25cd92b06a666d1
+R 7f92fe9bce1195a07bb82051f285216a
 U drh
-Z 55336ab4764d6f83d6e0beaecb47e53f
+Z 0c39792436bfc66d82520f9e3f716ced
 # Remove this line to create a well-formed Fossil manifest.
