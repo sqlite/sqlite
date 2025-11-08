@@ -544,5 +544,81 @@ do_test 4.3 {
 └─────────────┴─────────────┴─────┘
 }
 
+do_execsql_test 5.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(name, mtime, value);
+  INSERT INTO t1 VALUES
+    ('entry-one',1708791504,zeroblob(300)),
+    (unistr('one\u000atwo\u000athree'),1333206973,NULL),
+    ('sample-jsonb',1333206973,jsonb('{
+       "alpha":53.11688723,
+       "beta":"qrfWidthPrint(p, p->pOut, -p->u.sLine.mxColWth);",
+       "zeta":[15,null,1333206973,"fd8ffe000104a46494600010101"]}'));
+}
+do_test 5.1 {
+  set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
+                        value FROM t1 ORDER BY mtime}
+  set result "\n[db format -style line -maxtotalwidth 60 -blob sql \
+                   -text sql -wordwrap off -maxrowheight 77 $sql]"
+} {
+ name = unistr('one\u000atwo\u000athree')
+mtime = 1333206973
+ time = '2012-03-31 15:16:13'
+value = 
+
+ name = 'sample-jsonb'
+mtime = 1333206973
+ time = '2012-03-31 15:16:13'
+value = x'cc7c57616c706861b535332e31313638383732334762657461
+        c73071726657696474685072696e7428702c20702d3e704f7574
+        2c202d702d3e752e734c696e652e6d78436f6c577468293b477a
+        657461cb2c23313500a331333333323036393733c71b66643866
+        6665303030313034613436343934363030303130313031'
+
+ name = 'entry-one'
+mtime = 1708791504
+ time = '2024-02-24 16:18:24'
+value = x'00000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        000000000000000000000000000000'
+}
+do_test 5.1 {
+  set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
+                        value FROM t1 ORDER BY mtime}
+  set result "\n[db format -style line -maxtotalwidth 60 -blob sql \
+                   -text off -esc off -textjsonb yes \
+                   -wordwrap yes -maxrowheight 3 $sql]"
+} {
+ name = one
+        two
+        three
+mtime = 1333206973
+ time = 2012-03-31 15:16:13
+value = 
+
+ name = sample-jsonb
+mtime = 1333206973
+ time = 2012-03-31 15:16:13
+value = {"alpha":53.11688723,"beta":"qrfWidthPrint(p,
+        p->pOut, -p->u.sLine.mxColWth);","zeta":[15,null,
+        1333206973,"fd8ffe000104a46494600010101"]}
+
+ name = entry-one
+mtime = 1708791504
+ time = 2024-02-24 16:18:24
+value = x'00000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        ...
+}
 
 finish_test

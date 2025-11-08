@@ -1123,7 +1123,7 @@ static void qrfWrapLine(
       if( isspace(z[k]) ) break;
     }
     if( k<i/2 ){
-      for(k=i; k>i/2; k--){
+      for(k=i; k>=i/2; k--){
         if( isalnum(z[k-1])!=isalnum(z[k]) && (z[k]&0xc0)!=0x80 ) break;
       }
     }
@@ -1982,6 +1982,9 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_STYLE_Line: {
+      sqlite3_str *pVal;
+      int mxW;
+      int bWW;
       if( p->u.sLine.azCol==0 ){
         p->u.sLine.azCol = sqlite3_malloc64( p->nCol*sizeof(char*) );
         if( p->u.sLine.azCol==0 ){
@@ -1998,12 +2001,34 @@ static void qrfOneSimpleRow(Qrf *p){
         }
       }
       if( p->nRow ) sqlite3_str_append(p->pOut, "\n", 1);
+      pVal = sqlite3_str_new(p->db);
+      mxW = p->spec.mxTotalWidth ? p->spec.mxTotalWidth : QRF_MAX_WIDTH;
+      mxW -= 3 + p->u.sLine.mxColWth;
+      bWW = p->spec.bWordWrap==QRF_Yes;
       for(i=0; i<p->nCol; i++){
+        const char *zVal;
+        int cnt = 0;
         qrfWidthPrint(p, p->pOut, -p->u.sLine.mxColWth, p->u.sLine.azCol[i]);
         sqlite3_str_append(p->pOut, " = ", 3);
-        qrfRenderValue(p, p->pOut, i);
-        sqlite3_str_append(p->pOut, "\n", 1);
+        qrfRenderValue(p, pVal, i);
+        zVal = sqlite3_str_value(pVal);
+        if( zVal==0 ) zVal = "";
+        do{
+          int nThis, nWide, iNext;
+          qrfWrapLine(zVal, mxW, bWW, &nThis, &nWide, &iNext);
+          if( cnt ) sqlite3_str_appendchar(p->pOut,p->u.sLine.mxColWth+3,' ');
+          cnt++;
+          if( p->spec.mxRowHeight>0 && cnt>p->spec.mxRowHeight ){
+            zVal = "...";
+            nThis = iNext = 3;
+          }
+          sqlite3_str_append(p->pOut, zVal, nThis);
+          sqlite3_str_append(p->pOut, "\n", 1);
+          zVal += iNext;
+        }while( zVal[0] );
+        sqlite3_str_reset(pVal);
       }
+      sqlite3_free(sqlite3_str_finish(pVal));
       qrfWrite(p);
       break;
     }

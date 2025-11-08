@@ -2256,7 +2256,10 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
         qrf.eTitleAlign = aAlignMap[ax];
       }
       i++;
-    }else if( strcmp(zArg,"-maxcolwidth")==0 || strcmp(zArg,"-maxwidth")==0 ){
+    }else if( strcmp(zArg,"-maxcolwidth")==0
+           || strcmp(zArg,"-maxtotalwidth")==0 
+           || strcmp(zArg,"-maxrowheight")==0 
+    ){
       int v = 0;
       rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
       if( rc ) goto format_failed;
@@ -2267,6 +2270,8 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       }
       if( zArg[4]=='c' ){
         qrf.mxColWidth = v;
+      }else if( zArg[4]=='r' ){
+        qrf.mxRowHeight = v;
       }else{
         qrf.mxTotalWidth = v;
       }
