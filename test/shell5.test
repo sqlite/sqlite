@@ -576,8 +576,8 @@ do_test_with_ansi_output shell5-6.2 {
   catchcmd test.db {.import -csv shell5.csv t1
 .mode line
 SELECT * FROM t1;}
-} {0 {    1 = あい
-    2 = うえお}}
+} {0 {1 = あい
+2 = うえお}}
 
 # 2024-03-11 https://sqlite.org/forum/forumpost/ca014d7358
 # Import into a table that contains computed columns.

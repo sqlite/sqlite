@@ -1706,11 +1706,6 @@ qrf_reinit:
       if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
       break;
     }
-    case QRF_STYLE_Line: {
-      if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = "\n";
-      if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
-      break;
-    }
     case QRF_STYLE_JsonLine:
     case QRF_STYLE_Json: {
       p->spec.eText = QRF_TEXT_Json;
@@ -1941,11 +1936,7 @@ static void qrfOneSimpleRow(Qrf *p){
         qrfWidthPrint(p, p->pOut, -p->u.sLine.mxColWth, p->u.sLine.azCol[i]);
         sqlite3_str_append(p->pOut, " = ", 3);
         qrfRenderValue(p, p->pOut, i);
-        if( i<p->nCol-1 ){
-          sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
-        }else{
-          sqlite3_str_appendall(p->pOut, p->spec.zRowSep);
-        }
+        sqlite3_str_append(p->pOut, "\n", 1);
       }
       qrfWrite(p);
       break;
