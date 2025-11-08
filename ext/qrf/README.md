@@ -77,7 +77,7 @@ struct sqlite3_qrf_spec {
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
   short int mxColWidth;       /* Maximum width of any individual column */
-  short int mxTotalWidth;     /* Maximum overall table width */
+  short int nScreenWidth;     /* Try to keep output short so that it fits */
   short int mxRowHeight;      /* Maximum number of lines for any row */
   int mxLength;               /* Maximum content to display per element */
   int nWidth;                 /* Number of entries in aWidth[] */
@@ -207,7 +207,7 @@ Both fields can have one of the following values:
 
 > ~~~
 #define QRF_TEXT_Auto    0 /* Choose text encoding automatically */
-#define QRF_TEXT_Off     1 /* Literal text */
+#define QRF_TEXT_Plain   1 /* Literal text */
 #define QRF_TEXT_Sql     2 /* Quote as an SQL literal */
 #define QRF_TEXT_Csv     3 /* CSV-style quoting */
 #define QRF_TEXT_Html    4 /* HTML-style quoting */
@@ -218,7 +218,7 @@ Both fields can have one of the following values:
 A value of QRF_TEXT_Auto means that the query result formatter will choose
 what it thinks will be the best text encoding.
 
-A value of QRF_TEXT_Off means that text values appear in the output exactly
+A value of QRF_TEXT_Plain means that text values appear in the output exactly
 as they are found in the database file, with no translation.
 
 A value of QRF_TEXT_Sql means that text values are escaped so that they
@@ -306,37 +306,42 @@ mxLength setting.
 As for 2025-11-07, the mxLength constraint is not yet implemented.
 The current behavior is always as if mxLength where zero.*
 
-### 2.9 Word Wrapping In Columnar Styles (mxColWidth, mxTotalWidth, bWordWrap)
+### 2.9 Word Wrapping In Columnar Styles (mxColWidth, bWordWrap)
 
 When using columnar formatting modes (QRF_STYLE_Box, QRF_STYLE_Column,
 QRF_STYLE_Markdown, or QRF_STYLE_Table), the formatter attempts to limit
 the width of any individual column to sqlite3_qrf_spec.mxColWidth characters
 if mxColWidth is non-zero.  A zero value for mxColWidth means "unlimited".
-The formatter also attempts to limit the width of the entire table to
-no more than sqlite3_qrf_spec.mxTotalWidth characters.  Again, a zero
-value means "no-limit".
-
 The mxColWidth limit might be exceeded if the limit is very small.
-The mxTotalWidth is "best effort"; the formatter might go significantly
-beyond the mxTotalWidth if the table has too many columns
-to squeeze into the specified space.
 
-In order to keep individual columns, or the entire table, within
-requested width limits, it is sometimes necessary to wrap the content
-for a single row of a single column across multiple lines.  When this
-becomes necessary and if the bWordWrap setting is QRF_SW_On, then the
+In order to keep individual columns within requested width limits,
+it is sometimes necessary to wrap the content for a single row of
+a single column across multiple lines.  When this
+becomes necessary and if the bWordWrap setting is QRF_Yes, then the
 formatter attempts to split the content on whitespace or at a word boundary.
-If bWordWrap is QRF_SW_Off, then the formatter is free to split content
+If bWordWrap is QRF_No, then the formatter is free to split content
 anywhere, including in the middle of a word.
 
 For narrow columns and wide words, it might sometimes be necessary to split
-a column in the middle of a word, even when bWordWrap is QRF_SW_On.
+a column in the middle of a word, even when bWordWrap is QRF_Yes.
 
-*The mxTotalWidth setting is a place-holder.
-As for 2025-11-07, the mxTotalWidth constraint is not yet implemented.
-The current behavior is always as if mxTotalWidth where zero.*
+### 2.10 Helping The Output To Fit On The Terminal (nScreenWidth)
 
-### 2.10 Individual Column Width (nWidth and aWidth)
+The sqlite3_qrf_spec.nScreenWidth field can be set the number of
+characters that will fit on one line on the viewer output device.
+This is typically a number like 80 or 132.  The formatter will attempt
+to reduce the length of output lines, depending on the style, so
+that all output fits on that screen.
+
+A value of zero for nScreenWidth means "unknown" or "no width limit".
+When the value is zero, the formatter makes no attempt to keep the
+lines of output short.
+
+The nScreenWidth is a hint to the formatter, not a requirement.
+The formatter trieds to keep lines below the nScreenWidth limit,
+but it does not guarantee that it will.
+
+### 2.11 Individual Column Width (nWidth and aWidth)
 
 The sqlite3_qrf_spec.aWidth field is a pointer to an array of
 signed 16-bit integers that control the width of individual columns
@@ -374,7 +379,7 @@ Again, negative values for aWidth\[\] entries are supported for
 backwards compatibility only, and are not recommended for new
 applications.
 
-### 2.11 Alignment (nAlignment, aAlignment, eDfltAlign, eTitleAlign)
+### 2.12 Alignment (nAlignment, aAlignment, eDfltAlign, eTitleAlign)
 
 Some cells in a display table might contain a lot of text and thus
 be wide, or they might contain newline characters or be wrapped by
@@ -452,7 +457,7 @@ specify a vertical alignment, then values are top-aligned
 The vertical alignment settings are currently ignored and 
 the vertical alignment is always QRF_ALIGN_Top.*
 
-### 2.12 Row and Column Separator Strings
+### 2.13 Row and Column Separator Strings
 
 The sqlite3_qrf_spec.zColumnSep and sqlite3_qrf_spec.zRowSep strings
 are alternative column and row separator character sequences.  If not
@@ -460,18 +465,18 @@ specified (if these pointers are left as NULL) then appropriate defaults
 are used.  Some output styles have hard-coded column and row separators
 and these settings are ignored for those styles.
 
-### 2.13 The Output Table Name
+### 2.14 The Output Table Name
 
 The sqlite3_qrf_spec.zTableName value is the name of the output table
 when eStyle is QRF_STYLE_Insert.
 
-### 2.14 The Rendering Of NULL
+### 2.15 The Rendering Of NULL
 
 If a value is NULL then show the NULL using the string
 found in sqlite3_qrf_spec.zNull.  If zNull is itself a NULL pointer
 then NULL values are rendered as an empty string.
 
-### 2.15 Optional Value Rendering Callback
+### 2.16 Optional Value Rendering Callback
 
 If the sqlite3_qrf_spec.xRender field is not NULL, then each
 sqlite3_value coming out of the query is first passed to the
@@ -579,7 +584,7 @@ same line, each separated by a single "`|`" character and with lines
 terminated by a single newline (\\u000a or \\n).  These column
 and row separator choices can be overridden using the zColumnSep
 and zRowSep fields of the `sqlite3_qrf_spec` structure.  The text
-formatting is QRF_TEXT_Off, and BLOB encoding is QRF_BLOB_Text.  So
+formatting is QRF_TEXT_Plain, and BLOB encoding is QRF_BLOB_Text.  So
 characters appear in the output exactly as they appear in the database.
 Except the eEsp mode defaults to `QRF_ESC_On`, so that control
 characters are escaped, for safety.

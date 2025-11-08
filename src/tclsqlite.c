@@ -2066,7 +2066,7 @@ static void DbHookCmd(
 **     -defaultalign ("auto"|"left"|...)       Default alignment
 **     -titalalign ("auto"|"left"|"right"|...) Default column name alignment
 **     -maxcolwidth NUMBER                     Max width of any single column
-**     -maxtotalwidth NUMBER                   Max width of the entire table
+**     -screenwidth NUMBER                     Width of the display TTY
 **     -maxrowheight NUMBER                    Max height of a row in a table
 **     -maxlength NUMBER                       Content truncated to this size
 **     -align LIST-OF-ALIGNMENT                Alignment of columns
@@ -2092,7 +2092,7 @@ static void DbHookCmd(
 **     -defaultalign     eDfltAlign
 **     -titlealign       eTitleAlign
 **     -maxcolwidth      mxColWidth
-**     -maxtotalwidth    mxTotalWidth
+**     -screenwidth      nScreenWidth
 **     -maxrowheight     mxRowHeight
 **     -maxlength        mxLength
 **     -align            nAlign, aAlign
@@ -2188,12 +2188,12 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
     }else if( strcmp(zArg,"-text")==0 || strcmp(zArg, "-title")==0 ){
       static const char *azText[] = {
         "auto",             "csv",              "html",
-        "json",             "off",              "sql",
+        "json",             "plain",            "sql",
         "tcl",              0
       };
       static unsigned char aTextMap[] = {
         QRF_TEXT_Auto,      QRF_TEXT_Csv,       QRF_TEXT_Html,
-        QRF_TEXT_Json,      QRF_TEXT_Off,       QRF_TEXT_Sql,
+        QRF_TEXT_Json,      QRF_TEXT_Plain,     QRF_TEXT_Sql,
         QRF_TEXT_Tcl
       };
       int txt;
@@ -2257,7 +2257,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       }
       i++;
     }else if( strcmp(zArg,"-maxcolwidth")==0
-           || strcmp(zArg,"-maxtotalwidth")==0 
+           || strcmp(zArg,"-screenwidth")==0 
            || strcmp(zArg,"-maxrowheight")==0 
     ){
       int v = 0;
@@ -2273,7 +2273,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       }else if( zArg[4]=='r' ){
         qrf.mxRowHeight = v;
       }else{
-        qrf.mxTotalWidth = v;
+        qrf.nScreenWidth = v;
       }
       i++;
     }else if( strcmp(zArg,"-maxlength")==0 ){

@@ -34,7 +34,7 @@ struct sqlite3_qrf_spec {
   unsigned char eDfltAlign;   /* Default alignment, no covered by aAlignment */
   unsigned char eTitleAlign;  /* Alignment for column headers */
   short int mxColWidth;       /* Maximum width of any individual column */
-  short int mxTotalWidth;     /* Maximum overall table width */
+  short int nScreenWidth;     /* Maximum overall table width */
   short int mxRowHeight;      /* Maximum number of lines for any row */
   int mxLength;               /* Maximum content to display per element */
   int nWidth;                 /* Number of entries in aWidth[] */
@@ -64,7 +64,7 @@ int sqlite3_format_query_result(
 
 /*
 ** Range of values for sqlite3_qrf_spec.aWidth[] entries and for
-** sqlite3_qrf_spec.mxColWidth and .mxTotalWidth
+** sqlite3_qrf_spec.mxColWidth and .nScreenWidth
 */
 #define QRF_MAX_WIDTH    10000
 #define QRF_MIN_WIDTH    0
@@ -98,7 +98,7 @@ int sqlite3_format_query_result(
 ** Allowed values for sqlite3_qrf_spec.eText
 */
 #define QRF_TEXT_Auto    0 /* Choose text encoding automatically */
-#define QRF_TEXT_Off     1 /* Literal text */
+#define QRF_TEXT_Plain   1 /* Literal text */
 #define QRF_TEXT_Sql     2 /* Quote as an SQL literal */
 #define QRF_TEXT_Csv     3 /* CSV-style quoting */
 #define QRF_TEXT_Html    4 /* HTML-style quoting */

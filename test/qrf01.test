@@ -72,7 +72,7 @@ do_test 1.13 {
 do_test 1.14 {
   catch {db format -text unk -blob hex {SELECT * FROM t1}} res
   set res
-} {bad text encoding (-text) "unk": must be auto, csv, html, json, off, sql, or tcl}
+} {bad text encoding (-text) "unk": must be auto, csv, html, json, plain, sql, or tcl}
 do_test 1.15 {
   catch {db format -text sql -blob unk {SELECT * FROM t1}} res
   set res
@@ -272,7 +272,7 @@ BLOB||Ἀμήν
 }
 do_test 1.112 {
   set result "\n[db format -style list -columnnames on -text sql -null NULL \
-                 -title off {SELECT * FROM t1}]"
+                 -title plain {SELECT * FROM t1}]"
 } {
 a|b|c
 1|2.5|'three'
@@ -533,7 +533,7 @@ do_test 4.2 {
 └─────────────────┴─────────────────┴────┘
 }
 do_test 4.3 {
-  set result "\n[db format -text off -textjsonb on -maxcolwidth 11 \
+  set result "\n[db format -text plain -textjsonb on -maxcolwidth 11 \
               {SELECT a AS json, b AS jsonb, c AS num FROM t1}]"
 } {
 ┌─────────────┬─────────────┬─────┐
@@ -558,7 +558,7 @@ do_execsql_test 5.0 {
 do_test 5.1 {
   set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
                         value FROM t1 ORDER BY mtime}
-  set result "\n[db format -style line -maxtotalwidth 60 -blob sql \
+  set result "\n[db format -style line -screenwidth 60 -blob sql \
                    -text sql -wordwrap off -maxrowheight 77 $sql]"
 } {
  name = unistr('one\u000atwo\u000athree')
@@ -591,11 +591,11 @@ value = x'00000000000000000000000000000000000000000000000000
         0000000000000000000000000000000000000000000000000000
         000000000000000000000000000000'
 }
-do_test 5.1 {
+do_test 5.2 {
   set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
                         value FROM t1 ORDER BY mtime}
-  set result "\n[db format -style line -maxtotalwidth 60 -blob sql \
-                   -text off -esc off -textjsonb yes \
+  set result "\n[db format -style line -screenwidth 60 -blob sql \
+                   -text plain -esc off -textjsonb yes \
                    -wordwrap yes -maxrowheight 3 $sql]"
 } {
  name = one

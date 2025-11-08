@@ -1371,7 +1371,7 @@ static void qrfColumnar(Qrf *p){
     data.aiCol[i] = w;
   }
 
-  /* TBD: Narrow columns so that the total is less than p->spec.mxTotalWidth */
+  /* TBD: Narrow columns so that the total is less than p->spec.nScreenWidth */
 
   /* Draw the line across the top of the table.  Also initialize
   ** the row boundary and column separator texts. */
@@ -1818,14 +1818,14 @@ qrf_reinit:
     p->spec.eEsc = QRF_ESC_Ascii;
   }
   if( p->spec.eText==QRF_Auto ){
-    p->spec.eText = QRF_TEXT_Off;
+    p->spec.eText = QRF_TEXT_Plain;
   }
   if( p->spec.eTitle==QRF_Auto ){
     switch( p->spec.eStyle ){
       case QRF_STYLE_Box:
       case QRF_STYLE_Column:
       case QRF_STYLE_Table:
-        p->spec.eTitle = QRF_TEXT_Off;
+        p->spec.eTitle = QRF_TEXT_Plain;
         break;
       default:
         p->spec.eTitle = p->spec.eText;
@@ -2002,7 +2002,7 @@ static void qrfOneSimpleRow(Qrf *p){
       }
       if( p->nRow ) sqlite3_str_append(p->pOut, "\n", 1);
       pVal = sqlite3_str_new(p->db);
-      mxW = p->spec.mxTotalWidth ? p->spec.mxTotalWidth : QRF_MAX_WIDTH;
+      mxW = p->spec.nScreenWidth ? p->spec.nScreenWidth : QRF_MAX_WIDTH;
       mxW -= 3 + p->u.sLine.mxColWth;
       bWW = p->spec.bWordWrap==QRF_Yes;
       for(i=0; i<p->nCol; i++){
