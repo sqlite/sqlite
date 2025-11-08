@@ -367,16 +367,28 @@ do_test 2.4 {
 └───────┴───────┴────────────────────┘
 }
 do_test 2.5 {
-  set result "\n[db format -widths {5 -5 18} -wordwrap off \
+  set result "\n[db format -widths {5 -5 19} -wordwrap off \
                  {SELECT * FROM t1}]"
 } {
 ┌───────┬───────┬─────────────────────┐
 │   a   │   b   │          c          │
 ├───────┼───────┼─────────────────────┤
 │ 1     │     2 │ The quick fox jumps │
-│       │       │  over the lazy brow │
-│       │       │ n dog.              │
+│       │       │ over the lazy brown │
+│       │       │ dog.                │
 └───────┴───────┴─────────────────────┘
+}
+do_test 2.6 {
+  set result "\n[db format -widths {5 -5 18} -wordwrap off \
+                 {SELECT * FROM t1}]"
+} {
+┌───────┬───────┬────────────────────┐
+│   a   │   b   │         c          │
+├───────┼───────┼────────────────────┤
+│ 1     │     2 │ The quick fox jump │
+│       │       │ s over the lazy br │
+│       │       │ own dog.           │
+└───────┴───────┴────────────────────┘
 }
 
 do_execsql_test 2.10 {
@@ -466,7 +478,7 @@ do_test 4.2 {
 └─────────────────┴─────────────────┴────┘
 }
 do_test 4.3 {
-  set result "\n[db format -text off -textjsonb on -maxcolwidth 10 \
+  set result "\n[db format -text off -textjsonb on -maxcolwidth 11 \
               {SELECT a AS json, b AS jsonb, c AS num FROM t1}]"
 } {
 ┌─────────────┬─────────────┬─────┐
