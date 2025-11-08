@@ -1448,6 +1448,7 @@ static void qrfColumnar(Qrf *p){
       qrfRowSeparator(p->pOut, &data, '+');
       break;
   }
+  qrfWrite(p);
 
   qrfColDataFree(&data);
   return;

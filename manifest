@@ -1,5 +1,5 @@
-C Rewrite\sthe\stable\slayout\sin\sQRF.\s\sEasier\sto\smaintain\snow.\s\sStill\sa\sfew\nshell\stest\sfailures,\sbut\smuch\sbetter\safter\sthis\srewrite.
-D 2025-11-08T03:20:47.075
+C Make\ssure\scolumnar\soutputs\salways\sinvoke\sqrfWrite().
+D 2025-11-08T03:44:05.348
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 550c99ea5f9db2580ec66c12260b28feddc1c8a9b22396bb01bd9c3faaf720b6
-F ext/qrf/qrf.c e187f25116b1e33a1ccba1d25a03e60e7bf4bddfab72de48cb82da623f9fed7f
+F ext/qrf/qrf.c 75cb2730a5a71338138f5c3db9766617271141438ea5aa494703d0c3cddcfc22
 F ext/qrf/qrf.h 642c717aa5a88074f17712a59763f80c9d83e356c3c165953c3f9ba648511087
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2173,8 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9052991a897ad12ac54476d9a370d1ad18937abc3c3fc11efcb678f21cb5ef69
-R bfd19efc8813f884de7c5af24dd2aa88
+P 25838d282c5f7a922988245f373edfe8adbe28e929abce83afcda2b08472e685
+R 502809efeb093ed3374c38b7aba78f45
 U drh
-Z a1cd8bbd8fc7f8460e105f73287d0a96
+Z 7c0ff274efb342612203f1ecc7584f11
 # Remove this line to create a well-formed Fossil manifest.
