@@ -52,6 +52,8 @@ struct Qrf {
   int iErr;                   /* Error code */
   int nCol;                   /* Number of output columns */
   int expMode;                /* Original sqlite3_stmt_isexplain() plus 1 */
+  int mxWidth;                /* Screen width */
+  int mxHeight;               /* mxRowHeight */
   union {
     struct {                  /* Content for QRF_STYLE_Line */
       int mxColWth;             /* Maximum display width of any column */
@@ -1244,6 +1246,36 @@ static void qrfLoadAlignment(qrfColData *pData, Qrf *p){
 }
 
 /*
+** Output horizontally justified text into pOut.  The text is the
+** first nVal bytes of zVal.  Include nWS bytes of whitespace, either
+** split between both sides, or on the left, or on the right, depending
+** on eAlign.
+*/
+static void qrfPrintAligned(
+  sqlite3_str *pOut,       /* Append text here */
+  const char *zVal,        /* Text to append */
+  int nVal,                /* Use only the first nVal bytes of zVal[] */
+  int nWS,                 /* Whitespace for horizonal alignment */
+  unsigned char eAlign     /* Alignment type */
+){
+  eAlign &= QRF_ALIGN_HMASK;
+  if( eAlign==QRF_ALIGN_Center ){
+    /* Center the text */
+    sqlite3_str_appendchar(pOut, nWS/2, ' ');
+    sqlite3_str_append(pOut, zVal, nVal);
+    sqlite3_str_appendchar(pOut, nWS - nWS/2, ' ');
+  }else if( eAlign==QRF_ALIGN_Right){
+    /* Right justify the text */
+    sqlite3_str_appendchar(pOut, nWS, ' ');
+    sqlite3_str_append(pOut, zVal, nVal);
+  }else{
+    /* Left justify the next */
+    sqlite3_str_append(pOut, zVal, nVal);
+    sqlite3_str_appendchar(pOut, nWS, ' ');
+  }
+}
+
+/*
 ** Columnar modes require that the entire query be evaluated first, with
 ** results written into memory, so that we can compute appropriate column
 ** widths.
@@ -1357,10 +1389,15 @@ static void qrfColumnar(Qrf *p){
           }
         }
       }
-    }else if( data.bMultiRow==0 ){
+    }else if( data.bMultiRow==0 || w==1 ){
       for(j=i; j<data.n; j+=nColumn){
         if( data.aiWth[j] > w ){
           data.bMultiRow = 1;
+          if( w==1 ){
+            /* If aiWth[j] is 2 or more, then there might be a double-wide
+            ** character somewhere.  So make the column width at least 2. */
+            w = 2;
+          }
           break;
         }
       }
@@ -1403,6 +1440,7 @@ static void qrfColumnar(Qrf *p){
   bWW = (p->spec.bWordWrap==QRF_Yes && data.bMultiRow);
   for(i=0; i<data.n; i+=nColumn){
     int bMore;
+    int nRow = 0;
 
     /* Draw a single row of the table.  This might be the title line
     ** (if there is a title line) or a row in the body of the table.
@@ -1419,20 +1457,7 @@ static void qrfColumnar(Qrf *p){
         int nWS;
         qrfWrapLine(data.azThis[j], data.aiCol[j], bWW, &nThis, &nWide, &iNext);
         nWS = data.aiCol[j] - nWide;
-        if( (data.aAlign[j] & QRF_ALIGN_HMASK)==QRF_ALIGN_Center ){
-          /* Center the text */
-          sqlite3_str_appendchar(p->pOut, nWS/2, ' ');
-          sqlite3_str_append(p->pOut, data.azThis[j], nThis);
-          sqlite3_str_appendchar(p->pOut, nWS - nWS/2, ' ');
-        }else if( (data.aAlign[j] & QRF_ALIGN_HMASK)==QRF_ALIGN_Right){
-          /* Right justify the text */
-          sqlite3_str_appendchar(p->pOut, nWS, ' ');
-          sqlite3_str_append(p->pOut, data.azThis[j], nThis);
-        }else{
-          /* Left justify the next */
-          sqlite3_str_append(p->pOut, data.azThis[j], nThis);
-          sqlite3_str_appendchar(p->pOut, nWS, ' ');
-        }
+        qrfPrintAligned(p->pOut, data.azThis[j], nThis, nWS, data.aAlign[j]);
         data.azThis[j] += iNext;
         if( data.azThis[j][0]!=0 ) bMore = 1;
         if( j<nColumn-1 ){
@@ -1441,7 +1466,25 @@ static void qrfColumnar(Qrf *p){
           sqlite3_str_append(p->pOut, rowSep, szRowSep);
         }
       }
-    }while( bMore );
+    }while( bMore && ++nRow < p->mxHeight );
+    if( bMore ){
+      /* This row was terminated by mxRowHeight.  Show ellipsis. */
+      sqlite3_str_append(p->pOut, rowStart, szRowStart);
+      for(j=0; j<nColumn; j++){
+        if( data.azThis[j][0]==0 ){
+          sqlite3_str_appendchar(p->pOut, data.aiCol[j], ' ');
+        }else{
+          int nE = 3;
+          if( nE>data.aiCol[j] ) nE = data.aiCol[j];
+          qrfPrintAligned(p->pOut, "...", nE, data.aiCol[j]-nE, data.aAlign[j]);
+        }
+        if( j<nColumn-1 ){
+          sqlite3_str_append(p->pOut, colSep, szColSep);
+        }else{
+          sqlite3_str_append(p->pOut, rowSep, szRowSep);
+        }
+      }
+    }
 
     /* Draw either (1) the separator between the title line and the body
     ** of the table, or (2) separators between individual rows of the table
@@ -1712,6 +1755,208 @@ static void qrfScanStatusVm(Qrf *p){
 }
 
 /*
+** Attempt to determine if identifier zName needs to be quoted, either
+** because it contains non-alphanumeric characters, or because it is an
+** SQLite keyword.  Be conservative in this estimate:  When in doubt assume
+** that quoting is required.
+**
+** Return 1 if quoting is required.  Return 0 if no quoting is required.
+*/
+
+static int qrf_need_quote(const char *zName){
+  int i;
+  const unsigned char *z = (const unsigned char*)zName;
+  if( z==0 ) return 1;
+  if( !isalpha(z[0]) && z[0]!='_' ) return 1;
+  for(i=0; z[i]; i++){
+    if( !isalnum(z[i]) && z[i]!='_' ) return 1;
+  }
+  return sqlite3_keyword_check(zName, i)!=0;
+}
+
+/*
+** Helper function for QRF_STYLE_Json and QRF_STYLE_JsonLine.
+** The initial "{" for a JSON object that will contain row content
+** has been output.  Now output all the content.
+*/
+static void qrfOneJsonRow(Qrf *p){
+  int i, nItem; 
+  for(nItem=i=0; i<p->nCol; i++){
+    const char *zCName;
+    if( sqlite3_column_type(p->pStmt,i)==SQLITE_NULL ) continue;
+    zCName = sqlite3_column_name(p->pStmt, i);
+    if( nItem>0 ) sqlite3_str_append(p->pOut, ",", 1);
+    nItem++;
+    qrfEncodeText(p, p->pOut, zCName);
+    sqlite3_str_append(p->pOut, ":", 1);
+    qrfRenderValue(p, p->pOut, i);
+  }
+  qrfWrite(p);
+}
+
+/*
+** Render a single row of output for non-columnar styles - any
+** style that lets us render row by row as the content is received
+** from the query.
+*/
+static void qrfOneSimpleRow(Qrf *p){
+  int i;
+  switch( p->spec.eStyle ){
+    case QRF_STYLE_Off:
+    case QRF_STYLE_Count: {
+      /* No-op */
+      break;
+    }
+    case QRF_STYLE_Json: {
+      if( p->nRow==0 ){
+        sqlite3_str_append(p->pOut, "[{", 2);
+      }else{
+        sqlite3_str_append(p->pOut, "},\n{", 4);
+      }
+      qrfOneJsonRow(p);
+      break;
+    }
+    case QRF_STYLE_JsonLine: {
+      if( p->nRow==0 ){
+        sqlite3_str_append(p->pOut, "{", 1);
+      }else{
+        sqlite3_str_append(p->pOut, "}\n{", 3);
+      }
+      qrfOneJsonRow(p);
+      break;
+    }
+    case QRF_STYLE_Html: {
+      if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
+        sqlite3_str_append(p->pOut, "<TR>", 4);
+        for(i=0; i<p->nCol; i++){
+          const char *zCName = sqlite3_column_name(p->pStmt, i);
+          sqlite3_str_append(p->pOut, "\n<TH>", 5);
+          qrfEncodeText(p, p->pOut, zCName);
+        }
+        sqlite3_str_append(p->pOut, "\n</TR>\n", 7);
+      }
+      sqlite3_str_append(p->pOut, "<TR>", 4);
+      for(i=0; i<p->nCol; i++){
+        sqlite3_str_append(p->pOut, "\n<TD>", 5);
+        qrfRenderValue(p, p->pOut, i);
+      }
+      sqlite3_str_append(p->pOut, "\n</TR>\n", 7);
+      qrfWrite(p);
+      break;
+    }
+    case QRF_STYLE_Insert: {
+      if( qrf_need_quote(p->spec.zTableName) ){
+        sqlite3_str_appendf(p->pOut,"INSERT INTO \"%w\"",p->spec.zTableName);
+      }else{
+        sqlite3_str_appendf(p->pOut,"INSERT INTO %s",p->spec.zTableName);
+      }
+      if( p->spec.bColumnNames==QRF_Yes ){
+        for(i=0; i<p->nCol; i++){
+          const char *zCName = sqlite3_column_name(p->pStmt, i);
+          if( qrf_need_quote(zCName) ){
+            sqlite3_str_appendf(p->pOut, "%c\"%w\"",
+                                i==0 ? '(' : ',', zCName);
+          }else{
+            sqlite3_str_appendf(p->pOut, "%c%s",
+                                i==0 ? '(' : ',', zCName);
+          }
+        }
+        sqlite3_str_append(p->pOut, ")", 1);
+      }
+      sqlite3_str_append(p->pOut," VALUES(", 8);
+      for(i=0; i<p->nCol; i++){
+        if( i>0 ) sqlite3_str_append(p->pOut, ",", 1);
+        qrfRenderValue(p, p->pOut, i);
+      }
+      sqlite3_str_append(p->pOut, ");\n", 3);
+      qrfWrite(p);
+      break;
+    }
+    case QRF_STYLE_Line: {
+      sqlite3_str *pVal;
+      int mxW;
+      int bWW;
+      if( p->u.sLine.azCol==0 ){
+        p->u.sLine.azCol = sqlite3_malloc64( p->nCol*sizeof(char*) );
+        if( p->u.sLine.azCol==0 ){
+          qrfOom(p);
+          break;
+        }
+        p->u.sLine.mxColWth = 0;
+        for(i=0; i<p->nCol; i++){
+          int sz;
+          p->u.sLine.azCol[i] = sqlite3_column_name(p->pStmt, i);
+          if( p->u.sLine.azCol[i]==0 ) p->u.sLine.azCol[i] = "unknown";
+          sz = qrfDisplayLength(p->u.sLine.azCol[i]);
+          if( sz > p->u.sLine.mxColWth ) p->u.sLine.mxColWth = sz;
+        }
+      }
+      if( p->nRow ) sqlite3_str_append(p->pOut, "\n", 1);
+      pVal = sqlite3_str_new(p->db);
+      mxW = p->mxWidth - (3 + p->u.sLine.mxColWth);
+      bWW = p->spec.bWordWrap==QRF_Yes;
+      for(i=0; i<p->nCol; i++){
+        const char *zVal;
+        int cnt = 0;
+        qrfWidthPrint(p, p->pOut, -p->u.sLine.mxColWth, p->u.sLine.azCol[i]);
+        sqlite3_str_append(p->pOut, " = ", 3);
+        qrfRenderValue(p, pVal, i);
+        zVal = sqlite3_str_value(pVal);
+        if( zVal==0 ) zVal = "";
+        do{
+          int nThis, nWide, iNext;
+          qrfWrapLine(zVal, mxW, bWW, &nThis, &nWide, &iNext);
+          if( cnt ) sqlite3_str_appendchar(p->pOut,p->u.sLine.mxColWth+3,' ');
+          cnt++;
+          if( cnt>p->mxHeight ){
+            zVal = "...";
+            nThis = iNext = 3;
+          }
+          sqlite3_str_append(p->pOut, zVal, nThis);
+          sqlite3_str_append(p->pOut, "\n", 1);
+          zVal += iNext;
+        }while( zVal[0] );
+        sqlite3_str_reset(pVal);
+      }
+      sqlite3_free(sqlite3_str_finish(pVal));
+      qrfWrite(p);
+      break;
+    }
+    case QRF_STYLE_Eqp: {
+      const char *zEqpLine = (const char*)sqlite3_column_text(p->pStmt,3);
+      int iEqpId = sqlite3_column_int(p->pStmt, 0);
+      int iParentId = sqlite3_column_int(p->pStmt, 1);
+      if( zEqpLine==0 ) zEqpLine = "";
+      if( zEqpLine[0]=='-' ) qrfEqpRender(p, 0);
+      qrfEqpAppend(p, iEqpId, iParentId, zEqpLine);
+      break;
+    }
+    default: {  /* QRF_STYLE_List */
+      if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
+        int saved_eText = p->spec.eText;
+        p->spec.eText = p->spec.eTitle;
+        for(i=0; i<p->nCol; i++){
+          const char *zCName = sqlite3_column_name(p->pStmt, i);
+          if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
+          qrfEncodeText(p, p->pOut, zCName);
+        }
+        sqlite3_str_appendall(p->pOut, p->spec.zRowSep);
+        qrfWrite(p);
+        p->spec.eText = saved_eText;
+      }
+      for(i=0; i<p->nCol; i++){
+        if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
+        qrfRenderValue(p, p->pOut, i);
+      }
+      sqlite3_str_appendall(p->pOut, p->spec.zRowSep);
+      qrfWrite(p);
+      break;
+    }
+  }
+  p->nRow++;
+}
+
+/*
 ** Initialize the internal Qrf object.
 */
 static void qrfInitialize(
@@ -1742,6 +1987,10 @@ static void qrfInitialize(
   sz = sizeof(sqlite3_qrf_spec);
   memcpy(&p->spec, pSpec, sz);
   if( p->spec.zNull==0 ) p->spec.zNull = "";
+  p->mxWidth = p->spec.nScreenWidth;
+  if( p->mxWidth<=0 ) p->mxWidth = QRF_MAX_WIDTH;
+  p->mxHeight = p->spec.mxRowHeight;
+  if( p->mxHeight<=0 ) p->mxHeight = 2147483647;
 qrf_reinit:
   switch( p->spec.eStyle ){
     case QRF_Auto: {
@@ -1860,207 +2109,6 @@ qrf_reinit:
   }
   if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = ",";
   if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
-}
-
-/*
-** Attempt to determine if identifier zName needs to be quoted, either
-** because it contains non-alphanumeric characters, or because it is an
-** SQLite keyword.  Be conservative in this estimate:  When in doubt assume
-** that quoting is required.
-**
-** Return 1 if quoting is required.  Return 0 if no quoting is required.
-*/
-
-static int qrf_need_quote(const char *zName){
-  int i;
-  const unsigned char *z = (const unsigned char*)zName;
-  if( z==0 ) return 1;
-  if( !isalpha(z[0]) && z[0]!='_' ) return 1;
-  for(i=0; z[i]; i++){
-    if( !isalnum(z[i]) && z[i]!='_' ) return 1;
-  }
-  return sqlite3_keyword_check(zName, i)!=0;
-}
-
-/*
-** Helper function for QRF_STYLE_Json and QRF_STYLE_JsonLine.
-** The initial "{" for a JSON object that will contain row content
-** has been output.  Now output all the content.
-*/
-static void qrfOneJsonRow(Qrf *p){
-  int i, nItem; 
-  for(nItem=i=0; i<p->nCol; i++){
-    const char *zCName;
-    if( sqlite3_column_type(p->pStmt,i)==SQLITE_NULL ) continue;
-    zCName = sqlite3_column_name(p->pStmt, i);
-    if( nItem>0 ) sqlite3_str_append(p->pOut, ",", 1);
-    nItem++;
-    qrfEncodeText(p, p->pOut, zCName);
-    sqlite3_str_append(p->pOut, ":", 1);
-    qrfRenderValue(p, p->pOut, i);
-  }
-  qrfWrite(p);
-}
-
-/*
-** Render a single row of output.
-*/
-static void qrfOneSimpleRow(Qrf *p){
-  int i;
-  switch( p->spec.eStyle ){
-    case QRF_STYLE_Off:
-    case QRF_STYLE_Count: {
-      /* No-op */
-      break;
-    }
-    case QRF_STYLE_Json: {
-      if( p->nRow==0 ){
-        sqlite3_str_append(p->pOut, "[{", 2);
-      }else{
-        sqlite3_str_append(p->pOut, "},\n{", 4);
-      }
-      qrfOneJsonRow(p);
-      break;
-    }
-    case QRF_STYLE_JsonLine: {
-      if( p->nRow==0 ){
-        sqlite3_str_append(p->pOut, "{", 1);
-      }else{
-        sqlite3_str_append(p->pOut, "}\n{", 3);
-      }
-      qrfOneJsonRow(p);
-      break;
-    }
-    case QRF_STYLE_Html: {
-      if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
-        sqlite3_str_append(p->pOut, "<TR>", 4);
-        for(i=0; i<p->nCol; i++){
-          const char *zCName = sqlite3_column_name(p->pStmt, i);
-          sqlite3_str_append(p->pOut, "\n<TH>", 5);
-          qrfEncodeText(p, p->pOut, zCName);
-        }
-        sqlite3_str_append(p->pOut, "\n</TR>\n", 7);
-      }
-      sqlite3_str_append(p->pOut, "<TR>", 4);
-      for(i=0; i<p->nCol; i++){
-        sqlite3_str_append(p->pOut, "\n<TD>", 5);
-        qrfRenderValue(p, p->pOut, i);
-      }
-      sqlite3_str_append(p->pOut, "\n</TR>\n", 7);
-      qrfWrite(p);
-      break;
-    }
-    case QRF_STYLE_Insert: {
-      if( qrf_need_quote(p->spec.zTableName) ){
-        sqlite3_str_appendf(p->pOut,"INSERT INTO \"%w\"",p->spec.zTableName);
-      }else{
-        sqlite3_str_appendf(p->pOut,"INSERT INTO %s",p->spec.zTableName);
-      }
-      if( p->spec.bColumnNames==QRF_Yes ){
-        for(i=0; i<p->nCol; i++){
-          const char *zCName = sqlite3_column_name(p->pStmt, i);
-          if( qrf_need_quote(zCName) ){
-            sqlite3_str_appendf(p->pOut, "%c\"%w\"",
-                                i==0 ? '(' : ',', zCName);
-          }else{
-            sqlite3_str_appendf(p->pOut, "%c%s",
-                                i==0 ? '(' : ',', zCName);
-          }
-        }
-        sqlite3_str_append(p->pOut, ")", 1);
-      }
-      sqlite3_str_append(p->pOut," VALUES(", 8);
-      for(i=0; i<p->nCol; i++){
-        if( i>0 ) sqlite3_str_append(p->pOut, ",", 1);
-        qrfRenderValue(p, p->pOut, i);
-      }
-      sqlite3_str_append(p->pOut, ");\n", 3);
-      qrfWrite(p);
-      break;
-    }
-    case QRF_STYLE_Line: {
-      sqlite3_str *pVal;
-      int mxW;
-      int bWW;
-      if( p->u.sLine.azCol==0 ){
-        p->u.sLine.azCol = sqlite3_malloc64( p->nCol*sizeof(char*) );
-        if( p->u.sLine.azCol==0 ){
-          qrfOom(p);
-          break;
-        }
-        p->u.sLine.mxColWth = 0;
-        for(i=0; i<p->nCol; i++){
-          int sz;
-          p->u.sLine.azCol[i] = sqlite3_column_name(p->pStmt, i);
-          if( p->u.sLine.azCol[i]==0 ) p->u.sLine.azCol[i] = "unknown";
-          sz = qrfDisplayLength(p->u.sLine.azCol[i]);
-          if( sz > p->u.sLine.mxColWth ) p->u.sLine.mxColWth = sz;
-        }
-      }
-      if( p->nRow ) sqlite3_str_append(p->pOut, "\n", 1);
-      pVal = sqlite3_str_new(p->db);
-      mxW = p->spec.nScreenWidth ? p->spec.nScreenWidth : QRF_MAX_WIDTH;
-      mxW -= 3 + p->u.sLine.mxColWth;
-      bWW = p->spec.bWordWrap==QRF_Yes;
-      for(i=0; i<p->nCol; i++){
-        const char *zVal;
-        int cnt = 0;
-        qrfWidthPrint(p, p->pOut, -p->u.sLine.mxColWth, p->u.sLine.azCol[i]);
-        sqlite3_str_append(p->pOut, " = ", 3);
-        qrfRenderValue(p, pVal, i);
-        zVal = sqlite3_str_value(pVal);
-        if( zVal==0 ) zVal = "";
-        do{
-          int nThis, nWide, iNext;
-          qrfWrapLine(zVal, mxW, bWW, &nThis, &nWide, &iNext);
-          if( cnt ) sqlite3_str_appendchar(p->pOut,p->u.sLine.mxColWth+3,' ');
-          cnt++;
-          if( p->spec.mxRowHeight>0 && cnt>p->spec.mxRowHeight ){
-            zVal = "...";
-            nThis = iNext = 3;
-          }
-          sqlite3_str_append(p->pOut, zVal, nThis);
-          sqlite3_str_append(p->pOut, "\n", 1);
-          zVal += iNext;
-        }while( zVal[0] );
-        sqlite3_str_reset(pVal);
-      }
-      sqlite3_free(sqlite3_str_finish(pVal));
-      qrfWrite(p);
-      break;
-    }
-    case QRF_STYLE_Eqp: {
-      const char *zEqpLine = (const char*)sqlite3_column_text(p->pStmt,3);
-      int iEqpId = sqlite3_column_int(p->pStmt, 0);
-      int iParentId = sqlite3_column_int(p->pStmt, 1);
-      if( zEqpLine==0 ) zEqpLine = "";
-      if( zEqpLine[0]=='-' ) qrfEqpRender(p, 0);
-      qrfEqpAppend(p, iEqpId, iParentId, zEqpLine);
-      break;
-    }
-    default: {  /* QRF_STYLE_List */
-      if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
-        int saved_eText = p->spec.eText;
-        p->spec.eText = p->spec.eTitle;
-        for(i=0; i<p->nCol; i++){
-          const char *zCName = sqlite3_column_name(p->pStmt, i);
-          if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
-          qrfEncodeText(p, p->pOut, zCName);
-        }
-        sqlite3_str_appendall(p->pOut, p->spec.zRowSep);
-        qrfWrite(p);
-        p->spec.eText = saved_eText;
-      }
-      for(i=0; i<p->nCol; i++){
-        if( i>0 ) sqlite3_str_appendall(p->pOut, p->spec.zColumnSep);
-        qrfRenderValue(p, p->pOut, i);
-      }
-      sqlite3_str_appendall(p->pOut, p->spec.zRowSep);
-      qrfWrite(p);
-      break;
-    }
-  }
-  p->nRow++;
 }
 
 /*

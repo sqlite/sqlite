@@ -550,7 +550,7 @@ do_execsql_test 5.0 {
   INSERT INTO t1 VALUES
     ('entry-one',1708791504,zeroblob(300)),
     (unistr('one\u000atwo\u000athree'),1333206973,NULL),
-    ('sample-jsonb',1333206973,jsonb('{
+    ('sample-jsonb',1333101221,jsonb('{
        "alpha":53.11688723,
        "beta":"qrfWidthPrint(p, p->pOut, -p->u.sLine.mxColWth);",
        "zeta":[15,null,1333206973,"fd8ffe000104a46494600010101"]}'));
@@ -561,19 +561,19 @@ do_test 5.1 {
   set result "\n[db format -style line -screenwidth 60 -blob sql \
                    -text sql -wordwrap off -maxrowheight 77 $sql]"
 } {
- name = unistr('one\u000atwo\u000athree')
-mtime = 1333206973
- time = '2012-03-31 15:16:13'
-value = 
-
  name = 'sample-jsonb'
-mtime = 1333206973
- time = '2012-03-31 15:16:13'
+mtime = 1333101221
+ time = '2012-03-30 09:53:41'
 value = x'cc7c57616c706861b535332e31313638383732334762657461
         c73071726657696474685072696e7428702c20702d3e704f7574
         2c202d702d3e752e734c696e652e6d78436f6c577468293b477a
         657461cb2c23313500a331333333323036393733c71b66643866
         6665303030313034613436343934363030303130313031'
+
+ name = unistr('one\u000atwo\u000athree')
+mtime = 1333206973
+ time = '2012-03-31 15:16:13'
+value = 
 
  name = 'entry-one'
 mtime = 1708791504
@@ -598,19 +598,19 @@ do_test 5.2 {
                    -text plain -esc off -textjsonb yes \
                    -wordwrap yes -maxrowheight 3 $sql]"
 } {
+ name = sample-jsonb
+mtime = 1333101221
+ time = 2012-03-30 09:53:41
+value = {"alpha":53.11688723,"beta":"qrfWidthPrint(p,
+        p->pOut, -p->u.sLine.mxColWth);","zeta":[15,null,
+        1333206973,"fd8ffe000104a46494600010101"]}
+
  name = one
         two
         three
 mtime = 1333206973
  time = 2012-03-31 15:16:13
 value = 
-
- name = sample-jsonb
-mtime = 1333206973
- time = 2012-03-31 15:16:13
-value = {"alpha":53.11688723,"beta":"qrfWidthPrint(p,
-        p->pOut, -p->u.sLine.mxColWth);","zeta":[15,null,
-        1333206973,"fd8ffe000104a46494600010101"]}
 
  name = entry-one
 mtime = 1708791504
@@ -619,6 +619,93 @@ value = x'00000000000000000000000000000000000000000000000000
         0000000000000000000000000000000000000000000000000000
         0000000000000000000000000000000000000000000000000000
         ...
+}
+do_test 5.3a {
+  set result "\n[db format -style box -widths {0 10 10 14}\
+                 -align {left right right center} \
+                 -blob sql \
+                 -text plain -esc off -textjsonb no \
+                   -wordwrap yes -maxrowheight 2 $sql]"
+} {
+┌──────────────┬────────────┬────────────┬────────────────┐
+│     name     │   mtime    │    time    │     value      │
+├──────────────┼────────────┼────────────┼────────────────┤
+│ sample-jsonb │ 1333101221 │ 2012-03-30 │ x'cc7c57616c70 │
+│              │            │   09:53:41 │ 6861b535332e31 │
+│              │            │            │      ...       │
+├──────────────┼────────────┼────────────┼────────────────┤
+│ one          │ 1333206973 │ 2012-03-31 │                │
+│ two          │            │   15:16:13 │                │
+│ ...          │            │            │                │
+├──────────────┼────────────┼────────────┼────────────────┤
+│ entry-one    │ 1708791504 │ 2024-02-24 │ x'000000000000 │
+│              │            │   16:18:24 │ 00000000000000 │
+│              │            │            │      ...       │
+└──────────────┴────────────┴────────────┴────────────────┘
+}
+do_test 5.3b {
+  set result "\n[db format -style table -widths {0 10 10 14}\
+                 -align {center right right right} \
+                 -blob sql \
+                 -text plain -esc off -textjsonb no \
+                   -wordwrap yes -maxrowheight 2 $sql]"
+} {
++--------------+------------+------------+----------------+
+|     name     |   mtime    |    time    |     value      |
++--------------+------------+------------+----------------+
+| sample-jsonb | 1333101221 | 2012-03-30 | x'cc7c57616c70 |
+|              |            |   09:53:41 | 6861b535332e31 |
+|              |            |            |            ... |
++--------------+------------+------------+----------------+
+|     one      | 1333206973 | 2012-03-31 |                |
+|     two      |            |   15:16:13 |                |
+|     ...      |            |            |                |
++--------------+------------+------------+----------------+
+|  entry-one   | 1708791504 | 2024-02-24 | x'000000000000 |
+|              |            |   16:18:24 | 00000000000000 |
+|              |            |            |            ... |
++--------------+------------+------------+----------------+
+}
+do_test 5.3c {
+  set result "\n[db format -style column -widths {0 10 10 14}\
+                 -align {center right right right} \
+                 -blob sql \
+                 -text plain -esc off -textjsonb no \
+                   -wordwrap yes -maxrowheight 2 $sql]"
+} {
+    name        mtime        time         value     
+------------  ----------  ----------  --------------
+sample-jsonb  1333101221  2012-03-30  x'cc7c57616c70
+                            09:53:41  6861b535332e31
+                                                 ...
+
+    one       1333206973  2012-03-31                
+    two                     15:16:13                
+    ...                                             
+
+ entry-one    1708791504  2024-02-24  x'000000000000
+                            16:18:24  00000000000000
+                                                 ...
+}
+do_test 5.4 {
+  db eval {
+    CREATE TABLE t2(a,b,c,d,e);
+    WITH v(x) AS (SELECT 'abcdefghijklmnopqrstuvwxyz')
+    INSERT INTO t2 SELECT x,x,x,x,x FROM v;
+  }
+  set sql {SELECT char(0x61,0xa,0x62,0xa,0x63,0xa,0x64) a,
+           mtime b, mtime c, mtime d, mtime e FROM t1}
+  set result "\n[db format -style box -widths {1 2 3 4 5}\
+                -maxrowheight 3 -wordwrap off {SELECT *, 'x' AS x FROM t2}]"
+} {
+┌────┬────┬─────┬──────┬───────┬───┐
+│ a  │ b  │  c  │  d   │   e   │ x │
+├────┼────┼─────┼──────┼───────┼───┤
+│ ab │ ab │ abc │ abcd │ abcde │ x │
+│ cd │ cd │ def │ efgh │ fghij │   │
+│ ef │ ef │ ghi │ ijkl │ klmno │   │
+│ .. │ .. │ ... │ ...  │ ...   │   │
+└────┴────┴─────┴──────┴───────┴───┘
 }
 
 finish_test
