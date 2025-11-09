@@ -1,5 +1,5 @@
-C CLI\sshell:\sensure\sthat\s.dump\spropagates\sits\serror\scode\son\serror.\sProblem\sreported\sin\s[forum:a4f3873b0a8503cc|forum\spost\sa4f3873b0a].
-D 2025-11-09T06:51:32.761
+C Minor\sdoc\stypo\sfix\sreported\sin\s[forum:939d5864df|forum\spost\s939d5864df].
+D 2025-11-09T07:11:15.800
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -733,7 +733,7 @@ F src/resolve.c 5616fbcf3b833c7c705b24371828215ad0925d0c0073216c4f153348d5753f0a
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c ba9cd07ffa3277883c1986085f6ddc4320f4d35d5f212ab58df79a7ecc1a576a
 F src/shell.c.in 223e3703657f5e66c136521a32fc8cc9a7dbbe6b1ade6fd47457e78c38f33e6e
-F src/sqlite.h.in 43f60117ce68847b9d4e7fa43c2ac42bb324185e66b924d3114b24d4037fc263
+F src/sqlite.h.in 7403a952a8f1239de7525b73c4e3a0f9540ec0607ed24fec887f5832642d44b8
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
 F src/sqliteInt.h 88f7fc9ce1630d9a5f7e0a8e1f3287cdc63882fba985c18e7eee1b9f457f59aa
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0f712b6b0516dc151d3bcbb63497661c82e11eae368e639bbdf197e1b3467195
-R 044807217965408148f79cfdcd7bca35
+P 850b92b6347187d702736bf5a574b9b4a49854a33799875f24fc75c50a6bf908
+R 46289386d4eaab15ac455736694a428b
 U stephan
-Z 3d7e3b8f3dad8bd5cd921278664692af
+Z 05ad1e73dd4c11c5b0a1505655a4e3db
 # Remove this line to create a well-formed Fossil manifest.
