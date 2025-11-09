@@ -1,5 +1,5 @@
-C Remove\sseveral\smore\shundred\slines\sof\sdead\scode\sfrom\sshell.c.in.
-D 2025-11-09T00:01:48.783
+C Fixes\sfor\sharmless\sstatic\sanalyzer\swarnings.
+D 2025-11-09T00:37:29.108
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 5011393a53bfb26b59488e5d8d8576de521058876b61318d4fe476375a4ae9a2
-F ext/qrf/qrf.c aefc0febac369be026fb91830112c6ccec9f63c457bda0a502d69e123d89c8bd
+F ext/qrf/qrf.c d7e7bcc6d70478002daecbd32a352f76a1de8fef2b032a73ff698bc2e0c37ffe
 F ext/qrf/qrf.h 49a106a7484c9761bb66bebe0043fbf43302624734a9f9734e0fa410a908e525
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2173,8 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P efbcc7decd5347e3460cc3ed62720c8c3932225dfdf92293a990c51895450906
-R 66a1f4906d686c9035f43c716801c83d
+P 9de3e1d3fb0b2127e983aa455cda2f38646891da65eb9ac39bb5b00d8488f52f
+R 82e4d367a67dea25cb5537608e6abc45
 U drh
-Z cad66dc4b316d4d572021f7e287d84d0
+Z d5ab0a376a02936b9e254f6a39cd4a97
 # Remove this line to create a well-formed Fossil manifest.

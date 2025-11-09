@@ -954,7 +954,7 @@ static void qrfWidthPrint(Qrf *p, sqlite3_str *pOut, int w, const char *zUtf){
     w= mxW;
   }
   aw = w<0 ? -w : w;
-  if( zUtf==0 ) zUtf = "";
+  if( a==0 ) a = (const unsigned char*)"";
   while( (c = a[i])!=0 ){
     if( (c&0xc0)==0xc0 ){
       int u;
@@ -1064,7 +1064,7 @@ static void qrfWrapLine(
   int k;                 /* Bytes in a VT100 code */
   int n;                 /* Output column number */
   const unsigned char *z = (const unsigned char*)zIn;
-  unsigned char c;
+  unsigned char c = 0;
 
   if( zIn[0]==0 ){
     *pnThis = 0;
@@ -1275,11 +1275,9 @@ static void qrfColumnar(Qrf *p){
   }
   data.aiCol = (int*)&data.azThis[nColumn];
   data.aAlign = (unsigned char*)&data.aiCol[nColumn];
-  qrfColDataEnlarge(&data);
-  if( p->iErr ){
-    qrfColDataFree(&data);
-    return;
-  }
+  if( qrfColDataEnlarge(&data) ) return;
+  assert( data.az!=0 );
+  assert( data.aAlign!=0 );
 
   /* Load the column header names and all cell content into data */
   if( p->spec.bColumnNames==QRF_Yes ){
@@ -1302,8 +1300,7 @@ static void qrfColumnar(Qrf *p){
   }
   do{
     if( data.n+nColumn > data.nAlloc ){
-      qrfColDataEnlarge(&data);
-      if( p->iErr ) return;
+      if( qrfColDataEnlarge(&data) ) return;
     }
     for(i=0; i<nColumn; i++){
       char *z;
@@ -1393,7 +1390,7 @@ static void qrfColumnar(Qrf *p){
       colSep = "  ";
       rowSep = "\n";
       break;
-    case QRF_STYLE_Markdown:
+    default:  /*case QRF_STYLE_Markdown:*/
       rowStart = "| ";
       colSep = " | ";
       rowSep = " |\n";
