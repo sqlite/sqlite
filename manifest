@@ -1,5 +1,5 @@
-C Add\ssome\sUNUSED_PARAMATER()s\sfor\sthe\ssake\sof\s-pedantic\s-DSQLITE_OMIT_WAL.
-D 2025-11-07T11:46:56.199
+C In\ssqlite3.wasm.allocFromTypedArray(),\sswap\sthe\sorder\sof\sthe\sallocation\sand\sthe\saccess\sto\sthe\sheap\sview\sobject\sto\swork\saround\san\sobscure\sissue\swhen\sallocating\shuge\sblobs.\sThe\sheap\sview\sobject\scould\spreviously\sbecome\sstale\svia\sthe\sfollowing\sallocation\sif\sthe\sunderlying\sWebAssembly.Memory\sobject\sneeded\sto\sgrow.\sEssentially\sa\srealloc()-moves-the-pointer\ssituation\sbut\sit\sonly\scomes\sup\swith\shuge\sallocations\sunder\sthe\sright\scircumstances\sand\swould\strigger\sa\sJS\sexception\s(as\sopposed\sto\scorrupting\sthe\sWASM\sheap).\sProblem\sreported\sin\s[forum:05b77273be104532|forum\spost\s05b77273be104532].
+D 2025-11-09T06:32:10.051
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -593,7 +593,7 @@ F ext/wasm/api/pre-js.c-pp.js a876c6399dff29b6fe9e434036beb89889164cc872334e1842
 F ext/wasm/api/sqlite3-api-cleanup.js a3d6b9e449aefbb8bba283c2ba9477e2333a0eeb94a7a26b5bf952736f65a6dd
 F ext/wasm/api/sqlite3-api-glue.c-pp.js 79a54b54ca6324d28e31e19b56bbaebb7d2cc4b3079066e7e901333fa5047c53
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js 31dbfd470c91ffd96d77399b749bab6b69e3ba9074188833f97ac13f087cf07b
-F ext/wasm/api/sqlite3-api-prologue.js b5a55ae74efcdcd0aa6a143d59e34137e43ae732f02b563dcab22d735f1599a4
+F ext/wasm/api/sqlite3-api-prologue.js 307583ff39a978c897c4ef4ce53fe231dce5c73dc84785969c81c1ab5960a293
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667430f9d45167569633ffc7567938
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 9654b565b346dc609b75d15337f20acfa7af7d9d558da1afeb9b6d8eaa404966
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9819fc5aa7706fda9d4ec67835ae87eed64d321672873c9d864788b8cf5d27d8
-R 8f416cc9e00edb0a38d7ddc3ea33d472
+P 620434a4a276ecaf2ee56d325815ac4e33c95e1190b420a341e376e54ef60278
+R 53d28760a0461217c0f72e5bc36cfc54
 U stephan
-Z ed277ba7b57498eecdfdfae0e888d2bb
+Z 24490223412a84dd2d1d927424abf9e6
 # Remove this line to create a well-formed Fossil manifest.
