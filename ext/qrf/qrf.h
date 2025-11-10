@@ -42,10 +42,10 @@ struct sqlite3_qrf_spec {
   int nAlign;                 /* Number of entries in aAlignment[] */
   short int *aWidth;          /* Column widths */
   unsigned char *aAlign;      /* Column alignments */
-  const char *zColumnSep;     /* Alternative column separator */
-  const char *zRowSep;        /* Alternative row separator */
-  const char *zTableName;     /* Output table name */
-  const char *zNull;          /* Rendering of NULL */
+  char *zColumnSep;           /* Alternative column separator */
+  char *zRowSep;              /* Alternative row separator */
+  char *zTableName;           /* Output table name */
+  char *zNull;                /* Rendering of NULL */
   char *(*xRender)(void*,sqlite3_value*);           /* Render a value */
   int (*xWrite)(void*,const char*,sqlite3_int64);   /* Write output */
   void *pRenderArg;           /* First argument to the xRender callback */
@@ -119,7 +119,7 @@ int sqlite3_format_query_result(
 
 /*
 ** Control-character escape modes.
-** Allowed values for sqlite3_qrf_spec.eEscape
+** Allowed values for sqlite3_qrf_spec.eEsc
 */
 #define QRF_ESC_Auto    0 /* Choose the ctrl-char escape automatically */
 #define QRF_ESC_Off     1 /* Do not escape control characters */

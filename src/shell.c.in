@@ -658,9 +658,10 @@ static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
 ** lower 30 bits of a 32-bit signed integer.
 */
 static int strlen30(const char *z){
-  const char *z2 = z;
-  while( *z2 ){ z2++; }
-  return 0x3fffffff & (int)(z2 - z);
+  size_t n;
+  if( z==0 ) return 0;
+  n = strlen(z);
+  return n>0x3fffffff ? 0x3fffffff : n;
 }
 
 /*
@@ -1182,14 +1183,19 @@ struct ExpertInfo {
 };
 #endif
 
-/* Parameters affecting columnar mode result display (defaulting together) */
-typedef struct ColModeOpts {
-  int iWrap;            /* In columnar modes, wrap lines reaching this limit */
-  u8 bQuote;            /* Quote results for .mode box and table */
-  u8 bWordWrap;         /* In columnar modes, wrap at word boundaries  */
-} ColModeOpts;
-#define ColModeOpts_default { 60, 0, 0 }
-#define ColModeOpts_default_qbox { 60, 1, 0 }
+/* All the parameters that determine how to render query results.
+*/
+typedef struct Mode {
+  u8 autoExplain;        /* Automatically turn on .explain mode */
+  u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to each SQL stmt */
+  u8 autoEQPtrace;       /* autoEQP is in trace mode */
+  u8 scanstatsOn;        /* True to display scan stats before each finalize */
+  u8 bAutoScreenWidth;   /* Using the TTY to determine screen width */
+  u8 bEcho;              /* True to echo all SQL to output */
+  u8 eMode;              /* One of the MODE_ values */
+  u8 crlfMode;           /* Do NL-to-CRLF translations when enabled (maybe) */
+  sqlite3_qrf_spec spec; /* Spec to be passed into QRF */
+} Mode;
 
 /*
 ** State information about the database connection is contained in an
@@ -1198,10 +1204,6 @@ typedef struct ColModeOpts {
 typedef struct ShellState ShellState;
 struct ShellState {
   sqlite3 *db;           /* The database */
-  u8 autoExplain;        /* Automatically turn on .explain mode */
-  u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to each SQL stmt */
-  u8 autoEQPtrace;       /* autoEQP is in trace mode */
-  u8 scanstatsOn;        /* True to display scan stats before each finalize */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   u8 doXdgOpen;          /* Invoke start/open/xdg-open in output_reset() */
   u8 nEqpLevel;          /* Depth of the EQP output graph */
@@ -1209,9 +1211,6 @@ struct ShellState {
   u8 bSafeMode;          /* True to prohibit unsafe operations */
   u8 bSafeModePersist;   /* The long-term value of bSafeMode */
   u8 eRestoreState;      /* See comments above doAutoDetectRestore() */
-  u8 crlfMode;           /* Do NL-to-CRLF translations when enabled (maybe) */
-  u8 eEscMode;           /* Escape mode for text output */
-  ColModeOpts cmOpts;    /* Option values affecting columnar mode output */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of vertical lines in the EQP output graph */
   int inputNesting;      /* Track nesting level of .read and other redirects */
@@ -1224,12 +1223,7 @@ struct ShellState {
   FILE *out;             /* Write results here */
   FILE *traceOut;        /* Output for sqlite3_trace() */
   int nErr;              /* Number of errors seen */
-  int mode;              /* An output mode setting */
-  int modePrior;         /* Saved mode */
-  int cMode;             /* temporary output mode for the current query */
-  int normalMode;        /* Output mode before ".explain on" */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
-  int showHeader;        /* True to show column names in List or Column mode */
   int nCheck;            /* Number of ".check" commands run */
   unsigned nProgress;    /* Number of progress callbacks encountered */
   unsigned mxProgress;   /* Maximum progress callbacks before failing */
@@ -1240,18 +1234,11 @@ struct ShellState {
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
   char zTestcase[30];    /* Name of current test case */
-  char colSeparator[20]; /* Column separator character for several modes */
-  char rowSeparator[20]; /* Row separator character for MODE_Ascii */
-  char colSepPrior[20];  /* Saved column separator */
-  char rowSepPrior[20];  /* Saved row separator */
-  short int *colWidth;   /* Requested width of each column in columnar modes */
-  short int *actualWidth;/* Actual width of each column */
-  int nWidth;            /* Number of slots in colWidth[] and actualWidth[] */
-  char nullValue[20];    /* The text to print when a NULL comes back from
-                         ** the database */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   sqlite3_stmt *pStmt;   /* Current statement if any. */
   FILE *pLog;            /* Write log output here */
+  Mode mode;             /* Current display mode */
+  Mode modePrior;        /* Backup */
   struct AuxDb {         /* Storage space for auxiliary database connections */
     sqlite3 *db;               /* Connection pointer */
     const char *zDbFilename;   /* Filename used to open the connection */
@@ -1289,7 +1276,7 @@ static ShellState shellState;
 #endif
 
 
-/* Allowed values for ShellState.autoEQP
+/* Allowed values for ShellState.mode.autoEQP
 */
 #define AUTOEQP_off      0           /* Automatic EXPLAIN QUERY PLAN is off */
 #define AUTOEQP_on       1           /* Automatic EQP is on */
@@ -1318,14 +1305,9 @@ static ShellState shellState;
                                    ** top-level SQL statement */
 #define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
 
-/* Allowed values for ShellState.eEscMode.  The default value should
-** be 0, so to change the default, reorder the names.
+/* Names of values for Mode.spec.eEsc.
 */
-#define SHELL_ESC_ASCII        0      /* Substitute ^Y for X where Y=X+0x40 */
-#define SHELL_ESC_SYMBOL       1      /* Substitute U+2400 graphics */
-#define SHELL_ESC_OFF          2      /* Send characters verbatim */
-
-static const char *shell_EscModeNames[] = { "ascii", "symbol", "off" };
+static const char *qrfEscNames[] = { "auto", "off", "ascii", "symbol" };
 
 /*
 ** These are the allowed shellFlgs values
@@ -1334,10 +1316,7 @@ static const char *shell_EscModeNames[] = { "ascii", "symbol", "off" };
 #define SHFLG_Lookaside      0x00000002 /* Lookaside memory is used */
 #define SHFLG_Backslash      0x00000004 /* The --backslash option is used */
 #define SHFLG_PreserveRowid  0x00000008 /* .dump preserves rowid values */
-#define SHFLG_Newlines       0x00000010 /* .dump --newline flag */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
-#define SHFLG_Echo           0x00000040 /* .echo on/off, or --echo setting */
-#define SHFLG_HeaderSet      0x00000080 /* showHeader has been specified */
 #define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
 #define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
 #define SHFLG_TestingMode    0x00000400 /* allow unsafe testing features */
@@ -1350,7 +1329,9 @@ static const char *shell_EscModeNames[] = { "ascii", "symbol", "off" };
 #define ShellClearFlag(P,X)  ((P)->shellFlgs&=(~(X)))
 
 /*
-** These are the allowed modes.
+** These are the allowed values for Mode.eMode.  There is a lot of overlap
+** between these values and the Mode.spec.eStyle values, but they are not
+** one-to-one, and thus need to be tracked separately.
 */
 #define MODE_Line      0  /* One column per line.  Blank line between records */
 #define MODE_Column    1  /* One record per line in neat columns */
@@ -1388,7 +1369,7 @@ static const char *modeDescr[] = {
   "www",
 };
 
-/* Translation from legacy CLI output modes into QRF styles */
+/* This is the translation from Mode.eMode to Mode.spec.eStyle: */
 static const unsigned char aQrfStyle[] = {
   /* line */         QRF_STYLE_Line,
   /* column */       QRF_STYLE_Column,
@@ -1426,6 +1407,90 @@ static const unsigned char aQrfStyle[] = {
 ** It's not too expensive, so a generous allowance can be made.
 */
 #define MAX_INPUT_NESTING 25
+
+/*
+** Initialize a newly allocate Mode object to reasonable
+** defaults.
+*/
+static void modeInit(Mode *p){
+  memset(p, 0, sizeof(*p));
+  p->spec.iVersion = 1;
+  p->autoExplain = 1;
+  p->eMode = MODE_List;
+#ifdef _WIN32
+  p->crlfMode = 1;
+#endif
+}
+
+/*
+** Clear a display mode, freeing any allocated memory that it
+** contains.  This also resets the display mode back to its
+** defaults.
+*/
+static void modeFree(Mode *p){
+  free(p->spec.aWidth);
+  free(p->spec.aAlign);
+  free(p->spec.zColumnSep);
+  free(p->spec.zRowSep);
+  free(p->spec.zTableName);
+  free(p->spec.zNull);
+  modeInit(p);
+}
+
+/*
+** Duplicate Mode pSrc into pDest.  pDest is assumed to be
+** uninitialized prior to invoking this routine.
+*/
+static void modeDup(Mode *pDest, Mode *pSrc){
+  memcpy(pDest, pSrc, sizeof(*pDest));
+  if( pDest->spec.aWidth ){
+    size_t sz = sizeof(pSrc->spec.aWidth[0]) * pSrc->spec.nWidth;
+    pDest->spec.aWidth = malloc( sz );
+    if( pDest->spec.aWidth ){
+      memcpy(pDest->spec.aWidth, pSrc->spec.aWidth, sz);
+    }else{
+      pDest->spec.nWidth = 0;
+    }
+  }
+  if( pDest->spec.aAlign ){
+    size_t sz = sizeof(pSrc->spec.aAlign[0]) * pSrc->spec.nAlign;
+    pDest->spec.aAlign = malloc( sz );
+    if( pDest->spec.aAlign ){
+      memcpy(pDest->spec.aAlign, pSrc->spec.aAlign, sz);
+    }else{
+      pDest->spec.nAlign = 0;
+    }
+  }
+  if( pDest->spec.zColumnSep ){
+    pDest->spec.zColumnSep = strdup(pSrc->spec.zColumnSep);
+  }
+  if( pDest->spec.zRowSep ){
+    pDest->spec.zRowSep = strdup(pSrc->spec.zRowSep);
+  }
+  if( pDest->spec.zTableName ){
+    pDest->spec.zTableName = strdup(pSrc->spec.zTableName);
+  }
+  if( pDest->spec.zNull ){
+    pDest->spec.zNull = strdup(pSrc->spec.zNull);
+  }
+}
+
+/*
+** Set a string value to a copy of the zNew string in memory
+** obtained from system malloc().
+*/
+static void modeSetStr(char **az, const char *zNew){
+  free(*az);
+  if( zNew==0 ){
+    *az = 0;
+  }else{
+    size_t n = strlen(zNew);
+    *az = malloc( n+1 );
+    if( *az ){
+      memcpy(*az, zNew, n+1 );
+    }
+  }
+}
 
 /*
 ** A callback for the sqlite3_log() interface.
@@ -1672,16 +1737,15 @@ edit_func_end:
 ** Save or restore the current output mode
 */
 static void outputModePush(ShellState *p){
-  p->modePrior = p->mode;
+  modeFree(&p->modePrior);
+  modeDup(&p->modePrior,&p->mode);
   p->priorShFlgs = p->shellFlgs;
-  memcpy(p->colSepPrior, p->colSeparator, sizeof(p->colSeparator));
-  memcpy(p->rowSepPrior, p->rowSeparator, sizeof(p->rowSeparator));
 }
 static void outputModePop(ShellState *p){
+  modeFree(&p->mode);
   p->mode = p->modePrior;
+  modeInit(&p->modePrior);
   p->shellFlgs = p->priorShFlgs;
-  memcpy(p->colSeparator, p->colSepPrior, sizeof(p->colSeparator));
-  memcpy(p->rowSeparator, p->rowSepPrior, sizeof(p->rowSeparator));
 }
 
 /*
@@ -1689,7 +1753,7 @@ static void outputModePop(ShellState *p){
 */
 static void setCrlfMode(ShellState *p){
 #ifdef _WIN32
-  if( p->crlfMode ){
+  if( p->mode.crlfMode ){
     sqlite3_fsetmode(p->out, _O_TEXT);
   }else{
     sqlite3_fsetmode(p->out, _O_BINARY);
@@ -2844,28 +2908,10 @@ static int shell_exec(
   if( pzErrMsg ){
     *pzErrMsg = NULL;
   }
-  memset(&spec, 0, sizeof(spec));
-  spec.iVersion = 1;
+  memcpy(&spec, &pArg->mode.spec, sizeof(spec));
   spec.xWrite = shellWriteQR;
   spec.pWriteArg = (void*)pArg;
-  spec.nWidth = pArg->nWidth;
-  spec.aWidth = pArg->colWidth;
-  spec.zRowSep = pArg->rowSeparator;
-  spec.zColumnSep = pArg->colSeparator;
-  spec.zNull = pArg->nullValue;
-  spec.zTableName = pArg->zDestTable;
-  spec.bWordWrap = pArg->cmOpts.bWordWrap!=0 ? QRF_SW_On : QRF_SW_Off;
-  spec.mxColWidth = pArg->cmOpts.iWrap;
-  if( pArg->cmOpts.bQuote ){
-    spec.eText = QRF_TEXT_Sql;
-  }
-  switch( pArg->eEscMode ){
-    case SHELL_ESC_ASCII:  spec.eEsc = QRF_ESC_Ascii;  break;
-    case SHELL_ESC_SYMBOL: spec.eEsc = QRF_ESC_Symbol; break;
-    default:               spec.eEsc = QRF_ESC_Off;    break;
-  }
-  spec.bColumnNames = pArg->showHeader!=0 ? QRF_SW_On : QRF_SW_Off;
-  switch( pArg->mode ){
+  switch( pArg->mode.eMode ){
     case MODE_Insert: {
       if( ShellHasFlag(pArg, SHFLG_PreserveRowid) ){
         spec.bColumnNames = QRF_SW_On;
@@ -2881,12 +2927,12 @@ static int shell_exec(
     case MODE_Box:
     case MODE_Table:
     case MODE_Markdown: {
-      spec.bColumnNames = QRF_SW_On;
+      spec.bColumnNames = QRF_Yes;
       break;
     }
   }
-  assert( pArg->mode>=0 && pArg->mode<ArraySize(aQrfStyle) );
-  eStyle = aQrfStyle[pArg->mode];
+  assert( pArg->mode.eMode>=0 && pArg->mode.eMode<ArraySize(aQrfStyle) );
+  eStyle = aQrfStyle[pArg->mode.eMode];
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
   if( pArg->expert.pExpert ){
@@ -2922,18 +2968,18 @@ static int shell_exec(
      
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
       isExplain = sqlite3_stmt_isexplain(pStmt);
-      if( pArg && pArg->autoEQP && isExplain==0 ){
+      if( pArg && pArg->mode.autoEQP && isExplain==0 ){
         int triggerEQP = 0;
         disable_debug_trace_modes();
         sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
-        if( pArg->autoEQP>=AUTOEQP_trigger ){
+        if( pArg->mode.autoEQP>=AUTOEQP_trigger ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 1, 0);
         }
         sqlite3_reset(pStmt);
         spec.eStyle = QRF_STYLE_Auto;
-        sqlite3_stmt_explain(pStmt, 2-(pArg->autoEQP>=AUTOEQP_full));
+        sqlite3_stmt_explain(pStmt, 2-(pArg->mode.autoEQP>=AUTOEQP_full));
         sqlite3_format_query_result(pStmt, &spec, 0);
-        if( pArg->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
+        if( pArg->mode.autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
         }
         sqlite3_reset(pStmt);
@@ -2942,10 +2988,10 @@ static int shell_exec(
       }
 
       bind_prepared_stmt(pArg, pStmt);
-      if( isExplain && pArg->autoExplain ){
+      if( isExplain && pArg->mode.autoExplain ){
         spec.eStyle = isExplain==1 ? QRF_STYLE_Explain : QRF_STYLE_Eqp;
         sqlite3_format_query_result(pStmt, &spec, pzErrMsg);
-      }else if( pArg->mode==MODE_Www ){
+      }else if( pArg->mode.eMode==MODE_Www ){
         sqlite3_fprintf(pArg->out,
               "</PRE>\n"
               "<TABLE border='1' cellspacing='0' cellpadding='2'>\n");
@@ -2965,9 +3011,9 @@ static int shell_exec(
       }
 
       /* print loop-counters if required */
-      if( pArg && pArg->scanstatsOn ){
+      if( pArg && pArg->mode.scanstatsOn ){
         char *zErr = 0;
-        switch( pArg->scanstatsOn ){
+        switch( pArg->mode.scanstatsOn ){
           case 1:   spec.eStyle = QRF_STYLE_Stats;     break;
           case 2:   spec.eStyle = QRF_STYLE_StatsEst;  break;
           default:  spec.eStyle = QRF_STYLE_StatsVm;   break;
@@ -3208,9 +3254,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     ShellText sTable;
     char **azCol;
     int i;
-    char *savedDestTable;
-    int savedMode;
-    int savedShowHdr;
+    Mode savedMode;
 
     azCol = tableColumnList(p, zTable);
     if( azCol==0 ){
@@ -3253,12 +3297,11 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     appendText(&sSelect, " FROM ", 0);
     appendText(&sSelect, zTable, quoteChar(zTable));
 
-    savedDestTable = p->zDestTable;
+
     savedMode = p->mode;
-    savedShowHdr = p->showHeader;
-    p->zDestTable = (char*)zTable;
-    p->mode = p->cMode = MODE_Insert;
-//    p->showHeader = 1;
+    p->mode.spec.zTableName = (char*)zTable;
+    p->mode.eMode = MODE_Insert;
+    p->mode.spec.bColumnNames = QRF_No;
     rc = shell_exec(p, sSelect.zTxt, 0);
     if( (rc&0xff)==SQLITE_CORRUPT ){
       sqlite3_fputs("/****** CORRUPTION ERROR *******/\n", p->out);
@@ -3266,9 +3309,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
       shell_exec(p, sSelect.zTxt, 0);
       toggleSelectOrder(p->db);
     }
-    p->zDestTable = savedDestTable;
     p->mode = savedMode;
-    p->showHeader = savedShowHdr;
     freeText(&sTable);
     freeText(&sSelect);
     if( rc ) p->nErr++;
@@ -4229,7 +4270,7 @@ static void open_db(ShellState *p, int openFlags){
     }
 #endif
     sqlite3_db_config(
-        p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, p->scanstatsOn, (int*)0
+        p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, p->mode.scanstatsOn, (int*)0
     );
   }
 }
@@ -4924,7 +4965,7 @@ static void output_redir(ShellState *p, FILE *pfNew){
   }else{
     p->out = pfNew;
     setCrlfMode(p);
-    if( p->mode==MODE_Www ){
+    if( p->mode.eMode==MODE_Www ){
       sqlite3_fputs(
         "<!DOCTYPE html>\n"
         "<HTML><BODY><PRE>\n",
@@ -4947,7 +4988,7 @@ static void output_reset(ShellState *p){
     pclose(p->out);
 #endif
   }else{
-    if( p->mode==MODE_Www ){
+    if( p->mode.eMode==MODE_Www ){
       sqlite3_fputs("</PRE></BODY></HTML>\n", p->out);
     }
     output_file_close(p->out);
@@ -7253,12 +7294,12 @@ static int do_meta_command(const char *zLine, ShellState *p){
   ){
     if( nArg==2 ){
 #ifdef _WIN32
-      p->crlfMode = booleanValue(azArg[1]);
+      p->mode.crlfMode = booleanValue(azArg[1]);
 #else
-      p->crlfMode = 0;
+      p->mode.crlfMode = 0;
 #endif
     }
-    sqlite3_fprintf(stderr, "crlf is %s\n", p->crlfMode ? "ON" : "OFF");
+    sqlite3_fprintf(stderr, "crlf is %s\n", p->mode.crlfMode ? "ON" : "OFF");
   }else
 
   if( c=='d' && n>1 && cli_strncmp(azArg[0], "databases", n)==0 ){
@@ -7358,11 +7399,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
     char *zLike = 0;
     char *zSql;
     int i;
-    int savedShowHeader = p->showHeader;
     int savedShellFlags = p->shellFlgs;
+    Mode saved_mode;
     ShellClearFlag(p,
-       SHFLG_PreserveRowid|SHFLG_Newlines|SHFLG_Echo
-       |SHFLG_DumpDataOnly|SHFLG_DumpNoSys);
+       SHFLG_PreserveRowid|SHFLG_DumpDataOnly|SHFLG_DumpNoSys);
     for(i=1; i<nArg; i++){
       if( azArg[i][0]=='-' ){
         const char *z = azArg[i]+1;
@@ -7380,7 +7420,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
 #endif
         }else
         if( cli_strcmp(z,"newlines")==0 ){
-          ShellSetFlag(p, SHFLG_Newlines);
+          /*ShellSetFlag(p, SHFLG_Newlines);*/
         }else
         if( cli_strcmp(z,"data-only")==0 ){
           ShellSetFlag(p, SHFLG_DumpDataOnly);
@@ -7419,6 +7459,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
     open_db(p, 0);
 
+    modeDup(&saved_mode, &p->mode);
     outputDumpWarning(p, zLike);
     if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
       /* When playing back a "dump", the content might appear in an order
@@ -7428,7 +7469,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       sqlite3_fputs("BEGIN TRANSACTION;\n", p->out);
     }
     p->writableSchema = 0;
-    p->showHeader = 0;
+    p->mode.spec.bColumnNames = QRF_No;
     /* Set writable_schema=ON since doing so forces SQLite to initialize
     ** as much of the schema as it can even if the sqlite_schema table is
     ** corrupt. */
@@ -7465,14 +7506,15 @@ static int do_meta_command(const char *zLine, ShellState *p){
     if( (p->shellFlgs & SHFLG_DumpDataOnly)==0 ){
       sqlite3_fputs(p->nErr?"ROLLBACK; -- due to errors\n":"COMMIT;\n", p->out);
     }
-    p->showHeader = savedShowHeader;
     p->shellFlgs = savedShellFlags;
+    modeFree(&p->mode);
+    p->mode = saved_mode;
     rc = p->nErr>0;
   }else
 
   if( c=='e' && cli_strncmp(azArg[0], "echo", n)==0 ){
     if( nArg==2 ){
-      setOrClearFlag(p, SHFLG_Echo, azArg[1]);
+      p->mode.bEcho = booleanValue(azArg[1]);
     }else{
       eputz("Usage: .echo on|off\n");
       rc = 1;
@@ -7486,24 +7528,24 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
   if( c=='e' && cli_strncmp(azArg[0], "eqp", n)==0 ){
     if( nArg==2 ){
-      if( p->autoEQPtrace ){
+      if( p->mode.autoEQPtrace ){
         if( p->db ) sqlite3_exec(p->db, "PRAGMA vdbe_trace=OFF;", 0, 0, 0);
-        p->autoEQPtrace = 0;
+        p->mode.autoEQPtrace = 0;
       }
       if( cli_strcmp(azArg[1],"full")==0 ){
-        p->autoEQP = AUTOEQP_full;
+        p->mode.autoEQP = AUTOEQP_full;
       }else if( cli_strcmp(azArg[1],"trigger")==0 ){
-        p->autoEQP = AUTOEQP_trigger;
+        p->mode.autoEQP = AUTOEQP_trigger;
 #ifdef SQLITE_DEBUG
       }else if( cli_strcmp(azArg[1],"trace")==0 ){
-        p->autoEQP = AUTOEQP_full;
-        p->autoEQPtrace = 1;
+        p->mode.autoEQP = AUTOEQP_full;
+        p->mode.autoEQPtrace = 1;
         open_db(p, 0);
         sqlite3_exec(p->db, "SELECT name FROM sqlite_schema LIMIT 1", 0, 0, 0);
         sqlite3_exec(p->db, "PRAGMA vdbe_trace=ON;", 0, 0, 0);
 #endif
       }else{
-        p->autoEQP = (u8)booleanValue(azArg[1]);
+        p->mode.autoEQP = (u8)booleanValue(azArg[1]);
       }
     }else{
       eputz("Usage: .eqp off|on|trace|trigger|full\n");
@@ -7523,9 +7565,9 @@ static int do_meta_command(const char *zLine, ShellState *p){
   if( c=='e' && cli_strncmp(azArg[0], "explain", n)==0 ){
     if( nArg>=2 ){
       if( cli_strcmp(azArg[1],"auto")==0 ){
-        p->autoExplain = 1;
+        p->mode.autoExplain = 1;
       }else{
-        p->autoExplain = booleanValue(azArg[1]);
+        p->mode.autoExplain = booleanValue(azArg[1]);
       }
     }
   }else
@@ -7698,11 +7740,6 @@ static int do_meta_command(const char *zLine, ShellState *p){
     int hasStat[5];
     int flgs = 0;
     char *zSql;
-    memcpy(&data, p, sizeof(data));
-    data.showHeader = 0;
-    data.cMode = data.mode = MODE_List;
-    data.rowSeparator[0] = '\n';
-    data.rowSeparator[1] = 0;
     if( nArg==2 && optionMatch(azArg[1], "indent") ){
       nArg = 1;
     }
@@ -7720,6 +7757,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
        "WHERE type!='meta' AND sql NOTNULL"
        "  AND name NOT LIKE 'sqlite__%%' ESCAPE '_' "
        "ORDER BY x", flgs);
+    memcpy(&data, p, sizeof(data));
+    data.mode.spec.bColumnNames = QRF_No;
+    data.mode.spec.eStyle= QRF_STYLE_List;
+    data.mode.spec.zRowSep = "\n";
     rc = shell_exec(&data,zSql,0);
     sqlite3_free(zSql);
     if( rc==SQLITE_OK ){
@@ -7743,13 +7784,13 @@ static int do_meta_command(const char *zLine, ShellState *p){
       sqlite3_fputs("/* No STAT tables available */\n", p->out);
     }else{
       sqlite3_fputs("ANALYZE sqlite_schema;\n", p->out);
-      data.cMode = data.mode = MODE_Insert;
+      data.mode.eMode = MODE_Insert;
       if( hasStat[1] ){
-        data.zDestTable = "sqlite_stat1";
+        data.mode.spec.zTableName = "sqlite_stat1";
         shell_exec(&data, "SELECT * FROM sqlite_stat1", 0);
       }
       if( hasStat[4] ){
-        data.zDestTable = "sqlite_stat4";
+        data.mode.spec.zTableName = "sqlite_stat4";
         shell_exec(&data, "SELECT * FROM sqlite_stat4", 0);
       }
       sqlite3_fputs("ANALYZE sqlite_schema;\n", p->out);
@@ -7758,8 +7799,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
   if( c=='h' && cli_strncmp(azArg[0], "headers", n)==0 ){
     if( nArg==2 ){
-      p->showHeader = booleanValue(azArg[1]);
-      p->shellFlgs |= SHFLG_HeaderSet;
+      p->mode.spec.bColumnNames = booleanValue(azArg[1]) ? QRF_Yes : QRF_No;
     }else{
       eputz("Usage: .headers on|off\n");
       rc = 1;
@@ -7787,7 +7827,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     i64 nByte;                  /* Number of bytes in an SQL string */
     int i, j;                   /* Loop counters */
     int needCommit;             /* True to COMMIT or ROLLBACK at end */
-    int nSep;                   /* Number of bytes in p->colSeparator[] */
+    int nSep;                   /* Number of bytes in spec.zColumnSep */
     char *zSql = 0;             /* An SQL statement */
     ImportCtx sCtx;             /* Reader context */
     char *(SQLITE_CDECL *xRead)(ImportCtx*); /* Func to read one value */
@@ -7798,7 +7838,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
     failIfSafeMode(p, "cannot run .import in safe mode");
     memset(&sCtx, 0, sizeof(sCtx));
-    if( p->mode==MODE_Ascii ){
+    if( p->mode.eMode==MODE_Ascii ){
       xRead = ascii_read_one_field;
     }else{
       xRead = csv_read_one_field;
@@ -7850,8 +7890,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
     if( useOutputMode ){
       /* If neither the --csv or --ascii options are specified, then set
       ** the column and row separator characters from the output mode. */
-      nSep = strlen30(p->colSeparator);
-      if( nSep==0 ){
+      if( p->mode.spec.zColumnSep==0 ){
+        modeSetStr(&p->mode.spec.zColumnSep, ",");
+        nSep = 1;
+      }else if( (nSep = strlen30(p->mode.spec.zColumnSep))==0 ){
         eputz("Error: non-null column separator required for import\n");
         goto meta_command_exit;
       }
@@ -7860,28 +7902,30 @@ static int do_meta_command(const char *zLine, ShellState *p){
               " for import\n");
         goto meta_command_exit;
       }
-      nSep = strlen30(p->rowSeparator);
-      if( nSep==0 ){
+      if( p->mode.spec.zRowSep==0 ){
+        modeSetStr(&p->mode.spec.zRowSep, "\n");
+        nSep = 1;
+      }else if( (nSep = strlen30(p->mode.spec.zRowSep))==0 ){
         eputz("Error: non-null row separator required for import\n");
         goto meta_command_exit;
       }
-      if( nSep==2 && p->mode==MODE_Csv
-       && cli_strcmp(p->rowSeparator,SEP_CrLf)==0
+      if( nSep==2 && p->mode.eMode==MODE_Csv
+       && cli_strcmp(p->mode.spec.zRowSep,SEP_CrLf)==0
       ){
         /* When importing CSV (only), if the row separator is set to the
         ** default output row separator, change it to the default input
         ** row separator.  This avoids having to maintain different input
         ** and output row separators. */
-        sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-        nSep = strlen30(p->rowSeparator);
+        modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
+        nSep = strlen30(p->mode.spec.zRowSep);
       }
       if( nSep>1 ){
         eputz("Error: multi-character row separators not allowed"
               " for import\n");
         goto meta_command_exit;
       }
-      sCtx.cColSep = (u8)p->colSeparator[0];
-      sCtx.cRowSep = (u8)p->rowSeparator[0];
+      sCtx.cColSep = (u8)p->mode.spec.zRowSep[0];
+      sCtx.cRowSep = (u8)p->mode.spec.zColumnSep[0];
     }
     sCtx.zFile = zFile;
     sCtx.nLine = 1;
@@ -8052,7 +8096,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
         ** columns in ASCII mode?  If so, stop instead of NULL filling
         ** the remaining columns.
         */
-        if( p->mode==MODE_Ascii && (z==0 || z[0]==0) && i==0 ) break;
+        if( p->mode.eMode==MODE_Ascii && (z==0 || z[0]==0) && i==0 ) break;
         /*
         ** For CSV mode, per RFC 4180, accept EOF in lieu of final
         ** record terminator but only for last field of multi-field row.
@@ -8351,40 +8395,44 @@ static int do_meta_command(const char *zLine, ShellState *p){
     const char *zTabname = 0;
     int i, n2;
     int chng = 0;       /* 0x01:  change to cmopts.  0x02:  Any other change */
-    ColModeOpts cmOpts = ColModeOpts_default;
     for(i=1; i<nArg; i++){
       const char *z = azArg[i];
       if( optionMatch(z,"wrap") && i+1<nArg ){
-        cmOpts.iWrap = integerValue(azArg[++i]);
+        int w = integerValue(azArg[++i]);
+        if( w<(-QRF_MAX_WIDTH) ) w = -QRF_MAX_WIDTH;
+        if( w>QRF_MAX_WIDTH ) w = QRF_MAX_WIDTH;
+        p->mode.spec.mxColWidth = w;
         chng |= 1;
       }else if( optionMatch(z,"ww") ){
-        cmOpts.bWordWrap = 1;
+        p->mode.spec.bWordWrap = QRF_Yes;
         chng |= 1;
       }else if( optionMatch(z,"wordwrap") && i+1<nArg ){
-        cmOpts.bWordWrap = (u8)booleanValue(azArg[++i]);
+        p->mode.spec.bWordWrap = (u8)booleanValue(azArg[++i]) ? QRF_Yes : QRF_No;
         chng |= 1;
       }else if( optionMatch(z,"quote") ){
-        cmOpts.bQuote = 1;
+        p->mode.spec.eText = QRF_TEXT_Sql;
+        p->mode.spec.eBlob = QRF_BLOB_Sql;
         chng |= 1;
       }else if( optionMatch(z,"noquote") ){
-        cmOpts.bQuote = 0;
+        p->mode.spec.eText = QRF_Auto;
+        p->mode.spec.eBlob = QRF_Auto;
         chng |= 1;
       }else if( optionMatch(z,"escape") && i+1<nArg ){
         /* See similar code at tag-20250224-1 */
         const char *zEsc = azArg[++i];
         int k;
-        for(k=0; k<ArraySize(shell_EscModeNames); k++){
-          if( sqlite3_stricmp(zEsc,shell_EscModeNames[k])==0 ){
-            p->eEscMode = k;
+        for(k=0; k<ArraySize(qrfEscNames); k++){
+          if( sqlite3_stricmp(zEsc,qrfEscNames[k])==0 ){
+            p->mode.spec.eEsc = k;
             chng |= 2;
             break;
           }
         }
-        if( k>=ArraySize(shell_EscModeNames) ){
+        if( k>=ArraySize(qrfEscNames) ){
           sqlite3_fprintf(stderr, "unknown control character escape mode \"%s\""
                                   " - choices:", zEsc);
-          for(k=0; k<ArraySize(shell_EscModeNames); k++){
-            sqlite3_fprintf(stderr, " %s", shell_EscModeNames[k]);
+          for(k=0; k<ArraySize(qrfEscNames); k++){
+            sqlite3_fprintf(stderr, " %s", qrfEscNames[k]);
           }
           sqlite3_fprintf(stderr, "\n");
           rc = 1;
@@ -8397,9 +8445,9 @@ static int do_meta_command(const char *zLine, ShellState *p){
          */
         chng |= 1;
         if( cli_strcmp(z, "qbox")==0 ){
-          ColModeOpts cmo = ColModeOpts_default_qbox;
           zMode = "box";
-          cmOpts = cmo;
+          p->mode.spec.eText = QRF_TEXT_Sql;
+          p->mode.spec.eBlob = QRF_BLOB_Sql;
         }
       }else if( zTabname==0 ){
         zTabname = z;
@@ -8421,97 +8469,88 @@ static int do_meta_command(const char *zLine, ShellState *p){
       }
     }
     if( !chng ){
-      if( p->mode==MODE_Column
-       || p->mode==MODE_Box
-       || p->mode==MODE_Table
-       || p->mode>=MODE_Markdown
+      if( p->mode.eMode==MODE_Column
+       || p->mode.eMode==MODE_Box
+       || p->mode.eMode==MODE_Table
+       || p->mode.eMode==MODE_Markdown
       ){
-        sqlite3_fprintf(p->out,
-              "current output mode: %s --wrap %d --wordwrap %s "
-              "--%squote --escape %s\n",
-              modeDescr[p->mode], p->cmOpts.iWrap,
-              p->cmOpts.bWordWrap ? "on" : "off",
-              p->cmOpts.bQuote ? "" : "no",
-              shell_EscModeNames[p->eEscMode]
+        sqlite3_fprintf(p->out, "current output mode: %s",
+                        modeDescr[p->mode.eMode]);
+        if( p->mode.spec.mxColWidth ){
+          sqlite3_fprintf(p->out, " --wrap %d",
+             p->mode.spec.mxColWidth);
+        }else{
+          sqlite3_fprintf(p->out, " --wrap off");
+        }
+        sqlite3_fprintf(p->out, " --wordwrap %s --%squote --escape %s\n",
+              p->mode.spec.bWordWrap==QRF_Yes ? "on" : "off",
+              p->mode.spec.eText==QRF_TEXT_Sql ? "" : "no",
+              qrfEscNames[p->mode.spec.eEsc]
         );
       }else{
         sqlite3_fprintf(p->out,
               "current output mode: %s --escape %s\n",
-              modeDescr[p->mode],
-              shell_EscModeNames[p->eEscMode]
+              modeDescr[p->mode.eMode],
+              qrfEscNames[p->mode.spec.eEsc]
         );
       }
     }
     if( zMode==0 ){
-      zMode = modeDescr[p->mode];
-      if( (chng&1)==0 ) cmOpts = p->cmOpts;
+      zMode = modeDescr[p->mode.eMode];
     }
     n2 = strlen30(zMode);
     if( cli_strncmp(zMode,"lines",n2)==0 ){
-      p->mode = MODE_Line;
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      p->mode.eMode = MODE_Line;
+      modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
     }else if( cli_strncmp(zMode,"columns",n2)==0 ){
-      p->mode = MODE_Column;
-      if( (p->shellFlgs & SHFLG_HeaderSet)==0 ){
-        p->showHeader = 1;
-      }
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
-      p->cmOpts = cmOpts;
+      p->mode.eMode = MODE_Column;
+      modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
     }else if( cli_strncmp(zMode,"list",n2)==0 ){
-      p->mode = MODE_List;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Column);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      p->mode.eMode = MODE_List;
+      modeSetStr(&p->mode.spec.zColumnSep, SEP_Column);
+      modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
     }else if( cli_strncmp(zMode,"html",n2)==0 ){
-      p->mode = MODE_Html;
+      p->mode.eMode = MODE_Html;
     }else if( cli_strncmp(zMode,"tcl",n2)==0 ){
-      p->mode = MODE_Tcl;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Space);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      p->mode.eMode = MODE_Tcl;
+      modeSetStr(&p->mode.spec.zColumnSep, SEP_Space);
+      modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
     }else if( cli_strncmp(zMode,"csv",n2)==0 ){
-      p->mode = MODE_Csv;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
+      p->mode.eMode = MODE_Csv;
+      modeSetStr(&p->mode.spec.zColumnSep, SEP_Comma);
+      modeSetStr(&p->mode.spec.zRowSep, SEP_CrLf);
     }else if( cli_strncmp(zMode,"tabs",n2)==0 ){
-      p->mode = MODE_List;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Tab);
+      p->mode.eMode = MODE_List;
+      modeSetStr(&p->mode.spec.zColumnSep, SEP_Tab);
     }else if( cli_strncmp(zMode,"insert",n2)==0 ){
-      p->mode = MODE_Insert;
-      set_table_name(p, zTabname ? zTabname : "table");
-      if( p->eEscMode==SHELL_ESC_OFF ){
-        ShellSetFlag(p, SHFLG_Newlines);
-      }else{
-        ShellClearFlag(p, SHFLG_Newlines);
-      }
+      p->mode.eMode = MODE_Insert;
+      modeSetStr(&p->mode.spec.zTableName, zTabname);
     }else if( cli_strncmp(zMode,"quote",n2)==0 ){
-      p->mode = MODE_Quote;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      p->mode.eMode = MODE_Quote;
+      modeSetStr(&p->mode.spec.zColumnSep, SEP_Comma);
+      modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
     }else if( cli_strncmp(zMode,"ascii",n2)==0 ){
-      p->mode = MODE_Ascii;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
+      p->mode.eMode = MODE_Ascii;
+      modeSetStr(&p->mode.spec.zColumnSep, SEP_Unit);
+      modeSetStr(&p->mode.spec.zRowSep, SEP_Record);
     }else if( cli_strncmp(zMode,"markdown",n2)==0 ){
-      p->mode = MODE_Markdown;
-      p->cmOpts = cmOpts;
+      p->mode.eMode = MODE_Markdown;
     }else if( cli_strncmp(zMode,"table",n2)==0 ){
-      p->mode = MODE_Table;
-      p->cmOpts = cmOpts;
+      p->mode.eMode = MODE_Table;
     }else if( cli_strncmp(zMode,"box",n2)==0 ){
-      p->mode = MODE_Box;
-      p->cmOpts = cmOpts;
+      p->mode.eMode = MODE_Box;
     }else if( cli_strncmp(zMode,"count",n2)==0 ){
-      p->mode = MODE_Count;
+      p->mode.eMode = MODE_Count;
     }else if( cli_strncmp(zMode,"off",n2)==0 ){
-      p->mode = MODE_Off;
+      p->mode.eMode = MODE_Off;
     }else if( cli_strncmp(zMode,"json",n2)==0 ){
-      p->mode = MODE_Json;
+      p->mode.eMode = MODE_Json;
     }else{
       eputz("Error: mode should be one of: "
             "ascii box column csv html insert json line list markdown "
             "qbox quote table tabs tcl\n");
       rc = 1;
     }
-    p->cMode = p->mode;
   }else
 
 #ifndef SQLITE_SHELL_FIDDLE
@@ -8533,8 +8572,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
   if( c=='n' && cli_strncmp(azArg[0], "nullvalue", n)==0 ){
     if( nArg==2 ){
-      sqlite3_snprintf(sizeof(p->nullValue), p->nullValue,
-                       "%.*s", (int)ArraySize(p->nullValue)-1, azArg[1]);
+      modeSetStr(&p->mode.spec.zNull, azArg[1]);
     }else{
       eputz("Usage: .nullvalue STRING\n");
       rc = 1;
@@ -8738,10 +8776,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
       if( eMode=='x' ){
         /* spreadsheet mode.  Output as CSV. */
         newTempFile(p, "csv");
-        ShellClearFlag(p, SHFLG_Echo);
-        p->mode = MODE_Csv;
-        sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
-        sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_CrLf);
+        p->mode.bEcho = 0;
+        p->mode.eMode = MODE_Csv;
+        modeSetStr(&p->mode.spec.zColumnSep, SEP_Comma);
+        modeSetStr(&p->mode.spec.zRowSep, SEP_CrLf);
 #ifdef _WIN32
         zBom = zBomUtf8;  /* Always include the BOM on Windows, as Excel does
                           ** not work without it. */
@@ -8749,7 +8787,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       }else if( eMode=='w' ){
         /* web-browser mode. */
         newTempFile(p, "html");
-        if( !bPlain ) p->mode = MODE_Www;
+        if( !bPlain ) p->mode.eMode = MODE_Www;
       }else{
         /* text editor mode */
         newTempFile(p, "txt");
@@ -9074,21 +9112,21 @@ static int do_meta_command(const char *zLine, ShellState *p){
   ){
     if( nArg==2 ){
       if( cli_strcmp(azArg[1], "vm")==0 ){
-        p->scanstatsOn = 3;
+        p->mode.scanstatsOn = 3;
       }else
       if( cli_strcmp(azArg[1], "est")==0 ){
-        p->scanstatsOn = 2;
+        p->mode.scanstatsOn = 2;
       }else{
-        p->scanstatsOn = (u8)booleanValue(azArg[1]);
+        p->mode.scanstatsOn = (u8)booleanValue(azArg[1]);
       }
       open_db(p, 0);
       sqlite3_db_config(
-          p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, p->scanstatsOn, (int*)0
+          p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, p->mode.scanstatsOn, (int*)0
       );
 #if !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
       eputz("Warning: .scanstats not available in this build.\n");
 #elif !defined(SQLITE_ENABLE_BYTECODE_VTAB)
-      if( p->scanstatsOn==3 ){
+      if( p->mode.scanstatsOn==3 ){
         eputz("Warning: \".scanstats vm\" not available in this build.\n");
       }
 #endif
@@ -9113,9 +9151,9 @@ static int do_meta_command(const char *zLine, ShellState *p){
  
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
-    data.showHeader = 0;
-    data.cMode = data.mode = MODE_List;
-    memcpy(data.rowSeparator,"\n",2);
+    data.mode.spec.bColumnNames = QRF_No;
+    data.mode.eMode = MODE_List;
+    modeSetStr(&data.mode.spec.zRowSep, "\n");
     for(ii=1; ii<nArg; ii++){
       if( optionMatch(azArg[ii],"indent") ){
         bIndent = 1;
@@ -9577,12 +9615,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
       rc = 1;
     }
     if( nArg>=2 ){
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
-                       "%.*s", (int)ArraySize(p->colSeparator)-1, azArg[1]);
+      modeSetStr(&p->mode.spec.zColumnSep, azArg[1]);
     }
     if( nArg>=3 ){
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator,
-                       "%.*s", (int)ArraySize(p->rowSeparator)-1, azArg[2]);
+      modeSetStr(&p->mode.spec.zRowSep,azArg[2]);
     }
   }else
 
@@ -9798,34 +9834,35 @@ static int do_meta_command(const char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
-    sqlite3_fprintf(p->out, "%12.12s: %s\n","echo",
-          azBool[ShellHasFlag(p, SHFLG_Echo)]);
-    sqlite3_fprintf(p->out, "%12.12s: %s\n","eqp", azBool[p->autoEQP&3]);
+    sqlite3_fprintf(p->out, "%12.12s: %s\n","echo", azBool[p->mode.bEcho!=0]);
+    sqlite3_fprintf(p->out, "%12.12s: %s\n","eqp", azBool[p->mode.autoEQP&3]);
     sqlite3_fprintf(p->out, "%12.12s: %s\n","explain",
-                             p->autoExplain ? "auto" : "off");
+                             p->mode.autoExplain ? "auto" : "off");
     sqlite3_fprintf(p->out, "%12.12s: %s\n","headers",
-          azBool[p->showHeader!=0]);
-    if( p->mode==MODE_Column
-     || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
+          azBool[p->mode.spec.bColumnNames==QRF_Yes]);
+    if( p->mode.spec.eStyle==QRF_STYLE_Column
+     || p->mode.spec.eStyle==QRF_STYLE_Box
+     || p->mode.spec.eStyle==QRF_STYLE_Table
+     || p->mode.spec.eStyle==QRF_STYLE_Markdown
     ){
       sqlite3_fprintf(p->out,
             "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
-            modeDescr[p->mode], p->cmOpts.iWrap,
-            p->cmOpts.bWordWrap ? "on" : "off",
-            p->cmOpts.bQuote ? "" : "no");
+            modeDescr[p->mode.eMode], p->mode.spec.mxColWidth,
+            p->mode.spec.bWordWrap==QRF_Yes ? "on" : "off",
+            p->mode.spec.eText==QRF_TEXT_Sql ? "" : "no");
     }else{
-      sqlite3_fprintf(p->out, "%12.12s: %s\n","mode", modeDescr[p->mode]);
+      sqlite3_fprintf(p->out, "%12.12s: %s\n","mode", modeDescr[p->mode.eMode]);
     }
     sqlite3_fprintf(p->out, "%12.12s: ", "nullvalue");
-    output_c_string(p->out, p->nullValue);
+    output_c_string(p->out, p->mode.spec.zNull);
     sqlite3_fputs("\n", p->out);
     sqlite3_fprintf(p->out, "%12.12s: %s\n","output",
           strlen30(p->outfile) ? p->outfile : "stdout");
     sqlite3_fprintf(p->out, "%12.12s: ", "colseparator");
-    output_c_string(p->out, p->colSeparator);
+    output_c_string(p->out, p->mode.spec.zColumnSep);
     sqlite3_fputs("\n", p->out);
     sqlite3_fprintf(p->out, "%12.12s: ", "rowseparator");
-    output_c_string(p->out, p->rowSeparator);
+    output_c_string(p->out, p->mode.spec.zRowSep);
     sqlite3_fputs("\n", p->out);
     switch( p->statsOn ){
       case 0:  zOut = "off";     break;
@@ -9835,8 +9872,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
     }
     sqlite3_fprintf(p->out, "%12.12s: %s\n","stats", zOut);
     sqlite3_fprintf(p->out, "%12.12s: ", "width");
-    for (i=0;i<p->nWidth;i++) {
-      sqlite3_fprintf(p->out, "%d ", (int)p->colWidth[i]);
+    for(i=0; i<p->mode.spec.nWidth; i++){
+      sqlite3_fprintf(p->out, "%d ", (int)p->mode.spec.aWidth[i]);
     }
     sqlite3_fputs("\n", p->out);
     sqlite3_fprintf(p->out, "%12.12s: %s\n", "filename",
@@ -10635,15 +10672,15 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
   if( c=='w' && cli_strncmp(azArg[0], "width", n)==0 ){
     int j;
-    p->nWidth = nArg-1;
-    p->colWidth = realloc(p->colWidth, (p->nWidth+1)*sizeof(short int)*2);
-    if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
-    if( p->nWidth ) p->actualWidth = &p->colWidth[p->nWidth];
+    p->mode.spec.nWidth = nArg-1;
+    p->mode.spec.aWidth = realloc(p->mode.spec.aWidth,
+                                  (p->mode.spec.nWidth+1)*sizeof(short int));
+    shell_check_oom(p->mode.spec.aWidth);
     for(j=1; j<nArg; j++){
       i64 w = integerValue(azArg[j]);
       if( w < -QRF_MAX_WIDTH ) w = -QRF_MAX_WIDTH;
       if( w > QRF_MAX_WIDTH ) w = QRF_MAX_WIDTH;
-      p->colWidth[j-1] = (short int)w;
+      p->mode.spec.aWidth[j-1] = (short int)w;
     }
   }else
 
@@ -10938,7 +10975,7 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
 }
 
 static void echo_group_input(ShellState *p, const char *zDo){
-  if( ShellHasFlag(p, SHFLG_Echo) ){
+  if( p->mode.bEcho ){
     sqlite3_fprintf(p->out, "%s\n", zDo);
     fflush(p->out);
   }
@@ -11377,19 +11414,12 @@ static void verify_uninitialized(void){
 /*
 ** Initialize the state information in data
 */
-static void main_init(ShellState *data) {
-  memset(data, 0, sizeof(*data));
-  data->normalMode = data->cMode = data->mode = MODE_List;
-  data->autoExplain = 1;
-#ifdef _WIN32
-  data->crlfMode = 1;
-#endif
-  data->pAuxDb = &data->aAuxDb[0];
-  memcpy(data->colSeparator,SEP_Column, 2);
-  memcpy(data->rowSeparator,SEP_Row, 2);
-  data->showHeader = 0;
-  data->shellFlgs = SHFLG_Lookaside;
-  sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
+static void main_init(ShellState *p) {
+  memset(p, 0, sizeof(*p));
+  modeInit(&p->mode);
+  p->pAuxDb = &p->aAuxDb[0];
+  p->shellFlgs = SHFLG_Lookaside;
+  sqlite3_config(SQLITE_CONFIG_LOG, shellLog, p);
 #if !defined(SQLITE_SHELL_FIDDLE)
   verify_uninitialized();
 #endif
@@ -11832,46 +11862,43 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     if( cli_strcmp(z,"-init")==0 ){
       i++;
     }else if( cli_strcmp(z,"-html")==0 ){
-      data.mode = MODE_Html;
+      data.mode.eMode = MODE_Html;
     }else if( cli_strcmp(z,"-list")==0 ){
-      data.mode = MODE_List;
+      data.mode.eMode = MODE_List;
     }else if( cli_strcmp(z,"-quote")==0 ){
-      data.mode = MODE_Quote;
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator, SEP_Comma);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator, SEP_Row);
+      data.mode.eMode = MODE_Quote;
+      modeSetStr(&data.mode.spec.zColumnSep, SEP_Comma);
+      modeSetStr(&data.mode.spec.zRowSep, SEP_Row);
     }else if( cli_strcmp(z,"-line")==0 ){
-      data.mode = MODE_Line;
+      data.mode.eMode = MODE_Line;
     }else if( cli_strcmp(z,"-column")==0 ){
-      data.mode = MODE_Column;
-      if( (data.shellFlgs & SHFLG_HeaderSet)==0 ){
-        data.showHeader = 1;
-      }
+      data.mode.eMode = MODE_Column;
     }else if( cli_strcmp(z,"-json")==0 ){
-      data.mode = MODE_Json;
+      data.mode.eMode = MODE_Json;
     }else if( cli_strcmp(z,"-markdown")==0 ){
-      data.mode = MODE_Markdown;
+      data.mode.eMode = MODE_Markdown;
     }else if( cli_strcmp(z,"-table")==0 ){
-      data.mode = MODE_Table;
+      data.mode.eMode = MODE_Table;
     }else if( cli_strcmp(z,"-box")==0 ){
-      data.mode = MODE_Box;
+      data.mode.eMode = MODE_Box;
     }else if( cli_strcmp(z,"-csv")==0 ){
-      data.mode = MODE_Csv;
-      memcpy(data.colSeparator,",",2);
+      data.mode.eMode = MODE_Csv;
+      modeSetStr(&data.mode.spec.zColumnSep, SEP_Comma);
     }else if( cli_strcmp(z,"-escape")==0 && i+1<argc ){
       /* See similar code at tag-20250224-1 */
       const char *zEsc = argv[++i];
       int k;
-      for(k=0; k<ArraySize(shell_EscModeNames); k++){
-        if( sqlite3_stricmp(zEsc,shell_EscModeNames[k])==0 ){
-          data.eEscMode = k;
+      for(k=0; k<ArraySize(qrfEscNames); k++){
+        if( sqlite3_stricmp(zEsc,qrfEscNames[k])==0 ){
+          data.mode.spec.eEsc = k;
           break;
         }
       }
-      if( k>=ArraySize(shell_EscModeNames) ){
+      if( k>=ArraySize(qrfEscNames) ){
         sqlite3_fprintf(stderr, "unknown control character escape mode \"%s\""
                                 " - choices:", zEsc);
-        for(k=0; k<ArraySize(shell_EscModeNames); k++){
-          sqlite3_fprintf(stderr, " %s", shell_EscModeNames[k]);
+        for(k=0; k<ArraySize(qrfEscNames); k++){
+          sqlite3_fprintf(stderr, " %s", qrfEscNames[k]);
         }
         sqlite3_fprintf(stderr, "\n");
         exit(1);
@@ -11899,38 +11926,36 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.openFlags &= ~(SQLITE_OPEN_CREATE);
       if( data.openFlags==0 ) data.openFlags = SQLITE_OPEN_READWRITE;
     }else if( cli_strcmp(z,"-ascii")==0 ){
-      data.mode = MODE_Ascii;
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,SEP_Unit);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,SEP_Record);
+      data.mode.eMode = MODE_Ascii;
+      modeSetStr(&data.mode.spec.zColumnSep, SEP_Unit);
+      modeSetStr(&data.mode.spec.zRowSep, SEP_Record);
     }else if( cli_strcmp(z,"-tabs")==0 ){
-      data.mode = MODE_List;
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,SEP_Tab);
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,SEP_Row);
+      data.mode.eMode = MODE_List;
+      modeSetStr(&data.mode.spec.zColumnSep, SEP_Tab);
+      modeSetStr(&data.mode.spec.zRowSep, SEP_Row);
     }else if( cli_strcmp(z,"-separator")==0 ){
-      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
-                       "%s",cmdline_option_value(argc,argv,++i));
+      modeSetStr(&data.mode.spec.zColumnSep, 
+                       cmdline_option_value(argc,argv,++i));
     }else if( cli_strcmp(z,"-newline")==0 ){
-      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
-                       "%s",cmdline_option_value(argc,argv,++i));
+      modeSetStr(&data.mode.spec.zRowSep, 
+                       cmdline_option_value(argc,argv,++i));
     }else if( cli_strcmp(z,"-nullvalue")==0 ){
-      sqlite3_snprintf(sizeof(data.nullValue), data.nullValue,
-                       "%s",cmdline_option_value(argc,argv,++i));
+     modeSetStr(&data.mode.spec.zNull, 
+                       cmdline_option_value(argc,argv,++i));
     }else if( cli_strcmp(z,"-header")==0 ){
-      data.showHeader = 1;
-      ShellSetFlag(&data, SHFLG_HeaderSet);
+      data.mode.spec.bColumnNames = QRF_Yes;
      }else if( cli_strcmp(z,"-noheader")==0 ){
-      data.showHeader = 0;
-      ShellSetFlag(&data, SHFLG_HeaderSet);
+      data.mode.spec.bColumnNames = QRF_No;
     }else if( cli_strcmp(z,"-echo")==0 ){
-      ShellSetFlag(&data, SHFLG_Echo);
+      data.mode.bEcho = 1;
     }else if( cli_strcmp(z,"-eqp")==0 ){
-      data.autoEQP = AUTOEQP_on;
+      data.mode.autoEQP = AUTOEQP_on;
     }else if( cli_strcmp(z,"-eqpfull")==0 ){
-      data.autoEQP = AUTOEQP_full;
+      data.mode.autoEQP = AUTOEQP_full;
     }else if( cli_strcmp(z,"-stats")==0 ){
       data.statsOn = 1;
     }else if( cli_strcmp(z,"-scanstats")==0 ){
-      data.scanstatsOn = 1;
+      data.mode.scanstatsOn = 1;
     }else if( cli_strcmp(z,"-backslash")==0 ){
       /* Undocumented command-line option: -backslash
       ** Causes C-style backslash escapes to be evaluated in SQL statements
@@ -12035,7 +12060,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       eputz("Use -help for a list of options.\n");
       return 1;
     }
-    data.cMode = data.mode;
   }
 
   if( !readStdin ){
@@ -12147,7 +12171,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   for(i=0; i<argcToFree; i++) free(argvToFree[i]);
   free(argvToFree);
 #endif
-  free(data.colWidth);
+  modeFree(&data.mode);
   free(data.zNonce);
   free(data.dot.azArg);
   free(data.dot.aiOfst);
