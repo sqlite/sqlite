@@ -1027,7 +1027,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           let ptr = k1.pointer;
           k1.dispose();
           T.assert(undefined === k1.pointer).
-            mustThrowMatching(()=>{k1.$pP=1}, /disposed instance/);
+            mustThrowMatching(()=>{k1.$pP=1}, /disposed struct instance/);
         }finally{
           k1.dispose();
           k2.dispose();

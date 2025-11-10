@@ -5521,38 +5521,41 @@ static void clearTempFile(ShellState *p){
   p->zTempFile = 0;
 }
 
+/* Forward reference */
+static char *find_home_dir(int clearFlag);
+
 /*
 ** Create a new temp file name with the given suffix.
+**
+** Because the classic temp folders like /tmp are no longer
+** accessible to web browsers, for security reasons, create the
+** temp file in the user's home directory.
 */
 static void newTempFile(ShellState *p, const char *zSuffix){
+  char *zHome;          /* Home directory */
+  int i;                /* Loop counter */
+  sqlite3_uint64 r = 0; /* Integer with 64 bits of randomness */
+  char zRand[32];       /* Text string with 160 bits of randomness */
+#ifdef _WIN32
+  const char cDirSep = '\\';
+#else
+  const char cDirSep = '/';
+#endif
+
+  for(i=0; i<31; i++){
+    if( (i%12)==0 ) sqlite3_randomness(sizeof(r),&r);
+    zRand[i] = "0123456789abcdefghijklmnopqrstuvwxyz"[r%36];
+    r /= 36;
+  }
+  zRand[i] = 0;
   clearTempFile(p);
   sqlite3_free(p->zTempFile);
   p->zTempFile = 0;
-  if( p->db ){
-    sqlite3_file_control(p->db, 0, SQLITE_FCNTL_TEMPFILENAME, &p->zTempFile);
-  }
-  if( p->zTempFile==0 ){
-    /* If p->db is an in-memory database then the TEMPFILENAME file-control
-    ** will not work and we will need to fallback to guessing */
-    char *zTemp;
-    sqlite3_uint64 r;
-    sqlite3_randomness(sizeof(r), &r);
-    zTemp = getenv("TEMP");
-    if( zTemp==0 ) zTemp = getenv("TMP");
-    if( zTemp==0 ){
-#ifdef _WIN32
-      zTemp = "\\tmp";
-#else
-      zTemp = "/tmp";
-#endif
-    }
-    p->zTempFile = sqlite3_mprintf("%s/temp%llx.%s", zTemp, r, zSuffix);
-  }else{
-    p->zTempFile = sqlite3_mprintf("%z.%s", p->zTempFile, zSuffix);
-  }
+  zHome = find_home_dir(0);
+  p->zTempFile = sqlite3_mprintf("%s%ctemp-%s.%s",
+                                 zHome,cDirSep,zRand,zSuffix);
   shell_check_oom(p->zTempFile);
 }
-
 
 /*
 ** The implementation of SQL scalar function fkey_collate_clause(), used
@@ -7557,6 +7560,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     p->showHeader = savedShowHeader;
     p->shellFlgs = savedShellFlags;
+    rc = p->nErr>0;
   }else
 
   if( c=='e' && cli_strncmp(azArg[0], "echo", n)==0 ){

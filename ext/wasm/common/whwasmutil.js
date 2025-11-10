@@ -227,6 +227,14 @@ globalThis.WhWasmUtilInstaller = function(target){
       all args with a space between each. */
   const toss = (...args)=>{throw new Error(args.join(' '))};
 
+  if( !target.pointerSize && !target.pointerIR
+      && target.alloc && target.dealloc ){
+    /* Try to determine the pointer size by allocating. */
+    const ptr = target.alloc(1);
+    target.pointerSize = ('bigint'===typeof ptr ? 8 : 4);
+    target.dealloc(ptr);
+  }
+
   /**
      As of 2025-09-21, this library works with 64-bit WASM modules
      built with Emscripten's -sMEMORY64=1.
@@ -996,12 +1004,12 @@ globalThis.WhWasmUtilInstaller = function(target){
      target.heap8u().
   */
   target.cstrlen = function(ptr){
-    if(!ptr || !target.isPtr(ptr)) return null;
+    if(!ptr || !target.isPtr/*64*/(ptr)) return null;
     ptr = Number(ptr) /*tag:64bit*/;
     const h = heapWrappers().HEAP8U;
     let pos = ptr;
     for( ; h[pos] !== 0; ++pos ){}
-    return Number(pos - ptr);
+    return pos - ptr;
   };
 
   /** Internal helper to use in operations which need to distinguish
