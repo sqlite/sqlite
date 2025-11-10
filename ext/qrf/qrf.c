@@ -1787,7 +1787,6 @@ static void qrfOneJsonRow(Qrf *p){
   int i, nItem; 
   for(nItem=i=0; i<p->nCol; i++){
     const char *zCName;
-    if( sqlite3_column_type(p->pStmt,i)==SQLITE_NULL ) continue;
     zCName = sqlite3_column_name(p->pStmt, i);
     if( nItem>0 ) sqlite3_str_append(p->pOut, ",", 1);
     nItem++;
