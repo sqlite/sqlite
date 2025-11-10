@@ -799,22 +799,6 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
      environment via whwashutil.js.
   */
   Object.assign(wasm, {
-    /**
-       The WASM IR (Intermediate Representation) value for
-       pointer-type values. If set then it MUST be one of 'i32' or
-       'i64' (else an exception will be thrown). If it's not set, it
-       will default to 'i32'.
-    */
-    pointerIR: config.wasmPtrIR,
-
-    /**
-       True if BigInt support was enabled via (e.g.) the
-       Emscripten -sWASM_BIGINT flag, else false. When
-       enabled, certain 64-bit sqlite3 APIs are enabled which
-       are not otherwise enabled due to JS/WASM int64
-       impedance mismatches.
-    */
-    bigIntEnabled: !!config.bigIntEnabled,
 
     /**
        The symbols exported by the WASM environment.
@@ -833,6 +817,29 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       || toss3("API config object requires a WebAssembly.Memory object",
               "in either config.exports.memory (exported)",
               "or config.memory (imported)."),
+
+    /**
+       The WASM pointer size. If set then it MUST be one of 4 or 8 and
+       it MUST correspond to the WASM environment's pointer size. We
+       figure out the size by calling some un-JS-wrapped WASM function
+       which returns a pointer-type value. If that value is a BigInt,
+       it's 64-bit, else it's 32-bit. The pieces which populate
+       sqlite3.wasm (whwasmutil.js) can figure this out _if_ they can
+       allocate, but we have a chicken/egg situation there which makes
+       it illegal for that code to invoke wasm.dealloc() at the time
+       it would be needed. So we need to configure it ahead of time
+       (here) instead.
+    */
+    pointerSize: ('number'===typeof config.exports.sqlite3_libversion()) ? 4 : 8,
+
+    /**
+       True if BigInt support was enabled via (e.g.) the
+       Emscripten -sWASM_BIGINT flag, else false. When
+       enabled, certain 64-bit sqlite3 APIs are enabled which
+       are not otherwise enabled due to JS/WASM int64
+       impedance mismatches.
+    */
+    bigIntEnabled: !!config.bigIntEnabled,
 
     /**
        WebAssembly.Table object holding the indirect function call
