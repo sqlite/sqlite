@@ -211,4 +211,16 @@ if {[clang_sanitize_address]==0 && 0} {
   } {1 {(21) bad parameter or other API misuse}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_test misuse-6.0 {
+  sqlite3_set_errmsg db 1 "an error has occurred"
+} {SQLITE_OK}
+do_test misuse-6.1 {
+  sqlite3_errmsg db
+} {an error has occurred}
+do_test misuse-6.2 {
+  sqlite3_set_errmsg "" 1 "an error has occurred"
+} {SQLITE_MISUSE}
+
 finish_test
