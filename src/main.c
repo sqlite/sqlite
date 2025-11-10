@@ -1394,6 +1394,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   /* Clear the TEMP schema separately and last */
   if( db->aDb[1].pSchema ){
     sqlite3SchemaClear(db->aDb[1].pSchema);
+    assert( db->aDb[1].pSchema->trigHash.count==0 );
   }
   sqlite3VtabUnlockList(db);
 
