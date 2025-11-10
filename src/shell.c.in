@@ -1200,7 +1200,6 @@ struct ShellState {
   sqlite3 *db;           /* The database */
   u8 autoExplain;        /* Automatically turn on .explain mode */
   u8 autoEQP;            /* Run EXPLAIN QUERY PLAN prior to each SQL stmt */
-  u8 autoEQPtest;        /* autoEQP is in test mode */
   u8 autoEQPtrace;       /* autoEQP is in trace mode */
   u8 scanstatsOn;        /* True to display scan stats before each finalize */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
@@ -1219,6 +1218,7 @@ struct ShellState {
   int outCount;          /* Revert to stdout when reaching zero */
   int cnt;               /* Number of records displayed so far */
   i64 lineno;            /* Line number of last line read from in */
+  const char *zInFile;   /* Name of the input file */
   int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
   FILE *in;              /* Read commands from this stream */
   FILE *out;             /* Write results here */
@@ -1266,6 +1266,15 @@ struct ShellState {
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
   ExpertInfo expert;     /* Valid if previous command was ".expert OPT..." */
 #endif
+  struct DotCmdLine {    /* Info about arguments to a dot-command */
+    const char *zOrig;      /* Original text of the dot-command */
+    char *zCopy;            /* Copy of zOrig, from malloc() */
+    int nAlloc;             /* Size of allocates for arrays below */
+    int nArg;               /* Number of argument slots actually used */
+    char **azArg;           /* Pointer to each argument, dequoted */
+    int *aiOfst;            /* Offset into zOrig[] for start of each arg */
+    char *abQuot;           /* True if the argment was originally quoted */
+  } dot;
 #ifdef SQLITE_SHELL_FIDDLE
   struct {
     const char * zInput; /* Input string from wasm/JS proxy */
@@ -1446,6 +1455,20 @@ static void shellPutsFunc(
 }
 
 /*
+** Compute the name of the location of an input error in memory
+** obtained from sqlite3_malloc().
+*/
+static char *shellErrorLocation(ShellState *p){
+  char *zLoc;
+  if( p->zInFile==0 || strcmp(p->zInFile,"<stdin>")==0){
+    zLoc = sqlite3_mprintf("line %lld:", p->lineno);
+  }else{
+    zLoc = sqlite3_mprintf("%s:%lld:", p->zInFile, p->lineno);
+  }
+  return zLoc;
+}
+
+/*
 ** If in safe mode, print an error message described by the arguments
 ** and exit immediately.
 */
@@ -1457,13 +1480,49 @@ static void failIfSafeMode(
   if( p->bSafeMode ){
     va_list ap;
     char *zMsg;
+    char *zLoc = shellErrorLocation(p);
     va_start(ap, zErrMsg);
     zMsg = sqlite3_vmprintf(zErrMsg, ap);
     va_end(ap);
-    sqlite3_fprintf(stderr, "line %lld: %s\n", p->lineno, zMsg);
+    sqlite3_fprintf(stderr, "%s %s\n", zLoc, zMsg);
     exit(1);
   }
 }
+
+/*
+** Issue an error message from a dot-command.
+*/
+static void dotCmdError(
+  ShellState *p,       /* Shell state */
+  int iArg,            /* Index of argument on which error occurred */
+  const char *zBrief,  /* Brief (<20 character) error description */
+  const char *zDetail, /* Error details */
+  ...
+){
+  FILE *out = stderr;
+  char *zLoc = shellErrorLocation(p);
+  if( zBrief!=0 && iArg>=0 && iArg<p->dot.nArg ){
+    int i = p->dot.aiOfst[iArg];
+    int nPrompt = strlen(zBrief) + 5;
+    sqlite3_fprintf(out, "%s %s\n", zLoc, p->dot.zOrig);
+    if( i > nPrompt ){
+      sqlite3_fprintf(out, "%s %*s%s ---^\n", zLoc, 1+i-nPrompt, "", zBrief);
+    }else{
+      sqlite3_fprintf(out, "%s %*s^--- %s\n", zLoc, i, "", zBrief);
+    }
+  }
+  if( zDetail ){
+    char *zMsg;
+    va_list ap;
+    va_start(ap, zDetail);
+    zMsg = sqlite3_vmprintf(zDetail,ap);
+    va_end(ap);
+    sqlite3_fprintf(out,"%s %s\n", zLoc, zMsg);
+    sqlite3_free(zMsg);
+  }
+  sqlite3_free(zLoc);
+}
+  
 
 /*
 ** SQL function:   edit(VALUE)
@@ -6884,12 +6943,13 @@ static int faultsim_callback(int iArg){
 **
 ** Return 1 on error, 2 to exit, and 0 otherwise.
 */
-static int do_meta_command(char *zLine, ShellState *p){
+static int do_meta_command(const char *zLine, ShellState *p){
   int h = 1;
   int nArg = 0;
   int n, c;
   int rc = 0;
-  char *azArg[52];
+  char *z;
+  char **azArg;
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
   if( p->expert.pExpert ){
@@ -6899,27 +6959,51 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   /* Parse the input line into tokens.
   */
-  while( zLine[h] && nArg<ArraySize(azArg)-1 ){
-    while( IsSpace(zLine[h]) ){ h++; }
-    if( zLine[h]==0 ) break;
-    if( zLine[h]=='\'' || zLine[h]=='"' ){
-      int delim = zLine[h++];
-      azArg[nArg++] = &zLine[h];
-      while( zLine[h] && zLine[h]!=delim ){
-        if( zLine[h]=='\\' && delim=='"' && zLine[h+1]!=0 ) h++;
+  p->dot.zOrig = zLine;
+  free(p->dot.zCopy);
+  z = p->dot.zCopy = strdup(zLine);
+  shell_check_oom(z);
+  nArg = 0;
+  while( z[h] ){
+    while( IsSpace(z[h]) ){ h++; }
+    if( z[h]==0 ) break;
+    if( nArg+2>p->dot.nAlloc ){
+      p->dot.nAlloc = nArg+22;
+      p->dot.azArg = realloc(p->dot.azArg,p->dot.nAlloc*sizeof(char*));
+      shell_check_oom(p->dot.azArg);
+      p->dot.aiOfst = realloc(p->dot.aiOfst,p->dot.nAlloc*sizeof(int));
+      shell_check_oom(p->dot.aiOfst);
+      p->dot.abQuot = realloc(p->dot.abQuot,p->dot.nAlloc);
+      shell_check_oom(p->dot.abQuot);
+    }
+    if( z[h]=='\'' || z[h]=='"' ){
+      int delim = z[h++];
+      p->dot.abQuot[nArg] = 1;
+      p->dot.azArg[nArg] = &z[h];
+      p->dot.aiOfst[nArg] = h;
+      while( z[h] && z[h]!=delim ){
+        if( z[h]=='\\' && delim=='"' && z[h+1]!=0 ) h++;
         h++;
       }
-      if( zLine[h]==delim ){
-        zLine[h++] = 0;
+      if( z[h]==delim ){
+        z[h++] = 0;
       }
-      if( delim=='"' ) resolve_backslashes(azArg[nArg-1]);
+      if( delim=='"' ) resolve_backslashes(p->dot.azArg[nArg]);
     }else{
-      azArg[nArg++] = &zLine[h];
-      while( zLine[h] && !IsSpace(zLine[h]) ){ h++; }
-      if( zLine[h] ) zLine[h++] = 0;
+      p->dot.abQuot[nArg] = 0;
+      p->dot.azArg[nArg] = &z[h];
+      p->dot.aiOfst[nArg] = h;
+      while( z[h] && !IsSpace(z[h]) ){ h++; }
+      if( z[h] ) z[h++] = 0;
     }
+    nArg++;
   }
-  azArg[nArg] = 0;
+  p->dot.nArg = nArg;
+  if( p->dot.nAlloc==0 ){
+    return 0;  /* No input tokens */
+  }
+  p->dot.azArg[nArg] = 0;
+  azArg = p->dot.azArg;
 
   /* Process the input line.
   */
@@ -6978,7 +7062,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           bAsync = 1;
         }else
         {
-          sqlite3_fprintf(stderr,"unknown option: %s\n", azArg[j]);
+          dotCmdError(p, j, "unknown option", "should be -append or -async");
           return 1;
         }
       }else if( zDestFile==0 ){
@@ -7254,8 +7338,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( nArg>1 ) break;
     }
     if( nArg>1 && ii==ArraySize(aDbConfig) ){
-      sqlite3_fprintf(stderr,"Error: unknown dbconfig \"%s\"\n", azArg[1]);
-      eputz("Enter \".dbconfig\" with no arguments for a list\n");
+      dotCmdError(p, 1, "unknown dbconfig",
+         "Enter \".dbconfig\" with no arguments for a list");
     }
   }else
 
@@ -7285,8 +7369,9 @@ static int do_meta_command(char *zLine, ShellState *p){
         if( z[0]=='-' ) z++;
         if( cli_strcmp(z,"preserve-rowids")==0 ){
 #ifdef SQLITE_OMIT_VIRTUALTABLE
-          eputz("The --preserve-rowids option is not compatible"
-                " with SQLITE_OMIT_VIRTUALTABLE\n");
+          dotCmdError(p, i, "unable",
+            "The --preserve-rowids option is not compatible"
+                " with SQLITE_OMIT_VIRTUALTABLE");
           rc = 1;
           sqlite3_free(zLike);
           goto meta_command_exit;
@@ -7304,8 +7389,7 @@ static int do_meta_command(char *zLine, ShellState *p){
           ShellSetFlag(p, SHFLG_DumpNoSys);
         }else
         {
-          sqlite3_fprintf(stderr,
-               "Unknown option \"%s\" on \".dump\"\n", azArg[i]);
+          dotCmdError(p, i, "unknown option", 0);
           rc = 1;
           sqlite3_free(zLike);
           goto meta_command_exit;
@@ -7402,7 +7486,6 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='e' && cli_strncmp(azArg[0], "eqp", n)==0 ){
     if( nArg==2 ){
-      p->autoEQPtest = 0;
       if( p->autoEQPtrace ){
         if( p->db ) sqlite3_exec(p->db, "PRAGMA vdbe_trace=OFF;", 0, 0, 0);
         p->autoEQPtrace = 0;
@@ -7412,9 +7495,6 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else if( cli_strcmp(azArg[1],"trigger")==0 ){
         p->autoEQP = AUTOEQP_trigger;
 #ifdef SQLITE_DEBUG
-      }else if( cli_strcmp(azArg[1],"test")==0 ){
-        p->autoEQP = AUTOEQP_on;
-        p->autoEQPtest = 1;
       }else if( cli_strcmp(azArg[1],"trace")==0 ){
         p->autoEQP = AUTOEQP_full;
         p->autoEQPtrace = 1;
@@ -8342,7 +8422,9 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     if( !chng ){
       if( p->mode==MODE_Column
-       || (p->mode>=MODE_Markdown && p->mode<=MODE_Box)
+       || p->mode==MODE_Box
+       || p->mode==MODE_Table
+       || p->mode>=MODE_Markdown
       ){
         sqlite3_fprintf(p->out,
               "current output mode: %s --wrap %d --wordwrap %s "
@@ -8922,7 +9004,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       sqlite3_fprintf(stderr,"Error: cannot open \"%s\"\n", azArg[1]);
       rc = 1;
     }else{
-      rc = process_input(p, azArg[1]);
+      char *zFilename = strdup(azArg[1]);
+      rc = process_input(p, zFilename);
+      free(zFilename);
       fclose(p->in);
     }
     p->in = inSaved;
@@ -10551,7 +10635,6 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='w' && cli_strncmp(azArg[0], "width", n)==0 ){
     int j;
-    assert( nArg<=ArraySize(azArg) );
     p->nWidth = nArg-1;
     p->colWidth = realloc(p->colWidth, (p->nWidth+1)*sizeof(short int)*2);
     if( p->colWidth==0 && p->nWidth>0 ) shell_out_of_memory();
@@ -10913,6 +10996,8 @@ static int process_input(ShellState *p, const char *zSrc){
   int errCnt = 0;           /* Number of errors seen */
   i64 startline = 0;        /* Line number for start of current input */
   QuickScanState qss = QSS_Start; /* Accumulated line status (so far) */
+  const char *saved_zInFile;      /* Prior value of p->zInFile */
+  i64 saved_lineno;               /* Prior value of p->lineno */
 
   if( p->inputNesting==MAX_INPUT_NESTING ){
     /* This will be more informative in a later version. */
@@ -10921,6 +11006,9 @@ static int process_input(ShellState *p, const char *zSrc){
     return 1;
   }
   ++p->inputNesting;
+  saved_zInFile = p->zInFile;
+  p->zInFile = zSrc;
+  saved_lineno = p->lineno;
   p->lineno = 0;
   CONTINUE_PROMPT_RESET;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
@@ -11018,6 +11106,8 @@ static int process_input(ShellState *p, const char *zSrc){
   free(zSql);
   free(zLine);
   --p->inputNesting;
+  p->zInFile = saved_zInFile;
+  p->lineno = saved_lineno;
   return errCnt>0;
 }
 
@@ -11956,6 +12046,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     for(i=0; i<nCmd; i++){
       echo_group_input(&data, azCmd[i]);
       if( azCmd[i][0]=='.' ){
+        data.zInFile = "<cmdline>";
         rc = do_meta_command(azCmd[i], &data);
         if( rc ){
           if( rc==2 ) rc = 0;
@@ -12058,6 +12149,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
   free(data.colWidth);
   free(data.zNonce);
+  free(data.dot.azArg);
+  free(data.dot.aiOfst);
+  free(data.dot.abQuot);
   /* Clear the global data structure so that valgrind will detect memory
   ** leaks */
   memset(&data, 0, sizeof(data));
