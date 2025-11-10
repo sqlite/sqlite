@@ -504,8 +504,16 @@ void sqlite3SchemaClear(void *p){
   temp2 = pSchema->trigHash;
   sqlite3HashInit(&pSchema->trigHash);
   sqlite3HashClear(&pSchema->idxHash);
-  for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
-    sqlite3DeleteTrigger(&xdb, (Trigger*)sqliteHashData(pElem));
+  for(pElem=sqliteHashFirst(&temp2); pElem; ){
+    HashElem *pNext = sqliteHashNext(pElem);
+    Trigger *pTrig = (Trigger*)sqliteHashData(pElem);
+    if( pTrig->bReturning ){
+      /* Do not remove RETURNING triggers from the temp-triggers hash */
+      sqlite3HashTransfer(&pSchema->trigHash, &temp2, pElem);
+    }else{
+      sqlite3DeleteTrigger(&xdb, pTrig);
+    }
+    pElem = pNext;
   }
   sqlite3HashClear(&temp2);
   sqlite3HashInit(&pSchema->tblHash);
