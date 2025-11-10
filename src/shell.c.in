@@ -1396,7 +1396,7 @@ static const unsigned char aQrfStyle[] = {
   /* box */          QRF_STYLE_Box,
   /* count */        QRF_STYLE_Count,
   /* off */          QRF_STYLE_Off,
-  /* www */          108,
+  /* www */          QRF_STYLE_Html,
 };
 
 /*
@@ -1738,41 +1738,6 @@ static void output_c_string(FILE *out, const char *z){
 }
 
 /*
-** Output the given string with characters that are special to
-** HTML escaped.
-*/
-static void output_html_string(FILE *out, const char *z){
-  int i;
-  if( z==0 ) z = "";
-  while( *z ){
-    for(i=0;   z[i]
-            && z[i]!='<'
-            && z[i]!='&'
-            && z[i]!='>'
-            && z[i]!='\"'
-            && z[i]!='\'';
-        i++){}
-    if( i>0 ){
-      sqlite3_fprintf(out, "%.*s",i,z);
-    }
-    if( z[i]=='<' ){
-      sqlite3_fputs("&lt;", out);
-    }else if( z[i]=='&' ){
-      sqlite3_fputs("&amp;", out);
-    }else if( z[i]=='>' ){
-      sqlite3_fputs("&gt;", out);
-    }else if( z[i]=='\"' ){
-      sqlite3_fputs("&quot;", out);
-    }else if( z[i]=='\'' ){
-      sqlite3_fputs("&#39;", out);
-    }else{
-      break;
-    }
-    z += i + 1;
-  }
-}
-
-/*
 ** This routine runs when the user presses Ctrl-C
 */
 static void interrupt_handler(int NotUsed){
@@ -2089,65 +2054,6 @@ static int progress_handler(void *pClientData) {
   return 0;
 }
 #endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
-
-/*
-** This is the callback routine that the shell
-** invokes for each row of a query result.
-*/
-static int shell_callback(
-  void *pArg,
-  int nArg,        /* Number of result columns */
-  char **azArg,    /* Text of each result column */
-  char **azCol,    /* Column names */
-  int *aiType      /* Column types.  Might be NULL */
-){
-  int i;
-  ShellState *p = (ShellState*)pArg;
-
-  if( azArg==0 ) return 0;
-  switch( p->cMode ){
-    case MODE_Count:  assert(0);   break;
-    case MODE_Off:    assert(0);   break;
-    case MODE_Line:   assert(0);   break;
-    case MODE_List:  assert(0);   break;
-    case MODE_Html:  assert(0);   break;
-    case MODE_Www: {
-      if( p->cnt==0 && p->cMode==MODE_Www ){
-        sqlite3_fputs(
-          "</PRE>\n"
-          "<TABLE border='1' cellspacing='0' cellpadding='2'>\n"
-          ,p->out
-        );
-      }
-      if( p->cnt==0 && (p->showHeader || p->cMode==MODE_Www) ){
-        sqlite3_fputs("<TR>", p->out);
-        for(i=0; i<nArg; i++){
-          sqlite3_fputs("<TH>", p->out);
-          output_html_string(p->out, azCol[i]);
-          sqlite3_fputs("</TH>\n", p->out);
-        }
-        sqlite3_fputs("</TR>\n", p->out);
-      }
-      p->cnt++;
-      if( azArg==0 ) break;
-      sqlite3_fputs("<TR>", p->out);
-      for(i=0; i<nArg; i++){
-        sqlite3_fputs("<TD>", p->out);
-        output_html_string(p->out, azArg[i] ? azArg[i] : p->nullValue);
-        sqlite3_fputs("</TD>\n", p->out);
-      }
-      sqlite3_fputs("</TR>\n", p->out);
-      break;
-    }
-    case MODE_Tcl:      assert(0); break;
-    case MODE_Csv:      assert(0); break;
-    case MODE_Insert:   assert(0); break;
-    case MODE_Json:     assert(0); break;
-    case MODE_Quote:    assert(0); break;
-    case MODE_Ascii:    assert(0); break;
-  }
-  return 0;
-}
 
 /*
 ** This is the callback routine from sqlite3_exec() that appends all
@@ -2711,86 +2617,6 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
   sqlite3_finalize(pQ);
 }
 
-/*
-** Run a prepared statement
-*/
-static void exec_prepared_stmt(
-  ShellState *pArg,                                /* Pointer to ShellState */
-  sqlite3_stmt *pStmt                              /* Statement to run */
-){
-  int rc;
-  sqlite3_uint64 nRow = 0;
-
-  assert( pArg->cMode!=MODE_Column );
-  assert( pArg->cMode!=MODE_Table );
-  assert( pArg->cMode!=MODE_Box );
-  assert( pArg->cMode!=MODE_Markdown );
-
-  /* perform the first step.  this will tell us if we
-  ** have a result set or not and how wide it is.
-  */
-  rc = sqlite3_step(pStmt);
-  /* if we have a result set... */
-  if( SQLITE_ROW == rc ){
-    /* allocate space for col name ptr, value ptr, and type */
-    int nCol = sqlite3_column_count(pStmt);
-    void *pData = sqlite3_malloc64(3*nCol*sizeof(const char*) + 1);
-    if( !pData ){
-      shell_out_of_memory();
-    }else{
-      char **azCols = (char **)pData;      /* Names of result columns */
-      char **azVals = &azCols[nCol];       /* Results */
-      int *aiTypes = (int *)&azVals[nCol]; /* Result types */
-      int i, x;
-      assert(sizeof(int) <= sizeof(char *));
-      /* save off ptrs to column names */
-      for(i=0; i<nCol; i++){
-        azCols[i] = (char *)sqlite3_column_name(pStmt, i);
-      }
-      do{
-        nRow++;
-        /* extract the data and data types */
-        for(i=0; i<nCol; i++){
-          aiTypes[i] = x = sqlite3_column_type(pStmt, i);
-          if( x==SQLITE_BLOB
-           && pArg
-           && (pArg->cMode==MODE_Insert || pArg->cMode==MODE_Quote)
-          ){
-            azVals[i] = "";
-          }else{
-            azVals[i] = (char*)sqlite3_column_text(pStmt, i);
-          }
-          if( !azVals[i] && (aiTypes[i]!=SQLITE_NULL) ){
-            rc = SQLITE_NOMEM;
-            break; /* from for */
-          }
-        } /* end for */
-
-        /* if data and types extracted successfully... */
-        if( SQLITE_ROW == rc ){
-          /* call the supplied callback with the result row data */
-          if( shell_callback(pArg, nCol, azVals, azCols, aiTypes) ){
-            rc = SQLITE_ABORT;
-          }else{
-            rc = sqlite3_step(pStmt);
-          }
-        }
-      } while( SQLITE_ROW == rc );
-      sqlite3_free(pData);
-      if( pArg->cMode==MODE_Json ){
-        sqlite3_fputs("]\n", pArg->out);
-      }else if( pArg->cMode==MODE_Www ){
-        sqlite3_fputs("</TABLE>\n<PRE>\n", pArg->out);
-      }else if( pArg->cMode==MODE_Count ){
-        char zBuf[200];
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "%llu row%s\n",
-                         nRow, nRow!=1 ? "s" : "");
-        printf("%s", zBuf);
-      }
-    }
-  }
-}
-
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
 /*
 ** This function is called to process SQL if the previous shell command
@@ -2980,7 +2806,7 @@ static int shell_exec(
     default:               spec.eEsc = QRF_ESC_Off;    break;
   }
   spec.bColumnNames = pArg->showHeader!=0 ? QRF_SW_On : QRF_SW_Off;
-  switch( pArg->cMode ){
+  switch( pArg->mode ){
     case MODE_Insert: {
       if( ShellHasFlag(pArg, SHFLG_PreserveRowid) ){
         spec.bColumnNames = QRF_SW_On;
@@ -3000,14 +2826,8 @@ static int shell_exec(
       break;
     }
   }
-  if( pArg->cMode>=0
-   && pArg->cMode<ArraySize(aQrfStyle)
-   && aQrfStyle[pArg->cMode]<100
-  ){
-    eStyle = aQrfStyle[pArg->cMode];
-  }else{
-    eStyle = 199;
-  }
+  assert( pArg->mode>=0 && pArg->mode<ArraySize(aQrfStyle) );
+  eStyle = aQrfStyle[pArg->mode];
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
   if( pArg->expert.pExpert ){
@@ -3066,11 +2886,18 @@ static int shell_exec(
       if( isExplain && pArg->autoExplain ){
         spec.eStyle = isExplain==1 ? QRF_STYLE_Explain : QRF_STYLE_Eqp;
         sqlite3_format_query_result(pStmt, &spec, pzErrMsg);
-      }else if( eStyle<100 ){
+      }else if( pArg->mode==MODE_Www ){
+        sqlite3_fprintf(pArg->out,
+              "</PRE>\n"
+              "<TABLE border='1' cellspacing='0' cellpadding='2'>\n");
+        spec.eStyle = QRF_STYLE_Html;
+        sqlite3_format_query_result(pStmt, &spec, pzErrMsg);
+        sqlite3_fprintf(pArg->out,
+              "</TABLE>\n"
+              "<PRE>");
+      }else{
         spec.eStyle = eStyle;
         sqlite3_format_query_result(pStmt, &spec, pzErrMsg);
-      }else{
-        exec_prepared_stmt(pArg, pStmt);
       }
 
       /* print usage stats if stats on */
