@@ -1,5 +1,5 @@
-C Have\ssqlite3_set_errmsg()\sreturn\sSQLITE_MISUSE\sif\sa\sNULL\sdb\shandle\sis\spassed\sto\sit,\sas\sdocumented.
-D 2025-11-10T10:47:29.125
+C A\smore\scompact\sfix\sfor\sthe\sproblem\sfirst\sfixed\sby\s[5f5a736f88].
+D 2025-11-10T11:00:41.647
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -695,7 +695,7 @@ F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
 F src/json.c fb031340edee159c07ad37dbe668ffe945ed86f525b0eb3822e4a67cbc498a72
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c a3bc9a2522dc3b960e38b7582d1818f6245a49289387c2c7b19f27bfeabf1e81
-F src/main.c 3ab13efaa8addf25ee91dcd0888ffde9f350fa63838860d1776a0c6896118817
+F src/main.c 35e41b17b6355832498d4dd32b4db58dec5990190b5bc08bc210e4c6e73583be
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bb4fd5b789cebf2b224c29023fea3e620a86fb36730c36c0d85d9f35880bf643
-R 1d43d8f3a63ddfb56776a1fc102351ae
+P 5f5a736f88bc9bc6c9c83d2cbfd74c0b5357d7417d9993d34a78f0b7317ff796
+R 063b6dde440b74ad735818553471f1b0
 U dan
-Z 1fb8c05c0966999b33c2e02a86182d32
+Z dc3b424719650257d28cf4ee0f902a19
 # Remove this line to create a well-formed Fossil manifest.
