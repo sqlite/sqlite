@@ -1,5 +1,5 @@
-C Avoid\sdropping\sRETURNING\striggers\swhen\sthe\sschema\sis\sreset\swhile\spreparing\sa\sstatement.
-D 2025-11-10T19:11:15.510
+C Improved\sconcurrency\sfor\s"make\sdevtest"\sby\ssplitting\sfuzzdata1.db\sand\nfuzzdata2.db\sinto\sslices\sfor\sasan\sand\subsan\stesting.
+D 2025-11-10T20:01:39.258
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1689,7 +1689,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
-F test/testrunner.tcl 60d7efa1816c5dfc37df3e3454b94b9042c0c8c50b27ae296d4a797cd309ace6 x
+F test/testrunner.tcl 86179a8e78997e9257cb8f738c5624cb23897da5297855578ba74715e64f1602 x
 F test/testrunner_data.tcl c507a9afa911c03446ed90442ffd4a98aca02882c3d51bd1177c24795674def8
 F test/testrunner_estwork.tcl 7927a84327259a32854926f68a75292e33a61e7e052fdbfcb01f18696c99c724
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2167,9 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 62ad2350e368dc337ba2d0fb6847d07c40a6f79520dd6414d22b5b54983b0b12 e26bcef7522a6f6ee8d55fa30e7fe06419566cf4e8c2df0c33c92a4c89f58c05
-R 6a09bc20a679f411d2e7dd8b4866d82d
-T +closed e26bcef7522a6f6ee8d55fa30e7fe06419566cf4e8c2df0c33c92a4c89f58c05
-U dan
-Z 46d8d131081d65b42355f1e81a2148d3
+P 45d820ca227eb1ade4dda498b0f94b2c5df4bab3fc5fcdd517ee125a43d16f4d
+R c02353342359a64f90fec87b4fb2bd13
+U drh
+Z 0c51bc37cf181ef87235fa1f14598ce5
 # Remove this line to create a well-formed Fossil manifest.
