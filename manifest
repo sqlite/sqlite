@@ -1,5 +1,5 @@
-C A\smore\scompact\sfix\sfor\sthe\sproblem\sfirst\sfixed\sby\s[5f5a736f88].
-D 2025-11-10T11:00:41.647
+C Fix\sa\smissing\sva_end()\scall\sin\sthe\sintckMprintf()\sfunction\sof\sthe\nincremental\sintegrity-check\sextension.
+D 2025-11-10T11:05:36.073
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -284,7 +284,7 @@ F ext/intck/intck_common.tcl a61fd2697ae55b0a3d89847ca0b590c6e0d8ff64bebb70920d9
 F ext/intck/intckbusy.test d5ed4ef85a4b1dc1dee2484bd14a4bb68529659cca743327df0c775f005fa387
 F ext/intck/intckcorrupt.test f6c302792326fb3db9dcfc70b554c55369bc4b52882eaaf039cfe0b74c821029
 F ext/intck/intckfault.test cff3f75dff74abb3edfcb13f6aa53f6436746ab64b09fe5e2028f051e985efab
-F ext/intck/sqlite3intck.c 0d10df36e2b7b438aa80ecd3f5e584d41b747586b038258fe6b407f66b81e7c5
+F ext/intck/sqlite3intck.c b1c8a86f90fc00741d13314db9c58f7e2f92d1d19c5ad1c6904ec83a6bbd5c96
 F ext/intck/sqlite3intck.h 2b40c38e7063ab822c974c0bd4aed97dabb579ccfe2e180a4639bb3bbef0f1c9
 F ext/intck/test_intck.c 4f9eaadaedccb9df1d26ba41116a0a8e5b0c5556dc3098c8ff68633adcccdea8
 F ext/jni/GNUmakefile 8a94e3a1953b88cf117fb2a5380480feada8b4f5316f02572cab425030a720b4
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5f5a736f88bc9bc6c9c83d2cbfd74c0b5357d7417d9993d34a78f0b7317ff796
-R 063b6dde440b74ad735818553471f1b0
-U dan
-Z dc3b424719650257d28cf4ee0f902a19
+P 7a644178c8d289ca18631844b2d73b32fddc72afcc80906633dd38c14eba2ca9
+R bd6b05ffc04557a9ff7d69a81e6084d5
+U drh
+Z a1230748ab427e1519659da8a04065cb
 # Remove this line to create a well-formed Fossil manifest.
