@@ -2063,6 +2063,7 @@ static void DbHookCmd(
 **     -columnnames ("auto"|"off"|"on")        Show column names?
 **     -wordwrap ("auto"|"off"|"on")           Try to wrap at word boundry?
 **     -textjsonb ("auto"|"off"|"on")          Auto-convert JSONB to text?
+**     -textnull ("auto"|"off"|"on")           Use text encoding for -null.
 **     -defaultalign ("auto"|"left"|...)       Default alignment
 **     -titalalign ("auto"|"left"|"right"|...) Default column name alignment
 **     -maxcolwidth NUMBER                     Max width of any single column
@@ -2089,6 +2090,7 @@ static void DbHookCmd(
 **     -columnnames      bColumnNames
 **     -wordwrap         bWordWrap
 **     -textjsonb        bTextJsonb
+**     -textnull         bTestNull
 **     -defaultalign     eDfltAlign
 **     -titlealign       eTitleAlign
 **     -maxcolwidth      mxColWidth
@@ -2236,12 +2238,16 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       if( rc ) goto format_failed;
       qrf.bWordWrap = aBoolMap[v];
       i++;
-    }else if( strcmp(zArg,"-textjsonb")==0 ){
+    }else if( strcmp(zArg,"-textjsonb")==0 || strcmp(zArg,"-textnull")==0 ){
       int v = 0;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
-                              "-testjsonb", 0, &v);
+                              zArg, 0, &v);
       if( rc ) goto format_failed;
-      qrf.bTextJsonb = aBoolMap[v];
+      if( zArg[5]=='j' ){
+        qrf.bTextJsonb = aBoolMap[v];
+      }else{
+        qrf.bTextNull = aBoolMap[v];
+      }
       i++;
     }else if( strcmp(zArg,"-defaultalign")==0 || strcmp(zArg,"-titlealign")==0){
       int ax = 0;

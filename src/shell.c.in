@@ -1392,9 +1392,9 @@ static const unsigned char aQrfStyle[] = {
   /* html */         QRF_STYLE_Html,
   /* insert */       QRF_STYLE_Insert,
   /* quote */        QRF_STYLE_Quote,
-  /* tcl */          102,
+  /* tcl */          QRF_STYLE_List,
   /* csv */          QRF_STYLE_Csv,
-  /* ascii */        104,
+  /* ascii */        QRF_STYLE_List,
   /* prettyprint */  105,
   /* json */         QRF_STYLE_Json,
   /* markdown */     QRF_STYLE_Markdown,
@@ -2112,42 +2112,12 @@ static int shell_callback(
       sqlite3_fputs("</TR>\n", p->out);
       break;
     }
-    case MODE_Tcl: {
-      if( p->cnt++==0 && p->showHeader ){
-        for(i=0; i<nArg; i++){
-          output_c_string(p->out, azCol[i] ? azCol[i] : "");
-          if(i<nArg-1) sqlite3_fputs(p->colSeparator, p->out);
-        }
-        sqlite3_fputs(p->rowSeparator, p->out);
-      }
-      if( azArg==0 ) break;
-      for(i=0; i<nArg; i++){
-        output_c_string(p->out, azArg[i] ? azArg[i] : p->nullValue);
-        if(i<nArg-1) sqlite3_fputs(p->colSeparator, p->out);
-      }
-      sqlite3_fputs(p->rowSeparator, p->out);
-      break;
-    }
-    case MODE_Csv:      assert(0);  break;
+    case MODE_Tcl:      assert(0); break;
+    case MODE_Csv:      assert(0); break;
     case MODE_Insert:   assert(0); break;
     case MODE_Json:     assert(0); break;
     case MODE_Quote:    assert(0); break;
-    case MODE_Ascii: {
-      if( p->cnt++==0 && p->showHeader ){
-        for(i=0; i<nArg; i++){
-          if( i>0 ) sqlite3_fputs(p->colSeparator, p->out);
-          sqlite3_fputs(azCol[i] ? azCol[i] : "", p->out);
-        }
-        sqlite3_fputs(p->rowSeparator, p->out);
-      }
-      if( azArg==0 ) break;
-      for(i=0; i<nArg; i++){
-        if( i>0 ) sqlite3_fputs(p->colSeparator, p->out);
-        sqlite3_fputs(azArg[i] ? azArg[i] : p->nullValue, p->out);
-      }
-      sqlite3_fputs(p->rowSeparator, p->out);
-      break;
-    }
+    case MODE_Ascii:    assert(0); break;
   }
   return 0;
 }
@@ -2997,6 +2967,12 @@ static int shell_exec(
       if( ShellHasFlag(pArg, SHFLG_PreserveRowid) ){
         spec.bColumnNames = QRF_SW_On;
       }
+      break;
+    }
+    case MODE_Tcl: {
+      spec.eText = QRF_TEXT_Tcl;
+      spec.eTitle = QRF_TEXT_Tcl;
+      spec.bTextNull = QRF_Yes;
       break;
     }
     case MODE_Box:

@@ -76,6 +76,7 @@ struct sqlite3_qrf_spec {
   unsigned char bColumnNames; /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
+  unsigned char bTextNull;    /* Apply eText encoding to the zNull[] value */
   short int mxColWidth;       /* Maximum width of any individual column */
   short int nScreenWidth;     /* Try to keep output short so that it fits */
   short int mxRowHeight;      /* Maximum number of lines for any row */
@@ -470,11 +471,16 @@ and these settings are ignored for those styles.
 The sqlite3_qrf_spec.zTableName value is the name of the output table
 when eStyle is QRF_STYLE_Insert.
 
-### 2.15 The Rendering Of NULL
+### 2.15 The Rendering Of NULL (zNull, eTextNull)
 
 If a value is NULL then show the NULL using the string
 found in sqlite3_qrf_spec.zNull.  If zNull is itself a NULL pointer
 then NULL values are rendered as an empty string.
+
+If the sqlite3_qrf_spec.bTextNull field is QRF_Yes, then the
+text encoding specified by eText is applied to the value in
+zNull.  If bTextNull is QRF_No or QRF_Auto, then the value
+in zNull is shown verbatim.
 
 ### 2.16 Optional Value Rendering Callback
 

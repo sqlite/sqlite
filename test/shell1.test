@@ -1068,8 +1068,8 @@ do_test shell1-4.3 {
   catchcmd test.db ".mode tcl\nselect * from t1;"
 } {0 {""
 ""
-"1"
-"2.25"
+1
+2.25
 "hello"
 "\200\177"}}
 
@@ -1082,7 +1082,7 @@ do_test shell1-4.4 {
   }
   catchcmd test.db ".mode tcl\nselect * from t2;"
 } {0 {"" ""
-"1" "2.25"
+1 2.25
 "hello" "\200\177"}}
 
 # Test the output of ".mode tcl" with ".nullvalue"
@@ -1090,7 +1090,7 @@ do_test shell1-4.4 {
 do_test shell1-4.5 {
   catchcmd test.db ".mode tcl\n.nullvalue NULL\nselect * from t2;"
 } {0 {"NULL" ""
-"1" "2.25"
+1 2.25
 "hello" "\200\177"}}
 
 # Test the output of ".mode tcl" with Tcl reserved characters
