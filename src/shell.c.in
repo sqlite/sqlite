@@ -3006,11 +3006,9 @@ static int shell_exec(
       break;
     }
   }
-  if( sqlite3_stmt_isexplain(pStmt) ){
-    eStyle = QRF_STYLE_Auto;
-  }else if( pArg->cMode>=0
-         && pArg->cMode<ArraySize(aQrfStyle)
-         && aQrfStyle[pArg->cMode]<100
+  if( pArg->cMode>=0
+   && pArg->cMode<ArraySize(aQrfStyle)
+   && aQrfStyle[pArg->cMode]<100
   ){
     eStyle = aQrfStyle[pArg->cMode];
   }else{
@@ -3032,6 +3030,7 @@ static int shell_exec(
         *pzErrMsg = save_err_msg(db, "in prepare", rc, zSql);
       }
     }else{
+      int isExplain;
       if( !pStmt ){
         /* this happens for a comment or white-space */
         zSql = zLeftover;
@@ -3047,9 +3046,10 @@ static int shell_exec(
         pArg->pStmt = pStmt;
         pArg->cnt = 0;
       }
-
+     
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
-      if( pArg && pArg->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
+      isExplain = sqlite3_stmt_isexplain(pStmt);
+      if( pArg && pArg->autoEQP && isExplain==0 ){
         int triggerEQP = 0;
         disable_debug_trace_modes();
         sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
@@ -3069,7 +3069,10 @@ static int shell_exec(
       }
 
       bind_prepared_stmt(pArg, pStmt);
-      if( eStyle<100 ){
+      if( isExplain && pArg->autoExplain ){
+        spec.eStyle = isExplain==1 ? QRF_STYLE_Explain : QRF_STYLE_Eqp;
+        sqlite3_format_query_result(pStmt, &spec, pzErrMsg);
+      }else if( eStyle<100 ){
         spec.eStyle = eStyle;
         sqlite3_format_query_result(pStmt, &spec, pzErrMsg);
       }else{
@@ -7611,8 +7614,13 @@ static int do_meta_command(char *zLine, ShellState *p){
   /* The ".explain" command is automatic now.  It is largely pointless.  It
   ** retained purely for backwards compatibility */
   if( c=='e' && cli_strncmp(azArg[0], "explain", n)==0 ){
-    eputz("EXPLAIN output formatting is now automatic. "
-          "\".explain\" is pointless.\n");
+    if( nArg>=2 ){
+      if( cli_strcmp(azArg[1],"auto")==0 ){
+        p->autoExplain = 1;
+      }else{
+        p->autoExplain = booleanValue(azArg[1]);
+      }
+    }
   }else
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
@@ -9878,6 +9886,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     sqlite3_fprintf(p->out, "%12.12s: %s\n","echo",
           azBool[ShellHasFlag(p, SHFLG_Echo)]);
     sqlite3_fprintf(p->out, "%12.12s: %s\n","eqp", azBool[p->autoEQP&3]);
+    sqlite3_fprintf(p->out, "%12.12s: %s\n","explain",
+                             p->autoExplain ? "auto" : "off");
     sqlite3_fprintf(p->out, "%12.12s: %s\n","headers",
           azBool[p->showHeader!=0]);
     if( p->mode==MODE_Column
