@@ -330,6 +330,7 @@ do_catchsql_test 7.6 {
 # Check that temp triggers may INSERT/UPDATE/DELETE to fully qualified
 # table names.
 reset_db
+forcedelete {*}[glob -nocomplain *mj*]
 forcedelete test.db2
 do_execsql_test 8.0 {
   ATTACH 'test.db2' AS aux;
@@ -390,5 +391,76 @@ do_execsql_test 8.3.2 {
 } {}
 
 do_execsql_test 8.3.3 { SELECT * FROM t1 } {a b}
+
+#-------------------------------------------------------------------------
+reset_db
+set nDb 8
+do_test 9.0 {
+  for {set ii 0} {$ii < $nDb} {incr ii} {
+    db eval "ATTACH ':memory:' AS db$ii"
+    db eval "CREATE TABLE db$ii.tbl(a, b, c)"
+  }
+
+  for {set ii 0} {$ii < ($nDb-1)} {incr ii} {
+    set jj [expr $ii+1]
+    db eval "
+      CREATE TEMP TRIGGER tr$ii AFTER INSERT ON db$ii.tbl BEGIN
+        INSERT INTO db$jj.tbl VALUES(new.b, new.c, new.a);
+      END;
+    "
+  }
+} {}
+
+do_execsql_test 9.1 { INSERT INTO db0.tbl VALUES('a', 'b', 'c'); }
+do_execsql_test 9.1.1 { SELECT * FROM db0.tbl } {a b c}
+do_execsql_test 9.1.2 { SELECT * FROM db1.tbl } {b c a}
+do_execsql_test 9.1.3 { SELECT * FROM db2.tbl } {c a b}
+do_execsql_test 9.1.1 { SELECT * FROM db3.tbl } {a b c}
+do_execsql_test 9.1.2 { SELECT * FROM db4.tbl } {b c a}
+do_execsql_test 9.1.3 { SELECT * FROM db5.tbl } {c a b}
+do_execsql_test 9.1.1 { SELECT * FROM db6.tbl } {a b c}
+do_execsql_test 9.1.2 { SELECT * FROM db7.tbl } {b c a}
+
+do_test 9.2 {
+  for {set ii 0} {$ii < ($nDb-1)} {incr ii} {
+    set jj [expr $ii+1]
+    db eval "
+      CREATE TEMP TRIGGER tru$ii AFTER UPDATE ON db$ii.tbl BEGIN
+        UPDATE db$jj.tbl SET a=new.b, b=new.c, c=new.a;
+      END;
+    "
+  }
+} {}
+
+do_execsql_test 9.3 { UPDATE db0.tbl SET a=1, b=2, c=3 }
+do_execsql_test 9.3.1 { SELECT * FROM db0.tbl } {1 2 3}
+do_execsql_test 9.3.2 { SELECT * FROM db1.tbl } {2 3 1}
+do_execsql_test 9.3.3 { SELECT * FROM db2.tbl } {3 1 2}
+do_execsql_test 9.3.1 { SELECT * FROM db3.tbl } {1 2 3}
+do_execsql_test 9.3.2 { SELECT * FROM db4.tbl } {2 3 1}
+do_execsql_test 9.3.3 { SELECT * FROM db5.tbl } {3 1 2}
+do_execsql_test 9.3.1 { SELECT * FROM db6.tbl } {1 2 3}
+do_execsql_test 9.3.2 { SELECT * FROM db7.tbl } {2 3 1}
+
+do_test 9.4 {
+  for {set ii 0} {$ii < ($nDb-1)} {incr ii} {
+    set jj [expr $ii+1]
+    db eval "
+      CREATE TEMP TRIGGER trd$ii BEFORE DELETE ON db$ii.tbl BEGIN
+        DELETE FROM db$jj.tbl;
+      END;
+    "
+  }
+} {}
+
+do_execsql_test 9.5 { DELETE FROM db0.tbl }
+do_execsql_test 9.5.1 { SELECT * FROM db0.tbl } {}
+do_execsql_test 9.5.2 { SELECT * FROM db1.tbl } {}
+do_execsql_test 9.5.3 { SELECT * FROM db2.tbl } {}
+do_execsql_test 9.5.1 { SELECT * FROM db3.tbl } {}
+do_execsql_test 9.5.2 { SELECT * FROM db4.tbl } {}
+do_execsql_test 9.5.3 { SELECT * FROM db5.tbl } {}
+do_execsql_test 9.5.1 { SELECT * FROM db6.tbl } {}
+do_execsql_test 9.5.2 { SELECT * FROM db7.tbl } {}
 
 finish_test
