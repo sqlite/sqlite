@@ -1420,6 +1420,9 @@ static void modeInit(Mode *p){
 #ifdef _WIN32
   p->crlfMode = 1;
 #endif
+  p->spec.zColumnSep = strdup("|");
+  p->spec.zRowSep = strdup("\n");
+  p->spec.zNull = strdup("");
 }
 
 /*
@@ -7924,8 +7927,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
               " for import\n");
         goto meta_command_exit;
       }
-      sCtx.cColSep = (u8)p->mode.spec.zRowSep[0];
-      sCtx.cRowSep = (u8)p->mode.spec.zColumnSep[0];
+      sCtx.cColSep = (u8)p->mode.spec.zColumnSep[0];
+      sCtx.cRowSep = (u8)p->mode.spec.zRowSep[0];
     }
     sCtx.zFile = zFile;
     sCtx.nLine = 1;
@@ -8485,13 +8488,15 @@ static int do_meta_command(const char *zLine, ShellState *p){
         sqlite3_fprintf(p->out, " --wordwrap %s --%squote --escape %s\n",
               p->mode.spec.bWordWrap==QRF_Yes ? "on" : "off",
               p->mode.spec.eText==QRF_TEXT_Sql ? "" : "no",
-              qrfEscNames[p->mode.spec.eEsc]
+              qrfEscNames[p->mode.spec.eEsc==QRF_ESC_Auto?
+                  QRF_ESC_Ascii:p->mode.spec.eEsc]
         );
       }else{
         sqlite3_fprintf(p->out,
               "current output mode: %s --escape %s\n",
               modeDescr[p->mode.eMode],
-              qrfEscNames[p->mode.spec.eEsc]
+              qrfEscNames[p->mode.spec.eEsc==QRF_ESC_Auto?
+                  QRF_ESC_Ascii:p->mode.spec.eEsc]
         );
       }
     }

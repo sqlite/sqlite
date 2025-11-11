@@ -101,13 +101,13 @@ do_test shellA-1.9 {
      exec {*}$CLI test.db {.mode test --escape xyz}
   } msg]
   lappend rc $msg
-} {1 {unknown control character escape mode "xyz" - choices: ascii symbol off}}
+} {1 {unknown control character escape mode "xyz" - choices: auto off ascii symbol}}
 do_test shellA-1.10 {
   set rc [catch {
      exec {*}$CLI --escape abc test.db .q
   } msg]
   lappend rc $msg
-} {1 {unknown control character escape mode "abc" - choices: ascii symbol off}}
+} {1 {unknown control character escape mode "abc" - choices: auto off ascii symbol}}
 
 # ".mode quote"
 #
