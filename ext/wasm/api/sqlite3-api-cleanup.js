@@ -55,12 +55,7 @@ try{
     }
   );
 
-  /** Figure out if this is a 32- or 64-bit WASM build. */
-  bootstrapConfig.wasmPtrIR =
-    'number'===(typeof bootstrapConfig.exports.sqlite3_libversion())
-    ?  'i32' :'i64';
-  const sIMS = sqlite3InitScriptInfo;
-  sIMS.debugModule("Bootstrapping lib config", sIMS);
+ sqlite3InitScriptInfo.debugModule("Bootstrapping lib config", bootstrapConfig);
 
   /**
      For purposes of the Emscripten build, call sqlite3ApiBootstrap().

@@ -4220,7 +4220,7 @@ const char *sqlite3_errstr(int);
 int sqlite3_error_offset(sqlite3 *db);
 
 /*
-** CAPI3REF: Set Error Codes And Message
+** CAPI3REF: Set Error Code And Message
 ** METHOD: sqlite3
 **
 ** Set the error code of the database handle passed as the first argument
