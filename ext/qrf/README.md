@@ -71,16 +71,16 @@ struct sqlite3_qrf_spec {
   unsigned char eText;        /* Quoting style for text */
   unsigned char eTitle;       /* Quating style for the text of column names */
   unsigned char eBlob;        /* Quoting style for BLOBs */
-  unsigned char bColumnNames; /* True to show column names */
+  unsigned char bTitles;      /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
   unsigned char bTextNull;    /* Apply eText encoding to zNull[] */
   unsigned char eDfltAlign;   /* Default alignment, no covered by aAlignment */
   unsigned char eTitleAlign;  /* Alignment for column headers */
-  short int mxColWidth;       /* Maximum width of any individual column */
+  short int nWrap;            /* Wrap columns wider than this */
   short int nScreenWidth;     /* Maximum overall table width */
-  short int mxRowHeight;      /* Maximum number of lines for any row */
-  int mxLength;               /* Maximum content to display per element */
+  short int nLineLimit;       /* Maximum number of lines for any row */
+  int nCharLimit;             /* Maximum number of characters in a cell */
   int nWidth;                 /* Number of entries in aWidth[] */
   int nAlign;                 /* Number of entries in aAlignment[] */
   short int *aWidth;          /* Column widths */
@@ -146,9 +146,9 @@ for details on the meaning of the various style options.
 Other fields in sqlite3_qrf_spec might be used or might be
 ignored, depending on the value of eStyle.
 
-### 2.4 Show Column Names (bColumnNames)
+### 2.4 Show Column Names (bTitles)
 
-The sqlite3_qrf_spec.bColumnNames field can be either QRF_SW_Auto,
+The sqlite3_qrf_spec.bTitles field can be either QRF_SW_Auto,
 QRF_SW_On, or QRF_SW_Off.  Those three constants also have shorter
 alternative spellings: QRF_Auto, QRF_No, and
 QRF_Yes.
@@ -292,28 +292,40 @@ the C/Tcl/Perl octal backslash escapes.  So the string from the
 previous paragraph would be shown as
 `"\u0005\u0028\u0081\u00f3"`.
 
-### 2.8 Maximum displayed content length (mxLength)
+### 2.8 Maximum size of displayed content (nLineLimit, nCharLimit)
 
-If the sqlite3_qrf_spec.mxLength setting is non-zero, then the formatter
-*attempts* to show only the first mxLength characters of each value.
-This limit is approximate.  The content length might exceed the limit
-by a few characters, especially if the limit is very small.
+If the sqlite3_qrf_spec.nCharLimit setting is non-zero, then the formatter
+will display only the first nCharLimit characters of each value.
+Only characters that take up space are counted when enforcing this
+limit.  Zero-width characters and VT100 escape sequences do not count
+toward this limit.  The count is in characters, not bytes.
 
 Content length limits only apply to TEXT and BLOB values.  Numeric
 values and NULLs always display their full text regardless of the
-mxLength setting.
+nCharLimit setting.
 
 *This setting is a place-holder.
-As for 2025-11-07, the mxLength constraint is not yet implemented.
-The current behavior is always as if mxLength where zero.*
+As for 2025-11-07, the nCharLimit constraint is not yet implemented.
+The current behavior is always as if nCharLimit where zero.*
 
-### 2.9 Word Wrapping In Columnar Styles (mxColWidth, bWordWrap)
+If the sqlite3_qrf_spec.nLineLimit setting is non-zero, then the
+formatter will only display the first nLineLimit lines of each value.
+It does not matter if the value is split because it contains a newline
+character, or if it split by wrapping.  This setting merely limits
+the number of displayed lines.  This setting only works for
+**Box**, **Column**, **Line**, **Markdown**, and **Table** styles.
+
+The idea behind these settings is to prevent excessively large renderings
+when doing a query that (unexpectedly) contains very large text or
+blob values: perhaps megabyes of text.
+
+### 2.9 Word Wrapping In Columnar Styles (nWrap, bWordWrap)
 
 When using columnar formatting modes (QRF_STYLE_Box, QRF_STYLE_Column,
 QRF_STYLE_Markdown, or QRF_STYLE_Table), the formatter attempts to limit
-the width of any individual column to sqlite3_qrf_spec.mxColWidth characters
-if mxColWidth is non-zero.  A zero value for mxColWidth means "unlimited".
-The mxColWidth limit might be exceeded if the limit is very small.
+the width of any individual column to sqlite3_qrf_spec.nWrap characters
+if nWrap is non-zero.  A zero value for nWrap means "unlimited".
+The nWrap limit might be exceeded if the limit is very small.
 
 In order to keep individual columns within requested width limits,
 it is sometimes necessary to wrap the content for a single row of
@@ -567,7 +579,7 @@ into memory first in order to determine how wide to make each column.
 The nWidth, aWidth, and mxWidth fields of the `sqlite3_qrf_spec` object
 are used by these styles only, and are ignored by all other styles.
 The zRowSep and zColumnSep settings are ignored by these styles.  The
-bColumnNames setting is honored by these styles; it defaults to QRF_SW_On.
+bTitles setting is honored by these styles; it defaults to QRF_SW_On.
 
 The **Box** style uses Unicode box-drawing character to draw a grid
 of columns and rows to show the result.  The **Table** is the same,

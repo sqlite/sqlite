@@ -53,7 +53,7 @@ struct Qrf {
   int nCol;                   /* Number of output columns */
   int expMode;                /* Original sqlite3_stmt_isexplain() plus 1 */
   int mxWidth;                /* Screen width */
-  int mxHeight;               /* mxRowHeight */
+  int mxHeight;               /* nLineLimit */
   union {
     struct {                  /* Content for QRF_STYLE_Line */
       int mxColWth;             /* Maximum display width of any column */
@@ -1316,7 +1316,7 @@ static void qrfColumnar(Qrf *p){
   assert( data.aAlign!=0 );
 
   /* Load the column header names and all cell content into data */
-  if( p->spec.bColumnNames==QRF_Yes ){
+  if( p->spec.bTitles==QRF_Yes ){
     unsigned char saved_eText = p->spec.eText;
     p->spec.eText = p->spec.eTitle;
     for(i=0; i<nColumn; i++){
@@ -1358,7 +1358,7 @@ static void qrfColumnar(Qrf *p){
   }
 
   /* Compute the width and alignment of every column */
-  if( p->spec.bColumnNames==QRF_No ){
+  if( p->spec.bTitles==QRF_No ){
     qrfLoadAlignment(&data, p);
   }else if( p->spec.eTitleAlign==QRF_Auto ){
     memset(data.aAlign, QRF_ALIGN_Center, nColumn);
@@ -1386,8 +1386,8 @@ static void qrfColumnar(Qrf *p){
       for(j=i; j<data.n; j+=nColumn){
         if( data.aiWth[j] > w ){
           w = data.aiWth[j];
-          if( p->spec.mxColWidth>0 && w>p->spec.mxColWidth ){
-            w = p->spec.mxColWidth;
+          if( p->spec.nWrap>0 && w>p->spec.nWrap ){
+            w = p->spec.nWrap;
             data.bMultiRow = 1;
             break;
           }
@@ -1472,7 +1472,7 @@ static void qrfColumnar(Qrf *p){
       }
     }while( bMore && ++nRow < p->mxHeight );
     if( bMore ){
-      /* This row was terminated by mxRowHeight.  Show ellipsis. */
+      /* This row was terminated by nLineLimit.  Show ellipsis. */
       sqlite3_str_append(p->pOut, rowStart, szRowStart);
       for(j=0; j<nColumn; j++){
         if( data.azThis[j][0]==0 ){
@@ -1495,7 +1495,7 @@ static void qrfColumnar(Qrf *p){
     ** body.  isTitleDataSeparator will be true if we are doing (1).
     */
     if( (i==0 || data.bMultiRow) && i+nColumn<data.n ){
-      int isTitleDataSeparator = (i==0 && p->spec.bColumnNames==QRF_Yes);
+      int isTitleDataSeparator = (i==0 && p->spec.bTitles==QRF_Yes);
       if( isTitleDataSeparator ){
         qrfLoadAlignment(&data, p);
       }
@@ -1829,7 +1829,7 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_STYLE_Html: {
-      if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
+      if( p->nRow==0 && p->spec.bTitles==QRF_Yes ){
         sqlite3_str_append(p->pOut, "<TR>", 4);
         for(i=0; i<p->nCol; i++){
           const char *zCName = sqlite3_column_name(p->pStmt, i);
@@ -1853,7 +1853,7 @@ static void qrfOneSimpleRow(Qrf *p){
       }else{
         sqlite3_str_appendf(p->pOut,"INSERT INTO %s",p->spec.zTableName);
       }
-      if( p->spec.bColumnNames==QRF_Yes ){
+      if( p->spec.bTitles==QRF_Yes ){
         for(i=0; i<p->nCol; i++){
           const char *zCName = sqlite3_column_name(p->pStmt, i);
           if( qrf_need_quote(zCName) ){
@@ -1935,7 +1935,7 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     default: {  /* QRF_STYLE_List */
-      if( p->nRow==0 && p->spec.bColumnNames==QRF_Yes ){
+      if( p->nRow==0 && p->spec.bTitles==QRF_Yes ){
         int saved_eText = p->spec.eText;
         p->spec.eText = p->spec.eTitle;
         for(i=0; i<p->nCol; i++){
@@ -1992,7 +1992,7 @@ static void qrfInitialize(
   if( p->spec.zNull==0 ) p->spec.zNull = "";
   p->mxWidth = p->spec.nScreenWidth;
   if( p->mxWidth<=0 ) p->mxWidth = QRF_MAX_WIDTH;
-  p->mxHeight = p->spec.mxRowHeight;
+  p->mxHeight = p->spec.nLineLimit;
   if( p->mxHeight<=0 ) p->mxHeight = 2147483647;
 qrf_reinit:
   switch( p->spec.eStyle ){
@@ -2090,17 +2090,17 @@ qrf_reinit:
       default:            p->spec.eBlob = QRF_BLOB_Text; break;
     }
   }
-  if( p->spec.bColumnNames==QRF_Auto ){
+  if( p->spec.bTitles==QRF_Auto ){
     switch( p->spec.eStyle ){
       case QRF_STYLE_Box:
       case QRF_STYLE_Csv:
       case QRF_STYLE_Column:
       case QRF_STYLE_Table:
       case QRF_STYLE_Markdown:
-        p->spec.bColumnNames = QRF_Yes;
+        p->spec.bTitles = QRF_Yes;
         break;
       default:
-        p->spec.bColumnNames = QRF_No;
+        p->spec.bTitles = QRF_No;
         break;
     }
   }

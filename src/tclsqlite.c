@@ -2058,18 +2058,17 @@ static void DbHookCmd(
 **     -style ("auto"|"box"|"column"|...)      Output style
 **     -esc ("auto"|"off"|"ascii"|"symbol")    How to deal with ctrl chars
 **     -text ("auto"|"off"|"sql"|"csv"|...)    How to escape TEXT values
-**     -title ("auto"|"off"|"sql"|...)         How to escape column names
+**     -title ("auto"|"off"|"sql"|...|"off")   How to escape column names
 **     -blob ("auto"|"text"|"sql"|...)         How to escape BLOB values
-**     -columnnames ("auto"|"off"|"on")        Show column names?
 **     -wordwrap ("auto"|"off"|"on")           Try to wrap at word boundry?
 **     -textjsonb ("auto"|"off"|"on")          Auto-convert JSONB to text?
 **     -textnull ("auto"|"off"|"on")           Use text encoding for -null.
 **     -defaultalign ("auto"|"left"|...)       Default alignment
 **     -titalalign ("auto"|"left"|"right"|...) Default column name alignment
-**     -maxcolwidth NUMBER                     Max width of any single column
+**     -wrap NUMBER                            Max width of any single column
 **     -screenwidth NUMBER                     Width of the display TTY
-**     -maxrowheight NUMBER                    Max height of a row in a table
-**     -maxlength NUMBER                       Content truncated to this size
+**     -linelimit NUMBER                       Max lines for any cell
+**     -charlimit NUMBER                       Content truncated to this size
 **     -align LIST-OF-ALIGNMENT                Alignment of columns
 **     -widths LIST-OF-NUMBERS                 Widths for individual columns
 **     -columnsep TEXT                         Column separator text
@@ -2085,18 +2084,17 @@ static void DbHookCmd(
 **     -style            eStyle
 **     -esc              eEsc
 **     -text             eText
-**     -title            eTitle
+**     -title            eTitle, bTitle
 **     -blob             eBlob
-**     -columnnames      bColumnNames
 **     -wordwrap         bWordWrap
 **     -textjsonb        bTextJsonb
 **     -textnull         bTestNull
 **     -defaultalign     eDfltAlign
 **     -titlealign       eTitleAlign
-**     -maxcolwidth      mxColWidth
+**     -wrap             nWrap
 **     -screenwidth      nScreenWidth
-**     -maxrowheight     mxRowHeight
-**     -maxlength        mxLength
+**     -linelimit        nLineLimit
+**     -charlimit        nCharLimit
 **     -align            nAlign, aAlign
 **     -widths           nWidth, aWidth
 **     -columnsep        zColumnSep
@@ -2188,7 +2186,10 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       qrf.eEsc = aEscMap[esc];
       i++;
     }else if( strcmp(zArg,"-text")==0 || strcmp(zArg, "-title")==0 ){
-      static const char *azText[] = {
+      /* NB: --title can be "off" or "on but --text may not be.  Thus we put
+      ** the "off" and "on" choices first and start the search on the
+      ** thrid element of the array when processing --text */
+      static const char *azText[] = {           "off",   "on",
         "auto",             "csv",              "html",
         "json",             "plain",            "sql",
         "tcl",              0
@@ -2199,14 +2200,18 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
         QRF_TEXT_Tcl
       };
       int txt;
-      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azText,
-                              zArg[2]=='e' ? "text encoding (-text)" :
-                                   "column-name encoding (-title)", 0, &txt);
+      int k = zArg[2]=='e';
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], &azText[k*2], zArg,
+                               0, &txt);
       if( rc ) goto format_failed;
-      if( zArg[2]=='e' ){
+      if( k ){
         qrf.eText = aTextMap[txt];
+      }else if( txt<=1 ){
+        qrf.bTitles = txt ? QRF_Yes : QRF_No;
+        qrf.eTitle = QRF_TEXT_Auto;
       }else{
-        qrf.eTitle = aTextMap[txt];
+        qrf.bTitles = QRF_Yes;
+        qrf.eTitle = aTextMap[txt-2];
       }
       i++;
     }else if( strcmp(zArg,"-blob")==0 ){
@@ -2223,13 +2228,6 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
                               "BLOB encoding (-blob)", 0, &blob);
       if( rc ) goto format_failed;
       qrf.eBlob = aBlobMap[blob];
-      i++;
-    }else if( strcmp(zArg,"-columnnames")==0 ){
-      int v = 0;
-      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
-                              "-columnnames", 0, &v);
-      if( rc ) goto format_failed;
-      qrf.bColumnNames = aBoolMap[v];
       i++;
     }else if( strcmp(zArg,"-wordwrap")==0 ){
       int v = 0;
@@ -2262,9 +2260,9 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
         qrf.eTitleAlign = aAlignMap[ax];
       }
       i++;
-    }else if( strcmp(zArg,"-maxcolwidth")==0
+    }else if( strcmp(zArg,"-wrap")==0
            || strcmp(zArg,"-screenwidth")==0 
-           || strcmp(zArg,"-maxrowheight")==0 
+           || strcmp(zArg,"-linelimit")==0 
     ){
       int v = 0;
       rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
@@ -2274,20 +2272,20 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       }else if( v>QRF_MAX_WIDTH ){
         v = QRF_MAX_WIDTH;
       }
-      if( zArg[4]=='c' ){
-        qrf.mxColWidth = v;
-      }else if( zArg[4]=='r' ){
-        qrf.mxRowHeight = v;
-      }else{
+      if( zArg[1]=='w' ){
+        qrf.nWrap = v;
+      }else if( zArg[1]=='s' ){
         qrf.nScreenWidth = v;
+      }else{
+        qrf.nLineLimit = v;
       }
       i++;
-    }else if( strcmp(zArg,"-maxlength")==0 ){
+    }else if( strcmp(zArg,"-charlimit")==0 ){
       int v = 0;
       rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
       if( rc ) goto format_failed;
       if( v<0 ) v = 0;
-      qrf.mxLength = v;
+      qrf.nCharLimit = v;
       i++;
     }else if( strcmp(zArg,"-align")==0 ){
       Tcl_Size n = 0;

@@ -32,7 +32,7 @@ do_test 1.10 {
 └──────┴─────┴───────┘
 }
 do_test 1.11a {
-  set result "\n[db format -columnnames off {SELECT * FROM t1}]"
+  set result "\n[db format -title off {SELECT * FROM t1}]"
 } {
 ┌──────┬─────┬───────┐
 │ 1    │ 2.5 │ three │
@@ -72,7 +72,7 @@ do_test 1.13 {
 do_test 1.14 {
   catch {db format -text unk -blob hex {SELECT * FROM t1}} res
   set res
-} {bad text encoding (-text) "unk": must be auto, csv, html, json, plain, sql, or tcl}
+} {bad -text "unk": must be auto, csv, html, json, plain, sql, or tcl}
 do_test 1.15 {
   catch {db format -text sql -blob unk {SELECT * FROM t1}} res
   set res
@@ -105,7 +105,7 @@ do_test 1.30 {
 +------+-----+-------+
 }
 do_test 1.31 {
-  set result "\n[db format -style table -columnnames off {SELECT * FROM t1}]"
+  set result "\n[db format -style table -title off {SELECT * FROM t1}]"
 } {
 +------+-----+-------+
 | 1    | 2.5 | three |
@@ -122,7 +122,7 @@ a     b    c
 BLOB       Ἀμήν 
 }
 do_test 1.41 {
-  set result "\n[db format -style column -columnnames off {SELECT * FROM t1}]"
+  set result "\n[db format -style column -title off {SELECT * FROM t1}]"
 } {
 1     2.5  three
 BLOB       Ἀμήν 
@@ -136,10 +136,10 @@ do_test 1.60 {
   db format -style csv {SELECT * FROM t1}
 } "1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.61 {
-  db format -style csv -columnnames on {SELECT * FROM t1}
+  db format -style csv -title auto {SELECT * FROM t1}
 } "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.62 {
-  db format -style csv -columnnames on {SELECT a AS 'a x y', b, c FROM t1}
+  db format -style csv -title csv {SELECT a AS 'a x y', b, c FROM t1}
 } "\"a x y\",b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 
 do_test 1.70 {
@@ -157,7 +157,7 @@ do_test 1.70 {
 </TR>
 }
 do_test 1.71 {
-  set result "\n[db format -style html -columnnames on {SELECT * FROM t1}]"
+  set result "\n[db format -style html -title auto {SELECT * FROM t1}]"
 } {
 <TR>
 <TH>a
@@ -189,14 +189,14 @@ INSERT INTO t1 VALUES(1,2.5,'three');
 INSERT INTO t1 VALUES(x'424c4f42',NULL,'Ἀμήν');
 }
 do_test 1.82 {
-  set result "\n[db format -style insert -tablename t1 -columnnames on \
+  set result "\n[db format -style insert -tablename t1 -title auto \
       {SELECT * FROM t1}]"
 } {
 INSERT INTO t1(a,b,c) VALUES(1,2.5,'three');
 INSERT INTO t1(a,b,c) VALUES(x'424c4f42',NULL,'Ἀμήν');
 }
 do_test 1.83 {
-  set result "\n[db format -style insert -tablename drop -columnnames on \
+  set result "\n[db format -style insert -tablename drop -title on \
       {SELECT a AS "a-b", b, c AS "123" FROM t1}]"
 } {
 INSERT INTO "drop"("a-b",b,"123") VALUES(1,2.5,'three');
@@ -264,14 +264,14 @@ do_test 1.110 {
 BLOB||Ἀμήν
 }
 do_test 1.111 {
-  set result "\n[db format -style list -columnnames on {SELECT * FROM t1}]"
+  set result "\n[db format -style list -title on {SELECT * FROM t1}]"
 } {
 a|b|c
 1|2.5|three
 BLOB||Ἀμήν
 }
 do_test 1.112 {
-  set result "\n[db format -style list -columnnames on -text sql -null NULL \
+  set result "\n[db format -style list -title on -text sql -null NULL \
                  -title plain {SELECT * FROM t1}]"
 } {
 a|b|c
@@ -279,9 +279,9 @@ a|b|c
 x'424c4f42'|NULL|'Ἀμήν'
 }
 do_test 1.118 {
-  set rc [catch {db format -style list -columnnames unk {SELECT * FROM t1}} res]
+  set rc [catch {db format -style list -title unk {SELECT * FROM t1}} res]
   lappend rc $res
-} {1 {bad -columnnames "unk": must be auto, yes, no, on, or off}}
+} {1 {bad -title "unk": must be off, on, auto, csv, html, json, plain, sql, or tcl}}
 
 
 do_test 1.120 {
@@ -293,7 +293,7 @@ do_test 1.120 {
 | BLOB |     | Ἀμήν  |
 }
 do_test 1.121 {
-  set result "\n[db format -style markdown -columnnames off {SELECT * FROM t1}]"
+  set result "\n[db format -style markdown -title off {SELECT * FROM t1}]"
 } {
 | 1    | 2.5 | three |
 | BLOB |     | Ἀμήν  |
@@ -306,7 +306,7 @@ do_test 1.130 {
 x'424c4f42',NULL,'Ἀμήν'
 }
 do_test 1.131 {
-  set result "\n[db format -style quote -columnnames on {SELECT * FROM t1}]"
+  set result "\n[db format -style quote -title on {SELECT * FROM t1}]"
 } {
 'a','b','c'
 1,2.5,'three'
@@ -533,7 +533,7 @@ do_test 4.2 {
 └─────────────────┴─────────────────┴────┘
 }
 do_test 4.3 {
-  set result "\n[db format -text plain -textjsonb on -maxcolwidth 11 \
+  set result "\n[db format -text plain -textjsonb on -wrap 11 \
               {SELECT a AS json, b AS jsonb, c AS num FROM t1}]"
 } {
 ┌─────────────┬─────────────┬─────┐
@@ -559,7 +559,7 @@ do_test 5.1 {
   set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
                         value FROM t1 ORDER BY mtime}
   set result "\n[db format -style line -screenwidth 60 -blob sql \
-                   -text sql -wordwrap off -maxrowheight 77 $sql]"
+                   -text sql -wordwrap off -linelimit 77 $sql]"
 } {
  name = 'sample-jsonb'
 mtime = 1333101221
@@ -596,7 +596,7 @@ do_test 5.2 {
                         value FROM t1 ORDER BY mtime}
   set result "\n[db format -style line -screenwidth 60 -blob sql \
                    -text plain -esc off -textjsonb yes \
-                   -wordwrap yes -maxrowheight 3 $sql]"
+                   -wordwrap yes -linelimit 3 $sql]"
 } {
  name = sample-jsonb
 mtime = 1333101221
@@ -625,7 +625,7 @@ do_test 5.3a {
                  -align {left right right center} \
                  -blob sql \
                  -text plain -esc off -textjsonb no \
-                   -wordwrap yes -maxrowheight 2 $sql]"
+                   -wordwrap yes -linelimit 2 $sql]"
 } {
 ┌──────────────┬────────────┬────────────┬────────────────┐
 │     name     │   mtime    │    time    │     value      │
@@ -648,7 +648,7 @@ do_test 5.3b {
                  -align {center right right right} \
                  -blob sql \
                  -text plain -esc off -textjsonb no \
-                   -wordwrap yes -maxrowheight 2 $sql]"
+                   -wordwrap yes -linelimit 2 $sql]"
 } {
 +--------------+------------+------------+----------------+
 |     name     |   mtime    |    time    |     value      |
@@ -671,7 +671,7 @@ do_test 5.3c {
                  -align {center right right right} \
                  -blob sql \
                  -text plain -esc off -textjsonb no \
-                   -wordwrap yes -maxrowheight 2 $sql]"
+                   -wordwrap yes -linelimit 2 $sql]"
 } {
     name        mtime        time         value     
 ------------  ----------  ----------  --------------
@@ -696,7 +696,7 @@ do_test 5.4 {
   set sql {SELECT char(0x61,0xa,0x62,0xa,0x63,0xa,0x64) a,
            mtime b, mtime c, mtime d, mtime e FROM t1}
   set result "\n[db format -style box -widths {1 2 3 4 5}\
-                -maxrowheight 3 -wordwrap off {SELECT *, 'x' AS x FROM t2}]"
+                -linelimit 3 -wordwrap off {SELECT *, 'x' AS x FROM t2}]"
 } {
 ┌────┬────┬─────┬──────┬───────┬───┐
 │ a  │ b  │  c  │  d   │   e   │ x │

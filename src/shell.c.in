@@ -2977,7 +2977,7 @@ static int shell_exec(
   switch( pArg->mode.eMode ){
     case MODE_Insert: {
       if( ShellHasFlag(pArg, SHFLG_PreserveRowid) ){
-        spec.bColumnNames = QRF_SW_On;
+        spec.bTitles = QRF_SW_On;
       }
       break;
     }
@@ -2990,7 +2990,7 @@ static int shell_exec(
     case MODE_Box:
     case MODE_Table:
     case MODE_Markdown: {
-      spec.bColumnNames = QRF_Yes;
+      spec.bTitles = QRF_Yes;
       break;
     }
   }
@@ -3364,7 +3364,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azNotUsed){
     savedMode = p->mode;
     p->mode.spec.zTableName = (char*)zTable;
     p->mode.eMode = MODE_Insert;
-    p->mode.spec.bColumnNames = QRF_No;
+    p->mode.spec.bTitles = QRF_No;
     rc = shell_exec(p, sSelect.zTxt, 0);
     if( (rc&0xff)==SQLITE_CORRUPT ){
       cli_puts("/****** CORRUPTION ERROR *******/\n", p->out);
@@ -7070,7 +7070,7 @@ static int dotCmdMode(ShellState *p){
       int w = integerValue(azArg[++i]);
       if( w<(-QRF_MAX_WIDTH) ) w = -QRF_MAX_WIDTH;
       if( w>QRF_MAX_WIDTH ) w = QRF_MAX_WIDTH;
-      p->mode.spec.mxColWidth = w;
+      p->mode.spec.nWrap = w;
       chng |= 1;
     }else if( optionMatch(z,"ww") ){
       p->mode.spec.bWordWrap = QRF_Yes;
@@ -7157,9 +7157,9 @@ static int dotCmdMode(ShellState *p){
     ){
       cli_printf(p->out, "current output mode: %s",
                       modeDescr[p->mode.eMode]);
-      if( p->mode.spec.mxColWidth ){
+      if( p->mode.spec.nWrap ){
         cli_printf(p->out, " --wrap %d",
-           p->mode.spec.mxColWidth);
+           p->mode.spec.nWrap);
       }else{
         cli_printf(p->out, " --wrap off");
       }
@@ -8034,7 +8034,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       cli_puts("BEGIN TRANSACTION;\n", p->out);
     }
     p->writableSchema = 0;
-    p->mode.spec.bColumnNames = QRF_No;
+    p->mode.spec.bTitles = QRF_No;
     /* Set writable_schema=ON since doing so forces SQLite to initialize
     ** as much of the schema as it can even if the sqlite_schema table is
     ** corrupt. */
@@ -8323,7 +8323,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
        "  AND name NOT LIKE 'sqlite__%%' ESCAPE '_' "
        "ORDER BY x", flgs);
     memcpy(&data, p, sizeof(data));
-    data.mode.spec.bColumnNames = QRF_No;
+    data.mode.spec.bTitles = QRF_No;
     data.mode.spec.eStyle= QRF_STYLE_List;
     data.mode.spec.zRowSep = "\n";
     rc = shell_exec(&data,zSql,0);
@@ -8364,7 +8364,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
   if( c=='h' && cli_strncmp(azArg[0], "headers", n)==0 ){
     if( nArg==2 ){
-      p->mode.spec.bColumnNames = booleanValue(azArg[1]) ? QRF_Yes : QRF_No;
+      p->mode.spec.bTitles = booleanValue(azArg[1]) ? QRF_Yes : QRF_No;
     }else{
       eputz("Usage: .headers on|off\n");
       rc = 1;
@@ -9419,7 +9419,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
  
     open_db(p, 0);
     memcpy(&data, p, sizeof(data));
-    data.mode.spec.bColumnNames = QRF_No;
+    data.mode.spec.bTitles = QRF_No;
     data.mode.eMode = MODE_List;
     modeSetStr(&data.mode.spec.zRowSep, "\n");
     for(ii=1; ii<nArg; ii++){
@@ -10107,7 +10107,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     cli_printf(p->out, "%12.12s: %s\n","explain",
                              p->mode.autoExplain ? "auto" : "off");
     cli_printf(p->out, "%12.12s: %s\n","headers",
-          azBool[p->mode.spec.bColumnNames==QRF_Yes]);
+          azBool[p->mode.spec.bTitles==QRF_Yes]);
     if( p->mode.spec.eStyle==QRF_STYLE_Column
      || p->mode.spec.eStyle==QRF_STYLE_Box
      || p->mode.spec.eStyle==QRF_STYLE_Table
@@ -10115,7 +10115,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     ){
       cli_printf(p->out,
             "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
-            modeDescr[p->mode.eMode], p->mode.spec.mxColWidth,
+            modeDescr[p->mode.eMode], p->mode.spec.nWrap,
             p->mode.spec.bWordWrap==QRF_Yes ? "on" : "off",
             p->mode.spec.eText==QRF_TEXT_Sql ? "" : "no");
     }else{
@@ -12211,9 +12211,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
      modeSetStr(&data.mode.spec.zNull, 
                        cmdline_option_value(argc,argv,++i));
     }else if( cli_strcmp(z,"-header")==0 ){
-      data.mode.spec.bColumnNames = QRF_Yes;
+      data.mode.spec.bTitles = QRF_Yes;
      }else if( cli_strcmp(z,"-noheader")==0 ){
-      data.mode.spec.bColumnNames = QRF_No;
+      data.mode.spec.bTitles = QRF_No;
     }else if( cli_strcmp(z,"-echo")==0 ){
       data.mode.bEcho = 1;
     }else if( cli_strcmp(z,"-eqp")==0 ){

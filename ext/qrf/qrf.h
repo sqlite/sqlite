@@ -28,16 +28,16 @@ struct sqlite3_qrf_spec {
   unsigned char eText;        /* Quoting style for text */
   unsigned char eTitle;       /* Quating style for the text of column names */
   unsigned char eBlob;        /* Quoting style for BLOBs */
-  unsigned char bColumnNames; /* True to show column names */
+  unsigned char bTitles;      /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
   unsigned char bTextNull;    /* Apply eText encoding to zNull[] */
   unsigned char eDfltAlign;   /* Default alignment, no covered by aAlignment */
   unsigned char eTitleAlign;  /* Alignment for column headers */
-  short int mxColWidth;       /* Maximum width of any individual column */
+  short int nWrap;            /* Wrap columns wider than this */
   short int nScreenWidth;     /* Maximum overall table width */
-  short int mxRowHeight;      /* Maximum number of lines for any row */
-  int mxLength;               /* Maximum content to display per element */
+  short int nLineLimit;       /* Maximum number of lines for any row */
+  int nCharLimit;             /* Maximum number of characters in a cell */
   int nWidth;                 /* Number of entries in aWidth[] */
   int nAlign;                 /* Number of entries in aAlignment[] */
   short int *aWidth;          /* Column widths */
