@@ -511,17 +511,8 @@ SELECT readfile('FOO');"
 do_test shell1-3.15.3 {
   # too many arguments
   catchcmd "test.db" ".output FOO BAD"
-} {1 {ERROR: extra parameter: "BAD".  Usage:
-.output ?FILE?           Send output to FILE or stdout if FILE is omitted
-   If FILE begins with '|' then open it as a pipe.
-   If FILE is 'off' then output is disabled.
-   Options:
-     --bom                 Prefix output with a UTF8 byte-order mark
-     -e                    Send output to the system text editor
-     --plain               Use text/plain for -w option
-     -w                    Send output to a web browser
-     -x                    Send output as CSV to a spreadsheet
-child process exited abnormally}}
+} {1 {line 1: .output FOO BAD
+line 1:             ^--- surplus argument}}
 
 # .output stdout         Send output to the screen
 do_test shell1-3.16.1 {
@@ -530,17 +521,8 @@ do_test shell1-3.16.1 {
 do_test shell1-3.16.2 {
   # too many arguments
   catchcmd "test.db" ".output stdout BAD"
-} {1 {ERROR: extra parameter: "BAD".  Usage:
-.output ?FILE?           Send output to FILE or stdout if FILE is omitted
-   If FILE begins with '|' then open it as a pipe.
-   If FILE is 'off' then output is disabled.
-   Options:
-     --bom                 Prefix output with a UTF8 byte-order mark
-     -e                    Send output to the system text editor
-     --plain               Use text/plain for -w option
-     -w                    Send output to a web browser
-     -x                    Send output as CSV to a spreadsheet
-child process exited abnormally}}
+} {1 {line 1: .output stdout BAD
+line 1:                ^--- surplus argument}}
 
 # .prompt MAIN CONTINUE  Replace the standard prompts
 do_test shell1-3.17.1 {
