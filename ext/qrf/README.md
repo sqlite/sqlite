@@ -1,8 +1,8 @@
 # SQLite Query Result Formatting Subsystem
 
 The "Query Result Formatter" or "QRF" subsystem is a C-language
-subroutine that formats the output from an SQLite query for display
-using a fix-width font, for example on a TTY or over an SSH connection.
+subroutine that formats the output from an SQLite query for display using
+a fix-width font, for example on a terminal window over an SSH connection.
 The output format is configurable.  The application can request various
 table formats, with flexible column widths and alignments, row-oriented
 formats, such as CSV and similar, as well as various special purpose formats
@@ -546,7 +546,7 @@ The following output modes are currently defined:
 #define QRF_STYLE_Html      7 /* Generate an XHTML table */
 #define QRF_STYLE_Insert    8 /* Generate SQL "insert" statements */
 #define QRF_STYLE_Json      9 /* Output is a list of JSON objects */
-#define QRF_STYLE_JsonLine 10 /* Independent JSON objects for each row */
+#define QRF_STYLE_JObject  10 /* Independent JSON objects for each row */
 #define QRF_STYLE_Line     11 /* One column per line. */
 #define QRF_STYLE_List     12 /* One record per line with a separator */
 #define QRF_STYLE_Markdown 13 /* Markdown formatting */
@@ -621,11 +621,14 @@ that will inserts the data that is output into a table whose name is defined
 by the zTableName field of `sqlite3_qrf_spec`.  If zTableName is NULL,
 then a substitute name is used.
 
-The **Json** and **JsonLine** styles generates JSON text for the query result.
-The **Json** style produces a JSON array of structures with on 
-structure per row.  **JsonLine** outputs independent JSON objects, one per
+The **Json** and **JObject** styles generates JSON text for the query result.
+The **Json** style produces a JSON array of structures with one 
+structure per row.  **JObject** outputs independent JSON objects, one per
 row, with each structure on a separate line all by itself, and not
-part of a larger array.
+part of a larger array.  In both cases, the labels on the elements of the
+JSON objects are taken from the column names of the SQL query.  So if
+you have an SQL query that has two or more output columns with the same
+name, you will end up with JSON structures that have duplicate elements.
 
 Finally, the **Line** style paints each column of a row on a
 separate line with the column name on the left and a "`=`" separating the
