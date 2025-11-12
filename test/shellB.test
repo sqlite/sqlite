@@ -28,14 +28,14 @@ proc do_clitest {name} {
   set script [string map $mapping {
     catch {exec {*}$::CLI :memory: ".read $::testdir/<NAME>" 2>@stdout} res
     set ntest 0
-    set nerr 0
-    regexp {(\d+) tests run with (\d+) errors} $res all ntest nerr
+    set nerr 999
+    regexp {.*(\d+) tests? run with (\d+) errors?} $res all ntest nerr
     set_test_counter count [expr {[set_test_counter count]+$ntest-1}]
     set_test_counter errors [expr {[set_test_counter errors]+$nerr}]
-    set answer "$nerr errors"
+    set answer "error count: $nerr"
   }]
   # puts $script
-  do_test shellB-$name $script {0 errors}
+  do_test shellB-$name $script {error count: 0}
 }
 
 do_clitest modeA.clitest

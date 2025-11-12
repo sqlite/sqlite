@@ -1415,8 +1415,8 @@ static const char *qrfQuoteNames[] = { "off","off","sql","hex", "tcl", "json"};
 #define MODE_QBox     15  /* BOX with SQL-quoted content */
 #define MODE_Quote    16  /* Quote values as for SQL */
 #define MODE_Table    17  /* MySQL-style table formatting */
-#define MODE_Tcl      18  /* Space-separated list of TCL strings */
-#define MODE_Tsv      19  /* Tab-separated values */
+#define MODE_Tabs     18  /* Tab-separated values */
+#define MODE_Tcl      19  /* Space-separated list of TCL strings */
 #define MODE_Www      20  /* Full web-page output */
 
 /*
@@ -1439,7 +1439,7 @@ static const char *aModeStr[] =
    { 0, "\n", "|", " ", ",", "\r\n", "\036", "\037", "\t", "", "NULL", "null" };
 static const ModeInfo aModeInfo[] = {
 /*   zName      eCSep  eRSep eNull eText eBlob bHdr eTitle eStyle eCx */
-  { "ascii",    7,     8,    9,    3,    1,    1,   3,     12,    0  },
+  { "ascii",    7,     6,    9,    1,    1,    1,   1,     12,    0  },
   { "box",      0,     0,    9,    1,    1,    2,   1,     1,     2  },
   { "c",        4,     1,    2,    5,    4,    1,   5,     12,    0  },
   { "column",   0,     0,    9,    1,    1,    2,   1,     2,     2  },
@@ -1457,8 +1457,8 @@ static const ModeInfo aModeInfo[] = {
   { "qbox",     0,     0,    9,    2,    2,    2,   1,     1,     2  },
   { "quote",    4,     1,    10,   2,    2,    1,   2,     12,    0  },
   { "table",    0,     0,    9,    1,    1,    2,   1,     19,    2  },
+  { "tabs",     8,     1,    9,    3,    1,    1,   3,     12,    0  },
   { "tcl",      3,     1,    9,    5,    4,    1,   5,     12,    0  },
-  { "tsv",      8,     5,    9,    3,    1,    1,   3,     12,    0  },
   { "www",      0,     0,    9,    4,    1,    2,   4,     7,     0  },
 };     /*       |     /     /       \      \   |   /      /
        **       |    /     /         \      \  |  /      /
@@ -1973,6 +1973,51 @@ static void output_c_string(FILE *out, const char *z){
     z = pcEnd;
   }
   cli_puts(zq, out);
+}
+
+/* Encode input string z[] as a C-language string literal and
+** append it to the sqlite3_str.  If z is NULL render and empty string.
+*/
+static void append_c_string(sqlite3_str *out, const char *z){
+  char c;
+  static const char *zq = "\"";
+  static long ctrlMask = ~0L;
+  static const char *zDQBSRO = "\"\\\x7f"; /* double-quote, backslash, rubout */
+  char ace[3] = "\\?";
+  char cbsSay;
+  if( z==0 ) z = "";
+  sqlite3_str_appendall(out,zq);
+  while( *z!=0 ){
+    const char *pcDQBSRO = anyOfInStr(z, zDQBSRO, ~(size_t)0);
+    const char *pcPast = zSkipValidUtf8(z, INT_MAX, ctrlMask);
+    const char *pcEnd = (pcDQBSRO && pcDQBSRO < pcPast)? pcDQBSRO : pcPast;
+    if( pcEnd > z ){
+      sqlite3_str_appendf(out, "%.*s", (int)(pcEnd-z), z);
+    }
+    if( (c = *pcEnd)==0 ) break;
+    ++pcEnd;
+    switch( c ){
+    case '\\': case '"':
+      cbsSay = (char)c;
+      break;
+    case '\t': cbsSay = 't'; break;
+    case '\n': cbsSay = 'n'; break;
+    case '\r': cbsSay = 'r'; break;
+    case '\f': cbsSay = 'f'; break;
+    default: cbsSay = 0; break;
+    }
+    if( cbsSay ){
+      ace[1] = cbsSay;
+      sqlite3_str_appendall(out,ace);
+    }else if( !isprint(c&0xff) ){
+      sqlite3_str_appendf(out, "\\%03o", c&0xff);
+    }else{
+      ace[1] = (char)c;
+      sqlite3_str_appendall(out, ace+1);
+    }
+    z = pcEnd;
+  }
+  sqlite3_str_appendall(out, zq);
 }
 
 /*
@@ -7144,9 +7189,68 @@ static int pickStr(const char *zArg, char **pzErr, ...){
 **
 ** USAGE:  .mode [MODE] [OPTIONS]
 **
-** Change the output mode to MODE.  And/or apply OPTIONS to the
-** output mode.  If no arguments, show the current output mode and
-** relevant options.
+** Change the output mode to MODE and/or apply OPTIONS to the
+** output mode.  If no arguments, show the current output mode
+** and relevant options.
+**
+** Options:
+**
+**   --align  STRING          Set the alignment of text in columnar modes
+**                            String consists of characters 'L', 'C', 'R'
+**                            meaning "left", "centered", and "right", with
+**                            one letter per column starting from the left.
+**                            Unspecified alignment defaults to 'L'.
+**
+**   --charlimit N            Set the maximum number of output characters to
+**                            show for any single SQL value to N. Longer values
+**                            truncated. Zero means "no limit".
+**
+**   --colsep  STRING         Use STRING as the column separator
+**
+**   --escape  ESC            Enable/disable escaping of control characters
+**                            in output. ESC can be "off", "ascii", or
+**                            "symbol".
+**
+**   --linelimit N            Set the maximum number of output lines to show for
+**                            any single SQL value to N. Longer values are
+**                            truncated. Zero means "no limit". Only works
+**                            in "line" mode and in columnar modes.
+**
+**   --null  STRING           Render SQL NULL values as the given string
+**
+**   --quote  ARG             Enable/disable quoting of text. ARG can be
+**                            "off", "on", "sql", "csv", "html", "tcl",
+**                            or "json".  "off" means show the text as-is.
+**                            "on and "sql" are synonyms.
+**
+**   --reset                  Changes all mode settings back to their default.
+**
+**   --rowsep  STRING         Use STRING as the row separator
+**
+**   --screenwidth N          Declare the screen width of the output device
+**                            to be N characters.  An attempt may be made to
+**                            wrap output text to fit within this limit. Zero
+**                            means "no limit".  Or N can be "auto" to set the
+**                            width automatically.
+**
+**   --tablename  NAME        Set the name of the table for "insert" mode.
+**
+**   --textjsonb  BOOLEAN     If enabled, JSONB text is displayed as text JSON.
+**
+**   -v|--verbose             Verbose output
+**
+**   --widths  LIST           Set the columns widths for columnar modes. The
+**                            argument is a list of integers, one for each
+**                            column. A "0" width means use a dynamic width
+**                            based on the actual width of data. If there are
+**                            fewer entries in LIST than columns, "0" is used
+**                            for the unspecified widths.
+**
+**   --wordwrap  BOOLEAN      Enable/disable word wrapping
+**
+**   --wrap  N                Wrap columns wider than N characters
+**
+**   --ww                     Shorthand for "--wordwrap on"
 */
 static int dotCmdMode(ShellState *p){
   int nArg = p->dot.nArg;     /* Number of arguments */
@@ -7156,24 +7260,100 @@ static int dotCmdMode(ShellState *p){
   int i;                      /* Loop counter */
   int k;                      /* Misc index variable */
   int chng = 0;               /* True if anything has changed */
+  int bAll = 0;               /* Show all details of the mode */
 
   for(i=1; i<nArg; i++){
     const char *z = azArg[i];
-    if( optionMatch(z,"wrap") && i+1<nArg ){
-      int w = integerValue(azArg[++i]);
-      if( w<(-QRF_MAX_WIDTH) ) w = -QRF_MAX_WIDTH;
-      if( w>QRF_MAX_WIDTH ) w = QRF_MAX_WIDTH;
-      p->mode.spec.nWrap = w;
+    if( z[0]=='-' && z[1]=='-' ) z++;
+    if( z[0]!='-'
+     && iMode<0
+     && (eMode = modeFind(azArg[i]))>=0
+     && eMode!=MODE_Www
+    ){
+      iMode = i;
+      modeChange(&p->mode, eMode);
+      /* (Legacy) If the mode is MODE_Insert and the next argument
+      ** is not an option, then the next argument must be the table
+      ** name.
+      */
+      if( i+1<nArg && azArg[i+1][0]!='-' ){
+        i++;
+        modeSetStr(&p->mode.spec.zTableName, azArg[i]);
+      }
       chng = 1;
-    }else if( optionMatch(z,"ww") ){
-      p->mode.spec.bWordWrap = QRF_Yes;
-      chng = 1;
-    }else if( optionMatch(z,"wordwrap") ){
+    }else if( optionMatch(z,"align") ){
+      char *zAlign;
+      int nAlign;
+      int nErr = 0;
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
-      p->mode.spec.bWordWrap = (u8)booleanValue(azArg[++i]) ? QRF_Yes : QRF_No;
+      i++;
+      zAlign = azArg[i];
+      nAlign = 0x3fff & strlen(zAlign);
+      free(p->mode.spec.aAlign);
+      p->mode.spec.aAlign = malloc(nAlign);
+      shell_check_oom(p->mode.spec.aAlign);
+      for(k=0; k<nAlign; k++){
+        unsigned char c = 0;
+        switch( zAlign[k] ){
+          case 'l': case 'L':   c = QRF_ALIGN_Left;   break;
+          case 'c': case 'C':   c = QRF_ALIGN_Center; break;
+          case 'r': case 'R':   c = QRF_ALIGN_Right;  break;
+          default:  nErr++; break;
+        }
+        p->mode.spec.aAlign[k] = c;
+      }
+      p->mode.spec.nAlign = nAlign;
+      chng = 1;
+      if( nErr ){
+        dotCmdError(p, i, "bad alignment string",
+             "Should contain only characters L, C, and R.");
+        return 1;
+      }
+    }else if( 0<=(k=pickStr(z,0,"-charlimit","-linelimit","")) ){
+      int w;                /*   0            1  */
+      if( i+1>=nArg ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      w = integerValue(azArg[++i]);
+      if( k==0 ){
+        p->mode.spec.nCharLimit = w;
+      }else{
+        p->mode.spec.nLineLimit = 2;
+      }
+      chng = 1;
+    }else if( 0<=(k=pickStr(z,0,"-tablename","-rowsep","-colsep","-null","")) ){
+                            /*   0            1         2         3 */
+      if( i+1>=nArg ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      i++;
+      switch( k ){
+        case 0: modeSetStr(&p->mode.spec.zTableName, azArg[i]); break;
+        case 1: modeSetStr(&p->mode.spec.zRowSep, azArg[i]);    break;
+        case 2: modeSetStr(&p->mode.spec.zColumnSep, azArg[i]); break;
+        case 3: modeSetStr(&p->mode.spec.zNull, azArg[i]);      break;
+      }
+      chng = 1;
+    }else if( optionMatch(z,"escape") ){
+      /* See similar code at tag-20250224-1 */
+      char *zErr = 0;
+      if( i+1>=nArg ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      i++;                    /*  0     1       2  <-- One less than QRF_ESC_ */
+      k = pickStr(azArg[i],&zErr,"off","ascii","symbol","");
+      if( k<0 ){
+        dotCmdError(p, i, "unknown escape type", "%s", zErr);
+        sqlite3_free(zErr);
+        return 1;
+      }
+      p->mode.spec.eEsc = k+1;
       chng = 1;
     }else if( optionMatch(z,"quote") ){
       if( i+1<nArg
@@ -7232,63 +7412,77 @@ static int dotCmdMode(ShellState *p){
       p->mode.spec.eText = QRF_TEXT_Plain;
       p->mode.spec.eBlob = QRF_BLOB_Text;
       chng = 1;
+    }else if( optionMatch(z,"reset") ){
+      int eMode = p->mode.eMode;
+      modeFree(&p->mode);
+      modeChange(&p->mode, eMode);
     }else if( optionMatch(z,"textjsonb") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
-      p->mode.spec.bTextJsonb = (u8)booleanValue(azArg[++i]) ? QRF_Yes : QRF_No;
+      p->mode.spec.bTextJsonb = booleanValue(azArg[++i]) ? QRF_Yes : QRF_No;
       chng = 1;
-    }else if( optionMatch(z,"escape") ){
-      /* See similar code at tag-20250224-1 */
-      char *zErr = 0;
+    }else if( optionMatch(z,"widths") ){
+      int nWidth = 0;
+      short int *aWidth;
+      const char *z;
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
-      i++;                    /*  0     1       2  <-- One less than QRF_ESC_ */
-      k = pickStr(azArg[i],&zErr,"off","ascii","symbol","");
-      if( k<0 ){
-        dotCmdError(p, i, "unknown escape type", "%s", zErr);
-        sqlite3_free(zErr);
-        return 1;
+      z = azArg[++i];
+      /* Every width value takes at least 2 bytes in the input string to
+      ** specify, so strlen(z) bytes should be plenty of space to hold the
+      ** result. */
+      aWidth = malloc( strlen(z) );
+      while( isspace(z[0]) ) z++;
+      while( z[0] ){
+        int w = 0;
+        k = z[0]=='-' && isdigit(z[1]);
+        while( isdigit(z[k]) ){
+          w = w*10 + z[k] - '0';
+          if( w>QRF_MAX_WIDTH ){
+            dotCmdError(p,i+1,"width too big",
+                        "Maximum column width is %d", QRF_MAX_WIDTH);
+            free(aWidth);
+            return 1;
+          }
+          k++;
+        }
+        if( z[0]=='-' ) w = -w;
+        aWidth[nWidth++] = w;
+        z += k;
+        if( z[0]==',' ) z++;
+        while( isspace(z[0]) ) z++;
       }
-      p->mode.spec.eEsc = k+1;
+      free(p->mode.spec.aWidth);
+      p->mode.spec.aWidth = aWidth;
+      p->mode.spec.nWidth = nWidth;
       chng = 1;
-    }else if( 0<=(k=pickStr(z,0,"-tablename","-rowsep","-colsep","-null","")) ){
-                            /*   0            1         2         3 */
+    }else if( optionMatch(z,"wrap") ){
+      int w;
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
-      i++;
-      switch( k ){
-        case 0: modeSetStr(&p->mode.spec.zTableName, azArg[i]); break;
-        case 1: modeSetStr(&p->mode.spec.zRowSep, azArg[i]);    break;
-        case 2: modeSetStr(&p->mode.spec.zColumnSep, azArg[i]); break;
-        case 3: modeSetStr(&p->mode.spec.zNull, azArg[i]);      break;
-      }
+      w = integerValue(azArg[++i]);
+      if( w<(-QRF_MAX_WIDTH) ) w = -QRF_MAX_WIDTH;
+      if( w>QRF_MAX_WIDTH ) w = QRF_MAX_WIDTH;
+      p->mode.spec.nWrap = w;
       chng = 1;
-    }else if( iMode<0 && (eMode = modeFind(azArg[i]))>=0 && eMode!=MODE_Www ){
-      iMode = i;
-      modeChange(&p->mode, eMode);
-      /* (Legacy) If the mode is MODE_Insert and the next argument
-      ** is not an option, then the next argument must be the table
-      ** name.
-      */
-      if( i+1<nArg && azArg[i+1][0]!='-' ){
-        i++;
-        modeSetStr(&p->mode.spec.zTableName, azArg[i]);
-      }
+    }else if( optionMatch(z,"ww") ){
+      p->mode.spec.bWordWrap = QRF_Yes;
       chng = 1;
-    }else if( optionMatch(z,"error-prefix") ){
+    }else if( optionMatch(z,"wordwrap") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
-      free(p->zErrPrefix);
-      p->zErrPrefix = strdup(azArg[++i]);
+      p->mode.spec.bWordWrap = (u8)booleanValue(azArg[++i]) ? QRF_Yes : QRF_No;
       chng = 1;
+    }else if( optionMatch(z,"v") || optionMatch(z,"verbose") ){
+      bAll = 1;
     }else if( z[0]=='-' ){
       dotCmdError(p, i, "bad option", "Use \".help .mode\" for more info");
       return 1;
@@ -7298,22 +7492,87 @@ static int dotCmdMode(ShellState *p){
       return 1;
     }
   }
-  if( !chng ){
+  if( !chng || bAll ){
     const ModeInfo *pI = aModeInfo + p->mode.eMode;
     sqlite3_str *pDesc = sqlite3_str_new(p->db);
     char *zDesc;
+    const char *zSetting;
     sqlite3_str_appendall(pDesc,pI->zName);
-    if( pI->eCx>0 && p->mode.spec.bWordWrap ){
+    if( bAll || (p->mode.spec.nAlign && pI->eCx==2) ){
+      int i;
+      sqlite3_str_appendall(pDesc, " --align \"");
+      for(i=0; i<p->mode.spec.nAlign; i++){
+        unsigned char a = p->mode.spec.aAlign[i];
+        sqlite3_str_append(pDesc, "LLCR"+(a&3), 1);
+      }
+      sqlite3_str_append(pDesc, "\"", 1);
+    }
+    if( bAll || p->mode.spec.nCharLimit>0 ){
+      sqlite3_str_appendf(pDesc, " --charlimit %d",p->mode.spec.nCharLimit);
+    }
+    zSetting = aModeStr[pI->eCSep];
+    if( bAll || (zSetting && cli_strcmp(zSetting,p->mode.spec.zColumnSep)!=0) ){
+      sqlite3_str_appendf(pDesc, " --colsep ");
+      append_c_string(pDesc, p->mode.spec.zColumnSep);
+    }
+    if( bAll || p->mode.spec.eEsc!=QRF_Auto ){
+      sqlite3_str_appendf(pDesc, " --escape %s",qrfEscNames[p->mode.spec.eEsc]);
+    }
+    if( bAll || (p->mode.spec.nLineLimit>0 && pI->eCx>0) ){
+      sqlite3_str_appendf(pDesc, " --linelimit %d",p->mode.spec.nLineLimit);
+    }
+    zSetting = aModeStr[pI->eNull];
+    if( bAll || (zSetting && cli_strcmp(zSetting,p->mode.spec.zNull)!=0) ){
+      sqlite3_str_appendf(pDesc, " --null ");
+      append_c_string(pDesc, p->mode.spec.zNull);
+    }
+    if( bAll 
+     || (pI->eText!=p->mode.spec.eText && (pI->eText>1 || p->mode.spec.eText>1))
+    ){
+      sqlite3_str_appendf(pDesc," --quote %s",qrfQuoteNames[p->mode.spec.eText]);
+    }
+    zSetting = aModeStr[pI->eRSep];
+    if( bAll || (zSetting && cli_strcmp(zSetting,p->mode.spec.zRowSep)!=0) ){
+      sqlite3_str_appendf(pDesc, " --rowsep ");
+      append_c_string(pDesc, p->mode.spec.zRowSep);
+    }
+    if( bAll
+     || (pI->eCx && (p->mode.spec.nLineLimit>0 || p->mode.bAutoScreenWidth))
+    ){
+      if( p->mode.bAutoScreenWidth ){
+        sqlite3_str_appendall(pDesc, " --screenwidth auto");
+      }else{
+        sqlite3_str_appendf(pDesc," --screenwidth %d",
+                            p->mode.spec.nScreenWidth);
+      }
+    }
+    if( bAll || p->mode.eMode==MODE_Insert ){
+      sqlite3_str_appendf(pDesc," --tablename ");
+      append_c_string(pDesc, p->mode.spec.zTableName);
+    }
+    if( bAll || p->mode.spec.bTextJsonb ){
+      sqlite3_str_appendf(pDesc," --textjsonb %s",
+             p->mode.spec.bTextJsonb==QRF_Yes ? "on" : "off");
+    }
+    if( p->mode.spec.nWidth>0 && (bAll || pI->eCx==2) ){
+      int i;
+      const char *zSep = " --widths ";
+      for(i=0; i<p->mode.spec.nWidth; i++){
+        sqlite3_str_appendf(pDesc, "%s%d", zSep, (int)p->mode.spec.aWidth[i]);
+        zSep = ",";
+      }
+    }else if( bAll ){
+      sqlite3_str_appendall(pDesc, " --widths \"\"");
+    }
+    if( bAll || (pI->eCx>0 && p->mode.spec.bWordWrap) ){
+      if( bAll ){
+        sqlite3_str_appendf(pDesc, " --wordwrap %s",
+          p->mode.spec.bWordWrap==QRF_Yes ? "on" : "off");
+      }
       if( p->mode.spec.nWrap ){
         sqlite3_str_appendf(pDesc, " --wrap %d", p->mode.spec.nWrap);
       }
-      sqlite3_str_append(pDesc, " --ww", 5);
-    }
-    if( pI->eText!=p->mode.spec.eText ){
-      sqlite3_str_appendf(pDesc," --quote %s",qrfQuoteNames[p->mode.spec.eText]);
-    }
-    if( p->mode.spec.eEsc!=QRF_Auto ){
-      sqlite3_str_appendf(pDesc, " --escape %s", qrfEscNames[p->mode.spec.eEsc]);
+      if( !bAll ) sqlite3_str_append(pDesc, " --ww", 5);
     }
     zDesc = sqlite3_str_finish(pDesc);
     cli_printf(p->out, "current output mode: %s\n", zDesc);
@@ -7339,6 +7598,9 @@ static int dotCmdMode(ShellState *p){
 **
 **   -e                Accumulate output in a temporary text file then
 **                     launch a text editor when the redirection ends.
+**
+**   --error-prefix X  Use X as the left-margin prefix for error messages.
+**                     Set to an empty string to restore the default.
 **
 **   --glob GLOB       Raise an error if the memory buffer does not match
 **                     the GLOB pattern.
@@ -7463,6 +7725,14 @@ static int dotCmdOutput(ShellState *p){
         }
         zCheck = azArg[++i];
         eCheck = z[1]=='g' ? 1 : z[1]=='n' ? 2 : 3;
+      }else if( optionMatch(z,"error-prefix") ){
+        if( i+1>=nArg ){
+          dotCmdError(p, i, "missing argument", 0);
+          return 1;
+        }
+        free(p->zErrPrefix);
+        i++;
+        p->zErrPrefix = azArg[i][0]==0 ? 0 : strdup(azArg[i]);
       }else{
         dotCmdError(p, i, "unknown option", 0);
         sqlite3_free(zFile);
@@ -7517,6 +7787,7 @@ static int dotCmdOutput(ShellState *p){
       int nCheck = strlen30(zCheck);
       sqlite3_str *pPattern = sqlite3_str_new(p->db);
       char *zPattern;
+      sqlite3_int64 iStart = p->lineno;
       char zLine[2000];
       while( sqlite3_fgets(zLine,sizeof(zLine),p->in) ){
         if( strchr(zLine,'\n') ) p->lineno++;
@@ -7527,7 +7798,7 @@ static int dotCmdOutput(ShellState *p){
       if( cli_strcmp(zPattern,zTest)!=0 ){
         sqlite3_fprintf(stderr,
             "%s:%lld: --verify does matches prior output\n",
-          p->zInFile, p->lineno);
+          p->zInFile, iStart);
         p->nTestErr++;
       }
       sqlite3_free(zPattern);
@@ -11870,6 +12141,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   int nOptsEnd = argc;
   int bEnableVfstrace = 0;
   char **azCmd = 0;
+  int *aiCmd = 0;
   const char *zVfs = 0;           /* Value of -vfs command-line option */
 #if !SQLITE_SHELL_IS_UTF8
   char **argvToFree = 0;
@@ -11995,7 +12267,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         nCmd++;
         azCmd = realloc(azCmd, sizeof(azCmd[0])*nCmd);
         shell_check_oom(azCmd);
+        aiCmd = realloc(aiCmd, sizeof(aiCmd[0])*nCmd);
+        shell_check_oom(azCmd);
         azCmd[nCmd-1] = z;
+        aiCmd[nCmd-1] = i;
       }
       continue;
     }
@@ -12216,28 +12491,25 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     if( cli_strcmp(z,"-init")==0 ){
       i++;
     }else if( cli_strcmp(z,"-html")==0 ){
-      data.mode.eMode = MODE_Html;
+      modeChange(&data.mode, MODE_Html);
     }else if( cli_strcmp(z,"-list")==0 ){
-      data.mode.eMode = MODE_List;
+      modeChange(&data.mode, MODE_List);
     }else if( cli_strcmp(z,"-quote")==0 ){
-      data.mode.eMode = MODE_Quote;
-      modeSetStr(&data.mode.spec.zColumnSep, SEP_Comma);
-      modeSetStr(&data.mode.spec.zRowSep, SEP_Row);
+      modeChange(&data.mode, MODE_Quote);
     }else if( cli_strcmp(z,"-line")==0 ){
-      data.mode.eMode = MODE_Line;
+      modeChange(&data.mode, MODE_Line);
     }else if( cli_strcmp(z,"-column")==0 ){
-      data.mode.eMode = MODE_Column;
+      modeChange(&data.mode, MODE_Column);
     }else if( cli_strcmp(z,"-json")==0 ){
-      data.mode.eMode = MODE_Json;
+      modeChange(&data.mode, MODE_Json);
     }else if( cli_strcmp(z,"-markdown")==0 ){
-      data.mode.eMode = MODE_Markdown;
+      modeChange(&data.mode, MODE_Markdown);
     }else if( cli_strcmp(z,"-table")==0 ){
-      data.mode.eMode = MODE_Table;
+      modeChange(&data.mode, MODE_Table);
     }else if( cli_strcmp(z,"-box")==0 ){
-      data.mode.eMode = MODE_Box;
+      modeChange(&data.mode, MODE_Box);
     }else if( cli_strcmp(z,"-csv")==0 ){
-      data.mode.eMode = MODE_Csv;
-      modeSetStr(&data.mode.spec.zColumnSep, SEP_Comma);
+      modeChange(&data.mode, MODE_Csv);
     }else if( cli_strcmp(z,"-escape")==0 && i+1<argc ){
       /* See similar code at tag-20250224-1 */
       const char *zEsc = argv[++i];
@@ -12280,13 +12552,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.openFlags &= ~(SQLITE_OPEN_CREATE);
       if( data.openFlags==0 ) data.openFlags = SQLITE_OPEN_READWRITE;
     }else if( cli_strcmp(z,"-ascii")==0 ){
-      data.mode.eMode = MODE_Ascii;
-      modeSetStr(&data.mode.spec.zColumnSep, SEP_Unit);
-      modeSetStr(&data.mode.spec.zRowSep, SEP_Record);
+      modeChange(&data.mode, MODE_Ascii);
     }else if( cli_strcmp(z,"-tabs")==0 ){
-      data.mode.eMode = MODE_List;
-      modeSetStr(&data.mode.spec.zColumnSep, SEP_Tab);
-      modeSetStr(&data.mode.spec.zRowSep, SEP_Row);
+      modeChange(&data.mode, MODE_Tabs);
     }else if( cli_strcmp(z,"-separator")==0 ){
       modeSetStr(&data.mode.spec.zColumnSep, 
                        cmdline_option_value(argc,argv,++i));
@@ -12424,8 +12692,14 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     for(i=0; i<nCmd; i++){
       echo_group_input(&data, azCmd[i]);
       if( azCmd[i][0]=='.' ){
+        char *zErrCtx = malloc( 64 );
+        shell_check_oom(zErrCtx);
+        sqlite3_snprintf(64,zErrCtx,"argv[%i]:",aiCmd[i]);
         data.zInFile = "<cmdline>";
+        data.zErrPrefix = zErrCtx;
         rc = do_meta_command(azCmd[i], &data);
+        free(data.zErrPrefix);
+        data.zErrPrefix = 0;
         if( rc ){
           if( rc==2 ) rc = 0;
           goto shell_main_exit;
@@ -12505,6 +12779,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
  shell_main_exit:
   free(azCmd);
+  free(aiCmd);
   set_table_name(&data, 0);
   if( data.db ){
     session_close_all(&data, -1);

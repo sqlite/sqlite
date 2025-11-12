@@ -15,7 +15,6 @@
 #   ./sqlite3 <test/modeA.clitest
 #
 #
-.mode --error-prefix "Error:"
 CREATE TABLE t1(a,b,c,d,e);
 INSERT INTO t1 VALUES(1,2.5,'three',x'4444',NULL);
 INSERT INTO t1 SELECT b,c,d,e,a FROM t1;
@@ -34,9 +33,9 @@ SELECT * FROM t1;
 │     │ 1     │ 2.5   │ three │ DD    │
 └─────┴───────┴───────┴───────┴───────┘
 END
-.null xyz
 
 .output memory
+.mode --null xyz
 SELECT * FROM t1;
 .output --verify END
 ┌─────┬───────┬───────┬───────┬───────┐
@@ -49,10 +48,17 @@ SELECT * FROM t1;
 └─────┴───────┴───────┴───────┴───────┘
 END
 
-.output memory
+.output memory --error-prefix "Error:"
 .mode foo
 .output --verify END
 Error: .mode foo
 Error:       ^--- unknown mode
 Error: Use ".help .mode" for more info
 END
+
+.output memory
+.mode --null xyzzy -v
+.output -glob ' --null "xyzzy"'
+.output memory
+.mode -null abcde -v
+.output -glob ' --null "abcde"'

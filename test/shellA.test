@@ -101,7 +101,9 @@ do_test shellA-1.9 {
      exec {*}$CLI test.db {.mode test --escape xyz}
   } msg]
   lappend rc $msg
-} {1 {unknown control character escape mode "xyz" - choices: auto off ascii symbol}}
+} {1 {argv[2]: .mode test --escape xyz
+argv[2]:       ^--- unknown mode
+argv[2]: Use ".help .mode" for more info}}
 do_test shellA-1.10 {
   set rc [catch {
      exec {*}$CLI --escape abc test.db .q
@@ -121,8 +123,8 @@ do_test shellA-2.1 {
 8,'last line'
 }
 do_test shellA-2.2 {
-  exec {*}$CLI test.db --quote {.mode}
-} {current output mode: quote --escape ascii}
+  exec {*}$CLI test.db --quote {.mode -v}
+} {/*current output mode: quote* --escape auto*/}
 do_test shellA-2.3 {
   exec {*}$CLI test.db --quote --escape SYMBOL {.mode}
 } {current output mode: quote --escape symbol}
