@@ -23,7 +23,7 @@ this writing, but is not set in stone forever and may change at any
 time. This doc targets maintainers of this code and those wanting to
 dive in to the details, not end user.
 
-First off, a pikchr of the proverbial onion:
+First off, a [pikchr][] of the proverbial onion:
 
 ```pikchr toggle center
 scale = 0.85
@@ -211,3 +211,4 @@ of such preprocessing are maintained in
 
 
 [OPFS]: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
+[pikchr]: https://pikchr.org
