@@ -1294,6 +1294,7 @@ struct ShellState {
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
+  char *zErrPrefix;      /* Alternative error message prefix */
   char zTestcase[30];    /* Name of current test case */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   sqlite3_stmt *pStmt;   /* Current statement if any. */
@@ -1378,6 +1379,7 @@ static const char *qrfQuoteNames[] = { "off","off","sql","hex", "tcl", "json"};
 #define SHFLG_Lookaside      0x00000002 /* Lookaside memory is used */
 #define SHFLG_Backslash      0x00000004 /* The --backslash option is used */
 #define SHFLG_PreserveRowid  0x00000008 /* .dump preserves rowid values */
+#define SHFLG_NoErrLineno    0x00000010 /* Omit line numbers from error msgs */
 #define SHFLG_CountChanges   0x00000020 /* .changes setting */
 #define SHFLG_DumpDataOnly   0x00000100 /* .dump show data only */
 #define SHFLG_DumpNoSys      0x00000200 /* .dump omits system tables */
@@ -1636,7 +1638,9 @@ static void shellPutsFunc(
 */
 static char *shellErrorLocation(ShellState *p){
   char *zLoc;
-  if( p->zInFile==0 || strcmp(p->zInFile,"<stdin>")==0){
+  if( p->zErrPrefix ){
+    zLoc = sqlite3_mprintf("%s", p->zErrPrefix);
+  }else if( p->zInFile==0 || strcmp(p->zInFile,"<stdin>")==0){
     zLoc = sqlite3_mprintf("line %lld:", p->lineno);
   }else{
     zLoc = sqlite3_mprintf("%s:%lld:", p->zInFile, p->lineno);
@@ -7276,7 +7280,15 @@ static int dotCmdMode(ShellState *p){
         i++;
         modeSetStr(&p->mode.spec.zTableName, azArg[i]);
       }
-      chng = 1;      
+      chng = 1;
+    }else if( optionMatch(z,"error-prefix") ){
+      if( i+1>=nArg ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      free(p->zErrPrefix);
+      p->zErrPrefix = strdup(azArg[++i]);
+      chng = 1;
     }else if( z[0]=='-' ){
       dotCmdError(p, i, "bad option", "Use \".help .mode\" for more info");
       return 1;
@@ -12514,6 +12526,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   free(argvToFree);
 #endif
   modeFree(&data.mode);
+  free(data.zErrPrefix);
   free(data.zNonce);
   free(data.dot.zCopy);
   free(data.dot.azArg);

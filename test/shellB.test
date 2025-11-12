@@ -1,0 +1,43 @@
+# 2025-11-12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# TESTRUNNER: shell
+#
+# Test cases for the command-line shell using the new ".output memory"
+# feature.
+#
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set CLI [test_cli_invocation]
+
+# Run an instance of the CLI on the file $name.
+# Capture the number of test cases and the number of
+# errors and increment the counts.
+#
+proc do_clitest {name} {
+  set mapping [list <NAME> $name]
+  set script [string map $mapping {
+    catch {exec {*}$::CLI :memory: ".read $::testdir/<NAME>" 2>@stdout} res
+    set ntest 0
+    set nerr 0
+    regexp {(\d+) tests run with (\d+) errors} $res all ntest nerr
+    set_test_counter count [expr {[set_test_counter count]+$ntest-1}]
+    set_test_counter errors [expr {[set_test_counter errors]+$nerr}]
+    set answer "$nerr errors"
+  }]
+  # puts $script
+  do_test shellB-$name $script {0 errors}
+}
+
+do_clitest modeA.clitest
+
+finish_test
