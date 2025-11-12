@@ -1779,7 +1779,7 @@ static int qrf_need_quote(const char *zName){
 }
 
 /*
-** Helper function for QRF_STYLE_Json and QRF_STYLE_JsonLine.
+** Helper function for QRF_STYLE_Json and QRF_STYLE_JObject.
 ** The initial "{" for a JSON object that will contain row content
 ** has been output.  Now output all the content.
 */
@@ -1819,7 +1819,7 @@ static void qrfOneSimpleRow(Qrf *p){
       qrfOneJsonRow(p);
       break;
     }
-    case QRF_STYLE_JsonLine: {
+    case QRF_STYLE_JObject: {
       if( p->nRow==0 ){
         sqlite3_str_append(p->pOut, "{", 1);
       }else{
@@ -2009,7 +2009,7 @@ qrf_reinit:
       if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
       break;
     }
-    case QRF_STYLE_JsonLine:
+    case QRF_STYLE_JObject:
     case QRF_STYLE_Json: {
       p->spec.eText = QRF_TEXT_Json;
       p->spec.eBlob = QRF_BLOB_Json;
@@ -2129,7 +2129,7 @@ static void qrfFinalize(Qrf *p){
       qrfWrite(p);
       break;
     }
-    case QRF_STYLE_JsonLine: {
+    case QRF_STYLE_JObject: {
       sqlite3_str_append(p->pOut, "}\n", 2);
       qrfWrite(p);
       break;

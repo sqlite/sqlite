@@ -1366,9 +1366,10 @@ static ShellState shellState;
                                    ** top-level SQL statement */
 #define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
 
-/* Names of values for Mode.spec.eEsc.
+/* Names of values for Mode.spec.eEsc and Mode.spec.eText
 */
 static const char *qrfEscNames[] = { "auto", "off", "ascii", "symbol" };
+static const char *qrfQuoteNames[] = { "off","off","sql","hex", "tcl", "json"};
 
 /*
 ** These are the allowed shellFlgs values
@@ -1394,61 +1395,77 @@ static const char *qrfEscNames[] = { "auto", "off", "ascii", "symbol" };
 ** between these values and the Mode.spec.eStyle values, but they are not
 ** one-to-one, and thus need to be tracked separately.
 */
-#define MODE_Line      0  /* One column per line.  Blank line between records */
-#define MODE_Column    1  /* One record per line in neat columns */
-#define MODE_List      2  /* One record per line with a separator */
-#define MODE_Html      3  /* Generate an XHTML table */
-#define MODE_Insert    4  /* Generate SQL "insert" statements */
-#define MODE_Quote     5  /* Quote values as for SQL */
-#define MODE_Tcl       6  /* Generate ANSI-C or TCL quoted elements */
-#define MODE_Csv       7  /* Quote strings, numbers are plain */
-#define MODE_Ascii     8  /* Use ASCII unit and record separators (0x1F/0x1E) */
-#define MODE_Json      9  /* Output JSON */
-#define MODE_Markdown 10 /* Markdown formatting */
-#define MODE_Table    11  /* MySQL-style table formatting */
-#define MODE_Box      12  /* Unicode box-drawing characters */
-#define MODE_Count    13  /* Output only a count of the rows of output */
+#define MODE_Ascii     0  /* Use ASCII unit and record separators (0x1F/0x1E) */
+#define MODE_Box       1  /* Unicode box-drawing characters */
+#define MODE_C         2  /* Comma-separated list of C-strings */
+#define MODE_Column    3  /* One record per line in neat columns */
+#define MODE_Count     4  /* Output only a count of the rows of output */
+#define MODE_Csv       5  /* Quote strings, numbers are plain */
+#define MODE_Html      6  /* Generate an XHTML table */
+#define MODE_Insert    7  /* Generate SQL "insert" statements */
+#define MODE_JAtom     8  /* Comma-separated list of JSON atoms */
+#define MODE_JObject   9  /* One JSON object per row */
+#define MODE_Json     10  /* Output JSON */
+#define MODE_Line     11  /* One column per line.  Blank line between records */
+#define MODE_List     12  /* One record per line with a separator */
+#define MODE_Markdown 13  /* Markdown formatting */
 #define MODE_Off      14  /* No query output shown */
-#define MODE_Www      15  /* Full web-page output */
+#define MODE_QBox     15  /* BOX with SQL-quoted content */
+#define MODE_Quote    16  /* Quote values as for SQL */
+#define MODE_Table    17  /* MySQL-style table formatting */
+#define MODE_Tcl      18  /* Space-separated list of TCL strings */
+#define MODE_Tsv      19  /* Tab-separated values */
+#define MODE_Www      20  /* Full web-page output */
 
-static const char *modeDescr[] = {
-  "line",
-  "column",
-  "list",
-  "html",
-  "insert",
-  "quote",
-  "tcl",
-  "csv",
-  "ascii",
-  "json",
-  "markdown",
-  "table",
-  "box",
-  "count",
-  "off",
-  "www",
+/*
+*/
+typedef struct ModeInfo ModeInfo;
+struct ModeInfo {
+  char zName[9];         /* Symbolic name of the mode */
+  unsigned char eCSep;   /* Column separator */
+  unsigned char eRSep;   /* Row separator */
+  unsigned char eNull;   /* Null representation */
+  unsigned char eText;   /* Default text encoding */
+  unsigned char eBlob;   /* Default blob encoding */
+  unsigned char bHdr;    /* Show headers? */
+  unsigned char eTitle;  /* Header incoding. */
+  unsigned char eStyle;  /* Underlying QRF style */
+  unsigned char eCx;     /* 0: other, 1: line, 2: columnar */
 };
-
-/* This is the translation from Mode.eMode to Mode.spec.eStyle: */
-static const unsigned char aQrfStyle[] = {
-  /* line */         QRF_STYLE_Line,
-  /* column */       QRF_STYLE_Column,
-  /* list */         QRF_STYLE_List,
-  /* html */         QRF_STYLE_Html,
-  /* insert */       QRF_STYLE_Insert,
-  /* quote */        QRF_STYLE_Quote,
-  /* tcl */          QRF_STYLE_List,
-  /* csv */          QRF_STYLE_Csv,
-  /* ascii */        QRF_STYLE_List,
-  /* json */         QRF_STYLE_Json,
-  /* markdown */     QRF_STYLE_Markdown,
-  /* table */        QRF_STYLE_Table,
-  /* box */          QRF_STYLE_Box,
-  /* count */        QRF_STYLE_Count,
-  /* off */          QRF_STYLE_Off,
-  /* www */          QRF_STYLE_Html,
-};
+static const char *aModeStr[] = 
+  /* 0  1     2    3    4    5       6       7       8     9   10      11 */
+   { 0, "\n", "|", " ", ",", "\r\n", "\036", "\037", "\t", "", "NULL", "null" };
+static const ModeInfo aModeInfo[] = {
+/*   zName      eCSep  eRSep eNull eText eBlob bHdr eTitle eStyle eCx */
+  { "ascii",    7,     8,    9,    3,    1,    1,   3,     12,    0  },
+  { "box",      0,     0,    9,    1,    1,    2,   1,     1,     2  },
+  { "c",        4,     1,    2,    5,    4,    1,   5,     12,    0  },
+  { "column",   0,     0,    9,    1,    1,    2,   1,     2,     2  },
+  { "count",    0,     0,    0,    0,    0,    0,   0,     3,     0  },
+  { "csv",      4,     5,    9,    3,    1,    1,   3,     12,    0  },
+  { "html",     0,     0,    9,    4,    1,    2,   4,     7,     0  },
+  { "insert",   0,     0,    10,   2,    2,    1,   2,     8,     0  },
+  { "jatom",    4,     1,    11,   6,    5,    1,   6,     12,    0  },
+  { "jobject",  0,     1,    11,   6,    5,    0,   0,     10,    0  },
+  { "json",     0,     0,    11,   6,    6,    0,   0,     9,     0  },
+  { "line",     0,     1,    9,    1,    1,    0,   0,     11,    1  },
+  { "list",     2,     1,    9,    1,    1,    1,   1,     12,    0  },
+  { "markdown", 0,     0,    9,    1,    1,    2,   1,     13,    2  },
+  { "off",      0,     0,    0,    0,    0,    0,   0,     14,    0  },
+  { "qbox",     0,     0,    9,    2,    2,    2,   1,     1,     2  },
+  { "quote",    4,     1,    10,   2,    2,    1,   2,     12,    0  },
+  { "table",    0,     0,    9,    1,    1,    2,   1,     19,    2  },
+  { "tcl",      3,     1,    9,    5,    4,    1,   5,     12,    0  },
+  { "tsv",      8,     5,    9,    3,    1,    1,   3,     12,    0  },
+  { "www",      0,     0,    9,    4,    1,    2,   4,     7,     0  },
+};     /*       |     /     /       \      \   |   /      /
+       **       |    /     /         \      \  |  /      /
+       ** First three columns     These five column use integers that
+       ** are indexed into        correspond to QRF codes.  If QRF codes
+       ** aModeStr[].             change, these columns must change to match.
+       **                         eText and eTitle are QRF_TEXT_....  
+       **                         eBlob is QRF_BLOB_.... bHdr is QRF_SW_....
+       **                         eStyle is QRF_STYLE_....                   */
 
 /*
 ** These are the column/row/line separators used by the various
@@ -1469,22 +1486,6 @@ static const unsigned char aQrfStyle[] = {
 */
 #define MAX_INPUT_NESTING 25
 
-/*
-** Initialize a newly allocate Mode object to reasonable
-** defaults.
-*/
-static void modeInit(Mode *p){
-  memset(p, 0, sizeof(*p));
-  p->spec.iVersion = 1;
-  p->autoExplain = 1;
-  p->eMode = MODE_List;
-#ifdef _WIN32
-  p->crlfMode = 1;
-#endif
-  p->spec.zColumnSep = strdup("|");
-  p->spec.zRowSep = strdup("\n");
-  p->spec.zNull = strdup("");
-}
 
 /*
 ** Clear a display mode, freeing any allocated memory that it
@@ -1554,6 +1555,53 @@ static void modeSetStr(char **az, const char *zNew){
     }
   }
 }
+
+/*
+** Change the mode to eMode
+*/
+static void modeChange(Mode *p, unsigned char eMode){
+  const ModeInfo *pI;
+  assert( eMode>=0 && eMode<ArraySize(aModeInfo) );
+  pI = &aModeInfo[eMode];
+  p->eMode = eMode;
+  if( pI->eCSep ) modeSetStr(&p->spec.zColumnSep, aModeStr[pI->eCSep]);
+  if( pI->eRSep ) modeSetStr(&p->spec.zRowSep, aModeStr[pI->eRSep]);
+  if( pI->eNull ) modeSetStr(&p->spec.zNull, aModeStr[pI->eNull]);
+  p->spec.eText = pI->eText;
+  p->spec.eBlob = pI->eBlob;
+  p->spec.bTitles = pI->bHdr;
+  p->spec.eTitle = pI->eTitle;
+}
+
+/*
+** Initialize a newly allocate Mode object to reasonable
+** defaults.
+*/
+static void modeInit(Mode *p){
+  memset(p, 0, sizeof(*p));
+  p->spec.iVersion = 1;
+  p->autoExplain = 1;
+  p->eMode = MODE_List;
+#ifdef _WIN32
+  p->crlfMode = 1;
+#endif
+  p->spec.zColumnSep = strdup("|");
+  p->spec.zRowSep = strdup("\n");
+  p->spec.zNull = strdup("");
+}
+
+/*
+** Find the number of a display mode given its name.  Return -1 if
+** the name does not match any mode.
+*/
+static int modeFind(const char *zName){
+  int i;
+  for(i=0; i<ArraySize(aModeInfo); i++){
+    if( cli_strcmp(aModeInfo[i].zName,zName)==0 ) return i;
+  }
+  return -1;
+}
+
 
 /*
 ** A callback for the sqlite3_log() interface.
@@ -2994,8 +3042,8 @@ static int shell_exec(
       break;
     }
   }
-  assert( pArg->mode.eMode>=0 && pArg->mode.eMode<ArraySize(aQrfStyle) );
-  eStyle = aQrfStyle[pArg->mode.eMode];
+  assert( pArg->mode.eMode>=0 && pArg->mode.eMode<ArraySize(aModeInfo) );
+  eStyle = aModeInfo[pArg->mode.eMode].eStyle;
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
   if( pArg->expert.pExpert ){
@@ -7048,21 +7096,62 @@ static int faultsim_callback(int iArg){
 }
 
 /*
+** pickStr(zArg, &zErr, zS1, zS2, ..., "");
+**
+** Try to match zArg against zS1, zS2, and so forth until the first
+** emptry string.  Return the index of the match or -1 if none is found.
+** If no match is found, and &zErr is not NULL, then write into
+** zErr a message describing the valid choices.
+*/
+static int pickStr(const char *zArg, char **pzErr, ...){
+  int i, n;
+  const char *z;
+  sqlite3_str *pMsg;
+  va_list ap;
+  va_start(ap, pzErr);
+  i = 0;
+  while( (z = va_arg(ap,const char*))!=0 && z[0]!=0 ){
+    if( cli_strcmp(zArg, z)==0 ) return i;
+    i++;
+  }
+  va_end(ap);
+  if( pzErr==0 ) return -1;
+  n = i;
+  pMsg = sqlite3_str_new(0);
+  va_start(ap, pzErr);
+  sqlite3_str_appendall(pMsg, "should be");
+  i = 0;
+  while( (z = va_arg(ap, const char*))!=0 && z[0]!=0 ){
+    if( i==n-1 ){
+      sqlite3_str_append(pMsg,", or",4);
+    }else if( i>0 ){
+      sqlite3_str_append(pMsg, ",", 1);
+    }
+    sqlite3_str_appendf(pMsg, " %s", z);
+    i++;
+  }
+  va_end(ap);
+  *pzErr = sqlite3_str_finish(pMsg);
+  return -1;
+}
+
+/*
 ** DOT-COMMAND:  .mode
 **
-** USAGE:  .mode [OPTIONS] [MODE]
+** USAGE:  .mode [MODE] [OPTIONS]
 **
 ** Change the output mode to MODE.  And/or apply OPTIONS to the
 ** output mode.  If no arguments, show the current output mode and
 ** relevant options.
 */
 static int dotCmdMode(ShellState *p){
-  int nArg = p->dot.nArg;
-  char **azArg = p->dot.azArg;
-  const char *zMode = 0;
-  const char *zTabname = 0;
-  int i, n2;
-  int chng = 0;       /* 0x01:  change to cmopts.  0x02:  Any other change */
+  int nArg = p->dot.nArg;     /* Number of arguments */
+  char **azArg = p->dot.azArg;/* Argument list */
+  int eMode = -1;             /* New mode value, or -1 for none */
+  int iMode = -1;             /* Index of the argument that is the mode name */
+  int i;                      /* Loop counter */
+  int k;                      /* Misc index variable */
+  int chng = 0;               /* True if anything has changed */
 
   for(i=1; i<nArg; i++){
     const char *z = azArg[i];
@@ -7071,168 +7160,152 @@ static int dotCmdMode(ShellState *p){
       if( w<(-QRF_MAX_WIDTH) ) w = -QRF_MAX_WIDTH;
       if( w>QRF_MAX_WIDTH ) w = QRF_MAX_WIDTH;
       p->mode.spec.nWrap = w;
-      chng |= 1;
+      chng = 1;
     }else if( optionMatch(z,"ww") ){
       p->mode.spec.bWordWrap = QRF_Yes;
-      chng |= 1;
+      chng = 1;
     }else if( optionMatch(z,"wordwrap") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
       p->mode.spec.bWordWrap = (u8)booleanValue(azArg[++i]) ? QRF_Yes : QRF_No;
-      chng |= 1;
+      chng = 1;
     }else if( optionMatch(z,"quote") ){
-      p->mode.spec.eText = QRF_TEXT_Sql;
-      p->mode.spec.eBlob = QRF_BLOB_Sql;
-      chng |= 1;
+      if( i+1<nArg
+       && azArg[i+1][0]!='-'
+       && (iMode>0 || modeFind(azArg[i+1])<0)
+      ){
+        /* --quote is followed by an argument other that is not an option
+        ** or a mode name.  See it must be a boolean or a keyword to describe
+        ** how to set quoting. */
+        i++;
+        if( (k = pickStr(azArg[i],0,"no","yes","0","1",""))>=0 ){
+          k &= 1;   /* 0 for "off".  1 for "on". */
+        }else{
+          char *zErr = 0;         /*  0     1    2     3     4      5     6 */
+          k = pickStr(azArg[i],&zErr,"off","on","sql","csv","html","tcl","json",
+                                     "");
+          if( k<0 ){
+            dotCmdError(p, i, "unknown", "%z", zErr);
+            return 1;
+          }
+        }
+      }else{
+        /* (Legacy) no following boolean argument.  Turn quoting on */ 
+        k = 1;
+      }
+      switch( k ){
+        case 1:  /* on */
+        case 2:  /* sql */
+          p->mode.spec.eText = QRF_TEXT_Sql;
+          p->mode.spec.eBlob = QRF_BLOB_Sql;
+          break;
+        case 3:  /* csv */
+          p->mode.spec.eText = QRF_TEXT_Csv;
+          p->mode.spec.eBlob = QRF_BLOB_Text;
+          break;
+        case 4:  /* html */
+          p->mode.spec.eText = QRF_TEXT_Html;
+          p->mode.spec.eBlob = QRF_BLOB_Text;
+          break;
+        case 5:  /* tcl */
+          p->mode.spec.eText = QRF_TEXT_Tcl;
+          p->mode.spec.eBlob = QRF_BLOB_Text;
+          break;
+        case 6:  /* json */
+          p->mode.spec.eText = QRF_TEXT_Json;
+          p->mode.spec.eBlob = QRF_BLOB_Json;
+          break;
+        default:  /* off */
+          p->mode.spec.eText = QRF_TEXT_Plain;
+          p->mode.spec.eBlob = QRF_BLOB_Text;
+          break;
+      }
+      chng = 1;
+    }else if( optionMatch(z,"noquote") ){
+      /* (undocumented legacy) --noquote always turns quoting off */
+      p->mode.spec.eText = QRF_TEXT_Plain;
+      p->mode.spec.eBlob = QRF_BLOB_Text;
+      chng = 1;
     }else if( optionMatch(z,"textjsonb") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
       p->mode.spec.bTextJsonb = (u8)booleanValue(azArg[++i]) ? QRF_Yes : QRF_No;
-      chng |= 1;
-    }else if( optionMatch(z,"noquote") ){
-      p->mode.spec.eText = QRF_Auto;
-      p->mode.spec.eBlob = QRF_Auto;
-      chng |= 1;
+      chng = 1;
     }else if( optionMatch(z,"escape") ){
       /* See similar code at tag-20250224-1 */
+      char *zErr = 0;
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
-      const char *zEsc = azArg[++i];
-      int k;
-      for(k=0; k<ArraySize(qrfEscNames); k++){
-        if( sqlite3_stricmp(zEsc,qrfEscNames[k])==0 ){
-          p->mode.spec.eEsc = k;
-          chng |= 2;
-          break;
-        }
-      }
-      if( k>=ArraySize(qrfEscNames) ){
-        cli_printf(stderr, "unknown control character escape mode \"%s\""
-                                " - choices:", zEsc);
-        for(k=0; k<ArraySize(qrfEscNames); k++){
-          cli_printf(stderr, " %s", qrfEscNames[k]);
-        }
-        cli_printf(stderr, "\n");
+      i++;                    /*  0     1       2  <-- One less than QRF_ESC_ */
+      k = pickStr(azArg[i],&zErr,"off","ascii","symbol","");
+      if( k<0 ){
+        dotCmdError(p, i, "unknown escape type", "%s", zErr);
+        sqlite3_free(zErr);
         return 1;
       }
-    }else if( zMode==0 ){
-      zMode = z;
-      /* Apply defaults for qbox pseudo-mode.  If that
-       * overwrites already-set values, user was informed of this.
-       */
-      chng |= 1;
-      if( cli_strcmp(z, "qbox")==0 ){
-        zMode = "box";
-        p->mode.spec.eText = QRF_TEXT_Sql;
-        p->mode.spec.eBlob = QRF_BLOB_Sql;
+      p->mode.spec.eEsc = k+1;
+      chng = 1;
+    }else if( 0<=(k=pickStr(z,0,"-tablename","-rowsep","-colsep","-null","")) ){
+                            /*   0            1         2         3 */
+      if( i+1>=nArg ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
       }
-    }else if( zTabname==0 ){
-      zTabname = z;
+      i++;
+      switch( k ){
+        case 0: modeSetStr(&p->mode.spec.zTableName, azArg[i]); break;
+        case 1: modeSetStr(&p->mode.spec.zRowSep, azArg[i]);    break;
+        case 2: modeSetStr(&p->mode.spec.zColumnSep, azArg[i]); break;
+        case 3: modeSetStr(&p->mode.spec.zNull, azArg[i]);      break;
+      }
+      chng = 1;
+    }else if( iMode<0 && (eMode = modeFind(azArg[i]))>=0 && eMode!=MODE_Www ){
+      iMode = i;
+      modeChange(&p->mode, eMode);
+      /* (Legacy) If the mode is MODE_Insert and the next argument
+      ** is not an option, then the next argument must be the table
+      ** name.
+      */
+      if( i+1<nArg && azArg[i+1][0]!='-' ){
+        i++;
+        modeSetStr(&p->mode.spec.zTableName, azArg[i]);
+      }
+      chng = 1;      
     }else if( z[0]=='-' ){
-      cli_printf(stderr,"unknown option: %s\n", z);
-      eputz("options:\n"
-            "  --escape MODE\n"
-            "  --noquote\n"
-            "  --quote\n"
-            "  --wordwrap on/off\n"
-            "  --wrap N\n"
-            "  --ww\n");
+      dotCmdError(p, i, "bad option", "Use \".help .mode\" for more info");
       return 1;
     }else{
-      cli_printf(stderr,"extra argument: \"%s\"\n", z);
+      dotCmdError(p, i, iMode>0?"bad argument":"unknown mode",
+                  "Use \".help .mode\" for more info");
       return 1;
     }
   }
   if( !chng ){
-    if( p->mode.eMode==MODE_Column
-     || p->mode.eMode==MODE_Box
-     || p->mode.eMode==MODE_Table
-     || p->mode.eMode==MODE_Markdown
-    ){
-      cli_printf(p->out, "current output mode: %s",
-                      modeDescr[p->mode.eMode]);
+    const ModeInfo *pI = aModeInfo + p->mode.eMode;
+    sqlite3_str *pDesc = sqlite3_str_new(p->db);
+    char *zDesc;
+    sqlite3_str_appendall(pDesc,pI->zName);
+    if( pI->eCx>0 && p->mode.spec.bWordWrap ){
       if( p->mode.spec.nWrap ){
-        cli_printf(p->out, " --wrap %d",
-           p->mode.spec.nWrap);
-      }else{
-        cli_printf(p->out, " --wrap off");
+        sqlite3_str_appendf(pDesc, " --wrap %d", p->mode.spec.nWrap);
       }
-      cli_printf(p->out, " --wordwrap %s --%squote --escape %s\n",
-            p->mode.spec.bWordWrap==QRF_Yes ? "on" : "off",
-            p->mode.spec.eText==QRF_TEXT_Sql ? "" : "no",
-            qrfEscNames[p->mode.spec.eEsc==QRF_ESC_Auto?
-                QRF_ESC_Ascii:p->mode.spec.eEsc]
-      );
-    }else{
-      cli_printf(p->out,
-            "current output mode: %s --escape %s\n",
-            modeDescr[p->mode.eMode],
-            qrfEscNames[p->mode.spec.eEsc==QRF_ESC_Auto?
-                QRF_ESC_Ascii:p->mode.spec.eEsc]
-      );
+      sqlite3_str_append(pDesc, " --ww", 5);
     }
-  }
-  if( zMode==0 ){
-    zMode = modeDescr[p->mode.eMode];
-  }
-  n2 = strlen30(zMode);
-  if( cli_strncmp(zMode,"lines",n2)==0 ){
-    p->mode.eMode = MODE_Line;
-    modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
-  }else if( cli_strncmp(zMode,"columns",n2)==0 ){
-    p->mode.eMode = MODE_Column;
-    modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
-  }else if( cli_strncmp(zMode,"list",n2)==0 ){
-    p->mode.eMode = MODE_List;
-    modeSetStr(&p->mode.spec.zColumnSep, SEP_Column);
-    modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
-  }else if( cli_strncmp(zMode,"html",n2)==0 ){
-    p->mode.eMode = MODE_Html;
-  }else if( cli_strncmp(zMode,"tcl",n2)==0 ){
-    p->mode.eMode = MODE_Tcl;
-    modeSetStr(&p->mode.spec.zColumnSep, SEP_Space);
-    modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
-  }else if( cli_strncmp(zMode,"csv",n2)==0 ){
-    p->mode.eMode = MODE_Csv;
-    modeSetStr(&p->mode.spec.zColumnSep, SEP_Comma);
-    modeSetStr(&p->mode.spec.zRowSep, SEP_CrLf);
-  }else if( cli_strncmp(zMode,"tabs",n2)==0 ){
-    p->mode.eMode = MODE_List;
-    modeSetStr(&p->mode.spec.zColumnSep, SEP_Tab);
-  }else if( cli_strncmp(zMode,"insert",n2)==0 ){
-    p->mode.eMode = MODE_Insert;
-    modeSetStr(&p->mode.spec.zTableName, zTabname);
-  }else if( cli_strncmp(zMode,"quote",n2)==0 ){
-    p->mode.eMode = MODE_Quote;
-    modeSetStr(&p->mode.spec.zColumnSep, SEP_Comma);
-    modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
-  }else if( cli_strncmp(zMode,"ascii",n2)==0 ){
-    p->mode.eMode = MODE_Ascii;
-    modeSetStr(&p->mode.spec.zColumnSep, SEP_Unit);
-    modeSetStr(&p->mode.spec.zRowSep, SEP_Record);
-  }else if( cli_strncmp(zMode,"markdown",n2)==0 ){
-    p->mode.eMode = MODE_Markdown;
-  }else if( cli_strncmp(zMode,"table",n2)==0 ){
-    p->mode.eMode = MODE_Table;
-  }else if( cli_strncmp(zMode,"box",n2)==0 ){
-    p->mode.eMode = MODE_Box;
-  }else if( cli_strncmp(zMode,"count",n2)==0 ){
-    p->mode.eMode = MODE_Count;
-  }else if( cli_strncmp(zMode,"off",n2)==0 ){
-    p->mode.eMode = MODE_Off;
-  }else if( cli_strncmp(zMode,"json",n2)==0 ){
-    p->mode.eMode = MODE_Json;
-  }else{
-    eputz("Error: mode should be one of: "
-          "ascii box column csv html insert json line list markdown "
-          "qbox quote table tabs tcl\n");
-    return 1;
+    if( pI->eText!=p->mode.spec.eText ){
+      sqlite3_str_appendf(pDesc," --quote %s",qrfQuoteNames[p->mode.spec.eText]);
+    }
+    if( p->mode.spec.eEsc!=QRF_Auto ){
+      sqlite3_str_appendf(pDesc, " --escape %s", qrfEscNames[p->mode.spec.eEsc]);
+    }
+    zDesc = sqlite3_str_finish(pDesc);
+    cli_printf(p->out, "current output mode: %s\n", zDesc);
+    sqlite3_free(zDesc);
   }
   return 0;
 }
@@ -10115,11 +10188,12 @@ static int do_meta_command(const char *zLine, ShellState *p){
     ){
       cli_printf(p->out,
             "%12.12s: %s --wrap %d --wordwrap %s --%squote\n", "mode",
-            modeDescr[p->mode.eMode], p->mode.spec.nWrap,
+            aModeInfo[p->mode.eMode].zName, p->mode.spec.nWrap,
             p->mode.spec.bWordWrap==QRF_Yes ? "on" : "off",
             p->mode.spec.eText==QRF_TEXT_Sql ? "" : "no");
     }else{
-      cli_printf(p->out, "%12.12s: %s\n","mode", modeDescr[p->mode.eMode]);
+      cli_printf(p->out, "%12.12s: %s\n","mode", 
+                 aModeInfo[p->mode.eMode].zName);
     }
     cli_printf(p->out, "%12.12s: ", "nullvalue");
     output_c_string(p->out, p->mode.spec.zNull);

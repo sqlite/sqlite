@@ -83,7 +83,7 @@ int sqlite3_format_query_result(
 #define QRF_STYLE_Html      7 /* Generate an XHTML table */
 #define QRF_STYLE_Insert    8 /* Generate SQL "insert" statements */
 #define QRF_STYLE_Json      9 /* Output is a list of JSON objects */
-#define QRF_STYLE_JsonLine 10 /* Independent JSON objects for each row */
+#define QRF_STYLE_JObject  10 /* Independent JSON objects for each row */
 #define QRF_STYLE_Line     11 /* One column per line. */
 #define QRF_STYLE_List     12 /* One record per line with a separator */
 #define QRF_STYLE_Markdown 13 /* Markdown formatting */
