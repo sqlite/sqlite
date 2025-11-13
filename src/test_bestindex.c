@@ -221,7 +221,11 @@ static int tclConnect(
     rc = Tcl_EvalObjEx(interp, pScript, TCL_EVAL_GLOBAL);
     if( rc!=TCL_OK ){
       *pzErr = sqlite3_mprintf("%s", Tcl_GetStringResult(interp));
-      rc = SQLITE_ERROR;
+      if( sqlite3_stricmp(*pzErr, "database schema has changed")==0 ){
+        rc = SQLITE_SCHEMA;
+      }else{
+        rc = SQLITE_ERROR;
+      }
     }else{
       rc = sqlite3_declare_vtab(db, Tcl_GetStringResult(interp));
       if( rc!=SQLITE_OK ){
