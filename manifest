@@ -1,5 +1,5 @@
-C mkwasmbuilds.c\sdoc\supdates.\sMerge\sin\sthe\sparts\sof\s[8611cf643b]\swhich\sare\snot\scontentious.
-D 2025-11-13T09:03:48.460
+C Fix\sa\sproblem\sin\sthe\sEXISTS-to-JOIN\soptimization\s([e33da6d5dc964db8])\sso\nthat\sit\sworks\swith\snested\sWHERE\sand\sEXISTS\sstatements.\n[forum:/forumpost/0704c3c41e49631b|Forum\spost\s0704c3c41e4]
+D 2025-11-13T11:36:48.835
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -742,7 +742,7 @@ F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 3c604c49e6cf4211960a9ddb9505280fd22cde32175f40884c641c0f5a286036
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c d27c91455865fb191eb1b2c892e7586c5e3d9d3977f54913c8e70e2e8e5148b3
+F src/test1.c 5d061afe479c7364842e0170be7220dea13389575fa6030d30b3e20bec4e1f75
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -813,7 +813,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 505a98fbc599a971d92cb90371cf54546c404cd61e04fd093e7b0c8ff978f9b6
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 7d17cd5cb883b2166097957e20c4aab2d0d98e0c1141002ef77b5f6b9deed844
+F src/where.c 1b554a868134cbc9ca2192385403c0b63e5073ff01a6cdd600a846c09f843165
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 71c5c6804b7f882dec8ec858758accae02fcfca13df3cc720f1f258e663ec7c5
 F src/whereexpr.c 403a44eeec1a0f0914fccc6a59376b6924bc00ef6728fe6ffce4cf3051b320fc
@@ -1089,7 +1089,7 @@ F test/exclusive.test 7ff63be7503990921838d5c9f77f6e33e68e48ed1a9d48cd28745bf650
 F test/exclusive2.test cd70b1d9c6fffd336f9795b711dcc5d9ceba133ad3f7001da3fda63615bdc91e
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/existsexpr.test 9c4b77c4729281cc2ae63b9b460d0598ce28cc7876135e3e2c21629bbc8d077a
+F test/existsexpr.test e4674fb8d610e82540126ed252e6aa48922882e1bcec6522d7e5a44fe715be61
 F test/existsexpr2.test dc23e76389eff3d29f6488ff733012a3560cd67ec8cfaecbecd52cced5d5af11
 F test/existsfault.test ff41c11f3052c1bbd4f8dd557802310026253d67d7c4e3a180c16d2f0862973e
 F test/expr.test db981f8a85520e99ae20aab7ad2e9b5b0437ed09159b57ced434c672075d2e61
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42f95ea71e5e7e927685de3a6da2ede38abe7cabdd1fc71b9a14bebe9f54a65e
-R efca346a3a96db0e5e0d3f79e1a32176
-U stephan
-Z 08c40facf4857ff967d7d59325efe464
+P cb0f0e22241aae65938b4bc7a1b809088466a17cee80344f66ee889a76c422c1
+R e1df7415359298fd0a1cd1de534392b6
+U drh
+Z 3f50cf19050f41cd47ef418e45137a07
 # Remove this line to create a well-formed Fossil manifest.
