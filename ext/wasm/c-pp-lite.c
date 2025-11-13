@@ -270,9 +270,10 @@ static void db_prepare(sqlite3_stmt **pStmt, const char * zSql, ...);
 /*
 ** Opens the given file and processes its contents as c-pp, sending
 ** all output to the global c-pp output channel. Fails fatally on
-** error.
+** error. If bRaw is true then the file's contents are passed through
+** verbatim, rather than being preprocessed.
 */
-static void cmpp_process_file(const char * zName);
+static void cmpp_process_file(const char * zName, int bRaw);
 
 /*
 ** Operator policy for cmpp_kvp_parse().
@@ -2212,12 +2213,23 @@ static void cmpp_kwd_endif(CmppKeyword const * pKw, CmppTokenizer *t){
 static void cmpp_kwd_include(CmppKeyword const * pKw, CmppTokenizer *t){
   char const * zFile;
   char * zResolved;
+  int bRaw = 0 /* -raw flag */;
   if(CT_skip(t)) return;
-  else if(t->args.argc!=2){
-    cmpp_kwd__err(pKw, t, "Expecting exactly 1 filename argument");
+  else if(t->args.argc<2 || t->args.argc>3){
+    cmpp_kwd__err(pKw, t, "Expected args: ?-raw? filename");
   }
-  zFile = (const char *)t->args.argv[1];
-  if(db_including_has(zFile)){
+  if(t->args.argc==2){
+    zFile = (const char *)t->args.argv[1];
+  }else{
+    if( 0==strcmp("-raw", (char*)t->args.argv[1]) ){
+      bRaw = 1;
+    }else{
+      cmpp_kwd__err(pKw, t, "Unhandled argument: %s",
+                    t->args.argv[1]);
+    }
+    zFile = (const char *)t->args.argv[2];
+  }
+  if(!bRaw && db_including_has(zFile)){
     /* Note that different spellings of the same filename
     ** will elude this check, but that seems okay, as different
     ** spellings means that we're not re-running the exact same
@@ -2228,15 +2240,14 @@ static void cmpp_kwd_include(CmppKeyword const * pKw, CmppTokenizer *t){
   }
   zResolved = db_include_search(zFile);
   if(zResolved){
-    db_including_add(zFile, t->zName, t->token.lineNo);
-    cmpp_process_file(zResolved);
-    db_include_rm(zFile);
+    if( bRaw ) db_including_add(zFile, t->zName, t->token.lineNo);
+    cmpp_process_file(zResolved, bRaw);
+    if( bRaw ) db_include_rm(zFile);
     db_free(zResolved);
   }else{
     cmpp_t__err(t, "file not found: %s", zFile);
   }
 }
-
 
 static void cmpp_dump_defines( FILE * fp, int bIndent ){
   sqlite3_stmt * const q = g_stmt(GStmt_defSelAll);
@@ -2391,7 +2402,7 @@ CmppKeyword aKeywords[] = {
   {S(Endif), 0, TT_Endif, cmpp_kwd_endif},
   {S(Error), 0, TT_Error, cmpp_kwd_error},
   {S(If), 1, TT_If, cmpp_kwd_if},
-  {S(Include), 0, TT_Include, cmpp_kwd_include},
+  {S(Include), 1, TT_Include, cmpp_kwd_include},
   {S(Pragma), 1, TT_Pragma, cmpp_kwd_pragma},
   {S(Savepoint), 1, TT_Savepoint, cmpp_kwd_savepoint},
   {S(Stderr), 0, TT_Stderr, cmpp_kwd_stderr},
@@ -2443,14 +2454,25 @@ void cmpp_process_string(const char * zName,
   g.tok = oldTok;
 }
 
-void cmpp_process_file(const char * zName){
+void cmpp_process_file(const char * zName, int bRaw){
   FileWrapper fw = FileWrapper_empty;
   FileWrapper_open(&fw, zName, "r");
   g_FileWrapper_link(&fw);
   FileWrapper_slurp(&fw);
   g_debug(1,("Read %u byte(s) from [%s]\n", fw.nContent, fw.zName));
   if( fw.zContent ){
-    cmpp_process_string(zName, fw.zContent, fw.nContent);
+    if( bRaw ){
+      FileWrapper fw = FileWrapper_empty;
+      FileWrapper_open(&fw, zName, "rb");
+      g_FileWrapper_link(&fw);
+      FileWrapper_slurp(&fw);
+      if( 1!=fwrite(fw.zContent, fw.nContent, 1, g.out.pFile) ){
+        fatal("fwrite() failed with errno %d\n", errno);
+      }
+      g_FileWrapper_close(&fw);
+    }else{
+      cmpp_process_string(zName, fw.zContent, fw.nContent);
+    }
   }
   g_FileWrapper_close(&fw);
 }
@@ -2689,7 +2711,7 @@ int main(int argc, char const * const * argv){
         DOIT {
           ++nFile;
           g_out_open;
-          cmpp_process_file(zVal);
+          cmpp_process_file(zVal, 0);
         }
       }
       ISFLAG("e"){
@@ -2772,7 +2794,7 @@ int main(int argc, char const * const * argv){
           ++inclCount;
         }
         FileWrapper_open(&g.out, g.out.zName, "w");
-        cmpp_process_file("-");
+        cmpp_process_file("-", 0);
       }
     }
   }

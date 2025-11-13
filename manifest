@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\sEXISTS-to-JOIN\soptimization\s([e33da6d5dc964db8])\sso\nthat\sit\sworks\swith\snested\sWHERE\sand\sEXISTS\sstatements.\n[forum:/forumpost/0704c3c41e49631b|Forum\spost\s0704c3c41e4]
-D 2025-11-13T11:36:48.835
+C Add\sthe\s#include\s-raw\sflag\sto\sext/wasm/c-pp-lite.c\sto\ssupport\sa\spending\sfeature.
+D 2025-11-13T14:47:41.941
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -604,7 +604,7 @@ F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72
 F ext/wasm/api/sqlite3-wasm.c 2d1cbe498f7b0fb64b11451eda481f458df74d6258baea635513e637fcbb8b1a
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
-F ext/wasm/c-pp-lite.c 67e86d9ea47cf3e70a4067acd92788f4f8e6271fae02a68490b069303d7597be
+F ext/wasm/c-pp-lite.c 943be1a36774d58385dca32de36fc18d4f432fe79f7aa35e6c85dd6a6b825bd0
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cb0f0e22241aae65938b4bc7a1b809088466a17cee80344f66ee889a76c422c1
-R e1df7415359298fd0a1cd1de534392b6
-U drh
-Z 3f50cf19050f41cd47ef418e45137a07
+P d1e901eddc25175174d0706238ae0c33bfa5569e0c2ba4f1164b7a9600203442
+R 69751ab1669928a56efde739054714dc
+U stephan
+Z 96038a39e433e91de1388406d7509460
 # Remove this line to create a well-formed Fossil manifest.
