@@ -9261,6 +9261,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
     p->showHeader = savedShowHeader;
     p->shellFlgs = savedShellFlags;
+    rc = p->nErr>0;
   }else
 
   if( c=='e' && cli_strncmp(azArg[0], "echo", n)==0 ){
