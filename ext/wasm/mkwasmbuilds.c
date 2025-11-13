@@ -371,7 +371,7 @@ const BuildDefs oBuildDefs = {
   .node = {
     .zEmo        = "🍟",
     .zBaseName   = "sqlite3-node",
-    .zDotWasm    = 0,
+    .zDotWasm    = "sqlite3",
     .zCmppD      = "-Dtarget:node $(c-pp.D.bundler)",
     .zEmcc       = 0,
     .zEmccExtra  = 0,
@@ -382,21 +382,21 @@ const BuildDefs oBuildDefs = {
     ** node. */,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS
+    .flags       = CP_ALL | F_UNSUPPORTED | F_ESM | F_NODEJS
   },
 
   /* 64-bit node. */
   .node64 = {
     .zEmo        = "🍔",
     .zBaseName   = "sqlite3-node-64bit",
-    .zDotWasm    = 0,
+    .zDotWasm    = "sqlite3-64it",
     .zCmppD      = "-Dtarget:node $(c-pp.D.bundler)",
     .zEmcc       = 0,
     .zEmccExtra  = 0,
     .zEnv        = "node",
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS | F_64BIT
+    .flags       = CP_ALL | F_UNSUPPORTED | F_ESM | F_NODEJS | F_64BIT
   },
 
   /* Entirely unsupported. */
@@ -783,6 +783,9 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
   pf("c-pp.D.%s ?= %s\n", zBuildName, pB->zCmppD ? pB->zCmppD : "");
   if( pB->flags & F_64BIT ){
     pf("c-pp.D.%s += $(c-pp.D.64bit)\n", zBuildName);
+  }
+  if( pB->flags & F_UNSUPPORTED ){
+    pf("c-pp.D.%s += -Dunsupported-build\n", zBuildName);
   }
 
   pf("emcc.environment.%s ?= %s\n", zBuildName,

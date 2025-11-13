@@ -98,6 +98,7 @@ tgtFiles=(
     tester1.js
     tester1.mjs
 )
+tgtFiles+=(jswasm/sqlite3-node.mjs); # https://github.com/sqlite/sqlite-wasm/issues/118
 
 if [[ 1 = $b64 ]]; then
     tgtFiles+=(
@@ -148,6 +149,7 @@ fJ1=(
     sqlite3-worker1-promiser.mjs
     sqlite3-worker1-promiser-bundler-friendly.mjs
 )
+fJ1+=(sqlite3-node.mjs);  # https://github.com/sqlite/sqlite-wasm/issues/118
 fJ2=(
     sqlite3.js
     sqlite3.mjs

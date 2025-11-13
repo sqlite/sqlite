@@ -1,5 +1,5 @@
-C Teach\sc-pp\sto\sexport\sits\sargv\sas\sa\s#define\slist\sso\sthat\swe\scan\sembed\sit\sin\sthe\sgenerates\sfiles.
-D 2025-11-13T08:26:11.671
+C Re-add\sthe\s(still)\sunsupported\sand\s(still\s100%)\suntested\ssqlite3-node.mjs\sback\sto\sthe\sdist\sbundle,\sas\sits\sremoval\sin\s3.51\shas\s[caused\ssome\sdownstream\sdisruption](https://github.com/sqlite/sqlite-wasm/issues/118).\sThis\sis\sstashed\sin\sa\sbranch\sfor\snow\sand\smay\snever\sbe\smerged\s-\swe're\sstill\snegotiating\sthe\sterms\sof\sits\sre-addition\sand\smy\seventual\scapitulation.
+D 2025-11-13T08:36:52.956
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -627,8 +627,8 @@ F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73
 F ext/wasm/index.html 54e27db740695ab2cb296e02d42c4c66b3f11b65797340d19fa6590f5b287da1
 F ext/wasm/jaccwabyt/jaccwabyt.js 1e734c624205cdf621f322972dfb0fc8013d573a5882f57492a6830e5ec23e17
 F ext/wasm/jaccwabyt/jaccwabyt.md 167fc0b624c9bc2c477846e336de9403842d81b1a24fc4d3b24317cb9eba734f
-F ext/wasm/mkdist.sh 64d53f469c823ed311f6696f69cec9093f745e467334b34f5ceabdf9de3c5b28 x
-F ext/wasm/mkwasmbuilds.c 1b53c4d2a1350c19a96a8cdfbda6a39baea9d2142bfe0cbef0ccb0e898787f47
+F ext/wasm/mkdist.sh f774603c758e87fb115ceae192670aa10eeece9474ce2147671156d2e665b871 x
+F ext/wasm/mkwasmbuilds.c 8f945702c48aa55d8f3a801bde70f1a2c7a8364f38defc1e026bd0628280aee8
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2167,8 +2167,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 36cd33f634a45900f6e52ba07aa20242a5f2b29c7cbe19be968c52ffef34fcde
-R b697189ebe817c2d0222f56ac60e6cf8
+P 42f95ea71e5e7e927685de3a6da2ede38abe7cabdd1fc71b9a14bebe9f54a65e
+R 6ccca5a4124b16122b6a766379fbe805
+T *branch * sqlite3-node.mjs
+T *sym-sqlite3-node.mjs *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z b922991610b2c43f75bf9d6db0a24f53
+Z 351cb48117de9374caee3897f1c40064
 # Remove this line to create a well-formed Fossil manifest.
