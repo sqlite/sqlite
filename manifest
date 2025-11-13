@@ -1,5 +1,5 @@
-C Add\sbetter\stest\scase\sfor\sthe\sissue\swith\sdropping\sRETURNING\striggers\swhen\sthe\sschema\sis\sreset\swhile\spreparing\sa\sstatement.
-D 2025-11-13T17:42:55.573
+C Add\san\sOOM\stest\scase\sfor\sthe\sissue\swith\sdropping\sRETURNING\striggers\swhen\sthe\sschema\sis\sreset\swhile\spreparing\sa\sstatement\sthat\suses\san\seponymous\svtab.
+D 2025-11-13T18:02:22.344
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1523,7 +1523,7 @@ F test/reservebytes.test 6163640b5a5120c0dee6591481e673a0fa0bf0d12d4da7513bad692
 F test/resetdb.test 54c06f18bc832ac6d6319e5ab23d5c8dd49fdbeec7c696d791682a8006bd5fc3
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/returning1.test cd32517148948859db214dd814354597dd40e7489259590fac1a4f7bf44deb97
-F test/returningfault.test ae4c4b5e8745813287a359d9ccdb9d5c883c2e68afb18fb0767937d5de5692a4
+F test/returningfault.test 5f9649d05680357ab077fa6bad574a3eb3f6e4858a6880b25171be516a4efcda
 F test/rollback.test 952c4d805bca96adc2be76f621ea22115fe40b330015af36fcc8028c8547fcee
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
 F test/rollbackfault.test 0e646aeab8840c399cfbfa43daab46fd609cf04a
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e8b34b4178be621102dac165b716283055fad90b3edc2394f56a24f9f0149448
-R 20aa046c40edd19c9eb0c123dec945ac
+P 6a9fdde109865b23888f099d066721404e8b853f3dacd55ce08c8bbda2491ec3
+R 293a9ba450ddf977c5efff80a5fbf409
 U dan
-Z 4c6394f8af064a5c9e605294797a46bf
+Z 137373639e55a850897c0a977a7f6597
 # Remove this line to create a well-formed Fossil manifest.
