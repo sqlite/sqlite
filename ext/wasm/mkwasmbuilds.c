@@ -990,7 +990,7 @@ static void mk_fiddle(void){
          zBuildName, zBuildName);
       emit_compile_start(zBuildName);
       pf("\t$(b.cmd@)$(bin.emcc) -o $@"
-         " $(emcc.flags.%s)" /* set in fiddle.make */
+         " $(emcc.flags.%s)" /* set in GNUmakefile */
          " $(pre-post.%s.flags)"
          " $(fiddle.c.in)"
          "\n",
