@@ -14,6 +14,23 @@
    itself. i.e. try to keep file-local symbol names obnoxiously
    collision-resistant.
 */
+/**
+   This file was preprocessed using:
+
+//#@policy error
+   @c-pp::ARGV@
+//#@policy off
+*/
+//#if unsupported-build
+/**
+   UNSUPPORTED BUILD:
+
+   This SQLite JS build configuration is entirely unsupported! It has
+   not been tested beyond the ability to compile it. It may not
+   load. It may not work properly. Only builds targeting browser
+   environments are supported and tested.
+*/
+//#endif
 (function(Module){
   const sIMS =
         globalThis.sqlite3InitModuleState/*from extern-post-js.c-pp.js*/

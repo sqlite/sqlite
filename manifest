@@ -1,5 +1,5 @@
-C Doc\stypo\sfix\sreported\sin\s[forum:00e49e9aa1|forum\spost\s00e49e9aa1].
-D 2025-11-13T07:07:28.660
+C Teach\sc-pp\sto\sexport\sits\sargv\sas\sa\s#define\slist\sso\sthat\swe\scan\sembed\sit\sin\sthe\sgenerates\sfiles.
+D 2025-11-13T08:26:11.671
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -589,7 +589,7 @@ F ext/wasm/api/extern-post-js.c-pp.js 4b310c9891886e7c1ea4e2419966ff45dfeda825b8
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/post-js-footer.js 5bd7170b5e8ce7b62102702bbcf47ef7b3b49cd56ed40c043fd990aa715b74ee
 F ext/wasm/api/post-js-header.js 79d078aec33d93b640a19c574b504d88bb2446432f38e2fbb3bb8e36da436e70
-F ext/wasm/api/pre-js.c-pp.js a876c6399dff29b6fe9e434036beb89889164cc872334e184291723ecc7cb072
+F ext/wasm/api/pre-js.c-pp.js b1a7a09d14df1f36de11e801ba06cb92c0ddeb520e5b2f28836af0ec8146e288
 F ext/wasm/api/sqlite3-api-cleanup.js 79b54a566291e17c0c3e165c6c4969c48ec17cd297755180151af65ac616dfa0
 F ext/wasm/api/sqlite3-api-glue.c-pp.js 79a54b54ca6324d28e31e19b56bbaebb7d2cc4b3079066e7e901333fa5047c53
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js 31dbfd470c91ffd96d77399b749bab6b69e3ba9074188833f97ac13f087cf07b
@@ -604,7 +604,7 @@ F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72
 F ext/wasm/api/sqlite3-wasm.c 2d1cbe498f7b0fb64b11451eda481f458df74d6258baea635513e637fcbb8b1a
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
-F ext/wasm/c-pp-lite.c 8fa0148e73782a86274db688c4730e2962cd675af329490493adddaf3322f16f
+F ext/wasm/c-pp-lite.c 67e86d9ea47cf3e70a4067acd92788f4f8e6271fae02a68490b069303d7597be
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c4ae21c89e5fd40eefd4916df6c6a6c4e27075a434a9d47576d3fcfbc7720588
-R 7dae7236d32bcd25dfe2f2113ce68116
+P 36cd33f634a45900f6e52ba07aa20242a5f2b29c7cbe19be968c52ffef34fcde
+R b697189ebe817c2d0222f56ac60e6cf8
 U stephan
-Z a8b3d6401f2ad77b51b8d03c6fc0cd63
+Z b922991610b2c43f75bf9d6db0a24f53
 # Remove this line to create a well-formed Fossil manifest.

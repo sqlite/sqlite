@@ -970,7 +970,6 @@ void db_prepare(sqlite3_stmt **pStmt, const char * zSql, ...){
   char * z = 0;
   int n = 0;
   va_list va;
-  if(!str) fatal("sqlite3_str_new() failed");
   va_start(va, zSql);
   sqlite3_str_vappendf(str, zSql, va);
   va_end(va);
@@ -2580,6 +2579,21 @@ static int arg_is_flag( char const *zFlag, char const *zArg,
   return 0;
 }
 
+static void define_argv(int argc, char const * const * argv){
+  sqlite3_str * const s = sqlite3_str_new(g.db);
+  sqlite3_str_append(s, "c-pp::ARGV=", 11);
+  for( int i = 0; i < argc; ++i ){
+    if( i ) sqlite3_str_appendchar(s, 1, ' ');
+    sqlite3_str_appendf(s, "%s", argv[i]);
+  }
+  char * const z = sqlite3_str_finish(s);
+  assert(z);
+  if(z){
+    db_define_add(z, NULL);
+    sqlite3_free(z);
+  }
+}
+
 int main(int argc, char const * const * argv){
   int rc = 0;
   int inclCount = 0;
@@ -2617,6 +2631,7 @@ int main(int argc, char const * const * argv){
         g.sqlTrace.expandSql = expandMode;
       }
       cmpp_initdb();
+      define_argv(argc, argv);
     }
     for(int i = 1; i < argc; ++i){
       int negate = 0;
