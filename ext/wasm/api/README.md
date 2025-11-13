@@ -205,8 +205,8 @@ Preprocessing of Source Files
 Certain files in the build require preprocessing to filter in/out
 parts which differ between vanilla JS, ES6 Modules, and node.js
 builds. The preprocessor application itself is in
-[`c-pp.c`](/file/ext/wasm/c-pp.c) and the complete technical details
-of such preprocessing are maintained in
+[`c-pp-lite.c`](/file/ext/wasm/c-pp-lite.c) and the complete technical
+details of such preprocessing are maintained in
 [`GNUMakefile`](/file/ext/wasm/GNUmakefile).
 
 
