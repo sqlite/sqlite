@@ -1960,55 +1960,58 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     return (0===v) ? undefined : capi.sqlite3_value_to_js(v, throwIfCannotConvert);
   };
 
-  /**
-     Internal impl of sqlite3_preupdate_new/old_js() and
-     sqlite3changeset_new/old_js().
-  */
-  const __newOldValue = function(pObj, iCol, impl){
-    impl = capi[impl];
-    if(!this.ptr) this.ptr = wasm.allocPtr();
-    else wasm.pokePtr(this.ptr, 0);
-    const rc = impl(pObj, iCol, this.ptr);
-    if(rc) return SQLite3Error.toss(rc,arguments[2]+"() failed with code "+rc);
-    const pv = wasm.peekPtr(this.ptr);
-    return pv ? capi.sqlite3_value_to_js( pv, true ) : undefined;
-  }.bind(Object.create(null));
+  if( true ){ /* changeset/preupdate additions... */
+    /**
+       Internal impl of sqlite3_preupdate_new/old_js() and
+       sqlite3changeset_new/old_js().
+    */
+    const __newOldValue = function(pObj, iCol, impl){
+      impl = capi[impl];
+      if(!this.ptr) this.ptr = wasm.allocPtr();
+      else wasm.pokePtr(this.ptr, 0);
+      const rc = impl(pObj, iCol, this.ptr);
+      if(rc) return SQLite3Error.toss(rc,arguments[2]+"() failed with code "+rc);
+      const pv = wasm.peekPtr(this.ptr);
+      return pv ? capi.sqlite3_value_to_js( pv, true ) : undefined;
+    }.bind(Object.create(null));
 
-  /**
-     A wrapper around sqlite3_preupdate_new() which fetches the
-     sqlite3_value at the given index and returns the result of
-     passing it to sqlite3_value_to_js(). Throws on error.
-  */
-  capi.sqlite3_preupdate_new_js =
-    (pDb, iCol)=>__newOldValue(pDb, iCol, 'sqlite3_preupdate_new');
+    /**
+       A wrapper around sqlite3_preupdate_new() which fetches the
+       sqlite3_value at the given index and returns the result of
+       passing it to sqlite3_value_to_js(). Throws on error.
+    */
+    capi.sqlite3_preupdate_new_js =
+      (pDb, iCol)=>__newOldValue(pDb, iCol, 'sqlite3_preupdate_new');
 
-  /**
-     The sqlite3_preupdate_old() counterpart of
-     sqlite3_preupdate_new_js(), with an identical interface.
-  */
-  capi.sqlite3_preupdate_old_js =
-    (pDb, iCol)=>__newOldValue(pDb, iCol, 'sqlite3_preupdate_old');
+    /**
+       The sqlite3_preupdate_old() counterpart of
+       sqlite3_preupdate_new_js(), with an identical interface.
+    */
+    capi.sqlite3_preupdate_old_js =
+      (pDb, iCol)=>__newOldValue(pDb, iCol, 'sqlite3_preupdate_old');
 
-  /**
-     A wrapper around sqlite3changeset_new() which fetches the
-     sqlite3_value at the given index and returns the result of
-     passing it to sqlite3_value_to_js(). Throws on error.
+    /**
+       A wrapper around sqlite3changeset_new() which fetches the
+       sqlite3_value at the given index and returns the result of
+       passing it to sqlite3_value_to_js(). Throws on error.
 
-     If sqlite3changeset_new() succeeds but has no value to report,
-     this function returns the undefined value, noting that undefined
-     is a valid conversion from an `sqlite3_value`, so is unambiguous.
-  */
-  capi.sqlite3changeset_new_js =
-    (pChangesetIter, iCol) => __newOldValue(pChangesetIter, iCol,
-                                            'sqlite3changeset_new');
+       If sqlite3changeset_new() succeeds but has no value to report,
+       this function returns the undefined value, noting that
+       undefined is not a valid conversion from an `sqlite3_value`, so
+       is unambiguous.
+    */
+    capi.sqlite3changeset_new_js =
+      (pChangesetIter, iCol) => __newOldValue(pChangesetIter, iCol,
+                                              'sqlite3changeset_new');
 
-  /**
-     The sqlite3changeset_old() counterpart of
-     sqlite3changeset_new_js(), with an identical interface.
-  */
-  capi.sqlite3changeset_old_js =
-    (pChangesetIter, iCol)=>__newOldValue(pChangesetIter, iCol,
-                                          'sqlite3changeset_old');
+    /**
+       The sqlite3changeset_old() counterpart of
+       sqlite3changeset_new_js(), with an identical interface.
+    */
+    capi.sqlite3changeset_old_js =
+      (pChangesetIter, iCol)=>__newOldValue(pChangesetIter, iCol,
+                                            'sqlite3changeset_old');
+  }/*changeset/preupdate additions*/
 
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
@@ -2020,10 +2023,10 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     config,
     /**
        Holds the version info of the sqlite3 source tree from which
-       the generated sqlite3-api.js gets built. Note that its version
-       may well differ from that reported by sqlite3_libversion(), but
-       that should be considered a source file mismatch, as the JS and
-       WASM files are intended to be built and distributed together.
+       the generated sqlite3-api.js gets built. Its version may well
+       differ from that reported by sqlite3_libversion(), but that
+       should be considered a source file mismatch, as the JS and WASM
+       files are intended to be built and distributed together.
 
        This object is initially a placeholder which gets replaced by a
        build-generated object.
@@ -2048,9 +2051,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
        async init will be fatal to the init as a whole, but init
        routines are themselves welcome to install dummy catch()
        handlers which are not fatal if their failure should be
-       considered non-fatal. If called more than once, the second and
-       subsequent calls are no-ops which return a pre-resolved
-       Promise.
+       considered non-fatal.
 
        Ideally this function is called as part of the Promise chain
        which handles the loading and bootstrapping of the API.  If not
@@ -2075,10 +2076,6 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
              some initializers. Retain them when running in test mode
              so that we can add tests for them. */
           delete sqlite3.util;
-          /* It's conceivable that we might want to expose
-             StructBinder to client-side code, but it's only useful if
-             clients build their own sqlite3.wasm which contains their
-             own C struct types. */
           delete sqlite3.StructBinder;
         }
         return sqlite3;
