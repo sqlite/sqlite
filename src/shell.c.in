@@ -1273,9 +1273,9 @@ struct ShellState {
   u8 eRestoreState;      /* See comments above doAutoDetectRestore() */
   unsigned statsOn;      /* True to display memory stats before each finalize */
   unsigned mEqpLines;    /* Mask of vertical lines in the EQP output graph */
+  u8 nPopOutput;         /* Revert .output settings when reaching zero */
+  u8 nPopMode;           /* Revert .mode settings when reaching zero */
   int inputNesting;      /* Track nesting level of .read and other redirects */
-  int outCount;          /* Revert to stdout when reaching zero */
-  int cnt;               /* Number of records displayed so far */
   i64 lineno;            /* Line number of last line read from in */
   const char *zInFile;   /* Name of the input file */
   int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
@@ -1617,6 +1617,23 @@ static int modeFind(const char *zName){
   return -1;
 }
 
+/*
+** Save or restore the current output mode
+*/
+static void modePush(ShellState *p){
+  if( p->nPopMode==0 ){
+    modeFree(&p->modePrior);
+    modeDup(&p->modePrior,&p->mode);
+  }
+}
+static void modePop(ShellState *p){
+  if( p->modePrior.spec.iVersion>0 ){
+    modeFree(&p->mode);
+    p->mode = p->modePrior;
+    memset(&p->modePrior, 0, sizeof(p->modePrior));
+  }
+}
+
 
 /*
 ** A callback for the sqlite3_log() interface.
@@ -1860,21 +1877,6 @@ edit_func_end:
   sqlite3_free(p);
 }
 #endif /* SQLITE_NOHAVE_SYSTEM */
-
-/*
-** Save or restore the current output mode
-*/
-static void outputModePush(ShellState *p){
-  modeFree(&p->modePrior);
-  modeDup(&p->modePrior,&p->mode);
-  p->priorShFlgs = p->shellFlgs;
-}
-static void outputModePop(ShellState *p){
-  modeFree(&p->mode);
-  p->mode = p->modePrior;
-  modeInit(&p->modePrior);
-  p->shellFlgs = p->priorShFlgs;
-}
 
 /*
 ** Set output mode to text or binary for Windows.
@@ -3150,10 +3152,9 @@ static int shell_exec(
       if( zStmtSql==0 ) zStmtSql = "";
       while( IsSpace(zStmtSql[0]) ) zStmtSql++;
 
-      /* save off the prepared statement handle and reset row count */
+      /* save off the prepared statement handle */
       if( pArg ){
         pArg->pStmt = pStmt;
-        pArg->cnt = 0;
       }
      
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
@@ -3908,6 +3909,7 @@ static int showHelp(FILE *out, const char *zPattern){
   int j = 0;
   int n = 0;
   char *zPat;
+  const char *zHit = 0;
   if( zPattern==0 ){
     /* Show just the first line for all help topics */
     zPattern = "[a-z]";
@@ -3939,7 +3941,8 @@ static int showHelp(FILE *out, const char *zPattern){
   shell_check_oom(zPat);
   for(i=0; i<ArraySize(azHelp); i++){
     if( sqlite3_strglob(zPat, azHelp[i])==0 ){
-      cli_printf(out, "%s\n", azHelp[i]);
+      if( zHit ) cli_printf(out, "%s\n", zHit);
+      zHit = azHelp[i];
       j = i+1;
       n++;
     }
@@ -3952,11 +3955,14 @@ static int showHelp(FILE *out, const char *zPattern){
       }else{
         /* when zPattern is a prefix of exactly one command, then include
         ** the details of that command, which should begin at offset j */
+        cli_printf(out, "%s\n", zHit);
         while( j<ArraySize(azHelp)-1 && azHelp[j][0]==' ' ){
           cli_printf(out, "%s\n", azHelp[j]);
           j++;
         }
       }
+    }else{
+      cli_printf(out, "%s\n", zHit);
     }
   }
   sqlite3_free(zPat);
@@ -5223,7 +5229,7 @@ static void output_reset(ShellState *p){
         sqlite3_sleep(2000);
       }
       sqlite3_free(zCmd);
-      outputModePop(p);
+      modePop(p);
       p->doXdgOpen = 0;
     }
 #endif /* !defined(SQLITE_NOHAVE_SYSTEM) */
@@ -7283,73 +7289,57 @@ static int modeTitleDsply(ShellState *p, int bAll){
 /*
 ** DOT-COMMAND:  .mode
 **
-** USAGE:  .mode [MODE] [OPTIONS]
+** USAGE: .mode [MODE] [OPTIONS]
 **
 ** Change the output mode to MODE and/or apply OPTIONS to the
 ** output mode.  If no arguments, show the current output mode
 ** and relevant options.
 **
 ** Options:
-**
 **   --align  STRING          Set the alignment of text in columnar modes
 **                            String consists of characters 'L', 'C', 'R'
 **                            meaning "left", "centered", and "right", with
 **                            one letter per column starting from the left.
 **                            Unspecified alignment defaults to 'L'.
-**
 **   --charlimit N            Set the maximum number of output characters to
 **                            show for any single SQL value to N. Longer values
 **                            truncated. Zero means "no limit".
-**
 **   --colsep  STRING         Use STRING as the column separator
-**
 **   --escape  ESC            Enable/disable escaping of control characters
 **                            in output. ESC can be "off", "ascii", or
 **                            "symbol".
-**
 **   --linelimit N            Set the maximum number of output lines to show for
 **                            any single SQL value to N. Longer values are
 **                            truncated. Zero means "no limit". Only works
 **                            in "line" mode and in columnar modes.
-**
 **   --null  STRING           Render SQL NULL values as the given string
-**
+**   --once                   Setting changes to the left are reverted after
+**                            the next SQL command.
 **   --quote  ARG             Enable/disable quoting of text. ARG can be
 **                            "off", "on", "sql", "csv", "html", "tcl",
 **                            or "json".  "off" means show the text as-is.
 **                            "on and "sql" are synonyms.
-**
 **   --reset                  Changes all mode settings back to their default.
-**
 **   --rowsep  STRING         Use STRING as the row separator
-**
 **   --screenwidth N          Declare the screen width of the output device
 **                            to be N characters.  An attempt may be made to
 **                            wrap output text to fit within this limit. Zero
 **                            means "no limit".  Or N can be "auto" to set the
 **                            width automatically.
-**
 **   --tablename  NAME        Set the name of the table for "insert" mode.
-**
 **   --textjsonb  BOOLEAN     If enabled, JSONB text is displayed as text JSON.
-**
 **   --title  ARG             Whether or not to show column headers, and if so
 **                            how to encode them.  ARG can be "off", "on",
 **                            "sql", "csv", "html", "tcl", or "json".
-**
 **   -v|--verbose             Verbose output
-**
 **   --widths  LIST           Set the columns widths for columnar modes. The
 **                            argument is a list of integers, one for each
 **                            column. A "0" width means use a dynamic width
 **                            based on the actual width of data. If there are
 **                            fewer entries in LIST than columns, "0" is used
 **                            for the unspecified widths.
-**
 **   --wordwrap  BOOLEAN      Enable/disable word wrapping
-**
 **   --wrap  N                Wrap columns wider than N characters
-**
 **   --ww                     Shorthand for "--wordwrap on"
 */
 static int dotCmdMode(ShellState *p){
@@ -7512,6 +7502,10 @@ static int dotCmdMode(ShellState *p){
       p->mode.spec.eText = QRF_TEXT_Plain;
       p->mode.spec.eBlob = QRF_BLOB_Text;
       chng = 1;
+    }else if( optionMatch(z,"once") ){
+      p->nPopMode = 0;
+      modePush(p);
+      p->nPopMode = 1;
     }else if( optionMatch(z,"reset") ){
       int saved_eMode = p->mode.eMode;
       modeFree(&p->mode);
@@ -7634,6 +7628,7 @@ static int dotCmdMode(ShellState *p){
     char *zDesc;
     const char *zSetting;
 
+    if( p->nPopMode ) sqlite3_str_appendall(pDesc, "--once ");
     sqlite3_str_appendall(pDesc,pI->zName);
     if( bAll || (p->mode.spec.nAlign && pI->eCx==2) ){
       int ii;
@@ -7741,40 +7736,29 @@ static int dotCmdMode(ShellState *p){
 ** into /dev/null or the equivalent.
 **
 ** Options:
-**
 **   --bom             Prepend a byte-order mark to the output
-**
 **   -e                Accumulate output in a temporary text file then
 **                     launch a text editor when the redirection ends.
-**
 **   --error-prefix X  Use X as the left-margin prefix for error messages.
 **                     Set to an empty string to restore the default.
-**
 **   --glob GLOB       Raise an error if the memory buffer does not match
 **                     the GLOB pattern.
-**
 **   --keep            Continue using the same "memory" buffer.  Do not
 **                     reset it or delete it.  Useful in combination with
 **                     --glob, --not-glob, and/or --verify.
-**
 **   ---notglob GLOB   Raise an error if the memory buffer does not match
 **                     the GLOB pattern.
-**
 **   --plain           Use plain text rather than HTML tables with -w
-**
 **   --show            Write the memory buffer to the screen, for debugging.
-**
 **   --verify ENDMARK  Read subsequent lines of text until the first line
 **                     that matches ENDMARK.  Discard the ENDMARK.  Compare
 **                     the text against the accumulated output in memory and
 **                     raise an error if there are any differences.
-**
 **   -w                Show the output in a web browser.  Output is
 **                     written into a temporary HTML file until the
 **                     redirect ends, then the web browser is launched.
 **                     Query results  are shown as HTML tables, unless
 **                     the --plain is used too.
-**
 **   -x                Show the output in a spreadsheet.  Output is
 **                     written to a temp file as CSV then the spreadsheet
 **                     is launched when
@@ -7788,15 +7772,11 @@ static int dotCmdMode(ShellState *p){
 ** or -x options is used.
 **
 ** Options:
-**
 **   -e                Capture output into a temporary file then bring up
 **                     a text editor on that temporary file.
-**
 **   --plain           Use plain text rather than HTML tables with -w
-**
 **   -w                Capture output into an HTML file then bring up that
 **                     file in a web browser
-**
 **   -x                Show the output in a spreadsheet.  Output is
 **                     written to a temp file as CSV then the spreadsheet
 **                     is launched when
@@ -7915,9 +7895,9 @@ static int dotCmdOutput(ShellState *p){
     shell_check_oom(zFile);
   }
   if( bOnce ){
-    p->outCount = 2;
+    p->nPopOutput = 2;
   }else{
-    p->outCount = 0;
+    p->nPopOutput = 0;
   }
   if( eCheck ){
     char *zTest;
@@ -7966,7 +7946,7 @@ static int dotCmdOutput(ShellState *p){
 #ifndef SQLITE_NOHAVE_SYSTEM
   if( eMode=='e' || eMode=='x' || eMode=='w' ){
     p->doXdgOpen = 1;
-    outputModePush(p);
+    modePush(p);
     if( eMode=='x' ){
       /* spreadsheet mode.  Output as CSV. */
       newTempFile(p, "csv");
@@ -11467,9 +11447,9 @@ static int do_meta_command(const char *zLine, ShellState *p){
   }
 
 meta_command_exit:
-  if( p->outCount ){
-    p->outCount--;
-    if( p->outCount==0 ) output_reset(p);
+  if( p->nPopOutput ){
+    p->nPopOutput--;
+    if( p->nPopOutput==0 ) output_reset(p);
   }
   p->bSafeMode = p->bSafeModePersist;
   return rc;
@@ -11896,11 +11876,15 @@ static int process_input(ShellState *p, const char *zSrc){
       errCnt += runOneSqlLine(p, zSql, p->in, startline);
       CONTINUE_PROMPT_RESET;
       nSql = 0;
-      if( p->outCount ){
+      if( p->nPopOutput ){
         output_reset(p);
-        p->outCount = 0;
+        p->nPopOutput = 0;
       }else{
         clearTempFile(p);
+      }
+      if( p->nPopMode ){
+        modePop(p);
+        p->nPopMode = 0;
       }
       p->bSafeMode = p->bSafeModePersist;
       qss = QSS_Start;
