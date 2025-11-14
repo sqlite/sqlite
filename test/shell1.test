@@ -1079,7 +1079,7 @@ do_test shell1-4.4 {
 #
 do_test shell1-4.5 {
   catchcmd test.db ".mode tcl\n.nullvalue NULL\nselect * from t2;"
-} {0 {"NULL" ""
+} {0 {NULL ""
 1 2.25
 "hello" "\200\177"}}
 
