@@ -1,5 +1,5 @@
-C Slight\srestructure\sof\sthe\sprevious\scheckin.
-D 2025-11-14T17:23:24.208
+C If\sSQLITE_EXPERIMENTAL_PRAGMA_20251114\sis\sdefined\sat\sbuild-time,\ssend\san\sexperimental\spragma\sfile-control\sto\sthe\sVFS\sif\sa\scall\sto\stake\sa\sSHARED\slock\sis\sto\sbe\simmediately\sfollowed\sby\sone\sto\stake\sa\sRESERVED.
+D 2025-11-14T17:27:20.581
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -671,7 +671,7 @@ F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 0ad524883ec4ccac3221c97bdc2c5d5f6e149504e14cf269bbed31362c3f4393
+F src/btree.c 8850125300b9780fa54bc45a41af88eb2796b90f2f97942279094beef9b0e971
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 611e07299d72ff04bbcb9e7109183467e30925d203c3e121ef9bb3cf6876289b
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d64c9cd4c7a1ffe04de6c75126563d7bbb24266e13d41406f6d55720b8199037
-R f06d7f34f6dadc86bcd344e9d449291d
-U stephan
-Z 1decf52e01f67a53cd6c240f3ee45008
+P 8ff98747c072c8c333b1b37cf4ec9344e84f081bd4e6d3b5e75f37b1e1ce9e84
+R 05071b35c05567df1015a3c0f234c480
+U dan
+Z 9b8f047c4845a8daf6d10391e63368a1
 # Remove this line to create a well-formed Fossil manifest.
