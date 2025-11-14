@@ -842,27 +842,6 @@ fi
 endef
 
 #
-# Inputs/outputs for the sqlite3-api.js family.
-#
-# sqlite3-api.jses = the list of JS files which make up
-# sqlite3-api.js, in the order they need to be assembled.
-sqlite3-api.jses = $(sqlite3-license-version.js)
-sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
-sqlite3-api.jses += $(dir.common)/whwasmutil.js
-sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
-sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.c-pp.js
-sqlite3-api.jses += $(sqlite3-api-build-version.js)
-sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js
-sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
-ifeq (0,$(wasm-bare-bones))
-  sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
-endif
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
-sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
-
-#
 # $(sqlite3-license-version.js) contains the license header and
 # in-comment build version info.
 #
@@ -899,6 +878,27 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 		echo ';'; \
 		echo '});'; \
 	} > $@
+
+#
+# Inputs/outputs for the sqlite3-api.js family.
+#
+# sqlite3-api.jses = the list of JS files which make up
+# sqlite3-api.js, in the order they need to be assembled.
+sqlite3-api.jses = $(sqlite3-license-version.js)
+sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
+sqlite3-api.jses += $(dir.common)/whwasmutil.js
+sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.c-pp.js
+sqlite3-api.jses += $(sqlite3-api-build-version.js)
+sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
+ifeq (0,$(wasm-bare-bones))
+  sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
+endif
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
+sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 #
 # extern-post-js* and extern-pre-js* are files for use with

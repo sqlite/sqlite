@@ -377,7 +377,7 @@ const BuildDefs oBuildDefs = {
     ** node. */,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_UNSUPPORTED | F_ESM | F_NODEJS
+    .flags       = CP_JS | F_UNSUPPORTED | F_ESM | F_NODEJS
   },
 
   /* 64-bit node. */
@@ -391,7 +391,7 @@ const BuildDefs oBuildDefs = {
     .zEnv        = "node",
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_UNSUPPORTED | F_ESM | F_NODEJS | F_64BIT
+    .flags       = CP_JS | F_UNSUPPORTED | F_ESM | F_NODEJS | F_64BIT
   },
 
   /* Entirely unsupported. */
