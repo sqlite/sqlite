@@ -1,5 +1,5 @@
-C Fix\sa\smemory\serror\sin\sthe\s.schema\scommand.
-D 2025-11-14T10:42:29.691
+C Merge\scompiler-warning\sfix\sfrom\strunk\sinto\sthe\sqrf\sbranch.
+D 2025-11-14T11:06:27.128
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -755,7 +755,7 @@ F src/test8.c 206d8f3cc73950d252906656e2646b5de0d580b07187b635fcb3edd8c2c5fbc0
 F src/test9.c df9ddc7db6ef1b8cf745866ee229090779728bcbe660c7f297d3127ab21d92af
 F src/test_autoext.c 14d4bbd3d0bd1eec0f6d16b29e28cf1e2d0b020d454835f0721a5f68121ac10f
 F src/test_backup.c a2bfd90d2ff2511b8635507bdb30fa9b605ade19c16b533066cae3077f5bdb72
-F src/test_bestindex.c a9428931bec06de830b2630f57a7b1f2711761269f04df62b7aa1affcbce15bb
+F src/test_bestindex.c d75fad21369d80910238032bcf8d9ca1f2bffda13c1ceec63bfbb7f704448b15
 F src/test_blob.c 77b994e17f2c87055f44fd96c9a206c5a7155bae2cda2769af60c2f3582f962c
 F src/test_btree.c 28283787d32b8fa953eb77412ad0de2c9895260e4e5bd5a94b3c7411664f90d5
 F src/test_config.c 18aa596d37de1d5968c439fd58ebf38bc4d9c9d1db63621504e241fde375cecd
@@ -2175,8 +2175,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 89cf1de7b6abff567c70d52a415eea6deb52fc13c3008c1266a77b61e3711217
-R d9fa7b22b45645b10730f1bf20da94d3
+P 3300ed34b5a3598c46cdc4bdf1e9e81818a5029585ae917424f64c11c718bfa8 5252a2e629e1adb61169d32ca6458c6decd1ec562f358bb9d0b448a2f0243c56
+R f0481fcb31b39097a1040d0ea2b4dd6d
 U drh
-Z 0f98ac97effb5596c1c631077d49b40b
+Z b51caee9fb8648c2e805a8f6306d9bd9
 # Remove this line to create a well-formed Fossil manifest.
