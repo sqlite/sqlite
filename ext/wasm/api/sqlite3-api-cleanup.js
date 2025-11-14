@@ -28,13 +28,13 @@
   sqlite3ApiBootstrap() has been called.
 
   Because this code resides (after building) inside the function
-  installed by post-js-header.js, it has access to the
+  installed by post-js-header.js, it has access to state set up by
+  pre-js.c-pp.js and friends.
 */
 'use strict';
 if( 'undefined' === typeof EmscriptenModule/*from post-js-header.js*/ ){
-  console.warn("This is not running in the context of Module.runSQLite3PostLoadInit()");
-  throw new Error("sqlite3-api-cleanup.js expects to be running in the "+
-                  "context of its Emscripten module loader.");
+  /* Not an Emscripten build. Nothing to do. */
+  return;
 }
 try{
   /* Config options for sqlite3ApiBootstrap(). */
