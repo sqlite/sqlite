@@ -1,5 +1,5 @@
-C A\sbetter\sfix\sfor\sthe\sissue\swith\sRETURNING\striggers\son\seponymous\svirtual\stables\sand\sSQLITE_SCHEMA\serrors\sfirst\saddressed\sby\s[45d820ca22].
-D 2025-11-13T20:37:09.401
+C Fix\sa\sharmless\scompiler\swarning\sin\stesting\scode.
+D 2025-11-14T11:02:49.203
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -752,7 +752,7 @@ F src/test8.c 206d8f3cc73950d252906656e2646b5de0d580b07187b635fcb3edd8c2c5fbc0
 F src/test9.c df9ddc7db6ef1b8cf745866ee229090779728bcbe660c7f297d3127ab21d92af
 F src/test_autoext.c 14d4bbd3d0bd1eec0f6d16b29e28cf1e2d0b020d454835f0721a5f68121ac10f
 F src/test_backup.c a2bfd90d2ff2511b8635507bdb30fa9b605ade19c16b533066cae3077f5bdb72
-F src/test_bestindex.c a9428931bec06de830b2630f57a7b1f2711761269f04df62b7aa1affcbce15bb
+F src/test_bestindex.c d75fad21369d80910238032bcf8d9ca1f2bffda13c1ceec63bfbb7f704448b15
 F src/test_blob.c 77b994e17f2c87055f44fd96c9a206c5a7155bae2cda2769af60c2f3582f962c
 F src/test_btree.c 28283787d32b8fa953eb77412ad0de2c9895260e4e5bd5a94b3c7411664f90d5
 F src/test_config.c 18aa596d37de1d5968c439fd58ebf38bc4d9c9d1db63621504e241fde375cecd
@@ -2167,8 +2167,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dc569288dd63754269e14be7a9937c882531685a3e9caec25f86ec8c01eb9583
-R 3cca0d04126ebc024323ebdc5e2b2c38
-U dan
-Z 8968c95a49aa85753a4838a6742c155b
+P bf399992cb98e5d5f002a90b521328d5c2f113ebab8601653452d78222077bde
+R 822e867bdd04a0341d8323d597259571
+U drh
+Z 2d7ed663e8bf5d6719badf286180c421
 # Remove this line to create a well-formed Fossil manifest.

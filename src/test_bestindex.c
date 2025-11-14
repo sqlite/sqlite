@@ -828,7 +828,6 @@ static int tclUpdate(
   tcl_vtab *pTab = (tcl_vtab*)tab;
   Tcl_Interp *interp = pTab->interp; 
   Tcl_Obj *pEval = Tcl_DuplicateObj(pTab->pCmd);
-  Tcl_Obj *pRes = 0;
   int rc = TCL_OK;
 
   Tcl_IncrRefCount(pEval);
