@@ -7677,7 +7677,7 @@ static int dotCmdMode(ShellState *p){
       return 1;
     }
   }
-  if( chng || bAll ){
+  if( !chng || bAll ){
     const ModeInfo *pI = aModeInfo + p->mode.eMode;
     sqlite3_str *pDesc = sqlite3_str_new(p->db);
     char *zDesc;
@@ -7774,6 +7774,7 @@ static int dotCmdMode(ShellState *p){
     }
     zDesc = sqlite3_str_finish(pDesc);
     cli_printf(p->out, "current output mode: %s\n", zDesc);
+    fflush(p->out);
     sqlite3_free(zDesc);
   }
   return 0;
@@ -12180,6 +12181,7 @@ static const char zOptions[] =
 #endif
   "   -newline SEP         set output row separator. Default: '\\n'\n"
   "   -nofollow            refuse to open symbolic links to database files\n"
+  "   -noinit              Do not read the ~/.sqliterc file at startup\n"
   "   -nonce STRING        set the safe-mode escape nonce\n"
   "   -no-rowid-in-view    Disable rowid-in-view using sqlite3_config()\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
@@ -12327,6 +12329,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   int rc = 0;
   int warnInmemoryDb = 0;
   int readStdin = 1;
+  int noInit = 0;                 /* Do not read ~/.sqliterc if true */
   int nCmd = 0;
   int nOptsEnd = argc;
   int bEnableVfstrace = 0;
@@ -12577,6 +12580,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.openFlags |= SQLITE_OPEN_READONLY;
     }else if( cli_strcmp(z,"-nofollow")==0 ){
       data.openFlags |= SQLITE_OPEN_NOFOLLOW;
+    }else if( cli_strcmp(z,"-noinit")==0 ){
+      noInit = 1;
     }else if( cli_strcmp(z,"-exclusive")==0 ){  /* UNDOCUMENTED */
       data.openFlags |= SQLITE_OPEN_EXCLUSIVE;
     }else if( cli_strcmp(z,"-ifexists")==0 ){
@@ -12667,7 +12672,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   ** is given on the command line, look for a file named ~/.sqliterc and
   ** try to process it.
   */
-  process_sqliterc(&data,zInitFile);
+  if( !noInit ) process_sqliterc(&data,zInitFile);
 
   /* Make a second pass through the command-line argument and set
   ** options.  This second pass is delayed until after the initialization
@@ -12736,6 +12741,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.openFlags |= SQLITE_OPEN_READONLY;
     }else if( cli_strcmp(z,"-nofollow")==0 ){
       data.openFlags |= SQLITE_OPEN_NOFOLLOW;
+    }else if( cli_strcmp(z,"-noinit")==0 ){
+      /* No-op */
     }else if( cli_strcmp(z,"-exclusive")==0 ){  /* UNDOCUMENTED */
       data.openFlags |= SQLITE_OPEN_EXCLUSIVE;
     }else if( cli_strcmp(z,"-ifexists")==0 ){
