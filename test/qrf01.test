@@ -747,4 +747,34 @@ do_test 6.3 {
   set res
 } {bad -textnull "xyz": must be auto, yes, no, on, or off}
 
+do_execsql_test 7.0 {
+  CREATE TABLE t7(a,b);
+  INSERT INTO t7 VALUES('abcdefghijklmnop',
+    'abcぁdefかghiのjklはmnop');
+}
+do_test 7.1 {
+  set result "\n[db format -style list -charlimit 13 \
+                 {SELECT * FROM t7}]"
+} {
+abcdefghijklm...|abcぁdefかghi...
+}
+do_test 7.2 {
+  set result "\n[db format -style list -charlimit 14 \
+                 {SELECT * FROM t7}]"
+} {
+abcdefghijklmn...|abcぁdefかghi...
+}
+do_test 7.3 {
+  set result "\n[db format -style list -charlimit 15 \
+                 {SELECT * FROM t7}]"
+} {
+abcdefghijklmno...|abcぁdefかghiの...
+}
+do_test 7.4 {
+  set result "\n[db format -style list -charlimit 16 \
+                 {SELECT * FROM t7}]"
+} {
+abcdefghijklmnop|abcぁdefかghiのj...
+}
+
 finish_test

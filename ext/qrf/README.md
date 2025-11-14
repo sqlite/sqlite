@@ -298,15 +298,11 @@ If the sqlite3_qrf_spec.nCharLimit setting is non-zero, then the formatter
 will display only the first nCharLimit characters of each value.
 Only characters that take up space are counted when enforcing this
 limit.  Zero-width characters and VT100 escape sequences do not count
-toward this limit.  The count is in characters, not bytes.
-
-Content length limits only apply to TEXT and BLOB values.  Numeric
-values and NULLs always display their full text regardless of the
-nCharLimit setting.
-
-*This setting is a place-holder.
-As for 2025-11-07, the nCharLimit constraint is not yet implemented.
-The current behavior is always as if nCharLimit where zero.*
+toward this limit.  The count is in characters, not bytes.  When
+imposing this limit, the formatter adds the three characters "..."
+to the end of the value.  Those added characters are not counted
+as part of the limit.  Very small limits still result in truncation,
+but might render a few more characters than the limit.
 
 If the sqlite3_qrf_spec.nLineLimit setting is non-zero, then the
 formatter will only display the first nLineLimit lines of each value.
@@ -315,7 +311,7 @@ character, or if it split by wrapping.  This setting merely limits
 the number of displayed lines.  This setting only works for
 **Box**, **Column**, **Line**, **Markdown**, and **Table** styles.
 
-The idea behind these settings is to prevent excessively large renderings
+The idea behind both of these settings is to prevent large renderings
 when doing a query that (unexpectedly) contains very large text or
 blob values: perhaps megabyes of text.
 

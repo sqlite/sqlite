@@ -859,6 +859,9 @@ static const char *qrfJsonbToJson(Qrf *p, int iCol){
 ** Render value pVal into pOut
 */
 static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
+#if SQLITE_VERSION_NUMBER>=3052000
+  int iStartLen = sqlite3_str_length(pOut);
+#endif
   if( p->spec.xRender ){
     sqlite3_value *pVal;
     char *z;
@@ -969,6 +972,42 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       break;
     }
   }
+#if SQLITE_VERSION_NUMBER>=3052000
+  if( p->spec.nCharLimit>0
+   && (sqlite3_str_length(pOut) - iStartLen) > p->spec.nCharLimit
+  ){
+    const unsigned char *z;
+    int ii = 0, w = 0, limit = p->spec.nCharLimit;
+    z = (const unsigned char*)sqlite3_str_value(pOut) + iStartLen;
+    if( limit<4 ) limit = 4;
+    while( 1 ){
+      if( z[ii]<' ' ){
+        int k;
+        if( z[ii]=='\033' && (k = qrfIsVt100(z+ii))>0 ){
+          ii += k;
+        }else if( z[ii]==0 ){
+          break;
+        }else{
+          ii++;
+        }
+      }else if( (0x80&z[ii])==0 ){
+        w++;
+        if( w>limit ) break;
+        ii++;
+      }else{
+        int u = 0;
+        int len = sqlite3_qrf_decode_utf8(&z[ii], &u);
+        w += sqlite3_qrf_wcwidth(u);
+        if( w>limit ) break;
+        ii += len;
+      }
+    }
+    if( w>limit ){
+      sqlite3_str_truncate(pOut, iStartLen+ii);
+      sqlite3_str_append(pOut, "...", 3);
+    }
+  }
+#endif
 }
 
 /*
