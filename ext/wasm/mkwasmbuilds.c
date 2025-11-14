@@ -772,8 +772,6 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      zBuildName, zBuildName, zBaseName);
 
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
-  pf("out.%s.base ?= $(dir.dout.%s)/%s\n",
-     zBuildName, zBuildName, zBaseName);
 
   pf("c-pp.D.%s ?= %s\n", zBuildName, pB->zCmppD ? pB->zCmppD : "");
   if( pB->flags & F_64BIT ){
@@ -912,10 +910,9 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
 
   pf("\n%dbit: $(out.%s.js)\n"
      "$(out.%s.wasm): $(out.%s.js)\n"
-     "b-%s: $(out.%s.js) $(out.%s.wasm)\n",
+     "b-%s: $(out.%s.wasm)\n",
      (F_64BIT & pB->flags) ? 64 : 32, zBuildName,
-     zBuildName, zBuildName,
-     zBuildName, zBuildName, zBuildName);
+     zBuildName, zBuildName, zBuildName, zBuildName);
 
   if( CP_JS & pB->flags ){
     pf("$(dir.dout)/%s%s: $(out.%s.js)\n",
