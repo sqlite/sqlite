@@ -2308,7 +2308,7 @@ static void shellFormatSchema(
          || sqlite3_strlike("CREATE UNIQUE INDEX%", zSql, 0)==0;
   z = sqlite3_mprintf("%s", zSql);
   if( z==0 ){
-    sqlite3_free(sqlite3_str_finish(pOut));
+    sqlite3_str_free(pOut);
     sqlite3_result_error_nomem(pCtx);
     return;
   }
@@ -5254,7 +5254,7 @@ static void output_reset(ShellState *p){
   p->out = stdout;
   setCrlfMode(p);
   if( cli_output_capture ){
-    sqlite3_free(sqlite3_str_finish(cli_output_capture));
+    sqlite3_str_free(cli_output_capture);
     cli_output_capture = 0;
   }
 }
@@ -8031,7 +8031,7 @@ static int dotCmdOutput(ShellState *p){
     /* no-op */
   }else if( cli_strcmp(zFile,"memory")==0 ){
     if( cli_output_capture ){
-      sqlite3_free(sqlite3_str_finish(cli_output_capture));
+      sqlite3_str_free(cli_output_capture);
     }
     cli_output_capture = sqlite3_str_new(0);
   }else if( zFile[0]=='|' ){
@@ -10066,7 +10066,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     }else{
       rc = shell_exec(&data, sqlite3_str_value(pSql), &zErrMsg);
     }
-    sqlite3_free(sqlite3_str_finish(pSql));
+    sqlite3_str_free(pSql);
 
     if( zErrMsg ){
       shellEmitError(zErrMsg);
