@@ -7622,7 +7622,7 @@ static int dotCmdMode(ShellState *p){
       sqlite3_str_appendall(pDesc, " --align \"");
       for(i=0; i<p->mode.spec.nAlign; i++){
         unsigned char a = p->mode.spec.aAlign[i];
-        sqlite3_str_append(pDesc, "LLCR"+(a&3), 1);
+        sqlite3_str_appendchar(pDesc, 1, "LLCR"[a&3]);
       }
       sqlite3_str_append(pDesc, "\"", 1);
     }
