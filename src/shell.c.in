@@ -1289,7 +1289,6 @@ struct ShellState {
   unsigned mxProgress;   /* Maximum progress callbacks before failing */
   unsigned flgProgress;  /* Flags for the progress callback */
   unsigned shellFlgs;    /* Various flags */
-  unsigned priorShFlgs;  /* Saved copy of flags */
   unsigned nTestRun;     /* Number of test cases run */
   unsigned nTestErr;     /* Number of test cases that failed */
   sqlite3_int64 szMax;   /* --maxsize argument to .open */
@@ -1302,6 +1301,11 @@ struct ShellState {
   FILE *pLog;            /* Write log output here */
   Mode mode;             /* Current display mode */
   Mode modePrior;        /* Backup */
+  struct SavedMode {     /* Ability to define custom mode configurations */
+    char *zTag;            /* Name of this saved mode */
+    Mode mode;              /* The saved mode */
+  } *aSavedModes;        /* Array of saved .mode settings. system malloc() */
+  int nSavedModes;       /* Number of saved .mode settings */
   struct AuxDb {         /* Storage space for auxiliary database connections */
     sqlite3 *db;               /* Connection pointer */
     const char *zDbFilename;   /* Filename used to open the connection */
@@ -1371,7 +1375,8 @@ static ShellState shellState;
 /* Names of values for Mode.spec.eEsc and Mode.spec.eText
 */
 static const char *qrfEscNames[] = { "auto", "off", "ascii", "symbol" };
-static const char *qrfQuoteNames[] = { "off","off","sql","hex", "tcl", "json"};
+static const char *qrfQuoteNames[] = 
+      { "off","off","sql","hex","csv","tcl","json"};
 
 /*
 ** These are the allowed shellFlgs values
@@ -1574,18 +1579,23 @@ static void modeSetStr(char **az, const char *zNew){
 /*
 ** Change the mode to eMode
 */
-static void modeChange(Mode *p, unsigned char eMode){
+static void modeChange(ShellState *p, unsigned char eMode){
   const ModeInfo *pI;
-  assert( eMode<ArraySize(aModeInfo) );
-  pI = &aModeInfo[eMode];
-  p->eMode = eMode;
-  if( pI->eCSep ) modeSetStr(&p->spec.zColumnSep, aModeStr[pI->eCSep]);
-  if( pI->eRSep ) modeSetStr(&p->spec.zRowSep, aModeStr[pI->eRSep]);
-  if( pI->eNull ) modeSetStr(&p->spec.zNull, aModeStr[pI->eNull]);
-  p->spec.eText = pI->eText;
-  p->spec.eBlob = pI->eBlob;
-  p->spec.bTitles = pI->bHdr;
-  p->spec.eTitle = pI->eHdr;
+  if( eMode<ArraySize(aModeInfo) ){
+    pI = &aModeInfo[eMode];
+    Mode *pM = &p->mode;
+    pM->eMode = eMode;
+    if( pI->eCSep ) modeSetStr(&pM->spec.zColumnSep, aModeStr[pI->eCSep]);
+    if( pI->eRSep ) modeSetStr(&pM->spec.zRowSep, aModeStr[pI->eRSep]);
+    if( pI->eNull ) modeSetStr(&pM->spec.zNull, aModeStr[pI->eNull]);
+    pM->spec.eText = pI->eText;
+    pM->spec.eBlob = pI->eBlob;
+    pM->spec.bTitles = pI->bHdr;
+    pM->spec.eTitle = pI->eHdr;
+  }else if( eMode>=100 && eMode-100<p->nSavedModes ){
+    modeFree(&p->mode);
+    modeDup(&p->mode, &p->aSavedModes[eMode-100].mode);
+  }
 }
 
 /*
@@ -1608,11 +1618,17 @@ static void modeInit(Mode *p){
 /*
 ** Find the number of a display mode given its name.  Return -1 if
 ** the name does not match any mode.
+**
+** Saved modes are also searched if p!=NULL.  The number returned
+** for a saved mode is the index into the p->aSavedModes[] array plus 100.
 */
-static int modeFind(const char *zName){
+static int modeFind(ShellState *p, const char *zName){
   int i;
   for(i=0; i<ArraySize(aModeInfo); i++){
     if( cli_strcmp(aModeInfo[i].zName,zName)==0 ) return i;
+  }
+  for(i=0; i<p->nSavedModes; i++){
+    if( cli_strcmp(p->aSavedModes[i].zTag,zName)==0 ) return i+100;
   }
   return -1;
 }
@@ -7312,6 +7328,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            any single SQL value to N. Longer values are
 **                            truncated. Zero means "no limit". Only works
 **                            in "line" mode and in columnar modes.
+**   --list                   List available modes
 **   --null  STRING           Render SQL NULL values as the given string
 **   --once                   Setting changes to the left are reverted after
 **                            the next SQL command.
@@ -7327,6 +7344,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            means "no limit".  Or N can be "auto" to set the
 **                            width automatically.
 **   --tablename  NAME        Set the name of the table for "insert" mode.
+**   --tag  NAME              Save current mode as NAME.
 **   --textjsonb  BOOLEAN     If enabled, JSONB text is displayed as text JSON.
 **   --title  ARG             Whether or not to show column headers, and if so
 **                            how to encode them.  ARG can be "off", "on",
@@ -7357,11 +7375,11 @@ static int dotCmdMode(ShellState *p){
     if( z[0]=='-' && z[1]=='-' ) z++;
     if( z[0]!='-'
      && iMode<0
-     && (eMode = modeFind(azArg[i]))>=0
+     && (eMode = modeFind(p, azArg[i]))>=0
      && eMode!=MODE_Www
     ){
       iMode = i;
-      modeChange(&p->mode, eMode);
+      modeChange(p, eMode);
       /* (Legacy) If the mode is MODE_Insert and the next argument
       ** is not an option, then the next argument must be the table
       ** name.
@@ -7445,10 +7463,21 @@ static int dotCmdMode(ShellState *p){
       }
       p->mode.spec.eEsc = k+1;
       chng = 1;
+    }else if( optionMatch(z,"list") ){
+      int ii;
+      cli_puts("available modes:", p->out);
+      for(ii=0; ii<ArraySize(aModeInfo); ii++){
+        if( ii==MODE_Www ) continue;
+        cli_printf(p->out, " %s", aModeInfo[ii].zName);
+      }
+      for(ii=0; ii<p->nSavedModes; ii++){
+        cli_printf(p->out, " %s", p->aSavedModes[ii].zTag);
+      }
+      cli_puts("\n", p->out);
     }else if( optionMatch(z,"quote") ){
       if( i+1<nArg
        && azArg[i+1][0]!='-'
-       && (iMode>0 || modeFind(azArg[i+1])<0)
+       && (iMode>0 || modeFind(p, azArg[i+1])<0)
       ){
         /* --quote is followed by an argument other that is not an option
         ** or a mode name.  See it must be a boolean or a keyword to describe
@@ -7497,19 +7526,19 @@ static int dotCmdMode(ShellState *p){
           break;
       }
       chng = 1;
+    }else if( optionMatch(z,"once") ){
+      p->nPopMode = 0;
+      modePush(p);
+      p->nPopMode = 1;
     }else if( optionMatch(z,"noquote") ){
       /* (undocumented legacy) --noquote always turns quoting off */
       p->mode.spec.eText = QRF_TEXT_Plain;
       p->mode.spec.eBlob = QRF_BLOB_Text;
       chng = 1;
-    }else if( optionMatch(z,"once") ){
-      p->nPopMode = 0;
-      modePush(p);
-      p->nPopMode = 1;
     }else if( optionMatch(z,"reset") ){
       int saved_eMode = p->mode.eMode;
       modeFree(&p->mode);
-      modeChange(&p->mode, saved_eMode);
+      modeChange(p, saved_eMode);
     }else if( optionMatch(z,"screenwidth") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
@@ -7529,6 +7558,32 @@ static int dotCmdMode(ShellState *p){
         p->mode.spec.nScreenWidth = w;
       }
       i++;
+      chng = 1;
+    }else if( optionMatch(z,"tag") ){
+      size_t nByte;
+      int n;
+      const char *zTag;
+      if( i+1>=nArg ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      zTag = azArg[++i];
+      if( modeFind(p, zTag)>=0 ){
+        dotCmdError(p, i, "mode already exists", 0);
+        return 1;
+      }
+      if( p->nSavedModes > 100 ){
+        dotCmdError(p, i-1, "cannot add more modes", 0);
+        return 1;
+      }
+      n = p->nSavedModes++;
+      nByte = sizeof(p->aSavedModes[0]);
+      nByte *= n+1;
+      p->aSavedModes = realloc( p->aSavedModes, nByte );
+      shell_check_oom(p->aSavedModes);
+      p->aSavedModes[n].zTag = strdup(zTag);
+      shell_check_oom(p->aSavedModes[n].zTag);
+      modeDup(&p->aSavedModes[n].mode, &p->mode);
       chng = 1;
     }else if( optionMatch(z,"textjsonb") ){
       if( i+1>=nArg ){
@@ -7622,7 +7677,7 @@ static int dotCmdMode(ShellState *p){
       return 1;
     }
   }
-  if( !chng || bAll ){
+  if( chng || bAll ){
     const ModeInfo *pI = aModeInfo + p->mode.eMode;
     sqlite3_str *pDesc = sqlite3_str_new(p->db);
     char *zDesc;
@@ -12626,25 +12681,25 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     if( cli_strcmp(z,"-init")==0 ){
       i++;
     }else if( cli_strcmp(z,"-html")==0 ){
-      modeChange(&data.mode, MODE_Html);
+      modeChange(&data, MODE_Html);
     }else if( cli_strcmp(z,"-list")==0 ){
-      modeChange(&data.mode, MODE_List);
+      modeChange(&data, MODE_List);
     }else if( cli_strcmp(z,"-quote")==0 ){
-      modeChange(&data.mode, MODE_Quote);
+      modeChange(&data, MODE_Quote);
     }else if( cli_strcmp(z,"-line")==0 ){
-      modeChange(&data.mode, MODE_Line);
+      modeChange(&data, MODE_Line);
     }else if( cli_strcmp(z,"-column")==0 ){
-      modeChange(&data.mode, MODE_Column);
+      modeChange(&data, MODE_Column);
     }else if( cli_strcmp(z,"-json")==0 ){
-      modeChange(&data.mode, MODE_Json);
+      modeChange(&data, MODE_Json);
     }else if( cli_strcmp(z,"-markdown")==0 ){
-      modeChange(&data.mode, MODE_Markdown);
+      modeChange(&data, MODE_Markdown);
     }else if( cli_strcmp(z,"-table")==0 ){
-      modeChange(&data.mode, MODE_Table);
+      modeChange(&data, MODE_Table);
     }else if( cli_strcmp(z,"-box")==0 ){
-      modeChange(&data.mode, MODE_Box);
+      modeChange(&data, MODE_Box);
     }else if( cli_strcmp(z,"-csv")==0 ){
-      modeChange(&data.mode, MODE_Csv);
+      modeChange(&data, MODE_Csv);
     }else if( cli_strcmp(z,"-escape")==0 && i+1<argc ){
       /* See similar code at tag-20250224-1 */
       const char *zEsc = argv[++i];
@@ -12687,9 +12742,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       data.openFlags &= ~(SQLITE_OPEN_CREATE);
       if( data.openFlags==0 ) data.openFlags = SQLITE_OPEN_READWRITE;
     }else if( cli_strcmp(z,"-ascii")==0 ){
-      modeChange(&data.mode, MODE_Ascii);
+      modeChange(&data, MODE_Ascii);
     }else if( cli_strcmp(z,"-tabs")==0 ){
-      modeChange(&data.mode, MODE_Tabs);
+      modeChange(&data, MODE_Tabs);
     }else if( cli_strcmp(z,"-separator")==0 ){
       modeSetStr(&data.mode.spec.zColumnSep, 
                        cmdline_option_value(argc,argv,++i));
@@ -12936,6 +12991,14 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   free(argvToFree);
 #endif
   modeFree(&data.mode);
+  if( data.nSavedModes ){
+    int ii;
+    for(ii=0; ii<data.nSavedModes; ii++){
+      modeFree(&data.aSavedModes[ii].mode);
+      free(data.aSavedModes[ii].zTag);
+    }
+    free(data.aSavedModes);
+  }
   free(data.zErrPrefix);
   free(data.zNonce);
   free(data.dot.zCopy);
