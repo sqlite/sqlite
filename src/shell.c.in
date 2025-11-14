@@ -721,7 +721,7 @@ static int strlen30(const char *z){
   size_t n;
   if( z==0 ) return 0;
   n = strlen(z);
-  return n>0x3fffffff ? 0x3fffffff : n;
+  return n>0x3fffffff ? 0x3fffffff : (int)n;
 }
 
 /*
@@ -1696,7 +1696,7 @@ static void dotCmdError(
   char *zLoc = shellErrorLocation(p);
   if( zBrief!=0 && iArg>=0 && iArg<p->dot.nArg ){
     int i = p->dot.aiOfst[iArg];
-    int nPrompt = strlen(zBrief) + 5;
+    int nPrompt = strlen30(zBrief) + 5;
     cli_printf(out, "%s %s\n", zLoc, p->dot.zOrig);
     if( i > nPrompt ){
       cli_printf(out, "%s %*s%s ---^\n", zLoc, 1+i-nPrompt, "", zBrief);
@@ -7495,9 +7495,9 @@ static int dotCmdMode(ShellState *p){
       p->mode.spec.eBlob = QRF_BLOB_Text;
       chng = 1;
     }else if( optionMatch(z,"reset") ){
-      int eMode = p->mode.eMode;
+      int saved_eMode = p->mode.eMode;
       modeFree(&p->mode);
-      modeChange(&p->mode, eMode);
+      modeChange(&p->mode, saved_eMode);
     }else if( optionMatch(z,"screenwidth") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
@@ -7541,25 +7541,25 @@ static int dotCmdMode(ShellState *p){
       p->mode.spec.bTitles = k>=1 ? QRF_Yes : QRF_No;
       p->mode.spec.eTitle = k>1 ? k-1 : aModeInfo[p->mode.eMode].eHdr;
       chng = 1;
-    }else if( optionMatch(z,"widths") ){
+    }else if( optionMatch(z,"widths") || optionMatch(z,"width") ){
       int nWidth = 0;
       short int *aWidth;
-      const char *z;
+      const char *zW;
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
-      z = azArg[++i];
+      zW = azArg[++i];
       /* Every width value takes at least 2 bytes in the input string to
-      ** specify, so strlen(z) bytes should be plenty of space to hold the
+      ** specify, so strlen(zW) bytes should be plenty of space to hold the
       ** result. */
-      aWidth = malloc( strlen(z) );
-      while( isspace(z[0]) ) z++;
-      while( z[0] ){
+      aWidth = malloc( strlen(zW) );
+      while( isspace(zW[0]) ) zW++;
+      while( zW[0] ){
         int w = 0;
-        k = z[0]=='-' && isdigit(z[1]);
-        while( isdigit(z[k]) ){
-          w = w*10 + z[k] - '0';
+        k = zW[0]=='-' && isdigit(zW[1]);
+        while( isdigit(zW[k]) ){
+          w = w*10 + zW[k] - '0';
           if( w>QRF_MAX_WIDTH ){
             dotCmdError(p,i+1,"width too big",
                         "Maximum column width is %d", QRF_MAX_WIDTH);
@@ -7568,11 +7568,11 @@ static int dotCmdMode(ShellState *p){
           }
           k++;
         }
-        if( z[0]=='-' ) w = -w;
+        if( zW[0]=='-' ) w = -w;
         aWidth[nWidth++] = w;
-        z += k;
-        if( z[0]==',' ) z++;
-        while( isspace(z[0]) ) z++;
+        zW += k;
+        if( zW[0]==',' ) zW++;
+        while( isspace(zW[0]) ) zW++;
       }
       free(p->mode.spec.aWidth);
       p->mode.spec.aWidth = aWidth;
@@ -7618,10 +7618,10 @@ static int dotCmdMode(ShellState *p){
 
     sqlite3_str_appendall(pDesc,pI->zName);
     if( bAll || (p->mode.spec.nAlign && pI->eCx==2) ){
-      int i;
+      int ii;
       sqlite3_str_appendall(pDesc, " --align \"");
-      for(i=0; i<p->mode.spec.nAlign; i++){
-        unsigned char a = p->mode.spec.aAlign[i];
+      for(ii=0; ii<p->mode.spec.nAlign; ii++){
+        unsigned char a = p->mode.spec.aAlign[ii];
         sqlite3_str_appendchar(pDesc, 1, "LLCR"[a&3]);
       }
       sqlite3_str_append(pDesc, "\"", 1);
@@ -7685,10 +7685,10 @@ static int dotCmdMode(ShellState *p){
                    azTitle[p->mode.spec.eTitle-1]);
     }    
     if( p->mode.spec.nWidth>0 && (bAll || pI->eCx==2) ){
-      int i;
+      int ii;
       const char *zSep = " --widths ";
-      for(i=0; i<p->mode.spec.nWidth; i++){
-        sqlite3_str_appendf(pDesc, "%s%d", zSep, (int)p->mode.spec.aWidth[i]);
+      for(ii=0; ii<p->mode.spec.nWidth; ii++){
+        sqlite3_str_appendf(pDesc, "%s%d", zSep, (int)p->mode.spec.aWidth[ii]);
         zSep = ",";
       }
     }else if( bAll ){
@@ -8028,34 +8028,19 @@ dotCmdOutput_error:
   sqlite3_free(zFile);
   return 1;
 }
-
 /*
-** If an input line begins with "." then invoke this routine to
-** process that line.
-**
-** Return 1 on error, 2 to exit, and 0 otherwise.
+** Parse input line zLine up into individual arguments.  Retain the
+** parse in the p->dot substructure.
 */
-static int do_meta_command(const char *zLine, ShellState *p){
+static void parseDotCmdArgs(const char *zLine, ShellState *p){
+  char *z;
   int h = 1;
   int nArg = 0;
-  int n, c;
-  int rc = 0;
-  char *z;
-  char **azArg;
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
-  if( p->expert.pExpert ){
-    expertFinish(p, 1, 0);
-  }
-#endif
-
-  /* Parse the input line into tokens.
-  */
   p->dot.zOrig = zLine;
   free(p->dot.zCopy);
   z = p->dot.zCopy = strdup(zLine);
   shell_check_oom(z);
-  nArg = 0;
   while( z[h] ){
     while( IsSpace(z[h]) ){ h++; }
     if( z[h]==0 ) break;
@@ -8091,10 +8076,31 @@ static int do_meta_command(const char *zLine, ShellState *p){
     nArg++;
   }
   p->dot.nArg = nArg;
-  if( p->dot.nAlloc==0 ){
-    return 0;  /* No input tokens */
-  }
   p->dot.azArg[nArg] = 0;
+}
+
+/*
+** If an input line begins with "." then invoke this routine to
+** process that line.
+**
+** Return 1 on error, 2 to exit, and 0 otherwise.
+*/
+static int do_meta_command(const char *zLine, ShellState *p){
+  int nArg;
+  int n, c;
+  int rc = 0;
+  char **azArg;
+
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_AUTHORIZATION)
+  if( p->expert.pExpert ){
+    expertFinish(p, 1, 0);
+  }
+#endif
+
+  /* Parse the input line into tokens stored in p->dot.
+  */
+  parseDotCmdArgs(zLine, p);
+  nArg = p->dot.nArg;
   azArg = p->dot.azArg;
 
   /* Process the input line.
@@ -12939,9 +12945,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   free(data.dot.aiOfst);
   free(data.dot.abQuot);
   if( data.nTestRun ){
-    sqlite3_fprintf(stderr, "%d test%s run with %d error%s\n",
+    sqlite3_fprintf(stdout, "%d test%s run with %d error%s\n",
        data.nTestRun, data.nTestRun==1 ? "" : "s",
        data.nTestErr, data.nTestErr==1 ? "" : "s");
+    fflush(stdout);
     rc = data.nTestErr>0;
   }
   /* Clear the global data structure so that valgrind will detect memory

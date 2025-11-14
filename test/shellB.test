@@ -24,15 +24,16 @@ set CLI [test_cli_invocation]
 # errors and increment the counts.
 #
 proc do_clitest {name} {
-  set mapping [list <NAME> $name]
+  set mapping [list <NAME> $::testdir/$name <CLI> $::CLI]
   set script [string map $mapping {
-    catch {exec {*}$::CLI :memory: ".read $::testdir/<NAME>" 2>@stdout} res
+    catch {exec <CLI> :memory: ".read <NAME>" 2>@stdout} res
     set ntest 0
     set nerr 999
     regexp {.*(\d+) tests? run with (\d+) errors?} $res all ntest nerr
     set_test_counter count [expr {[set_test_counter count]+$ntest-1}]
     set_test_counter errors [expr {[set_test_counter errors]+$nerr}]
-    set answer "error count: $nerr"
+    if {$nerr==0} {set res "error count: 0"}
+    set res
   }]
   # puts $script
   do_test shellB-$name $script {error count: 0}

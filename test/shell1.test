@@ -1334,12 +1334,12 @@ select * from t;}
 #
 do_test shell1-9.1 {
   catchcmd :memory: {
-.mode csv
+.mode csv --rowsep "\n"
 /*
 x */ select 1,2; --x
  -- .nada
 ;
-.mode csv
+.mode csv --rowsep "\n"
 --x
 select 2,1; select 3,4;
 }

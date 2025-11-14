@@ -16,7 +16,6 @@
 #include "qrf.h"
 #endif
 #include <string.h>
-#include <ctype.h>
 #include <assert.h>
 
 typedef sqlite3_int64 i64;
@@ -70,6 +69,38 @@ struct Qrf {
   int *actualWidth;           /* Actual width of each column */
   sqlite3_qrf_spec spec;      /* Copy of the original spec */
 };
+
+/*
+** Data for substitute ctype.h functions.  Used for x-platform
+** consistency and so that '_' is counted as an alphabetic
+** character.
+**
+**    0x01 -  space
+**    0x02 -  digit
+**    0x04 -  alphabetic, including '_'
+*/
+static const char qrfCType[] = {
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0,
+  0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 4,
+  0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+#define qrfSpace(x) ((qrfCType[(unsigned char)x]&1)!=0)
+#define qrfDigit(x) ((qrfCType[(unsigned char)x]&2)!=0)
+#define qrfAlpha(x) ((qrfCType[(unsigned char)x]&4)!=0)
+#define qrfAlnum(x) ((qrfCType[(unsigned char)x]&6)!=0)
 
 /*
 ** Set an error code and error message.
@@ -1123,14 +1154,14 @@ static void qrfWrapLine(
   ** point that is neither a "\n" or a 0x00.  Figure out where that
   ** split should occur
   */
-  if( bWrap && z[i]!=0 && !isspace(z[i]) && isalnum(c)==isalnum(z[i]) ){
+  if( bWrap && z[i]!=0 && !qrfSpace(z[i]) && qrfAlnum(c)==qrfAlnum(z[i]) ){
     /* Perhaps try to back up to a better place to break the line */
     for(k=i-1; k>=i/2; k--){
-      if( isspace(z[k]) ) break;
+      if( qrfSpace(z[k]) ) break;
     }
     if( k<i/2 ){
       for(k=i; k>=i/2; k--){
-        if( isalnum(z[k-1])!=isalnum(z[k]) && (z[k]&0xc0)!=0x80 ) break;
+        if( qrfAlnum(z[k-1])!=qrfAlnum(z[k]) && (z[k]&0xc0)!=0x80 ) break;
       }
     }
     if( k>=i/2 ){
@@ -1771,9 +1802,9 @@ static int qrf_need_quote(const char *zName){
   int i;
   const unsigned char *z = (const unsigned char*)zName;
   if( z==0 ) return 1;
-  if( !isalpha(z[0]) && z[0]!='_' ) return 1;
+  if( !qrfAlpha(z[0]) ) return 1;
   for(i=0; z[i]; i++){
-    if( !isalnum(z[i]) && z[i]!='_' ) return 1;
+    if( !qrfAlnum(z[i]) ) return 1;
   }
   return sqlite3_keyword_check(zName, i)!=0;
 }
