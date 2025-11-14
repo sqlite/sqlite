@@ -9908,7 +9908,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     memcpy(&data, p, sizeof(data));
     data.mode.spec.bTitles = QRF_No;
     data.mode.eMode = MODE_List;
-    modeSetStr(&data.mode.spec.zRowSep, "\n");
+    data.mode.spec.zRowSep = "\n";
     for(ii=1; ii<nArg; ii++){
       if( optionMatch(azArg[ii],"indent") ){
         bIndent = 1;
