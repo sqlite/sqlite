@@ -1576,7 +1576,7 @@ static void modeSetStr(char **az, const char *zNew){
 */
 static void modeChange(Mode *p, unsigned char eMode){
   const ModeInfo *pI;
-  assert( eMode>=0 && eMode<ArraySize(aModeInfo) );
+  assert( eMode<ArraySize(aModeInfo) );
   pI = &aModeInfo[eMode];
   p->eMode = eMode;
   if( pI->eCSep ) modeSetStr(&p->spec.zColumnSep, aModeStr[pI->eCSep]);
@@ -3866,6 +3866,19 @@ static const char *(azHelp[]) = {
 #endif
 };
 
+INSERT-USAGE-TEXT-HERE
+
+/*
+** Return a pointer to usage text for zCmd, or NULL if none exists.
+*/
+static const char *findUsage(const char *zCmd){
+  int i;
+  for(i=0; i<ArraySize(aUsage); i++){
+    if( sqlite3_strglob(zCmd, aUsage[i].zCmd)==0 ) return aUsage[i].zUsage;
+  }
+  return 0;
+}
+
 /*
 ** Output help text for commands that match zPattern.
 **
@@ -3922,7 +3935,7 @@ static int showHelp(FILE *out, const char *zPattern){
   }
 
   /* Seek documented commands for which zPattern is an exact prefix */
-  zPat = sqlite3_mprintf(".%s*", zPattern);
+  zPat = sqlite3_mprintf(".%s*", zPattern[0]=='.' ? &zPattern[1] : zPattern);
   shell_check_oom(zPat);
   for(i=0; i<ArraySize(azHelp); i++){
     if( sqlite3_strglob(zPat, azHelp[i])==0 ){
@@ -3931,18 +3944,23 @@ static int showHelp(FILE *out, const char *zPattern){
       n++;
     }
   }
-  sqlite3_free(zPat);
   if( n ){
     if( n==1 ){
-      /* when zPattern is a prefix of exactly one command, then include
-      ** the details of that command, which should begin at offset j */
-      while( j<ArraySize(azHelp)-1 && azHelp[j][0]==' ' ){
-        cli_printf(out, "%s\n", azHelp[j]);
-        j++;
+      const char *zUsage = findUsage(zPat);
+      if( zUsage ){
+        cli_puts(zUsage, out);
+      }else{
+        /* when zPattern is a prefix of exactly one command, then include
+        ** the details of that command, which should begin at offset j */
+        while( j<ArraySize(azHelp)-1 && azHelp[j][0]==' ' ){
+          cli_printf(out, "%s\n", azHelp[j]);
+          j++;
+        }
       }
     }
-    return n;
   }
+  sqlite3_free(zPat);
+  if( n ) return n;
 
   /* Look for documented commands that contain zPattern anywhere.
   ** Show complete text of all documented commands that match. */
@@ -7712,8 +7730,8 @@ static int dotCmdMode(ShellState *p){
 }
 
 /*
-** DOT-COMMAND: .output [OPTIONS] [FILE]
-** ONELINER:     Redirect output
+** DOT-COMMAND: .output
+** USAGE: .output [OPTIONS] [FILE]
 **
 ** Begin redirecting output to FILE.  Or if FILE is omitted, revert
 ** to sending output to the console.  If FILE begins with "|" then
@@ -7761,8 +7779,8 @@ static int dotCmdMode(ShellState *p){
 **                     written to a temp file as CSV then the spreadsheet
 **                     is launched when
 **
-** DOT-COMMAND: .once [OPTIONS] FILE ...
-** ONELINER:     Redirect output for the next SQL statement or dot-command
+** DOT-COMMAND: .once
+** USAGE: .once [OPTIONS] FILE ...
 **
 ** Write the output for the next line of SQL or the next dot-command into
 ** FILE.  If FILE begins with "|" then it is a program into which output
@@ -7784,13 +7802,9 @@ static int dotCmdMode(ShellState *p){
 **                     is launched when
 **
 ** DOT-COMMAND: .excel
-** ONELINER:    Display results of the next SQL statement in a spreadsheet
-**
 ** Shorthand for ".once -x"
 **
 ** DOT-COMMAND: .www [--plain]
-** ONELINER:    Display result of the next SQL statement in a web browser
-**
 ** Shorthand for ".once -w" or ".once --plain -w"
 */
 static int dotCmdOutput(ShellState *p){

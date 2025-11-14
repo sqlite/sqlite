@@ -985,6 +985,7 @@ static void qrfWidthPrint(Qrf *p, sqlite3_str *pOut, int w, const char *zUtf){
   int n = 0;
   int k;
   int aw;
+  (void)p;
   if( w<-mxW ){
     w = -mxW;
   }else if( w>mxW ){
