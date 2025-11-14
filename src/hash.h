@@ -70,7 +70,6 @@ void sqlite3HashInit(Hash*);
 void *sqlite3HashInsert(Hash*, const char *pKey, void *pData);
 void *sqlite3HashFind(const Hash*, const char *pKey);
 void sqlite3HashClear(Hash*);
-void sqlite3HashTransfer(Hash*, Hash*, HashElem *pElem);
 
 /*
 ** Macros for looping over all elements of a hash table.  The idiom is

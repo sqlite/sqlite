@@ -23,7 +23,7 @@ this writing, but is not set in stone forever and may change at any
 time. This doc targets maintainers of this code and those wanting to
 dive in to the details, not end user.
 
-First off, a pikchr of the proverbial onion:
+First off, a [pikchr][] of the proverbial onion:
 
 ```pikchr toggle center
 scale = 0.85
@@ -205,9 +205,10 @@ Preprocessing of Source Files
 Certain files in the build require preprocessing to filter in/out
 parts which differ between vanilla JS, ES6 Modules, and node.js
 builds. The preprocessor application itself is in
-[`c-pp.c`](/file/ext/wasm/c-pp.c) and the complete technical details
-of such preprocessing are maintained in
+[`c-pp-lite.c`](/file/ext/wasm/c-pp-lite.c) and the complete technical
+details of such preprocessing are maintained in
 [`GNUMakefile`](/file/ext/wasm/GNUmakefile).
 
 
 [OPFS]: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
+[pikchr]: https://pikchr.org

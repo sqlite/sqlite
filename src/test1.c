@@ -8305,6 +8305,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "balanced-merge",      SQLITE_BalancedMerge  },
     { "propagate-const",     SQLITE_PropagateConst },
     { "one-pass",            SQLITE_OnePass        },
+    { "exists-to-join",      SQLITE_ExistsToJoin   },
   };
 
   if( objc!=4 ){
