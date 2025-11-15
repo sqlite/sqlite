@@ -1192,6 +1192,9 @@ static void qrfAppendWithTabs(
         col += k;
         z++;
         nVal--;
+      }else if( c=='\r' && nVal==1 ){
+        z++;
+        nVal--;
       }else{
         char zCtrlPik[4];
         col++;
@@ -1270,9 +1273,7 @@ struct qrfColData {
   int *aiWth;              /* Width of each cell */
   struct qrfPerCol {       /* Per-column data */
     char *z;                 /* Cache of text for current row */
-    sqlite3_int64 nW;        /* Total text width across all rows */
     int w;                   /* Computed width of this column */
-    int nLn;                 /* Lines of text over all rows */
     int mxW;                 /* Maximum natural (unwrapped) width */
     unsigned char e;         /* Alignment */
     unsigned char fx;        /* Width is fixed */
@@ -1425,7 +1426,9 @@ static void qrfLoadAlignment(qrfColData *pData, Qrf *p){
 static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
   int sepW;             /* Width of all box separators and margins */
   int sumW;             /* Total width of data area over all columns */
-  int i;                /* Loop counter */
+  int targetW;          /* Desired total data area */
+  int i;                /* Loop counters */
+  int nCol;             /* Number of columns */
 
   pData->nMargin = 2;   /* Default to normal margins */
   if( p->spec.nScreenWidth==0 ) return;
@@ -1434,7 +1437,8 @@ static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
   }else{
     sepW = pData->nCol*3 + 1;
   }
-  for(i=sumW=0; i<pData->nCol; i++) sumW += pData->a[i].w;
+  nCol = pData->nCol;
+  for(i=sumW=0; i<nCol; i++) sumW += pData->a[i].w;
   if( p->spec.nScreenWidth >= sumW+sepW ) return;
 
   /* First thing to do is reduce the separation between columns */
@@ -1444,7 +1448,49 @@ static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
   }else{
     sepW = pData->nCol + 1;
   }
+  targetW = p->spec.nScreenWidth - sepW;
 
+#define MIN_SQUOZE    8
+#define MIN_EX_SQUOZE 16
+  /* Reduce the width of the widest eligible column.  A column is
+  ** eligible for narrowing if:
+  **
+  **    *  It is not a fixed-width column  (a[0].fx is false)
+  **    *  The current width is more than MIN_SQUOZE
+  **    *  Either:
+  **         +  The current width is more then MIN_EX_SQUOZE, or
+  **         +  The current width is more than half the max width (a[].mxW)
+  **
+  ** Keep making reductions until either no more reductions are
+  ** possible or until the size target is reached.
+  */
+  while( sumW > targetW ){
+    int gain, w;
+    int ix = -1;
+    int mx = 0;
+    for(i=0; i<nCol; i++){
+      if( pData->a[i].fx==0
+       && (w = pData->a[i].w)>mx
+       && w>MIN_SQUOZE
+       && (w>MIN_EX_SQUOZE || w*2>pData->a[i].mxW)
+      ){
+        ix = i;
+        mx = w;
+      }
+    }
+    if( ix<0 ) break;
+    if( mx>=MIN_SQUOZE*2 ){
+      gain = mx/2;
+    }else{
+      gain = mx - MIN_SQUOZE;
+    }
+    if( sumW - gain < targetW ){
+      gain = sumW - targetW;
+    }
+    sumW -= gain;
+    pData->a[ix].w -= gain;
+    pData->bMultiRow = 1;
+  }
 }
 
 /*
@@ -1495,9 +1541,7 @@ static void qrfColumnar(Qrf *p){
       z = data.az[data.n] = sqlite3_str_finish(pStr);
       data.aiWth[data.n] = w = qrfDisplayWidth(z, n, &nNL);
       data.n++;
-      data.a[i].nW += w;
       if( w>data.a[i].mxW ) data.a[i].mxW = w;
-      data.a[i].nLn += 1+nNL;
       if( nNL ) data.bMultiRow = 1;
     }
     p->spec.eText = saved_eText;
@@ -1517,9 +1561,7 @@ static void qrfColumnar(Qrf *p){
       z = data.az[data.n] = sqlite3_str_finish(pStr);
       data.aiWth[data.n] = w = qrfDisplayWidth(z, n, &nNL);
       data.n++;
-      data.a[i].nW += w;
       if( w>data.a[i].mxW ) data.a[i].mxW = w;
-      data.a[i].nLn += 1+nNL;
       if( nNL ) data.bMultiRow = 1;
     }
     p->nRow++;
