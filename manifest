@@ -1,5 +1,5 @@
-C Data\sstructure\simprovements\son\scolumnar\slayout.\s\sPrep\swork\sfor\sgetting\ncolumnar\slayouts\sto\srespond\sto\snScreenWidth.
-D 2025-11-15T11:28:23.387
+C Columnar\sformats\srespond\sto\s--screenwidth\srestrictions\sby\sremoving\ncell\spadding.
+D 2025-11-15T12:09:13.368
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 09dd538966d8ee32598fc010e7fe6755bd7190494953a02960a9c81197d20cf3
-F ext/qrf/qrf.c 4b9a551c43631fee70561bec966484e1e6d0705e9390ad981bf90629ec50b43d
+F ext/qrf/qrf.c fbb6de94990683f8dab198fd11f8d525814e238f239d8c2b5ba876f0547fc20d
 F ext/qrf/qrf.h b4b3489b3b3683523fd248d15cf5945830643b036943efacdb772a3e00367aa2
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -1509,6 +1509,7 @@ F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/pushdown.test 46a626ef1c0ca79b85296ff2e078b9da20a50e9b804b38f441590c3987580ddd
 F test/qrf01.test f46f498e447d988b52dfa1cd45c683b7212bb2056741a4eff306df185b9c00b1
 F test/qrf02.test 39b4afdc000bedccdafc0aecf17638df67a67aaa2d2942865ae6abcc48ba0e92
+F test/qrf03.test 9d88aeb5cdd53f050b7ab9bd203281f7c9d063c33f22f8808e441b7ac0874ccf
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quickcheck.test a4b7e878cd97e46108291c409b0bf8214f29e18fddd68a42bc5c1375ad1fb80a
@@ -2175,8 +2176,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0650e2b83170b44c1ba944259a96d41e1a14a57004d4f1f80dc5640ae837a81e
-R 68d6d980f828d21e49b27041ff53af43
+P 777eeb2ed2708faf42559387bd582b9345a794798a0327e4fcd75e37948eac60
+R 18da84638cbc549862fa04427f55af51
 U drh
-Z b607d4ec693b98f876c3e69df28145b2
+Z 09f09c667712ec4cacfa01d0509edacc
 # Remove this line to create a well-formed Fossil manifest.

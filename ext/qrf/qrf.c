@@ -1420,6 +1420,34 @@ static void qrfLoadAlignment(qrfColData *pData, Qrf *p){
 }
 
 /*
+** Adjust the layout for the screen width restriction
+*/
+static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
+  int sepW;             /* Width of all box separators and margins */
+  int sumW;             /* Total width of data area over all columns */
+  int i;                /* Loop counter */
+
+  pData->nMargin = 2;   /* Default to normal margins */
+  if( p->spec.nScreenWidth==0 ) return;
+  if( p->spec.eStyle==QRF_STYLE_Column ){
+    sepW = pData->nCol*2 - 2;
+  }else{
+    sepW = pData->nCol*3 + 1;
+  }
+  for(i=sumW=0; i<pData->nCol; i++) sumW += pData->a[i].w;
+  if( p->spec.nScreenWidth >= sumW+sepW ) return;
+
+  /* First thing to do is reduce the separation between columns */
+  pData->nMargin = 0;
+  if( p->spec.eStyle==QRF_STYLE_Column ){
+    sepW = pData->nCol - 1;
+  }else{
+    sepW = pData->nCol + 1;
+  }
+
+}
+
+/*
 ** Columnar modes require that the entire query be evaluated first, with
 ** results written into memory, so that we can compute appropriate column
 ** widths.
@@ -1548,33 +1576,51 @@ static void qrfColumnar(Qrf *p){
     data.a[i].w = w;
   }
 
-  /* TBD: Narrow columns so that the total is less than p->spec.nScreenWidth */
+  /* Adjust the column widths due to screen width restrictions */
+  qrfRestrictScreenWidth(&data, p);
 
   /* Draw the line across the top of the table.  Also initialize
   ** the row boundary and column separator texts. */
-  data.nMargin = 2;
   switch( p->spec.eStyle ){
     case QRF_STYLE_Box:
-      rowStart = BOX_13 " ";
-      colSep = " " BOX_13 " ";
-      rowSep = " " BOX_13 "\n";
+      if( data.nMargin ){
+        rowStart = BOX_13 " ";
+        colSep = " " BOX_13 " ";
+        rowSep = " " BOX_13 "\n";
+      }else{
+        rowStart = BOX_13;
+        colSep = BOX_13;
+        rowSep = BOX_13 "\n";
+      }
       qrfBoxSeparator(p->pOut, &data, BOX_23, BOX_234, BOX_34);
       break;
     case QRF_STYLE_Table:
-      rowStart = "| ";
-      colSep = " | ";
-      rowSep = " |\n";
+      if( data.nMargin ){
+        rowStart = "| ";
+        colSep = " | ";
+        rowSep = " |\n";
+      }else{
+        rowStart = "|";
+        colSep = "|";
+        rowSep = "|\n";
+      }
       qrfRowSeparator(p->pOut, &data, '+');
       break;
     case QRF_STYLE_Column:
       rowStart = "";
-      colSep = "  ";
+      colSep = data.nMargin ? "  " : " ";
       rowSep = "\n";
       break;
     default:  /*case QRF_STYLE_Markdown:*/
-      rowStart = "| ";
-      colSep = " | ";
-      rowSep = " |\n";
+      if( data.nMargin ){
+        rowStart = "| ";
+        colSep = " | ";
+        rowSep = " |\n";
+      }else{
+        rowStart = "|";
+        colSep = "|";
+        rowSep = "|\n";
+      }
       break;
   }
   szRowStart = (int)strlen(rowStart);
