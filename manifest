@@ -1,5 +1,5 @@
-C Random\sJS\sbuild\scleanups\sand\sparallel\sbuild\smkdir\srace\sfixes.\sReinstate\sthe\srecently-removed\s[a65bd978cbc646ec]\safter\sfinding\sa\sreformulation\swhich\sworks\son\sEmscripten\s4.0.19\s(and\ssaves\sabout\s85kb\son\sthe\sJS\sdeliverables).
-D 2025-11-15T13:30:13.350
+C Replace\sthe\sJNI\sbinding's\sinternal\suse\sof\ssqlite3ErrorWithMsg()\swith\ssqlite3_set_errmsg()\sand\shave\sit\shandle\sOOM\sin\sa\sway\sconsistent\swith\sthe\srest\sof\sthe\sJNI\sbindings.
+D 2025-11-15T15:09:04.569
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -290,7 +290,7 @@ F ext/intck/test_intck.c 4f9eaadaedccb9df1d26ba41116a0a8e5b0c5556dc3098c8ff68633
 F ext/jni/GNUmakefile 8a94e3a1953b88cf117fb2a5380480feada8b4f5316f02572cab425030a720b4
 F ext/jni/README.md 1479c83dbe26125264a060ee6873531795a7082dbc0d43c4067683371331559f
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 3d84a0176af779737ae977ba1c90d2ffe2537b8299c5d9f6552620493f12ac4b
+F ext/jni/src/c/sqlite3-jni.c b28ca2a083743dbc0f14dd0b41be30034a0284d66587060dfaf825e9d885a0fd
 F ext/jni/src/c/sqlite3-jni.h df43024cced914c49485633d0f90168689e70577b3b17b0ecbdaf16e4a417bff
 F ext/jni/src/org/sqlite/jni/annotation/Experimental.java 8603498634e41d0f7c70f661f64e05df64376562ea8f126829fd1e0cdd47e82b
 F ext/jni/src/org/sqlite/jni/annotation/NotNull.java be6cc3e8e114485822331630097cc0f816377e8503af2fc02f9305ff2b353917
@@ -2166,8 +2166,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2bd0addb6068cd2b34f6151a824c578e2253f541a8c55b578219b09c42afd82b
-R cb76483e55da810a9fb38d6425ffedc4
+P acb1525a49463de67716638626406ccde9a282907d0de218ab88bf474ba830ee
+R 401c7736be7e7154dc5b54d0e020a24a
 U stephan
-Z 3f713550333ee0705fe41873843f5246
+Z b31456e0517faa0fcb62a707b78caf87
 # Remove this line to create a well-formed Fossil manifest.
