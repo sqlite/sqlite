@@ -898,7 +898,6 @@ ifeq (0,$(wasm-bare-bones))
 endif
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
-sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 #
 # extern-post-js* and extern-pre-js* are files for use with

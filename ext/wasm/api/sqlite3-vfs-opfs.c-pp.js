@@ -16,7 +16,7 @@
   asynchronous Origin-Private FileSystem (OPFS) APIs using a second
   Worker, implemented in sqlite3-opfs-async-proxy.js.  This file is
   intended to be appended to the main sqlite3 JS deliverable somewhere
-  after sqlite3-api-oo1.js and before sqlite3-api-cleanup.js.
+  after sqlite3-api-oo1.js.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){

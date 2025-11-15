@@ -2130,6 +2130,19 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     sqlite3InitScriptInfo /* from post-js-header.js */;
   if( (sqlite3.__isUnderTest = sqlite3IsUnderTest /* from post-js-header.js */) ){
     sqlite3.config.emscripten = EmscriptenModule;
+    /*
+      The problem with exposing these pieces (in non-testing runs) via
+      sqlite3.wasm is that it exposes non-SQLite pieces to the
+      clients, who may come to expect it to remain. _We_ only have
+      these data because we've overridden Emscripten's wasm file
+      loader, and if we lose that capability for some reason then
+      we'll lose access to this metadata.
+
+      These data are interesting for exploring how the wasm/JS
+      pieces connect, e.g. for exploring exactly what Emscripten
+      imports into WASM from its JS glue, but it's not
+      SQLite-related.
+    */
     const iw = sqlite3InitScriptInfo.instantiateWasm;
     if( iw ){
       /* Metadata injected by the custom Module.instantiateWasm()
