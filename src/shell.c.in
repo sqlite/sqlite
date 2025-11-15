@@ -7430,7 +7430,7 @@ static int dotCmdMode(ShellState *p){
       if( k==0 ){
         p->mode.spec.nCharLimit = w;
       }else{
-        p->mode.spec.nLineLimit = 2;
+        p->mode.spec.nLineLimit = w;
       }
       chng = 1;
     }else if( 0<=(k=pickStr(z,0,"-tablename","-rowsep","-colsep","-null","")) ){
@@ -7477,7 +7477,7 @@ static int dotCmdMode(ShellState *p){
     }else if( optionMatch(z,"quote") ){
       if( i+1<nArg
        && azArg[i+1][0]!='-'
-       && (iMode>0 || modeFind(p, azArg[i+1])<0)
+       && (iMode>0 || strcmp(azArg[i+1],"off")==0 || modeFind(p, azArg[i+1])<0)
       ){
         /* --quote is followed by an argument other that is not an option
         ** or a mode name.  See it must be a boolean or a keyword to describe
@@ -7592,7 +7592,7 @@ static int dotCmdMode(ShellState *p){
       }
       p->mode.spec.bTextJsonb = booleanValue(azArg[++i]) ? QRF_Yes : QRF_No;
       chng = 1;
-    }else if( optionMatch(z,"titles") ){
+    }else if( optionMatch(z,"titles") || optionMatch(z,"title") ){
       char *zErr = 0;
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
