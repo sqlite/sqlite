@@ -1956,15 +1956,6 @@ static void S3JniUdf_finalizer(void * s){
 }
 
 /*
-** Helper for processing args to UDF handlers with signature
-** (sqlite3_context*,int,sqlite3_value**).
-*/
-typedef struct {
-  jobject jcx         /* sqlite3_context */;
-  jobjectArray jargv  /* sqlite3_value[] */;
-} udf_jargs;
-
-/*
 ** Converts the given (cx, argc, argv) into arguments for the given
 ** UDF, writing the result (Java wrappers for cx and argv) in the
 ** final 2 arguments. Returns 0 on success, SQLITE_NOMEM on allocation
@@ -2005,7 +1996,7 @@ error_oom:
 /*
 ** Requires that jCx and jArgv are sqlite3_context
 ** resp. array-of-sqlite3_value values initialized by udf_args(). The
-** latter will be 0-and-NULL for UDF types with no arguments. This
+** (argc,argv) are (0,NULL) for UDF types with no arguments. This
 ** function zeroes out the nativePointer member of jCx and each entry
 ** in jArgv. This is a safety-net precaution to avoid undefined
 ** behavior if a Java-side UDF holds a reference to its context or one
@@ -2098,19 +2089,19 @@ static int udf_xFSI(sqlite3_context* const pCx, int argc,
                     sqlite3_value** const argv, S3JniUdf * const s,
                     jmethodID xMethodID, const char * const zFuncType){
   S3JniDeclLocal_env;
-  udf_jargs args = {0,0};
-  int rc = udf_args(env, pCx, argc, argv, &args.jcx, &args.jargv);
-
+  jobject jcx        = 0 /* sqlite3_context */;
+  jobjectArray jargv = 0 /* sqlite3_value[] */;
+  int rc = udf_args(env, pCx, argc, argv, &jcx, &jargv);
   if( 0 == rc ){
-    (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
+    (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx, jargv);
     S3JniIfThrew{
       rc = udf_report_exception(env, 'F'==zFuncType[1]/*xFunc*/, pCx,
                                 s->zFuncName, zFuncType);
     }
-    udf_unargs(env, args.jcx, argc, args.jargv);
+    udf_unargs(env, jcx, argc, jargv);
   }
-  S3JniUnrefLocal(args.jcx);
-  S3JniUnrefLocal(args.jargv);
+  S3JniUnrefLocal(jcx);
+  S3JniUnrefLocal(jargv);
   return rc;
 }
 
