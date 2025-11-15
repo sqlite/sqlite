@@ -8730,7 +8730,7 @@ sqlite3_str *sqlite3_str_new(sqlite3*);
 **
 ** ^The [sqlite3_str_free(X)] interface destroys both the sqlite3_str object
 ** X and the string content it contains.  Calling sqlite3_str_free(X) is
-** the equivalent of calling [sqlite3_free](sqlite3_str_finalize(X)).
+** the equivalent of calling [sqlite3_free](sqlite3_str_finish(X)).
 */
 char *sqlite3_str_finish(sqlite3_str*);
 void sqlite3_str_free(sqlite3_str*);
