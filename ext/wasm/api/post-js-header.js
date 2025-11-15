@@ -8,9 +8,11 @@
 
    Running this function will bootstrap the library and return
    a Promise to the sqlite3 namespace object.
+
+   In the canonical builds, this gets called by extern-post-js.c-pp.js
 */
 Module.runSQLite3PostLoadInit = async function(
-  sqlite3InitScriptInfo /* populated by extern-post-js.c-pp.js */,
+  sqlite3InitScriptInfo,
   EmscriptenModule/*the Emscripten-style module object*/,
   sqlite3IsUnderTest
 ){

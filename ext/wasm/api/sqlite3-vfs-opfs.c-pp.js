@@ -1441,7 +1441,7 @@ installOpfsVfs.defaultProxyUri =
 globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   try{
     let proxyJs = installOpfsVfs.defaultProxyUri;
-    if(sqlite3.scriptInfo.sqlite3Dir){
+    if( sqlite3?.scriptInfo?.sqlite3Dir ){
       installOpfsVfs.defaultProxyUri =
         sqlite3.scriptInfo.sqlite3Dir + proxyJs;
       //sqlite3.config.warn("installOpfsVfs.defaultProxyUri =",installOpfsVfs.defaultProxyUri);
