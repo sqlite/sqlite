@@ -219,9 +219,8 @@ b.cp = $(call b.mkdir@); \
 # $4 = optional $(bin.c-pp) flags
 define b.c-pp.shcmd
 $(call b.mkdir@); \
-$(call b.echo,$(1),$(emo.disk)$(emo.lock) $(bin.c-pp) $(4) $(if $(loud.if),$(2))); \
-rm -f $(3); \
-$(bin.c-pp) -o $(3) $(4) $(2) || exit; \
+$(call b.echo,$(1),$(emo.disk)$(emo.lock)[$(3)] $(4)); \
+rm -f $(3); $(bin.c-pp) -o $(3) $(4) $(2) || exit; \
 chmod -w $(3)
 endef
 
@@ -233,7 +232,8 @@ endef
 # Args: as for $(b.c-pp.shcmd).
 define b.c-pp.target
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
-	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4) $(b.c-pp.target.flags))
+	@$$(call b.mkdir@)
+	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4) $$(b.c-pp.target.flags))
 CLEAN_FILES += $(3)
 endef
 
@@ -260,7 +260,7 @@ endef
 #
 # To repeat: all node.js builds are 100% untested and unsupported.
 #
-# Most c-pp.D.X are set via $(bin.mkwasmbuilds) and X is a build name.
+# Most c-pp.D.X are set via $(bin.mkwb) and X is a build name.
 # Those make rules reference c-pp.D.64bit, so it should be defined in
 # advance.
 #
@@ -282,9 +282,20 @@ c-pp.D.64bit = -Dbits64
 # This is intended to be used in makefile targets which generate an
 # Emscripten module and where $@ is the module's .js/.mjs file.
 #
+# This is inherently fragile and has been broken by Emscripten updates
+# before.
+#
+ifeq (1,1)
+define b.strip-js-emcc-bindings
+echo "$(1) $(emo.garbage) Stripping export wrappers."; \
+sed -i -e '/var _sqlite3.*makeInvalidEarly.*;/d' \
+-e '/assert.*sqlite3.*missing.*;/d' \
+-e '/_sqlite.*createExportWrapper.*;/d' $@
+endef
+else
 b.strip-js-emcc-bindings = \
   echo '$(1) $(emo.bug) (disabled because it breaks emsdk 4.0.16+)'
-
+endif
 
 #
 # Set up sqlite3.c and sqlite3.h...
@@ -850,9 +861,8 @@ endef
 #
 sqlite3-license-version.js = $(dir.tmp)/sqlite3-license-version.js
 $(sqlite3-license-version.js): $(bin.version-info) \
-  $(dir.api)/sqlite3-license-version-header.js
-	@echo '$(logtag.@) $(emo.disk)'; \
-	$(call b.mkdir@); { \
+  $(dir.api)/sqlite3-license-version-header.js $(MAKEFILE)
+	@$(call b.mkdir@); echo '$(logtag.@) $(emo.disk)'; { \
 		cat $(dir.api)/sqlite3-license-version-header.js || exit $$?;  \
 		echo '/*'; \
 		echo '** This code was built from sqlite3 version...'; \
@@ -860,7 +870,7 @@ $(sqlite3-license-version.js): $(bin.version-info) \
 		awk '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' $(sqlite3.h); \
 		awk '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
 		echo '**'; echo '** Emscripten SDK: $(emcc.version)'; \
-		echo '**'; \
+		echo '**'; echo '** Preprocessed by:'; echo '**    @c-pp::ARGV@'; \
 		echo '*/'; \
 	} > $@
 
@@ -886,10 +896,10 @@ $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 # sqlite3-api.js, in the order they need to be assembled.
 sqlite3-api.jses = $(sqlite3-license-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
+sqlite3-api.jses += $(sqlite3-api-build-version.js)
 sqlite3-api.jses += $(dir.common)/whwasmutil.js
 sqlite3-api.jses += $(dir.jacc)/jaccwabyt.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.c-pp.js
-sqlite3-api.jses += $(sqlite3-api-build-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
@@ -898,6 +908,13 @@ ifeq (0,$(wasm-bare-bones))
 endif
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
+
+# Parallel builds can fail if $(sqlite3-license-version.js) is not
+# created early enough, so make all files in $(sqlite-api.jses) except
+# for $(sqlite3-license-version.js) depend on
+# $(sqlite3-license-version.js).
+deps.jses = $(filter-out $(sqlite3-license-version.js),$(sqlite3-api.jses))
+$(deps.jses): $(sqlite3-license-version.js)
 
 #
 # extern-post-js* and extern-pre-js* are files for use with
@@ -936,7 +953,7 @@ $(post-js.in.js): $(MKDIR.bld) $(post-jses.js) $(MAKEFILE)
 	done > $@
 
 #
-# speedtest1 decls needed before the $(bin.mkws)-generated makefile
+# speedtest1 decls needed before the $(bin.mkwb)-generated makefile
 # is included.
 #
 bin.speedtest1 = ../../speedtest1
@@ -977,7 +994,7 @@ endif
 
 EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
 $(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE_LIST)
-	@$(b.mkdir@)
+	@$(call b.mkdir@)
 	@$(call b.c-pp.shcmd,filter,$(EXPORTED_FUNCTIONS.api.in),\
       $@,$(EXPORTED_FUNCTIONS.c-pp.flags) -Dfiddle)
 	@echo $(logtag.@) $(emo.disk)
@@ -1105,10 +1122,10 @@ sqlite3.ext.js =
 define gen-worker1
 # $1 = X.ext part of sqlite3-worker1X.ext
 # $2 = $(c-pp.D.NAME)
-$(call b.c-pp.target,filter,$(dir.api)/sqlite3-worker1.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1$(1),$(2))
-sqlite3.ext.js += $(dir.dout)/sqlite3-worker1$(1)
-all: $(dir.dout)/sqlite3-worker1$(1)
+$(call b.c-pp.target,filter,$$(dir.api)/sqlite3-worker1.c-pp.js,\
+    $$(dir.dout)/sqlite3-worker1$(1),$(2))
+sqlite3.ext.js += $$(dir.dout)/sqlite3-worker1$(1)
+all: $$(dir.dout)/sqlite3-worker1$(1)
 endef
 
 $(eval $(call gen-worker1,.js,$(c-pp.D.vanilla)))
@@ -1122,10 +1139,10 @@ $(eval $(call gen-worker1,-bundler-friendly.mjs,$(c-pp.D.bundler)))
 define gen-promiser
 # $1 = X.ext part of sqlite3-worker1-promiserX.ext
 # $2 = $(c-pp.D.NAME)
-$(call b.c-pp.target,filter,$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
-    $(dir.dout)/sqlite3-worker1-promiser$(1),$(2))
-sqlite3.ext.js += $(dir.dout)/sqlite3-worker1-promiser$(1)
-all: $(dir.dout)/sqlite3-worker1-promiser$(1)
+$(call b.c-pp.target,filter,$$(dir.api)/sqlite3-worker1-promiser.c-pp.js,\
+    $$(dir.dout)/sqlite3-worker1-promiser$(1),$(2))
+sqlite3.ext.js += $$(dir.dout)/sqlite3-worker1-promiser$(1)
+all: $$(dir.dout)/sqlite3-worker1-promiser$(1)
 endef
 
 $(eval $(call gen-promiser,.js,$(c-pp.D.vanilla)))
@@ -1167,13 +1184,18 @@ $(dir.dout)/sqlite3-opfs-async-proxy.js: $(dir.api)/sqlite3-opfs-async-proxy.js
 # we don't otherwise have a great place to attach them such that
 # they're always copied when we need them.
 #
-# The var $(out.$(B).js) comes from $(bin.mkwasmbuilds).
+# The var $(out.$(B).js) comes from $(bin.mkwb) and $(B) is the name
+# of a build set up by that tool, e.g. b-vanilla or b-esm64.
 #
 $(foreach B,$(b.names),$(eval $(out.$(B).js): $(sqlite3.ext.js)))
+
 #
 # b-all: builds all available js/wasm builds.
 #
 $(foreach B,$(b.names),$(eval b-all: $(out.$(B).js)))
+
+#$(foreach B,$(b.names),$(eval pre: $(pre-js.$(B).js)))
+$(foreach B,$(b.names),$(eval post: $(post-js.$(B).js)))
 
 #
 # speedtest1 is our primary benchmarking tool.
@@ -1224,8 +1246,7 @@ speedtest1.exit-runtime1 = -sEXIT_RUNTIME=1
 # which runs speedtest1 multiple times.
 
 $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
-	@$(call b.echo,@,$(emo.disk)); \
-	$(call b.mkdir@); \
+	@$(call b.mkdir@); $(call b.echo,@,$(emo.disk)); \
 	{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api); } 	> $@ || exit
 speedtest1: b-speedtest1
 

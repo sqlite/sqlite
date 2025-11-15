@@ -280,7 +280,7 @@ const BuildDefs oBuildDefs = {
     " -DSQLITE_SPEEDTEST1_WASM"
     " $(SQLITE_OPT)"
     " -USQLITE_WASM_BARE_BONES"
-    " -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c)"
+    " -USQLITE_C -DSQLITE_C=$(sqlite3.c)"
     " $(speedtest1.exit-runtime0)"
     " $(speedtest1.c.in)"
     " -lm",
@@ -308,7 +308,7 @@ const BuildDefs oBuildDefs = {
     " -DSQLITE_SPEEDTEST1_WASM"
     " $(SQLITE_OPT)"
     " -USQLITE_WASM_BARE_BONES"
-    " -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c)"
+    " -USQLITE_C -DSQLITE_C=$(sqlite3.c)"
     " $(speedtest1.exit-runtime0)"
     " $(speedtest1.c.in)"
     " -lm",
@@ -633,7 +633,7 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
          pB->zDotWasm);
     }
     ps("");
-    pf("\t@$(call b.c-pp.shcmd,"
+    pf("\t@$(call b.mkdir@); $(call b.c-pp.shcmd,"
        "%s,"
        "$(pre-js.in.js),"
        "$(pre-js.%s.js),"
