@@ -11,9 +11,7 @@
   ***********************************************************************
 
   This file is the tail end of the sqlite3-api.js constellation,
-  intended to be appended after all other sqlite3-api-*.js files so
-  that it can finalize any setup and clean up any global symbols
-  temporarily used for setting up the API's various subsystems.
+  closing the function scope opened by post-js-header.js.
 
   In terms of amalgamation code placement, this file is appended
   immediately after the final sqlite3-api-*.js piece. Those files
@@ -27,11 +25,12 @@
   pre-js.c-pp.js and friends.
 */
 try{
+  /* We are in the closing block of Module.runSQLite3PostLoadInit(), so
+     its arguments are visible here. */
+
   /* Config options for sqlite3ApiBootstrap(). */
   const bootstrapConfig = Object.assign(
     Object.create(null),
-    globalThis.sqlite3ApiBootstrap.defaultConfig, // default options
-    globalThis.sqlite3ApiConfig || {}, // optional client-provided options
     /** The WASM-environment-dependent configuration for sqlite3ApiBootstrap() */
     {
       memory: ('undefined'!==typeof wasmMemory)
@@ -42,7 +41,9 @@ try{
         : (Object.prototype.hasOwnProperty.call(EmscriptenModule,'wasmExports')
            ? EmscriptenModule['wasmExports']
            : EmscriptenModule['asm']/* emscripten <=3.1.43 */)
-    }
+    },
+    globalThis.sqlite3ApiBootstrap.defaultConfig, // default options
+    globalThis.sqlite3ApiConfig || {} // optional client-provided options
   );
 
   sqlite3InitScriptInfo.debugModule("Bootstrapping lib config", bootstrapConfig);
