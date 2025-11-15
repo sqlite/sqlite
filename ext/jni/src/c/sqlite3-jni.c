@@ -3645,7 +3645,7 @@ S3JniApi(sqlite3_create_function() sqlite3_create_function_v2()
 
   if( !pDb || !jFuncName ){
     return SQLITE_MISUSE;
-  }else if( !encodingTypeIsValid(eTextRep) ){
+  }else if( !encodingTypeIsValid(eTextRep & 0x0f) ){
     return s3jni_db_error(env, pDb, SQLITE_FORMAT,
                           "Invalid function encoding option.");
   }
