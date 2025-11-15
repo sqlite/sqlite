@@ -3653,7 +3653,7 @@ static const char *(azHelp[]) = {
   "   --schema SCHEMA         Use SCHEMA instead of \"main\"",
   "   --help                  Show CMD details",
   ".fullschema ?--indent?   Show schema and the content of sqlite_stat tables",
-  ".headers on|off          Turn display of headers on or off",
+  ",headers on|off          Turn display of headers on or off",
   ".help ?-all? ?PATTERN?   Show help text for PATTERN",
 #ifndef SQLITE_SHELL_FIDDLE
   ".import FILE TABLE       Import data from FILE into TABLE",
@@ -3694,42 +3694,12 @@ static const char *(azHelp[]) = {
   ".log on|off              Turn logging on or off.",
 #endif
   ".mode ?MODE? ?OPTIONS?   Set output mode",
-  "   MODE is one of:",
-  "     ascii       Columns/rows delimited by 0x1F and 0x1E",
-  "     box         Tables using unicode box-drawing characters",
-  "     csv         Comma-separated values",
-  "     column      Output in columns.  (See .width)",
-  "     html        HTML <table> code",
-  "     insert      SQL insert statements for TABLE",
-  "     json        Results in a JSON array",
-  "     line        One value per line",
-  "     list        Values delimited by \"|\"",
-  "     markdown    Markdown table format",
-  "     qbox        Shorthand for \"box --wrap 60 --quote\"",
-  "     quote       Escape answers as for SQL",
-  "     table       ASCII-art table",
-  "     tabs        Tab-separated values",
-  "     tcl         TCL list elements",
-  "   OPTIONS: (for columnar modes or insert mode):",
-  "     --escape T     ctrl-char escape; T is one of: symbol, ascii, off",
-  "     --wrap N       Wrap output lines to no longer than N characters",
-  "     --wordwrap B   Wrap or not at word boundaries per B (on/off)",
-  "     --ww           Shorthand for \"--wordwrap 1\"",
-  "     --quote        Quote output text as SQL literals",
-  "     --noquote      Do not quote output text",
-  "     TABLE          The name of SQL table used for \"insert\" mode",
 #ifndef SQLITE_SHELL_FIDDLE
   ".nonce STRING            Suspend safe mode for one command if nonce matches",
 #endif
   ".nullvalue STRING        Use STRING in place of NULL values",
 #ifndef SQLITE_SHELL_FIDDLE
   ".once ?OPTIONS? ?FILE?   Output for the next SQL command only to FILE",
-  "     If FILE begins with '|' then open as a pipe",
-  "       --bom    Put a UTF8 byte-order mark at the beginning",
-  "       -e       Send output to the system text editor",
-  "       --plain  Use text/plain output instead of HTML for -w option",
-  "       -w       Send output as HTML to a web browser (same as \".www\")",
-  "       -x       Send output as CSV to a spreadsheet (same as \".excel\")",
   /* Note that .open is (partially) available in WASM builds but is
   ** currently only intended to be used by the fiddle tool, not
   ** end users, so is "undocumented." */
@@ -3755,16 +3725,6 @@ static const char *(azHelp[]) = {
   "        --zip           FILE is a ZIP archive",
 #ifndef SQLITE_SHELL_FIDDLE
   ".output ?FILE?           Send output to FILE or stdout if FILE is omitted",
-  "   If FILE begins with '|' then open it as a pipe.",
-  "   If FILE is 'off' then output is disabled.",
-  "   If FILE is 'memory' then capture all output in an internal buffer.",
-  "   If FILE is omitted, restore output to the console.",
-  "   Options:",
-  "     --bom                 Prefix output with a UTF8 byte-order mark",
-  "     -e                    Send output to the system text editor",
-  "     --plain               Use text/plain for -w option",
-  "     -w                    Send output to a web browser",
-  "     -x                    Send output as CSV to a spreadsheet",
 #endif
   ".parameter CMD ...       Manage SQL parameter bindings",
   "   clear                   Erase all bindings",
@@ -3807,7 +3767,7 @@ static const char *(azHelp[]) = {
   "    Options:",
   "       --init               Create a new SELFTEST table",
   "       -v                   Verbose output",
-  ".separator COL ?ROW?     Change the column and row separators",
+  ",separator COL ?ROW?     Change the column and row separators",
 #if defined(SQLITE_ENABLE_SESSION)
   ".session ?NAME? CMD ...  Create or control sessions",
   "   Subcommands:",
@@ -3834,7 +3794,7 @@ static const char *(azHelp[]) = {
 #if !defined(SQLITE_NOHAVE_SYSTEM) && !defined(SQLITE_SHELL_FIDDLE)
   ".shell CMD ARGS...       Run CMD ARGS... in a system shell",
 #endif
-  ".show                    Show the current values for various settings",
+  ",show                    Show the current values for various settings",
   ".stats ?ARG?             Show stats or turn stats on or off",
   "   off                      Turn off automatic stat display",
   "   on                       Turn on automatic stat display",
@@ -3875,7 +3835,7 @@ static const char *(azHelp[]) = {
   ".vfsinfo ?AUX?           Information about the top-level VFS",
   ".vfslist                 List all available VFSes",
   ".vfsname ?AUX?           Print the name of the VFS stack",
-  ".width NUM1 NUM2 ...     Set minimum column widths for columnar output",
+  ",width NUM1 NUM2 ...     Set minimum column widths for columnar output",
   "     Negative values right-justify",
 #ifndef SQLITE_SHELL_FIDDLE
   ".www                     Display output of the next command in web browser",
@@ -7312,7 +7272,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 ** and relevant options.
 **
 ** Options:
-**   --align  STRING          Set the alignment of text in columnar modes
+**   --align STRING           Set the alignment of text in columnar modes
 **                            String consists of characters 'L', 'C', 'R'
 **                            meaning "left", "centered", and "right", with
 **                            one letter per column starting from the left.
@@ -7320,8 +7280,8 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **   --charlimit N            Set the maximum number of output characters to
 **                            show for any single SQL value to N. Longer values
 **                            truncated. Zero means "no limit".
-**   --colsep  STRING         Use STRING as the column separator
-**   --escape  ESC            Enable/disable escaping of control characters
+**   --colsep STRING          Use STRING as the column separator
+**   --escape ESC             Enable/disable escaping of control characters
 **                            in output. ESC can be "off", "ascii", or
 **                            "symbol".
 **   --linelimit N            Set the maximum number of output lines to show for
@@ -7329,35 +7289,35 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            truncated. Zero means "no limit". Only works
 **                            in "line" mode and in columnar modes.
 **   --list                   List available modes
-**   --null  STRING           Render SQL NULL values as the given string
-**   --once                   Setting changes to the left are reverted after
+**   --null STRING            Render SQL NULL values as the given string
+**   --once                   Setting changes to the right are reverted after
 **                            the next SQL command.
-**   --quote  ARG             Enable/disable quoting of text. ARG can be
+**   --quote ARG              Enable/disable quoting of text. ARG can be
 **                            "off", "on", "sql", "csv", "html", "tcl",
 **                            or "json".  "off" means show the text as-is.
 **                            "on and "sql" are synonyms.
 **   --reset                  Changes all mode settings back to their default.
-**   --rowsep  STRING         Use STRING as the row separator
+**   --rowsep STRING          Use STRING as the row separator
 **   --screenwidth N          Declare the screen width of the output device
 **                            to be N characters.  An attempt may be made to
 **                            wrap output text to fit within this limit. Zero
 **                            means "no limit".  Or N can be "auto" to set the
 **                            width automatically.
-**   --tablename  NAME        Set the name of the table for "insert" mode.
-**   --tag  NAME              Save current mode as NAME.
-**   --textjsonb  BOOLEAN     If enabled, JSONB text is displayed as text JSON.
+**   --tablename NAME         Set the name of the table for "insert" mode.
+**   --tag NAME               Save mode to the left as NAME.
+**   --textjsonb BOOLEAN      If enabled, JSONB text is displayed as text JSON.
 **   --title  ARG             Whether or not to show column headers, and if so
 **                            how to encode them.  ARG can be "off", "on",
 **                            "sql", "csv", "html", "tcl", or "json".
 **   -v|--verbose             Verbose output
-**   --widths  LIST           Set the columns widths for columnar modes. The
+**   --widths LIST            Set the columns widths for columnar modes. The
 **                            argument is a list of integers, one for each
 **                            column. A "0" width means use a dynamic width
 **                            based on the actual width of data. If there are
 **                            fewer entries in LIST than columns, "0" is used
 **                            for the unspecified widths.
-**   --wordwrap  BOOLEAN      Enable/disable word wrapping
-**   --wrap  N                Wrap columns wider than N characters
+**   --wordwrap BOOLEAN       Enable/disable word wrapping
+**   --wrap N                 Wrap columns wider than N characters
 **   --ww                     Shorthand for "--wordwrap on"
 */
 static int dotCmdMode(ShellState *p){
