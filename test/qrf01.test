@@ -777,4 +777,89 @@ do_test 7.4 {
 abcdefghijklmnop|abcぁdefかghiのj...
 }
 
+do_test 8.0 {
+  set result "\n[db format -style table {
+    WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<10)
+    SELECT 'aaa' AS 'a', format('%.*c',n,'b')||char(9)||'xx' AS x FROM c}]"
+} {
++-----+--------------------+
+|  a  |         x          |
++-----+--------------------+
+| aaa | b       xx         |
+| aaa | bb      xx         |
+| aaa | bbb     xx         |
+| aaa | bbbb    xx         |
+| aaa | bbbbb   xx         |
+| aaa | bbbbbb  xx         |
+| aaa | bbbbbbb xx         |
+| aaa | bbbbbbbb        xx |
+| aaa | bbbbbbbbb       xx |
+| aaa | bbbbbbbbbb      xx |
++-----+--------------------+
+}
+do_test 8.1 {
+  set result "\n[db format -style table {
+    WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<10)
+    SELECT 'aaaa' AS 'a', format('%.*c',n,'b')||char(9)||'xx' AS x FROM c}]"
+} {
++------+--------------------+
+|  a   |         x          |
++------+--------------------+
+| aaaa | b       xx         |
+| aaaa | bb      xx         |
+| aaaa | bbb     xx         |
+| aaaa | bbbb    xx         |
+| aaaa | bbbbb   xx         |
+| aaaa | bbbbbb  xx         |
+| aaaa | bbbbbbb xx         |
+| aaaa | bbbbbbbb        xx |
+| aaaa | bbbbbbbbb       xx |
+| aaaa | bbbbbbbbbb      xx |
++------+--------------------+
+}
+do_test 8.3 {
+  set result "\n[db format -style table -esc off {
+    WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<15)
+    SELECT 'aaa' AS 'a',n, 'xx'||char(n)||'yy' AS xy FROM c
+     WHERE n NOT IN (8,10,13,14)}]"
+} {
++-----+----+------------+
+|  a  | n  |     xy     |
++-----+----+------------+
+| aaa | 1  | xx␁yy      |
+| aaa | 2  | xx␂yy      |
+| aaa | 3  | xx␃yy      |
+| aaa | 4  | xx␄yy      |
+| aaa | 5  | xx␅yy      |
+| aaa | 6  | xx␆yy      |
+| aaa | 7  | xx␇yy      |
+| aaa | 9  | xx      yy |
+| aaa | 11 | xx␋yy      |
+| aaa | 12 | xx␌yy      |
+| aaa | 15 | xx␏yy      |
++-----+----+------------+
+}
+do_test 8.4 {
+  set result "\n[db format -style table -esc off {
+    WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<15)
+    SELECT 'aaa' AS 'a',n, 'xx'||char(n)||'yy'||char(9)||'zz' AS xyz FROM c
+     WHERE n NOT IN (8,10,13,14)}]"
+} {
++-----+----+--------------------+
+|  a  | n  |        xyz         |
++-----+----+--------------------+
+| aaa | 1  | xx␁yy   zz         |
+| aaa | 2  | xx␂yy   zz         |
+| aaa | 3  | xx␃yy   zz         |
+| aaa | 4  | xx␄yy   zz         |
+| aaa | 5  | xx␅yy   zz         |
+| aaa | 6  | xx␆yy   zz         |
+| aaa | 7  | xx␇yy   zz         |
+| aaa | 9  | xx      yy      zz |
+| aaa | 11 | xx␋yy   zz         |
+| aaa | 12 | xx␌yy   zz         |
+| aaa | 15 | xx␏yy   zz         |
++-----+----+--------------------+
+}
+
 finish_test

@@ -1175,6 +1175,8 @@ static void qrfWrapLine(
     }
     if( c==0x1b && (k = qrfIsVt100(&z[i]))>0 ){
       i += k-1;
+    }else{
+      n++;
     }
   }
   if( c==0 ){
@@ -1321,6 +1323,60 @@ static void qrfLoadAlignment(qrfColData *pData, Qrf *p){
 }
 
 /*
+** Append nVal bytes of text from zVal onto the end of pOut.
+** Convert tab characters in zVal to the appropriate number of
+** spaces.
+*/
+static void qrfAppendWithTabs(
+  sqlite3_str *pOut,       /* Append text here */
+  const char *zVal,        /* Text to append */
+  int nVal                 /* Use only the first nVal bytes of zVal[] */
+){
+  int i = 0;
+  unsigned int col = 0;
+  unsigned char *z = (unsigned char *)zVal;
+  while( i<nVal ){
+    unsigned char c = z[i];
+    if( c<' ' ){
+      int k;
+      sqlite3_str_append(pOut, (const char*)z, i);
+      nVal -= i;
+      z += i;
+      i = 0;
+      if( c=='\033' && (k = qrfIsVt100(z))>0 ){
+        sqlite3_str_append(pOut, (const char*)z, k);
+        z += k;
+        nVal -= k;
+      }else if( c=='\t' ){
+        k = 8 - (col&7);
+        sqlite3_str_appendchar(pOut, k, ' ');
+        col += k;
+        z++;
+        nVal--;
+      }else{
+        char zCtrlPik[4];
+        col++;
+        zCtrlPik[0] = 0xe2;
+        zCtrlPik[1] = 0x90;
+        zCtrlPik[2] = 0x80+c;
+        sqlite3_str_append(pOut, zCtrlPik, 3);
+        z++;
+        nVal--;
+      }
+    }else if( (0x80&c)==0 ){
+      i++;
+      col++;
+    }else{
+      int u = 0;
+      int len = sqlite3_qrf_decode_utf8(&z[i], &u);
+      i += len;
+      col += sqlite3_qrf_wcwidth(u);
+    }
+  }
+  sqlite3_str_append(pOut, (const char*)z, i);
+}    
+
+/*
 ** Output horizontally justified text into pOut.  The text is the
 ** first nVal bytes of zVal.  Include nWS bytes of whitespace, either
 ** split between both sides, or on the left, or on the right, depending
@@ -1337,15 +1393,15 @@ static void qrfPrintAligned(
   if( eAlign==QRF_ALIGN_Center ){
     /* Center the text */
     sqlite3_str_appendchar(pOut, nWS/2, ' ');
-    sqlite3_str_append(pOut, zVal, nVal);
+    qrfAppendWithTabs(pOut, zVal, nVal);
     sqlite3_str_appendchar(pOut, nWS - nWS/2, ' ');
   }else if( eAlign==QRF_ALIGN_Right){
     /* Right justify the text */
     sqlite3_str_appendchar(pOut, nWS, ' ');
-    sqlite3_str_append(pOut, zVal, nVal);
+    qrfAppendWithTabs(pOut, zVal, nVal);
   }else{
     /* Left justify the next */
-    sqlite3_str_append(pOut, zVal, nVal);
+    qrfAppendWithTabs(pOut, zVal, nVal);
     sqlite3_str_appendchar(pOut, nWS, ' ');
   }
 }
