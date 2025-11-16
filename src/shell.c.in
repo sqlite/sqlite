@@ -7584,6 +7584,7 @@ static int dotCmdMode(ShellState *p){
       while( isspace(zW[0]) ) zW++;
       while( zW[0] ){
         int w = 0;
+        int nDigit = 0;
         k = zW[0]=='-' && isdigit(zW[1]);
         while( isdigit(zW[k]) ){
           w = w*10 + zW[k] - '0';
@@ -7593,7 +7594,14 @@ static int dotCmdMode(ShellState *p){
             free(aWidth);
             return 1;
           }
+          nDigit++;
           k++;
+        }
+        if( nDigit==0 ){
+          dotCmdError(p,i+1,"syntax error",
+                      "should be a comma-separated list if integers");
+          free(aWidth);
+          return 1;
         }
         if( zW[0]=='-' ) w = -w;
         aWidth[nWidth++] = w;
