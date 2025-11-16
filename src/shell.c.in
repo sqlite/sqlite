@@ -8050,6 +8050,15 @@ dotCmdOutput_error:
 ** Parse input line zLine up into individual arguments.  Retain the
 ** parse in the p->dot substructure.
 */
+static void parseDotRealloc(ShellState *p, int nArg){
+  p->dot.nAlloc = nArg+22;
+  p->dot.azArg = realloc(p->dot.azArg,p->dot.nAlloc*sizeof(char*));
+  shell_check_oom(p->dot.azArg);
+  p->dot.aiOfst = realloc(p->dot.aiOfst,p->dot.nAlloc*sizeof(int));
+  shell_check_oom(p->dot.aiOfst);
+  p->dot.abQuot = realloc(p->dot.abQuot,p->dot.nAlloc);
+  shell_check_oom(p->dot.abQuot);
+}
 static void parseDotCmdArgs(const char *zLine, ShellState *p){
   char *z;
   int h = 1;
@@ -8059,17 +8068,12 @@ static void parseDotCmdArgs(const char *zLine, ShellState *p){
   free(p->dot.zCopy);
   z = p->dot.zCopy = strdup(zLine);
   shell_check_oom(z);
+  parseDotRealloc(p, 2);
   while( z[h] ){
     while( IsSpace(z[h]) ){ h++; }
     if( z[h]==0 ) break;
     if( nArg+2>p->dot.nAlloc ){
-      p->dot.nAlloc = nArg+22;
-      p->dot.azArg = realloc(p->dot.azArg,p->dot.nAlloc*sizeof(char*));
-      shell_check_oom(p->dot.azArg);
-      p->dot.aiOfst = realloc(p->dot.aiOfst,p->dot.nAlloc*sizeof(int));
-      shell_check_oom(p->dot.aiOfst);
-      p->dot.abQuot = realloc(p->dot.abQuot,p->dot.nAlloc);
-      shell_check_oom(p->dot.abQuot);
+      parseDotRealloc(p, nArg);
     }
     if( z[h]=='\'' || z[h]=='"' ){
       int delim = z[h++];
