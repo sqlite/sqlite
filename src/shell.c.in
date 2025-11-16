@@ -1975,6 +1975,7 @@ static void output_c_string(FILE *out, const char *z){
   char ace[3] = "\\?";
   char cbsSay;
   cli_puts(zq, out);
+  if( z==0 ) z = "";
   while( *z!=0 ){
     const char *pcDQBSRO = anyOfInStr(z, zDQBSRO, ~(size_t)0);
     const char *pcPast = zSkipValidUtf8(z, INT_MAX, ctrlMask);

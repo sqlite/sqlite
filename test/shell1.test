@@ -48,7 +48,7 @@ do_test shell1-1.1.1b {
 } {1 1}
 # error on extra options
 do_test shell1-1.1.2 {
-  catchcmd "test.db \"select+3\" \"select+4\"" ""
+  catchcmd "-compat 20250101 test.db \"select+3\" \"select+4\"" ""
 } {0 {3
 4}}
 # error on extra options
@@ -182,7 +182,7 @@ do_test shell1-1.17.1 {
   catchcmd {-- --db "CREATE TABLE T(c1);"}
 } {0 {}}
 do_test shell1-1.17.2 {
-  catchcmd {-- --db "SELECT name from sqlite_schema;"}
+  catchcmd {-compat 20250101 -- --db "SELECT name from sqlite_schema;"}
 } {0 T}
 forcedelete ./--db
 
@@ -456,7 +456,7 @@ do_test shell1-3.12.3 {
 #                          tabs     Tab-separated values
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
-  catchcmd "test.db" ".mode"
+  catchcmd "test.db" ".mode 20250101\n.mode"
 } {0 {current output mode: list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
@@ -510,7 +510,7 @@ do_test shell1-3.15.1 {
 .print x"
 } {0 x}
 do_test shell1-3.15.2 {
-  catchcmd "test.db" ".output FOO
+  catchcmd "test.db" ".mode 20250101\n.output FOO
 .print x
 .output
 SELECT readfile('FOO');"
@@ -632,7 +632,7 @@ do_test shell1-3.22.4 {
 
 # .show                  Show the current values for various settings
 do_test shell1-3.23.1 {
-  set res [catchcmd "test.db" ".show"]
+  set res [catchcmd "test.db" ".mode 20250101\n.show"]
   list [regexp {echo:} $res] \
        [regexp {explain:} $res] \
        [regexp {headers:} $res] \
@@ -668,7 +668,7 @@ do_test shell1-3.23b.4 {
 # Adverse interaction between .stats and .eqp
 #
 do_test shell1-3.23b.5 {
-  catchcmd "test.db" [string map {"\n    " "\n"} {
+  catchcmd "test.db" [string map {"\n    " "\n"} {.mode 20250101
     CREATE TEMP TABLE t1(x);
     INSERT INTO t1 VALUES(1),(2);
     .stats on
@@ -751,9 +751,9 @@ do_test shell1-3.27.4 {
   catchcmd "test.db" ".timer OFF BAD"
 } {1 {Usage: .timer on|off}}
 
-do_test shell1-3-28.1 {
+do_test shell1-3.28.1 {
   catchcmd test.db \
-     ".log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
+     ".mode 20250101\n.log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
 } "0 {(123) hello\n456}"
 
 do_test shell1-3-29.1 {
@@ -1263,7 +1263,7 @@ do_test shell1-7.1.7 {
 # information.
 #
 do_test shell1-8.1 {
-  catchcmd ":memory:" {
+  catchcmd ":memory:" {.mode 20250101
     -- The pow2 table will hold all the necessary powers of two.
     CREATE TABLE pow2(x INTEGER PRIMARY KEY, v TEXT);
     WITH RECURSIVE c(x,v) AS (
