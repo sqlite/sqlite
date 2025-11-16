@@ -8826,7 +8826,9 @@ static int do_meta_command(const char *zLine, ShellState *p){
        "ORDER BY x", flgs);
     memcpy(&data, p, sizeof(data));
     data.mode.spec.bTitles = QRF_No;
-    data.mode.spec.eStyle= QRF_STYLE_List;
+    data.mode.eMode = MODE_List;
+    data.mode.spec.eText = QRF_TEXT_Plain;
+    data.mode.spec.nCharLimit = 0;
     data.mode.spec.zRowSep = "\n";
     rc = shell_exec(&data,zSql,0);
     sqlite3_free(zSql);
@@ -9924,6 +9926,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
     memcpy(&data, p, sizeof(data));
     data.mode.spec.bTitles = QRF_No;
     data.mode.eMode = MODE_List;
+    data.mode.spec.eText = QRF_TEXT_Plain;
+    data.mode.spec.nCharLimit = 0;
     data.mode.spec.zRowSep = "\n";
     for(ii=1; ii<nArg; ii++){
       if( optionMatch(azArg[ii],"indent") ){
