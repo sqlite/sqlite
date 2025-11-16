@@ -405,7 +405,7 @@ do_test shell1-3.10.1 {
   # look for a few of the possible help commands
   list [regexp {.help} $res] \
        [regexp {.quit} $res] \
-       [regexp {.show} $res]
+       [regexp {.mode} $res]
 } {1 1 1}
 do_test shell1-3.10.2 {
   # we allow .help to take extra args (it is help after all)
@@ -413,7 +413,7 @@ do_test shell1-3.10.2 {
   # look for a few of the possible help commands
   list [regexp {.help} $res] \
        [regexp {.quit} $res] \
-       [regexp {.show} $res]
+       [regexp {.mode} $res]
 } {1 1 1}
 
 # .import FILE TABLE     Import data from FILE into TABLE

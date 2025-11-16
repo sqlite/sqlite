@@ -4674,13 +4674,13 @@ static void output_file_close(FILE *f){
 ** recognized and do the right thing.  NULL is returned if the output
 ** filename is "off".
 */
-static FILE *output_file_open(const char *zFile){
+static FILE *output_file_open(ShellState *p, const char *zFile){
   FILE *f;
   if( cli_strcmp(zFile,"stdout")==0 ){
     f = stdout;
   }else if( cli_strcmp(zFile, "stderr")==0 ){
     f = stderr;
-  }else if( cli_strcmp(zFile, "off")==0 ){
+  }else if( cli_strcmp(zFile, "off")==0 || p->bSafeMode ){
     f = 0;
   }else{
     f = sqlite3_fopen(zFile, "w");
@@ -8020,7 +8020,7 @@ static int dotCmdOutput(ShellState *p){
     }
 #endif
   }else{
-    FILE *pfFile = output_file_open(zFile);
+    FILE *pfFile = output_file_open(p, zFile);
     if( pfFile==0 ){
       if( cli_strcmp(zFile,"off")!=0 ){
        assert( stderr!=NULL );
@@ -9464,7 +9464,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       }
       output_file_close(p->pLog);
       if( cli_strcmp(zFile,"on")==0 ) zFile = "stdout";
-      p->pLog = output_file_open(zFile);
+      p->pLog = output_file_open(p, zFile);
     }
   }else
 
@@ -10793,7 +10793,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
   /* Begin redirecting output to the file "testcase-out.txt" */
   if( c=='t' && cli_strcmp(azArg[0],"testcase")==0 ){
     output_reset(p);
-    p->out = output_file_open("testcase-out.txt");
+    p->out = output_file_open(p, "testcase-out.txt");
     if( p->out==0 ){
       eputz("Error: cannot open 'testcase-out.txt'\n");
     }
@@ -11348,7 +11348,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
         }
       }else{
         output_file_close(p->traceOut);
-        p->traceOut = output_file_open(z);
+        p->traceOut = output_file_open(p, z);
       }
     }
     if( p->traceOut==0 ){
