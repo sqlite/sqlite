@@ -10011,10 +10011,9 @@ static int do_meta_command(const char *zLine, ShellState *p){
     sqlite3_finalize(pStmt);
 #ifndef SQLITE_OMIT_INTROSPECTION_PRAGMAS
     if( zName ){
-      sqlite3_str_appendf(pSql,
+      sqlite3_str_appendall(pSql,
          " UNION ALL SELECT shell_module_schema(name),"
-         " 'table', name, name, name, 9e+99, 'main' FROM pragma_module_list",
-      0);
+         " 'table', name, name, name, 9e+99, 'main' FROM pragma_module_list");
     }
 #endif
     sqlite3_str_appendf(pSql, ") WHERE ", 0);
@@ -10023,9 +10022,9 @@ static int do_meta_command(const char *zLine, ShellState *p){
       bGlob = strchr(zName, '*') != 0 || strchr(zName, '?') != 0 ||
               strchr(zName, '[') != 0;
       if( strchr(zName, '.') ){
-        sqlite3_str_appendf(pSql, "lower(format('%s.%s',sname,tbl_name))", 0);
+        sqlite3_str_appendall(pSql, "lower(format('%%s.%%s',sname,tbl_name))");
       }else{
-        sqlite3_str_appendf(pSql, "lower(tbl_name)", 0);
+        sqlite3_str_appendall(pSql, "lower(tbl_name)");
       }
       if( bGlob ){
         sqlite3_str_appendf(pSql, " GLOB %Q AND ", zName);
