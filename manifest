@@ -1,5 +1,5 @@
-C Remove\san\sunused\sstruct.
-D 2025-11-15T16:06:03.503
+C Fix\sa\sharmless\scompiler\swarning.
+D 2025-11-17T19:19:58.169
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
 F src/pragma.c ecec75795c1821520266e4f93fa8840cce48979af532db06f085e36a7813860f
 F src/prepare.c 2af0b5c1ec787c8eebd21baa9d79caf4a4dc3a18e76ce2edbf2027d706bca37a
-F src/printf.c 0f6c73d1427e397c631bfaf1e0117b12c9c0545e4c2e44987237ec7849c92044
+F src/printf.c b1b29b5e58e1530d5daeee5963d3c318d8ab2d7e38437580e28755753e0c1ded
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 5616fbcf3b833c7c705b24371828215ad0925d0c0073216c4f153348d5753f0a
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -2166,8 +2166,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aab640be7bc5829fe16d2582b13f942b7debb271c150ca2471561de6b2d70dc7
-R 012476731c5db75eaace4f90d638ad84
-U stephan
-Z 7745ec9fad92783170dee3b89dca825b
+P 93dd0e62b74a0d99803f680f23953e9fa2429074505ba402ca5ed4610ddef8fb
+R ef962db96f531e4a64674fd59331a72f
+U drh
+Z d5df2573fb817617cebf84ebcd969278
 # Remove this line to create a well-formed Fossil manifest.

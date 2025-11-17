@@ -1230,7 +1230,7 @@ int sqlite3_str_length(sqlite3_str *p){
 
 /* Truncate the text of the string to be no more than N bytes. */
 void sqlite3_str_truncate(sqlite3_str *p, int N){
-  if( p!=0 && N>=0 && N<p->nChar ){
+  if( p!=0 && N>=0 && (u32)N<p->nChar ){
     p->nChar = N;
     p->zText[p->nChar] = 0;
   }
