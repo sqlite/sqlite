@@ -40,7 +40,8 @@ do_test shell5-1.1.2 {
 do_test shell5-1.1.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
-} {/1 .ERROR: extra argument.*/}
+} {1 {line 1: .import FOO BAR BAD
+line 1:                 ^--- unknown argument}}
 
 # .separator STRING      Change separator used by output mode and .import
 do_test shell5-1.2.1 {

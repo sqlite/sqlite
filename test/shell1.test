@@ -426,7 +426,8 @@ do_test shell1-3.11.2 {
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
-} {/1 .ERROR: extra argument: "BAD".*./}
+} {1 {line 1: .import FOO BAR BAD
+line 1:                 ^--- unknown argument}}
 
 # .indexes ?TABLE?       Show names of all indexes
 #                          If TABLE specified, only show indexes for tables
@@ -456,7 +457,7 @@ do_test shell1-3.12.3 {
 #                          tabs     Tab-separated values
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
-  catchcmd "test.db" ".mode 20250101\n.mode"
+  catchcmd "test.db" ".mode batch\n.mode"
 } {0 {current output mode: list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
@@ -510,7 +511,7 @@ do_test shell1-3.15.1 {
 .print x"
 } {0 x}
 do_test shell1-3.15.2 {
-  catchcmd "test.db" ".mode 20250101\n.output FOO
+  catchcmd "test.db" ".mode batch\n.output FOO
 .print x
 .output
 SELECT readfile('FOO');"
@@ -632,7 +633,7 @@ do_test shell1-3.22.4 {
 
 # .show                  Show the current values for various settings
 do_test shell1-3.23.1 {
-  set res [catchcmd "test.db" ".mode 20250101\n.show"]
+  set res [catchcmd "test.db" ".mode batch\n.show"]
   list [regexp {echo:} $res] \
        [regexp {explain:} $res] \
        [regexp {headers:} $res] \
@@ -668,7 +669,7 @@ do_test shell1-3.23b.4 {
 # Adverse interaction between .stats and .eqp
 #
 do_test shell1-3.23b.5 {
-  catchcmd "test.db" [string map {"\n    " "\n"} {.mode 20250101
+  catchcmd "test.db" [string map {"\n    " "\n"} {.mode batch
     CREATE TEMP TABLE t1(x);
     INSERT INTO t1 VALUES(1),(2);
     .stats on
@@ -753,7 +754,7 @@ do_test shell1-3.27.4 {
 
 do_test shell1-3.28.1 {
   catchcmd test.db \
-     ".mode 20250101\n.log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
+     ".mode batch\n.log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
 } "0 {(123) hello\n456}"
 
 do_test shell1-3-29.1 {
@@ -1263,7 +1264,7 @@ do_test shell1-7.1.7 {
 # information.
 #
 do_test shell1-8.1 {
-  catchcmd ":memory:" {.mode 20250101
+  catchcmd ":memory:" {.mode batch
     -- The pow2 table will hold all the necessary powers of two.
     CREATE TABLE pow2(x INTEGER PRIMARY KEY, v TEXT);
     WITH RECURSIVE c(x,v) AS (

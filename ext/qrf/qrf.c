@@ -2261,9 +2261,10 @@ qrf_reinit:
     case QRF_STYLE_Csv: {
       p->spec.eStyle = QRF_STYLE_List;
       p->spec.eText = QRF_TEXT_Csv;
-      p->spec.eBlob = QRF_BLOB_Tcl;
+      p->spec.eBlob = QRF_BLOB_Text;
       p->spec.zColumnSep = ",";
       p->spec.zRowSep = "\r\n";
+      p->spec.zNull = "";
       break;
     }
     case QRF_STYLE_Quote: {

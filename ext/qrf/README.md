@@ -278,7 +278,7 @@ A value of QRF_BLOB_Sql means that BLOB values are shown as SQL BLOB
 literals: a prefix "`x'`" following by hexadecimal and ending with a
 final "`'`".
 
-A value of QRF_BLOB_Hex means that BLOB values are shown as pure
+A value of QRF_BLOB_Hex means that BLOB values are shown as
 hexadecimal text with no delimiters.
 
 A value of QRF_BLOB_Tcl means that BLOB values are shown as a
@@ -604,10 +604,16 @@ Except the eEsp mode defaults to `QRF_ESC_On`, so that control
 characters are escaped, for safety.
 
 The **Csv** and **Quote** styles are simply variations on **List**
-with different defaults.
-**Csv** sets things up to generate valid CSV file output.
-**Quote** displays a comma-separated list of SQL
-value literals.
+with hard-coded values for some of the sqlite3_qrf_spec settings:
+
+<table border=1 cellpadding=2 cellspacing=0>
+<tr><th>&nbsp;<th>Quote<th>Csv
+<tr><td>zColumnSep<td>","<td>","
+<tr><td>zRowSep<td>"\\n"<td>"\\r\\n"
+<tr><td>zNull<td>"NULL"<td>""
+<tr><td>eText<td>QRF_TEXT_Sql<td>QRF_TEXT_Csv
+<tr><td>eBlob<td>QRF_BLOB_Sql<td>QRF_BLOB_Text
+</table>
 
 The **Html** style generates HTML table content, just without
 the `<TABLE>..</TABLE>` around the outside.
