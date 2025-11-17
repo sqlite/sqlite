@@ -12274,7 +12274,6 @@ static void main_init(ShellState *p) {
 #else
   p->iCompat = 20251116;
 #endif
-  modeDefault(p);
   p->pAuxDb = &p->aAuxDb[0];
   p->shellFlgs = SHFLG_Lookaside;
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, p);
@@ -12498,6 +12497,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         /* Excess arguments are interpreted as SQL (or dot-commands) and
         ** mean that nothing is read from stdin */
         readStdin = 0;
+        stdin_is_interactive = 0;
         nCmd++;
         azCmd = realloc(azCmd, sizeof(azCmd[0])*nCmd);
         shell_check_oom(azCmd);
@@ -12713,6 +12713,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #ifndef SQLITE_SHELL_FIDDLE
   sqlite3_appendvfs_init(0,0,0);
 #endif
+  modeDefault(&data);
 
   /* Go ahead and open the database file if it already exists.  If the
   ** file does not exist, delay opening it.  This prevents empty database
@@ -12927,6 +12928,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         arDotCommand(&data, 1, argv+i, argc-i);
       }
       readStdin = 0;
+      stdin_is_interactive = 0;
       break;
 #endif
     }else if( cli_strcmp(z,"-safe")==0 ){
