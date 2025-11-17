@@ -536,11 +536,11 @@ do_test 4.1 {
 do_test 4.2 {
   set result "\n[db format -text sql -textjsonb on {SELECT * FROM t1}]"
 } {
-┌─────────────────┬─────────────────┬────┐
-│        a        │        b        │ c  │
-├─────────────────┼─────────────────┼────┤
-│ '{"a":5,"b":6}' │ '{"c":1,"d":2}' │ 99 │
-└─────────────────┴─────────────────┴────┘
+┌─────────────────┬────────────────────────┬────┐
+│        a        │           b            │ c  │
+├─────────────────┼────────────────────────┼────┤
+│ '{"a":5,"b":6}' │ jsonb('{"c":1,"d":2}') │ 99 │
+└─────────────────┴────────────────────────┴────┘
 }
 do_test 4.3 {
   set result "\n[db format -text plain -textjsonb on -wrap 11 \
@@ -870,5 +870,24 @@ do_test 8.4 {
 | aaa | 15 | xx␏yy   zz         |
 +-----+----+--------------------+
 }
+
+do_test 9.1 {
+  db eval {
+    CREATE TABLE t9(x);
+    INSERT INTO t9 VALUES
+      (x'4331323334'),
+      (x'c30431323334'),
+      (x'd3000431323334'),
+      (x'e30000000431323334'),
+      (x'f3000000000000000431323334');
+  }
+  db format -style list -text plain -rowsep , -textjsonb on \
+               {SELECT * FROM t9}
+} {1234,1234,1234,1234,1234,}
+do_test 9.2 {
+  db format -style list -text sql -rowsep , -textjsonb on \
+               {SELECT * FROM t9}
+} {jsonb('1234'),jsonb('1234'),jsonb('1234'),jsonb('1234'),jsonb('1234'),}
+db close
 
 finish_test

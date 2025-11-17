@@ -814,9 +814,32 @@ static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
 }
 
 /*
+** Do a quick sanity check to see aBlob[0..nBlob-1] is valid JSONB
+** return true if it is and false if it is not.
+**
+** False positives are possible, but not false negatives.
+*/
+static int qrfJsonbQuickCheck(unsigned char *aBlob, int nBlob){
+  unsigned char x;   /* Payload size half-byte */
+  int i;             /* Loop counter */   
+  int n;             /* Bytes in the payload size integer */
+  sqlite3_uint64 sz; /* value of the payload size integer */
+
+  if( nBlob==0 ) return 0;
+  x = aBlob[0]>>4;
+  if( x<=11 ) return nBlob==(1+x);
+  n = x<14 ? x-11 : 4*(x-13);
+  if( nBlob<1+n ) return 0;
+  sz = aBlob[1];
+  for(i=1; i<n; i++) sz = (sz<<8) + aBlob[i+1];
+  return sz+n+1==(sqlite3_uint64)nBlob;
+}
+
+/*
 ** The current iCol-th column of p->pStmt is known to be a BLOB.  Check
 ** to see if that BLOB is really a JSONB blob.  If it is, then translate
 ** it into a text JSON representation and return a pointer to that text JSON.
+** If the BLOB is not JSONB, then return a NULL pointer.
 **
 ** The memory used to hold the JSON text is managed internally by the
 ** "p" object and is overwritten and/or deallocated upon the next call
@@ -827,6 +850,11 @@ static const char *qrfJsonbToJson(Qrf *p, int iCol){
   int nByte;
   const void *pBlob;
   int rc;
+  nByte = sqlite3_column_bytes(p->pStmt, iCol);
+  pBlob = sqlite3_column_blob(p->pStmt, iCol);
+  if( qrfJsonbQuickCheck((unsigned char*)pBlob, nByte)==0 ){
+    return 0;
+  }
   if( p->pJTrans==0 ){
     sqlite3 *db;
     rc = sqlite3_open(":memory:",&db);
@@ -844,8 +872,6 @@ static const char *qrfJsonbToJson(Qrf *p, int iCol){
   }else{
     sqlite3_reset(p->pJTrans);
   }
-  nByte = sqlite3_column_bytes(p->pStmt, iCol);
-  pBlob = sqlite3_column_blob(p->pStmt, iCol);
   sqlite3_bind_blob(p->pJTrans, 1, (void*)pBlob, nByte, SQLITE_STATIC);
   rc = sqlite3_step(p->pJTrans);
   if( rc==SQLITE_ROW ){
@@ -888,7 +914,13 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       if( p->spec.bTextJsonb==QRF_Yes ){
         const char *zJson = qrfJsonbToJson(p, iCol);
         if( zJson ){
-          qrfEncodeText(p, pOut, zJson);
+          if( p->spec.eText==QRF_TEXT_Sql ){
+            sqlite3_str_append(pOut,"jsonb(",6);
+            qrfEncodeText(p, pOut, zJson);
+            sqlite3_str_append(pOut,")",1);
+          }else{
+            qrfEncodeText(p, pOut, zJson);
+          }
           break;
         }
       }

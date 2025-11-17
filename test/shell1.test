@@ -1378,4 +1378,30 @@ select base85(zeroblob(2000000000));
 }
 } {/1.*too big.*/}
 
+#----------------------------------------------------------------------------
+# As of 2025-11-17, the default mode is:
+#
+#     qbox --screenwidth auto --linelimit 5 --charlimit 300 --textjsonb on
+#
+do_test shell1-12.1 {
+  catchcmd :memory: {.mode tty
+.print
+SELECT jsonb(1234) AS x;}
+} {0 {
+┌───────────────┐
+│       x       │
+├───────────────┤
+│ jsonb('1234') │
+└───────────────┘}}
+do_test shell1-12.2 {
+  catchcmd :memory: {.mode box --textjsonb on
+.print
+SELECT jsonb(1234) AS x;}
+} {0 {
+┌──────┐
+│  x   │
+├──────┤
+│ 1234 │
+└──────┘}}
+
 finish_test

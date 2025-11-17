@@ -1625,6 +1625,7 @@ static void modeChange(ShellState *p, unsigned char eMode){
     p->mode.bAutoScreenWidth = 1;
     p->mode.spec.nCharLimit = 300;
     p->mode.spec.nLineLimit = 5;
+    p->mode.spec.bTextJsonb = QRF_Yes;
     p->mode.mFlags = mFlags;
   }
 }
