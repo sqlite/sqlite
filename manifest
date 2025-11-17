@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\s".show".\s\sAdjust\stest\scases\sfor\sthe\snew\sdefault\smode.
-D 2025-11-16T23:06:45.485
+C Fix\stest\scases\simpacted\sby\sthe\suse\sof\s~/.sqliterc
+D 2025-11-17T00:15:14.616
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -71,7 +71,7 @@ F doc/wal-lock.md 7db0cd61e2000b545b78ce89b0c2a9a8dd8d64c097839258ac10d7c5c4156e
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test 1d2da6606623b57bb47064e02140823ce1daecd4cacbf402c73ad3473d7f000c
+F ext/expert/expert1.test d9dfbf7fb527cfd43049e30a6238ef02c94484041fa4461ed41acbc6435425d6
 F ext/expert/sqlite3expert.c 546010043fbec93544f762de5161b3d553165859e6bd853c4b85c05f93484260
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c c395134bd6d4efa594a7d26578a1cb624c4027b79b4b5fcd44736c5ef1f5f725
@@ -887,7 +887,7 @@ F test/autoindex5.test 3fb938cbf4e7f3896563ce04e2a24b0bc653fc6245b4bf3268cd7b20f
 F test/autovacuum.test 00671369bbf96c6a49989a9425f5b78b94075d6a4b031e5e00000c2c32f365df
 F test/autovacuum2.test 76f7eb4fe6a6bf6d33a196a7141dba98886d2fb53a268d7feca285d5da4759d7
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
-F test/avfs.test 76f59743dc1f5fa533840d1818b420fe1ee45e21c0fd6bbac7942ba677903128
+F test/avfs.test 95bb8d04f8edad6dc9e600221d103f7e2cc3da398af84df215a3a819e560c45c
 F test/avtrans.test 7a6eae44763293024b137b53ff824d8500d754dbae060a8d940afbacfc1d4a15
 F test/backcompat.test f2431465ed668f09fc3f6998e56e893a1506ccea6e8b6f409f085f759f431b48
 F test/backup.test 3b08fd4af69f0fa786931103a31f4542b184aba16e239e5f22b18c3c2476697f
@@ -1522,7 +1522,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rbu.test 168573d353cd0fd10196b87b0caa322c144ef736
 F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/readonly.test 0d307c335b3421898cfe64a783a376138aa003849b6bff61ee2d21e805bc0051
-F test/recover.test c76d05f33f0271fba0f0752170e03b0ab5952dc61dcea7ab3ba40df03c4c42de
+F test/recover.test 643139b911ac880a1e881d7621f02cfb546b608b8f2494d7d26fd5ed103b1ceb
 F test/regexp1.test 8f2a8bc1569666e29a4cee6c1a666cd224eb6d50e2470d1dc1df995170f3e0f1
 F test/regexp2.test 64f9726b2ddc71aea06725fcad53231833d038d58b936d49083ace658b370a13
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
@@ -2176,8 +2176,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 52e022375961ad9460412e40e100219ee59055eb0ab309cbfc2ab19f61929a45
-R 90207c5bcf877b0621eec6aeeab42653
+P 2aebd7bfecaaf1f75b52b05a0d3009fc0dc61289ae666d24cb4e3ddfaf251645
+R 5f06e6da6beb48984fc94266490a7906
 U drh
-Z 04f01ffacb993786991c47ce0eda4152
+Z 490dbb4a529fbc5b5a8e8da8dff783f8
 # Remove this line to create a well-formed Fossil manifest.
