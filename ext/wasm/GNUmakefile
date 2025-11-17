@@ -576,6 +576,10 @@ b.c-pp.target.flags ?=
 ifeq (1,$(SQLITE_C_IS_SEE))
   b.c-pp.target.flags += -Denable-see
 endif
+api.oo1 ?= 1
+ifeq (0,$(api.oo1))
+  b.c-pp.target.flags += -Domit-oo1
+endif
 
 #
 # cflags.common = C compiler flags for all builds
