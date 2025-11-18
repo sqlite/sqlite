@@ -26,7 +26,7 @@ const toExportForESM =
   */
   const originalInit = sqlite3InitModule;
   if(!originalInit){
-    throw new Error("Expecting globalThis.sqlite3InitModule to be defined by the Emscripten build.");
+    throw new Error("Expecting sqlite3InitModule to be defined by the Emscripten build.");
   }
   /**
      We need to add some state which our custom Module.locateFile()

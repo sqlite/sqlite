@@ -4973,6 +4973,37 @@ static int SQLITE_TCLAPI test_errmsg16(
 }
 
 /*
+** Usage:   sqlite3_set_errmsg DB ERRCODE ERRMSG
+*/
+static int SQLITE_TCLAPI test_set_errmsg(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zDb = 0;
+  const char *zErr = 0;
+  int iErr = 0;
+  sqlite3 *db = 0;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ERRCODE ERRMSG");
+    return TCL_ERROR;
+  }
+  zDb = Tcl_GetString(objv[1]);
+  if( zDb[0] ){
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &iErr) ) return TCL_ERROR;
+  zErr = Tcl_GetString(objv[3]);
+
+  rc = sqlite3_set_errmsg(db, iErr, (zErr[0] ? zErr : 0));
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
+  return TCL_OK;
+}
+
+/*
 ** Usage: sqlite3_prepare DB sql bytes ?tailvar?
 **
 ** Compile up to <bytes> bytes of the supplied SQL string <sql> using
@@ -7339,6 +7370,7 @@ static int SQLITE_TCLAPI test_limit(
     { "SQLITE_LIMIT_SQL_LENGTH",          SQLITE_LIMIT_SQL_LENGTH           },
     { "SQLITE_LIMIT_COLUMN",              SQLITE_LIMIT_COLUMN               },
     { "SQLITE_LIMIT_EXPR_DEPTH",          SQLITE_LIMIT_EXPR_DEPTH           },
+    { "SQLITE_LIMIT_PARSER_DEPTH",        SQLITE_LIMIT_PARSER_DEPTH         },
     { "SQLITE_LIMIT_COMPOUND_SELECT",     SQLITE_LIMIT_COMPOUND_SELECT      },
     { "SQLITE_LIMIT_VDBE_OP",             SQLITE_LIMIT_VDBE_OP              },
     { "SQLITE_LIMIT_FUNCTION_ARG",        SQLITE_LIMIT_FUNCTION_ARG         },
@@ -7350,7 +7382,7 @@ static int SQLITE_TCLAPI test_limit(
     
     /* Out of range test cases */
     { "SQLITE_LIMIT_TOOSMALL",            -1,                               },
-    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_WORKER_THREADS+1     },
+    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_PARSER_DEPTH+1       },
   };
   int i, id = 0;
   int val;
@@ -8274,6 +8306,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "balanced-merge",      SQLITE_BalancedMerge  },
     { "propagate-const",     SQLITE_PropagateConst },
     { "one-pass",            SQLITE_OnePass        },
+    { "exists-to-join",      SQLITE_ExistsToJoin   },
   };
 
   if( objc!=4 ){
@@ -9112,6 +9145,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_errmsg",                test_errmsg        ,0 },
      { "sqlite3_error_offset",          test_error_offset  ,0 },
      { "sqlite3_errmsg16",              test_errmsg16      ,0 },
+     { "sqlite3_set_errmsg",            test_set_errmsg    ,0 },
      { "sqlite3_open",                  test_open          ,0 },
      { "sqlite3_open16",                test_open16        ,0 },
      { "sqlite3_open_v2",               test_open_v2       ,0 },

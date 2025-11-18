@@ -11,11 +11,19 @@
     <style></style>
   </head>
   <body><h1 id='color-target'></h1>
-    <div>Variants:
-      <a href='tester1.html' target='tester1.html'>conventional UI thread</a>,
-      <a href='tester1-worker.html' target='tester1-worker.html'>conventional worker</a>,
-      <a href='tester1-esm.html' target='tester1-esm.html'>ESM in UI thread</a>,
-      <a href='tester1-worker.html?esm' target='tester1-worker.html?esm'>ESM worker</a>
+    <div>Variants (32-bit):
+      conventional UI thread:
+      (<a href='tester1.html' target='tester1.html'>32-bit</a>,
+      <a href='tester1-64bit.html' target='tester1-64bit.html'>64-bit</a>),
+      conventional worker:
+      (<a href='tester1-worker.html' target='tester1-worker.html'>32-bit</a>,
+      <a href='tester1-worker-64bit.html' target='tester1-worker-64bit.html'>64-bit</a>),
+      ESM in UI thread:
+      (<a href='tester1-esm.html' target='tester1-esm.html'>32-bit</a>,
+      <a href='tester1-esm-64bit.html' target='tester1-esm-64bit.html'>64-bit</a>),
+      ESM worker:</a>
+      (<a href='tester1-worker.html?esm' target='tester1-worker.html?esm'>32-bit</a>
+      <a href='tester1-worker-64bit.html?esm' target='tester1-worker-64bit.html?esm'>64-bit</a>)
     </div>
     <div class='input-wrapper'>
       <input type='checkbox' id='cb-log-reverse'>

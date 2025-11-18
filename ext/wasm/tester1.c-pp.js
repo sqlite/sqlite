@@ -369,6 +369,88 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     clearOnInit: true,
     initialCapacity: 6
   };
+
+//#if enable-see
+  /**
+     Code consolidator for SEE sanity checks for various VFSes. ctor
+     is the VFS's oo1.DB-type constructor.  ctorOptFunc(bool) is a
+     function which must return a constructor args object for ctor. It
+     is passed true if the db needs to be cleaned up/unlinked before
+     opening it (OPFS) and false if not (how that is done is
+     VFS-dependent).  dbUnlink is a function which is expected to
+     unlink() the db file if the ctorOpfFunc does not do so when
+     passed true (kvvfs).
+
+     This function initializes the db described by ctorOptFunc(...),
+     writes some secret info into it, and re-opens it twice to
+     confirmi that it can be read with an SEE key and cannot be read
+     without one.
+  */
+  T.seeBaseCheck = function(ctor, ctorOptFunc, dbUnlink){
+    let initDb = true;
+    const tryKey = function(keyKey, key, expectCount){
+      let db;
+      //console.debug('tryKey()',arguments);
+      try {
+        if (initDb) {
+          const ctoropt = ctorOptFunc(initDb);
+          initDb = false;
+          db = new ctor({
+            ...ctoropt,
+            [keyKey]: key
+          });
+          db.exec([
+            "drop table if exists t;",
+            "create table t(a);"
+          ]);
+          db.close();
+          db = null;
+          // Ensure that it's actually encrypted...
+          let err;
+          try {
+            db = new ctor(ctorOptFunc(false));
+            T.assert(db, 'db opened') /* opening is fine, but... */;
+            db.exec("select 1 from sqlite_schema");
+            console.warn("(should not be reached) sessionStorage =", sessionStorage);
+          } catch (e) {
+            err = e;
+          } finally {
+            db.close()
+            db = null;
+          }
+          T.assert(err, "Expecting an exception")
+            .assert(capi.SQLITE_NOTADB == err.resultCode,
+                    "Expecting NOTADB");
+        }/*initDb*/
+        db = new ctor({
+          ...ctorOptFunc(false),
+          [keyKey]: key
+        });
+        db.exec("insert into t(a) values (1),(2)");
+        T.assert(expectCount === db.selectValue('select sum(a) from t'));
+      } finally {
+        if (db) db.close();
+      }
+    };
+    const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
+    dbUnlink();
+    tryKey('textkey', 'foo', 3);
+    T.assert( !initDb );
+    tryKey('textkey', 'foo', 6);
+    dbUnlink();
+    initDb = true;
+    tryKey('key', 'foo', 3);
+    T.assert( !initDb );
+    tryKey('key', hexFoo, 6);
+    dbUnlink();
+    initDb = true;
+    tryKey('hexkey', hexFoo, 3);
+    T.assert( !initDb );
+    tryKey('hexkey', hexFoo, 6);
+    dbUnlink();
+  },
+//#endif enable-see
+
   ////////////////////////////////////////////////////////////////////////
   // End of infrastructure setup. Now define the tests...
   ////////////////////////////////////////////////////////////////////////
@@ -945,7 +1027,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           let ptr = k1.pointer;
           k1.dispose();
           T.assert(undefined === k1.pointer).
-            mustThrowMatching(()=>{k1.$pP=1}, /disposed instance/);
+            mustThrowMatching(()=>{k1.$pP=1}, /disposed struct instance/);
         }finally{
           k1.dispose();
           k2.dispose();
@@ -1549,6 +1631,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       T.assert(blob instanceof Uint8Array).
         assert(0x68===blob[0] && 0x69===blob[1]);
       blob = null;
+      blob = db.selectValue("select ?1", new Uint8Array([97,0,98,0,99]),
+                            sqlite3.capi.SQLITE_TEXT);
+      T.assert("a\0b\0c"===blob, "Something is amiss with embedded NULs");
       let counter = 0, colNames = [];
       list.length = 0;
       db.exec(new TextEncoder('utf-8').encode("SELECT a a, b b FROM t"),{
@@ -2836,71 +2921,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       predicate: ()=>(isUIThread()
                       || "Only available in main thread."),
       test: function(sqlite3){
-        this.kvvfsUnlink();
-        let initDb = true;
-        const tryKey = function(keyKey, key, expectCount){
-          let db;
-          //console.debug('tryKey()',arguments);
-          const ctoropt = {
-            filename: this.kvvfsDbFile
-            //vfs: 'kvvfs'
-            //,flags: 'ct'
-          };
-          try {
-            if (initDb) {
-              initDb = false;
-              db = new this.JDb({
-                ...ctoropt,
-                [keyKey]: key
-              });
-              db.exec([
-                "drop table if exists t;",
-                "create table t(a);"
-              ]);
-              db.close();
-              // Ensure that it's actually encrypted...
-              let err;
-              try {
-                db = new this.JDb(ctoropt);
-                T.assert(db, 'db opened') /* opening is fine, but... */;
-                db.exec("select 1 from sqlite_schema");
-                console.warn("(should not be reached) sessionStorage =", sessionStorage);
-              } catch (e) {
-                err = e;
-              } finally {
-                db.close()
-              }
-              T.assert(err, "Expecting an exception")
-                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
-                        "Expecting NOTADB");
-            }/*initDb*/
-            //console.debug('tryKey()',arguments);
-            db = new sqlite3.oo1.DB({
-              ...ctoropt,
-              vfs: 'kvvfs',
-              [keyKey]: key
-            });
-            db.exec("insert into t(a) values (1),(2)");
-            T.assert(expectCount === db.selectValue('select sum(a) from t'));
-          } finally {
-            if (db) db.close();
-          }
-        }.bind(this);
-        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
-        tryKey('textkey', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('textkey', 'foo', 6);
-        this.kvvfsUnlink();
-        initDb = true;
-        tryKey('key', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('key', hexFoo, 6);
-        this.kvvfsUnlink();
-        initDb = true;
-        tryKey('hexkey', hexFoo, 3);
-        T.assert( !initDb );
-        tryKey('hexkey', hexFoo, 6);
-        this.kvvfsUnlink();
+        T.seeBaseCheck(sqlite3.oo1.JsStorageDb, (isInit)=>{
+          return {filename: "session"};
+        }, ()=>this.kvvfsUnlink());
       }
     })/*kvvfs with SEE*/
 //#endif enable-see
@@ -3315,71 +3338,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'OPFS with SEE encryption',
       test: function(sqlite3){
-        const dbFile = 'file:///sqlite3-see.edb';
-        const dbCtor = sqlite3.oo1.OpfsDb;
-        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
-        let initDb = true;
-        const tryKey = function(keyKey, key, expectCount){
-          let db;
-          //console.debug('tryKey()',arguments);
-          const ctoropt = {
-            filename: dbFile,
-            flags: 'c'
-          };
-          try {
-            if (initDb) {
-              initDb = false;
-              const opt = {
-                ...ctoropt,
-                [keyKey]: key
-              };
-              opt.filename += '?delete-before-open=1';
-              db = new dbCtor(opt);
-              db.exec([
-                "drop table if exists t;",
-                "create table t(a);"
-              ]);
-              db.close();
-              // Ensure that it's actually encrypted...
-              let err;
-              try {
-                db = new dbCtor(ctoropt);
-                T.assert(db, 'db opened') /* opening is fine, but... */;
-                const rv = db.exec({
-                  sql:"select count(*) from sqlite_schema",
-                  returnValue: 'resultRows'
-                });
-                console.warn("(should not be reached) rv =",rv);
-              } catch (e) {
-                err = e;
-              } finally {
-                db.close()
-              }
-              T.assert(err, "Expecting an exception")
-                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
-                        "Expecting NOTADB");
-            }/*initDb*/
-            db = new dbCtor({
-              ...ctoropt,
-              [keyKey]: key
-            });
-            db.exec("insert into t(a) values (1),(2)");
-            T.assert(expectCount === db.selectValue('select sum(a) from t'));
-          } finally {
-            if (db) db.close();
-          }
-        };
-        tryKey('textkey', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('textkey', 'foo', 6);
-        initDb = true;
-        tryKey('key', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('key', hexFoo, 6);
-        initDb = true;
-        tryKey('hexkey', hexFoo, 3);
-        T.assert( !initDb );
-        tryKey('hexkey', hexFoo, 6);
+        T.seeBaseCheck(
+          sqlite3.oo1.OpfsDb,
+          function(isInit){
+            const opt = {filename: 'file:///sqlite3-see.edb'};
+            if( isInit ) opt.filename += '?delete-before-open=1';
+            return opt;
+          },
+          ()=>{});
       }
     })/*OPFS with SEE*/
 //#endif enable-see
@@ -3584,69 +3550,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let poolUtil;
         const P1 = await inst(poolConfig).then(u=>poolUtil = u).catch(catcher);
         const dbFile = '/sqlite3-see.edb';
-        const dbCtor = poolUtil.OpfsSAHPoolDb;
-        const hexFoo = new Uint8Array([0x66,0x6f,0x6f]/*=="foo"*/);
-        let initDb = true;
-        const tryKey = function(keyKey, key, expectCount){
-          let db;
-          //console.debug('tryKey()',arguments);
-          const ctoropt = {
-            filename: dbFile,
-            flags: 'c'
-          };
-          try {
-            if (initDb) {
-              initDb = false;
-              poolUtil.unlink(dbFile);
-              db = new dbCtor({
-                ...ctoropt,
-                [keyKey]: key
-              });
-              db.exec([
-                "drop table if exists t;",
-                "create table t(a);"
-              ]);
-              db.close();
-              // Ensure that it's actually encrypted...
-              let err;
-              try {
-                db = new dbCtor(ctoropt);
-                T.assert(db, 'db opened') /* opening is fine, but... */;
-                const rv = db.exec({
-                  sql:"select count(*) from sqlite_schema",
-                  returnValue: 'resultRows'
-                });
-                console.warn("(should not be reached) rv =",rv);
-              } catch (e) {
-                err = e;
-              } finally {
-                db.close()
-              }
-              T.assert(err, "Expecting an exception")
-                .assert(sqlite3.capi.SQLITE_NOTADB == err.resultCode,
-                        "Expecting NOTADB");
-            }/*initDb*/
-            db = new dbCtor({
-              ...ctoropt,
-              [keyKey]: key
-            });
-            db.exec("insert into t(a) values (1),(2)");
-            T.assert(expectCount === db.selectValue('select sum(a) from t'));
-          } finally {
-            if (db) db.close();
-          }
-        };
-        tryKey('textkey', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('textkey', 'foo', 6);
-        initDb = true;
-        tryKey('key', 'foo', 3);
-        T.assert( !initDb );
-        tryKey('key', hexFoo, 6);
-        initDb = true;
-        tryKey('hexkey', hexFoo, 3);
-        T.assert( !initDb );
-        tryKey('hexkey', hexFoo, 6);
+        T.seeBaseCheck(
+          poolUtil.OpfsSAHPoolDb,
+          (isInit)=>{return {filename: dbFile}},
+          ()=>poolUtil.unlink(dbFile)
+        );
         poolUtil.removeVfs();
       }
     })/*opfs-sahpool with SEE*/
@@ -3715,44 +3623,54 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t("Misc. stmt_...", function(sqlite3){
       const db = new sqlite3.oo1.DB();
       db.exec("create table t(a doggiebiscuits); insert into t(a) values(123)");
-      const stmt = db.prepare("select a, a+1 from t");
-      T.assert( stmt.isReadOnly() )
-        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) )
-        .assert( 0===capi.sqlite3_stmt_explain(stmt, 1) )
-        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
-        .assert( 0===capi.sqlite3_stmt_explain(stmt, 2) )
-        .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
-        .assert( 0===capi.sqlite3_stmt_explain(stmt, 0) )
-        .assert( 0===capi.sqlite3_stmt_isexplain(stmt) );
-      let n = 0;
-      while( capi.SQLITE_ROW === capi.sqlite3_step(stmt) ){
-        ++n;
-        T.assert( 0!==capi.sqlite3_stmt_explain(stmt, 1),
-                  "Because stmt is busy" )
-          .assert( capi.sqlite3_stmt_busy(stmt) )
-          .assert( stmt.isBusy() )
-          .assert( 0!==capi.sqlite3_stmt_readonly(stmt) )
-          .assert( true===stmt.isReadOnly() );
-        const sv = capi.sqlite3_column_value(stmt, 0);
-        T.assert( 123===capi.sqlite3_value_int(sv) )
-          .assert( "doggiebiscuits"===capi.sqlite3_column_decltype(stmt,0) )
-          .assert( null===capi.sqlite3_column_decltype(stmt,1) );
+      let stmt;
+      try{
+        stmt = db.prepare("select a, a+1 from t");
+        T.assert( stmt.isReadOnly() )
+          .assert( 0===capi.sqlite3_stmt_isexplain(stmt) )
+          .assert( 0===capi.sqlite3_stmt_explain(stmt, 1) )
+          .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+          .assert( 0===capi.sqlite3_stmt_explain(stmt, 2) )
+          .assert( 0!==capi.sqlite3_stmt_isexplain(stmt) )
+          .assert( 0===capi.sqlite3_stmt_explain(stmt, 0) )
+          .assert( 0===capi.sqlite3_stmt_isexplain(stmt) );
+        let n = 0;
+        while( capi.SQLITE_ROW === capi.sqlite3_step(stmt) ){
+          ++n;
+          T.assert( 0!==capi.sqlite3_stmt_explain(stmt, 1),
+                    "Because stmt is busy" )
+            .assert( capi.sqlite3_stmt_busy(stmt) )
+            .assert( stmt.isBusy() )
+            .assert( 0!==capi.sqlite3_stmt_readonly(stmt) )
+            .assert( true===stmt.isReadOnly() );
+          const sv = capi.sqlite3_column_value(stmt, 0);
+          T.assert( 123===capi.sqlite3_value_int(sv) )
+            .assert( "doggiebiscuits"===capi.sqlite3_column_decltype(stmt,0) )
+            .assert( null===capi.sqlite3_column_decltype(stmt,1) );
+        }
+        T.assert( 1===n )
+          .assert( 0===capi.sqlite3_stmt_busy(stmt) )
+          .assert( !stmt.isBusy() );
+
+        if( wasm.exports.sqlite3_column_origin_name ){
+          log("Column metadata APIs enabled");
+          T.assert( "t" === capi.sqlite3_column_table_name(stmt, 0))
+            .assert("a" === capi.sqlite3_column_origin_name(stmt, 0))
+            .assert("main" === capi.sqlite3_column_database_name(stmt, 0))
+        }else{
+          log("Column metadata APIs not enabled");
+        } // column metadata APIs
+        stmt.finalize();
+        stmt = null;
+        stmt = db.prepare("select ?1").bind(new Uint8Array([97,0,98,0,99]));
+        stmt.step();
+        const sv = capi.sqlite3_column_value(stmt,0);
+        T.assert("a\0b\0c"===capi.sqlite3_value_text(sv),
+                 "Expecting NULs to have survived.");
+      }finally{
+        if(stmt) stmt.finalize();
+        db.close();
       }
-      T.assert( 1===n )
-        .assert( 0===capi.sqlite3_stmt_busy(stmt) )
-        .assert( !stmt.isBusy() );
-
-      if( wasm.exports.sqlite3_column_origin_name ){
-        log("Column metadata APIs enabled");
-        T.assert( "t" === capi.sqlite3_column_table_name(stmt, 0))
-          .assert("a" === capi.sqlite3_column_origin_name(stmt, 0))
-          .assert("main" === capi.sqlite3_column_database_name(stmt, 0))
-      }else{
-        log("Column metadata APIs not enabled");
-      } // column metadata APIs
-
-      stmt.finalize();
-      db.close();
     })
 
   ////////////////////////////////////////////////////////////////////

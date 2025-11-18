@@ -494,6 +494,7 @@ struct lemon {
   char *filename;          /* Name of the input file */
   char *outname;           /* Name of the current output file */
   char *tokenprefix;       /* A prefix added to token names in the .h file */
+  char *stackSizeLimit;    /* Function to return the stack size limit */
   char *reallocFunc;       /* Function to use to allocate stack space */
   char *freeFunc;          /* Function to use to free stack space */
   int nconflict;           /* Number of parsing conflicts */
@@ -2638,6 +2639,9 @@ static void parseonetoken(struct pstate *psp)
         }else if( strcmp(x,"default_type")==0 ){
           psp->declargslot = &(psp->gp->vartype);
           psp->insertLineMacro = 0;
+        }else if( strcmp(x,"stack_size_limit")==0 ){
+          psp->declargslot = &(psp->gp->stackSizeLimit);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"realloc")==0 ){
           psp->declargslot = &(psp->gp->reallocFunc);
           psp->insertLineMacro = 0;
@@ -3715,7 +3719,7 @@ PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
   return act;
 }
 
-#define LINESIZE 1000
+#define LINESIZE 10000
 /* The next cluster of routines are for reading the template file
 ** and writing the results to the generated parser */
 /* The first function transfers data from "in" to "out" until
@@ -3750,12 +3754,9 @@ PRIVATE void tplt_xfer(char *name, FILE *in, FILE *out, int *lineno)
 
 /* Skip forward past the header of the template file to the first "%%"
 */
-PRIVATE void tplt_skip_header(FILE *in, int *lineno)
-{
+PRIVATE void tplt_skip_header(FILE *in){
   char line[LINESIZE];
-  while( fgets(line,LINESIZE,in) && (line[0]!='%' || line[1]!='%') ){
-    (*lineno)++;
-  }
+  while( fgets(line,LINESIZE,in) && (line[0]!='%' || line[1]!='%') ){}
 }
 
 /* The next function finds the template file and opens it, returning
@@ -3825,12 +3826,14 @@ PRIVATE void tplt_linedir(FILE *out, int lineno, char *filename)
     filename++;
   }
   fprintf(out,"\"\n");
+  fflush(out);
 }
 
 /* Print a string to the file and keep the linenumber up to date */
 PRIVATE void tplt_print(FILE *out, struct lemon *lemp, char *str, int *lineno)
 {
   if( str==0 ) return;
+  fflush(out);
   while( *str ){
     putc(*str,out);
     if( *str=='\n' ) (*lineno)++;
@@ -3843,6 +3846,7 @@ PRIVATE void tplt_print(FILE *out, struct lemon *lemp, char *str, int *lineno)
   if (!lemp->nolinenosflag) {
     (*lineno)++; tplt_linedir(out,*lineno,lemp->outname);
   }
+  fflush(out);
   return;
 }
 
@@ -4407,6 +4411,13 @@ static void writeRuleText(FILE *out, struct rule *rp){
   }
 }
 
+/*
+** Return true if the string is not NULL and not empty.
+*/
+static int notnull(const char *z){
+  return z && z[0];
+}
+
 
 /* Generate C source code for the parser */
 void ReportTable(
@@ -4414,7 +4425,7 @@ void ReportTable(
   int mhflag,     /* Output in makeheaders format if true */
   int sqlFlag     /* Generate the *.sql file too */
 ){
-  FILE *out, *in, *sql;
+  FILE *out, *in;
   int  lineno;
   struct state *stp;
   struct action *ap;
@@ -4439,15 +4450,8 @@ void ReportTable(
 
   in = tplt_open(lemp);
   if( in==0 ) return;
-  out = file_open(lemp,".c","wb");
-  if( out==0 ){
-    fclose(in);
-    return;
-  }
-  if( sqlFlag==0 ){
-    sql = 0;
-  }else{
-    sql = file_open(lemp, ".sql", "wb");
+  if( sqlFlag ){
+    FILE *sql = file_open(lemp, ".sql", "wb");
     if( sql==0 ){
       fclose(in);
       fclose(out);
@@ -4515,6 +4519,12 @@ void ReportTable(
       }
     }
     fprintf(sql, "COMMIT;\n");
+    fclose(sql);
+  }
+  out = file_open(lemp,".c","wb");
+  if( out==0 ){
+    fclose(in);
+    return;
   }
   lineno = 1;
 
@@ -4543,7 +4553,7 @@ void ReportTable(
     }
   }
   if( lemp->include[0]=='/' ){
-    tplt_skip_header(in,&lineno);
+    tplt_skip_header(in);
   }else{
     tplt_xfer(lemp->name,in,out,&lineno);
   }
@@ -4563,7 +4573,7 @@ void ReportTable(
   if( mhflag ){
     fprintf(out,"#if INTERFACE\n"); lineno++;
   }else{
-    fprintf(out,"#ifndef %s%s\n", prefix, lemp->symbols[1]->name);
+    fprintf(out,"#ifndef %s%s\n", prefix, lemp->symbols[1]->name); lineno++;
   }
   for(i=1; i<lemp->nterminal; i++){
     fprintf(out,"#define %s%-30s %2d\n",prefix,lemp->symbols[i]->name,i);
@@ -4612,25 +4622,33 @@ void ReportTable(
     fprintf(out,"#define %sARG_FETCH\n",name); lineno++;
     fprintf(out,"#define %sARG_STORE\n",name); lineno++;
   }
+  fprintf(out, "#undef YYREALLOC\n"); lineno++;
   if( lemp->reallocFunc ){
     fprintf(out,"#define YYREALLOC %s\n", lemp->reallocFunc); lineno++;
   }else{
     fprintf(out,"#define YYREALLOC realloc\n"); lineno++;
   }
+  fprintf(out, "#undef YYFREE\n"); lineno++;
   if( lemp->freeFunc ){
     fprintf(out,"#define YYFREE %s\n", lemp->freeFunc); lineno++;
   }else{
     fprintf(out,"#define YYFREE free\n"); lineno++;
   }
+  fprintf(out, "#undef YYDYNSTACK\n"); lineno++;
   if( lemp->reallocFunc && lemp->freeFunc ){
     fprintf(out,"#define YYDYNSTACK 1\n"); lineno++;
   }else{
     fprintf(out,"#define YYDYNSTACK 0\n"); lineno++;
   }
-  if( lemp->ctx && lemp->ctx[0] ){
+  fprintf(out, "#undef YYSIZELIMIT\n"); lineno++;
+  if( notnull(lemp->ctx) ){
     i = lemonStrlen(lemp->ctx);
     while( i>=1 && ISSPACE(lemp->ctx[i-1]) ) i--;
     while( i>=1 && (ISALNUM(lemp->ctx[i-1]) || lemp->ctx[i-1]=='_') ) i--;
+    if( notnull(lemp->stackSizeLimit) ){
+      fprintf(out,"#define YYSIZELIMIT %s\n", lemp->stackSizeLimit); lineno++;
+    }
+    fprintf(out,"#define %sCTX(P) ((P)->%s)\n",name,&lemp->ctx[i]); lineno++;
     fprintf(out,"#define %sCTX_SDECL %s;\n",name,lemp->ctx);  lineno++;
     fprintf(out,"#define %sCTX_PDECL ,%s\n",name,lemp->ctx);  lineno++;
     fprintf(out,"#define %sCTX_PARAM ,%s\n",name,&lemp->ctx[i]);  lineno++;
@@ -4639,6 +4657,7 @@ void ReportTable(
     fprintf(out,"#define %sCTX_STORE yypParser->%s=%s;\n",
                  name,&lemp->ctx[i],&lemp->ctx[i]);  lineno++;
   }else{
+    fprintf(out,"#define %sCTX(P) 0\n",name); lineno++;
     fprintf(out,"#define %sCTX_SDECL\n",name); lineno++;
     fprintf(out,"#define %sCTX_PDECL\n",name); lineno++;
     fprintf(out,"#define %sCTX_PARAM\n",name); lineno++;
@@ -4648,10 +4667,13 @@ void ReportTable(
   if( mhflag ){
     fprintf(out,"#endif\n"); lineno++;
   }
+  fprintf(out, "#undef YYERRORSYMBOL\n"); lineno++;
+  fprintf(out, "#undef YYERRSYMDT\n"); lineno++;
   if( lemp->errsym && lemp->errsym->useCnt ){
     fprintf(out,"#define YYERRORSYMBOL %d\n",lemp->errsym->index); lineno++;
     fprintf(out,"#define YYERRSYMDT yy%d\n",lemp->errsym->dtnum); lineno++;
   }
+  fprintf(out,"#undef YYFALLBACK\n"); lineno++;
   if( lemp->has_fallback ){
     fprintf(out,"#define YYFALLBACK 1\n");  lineno++;
   }
@@ -5003,7 +5025,6 @@ void ReportTable(
          sp2->destLineno = -1;  /* Avoid emitting this destructor again */
       }
     }
-
     emit_destructor_code(out,lemp->symbols[i],lemp,&lineno);
     fprintf(out,"      break;\n"); lineno++;
   }
@@ -5103,7 +5124,6 @@ void ReportTable(
   acttab_free(pActtab);
   fclose(in);
   fclose(out);
-  if( sql ) fclose(sql);
   return;
 }
 
