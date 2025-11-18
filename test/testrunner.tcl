@@ -1269,6 +1269,26 @@ proc add_fuzztest_jobs {buildname patternlist} {
     set subcmd [lrange $interpreter 1 end]
     set interpreter [lindex $interpreter 0]
 
+    # For fuzzcheck-asan and fuzzcheck-ubsan, break up some
+    # fuzzdata files into multiple slices, for improved
+    # concurrency.
+    #
+    if {[string match *fuzzcheck-*san $interpreter]} {
+      set newscripts {}
+      foreach s $scripts {
+        if {[string match {*fuzzdata[12].db} $s]
+            && ![string match slice $s]} {
+          set N 6
+          for {set i 0} {$i<$N} {incr i} {
+            lappend newscripts [list --slice $i $N $s]
+          }
+        } else {
+          lappend newscripts $s
+        }
+      }
+      set scripts $newscripts
+    }
+
     if {[string match fuzzcheck* $interpreter]
      && [info exists env(FUZZDB)]
      && [file readable $env(FUZZDB)]

@@ -1228,6 +1228,14 @@ int sqlite3_str_length(sqlite3_str *p){
   return p ? p->nChar : 0;
 }
 
+/* Truncate the text of the string to be no more than N bytes. */
+void sqlite3_str_truncate(sqlite3_str *p, int N){
+  if( p!=0 && N>=0 && (u32)N<p->nChar ){
+    p->nChar = N;
+    p->zText[p->nChar] = 0;
+  }
+}
+
 /* Return the current value for p */
 char *sqlite3_str_value(sqlite3_str *p){
   if( p==0 || p->nChar==0 ) return 0;
@@ -1246,6 +1254,17 @@ void sqlite3_str_reset(StrAccum *p){
   p->nAlloc = 0;
   p->nChar = 0;
   p->zText = 0;
+}
+
+/*
+** Destroy a dynamically allocate sqlite3_str object and all
+** of its content, all in one call.
+*/
+void sqlite3_str_free(sqlite3_str *p){
+  if( p ){
+    sqlite3_str_reset(p);
+    sqlite3_free(p);
+  }
 }
 
 /*

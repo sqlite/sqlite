@@ -1122,11 +1122,3 @@ int sqlite3_fileio_init(
   }
   return rc;
 }
-
-#if defined(FILEIO_WIN32_DLL) && (defined(_WIN32) || defined(WIN32))
-/* To allow a standalone DLL, make test_windirent.c use the same
- * redefined SQLite API calls as the above extension code does.
- * Just pull in this .c to accomplish this. As a beneficial side
- * effect, this extension becomes a single translation unit. */
-#  include "test_windirent.c"
-#endif

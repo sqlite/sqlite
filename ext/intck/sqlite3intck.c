@@ -160,6 +160,7 @@ static char *intckMprintf(sqlite3_intck *p, const char *zFmt, ...){
     sqlite3_free(zRet);
     zRet = 0;
   }
+  va_end(ap);
   return zRet;
 }
 

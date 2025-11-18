@@ -7424,8 +7424,22 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeAddOp2(v, OP_Goto, 1, pLevel->p2);
       }
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
-      if( pTabList->a[pLevel->iFrom].fg.fromExists ){
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
+      if( pTabList->a[pLevel->iFrom].fg.fromExists && i==pWInfo->nLevel-1 ){
+        /* If the EXISTS-to-JOIN optimization was applied, then the EXISTS
+        ** loop(s) will be the inner-most loops of the join. There might be
+        ** multiple EXISTS loops, but they will all be nested, and the join
+        ** order will not have been changed by the query planner.  If the
+        ** inner-most EXISTS loop sees a single successful row, it should
+        ** break out of *all* EXISTS loops.  But only the inner-most of the
+        ** nested EXISTS loops should do this breakout. */
+        int nOuter = 0; /* Nr of outer EXISTS that this one is nested within */
+        while( nOuter<i ){
+          if( !pTabList->a[pLevel[-nOuter-1].iFrom].fg.fromExists ) break;
+          nOuter++;
+        }
+        testcase( nOuter>0 );
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel[-nOuter].addrBrk);
+        VdbeComment((v, "EXISTS break"));
       }
       /* The common case: Advance to the next row */
       if( pLevel->addrCont ) sqlite3VdbeResolveLabel(v, pLevel->addrCont);

@@ -13,11 +13,14 @@ Technical support is available in the forum:
   <https://sqlite.org/forum>
 
 
-> **FOREWARNING:** this subproject is very much in development and
-  subject to any number of changes. Please do not rely on any
-  information about its API until this disclaimer is removed.  The JNI
-  bindings released with version 3.43 are a "tech preview." Once
-  finalized, strong backward compatibility guarantees will apply.
+> **FOREWARNING:** the JNI subproject is experimental and subject to
+  any number of changes.  This API is "feature-complete", with only a
+  few difficult-to-reach corners of the C API not represented here,
+  but it is not a supported deliverable of the project so does not
+  have same backward compatibility guarantees which the C APIs
+  do. That said: the [C-style API](#1to1ish) is especially resistent
+  to compatibility breakage because it's designed to be as close to
+  the C API as feasible.
 
 Project goals/requirements:
 
@@ -162,11 +165,13 @@ or propagate exceptions and must return error information (if any) via
 result codes or `null`. The only cases where the C-style APIs may
 throw is through client-side misuse, e.g. passing in a null where it
 may cause a `NullPointerException`. The APIs clearly mark function
-parameters which should not be null, but does not generally actively
-defend itself against such misuse. Some C-style APIs explicitly accept
-`null` as a no-op for usability's sake, and some of the JNI APIs
-deliberately return an error code, instead of segfaulting, when passed
-a `null`.
+parameters which should not be null, and it internally uses the
+`SQLITE_API_ARMOR` mechanism to help product against such misuse. Some
+C-style APIs explicitly accept `null` as a no-op for usability's sake,
+and some of the JNI APIs deliberately return an error code, instead of
+segfaulting, when passed a `null`. There are no known cases where it
+will misuse memory if passed a `null` or out-of-range value from
+client code.
 
 Client-defined callbacks _must never throw exceptions_ unless _very
 explicitly documented_ as being throw-safe. Exceptions are generally
@@ -194,7 +199,8 @@ Some constructs, when modelled 1-to-1 from C to Java, are unduly
 clumsy to work with in Java because they try to shoehorn C's way of
 doing certain things into Java's wildly different ways. The following
 subsections cover those, starting with a verbose explanation and
-demonstration of where such changes are "really necessary"...
+demonstration of where such changes are "really necessary" for
+usability's sake...
 
 ### Custom Collations
 
@@ -286,11 +292,8 @@ binding. The Java API has only one core function-registration function:
 
 ```java
 int sqlite3_create_function(sqlite3 db, String funcName, int nArgs,
-                            int encoding, SQLFunction func);
+                            int flags, SQLFunction func);
 ```
-
-> Design question: does the encoding argument serve any purpose in
-  Java? That's as-yet undetermined. If not, it will be removed.
 
 `SQLFunction` is not used directly, but is instead instantiated via
 one of its three subclasses:
@@ -313,4 +316,4 @@ in-flux nature of this API.
 Various APIs which accept callbacks, e.g. `sqlite3_trace_v2()` and
 `sqlite3_update_hook()`, use interfaces similar to those shown above.
 Despite the changes in signature, the JNI layer makes every effort to
-provide the same semantics as the C API documentation suggests.
+provide the same semantics as the C API documentation describes.
