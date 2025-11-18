@@ -23,6 +23,9 @@ ifcapable !altertable {
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a);                 
+  CREATE TEMP TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    SELECT 123;
+  END;
 }
 faultsim_save_and_close
 
