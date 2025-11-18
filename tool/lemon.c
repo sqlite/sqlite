@@ -494,6 +494,7 @@ struct lemon {
   char *filename;          /* Name of the input file */
   char *outname;           /* Name of the current output file */
   char *tokenprefix;       /* A prefix added to token names in the .h file */
+  char *stackSizeLimit;    /* Function to return the stack size limit */
   char *reallocFunc;       /* Function to use to allocate stack space */
   char *freeFunc;          /* Function to use to free stack space */
   int nconflict;           /* Number of parsing conflicts */
@@ -2638,6 +2639,9 @@ static void parseonetoken(struct pstate *psp)
         }else if( strcmp(x,"default_type")==0 ){
           psp->declargslot = &(psp->gp->vartype);
           psp->insertLineMacro = 0;
+        }else if( strcmp(x,"stack_size_limit")==0 ){
+          psp->declargslot = &(psp->gp->stackSizeLimit);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"realloc")==0 ){
           psp->declargslot = &(psp->gp->reallocFunc);
           psp->insertLineMacro = 0;
@@ -4407,6 +4411,13 @@ static void writeRuleText(FILE *out, struct rule *rp){
   }
 }
 
+/*
+** Return true if the string is not NULL and not empty.
+*/
+static int notnull(const char *z){
+  return z && z[0];
+}
+
 
 /* Generate C source code for the parser */
 void ReportTable(
@@ -4611,25 +4622,33 @@ void ReportTable(
     fprintf(out,"#define %sARG_FETCH\n",name); lineno++;
     fprintf(out,"#define %sARG_STORE\n",name); lineno++;
   }
+  fprintf(out, "#undef YYREALLOC\n"); lineno++;
   if( lemp->reallocFunc ){
     fprintf(out,"#define YYREALLOC %s\n", lemp->reallocFunc); lineno++;
   }else{
     fprintf(out,"#define YYREALLOC realloc\n"); lineno++;
   }
+  fprintf(out, "#undef YYFREE\n"); lineno++;
   if( lemp->freeFunc ){
     fprintf(out,"#define YYFREE %s\n", lemp->freeFunc); lineno++;
   }else{
     fprintf(out,"#define YYFREE free\n"); lineno++;
   }
+  fprintf(out, "#undef YYDYNSTACK\n"); lineno++;
   if( lemp->reallocFunc && lemp->freeFunc ){
     fprintf(out,"#define YYDYNSTACK 1\n"); lineno++;
   }else{
     fprintf(out,"#define YYDYNSTACK 0\n"); lineno++;
   }
-  if( lemp->ctx && lemp->ctx[0] ){
+  fprintf(out, "#undef YYSIZELIMIT\n"); lineno++;
+  if( notnull(lemp->ctx) ){
     i = lemonStrlen(lemp->ctx);
     while( i>=1 && ISSPACE(lemp->ctx[i-1]) ) i--;
     while( i>=1 && (ISALNUM(lemp->ctx[i-1]) || lemp->ctx[i-1]=='_') ) i--;
+    if( notnull(lemp->stackSizeLimit) ){
+      fprintf(out,"#define YYSIZELIMIT %s\n", lemp->stackSizeLimit); lineno++;
+    }
+    fprintf(out,"#define %sCTX(P) ((P)->%s)\n",name,&lemp->ctx[i]); lineno++;
     fprintf(out,"#define %sCTX_SDECL %s;\n",name,lemp->ctx);  lineno++;
     fprintf(out,"#define %sCTX_PDECL ,%s\n",name,lemp->ctx);  lineno++;
     fprintf(out,"#define %sCTX_PARAM ,%s\n",name,&lemp->ctx[i]);  lineno++;
@@ -4638,6 +4657,7 @@ void ReportTable(
     fprintf(out,"#define %sCTX_STORE yypParser->%s=%s;\n",
                  name,&lemp->ctx[i],&lemp->ctx[i]);  lineno++;
   }else{
+    fprintf(out,"#define %sCTX(P) 0\n",name); lineno++;
     fprintf(out,"#define %sCTX_SDECL\n",name); lineno++;
     fprintf(out,"#define %sCTX_PDECL\n",name); lineno++;
     fprintf(out,"#define %sCTX_PARAM\n",name); lineno++;
@@ -4647,10 +4667,13 @@ void ReportTable(
   if( mhflag ){
     fprintf(out,"#endif\n"); lineno++;
   }
+  fprintf(out, "#undef YYERRORSYMBOL\n"); lineno++;
+  fprintf(out, "#undef YYERRSYMDT\n"); lineno++;
   if( lemp->errsym && lemp->errsym->useCnt ){
     fprintf(out,"#define YYERRORSYMBOL %d\n",lemp->errsym->index); lineno++;
     fprintf(out,"#define YYERRSYMDT yy%d\n",lemp->errsym->dtnum); lineno++;
   }
+  fprintf(out,"#undef YYFALLBACK\n"); lineno++;
   if( lemp->has_fallback ){
     fprintf(out,"#define YYFALLBACK 1\n");  lineno++;
   }
