@@ -1,5 +1,5 @@
-C Add\sapi.oo1=0\sflag\sto\sext/wasm/GNUmakefile\sto\sstrip\sout\sthe\ssqlite3.oo1\spieces\sfrom\sthe\sbuild.\sPart\sof\sthe\songoing\sresponse\sto\s[forum:4b7d45433731d2e0|forum\spost\s4b7d45433731d2e0].
-D 2025-11-17T23:55:41.172
+C Fix\sincorrect\s"#line"\sgeneration\sin\sLemon.
+D 2025-11-18T10:38:41.356
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2101,7 +2101,7 @@ F tool/genfkey.README e550911fa984c8255ebed2ef97824125d83806eb5232582700de949edf
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
-F tool/lemon.c 8f6c122e5727cb0e5f302b8efc91489b1947a8d98206d7a1b1cfc0ed685b6e7c
+F tool/lemon.c 861099d4d328251c85a35cfe3da81e00e35a0708be5aab0e1c7feb157b9735e8
 F tool/lempar.c bdffd3b233a4e4e78056c9c01fadd2bb3fe902435abde3bce3d769fdf0d5cca2
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c 63412f9790e5e8538fbde0b4f6db154aaaf80f7a10a01e3c94d14b773a8dd5a6
@@ -2166,8 +2166,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6621737cc05cbf8ff5f576775a8a3c64f666b56d42939968ebb55d72a835646b
-R f725b34e8d754de05251b176eb359cd6
-U stephan
-Z c71a6e355b45027ea5bfc35ef83fb8b3
+P ea48567ac54e4949a8b68977a58a5de7946e074ae8737133071d02f40ac97f34
+R 956e0d8d894da87712e963f1d74f3842
+U drh
+Z 160fdfae770c78987ceedbc701266298
 # Remove this line to create a well-formed Fossil manifest.
