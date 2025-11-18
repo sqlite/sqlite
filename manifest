@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_LIMIT_PARSER_DEPTH\svalue\sfor\ssqlite3_limit().\s\sThis\sisn't\nsomething\sthat\smany\sapplications\swill\sneed,\sbut\sit\sis\suseful\sfor\stesting.
-D 2025-11-18T14:48:33.193
+C Lower\sthe\sdefault\sstack\ssize\sfor\sthe\sparse\sto\s50.
+D 2025-11-18T15:20:22.796
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/os_win.c a89b501fc195085c7d6c9eec7f5bd782625e94bb2a96b000f4d009703df1083f
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c a81461de271ac4886ad75b7ca2cca8157a48635820c4646cd2714acdc2c17e5f
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
-F src/parse.y 6706ff4cfe15194279c8da5acf2b0d1e5845ca945c976398bb4cbe0e188e0744
+F src/parse.y afa49045cdd54131a7b2a0a7ab0401111d1ed6972ac323081e2dfe09e4de1bac
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
@@ -2166,8 +2166,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cb19986dc6bc483df21e082e54a14cb6d7540b1734259e6d326d676908ac0172
-R 7eda36c539b846b8b7294d534ccca677
+P 8f0b07f36159225c476f756f8f9b35c75783bc8bed43b578f4d1055fa800ecc9
+R c68f53fdd732bf66e96ffccfbfad06fd
 U drh
-Z 033a2ffcce1aafa9ea403459cb7996b3
+Z bf286ce506e13b7f5702e955703a4050
 # Remove this line to create a well-formed Fossil manifest.

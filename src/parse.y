@@ -21,10 +21,11 @@
 */
 }
 
-// Function used to enlarge the parser stack, if needed
-%stack_size_limit  parserStackSizeLimit
-%realloc           parserStackRealloc
-%free              sqlite3_free
+// Setup for the parser stack
+%stack_size        50                        // Initial stack size
+%stack_size_limit  parserStackSizeLimit      // Function returning max stack size
+%realloc           parserStackRealloc        // realloc() for the stack
+%free              sqlite3_free              // free() for the stack
 
 // All token codes are small integers with #defines that begin with "TK_"
 %token_prefix TK_
