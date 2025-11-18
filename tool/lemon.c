@@ -495,6 +495,7 @@ struct lemon {
   char *outname;           /* Name of the current output file */
   char *tokenprefix;       /* A prefix added to token names in the .h file */
   char *reallocFunc;       /* Function to use to allocate stack space */
+  char *reallocFuncEx;     /* Alternative realloc() with context pointer */
   char *freeFunc;          /* Function to use to free stack space */
   int nconflict;           /* Number of parsing conflicts */
   int nactiontab;          /* Number of entries in the yy_action[] table */
@@ -2641,6 +2642,9 @@ static void parseonetoken(struct pstate *psp)
         }else if( strcmp(x,"realloc")==0 ){
           psp->declargslot = &(psp->gp->reallocFunc);
           psp->insertLineMacro = 0;
+        }else if( strcmp(x,"reallocx")==0 ){
+          psp->declargslot = &(psp->gp->reallocFuncEx);
+          psp->insertLineMacro = 0;
         }else if( strcmp(x,"free")==0 ){
           psp->declargslot = &(psp->gp->freeFunc);
           psp->insertLineMacro = 0;
@@ -4414,7 +4418,7 @@ void ReportTable(
   int mhflag,     /* Output in makeheaders format if true */
   int sqlFlag     /* Generate the *.sql file too */
 ){
-  FILE *out, *in, *sql;
+  FILE *out, *in;
   int  lineno;
   struct state *stp;
   struct action *ap;
@@ -4439,18 +4443,10 @@ void ReportTable(
 
   in = tplt_open(lemp);
   if( in==0 ) return;
-  out = file_open(lemp,".c","wb");
-  if( out==0 ){
-    fclose(in);
-    return;
-  }
-  if( sqlFlag==0 ){
-    sql = 0;
-  }else{
-    sql = file_open(lemp, ".sql", "wb");
+  if( sqlFlag ){
+    FILE *sql = file_open(lemp, ".sql", "wb");
     if( sql==0 ){
       fclose(in);
-      fclose(out);
       return;
     }
     fprintf(sql,
@@ -4515,6 +4511,12 @@ void ReportTable(
       }
     }
     fprintf(sql, "COMMIT;\n");
+    fclose(sql);
+  }
+  out = file_open(lemp,".c","wb");
+  if( out==0 ){
+    fclose(in);
+    return;
   }
   lineno = 1;
 
@@ -4612,17 +4614,21 @@ void ReportTable(
     fprintf(out,"#define %sARG_FETCH\n",name); lineno++;
     fprintf(out,"#define %sARG_STORE\n",name); lineno++;
   }
-  if( lemp->reallocFunc ){
-    fprintf(out,"#define YYREALLOC %s\n", lemp->reallocFunc); lineno++;
+  if( lemp->reallocFuncEx ){
+    fprintf(out,"#define YYREALLOC(A,B,C,D) %s(A,B,C,D)\n",
+            lemp->reallocFuncEx); lineno++;
+  }else if( lemp->reallocFunc ){
+    fprintf(out,"#define YYREALLOC(A,B,C,D) %s(A,B*C)\n",
+            lemp->reallocFunc); lineno++;
   }else{
-    fprintf(out,"#define YYREALLOC realloc\n"); lineno++;
+    fprintf(out,"#define YYREALLOC(A,B,C,D) realloc(A,B*C)\n"); lineno++;
   }
   if( lemp->freeFunc ){
     fprintf(out,"#define YYFREE %s\n", lemp->freeFunc); lineno++;
   }else{
     fprintf(out,"#define YYFREE free\n"); lineno++;
   }
-  if( lemp->reallocFunc && lemp->freeFunc ){
+  if( (lemp->reallocFunc || lemp->reallocFuncEx) && lemp->freeFunc ){
     fprintf(out,"#define YYDYNSTACK 1\n"); lineno++;
   }else{
     fprintf(out,"#define YYDYNSTACK 0\n"); lineno++;
@@ -4634,6 +4640,7 @@ void ReportTable(
     fprintf(out,"#define %sCTX_SDECL %s;\n",name,lemp->ctx);  lineno++;
     fprintf(out,"#define %sCTX_PDECL ,%s\n",name,lemp->ctx);  lineno++;
     fprintf(out,"#define %sCTX_PARAM ,%s\n",name,&lemp->ctx[i]);  lineno++;
+    fprintf(out,"#define %sCTX_FIELD %s\n",name,&lemp->ctx[i]); lineno++;
     fprintf(out,"#define %sCTX_FETCH %s=yypParser->%s;\n",
                  name,lemp->ctx,&lemp->ctx[i]);  lineno++;
     fprintf(out,"#define %sCTX_STORE yypParser->%s=%s;\n",
@@ -4642,6 +4649,7 @@ void ReportTable(
     fprintf(out,"#define %sCTX_SDECL\n",name); lineno++;
     fprintf(out,"#define %sCTX_PDECL\n",name); lineno++;
     fprintf(out,"#define %sCTX_PARAM\n",name); lineno++;
+    fprintf(out,"#define %sCTX_FIELD yyhwm\n", name); lineno++;
     fprintf(out,"#define %sCTX_FETCH\n",name); lineno++;
     fprintf(out,"#define %sCTX_STORE\n",name); lineno++;
   }
@@ -5103,7 +5111,6 @@ void ReportTable(
   acttab_free(pActtab);
   fclose(in);
   fclose(out);
-  if( sql ) fclose(sql);
   return;
 }
 

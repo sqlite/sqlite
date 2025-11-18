@@ -303,11 +303,11 @@ static int yyGrowStack(yyParser *p){
   newSize = oldSize*2 + 100;
   idx = (int)(p->yytos - p->yystack);
   if( p->yystack==p->yystk0 ){
-    pNew = YYREALLOC(0, newSize*sizeof(pNew[0]));
+    pNew = YYREALLOC(0,newSize,sizeof(pNew[0]), p->ParseCTX_FIELD);
     if( pNew==0 ) return 1;
     memcpy(pNew, p->yystack, oldSize*sizeof(pNew[0]));
   }else{
-    pNew = YYREALLOC(p->yystack, newSize*sizeof(pNew[0]));
+    pNew = YYREALLOC(p->yystack,newSize,sizeof(pNew[0]),p->ParseCTX_FIELD);
     if( pNew==0 ) return 1;
   }
   p->yystack = pNew;
