@@ -667,12 +667,14 @@ globalThis.WhWasmUtilInstaller = function(target){
     const ft = target.functionTable();
     const oldLen = __asPtrType(ft.length);
     let ptr;
-    while(cache.freeFuncIndexes.length){
-      ptr = cache.freeFuncIndexes.pop();
-      if(ft.get(ptr)){ /* Table was modified via a different API */
+    while( (ptr = cache.freeFuncIndexes.pop()) ){
+      if(ft.get(ptr)){
+        /* freeFuncIndexes's entry is stale. Table was modified via a
+           different API */
         ptr = null;
         continue;
       }else{
+        /* This index is free. We'll re-use it. */
         break;
       }
     }
@@ -763,10 +765,9 @@ globalThis.WhWasmUtilInstaller = function(target){
      has no side effects and returns undefined.
   */
   target.uninstallFunction = function(ptr){
-    if(!ptr && 0!==ptr) return undefined;
-    const fi = cache.freeFuncIndexes;
+    if(!ptr && __NullPtr!==ptr) return undefined;
     const ft = target.functionTable();
-    fi.push(ptr);
+    cache.freeFuncIndexes.push(ptr);
     const rc = ft.get(ptr);
     ft.set(ptr, null);
     return rc;

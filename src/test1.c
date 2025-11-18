@@ -7370,6 +7370,7 @@ static int SQLITE_TCLAPI test_limit(
     { "SQLITE_LIMIT_SQL_LENGTH",          SQLITE_LIMIT_SQL_LENGTH           },
     { "SQLITE_LIMIT_COLUMN",              SQLITE_LIMIT_COLUMN               },
     { "SQLITE_LIMIT_EXPR_DEPTH",          SQLITE_LIMIT_EXPR_DEPTH           },
+    { "SQLITE_LIMIT_PARSER_DEPTH",        SQLITE_LIMIT_PARSER_DEPTH         },
     { "SQLITE_LIMIT_COMPOUND_SELECT",     SQLITE_LIMIT_COMPOUND_SELECT      },
     { "SQLITE_LIMIT_VDBE_OP",             SQLITE_LIMIT_VDBE_OP              },
     { "SQLITE_LIMIT_FUNCTION_ARG",        SQLITE_LIMIT_FUNCTION_ARG         },
@@ -7381,7 +7382,7 @@ static int SQLITE_TCLAPI test_limit(
     
     /* Out of range test cases */
     { "SQLITE_LIMIT_TOOSMALL",            -1,                               },
-    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_WORKER_THREADS+1     },
+    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_PARSER_DEPTH+1       },
   };
   int i, id = 0;
   int val;
@@ -8305,6 +8306,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "balanced-merge",      SQLITE_BalancedMerge  },
     { "propagate-const",     SQLITE_PropagateConst },
     { "one-pass",            SQLITE_OnePass        },
+    { "exists-to-join",      SQLITE_ExistsToJoin   },
   };
 
   if( objc!=4 ){
