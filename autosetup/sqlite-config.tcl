@@ -805,7 +805,8 @@ proc sqlite-handle-common-feature-flags {} {
         sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
       }
     }
-    scanstatus      -DSQLITE_ENABLE_STMT_SCANSTATUS {}
+    bytecode-vtab   -DSQLITE_ENABLE_BYTECODE_VTAB {}
+    scanstatus      {-DSQLITE_ENABLE_STMT_SCANSTATUS -DSQLITE_ENABLE_BYTECODE_VTAB} {}
     column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
     dbpage          -DSQLITE_ENABLE_DBPAGE_VTAB {}
     dbstat          -DSQLITE_ENABLE_DBSTAT_VTAB {}

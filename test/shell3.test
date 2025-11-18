@@ -109,7 +109,7 @@ do_test shell3-2.7 {
 # Run combinations of odd identifiers, comments, semicolon placement
 do_test shell3-3.1 {
   forcedelete foo.db
-  set rc [ catchcmd "foo.db" {CREATE TABLE t1("
+  set rc [ catchcmd "foo.db -compat 20250101" {CREATE TABLE t1("
 a--.
 " --x
 ); CREATE TABLE t2("a[""b""]");
