@@ -142,7 +142,7 @@ SQLITE_EXTENSION_INIT3
 /*
 ** The assert_fts3_nc() macro is similar to the assert() macro, except that it
 ** is used for assert() conditions that are true only if it can be 
-** guranteed that the database is not corrupt.
+** guaranteed that the database is not corrupt.
 */
 #ifdef SQLITE_DEBUG
 extern int sqlite3_fts3_may_be_corrupt;
