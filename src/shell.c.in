@@ -10047,6 +10047,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       { "sql_length",            SQLITE_LIMIT_SQL_LENGTH                },
       { "column",                SQLITE_LIMIT_COLUMN                    },
       { "expr_depth",            SQLITE_LIMIT_EXPR_DEPTH                },
+      { "parser_depth",          SQLITE_LIMIT_PARSER_DEPTH              },
       { "compound_select",       SQLITE_LIMIT_COMPOUND_SELECT           },
       { "vdbe_op",               SQLITE_LIMIT_VDBE_OP                   },
       { "function_arg",          SQLITE_LIMIT_FUNCTION_ARG              },

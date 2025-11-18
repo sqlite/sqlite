@@ -494,7 +494,7 @@ struct lemon {
   char *filename;          /* Name of the input file */
   char *outname;           /* Name of the current output file */
   char *tokenprefix;       /* A prefix added to token names in the .h file */
-  char *resizeFunc;        /* Function to compute new stack size */
+  char *stackSizeLimit;    /* Function to return the stack size limit */
   char *reallocFunc;       /* Function to use to allocate stack space */
   char *freeFunc;          /* Function to use to free stack space */
   int nconflict;           /* Number of parsing conflicts */
@@ -2639,8 +2639,8 @@ static void parseonetoken(struct pstate *psp)
         }else if( strcmp(x,"default_type")==0 ){
           psp->declargslot = &(psp->gp->vartype);
           psp->insertLineMacro = 0;
-        }else if( strcmp(x,"stack_resizer")==0 ){
-          psp->declargslot = &(psp->gp->resizeFunc);
+        }else if( strcmp(x,"stack_size_limit")==0 ){
+          psp->declargslot = &(psp->gp->stackSizeLimit);
           psp->insertLineMacro = 0;
         }else if( strcmp(x,"realloc")==0 ){
           psp->declargslot = &(psp->gp->reallocFunc);
@@ -4640,13 +4640,13 @@ void ReportTable(
   }else{
     fprintf(out,"#define YYDYNSTACK 0\n"); lineno++;
   }
-  fprintf(out, "#undef YYRESIZE\n"); lineno++;
+  fprintf(out, "#undef YYSIZELIMIT\n"); lineno++;
   if( notnull(lemp->ctx) ){
     i = lemonStrlen(lemp->ctx);
     while( i>=1 && ISSPACE(lemp->ctx[i-1]) ) i--;
     while( i>=1 && (ISALNUM(lemp->ctx[i-1]) || lemp->ctx[i-1]=='_') ) i--;
-    if( notnull(lemp->resizeFunc) ){
-      fprintf(out,"#define YYRESIZE %s\n", lemp->resizeFunc); lineno++;
+    if( notnull(lemp->stackSizeLimit) ){
+      fprintf(out,"#define YYSIZELIMIT %s\n", lemp->stackSizeLimit); lineno++;
     }
     fprintf(out,"#define %sCTX(P) ((P)->%s)\n",name,&lemp->ctx[i]); lineno++;
     fprintf(out,"#define %sCTX_SDECL %s;\n",name,lemp->ctx);  lineno++;
@@ -4657,6 +4657,7 @@ void ReportTable(
     fprintf(out,"#define %sCTX_STORE yypParser->%s=%s;\n",
                  name,&lemp->ctx[i],&lemp->ctx[i]);  lineno++;
   }else{
+    fprintf(out,"#define %sCTX(P) 0\n",name); lineno++;
     fprintf(out,"#define %sCTX_SDECL\n",name); lineno++;
     fprintf(out,"#define %sCTX_PDECL\n",name); lineno++;
     fprintf(out,"#define %sCTX_PARAM\n",name); lineno++;

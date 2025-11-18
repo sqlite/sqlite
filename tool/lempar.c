@@ -299,12 +299,16 @@ static int yyGrowStack(yyParser *p){
   int newSize;
   int idx;
   yyStackEntry *pNew;
+#ifdef YYSIZELIMIT
+  int nLimit = YYSIZELIMIT(ParseCTX(p));
+#endif
 
-#ifdef YYRESIZE
-  newSize = YYRESIZE(oldSize, ParseCTX(p));
-  if( newSize<=oldSize ) return 1;
-#else
   newSize = oldSize*2 + 100;
+#ifdef YYSIZELIMIT
+  if( newSize>nLimit ){
+    newSize = nLimit;
+    if( newSize<=oldSize ) return 1;
+  }
 #endif
   idx = (int)(p->yytos - p->yystack);
   if( p->yystack==p->yystk0 ){
