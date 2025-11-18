@@ -3942,6 +3942,9 @@ struct Parse {
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
   int nMaxArg;         /* Max args to xUpdate and xFilter vtab methods */
   int nSelect;         /* Number of SELECT stmts. Counter for Select.selId */
+#if SQLITE_MAX_SUBQUERY+0 > 0
+  u32 nSubquery;       /* Number of subqueries seen so far */
+#endif
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   u32 nProgressSteps;  /* xProgress steps taken during sqlite3_prepare() */
 #endif

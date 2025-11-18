@@ -5019,6 +5019,11 @@ int sqlite3SrcItemAttachSubquery(
   Subquery *p;
   assert( pSelect!=0 );
   assert( pItem->fg.isSubquery==0 );
+#if SQLITE_MAX_SUBQUERY+0 > 0
+  if( pParse->nSubquery++ > SQLITE_MAX_SUBQUERY ){
+    sqlite3ErrorMsg(pParse, "Too many subqueries");
+  }
+#endif
   if( pItem->fg.fixedSchema ){
     pItem->u4.pSchema = 0;
     pItem->fg.fixedSchema = 0;

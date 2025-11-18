@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2025-11-17T19:19:58.169
+C Experimental\sSQLITE_MAX_SUBQUERY\scompile-time\soption.
+D 2025-11-18T00:16:40.468
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -673,7 +673,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 8850125300b9780fa54bc45a41af88eb2796b90f2f97942279094beef9b0e971
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c 611e07299d72ff04bbcb9e7109183467e30925d203c3e121ef9bb3cf6876289b
+F src/build.c 62cf7d885a93d87dcdb2a314408b760367cd9d9b54f8d4ea7d71d0cd36f0ab4c
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c ff6081a31878fc34df8fa1052a9cbf17ddc22652544dcb3e2326886ed1053b55
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -735,7 +735,7 @@ F src/shell.c.in ceb0a9cc008ac82d8d2e6ef353db14a54bc40dfd60a8cfbb6bc98d071f53876
 F src/sqlite.h.in 667dff873941366da98da3200cf757ac05dfb62ea785e6642e33dd586ae5285c
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d5330f5f8461f5ce74960436ddcfa53ecd09c2b8b23901e22ae38aec3243998
-F src/sqliteInt.h 88f7fc9ce1630d9a5f7e0a8e1f3287cdc63882fba985c18e7eee1b9f457f59aa
+F src/sqliteInt.h 775c133757bd5c7d0fce10407959ee45993678ae95088e4ebdb22ef24e9d78ff
 F src/sqliteLimit.h fe70bd8983e5d317a264f2ea97473b359faf3ebb0827877a76813f5cf0cdc364
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2166,8 +2166,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 93dd0e62b74a0d99803f680f23953e9fa2429074505ba402ca5ed4610ddef8fb
-R ef962db96f531e4a64674fd59331a72f
+P 6621737cc05cbf8ff5f576775a8a3c64f666b56d42939968ebb55d72a835646b
+R d682117481a7b1cf594f7dd8ef6eff70
+T *branch * max-subquery
+T *sym-max-subquery *
+T -sym-trunk *
 U drh
-Z d5df2573fb817617cebf84ebcd969278
+Z 62a7b6290233b3d348ba184dec1ce219
 # Remove this line to create a well-formed Fossil manifest.
