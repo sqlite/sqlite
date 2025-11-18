@@ -1,5 +1,5 @@
-C New\ssubcomponent,\sthe\sQuery\sResult\sFormatter\s(QRF),\sthat\sformats\squery\nresults\sfor\sdisplay\sto\shumans\son\sa\sfixed-width\sfont\sterminal.\s\sRework\sthe\nCLI\sto\smake\suse\sof\sthe\sQRF.\s\sRenovate\sthe\s.mode\scommand\sof\sthe\sCLI.\s\sAlso\nincorporate\sthe\sQRF\sinto\sthe\sTCL\sinterface\sas\sthe\s"format"\smethod.
-D 2025-11-18T17:49:48.189
+C Do\snot\sattempt\sto\smake\sthe\sgenerated\sfile\s"shell.c"\sread-only.\s\sThis\sturns\nout\sto\sbe\sannoying\sin\sgeneral,\sand\sespecially\sannoying\son\smacs.
+D 2025-11-18T19:11:21.605
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2127,7 +2127,7 @@ F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61
 F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl 3801ce32f8c55fe63a3b279f231fb26c2c1a2ea9a09d2dd599239d87a609acec
-F tool/mkshellc.tcl 1c9197524174237b580dc1a6d1552541c5f5b78162949b4b8e640a7aef688d40
+F tool/mkshellc.tcl a9a4d421a35b7117bb9d50e8e533c59a67f8a03957e2dd1282b92d27fb87e74c
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mksqlite3c-noext.tcl 351c55256213154cabb051a3c870ef9f4487de905015141ae50dc7578a901b84
 F tool/mksqlite3c.tcl 7a268139158e5deef27a370bc2f8db6ccf100c1ad7ac5e5b23743c0fd354f609
@@ -2175,9 +2175,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 52ba0c731d004409353a55ce8ca5a514ce486a077a2be82db5b8fea7619848d5 3d55ec15a9e4dc8af4bf1e2884eaa2c809995fb1529633f73287dc7a54153629
-R 90c9d6f86b8c5c7df96c212de7de0225
-T +closed 3d55ec15a9e4dc8af4bf1e2884eaa2c809995fb1529633f73287dc7a54153629
+P 7e460ffa5aae884807db9e7c8214d6d822d5d38ea406fe3b3eac04ac16f158fa
+R f9c4e45f38839ca1c261638da612b298
 U drh
-Z e451421aeb4f1164bb161f700227d1d5
+Z 3de148df391cc0000ff94c377d5776dd
 # Remove this line to create a well-formed Fossil manifest.
