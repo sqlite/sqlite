@@ -23,7 +23,7 @@ this writing, but is not set in stone forever and may change at any
 time. This doc targets maintainers of this code and those wanting to
 dive in to the details, not end user.
 
-First off, a pikchr of the proverbial onion:
+First off, a [pikchr][] of the proverbial onion:
 
 ```pikchr toggle center
 scale = 0.85
@@ -60,14 +60,14 @@ maintenance point of view.
 At the center of the onion is `sqlite3-api.js`, which gets generated
 by concatenating the following files together in their listed order:
 
-- **`sqlite3-api-prologue.js`**\  
+- **`sqlite3-api-prologue.js`**  
   Contains the initial bootstrap setup of the sqlite3 API
   objects. This is exposed as a function, rather than objects, so that
   the next step can pass in a config object which abstracts away parts
   of the WASM environment, to facilitate plugging it in to arbitrary
   WASM toolchains. The bootstrapping function gets removed from the
   global scope in a later stage of the bootstrapping process.
-- **`../common/whwasmutil.js`**\  
+- **`../common/whwasmutil.js`**  
   A semi-third-party collection of JS/WASM utility code intended to
   replace much of the Emscripten glue. The sqlite3 APIs internally use
   these APIs instead of their Emscripten counterparts, in order to be
@@ -77,79 +77,78 @@ by concatenating the following files together in their listed order:
   toolchains. It is "semi-third-party" in that it was created in order
   to support this tree but is standalone and maintained together
   with...
-- **`../jaccwabyt/jaccwabyt.js`**\  
+- **`../jaccwabyt/jaccwabyt.js`**  
   Another semi-third-party API which creates bindings between JS
   and C structs, such that changes to the struct state from either JS
   or C are visible to the other end of the connection. This is also an
   independent spinoff project, conceived for the sqlite3 project but
   maintained separately.
-- **`sqlite3-api-glue.js`**\  
+- **`sqlite3-api-glue.js`**  
   Invokes functionality exposed by the previous two files to flesh out
   low-level parts of `sqlite3-api-prologue.js`. Most of these pieces
   involve populating the `sqlite3.capi.wasm` object and creating
   `sqlite3.capi.sqlite3_...()` bindings. This file also deletes most
   global-scope symbols the above files create, effectively moving them
   into the scope being used for initializing the API.
-- **`<build>/sqlite3-api-build-version.js`**\  
+- **`<build>/sqlite3-api-build-version.js`**  
   Gets created by the build process and populates the
   `sqlite3.version` object. This part is not critical, but records the
   version of the library against which this module was built.
-- **`sqlite3-api-oo1.js`**\  
+- **`sqlite3-api-oo1.js`**  
   Provides a high-level object-oriented wrapper to the lower-level C
   API, colloquially known as OO API #1. Its API is similar to other
   high-level sqlite3 JS wrappers and should feel relatively familiar
   to anyone familiar with such APIs. It is not a "required component"
   and can be elided from builds which do not want it.
-- **`sqlite3-api-worker1.js`**\  
+- **`sqlite3-api-worker1.js`**  
   A Worker-thread-based API which uses OO API #1 to provide an
   interface to a database which can be driven from the main Window
   thread via the Worker message-passing interface. Like OO API #1,
   this is an optional component, offering one of any number of
   potential implementations for such an API.
-    - **`sqlite3-worker1.js`**\  
+    - **`sqlite3-worker1.js`**  
       Is not part of the amalgamated sources and is intended to be
       loaded by a client Worker thread. It loads the sqlite3 module
       and runs the Worker #1 API which is implemented in
       `sqlite3-api-worker1.js`.
-    - **`sqlite3-worker1-promiser.js`**\  
+    - **`sqlite3-worker1-promiser.js`**  
       Is likewise not part of the amalgamated sources and provides
       a Promise-based interface into the Worker #1 API. This is
       a far user-friendlier way to interface with databases running
       in a Worker thread.
-- **`sqlite3-vfs-helper.js`**\  
+- **`sqlite3-vfs-helper.js`**  
   Installs the `sqlite3.vfs` namespace, which contain helpers for use
   by downstream code which creates `sqlite3_vfs` implementations.
-- **`sqlite3-vtab-helper.js`**\  
+- **`sqlite3-vtab-helper.js`**  
   Installs the `sqlite3.vtab` namespace, which contain helpers for use
   by downstream code which creates `sqlite3_module` implementations.
-- **`sqlite3-vfs-opfs.c-pp.js`**\  
+- **`sqlite3-vfs-opfs.c-pp.js`**  
   is an sqlite3 VFS implementation which supports the [Origin-Private
   FileSystem (OPFS)][OPFS] as a storage layer to provide persistent
   storage for database files in a browser. It requires...
-    - **`sqlite3-opfs-async-proxy.js`**\  
+    - **`sqlite3-opfs-async-proxy.js`**  
       is the asynchronous backend part of the [OPFS][] proxy. It
       speaks directly to the (async) OPFS API and channels those
       results back to its synchronous counterpart. This file, because
       it must be started in its own Worker, is not part of the
       amalgamation.
-- **`sqlite3-vfs-opfs-sahpool.c-pp.js`**\  
+- **`sqlite3-vfs-opfs-sahpool.c-pp.js`**  
   is another sqlite3 VFS supporting the [OPFS][], but uses a
   completely different approach than the above-listed one.
-- **`sqlite3-api-cleanup.js`**\  
-  The previous files do not immediately extend the library. Instead
-  they add callback functions to be called during its
-  bootstrapping. Some also temporarily create global objects in order
-  to communicate their state to the files which follow them. This file
-  cleans up any dangling globals and runs the API bootstrapping
-  process, which is what finally executes the initialization code
-  installed by the previous files. As of this writing, this code
-  ensures that the previous files leave no more than a single global
-  symbol installed - `sqlite3InitModule()`. When adapting the API for
-  non-Emscripten toolchains, this "should" be the only file, of those
-  in this list, where changes are needed. The Emscripten-specific
-  pieces described below may also require counterparts in any as-yet
-  hypothetical alternative build.
 
+The previous files do not immediately extend the library. Instead they
+install a global function `sqlite3ApiBootstrap()`, which downstream
+code must call to configure the library for the current JS/WASM
+environment.  Each file listed above pushes a callback into the
+bootstrapping queue, to be called as part of `sqlite3ApiBootstrap()`.
+Some files also temporarily create global objects in order to
+communicate their state to the files which follow them. Those
+get cleaned up vi `post-js-footer.js`, described below.
+
+Adapting the build for non-Emscripten toolchains essentially requires packaging
+the above files, concatated together, into that toolchain's "JS glue"
+and, in the final stage of that glue, call `sqlite3ApiBootstrap()` and
+return its result to the end user.
 
 **Files with the extension `.c-pp.js`** are intended [to be processed
 with `c-pp`](#c-pp), noting that such preprocessing may be applied
@@ -171,23 +170,27 @@ from this file rather than `sqlite3.c`.
 The following Emscripten-specific files are injected into the
 build-generated `sqlite3.js` along with `sqlite3-api.js`.
 
-- **`extern-pre-js.js`**\  
+- **`extern-pre-js.js`**  
   Emscripten-specific header for Emscripten's `--extern-pre-js`
   flag. As of this writing, that file is only used for experimentation
   purposes and holds no code relevant to the production deliverables.
-- **`pre-js.c-pp.js`**\  
+- **`pre-js.c-pp.js`**  
   Emscripten-specific header for Emscripten's `--pre-js` flag. This
   file overrides certain Emscripten behavior before Emscripten does
   most of its work.
-- **`post-js-header.js`**\  
+- **`post-js-header.js`**  
   Emscripten-specific header for the `--post-js` input. It opens up,
   but does not close, a function used for initializing the library.
-- (**`sqlite3-api.js`** gets sandwiched between these &uarr; two
-  &darr; files.)
-- **`post-js-footer.js`**\  
+- **`sqlite3-api.js`** gets sandwiched between these &uarr; two
+  &darr; files.
+- **`post-js-footer.js`**  
   Emscripten-specific footer for the `--post-js` input. This closes
-  off the function opened by `post-js-header.js`.
-- **`extern-post-js.c-pp.js`**\  
+  off the function opened by `post-js-header.js`. This file cleans up
+  any dangling globals and runs `sqlite3ApiBootstrap()`. As of this
+  writing, this code ensures that the previous files leave no more
+  than a single global symbol installed - `sqlite3InitModule()`.
+
+- **`extern-post-js.c-pp.js`**  
   Emscripten-specific header for Emscripten's `--extern-post-js`
   flag. This file is run in the global scope. It overwrites the
   Emscripten-installed `sqlite3InitModule()` function with one which
@@ -205,9 +208,10 @@ Preprocessing of Source Files
 Certain files in the build require preprocessing to filter in/out
 parts which differ between vanilla JS, ES6 Modules, and node.js
 builds. The preprocessor application itself is in
-[`c-pp.c`](/file/ext/wasm/c-pp.c) and the complete technical details
-of such preprocessing are maintained in
+[`c-pp-lite.c`](/file/ext/wasm/c-pp-lite.c) and the complete technical
+details of such preprocessing are maintained in
 [`GNUMakefile`](/file/ext/wasm/GNUmakefile).
 
 
 [OPFS]: https://developer.mozilla.org/en-US/docs/Web/API/File_System_API/Origin_private_file_system
+[pikchr]: https://pikchr.org

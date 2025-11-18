@@ -90,7 +90,7 @@ foreach {tn setup} {
     proc do_rec_test {tn sql res} {
       set res [squish [string trim $res]]
       set tst [subst -nocommands { 
-        squish [string trim [exec $::CLI test.db ".expert" {$sql;}]]
+        squish [string trim [exec $::CLI -noinit test.db ".expert" {$sql;}]]
       }]
       uplevel [list do_test $tn $tst $res]
     }

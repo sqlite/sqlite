@@ -71,13 +71,13 @@ enum BuildDefFlags {
   ** only their JS file and patch their JS to use the WASM file from a
   ** canonical build which uses that same WASM file. Reusing X.wasm
   ** that way can only work for builds which are processed identically
-  ** by Emscripten. For a given set of C flags (as opposed to
+  ** by Emscripten. For a given set of C flags (as distinct from
   ** JS-influencing flags), all builds of X.js and Y.js will produce
   ** identical X.wasm and Y.wasm files. Their JS files may well
   ** differ, however.
   */
-  CP_JS              = 1 << 30,
-  CP_WASM            = 1 << 31,
+  CP_JS              = 1 << 30, /* X.js or X.mjs, depending on F_ESM */
+  CP_WASM            = 1 << 31, /* X,wasm */
   CP_ALL             = CP_JS | CP_WASM
 };
 
@@ -94,11 +94,10 @@ enum BuildDefFlags {
 ** final build directory $(dir.dout).
 **
 ** To keep parallel builds from stepping on each other, each distinct
-** build goes into its own subdir $(dir.dout.BuildName)[^1], i.e.
-** $(dir.dout)/BuildName.  Builds which produce deliverables we'd like
-** to keep/distribute copy their final results into the build dir
-** $(dir.dout). See the notes for the CP_JS enum entry for more
-** details on that.
+** build goes into its own subdir $(dir.dout.$(BuildDef::zBaseName).
+** Builds which produce deliverables we'd like to keep/distribute copy
+** their final results into the build dir $(dir.dout). See the notes
+** for the CP_JS enum entry for more details on that.
 **
 ** The final result of each build is a pair of JS/WASM files, but
 ** getting there requires generation of several files, primarily as
@@ -116,9 +115,9 @@ enum BuildDefFlags {
 **
 ** --extern-post-js = gets injected immediately after
 ** sqlite3InitModule(), in the global scope. In this step we replace
-** sqlite3InitModule() with a slightly customized, the main purpose of
-** which is to (A) give us (not Emscripten) control over the arguments
-** it accepts and (B) to run the library bootstrap step.
+** sqlite3InitModule() with a slightly customized one, the main
+** purpose of which is to (A) give us (not Emscripten) control over
+** the arguments it accepts and (B) to run the library bootstrap step.
 **
 ** Then there's sqlite3-api.BuildName.js, which is the entire SQLite3
 ** JS API (generated from the list defined in $(sqlite3-api.jses)). It
@@ -126,9 +125,7 @@ enum BuildDefFlags {
 **
 ** Each of those inputs has to be generated before passing them on to
 ** Emscripten so that any build-specific capabilities can get filtered
-** in or out (using ./c-pp.c).
-**
-** [^1]: The legal BuildNames are in this file's BuildDef_map macro.
+** in or out (using ./c-pp-lite.c).
 */
 struct BuildDef {
   /*
@@ -143,8 +140,8 @@ struct BuildDef {
   **
   ** The convention for 32- vs 64-bit pairs is to give them similar
   ** emoji, e.g. a cookie for 32-bit and a donut or cake for 64.
-  ** Alternately, the same emoji a "64" suffix, excep that that throws
-  ** off the output alignment in parallel builds ;).
+  ** Alternately, the same emoji a "64" suffix, except that that
+  ** throws off the output alignment in parallel builds ;).
   */
   const char *zEmo;
   /*
@@ -161,7 +158,7 @@ struct BuildDef {
   const char *zCmppD;     /* Extra -D... flags for c-pp */
   const char *zEmcc;      /* Full flags for emcc. Normally NULL for default. */
   const char *zEmccExtra; /* Extra flags for emcc */
-  const char *zDeps;      /* Extra deps */
+  const char *zDeps;      /* Extra make target deps */
   const char *zEnv;       /* emcc -sENVIRONMENT=... value */
   /*
   ** Makefile code "ifeq (...)". If set, this build is enclosed in a
@@ -196,9 +193,8 @@ typedef struct BuildDef BuildDef;
 ** The set of WASM builds for the library (as opposed to the apps
 ** (fiddle, speedtest1)). Their order in BuildDefs_map is mostly
 ** insignificant, but some makefile vars used by some builds are set
-** up by prior builds. Because of that, the (sqlite3, vanilla),
-** (sqlite3, esm), and (sqlite3, bundler-friendly) builds should be
-** defined first (in that order).
+** up by prior builds. Because of that, the vanilla, esm, and
+** bundler-friendly builds should be defined first (in that order).
 */
 struct BuildDefs {
 #define E(N) BuildDef N;
@@ -284,7 +280,7 @@ const BuildDefs oBuildDefs = {
     " -DSQLITE_SPEEDTEST1_WASM"
     " $(SQLITE_OPT)"
     " -USQLITE_WASM_BARE_BONES"
-    " -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c)"
+    " -USQLITE_C -DSQLITE_C=$(sqlite3.c)"
     " $(speedtest1.exit-runtime0)"
     " $(speedtest1.c.in)"
     " -lm",
@@ -312,7 +308,7 @@ const BuildDefs oBuildDefs = {
     " -DSQLITE_SPEEDTEST1_WASM"
     " $(SQLITE_OPT)"
     " -USQLITE_WASM_BARE_BONES"
-    " -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c)"
+    " -USQLITE_C -DSQLITE_C=$(sqlite3.c)"
     " $(speedtest1.exit-runtime0)"
     " $(speedtest1.c.in)"
     " -lm",
@@ -346,7 +342,6 @@ const BuildDefs oBuildDefs = {
     .zDeps       = 0,
     .zIfCond     = 0,
     .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM
-    //| F_NOT_IN_ALL
   },
 
   /* 64-bit bundler-friendly. */
@@ -371,7 +366,7 @@ const BuildDefs oBuildDefs = {
   .node = {
     .zEmo        = "🍟",
     .zBaseName   = "sqlite3-node",
-    .zDotWasm    = 0,
+    .zDotWasm    = "sqlite3",
     .zCmppD      = "-Dtarget:node $(c-pp.D.bundler)",
     .zEmcc       = 0,
     .zEmccExtra  = 0,
@@ -382,21 +377,21 @@ const BuildDefs oBuildDefs = {
     ** node. */,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS
+    .flags       = CP_JS | F_UNSUPPORTED | F_ESM | F_NODEJS
   },
 
   /* 64-bit node. */
   .node64 = {
     .zEmo        = "🍔",
     .zBaseName   = "sqlite3-node-64bit",
-    .zDotWasm    = 0,
+    .zDotWasm    = "sqlite3-64bit",
     .zCmppD      = "-Dtarget:node $(c-pp.D.bundler)",
     .zEmcc       = 0,
     .zEmccExtra  = 0,
     .zEnv        = "node",
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_UNSUPPORTED | F_NODEJS | F_64BIT
+    .flags       = CP_JS | F_UNSUPPORTED | F_ESM | F_NODEJS | F_64BIT
   },
 
   /* Entirely unsupported. */
@@ -638,7 +633,7 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
          pB->zDotWasm);
     }
     ps("");
-    pf("\t@$(call b.c-pp.shcmd,"
+    pf("\t@$(call b.mkdir@); $(call b.c-pp.shcmd,"
        "%s,"
        "$(pre-js.in.js),"
        "$(pre-js.%s.js),"
@@ -777,12 +772,13 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
      zBuildName, zBuildName, zBaseName);
 
   pf("dir.dout.%s ?= $(dir.dout)/%s\n", zBuildName, zBuildName);
-  pf("out.%s.base ?= $(dir.dout.%s)/%s\n",
-     zBuildName, zBuildName, zBaseName);
 
   pf("c-pp.D.%s ?= %s\n", zBuildName, pB->zCmppD ? pB->zCmppD : "");
   if( pB->flags & F_64BIT ){
     pf("c-pp.D.%s += $(c-pp.D.64bit)\n", zBuildName);
+  }
+  if( pB->flags & F_UNSUPPORTED ){
+    pf("c-pp.D.%s += -Dunsupported-build\n", zBuildName);
   }
 
   pf("emcc.environment.%s ?= %s\n", zBuildName,
@@ -914,10 +910,9 @@ static void mk_lib_mode(const char *zBuildName, const BuildDef * pB){
 
   pf("\n%dbit: $(out.%s.js)\n"
      "$(out.%s.wasm): $(out.%s.js)\n"
-     "b-%s: $(out.%s.js) $(out.%s.wasm)\n",
+     "b-%s: $(out.%s.wasm)\n",
      (F_64BIT & pB->flags) ? 64 : 32, zBuildName,
-     zBuildName, zBuildName,
-     zBuildName, zBuildName, zBuildName);
+     zBuildName, zBuildName, zBuildName, zBuildName);
 
   if( CP_JS & pB->flags ){
     pf("$(dir.dout)/%s%s: $(out.%s.js)\n",
@@ -992,7 +987,7 @@ static void mk_fiddle(void){
          zBuildName, zBuildName);
       emit_compile_start(zBuildName);
       pf("\t$(b.cmd@)$(bin.emcc) -o $@"
-         " $(emcc.flags.%s)" /* set in fiddle.make */
+         " $(emcc.flags.%s)" /* set in GNUmakefile */
          " $(pre-post.%s.flags)"
          " $(fiddle.c.in)"
          "\n",
