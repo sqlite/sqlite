@@ -171,6 +171,7 @@ public final class Sqlite implements AutoCloseable  {
   public static final int DBSTATUS_DEFERRED_FKS = CApi.SQLITE_DBSTATUS_DEFERRED_FKS;
   public static final int DBSTATUS_CACHE_USED_SHARED = CApi.SQLITE_DBSTATUS_CACHE_USED_SHARED;
   public static final int DBSTATUS_CACHE_SPILL = CApi.SQLITE_DBSTATUS_CACHE_SPILL;
+  public static final int DBSTATUS_TEMPBUF_SPILL = CApi.SQLITE_DBSTATUS_TEMPBUF_SPILL;
 
   // Limits
   public static final int LIMIT_LENGTH = CApi.SQLITE_LIMIT_LENGTH;
