@@ -1208,20 +1208,24 @@ The wildcard token is only matched if there are no alternatives.</p>
 <tt>%stack_size_limit</tt> directives</h4>
 
 <p>The <tt>%realloc</tt> and <tt>%free</tt> directives defines function
-that allocate and free heap memory.  The signatures of these functions
-should be the same as the realloc() and free() functions from the standard
-C library.
+that allocate and free heap memory.  The signatures and semantics of
+these functions are similar to the realloc() and free() functions from
+the standard C library, except that these functions take an extra
+parameter at the end that is determined by %extra_context.  If
+%extra_context is not defined, then the extra argument is 0.  The
+extra parameter provides the capability to do better error reporting
+in the event of a memory allocation error, and/or to use an alternative
+private application heap.
 
-<p>If both of these functions are defined
-then these functions are used to allocate and free
-memory for supplemental parser stack space, if the initial
-parse stack space is exceeded.  The initial parser stack size
+<p>If both of these functions are defined then they are used to
+allocate and free memory for supplemental parser stack space, if
+the initial parse stack space is exceeded.  The initial parser stack size
 is specified by either <tt>%stack_size</tt> or the
 -DYYSTACKDEPTH compile-time flag.
 
 <p>The <tt>%stack_size_limit</tt> directive defines a function that returns
 the maximum allowed parser stack size.  If this diretive does not exist,
-no size limit is enforced.  The function takes a single argument which
+no size limit is enforced.  This function takes a single argument which
 is the %extra_context value or "0" if %extra_context is not defined.
 The function should return an integer that is the maximum
 number of parser stack entries.  If more stack space

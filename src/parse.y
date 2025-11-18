@@ -25,7 +25,7 @@
 %stack_size        50                        // Initial stack size
 %stack_size_limit  parserStackSizeLimit      // Function returning max stack size
 %realloc           parserStackRealloc        // realloc() for the stack
-%free              sqlite3_free              // free() for the stack
+%free              parserStackFree           // free() for the stack
 
 // All token codes are small integers with #defines that begin with "TK_"
 %token_prefix TK_
@@ -585,8 +585,18 @@ cmd ::= select(X).  {
   ** sqlite3_realloc() that includes a call to sqlite3FaultSim() to facilitate
   ** testing.
   */
-  static void *parserStackRealloc(void *pOld, sqlite3_uint64 newSize){
-    return sqlite3FaultSim(700) ? 0 : sqlite3_realloc(pOld, newSize);
+  static void *parserStackRealloc(
+    void *pOld,               /* Prior allocation */
+    sqlite3_uint64 newSize,   /* Requested new alloation size */
+    Parse *pParse             /* Parsing context */
+  ){
+    void *p = sqlite3FaultSim(700) ? 0 : sqlite3_realloc(pOld, newSize);
+    if( p==0 ) sqlite3OomFault(pParse->db);
+    return p;
+  }
+  static void parserStackFree(void *pOld, Parse *pParse){
+    (void)pParse;
+    sqlite3_free(pOld); 
   }
 
   /* Return an integer that is the maximum allowed stack size */
