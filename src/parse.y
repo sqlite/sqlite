@@ -22,8 +22,9 @@
 }
 
 // Function used to enlarge the parser stack, if needed
-%realloc parserStackRealloc
-%free    sqlite3_free
+%stack_resizer parserStackResize
+%realloc       parserStackRealloc
+%free          sqlite3_free
 
 // All token codes are small integers with #defines that begin with "TK_"
 %token_prefix TK_
@@ -49,7 +50,7 @@
   }
 }
 %stack_overflow {
-  sqlite3OomFault(pParse->db);
+  if( pParse->nErr==0 ) sqlite3OomFault(pParse->db);
 }
 
 // The name of the generated procedure that implements the parser
@@ -585,6 +586,18 @@ cmd ::= select(X).  {
   */
   static void *parserStackRealloc(void *pOld, sqlite3_uint64 newSize){
     return sqlite3FaultSim(700) ? 0 : sqlite3_realloc(pOld, newSize);
+  }
+
+  /* Determine how big to make the stack */
+  static int parserStackResize(int oldSize, Parse *pParse){
+    int newSize;
+    int limit;
+    limit = pParse->db->aLimit[SQLITE_LIMIT_EXPR_DEPTH];
+    if( limit ) limit = limit*4 +100;
+    newSize = oldSize*2 + 100;
+    if( newSize>limit ) newSize = limit;
+    if( newSize<=oldSize ) sqlite3ErrorMsg(pParse, "Recursion limit");
+    return newSize;
   }
 }
 

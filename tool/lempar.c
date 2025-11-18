@@ -300,7 +300,12 @@ static int yyGrowStack(yyParser *p){
   int idx;
   yyStackEntry *pNew;
 
+#ifdef YYRESIZE
+  newSize = YYRESIZE(oldSize, ParseCTX(p));
+  if( newSize<=oldSize ) return 1;
+#else
   newSize = oldSize*2 + 100;
+#endif
   idx = (int)(p->yytos - p->yystack);
   if( p->yystack==p->yystk0 ){
     pNew = YYREALLOC(0, newSize*sizeof(pNew[0]));
