@@ -1870,10 +1870,10 @@ cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
   sqlite3AlterRenameColumn(pParse, X, &Y, &Z);
 }
 cmd ::= ALTER TABLE fullname(X) DROP CONSTRAINT nm(Y). {
-  sqlite3AlterDropConstraint(pParse, X, &Y);
+  sqlite3AlterDropConstraint(pParse, X, &Y, 0);
 }
 cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) DROP NOT NULL. {
-  sqlite3AlterDropNotNull(pParse, X, &Y);
+  sqlite3AlterDropConstraint(pParse, X, 0, &Y);
 }
 cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) SET NOT(Z) NULL onconf. {
   sqlite3AlterSetNotNull(pParse, X, &Y, &Z);

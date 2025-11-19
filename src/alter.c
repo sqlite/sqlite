@@ -2336,7 +2336,7 @@ exit_drop_column:
 }
 
 /*
-** Return the number of bytes of leading whitespace in string z.
+** Return the number of bytes of leading whitespace/comments in string z[].
 */
 static int getWhitespace(const u8 *z){
   int nRet = 0;
@@ -2351,10 +2351,26 @@ static int getWhitespace(const u8 *z){
 
 
 /*
-** Skip over any leading whitespace, then read the first token from the
-** string passed as the first argument. Set *piToken to the type of the
-** token before returning the total number of bytes consumed (including 
-** any whitespace).
+** Return the number of bytes until the end of the next non-whitespace and
+** non-comment token.  For the purpose of this function, a "(" token includes
+** all of the bytes through and including the matching ")", or until the
+** first illegal token, whichever comes first.
+**
+** Write the token type into *piToken.
+**
+** The value returned is the number of bytes in the token itself plus
+** the number of bytes of leading whitespace and comments skipped plus
+** all bytes through the next matching ")" if the token is TK_LP.
+**
+** Example:    (Note: '.' used in place of '*' in the example z[] text)
+**
+**                                    ,--------- *piToken := TK_RP
+**                                    v
+**    z[] = " /.comment./ --comment\n (two three four) five"
+**          |                                        |
+**          |<-------------------------------------->|
+**                              |
+**                              `--- return value
 */
 static int getConstraintToken(const u8 *z, int *piToken){
   int iOff = 0;
@@ -2386,8 +2402,12 @@ static int getConstraintToken(const u8 *z, int *piToken){
 
 /*
 ** Argument z points into the body of a constraint - specifically the 
-** second token of the constraint definition. Return the number of bytes
-** until the end of the constraint. 
+** second token of the constraint definition.  For a named constraint,
+** z points to the first token past the CONSTRAINT keyword.  For an
+** unnamed NOT NULL constraint, z points to the first byte past the NOT
+** keyword.
+**
+** Return the number of bytes until the end of the constraint. 
 */
 static int getConstraint(const u8 *z){
   int iOff = 0;
@@ -2416,14 +2436,25 @@ static int getConstraint(const u8 *z){
   return iOff;
 }
 
+/*
+** Compare two constraint names.
+**
+** Summary:   *pRes := zQuote != zCmp
+**
+** Details:
+** Compare the (possibly quoted) constraint name zQuote[0..nQuote-1]
+** against zCmp[].  Write zero into *pRes if they are the same and
+** non-zero if they differ.  Normally return SQLITE_OK, except if there
+** is an OOM, set the OOM error condition on ctx and return SQLITE_NOMEM.
+*/
 static int quotedCompare(
-  sqlite3_context *ctx,
-  const u8 *zQuote, 
-  int nQuote, 
-  const u8 *zCmp,
-  int *pRes
+  sqlite3_context *ctx,  /* Function context on which to report errors */
+  const u8 *zQuote,      /* Possibly quoted text.  Not zero-terminated. */
+  int nQuote,            /* Length of zQuote in bytes */
+  const u8 *zCmp,        /* Zero-terminated, unquoted name to compare against */
+  int *pRes              /* OUT: Set to 0 if equal, non-zero if unequal */
 ){
-  char *zCopy = 0;
+  char *zCopy = 0;       /* De-quoted, zero-terminated copy of zQuote[] */
 
   zCopy = sqlite3MallocZero(nQuote+1);
   if( zCopy==0 ){
@@ -2438,12 +2469,10 @@ static int quotedCompare(
 }
 
 /*
-** The second argument is passed a CREATE TABLE statement. This function
-** attempts to find the offset of the first token of the first column
-** definition in the table. If successful, it sets (*piOff) to the offset
-** and return SQLITE_OK. Otherwise, if an error occurs, it leaves an
-** error code and message in the context handle passed as the first argument
-** and returns SQLITE_ERROR.
+** zSql[] is a CREATE TABLE statement, supposedly.  Find the offset
+** into zSql[] of the first character past the first "(" and write
+** that offset into *piOff and return SQLITE_OK.  Or, if not found,
+** set the SQLITE_CORRUPT error code and return SQLITE_ERROR.
 */
 static int skipCreateTable(sqlite3_context *ctx, const u8 *zSql, int *piOff){
   int iOff = 0;
@@ -2469,8 +2498,8 @@ static int skipCreateTable(sqlite3_context *ctx, const u8 *zSql, int *piOff){
 ** with a constraint removed.  Two forms, depending on the datatype
 ** of argv[2]:
 **
-**   sqlite3_drop_constraint(SQL, INT)  -- Omit NOT NULL from the INT-th column
-**   sqlite3_drop_constraint(SQL, TEXT) -- OMIT constraint with name TEXT
+**   sqlite_drop_constraint(SQL, INT)  -- Omit NOT NULL from the INT-th column
+**   sqlite_drop_constraint(SQL, TEXT) -- OMIT constraint with name TEXT
 **
 ** In the first case, the left-most column is 0.
 */
@@ -2602,9 +2631,13 @@ static void dropConstraintFunc(
 }
 
 /*
-** Implementation of internal SQL function:
+** Internal SQL function:
 **
 **     sqlite_add_constraint(SQL, CONSTRAINT-TEXT, ICOL)
+**
+** SQL is a CREATE TABLE statement.  Return a modified version of
+** SQL that adds CONSTRAINT-TEXT at the end of the ICOL-th column
+** definition.  (The left-most column defintion is 0.)
 */
 static void addConstraintFunc(
   sqlite3_context *ctx,
@@ -2699,11 +2732,11 @@ static int alterFindCol(Parse *pParse, Table *pTab, Token *pCol, int *piCol){
 ** parameters is undefined in this case.
 */
 static Table *alterFindTable(
-  Parse *pParse, 
-  SrcList *pSrc, 
-  int *piDb,
-  const char **pzDb,
-  int bAuth
+  Parse *pParse,        /* Parsing context */
+  SrcList *pSrc,        /* Name of the table to look for */
+  int *piDb,            /* OUT: write the iDb here */
+  const char **pzDb,    /* OUT: write name of schema here */
+  int bAuth             /* Do ALTER TABLE authorization checks if true */
 ){
   sqlite3 *db = pParse->db;
   Table *pTab = 0;
@@ -2731,11 +2764,19 @@ static Table *alterFindTable(
   return pTab;
 }
 
-void alterDropConstraint(
-  Parse *pParse, 
-  SrcList *pSrc, 
-  Token *pCons, 
-  Token *pCol
+/*
+** Generate bytecode for one of:
+**
+**  (1)   ALTER TABLE pSrc DROP CONSTRAINT pCons
+**  (2)   ALTER TABLE pSrc ALTER pCol DROP NOT NULL
+**
+** One of pCons and pCol must be NULL and the other non-null.
+*/
+void sqlite3AlterDropConstraint(
+  Parse *pParse,    /* Parsing context */
+  SrcList *pSrc,    /* The table being altered */
+  Token *pCons,     /* Name of the constraint to drop */
+  Token *pCol       /* Name of the column from which to remove the NOT NULL */
 ){
   sqlite3 *db = pParse->db;
   Table *pTab = 0;
@@ -2743,6 +2784,8 @@ void alterDropConstraint(
   const char *zDb = 0;
   char *zArg = 0;
 
+  assert( (pCol==0)!=(pCons==0) );
+  assert( pSrc->nSrc==1 );
   pTab = alterFindTable(pParse, pSrc, &iDb, &zDb, pCons!=0);
   if( !pTab ) return;
 
@@ -2765,25 +2808,6 @@ void alterDropConstraint(
 
   /* Finally, reload the database schema. */
   renameReloadSchema(pParse, iDb, INITFLAG_AlterDropCons);
-}
-
-
-/*
-** Prepare a statement of the form:
-**
-**   ALTER TABLE pSrc DROP CONSTRAINT pCons
-*/
-void sqlite3AlterDropConstraint(Parse *pParse, SrcList *pSrc, Token *pCons){
-  alterDropConstraint(pParse, pSrc, pCons, 0);
-}
-
-/*
-** Prepare a statement of the form:
-**
-**   ALTER TABLE pSrc ALTER pCol DROP NOT NULL
-*/
-void sqlite3AlterDropNotNull(Parse *pParse, SrcList *pSrc, Token *pCol){
-  alterDropConstraint(pParse, pSrc, 0, pCol);
 }
 
 /*
@@ -2809,6 +2833,12 @@ static void failConstraintFunc(
 ** statement. If successful, this function returns the size of the buffer in
 ** bytes not including any trailing whitespace or "--" style comments. Or,
 ** if an OOM occurs, it returns 0 and sets db->mallocFailed to true.
+**
+** C-style comments at the end are preserved.  "--" style comments are
+** removed because the comment terminator might be \000, and we are about
+** to insert the pCons[] text into the middle of a larger string, and that
+** will have the effect of removing the comment terminator and messing up
+** the syntax.
 */
 static int alterRtrimConstraint(
   sqlite3 *db,                    /* used to record OOM error */
@@ -2844,10 +2874,10 @@ static int alterRtrimConstraint(
 **   ALTER TABLE pSrc ALTER pCol SET NOT NULL
 */
 void sqlite3AlterSetNotNull(
-  Parse *pParse, 
-  SrcList *pSrc, 
-  Token *pCol,
-  Token *pFirst
+  Parse *pParse,   /* Parsing context */
+  SrcList *pSrc,   /* Name of the table being altered */
+  Token *pCol,     /* Name of the column to add a NOT NULL constraint to */
+  Token *pFirst    /* The NOT token of the NOT NULL constraint text */
 ){
   Table *pTab = 0;
   int iCol = 0;
@@ -2857,6 +2887,7 @@ void sqlite3AlterSetNotNull(
   int nCons = 0;
 
   /* Look up the table being altered. */
+  assert( pSrc->nSrc==1 );
   pTab = alterFindTable(pParse, pSrc, &iDb, &zDb, 0);
   if( !pTab ) return;
 
@@ -2935,21 +2966,30 @@ static void findConstraintFunc(
   sqlite3_result_int(ctx, 0);
 }
 
+/*
+** Generate bytecode to implement:
+**
+**    ALTER TABLE pSrc ADD [CONSTRAINT pName] CHECK(pExpr)
+**
+** Any "ON CONFLICT" text that occurs after the "CHECK(...)", up
+** until pParse->sLastToken, is included as part of the new constraint.
+*/
 void sqlite3AlterAddConstraint(
-  Parse *pParse,                  /* Parse context */
-  SrcList *pSrc,                  /* Table to add constraint to */
-  Token *pFirst,                  /* First token of new constraint */
-  Token *pName,                   /* Name of new constraint */
-  const char *pExpr,              /* Text of CHECK expression */
-  int nExpr                       /* Size of pExpr in bytes */
+  Parse *pParse,           /* Parse context */
+  SrcList *pSrc,           /* Table to add constraint to */
+  Token *pFirst,           /* First token of new constraint */
+  Token *pName,            /* Name of new constraint. NULL if name omitted. */
+  const char *pExpr,       /* Text of CHECK expression */
+  int nExpr                /* Size of pExpr in bytes */
 ){ 
-  Table *pTab = 0;
-  int iDb = 0;
-  const char *zDb = 0;
-  int nCons;
-  const char *pCons = 0;
+  Table *pTab = 0;         /* Table identified by pSrc */
+  int iDb = 0;             /* Which schema does pTab live in */
+  const char *zDb = 0;     /* Name of the schema in which pTab lives */
+  const char *pCons = 0;   /* Text of the constraint */
+  int nCons;               /* Bytes of text to use from pCons[] */
 
   /* Look up the table being altered. */
+  assert( pSrc->nSrc==1 );
   pTab = alterFindTable(pParse, pSrc, &iDb, &zDb, 1);
   if( !pTab ) return;
 
