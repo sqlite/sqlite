@@ -2464,7 +2464,15 @@ static int skipCreateTable(sqlite3_context *ctx, const u8 *zSql, int *piOff){
 }
 
 /*
-** The implementation of internal function sqlite3_drop_constraint().
+** Internal SQL function sqlite3_drop_constraint():  Given an input
+** CREATE TABLE statement, return a revised CREATE TABLE statement
+** with a constraint removed.  Two forms, depending on the datatype
+** of argv[2]:
+**
+**   sqlite3_drop_constraint(SQL, INT)  -- Omit NOT NULL from the INT-th column
+**   sqlite3_drop_constraint(SQL, TEXT) -- OMIT constraint with name TEXT
+**
+** In the first case, the left-most column is 0.
 */
 static void dropConstraintFunc(
   sqlite3_context *ctx,
