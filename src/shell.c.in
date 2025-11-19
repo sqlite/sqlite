@@ -1600,8 +1600,8 @@ static void modeSetStr(char **az, const char *zNew){
 static void modeChange(ShellState *p, unsigned char eMode){
   const ModeInfo *pI;
   if( eMode<ArraySize(aModeInfo) ){
-    pI = &aModeInfo[eMode];
     Mode *pM = &p->mode;
+    pI = &aModeInfo[eMode];
     pM->eMode = eMode;
     if( pI->eCSep ) modeSetStr(&pM->spec.zColumnSep, aModeStr[pI->eCSep]);
     if( pI->eRSep ) modeSetStr(&pM->spec.zRowSep, aModeStr[pI->eRSep]);
@@ -2101,34 +2101,37 @@ static void interrupt_handler(int NotUsed){
 /* Try to determine the screen width.  Use the default if unable.
 */
 int shellScreenWidth(void){
-  if( stdout_tty_width>0 ) return stdout_tty_width;
+  if( stdout_tty_width>0 ){
+    return stdout_tty_width;
+  }else{
 #if defined(TIOCGSIZE)
-  struct ttysize ts;
-  if( ioctl(STDIN_FILENO, TIOCGSIZE, &ts)>=0
-   || ioctl(STDOUT_FILENO, TIOCGSIZE, &ts)>=0
-   || ioctl(STDERR_FILENO, TIOCGSIZE, &ts)>=0
-  ){
-    return ts.ts_cols;
-  }
+    struct ttysize ts;
+    if( ioctl(STDIN_FILENO, TIOCGSIZE, &ts)>=0
+     || ioctl(STDOUT_FILENO, TIOCGSIZE, &ts)>=0
+     || ioctl(STDERR_FILENO, TIOCGSIZE, &ts)>=0
+    ){
+      return ts.ts_cols;
+    }
 #elif defined(TIOCGWINSZ)
-  struct winsize ws;
-  if( ioctl(STDIN_FILENO, TIOCGWINSZ, &ws)>=0
-   || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws)>=0
-   || ioctl(STDERR_FILENO, TIOCGWINSZ, &ws)>=0
-  ){
-    return ws.ws_col;
-  }
+    struct winsize ws;
+    if( ioctl(STDIN_FILENO, TIOCGWINSZ, &ws)>=0
+     || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws)>=0
+     || ioctl(STDERR_FILENO, TIOCGWINSZ, &ws)>=0
+    ){
+      return ws.ws_col;
+    }
 #elif defined(_WIN32)
-  CONSOLE_SCREEN_BUFFER_INFO csbi;
-  if( GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)
-   || GetConsoleScreenBufferInfo(GetStdHandle(STD_ERROR_HANDLE), &csbi)
-   || GetConsoleScreenBufferInfo(GetStdHandle(STD_INPUT_HANDLE), &csbi)
-  ){
-    return csbi.srWindow.Right - csbi.srWindow.Left + 1;
-  }
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    if( GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)
+     || GetConsoleScreenBufferInfo(GetStdHandle(STD_ERROR_HANDLE), &csbi)
+     || GetConsoleScreenBufferInfo(GetStdHandle(STD_INPUT_HANDLE), &csbi)
+    ){
+      return csbi.srWindow.Right - csbi.srWindow.Left + 1;
+    }
 #endif
 #define DEFAULT_SCREEN_WIDTH 80
-  return DEFAULT_SCREEN_WIDTH;
+    return DEFAULT_SCREEN_WIDTH;
+  }
 }
 
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
@@ -9227,8 +9230,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
     rc = shell_exec(&data,zSql,0);
     sqlite3_free(zSql);
     if( rc==SQLITE_OK ){
-      memset(hasStat, 0, sizeof(hasStat));
       sqlite3_stmt *pStmt;
+      memset(hasStat, 0, sizeof(hasStat));
       rc = sqlite3_prepare_v2(p->db,
                "SELECT substr(name,12,1) FROM sqlite_schema"
                " WHERE name GLOB 'sqlite_stat[134]'",
