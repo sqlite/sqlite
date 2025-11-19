@@ -2916,7 +2916,7 @@ void sqlite3AlterAddConstraint(
     char *zName = sqlite3NameFromToken(pParse->db, pCons);
 
     sqlite3NestedParse(pParse,
-        "SELECT sqlite_fail('constraint '||%Q||' already exists', %d) "
+        "SELECT sqlite_fail('constraint %q already exists', %d) "
         "FROM \"%w\"." LEGACY_SCHEMA_TABLE " "
         "WHERE type='table' AND tbl_name=%Q COLLATE nocase "
         "AND sqlite_find_constraint(sql, %Q)",
