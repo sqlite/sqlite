@@ -2850,7 +2850,7 @@ static int alterRtrimConstraint(
   int iEnd = 0;
 
   if( zTmp==0 ){
-    db->mallocFailed = 1;
+    sqlite3OomFault(db);
     return 0;
   }
 
