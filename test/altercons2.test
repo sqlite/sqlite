@@ -206,5 +206,42 @@ do_execsql_test 10.4 {
   INSERT INTO abc VALUES(NULL);
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 11.0 {
+  CREATE TABLE t1(a, b, c);
+}
+
+do_execsql_test 11.1.1 {
+  ALTER TABLE t1 ADD CONSTRAINT c1 CHECK(a=b) --comment
+  ;
+}
+
+do_execsql_test 11.1.2 {ALTER TABLE t1 ADD CONSTRAINT c2 CHECK(a=b) --comment}
+
+do_execsql_test 11.1.3 {
+  SELECT sql FROM sqlite_schema;
+} {
+  {CREATE TABLE t1(a, b, c, CONSTRAINT c1 CHECK(a=b), CONSTRAINT c2 CHECK(a=b))}
+}
+
+do_execsql_test 11.2.1 {
+  CREATE TABLE t2(a, b);
+}
+do_execsql_test 11.2.2 {ALTER TABLE t2 ALTER b SET NOT NULL --new cons}
+do_execsql_test 11.2.3 {
+  SELECT sql FROM sqlite_schema WHERE name='t2';
+} {
+  {CREATE TABLE t2(a, b NOT NULL)}
+}
+do_execsql_test 11.2.3 {
+  ALTER TABLE t2 ALTER b DROP NOT NULL;
+  SELECT sql FROM sqlite_schema WHERE name='t2';
+} {
+  {CREATE TABLE t2(a, b)}
+}
+do_execsql_test 11.2.2 {ALTER TABLE t2 ALTER b SET NOT NULL --new cons
+;
+}
 finish_test
 

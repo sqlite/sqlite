@@ -2804,6 +2804,41 @@ static void failConstraintFunc(
 }
 
 /*
+** Buffer pCons, which is nCons bytes in size, contains the text of a 
+** NOT NULL or CHECK constraint that will be inserted into a CREATE TABLE
+** statement. If successful, this function returns the size of the buffer in
+** bytes not including any trailing whitespace or "--" style comments. Or,
+** if an OOM occurs, it returns 0 and sets db->mallocFailed to true.
+*/
+static int alterRtrimConstraint(
+  sqlite3 *db,                    /* used to record OOM error */
+  const char *pCons,              /* Buffer containing constraint */
+  int nCons                       /* Size of pCons in bytes */
+){
+  u8 *zTmp = (u8*)sqlite3_mprintf("%.*s", nCons, pCons);
+  int iOff = 0;
+  int iEnd = 0;
+
+  if( zTmp==0 ){
+    db->mallocFailed = 1;
+    return 0;
+  }
+
+  while( 1 ){
+    int t = 0;
+    int nToken = sqlite3GetToken(&zTmp[iOff], &t);
+    if( t==TK_ILLEGAL ) break;
+    if( t!=TK_SPACE && (t!=TK_COMMENT || zTmp[iOff]!='-') ){
+      iEnd = iOff+nToken;
+    }
+    iOff += nToken;
+  }
+
+  sqlite3_free(zTmp);
+  return iEnd;
+}
+
+/*
 ** Prepare a statement of the form:
 **
 **   ALTER TABLE pSrc ALTER pCol SET NOT NULL
@@ -2832,8 +2867,7 @@ void sqlite3AlterSetNotNull(
 
   /* Find the length in bytes of the constraint definition */
   pCons = pFirst->z;
-  nCons = pParse->sLastToken.z - pCons;
-  while( sqlite3Isspace(pCons[nCons-1]) ) nCons--;
+  nCons = alterRtrimConstraint(pParse->db, pCons, pParse->sLastToken.z - pCons);
 
   /* Search for a constraint violation. Throw an exception if one is found. */
   sqlite3NestedParse(pParse,
@@ -2905,7 +2939,7 @@ void sqlite3AlterAddConstraint(
   Parse *pParse,                  /* Parse context */
   SrcList *pSrc,                  /* Table to add constraint to */
   Token *pFirst,                  /* First token of new constraint */
-  Token *pCons,                   /* Name of new constraint */
+  Token *pName,                   /* Name of new constraint */
   const char *pExpr,              /* Text of CHECK expression */
   int nExpr                       /* Size of pExpr in bytes */
 ){ 
@@ -2913,6 +2947,7 @@ void sqlite3AlterAddConstraint(
   int iDb = 0;
   const char *zDb = 0;
   int nCons;
+  const char *pCons = 0;
 
   /* Look up the table being altered. */
   pTab = alterFindTable(pParse, pSrc, &iDb, &zDb, 1);
@@ -2920,8 +2955,8 @@ void sqlite3AlterAddConstraint(
 
   /* If this new constraint has a name, check that it is not a duplicate of
   ** an existing constraint. It is an error if it is.  */
-  if( pCons ){
-    char *zName = sqlite3NameFromToken(pParse->db, pCons);
+  if( pName ){
+    char *zName = sqlite3NameFromToken(pParse->db, pName);
 
     sqlite3NestedParse(pParse,
         "SELECT sqlite_fail('constraint %q already exists', %d) "
@@ -2941,13 +2976,14 @@ void sqlite3AlterAddConstraint(
   );
 
   /* Edit the SQL for the named table. */
-  nCons = pParse->sLastToken.z - pFirst->z;
-  while( sqlite3Isspace(pFirst->z[nCons-1]) ) nCons--;
+  pCons = pFirst->z;
+  nCons = alterRtrimConstraint(pParse->db, pCons, pParse->sLastToken.z - pCons);
+
   sqlite3NestedParse(pParse,
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
       "sql = sqlite_add_constraint(sql, %.*Q, -1) "
       "WHERE type='table' AND tbl_name=%Q COLLATE nocase"
-      , zDb, nCons, pFirst->z, pTab->zName
+      , zDb, nCons, pCons, pTab->zName
   );
 
   /* Finally, reload the database schema. */
