@@ -1,5 +1,5 @@
-C Remove\san\sextraneous\sloop\slevel\sfrom\sthe\sJS\sbootstrapping\sbits.
-D 2025-11-20T12:14:03.117
+C Fix\shwtime.h\s(broken\sby\s[305bb022368bac9f])\sso\sthat\sunamalgamated\swindows\nbuilds\swork\sagain.
+D 2025-11-20T12:41:26.416
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -691,7 +691,7 @@ F src/func.c 0b802107498048d3dcac0b757720bcb8506507ce02159e213ab8161458eb293b
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
-F src/hwtime.h d4d1b98c1afdc56986a5c0eba882786ef017e2180a320da25b4231b8e7e463e8
+F src/hwtime.h 21c2cf1f736e7b97502c3674d0c386db3f06870d6f10d0cf8174e2a4b8cb726e
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
 F src/json.c fb031340edee159c07ad37dbe668ffe945ed86f525b0eb3822e4a67cbc498a72
@@ -2175,8 +2175,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aaa55a3ebf8e725443030be5f31ac7fc0766c1f3c771ce69852f31e7e6f165b9
-R 4b3a2e70b2ef9e3e86256ce49b7cd978
-U stephan
-Z 0303d535edc52a603103a62ad48d206b
+P 86817b4e9f011d296fb420be95269fecb54fb48a220bce84020e3af2d2c164a4
+R 12df208129cfac05da6465e778ffa7dd
+U drh
+Z 2383ae68ea8b18a19ff2f4d551109d3e
 # Remove this line to create a well-formed Fossil manifest.
