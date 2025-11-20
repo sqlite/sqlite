@@ -1529,6 +1529,7 @@ static const ModeInfo aModeInfo[] = {
 ** contains.
 */
 static void modeFree(Mode *p){
+  u8 autoExplain = p->autoExplain;
   free(p->spec.aWidth);
   free(p->spec.aAlign);
   free(p->spec.zColumnSep);
@@ -1537,6 +1538,7 @@ static void modeFree(Mode *p){
   free(p->spec.zNull);
   memset(p, 0, sizeof(*p));
   p->spec.iVersion = 1;
+  p->autoExplain = autoExplain;
 }
 
 /*
