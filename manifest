@@ -1,5 +1,5 @@
-C Preserve\sauto-explain\smode\sacross\smode\schanges,\sas\shas\salways\sbeen\sthe\ncase\sbefore.
-D 2025-11-20T21:08:46.952
+C Test\scases\sfor\sthe\sfix\sin\sthe\sprior\scheck-in.
+D 2025-11-20T22:46:27.556
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -18,7 +18,7 @@ F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
-F autoconf/Makefile.msc 803aa9e23b6a764751f6a91d0673620eefa46729fb80faf51391120e1d752966
+F autoconf/Makefile.msc 7952ed1fbb824f9421688e6b46d09fc4d5a13decec791a6264be4f65e64dfc08
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
@@ -1436,7 +1436,7 @@ F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
 F test/mmapcorrupt.test 470fb44fe92e99c1d23701d156f8c17865f5b027063c9119dcfdb842791f4465
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
-F test/modeA.clitest 73d091c785671f629af0900f0654a28468bbba5685a545c1513049c57f1b8cbc
+F test/modeA.clitest 43098858465029ebe9229009fbd59528adf89f265fb82af87fc5c58f7901b2bc
 F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test fac575e0b1b852025575a6a8357701d80933e98b5d2fe6d35ddaa68f92f6a1f7
@@ -1612,7 +1612,7 @@ F test/shell7.test 43fd8e511c533bab5232e95c7b4be93b243451709e89582600d4b6e67693d
 F test/shell8.test 641cf21a99c59404c24e3062923734951c4099a6b6b6520de00cf7a1249ee871
 F test/shell9.test 8742a5b390cdcef6369f5aa223e415aa4255a4129ef249b177887dc635a87209
 F test/shellA.test 4ece22f204532fb04ab702c5b9c70d8680ff610bff1e82c849c16a7b5cd57d83
-F test/shellB.test ca8a5ce5b9a59098732fa140c911162f0306f70239c6c2de6da9b718ca304cad
+F test/shellB.test de879b1ea7c25daf1a06b2c882b45a5d002e6580c81c57169ce47084cc6afb6b
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2175,8 +2175,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1245319257d03a00eddbc8ff4b43b5813f8a567a12a9957f923bef58c85c0c20
-R f732652d0e1f11bfe46467efc5be1c8c
+P 8896185ae0b0af8918aa8ce449f18759e6ae60358afbac1019397bae307b15d5
+R 254d017f2dd051b92cbdd62f2ef390cd
 U drh
-Z c4f547400bf3f5e95c885ba485f32056
+Z 1247e56565ac3eb588c6a5672754d68c
 # Remove this line to create a well-formed Fossil manifest.
