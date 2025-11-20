@@ -2477,6 +2477,8 @@ static int quotedCompare(
 static int skipCreateTable(sqlite3_context *ctx, const u8 *zSql, int *piOff){
   int iOff = 0;
 
+  if( zSql==0 ) return SQLITE_ERROR;
+
   /* Jump past the "CREATE TABLE" bit. */
   while( 1 ){
     int t = 0;
@@ -2518,6 +2520,8 @@ static void dropConstraintFunc(
   char *zNew = 0;
   int t = 0;
   UNUSED_PARAMETER(NotUsed);
+
+  if( zSql==0 ) return;
 
   /* Jump past the "CREATE TABLE" bit. */
   if( skipCreateTable(ctx, zSql, &iOff) ) return;
@@ -2942,6 +2946,7 @@ static void findConstraintFunc(
   zSql = sqlite3_value_text(argv[0]);
   zCons = sqlite3_value_text(argv[1]);
 
+  if( zSql==0 || zCons==0 ) return;
   while( t!=TK_LP && t!=TK_ILLEGAL ){
     iOff += sqlite3GetToken(&zSql[iOff], &t);
   }
