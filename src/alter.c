@@ -2519,6 +2519,7 @@ static void dropConstraintFunc(
   int iEnd = 0;
   char *zNew = 0;
   int t = 0;
+  sqlite3 *db;
   UNUSED_PARAMETER(NotUsed);
 
   if( zSql==0 ) return;
@@ -2624,13 +2625,9 @@ static void dropConstraintFunc(
       if( zSql[iStart-1]==',' ) iStart--;
     }
 
-    zNew = sqlite3_mprintf("%.*s%s%s", iStart, zSql, zSpace, &zSql[iEnd]);
-    if( zNew==0 ){
-      sqlite3_result_error_nomem(ctx);
-    }else{
-      sqlite3_result_text(ctx, zNew, -1, SQLITE_TRANSIENT);
-      sqlite3_free(zNew);
-    }
+    db = sqlite3_context_db_handle(ctx);
+    zNew = sqlite3MPrintf(db, "%.*s%s%s", iStart, zSql, zSpace, &zSql[iEnd]);
+    sqlite3_result_text(ctx, zNew, -1, SQLITE_DYNAMIC);
   }
 }
 
@@ -2655,6 +2652,7 @@ static void addConstraintFunc(
   int ii;
   char *zNew = 0;
   int t = 0;
+  sqlite3 *db;
   UNUSED_PARAMETER(NotUsed);
 
   if( skipCreateTable(ctx, zSql, &iOff) ) return;
@@ -2674,18 +2672,13 @@ static void addConstraintFunc(
 
   iOff += getWhitespace(&zSql[iOff]);
 
+  db = sqlite3_context_db_handle(ctx);
   if( iCol<0 ){
-    zNew = sqlite3_mprintf("%.*s, %s%s", iOff, zSql, zCons, &zSql[iOff]);
+    zNew = sqlite3MPrintf(db, "%.*s, %s%s", iOff, zSql, zCons, &zSql[iOff]);
   }else{
-    zNew = sqlite3_mprintf("%.*s %s%s", iOff, zSql, zCons, &zSql[iOff]);
+    zNew = sqlite3MPrintf(db, "%.*s %s%s", iOff, zSql, zCons, &zSql[iOff]);
   }
-
-  if( zNew==0 ){
-    sqlite3_result_error_nomem(ctx);
-  }else{
-    sqlite3_result_text(ctx, zNew, -1, SQLITE_TRANSIENT);
-    sqlite3_free(zNew);
-  }
+  sqlite3_result_text(ctx, zNew, -1, SQLITE_DYNAMIC);
 }
 
 /*
@@ -2849,14 +2842,11 @@ static int alterRtrimConstraint(
   const char *pCons,              /* Buffer containing constraint */
   int nCons                       /* Size of pCons in bytes */
 ){
-  u8 *zTmp = (u8*)sqlite3_mprintf("%.*s", nCons, pCons);
+  u8 *zTmp = (u8*)sqlite3MPrintf(db, "%.*s", nCons, pCons);
   int iOff = 0;
   int iEnd = 0;
 
-  if( zTmp==0 ){
-    sqlite3OomFault(db);
-    return 0;
-  }
+  if( zTmp==0 ) return 0;
 
   while( 1 ){
     int t = 0;
@@ -2868,7 +2858,7 @@ static int alterRtrimConstraint(
     iOff += nToken;
   }
 
-  sqlite3_free(zTmp);
+  sqlite3DbFree(db, zTmp);
   return iEnd;
 }
 
