@@ -491,7 +491,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   /* Look up the table being altered. */
   assert( pParse->pNewTable==0 );
   assert( sqlite3BtreeHoldsAllMutexes(db) );
-  if( db->mallocFailed ) goto exit_begin_add_column;
+  if( NEVER(db->mallocFailed) ) goto exit_begin_add_column;
   pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_begin_add_column;
 
