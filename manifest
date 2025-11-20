@@ -1,5 +1,5 @@
-C Fix\sthree\sharmless\sdeclaration-after-statement\swarnings\sin\sthe\snew\sCLI\scode.
-D 2025-11-19T19:37:28.777
+C Enable\sthe\sSQLITE_EXPERIMENTAL_PRAGMA_20251114\sin\sthe\sWASM\sbuilds\sfor\sthe\ssake\sof\sVFS\sexperimentors.\sThe\slinks\sin\sthe\scomments\sdescribe\swhat\sthat\sdoes.
+D 2025-11-20T12:12:55.737
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -603,7 +603,7 @@ F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 26cb41d5a62f46a106b6371eb00fef02de3cdbfaa51338ba087a45f53028e0d0
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js aa330fa0e8ef35cbd92eb0d52e05fbaa07e61540c5cb164e693c82428ce1d763
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72a76124213cbc9469d757676da86
-F ext/wasm/api/sqlite3-wasm.c 03451f8335f4ba8ea9a79dfc170560b1ee5376de64ff49c1a114274ccf50ab3d
+F ext/wasm/api/sqlite3-wasm.c 7778527bdbb241b8e742a5fc50e470e8b8d0529c41fab9ac127c2c63f3c90d47
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
 F ext/wasm/c-pp-lite.c 943be1a36774d58385dca32de36fc18d4f432fe79f7aa35e6c85dd6a6b825bd0
@@ -2175,8 +2175,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6ab18d036a3e412ee01806a40f69aca2b77283bd5336df27597cc19d32e6e6f2
-R e3da078c2b7960eab0e64962daf9a98f
-U drh
-Z e7941ad5f7c0e9c526b337f263473567
+P b65b29656c835db22557733f4dcfe906bf21a7a3c36266cbbc7e3277f029b901
+R 81419b5754d24228dec1788b6a6ec43e
+U stephan
+Z eb049d89419c9b23f15a68a263a56264
 # Remove this line to create a well-formed Fossil manifest.
