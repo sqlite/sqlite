@@ -975,10 +975,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
            "entry SQLITE_WASM_DEALLOC (=="+capi.SQLITE_WASM_DEALLOC+").");
     }
     const __rcMap = Object.create(null);
-    for(const t of ['resultCodes']){
-      for(const e of Object.entries(wasm.ctype[t])){
-        __rcMap[e[1]] = e[0];
-      }
+    for(const e of Object.entries(wasm.ctype['resultCodes'])){
+      __rcMap[e[1]] = e[0];
     }
     /**
        For the given integer, returns the SQLITE_xxx result code as a
