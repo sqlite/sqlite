@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\simplementation\sof\sthe\s".schema"\scommand\sof\sthe\sCLI\sfor\sthe\ncase\swhen\sthere\sare\sATTACH-ed\sdatabases.
-D 2025-11-21T17:30:44.138
+C Fix\sthe\sqrf.h\sheader\sso\sthat\sit\sis\susable\sfrom\sC++
+D 2025-11-21T19:01:26.921
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -418,7 +418,7 @@ F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md dd565fd1ca0c46ea37dbf4d496e368b9ecade768c92669640bc106e039629016
 F ext/qrf/qrf.c 9c956eb63c34f9e1addfb658e61bc81c6e1783dd67d0656260223ab25b02ea37
-F ext/qrf/qrf.h b4b3489b3b3683523fd248d15cf5945830643b036943efacdb772a3e00367aa2
+F ext/qrf/qrf.h 52469140638d52fd4407bb4c8fc426185d19928f8664e1079ff2ae6655bbbd82
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
 F ext/rbu/rbu10.test 7c22caa32c2ff26983ca8320779a31495a6555737684af7aba3daaf762ef3363
@@ -2178,8 +2178,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41f94eca01d8317364aa60ddd8e5fe3cd21a215040ef271a157d450a914139d0
-R d9fc85290e05d34572562b0787425dcb
+P 8a230e4da230a7b103749b069a99a58e4c220873c2f9576abdc928c3538d70b3
+R 9edf605adfac4cfcf84edc6a6e745b30
 U drh
-Z e1a81275db2100d8eeaf6c8da8fbe67a
+Z df4de17f12864ca64bcdaf83a6c3bdb2
 # Remove this line to create a well-formed Fossil manifest.

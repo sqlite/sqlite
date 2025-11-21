@@ -14,6 +14,9 @@
 */
 #ifndef SQLITE_QRF_H
 #define SQLITE_QRF_H
+#ifdef _cplusplus
+extern "C" {
+#endif
 #include <stdlib.h>
 #include "sqlite3.h"
 
@@ -179,6 +182,7 @@ int sqlite3_format_query_result(
 int sqlite3_qrf_wcwidth(int c);
 
 
-
-
+#ifdef _cplusplus
+}
+#endif
 #endif /* !defined(SQLITE_QRF_H) */
