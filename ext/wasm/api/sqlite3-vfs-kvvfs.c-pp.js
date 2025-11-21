@@ -20,33 +20,112 @@
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   /* We unregister the kvvfs VFS from Worker threads later on. */
-  const util = sqlite3.util,
-        capi = sqlite3.capi,
-        wasm = sqlite3.wasm,
+  const capi = sqlite3.capi,
         sqlite3_kvvfs_methods = capi.sqlite3_kvvfs_methods,
-        pKvvfs = sqlite3.capi.sqlite3_vfs_find("kvvfs");
-  delete capi.sqlite3_kvvfs_methods /* this is JS plumbing, not part
-                                       of the public API */;
-  if( !pKvvfs ) return /* built without kvvfs */;
+        KVVfsFile = capi.KVVfsFile,
+        pKvvfs = sqlite3.capi.sqlite3_vfs_find("kvvfs")
+
+  /* These are JS plumbing, not part of the public API */
+  delete capi.sqlite3_kvvfs_methods;
+  delete capi.KVVfsFile;
+
+  if( !pKvvfs ) return /* nothing to do */;
+
+  const util = sqlite3.util,
+        wasm = sqlite3.wasm;
 
   if( !util.isUIThread() ){
-    /* One test currently relies on this VFS not being visible
-       in Workers. If we add generic object storage, we can
-       retain this VFS in Workers. */
+    /* One test currently relies on this VFS not being visible in
+       Workers. Once we add generic object storage, we can retain this
+       VFS in Workers, we just can't provide local/sessionStorage
+       access there. */
     capi.sqlite3_vfs_unregister(pKvvfs);
     return;
   }
 
-    /**
-       Internal helper for sqlite3_js_kvvfs_clear() and friends.
-       Its argument should be one of ('local','session',"").
-    */
+  const __hop = (o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+  /**
+     Implementation of JS's Storage interface for use
+     as backing store of the kvvfs.
+  */
+  class ObjectStorage extends Storage {
+    #map;
+    #keys;
+    #getKeys(){return this.#keys ??= Object.keys(this.#map);}
+
+    constructor(){
+      super();
+      this.clear();
+    }
+
+    key(n){
+      const k = this.#getKeys();
+      return n<k.length ? k[n] : null;
+    }
+
+    getItem(k){
+      return this.#map[k] ?? null;
+    }
+
+    setItem(k,v){
+      if( !__hop(this.#map, k) ){
+        this.#keys = null;
+      }
+      this.#map[k]=v;
+    }
+
+    removeItem(k){
+      if( delete this.#map[k] ){
+        this.#keys = null;
+      }
+    }
+
+    clear(){
+      this.#map = Object.create(null);
+      this.#keys = null;
+    }
+
+    get length() {
+      return this.#getKeys().length;
+    }
+  }/*ObjectStorage*/;
+
+  const kvvfsState = Object.assign(Object.create(null),{
+    jClassToStorage: new Map(
+      /* Map of JS-format KVVfsFile::zClass values to Storage
+         object. We can't use WeakMap because that requires an Object
+         or Symbol as a key, and we can't use Symbol in this
+         context. We don't use KVVfsFile::zClass pointers as keys only
+         because of some special-casing for local/session journal
+         files which remaps those pointers. */
+    )
+  });
+  kvvfsState.jClassToStorage.set('local', localStorage);
+  kvvfsState.jClassToStorage.set('session', sessionStorage);
+
+  /**
+     Internal helper for sqlite3_js_kvvfs_clear() and friends.
+     Its argument should be one of ('local','session',"").
+  */
   const __kvfsWhich = function(which){
     const rc = Object.create(null);
     rc.prefix = 'kvvfs-'+which;
     rc.stores = [];
-    if('session'===which || ""===which) rc.stores.push(globalThis.sessionStorage);
-    if('local'===which || ""===which) rc.stores.push(globalThis.localStorage);
+    let got = 0;
+    if( globalThis.sessionStorage
+        && ('session'===which || ""===which)){
+      rc.stores.push(globalThis.sessionStorage);
+      ++got;
+    }
+    if( globalThis.localStorage
+        && ('local'===which || ""===which) ){
+      rc.stores.push(globalThis.localStorage);
+      ++got;
+    }
+    if( !got && which ){
+      const x = kvvfsState.jClassToStorage.get(which);
+      if( x ) rc.stores.push(x);
+    }
     return rc;
   };
 
@@ -114,8 +193,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   const kvvfsMakeKey = wasm.exports.sqlite3__wasm_kvvfsMakeKeyOnPstack;
   const pstack = wasm.pstack;
-  const kvvfsStorage = (zClass)=>((115/*=='s'*/===wasm.peek(zClass))
-                                  ? sessionStorage : localStorage);
+  const kvvfsStorage = function(zClass){
+    const s = wasm.cstrToJs(zClass);
+    if( !this.rxSession ){
+      this.rxSession = /^session(-journal)?$/;
+      this.rxLocal = /^local(-journal)?$/;
+    }
+    if( this.rxSession.test(s) ) return sessionStorage;
+    if( this.rxLocal.test(s) ) return localStorage;
+    return kvvfsStorage.jClassToStorage.get(s);
+  }.bind(Object.create(null));
 
   { /* Override native sqlite3_kvvfs_methods */
     const kvvfsMethods = new sqlite3_kvvfs_methods(
@@ -130,14 +217,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          backing store.
 
          The interface docs for these methods are in
-         src/os_kv.c:kvstorageRead(), kvstorageWrite(), and
-         kvstorageDelete().
+         src/os_kv.c:kvrecordRead(), kvrecordWrite(), and
+         kvrecordDelete().
       */
       for(const e of Object.entries({
-        xStorageRead: (zClass, zKey, zBuf, nBuf)=>{
+        xRcrdRead: (zClass, zKey, zBuf, nBuf)=>{
           const stack = pstack.pointer,
                 astack = wasm.scopedAllocPush();
-          try {
+          try{
             const zXKey = kvvfsMakeKey(zClass,zKey);
             if(!zXKey) return -3/*OOM*/;
             const jKey = wasm.cstrToJs(zXKey);
@@ -159,37 +246,37 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             wasm.poke(wasm.ptr.add(zBuf, nBuf, -1), 0);
             return nBuf - 1;
           }catch(e){
-            sqlite3.config.error("kvstorageRead()",e);
+            sqlite3.config.error("kvrecordRead()",e);
             return -2;
           }finally{
             pstack.restore(stack);
             wasm.scopedAllocPop(astack);
           }
         },
-        xStorageWrite: (zClass, zKey, zData)=>{
+        xRcrdWrite: (zClass, zKey, zData)=>{
           const stack = pstack.pointer;
           try {
             const zXKey = kvvfsMakeKey(zClass,zKey);
-            if(!zXKey) return 1/*OOM*/;
+            if(!zXKey) return SQLITE_NOMEM;
             const jKey = wasm.cstrToJs(zXKey);
             kvvfsStorage(zClass).setItem(jKey, wasm.cstrToJs(zData));
             return 0;
           }catch(e){
-            sqlite3.config.error("kvstorageWrite()",e);
+            sqlite3.config.error("kvrecordWrite()",e);
             return capi.SQLITE_IOERR;
           }finally{
             pstack.restore(stack);
           }
         },
-        xStorageDelete: (zClass, zKey)=>{
+        xRcrdDelete: (zClass, zKey)=>{
           const stack = pstack.pointer;
           try {
             const zXKey = kvvfsMakeKey(zClass,zKey);
-            if(!zXKey) return 1/*OOM*/;
+            if(!zXKey) return capi.SQLITE_NOMEM;
             kvvfsStorage(zClass).removeItem(wasm.cstrToJs(zXKey));
             return 0;
           }catch(e){
-            sqlite3.config.error("kvstorageDelete()",e);
+            sqlite3.config.error("kvrecordDelete()",e);
             return capi.SQLITE_IOERR;
           }finally{
             pstack.restore(stack);
@@ -219,11 +306,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      in Worker threads and non-browser builds. They could optionally
      be exported to/from JSON.
   */
-  const eventualTodo = 1 || {
+  const eventualTodo = {
     vfsMethods:{
+//#if nope
       /**
       */
-      xOpen: function(pProtoVfs,zName,pProtoFile,flags,pOutFlags){},
+      xOpen: function(pProtoVfs,zName,pProtoFile,flags,pOutFlags){
+      },
       xDelete: function(pVfs, zName, iSyncFlag){},
       xAccess:function(pProtoVfs, zPath, flags, pResOut){},
       xFullPathname: function(pVfs, zPath, nOut, zOut){},
@@ -238,8 +327,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
         return i;
       }
+//#endif
     },
 
+//#if nope
     /**
        kvvfs has separate impls for some of the I/O methods,
        depending on whether it's a db or journal file.
@@ -276,6 +367,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         xDeviceCharacteristics: todoIOMethodsDb.xDeviceCharacteristics
       }
     }
+//#endif
   }/*eventualTodo*/;
 
   if(sqlite3?.oo1?.DB){

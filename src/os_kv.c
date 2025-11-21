@@ -42,6 +42,11 @@ typedef struct KVVfsFile KVVfsFile;
 
 /* A single open file.  There are only two files represented by this
 ** VFS - the database and the rollback journal.
+**
+** Maintenance reminder: if this struct changes in any way, the JSON
+** rendering of its structure must be updated in
+** sqlite3-wasm.c:sqlite3__wasm_enum_json(). There are no binary
+** compatibility concerns, so it does not need an iVersion member.
 */
 struct KVVfsFile {
   sqlite3_file base;              /* IO methods */
@@ -90,11 +95,7 @@ static int kvvfsSleep(sqlite3_vfs*, int microseconds);
 static int kvvfsCurrentTime(sqlite3_vfs*, double*);
 static int kvvfsCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
 
-static
-#ifndef SQLITE_WASM
-const
-#endif
-sqlite3_vfs sqlite3OsKvvfsObject = {
+static sqlite3_vfs sqlite3OsKvvfsObject = {
   1,                              /* iVersion */
   sizeof(KVVfsFile),              /* szOsFile */
   1024,                           /* mxPathname */
@@ -118,11 +119,7 @@ sqlite3_vfs sqlite3OsKvvfsObject = {
 
 /* Methods for sqlite3_file objects referencing a database file
 */
-static
-#ifndef SQLITE_WASM
-const
-#endif
-sqlite3_io_methods kvvfs_db_io_methods = {
+static sqlite3_io_methods kvvfs_db_io_methods = {
   1,                              /* iVersion */
   kvvfsClose,                     /* xClose */
   kvvfsReadDb,                    /* xRead */
@@ -146,11 +143,7 @@ sqlite3_io_methods kvvfs_db_io_methods = {
 
 /* Methods for sqlite3_file objects referencing a rollback journal
 */
-static
-#ifndef SQLITE_WASM
-const
-#endif
-sqlite3_io_methods kvvfs_jrnl_io_methods = {
+static sqlite3_io_methods kvvfs_jrnl_io_methods = {
   1,                              /* iVersion */
   kvvfsClose,                     /* xClose */
   kvvfsReadJrnl,                  /* xRead */
@@ -193,7 +186,8 @@ static void kvrecordMakeKey(
   const char *zKeyIn,
   char *zKeyOut
 ){
-  sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s-%s", zClass, zKeyIn);
+  sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s-%s",
+                   zClass, zKeyIn ? zKeyIn : "");
 }
 
 /* Write content into a key.  zClass is the particular namespace of the
@@ -299,14 +293,13 @@ static int kvrecordRead(
 ** Maintenance reminder: if this struct changes in any way, the JSON
 ** rendering of its structure must be updated in
 ** sqlite3-wasm.c:sqlite3__wasm_enum_json(). There are no binary
-** compatibility concerns, so it does not need an iVersion
-** member.
+** compatibility concerns, so it does not need an iVersion member.
 */
 typedef struct sqlite3_kvvfs_methods sqlite3_kvvfs_methods;
 struct sqlite3_kvvfs_methods {
+  int (*xRcrdRead)(const char*, const char *zKey, char *zBuf, int nBuf);
   int (*xRcrdWrite)(const char*, const char *zKey, const char *zData);
   int (*xRcrdDelete)(const char*, const char *zKey);
-  int (*xRcrdRead)(const char*, const char *zKey, char *zBuf, int nBuf);
   const int nKeySize;
 #ifndef SQLITE_WASM
 #  define MAYBE_CONST const
@@ -334,9 +327,9 @@ struct sqlite3_kvvfs_methods {
 const
 #endif
 sqlite3_kvvfs_methods sqlite3KvvfsMethods = {
-  .xRcrdRead    = kvrecordRead,
-  .xRcrdWrite   = kvrecordWrite,
-  .xRcrdDelete  = kvrecordDelete,
+  .xRcrdRead       = kvrecordRead,
+  .xRcrdWrite      = kvrecordWrite,
+  .xRcrdDelete     = kvrecordDelete,
   .nKeySize        = KVRECORD_KEY_SZ,
   .pVfs            = &sqlite3OsKvvfsObject,
   .pIoDb           = &kvvfs_db_io_methods,
@@ -499,7 +492,7 @@ static sqlite3_int64 kvvfsReadFileSize(KVVfsFile *pFile){
   char zData[50];
   zData[0] = 0;
   sqlite3KvvfsMethods.xRcrdRead(pFile->zClass, "sz", zData,
-                                   sizeof(zData)-1);
+                                sizeof(zData)-1);
   return strtoll(zData, 0, 0);
 }
 static int kvvfsWriteFileSize(KVVfsFile *pFile, sqlite3_int64 sz){
@@ -586,7 +579,7 @@ static int kvvfsReadDb(
   }
   sqlite3_snprintf(sizeof(zKey), zKey, "%u", pgno);
   got = sqlite3KvvfsMethods.xRcrdRead(pFile->zClass, zKey,
-                                         aData, SQLITE_KVOS_SZ-1);
+                                      aData, SQLITE_KVOS_SZ-1);
   if( got<0 ){
     n = 0;
   }else{
@@ -844,33 +837,39 @@ static int kvvfsOpen(
   KVVfsFile *pFile = (KVVfsFile*)pProtoFile;
   if( zName==0 ) zName = "";
   SQLITE_KV_LOG(("xOpen(\"%s\")\n", zName));
-  if( strcmp(zName, "local")==0
-   || strcmp(zName, "session")==0
-  ){
-    pFile->isJournal = 0;
-    pFile->base.pMethods = &kvvfs_db_io_methods;
-  }else
-  if( strcmp(zName, "local-journal")==0 
-   || strcmp(zName, "session-journal")==0
-  ){
+  assert(!pFile->zClass);
+  assert(!pFile->aData);
+  pFile->aData = 0;
+  pFile->aJrnl = 0;
+  pFile->nJrnl = 0;
+  pFile->szPage = -1;
+  pFile->szDb = -1;
+  if( 0==sqlite3_strglob("*-journal", zName) ){
     pFile->isJournal = 1;
     pFile->base.pMethods = &kvvfs_jrnl_io_methods;
+    if( 0==strcmp("session-journal",zName) ){
+      pFile->zClass = "session";
+    }else if( 0==strcmp("local-journal",zName) ){
+      pFile->zClass = "local";
+    }
   }else{
-    return SQLITE_CANTOPEN;
+    pFile->isJournal = 0;
+    pFile->base.pMethods = &kvvfs_db_io_methods;
+    if( 0==strcmp("session",zName) || 0==strcmp("local",zName) ){
+      pFile->zClass = zName;
+    }
   }
-  if( zName[0]=='s' ){
-    pFile->zClass = "session";
-  }else{
-    pFile->zClass = "local";
+  if( !pFile->zClass ){
+#ifndef SQLITE_WASM
+    return SQLITE_CANTOPEN;
+#else
+    pFile->zClass = zName;
+#endif
   }
   pFile->aData = sqlite3_malloc64(SQLITE_KVOS_SZ);
   if( pFile->aData==0 ){
     return SQLITE_NOMEM;
   }
-  pFile->aJrnl = 0;
-  pFile->nJrnl = 0;
-  pFile->szPage = -1;
-  pFile->szDb = -1;
   return SQLITE_OK;
 }
 
@@ -880,13 +879,17 @@ static int kvvfsOpen(
 ** returning.
 */
 static int kvvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
+  int rc /* The JS impl can fail with OOM in argument conversion */;
   if( strcmp(zPath, "local-journal")==0 ){
-    sqlite3KvvfsMethods.xRcrdDelete("local", "jrnl");
+    rc = sqlite3KvvfsMethods.xRcrdDelete("local", "jrnl");
   }else
   if( strcmp(zPath, "session-journal")==0 ){
-    sqlite3KvvfsMethods.xRcrdDelete("session", "jrnl");
+    rc = sqlite3KvvfsMethods.xRcrdDelete("session", "jrnl");
   }
-  return SQLITE_OK;
+  else{
+    rc = 0;
+  }
+  return rc;
 }
 
 /*

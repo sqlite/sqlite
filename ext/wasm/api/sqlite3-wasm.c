@@ -1088,14 +1088,29 @@ const char * sqlite3__wasm_enum_json(void){
 #undef CurrentStruct
 
 #define CurrentStruct sqlite3_kvvfs_methods
+    /* From os_kv.c */
     StructBinder {
-      M(xRcrdRead,           "i(sspi)");
-      M(xRcrdWrite,          "i(sss)");
-      M(xRcrdDelete,         "i(s)");
-      M(nKeySize,               "i");
-      M(pVfs,                   "p");
-      M(pIoDb,                  "p");
-      M(pIoJrnl,                "p");
+      M(xRcrdRead,         "i(sspi)");
+      M(xRcrdWrite,        "i(sss)");
+      M(xRcrdDelete,       "i(ss)");
+      M(nKeySize,          "i");
+      M(pVfs,              "p");
+      M(pIoDb,             "p");
+      M(pIoJrnl,           "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct KVVfsFile
+    /* From os_kv.c */
+    StructBinder {
+      M(base,               "p")/*sqlite3_file base*/;
+      M(zClass,             "s");
+      M(isJournal,          "i");
+      M(nJrnl,              "i")/*actually unsigned!*/;
+      M(aJrnl,              "p");
+      M(szPage,             "i");
+      M(szDb,               "j");
+      M(aData,              "p");
     } _StructBinder;
 #undef CurrentStruct
 
@@ -1152,7 +1167,13 @@ const char * sqlite3__wasm_enum_json(void){
      ** sqlite3_index_info, we have to uplift those into constructs we
      ** can access by type name. These structs _must_ match their
      ** in-sqlite3_index_info counterparts byte for byte.
-    */
+     **
+     ** 2025-11-21: this uplifing is no longer necessary, as Jaccwabyt
+     ** can now handle nested structs, but "it ain't broke" so there's
+     ** no pressing need to rewire this. Also, it's conceivable that
+     ** rewiring it might break downstream vtab impls, so it shouldn't
+     ** be rewired.
+     */
     typedef struct {
       int iColumn;
       unsigned char op;
@@ -1566,7 +1587,7 @@ int sqlite3__wasm_posix_create_file( const char *zFilename,
 **
 ** Allocates sqlite3KvvfsMethods.nKeySize bytes from
 ** sqlite3__wasm_pstack_alloc() and returns 0 if that allocation fails,
-** else it passes that string to kvstorageMakeKey() and returns a
+** else it passes that string to kvrecordMakeKey() and returns a
 ** NUL-terminated pointer to that string. It is up to the caller to
 ** use sqlite3__wasm_pstack_restore() to free the returned pointer.
 */
@@ -1577,7 +1598,7 @@ char * sqlite3__wasm_kvvfsMakeKeyOnPstack(const char *zClass,
   char *zKeyOut =
     (char *)sqlite3__wasm_pstack_alloc(sqlite3KvvfsMethods.nKeySize);
   if(zKeyOut){
-    kvstorageMakeKey(zClass, zKeyIn, zKeyOut);
+    kvrecordMakeKey(zClass, zKeyIn, zKeyOut);
   }
   return zKeyOut;
 }
