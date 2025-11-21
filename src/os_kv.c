@@ -51,6 +51,7 @@ typedef struct KVVfsFile KVVfsFile;
 struct KVVfsFile {
   sqlite3_file base;              /* IO methods */
   const char *zClass;             /* Storage class */
+  const char *zName;              /* File name (used by the JS side) */
   int isJournal;                  /* True if this is a journal file */
   unsigned int nJrnl;             /* Space allocated for aJrnl[] */
   char *aJrnl;                    /* Journal content */
@@ -839,11 +840,11 @@ static int kvvfsOpen(
   SQLITE_KV_LOG(("xOpen(\"%s\")\n", zName));
   assert(!pFile->zClass);
   assert(!pFile->aData);
-  pFile->aData = 0;
-  pFile->aJrnl = 0;
-  pFile->nJrnl = 0;
+  assert(!pFile->aJrnl);
+  assert(!pFile->nJrnl);
   pFile->szPage = -1;
   pFile->szDb = -1;
+  pFile->zName = zName;
   if( 0==sqlite3_strglob("*-journal", zName) ){
     pFile->isJournal = 1;
     pFile->base.pMethods = &kvvfs_jrnl_io_methods;
@@ -863,6 +864,7 @@ static int kvvfsOpen(
 #ifndef SQLITE_WASM
     return SQLITE_CANTOPEN;
 #else
+    /* The JS impl maps these to Storage objects */
     pFile->zClass = zName;
 #endif
   }

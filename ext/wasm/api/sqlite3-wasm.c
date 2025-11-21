@@ -1105,6 +1105,7 @@ const char * sqlite3__wasm_enum_json(void){
     StructBinder {
       M(base,               "p")/*sqlite3_file base*/;
       M(zClass,             "s");
+      M(zName,              "s");
       M(isJournal,          "i");
       M(nJrnl,              "i")/*actually unsigned!*/;
       M(aJrnl,              "p");
