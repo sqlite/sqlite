@@ -222,32 +222,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      It also accepts those as the first 3 arguments.
   */
   const dbCtorHelper = function ctor(...args){
-    if(!ctor._name2vfs){
-      /**
-         Map special filenames which we handle here (instead of in C)
-         to some helpful metadata...
-
-         As of 2022-09-20, the C API supports the names :localStorage:
-         and :sessionStorage: for kvvfs. However, C code cannot
-         determine (without embedded JS code, e.g. via Emscripten's
-         EM_JS()) whether the kvvfs is legal in the current browser
-         context (namely the main UI thread). In order to help client
-         code fail early on, instead of it being delayed until they
-         try to read or write a kvvfs-backed db, we'll check for those
-         names here and throw if they're not legal in the current
-         context.
-      */
-      ctor._name2vfs = Object.create(null);
-      const isWorkerThread = ('function'===typeof importScripts/*===running in worker thread*/)
-            ? (n)=>toss3("VFS",n,"is only available in the main window thread.")
-            : false;
-      ctor._name2vfs[':localStorage:'] = {
-        vfs: 'kvvfs', filename: isWorkerThread || (()=>'local')
-      };
-      ctor._name2vfs[':sessionStorage:'] = {
-        vfs: 'kvvfs', filename: isWorkerThread || (()=>'session')
-      };
-    }
     const opt = ctor.normalizeArgs(...args);
     //sqlite3.config.debug("DB ctor",opt);
     let pDb;
@@ -270,11 +244,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         toss3("Invalid arguments for DB constructor:", arguments, "opts:", opt);
       }
       let fnJs = wasm.isPtr(fn) ? wasm.cstrToJs(fn) : fn;
-      const vfsCheck = ctor._name2vfs[fnJs];
-      if(vfsCheck){
-        vfsName = vfsCheck.vfs;
-        fn = fnJs = vfsCheck.filename(fnJs);
-      }
       let oflags = 0;
       if( flagsStr.indexOf('c')>=0 ){
         oflags |= capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;

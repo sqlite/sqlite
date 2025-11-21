@@ -1,5 +1,5 @@
-C Initial\srestructuring\sof\skvvfs\sworking\stowards\sgeneric\ssupport\sof\sJS's\sStrorage\sinterface\sas\sstorage\srather\sthan\shard-coding\sit\sto\sjust\swindow.localStorage\sand\swindow.sessionStorage.\sThe\seventual\sgoal\sof\sthat\sis\sto\shave\sa\sstorage\ssolution\swhich\sworks\swithout\sthe\sPOSIX\sI/O\sAPIs,\sgetting\sus\sone\sstep\scloser\sto\sa\swasi-sdk\sbuild.\sIt\swould\sbe\stransient,\slike\sEmscripten's\svirtual\sfilesystem,\sand\scould\shypothetically\sreplace\sour\sdependency\son\sthat\sparticular\sfeature.
-D 2025-11-21T15:23:52.218
+C Remove\skvvfs-specific\sfilename\svalidation\sfrom\sthe\soo1.DB\sctor.
+D 2025-11-21T18:49:58.635
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -594,7 +594,7 @@ F ext/wasm/api/post-js-footer.js a50c1a2c4d008aede7b2aa1f18891a7ee71437c2f415b8a
 F ext/wasm/api/post-js-header.js d24bd0d065f3489c8b78ddf3ead6321e5d047187a162cd503c41700e03dd1f06
 F ext/wasm/api/pre-js.c-pp.js ad2546290e0c8ce5ca2081bff6e85cc25eeb904a3303921f1184290a7ff1b32f
 F ext/wasm/api/sqlite3-api-glue.c-pp.js 9eaed1801be392f6687aa7da8e3a5a41d03de19993d8fe62ee6c52617eab4985
-F ext/wasm/api/sqlite3-api-oo1.c-pp.js 8ce38bd4b22aa2b0311c7a8e87e748e06213766fe2141de7574672d103ece255
+F ext/wasm/api/sqlite3-api-oo1.c-pp.js 7d8850f754b4a9aecd5a4a92a357e05f720cd7f5cf962909343b40c914237256
 F ext/wasm/api/sqlite3-api-prologue.js 7004b569624765c5132984bfecee2305bef928a6adf44e0202dacc9cbc5c8e2a
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667430f9d45167569633ffc7567938
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
@@ -2178,11 +2178,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 41f94eca01d8317364aa60ddd8e5fe3cd21a215040ef271a157d450a914139d0
-R c24190ae7a0835568d82af728a2e7bdd
-T *branch * kvvfs-v2
-T *sym-kvvfs-v2 *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 190ef4a94005b0feebe865a960d846a1b60ec1b267b15d5a24749f174a6169bc
+R 27101f2463500f36d7a13f96ac32ad77
 U stephan
-Z 9210a0cee9d8767f1b346041ef3e7366
+Z ec5d23038f38ba629b0ed0cf97f470b5
 # Remove this line to create a well-formed Fossil manifest.
