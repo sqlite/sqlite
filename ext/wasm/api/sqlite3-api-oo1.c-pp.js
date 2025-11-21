@@ -239,7 +239,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       */
       ctor._name2vfs = Object.create(null);
       const isWorkerThread = ('function'===typeof importScripts/*===running in worker thread*/)
-            ? (n)=>toss3("The VFS for",n,"is only available in the main window thread.")
+            ? (n)=>toss3("VFS",n,"is only available in the main window thread.")
             : false;
       ctor._name2vfs[':localStorage:'] = {
         vfs: 'kvvfs', filename: isWorkerThread || (()=>'local')
@@ -2294,55 +2294,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     DB,
     Stmt
   }/*oo1 object*/;
-
-  if(util.isUIThread()){
-    /**
-       Functionally equivalent to DB(storageName,'c','kvvfs') except
-       that it throws if the given storage name is not one of 'local'
-       or 'session'.
-
-       As of version 3.46, the argument may optionally be an options
-       object in the form:
-
-       {
-         filename: 'session'|'local',
-         ... etc. (all options supported by the DB ctor)
-       }
-
-       noting that the 'vfs' option supported by main DB
-       constructor is ignored here: the vfs is always 'kvvfs'.
-    */
-    sqlite3.oo1.JsStorageDb = function(storageName='session'){
-      const opt = dbCtorHelper.normalizeArgs(...arguments);
-      storageName = opt.filename;
-      if('session'!==storageName && 'local'!==storageName){
-        toss3("JsStorageDb db name must be one of 'session' or 'local'.");
-      }
-      opt.vfs = 'kvvfs';
-      dbCtorHelper.call(this, opt);
-    };
-    const jdb = sqlite3.oo1.JsStorageDb;
-    jdb.prototype = Object.create(DB.prototype);
-    /** Equivalent to sqlite3_js_kvvfs_clear(). */
-    jdb.clearStorage = capi.sqlite3_js_kvvfs_clear;
-    /**
-       Clears this database instance's storage or throws if this
-       instance has been closed. Returns the number of
-       database blocks which were cleaned up.
-    */
-    jdb.prototype.clearStorage = function(){
-      return jdb.clearStorage(affirmDbOpen(this).filename);
-    };
-    /** Equivalent to sqlite3_js_kvvfs_size(). */
-    jdb.storageSize = capi.sqlite3_js_kvvfs_size;
-    /**
-       Returns the _approximate_ number of bytes this database takes
-       up in its storage or throws if this instance has been closed.
-    */
-    jdb.prototype.storageSize = function(){
-      return jdb.storageSize(affirmDbOpen(this).filename);
-    };
-  }/*main-window-only bits*/
 
 });
 //#else

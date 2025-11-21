@@ -988,8 +988,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const notThese = Object.assign(Object.create(null),{
       // For each struct to NOT register, map its name to true:
       WasmTestStruct: true,
-      /* We unregister the kvvfs VFS from Worker threads below. */
-      sqlite3_kvvfs_methods: !util.isUIThread(),
       /* sqlite3_index_info and friends require int64: */
       sqlite3_index_info: !wasm.bigIntEnabled,
       sqlite3_index_constraint: !wasm.bigIntEnabled,
@@ -1782,106 +1780,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       __autoExtFptr.clear();
     };
   }/* auto-extension */
-
-  const pKvvfs = capi.sqlite3_vfs_find("kvvfs");
-  if( pKvvfs ){/* kvvfs-specific glue */
-    if(util.isUIThread()){
-      const kvvfsMethods = new capi.sqlite3_kvvfs_methods(
-        wasm.exports.sqlite3__wasm_kvvfs_methods()
-      );
-      delete capi.sqlite3_kvvfs_methods;
-
-      const kvvfsMakeKey = wasm.exports.sqlite3__wasm_kvvfsMakeKeyOnPstack,
-            pstack = wasm.pstack;
-
-      const kvvfsStorage = (zClass)=>
-            ((115/*=='s'*/===wasm.peek(zClass))
-             ? sessionStorage : localStorage);
-
-      /**
-         Implementations for members of the object referred to by
-         sqlite3__wasm_kvvfs_methods(). We swap out the native
-         implementations with these, which use localStorage or
-         sessionStorage for their backing store.
-      */
-      const kvvfsImpls = {
-        xRead: (zClass, zKey, zBuf, nBuf)=>{
-          const stack = pstack.pointer,
-                astack = wasm.scopedAllocPush();
-          try {
-            const zXKey = kvvfsMakeKey(zClass,zKey);
-            if(!zXKey) return -3/*OOM*/;
-            const jKey = wasm.cstrToJs(zXKey);
-            const jV = kvvfsStorage(zClass).getItem(jKey);
-            if(!jV) return -1;
-            const nV = jV.length /* We are relying 100% on v being
-                                    ASCII so that jV.length is equal
-                                    to the C-string's byte length. */;
-            if(nBuf<=0) return nV;
-            else if(1===nBuf){
-              wasm.poke(zBuf, 0);
-              return nV;
-            }
-            const zV = wasm.scopedAllocCString(jV);
-            if(nBuf > nV + 1) nBuf = nV + 1;
-            wasm.heap8u().copyWithin(
-              Number(zBuf), Number(zV), wasm.ptr.addn(zV, nBuf,- 1)
-            );
-            wasm.poke(wasm.ptr.add(zBuf, nBuf, -1), 0);
-            return nBuf - 1;
-          }catch(e){
-            sqlite3.config.error("kvstorageRead()",e);
-            return -2;
-          }finally{
-            pstack.restore(stack);
-            wasm.scopedAllocPop(astack);
-          }
-        },
-        xWrite: (zClass, zKey, zData)=>{
-          const stack = pstack.pointer;
-          try {
-            const zXKey = kvvfsMakeKey(zClass,zKey);
-            if(!zXKey) return 1/*OOM*/;
-            const jKey = wasm.cstrToJs(zXKey);
-            kvvfsStorage(zClass).setItem(jKey, wasm.cstrToJs(zData));
-            return 0;
-          }catch(e){
-            sqlite3.config.error("kvstorageWrite()",e);
-            return capi.SQLITE_IOERR;
-          }finally{
-            pstack.restore(stack);
-          }
-        },
-        xDelete: (zClass, zKey)=>{
-          const stack = pstack.pointer;
-          try {
-            const zXKey = kvvfsMakeKey(zClass,zKey);
-            if(!zXKey) return 1/*OOM*/;
-            kvvfsStorage(zClass).removeItem(wasm.cstrToJs(zXKey));
-            return 0;
-          }catch(e){
-            sqlite3.config.error("kvstorageDelete()",e);
-            return capi.SQLITE_IOERR;
-          }finally{
-            pstack.restore(stack);
-          }
-        }
-      }/*kvvfsImpls*/;
-      for(const k of Object.keys(kvvfsImpls)){
-        kvvfsMethods[kvvfsMethods.memberKey(k)] =
-          wasm.installFunction(
-            kvvfsMethods.memberSignature(k),
-            kvvfsImpls[k]
-          );
-      }
-    }else{
-      /* Worker thread: unregister kvvfs to avoid it being used
-         for anything other than local/sessionStorage. It "can"
-         be used that way but it's not really intended to be. */
-      capi.sqlite3_vfs_unregister(pKvvfs);
-      delete capi.sqlite3_kvvfs_methods;
-    }
-  }/*pKvvfs*/
 
   /* Warn if client-level code makes use of FuncPtrAdapter. */
   wasm.xWrap.FuncPtrAdapter.warnOnUse = true;
