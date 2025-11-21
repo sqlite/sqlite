@@ -731,7 +731,7 @@ do_test shell1-3.26.5 {
 do_test shell1-3.26.6 {
   catchcmd "test.db" ".mode column\n.header off\n.width -10 10\nSELECT 'abcdefg', 123456;"
   # this should be treated the same as a '1' width for col 1 and 2
-} {0 {   abcdefg  123456    }}
+} {0 {   abcdefg  123456}}
 
 
 # .timer ON|OFF          Turn the CPU timer measurement on or off

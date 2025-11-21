@@ -116,16 +116,16 @@ do_test 1.31 {
 do_test 1.40 {
   set result "\n[db format -style column {SELECT * FROM t1}]"
 } {
-a     b    c    
+a     b    c
 ----  ---  -----
 1     2.5  three
-BLOB       Ἀμήν 
+BLOB       Ἀμήν
 }
 do_test 1.41 {
   set result "\n[db format -style column -title off {SELECT * FROM t1}]"
 } {
 1     2.5  three
-BLOB       Ἀμήν 
+BLOB       Ἀμήν
 }
 
 do_test 1.50 {
@@ -683,15 +683,15 @@ do_test 5.3c {
                  -text plain -esc off -textjsonb no \
                    -wordwrap yes -linelimit 2 $sql]"
 } {
-    name        mtime        time         value     
+    name        mtime        time         value
 ------------  ----------  ----------  --------------
 sample-jsonb  1333101221  2012-03-30  x'cc7c57616c70
                             09:53:41  6861b535332e31
                                                  ...
 
-    one       1333206973  2012-03-31                
-    two                     15:16:13                
-    ...                                             
+    one       1333206973  2012-03-31
+    two                     15:16:13
+    ...
 
  entry-one    1708791504  2024-02-24  x'000000000000
                             16:18:24  00000000000000

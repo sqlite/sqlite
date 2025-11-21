@@ -1042,6 +1042,17 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
 #endif
 }
 
+/* Trim spaces of the end if pOut
+*/
+static void qrfRTrim(sqlite3_str *pOut){
+#if SQLITE_VERSION_NUMBER>=3052000
+  int nByte = sqlite3_str_length(pOut);
+  const char *zOut = sqlite3_str_value(pOut);
+  while( nByte>0 && zOut[nByte-1]==' ' ){ nByte--; }
+  sqlite3_str_truncate(pOut, nByte);
+#endif
+}
+
 /*
 ** Store string zUtf to pOut as w characters.  If w is negative,
 ** then right-justify the text.  W is the width in display characters, not
@@ -1453,6 +1464,14 @@ static void qrfLoadAlignment(qrfColData *pData, Qrf *p){
 }
 
 /*
+** The output is single-column and the bWrapSnglCol flag is set.
+** Check to see if the single-column output can be split into multiple
+** columns that appear side-by-side.  Adjust pData appropriately.
+*/
+static void qrfWrapSingleColumn(qrfColData *pData, Qrf *p){
+}
+
+/*
 ** Adjust the layout for the screen width restriction
 */
 static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
@@ -1541,6 +1560,7 @@ static void qrfColumnar(Qrf *p){
   int bWW;                                /* True to do word-wrap */
   sqlite3_str *pStr;                      /* Temporary rendering */
   qrfColData data;                        /* Columnar layout data */
+  int bRTrim;                             /* Trim trailing space */
 
   rc = sqlite3_step(p->pStmt);
   if( rc!=SQLITE_ROW || nColumn==0 ){
@@ -1650,8 +1670,20 @@ static void qrfColumnar(Qrf *p){
     data.a[i].w = w;
   }
 
-  /* Adjust the column widths due to screen width restrictions */
-  qrfRestrictScreenWidth(&data, p);
+  if( nColumn==1
+   && p->spec.bWrapSnglCol
+   && p->spec.eStyle==QRF_STYLE_Column
+   && p->spec.bTitles==QRF_No
+   && p->spec.nScreenWidth>data.a[0].w+3
+  ){
+    /* Attempt to convert single-column tables into multi-column by
+    ** verticle wrapping, if the screen is wide enough and if the
+    ** bWrapSnglCol flag is set. */
+    qrfWrapSingleColumn(&data, p);
+  }else{
+    /* Adjust the column widths due to screen width restrictions */
+    qrfRestrictScreenWidth(&data, p);
+  }
 
   /* Draw the line across the top of the table.  Also initialize
   ** the row boundary and column separator texts. */
@@ -1702,6 +1734,7 @@ static void qrfColumnar(Qrf *p){
   szColSep = (int)strlen(colSep);
 
   bWW = (p->spec.bWordWrap==QRF_Yes && data.bMultiRow);
+  bRTrim = (p->spec.eStyle==QRF_STYLE_Column);
   for(i=0; i<data.n; i+=nColumn){
     int bMore;
     int nRow = 0;
@@ -1727,6 +1760,7 @@ static void qrfColumnar(Qrf *p){
         if( j<nColumn-1 ){
           sqlite3_str_append(p->pOut, colSep, szColSep);
         }else{
+          if( bRTrim ) qrfRTrim(p->pOut);
           sqlite3_str_append(p->pOut, rowSep, szRowSep);
         }
       }
@@ -1745,6 +1779,7 @@ static void qrfColumnar(Qrf *p){
         if( j<nColumn-1 ){
           sqlite3_str_append(p->pOut, colSep, szColSep);
         }else{
+          if( bRTrim ) qrfRTrim(p->pOut);
           sqlite3_str_append(p->pOut, rowSep, szRowSep);
         }
       }
@@ -1785,10 +1820,12 @@ static void qrfColumnar(Qrf *p){
               if( j<nColumn-1 ){
                 sqlite3_str_append(p->pOut, colSep, szColSep);
               }else{
+                qrfRTrim(p->pOut);
                 sqlite3_str_append(p->pOut, rowSep, szRowSep);
               }
             }
           }else if( data.bMultiRow ){
+            qrfRTrim(p->pOut);
             sqlite3_str_append(p->pOut, "\n", 1);
           }
           break;
