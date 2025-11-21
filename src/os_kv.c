@@ -35,7 +35,6 @@
 #define SQLITE_KV_LOG(X)
 #endif
 
-
 /*
 ** Forward declaration of objects used by this VFS implementation
 */
@@ -91,7 +90,11 @@ static int kvvfsSleep(sqlite3_vfs*, int microseconds);
 static int kvvfsCurrentTime(sqlite3_vfs*, double*);
 static int kvvfsCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
 
-static sqlite3_vfs sqlite3OsKvvfsObject = {
+static
+#ifndef SQLITE_WASM
+const
+#endif
+sqlite3_vfs sqlite3OsKvvfsObject = {
   1,                              /* iVersion */
   sizeof(KVVfsFile),              /* szOsFile */
   1024,                           /* mxPathname */
@@ -115,7 +118,11 @@ static sqlite3_vfs sqlite3OsKvvfsObject = {
 
 /* Methods for sqlite3_file objects referencing a database file
 */
-static sqlite3_io_methods kvvfs_db_io_methods = {
+static
+#ifndef SQLITE_WASM
+const
+#endif
+sqlite3_io_methods kvvfs_db_io_methods = {
   1,                              /* iVersion */
   kvvfsClose,                     /* xClose */
   kvvfsReadDb,                    /* xRead */
@@ -139,7 +146,11 @@ static sqlite3_io_methods kvvfs_db_io_methods = {
 
 /* Methods for sqlite3_file objects referencing a rollback journal
 */
-static sqlite3_io_methods kvvfs_jrnl_io_methods = {
+static
+#ifndef SQLITE_WASM
+const
+#endif
+sqlite3_io_methods kvvfs_jrnl_io_methods = {
   1,                              /* iVersion */
   kvvfsClose,                     /* xClose */
   kvvfsReadJrnl,                  /* xRead */
@@ -168,21 +179,21 @@ static sqlite3_io_methods kvvfs_jrnl_io_methods = {
 
 /* Forward declarations for the low-level storage engine
 */
-static int kvstorageWrite(const char*, const char *zKey, const char *zData);
-static int kvstorageDelete(const char*, const char *zKey);
-static int kvstorageRead(const char*, const char *zKey, char *zBuf, int nBuf);
-#define KVSTORAGE_KEY_SZ  32
+static int kvrecordWrite(const char*, const char *zKey, const char *zData);
+static int kvrecordDelete(const char*, const char *zKey);
+static int kvrecordRead(const char*, const char *zKey, char *zBuf, int nBuf);
+#define KVRECORD_KEY_SZ  32
 
 /* Expand the key name with an appropriate prefix and put the result
 ** in zKeyOut[].  The zKeyOut[] buffer is assumed to hold at least
-** KVSTORAGE_KEY_SZ bytes.
+** KVRECORD_KEY_SZ bytes.
 */
-static void kvstorageMakeKey(
+static void kvrecordMakeKey(
   const char *zClass,
   const char *zKeyIn,
   char *zKeyOut
 ){
-  sqlite3_snprintf(KVSTORAGE_KEY_SZ, zKeyOut, "kvvfs-%s-%s", zClass, zKeyIn);
+  sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s-%s", zClass, zKeyIn);
 }
 
 /* Write content into a key.  zClass is the particular namespace of the
@@ -192,14 +203,14 @@ static void kvstorageMakeKey(
 **
 ** Return the number of errors.
 */
-static int kvstorageWrite(
+static int kvrecordWrite(
   const char *zClass,
   const char *zKey,
   const char *zData
 ){
   FILE *fd;
-  char zXKey[KVSTORAGE_KEY_SZ];
-  kvstorageMakeKey(zClass, zKey, zXKey);
+  char zXKey[KVRECORD_KEY_SZ];
+  kvrecordMakeKey(zClass, zKey, zXKey);
   fd = fopen(zXKey, "wb");
   if( fd ){
     SQLITE_KV_TRACE(("KVVFS-WRITE  %-15s (%d) %.50s%s\n", zXKey,
@@ -217,9 +228,9 @@ static int kvstorageWrite(
 ** namespace given by zClass.  If the key does not previously exist,
 ** this routine is a no-op.
 */
-static int kvstorageDelete(const char *zClass, const char *zKey){
-  char zXKey[KVSTORAGE_KEY_SZ];
-  kvstorageMakeKey(zClass, zKey, zXKey);
+static int kvrecordDelete(const char *zClass, const char *zKey){
+  char zXKey[KVRECORD_KEY_SZ];
+  kvrecordMakeKey(zClass, zKey, zXKey);
   unlink(zXKey);
   SQLITE_KV_TRACE(("KVVFS-DELETE %-15s\n", zXKey));
   return 0;
@@ -240,7 +251,7 @@ static int kvstorageDelete(const char *zClass, const char *zKey){
 ** zero-terminates zBuf at zBuf[0] and returns the size of the data
 ** without reading it.
 */
-static int kvstorageRead(
+static int kvrecordRead(
   const char *zClass,
   const char *zKey,
   char *zBuf,
@@ -248,8 +259,8 @@ static int kvstorageRead(
 ){
   FILE *fd;
   struct stat buf;
-  char zXKey[KVSTORAGE_KEY_SZ];
-  kvstorageMakeKey(zClass, zKey, zXKey);
+  char zXKey[KVRECORD_KEY_SZ];
+  kvrecordMakeKey(zClass, zKey, zXKey);
   if( access(zXKey, R_OK)!=0
    || stat(zXKey, &buf)!=0
    || !S_ISREG(buf.st_mode)
@@ -293,11 +304,21 @@ static int kvstorageRead(
 */
 typedef struct sqlite3_kvvfs_methods sqlite3_kvvfs_methods;
 struct sqlite3_kvvfs_methods {
-  int (*xRead)(const char *zClass, const char *zKey, char *zBuf, int nBuf);
-  int (*xWrite)(const char *zClass, const char *zKey, const char *zData);
-  int (*xDelete)(const char *zClass, const char *zKey);
+  int (*xRcrdWrite)(const char*, const char *zKey, const char *zData);
+  int (*xRcrdDelete)(const char*, const char *zKey);
+  int (*xRcrdRead)(const char*, const char *zKey, char *zBuf, int nBuf);
   const int nKeySize;
+#ifndef SQLITE_WASM
+#  define MAYBE_CONST const
+#else
+#  define MAYBE_CONST
+#endif
+  MAYBE_CONST sqlite3_vfs * pVfs;
+  MAYBE_CONST sqlite3_io_methods *pIoDb;
+  MAYBE_CONST sqlite3_io_methods *pIoJrnl;
+#undef MAYBE_CONST
 };
+
 
 /*
 ** This object holds the kvvfs I/O methods which may be swapped out
@@ -313,10 +334,13 @@ struct sqlite3_kvvfs_methods {
 const
 #endif
 sqlite3_kvvfs_methods sqlite3KvvfsMethods = {
-kvstorageRead,
-kvstorageWrite,
-kvstorageDelete,
-KVSTORAGE_KEY_SZ
+  .xRcrdRead    = kvrecordRead,
+  .xRcrdWrite   = kvrecordWrite,
+  .xRcrdDelete  = kvrecordDelete,
+  .nKeySize        = KVRECORD_KEY_SZ,
+  .pVfs            = &sqlite3OsKvvfsObject,
+  .pIoDb           = &kvvfs_db_io_methods,
+  .pIoJrnl         = &kvvfs_jrnl_io_methods
 };
 
 /****** Utility subroutines ************************************************/
@@ -474,13 +498,14 @@ static void kvvfsDecodeJournal(
 static sqlite3_int64 kvvfsReadFileSize(KVVfsFile *pFile){
   char zData[50];
   zData[0] = 0;
-  sqlite3KvvfsMethods.xRead(pFile->zClass, "sz", zData, sizeof(zData)-1);
+  sqlite3KvvfsMethods.xRcrdRead(pFile->zClass, "sz", zData,
+                                   sizeof(zData)-1);
   return strtoll(zData, 0, 0);
 }
 static int kvvfsWriteFileSize(KVVfsFile *pFile, sqlite3_int64 sz){
   char zData[50];
   sqlite3_snprintf(sizeof(zData), zData, "%lld", sz);
-  return sqlite3KvvfsMethods.xWrite(pFile->zClass, "sz", zData);
+  return sqlite3KvvfsMethods.xRcrdWrite(pFile->zClass, "sz", zData);
 }
 
 /****** sqlite3_io_methods methods ******************************************/
@@ -491,7 +516,7 @@ static int kvvfsWriteFileSize(KVVfsFile *pFile, sqlite3_int64 sz){
 static int kvvfsClose(sqlite3_file *pProtoFile){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
 
-  SQLITE_KV_LOG(("xClose %s %s\n", pFile->zClass, 
+  SQLITE_KV_LOG(("xClose %s %s\n", pFile->zClass,
              pFile->isJournal ? "journal" : "db"));
   sqlite3_free(pFile->aJrnl);
   sqlite3_free(pFile->aData);
@@ -503,22 +528,22 @@ static int kvvfsClose(sqlite3_file *pProtoFile){
 */
 static int kvvfsReadJrnl(
   sqlite3_file *pProtoFile,
-  void *zBuf, 
-  int iAmt, 
+  void *zBuf,
+  int iAmt,
   sqlite_int64 iOfst
 ){
   KVVfsFile *pFile = (KVVfsFile*)pProtoFile;
   assert( pFile->isJournal );
   SQLITE_KV_LOG(("xRead('%s-journal',%d,%lld)\n", pFile->zClass, iAmt, iOfst));
   if( pFile->aJrnl==0 ){
-    int szTxt = kvstorageRead(pFile->zClass, "jrnl", 0, 0);
+    int szTxt = kvrecordRead(pFile->zClass, "jrnl", 0, 0);
     char *aTxt;
     if( szTxt<=4 ){
       return SQLITE_IOERR;
     }
     aTxt = sqlite3_malloc64( szTxt+1 );
     if( aTxt==0 ) return SQLITE_NOMEM;
-    kvstorageRead(pFile->zClass, "jrnl", aTxt, szTxt+1);
+    kvrecordRead(pFile->zClass, "jrnl", aTxt, szTxt+1);
     kvvfsDecodeJournal(pFile, aTxt, szTxt);
     sqlite3_free(aTxt);
     if( pFile->aJrnl==0 ) return SQLITE_IOERR;
@@ -535,8 +560,8 @@ static int kvvfsReadJrnl(
 */
 static int kvvfsReadDb(
   sqlite3_file *pProtoFile,
-  void *zBuf, 
-  int iAmt, 
+  void *zBuf,
+  int iAmt,
   sqlite_int64 iOfst
 ){
   KVVfsFile *pFile = (KVVfsFile*)pProtoFile;
@@ -560,8 +585,8 @@ static int kvvfsReadDb(
     pgno = 1;
   }
   sqlite3_snprintf(sizeof(zKey), zKey, "%u", pgno);
-  got = sqlite3KvvfsMethods.xRead(pFile->zClass, zKey,
-                                  aData, SQLITE_KVOS_SZ-1);
+  got = sqlite3KvvfsMethods.xRcrdRead(pFile->zClass, zKey,
+                                         aData, SQLITE_KVOS_SZ-1);
   if( got<0 ){
     n = 0;
   }else{
@@ -593,8 +618,8 @@ static int kvvfsReadDb(
 */
 static int kvvfsWriteJrnl(
   sqlite3_file *pProtoFile,
-  const void *zBuf, 
-  int iAmt, 
+  const void *zBuf,
+  int iAmt,
   sqlite_int64 iOfst
 ){
   KVVfsFile *pFile = (KVVfsFile*)pProtoFile;
@@ -621,14 +646,15 @@ static int kvvfsWriteJrnl(
 */
 static int kvvfsWriteDb(
   sqlite3_file *pProtoFile,
-  const void *zBuf, 
-  int iAmt, 
+  const void *zBuf,
+  int iAmt,
   sqlite_int64 iOfst
 ){
   KVVfsFile *pFile = (KVVfsFile*)pProtoFile;
   unsigned int pgno;
   char zKey[30];
   char *aData = pFile->aData;
+  int rc;
   SQLITE_KV_LOG(("xWrite('%s-db',%d,%lld)\n", pFile->zClass, iAmt, iOfst));
   assert( iAmt>=512 && iAmt<=65536 );
   assert( (iAmt & (iAmt-1))==0 );
@@ -637,13 +663,13 @@ static int kvvfsWriteDb(
   pgno = 1 + iOfst/iAmt;
   sqlite3_snprintf(sizeof(zKey), zKey, "%u", pgno);
   kvvfsEncode(zBuf, iAmt, aData);
-  if( sqlite3KvvfsMethods.xWrite(pFile->zClass, zKey, aData) ){
-    return SQLITE_IOERR;
+  rc = sqlite3KvvfsMethods.xRcrdWrite(pFile->zClass, zKey, aData);
+  if( 0==rc ){
+    if( iOfst+iAmt > pFile->szDb ){
+      pFile->szDb = iOfst + iAmt;
+    }
   }
-  if( iOfst+iAmt > pFile->szDb ){
-    pFile->szDb = iOfst + iAmt;
-  }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -653,7 +679,7 @@ static int kvvfsTruncateJrnl(sqlite3_file *pProtoFile, sqlite_int64 size){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   SQLITE_KV_LOG(("xTruncate('%s-journal',%lld)\n", pFile->zClass, size));
   assert( size==0 );
-  sqlite3KvvfsMethods.xDelete(pFile->zClass, "jrnl");
+  sqlite3KvvfsMethods.xRcrdDelete(pFile->zClass, "jrnl");
   sqlite3_free(pFile->aJrnl);
   pFile->aJrnl = 0;
   pFile->nJrnl = 0;
@@ -662,7 +688,7 @@ static int kvvfsTruncateJrnl(sqlite3_file *pProtoFile, sqlite_int64 size){
 static int kvvfsTruncateDb(sqlite3_file *pProtoFile, sqlite_int64 size){
   KVVfsFile *pFile = (KVVfsFile *)pProtoFile;
   if( pFile->szDb>size
-   && pFile->szPage>0 
+   && pFile->szPage>0
    && (size % pFile->szPage)==0
   ){
     char zKey[50];
@@ -672,7 +698,7 @@ static int kvvfsTruncateDb(sqlite3_file *pProtoFile, sqlite_int64 size){
     pgnoMax = 2 + pFile->szDb/pFile->szPage;
     while( pgno<=pgnoMax ){
       sqlite3_snprintf(sizeof(zKey), zKey, "%u", pgno);
-      sqlite3KvvfsMethods.xDelete(pFile->zClass, zKey);
+      sqlite3KvvfsMethods.xRcrdDelete(pFile->zClass, zKey);
       pgno++;
     }
     pFile->szDb = size;
@@ -704,7 +730,7 @@ static int kvvfsSyncJrnl(sqlite3_file *pProtoFile, int flags){
   }while( n>0 );
   zOut[i++] = ' ';
   kvvfsEncode(pFile->aJrnl, pFile->nJrnl, &zOut[i]);
-  i = sqlite3KvvfsMethods.xWrite(pFile->zClass, "jrnl", zOut);
+  i = sqlite3KvvfsMethods.xRcrdWrite(pFile->zClass, "jrnl", zOut);
   sqlite3_free(zOut);
   return i ? SQLITE_IOERR : SQLITE_OK;
 }
@@ -855,10 +881,10 @@ static int kvvfsOpen(
 */
 static int kvvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   if( strcmp(zPath, "local-journal")==0 ){
-    sqlite3KvvfsMethods.xDelete("local", "jrnl");
+    sqlite3KvvfsMethods.xRcrdDelete("local", "jrnl");
   }else
   if( strcmp(zPath, "session-journal")==0 ){
-    sqlite3KvvfsMethods.xDelete("session", "jrnl");
+    sqlite3KvvfsMethods.xRcrdDelete("session", "jrnl");
   }
   return SQLITE_OK;
 }
@@ -868,23 +894,27 @@ static int kvvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 ** is available, or false otherwise.
 */
 static int kvvfsAccess(
-  sqlite3_vfs *pProtoVfs, 
-  const char *zPath, 
-  int flags, 
+  sqlite3_vfs *pProtoVfs,
+  const char *zPath,
+  int flags,
   int *pResOut
 ){
   SQLITE_KV_LOG(("xAccess(\"%s\")\n", zPath));
   if( strcmp(zPath, "local-journal")==0 ){
-    *pResOut = sqlite3KvvfsMethods.xRead("local", "jrnl", 0, 0)>0;
+    *pResOut =
+      sqlite3KvvfsMethods.xRcrdRead("local", "jrnl", 0, 0)>0;
   }else
   if( strcmp(zPath, "session-journal")==0 ){
-    *pResOut = sqlite3KvvfsMethods.xRead("session", "jrnl", 0, 0)>0;
+    *pResOut =
+      sqlite3KvvfsMethods.xRcrdRead("session", "jrnl", 0, 0)>0;
   }else
   if( strcmp(zPath, "local")==0 ){
-    *pResOut = sqlite3KvvfsMethods.xRead("local", "sz", 0, 0)>0;
+    *pResOut =
+      sqlite3KvvfsMethods.xRcrdRead("local", "sz", 0, 0)>0;
   }else
   if( strcmp(zPath, "session")==0 ){
-    *pResOut = sqlite3KvvfsMethods.xRead("session", "sz", 0, 0)>0;
+    *pResOut =
+      sqlite3KvvfsMethods.xRcrdRead("session", "sz", 0, 0)>0;
   }else
   {
     *pResOut = 0;
@@ -899,9 +929,9 @@ static int kvvfsAccess(
 ** of at least (INST_MAX_PATHNAME+1) bytes.
 */
 static int kvvfsFullPathname(
-  sqlite3_vfs *pVfs, 
-  const char *zPath, 
-  int nOut, 
+  sqlite3_vfs *pVfs,
+  const char *zPath,
+  int nOut,
   char *zOut
 ){
   size_t nPath;
@@ -924,7 +954,7 @@ static void *kvvfsDlOpen(sqlite3_vfs *pVfs, const char *zPath){
 }
 
 /*
-** Populate the buffer pointed to by zBufOut with nByte bytes of 
+** Populate the buffer pointed to by zBufOut with nByte bytes of
 ** random data.
 */
 static int kvvfsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
@@ -933,7 +963,7 @@ static int kvvfsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
 }
 
 /*
-** Sleep for nMicro microseconds. Return the number of microseconds 
+** Sleep for nMicro microseconds. Return the number of microseconds
 ** actually slept.
 */
 static int kvvfsSleep(sqlite3_vfs *pVfs, int nMicro){
@@ -961,7 +991,7 @@ static int kvvfsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
 #endif /* SQLITE_OS_KV || SQLITE_OS_UNIX */
 
 #if SQLITE_OS_KV
-/* 
+/*
 ** This routine is called initialize the KV-vfs as the default VFS.
 */
 int sqlite3_os_init(void){

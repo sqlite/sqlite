@@ -1089,10 +1089,13 @@ const char * sqlite3__wasm_enum_json(void){
 
 #define CurrentStruct sqlite3_kvvfs_methods
     StructBinder {
-      M(xRead,    "i(sspi)");
-      M(xWrite,   "i(sss)");
-      M(xDelete,  "i(ss)");
-      M(nKeySize, "i");
+      M(xRcrdRead,           "i(sspi)");
+      M(xRcrdWrite,          "i(sss)");
+      M(xRcrdDelete,         "i(s)");
+      M(nKeySize,               "i");
+      M(pVfs,                   "p");
+      M(pIoDb,                  "p");
+      M(pIoJrnl,                "p");
     } _StructBinder;
 #undef CurrentStruct
 

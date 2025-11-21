@@ -1,5 +1,5 @@
-C Add\snew\sfile\smissing\sfrom\s[3c4061428544].
-D 2025-11-21T15:03:38.538
+C Initial\srestructuring\sof\skvvfs\sworking\stowards\sgeneric\ssupport\sof\sJS's\sStrorage\sinterface\sas\sstorage\srather\sthan\shard-coding\sit\sto\sjust\swindow.localStorage\sand\swindow.sessionStorage.\sThe\seventual\sgoal\sof\sthat\sis\sto\shave\sa\sstorage\ssolution\swhich\sworks\swithout\sthe\sPOSIX\sI/O\sAPIs,\sgetting\sus\sone\sstep\scloser\sto\sa\swasi-sdk\sbuild.\sIt\swould\sbe\stransient,\slike\sEmscripten's\svirtual\sfilesystem,\sand\scould\shypothetically\sreplace\sour\sdependency\son\sthat\sparticular\sfeature.
+D 2025-11-21T15:23:52.218
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -600,11 +600,11 @@ F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 9654b565b346dc609b75d15337f20acfa7af7d9d558da1afeb9b6d8eaa404966
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js f44a4396b2305b27dc81c00a1629fe4f615520f7fb11ed4e606255e365956ba2
+F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js c4e6009351a2841ade6ecab247c9883974eccd8d5e2d8c00d4bcc9999023b0ad
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 26cb41d5a62f46a106b6371eb00fef02de3cdbfaa51338ba087a45f53028e0d0
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js aa330fa0e8ef35cbd92eb0d52e05fbaa07e61540c5cb164e693c82428ce1d763
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72a76124213cbc9469d757676da86
-F ext/wasm/api/sqlite3-wasm.c 7778527bdbb241b8e742a5fc50e470e8b8d0529c41fab9ac127c2c63f3c90d47
+F ext/wasm/api/sqlite3-wasm.c 2179f102b6c851070f4e780d71f8294e2aa53ba010f1e7cfd8fc101b81df8b0e
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
 F ext/wasm/c-pp-lite.c 943be1a36774d58385dca32de36fc18d4f432fe79f7aa35e6c85dd6a6b825bd0
@@ -717,7 +717,7 @@ F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
-F src/os_kv.c fb7ba8d6204197357f1eb7e1c7450d09c10043bf7e99aba602f4aa46b8fb11a3
+F src/os_kv.c 2963455c752a20eb60d6d497a9bace5a6cc83af4ecd40ed0e33fdfb370864fce
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 7945ede1e85b2d1b910e1b4af9ba342e964b1e30e79f4176480a60736445cb36
 F src/os_win.c a89b501fc195085c7d6c9eec7f5bd782625e94bb2a96b000f4d009703df1083f
@@ -2178,8 +2178,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 895498e4431e02cff65a5d96db22f0b0cb9c96aedf1e3cdcdeb3c34c6fec432b
-R ce0350baf4d1de88228e71ca89be9093
+P 41f94eca01d8317364aa60ddd8e5fe3cd21a215040ef271a157d450a914139d0
+R c24190ae7a0835568d82af728a2e7bdd
+T *branch * kvvfs-v2
+T *sym-kvvfs-v2 *
+T -sym-trunk * Cancelled\sby\sbranch.
 U stephan
-Z 923ff40315e60b496c7ed96ee0be8e80
+Z 9210a0cee9d8767f1b346041ef3e7366
 # Remove this line to create a well-formed Fossil manifest.

@@ -134,7 +134,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          kvstorageDelete().
       */
       for(const e of Object.entries({
-        xRead: (zClass, zKey, zBuf, nBuf)=>{
+        xStorageRead: (zClass, zKey, zBuf, nBuf)=>{
           const stack = pstack.pointer,
                 astack = wasm.scopedAllocPush();
           try {
@@ -166,7 +166,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             wasm.scopedAllocPop(astack);
           }
         },
-        xWrite: (zClass, zKey, zData)=>{
+        xStorageWrite: (zClass, zKey, zData)=>{
           const stack = pstack.pointer;
           try {
             const zXKey = kvvfsMakeKey(zClass,zKey);
@@ -181,7 +181,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             pstack.restore(stack);
           }
         },
-        xDelete: (zClass, zKey)=>{
+        xStorageDelete: (zClass, zKey)=>{
           const stack = pstack.pointer;
           try {
             const zXKey = kvvfsMakeKey(zClass,zKey);
@@ -213,10 +213,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      We can call back into the native impls when needed, but we need
      to override certain operations here to bypass its strict
      db-naming rules (which, funnily enough, are in place because
-     they're relevant (only) for this browser-side
-     implementation). Apropos: the port to generic objects would also
-     make non-persistent kvvfs available in Worker threads and
-     non-browser builds.
+     they're relevant (only) for what should soon be the previous
+     version of this browser-side implementation). Apropos: the port
+     to generic objects would also make non-persistent kvvfs available
+     in Worker threads and non-browser builds. They could optionally
+     be exported to/from JSON.
   */
   const eventualTodo = 1 || {
     vfsMethods:{
