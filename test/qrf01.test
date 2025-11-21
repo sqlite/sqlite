@@ -888,6 +888,13 @@ do_test 9.2 {
   db format -style list -text sql -rowsep , -textjsonb on \
                {SELECT * FROM t9}
 } {jsonb('1234'),jsonb('1234'),jsonb('1234'),jsonb('1234'),jsonb('1234'),}
+do_test 9.3 {
+  db format -style json  {SELECT * FROM t9 WHERE rowid<0}
+} {}
+do_test 9.4 {
+  db format -style jobject  {SELECT * FROM t9 WHERE rowid<0}
+} {}
+
 db close
 
 finish_test

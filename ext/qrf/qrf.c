@@ -2386,13 +2386,17 @@ static void qrfFinalize(Qrf *p){
       break;
     }
     case QRF_STYLE_Json: {
-      sqlite3_str_append(p->pOut, "}]\n", 3);
-      qrfWrite(p);
+      if( p->nRow>0 ){
+        sqlite3_str_append(p->pOut, "}]\n", 3);
+        qrfWrite(p);
+      }
       break;
     }
     case QRF_STYLE_JObject: {
-      sqlite3_str_append(p->pOut, "}\n", 2);
-      qrfWrite(p);
+      if( p->nRow>0 ){
+        sqlite3_str_append(p->pOut, "}\n", 2);
+        qrfWrite(p);
+      }
       break;
     }
     case QRF_STYLE_Line: {
