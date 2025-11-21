@@ -1,5 +1,5 @@
-C Add\snew\sfile\smissing\sfrom\s[3c4061428544].
-D 2025-11-21T15:03:38.538
+C Fix\stypo\sin\sthe\simplementation\sof\sthe\s".schema"\scommand\sof\sthe\sCLI\sfor\sthe\ncase\swhen\sthere\sare\sATTACH-ed\sdatabases.
+D 2025-11-21T17:30:44.138
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -735,7 +735,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 5616fbcf3b833c7c705b24371828215ad0925d0c0073216c4f153348d5753f0a
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c ba9cd07ffa3277883c1986085f6ddc4320f4d35d5f212ab58df79a7ecc1a576a
-F src/shell.c.in c8256f5f03ed3177b892ba8a730cdf222aeefbf146a4efae046b5f7356953ada
+F src/shell.c.in 471f872bdcffaeac73cc370f1b903c1a77206f67c1d9140a9d034250873a0e1c
 F src/sqlite.h.in f1363321ca55cc2feaa289e9fe6dfb08102a28c54edf005564711a2348b06eef
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d5330f5f8461f5ce74960436ddcfa53ecd09c2b8b23901e22ae38aec3243998
@@ -2178,8 +2178,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 895498e4431e02cff65a5d96db22f0b0cb9c96aedf1e3cdcdeb3c34c6fec432b
-R ce0350baf4d1de88228e71ca89be9093
-U stephan
-Z 923ff40315e60b496c7ed96ee0be8e80
+P 41f94eca01d8317364aa60ddd8e5fe3cd21a215040ef271a157d450a914139d0
+R d9fc85290e05d34572562b0787425dcb
+U drh
+Z e1a81275db2100d8eeaf6c8da8fbe67a
 # Remove this line to create a well-formed Fossil manifest.

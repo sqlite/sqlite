@@ -10064,7 +10064,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
             bIndent);
       }else{
         sqlite3_str_appendf(pSql,
-            "SELECT shell_format_schema(shell_add_schema(sql,%Q,name),%d))",
+            "SELECT shell_format_schema(shell_add_schema(sql,%Q,name),%d)",
             zDb, bIndent);
       }
       sqlite3_str_appendf(pSql,
