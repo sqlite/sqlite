@@ -926,7 +926,7 @@ do_test 10.1 {
       ('yates'),
       ('zoe');
   }
-  set result "\n[db format -style column -title off -screenwidth 41 -wrapsnglcol on \
+  set result "\n[db format -style column -title off -screenwidth 41 -splitcolumn on \
                     {SELECT x FROM t1}]"
 } {
 alice                  octavian
@@ -944,7 +944,7 @@ mike                   zoe
 nina
 }
 do_test 10.2 {
-  set result "\n[db format -style column -title off -screenwidth 42 -wrapsnglcol on \
+  set result "\n[db format -style column -title off -screenwidth 42 -splitcolumn on \
                     {SELECT x FROM t1}]"
 } {
 alice                  jake      tammy
@@ -958,7 +958,7 @@ harold                 rita
 ingrid                 sam
 }
 do_test 10.3 {
-  set result "\n[db format -style column -title off -screenwidth 51 -wrapsnglcol on \
+  set result "\n[db format -style column -title off -screenwidth 51 -splitcolumn on \
                     {SELECT x FROM t1}]"
 } {
 alice                  harold    paula    william
@@ -970,7 +970,7 @@ fred                   nina      ulysses
 gertrude               octavian  violet
 }
 do_test 10.4 {
-  set result "\n[db format -style column -title off -screenwidth 61 -wrapsnglcol on \
+  set result "\n[db format -style column -title off -screenwidth 61 -splitcolumn on \
                     {SELECT x FROM t1}]"
 } {
 alice                  fred      lisa      quintus  violet
@@ -980,7 +980,7 @@ daniel                 ingrid    octavian  tammy    yates
 emma                   jake      paula     ulysses  zoe
 }
 do_test 10.5 {
-  set result "\n[db format -style column -title off -screenwidth 74 -wrapsnglcol on \
+  set result "\n[db format -style column -title off -screenwidth 74 -splitcolumn on \
                     {SELECT x FROM t1}]"
 } {
 alice                  emma      ingrid  nina      rita     violet     zoe

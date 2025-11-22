@@ -1510,11 +1510,11 @@ static int *qrfValidLayout(
 }
 
 /*
-** The output is single-column and the bWrapSnglCol flag is set.
+** The output is single-column and the bSplitColumn flag is set.
 ** Check to see if the single-column output can be split into multiple
 ** columns that appear side-by-side.  Adjust pData appropriately.
 */
-static void qrfWrapSingleColumn(qrfColData *pData, Qrf *p){
+static void qrfSplitColumn(qrfColData *pData, Qrf *p){
   int nCol = 1;
   int *aw = 0;
   char **az = 0;
@@ -1785,15 +1785,15 @@ static void qrfColumnar(Qrf *p){
   }
 
   if( nColumn==1
-   && p->spec.bWrapSnglCol==QRF_Yes
+   && p->spec.bSplitColumn==QRF_Yes
    && p->spec.eStyle==QRF_STYLE_Column
    && p->spec.bTitles==QRF_No
    && p->spec.nScreenWidth>data.a[0].w+3
   ){
     /* Attempt to convert single-column tables into multi-column by
     ** verticle wrapping, if the screen is wide enough and if the
-    ** bWrapSnglCol flag is set. */
-    qrfWrapSingleColumn(&data, p);
+    ** bSplitColumn flag is set. */
+    qrfSplitColumn(&data, p);
     nColumn = data.nCol;
   }else{
     /* Adjust the column widths due to screen width restrictions */

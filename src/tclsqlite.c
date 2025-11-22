@@ -2063,7 +2063,7 @@ static void DbHookCmd(
 **     -wordwrap ("auto"|"off"|"on")           Try to wrap at word boundry?
 **     -textjsonb ("auto"|"off"|"on")          Auto-convert JSONB to text?
 **     -textnull ("auto"|"off"|"on")           Use text encoding for -null.
-**     -wrapsnglcol ("auto"|"off"|"on")        Enable wrap-single-column
+**     -splitcolumn ("auto"|"off"|"on")        Enable split-column mode
 **     -defaultalign ("auto"|"left"|...)       Default alignment
 **     -titalalign ("auto"|"left"|"right"|...) Default column name alignment
 **     -wrap NUMBER                            Max width of any single column
@@ -2090,7 +2090,7 @@ static void DbHookCmd(
 **     -wordwrap         bWordWrap
 **     -textjsonb        bTextJsonb
 **     -textnull         bTestNull
-**     -wrapsnglcol      bWrapSnglCol
+**     -splitcolumn      bSplitColumn
 **     -defaultalign     eDfltAlign
 **     -titlealign       eTitleAlign
 **     -wrap             nWrap
@@ -2240,7 +2240,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       i++;
     }else if( strcmp(zArg,"-textjsonb")==0
            || strcmp(zArg,"-textnull")==0
-           || strcmp(zArg,"-wrapsnglcol")==0
+           || strcmp(zArg,"-splitcolumn")==0
     ){
       int v = 0;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
@@ -2251,7 +2251,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       }else if( zArg[5]=='n' ){
         qrf.bTextNull = aBoolMap[v];
       }else{
-        qrf.bWrapSnglCol = aBoolMap[v];
+        qrf.bSplitColumn = aBoolMap[v];
       }
       i++;
     }else if( strcmp(zArg,"-defaultalign")==0 || strcmp(zArg,"-titlealign")==0){
