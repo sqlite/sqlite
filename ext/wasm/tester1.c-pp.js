@@ -2882,10 +2882,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'kvvfs sessionStorage',
       predicate: ()=>(globalThis.sessionStorage || "sessionStorage is unavailable"),
       test: function(sqlite3){
-        const filename = this.kvvfsDbFile = 'session';
+        const JDb = sqlite3.oo1.JsStorageDb;
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(looksLikePtr(pVfs));
-        const JDb = sqlite3.oo1.JsStorageDb;
+        let x = JDb.testKvvfsWhich('');
+        T.assert( 2 === x?.stores?.length )
+          .assert( x.stores.indexOf(globalThis.sessionStorage)>-1 )
+          .assert( x.stores.indexOf(globalThis.localStorage)>-1 )
+          .assert( 'kvvfs-' === x.prefix );
+        const filename = this.kvvfsDbFile = 'session';
         const unlink = this.kvvfsUnlink = ()=>JDb.clearStorage(filename);
         unlink();
         let db = new JDb(filename);
@@ -2894,7 +2899,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             'create table kvvfs(a);',
             'insert into kvvfs(a) values(1),(2),(3)'
           ]);
-          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          T.assert(3 === db.selectValue('select count(*) from kvvfs'))
+            .assert( db.storageSize() > 0, "Db size counting is broken" );
           db.close();
           db = undefined;
           db = new JDb(filename);
@@ -2908,7 +2914,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'transient kvvfs',
       test: function(sqlite3){
-        const filename = 'global' /* preinstalled instance */;
+        const filename = 'localThread' /* preinstalled instance */;
         const JDb = sqlite3.oo1.JsStorageDb;
         JDb.clearStorage(filename);
         let db = new JDb(filename);
@@ -2935,6 +2941,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new JDb('new-storage');
           db.exec(sqlSetup);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          console.debug("kvvfs to Object:",db.testDbToObject());
+          const n = db.storageSize();
+          T.assert( n>0, "Db size count failed" );
           close();
 
           T.mustThrow(function(){

@@ -102,7 +102,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      Map of JS-stringified KVVfsFile::zClass names to
-     reference-counted Storage objects. These objects are creates in
+     reference-counted Storage objects. These objects are created in
      xOpen(). Their refcount is decremented in xClose(), and the
      record is destroyed if the refcount reaches 0. We refcount so
      that concurrent active xOpen()s on a given name, and within a
@@ -110,7 +110,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   cache.jzClassToStorage = Object.assign(Object.create(null),{
     /* Start off with mappings for well-known names. */
-    global: {
+    localThread: {
       refc: 3/*never reaches 0*/,
       s: new TransientStorage
     }
@@ -152,11 +152,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      It returns an object in the form:
 
-     .prefix = the key prefix for this storage: "kvvfs-"+which.
-     (FIXME: we need to teach the underlying pieces to elide the
-     "-..." part for non-sessionSession/non-localStorage entries.
-     If we don't, each storage's keys will always be prefixed
-     by their name, which is wasteful.)
+     .prefix = the key prefix for this storage. Typically
+     ("kvvfs-"+which) for persistent storage and "kvvfs-" for
+     transient. (The former is historical, retained for backwards
+     compatibility.)
 
      .stores = [ array of Storage-like objects ]. Will only have >1
      element if which is falsy, in which case it contains (if called
@@ -172,7 +171,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const s = cache.jzClassToStorage[which];
       if( s ){
         //debug("kvvfsWhich",s.jzClass,rc.prefix, s.s);
-        rc.prefix = 'kvvfs-'+s.jzClass;
+        if( !s.useFullZClass ){
+          rc.prefix = 'kvvfs-';
+        }
         rc.stores.push(s.s);
       }
     }else{
@@ -243,7 +244,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   capi.sqlite3_js_kvvfs_size = function(which=""){
     let sz = 0;
     const store = kvvfsWhich(which);
+    //warn("kvvfs_size storage",store);
     store?.stores?.forEach?.((s)=>{
+      //warn("kvvfs_size backend",s);
       let i;
       for(i = 0; i < s.length; ++i){
         const k = s.key(i);
@@ -727,7 +730,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           return rc;
         }
       }
-    }
+      jdb.testKvvfsWhich = kvvfsWhich;
+    }/* __isUnderTest */
   }/*sqlite3.oo1.JsStorageDb*/
 
 })/*globalThis.sqlite3ApiBootstrap.initializers*/;
