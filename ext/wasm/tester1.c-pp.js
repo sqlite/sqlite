@@ -2913,6 +2913,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }/*kvvfs sanity checks*/)
     .t({
       name: 'transient kvvfs',
+      //predicate: ()=>false,
       test: function(sqlite3){
         const filename = 'localThread' /* preinstalled instance */;
         const JDb = sqlite3.oo1.JsStorageDb;
@@ -2935,18 +2936,26 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new JDb(filename);
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-          console.debug("kvvfs to Object:",db.testDbToObject());
+          console.debug("kvvfs to Object:",db.testDbToObject(true));
           close();
 
           db = new JDb('new-storage');
           db.exec(sqlSetup);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
-          console.debug("kvvfs to Object:",db.testDbToObject());
+          console.debug("kvvfs to Object:",db.testDbToObject(true));
           const n = db.storageSize();
           T.assert( n>0, "Db size count failed" );
-          close();
 
-          T.mustThrow(function(){
+          if( 1 ){
+            // Concurrent open of that same name uses the same storage
+            const x = new JDb(db.filename);
+            T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+            x.close();
+          }
+          close();
+          // When the final instance of a name is closed, the storage
+          // disappears...
+          T.mustThrowMatching(function(){
             /* Ensure that 'new-storage' was deleted when its refcount
                went to 0. TODO is a way to tell these instances to
                hang around after that, such that 'new-instance' could
@@ -2958,7 +2967,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             }finally{
               ddb.close();
             }
-          }, "Expecting new-storage to be empty.");
+          }, /.*no such table: kvvfs.*/);
         }finally{
           if( db ) db.close();
         }

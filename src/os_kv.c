@@ -21,7 +21,7 @@
 ** Debugging logic
 */
 
-/* SQLITE_KV_TRACE() is used for tracing calls to kvstorage routines. */
+/* SQLITE_KV_TRACE() is used for tracing calls to kvrecord routines. */
 #if 0
 #define SQLITE_KV_TRACE(X)  printf X
 #else
@@ -535,6 +535,9 @@ static int kvvfsClose(sqlite3_file *pProtoFile){
              pFile->isJournal ? "journal" : "db"));
   sqlite3_free(pFile->aJrnl);
   sqlite3_free(pFile->aData);
+#ifdef SQLITE_WASM
+  memset(pFile, 0, sizeof(*pFile));
+#endif
   return SQLITE_OK;
 }
 
@@ -920,17 +923,18 @@ static int kvvfsAccess(
   SQLITE_KV_LOG(("xAccess(\"%s\")\n", zPath));
 #if 0 && defined(SQLITE_WASM)
   /*
-  ** Bug somewhere: if this method sets *pResOut to non-0 then
-  ** xClose() is abort()ing via free(). The symptoms are the same
-  ** whether we set *pResOut from here or from JS.
+  ** This is not having the desired effect in the JS bindings.
+  ** It's ostensibly the same logic as the #else block, but
+  ** it's not behaving that way.
+  **
+  ** In JS we map all zPaths to Storage objects, and -journal files
+  ** are mapped to the storage for the main db (which is is exactly
+  ** what the mapping of "local-journal" -> "local" is doing).
   */
-  if( 0==sqlite3_strglob("*-journal", zPath) ){
-    *pResOut =
-      sqlite3KvvfsMethods.xRcrdRead(zPath, "jrnl", 0, 0)>0;
-  }else{
-    *pResOut =
-      sqlite3KvvfsMethods.xRcrdRead(zPath, "sz", 0, 0)>0;
-  }
+  const char *zKey = (0==sqlite3_strglob("*-journal", zPath))
+    ? "jrnl" : "sz";
+  *pResOut =
+    sqlite3KvvfsMethods.xRcrdRead(zPath, zKey, 0, 0)>0;
 #else
   if( strcmp(zPath, "local-journal")==0 ){
     *pResOut =

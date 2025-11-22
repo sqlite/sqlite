@@ -36,7 +36,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         hop = (o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 
   const cache = Object.assign(Object.create(null),{
-    rxJournalSuffix: /^-journal$/, // TOOD: lazily init once we figure out where
+    rxJournalSuffix: /-journal$/, // TOOD: lazily init once we figure out where
     zKeyJrnl: wasm.allocCString("jrnl"),
     zKeySz: wasm.allocCString("sz")
   });
@@ -334,22 +334,29 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 astack = wasm.scopedAllocPush();
           try{
             const store = storageForZClass(zClass);
-            if( !store ) return -1;
             if( 0 ){
-              debug("xRcrdRead", nBuf, zClass, wasm.cstrToJs(zClass),
-                    wasm.cstrToJs(zKey), store);
+              debug("xRcrdRead", wasm.cstrToJs(zClass),
+                    wasm.cstrToJs(zKey), zBuf, nBuf, store );
             }
+            if( !store ) return -1;
             const zXKey = keyForStorage(store, zClass, zKey);
             if(!zXKey) return -3/*OOM*/;
             const jV = store.s.getItem(wasm.cstrToJs(zXKey));
-            if(!jV) return -1;
+            if(null===jV) return -1;
             const nV = jV.length /* We are relying 100% on v being
                                  ** ASCII so that jV.length is equal
                                  ** to the C-string's byte length. */;
+            if( 0 ){
+              debug("xRcrdRead", wasm.cstrToJs(zXKey), store, jV);
+            }
             if(nBuf<=0) return nV;
             else if(1===nBuf){
               wasm.poke(zBuf, 0);
               return nV;
+            }
+            if( 0 ){
+              debug("xRcrdRead", nBuf, zClass, wasm.cstrToJs(zClass),
+                    wasm.cstrToJs(zKey), nV, jV, store);
             }
             const zV = wasm.scopedAllocCString(jV)
             /* TODO: allocate a single 128kb buffer (largest page
@@ -360,7 +367,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               Number(zBuf), Number(zV), wasm.ptr.addn(zV, nBuf,- 1)
             );
             wasm.poke(wasm.ptr.add(zBuf, nBuf), 0);
-            return nBuf - 1;
+            return nBuf;
           }catch(e){
             error("kvrecordRead()",e);
             return -2;
@@ -420,16 +427,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if( n > kvvfsMethods.$nKeySize - 8 /*"-journal"*/ - 1 ){
               warn("file name is too long:", wasm.cstrToJs(zName));
               return capi.SQLITE_RANGE;
+            }else{
+              wasm.poke32(pOutFlags, flags | sqlite3.SQLITE_OPEN_CREATE);
             }
             const rc = originalMethods.vfs.xOpen(pProtoVfs, zName, pProtoFile,
                                                  flags, pOutFlags);
             if( 0==rc ){
               const f = new KVVfsFile(pProtoFile);
               util.assert(f.$zClass, "Missing f.$zClass");
-                const jzName = wasm.cstrToJs(zName);
-              const jzClass = wasm.cstrToJs(f.$zClass);
+              const jzClass = wasm.cstrToJs(zName);//f.$zClass);
               let s = cache.jzClassToStorage[jzClass];
-              //debug("xOpen", jzName, jzClass, s);
+              //debug("xOpen", jzClass, s);
               if( s ){
                 ++s.refc;
               }else{
@@ -437,10 +445,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                    around forever so that future xOpen()s get the same
                    Storage-ish objects. We can accomplish that by
                    simply increasing the refcount once more. */
-                util.assert( !f.$isJournal, "Opening a journal before its db? "+jzName );
+                util.assert( !f.$isJournal, "Opening a journal before its db? "+jzClass );
                 const other = f.$isJournal
-                      ? jzName.replace(cache.rxJournalSuffix,'')
-                      : jzName + '-journal';
+                      ? jzClass.replace(cache.rxJournalSuffix,'')
+                      : jzClass + '-journal';
                 s = cache.jzClassToStorage[jzClass]
                   = cache.jzClassToStorage[other]
                   = Object.assign(Object.create(null),{
@@ -452,9 +460,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                     s: new TransientStorage
                   });
                 debug("xOpen installed storage handles [",
-                      jzName, other,"]", s);
+                      jzClass, other,"]", s);
               }
-              pFileHandles.set(pProtoFile, {s,f,n:jzName});
+              pFileHandles.set(pProtoFile, {s,f,n:jzClass});
             }
             return rc;
           }catch(e){
@@ -484,46 +492,49 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
         xAccess:function(pProtoVfs, zPath, flags, pResOut){
           try{
-            if( 0 ){
+            /**
+               In every test run to date, if this function sets
+               *pResOut to anything other than 0, the VFS fails to
+               function.  Why that that is is a mystery. How it seems
+               to work despite never reporting "file found" is a
+               mystery.
+            */
+            wasm.poke32(pResOut, 0);
+            return 0;
+            if( 1 ){
+              /* This is fundamentally exactly what the native impl does. */
               const jzName = wasm.cstrToJs(zPath);
-              const s = cache.jzClassToStorage[jzName];
-              debug("xAccess", jzName, s);
-              let drc = 1;
-              wasm.poke32(pResOut, 0);
-              if( s ){
-                /* This block is _somehow_ triggering an
-                   abort() via xClose(). */
-                if(0) debug("cache.zKeyJrnl...",wasm.cstrToJs(cache.zKeyJrnl),
-                      wasm.cstrToJs(cache.zKeySz));
-                drc = recordHandler.xRcrdRead(
-                  zPath,
-                  jzName.endsWith("-journal")
-                    ? cache.zKeyJrnl
-                    : cache.zKeySz,
-                  wasm.ptr.null, 0
+              const drc = recordHandler.xRcrdRead(
+                zPath, cache.rxJournalSuffix.test(jzName)
+                  ? cache.zKeyJrnl
+                  : cache.zKeySz,
+                wasm.ptr.null, 0
+              );
+              if( drc>0 ){
+                wasm.poke32(
+                  pResOut, 1
+                  /* This poke is triggering an abort via xClose().
+                     If we poke 0 then no problem... except that
+                     xAccess() doesn't report the truth. Same effect
+                     if we move that to the native impl
+                     os_kv.c:kvvfsAccess(). */
                 );
-                debug("xAccess", jzName, drc, pResOut);
-                if( drc>0 ){
-                  wasm.poke32(
-                    pResOut, 1
-                    /* This poke is triggering an abort via xClose().
-                       If we poke 0 then no problem... except that
-                       xAccess() doesn't report the truth. Same effect
-                       if we move that to the native impl
-                       os_kv.c:kvvfsAccess(). */
-                  );
-                }
               }
+              debug("xAccess", jzName, drc, pResOut, wasm.peek32(pResOut));
               return 0;
+            }else{
+              const rc = originalMethods.vfs.xAccess(
+                pProtoVfs, zPath, flags, pResOut
+                /* This one is only valid for local/session storage. */
+              );
+              if( 0 && !!wasm.peek32(pResOut) ){
+                /* The native impl, despite apparently hitting the
+                   right data on this side of the call, never sets
+                   pResOut to anything other than 0. */
+                debug("xAccess *pResOut", wasm.cstrToJs(zPath), wasm.peek32(pResOut));
+              }
+              return rc;
             }
-            const rc = originalMethods.vfs.xAccess(
-              pProtoVfs, zPath, flags, pResOut
-              /* This one is only valid for local/session storage */
-            );
-            if( 0 && 0===rc ){
-              debug("xAccess pResOut", wasm.peek32(pResOut));
-            }
-            return rc;
           }catch(e){
             error('xAccess',e);
             return capi.SQLITE_ERROR;
@@ -532,8 +543,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
 //#if nope
         xFullPathname: function(pVfs, zPath, nOut, zOut){},
-        xDlOpen: function(pVfs, zFilename){},
-        xSleep: function(pVfs,usec){},
         xCurrentTime: function(pVfs,pOutDbl){},
         xCurrentTimeInt64: function(pVfs,pOutI64){},
 //#endif
@@ -579,7 +588,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
             return 0;
           }catch(e){
-            warn("xClose",e);
+            error("xClose",e);
             return capi.SQLITE_ERROR;
           }
         },
@@ -717,15 +726,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
 
     if( sqlite3.__isUnderTest ){
-      jdb.prototype.testDbToObject = function(){
+      jdb.prototype.testDbToObject = function(includeJournal=false){
         const store = cache.jzClassToStorage[this.affirmOpen().filename];
+        const rx = includeJournal ? undefined : /^kvvfs(-(local|session))?-jrnl$/;
         if( store ){
           const s = store.s;
           const rc = Object.create(null);
           let i = 0, n = s.length;
           for( ; i < n; ++i ){
-            const k = s.key(i), v = s.getItem(k);
-            rc[k] = v;
+            const k = s.key(i);
+            if( !rx || !rx.test(k) ){
+              rc[k] = s.getItem(k);
+            }
           }
           return rc;
         }
