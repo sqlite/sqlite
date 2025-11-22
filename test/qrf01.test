@@ -895,6 +895,100 @@ do_test 9.4 {
   db format -style jobject  {SELECT * FROM t9 WHERE rowid<0}
 } {}
 
+do_test 10.1 {
+  db eval {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(x);
+    INSERT INTO t1(x) VALUES
+      ('alice'),
+      ('bob'),
+      ('cinderella-cinderella'),
+      ('daniel'),
+      ('emma'),
+      ('fred'),
+      ('gertrude'),
+      ('harold'),
+      ('ingrid'),
+      ('jake'),
+      ('lisa'),
+      ('mike'),
+      ('nina'),
+      ('octavian'),
+      ('paula'),
+      ('quintus'),
+      ('rita'),
+      ('sam'),
+      ('tammy'),
+      ('ulysses'),
+      ('violet'),
+      ('william'),
+      ('xanthippe'),
+      ('yates'),
+      ('zoe');
+  }
+  set result "\n[db format -style column -title off -screenwidth 41 -wrapsnglcol on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  octavian
+bob                    paula
+cinderella-cinderella  quintus
+daniel                 rita
+emma                   sam
+fred                   tammy
+gertrude               ulysses
+harold                 violet
+ingrid                 william
+jake                   xanthippe
+lisa                   yates
+mike                   zoe
+nina
+}
+do_test 10.2 {
+  set result "\n[db format -style column -title off -screenwidth 42 -wrapsnglcol on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  jake      tammy
+bob                    lisa      ulysses
+cinderella-cinderella  mike      violet
+daniel                 nina      william
+emma                   octavian  xanthippe
+fred                   paula     yates
+gertrude               quintus   zoe
+harold                 rita
+ingrid                 sam
+}
+do_test 10.3 {
+  set result "\n[db format -style column -title off -screenwidth 51 -wrapsnglcol on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  harold    paula    william
+bob                    ingrid    quintus  xanthippe
+cinderella-cinderella  jake      rita     yates
+daniel                 lisa      sam      zoe
+emma                   mike      tammy
+fred                   nina      ulysses
+gertrude               octavian  violet
+}
+do_test 10.4 {
+  set result "\n[db format -style column -title off -screenwidth 61 -wrapsnglcol on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  fred      lisa      quintus  violet
+bob                    gertrude  mike      rita     william
+cinderella-cinderella  harold    nina      sam      xanthippe
+daniel                 ingrid    octavian  tammy    yates
+emma                   jake      paula     ulysses  zoe
+}
+do_test 10.5 {
+  set result "\n[db format -style column -title off -screenwidth 74 -wrapsnglcol on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  emma      ingrid  nina      rita     violet     zoe
+bob                    fred      jake    octavian  sam      william
+cinderella-cinderella  gertrude  lisa    paula     tammy    xanthippe
+daniel                 harold    mike    quintus   ulysses  yates
+}
+
 db close
 
 finish_test
