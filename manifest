@@ -1,5 +1,5 @@
-C Add\sthe\s--no-limits\soption\sto\sthe\s.mode\scommand\sin\sthe\sCLI.
-D 2025-11-22T21:47:48.856
+C Add\s"split"\smode\sin\sthe\sCLI.\s\sFix\sCLI\scommands\sgiven\son\sthe\scommand\sline\nso\sthat\sthey\shonor\s--once\sin\sprior\scommands.
+D 2025-11-22T23:34:53.769
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -735,7 +735,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 5616fbcf3b833c7c705b24371828215ad0925d0c0073216c4f153348d5753f0a
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c ba9cd07ffa3277883c1986085f6ddc4320f4d35d5f212ab58df79a7ecc1a576a
-F src/shell.c.in bbd55e63e9ae9f33e96a9511dc21a4be3f9be3b1fb7a492bdd1c725258a69682
+F src/shell.c.in 977f8b9b108f37cdcce4c1a0f17e7809666aaa6c504f0752eb8c4ec7122999c4
 F src/sqlite.h.in f1363321ca55cc2feaa289e9fe6dfb08102a28c54edf005564711a2348b06eef
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d5330f5f8461f5ce74960436ddcfa53ecd09c2b8b23901e22ae38aec3243998
@@ -1614,7 +1614,7 @@ F test/shell6.test e3b883b61d4916b6906678a35f9d19054861123ad91b856461e0a456273bd
 F test/shell7.test 43fd8e511c533bab5232e95c7b4be93b243451709e89582600d4b6e67693d5c3
 F test/shell8.test 641cf21a99c59404c24e3062923734951c4099a6b6b6520de00cf7a1249ee871
 F test/shell9.test 8742a5b390cdcef6369f5aa223e415aa4255a4129ef249b177887dc635a87209
-F test/shellA.test 4ece22f204532fb04ab702c5b9c70d8680ff610bff1e82c849c16a7b5cd57d83
+F test/shellA.test 4b8983a40703b5550f691592b6c5bc64886c26755eeb7a474af849d1e39b51f2
 F test/shellB.test de879b1ea7c25daf1a06b2c882b45a5d002e6580c81c57169ce47084cc6afb6b
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
@@ -2178,8 +2178,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 76512b3b80fdcaae22340cde0b69857e2a4d7e86a63c6759465bd8a0bcbf82bc
-R fd59072a32f0d4099969082466a9a77e
+P 3cee168e8801481f6d909fb5d20a773b9c6ca0b8daedfc301c9d762a17f9d839
+R 53605c07fff250aecf8e1982cc6fddce
 U drh
-Z 8f5059e4a9fa8586168b58aff36d75e6
+Z 5d5dcf7a665f0cd59987ab755e809ab9
 # Remove this line to create a well-formed Fossil manifest.

@@ -250,4 +250,83 @@ INSERT INTO t1 VALUES(7,'carriage\rreturn');
 INSERT INTO t1 VALUES(8,'last line');
 "
 
+# ".mode split"
+#
+do_test shellA-6.1 {
+  db eval {
+    CREATE TABLE t2(x);
+    INSERT INTO t2(x) VALUES
+      ('one'), ('two'), ('three'), ('four'), ('five'),
+      ('six'), ('seven'), ('eight'), ('nine'), ('ten'),
+      ('eleven'), ('twelve'), ('thirteen'), ('fourteen');
+  }
+  exec {*}$CLI -noinit test.db \
+      {.print} \
+      {.mode split -screenwidth 30} \
+      {SELECT x FROM t2}
+} {
+one    five   nine    thirteen
+two    six    ten     fourteen
+three  seven  eleven
+four   eight  twelve}
+# 3456789 123456789 123456789
+
+do_test shellA-6.2 {
+  exec {*}$CLI -noinit test.db \
+      {.print} \
+      {.mode split -screenwidth 30} \
+      {SELECT x FROM t2} \
+      {.mode column -titles off} \
+      {SELECT x FROM t2}
+} {
+one    five   nine    thirteen
+two    six    ten     fourteen
+three  seven  eleven
+four   eight  twelve
+one
+two
+three
+four
+five
+six
+seven
+eight
+nine
+ten
+eleven
+twelve
+thirteen
+fourteen}
+
+do_test shellA-6.3 {
+  exec {*}$CLI -noinit test.db \
+      {.print} \
+      {.mode table} \
+      {.mode --once split -screenwidth 30} \
+      {SELECT x FROM t2} \
+      {SELECT x FROM t2}
+} {
+one    five   nine    thirteen
+two    six    ten     fourteen
+three  seven  eleven
+four   eight  twelve
++----------+
+|    x     |
++----------+
+| one      |
+| two      |
+| three    |
+| four     |
+| five     |
+| six      |
+| seven    |
+| eight    |
+| nine     |
+| ten      |
+| eleven   |
+| twelve   |
+| thirteen |
+| fourteen |
++----------+}
+
 finish_test

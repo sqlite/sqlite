@@ -1430,12 +1430,13 @@ static const char *qrfQuoteNames[] =
 #define MODE_Off      14  /* No query output shown */
 #define MODE_QBox     15  /* BOX with SQL-quoted content */
 #define MODE_Quote    16  /* Quote values as for SQL */
-#define MODE_Table    17  /* MySQL-style table formatting */
-#define MODE_Tabs     18  /* Tab-separated values */
-#define MODE_Tcl      19  /* Space-separated list of TCL strings */
-#define MODE_Www      20  /* Full web-page output */
+#define MODE_Split    17  /* Split-column mode */
+#define MODE_Table    18  /* MySQL-style table formatting */
+#define MODE_Tabs     19  /* Tab-separated values */
+#define MODE_Tcl      20  /* Space-separated list of TCL strings */
+#define MODE_Www      21  /* Full web-page output */
 
-#define MODE_BUILTIN  20  /* Maximum built-in mode */
+#define MODE_BUILTIN  21  /* Maximum built-in mode */
 #define MODE_BATCH    50  /* Default mode for batch processing */
 #define MODE_TTY      51  /* Default mode for interactive processing */
 #define MODE_USER     75  /* First user-defined mode */
@@ -1484,6 +1485,7 @@ static const ModeInfo aModeInfo[] = {
   { "off",      0,     0,    0,    0,    0,    0,   0,   14,    0 },
   { "qbox",     0,     0,    9,    2,    1,    2,   2,   1,     2 },
   { "quote",    4,     1,    10,   2,    2,    2,   1,   12,    0 },
+  { "split",    0,     0,    9,    1,    1,    1,   1,   2,     2 },
   { "table",    0,     0,    9,    1,    1,    1,   2,   19,    2 },
   { "tabs",     8,     1,    9,    3,    3,    1,   1,   12,    0 },
   { "tcl",      3,     1,    12,   5,    5,    4,   1,   12,    0 },
@@ -1612,6 +1614,12 @@ static void modeChange(ShellState *p, unsigned char eMode){
     pM->spec.eBlob = pI->eBlob;
     pM->spec.bTitles = pI->bHdr;
     pM->spec.eTitle = pI->eHdr;
+    if( eMode==MODE_Split ){
+      pM->spec.bSplitColumn = QRF_Yes;
+      pM->bAutoScreenWidth = 1;
+    }else{
+      pM->spec.bSplitColumn = QRF_No;
+    }
   }else if( eMode>=MODE_USER && eMode-MODE_USER<p->nSavedModes ){
     modeFree(&p->mode);
     modeDup(&p->mode, &p->aSavedModes[eMode-MODE_USER].mode);
@@ -13005,6 +13013,16 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
           if( rc==0 ) rc = 1;
           goto shell_main_exit;
         }
+        if( data.nPopMode ){
+          modePop(&data);
+          data.nPopMode = 0;
+        }
+      }
+      if( data.nPopOutput ){
+        output_reset(&data);
+        data.nPopOutput = 0;
+      }else{
+        clearTempFile(&data);
       }
     }
   }else{
