@@ -8424,9 +8424,10 @@ dotCmdOutput_error:
   sqlite3_free(zFile);
   return 1;
 }
+
 /*
-** Parse input line zLine up into individual arguments.  Retain the
-** parse in the p->dot substructure.
+** Enlarge the space allocated in p->dot so that it can hold more
+** than nArg parsed command-line arguments.
 */
 static void parseDotRealloc(ShellState *p, int nArg){
   p->dot.nAlloc = nArg+22;
@@ -8437,15 +8438,29 @@ static void parseDotRealloc(ShellState *p, int nArg){
   p->dot.abQuot = realloc(p->dot.abQuot,p->dot.nAlloc);
   shell_check_oom(p->dot.abQuot);
 }
+
+
+/*
+** Parse input line zLine up into individual arguments.  Retain the
+** parse in the p->dot substructure.
+*/
 static void parseDotCmdArgs(const char *zLine, ShellState *p){
   char *z;
   int h = 1;
   int nArg = 0;
+  size_t szLine;
 
   p->dot.zOrig = zLine;
   free(p->dot.zCopy);
   z = p->dot.zCopy = strdup(zLine);
   shell_check_oom(z);
+  szLine = strlen(z);
+  while( szLine>0 && IsSpace(z[szLine-1]) ) szLine--;
+  if( szLine>0 && z[szLine-1]==';' && p->iCompat>=20251115 ){
+    szLine--;
+    while( szLine>0 && IsSpace(z[szLine-1]) ) szLine--;
+  }
+  z[szLine] = 0;
   parseDotRealloc(p, 2);
   while( z[h] ){
     while( IsSpace(z[h]) ){ h++; }
