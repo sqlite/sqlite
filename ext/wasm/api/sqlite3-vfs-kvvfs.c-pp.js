@@ -47,6 +47,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const warn = function(){
     sqlite3.config.warn("kvvfs:", ...arguments);
   };
+  const error = function(){
+    sqlite3.config.error("kvvfs:", ...arguments);
+  };
 
   /**
      Implementation of JS's Storage interface for use as backing store
@@ -302,6 +305,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const pVfs = new capi.sqlite3_vfs(kvvfsMethods.$pVfs);
     const pIoDb = new capi.sqlite3_io_methods(kvvfsMethods.$pIoDb);
     const pIoJrnl = new capi.sqlite3_io_methods(kvvfsMethods.$pIoJrnl);
+    const recordHandler = Object.create(null);
     /**
        Implementations for members of the object referred to by
        sqlite3__wasm_kvvfs_methods(). We swap out the native
@@ -327,6 +331,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 astack = wasm.scopedAllocPush();
           try{
             const store = storageForZClass(zClass);
+            if( !store ) return -1;
+            if( 0 ){
+              debug("xRcrdRead", nBuf, zClass, wasm.cstrToJs(zClass),
+                    wasm.cstrToJs(zKey), store);
+            }
             const zXKey = keyForStorage(store, zClass, zKey);
             if(!zXKey) return -3/*OOM*/;
             const jV = store.s.getItem(wasm.cstrToJs(zXKey));
@@ -347,10 +356,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             wasm.heap8u().copyWithin(
               Number(zBuf), Number(zV), wasm.ptr.addn(zV, nBuf,- 1)
             );
-            wasm.poke(wasm.ptr.add(zBuf, nBuf, -1), 0);
+            wasm.poke(wasm.ptr.add(zBuf, nBuf), 0);
             return nBuf - 1;
           }catch(e){
-            sqlite3.config.error("kvrecordRead()",e);
+            error("kvrecordRead()",e);
             return -2;
           }finally{
             pstack.restore(stack);
@@ -370,7 +379,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             );
             return 0;
           }catch(e){
-            sqlite3.config.error("kvrecordWrite()",e);
+            error("kvrecordWrite()",e);
             return capi.SQLITE_IOERR;
           }finally{
             pstack.restore(stack);
@@ -386,7 +395,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             store.s.removeItem(wasm.cstrToJs(zXKey));
             return 0;
           }catch(e){
-            sqlite3.config.error("kvrecordDelete()",e);
+            error("kvrecordDelete()",e);
             return capi.SQLITE_IOERR;
           }finally{
             pstack.restore(stack);
@@ -450,59 +459,75 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             return capi.SQLITE_ERROR;
           }
         }/*xOpen()*/,
-//#if nope
-        xAccess:function(pProtoVfs, zPath, flags, pResOut){
-          /* Triggering an abort() via xClose(), but we'll need a working
-             xAccess() if we want to use kvvfs as the default vfs. */
-          try{
-            let drc = 0;
-            const jzName = wasm.cstrToJs(zPath);
-            const s = cache.jzClassToStorage[jzName];
-            debug("xAccess", jzName, s);
-            if( s ){
-              if( 0 && !jzName.endsWith("-journal") ){
-                drc = 1;
-              }else{
-                const zKey = jzName.endsWith("-journal")
-                      ? cache.zKeyJrnl
-                      : cache.zKeySz;
-                drc = sqlite3_kvvfs_methods.override.recordHandler
-                  .xRcrdRead(zPath, zKey, wasm.ptr.null, 0);
-              }
-            }
-            wasm.poke32(pResOut, drc>0 ? 1 : 0);
-            return 0;
-          }catch(e){
-            warn("xAccess",e);
-            return capi.SQLITE_ERROR;
-          }
-        }/*xAccess*/,
+
         xDelete: function(pVfs, zName, iSyncFlag){
           try{
-            // Triggering an abort() via xClose()
-            util.assert(zName, "null zName?");
-            const jzName = wasm.cstrToJs(zName);
-            const s = cache.jzClassToStorage[jzName];
-            debug("xDelete", jzName, s);
-            if( s ){
-              if( jzName.endsWith("-journal") ){
-                const zKey = cache.zKeyJrnl;
-                util.assert(zKey, "Missing cache.zKeyJrnl");
-                sqlite3_kvvfs_methods.override.recordHandler
-                  .xRcrdDelete(zName, zKey);
-              }else{
-                drc = 1;
-                delete cache.jzClassToStorage[jzName];
+            if( 0 ){
+              util.assert(zName, "null zName?");
+              const jzName = wasm.cstrToJs(zName);
+              const s = cache.jzClassToStorage[jzName];
+              debug("xDelete", jzName, s);
+              if( cache.rxJournalSuffix.test(jzName) ){
+                recordHandler.xRcrdDelete(zName, cache.zKeyJrnl);
               }
               return 0;
-            }else{
-              return originalMethods.vfs.xDelete(pVfs, zName, iSyncFlag);
             }
+            return originalMethods.vfs.xDelete(pVfs, zName, iSyncFlag);
           }catch(e){
             warn("xDelete",e);
             return capi.SQLITE_ERROR;
           }
         },
+
+        xAccess:function(pProtoVfs, zPath, flags, pResOut){
+          try{
+            if( 0 ){
+              const jzName = wasm.cstrToJs(zPath);
+              const s = cache.jzClassToStorage[jzName];
+              debug("xAccess", jzName, s);
+              let drc = 1;
+              wasm.poke32(pResOut, 0);
+              if( s ){
+                /* This block is _somehow_ triggering an
+                   abort() via xClose(). */
+                if(0) debug("cache.zKeyJrnl...",wasm.cstrToJs(cache.zKeyJrnl),
+                      wasm.cstrToJs(cache.zKeySz));
+                drc = recordHandler.xRcrdRead(
+                  zPath,
+                  jzName.endsWith("-journal")
+                    ? cache.zKeyJrnl
+                    : cache.zKeySz,
+                  wasm.ptr.null, 0
+                );
+                debug("xAccess", jzName, drc, pResOut);
+                if( drc>0 ){
+                  wasm.poke32(
+                    pResOut, 1
+                    /* This poke is triggering an abort via xClose().
+                       If we poke 0 then no problem... except that
+                       xAccess() doesn't report the truth. Same effect
+                       if we move that to the native impl
+                       os_kv.c:kvvfsAccess(). */
+                  );
+                }
+              }
+              return 0;
+            }
+            const rc = originalMethods.vfs.xAccess(
+              pProtoVfs, zPath, flags, pResOut
+              /* This one is only valid for local/session storage */
+            );
+            if( 0 && 0===rc ){
+              debug("xAccess pResOut", wasm.peek32(pResOut));
+            }
+            return rc;
+          }catch(e){
+            error('xAccess',e);
+            return capi.SQLITE_ERROR;
+          }
+        },
+
+//#if nope
         xFullPathname: function(pVfs, zPath, nOut, zOut){},
         xDlOpen: function(pVfs, zFilename){},
         xSleep: function(pVfs,usec){},
@@ -544,8 +569,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 delete s.s;
                 delete s.refc;
               }
-              h.f.dispose();
               originalIoMethods(h.f).xClose(pFile);
+              h.f.dispose();
             }else{
               /* Can happen if xOpen fails */
             }
@@ -594,10 +619,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }/*sqlite3_kvvfs_methods.override*/;
 
     const ov = sqlite3_kvvfs_methods.override;
-    debug("pVfs and friends", pVfs, pIoDb, pIoJrnl);
+    debug("pVfs and friends", pVfs, pIoDb, pIoJrnl,
+          kvvfsMethods, capi.sqlite3_file.structInfo,
+          KVVfsFile.structInfo);
     try {
       for(const e of Object.entries(ov.recordHandler)){
         // Overwrite kvvfsMethods's callbacks
+        recordHandler[e[0]] = e[1];
         kvvfsMethods[kvvfsMethods.memberKey(e[0])] =
           wasm.installFunction(kvvfsMethods.memberSignature(e[0]), e[1]);
       }
@@ -612,12 +640,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       for(const e of Object.entries(ov.ioDb)){
         // Similar treatment for pVfs.$pIoDb a.k.a. pIoDb...
-        const k = e[0], f = e[1], km = pIoDb.memberKey(k),
-              member = pIoDb.structInfo.members[k]
-              || util.toss("Missing pIoDb.structInfo[",k,"]");
+        const k = e[0], f = e[1], km = pIoDb.memberKey(k);
         originalMethods.ioDb[k] = wasm.functionEntry(pIoDb[km])
           || util.toss("Missing native pIoDb[",km,"]");
-        pIoDb[km] = wasm.installFunction(member.signature, f);
+        pIoDb[km] = wasm.installFunction(pIoDb.memberSignature(k), f);
       }
       for(const e of Object.entries(ov.ioJrnl)){
         // Similar treatment for pVfs.$pIoJrnl a.k.a. pIoJrnl...
@@ -628,8 +654,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           /* use pIoDb's copy */
           pIoJrnl[km] = pIoDb[km] || util.toss("Missing copied pIoDb[",km,"]");
         }else{
-          const member = pIoJrnl.structInfo.members[k]
-                || util.toss("Missing pIoJrnl.structInfo[",k,"]");
           pIoJrnl[km] = wasm.installFunction(pIoJrnl.memberSignature(k), f);
         }
       }

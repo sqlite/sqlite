@@ -918,6 +918,20 @@ static int kvvfsAccess(
   int *pResOut
 ){
   SQLITE_KV_LOG(("xAccess(\"%s\")\n", zPath));
+#if 0 && defined(SQLITE_WASM)
+  /*
+  ** Bug somewhere: if this method sets *pResOut to non-0 then
+  ** xClose() is abort()ing via free(). The symptoms are the same
+  ** whether we set *pResOut from here or from JS.
+  */
+  if( 0==sqlite3_strglob("*-journal", zPath) ){
+    *pResOut =
+      sqlite3KvvfsMethods.xRcrdRead(zPath, "jrnl", 0, 0)>0;
+  }else{
+    *pResOut =
+      sqlite3KvvfsMethods.xRcrdRead(zPath, "sz", 0, 0)>0;
+  }
+#else
   if( strcmp(zPath, "local-journal")==0 ){
     *pResOut =
       sqlite3KvvfsMethods.xRcrdRead("local", "jrnl", 0, 0)>0;
@@ -937,6 +951,8 @@ static int kvvfsAccess(
   {
     *pResOut = 0;
   }
+  /*all current JS tests avoid triggering: assert( *pResOut == 0 ); */
+#endif
   SQLITE_KV_LOG(("xAccess returns %d\n",*pResOut));
   return SQLITE_OK;
 }
