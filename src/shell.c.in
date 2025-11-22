@@ -7667,6 +7667,8 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            truncated. Zero means "no limit". Only works
 **                            in "line" mode and in columnar modes.
 **   --list                   List available modes
+**   --no-limits              Shorthand to turn off --linelimit, --charlimit,
+**                            and --screenwidth.
 **   --null STRING            Render SQL NULL values as the given string
 **   --once                   Setting changes to the right are reverted after
 **                            the next SQL command.
@@ -7812,6 +7814,21 @@ static int dotCmdMode(ShellState *p){
         cli_printf(p->out, " %s", p->aSavedModes[ii].zTag);
       }
       cli_puts(" batch tty\n", p->out);
+    }else if( optionMatch(z,"once") ){
+      p->nPopMode = 0;
+      modePush(p);
+      p->nPopMode = 1;
+    }else if( optionMatch(z,"noquote") ){
+      /* (undocumented legacy) --noquote always turns quoting off */
+      p->mode.spec.eText = QRF_TEXT_Plain;
+      p->mode.spec.eBlob = QRF_BLOB_Text;
+      chng = 1;
+    }else if( optionMatch(z,"no-limits") ){
+      p->mode.spec.nLineLimit = 0;
+      p->mode.spec.nCharLimit = 0;
+      p->mode.spec.nScreenWidth = 0;
+      p->mode.bAutoScreenWidth = 0;
+      chng = 1;
     }else if( optionMatch(z,"quote") ){
       if( i+1<nArg
        && azArg[i+1][0]!='-'
@@ -7863,15 +7880,6 @@ static int dotCmdMode(ShellState *p){
           p->mode.spec.eBlob = QRF_BLOB_Text;
           break;
       }
-      chng = 1;
-    }else if( optionMatch(z,"once") ){
-      p->nPopMode = 0;
-      modePush(p);
-      p->nPopMode = 1;
-    }else if( optionMatch(z,"noquote") ){
-      /* (undocumented legacy) --noquote always turns quoting off */
-      p->mode.spec.eText = QRF_TEXT_Plain;
-      p->mode.spec.eBlob = QRF_BLOB_Text;
       chng = 1;
     }else if( optionMatch(z,"reset") ){
       int saved_eMode = p->mode.eMode;
