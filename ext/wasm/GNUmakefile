@@ -998,7 +998,8 @@ endif
 ########################################################################
 
 EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
-$(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE_LIST)
+$(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) \
+ $(MAKEFILE_LIST) $(bin.c-pp)
 	@$(call b.mkdir@)
 	@$(call b.c-pp.shcmd,filter,$(EXPORTED_FUNCTIONS.api.in),\
       $@,$(EXPORTED_FUNCTIONS.c-pp.flags) -Dfiddle)

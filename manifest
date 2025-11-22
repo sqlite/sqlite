@@ -1,5 +1,5 @@
-C Implementation\sof\sbWrapSnglCol\sin\sQRF.
-D 2025-11-22T00:38:17.646
+C Cherrypick\s[e0b33b51229a]\sfor\sthe\slatest\swasmutil/jaccwabyt\s-\sall\stests\sare\shappy.\sFix\sa\smake\sdeps\sbug\swhich\scan\sbreak\sparallel\sbuilds\sinvolving\sfiddle.
+D 2025-11-22T15:49:45.613
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009e
 F ext/session/sqlite3session.c b3de195ce668cace9b324599bf6255a70290cbfb5451e826e946f3aee6e64c54
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
-F ext/wasm/GNUmakefile bff7f432a65bc5152ae5aaf19f480dd16fa7fdd11a451773b7dbcac544c703b3
+F ext/wasm/GNUmakefile 58b851cb13559027499f25050a8c4a103b4c674d97f2ce4e75f2acc8cb112de7
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -611,7 +611,7 @@ F ext/wasm/c-pp-lite.c 943be1a36774d58385dca32de36fc18d4f432fe79f7aa35e6c85dd6a6
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js 804409dec98458f732b23e6e86788934ac6dec002107435cc4055355585d1c15
+F ext/wasm/common/whwasmutil.js 831f07a0d9bb61713164871370811432e96d0f813806a4d2c783d3c77c2373a0
 F ext/wasm/config.make.in c424ae1cc3c89274520ad312509d36c4daa34a3fce5d0c688e5f8f4365e1049a
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
@@ -628,8 +628,8 @@ F ext/wasm/fiddle/fiddle.js 84fd75967e0af8b69d3dd849818342227d0f81d13db92e0dcbc6
 F ext/wasm/fiddle/index.html a27b8127ef9ecf19612da93b2a6a73bdb3777b5c56b5450bb7200a94bc108ff9
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
 F ext/wasm/index.html 54e27db740695ab2cb296e02d42c4c66b3f11b65797340d19fa6590f5b287da1
-F ext/wasm/jaccwabyt/jaccwabyt.js 236464b7c8e2d2540a296ba049b3e812e2697ef8439ac96f0d20716e46ba6809
-F ext/wasm/jaccwabyt/jaccwabyt.md 167fc0b624c9bc2c477846e336de9403842d81b1a24fc4d3b24317cb9eba734f
+F ext/wasm/jaccwabyt/jaccwabyt.js 4e2b797dc170851c9c530c3567679f4aa509eec0fab73b466d945b00b356574b
+F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
 F ext/wasm/mkdist.sh 64d53f469c823ed311f6696f69cec9093f745e467334b34f5ceabdf9de3c5b28 x
 F ext/wasm/mkwasmbuilds.c ef42e404236dd98cedb6ecea47b6d2474e3c593633ce6d992d316289dfc442b6
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
@@ -2178,8 +2178,9 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a858027fc92727c680b7e984303df7f9e0a2d90c860c547176f290b113a69390
-R a51fa5dfb24a3bcee8421313d1d3bb87
-U drh
-Z a16fb45a4bab603e7bb9dd853cb499d3
+P 4bbd3f7ead50c0babd7843f58972e2e1762a84866cc4ed88a2a74375b13da11c
+Q +e0b33b51229a977cc3fa8a5a6c8ea59669f8bf566b2a6330fd24da1ad886a716
+R f6b721d7685989e37470bf1784a31d71
+U stephan
+Z 5210094d728f9a00c8b58ce19311c7b6
 # Remove this line to create a well-formed Fossil manifest.
