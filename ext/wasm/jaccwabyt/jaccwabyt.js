@@ -16,9 +16,17 @@
   Project homes:
   - https://fossil.wanderinghorse.net/r/jaccwabyt
   - https://sqlite.org/src/dir/ext/wasm/jaccwabyt
+
+  This build was generated using:
+
+  ./c-pp -o js/jaccwabyt.js -@policy=error jaccwabyt/jaccwabyt.c-pp.js
+
+  by libcmpp 2.x 2fc4afc31f6505c27b9c34988973a2bd9b157d559247cdd26868ae75632c3a5e @ 2025-11-16 23:03:27.352 UTC
 */
 'use strict';
-globalThis.Jaccwabyt = function StructBinderFactory(config){
+globalThis.Jaccwabyt =
+function StructBinderFactory(config){
+  'use strict';
 /* ^^^^ it is recommended that clients move that object into wherever
    they'd like to have it and delete the globalThis-held copy.  This
    API does not require the global reference - it is simply installed
@@ -65,18 +73,20 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
 
   //console.warn("config",config);
   let ptr;
-  const ptrIR = config.pointerIR
+  const ptrSize = config.pointerSize
+        || config.ptrSize/*deprecated*/
+        || ('bigint'===typeof (ptr = alloc(1)) ? 8 : 4);
+  const ptrIR = config.pointerIR/*deprecated*/
         || config.ptrIR/*deprecated*/
-        || ('bigint'===typeof (ptr = alloc(1)) ? 'i64' : 'i32');
-  /* Undocumented (on purpose) config options: */
-  const ptrSize = config.ptrSize/*deprecated*/
-        || ('i32'===ptrIR ? 4 : 8);
-  dealloc(ptr);
-  ptr = undefined;
+        || (4===ptrSize ? 'i32' : 'i64');
+  if( ptr ){
+    dealloc(ptr);
+    ptr = undefined;
+  }
   //console.warn("ptrIR =",ptrIR,"ptrSize =",ptrSize);
 
-  if(ptrIR!=='i32' && ptrIR!=='i64') toss("Invalid pointer representation:",ptrIR);
   if(ptrSize!==4 && ptrSize!==8) toss("Invalid pointer size:",ptrSize);
+  if(ptrIR!=='i32' && ptrIR!=='i64') toss("Invalid pointer representation:",ptrIR);
 
   /** Either BigInt or, if !bigIntEnabled, a function which
       throws complaining that BigInt is not enabled. */
@@ -853,6 +863,8 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   }/*makeMemberStructWrapper()*/;
 
   /**
+     This is where most of the magic happens.
+
      Pass this a StructBinderImpl-generated constructor, a member
      property name, and the struct member description object. It will
      define property accessors for proto[memberKey] which read
@@ -936,7 +948,7 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         }
         if(!this.pointer){
           toss("Cannot set native property on a disposed",
-               this.structSame,"instance.");
+               this.structName,"instance.");
         }
         if( setterProxy ) v = setterProxy.apply(this,[key,v]);
         if( null===v || undefined===v ) v = __NullPtr;
