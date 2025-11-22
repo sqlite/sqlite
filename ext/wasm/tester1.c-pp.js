@@ -2879,25 +2879,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
   T.g('kvvfs')
     .t({
-      name: 'kvvfs is disabled in worker',
-      predicate: ()=>(isWorker() || "test is only valid in a Worker"),
-      test: function(sqlite3){
-        T.assert(
-          !capi.sqlite3_vfs_find('kvvfs'),
-          "Expecting kvvfs to be unregistered."
-        );
-      }
-    })
-    .t({
-      name: 'kvvfs in main thread',
-      predicate: ()=>(isUIThread()
-                      || "local/sessionStorage are unavailable in a Worker"),
+      name: 'kvvfs sessionStorage',
+      predicate: ()=>(globalThis.sessionStorage || "sessionStorage is unavailable"),
       test: function(sqlite3){
         const filename = this.kvvfsDbFile = 'session';
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(looksLikePtr(pVfs));
-        const JDb = this.JDb = sqlite3.oo1.JsStorageDb;
-        const unlink = this.kvvfsUnlink = ()=>JDb.clearStorage(this.kvvfsDbFile);
+        const JDb = sqlite3.oo1.JsStorageDb;
+        const unlink = this.kvvfsUnlink = ()=>JDb.clearStorage(filename);
         unlink();
         let db = new JDb(filename);
         try {
@@ -2916,6 +2905,55 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     }/*kvvfs sanity checks*/)
+    .t({
+      name: 'transient kvvfs',
+      test: function(sqlite3){
+        const filename = 'global' /* preinstalled instance */;
+        const JDb = sqlite3.oo1.JsStorageDb;
+        const unlink = ()=>JDb.clearStorage(filename);
+        unlink();
+        let db = new JDb(filename);
+        const sqlSetup = [
+          'create table kvvfs(a);',
+          'insert into kvvfs(a) values(1),(2),(3)'
+        ];
+        try {
+          db.exec(sqlSetup);
+          const close = ()=>{
+            db.close();
+            db = undefined;
+          };
+          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          close();
+
+          db = new JDb(filename);
+          db.exec('insert into kvvfs(a) values(4),(5),(6)');
+          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+          close();
+
+          db = new JDb('new-storage');
+          db.exec(sqlSetup);
+          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          close();
+
+          T.mustThrow(function(){
+            /* Ensure that 'new-storage' was deleted when its refcount
+               went to 0. TODO is a way to tell these instances to
+               hang around after that, such that 'new-instance' could
+               be semi-persistent (until the page is reloaded).
+            */
+            let ddb = new JDb('new-storage');
+            try{
+              ddb.selectValue('select a from kvvfs');
+            }finally{
+              ddb.close();
+            }
+          }, "Expecting new-storage to be empty.");
+        }finally{
+          if( db ) db.close();
+        }
+      }
+    }/*transient kvvfs*/)
 //#if enable-see
     .t({
       name: 'kvvfs with SEE encryption',

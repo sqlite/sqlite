@@ -181,14 +181,25 @@ static int kvrecordRead(const char*, const char *zKey, char *zBuf, int nBuf);
 /* Expand the key name with an appropriate prefix and put the result
 ** in zKeyOut[].  The zKeyOut[] buffer is assumed to hold at least
 ** KVRECORD_KEY_SZ bytes.
+**
+** TODO: we only need to include zClass in the keys for "local" and
+** "session" instances and their "-journal" counterparts.  For other
+** instances (a capability added 3+ years later) we can allow longer
+** db names if we elide zClass. We don't _really_ need that part of
+** the key in JS-side local/session instances (we do in
+** filesystem-side instances), but we can't strip it without
+** invalidating existing JS-side kvvfs dbs.
 */
 static void kvrecordMakeKey(
   const char *zClass,
   const char *zKeyIn,
   char *zKeyOut
 ){
+  assert( zClass );
+  assert( zKeyIn );
+  assert( zKeyOut );
   sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s-%s",
-                   zClass, zKeyIn ? zKeyIn : "");
+                   zClass, zKeyIn);
 }
 
 /* Write content into a key.  zClass is the particular namespace of the
@@ -302,6 +313,7 @@ struct sqlite3_kvvfs_methods {
   int (*xRcrdWrite)(const char*, const char *zKey, const char *zData);
   int (*xRcrdDelete)(const char*, const char *zKey);
   const int nKeySize;
+  const int nBufferSize;
 #ifndef SQLITE_WASM
 #  define MAYBE_CONST const
 #else
@@ -332,6 +344,7 @@ sqlite3_kvvfs_methods sqlite3KvvfsMethods = {
   .xRcrdWrite      = kvrecordWrite,
   .xRcrdDelete     = kvrecordDelete,
   .nKeySize        = KVRECORD_KEY_SZ,
+  .nBufferSize     = SQLITE_KVOS_SZ,
   .pVfs            = &sqlite3OsKvvfsObject,
   .pIoDb           = &kvvfs_db_io_methods,
   .pIoJrnl         = &kvvfs_jrnl_io_methods
@@ -842,6 +855,7 @@ static int kvvfsOpen(
   assert(!pFile->aData);
   assert(!pFile->aJrnl);
   assert(!pFile->nJrnl);
+  assert(!pFile->base.pMethods);
   pFile->szPage = -1;
   pFile->szDb = -1;
   pFile->zName = zName;
@@ -856,17 +870,9 @@ static int kvvfsOpen(
   }else{
     pFile->isJournal = 0;
     pFile->base.pMethods = &kvvfs_db_io_methods;
-    if( 0==strcmp("session",zName) || 0==strcmp("local",zName) ){
-      pFile->zClass = zName;
-    }
   }
   if( !pFile->zClass ){
-#ifndef SQLITE_WASM
-    return SQLITE_CANTOPEN;
-#else
-    /* The JS impl maps these to Storage objects */
     pFile->zClass = zName;
-#endif
   }
   pFile->aData = sqlite3_malloc64(SQLITE_KVOS_SZ);
   if( pFile->aData==0 ){

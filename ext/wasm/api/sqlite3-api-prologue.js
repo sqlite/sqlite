@@ -752,6 +752,11 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     toss: function(...args){throw new Error(args.join(' '))},
     toss3,
     typedArrayPart: wasm.typedArrayPart,
+    assert: function(arg,msg){
+      if( !arg ){
+        util.toss("Assertion failed:",msg);
+      }
+    },
     /**
        Given a byte array or ArrayBuffer, this function throws if the
        lead bytes of that buffer do not hold a SQLite3 database header,

@@ -1019,13 +1019,15 @@ const char * sqlite3__wasm_enum_json(void){
   /** ^^^ indirection needed to expand CurrentStruct */
 #define StructBinder StructBinder_(CurrentStruct)
 #define _StructBinder CloseBrace(2)
-#define M(MEMBER,SIG)                                         \
-  outf("%s\"%s\": "                                           \
-       "{\"offset\":%d,\"sizeof\": %d,\"signature\":\"%s\"}", \
-       (n++ ? ", " : ""), #MEMBER,                            \
-       (int)offsetof(CurrentStruct,MEMBER),                   \
-       (int)sizeof(((CurrentStruct*)0)->MEMBER),              \
-       SIG)
+#define M3(MEMBER,SIG,READONLY)                                \
+  outf("%s\"%s\": "                                            \
+       "{\"offset\":%d,\"sizeof\":%d,\"signature\":\"%s\"%s}", \
+       (n++ ? ", " : ""), #MEMBER,                             \
+       (int)offsetof(CurrentStruct,MEMBER),                    \
+       (int)sizeof(((CurrentStruct*)0)->MEMBER),               \
+       SIG, (READONLY ? ",\"readOnly\":true" : ""))
+#define M(MEMBER,SIG) M3(MEMBER,SIG,0)
+#define MRO(MEMBER,SIG) M3(MEMBER,SIG,1)
 
   nStruct = 0;
   out(", \"structs\": ["); {
@@ -1093,7 +1095,8 @@ const char * sqlite3__wasm_enum_json(void){
       M(xRcrdRead,         "i(sspi)");
       M(xRcrdWrite,        "i(sss)");
       M(xRcrdDelete,       "i(ss)");
-      M(nKeySize,          "i");
+      MRO(nKeySize,        "i");
+      MRO(nBufferSize,     "i");
       M(pVfs,              "p");
       M(pIoDb,             "p");
       M(pIoJrnl,           "p");
@@ -1269,6 +1272,8 @@ const char * sqlite3__wasm_enum_json(void){
 #undef StructBinder_
 #undef StructBinder__
 #undef M
+#undef MRO
+#undef M3
 #undef _StructBinder
 #undef CloseBrace
 #undef out
