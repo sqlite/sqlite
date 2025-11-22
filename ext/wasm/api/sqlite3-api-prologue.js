@@ -2034,6 +2034,9 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     */
     scriptInfo: undefined
   };
+  if( ('undefined'!==typeof sqlite3IsUnderTest/* from post-js-header.js */) ){
+    sqlite3.__isUnderTest = !!sqlite3IsUnderTest;
+  }
   try{
     sqlite3ApiBootstrap.initializers.forEach((f)=>{
       f(sqlite3);
@@ -2056,9 +2059,6 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
        builds, this would need to be injected in somewhere to get
        that VFS loading. */ = sqlite3InitScriptInfo;
   }
-  sqlite3.__isUnderTest =
-    ('undefined'===typeof sqlite3IsUnderTest /* from post-js-header.js */)
-    ? false : !!sqlite3IsUnderTest;
   if( sqlite3.__isUnderTest ){
     if( 'undefined'!==typeof EmscriptenModule ){
       sqlite3.config.emscripten = EmscriptenModule;

@@ -51,7 +51,6 @@ typedef struct KVVfsFile KVVfsFile;
 struct KVVfsFile {
   sqlite3_file base;              /* IO methods */
   const char *zClass;             /* Storage class */
-  const char *zName;              /* File name (used by the JS side) */
   int isJournal;                  /* True if this is a journal file */
   unsigned int nJrnl;             /* Space allocated for aJrnl[] */
   char *aJrnl;                    /* Journal content */
@@ -198,6 +197,15 @@ static void kvrecordMakeKey(
   assert( zClass );
   assert( zKeyIn );
   assert( zKeyOut );
+#ifdef SQLITE_WASM
+  if( !zClass || !zClass[0] ){
+    /* The JS bindings use a zClass of NULL for non-local/non-session
+       instances. */
+    sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s",
+                     zKeyIn);
+    return;
+  }
+#endif
   sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s-%s",
                    zClass, zKeyIn);
 }
@@ -858,7 +866,6 @@ static int kvvfsOpen(
   assert(!pFile->base.pMethods);
   pFile->szPage = -1;
   pFile->szDb = -1;
-  pFile->zName = zName;
   if( 0==sqlite3_strglob("*-journal", zName) ){
     pFile->isJournal = 1;
     pFile->base.pMethods = &kvvfs_jrnl_io_methods;

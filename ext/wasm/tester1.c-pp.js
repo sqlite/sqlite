@@ -2910,14 +2910,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         const filename = 'global' /* preinstalled instance */;
         const JDb = sqlite3.oo1.JsStorageDb;
-        const unlink = ()=>JDb.clearStorage(filename);
-        unlink();
+        JDb.clearStorage(filename);
         let db = new JDb(filename);
         const sqlSetup = [
           'create table kvvfs(a);',
           'insert into kvvfs(a) values(1),(2),(3)'
         ];
         try {
+          db.clearStorage(/*must not throw*/);
           db.exec(sqlSetup);
           const close = ()=>{
             db.close();
@@ -2929,6 +2929,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new JDb(filename);
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+          console.debug("kvvfs to Object:",db.testDbToObject());
           close();
 
           db = new JDb('new-storage');

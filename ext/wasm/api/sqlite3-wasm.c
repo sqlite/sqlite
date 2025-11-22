@@ -1108,7 +1108,6 @@ const char * sqlite3__wasm_enum_json(void){
     StructBinder {
       M(base,               "p")/*sqlite3_file base*/;
       M(zClass,             "s");
-      M(zName,              "s");
       M(isJournal,          "i");
       M(nJrnl,              "i")/*actually unsigned!*/;
       M(aJrnl,              "p");
@@ -1599,7 +1598,7 @@ int sqlite3__wasm_posix_create_file( const char *zFilename,
 */
 SQLITE_WASM_EXPORT
 char * sqlite3__wasm_kvvfsMakeKeyOnPstack(const char *zClass,
-                                         const char *zKeyIn){
+                                          const char *zKeyIn){
   assert(sqlite3KvvfsMethods.nKeySize>24);
   char *zKeyOut =
     (char *)sqlite3__wasm_pstack_alloc(sqlite3KvvfsMethods.nKeySize);
