@@ -2924,8 +2924,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           'insert into kvvfs(a) values(1),(2),(3)'
         ];
         try {
+          T.assert( 0===db.storageSize(), "expecting 0 storage size" );
           db.clearStorage(/*must not throw*/);
+          T.assert( 0===db.storageSize(), "expecting 0 storage size" );
           db.exec(sqlSetup);
+          T.assert( 0<db.storageSize(), "expecting non-0 db size" );
+          db.clearStorage(/*wiping everything out from under it*/);
+          T.assert( 0===db.storageSize(), "expecting 0 storage size" );
+          db.exec(sqlSetup/*that actually worked*/);
+          T.assert( 0<db.storageSize(), "expecting non-0 db size" );
           const close = ()=>{
             db.close();
             db = undefined;
@@ -2936,7 +2943,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new JDb(filename);
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-          console.debug("kvvfs to Object:",db.exportToObject(true));
+          const exp = db.exportToObject(true);
+          T.assert( filename===exp.name, "Broken export filename" )
+            .assert( exp?.data?.['kvvfs-sz'] > 0, "Missing kvvfs-sz" );
+          console.debug("kvvfs to Object:",exp);
           close();
 
           db = new JDb('new-storage');
@@ -2962,14 +2972,60 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                be semi-persistent (until the page is reloaded).
             */
             let ddb = new JDb('new-storage');
-            try{
-              ddb.selectValue('select a from kvvfs');
-            }finally{
-              ddb.close();
-            }
+            try{ddb.selectValue('select a from kvvfs')}
+            finally{ddb.close()}
           }, /.*no such table: kvvfs.*/);
         }finally{
           if( db ) db.close();
+        }
+      }
+    }/*transient kvvfs*/)
+    .t({
+      name: 'concurrent transient kvvfs',
+      //predicate: ()=>false,
+      test: function(sqlite3){
+        const filename = 'my';
+        const JDb = sqlite3.oo1.JsStorageDb;
+        let db;
+        let duo;
+        const sqlSetup = [
+          'create table kvvfs(a);',
+          'insert into kvvfs(a) values(1),(2),(3)'
+        ];
+        try {
+          db = new JDb(filename);
+          db.clearStorage(/*must not throw*/);
+          db.exec(sqlSetup);
+          const close = ()=>{
+            db.close();
+            db = undefined;
+          };
+          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+
+          const duo = new JDb(filename);
+          duo.exec('insert into kvvfs(a) values(4),(5),(6)');
+          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+          console.debug("duo.exportToObject()",duo.exportToObject(false));
+          close();
+          T.assert(6 === duo.selectValue('select count(*) from kvvfs'));
+          duo.close();
+          T.mustThrowMatching(function(){
+            let ddb = new JDb(filename);
+            try{ddb.selectValue('select a from kvvfs')}
+            finally{ddb.close()}
+          }, /.*no such table: kvvfs.*/);
+
+          /*
+            TODO: more advanced concurrent use tests, e.g. looping
+            over a query in one connection while writing from
+            another. Currently that will probably corrupt the db, and
+            kvvfs's journaling does not support multiple journals per
+            storage unit. We need to test the locking and fix it as
+            appropriate.
+          */
+        }finally{
+          if( db ) db.close();
+          if( duo ) duo.close();
         }
       }
     }/*transient kvvfs*/)
