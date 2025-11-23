@@ -144,7 +144,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if( !hop(this.#map, k) ){
         this.#keys = null;
       }
-      this.#map[k]=v;
+      this.#map[k] = v;
     }
 
     removeItem(k){
@@ -171,18 +171,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      that concurrent active xOpen()s on a given name, and within a
      given thread, use the same storage object.
   */
-  cache.jzClassToStorage = Object.assign(Object.create(null),{
+  cache.storagePool = Object.assign(Object.create(null),{
     /* Start off with mappings for well-known names. */
     localThread: {
       refc: 3/*never reaches 0*/,
-      s: new KVVfsStorage,
+      storage: new KVVfsStorage,
       files: [/*KVVfsFile instances currently using this storage*/]
     }
   });
   if( globalThis.localStorage instanceof globalThis.Storage ){
-    cache.jzClassToStorage.local = {
+    cache.storagePool.local = {
       refc: 3/*never reaches 0*/,
-      s: globalThis.localStorage,
+      storage: globalThis.localStorage,
       /* This is the storage prefix used for kvvfs keys.  It is
          "kvvfs-STORAGENAME-" for local/session storage and an empty
          string for transient storage. local/session storage must
@@ -196,31 +196,41 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
   }
   if( globalThis.sessionStorage instanceof globalThis.Storage ){
-    cache.jzClassToStorage.session = {
+    cache.storagePool.session = {
       refc: 3/*never reaches 0*/,
-      s: globalThis.sessionStorage,
+      storage: globalThis.sessionStorage,
       keyPrefix: "kvvfs-session-",
       files: []
     }
   }
-  for(const k of Object.keys(cache.jzClassToStorage)){
+  for(const k of Object.keys(cache.storagePool)){
     /* Journals in kvvfs are are stored as individual records within
        their Storage-ish object, named "KEYPREFIXjrnl" (see above
        re. KEYPREFIX). We always map the db and its journal to the
        same Storage object. */
-    const orig = cache.jzClassToStorage[k];
+    const orig = cache.storagePool[k];
     orig.jzClass = k;
-    cache.jzClassToStorage[k+'-journal'] = orig;
+    cache.storagePool[k+'-journal'] = orig;
   }
-
-  const kvvfsIsPersistentName = (v)=>'local'===v || 'session'===v;
   /**
-     Keys in kvvfs have a prefix of "kvvfs-NAME", where NAME is the db
-     name. This key is redundant in JS but it's how kvvfs works (it
-     saves each key to a separate file, so needs a
-     distinct-per-db-name namespace). We retain this prefix in 'local'
-     and 'session' storage for backwards compatibility but elide them
-     from "v2" transient storage, where they're superfluous.
+     Returns the storage object mapped to the given string zClass
+     (C-string pointer or JS string).
+  */
+  const storageForZClass = (zClass)=>
+        'string'===typeof zClass
+        ? cache.storagePool[zClass]
+        : cache.storagePool[wasm.cstrToJs(zClass)];
+
+  /** True if v is one of the special persistant Storage objects. */
+  const kvvfsIsPersistentName = (v)=>'local'===v || 'session'===v;
+
+  /**
+     Keys in kvvfs have a prefix of "kvvfs-NAME-", where NAME is the
+     db name. This key is redundant in JS but it's how kvvfs works (it
+     saves each key to a separate file, so needs a distinct namespace
+     per data source name). We retain this prefix in 'local' and
+     'session' storage for backwards compatibility but elide them from
+     "v2" storage, where they're superfluous.
   */
   const kvvfsKeyPrefix = (v)=>kvvfsIsPersistentName(v) ? 'kvvfs-'+v+'-' : '';
 
@@ -234,26 +244,31 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      .prefix = the key prefix for this storage. Typically
      ("kvvfs-"+which) for local/sessionStorage and "" for transient
      storage. (The former is historical, retained for backwards
-     compatibility.) If which is falsy then the prefix is "kvvfs-" for
-     backwards compatibility (it will match keys for both local- and
-     sessionStorage, but not transient storage).
+     compatibility.) If `which` is falsy then the prefix is "kvvfs-"
+     for backwards compatibility (it will match keys for both local-
+     and sessionStorage, but not transient storage or non-kvvfs keys
+     in the persistent storages).
 
      .stores = [ array of Storage-like objects ]. Will only have >1
      element if which is falsy, in which case it contains (if called
      from the main thread) localStorage and sessionStorage. It will be
      empty if no mapping is found or those objects are not available
      in the current environment (e.g. a worker thread).
+
+     .cts = the underlying storagePool entry. This will only be set
+     of which is not empty.
   */
   const kvvfsWhich = function callee(which){
     const rc = Object.assign(Object.create(null),{
       stores: []
     });
     if( which ){
-      const s = cache.jzClassToStorage[which];
+      const s = storageForZClass(which);
       if( s ){
         //debug("kvvfsWhich",s.jzClass,rc.prefix, s.s);
         rc.prefix = s.keyPrefix ?? '';
-        rc.stores.push(s.s);
+        rc.stores.push(s.storage);
+        rc.cts = s;
       }else{
         rc.prefix = undefined;
       }
@@ -292,6 +307,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 //#endif nope
 
   /**
+     Expects an object from the storagePool map. The $szPage and
+     $szDb members of each store.files entry is set to -1 in an attempt
+     to trigger those values to reload.
+  */
+  const alertFilesToReload = (store)=>{
+    try{
+      for( const f of store.files ){
+        // FIXME: we need to use one of the C APIs for this, maybe an
+        // fcntl.
+        f.$szPage = -1;
+        f.$szDb = -1n
+      }
+    }catch(e){
+      error("alertFilesToReload()",store,e);
+      throw e;
+    }
+  };
+
+  /**
      Clears all storage used by the kvvfs DB backend, deleting any
      DB(s) stored there.
 
@@ -325,6 +359,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       toRm.forEach((kk)=>s.removeItem(kk));
       rc += toRm.length;
     });
+    if( store.cts ) alertFilesToReload(store.cts);
     return rc;
   };
 
@@ -379,24 +414,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      TODO: prealloc a buffer on demand for this. We know its
      max size from kvvfsMethods.$nKeySize. */
   const pstack = wasm.pstack;
-  /**
-     Returns the storage object mapped to the given string zClass
-     (C-string pointer or JS string).
-  */
-  const storageForZClass = (zClass)=>{
-    return 'string'===typeof zClass
-      ? cache.jzClassToStorage[zClass]
-      : cache.jzClassToStorage[wasm.cstrToJs(zClass)];
-  };
 
   /**
      sqlite3_file pointers => objects, each of which has:
 
-     .s = Storage object
+     .file = KVVfsFile instance
 
-     .f = KVVfsFile instance
+     .jzClass = JS-string form of f.$zClass
 
-     .n = JS-string form of f.$zClass
+     .storage = Storage object. It is shared between a db and its
+     journal.
   */
   const pFileHandles = new Map();
 
@@ -471,8 +498,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if( !store ) return -1;
             const zXKey = keyForStorage(store, zClass, zKey);
             if(!zXKey) return -3/*OOM*/;
+            const jXKey = wasm.cstrToJs(zXKey);
             //debug("xRcrdRead zXKey", jzClass, wasm.cstrToJs(zXKey), store );
-            const jV = store.s.getItem(wasm.cstrToJs(zXKey));
+            const jV = store.storage.getItem(jXKey);
             if(null===jV) return -1;
             const nV = jV.length /* We are relying 100% on v being
                                  ** ASCII so that jV.length is equal
@@ -485,7 +513,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               wasm.poke(zBuf, 0);
               return nV;
             }
-            util.assert( nBuf>nV, "xRcrdRead Input buffer is too small" );
+            if( nBuf+1<nV ){
+              util.toss3(capi.SQLITE_RANGE,
+                         "xRcrdRead()",jzClass,jXKey,
+                         "input buffer is too small: need",
+                         nV,"but have",nBuf);
+            }
             if( 0 ){
               debug("xRcrdRead", nBuf, zClass, wasm.cstrToJs(zClass),
                     wasm.cstrToJs(zKey), nV, jV, store);
@@ -525,7 +558,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const store = storageForZClass(jzClass);
             const zXKey = keyForStorage(store, zClass, zKey);
             if(!zXKey) return SQLITE_NOMEM;
-            store.s.setItem(
+            store.storage.setItem(
               wasm.cstrToJs(zXKey),
               wasm.cstrToJs(zData)
             );
@@ -544,7 +577,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const store = storageForZClass(zClass);
             const zXKey = keyForStorage(store, zClass, zKey);
             if(!zXKey) return capi.SQLITE_NOMEM;
-            store.s.removeItem(wasm.cstrToJs(zXKey));
+            store.storage.removeItem(wasm.cstrToJs(zXKey));
             return 0;
           }catch(e){
             error("kvrecordDelete()",e);
@@ -577,7 +610,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const f = new KVVfsFile(pProtoFile);
             util.assert(f.$zClass, "Missing f.$zClass");
             const jzClass = wasm.cstrToJs(zName);
-            let s = cache.jzClassToStorage[jzClass];
+            let s = storageForZClass(jzClass);
             //debug("xOpen", jzClass, s);
             if( s ){
               ++s.refc;
@@ -591,22 +624,22 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               const other = f.$isJournal
                     ? jzClass.replace(cache.rxJournalSuffix,'')
                     : jzClass + '-journal';
-              s = cache.jzClassToStorage[jzClass]
-                = cache.jzClassToStorage[other]
+              s = cache.storagePool[jzClass]
+                = cache.storagePool[other]
                 = Object.assign(Object.create(null),{
-                  jzClass: jzClass,
+                  jzClass,
                   refc: 1/* if this is a db-open, the journal open
                             will follow soon enough and bump the
                             refcount. If we start at 2 here, that
                             pending open will increment it again. */,
-                  s: new KVVfsStorage,
+                  storage: new KVVfsStorage,
                   keyPrefix: '',
                   files: [f]
                 });
               debug("xOpen installed storage handles [",
                     jzClass, other,"]", s);
             }
-            pFileHandles.set(pProtoFile, {s,f,n:jzClass});
+            pFileHandles.set(pProtoFile, {storage: s, file: f, jzClass});
             return 0;
           }catch(e){
             warn("xOpen:",e);
@@ -616,17 +649,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
         xDelete: function(pVfs, zName, iSyncFlag){
           try{
-            if( 0 ){
-              util.assert(zName, "null zName?");
-              const jzName = wasm.cstrToJs(zName);
-              const s = cache.jzClassToStorage[jzName];
-              debug("xDelete", jzName, s);
-              if( cache.rxJournalSuffix.test(jzName) ){
-                recordHandler.xRcrdDelete(zName, cache.zKeyJrnl);
-              }
-              return 0;
+            const jzName = wasm.cstrToJs(zName);
+            //debug("xDelete", jzName, storageForZClass(jzName));
+            if( cache.rxJournalSuffix.test(jzName) ){
+              recordHandler.xRcrdDelete(zName, cache.zKeyJrnl);
             }
-            return originalMethods.vfs.xDelete(pVfs, zName, iSyncFlag);
+            return 0;
           }catch(e){
             warn("xDelete",e);
             return capi.SQLITE_ERROR;
@@ -721,24 +749,22 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             //debug("xClose", pFile, h);
             if( h ){
               pFileHandles.delete(pFile);
-              const s = cache.jzClassToStorage[h.n];
-              util.assert(s, "Missing jzClassToStorage["+h.n+"]");
-              util.assert(h.f, "Missing KVVfsFile handle for "+h.n);
-              s.files = s.files.filter((v)=>v!==h.f);
+              const s = storageForZClass(h.jzClass);
+              s.files = s.files.filter((v)=>v!==h.file);
               if( 0===--s.refc ){
-                const other = h.f.$isJournal
-                      ? h.n.replace(cache.rxJournalSuffix,'')
-                      : h.n+'-journal';
-                debug("cleaning up storage handles [", h.n, other,"]",s);
-                delete cache.jzClassToStorage[h.n];
-                delete cache.jzClassToStorage[other];
+                const other = h.file.$isJournal
+                      ? h.jzClass.replace(cache.rxJournalSuffix,'')
+                      : h.jzClass+'-journal';
+                debug("cleaning up storage handles [", h.jzClass, other,"]",s);
+                delete cache.storagePool[h.jzClass];
+                delete cache.storagePool[other];
                 if( !sqlite3.__isUnderTest ){
-                  delete s.s;
+                  delete s.storage;
                   delete s.refc;
                 }
               }
-              originalIoMethods(h.f).xClose(pFile);
-              h.f.dispose();
+              originalIoMethods(h.file).xClose(pFile);
+              h.file.dispose();
             }else{
               /* Can happen if xOpen fails */
             }
@@ -926,12 +952,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     jdb.prototype.exportToObject = function(includeJournal=true){
       this.affirmOpen();
-      const store = cache.jzClassToStorage[this.affirmOpen().filename];
+      const store = storageForZClass(this.affirmOpen().filename);
       if( !store ){
         util.toss3(capi.SQLITE_ERROR,"kvvfs db '",
                    this.filename,"' has no storage object.");
       }
-      const s = store.s;
+      debug("store=",store);
+      const s = store.storage;
       const rc = Object.assign(Object.create(null),{
         name: this.filename,
         timestamp: Date.now(),
@@ -974,6 +1001,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
 
     /**
+       Does not yet work: it imports the db but the handle cannot
+       read from the modified-underneath-it storage yet. We have to
+       figure out how to get the file to re-read the db size.
+
        The counterpart of exportToObject(). Its argument must be
        the result of exportToObject().
 
@@ -986,11 +1017,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        - This db is closed.
 
+       - A transaction is active.
+
+       - If any statements are open.
+
+       - Malformed input object.
+
        - Other handles to the same storage object are opened.
        Performing this page-by-page import would invoke undefined
        behavior on them.
-
-       - A transaction is active.
 
        Those are the error case it can easily cover. The room for
        undefined behavior in wiping a db's storage out from under it
@@ -998,39 +1033,52 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        If it throws after starting the input then it clears the
        storage before returning, to avoid leaving the db in an
-       undefined state. It has no inherent error conditions during the
-       input phase beyond out-of-memory but it may throw for any of
-       the above-listed conditions before reaching that step, in which
-       case the db is not modified.
+       undefined state. It may throw for any of the above-listed
+       conditions before reaching that step, in which case the db is
+       not modified.
     */
     jdb.prototype.importFromObject = function(exp){
       this.affirmOpen();
       if( !exp?.timestamp
           || !exp.name
           || undefined===exp.size
+          || exp.size<0 || exp.size>=0x7fffffff
           || !Array.isArray(exp.pages) ){
         util.toss3(capi.SQLITE_MISUSE, "Malformed export object.");
-      }
-      if( s.files.length>1 ){
-        util.toss3(capi.SQLITE_IOERR_ACCESS,
-                   "Cannot import a db when multiple handles to it",
-                   "are opened.");
+      }else if( capi.sqlite3_next_stmt(this.pointer, null) ){
+        util.toss3(capi.SQLITE_MISUSE,
+                   "Cannot import when statements are active.");
       }else if( capi.sqlite3_txn_state(this.pointer, null)>0 ){
         util.toss3(capi.SQLITE_MISUSE,
                    "Cannot import the db while a transaction is active.");
       }
-      warn("importFromObject() is incomplete");
+      //warn("importFromObject() is incomplete");
       const store = kvvfsWhich(this.filename);
-      util.assert(store?.s, "Somehow missing a storage object for", this.filename);
+      if( !store?.cts ){
+        util.toss3(capi.SQLITE_ERROR,
+                   "Somehow missing a storage object for", this.filename);
+      }else if( store.cts.files.length>1 ){
+        util.toss3(capi.SQLITE_IOERR_ACCESS,
+                   "Cannot import a db when multiple handles to it",
+                   "are opened.");
+      }
+      //debug("Importing store",store.cts.files.length, store);
+      //debug("object to import:",exp);
       const keyPrefix = kvvfsKeyPrefix(this.filename);
       this.clearStorage();
       try{
-        s.files.forEach((f)=>f.$szPage = $f.$szDb = -1)
         /* Force the native KVVfsFile instances to re-read the db
            and page size. */;
+        const s = store.cts.storage;
         s.setItem(keyPrefix+'sz', exp.size);
         if( exp.journal ) s.setItem(keyPrefix+'jrnl', exp.journal);
-        exp.pages.forEach((v,ndx)=>s.setItem(keyPrefix+(ndx+1)));
+        exp.pages.forEach((v,ndx)=>s.setItem(keyPrefix+(ndx+1), v));
+        //debug("imported:",this.exportToObject());
+        //this.exec("pragma page_size");
+        for( const f of store.cts.files ){
+          f.$szDb = exp.size;
+          f.$szPage = -1;
+        }
       }catch(e){
         this.clearStorage();
         throw e;

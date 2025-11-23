@@ -2994,24 +2994,38 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           'create table kvvfs(a);',
           'insert into kvvfs(a) values(1),(2),(3)'
         ];
+        const sqlCount = 'select count(*) from kvvfs';
         try {
           db = new JDb(filename);
           db.clearStorage(/*must not throw*/);
           db.exec(sqlSetup);
-          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          T.assert(3 === db.selectValue(sqlCount));
 
-          const duo = new JDb(filename);
+          duo = new JDb(filename);
           duo.exec('insert into kvvfs(a) values(4),(5),(6)');
-          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+          T.assert(6 === db.selectValue(sqlCount));
           console.debug("duo.exportToObject()",duo.exportToObject(false));
           db.close();
-          T.assert(6 === duo.selectValue('select count(*) from kvvfs'));
+          T.assert(6 === duo.selectValue(sqlCount));
           duo.close();
           T.mustThrowMatching(function(){
             let ddb = new JDb(filename);
             try{ddb.selectValue('select a from kvvfs')}
             finally{ddb.close()}
           }, /.*no such table: kvvfs.*/);
+
+          if( 1 ){
+            // The db does not yet work after an import.
+            duo = new JDb(filename);
+            duo.exec(sqlSetup);
+            const exp = duo.exportToObject();
+            duo.exec('insert into kvvfs(a) values(4),(5),(6)');
+            T.assert(6 === duo.selectValue(sqlCount));
+            duo.importFromObject(exp);
+            console.debug("Before/after exports:",exp, duo.exportToObject());
+            // FIXME: db access does not work beyond that after an import.
+            //T.assert(3 === duo.selectValue(sqlCount));
+          }
 
           /*
             TODO: more advanced concurrent use tests, e.g. looping
@@ -3026,7 +3040,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           duo?.close?.();
         }
       }
-    }/*transient kvvfs*/)
+    }/*concurrent transient kvvfs*/)
 //#if enable-see
     .t({
       name: 'kvvfs SEE encryption in sessionStorage',
