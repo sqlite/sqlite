@@ -194,18 +194,19 @@ static void kvrecordMakeKey(
   const char *zKeyIn,
   char *zKeyOut
 ){
-  assert( zClass );
   assert( zKeyIn );
   assert( zKeyOut );
 #ifdef SQLITE_WASM
   if( !zClass || !zClass[0] ){
-    /* The JS bindings use a zClass of NULL for non-local/non-session
-       instances. */
-    sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s",
+    /* The JS bindings pass a zClass of NULL for non-local/non-session
+       instances which store _only_ kvvfs state, so they don't need a
+       key prefix (and having one wastes space). */
+    sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "%s",
                      zKeyIn);
     return;
   }
 #endif
+  assert( zClass );
   sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s-%s",
                    zClass, zKeyIn);
 }

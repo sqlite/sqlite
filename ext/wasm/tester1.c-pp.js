@@ -2945,7 +2945,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
           const exp = db.exportToObject(true);
           T.assert( filename===exp.name, "Broken export filename" )
-            .assert( exp?.data?.['kvvfs-sz'] > 0, "Missing kvvfs-sz" );
+            .assert( exp?.size > 0, "Missing db size" )
+            .assert( exp?.pages?.length > 0, "Missing db pages" );
           console.debug("kvvfs to Object:",exp);
           close();
 
