@@ -200,6 +200,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_libversion_number", "int"],
       ["sqlite3_limit", "int", ["sqlite3*", "int", "int"]],
       ["sqlite3_malloc", "*","int"],
+      ["sqlite3_next_stmt", "sqlite3_stmt*", ["sqlite3*","sqlite3_stmt*"]],
       ["sqlite3_open", "int", "string", "*"],
       ["sqlite3_open_v2", "int", "string", "*", "int", "string"],
       /* sqlite3_prepare_v2() and sqlite3_prepare_v3() are handled
