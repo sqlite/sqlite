@@ -11,7 +11,9 @@
 
   ***********************************************************************
 
-  This file houses the "kvvfs" pieces of the JS API.
+  This file houses the "kvvfs" pieces of the JS API. Most of kvvfs is
+  implemented in src/os_kv.c and exposed for use here via
+  sqlite3-wasm.c.
 
   Main project home page: https://sqlite.org
 
@@ -314,8 +316,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        Implementations for members of the object referred to by
        sqlite3__wasm_kvvfs_methods(). We swap out some native
-       implementations with these, which use JS Storage for their
-       backing store.
+       implementations with these so that we can use JS Storage for
+       their backing store.
     */
     const methodOverrides = {
 
@@ -557,11 +559,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
         },
 
-//#if nope
-        xFullPathname: function(pVfs, zPath, nOut, zOut){},
-        xCurrentTime: function(pVfs,pOutDbl){},
-        xCurrentTimeInt64: function(pVfs,pOutI64){},
-//#endif
         xRandomness: function(pVfs, nOut, pOut){
           const heap = wasm.heap8u();
           let i = 0;
@@ -569,6 +566,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
           return i;
         }
+
+//#if nope
+        // these impls work but there's currently no pressing need _not_ use
+        // the native impls.
+        xCurrentTime: function(pVfs,pOut){
+          wasm.poke64f(pOut, 2440587.5 + (new Date().getTime()/86400000));
+          return 0;
+        },
+
+        xCurrentTimeInt64: function(pVfs,pOut){
+          wasm.poke64(pOut, (2440587.5 * 86400000) + new Date().getTime());
+          return 0;
+        }
+//#endif
       },
 
       /**
@@ -719,6 +730,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ){
       const opt = DB.dbCtorHelper.normalizeArgs(...arguments);
       opt.vfs = 'kvvfs';
+      switch( opt.filename ){
+          /* sqlite3_open(), in these builds, recognizes the names
+             below and performs some magic which we want to bypass
+             here for sanity's sake. */
+        case ":sessionStorage:": opt.filename = 'session'; break;
+        case ":localStorage:": opt.filename = 'local'; break;
+      }
       DB.dbCtorHelper.call(this, opt);
     };
     sqlite3.oo1.JsStorageDb.defaultStorageName = 'session';
@@ -744,24 +762,73 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return jdb.storageSize(this.affirmOpen().filename);
     };
 
-    if( sqlite3.__isUnderTest ){
-      jdb.prototype.testDbToObject = function(includeJournal=false){
-        const store = cache.jzClassToStorage[this.affirmOpen().filename];
-        const rx = includeJournal ? undefined : /^kvvfs(-(local|session))?-jrnl$/;
-        if( store ){
-          const s = store.s;
-          const rc = Object.create(null);
-          let i = 0, n = s.length;
-          for( ; i < n; ++i ){
-            const k = s.key(i);
-            if( !rx || !rx.test(k) ){
-              rc[k] = s.getItem(k);
-            }
+    /**
+       Copies the entire contents of this db into a JSON-friendly
+       form.  The returned object is structured as follows...
+
+       - "name": the name of the db. This is 'local' or 'session' for
+       localStorage resp. sessionStorage, and an arbitrary name for
+       transient storage.
+
+       - "timestamp": the time this function was called, in Unix
+         epoch milliseconds.
+
+       - "data": An object holding the raw encoded state. It has the
+       following properties:
+
+         - "kvvfs[-X]-sz" = the decoded size of the db. Its encoded
+           size may vary wildly from that in either direction,
+           depending largely on the ratio of empty space to data.
+
+         - "kvvfs[-X]-jrnl" = if includeJournal is true and the db has
+           a journal, it is stored in this record. If is has no
+           journal, or includeJournal is false, this key is not set.
+
+         - "kvvfs[-X]-###" = one encoded page of the db, with ###
+           corresponding to the page number.
+
+       The [-X] parts are only set for localStorage and sessionStorage
+       back-ends and the X of each is 'local' or 'session'. That is:
+       the keys contain the storage back-end's name because of how the
+       underlying native VFS works (each key goes in its own file so
+       it must be distinct per storage name). That part is retained
+       here for backwards compatibility - transient storage objects
+       elide that part.
+
+       The encoding of the underlying database is not part of this
+       interface - it is simply passed on as-is.
+
+       Throws if this db is not opened.
+
+       Added in version 3.?? (tenatively 3.52).
+    */
+    jdb.prototype.exportToObject = function(includeJournal=false){
+      this.affirmOpen();
+      const store = cache.jzClassToStorage[this.affirmOpen().filename];
+      const rx = includeJournal ? undefined : /^kvvfs(-(local|session))?-jrnl$/;
+      if( store ){
+        const s = store.s;
+        const rc = Object.assign(Object.create(null),{
+          name: this.filename,
+          timestamp: (new Date()).valueOf(),
+          data:Object.create(null)
+        });
+        let i = 0, n = s.length;
+        for( ; i < n; ++i ){
+          const k = s.key(i);
+          if( !rx || !rx.test(k) ){
+            rc.data[k] = s.getItem(k);
           }
-          return rc;
         }
+        return rc;
       }
-      jdb.testKvvfsWhich = kvvfsWhich;
+    };
+
+    if( sqlite3.__isUnderTest ){
+      jdb.test = {
+        kvvfsWhich,
+        cache
+      }
     }/* __isUnderTest */
   }/*sqlite3.oo1.JsStorageDb*/
 

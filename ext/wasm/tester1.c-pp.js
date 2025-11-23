@@ -2885,7 +2885,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const JDb = sqlite3.oo1.JsStorageDb;
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(looksLikePtr(pVfs));
-        let x = JDb.testKvvfsWhich('');
+        let x = JDb.test.kvvfsWhich('');
         T.assert( 2 === x?.stores?.length )
           .assert( x.stores.indexOf(globalThis.sessionStorage)>-1 )
           .assert( x.stores.indexOf(globalThis.localStorage)>-1 )
@@ -2936,13 +2936,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new JDb(filename);
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-          console.debug("kvvfs to Object:",db.testDbToObject(true));
+          console.debug("kvvfs to Object:",db.exportToObject(true));
           close();
 
           db = new JDb('new-storage');
           db.exec(sqlSetup);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
-          console.debug("kvvfs to Object:",db.testDbToObject(true));
+          console.debug("kvvfs to Object:",db.exportToObject(true));
           const n = db.storageSize();
           T.assert( n>0, "Db size count failed" );
 
