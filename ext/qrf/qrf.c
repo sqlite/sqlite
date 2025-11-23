@@ -1520,6 +1520,7 @@ static void qrfSplitColumn(qrfColData *pData, Qrf *p){
   char **az = 0;
   int *aiWth = 0;
   int nColNext = 2;
+  int w;
   struct qrfPerCol *a = 0;
   sqlite3_int64 nRow = 1;
   sqlite3_int64 i;
@@ -1582,7 +1583,9 @@ static void qrfSplitColumn(qrfColData *pData, Qrf *p){
   pData->a = a;
   pData->nCol = nCol;
   pData->n = pData->nAlloc = nRow*nCol;
-  pData->nMargin = 2;
+  for(i=w=0; i<nCol; i++) w += a[i].w;
+  pData->nMargin = (p->spec.nScreenWidth - w)/(nCol - 1);
+  if( pData->nMargin>5 ) pData->nMargin = 5;
 }
 
 /*
@@ -1830,7 +1833,13 @@ static void qrfColumnar(Qrf *p){
       break;
     case QRF_STYLE_Column:
       rowStart = "";
-      colSep = data.nMargin ? "  " : " ";
+      if( data.nMargin<2 ){
+        colSep = " ";
+      }else if( data.nMargin<=5 ){
+        colSep = "     " + (5-data.nMargin);
+      }else{
+        colSep = "     ";
+      }
       rowSep = "\n";
       break;
     default:  /*case QRF_STYLE_Markdown:*/
