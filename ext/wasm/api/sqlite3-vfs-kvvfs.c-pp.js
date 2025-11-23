@@ -19,6 +19,64 @@
 
   Documentation home page: https://sqlite.org/wasm
 */
+
+/**
+   kvvfs - the Key/Value VFS - is an SQLite3 VFS which delegates
+   storage of its pages and metadata to a key-value store.
+
+   It was conceived in order to support JS's localStorage and
+   sessionStorage objects. Its native implementation uses files as
+   key/value storage (one file per record) but the JS implementation
+   replaces a few methods so that it can use the aforementioned
+   objects as storage.
+
+   It uses a bespoke ASCII encoding to store each db page as a
+   separate record and stores some metadata, like the db's encoded
+   size and its journal, as individual records.
+
+   kvvfs is significantly less efficient than a plain in-memory db but
+   it also, as a side effect of its design, offers a JSON-friendly
+   interchange format for exporting and importing databases.
+
+   kvvfs is _not_ designed for heavy db loads. It is relatively
+   malloc()-heavy, having to de/allocate frequently, and it
+   spends much of its time converting the raw db pages into and out of
+   an ASCII encoding.
+
+   But it _does_ work and is "performant enough" for db work of the
+   scale of a db which will fit within sessionStorage or localStorage
+   (just 2-3mb).
+
+   "Version 2" extends it to support using Storage-like objects as
+   backing storage, Storage being the JS class which localStorage and
+   sessionStorage both derive from. This essentially moves the backing
+   store from whatever localStorage and sessionStorage use to an
+   in-memory object.
+
+   This effort is primarily a stepping stone towards eliminating, if
+   it proves possible, the POSIX I/O API dependencies in SQLite's WASM
+   builds. That is: if this VFS works properly, it can be set as the
+   default VFS and we can eliminate the "unix" VFS from the JS/WASM
+   builds (as opposed to server-wise/WASI builds). That still, as of
+   2025-11-23, a ways away, but it's the main driver for version 2 of
+   kvvfs.
+
+   Version 2 remains compatible with version 1 databases and always
+   writes localStorage/sessionStorage metadata in the v1 format, so
+   such dbs can be manipulated freely by either version. For transient
+   storage objects (new in version 2), the format of its record keys
+   is simpified, requiring less space than v1 keys by eliding
+   redundant (in this context) info from the keys.
+
+   Another benefit of v2 is its ability to export dbs into a
+   JSON-friendly (but not human-friendly) format.
+
+   A potential, as-yet-unproven, benefit, would be the ability to plug
+   arbitrary Storage-compatible objects in so that clients could,
+   e.g. asynchronously post updates to db pages to some back-end for
+   backups.
+*/
+
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   /* We unregister the kvvfs VFS from Worker threads later on. */
@@ -57,12 +115,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Implementation of JS's Storage interface for use as backing store
      of the kvvfs. Storage is a native class and its constructor
      cannot be legally called from JS, making it impossible to
-     directly subclass Storage.
+     directly subclass Storage. This class implements the Storage
+     interface, however, to make it a drop-in replacement for
+     localStorage/sessionStorage.
 
      This impl simply proxies a plain, prototype-less Object, suitable
      for JSON-ing.
   */
-  class TransientStorage {
+  class KVVfsStorage {
     #map;
     #keys;
     #getKeys(){return this.#keys ??= Object.keys(this.#map);}
@@ -101,7 +161,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     get length() {
       return this.#getKeys().length;
     }
-  }/*TransientStorage*/;
+  }/*KVVfsStorage*/;
 
   /**
      Map of JS-stringified KVVfsFile::zClass names to
@@ -115,7 +175,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Start off with mappings for well-known names. */
     localThread: {
       refc: 3/*never reaches 0*/,
-      s: new TransientStorage,
+      s: new KVVfsStorage,
       files: [/*KVVfsFile instances currently using this storage*/]
     }
   });
@@ -206,6 +266,30 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     //debug("kvvfsWhich",which,rc);
     return rc;
   };
+
+//#if nope
+  // fileForDb() works but we don't have a current need for it.
+  /**
+     Expects an (sqlite3*). Uses sqlite3_file_control() to extract its
+     (sqlite3_file*). On success it returns a new KVVfsFile instance
+     wrapping that pointer, which the caller must eventual call
+     dispose() on (which won't free the underlying pointer, just the
+     wrapper).
+   */
+  const fileForDb = function(pDb){
+    const stack = pstack.pointer;
+    try{
+      const pOut = pstack.allocPtr();
+      return wasm.exports.sqlite3_file_control(
+        pDb, wasm.ptr.null, capi.SQLITE_FCNTL_FILE_POINTER, pOut
+      )
+        ? null
+        : new KVVfsFile(wasm.peekPtr(pOut));
+    }finally{
+      pstack.restore(stack);
+    }
+  };
+//#endif nope
 
   /**
      Clears all storage used by the kvvfs DB backend, deleting any
@@ -492,25 +576,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if( rc ) return rc;
             const f = new KVVfsFile(pProtoFile);
             util.assert(f.$zClass, "Missing f.$zClass");
-            const jzClass = wasm.cstrToJs(zName);//f.$zClass);
+            const jzClass = wasm.cstrToJs(zName);
             let s = cache.jzClassToStorage[jzClass];
             //debug("xOpen", jzClass, s);
             if( s ){
               ++s.refc;
               s.files.push(f);
-              if( false && !s.keyPrefix ){
-              /* this messes up the recordHandler methods. They have only
-                 the key, not the sqlite3_file object, so cannot map
-                 a prefixless key to a storage object. */
-                f.$zClass = wasm.ptr.null;
-              }
             }else{
               /* TODO: a url flag which tells it to keep the storage
                  around forever so that future xOpen()s get the same
                  Storage-ish objects. We can accomplish that by
                  simply increasing the refcount once more. */
               util.assert( !f.$isJournal, "Opening a journal before its db? "+jzClass );
-              //breaks stuff f.$zClass = wasm.ptr.null /* causes the "kvvfs-" prefix to be elided from keys */;
               const other = f.$isJournal
                     ? jzClass.replace(cache.rxJournalSuffix,'')
                     : jzClass + '-journal';
@@ -522,7 +599,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                             will follow soon enough and bump the
                             refcount. If we start at 2 here, that
                             pending open will increment it again. */,
-                  s: new TransientStorage,
+                  s: new KVVfsStorage,
                   keyPrefix: '',
                   files: [f]
                 });
@@ -619,12 +696,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         // these impls work but there's currently no pressing need _not_ use
         // the native impls.
         xCurrentTime: function(pVfs,pOut){
-          wasm.poke64f(pOut, 2440587.5 + (new Date().getTime()/86400000));
+          wasm.poke64f(pOut, 2440587.5 + (Date.now()/86400000));
           return 0;
         },
 
         xCurrentTimeInt64: function(pVfs,pOut){
-          wasm.poke64(pOut, (2440587.5 * 86400000) + new Date().getTime());
+          wasm.poke64(pOut, (2440587.5 * 86400000) + Date.now());
           return 0;
         }
 //#endif
@@ -857,7 +934,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const s = store.s;
       const rc = Object.assign(Object.create(null),{
         name: this.filename,
-        timestamp: (new Date()).valueOf(),
+        timestamp: Date.now(),
         pages: []
       });
       const pages = Object.create(null);
@@ -904,16 +981,27 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        invoking this while the db is in active use invokes undefined
        behavior.
 
-       Throws on error. Returns this object on success.
+       Returns this object on success. Throws on error. Error
+       conditions include:
 
-       FIXMEs:
+       - This db is closed.
 
-       - We need the page size in the export so that we can reset it,
-       if needed, on the import.
+       - Other handles to the same storage object are opened.
+       Performing this page-by-page import would invoke undefined
+       behavior on them.
 
-       - We need to ensure that the native-size KVVfsFile::szDb and
-       KVVfsFile::szPage get set to -1 for all open instances so that
-       they re-read the db size.
+       - A transaction is active.
+
+       Those are the error case it can easily cover. The room for
+       undefined behavior in wiping a db's storage out from under it
+       is a whole other potential minefield.
+
+       If it throws after starting the input then it clears the
+       storage before returning, to avoid leaving the db in an
+       undefined state. It has no inherent error conditions during the
+       input phase beyond out-of-memory but it may throw for any of
+       the above-listed conditions before reaching that step, in which
+       case the db is not modified.
     */
     jdb.prototype.importFromObject = function(exp){
       this.affirmOpen();
@@ -923,12 +1011,23 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           || !Array.isArray(exp.pages) ){
         util.toss3(capi.SQLITE_MISUSE, "Malformed export object.");
       }
+      if( s.files.length>1 ){
+        util.toss3(capi.SQLITE_IOERR_ACCESS,
+                   "Cannot import a db when multiple handles to it",
+                   "are opened.");
+      }else if( capi.sqlite3_txn_state(this.pointer, null)>0 ){
+        util.toss3(capi.SQLITE_MISUSE,
+                   "Cannot import the db while a transaction is active.");
+      }
       warn("importFromObject() is incomplete");
-      this.clearStorage();
       const store = kvvfsWhich(this.filename);
-      util.assert(store?.s, "Somehow missing a storage object for",this.filename);
+      util.assert(store?.s, "Somehow missing a storage object for", this.filename);
       const keyPrefix = kvvfsKeyPrefix(this.filename);
+      this.clearStorage();
       try{
+        s.files.forEach((f)=>f.$szPage = $f.$szDb = -1)
+        /* Force the native KVVfsFile instances to re-read the db
+           and page size. */;
         s.setItem(keyPrefix+'sz', exp.size);
         if( exp.journal ) s.setItem(keyPrefix+'jrnl', exp.journal);
         exp.pages.forEach((v,ndx)=>s.setItem(keyPrefix+(ndx+1)));
