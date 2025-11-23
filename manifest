@@ -1,5 +1,5 @@
-C In\sQRF\sin\sbSplitColumn\smode,\sincrease\sthe\sspacing\sbetween\scolumns\sto\sbe\sas\nwide\sas\sfive,\sfor\simproved\slegibility,\sif\sscreen\swidth\sallows.
-D 2025-11-23T00:45:47.805
+C New\stest\scase\sfor\sbSplitColumn\sin\sQRF.
+D 2025-11-23T10:55:38.669
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1512,6 +1512,7 @@ F test/pushdown.test 46a626ef1c0ca79b85296ff2e078b9da20a50e9b804b38f441590c39875
 F test/qrf01.test a6ecc051613ea4dde796e4ff20fdb2c59a2138faf926d90a2a92c1e291776617
 F test/qrf02.test 39b4afdc000bedccdafc0aecf17638df67a67aaa2d2942865ae6abcc48ba0e92
 F test/qrf03.test 9de53aea459f5a127283db03cbb6011500757685646d21aa3c29c44c6ef23e86
+F test/qrf04.test 0894692c998d2401dcc33449c02051b503ecce0c94217be54fb007c82d2d1379
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quickcheck.test a4b7e878cd97e46108291c409b0bf8214f29e18fddd68a42bc5c1375ad1fb80a
@@ -2178,8 +2179,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b73df612b621699cd58de6ef327fefdeb8f52eb620f0d2df00d38ff6608a8dd5
-R 21cb4fdd07b535e967358e7f11ed0f3e
+P 673648cc812e1549c2b3e7749306e7395d0b7e396a7d5ac432948eb3a6c3713f
+R b07cade1b53255f8485d393775aba3a9
 U drh
-Z 22bfdb54bd9f215342f9c6ccdefd6051
+Z 810fd1ddb73ce7b8ee1038ab0bad873b
 # Remove this line to create a well-formed Fossil manifest.
