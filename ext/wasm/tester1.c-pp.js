@@ -2909,6 +2909,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }finally{
           if( db ) db.close();
         }
+        //console.debug("sessionStorage",globalThis.sessionStorage);
       }
     }/*kvvfs sanity checks*/)
     .t({
@@ -2997,17 +2998,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new JDb(filename);
           db.clearStorage(/*must not throw*/);
           db.exec(sqlSetup);
-          const close = ()=>{
-            db.close();
-            db = undefined;
-          };
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
 
           const duo = new JDb(filename);
           duo.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
           console.debug("duo.exportToObject()",duo.exportToObject(false));
-          close();
+          db.close();
           T.assert(6 === duo.selectValue('select count(*) from kvvfs'));
           duo.close();
           T.mustThrowMatching(function(){
@@ -3025,20 +3022,21 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             appropriate.
           */
         }finally{
-          if( db ) db.close();
-          if( duo ) duo.close();
+          db?.close?.();
+          duo?.close?.();
         }
       }
     }/*transient kvvfs*/)
 //#if enable-see
     .t({
-      name: 'kvvfs with SEE encryption',
-      predicate: ()=>(isUIThread()
-                      || "Only available in main thread."),
+      name: 'kvvfs SEE encryption in sessionStorage',
+      predicate: ()=>(!!globalThis.sessionStorage
+                      || "sessionStorage is not available"),
       test: function(sqlite3){
-        T.seeBaseCheck(sqlite3.oo1.JsStorageDb, (isInit)=>{
-          return {filename: "session"};
-        }, ()=>this.kvvfsUnlink());
+        const JDb = sqlite3.oo1.JsStorageDb;
+        T.seeBaseCheck(JDb,
+                       (isInit)=>return {filename: "session"},
+                       ()=>JDb.clearStorage('session'));
       }
     })/*kvvfs with SEE*/
 //#endif enable-see
