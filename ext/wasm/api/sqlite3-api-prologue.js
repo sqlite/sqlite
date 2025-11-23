@@ -892,7 +892,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
 
        Like this.alloc.impl(), this.realloc.impl() is a direct binding
        to the underlying realloc() implementation which does not throw
-       exceptions, instead returning 0 on allocation error.
+       exceptions, instead returning 0 (or 0n) on allocation error.
     */
     realloc: undefined/*installed later*/,
 
