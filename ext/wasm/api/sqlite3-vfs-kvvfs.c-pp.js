@@ -288,7 +288,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const keyForStorage = (store, zClass, zKey)=>{
     //debug("keyForStorage(",store, wasm.cstrToJs(zClass), wasm.cstrToJs(zKey));
     return wasm.exports.sqlite3__wasm_kvvfsMakeKeyOnPstack(
-      store.keyPrefix ? zClass : null, zKey
+      store.keyPrefix ? zClass : wasm.ptr.null, zKey
     );
   };
   /* We use this for the many small key allocations we need.
@@ -502,7 +502,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               /* this messes up the recordHandler methods. They have only
                  the key, not the sqlite3_file object, so cannot map
                  a prefixless key to a storage object. */
-                f.$zClass = null;
+                f.$zClass = wasm.ptr.null;
               }
             }else{
               /* TODO: a url flag which tells it to keep the storage
@@ -510,7 +510,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                  Storage-ish objects. We can accomplish that by
                  simply increasing the refcount once more. */
               util.assert( !f.$isJournal, "Opening a journal before its db? "+jzClass );
-              //breaks stuff f.$zClass = null /* causes the "kvvfs-" prefix to be elided from keys */;
+              //breaks stuff f.$zClass = wasm.ptr.null /* causes the "kvvfs-" prefix to be elided from keys */;
               const other = f.$isJournal
                     ? jzClass.replace(cache.rxJournalSuffix,'')
                     : jzClass + '-journal';
