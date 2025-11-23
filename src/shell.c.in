@@ -10784,12 +10784,11 @@ static int do_meta_command(const char *zLine, ShellState *p){
    || (c=='i' && (cli_strncmp(azArg[0], "indices", n)==0
                  || cli_strncmp(azArg[0], "indexes", n)==0) )
   ){
-    sqlite3_stmt *pStmt;
-    char **azResult;
-    int nRow, nAlloc;
     int ii;
-    ShellText s;
-    initText(&s);
+    sqlite3_stmt *pStmt;
+    sqlite3_str *pSql;
+    const char *zPattern = nArg>1 ? azArg[1] : 0;
+
     open_db(p, 0);
     rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
     if( rc ){
@@ -10806,86 +10805,46 @@ static int do_meta_command(const char *zLine, ShellState *p){
       sqlite3_finalize(pStmt);
       goto meta_command_exit;
     }
+    pSql = sqlite3_str_new(p->db);
     for(ii=0; sqlite3_step(pStmt)==SQLITE_ROW; ii++){
       const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
       if( zDbName==0 ) continue;
-      if( s.zTxt && s.zTxt[0] ) appendText(&s, " UNION ALL ", 0);
-      if( sqlite3_stricmp(zDbName, "main")==0 ){
-        appendText(&s, "SELECT name FROM ", 0);
-      }else{
-        appendText(&s, "SELECT ", 0);
-        appendText(&s, zDbName, '\'');
-        appendText(&s, "||'.'||name FROM ", 0);
+      if( sqlite3_str_length(pSql) ){
+        sqlite3_str_appendall(pSql, " UNION ALL ");
       }
-      appendText(&s, zDbName, '"');
-      appendText(&s, ".sqlite_schema ", 0);
-      if( c=='t' ){
-        appendText(&s," WHERE type IN ('table','view')"
-                      "   AND name NOT LIKE 'sqlite__%' ESCAPE '_'"
-                      "   AND name LIKE ?1", 0);
+      if( sqlite3_stricmp(zDbName, "main")==0 ){
+        sqlite3_str_appendall(pSql, "SELECT name FROM ");
       }else{
-        appendText(&s," WHERE type='index'"
-                      "   AND tbl_name LIKE ?1", 0);
+        sqlite3_str_appendf(pSql, "SELECT %Q||'.'||name FROM ", zDbName);
+      }
+      sqlite3_str_appendf(pSql, "\"%w\".sqlite_schema", zDbName);
+      if( c=='t' ){
+        sqlite3_str_appendf(pSql,
+            " WHERE type IN ('table','view')"
+            "   AND name NOT LIKE 'sqlite__%%' ESCAPE '_'"
+        );
+        if( zPattern ){
+          sqlite3_str_appendf(pSql," AND name LIKE %Q", zPattern);
+        }
+      }else{
+        sqlite3_str_appendf(pSql, " WHERE type='index'");
+        if( zPattern ){
+          sqlite3_str_appendf(pSql," AND tbl_name LIKE %Q", zPattern);
+        }
       }
     }
     rc = sqlite3_finalize(pStmt);
     if( rc==SQLITE_OK ){
-      appendText(&s, " ORDER BY 1", 0);
-      rc = sqlite3_prepare_v2(p->db, s.zTxt, -1, &pStmt, 0);
+      sqlite3_str_appendall(pSql, " ORDER BY 1");
     }
-    freeText(&s);
+
+    /* Run the SQL statement in "split" mode. */
+    modePush(p);
+    modeChange(p, MODE_Split);
+    shell_exec(p, sqlite3_str_value(pSql), 0);
+    sqlite3_str_free(pSql);
+    modePop(p);
     if( rc ) return shellDatabaseError(p->db);
-
-    /* Run the SQL statement prepared by the above block. Store the results
-    ** as an array of nul-terminated strings in azResult[].  */
-    nRow = nAlloc = 0;
-    azResult = 0;
-    if( nArg>1 ){
-      sqlite3_bind_text(pStmt, 1, azArg[1], -1, SQLITE_TRANSIENT);
-    }else{
-      sqlite3_bind_text(pStmt, 1, "%", -1, SQLITE_STATIC);
-    }
-    while( sqlite3_step(pStmt)==SQLITE_ROW ){
-      if( nRow>=nAlloc ){
-        char **azNew;
-        sqlite3_int64 n2 = 2*(sqlite3_int64)nAlloc + 10;
-        azNew = sqlite3_realloc64(azResult, sizeof(azResult[0])*n2);
-        shell_check_oom(azNew);
-        nAlloc = (int)n2;
-        azResult = azNew;
-      }
-      azResult[nRow] = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 0));
-      shell_check_oom(azResult[nRow]);
-      nRow++;
-    }
-    if( sqlite3_finalize(pStmt)!=SQLITE_OK ){
-      rc = shellDatabaseError(p->db);
-    }
-
-    /* Pretty-print the contents of array azResult[] to the output */
-    if( rc==0 && nRow>0 ){
-      int len, maxlen = 0;
-      int i, j;
-      int nPrintCol, nPrintRow;
-      for(i=0; i<nRow; i++){
-        len = strlen30(azResult[i]);
-        if( len>maxlen ) maxlen = len;
-      }
-      nPrintCol = shellScreenWidth()/(maxlen+2);
-      if( nPrintCol<1 ) nPrintCol = 1;
-      nPrintRow = (nRow + nPrintCol - 1)/nPrintCol;
-      for(i=0; i<nPrintRow; i++){
-        for(j=i; j<nRow; j+=nPrintRow){
-          char *zSp = j<nPrintRow ? "" : "  ";
-          cli_printf(p->out,
-               "%s%-*s", zSp, maxlen, azResult[j] ? azResult[j]:"");
-        }
-        cli_puts("\n", p->out);
-      }
-    }
-
-    for(ii=0; ii<nRow; ii++) sqlite3_free(azResult[ii]);
-    sqlite3_free(azResult);
   }else
 
 #ifndef SQLITE_SHELL_FIDDLE

@@ -1785,6 +1785,7 @@ static void qrfColumnar(Qrf *p){
   }
 
   if( nColumn==1
+   && data.n>1
    && p->spec.bSplitColumn==QRF_Yes
    && p->spec.eStyle==QRF_STYLE_Column
    && p->spec.bTitles==QRF_No
