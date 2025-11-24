@@ -375,7 +375,8 @@ configure process, and check it in.
 Patching Autosetup for Project-local Changes
 ------------------------------------------------------------------------
 
-The autosetup files require the following patche after updating:
+The autosetup files require the following patches after updating
+from their upstream sources:
 
 ### `--debug` flag
 
