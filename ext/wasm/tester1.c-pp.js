@@ -2941,10 +2941,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
           close();
 
+          const exportDb = capi.sqlite3_js_kvvfs_export_storage;
           db = new JDb(filename);
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-          const exp = db.exportToObject(true);
+          const exp = exportDb(filename,true);
           T.assert( filename===exp.name, "Broken export filename" )
             .assert( exp?.size > 0, "Missing db size" )
             .assert( exp?.pages?.length > 0, "Missing db pages" );
@@ -2954,7 +2955,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new JDb('new-storage');
           db.exec(sqlSetup);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
-          console.debug("kvvfs to Object:",db.exportToObject(true));
+          console.debug("kvvfs to Object:",exportDb(db.filename));
           const n = db.storageSize();
           T.assert( n>0, "Db size count failed" );
 
@@ -2996,6 +2997,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         ];
         const sqlCount = 'select count(*) from kvvfs';
         try {
+          const exportDb = capi.sqlite3_js_kvvfs_export_storage;
           db = new JDb(filename);
           db.clearStorage(/*must not throw*/);
           db.exec(sqlSetup);
@@ -3004,7 +3006,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           duo = new JDb(filename);
           duo.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue(sqlCount));
-          console.debug("duo.exportToObject()",duo.exportToObject(false));
+          let exp = exportDb(filename);
+          console.debug("exported db",exp);
           db.close();
           T.assert(6 === duo.selectValue(sqlCount));
           duo.close();
@@ -3014,18 +3017,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             finally{ddb.close()}
           }, /.*no such table: kvvfs.*/);
 
-          if( 1 ){
-            // The db does not yet work after an import.
-            duo = new JDb(filename);
-            duo.exec(sqlSetup);
-            const exp = duo.exportToObject();
-            duo.exec('insert into kvvfs(a) values(4),(5),(6)');
-            T.assert(6 === duo.selectValue(sqlCount));
-            duo.importFromObject(exp);
-            console.debug("Before/after exports:",exp, duo.exportToObject());
-            // FIXME: db access does not work beyond that after an import.
-            //T.assert(3 === duo.selectValue(sqlCount));
-          }
+          const importDb = capi.sqlite3_js_kvvfs_import_storage;
+          duo = new JDb(filename);
+          T.mustThrowMatching(()=>importDb(exp,true), /.*in use.*/);
+          duo.close();
+          importDb(exp);
+          duo = new JDb(filename);
+          T.assert(6 === duo.selectValue(sqlCount));
+          duo.close();
 
           /*
             TODO: more advanced concurrent use tests, e.g. looping
