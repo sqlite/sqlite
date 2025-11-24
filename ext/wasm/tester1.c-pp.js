@@ -210,8 +210,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
        filter.test(error.message) passes. If it's a function, the test
        passes if filter(error) returns truthy. If it's a string, the
        test passes if the filter matches the exception message
-       precisely. In all other cases the test fails, throwing an
-       Error.
+       precisely. If filter is a number then it is compared against
+       the resultCode property of the exception. In all other cases
+       the test fails, throwing an Error.
 
        If it throws, msg is used as the error report unless it's falsy,
        in which case a default is used.
@@ -225,7 +226,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       if(filter instanceof RegExp) pass = filter.test(err.message);
       else if(filter instanceof Function) pass = filter(err);
       else if('string' === typeof filter) pass = (err.message === filter);
+      else if('number' === typeof filter) pass = (err.resultCode === filter);
       if(!pass){
+        console.error("Filter",filter,"rejected exception",err);
         throw new Error(msg || ("Filter rejected this exception: <<"+err.message+">>"));
       }
       return this;
@@ -2918,6 +2921,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         const filename = 'localThread' /* preinstalled instance */;
         const JDb = sqlite3.oo1.JsStorageDb;
+        const DB = sqlite3.oo1.DB;
         JDb.clearStorage(filename);
         let db = new JDb(filename);
         const sqlSetup = [
@@ -2952,16 +2956,19 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           console.debug("kvvfs to Object:",exp);
           close();
 
-          db = new JDb('new-storage');
+          const dbFileRaw = 'file:new-storage?vfs=kvvfs&transient=1';
+          db = new DB(dbFileRaw);
           db.exec(sqlSetup);
+          const dbFilename = db.dbFilename();
+          console.warn("db.dbFilename() =",dbFilename);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
-          console.debug("kvvfs to Object:",exportDb(db.filename));
-          const n = db.storageSize();
+          console.debug("kvvfs to Object:",exportDb(dbFilename));
+          const n = capi.sqlite3_js_kvvfs_size( dbFilename );
           T.assert( n>0, "Db size count failed" );
 
           if( 1 ){
             // Concurrent open of that same name uses the same storage
-            const x = new JDb(db.filename);
+            const x = new JDb(dbFilename);
             T.assert(3 === db.selectValue('select count(*) from kvvfs'));
             x.close();
           }
@@ -2970,14 +2977,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           // disappears...
           T.mustThrowMatching(function(){
             /* Ensure that 'new-storage' was deleted when its refcount
-               went to 0. TODO is a way to tell these instances to
-               hang around after that, such that 'new-instance' could
-               be semi-persistent (until the page is reloaded).
-            */
-            let ddb = new JDb('new-storage');
+               went to 0, because of its 'transient' flag. By default
+               the objects are retained, like a filesystem would. */
+            let ddb = new JDb(dbFilename);
             try{ddb.selectValue('select a from kvvfs')}
             finally{ddb.close()}
-          }, /.*no such table: kvvfs.*/);
+          }, /no such table: kvvfs/);
         }finally{
           if( db ) db.close();
         }
@@ -2988,6 +2993,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       //predicate: ()=>false,
       test: function(sqlite3){
         const filename = 'my';
+        const DB = sqlite3.oo1.DB;
         const JDb = sqlite3.oo1.JsStorageDb;
         let db;
         let duo;
@@ -2998,8 +3004,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const sqlCount = 'select count(*) from kvvfs';
         try {
           const exportDb = capi.sqlite3_js_kvvfs_export_storage;
-          db = new JDb(filename);
-          db.clearStorage(/*must not throw*/);
+          const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&transient=1';
+          db = new DB(dbFileRaw);
+          capi.sqlite3_js_kvvfs_clear(filename);
           db.exec(sqlSetup);
           T.assert(3 === db.selectValue(sqlCount));
 
@@ -3021,7 +3028,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           duo = new JDb(filename);
           T.mustThrowMatching(()=>importDb(exp,true), /.*in use.*/);
           duo.close();
-          importDb(exp);
+          importDb(exp, true);
           duo = new JDb(filename);
           T.assert(6 === duo.selectValue(sqlCount));
           duo.close();

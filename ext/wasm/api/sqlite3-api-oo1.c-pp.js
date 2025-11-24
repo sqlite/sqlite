@@ -213,7 +213,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      properties:
 
      - `.filename`: the db filename. It may be a special name like ":memory:"
-       or "".
+       or "". It may also be a URI-style name.
 
      - `.flags`: as documented in the DB constructor.
 
