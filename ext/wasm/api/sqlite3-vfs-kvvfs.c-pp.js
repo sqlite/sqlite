@@ -31,7 +31,7 @@
    objects as storage.
 
    It uses a bespoke ASCII encoding to store each db page as a
-   separate record and stores some metadata, like the db's encoded
+   separate record and stores some metadata, like the db's unencoded
    size and its journal, as individual records.
 
    kvvfs is significantly less efficient than a plain in-memory db but
@@ -605,18 +605,27 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         xOpen: function(pProtoVfs,zName,pProtoFile,flags,pOutFlags){
           try{
             //cache.zReadBuf ??= wasm.malloc(kvvfsMethods.$nBufferSize);
+            if( !zName ){
+              zName = (cache.zEmpty ??= wasm.allocCString(""));
+            }
             const n = wasm.cstrlen(zName);
             if( n > kvvfsMethods.$nKeySize - 8 /*"-journal"*/ - 1 ){
               warn("file name is too long:", wasm.cstrToJs(zName));
               return capi.SQLITE_RANGE;
             }
-            //wasm.poke32(pOutFlags, flags | sqlite3.SQLITE_OPEN_CREATE);
+            const jzClass = wasm.cstrToJs(zName);
+            if( jzClass?.length != n ){
+              warn("kvvfs file name must be ASCII-only");
+              /* This limitation is to avoide any issues with
+                 truncating multi-byte characters in kvvfs's key-size
+                 limit. */
+              return capi.SQLITE_RANGE;
+            }
             const rc = originalMethods.vfs.xOpen(pProtoVfs, zName, pProtoFile,
                                                  flags, pOutFlags);
             if( rc ) return rc;
             const f = new KVVfsFile(pProtoFile);
             util.assert(f.$zClass, "Missing f.$zClass");
-            const jzClass = wasm.cstrToJs(zName);
             let s = storageForZClass(jzClass);
             //debug("xOpen", jzClass, s);
             if( s ){
@@ -627,7 +636,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                  around forever so that future xOpen()s get the same
                  Storage-ish objects. We can accomplish that by
                  simply increasing the refcount once more. */
+              wasm.poke32(pOutFlags, flags | sqlite3.SQLITE_OPEN_CREATE);
               util.assert( !f.$isJournal, "Opening a journal before its db? "+jzClass );
+              /* Map both zName and zName-journal to the same storage. */
               const other = f.$isJournal
                     ? jzClass.replace(cache.rxJournalSuffix,'')
                     : jzClass + '-journal';
@@ -1014,7 +1025,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       s.setItem(keyPrefix+'sz', exp.size);
       if( exp.journal ) s.setItem(keyPrefix+'jrnl', exp.journal);
       exp.pages.forEach((v,ndx)=>s.setItem(keyPrefix+(ndx+1), v));
-      s.getItem("")/*kludge: for KVVfsStorage to reset its keys*/;
+      //s.getItem("")/*kludge: for KVVfsStorage to reset its keys*/;
     }catch(e){
       capi.sqlite3_js_kvvfs_clear(exp.name);
       throw e;
