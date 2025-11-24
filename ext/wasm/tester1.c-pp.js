@@ -2956,11 +2956,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           console.debug("kvvfs to Object:",exp);
           close();
 
-          const dbFileRaw = 'file:new-storage?vfs=kvvfs&transient=1';
-          db = new DB(dbFileRaw);
+          const dbFileRaw = 'file:new-storage?vfs=kvvfs&delete-on-close=1';
+          db = new DB({
+            filename: dbFileRaw,
+            //flags: 'ct'
+          });
           db.exec(sqlSetup);
           const dbFilename = db.dbFilename();
-          console.warn("db.dbFilename() =",dbFilename);
+          //console.warn("db.dbFilename() =",dbFilename);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
           console.debug("kvvfs to Object:",exportDb(dbFilename));
           const n = capi.sqlite3_js_kvvfs_size( dbFilename );
@@ -3004,7 +3007,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const sqlCount = 'select count(*) from kvvfs';
         try {
           const exportDb = capi.sqlite3_js_kvvfs_export_storage;
-          const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&transient=1';
+          const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&delete-on-close=1';
           db = new DB(dbFileRaw);
           capi.sqlite3_js_kvvfs_clear(filename);
           db.exec(sqlSetup);

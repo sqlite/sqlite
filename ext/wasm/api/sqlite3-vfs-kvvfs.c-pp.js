@@ -196,11 +196,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     refc: 1,
     /**
-       isTransient objects will be removed by xClose() when refc
+       deleteAtRefc0 objects will be removed by xClose() when refc
        reaches 0. The others will persist, to give the illusion of
        real back-end storage. Managed by xOpen().
      */
-    isTransient: false,
+    deleteAtRefc0: false,
     /**
        The backing store. Must implement the Storage interface.
     */
@@ -588,11 +588,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const rc = originalMethods.vfs.xOpen(pProtoVfs, zName, pProtoFile,
                                                  flags, pOutFlags);
             if( rc ) return rc;
-            let transient = false;
+            let deleteAt0 = false;
             if(n && wasm.isPtr(zName)){
-              if(capi.sqlite3_uri_boolean(zName, "transient", 0)){
-                transient = true;
-                //warn("transient=",transient);
+              if(capi.sqlite3_uri_boolean(zName, "delete-on-close", 0)){
+                deleteAt0 = true;
+                //warn("transient=",deleteAt0);
               }
               if(capi.sqlite3_uri_boolean(zName, "wipe-before-open", 0)){
                 // TODO
@@ -604,7 +604,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             //debug("xOpen", jzClass, s);
             if( s ){
               ++s.refc;
-              if( true===transient ) s.isTransient = true;
+              //no if( true===deleteAt0 ) s.deleteAtRefc0 = true;
               s.files.push(f);
             }else{
               /* TODO: a url flag which tells it to keep the storage
@@ -621,7 +621,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 = cache.storagePool[other]
                 = newStorageObj(jzClass);
               s.files.push(f);
-              s.isTransient = transient;
+              s.deleteAtRefc0 = deleteAt0;
               debug("xOpen installed storage handles [",
                     jzClass, other,"]", s);
             }
@@ -737,7 +737,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               pFileHandles.delete(pFile);
               const s = storageForZClass(h.jzClass);
               s.files = s.files.filter((v)=>v!==h.file);
-              if( --s.refc<=0 && s.isTransient ){
+              if( --s.refc<=0 && s.deleteAtRefc0 ){
                 const other = h.file.$isJournal
                       ? h.jzClass.replace(cache.rxJournalSuffix,'')
                       : h.jzClass+'-journal';
