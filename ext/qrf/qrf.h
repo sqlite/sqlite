@@ -120,6 +120,7 @@ int sqlite3_format_query_result(
 #define QRF_BLOB_Hex     3 /* Hexadecimal representation */
 #define QRF_BLOB_Tcl     4 /* "\000" notation */
 #define QRF_BLOB_Json    5 /* A JSON string */
+#define QRF_BLOB_Size    6 /* Display the blob size only */
 
 /*
 ** Control-character escape modes.

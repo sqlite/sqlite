@@ -7902,7 +7902,7 @@ static int dotCmdMode(ShellState *p){
           p->mode.spec.eText = QRF_TEXT_Json;
           p->mode.spec.eBlob = QRF_BLOB_Json;
           break;
-        default:  /* off */
+        default: /* off */
           p->mode.spec.eText = QRF_TEXT_Plain;
           p->mode.spec.eBlob = QRF_BLOB_Text;
           break;

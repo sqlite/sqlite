@@ -2219,11 +2219,13 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
     }else if( strcmp(zArg,"-blob")==0 ){
       static const char *azBlob[] = {
         "auto",             "hex",              "json",
-        "tcl",              "text",             "sql",      0
+        "tcl",              "text",             "sql",
+        "size",             0
       };
       static unsigned char aBlobMap[] = {
         QRF_BLOB_Auto,      QRF_BLOB_Hex,       QRF_BLOB_Json,
-        QRF_BLOB_Tcl,       QRF_BLOB_Text,      QRF_BLOB_Sql
+        QRF_BLOB_Tcl,       QRF_BLOB_Text,      QRF_BLOB_Sql,
+        QRF_BLOB_Size
       };
       int blob;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBlob,

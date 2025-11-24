@@ -983,6 +983,11 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
           }
           break;
         }
+        case QRF_BLOB_Size: {
+          int nBlob = sqlite3_column_bytes(p->pStmt,iCol);
+          sqlite3_str_appendf(pOut, "(%d-byte blob)", nBlob);
+          break;
+        }
         default: {
           const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
           qrfEncodeText(p, pOut, zTxt);

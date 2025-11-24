@@ -76,7 +76,7 @@ do_test 1.14 {
 do_test 1.15 {
   catch {db format -text sql -blob unk {SELECT * FROM t1}} res
   set res
-} {bad BLOB encoding (-blob) "unk": must be auto, hex, json, tcl, text, or sql}
+} {bad BLOB encoding (-blob) "unk": must be auto, hex, json, tcl, text, sql, or size}
 do_test 1.16 {
   catch {db format -text sql -style unk {SELECT * FROM t1}} res
   set res
@@ -987,6 +987,16 @@ alice                  emma      ingrid  nina      rita     violet     zoe
 bob                    fred      jake    octavian  sam      william
 cinderella-cinderella  gertrude  lisa    paula     tammy    xanthippe
 daniel                 harold    mike    quintus   ulysses  yates
+}
+
+do_test 11.1 {
+  set result "\n[db format -style table -blob size {SELECT randomblob(1234)}]"
+} {
++------------------+
+| randomblob(1234) |
++------------------+
+| (1234-byte blob) |
++------------------+
 }
 
 db close
