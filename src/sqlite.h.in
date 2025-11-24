@@ -766,9 +766,7 @@ struct sqlite3_file {
 **
 ** The flags argument to xSync may be one of [SQLITE_SYNC_NORMAL] or
 ** [SQLITE_SYNC_FULL].  The first choice is the normal fsync().
-** The second choice is a Mac OS X style fullsync.  The [SQLITE_SYNC_DATAONLY]
-** flag may be ORed in to indicate that only the data of the file
-** and not its inode needs to be synced.
+** The second choice is a Mac OS X style fullsync.
 **
 ** The integer values to xLock() and xUnlock() are one of
 ** <ul>

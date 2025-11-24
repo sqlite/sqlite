@@ -1400,7 +1400,7 @@ static int zeroJournalHdr(Pager *pPager, int doTruncate){
       rc = sqlite3OsWrite(pPager->jfd, zeroHdr, sizeof(zeroHdr), 0);
     }
     if( rc==SQLITE_OK && !pPager->noSync ){
-      rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_DATAONLY|pPager->syncFlags);
+      rc = sqlite3OsSync(pPager->jfd, pPager->syncFlags);
     }
 
     /* At this point the transaction is committed but the write lock
@@ -4367,9 +4367,7 @@ static int syncJournal(Pager *pPager, int newHdr){
       if( 0==(iDc&SQLITE_IOCAP_SEQUENTIAL) ){
         PAGERTRACE(("SYNC journal of %d\n", PAGERID(pPager)));
         IOTRACE(("JSYNC %p\n", pPager))
-        rc = sqlite3OsSync(pPager->jfd, pPager->syncFlags|
-          (pPager->syncFlags==SQLITE_SYNC_FULL?SQLITE_SYNC_DATAONLY:0)
-        );
+        rc = sqlite3OsSync(pPager->jfd, pPager->syncFlags);
         if( rc!=SQLITE_OK ) return rc;
       }
 

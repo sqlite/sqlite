@@ -514,7 +514,7 @@ static int fsSync(sqlite3_file *pFile, int flags){
     rc = pRealFile->pMethods->xWrite(pRealFile, zSize, 4, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = pRealFile->pMethods->xSync(pRealFile, flags&(~SQLITE_SYNC_DATAONLY));
+    rc = pRealFile->pMethods->xSync(pRealFile, flags);
   }
 
   return rc;

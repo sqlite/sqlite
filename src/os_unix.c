@@ -3756,20 +3756,18 @@ int sqlite3_fullsync_count = 0;
 ** enabled, however, since with SQLITE_NO_SYNC enabled, an OS crash
 ** or power failure will likely corrupt the database file.
 **
-** SQLite sets the dataOnly flag if the size of the file is unchanged.
-** The idea behind dataOnly is that it should only write the file content
-** to disk, not the inode.  We only set dataOnly if the file size is
-** unchanged since the file size is part of the inode.  However,
-** Ted Ts'o tells us that fdatasync() will also write the inode if the
-** file size has changed.  The only real difference between fdatasync()
-** and fsync(), Ted tells us, is that fdatasync() will not flush the
-** inode if the mtime or owner or other inode attributes have changed.
-** We only care about the file size, not the other file attributes, so
-** as far as SQLite is concerned, an fdatasync() is always adequate.
-** So, we always use fdatasync() if it is available, regardless of
-** the value of the dataOnly flag.
+** At one point we attempted to pass a flag to this function if the
+** file-size had not changed to tell it to use fdatasync() instead of
+** fsync() in this case. However, Ted Ts'o tells us that fdatasync() will
+** also write the inode if the file size has changed.  The only real
+** difference between fdatasync() and fsync(), Ted tells us, is that
+** fdatasync() will not flush the inode if the mtime or owner or other
+** inode attributes have changed.  We only care about the file size, not
+** the other file attributes, so as far as SQLite is concerned, an
+** fdatasync() is always adequate.  So, we always use fdatasync() if it is
+** available.
 */
-static int full_fsync(int fd, int fullSync, int dataOnly){
+static int full_fsync(int fd, int fullSync){
   int rc;
 
   /* The following "ifdef/elif/else/" block has the same structure as
@@ -3779,12 +3777,9 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 #ifdef SQLITE_NO_SYNC
   UNUSED_PARAMETER(fd);
   UNUSED_PARAMETER(fullSync);
-  UNUSED_PARAMETER(dataOnly);
 #elif HAVE_FULLFSYNC
-  UNUSED_PARAMETER(dataOnly);
 #else
   UNUSED_PARAMETER(fullSync);
-  UNUSED_PARAMETER(dataOnly);
 #endif
 
   /* Record the number of times that we do a normal fsync() and
@@ -3890,10 +3885,6 @@ static int openDirectory(const char *zFilename, int *pFd){
 /*
 ** Make sure all writes to a particular file are committed to disk.
 **
-** If dataOnly==0 then both the file itself and its metadata (file
-** size, access time, etc) are synced.  If dataOnly!=0 then only the
-** file data is synced.
-**
 ** Under Unix, also make sure that the directory entry for the file
 ** has been created by fsync-ing the directory that contains the file.
 ** If we do not do this and we encounter a power failure, the directory
@@ -3906,7 +3897,6 @@ static int unixSync(sqlite3_file *id, int flags){
   int rc;
   unixFile *pFile = (unixFile*)id;
 
-  int isDataOnly = (flags&SQLITE_SYNC_DATAONLY);
   int isFullsync = (flags&0x0F)==SQLITE_SYNC_FULL;
 
   /* Check that one of SQLITE_SYNC_NORMAL or FULL was passed */
@@ -3921,7 +3911,7 @@ static int unixSync(sqlite3_file *id, int flags){
 
   assert( pFile );
   OSTRACE(("SYNC    %-3d\n", pFile->h));
-  rc = full_fsync(pFile->h, isFullsync, isDataOnly);
+  rc = full_fsync(pFile->h, isFullsync);
   SimulateIOError( rc=1 );
   if( rc ){
     storeLastErrno(pFile, errno);
@@ -3938,7 +3928,7 @@ static int unixSync(sqlite3_file *id, int flags){
             HAVE_FULLFSYNC, isFullsync));
     rc = osOpenDirectory(pFile->zPath, &dirfd);
     if( rc==SQLITE_OK ){
-      full_fsync(dirfd, 0, 0);
+      full_fsync(dirfd, 0);
       robust_close(pFile, dirfd, __LINE__);
     }else{
       assert( rc==SQLITE_CANTOPEN );
@@ -6854,7 +6844,7 @@ static int unixDelete(
     int fd;
     rc = osOpenDirectory(zPath, &fd);
     if( rc==SQLITE_OK ){
-      if( full_fsync(fd,0,0) ){
+      if( full_fsync(fd, 0) ){
         rc = unixLogError(SQLITE_IOERR_DIR_FSYNC, "fsync", zPath);
       }
       robust_close(0, fd, __LINE__);
@@ -7910,7 +7900,7 @@ static int proxyTakeConch(unixFile *pFile){
         writeSize = PROXY_PATHINDEX + strlen(&writeBuffer[PROXY_PATHINDEX]);
         robust_ftruncate(conchFile->h, writeSize);
         rc = unixWrite((sqlite3_file *)conchFile, writeBuffer, writeSize, 0);
-        full_fsync(conchFile->h,0,0);
+        full_fsync(conchFile->h, 0);
         /* If we created a new conch file (not just updated the contents of a
          ** valid conch file), try to match the permissions of the database
          */

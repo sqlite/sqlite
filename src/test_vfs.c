@@ -436,12 +436,6 @@ static int tvfsSync(sqlite3_file *pFile, int flags){
       case SQLITE_SYNC_FULL:
         zFlags = "full";
         break;
-      case SQLITE_SYNC_NORMAL|SQLITE_SYNC_DATAONLY:
-        zFlags = "normal|dataonly";
-        break;
-      case SQLITE_SYNC_FULL|SQLITE_SYNC_DATAONLY:
-        zFlags = "full|dataonly";
-        break;
       default:
         assert(0);
     }

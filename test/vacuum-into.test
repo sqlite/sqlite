@@ -198,7 +198,7 @@ foreach {tn pragma res} {
   750 {
     PRAGMA fullfsync = 1;
     PRAGMA synchronous = full;
-  } {full|dataonly 1 full 2}
+  } {full 3}
 } {
 
   forcedelete test.db2
