@@ -7653,9 +7653,9 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **
 ** USAGE: .mode [MODE] [OPTIONS]
 **
-** Change the output mode to MODE and/or apply OPTIONS to the
-** output mode.  If no arguments, show the current output mode
-** and relevant options.
+** Change the output mode to MODE and/or apply OPTIONS to the output mode.
+** Arguments are processed from left to right.  If no arguments, show the
+** current output mode and relevant options.
 **
 ** Options:
 **   --align STRING           Set the alignment of text in columnar modes
@@ -7674,9 +7674,9 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            any single SQL value to N. Longer values are
 **                            truncated. Zero means "no limit". Only works
 **                            in "line" mode and in columnar modes.
+**   --limits L,C             Shorthand for "--linelimit L --charlimit C".
+**                            Or "off" to mean "0,0".  Or "on" for "5,300".
 **   --list                   List available modes
-**   --no-limits              Shorthand to turn off --linelimit, --charlimit,
-**                            and --screenwidth.
 **   --null STRING            Render SQL NULL values as the given string
 **   --once                   Setting changes to the right are reverted after
 **                            the next SQL command.
@@ -7686,7 +7686,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            "on and "sql" are synonyms.
 **   --reset                  Changes all mode settings back to their default.
 **   --rowsep STRING          Use STRING as the row separator
-**   --screenwidth N          Declare the screen width of the output device
+**   --sw|--screenwidth N     Declare the screen width of the output device
 **                            to be N characters.  An attempt may be made to
 **                            wrap output text to fit within this limit. Zero
 **                            means "no limit".  Or N can be "auto" to set the
@@ -7694,7 +7694,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **   --tablename NAME         Set the name of the table for "insert" mode.
 **   --tag NAME               Save mode to the left as NAME.
 **   --textjsonb BOOLEAN      If enabled, JSONB text is displayed as text JSON.
-**   --title  ARG             Whether or not to show column headers, and if so
+**   --title ARG              Whether or not to show column headers, and if so
 **                            how to encode them.  ARG can be "off", "on",
 **                            "sql", "csv", "html", "tcl", or "json".
 **   -v|--verbose             Verbose output
@@ -7798,11 +7798,10 @@ static int dotCmdMode(ShellState *p){
     }else if( optionMatch(z,"escape") ){
       /* See similar code at tag-20250224-1 */
       char *zErr = 0;
-      if( i+1>=nArg ){
-        dotCmdError(p, i, "missing argument", 0);
+      if( (++i)>=nArg ){
+        dotCmdError(p, i-1, "missing argument", 0);
         return 1;
-      }
-      i++;                    /*  0     1       2  <-- One less than QRF_ESC_ */
+      }                       /*  0     1       2  <-- One less than QRF_ESC_ */
       k = pickStr(azArg[i],&zErr,"off","ascii","symbol","");
       if( k<0 ){
         dotCmdError(p, i, "unknown escape type", "%s", zErr);
@@ -7810,6 +7809,30 @@ static int dotCmdMode(ShellState *p){
         return 1;
       }
       p->mode.spec.eEsc = k+1;
+      chng = 1;
+    }else if( optionMatch(z,"limits") ){
+      if( (++i)>=nArg ){
+        dotCmdError(p, i-1, "missing argument", 0);
+        return 1;
+      }
+      k = pickStr(azArg[i],0,"on","off","");
+      if( k==0 ){
+        p->mode.spec.nLineLimit = 5;
+        p->mode.spec.nCharLimit = 300;
+      }else if( k==1 ){
+        p->mode.spec.nLineLimit = 0;
+        p->mode.spec.nCharLimit = 0;
+      }else{
+        int L, C;
+        int nNum = sscanf(azArg[i], "%d,%d", &L, &C);
+        if( nNum!=2 || L<0 || C<0 ){
+          dotCmdError(p, i, "bad argument", "Should be \"L,C\" where L and C"
+                            " are unsigned integers");
+          return 1;
+        }        
+        p->mode.spec.nLineLimit = L;
+        p->mode.spec.nCharLimit = C;
+      }
       chng = 1;
     }else if( optionMatch(z,"list") ){
       int ii;
@@ -7830,12 +7853,6 @@ static int dotCmdMode(ShellState *p){
       /* (undocumented legacy) --noquote always turns quoting off */
       p->mode.spec.eText = QRF_TEXT_Plain;
       p->mode.spec.eBlob = QRF_BLOB_Text;
-      chng = 1;
-    }else if( optionMatch(z,"no-limits") ){
-      p->mode.spec.nLineLimit = 0;
-      p->mode.spec.nCharLimit = 0;
-      p->mode.spec.nScreenWidth = 0;
-      p->mode.bAutoScreenWidth = 0;
       chng = 1;
     }else if( optionMatch(z,"quote") ){
       if( i+1<nArg
@@ -7893,25 +7910,24 @@ static int dotCmdMode(ShellState *p){
       int saved_eMode = p->mode.eMode;
       modeFree(&p->mode);
       modeChange(p, saved_eMode);
-    }else if( optionMatch(z,"screenwidth") ){
-      if( i+1>=nArg ){
-        dotCmdError(p, i, "missing argument", 0);
+    }else if( optionMatch(z,"screenwidth") || optionMatch(z,"sw") ){
+      if( (++i)>=nArg ){
+        dotCmdError(p, i-1, "missing argument", 0);
         return 1;
       }
-      k = pickStr(azArg[i+1],0,"off","auto","");
+      k = pickStr(azArg[i],0,"off","auto","");
       if( k==0 ){
         p->mode.bAutoScreenWidth = 0;
         p->mode.spec.nScreenWidth = 0;
       }else if( k==1 ){
         p->mode.bAutoScreenWidth = 1;
       }else{
-        i64 w = integerValue(azArg[i+1]);
+        i64 w = integerValue(azArg[i]);
         p->mode.bAutoScreenWidth = 0;
         if( w<0 ) w = 0;
         if( w>QRF_MAX_WIDTH ) w = QRF_MAX_WIDTH;
         p->mode.spec.nScreenWidth = w;
       }
-      i++;
       chng = 1;
     }else if( optionMatch(z,"tag") ){
       size_t nByte;
