@@ -1,5 +1,5 @@
-C Add\sthe\sQRF_BLOB_Size\sencoding\sfor\sBLOBs\sin\sQRF.
-D 2025-11-24T16:46:08.093
+C Change\ssome\s32-bit\sintegers\sin\sfts3_write.c\sto\s64-bit\sto\sreduce\sthe\schances\sof\sinteger\soverflow.
+D 2025-11-24T17:44:17.066
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -97,7 +97,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c 2bee1c5828f6401adffd07ca64260aeb79d64138958273a56de8fa5e8759a0c1
+F ext/fts3/fts3_write.c c0b3e2394be849d21ad83b32c099cdf844fa14daf271323e4fa16d1dd54965c3
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 413c346399159df81f86c4928b7c4a455caab73bfbc8cd68f950f632e5751674
@@ -2179,8 +2179,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 06554a079d6b299986fc5eeb201595fad14f77c0efcf2d65bd2f36bbc325892c
-R c86d5c0a3025fa76b0f43eac37451ab3
-U drh
-Z c1bfe35d41365772ab7fa80ff544b5b7
+P bafff695d34202377b937cb4ca9f8a7611ae286d9ab927e6c71faa3cd99496e5
+R cfc1251bc868a6200eefed64db533f1c
+U dan
+Z 6252b8ce71cf1f222eab37a79e8ca011
 # Remove this line to create a well-formed Fossil manifest.

@@ -98,9 +98,9 @@ typedef struct SegmentWriter SegmentWriter;
 ** incrementally. See function fts3PendingListAppend() for details.
 */
 struct PendingList {
-  int nData;
+  sqlite3_int64 nData;
   char *aData;
-  int nSpace;
+  sqlite3_int64 nSpace;
   sqlite3_int64 iLastDocid;
   sqlite3_int64 iLastCol;
   sqlite3_int64 iLastPos;
