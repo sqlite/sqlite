@@ -1,5 +1,5 @@
-C Show\sjust\sthe\slist\sof\savailable\smodes\sand\somit\sthe\scurrent\smode\sdisplay\nfor\sthe\s".mode\s--list"\scommand\sin\sthe\sCLI.
-D 2025-11-24T13:26:06.078
+C Avoid\ssigned\sinteger\soverflow\sthat\smay\soccur\sin\sa\snon-default\sbuild\swhen\sprocessing\sa\svery\slarge\sCREATE\sTABLE\sAS\s...\sstatement.
+D 2025-11-24T15:40:10.419
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -677,7 +677,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 8850125300b9780fa54bc45a41af88eb2796b90f2f97942279094beef9b0e971
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c 611e07299d72ff04bbcb9e7109183467e30925d203c3e121ef9bb3cf6876289b
+F src/build.c 4e1afafc56504ed6253e1b115c1502de4243c2287a0c799f4967fcd2d7716ad9
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c ff6081a31878fc34df8fa1052a9cbf17ddc22652544dcb3e2326886ed1053b55
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -2179,9 +2179,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cff0978587a4193b57b0384a587bf89174be2fd91cff4d40130babef1dc8431e
-Q +f3eb6ed2532c4a6e5f8e50cc8273d630d91b15ea8d7e71bee040a488612fa6fa
-R 702495d83779239b4ef3d3af149d3f84
-U drh
-Z 3cc2b9290102d9eff97a174f136af950
+P b9b2761fe79d9cc52365eef6bc34c7442972c5410517ff69926397cc7974ae33
+R 135b3b2f4449f671f2b7dc5099d83040
+U dan
+Z 7174aabfa8f19f6bdd97e16dce3a7ba4
 # Remove this line to create a well-formed Fossil manifest.
