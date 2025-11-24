@@ -210,11 +210,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     localThread: createStorageObj('localThread')
   });
 
-  if( globalThis.localStorage instanceof globalThis.Storage ){
-    cache.storagePool.local = createStorageObj('local');
-  }
-  if( globalThis.sessionStorage instanceof globalThis.Storage ){
-    cache.storagePool.session = createStorageObj('session');
+  if( globalThis.Storage ){
+    if( globalThis.localStorage instanceof globalThis.Storage ){
+      cache.storagePool.local = createStorageObj('local');
+    }
+    if( globalThis.sessionStorage instanceof globalThis.Storage ){
+      cache.storagePool.session = createStorageObj('session');
+    }
   }
 
   for(const k of Object.keys(cache.storagePool)){
