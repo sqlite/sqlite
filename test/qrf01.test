@@ -137,19 +137,19 @@ do_test 1.60a {
 } "1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.60b {
   db format -style csv -columnsep xyz -rowsep pqr -text sql -blob sql {SELECT * FROM t1}
-} "1,2.5,three\r\nBLOB,,\"Ἀμήν\"\r\n"
+} "1,2.5,three\r\nx'424c4f42',,\"Ἀμήν\"\r\n"
 do_test 1.61a {
   db format -style list -columnsep , -rowsep \r\n -text csv -title auto -blob tcl {SELECT * FROM t1}
 } "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.61b {
   db format -style csv -title auto -blob tcl {SELECT * FROM t1}
-} "a,b,c\r\n1,2.5,three\r\nBLOB,,\"Ἀμήν\"\r\n"
+} "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.62a {
   db format -style list -columnsep , -rowsep \r\n -text csv -title csv -blob tcl {SELECT a AS 'a x y', b, c FROM t1}
 } "\"a x y\",b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.62b {
   db format -style csv -title csv -blob tcl {SELECT a AS 'a x y', b, c FROM t1}
-} "\"a x y\",b,c\r\n1,2.5,three\r\nBLOB,,\"Ἀμήν\"\r\n"
+} "\"a x y\",b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 
 do_test 1.70 {
   set result "\n[db format -style html {SELECT * FROM t1}]"

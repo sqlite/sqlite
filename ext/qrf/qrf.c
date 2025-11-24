@@ -2441,7 +2441,6 @@ qrf_reinit:
     case QRF_STYLE_JObject:
     case QRF_STYLE_Json: {
       p->spec.eText = QRF_TEXT_Json;
-      p->spec.eBlob = QRF_BLOB_Json;
       p->spec.zNull = "null";
       break;
     }
@@ -2452,7 +2451,6 @@ qrf_reinit:
     }
     case QRF_STYLE_Insert: {
       p->spec.eText = QRF_TEXT_Sql;
-      p->spec.eBlob = QRF_BLOB_Sql;
       p->spec.zNull = "NULL";
       if( p->spec.zTableName==0 || p->spec.zTableName[0]==0 ){
         p->spec.zTableName = "tab";
@@ -2462,7 +2460,6 @@ qrf_reinit:
     case QRF_STYLE_Csv: {
       p->spec.eStyle = QRF_STYLE_List;
       p->spec.eText = QRF_TEXT_Csv;
-      p->spec.eBlob = QRF_BLOB_Text;
       p->spec.zColumnSep = ",";
       p->spec.zRowSep = "\r\n";
       p->spec.zNull = "";
@@ -2470,7 +2467,6 @@ qrf_reinit:
     }
     case QRF_STYLE_Quote: {
       p->spec.eText = QRF_TEXT_Sql;
-      p->spec.eBlob = QRF_BLOB_Sql;
       p->spec.zNull = "NULL";
       p->spec.zColumnSep = ",";
       p->spec.zRowSep = "\n";
