@@ -10,6 +10,12 @@ about what SQLite is and how it works from a user's perspective.  This
 README file is about the source code that goes into building SQLite,
 not about how SQLite is used.
 
+SQLite is a C-language library that implements a small, fast, self-contained,
+high-reliability, full-featured, SQL database engine. SQLite is the most used
+database engine in the world. SQLite is built into all mobile phones and most
+computers and comes bundled inside countless other applications that people
+use every day.It also include lemon and sqlite3_analyzer and tcl tools.
+
 ## Version Control
 
 SQLite sources are managed using
