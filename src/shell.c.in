@@ -7845,6 +7845,8 @@ static int dotCmdMode(ShellState *p){
         cli_printf(p->out, " %s", p->aSavedModes[ii].zTag);
       }
       cli_puts(" batch tty\n", p->out);
+      chng = 1;  /* Not really a change, but we still want to suppress the
+                 ** "current mode" output */
     }else if( optionMatch(z,"once") ){
       p->nPopMode = 0;
       modePush(p);
