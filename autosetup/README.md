@@ -375,6 +375,10 @@ configure process, and check it in.
 Patching Autosetup for Project-local Changes
 ------------------------------------------------------------------------
 
+The autosetup files require the following patche after updating:
+
+### `--debug` flag
+
 Autosetup reserves the flag name **`--debug`** for its own purposes,
 and its own special handling of `--enable-...` flags makes `--debug`
 an alias for `--enable-debug`. As this project has a long history of
@@ -387,6 +391,11 @@ writing) four small edits in
 If autosetup is upgraded and this patch is _not_ applied the invoking
 `./configure` will fail loudly because of the declaration of the
 `debug` flag in `auto.def` - duplicated flags are not permitted.
+
+### Fail on `malloc()` error
+
+See [check-in 72c8a5b94cdf5d](/info/72c8a5b94cdf5d).
+
 
 <a name="branch-customization"></a>
 Branch-specific Customization

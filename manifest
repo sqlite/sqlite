@@ -1,5 +1,5 @@
-C Change\sour\slocal\scopy\sof\sthe\sthird-party\sjimsh0.c\sprogram\s(used\sonly\nduring\sthe\sbuild\sprocess)\sso\sthat\sit\sprints\san\serror\smessage\sand\nexits\sif\smalloc()\sfails.\s\sThis\sdoes\snot\sfix\sany\sactual\sbugs\snor\smake\nthe\sbuild\sprocess\sany\s"safer",\sbut\sit\smight\shelp\sprevent\sbothersome\nwarnings\sfrom\spedantic\sstatic\sanalyzers.
-D 2025-11-24T11:00:02.114
+C Add\sthe\sfail-on-malloc()-error\spatch\sto\sthe\sautosetup\smaintenance\sdocs.
+D 2025-11-24T13:10:23.363
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -33,7 +33,7 @@ F autoconf/tea/teaish.tcl 81feb417e718ed75cdd7e2fdf6771f3da80dae97377a90c4d5b62b
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md ce0f95980a687bb861bd830b76bc4b48513567be5cf5ee7004f4f3439ffe3841
+F autosetup/README.md 3dbca2c5469674da592af6e194a31336ee2c27e160ccbf40b2afdcde6ce3d724
 F autosetup/autosetup b16e44924c197783df67366762dda985b45d49ebc4af15f4054e3ee0e3b65169 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -2179,8 +2179,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de27d2d3f2353309227b4d5f77eff76c108c094b61ac59f5a769229a084f2567
-R 538532201c3ca97ed9ee4d6faba29878
-U drh
-Z b0305535995409722df1bc7eb1c4bce2
+P 72c8a5b94cdf5da7e2b197e02c9d5d98fe415cd731c3893acf3ba69bb4dde37a
+R 8f968d71cef429c61b780585167b11f3
+U stephan
+Z d3af1f475ef6390690987f7f6c1d4218
 # Remove this line to create a well-formed Fossil manifest.
