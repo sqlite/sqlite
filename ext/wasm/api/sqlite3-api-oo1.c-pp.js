@@ -88,7 +88,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         wasm.installFunction('i(ippp)', function(t,c,p,x){
           if(capi.SQLITE_TRACE_STMT===t){
             // x == SQL, p == sqlite3_stmt*
-            console.log("SQL TRACE #"+(++this.counter)+' via sqlite3@'+c+':',
+            console.log("SQL TRACE #"+(++this.counter),
+                        'via sqlite3@'+c+'['+capi.sqlite3_db_filename(c,null)+']',
                         wasm.cstrToJs(x));
           }
         }.bind({counter: 0}));
@@ -243,7 +244,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         sqlite3.config.error("Invalid DB ctor args",opt,arguments);
         toss3("Invalid arguments for DB constructor:", arguments, "opts:", opt);
       }
-      let fnJs = wasm.isPtr(fn) ? wasm.cstrToJs(fn) : fn;
       let oflags = 0;
       if( flagsStr.indexOf('c')>=0 ){
         oflags |= capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
@@ -268,7 +268,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }finally{
         wasm.pstack.restore(stack);
       }
-      this.filename = fnJs;
+      this.filename =
+        /* A poor design choice we have to keep: this.filename may be
+           in the form "file:....?....". It really should have been
+           sqlite3_db_filename(pDb) but that discrepancy went too long
+           unnoticed to be able to change without risk of
+           breakage. DB.dbFilename() can be used to fetch _just_ the
+           name part.
+        */ wasm.isPtr(fn) ? wasm.cstrToJs(fn) : fn;
+
     }
     __ptrMap.set(this, pDb);
     __stmtMap.set(this, Object.create(null));
@@ -359,12 +367,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      The given db filename must be resolvable using whatever
      filesystem layer (virtual or otherwise) is set up for the default
-     sqlite3 VFS.
+     sqlite3 VFS or a VFS which can resolve it must be specified.
 
-     Note that the special sqlite3 db names ":memory:" and ""
-     (temporary db) have their normal special meanings here and need
-     not resolve to real filenames, but "" uses an on-storage
-     temporary database and requires that the VFS support that.
+     The special sqlite3 db names ":memory:" and "" (temporary db)
+     have their normal special meanings here and need not resolve to
+     real filenames, but "" uses an on-storage temporary database and
+     requires that the VFS support that.
 
      The second argument specifies the open/create mode for the
      database. It must be string containing a sequence of letters (in
