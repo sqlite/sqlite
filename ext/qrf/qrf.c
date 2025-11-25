@@ -1832,17 +1832,19 @@ static void qrfColumnar(Qrf *p){
       }
       qrfRowSeparator(p->pOut, &data, '+');
       break;
-    case QRF_STYLE_Column:
+    case QRF_STYLE_Column: {
+      static const char zSpace[] = "     ";
       rowStart = "";
       if( data.nMargin<2 ){
         colSep = " ";
       }else if( data.nMargin<=5 ){
-        colSep = "     " + (5-data.nMargin);
+        colSep = &zSpace[5-data.nMargin];
       }else{
-        colSep = "     ";
+        colSep = zSpace;
       }
       rowSep = "\n";
       break;
+    }
     default:  /*case QRF_STYLE_Markdown:*/
       if( data.nMargin ){
         rowStart = "| ";
