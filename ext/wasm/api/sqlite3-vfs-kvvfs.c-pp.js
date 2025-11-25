@@ -100,10 +100,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         toss3 = util.toss3,
         hop = (o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 
+  const kvvfsMethods = new sqlite3_kvvfs_methods(
+    /* Wraps the static sqlite3_api_methods singleton */
+    wasm.exports.sqlite3__wasm_kvvfs_methods()
+  );
+  util.assert( 32<=kvvfsMethods.$nKeySize, "unexpected kvvfsMethods.$nKeySize: "+kvvfsMethods.$nKeySize);
+
   const cache = Object.assign(Object.create(null),{
-    rxJournalSuffix: /-journal$/, // TOOD: lazily init once we figure out where
+    rxJournalSuffix: /-journal$/,
     zKeyJrnl: wasm.allocCString("jrnl"),
-    zKeySz: wasm.allocCString("sz")
+    zKeySz: wasm.allocCString("sz"),
+    keySize: kvvfsMethods.$nKeySize
   });
 
   const debug = sqlite3.__isUnderTest
@@ -186,6 +193,33 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const kvvfsKeyPrefix = (v)=>kvvfsIsPersistentName(v) ? 'kvvfs-'+v+'-' : '';
 
   /**
+     Throws if storage name n is not valid for use as a storage name.
+     This is intended for the high-level APIs, not the low-level ones.
+  */
+  const validateStorageName = function(n,mayBeJournal=false){
+    let maxLen = cache.keySize - 1;
+    if( cache.rxJournalSuffix.test(n) ){
+      if( !mayBeJournal ){
+        toss3(capi.SQLITE_MISUSE, "Storage names may not have a '-journal' suffix.");
+      }
+    }else{
+      maxLen -= 8 /* "-journal" */;
+    }
+    const len = n.length;
+    if( len > maxLen ){
+      toss3(capi.SQLITE_RANGE, "Storage name is too long.");
+    }
+    let i;
+    for( i = 0; i < len; ++i ){
+      const ch = n.codePointAt(i);
+      if( ch<45 || (ch & 0x80) ){
+        toss3(capi.SQLITE_RANGE,
+              "Illegal character ("+ch+"d) in storage name:",n);
+      }
+    }
+  };
+
+  /**
      Create a new instance of the objects which go into
      cache.storagePool.
   */
@@ -203,7 +237,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        deleteAtRefc0 objects will be removed by xClose() when refc
        reaches 0. The others will persist, to give the illusion of
-       real back-end storage. Managed by xOpen().
+       real back-end storage. Managed by xOpen(). By default this is
+       false but the delete-on-close=1 flag can be used to set this to
+       true.
      */
     deleteAtRefc0: false,
     /**
@@ -227,9 +263,38 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        xOpen() and xClose().
     */
     files: [],
+    /**
+       A list of objects with various event callbacks. See
+       sqlite3_js_kvvfs_listen().
+     */
     listeners: []
   });
 
+  /**
+     Deletes the cache.storagePool entries for store and its
+     db/journal counterpart.
+  */
+  const deleteStorage = function(store){
+    const other = cache.rxJournalSuffix.test(store.jzClass)
+          ? store.jzClass.replace(cache.rxJournalSuffix,'')
+          : store.jzClass+'-journal';
+    debug("cleaning up storage handles [", store.jzClass, other,"]",store);
+    delete cache.storagePool[store.jzClass];
+    delete cache.storagePool[other];
+    if( !sqlite3.__isUnderTest ){
+      /* In test runs, leave these for inspection. If we delete them here,
+         any prior dumps of them emitted via the console get cleared out
+         because the console shows live objects instead of call-time
+         static dumps. */
+      delete store.storage;
+      delete store.refc;
+    }
+  };
+
+  /**
+     Add both store.jzClass and store.jzClass+"-journal"
+     to cache,storagePool.
+  */
   const installStorageAndJournal = (store)=>
         cache.storagePool[store.jzClass] =
         cache.storagePool[store.jzClass+'-journal'] = store;
@@ -248,6 +313,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   });
 
   if( globalThis.Storage ){
+    /* If available, install local/session storage. */
     if( globalThis.localStorage instanceof globalThis.Storage ){
       cache.storagePool.local = newStorageObj('local', globalThis.localStorage);
     }
@@ -256,6 +322,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   }
 
+  /* Add "-journal" twins for each cache.storagePool entry... */
   for(const k of Object.keys(cache.storagePool)){
     /* Journals in kvvfs are are stored as individual records within
        their Storage-ish object, named "{storage.keyPrefix}jrnl".  We
@@ -293,7 +360,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      'delete': key
   */
-  const notifyListners = async function(eventName,store,...args){
+  const notifyListeners = async function(eventName,store,...args){
     store.listeners.forEach((v)=>{
       const f = v?.[eventName];
       if( !f ) return;
@@ -410,10 +477,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const originalIoMethods = (kvvfsFile)=>
           originalMethods[kvvfsFile.$isJournal ? 'ioJrnl' : 'ioDb'];
 
-    const kvvfsMethods = new sqlite3_kvvfs_methods(
-      /* Wraps the static sqlite3_api_methods singleton */
-      wasm.exports.sqlite3__wasm_kvvfs_methods()
-    );
     const pVfs = new capi.sqlite3_vfs(kvvfsMethods.$pVfs);
     const pIoDb = new capi.sqlite3_io_methods(kvvfsMethods.$pIoDb);
     const pIoJrnl = new capi.sqlite3_io_methods(kvvfsMethods.$pIoJrnl);
@@ -519,7 +582,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const jxKey = wasm.cstrToJs(zXKey);
             const jData = wasm.cstrToJs(zData);
             store.storage.setItem(jxKey, jData);
-            notifyListners('write', store, jxKey, jData);
+            notifyListeners('write', store, jxKey, jData);
             return 0;
           }catch(e){
             error("kvrecordWrite()",e);
@@ -534,7 +597,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             //if(!zXKey) return capi.SQLITE_NOMEM;
             const jxKey = wasm.cstrToJs(zXKey);
             store.storage.removeItem(jxKey);
-            notifyListners('delete', store, jxKey);
+            notifyListeners('delete', store, jxKey);
             return 0;
           }catch(e){
             error("kvrecordDelete()",e);
@@ -557,24 +620,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if( !zName ){
               zName = (cache.zEmpty ??= wasm.allocCString(""));
             }
-            const n = wasm.cstrlen(zName);
-            if( !n ){
-              toss3(capi.SQLITE_RANGE,
-                    "Storage name may not be empty (backwards",
-                    "compatibilty constraint)");
-            }else if( n > kvvfsMethods.$nKeySize - 8 /*"-journal"*/ - 1 ){
-              toss3(capi.SQLITE_RANGE,
-                    "Storage name is too long:", wasm.cstrToJs(zName));
-            }
-            let i = 0;
-            for( ; i < n; ++i ){
-              const ch = wasm.peek8(wasm.ptr.add(zName, i));
-              if( ch < 45 || (ch & 0x80) ){
-                toss3(capi.SQLITE_RANGE,
-                      "Illegal character ("+ch+"d) in storage name.");
-              }
-            }
             const jzClass = wasm.cstrToJs(zName);
+            validateStorageName(jzClass, true);
+            util.assert( jzClass.length===wasm.cstrlen(zName),
+                         "ASCII-only validation failed" );
             if( (flags & (capi.SQLITE_OPEN_MAIN_DB
                           | capi.SQLITE_OPEN_TEMP_DB
                           | capi.SQLITE_OPEN_TRANSIENT_DB))
@@ -586,13 +635,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                                  flags, pOutFlags);
             if( rc ) return rc;
             let deleteAt0 = false;
-            if(n && wasm.isPtr(zName)){
+            if(wasm.isPtr(arguments[1]/*original zName*/)){
               if(capi.sqlite3_uri_boolean(zName, "delete-on-close", 0)){
                 deleteAt0 = true;
-                //warn("transient=",deleteAt0);
-              }
-              if(capi.sqlite3_uri_boolean(zName, "wipe-before-open", 0)){
-                // TODO?
               }
             }
             const f = new KVVfsFile(pProtoFile);
@@ -619,7 +664,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
             }
             pFileHandles.set(pProtoFile, {storage: s, file: f, jzClass});
-            notifyListners('open', s, s.files.length);
+            notifyListeners('open', s, s.files.length);
             return 0;
           }catch(e){
             warn("xOpen:",e);
@@ -753,20 +798,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               const s = storageForZClass(h.jzClass);
               s.files = s.files.filter((v)=>v!==h.file);
               if( --s.refc<=0 && s.deleteAtRefc0 ){
-                const other = h.file.$isJournal
-                      ? h.jzClass.replace(cache.rxJournalSuffix,'')
-                      : h.jzClass+'-journal';
-                debug("cleaning up storage handles [", h.jzClass, other,"]",s);
-                delete cache.storagePool[h.jzClass];
-                delete cache.storagePool[other];
-                if( !sqlite3.__isUnderTest ){
-                  delete s.storage;
-                  delete s.refc;
-                }
+                deleteStorage(s);
               }
               originalIoMethods(h.file).xClose(pFile);
               h.file.dispose();
-              notifyListners('close', s, s.files.length);
+              notifyListeners('close', s, s.files.length);
             }else{
               /* Can happen if xOpen fails */
             }
@@ -901,7 +937,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - It accepts an arbitrary storage name. In v1 this was a silent
      no-op for any names other than ('local','session','').
 
-     - The second argument was added.
+     - The second argument was added. Its default value reflects the
+     legacy behavior.
 
      - It throws if a db currently has the storage opened. That
      version 1 did not throw for this case was due to an architectural
@@ -933,7 +970,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     This routine guesses the approximate amount of
+     This routine estimates the approximate amount of
      storage used by the given kvvfs back-end.
 
      Its arguments are as documented for sqlite3_js_kvvfs_clear(),
@@ -965,20 +1002,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     }
     return sz * 2 /* because JS uses 2-byte char encoding */;
-  };
-
-  /**
-     Throws if storage name n is not valid for use as a storage name.
-     This is intended for the high-level APIs, not the low-level ones.
-  */
-  const validateStorageName = function(n){
-    if( cache.rxJournalSuffix.test(n) ){
-      toss3(capi.SQLITE_MISUSE, "Storage names may not have a '-journal' suffix.");
-    }
-    if( n.length>23 ){
-      toss3(capi.SQLITE_RANGE, "Storage name is too long.");
-    }
-    // TODO: check all of kvvfs's name constraints
   };
 
   /**
@@ -1066,7 +1089,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/* sqlite3_js_kvvfs_export */;
 
   /**
-     INCOMPLETE. This interface is subject to change.
+     EXPERIMENTAL. This interface is subject to change.
 
      The counterpart of sqlite3_js_kvvfs_export(). Its
      argument must be the result of that function() or
@@ -1143,6 +1166,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
+     EXPERIMENTAL. This interface is subject to change.
+
      If no kvvfs storage exists with the given name, one is
      installed. If one exists, its reference count is increased so
      that it won't be freed by the closing of a database or journal
@@ -1161,6 +1186,42 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
+     Conditionally "unlinks" a kvvfs storage object, reducing its
+     reference count by 1.
+
+     This is a no-op if name ends in "-journal" or refers to a
+     built-in storage object ('local', 'session', or 'localThread').
+
+     It will not lower the refcount below the number of
+     currently-opened db/journal files for the storage (so that it
+     cannot delete it out from under them).
+
+     If the refcount reaches 0 then the storage object is
+     removed.
+
+     Returns true if it reduces the refcount, else false.  A result of
+     true does not necessarily mean that the storage unit was removed,
+     just that its refcount was lowered.
+  */
+  const sqlite3_js_kvvfs_unlink = function(name){
+    const store = storageForZClass(name);
+    if( !store
+        || kvvfsIsPersistentName(store.jzClass)
+        || 'localThread'===store.jzClass
+        || cache.rxJournalSuffix.test(name) ) return false;
+    if( store.refc > store.files.length || 0===store.files.length ){
+      if( --store.refc<=0 ){
+        /* Ignoring deleteAtRefc0 for an explicit unlink */
+        deleteStorage(store);
+      }
+      return true;
+    }
+    return false;
+  };
+
+  /**
+     EXPERIMENTAL. This interface is subject to change.
+
      Adds an event listener to a kvvfs storage object. The idea is
      that this can be used to asynchronously back up one kvvfs storage
      object to another or another channel entirely. (The caveat in the
@@ -1172,7 +1233,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - storage: the name of the kvvfs storage object.
 
      - reserve [=false]: if true, sqlite3_js_kvvfs_reserve() is used
-     to ensure that the storage exists.
+     to ensure that the storage exists if it does not already.
+     If this is false and the storage does not exist then an
+     exception is thrown.
 
      - events: an object which may have any of the following
      callback function properties: open, close, write, delete.
@@ -1198,6 +1261,27 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      were written (both strings).
 
      - 'delete' gets the string-type key of the deleted record.
+
+     Passing the same object ot sqlite3_js_kvvfs_unlisten() will
+     remove the listener.
+
+     The arguments to 'write' and 'delete' are in one of the following
+     forms:
+
+     - 'sz' = the unencoded db size as a string
+
+     - 'jrnl' = the current db journal as a string
+
+     - '[1-9][0-9]*' (a db page number) = an encoded db page
+
+     For 'local' and 'session' storage, all of those keys have a
+     prefix of 'kvvfs-local-' resp. 'kvvfs-session-'. This is required
+     both for backwards compatibility and to enable dbs in those
+     storage objects to coexit with client data. Other storage objects
+     do not have a prefix.
+
+     Design note: JS has StorageEvents but only in the main thread,
+     which is why the listeners are not based on that.
   */
   const sqlite3_js_kvvfs_listen = function(opt){
     if( !opt || 'object'!==typeof opt ){
@@ -1221,7 +1305,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Removes all kvvfs event listeners for the given options
+     EXPERIMENTAL. This interface is subject to change.
+
+     Removes the kvvfs event listeners for the given options
      object. It must be passed the same object instance which was
      passed to sqlite3_js_kvvfs_listen().
 
@@ -1235,7 +1321,26 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   };
 
-  if(sqlite3?.oo1?.DB){
+  /**
+     Public interface for kvvfs v2. The capi.sqlite3_js_kvvfs_...()
+     routines remain in place for v1. Some members of this class proxy
+     to those functions but use different default argument values in
+     some cases.
+  */
+  sqlite3.kvvfs = Object.assign(Object.create(null),{
+    reserve:  sqlite3_js_kvvfs_reserve,
+    import:   sqlite3_js_kvvfs_import,
+    export:   sqlite3_js_kvvfs_export,
+    unlink:   sqlite3_js_kvvfs_unlink,
+    listen:   sqlite3_js_kvvfs_listen,
+    unlisten: sqlite3_js_kvvfs_unlisten,
+    exists:   (name)=>!!storageForZClass(name),
+    // DIFFERENT DEFAULTS for the arguments:
+    size:     (which,emptyIsAName=true)=>capi.sqlite3_js_kvvfs_size(which,emptyIsAName),
+    clear:    (which,emptyIsAName=true)=>capi.sqlite3_js_kvvfs_clear(which,emptyIsAName),
+  });
+
+  if(sqlite3.oo1?.DB){
     /**
        Functionally equivalent to DB(storageName,'c','kvvfs') except
        that it throws if the given storage name is not one of 'local'
@@ -1265,6 +1370,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         case ":sessionStorage:": opt.filename = 'session'; break;
         case ":localStorage:": opt.filename = 'local'; break;
       }
+      const m = /(file:(\/\/)?)([^?]+)/.exec(opt.filename);
+      validateStorageName( m ? m[3] : opt.filename);
       DB.dbCtorHelper.call(this, opt);
     };
     sqlite3.oo1.JsStorageDb.defaultStorageName = 'session';
@@ -1296,23 +1403,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     }/* __isUnderTest */
   }/*sqlite3.oo1.JsStorageDb*/
-
-  /**
-     Public interface for kvvfs v2. The capi.sqlite3_js_kvvfs_...()
-     routines remain in place for v1. Some members of this class proxy
-     to those functions but use different default argument values in
-     some cases.
-  */
-  sqlite3.kvvfs = Object.assign(Object.create(null),{
-    reserve:  sqlite3_js_kvvfs_reserve,
-    import:   sqlite3_js_kvvfs_import,
-    export:   sqlite3_js_kvvfs_export,
-    listen:   sqlite3_js_kvvfs_listen,
-    unlisten: sqlite3_js_kvvfs_unlisten,
-    // DIFFERENT DEFAULTS for the second arguments:
-    size:     (which,emptyIsAName=true)=>capi.sqlite3_js_kvvfs_size(which,emptyIsAName),
-    clear:    (which,emptyIsAName=true)=>capi.sqlite3_js_kvvfs_clear(which,emptyIsAName),
-  });
 
 })/*globalThis.sqlite3ApiBootstrap.initializers*/;
 //#endif not omit-kvvfs

@@ -3018,6 +3018,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
              db and SQLite is not calling xGetLastError() to fetch
              the error string. */
         }, capi.SQLITE_RANGE);
+        T.mustThrowMatching(()=>{
+          new JDb("012345678901234567890123"/*too long*/);
+        }, capi.SQLITE_RANGE);
+        {
+          const name = "01234567890123456789012" /* max name length */;
+          (new JDb(name)).close();
+          T.assert( sqlite3.kvvfs.unlink(name) );
+        }
 
         try {
           const exportDb = sqlite3.kvvfs.export;
