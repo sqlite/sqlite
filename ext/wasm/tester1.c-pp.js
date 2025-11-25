@@ -3078,18 +3078,23 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             reserve: true,
             events: {
               'open':   (ev)=>{
+                //console.warn('open',ev);
                 ++counts[ev.type];
-                T.assert('number'===typeof ev.data);
+                T.assert(filename===ev.storageName)
+                  .assert('number'===typeof ev.data);
               },
               'close': (ev)=>{
+                //console.warn('close',ev);
                 ++counts[ev.type];
                 T.assert('number'===typeof ev.data);
               },
               'delete': (ev)=>{
+                //console.warn('delete',ev);
                 ++counts[ev.type];
                 T.assert('string'===typeof ev.data);
               },
               'write':  (ev)=>{
+                //console.warn('write',ev);
                 ++counts[ev.type];
                 T.assert(Array.isArray(ev.data))
                   .assert('string'===typeof ev.data[0])

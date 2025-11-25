@@ -298,7 +298,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const f = v?.[eventName];
       if( !f ) return;
       const ev = Object.create(null);
-      ev.storageName = store.jxClass;
+      ev.storageName = store.jzClass;
       ev.type = eventName;
       ev.data = ((args.length===1) ? args[0] : args);
       try{f(ev)?.catch?.(noop)}

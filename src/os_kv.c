@@ -172,9 +172,12 @@ static sqlite3_io_methods kvvfs_jrnl_io_methods = {
 
 /* Forward declarations for the low-level storage engine
 */
+#ifndef SQLITE_WASM
+/* In WASM builds these are implemented in JS. */
 static int kvrecordWrite(const char*, const char *zKey, const char *zData);
 static int kvrecordDelete(const char*, const char *zKey);
 static int kvrecordRead(const char*, const char *zKey, char *zBuf, int nBuf);
+#endif
 #define KVRECORD_KEY_SZ  32
 
 /* Expand the key name with an appropriate prefix and put the result
@@ -211,6 +214,7 @@ static void kvrecordMakeKey(
                    zClass, zKeyIn);
 }
 
+#ifndef SQLITE_WASM
 /* Write content into a key.  zClass is the particular namespace of the
 ** underlying key/value store to use - either "local" or "session".
 **
@@ -223,7 +227,6 @@ static int kvrecordWrite(
   const char *zKey,
   const char *zData
 ){
-#ifndef SQLITE_WASM
   FILE *fd;
   char zXKey[KVRECORD_KEY_SZ];
   kvrecordMakeKey(zClass, zKey, zXKey);
@@ -238,15 +241,6 @@ static int kvrecordWrite(
   }else{
     return 1;
   }
-#else
-  /* block the above out to reduce the WASM side's dependency
-     on POSIX I/O APIS. */
-  UNUSED_PARAMETER(zClass);
-  UNUSED_PARAMETER(zKey);
-  UNUSED_PARAMETER(zData);
-  assert(!"overwritten by JS");
-  return SQLITE_ERROR;
-#endif
 }
 
 /* Delete a key (with its corresponding data) from the key/value
@@ -254,20 +248,11 @@ static int kvrecordWrite(
 ** this routine is a no-op.
 */
 static int kvrecordDelete(const char *zClass, const char *zKey){
-#ifndef SQLITE_WASM
   char zXKey[KVRECORD_KEY_SZ];
   kvrecordMakeKey(zClass, zKey, zXKey);
   unlink(zXKey);
   SQLITE_KV_TRACE(("KVVFS-DELETE %-15s\n", zXKey));
   return 0;
-#else
-  /* block the above out to reduce the WASM side's dependency
-     on POSIX I/O APIS. */
-  UNUSED_PARAMETER(zClass);
-  UNUSED_PARAMETER(zKey);
-  assert(!"overwritten by JS");
-  return SQLITE_ERROR;
-#endif
 }
 
 /* Read the value associated with a zKey from the key/value namespace given
@@ -291,7 +276,6 @@ static int kvrecordRead(
   char *zBuf,
   int nBuf
 ){
-#ifndef SQLITE_WASM
   FILE *fd;
   struct stat buf;
   char zXKey[KVRECORD_KEY_SZ];
@@ -326,17 +310,9 @@ static int kvrecordRead(
                  n, zBuf, n>50 ? "..." : ""));
     return (int)n;
   }
-#else
-  /* block the above out to reduce the WASM side's dependency
-     on POSIX I/O APIS. */
-  UNUSED_PARAMETER(zClass);
-  UNUSED_PARAMETER(zKey);
-  UNUSED_PARAMETER(zBuf);
-  UNUSED_PARAMETER(nBuf);
-  assert(!"overwritten by JS");
-  return SQLITE_ERROR;
-#endif
 }
+#endif /* #ifndef SQLITE_WASM */
+
 
 /*
 ** An internal level of indirection which enables us to replace the
@@ -379,9 +355,15 @@ struct sqlite3_kvvfs_methods {
 const
 #endif
 sqlite3_kvvfs_methods sqlite3KvvfsMethods = {
+#ifndef SQLITE_WASM
   .xRcrdRead       = kvrecordRead,
   .xRcrdWrite      = kvrecordWrite,
   .xRcrdDelete     = kvrecordDelete,
+#else
+  .xRcrdRead       = 0,
+  .xRcrdWrite      = 0,
+  .xRcrdDelete     = 0,
+#endif
   .nKeySize        = KVRECORD_KEY_SZ,
   .nBufferSize     = SQLITE_KVOS_SZ,
   .pVfs            = &sqlite3OsKvvfsObject,
@@ -585,16 +567,22 @@ static int kvvfsReadJrnl(
   assert( pFile->isJournal );
   SQLITE_KV_LOG(("xRead('%s-journal',%d,%lld)\n", pFile->zClass, iAmt, iOfst));
   if( pFile->aJrnl==0 ){
-    int szTxt = kvrecordRead(pFile->zClass, "jrnl", 0, 0);
+    int rc;
+    int szTxt = sqlite3KvvfsMethods.xRcrdRead(pFile->zClass, "jrnl",
+                                              0, 0);
     char *aTxt;
     if( szTxt<=4 ){
       return SQLITE_IOERR;
     }
     aTxt = sqlite3_malloc64( szTxt+1 );
     if( aTxt==0 ) return SQLITE_NOMEM;
-    kvrecordRead(pFile->zClass, "jrnl", aTxt, szTxt+1);
-    kvvfsDecodeJournal(pFile, aTxt, szTxt);
+    rc = sqlite3KvvfsMethods.xRcrdRead(pFile->zClass, "jrnl",
+                                       aTxt, szTxt+1);
+    if( rc>=0 ){
+      kvvfsDecodeJournal(pFile, aTxt, szTxt);
+    }
     sqlite3_free(aTxt);
+    if( rc ) return rc;
     if( pFile->aJrnl==0 ) return SQLITE_IOERR;
   }
   if( iOfst+iAmt>pFile->nJrnl ){
