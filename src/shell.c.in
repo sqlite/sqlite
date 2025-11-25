@@ -1483,7 +1483,7 @@ static const ModeInfo aModeInfo[] = {
   { "list",     2,     1,    9,    1,    1,    0,   1,   12,    0 },
   { "markdown", 0,     0,    9,    1,    1,    0,   2,   13,    2 },
   { "off",      0,     0,    0,    0,    0,    0,   0,   14,    0 },
-  { "qbox",     0,     0,    9,    2,    1,    0,   2,   1,     2 },
+  { "qbox",     0,     0,    10,   2,    1,    0,   2,   1,     2 },
   { "quote",    4,     1,    10,   2,    2,    0,   1,   12,    0 },
   { "split",    0,     0,    9,    1,    1,    0,   1,   2,     2 },
   { "table",    0,     0,    9,    1,    1,    0,   2,   19,    2 },
@@ -7907,6 +7907,8 @@ static int dotCmdMode(ShellState *p){
       }
       switch( k ){
         case 1:  /* on */
+          modeSetStr(&p->mode.spec.zNull, "NULL");
+          /* Fall through */
         case 2:  /* sql */
           p->mode.spec.eText = QRF_TEXT_Sql;
           break;
@@ -8101,7 +8103,7 @@ static int dotCmdMode(ShellState *p){
       u8 e = p->mode.spec.eBlob;
       sqlite3_str_appendf(pDesc, " --blob-quote %s", azBQuote[e]);
     }
-    if( bAll || p->mode.spec.nCharLimit>0 ){
+    if( !bAll && p->mode.spec.nLineLimit==0 && p->mode.spec.nCharLimit>0 ){
       sqlite3_str_appendf(pDesc, " --charlimit %d",p->mode.spec.nCharLimit);
     }
     zSetting = aModeStr[pI->eCSep];
@@ -8112,7 +8114,15 @@ static int dotCmdMode(ShellState *p){
     if( bAll || p->mode.spec.eEsc!=QRF_Auto ){
       sqlite3_str_appendf(pDesc, " --escape %s",qrfEscNames[p->mode.spec.eEsc]);
     }
-    if( bAll || (p->mode.spec.nLineLimit>0 && pI->eCx>0) ){
+    if( bAll || (p->mode.spec.nLineLimit>0 && p->mode.spec.nCharLimit>0) ){
+      if( p->mode.spec.nLineLimit==0 && p->mode.spec.nCharLimit==0 ){
+        sqlite3_str_appendf(pDesc, " --limits off");
+      }else{
+        sqlite3_str_appendf(pDesc, " --limits %d,%d",
+           p->mode.spec.nLineLimit, p->mode.spec.nCharLimit);
+      }
+    }else 
+    if( p->mode.spec.nCharLimit==0 && p->mode.spec.nLineLimit>0 && pI->eCx>0 ){
       sqlite3_str_appendf(pDesc, " --linelimit %d",p->mode.spec.nLineLimit);
     }
     zSetting = aModeStr[pI->eNull];
