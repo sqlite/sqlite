@@ -3021,6 +3021,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.mustThrowMatching(()=>{
           new JDb("012345678901234567890123"/*too long*/);
         }, capi.SQLITE_RANGE);
+        T.mustThrowMatching(()=>new JDb(""), capi.SQLITE_RANGE);
         {
           const name = "01234567890123456789012" /* max name length */;
           (new JDb(name)).close();

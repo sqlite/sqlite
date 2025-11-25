@@ -206,8 +206,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       maxLen -= 8 /* "-journal" */;
     }
     const len = n.length;
+    if( !len ) toss3(capi.SQLITE_RANGE,"Empty name is not permitted.");
     if( len > maxLen ){
-      toss3(capi.SQLITE_RANGE, "Storage name is too long.");
+      toss3(capi.SQLITE_RANGE, "Storage name is too long. Limit =", maxLen);
     }
     let i;
     for( i = 0; i < len; ++i ){
@@ -454,14 +455,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const pFileHandles = new Map();
 
-  if( sqlite3.__isUnderTest ){
-    /* For inspection via the dev tools console. */
-    sqlite3.kvvfsStuff = {
-      pFileHandles,
-      cache
-    };
-  }
-
   {
     /**
        Original WASM functions for methods we partially override.
@@ -621,6 +614,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               zName = (cache.zEmpty ??= wasm.allocCString(""));
             }
             const jzClass = wasm.cstrToJs(zName);
+            debug("xOpen",jzClass);
             validateStorageName(jzClass, true);
             util.assert( jzClass.length===wasm.cstrlen(zName),
                          "ASCII-only validation failed" );
@@ -916,13 +910,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - A transient kvvfs storage object name.
 
      In the first two cases, only sessionStorage resp. localStorage is
-     cleared. If passed an an empty string (the default) then its
-     behavior depends on the second argument:
-
-     If emptyIsAName is false (the default) then an empty string means
-     both of 'local' and 'session' storage. (For backwards
-     compatibility.) if emptyIsAName is true then the empty string is
-     treated as a storage name instead.
+     cleared. An empty string resolves to both 'local' and 'session'
+     storage.
 
      Returns the number of entries cleared.
 
@@ -944,8 +933,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      version 1 did not throw for this case was due to an architectural
      limitation which has since been overcome.
   */
-  capi.sqlite3_js_kvvfs_clear = function callee(which="", emptyIsAName=false){
-    if( !which && !emptyIsAName && cache.storagePool.local ){
+  capi.sqlite3_js_kvvfs_clear = function callee(which=""){
+    if( !which ){
       return callee('local') + callee('session');
     }
     const store = storageForZClass(which);
@@ -986,8 +975,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      unspecified and may include per-entry overhead invisible to
      clients.
   */
-  capi.sqlite3_js_kvvfs_size = function callee(which="", emptyIsAName=false){
-    if( !which && !emptyIsAName ){
+  capi.sqlite3_js_kvvfs_size = function callee(which=""){
+    if( !which ){
       return callee('local') + callee('session');
     }
     const store = storageForZClass(which);
@@ -1335,10 +1324,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     listen:   sqlite3_js_kvvfs_listen,
     unlisten: sqlite3_js_kvvfs_unlisten,
     exists:   (name)=>!!storageForZClass(name),
-    // DIFFERENT DEFAULTS for the arguments:
-    size:     (which,emptyIsAName=true)=>capi.sqlite3_js_kvvfs_size(which,emptyIsAName),
-    clear:    (which,emptyIsAName=true)=>capi.sqlite3_js_kvvfs_clear(which,emptyIsAName),
+    size:     capi.sqlite3_js_kvvfs_size,
+    clear:    capi.sqlite3_js_kvvfs_clear
   });
+
+  if( sqlite3.__isUnderTest ){
+    /* For inspection via the dev tools console. */
+    sqlite3.kvvfs.test = {
+      pFileHandles,
+      cache
+    };
+  }
 
   if(sqlite3.oo1?.DB){
     /**
