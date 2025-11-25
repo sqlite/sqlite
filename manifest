@@ -1,5 +1,5 @@
-C kvvfs\sinternal\scleanups.\sExperimentally\sadd\sasync\sevent\slisteners\sto\skvvfs\sto\sexplore\sbacking\sup\sa\skvvfs\sa\spage\sat\sa\stime.
-D 2025-11-25T05:44:03.837
+C In\swasm\sbuilds,\s#if\sout\sthe\simpls\sfor\sthe\s3\score\skvvfs\si/o\sroutines\swhich\sget\soverwritten\sfrom\sJS\s(and\sthus\saren't\sused)\sto\sreduce\sdependencies\son\sPOSIX\sAPIs.
+D 2025-11-25T15:35:53.299
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -717,7 +717,7 @@ F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
-F src/os_kv.c d4f6c56d8933010df6a436db973a0888d62ae88aefcbe3091a378adcf208a356
+F src/os_kv.c e12a9a0c12292ed8a4e06ee71368dcc515122b995ac1d1860212750df3abb285
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 7945ede1e85b2d1b910e1b4af9ba342e964b1e30e79f4176480a60736445cb36
 F src/os_win.c a89b501fc195085c7d6c9eec7f5bd782625e94bb2a96b000f4d009703df1083f
@@ -2178,8 +2178,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P be435b668f1aee56fc4965592c207de25283de238fe89002f1a68ba0567aca65
-R a40d02997945aa1084905b681811107d
+P f355fd484947a645206c9b9c2fd6fe691455dece7fb1aa5b72cb51a86b39474f
+R 93d4eb5b59489ea4dc2e925508b24b87
 U stephan
-Z 28f21285f9b3750dac51a6c728b3cdad
+Z b720bd0cbd461c9ff070c111739d050c
 # Remove this line to create a well-formed Fossil manifest.

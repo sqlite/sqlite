@@ -223,6 +223,7 @@ static int kvrecordWrite(
   const char *zKey,
   const char *zData
 ){
+#ifndef SQLITE_WASM
   FILE *fd;
   char zXKey[KVRECORD_KEY_SZ];
   kvrecordMakeKey(zClass, zKey, zXKey);
@@ -237,6 +238,15 @@ static int kvrecordWrite(
   }else{
     return 1;
   }
+#else
+  /* block the above out to reduce the WASM side's dependency
+     on POSIX I/O APIS. */
+  UNUSED_PARAMETER(zClass);
+  UNUSED_PARAMETER(zKey);
+  UNUSED_PARAMETER(zData);
+  assert(!"overwritten by JS");
+  return SQLITE_ERROR;
+#endif
 }
 
 /* Delete a key (with its corresponding data) from the key/value
@@ -244,11 +254,20 @@ static int kvrecordWrite(
 ** this routine is a no-op.
 */
 static int kvrecordDelete(const char *zClass, const char *zKey){
+#ifndef SQLITE_WASM
   char zXKey[KVRECORD_KEY_SZ];
   kvrecordMakeKey(zClass, zKey, zXKey);
   unlink(zXKey);
   SQLITE_KV_TRACE(("KVVFS-DELETE %-15s\n", zXKey));
   return 0;
+#else
+  /* block the above out to reduce the WASM side's dependency
+     on POSIX I/O APIS. */
+  UNUSED_PARAMETER(zClass);
+  UNUSED_PARAMETER(zKey);
+  assert(!"overwritten by JS");
+  return SQLITE_ERROR;
+#endif
 }
 
 /* Read the value associated with a zKey from the key/value namespace given
@@ -272,6 +291,7 @@ static int kvrecordRead(
   char *zBuf,
   int nBuf
 ){
+#ifndef SQLITE_WASM
   FILE *fd;
   struct stat buf;
   char zXKey[KVRECORD_KEY_SZ];
@@ -306,6 +326,16 @@ static int kvrecordRead(
                  n, zBuf, n>50 ? "..." : ""));
     return (int)n;
   }
+#else
+  /* block the above out to reduce the WASM side's dependency
+     on POSIX I/O APIS. */
+  UNUSED_PARAMETER(zClass);
+  UNUSED_PARAMETER(zKey);
+  UNUSED_PARAMETER(zBuf);
+  UNUSED_PARAMETER(nBuf);
+  assert(!"overwritten by JS");
+  return SQLITE_ERROR;
+#endif
 }
 
 /*
