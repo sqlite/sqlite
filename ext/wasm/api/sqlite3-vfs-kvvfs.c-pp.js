@@ -105,15 +105,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     zKeySz: wasm.allocCString("sz")
   });
 
-  const debug = function(){
-    sqlite3.config.debug("kvvfs:", ...arguments);
-  };
-  const warn = function(){
-    sqlite3.config.warn("kvvfs:", ...arguments);
-  };
-  const error = function(){
-    sqlite3.config.error("kvvfs:", ...arguments);
-  };
+  const debug = sqlite3.__isUnderTest
+        ? function(){sqlite3.config.debug("kvvfs:", ...arguments)}
+        : function(){};
+  const warn = function(){sqlite3.config.warn("kvvfs:", ...arguments)};
+  const error = function(){sqlite3.config.error("kvvfs:", ...arguments)};
 
   /**
      Implementation of JS's Storage interface for use as backing store
@@ -256,6 +252,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     cache.storagePool[k+'-journal'] = orig;
   }
 
+  cache.setError = (e=undefined)=>{
+    if( e ){
+      cache.lastError = e;
+      return (e.resultCode | 0) || capi.SQLITE_ERROR;
+    }
+    delete cache.lastError;
+    return 0;
+  };
+
+  cache.popError = ()=>{
+    const e = cache.lastError;
+    delete cache.lastError;
+    return e;
+  };
+
   /**
      Returns the storage object mapped to the given string zClass
      (C-string pointer or JS string).
@@ -396,6 +407,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const pFileHandles = new Map();
 
   if( sqlite3.__isUnderTest ){
+    /* For inspection via the dev tools console. */
     sqlite3.kvvfsStuff = {
       pFileHandles,
       cache
@@ -564,6 +576,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       vfs:{
         /* sqlite3_kvvfs_methods::pVfs's methods */
         xOpen: function(pProtoVfs,zName,pProtoFile,flags,pOutFlags){
+          cache.popError();
           try{
             //cache.zReadBuf ??= wasm.malloc(kvvfsMethods.$nBufferSize);
             if( !zName ){
@@ -571,23 +584,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
             const n = wasm.cstrlen(zName);
             if( !n ){
-              warn("file name may not be empty (backwards compatibilty constraint)");
-              return capi.SQLITE_RANGE;
+              util.toss3(capi.SQLITE_RANGE,
+                         "Storage name may not be empty (backwards",
+                         "compatibilty constraint)");
             }else if( n > kvvfsMethods.$nKeySize - 8 /*"-journal"*/ - 1 ){
-              warn("file name is too long:", wasm.cstrToJs(zName));
-              return capi.SQLITE_RANGE;
+              util.toss3(capi.SQLITE_RANGE,
+                         "Storage name is too long:", wasm.cstrToJs(zName));
             }
-            const jzClass = wasm.cstrToJs(zName);
-            if( jzClass?.length != n ){
-              warn("kvvfs file name must be ASCII-only:",jzClass);
-              /* This limitation is to avoide any issues with
-                 truncating multi-byte characters in kvvfs's key-size
-                 limit. */
-              return capi.SQLITE_RANGE;
+            let i = 0;
+            for( ; i < n; ++i ){
+              const ch = wasm.peek8(wasm.ptr.add(zName, i));
+              if( ch < 45 || (ch & 0x80) ){
+                util.toss3(capi.SQLITE_RANGE,
+                           "Illegal character ("+ch+"d) in storage name.");
+              }
             }
             const rc = originalMethods.vfs.xOpen(pProtoVfs, zName, pProtoFile,
                                                  flags, pOutFlags);
             if( rc ) return rc;
+            const jzClass = wasm.cstrToJs(zName);
             let deleteAt0 = false;
             if(n && wasm.isPtr(zName)){
               if(capi.sqlite3_uri_boolean(zName, "delete-on-close", 0)){
@@ -595,7 +610,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 //warn("transient=",deleteAt0);
               }
               if(capi.sqlite3_uri_boolean(zName, "wipe-before-open", 0)){
-                // TODO
+                // TODO?
               }
             }
             const f = new KVVfsFile(pProtoFile);
@@ -629,11 +644,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             return 0;
           }catch(e){
             warn("xOpen:",e);
-            return capi.SQLITE_ERROR;
+            return cache.setError(e);
           }
         }/*xOpen()*/,
 
         xDelete: function(pVfs, zName, iSyncFlag){
+          cache.popError();
           try{
             const jzName = wasm.cstrToJs(zName);
             //debug("xDelete", jzName, storageForZClass(jzName));
@@ -643,11 +659,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             return 0;
           }catch(e){
             warn("xDelete",e);
-            return capi.SQLITE_ERROR;
+            return cache.setError(e);
           }
         },
 
-        xAccess:function(pProtoVfs, zPath, flags, pResOut){
+        xAccess: function(pProtoVfs, zPath, flags, pResOut){
+          cache.popError();
           try{
             /**
                In every test run to date, if this function sets
@@ -694,7 +711,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
           }catch(e){
             error('xAccess',e);
-            return capi.SQLITE_ERROR;
+            return cache.setError(e);
           }
         },
 
@@ -704,6 +721,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           const npOut = Number(pOut);
           for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
           return i;
+        },
+
+        xGetLastError: function(pVfs,nOut,pOut){
+          const e = cache.popError();
+          debug('xGetLastError',e);
+          if(e){
+            const scope = wasm.scopedAllocPush();
+            try{
+              const [cMsg, n] = wasm.scopedAllocCString(e.message, true);
+              wasm.cstrncpy(pOut, cMsg, nOut);
+              if(n > nOut) wasm.poke8(wasm.ptr.add(pOut,nOut,-1), 0);
+              debug("set xGetLastError",e.message);
+            }catch(e){
+              return capi.SQLITE_NOMEM;
+            }finally{
+              wasm.scopedAllocPop(scope);
+            }
+          }
+          return e ? ((e.resultCode | 0) || capi.SQLITE_IOERR) : 0;
         }
 
 //#if nope
@@ -817,8 +853,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const k = e[0], f = e[1], km = pVfs.memberKey(k),
               member = pVfs.structInfo.members[k]
               || util.toss("Missing pVfs.structInfo[",k,"]");
-        originalMethods.vfs[k] = wasm.functionEntry(pVfs[km])
-          || util.toss("Missing native pVfs[",km,"]");
+        originalMethods.vfs[k] = wasm.functionEntry(pVfs[km]);
         pVfs[km] = wasm.installFunction(member.signature, f);
       }
       for(const e of Object.entries(methodOverrides.ioDb)){

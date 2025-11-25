@@ -3005,6 +3005,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           'insert into kvvfs(a) values(1),(2),(3)'
         ];
         const sqlCount = 'select count(*) from kvvfs';
+        T.mustThrowMatching(()=>{
+          new JDb("this is an illegal name too long and spaces");
+          /* We don't have a way to get error strings from xOpen()
+             to this point? xOpen() does not have a handle to the
+             db and SQLite is not calling xGetLastError() to fetch
+             the error string. */
+        }, capi.SQLITE_RANGE);
+
         try {
           const exportDb = capi.sqlite3_js_kvvfs_export_storage;
           const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&delete-on-close=1';
