@@ -226,8 +226,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        KVVfsFile instances currently using this storage. Managed by
        xOpen() and xClose().
     */
-    files: []
+    files: [],
+    listeners: []
   });
+
+  const installStorageAndJournal = (store)=>
+        cache.storagePool[store.jzClass] =
+        cache.storagePool[store.jzClass+'-journal'] = store;
 
   /**
      Map of JS-stringified KVVfsFile::zClass names to
@@ -260,10 +265,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     cache.storagePool[k+'-journal'] = orig;
   }
 
-  cache.setError = (e=undefined)=>{
+  cache.setError = (e=undefined, dfltErrCode=capi.SQLITE_ERROR)=>{
     if( e ){
       cache.lastError = e;
-      return (e.resultCode | 0) || capi.SQLITE_ERROR;
+      return (e.resultCode | 0) || dfltErrCode;
     }
     delete cache.lastError;
     return 0;
@@ -273,6 +278,34 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const e = cache.lastError;
     delete cache.lastError;
     return e;
+  };
+
+  const noop = ()=>{};
+
+  /**
+     Listener events and their argument(s):
+
+     'open': number of opened handles on this storage.
+
+     'close': number of opened handles on this storage.
+
+     'write': key, value
+
+     'delete': key
+  */
+  const notifyListners = async function(eventName,store,...args){
+    store.listeners.forEach((v)=>{
+      const f = v?.[eventName];
+      if( !f ) return;
+      const ev = Object.create(null);
+      ev.storageName = store.jxClass;
+      ev.type = eventName;
+      ev.data = ((args.length===1) ? args[0] : args);
+      try{f(ev)?.catch?.(noop)}
+      catch(e){
+        warn("notifyListener",store.jzClass,eventName,e);
+      }
+    });
   };
 
   /**
@@ -424,7 +457,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
             if( !store ) return -1;
             const zXKey = zKeyForStorage(store, zClass, zKey);
-            if(!zXKey) return -3/*OOM*/;
+            //if(!zXKey) return -3/*OOM*/;
             const jXKey = wasm.cstrToJs(zXKey);
             //debug("xRcrdRead zXKey", jzClass, wasm.cstrToJs(zXKey), store );
             const jV = store.storage.getItem(jXKey);
@@ -471,6 +504,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             heap[wasm.ptr.add(zBuf, nV)] = 0;
             return nBuf;
           }catch(e){
+            error("kvrecordRead()",e);
             cache.setError(e);
             return -2;
           }
@@ -481,15 +515,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             const jzClass = wasm.cstrToJs(zClass);
             const store = storageForZClass(jzClass);
             const zXKey = zKeyForStorage(store, zClass, zKey);
-            if(!zXKey) return SQLITE_NOMEM;
-            store.storage.setItem(
-              wasm.cstrToJs(zXKey),
-              wasm.cstrToJs(zData)
-            );
+            //if(!zXKey) return SQLITE_NOMEM;
+            const jxKey = wasm.cstrToJs(zXKey);
+            const jData = wasm.cstrToJs(zData);
+            store.storage.setItem(jxKey, jData);
+            notifyListners('write', store, jxKey, jData);
             return 0;
           }catch(e){
             error("kvrecordWrite()",e);
-            return capi.SQLITE_IOERR;
+            return cache.setError(e, capi.SQLITE_IOERR);
           }
         },
 
@@ -497,12 +531,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           try {
             const store = storageForZClass(zClass);
             const zXKey = zKeyForStorage(store, zClass, zKey);
-            if(!zXKey) return capi.SQLITE_NOMEM;
-            store.storage.removeItem(wasm.cstrToJs(zXKey));
+            //if(!zXKey) return capi.SQLITE_NOMEM;
+            const jxKey = wasm.cstrToJs(zXKey);
+            store.storage.removeItem(jxKey);
+            notifyListners('delete', store, jxKey);
             return 0;
           }catch(e){
             error("kvrecordDelete()",e);
-            return capi.SQLITE_IOERR;
+            return cache.setError(e, capi.SQLITE_IOERR);
           }
         }
       }/*recordHandler*/,
@@ -575,18 +611,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               wasm.poke32(pOutFlags, flags | sqlite3.SQLITE_OPEN_CREATE);
               util.assert( !f.$isJournal, "Opening a journal before its db? "+jzClass );
               /* Map both zName and zName-journal to the same storage. */
-              const other = f.$isJournal
-                    ? jzClass.replace(cache.rxJournalSuffix,'')
-                    : jzClass + '-journal';
-              s = cache.storagePool[jzClass]
-                = cache.storagePool[other]
-                = newStorageObj(jzClass);
+              const nm = jzClass.replace(cache.rxJournalSuffix,'');
+              s = newStorageObj(nm);
+              installStorageAndJournal(s);
               s.files.push(f);
               s.deleteAtRefc0 = deleteAt0;
-              debug("xOpen installed storage handles [",
-                    jzClass, other,"]", s);
+              debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
             }
             pFileHandles.set(pProtoFile, {storage: s, file: f, jzClass});
+            notifyListners('open', s, s.files.length);
             return 0;
           }catch(e){
             warn("xOpen:",e);
@@ -733,6 +766,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               }
               originalIoMethods(h.file).xClose(pFile);
               h.file.dispose();
+              notifyListners('close', s, s.files.length);
             }else{
               /* Can happen if xOpen fails */
             }
@@ -942,6 +976,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
+     Throws if storage name n is not valid for use as a storage name.
+     This is intended for the high-level APIs, not the low-level ones.
+  */
+  const validateStorageName = function(n){
+    if( cache.rxJournalSuffix.test(n) ){
+      toss3(capi.SQLITE_MISUSE, "Storage names may not have a '-journal' suffix.");
+    }
+    if( n.length>23 ){
+      toss3(capi.SQLITE_RANGE, "Storage name is too long.");
+    }
+    // TODO: check all of kvvfs's name constraints
+  };
+
+  /**
      Copies the entire contents of the given transient storage object
      into a JSON-friendly form.  The returned object is structured as
      follows...
@@ -1044,11 +1092,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - Malformed input object.
 
-     If it throws after starting the import then it clears the
-     storage before returning, to avoid leaving the db in an
-     undefined state. It may throw for any of the above-listed
-     conditions before reaching that step, in which case the db is
-     not modified.
+     If it throws after starting the import then it clears the storage
+     before returning, to avoid leaving the db in an undefined
+     state. It may throw for any of the above-listed conditions before
+     reaching that step, in which case the db is not modified. If
+     exp.name refers to a new storage name then if it throws, the name
+     does not get installed.
   */
   capi.sqlite3_js_kvvfs_import = function(exp, overwrite=false){
     if( !exp?.timestamp
@@ -1059,7 +1108,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       toss3(capi.SQLITE_MISUSE, "Malformed export object.");
     }
     //warn("importFromObject() is incomplete");
+    validateStorageName(exp.name);
     let store = storageForZClass(exp.name);
+    const isNew = !store;
     if( store ){
       if( !overwrite ){
         //warn("Storage exists:",arguments,store);
@@ -1075,19 +1126,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       capi.sqlite3_js_kvvfs_clear(exp.name);
     }else{
-      if( cache.rxJournalSuffix.test(exp.name) ){
-        /* kvvfs's xOpen() specifically prohibits that db files have a
-           suffix of "-journal" because it has a very specific meaning
-           in kvvfs. We report it here, rather than waiting on a
-           pending xOpen() to catch it, because xOpen() has no way of
-           reporting an error message. */
-        toss3(capi.SQLITE_MISUSE,
-              "Cowardly refusing to create storage with a",
-              "'-journal' suffix.");
-      }
       store = newStorageObj(exp.name);
-      cache.storagePool[exp.name] =
-        cache.storagePool[exp.name+'-journal'] = store;
       //warn("Installing new storage:",store);
     }
     //debug("Importing store",store.poolEntry.files.length, store);
@@ -1100,12 +1139,108 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       s.setItem(keyPrefix+'sz', exp.size);
       if( exp.journal ) s.setItem(keyPrefix+'jrnl', exp.journal);
       exp.pages.forEach((v,ndx)=>s.setItem(keyPrefix+(ndx+1), v));
-      //s.getItem("")/*kludge: for KVVfsStorage to reset its keys*/;
+      if( isNew ) installStorageAndJournal(store);
     }catch(e){
-      capi.sqlite3_js_kvvfs_clear(exp.name);
+      if( !isNew ){
+        try{capi.sqlite3_js_kvvfs_clear(exp.name);}
+        catch(ee){/*ignored*/}
+      }
       throw e;
     }
     return this;
+  };
+
+  /**
+     Adds an event listener to a kvvfs storage object. The idea is
+     that this can be used to asynchronously back up one kvvfs storage
+     object to another or another channel entirely. (The caveat in the
+     latter case is that kvvfs's format is not readily consumable by
+     downstream code.)
+
+     Its argument must be an object with the following properties:
+
+     - storage: the name of the kvvfs storage object.
+
+     - reserve [=false]: if true, sqlite3_js_kvvfs_reserve() is used
+     to ensure that the storage exists.
+
+     - events: an object which may have any of the following
+     callback function properties: open, close, write, delete.
+
+     Each one of the events callbacks will be called asynchronously
+     when the given storage performs those operations. They may be
+     asynchronous. All exceptions, including those via Promises, are
+     ignored but may trigger warning output on the console.
+
+     Each callback gets passed a single object with the following
+     properties:
+
+     .type = the same as the name of the callback
+
+     .storageName = the name of the storage object
+
+     .data = callback-dependent:
+
+     - 'open' and 'close' get an integer, the number of
+     currently-opened handles on the storage.
+
+     - 'write' gets a length-two array holding the key and value which
+     were written (both strings).
+
+     - 'delete' gets the string-type key of the deleted record.
+  */
+  capi.sqlite3_js_kvvfs_listen = function(opt){
+    if( !opt || 'object'!==typeof opt ){
+      toss3(capi.SQLITE_MISUSE, "Expecting a listener object.");
+    }
+    let store = storageForZClass(opt.storage);
+    if( !store ){
+      if( opt.storage && opt.reserve ){
+        capi.sqlite3_js_kvvfs_reserve(opt.storage);
+        store = storageForZClass(opt.storage);
+        util.assert(store,
+                    "Unexpectedly cannot fetch reserved storage "
+                    +opt.storage);
+      }else{
+        toss3(capi.SQLITE_NOTFOUND,"No such storage:",opt.storage);
+      }
+    }
+    if( opt.events ){
+      store.listeners.push(opt.events);
+    }
+  };
+
+  /**
+     Removes all kvvfs event listeners for the given options
+     object. It must be passed the same object instance which was
+     passed to sqlite3_js_kvvfs_listen().
+
+     This has no side effects if opt is invalid or is not a match for
+     any listeners.
+  */
+  capi.sqlite3_js_kvvfs_unlisten = function(opt){
+    const store = storageForZClass(opt?.storage);
+    if( store && opt.events ){
+      store.listeners = store.listeners.filter((v)=>v!==opt.events);
+    }
+  };
+
+  /**
+     If no kvvfs storage exists with the given name, one is
+     installed. If one exists, its reference count is increased so
+     that it won't be freed by the closing of a database or journal
+     file.
+
+     Throws if the name is not valid for a new storage object.
+  */
+  capi.sqlite3_js_kvvfs_reserve = function(name){
+    let store = storageForZClass(name);
+    if( store ){
+      ++store.refc;
+      return;
+    }
+    validateStorageName(name);
+    installStorageAndJournal(newStorageObj(name));
   };
 
   if(sqlite3?.oo1?.DB){

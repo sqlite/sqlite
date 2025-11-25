@@ -3059,6 +3059,68 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     }/*concurrent transient kvvfs*/)
+    .t({
+      name: 'kvvfs listeners (experiment)',
+      test: function(sqlite3){
+        let db;
+        try {
+          const filename = 'listen';
+          const DB = sqlite3.oo1.DB;
+          const sqlSetup = [
+            'create table kvvfs(a);',
+            'insert into kvvfs(a) values(1),(2),(3)'
+          ];
+          const counts = Object.assign(Object.create(null),{
+            open: 0, close: 0, delete: 0, write: 0
+          });
+          const listener = {
+            storage: filename,
+            reserve: true,
+            events: {
+              'open':   (ev)=>{
+                ++counts[ev.type];
+                T.assert('number'===typeof ev.data);
+              },
+              'close': (ev)=>{
+                ++counts[ev.type];
+                T.assert('number'===typeof ev.data);
+              },
+              'delete': (ev)=>{
+                ++counts[ev.type];
+                T.assert('string'===typeof ev.data);
+              },
+              'write':  (ev)=>{
+                ++counts[ev.type];
+                T.assert(Array.isArray(ev.data))
+                  .assert('string'===typeof ev.data[0])
+                  .assert('string'===typeof ev.data[1]);
+              }
+            }
+          };
+          capi.sqlite3_js_kvvfs_listen(listener);
+          const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&delete-on-close=1';
+          db = new DB(dbFileRaw);
+          db.exec(sqlSetup);
+          db.close();
+          console.debug("kvvfs listener counts:",counts);
+          T.assert( counts.open )
+            .assert( counts.close )
+            .assert( counts.delete )
+            .assert( counts.write )
+            .assert( counts.open===counts.close );
+          const before = JSON.stringify(counts);
+          capi.sqlite3_js_kvvfs_unlisten(listener);
+          db = new DB(dbFileRaw);
+          db.exec("delete from kvvfs");
+          db.close();
+          const after = JSON.stringify(counts);
+          T.assert( before===after, "Expecting no events after unlistening." );
+        }finally{
+          db?.close?.();
+        }
+
+      }
+    })/*kvvfs listeners
 //#if enable-see
     .t({
       name: 'kvvfs SEE encryption in sessionStorage',
