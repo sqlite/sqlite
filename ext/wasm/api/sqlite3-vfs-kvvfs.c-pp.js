@@ -115,12 +115,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Implementation of JS's Storage interface for use as backing store
      of the kvvfs. Storage is a native class and its constructor
      cannot be legally called from JS, making it impossible to
-     directly subclass Storage. This class implements the Storage
-     interface, however, to make it a drop-in replacement for
+     directly subclass Storage. This class implements (only) the
+     Storage interface, however, to make it a drop-in replacement for
      localStorage/sessionStorage.
 
      This impl simply proxies a plain, prototype-less Object, suitable
      for JSON-ing.
+
+     Design note: Storage has a bit of an odd iteration-related
+     interface as does not (AFAIK) specify specific behavior regarding
+     modification during traversal. Because of that, this class does
+     some seemingly unnecessary things with its #keys member, deleting
+     and recreating it whenever a property index might be invalidated.
   */
   class KVVfsStorage {
     #map;
@@ -163,7 +169,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   }/*KVVfsStorage*/;
 
-  /** True if v is one of the special persistant Storage objects. */
+  /** True if v is the name of one of the special persistant Storage
+      objects. */
   const kvvfsIsPersistentName = (v)=>'local'===v || 'session'===v;
 
   /**
@@ -171,8 +178,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      db name. This key is redundant in JS but it's how kvvfs works (it
      saves each key to a separate file, so needs a distinct namespace
      per data source name). We retain this prefix in 'local' and
-     'session' storage for backwards compatibility but elide them from
-     "v2" storage, where they're superfluous.
+     'session' storage for backwards compatibility and so that they
+     can co-exist with client data in their storage, but we elide them
+     from "v2" storage, where they're superfluous.
   */
   const kvvfsKeyPrefix = (v)=>kvvfsIsPersistentName(v) ? 'kvvfs-'+v+'-' : '';
 
@@ -219,7 +227,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     files: []
   });
-
 
   /**
      Map of JS-stringified KVVfsFile::zClass names to
@@ -599,10 +606,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                            "Illegal character ("+ch+"d) in storage name.");
               }
             }
+            const jzClass = wasm.cstrToJs(zName);
+            if( (flags & (capi.SQLITE_OPEN_MAIN_DB
+                          | capi.SQLITE_OPEN_TEMP_DB
+                          | capi.SQLITE_OPEN_TRANSIENT_DB))
+                && cache.rxJournalSuffix.test(jzClass) ){
+              util.toss3(capi.SQLITE_ERROR,
+                         "DB files may not have a '-journal' suffix.");
+            }
             const rc = originalMethods.vfs.xOpen(pProtoVfs, zName, pProtoFile,
                                                  flags, pOutFlags);
             if( rc ) return rc;
-            const jzClass = wasm.cstrToJs(zName);
             let deleteAt0 = false;
             if(n && wasm.isPtr(zName)){
               if(capi.sqlite3_uri_boolean(zName, "delete-on-close", 0)){
