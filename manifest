@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sfts3/4\sdebugging\scode\sallowing\s'maxpendinXY'\sto\sact\sas\sa\ssynonym\sfor\s'maxpending='\sin\sspecial\sINSERT\sstatements.
-D 2025-11-25T15:11:34.969
+C Fix\ssubtle\sinaccuracies\sin\sqrfWrapLine().\s\sOmit\san\sunused\svariable\sfrom\sshell.c.in.
+D 2025-11-25T18:20:33.534
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md c4ee554743fa61858e5685a90689c011adb549a4e5467d3c639c9bc57ba00bb0
-F ext/qrf/qrf.c f3ae2e31bf1e61c504450a2a31f9ba1ce8f39399c0e9413af5d85b8e618cb941
+F ext/qrf/qrf.c 838c5af2b59b88640b1fd3665396ce15b1c6ed93612bdbc18e142a81d321e097
 F ext/qrf/qrf.h fe677b8564dd8feaff6d2876a0e06c2e1d8ceaa6f00acd179da92a9e87c2955a
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -735,7 +735,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 5616fbcf3b833c7c705b24371828215ad0925d0c0073216c4f153348d5753f0a
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 6a509cddd815d64f6141e539fff633a518a393772a44dffb4490f7fc3f0d83a9
-F src/shell.c.in cb6f5d86ca4c30ca927b1fa1e4d3a66c00e61ca5a0c8ebaa56978d47f916b8c9
+F src/shell.c.in 721bcbef2521ca6712e73dda8e07628b56798a5eae903be3048100ad9ad926fc
 F src/sqlite.h.in f1363321ca55cc2feaa289e9fe6dfb08102a28c54edf005564711a2348b06eef
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d5330f5f8461f5ce74960436ddcfa53ecd09c2b8b23901e22ae38aec3243998
@@ -2179,8 +2179,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d4c1d3e30b774802a7abd5f61807a690fb5be7617459f3dbd7ec1efceb6125d7
-R c365f6839f041415146f73889bb9943b
-U dan
-Z 29825f0c182095f31b3d9086c0a4dd8c
+P 5af554337af3052a5fd734c05883700dd42d140d99d41154b60e1a0f559e5023
+R 239653f4a6c15daf74d7d314b2de3a81
+U drh
+Z 664f5da640f0d04cc9000c09d169e8d2
 # Remove this line to create a well-formed Fossil manifest.

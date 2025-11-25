@@ -1131,15 +1131,15 @@ static void qrfWrapLine(
   const unsigned char *z = (const unsigned char*)zIn;
   unsigned char c = 0;
 
-  if( zIn[0]==0 ){
+  if( z[0]==0 ){
     *pnThis = 0;
     *pnWide = 0;
     *piNext = 0;
     return;
   }
   n = 0;
-  for(i=0; n<w; i++){
-    c = zIn[i];
+  for(i=0; n<=w; i++){
+    c = z[i];
     if( c>=0xc0 ){
       int u;
       int len = sqlite3_qrf_decode_utf8(&z[i], &u);
@@ -1150,11 +1150,12 @@ static void qrfWrapLine(
       continue;
     }
     if( c>=' ' ){
+      if( n==w ) break;
       n++;
       continue;
     }
     if( c==0 || c=='\n' ) break;
-    if( c=='\r' && zIn[i+1]=='\n' ){ c = zIn[++i]; break; }
+    if( c=='\r' && z[i+1]=='\n' ){ c = z[++i]; break; }
     if( c=='\t' ){
       int wcw = 8 - (n&7);
       if( n+wcw>w ) break;
@@ -1163,6 +1164,8 @@ static void qrfWrapLine(
     }
     if( c==0x1b && (k = qrfIsVt100(&z[i]))>0 ){
       i += k-1;
+    }else if( n==w ){
+      break;
     }else{
       n++;
     }
