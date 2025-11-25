@@ -2888,11 +2888,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const JDb = sqlite3.oo1.JsStorageDb;
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(looksLikePtr(pVfs));
-        let x = JDb.test.kvvfsWhich('');
-        T.assert( 2 === x?.stores?.length )
-          .assert( x.stores.indexOf(globalThis.sessionStorage)>-1 )
-          .assert( x.stores.indexOf(globalThis.localStorage)>-1 )
-          .assert( 'kvvfs-' === x.prefix );
+        let x = JDb.test.storageForZClass('session');
+        T.assert( 0 === x.files.length )
+          .assert( globalThis.sessionStorage===x.storage )
+          .assert( 'kvvfs-session-' === x.keyPrefix );
         const filename = this.kvvfsDbFile = 'session';
         const unlink = this.kvvfsUnlink = ()=>JDb.clearStorage(filename);
         unlink();
@@ -2930,10 +2929,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         ];
         try {
           T.assert( 0===db.storageSize(), "expecting 0 storage size" );
-          db.clearStorage(/*must not throw*/);
+          //T.mustThrowMatching(()=>db.clearStorage(), /in-use/);
+          db.clearStorage();
           T.assert( 0===db.storageSize(), "expecting 0 storage size" );
           db.exec(sqlSetup);
           T.assert( 0<db.storageSize(), "expecting non-0 db size" );
+          //T.mustThrowMatching(()=>db.clearStorage(), /in-use/);
           db.clearStorage(/*wiping everything out from under it*/);
           T.assert( 0===db.storageSize(), "expecting 0 storage size" );
           db.exec(sqlSetup/*that actually worked*/);
@@ -2945,7 +2946,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
           close();
 
-          const exportDb = capi.sqlite3_js_kvvfs_export_storage;
+          const exportDb = capi.sqlite3_js_kvvfs_export;
           db = new JDb(filename);
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
@@ -3014,7 +3015,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }, capi.SQLITE_RANGE);
 
         try {
-          const exportDb = capi.sqlite3_js_kvvfs_export_storage;
+          const exportDb = capi.sqlite3_js_kvvfs_export;
           const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&delete-on-close=1';
           db = new DB(dbFileRaw);
           capi.sqlite3_js_kvvfs_clear(filename);
@@ -3035,7 +3036,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             finally{ddb.close()}
           }, /.*no such table: kvvfs.*/);
 
-          const importDb = capi.sqlite3_js_kvvfs_import_storage;
+          const importDb = capi.sqlite3_js_kvvfs_import;
           duo = new JDb(filename);
           T.mustThrowMatching(()=>importDb(exp,true), /.*in use.*/);
           duo.close();
