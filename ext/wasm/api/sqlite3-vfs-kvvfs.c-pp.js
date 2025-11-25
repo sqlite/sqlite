@@ -614,7 +614,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               zName = (cache.zEmpty ??= wasm.allocCString(""));
             }
             const jzClass = wasm.cstrToJs(zName);
-            debug("xOpen",jzClass);
+            //debug("xOpen",jzClass);
             validateStorageName(jzClass, true);
             util.assert( jzClass.length===wasm.cstrlen(zName),
                          "ASCII-only validation failed" );
