@@ -3043,6 +3043,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           importDb(exp, true);
           duo = new JDb(filename);
           T.assert(6 === duo.selectValue(sqlCount));
+          let newCount;
+          try{
+            duo.transaction(()=>{
+              duo.exec("insert into kvvfs(a) values(7)");
+              newCount = duo.selectValue(sqlCount);
+              T.assert(false, "rolling back");
+            });
+          }catch(e){/*ignored*/}
+          T.assert(7===newCount, "Unexpected row count before rollback")
+            .assert(6 === duo.selectValue(sqlCount),
+                    "Unexpected row count after rollback");
           duo.close();
 
           /*
