@@ -7674,14 +7674,14 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            one letter per column starting from the left.
 **                            Unspecified alignment defaults to 'L'.
 **   --blob-quote ARG         ARG can be "auto", "text", "sql", "hex", "tcl",
-**                            "tcl", "json", or "size".  Default is "auto".
+**                            "json", or "size".  Default is "auto".
 **   --charlimit N            Set the maximum number of output characters to
 **                            show for any single SQL value to N. Longer values
 **                            truncated. Zero means "no limit".
 **   --colsep STRING          Use STRING as the column separator
 **   --escape ESC             Enable/disable escaping of control characters
-**                            in output. ESC can be "off", "ascii", or
-**                            "symbol".
+**                            found in the output. ESC can be "off", "ascii",
+**                            or "symbol".
 **   --linelimit N            Set the maximum number of output lines to show for
 **                            any single SQL value to N. Longer values are
 **                            truncated. Zero means "no limit". Only works
@@ -7695,7 +7695,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **   --quote ARG              Enable/disable quoting of text. ARG can be
 **                            "off", "on", "sql", "csv", "html", "tcl",
 **                            or "json".  "off" means show the text as-is.
-**                            "on and "sql" are synonyms.
+**                            "on" is an alias for "sql".
 **   --reset                  Changes all mode settings back to their default.
 **   --rowsep STRING          Use STRING as the row separator
 **   --sw|--screenwidth N     Declare the screen width of the output device
