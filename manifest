@@ -1,12 +1,12 @@
-C Cherry-pick\sJS\sfixes/cleanups/docs\sfrom\s[206275292217],\s[256c1dd2c367],\sand\s[dec0c6073cc1]\sfrom\sthe\skvvfs-v2\sbranch\sinto\strunk.
-D 2025-11-25T19:29:23.137
+C Add\stwo\snew\smakefile\stargets,\s"errors"\sand\s"status",\sfor\schecking\son\stestrunner\nerrors\sand\sfor\srunning\stestrunner\sstatus\s-d\s2,\srespectively.\s\sAdd\sa\ssimple\nmake.bat\sscript\sat\sthe\stop\slevel\sthat\sruns\snmake\sfor\sus,\sand\sthus\smake\sthe\ncommand-line\sto\stest\son\sWindows\sidentical\sto\sUnix.
+D 2025-11-25T22:38:07.645
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 8c5ed7173ee4cc3c03ba8e21065128f7ca5292c83d68f3bf971786e21fc6e382
+F Makefile.msc 295bc62fdd8663a6581cc43252403fac3cb784002164ff53fac8d15fc72fdfaa
 F README.md dae499194b75deed76a13a4a83c82493f2530331882d7dfe5754d63287d3f8f7
 F VERSION 74672bfd4c7826c0fc6f84762488a707c52e7d2d94af42ccb0edcc6c74311c41
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -657,7 +657,8 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 27a0769b40a813343f19e8fca2e9d55405f0311cb3cc5327f5702640df0182a0
+F main.mk 822f9eda3e689748341597f4327a071c2b0ce41cc3ed477d72f2560b956eb5c0
+F make.bat c7681f58aaecb6ea61c93633d7ee8a966049a0aa84a6f87d8c38ef6f20d802b9
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2179,11 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cb9cf028fcefa8ec51415b5dac886c2443b2ed207fa388dbc3d725dcc85fe092
-Q +206275292217be4ff317d4c9186ecaf863ca69295e2f995ed175aa65d9ad11dc
-Q +256c1dd2c367dbc3b3df5028f2004bb1126851109efc71a1699f60f493514fcb
-Q +dec0c6073cc130ba445ec68bc49a410001d778c4aa21624dcb0a68b88fce251f
-R 1bd4f238e6244800fd8e38a43ceaf247
-U stephan
-Z 47cb0055a911d2246aed481ee4cb1fa4
+P cdd3e700f59e5c30241cd5c6d9ea31f6a5f1c7130c6341b4e0b6dc32b06f3c79
+R 82cb45261e32c5b9ab63a4156394603e
+U drh
+Z f16bf0b2eb8144769b7b4bb4a591d8d8
 # Remove this line to create a well-formed Fossil manifest.

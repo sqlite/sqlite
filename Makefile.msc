@@ -2664,6 +2664,17 @@ devtest:	srctree-check sourcetest
 mdevtest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
+# Show all errors from the most reason testrunner invocation
+#
+errors:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl errors
+
+# Show the status of the current testrunner invocation,
+# updated every couple of seconds
+#
+status:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl status -d 2
+
 # Validate that various generated files in the source tree
 # are up-to-date.
 #
