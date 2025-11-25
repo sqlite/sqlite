@@ -2090,9 +2090,11 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   delete globalThis.sqlite3ApiBootstrap;
   delete sqlite3ApiBootstrap.defaultConfig;
   return sqlite3.asyncPostInit().then((s)=>{
-    sqlite3InitScriptInfo.debugModule(
-      "sqlite3.asyncPostInit() complete", sqlite3
-    );
+    if( 'undefined'!==typeof sqlite3InitScriptInfo/* from post-js-header.js */ ){
+      sqlite3InitScriptInfo.debugModule(
+        "sqlite3.asyncPostInit() complete", s
+      );
+    }
     delete s.asyncPostInit;
     delete s.scriptInfo;
     delete s.emscripten;
