@@ -996,11 +996,7 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
       break;
     }
     case SQLITE_NULL: {
-      if( p->spec.bTextNull==QRF_Yes ){
-        qrfEncodeText(p, pOut, p->spec.zNull);
-      }else{
-        sqlite3_str_appendall(pOut, p->spec.zNull);
-      }
+      sqlite3_str_appendall(pOut, p->spec.zNull);
       break;
     }
     case SQLITE_TEXT: {
@@ -2423,6 +2419,11 @@ static void qrfInitialize(
   if( p->mxWidth<=0 ) p->mxWidth = QRF_MAX_WIDTH;
   p->mxHeight = p->spec.nLineLimit;
   if( p->mxHeight<=0 ) p->mxHeight = 2147483647;
+  if( p->spec.eStyle>QRF_STYLE_Table ) p->spec.eStyle = QRF_Auto;
+  if( p->spec.eEsc>QRF_ESC_Symbol ) p->spec.eEsc = QRF_Auto;
+  if( p->spec.eText>QRF_TEXT_Json ) p->spec.eText = QRF_Auto;
+  if( p->spec.eTitle>QRF_TEXT_Json ) p->spec.eTitle = QRF_Auto;
+  if( p->spec.eBlob>QRF_BLOB_Size ) p->spec.eBlob = QRF_Auto;
 qrf_reinit:
   switch( p->spec.eStyle ){
     case QRF_Auto: {

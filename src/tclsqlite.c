@@ -2062,7 +2062,6 @@ static void DbHookCmd(
 **     -blob ("auto"|"text"|"sql"|...)         How to escape BLOB values
 **     -wordwrap ("auto"|"off"|"on")           Try to wrap at word boundry?
 **     -textjsonb ("auto"|"off"|"on")          Auto-convert JSONB to text?
-**     -textnull ("auto"|"off"|"on")           Use text encoding for -null.
 **     -splitcolumn ("auto"|"off"|"on")        Enable split-column mode
 **     -defaultalign ("auto"|"left"|...)       Default alignment
 **     -titalalign ("auto"|"left"|"right"|...) Default column name alignment
@@ -2089,7 +2088,6 @@ static void DbHookCmd(
 **     -blob             eBlob
 **     -wordwrap         bWordWrap
 **     -textjsonb        bTextJsonb
-**     -textnull         bTestNull
 **     -splitcolumn      bSplitColumn
 **     -defaultalign     eDfltAlign
 **     -titlealign       eTitleAlign
@@ -2241,7 +2239,6 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       qrf.bWordWrap = aBoolMap[v];
       i++;
     }else if( strcmp(zArg,"-textjsonb")==0
-           || strcmp(zArg,"-textnull")==0
            || strcmp(zArg,"-splitcolumn")==0
     ){
       int v = 0;
@@ -2250,8 +2247,6 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       if( rc ) goto format_failed;
       if( zArg[5]=='j' ){
         qrf.bTextJsonb = aBoolMap[v];
-      }else if( zArg[5]=='n' ){
-        qrf.bTextNull = aBoolMap[v];
       }else{
         qrf.bSplitColumn = aBoolMap[v];
       }

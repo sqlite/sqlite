@@ -730,31 +730,6 @@ do_test 6.1a {
 } {
 1,2.5,"three","\064\040\050\146\157\165\162\051",NULL
 }
-do_test 6.1b {
-  set result "\n[db format -style list -null NULL \
-                 -text tcl -columnsep , -textnull off \
-                 {SELECT * FROM t2}]"
-} {
-1,2.5,"three","\064\040\050\146\157\165\162\051",NULL
-}
-do_test 6.1c {
-  set result "\n[db format -style list -null NULL \
-                 -text tcl -columnsep , -textnull auto \
-                 {SELECT * FROM t2}]"
-} {
-1,2.5,"three","\064\040\050\146\157\165\162\051",NULL
-}
-do_test 6.2 {
-  set result "\n[db format -style list -null NULL \
-                 -text tcl -columnsep , -textnull yes \
-                 {SELECT * FROM t2}]"
-} {
-1,2.5,"three","\064\040\050\146\157\165\162\051","NULL"
-}
-do_test 6.3 {
-  catch {db format -textnull xyz {SELECT * FROM t2}} res
-  set res
-} {bad -textnull "xyz": must be auto, yes, no, on, or off}
 
 do_execsql_test 7.0 {
   CREATE TABLE t7(a,b);
