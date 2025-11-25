@@ -5457,7 +5457,7 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
       v = atoi(&zVal[9]);
       if( v>=24 && v<=p->nPgsz-35 ) p->nNodeSize = v;
       rc = SQLITE_OK;
-    }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 9) ){
+    }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 11) ){
       v = atoi(&zVal[11]);
       if( v>=64 && v<=FTS3_MAX_PENDING_DATA ) p->nMaxPendingData = v;
       rc = SQLITE_OK;

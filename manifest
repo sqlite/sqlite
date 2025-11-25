@@ -1,5 +1,5 @@
-C Work\saround\san\sincorrect\scompiler\swarning\son\sMac.
-D 2025-11-25T13:58:36.873
+C Fix\sa\stypo\sin\sfts3/4\sdebugging\scode\sallowing\s'maxpendinXY'\sto\sact\sas\sa\ssynonym\sfor\s'maxpending='\sin\sspecial\sINSERT\sstatements.
+D 2025-11-25T15:11:34.969
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -97,7 +97,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c c0b3e2394be849d21ad83b32c099cdf844fa14daf271323e4fa16d1dd54965c3
+F ext/fts3/fts3_write.c f3d75a37ed00046dce83068ca5f8045f54093ace54f823fe74216b5bb26008c8
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 413c346399159df81f86c4928b7c4a455caab73bfbc8cd68f950f632e5751674
@@ -1212,7 +1212,7 @@ F test/fts4merge.test 57d093660a5093ae6e9fbd2d17592a88b45bbd66db2703c4b640b28828
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test 8d9ccb4a3d41c4c617a149d6c4b13ad02de797d0
 F test/fts4merge4.test 66fce89934cd9508cbdc67de486558c34912ffb2e8ffe5c9a1bbb9b8a4408ba7
-F test/fts4merge5.test 69932d85cda8a1c4dcfb742865900ed8fbda51724b8cf9a45bbe226dfd06c596
+F test/fts4merge5.test 987af90c930e8555f74ab994f597431caec7f8defc52de7718655c32da07af9e
 F test/fts4min.test 1c11e4bde16674a0c795953509cbc3731a7d9cbd1ddc7f35467bf39d632d749f
 F test/fts4noti.test d5d933705b1b1516b67a5e3f8e514ecb19c6522fb3357bb744776d48427c2292
 F test/fts4onepass.test d69ddc4ee3415e40b0c5d1d0408488a87614d4f63ba9c44f3e52db541d6b7cc7
@@ -2179,8 +2179,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5454ec46e162247afa178c8532a0fa19eb05897417ac5b3d2a2ed14bfd331a75
-R daf93189cd3ba867760206933933b783
-U drh
-Z 260ed4d7667ca72034d0a28a929b763b
+P d4c1d3e30b774802a7abd5f61807a690fb5be7617459f3dbd7ec1efceb6125d7
+R c365f6839f041415146f73889bb9943b
+U dan
+Z 29825f0c182095f31b3d9086c0a4dd8c
 # Remove this line to create a well-formed Fossil manifest.
