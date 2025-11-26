@@ -1,5 +1,5 @@
-C Tweak\stestrunner.tcl\sto\sallow\sit\sto\suse\smore\scores.
-D 2025-11-26T00:41:20.521
+C Fix\sthe\ssha1()\sextension\sfunction\sso\sthat\sit\sreturns\sactual\sTEXT\sinstead\nof\sa\sBLOB\scontaining\sthe\sUTF-8\sTEXT.\n[forum:/forumpost/d15eefea7c|Forum\spost\sd15eefea7c]
+D 2025-11-26T11:19:11.232
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -392,7 +392,7 @@ F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c 22c6d8f00cc1b5089b1b37392e9097e9df9a5db53be86daf9a7669d95bb179f4
-F ext/misc/sha1.c cb5002148c2661b5946f34561701e9105e9d339b713ec8ac057fd888b196dcb9
+F ext/misc/sha1.c 3030b5926b34bb09459200e100fae34e48c04077cf175381a7560f72bbf3d9cf
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 693c8fd3293087fa821322967a97e59dfa24051e5d2ca7fa85790a4034db6fa4
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7abc25ff3b24b11c171e715ae96c8e97651d340b7a8bb8125a73902e1ad881ab
-R 103fa8dd39f94842edbe1608f4d19416
+P 71b916d4de7a4611f6ada597bfd58b59cab18e3a732de17c92b7346ecff31c04
+R 8a342f5298ac043d301d47c9e035df54
 U drh
-Z ae9a19174981b00522b41b1e47738b84
+Z 1832047028ab673aab528eafb2d4984c
 # Remove this line to create a well-formed Fossil manifest.
