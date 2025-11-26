@@ -1,5 +1,5 @@
-C Teach\skvvf's\sxClose()\sand\sxFileControl()\sto\sreturn\smore\sspecific\sresult\scodes\sfor\sexceptions.
-D 2025-11-26T20:18:11.986
+C Minor\skvvfs\serror\shandling\scleanup.
+D 2025-11-26T20:20:40.579
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -600,7 +600,7 @@ F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 9654b565b346dc609b75d15337f20acfa7af7d9d558da1afeb9b6d8eaa404966
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js ce2919a4ed90a9664563fb28ae97e5f3aa945d0967aea15d8bdfb33c8e5335e5
+F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js e08a013432aeb5e38f043829d8fa3dca06e124c117294d4c0a23db69138ae5b1
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js a2eea6442556867b589e04107796c6e1d04a472219529eeb45b7cd221d7d048b
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 88ce2078267a2d1af57525a32d896295f4a8db7664de0e17e82dc9ff006ed8d3
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72a76124213cbc9469d757676da86
@@ -2178,8 +2178,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 65272adfab333565719bde4f6c5bbe4f0b5415c17a8de43e6b2d7b0518cca4c7
-R 7ff02af4799af090b17818f6b0942a23
+P 6b48375972e6e4112efd51ffea0e54d33a4245bf0155b7fa3ca1e3f147eb043c
+R 74e2ae36c15f837c3e4c4002d7a13abf
 U stephan
-Z 21a402996c80c3c212f253d56f5c611b
+Z 6a6f640b6701e4797284b1e2e610ae36
 # Remove this line to create a well-formed Fossil manifest.

@@ -794,7 +794,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xFileControl: function(pFile, opId, pArg){
         try{
           const h = pFileHandles.get(pFile);
-          if( h && opId===capi.SQLITE_FCNTL_PRAGMA ){
+          util.assert(h, "Missing KVVfsFile handle");
+          if( opId===capi.SQLITE_FCNTL_PRAGMA ){
             /* pArg== length-3 (char**) */
             const zName = wasm.peekPtr(wasm.ptr.add(pArg, wasm.ptr.size));
             //const argv = wasm.cArgvToJs(3, pArg);
