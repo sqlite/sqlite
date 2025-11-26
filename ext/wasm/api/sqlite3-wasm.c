@@ -239,6 +239,11 @@
 // See also:
 //__attribute__((export_name("theExportedName"), used, visibility("default")))
 
+#if 0
+/** Increase the kvvfs key size limit from 32. */
+#define KVRECORD_KEY_SZ 64
+#endif
+
 /*
 ** Which sqlite3.c we're using needs to be configurable to enable
 ** building against a custom copy, e.g. the SEE variant. We #include
@@ -1590,16 +1595,31 @@ int sqlite3__wasm_posix_create_file( const char *zFilename,
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
 **
-** This returns a pointer to a static buffer, so it must be copied
-** if it needs to be retained across two calls to this function.
+** This returns either a pointer to a static buffer or zKeyIn directly
+** (if zClass is NULL or empty).
 */
 SQLITE_WASM_EXPORT
 const char * sqlite3__wasm_kvvfsMakeKey(const char *zClass,
                                         const char *zKeyIn){
   static char buf[SQLITE_KVOS_SZ+1] = {0};
   assert(sqlite3KvvfsMethods.nKeySize>24);
-  kvrecordMakeKey(zClass, zKeyIn, buf);
-  return buf;
+  if( zClass && *zClass ){
+    kvrecordMakeKey(zClass, zKeyIn, buf);
+    return buf;
+  }else{
+#if 1
+    /* We can return zKeyIn here only because the JS API takes special
+    ** care with its lifetime.*/
+    return zKeyIn;
+#else
+    /* It would be nice to be able to return zKeyIn directly here, but
+    ** it may have been allocated as part of the automated JS-to-WASM
+    ** conversions, in which case it will be freed before reaching the
+    ** caller. */
+    sqlite3_snprintf(KVRECORD_KEY_SZ, buf, "%s", zKeyIn);
+    return buf;
+#endif
+  }
 }
 
 /*

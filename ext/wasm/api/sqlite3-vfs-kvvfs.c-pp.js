@@ -416,16 +416,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      its management).
   */
   const fileForDb = function(pDb){
-    const stack = pstack.pointer;
+    const stack = wasm.pstack.pointer;
     try{
-      const pOut = pstack.allocPtr();
+      const pOut = wasm.pstack.allocPtr();
       return wasm.exports.sqlite3_file_control(
         pDb, wasm.ptr.null, capi.SQLITE_FCNTL_FILE_POINTER, pOut
       )
         ? null
         : new KVVfsFile(wasm.peekPtr(pOut));
     }finally{
-      pstack.restore(stack);
+      wasm.pstack.restore(stack);
     }
   };
 
@@ -449,18 +449,22 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 //#endif nope
 
-  /** Returns a C string from sqlite3__wasm_kvvfsMakeKey(). The memory
-      is static, so must be copied before a second call. */
+  const kvvfsMakeKey = wasm.exports.sqlite3__wasm_kvvfsMakeKey;
+  /**
+     Returns a C string from sqlite3__wasm_kvvfsMakeKey() OR returns
+     zKey. In the former case the memory is static, so must be copied
+     before a second call. zKey MUST be a pointer passed to a
+     VFS/file method, to allow us to avoid an alloc and/or an
+     snprintf(). It requires C-string arguments for zClass and
+     zKey. zClass may be NULL but zKey may not.
+  */
   const zKeyForStorage = (store, zClass, zKey)=>{
     //debug("zKeyForStorage(",store, wasm.cstrToJs(zClass), wasm.cstrToJs(zKey));
-    return wasm.exports.sqlite3__wasm_kvvfsMakeKey(
-      store.keyPrefix ? zClass : wasm.ptr.null, zKey
-    );
+    return (zClass && store.keyPrefix) ? kvvfsMakeKey(zClass, zKey) : zKey;
   };
-  /* We use this for the many small key allocations we need.
-     TODO: prealloc a buffer on demand for this. We know its
-     max size from kvvfsMethods.$nKeySize. */
-  const pstack = wasm.pstack;
+
+  const jsKeyForStorage = (store,zClass,zKey)=>
+        wasm.cstrToJs(zKeyForStorage(store, zClass, zKey));
 
   /**
      sqlite3_file pointers => objects, each of which has:
@@ -531,9 +535,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                   zBuf, nBuf, store );
           }
           if( !store ) return -1;
-          const zXKey = zKeyForStorage(store, zClass, zKey);
-          //if(!zXKey) return -3/*OOM*/;
-          const jXKey = wasm.cstrToJs(zXKey);
+          const jXKey = jsKeyForStorage(store, zClass, zKey);
           //debug("xRcrdRead zXKey", jzClass, wasm.cstrToJs(zXKey), store );
           const jV = store.storage.getItem(jXKey);
           if(null===jV) return -1;
@@ -541,7 +543,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                ** ASCII so that jV.length is equal
                                ** to the C-string's byte length. */;
           if( 0 ){
-            debug("xRcrdRead", wasm.cstrToJs(zXKey), store, jV);
+            debug("xRcrdRead", jXKey, store, jV);
           }
           if(nBuf<=0) return nV;
           else if(1===nBuf){
@@ -589,9 +591,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try {
           const jzClass = wasm.cstrToJs(zClass);
           const store = storageForZClass(jzClass);
-          const zXKey = zKeyForStorage(store, zClass, zKey);
-          //if(!zXKey) return SQLITE_NOMEM;
-          const jxKey = wasm.cstrToJs(zXKey);
+          const jxKey = jsKeyForStorage(store, zClass, zKey);
           const jData = wasm.cstrToJs(zData);
           store.storage.setItem(jxKey, jData);
           notifyListeners('write', store, jxKey, jData);
@@ -605,9 +605,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xRcrdDelete: (zClass, zKey)=>{
         try {
           const store = storageForZClass(zClass);
-          const zXKey = zKeyForStorage(store, zClass, zKey);
-          //if(!zXKey) return capi.SQLITE_NOMEM;
-          const jxKey = wasm.cstrToJs(zXKey);
+          const jxKey = jsKeyForStorage(store, zClass, zKey);
           store.storage.removeItem(jxKey);
           notifyListeners('delete', store, jxKey);
           return 0;
