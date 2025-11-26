@@ -671,7 +671,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             s = newStorageObj(nm);
             installStorageAndJournal(s);
             s.files.push(f);
-            s.deleteAtRefc0 = deleteAt0;
+            s.deleteAtRefc0 = deleteAt0 || !!(capi.SQLITE_OPEN_DELETEONCLOSE & flags);
             debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
           }
           pFileHandles.set(pProtoFile, {storage: s, file: f, jzClass});
@@ -789,17 +789,51 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           return capi.SQLITE_ERROR;
         }
       },
+
+      xFileControl: function(pFile, opId, pArg){
+        try{
+          const h = pFileHandles.get(pFile);
+          if( h && opId===capi.SQLITE_FCNTL_PRAGMA ){
+            /* pArg== length-3 (char**) */
+            const zName = wasm.peekPtr(wasm.ptr.add(pArg, wasm.ptr.size));
+            //const argv = wasm.cArgvToJs(3, pArg);
+            if( "page_size"===wasm.cstrToJs(zName) ){
+              //debug("xFileControl pragma",wasm.cstrToJs(zName));
+              const zVal = wasm.peekPtr(wasm.ptr.add(pArg, 2*wasm.ptr.size));
+              if( zVal ){
+                /* Without this, pragma page_size=N; followed by a
+                   vacuum breaks the db. With this, it continues
+                   working but does not actually change the page
+                   size. */
+                //debug("xFileControl pragma", h,
+                //      "NOT setting page size to", wasm.cstrToJs(zVal));
+                h.file.$szPage = -1;
+                return 0;//corrupts capi.SQLITE_NOTFOUND;
+              }else if( 0 && h.file.$szPage>0 ){
+                // This works but is superfluous
+                //debug("xFileControl", h, "getting page size",h.file.$szPage);
+                wasm.pokePtr(pArg, wasm.allocCString(""+h.file.$szPage));
+                // memory now owned by sqlite.
+                return 0;//capi.SQLITE_NOTFOUND;
+              }
+            }
+          }
+          return originalIoMethods(h.file).xFileControl(pFile, opId, pArg);
+        }catch(e){
+          error("xFileControl",e);
+          return capi.SQLITE_ERROR;
+        }
+      },
+
 //#if nope
       xRead: function(pFile,pTgt,n,iOff64){},
       xWrite: function(pFile,pSrc,n,iOff64){},
       xTruncate: function(pFile,i64){},
       xSync: function(pFile,flags){},
-      xFileControl: function(pFile, opId, pArg){},
       xFileSize: function(pFile,pi64Out){},
       xLock: function(pFile,iLock){},
       xUnlock: function(pFile,iLock){},
       xCheckReservedLock: function(pFile,piOut){},
-      xFileControl: function(pFile,iOp,pArg){},
       xSectorSize: function(pFile){},
       xDeviceCharacteristics: function(pFile){}
 //#endif
@@ -820,7 +854,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xLock: true,
       xUnlock: true,
       xCheckReservedLock: true,
-      xFileControl: function(pFile,iOp,pArg){},
       xSectorSize: true,
       xDeviceCharacteristics: true
 //#endif
@@ -1362,6 +1395,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ){
       const opt = DB.dbCtorHelper.normalizeArgs(...arguments);
       opt.vfs = 'kvvfs';
+      if( opt.flags ) opt.flags = 'cw'+opt.flags;
+      else opt.flags = 'cw';
       switch( opt.filename ){
           /* sqlite3_open(), in these builds, recognizes the names
              below and performs some magic which we want to bypass

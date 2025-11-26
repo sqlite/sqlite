@@ -2946,6 +2946,24 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const filename = 'localThread' /* preinstalled instance */;
         const JDb = sqlite3.oo1.JsStorageDb;
         const DB = sqlite3.oo1.DB;
+
+        T.mustThrowMatching(()=>{
+          new JDb("this is an illegal name too long and spaces");
+          /* We don't have a way to get error strings from xOpen()
+             to this point? xOpen() does not have a handle to the
+             db and SQLite is not calling xGetLastError() to fetch
+             the error string. */
+        }, capi.SQLITE_RANGE);
+        T.mustThrowMatching(()=>{
+          new JDb("012345678901234567890123"/*too long*/);
+        }, capi.SQLITE_RANGE);
+        T.mustThrowMatching(()=>new JDb(""), capi.SQLITE_RANGE);
+        {
+          const name = "01234567890123456789012" /* max name length */;
+          (new JDb(name)).close();
+          T.assert( sqlite3.kvvfs.unlink(name) );
+        }
+
         sqlite3.kvvfs.clear(filename);
         let db = new JDb(filename);
         const sqlSetup = [
@@ -3027,31 +3045,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       //predicate: ()=>false,
       test: function(sqlite3){
         const filename = 'my';
+        const kvvfs = sqlite3.kvvfs;
         const DB = sqlite3.oo1.DB;
         const JDb = sqlite3.oo1.JsStorageDb;
         let db;
         let duo;
+        let q1, q2;
         const sqlSetup = [
           'create table kvvfs(a);',
           'insert into kvvfs(a) values(1),(2),(3)'
         ];
         const sqlCount = 'select count(*) from kvvfs';
-        T.mustThrowMatching(()=>{
-          new JDb("this is an illegal name too long and spaces");
-          /* We don't have a way to get error strings from xOpen()
-             to this point? xOpen() does not have a handle to the
-             db and SQLite is not calling xGetLastError() to fetch
-             the error string. */
-        }, capi.SQLITE_RANGE);
-        T.mustThrowMatching(()=>{
-          new JDb("012345678901234567890123"/*too long*/);
-        }, capi.SQLITE_RANGE);
-        T.mustThrowMatching(()=>new JDb(""), capi.SQLITE_RANGE);
-        {
-          const name = "01234567890123456789012" /* max name length */;
-          (new JDb(name)).close();
-          T.assert( sqlite3.kvvfs.unlink(name) );
-        }
 
         try {
           const exportDb = sqlite3.kvvfs.export;
@@ -3065,9 +3069,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           duo.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue(sqlCount));
           let exp = exportDb(filename);
+          let expectRows = 6;
           console.debug("exported db",exp);
           db.close();
-          T.assert(6 === duo.selectValue(sqlCount));
+          T.assert(expectRows === duo.selectValue(sqlCount));
           duo.close();
           T.mustThrowMatching(function(){
             let ddb = new JDb(filename);
@@ -3075,13 +3080,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             finally{ddb.close()}
           }, /.*no such table: kvvfs.*/);
 
+          T.assert( kvvfs.unlink(filename) )
+            .assert( !kvvfs.exists(filename) );
+
           const importDb = sqlite3.kvvfs.import;
-          duo = new JDb(filename);
+          duo = new JDb(dbFileRaw);
           T.mustThrowMatching(()=>importDb(exp,true), /.*in use.*/);
           duo.close();
           importDb(exp, true);
-          duo = new JDb(filename);
-          T.assert(6 === duo.selectValue(sqlCount));
+          duo = new JDb(dbFileRaw);
+          T.assert(expectRows === duo.selectValue(sqlCount));
           let newCount;
           try{
             duo.transaction(()=>{
@@ -3091,9 +3099,94 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             });
           }catch(e){/*ignored*/}
           T.assert(7===newCount, "Unexpected row count before rollback")
-            .assert(6 === duo.selectValue(sqlCount),
+            .assert(expectRows === duo.selectValue(sqlCount),
                     "Unexpected row count after rollback");
           duo.close();
+
+          T.assert( kvvfs.unlink(filename) )
+            .assert( !kvvfs.exists(filename) );
+
+          importDb(exp, true);
+          db = new JDb({
+            filename,
+            flags: 't'
+          });
+          duo = new JDb(filename);
+          T.assert(expectRows === duo.selectValue(sqlCount));
+          const sqlIns1 = "insert into kvvfs(a) values(?)";
+          q1 = db.prepare(sqlIns1);
+          q2 = duo.prepare(sqlIns1);
+          if( 0 ){
+            q1.bind('from q1').stepFinalize();
+            ++expectRows;
+            T.assert(expectRows === duo.selectValue(sqlCount),
+                     "Unexpected record count.");
+            q2.bind('from q1').stepFinalize();
+            ++expectRows;
+          }else{
+            q1.bind('from q1');
+            T.assert(capi.SQLITE_DONE===capi.sqlite3_step(q1),
+                     "Unexpected step result");
+            ++expectRows;
+            T.assert(expectRows === duo.selectValue(sqlCount),
+                     "Unexpected record count.");
+            q2.bind('from q1').step();
+            ++expectRows;
+          }
+          T.assert(expectRows === db.selectValue(sqlCount),
+                   "Unexpected record count.");
+          q1.finalize();
+          q2.finalize();
+
+          if( 1 ){
+            const pageSize = 1024 * 16;
+            console.debug("Export before vacuum", exportDb(filename));
+            console.debug("page size before vacuum",
+                          db.selectArray(
+                            "select page_size from pragma_page_size()"
+                          ));
+            db.exec([
+              "delete from kvvfs where a=1;",
+              "pragma page_size="+pageSize+";",
+              "vacuum;"
+            ]);
+            --expectRows;
+            console.debug("page size after",
+                          db.selectArray(
+                            "select page_size from pragma_page_size()"
+                          ));
+            T.assert(expectRows === duo.selectValue(sqlCount),
+                     "Unexpected record count.");
+            T.assert( 8192 == db.selectValue(
+              /* kvvfs actively resists attempts to change the page size
+                 because _not_ doing so causes a vacuum to corrupt
+                 the db. */
+              "select page_size from pragma_page_size()"
+            ) );
+            if( 0 ){
+              // It's stuck at 8k
+              T.assert(pageSize == duo.selectValue("pragma page_size"),
+                       "Unexpected page size.");
+            }
+            // It fails at this point for non-8k sizes
+            T.assert(expectRows === duo.selectValue(sqlCount),
+                     "Unexpected record count.");
+            exp = exportDb(filename);
+            console.debug("vacuumed export",exp);
+          }else{
+            expectRows = 6;
+          }
+
+          db.close();
+          duo.close();
+          T.assert( kvvfs.unlink(exp.name) )
+            .assert( !kvvfs.exists(exp.name) );
+          importDb(exp);
+          T.assert( kvvfs.exists(exp.name) );
+          db = new JDb(exp.name);
+          console.debug("column count after export",db.selectValue(sqlCount));
+          T.assert(expectRows === db.selectValue(sqlCount),
+                   "Unexpected record count.");
 
           /*
             TODO: more advanced concurrent use tests, e.g. looping
@@ -3104,6 +3197,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             appropriate.
           */
         }finally{
+          q1?.finalize?.();
+          q2?.finalize?.();
           db?.close?.();
           duo?.close?.();
         }
