@@ -52,10 +52,10 @@ do_test 1.11b {
 do_test 1.11c {
   set result "\n[db format -text sql -border off {SELECT * FROM t1}]"
 } {
-     a      │  b  │    c
-────────────┼─────┼────────
-1           │ 2.5 │ 'three'
-x'424c4f42' │     │ 'Ἀμήν'
+      a      │  b  │    c
+─────────────┼─────┼─────────
+ 1           │ 2.5 │ 'three'
+ x'424c4f42' │     │ 'Ἀμήν'
 }
 do_test 1.12 {
   set result "\n[db format -text csv {SELECT * FROM t1}]"
@@ -123,12 +123,41 @@ do_test 1.31 {
 do_test 1.32 {
   set result "\n[db format -style table -border off {SELECT * FROM t1}]"
 } {
- a   |  b  |   c
------+-----+------
-1    | 2.5 | three
-BLOB |     | Ἀμήν
+  a   |  b  |   c
+------+-----+-------
+    1 | 2.5 | three
+ BLOB |     | Ἀμήν
 }
-
+do_test 1.33 {
+  set result "\n[db format -style table -border off \
+                 -screenwidth 15 \
+                 {SELECT * FROM t1}]"
+} {
+ a  | b |  c
+----+---+-----
+   1|2.5|three
+BLOB|   |Ἀμήν
+}
+do_test 1.34 {
+  set result "\n[db format -style box -border off \
+                 -screenwidth 30 \
+                 {SELECT * FROM t1}]"
+} {
+  a   │  b  │   c
+──────┼─────┼───────
+    1 │ 2.5 │ three
+ BLOB │     │ Ἀμήν
+}
+do_test 1.35 {
+  set result "\n[db format -style box -border off \
+                 -screenwidth 15 \
+                 {SELECT * FROM t1}]"
+} {
+ a  │ b │  c
+────┼───┼─────
+   1│2.5│three
+BLOB│   │Ἀμήν
+}
 
 do_test 1.40 {
   set result "\n[db format -style column {SELECT * FROM t1}]"

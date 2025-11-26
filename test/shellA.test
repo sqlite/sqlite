@@ -202,18 +202,18 @@ do_test_with_ansi_output shellA-4.1b {
     {.mode -border off} \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-a │            x
-──┼─────────────────────────
-1 │ line with ' single quote
-──┼─────────────────────────
-2 │ ^[[31mVT-100 codes^[[0m
-──┼─────────────────────────
-6 │ new
-  │ line
-──┼─────────────────────────
-7 │ carriage^Mreturn
-──┼─────────────────────────
-8 │ last line
+ a │            x
+───┼──────────────────────────
+ 1 │ line with ' single quote
+───┼──────────────────────────
+ 2 │ ^[[31mVT-100 codes^[[0m
+───┼──────────────────────────
+ 6 │ new
+   │ line
+───┼──────────────────────────
+ 7 │ carriage^Mreturn
+───┼──────────────────────────
+ 8 │ last line
 }
 do_test_with_ansi_output shellA-4.2 {
  exec {*}$CLI -noinit test.db {.mode qbox} {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
@@ -232,13 +232,13 @@ do_test_with_ansi_output shellA-4.2b {
  exec {*}$CLI -noinit test.db {.mode qbox -border off} \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-a │                     x
-──┼──────────────────────────────────────────
-1 │ 'line with '' single quote'
-2 │ unistr('\u001b[31mVT-100 codes\u001b[0m')
-6 │ unistr('new\u000aline')
-7 │ unistr('carriage\u000dreturn')
-8 │ 'last line'
+ a │                     x
+───┼───────────────────────────────────────────
+ 1 │ 'line with '' single quote'
+ 2 │ unistr('\u001b[31mVT-100 codes\u001b[0m')
+ 6 │ unistr('new\u000aline')
+ 7 │ unistr('carriage\u000dreturn')
+ 8 │ 'last line'
 }
 
 # ".mode insert"

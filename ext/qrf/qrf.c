@@ -1381,20 +1381,14 @@ static int qrfColDataEnlarge(qrfColData *p){
 static void qrfRowSeparator(sqlite3_str *pOut, qrfColData *p, char cSep){
   int i;
   if( p->nCol>0 ){
-    int endMargin;
     int useBorder = p->p->spec.bBorder!=QRF_No;
     if( useBorder ){
       sqlite3_str_append(pOut, &cSep, 1);
-      endMargin = p->nMargin;
-    }else{
-      endMargin = p->nCol>1 ? p->nMargin/2 : 0;
     }
-    sqlite3_str_appendchar(pOut, p->a[0].w+endMargin, '-');
+    sqlite3_str_appendchar(pOut, p->a[0].w+p->nMargin, '-');
     for(i=1; i<p->nCol; i++){
-      int w = p->a[i].w;
-      w += (i+1)==p->nCol ? endMargin : p->nMargin;
       sqlite3_str_append(pOut, &cSep, 1);
-      sqlite3_str_appendchar(pOut, w, '-');
+      sqlite3_str_appendchar(pOut, p->a[i].w+p->nMargin, '-');
     }
     if( useBorder ){
       sqlite3_str_append(pOut, &cSep, 1);
@@ -1456,20 +1450,14 @@ static void qrfBoxSeparator(
 ){
   int i;
   if( p->nCol>0 ){
-    int endMargin;
     int useBorder = p->p->spec.bBorder!=QRF_No;
     if( useBorder ){
       sqlite3_str_appendall(pOut, zSep1);
-      endMargin = p->nMargin;
-    }else{
-      endMargin = p->nCol>1 ? p->nMargin/2 : 0;
     }
-    qrfBoxLine(pOut, p->a[0].w+endMargin);
+    qrfBoxLine(pOut, p->a[0].w+p->nMargin);
     for(i=1; i<p->nCol; i++){
-      int w = p->a[i].w;
-      w += i==p->nCol-1 ? endMargin : p->nMargin;     
       sqlite3_str_appendall(pOut, zSep2);
-      qrfBoxLine(pOut, w);
+      qrfBoxLine(pOut, p->a[i].w+p->nMargin);
     }
     if( useBorder ){
       sqlite3_str_appendall(pOut, zSep3);
@@ -1641,7 +1629,7 @@ static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
     sepW = pData->nCol*2 - 2;
   }else{
     sepW = pData->nCol*3 + 1;
-    if( p->spec.bBorder==QRF_No ) sepW -= 4;
+    if( p->spec.bBorder==QRF_No ) sepW -= 2;
   }
   nCol = pData->nCol;
   for(i=sumW=0; i<nCol; i++) sumW += pData->a[i].w;
@@ -1861,7 +1849,7 @@ static void qrfColumnar(Qrf *p){
         rowSep = BOX_13 "\n";
       }
       if( p->spec.bBorder==QRF_No){
-        rowStart = "";
+        rowStart += 3;
         rowSep = "\n";
       }else{
         qrfBoxSeparator(p->pOut, &data, BOX_23, BOX_234, BOX_34);
@@ -1878,7 +1866,7 @@ static void qrfColumnar(Qrf *p){
         rowSep = "|\n";
       }
       if( p->spec.bBorder==QRF_No ){
-        rowStart = "";
+        rowStart += 1;
         rowSep = "\n";
       }else{
         qrfRowSeparator(p->pOut, &data, '+');
