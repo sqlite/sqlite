@@ -2882,13 +2882,38 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
   T.g('kvvfs')
     .t({
+      name: 'kvvfs v1 API availability',
+      test: function(sqlite3){
+        const capi = sqlite3.capi;
+        if( isUIThread() ){
+          T.assert( capi.sqlite3_js_kvvfs_clear )
+            .assert( capi.sqlite3_js_kvvfs_size );
+        }else{
+          /* Historical behaviour retained not for compatibility but
+             to help avoid some confusion between the v1 and v2 kvvfs
+             APIs (namely in how the v1 variants handle empty
+             strings). */
+          T.assert( !capi.sqlite3_js_kvvfs_clear )
+            .assert( !capi.sqlite3_js_kvvfs_size );
+        }
+        const k = sqlite3.kvvfs;
+        T.assert( k && 'object'===typeof k );
+        for(const n of ['reserve', 'import', 'export',
+                        'unlink', 'listen', 'unlisten',
+                        //'exists',
+                        'size', 'clear'] ){
+          T.assert( k[n] instanceof Function );
+        }
+      }
+    }/*kvvfs API availability*/)
+    .t({
       name: 'kvvfs sessionStorage',
       predicate: ()=>(globalThis.sessionStorage || "sessionStorage is unavailable"),
       test: function(sqlite3){
         const JDb = sqlite3.oo1.JsStorageDb;
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(looksLikePtr(pVfs));
-        let x = JDb.test.storageForZClass('session');
+        let x = sqlite3.kvvfs.test.storageForZClass('session');
         T.assert( 0 === x.files.length )
           .assert( globalThis.sessionStorage===x.storage )
           .assert( 'kvvfs-session-' === x.keyPrefix );
