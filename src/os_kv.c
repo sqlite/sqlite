@@ -178,19 +178,13 @@ static int kvrecordWrite(const char*, const char *zKey, const char *zData);
 static int kvrecordDelete(const char*, const char *zKey);
 static int kvrecordRead(const char*, const char *zKey, char *zBuf, int nBuf);
 #endif
-#define KVRECORD_KEY_SZ  32
+#ifndef KVRECORD_KEY_SZ
+#define KVRECORD_KEY_SZ 32
+#endif
 
 /* Expand the key name with an appropriate prefix and put the result
 ** in zKeyOut[].  The zKeyOut[] buffer is assumed to hold at least
 ** KVRECORD_KEY_SZ bytes.
-**
-** TODO: we only need to include zClass in the keys for "local" and
-** "session" instances and their "-journal" counterparts.  For other
-** instances (a capability added 3+ years later) we can allow longer
-** db names if we elide zClass. We don't _really_ need that part of
-** the key in JS-side local/session instances (we do in
-** filesystem-side instances), but we can't strip it without
-** invalidating existing JS-side kvvfs dbs.
 */
 static void kvrecordMakeKey(
   const char *zClass,
@@ -199,22 +193,16 @@ static void kvrecordMakeKey(
 ){
   assert( zKeyIn );
   assert( zKeyOut );
-#ifdef SQLITE_WASM
-  if( !zClass || !zClass[0] ){
-    /* The JS bindings pass a zClass of NULL for non-local/non-session
-       instances which store _only_ kvvfs state, so they don't need a
-       key prefix (and having one wastes space). */
-    sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "%s",
-                     zKeyIn);
-    return;
-  }
-#endif
   assert( zClass );
   sqlite3_snprintf(KVRECORD_KEY_SZ, zKeyOut, "kvvfs-%s-%s",
                    zClass, zKeyIn);
 }
 
 #ifndef SQLITE_WASM
+/* In WASM builds do not define APIs which use fopen(), fwrite(),
+** and the like because those APIs are a portability issue for
+** WASM.
+*/
 /* Write content into a key.  zClass is the particular namespace of the
 ** underlying key/value store to use - either "local" or "session".
 **

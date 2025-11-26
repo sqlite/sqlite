@@ -1,5 +1,5 @@
-C Fix\stests\sbroken\sby\sthe\sprevious\scommit.
-D 2025-11-26T16:40:23.269
+C Remove\sa\sJS-specific\sblock\sfrom\sos_kv.c.
+D 2025-11-26T17:17:22.760
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -717,7 +717,7 @@ F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
-F src/os_kv.c c0f9a04057731e5e8e41478b55aef2139c86b46a8731c7daf4793e8e5cee69af
+F src/os_kv.c aa51119e9782d886295ad3fb49cf8c6a75e2a499c3412c8eb7c2aa113e74c4f8
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 7945ede1e85b2d1b910e1b4af9ba342e964b1e30e79f4176480a60736445cb36
 F src/os_win.c a89b501fc195085c7d6c9eec7f5bd782625e94bb2a96b000f4d009703df1083f
@@ -2178,8 +2178,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 450b4bcca6038be58a73ff15ff18b9d70df661fe0bd9777273e0db6fbce5f296
-R 1fce3bc8bc8cd3905cff1d9a17674e6f
+P 430d4d668fc2d151f20a02ddbbac7f884258af7fd1268d3aafb5f9e8eadf844b
+R 97d64486b4b391325b5b64691589e23c
 U stephan
-Z a635990442def45b08444596d861233f
+Z 4b42bb50f91a3a3adbedb072d470ff51
 # Remove this line to create a well-formed Fossil manifest.
