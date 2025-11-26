@@ -1,5 +1,5 @@
-C Add\sthe\sbBorder\soption\sto\sthe\sQRF\sspec.\s\sReflect\sthis\sin\sthe\s-border\noption\son\sthe\sTCL\sformat\smethod,\sand\sthe\s--border\soption\sto\s".mode"\nin\sthe\sCLI.\s\sAlso\sadd\sthe\s"psql"\smode\sto\sthe\sCLI.
-D 2025-11-26T16:21:56.554
+C In\sQRF,\sif\sthe\shorizontal\salignment\sis\sQRF_ALIGN_Auto,\sthen\suse\sright\nalignment\sfor\snumeric\svalues\sand\sleft\salignment\sfor\severything\selse.
+D 2025-11-26T17:23:11.968
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -416,8 +416,8 @@ F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f6
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
-F ext/qrf/README.md c63030fbaf2f5ceedc574749a0630da14bdac4f4ffe70415ddb0e64fc9876aa2
-F ext/qrf/qrf.c b134a3d07cea77d27301dca44bcd8d3cd1551cbed7e51c21854bb6fe570995fa
+F ext/qrf/README.md 07dcefad86c259c161d0ec2ee5f8430a88d1645ff9b23f535b7cf27a1c527d32
+F ext/qrf/qrf.c af751995194a62f5cc631a6f19b5c5a2c44211098a983ca5a9e26c6ea2eef311
 F ext/qrf/qrf.h 322d48537a5aa39c206c2ec0764a7938ea7662a8c25be1c4e9d742789609ba1e
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -1440,7 +1440,7 @@ F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
 F test/mmapcorrupt.test 470fb44fe92e99c1d23701d156f8c17865f5b027063c9119dcfdb842791f4465
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
-F test/modeA.clitest 43098858465029ebe9229009fbd59528adf89f265fb82af87fc5c58f7901b2bc
+F test/modeA.clitest e0c63c28e2651dd322e21de683fec7d247028b80f7a753663244ba0087215dc8
 F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test fac575e0b1b852025575a6a8357701d80933e98b5d2fe6d35ddaa68f92f6a1f7
@@ -1512,7 +1512,7 @@ F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/pushdown.test 46a626ef1c0ca79b85296ff2e078b9da20a50e9b804b38f441590c3987580ddd
 F test/qrf01.test 6cef9377ad7defbb9dce75e022304807b75b5f1a7e17d1cafdea05bf076cc7f9
 F test/qrf02.test 39b4afdc000bedccdafc0aecf17638df67a67aaa2d2942865ae6abcc48ba0e92
-F test/qrf03.test 9de53aea459f5a127283db03cbb6011500757685646d21aa3c29c44c6ef23e86
+F test/qrf03.test ad7fa339fb46b26b08625f3a77a4827bdee9f0dad402d8ddc1fcb8f05aa64a54
 F test/qrf04.test 0894692c998d2401dcc33449c02051b503ecce0c94217be54fb007c82d2d1379
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8b0cbc18be3c6f2501b102757af6be98c48044a296104cca7bce822ac2304515
-R 8945f4ddcddcd63749e20ffed7b156be
+P 02cbeb69884cd884d9b1b5f59c4168a3dc24b1a5aecc6967586c0be350b10574
+R 1d443466fd57e9ddd9d39780d34ef6e2
 U drh
-Z 40eaa1e5fedbd407b6fc2b7e3ad849db
+Z a9a3510b1739287ae392b4f4d704735c
 # Remove this line to create a well-formed Fossil manifest.

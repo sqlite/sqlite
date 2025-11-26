@@ -465,8 +465,9 @@ entry for that column takes precedence.  If either the horizontal
 or vertical alignment has an "auto" value for that column or if
 a column is beyond the first nAlign entries, then eDfltAlign
 is used as a backup.  If neither aAlign\[\] nor eDfltAlign
-specify a horizontal alignment, then values are left-aligned
-(QRF_ALIGN_Left).  If neither aAlign\[\] nor eDfltAlign
+specify a horizontal alignment, then values are right-aligned
+(QRF_ALIGN_Right) if they are numeric and left-aligned
+(QRF_ALIGN_Left) otherwise.  If neither aAlign\[\] nor eDfltAlign
 specify a vertical alignment, then values are top-aligned
 (QRF_ALIGN_Top).
 
