@@ -375,7 +375,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      'delete': key
   */
   const notifyListeners = async function(eventName,store,...args){
-    store.listeners.forEach((v)=>{
+    for(const v of store.listeners){
       const f = v?.[eventName];
       if( !f ) return;
       const ev = Object.create(null);
@@ -386,7 +386,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       catch(e){
         warn("notifyListener",store.jzClass,eventName,e);
       }
-    });
+    }
   };
 
   /**

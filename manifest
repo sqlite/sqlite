@@ -1,5 +1,5 @@
-C Internal\skvvfs\sdocs\sand\scleanups.\sWasm\sspeedtest1:\sremove\sthe\shard-coded\s--size=2\slimit\sfor\skvvfs\sand\suse\sa\stransient\sstorage\sobject\sinstead\sof\ssession\sstorage\s(which\sis\slimited\sto\s--size=2).\sFor\ssmall\sjob\ssizes\skvvfs\sis\sroughly\s3x\sthe\sspeed\sof\smemdb\sand\sthat\sgap\sgrows\sas\sthe\s--size\sincreases,\swith\skvvfs\s_really_\sbogging\sdown\son\sthe\s--size=50\sjsonb\stests.
-D 2025-11-26T13:55:20.070
+C Minor\soptimization\sin\skvvfs\sevent\snotification.
+D 2025-11-26T14:22:51.188
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -600,7 +600,7 @@ F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 9654b565b346dc609b75d15337f20acfa7af7d9d558da1afeb9b6d8eaa404966
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js cfa7feabd5db5fd62faef81a2f5e80064e4ee768b33453d9d9e2b38fbf26d447
+F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 3c16758871b5733c2481f67bb0ce1b9ebc84ac2aec9b5429c47484c4d48476ea
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js a2eea6442556867b589e04107796c6e1d04a472219529eeb45b7cd221d7d048b
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 88ce2078267a2d1af57525a32d896295f4a8db7664de0e17e82dc9ff006ed8d3
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 9097074724172e31e56ce20ccd7482259cf72a76124213cbc9469d757676da86
@@ -2178,8 +2178,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9fc6b811d6b0e268be18b768b6a69381606557a1702064b29f0ff4ca7c505cac
-R 7bb0e65fe8224ec5fb003bd562b40cb9
+P 43173267849f7f4b77a9ee15ab586e9deb0e290071149857fe18421fb948a715
+R 4399e25b2c0c760a62be55eff75ae397
 U stephan
-Z c4c5f600a67a1abe0d9c03c1534e75d2
+Z b2881af474b600509e635a0dd3ee7414
 # Remove this line to create a well-formed Fossil manifest.
