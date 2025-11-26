@@ -49,6 +49,14 @@ do_test 1.11b {
 │ x'424c4f42' │     │ 'Ἀμήν'  │
 └─────────────┴─────┴─────────┘
 }
+do_test 1.11c {
+  set result "\n[db format -text sql -border off {SELECT * FROM t1}]"
+} {
+     a      │  b  │    c
+────────────┼─────┼────────
+1           │ 2.5 │ 'three'
+x'424c4f42' │     │ 'Ἀμήν'
+}
 do_test 1.12 {
   set result "\n[db format -text csv {SELECT * FROM t1}]"
 } {
@@ -112,6 +120,15 @@ do_test 1.31 {
 | BLOB |     | Ἀμήν  |
 +------+-----+-------+
 }
+do_test 1.32 {
+  set result "\n[db format -style table -border off {SELECT * FROM t1}]"
+} {
+ a   |  b  |   c
+-----+-----+------
+1    | 2.5 | three
+BLOB |     | Ἀμήν
+}
+
 
 do_test 1.40 {
   set result "\n[db format -style column {SELECT * FROM t1}]"

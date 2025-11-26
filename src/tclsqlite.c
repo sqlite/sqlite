@@ -2065,6 +2065,7 @@ static void DbHookCmd(
 **     -splitcolumn ("auto"|"off"|"on")        Enable split-column mode
 **     -defaultalign ("auto"|"left"|...)       Default alignment
 **     -titalalign ("auto"|"left"|"right"|...) Default column name alignment
+**     -border ("auto"|"off"|"on")             Border for box and table styles
 **     -wrap NUMBER                            Max width of any single column
 **     -screenwidth NUMBER                     Width of the display TTY
 **     -linelimit NUMBER                       Max lines for any cell
@@ -2091,6 +2092,7 @@ static void DbHookCmd(
 **     -splitcolumn      bSplitColumn
 **     -defaultalign     eDfltAlign
 **     -titlealign       eTitleAlign
+**     -border           bBorder
 **     -wrap             nWrap
 **     -screenwidth      nScreenWidth
 **     -linelimit        nLineLimit
@@ -2240,13 +2242,16 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       i++;
     }else if( strcmp(zArg,"-textjsonb")==0
            || strcmp(zArg,"-splitcolumn")==0
+           || strcmp(zArg,"-border")==0
     ){
       int v = 0;
       rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
                               zArg, 0, &v);
       if( rc ) goto format_failed;
-      if( zArg[5]=='j' ){
+      if( zArg[1]=='t' ){
         qrf.bTextJsonb = aBoolMap[v];
+      }else if( zArg[1]=='b' ){
+        qrf.bBorder = aBoolMap[v];
       }else{
         qrf.bSplitColumn = aBoolMap[v];
       }

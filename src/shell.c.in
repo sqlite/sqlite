@@ -1428,15 +1428,16 @@ static const char *qrfQuoteNames[] =
 #define MODE_List     12  /* One record per line with a separator */
 #define MODE_Markdown 13  /* Markdown formatting */
 #define MODE_Off      14  /* No query output shown */
-#define MODE_QBox     15  /* BOX with SQL-quoted content */
-#define MODE_Quote    16  /* Quote values as for SQL */
-#define MODE_Split    17  /* Split-column mode */
-#define MODE_Table    18  /* MySQL-style table formatting */
-#define MODE_Tabs     19  /* Tab-separated values */
-#define MODE_Tcl      20  /* Space-separated list of TCL strings */
-#define MODE_Www      21  /* Full web-page output */
+#define MODE_Psql     15  /* Similar to psql */
+#define MODE_QBox     16  /* BOX with SQL-quoted content */
+#define MODE_Quote    17  /* Quote values as for SQL */
+#define MODE_Split    18  /* Split-column mode */
+#define MODE_Table    19  /* MySQL-style table formatting */
+#define MODE_Tabs     20  /* Tab-separated values */
+#define MODE_Tcl      21  /* Space-separated list of TCL strings */
+#define MODE_Www      22  /* Full web-page output */
 
-#define MODE_BUILTIN  21  /* Maximum built-in mode */
+#define MODE_BUILTIN  22  /* Maximum built-in mode */
 #define MODE_BATCH    50  /* Default mode for batch processing */
 #define MODE_TTY      51  /* Default mode for interactive processing */
 #define MODE_USER     75  /* First user-defined mode */
@@ -1457,6 +1458,7 @@ struct ModeInfo {
   unsigned char bHdr;    /* Show headers by default.  0: n/a, 1: no 2: yes */
   unsigned char eStyle;  /* Underlying QRF style */
   unsigned char eCx;     /* 0: other, 1: line, 2: columnar */
+  unsigned char mFlg;    /* Flags. 1=border-off 2=split-column */
 };
 
 /* String constants used by built-in modes */
@@ -1467,29 +1469,30 @@ static const char *aModeStr[] =
   /* 9    10      11      12                                            */
 
 static const ModeInfo aModeInfo[] = {
-/*   zName      eCSep  eRSep eNull eText eHdr eBlob bHdr eStyle eCx */
-  { "ascii",    7,     6,    9,    1,    1,    0,   1,   12,    0 },
-  { "box",      0,     0,    9,    1,    1,    0,   2,   1,     2 },
-  { "c",        4,     1,    10,   5,    5,    4,   1,   12,    0 },
-  { "column",   0,     0,    9,    1,    1,    0,   2,   2,     2 },
-  { "count",    0,     0,    0,    0,    0,    0,   0,   3,     0 },
-  { "csv",      4,     5,    9,    3,    3,    0,   1,   12,    0 },
-  { "html",     0,     0,    9,    4,    4,    0,   2,   7,     0 },
-  { "insert",   0,     0,    10,   2,    2,    0,   1,   8,     0 },
-  { "jatom",    4,     1,    11,   6,    6,    0,   1,   12,    0 },
-  { "jobject",  0,     1,    11,   6,    6,    0,   0,   10,    0 },
-  { "json",     0,     0,    11,   6,    6,    0,   0,   9,     0 },
-  { "line",     0,     1,    9,    1,    1,    0,   0,   11,    1 },
-  { "list",     2,     1,    9,    1,    1,    0,   1,   12,    0 },
-  { "markdown", 0,     0,    9,    1,    1,    0,   2,   13,    2 },
-  { "off",      0,     0,    0,    0,    0,    0,   0,   14,    0 },
-  { "qbox",     0,     0,    10,   2,    1,    0,   2,   1,     2 },
-  { "quote",    4,     1,    10,   2,    2,    0,   1,   12,    0 },
-  { "split",    0,     0,    9,    1,    1,    0,   1,   2,     2 },
-  { "table",    0,     0,    9,    1,    1,    0,   2,   19,    2 },
-  { "tabs",     8,     1,    9,    3,    3,    0,   1,   12,    0 },
-  { "tcl",      3,     1,    12,   5,    5,    4,   1,   12,    0 },
-  { "www",      0,     0,    9,    4,    4,    0,   2,   7,     0 }
+/*   zName      eCSep  eRSep eNull eText eHdr eBlob bHdr eStyle eCx mFlg */
+  { "ascii",    7,     6,    9,    1,    1,    0,   1,   12,    0,  0 },
+  { "box",      0,     0,    9,    1,    1,    0,   2,   1,     2,  0 },
+  { "c",        4,     1,    10,   5,    5,    4,   1,   12,    0,  0 },
+  { "column",   0,     0,    9,    1,    1,    0,   2,   2,     2,  0 },
+  { "count",    0,     0,    0,    0,    0,    0,   0,   3,     0,  0 },
+  { "csv",      4,     5,    9,    3,    3,    0,   1,   12,    0,  0 },
+  { "html",     0,     0,    9,    4,    4,    0,   2,   7,     0,  0 },
+  { "insert",   0,     0,    10,   2,    2,    0,   1,   8,     0,  0 },
+  { "jatom",    4,     1,    11,   6,    6,    0,   1,   12,    0,  0 },
+  { "jobject",  0,     1,    11,   6,    6,    0,   0,   10,    0,  0 },
+  { "json",     0,     0,    11,   6,    6,    0,   0,   9,     0,  0 },
+  { "line",     0,     1,    9,    1,    1,    0,   0,   11,    1,  0 },
+  { "list",     2,     1,    9,    1,    1,    0,   1,   12,    0,  0 },
+  { "markdown", 0,     0,    9,    1,    1,    0,   2,   13,    2,  0 },
+  { "off",      0,     0,    0,    0,    0,    0,   0,   14,    0,  0 },
+  { "psql",     0,     0,    9,    1,    1,    0,   2,   19,    2,  1 },
+  { "qbox",     0,     0,    10,   2,    1,    0,   2,   1,     2,  0 },
+  { "quote",    4,     1,    10,   2,    2,    0,   1,   12,    0,  0 },
+  { "split",    0,     0,    9,    1,    1,    0,   1,   2,     2,  2 },
+  { "table",    0,     0,    9,    1,    1,    0,   2,   19,    2,  0 },
+  { "tabs",     8,     1,    9,    3,    3,    0,   1,   12,    0,  0 },
+  { "tcl",      3,     1,    12,   5,    5,    4,   1,   12,    0,  0 },
+  { "www",      0,     0,    9,    4,    4,    0,   2,   7,     0,  0 }
 };     /*       |     /     /      |     /    /     |    |       \
        **       |    /     /       |    /    /      |    |        \_ 2: columnar
        ** Index into aModeStr[]    |   /    /       |    |           1: line
@@ -1615,7 +1618,12 @@ static void modeChange(ShellState *p, unsigned char eMode){
     pM->spec.eBlob = pI->eBlob;
     pM->spec.bTitles = pI->bHdr;
     pM->spec.eTitle = pI->eHdr;
-    if( eMode==MODE_Split ){
+    if( pI->mFlg & 0x01 ){
+      pM->spec.bBorder = QRF_No;
+    }else{
+      pM->spec.bBorder = QRF_Auto;
+    }
+    if( pI->mFlg & 0x02 ){
       pM->spec.bSplitColumn = QRF_Yes;
       pM->bAutoScreenWidth = 1;
     }else{
@@ -7675,6 +7683,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            Unspecified alignment defaults to 'L'.
 **   --blob-quote ARG         ARG can be "auto", "text", "sql", "hex", "tcl",
 **                            "json", or "size".  Default is "auto".
+**   --border on|off          Show outer border on "box" and "table" modes.
 **   --charlimit N            Set the maximum number of output characters to
 **                            show for any single SQL value to N. Longer values
 **                            truncated. Zero means "no limit".
@@ -7791,6 +7800,16 @@ static int dotCmdMode(ShellState *p){
         ** Must match QRF_BLOB_xxxx values.  See also tag-20251124a */
       if( k>=0 ){
         p->mode.spec.eBlob = k & 0xff;
+      }
+      chng = 1;
+    }else if( optionMatch(z,"border") ){
+      if( (++i)>=nArg ){
+        dotCmdError(p, i-1, "missing argument", 0);
+        return 1;
+      }
+      k = pickStr(azArg[i], 0, "auto", "off", "on", "");
+      if( k>=0 ){
+        p->mode.spec.bBorder = k & 0x3;
       }
       chng = 1;
     }else if( 0<=(k=pickStr(z,0,"-charlimit","-linelimit","")) ){
@@ -8094,6 +8113,12 @@ static int dotCmdMode(ShellState *p){
         sqlite3_str_appendchar(pDesc, 1, "LLCR"[a&3]);
       }
       sqlite3_str_append(pDesc, "\"", 1);
+    }
+    if( bAll
+     || (p->mode.spec.bBorder==QRF_No) != ((pI->mFlg&1)!=0)
+    ){
+      sqlite3_str_appendf(pDesc," --border %s",
+             p->mode.spec.bBorder==QRF_No ? "off" : "on");
     }
     if( bAll || p->mode.spec.eBlob!=QRF_BLOB_Auto ){
       const char *azBQuote[] =
@@ -12807,6 +12832,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       modeChange(&data, MODE_Markdown);
     }else if( cli_strcmp(z,"-table")==0 ){
       modeChange(&data, MODE_Table);
+    }else if( cli_strcmp(z,"-psql")==0 ){
+      modeChange(&data, MODE_Psql);
     }else if( cli_strcmp(z,"-box")==0 ){
       modeChange(&data, MODE_Box);
     }else if( cli_strcmp(z,"-csv")==0 ){

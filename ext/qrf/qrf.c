@@ -1370,13 +1370,24 @@ static int qrfColDataEnlarge(qrfColData *p){
 static void qrfRowSeparator(sqlite3_str *pOut, qrfColData *p, char cSep){
   int i;
   if( p->nCol>0 ){
-    sqlite3_str_append(pOut, &cSep, 1);
-    sqlite3_str_appendchar(pOut, p->a[0].w+p->nMargin, '-');
-    for(i=1; i<p->nCol; i++){
+    int endMargin;
+    int useBorder = p->p->spec.bBorder!=QRF_No;
+    if( useBorder ){
       sqlite3_str_append(pOut, &cSep, 1);
-      sqlite3_str_appendchar(pOut, p->a[i].w+p->nMargin, '-');
+      endMargin = p->nMargin;
+    }else{
+      endMargin = p->nCol>1 ? p->nMargin/2 : 0;
     }
-    sqlite3_str_append(pOut, &cSep, 1);
+    sqlite3_str_appendchar(pOut, p->a[0].w+endMargin, '-');
+    for(i=1; i<p->nCol; i++){
+      int w = p->a[i].w;
+      w += (i+1)==p->nCol ? endMargin : p->nMargin;
+      sqlite3_str_append(pOut, &cSep, 1);
+      sqlite3_str_appendchar(pOut, w, '-');
+    }
+    if( useBorder ){
+      sqlite3_str_append(pOut, &cSep, 1);
+    }
   }
   sqlite3_str_append(pOut, "\n", 1);
 }
@@ -1434,13 +1445,24 @@ static void qrfBoxSeparator(
 ){
   int i;
   if( p->nCol>0 ){
-    sqlite3_str_appendall(pOut, zSep1);
-    qrfBoxLine(pOut, p->a[0].w+p->nMargin);
-    for(i=1; i<p->nCol; i++){
-      sqlite3_str_appendall(pOut, zSep2);
-      qrfBoxLine(pOut, p->a[i].w+p->nMargin);
+    int endMargin;
+    int useBorder = p->p->spec.bBorder!=QRF_No;
+    if( useBorder ){
+      sqlite3_str_appendall(pOut, zSep1);
+      endMargin = p->nMargin;
+    }else{
+      endMargin = p->nCol>1 ? p->nMargin/2 : 0;
     }
-    sqlite3_str_appendall(pOut, zSep3);
+    qrfBoxLine(pOut, p->a[0].w+endMargin);
+    for(i=1; i<p->nCol; i++){
+      int w = p->a[i].w;
+      w += i==p->nCol-1 ? endMargin : p->nMargin;     
+      sqlite3_str_appendall(pOut, zSep2);
+      qrfBoxLine(pOut, w);
+    }
+    if( useBorder ){
+      sqlite3_str_appendall(pOut, zSep3);
+    }
   }
   sqlite3_str_append(pOut, "\n", 1);
 }
@@ -1608,6 +1630,7 @@ static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
     sepW = pData->nCol*2 - 2;
   }else{
     sepW = pData->nCol*3 + 1;
+    if( p->spec.bBorder==QRF_No ) sepW -= 4;
   }
   nCol = pData->nCol;
   for(i=sumW=0; i<nCol; i++) sumW += pData->a[i].w;
@@ -1619,6 +1642,7 @@ static void qrfRestrictScreenWidth(qrfColData *pData, Qrf *p){
     sepW = pData->nCol - 1;
   }else{
     sepW = pData->nCol + 1;
+    if( p->spec.bBorder==QRF_No ) sepW -= 2;
   }
   targetW = p->spec.nScreenWidth - sepW;
 
@@ -1691,6 +1715,7 @@ static void qrfColumnar(Qrf *p){
   /* Initialize the data container */
   memset(&data, 0, sizeof(data));
   data.nCol = p->nCol;
+  data.p = p;
   data.a = sqlite3_malloc64( nColumn*sizeof(struct qrfPerCol) );
   if( data.a==0 ){
     qrfOom(p);
@@ -1821,7 +1846,12 @@ static void qrfColumnar(Qrf *p){
         colSep = BOX_13;
         rowSep = BOX_13 "\n";
       }
-      qrfBoxSeparator(p->pOut, &data, BOX_23, BOX_234, BOX_34);
+      if( p->spec.bBorder==QRF_No){
+        rowStart = "";
+        rowSep = "\n";
+      }else{
+        qrfBoxSeparator(p->pOut, &data, BOX_23, BOX_234, BOX_34);
+      }
       break;
     case QRF_STYLE_Table:
       if( data.nMargin ){
@@ -1833,7 +1863,12 @@ static void qrfColumnar(Qrf *p){
         colSep = "|";
         rowSep = "|\n";
       }
-      qrfRowSeparator(p->pOut, &data, '+');
+      if( p->spec.bBorder==QRF_No ){
+        rowStart = "";
+        rowSep = "\n";
+      }else{
+        qrfRowSeparator(p->pOut, &data, '+');
+      }
       break;
     case QRF_STYLE_Column: {
       static const char zSpace[] = "     ";
@@ -1865,7 +1900,15 @@ static void qrfColumnar(Qrf *p){
   szColSep = (int)strlen(colSep);
 
   bWW = (p->spec.bWordWrap==QRF_Yes && data.bMultiRow);
-  bRTrim = (p->spec.eStyle==QRF_STYLE_Column);
+  if( p->spec.eStyle==QRF_STYLE_Column
+   || (p->spec.bBorder==QRF_No
+       && (p->spec.eStyle==QRF_STYLE_Box || p->spec.eStyle==QRF_STYLE_Table)
+      )
+  ){
+    bRTrim = 1;
+  }else{
+    bRTrim = 0;
+  }
   for(i=0; i<data.n; i+=nColumn){
     int bMore;
     int nRow = 0;
@@ -1968,13 +2011,15 @@ static void qrfColumnar(Qrf *p){
   }
 
   /* Draw the line across the bottom of the table */
-  switch( p->spec.eStyle ){
-    case QRF_STYLE_Box:
-      qrfBoxSeparator(p->pOut, &data, BOX_12, BOX_124, BOX_14);
-      break;
-    case QRF_STYLE_Table:
-      qrfRowSeparator(p->pOut, &data, '+');
-      break;
+  if( p->spec.bBorder!=QRF_No ){
+    switch( p->spec.eStyle ){
+      case QRF_STYLE_Box:
+        qrfBoxSeparator(p->pOut, &data, BOX_12, BOX_124, BOX_14);
+        break;
+      case QRF_STYLE_Table:
+        qrfRowSeparator(p->pOut, &data, '+');
+        break;
+    }
   }
   qrfWrite(p);
 

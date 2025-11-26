@@ -75,6 +75,7 @@ struct sqlite3_qrf_spec {
   unsigned char eDfltAlign;   /* Default alignment, no covered by aAlignment */
   unsigned char eTitleAlign;  /* Alignment for column headers */
   unsigned char bSplitColumn; /* Wrap single-column output into many columns */
+  unsigned char bBorder;      /* Show outer border in Box and Table styles */
   short int nWrap;            /* Wrap columns wider than this */
   short int nScreenWidth;     /* Maximum overall table width */
   short int nLineLimit;       /* Maximum number of lines for any row */
@@ -587,8 +588,12 @@ to draw the grid. The **Column** arranges the results in neat columns
 but does not draw in column or row separator, except that it does draw
 lines horizontal lines using "`-`" characters to separate the column names
 from the data below.  This is very similar to default output styling in
-psql.  The **Markdown** renders its result in the
-Markdown table format.
+psql.  The **Markdown** renders its result in the Markdown table format.
+
+The **Box** and **Table** styles normally have a border that surrounds
+the entire result.  However, if sqlite3_qrf_spec.bBorder is QRF_No, then
+that border is omitted, saving a little space both horizontally and
+vertically.
 
 #### 4.2.1 Split Column Mode
 
