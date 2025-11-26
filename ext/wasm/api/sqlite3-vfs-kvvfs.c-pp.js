@@ -721,7 +721,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         let i = 0;
         const npOut = Number(pOut);
         for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
-        return i;
+        return nOut;
       },
 
       xGetLastError: function(pVfs,nOut,pOut){
@@ -734,13 +734,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             wasm.cstrncpy(pOut, cMsg, nOut);
             if(n > nOut) wasm.poke8(wasm.ptr.add(pOut,nOut,-1), 0);
             debug("set xGetLastError",e.message);
+            return (e.resultCode | 0) || capi.SQLITE_IOERR;
           }catch(e){
             return capi.SQLITE_NOMEM;
           }finally{
             wasm.scopedAllocPop(scope);
           }
         }
-        return e ? ((e.resultCode | 0) || capi.SQLITE_IOERR) : 0;
+        return 0;
       }
 
 //#if nope
@@ -786,7 +787,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           return 0;
         }catch(e){
           error("xClose",e);
-          return capi.SQLITE_ERROR;
+          return cache.setError(e);
         }
       },
 
@@ -821,7 +822,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           return originalIoMethods(h.file).xFileControl(pFile, opId, pArg);
         }catch(e){
           error("xFileControl",e);
-          return capi.SQLITE_ERROR;
+          return cache.setError(e);
         }
       },
 
