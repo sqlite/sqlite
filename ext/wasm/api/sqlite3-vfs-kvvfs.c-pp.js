@@ -1322,11 +1322,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     sqlite3.kvvfs.test = {
       pFileHandles,
       cache,
+      storageForZClass,
       KVVfsStorage
     };
   }
 
-  if( globalThis.localStorage || globalThis.sessionStorage ){
+  if( globalThis.Storage ){
     /**
        Prior to version 2, kvvfs was only available in the main
        thread.  We retain that for the v1 APIs, exposing them only in

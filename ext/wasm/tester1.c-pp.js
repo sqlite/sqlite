@@ -2886,8 +2886,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         const capi = sqlite3.capi;
         if( isUIThread() ){
-          T.assert( capi.sqlite3_js_kvvfs_clear )
-            .assert( capi.sqlite3_js_kvvfs_size );
+          T.assert( !!capi.sqlite3_js_kvvfs_size )
+            .assert( !!capi.sqlite3_js_kvvfs_clear );
         }else{
           /* Historical behaviour retained not for compatibility but
              to help avoid some confusion between the v1 and v2 kvvfs
