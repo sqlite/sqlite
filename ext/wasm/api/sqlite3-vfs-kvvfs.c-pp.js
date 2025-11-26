@@ -194,26 +194,35 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      Throws if storage name n is not valid for use as a storage name.
-     This is intended for the high-level APIs, not the low-level ones.
+     Much of this goes back to kvvfs having a fixed buffer size for
+     its keys, and the storage name needing to be encoded in the keys
+     for local/session storage. We disallow non-ASCII to avoid
+     problems with truncated multibyte characters at the end of the
+     key buffer.
+
+     The second argument must only be true when called from xOpen() -
+     it makes names with a "-journal" suffix legal.
   */
   const validateStorageName = function(n,mayBeJournal=false){
+    if( kvvfsIsPersistentName(n) ) return;
+    const len = n.length;
+    if( !len ) toss3(capi.SQLITE_RANGE, "Empty name is not permitted.");
     let maxLen = cache.keySize - 1;
     if( cache.rxJournalSuffix.test(n) ){
       if( !mayBeJournal ){
-        toss3(capi.SQLITE_MISUSE, "Storage names may not have a '-journal' suffix.");
+        toss3(capi.SQLITE_MISUSE,
+              "Storage names may not have a '-journal' suffix.");
       }
     }else{
       maxLen -= 8 /* "-journal" */;
     }
-    const len = n.length;
-    if( !len ) toss3(capi.SQLITE_RANGE,"Empty name is not permitted.");
     if( len > maxLen ){
       toss3(capi.SQLITE_RANGE, "Storage name is too long. Limit =", maxLen);
     }
     let i;
     for( i = 0; i < len; ++i ){
       const ch = n.codePointAt(i);
-      if( ch<45 || (ch & 0x80) ){
+      if( ch<45 || ch >126 ){
         toss3(capi.SQLITE_RANGE,
               "Illegal character ("+ch+"d) in storage name:",n);
       }
@@ -322,6 +331,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       cache.storagePool.session = newStorageObj('session', globalThis.sessionStorage);
     }
   }
+
+  cache.builtinStorageNames = Object.keys(cache.storagePool);
+
+  const isBuiltinName = (n)=>cache.builtinStorageNames.indexOf(n)>-1;
 
   /* Add "-journal" twins for each cache.storagePool entry... */
   for(const k of Object.keys(cache.storagePool)){
@@ -854,9 +867,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                    /* Native is SQLITE_KVOS_SZ is 133073 as of this writing */ );
       for(const e of Object.entries(methodOverrides.recordHandler)){
         // Overwrite kvvfsMethods's callbacks
-        recordHandler[e[0]] = e[1];
-        kvvfsMethods[kvvfsMethods.memberKey(e[0])] =
-          wasm.installFunction(kvvfsMethods.memberSignature(e[0]), e[1]);
+        const k = e[0], f = e[1];
+        recordHandler[k] = f;
+        if( 0 ){
+          // bug: this should work
+          kvvfsMethods.installMethod(k, f);
+        }else{
+          kvvfsMethods[kvvfsMethods.memberKey(k)] =
+            wasm.installFunction(kvvfsMethods.memberSignature(k), f);
+        }
       }
       for(const e of Object.entries(methodOverrides.vfs)){
         // Overwrite some pVfs entries and stash the original impls
@@ -1179,7 +1198,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      reference count by 1.
 
      This is a no-op if name ends in "-journal" or refers to a
-     built-in storage object ('local', 'session', or 'localThread').
+     built-in storage object.
 
      It will not lower the refcount below the number of
      currently-opened db/journal files for the storage (so that it
@@ -1196,7 +1215,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const store = storageForZClass(name);
     if( !store
         || kvvfsIsPersistentName(store.jzClass)
-        || 'localThread'===store.jzClass
+        || isBuiltinName(store.jzClass)
         || cache.rxJournalSuffix.test(name) ) return false;
     if( store.refc > store.files.length || 0===store.files.length ){
       if( --store.refc<=0 ){
