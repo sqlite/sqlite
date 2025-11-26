@@ -212,7 +212,8 @@ proc default_njob {} {
   if {$nCore<=2} {
     set nHelper 1
   } else {
-    set nHelper [expr int($nCore*0.5)]
+    set nHelper [expr int($nCore*0.8)]
+    if {$nHelper>20} {set nHelper 20}
   }
   return $nHelper
 }

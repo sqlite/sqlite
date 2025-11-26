@@ -1,5 +1,5 @@
-C When\s"testrunner.tcl\sstatus\s-d\sN"\sis\srun\sbut\sthe\stest\sdatabase\sis\snot\syet\navailable,\sit\senters\sa\swait\sloop\suntil\sthe\stesting\sbegins.
-D 2025-11-25T23:59:31.304
+C Tweak\stestrunner.tcl\sto\sallow\sit\sto\suse\smore\scores.
+D 2025-11-26T00:41:20.521
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1701,7 +1701,7 @@ F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 463ae33b8bf75ac77451df19bd65e7c415c2e9891227c7c9e657d0a2d8e1074a
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
-F test/testrunner.tcl 2978373673f9cc30fe65fe0f87bbde05b17f1ce32a65fa0b45fef3ce55fbfee6 x
+F test/testrunner.tcl 6cbda5d6ff9b26b11993f1e1ddd57d9521cec7c31676ad323a40a6821ce43ad6 x
 F test/testrunner_data.tcl c507a9afa911c03446ed90442ffd4a98aca02882c3d51bd1177c24795674def8
 F test/testrunner_estwork.tcl 81e2ae10238f50540f42fbf2d94913052a99bfb494b69e546506323f195dcff9
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bf54e5fccdf7cd274f3e91a7fd4a23c85f42c0e3163d84ecdb5b9097bdc940d8
-R 7b21d952c4c39595261c74f40aecd6ae
+P 7abc25ff3b24b11c171e715ae96c8e97651d340b7a8bb8125a73902e1ad881ab
+R 103fa8dd39f94842edbe1608f4d19416
 U drh
-Z 60c548eaef43d37f5a69056783f36dc5
+Z ae9a19174981b00522b41b1e47738b84
 # Remove this line to create a well-formed Fossil manifest.
