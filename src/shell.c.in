@@ -8014,12 +8014,12 @@ static int dotCmdMode(ShellState *p){
       ** specify, so strlen(zW) bytes should be plenty of space to hold the
       ** result. */
       aWidth = malloc( strlen(zW) );
-      while( isspace(zW[0]) ) zW++;
+      while( IsSpace(zW[0]) ) zW++;
       while( zW[0] ){
         int w = 0;
         int nDigit = 0;
-        k = zW[0]=='-' && isdigit(zW[1]);
-        while( isdigit(zW[k]) ){
+        k = zW[0]=='-' && IsDigit(zW[1]);
+        while( IsDigit(zW[k]) ){
           w = w*10 + zW[k] - '0';
           if( w>QRF_MAX_WIDTH ){
             dotCmdError(p,i+1,"width too big",
@@ -8040,7 +8040,7 @@ static int dotCmdMode(ShellState *p){
         aWidth[nWidth++] = w;
         zW += k;
         if( zW[0]==',' ) zW++;
-        while( isspace(zW[0]) ) zW++;
+        while( IsSpace(zW[0]) ) zW++;
       }
       free(p->mode.spec.aWidth);
       p->mode.spec.aWidth = aWidth;
