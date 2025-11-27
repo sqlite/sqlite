@@ -1,5 +1,5 @@
-C Fix\sa\sCLI\stest\scase\sdue\sto\sa\schange\sin\serror\smessage\stext.
-D 2025-11-27T10:57:06.444
+C Ensure\sthat\sthe\ssplit-column\stransformer\sin\sQRF\scorrectly\ntransforms\sthe\sabNum&#91;&#93;\sarray.
+D 2025-11-27T11:29:14.492
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 86fc5c3c5e3eddbe54fc1235cbdc52b8c2c0732791d224345c3014cd45c4c0e7
-F ext/qrf/qrf.c f5dfef8bcd71144bc57023b875363101f89ab332f13593aed49361cdce8be19e
+F ext/qrf/qrf.c 1e2d384f76cdc12f05ca9177116926d9f42eaf04ad8e44d16a7ca1e40fba45fd
 F ext/qrf/qrf.h 322d48537a5aa39c206c2ec0764a7938ea7662a8c25be1c4e9d742789609ba1e
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fd9158e6359a85c509e29ddbb333e5ee5d20aae5dc38cd14425286e5f3764b06
-R ef4d88838467fa22227740006b065978
+P cf45d534d63878b00d949234e81cf9c67db7d7067bbac2fd5cd1780463fcce06
+R f218e4b551adf7251e42fcbdc0f4ddeb
 U drh
-Z 5a61d4ecd1de4c0999cdb6379e8f8e90
+Z 49054ea308cf65a4fcce75e77038ee99
 # Remove this line to create a well-formed Fossil manifest.

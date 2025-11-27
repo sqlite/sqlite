@@ -1544,6 +1544,7 @@ static void qrfSplitColumn(qrfColData *pData, Qrf *p){
   int *aw = 0;
   char **az = 0;
   int *aiWth = 0;
+  unsigned char *abNum = 0;
   int nColNext = 2;
   int w;
   struct qrfPerCol *a = 0;
@@ -1582,9 +1583,18 @@ static void qrfSplitColumn(qrfColData *pData, Qrf *p){
     qrfOom(p);
     return;
   }
+  abNum = sqlite3_malloc64( nRow*nCol );
+  if( abNum==0 ){
+    sqlite3_free(az);
+    sqlite3_free(aiWth);
+    sqlite3_free(a);
+    qrfOom(p);
+    return;
+  }
   for(i=0; i<pData->n; i++){
     sqlite3_int64 j = (i%nRow)*nCol + (i/nRow);
     az[j] = pData->az[i];
+    abNum[j]= pData->abNum[i];
     pData->az[i] = 0;
     aiWth[j] = pData->aiWth[i];
   }
@@ -1593,6 +1603,7 @@ static void qrfSplitColumn(qrfColData *pData, Qrf *p){
     az[j] = sqlite3_mprintf("");
     if( az[j]==0 ) qrfOom(p);
     aiWth[j] = 0;
+    abNum[j] = 0;
     i++;
   }
   for(i=0; i<nCol; i++){
@@ -1602,10 +1613,12 @@ static void qrfSplitColumn(qrfColData *pData, Qrf *p){
   sqlite3_free(pData->az);
   sqlite3_free(pData->aiWth);
   sqlite3_free(pData->a);
+  sqlite3_free(pData->abNum);
   sqlite3_free(aw);
   pData->az = az;
   pData->aiWth = aiWth;
   pData->a = a;
+  pData->abNum = abNum;
   pData->nCol = nCol;
   pData->n = pData->nAlloc = nRow*nCol;
   for(i=w=0; i<nCol; i++) w += a[i].w;
