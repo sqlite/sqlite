@@ -760,7 +760,8 @@ static int fts3PendingTermsAddOne(
 
   pList = (PendingList *)fts3HashFind(pHash, zToken, nToken);
   if( pList ){
-    p->nPendingData -= (pList->nData + nToken + sizeof(Fts3HashElem));
+    assert( pList->nData+nToken+sizeof(Fts3HashElem) <= (i64)p->nPendingData );
+    p->nPendingData -= (int)(pList->nData + nToken + sizeof(Fts3HashElem));
   }
   if( fts3PendingListAppend(&pList, p->iPrevDocid, iCol, iPos, &rc) ){
     if( pList==fts3HashInsert(pHash, zToken, nToken, pList) ){
@@ -773,7 +774,9 @@ static int fts3PendingTermsAddOne(
     }
   }
   if( rc==SQLITE_OK ){
-    p->nPendingData += (pList->nData + nToken + sizeof(Fts3HashElem));
+    assert( (i64)p->nPendingData + pList->nData + nToken
+             + sizeof(Fts3HashElem) <= 0x3fffffff );
+    p->nPendingData += (int)(pList->nData + nToken + sizeof(Fts3HashElem));
   }
   return rc;
 }

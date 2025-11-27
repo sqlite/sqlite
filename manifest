@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sQRF\sREADME.md\sfile\sto\shelp\sclarify\show\sto\suse\sit.
-D 2025-11-26T22:58:26.158
+C Fix\stwo\sharmless\scompiler\swarnings\sin\sFTS3.
+D 2025-11-27T01:32:07.012
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -97,7 +97,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c f3d75a37ed00046dce83068ca5f8045f54093ace54f823fe74216b5bb26008c8
+F ext/fts3/fts3_write.c 66abcd0a35c722ad13ea73d4c31fc7773b9a01b35d434ad945cbf17b4f2563bd
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 413c346399159df81f86c4928b7c4a455caab73bfbc8cd68f950f632e5751674
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2892aaeed9f55ad87791491068493c2e530eeff4194d156f16745d185760797c
-R 47643b76f3fa2e8ace4e989a9a6981ec
+P ff589e9e0da99e2248bc7a8bff37e1deb7cbdf8285c18467acd89b65c67401d3
+R c9751be75431aa424843f0ad1b623f1c
 U drh
-Z d304c4e1d952783653a628c674b5ed4e
+Z 83bc9a6ee1152da31fdf309791316bbb
 # Remove this line to create a well-formed Fossil manifest.
