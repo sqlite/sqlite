@@ -12778,7 +12778,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #else
     cli_printf(stderr,
                     "%s: Error: no database filename specified\n", Argv0);
-    return 1;
+    rc = 1;
+    goto shell_main_exit;
 #endif
   }
   data.out = stdout;
@@ -12920,7 +12921,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-version")==0 ){
       cli_printf(stdout, "%s %s (%d-bit)\n",
             sqlite3_libversion(), sqlite3_sourceid(), 8*(int)sizeof(char*));
-      return 0;
+      rc = 0;
+      goto shell_main_exit;
     }else if( cli_strcmp(z,"-interactive")==0 ){
       /* Need to check for interactive override here to so that it can
       ** affect console setup (for Windows only) and testing thereof.
@@ -12977,25 +12979,29 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
         rc = do_meta_command(z, &data);
-        if( rc && bail_on_error ) return rc==2 ? 0 : rc;
+        if( rc && bail_on_error ){
+          if( rc==2 ) rc = 0;
+          goto shell_main_exit;
+        }
       }else{
         open_db(&data, 0);
         rc = shell_exec(&data, z, &zErrMsg);
         if( zErrMsg!=0 ){
           shellEmitError(zErrMsg);
           sqlite3_free(zErrMsg);
-          if( bail_on_error ) return rc!=0 ? rc : 1;
+          if( !rc ) rc = 1;
         }else if( rc!=0 ){
           cli_printf(stderr,"Error: unable to process SQL \"%s\"\n", z);
-          if( bail_on_error ) return rc;
         }
+        if( bail_on_error ) goto shell_main_exit;
       }
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
     }else if( cli_strncmp(z, "-A", 2)==0 ){
       if( nCmd>0 ){
         cli_printf(stderr,"Error: cannot mix regular SQL or dot-commands"
               " with \"%s\"\n", z);
-        return 1;
+        rc = 1;
+        goto shell_main_exit;
       }
       open_db(&data, OPEN_DB_ZIPFILE);
       if( z[2] ){
