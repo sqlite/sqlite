@@ -13015,7 +13015,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else{
       cli_printf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       eputz("Use -help for a list of options.\n");
-      return 1;
+      rc = 1;
+      goto shell_main_exit;
     }
   }
 
