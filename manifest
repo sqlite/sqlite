@@ -1,5 +1,5 @@
-C Fix\stwo\sharmless\scompiler\swarnings\sin\sFTS3.
-D 2025-11-27T01:32:07.012
+C Fix\sa\sCLI\stest\scase\sdue\sto\sa\schange\sin\serror\smessage\stext.
+D 2025-11-27T10:57:06.444
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1607,7 +1607,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 6c52e65970de30512aed6346d75b3392627e99ab26542f6e8af882f0e6617360
+F test/shell1.test f377091779c4099619e78e1f55a0a12513eaac55d5073a14ca6545c6742c746c
 F test/shell2.test 103140814bdc7508aa41dd3462413cbc4aa84b4261112cb8d501d74275cb7d48
 F test/shell3.test 840192774cc4edf7653520c0434a311c7477b9bc324abbc7bd2887915792fa8c
 F test/shell4.test e25580a792b7b54560c3a76b6968bd8189261f38979fe28e6bc6312c5db280db
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ff589e9e0da99e2248bc7a8bff37e1deb7cbdf8285c18467acd89b65c67401d3
-R c9751be75431aa424843f0ad1b623f1c
+P fd9158e6359a85c509e29ddbb333e5ee5d20aae5dc38cd14425286e5f3764b06
+R ef4d88838467fa22227740006b065978
 U drh
-Z 83bc9a6ee1152da31fdf309791316bbb
+Z 5a61d4ecd1de4c0999cdb6379e8f8e90
 # Remove this line to create a well-formed Fossil manifest.

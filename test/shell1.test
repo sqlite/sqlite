@@ -931,7 +931,7 @@ do_test shell1-4.1.6 {
                          (4,2.25), (5,'hello'), (6,x'807f');
   }
   catchcmd test2.db {.dump --preserve-rowids}
-} {1 {The --preserve-rowids option is not compatible with SQLITE_OMIT_VIRTUALTABLE}}
+} {/.* --preserve-rowids option is not compatible with SQLITE_OMIT_VIRTUALTABLE/}
 
 }
 
