@@ -1383,7 +1383,7 @@ all: tester1
 #
 # jquery.terminal support for fiddle:
 #
-# If a _built_ checkout of https://github.com/jcubic/jquery.terminal
+# If a clone of https://github.com/jcubic/jquery.terminal
 # is found in $(JQTERM), defaulting to $(HOME)/src/jquery.terminal
 # then add jquery.terminal support to fiddle.
 #
