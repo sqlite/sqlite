@@ -49,6 +49,14 @@ do_test 1.11b {
 │ x'424c4f42' │     │ 'Ἀμήν'  │
 └─────────────┴─────┴─────────┘
 }
+do_test 1.11c {
+  set result "\n[db format -text sql -border off {SELECT * FROM t1}]"
+} {
+      a      │  b  │    c
+─────────────┼─────┼─────────
+ 1           │ 2.5 │ 'three'
+ x'424c4f42' │     │ 'Ἀμήν'
+}
 do_test 1.12 {
   set result "\n[db format -text csv {SELECT * FROM t1}]"
 } {
@@ -76,7 +84,7 @@ do_test 1.14 {
 do_test 1.15 {
   catch {db format -text sql -blob unk {SELECT * FROM t1}} res
   set res
-} {bad BLOB encoding (-blob) "unk": must be auto, hex, json, tcl, text, or sql}
+} {bad BLOB encoding (-blob) "unk": must be auto, hex, json, tcl, text, sql, or size}
 do_test 1.16 {
   catch {db format -text sql -style unk {SELECT * FROM t1}} res
   set res
@@ -112,20 +120,58 @@ do_test 1.31 {
 | BLOB |     | Ἀμήν  |
 +------+-----+-------+
 }
+do_test 1.32 {
+  set result "\n[db format -style table -border off {SELECT * FROM t1}]"
+} {
+  a   |  b  |   c
+------+-----+-------
+    1 | 2.5 | three
+ BLOB |     | Ἀμήν
+}
+do_test 1.33 {
+  set result "\n[db format -style table -border off \
+                 -screenwidth 15 \
+                 {SELECT * FROM t1}]"
+} {
+ a  | b |  c
+----+---+-----
+   1|2.5|three
+BLOB|   |Ἀμήν
+}
+do_test 1.34 {
+  set result "\n[db format -style box -border off \
+                 -screenwidth 30 \
+                 {SELECT * FROM t1}]"
+} {
+  a   │  b  │   c
+──────┼─────┼───────
+    1 │ 2.5 │ three
+ BLOB │     │ Ἀμήν
+}
+do_test 1.35 {
+  set result "\n[db format -style box -border off \
+                 -screenwidth 15 \
+                 {SELECT * FROM t1}]"
+} {
+ a  │ b │  c
+────┼───┼─────
+   1│2.5│three
+BLOB│   │Ἀμήν
+}
 
 do_test 1.40 {
   set result "\n[db format -style column {SELECT * FROM t1}]"
 } {
-a     b    c    
+a     b    c
 ----  ---  -----
 1     2.5  three
-BLOB       Ἀμήν 
+BLOB       Ἀμήν
 }
 do_test 1.41 {
   set result "\n[db format -style column -title off {SELECT * FROM t1}]"
 } {
 1     2.5  three
-BLOB       Ἀμήν 
+BLOB       Ἀμήν
 }
 
 do_test 1.50 {
@@ -137,19 +183,19 @@ do_test 1.60a {
 } "1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.60b {
   db format -style csv -columnsep xyz -rowsep pqr -text sql -blob sql {SELECT * FROM t1}
-} "1,2.5,three\r\nBLOB,,\"Ἀμήν\"\r\n"
+} "1,2.5,three\r\nx'424c4f42',,\"Ἀμήν\"\r\n"
 do_test 1.61a {
   db format -style list -columnsep , -rowsep \r\n -text csv -title auto -blob tcl {SELECT * FROM t1}
 } "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.61b {
   db format -style csv -title auto -blob tcl {SELECT * FROM t1}
-} "a,b,c\r\n1,2.5,three\r\nBLOB,,\"Ἀμήν\"\r\n"
+} "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.62a {
   db format -style list -columnsep , -rowsep \r\n -text csv -title csv -blob tcl {SELECT a AS 'a x y', b, c FROM t1}
 } "\"a x y\",b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 do_test 1.62b {
   db format -style csv -title csv -blob tcl {SELECT a AS 'a x y', b, c FROM t1}
-} "\"a x y\",b,c\r\n1,2.5,three\r\nBLOB,,\"Ἀμήν\"\r\n"
+} "\"a x y\",b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
 
 do_test 1.70 {
   set result "\n[db format -style html {SELECT * FROM t1}]"
@@ -683,15 +729,15 @@ do_test 5.3c {
                  -text plain -esc off -textjsonb no \
                    -wordwrap yes -linelimit 2 $sql]"
 } {
-    name        mtime        time         value     
+    name        mtime        time         value
 ------------  ----------  ----------  --------------
 sample-jsonb  1333101221  2012-03-30  x'cc7c57616c70
                             09:53:41  6861b535332e31
                                                  ...
 
-    one       1333206973  2012-03-31                
-    two                     15:16:13                
-    ...                                             
+    one       1333206973  2012-03-31
+    two                     15:16:13
+    ...
 
  entry-one    1708791504  2024-02-24  x'000000000000
                             16:18:24  00000000000000
@@ -730,31 +776,6 @@ do_test 6.1a {
 } {
 1,2.5,"three","\064\040\050\146\157\165\162\051",NULL
 }
-do_test 6.1b {
-  set result "\n[db format -style list -null NULL \
-                 -text tcl -columnsep , -textnull off \
-                 {SELECT * FROM t2}]"
-} {
-1,2.5,"three","\064\040\050\146\157\165\162\051",NULL
-}
-do_test 6.1c {
-  set result "\n[db format -style list -null NULL \
-                 -text tcl -columnsep , -textnull auto \
-                 {SELECT * FROM t2}]"
-} {
-1,2.5,"three","\064\040\050\146\157\165\162\051",NULL
-}
-do_test 6.2 {
-  set result "\n[db format -style list -null NULL \
-                 -text tcl -columnsep , -textnull yes \
-                 {SELECT * FROM t2}]"
-} {
-1,2.5,"three","\064\040\050\146\157\165\162\051","NULL"
-}
-do_test 6.3 {
-  catch {db format -textnull xyz {SELECT * FROM t2}} res
-  set res
-} {bad -textnull "xyz": must be auto, yes, no, on, or off}
 
 do_execsql_test 7.0 {
   CREATE TABLE t7(a,b);
@@ -894,6 +915,110 @@ do_test 9.3 {
 do_test 9.4 {
   db format -style jobject  {SELECT * FROM t9 WHERE rowid<0}
 } {}
+
+do_test 10.1 {
+  db eval {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(x);
+    INSERT INTO t1(x) VALUES
+      ('alice'),
+      ('bob'),
+      ('cinderella-cinderella'),
+      ('daniel'),
+      ('emma'),
+      ('fred'),
+      ('gertrude'),
+      ('harold'),
+      ('ingrid'),
+      ('jake'),
+      ('lisa'),
+      ('mike'),
+      ('nina'),
+      ('octavian'),
+      ('paula'),
+      ('quintus'),
+      ('rita'),
+      ('sam'),
+      ('tammy'),
+      ('ulysses'),
+      ('violet'),
+      ('william'),
+      ('xanthippe'),
+      ('yates'),
+      ('zoe');
+  }
+  set result "\n[db format -style column -title off -screenwidth 41 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  octavian
+bob                    paula
+cinderella-cinderella  quintus
+daniel                 rita
+emma                   sam
+fred                   tammy
+gertrude               ulysses
+harold                 violet
+ingrid                 william
+jake                   xanthippe
+lisa                   yates
+mike                   zoe
+nina
+}
+do_test 10.2 {
+  set result "\n[db format -style column -title off -screenwidth 42 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  jake      tammy
+bob                    lisa      ulysses
+cinderella-cinderella  mike      violet
+daniel                 nina      william
+emma                   octavian  xanthippe
+fred                   paula     yates
+gertrude               quintus   zoe
+harold                 rita
+ingrid                 sam
+}
+do_test 10.3 {
+  set result "\n[db format -style column -title off -screenwidth 51 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  harold    paula    william
+bob                    ingrid    quintus  xanthippe
+cinderella-cinderella  jake      rita     yates
+daniel                 lisa      sam      zoe
+emma                   mike      tammy
+fred                   nina      ulysses
+gertrude               octavian  violet
+}
+do_test 10.4 {
+  set result "\n[db format -style column -title off -screenwidth 61 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  fred      lisa      quintus  violet
+bob                    gertrude  mike      rita     william
+cinderella-cinderella  harold    nina      sam      xanthippe
+daniel                 ingrid    octavian  tammy    yates
+emma                   jake      paula     ulysses  zoe
+}
+do_test 10.5 {
+  set result "\n[db format -style column -title off -screenwidth 74 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  emma      ingrid  nina      rita     violet     zoe
+bob                    fred      jake    octavian  sam      william
+cinderella-cinderella  gertrude  lisa    paula     tammy    xanthippe
+daniel                 harold    mike    quintus   ulysses  yates
+}
+
+do_test 11.1 {
+  set result "\n[db format -style table -blob size {SELECT randomblob(1234)}]"
+} {
++------------------+
+| randomblob(1234) |
++------------------+
+| (1234-byte blob) |
++------------------+
+}
 
 db close
 

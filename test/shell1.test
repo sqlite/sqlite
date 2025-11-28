@@ -731,7 +731,7 @@ do_test shell1-3.26.5 {
 do_test shell1-3.26.6 {
   catchcmd "test.db" ".mode column\n.header off\n.width -10 10\nSELECT 'abcdefg', 123456;"
   # this should be treated the same as a '1' width for col 1 and 2
-} {0 {   abcdefg  123456    }}
+} {0 {   abcdefg  123456}}
 
 
 # .timer ON|OFF          Turn the CPU timer measurement on or off
@@ -931,7 +931,7 @@ do_test shell1-4.1.6 {
                          (4,2.25), (5,'hello'), (6,x'807f');
   }
   catchcmd test2.db {.dump --preserve-rowids}
-} {1 {The --preserve-rowids option is not compatible with SQLITE_OMIT_VIRTUALTABLE}}
+} {/.* --preserve-rowids option is not compatible with SQLITE_OMIT_VIRTUALTABLE/}
 
 }
 
@@ -1311,6 +1311,12 @@ do_test shell1-8.4 {
 +------------------+-----+
 | 6683623321994527 | -47 |
 +------------------+-----+}}
+do_test shell1-8.4b {
+  catchcmd ":memory: --psql" \
+    {SELECT ieee754_mantissa(47.49) AS M, ieee754_exponent(47.49) AS E;}
+} {0 {        M         |  E
+------------------+-----
+ 6683623321994527 | -47}}
 do_test_with_ansi_output shell1-8.5 {
   catchcmd ":memory: --box" {
 create table t(a text, b int);
