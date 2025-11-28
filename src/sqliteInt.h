@@ -4268,10 +4268,11 @@ typedef struct {
 /*
 ** Allowed values for mInitFlags
 */
-#define INITFLAG_AlterMask     0x0003  /* Types of ALTER */
+#define INITFLAG_AlterMask     0x0007  /* Types of ALTER */
 #define INITFLAG_AlterRename   0x0001  /* Reparse after a RENAME */
 #define INITFLAG_AlterDrop     0x0002  /* Reparse after a DROP COLUMN */
 #define INITFLAG_AlterAdd      0x0003  /* Reparse after an ADD COLUMN */
+#define INITFLAG_AlterDropCons 0x0004  /* Reparse after an ADD COLUMN */
 
 /* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
 ** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
@@ -5452,6 +5453,9 @@ void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*);
+void sqlite3AlterDropConstraint(Parse*,SrcList*,Token*,Token*);
+void sqlite3AlterAddConstraint(Parse*,SrcList*,Token*,Token*,const char*,int);
+void sqlite3AlterSetNotNull(Parse*, SrcList*, Token*, Token*);
 i64 sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);

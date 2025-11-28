@@ -358,7 +358,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try{
           const [cMsg, n] = wasm.scopedAllocCString(e.message, true);
           wasm.cstrncpy(pOut, cMsg, nOut);
-          if(n > nOut) wasm.poke8(pOut + nOut - 1, 0);
+          if(n > nOut) wasm.poke8(wasm.ptr.add(pOut,nOut,-1), 0);
         }catch(e){
           return capi.SQLITE_NOMEM;
         }finally{

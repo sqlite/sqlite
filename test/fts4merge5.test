@@ -53,6 +53,9 @@ for {set tn 1} {1} {incr tn} {
   }
 }
 
+do_catchsql_test 1.5 {
+  INSERT INTO x1(x1) VALUES('maxpendinAB64');
+} {1 {SQL logic error}}
 
 
 finish_test

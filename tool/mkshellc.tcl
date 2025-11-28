@@ -147,12 +147,3 @@ while {1} {
 puts $out "/************************* End src/shell.c.in ******************/"
 close $in
 close $out
-
-# Try to disable write permissions on the generate file, to prevent
-# accidentally editing the generated file rather than source files.
-#
-if {$output_file ne ""} {
-  catch {file attributes $output_file -readonly 1}
-  catch {file attributes $output_file -permissions -w}
-  catch {exec chmod -w $output_file}
-}
