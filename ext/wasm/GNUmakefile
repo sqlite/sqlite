@@ -874,7 +874,6 @@ $(sqlite3-license-version.js): $(bin.version-info) \
 		awk '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' $(sqlite3.h); \
 		awk '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
 		echo '**'; echo '** Emscripten SDK: $(emcc.version)'; \
-		echo '**'; echo '** Preprocessed by:'; echo '**    @c-pp::ARGV@'; \
 		echo '*/'; \
 	} > $@
 
