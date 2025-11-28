@@ -1,5 +1,5 @@
-C A\sbetter\sfix\sfor\sthe\sissue\swith\sRETURNING\striggers\son\seponymous\nvirtual\stables\sand\sSQLITE_SCHEMA\serrors.
-D 2025-11-28T13:04:31.843
+C Version\s3.51.1
+D 2025-11-28T17:28:25.933
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2171,11 +2171,10 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 712e31c59254f82e62a19e41d3b6ac15391dd6e9df966cacadfa9ae79415b243
-Q +6a9fdde109865b23888f099d066721404e8b853f3dacd55ce08c8bbda2491ec3
-Q +bf399992cb98e5d5f002a90b521328d5c2f113ebab8601653452d78222077bde
-Q +dc569288dd63754269e14be7a9937c882531685a3e9caec25f86ec8c01eb9583
+P 40ddaca3fb752425c26570365a9f31820786d21d043c1c0a4b49746ff9bc0782
 R e6faec25512909b375a6de433bcc999d
+T +sym-release *
+T +sym-version-3.51.1 *
 U drh
-Z 6bdf6810679e96e0bba6c4bccb37d033
+Z a5cb39bb0c202daa26ad87d8a3e3f169
 # Remove this line to create a well-formed Fossil manifest.
