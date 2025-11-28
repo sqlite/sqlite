@@ -29,7 +29,7 @@ proc do_clitest {name} {
     catch {exec <CLI> :memory: ".read <NAME>" 2>@stdout} res
     set ntest 0
     set nerr 999
-    regexp {.*(\d+) tests? run with (\d+) errors?} $res all ntest nerr
+    regexp {(\d+) tests? run with (\d+) errors?} $res all ntest nerr
     set_test_counter count [expr {[set_test_counter count]+$ntest-1}]
     set_test_counter errors [expr {[set_test_counter errors]+$nerr}]
     if {$nerr==0} {set res "error count: 0"}

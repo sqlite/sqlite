@@ -88,7 +88,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         wasm.installFunction('i(ippp)', function(t,c,p,x){
           if(capi.SQLITE_TRACE_STMT===t){
             // x == SQL, p == sqlite3_stmt*
-            console.log("SQL TRACE #"+(++this.counter)+' via sqlite3@'+c+':',
+            console.log("SQL TRACE #"+(++this.counter),
+                        'via sqlite3@'+c+'['+capi.sqlite3_db_filename(c,null)+']',
                         wasm.cstrToJs(x));
           }
         }.bind({counter: 0}));
@@ -222,32 +223,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      It also accepts those as the first 3 arguments.
   */
   const dbCtorHelper = function ctor(...args){
-    if(!ctor._name2vfs){
-      /**
-         Map special filenames which we handle here (instead of in C)
-         to some helpful metadata...
-
-         As of 2022-09-20, the C API supports the names :localStorage:
-         and :sessionStorage: for kvvfs. However, C code cannot
-         determine (without embedded JS code, e.g. via Emscripten's
-         EM_JS()) whether the kvvfs is legal in the current browser
-         context (namely the main UI thread). In order to help client
-         code fail early on, instead of it being delayed until they
-         try to read or write a kvvfs-backed db, we'll check for those
-         names here and throw if they're not legal in the current
-         context.
-      */
-      ctor._name2vfs = Object.create(null);
-      const isWorkerThread = ('function'===typeof importScripts/*===running in worker thread*/)
-            ? (n)=>toss3("The VFS for",n,"is only available in the main window thread.")
-            : false;
-      ctor._name2vfs[':localStorage:'] = {
-        vfs: 'kvvfs', filename: isWorkerThread || (()=>'local')
-      };
-      ctor._name2vfs[':sessionStorage:'] = {
-        vfs: 'kvvfs', filename: isWorkerThread || (()=>'session')
-      };
-    }
     const opt = ctor.normalizeArgs(...args);
     //sqlite3.config.debug("DB ctor",opt);
     let pDb;
@@ -268,12 +243,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           || (vfsName && ('string'!==typeof vfsName && !wasm.isPtr(vfsName))) ){
         sqlite3.config.error("Invalid DB ctor args",opt,arguments);
         toss3("Invalid arguments for DB constructor:", arguments, "opts:", opt);
-      }
-      let fnJs = wasm.isPtr(fn) ? wasm.cstrToJs(fn) : fn;
-      const vfsCheck = ctor._name2vfs[fnJs];
-      if(vfsCheck){
-        vfsName = vfsCheck.vfs;
-        fn = fnJs = vfsCheck.filename(fnJs);
       }
       let oflags = 0;
       if( flagsStr.indexOf('c')>=0 ){
@@ -299,7 +268,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }finally{
         wasm.pstack.restore(stack);
       }
-      this.filename = fnJs;
+      this.filename =
+        /* A poor design choice we have to keep: this.filename may be
+           in the form "file:....?....". It really should have been
+           sqlite3_db_filename(pDb) but that discrepancy went too long
+           unnoticed to be able to change without risk of
+           breakage. DB.dbFilename() can be used to fetch _just_ the
+           name part.
+        */ wasm.isPtr(fn) ? wasm.cstrToJs(fn) : fn;
+
     }
     __ptrMap.set(this, pDb);
     __stmtMap.set(this, Object.create(null));
@@ -390,12 +367,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      The given db filename must be resolvable using whatever
      filesystem layer (virtual or otherwise) is set up for the default
-     sqlite3 VFS.
+     sqlite3 VFS or a VFS which can resolve it must be specified.
 
-     Note that the special sqlite3 db names ":memory:" and ""
-     (temporary db) have their normal special meanings here and need
-     not resolve to real filenames, but "" uses an on-storage
-     temporary database and requires that the VFS support that.
+     The special sqlite3 db names ":memory:" and "" (temporary db)
+     have their normal special meanings here and need not resolve to
+     real filenames, but "" uses an on-storage temporary database and
+     requires that the VFS support that.
 
      The second argument specifies the open/create mode for the
      database. It must be string containing a sequence of letters (in
@@ -2294,55 +2271,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     DB,
     Stmt
   }/*oo1 object*/;
-
-  if(util.isUIThread()){
-    /**
-       Functionally equivalent to DB(storageName,'c','kvvfs') except
-       that it throws if the given storage name is not one of 'local'
-       or 'session'.
-
-       As of version 3.46, the argument may optionally be an options
-       object in the form:
-
-       {
-         filename: 'session'|'local',
-         ... etc. (all options supported by the DB ctor)
-       }
-
-       noting that the 'vfs' option supported by main DB
-       constructor is ignored here: the vfs is always 'kvvfs'.
-    */
-    sqlite3.oo1.JsStorageDb = function(storageName='session'){
-      const opt = dbCtorHelper.normalizeArgs(...arguments);
-      storageName = opt.filename;
-      if('session'!==storageName && 'local'!==storageName){
-        toss3("JsStorageDb db name must be one of 'session' or 'local'.");
-      }
-      opt.vfs = 'kvvfs';
-      dbCtorHelper.call(this, opt);
-    };
-    const jdb = sqlite3.oo1.JsStorageDb;
-    jdb.prototype = Object.create(DB.prototype);
-    /** Equivalent to sqlite3_js_kvvfs_clear(). */
-    jdb.clearStorage = capi.sqlite3_js_kvvfs_clear;
-    /**
-       Clears this database instance's storage or throws if this
-       instance has been closed. Returns the number of
-       database blocks which were cleaned up.
-    */
-    jdb.prototype.clearStorage = function(){
-      return jdb.clearStorage(affirmDbOpen(this).filename);
-    };
-    /** Equivalent to sqlite3_js_kvvfs_size(). */
-    jdb.storageSize = capi.sqlite3_js_kvvfs_size;
-    /**
-       Returns the _approximate_ number of bytes this database takes
-       up in its storage or throws if this instance has been closed.
-    */
-    jdb.prototype.storageSize = function(){
-      return jdb.storageSize(affirmDbOpen(this).filename);
-    };
-  }/*main-window-only bits*/
 
 });
 //#else

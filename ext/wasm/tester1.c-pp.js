@@ -1027,7 +1027,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           let ptr = k1.pointer;
           k1.dispose();
           T.assert(undefined === k1.pointer).
-            mustThrowMatching(()=>{k1.$pP=1}, /disposed struct instance/);
+            mustThrowMatching(()=>{k1.$pP=1}, /disposed/);
         }finally{
           k1.dispose();
           k2.dispose();
@@ -2907,11 +2907,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           ]);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
           db.close();
+          db = undefined;
           db = new JDb(filename);
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
         }finally{
-          db.close();
+          if( db ) db.close();
         }
       }
     }/*kvvfs sanity checks*/)

@@ -7409,11 +7409,13 @@ void *JimDefaultAllocator(void *ptr, size_t size)
         free(ptr);
         return NULL;
     }
-    else if (ptr) {
-        return realloc(ptr, size);
-    }
     else {
-        return malloc(size);
+        void *p = realloc(ptr, size);
+        if( p==0 ){
+            fprintf(stderr,"Out of memory\n");
+            exit(1);
+        }
+        return p;
     }
 }
 
