@@ -564,6 +564,7 @@ void sqlite3SchemaClear(void *p){
   for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
     sqlite3DeleteTrigger(&xdb, (Trigger*)sqliteHashData(pElem));
   }
+
   sqlite3HashClear(&temp2);
   sqlite3HashInit(&pSchema->tblHash);
   for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){

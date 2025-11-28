@@ -1318,9 +1318,12 @@ int sqlite3VtabEponymousTableInit(Parse *pParse, Module *pMod){
   addModuleArgument(pParse, pTab, sqlite3DbStrDup(db, pTab->zName));
   addModuleArgument(pParse, pTab, 0);
   addModuleArgument(pParse, pTab, sqlite3DbStrDup(db, pTab->zName));
+  db->nSchemaLock++;
   rc = vtabCallConstructor(db, pTab, pMod, pModule->xConnect, &zErr);
+  db->nSchemaLock--;
   if( rc ){
     sqlite3ErrorMsg(pParse, "%s", zErr);
+    pParse->rc = rc;
     sqlite3DbFree(db, zErr);
     sqlite3VtabEponymousTableClear(db, pMod);
   }
