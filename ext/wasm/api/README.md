@@ -62,7 +62,7 @@ by concatenating the following files together in their listed order:
 
 - **`sqlite3-api-prologue.js`**  
   Contains the initial bootstrap setup of the sqlite3 API
-  objects. This is exposed as a function, rather than objects, so that
+  objects. This is exposed as a bootstrapping function so that
   the next step can pass in a config object which abstracts away parts
   of the WASM environment, to facilitate plugging it in to arbitrary
   WASM toolchains. The bootstrapping function gets removed from the
@@ -116,10 +116,10 @@ by concatenating the following files together in their listed order:
       a Promise-based interface into the Worker #1 API. This is
       a far user-friendlier way to interface with databases running
       in a Worker thread.
-- **`sqlite3-vfs-helper.js`**  
+- **`sqlite3-vfs-helper.c-pp.js`**  
   Installs the `sqlite3.vfs` namespace, which contain helpers for use
   by downstream code which creates `sqlite3_vfs` implementations.
-- **`sqlite3-vtab-helper.js`**  
+- **`sqlite3-vtab-helper.c-pp.js`**  
   Installs the `sqlite3.vtab` namespace, which contain helpers for use
   by downstream code which creates `sqlite3_module` implementations.
 - **`sqlite3-vfs-opfs.c-pp.js`**  
