@@ -271,25 +271,3 @@ void *sqlite3HashInsert(Hash *pH, const char *pKey, void *data){
   return 0;
 }
 
-/*
-** Parameter pElem is currently part of hash table pFrom. Add it to hash 
-** table pTo. 
-**
-** This procedure corrupts hash table pFrom. Specifically, it removes element
-** pElem from the list of all elements in the hash table, but may leave
-** a pointer to it in one of the hash buckets of pFrom. This is not a problem
-** because this function is only called if hash table pFrom will be cleared
-** before any further lookups or inserts are attempted.
-*/
-void sqlite3HashTransfer(Hash *pTo, Hash *pFrom, HashElem *pElem){
-  if( pElem->prev ){
-    pElem->prev->next = pElem->next; 
-  }else{
-    assert( pFrom->first==pElem );
-    pFrom->first = pElem->next;
-  }
-  pTo->count++;
-  insertElement(pTo, pTo->ht ? &pTo->ht[pElem->h % pTo->htsize] : 0, pElem);
-}
-
-
