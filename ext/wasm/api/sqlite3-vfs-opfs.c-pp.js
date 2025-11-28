@@ -589,7 +589,7 @@ const installOpfsVfs = function callee(options){
 
       /**
          Returns an array of the deserialized state stored by the most
-         recent serialize() operation (from from this thread or the
+         recent serialize() operation (from this thread or the
          counterpart thread), or null if the serialization buffer is
          empty.  If passed a truthy argument, the serialization buffer
          is cleared after deserialization.
@@ -924,7 +924,7 @@ const installOpfsVfs = function callee(options){
         fh.filename = zName;
         fh.sab = new SharedArrayBuffer(state.fileBufferSize);
         fh.flags = flags;
-        fh.readOnly = !(sqlite3.SQLITE_OPEN_CREATE & flags)
+        fh.readOnly = !(capi.SQLITE_OPEN_CREATE & flags)
           && !!(flags & capi.SQLITE_OPEN_READONLY);
         const rc = opRun('xOpen', pFile, zName, flags, opfsFlags);
         if(!rc){
