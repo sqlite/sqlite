@@ -2430,8 +2430,8 @@ void sqlite3SubqueryColumnTypes(
       }
     }
     if( zType ){
-      const i64 k = sqlite3Strlen30(zType);
-      n = sqlite3Strlen30(pCol->zCnName);
+      const i64 k = strlen(zType);
+      n = strlen(pCol->zCnName);
       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+k+2);
       pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
       if( pCol->zCnName ){
