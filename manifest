@@ -1,5 +1,5 @@
-C Handle\sempty\sstring\svalues\sin\scolumnar\smodes\swithout\sNULL\spointer\ndereferences.
-D 2025-11-29T18:18:15.607
+C Update\sthe\sdocumentation\sto\ssqlite3_str_finish().\s\sThat\sfunction\smight\nnot\sreturn\sNULL\son\san\sempty\sstring\snow,\sif\sthe\sempty\sstring\sis\screated\nthrough\sthe\suse\sof\ssqlite3_str_truncate().
+D 2025-11-29T18:32:25.952
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -737,7 +737,7 @@ F src/resolve.c 5616fbcf3b833c7c705b24371828215ad0925d0c0073216c4f153348d5753f0a
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 6a509cddd815d64f6141e539fff633a518a393772a44dffb4490f7fc3f0d83a9
 F src/shell.c.in 139c2fb0a69274c15f1f0f5f3e11eadb197c8104287146f13ff88a9e13f486cc
-F src/sqlite.h.in f1363321ca55cc2feaa289e9fe6dfb08102a28c54edf005564711a2348b06eef
+F src/sqlite.h.in 78d57fcb8cd0a07572b97fa7cc0cb88416de9faffc2acb315c88fc34b72c34b1
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d5330f5f8461f5ce74960436ddcfa53ecd09c2b8b23901e22ae38aec3243998
 F src/sqliteInt.h a89c3a9296928dffcb4c287df176a739f9cf620c7c9d33aec59e8efb9b39cbbd
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2dc73eb2d215178c448b182ebb227bc4753ad7baf46c8bd58f20a2b22e998726
-R 6f3572511e9a44e28580898f1eb685ed
+P 7927dbc5ebc76233325e45bd24181dbc5c3636e271f9352cf530f41dad6ba66d
+R dd82c2957b46379774f8ec9dc63117c1
 U drh
-Z 77357314f64ea8ae54c0fdf8979130c7
+Z eec0537322c160e0451be2e6174833b8
 # Remove this line to create a well-formed Fossil manifest.
