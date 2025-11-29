@@ -153,6 +153,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     logClass('error',...args);
   };
 
+  const debug = (...args)=>{
+    console.debug('tester1',...args);
+  };
+
   const toss = (...args)=>{
     error(...args);
     throw new Error(args.join(' '));
@@ -3014,7 +3018,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const dbFilename = db.dbFilename();
           //console.warn("db.dbFilename() =",dbFilename);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
-          console.debug("kvvfs to Object:",exportDb(dbFilename));
+          debug("kvvfs to Object:",exportDb(dbFilename));
           const n = sqlite3.kvvfs.size( dbFilename );
           T.assert( n>0, "Db size count failed" );
 
@@ -3070,7 +3074,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           T.assert(6 === db.selectValue(sqlCount));
           let exp = exportDb(filename);
           let expectRows = 6;
-          console.debug("exported db",exp);
+          debug("exported db",exp);
           db.close();
           T.assert(expectRows === duo.selectValue(sqlCount));
           duo.close();
@@ -3108,8 +3112,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
           importDb(exp, true);
           db = new JDb({
-            filename,
-            flags: 't'
+            filename
+            //flags: 't'
           });
           duo = new JDb(filename);
           T.assert(expectRows === duo.selectValue(sqlCount));
@@ -3140,8 +3144,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
           if( 1 ){
             const pageSize = 1024 * 16;
-            console.debug("Export before vacuum", exportDb(filename));
-            console.debug("page size before vacuum",
+            debug("Export before vacuum", exportDb(filename));
+            debug("page size before vacuum",
                           db.selectArray(
                             "select page_size from pragma_page_size()"
                           ));
@@ -3151,10 +3155,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               "vacuum;"
             ]);
             --expectRows;
-            console.debug("page size after",
-                          db.selectArray(
-                            "select page_size from pragma_page_size()"
-                          ));
+            if( 0 ){
+              debug("page size after",
+                    db.selectArray(
+                      "select page_size from pragma_page_size()"
+                    ));
+            }
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
             T.assert( 8192 == db.selectValue(
@@ -3172,7 +3178,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
             exp = exportDb(filename);
-            console.debug("vacuumed export",exp);
+            debug("vacuumed export",exp);
           }else{
             expectRows = 6;
           }
@@ -3184,7 +3190,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           importDb(exp);
           T.assert( kvvfs.exists(exp.name) );
           db = new JDb(exp.name);
-          console.debug("column count after export",db.selectValue(sqlCount));
+          debug("column count after export",db.selectValue(sqlCount));
           T.assert(expectRows === db.selectValue(sqlCount),
                    "Unexpected record count.");
 
@@ -3252,7 +3258,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new DB(dbFileRaw);
           db.exec(sqlSetup);
           db.close();
-          console.debug("kvvfs listener counts:",counts);
+          debug("kvvfs listener counts:",counts);
           T.assert( counts.open )
             .assert( counts.close )
             .assert( counts.delete )
@@ -3277,15 +3283,24 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         const kvvfs = sqlite3.kvvfs;
         const db = new sqlite3.oo1.DB();
+        const db2 = new sqlite3.oo1.DB('file:foo?vfs=kvvfs&delete-on-close=1');
         try{
           kvvfs.create_module(db);
           /*db.exec([
-            "create virtual table vt using kvvfs()"
+            "create virtual table vt using sqlite_kvvfs()"
           ]);*/
-          let rc = db.selectObjects("select * from sqlite_kvvfs");
-          console.log("vtab rc", rc);
+          let rc = db.selectObjects("select * from sqlite_kvvfs order by name");
+          debug("sqlite_kvvfs vtab:", rc);
+          rc = db.selectObject("select * from sqlite_kvvfs where name='foo'");
+          T.assert(rc, "Expecting foo storage record")
+            .assert('foo'===rc.name, "Unexpected name")
+            .assert(1===rc.nRef, "Unexpected refcount");
+          db2.close();
+          rc = db.selectObject("select * from sqlite_kvvfs where name='foo'");
+          T.assert(!rc, "Expecting foo storage to be gone");
         }finally{
           db.close();
+          db2.close();
         }
       }
     })/* kvvfs vtab */
@@ -3313,7 +3328,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let countCommit = 0, countRollback = 0;;
         const db = new sqlite3.oo1.DB(':memory:',1 ? 'c' : 'ct');
         let rc = capi.sqlite3_commit_hook(db, (p)=>{
-          //console.debug("commit hook",arguments);
+          //debug("commit hook",arguments);
           ++countCommit;
           return (17 == p) ? 0 : capi.SQLITE_ERROR;
         }, 17);

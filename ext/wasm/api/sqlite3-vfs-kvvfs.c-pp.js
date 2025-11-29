@@ -1456,19 +1456,28 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     Object.keys(cols).forEach((v,i)=>cols[v].colId = i);
 
     const VT = sqlite3.vtab;
-    const cursorState = function(cursor){
-      return ((cursor instanceof capi.sqlite3_vtab_cursor)
-       ? cursor
-       : VT.xCursor.get(cursor)
-      ).vTabState
-        ??= Object.assign(Object.create(null),{
+    const ProtoCursor = Object.assign(Object.create(null),{
+      row: function(){
+        return cache.storagePool[this.names[this.rowid]];
+      }
+    });
+    Object.assign(Object.create(ProtoCursor),{
           rowid: 0,
           names: Object.keys(cache.storagePool)
-            .filter(v=>!cache.rxJournalSuffix.test(v)),
-          row: function(){
-            return cache.storagePool[this.names[this.rowid]];
-          }
+            .filter(v=>!cache.rxJournalSuffix.test(v))
+        })
+    const cursorState = function(cursor, reset){
+      const o = (cursor instanceof capi.sqlite3_vtab_cursor)
+            ? cursor
+            : VT.xCursor.get(cursor);
+      if( reset || !o.vTabState ){
+        o.vTabState = Object.assign(Object.create(ProtoCursor),{
+          rowid: 0,
+          names: Object.keys(cache.storagePool)
+            .filter(v=>!cache.rxJournalSuffix.test(v))
         });
+      }
+      return o.vTabState;
     };
 
     const dbg = 1 ? ()=>{} : (...args)=>debug("vtab",...args);
@@ -1568,8 +1577,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           xFilter: function(pCursor, idxNum, idxCStr,
                             argc, argv/* [sqlite3_value* ...] */){
             dbg("xFilter",...arguments);
-            const st = cursorState(pCursor);
-            st.rowid = 0;
+            const st = cursorState(pCursor, true);
             return 0;
           },
           xBestIndex: function(pVtab, pIdxInfo){
