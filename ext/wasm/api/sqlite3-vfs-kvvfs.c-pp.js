@@ -283,10 +283,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     files: [],
     /**
-       A list of objects with various event callbacks. See
-       sqlite3_js_kvvfs_listen().
-     */
-    listeners: []
+       If set, it's an array of objects with various event
+       callbacks. See sqlite3_js_kvvfs_listen().
+    */
+    listeners: undefined
   });
 
   /**
@@ -384,16 +384,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      'delete': key
   */
   const notifyListeners = async function(eventName,store,...args){
-    for(const v of store.listeners){
-      const f = v?.[eventName];
-      if( !f ) return;
+    if( store.listeners ){
       const ev = Object.create(null);
       ev.storageName = store.jzClass;
       ev.type = eventName;
-      ev.data = ((args.length===1) ? args[0] : args);
-      try{f(ev)?.catch?.(noop)}
-      catch(e){
-        warn("notifyListener",store.jzClass,eventName,e);
+      for(const ear of store.listeners){
+        const f = ear?.[eventName];
+        if( f ){
+          ev.data = ((args.length===1) ? args[0] : args);
+          try{f(ev)?.catch?.(noop)}
+          catch(e){
+            warn("notifyListeners",store.jzClass,eventName,e);
+          }
+        }
       }
     }
   };
@@ -1316,7 +1319,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     }
     if( opt.events ){
-      store.listeners.push(opt.events);
+      (store.listeners ??= []).push(opt.events);
     }
   };
 
@@ -1332,8 +1335,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const sqlite3_js_kvvfs_unlisten = function(opt){
     const store = storageForZClass(opt?.storage);
-    if( store && opt.events ){
+    if( store?.listeners && opt.events ){
       store.listeners = store.listeners.filter((v)=>v!==opt.events);
+      if( !store.listeners.length ){
+        store.listeners = undefined;
+      }
     }
   };
 
@@ -1509,6 +1515,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
           },
           xCreate: wasm.ptr.null, // eponymous only
+          //xCreate: true, // copy xConnect, i.e. also eponymous only
           xDisconnect: function(pVtab){
             dbg("xDisconnect",...arguments);
             VT.xVtab.dispose(pVtab);
@@ -1570,8 +1577,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             return 0;
           },
           xEof: function(pCursor){
-            dbg("xEof",...arguments);
             const st = cursorState(pCursor);
+            dbg("xEof?="+(!st.row()),...arguments);
             return !st.row();
           },
           xFilter: function(pCursor, idxNum, idxCStr,

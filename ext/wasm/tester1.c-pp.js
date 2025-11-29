@@ -3144,11 +3144,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
           if( 1 ){
             const pageSize = 1024 * 16;
-            debug("Export before vacuum", exportDb(filename));
-            debug("page size before vacuum",
-                          db.selectArray(
-                            "select page_size from pragma_page_size()"
-                          ));
+            if( 0 ){
+              debug("Export before vacuum", exportDb(filename));
+              debug("page size before vacuum",
+                    db.selectArray(
+                      "select page_size from pragma_page_size()"
+                    ));
+            }
             db.exec([
               "delete from kvvfs where a=1;",
               "pragma page_size="+pageSize+";",
@@ -3178,7 +3180,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
             exp = exportDb(filename);
-            debug("vacuumed export",exp);
+            if( 0 ){
+              debug("vacuumed export",exp);
+            }
           }else{
             expectRows = 6;
           }
@@ -3190,7 +3194,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           importDb(exp);
           T.assert( kvvfs.exists(exp.name) );
           db = new JDb(exp.name);
-          debug("column count after export",db.selectValue(sqlCount));
+          //debug("column count after export",db.selectValue(sqlCount));
           T.assert(expectRows === db.selectValue(sqlCount),
                    "Unexpected record count.");
 
@@ -3296,7 +3300,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert('foo'===rc.name, "Unexpected name")
             .assert(1===rc.nRef, "Unexpected refcount");
           db2.close();
-          rc = db.selectObject("select * from sqlite_kvvfs where name='foo'");
+          rc = db.selectObject("select 1 from sqlite_kvvfs where name='foo'");
           T.assert(!rc, "Expecting foo storage to be gone");
         }finally{
           db.close();
