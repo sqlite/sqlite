@@ -577,11 +577,14 @@ static int qrfDisplayLength(const char *zIn){
 ** it will need to be split.
 */
 static int qrfDisplayWidth(const char *zIn, sqlite3_int64 nByte, int *pnNL){
-  const unsigned char *z = (const unsigned char*)zIn;
-  const unsigned char *zEnd = &z[nByte];
+  const unsigned char *z;
+  const unsigned char *zEnd;
   int mx = 0;
   int n = 0;
   int nNL = 0;
+  if( zIn==0 ) zIn = "";
+  z = (const unsigned char*)zIn;
+  zEnd = &z[nByte];
   while( z<zEnd ){
     if( z[0]<' ' ){
       int k;
@@ -1934,6 +1937,7 @@ static void qrfColumnar(Qrf *p){
     */
     for(j=0; j<nColumn; j++){
       data.a[j].z = data.az[i+j];
+      if( data.a[j].z==0 ) data.a[j].z = "";
       data.a[j].bNum = data.abNum[i+j];
     }
     do{

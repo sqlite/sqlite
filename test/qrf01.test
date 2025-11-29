@@ -1020,6 +1020,17 @@ do_test 11.1 {
 +------------------+
 }
 
+do_test 12.1 {
+  set result "\n[db format -style box -text html \
+                  {SELECT 'abc','','xyz'}]"
+} {
+┌───────┬────┬───────┐
+│ 'abc' │ '' │ 'xyz' │
+├───────┼────┼───────┤
+│ abc   │    │ xyz   │
+└───────┴────┴───────┘
+}
+
 db close
 
 finish_test
