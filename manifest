@@ -1,5 +1,5 @@
-C More\stests\sfor\sthe\skvvfs\svtab.
-D 2025-11-29T21:19:35.418
+C Add\sa\sWASM-side\sexport\sfor\skvvfsDecode()\sfor\spending\sprivate\suse\sin\sthe\skvvfs\sexport\sbits\sand\sensure\sthat\sit\sconsistently\sreturns\s-1\sfor\smalformed\sinput.
+D 2025-11-29T23:29:07.265
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -604,7 +604,7 @@ F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js a1e556dd5c1769edf1be913d768a74fcfea33b4
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js a2eea6442556867b589e04107796c6e1d04a472219529eeb45b7cd221d7d048b
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 88ce2078267a2d1af57525a32d896295f4a8db7664de0e17e82dc9ff006ed8d3
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
-F ext/wasm/api/sqlite3-wasm.c 1d6f8f3486f4f9a21db597f84a015fe9bb7c111652ce6beacdaceb0d162617ff
+F ext/wasm/api/sqlite3-wasm.c d74ea827a644598090cf450a0bb38564332e658829d3e924f471558de669a336
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
 F ext/wasm/c-pp-lite.c f38254fba42561728c2e4764a7ba8d68700091e7c2f4418112868c0daba16783
@@ -718,7 +718,7 @@ F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
-F src/os_kv.c aa51119e9782d886295ad3fb49cf8c6a75e2a499c3412c8eb7c2aa113e74c4f8
+F src/os_kv.c fbc86fbfeba7ab7479e217fd78def2859b31b387f7b63702da53b2dade12c118
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 7945ede1e85b2d1b910e1b4af9ba342e964b1e30e79f4176480a60736445cb36
 F src/os_win.c a89b501fc195085c7d6c9eec7f5bd782625e94bb2a96b000f4d009703df1083f
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eaff2e8b7f63575e85fb9be800a2c59163e402d6a25fc6a955b9df15afe13b92
-R a57997d54941b9d2a633b9ebeaee3c38
+P 0358a99eedb503aaf8eff32a3143a2591081dfd3fd9eeecc51c601c98c714d6f
+R c2c4dd9b9b3790425888bafc6adcde46
 U stephan
-Z 72d312635cca3a260df8159a5e2d240e
+Z 5539aebd29d265f356d1029839f5e503
 # Remove this line to create a well-formed Fossil manifest.

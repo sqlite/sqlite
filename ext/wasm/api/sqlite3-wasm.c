@@ -1783,6 +1783,19 @@ char * sqlite3__wasm_qfmt_token(char *z, int addQuotes){
   return rc;
 }
 
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** A WASM wrapper for the interal os_kv.c:kvvfsDecode() for internal
+** use by the kvvfs v2 API.
+*/
+SQLITE_WASM_EXPORT
+int sqlite3__wasm_kvvfs_decode(const char *a, char *aOut, int nOut){
+  return kvvfsDecode(a, aOut, nOut);
+}
+
+
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/console.h>
 #include <emscripten/wasmfs.h>

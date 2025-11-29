@@ -434,9 +434,13 @@ static const signed char kvvfsHexValue[256] = {
 ** Decode the text encoding back to binary.  The binary content is
 ** written into pOut, which must be at least nOut bytes in length.
 **
-** The return value is the number of bytes actually written into aOut[].
+** The return value is the number of bytes actually written into aOut[], or
+** -1 for malformed inputs.
 */
-static int kvvfsDecode(const char *a, char *aOut, int nOut){
+#ifndef SQLITE_WASM
+static
+#endif
+int kvvfsDecode(const char *a, char *aOut, int nOut){
   int i, j;
   int c;
   const unsigned char *aIn = (const unsigned char*)a;
@@ -461,7 +465,7 @@ static int kvvfsDecode(const char *a, char *aOut, int nOut){
     }else{
       aOut[j] = c<<4;
       c = kvvfsHexValue[aIn[++i]];
-      if( c<0 ) break;
+      if( c<0 ) return -1;
       aOut[j++] += c;
       i++;
     }
