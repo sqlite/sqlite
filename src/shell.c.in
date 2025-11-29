@@ -9685,6 +9685,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
     int openMode = SHELL_OPEN_UNSPEC;
     int openFlags = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
 
+    if( p->bSafeMode ) openFlags = SQLITE_OPEN_READONLY;
+
     /* Check for command-line arguments */
     for(iName=1; iName<nArg; iName++){
       const char *z = azArg[iName];
@@ -9692,10 +9694,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
       if( optionMatch(z,"new") ){
         newFlag = 1;
 #ifdef SQLITE_HAVE_ZLIB
-      }else if( optionMatch(z, "zip") ){
+      }else if( optionMatch(z, "zip") && !p->bSafeMode ){
         openMode = SHELL_OPEN_ZIPFILE;
 #endif
-      }else if( optionMatch(z, "append") ){
+      }else if( optionMatch(z, "append") && !p->bSafeMode ){
         openMode = SHELL_OPEN_APPENDVFS;
       }else if( optionMatch(z, "readonly") ){
         openFlags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
