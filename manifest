@@ -1,5 +1,5 @@
-C Correct\sa\sdoc\sfalsehood\s-\sjquery.terminal\sdoes\snot\srequire\spre-building.
-D 2025-11-28T17:56:22.595
+C Fix\san\sassertion\sfault\sin\ssqlite3Dequote()\sthat\scan\soccur\swith\nALTER\sTABLE\sDROP\sCONSTRAINT\son\sa\scorrupt\sschema.\ndbsqlfuzz\s509a778e8a0c21a6448003feb773a1e55ed751e7.\s\sTest\scase\sin\sTH3.
+D 2025-11-29T12:06:12.932
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -668,7 +668,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 1b9c24374a85dfc7eb8fa7c4266ee0db4f9609cceecfc5481cd8307e5af04366
 F sqlite3.pc.in e6dee284fba59ef500092fdc1843df3be8433323a3733c91da96690a50a5b398
-F src/alter.c f31437552c733957f19351cdfae8fad8e8f0c7d11041e5b7966aae57206ad91f
+F src/alter.c fe6fa35700b968f8f9d2515939455e70f6b6ff2586a6e3ce9827bf44756354f2
 F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
 F src/attach.c 9af61b63b10ee702b1594ecd24fb8cea0839cfdb6addee52fba26fa879f5db9d
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9dd16f8e3b8e181ff138b4061c9dbc116cbc6f85ee867a97cd8af6e9e874c7d1
-R 19f071d72e95cabbab2f39a77dde2c1c
-U stephan
-Z 1378159a2aa74fa957ced5b9c6aaf0e0
+P 4384c9a108b58a0b8c38c51678aad871f088358b9bff3922299cc7ddb3d247ce
+R 7319a92f6ed0f94183ac2bcfe4bf386d
+U drh
+Z 43127c85d2631bbec7cc913abbee76ec
 # Remove this line to create a well-formed Fossil manifest.

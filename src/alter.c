@@ -2449,6 +2449,7 @@ static int getConstraint(const u8 *z){
 */
 static int quotedCompare(
   sqlite3_context *ctx,  /* Function context on which to report errors */
+  int t,                 /* Token type */
   const u8 *zQuote,      /* Possibly quoted text.  Not zero-terminated. */
   int nQuote,            /* Length of zQuote in bytes */
   const u8 *zCmp,        /* Zero-terminated, unquoted name to compare against */
@@ -2456,6 +2457,10 @@ static int quotedCompare(
 ){
   char *zCopy = 0;       /* De-quoted, zero-terminated copy of zQuote[] */
 
+  if( t==TK_ILLEGAL ){
+    *pRes = 1;
+    return SQLITE_OK;
+  }
   zCopy = sqlite3MallocZero(nQuote+1);
   if( zCopy==0 ){
     sqlite3_result_error_nomem(ctx);
@@ -2554,7 +2559,7 @@ static void dropConstraintFunc(
         ** the constraint being dropped.  */
         nTok = getConstraintToken(&zSql[iOff], &t);
         if( zCons ){
-          if( quotedCompare(ctx, &zSql[iOff], nTok, zCons, &cmp) ) return;
+          if( quotedCompare(ctx, t, &zSql[iOff], nTok, zCons, &cmp) ) return;
         }
         iOff += nTok;
 
@@ -2948,7 +2953,7 @@ static void findConstraintFunc(
       int cmp = 0;
       iOff += getWhitespace(&zSql[iOff]);
       nTok = getConstraintToken(&zSql[iOff], &t);
-      if( quotedCompare(ctx, &zSql[iOff], nTok, zCons, &cmp) ) return;
+      if( quotedCompare(ctx, t, &zSql[iOff], nTok, zCons, &cmp) ) return;
       if( cmp==0 ){
         sqlite3_result_int(ctx, 1);
         return;
