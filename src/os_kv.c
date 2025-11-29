@@ -465,7 +465,7 @@ int kvvfsDecode(const char *a, char *aOut, int nOut){
     }else{
       aOut[j] = c<<4;
       c = kvvfsHexValue[aIn[++i]];
-      if( c<0 ) return -1;
+      if( c<0 ) return -1 /* hex bytes are always in pairs */;
       aOut[j++] += c;
       i++;
     }

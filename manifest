@@ -1,5 +1,5 @@
-C Fix\skvvfs\sevent\snotification\sto\snotify\s_all_\slisteners\sand\soptimize\sbetter\sfor\sthe\scommon\scase\sof\sno\slisteners.\sSquelch\ssome\sdebug\soutput.
-D 2025-11-29T23:29:30.618
+C Add\sa\scomment\sexplaining\sthe\snew\skvvfsDecode()\sreturn\s-1\sfrom\s[cd81cb70525e].
+D 2025-11-29T23:41:34.784
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -718,7 +718,7 @@ F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
-F src/os_kv.c fbc86fbfeba7ab7479e217fd78def2859b31b387f7b63702da53b2dade12c118
+F src/os_kv.c 110ef88f5ee976124a08a03c51ac47f46cc9904739929e77016d7ab0ca9004b0
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 7945ede1e85b2d1b910e1b4af9ba342e964b1e30e79f4176480a60736445cb36
 F src/os_win.c a89b501fc195085c7d6c9eec7f5bd782625e94bb2a96b000f4d009703df1083f
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cd81cb70525edeb25c4ab287cd5fd03db08ec45fd9e4001cad5c3eadf11505ae
-R 789f376fc2b96e33926a6af675a9a50c
+P 989d097b1324cf712107bb81697fa8e9044aea0e7feacf0e6b6561e216f07989
+R 465351f3f0514d80bd2330c01d6416cc
 U stephan
-Z 375e7800f59bf74696e74b64b3cb2618
+Z ab4d411f734d9d3878ae160021ac295e
 # Remove this line to create a well-formed Fossil manifest.
