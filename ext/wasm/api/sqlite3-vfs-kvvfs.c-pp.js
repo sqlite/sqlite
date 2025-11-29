@@ -97,7 +97,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   if( !pKvvfs ) return /* nothing to do */;
   if( 0 ){
-    /* This working would be our proverbial holy grail. */
+    /* This working would be our proverbial holy grail, in that it
+       would allow us to eliminate the current default VFS, which
+       relies on POSIX I/O APIs. Eliminating that dependency would get
+       us one giant step closer to creating wasi-sdk builds. */
     capi.sqlite3_vfs_register(pKvvfs, 1);
   }
 
@@ -465,6 +468,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   const jsKeyForStorage = (store,zClass,zKey)=>
         wasm.cstrToJs(zKeyForStorage(store, zClass, zKey));
+
+  const storageGetDbSize = (store)=>+store.storage.getItem(store.keyPrefix + "sz");
 
   /**
      sqlite3_file pointers => objects, each of which has:
@@ -1433,6 +1438,159 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return jdb.storageSize(this.affirmOpen().filename, true);
     };
   }/*sqlite3.oo1.JsStorageDb*/
+
+  if( sqlite3.__isUnderTest && sqlite3.vtab ){
+    /**
+       An eponymous vtab for inspecting the kvvfs state.  This is only
+       intended for use in testing and development, not part of the
+       public API.
+    */
+    const cols = Object.assign(Object.create(null),{
+      rowid:       {type: 'INTEGER'},
+      name:        {type: 'TEXT'},
+      nRef:        {type: 'INTEGER'},
+      nOpen:       {type: 'INTEGER'},
+      isTransient: {type: 'INTEGER'},
+      dbSize:      {type: 'INTEGER'}
+    });
+    Object.keys(cols).forEach((v,i)=>cols[v].colId = i);
+
+    const VT = sqlite3.vtab;
+    const cursorState = function(cursor){
+      return ((cursor instanceof capi.sqlite3_vtab_cursor)
+       ? cursor
+       : VT.xCursor.get(cursor)
+      ).vTabState
+        ??= Object.assign(Object.create(null),{
+          rowid: 0,
+          names: Object.keys(cache.storagePool)
+            .filter(v=>!cache.rxJournalSuffix.test(v)),
+          row: function(){
+            return cache.storagePool[this.names[this.rowid]];
+          }
+        });
+    };
+
+    const dbg = 1 ? ()=>{} : (...args)=>debug("vtab",...args);
+
+    const theModule = function f(){
+      return f.mod ??= new sqlite3.capi.sqlite3_module().setupModule({
+        catchExceptions: true,
+        methods: {
+          xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
+            dbg("xConnect");
+            try{
+              const xcol = [];
+              Object.keys(cols).forEach((k)=>{
+                xcol.push(k+" "+cols[k].type);
+              });
+              const rc = capi.sqlite3_declare_vtab(
+                pDb, "CREATE TABLE ignored("+xcol.join(',')+")"
+              );
+              if(0===rc){
+                const t = VT.xVtab.create(ppVtab);
+                util.assert(
+                  (t === VT.xVtab.get(wasm.peekPtr(ppVtab))),
+                  "output pointer check failed"
+                );
+              }
+              return rc;
+            }catch(e){
+              return VT.xErrror('xConnect', e, capi.SQLITE_ERROR);
+            }
+          },
+          xCreate: wasm.ptr.null, // eponymous only
+          xDisconnect: function(pVtab){
+            dbg("xDisconnect",...arguments);
+            VT.xVtab.dispose(pVtab);
+            return 0;
+          },
+          xOpen: function(pVtab, ppCursor){
+            dbg("xOpen",...arguments);
+            VT.xCursor.create(ppCursor);
+            return 0;
+          },
+          xClose: function(pCursor){
+            dbg("xClose",...arguments);
+            const c = VT.xCursor.unget(pCursor);
+            delete c.vTabState;
+            c.dispose();
+            return 0;
+          },
+          xNext: function(pCursor){
+            dbg("xNext",...arguments);
+            const c = VT.xCursor.get(pCursor);
+            ++cursorState(c).rowid;
+            return 0;
+          },
+          xColumn: function(pCursor, pCtx, iCol){
+            dbg("xColumn",...arguments);
+            //const c = VT.xCursor.get(pCursor);
+            const st = cursorState(pCursor);
+            const store = st.row();
+            util.assert(store, "Unexpected xColumn call");
+            switch(iCol){
+              case cols.rowid.colId:
+                capi.sqlite3_result_int(pCtx, st.rowid);
+                break;
+              case cols.name.colId:
+                capi.sqlite3_result_text(pCtx, store.jzClass, -1, capi.SQLITE_TRANSIENT);
+                break;
+              case cols.nRef.colId:
+                capi.sqlite3_result_int(pCtx, store.refc);
+                break;
+              case cols.nOpen.colId:
+                capi.sqlite3_result_int(pCtx, store.files.length);
+                break;
+              case cols.isTransient.colId:
+                capi.sqlite3_result_int(pCtx, !!store.deleteAtRefc0);
+                break;
+              case cols.dbSize.colId:
+                capi.sqlite3_result_int(pCtx, storageGetDbSize(store));
+                break;
+              default:
+                capi.sqlite3_result_error(pCtx, "Invalid column id: "+iCol);
+                return capi.SQLITE_RANGE;
+            }
+            return 0;
+          },
+          xRowid: function(pCursor, ppRowid64){
+            dbg("xRowid",...arguments);
+            const st = cursorState(pCursor);
+            VT.xRowid(ppRowid64, st.rowid);
+            return 0;
+          },
+          xEof: function(pCursor){
+            dbg("xEof",...arguments);
+            const st = cursorState(pCursor);
+            return !st.row();
+          },
+          xFilter: function(pCursor, idxNum, idxCStr,
+                            argc, argv/* [sqlite3_value* ...] */){
+            dbg("xFilter",...arguments);
+            const st = cursorState(pCursor);
+            st.rowid = 0;
+            return 0;
+          },
+          xBestIndex: function(pVtab, pIdxInfo){
+            dbg("xBestIndex",...arguments);
+            //const t = VT.xVtab.get(pVtab);
+            const pii = new capi.sqlite3_index_info(pIdxInfo);
+            pii.$estimatedRows = cache.storagePool.size;
+            pii.$estimatedCost = 1.0;
+            pii.dispose();
+            return 0;
+          }
+        }
+      })/*setupModule*/;
+    }/*theModule()*/;
+
+    sqlite3.kvvfs.create_module = function(pDb, name="sqlite_kvvfs"){
+      return capi.sqlite3_create_module(pDb, name, theModule(),
+                                        wasm.ptr.null);
+    };
+
+  }/* virtual table */
 
 })/*globalThis.sqlite3ApiBootstrap.initializers*/;
 //#savepoint rollback

@@ -2631,7 +2631,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(wasm.isPtr(tmplMod.$xRowid))
           .assert(wasm.isPtr(tmplMod.$xCreate))
           .assert(tmplMod.$xCreate === tmplMod.$xConnect,
-                  "setup() must make these equivalent and "+
+                  "setupModule() must make these equivalent and "+
                   "installMethods() must avoid re-compiling identical functions");
         tmplMod.$xCreate = wasm.ptr.null /* make tmplMod eponymous-only */;
         let rc = capi.sqlite3_create_module(
@@ -3265,12 +3265,30 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db.close();
           const after = JSON.stringify(counts);
           T.assert( before===after, "Expecting no events after unlistening." );
+          sqlite3.kvvfs.unlink(filename);
         }finally{
           db?.close?.();
         }
-
       }
-    })/*kvvfs listeners
+    })/*kvvfs listeners */
+    .t({
+      name: 'kvvfs vtab',
+      predicate: (sqlite3)=>!!sqlite3.kvvfs.create_module,
+      test: function(sqlite3){
+        const kvvfs = sqlite3.kvvfs;
+        const db = new sqlite3.oo1.DB();
+        try{
+          kvvfs.create_module(db);
+          /*db.exec([
+            "create virtual table vt using kvvfs()"
+          ]);*/
+          let rc = db.selectObjects("select * from sqlite_kvvfs");
+          console.log("vtab rc", rc);
+        }finally{
+          db.close();
+        }
+      }
+    })/* kvvfs vtab */
 //#if enable-see
     .t({
       name: 'kvvfs SEE encryption in sessionStorage',

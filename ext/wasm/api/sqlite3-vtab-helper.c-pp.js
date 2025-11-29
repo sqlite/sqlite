@@ -172,10 +172,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          Works like unget() plus it calls dispose() on the
          StructType object.
       */
-      dispose: (pCObj)=>{
-        const o = __xWrap(pCObj,true);
-        if(o) o.dispose();
-      }
+      dispose: (pCObj)=>__xWrap(pCObj,true)?.dispose?.()
     });
   };
 
