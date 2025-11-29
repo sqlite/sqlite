@@ -1836,6 +1836,21 @@ int sqlite3__wasm_init_wasmfs(const char *zUnused){
 }
 #endif /* __EMSCRIPTEN__ && SQLITE_ENABLE_WASMFS */
 
+#if 0
+SQLITE_WASM_EXPORT
+int sqlite3__wasm_wait_int32(int32_t * addr, int interval, int max){
+  unsigned tWaited = 0;
+  if( interval <= 0 ) interval = 50;
+  if( max <= 0 ) max = 3000;
+  while( tWaited < max ){
+    //printf("tWaited=%d, interval=%d, max=%d, *addr=%d\n", tWaited, interval, max, *addr);
+    if( *addr ) return 1;
+    tWaited += sqlite3_sleep(interval);
+  }
+  return 0;
+}
+#endif
+
 #if SQLITE_WASM_ENABLE_C_TESTS
 
 SQLITE_WASM_EXPORT

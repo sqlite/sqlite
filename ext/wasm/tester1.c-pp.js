@@ -140,6 +140,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }
     TestUtil.checkHeapSize(true);
   };
+  const debug = (...args)=>{
+    console.debug('tester1',...args);
+  };
   const log = (...args)=>{
     //console.log(...args);
     logClass('',...args);
@@ -3303,6 +3306,70 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     })/*kvvfs with SEE*/
 //#endif enable-see
   ;/* end kvvfs tests */
+
+//#if nope
+  ////////////////////////////////////////////////////////////////////////
+  T.g('Async as sync experiment')
+    .t({
+      name: 'async via sync',
+      predicate: ()=>isUIThread() || 'UI thread only',
+      test: function(sqlite3){
+        log("An experiment in hiding async behind a sync interface.");
+        const nExpect = 11;
+        const blob = new Blob(
+          [document.querySelector("#worker-asyncTest1").textContent],
+          { type: "text/javascript" }
+        );
+        const dbg = (...args)=>console.warn('syncy test',...args);
+        const startTime = Date.now();
+        const indirection = function*(pOut){
+          const genWaiter = function*(ptrToWatch, maxWait){
+            const maxTime = startTime + maxWait;
+            const gap = 200;
+            let n = 0;
+            const f = wasm.exports.sqlite3__wasm_wait_int32;
+            do{
+              dbg("Checking ptr...");
+              ++n;
+              if( f(ptrToWatch, 75, gap) ){
+                break;
+              }
+              dbg("nope to ptr", n);
+              yield 0;
+            }while( Date.now() + gap < maxTime );
+            dbg("Exited loop?");
+            dbg("Got async result", wasm.peek32(ptrToWatch));
+            return 1;
+            //return 0;
+          };
+          const waiter = genWaiter(pOut, 3000);
+          // does not fire when we need it to. setTimeout( fa, 300 );
+          debug("Beginning wait on pOut...");
+          yield *waiter;
+          //wasm.dealloc(pOut);
+        };
+        const pOut = wasm.alloc(4);
+        if( 1 ){
+          dbg("Starting worker");
+          const worker = new Worker(window.URL.createObjectURL(blob));
+          worker.onmessage = function(ev){
+            dbg("worker shows signs of life",ev);
+            dbg("Setting pOut async", startTime, Date.now());
+            //wasm.poke32(pOut, nExpect);
+          };
+        }
+        wasm.poke32(pOut, 0);
+        const indy = indirection(pOut);
+        const p = new Promise((ok,nok)=>{
+          while( !indy.next().done );
+          ok();
+        });
+        //indy.next();
+        //indy.next();
+        //indy.next();
+      }
+    })/*async-as-sync experiment*/;
+//#endif
 
   ////////////////////////////////////////////////////////////////////////
   T.g('Hook APIs')

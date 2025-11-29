@@ -40,5 +40,15 @@
     <script src="@sqlite3.js@"></script>
     <script src="@tester1.js@"></script>
 //#endif
-  </body>
+//#if nope
+    <script type='tester1/worker' id='worker-asyncTest1'>
+      onmessage = function(e){
+        console.debug("tester1 Worker message:",e);
+        postMessage('gone');
+      };
+      console.debug("tester1/worker coming to life");
+      postMessage('ready');
+    </script>
+//#endif
+</body>
 </html>
