@@ -1267,6 +1267,8 @@ speedtest1: b-speedtest1
 #
 # Generate 64-bit variants of speedtest1*.{js,html}
 #
+# TODO: preprocess these like we do the rest.
+#
 define gen-st64
 $(2): $(1)
 	@$$(call b.echo,speedtest164,$$(emo.disk)$(emo.lock) Creating from $$<)

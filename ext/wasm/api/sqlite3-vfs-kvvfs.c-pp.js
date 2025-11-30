@@ -115,21 +115,66 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   );
   util.assert( 32<=kvvfsMethods.$nKeySize, "unexpected kvvfsMethods.$nKeySize: "+kvvfsMethods.$nKeySize);
 
+  /**
+     Most of the VFS-internal state.
+   */
   const cache = Object.assign(Object.create(null),{
-    fixedPageSize: 8192/*used in some validation*/,
+    /**
+       Bug: kvvfs is currently fixed at a page size of 8kb because
+       changing it is leaving corrupted dbs for reasons as yet
+       unknown. This value is used in certain validation to ensure
+       that if that limitation is lifted, it will break potentially
+       affected code.
+    */
+    fixedPageSize: 8192,
+    /** Regex matching journal file names. */
     rxJournalSuffix: /-journal$/,
+    /** Frequently-used C-string. */
     zKeyJrnl: wasm.allocCString("jrnl"),
+    /** Frequently-used C-string. */
     zKeySz: wasm.allocCString("sz"),
+    /**
+       The maximum size of a kvvfs record key. It is historically only
+       32, a limitation currently retained only because it's convenient to
+       do so (the underlying code has outgrown the need for the artifically
+       low limit).
+
+       We cache this value here because the end of this init code will
+       dispose of kvvfsMethods, invalidating it.
+    */
     keySize: kvvfsMethods.$nKeySize,
+    /**
+       WASM heap memory buffers to optimize out some frequent
+       allocations.
+    */
     buffer: Object.assign(Object.create(null),{
+      /**
+         The size of each buffer in this.pool.
+
+         kvvfsMethods.$nBufferSize is slightly larger than the output
+         space needed for a kvvfs-encoded 64kb db page in a worse-cast
+         encoding (128kb). It is not suitable for arbitrary buffer
+         use, only page de/encoding.  As the VFS system has no hook
+         into library finalization, these buffers are effectively
+         leaked except in the few places which use memBufferFree().
+      */
       n: kvvfsMethods.$nBufferSize,
+      /**
+         Map of buffer ids to wasm.alloc()'d pointers of size
+         this.n. (Re)used by various internals.
+
+         Buffer ids 0 and 1 are used in the API internals.  Other
+         names are used in higher-level APIs.
+
+         See memBuffer() and memBufferFree().
+      */
       pool: Object.create(null)
     })
   });
 
   /**
-     A wasm.alloc()'d buffer large enough for all kvvfs
-     encoding/decoding needs (cache.buffer.n).
+     Returns a (cached) wasm.alloc()'d buffer of cache.buffer.n size,
+     throwing on OOM.
 
      We leak this one-time alloc because we've no better option.
      sqlite3_vfs does not have a finalizer, so we've no place to hook
@@ -139,7 +184,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   cache.memBuffer = (id=0)=>cache.buffer.pool[id] ??= wasm.alloc(cache.buffer.n);
 
-  /** Freeds the buffer with the given id. */
+  /** Frees the buffer with the given id. */
   cache.memBufferFree = (id)=>{
     const b = cache.buffer.pool[id];
     if( b ){
@@ -148,19 +193,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   };
 
+  const noop = ()=>{};
   const debug = sqlite3.__isUnderTest
-        ? function(){sqlite3.config.debug("kvvfs:", ...arguments)}
-        : function(){};
-  const warn = function(){sqlite3.config.warn("kvvfs:", ...arguments)};
-  const error = function(){sqlite3.config.error("kvvfs:", ...arguments)};
+        ? (...args)=>sqlite3.config.debug("kvvfs:", ...args)
+        : noop;
+  const warn = (...args)=>sqlite3.config.warn("kvvfs:", ...args);
+  const error = (...args)=>sqlite3.config.error("kvvfs:", ...args);
 
   /**
      Implementation of JS's Storage interface for use as backing store
      of the kvvfs. Storage is a native class and its constructor
      cannot be legally called from JS, making it impossible to
      directly subclass Storage. This class implements (only) the
-     Storage interface, however, to make it a drop-in replacement for
-     localStorage/sessionStorage.
+     Storage interface, to make it a drop-in replacement for
+     localStorage/sessionStorage. (Any behavioral discrepancies are to
+     be considered bugs.)
 
      This impl simply proxies a plain, prototype-less Object, suitable
      for JSON-ing.
@@ -266,26 +313,31 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      Create a new instance of the objects which go into
-     cache.storagePool.
+     cache.storagePool, with a refcount of 1. If passed a Storage-like
+     object as its second argument, it is used for the storage,
+     otherwise it creates a new KVVfsStorage object.
   */
-  const newStorageObj = (name,storage)=>Object.assign(Object.create(null),{
+  const newStorageObj = (name,storage=undefined)=>Object.assign(Object.create(null),{
     /**
        JS string value of this KVVfsFile::$zClass. i.e. the storage's
        name.
     */
     jzClass: name,
     /**
-       Refcount to keep dbs and journals pointing to the same storage
-       for the life of both. Managed by xOpen() and xClose().
+       Refcount. This keeps dbs and journals pointing to the same
+       storage for the life of both and enables kvvfs to behave more
+       like a conventional filesystem (a stepping stone towards
+       downstream API goals). Managed by xOpen() and xClose().
     */
     refc: 1,
     /**
-       deleteAtRefc0 objects will be removed by xClose() when refc
-       reaches 0. The others will persist, to give the illusion of
-       real back-end storage. Managed by xOpen(). By default this is
-       false but the delete-on-close=1 flag can be used to set this to
-       true.
-     */
+       If true, this storage will be removed by xClose() or
+       sqlite3_js_kvvfs_unlink() when refc reaches 0. The others will
+       persist when refc==0, to give the illusion of real back-end
+       storage. Managed by xOpen() and sqlite3_js_kvvfs_reserve(). By
+       default this is false but the delete-on-close=1 flag can be
+       used to set this to true.
+    */
     deleteAtRefc0: false,
     /**
        The backing store. Must implement the Storage interface.
@@ -294,10 +346,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        The storage prefix used for kvvfs keys.  It is
        "kvvfs-STORAGENAME-" for local/session storage and an empty
-       string for transient storage. local/session storage must use
-       the long form (A) for backwards compatibility and (B) so that
-       kvvfs can coexist with non-db client data in those backends.
-       Neither (A) nor (B) are concerns for KVVfsStorage objects.
+       string for other storage. local/session storage must use the
+       long form (A) for backwards compatibility and (B) so that kvvfs
+       can coexist with non-db client data in those backends.  Neither
+       (A) nor (B) are concerns for KVVfsStorage objects.
 
        This prefix mirrors the one generated by os_kv.c's
        kvrecordMakeKey() and must stay in sync with that one.
@@ -310,14 +362,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     files: [],
     /**
        If set, it's an array of objects with various event
-       callbacks. See sqlite3_js_kvvfs_listen().
+       callbacks. See sqlite3_js_kvvfs_listen(). When there are no
+       listeners, this member is set to undefined (instead of an empty
+       array) to allow us to more easily optimize out calls to
+       notifyListeners() for the common case of no listeners.
     */
     listeners: undefined
   });
 
   /**
-     Deletes the cache.storagePool entries for store and its
-     db/journal counterpart.
+     Deletes the cache.storagePool entries for store (a
+     cache.storagePool entry) and its db/journal counterpart.
   */
   const deleteStorage = function(store){
     const other = cache.rxJournalSuffix.test(store.jzClass)
@@ -402,6 +457,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return e;
   };
 
+  /** Exception handler for notifyListeners(). */
   const catchForNotify = (e)=>{
     warn("kvvfs.listener handler threw:",e);
   };
@@ -425,58 +481,63 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      xFileControl().
   */
   const notifyListeners = async function(eventName,store,...args){
-    if( store.listeners ){
-      //cache.rxPageNoSuffix ??= /(\d+)$/;
-      if( store.keyPrefix && args[0] ){
-        args[0] = args[0].replace(store.keyPrefix,'');
-      }
-      let u8enc, z0, z1, wcache;
-      for(const ear of store.listeners){
-        const ev = Object.create(null);
-        ev.storageName = store.jzClass;
-        ev.type = eventName;
-        const decodePages = ear.decodePages;
-        const f = ear.events[eventName];
-        if( f ){
-          if( !ear.includeJournal && args[0]==='jrnl' ){
-            continue;
-          }
-          if( 'write'===eventName && ear.decodePages && +args[0]>0 ){
-            /* Decode pages to Uint8Array. */
-            ev.data = [args[0]];
-            if( wcache?.[args[0]] ){
-              ev.data[1] = wcache[args[0]];
+    try{
+      if( store.listeners ){
+        //cache.rxPageNoSuffix ??= /(\d+)$/;
+        if( store.keyPrefix && args[0] ){
+          args[0] = args[0].replace(store.keyPrefix,'');
+        }
+        let u8enc, z0, z1, wcache;
+        for(const ear of store.listeners){
+          const ev = Object.create(null);
+          ev.storageName = store.jzClass;
+          ev.type = eventName;
+          const decodePages = ear.decodePages;
+          const f = ear.events[eventName];
+          if( f ){
+            if( !ear.includeJournal && args[0]==='jrnl' ){
               continue;
             }
-            u8enc ??= new TextEncoder('utf-8');
-            z0 ??= cache.memBuffer(10);
-            z1 ??= cache.memBuffer(11);
-            const u = u8enc.encode(args[1]);
-            const heap = wasm.heap8u();
-            heap.set(u, z0);
-            heap[wasm.ptr.add(z0, u.length)] = 0;
-            const rc = kvvfsDecode(z0, z1, cache.buffer.n);
-            if( rc>0 ){
-              wcache ??= Object.create(null);
-              wcache[args[0]]
-                = ev.data[1]
-                = heap.slice(z1, wasm.ptr.add(z1,rc));
+            if( 'write'===eventName && ear.decodePages && +args[0]>0 ){
+              /* Decode pages to Uint8Array, caching the result in
+                 wcache in case we have more listeners. */
+              ev.data = [args[0]];
+              if( wcache?.[args[0]] ){
+                ev.data[1] = wcache[args[0]];
+                continue;
+              }
+              u8enc ??= new TextEncoder('utf-8');
+              z0 ??= cache.memBuffer(10);
+              z1 ??= cache.memBuffer(11);
+              const u = u8enc.encode(args[1]);
+              const heap = wasm.heap8u();
+              heap.set(u, Number(z0));
+              heap[wasm.ptr.addn(z0, u.length)] = 0;
+              const rc = kvvfsDecode(z0, z1, cache.buffer.n);
+              if( rc>0 ){
+                wcache ??= Object.create(null);
+                wcache[args[0]]
+                  = ev.data[1]
+                  = heap.slice(Number(z1), wasm.ptr.addn(z1,rc));
+              }else{
+                continue;
+              }
             }else{
-              continue;
+              ev.data = args.length
+                ? ((args.length===1) ? args[0] : args)
+                : undefined;
             }
-          }else{
-            ev.data = args.length
-              ? ((args.length===1) ? args[0] : args)
-              : undefined;
-          }
-          try{f(ev)?.catch?.(catchForNotify)}
-          catch(e){
-            warn("notifyListeners [",store.jzClass,"]",eventName,e);
+            try{f(ev)?.catch?.(catchForNotify)}
+            catch(e){
+              warn("notifyListeners [",store.jzClass,"]",eventName,e);
+            }
           }
         }
       }
+    }catch(e){
+      catchForNotify(e);
     }
-  };
+  }/*notifyListeners()*/;
 
   /**
      Returns the storage object mapped to the given string zClass
@@ -1223,7 +1284,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 util.toss3(capi.SQLITE_ERROR,"Unexpected decoded page size:",nDec);
               }
               //debug("Decoded",nDec,"page bytes");
-              pages[kk] = heap.slice(zDec, wasm.ptr.add(zDec, nDec));
+              pages[kk] = heap.slice(Number(zDec), wasm.ptr.addn(zDec, nDec));
             }else{
               pages[kk] = s.getItem(k);
             }
@@ -1325,8 +1386,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           /* Copy u to the heap and encode the heap copy via C. This
              is _presumably_ faster than porting the encoding algo to
              JS. */
-          heap.set(u, zBin);
-          heap[wasm.ptr.add(zBin,n)] = 0;
+          heap.set(u, Number(zBin));
+          heap[wasm.ptr.addn(zBin,n)] = 0;
           const rc = kvvfsEncode(zBin, n, zEnc);
           util.assert( rc < cache.buffer.n,
                        "Impossibly long output - possibly smashed the heap" );
