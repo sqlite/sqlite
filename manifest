@@ -1,5 +1,5 @@
-C Improvement\simplementation\sof\sthe\sprevious\scheck-in:\sruns\sfaster.
-D 2025-11-30T17:47:27.835
+C Tweaks\sto\sthe\swcwidth()\salgorithm\sin\sQRF,\sfor\sbetter\sagreement\swith\nthe\sTerminal\son\sUbuntu.\s\sThere\sis\sno\sperfect\ssolution,\sas\sdifferent\nttys\sdo\sthings\sdifferently,\sbut\swe\sshould\stry\sto\sget\sas\sclose\sas\swe\ncan.
+D 2025-11-30T23:09:24.695
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,7 +417,7 @@ F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 86fc5c3c5e3eddbe54fc1235cbdc52b8c2c0732791d224345c3014cd45c4c0e7
-F ext/qrf/qrf.c 32b5e5a189dde20117210d385abae48e08b5f111f302a8803cffffb8f79a7cdb
+F ext/qrf/qrf.c 425d02cffcc5b5fe9ff5817794bf751b1fdd6912f570c354272429ce1262b866
 F ext/qrf/qrf.h 322d48537a5aa39c206c2ec0764a7938ea7662a8c25be1c4e9d742789609ba1e
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 42b6dab92464833eeae5fb261ed689e4b632132d7c8e1ea920aeeb5d50091ab7
-R a055702d155b1a51b4b772dbcde9c4ed
+P 484d1fd2a240c8fd006e7794936d6678b8db792a8b2b30d2ae5baf5a1b19463a
+R 421579a1dc9b719bd685b85a638635dd
 U drh
-Z 79eb370b2f8598cdf686e419d28e8dd2
+Z 45edc4a3bdf06ba616e7832a1c1aa528
 # Remove this line to create a well-formed Fossil manifest.
