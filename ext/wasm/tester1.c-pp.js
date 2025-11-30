@@ -3362,7 +3362,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             debug("kvvfs listener pageLog", pglog);
           }
           const before = JSON.stringify(counts);
-          sqlite3.kvvfs.unlisten(listener);
+          T.assert( sqlite3.kvvfs.unlisten(listener) )
+            .assert( !sqlite3.kvvfs.unlisten(listener) );
           db = new DB(dbFileRaw);
           db.exec("delete from kvvfs");
           db.close();

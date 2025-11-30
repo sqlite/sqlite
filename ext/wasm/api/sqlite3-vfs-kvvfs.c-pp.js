@@ -1488,16 +1488,23 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      This has no side effects if opt is invalid or is not a match for
      any listeners.
 
+     Return true if it unregisters its argument, else false.
+
      Added in version @kvvfs-v2-added-in@.
   */
   const sqlite3_js_kvvfs_unlisten = function(opt){
     const store = storageForZClass(opt?.storage);
     if( store?.listeners && opt.events ){
+      const n = store.listeners.length;
       store.listeners = store.listeners.filter((v)=>v!==opt);
+      const rc = n>store.listeners.length;
       if( !store.listeners.length ){
+        // to speed up downstream checks for listeners
         store.listeners = undefined;
       }
+      return rc;
     }
+    return false;
   };
 
   /**
