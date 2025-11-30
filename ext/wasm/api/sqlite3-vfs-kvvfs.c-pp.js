@@ -228,12 +228,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const kvvfsKeyPrefix = (v)=>kvvfsIsPersistentName(v) ? 'kvvfs-'+v+'-' : '';
 
   /**
-     Throws if storage name n is not valid for use as a storage name.
-     Much of this goes back to kvvfs having a fixed buffer size for
-     its keys, and the storage name needing to be encoded in the keys
-     for local/session storage. We disallow non-ASCII to avoid
-     problems with truncated multibyte characters at the end of the
-     key buffer.
+     Throws if storage name n (JS string) is not valid for use as a
+     storage name.  Much of this goes back to kvvfs having a fixed
+     buffer size for its keys, and the storage name needing to be
+     encoded in the keys for local/session storage. We disallow
+     non-ASCII to avoid problems with truncated multibyte characters
+     at the end of the key buffer.
 
      The second argument must only be true when called from xOpen() -
      it makes names with a "-journal" suffix legal.
@@ -257,7 +257,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     let i;
     for( i = 0; i < len; ++i ){
       const ch = n.codePointAt(i);
-      if( ch<45 || ch >126 ){
+      if( ch<43 || ch >126 ){
         toss3(capi.SQLITE_RANGE,
               "Illegal character ("+ch+"d) in storage name:",n);
       }
@@ -345,6 +345,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         cache.storagePool[store.jzClass+'-journal'] = store;
 
   /**
+     The public name of the current thread's transient storage
+     object. A storage object with this name gets preinstalled.
+  */
+  const nameOfThisThreadStorage = '.';
+
+  /**
      Map of JS-stringified KVVfsFile::zClass names to
      reference-counted Storage objects. These objects are created in
      xOpen(). Their refcount is decremented in xClose(), and the
@@ -354,7 +360,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   cache.storagePool = Object.assign(Object.create(null),{
     /* Start off with mappings for well-known names. */
-    localThread: newStorageObj('localThread')
+    [nameOfThisThreadStorage]: newStorageObj(nameOfThisThreadStorage)
   });
 
   if( globalThis.Storage ){
@@ -432,7 +438,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const decodePages = ear.decodePages;
         const f = ear.events[eventName];
         if( f ){
-          if( ear.elideJournal && args[0]==='jrnl' ){
+          if( !ear.includeJournal && args[0]==='jrnl' ){
             continue;
           }
           if( 'write'===eventName && ear.decodePages && +args[0]>0 ){
@@ -1045,7 +1051,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     const store = storageForZClass(which);
     if( !store ) return 0;
-    const keyPrefix = store.keyPrefix;
     if( store.files.length ){
       toss3(capi.SQLITE_ACCESS,
             "Cannot clear in-use database storage.");
@@ -1057,7 +1062,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     for( i = 0; i < n; ++i ){
       const k = s.key(i);
       //debug("kvvfs_clear ?",k);
-      if(!keyPrefix || k.startsWith(keyPrefix)) toRm.push(k);
+      if(!store.keyPrefix || k.startsWith(store.keyPrefix)) toRm.push(k);
     }
     toRm.forEach((kk)=>s.removeItem(kk));
     //alertFilesToReload(store);
@@ -1178,7 +1183,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     });
     const pages = Object.create(null);
     let xpages;
-    const keyPrefix = kvvfsKeyPrefix(rc.name);
+    const keyPrefix = store.keyPrefix;
     const rxTail = keyPrefix
           ? /^kvvfs-[^-]+-(\w+)/ /* X... part of kvvfs-NAME-X... */
           : undefined;
@@ -1431,10 +1436,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      requires no extra work, we already have it in hand, and it's
      often smaller. It's not great for interchange, though.
 
-     - elideJournal [=false]: if true, writes and deletes of
-     "jrnl" records are elided (no event is sent).
+     - includeJournal [=false]: if true, writes and deletes of
+     "jrnl" records are included. If false, no events are sent
+     for journal updates.
 
-     Passing the same object ot sqlite3_js_kvvfs_unlisten() will
+     Passing the same object to sqlite3_js_kvvfs_unlisten() will
      remove the listener.
 
      Each one of the events callbacks will be called asynchronously
@@ -1460,38 +1466,32 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - 'write' gets a length-two array holding the key and value which
      were written. The key is always a string, even if it's a db page
      number. For db-page records, the value's type depends on
-     opt.decodePages.  All others, including the journal, are strings
-     (the latter, being in a kvvfs-specific format, is delivered in
-     its kvvfs-native format). More details below.
+     opt.decodePages.  All others, including the journal, are strings.
+     (The journal, being a kvvfs-specific format, is delivered in
+     that same JSON-friendly format.) More details below.
 
      - 'delete' gets the string-type key of the deleted record.
 
-     - 'sync' receives
-     one argument: true if it was triggered by db file's
-     xSync(), false if it was triggered by xFileControl() (which
-     triggers before the xSync() and also triggers is the DB has
-     PRAGMA SYNCHRONOUS=OFF.
+     - 'sync' gets a boolean value: true if it was triggered by db
+     file's xSync(), false if it was triggered by xFileControl().  The
+     latter triggers before the xSync() and also triggers if the DB
+     has PRAGMA SYNCHRONOUS=OFF (in which case xSync() is not
+     triggered).
 
-     The arguments to 'write', and keys to 'delete', are in one of the
-     following forms:
+     The key/value arguments to 'write', and key argument to 'delete',
+     are in one of the following forms:
 
      - 'sz' = the unencoded db size as a string. This specific key is
      key is never deleted, so is only ever passed to 'write' events.
 
      - 'jrnl' = the current db journal as a kvvfs-encoded string. This
      journal format is not useful anywhere except in the kvvfs
-     internals. These events are not fired if opt.elideJournal is
-     true.
+     internals. These events are not fired if opt.includeJournal is
+     false.
 
-     - '[1-9][0-9]*' (a db page number) = a db page. Its type depends
-     on opt.decodePages. These may be written and deleted in arbitrary
-     order. If a page is deleted, the db is shrinking.
-
-     For 'local' and 'session' storage, all of those keys have a
-     prefix of 'kvvfs-local-' resp. 'kvvfs-session-'. This is required
-     both for backwards compatibility and to enable dbs in those
-     storage objects to coexit with client data. Other storage objects
-     do not have a prefix.
+     - '[1-9][0-9]*' (a db page number) = Its type depends on
+     opt.decodePages. These may be written and deleted in arbitrary
+     order.
 
      Design note: JS has StorageEvents but only in the main thread,
      which is why the listeners are not based on that.
@@ -1625,7 +1625,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       DB.dbCtorHelper.call(this, opt);
     };
     sqlite3.oo1.JsStorageDb.defaultStorageName
-      = cache.storagePool.session ? 'session' : 'localThread';
+      = cache.storagePool.session ? 'session' : nameOfThisThreadStorage;
     const jdb = sqlite3.oo1.JsStorageDb;
     jdb.prototype = Object.create(DB.prototype);
     jdb.clearStorage = sqlite3_js_kvvfs_clear;

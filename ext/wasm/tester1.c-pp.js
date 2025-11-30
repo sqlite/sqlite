@@ -2973,7 +2973,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'transient kvvfs',
       //predicate: ()=>false,
       test: function(sqlite3){
-        const filename = 'localThread' /* preinstalled instance */;
+        const filename = '.' /* preinstalled instance */;
         const JDb = sqlite3.oo1.JsStorageDb;
         const DB = sqlite3.oo1.DB;
 
@@ -3266,7 +3266,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           pglog.pages = [];
           pglog.jrnl = undefined;
           pglog.size = undefined;
-          pglog.elideJournal = true;
+          pglog.includeJournal = false;
           pglog.decodePages = true;
           pglog.exception = new Error("Testing that exceptions from listeners do not interfere");
           const toss = ()=>{
@@ -3280,7 +3280,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const listener = {
             storage: filename,
             reserve: true,
-            elideJournal: pglog.elideJournal,
+            includeJournal: pglog.includeJournal,
             decodePages: pglog.decodePages,
             events: {
               'open':   (ev)=>{
@@ -3303,7 +3303,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                 T.assert('string'===typeof ev.data);
                 switch(ev.data){
                   case 'jrnl':
-                    T.assert(!pglog.elideJournal);
+                    T.assert(pglog.includeJournal);
                     pglog.jrnl = null;
                     break;
                   default:{
@@ -3328,7 +3328,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                   .assert('string'===typeof key);
                 switch( key ){
                   case 'jrnl':
-                    T.assert(!pglog.elideJournal);
+                    T.assert(pglog.includeJournal);
                     pglog.jrnl = val;
                     break;
                   case 'sz':{
@@ -3368,14 +3368,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           debug("kvvfs listener counts:",counts);
           T.assert( counts.open );
           T.assert( counts.close );
-          T.assert( listener.elideJournal ? !counts.delete : counts.delete );
+          T.assert( listener.includeJournal ? counts.delete : !counts.delete );
           T.assert( counts.write );
           T.assert( counts.xSync );
           T.assert( counts.xFileControlSync>=counts.xSync );
           T.assert( counts.open===counts.close );
-          T.assert( pglog.elideJournal
-                     ? (undefined===pglog.jrnl)
-                     : (null===pglog.jrnl),
+          T.assert( pglog.includeJournal
+                    ? (null===pglog.jrnl)
+                    : (undefined===pglog.jrnl),
                      "Unexpected pglog.jrnl value: "+pglog.jrnl );
           if( 1 ){
             T.assert(undefined===pglog.pages[0], "Expecting empty slot 0");
