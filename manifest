@@ -1,5 +1,5 @@
-C Block\sinjection\sof\shyper-oversized\sSQL\sinputs\sinto\sthe\sparser.
-D 2025-11-30T17:26:53.167
+C Improvement\simplementation\sof\sthe\sprevious\scheck-in:\sruns\sfaster.
+D 2025-11-30T17:47:27.835
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -730,7 +730,7 @@ F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
 F src/pragma.c ecec75795c1821520266e4f93fa8840cce48979af532db06f085e36a7813860f
-F src/prepare.c 48783efd7440445fcc8f2901868f3cac2c105ede48d4612b6f1f92404e558a8d
+F src/prepare.c f6a6e28a281bd1d1da12f47d370a81af46159b40f73bf7fa0b276b664f9c8b7d
 F src/printf.c b1b29b5e58e1530d5daeee5963d3c318d8ab2d7e38437580e28755753e0c1ded
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 5616fbcf3b833c7c705b24371828215ad0925d0c0073216c4f153348d5753f0a
@@ -794,7 +794,7 @@ F src/test_vfs.c b4135c1308516adf0dfd494e6d6c33114e03732be899eace0502919b674586b
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c cb3294cf23c11106b50d9af6998a6c1bf389b52e15b17698c9fab97bbaa9b37f
+F src/tokenize.c ca1382f02a3990d1a770acd5c55731dee10cd644465b2855eca33e4d2ea299ed
 F src/treeview.c 3ce7ac9835d2d70cc1c868b01b747ae8a062322e155701e58e3d62ca79aada7a
 F src/trigger.c d5cf2541ff048f30b6a0507eb3d1ec4e695c53584e3b2298a5bf248714fe185e
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
@@ -2126,7 +2126,7 @@ F tool/mkautoconfamal.sh 647dada5e34c466bef62a4408e1c99a7e5e1922805479dd57944f33
 F tool/mkccode.tcl c42a8f8cf78f92e83795d5447460dbce7aaf78a3bbf9082f1507dc71a3665f3c x
 F tool/mkcombo.tcl 2a5189b219c4a495e1ff7fc980bd568d3cfb82ae9d50c84e77f7a161e96fc132
 F tool/mkctimec.tcl 3fb5cad05922f5da61262cb6bcd5868a34e94a49ca8833ae2d7796e7df075576 x
-F tool/mkkeywordhash.c 6b0be901c47f9ad42215fc995eb2f4384ac49213b1fba395102ec3e999acf559
+F tool/mkkeywordhash.c 82d5af1d0e677900739fba59155cddac172d8c712c2d91ab73d6e6bcb30060f0
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1d79220ac9f6ad783dee48d341ebc9bb58f357b585baf1612b5aebbf8ad0cccb
-R 0065eeeab95a3049a86de91e0495a5f0
+P 42b6dab92464833eeae5fb261ed689e4b632132d7c8e1ea920aeeb5d50091ab7
+R a055702d155b1a51b4b772dbcde9c4ed
 U drh
-Z 6a0cb4a311ee1730d569692b4306cb40
+Z 79eb370b2f8598cdf686e419d28e8dd2
 # Remove this line to create a well-formed Fossil manifest.
