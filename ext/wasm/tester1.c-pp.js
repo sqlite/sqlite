@@ -3260,9 +3260,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           ];
           const sqlCount = "select count(*) from kvvfs";
           const sqlSelectSchema = "select * from sqlite_schema";
-          const counts = Object.assign(Object.create(null),{
-            open: 0, close: 0, delete: 0, write: 0
-          });
+          const counts = Object.create(null);
+          const incr = (key)=>counts[key] = 1 + (counts[key] ?? 0);
           const pglog = Object.create(null);
           pglog.pages = [];
           pglog.jrnl = undefined;
@@ -3277,6 +3276,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               throw e;
             }
           };
+
           const listener = {
             storage: filename,
             reserve: true,
@@ -3285,7 +3285,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             events: {
               'open':   (ev)=>{
                 //console.warn('open',ev);
-                ++counts[ev.type];
+                incr(ev.type);
                 T.assert(filename===ev.storageName)
                   .assert('number'===typeof ev.data);
               },
@@ -3293,13 +3293,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                 //^^^ if this is async, we can't time the test for
                 // pglog.exception without far more hoop-jumping.
                 //console.warn('close',ev);
-                ++counts[ev.type];
+                incr(ev.type);
                 T.assert('number'===typeof ev.data);
                 toss();
               },
               'delete': (ev)=>{
                 //console.warn('delete',ev);
-                ++counts[ev.type];
+                incr(ev.type);
                 T.assert('string'===typeof ev.data);
                 switch(ev.data){
                   case 'jrnl':
@@ -3317,9 +3317,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                   }
                 }
               },
+              'sync': (ev)=>{
+                incr(ev.data ? 'xSync' : 'xFileControlSync');
+              },
               'write':  (ev)=>{
                 //console.warn('write',ev);
-                ++counts[ev.type];
+                incr(ev.type);
                 const key = ev.data[0], val = ev.data[1];
                 T.assert(Array.isArray(ev.data))
                   .assert('string'===typeof key);
@@ -3350,6 +3353,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             }
           };
+
           kvvfs.listen(listener);
           const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&delete-on-close=1';
           const expOpt = {
@@ -3362,12 +3366,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                    "Unexpected empty schema");
           db.close();
           debug("kvvfs listener counts:",counts);
-          T.assert( counts.open )
-            .assert( counts.close )
-            .assert( listener.elideJournal ? !counts.delete : counts.delete )
-            .assert( counts.write )
-            .assert( counts.open===counts.close )
-            .assert( pglog.elideJournal
+          T.assert( counts.open );
+          T.assert( counts.close );
+          T.assert( listener.elideJournal ? !counts.delete : counts.delete );
+          T.assert( counts.write );
+          T.assert( counts.xSync );
+          T.assert( counts.xFileControlSync>=counts.xSync );
+          T.assert( counts.open===counts.close );
+          T.assert( pglog.elideJournal
                      ? (undefined===pglog.jrnl)
                      : (null===pglog.jrnl),
                      "Unexpected pglog.jrnl value: "+pglog.jrnl );
@@ -3377,8 +3383,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             //debug("kvvfs listener pageLog", pglog);
           }
           const before = JSON.stringify(counts);
-          T.assert( kvvfs.unlisten(listener) )
-            .assert( !kvvfs.unlisten(listener) );
+          T.assert( kvvfs.unlisten(listener) );
+          T.assert( !kvvfs.unlisten(listener) );
           db = new DB(dbFileRaw);
           T.assert( db.selectObjects(sqlSelectSchema)?.length>0 );
           const exp = kvvfs.export(expOpt);

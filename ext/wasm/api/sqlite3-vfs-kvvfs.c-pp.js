@@ -404,7 +404,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const kvvfsEncode = wasm.exports.sqlite3__wasm_kvvfs_encode;
 
   /**
-     Listener events and their argument(s):
+     Listener events and their argument(s) (via the callback(ev)
+     ev.data member):
 
      'open': number of opened handles on this storage.
 
@@ -413,11 +414,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      'write': key, value
 
      'delete': key
+
+     'sync': true if it's from xSync(), false if it's from
+     xFileControl().
   */
   const notifyListeners = async function(eventName,store,...args){
     if( store.listeners ){
       //cache.rxPageNoSuffix ??= /(\d+)$/;
-      if( store.keyPrefix ){
+      if( store.keyPrefix && args[0] ){
         args[0] = args[0].replace(store.keyPrefix,'');
       }
       let u8enc, z0, z1, wcache;
@@ -451,9 +455,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               wcache[args[0]]
                 = ev.data[1]
                 = heap.slice(z1, wasm.ptr.add(z1,rc));
+            }else{
+              continue;
             }
           }else{
-            ev.data = ((args.length===1) ? args[0] : args);
+            ev.data = args.length
+              ? ((args.length===1) ? args[0] : args)
+              : undefined;
           }
           try{f(ev)?.catch?.(catchForNotify)}
           catch(e){
@@ -721,10 +729,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             //no if( true===deleteAt0 ) s.deleteAtRefc0 = true;
             s.files.push(f);
           }else{
-            /* TODO: a url flag which tells it to keep the storage
-               around forever so that future xOpen()s get the same
-               Storage-ish objects. We can accomplish that by
-               simply increasing the refcount once more. */
             wasm.poke32(pOutFlags, flags | sqlite3.SQLITE_OPEN_CREATE);
             util.assert( !f.$isJournal, "Opening a journal before its db? "+jzClass );
             /* Map both zName and zName-journal to the same storage. */
@@ -735,7 +739,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             s.deleteAtRefc0 = deleteAt0 || !!(capi.SQLITE_OPEN_DELETEONCLOSE & flags);
             //debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
           }
-          pFileHandles.set(pProtoFile, {storage: s, file: f, jzClass});
+          pFileHandles.set(pProtoFile, {store: s, file: f, jzClass});
           notifyListeners('open', s, s.files.length);
           return 0;
         }catch(e){
@@ -748,10 +752,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         cache.popError();
         try{
           const jzName = wasm.cstrToJs(zName);
-          //debug("xDelete", jzName, storageForZClass(jzName));
           if( cache.rxJournalSuffix.test(jzName) ){
             recordHandler.xRcrdDelete(zName, cache.zKeyJrnl);
-          }
+          }/*
+             else: historically not done, but maybe otherwise delete
+             all db pages from storageForZClass(zName)?
+           */
           return 0;
         }catch(e){
           warn("xDelete",e);
@@ -829,12 +835,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ioDb:{
       /* sqlite3_kvvfs_methods::pIoDb's methods */
       xClose: function(pFile){
+        cache.popError();
         try{
           const h = pFileHandles.get(pFile);
           //debug("xClose", pFile, h);
           if( h ){
             pFileHandles.delete(pFile);
-            const s = storageForZClass(h.jzClass);
+            const s = h.store;//storageForZClass(h.jzClass);
             s.files = s.files.filter((v)=>v!==h.file);
             if( --s.refc<=0 && s.deleteAtRefc0 ){
               deleteStorage(s);
@@ -853,9 +860,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       },
 
       xFileControl: function(pFile, opId, pArg){
+        cache.popError();
         try{
           const h = pFileHandles.get(pFile);
           util.assert(h, "Missing KVVfsFile handle");
+          //debug("xFileControl",h,opId);
           if( opId===capi.SQLITE_FCNTL_PRAGMA ){
             /* pArg== length-3 (char**) */
             const zName = wasm.peekPtr(wasm.ptr.add(pArg, wasm.ptr.size));
@@ -881,18 +890,36 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               }
             }
           }
-          return originalIoMethods(h.file).xFileControl(pFile, opId, pArg);
+          const rc = originalIoMethods(h.file).xFileControl(pFile, opId, pArg);
+          if( 0==rc && capi.SQLITE_FCNTL_SYNC===opId ){
+            notifyListeners('sync', h.store, false);
+          }
+          return rc;
         }catch(e){
           error("xFileControl",e);
           return cache.setError(e);
         }
       },
 
+      xSync: function(pFile,flags){
+        cache.popError();
+        try{
+          const h = pFileHandles.get(pFile);
+          //debug("xSync",h);
+          util.assert(h, "Missing KVVfsFile handle");
+          const rc = originalIoMethods(h.file).xSync(pFile, flags);
+          if( 0==rc ) notifyListeners('sync', h.store, true);
+          return rc;
+        }catch(e){
+          error("xSync",e);
+          return cache.setError(e);
+        }
+      }
+
 //#if nope
       xRead: function(pFile,pTgt,n,iOff64){},
       xWrite: function(pFile,pSrc,n,iOff64){},
       xTruncate: function(pFile,i64){},
-      xSync: function(pFile,flags){},
       xFileSize: function(pFile,pi64Out){},
       xLock: function(pFile,iLock){},
       xUnlock: function(pFile,iLock){},
@@ -1438,6 +1465,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      its kvvfs-native format). More details below.
 
      - 'delete' gets the string-type key of the deleted record.
+
+     - 'sync' receives
+     one argument: true if it was triggered by db file's
+     xSync(), false if it was triggered by xFileControl() (which
+     triggers before the xSync() and also triggers is the DB has
+     PRAGMA SYNCHRONOUS=OFF.
 
      The arguments to 'write', and keys to 'delete', are in one of the
      following forms:
