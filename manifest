@@ -1,5 +1,5 @@
-C Rename\skvvfs's\s'localThread'\sstorage\sobject\sto\s'.'.\sSwap\skvvfs.listen()'s\selideJournal(=false)\soption\swith\sincludeJournal(=false)\s(i.e.\sopt\sin\sinstead\sof\sopt\sout).
-D 2025-11-30T08:32:52.350
+C Optimize\sout\sa\skvvfs\sevent\snotification\scall\sin\sthe\scommon\scase\swhere\sthere\sare\sno\slisteners.
+D 2025-11-30T16:37:47.709
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -600,7 +600,7 @@ F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 9654b565b346dc609b75d15337f20acfa7af7d9d558da1afeb9b6d8eaa404966
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 352436a4e3adf66ae68dcff58ebb5aabe9754d716b818d955bceaf2641b6f815
+F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 278c7882968b01e9fc8269ae94f725e85acce1dc0a38e91b71397a17d8c1876e
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js a2eea6442556867b589e04107796c6e1d04a472219529eeb45b7cd221d7d048b
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 88ce2078267a2d1af57525a32d896295f4a8db7664de0e17e82dc9ff006ed8d3
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a4b6dadffa1b43aadebfa06a1de14d763efd18b16c4a3e87f1bd039fbff2524d
-R f7259cd8e3b1071dcc04e1dcebc90322
+P 7f0eca9d0aeb49c86a785ae930d235902bbd0f15877cc8f6083daac8efb2d1c1
+R bd382764c774d080ec17e2301611eab2
 U stephan
-Z 1f9741d6046d640c682611f3b5f58d30
+Z 249c02695d60433ade4ac626997fb17e
 # Remove this line to create a well-formed Fossil manifest.

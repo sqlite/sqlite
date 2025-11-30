@@ -670,7 +670,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           const jxKey = jsKeyForStorage(store, zClass, zKey);
           const jData = wasm.cstrToJs(zData);
           store.storage.setItem(jxKey, jData);
-          notifyListeners('write', store, jxKey, jData);
+          store.listeners && notifyListeners('write', store, jxKey, jData);
           return 0;
         }catch(e){
           error("kvrecordWrite()",e);
@@ -683,7 +683,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           const store = storageForZClass(zClass);
           const jxKey = jsKeyForStorage(store, zClass, zKey);
           store.storage.removeItem(jxKey);
-          notifyListeners('delete', store, jxKey);
+          store.listeners && notifyListeners('delete', store, jxKey);
           return 0;
         }catch(e){
           error("kvrecordDelete()",e);
@@ -746,7 +746,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             //debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
           }
           pFileHandles.set(pProtoFile, {store: s, file: f, jzClass});
-          notifyListeners('open', s, s.files.length);
+          s.listeners && notifyListeners('open', s, s.files.length);
           return 0;
         }catch(e){
           warn("xOpen:",e);
@@ -854,7 +854,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
             originalIoMethods(h.file).xClose(pFile);
             h.file.dispose();
-            notifyListeners('close', s, s.files.length);
+            s.listeners && notifyListeners('close', s, s.files.length);
           }else{
             /* Can happen if xOpen fails */
           }
@@ -898,7 +898,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
           const rc = originalIoMethods(h.file).xFileControl(pFile, opId, pArg);
           if( 0==rc && capi.SQLITE_FCNTL_SYNC===opId ){
-            notifyListeners('sync', h.store, false);
+            h.store.listeners && notifyListeners('sync', h.store, false);
           }
           return rc;
         }catch(e){
@@ -914,7 +914,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           //debug("xSync",h);
           util.assert(h, "Missing KVVfsFile handle");
           const rc = originalIoMethods(h.file).xSync(pFile, flags);
-          if( 0==rc ) notifyListeners('sync', h.store, true);
+          if( 0==rc && h.store.listeners ) notifyListeners('sync', h.store, true);
           return rc;
         }catch(e){
           error("xSync",e);
