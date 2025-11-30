@@ -1,5 +1,5 @@
-C kvvfs\sdocs\sand\s64-bit\sfixes.
-D 2025-11-30T18:43:59.989
+C Fix\sfiltering\sof\sthe\s64-bit\sspeedtest1\swasm\stest\spages\sto\sagain\sload\sthe\s64-bit\swasm\sfiles.
+D 2025-11-30T18:59:44.604
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -578,7 +578,7 @@ F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009e
 F ext/session/sqlite3session.c b3de195ce668cace9b324599bf6255a70290cbfb5451e826e946f3aee6e64c54
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
-F ext/wasm/GNUmakefile 0b40ca7fc6310a1375b813dde2b26b549e6a650c10045418fe8440619a3e826c
+F ext/wasm/GNUmakefile eba7a9fe9a23479dd828d8eb147fc10d5e44328fc942b63e820f2b7138b4cc94
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8405c19d32f1e8b7273953a038f8bdfd4ea1a6548300bac5421cdf6fc6840285
-R 2f3b7cfa7869c544f8a6af729f308175
+P cf58e17fa2dc2e183a6ea1d41795c701efb303c9b378aa9b90953c9b568c621a
+R bc38fc0c5db4dd54fec98ee4b57b00bc
 U stephan
-Z d109a9becc744b2aad4397bfe3d32fc6
+Z 6428b67de3175eb95663bffa8d0e7f37
 # Remove this line to create a well-formed Fossil manifest.

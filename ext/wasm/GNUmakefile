@@ -1263,25 +1263,33 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
 	@$(call b.mkdir@); $(call b.echo,@,$(emo.disk)); \
 	{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api); } 	> $@ || exit
 speedtest1: b-speedtest1
+st: speedtest1
 
 #
 # Generate 64-bit variants of speedtest1*.{js,html}
+#
+# $1 = input file
+# $2 = output file
 #
 # TODO: preprocess these like we do the rest.
 #
 define gen-st64
 $(2): $(1)
 	@$$(call b.echo,speedtest164,$$(emo.disk)$(emo.lock) Creating from $$<)
-	@rm -f $$@; \
-	sed -e 's/$(3)\.js/$(3)-64bit\.js/' < $$< > $$@; \
+	rm -f $$@; \
+	sed -e 's/speedtest1\.js/speedtest1-64bit\.js/' \
+	-e 's/speedtest1-worker\.js/speedtest1-worker-64bit\.js/' \
+	< $$< > $$@; \
 	chmod -w $$@
-b-speedtest164: $(2)
+$(2): b-speedtest164
+speedtest1: $(1) $(2)
 CLEAN_FILES += $(2)
 endef
+speedtest1: b-speedtest164
 
-$(eval $(call gen-st64,speedtest1.html,speedtest1-64bit.html,speedtest1))
-$(eval $(call gen-st64,speedtest1-worker.html,speedtest1-worker-64bit.html,speedtest1-worker))
-$(eval $(call gen-st64,speedtest1-worker.js,speedtest1-worker-64bit.js,speedtest1-worker))
+$(eval $(call gen-st64,speedtest1.html,speedtest1-64bit.html))
+$(eval $(call gen-st64,speedtest1-worker.html,speedtest1-worker-64bit.html))
+$(eval $(call gen-st64,speedtest1-worker.js,speedtest1-worker-64bit.js))
 # end speedtest1.js
 ########################################################################
 
