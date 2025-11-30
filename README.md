@@ -136,11 +136,11 @@ to compile with the SQLITE_OMIT_DEPRECATED compile-time option, one could say:
         ./configure --enable-all
         make OPTIONS=-DSQLITE_OMIT_DEPRECATED sqlite3
 
-The configure script uses autoconf 2.61 and libtool.  If the configure
-script does not work out for you, there is a generic makefile named
-"Makefile.linux-gcc" in the top directory of the source tree that you
-can copy and edit to suit your needs.  Comments on the generic makefile
-show what changes are needed.
+The configure script uses [autosetup](https://msteveb.github.io/autosetup/).
+If the configure script does not work out for you, there is a generic
+makefile named "Makefile.linux-gcc" in the top directory of the source tree
+that you can copy and edit to suit your needs.  Comments on the generic
+makefile show what changes are needed.
 
 ## Compiling for Windows Using MSVC
 
