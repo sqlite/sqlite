@@ -116,11 +116,37 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   util.assert( 32<=kvvfsMethods.$nKeySize, "unexpected kvvfsMethods.$nKeySize: "+kvvfsMethods.$nKeySize);
 
   const cache = Object.assign(Object.create(null),{
+    fixedPageSize: 8192/*used in some validation*/,
     rxJournalSuffix: /-journal$/,
     zKeyJrnl: wasm.allocCString("jrnl"),
     zKeySz: wasm.allocCString("sz"),
-    keySize: kvvfsMethods.$nKeySize
+    keySize: kvvfsMethods.$nKeySize,
+    buffer: Object.assign(Object.create(null),{
+      n: kvvfsMethods.$nBufferSize,
+      pool: Object.create(null)
+    })
   });
+
+  /**
+     A wasm.alloc()'d buffer large enough for all kvvfs
+     encoding/decoding needs (cache.buffer.n).
+
+     We leak this one-time alloc because we've no better option.
+     sqlite3_vfs does not have a finalizer, so we've no place to hook
+     in the cleanup. We "could" extend sqlite3_shutdown() to have a
+     cleanup list for stuff like this but that function is never
+     used in JS, so it's hardly worth it.
+  */
+  cache.memBuffer = (id=0)=>cache.buffer.pool[id] ??= wasm.alloc(cache.buffer.n);
+
+  /** Freeds the buffer with the given id. */
+  cache.memBufferFree = (id)=>{
+    const b = cache.buffer.pool[id];
+    if( b ){
+      wasm.dealloc(b);
+      delete cache.buffer.pool[id];
+    }
+  };
 
   const debug = sqlite3.__isUnderTest
         ? function(){sqlite3.config.debug("kvvfs:", ...arguments)}
@@ -297,7 +323,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const other = cache.rxJournalSuffix.test(store.jzClass)
           ? store.jzClass.replace(cache.rxJournalSuffix,'')
           : store.jzClass+'-journal';
-    debug("cleaning up storage handles [", store.jzClass, other,"]",store);
+    //debug("cleaning up storage handles [", store.jzClass, other,"]",store);
     delete cache.storagePool[store.jzClass];
     delete cache.storagePool[other];
     if( !sqlite3.__isUnderTest ){
@@ -568,16 +594,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             debug("xRcrdRead", nBuf, zClass, wasm.cstrToJs(zClass),
                   wasm.cstrToJs(zKey), nV, jV, store);
           }
-          const zV = cache.keybuf.mem ??= wasm.alloc.impl(cache.keybuf.n)
-          /* We leak this one-time alloc because we've no better
-             option.  sqlite3_vfs does not have a finalizer, so
-             we've no place to hook in the cleanup. We "could"
-             extend sqlite3_shutdown() to have a cleanup list for
-             stuff like this but (A) that function is never used in
-             JS and (B) its cleanup would leave cache.keybuf
-             pointing to stale memory, so if the library were used
-             after sqlite3_shutdown() then we'd corrupt memory. */;
-          if( !zV ) return -3 /*OOM*/;
+          const zV = cache.memBuffer(0);
+          //if( !zV ) return -3 /*OOM*/;
           const heap = wasm.heap8();
           let i;
           for(i = 0; i < nV; ++i){
@@ -634,7 +652,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xOpen: function(pProtoVfs,zName,pProtoFile,flags,pOutFlags){
         cache.popError();
         try{
-          //cache.zReadBuf ??= wasm.malloc(kvvfsMethods.$nBufferSize);
           if( !zName ){
             zName = (cache.zEmpty ??= wasm.allocCString(""));
           }
@@ -680,7 +697,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             installStorageAndJournal(s);
             s.files.push(f);
             s.deleteAtRefc0 = deleteAt0 || !!(capi.SQLITE_OPEN_DELETEONCLOSE & flags);
-            debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
+            //debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
           }
           pFileHandles.set(pProtoFile, {storage: s, file: f, jzClass});
           notifyListeners('open', s, s.files.length);
@@ -874,9 +891,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         kvvfsMethods, capi.sqlite3_file.structInfo,
         KVVfsFile.structInfo);
   try {
-    cache.keybuf = Object.create(null);
-    cache.keybuf.n = kvvfsMethods.$nBufferSize;
-    util.assert( cache.keybuf.n>1024*129, "Key buffer is not large enough"
+    util.assert( cache.buffer.n>1024*129, "Heap buffer is not large enough"
                  /* Native is SQLITE_KVOS_SZ is 133073 as of this writing */ );
     for(const e of Object.entries(methodOverrides.recordHandler)){
       // Overwrite kvvfsMethods's callbacks
@@ -1022,9 +1037,28 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Copies the entire contents of the given transient storage object
-     into a JSON-friendly form.  The returned object is structured as
-     follows...
+     Exports a kvvfs storage object to an object, optionally
+     JSON-friendly.
+
+     Usages:
+
+     thisfunc(storageName);
+     thisfunc(options);
+
+     In the latter case, the options object must be an object with
+     the following properties:
+
+     - "name" (string) required. The storage to export.
+
+     - "expandPages" (bool=false). If true, the .pages result property
+     holdes Uint8Array objects holding the raw binary-format db
+     pages. The default is to use kvvfs-encoded string pages
+     (JSON-friendly).
+
+     - "includeJournal" (bool=false). If true and the db has a current
+     journal, it is exported as well.
+
+     The returned object is structured as follows...
 
      - "name": the name of the storage. This is 'local' or 'session'
      for localStorage resp. sessionStorage, and an arbitrary name for
@@ -1056,11 +1090,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      Added in version @kvvfs-v2-added-in@.
   */
-  const sqlite3_js_kvvfs_export = function(storageName,includeJournal=true){
-    const store = storageForZClass(storageName);
+  const sqlite3_js_kvvfs_export = function callee(...args){
+    let opt;
+    if( 1===args.length && 'object'===typeof args[0] ){
+      opt = args[0];
+    }else{
+      opt = {
+        name: args[0],
+        //expandPages: true
+      };
+    }
+    const store = storageForZClass(opt.name);
     if( !store ){
       toss3(capi.SQLITE_NOTFOUND,
-            "There is no kvvfs storage named",storageName);
+            "There is no kvvfs storage named",opt.name);
     }
     //debug("store to export=",store);
     const s = store.storage;
@@ -1070,6 +1113,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       pages: []
     });
     const pages = Object.create(null);
+    let xpages;
     const keyPrefix = kvvfsKeyPrefix(rc.name);
     const rxTail = keyPrefix
           ? /^kvvfs-[^-]+-(\w+)/ /* X... part of kvvfs-NAME-X... */
@@ -1081,7 +1125,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         let kk = (keyPrefix ? rxTail.exec(k) : undefined)?.[1] ?? k;
         switch( kk ){
           case 'jrnl':
-            if( includeJournal ) rc.journal = s.getItem(k);
+            if( opt.includeJournal ) rc.journal = s.getItem(k);
             break;
           case 'sz':
             rc.size = +s.getItem(k);
@@ -1091,11 +1135,34 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if( !util.isInt32(kk) || kk<=0 ){
               toss3(capi.SQLITE_RANGE, "Malformed kvvfs key: "+k);
             }
-            pages[kk] = s.getItem(k);
+            if( opt.expandPages ){
+              const spg = s.getItem(k),
+                    n = spg.length,
+                    z = cache.memBuffer(0),
+                    zDec = cache.memBuffer(1),
+                    heap = wasm.heap8u()/* MUST be inited last*/;
+              let i = 0;
+              for( ; i < n; ++i ){
+                heap[wasm.ptr.add(z, i)] = spg.codePointAt(i) & 0xff;
+              }
+              heap[wasm.ptr.add(z, i)] = 0;
+              //debug("Decoding",i,"page bytes");
+              const nDec = wasm.exports.sqlite3__wasm_kvvfs_decode(
+                z, zDec, cache.buffer.n
+              );
+              if( cache.fixedPageSize !== nDec ){
+                util.toss3(capi.SQLITE_ERROR,"Unexpected decoded page size:",nDec);
+              }
+              //debug("Decoded",nDec,"page bytes");
+              pages[kk] = heap.slice(zDec, wasm.ptr.add(zDec, nDec));
+            }else{
+              pages[kk] = s.getItem(k);
+            }
             break;
         }
       }
     }
+    if( opt.expandPages ) cache.memBufferFree(1);
     /* Now sort the page numbers and move them into an array. In JS
        property keys are always strings, so we have to coerce them to
        numbers so we can get them sorted properly for the array. */
@@ -1139,7 +1206,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         || !Array.isArray(exp.pages) ){
       toss3(capi.SQLITE_MISUSE, "Malformed export object.");
     }
-    //warn("importFromObject() is incomplete");
     validateStorageName(exp.name);
     let store = storageForZClass(exp.name);
     const isNew = !store;
@@ -1156,7 +1222,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         toss3(capi.SQLITE_IOERR_ACCESS,
               "Cannot import db storage while it is in use.");
       }
-      sqlite3_js_kvvfs_clear(exp.name, true);
+      sqlite3_js_kvvfs_clear(exp.name);
     }else{
       store = newStorageObj(exp.name);
       //warn("Installing new storage:",store);
@@ -1164,13 +1230,43 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     //debug("Importing store",store.poolEntry.files.length, store);
     //debug("object to import:",exp);
     const keyPrefix = kvvfsKeyPrefix(exp.name);
+    let zEnc;
     try{
       /* Force the native KVVfsFile instances to re-read the db
          and page size. */;
       const s = store.storage;
       s.setItem(keyPrefix+'sz', exp.size);
       if( exp.journal ) s.setItem(keyPrefix+'jrnl', exp.journal);
-      exp.pages.forEach((v,ndx)=>s.setItem(keyPrefix+(ndx+1), v));
+      if( exp.pages[0] instanceof Uint8Array ){
+        /* raw binary pages */
+        //debug("pages",exp.pages);
+        exp.pages.forEach((u,ndx)=>{
+          const n = u.length;
+          if( cache.fixedPageSize !== n ){
+            util.toss3(capi.SQLITE_RANGE,"Unexpected page size:", n);
+          }
+          zEnc = cache.memBuffer(1);
+          const zBin = cache.memBuffer(0),
+                heap = wasm.heap8u();
+          /* Copy u to the heap and encode the heaped copy. This is
+             _presumably_ faster than porting the encoding algo to
+             JS, which would involve many, many more function calls. */
+          let i;
+          for(i=0; i<n; ++i ) heap[wasm.ptr.add(zBin,i)] = u[i];
+          heap[wasm.ptr.add(zBin,i)] = 0;
+          const rc = wasm.exports.sqlite3__wasm_kvvfs_encode(zBin, i, zEnc);
+          util.assert( rc < cache.buffer.n,
+                       "Impossibly long output - possibly smashed the heap" );
+          util.assert( 0===wasm.peek8(wasm.ptr.add(zEnc,rc)),
+                       "Expecting NUL-terminated encoded output" );
+          const jenc = wasm.cstrToJs(zEnc);
+          //debug("(un)encoded page:",u,jenc);
+          s.setItem(keyPrefix+(ndx+1), jenc);
+        });
+      }else if( exp.pages[0] ){
+        /* kvvfs-encoded pages */
+        exp.pages.forEach((v,ndx)=>s.setItem(keyPrefix+(ndx+1), v));
+      }
       if( isNew ) installStorageAndJournal(store);
     }catch(e){
       if( !isNew ){
@@ -1178,6 +1274,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         catch(ee){/*ignored*/}
       }
       throw e;
+    }finally{
+      if( zEnc ){
+        cache.memBufferFree(1);
+      }
     }
     return this;
   };
@@ -1468,10 +1568,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     });
     Object.assign(Object.create(ProtoCursor),{
-          rowid: 0,
-          names: Object.keys(cache.storagePool)
-            .filter(v=>!cache.rxJournalSuffix.test(v))
-        })
+      rowid: 0,
+      names: Object.keys(cache.storagePool)
+        .filter(v=>!cache.rxJournalSuffix.test(v))
+    });
     const cursorState = function(cursor, reset){
       const o = (cursor instanceof capi.sqlite3_vtab_cursor)
             ? cursor

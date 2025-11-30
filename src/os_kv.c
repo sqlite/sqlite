@@ -383,7 +383,10 @@ sqlite3_kvvfs_methods sqlite3KvvfsMethods = {
 **      of hexadecimal and base-26 numbers, it is always clear where
 **      one stops and the next begins.
 */
-static int kvvfsEncode(const char *aData, int nData, char *aOut){
+#ifndef SQLITE_WASM
+static
+#endif
+int kvvfsEncode(const char *aData, int nData, char *aOut){
   int i, j;
   const unsigned char *a = (const unsigned char*)aData;
   for(i=j=0; i<nData; i++){

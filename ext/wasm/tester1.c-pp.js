@@ -2908,6 +2908,28 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                         'size', 'clear'] ){
           T.assert( k[n] instanceof Function );
         }
+
+        if( 0 ){
+          const scope = wasm.scopedAllocPush();
+          try{
+            const pg = "53514C69746520666F726D61742033b20b0101b402020d02d02l01d04l01jb02b2E91E00Dd011FD3b1FD3dxl2B010617171701377461626C656B767666736B7676667302435245415445205441424C45206B76766673286129";
+            const n = pg.length;
+            const pI = wasm.scopedAlloc( n+1 );
+            const nO = 8192 * 2;
+            const pO = wasm.scopedAlloc( nO );
+            const heap = wasm.heap8u();
+            let i;
+            for( i=0; i<n; ++i ){
+              heap[wasm.ptr.add(pI, i)] = pg.codePointAt(i) & 0xff;
+            }
+            heap[wasm.ptr.add(pI, i)] = 0;
+            const rc = wasm.exports.sqlite3__wasm_kvvfs_decode(pI, pO, nO);
+            const u = heap.slice(pO, wasm.ptr.add(pO,rc));
+            debug("decode rc=", rc, u);
+          }finally{
+            wasm.scopedAllocPop(scope);
+          }
+        }
       }
     }/*kvvfs API availability*/)
     .t({
@@ -3002,7 +3024,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db = new JDb(filename);
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
-          const exp = exportDb(filename,true);
+          const exp = exportDb({name:filename,includeJournal:true});
           T.assert( filename===exp.name, "Broken export filename" )
             .assert( exp?.size > 0, "Missing db size" )
             .assert( exp?.pages?.length > 0, "Missing db pages" );
@@ -3179,7 +3201,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             // It fails at this point for non-8k sizes
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
-            exp = exportDb(filename);
+            exp = exportDb({
+              name: filename,
+              expandPages: true
+            });
+            debug("Exported page-expanded db",exp);
             if( 0 ){
               debug("vacuumed export",exp);
             }
@@ -3281,6 +3307,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     })/*kvvfs listeners */
+
     .t({
       name: 'kvvfs vtab',
       predicate: (sqlite3)=>!!sqlite3.kvvfs.create_module,
@@ -3308,6 +3335,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     })/* kvvfs vtab */
+
 //#if enable-see
     .t({
       name: 'kvvfs SEE encryption in sessionStorage',

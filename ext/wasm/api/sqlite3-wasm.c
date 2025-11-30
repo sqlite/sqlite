@@ -1794,6 +1794,10 @@ SQLITE_WASM_EXPORT
 int sqlite3__wasm_kvvfs_decode(const char *a, char *aOut, int nOut){
   return kvvfsDecode(a, aOut, nOut);
 }
+SQLITE_WASM_EXPORT
+int sqlite3__wasm_kvvfs_encode(const char *a, int nA, char *aOut){
+  return kvvfsEncode(a, nA, aOut);
+}
 
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
