@@ -3098,7 +3098,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           duo = new JDb(filename);
           duo.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue(sqlCount));
-          let exp = exportDb(filename);
+          const expOpt = {
+            name: filename,
+            decodePages: true
+          };
+          let exp = exportDb(expOpt);
           let expectRows = 6;
           debug("exported db",exp);
           db.close();
@@ -3171,7 +3175,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           if( 1 ){
             const pageSize = 1024 * 16;
             if( 0 ){
-              debug("Export before vacuum", exportDb(filename));
+              debug("Export before vacuum", exportDb(expOpt));
               debug("page size before vacuum",
                     db.selectArray(
                       "select page_size from pragma_page_size()"
@@ -3205,10 +3209,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             // It fails at this point for non-8k sizes
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
-            exp = exportDb({
-              name: filename,
-              expandPages: true
-            });
+            exp = exportDb(expOpt);
             debug("Exported page-expanded db",exp);
             if( 0 ){
               debug("vacuumed export",exp);
@@ -3248,14 +3249,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'kvvfs listeners (experiment)',
       test: function(sqlite3){
+        const kvvfs = sqlite3.kvvfs;
+        const filename = 'listen';
         let db;
         try {
-          const filename = 'listen';
           const DB = sqlite3.oo1.DB;
           const sqlSetup = [
             'create table kvvfs(a);',
             'insert into kvvfs(a) values(1),(2),(3)'
           ];
+          const sqlCount = "select count(*) from kvvfs";
+          const sqlSelectSchema = "select * from sqlite_schema";
           const counts = Object.assign(Object.create(null),{
             open: 0, close: 0, delete: 0, write: 0
           });
@@ -3264,7 +3268,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           pglog.jrnl = undefined;
           pglog.size = undefined;
           pglog.elideJournal = true;
-          //pglog.decodePages = true;
+          pglog.decodePages = true;
           pglog.exception = new Error("Testing that exceptions from listeners do not interfere");
           const toss = ()=>{
             if( pglog.exception ){
@@ -3302,10 +3306,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                     T.assert(!pglog.elideJournal);
                     pglog.jrnl = null;
                     break;
-                  default:
-                    T.assert( +ev.data>0, "Expecting positive db page number" );
-                    pglog[+ev.data] = undefined;
+                  default:{
+                    const n = +ev.data>0;
+                    T.assert( n, "Expecting positive db page number" );
+                    if( n < pglog.pages.length ){
+                      pglog.size = undefined;
+                    }
+                    pglog.pages[n] = undefined;
                     break;
+                  }
                 }
               },
               'write':  (ev)=>{
@@ -3341,10 +3350,16 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               }
             }
           };
-          sqlite3.kvvfs.listen(listener);
+          kvvfs.listen(listener);
           const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&delete-on-close=1';
+          const expOpt = {
+            name: filename,
+            //decodePages: true
+          };
           db = new DB(dbFileRaw);
           db.exec(sqlSetup);
+          T.assert(db.selectObjects(sqlSelectSchema)?.length>0,
+                   "Unexpected empty schema");
           db.close();
           debug("kvvfs listener counts:",counts);
           T.assert( counts.open )
@@ -3359,19 +3374,45 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           if( 1 ){
             T.assert(undefined===pglog.pages[0], "Expecting empty slot 0");
             pglog.pages.shift();
-            debug("kvvfs listener pageLog", pglog);
+            //debug("kvvfs listener pageLog", pglog);
           }
           const before = JSON.stringify(counts);
-          T.assert( sqlite3.kvvfs.unlisten(listener) )
-            .assert( !sqlite3.kvvfs.unlisten(listener) );
+          T.assert( kvvfs.unlisten(listener) )
+            .assert( !kvvfs.unlisten(listener) );
           db = new DB(dbFileRaw);
+          T.assert( db.selectObjects(sqlSelectSchema)?.length>0 );
+          const exp = kvvfs.export(expOpt);
+          const expectRows = db.selectValue(sqlCount);
           db.exec("delete from kvvfs");
           db.close();
           const after = JSON.stringify(counts);
           T.assert( before===after, "Expecting no events after unlistening." );
-          sqlite3.kvvfs.unlink(filename);
+          if( 0 ){
+            exp = kvvfs.export(expOpt);
+            debug("Post-delete export:",exp);
+          }
+          if( 1 ){
+            // Replace the storage with the pglog state...
+            const bogoExp = {
+              name: filename,
+              size: pglog.size,
+              timestamp: Date.now(),
+              pages: pglog.pages
+            };
+            //debug("exp",exp);
+            //debug("bogoExp",bogoExp);
+            kvvfs.import(bogoExp, true);
+            //debug("Re-exported", kvvfs.export(expOpt));
+            db = new DB(dbFileRaw);
+            // Failing on the next line despite exports looking good
+            T.assert(db.selectObjects(sqlSelectSchema)?.length>0,
+                     "Empty schema on imported db");
+            T.assert(expectRows===db.selectValue(sqlCount));
+            db.close();
+          }
         }finally{
           db?.close?.();
+          kvvfs.unlink(filename);
         }
       }
     })/*kvvfs listeners */

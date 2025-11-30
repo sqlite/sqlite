@@ -1086,7 +1086,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - "name" (string) required. The storage to export.
 
-     - "expandPages" (bool=false). If true, the .pages result property
+     - "decodePages" (bool=false). If true, the .pages result property
      holdes Uint8Array objects holding the raw binary-format db
      pages. The default is to use kvvfs-encoded string pages
      (JSON-friendly).
@@ -1134,7 +1134,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }else if(args.length){
       opt = Object.assign(Object.create(null),{
         name: args[0],
-        //expandPages: true
+        //decodePages: true
       });
     }
     const store = opt ? storageForZClass(opt.name) : null;
@@ -1172,7 +1172,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if( !util.isInt32(kk) || kk<=0 ){
               toss3(capi.SQLITE_RANGE, "Malformed kvvfs key: "+k);
             }
-            if( opt.expandPages ){
+            if( opt.decodePages ){
               const spg = s.getItem(k),
                     n = spg.length,
                     z = cache.memBuffer(0),
@@ -1199,7 +1199,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
       }
     }
-    if( opt.expandPages ) cache.memBufferFree(1);
+    if( opt.decodePages ) cache.memBufferFree(1);
     /* Now sort the page numbers and move them into an array. In JS
        property keys are always strings, so we have to coerce them to
        numbers so we can get them sorted properly for the array. */
@@ -1439,14 +1439,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - 'delete' gets the string-type key of the deleted record.
 
-     The arguments to 'write' and 'delete' are in one of the
+     The arguments to 'write', and keys to 'delete', are in one of the
      following forms:
 
-     - 'sz' = the unencoded db size as a string
+     - 'sz' = the unencoded db size as a string. This specific key is
+     key is never deleted, so is only ever passed to 'write' events.
 
-     - 'jrnl' = the current db journal as a string
+     - 'jrnl' = the current db journal as a kvvfs-encoded string. This
+     journal format is not useful anywhere except in the kvvfs
+     internals. These events are not fired if opt.elideJournal is
+     true.
 
-     - '[1-9][0-9]*' (a db page number) = an encoded db page
+     - '[1-9][0-9]*' (a db page number) = a db page. Its type depends
+     on opt.decodePages. These may be written and deleted in arbitrary
+     order. If a page is deleted, the db is shrinking.
 
      For 'local' and 'session' storage, all of those keys have a
      prefix of 'kvvfs-local-' resp. 'kvvfs-session-'. This is required
