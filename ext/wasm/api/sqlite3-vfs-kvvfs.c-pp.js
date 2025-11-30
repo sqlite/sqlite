@@ -396,7 +396,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return e;
   };
 
-  const noop = ()=>{};
+  const catchForNotify = (e)=>{
+    warn("kvvfs.listener handler threw:",e);
+  };
+
+  const kvvfsDecode = wasm.exports.sqlite3__wasm_kvvfs_decode;
+  const kvvfsEncode = wasm.exports.sqlite3__wasm_kvvfs_encode;
 
   /**
      Listener events and their argument(s):
@@ -411,16 +416,48 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const notifyListeners = async function(eventName,store,...args){
     if( store.listeners ){
-      const ev = Object.create(null);
-      ev.storageName = store.jzClass;
-      ev.type = eventName;
+      //cache.rxPageNoSuffix ??= /(\d+)$/;
+      if( store.keyPrefix ){
+        args[0] = args[0].replace(store.keyPrefix,'');
+      }
+      let u8enc, z0, z1, wcache;
       for(const ear of store.listeners){
-        const f = ear?.[eventName];
+        const ev = Object.create(null);
+        ev.storageName = store.jzClass;
+        ev.type = eventName;
+        const decodePages = ear.decodePages;
+        const f = ear.events[eventName];
         if( f ){
-          ev.data = ((args.length===1) ? args[0] : args);
-          try{f(ev)?.catch?.(noop)}
+          if( ear.elideJournal && args[0]==='jrnl' ){
+            continue;
+          }
+          if( 'write'===eventName && ear.decodePages && +args[0]>0 ){
+            /* Decode pages to Uint8Array. */
+            ev.data = [args[0]];
+            if( wcache?.[args[0]] ){
+              ev.data[1] = wcache[args[0]];
+              continue;
+            }
+            u8enc ??= new TextEncoder('utf-8');
+            z0 ??= cache.memBuffer(10);
+            z1 ??= cache.memBuffer(11);
+            const u = u8enc.encode(args[1]);
+            const heap = wasm.heap8u();
+            heap.set(u, z0);
+            heap[wasm.ptr.add(z0, u.length)] = 0;
+            const rc = kvvfsDecode(z0, z1, cache.buffer.n);
+            if( rc>0 ){
+              wcache ??= Object.create(null);
+              wcache[args[0]]
+                = ev.data[1]
+                = heap.slice(z1, wasm.ptr.add(z1,rc));
+            }
+          }else{
+            ev.data = ((args.length===1) ? args[0] : args);
+          }
+          try{f(ev)?.catch?.(catchForNotify)}
           catch(e){
-            warn("notifyListeners",store.jzClass,eventName,e);
+            warn("notifyListeners [",store.jzClass,"]",eventName,e);
           }
         }
       }
@@ -483,12 +520,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   const kvvfsMakeKey = wasm.exports.sqlite3__wasm_kvvfsMakeKey;
   /**
-     Returns a C string from sqlite3__wasm_kvvfsMakeKey() OR returns
-     zKey. In the former case the memory is static, so must be copied
-     before a second call. zKey MUST be a pointer passed to a
-     VFS/file method, to allow us to avoid an alloc and/or an
-     snprintf(). It requires C-string arguments for zClass and
-     zKey. zClass may be NULL but zKey may not.
+     Returns a C string from kvvfsMakeKey() OR returns zKey. In the
+     former case the memory is static, so must be copied before a
+     second call. zKey MUST be a pointer passed to a VFS/file method,
+     to allow us to avoid an alloc and/or an snprintf(). It requires
+     C-string arguments for zClass and zKey. zClass may be NULL but
+     zKey may not.
   */
   const zKeyForStorage = (store, zClass, zKey)=>{
     //debug("zKeyForStorage(",store, wasm.cstrToJs(zClass), wasm.cstrToJs(zKey));
@@ -615,8 +652,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
       xRcrdWrite: (zClass, zKey, zData)=>{
         try {
-          const jzClass = wasm.cstrToJs(zClass);
-          const store = storageForZClass(jzClass);
+          const store = storageForZClass(zClass);
           const jxKey = jsKeyForStorage(store, zClass, zKey);
           const jData = wasm.cstrToJs(zData);
           store.storage.setItem(jxKey, jData);
@@ -1056,7 +1092,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      (JSON-friendly).
 
      - "includeJournal" (bool=false). If true and the db has a current
-     journal, it is exported as well.
+     journal, it is exported as well. (Kvvfs journals are stored as a
+     single record within the db's storage object.)
 
      The returned object is structured as follows...
 
@@ -1071,7 +1108,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - "size": the unencoded db size.
 
-     - "journal": if includeJournal is true and this db has a
+     - "journal": if options.includeJournal is true and this db has a
      journal, it is stored as a string here, otherwise this property
      is not set.
 
@@ -1094,16 +1131,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     let opt;
     if( 1===args.length && 'object'===typeof args[0] ){
       opt = args[0];
-    }else{
-      opt = {
+    }else if(args.length){
+      opt = Object.assign(Object.create(null),{
         name: args[0],
         //expandPages: true
-      };
+      });
     }
-    const store = storageForZClass(opt.name);
+    const store = opt ? storageForZClass(opt.name) : null;
     if( !store ){
       toss3(capi.SQLITE_NOTFOUND,
-            "There is no kvvfs storage named",opt.name);
+            "There is no kvvfs storage named",opt?.name);
     }
     //debug("store to export=",store);
     const s = store.storage;
@@ -1147,7 +1184,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               }
               heap[wasm.ptr.add(z, i)] = 0;
               //debug("Decoding",i,"page bytes");
-              const nDec = wasm.exports.sqlite3__wasm_kvvfs_decode(
+              const nDec = kvvfsDecode(
                 z, zDec, cache.buffer.n
               );
               if( cache.fixedPageSize !== nDec ){
@@ -1202,10 +1239,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if( !exp?.timestamp
         || !exp.name
         || undefined===exp.size
-        || exp.size<0 || exp.size>=0x7fffffff
         || !Array.isArray(exp.pages) ){
       toss3(capi.SQLITE_MISUSE, "Malformed export object.");
+    }else if( !exp.size
+              || (exp.size !== (exp.size | 0))
+              || (exp.size % cache.fixedPageSize)
+              || exp.size>=0x7fffffff ){
+      toss3(capi.SQLITE_RANGE, "Invalid db size: "+exp.size);
     }
+
     validateStorageName(exp.name);
     let store = storageForZClass(exp.name);
     const isNew = !store;
@@ -1245,16 +1287,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           if( cache.fixedPageSize !== n ){
             util.toss3(capi.SQLITE_RANGE,"Unexpected page size:", n);
           }
-          zEnc = cache.memBuffer(1);
+          zEnc ??= cache.memBuffer(1);
           const zBin = cache.memBuffer(0),
-                heap = wasm.heap8u();
-          /* Copy u to the heap and encode the heaped copy. This is
-             _presumably_ faster than porting the encoding algo to
-             JS, which would involve many, many more function calls. */
-          let i;
-          for(i=0; i<n; ++i ) heap[wasm.ptr.add(zBin,i)] = u[i];
-          heap[wasm.ptr.add(zBin,i)] = 0;
-          const rc = wasm.exports.sqlite3__wasm_kvvfs_encode(zBin, i, zEnc);
+                heap = wasm.heap8u()/*MUST be inited last*/;
+          /* Copy u to the heap and encode the heap copy via C. This
+             is _presumably_ faster than porting the encoding algo to
+             JS. */
+          heap.set(u, zBin);
+          heap[wasm.ptr.add(zBin,n)] = 0;
+          const rc = kvvfsEncode(zBin, n, zEnc);
           util.assert( rc < cache.buffer.n,
                        "Impossibly long output - possibly smashed the heap" );
           util.assert( 0===wasm.peek8(wasm.ptr.add(zEnc,rc)),
@@ -1357,10 +1398,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - events: an object which may have any of the following
      callback function properties: open, close, write, delete.
 
+     - decodePages [=false]: if true, write events will receive each
+     db page write in the form of a Uint8Array holding the raw binary
+     db page. The default is to emit the kvvfs-format page because it
+     requires no extra work, we already have it in hand, and it's
+     often smaller. It's not great for interchange, though.
+
+     - elideJournal [=false]: if true, writes and deletes of
+     "jrnl" records are elided (no event is sent).
+
+     Passing the same object ot sqlite3_js_kvvfs_unlisten() will
+     remove the listener.
+
      Each one of the events callbacks will be called asynchronously
      when the given storage performs those operations. They may be
-     asynchronous. All exceptions, including those via Promises, are
-     ignored but may trigger warning output on the console.
+     asynchronous functions but are not required to be (the events are
+     fired async either way, but making the event callbacks async may
+     be advantageous when multiple listeners are involved). All
+     exceptions, including those via Promises, are ignored but may (or
+     may not) trigger warning output on the console.
 
      Each callback gets passed a single object with the following
      properties:
@@ -1375,15 +1431,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      currently-opened handles on the storage.
 
      - 'write' gets a length-two array holding the key and value which
-     were written (both strings).
+     were written. The key is always a string, even if it's a db page
+     number. For db-page records, the value's type depends on
+     opt.decodePages.  All others, including the journal, are strings
+     (the latter, being in a kvvfs-specific format, is delivered in
+     its kvvfs-native format). More details below.
 
      - 'delete' gets the string-type key of the deleted record.
 
-     Passing the same object ot sqlite3_js_kvvfs_unlisten() will
-     remove the listener.
-
-     The arguments to 'write' and 'delete' are in one of the following
-     forms:
+     The arguments to 'write' and 'delete' are in one of the
+     following forms:
 
      - 'sz' = the unencoded db size as a string
 
@@ -1419,7 +1476,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
     }
     if( opt.events ){
-      (store.listeners ??= []).push(opt.events);
+      (store.listeners ??= []).push(opt);
     }
   };
 
@@ -1436,7 +1493,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const sqlite3_js_kvvfs_unlisten = function(opt){
     const store = storageForZClass(opt?.storage);
     if( store?.listeners && opt.events ){
-      store.listeners = store.listeners.filter((v)=>v!==opt.events);
+      store.listeners = store.listeners.filter((v)=>v!==opt);
       if( !store.listeners.length ){
         store.listeners = undefined;
       }

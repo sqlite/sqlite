@@ -2912,7 +2912,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         if( 0 ){
           const scope = wasm.scopedAllocPush();
           try{
-            const pg = "53514C69746520666F726D61742033b20b0101b402020d02d02l01d04l01jb02b2E91E00Dd011FD3b1FD3dxl2B010617171701377461626C656B767666736B7676667302435245415445205441424C45206B76766673286129";
+            const pg = [
+              "53514C69746520666F726D61742033b20b0101b402020d02d02l01d0",
+              "4l01jb02b2E91E00Dd011FD3b1FD3dxl2B010617171701377461626C",
+              "656B767666736B7676667302435245415445205441424C45206B76766673286129"
+            ].join('');
             const n = pg.length;
             const pI = wasm.scopedAlloc( n+1 );
             const nO = 8192 * 2;
@@ -3240,6 +3244,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
       }
     }/*concurrent transient kvvfs*/)
+
     .t({
       name: 'kvvfs listeners (experiment)',
       test: function(sqlite3){
@@ -3254,9 +3259,25 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const counts = Object.assign(Object.create(null),{
             open: 0, close: 0, delete: 0, write: 0
           });
+          const pglog = Object.create(null);
+          pglog.pages = [];
+          pglog.jrnl = undefined;
+          pglog.size = undefined;
+          pglog.elideJournal = true;
+          //pglog.decodePages = true;
+          pglog.exception = new Error("Testing that exceptions from listeners do not interfere");
+          const toss = ()=>{
+            if( pglog.exception ){
+              const e = pglog.exception;
+              delete pglog.exception;
+              throw e;
+            }
+          };
           const listener = {
             storage: filename,
             reserve: true,
+            elideJournal: pglog.elideJournal,
+            decodePages: pglog.decodePages,
             events: {
               'open':   (ev)=>{
                 //console.warn('open',ev);
@@ -3265,21 +3286,58 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                   .assert('number'===typeof ev.data);
               },
               'close': (ev)=>{
+                //^^^ if this is async, we can't time the test for
+                // pglog.exception without far more hoop-jumping.
                 //console.warn('close',ev);
                 ++counts[ev.type];
                 T.assert('number'===typeof ev.data);
+                toss();
               },
               'delete': (ev)=>{
                 //console.warn('delete',ev);
                 ++counts[ev.type];
                 T.assert('string'===typeof ev.data);
+                switch(ev.data){
+                  case 'jrnl':
+                    T.assert(!pglog.elideJournal);
+                    pglog.jrnl = null;
+                    break;
+                  default:
+                    T.assert( +ev.data>0, "Expecting positive db page number" );
+                    pglog[+ev.data] = undefined;
+                    break;
+                }
               },
               'write':  (ev)=>{
                 //console.warn('write',ev);
                 ++counts[ev.type];
+                const key = ev.data[0], val = ev.data[1];
                 T.assert(Array.isArray(ev.data))
-                  .assert('string'===typeof ev.data[0])
-                  .assert('string'===typeof ev.data[1]);
+                  .assert('string'===typeof key);
+                switch( key ){
+                  case 'jrnl':
+                    T.assert(!pglog.elideJournal);
+                    pglog.jrnl = val;
+                    break;
+                  case 'sz':{
+                    const sz = +val;
+                    T.assert( sz>0, "Expecting a db page number" );
+                    if( sz < pglog.sz ){
+                      pglog.pages.length = sz / pglog.pages.length;
+                    }
+                    pglog.size = sz;
+                    break;
+                  }
+                  default:
+                    T.assert( +key>0, "Expecting a positive db page number" );
+                    pglog.pages[+key] = val;
+                    if( pglog.decodePages ){
+                      T.assert( val instanceof Uint8Array );
+                    }else{
+                      T.assert( 'string'===typeof val );
+                    }
+                    break;
+                }
               }
             }
           };
@@ -3291,9 +3349,18 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           debug("kvvfs listener counts:",counts);
           T.assert( counts.open )
             .assert( counts.close )
-            .assert( counts.delete )
+            .assert( listener.elideJournal ? !counts.delete : counts.delete )
             .assert( counts.write )
-            .assert( counts.open===counts.close );
+            .assert( counts.open===counts.close )
+            .assert( pglog.elideJournal
+                     ? (undefined===pglog.jrnl)
+                     : (null===pglog.jrnl),
+                     "Unexpected pglog.jrnl value: "+pglog.jrnl );
+          if( 1 ){
+            T.assert(undefined===pglog.pages[0], "Expecting empty slot 0");
+            pglog.pages.shift();
+            debug("kvvfs listener pageLog", pglog);
+          }
           const before = JSON.stringify(counts);
           sqlite3.kvvfs.unlisten(listener);
           db = new DB(dbFileRaw);
