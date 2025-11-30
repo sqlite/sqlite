@@ -782,6 +782,10 @@ static int sqlite3Prepare(
     }else{
       sParse.zTail = &zSql[nBytes];
     }
+  }else if( strlen(zSql)>(size_t)db->aLimit[SQLITE_LIMIT_SQL_LENGTH] ){
+    sqlite3ErrorWithMsg(db, SQLITE_TOOBIG, "statement too long");
+    rc = sqlite3ApiExit(db, SQLITE_TOOBIG);
+    goto end_prepare;
   }else{
     sqlite3RunParser(&sParse, zSql);
   }
