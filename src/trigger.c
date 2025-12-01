@@ -589,6 +589,8 @@ TriggerStep *sqlite3TriggerUpdateStep(
       pTriggerStep->pSrc = sqlite3SrcListAppendList(
           pParse, pTriggerStep->pSrc, pFromDup
       );
+    }else{
+      sqlite3SrcListDelete(db, pFromDup);
     }
   }
   sqlite3ExprListDelete(db, pEList);
