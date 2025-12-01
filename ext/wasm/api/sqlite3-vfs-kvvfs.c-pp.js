@@ -378,7 +378,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const other = cache.rxJournalSuffix.test(store.jzClass)
           ? store.jzClass.replace(cache.rxJournalSuffix,'')
           : store.jzClass+'-journal';
-    //debug("cleaning up storage handles [", store.jzClass, other,"]",store);
+    debug("cleaning up storage handles [", store.jzClass, other,"]",store);
     delete cache.storagePool[store.jzClass];
     delete cache.storagePool[other];
     if( !sqlite3.__isUnderTest ){
@@ -762,9 +762,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       /* sqlite3_kvvfs_methods::pVfs's methods */
       xOpen: function(pProtoVfs,zName,pProtoFile,flags,pOutFlags){
         cache.popError();
+        let zToFree /* alloc()'d memory for temp db name */;
         try{
           if( !zName ){
-            zName = (cache.zEmpty ??= wasm.allocCString(""));
+            zToFree = wasm.allocCString(""+pProtoFile+"."
+                                        +(Math.random() * 100000 | 0));
+            zName = zToFree;
           }
           const jzClass = wasm.cstrToJs(zName);
           //debug("xOpen",jzClass);
@@ -778,10 +781,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             toss3(capi.SQLITE_ERROR,
                   "DB files may not have a '-journal' suffix.");
           }
+          let s = storageForZClass(jzClass);
+          if( !s && !(flags & capi.SQLITE_OPEN_CREATE) ){
+            toss3(capi.SQLITE_ERROR, "Storage not found:", jzClass);
+          }
           const rc = originalMethods.vfs.xOpen(pProtoVfs, zName, pProtoFile,
                                                flags, pOutFlags);
           if( rc ) return rc;
-          let deleteAt0 = false;
+          let deleteAt0 = !!(capi.SQLITE_OPEN_DELETEONCLOSE & flags);
           if(wasm.isPtr(arguments[1]/*original zName*/)){
             if(capi.sqlite3_uri_boolean(zName, "delete-on-close", 0)){
               deleteAt0 = true;
@@ -789,22 +796,23 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
           const f = new KVVfsFile(pProtoFile);
           util.assert(f.$zClass, "Missing f.$zClass");
-          let s = storageForZClass(jzClass);
+          f.addOnDispose(zToFree);
+          zToFree = undefined;
           //debug("xOpen", jzClass, s);
           if( s ){
             ++s.refc;
             //no if( true===deleteAt0 ) s.deleteAtRefc0 = true;
             s.files.push(f);
           }else{
-            wasm.poke32(pOutFlags, flags | sqlite3.SQLITE_OPEN_CREATE);
+            wasm.poke32(pOutFlags, flags | capi.SQLITE_OPEN_CREATE);
             util.assert( !f.$isJournal, "Opening a journal before its db? "+jzClass );
             /* Map both zName and zName-journal to the same storage. */
             const nm = jzClass.replace(cache.rxJournalSuffix,'');
             s = newStorageObj(nm);
             installStorageAndJournal(s);
             s.files.push(f);
-            s.deleteAtRefc0 = deleteAt0 || !!(capi.SQLITE_OPEN_DELETEONCLOSE & flags);
-            //debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
+            s.deleteAtRefc0 = deleteAt0;
+            debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
           }
           pFileHandles.set(pProtoFile, {store: s, file: f, jzClass});
           s.listeners && notifyListeners('open', s, s.files.length);
@@ -812,6 +820,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }catch(e){
           warn("xOpen:",e);
           return cache.setError(e);
+        }finally{
+          zToFree && wasm.dealloc(zToFree);
         }
       }/*xOpen()*/,
 
@@ -1649,6 +1659,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     capi.sqlite3_js_kvvfs_clear = (which="")=>sqlite3_js_kvvfs_clear(which);
   }
 
+//#if not omit-oo1
   if(sqlite3.oo1?.DB){
     /**
        Functionally equivalent to DB(storageName,'c','kvvfs') except
@@ -1672,8 +1683,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ){
       const opt = DB.dbCtorHelper.normalizeArgs(...arguments);
       opt.vfs = 'kvvfs';
-      if( opt.flags ) opt.flags = 'cw'+opt.flags;
-      else opt.flags = 'cw';
+      if( 0 ){
+        // Current tests rely on these, but that's arguably a bug
+        if( opt.flags ) opt.flags = 'cw'+opt.flags;
+        else opt.flags = 'cw';
+      }
       switch( opt.filename ){
           /* sqlite3_open(), in these builds, recognizes the names
              below and performs some magic which we want to bypass
@@ -1708,6 +1722,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return jdb.storageSize(this.affirmOpen().filename, true);
     };
   }/*sqlite3.oo1.JsStorageDb*/
+//#endif not omit-oo1
 
   if( sqlite3.__isUnderTest && sqlite3.vtab ){
     /**

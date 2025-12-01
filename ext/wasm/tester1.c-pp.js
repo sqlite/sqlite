@@ -3262,13 +3262,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           const sqlSelectSchema = "select * from sqlite_schema";
           const counts = Object.create(null);
           const incr = (key)=>counts[key] = 1 + (counts[key] ?? 0);
-          const pglog = Object.create(null);
-          pglog.pages = [];
-          pglog.jrnl = undefined;
-          pglog.size = undefined;
-          pglog.includeJournal = false;
-          pglog.decodePages = true;
-          pglog.exception = new Error("Testing that exceptions from listeners do not interfere");
+          const pglog = Object.assign(Object.create(null),{
+            pages: [],
+            jrnl: undefined,
+            size: undefined,
+            includeJournal: false,
+            decodePages: true,
+            exception: new Error("Testing that exceptions from listeners do not interfere") 
+         });
           const toss = ()=>{
             if( pglog.exception ){
               const e = pglog.exception;
