@@ -14,6 +14,9 @@
 */
 #ifndef SQLITE_QRF_H
 #define SQLITE_QRF_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdlib.h>
 #include "sqlite3.h"
 
@@ -31,9 +34,10 @@ struct sqlite3_qrf_spec {
   unsigned char bTitles;      /* True to show column names */
   unsigned char bWordWrap;    /* Try to wrap on word boundaries */
   unsigned char bTextJsonb;   /* Render JSONB blobs as JSON text */
-  unsigned char bTextNull;    /* Apply eText encoding to zNull[] */
   unsigned char eDfltAlign;   /* Default alignment, no covered by aAlignment */
   unsigned char eTitleAlign;  /* Alignment for column headers */
+  unsigned char bSplitColumn; /* Wrap single-column output into many columns */
+  unsigned char bBorder;      /* Show outer border in Box and Table styles */
   short int nWrap;            /* Wrap columns wider than this */
   short int nScreenWidth;     /* Maximum overall table width */
   short int nLineLimit;       /* Maximum number of lines for any row */
@@ -116,6 +120,7 @@ int sqlite3_format_query_result(
 #define QRF_BLOB_Hex     3 /* Hexadecimal representation */
 #define QRF_BLOB_Tcl     4 /* "\000" notation */
 #define QRF_BLOB_Json    5 /* A JSON string */
+#define QRF_BLOB_Size    6 /* Display the blob size only */
 
 /*
 ** Control-character escape modes.
@@ -179,6 +184,7 @@ int sqlite3_format_query_result(
 int sqlite3_qrf_wcwidth(int c);
 
 
-
-
+#ifdef __cplusplus
+}
+#endif
 #endif /* !defined(SQLITE_QRF_H) */

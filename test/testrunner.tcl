@@ -212,7 +212,8 @@ proc default_njob {} {
   if {$nCore<=2} {
     set nHelper 1
   } else {
-    set nHelper [expr int($nCore*0.5)]
+    set nHelper [expr int($nCore*0.8)]
+    if {$nHelper>20} {set nHelper 20}
   }
   return $nHelper
 }
@@ -706,9 +707,18 @@ if {[llength $argv]>=1
     }
   }
 
-  if {![file readable $TRG(dbname)]} {
-    puts "Database missing: $TRG(dbname)"
-    exit
+  set once 1
+  while {![file readable $TRG(dbname)]} {
+    if {$delay==0} {
+      puts "Database missing: $TRG(dbname)"
+      exit
+    }
+    if {$once} {
+      set once 0
+      puts "Waiting for testing to start...."
+      flush stdout
+    }
+    after [expr {$delay*1000}]
   }
   sqlite3 mydb $TRG(dbname)
   mydb timeout 2000

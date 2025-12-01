@@ -98,9 +98,9 @@ typedef struct SegmentWriter SegmentWriter;
 ** incrementally. See function fts3PendingListAppend() for details.
 */
 struct PendingList {
-  int nData;
+  sqlite3_int64 nData;
   char *aData;
-  int nSpace;
+  sqlite3_int64 nSpace;
   sqlite3_int64 iLastDocid;
   sqlite3_int64 iLastCol;
   sqlite3_int64 iLastPos;
@@ -760,7 +760,8 @@ static int fts3PendingTermsAddOne(
 
   pList = (PendingList *)fts3HashFind(pHash, zToken, nToken);
   if( pList ){
-    p->nPendingData -= (pList->nData + nToken + sizeof(Fts3HashElem));
+    assert( pList->nData+nToken+sizeof(Fts3HashElem) <= (i64)p->nPendingData );
+    p->nPendingData -= (int)(pList->nData + nToken + sizeof(Fts3HashElem));
   }
   if( fts3PendingListAppend(&pList, p->iPrevDocid, iCol, iPos, &rc) ){
     if( pList==fts3HashInsert(pHash, zToken, nToken, pList) ){
@@ -773,7 +774,9 @@ static int fts3PendingTermsAddOne(
     }
   }
   if( rc==SQLITE_OK ){
-    p->nPendingData += (pList->nData + nToken + sizeof(Fts3HashElem));
+    assert( (i64)p->nPendingData + pList->nData + nToken
+             + sizeof(Fts3HashElem) <= 0x3fffffff );
+    p->nPendingData += (int)(pList->nData + nToken + sizeof(Fts3HashElem));
   }
   return rc;
 }
@@ -5457,7 +5460,7 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
       v = atoi(&zVal[9]);
       if( v>=24 && v<=p->nPgsz-35 ) p->nNodeSize = v;
       rc = SQLITE_OK;
-    }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 9) ){
+    }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 11) ){
       v = atoi(&zVal[11]);
       if( v>=64 && v<=FTS3_MAX_PENDING_DATA ) p->nMaxPendingData = v;
       rc = SQLITE_OK;

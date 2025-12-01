@@ -1604,86 +1604,6 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     return x===v ? undefined : x;
   }
 
-  if( util.isUIThread() ){
-    /* Features specific to the main window thread... */
-
-    /**
-       Internal helper for sqlite3_js_kvvfs_clear() and friends.
-       Its argument should be one of ('local','session',"").
-    */
-    const __kvvfsInfo = function(which){
-      const rc = Object.create(null);
-      rc.prefix = 'kvvfs-'+which;
-      rc.stores = [];
-      if('session'===which || ""===which) rc.stores.push(globalThis.sessionStorage);
-      if('local'===which || ""===which) rc.stores.push(globalThis.localStorage);
-      return rc;
-    };
-
-    /**
-       Clears all storage used by the kvvfs DB backend, deleting any
-       DB(s) stored there. Its argument must be either 'session',
-       'local', or "". In the first two cases, only sessionStorage
-       resp. localStorage is cleared. If it's an empty string (the
-       default) then both are cleared. Only storage keys which match
-       the pattern used by kvvfs are cleared: any other client-side
-       data are retained.
-
-       This function is only available in the main window thread.
-
-       Returns the number of entries cleared.
-    */
-    capi.sqlite3_js_kvvfs_clear = function(which=""){
-      let rc = 0;
-      const kvinfo = __kvvfsInfo(which);
-      kvinfo.stores.forEach((s)=>{
-        const toRm = [] /* keys to remove */;
-        let i;
-        for( i = 0; i < s.length; ++i ){
-          const k = s.key(i);
-          if(k.startsWith(kvinfo.prefix)) toRm.push(k);
-        }
-        toRm.forEach((kk)=>s.removeItem(kk));
-        rc += toRm.length;
-      });
-      return rc;
-    };
-
-    /**
-       This routine guesses the approximate amount of
-       window.localStorage and/or window.sessionStorage in use by the
-       kvvfs database backend. Its argument must be one of
-       ('session', 'local', ""). In the first two cases, only
-       sessionStorage resp. localStorage is counted. If it's an empty
-       string (the default) then both are counted. Only storage keys
-       which match the pattern used by kvvfs are counted. The returned
-       value is the "length" value of every matching key and value,
-       noting that JavaScript stores each character in 2 bytes.
-
-       Note that the returned size is not authoritative from the
-       perspective of how much data can fit into localStorage and
-       sessionStorage, as the precise algorithms for determining
-       those limits are unspecified and may include per-entry
-       overhead invisible to clients.
-    */
-    capi.sqlite3_js_kvvfs_size = function(which=""){
-      let sz = 0;
-      const kvinfo = __kvvfsInfo(which);
-      kvinfo.stores.forEach((s)=>{
-        let i;
-        for(i = 0; i < s.length; ++i){
-          const k = s.key(i);
-          if(k.startsWith(kvinfo.prefix)){
-            sz += k.length;
-            sz += s.getItem(k).length;
-          }
-        }
-      });
-      return sz * 2 /* because JS uses 2-byte char encoding */;
-    };
-
-  }/* main-window-only bits */
-
   /**
      Wraps all known variants of the C-side variadic
      sqlite3_db_config().
@@ -2170,9 +2090,11 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   delete globalThis.sqlite3ApiBootstrap;
   delete sqlite3ApiBootstrap.defaultConfig;
   return sqlite3.asyncPostInit().then((s)=>{
-    sqlite3InitScriptInfo.debugModule(
-      "sqlite3.asyncPostInit() complete", sqlite3
-    );
+    if( 'undefined'!==typeof sqlite3InitScriptInfo/* from post-js-header.js */ ){
+      sqlite3InitScriptInfo.debugModule(
+        "sqlite3.asyncPostInit() complete", s
+      );
+    }
     delete s.asyncPostInit;
     delete s.scriptInfo;
     delete s.emscripten;

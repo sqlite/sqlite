@@ -94,6 +94,18 @@
 #define SQLITE_ENABLE_API_ARMOR 1
 
 /**********************************************************************/
+/* SQLITE_EXPERIMENTAL_PRAGMA_20251114 */
+/*
+** See:
+** https://sqlite.org/src/info/e2b3f1a9480a9be3
+** https://github.com/rhashimoto/wa-sqlite/discussions/301
+**
+** It is enabled here for the sake of VFS experimentors.
+*/
+#undef SQLITE_EXPERIMENTAL_PRAGMA_20251114
+#define SQLITE_EXPERIMENTAL_PRAGMA_20251114
+
+/**********************************************************************/
 /* SQLITE_O... */
 #undef SQLITE_OMIT_DEPRECATED
 #define SQLITE_OMIT_DEPRECATED 1

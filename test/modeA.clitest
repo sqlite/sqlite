@@ -27,10 +27,10 @@ SELECT * FROM t1;
 ┌─────┬───────┬───────┬───────┬───────┐
 │  a  │   b   │   c   │   d   │   e   │
 ├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 2.5   │ three │ DD    │       │
-│ 2.5 │ three │ DD    │       │ 1     │
-│ DD  │       │ 1     │ 2.5   │ three │
-│     │ 1     │ 2.5   │ three │ DD    │
+│   1 │   2.5 │ three │ DD    │       │
+│ 2.5 │ three │ DD    │       │     1 │
+│ DD  │       │     1 │   2.5 │ three │
+│     │     1 │   2.5 │ three │ DD    │
 └─────┴───────┴───────┴───────┴───────┘
 END
 
@@ -41,10 +41,10 @@ SELECT * FROM t1;
 ┌─────┬───────┬───────┬───────┬───────┐
 │  a  │   b   │   c   │   d   │   e   │
 ├─────┼───────┼───────┼───────┼───────┤
-│ 1   │ 2.5   │ three │ DD    │ xyz   │
-│ 2.5 │ three │ DD    │ xyz   │ 1     │
-│ DD  │ xyz   │ 1     │ 2.5   │ three │
-│ xyz │ 1     │ 2.5   │ three │ DD    │
+│   1 │   2.5 │ three │ DD    │ xyz   │
+│ 2.5 │ three │ DD    │ xyz   │     1 │
+│ DD  │ xyz   │     1 │   2.5 │ three │
+│ xyz │     1 │   2.5 │ three │ DD    │
 └─────┴───────┴───────┴───────┴───────┘
 END
 
@@ -62,3 +62,22 @@ END
 .output memory
 .mode -null abcde -v
 .output -glob ' --null "abcde"'
+
+# Test cases for the ".explain off" command
+.mode box -reset
+.output memory
+EXPLAIN SELECT * FROM t1;
+.output --notglob *────* --keep
+.output --notglob "* id │ parent │ notused │ detail *" --keep
+.output --glob "*   Init  *"
+.output memory
+EXPLAIN QUERY PLAN SELECT * FROM t1;
+.output --glob "*`--SCAN *"
+.explain off
+.output memory
+EXPLAIN SELECT * FROM t1;
+.output --glob *────*
+.output memory
+EXPLAIN QUERY PLAN SELECT * FROM t1;
+.output --glob "* id │ parent │ notused │ detail *"
+.explain auto

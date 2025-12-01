@@ -1,0 +1,442 @@
+# 2025 September 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix altercons
+
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
+foreach {tn before after} {
+  1 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b)) }
+    { CREATE TABLE t1(a, b) }
+
+  2 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) NOT NULL) }
+    { CREATE TABLE t1(a, b NOT NULL) }
+
+  3 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b)NOT NULL) }
+    { CREATE TABLE t1(a, b NOT NULL) }
+
+  3 { CREATE TABLE t1(a, b NOT NULL CONSTRAINT abc CHECK(t1.a != t1.b)); }
+    { CREATE TABLE t1(a, b NOT NULL) }
+
+  4 { CREATE TABLE t1(a, b, CONSTRAINT abc CHECK(t1.a != t1.b)) }
+    { CREATE TABLE t1(a, b) }
+
+  5 { CREATE TABLE t1(a, b, CONSTRAINT abc CHECK(t1.a != t1.b), PRIMARY KEY(a))}
+    { CREATE TABLE t1(a, b, PRIMARY KEY(a)) }
+
+  6 { CREATE TABLE t1(a, b,CONSTRAINT abc CHECK(t1.a != t1.b),PRIMARY KEY(a))}
+    { CREATE TABLE t1(a, b,PRIMARY KEY(a)) }
+
+  7 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) CONSTRAINT def UNIQUE) }
+    { CREATE TABLE t1(a, b CONSTRAINT def UNIQUE) }
+
+  8 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) CHECK (123)) }
+    { CREATE TABLE t1(a, b CHECK (123)) }
+
+  9 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) DEFAULT NULL) }
+    { CREATE TABLE t1(a, b DEFAULT NULL) }
+
+ 10 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) COLLATE nocase) }
+    { CREATE TABLE t1(a, b COLLATE nocase) }
+
+ 11 { CREATE TABLE t1(a, b CONSTRAINT abc CHECK(t1.a != t1.b) REFERENCES t2) }
+    { CREATE TABLE t1(a, b REFERENCES t2) }
+
+ 12 { CREATE TABLE t1(a, b, c, CONSTRAINT one CONSTRAINT abc CHECK(a!=b) CONSTRAINT three) }
+    { CREATE TABLE t1(a, b, c, CONSTRAINT one CONSTRAINT three) }
+
+ 13 { CREATE TABLE t1(a, b, c, CONSTRAINT abc CONSTRAINT one CHECK(a!=b) CONSTRAINT three) }
+    { CREATE TABLE t1(a, b, c, CONSTRAINT one CHECK(a!=b) CONSTRAINT three) }
+
+ 14 { CREATE TABLE t1(a, b, c, CONSTRAINT abc) }
+    { CREATE TABLE t1(a, b, c) }
+
+ 15 { CREATE TABLE t1(a, b, c,      
+                      CONSTRAINT abc, CHECK( a!=b )) }
+    { CREATE TABLE t1(a, b, c, CHECK( a!=b )) }
+
+ 16 { CREATE TABLE t1(a, b, c, CONSTRAINT abc /* hello */ CHECK( a!=b )) }
+    { CREATE TABLE t1(a, b, c) }
+
+ 17 { CREATE TABLE t1(a, b, c, /* world */ CONSTRAINT abc CHECK( a!=b )) }
+    { CREATE TABLE t1(a, b, c) }
+
+ 18 { CREATE TABLE t1(a, b, c -- comment
+  CONSTRAINT abc NOT NULL
+  ) }
+    { CREATE TABLE t1(a, b, c) }
+
+ 19 { CREATE TABLE t1(a, b, c, -- comment
+  CONSTRAINT abc CHECK (a>b) CONSTRAINT two
+  ) }
+    { CREATE TABLE t1(a, b, c, CONSTRAINT two
+  ) }
+
+ 20 { CREATE TABLE t1(a, b, c, CONSTRAINT one CONSTRAINT abc CHECK (a>b)CONSTRAINT two) }
+    { CREATE TABLE t1(a, b, c, CONSTRAINT one CONSTRAINT two) }
+
+ 21 { CREATE TABLE t1(a, b, c CONSTRAINT abc AS (b+1)) }
+    { CREATE TABLE t1(a, b, c AS (b+1)) }
+
+ 22 { CREATE TABLE t1(a, b, c CONSTRAINT abc GENERATED ALWAYS AS (b+1) STORED) }
+    { CREATE TABLE t1(a, b, c GENERATED ALWAYS AS (b+1) STORED) }
+} {
+  reset_db
+
+  do_execsql_test 1.$tn.0 $before
+
+  do_execsql_test 1.$tn.1 {
+    ALTER TABLE t1 DROP CONSTRAINT abc;
+  } {}
+
+  do_execsql_test 1.$tn.2 {
+    SELECT sql FROM sqlite_schema WHERE name='t1'
+  } [list [string trim $after]]
+}
+
+#-------------------------------------------------------------------------
+
+do_execsql_test 2.0 {
+  CREATE TABLE t2(x, y CONSTRAINT ccc UNIQUE);
+}
+do_catchsql_test 2.1 {
+  ALTER TABLE t2 DROP CONSTRAINT ccc
+} {1 {constraint may not be dropped: ccc}}
+do_catchsql_test 2.2 {
+  ALTER TABLE t2 DROP CONSTRAINT ddd
+} {1 {no such constraint: ddd}}
+
+#-------------------------------------------------------------------------
+reset_db
+foreach {tn col before after} {
+  1 a { CREATE TABLE t1(a NOT NULL, b) }
+      { CREATE TABLE t1(a, b) }
+
+  2 a { CREATE TABLE t1(a NOT NULL ON CONFLICT FAIL, b) }
+      { CREATE TABLE t1(a, b) }
+
+  3 a { CREATE TABLE t1(a NOT NULL ON CONFLICT FAIL UNIQUE, b) }
+      { CREATE TABLE t1(a UNIQUE, b) }
+
+  4 b { CREATE TABLE t1(a NOT NULL ON CONFLICT FAIL UNIQUE, b) }
+      { CREATE TABLE t1(a NOT NULL ON CONFLICT FAIL UNIQUE, b) }
+
+  5 a { CREATE TABLE t1(a CHECK(a<b) NOT NULL, b) }
+      { CREATE TABLE t1(a CHECK(a<b), b) }
+
+  6 a { CREATE TABLE t1(a CHECK(a<b) CONSTRAINT nn NOT NULL, b) }
+      { CREATE TABLE t1(a CHECK(a<b), b) }
+
+  7 b { CREATE TABLE t1(a, b NOT NULL PRIMARY KEY) }
+      { CREATE TABLE t1(a, b PRIMARY KEY) }
+
+  8 b { CREATE TABLE t1(a, b CHECK ((b+a) IS NOT NULL) NOT NULL PRIMARY KEY) }
+      { CREATE TABLE t1(a, b CHECK ((b+a) IS NOT NULL) PRIMARY KEY) }
+
+  9 b { CREATE TABLE t1(a, b CONSTRAINT nn CHECK (b IS NOT NULL) NOT NULL) }
+      { CREATE TABLE t1(a, b CONSTRAINT nn CHECK (b IS NOT NULL)) }
+
+ 10 b { CREATE TABLE t1(a, b NOT NULL AS (a+1)) }
+      { CREATE TABLE t1(a, b AS (a+1)) }
+
+ 11 b { CREATE TABLE t1(a, b NOT NULL GENERATED ALWAYS AS (a+1)) }
+      { CREATE TABLE t1(a, b GENERATED ALWAYS AS (a+1)) }
+} {
+  reset_db
+
+  do_execsql_test 3.$tn.0 $before
+
+  do_execsql_test 3.$tn.1 "
+    ALTER TABLE t1 ALTER COLUMN $col DROP NOT NULL
+  "
+
+  do_execsql_test 3.$tn.2 {
+    SELECT sql FROM sqlite_schema WHERE name='t1'
+  } [list [string trim $after]]
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t2(x, y CONSTRAINT ccc UNIQUE);
+}
+do_execsql_test 4.1 {
+  ALTER TABLE t2 ALTER x DROP NOT NULL;
+  ALTER TABLE t2 ALTER x DROP NOT NULL;
+  ALTER TABLE t2 ALTER x DROP NOT NULL;
+} {}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+
+do_execsql_test 5.1 {
+  CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t3 VALUES(1000, NULL);
+}
+
+do_catchsql_test 5.2.1 {
+  ALTER TABLE t3 ALTER b SET NOT NULL
+} {1 {constraint failed}}
+
+do_test 5.2.2 {
+  sqlite3_errcode db
+} {SQLITE_CONSTRAINT}
+
+foreach {tn before alter after} {
+  1  { CREATE TABLE t1(a, b) }
+     { ALTER TABLE t1 ALTER a SET NOT NULL }
+     { CREATE TABLE t1(a NOT NULL, b) }
+
+  2  { CREATE TABLE t1(a, b) }
+     { ALTER TABLE t1 ALTER a SET NOT NULL ON CONFLICT FAIL }
+     { CREATE TABLE t1(a NOT NULL ON CONFLICT FAIL, b) }
+
+  3  { CREATE TABLE t1(a, b) }
+     { ALTER TABLE t1 ALTER a SET NOT NULL ON CONFLICT fail; }
+     { CREATE TABLE t1(a NOT NULL ON CONFLICT fail, b) }
+
+  4  { CREATE TABLE t1(a, b) }
+     { ALTER TABLE t1 ALTER b SET NOT   NULL ON CONFLICT IGNORE ; }
+     { CREATE TABLE t1(a, b NOT   NULL ON CONFLICT IGNORE) }
+
+  5  { CREATE TABLE t1(a, 'a b c' VARCHAR(10), UNIQUE(a)) }
+     { ALTER TABLE t1 ALTER 'a b c' SET NOT NULL }
+     { CREATE TABLE t1(a, 'a b c' VARCHAR(10) NOT NULL, UNIQUE(a)) }
+} {
+  reset_db
+  do_execsql_test 5.3.$tn.1 $before
+  do_execsql_test 5.3.$tn.2 $alter
+  do_execsql_test 5.3.$tn.3 {
+    SELECT sql FROM sqlite_schema WHERE name='t1';
+  } [list [string trim $after]]
+}
+
+do_execsql_test 5.4.1 {
+  CREATE TABLE x1(a, b, c);
+}
+do_catchsql_test 5.4.2 {
+  ALTER TABLE x1 ALTER d SET NOT NULL;
+} {1 {no such column: d}}
+do_catchsql_test 5.4.3 {
+  ALTER TABLE x2 ALTER c SET NOT NULL;
+} {1 {no such table: x2}}
+do_catchsql_test 5.4.4 {
+  ALTER TABLE temp.x1 ALTER c SET NOT NULL;
+} {1 {no such table: temp.x1}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+
+do_execsql_test 6.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+}
+
+do_catchsql_test 6.2.1 {
+  ALTER TABLE t1 ADD CONSTRAINT nn CHECK (c!=6);
+} {1 {constraint failed}}
+do_execsql_test 6.2.2 {
+  DELETE FROM t1 WHERE c=6;
+  ALTER TABLE t1 ADD CONSTRAINT nn CHECK (c!=6);
+} {}
+do_catchsql_test 6.2.3 {
+  INSERT INTO t1 VALUES(4, 5, 6);
+} {1 {CHECK constraint failed: nn}}
+
+foreach {tn before alter after} {
+  1 { CREATE TABLE t1(a, b) }
+    { ALTER TABLE t1 ADD CONSTRAINT nn CHECK (a>=0) }
+    { CREATE TABLE t1(a, b, CONSTRAINT nn CHECK (a>=0)) }
+
+  2 { CREATE TABLE t1(a, b  ) }
+    { ALTER TABLE t1 ADD CONSTRAINT nn CHECK (a>=0) }
+    { CREATE TABLE t1(a, b  , CONSTRAINT nn CHECK (a>=0)) }
+
+  3 { CREATE TABLE t1(a, b  ) }
+    { ALTER TABLE t1 ADD CHECK (a>=0) }
+    { CREATE TABLE t1(a, b  , CHECK (a>=0)) }
+} {
+  reset_db
+  do_execsql_test 6.3.$tn.1 $before
+  do_execsql_test 6.3.$tn.2 $alter
+  do_execsql_test 6.3.$tn.3 {
+    SELECT sql FROM sqlite_schema WHERE type='table';
+  } [list [string trim $after]]
+}
+
+do_execsql_test 6.4.1 {
+  CREATE TABLE b1(a, b, CONSTRAINT abc CHECK (a!=2));
+}
+do_catchsql_test 6.4.2 {
+  ALTER TABLE b1 ADD CONSTRAINT abc CHECK (a!=3);
+} {1 {constraint abc already exists}}
+do_execsql_test 6.4.1 {
+  SELECT sql FROM sqlite_schema WHERE tbl_name='b1'
+} {{CREATE TABLE b1(a, b, CONSTRAINT abc CHECK (a!=2))}}
+
+do_execsql_test 6.5 {
+  CREATE TABLE abc(x,y);
+}
+
+do_catchsql_test 6.6 {
+  ALTER TABLE abc ADD CHECK (z>=0);
+} {1 {no such column: z}}
+
+#-------------------------------------------------------------------------
+# Try attaching a NOT NULL to a generated column.
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE x1(a, b AS (a+1));
+  INSERT INTO x1 VALUES(1), (2), (3), (NULL);
+}
+
+do_catchsql_test 7.1 {
+  ALTER TABLE x1 ALTER b SET NOT NULL;
+} {1 {constraint failed}}
+
+do_catchsql_test 7.2 {
+  DELETE FROM x1 WHERE b IS NULL;
+  ALTER TABLE x1 ALTER b SET NOT NULL;
+} {0 {}}
+
+do_execsql_test 7.3 {
+  SELECT b FROM x1
+} {2 3 4}
+
+do_catchsql_test 7.4 {
+  ALTER TABLE x1 ALTER rowid SET NOT NULL;
+} {1 {no such column: rowid}}
+
+do_execsql_test 7.5 {
+  CREATE VIEW v1 AS SELECT a, b FROM x1;
+}
+do_catchsql_test 7.6 {
+  ALTER TABLE v1 RENAME a TO c;
+} {1 {cannot rename columns of view "v1"}}
+do_catchsql_test 7.7 {
+  ALTER TABLE v1 ALTER a SET NOT NULL;
+} {1 {cannot edit constraints of view "v1"}}
+do_catchsql_test 7.8 {
+  ALTER TABLE sqlite_schema ALTER sql SET NOT NULL;
+} {1 {table sqlite_master may not be altered}}
+do_catchsql_test 7.9 {
+  ALTER TABLE v1 ALTER a DROP NOT NULL
+} {1 {cannot edit constraints of view "v1"}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b NOT NULL, c CHECK (c!=555), d);
+  INSERT INTO t1 VALUES(1, 1, 1, 1);
+  INSERT INTO t1 VALUES(2, 2, 2, 2);
+  INSERT INTO t1 VALUES(3, 3, 3, 3);
+}
+
+do_execsql_test 8.1.1 {
+  ALTER TABLE t1 ALTER a SET NOT NULL;
+  ALTER TABLE t1 ALTER b SET NOT NULL;
+  ALTER TABLE t1 ALTER c SET NOT NULL;
+  ALTER TABLE t1 ALTER d SET NOT NULL;
+}
+
+do_execsql_test 8.1.2 {
+  SELECT sql FROM sqlite_schema WHERE tbl_name = 't1'
+} {{CREATE TABLE t1(a INTEGER PRIMARY KEY NOT NULL, b NOT NULL, c CHECK (c!=555) NOT NULL, d NOT NULL)}}
+
+do_execsql_test 8.1.3 {
+  SELECT * FROM t1 WHERE a=2;
+} {2 2 2 2}
+
+do_execsql_test 8.2.1 {
+  ALTER TABLE t1 ALTER a DROP NOT NULL;
+  ALTER TABLE t1 ALTER b DROP NOT NULL;
+  ALTER TABLE t1 ALTER c DROP NOT NULL;
+  ALTER TABLE t1 ALTER d DROP NOT NULL;
+}
+
+do_execsql_test 8.2.2 {
+  SELECT sql FROM sqlite_schema WHERE tbl_name = 't1'
+} {{CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c CHECK (c!=555), d)}}
+
+do_execsql_test 8.2.3 {
+  SELECT * FROM t1 WHERE a=3;
+} {3 3 3 3}
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+do_execsql_test 9.0 {
+  CREATE TABLE t1(x, y, z);
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t1(x, y, z);
+  INSERT INTO aux.t1 VALUES(1, 1, 1);
+  INSERT INTO aux.t1 VALUES(2, 2, 2);
+  INSERT INTO aux.t1 VALUES(3, 3, NULL);
+
+  CREATE TABLE aux.t2(x, y, z);
+}
+
+do_catchsql_test 9.1.1 {
+  ALTER TABLE aux.t1 ALTER COLUMN z SET NOT NULL
+} {1 {constraint failed}}
+do_execsql_test 9.1.2 {
+  UPDATE aux.t1 SET z=x;
+  ALTER TABLE aux.t1 ALTER COLUMN z SET NOT NULL;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t1';
+} {{CREATE TABLE t1(x, y, z NOT NULL)}}
+do_execsql_test 9.1.3 {
+  ALTER TABLE aux.t1 ALTER z DROP NOT NULL;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t1';
+} {{CREATE TABLE t1(x, y, z)}}
+do_execsql_test 9.1.4 {
+  ALTER TABLE t2 ALTER x SET NOT NULL;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t2';
+} {{CREATE TABLE t2(x NOT NULL, y, z)}}
+do_execsql_test 9.1.5 {
+  ALTER TABLE t2 ALTER x DROP NOT NULL;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t2';
+} {{CREATE TABLE t2(x, y, z)}}
+
+do_catchsql_test 9.2.1 {
+  ALTER TABLE aux.t1 ADD CONSTRAINT bill CHECK (y!=2);
+} {1 {constraint failed}}
+do_execsql_test 9.2.2 {
+  UPDATE aux.t1 SET y=4 WHERE y=2;
+  ALTER TABLE aux.t1 ADD CONSTRAINT bill CHECK (y!=2);
+  SELECT sql FROM aux.sqlite_schema WHERE name='t1';
+} {{CREATE TABLE t1(x, y, z, CONSTRAINT bill CHECK (y!=2))}}
+do_execsql_test 9.2.3 {
+  ALTER TABLE aux.t1 DROP CONSTRAINT bill;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t1';
+} {{CREATE TABLE t1(x, y, z)}}
+do_execsql_test 9.2.4 {
+  ALTER TABLE t2 ADD CONSTRAINT william CHECK (z!='');
+  SELECT sql FROM aux.sqlite_schema WHERE name='t2';
+} {{CREATE TABLE t2(x, y, z, CONSTRAINT william CHECK (z!=''))}}
+do_execsql_test 9.2.5 {
+  ALTER TABLE t2 DROP CONSTRAINT william;
+  SELECT sql FROM aux.sqlite_schema WHERE name='t2';
+} {{CREATE TABLE t2(x, y, z)}}
+
+finish_test
+

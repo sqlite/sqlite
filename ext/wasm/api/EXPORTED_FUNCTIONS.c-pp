@@ -75,6 +75,7 @@ _sqlite3_limit
 _sqlite3_malloc
 _sqlite3_malloc64
 _sqlite3_msize
+_sqlite3_next_stmt
 _sqlite3_open
 _sqlite3_open_v2
 _sqlite3_overload_function

@@ -2603,7 +2603,7 @@ static int arg_is_flag( char const *zFlag, char const *zArg,
 
 static void define_argv(int argc, char const * const * argv){
   sqlite3_str * const s = sqlite3_str_new(g.db);
-  sqlite3_str_append(s, "c-pp::ARGV=", 11);
+  sqlite3_str_append(s, "c-pp::argv=", 11);
   for( int i = 0; i < argc; ++i ){
     if( i ) sqlite3_str_appendchar(s, 1, ' ');
     sqlite3_str_appendf(s, "%s", argv[i]);

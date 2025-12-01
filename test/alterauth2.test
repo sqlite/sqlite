@@ -116,4 +116,55 @@ do_auth_test 1.3 {
   {SQLITE_UPDATE sqlite_temp_master sql temp {}}
 }
 
+do_auth_test 1.4 {
+  ALTER TABLE t2 ALTER COLUMN b SET NOT NULL;
+} {
+  {SQLITE_ALTER_TABLE main t2 b {}} 
+  {SQLITE_FUNCTION {} sqlite_add_constraint {} {}} 
+  {SQLITE_FUNCTION {} sqlite_drop_constraint {} {}} 
+  {SQLITE_FUNCTION {} sqlite_fail {} {}} 
+  {SQLITE_READ sqlite_master sql main {}} 
+  {SQLITE_READ sqlite_master tbl_name main {}} 
+  {SQLITE_READ sqlite_master type main {}} 
+  {SQLITE_READ t2 b main {}} 
+  {SQLITE_SELECT {} {} {} {}} 
+  {SQLITE_UPDATE sqlite_master sql main {}}
+}
+do_auth_test 1.5 {
+  ALTER TABLE t2 ALTER COLUMN 'b' DROP NOT NULL;
+} {
+  {SQLITE_ALTER_TABLE main t2 b {}} 
+  {SQLITE_FUNCTION {} sqlite_drop_constraint {} {}} 
+  {SQLITE_READ sqlite_master sql main {}} 
+  {SQLITE_READ sqlite_master tbl_name main {}} 
+  {SQLITE_READ sqlite_master type main {}} 
+  {SQLITE_UPDATE sqlite_master sql main {}}
+}
+
+do_auth_test 1.6 {
+  ALTER TABLE t2 ADD CONSTRAINT abc CHECK (aaa>b)
+} {
+  {SQLITE_ALTER_TABLE main t2 {} {}} 
+  {SQLITE_FUNCTION {} sqlite_add_constraint {} {}} 
+  {SQLITE_FUNCTION {} sqlite_fail {} {}} 
+  {SQLITE_FUNCTION {} sqlite_find_constraint {} {}} 
+  {SQLITE_READ sqlite_master sql main {}} 
+  {SQLITE_READ sqlite_master tbl_name main {}} 
+  {SQLITE_READ sqlite_master type main {}} 
+  {SQLITE_READ t2 aaa main {}} 
+  {SQLITE_READ t2 b main {}} 
+  {SQLITE_SELECT {} {} {} {}} 
+  {SQLITE_UPDATE sqlite_master sql main {}}
+}
+do_auth_test 1.7 {
+  ALTER TABLE t2 DROP CONSTRAINT abc;
+} {
+  {SQLITE_ALTER_TABLE main t2 {} {}} 
+  {SQLITE_FUNCTION {} sqlite_drop_constraint {} {}} 
+  {SQLITE_READ sqlite_master sql main {}} 
+  {SQLITE_READ sqlite_master tbl_name main {}} 
+  {SQLITE_READ sqlite_master type main {}} 
+  {SQLITE_UPDATE sqlite_master sql main {}}
+}
+
 finish_test

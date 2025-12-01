@@ -18,6 +18,7 @@
 
 #if defined(_MSC_VER) && defined(_WIN32)
 
+  #include "windows.h"
   #include <profileapi.h>
 
   __inline sqlite3_uint64 sqlite3Hwtime(void){

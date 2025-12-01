@@ -2074,6 +2074,7 @@ static void fts5SegIterReverseInitPage(Fts5Index *p, Fts5SegIter *pIter){
   while( 1 ){
     u64 iDelta = 0;
 
+    if( i>=n ) break;
     if( eDetail==FTS5_DETAIL_NONE ){
       /* todo */
       if( i<n && a[i]==0 ){

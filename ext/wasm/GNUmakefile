@@ -874,7 +874,6 @@ $(sqlite3-license-version.js): $(bin.version-info) \
 		awk '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' $(sqlite3.h); \
 		awk '/define SQLITE_SOURCE_ID/{$$1=""; print "**" $$0}' $(sqlite3.h); \
 		echo '**'; echo '** Emscripten SDK: $(emcc.version)'; \
-		echo '**'; echo '** Preprocessed by:'; echo '**    @c-pp::ARGV@'; \
 		echo '*/'; \
 	} > $@
 
@@ -910,6 +909,7 @@ sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.c-pp.js
 ifeq (0,$(wasm-bare-bones))
   sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
 endif
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-kvvfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
 
@@ -996,12 +996,20 @@ endif
 # /shell.c
 ########################################################################
 
+#
+# Fiddle-related decls we need before .wasmbuilds is included
+#
+
+fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
+
 EXPORTED_FUNCTIONS.fiddle = $(dir.tmp)/EXPORTED_FUNCTIONS.fiddle
-$(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE_LIST)
+$(EXPORTED_FUNCTIONS.fiddle): $(EXPORTED_FUNCTIONS.api.in) \
+ $(MAKEFILE_LIST) $(bin.c-pp)
 	@$(call b.mkdir@)
-	@$(call b.c-pp.shcmd,filter,$(EXPORTED_FUNCTIONS.api.in),\
+	@$(call b.c-pp.shcmd,fiddle,$(EXPORTED_FUNCTIONS.api.in),\
       $@,$(EXPORTED_FUNCTIONS.c-pp.flags) -Dfiddle)
 	@echo $(logtag.@) $(emo.disk)
+
 
 emcc.flags.fiddle = \
   $(emcc.cflags) $(emcc_opt_full) \
@@ -1027,21 +1035,23 @@ emcc.flags.fiddle = \
   -USQLITE_WASM_BARE_BONES \
   -DSQLITE_SHELL_FIDDLE
 
-clean: clean-fiddle
-clean-fiddle:
-	rm -f $(dir.fiddle)/fiddle-module.js \
-        $(dir.fiddle)/*.wasm \
-        $(dir.fiddle)/sqlite3-opfs-*.js \
-        $(dir.fiddle)/*.gz \
-        $(EXPORTED_FUNCTIONS.fiddle)
-	rm -fr $(dir.fiddle-debug)
-
 emcc.flags.fiddle.debug = $(emcc.flags.fiddle) \
   -DSQLITE_DEBUG \
   -DSQLITE_ENABLE_SELECTTRACE \
   -DSQLITE_ENABLE_WHERETRACE
 
-fiddle.c.in = $(dir.top)/shell.c $(sqlite3-wasm.c)
+clean: clean-fiddle
+clean-fiddle:
+	rm -f $(dir.fiddle)/fiddle-module.js \
+  $(dir.fiddle)/*.wasm \
+  $(dir.fiddle)/sqlite3-opfs-*.js \
+  $(dir.fiddle)/*.gz \
+  $(dir.fiddle)/index.html \
+  $(EXPORTED_FUNCTIONS.fiddle)
+	rm -fr $(dir.fiddle-debug)
+distclean: distclean-fiddle
+distclean-fiddle:
+	rm -fr $(dir.fiddle)/jqterm
 
 #
 # WASMFS build - unsupported and untested. We used WASMFS
@@ -1369,6 +1379,54 @@ all: tester1
 #
 # end tester1
 #
+
+#
+# jquery.terminal support for fiddle:
+#
+# If a clone of https://github.com/jcubic/jquery.terminal
+# is found in $(JQTERM), defaulting to $(HOME)/src/jquery.terminal
+# then add jquery.terminal support to fiddle.
+#
+# To build that package, from its checkout dir:
+#
+#   npm install
+#   make
+#
+c-pp.D.fiddle ?=
+JQTERM ?= $(HOME)/src/jquery.terminal
+dir.jqtermExt = $(firstword $(wildcard $(JQTERM)))
+#$(info dir.jqtermExt=$(dir.jqtermExt))
+ifeq (0,$(MAKING_CLEAN))
+ifeq (,$(wildcard $(dir.jqtermExt)/js/jquery.terminal.min.js))
+$(info $(emo.magic) To add jquery.terminal support to fiddle, set JQTERM=/path/to/its/built/checkout)
+else
+$(info $(emo.magic) jquery.terminal found in $(dir.jqtermExt) - adding it to fiddle. Make sure it is built!)
+
+dir.jqterm = $(dir.fiddle)/jqterm
+$(dir.fiddle)/jqterm/jquery.terminal.bundle.min.js:
+	@$(call b.mkdir@)
+	cat $(dir.jqtermExt)/js/jquery-1*.min.js \
+	$(dir.jqtermExt)/js/jquery.terminal.min.js > $@
+
+$(dir.fiddle)/jqterm/jquery.terminal.min.css: $(dir.jqtermExt)/css/jquery.terminal.min.css
+	@$(call b.mkdir@)
+	@$(call b.cp,fiddle,$<,$(dir $@))
+
+$(dir.fiddle)/index.html: $(dir.fiddle)/jqterm/jquery.terminal.bundle.min.js \
+  $(dir.fiddle)/jqterm/jquery.terminal.min.css
+c-pp.D.fiddle += -Djqterm
+endif
+endif
+# ^^^ JQTERM/MAKING_CLEAN
+
+#
+# Generate fiddle/index.html. Must come after JQTERM is handled.
+#
+$(dir.fiddle)/index.html: $(dir.fiddle)/index.c-pp.html
+$(eval $(call b.c-pp.target,fiddle,\
+  $(dir.fiddle)/index.c-pp.html,$(dir.fiddle)/index.html,$(c-pp.D.fiddle)))
+$(out.fiddle.wasm): $(dir.fiddle)/index.html
+
 
 #
 # Convenience rules to rebuild with various -Ox levels. Much
