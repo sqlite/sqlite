@@ -26,6 +26,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      the sqlite3 binding if, e.g., the wrapper is in the main thread
      and the sqlite3 API is in a worker. */
 
+  const outWrapper = function(f){
+    return (...args)=>f("sqlite3.oo1:",...args);
+  };
+
+  const debug = sqlite3.__isUnderTest
+        ? outWrapper(console.debug.bind(console))
+        : outWrapper(sqlite3.config.debug);
+  const warn = sqlite3.__isUnderTest
+        ? outWrapper(console.warn.bind(console))
+        : outWrapper(sqlite3.config.warn);
+  const error = sqlite3.__isUnderTest
+        ? outWrapper(console.error.bind(console))
+        : outWrapper(sqlite3.config.error);
+
   /**
      In order to keep clients from manipulating, perhaps
      inadvertently, the underlying pointer values of DB and Stmt
@@ -906,15 +920,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        result set, but only if that statement has any result rows. The
        callback's "this" is the options object, noting that this
        function synthesizes one if the caller does not pass one to
-       exec(). The second argument passed to the callback is always
-       the current Stmt object, as it's needed if the caller wants to
-       fetch the column names or some such (noting that they could
-       also be fetched via `this.columnNames`, if the client provides
-       the `columnNames` option). If the callback returns a literal
-       `false` (as opposed to any other falsy value, e.g. an implicit
-       `undefined` return), any ongoing statement-`step()` iteration
-       stops without an error. The return value of the callback is
-       otherwise ignored.
+       exec(). The first argument passed to the callback is described
+       below. The second argument is always the current Stmt object,
+       as it's needed if the caller wants to fetch the column names or
+       some such (noting that they could also be fetched via
+       `this.columnNames`, if the client provides the `columnNames`
+       option). If the callback returns a literal `false` (as opposed
+       to any other falsy value, e.g. an implicit `undefined` return),
+       any ongoing statement-`step()` iteration stops without an
+       error. The return value of the callback is otherwise ignored.
 
        ACHTUNG: The callback MUST NOT modify the Stmt object. Calling
        any of the Stmt.get() variants, Stmt.getColumnName(), or
@@ -947,20 +961,23 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          A.3) `'stmt'` causes the current Stmt to be passed to the
          callback, but this mode will trigger an exception if
          `resultRows` is an array because appending the transient
-         statement to the array would be downright unhelpful.
+         statement to the array would be downright unhelpful.  This
+         option is a legacy feature, retained for backwards
+         compatibility.  The statement object is passed as the second
+         argument to the callback, as described above.
 
        B) An integer, indicating a zero-based column in the result
-       row. Only that one single value will be passed on.
+       row. Only that one single value, in JS form, will be passed on.
 
        C) A string with a minimum length of 2 and leading character of
        '$' will fetch the row as an object, extract that one field,
-       and pass that field's value to the callback. Note that these
-       keys are case-sensitive so must match the case used in the
+       and pass that field's value to the callback. These keys are
+       case-sensitive so must match the case used in the
        SQL. e.g. `"select a A from t"` with a `rowMode` of `'$A'`
        would work but `'$a'` would not. A reference to a column not in
        the result set will trigger an exception on the first row (as
-       the check is not performed until rows are fetched).  Note also
-       that `$` is a legal identifier character in JS so need not be
+       the check is not performed until rows are fetched).  Note that
+       `$` is a legal identifier character in JS so need not be
        quoted.
 
        Any other `rowMode` value triggers an exception.
@@ -1000,6 +1017,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - `callback` and `resultRows`: permit an array entries with
        semantics similar to those described for `bind` above.
 
+       OTOH, this function already does too much.
     */
     exec: function(/*(sql [,obj]) || (obj)*/){
       affirmDbOpen(this);
@@ -1023,7 +1041,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         /* Optimization: if the SQL is a TypedArray we can save some string
            conversion costs. */;
         /* Allocate the two output pointers (ppStmt, pzTail) and heap
-           space for the SQL (pSql). When prepare_v2() returns, pzTail
+           space for the SQL (pSql). When prepare_v3() returns, pzTail
            will point to somewhere in pSql. */
         let sqlByteLen = isTA ? arg.sql.byteLength : wasm.jstrlen(arg.sql);
         const ppStmt  = wasm.scopedAlloc(
@@ -1035,8 +1053,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const pSqlEnd = wasm.ptr.add(pSql, sqlByteLen);
         if(isTA) wasm.heap8().set(arg.sql, pSql);
         else wasm.jstrcpy(arg.sql, wasm.heap8(), pSql, sqlByteLen, false);
-        wasm.poke(wasm.ptr.add(pSql, sqlByteLen), 0/*NUL terminator*/);
-        while(pSql && wasm.peek(pSql, 'i8')
+        wasm.poke8(wasm.ptr.add(pSql, sqlByteLen), 0/*NUL terminator*/);
+        while(pSql && wasm.peek8(pSql)
               /* Maintenance reminder:^^^ _must_ be 'i8' or else we
                  will very likely cause an endless loop. What that's
                  doing is checking for a terminating NUL byte. If we
@@ -1100,6 +1118,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             /* In order to trigger an exception in the
                INSERT...RETURNING locking scenario:
                https://sqlite.org/forum/forumpost/36f7a2e7494897df
+               [tag:insert-returning-reset]
             */).finalize();
           stmt = null;
         }/*prepare() loop*/
@@ -1107,14 +1126,140 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         sqlite3.config.warn("DB.exec() is propagating exception",opt,e);
         throw e;
       }*/finally{
-        wasm.scopedAllocPop(stack);
         if(stmt){
           __execLock.delete(stmt);
           stmt.finalize();
         }
+        wasm.scopedAllocPop(stack);
       }
       return arg.returnVal();
     }/*exec()*/,
+
+//#if nope
+    /**
+       Experimental and untested - do not use.
+
+       Prepares one or more SQL statements, passing each to a callback
+       for processing.
+
+       It requires an options object with the following properties:
+
+       - "sql": SQL in any format accepted by exec().
+
+       - "callback" (function): gets passed each prepared statement,
+       as described below.
+
+       - "asPointer" (bool=false): if true, the callback is passed the
+       WASM (sqlite3*) pointer instead of a Stmt object.
+
+       - "saveSql" (array): if set, the SQL of each prepared statement
+       is appended to this array. This can be used without a callback
+       to split SQL into its component statements. Purely empty
+       statements (for for which sqlite3_prepare() returns a NULL
+       sqlite3_stmt, i.e. spaces and comments) are not added to this
+       list unless...
+
+       - "saveEmpty" (bool=false): If true, empty statements are
+       retained in opt.saveSql, but their leading/trailing whitespace
+       is trimmed (as for queries) so they may be empty.
+
+       For each statement in the input SQL:
+
+       1) If opt.saveSql is set, the SQL is appended to it.
+
+       2) If callback is set, callback(S) is called, where S is either
+       a Stmt object (by default) or an (sqlite3*) WASM pointer (if
+       opt.asPointer is true). If the callback returns a literal true
+       (as opposed to any other truthy value), ownership of S is
+       transferred to the callback, otherwise S is reset and finalized
+       as soon as the callback returns.  If the callback throws, S is
+       unconditionally finalized.
+
+       If neither of opt.saveSql nor opt.callback are set, this
+       function does nothing more than prepare and finalize each
+       statement, which will trigger an exception if any of them
+       contain invalid SQL.
+    */
+    forEachStmt: function(opt){
+      affirmDbOpen(this);
+      opt ??= Object.create(null);
+      if(!opt.sql){
+        return toss3("exec() requires an SQL string.");
+      }
+      const sql = util.flexibleString(opt.sql);
+      const callback = opt.callback;
+      let stmt, pStmt;
+      const stack = wasm.scopedAllocPush();
+      const saveSql = Array.isArray(opt.saveSql) ? opt.saveSql : undefined;
+      try{
+        const isTA = util.isSQLableTypedArray(opt.sql)
+        /* Optimization: if the SQL is a TypedArray we can save some string
+           conversion costs. */;
+        /* Allocate the two output pointers (ppStmt, pzTail) and heap
+           space for the SQL (pSql). When prepare_v3() returns, pzTail
+           will point to somewhere in pSql. */
+        let sqlByteLen = isTA ? opt.sql.byteLength : wasm.jstrlen(sql);
+        const ppStmt  = wasm.scopedAlloc(
+          /* output (sqlite3_stmt**) arg and pzTail */
+          (2 * wasm.ptr.size) + (sqlByteLen + 1/* SQL + NUL */)
+        );
+        const pzTail = wasm.ptr.add(ppStmt, wasm.ptr.size) /* final arg to sqlite3_prepare_v2() */;
+        let pSql = wasm.ptr.add(pzTail, wasm.ptr.size) /* start of the SQL string */;
+        const pSqlEnd = wasm.ptr.add(pSql, sqlByteLen);
+        if(isTA) wasm.heap8().set(sql, pSql);
+        else wasm.jstrcpy(sql, wasm.heap8(), pSql, sqlByteLen, false);
+        wasm.poke8(wasm.ptr.add(pSql, sqlByteLen), 0/*NUL terminator*/);
+        while( pSql && wasm.peek8(pSql) ){
+          pStmt = stmt = null;
+          wasm.pokePtr([ppStmt, pzTail], 0);
+          const zHead = pSql;
+          DB.checkRc(this, capi.sqlite3_prepare_v3(
+            this.pointer, pSql, sqlByteLen, 0, ppStmt, pzTail
+          ));
+          [pStmt, pSql] = wasm.peekPtr([ppStmt, pzTail]);
+          sqlByteLen = wasm.ptr.addn(pSqlEnd,-pSql);
+          if(opt.saveSql){
+            if( pStmt ) opt.saveSql.push(capi.sqlite3_sql(pStmt).trim());
+            else if( opt.saveEmpty ){
+              saveSql.push(wasm.typedArrayToString(
+                wasm.heap8u(), Number(zHead),
+                wasm.ptr.addn(zHead, sqlByteLen)
+              ).trim(/*arguable*/));
+            }
+          }
+          if(!pStmt) continue;
+          //sqlite3.config.debug("forEachStmt() pSql =",capi.sqlite3_sql(pStmt));
+          if( !opt.callback ){
+            capi.sqlite3_finalize(pStmt);
+            pStmt = null;
+            continue;
+          }
+          stmt = opt.asPointer ? null : new Stmt(this, pStmt, BindTypes);
+          if( true===callaback(stmt || pStmt) ){
+            stmt = pStmt = null /*callback took ownership */;
+          }else if(stmt){
+            pStmt = null;
+            stmt.reset(
+              /* See [tag:insert-returning-reset]. The thinking here is
+                 that if the callback didn't throw for this, it
+                 probably should have.
+              */).finalize();
+            stmt = null;
+          }else{
+            const rx = capi.sqlite3_reset(pStmt/*[tag:insert-returning-reset]*/);
+            capi.sqlite3_finalize(pStmt);
+            pStmt = null;
+            DB.checkRc(this, rx);
+          }
+        }/*prepare() loop*/
+      }finally{
+        if(stmt) stmt.finalize();
+        else if(pStmt) capi.sqlite3_finalize(pStmt);
+        wasm.scopedAllocPop(stack);
+      }
+      return this;
+    }/*forEachStmt()*/,
+//#endif nope
 
     /**
        Creates a new UDF (User-Defined Function) which is accessible

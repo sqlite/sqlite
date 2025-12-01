@@ -1888,6 +1888,96 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   }/* virtual table */
 
+//#if nope
+
+  /**
+     The idea here is a simpler wrapper for listening to kvvfs
+     changes.  Clients would override its onXyz() event methods
+     instead of providing callbacks for sqlite3.kvvfs.listen(), the
+     main (only?) benefit of which is that this class would do the
+     sorting-out and validation of event state before calling the
+     overloaded callbacks.
+  */
+  kvvfs.Listener = class KvvfsListener {
+    #store;
+    #listener;
+
+    constructor(opt){
+      this.#listenTo(opt);
+    }
+
+    #event(ev){
+      switch(ev.type){
+        case 'open': this.onOpen(ev.data); break;
+        case 'close': this.onClose(ev.data); break;
+        case 'sync': this.onSync(ev.data); break;
+        case 'delete':
+          switch(ev.data){
+            case 'jrnl': break;
+            default:{
+              const n = +ev.data;
+              util.assert( n>0, "Expecting positive db page number" );
+              this.onPageChange(n, null);
+              break;
+            }
+          }
+          break;
+        case 'write':{
+          const key = ev.data[0], val = ev.data[1];
+          switch( key ){
+            case 'jrnl': break;
+            case 'sz':{
+              const sz = +val;
+              util.assert( sz>0, "Expecting a db page number" );
+              this.onSizeChange(sz);
+              break;
+            }
+            default:
+              T.assert( +key>0, "Expecting a positive db page number" );
+              this.onPageChange(+key, val);
+              break;
+          }
+          break;
+        }
+      }
+    }
+
+    #listenTo(opt){
+      if(this.#listener){
+        sqlite3_js_kvvfs_unlisten(this.#listener);
+        this.#listener = undefined;
+      }
+      const eventHandler = async function(ev){this.event(ev)}.bind(this);
+      const li = Object.assign(
+        { /* Defaults */
+          reserve: false,
+          includeJournal: false,
+          decodePages: false,
+          storage: null
+        },
+        (/*client options*/opt||{}),
+        {/*hard-coded options*/
+          events: Object.assign(Object.create(null),{
+            'open':   eventHandler,
+            'close':  eventHandler,
+            'write':  eventHandler,
+            'delete': eventHandler,
+            'sync':   eventHandler
+          })
+        }
+      );
+      sqlite3_js_kvvfs_listen(li);
+      this.#listener = li;
+    }
+
+    async onSizeChange(sz){}
+    async onPageChange(pgNo,content/*null for delete*/){}
+    async onSync(mode/*true=xSync, false=xFileControl*/){}
+    async onOpen(count){}
+    async onClose(count){}
+  }/*KvvfsListener*/;
+//#endif nope
+
 })/*globalThis.sqlite3ApiBootstrap.initializers*/;
 //#savepoint rollback
 //#endif not omit-kvvfs

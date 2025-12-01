@@ -3080,7 +3080,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'concurrent transient kvvfs',
       //predicate: ()=>false,
       test: function(sqlite3){
-        const filename = '👷';
+        const filename = '💾👷';
         const kvvfs = sqlite3.kvvfs;
         const DB = sqlite3.oo1.DB;
         const JDb = sqlite3.oo1.JsStorageDb;
@@ -3318,8 +3318,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                     pglog.jrnl = null;
                     break;
                   default:{
-                    const n = +ev.data>0;
-                    T.assert( n, "Expecting positive db page number" );
+                    const n = +ev.data;
+                    T.assert( n>0, "Expecting positive db page number" );
                     if( n < pglog.pages.length ){
                       pglog.size = undefined;
                     }
@@ -3334,9 +3334,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
               'write':  (ev)=>{
                 //console.warn('write',ev);
                 incr(ev.type);
+                T.assert(Array.isArray(ev.data));
                 const key = ev.data[0], val = ev.data[1];
-                T.assert(Array.isArray(ev.data))
-                  .assert('string'===typeof key);
+                T.assert('string'===typeof key);
                 switch( key ){
                   case 'jrnl':
                     T.assert(pglog.includeJournal);
@@ -3443,18 +3443,20 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const db2 = new sqlite3.oo1.DB('file:foo?vfs=kvvfs&delete-on-close=1');
         try{
           kvvfs.create_module(db);
-          /*db.exec([
-            "create virtual table vt using sqlite_kvvfs()"
-          ]);*/
           let rc = db.selectObjects("select * from sqlite_kvvfs order by name");
           debug("sqlite_kvvfs vtab:", rc);
+          const nDb = rc.length;
           rc = db.selectObject("select * from sqlite_kvvfs where name='foo'");
           T.assert(rc, "Expecting foo storage record")
             .assert('foo'===rc.name, "Unexpected name")
             .assert(1===rc.nRef, "Unexpected refcount");
           db2.close();
-          rc = db.selectObject("select 1 from sqlite_kvvfs where name='foo'");
-          T.assert(!rc, "Expecting foo storage to be gone");
+          rc = db.selectObjects("select * from sqlite_kvvfs");
+          T.assert( !rc.filter((o)=>o.name==='foo').length,
+                    "Expecting foo storage to be gone");
+          debug("sqlite_kvvfs vtab:", rc);
+          T.assert( rc.length+1 === nDb,
+                    "Unexpected storage count: got",rc.length,"expected",nDb);
         }finally{
           db.close();
           db2.close();
