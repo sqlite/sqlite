@@ -6896,7 +6896,9 @@ static int recoverDatabaseCmd(ShellState *pState, int nArg, char **azArg){
       pState->db, "main", recoverSqlCb, (void*)pState
   );
 
-  sqlite3_recover_config(p, 789, (void*)zRecoveryDb);  /* Debug use only */
+  if( !pState->bSafeMode ){
+    sqlite3_recover_config(p, 789, (void*)zRecoveryDb);  /* Debug use only */
+  }
   sqlite3_recover_config(p, SQLITE_RECOVER_LOST_AND_FOUND, (void*)zLAF);
   sqlite3_recover_config(p, SQLITE_RECOVER_ROWIDS, (void*)&bRowids);
   sqlite3_recover_config(p, SQLITE_RECOVER_FREELIST_CORRUPT,(void*)&bFreelist);
