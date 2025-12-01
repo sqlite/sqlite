@@ -563,7 +563,7 @@ TriggerStep *sqlite3TriggerUpdateStep(
   TriggerStep *pTriggerStep;
 
   pTriggerStep = triggerStepAllocate(pParse, TK_UPDATE, pTabList, zStart, zEnd);
-  if( db->mallocFailed==0 ){
+  if( pTriggerStep ){
     SrcList *pFromDup = 0;
     if( IN_RENAME_OBJECT ){
       pTriggerStep->pExprList = pEList;
