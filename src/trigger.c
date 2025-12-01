@@ -585,7 +585,7 @@ TriggerStep *sqlite3TriggerUpdateStep(
       pSub = sqlite3SelectNew(pParse, 0, pFromDup, 0,0,0,0, SF_NestedFrom, 0);
       pFromDup = sqlite3SrcListAppendFromTerm(pParse, 0, 0, 0, &as, pSub ,0);
     }
-    if( pFromDup ){
+    if( pFromDup && pTriggerStep->pSrc ){
       pTriggerStep->pSrc = sqlite3SrcListAppendList(
           pParse, pTriggerStep->pSrc, pFromDup
       );
