@@ -2904,8 +2904,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert( k && 'object'===typeof k );
         for(const n of ['reserve', 'import', 'export',
                         'unlink', 'listen', 'unlisten',
-                        //'exists',
-                        'size', 'clear'] ){
+                        'exists',
+                        'estimateSize', 'clear'] ){
           T.assert( k[n] instanceof Function );
         }
 
@@ -3051,7 +3051,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           //console.warn("db.dbFilename() =",dbFilename);
           T.assert(3 === db.selectValue('select count(*) from kvvfs'));
           debug("kvvfs to Object:",exportDb(dbFilename));
-          const n = sqlite3.kvvfs.size( dbFilename );
+          const n = sqlite3.kvvfs.estimateSize( dbFilename );
           T.assert( n>0, "Db size count failed" );
 
           if( 1 ){

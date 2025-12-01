@@ -1114,19 +1114,37 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - It accepts an arbitrary storage name. In v1 this was a silent
      no-op for any names other than ('local','session','').
 
-     - It throws if a db currently has the storage opened. That
-     version 1 did not throw for this case was due to an architectural
-     limitation which has since been overcome.
+     - It throws if a db currently has the storage opened UNLESS the
+     storage object is localStorage or sessionStorage. That version 1
+     did not throw for this case was due to an architectural
+     limitation which has since been overcome, but removal of
+     JsStorageDb.prototype.clearStorage() would be a backwards compatibility
+     break, so this function permits wiping the storage for those two
+     cases even if they are opened. Use with case.
   */
   const sqlite3_js_kvvfs_clear = function callee(which){
-    if( !which ){
+    if( ''===which ){
       return callee('local') + callee('session');
     }
     const store = storageForZClass(which);
     if( !store ) return 0;
     if( store.files.length ){
-      toss3(capi.SQLITE_ACCESS,
-            "Cannot clear in-use database storage.");
+      if( globalThis.localStorage===store.storage
+          || globalThis.sessionStorage===store.storage ){
+        /* backwards compatibility: allow these to be cleared
+           while opened. */
+      }else{
+        /* Interestingly, kvvfs recovers just fine when the storage is
+           wiped, so long as the db is not in use and its schema is
+           recreated before it's used, but client apps should not have
+           to be faced with that eventuality mid-query (where it
+           _will_ cause failures). Therefore we disallow it when
+           storage handles are opened. Kvvfs version 1 could not
+           detect this case - see the if() block above.
+        */
+        toss3(capi.SQLITE_ACCESS,
+              "Cannot clear in-use database storage.");
+      }
     }
     const s = store.storage;
     const toRm = [] /* keys to remove */;
@@ -1160,7 +1178,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      clients.
   */
   const sqlite3_js_kvvfs_size = function callee(which){
-    if( !which ){
+    if( ''===which ){
       return callee('local') + callee('session');
     }
     const store = storageForZClass(which);
@@ -1414,16 +1432,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         exp.pages.forEach((v,ndx)=>s.setItem(keyPrefix+(ndx+1), v));
       }
       if( isNew ) installStorageAndJournal(store);
-    }catch(e){
+    }catch{
       if( !isNew ){
-        try{sqlite3_js_kvvfs_clear(exp.name, true);}
-        catch(ee){/*ignored*/}
+        try{sqlite3_js_kvvfs_clear(exp.name);}catch(ee){/*ignored*/}
       }
-      throw e;
     }finally{
-      if( zEnc ){
-        cache.memBufferFree(1);
-      }
+      if( zEnc ) cache.memBufferFree(1);
     }
     return this;
   };
@@ -1464,7 +1478,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      Returns true if it reduces the refcount, else false.  A result of
      true does not necessarily mean that the storage unit was removed,
-     just that its refcount was lowered.
+     just that its refcount was lowered. Similarly, a result of false
+     does not mean that the storage is removed - it may still have
+     opened handles.
 
      Added in version @kvvfs-v2-added-in@.
   */
@@ -1633,7 +1649,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     listen:   sqlite3_js_kvvfs_listen,
     unlisten: sqlite3_js_kvvfs_unlisten,
     exists:   (name)=>!!storageForZClass(name),
-    size:     sqlite3_js_kvvfs_size,
+    estimateSize: sqlite3_js_kvvfs_size,
     clear:    sqlite3_js_kvvfs_clear
   });
 
@@ -1707,12 +1723,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     jdb.prototype = Object.create(DB.prototype);
     jdb.clearStorage = sqlite3_js_kvvfs_clear;
     /**
+       DEPRECATED: the inherited method of this name (as opposed to
+       the "static" class method) is deprecated with version 2 of
+       kvvfs. This function will, for backwards comaptibility,
+       continue to work with localStorage and sessionStorage, but will
+       throw for all other storage because they are opened. Version 1
+       was not capable of recognizing that the storage was opened so
+       permitted wiping it out at any time, but that was arguably a
+       bug.
+
        Clears this database instance's storage or throws if this
        instance has been closed. Returns the number of
-       database blocks which were cleaned up.
+       database pages which were cleaned up.
     */
     jdb.prototype.clearStorage = function(){
-      return jdb.clearStorage(this.affirmOpen().filename, true);
+      return jdb.clearStorage(this.affirmOpen().dbFilename(), true);
     };
     /** Equivalent to sqlite3_js_kvvfs_size(). */
     jdb.storageSize = sqlite3_js_kvvfs_size;
@@ -1721,7 +1746,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        up in its storage or throws if this instance has been closed.
     */
     jdb.prototype.storageSize = function(){
-      return jdb.storageSize(this.affirmOpen().filename, true);
+      return jdb.storageSize(this.affirmOpen().dbFilename(), true);
     };
   }/*sqlite3.oo1.JsStorageDb*/
 //#endif not omit-oo1
@@ -1889,7 +1914,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/* virtual table */
 
 //#if nope
-
   /**
      The idea here is a simpler wrapper for listening to kvvfs
      changes.  Clients would override its onXyz() event methods

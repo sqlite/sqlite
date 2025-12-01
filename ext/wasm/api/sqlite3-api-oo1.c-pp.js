@@ -235,6 +235,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - `.vfs`: as documented in the DB constructor.
 
      It also accepts those as the first 3 arguments.
+
+     In non-default builds it may accept additional configuration
+     options.
   */
   const dbCtorHelper = function ctor(...args){
     const opt = ctor.normalizeArgs(...args);
@@ -799,6 +802,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        sqlite3_db_filename() value for the given database name,
        defaulting to "main".  The argument may be either a JS string
        or a pointer to a WASM-allocated C-string.
+
+       this.filename may be in the form of a URI-style string, whereas
+       the returned string contains only the filename part.
     */
     dbFilename: function(dbName='main'){
       return capi.sqlite3_db_filename(affirmDbOpen(this).pointer, dbName);
