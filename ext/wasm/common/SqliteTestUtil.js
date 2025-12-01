@@ -45,7 +45,7 @@
         is called and its result is evaluated.
     */
     assert: function f(expr, ...msg){
-      msg = msg.join(' ');
+      msg = msg?.join?.(' ');
       if(!f._){
         f._ = ('undefined'===typeof abort
                ? (msg)=>{throw new Error(msg)}

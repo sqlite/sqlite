@@ -1,5 +1,5 @@
-C Minor\sJS\sdocs\sand\scleanups.\sAdd\ssome\s#if'd-out\skvvfs\sand\soo1\spieces\sto\sexperiment\swith\slater.
-D 2025-12-01T21:10:16.341
+C Harden\sa\schange\sto\sSqliteTestUtil.assert()\sin\sthe\sprevious\scheckin\sto\shandle\sa\snull\ssecond\sargument.
+D 2025-12-01T21:14:11.962
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -608,7 +608,7 @@ F ext/wasm/api/sqlite3-wasm.c 6d69ca57b772a5a194b3acf879ef39b865f634c5bc92718c6e
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bda1c75bd674a92a0e27cc2f3d46dbbf21e422413f8046814515a0bd7409328a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 802d69ead8c38dc1be52c83afbfc77e757da8a91a2e159e7ed3ecda8b8dba2e7
 F ext/wasm/c-pp-lite.c f38254fba42561728c2e4764a7ba8d68700091e7c2f4418112868c0daba16783
-F ext/wasm/common/SqliteTestUtil.js fa1bc2eb53867c1a5eb6e41fb747af63177f95ae6b55790fafed13078387f284
+F ext/wasm/common/SqliteTestUtil.js dae753b95e72248c4395d8de8359e0d055cd9928488e8dd84aef89e46d23b32e
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
 F ext/wasm/common/whwasmutil.js 831f07a0d9bb61713164871370811432e96d0f813806a4d2c783d3c77c2373a0
@@ -2180,8 +2180,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9901cf8e4a00ea9a199a3fb54bd58bd66cff4d02c55433d55f2b417e188e49e0
-R eb980a7af88b079f02a9ea12998dc78d
+P 3db29b00db8d75c6b6a909a46a5c71515d3407af27ff9cb79091f293e4005ce3
+R 197d2c3222044c3be58decb20201c686
 U stephan
-Z 44ba6943e94a2e33acd420e331607217
+Z 3ec3966104200066049bfa4c0fe1d97c
 # Remove this line to create a well-formed Fossil manifest.
