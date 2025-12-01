@@ -278,16 +278,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Throws if storage name n (JS string) is not valid for use as a
      storage name.  Much of this goes back to kvvfs having a fixed
      buffer size for its keys, and the storage name needing to be
-     encoded in the keys for local/session storage. We disallow
-     non-ASCII to avoid problems with truncated multibyte characters
-     at the end of the key buffer.
+     encoded in the keys for local/session storage.
 
      The second argument must only be true when called from xOpen() -
      it makes names with a "-journal" suffix legal.
   */
   const validateStorageName = function(n,mayBeJournal=false){
     if( kvvfsIsPersistentName(n) ) return;
-    const len = n.length;
+    const len = (new Blob([n])).size/*byte length*/;
     if( !len ) toss3(capi.SQLITE_RANGE, "Empty name is not permitted.");
     let maxLen = cache.keySize - 1;
     if( cache.rxJournalSuffix.test(n) ){
@@ -296,7 +294,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               "Storage names may not have a '-journal' suffix.");
       }
     }else{
-      maxLen -= 8 /* "-journal" */;
+      maxLen -= 8 /* so we have space for a matching "-journal" suffix */;
     }
     if( len > maxLen ){
       toss3(capi.SQLITE_RANGE, "Storage name is too long. Limit =", maxLen);
@@ -304,7 +302,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     let i;
     for( i = 0; i < len; ++i ){
       const ch = n.codePointAt(i);
-      if( ch<43 || ch >126 ){
+      if( ch<32 ){
         toss3(capi.SQLITE_RANGE,
               "Illegal character ("+ch+"d) in storage name:",n);
       }
@@ -479,58 +477,64 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      'sync': true if it's from xSync(), false if it's from
      xFileControl().
+
+     For efficiency's sake, all calls to this function should
+     be in the form:
+
+     store.listeners && notifyListeners(...);
+
+     Failing to do so will trigger an exceptin in this function (which
+     will be ignored but may produce a console warning).
   */
   const notifyListeners = async function(eventName,store,...args){
     try{
-      if( store.listeners ){
-        //cache.rxPageNoSuffix ??= /(\d+)$/;
-        if( store.keyPrefix && args[0] ){
-          args[0] = args[0].replace(store.keyPrefix,'');
-        }
-        let u8enc, z0, z1, wcache;
-        for(const ear of store.listeners){
-          const ev = Object.create(null);
-          ev.storageName = store.jzClass;
-          ev.type = eventName;
-          const decodePages = ear.decodePages;
-          const f = ear.events[eventName];
-          if( f ){
-            if( !ear.includeJournal && args[0]==='jrnl' ){
+      //cache.rxPageNoSuffix ??= /(\d+)$/;
+      if( store.keyPrefix && args[0] ){
+        args[0] = args[0].replace(store.keyPrefix,'');
+      }
+      let u8enc, z0, z1, wcache;
+      for(const ear of store.listeners){
+        const ev = Object.create(null);
+        ev.storageName = store.jzClass;
+        ev.type = eventName;
+        const decodePages = ear.decodePages;
+        const f = ear.events[eventName];
+        if( f ){
+          if( !ear.includeJournal && args[0]==='jrnl' ){
+            continue;
+          }
+          if( 'write'===eventName && ear.decodePages && +args[0]>0 ){
+            /* Decode pages to Uint8Array, caching the result in
+               wcache in case we have more listeners. */
+            ev.data = [args[0]];
+            if( wcache?.[args[0]] ){
+              ev.data[1] = wcache[args[0]];
               continue;
             }
-            if( 'write'===eventName && ear.decodePages && +args[0]>0 ){
-              /* Decode pages to Uint8Array, caching the result in
-                 wcache in case we have more listeners. */
-              ev.data = [args[0]];
-              if( wcache?.[args[0]] ){
-                ev.data[1] = wcache[args[0]];
-                continue;
-              }
-              u8enc ??= new TextEncoder('utf-8');
-              z0 ??= cache.memBuffer(10);
-              z1 ??= cache.memBuffer(11);
-              const u = u8enc.encode(args[1]);
-              const heap = wasm.heap8u();
-              heap.set(u, Number(z0));
-              heap[wasm.ptr.addn(z0, u.length)] = 0;
-              const rc = kvvfsDecode(z0, z1, cache.buffer.n);
-              if( rc>0 ){
-                wcache ??= Object.create(null);
-                wcache[args[0]]
-                  = ev.data[1]
-                  = heap.slice(Number(z1), wasm.ptr.addn(z1,rc));
-              }else{
-                continue;
-              }
+            u8enc ??= new TextEncoder('utf-8');
+            z0 ??= cache.memBuffer(10);
+            z1 ??= cache.memBuffer(11);
+            const u = u8enc.encode(args[1]);
+            const heap = wasm.heap8u();
+            heap.set(u, Number(z0));
+            heap[wasm.ptr.addn(z0, u.length)] = 0;
+            const rc = kvvfsDecode(z0, z1, cache.buffer.n);
+            if( rc>0 ){
+              wcache ??= Object.create(null);
+              wcache[args[0]]
+                = ev.data[1]
+                = heap.slice(Number(z1), wasm.ptr.addn(z1,rc));
             }else{
-              ev.data = args.length
-                ? ((args.length===1) ? args[0] : args)
-                : undefined;
+              continue;
             }
-            try{f(ev)?.catch?.(catchForNotify)}
-            catch(e){
-              warn("notifyListeners [",store.jzClass,"]",eventName,e);
-            }
+          }else{
+            ev.data = args.length
+              ? ((args.length===1) ? args[0] : args)
+              : undefined;
+          }
+          try{f(ev)?.catch?.(catchForNotify)}
+          catch(e){
+            warn("notifyListeners [",store.jzClass,"]",eventName,e);
           }
         }
       }
@@ -772,8 +776,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           const jzClass = wasm.cstrToJs(zName);
           //debug("xOpen",jzClass);
           validateStorageName(jzClass, true);
-          util.assert( jzClass.length===wasm.cstrlen(zName),
-                       "ASCII-only validation failed" );
           if( (flags & (capi.SQLITE_OPEN_MAIN_DB
                         | capi.SQLITE_OPEN_TEMP_DB
                         | capi.SQLITE_OPEN_TRANSIENT_DB))

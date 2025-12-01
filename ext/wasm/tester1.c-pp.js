@@ -2978,14 +2978,20 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const DB = sqlite3.oo1.DB;
 
         T.mustThrowMatching(()=>{
-          new JDb("this is an illegal name too long and spaces");
+          new JDb("this\ns an illegal - contains control characters");
           /* We don't have a way to get error strings from xOpen()
              to this point? xOpen() does not have a handle to the
              db and SQLite is not calling xGetLastError() to fetch
              the error string. */
         }, capi.SQLITE_RANGE);
         T.mustThrowMatching(()=>{
-          new JDb("012345678901234567890123"/*too long*/);
+          new JDb("01234567890123456789"+
+                  "01234567890123456789"+
+                  "01234567890123456789"+
+                  "01234567890123456789"+
+                  "01234567890123456789"+
+                  "01234567890123456789"+
+                  "0"/*too long*/);
         }, capi.SQLITE_RANGE);
         T.mustThrowMatching(()=>new JDb(""), capi.SQLITE_RANGE);
         {
@@ -3074,7 +3080,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'concurrent transient kvvfs',
       //predicate: ()=>false,
       test: function(sqlite3){
-        const filename = 'my';
+        const filename = '👷';
         const kvvfs = sqlite3.kvvfs;
         const DB = sqlite3.oo1.DB;
         const JDb = sqlite3.oo1.JsStorageDb;
@@ -3284,6 +3290,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             includeJournal: pglog.includeJournal,
             decodePages: pglog.decodePages,
             events: {
+              /**
+                 These may be async but must not be in this case
+                 because we can't test their result without a lot of
+                 hoop-jumping if they are. Kvvfs calls these
+                 asynchronously, though.
+               */
               'open':   (ev)=>{
                 //console.warn('open',ev);
                 incr(ev.type);
@@ -3291,8 +3303,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                   .assert('number'===typeof ev.data);
               },
               'close': (ev)=>{
-                //^^^ if this is async, we can't time the test for
-                // pglog.exception without far more hoop-jumping.
                 //console.warn('close',ev);
                 incr(ev.type);
                 T.assert('number'===typeof ev.data);
