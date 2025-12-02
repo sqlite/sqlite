@@ -3193,7 +3193,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                       "select page_size from pragma_page_size()"
                     ));
             }
-            kvvfs.log.xFileControl = true;
+            //kvvfs.log.xFileControl = true;
+            //kvvfs.log.xAccess = true;
             db.exec([
               "BEGIN;",
               "insert into kvvfs(a) values(randomblob(16000/*>pg size*/));",
@@ -3214,7 +3215,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                      "got",gotPageSize);
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
-            kvvfs.log.xFileControl = false;
+            kvvfs.log.xAccess = kvvfs.log.xFileControl = false;
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
             exp = exportDb(expOpt);

@@ -361,6 +361,29 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   });
 
   /**
+     Public interface for kvvfs v2. The capi.sqlite3_js_kvvfs_...()
+     routines remain in place for v1. Some members of this class proxy
+     to those functions but use different default argument values in
+     some cases.
+  */
+  const kvvfs = sqlite3.kvvfs = Object.create(null);
+  if( sqlite3.__isUnderTest ){
+    /* For inspection via the dev tools console. */
+    kvvfs.log = Object.assign(Object.create(null),{
+      xOpen: false,
+      xClose: false,
+      xWrite: false,
+      xRead: false,
+      xSync: false,
+      xAccess: false,
+      xFileControl: false,
+      xRcrdRead: false,
+      xRcrdWrite: false,
+      xRcrdDelete: false,
+    });
+  }
+
+  /**
      Deletes the cache.storagePool entries for store (a
      cache.storagePool entry) and its db/journal counterpart.
   */
@@ -368,7 +391,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const other = cache.rxJournalSuffix.test(store.jzClass)
           ? store.jzClass.replace(cache.rxJournalSuffix,'')
           : store.jzClass+'-journal';
-    debug("cleaning up storage handles [", store.jzClass, other,"]",store);
+    kvvfs?.log?.xClose
+      && debug("cleaning up storage handles [", store.jzClass, other,"]",store);
     delete cache.storagePool[store.jzClass];
     delete cache.storagePool[other];
     if( !sqlite3.__isUnderTest ){
@@ -634,13 +658,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const originalIoMethods = (kvvfsFile)=>
         originalMethods[kvvfsFile.$isJournal ? 'ioJrnl' : 'ioDb'];
 
-  /**
-     Public interface for kvvfs v2. The capi.sqlite3_js_kvvfs_...()
-     routines remain in place for v1. Some members of this class proxy
-     to those functions but use different default argument values in
-     some cases.
-  */
-  const kvvfs = sqlite3.kvvfs = Object.create(null);
+  const pVfs = new capi.sqlite3_vfs(kvvfsMethods.$pVfs);
+  const pIoDb = new capi.sqlite3_io_methods(kvvfsMethods.$pIoDb);
+  const pIoJrnl = new capi.sqlite3_io_methods(kvvfsMethods.$pIoJrnl);
+  const recordHandler =
+        Object.create(null)/** helper for some vfs
+                               routines. Populated later. */;
   const kvvfsInternal = Object.assign(Object.create(null),{
     pFileHandles,
     cache,
@@ -654,28 +677,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     disablePageSizeChange: true
   });
-  if( sqlite3.__isUnderTest ){
-    /* For inspection via the dev tools console. */
+  if( kvvfs.log ){
+    // this is a test build
     kvvfs.internal = kvvfsInternal;
-    kvvfs.log = Object.assign(Object.create(null),{
-      xOpen: false,
-      xClose: false,
-      xWrite: false,
-      xRead: false,
-      xSync: false,
-      xFileControl: false,
-      xRcrdRead: false,
-      xRcrdWrite: false,
-      xRcrdDelete: false,
-    });
   }
-
-  const pVfs = new capi.sqlite3_vfs(kvvfsMethods.$pVfs);
-  const pIoDb = new capi.sqlite3_io_methods(kvvfsMethods.$pIoDb);
-  const pIoJrnl = new capi.sqlite3_io_methods(kvvfsMethods.$pIoJrnl);
-  const recordHandler =
-        Object.create(null)/** helper for some vfs
-                               routines. Populated later. */;
 
   /**
      Implementations for members of the object referred to by
@@ -793,6 +798,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xOpen: function(pProtoVfs,zName,pProtoFile,flags,pOutFlags){
         cache.popError();
         let zToFree /* alloc()'d memory for temp db name */;
+        if( 0 ){
+          /* tester1.js makes it a lot further if we do this. */
+          flags |= capi.SQLITE_OPEN_CREATE;
+        }
         try{
           if( !zName ){
             zToFree = wasm.allocCString(""+pProtoFile+"."
@@ -841,7 +850,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             installStorageAndJournal(s);
             s.files.push(f);
             s.deleteAtRefc0 = deleteAt0;
-            debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
+            kvvfs?.log?.xOpen
+              && debug("xOpen installed storage handle [",nm, nm+"-journal","]", s);
           }
           pFileHandles.set(pProtoFile, {store: s, file: f, jzClass});
           s.listeners && notifyListeners('open', s, s.files.length);
@@ -874,14 +884,35 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xAccess: function(pProtoVfs, zPath, flags, pResOut){
         cache.popError();
         try{
-          /**
-             In every test run to date, if this function sets
-             *pResOut to anything other than 0, the VFS fails to
-             function.  Why that that is is a mystery. How it seems
-             to work despite never reporting "file found" is a
-             mystery.
-          */
-          wasm.poke32(pResOut, 0);
+          const s = storageForZClass(zPath);
+          const jzPath = s?.jzClass || wasm.cstrToJs(zPath);
+          if( kvvfs?.log?.xAccess ){
+            debug("xAccess",jzPath,"flags =",
+                  flags,"*pResOut =",wasm.peek32(pResOut),
+                  "store =",s);
+          }
+          if( !s ){
+            /** The xAccess method returns [SQLITE_OK] on success or some
+             ** non-zero error code if there is an I/O error or if the name of
+             ** the file given in the second argument is illegal.
+             */
+            validateStorageName(jzPath);
+          }
+          if( s ){
+            const key = s.keyPrefix+
+                  (cache.rxJournalSuffix.test(jzPath) ? "jrnl" : "1");
+            const res = s.storage.getItem(key) ? 0 : 1;
+            /* This res value looks completely backwards to me, and
+               is the opposite of the native kvvfs's impl, but it's
+               working, whereas reimplementing the native one
+               faithfully does not. Read the lib-level code of where
+               this is invoked, my expectation is that we set res to 0
+               for not-exists. */
+            //warn("access res",jzPath,res);
+            wasm.poke32(pResOut, res);
+          }else{
+            wasm.poke32(pResOut, 0);
+          }
           return 0;
         }catch(e){
           error('xAccess',e);
