@@ -119,14 +119,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Most of the VFS-internal state.
    */
   const cache = Object.assign(Object.create(null),{
-    /**
-       Bug: kvvfs is currently fixed at a page size of 8kb because
-       changing it is leaving corrupted dbs for reasons as yet
-       unknown. This value is used in certain validation to ensure
-       that if that limitation is lifted, it will break potentially
-       affected code.
-    */
-    fixedPageSize: 8192,
     /** Regex matching journal file names. */
     rxJournalSuffix: /-journal$/,
     /** Frequently-used C-string. */
@@ -649,15 +641,23 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      some cases.
   */
   const kvvfs = sqlite3.kvvfs = Object.create(null);
+  const kvvfsInternal = Object.assign(Object.create(null),{
+    pFileHandles,
+    cache,
+    storageForZClass,
+    KVVfsStorage,
+    /**
+       BUG: changing to a page size other than the default,
+       then vacuuming, corrupts the db. As a workaround,
+       until this is resolved, we forcibly disable
+       (pragma page_size=...) changes.
+    */
+    disablePageSizeChange: true
+  });
   if( sqlite3.__isUnderTest ){
     /* For inspection via the dev tools console. */
-    sqlite3.kvvfs.test = Object.assign(Object.create(null),{
-      pFileHandles,
-      cache,
-      storageForZClass,
-      KVVfsStorage
-    });
-    sqlite3.kvvfs.log = Object.assign(Object.create(null),{
+    kvvfs.internal = kvvfsInternal;
+    kvvfs.log = Object.assign(Object.create(null),{
       xOpen: false,
       xClose: false,
       xWrite: false,
@@ -952,7 +952,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if( --s.refc<=0 && s.deleteAtRefc0 ){
               deleteStorage(s);
             }
-            originalIoMethods(h.file).xClose(pFile);
+            originalMethods.ioDb/*same for journals*/.xClose(pFile);
             h.file.dispose();
             s.listeners && notifyListeners('close', s, s.files.length);
           }else{
@@ -970,35 +970,36 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try{
           const h = pFileHandles.get(pFile);
           util.assert(h, "Missing KVVfsFile handle");
-          kvvfs?.log?.xFileControl && debug("xFileControl",h,opId);
-          if( 0 && opId===capi.SQLITE_FCNTL_PRAGMA ){
+          kvvfs?.log?.xFileControl && debug("xFileControl",h,'op =',opId);
+          if( opId===capi.SQLITE_FCNTL_PRAGMA
+              && kvvfs.internal.disablePageSizeChange ){
             /* pArg== length-3 (char**) */
+            //const argv = wasm.cArgvToJs(3, pArg); // the easy way
             const zName = wasm.peekPtr(wasm.ptr.add(pArg, wasm.ptr.size));
-            //const argv = wasm.cArgvToJs(3, pArg);
             if( "page_size"===wasm.cstrToJs(zName) ){
-              //debug("xFileControl pragma",wasm.cstrToJs(zName));
+              kvvfs?.log?.xFileControl
+                && debug("xFileControl pragma",wasm.cstrToJs(zName));
               const zVal = wasm.peekPtr(wasm.ptr.add(pArg, 2*wasm.ptr.size));
               if( zVal ){
                 /* Without this, pragma page_size=N; followed by a
                    vacuum breaks the db. With this, it continues
                    working but does not actually change the page
                    size. */
-                warn("xFileControl pragma", h,
-                      "NOT setting page size to", wasm.cstrToJs(zVal));
+                kvvfs?.log?.xFileControl
+                  && warn("xFileControl pragma", h,
+                          "NOT setting page size to", wasm.cstrToJs(zVal));
                 h.file.$szPage = -1;
-                if( h.file.$aJournal ){
-                  warn("This file has a journal of", h.file.$nJrnl, "bytes");
-                }
-                return 0/*corrupts, but not until much later? capi.SQLITE_NOTFOUND*/;
-              }else if( 0 && h.file.$szPage>0 ){
-                warn("xFileControl", h, "getting page size",h.file.$szPage);
-                wasm.pokePtr(pArg, wasm.allocCString(""+h.file.$szPage));
-                // memory now owned by sqlite.
+                return 0/*corrupts: capi.SQLITE_NOTFOUND*/;
+              }else if( h.file.$szPage>0 ){
+                kvvfs?.log?.xFileControl &&
+                  warn("xFileControl", h, "getting page size",h.file.$szPage);
+                wasm.pokePtr(pArg, wasm.allocCString(""+h.file.$szPage)
+                             /* memory now owned by the library */);
                 return 0;//capi.SQLITE_NOTFOUND;
               }
             }
           }
-          const rc = originalIoMethods(h.file).xFileControl(pFile, opId, pArg);
+          const rc = originalMethods.ioDb.xFileControl(pFile, opId, pArg);
           if( 0==rc && capi.SQLITE_FCNTL_SYNC===opId ){
             h.store.listeners && notifyListeners('sync', h.store, false);
           }
@@ -1025,13 +1026,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       },
 
 //#if not nope
+      // We override xRead/xWrite only for logging/debugging. They
+      // should otherwise be disabled (it's faster that way).
       xRead: function(pFile,pTgt,n,iOff64){
         cache.popError();
         try{
-          const h = pFileHandles.get(pFile);
-          util.assert(h, "Missing KVVfsFile handle");
-          kvvfs?.log?.xRead && debug("xRead", n, iOff64, h);
-          return originalIoMethods(h.file).xRead(pFile, pTgt, n, iOff64);
+          if( kvvfs?.log?.xRead ){
+            const h = pFileHandles.get(pFile);
+            util.assert(h, "Missing KVVfsFile handle");
+            debug("xRead", n, iOff64, h);
+          }
+          return originalMethods.ioDb.xRead(pFile, pTgt, n, iOff64);
         }catch(e){
           error("xRead",e);
           return cache.setError(e);
@@ -1040,12 +1045,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xWrite: function(pFile,pSrc,n,iOff64){
         cache.popError();
         try{
-          const h = pFileHandles.get(pFile);
-          util.assert(h, "Missing KVVfsFile handle");
-          kvvfs?.log?.xWrite && debug("xWrite", n, iOff64, h);
-          return originalIoMethods(h.file).xWrite(pFile, pSrc, n, iOff64);
+          if( kvvfs?.log?.xWrite ){
+            const h = pFileHandles.get(pFile);
+            util.assert(h, "Missing KVVfsFile handle");
+            debug("xWrite", n, iOff64, h);
+          }
+          return originalMethods.ioDb.xWrite(pFile, pSrc, n, iOff64);
         }catch(e){
-          error("xRead",e);
+          error("xWrite",e);
           return cache.setError(e);
         }
       },
@@ -1364,9 +1371,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               const nDec = kvvfsDecode(
                 z, zDec, cache.buffer.n
               );
-              if( cache.fixedPageSize !== nDec ){
-                util.toss3(capi.SQLITE_ERROR,"Unexpected decoded page size:",nDec);
-              }
               //debug("Decoded",nDec,"page bytes");
               pages[kk] = heap.slice(Number(zDec), wasm.ptr.addn(zDec, nDec));
             }else{
@@ -1420,7 +1424,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       toss3(capi.SQLITE_MISUSE, "Malformed export object.");
     }else if( !exp.size
               || (exp.size !== (exp.size | 0))
-              || (exp.size % cache.fixedPageSize)
+              //|| (exp.size % cache.fixedPageSize)
               || exp.size>=0x7fffffff ){
       toss3(capi.SQLITE_RANGE, "Invalid db size: "+exp.size);
     }
@@ -1461,7 +1465,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         //debug("pages",exp.pages);
         exp.pages.forEach((u,ndx)=>{
           const n = u.length;
-          if( cache.fixedPageSize !== n ){
+          if( 0 && cache.fixedPageSize !== n ){
             util.toss3(capi.SQLITE_RANGE,"Unexpected page size:", n);
           }
           zEnc ??= cache.memBuffer(1);

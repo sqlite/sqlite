@@ -2943,7 +2943,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const JDb = sqlite3.oo1.JsStorageDb;
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(looksLikePtr(pVfs));
-        let x = sqlite3.kvvfs.test.storageForZClass('session');
+        let x = sqlite3.kvvfs.internal.storageForZClass('session');
         T.assert( 0 === x.files.length )
           .assert( globalThis.sessionStorage===x.storage )
           .assert( 'kvvfs-session-' === x.keyPrefix );
@@ -3182,7 +3182,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
           if( 1 ){
             error("Begin vacuum/page size test...");
-            const pageSize = 1024 * 8;
+            const defaultPageSize = 1024 * 8 /* build-time default */;
+            const pageSize = 0
+                  ? defaultPageSize
+                  : 1024 * 16 /* any valid value other than the default */;
             if( 0 ){
               debug("Export before vacuum", exportDb(expOpt));
               debug("page size before vacuum",
@@ -3190,36 +3193,28 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                       "select page_size from pragma_page_size()"
                     ));
             }
+            kvvfs.log.xFileControl = true;
             db.exec([
               "BEGIN;",
               "insert into kvvfs(a) values(randomblob(16000/*>pg size*/));",
               "COMMIT;",
               "delete from kvvfs where octet_length(a)>100;",
-              //"pragma page_size="+pageSize+";",
+              "pragma page_size="+pageSize+";",
               "vacuum;",
               "select 1;"
             ]);
-            expectRows;
-            if( 0 ){
-              debug("page size after",
-                    db.selectArray(
-                      "select page_size from pragma_page_size()"
-                    ));
-            }
+            const expectPageSize = kvvfs.internal.disablePageSizeChange
+                  ? defaultPageSize
+                  : pageSize;
+            const gotPageSize = db.selectValue(
+              "select page_size from pragma_page_size()"
+            );
+            T.assert(+gotPageSize === expectPageSize,
+                     "Expecting page size",expectPageSize,
+                     "got",gotPageSize);
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
-            T.assert( 8192 == db.selectValue(
-              /* kvvfs actively resists attempts to change the page size
-                 because _not_ doing so causes a vacuum to corrupt
-                 the db. */
-              "select page_size from pragma_page_size()"
-            ) );
-            if( 0 ){
-              // It's stuck at 8k
-              T.assert(pageSize == duo.selectValue("pragma page_size"),
-                       "Unexpected page size.");
-            }
-            // It fails at this point for non-8k sizes
+            kvvfs.log.xFileControl = false;
             T.assert(expectRows === duo.selectValue(sqlCount),
                      "Unexpected record count.");
             exp = exportDb(expOpt);
