@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sUAF\sin\ssqlite3.oo1.DB.exec()'s\steardown\spieces.
-D 2025-12-01T19:19:06.145
+C Add\sdeveloper\snote\son\show\sto\smeasure\scoverage\sof\sQRF.
+D 2025-12-02T12:23:24.524
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -417,6 +417,7 @@ F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6
 F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 86fc5c3c5e3eddbe54fc1235cbdc52b8c2c0732791d224345c3014cd45c4c0e7
+F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
 F ext/qrf/qrf.c 425d02cffcc5b5fe9ff5817794bf751b1fdd6912f570c354272429ce1262b866
 F ext/qrf/qrf.h 322d48537a5aa39c206c2ec0764a7938ea7662a8c25be1c4e9d742789609ba1e
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
@@ -2180,8 +2181,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 65202440874a7fea5aba262e8e78b97c833147d47837a99f301eca968f9a78b1
-R 2b585afb5fd5aa160ed72311c749b506
-U stephan
-Z 6b93b896a26a49329f6a8f0fce93ab21
+P 7e99e93cddeba555836206a278c5dcfd8565cc2a486a83cffab64dad168e9464
+R de758b56921e31817918b1313754b07f
+U drh
+Z cc3cfdbf6b5a72385cbc0d52882a934a
 # Remove this line to create a well-formed Fossil manifest.
