@@ -642,6 +642,34 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const originalIoMethods = (kvvfsFile)=>
         originalMethods[kvvfsFile.$isJournal ? 'ioJrnl' : 'ioDb'];
 
+  /**
+     Public interface for kvvfs v2. The capi.sqlite3_js_kvvfs_...()
+     routines remain in place for v1. Some members of this class proxy
+     to those functions but use different default argument values in
+     some cases.
+  */
+  const kvvfs = sqlite3.kvvfs = Object.create(null);
+  if( sqlite3.__isUnderTest ){
+    /* For inspection via the dev tools console. */
+    sqlite3.kvvfs.test = Object.assign(Object.create(null),{
+      pFileHandles,
+      cache,
+      storageForZClass,
+      KVVfsStorage
+    });
+    sqlite3.kvvfs.log = Object.assign(Object.create(null),{
+      xOpen: false,
+      xClose: false,
+      xWrite: false,
+      xRead: false,
+      xSync: false,
+      xFileControl: false,
+      xRcrdRead: false,
+      xRcrdWrite: false,
+      xRcrdDelete: false,
+    });
+  }
+
   const pVfs = new capi.sqlite3_vfs(kvvfsMethods.$pVfs);
   const pIoDb = new capi.sqlite3_io_methods(kvvfsMethods.$pIoDb);
   const pIoJrnl = new capi.sqlite3_io_methods(kvvfsMethods.$pIoJrnl);
@@ -680,13 +708,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try{
           const jzClass = wasm.cstrToJs(zClass);
           const store = storageForZClass(jzClass);
-          if( 0 ){
-            debug("xRcrdRead", jzClass, wasm.cstrToJs(zKey),
-                  zBuf, nBuf, store );
-          }
           if( !store ) return -1;
           const jXKey = jsKeyForStorage(store, zClass, zKey);
-          //debug("xRcrdRead zXKey", jzClass, wasm.cstrToJs(zXKey), store );
+          kvvfs?.log?.xRcrdRead && warn("xRcrdRead", jzClass, jXKey, nBuf, store );
           const jV = store.storage.getItem(jXKey);
           if(null===jV) return -1;
           const nV = jV.length /* We are relying 100% on v being
@@ -734,6 +758,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           const store = storageForZClass(zClass);
           const jxKey = jsKeyForStorage(store, zClass, zKey);
           const jData = wasm.cstrToJs(zData);
+          kvvfs?.log?.xRcrdWrite && warn("xRcrdWrite",jxKey, store);
           store.storage.setItem(jxKey, jData);
           store.listeners && notifyListeners('write', store, jxKey, jData);
           return 0;
@@ -747,6 +772,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try {
           const store = storageForZClass(zClass);
           const jxKey = jsKeyForStorage(store, zClass, zKey);
+          kvvfs?.log?.xRcrdDelete && warn("xRcrdDelete",jxKey, store);
           store.storage.removeItem(jxKey);
           store.listeners && notifyListeners('delete', store, jxKey);
           return 0;
@@ -774,7 +800,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             zName = zToFree;
           }
           const jzClass = wasm.cstrToJs(zName);
-          //debug("xOpen",jzClass);
+          kvvfs?.log?.xOpen && debug("xOpen",jzClass,"flags =",flags);
           validateStorageName(jzClass, true);
           if( (flags & (capi.SQLITE_OPEN_MAIN_DB
                         | capi.SQLITE_OPEN_TEMP_DB
@@ -805,6 +831,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             ++s.refc;
             //no if( true===deleteAt0 ) s.deleteAtRefc0 = true;
             s.files.push(f);
+            wasm.poke32(pOutFlags, flags);
           }else{
             wasm.poke32(pOutFlags, flags | capi.SQLITE_OPEN_CREATE);
             util.assert( !f.$isJournal, "Opening a journal before its db? "+jzClass );
@@ -917,7 +944,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         cache.popError();
         try{
           const h = pFileHandles.get(pFile);
-          //debug("xClose", pFile, h);
+          kvvfs?.log?.xClose && debug("xClose", pFile, h);
           if( h ){
             pFileHandles.delete(pFile);
             const s = h.store;//storageForZClass(h.jzClass);
@@ -943,8 +970,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try{
           const h = pFileHandles.get(pFile);
           util.assert(h, "Missing KVVfsFile handle");
-          //debug("xFileControl",h,opId);
-          if( opId===capi.SQLITE_FCNTL_PRAGMA ){
+          kvvfs?.log?.xFileControl && debug("xFileControl",h,opId);
+          if( 0 && opId===capi.SQLITE_FCNTL_PRAGMA ){
             /* pArg== length-3 (char**) */
             const zName = wasm.peekPtr(wasm.ptr.add(pArg, wasm.ptr.size));
             //const argv = wasm.cArgvToJs(3, pArg);
@@ -956,13 +983,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                    vacuum breaks the db. With this, it continues
                    working but does not actually change the page
                    size. */
-                //debug("xFileControl pragma", h,
-                //      "NOT setting page size to", wasm.cstrToJs(zVal));
+                warn("xFileControl pragma", h,
+                      "NOT setting page size to", wasm.cstrToJs(zVal));
                 h.file.$szPage = -1;
-                return 0;//corrupts capi.SQLITE_NOTFOUND;
+                if( h.file.$aJournal ){
+                  warn("This file has a journal of", h.file.$nJrnl, "bytes");
+                }
+                return 0/*corrupts, but not until much later? capi.SQLITE_NOTFOUND*/;
               }else if( 0 && h.file.$szPage>0 ){
-                // This works but is superfluous
-                //debug("xFileControl", h, "getting page size",h.file.$szPage);
+                warn("xFileControl", h, "getting page size",h.file.$szPage);
                 wasm.pokePtr(pArg, wasm.allocCString(""+h.file.$szPage));
                 // memory now owned by sqlite.
                 return 0;//capi.SQLITE_NOTFOUND;
@@ -984,20 +1013,45 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         cache.popError();
         try{
           const h = pFileHandles.get(pFile);
-          //debug("xSync",h);
+          kvvfs?.log?.xSync && debug("xSync", h);
           util.assert(h, "Missing KVVfsFile handle");
-          const rc = originalIoMethods(h.file).xSync(pFile, flags);
+          const rc = originalMethods.ioDb.xSync(pFile, flags);
           if( 0==rc && h.store.listeners ) notifyListeners('sync', h.store, true);
           return rc;
         }catch(e){
           error("xSync",e);
           return cache.setError(e);
         }
-      }
+      },
+
+//#if not nope
+      xRead: function(pFile,pTgt,n,iOff64){
+        cache.popError();
+        try{
+          const h = pFileHandles.get(pFile);
+          util.assert(h, "Missing KVVfsFile handle");
+          kvvfs?.log?.xRead && debug("xRead", n, iOff64, h);
+          return originalIoMethods(h.file).xRead(pFile, pTgt, n, iOff64);
+        }catch(e){
+          error("xRead",e);
+          return cache.setError(e);
+        }
+      },
+      xWrite: function(pFile,pSrc,n,iOff64){
+        cache.popError();
+        try{
+          const h = pFileHandles.get(pFile);
+          util.assert(h, "Missing KVVfsFile handle");
+          kvvfs?.log?.xWrite && debug("xWrite", n, iOff64, h);
+          return originalIoMethods(h.file).xWrite(pFile, pSrc, n, iOff64);
+        }catch(e){
+          error("xRead",e);
+          return cache.setError(e);
+        }
+      },
+//#endif nope
 
 //#if nope
-      xRead: function(pFile,pTgt,n,iOff64){},
-      xWrite: function(pFile,pSrc,n,iOff64){},
       xTruncate: function(pFile,i64){},
       xFileSize: function(pFile,pi64Out){},
       xLock: function(pFile,iLock){},
@@ -1635,33 +1689,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return false;
   };
 
-  /**
-     Public interface for kvvfs v2. The capi.sqlite3_js_kvvfs_...()
-     routines remain in place for v1. Some members of this class proxy
-     to those functions but use different default argument values in
-     some cases.
-  */
-  sqlite3.kvvfs = Object.assign(Object.create(null),{
-    reserve:  sqlite3_js_kvvfs_reserve,
-    import:   sqlite3_js_kvvfs_import,
-    export:   sqlite3_js_kvvfs_export,
-    unlink:   sqlite3_js_kvvfs_unlink,
-    listen:   sqlite3_js_kvvfs_listen,
-    unlisten: sqlite3_js_kvvfs_unlisten,
-    exists:   (name)=>!!storageForZClass(name),
-    estimateSize: sqlite3_js_kvvfs_size,
-    clear:    sqlite3_js_kvvfs_clear
-  });
+  sqlite3.kvvfs.reserve =  sqlite3_js_kvvfs_reserve;
+  sqlite3.kvvfs.import =   sqlite3_js_kvvfs_import;
+  sqlite3.kvvfs.export =   sqlite3_js_kvvfs_export;
+  sqlite3.kvvfs.unlink =   sqlite3_js_kvvfs_unlink;
+  sqlite3.kvvfs.listen =   sqlite3_js_kvvfs_listen;
+  sqlite3.kvvfs.unlisten = sqlite3_js_kvvfs_unlisten;
+  sqlite3.kvvfs.exists =   (name)=>!!storageForZClass(name);
+  sqlite3.kvvfs.estimateSize = sqlite3_js_kvvfs_size;
+  sqlite3.kvvfs.clear =    sqlite3_js_kvvfs_clear;
 
-  if( sqlite3.__isUnderTest ){
-    /* For inspection via the dev tools console. */
-    sqlite3.kvvfs.test = {
-      pFileHandles,
-      cache,
-      storageForZClass,
-      KVVfsStorage
-    };
-  }
 
   if( globalThis.Storage ){
     /**

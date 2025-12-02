@@ -3080,7 +3080,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'concurrent transient kvvfs',
       //predicate: ()=>false,
       test: function(sqlite3){
-        const filename = '💾👷';
+        const filename = 'myStorage';
         const kvvfs = sqlite3.kvvfs;
         const DB = sqlite3.oo1.DB;
         const JDb = sqlite3.oo1.JsStorageDb;
@@ -3148,8 +3148,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
           importDb(exp, true);
           db = new JDb({
-            filename
-            //flags: 't'
+            filename,
+            flags: 'c'
+            /* BUG: without the 'c' flag, the db works until we try to
+               vacuum, at which point it fails with "read only db". */
           });
           duo = new JDb(filename);
           T.assert(expectRows === duo.selectValue(sqlCount));
@@ -3179,7 +3181,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           q2.finalize();
 
           if( 1 ){
-            const pageSize = 1024 * 16;
+            error("Begin vacuum/page size test...");
+            const pageSize = 1024 * 8;
             if( 0 ){
               debug("Export before vacuum", exportDb(expOpt));
               debug("page size before vacuum",
@@ -3188,11 +3191,15 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                     ));
             }
             db.exec([
-              "delete from kvvfs where a=1;",
-              "pragma page_size="+pageSize+";",
-              "vacuum;"
+              "BEGIN;",
+              "insert into kvvfs(a) values(randomblob(16000/*>pg size*/));",
+              "COMMIT;",
+              "delete from kvvfs where octet_length(a)>100;",
+              //"pragma page_size="+pageSize+";",
+              "vacuum;",
+              "select 1;"
             ]);
-            --expectRows;
+            expectRows;
             if( 0 ){
               debug("page size after",
                     db.selectArray(
@@ -3220,6 +3227,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             if( 0 ){
               debug("vacuumed export",exp);
             }
+            error("End vacuum/page size test.");
           }else{
             expectRows = 6;
           }
