@@ -537,13 +537,20 @@ static int qrfIsVt100(const unsigned char *z){
 
 /*
 ** Return the length of a string in display characters.
-** Multibyte UTF8 characters count as a single character
-** for single-width characters, or as two characters for
-** double-width characters.
+**
+** Most characters of the input string count as 1, including
+** multi-byte UTF8 characters.  However, zero-width unicode
+** characters and VT100 escape sequences count as zero, and
+** double-width characters count as two.
+**
+** The definition of "zero-width" and "double-width" characters
+** is not precise.  It depends on the output device, to some extent,
+** and it varies according to the Unicode version.  This routine
+** makes the best guess that it can.
 */
-static int qrfDisplayLength(const char *zIn){
+size_t sqlite3_qrf_wcswidth(const char *zIn){
   const unsigned char *z = (const unsigned char*)zIn;
-  int n = 0;
+  size_t n = 0;
   while( *z ){
     if( z[0]<' ' ){
       int k;
@@ -2198,7 +2205,7 @@ static void qrfExplain(Qrf *p){
         int len;
         if( i==nArg-1 ) w = 0;
         if( zVal==0 ) zVal = "";
-        len = qrfDisplayLength(zVal);
+        len = (int)sqlite3_qrf_wcswidth(zVal);
         if( len>w ){
           w = len;
           zSep = " ";
@@ -2388,7 +2395,7 @@ static void qrfOneSimpleRow(Qrf *p){
           int sz;
           p->u.sLine.azCol[i] = sqlite3_column_name(p->pStmt, i);
           if( p->u.sLine.azCol[i]==0 ) p->u.sLine.azCol[i] = "unknown";
-          sz = qrfDisplayLength(p->u.sLine.azCol[i]);
+          sz = (int)sqlite3_qrf_wcswidth(p->u.sLine.azCol[i]);
           if( sz > p->u.sLine.mxColWth ) p->u.sLine.mxColWth = sz;
         }
       }
