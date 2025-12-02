@@ -2976,7 +2976,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const filename = '.' /* preinstalled instance */;
         const JDb = sqlite3.oo1.JsStorageDb;
         const DB = sqlite3.oo1.DB;
-
+        T.mustThrowMatching(()=>new JDb(""), capi.SQLITE_MISUSE);
         T.mustThrowMatching(()=>{
           new JDb("this\ns an illegal - contains control characters");
           /* We don't have a way to get error strings from xOpen()
@@ -2984,6 +2984,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
              db and SQLite is not calling xGetLastError() to fetch
              the error string. */
         }, capi.SQLITE_RANGE);
+        T.mustThrowMatching(()=>{new JDb("foo-journal");},
+                            capi.SQLITE_MISUSE);
+        T.mustThrowMatching(()=>{new JDb("foo-wal");},
+                            capi.SQLITE_MISUSE);
+        T.mustThrowMatching(()=>{new JDb("foo-shm");},
+                            capi.SQLITE_MISUSE);
         T.mustThrowMatching(()=>{
           new JDb("01234567890123456789"+
                   "01234567890123456789"+
@@ -2993,7 +2999,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                   "01234567890123456789"+
                   "0"/*too long*/);
         }, capi.SQLITE_RANGE);
-        T.mustThrowMatching(()=>new JDb(""), capi.SQLITE_RANGE);
         {
           const name = "01234567890123456789012" /* max name length */;
           (new JDb(name)).close();

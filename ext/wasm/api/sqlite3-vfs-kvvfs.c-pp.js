@@ -278,13 +278,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const validateStorageName = function(n,mayBeJournal=false){
     if( kvvfsIsPersistentName(n) ) return;
     const len = (new Blob([n])).size/*byte length*/;
-    if( !len ) toss3(capi.SQLITE_RANGE, "Empty name is not permitted.");
+    if( !len ) toss3(capi.SQLITE_MISUSE, "Empty name is not permitted.");
     let maxLen = cache.keySize - 1;
     if( cache.rxJournalSuffix.test(n) ){
       if( !mayBeJournal ){
         toss3(capi.SQLITE_MISUSE,
               "Storage names may not have a '-journal' suffix.");
       }
+    }else if( ['-wal','-shm'].filter(v=>n.endsWith(v)).length ){
+      toss3(capi.SQLITE_MISUSE,
+            "Storage names may not have a -wal or -shm suffix.");
     }else{
       maxLen -= 8 /* so we have space for a matching "-journal" suffix */;
     }
@@ -892,11 +895,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                   "store =",s);
           }
           if( !s ){
+            // From the API docs:
             /** The xAccess method returns [SQLITE_OK] on success or some
              ** non-zero error code if there is an I/O error or if the name of
              ** the file given in the second argument is illegal.
              */
-            validateStorageName(jzPath);
+            // However, returning non-0 from here is fatal, so we don't do that.
+            try{validateStorageName(jzPath)}
+            catch(e){
+              //warn("xAccess is ignoring name validation failure:",e);
+              wasm.poke32(pResOut, 0);
+              return 0;
+            }
           }
           if( s ){
             const key = s.keyPrefix+
