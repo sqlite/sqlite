@@ -1799,6 +1799,9 @@ testfixture$(T.exe):	$(T.tcl.env.sh) has_tclsh85 $(TESTFIXTURE_SRC)
 		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC \
 		$(LDFLAGS.libsqlite3)
 
+qrftest$(T.exe): sqlite3.c $(TOP)/ext/qrf/qrf.h $(TOP)/ext/qrf/qrf.c $(TOP)/ext/qrf/test/qrftest.c
+	$(T.link) -I$(TOP)/ext/qrf $(TOP)/ext/qrf/test/qrftest.c $(TOP)/ext/qrf/qrf.c sqlite3.c -o $@ $(LDFLAGS.libsqlite3)
+
 coretestprogs:	testfixture$(B.exe) sqlite3$(B.exe)
 
 testprogs:	$(TESTPROGS) srcck1$(B.exe) fuzzcheck$(T.exe) sessionfuzz$(T.exe)

@@ -1,5 +1,5 @@
-C Disallow\sthe\sundocumented\s-recovery-db\soption\son\sthe\s".recover"\scommand\nof\sthe\sCLI\swhen\sin\s--safe\smode.
-D 2025-12-01T11:07:31.854
+C Initial\scode\sfor\sa\stest\sprogram\sspecifically\sfor\sQRF.\s\sMaybe\sit\swould\sbe\nbetter\sjust\sto\suse\sthe\sTCL\sinterface\sfor\sthis.\s\sWorked\ssaved\son\sthis\sbranch\nin\scase\sI\sever\sdecide\sto\scome\sback\sto\sit\sor\sreuse\spart\sof\sit.
+D 2025-12-02T11:40:45.005
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -419,6 +419,7 @@ F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d466
 F ext/qrf/README.md 86fc5c3c5e3eddbe54fc1235cbdc52b8c2c0732791d224345c3014cd45c4c0e7
 F ext/qrf/qrf.c 425d02cffcc5b5fe9ff5817794bf751b1fdd6912f570c354272429ce1262b866
 F ext/qrf/qrf.h 322d48537a5aa39c206c2ec0764a7938ea7662a8c25be1c4e9d742789609ba1e
+F ext/qrf/test/qrftest.c a2061dc04604dded25305b32689a01c567a75d8b015d3100116f16ee5a643c8c
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
 F ext/rbu/rbu10.test 7c22caa32c2ff26983ca8320779a31495a6555737684af7aba3daaf762ef3363
@@ -657,7 +658,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 822f9eda3e689748341597f4327a071c2b0ce41cc3ed477d72f2560b956eb5c0
+F main.mk 5a4954af031ac21dece30ebaf61c9594b8a441c2a0e4bb3636da2687d02ca70c
 F make.bat a136fd0b1c93e89854a86d5f4edcf0386d211e5d5ec2434480f6eea436c7420c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2180,8 +2181,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 35f39f7cb1030b1a57f2921f50ab600496fc1e774593717845e87f2e47dc49ba
-R a7ecee17b65f2e02eed8810e0fb1d4ba
+P 65202440874a7fea5aba262e8e78b97c833147d47837a99f301eca968f9a78b1
+R bd2d2c6a3b8d7b55e3f27798b187abb2
+T *branch * qrftest
+T *sym-qrftest *
+T -sym-trunk *
 U drh
-Z 50d000086ea0500f9c141c467282e85a
+Z 2febcbab07f4e3049a7b8ff917242afb
 # Remove this line to create a well-formed Fossil manifest.
