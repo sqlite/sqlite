@@ -589,6 +589,7 @@ ifcapable vtab {
 # .schema ?TABLE?        Show the CREATE statements
 #                          If TABLE specified, only show tables matching
 #                          LIKE pattern TABLE.
+forcedelete test.db
 do_test shell1-3.21.1 {
   catchcmd "test.db" ".schema"
 } {0 {}}
@@ -615,6 +616,20 @@ CREATE VIEW v1 AS SELECT y+1 FROM v2
 
   catch {db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}}
 }
+do_test shell1-3.21.5 {
+  exec {*}$CLI -noinit test.db \
+   {CREATE TABLE t2(a INTEGER PRIMARY KEY, b BLOB DEFAULT(jsonb('[]')),c TEXT NOT NULL)STRICT;} \
+   {.schema -indent t2}
+} {CREATE TABLE t2(
+  a INTEGER PRIMARY KEY,
+  b BLOB DEFAULT(jsonb('[]')),
+  c TEXT NOT NULL
+)STRICT;}
+do_test shell1-3.21.6 {
+  exec {*}$CLI -noinit test.db \
+   {DROP TABLE t2;} {DROP VIEW v1;} {DROP VIEW v2;} {DROP TABLE t1;}\
+   {.schema -indent t2}
+} {}
 
 # .separator STRING  Change column separator used by output and .import
 do_test shell1-3.22.1 {
