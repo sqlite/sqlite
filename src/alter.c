@@ -2223,7 +2223,7 @@ static void dropColumnFunc(
     ** previous column, and tokenize until the next ",".  */
     pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol-1].zCnName);
     do {
-      pCol->t.z += getConstraintToken(pCol->t.z, &eTok);
+      pCol->t.z += getConstraintToken((const u8*)pCol->t.z, &eTok);
     }while( eTok!=TK_COMMA );
     pCol->t.z--;
     zEnd = (const char*)&zSql[pTab->u.tab.addColOffset];

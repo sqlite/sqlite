@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sALTER\sTABLE\sDROP\sCOLUMN\scommands\swhere\sthe\scolumn\sbeing\sdropped\sis\sthe\srightmost\sin\stable\sand\sis\simmediately\spreceded\sby\sa\scomment\scontaining\sa\s","\scharacter.
-D 2025-12-02T14:43:59.730
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sprevious\scheck-in.
+D 2025-12-02T15:01:29.826
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -669,7 +669,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 1b9c24374a85dfc7eb8fa7c4266ee0db4f9609cceecfc5481cd8307e5af04366
 F sqlite3.pc.in e6dee284fba59ef500092fdc1843df3be8433323a3733c91da96690a50a5b398
-F src/alter.c 49274beed71d31591c8de17404f31e53ed8798507c8b3016d6f15b8ec478b1e2
+F src/alter.c 4f483968fcbb985d4e2608fcd78ff24de66d83231fc1c96f33ab014ccb9dffa0
 F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
 F src/attach.c 9af61b63b10ee702b1594ecd24fb8cea0839cfdb6addee52fba26fa879f5db9d
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
@@ -2181,8 +2181,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0fdd453c03addb8f5c1e546f7513e3498bccd61266174ce99a61ceebf04e97cf
-R a05db7d00d43861c033636a6b23ea3b7
-U dan
-Z 7c7543e8fa4c87f35bf5869e2e4f8ba1
+P c872bd1ee7b219e055f40e43766e4ed6bc2d2ca8cb92577cd3560f4173b1f257
+R c46cfff780eeed3878512057a17d323b
+U drh
+Z 089d78bdb228ed07162c6c905e40e2c9
 # Remove this line to create a well-formed Fossil manifest.
