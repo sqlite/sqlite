@@ -2114,6 +2114,57 @@ static void renameTableTest(
 #endif
 }
 
+
+/*
+** Return the number of bytes until the end of the next non-whitespace and
+** non-comment token.  For the purpose of this function, a "(" token includes
+** all of the bytes through and including the matching ")", or until the
+** first illegal token, whichever comes first.
+**
+** Write the token type into *piToken.
+**
+** The value returned is the number of bytes in the token itself plus
+** the number of bytes of leading whitespace and comments skipped plus
+** all bytes through the next matching ")" if the token is TK_LP.
+**
+** Example:    (Note: '.' used in place of '*' in the example z[] text)
+**
+**                                    ,--------- *piToken := TK_RP
+**                                    v
+**    z[] = " /.comment./ --comment\n (two three four) five"
+**          |                                        |
+**          |<-------------------------------------->|
+**                              |
+**                              `--- return value
+*/
+static int getConstraintToken(const u8 *z, int *piToken){
+  int iOff = 0;
+  int t = 0;
+  do {
+    iOff += sqlite3GetToken(&z[iOff], &t);
+  }while( t==TK_SPACE || t==TK_COMMENT );
+
+  *piToken = t;
+
+  if( t==TK_LP ){
+    int nNest = 1;
+    while( nNest>0 ){
+      iOff += sqlite3GetToken(&z[iOff], &t);
+      if( t==TK_LP ){
+        nNest++;
+      }else if( t==TK_RP ){
+        t = TK_LP;
+        nNest--;
+      }else if( t==TK_ILLEGAL ){
+        break;
+      }
+    }
+  }
+
+  *piToken = t;
+  return iOff;
+}
+
 /*
 ** The implementation of internal UDF sqlite_drop_column().
 **
@@ -2158,15 +2209,24 @@ static void dropColumnFunc(
     goto drop_column_done;
   }
 
-  pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zCnName);
   if( iCol<pTab->nCol-1 ){
     RenameToken *pEnd;
+    pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zCnName);
     pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zCnName);
     zEnd = (const char*)pEnd->t.z;
   }else{
+    int eTok;
     assert( IsOrdinaryTable(pTab) );
+    assert( iCol!=0 );
+    /* Point pCol->t.z at the "," immediately preceding the definition of
+    ** the column being dropped. To do this, start at the name of the 
+    ** previous column, and tokenize until the next ",".  */
+    pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol-1].zCnName);
+    do {
+      pCol->t.z += getConstraintToken(pCol->t.z, &eTok);
+    }while( eTok!=TK_COMMA );
+    pCol->t.z--;
     zEnd = (const char*)&zSql[pTab->u.tab.addColOffset];
-    while( ALWAYS(pCol->t.z[0]!=0) && pCol->t.z[0]!=',' ) pCol->t.z--;
   }
 
   zNew = sqlite3MPrintf(db, "%.*s%s", pCol->t.z-zSql, zSql, zEnd);
@@ -2349,56 +2409,6 @@ static int getWhitespace(const u8 *z){
   return nRet;
 }
 
-
-/*
-** Return the number of bytes until the end of the next non-whitespace and
-** non-comment token.  For the purpose of this function, a "(" token includes
-** all of the bytes through and including the matching ")", or until the
-** first illegal token, whichever comes first.
-**
-** Write the token type into *piToken.
-**
-** The value returned is the number of bytes in the token itself plus
-** the number of bytes of leading whitespace and comments skipped plus
-** all bytes through the next matching ")" if the token is TK_LP.
-**
-** Example:    (Note: '.' used in place of '*' in the example z[] text)
-**
-**                                    ,--------- *piToken := TK_RP
-**                                    v
-**    z[] = " /.comment./ --comment\n (two three four) five"
-**          |                                        |
-**          |<-------------------------------------->|
-**                              |
-**                              `--- return value
-*/
-static int getConstraintToken(const u8 *z, int *piToken){
-  int iOff = 0;
-  int t = 0;
-  do {
-    iOff += sqlite3GetToken(&z[iOff], &t);
-  }while( t==TK_SPACE || t==TK_COMMENT );
-
-  *piToken = t;
-
-  if( t==TK_LP ){
-    int nNest = 1;
-    while( nNest>0 ){
-      iOff += sqlite3GetToken(&z[iOff], &t);
-      if( t==TK_LP ){
-        nNest++;
-      }else if( t==TK_RP ){
-        t = TK_LP;
-        nNest--;
-      }else if( t==TK_ILLEGAL ){
-        break;
-      }
-    }
-  }
-
-  *piToken = t;
-  return iOff;
-}
 
 /*
 ** Argument z points into the body of a constraint - specifically the 
