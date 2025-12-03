@@ -4934,6 +4934,7 @@ int sqlite3NoTempsInRange(Parse*,int,int);
 #endif
 Expr *sqlite3ExprAlloc(sqlite3*,int,const Token*,int);
 Expr *sqlite3Expr(sqlite3*,int,const char*);
+Expr *sqlite3ExprInt32(sqlite3*,int);
 void sqlite3ExprAttachSubtrees(sqlite3*,Expr*,Expr*,Expr*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*);
 void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
