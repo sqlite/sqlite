@@ -1,5 +1,5 @@
-C Fix\srecently\sadded\stest\scases\sfor\sWindows.
-D 2025-12-03T02:48:36.971
+C Clarification\sof\scomment\stext\sin\sexpr.c.\s\sNo\schanges\sto\scode.
+D 2025-12-03T12:07:35.684
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -687,7 +687,7 @@ F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
 F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 03a77ba20e54f0f42ebd8eddf15411ed6bdb06a2c472ac4b6b336521bf7cea42
-F src/expr.c 17b0cbe08e004c1653030f5de9b6b050e84feaa112239f7f576af2dc5e53a5fb
+F src/expr.c 684f391581c62cb0ff6e37e05b5642e5a5c938f07897fbf6d0ae58de96a2c555
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 928ed2517e8732113d2b9821aa37af639688d752f4ea9ac6e0e393d713eeb76f
 F src/func.c 0b802107498048d3dcac0b757720bcb8506507ce02159e213ab8161458eb293b
@@ -2183,8 +2183,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 71ea7f38ffd0648c58713d8be5d2f5536f926ec21a0adc3c2a8a9a7ba8ea3826
-R ff4a0f3936f1f30e04d65abc0360383d
+P bccc0d65b0fb617f6c8eb111b6717d3ad419f80d3495dc5c6a69ccd0771b3d9d
+R b657241f08cf4f1a9f15fdda4d21e254
 U drh
-Z 21b23840350c65ec9f0323ed744bb78d
+Z 32d06a64dcd8b620cb1a299ac970a7bc
 # Remove this line to create a well-formed Fossil manifest.
