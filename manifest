@@ -1,5 +1,5 @@
-C Create\sa\snew\sinternal\ssubroutine\sspecifically\sdesigned\sto\sallocate\nExpr\snodes\sthat\shold\sa\s32-bit\sinteger.
-D 2025-12-03T16:54:48.746
+C More\saggressive\soptimization\sof\sIS\sNULL\sand\sIS\sNOT\sNULL\soperators.
+D 2025-12-03T18:18:29.761
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os_win.c a89b501fc195085c7d6c9eec7f5bd782625e94bb2a96b000f4d009703df1083f
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c a81461de271ac4886ad75b7ca2cca8157a48635820c4646cd2714acdc2c17e5f
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
-F src/parse.y 1af718c29a259a80cba96ab7e62ddc2d3f14b1242a1d176868f80c5d4f412e16
+F src/parse.y 6afdb006a4a8aac04a4dd37efd8b5e2d5cc39f9751b63e02cf11d9486ba3562a
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
@@ -2183,11 +2183,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P afe5ee64f1cde4945c878220b029f2a22578c2bccda4fddc005c4e6a4718c6cd
-R c225aed59957640feafaa5b7a326af34
-T *branch * expr-opt
-T *sym-expr-opt *
-T -sym-trunk *
+P 38d06f69e516dd13becbfb735a2a0035c2f3c50ea5d661a668b109a996656523
+R e345b725a39db244a730c4ef212bf292
 U drh
-Z 7b5c81060b54c05ccfb8538b780dea3f
+Z 8f73060af5100688a4299f0ba560aae8
 # Remove this line to create a well-formed Fossil manifest.
