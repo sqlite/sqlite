@@ -935,34 +935,22 @@ Expr *sqlite3ExprAlloc(
   int dequote             /* True to dequote */
 ){
   Expr *pNew;
-  int nExtra = 0;
-  int iValue = 0;
+  int nExtra = pToken ? pToken->n+1 : 0;
 
   assert( db!=0 );
-  if( pToken ){
-    if( op!=TK_INTEGER || pToken->z==0
-          || sqlite3GetInt32(pToken->z, &iValue)==0 ){
-      nExtra = pToken->n+1;  /* tag-20240227-a */
-      assert( iValue>=0 );
-    }
-  }
   pNew = sqlite3DbMallocRawNN(db, sizeof(Expr)+nExtra);
   if( pNew ){
     memset(pNew, 0, sizeof(Expr));
     pNew->op = (u8)op;
     pNew->iAgg = -1;
-    if( pToken ){
-      if( nExtra==0 ){
-        pNew->flags |= EP_IntValue|EP_Leaf|(iValue?EP_IsTrue:EP_IsFalse);
-        pNew->u.iValue = iValue;
-      }else{
-        pNew->u.zToken = (char*)&pNew[1];
-        assert( pToken->z!=0 || pToken->n==0 );
-        if( pToken->n ) memcpy(pNew->u.zToken, pToken->z, pToken->n);
-        pNew->u.zToken[pToken->n] = 0;
-        if( dequote && sqlite3Isquote(pNew->u.zToken[0]) ){
-          sqlite3DequoteExpr(pNew);
-        }
+    if( nExtra ){
+      assert( pToken!=0 );
+      pNew->u.zToken = (char*)&pNew[1];
+      assert( pToken->z!=0 || pToken->n==0 );
+      if( pToken->n ) memcpy(pNew->u.zToken, pToken->z, pToken->n);
+      pNew->u.zToken[pToken->n] = 0;
+      if( dequote && sqlite3Isquote(pNew->u.zToken[0]) ){
+        sqlite3DequoteExpr(pNew);
       }
     }
 #if SQLITE_MAX_EXPR_DEPTH>0
@@ -985,6 +973,24 @@ Expr *sqlite3Expr(
   x.z = zToken;
   x.n = sqlite3Strlen30(zToken);
   return sqlite3ExprAlloc(db, op, &x, 0);
+}
+
+/*
+** Allocate an expression for a 32-bit signed integer literal.
+*/
+Expr *sqlite3ExprInt32(sqlite3 *db, int iVal){
+  Expr *pNew = sqlite3DbMallocRawNN(db, sizeof(Expr));
+  if( pNew ){
+    memset(pNew, 0, sizeof(Expr));
+    pNew->op = TK_INTEGER;
+    pNew->iAgg = -1;
+    pNew->flags = EP_IntValue|EP_Leaf|(iVal?EP_IsTrue:EP_IsFalse);
+    pNew->u.iValue = iVal;
+#if SQLITE_MAX_EXPR_DEPTH>0
+    pNew->nHeight = 1;
+#endif 
+  }
+  return pNew;
 }
 
 /*
@@ -1149,7 +1155,7 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
     ){
       sqlite3ExprDeferredDelete(pParse, pLeft);
       sqlite3ExprDeferredDelete(pParse, pRight);
-      return sqlite3Expr(db, TK_INTEGER, "0");
+      return sqlite3ExprInt32(db, 0);
     }else{
       return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
     }
@@ -3909,7 +3915,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
      || (pLeft->u.iValue!=1 && pLeft->u.iValue!=0)
     ){
       sqlite3 *db = pParse->db;
-      pLimit = sqlite3Expr(db, TK_INTEGER, "0");
+      pLimit = sqlite3ExprInt32(db, 0);
       if( pLimit ){
         pLimit->affExpr = SQLITE_AFF_NUMERIC;
         pLimit = sqlite3PExpr(pParse, TK_NE,
@@ -3920,7 +3926,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     }
   }else{
     /* If there is no pre-existing limit add a limit of 1 */
-    pLimit = sqlite3Expr(pParse->db, TK_INTEGER, "1");
+    pLimit = sqlite3ExprInt32(pParse->db, 1);
     pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
   }
   pSel->iLimit = 0;

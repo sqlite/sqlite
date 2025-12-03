@@ -717,7 +717,7 @@ void sqlite3WindowUpdate(
           pWin->eEnd = aUp[i].eEnd;
           pWin->eExclude = 0;
           if( pWin->eStart==TK_FOLLOWING ){
-            pWin->pStart = sqlite3Expr(db, TK_INTEGER, "1");
+            pWin->pStart = sqlite3ExprInt32(db, 1);
           }
           break;
         }
@@ -1062,9 +1062,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** keep everything legal in this case.
     */
     if( pSublist==0 ){
-      pSublist = sqlite3ExprListAppend(pParse, 0,
-        sqlite3Expr(db, TK_INTEGER, "0")
-      );
+      pSublist = sqlite3ExprListAppend(pParse, 0, sqlite3ExprInt32(db, 0));
     }
 
     pSub = sqlite3SelectNew(
