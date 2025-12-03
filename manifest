@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\s".schema\sindent"\slogic.\n[forum:/forumpost/c8136b1bd0|Forum\spost\s2025-12-02T19:04:04Z].
-D 2025-12-02T19:55:39.502
+C Fix\srecently\sadded\stest\scases\sfor\sWindows.
+D 2025-12-03T02:48:36.971
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1516,7 +1516,7 @@ F test/qrf02.test 39b4afdc000bedccdafc0aecf17638df67a67aaa2d2942865ae6abcc48ba0e
 F test/qrf03.test ad7fa339fb46b26b08625f3a77a4827bdee9f0dad402d8ddc1fcb8f05aa64a54
 F test/qrf04.test 0894692c998d2401dcc33449c02051b503ecce0c94217be54fb007c82d2d1379
 F test/qrf05.test 8ade5bfa7ef0b448e531687203fa8ae9ef41f1d7e4c11d5ba0c4846af75b13d5
-F test/qrf06.test 60ee6a77955a28ff7ab4e418ea71ca7ab8d24d993783a46ec0f7f4223174fabd
+F test/qrf06.test 3907f81c79fd884802cc7552d4a07fd8d73c381ade9d5108e6d7f56fd962b99b
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quickcheck.test a4b7e878cd97e46108291c409b0bf8214f29e18fddd68a42bc5c1375ad1fb80a
@@ -1610,7 +1610,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 495e8f87eca4010e8f2f930468e4d69a4923f22b8022faa0b1faa2efa2af68e5
+F test/shell1.test b49a89913c194c37ca10c9ded1b6b6866506104621c6cc599e557e4cb5ed8cc2
 F test/shell2.test 103140814bdc7508aa41dd3462413cbc4aa84b4261112cb8d501d74275cb7d48
 F test/shell3.test 840192774cc4edf7653520c0434a311c7477b9bc324abbc7bd2887915792fa8c
 F test/shell4.test e25580a792b7b54560c3a76b6968bd8189261f38979fe28e6bc6312c5db280db
@@ -2183,8 +2183,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e49c63e31888c6787ab13f736d58ff985a24c3f98b475e05c30e8b244afffb80
-R 2ce68e64630fa55d12785e2ebab7a182
+P 71ea7f38ffd0648c58713d8be5d2f5536f926ec21a0adc3c2a8a9a7ba8ea3826
+R ff4a0f3936f1f30e04d65abc0360383d
 U drh
-Z 4962bf9c4e3c537fc62e88d0a1d5076b
+Z 21b23840350c65ec9f0323ed744bb78d
 # Remove this line to create a well-formed Fossil manifest.

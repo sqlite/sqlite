@@ -589,7 +589,6 @@ ifcapable vtab {
 # .schema ?TABLE?        Show the CREATE statements
 #                          If TABLE specified, only show tables matching
 #                          LIKE pattern TABLE.
-forcedelete test.db
 do_test shell1-3.21.1 {
   catchcmd "test.db" ".schema"
 } {0 {}}
@@ -627,7 +626,7 @@ do_test shell1-3.21.5 {
 )STRICT;}
 do_test shell1-3.21.6 {
   exec {*}$CLI -noinit test.db \
-   {DROP TABLE t2;} {DROP VIEW v1;} {DROP VIEW v2;} {DROP TABLE t1;}\
+   {DROP TABLE t2;} \
    {.schema -indent t2}
 } {}
 
