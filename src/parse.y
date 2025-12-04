@@ -833,11 +833,35 @@ fullname(A) ::= nm(X) DOT nm(Y). {
 
 %type xfullname {SrcList*}
 %destructor xfullname {sqlite3SrcListDelete(pParse->db, $$);}
-xfullname(A) ::= fullname(X). { A=X; }
-xfullname(A) ::= fullname(X) AS nm(Z). {  
-  X->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
-  A = X;
+xfullname(A) ::= nm(X).  {
+  A = sqlite3SrcListAppend(pParse,0,&X,0);
+  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
 }
+xfullname(A) ::= nm(X) DOT nm(Y). {
+  A = sqlite3SrcListAppend(pParse,0,&X,&Y);
+  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
+}
+xfullname(A) ::= nm(X) AS nm(Z).  {
+  A = sqlite3SrcListAppend(pParse,0,&X,0);
+  if( A ){
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
+    }else{
+      A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+    }
+  }
+}
+xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z). {
+  A = sqlite3SrcListAppend(pParse,0,&X,&Y);
+  if( A ){
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
+    }else{
+      A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+    }
+  }
+}
+
 
 %type joinop {int}
 joinop(X) ::= COMMA|JOIN.              { X = JT_INNER; }
