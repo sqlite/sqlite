@@ -1,12 +1,12 @@
-C Make\sthe\sshell_exec()\sroutine\sin\sthe\sCLI\srobust\sagainst\sNULL\sSQL\stext.\nFix\sharmless\scompiler\swarnings\sin\sext/misc/zipfile.c.
-D 2025-12-04T20:22:36.336
+C Automatically\sadd\sthe\s/NODEFAULTLIB:msvcrt\sflag\sto\sthe\sMakefile.msc\sso\sthat\nWindows\sbuilds\sare\sable\sto\slink\sagainst\szlib.lib\sby\sdefault.
+D 2025-12-04T21:16:12.329
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 295bc62fdd8663a6581cc43252403fac3cb784002164ff53fac8d15fc72fdfaa
+F Makefile.msc 3ff9b7d3060e658b94c6a97dfbc49b69c1804321d675a29e117748722de52c87
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
 F VERSION 74672bfd4c7826c0fc6f84762488a707c52e7d2d94af42ccb0edcc6c74311c41
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d73364555d213e443d8400ed69b134006f4e2fe0054d74fe0828ff01effe5cd2
-R c59a03fa78282f99ec46da47260a006f
+P 2ecba7dfd10c7d6a7a34b0ec01a387c9f1426c0504c8f20edc03e29bb9aa93c3
+R 08893963a99c97a11ea1cc37e47fbd5d
 U drh
-Z 6f7b8b99cea200503a2d25a0683cc9c3
+Z 30785e0d940f06ddb3cd7af0a8ba6981
 # Remove this line to create a well-formed Fossil manifest.
