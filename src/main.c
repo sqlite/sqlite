@@ -2945,6 +2945,9 @@ static const int aHardLimit[] = {
 #if SQLITE_MAX_SQL_LENGTH>SQLITE_MAX_LENGTH
 # error SQLITE_MAX_SQL_LENGTH must not be greater than SQLITE_MAX_LENGTH
 #endif
+#if SQLITE_MAX_SQL_LENGTH>2147482624     /* 1024 less than 2^31 */
+# error SQLITE_MAX_SQL_LENGTH must not be greater than 2147482624
+#endif
 #if SQLITE_MAX_COMPOUND_SELECT<2
 # error SQLITE_MAX_COMPOUND_SELECT must be at least 2
 #endif
