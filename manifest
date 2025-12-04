@@ -1,5 +1,5 @@
-C Fix\san\serror\sintroduced\sby\sthe\sprevious\scheck-in.
-D 2025-12-04T13:08:59.580
+C Mark\san\salways-true\sconditional\sas\ssuch.
+D 2025-12-04T13:28:25.148
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -669,7 +669,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 1b9c24374a85dfc7eb8fa7c4266ee0db4f9609cceecfc5481cd8307e5af04366
 F sqlite3.pc.in e6dee284fba59ef500092fdc1843df3be8433323a3733c91da96690a50a5b398
-F src/alter.c 6c7791c7d95f66df7c510ed006bd8b0a58badfd7106ad2aa97f2d10ae3c3e06d
+F src/alter.c fc36b19273ffe364aeb4d00ba04bda8798ad7a67fec7a035ee8ee56272e1bdbe
 F src/analyze.c 03bcfc083fc0cccaa9ded93604e1d4244ea245c17285d463ef6a60425fcb247d
 F src/attach.c 7cf07d4fa42b9fc8662237c60c40b730326c30aa90ae5fffc0b18b2d726ebf61
 F src/auth.c 54ab9c6c5803b47c0d45b76ce27eff22a03b4b1f767c5945a3a4eb13aa4c78dc
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1c1ad5e39cb379250f10db5ef61f42e0bd56ace308f8e41f9bf5e08d92075521
-R d0468f7fd220c9004a91afabbc246b27
+P 948e24ae3816d650be66bbe6b880bea74da643af37c4349e6cf2e207e6cf9b28
+R 1b1d291f620f9976802e4c1eb32b7e7e
 U drh
-Z a78d503406899735e8c7ef3d1cc3e1f1
+Z 84ec7f2274c7df86690fbd0d85ed23da
 # Remove this line to create a well-formed Fossil manifest.
