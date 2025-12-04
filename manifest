@@ -1,5 +1,5 @@
-C Performance\soptimization\sin\sthe\slanguage\sgrammar.
-D 2025-12-04T11:59:11.518
+C Fix\san\serror\sintroduced\sby\sthe\sprevious\scheck-in.
+D 2025-12-04T13:08:59.580
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os_win.c a89b501fc195085c7d6c9eec7f5bd782625e94bb2a96b000f4d009703df1083f
 F src/os_win.h 4c247cdb6d407c75186c94a1e84d5a22cbae4adcec93fcae8d2bc1f956fd1f19
 F src/pager.c a81461de271ac4886ad75b7ca2cca8157a48635820c4646cd2714acdc2c17e5f
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
-F src/parse.y 4a23bf1437e2f0a6470a40cbe79b8dd6a52292a0a7ecd3b6268d170b0cf2f802
+F src/parse.y 7c2184b5665c671258c4e96a10bbc9dbf7e1ede462ebc4e614249de0d54c8a26
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8e8a27c77aa0ea5891968231e13a8caeade48b817419bbf6eda18ad217f1df63
-R 8de7f794171ed7df662770c0396beb92
+P 1c1ad5e39cb379250f10db5ef61f42e0bd56ace308f8e41f9bf5e08d92075521
+R d0468f7fd220c9004a91afabbc246b27
 U drh
-Z ada3aa3b66f39f347d273cddb2d5d232
+Z a78d503406899735e8c7ef3d1cc3e1f1
 # Remove this line to create a well-formed Fossil manifest.

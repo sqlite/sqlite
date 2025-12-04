@@ -855,7 +855,7 @@ xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z). {
   A = sqlite3SrcListAppend(pParse,0,&X,&Y);
   if( A ){
     if( IN_RENAME_OBJECT ){
-      sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
+      sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
     }else{
       A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
     }
