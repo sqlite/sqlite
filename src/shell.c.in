@@ -2391,6 +2391,8 @@ static void shellFormatSchema(
     for(i=j=0; (c = z[i])!=0; i++){ /* Copy from z[i] back to z[j] */
       if( c==cEnd ){
         cEnd = 0;
+      }else if( cEnd!=0){
+        /* No-op */
       }else if( c=='"' || c=='\'' || c=='`' ){
         cEnd = c;
       }else if( c=='[' ){

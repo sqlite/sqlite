@@ -1169,7 +1169,12 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
 term(A) ::= NULL|FLOAT|BLOB(X). {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
 term(A) ::= STRING(X).          {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
 term(A) ::= INTEGER(X). {
-  A = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 1);
+  int iValue;
+  if( sqlite3GetInt32(X.z, &iValue)==0 ){
+    A = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 0);
+  }else{
+    A = sqlite3ExprInt32(pParse->db, iValue);
+  }
   if( A ) A->w.iOfst = (int)(X.z - pParse->zTail);
 }
 expr(A) ::= VARIABLE(X).     {
@@ -1351,43 +1356,67 @@ expr(A) ::= expr(A) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
   if( A ) A->flags |= EP_InfixFunc;
 }
 
-expr(A) ::= expr(A) ISNULL|NOTNULL(E).   {A = sqlite3PExpr(pParse,@E,A,0);}
-expr(A) ::= expr(A) NOT NULL.    {A = sqlite3PExpr(pParse,TK_NOTNULL,A,0);}
-
 %include {
-  /* A routine to convert a binary TK_IS or TK_ISNOT expression into a
-  ** unary TK_ISNULL or TK_NOTNULL expression. */
-  static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
-    sqlite3 *db = pParse->db;
-    if( pA && pY && pY->op==TK_NULL && !IN_RENAME_OBJECT ){
-      pA->op = (u8)op;
-      sqlite3ExprDelete(db, pA->pRight);
-      pA->pRight = 0;
+  /* Create a TK_ISNULL or TK_NOTNULL expression, perhaps optimized to
+  ** to TK_TRUEFALSE, if possible */
+  static Expr *sqlite3PExprIsNull(
+    Parse *pParse,  /* Parsing context */
+    int op,         /* TK_ISNULL or TK_NOTNULL */
+    Expr *pLeft     /* Operand */
+  ){
+    Expr *p = pLeft;
+    assert( op==TK_ISNULL || op==TK_NOTNULL );
+    assert( pLeft!=0 );
+    while( p->op==TK_UPLUS || p->op==TK_UMINUS ){
+      p = p->pLeft;
+      assert( p!=0 );
     }
+    switch( p->op ){
+      case TK_INTEGER:
+      case TK_STRING:
+      case TK_FLOAT:
+      case TK_BLOB:
+        sqlite3ExprDeferredDelete(pParse, pLeft);
+        return sqlite3ExprInt32(pParse->db, op==TK_NOTNULL);
+      default:
+        break;
+    }
+    return sqlite3PExpr(pParse, op, pLeft, 0);
+  }
+
+  /* Create a TK_IS or TK_ISNOT operator, perhaps optimized to
+  ** TK_ISNULL or TK_NOTNULL or TK_TRUEFALSE. */
+  static Expr *sqlite3PExprIs(
+    Parse *pParse,  /* Parsing context */
+    int op,         /* TK_IS or TK_ISNOT */
+    Expr *pLeft,    /* Left operand */
+    Expr *pRight    /* Right operand */
+  ){
+    if( pRight && pRight->op==TK_NULL ){
+      sqlite3ExprDeferredDelete(pParse, pRight);
+      return sqlite3PExprIsNull(pParse, op==TK_IS ? TK_ISNULL : TK_NOTNULL, pLeft);
+    }
+    return sqlite3PExpr(pParse, op, pLeft, pRight);
   }
 }
 
-//    expr1 IS expr2
-//    expr1 IS NOT expr2
+expr(A) ::= expr(A) ISNULL|NOTNULL(E).   {A = sqlite3PExprIsNull(pParse,@E,A);}
+expr(A) ::= expr(A) NOT NULL.    {A = sqlite3PExprIsNull(pParse,TK_NOTNULL,A);}
+
+//    expr1 IS expr2       same as    expr1 IS NOT DISTICT FROM expr2
+//    expr1 IS NOT expr2   same as    expr1 IS DISTINCT FROM expr2
 //
-// If expr2 is NULL then code as TK_ISNULL or TK_NOTNULL.  If expr2
-// is any other expression, code as TK_IS or TK_ISNOT.
-// 
 expr(A) ::= expr(A) IS expr(Y).     {
-  A = sqlite3PExpr(pParse,TK_IS,A,Y);
-  binaryToUnaryIfNull(pParse, Y, A, TK_ISNULL);
+  A = sqlite3PExprIs(pParse, TK_IS, A, Y);
 }
 expr(A) ::= expr(A) IS NOT expr(Y). {
-  A = sqlite3PExpr(pParse,TK_ISNOT,A,Y);
-  binaryToUnaryIfNull(pParse, Y, A, TK_NOTNULL);
+  A = sqlite3PExprIs(pParse, TK_ISNOT, A, Y);
 }
 expr(A) ::= expr(A) IS NOT DISTINCT FROM expr(Y).     {
-  A = sqlite3PExpr(pParse,TK_IS,A,Y);
-  binaryToUnaryIfNull(pParse, Y, A, TK_ISNULL);
+  A = sqlite3PExprIs(pParse, TK_IS, A, Y);
 }
 expr(A) ::= expr(A) IS DISTINCT FROM expr(Y). {
-  A = sqlite3PExpr(pParse,TK_ISNOT,A,Y);
-  binaryToUnaryIfNull(pParse, Y, A, TK_NOTNULL);
+  A = sqlite3PExprIs(pParse, TK_ISNOT, A, Y);
 }
 
 expr(A) ::= NOT(B) expr(X).  

@@ -2361,6 +2361,10 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
     }else if( strcmp(zArg,"-null")==0 ){
       qrf.zNull = Tcl_GetString(objv[i+1]);
       i++;
+    }else if( strcmp(zArg,"-version")==0 ){
+      /* Undocumented. Testing use only */
+      qrf.iVersion = atoi(Tcl_GetString(objv[i+1]));
+      i++;
     }else{
       Tcl_AppendResult(pDb->interp, "unknown option: ", zArg, (char*)0);
       rc = TCL_ERROR;

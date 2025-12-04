@@ -1107,11 +1107,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         sqlite3.config.warn("DB.exec() is propagating exception",opt,e);
         throw e;
       }*/finally{
-        wasm.scopedAllocPop(stack);
         if(stmt){
           __execLock.delete(stmt);
           stmt.finalize();
         }
+        wasm.scopedAllocPop(stack);
       }
       return arg.returnVal();
     }/*exec()*/,
