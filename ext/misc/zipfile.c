@@ -900,11 +900,12 @@ static int zipfileGetEntry(
         rc = zipfileReadData(pFile, aRead, szFix, pNew->cds.iOffset, pzErr);
       }else{
         aRead = (u8*)&aBlob[pNew->cds.iOffset];
-        if( (pNew->cds.iOffset + ZIPFILE_LFH_FIXED_SZ)>nBlob ){
+        if( (pNew->cds.iOffset + ZIPFILE_LFH_FIXED_SZ)>(unsigned)nBlob ){
           rc = zipfileCorrupt(pzErr);
         }
       }
 
+      memset(&lfh, 0, sizeof(lfh));
       if( rc==SQLITE_OK ) rc = zipfileReadLFH(aRead, &lfh);
       if( rc==SQLITE_OK ){
         pNew->iDataOff =  pNew->cds.iOffset + ZIPFILE_LFH_FIXED_SZ;
