@@ -7380,6 +7380,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   sqlite3 *db = pParse->db;
   int iEnd = sqlite3VdbeCurrentAddr(v);
   int nRJ = 0;
+#ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
+  int addrSeek = 0;
+#endif
 
   /* Generate loop termination code.
   */
@@ -7392,7 +7395,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       ** the RIGHT JOIN table */
       WhereRightJoin *pRJ = pLevel->pRJ;
       sqlite3VdbeResolveLabel(v, pLevel->addrCont);
-      pLevel->addrCont = 0;
+      /* Replace addrCont with a new label that will never be used, just so
+      ** the subsequent call to resolve pLevel->addrCont will have something
+      ** to resolve. */
+      pLevel->addrCont = sqlite3VdbeMakeLabel(pParse);
       pRJ->endSubrtn = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp3(v, OP_Return, pRJ->regReturn, pRJ->addrSubrtn, 1);
       VdbeCoverage(v);
@@ -7401,7 +7407,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     pLoop = pLevel->pWLoop;
     if( pLevel->op!=OP_Noop ){
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
-      int addrSeek = 0;
       Index *pIdx;
       int n;
       if( pWInfo->eDistinct==WHERE_DISTINCT_ORDERED
@@ -7424,25 +7429,26 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeAddOp2(v, OP_Goto, 1, pLevel->p2);
       }
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
-      if( pTabList->a[pLevel->iFrom].fg.fromExists && i==pWInfo->nLevel-1 ){
-        /* If the EXISTS-to-JOIN optimization was applied, then the EXISTS
-        ** loop(s) will be the inner-most loops of the join. There might be
-        ** multiple EXISTS loops, but they will all be nested, and the join
-        ** order will not have been changed by the query planner.  If the
-        ** inner-most EXISTS loop sees a single successful row, it should
-        ** break out of *all* EXISTS loops.  But only the inner-most of the
-        ** nested EXISTS loops should do this breakout. */
-        int nOuter = 0; /* Nr of outer EXISTS that this one is nested within */
-        while( nOuter<i ){
-          if( !pTabList->a[pLevel[-nOuter-1].iFrom].fg.fromExists ) break;
-          nOuter++;
-        }
-        testcase( nOuter>0 );
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel[-nOuter].addrBrk);
-        VdbeComment((v, "EXISTS break"));
+    }
+    if( pTabList->a[pLevel->iFrom].fg.fromExists && i==pWInfo->nLevel-1 ){
+      /* If the EXISTS-to-JOIN optimization was applied, then the EXISTS
+      ** loop(s) will be the inner-most loops of the join. There might be
+      ** multiple EXISTS loops, but they will all be nested, and the join
+      ** order will not have been changed by the query planner.  If the
+      ** inner-most EXISTS loop sees a single successful row, it should
+      ** break out of *all* EXISTS loops.  But only the inner-most of the
+      ** nested EXISTS loops should do this breakout. */
+      int nOuter = 0; /* Nr of outer EXISTS that this one is nested within */
+      while( nOuter<i ){
+        if( !pTabList->a[pLevel[-nOuter-1].iFrom].fg.fromExists ) break;
+        nOuter++;
       }
-      /* The common case: Advance to the next row */
-      if( pLevel->addrCont ) sqlite3VdbeResolveLabel(v, pLevel->addrCont);
+      testcase( nOuter>0 );
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel[-nOuter].addrBrk);
+      VdbeComment((v, "EXISTS break"));
+    }
+    sqlite3VdbeResolveLabel(v, pLevel->addrCont);
+    if( pLevel->op!=OP_Noop ){
       sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
       sqlite3VdbeChangeP5(v, pLevel->p5);
       VdbeCoverage(v);
@@ -7455,10 +7461,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         VdbeCoverage(v);
       }
 #ifndef SQLITE_DISABLE_SKIPAHEAD_DISTINCT
-      if( addrSeek ) sqlite3VdbeJumpHere(v, addrSeek);
+      if( addrSeek ){
+        sqlite3VdbeJumpHere(v, addrSeek);
+        addrSeek = 0;
+      }
 #endif
-    }else if( pLevel->addrCont ){
-      sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     }
     if( (pLoop->wsFlags & WHERE_IN_ABLE)!=0 && pLevel->u.in.nIn>0 ){
       struct InLoop *pIn;
