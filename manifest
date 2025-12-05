@@ -1,5 +1,5 @@
-C Automatically\sadd\sthe\s/NODEFAULTLIB:msvcrt\sflag\sto\sthe\sMakefile.msc\sso\sthat\nWindows\sbuilds\sare\sable\sto\slink\sagainst\szlib.lib\sby\sdefault.
-D 2025-12-04T21:16:12.329
+C Update\sthe\sautoconf\sMakefile.msc\sbased\son\sthe\sMakefile.msc\schanges\sin\sthe\nprevious\scheck-in.
+D 2025-12-05T00:56:51.025
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -18,7 +18,7 @@ F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
-F autoconf/Makefile.msc 7952ed1fbb824f9421688e6b46d09fc4d5a13decec791a6264be4f65e64dfc08
+F autoconf/Makefile.msc 61c9c186233b2f140d47b17cdcbd04f476d1399fe8fb2e697344fbfc855e8a5b
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2ecba7dfd10c7d6a7a34b0ec01a387c9f1426c0504c8f20edc03e29bb9aa93c3
-R 08893963a99c97a11ea1cc37e47fbd5d
+P 0b75057d61ccd57fca19d49679f0ff99231595f619aa0c4310aa3180b8de08b7
+R 495edf45a012303eb9f0a754fea978ad
 U drh
-Z 30785e0d940f06ddb3cd7af0a8ba6981
+Z 45c171a27a0a33e83f25884aef748799
 # Remove this line to create a well-formed Fossil manifest.

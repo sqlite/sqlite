@@ -982,9 +982,9 @@ LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:libucrt.lib /DEFAULTLIB:ucrt.lib
 # If either debugging or symbols are enabled, enable PDBs.
 #
 !IF $(DEBUG)>1 || $(SYMBOLS)!=0
-LDFLAGS = /DEBUG $(LDOPTS)
+LDFLAGS = /NODEFAULTLIB:msvcrt /DEBUG $(LDOPTS)
 !ELSE
-LDFLAGS = $(LDOPTS)
+LDFLAGS = /NODEFAULTLIB:msvcrt $(LDOPTS)
 !ENDIF
 
 
