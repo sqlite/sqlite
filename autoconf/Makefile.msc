@@ -101,13 +101,6 @@ NO_WARN = $(NO_WARN) -wd4210 -wd4232 -wd4244 -wd4305 -wd4306 -wd4702 -wd4706
 !ENDIF
 !ENDIF
 
-# Set this non-0 to use the library paths and other options necessary for
-# Windows Phone 8.1.
-#
-!IFNDEF USE_WP81_OPTS
-USE_WP81_OPTS = 0
-!ENDIF
-
 # Set this non-0 to split the SQLite amalgamation file into chunks to
 # be used for debugging with Visual Studio.
 #
@@ -563,10 +556,14 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) $(RCOPTS) $(RCCOPTS)
 !IF "$(PLATFORM)"=="x86"
 CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+
+
 !ELSE
 !IFNDEF PLATFORM
 CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+
+
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
@@ -930,33 +927,6 @@ STORELIBPATH = $(CRTLIBPATH)\store
 STORELIBPATH = $(STORELIBPATH:\\=\)
 LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(STORELIBPATH)"
 !ENDIF
-!ENDIF
-
-# When compiling for Windows Phone 8.1, an extra library path is
-# required.
-#
-!IF $(USE_WP81_OPTS)!=0
-!IFNDEF WP81LIBPATH
-!IF "$(PLATFORM)"=="x86"
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
-!ELSEIF "$(PLATFORM)"=="ARM"
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\ARM
-!ELSE
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
-!ENDIF
-!ENDIF
-!ENDIF
-
-# When compiling for Windows Phone 8.1, some extra linker options
-# are also required.
-#
-!IF $(USE_WP81_OPTS)!=0
-!IFDEF WP81LIBPATH
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(WP81LIBPATH)"
-!ENDIF
-LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE
-LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib
-LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 !ENDIF
 
 # When compiling for UWP or the Windows 10 platform, some extra linker

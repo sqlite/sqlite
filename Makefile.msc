@@ -11,6 +11,8 @@
 TOP = .
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # Set this non-0 to create and use the SQLite amalgamation file.
 #
 !IFNDEF USE_AMALGAMATION
@@ -101,13 +103,6 @@ NO_WARN = $(NO_WARN) -wd4210 -wd4232 -wd4244 -wd4305 -wd4306 -wd4702 -wd4706
 !ENDIF
 !ENDIF
 
-# Set this non-0 to use the library paths and other options necessary for
-# Windows Phone 8.1.
-#
-!IFNDEF USE_WP81_OPTS
-USE_WP81_OPTS = 0
-!ENDIF
-
 # Set this non-0 to split the SQLite amalgamation file into chunks to
 # be used for debugging with Visual Studio.
 #
@@ -116,14 +111,8 @@ SPLIT_AMALGAMATION = 0
 !ENDIF
 
 # <<mark>>
-# Set this non-0 to have this makefile assume the Tcl shell executable
-# (tclsh*.exe) is available in the PATH.  By default, this is disabled
-# for compatibility with older build environments.  This setting only
-# applies if TCLSH_CMD is not set manually.
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
 #
-!IFNDEF USE_TCLSH_IN_PATH
-USE_TCLSH_IN_PATH = 0
-!ENDIF
 
 # Set this non-0 to use zlib, possibly compiling it from source code.
 #
@@ -209,6 +198,8 @@ FOR_WIN10 = 0
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
@@ -265,6 +256,8 @@ DEBUG = 0
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # By default, use --linemacros=1 argument to the mksqlite3c.tcl tool, which
 # is used to build the amalgamation. This can be turned off to ease debug
 # of the amalgamation away from the source tree.
@@ -360,6 +353,8 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # These are the names of the customized Tcl header files used by various parts
 # of this makefile when the stdcall calling convention is in use.  It is not
 # used for any other purpose.
@@ -641,16 +636,24 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 !IF "$(PLATFORM)"=="x86"
 CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 TEST_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
 # <</mark>>
+
 !ELSE
 !IFNDEF PLATFORM
 CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 TEST_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
 # <</mark>>
+
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
@@ -820,6 +823,8 @@ BCC = $(BCC) -MT
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in
 # any extension header files by default.  For non-amalgamation
 # builds, we need to make sure the compiler can find these.
@@ -945,6 +950,8 @@ TCC = $(TCC) /fsanitize=address
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
 # (TCLINCDIR, TCLLIBDIR, and LIBTCL) may be overridden via the environment
@@ -1184,6 +1191,8 @@ BCC = $(BCC) -Zi
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # If zlib support is enabled, add the compiler options for it.
 #
 !IF $(USE_ZLIB)!=0
@@ -1259,33 +1268,6 @@ LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(STORELIBPATH)"
 !ENDIF
 !ENDIF
 
-# When compiling for Windows Phone 8.1, an extra library path is
-# required.
-#
-!IF $(USE_WP81_OPTS)!=0
-!IFNDEF WP81LIBPATH
-!IF "$(PLATFORM)"=="x86"
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
-!ELSEIF "$(PLATFORM)"=="ARM"
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\ARM
-!ELSE
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
-!ENDIF
-!ENDIF
-!ENDIF
-
-# When compiling for Windows Phone 8.1, some extra linker options
-# are also required.
-#
-!IF $(USE_WP81_OPTS)!=0
-!IFDEF WP81LIBPATH
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(WP81LIBPATH)"
-!ENDIF
-LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE
-LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib
-LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
-!ENDIF
-
 # When compiling for UWP or the Windows 10 platform, some extra linker
 # options are also required.
 #
@@ -1315,6 +1297,8 @@ LDFLAGS = /NODEFAULTLIB:msvcrt $(LDOPTS)
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # Start with the Tcl related linker options.
 #
 !IF $(NO_TCL)==0
@@ -1341,6 +1325,8 @@ LTLIBS = $(LTLIBS) $(LIBICU)
 ###############################################################################
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # Object files for the SQLite library (non-amalgamation).
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \

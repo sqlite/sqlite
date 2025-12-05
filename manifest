@@ -1,12 +1,12 @@
-C Minor\sadjustment\sto\sthe\szipfile.test\sscript\sso\sthat\sit\sworks\son\sWindows.
-D 2025-12-05T15:09:42.281
+C Omit\sobsolete\sfeatures\s(Ex:\sWindows\sPhone\ssupport)\sfrom\sthe\sWindows\nMakefile.msc.\s\sMore\sof\sthis\skind\sof\sthing\sis\spending...
+D 2025-12-05T16:06:34.367
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 3ff9b7d3060e658b94c6a97dfbc49b69c1804321d675a29e117748722de52c87
+F Makefile.msc 407e29fa88f542298d0d3557302591ec0c43ee3b77978cd23955e5dde0eb3e59
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
 F VERSION 74672bfd4c7826c0fc6f84762488a707c52e7d2d94af42ccb0edcc6c74311c41
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -18,7 +18,7 @@ F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
-F autoconf/Makefile.msc 61c9c186233b2f140d47b17cdcbd04f476d1399fe8fb2e697344fbfc855e8a5b
+F autoconf/Makefile.msc a362297e3b5c61ef90b3afbe90cbaa28dd540e580b59fa9d1a4ad6dff9dcdc55
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aa0a28776bbeafb71b2db20ac8c16377ba07b7d3d58e46cfd11f60c694759a90
-R 0a5112a959a9ebebd792ed021b58c950
+P 7bb633df97678b98515e603c5154ffc5b54055cff187d74a2c5d010e5b3720d1
+R 06e7c0f5561241ae2533f5ffa8fec966
 U drh
-Z c8efa011e9233ac49a17b17f770e3cf7
+Z 20fb4147d37a7174598e3d5729f93951
 # Remove this line to create a well-formed Fossil manifest.
