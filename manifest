@@ -1,5 +1,5 @@
-C Update\sthe\sautoconf\sMakefile.msc\sbased\son\sthe\sMakefile.msc\schanges\sin\sthe\nprevious\scheck-in.
-D 2025-12-05T00:56:51.025
+C Another\sfix\sto\s[e33da6d5dc964db8]:\sEnsure\sthat\sthe\sEXISTS-to-JOIN\sbreak\nhappens\seven\sif\sthe\sinner\sloop\sis\sa\s"no-op"\sloop\sthat\snever\sexecutes\smore\nthan\sonce\sbecause\sit\sis\scontrolled\sby\sa\sUNIQUE\sindex.\s\sThis\sresolves\sthe\nerror\sreported\sin\s[forum:/forumpost/7992838ba2|forum\spost\s7992838ba2].\nTest\scases\sare\sin\sTH3.
+D 2025-12-05T01:33:23.992
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -818,7 +818,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 505a98fbc599a971d92cb90371cf54546c404cd61e04fd093e7b0c8ff978f9b6
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 1b554a868134cbc9ca2192385403c0b63e5073ff01a6cdd600a846c09f843165
+F src/where.c 287324fe73a0ae8e55b3be89bb2fe4148e3a8394e1e2f10ed2113713a037d8a3
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 71c5c6804b7f882dec8ec858758accae02fcfca13df3cc720f1f258e663ec7c5
 F src/whereexpr.c 5f412da6616e26b8000dd736a5ce5da0018dff0933cd656bbb25f407db16bf93
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0b75057d61ccd57fca19d49679f0ff99231595f619aa0c4310aa3180b8de08b7
-R 495edf45a012303eb9f0a754fea978ad
+P 8dce36698949f2e3a9948afc7c2b6c06f575d12033148e8c55fa79c03a73e2b4
+R 2440a17c53adf3cd06510dbc8328e330
 U drh
-Z 45c171a27a0a33e83f25884aef748799
+Z c606aa1c85654749574896aa57a1c98a
 # Remove this line to create a well-formed Fossil manifest.
