@@ -1,5 +1,5 @@
-C In\sthe\sWindows\sMakefile.msc,\snever\sset\s-DNDEBUG.\s\sAnd\sadd\sthe\s"env"\starget\nwhich\sprints\sout\sthe\svalue\sof\sall\s127\sconfiguration\svariables\sthat\s\nMakefile.msc\suses.
-D 2025-12-05T19:45:43.225
+C When\sdrawing\sboxes\susing\sQRF,\suse\srounded\scorners\sand\suse\sa\sdouble-line\sto\nseparate\scolumn\sheaders\sfrom\sthe\scontent.
+D 2025-12-05T22:04:49.269
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -418,7 +418,7 @@ F ext/misc/zipfile.c 9981cda2f5d08ff01f33c2e4cea82df75f83a4c0fdcbc5dce67e0f775b7
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 86fc5c3c5e3eddbe54fc1235cbdc52b8c2c0732791d224345c3014cd45c4c0e7
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
-F ext/qrf/qrf.c c50368ea2be3ab67bd6698d8b34bf70210d3fbf6b3659ed328543e5ec8d69eff
+F ext/qrf/qrf.c 639179fcbf6768fa61e5d931121c3f8bdc7cb62e92b9b239b3c6583c4d6ff49e
 F ext/qrf/qrf.h 2cd7bd43579c522d3ae5c16034c7fdf41085684189811ae8e18ebc932a1cc79f
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2184,8 +2184,11 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 19e5ae6e20a1e2f41c5bc77b7bb99211b22d6fabf21e5f2f7f82028615eb791e
-R bb5e74c6d6d5cea877cbf9c5fa311298
+P f82376f080ca5cb316b8eb2e48a128b1838eb376b9e903c7af611b398cfe9b1f
+R 875f89180e49565d507ad67ac515a40e
+T *branch * qrf-box-enhancements
+T *sym-qrf-box-enhancements *
+T -sym-trunk *
 U drh
-Z 1327b3a4ad83622efbe2804317ed0b12
+Z ede9962b23f4bc5bbbb7a1e52559a3c0
 # Remove this line to create a well-formed Fossil manifest.

@@ -1432,20 +1432,33 @@ static void qrfRowSeparator(sqlite3_str *pOut, qrfColData *p, char cSep){
 #define BOX_124  "\342\224\264"  /* U+2534 -'- */
 #define BOX_1234 "\342\224\274"  /* U+253c -|- */
 
+/* Rounded corners: */
+#define BOX_R12  "\342\225\260"  /* U+2570  '- */
+#define BOX_R23  "\342\225\255"  /* U+256d  ,- */
+#define BOX_R34  "\342\225\256"  /* U+256e -,  */
+#define BOX_R14  "\342\225\257"  /* U+256f -'  */
+
+/* Doubled horizontal lines: */
+#define DBL_24   "\342\225\220"  /* U+2550 === */
+#define DBL_123  "\342\225\236"  /* U+255e  |= */
+#define DBL_134  "\342\225\241"  /* U+2561 =|  */
+#define DBL_1234 "\342\225\252"  /* U+256a =|= */
+
 /* Draw horizontal line N characters long using unicode box
 ** characters
 */
-static void qrfBoxLine(sqlite3_str *pOut, int N){
-  const char zDash[] =
-      BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24
-      BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24 BOX_24;
-  const int nDash = sizeof(zDash) - 1;
+static void qrfBoxLine(sqlite3_str *pOut, int N, int bDbl){
+  const char *azDash[2] = {
+      BOX_24 BOX_24 BOX_24 BOX_24 BOX_24   BOX_24 BOX_24 BOX_24 BOX_24 BOX_24,
+      DBL_24 DBL_24 DBL_24 DBL_24 DBL_24   DBL_24 DBL_24 DBL_24 DBL_24 DBL_24
+  };/*  0       1      2     3      4        5      6      7      8      9   */
+  const int nDash = 30;
   N *= 3;
   while( N>nDash ){
-    sqlite3_str_append(pOut, zDash, nDash);
+    sqlite3_str_append(pOut, azDash[bDbl], nDash);
     N -= nDash;
   }
-  sqlite3_str_append(pOut, zDash, N);
+  sqlite3_str_append(pOut, azDash[bDbl], N);
 }
 
 /*
@@ -1456,7 +1469,8 @@ static void qrfBoxSeparator(
   qrfColData *p,
   const char *zSep1,
   const char *zSep2,
-  const char *zSep3
+  const char *zSep3,
+  int bDbl
 ){
   int i;
   if( p->nCol>0 ){
@@ -1464,10 +1478,10 @@ static void qrfBoxSeparator(
     if( useBorder ){
       sqlite3_str_appendall(pOut, zSep1);
     }
-    qrfBoxLine(pOut, p->a[0].w+p->nMargin);
+    qrfBoxLine(pOut, p->a[0].w+p->nMargin, bDbl);
     for(i=1; i<p->nCol; i++){
       sqlite3_str_appendall(pOut, zSep2);
-      qrfBoxLine(pOut, p->a[i].w+p->nMargin);
+      qrfBoxLine(pOut, p->a[i].w+p->nMargin, bDbl);
     }
     if( useBorder ){
       sqlite3_str_appendall(pOut, zSep3);
@@ -1875,7 +1889,7 @@ static void qrfColumnar(Qrf *p){
         rowStart += 3;
         rowSep = "\n";
       }else{
-        qrfBoxSeparator(p->pOut, &data, BOX_23, BOX_234, BOX_34);
+        qrfBoxSeparator(p->pOut, &data, BOX_R23, BOX_234, BOX_R34, 0);
       }
       break;
     case QRF_STYLE_Table:
@@ -2008,8 +2022,10 @@ static void qrfColumnar(Qrf *p){
           break;
         }
         case QRF_STYLE_Box: {
-          if( isTitleDataSeparator || data.bMultiRow ){
-            qrfBoxSeparator(p->pOut, &data, BOX_123, BOX_1234, BOX_134);
+          if( isTitleDataSeparator ){
+            qrfBoxSeparator(p->pOut, &data, DBL_123, DBL_1234, DBL_134, 1);
+          }else if( data.bMultiRow ){
+            qrfBoxSeparator(p->pOut, &data, BOX_123, BOX_1234, BOX_134, 0);
           }
           break;
         }
@@ -2044,7 +2060,7 @@ static void qrfColumnar(Qrf *p){
   if( p->spec.bBorder!=QRF_No ){
     switch( p->spec.eStyle ){
       case QRF_STYLE_Box:
-        qrfBoxSeparator(p->pOut, &data, BOX_12, BOX_124, BOX_14);
+        qrfBoxSeparator(p->pOut, &data, BOX_R12, BOX_124, BOX_R14, 0);
         break;
       case QRF_STYLE_Table:
         qrfRowSeparator(p->pOut, &data, '+');
