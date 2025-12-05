@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\sEXISTS-to-JOIN\sbreak\shappens\seven\sif\sthe\sinner\sloop\sis\na\s"no-op"\sloop\sthat\snever\sexecutes\smore\sthan\sonce\sbecause\sit\sis\scontrolled\nby\sa\sUNIQUE\sindex.
-D 2025-12-05T01:38:59.604
+C Increase\sthe\spatch\snumber\sto\s3.51.2
+D 2025-12-05T01:43:23.648
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -8,7 +8,7 @@ F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 8dd676302f3165984c046f81af14b6676a334418fa30255efaf439f8033042fa
 F README.md dae499194b75deed76a13a4a83c82493f2530331882d7dfe5754d63287d3f8f7
-F VERSION a3971cc92c03ff4c250d95d1ecf61e2433152c21926d8a7dd429b39218a6e4c7
+F VERSION 53fb08d314af314f884da9b33cabad229928aac28b53984a2c38fd4d7dc608ab
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -2171,9 +2171,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 59e0b8a2812f9969402a719174506a20a231a66a15818e6e8830956de2d365e6
-Q +bbded6477020af4d52253c5af2d33ec9b9cd619d33f744206f7420458bd84f12
-R 8e5bcee7a6d1f6144560a3c9114af27d
+P 0cf6211f0994474dc23ba5f38d2e6d0984360039798293eca757047e66d00c58
+R 9a294695f5a1bfd0c3e3d80b269eb61a
 U drh
-Z 8c070e29f5a8a0b12732bd39685c9fe3
+Z 4f10b1c6bc3ee34da754ab3ed2e40cf8
 # Remove this line to create a well-formed Fossil manifest.
