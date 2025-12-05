@@ -1,5 +1,5 @@
-C Enhance\sthe\sunixIsSharingShmNode()\scode\s(check-in\s[6385a1962c69c69c])\nso\sthat\sit\smore\sunderstandable\sby\shumans,\sand\sso\sthat\sit\sdoes\snot\strigger\nfalse\spositive\sdeadlock\swarnings\sin\sTSAN.
-D 2025-12-05T12:22:23.299
+C Minor\sadjustment\sto\sthe\szipfile.test\sscript\sso\sthat\sit\sworks\son\sWindows.
+D 2025-12-05T15:09:42.281
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2090,7 +2090,7 @@ F test/writecrash.test 13520af28f376bfc8c0bcd130efc1fff20bb165198e8b94cf153f1f75
 F test/zeroblob.test 7b74cefc7b281dfa2b07cd237987fbe94b4a2037a7771e9e83f2d5f608b1d99e
 F test/zeroblobfault.test 861d8191a0d944dfebb3cb4d2c5b4e46a5a119eaec5a63dd996c2389f8063441
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 82d402903199d193073af2c3c56b3c6839d229160fdc9ba437fa959db8da3ecc
+F test/zipfile.test ca3fb01d900c06efd7cf61b709576b714eeb249cbc7cae30af303536f1b4e91e
 F test/zipfile2.test a577e0775e32ef8972e7d5e9a45bc071a5ae061b5b965a08c9c4b709ad036a25
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bbded6477020af4d52253c5af2d33ec9b9cd619d33f744206f7420458bd84f12
-R c1b0adad487f17c68c10bd2c579d8273
+P aa0a28776bbeafb71b2db20ac8c16377ba07b7d3d58e46cfd11f60c694759a90
+R 0a5112a959a9ebebd792ed021b58c950
 U drh
-Z 7b2c53fc363a306bca11886e7b272b7d
+Z c8efa011e9233ac49a17b17f770e3cf7
 # Remove this line to create a well-formed Fossil manifest.
