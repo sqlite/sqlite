@@ -1009,7 +1009,7 @@ static void zipfileInflate(
       if( err!=Z_STREAM_END ){
         zipfileCtxErrorMsg(pCtx, "inflate() failed (%d)", err);
       }else{
-        sqlite3_result_blob(pCtx, aRes, nOut, zipfileFree);
+        sqlite3_result_blob(pCtx, aRes, (int)str.total_out, zipfileFree);
         aRes = 0;
       }
     }
