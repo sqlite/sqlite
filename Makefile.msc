@@ -175,14 +175,6 @@ USE_NATIVE_LIBPATHS = 0
 USE_RC = 1
 !ENDIF
 
-# Set this non-0 to compile binaries suitable for the WinRT environment.
-# This setting does not apply to any binaries that require Tcl to operate
-# properly (i.e. the text fixture, etc).
-#
-!IFNDEF FOR_WINRT
-FOR_WINRT = 0
-!ENDIF
-
 # Set this non-0 to compile binaries suitable for the UWP environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
@@ -780,18 +772,6 @@ SHELL_LINK_OPTS = $(SHELL_CORE_LIB)
 TCC = $(TCC) -FAcs
 !ENDIF
 
-# When compiling the library for use in the WinRT environment,
-# the following compile-time options must be used as well to
-# disable use of Win32 APIs that are not available and to enable
-# use of Win32 APIs that are specific to Windows 8 and/or WinRT.
-#
-!IF $(FOR_WINRT)!=0
-TCC = $(TCC) -DSQLITE_OS_WINRT=1
-RCC = $(RCC) -DSQLITE_OS_WINRT=1
-TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
-RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
-!ENDIF
-
 # C compiler options for the Windows 10 platform (needs MSVC 2015).
 #
 !IF $(FOR_WIN10)!=0
@@ -804,7 +784,7 @@ BCC = $(BCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 # USE_CRT_DLL option is set to force dynamically linking to the
 # MSVC runtime library.
 #
-!IF $(FOR_WINRT)!=0 || $(USE_CRT_DLL)!=0
+!IF $(USE_CRT_DLL)!=0
 !IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
@@ -1233,29 +1213,6 @@ LTLIBOPTS = /NOLOGO /MACHINE:x86
 !ELSE
 LTLINKOPTS = /NOLOGO
 LTLIBOPTS = /NOLOGO
-!ENDIF
-
-# When compiling for use in the WinRT environment, the following
-# linker option must be used to mark the executable as runnable
-# only in the context of an application container.
-#
-!IF $(FOR_WINRT)!=0
-LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
-!IF "$(VISUALSTUDIOVERSION)"=="12.0" || "$(VISUALSTUDIOVERSION)"=="14.0"
-!IFNDEF STORELIBPATH
-!IF "$(PLATFORM)"=="x86"
-STORELIBPATH = $(CRTLIBPATH)\store
-!ELSEIF "$(PLATFORM)"=="x64"
-STORELIBPATH = $(CRTLIBPATH)\store\amd64
-!ELSEIF "$(PLATFORM)"=="ARM"
-STORELIBPATH = $(CRTLIBPATH)\store\arm
-!ELSE
-STORELIBPATH = $(CRTLIBPATH)\store
-!ENDIF
-!ENDIF
-STORELIBPATH = $(STORELIBPATH:\\=\)
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(STORELIBPATH)"
-!ENDIF
 !ENDIF
 
 # When compiling for UWP or the Windows 10 platform, some extra linker
@@ -2833,7 +2790,6 @@ env:
 	@echo EXTHDR = $(EXTHDR)
 	@echo EXTRA_SRC = $(EXTRA_SRC)
 	@echo FOR_UWP = $(FOR_UWP)
-	@echo FOR_WINRT = $(FOR_WINRT)
 	@echo FUZZCHECK_OPTS = $(FUZZCHECK_OPTS)
 	@echo FUZZCHECK_SRC = $(FUZZCHECK_SRC)
 	@echo FUZZDATA = $(FUZZDATA)

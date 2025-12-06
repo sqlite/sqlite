@@ -1785,11 +1785,6 @@ proc crashsql {args} {
   # cfSync(), which can be different then what TCL uses by
   # default, so here we force it to the "nativename" format.
   set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
-  ifcapable winrt {
-    # Except on winrt. Winrt has no way to transform a relative path into
-    # an absolute one, so it just uses the relative paths.
-    set cfile $crashfile
-  }
 
   set f [open crash.tcl w]
   puts $f "sqlite3_initialize ; sqlite3_shutdown"

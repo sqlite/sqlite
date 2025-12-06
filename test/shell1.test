@@ -302,9 +302,7 @@ do_test shell1-3.2.4 {
   catchcmd "test.db" ".bail OFF BAD"
 } {1 {Usage: .bail on|off}}
 
-# This test will not work on winrt, as winrt has no concept of the absolute
-# paths that the test expects in the result. It uses relative paths only.
-ifcapable vtab&&!winrt {
+ifcapable vtab {
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
@@ -752,12 +750,9 @@ do_test shell1-3.26.6 {
 do_test shell1-3.27.1 {
   catchcmd "test.db" ".timer"
 } {1 {Usage: .timer on|off}}
-ifcapable !winrt {
-  # No timer support on winrt.
-  do_test shell1-3.27.2 {
-    catchcmd "test.db" ".timer ON"
-  } {0 {}}
-}
+do_test shell1-3.27.2 {
+  catchcmd "test.db" ".timer ON"
+} {0 {}}
 do_test shell1-3.27.3 {
   catchcmd "test.db" ".timer OFF"
 } {0 {}}

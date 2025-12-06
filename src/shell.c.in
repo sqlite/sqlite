@@ -32,14 +32,6 @@ typedef unsigned short int u16;
 #endif
 
 /*
-** Determine if we are dealing with WinRT, which provides only a subset of
-** the full Win32 API.
-*/
-#if !defined(SQLITE_OS_WINRT)
-# define SQLITE_OS_WINRT 0
-#endif
-
-/*
 ** If SQLITE_SHELL_FIDDLE is defined then the shell is modified
 ** somewhat for use as a WASM module in a web browser. This flag
 ** should only be used when building the "fiddle" web application, as
@@ -178,9 +170,6 @@ typedef unsigned char u8;
 #endif
 
 #if defined(_WIN32) || defined(WIN32)
-# if SQLITE_OS_WINRT
-#  define SQLITE_OMIT_POPEN 1
-# else
 #  include <io.h>
 #  include <fcntl.h>
 #  define isatty(h) _isatty(h)
@@ -195,7 +184,6 @@ typedef unsigned char u8;
 #  endif
 #  undef pclose
 #  define pclose _pclose
-# endif
 #else
  /* Make sure isatty() has a prototype. */
  extern int isatty(int);
@@ -226,9 +214,6 @@ typedef unsigned char u8;
 #define IsAlpha(X)  isalpha((unsigned char)X)
 
 #if defined(_WIN32) || defined(WIN32)
-#if SQLITE_OS_WINRT
-#include <intrin.h>
-#endif
 #undef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -436,7 +421,6 @@ static int hasTimer(void){
   if( getProcessTimesAddr ){
     return 1;
   } else {
-#if !SQLITE_OS_WINRT
     /* GetProcessTimes() isn't supported in WIN95 and some other Windows
     ** versions. See if the version we are running on has it, and if it
     ** does, save off a pointer to it and the current process handle.
@@ -453,7 +437,6 @@ static int hasTimer(void){
         FreeLibrary(hinstLib);
       }
     }
-#endif
   }
   return 0;
 }
@@ -12378,18 +12361,14 @@ static void main_init(ShellState *p) {
 */
 #if defined(_WIN32) || defined(WIN32)
 static void printBold(const char *zText){
-#if !SQLITE_OS_WINRT
   HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
   CONSOLE_SCREEN_BUFFER_INFO defaultScreenInfo;
   GetConsoleScreenBufferInfo(out, &defaultScreenInfo);
   SetConsoleTextAttribute(out,
          FOREGROUND_RED|FOREGROUND_INTENSITY
   );
-#endif
   sputz(stdout, zText);
-#if !SQLITE_OS_WINRT
   SetConsoleTextAttribute(out, defaultScreenInfo.wAttributes);
-#endif
 }
 #else
 static void printBold(const char *zText){
@@ -12495,11 +12474,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       }
     }else{
 #if defined(_WIN32) || defined(WIN32)
-#if SQLITE_OS_WINRT
-      __debugbreak();
-#else
       DebugBreak();
-#endif
 #elif defined(SIGTRAP)
       raise(SIGTRAP);
 #endif
