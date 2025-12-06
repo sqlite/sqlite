@@ -1642,6 +1642,7 @@ static void modeChange(ShellState *p, unsigned char eMode){
     modeFree(&p->mode);
     modeChange(p, MODE_QBox);
     p->mode.bAutoScreenWidth = 1;
+    p->mode.spec.eText = QRF_TEXT_Relaxed;
     p->mode.spec.nCharLimit = 300;
     p->mode.spec.nLineLimit = 5;
     p->mode.spec.bTextJsonb = QRF_Yes;
@@ -3207,6 +3208,7 @@ static int shell_exec(
   }
   if( spec.eBlob==QRF_BLOB_Auto ){
     switch( spec.eText ){
+      case QRF_TEXT_Relaxed: /* fall through */
       case QRF_TEXT_Sql:  spec.eBlob = QRF_BLOB_Sql;   break;
       case QRF_TEXT_Json: spec.eBlob = QRF_BLOB_Json;  break;
       default:            spec.eBlob = QRF_BLOB_Text;  break;

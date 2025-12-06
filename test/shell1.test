@@ -1304,20 +1304,20 @@ do_test_with_ansi_output shell1-8.2 {
 .mode box
 SELECT ieee754(47.49) AS x;
   }
-} {0 {┌───────────────────────────────┐
+} {0 {╭───────────────────────────────╮
 │               x               │
-├───────────────────────────────┤
+╞═══════════════════════════════╡
 │ ieee754(6683623321994527,-47) │
-└───────────────────────────────┘}}
+╰───────────────────────────────╯}}
 do_test_with_ansi_output shell1-8.3 {
   catchcmd ":memory: --box" {
     select ieee754(6683623321994527,-47) as x;
   }
-} {0 {┌───────┐
+} {0 {╭───────╮
 │   x   │
-├───────┤
+╞═══════╡
 │ 47.49 │
-└───────┘}}
+╰───────╯}}
 do_test shell1-8.4 {
   catchcmd ":memory: --table" {SELECT ieee754_mantissa(47.49) AS M, ieee754_exponent(47.49) AS E;}
 } {0 {+------------------+-----+
@@ -1340,15 +1340,15 @@ insert into t values ('too long for one line', 1), ('shorter', NULL);
 .width 10 10
 .nullvalue NADA
 select * from t;}
-} {0 {┌────────────┬────────────┐
+} {0 {╭────────────┬────────────╮
 │     a      │     b      │
-├────────────┼────────────┤
-│ too long f │ 1          │
+╞════════════╪════════════╡
+│ too long f │          1 │
 │ or one lin │            │
 │ e          │            │
 ├────────────┼────────────┤
 │ shorter    │ NADA       │
-└────────────┴────────────┘}}
+╰────────────┴────────────╯}}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
@@ -1404,24 +1404,24 @@ select base85(zeroblob(2000000000));
 #     qbox --screenwidth auto --linelimit 5 --charlimit 300 --textjsonb on
 #
 do_test shell1-12.1 {
-  catchcmd :memory: {.mode tty
+  catchcmd :memory: {.mode tty -quote sql
 .print
 SELECT jsonb(1234) AS x;}
 } {0 {
-┌───────────────┐
+╭───────────────╮
 │       x       │
-├───────────────┤
+╞═══════════════╡
 │ jsonb('1234') │
-└───────────────┘}}
+╰───────────────╯}}
 do_test shell1-12.2 {
   catchcmd :memory: {.mode box --textjsonb on
 .print
 SELECT jsonb(1234) AS x;}
 } {0 {
-┌──────┐
+╭──────╮
 │  x   │
-├──────┤
+╞══════╡
 │ 1234 │
-└──────┘}}
+╰──────╯}}
 
 finish_test
