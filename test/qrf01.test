@@ -1040,6 +1040,72 @@ do_test 12.1 {
 ╰───────┴────┴───────╯
 }
 
+# Tests for "relaxed" quoting
+#
+do_test 13.2 {
+  db eval {
+    CREATE TABLE t13(a,b);
+    INSERT INTO t13(a,b) VALUES
+      (1,'NULL'),
+      (0,'-NULL-'),
+      (0,''),
+      (1,'''abcde'),
+      (1,'abcde'''),
+      (0,'abcde'),
+      (1,' abcde'),
+      (1,'abcde '),
+      (1,'+0'),
+      (1,'-0'),
+      (1,'012345'),
+      (0,'012xyz345'),
+      (1,'0123.45'),
+      (0,'12.34.56'),
+      (0,'12.3e'),
+      (1,'12.3e+123'),
+      (1,'12.3e-34'),
+      (1,'12.3E56'),
+      (1,'12E56'),
+      (0,'12.5E5.6'),
+      (0,'12.5e+'),
+      (0,'12.5e-'),
+      (1,'+Inf'),(1,'-Inf'),(1,'Inf');
+  }
+  set result \n[db format -style box -text relaxed -null NULL \
+                 -align {center left} \
+                 {SELECT if(a,'yes','') AS 'quoted?', b AS string
+                   FROM t13 ORDER BY rowid}]
+} {
+╭─────────┬─────────────╮
+│ quoted? │   string    │
+╞═════════╪═════════════╡
+│   yes   │ 'NULL'      │
+│         │ -NULL-      │
+│         │             │
+│   yes   │ '''abcde'   │
+│   yes   │ 'abcde'''   │
+│         │ abcde       │
+│   yes   │ ' abcde'    │
+│   yes   │ 'abcde '    │
+│   yes   │ '+0'        │
+│   yes   │ '-0'        │
+│   yes   │ '012345'    │
+│         │ 012xyz345   │
+│   yes   │ '0123.45'   │
+│         │ 12.34.56    │
+│         │ 12.3e       │
+│   yes   │ '12.3e+123' │
+│   yes   │ '12.3e-34'  │
+│   yes   │ '12.3E56'   │
+│   yes   │ '12E56'     │
+│         │ 12.5E5.6    │
+│         │ 12.5e+      │
+│         │ 12.5e-      │
+│   yes   │ '+Inf'      │
+│   yes   │ '-Inf'      │
+│   yes   │ 'Inf'       │
+╰─────────┴─────────────╯
+}
+
 db close
 
 finish_test

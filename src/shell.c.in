@@ -7708,8 +7708,8 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **   --once                   Setting changes to the right are reverted after
 **                            the next SQL command.
 **   --quote ARG              Enable/disable quoting of text. ARG can be
-**                            "off", "on", "sql", "csv", "html", "tcl",
-**                            or "json".  "off" means show the text as-is.
+**                            "off", "on", "sql", "relaxed", "csv", "html",
+**                            "tcl", or "json". "off" means show the text as-is.
 **                            "on" is an alias for "sql".
 **   --reset                  Changes all mode settings back to their default.
 **   --rowsep STRING          Use STRING as the row separator

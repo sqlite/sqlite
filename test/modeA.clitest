@@ -48,6 +48,45 @@ SELECT * FROM t1;
 ╰─────┴───────┴───────┴───────┴───────╯
 END
 
+# Default output mode is qbox --quote relaxed
+#
+.mode tty --wrap 10
+CREATE TABLE t2(a,b,c,d);
+INSERT INTO t2 VALUES(1,2.5,'three',x'4444');
+INSERT INTO t2 VALUES('The quick fox jumps over the lazy brown dog',2,3,4);
+INSERT INTO t2 VALUES('10','', -1.25,NULL);
+INSERT INTO t2 VALUES('a,b,c','"Double-Quoted"','-1.25','NULL');
+.output memory
+SELECT * FROM t2;
+.output --verify END
+╭────────────┬────────────┬─────────┬─────────╮
+│     a      │     b      │    c    │    d    │
+╞════════════╪════════════╪═════════╪═════════╡
+│          1 │        2.5 │ three   │ x'4444' │
+├────────────┼────────────┼─────────┼─────────┤
+│ The quick  │          2 │       3 │       4 │
+│ fox jumps  │            │         │         │
+│ over the   │            │         │         │
+│ lazy brown │            │         │         │
+│ dog        │            │         │         │
+├────────────┼────────────┼─────────┼─────────┤
+│ '10'       │            │   -1.25 │ NULL    │
+├────────────┼────────────┼─────────┼─────────┤
+│ a,b,c      │ "Double-   │ '-1.25' │ 'NULL'  │
+│            │ Quoted"    │         │         │
+╰────────────┴────────────┴─────────┴─────────╯
+END
+.output memory
+.mode
+.output --verify END
+current output mode: qbox --limits 5,300 --quote relaxed --screenwidth auto --textjsonb on
+END
+.output memory
+.mode -v
+.output --verify END
+current output mode: qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits 5,300 --null "NULL" --quote relaxed --rowsep "" --screenwidth auto --tablename "" --textjsonb on --titles on --widths "" --wordwrap off --wrap 10
+END
+
 .output memory --error-prefix "Error:"
 .mode foo
 .output --verify END
