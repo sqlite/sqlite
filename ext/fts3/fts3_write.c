@@ -760,7 +760,8 @@ static int fts3PendingTermsAddOne(
 
   pList = (PendingList *)fts3HashFind(pHash, zToken, nToken);
   if( pList ){
-    assert( pList->nData+nToken+sizeof(Fts3HashElem) <= (i64)p->nPendingData );
+    assert( (i64)pList->nData+(i64)nToken+(i64)sizeof(Fts3HashElem)
+             <= (i64)p->nPendingData );
     p->nPendingData -= (int)(pList->nData + nToken + sizeof(Fts3HashElem));
   }
   if( fts3PendingListAppend(&pList, p->iPrevDocid, iCol, iPos, &rc) ){
