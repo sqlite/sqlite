@@ -2194,12 +2194,12 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       static const char *azText[] = {           "off",   "on",
         "auto",             "csv",              "html",
         "json",             "plain",            "sql",
-        "tcl",              0
+        "tcl",              "relaxed",          0
       };
       static unsigned char aTextMap[] = {
         QRF_TEXT_Auto,      QRF_TEXT_Csv,       QRF_TEXT_Html,
         QRF_TEXT_Json,      QRF_TEXT_Plain,     QRF_TEXT_Sql,
-        QRF_TEXT_Tcl
+        QRF_TEXT_Tcl,       QRF_TEXT_Relaxed
       };
       int txt;
       int k = zArg[2]=='e';

@@ -109,6 +109,7 @@ int sqlite3_format_query_result(
 #define QRF_TEXT_Html    4 /* HTML-style quoting */
 #define QRF_TEXT_Tcl     5 /* C/Tcl quoting */
 #define QRF_TEXT_Json    6 /* JSON quoting */
+#define QRF_TEXT_Relaxed 7 /* Relaxed SQL quoting */
 
 /*
 ** Quoting styles for BLOBs

@@ -17,6 +17,7 @@
 #endif
 #include <string.h>
 #include <assert.h>
+#include <ctype.h>
 
 typedef sqlite3_int64 i64;
 
@@ -704,6 +705,45 @@ static void qrfEscape(
 }
 
 /*
+** Determine if the string z[] can be shown as plain text.  Return true
+** if z[] is unambiguously text.  Return false if z[] needs to be
+** quoted.
+**
+** All of the following must be true in order for z[] to be relaxable:
+**
+**    (1) z[] does not begin or end with ' or whitespace
+**    (2) z[] is not the same as the NULL rendering
+**    (3) z[] does not looks like a numeric literal
+*/
+static int qrfRelaxable(Qrf *p, const char *z){
+  size_t i, n;
+  if( z[0]=='\'' || isspace(z[0]) ) return 0;
+  if( z[0]==0 && (p->spec.zNull==0 || p->spec.zNull[0]==0) ) return 0;
+  n = strlen(z);
+  if( z[n-1]=='\'' || isspace(z[n-1]) ) return 0;
+  if( p->spec.zNull && strcmp(p->spec.zNull,z)==0 ) return 0;
+  i = (z[0]=='-' || z[0]=='+');
+  if( strcmp(z+i,"Inf")==0 ) return 0;
+  if( !isdigit(z[i]) ) return 1;
+  i++;
+  while( isdigit(z[i]) ){ i++; }
+  if( z[i]==0 ) return 0;
+  if( z[i]=='.' ){
+    i++;
+    while( isdigit(z[i]) ){ i++; }
+    if( z[i]==0 ) return 0;
+  }
+  if( z[i]=='e' || z[i]=='E' ){
+    i++;
+    if( z[i]=='+' || z[i]=='-' ){ i++; }
+    if( !isdigit(z[i]) ) return 1;
+    i++;
+    while( isdigit(z[i]) ){ i++; }
+  }
+  return z[i]!=0;
+}
+
+/*
 ** If a field contains any character identified by a 1 in the following
 ** array, then the string must be quoted for CSV.
 */
@@ -732,6 +772,13 @@ static const char qrfCsvQuote[] = {
 static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
   int iStart = sqlite3_str_length(pOut);
   switch( p->spec.eText ){
+    case QRF_TEXT_Relaxed: {
+      if( qrfRelaxable(p, zTxt) ){
+        sqlite3_str_appendall(pOut, zTxt);
+        break;
+      }
+      /* Fall through into the SQL case */
+    }
     case QRF_TEXT_Sql: {
       if( p->spec.eEsc==QRF_ESC_Off ){
         sqlite3_str_appendf(pOut, "%Q", zTxt);
@@ -2517,8 +2564,8 @@ static void qrfInitialize(
   if( p->mxHeight<=0 ) p->mxHeight = 2147483647;
   if( p->spec.eStyle>QRF_STYLE_Table ) p->spec.eStyle = QRF_Auto;
   if( p->spec.eEsc>QRF_ESC_Symbol ) p->spec.eEsc = QRF_Auto;
-  if( p->spec.eText>QRF_TEXT_Json ) p->spec.eText = QRF_Auto;
-  if( p->spec.eTitle>QRF_TEXT_Json ) p->spec.eTitle = QRF_Auto;
+  if( p->spec.eText>QRF_TEXT_Relaxed ) p->spec.eText = QRF_Auto;
+  if( p->spec.eTitle>QRF_TEXT_Relaxed ) p->spec.eTitle = QRF_Auto;
   if( p->spec.eBlob>QRF_BLOB_Size ) p->spec.eBlob = QRF_Auto;
 qrf_reinit:
   switch( p->spec.eStyle ){
