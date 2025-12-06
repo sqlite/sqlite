@@ -254,6 +254,7 @@ Both fields can have one of the following values:
 #define QRF_TEXT_Html    4 /* HTML-style quoting */
 #define QRF_TEXT_Tcl     5 /* C/Tcl quoting */
 #define QRF_TEXT_Json    6 /* JSON quoting */
+#define QRF_TEXT_Relaxed 7 /* Relaxed SQL quoting */
 ~~~
 
 A value of QRF_TEXT_Auto means that the query result formatter will choose
@@ -266,6 +267,14 @@ A value of QRF_TEXT_Sql means that text values are escaped so that they
 look like SQL literals.  That means the value will be surrounded by
 single-quotes (U+0027) and any single-quotes contained within the text
 will be doubled.
+
+QRF_TEXT_Relaxed is similar to QRF_TEXT_Sql, except that it automatically
+reverts to QRF_TEXT_Plain if the value to be displayed does not contain
+special characters and is not easily confused with a NULL or a numeric
+value.  QRF_TEXT_Relaxed strives to minimize the amount of quoting syntax
+while keeping the result unambiguous and easy for humans to read.  The
+precise rules for when quoting is omitted in QRF_TEXT_Relaxed, and when
+it is applied, might be adjusted in future releases.
 
 A value of QRF_TEXT_Csv means that text values are escaped in accordance
 with RFC&nbsp;4180, which defines Comma-Separated-Value or CSV files.

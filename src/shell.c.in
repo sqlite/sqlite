@@ -1386,7 +1386,7 @@ static ShellState shellState;
 */
 static const char *qrfEscNames[] = { "auto", "off", "ascii", "symbol" };
 static const char *qrfQuoteNames[] = 
-      { "off","off","sql","hex","csv","tcl","json"};
+      { "off","off","sql","hex","csv","tcl","json","relaxed"};
 
 /*
 ** These are the allowed shellFlgs values
@@ -1642,6 +1642,7 @@ static void modeChange(ShellState *p, unsigned char eMode){
     modeFree(&p->mode);
     modeChange(p, MODE_QBox);
     p->mode.bAutoScreenWidth = 1;
+    p->mode.spec.eText = QRF_TEXT_Relaxed;
     p->mode.spec.nCharLimit = 300;
     p->mode.spec.nLineLimit = 5;
     p->mode.spec.bTextJsonb = QRF_Yes;
@@ -3207,6 +3208,7 @@ static int shell_exec(
   }
   if( spec.eBlob==QRF_BLOB_Auto ){
     switch( spec.eText ){
+      case QRF_TEXT_Relaxed: /* fall through */
       case QRF_TEXT_Sql:  spec.eBlob = QRF_BLOB_Sql;   break;
       case QRF_TEXT_Json: spec.eBlob = QRF_BLOB_Json;  break;
       default:            spec.eBlob = QRF_BLOB_Text;  break;
@@ -7706,8 +7708,8 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **   --once                   Setting changes to the right are reverted after
 **                            the next SQL command.
 **   --quote ARG              Enable/disable quoting of text. ARG can be
-**                            "off", "on", "sql", "csv", "html", "tcl",
-**                            or "json".  "off" means show the text as-is.
+**                            "off", "on", "sql", "relaxed", "csv", "html",
+**                            "tcl", or "json". "off" means show the text as-is.
 **                            "on" is an alias for "sql".
 **   --reset                  Changes all mode settings back to their default.
 **   --rowsep STRING          Use STRING as the row separator
@@ -7916,9 +7918,10 @@ static int dotCmdMode(ShellState *p){
         if( (k = pickStr(azArg[i],0,"no","yes","0","1",""))>=0 ){
           k &= 1;   /* 0 for "off".  1 for "on". */
         }else{
-          char *zErr = 0;         /*  0     1    2     3     4      5     6 */
-          k = pickStr(azArg[i],&zErr,"off","on","sql","csv","html","tcl","json",
-                                     "");
+          char *zErr = 0;
+          k = pickStr(azArg[i],&zErr,
+                 "off","on","sql","csv","html","tcl","json","relaxed","");
+              /*  0     1    2     3     4      5     6      7   */
           if( k<0 ){
             dotCmdError(p, i, "unknown", "%z", zErr);
             return 1;
@@ -7946,6 +7949,9 @@ static int dotCmdMode(ShellState *p){
           break;
         case 6:  /* json */
           p->mode.spec.eText = QRF_TEXT_Json;
+          break;
+        case 7:  /* relaxed */
+          p->mode.spec.eText = QRF_TEXT_Relaxed;
           break;
         default: /* off */
           p->mode.spec.eText = QRF_TEXT_Plain;

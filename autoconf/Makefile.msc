@@ -707,16 +707,6 @@ BCC = $(BCC) -MT
 !ENDIF
 
 
-# Define -DNDEBUG to compile without debugging (i.e., for production usage)
-# Omitting the define will cause extra debugging code to be inserted and
-# includes extra comments when "EXPLAIN stmt" is used.
-#
-!IF $(DEBUG)==0
-TCC = $(TCC) -DNDEBUG
-BCC = $(BCC) -DNDEBUG
-RCC = $(RCC) -DNDEBUG
-!ENDIF
-
 !IF $(DEBUG)>0 || $(API_ARMOR)!=0 || $(FOR_WIN10)!=0
 TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR=1
 RCC = $(RCC) -DSQLITE_ENABLE_API_ARMOR=1
