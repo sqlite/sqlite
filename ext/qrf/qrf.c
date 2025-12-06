@@ -17,7 +17,6 @@
 #endif
 #include <string.h>
 #include <assert.h>
-#include <ctype.h>
 
 typedef sqlite3_int64 i64;
 
@@ -102,6 +101,15 @@ static const char qrfCType[] = {
 #define qrfDigit(x) ((qrfCType[(unsigned char)x]&2)!=0)
 #define qrfAlpha(x) ((qrfCType[(unsigned char)x]&4)!=0)
 #define qrfAlnum(x) ((qrfCType[(unsigned char)x]&6)!=0)
+
+#ifndef deliberate_fall_through
+/* Quiet some compilers about some of our intentional code. */
+# if defined(GCC_VERSION) && GCC_VERSION>=7000000
+#  define deliberate_fall_through __attribute__((fallthrough));
+# else
+#  define deliberate_fall_through
+# endif
+#endif
 
 /*
 ** Set an error code and error message.
@@ -717,28 +725,28 @@ static void qrfEscape(
 */
 static int qrfRelaxable(Qrf *p, const char *z){
   size_t i, n;
-  if( z[0]=='\'' || isspace(z[0]) ) return 0;
+  if( z[0]=='\'' || qrfSpace(z[0]) ) return 0;
   if( z[0]==0 && (p->spec.zNull==0 || p->spec.zNull[0]==0) ) return 0;
   n = strlen(z);
-  if( z[n-1]=='\'' || isspace(z[n-1]) ) return 0;
+  if( z[n-1]=='\'' || qrfSpace(z[n-1]) ) return 0;
   if( p->spec.zNull && strcmp(p->spec.zNull,z)==0 ) return 0;
   i = (z[0]=='-' || z[0]=='+');
   if( strcmp(z+i,"Inf")==0 ) return 0;
-  if( !isdigit(z[i]) ) return 1;
+  if( !qrfDigit(z[i]) ) return 1;
   i++;
-  while( isdigit(z[i]) ){ i++; }
+  while( qrfDigit(z[i]) ){ i++; }
   if( z[i]==0 ) return 0;
   if( z[i]=='.' ){
     i++;
-    while( isdigit(z[i]) ){ i++; }
+    while( qrfDigit(z[i]) ){ i++; }
     if( z[i]==0 ) return 0;
   }
   if( z[i]=='e' || z[i]=='E' ){
     i++;
     if( z[i]=='+' || z[i]=='-' ){ i++; }
-    if( !isdigit(z[i]) ) return 1;
+    if( !qrfDigit(z[i]) ) return 1;
     i++;
-    while( isdigit(z[i]) ){ i++; }
+    while( qrfDigit(z[i]) ){ i++; }
   }
   return z[i]!=0;
 }
@@ -772,13 +780,12 @@ static const char qrfCsvQuote[] = {
 static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
   int iStart = sqlite3_str_length(pOut);
   switch( p->spec.eText ){
-    case QRF_TEXT_Relaxed: {
+    case QRF_TEXT_Relaxed:
       if( qrfRelaxable(p, zTxt) ){
         sqlite3_str_appendall(pOut, zTxt);
         break;
       }
-      /* Fall through into the SQL case */
-    }
+      deliberate_fall_through; /* FALLTHRU */
     case QRF_TEXT_Sql: {
       if( p->spec.eEsc==QRF_ESC_Off ){
         sqlite3_str_appendf(pOut, "%Q", zTxt);

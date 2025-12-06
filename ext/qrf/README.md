@@ -268,7 +268,7 @@ look like SQL literals.  That means the value will be surrounded by
 single-quotes (U+0027) and any single-quotes contained within the text
 will be doubled.
 
-QRF_TEXT_Relaxed is similar to QRF_TEXT_Sql, except that automatically
+QRF_TEXT_Relaxed is similar to QRF_TEXT_Sql, except that it automatically
 reverts to QRF_TEXT_Plain if the value to be displayed does not contain
 special characters and is not easily confused with a NULL or a numeric
 value.  QRF_TEXT_Relaxed strives to minimize the amount of quoting syntax
