@@ -1,5 +1,5 @@
-C Remove\s#ifdefs\sintended\sto\smake\sSQLite\scompatible\swith\sWindows\sRT.\s\sWinRT\nwas\sshort-lived\sand\shas\sbeen\sdiscontinued\sfor\sa\slong\stime.
-D 2025-12-06T19:56:40.405
+C Do\snot\sreturn\stoo\smany\sbytes\sfrom\sthe\szipfile\sextension\sgiven\sa\smalformed\nZIP\sfile.
+D 2025-12-06T23:58:09.413
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c 916bbdf8023fbda9937afae57d81a853d8c2ea00f2320aa27becbc33574f963d
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 6fc14ef82b19b77a95788ffbcfad7989b4e3cb4ce96a21dcb5cf7312f362fba9
-F autosetup/sqlite-config.tcl 97dc76d332ae3344d02d15c99c57db0ac063537e9133cbee0520d48ba0eddc08
+F autosetup/sqlite-config.tcl 7463d59c9c5e86ca286ea16fdab943058beb9346110049eca435154795890f71
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl e014dd95900c7f9a34e8e0f460f47e94841059827bce8b4c49668b0c7ae3f1a0
@@ -414,7 +414,7 @@ F ext/misc/vtablog.c 2d04386c2f5a3bb93bc9ae978f0b7dcd5a264e126abd640dd6d82aa9067
 F ext/misc/vtshim.c e5bce24ab8c532f4fdc600148718fe1802cb6ed57417f1c1032d8961f72b0e8f
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
-F ext/misc/zipfile.c 9981cda2f5d08ff01f33c2e4cea82df75f83a4c0fdcbc5dce67e0f775b770fb1
+F ext/misc/zipfile.c d792ed9b936ddfe9a210ecc893352afaee306c63b084187f6e44951f6f669e21
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 6ee2f6431c8260854f815123c7e14769e77c7d0547424b852ae6216099cfdc50
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 005e176b4e5b3a28865b08c23d6ecd2c76c036b9c6b2075e6d7bfc584d3c433e
-R 8f14062c94244f118caafefdce0be391
+P 108691a3cb2f296f0ede06c34271ee185f299bfd76e97a1bd06c730a28d94ff4 3d459f1fb1bd1b5e723629c463ab392af7b206ece3388bda216c6a4c26160909
+R 24c7fadd707464dc0ec7c3ced472d67c
 U drh
-Z b8f5dbfdad1a30478e611a8a35f36789
+Z ee178766ec467478da85eb3dd0679b43
 # Remove this line to create a well-formed Fossil manifest.
