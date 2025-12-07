@@ -90,16 +90,10 @@ while( zSql && zSql[0] ){
 }
 ~~~
 
+<a id="spec"></a>
 ## 2.0 The `sqlite3_qrf_spec` object
 
-The most recent definition of `sqlite3_qrf_spec` is shown below.
-
-Do not be alarmed by the complexity of this structure.  You only need
-to understand the properties you want to modify.  Zero is always a good
-default for all of the attributes (except iVersion and pzOutput/xWrite)
-and so simply zeroing out the bulk of this structure is a good start.
-You can then slowly make adjustments to individual fields to get the
-results you desire.
+The `sqlite3_qrf_spec` looks like this:
 
 > ~~~
 typedef struct sqlite3_qrf_spec sqlite3_qrf_spec;
@@ -138,16 +132,19 @@ struct sqlite3_qrf_spec {
 };
 ~~~
 
-Again, the only fields that must initialized are:
+Do not be alarmed by the complexity of this structure.  Everything can
+be zeroed except for:
 
   *  `.iVersion`
   *  One of `.pzOutput` or `.xWrite`.
 
-All other fields can be zeroed.  Or they can contain other values to
-alter the formatting of the query results.
+You do not need to understand and configure every field of this object
+in order to use QRF effectively.  Start by zeroing out the whole structure,
+then initializing iVersion and one of pzOutput or xWrite.  Then maybe
+tweak one or two other settings to get the output you want.
 
 Further detail on the meanings of each of the fields in the
-`sqlite3_qrf_spec` object are described below.
+`sqlite3_qrf_spec` object is in the subsequent sections.
 
 ### 2.1 Structure Version Number
 
