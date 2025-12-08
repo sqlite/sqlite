@@ -1,5 +1,5 @@
-C Introducing\skvvfs\sv2\sfor\sthe\sJS\sbindings.\sSummary:\sno\slonger\shard-coded\sto\ssession/localStorage,\savailable\soutside\sof\sthe\smain\sUI\sthread\s(non-persistently),\sa\ssimpler-to-use\simport/export\sAPI,\sand\sadds\san\sasynchronous\sevent\sinterface\sintended\sfor\screating\spage-by-page\sdb\sbackups.
-D 2025-12-08T13:06:27.801
+C Update\sthe\sadded-in-version\sstamp\sto\ssome\skvvfs\sJS\sAPIs.
+D 2025-12-08T13:11:17.537
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -601,7 +601,7 @@ F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 9654b565b346dc609b75d15337f20acfa7af7d9d558da1afeb9b6d8eaa404966
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 8623900131a24c109fe115b3860d0668a05830518b9fb6026e745f281657c027
+F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 27592749a2967e472533bebc485358bcf97a4e1d720ef71ba6e8ef9238278a8f
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js a2eea6442556867b589e04107796c6e1d04a472219529eeb45b7cd221d7d048b
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 88ce2078267a2d1af57525a32d896295f4a8db7664de0e17e82dc9ff006ed8d3
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
@@ -2184,9 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b2517d01e65b34ea4ca52c9149d7b255a36a45a50b332cb8ccfdacf22e629be2 1781e5e8d0cd2b508f7992987257416bd48841ea7e30bc9294784a7c1a402be7
-R fb2317e58ee4c6fd1b0a04dcff5b1916
-T +closed 1781e5e8d0cd2b508f7992987257416bd48841ea7e30bc9294784a7c1a402be7
+P ec866b04d088e53b09764d00f5403902785328fd8f3cbf80d3affa166477711d
+R b4b27fb33dd21e3543328c94ac8a8f50
 U stephan
-Z 7997af5d18e22f187072ca02f9e440d9
+Z c199f25a64d5fc69ba19bfd9754cb1ab
 # Remove this line to create a well-formed Fossil manifest.

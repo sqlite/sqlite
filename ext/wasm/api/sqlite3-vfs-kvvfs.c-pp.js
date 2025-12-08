@@ -27,7 +27,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 //#else
 //#@policy error
 //#savepoint begin
-//#define kvvfs-v2-added-in=TBD
+//#define kvvfs-v2-added-in=3.52.0
 /**
    kvvfs - the Key/Value VFS - is an SQLite3 VFS which delegates
    storage of its pages and metadata to a key-value store.
