@@ -229,15 +229,18 @@
 ** not by client code, so an argument can be made for reducing their
 ** visibility by not including them in any build-time export lists.
 **
-** 2022-09-11: it's not yet _proven_ that this approach works in
-** non-Emscripten builds. If not, such builds will need to export
-** those using the --export=... wasm-ld flag (or equivalent). As of
-** this writing we are tied to Emscripten for various reasons
-** and cannot test the library with other build environments.
+** 2025-12-01: for use in non-Emscripten builds, we need a more
+** invasive macro which explicitly names the export:
+** SQLITE_WASM_EXPORT2.
 */
 #define SQLITE_WASM_EXPORT __attribute__((used,visibility("default")))
-// See also:
-//__attribute__((export_name("theExportedName"), used, visibility("default")))
+#define SQLITE_WASM_EXPORT_NAMED(X) __attribute__((export_name(#X),used,visibility("default")))
+#define SQLITE_WASM_EXPORT2(RETTYPE,NAME,SIG) SQLITE_WASM_EXPORT_NAMED(NAME) RETTYPE NAME SIG
+
+#if 1
+/** Increase the kvvfs key size limit from 32. */
+#define KVRECORD_KEY_SZ 128
+#endif
 
 /*
 ** Which sqlite3.c we're using needs to be configurable to enable
@@ -260,45 +263,6 @@
 #undef INC__STRINGIFY_
 #undef INC__STRINGIFY
 #undef SQLITE_C
-
-#if 0
-/*
-** An EXPERIMENT in implementing a stack-based allocator analog to
-** Emscripten's stackSave(), stackAlloc(), stackRestore().
-** Unfortunately, this cannot work together with Emscripten because
-** Emscripten defines its own native one and we'd stomp on each
-** other's memory. Other than that complication, basic tests show it
-** to work just fine.
-**
-** Another option is to malloc() a chunk of our own and call that our
-** "stack".
-*/
-SQLITE_WASM_EXPORT void * sqlite3__wasm_stack_end(void){
-  extern void __heap_base
-    /* see https://stackoverflow.com/questions/10038964 */;
-  return &__heap_base;
-}
-SQLITE_WASM_EXPORT void * sqlite3__wasm_stack_begin(void){
-  extern void __data_end;
-  return &__data_end;
-}
-static void * pWasmStackPtr = 0;
-SQLITE_WASM_EXPORT void * sqlite3__wasm_stack_ptr(void){
-  if(!pWasmStackPtr) pWasmStackPtr = sqlite3__wasm_stack_end();
-  return pWasmStackPtr;
-}
-SQLITE_WASM_EXPORT void sqlite3__wasm_stack_restore(void * p){
-  pWasmStackPtr = p;
-}
-SQLITE_WASM_EXPORT void * sqlite3__wasm_stack_alloc(int n){
-  if(n<=0) return 0;
-  n = (n + 7) & ~7 /* align to 8-byte boundary */;
-  unsigned char * const p = (unsigned char *)sqlite3__wasm_stack_ptr();
-  unsigned const char * const b = (unsigned const char *)sqlite3__wasm_stack_begin();
-  if(b + n >= p || b + n < b/*overflow*/) return 0;
-  return pWasmStackPtr = p - n;
-}
-#endif /* stack allocator experiment */
 
 /*
 ** State for the "pseudo-stack" allocator implemented in
@@ -348,10 +312,10 @@ SQLITE_WASM_EXPORT void sqlite3__wasm_pstack_restore(unsigned char * p){
 ** the memory on success, 0 on error (including a negative n value). n
 ** is always adjusted to be a multiple of 8 and returned memory is
 ** always zeroed out before returning (because this keeps the client
-** JS code from having to do so, and most uses of the pstack will
-** call for doing so).
+** JS code from having to do so, and most uses of the pstack call for
+** doing so).
 */
-SQLITE_WASM_EXPORT void * sqlite3__wasm_pstack_alloc(int n){
+SQLITE_WASM_EXPORT2(void *,sqlite3__wasm_pstack_alloc,(int n)){
   if( n<=0 ) return 0;
   n = (n + 7) & ~7 /* align to 8-byte boundary */;
   if( PStack.pBegin + n > PStack.pPos /*not enough space left*/
@@ -363,7 +327,7 @@ SQLITE_WASM_EXPORT void * sqlite3__wasm_pstack_alloc(int n){
 ** Return the number of bytes left which can be
 ** sqlite3__wasm_pstack_alloc()'d.
 */
-SQLITE_WASM_EXPORT int sqlite3__wasm_pstack_remaining(void){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_pstack_remaining,(void)){
   assert(PStack.pPos >= PStack.pBegin);
   assert(PStack.pPos <= PStack.pEnd);
   return (int)(PStack.pPos - PStack.pBegin);
@@ -374,7 +338,7 @@ SQLITE_WASM_EXPORT int sqlite3__wasm_pstack_remaining(void){
 ** any space which is currently allocated. This value is a
 ** compile-time constant.
 */
-SQLITE_WASM_EXPORT int sqlite3__wasm_pstack_quota(void){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_pstack_quota,(void)){
   return (int)(PStack.pEnd - PStack.pBegin);
 }
 
@@ -387,8 +351,7 @@ struct WasmTestStruct {
   void (*xFunc)(void*);
 };
 typedef struct WasmTestStruct WasmTestStruct;
-SQLITE_WASM_EXPORT
-void sqlite3__wasm_test_struct(WasmTestStruct * s){
+SQLITE_WASM_EXPORT2(void,sqlite3__wasm_test_struct,(WasmTestStruct * s)){
   if(s){
     if( 0 ){
       /* Do not be alarmed by the small (and odd) pointer values.
@@ -428,8 +391,7 @@ void sqlite3__wasm_test_struct(WasmTestStruct * s){
 ** fails to compile with "tables may not be 64-bit" but does not tell
 ** us where it's happening.
 */
-SQLITE_WASM_EXPORT
-const char * sqlite3__wasm_enum_json(void){
+SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_enum_json,(void)){
   static char aBuffer[1024 * 20] =
     {0} /* where the JSON goes. 2025-09-19: output size=19295, but
            that can vary slightly from build to build, so a little
@@ -1019,13 +981,15 @@ const char * sqlite3__wasm_enum_json(void){
   /** ^^^ indirection needed to expand CurrentStruct */
 #define StructBinder StructBinder_(CurrentStruct)
 #define _StructBinder CloseBrace(2)
-#define M(MEMBER,SIG)                                         \
-  outf("%s\"%s\": "                                           \
-       "{\"offset\":%d,\"sizeof\": %d,\"signature\":\"%s\"}", \
-       (n++ ? ", " : ""), #MEMBER,                            \
-       (int)offsetof(CurrentStruct,MEMBER),                   \
-       (int)sizeof(((CurrentStruct*)0)->MEMBER),              \
-       SIG)
+#define M3(MEMBER,SIG,READONLY)                                \
+  outf("%s\"%s\": "                                            \
+       "{\"offset\":%d,\"sizeof\":%d,\"signature\":\"%s\"%s}", \
+       (n++ ? ", " : ""), #MEMBER,                             \
+       (int)offsetof(CurrentStruct,MEMBER),                    \
+       (int)sizeof(((CurrentStruct*)0)->MEMBER),               \
+       SIG, (READONLY ? ",\"readOnly\":true" : ""))
+#define M(MEMBER,SIG) M3(MEMBER,SIG,0)
+#define MRO(MEMBER,SIG) M3(MEMBER,SIG,1)
 
   nStruct = 0;
   out(", \"structs\": ["); {
@@ -1088,11 +1052,30 @@ const char * sqlite3__wasm_enum_json(void){
 #undef CurrentStruct
 
 #define CurrentStruct sqlite3_kvvfs_methods
+    /* From os_kv.c */
     StructBinder {
-      M(xRead,    "i(sspi)");
-      M(xWrite,   "i(sss)");
-      M(xDelete,  "i(ss)");
-      M(nKeySize, "i");
+      M(xRcrdRead,         "i(sspi)");
+      M(xRcrdWrite,        "i(sss)");
+      M(xRcrdDelete,       "i(ss)");
+      MRO(nKeySize,        "i");
+      MRO(nBufferSize,     "i");
+      M(pVfs,              "p");
+      M(pIoDb,             "p");
+      M(pIoJrnl,           "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct KVVfsFile
+    /* From os_kv.c */
+    StructBinder {
+      M(base,               "p")/*sqlite3_file base*/;
+      M(zClass,             "s");
+      M(isJournal,          "i");
+      M(nJrnl,              "i")/*actually unsigned!*/;
+      M(aJrnl,              "p");
+      M(szPage,             "i");
+      M(szDb,               "j");
+      M(aData,              "p");
     } _StructBinder;
 #undef CurrentStruct
 
@@ -1149,7 +1132,13 @@ const char * sqlite3__wasm_enum_json(void){
      ** sqlite3_index_info, we have to uplift those into constructs we
      ** can access by type name. These structs _must_ match their
      ** in-sqlite3_index_info counterparts byte for byte.
-    */
+     **
+     ** 2025-11-21: this uplifing is no longer necessary, as Jaccwabyt
+     ** can now handle nested structs, but "it ain't broke" so there's
+     ** no pressing need to rewire this. Also, it's conceivable that
+     ** rewiring it might break downstream vtab impls, so it shouldn't
+     ** be rewired.
+     */
     typedef struct {
       int iColumn;
       unsigned char op;
@@ -1244,6 +1233,8 @@ const char * sqlite3__wasm_enum_json(void){
 #undef StructBinder_
 #undef StructBinder__
 #undef M
+#undef MRO
+#undef M3
 #undef _StructBinder
 #undef CloseBrace
 #undef out
@@ -1261,8 +1252,7 @@ const char * sqlite3__wasm_enum_json(void){
 ** method, SQLITE_MISUSE is returned, else the result of the xDelete()
 ** call is returned.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_vfs_unlink(sqlite3_vfs *pVfs, const char *zName){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_vfs_unlink,(sqlite3_vfs *pVfs, const char *zName)){
   int rc = SQLITE_MISUSE /* ??? */;
   if( 0==pVfs && 0!=zName ) pVfs = sqlite3_vfs_find(0);
   if( zName && pVfs && pVfs->xDelete ){
@@ -1279,8 +1269,7 @@ int sqlite3__wasm_vfs_unlink(sqlite3_vfs *pVfs, const char *zName){
 ** defaulting to "main" if zDbName is 0. Returns 0 if no db with the
 ** given name is open.
 */
-SQLITE_WASM_EXPORT
-sqlite3_vfs * sqlite3__wasm_db_vfs(sqlite3 *pDb, const char *zDbName){
+SQLITE_WASM_EXPORT2(sqlite3_vfs *,sqlite3__wasm_db_vfs,(sqlite3 *pDb, const char *zDbName)){
   sqlite3_vfs * pVfs = 0;
   sqlite3_file_control(pDb, zDbName ? zDbName : "main",
                        SQLITE_FCNTL_VFS_POINTER, &pVfs);
@@ -1302,8 +1291,7 @@ sqlite3_vfs * sqlite3__wasm_db_vfs(sqlite3 *pDb, const char *zDbName){
 ** Returns 0 on success, an SQLITE_xxx code on error. Returns
 ** SQLITE_MISUSE if pDb is NULL.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_db_reset(sqlite3 *pDb){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_db_reset,(sqlite3 *pDb)){
   int rc = SQLITE_MISUSE;
   if( pDb ){
     sqlite3_table_column_metadata(pDb, "main", 0, 0, 0, 0, 0, 0, 0);
@@ -1384,10 +1372,10 @@ int sqlite3__wasm_db_export_chunked( sqlite3* pDb,
 ** If `*pOut` is not NULL, the caller is responsible for passing it to
 ** sqlite3_free() to free it.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
-                               unsigned char **pOut,
-                               sqlite3_int64 *nOut, unsigned int mFlags ){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_db_serialize,
+                   (sqlite3 *pDb, const char *zSchema,
+                    unsigned char **pOut,
+                    sqlite3_int64 *nOut, unsigned int mFlags)){
   unsigned char * z;
   if( !pDb || !pOut ) return SQLITE_MISUSE;
   if( nOut ) *nOut = 0;
@@ -1448,11 +1436,9 @@ int sqlite3__wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
 ** portability, so that the API can still work in builds where BigInt
 ** support is disabled or unavailable.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_vfs_create_file( sqlite3_vfs *pVfs,
-                                  const char *zFilename,
-                                  const unsigned char * pData,
-                                  int nData ){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_vfs_create_file,
+                   (sqlite3_vfs *pVfs, const char *zFilename,
+                    const unsigned char * pData, int nData)){
   int rc;
   sqlite3_file *pFile = 0;
   sqlite3_io_methods const *pIo;
@@ -1538,10 +1524,9 @@ int sqlite3__wasm_vfs_create_file( sqlite3_vfs *pVfs,
 ** zFilename, appends pData bytes to it, and returns 0 on success or
 ** SQLITE_IOERR on error.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_posix_create_file( const char *zFilename,
-                                    const unsigned char * pData,
-                                    int nData ){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_posix_create_file,
+                   (const char *zFilename, const unsigned char * pData,
+                    int nData)){
   int rc;
   FILE * pFile = 0;
   int fileExisted = 0;
@@ -1561,22 +1546,30 @@ int sqlite3__wasm_posix_create_file( const char *zFilename,
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
 **
-** Allocates sqlite3KvvfsMethods.nKeySize bytes from
-** sqlite3__wasm_pstack_alloc() and returns 0 if that allocation fails,
-** else it passes that string to kvstorageMakeKey() and returns a
-** NUL-terminated pointer to that string. It is up to the caller to
-** use sqlite3__wasm_pstack_restore() to free the returned pointer.
+** This returns either a pointer to a static buffer or zKeyIn directly
+** (if zClass is NULL or empty).
 */
-SQLITE_WASM_EXPORT
-char * sqlite3__wasm_kvvfsMakeKeyOnPstack(const char *zClass,
-                                         const char *zKeyIn){
+SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_kvvfsMakeKey,
+                    (const char *zClass, const char *zKeyIn)){
+  static char buf[SQLITE_KVOS_SZ+1] = {0};
   assert(sqlite3KvvfsMethods.nKeySize>24);
-  char *zKeyOut =
-    (char *)sqlite3__wasm_pstack_alloc(sqlite3KvvfsMethods.nKeySize);
-  if(zKeyOut){
-    kvstorageMakeKey(zClass, zKeyIn, zKeyOut);
+  if( zClass && *zClass ){
+    kvrecordMakeKey(zClass, zKeyIn, buf);
+    return buf;
+  }else{
+#if 1
+    /* We can return zKeyIn here only because the JS API takes special
+    ** care with its lifetime.*/
+    return zKeyIn;
+#else
+    /* It would be nice to be able to return zKeyIn directly here, but
+    ** it may have been allocated as part of the automated JS-to-WASM
+    ** conversions, in which case it will be freed before reaching the
+    ** caller. */
+    sqlite3_snprintf(KVRECORD_KEY_SZ, buf, "%s", zKeyIn);
+    return buf;
+#endif
   }
-  return zKeyOut;
 }
 
 /*
@@ -1586,8 +1579,7 @@ char * sqlite3__wasm_kvvfsMakeKeyOnPstack(const char *zClass,
 ** Returns the pointer to the singleton object which holds the kvvfs
 ** I/O methods and associated state.
 */
-SQLITE_WASM_EXPORT
-sqlite3_kvvfs_methods * sqlite3__wasm_kvvfs_methods(void){
+SQLITE_WASM_EXPORT2(sqlite3_kvvfs_methods *,sqlite3__wasm_kvvfs_methods,(void)){
   return &sqlite3KvvfsMethods;
 }
 
@@ -1602,8 +1594,8 @@ sqlite3_kvvfs_methods * sqlite3__wasm_kvvfs_methods(void){
 ** sqlite3_vtab_config(), or SQLITE_MISUSE if the 2nd arg is not a
 ** valid value.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_vtab_config(sqlite3 *pDb, int op, int arg){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_vtab_config,
+                   (sqlite3 *pDb, int op, int arg)){
   switch(op){
   case SQLITE_VTAB_DIRECTONLY:
   case SQLITE_VTAB_INNOCUOUS:
@@ -1623,8 +1615,8 @@ int sqlite3__wasm_vtab_config(sqlite3 *pDb, int op, int arg){
 ** Wrapper for the variants of sqlite3_db_config() which take
 ** (int,int*) variadic args.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_db_config_ip(sqlite3 *pDb, int op, int arg1, int* pArg2){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_db_config_ip,
+                   (sqlite3 *pDb, int op, int arg1, int* pArg2)){
   switch(op){
     case SQLITE_DBCONFIG_ENABLE_FKEY:
     case SQLITE_DBCONFIG_ENABLE_TRIGGER:
@@ -1659,8 +1651,9 @@ int sqlite3__wasm_db_config_ip(sqlite3 *pDb, int op, int arg1, int* pArg2){
 ** Wrapper for the variants of sqlite3_db_config() which take
 ** (void*,int,int) variadic args.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_db_config_pii(sqlite3 *pDb, int op, void * pArg1, int arg2, int arg3){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_db_config_pii,
+                   (sqlite3 *pDb, int op, void * pArg1, int arg2,
+                    int arg3)){
   switch(op){
     case SQLITE_DBCONFIG_LOOKASIDE:
       return sqlite3_db_config(pDb, op, pArg1, arg2, arg3);
@@ -1675,8 +1668,8 @@ int sqlite3__wasm_db_config_pii(sqlite3 *pDb, int op, void * pArg1, int arg2, in
 ** Wrapper for the variants of sqlite3_db_config() which take
 ** (const char *) variadic args.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_db_config_s(sqlite3 *pDb, int op, const char *zArg){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_db_config_s,(sqlite3 *pDb, int op,
+                                                  const char *zArg)){
   switch(op){
     case SQLITE_DBCONFIG_MAINDBNAME:
       return sqlite3_db_config(pDb, op, zArg);
@@ -1692,8 +1685,7 @@ int sqlite3__wasm_db_config_s(sqlite3 *pDb, int op, const char *zArg){
 ** Binding for combinations of sqlite3_config() arguments which take
 ** a single integer argument.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_config_i(int op, int arg){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_config_i,(int op, int arg)){
   return sqlite3_config(op, arg);
 }
 
@@ -1704,8 +1696,7 @@ int sqlite3__wasm_config_i(int op, int arg){
 ** Binding for combinations of sqlite3_config() arguments which take
 ** two int arguments.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_config_ii(int op, int arg1, int arg2){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_config_ii,(int op, int arg1, int arg2)){
   return sqlite3_config(op, arg1, arg2);
 }
 
@@ -1716,8 +1707,7 @@ int sqlite3__wasm_config_ii(int op, int arg1, int arg2){
 ** Binding for combinations of sqlite3_config() arguments which take
 ** a single i64 argument.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_config_j(int op, sqlite3_int64 arg){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_config_j,(int op, sqlite3_int64 arg)){
   return sqlite3_config(op, arg);
 }
 
@@ -1729,8 +1719,7 @@ int sqlite3__wasm_config_j(int op, sqlite3_int64 arg){
 ** sqlite3_mprintf()'s %Q modifier (if addQuotes is true) or %q (if
 ** addQuotes is 0). Returns NULL if z is NULL or on OOM.
 */
-SQLITE_WASM_EXPORT
-char * sqlite3__wasm_qfmt_token(char *z, int addQuotes){
+SQLITE_WASM_EXPORT2(char *,sqlite3__wasm_qfmt_token,(char *z, int addQuotes)){
   char * rc = 0;
   if( z ){
     rc = addQuotes
@@ -1739,6 +1728,21 @@ char * sqlite3__wasm_qfmt_token(char *z, int addQuotes){
   }
   return rc;
 }
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** A WASM wrapper for the interal os_kv.c:kvvfsDecode() for internal
+** use by the kvvfs v2 API.
+*/
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_kvvfs_decode,(const char *a, char *aOut, int nOut)){
+  return kvvfsDecode(a, aOut, nOut);
+}
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_kvvfs_encode,(const char *a, int nA, char *aOut)){
+  return kvvfsEncode(a, nA, aOut);
+}
+
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/console.h>
@@ -1765,8 +1769,7 @@ char * sqlite3__wasm_qfmt_token(char *z, int addQuotes){
 ** the virtual FS fails. In builds compiled without SQLITE_ENABLE_WASMFS
 ** defined, SQLITE_NOTFOUND is returned without side effects.
 */
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_init_wasmfs(const char *zMountPoint){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_init_wasmfs,(const char *zMountPoint)){
   static backend_t pOpfs = 0;
   if( !zMountPoint || !*zMountPoint ) zMountPoint = "/opfs";
   if( !pOpfs ){
@@ -1785,8 +1788,7 @@ int sqlite3__wasm_init_wasmfs(const char *zMountPoint){
   return pOpfs ? 0 : SQLITE_NOMEM;
 }
 #else
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_init_wasmfs(const char *zUnused){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_init_wasmfs,(const char *zUnused)){
   //emscripten_console_warn("WASMFS OPFS is not compiled in.");
   (void)zUnused;
   return SQLITE_NOTFOUND;
@@ -1795,52 +1797,43 @@ int sqlite3__wasm_init_wasmfs(const char *zUnused){
 
 #if SQLITE_WASM_ENABLE_C_TESTS
 
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_test_intptr(int * p){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_test_intptr,(int * p)){
   return *p = *p * 2;
 }
 
-SQLITE_WASM_EXPORT
-void * sqlite3__wasm_test_voidptr(void * p){
+SQLITE_WASM_EXPORT2(void *,sqlite3__wasm_test_voidptr,(void * p)){
   return p;
 }
 
-SQLITE_WASM_EXPORT
-int64_t sqlite3__wasm_test_int64_max(void){
+SQLITE_WASM_EXPORT2(int64_t,sqlite3__wasm_test_int64_max,(void)){
   return (int64_t)0x7fffffffffffffff;
 }
 
-SQLITE_WASM_EXPORT
-int64_t sqlite3__wasm_test_int64_min(void){
+SQLITE_WASM_EXPORT2(int64_t,sqlite3__wasm_test_int64_min,(void)){
   return ~sqlite3__wasm_test_int64_max();
 }
 
-SQLITE_WASM_EXPORT
-int64_t sqlite3__wasm_test_int64_times2(int64_t x){
+SQLITE_WASM_EXPORT2(int64_t,sqlite3__wasm_test_int64_times2,(int64_t x)){
   return x * 2;
 }
 
-SQLITE_WASM_EXPORT
-void sqlite3__wasm_test_int64_minmax(int64_t * min, int64_t *max){
+SQLITE_WASM_EXPORT2(void,sqlite3__wasm_test_int64_minmax,(int64_t * min, int64_t *max)){
   *max = sqlite3__wasm_test_int64_max();
   *min = sqlite3__wasm_test_int64_min();
   /*printf("minmax: min=%lld, max=%lld\n", *min, *max);*/
 }
 
-SQLITE_WASM_EXPORT
-int64_t sqlite3__wasm_test_int64ptr(int64_t * p){
+SQLITE_WASM_EXPORT2(int64_t,sqlite3__wasm_test_int64ptr,(int64_t * p)){
   /*printf("sqlite3__wasm_test_int64ptr( @%lld = 0x%llx )\n", (int64_t)p, *p);*/
   return *p = *p * 2;
 }
 
-SQLITE_WASM_EXPORT
-void sqlite3__wasm_test_stack_overflow(int recurse){
+SQLITE_WASM_EXPORT2(void,sqlite3__wasm_test_stack_overflow,(int recurse)){
   if(recurse) sqlite3__wasm_test_stack_overflow(recurse);
 }
 
 /* For testing the 'string:dealloc' whwasmutil.xWrap() conversion. */
-SQLITE_WASM_EXPORT
-char * sqlite3__wasm_test_str_hello(int fail){
+SQLITE_WASM_EXPORT2(char *,sqlite3__wasm_test_str_hello,(int fail)){
   char * s = fail ? 0 : (char *)sqlite3_malloc(6);
   if(s){
     memcpy(s, "hello", 5);
@@ -1954,8 +1947,8 @@ static int sqlite3__wasm_SQLTester_strnotglob(const char *zGlob, const char *z){
   return *z==0;
 }
 
-SQLITE_WASM_EXPORT
-int sqlite3__wasm_SQLTester_strglob(const char *zGlob, const char *z){
+SQLITE_WASM_EXPORT2(int,sqlite3__wasm_SQLTester_strglob,
+                    (const char *zGlob, const char *z)){
  return !sqlite3__wasm_SQLTester_strnotglob(zGlob, z);
 }
 

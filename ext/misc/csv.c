@@ -24,8 +24,8 @@
 ** schema= parameter, like this:
 **
 **    CREATE VIRTUAL TABLE temp.csv2 USING csv(
-**       filename = "../http.log",
-**       schema = "CREATE TABLE x(date,ipaddr,url,referrer,userAgent)"
+**       filename = '../http.log',
+**       schema = 'CREATE TABLE x(date,ipaddr,url,referrer,userAgent)'
 **    );
 **
 ** Instead of specifying a file, the text of the CSV can be loaded using

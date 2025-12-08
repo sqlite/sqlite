@@ -153,6 +153,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     logClass('error',...args);
   };
 
+  const debug = (...args)=>{
+    console.debug('tester1',...args);
+  };
+
   const toss = (...args)=>{
     error(...args);
     throw new Error(args.join(' '));
@@ -210,8 +214,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
        filter.test(error.message) passes. If it's a function, the test
        passes if filter(error) returns truthy. If it's a string, the
        test passes if the filter matches the exception message
-       precisely. In all other cases the test fails, throwing an
-       Error.
+       precisely. If filter is a number then it is compared against
+       the resultCode property of the exception. In all other cases
+       the test fails, throwing an Error.
 
        If it throws, msg is used as the error report unless it's falsy,
        in which case a default is used.
@@ -225,7 +230,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       if(filter instanceof RegExp) pass = filter.test(err.message);
       else if(filter instanceof Function) pass = filter(err);
       else if('string' === typeof filter) pass = (err.message === filter);
+      else if('number' === typeof filter) pass = (err.resultCode === filter);
       if(!pass){
+        console.error("Filter",filter,"rejected exception",err);
         throw new Error(msg || ("Filter rejected this exception: <<"+err.message+">>"));
       }
       return this;
@@ -2628,7 +2635,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           .assert(wasm.isPtr(tmplMod.$xRowid))
           .assert(wasm.isPtr(tmplMod.$xCreate))
           .assert(tmplMod.$xCreate === tmplMod.$xConnect,
-                  "setup() must make these equivalent and "+
+                  "setupModule() must make these equivalent and "+
                   "installMethods() must avoid re-compiling identical functions");
         tmplMod.$xCreate = wasm.ptr.null /* make tmplMod eponymous-only */;
         let rc = capi.sqlite3_create_module(
@@ -2879,25 +2886,69 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
   T.g('kvvfs')
     .t({
-      name: 'kvvfs is disabled in worker',
-      predicate: ()=>(isWorker() || "test is only valid in a Worker"),
+      name: 'kvvfs v1 API availability',
       test: function(sqlite3){
-        T.assert(
-          !capi.sqlite3_vfs_find('kvvfs'),
-          "Expecting kvvfs to be unregistered."
-        );
+        const capi = sqlite3.capi;
+        if( isUIThread() ){
+          T.assert( !!capi.sqlite3_js_kvvfs_size )
+            .assert( !!capi.sqlite3_js_kvvfs_clear );
+        }else{
+          /* Historical behaviour retained not for compatibility but
+             to help avoid some confusion between the v1 and v2 kvvfs
+             APIs (namely in how the v1 variants handle empty
+             strings). */
+          T.assert( !capi.sqlite3_js_kvvfs_clear )
+            .assert( !capi.sqlite3_js_kvvfs_size );
+        }
+        const k = sqlite3.kvvfs;
+        T.assert( k && 'object'===typeof k );
+        for(const n of ['reserve', 'import', 'export',
+                        'unlink', 'listen', 'unlisten',
+                        'exists',
+                        'estimateSize', 'clear'] ){
+          T.assert( k[n] instanceof Function );
+        }
+
+        if( 0 ){
+          const scope = wasm.scopedAllocPush();
+          try{
+            const pg = [
+              "53514C69746520666F726D61742033b20b0101b402020d02d02l01d0",
+              "4l01jb02b2E91E00Dd011FD3b1FD3dxl2B010617171701377461626C",
+              "656B767666736B7676667302435245415445205441424C45206B76766673286129"
+            ].join('');
+            const n = pg.length;
+            const pI = wasm.scopedAlloc( n+1 );
+            const nO = 8192 * 2;
+            const pO = wasm.scopedAlloc( nO );
+            const heap = wasm.heap8u();
+            let i;
+            for( i=0; i<n; ++i ){
+              heap[wasm.ptr.add(pI, i)] = pg.codePointAt(i) & 0xff;
+            }
+            heap[wasm.ptr.add(pI, i)] = 0;
+            const rc = wasm.exports.sqlite3__wasm_kvvfs_decode(pI, pO, nO);
+            const u = heap.slice(pO, wasm.ptr.add(pO,rc));
+            debug("decode rc=", rc, u);
+          }finally{
+            wasm.scopedAllocPop(scope);
+          }
+        }
       }
-    })
+    }/*kvvfs API availability*/)
     .t({
-      name: 'kvvfs in main thread',
-      predicate: ()=>(isUIThread()
-                      || "local/sessionStorage are unavailable in a Worker"),
+      name: 'kvvfs sessionStorage',
+      predicate: ()=>(globalThis.sessionStorage || "sessionStorage is unavailable"),
       test: function(sqlite3){
-        const filename = this.kvvfsDbFile = 'session';
+        const JDb = sqlite3.oo1.JsStorageDb;
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(looksLikePtr(pVfs));
-        const JDb = this.JDb = sqlite3.oo1.JsStorageDb;
-        const unlink = this.kvvfsUnlink = ()=>JDb.clearStorage(this.kvvfsDbFile);
+        let x = sqlite3.kvvfs.internal.storageForZClass('session');
+        T.assert( 0 === x.files.length )
+          .assert( globalThis.sessionStorage===x.storage )
+          .assert( 'kvvfs-session-' === x.keyPrefix );
+        const filename = this.kvvfsDbFile = 'session';
+        const unlink = this.kvvfsUnlink = ()=>sqlite3.kvvfs.clear(filename);
         unlink();
         let db = new JDb(filename);
         try {
@@ -2905,7 +2956,8 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             'create table kvvfs(a);',
             'insert into kvvfs(a) values(1),(2),(3)'
           ]);
-          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          T.assert(3 === db.selectValue('select count(*) from kvvfs'))
+            .assert( db.storageSize() > 0, "Db size counting is broken" );
           db.close();
           db = undefined;
           db = new JDb(filename);
@@ -2914,17 +2966,523 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }finally{
           if( db ) db.close();
         }
+        //console.debug("sessionStorage",globalThis.sessionStorage);
       }
     }/*kvvfs sanity checks*/)
+    .t({
+      name: 'transient kvvfs',
+      //predicate: ()=>false,
+      test: function(sqlite3){
+        const filename = '.' /* preinstalled instance */;
+        const JDb = sqlite3.oo1.JsStorageDb;
+        const DB = sqlite3.oo1.DB;
+        T.mustThrowMatching(()=>new JDb(""), capi.SQLITE_MISUSE);
+        T.mustThrowMatching(()=>{
+          new JDb("this\ns an illegal - contains control characters");
+          /* We don't have a way to get error strings from xOpen()
+             to this point? xOpen() does not have a handle to the
+             db and SQLite is not calling xGetLastError() to fetch
+             the error string. */
+        }, capi.SQLITE_RANGE);
+        T.mustThrowMatching(()=>{new JDb("foo-journal");},
+                            capi.SQLITE_MISUSE);
+        T.mustThrowMatching(()=>{new JDb("foo-wal");},
+                            capi.SQLITE_MISUSE);
+        T.mustThrowMatching(()=>{new JDb("foo-shm");},
+                            capi.SQLITE_MISUSE);
+        T.mustThrowMatching(()=>{
+          new JDb("01234567890123456789"+
+                  "01234567890123456789"+
+                  "01234567890123456789"+
+                  "01234567890123456789"+
+                  "01234567890123456789"+
+                  "01234567890123456789"+
+                  "0"/*too long*/);
+        }, capi.SQLITE_RANGE);
+        {
+          const name = "01234567890123456789012" /* max name length */;
+          (new JDb(name)).close();
+          T.assert( sqlite3.kvvfs.unlink(name) );
+        }
+
+        sqlite3.kvvfs.clear(filename);
+        let db = new JDb(filename);
+        const sqlSetup = [
+          'create table kvvfs(a);',
+          'insert into kvvfs(a) values(1),(2),(3)'
+        ];
+        try {
+          T.assert( 0===db.storageSize(), "expecting 0 storage size" );
+          T.mustThrowMatching(()=>db.clearStorage(), /in-use/);
+          //db.clearStorage();
+          T.assert( 0===db.storageSize(), "expecting 0 storage size" );
+          db.exec(sqlSetup);
+          T.assert( 0<db.storageSize(), "expecting non-0 db size" );
+          T.mustThrowMatching(()=>db.clearStorage(), /in-use/);
+          //db.clearStorage(/*wiping everything out from under it*/);
+          T.assert( 0<db.storageSize(), "expecting non-0 storage size" );
+          //db.exec(sqlSetup/*that actually worked*/);
+          /* Clearing the storage out from under the db does actually
+             work so long as we re-initialize it before reading.
+             It is tentatively disallowed for sanity's sake rather
+             than it not working.
+           */
+          T.assert( 0<db.storageSize(), "expecting non-0 db size" );
+          const close = ()=>{
+            db.close();
+            db = undefined;
+          };
+          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          close();
+
+          const exportDb = sqlite3.kvvfs.export;
+          db = new JDb(filename);
+          db.exec('insert into kvvfs(a) values(4),(5),(6)');
+          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+          const exp = exportDb({name:filename,includeJournal:true});
+          T.assert( filename===exp.name, "Broken export filename" )
+            .assert( exp?.size > 0, "Missing db size" )
+            .assert( exp?.pages?.length > 0, "Missing db pages" );
+          console.debug("kvvfs to Object:",exp);
+          close();
+
+          const dbFileRaw = 'file:new-storage?vfs=kvvfs&delete-on-close=1';
+          db = new DB({
+            filename: dbFileRaw,
+            //flags: 'ct'
+          });
+          db.exec(sqlSetup);
+          const dbFilename = db.dbFilename();
+          //console.warn("db.dbFilename() =",dbFilename);
+          T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+          debug("kvvfs to Object:",exportDb(dbFilename));
+          const n = sqlite3.kvvfs.estimateSize( dbFilename );
+          T.assert( n>0, "Db size count failed" );
+
+          if( 1 ){
+            // Concurrent open of that same name uses the same storage
+            const x = new JDb(dbFilename);
+            T.assert(3 === db.selectValue('select count(*) from kvvfs'));
+            x.close();
+          }
+          close();
+          // When the final instance of a name is closed, the storage
+          // disappears...
+          T.mustThrowMatching(function(){
+            /* Ensure that 'new-storage' was deleted when its refcount
+               went to 0, because of its 'transient' flag. By default
+               the objects are retained, like a filesystem would. */
+            let ddb = new JDb(dbFilename);
+            try{ddb.selectValue('select a from kvvfs')}
+            finally{ddb.close()}
+          }, /no such table: kvvfs/);
+        }finally{
+          if( db ) db.close();
+        }
+      }
+    }/*transient kvvfs*/)
+    .t({
+      name: 'concurrent transient kvvfs',
+      //predicate: ()=>false,
+      test: function(sqlite3){
+        const filename = 'myStorage';
+        const kvvfs = sqlite3.kvvfs;
+        const DB = sqlite3.oo1.DB;
+        const JDb = sqlite3.oo1.JsStorageDb;
+        let db;
+        let duo;
+        let q1, q2;
+        const sqlSetup = [
+          'create table kvvfs(a);',
+          'insert into kvvfs(a) values(1),(2),(3)'
+        ];
+        const sqlCount = 'select count(*) from kvvfs';
+
+        try {
+          const exportDb = sqlite3.kvvfs.export;
+          const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&delete-on-close=1';
+          sqlite3.kvvfs.clear(filename);
+          db = new DB(dbFileRaw);
+          db.exec(sqlSetup);
+          T.assert(3 === db.selectValue(sqlCount));
+
+          duo = new JDb(filename);
+          duo.exec('insert into kvvfs(a) values(4),(5),(6)');
+          T.assert(6 === db.selectValue(sqlCount));
+          const expOpt = {
+            name: filename,
+            decodePages: true
+          };
+          let exp = exportDb(expOpt);
+          let expectRows = 6;
+          debug("exported db",exp);
+          db.close();
+          T.assert(expectRows === duo.selectValue(sqlCount));
+          duo.close();
+          T.mustThrowMatching(function(){
+            let ddb = new JDb(filename);
+            try{ddb.selectValue('select a from kvvfs')}
+            finally{ddb.close()}
+          }, /.*no such table: kvvfs.*/);
+
+          T.assert( kvvfs.unlink(filename) )
+            .assert( !kvvfs.exists(filename) );
+
+          const importDb = sqlite3.kvvfs.import;
+          duo = new JDb(dbFileRaw);
+          T.mustThrowMatching(()=>importDb(exp,true), /.*in use.*/);
+          duo.close();
+          importDb(exp, true);
+          duo = new JDb(dbFileRaw);
+          T.assert(expectRows === duo.selectValue(sqlCount));
+          let newCount;
+          try{
+            duo.transaction(()=>{
+              duo.exec("insert into kvvfs(a) values(7)");
+              newCount = duo.selectValue(sqlCount);
+              T.assert(false, "rolling back");
+            });
+          }catch(e){/*ignored*/}
+          T.assert(7===newCount, "Unexpected row count before rollback")
+            .assert(expectRows === duo.selectValue(sqlCount),
+                    "Unexpected row count after rollback");
+          duo.close();
+
+          T.assert( kvvfs.unlink(filename) )
+            .assert( !kvvfs.exists(filename) );
+
+          importDb(exp, true);
+          db = new JDb({
+            filename,
+            flags: 'c'
+            /* BUG: without the 'c' flag, the db works until we try to
+               vacuum, at which point it fails with "read only db". */
+          });
+          duo = new JDb(filename);
+          T.assert(expectRows === duo.selectValue(sqlCount));
+          const sqlIns1 = "insert into kvvfs(a) values(?)";
+          q1 = db.prepare(sqlIns1);
+          q2 = duo.prepare(sqlIns1);
+          if( 0 ){
+            q1.bind('from q1').stepFinalize();
+            ++expectRows;
+            T.assert(expectRows === duo.selectValue(sqlCount),
+                     "Unexpected record count.");
+            q2.bind('from q1').stepFinalize();
+            ++expectRows;
+          }else{
+            q1.bind('from q1');
+            T.assert(capi.SQLITE_DONE===capi.sqlite3_step(q1),
+                     "Unexpected step result");
+            ++expectRows;
+            T.assert(expectRows === duo.selectValue(sqlCount),
+                     "Unexpected record count.");
+            q2.bind('from q1').step();
+            ++expectRows;
+          }
+          T.assert(expectRows === db.selectValue(sqlCount),
+                   "Unexpected record count.");
+          q1.finalize();
+          q2.finalize();
+
+          if( 1 ){
+            debug("Begin vacuum/page size test...");
+            const defaultPageSize = 1024 * 8 /* build-time default */;
+            const pageSize = 0
+                  ? defaultPageSize
+                  : 1024 * 16 /* any valid value other than the default */;
+            if( 0 ){
+              debug("Export before vacuum", exportDb(expOpt));
+              debug("page size before vacuum",
+                    db.selectArray(
+                      "select page_size from pragma_page_size()"
+                    ));
+            }
+            //kvvfs.log.xFileControl = true;
+            //kvvfs.log.xAccess = true;
+            db.exec([
+              "BEGIN;",
+              "insert into kvvfs(a) values(randomblob(16000/*>pg size*/));",
+              "COMMIT;",
+              "delete from kvvfs where octet_length(a)>100;",
+              "pragma page_size="+pageSize+";",
+              "vacuum;",
+              "select 1;"
+            ]);
+            const expectPageSize = kvvfs.internal.disablePageSizeChange
+                  ? defaultPageSize
+                  : pageSize;
+            const gotPageSize = db.selectValue(
+              "select page_size from pragma_page_size()"
+            );
+            T.assert(+gotPageSize === expectPageSize,
+                     "Expecting page size",expectPageSize,
+                     "got",gotPageSize);
+            T.assert(expectRows === duo.selectValue(sqlCount),
+                     "Unexpected record count.");
+            kvvfs.log.xAccess = kvvfs.log.xFileControl = false;
+            T.assert(expectRows === duo.selectValue(sqlCount),
+                     "Unexpected record count.");
+            exp = exportDb(expOpt);
+            debug("Exported page-expanded db",exp);
+            if( 0 ){
+              debug("vacuumed export",exp);
+            }
+            debug("End vacuum/page size test.");
+          }else{
+            expectRows = 6;
+          }
+
+          db.close();
+          duo.close();
+          T.assert( kvvfs.unlink(exp.name) )
+            .assert( !kvvfs.exists(exp.name) );
+          importDb(exp);
+          T.assert( kvvfs.exists(exp.name) );
+          db = new JDb(exp.name);
+          //debug("column count after export",db.selectValue(sqlCount));
+          T.assert(expectRows === db.selectValue(sqlCount),
+                   "Unexpected record count.");
+
+          /*
+            TODO: more advanced concurrent use tests, e.g. looping
+            over a query in one connection while writing from
+            another. Currently that will probably corrupt the db, and
+            kvvfs's journaling does not support multiple journals per
+            storage unit. We need to test the locking and fix it as
+            appropriate.
+          */
+        }finally{
+          q1?.finalize?.();
+          q2?.finalize?.();
+          db?.close?.();
+          duo?.close?.();
+        }
+      }
+    }/*concurrent transient kvvfs*/)
+
+    .t({
+      name: 'kvvfs listeners (experiment)',
+      test: function(sqlite3){
+        const kvvfs = sqlite3.kvvfs;
+        const filename = 'listen';
+        let db;
+        try {
+          const DB = sqlite3.oo1.DB;
+          const sqlSetup = [
+            'create table kvvfs(a);',
+            'insert into kvvfs(a) values(1),(2),(3)'
+          ];
+          const sqlCount = "select count(*) from kvvfs";
+          const sqlSelectSchema = "select * from sqlite_schema";
+          const counts = Object.create(null);
+          const incr = (key)=>counts[key] = 1 + (counts[key] ?? 0);
+          const pglog = Object.assign(Object.create(null),{
+            pages: [],
+            jrnl: undefined,
+            size: undefined,
+            includeJournal: false,
+            decodePages: true,
+            exception: new Error("Testing that exceptions from listeners do not interfere") 
+         });
+          const toss = ()=>{
+            if( pglog.exception ){
+              const e = pglog.exception;
+              delete pglog.exception;
+              throw e;
+            }
+          };
+
+          const listener = {
+            storage: filename,
+            reserve: true,
+            includeJournal: pglog.includeJournal,
+            decodePages: pglog.decodePages,
+            events: {
+              /**
+                 These may be async but must not be in this case
+                 because we can't test their result without a lot of
+                 hoop-jumping if they are. Kvvfs calls these
+                 asynchronously, though.
+               */
+              'open':   (ev)=>{
+                //console.warn('open',ev);
+                incr(ev.type);
+                T.assert(filename===ev.storageName)
+                  .assert('number'===typeof ev.data);
+              },
+              'close': (ev)=>{
+                //console.warn('close',ev);
+                incr(ev.type);
+                T.assert('number'===typeof ev.data);
+                toss();
+              },
+              'delete': (ev)=>{
+                //console.warn('delete',ev);
+                incr(ev.type);
+                T.assert('string'===typeof ev.data);
+                switch(ev.data){
+                  case 'jrnl':
+                    T.assert(pglog.includeJournal);
+                    pglog.jrnl = null;
+                    break;
+                  default:{
+                    const n = +ev.data;
+                    T.assert( n>0, "Expecting positive db page number" );
+                    if( n < pglog.pages.length ){
+                      pglog.size = undefined;
+                    }
+                    pglog.pages[n] = undefined;
+                    break;
+                  }
+                }
+              },
+              'sync': (ev)=>{
+                incr(ev.data ? 'xSync' : 'xFileControlSync');
+              },
+              'write':  (ev)=>{
+                //console.warn('write',ev);
+                incr(ev.type);
+                T.assert(Array.isArray(ev.data));
+                const key = ev.data[0], val = ev.data[1];
+                T.assert('string'===typeof key);
+                switch( key ){
+                  case 'jrnl':
+                    T.assert(pglog.includeJournal);
+                    pglog.jrnl = val;
+                    break;
+                  case 'sz':{
+                    const sz = +val;
+                    T.assert( sz>0, "Expecting a db page number" );
+                    if( sz < pglog.sz ){
+                      pglog.pages.length = sz / pglog.pages.length;
+                    }
+                    pglog.size = sz;
+                    break;
+                  }
+                  default:
+                    T.assert( +key>0, "Expecting a positive db page number" );
+                    pglog.pages[+key] = val;
+                    if( pglog.decodePages ){
+                      T.assert( val instanceof Uint8Array );
+                    }else{
+                      T.assert( 'string'===typeof val );
+                    }
+                    break;
+                }
+              }
+            }
+          };
+
+          kvvfs.listen(listener);
+          const dbFileRaw = 'file:'+filename+'?vfs=kvvfs&delete-on-close=1';
+          const expOpt = {
+            name: filename,
+            //decodePages: true
+          };
+          db = new DB(dbFileRaw);
+          db.exec(sqlSetup);
+          T.assert(db.selectObjects(sqlSelectSchema)?.length>0,
+                   "Unexpected empty schema");
+          db.close();
+          debug("kvvfs listener counts:",counts);
+          T.assert( counts.open );
+          T.assert( counts.close );
+          T.assert( listener.includeJournal ? counts.delete : !counts.delete );
+          T.assert( counts.write );
+          T.assert( counts.xSync );
+          T.assert( counts.xFileControlSync>=counts.xSync );
+          T.assert( counts.open===counts.close );
+          T.assert( pglog.includeJournal
+                    ? (null===pglog.jrnl)
+                    : (undefined===pglog.jrnl),
+                     "Unexpected pglog.jrnl value: "+pglog.jrnl );
+          if( 1 ){
+            T.assert(undefined===pglog.pages[0], "Expecting empty slot 0");
+            pglog.pages.shift();
+            //debug("kvvfs listener pageLog", pglog);
+          }
+          const before = JSON.stringify(counts);
+          T.assert( kvvfs.unlisten(listener) );
+          T.assert( !kvvfs.unlisten(listener) );
+          db = new DB(dbFileRaw);
+          T.assert( db.selectObjects(sqlSelectSchema)?.length>0 );
+          const exp = kvvfs.export(expOpt);
+          const expectRows = db.selectValue(sqlCount);
+          db.exec("delete from kvvfs");
+          db.close();
+          const after = JSON.stringify(counts);
+          T.assert( before===after, "Expecting no events after unlistening." );
+          if( 0 ){
+            exp = kvvfs.export(expOpt);
+            debug("Post-delete export:",exp);
+          }
+          if( 1 ){
+            // Replace the storage with the pglog state...
+            const bogoExp = {
+              name: filename,
+              size: pglog.size,
+              timestamp: Date.now(),
+              pages: pglog.pages
+            };
+            //debug("exp",exp);
+            //debug("bogoExp",bogoExp);
+            kvvfs.import(bogoExp, true);
+            //debug("Re-exported", kvvfs.export(expOpt));
+            db = new DB(dbFileRaw);
+            // Failing on the next line despite exports looking good
+            T.assert(db.selectObjects(sqlSelectSchema)?.length>0,
+                     "Empty schema on imported db");
+            T.assert(expectRows===db.selectValue(sqlCount));
+            db.close();
+          }
+        }finally{
+          db?.close?.();
+          kvvfs.unlink(filename);
+        }
+      }
+    })/*kvvfs listeners */
+
+    .t({
+      name: 'kvvfs vtab',
+      predicate: (sqlite3)=>!!sqlite3.kvvfs.create_module,
+      test: function(sqlite3){
+        const kvvfs = sqlite3.kvvfs;
+        const db = new sqlite3.oo1.DB();
+        const db2 = new sqlite3.oo1.DB('file:foo?vfs=kvvfs&delete-on-close=1');
+        try{
+          kvvfs.create_module(db);
+          let rc = db.selectObjects("select * from sqlite_kvvfs order by name");
+          debug("sqlite_kvvfs vtab:", rc);
+          const nDb = rc.length;
+          rc = db.selectObject("select * from sqlite_kvvfs where name='foo'");
+          T.assert(rc, "Expecting foo storage record")
+            .assert('foo'===rc.name, "Unexpected name")
+            .assert(1===rc.nRef, "Unexpected refcount");
+          db2.close();
+          rc = db.selectObjects("select * from sqlite_kvvfs");
+          T.assert( !rc.filter((o)=>o.name==='foo').length,
+                    "Expecting foo storage to be gone");
+          debug("sqlite_kvvfs vtab:", rc);
+          T.assert( rc.length+1 === nDb,
+                    "Unexpected storage count: got",rc.length,"expected",nDb);
+        }finally{
+          db.close();
+          db2.close();
+        }
+      }
+    })/* kvvfs vtab */
+
 //#if enable-see
     .t({
-      name: 'kvvfs with SEE encryption',
-      predicate: ()=>(isUIThread()
-                      || "Only available in main thread."),
+      name: 'kvvfs SEE encryption in sessionStorage',
+      predicate: ()=>(!!globalThis.sessionStorage
+                      || "sessionStorage is not available"),
       test: function(sqlite3){
-        T.seeBaseCheck(sqlite3.oo1.JsStorageDb, (isInit)=>{
-          return {filename: "session"};
-        }, ()=>this.kvvfsUnlink());
+        const JDb = sqlite3.oo1.JsStorageDb;
+        T.seeBaseCheck(JDb,
+                       (isInit)=>return {filename: "session"},
+                       ()=>JDb.clearStorage('session'));
       }
     })/*kvvfs with SEE*/
 //#endif enable-see
@@ -2939,7 +3497,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         let countCommit = 0, countRollback = 0;;
         const db = new sqlite3.oo1.DB(':memory:',1 ? 'c' : 'ct');
         let rc = capi.sqlite3_commit_hook(db, (p)=>{
-          //console.debug("commit hook",arguments);
+          //debug("commit hook",arguments);
           ++countCommit;
           return (17 == p) ? 0 : capi.SQLITE_ERROR;
         }, 17);
