@@ -139,41 +139,41 @@ do_test_with_ansi_output shellA-3.1 {
  exec {*}$CLI -noinit test.db --line --escape symbol \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-    a = 1
-    x = line with ' single quote
+    a: 1
+    x: line with ' single quote
 
-    a = 2
-    x = ␛[31mVT-100 codes␛[0m
+    a: 2
+    x: ␛[31mVT-100 codes␛[0m
 
-    a = 6
-    x = new
-line
+    a: 6
+    x: new
+       line
 
-    a = 7
-    x = carriage␍return
+    a: 7
+    x: carriage␍return
 
-    a = 8
-    x = last line
+    a: 8
+    x: last line
 }
 do_test shellA-3.2 {
  exec {*}$CLI -noinit test.db --line --escape ascii \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-    a = 1
-    x = line with ' single quote
+    a: 1
+    x: line with ' single quote
 
-    a = 2
-    x = ^[[31mVT-100 codes^[[0m
+    a: 2
+    x: ^[[31mVT-100 codes^[[0m
 
-    a = 6
-    x = new
-line
+    a: 6
+    x: new
+       line
 
-    a = 7
-    x = carriage^Mreturn
+    a: 7
+    x: carriage^Mreturn
 
-    a = 8
-    x = last line
+    a: 8
+    x: last line
 }
 
 # ".mode box"

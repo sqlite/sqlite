@@ -79,12 +79,12 @@ END
 .output memory
 .mode
 .output --verify END
-current output mode: qbox --limits 5,300 --quote relaxed --screenwidth auto --textjsonb on
+current output mode: qbox --limits 5,300 --quote relaxed --screenwidth auto --textjsonb on --titlelimit 20
 END
 .output memory
 .mode -v
 .output --verify END
-current output mode: qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits 5,300 --null "NULL" --quote relaxed --rowsep "" --screenwidth auto --tablename "" --textjsonb on --titles on --widths "" --wordwrap off --wrap 10
+current output mode: qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits 5,300 --null "NULL" --quote relaxed --rowsep "" --screenwidth auto --tablename "" --textjsonb on --titlelimit 20 --titles on --widths "" --wordwrap off --wrap 10
 END
 
 .output memory --error-prefix "Error:"

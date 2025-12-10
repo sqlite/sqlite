@@ -289,27 +289,27 @@ do_test 1.92 {
 do_test 1.100 {
   set result "\n[db format -style line {SELECT * FROM t1}]"
 } {
-a = 1
-b = 2.5
-c = three
+a: 1
+b: 2.5
+c: three
 
-a = BLOB
-b = 
-c = Ἀμήν
+a: BLOB
+b: 
+c: Ἀμήν
 }
 do_test 1.101 {
   set result "\n[db format -style line -null (NULL) {SELECT * FROM t1}]"
 } {
-a = 1
-b = 2.5
-c = three
+a: 1
+b: 2.5
+c: three
 
-a = BLOB
-b = (NULL)
-c = Ἀμήν
+a: BLOB
+b: (NULL)
+c: Ἀμήν
 }
 do_test 1.102 {
-  set result "\n[db format -style line -null (NULL) \
+  set result "\n[db format -style line -null (NULL) -columnsep { = } \
                  -text sql {SELECT * FROM t1}]"
 } {
 a = 1
@@ -624,7 +624,8 @@ do_test 5.1 {
   set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
                         value FROM t1 ORDER BY mtime}
   set result "\n[db format -style line -screenwidth 60 -blob sql \
-                   -text sql -wordwrap off -linelimit 77 $sql]"
+                   -text sql -wordwrap off -linelimit 77 \
+                   -columnsep { = } $sql]"
 } {
  name = 'sample-jsonb'
 mtime = 1333101221
@@ -656,11 +657,11 @@ value = x'00000000000000000000000000000000000000000000000000
         0000000000000000000000000000000000000000000000000000
         000000000000000000000000000000'
 }
-do_test 5.2 {
+do_test 5.2a {
   set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
                         value FROM t1 ORDER BY mtime}
   set result "\n[db format -style line -screenwidth 60 -blob sql \
-                   -text plain -esc off -textjsonb yes \
+                   -text plain -esc off -textjsonb yes -columnsep { = }\
                    -wordwrap yes -linelimit 3 $sql]"
 } {
  name = sample-jsonb
@@ -685,6 +686,38 @@ value = x'00000000000000000000000000000000000000000000000000
         0000000000000000000000000000000000000000000000000000
         ...
 }
+set sqlnolabel "SELECT name, mtime, datetime(mtime,'unixepoch'),\
+                      value FROM t1 ORDER BY mtime"
+do_test 5.2b {
+  set result "\n[db format -style line -screenwidth 60 -blob sql \
+                   -text plain -esc off -textjsonb no -titlelimit 12 \
+                   -wordwrap yes -linelimit 3 $sqlnolabel ]"
+} {
+        name: sample-jsonb
+       mtime: 1333101221
+datetime(...: 2012-03-30 09:53:41
+       value: x'cc7c57616c706861b535332e31313638383732334762
+               657461c73071726657696474685072696e7428702c2070
+               2d3e704f75742c202d702d3e752e734c696e652e6d7843
+               ...
+
+        name: one
+               two
+               three
+       mtime: 1333206973
+datetime(...: 2012-03-31 15:16:13
+       value: 
+
+        name: entry-one
+       mtime: 1708791504
+datetime(...: 2024-02-24 16:18:24
+       value: x'00000000000000000000000000000000000000000000
+               0000000000000000000000000000000000000000000000
+               0000000000000000000000000000000000000000000000
+               ...
+}
+set sql "SELECT name, mtime, datetime(mtime,'unixepoch') AS time,\
+                      value FROM t1 ORDER BY mtime"
 do_test 5.3a {
   set result "\n[db format -style box -widths {0 10 10 14}\
                  -align {left right right center} \
@@ -709,6 +742,29 @@ do_test 5.3a {
 ╰──────────────┴────────────┴────────────┴────────────────╯
 }
 do_test 5.3b {
+  set result "\n[db format -style box -widths {0 10 0 14} \
+                 -align {left right right center} \
+                 -blob sql -titlelimit 12 \
+                 -text plain -esc off -textjsonb no \
+                   -wordwrap yes -linelimit 2 $sqlnolabel ]"
+} {
+╭──────────────┬────────────┬─────────────────────┬────────────────╮
+│     name     │   mtime    │    datetime(...     │     value      │
+╞══════════════╪════════════╪═════════════════════╪════════════════╡
+│ sample-jsonb │ 1333101221 │ 2012-03-30 09:53:41 │ x'cc7c57616c70 │
+│              │            │                     │ 6861b535332e31 │
+│              │            │                     │      ...       │
+├──────────────┼────────────┼─────────────────────┼────────────────┤
+│ one          │ 1333206973 │ 2012-03-31 15:16:13 │                │
+│ two          │            │                     │                │
+│ ...          │            │                     │                │
+├──────────────┼────────────┼─────────────────────┼────────────────┤
+│ entry-one    │ 1708791504 │ 2024-02-24 16:18:24 │ x'000000000000 │
+│              │            │                     │ 00000000000000 │
+│              │            │                     │      ...       │
+╰──────────────┴────────────┴─────────────────────┴────────────────╯
+}
+do_test 5.3c {
   set result "\n[db format -style table -widths {0 10 10 14}\
                  -align {center right right right} \
                  -blob sql \
