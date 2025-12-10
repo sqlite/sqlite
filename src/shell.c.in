@@ -1448,8 +1448,8 @@ struct ModeInfo {
 static const char *aModeStr[] = 
   /* 0    1       2       3       4     5        6        7        8    */
    { 0,   "\n",   "|",    " ",    ",",  "\r\n",  "\036",  "\037",  "\t",
-     "",  "NULL", "null", "\"\""                                         };
-  /* 9    10      11      12                                            */
+     "",  "NULL", "null", "\"\"", ": ",                                   };
+  /* 9    10      11      12      13                                    */
 
 static const ModeInfo aModeInfo[] = {
 /*   zName      eCSep  eRSep eNull eText eHdr eBlob bHdr eStyle eCx mFlg */
@@ -1464,7 +1464,7 @@ static const ModeInfo aModeInfo[] = {
   { "jatom",    4,     1,    11,   6,    6,    0,   1,   12,    0,  0 },
   { "jobject",  0,     1,    11,   6,    6,    0,   0,   10,    0,  0 },
   { "json",     0,     0,    11,   6,    6,    0,   0,   9,     0,  0 },
-  { "line",     0,     1,    9,    1,    1,    0,   0,   11,    1,  0 },
+  { "line",     13,    1,    9,    1,    1,    0,   0,   11,    1,  0 },
   { "list",     2,     1,    9,    1,    1,    0,   1,   12,    0,  0 },
   { "markdown", 0,     0,    9,    1,    1,    0,   2,   13,    2,  0 },
   { "off",      0,     0,    0,    0,    0,    0,   0,   14,    0,  0 },
@@ -1629,6 +1629,7 @@ static void modeChange(ShellState *p, unsigned char eMode){
     p->mode.spec.nCharLimit = 300;
     p->mode.spec.nLineLimit = 5;
     p->mode.spec.bTextJsonb = QRF_Yes;
+    p->mode.spec.nTitleLimit = 20;
     p->mode.mFlags = mFlags;
   }
 }
@@ -7707,6 +7708,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **   --title ARG              Whether or not to show column headers, and if so
 **                            how to encode them.  ARG can be "off", "on",
 **                            "sql", "csv", "html", "tcl", or "json".
+**   --titlelimit N           Limit the length of column titles to N characters.
 **   -v|--verbose             Verbose output
 **   --widths LIST            Set the columns widths for columnar modes. The
 **                            argument is a list of integers, one for each
@@ -7801,17 +7803,17 @@ static int dotCmdMode(ShellState *p){
         p->mode.spec.bBorder = k & 0x3;
       }
       chng = 1;
-    }else if( 0<=(k=pickStr(z,0,"-charlimit","-linelimit","")) ){
+    }else if( 0<=(k=pickStr(z,0,"-charlimit","-linelimit","-titlelimit","")) ){
       int w;                /*   0            1  */
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
       w = integerValue(azArg[++i]);
-      if( k==0 ){
-        p->mode.spec.nCharLimit = w;
-      }else{
-        p->mode.spec.nLineLimit = w;
+      switch( k ){
+        case 0:   p->mode.spec.nCharLimit = w;   break;
+        case 1:   p->mode.spec.nLineLimit = w;   break;
+        default:  p->mode.spec.nTitleLimit = w;  break;
       }
       chng = 1;
     }else if( 0<=(k=pickStr(z,0,"-tablename","-rowsep","-colsep","-null","")) ){
@@ -8175,6 +8177,9 @@ static int dotCmdMode(ShellState *p){
     if( bAll || p->mode.spec.bTextJsonb ){
       sqlite3_str_appendf(pDesc," --textjsonb %s",
              p->mode.spec.bTextJsonb==QRF_Yes ? "on" : "off");
+    }
+    if( bAll || p->mode.spec.nTitleLimit>0 ){
+      sqlite3_str_appendf(pDesc, " --titlelimit %d", p->mode.spec.nTitleLimit);
     }
     k = modeTitleDsply(p, bAll);
     if( k==1 ){

@@ -2070,6 +2070,7 @@ static void DbHookCmd(
 **     -screenwidth NUMBER                     Width of the display TTY
 **     -linelimit NUMBER                       Max lines for any cell
 **     -charlimit NUMBER                       Content truncated to this size
+**     -titlelimit NUMBER                      Max width of column titles
 **     -align LIST-OF-ALIGNMENT                Alignment of columns
 **     -widths LIST-OF-NUMBERS                 Widths for individual columns
 **     -columnsep TEXT                         Column separator text
@@ -2097,6 +2098,7 @@ static void DbHookCmd(
 **     -screenwidth      nScreenWidth
 **     -linelimit        nLineLimit
 **     -charlimit        nCharLimit
+**     -titlelimit       nTitleLimit
 **     -align            nAlign, aAlign
 **     -widths           nWidth, aWidth
 **     -columnsep        zColumnSep
@@ -2272,6 +2274,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
     }else if( strcmp(zArg,"-wrap")==0
            || strcmp(zArg,"-screenwidth")==0 
            || strcmp(zArg,"-linelimit")==0 
+           || strcmp(zArg,"-titlelimit")==0 
     ){
       int v = 0;
       rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
@@ -2285,6 +2288,8 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
         qrf.nWrap = v;
       }else if( zArg[1]=='s' ){
         qrf.nScreenWidth = v;
+      }else if( zArg[1]=='t' ){
+        qrf.nTitleLimit = v;
       }else{
         qrf.nLineLimit = v;
       }

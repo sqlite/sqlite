@@ -114,6 +114,7 @@ struct sqlite3_qrf_spec {
   short int nWrap;            /* Wrap columns wider than this */
   short int nScreenWidth;     /* Maximum overall table width */
   short int nLineLimit;       /* Maximum number of lines for any row */
+  short int nTitleLimit;      /* Maximum number of characters in a title */
   int nCharLimit;             /* Maximum number of characters in a cell */
   int nWidth;                 /* Number of entries in aWidth[] */
   int nAlign;                 /* Number of entries in aAlignment[] */
@@ -343,7 +344,7 @@ A value of QRF_BLOB_Size does not show any BLOB content at all.
 Instead, it substitutes a text string that says how many bytes
 the BLOB contains.
 
-### 2.8 Maximum size of displayed content (nLineLimit, nCharLimit)
+### 2.8 Maximum size of displayed content (nLineLimit, nCharLimit, nTitleLimit)
 
 If the sqlite3_qrf_spec.nCharLimit setting is non-zero, then the formatter
 will display only the first nCharLimit characters of each value.
@@ -365,6 +366,17 @@ the number of displayed lines.  This setting only works for
 The idea behind both of these settings is to prevent large renderings
 when doing a query that (unexpectedly) contains very large text or
 blob values: perhaps megabyes of text.
+
+If the sqlite3_qrf_spec.nTitleLimit is non-zero, then the formatter
+attempts to limits the size of column titles to at most nTitleLimit
+display characters in width and a single line of text.  The nTitleLimit
+is useful for queries that have result columns that are scalar
+subqueries or complex expressions.  If those columns lack an AS
+clause, then the name of the column will be a copy of the expression
+that defines the column, which in some queries can be hundreds of
+characters and multiple lines in length, which can reduce the readability
+of tabular displays.  An nTitleLimit somewhere in the range of 10 to
+20 can improve readability.
 
 ### 2.9 Word Wrapping In Columnar Styles (nWrap, bWordWrap)
 

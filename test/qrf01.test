@@ -289,27 +289,27 @@ do_test 1.92 {
 do_test 1.100 {
   set result "\n[db format -style line {SELECT * FROM t1}]"
 } {
-a = 1
-b = 2.5
-c = three
+a: 1
+b: 2.5
+c: three
 
-a = BLOB
-b = 
-c = Ἀμήν
+a: BLOB
+b: 
+c: Ἀμήν
 }
 do_test 1.101 {
   set result "\n[db format -style line -null (NULL) {SELECT * FROM t1}]"
 } {
-a = 1
-b = 2.5
-c = three
+a: 1
+b: 2.5
+c: three
 
-a = BLOB
-b = (NULL)
-c = Ἀμήν
+a: BLOB
+b: (NULL)
+c: Ἀμήν
 }
 do_test 1.102 {
-  set result "\n[db format -style line -null (NULL) \
+  set result "\n[db format -style line -null (NULL) -columnsep { = } \
                  -text sql {SELECT * FROM t1}]"
 } {
 a = 1
@@ -624,7 +624,8 @@ do_test 5.1 {
   set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
                         value FROM t1 ORDER BY mtime}
   set result "\n[db format -style line -screenwidth 60 -blob sql \
-                   -text sql -wordwrap off -linelimit 77 $sql]"
+                   -text sql -wordwrap off -linelimit 77 \
+                   -columnsep { = } $sql]"
 } {
  name = 'sample-jsonb'
 mtime = 1333101221
@@ -660,7 +661,7 @@ do_test 5.2 {
   set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
                         value FROM t1 ORDER BY mtime}
   set result "\n[db format -style line -screenwidth 60 -blob sql \
-                   -text plain -esc off -textjsonb yes \
+                   -text plain -esc off -textjsonb yes -columnsep { = }\
                    -wordwrap yes -linelimit 3 $sql]"
 } {
  name = sample-jsonb
