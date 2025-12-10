@@ -1507,6 +1507,19 @@ static const ModeInfo aModeInfo[] = {
 #define SEP_Record    "\x1E"
 
 /*
+** Default values for the various QRF limits
+*/
+#ifndef DFLT_CHAR_LIMIT
+# define DFLT_CHAR_LIMIT  300
+#endif
+#ifndef DFLT_LINE_LIMIT
+# define DFLT_LINE_LIMIT  5
+#endif
+#ifndef DFLT_TITLE_LIMIT
+# define DFLT_TITLE_LIMIT 20
+#endif
+
+/*
 ** Limit input nesting via .read or any other input redirect.
 ** It's not too expensive, so a generous allowance can be made.
 */
@@ -1626,10 +1639,10 @@ static void modeChange(ShellState *p, unsigned char eMode){
     modeChange(p, MODE_QBox);
     p->mode.bAutoScreenWidth = 1;
     p->mode.spec.eText = QRF_TEXT_Relaxed;
-    p->mode.spec.nCharLimit = 300;
-    p->mode.spec.nLineLimit = 5;
+    p->mode.spec.nCharLimit = DFLT_CHAR_LIMIT;
+    p->mode.spec.nLineLimit = DFLT_LINE_LIMIT;
     p->mode.spec.bTextJsonb = QRF_Yes;
-    p->mode.spec.nTitleLimit = 20;
+    p->mode.spec.nTitleLimit = DFLT_TITLE_LIMIT;
     p->mode.mFlags = mFlags;
   }
 }
@@ -7855,11 +7868,13 @@ static int dotCmdMode(ShellState *p){
       }
       k = pickStr(azArg[i],0,"on","off","");
       if( k==0 ){
-        p->mode.spec.nLineLimit = 5;
-        p->mode.spec.nCharLimit = 300;
+        p->mode.spec.nLineLimit = DFLT_LINE_LIMIT;
+        p->mode.spec.nCharLimit = DFLT_CHAR_LIMIT;
+        p->mode.spec.nTitleLimit = DFLT_TITLE_LIMIT;
       }else if( k==1 ){
         p->mode.spec.nLineLimit = 0;
         p->mode.spec.nCharLimit = 0;
+        p->mode.spec.nTitleLimit = 0;
       }else{
         int L, C, T = 0;
         int nNum = sscanf(azArg[i], "%d,%d,%d", &L, &C, &T);
@@ -8145,9 +8160,9 @@ static int dotCmdMode(ShellState *p){
        && p->mode.spec.nTitleLimit==0
       ){
         sqlite3_str_appendf(pDesc, " --limits off");
-      }else if( p->mode.spec.nLineLimit==5
-       && p->mode.spec.nCharLimit==300
-       && p->mode.spec.nTitleLimit==20
+      }else if( p->mode.spec.nLineLimit==DFLT_LINE_LIMIT
+       && p->mode.spec.nCharLimit==DFLT_CHAR_LIMIT
+       && p->mode.spec.nTitleLimit==DFLT_TITLE_LIMIT
       ){
         sqlite3_str_appendf(pDesc, " --limits on");
       }else{
