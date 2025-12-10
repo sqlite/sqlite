@@ -360,8 +360,9 @@ If the sqlite3_qrf_spec.nLineLimit setting is non-zero, then the
 formatter will only display the first nLineLimit lines of each value.
 It does not matter if the value is split because it contains a newline
 character, or if it split by wrapping.  This setting merely limits
-the number of displayed lines.  This setting only works for
-**Box**, **Column**, **Line**, **Markdown**, and **Table** styles.
+the number of displayed lines.  The nLineLimit setting currently only 
+works for **Box**, **Column**, **Line**, **Markdown**, and **Table**
+styles, though that limitation might change in future releases.
 
 The idea behind both of these settings is to prevent large renderings
 when doing a query that (unexpectedly) contains very large text or
@@ -375,8 +376,10 @@ subqueries or complex expressions.  If those columns lack an AS
 clause, then the name of the column will be a copy of the expression
 that defines the column, which in some queries can be hundreds of
 characters and multiple lines in length, which can reduce the readability
-of tabular displays.  An nTitleLimit somewhere in the range of 10 to
-20 can improve readability.
+of tabular displays.  An nTitleLimit somewhere in the range of 10 to 20.
+can improve readability.   The nTitleLimit setting currently only 
+works for **Box**, **Column**, **Line**, **Markdown**, and **Table**
+styles, though that limitation might change in future releases.
 
 ### 2.9 Word Wrapping In Columnar Styles (nWrap, bWordWrap)
 
