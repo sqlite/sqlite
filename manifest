@@ -1,5 +1,5 @@
-C Add\sthe\s--titlelimit\soption\sto\sCLI,\sdefaulting\sto\s20.\s\sIn\s"line"\smode\sof\nthe\sCLI,\sthe\sdefault\sseperator\sis\schanged\sfrom\s"\s=\s"\sto\s":\s".\s\sThis\scan\sbe\noverridden\susing\sthe\s--colsep\soption.
-D 2025-12-10T16:10:26.359
+C In\sfiddle,\sremove\sthe\sdefault\s.dot-commands\sit\sruns,\sas\sthey\sdo\snot\sreflect\scurrent\sshell\sdefaults.
+D 2025-12-10T16:20:44.840
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -624,7 +624,7 @@ F ext/wasm/demo-worker1-promiser.c-pp.js f40ec65810048e368896be71461028bd10de01e
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js fdfa90aa9d6b402bfed802cf1595fe4da6cc834ac38c8ff854bf1ee01f5ff9bb
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
-F ext/wasm/fiddle/fiddle-worker.js 7798af02e672e088ff192716f80626c8895e19301a65b8af6d5d12b2d13d2451
+F ext/wasm/fiddle/fiddle-worker.js 6c72acac2d381480bc9f5eb538e3f2faf2c1f72dd4fcbd05d3b409818a9a8fd5
 F ext/wasm/fiddle/fiddle.js 84fd75967e0af8b69d3dd849818342227d0f81d13db92e0dcbc63649b31a4893
 F ext/wasm/fiddle/index.c-pp.html 72c7e5517217960b3809648429ea396a7cbad0ffb2c92f6a2f5703abecb27317
 F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73607dc54d290
@@ -2184,9 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f88e1d03573f394fc7caf60704c96152717b3fe8be4eef0caeb64737054f0fd2 a9b0a3ce043fc910465d676c72bcf44c2ff6fbc1b0a832106cd2d3f97c7fb16a
-R a172e9bee8a0c6c8a96cf7ee3b505c19
-T +closed a9b0a3ce043fc910465d676c72bcf44c2ff6fbc1b0a832106cd2d3f97c7fb16a
-U drh
-Z d53d353ba125a5bfc73030e390f2b54e
+P 291677ebb3e5c2fe00e4340d8d3661fde6bd18494f1d4e56da1efcf613ab21b6
+R d47a8f3aa36b972329f3c3ae399a3f1e
+U stephan
+Z 013a3e934a07512683fd4b3fb35ca291
 # Remove this line to create a well-formed Fossil manifest.
