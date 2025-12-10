@@ -8178,7 +8178,7 @@ static int dotCmdMode(ShellState *p){
       sqlite3_str_appendf(pDesc," --textjsonb %s",
              p->mode.spec.bTextJsonb==QRF_Yes ? "on" : "off");
     }
-    if( bAll || p->mode.spec.nTitleLimit>0 ){
+    if( bAll || (p->mode.spec.nTitleLimit>0 && pI->eCx!=0) ){
       sqlite3_str_appendf(pDesc, " --titlelimit %d", p->mode.spec.nTitleLimit);
     }
     k = modeTitleDsply(p, bAll);
