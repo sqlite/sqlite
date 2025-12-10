@@ -957,11 +957,14 @@ static const char *qrfJsonbToJson(Qrf *p, int iCol){
 static int qrfTitleLimit(char *zIn, int N){
   unsigned char *z = (unsigned char*)zIn;
   int n = 0;
-  unsigned char *zEllipse = 0;
-  while( z[0] ){
+  unsigned char *zEllipsis = 0;
+  while( 1 /*exit-by-break*/ ){
     if( z[0]<' ' ){
       int k;
-      if( z[0]=='\033' && (k = qrfIsVt100(z))>0 ){
+      if( z[0]==0 ){
+        zEllipsis = 0;
+        break;
+      }else if( z[0]=='\033' && (k = qrfIsVt100(z))>0 ){
         z += k;
       }else if( z[0]=='\t' ){
         z[0] = ' ';
@@ -971,20 +974,20 @@ static int qrfTitleLimit(char *zIn, int N){
         z++;
       }
     }else if( (0x80&z[0])==0 ){
-      if( n>=(N-3) && zEllipse==0 ) zEllipse = z;
+      if( n>=(N-3) && zEllipsis==0 ) zEllipsis = z;
       if( n==N ){ z[0] = 0; break; }
       n++;
       z++;
     }else{
       int u = 0;
       int len = sqlite3_qrf_decode_utf8(z, &u);
-      if( n+len>(N-3) && zEllipse==0 ) zEllipse = z;
+      if( n+len>(N-3) && zEllipsis==0 ) zEllipsis = z;
       if( n+len>N ){ z[0] = 0; break; }
       z += len;
       n += sqlite3_qrf_wcwidth(u);
     }
   }
-  if( zEllipse ) memcpy(zEllipse,"...",4);
+  if( zEllipsis && N>=3 ) memcpy(zEllipsis,"...",4);
   return n;
 }
 

@@ -7685,8 +7685,11 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            any single SQL value to N. Longer values are
 **                            truncated. Zero means "no limit". Only works
 **                            in "line" mode and in columnar modes.
-**   --limits L,C             Shorthand for "--linelimit L --charlimit C".
-**                            Or "off" to mean "0,0".  Or "on" for "5,300".
+**   --limits L,C,T           Shorthand for "--linelimit L --charlimit C
+**                            --titlelimit T". The ",T" can be omitted in which
+**                            case the --titlelimit is unchanged.  The argument
+**                            can also be "off" to mean "0,0,0" or "on" to
+**                            mean "5,300,20".
 **   --list                   List available modes
 **   --null STRING            Render SQL NULL values as the given string
 **   --once                   Setting changes to the right are reverted after
@@ -7858,15 +7861,16 @@ static int dotCmdMode(ShellState *p){
         p->mode.spec.nLineLimit = 0;
         p->mode.spec.nCharLimit = 0;
       }else{
-        int L, C;
-        int nNum = sscanf(azArg[i], "%d,%d", &L, &C);
-        if( nNum!=2 || L<0 || C<0 ){
-          dotCmdError(p, i, "bad argument", "Should be \"L,C\" where L and C"
-                            " are unsigned integers");
+        int L, C, T = 0;
+        int nNum = sscanf(azArg[i], "%d,%d,%d", &L, &C, &T);
+        if( nNum<2 || L<0 || C<0 || T<0){
+          dotCmdError(p, i, "bad argument", "Should be \"L,C,T\" where L, C"
+                            " and T are unsigned integers");
           return 1;
         }        
         p->mode.spec.nLineLimit = L;
         p->mode.spec.nCharLimit = C;
+        if( nNum==3 ) p->mode.spec.nTitleLimit = T;
       }
       chng = 1;
     }else if( optionMatch(z,"list") ){
@@ -8123,9 +8127,6 @@ static int dotCmdMode(ShellState *p){
       u8 e = p->mode.spec.eBlob;
       sqlite3_str_appendf(pDesc, " --blob-quote %s", azBQuote[e]);
     }
-    if( !bAll && p->mode.spec.nLineLimit==0 && p->mode.spec.nCharLimit>0 ){
-      sqlite3_str_appendf(pDesc, " --charlimit %d",p->mode.spec.nCharLimit);
-    }
     zSetting = aModeStr[pI->eCSep];
     if( bAll || (zSetting && cli_strcmp(zSetting,p->mode.spec.zColumnSep)!=0) ){
       sqlite3_str_appendf(pDesc, " --colsep ");
@@ -8134,16 +8135,26 @@ static int dotCmdMode(ShellState *p){
     if( bAll || p->mode.spec.eEsc!=QRF_Auto ){
       sqlite3_str_appendf(pDesc, " --escape %s",qrfEscNames[p->mode.spec.eEsc]);
     }
-    if( bAll || (p->mode.spec.nLineLimit>0 && p->mode.spec.nCharLimit>0) ){
-      if( p->mode.spec.nLineLimit==0 && p->mode.spec.nCharLimit==0 ){
+    if( bAll
+     || (p->mode.spec.nLineLimit>0 && pI->eCx>0)
+     || p->mode.spec.nCharLimit>0
+     || (p->mode.spec.nTitleLimit>0 && pI->eCx>0)
+    ){
+      if( p->mode.spec.nLineLimit==0
+       && p->mode.spec.nCharLimit==0
+       && p->mode.spec.nTitleLimit==0
+      ){
         sqlite3_str_appendf(pDesc, " --limits off");
+      }else if( p->mode.spec.nLineLimit==5
+       && p->mode.spec.nCharLimit==300
+       && p->mode.spec.nTitleLimit==20
+      ){
+        sqlite3_str_appendf(pDesc, " --limits on");
       }else{
-        sqlite3_str_appendf(pDesc, " --limits %d,%d",
-           p->mode.spec.nLineLimit, p->mode.spec.nCharLimit);
+        sqlite3_str_appendf(pDesc, " --limits %d,%d,%d",
+           p->mode.spec.nLineLimit, p->mode.spec.nCharLimit,
+           p->mode.spec.nTitleLimit);
       }
-    }else 
-    if( p->mode.spec.nCharLimit==0 && p->mode.spec.nLineLimit>0 && pI->eCx>0 ){
-      sqlite3_str_appendf(pDesc, " --linelimit %d",p->mode.spec.nLineLimit);
     }
     zSetting = aModeStr[pI->eNull];
     if( bAll || (zSetting && cli_strcmp(zSetting,p->mode.spec.zNull)!=0) ){
@@ -8164,9 +8175,9 @@ static int dotCmdMode(ShellState *p){
      || (pI->eCx && (p->mode.spec.nScreenWidth>0 || p->mode.bAutoScreenWidth))
     ){
       if( p->mode.bAutoScreenWidth ){
-        sqlite3_str_appendall(pDesc, " --screenwidth auto");
+        sqlite3_str_appendall(pDesc, " --sw auto");
       }else{
-        sqlite3_str_appendf(pDesc," --screenwidth %d",
+        sqlite3_str_appendf(pDesc," --sw %d",
                             p->mode.spec.nScreenWidth);
       }
     }
@@ -8177,9 +8188,6 @@ static int dotCmdMode(ShellState *p){
     if( bAll || p->mode.spec.bTextJsonb ){
       sqlite3_str_appendf(pDesc," --textjsonb %s",
              p->mode.spec.bTextJsonb==QRF_Yes ? "on" : "off");
-    }
-    if( bAll || (p->mode.spec.nTitleLimit>0 && pI->eCx!=0) ){
-      sqlite3_str_appendf(pDesc, " --titlelimit %d", p->mode.spec.nTitleLimit);
     }
     k = modeTitleDsply(p, bAll);
     if( k==1 ){
@@ -8213,7 +8221,7 @@ static int dotCmdMode(ShellState *p){
       if( !bAll ) sqlite3_str_append(pDesc, " --ww", 5);
     }
     zDesc = sqlite3_str_finish(pDesc);
-    cli_printf(p->out, "current output mode: %s\n", zDesc);
+    cli_printf(p->out, ".mode %s\n", zDesc);
     fflush(p->out);
     sqlite3_free(zDesc);
   }

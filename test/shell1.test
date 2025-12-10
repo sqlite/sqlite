@@ -456,7 +456,7 @@ do_test shell1-3.12.3 {
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
   catchcmd "test.db" ".mode batch\n.mode"
-} {0 {current output mode: list}}
+} {0 {.mode list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
 } {1 {line 1: .mode FOO

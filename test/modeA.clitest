@@ -79,14 +79,13 @@ END
 .output memory
 .mode
 .output --verify END
-current output mode: qbox --limits 5,300 --quote relaxed --screenwidth auto --textjsonb on --titlelimit 20
+.mode qbox --limits on --quote relaxed --sw auto --textjsonb on
 END
 .output memory
 .mode -v
 .output --verify END
-current output mode: qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits 5,300 --null "NULL" --quote relaxed --rowsep "" --screenwidth auto --tablename "" --textjsonb on --titlelimit 20 --titles on --widths "" --wordwrap off --wrap 10
+.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits on --null "NULL" --quote relaxed --rowsep "" --sw auto --tablename "" --textjsonb on --titles on --widths "" --wordwrap off --wrap 10
 END
-
 .output memory --error-prefix "Error:"
 .mode foo
 .output --verify END
@@ -120,3 +119,109 @@ EXPLAIN SELECT * FROM t1;
 EXPLAIN QUERY PLAN SELECT * FROM t1;
 .output --glob "* id │ parent │ notused │ detail *"
 .explain auto
+
+# Test cases for limit settings in the .mode command.
+.output memory
+.mode box --reset
+.mode
+.output --verify END
+.mode box
+END
+.output memory
+.mode --limits 5,300,20
+.mode
+.output --verify END
+.mode box --limits on
+END
+.output memory
+.mode --limits 5,300,19
+.mode
+.output --verify END
+.mode box --limits 5,300,19
+END
+.output memory
+.mode --limits 0,0,0
+.mode -v
+.output --verify END
+.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --limits off --null "" --quote off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles on --widths "" --wordwrap off
+END
+
+.output memory
+.mode --linelimit 123
+.mode
+.output --verify END
+.mode box --limits 123,0,0
+END
+
+.output memory
+.mode --linelimit 0 -charlimit 123
+.mode
+.output --verify END
+.mode box --limits 0,123,0
+END
+
+.output memory
+.mode --charlimit 0 -titlelimit 123
+.mode
+.output --verify END
+.mode box --limits 0,0,123
+END
+
+.output memory
+.mode list
+.mode
+.output --verify END
+.mode list
+END
+
+.output memory
+.mode -limits 0,123,0
+.mode
+.output --verify END
+.mode list --limits 0,123,0
+END
+
+.output memory
+.mode -limits 123,0,0
+.mode
+.output --verify END
+.mode list
+END
+
+# --titlelimit functionality
+#
+.output memory
+.mode line --limits off --titlelimit 20
+SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
+.output --verify END
+abcdefghijklmnopq...: The quick fox jumps over the lazy brown dog
+                   b: 2
+END
+.output memory
+.mode line --titlelimit 10
+SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
+.output --verify END
+abcdefg...: The quick fox jumps over the lazy brown dog
+         b: 2
+END
+.output memory
+.mode line --titlelimit 2
+SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
+.output --verify END
+ab: The quick fox jumps over the lazy brown dog
+ b: 2
+END
+.output memory
+.mode line --titlelimit 4
+SELECT a AS 'abcd', b FROM t2 WHERE c=3;
+.output --verify END
+abcd: The quick fox jumps over the lazy brown dog
+   b: 2
+END
+.output memory
+.mode line --titlelimit 3
+SELECT a AS 'abcd', b FROM t2 WHERE c=3;
+.output --verify END
+...: The quick fox jumps over the lazy brown dog
+  b: 2
+END
