@@ -38,9 +38,11 @@ SQLITE_EXTENSION_INIT1
 
 #ifndef SQLITE_AMALGAMATION
 /*
-** The "u32" type must be an unsigned 32-bit integer.  Adjust this
+** The "u32" type must be an unsigned 32-bit integer.  "u64" is
+** an unsigned 64-bit integer.
 */
 typedef unsigned int u32;
+typedef sqlite3_uint64 u64;
 
 /*
 ** Must be a 16-bit value
@@ -570,7 +572,7 @@ static int delta_apply(
           /* ERROR: copy exceeds output file size */
           return -1;
         }
-        if( ofst+cnt > lenSrc ){
+        if( (u64)ofst+(u64)cnt > (u64)lenSrc ){
           /* ERROR: copy extends past end of input */
           return -1;
         }
