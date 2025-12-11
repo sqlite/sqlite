@@ -1,12 +1,12 @@
-C Fix\scalls\sto\ssqlite3_wal_checkpoint_v2(SQLITE_CHECKPOINT_NOOP)\sso\sthat\sthey\sdo\snot\sreturn\sSQLITE_MISUSE.
-D 2025-12-11T11:05:26.817
+C Adjust\sthe\sMSVC\sMakefile\sso\sthat\swhen\sit\sinvokes\sthe\szlib\smakefile,\sit\nchanges\sCFLAGS\sto\suse\sthe\scorrect\s-M\scompiler\soption\sto\smatch\sSQLite.
+D 2025-12-11T17:49:17.143
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc cc18f77083ff3b94f8bba823a3759b7a0c0e87ffe8733c8b8dff66371df4e880
+F Makefile.msc 39d4085a92ef891ac9290277d910965b44d31e385beceaabc37aa5e6e7b71ecb
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
 F VERSION 74672bfd4c7826c0fc6f84762488a707c52e7d2d94af42ccb0edcc6c74311c41
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4ef66da15bfe69d940cfbeff2be2b7e13da156495b349b453d68e70f4dcca36a
-R 1bcbdbc59f286581654febdd8dfdb24d
-U dan
-Z e8da1f0e06bab901a86a82364a0bd8bb
+P 117f4093f08e0abbde2041f70898220e237e250664f6ede6d4eb2a8a44050466
+R c998c3d860ebe4cf53a525410c0f4746
+U drh
+Z abb40a60815ce668f787767a2f5f6cee
 # Remove this line to create a well-formed Fossil manifest.

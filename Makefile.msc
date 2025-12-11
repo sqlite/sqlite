@@ -788,17 +788,21 @@ BCC = $(BCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
+ZLIBCFLAGS = -nologo -MDd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MD
 BCC = $(BCC) -MD
+ZLIBCFLAGS = -nologo -MD -W3 -O2 -Oy- -Zi
 !ENDIF
 !ELSE
 !IF $(DEBUG)>1
 TCC = $(TCC) -MTd
 BCC = $(BCC) -MTd
+ZLIBCFLAGS = -nologo -MTd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MT
 BCC = $(BCC) -MT
+ZLIBCFLAGS = -nologo -MT -W3 -O2 -Oy- -Zi
 !ENDIF
 !ENDIF
 
@@ -2362,7 +2366,7 @@ shell.c:	$(SHELL_DEP) $(TOP)\tool\mkshellc.tcl $(JIM_TCLSH)
 	$(JIM_TCLSH) $(TOP)\tool\mkshellc.tcl shell.c
 
 zlib:
-	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) && popd
+	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) CFLAGS="$(ZLIBCFLAGS)" && popd
 
 # Rules to build the extension objects.
 #
@@ -2891,6 +2895,7 @@ env:
 	@echo USE_STDCALL = $(USE_STDCALL)
 	@echo USE_ZLIB = $(USE_ZLIB)
 	@echo XCOMPILE = $(XCOMPILE)
+	@echo ZLIBCFLAGS = $(ZLIBCFLAGS)
 	@echo ZLIBDIR = $(ZLIBDIR)
 	@echo ZLIBINCDIR = $(ZLIBINCDIR)
 	@echo ZLIBLIBDIR = $(ZLIBLIBDIR)
