@@ -1,5 +1,5 @@
-C Use\smacros\sfor\sthe\sdefault\svalues\sfor\sQRF\slimits\sin\sthe\sCLI,\srather\sthan\nhard-coded\smagic\snumbers.
-D 2025-12-10T19:43:06.818
+C Fix\scalls\sto\ssqlite3_wal_checkpoint_v2(SQLITE_CHECKPOINT_NOOP)\sso\sthat\sthey\sdo\snot\sreturn\sSQLITE_MISUSE.
+D 2025-12-11T11:05:26.817
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -700,7 +700,7 @@ F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
 F src/json.c fb031340edee159c07ad37dbe668ffe945ed86f525b0eb3822e4a67cbc498a72
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 4747f72084dc80520a2d23e5bb0bc0760672208a81a2b115ce0b657acd65edf4
-F src/main.c 8ee5d36123330e7a6a8ef3acd6c05cdc254d6d4ef6ca2e472c702ac1ee9a5617
+F src/main.c 21fb86045bbf6b6329251a0ce6771735b6c71287cc9fcda1f2005d4ac5f25b52
 F src/malloc.c 410e570b30c26cc36e3372577df50f7a96ee3eed5b2b161c6b6b48773c650c5e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -747,7 +747,7 @@ F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 85b5a20df96016e5d1d8fdc68c8a4c279c5b93e2049b77cd806c2cc50b9d8c56
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c 0e71fbcb484a271564e98e0158192c28c24f5521594218c3ba48bcb4cf634f91
+F src/test1.c 2986148389a86555db7e6b731767154f165a2c7bc690131f90596fa6263fe79d
 F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -1080,7 +1080,7 @@ F test/e_uri.test 86564382132d9c453845eeb5293c7e375487b625900ab56c181a0464908417
 F test/e_vacuum.test 89fc48e8beee2f9dfd6de1fbb2edea6542dae9121dc0fbe6313764169e742104
 F test/e_wal.test db7c33642711cf3c7959714b5f012aca08cacfa78da0382f95e849eb3ba66aa4
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
-F test/e_walckpt.test 28c371a6bb5e5fe7f31679c1df1763a19d19e8a0
+F test/e_walckpt.test 16e7d006e8687654ee59e7ad5a6d285ba23f0fe0eeb87f790afd6bc9cf1d1924
 F test/e_walhook.test 01b494287ba9e60b70f6ebf3c6c62e0ffe01788e344a4846b08e5de0b344cb66
 F test/emptytable.test a38110becbdfa6325cd65cb588dca658cd885f62
 F test/enc.test b5503a87b31cea8a5084c6e447383f9ca08933bd2f29d97b6b6201081b2343eb
@@ -1987,7 +1987,7 @@ F test/wal_common.tcl 204d1721ac13c5e0c7fae6380315b5ab7f4e8423f580d826c5e9df1995
 F test/walbak.test 018d4e5a3d45c6298d11b99f09a8ef6876527946
 F test/walbig.test f437473a16cfb314867c6b5d1dbcd519e73e3434
 F test/walblock.test 6bb472e82730e7e4e81395e907a01d8cfc2bd9e1f01f8a9184ca572e2955a4bf
-F test/walckptnoop.test b13a2c3140f2c913cfd422d9a224544757d04b8b14ab4c267ab9910467c0b9be
+F test/walckptnoop.test 5f6123750f40cb86633a7e014f9fb805d0eb494b811840086dc72e554e68c7c1
 F test/walcksum.test 50e204500eed9c691b6045e467bb2923f49aa93d8adf315e2be135fdb202c1c2
 F test/walcrash.test 21038858cc552077b0522f50b0fa87e38139306a
 F test/walcrash2.test a0edab4e5390f03b99a790de89aad15d6ec70b36
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f883b854976d2aa679c87edce3b577f38b5fa518f707706320d1ddb38365e2dd
-R 24498b37569a2ae0c2c4ec1e4e3d901c
-U drh
-Z ecafff39bd33cce7916df7333bda9286
+P 4ef66da15bfe69d940cfbeff2be2b7e13da156495b349b453d68e70f4dcca36a
+R 1bcbdbc59f286581654febdd8dfdb24d
+U dan
+Z e8da1f0e06bab901a86a82364a0bd8bb
 # Remove this line to create a well-formed Fossil manifest.
