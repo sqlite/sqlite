@@ -1,5 +1,5 @@
-C Prevent\sa\smalicious\sdelta\sfrom\scausing\san\sinteger\soverflow\sin\sthe\nfossildelta\sextension.\s\sThis\scode\sis\snot\sused\sin\sthe\sSQLite\score.
-D 2025-12-11T23:24:05.667
+C Include\sthe\slatest\sMakefile.msc\schanges\sand\sthe\snew\s"make.bat"\sscript\nin\sthe\samalgamation\starballs.
+D 2025-12-12T00:21:10.795
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -17,8 +17,8 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/sqlite370.svg 40b7e2fe8aac3add5d56dd86ab8d427a4eca5bcb3fe4f8946cb3794e1821d531
 F auto.def 44a0d1bf09d78355fc88251ccbf8e64e6341fd89c11de68a01c3645e53a2bade
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.in 306f500fce8cae9e1af9459f1ac7fe89ce46999594ef3fdc62dc9d7d651fb091
-F autoconf/Makefile.msc 5edea0afa71af09f45ab25a6a09d204e8744cbe9f3cf54222502cf9e41aa4325
+F autoconf/Makefile.in efab1f56c7961d301efc030baa4391b9faae38733d94385a3d56b54720a74aba
+F autoconf/Makefile.msc e6c596e6e63ea17aa7a97eb8ded18cd984c8dd4203766644fbd57b8fcf720225
 F autoconf/README.first f1d3876e9a7852c22f275a6f06814e64934cecbc0b5b9617d64849094c1fd136
 F autoconf/README.txt b749816b8452b3af994dc6d607394bef3df1736d7e09359f1087de8439a52807
 F autoconf/auto.def 3d994f3a9cc9b712dbce92a5708570ddcf3b988141b6eb738f2ed16127a9f0ac
@@ -2126,7 +2126,7 @@ F tool/logest.c c34e5944318415de513d29a6098df247a9618c96d83c38d4abd88641fe46e669
 F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkamalzip.tcl 8aa5ebe7973c8b8774062d34e15fea9815c4cc2ceea3a9b184695f005910876a
-F tool/mkautoconfamal.sh 647dada5e34c466bef62a4408e1c99a7e5e1922805479dd57944f33f9803f2f8
+F tool/mkautoconfamal.sh 06fbe090b81c24e592c1f22b404334f805ba74d482a9260f2ac81e6f3d3386d8
 F tool/mkccode.tcl c42a8f8cf78f92e83795d5447460dbce7aaf78a3bbf9082f1507dc71a3665f3c x
 F tool/mkcombo.tcl 2a5189b219c4a495e1ff7fc980bd568d3cfb82ae9d50c84e77f7a161e96fc132
 F tool/mkctimec.tcl 3fb5cad05922f5da61262cb6bcd5868a34e94a49ca8833ae2d7796e7df075576 x
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e785a80e4100c368dca8d73cb662cff4d0fd76734fa0f3fa9b5754a380f7c746
-R d97187709711ac6befc9df59998f577d
+P 01409738afc2c0d5bdaa248ffb508aa5f36a66390f6b8e4834734529ee8ed2fa
+R ee11728d3aa258a0fbceeafa036bdf4e
 U drh
-Z a79d44db71901fb1ea2f28a2ac813d65
+Z 613f9f742496678e7b087d518f690587
 # Remove this line to create a well-formed Fossil manifest.
