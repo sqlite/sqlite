@@ -1,5 +1,5 @@
-C Include\sthe\slatest\sMakefile.msc\schanges\sand\sthe\snew\s"make.bat"\sscript\nin\sthe\samalgamation\starballs.
-D 2025-12-12T00:21:10.795
+C Fix\san\sinaccuracy\sin\sthe\sqrfRelaxable()\sroutine\sin\sQRF\swhen\sthe\sinput\sis\nan\sempty\sstring.
+D 2025-12-12T10:21:52.385
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -418,7 +418,7 @@ F ext/misc/zipfile.c d792ed9b936ddfe9a210ecc893352afaee306c63b084187f6e44951f6f6
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md ea2cfe3526cb39d1f32c4537499a403e100aff16bda796cb92254b63d913de4e
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
-F ext/qrf/qrf.c 773c21962652f6ebc2cf9a7c4decad595e576569b169a85654ad8f3097cc91e9
+F ext/qrf/qrf.c f1125c71e306106997065b4260a9870119d7c0f5556587234b8ec1747fb2d61d
 F ext/qrf/qrf.h 2ac14b0aaacf44636d8c81051bfeab4afae50a98fbb2e10ff5aed0c28a87b2b2
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 01409738afc2c0d5bdaa248ffb508aa5f36a66390f6b8e4834734529ee8ed2fa
-R ee11728d3aa258a0fbceeafa036bdf4e
+P 6deab75874acfa183e51b8ae8d9305e8d09072bb6c646859ed40beb46e91fe0f
+R 9b5161bb592124861c576de5fb147e2d
 U drh
-Z 613f9f742496678e7b087d518f690587
+Z e6c5308c4c11413d5773095bc213afc8
 # Remove this line to create a well-formed Fossil manifest.

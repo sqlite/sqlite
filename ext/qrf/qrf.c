@@ -726,9 +726,11 @@ static void qrfEscape(
 static int qrfRelaxable(Qrf *p, const char *z){
   size_t i, n;
   if( z[0]=='\'' || qrfSpace(z[0]) ) return 0;
-  if( z[0]==0 && (p->spec.zNull==0 || p->spec.zNull[0]==0) ) return 0;
+  if( z[0]==0 ){
+    return (p->spec.zNull!=0 && p->spec.zNull[0]!=0);
+  }
   n = strlen(z);
-  if( z[n-1]=='\'' || qrfSpace(z[n-1]) ) return 0;
+  if( n==0 || z[n-1]=='\'' || qrfSpace(z[n-1]) ) return 0;
   if( p->spec.zNull && strcmp(p->spec.zNull,z)==0 ) return 0;
   i = (z[0]=='-' || z[0]=='+');
   if( strcmp(z+i,"Inf")==0 ) return 0;
