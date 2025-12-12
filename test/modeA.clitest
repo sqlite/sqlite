@@ -21,9 +21,9 @@ INSERT INTO t1 SELECT b,c,d,e,a FROM t1;
 INSERT INTO t1 SELECT d,e,a,b,c FROM t1;
 .mode box
 
-.output memory
+.testcase 100
 SELECT * FROM t1;
-.output --verify END
+.check <<END
 ╭─────┬───────┬───────┬───────┬───────╮
 │  a  │   b   │   c   │   d   │   e   │
 ╞═════╪═══════╪═══════╪═══════╪═══════╡
@@ -34,10 +34,10 @@ SELECT * FROM t1;
 ╰─────┴───────┴───────┴───────┴───────╯
 END
 
-.output memory
+.testcase 110
 .mode --null xyz
 SELECT * FROM t1;
-.output --verify END
+.check <<END
 ╭─────┬───────┬───────┬───────┬───────╮
 │  a  │   b   │   c   │   d   │   e   │
 ╞═════╪═══════╪═══════╪═══════╪═══════╡
@@ -56,9 +56,9 @@ INSERT INTO t2 VALUES(1,2.5,'three',x'4444');
 INSERT INTO t2 VALUES('The quick fox jumps over the lazy brown dog',2,3,4);
 INSERT INTO t2 VALUES('10','', -1.25,NULL);
 INSERT INTO t2 VALUES('a,b,c','"Double-Quoted"','-1.25','NULL');
-.output memory
+.testcase 120
 SELECT * FROM t2;
-.output --verify END
+.check <<END
 ╭────────────┬────────────┬─────────┬─────────╮
 │     a      │     b      │    c    │    d    │
 ╞════════════╪════════════╪═════════╪═════════╡
@@ -76,152 +76,152 @@ SELECT * FROM t2;
 │            │ Quoted"    │         │         │
 ╰────────────┴────────────┴─────────┴─────────╯
 END
-.output memory
+.testcase 130
 .mode
-.output --verify END
+.check <<END
 .mode qbox --limits on --quote relaxed --sw auto --textjsonb on
 END
-.output memory
+.testcase 140
 .mode -v
-.output --verify END
+.check <<END
 .mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits on --null "NULL" --quote relaxed --rowsep "" --sw auto --tablename "" --textjsonb on --titles on --widths "" --wordwrap off --wrap 10
 END
-.output memory --error-prefix "Error:"
+.testcase 150 --error-prefix "Error:"
 .mode foo
-.output --verify END
+.check <<END
 Error: .mode foo
 Error:       ^--- unknown mode
 Error: Use ".help .mode" for more info
 END
 
-.output memory
+.testcase 160
 .mode --null xyzzy -v
 .output -glob ' --null "xyzzy"'
-.output memory
+.testcase 170
 .mode -null abcde -v
 .output -glob ' --null "abcde"'
 
 # Test cases for the ".explain off" command
 .mode box -reset
-.output memory
+.testcase 180
 EXPLAIN SELECT * FROM t1;
 .output --notglob *────* --keep
 .output --notglob "* id │ parent │ notused │ detail *" --keep
 .output --glob "*   Init  *"
-.output memory
+.testcase 190
 EXPLAIN QUERY PLAN SELECT * FROM t1;
 .output --glob "*`--SCAN *"
 .explain off
-.output memory
+.testcase 200
 EXPLAIN SELECT * FROM t1;
 .output --glob *────*
-.output memory
+.testcase 210
 EXPLAIN QUERY PLAN SELECT * FROM t1;
 .output --glob "* id │ parent │ notused │ detail *"
 .explain auto
 
 # Test cases for limit settings in the .mode command.
-.output memory
+.testcase 300
 .mode box --reset
 .mode
-.output --verify END
+.check <<END
 .mode box
 END
-.output memory
+.testcase 310
 .mode --limits 5,300,20
 .mode
-.output --verify END
+.check <<END
 .mode box --limits on
 END
-.output memory
+.testcase 320
 .mode --limits 5,300,19
 .mode
-.output --verify END
+.check <<END
 .mode box --limits 5,300,19
 END
-.output memory
+.testcase 330
 .mode --limits 0,0,0
 .mode -v
-.output --verify END
+.check <<END
 .mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --limits off --null "" --quote off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles on --widths "" --wordwrap off
 END
 
-.output memory
+.testcase 400
 .mode --linelimit 123
 .mode
-.output --verify END
+.check <<END
 .mode box --limits 123,0,0
 END
 
-.output memory
+.testcase 410
 .mode --linelimit 0 -charlimit 123
 .mode
-.output --verify END
+.check <<END
 .mode box --limits 0,123,0
 END
 
-.output memory
+.testcase 420
 .mode --charlimit 0 -titlelimit 123
 .mode
-.output --verify END
+.check <<END
 .mode box --limits 0,0,123
 END
 
-.output memory
+.testcase 430
 .mode list
 .mode
-.output --verify END
+.check <<END
 .mode list
 END
 
-.output memory
+.testcase 440
 .mode -limits 0,123,0
 .mode
-.output --verify END
+.check <<END
 .mode list --limits 0,123,0
 END
 
-.output memory
+.testcase 450
 .mode -limits 123,0,0
 .mode
-.output --verify END
+.check <<END
 .mode list
 END
 
 # --titlelimit functionality
 #
-.output memory
+.testcase 500
 .mode line --limits off --titlelimit 20
 SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
-.output --verify END
+.check <<END
 abcdefghijklmnopq...: The quick fox jumps over the lazy brown dog
                    b: 2
 END
-.output memory
+.testcase 510
 .mode line --titlelimit 10
 SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
-.output --verify END
+.check <<END
 abcdefg...: The quick fox jumps over the lazy brown dog
          b: 2
 END
-.output memory
+.testcase 520
 .mode line --titlelimit 2
 SELECT a AS 'abcdefghijklmnopqrstuvwxyz', b FROM t2 WHERE c=3;
-.output --verify END
+.check <<END
 ab: The quick fox jumps over the lazy brown dog
  b: 2
 END
-.output memory
+.testcase 530
 .mode line --titlelimit 4
 SELECT a AS 'abcd', b FROM t2 WHERE c=3;
-.output --verify END
+.check <<END
 abcd: The quick fox jumps over the lazy brown dog
    b: 2
 END
-.output memory
+.testcase 540
 .mode line --titlelimit 3
 SELECT a AS 'abcd', b FROM t2 WHERE c=3;
-.output --verify END
+.check <<END
 ...: The quick fox jumps over the lazy brown dog
   b: 2
 END
