@@ -1,5 +1,5 @@
-C Remove\sfrom\sos_win.c\sa\sreference\sto\sunused\ssystem\scall\sCreateEventExW()\sleft\sover\sfrom\sthe\snow\sremoved\swinrt\ssupport.
-D 2025-12-12T11:02:18.443
+C Omit\sunused\sentries\sin\sthe\saSysCall\sarray\sfor\sthe\sWindows\sdriver.\s\sFix\nincorrect\snumbering\sin\salter\sentries\sof\sthat\sarray.
+D 2025-12-12T11:50:37.088
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -722,7 +722,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c e7d96727db5b67e39d590a68cc61c86daf4c093c36c011a09ebfb521182ec28d
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c dcf7988ddbdd68619b821c9a722f9377abb46f1d26c9279eb5a50402fd43d749
-F src/os_win.c c3ba6bfe4034564037f58a453e8354ce884df6a5e0f30cceeeb8a1ce3e060b86
+F src/os_win.c b915f7d3ba6725dd1a826a594da5e63940907b61b33d6a857838dbf0d224fc6b
 F src/os_win.h 5e168adf482484327195d10f9c3bce3520f598e04e07ffe62c9c5a8067c1037b
 F src/pager.c a81461de271ac4886ad75b7ca2cca8157a48635820c4646cd2714acdc2c17e5f
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eb8a519571f7d35b81cbdbe668da45b33e5505d9a038305129df7ba2c16fd3b0
-R 57c71a2ef8fedb6779d6fd9a8cd8d66b
-U dan
-Z ea974ab5015d56df4eec7f205898922c
+P c68ef69ec97da0312b95375b3af159f8a06ce1a69376d042c557dcca18d3f77e
+R 021af3d3b587e1f5bd5ad3b9d3c9969f
+U drh
+Z 3b2ff21063fd5b8784977a80d3a436c0
 # Remove this line to create a well-formed Fossil manifest.
