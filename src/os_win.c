@@ -6476,6 +6476,11 @@ int sqlite3_os_init(void){
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
   assert( ArraySize(aSyscall)==85 );
+  assert( strcmp(aSyscall[0].zName,"AreFileApisANSI")==0 );
+  assert( strcmp(aSyscall[21].zName,"GetFileAttributesW")==0 );
+  assert( strcmp(aSyscall[42].zName,"HeapValidate")==0 );
+  assert( strcmp(aSyscall[63].zName,"WaitForSingleObjectEx")==0 );
+  assert( strcmp(aSyscall[84].zName,"cygwin_conv_path")==0 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
