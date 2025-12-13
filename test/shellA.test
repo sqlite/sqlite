@@ -126,10 +126,10 @@ do_test shellA-2.2 {
   exec {*}$CLI -noinit test.db --quote {.mode -v}
 } {/*.mode quote* --escape auto*/}
 do_test shellA-2.3 {
-  exec {*}$CLI -noinit -compat 20250101 test.db --quote --escape SYMBOL {.mode}
+  exec {*}$CLI -noinit test.db --quote --escape SYMBOL {.mode}
 } {.mode quote --escape symbol}
 do_test shellA-2.4 {
-  exec {*}$CLI -noinit -compat 20250101 test.db --quote --escape OFF {.mode}
+  exec {*}$CLI -noinit test.db --quote --escape OFF {.mode}
 } {.mode quote --escape off}
 
 

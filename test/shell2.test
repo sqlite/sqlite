@@ -85,7 +85,7 @@ SELECT * FROM foo;}
 # NB. whitespace is important
 do_test shell2-1.4.2 {
   forcedelete foo.db
-  catchcmd "-compat 20250101 -echo foo.db" {CREATE TABLE foo(a);
+  catchcmd "-echo foo.db" {CREATE TABLE foo(a);
 INSERT INTO foo(a) VALUES(1);
 SELECT * FROM foo;}
 } {0 {CREATE TABLE foo(a);

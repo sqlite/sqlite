@@ -48,7 +48,7 @@ do_test shell1-1.1.1b {
 } {1 1}
 # error on extra options
 do_test shell1-1.1.2 {
-  catchcmd "-compat 20250101 test.db \"select+3\" \"select+4\"" ""
+  catchcmd "test.db \"select+3\" \"select+4\"" ""
 } {0 {3
 4}}
 # error on extra options
@@ -182,7 +182,7 @@ do_test shell1-1.17.1 {
   catchcmd {-- --db "CREATE TABLE T(c1);"}
 } {0 {}}
 do_test shell1-1.17.2 {
-  catchcmd {-compat 20250101 -- --db "SELECT name from sqlite_schema;"}
+  catchcmd {-- --db "SELECT name from sqlite_schema;"}
 } {0 T}
 forcedelete ./--db
 

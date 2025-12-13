@@ -1256,7 +1256,6 @@ typedef struct Mode {
 typedef struct ShellState ShellState;
 struct ShellState {
   sqlite3 *db;           /* The database */
-  int iCompat;           /* Compatibility date YYYYMMDD */
   u8 openMode;           /* SHELL_OPEN_NORMAL, _APPENDVFS, or _ZIPFILE */
   u8 doXdgOpen;          /* Invoke start/open/xdg-open in output_reset() */
   u8 nEqpLevel;          /* Depth of the EQP output graph */
@@ -1648,14 +1647,13 @@ static void modeChange(ShellState *p, unsigned char eMode){
 }
 
 /*
-** Set the mode to the default according to p->iCompat.  It assumed
-** that the mode has already been freed and zeroed prior to calling
-** this routine.
+** Set the mode to the default.  It assumed that the mode has
+** already been freed and zeroed prior to calling this routine.
 */
 static void modeDefault(ShellState *p){
   p->mode.spec.iVersion = 1;
   p->mode.autoExplain = 1;
-  if( p->iCompat>=20251115 && (stdin_is_interactive || stdout_is_console) ){
+  if( stdin_is_interactive || stdout_is_console ){
     modeChange(p, MODE_TTY);
   }else{
     modeChange(p, MODE_BATCH);
@@ -8675,7 +8673,7 @@ static void parseDotCmdArgs(const char *zLine, ShellState *p){
   shell_check_oom(z);
   szLine = strlen(z);
   while( szLine>0 && IsSpace(z[szLine-1]) ) szLine--;
-  if( szLine>0 && z[szLine-1]==';' && p->iCompat>=20251115 ){
+  if( szLine>0 && z[szLine-1]==';' ){
     szLine--;
     while( szLine>0 && IsSpace(z[szLine-1]) ) szLine--;
   }
@@ -12357,7 +12355,6 @@ static const char zOptions[] =
   "   -box                 set output mode to 'box'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -column              set output mode to 'column'\n"
-  "   -compat YYYYMMDD     set default options for date YYYYMMDD\n"
   "   -csv                 set output mode to 'csv'\n"
 #if !defined(SQLITE_OMIT_DESERIALIZE)
   "   -deserialize         open the database using sqlite3_deserialize()\n"
@@ -12441,11 +12438,6 @@ static void verify_uninitialized(void){
 */
 static void main_init(ShellState *p) {
   memset(p, 0, sizeof(*p));
-#if defined(COMPATIBILITY_DATE)
-  p->iCompat = COMPATIBILITY_DATE;
-#else
-  p->iCompat = 20251116;
-#endif
   p->pAuxDb = &p->aAuxDb[0];
   p->shellFlgs = SHFLG_Lookaside;
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, p);
@@ -12700,11 +12692,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         exit(1);
       }
       stdout_tty_width = n;
-    }else if( cli_strcmp(z,"-compat")==0 ){
-      data.iCompat = atoi(cmdline_option_value(argc, argv, ++i));
-      modeFree(&data.mode);
-      memset(&data.mode, 0, sizeof(data.mode));
-      modeDefault(&data);
     }else if( cli_strcmp(z,"-utf8")==0 ){
     }else if( cli_strcmp(z,"-no-utf8")==0 ){
     }else if( cli_strcmp(z,"-no-rowid-in-view")==0 ){
@@ -13020,8 +13007,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-batch")==0 ){
       /* already handled */
     }else if( cli_strcmp(z,"-screenwidth")==0 ){
-      i++;      
-    }else if( cli_strcmp(z,"-compat")==0 ){
       i++;      
     }else if( cli_strcmp(z,"-utf8")==0 ){
       /* already handled */
