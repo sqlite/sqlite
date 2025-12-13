@@ -4123,6 +4123,52 @@ static int session_filter(void *pCtx, const char *zTab){
 #endif
 
 /*
+** Return the size of the named file in bytes.  Or return a negative
+** number if the file does not exist.
+*/
+static sqlite3_int64 fileSize(const char *zFile){
+#if defined(_WIN32) || defined(WIN32)
+  struct _stat64 x;
+  if( _stat64(zFile, &x)!=0 ) return -1;
+  return (sqlite3_int64)x.st_size;
+#else
+  struct stat x;
+  if( stat(zFile, &x)!=0 ) return -1;
+  return (sqlite3_int64)x.st_size;
+#endif
+}
+
+/*
+** Return true if zFile is an SQLite database.
+**
+** Algorithm:
+**    * If the file does not exist -> return false
+**    * If the size of the file is not a multiple of 512 -> return false
+**    * If sqlite3_open() fails -> return false
+**    * if sqlite3_prepare() or sqlite3_step() fails -> return false
+**    * Otherwise -> return true
+*/
+static int isDatabaseFile(const char *zFile, int openFlags){
+  sqlite3 *db = 0;
+  sqlite3_stmt *pStmt = 0;
+  int rc;
+  sqlite3_int64 sz = fileSize(zFile);
+  if( sz<512 || (sz%512)!=0 ) return 0;
+  if( sqlite3_open_v2(zFile, &db, openFlags, 0)==SQLITE_OK
+   && sqlite3_prepare_v2(db,"SELECT count(*) FROM sqlite_schema",-1,&pStmt,0)
+           ==SQLITE_OK
+   && sqlite3_step(pStmt)==SQLITE_ROW
+  ){
+    rc = 1;
+  }else{
+    rc = 0;
+  }
+  sqlite3_finalize(pStmt);
+  sqlite3_close(db);
+  return rc;
+}
+
+/*
 ** Try to deduce the type of file for zName based on its content.  Return
 ** one of the SHELL_OPEN_* constants.
 **
@@ -4134,20 +4180,12 @@ static int session_filter(void *pCtx, const char *zTab){
 int deduceDatabaseType(const char *zName, int dfltZip, int openFlags){
   FILE *f;
   size_t n;
-  sqlite3 *db = 0;
-  sqlite3_stmt *pStmt = 0;
   int rc = SHELL_OPEN_UNSPEC;
   char zBuf[100];
   if( access(zName,0)!=0 ) goto database_type_by_name;
-  if( sqlite3_open_v2(zName, &db, openFlags, 0)==SQLITE_OK
-   && sqlite3_prepare_v2(db,"SELECT count(*) FROM sqlite_schema",-1,&pStmt,0)
-           ==SQLITE_OK
-   && sqlite3_step(pStmt)==SQLITE_ROW
-  ){
+  if( isDatabaseFile(zName, openFlags) ){
     rc = SHELL_OPEN_NORMAL;
   }
-  sqlite3_finalize(pStmt);
-  sqlite3_close(db);
   if( rc==SHELL_OPEN_NORMAL ) return SHELL_OPEN_NORMAL;
   f = sqlite3_fopen(zName, "rb");
   if( f==0 ) goto database_type_by_name;
@@ -4180,6 +4218,33 @@ database_type_by_name:
     rc = SHELL_OPEN_NORMAL;
   }
   return rc;
+}
+
+/*
+** If the text in z[] is the name of a readable file and that file appears
+** to contain SQL text and/or dot-commands, then return true.  If z[] is
+** not a file, or if the file is unreadable, or if the file is a database
+** or anything else that is not SQL text and dot-commands, then return false.
+**
+** If the bLeaveUninit flag is set, then be sure to leave SQLite in an
+** uninitialized state.  This means invoking sqlite3_shutdown() after any
+** SQLite API is used.
+**
+** Some amount of guesswork is involved in this decision.
+*/
+static int isScriptFile(const char *z, int bLeaveUninit){
+  sqlite3_int64 sz = fileSize(z);
+  if( sz<=0 ) return 0;
+  if( (sz%512)==0 ){
+    int rc = isDatabaseFile(z, SQLITE_OPEN_READONLY);
+    if( bLeaveUninit ){
+      sqlite3_shutdown();
+    }
+    if( rc ) return 0;  /* Is a database */
+  }
+  if( sqlite3_strlike("*.sql",z,0)==0 ) return 1;
+  if( sqlite3_strlike("*.txt",z,0)==0 ) return 1;
+  return 0;
 }
 
 #ifndef SQLITE_OMIT_DESERIALIZE
@@ -12635,7 +12700,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
 #endif
 
-  /* Do an initial pass through the command-line argument to locate
+  /* Do an initial pass through the command-line arguments to locate
   ** the name of the database file, the name of the initialization file,
   ** the size of the alternative malloc heap, options affecting commands
   ** or SQL run from the command line, and the first command to execute.
@@ -12647,7 +12712,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     char *z;
     z = argv[i];
     if( z[0]!='-' || i>nOptsEnd ){
-      if( data.aAuxDb->zDbFilename==0 ){
+      if( data.aAuxDb->zDbFilename==0 && !isScriptFile(z,1) ){
         data.aAuxDb->zDbFilename = z;
       }else{
         /* Excess arguments are interpreted as SQL (or dot-commands) and
@@ -12882,7 +12947,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   */
   if( !noInit ) process_sqliterc(&data,zInitFile);
 
-  /* Make a second pass through the command-line argument and set
+  /* Make a second pass through the command-line arguments and set
   ** options.  This second pass is delayed until after the initialization
   ** file is processed so that the command-line arguments will override
   ** settings in the initialization file.
@@ -13107,7 +13172,17 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     */
     for(i=0; i<nCmd; i++){
       echo_group_input(&data, azCmd[i]);
-      if( azCmd[i][0]=='.' ){
+      if( isScriptFile(azCmd[i],0) ){
+        FILE *inSaved = data.in;
+        i64 savedLineno = data.lineno;
+        int res = 1;
+        if( (data.in = openChrSource(azCmd[i]))!=0 ){
+          res = process_input(&data, azCmd[i]);
+        }
+        data.in = inSaved;
+        data.lineno = savedLineno;
+        if( res ) i = nCmd;
+      }else if( azCmd[i][0]=='.' ){
         char *zErrCtx = malloc( 64 );
         shell_check_oom(zErrCtx);
         sqlite3_snprintf(64,zErrCtx,"argv[%i]:",aiCmd[i]);

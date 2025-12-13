@@ -1,3 +1,5 @@
+#!sqlite3
+#
 # 2025-11-12
 #
 # The author disclaims copyright to this source code.  In place of
