@@ -577,6 +577,13 @@ The eText, eBlob, and eEsc settings above become no-ops if the xRender
 routine returns non-NULL.  In other words, the application-supplied
 xRender routine is expected to do all of its own quoting and formatting.
 
+The xRender routine is expected to do character length limiting itself.
+So the nCharLimit setting becomes a no-op if xRender is used.  However
+the nLineLimit setting is still applied.  The nTitleLimit setting is
+not applicable to xRender because title values come from the
+sqlite3_column_name() interface not from sqlite3_column_value(),
+and so that names of columns are never processed by xRender.
+
 ## 3.0 The `sqlite3_format_query_result()` Interface
 
 Invoke the `sqlite3_format_query_result(P,S,E)` interface to run

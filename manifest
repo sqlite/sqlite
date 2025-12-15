@@ -1,5 +1,5 @@
-C Fix\sthe\stest/vt100-a.sql\sscript\sto\suse\s.testcase\sand\s.check.
-D 2025-12-15T13:26:27.061
+C Clarify\sthe\saffect\sof\snCharLimit,\snLineLimit,\sand\snTitleLimit\son\sthe\nxRender\soutput\sfrom\sQRF.
+D 2025-12-15T13:58:41.145
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -416,7 +416,7 @@ F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f6
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
 F ext/misc/zipfile.c d792ed9b936ddfe9a210ecc893352afaee306c63b084187f6e44951f6f669e21
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
-F ext/qrf/README.md ea2cfe3526cb39d1f32c4537499a403e100aff16bda796cb92254b63d913de4e
+F ext/qrf/README.md e6e0ce2700acf6fd06312b42726a8f08ca240f30e1b122bff87c71c602046352
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
 F ext/qrf/qrf.c f1125c71e306106997065b4260a9870119d7c0f5556587234b8ec1747fb2d61d
 F ext/qrf/qrf.h 2ac14b0aaacf44636d8c81051bfeab4afae50a98fbb2e10ff5aed0c28a87b2b2
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef9b4b1e4690c889c48f4e725d42127c46f60c6bf2023ae79bf1e9c6c83368ec
-R 6c910ad36a2a31c4a41529fade9500c6
+P 5cf9e99ff8279530cb73a24794107591f8dab755fe78acd6c11429e532f3d1bf
+R 61f1b2124f9d7a4acd1b4a3d4268eab3
 U drh
-Z 1702697e014218818a44d4bbfb64ad82
+Z d5b44ebdba76bbdfb15b0fa610193449
 # Remove this line to create a well-formed Fossil manifest.
