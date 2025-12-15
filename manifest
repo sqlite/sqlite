@@ -1,5 +1,5 @@
-C Enable\san\sORDER\sBY\sclause\sto\srefer\sto\scolumns\sin\souter\squeries.
-D 2025-12-15T11:59:47.350
+C Fix\sthe\stest/vt100-a.sql\sscript\sto\suse\s.testcase\sand\s.check.
+D 2025-12-15T13:26:27.061
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1620,7 +1620,7 @@ F test/shell7.test 43fd8e511c533bab5232e95c7b4be93b243451709e89582600d4b6e67693d
 F test/shell8.test 641cf21a99c59404c24e3062923734951c4099a6b6b6520de00cf7a1249ee871
 F test/shell9.test 8742a5b390cdcef6369f5aa223e415aa4255a4129ef249b177887dc635a87209
 F test/shellA.test 05cdaafa1f79913654487ce3aefa038d4106245d58f52e02faf506140a76d480
-F test/shellB.test 41730c85658e1caa7e421454deefb3837fbfcd68be13a2a2f3a1ed92342fb0a4
+F test/shellB.test 83950926667acf60b07f5d7a808e524ec725432633c005aa3ced5cb48388cf73
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -1946,7 +1946,7 @@ F test/view.test 3c23d7a068e9e4a0c4e6907498042772adea725f0630c3d9638ffd4e5a08b92
 F test/view2.test db32c8138b5b556f610b35dfddd38c5a58a292f07fda5281eedb0851b2672679
 F test/view3.test ad8a8290ee2b55ff6ce66c9ef1ce3f1e47926273a3814e1c425293e128a95456
 F test/vt02.c 5b44ac67b1a283fedecf2d6e2ceda61e7a157f01d44dcb4490dcb1e87d057060
-F test/vt100-a.sql 631eeab18c5adb531bab79aecf64eee3934b42c75a309ee395c814717a6a7651
+F test/vt100-a.sql a3e188a118ca78c08b41681a4db6d0f353e554ceb33f1573b1872d16e2d30596
 F test/vtab1.test 09a72330d0f31eda2ffaa828b06a6b917fb86250ee72de0301570af725774c07
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -2184,8 +2184,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 87bca1250c5e660debbb29c5fabb89082c2d2059fc8b5851e1b1a519c3be7fc1
-R f004c13af1a1be21bad8d4c7d8ba20e0
+P ef9b4b1e4690c889c48f4e725d42127c46f60c6bf2023ae79bf1e9c6c83368ec
+R 6c910ad36a2a31c4a41529fade9500c6
 U drh
-Z 5c74dbec152b78ca8dccf7f221dabb42
+Z 1702697e014218818a44d4bbfb64ad82
 # Remove this line to create a well-formed Fossil manifest.
