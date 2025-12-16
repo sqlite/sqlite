@@ -17,6 +17,7 @@
 #   ./sqlite3 <test/modeA.clitest
 #
 #
+.open :memory:
 CREATE TABLE t1(a,b,c,d,e);
 INSERT INTO t1 VALUES(1,2.5,'three',x'4444',NULL);
 INSERT INTO t1 SELECT b,c,d,e,a FROM t1;

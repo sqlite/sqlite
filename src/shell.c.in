@@ -8621,9 +8621,13 @@ static int dotCmdCheck(ShellState *p){
       sqlite3_str_appendall(pPattern, zLine);
     }
     zPattern = sqlite3_str_finish(pPattern);
+    if( zPattern==0 ){
+      zPattern = sqlite3_mprintf("");
+    }
   }else{
     zPattern = zCheck;
   }
+  shell_check_oom(zPattern);
   switch( eCheck ){
     case 1: {
       char *zGlob = sqlite3_mprintf("*%s*", zPattern);
@@ -9616,10 +9620,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
     }
     zSql = sqlite3_mprintf(
       "SELECT rootpage, 0 FROM sqlite_schema"
-      " WHERE name='%q' AND type='index'"
+      " WHERE type='index' AND lower(name)=lower('%q')"
       "UNION ALL "
       "SELECT rootpage, 1 FROM sqlite_schema"
-      " WHERE name='%q' AND type='table'"
+      " WHERE type='table' AND lower(name)=lower('%q')"
       "   AND sql LIKE '%%without%%rowid%%'",
       azArg[1], azArg[1]
     );
