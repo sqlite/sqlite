@@ -42,5 +42,6 @@ proc do_clitest {name} {
 do_clitest modeA.sql
 do_clitest dblwidth-a.sql
 do_clitest vt100-a.sql
+do_clitest regexp1.sql
 
 finish_test
