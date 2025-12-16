@@ -8550,6 +8550,8 @@ dotCmdOutput_error:
 **
 ** Options:
 **   --error-prefix TEXT    Change error message prefix text to TEXT
+**   --exact                Do an exact comparison including leading and
+**                          trailing whitespace.
 **   --glob                 Treat PATTERN as a GLOB
 **   --keep                 Do not reset the testcase.  More .check commands
 **                          will follow.
@@ -8635,8 +8637,22 @@ static int dotCmdCheck(ShellState *p){
       sqlite3_free(zGlob);
       break;
     }
+    case 3: {
+      isOk = cli_strcmp(zTest,zPattern)==0;
+      break;
+    }
     default: {
-      isOk = cli_strcmp(zPattern,zTest)==0;
+      /* Skip leading and trailing \n and \r on both pattern and test output */
+      const char *z1 = zPattern;
+      const char *z2 = zTest;
+      size_t n1, n2;
+      while( z1[0]=='\n' || z1[0]=='\r' ) z1++;
+      n1 = strlen(z1);
+      while( n1>0 && (z1[n1-1]=='\n' || z1[n1-1]=='\r') ) n1--;
+      while( z2[0]=='\n' || z2[0]=='\r' ) z2++;
+      n2 = strlen(z2);
+      while( n2>0 && (z2[n2-1]=='\n' || z2[n2-1]=='\r') ) n2--;
+      isOk = n1==n2 && memcmp(z1,z2,n1)==0;
       break;
     }
   }
@@ -9761,9 +9777,10 @@ static int do_meta_command(const char *zLine, ShellState *p){
       if( nArg==3 ){
         sqlite3_limit(p->db, aLimit[iLimit].limitCode,
                       (int)integerValue(azArg[2]));
+      }else{
+        cli_printf(stdout, "%20s %d\n", aLimit[iLimit].zLimitName,
+              sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
       }
-      cli_printf(stdout, "%20s %d\n", aLimit[iLimit].zLimitName,
-            sqlite3_limit(p->db, aLimit[iLimit].limitCode, -1));
     }
   }else
 

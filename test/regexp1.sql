@@ -19,14 +19,14 @@
 --                       0         1         2         3         4
 --                        123456789 123456789 123456789 123456789 123
 SELECT 'abcdefg' REGEXP '((((((((((((((((((abcdefg))))))))))))))))))';
-.check "1\n"
+.check 1
 
-.limit like_pattern_length 42
 .testcase 110
+.limit like_pattern_length 42
 SELECT 'abcdefg' REGEXP '((((((((((((((((((abcdefg))))))))))))))))))';
 .check -glob "Error near line #: REGEXP pattern too big*"
 
-.limit like_pattern_length 43
 .testcase 120
+.limit like_pattern_length 43
 SELECT 'abcdefg' REGEXP '((((((((((((((((((abcdefg))))))))))))))))))';
-.check "1\n"
+.check 1
