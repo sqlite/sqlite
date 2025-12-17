@@ -1514,11 +1514,12 @@ static sqlite3_index_info *allocateIndexInfo(
       break;
     }
     if( i==n ){
+      int bSortByGroup = (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)!=0;
       nOrderBy = n;
       if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY) && !pSrc->fg.rowidUsed ){
-        eDistinct = 2 + ((pWInfo->wctrlFlags & WHERE_SORTBYGROUP)!=0);
+        eDistinct = 2 + bSortByGroup;
       }else if( pWInfo->wctrlFlags & WHERE_GROUPBY ){
-        eDistinct = 1;
+        eDistinct = 1 - bSortByGroup;
       }
     }
   }
