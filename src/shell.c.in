@@ -13199,6 +13199,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         int res = 1;
         if( (data.in = openChrSource(azCmd[i]))!=0 ){
           res = process_input(&data, azCmd[i]);
+          fclose(data.in);
         }
         data.in = inSaved;
         data.lineno = savedLineno;
