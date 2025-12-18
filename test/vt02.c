@@ -937,7 +937,7 @@ static int vt02BestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
           /* DISTINCT A,B,C,D */
           pInfo->orderByConsumed = 1;
         }
-      }else{  /* GROUP BY */
+      }else if( eDistinct==1 ){  /* GROUP BY */
         if( x==0x02 ){
           /* GROUP BY A */
           pInfo->orderByConsumed = 1;
