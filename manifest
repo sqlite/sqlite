@@ -1,5 +1,5 @@
-C Improve\stests\sin\sbestindexF.test.\sNo\schanges\sto\snon-test\scode.
-D 2025-12-18T16:05:05.184
+C New\soptions\sfor\svt02.c\sthat\sallow\stests\sto\sconfigure\sit\sto\spartially\nde-duplicate\sa\sDISTINCT\squery.
+D 2025-12-18T16:14:38.572
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1948,7 +1948,7 @@ F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test 3c23d7a068e9e4a0c4e6907498042772adea725f0630c3d9638ffd4e5a08b92b
 F test/view2.test db32c8138b5b556f610b35dfddd38c5a58a292f07fda5281eedb0851b2672679
 F test/view3.test ad8a8290ee2b55ff6ce66c9ef1ce3f1e47926273a3814e1c425293e128a95456
-F test/vt02.c e2eb2e576567bba5c0f7bd7fe1a267fe566f1422a55fcff6dda02012159ec95d
+F test/vt02.c 91f2643dce0385300294cb2e78b459d038a3f4b095ab5031926742e8871487d4
 F test/vt100-a.sql a3e188a118ca78c08b41681a4db6d0f353e554ceb33f1573b1872d16e2d30596
 F test/vtab1.test 09a72330d0f31eda2ffaa828b06a6b917fb86250ee72de0301570af725774c07
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
@@ -2187,8 +2187,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 612c1ece6752e3318fc688717ad6a82219b85df7d32e4e07dbc2f361a5aeeee4
-R 580ea8657cb3efb5b82ff2a1e13c7fc2
-U dan
-Z 99a67f6205f5b3113357bf79d420e775
+P 347d4d34c1815827e7049e57830c1fff67f6eb16ae5cc00839e35d94bac81e92
+R 29e510d0a5b9184871ac0c9974760fc9
+U drh
+Z 011846103a1c6bd79a9c9fff8a8c2bf0
 # Remove this line to create a well-formed Fossil manifest.

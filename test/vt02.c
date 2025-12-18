@@ -111,6 +111,13 @@
 **                      vector of results sent to xFilter.  Only the first
 **                      few are used, as required by idxNum.
 **
+**       0x80           If sqlite3_vtab_distinct() says that duplicate rows
+**                      may be omitted (values 2 or 3), then maybe omit
+**                      some but not all of the duplicate rows.
+**
+**       0x100          Do not omit any duplicate rows even if
+**                      sqlite3_vtab_distinct() says that is ok to do.
+**
 ** Because these flags take effect during xBestIndex, the RHS of the
 ** flag= constraint must be accessible.  In other words, the RHS of flag=
 ** needs to be an integer literal, not another column of a join or a
@@ -215,6 +222,8 @@ struct vt02_vtab {
 #define VT02_NO_OFFSET      0x0004  /* Omit the offset optimization */
 #define VT02_ALLOC_IDXSTR   0x0008  /* Alloate an idxStr */
 #define VT02_BAD_IDXNUM     0x0010  /* Generate an invalid idxNum */
+#define VT02_PARTIAL_DEDUP  0x0080  /* Omit some but not all duplicate rows */
+#define VT02_NO_DEDUP       0x0100  /* Include all duplicate rows */
 
 /*
 ** A cursor
@@ -905,18 +914,21 @@ static int vt02BestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
       }else if( nAsc==0 ){
         pInfo->idxNum += 1000;   /* Reverse output order */
       }
-      if( eDistinct==2 ){  /* DISTINCT */
+      if( eDistinct>=2 && (flags & VT02_NO_DEDUP)!=0 ){
+        eDistinct = 1;
+      }
+      if( eDistinct>=2 ){  /* DISTINCT or (DISTINCT and ORDER BY) */
         if( x==0x02 ){
           /* DISTINCT A */
-          pInfo->idxNum += 30;
+          pInfo->idxNum += (flags & VT02_PARTIAL_DEDUP)!=0 ? 20 : 30;
           pInfo->orderByConsumed = 1;
         }else if( x==0x06 ){
           /* DISTINCT A,B */
-          pInfo->idxNum += 20;
+          pInfo->idxNum += (flags & VT02_PARTIAL_DEDUP)!=0 ? 10 : 20;
           pInfo->orderByConsumed = 1;
         }else if( x==0x0e ){
           /* DISTINCT A,B,C */
-          pInfo->idxNum += 10;
+          pInfo->idxNum += (flags & VT02_PARTIAL_DEDUP)!=0 ? 0 : 10;
           pInfo->orderByConsumed = 1;
         }else if( x & 0x01 ){
           /* DISTINCT X */
@@ -925,7 +937,7 @@ static int vt02BestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
           /* DISTINCT A,B,C,D */
           pInfo->orderByConsumed = 1;
         }
-      }else if( eDistinct>=1 ){  /* GROUP BY or (DISTINCT and ORDER BY) */
+      }else{  /* GROUP BY */
         if( x==0x02 ){
           /* GROUP BY A */
           pInfo->orderByConsumed = 1;
