@@ -45,8 +45,29 @@
 **      a=... AND b=... AND c=...
 **      a=... AND b=... AND c=... AND d=...
 **
-** Various ORDER BY constraints are also recognized and consumed.  The
-** OFFSET constraint is recognized and consumed.
+** The table will also recognize IN constraints on column D using the
+** sqlite3_vtab_in_first() and sqlite3_vtab_in_next() interfaces:
+**
+**      a=... AND d IN (...)
+**      a=... AND b=... AND d IN (...)
+**      a=... AND b=... AND c=... AND d IN (...)
+**
+** Various ORDER BY constraints are also recognized and consumed.
+**
+**      ORDER BY x
+**      ORDER BY a
+**      ORDER BY a, b
+**      ORDER BY a, b, c
+**      ORDER BY a, b, c, d
+**
+** The above also work if every term is DESC rather than ASC. However,
+** the orderByConsumed is not set if there are a mixture of ASC and DESC
+** terms in the ORDER BY clause.
+**
+** The sqlite3_vtab_distinct() interface is used to recognize DISTINCT
+** and GROUP BY constraints and consume the corresponding sorting requirements.
+**
+** The OFFSET constraint is recognized and consumed.
 **
 ** ## TABLE-VALUED FUNCTION
 **
@@ -136,14 +157,12 @@
 ** ## COMPILING AND RUNNING
 **
 ** This file can also be compiled separately as a loadable extension
-** for SQLite (as long as the -DTH3_VERSION is not defined).  To compile as a
-** loadable extension do his:
+** for SQLite (as long as the -DTH3_VERSION is not defined). To compile as a
+** loadable extension do something like this:
 **
-**    gcc -Wall -g -shared -fPIC -I. -DSQLITE_DEBUG vt02.c -o vt02.so
-**
-** Or on Windows:
-**
-**    cl vt02.c -link -dll -out:vt02.dll
+**   (linux)     gcc -shared -fPIC -I. vt02.c -o vt02.so
+**   (mac)       clang -dynamiclib -fPIC -I. vt02.c -o vt02.dylib
+**   (windows)   cl vt02.c -link -dll -out:vt02.dll
 **
 ** Then load into the CLI using:
 **
@@ -167,6 +186,7 @@
 **    2x           increment by 100
 **    3x           increment by 1000
 **   1xx           Use offset provided by argv[N]
+**  1xxx           Reverse output order (to implement ORDER BY ... DESC)
 */
 #ifndef TH3_VERSION
   /* These bits for separate compilation as a loadable extension, only */
@@ -203,6 +223,7 @@ struct vt02_cur {
   sqlite3_vtab_cursor parent; /* Base class.  Must be first */
   sqlite3_int64 i;            /* Current entry */
   sqlite3_int64 iEof;         /* Indicate EOF when reaching this value */
+  sqlite3_int64 iMin;         /* EOF if dropping below this value */
   int iIncr;                  /* Amount by which to increment */
   unsigned int mD;            /* Mask of allowed D-column values */
 };
@@ -292,7 +313,7 @@ static int vt02Close(sqlite3_vtab_cursor *pCursor){
 */
 static int vt02Eof(sqlite3_vtab_cursor *pCursor){
   vt02_cur *pCur = (vt02_cur*)pCursor;
-  return pCur->i<0 || pCur->i>=pCur->iEof;
+  return pCur->i<pCur->iMin || pCur->i>=pCur->iEof;
 }
 
 /* Advance the cursor to the next row in the table
@@ -301,8 +322,8 @@ static int vt02Next(sqlite3_vtab_cursor *pCursor){
   vt02_cur *pCur = (vt02_cur*)pCursor;
   do{
     pCur->i += pCur->iIncr;
-    if( pCur->i<0 ) pCur->i = pCur->iEof;
-  }while( (pCur->mD & (1<<(pCur->i%10)))==0 && pCur->i<pCur->iEof );
+    if( pCur->i<pCur->iMin || pCur->i>=pCur->iEof ) break;
+  }while( (pCur->mD & (1<<(pCur->i%10)))==0 );
   return SQLITE_OK;
 }
 
@@ -324,6 +345,7 @@ static int vt02Next(sqlite3_vtab_cursor *pCursor){
 **    2x           increment by 100
 **    3x           increment by 1000
 **   1xx           Use offset provided by argv[N]
+**  1xxx           Output rows in reverse order
 */
 static int vt02Filter(
   sqlite3_vtab_cursor *pCursor, /* The cursor to rewind */
@@ -334,11 +356,17 @@ static int vt02Filter(
 ){
   vt02_cur *pCur = (vt02_cur*)pCursor; /* The vt02 cursor */
   int bUseOffset = 0;                  /* True to use OFFSET value */
+  int bReverse = 0;                    /* Output rows in reverse order */
   int iArg = 0;                        /* argv[] values used so far */
   int iOrigIdxNum = idxNum;            /* Original value for idxNum */
 
   pCur->iIncr = 1;
+  pCur->iMin = 0;
   pCur->mD = 0x3ff;
+  if( idxNum>=1000 ){
+    bReverse = 1;
+    idxNum -= 1000;
+  }
   if( idxNum>=100 ){
     bUseOffset = 1;
     idxNum -= 100;
@@ -416,9 +444,17 @@ static int vt02Filter(
   }else{
     goto vt02_bad_idxnum;
   }
+  if( bReverse ){
+    sqlite3_int64 x;
+    x = pCur->i + ((pCur->iEof - pCur->i)/pCur->iIncr)*pCur->iIncr;
+    if( x>=pCur->iEof ) x -= pCur->iIncr;
+    pCur->iIncr = -pCur->iIncr;
+    pCur->iMin = pCur->i;
+    pCur->i = x;
+  }
   if( bUseOffset ){
     int nSkip = sqlite3_value_int(argv[iArg]);
-    while( nSkip-- > 0 && pCur->i<pCur->iEof ) vt02Next(pCursor);
+    while( nSkip-- > 0 && !vt02Eof(pCursor) ) vt02Next(pCursor);
   }
   return SQLITE_OK;
 
@@ -838,24 +874,38 @@ static int vt02BestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   ** the same answer.
   */
   if( pInfo->nOrderBy>0 && (flags & VT02_NO_SORT_OPT)==0 ){
+    int eDistinct = sqlite3_vtab_distinct(pInfo);
     if( pInfo->idxNum==1 ){
       /* There will only be one row of output.  So it is always sorted. */
       pInfo->orderByConsumed = 1;
     }else
-    if( pInfo->aOrderBy[0].iColumn<=0 
-     && pInfo->aOrderBy[0].desc==0
-    ){
-      /* First column of order by is X ascending */
+    if( pInfo->aOrderBy[0].iColumn<=0 ){
+      /* First column of order by is X */
+      if( pInfo->aOrderBy[0].desc ){
+        pInfo->idxNum += 1000;   /* Reverse output order */
+      }
       pInfo->orderByConsumed = 1;
     }else
-    if( sqlite3_vtab_distinct(pInfo)>=1 ){
+    if( eDistinct>=1 ){
       unsigned int x = 0;
+      int nDesc = 0;
+      int nAsc = 0;
       for(i=0; i<pInfo->nOrderBy; i++){
         int iCol = pInfo->aOrderBy[i].iColumn;
         if( iCol<0 ) iCol = 0;
+        if( pInfo->aOrderBy[i].desc ){
+          nDesc++;
+        }else{
+          nAsc++;
+        }
         x |= 1<<iCol;
       }
-      if( sqlite3_vtab_distinct(pInfo)==2 ){
+      if( nDesc>0 && nAsc>0 ){
+        if( eDistinct!=1 ) eDistinct = -999;  /* Never set orderByConsumed */
+      }else if( nAsc==0 ){
+        pInfo->idxNum += 1000;   /* Reverse output order */
+      }
+      if( eDistinct==2 ){  /* DISTINCT */
         if( x==0x02 ){
           /* DISTINCT A */
           pInfo->idxNum += 30;
@@ -875,7 +925,7 @@ static int vt02BestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
           /* DISTINCT A,B,C,D */
           pInfo->orderByConsumed = 1;
         }
-      }else{
+      }else if( eDistinct>=1 ){  /* GROUP BY or (DISTINCT and ORDER BY) */
         if( x==0x02 ){
           /* GROUP BY A */
           pInfo->orderByConsumed = 1;
@@ -901,7 +951,7 @@ static int vt02BestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     pInfo->needToFreeIdxStr = 1;
   }
   if( flags & VT02_BAD_IDXNUM ){
-    pInfo->idxNum += 1000;
+    pInfo->idxNum += 10000;
   }
 
   if( iOffset>=0 ){
