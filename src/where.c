@@ -1520,6 +1520,8 @@ static sqlite3_index_info *allocateIndexInfo(
         eDistinct = 2 + bSortByGroup;
       }else if( pWInfo->wctrlFlags & WHERE_GROUPBY ){
         eDistinct = 1 - bSortByGroup;
+      }else if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
+        eDistinct = 3;
       }
     }
   }
