@@ -943,6 +943,21 @@ static int vt02BestIndex(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
           pInfo->orderByConsumed = 1;
         }
       }
+    }else{
+      int nDesc = 0;
+      int nAsc = 0;
+      for(i=0; i<pInfo->nOrderBy; i++){
+        if( pInfo->aOrderBy[i].iColumn!=i+1 ) break;
+        if( pInfo->aOrderBy[i].desc ){
+          nDesc++;
+        }else{
+          nAsc++;
+        }
+      }
+      if( i==pInfo->nOrderBy && (nDesc==0 || nAsc==0) ){
+        pInfo->orderByConsumed = 1;
+        if( nDesc ) pInfo->idxNum += 1000;
+      }
     }
   }
 
