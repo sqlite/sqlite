@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\svt02.c\stest\svirtual\stable.
-D 2025-12-18T20:44:48.566
+C Add\sexperimental\scompile-time\soption\sSQLITE_ALLOW_TRIGGERS_ON_SYSTEM_TABLES.
+D 2025-12-19T13:17:40.182
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -797,7 +797,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c ca1382f02a3990d1a770acd5c55731dee10cd644465b2855eca33e4d2ea299ed
 F src/treeview.c 3ce7ac9835d2d70cc1c868b01b747ae8a062322e155701e58e3d62ca79aada7a
-F src/trigger.c 96e5ceb7461b0c469a6e155feb00f39b992b6205f3f5118d01905f45f8234372
+F src/trigger.c cb894db98083c68c4a17c72566ed39434aa91286db20d2891279ee49e6bfec0c
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
@@ -2187,8 +2187,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fba29a8b560d839e42c2a46421ab870da6e6ed6e15a17aa51f223e32ec3aa8ae
-R 50c29669ad79a4c8af2840c3e65b6f87
+P a7a73d30c552195c95c282688eb3d067746c722b702c7f2ba151996ec92136f5
+R de13af5fc4d57bfa37958aa582721247
 U drh
-Z 22fb866bdb25a10a435495395df41955
+Z 3bff47448627ea9f76ff50b43eca0451
 # Remove this line to create a well-formed Fossil manifest.
