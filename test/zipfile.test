@@ -885,7 +885,10 @@ do_test 19.1 {
     INSERT INTO v0 DEFAULT VALUES;
   }
 } {}
+db close
 forcedelete zipfile19.zip
+sqlite3 db :memory:
+load_static_extension db zipfile
 
 #-------------------------------------------------------------------------
 do_catchsql_test 20.0 {
