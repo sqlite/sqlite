@@ -982,29 +982,10 @@ static struct win_syscall {
 #define osWaitForSingleObjectEx ((DWORD(WINAPI*)(HANDLE,DWORD, \
         BOOL))aSyscall[63].pCurrent)
 
-  { "SetFilePointerEx",        (SYSCALL)SetFilePointerEx,        0 },
-
-#define osSetFilePointerEx ((BOOL(WINAPI*)(HANDLE,LARGE_INTEGER, \
-        PLARGE_INTEGER,DWORD))aSyscall[64].pCurrent)
-
-  { "GetFileInformationByHandleEx", (SYSCALL)GetFileInformationByHandleEx, 0 },
-
-#define osGetFileInformationByHandleEx ((BOOL(WINAPI*)(HANDLE, \
-        FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD))aSyscall[65].pCurrent)
-
-  { "CreateFile2",             (SYSCALL)CreateFile2,             0 },
-
-#define osCreateFile2 ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD,DWORD, \
-        LPCREATEFILE2_EXTENDED_PARAMETERS))aSyscall[66].pCurrent)
-
-  { "GetTickCount64",          (SYSCALL)GetTickCount64,          0 },
-
-#define osGetTickCount64 ((ULONGLONG(WINAPI*)(VOID))aSyscall[67].pCurrent)
-
   { "GetNativeSystemInfo",     (SYSCALL)GetNativeSystemInfo,     0 },
 
 #define osGetNativeSystemInfo ((VOID(WINAPI*)( \
-        LPSYSTEM_INFO))aSyscall[68].pCurrent)
+        LPSYSTEM_INFO))aSyscall[64].pCurrent)
 
 #if defined(SQLITE_WIN32_HAS_ANSI)
   { "OutputDebugStringA",      (SYSCALL)OutputDebugStringA,      0 },
@@ -1012,7 +993,7 @@ static struct win_syscall {
   { "OutputDebugStringA",      (SYSCALL)0,                       0 },
 #endif
 
-#define osOutputDebugStringA ((VOID(WINAPI*)(LPCSTR))aSyscall[69].pCurrent)
+#define osOutputDebugStringA ((VOID(WINAPI*)(LPCSTR))aSyscall[65].pCurrent)
 
 #if defined(SQLITE_WIN32_HAS_WIDE)
   { "OutputDebugStringW",      (SYSCALL)OutputDebugStringW,      0 },
@@ -1020,11 +1001,11 @@ static struct win_syscall {
   { "OutputDebugStringW",      (SYSCALL)0,                       0 },
 #endif
 
-#define osOutputDebugStringW ((VOID(WINAPI*)(LPCWSTR))aSyscall[70].pCurrent)
+#define osOutputDebugStringW ((VOID(WINAPI*)(LPCWSTR))aSyscall[66].pCurrent)
 
   { "GetProcessHeap",          (SYSCALL)GetProcessHeap,          0 },
 
-#define osGetProcessHeap ((HANDLE(WINAPI*)(VOID))aSyscall[71].pCurrent)
+#define osGetProcessHeap ((HANDLE(WINAPI*)(VOID))aSyscall[67].pCurrent)
 
 /*
 ** NOTE: On some sub-platforms, the InterlockedCompareExchange "function"
@@ -1039,7 +1020,7 @@ static struct win_syscall {
   { "InterlockedCompareExchange", (SYSCALL)InterlockedCompareExchange, 0 },
 
 #define osInterlockedCompareExchange ((LONG(WINAPI*)(LONG \
-        SQLITE_WIN32_VOLATILE*, LONG,LONG))aSyscall[72].pCurrent)
+        SQLITE_WIN32_VOLATILE*, LONG,LONG))aSyscall[68].pCurrent)
 #endif /* defined(InterlockedCompareExchange) */
 
 #if !SQLITE_OS_WINCE && SQLITE_WIN32_USE_UUID
@@ -1048,7 +1029,7 @@ static struct win_syscall {
   { "UuidCreate",               (SYSCALL)0,                      0 },
 #endif
 
-#define osUuidCreate ((RPC_STATUS(RPC_ENTRY*)(UUID*))aSyscall[73].pCurrent)
+#define osUuidCreate ((RPC_STATUS(RPC_ENTRY*)(UUID*))aSyscall[69].pCurrent)
 
 #if !SQLITE_OS_WINCE && SQLITE_WIN32_USE_UUID
   { "UuidCreateSequential",     (SYSCALL)UuidCreateSequential,   0 },
@@ -1057,7 +1038,7 @@ static struct win_syscall {
 #endif
 
 #define osUuidCreateSequential \
-        ((RPC_STATUS(RPC_ENTRY*)(UUID*))aSyscall[74].pCurrent)
+        ((RPC_STATUS(RPC_ENTRY*)(UUID*))aSyscall[70].pCurrent)
 
 #if !defined(SQLITE_NO_SYNC) && SQLITE_MAX_MMAP_SIZE>0
   { "FlushViewOfFile",          (SYSCALL)FlushViewOfFile,        0 },
@@ -1066,7 +1047,7 @@ static struct win_syscall {
 #endif
 
 #define osFlushViewOfFile \
-        ((BOOL(WINAPI*)(LPCVOID,SIZE_T))aSyscall[75].pCurrent)
+        ((BOOL(WINAPI*)(LPCVOID,SIZE_T))aSyscall[71].pCurrent)
 
 /*
 ** If SQLITE_ENABLE_SETLK_TIMEOUT is defined, we require CreateEvent()
@@ -1083,7 +1064,7 @@ static struct win_syscall {
 
 #define osCreateEvent ( \
     (HANDLE(WINAPI*) (LPSECURITY_ATTRIBUTES,BOOL,BOOL,LPCSTR)) \
-    aSyscall[76].pCurrent \
+    aSyscall[72].pCurrent \
 )
 
 /*
@@ -1100,7 +1081,7 @@ static struct win_syscall {
   { "CancelIo",                 (SYSCALL)0,                      0 },
 #endif
 
-#define osCancelIo ((BOOL(WINAPI*)(HANDLE))aSyscall[77].pCurrent)
+#define osCancelIo ((BOOL(WINAPI*)(HANDLE))aSyscall[73].pCurrent)
 
 #if defined(SQLITE_WIN32_HAS_WIDE) && defined(_WIN32)
   { "GetModuleHandleW",         (SYSCALL)GetModuleHandleW,       0 },
@@ -1108,7 +1089,7 @@ static struct win_syscall {
   { "GetModuleHandleW",         (SYSCALL)0,                      0 },
 #endif
 
-#define osGetModuleHandleW ((HMODULE(WINAPI*)(LPCWSTR))aSyscall[78].pCurrent)
+#define osGetModuleHandleW ((HMODULE(WINAPI*)(LPCWSTR))aSyscall[74].pCurrent)
 
 #ifndef _WIN32
   { "getenv",                   (SYSCALL)getenv,                 0 },
@@ -1116,7 +1097,7 @@ static struct win_syscall {
   { "getenv",                   (SYSCALL)0,                      0 },
 #endif
 
-#define osGetenv ((const char *(*)(const char *))aSyscall[79].pCurrent)
+#define osGetenv ((const char *(*)(const char *))aSyscall[75].pCurrent)
 
 #ifndef _WIN32
   { "getcwd",                   (SYSCALL)getcwd,                 0 },
@@ -1124,7 +1105,7 @@ static struct win_syscall {
   { "getcwd",                   (SYSCALL)0,                      0 },
 #endif
 
-#define osGetcwd ((char*(*)(char*,size_t))aSyscall[80].pCurrent)
+#define osGetcwd ((char*(*)(char*,size_t))aSyscall[76].pCurrent)
 
 #ifndef _WIN32
   { "readlink",                 (SYSCALL)readlink,               0 },
@@ -1132,7 +1113,7 @@ static struct win_syscall {
   { "readlink",                 (SYSCALL)0,                      0 },
 #endif
 
-#define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[81].pCurrent)
+#define osReadlink ((ssize_t(*)(const char*,char*,size_t))aSyscall[77].pCurrent)
 
 #ifndef _WIN32
   { "lstat",                    (SYSCALL)lstat,                  0 },
@@ -1140,7 +1121,7 @@ static struct win_syscall {
   { "lstat",                    (SYSCALL)0,                      0 },
 #endif
 
-#define osLstat ((int(*)(const char*,struct stat*))aSyscall[82].pCurrent)
+#define osLstat ((int(*)(const char*,struct stat*))aSyscall[78].pCurrent)
 
 #ifndef _WIN32
   { "__errno",                  (SYSCALL)__errno,                0 },
@@ -1148,7 +1129,7 @@ static struct win_syscall {
   { "__errno",                  (SYSCALL)0,                      0 },
 #endif
 
-#define osErrno (*((int*(*)(void))aSyscall[83].pCurrent)())
+#define osErrno (*((int*(*)(void))aSyscall[79].pCurrent)())
 
 #ifndef _WIN32
   { "cygwin_conv_path",         (SYSCALL)cygwin_conv_path,       0 },
@@ -1157,7 +1138,7 @@ static struct win_syscall {
 #endif
 
 #define osCygwin_conv_path ((size_t(*)(unsigned int, \
-    const void *, void *, size_t))aSyscall[84].pCurrent)
+    const void *, void *, size_t))aSyscall[80].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -6475,12 +6456,12 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==85 );
+  assert( ArraySize(aSyscall)==81 );
   assert( strcmp(aSyscall[0].zName,"AreFileApisANSI")==0 );
-  assert( strcmp(aSyscall[21].zName,"GetFileAttributesW")==0 );
-  assert( strcmp(aSyscall[42].zName,"HeapValidate")==0 );
-  assert( strcmp(aSyscall[63].zName,"WaitForSingleObjectEx")==0 );
-  assert( strcmp(aSyscall[84].zName,"cygwin_conv_path")==0 );
+  assert( strcmp(aSyscall[20].zName,"GetFileAttributesA")==0 );
+  assert( strcmp(aSyscall[40].zName,"HeapReAlloc")==0 );
+  assert( strcmp(aSyscall[60].zName,"WideCharToMultiByte")==0 );
+  assert( strcmp(aSyscall[80].zName,"cygwin_conv_path")==0 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));

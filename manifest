@@ -1,5 +1,5 @@
-C Add\sexperimental\scompile-time\soption\sSQLITE_ALLOW_TRIGGERS_ON_SYSTEM_TABLES.
-D 2025-12-19T13:17:40.182
+C Remove\sunused\sthunk\scases\sfrom\sos_win.c,\sso\sthat\sit\swill\s(hopefully)\scompile\nagain\son\sWinXP.
+D 2025-12-22T11:28:16.789
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -722,7 +722,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c e7d96727db5b67e39d590a68cc61c86daf4c093c36c011a09ebfb521182ec28d
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c dcf7988ddbdd68619b821c9a722f9377abb46f1d26c9279eb5a50402fd43d749
-F src/os_win.c a58768884669ea574d3d4169bed596c559f07e384bd5a657fadafe77c296391e
+F src/os_win.c 42a92138542bfb2fdd336f7246c579042ae0dcc798e81bed3e8fac34528156ce
 F src/os_win.h 5e168adf482484327195d10f9c3bce3520f598e04e07ffe62c9c5a8067c1037b
 F src/pager.c a81461de271ac4886ad75b7ca2cca8157a48635820c4646cd2714acdc2c17e5f
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2187,8 +2187,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a7a73d30c552195c95c282688eb3d067746c722b702c7f2ba151996ec92136f5
-R de13af5fc4d57bfa37958aa582721247
+P f916bcc8657a4db2d069018751815f2ad91851499add761b1eb119f265b72a09
+R 8b9d364f69a5618d4d561d5a06288cf2
 U drh
-Z 3bff47448627ea9f76ff50b43eca0451
+Z 9c8bbb71d24a438545d3ee3a33118cbb
 # Remove this line to create a well-formed Fossil manifest.
