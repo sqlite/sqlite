@@ -1280,7 +1280,9 @@ void sqlite3ExprFunctionUsable(
 ){
   assert( !IN_RENAME_OBJECT );
   assert( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0 );
-  if( ExprHasProperty(pExpr, EP_FromDDL) ){
+  if( ExprHasProperty(pExpr, EP_FromDDL) 
+   || pParse->prepFlags & SQLITE_PREPARE_FROM_DDL
+  ){
     if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
      || (pParse->db->flags & SQLITE_TrustedSchema)==0
     ){

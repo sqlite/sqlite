@@ -4433,12 +4433,20 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** fails, the sqlite3_prepare_v3() call returns the same error indications
 ** with or without this flag; it just omits the call to [sqlite3_log()] that
 ** logs the error.
+**
+** [[SQLITE_PREPARE_FROM_DDL]] <dt>SQLITE_PREPARE_FROM_DDL</dt>
+** <dd>The SQLITE_PREPARE_FROM_DDL causes the SQL compiler to behave as if
+** the SQL statement was part of a database schema. This only makes a
+** difference if the SQLITE_DBCONFIG_TRUSTED_SCHEMA option is set to off.
+** This flag may be used by virtual table implementations that do not
+** completely control the SQL commands that they evaluate.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
 #define SQLITE_PREPARE_NORMALIZE               0x02
 #define SQLITE_PREPARE_NO_VTAB                 0x04
 #define SQLITE_PREPARE_DONT_LOG                0x10
+#define SQLITE_PREPARE_FROM_DDL                0x20
 
 /*
 ** CAPI3REF: Compiling An SQL Statement

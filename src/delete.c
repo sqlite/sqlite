@@ -86,7 +86,7 @@ static int vtabIsReadOnly(Parse *pParse, Table *pTab){
   **   *  Only allow DELETE, INSERT, or UPDATE of non-SQLITE_VTAB_INNOCUOUS
   **      virtual tables if PRAGMA trusted_schema=ON.
   */
-  if( pParse->pToplevel!=0
+  if( (pParse->pToplevel!=0 || (pParse->prepFlags & SQLITE_PREPARE_FROM_DDL))
    && pTab->u.vtab.p->eVtabRisk >
            ((pParse->db->flags & SQLITE_TrustedSchema)!=0)
   ){

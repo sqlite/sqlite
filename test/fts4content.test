@@ -638,7 +638,6 @@ do_catchsql_test 11.1 {
 # Check that an fts4 table cannot be its own content table.
 #
 reset_db
-breakpoint
 do_execsql_test 12.1.1 {
   CREATE VIRTUAL TABLE t1 USING fts4(a, content=t1 );
   INSERT INTO t1(rowid, a) VALUES(1, 'abc');
@@ -669,6 +668,64 @@ do_catchsql_test 12.2.4 {
   SELECT count(*) FROM t1;
 } {1 {SQL logic error}}
 
+#---------------------------------------------------------------------------
+# Check that an fts4 table cannot read from an unsafe vtab in a non-trusted 
+# schema.
+reset_db
+do_execsql_test 13.0 {
+  PRAGMA trusted_schema = off;
+  CREATE VIRTUAL TABLE t1 USING fts4(data, content=sqlite_dbpage);
+}
 
+do_catchsql_test 13.1 {
+  INSERT INTO t1(t1) VALUES('rebuild');
+} {1 {SQL logic error}}
+
+proc vtab_command {method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE t1(a)"
+    }
+
+    xBestIndex {
+      return ""
+    }
+
+    xFilter {
+      return [list sql {SELECT 1, 123}]
+    }
+
+    xUpdate {
+      return 123
+    }
+  }
+
+  return {}
+}
+
+register_tcl_module db xyz
+
+do_execsql_test 13.2.0 {
+  CREATE VIRTUAL TABLE aa USING tcl(vtab_command);
+}
+
+do_execsql_test 13.2.1 {
+  INSERT INTO aa VALUES('one two three');
+}
+
+do_test 13.2.2 {
+  set ::stmt [sqlite3_prepare_v3 db \
+    "INSERT INTO aa VALUES('one two three');" -1 0x00
+  ]
+  sqlite3_finalize $::stmt
+} {SQLITE_OK}
+
+do_test 13.2.2 {
+  list [catch {
+    set ::stmt [sqlite3_prepare_v3 db \
+      "INSERT INTO aa VALUES('one two three');" -1 0x20
+    ]
+  } msg] $msg
+} {1 {(1) unsafe use of virtual table "aa"}}
 
 finish_test

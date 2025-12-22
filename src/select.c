@@ -6181,7 +6181,7 @@ static int selectExpander(Walker *pWalker, Select *p){
         }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         else if( ALWAYS(IsVirtual(pTab))
-         && pFrom->fg.fromDDL
+         && (pFrom->fg.fromDDL || (pParse->prepFlags & SQLITE_PREPARE_FROM_DDL))
          && ALWAYS(pTab->u.vtab.p!=0)
          && pTab->u.vtab.p->eVtabRisk > ((db->flags & SQLITE_TrustedSchema)!=0)
         ){
