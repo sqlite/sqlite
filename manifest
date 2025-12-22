@@ -1,5 +1,5 @@
-C Remove\sunused\sthunk\scases\sfrom\sos_win.c,\sso\sthat\sit\swill\s(hopefully)\scompile\nagain\son\sWinXP.
-D 2025-12-22T11:28:16.789
+C Fix\sa\sharmless\ssigned\sinteger\soverflow\swarning\sin\sthe\sieee754()\sextension\nfunction.
+D 2025-12-22T12:00:57.751
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -375,7 +375,7 @@ F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a562918
 F ext/misc/fileio.c 452300ca34fadafd2bb9eb09557de5a518da1fd2349f9f9cedd22b1566a7164f
 F ext/misc/fossildelta.c 547d0b6744dbec531f081a8c52daf302c38d72da5f548307ee8f72a6618ff419
 F ext/misc/fuzzer.c 6b231352815304ba60d8e9ec2ee73d4918e74d9b76bda8940ba2b64e8777515e
-F ext/misc/ieee754.c 176c061c94857b543313959289cb60cf777c999fd002f82b53d194b95e9f347a
+F ext/misc/ieee754.c 7d7ecdd9490f6746ad88e0aa4f073ea66422341dce062d24d1b4d47d2e9050d6
 F ext/misc/memstat.c 43705d795090efb78c85c736b89251e743c291e23daaa8382fe7a0df2c6a283d
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
@@ -2187,8 +2187,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f916bcc8657a4db2d069018751815f2ad91851499add761b1eb119f265b72a09
-R 8b9d364f69a5618d4d561d5a06288cf2
+P eb2c020481dd591f459cf7191d18c2499aeec210fc3fc27bb35e5abc0d9cb6d8
+R 2a7836156030d62529cfef202e9403b2
 U drh
-Z 9c8bbb71d24a438545d3ee3a33118cbb
+Z c4e3cf9c36d6e8c67077ec4e9dd57a9c
 # Remove this line to create a well-formed Fossil manifest.
