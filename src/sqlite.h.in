@@ -4435,11 +4435,19 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** logs the error.
 **
 ** [[SQLITE_PREPARE_FROM_DDL]] <dt>SQLITE_PREPARE_FROM_DDL</dt>
-** <dd>The SQLITE_PREPARE_FROM_DDL causes the SQL compiler to behave as if
-** the SQL statement was part of a database schema. This only makes a
-** difference if the SQLITE_DBCONFIG_TRUSTED_SCHEMA option is set to off.
-** This flag may be used by virtual table implementations that do not
-** completely control the SQL commands that they evaluate.
+** <dd>The SQLITE_PREPARE_FROM_DDL flag causes the SQL compiler to behave as if
+** the SQL statement is part of a database schema. This makes a difference
+** when the [SQLITE_DBCONFIG_TRUSTED_SCHEMA] option is set to off.
+** When this option is used and SQLITE_DBCONFIG_TRUSTED_SCHEMA is off,
+** SQL functions may not be called unless they are tagged with
+** [SQLITE_INNOCUOUS] and virtual tables may not be used unless tagged
+** with [SQLITE_VTAB_INNOCUOUS].  Use the SQLITE_PREPARE_FROM_DDL option
+** when preparing SQL that is derived from parts of the database
+** schema. In particular, virtual table implementations that
+** run SQL statements based on the arguments to their CREATE VIRTUAL
+** TABLE statement should use [sqlite3_prepare_v3()] and set the
+** SQLITE_PREPARE_FROM_DLL flag to prevent bypass of the
+** [SQLITE_DBCONFIG_TRUSTED_SCHEMA] security checks.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
@@ -4460,8 +4468,9 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** The preferred routine to use is [sqlite3_prepare_v2()].  The
 ** [sqlite3_prepare()] interface is legacy and should be avoided.
-** [sqlite3_prepare_v3()] has an extra "prepFlags" option that is used
-** for special purposes.
+** [sqlite3_prepare_v3()] has an extra 
+** [SQLITE_PREPARE_FROM_DDL|"prepFlags" option] that is some times
+** needed for special purpose or to pass along security restrictions.
 **
 ** The use of the UTF-8 interfaces is preferred, as SQLite currently
 ** does all parsing using UTF-8.  The UTF-16 interfaces are provided
