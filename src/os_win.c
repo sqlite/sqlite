@@ -5716,6 +5716,7 @@ static int winAccess(
         attr = sAttrData.dwFileAttributes;
       }
     }else{
+      if( noRetry ) lastErrno = osGetLastError();
       winLogIoerr(cnt, __LINE__);
       if( lastErrno!=ERROR_FILE_NOT_FOUND && lastErrno!=ERROR_PATH_NOT_FOUND ){
         sqlite3_free(zConverted);

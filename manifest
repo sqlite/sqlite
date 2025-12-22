@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\ssigned\sinteger\soverflow\swarning\sin\sthe\sieee754()\sextension\nfunction.
-D 2025-12-22T12:00:57.751
+C Fix\sspurious\serror\slog\sreports\scaused\sby\s[d25c8a6222d4e3f2].\s\sSee\n[forum:/forumpost/d2326687662430c1|forum\spost\sd2326687662].
+D 2025-12-22T12:33:27.145
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -722,7 +722,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c e7d96727db5b67e39d590a68cc61c86daf4c093c36c011a09ebfb521182ec28d
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c dcf7988ddbdd68619b821c9a722f9377abb46f1d26c9279eb5a50402fd43d749
-F src/os_win.c 42a92138542bfb2fdd336f7246c579042ae0dcc798e81bed3e8fac34528156ce
+F src/os_win.c 0d553b6e8b92c8eb85e7f1b4a8036fe8638c8b32c9ad8d9d72a861c10f81b4c5
 F src/os_win.h 5e168adf482484327195d10f9c3bce3520f598e04e07ffe62c9c5a8067c1037b
 F src/pager.c a81461de271ac4886ad75b7ca2cca8157a48635820c4646cd2714acdc2c17e5f
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2187,8 +2187,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P eb2c020481dd591f459cf7191d18c2499aeec210fc3fc27bb35e5abc0d9cb6d8
-R 2a7836156030d62529cfef202e9403b2
+P f43d3339c1f06aabcb8e678ed4b91a490cfd0bc880c642ce9c1138c7e08cb360
+R 368416e9322dccc113e01f13b887d649
 U drh
-Z c4e3cf9c36d6e8c67077ec4e9dd57a9c
+Z 991a818d717546a1f42472b805bde58a
 # Remove this line to create a well-formed Fossil manifest.
