@@ -10342,8 +10342,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
                       ");\n", zName);
       }
     }
-    rc = sqlite3_prepare_v2(p->db, "SELECT name FROM pragma_database_list",
-                            -1, &pStmt, 0);
+    rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
     if( rc ){
       shellDatabaseError(p->db);
       sqlite3_finalize(pStmt);
@@ -10355,7 +10354,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     sqlite3_str_appendf(pSql, "SELECT sql FROM", 0);
     iSchema = 0;
     while( sqlite3_step(pStmt)==SQLITE_ROW ){
-      const char *zDb = (const char*)sqlite3_column_text(pStmt, 0);
+      const char *zDb = (const char*)sqlite3_column_text(pStmt, 1);
       char zScNum[30];
       sqlite3_snprintf(sizeof(zScNum), zScNum, "%d", ++iSchema);
       sqlite3_str_appendall(pSql, zDiv);
