@@ -10374,7 +10374,8 @@ static int do_meta_command(const char *zLine, ShellState *p){
       sqlite3_str_appendf(pSql," FROM \"%w\".sqlite_schema", zDb);
     }
     sqlite3_finalize(pStmt);
-#ifndef SQLITE_OMIT_INTROSPECTION_PRAGMAS
+#if !defined(SQLITE_OMIT_INTROSPECTION_PRAGMAS) \
+ && !defined(SQLITE_OMIT_VIRTUALTABLE)
     if( zName ){
       sqlite3_str_appendall(pSql,
          " UNION ALL SELECT shell_module_schema(name),"
