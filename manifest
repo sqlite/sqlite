@@ -1,5 +1,5 @@
-C Additional\schanges\sto\ssupport\sthe\s".schema"\scommand\son\sbuilds\sthat\somit\nvirtual\stables.
-D 2025-12-23T17:24:10.162
+C Enhance\sthe\somit-noop-join\soptimization\sso\sthat\sit\sis\sable\sto\somit\sa\nchain\sof\snoop-joins.\s\sOptimization\simprovement\ssuggested\sby\n[forum:/forumpost/11a53f2bad|forum\spost\s11a53f2bad].
+D 2025-12-24T14:03:15.617
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -818,7 +818,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 505a98fbc599a971d92cb90371cf54546c404cd61e04fd093e7b0c8ff978f9b6
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 917eeaa56a1b5e91e4eecc9d260f34e69287d7cd26d458335d03df3ef2eea3cc
+F src/where.c 0079b6ba463ae806b99b20cb335729dcce5f3e496b81cccf6441dc11f8c5bf92
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 71c5c6804b7f882dec8ec858758accae02fcfca13df3cc720f1f258e663ec7c5
 F src/whereexpr.c 5f412da6616e26b8000dd736a5ce5da0018dff0933cd656bbb25f407db16bf93
@@ -1322,7 +1322,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 5984da7bf74b6540aa356f2ab0c6ae68a6d12039a3d798a9ac6a100abc17d520
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test 2fcfd84640cfd9ff48f31b4b0d370c4d5498c355ae4384544668ca54d37ae186
+F test/join.test c706b382ed09ddc89eee7ad0ffd08d862655b0abc292a690d41d995c18c17b3f
 F test/join2.test f59d63264fb24784ae9c3bc9d867eb569cd6d442da5660f8852effe5c1938c27
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -2187,8 +2187,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b4e3c8170a107b2018fe5374495dbec14c851ccbf7419cd382991b2fe68c45e4
-R bbf0f8a3b999b9219c1c633e81632132
+P 6b5c0374fa81cf069263bebf9b740573de4f82fde3c4e5796af80dcbe6a1a2e7
+R 29d0420c4de507ad710f36a0a3484d53
 U drh
-Z c31ffc765328d25d9e743687ef375ec0
+Z 43c41d94e3f055232643d08c19bf340b
 # Remove this line to create a well-formed Fossil manifest.

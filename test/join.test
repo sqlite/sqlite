@@ -1369,4 +1369,45 @@ do_execsql_test join-32.3 {
           INNER JOIN t2 ON +y IS z;
 } {NULL NULL 123 NULL}
 
+# 2025-12-24 https://sqlite.org/forum/forumpost/11a53f2bad
+#
+# Chained omit-noop-join optimization
+#
+reset_db
+db null NULL
+do_execsql_test join-33.1 {
+  CREATE TABLE t1(a1 INTEGER PRIMARY KEY, b1);
+  CREATE TABLE t2(a2 INTEGER PRIMARY KEY, b2);
+  CREATE TABLE t3(a3 INTEGER PRIMARY KEY, b3);
+  CREATE TABLE t4(a4 INTEGER PRIMARY KEY, b4);
+  INSERT INTO t1 VALUES(1,11),(2,12),(3,13),       (5,15);
+  INSERT INTO t2 VALUES(1,21),       (3,23),(4,24),(5,25);
+  INSERT INTO t3 VALUES       (2,32),(3,33),       (5,35);
+  INSERT INTO t4 VALUES(1,41),(2,42),       (4,44),(5,45);
+  CREATE VIEW vchain AS
+    SELECT a1, b1, b2, b3, b4
+      FROM t1 LEFT JOIN t2 ON a1=a2
+              LEFT JOIN t3 ON a2=a3
+              LEFT JOIN t4 ON a3=a4;
+}
+do_execsql_test join-33.2 {
+  SELECT a1 FROM vchain ORDER BY a1;
+} {1 2 3 5}
+do_eqp_test join-33.2-eqp {
+  SELECT a1 FROM vchain ORDER BY a1;
+} {
+  QUERY PLAN
+  `--SCAN t1
+}
+do_execsql_test join-33.3 {
+  SELECT a1, b2 FROM vchain ORDER BY a1;
+} {1 21 2 NULL 3 23 5 25}
+do_eqp_test join-33.3-eqp {
+  SELECT a1, b2 FROM vchain ORDER BY a1;
+} {
+  QUERY PLAN
+  |--SCAN t1
+  `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+}
+
 finish_test
