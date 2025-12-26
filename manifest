@@ -1,5 +1,5 @@
-C Doc\stypo\sfixes\sin\sthe\sconfigure\sscript\spieces.
-D 2025-12-24T18:12:08.710
+C To\sensure\sthat\sthe\ssqlite3_hard_heap_limit()\scall\sit\smakes\sis\seffective,\sadd\s"sqlite3_config(SQLITE_CONFIG_MEMSTATUS,\s1);"\sto\sfuzzcheck.c.
+D 2025-12-26T17:23:25.617
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1242,7 +1242,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 02824a0a8d84242f616e4ffd249b75eade48ecb7d10c18d2ac19a38218ff9c13
+F test/fuzzcheck.c 34a025386f84d818cd3343e69e9d9083091af83153e226d71d4e1c126b5f1dd0
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2187,8 +2187,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5a85b83b9f21ad88938e273bb35b398e91133424683e915836f322b69f277673
-R 9869845c9c405290dbd2506053f58ebd
-U stephan
-Z a79998f9233b43520249ee8e7b7f9b23
+P 8ab37d9fb909dc6bfbede004f342e6c1625c99df9b316807dc77a9a636ee6873
+R 81328fa787ead27d2d0283ffbcc32c4e
+U dan
+Z 0315561ae7dfa48747bda2c07292a1fd
 # Remove this line to create a well-formed Fossil manifest.
