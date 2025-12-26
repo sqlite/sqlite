@@ -1866,8 +1866,8 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\misc $(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS) $(TOP)\tool\winmain.c
+	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\misc $(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.c $(TOP)\tool\winmain.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)

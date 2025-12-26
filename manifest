@@ -1,12 +1,12 @@
-C To\sensure\sthat\sthe\ssqlite3_hard_heap_limit()\scall\sit\smakes\sis\seffective,\sadd\s"sqlite3_config(SQLITE_CONFIG_MEMSTATUS,\s1);"\sto\sfuzzcheck.c.
-D 2025-12-26T17:23:25.617
+C Work\saround\sthe\sWindows\s"Worst-Fit"\sbug\sin\sthe\s"sqldiff.exe"\sprogram.
+D 2025-12-26T20:13:32.174
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 39d4085a92ef891ac9290277d910965b44d31e385beceaabc37aa5e6e7b71ecb
+F Makefile.msc fcf72b1401e1b2b1cb6f9b84ee961f6dff5bc808c249d76353a4a5447dbaf0b9
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
 F VERSION 74672bfd4c7826c0fc6f84762488a707c52e7d2d94af42ccb0edcc6c74311c41
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2167,7 +2167,7 @@ F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdadd
 F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 4969fd642dad0ea483e4e104163021d92baf98f6a8eac981fe48525f9b873430
-F tool/sqldiff.c 134be7866be19f8beb32043d5aea5657f01aaeae2df8d33d758ff722c78666b9
+F tool/sqldiff.c 68f88017de3bed3aa65c93a4cf3a04d0989d158bc6fad8f1475beeeea1aae3ac
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
 F tool/sqlite3_rsync.c d0e58a1e49fe2192c3ee0b697aed182d502bebfe5b4b406ba6b2baa52a04ecbe
 F tool/sqltclsh.c.in c103c6fc7d42bce611f9d4596774d60b7ef3d0b291a1f58c9e6184e458b89296
@@ -2187,8 +2187,9 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8ab37d9fb909dc6bfbede004f342e6c1625c99df9b316807dc77a9a636ee6873
-R 81328fa787ead27d2d0283ffbcc32c4e
-U dan
-Z 0315561ae7dfa48747bda2c07292a1fd
+F tool/winmain.c f40bccf0236f8bcc34b299781b7d34cb269ace23afe5c1b8a9d966e2fa1ce9e5
+P f7736af849d910f04d8622ed7c6e705d84cf22f0a73dca0f30eead9bd1f28bc7
+R 43855622a7f99eaf2e84b3fd5150fbc0
+U drh
+Z 568ba1e2be02bc872c4ea7b34bd66c20
 # Remove this line to create a well-formed Fossil manifest.
