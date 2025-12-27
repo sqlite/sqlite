@@ -1,5 +1,5 @@
-C Work\saround\sthe\sWindows\s"Worst-Fit"\sbug\sin\sthe\s"sqldiff.exe"\sprogram.
-D 2025-12-26T20:13:32.174
+C Change\sa\ssingle\sinteger\svariable\sto\s64-bit\sin\sthe\stokenizer\sto\savoid\nany\spossibility\sof\san\sinteger\soverflow.
+D 2025-12-27T19:57:59.356
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -795,7 +795,7 @@ F src/test_vfs.c b4135c1308516adf0dfd494e6d6c33114e03732be899eace0502919b674586b
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
-F src/tokenize.c ca1382f02a3990d1a770acd5c55731dee10cd644465b2855eca33e4d2ea299ed
+F src/tokenize.c f297bbf02037639e7a93b37d9c6e4415b3de1273395ee8fa8183e741e1e7fb72
 F src/treeview.c 3ce7ac9835d2d70cc1c868b01b747ae8a062322e155701e58e3d62ca79aada7a
 F src/trigger.c cb894db98083c68c4a17c72566ed39434aa91286db20d2891279ee49e6bfec0c
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
@@ -2188,8 +2188,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c f40bccf0236f8bcc34b299781b7d34cb269ace23afe5c1b8a9d966e2fa1ce9e5
-P f7736af849d910f04d8622ed7c6e705d84cf22f0a73dca0f30eead9bd1f28bc7
-R 43855622a7f99eaf2e84b3fd5150fbc0
+P f41851587328f8b434e66987765324b7bf5746ecdf3a9f2869000276e0f79401
+R 0318fcb6944164fd4ebe079bcdee2867
 U drh
-Z 568ba1e2be02bc872c4ea7b34bd66c20
+Z cb66f3935c2321391ca778a118ec4b1c
 # Remove this line to create a well-formed Fossil manifest.

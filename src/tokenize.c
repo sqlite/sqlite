@@ -508,7 +508,7 @@ i64 sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case CC_DOLLAR:
     case CC_VARALPHA: {
-      int n = 0;
+      i64 n = 0;
       testcase( z[0]=='$' );  testcase( z[0]=='@' );
       testcase( z[0]==':' );  testcase( z[0]=='#' );
       *tokenType = TK_VARIABLE;
