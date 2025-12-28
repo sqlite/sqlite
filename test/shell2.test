@@ -330,11 +330,11 @@ do_test shell2-1.4.11 {
   close $df
   set res [catchcmd :memory: [string trim {
  CREATE TABLE t(line text);
-.mode ascii
-.separator "\377" "\n"
+.mode ascii -colsep "\377" -rowsep "\n"
 .import dummy.csv t
  SELECT count(*) FROM t;}]]
-} {0 1}
+} {1 {0
+Error: .import column separator must be ASCII}}
 } ;# ifcapable vtab
 
 # Bug from forum post 7cbe081746dd3803

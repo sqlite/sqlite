@@ -4930,8 +4930,8 @@ static void import_append_char(ImportCtx *p, int c){
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
 **      from sqlite3_malloc64().
-**   +  Use p->cSep as the column separator.  The default is ",".
-**   +  Use p->rSep as the row separator.  The default is "\n".
+**   +  Use p->cColSep as the column separator.  The default is ",".
+**   +  Use p->cRowSep as the row separator.  The default is "\n".
 **   +  Keep track of the line number in p->nLine.
 **   +  Store the character that terminates the field in p->cTerm.  Store
 **      EOF on end-of-file.
@@ -5020,8 +5020,8 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
 **      from sqlite3_malloc64().
-**   +  Use p->cSep as the column separator.  The default is "\x1F".
-**   +  Use p->rSep as the row separator.  The default is "\x1E".
+**   +  Use p->cColSep as the column separator.  The default is "\x1F".
+**   +  Use p->cRowSep as the row separator.  The default is "\x1E".
 **   +  Keep track of the row number in p->nLine.
 **   +  Store the character that terminates the field in p->cTerm.  Store
 **      EOF on end-of-file.
@@ -7346,13 +7346,23 @@ static int pickStr(const char *zArg, char **pzErr, ...){
 ** names.  If FILE begins with "|" then it is a command that is run
 ** and the output from the command is used as the input data.
 **
-** FILE is assumed to be in a CSV format, unless the current mode
-** is "ascii" or "tabs" or unless one of the options below specify
-** an alternative.
+** The content of FILE is interpreted using RFC-4180 ("CSV") quoting
+** rules unless the current mode is "ascii" or "tabs" or unless one
+** the --ascii option is used.
+**
+** The column and row separators must be single ASCII characters.  If
+** multiple characters or a Unicode character are specified for the
+** separators, then only the first byte of the separator is used.  Except,
+** if the row separator is \n and the mode is not --ascii, then \r\n is
+** understood as a row separator too.
 **
 ** Options:
-**   --ascii         Use \037 and \036 as column and row separators on input
+**   --ascii         Do not use RFC-4180 quoting.  Use \037 and \036
+**                   as column and row separators on input, unless other
+**                   delimiters are specified using --colsep and/or --rowsep
+**   --colsep CHAR   Use CHAR as the column separator.
 **   --csv           Input is standard RFC-4180 CSV.
+**   --rowsep CHAR   Use CHAR as the row separator.
 **   --schema S      When creating TABLE, put it in schema S
 **   --skip N        Ignore the first N rows of input
 **   -v              Verbose mode
@@ -7368,13 +7378,11 @@ static int dotCmdImport(ShellState *p){
   i64 nByte;                  /* Number of bytes in an SQL string */
   int i, j;                   /* Loop counters */
   int needCommit;             /* True to COMMIT or ROLLBACK at end */
-  int nSep;                   /* Number of bytes in spec.zColumnSep */
   char *zSql = 0;             /* An SQL statement */
   ImportCtx sCtx;             /* Reader context */
   char *(SQLITE_CDECL *xRead)(ImportCtx*); /* Func to read one value */
   int eVerbose = 0;           /* Larger for more console output */
   i64 nSkip = 0;              /* Initial lines to skip */
-  int useOutputMode = 1;      /* Use output mode to determine separators */
   char *zCreate = 0;          /* CREATE TABLE statement text */
   int rc;                     /* Result code */
 
@@ -7404,15 +7412,27 @@ static int dotCmdImport(ShellState *p){
     }else if( cli_strcmp(z,"-skip")==0 && i<nArg-1 ){
       nSkip = integerValue(azArg[++i]);
     }else if( cli_strcmp(z,"-ascii")==0 ){
-      sCtx.cColSep = SEP_Unit[0];
-      sCtx.cRowSep = SEP_Record[0];
+      if( sCtx.cColSep==0 ) sCtx.cColSep = SEP_Unit[0];
+      if( sCtx.cRowSep==0 ) sCtx.cRowSep = SEP_Record[0];
       xRead = ascii_read_one_field;
-      useOutputMode = 0;
     }else if( cli_strcmp(z,"-csv")==0 ){
-      sCtx.cColSep = ',';
-      sCtx.cRowSep = '\n';
+      if( sCtx.cColSep==0 ) sCtx.cColSep = ',';
+      if( sCtx.cRowSep==0 ) sCtx.cRowSep = '\n';
       xRead = csv_read_one_field;
-      useOutputMode = 0;
+    }else if( cli_strcmp(z,"-colsep")==0 ){
+      if( i==nArg-1 ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      i++;
+      sCtx.cColSep = azArg[i][0];
+    }else if( cli_strcmp(z,"-rowsep")==0 ){
+      if( i==nArg-1 ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      i++;
+      sCtx.cRowSep = azArg[i][0];
     }else{
       dotCmdError(p, i, "unknown option", 0);
       return 1;
@@ -7425,45 +7445,30 @@ static int dotCmdImport(ShellState *p){
   }
   seenInterrupt = 0;
   open_db(p, 0);
-  if( useOutputMode ){
-    /* If neither the --csv or --ascii options are specified, then set
-    ** the column and row separator characters from the output mode. */
-    if( p->mode.spec.zColumnSep==0 ){
-      modeSetStr(&p->mode.spec.zColumnSep, ",");
-      nSep = 1;
-    }else if( (nSep = strlen30(p->mode.spec.zColumnSep))==0 ){
-      eputz("Error: non-null column separator required for import\n");
-      return 1;
+  if( sCtx.cColSep==0 ){
+    if( p->mode.spec.zColumnSep && p->mode.spec.zColumnSep[0]!=0 ){
+      sCtx.cColSep = p->mode.spec.zColumnSep[0];
+    }else{
+      sCtx.cColSep = ',';
     }
-    if( nSep>1 ){
-      eputz("Error: multi-character column separators not allowed"
-            " for import\n");
-      return 1;
+  }
+  if( (sCtx.cColSep & 0x80)!=0 ){
+    eputz("Error: .import column separator must be ASCII\n");
+    return 1;
+  }
+  if( sCtx.cRowSep==0 ){
+    if( p->mode.spec.zRowSep && p->mode.spec.zRowSep[0]!=0 ){
+      sCtx.cRowSep = p->mode.spec.zRowSep[0];
+    }else{
+      sCtx.cRowSep = '\n';
     }
-    if( p->mode.spec.zRowSep==0 ){
-      modeSetStr(&p->mode.spec.zRowSep, "\n");
-      nSep = 1;
-    }else if( (nSep = strlen30(p->mode.spec.zRowSep))==0 ){
-      eputz("Error: non-null row separator required for import\n");
-      return 1;
-    }
-    if( nSep==2 && p->mode.eMode==MODE_Csv
-     && cli_strcmp(p->mode.spec.zRowSep,SEP_CrLf)==0
-    ){
-      /* When importing CSV (only), if the row separator is set to the
-      ** default output row separator, change it to the default input
-      ** row separator.  This avoids having to maintain different input
-      ** and output row separators. */
-      modeSetStr(&p->mode.spec.zRowSep, SEP_Row);
-      nSep = strlen30(p->mode.spec.zRowSep);
-    }
-    if( nSep>1 ){
-      eputz("Error: multi-character row separators not allowed"
-            " for import\n");
-      return 1;
-    }
-    sCtx.cColSep = (u8)p->mode.spec.zColumnSep[0];
-    sCtx.cRowSep = (u8)p->mode.spec.zRowSep[0];
+  }
+  if( sCtx.cRowSep=='\r' && xRead!=ascii_read_one_field ){
+    sCtx.cRowSep = '\n';
+  }
+  if( (sCtx.cRowSep & 0x80)!=0 ){
+    eputz("Error: .import row separator must be ASCII\n");
+    return 1;
   }
   sCtx.zFile = zFile;
   sCtx.nLine = 1;
@@ -7484,7 +7489,7 @@ static int dotCmdImport(ShellState *p){
     cli_printf(stderr,"Error: cannot open \"%s\"\n", zFile);
     return 1;
   }
-  if( eVerbose>=2 || (eVerbose>=1 && useOutputMode) ){
+  if( eVerbose>=1 ){
     char zSep[2];
     zSep[1] = 0;
     zSep[0] = sCtx.cColSep;
