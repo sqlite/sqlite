@@ -44,5 +44,6 @@ do_clitest dblwidth-a.sql
 do_clitest vt100-a.sql
 do_clitest regexp1.sql
 do_clitest imposter1.sql
+do_clitest import01.sql
 
 finish_test

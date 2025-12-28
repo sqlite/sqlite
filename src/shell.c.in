@@ -7690,6 +7690,10 @@ static int dotCmdImport(ShellState *p){
       }
       sqlite3_bind_text(pStmt, i+1, z, -1, SQLITE_TRANSIENT);
       if( i<nCol-1 && sCtx.cTerm!=sCtx.cColSep ){
+        if( i==0 && (strcmp(z,"\n")==0 || strcmp(z,"\r\n")==0) ){
+          /* Ignore trailing \n or \r\n when some other row separator */
+          break;
+        }
         cli_printf(stderr,"%s:%d: expected %d columns but found %d"
               " - filling the rest with NULL\n",
               sCtx.zFile, startLine, nCol, i+1);
@@ -8653,7 +8657,7 @@ static int dotCmdCheck(ShellState *p){
     dotCmdError(p, 0, "no PATTERN specified", 0);
     return 1;
   }
-  if( cli_output_capture ){
+  if( cli_output_capture && sqlite3_str_length(cli_output_capture) ){
     zTest = sqlite3_str_value(cli_output_capture);
     shell_check_oom(zTest);
   }else{

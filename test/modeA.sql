@@ -14,7 +14,7 @@
 # Test cases for the ".mode" command of the CLI.
 # To run these tests:
 #
-#   ./sqlite3 <test/modeA.clitest
+#   ./sqlite3 test/modeA.sql
 #
 #
 .open :memory:
