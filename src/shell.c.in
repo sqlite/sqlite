@@ -4892,7 +4892,9 @@ struct ImportCtx {
   const char *zFile;  /* Name of the input file */
   FILE *in;           /* Read the CSV text from this input stream */
   int (SQLITE_CDECL *xCloser)(FILE*);      /* Func to close in */
+  char *zIn;          /* Input text */
   char *z;            /* Accumulated text for a field */
+  i64 nUsed;          /* Bytes of zIn[] used so far */
   i64 n;              /* Number of bytes in z */
   i64 nAlloc;         /* Space allocated for z[] */
   int nLine;          /* Current line number */
@@ -4912,9 +4914,28 @@ static void import_cleanup(ImportCtx *p){
   }
   sqlite3_free(p->z);
   p->z = 0;
+  if( p->zIn ){
+    sqlite3_free(p->zIn);
+    p->zIn = 0;
+  }
 }
 
-/* Append a single byte to z[] */
+/* Read a single character of the .import input text.  Return EOF
+** at end-of-file.
+*/
+static int import_getc(ImportCtx *p){
+  if( p->in ){
+    return fgetc(p->in);
+  }else if( p->zIn && p->zIn[p->nUsed]!=0 ){
+    return p->zIn[p->nUsed++];
+  }else{
+    return EOF;
+  }
+}
+
+/* Append a single byte to the field value begin constructed
+** in the p->z[] buffer
+*/
 static void import_append_char(ImportCtx *p, int c){
   if( p->n+1>=p->nAlloc ){
     p->nAlloc += p->nAlloc + 100;
@@ -4942,7 +4963,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
   int cSep = (u8)p->cColSep;
   int rSep = (u8)p->cRowSep;
   p->n = 0;
-  c = fgetc(p->in);
+  c = import_getc(p);
   if( c==EOF || seenInterrupt ){
     p->cTerm = EOF;
     return 0;
@@ -4953,7 +4974,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
     int cQuote = c;
     pc = ppc = 0;
     while( 1 ){
-      c = fgetc(p->in);
+      c = import_getc(p);
       if( c==rSep ) p->nLine++;
       if( c==cQuote ){
         if( pc==cQuote ){
@@ -4989,10 +5010,10 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
     ** UTF-8 BOM  (0xEF BB BF) then skip the BOM */
     if( (c&0xff)==0xef && p->bNotFirst==0 ){
       import_append_char(p, c);
-      c = fgetc(p->in);
+      c = import_getc(p);
       if( (c&0xff)==0xbb ){
         import_append_char(p, c);
-        c = fgetc(p->in);
+        c = import_getc(p);
         if( (c&0xff)==0xbf ){
           p->bNotFirst = 1;
           p->n = 0;
@@ -5002,7 +5023,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
     }
     while( c!=EOF && c!=cSep && c!=rSep ){
       import_append_char(p, c);
-      c = fgetc(p->in);
+      c = import_getc(p);
     }
     if( c==rSep ){
       p->nLine++;
@@ -5032,14 +5053,14 @@ static char *SQLITE_CDECL ascii_read_one_field(ImportCtx *p){
   int cSep = (u8)p->cColSep;
   int rSep = (u8)p->cRowSep;
   p->n = 0;
-  c = fgetc(p->in);
+  c = import_getc(p);
   if( c==EOF || seenInterrupt ){
     p->cTerm = EOF;
     return 0;
   }
   while( c!=EOF && c!=cSep && c!=rSep ){
     import_append_char(p, c);
-    c = fgetc(p->in);
+    c = import_getc(p);
   }
   if( c==rSep ){
     p->nLine++;
@@ -7344,7 +7365,9 @@ static int pickStr(const char *zArg, char **pzErr, ...){
 ** Import CSV or similar text from FILE into TABLE.  If TABLE does
 ** not exist, it is created using the first row of FILE as the column
 ** names.  If FILE begins with "|" then it is a command that is run
-** and the output from the command is used as the input data.
+** and the output from the command is used as the input data.  If
+** FILE begins with "<<" followed by a label, then content is read from
+** the script until the first line that matches the label.
 **
 ** The content of FILE is interpreted using RFC-4180 ("CSV") quoting
 ** rules unless the current mode is "ascii" or "tabs" or unless one
@@ -7481,11 +7504,32 @@ static int dotCmdImport(ShellState *p){
     sCtx.zFile = "<pipe>";
     sCtx.xCloser = pclose;
 #endif
+  }else if( sCtx.zFile[0]=='<' && sCtx.zFile[1]=='<' && sCtx.zFile[2]!=0 ){
+    /* Input text comes from subsequent lines of script until the zFile
+    ** delimiter */
+    int nEndMark = strlen30(sCtx.zFile);
+    sqlite3_str *pPattern = sqlite3_str_new(p->db);
+    int ckEnd = 1;
+    char zLine[2000];
+    while( sqlite3_fgets(zLine,sizeof(zLine),p->in) ){
+      if( ckEnd && cli_strncmp(&sCtx.zFile[2],zLine,nEndMark-2)==0 ) break;
+      if( strchr(zLine,'\n') ){
+        p->lineno++;
+        ckEnd = 1;
+      }else{
+        ckEnd = 0;
+      }
+      sqlite3_str_appendall(pPattern, zLine);
+    }
+    sCtx.zIn = sqlite3_str_finish(pPattern);
+    if( sCtx.zIn==0 ){
+      sCtx.zIn = sqlite3_mprintf("");
+    }
   }else{
     sCtx.in = sqlite3_fopen(sCtx.zFile, "rb");
     sCtx.xCloser = fclose;
   }
-  if( sCtx.in==0 ){
+  if( sCtx.in==0 && sCtx.zIn==0 ){
     cli_printf(stderr,"Error: cannot open \"%s\"\n", zFile);
     return 1;
   }
