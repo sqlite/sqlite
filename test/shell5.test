@@ -33,10 +33,10 @@ forcedelete test.db test.db-journal test.db-wal
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell5-1.1.1 {
   catchcmd "test.db" ".import"
-} {/1 .ERROR: missing FILE argument.*/}
+} {/1 .line 1: Missing FILE argument.*/}
 do_test shell5-1.1.2 {
   catchcmd "test.db" ".import FOO"
-} {/1 .ERROR: missing TABLE argument.*/}
+} {/1 .line 1: Missing TABLE argument.*/}
 do_test shell5-1.1.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
@@ -83,7 +83,7 @@ do_test shell5-1.4.1 {
   forcedelete FOO
   set res [catchcmd "test.db" {CREATE TABLE t1(a, b);
 .import FOO t1}]
-} {1 {Error: cannot open "FOO"}}
+} {1 {line 2: cannot open "FOO"}}
 
 # the remainder of these test cases require virtual tables.
 #
@@ -276,6 +276,7 @@ do_test shell5-1.7.1 {
   close $in
   set res [catchcmd "test.db" {.mode csv
 .import shell5.csv t3
+.mode quote
 SELECT COUNT(*) FROM t3;}]
 } [list 0 $rows]
 
@@ -503,9 +504,10 @@ do_test shell5-4.4 {
 CREATE TEMP TABLE t8(a, b, c);
 .import shell5.csv t8
 .nullvalue #
+.mode quote
 SELECT * FROM temp.t8
   }]
-} {0 1,2,3}
+} {0 '1','2','3'}
 
 #----------------------------------------------------------------------------
 # Tests for the shell automatic column rename.

@@ -7531,8 +7531,11 @@ static int dotCmdImport(ShellState *p){
       sCtx.zIn = sqlite3_mprintf("");
     }
     if( ckEnd<2 ){
-      cli_printf(stderr, "%s:%lld: Content terminator \"%s\" not found.\n",
-            p->zInFile, iStart, &sCtx.zFile[2]);
+      i64 savedLn = p->lineno;
+      p->lineno = iStart;
+      dotCmdError(p, 0, 0,"Content terminator \"%s\" not found.",
+                  &sCtx.zFile[2]);
+      p->lineno = savedLn;
       import_cleanup(&sCtx);
       return 1;
     }
@@ -7541,7 +7544,7 @@ static int dotCmdImport(ShellState *p){
     sCtx.xCloser = fclose;
   }
   if( sCtx.in==0 && sCtx.zIn==0 ){
-    cli_printf(stderr,"%s:%lld: cannot open \"%s\"\n", zFile, p->lineno);
+    dotCmdError(p, 0, 0, "cannot open \"%s\"", zFile);
     import_cleanup(&sCtx);
     return 1;
   }

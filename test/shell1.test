@@ -417,15 +417,18 @@ do_test shell1-3.10.2 {
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell1-3.11.1 {
   catchcmd "test.db" ".import"
-} {/1 .ERROR: missing FILE argument.*/}
+} {/1 .line 1: Missing FILE argument.*/}
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
-} {/1 .ERROR: missing TABLE argument.*/}
+} {/1 .line 1: Missing TABLE argument.*/}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
 } {1 {line 1: .import FOO BAR BAD
 line 1:                 ^--- unknown argument}}
+do_test shell1-3.11.4 {
+  catchcmd "test.db" ".import <<END t1\na,b,c\n1,2,3"
+} {1 {line 1: Content terminator "END" not found.}}
 
 # .indexes ?TABLE?       Show names of all indexes
 #                          If TABLE specified, only show indexes for tables
