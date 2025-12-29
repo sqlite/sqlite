@@ -615,4 +615,36 @@ do_test shell5-8.1 {
   catchcmd :memory: {.import --csv shell5.csv '""""""""""""""""""""""""""""""""""""""""""""""'}
 } {0 {}}
 
+
+# 2025-12-29 https://sqlite.org/forum/forumpost/6c1c0e213d
+# .import honor .bail
+#
+do_test shell5-9.1 {
+  catchcmd ":memory:" {
+    CREATE TABLE t1(a,b,c INT CHECK(c<>5));
+.bail on
+.import -csv <<END t1
+1,2,3
+"a","b","c"
+3,4,5
+"q","r","s"
+END
+SELECT * FROM t1;}
+} {1 {<stdin>:7: INSERT failed: CHECK constraint failed: c<>5}}
+do_test shell5-9.2 {
+  catchcmd ":memory:" {
+    CREATE TABLE t1(a,b,c INT CHECK(c<>5));
+.bail off
+.import -csv <<END t1
+1,2,3
+"a","b","c"
+3,4,5
+"q","r","s"
+END
+SELECT * FROM t1;}
+} {1 {1|2|3
+a|b|c
+q|r|s
+<stdin>:7: INSERT failed: CHECK constraint failed: c<>5}}
+
 finish_test

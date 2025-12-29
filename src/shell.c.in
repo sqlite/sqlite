@@ -7406,6 +7406,7 @@ static int dotCmdImport(ShellState *p){
   char *(SQLITE_CDECL *xRead)(ImportCtx*); /* Func to read one value */
   int eVerbose = 0;           /* Larger for more console output */
   i64 nSkip = 0;              /* Initial lines to skip */
+  i64 iLineOffset = 0;        /* Offset to the first line of input */
   char *zCreate = 0;          /* CREATE TABLE statement text */
   int rc;                     /* Result code */
 
@@ -7507,13 +7508,17 @@ static int dotCmdImport(ShellState *p){
   }else if( sCtx.zFile[0]=='<' && sCtx.zFile[1]=='<' && sCtx.zFile[2]!=0 ){
     /* Input text comes from subsequent lines of script until the zFile
     ** delimiter */
-    int nEndMark = strlen30(sCtx.zFile);
+    int nEndMark = strlen30(zFile)-2;
+    char *zEndMark = &zFile[2];
     sqlite3_str *pContent = sqlite3_str_new(p->db);
     int ckEnd = 1;
     i64 iStart = p->lineno;
     char zLine[2000];
+    sCtx.zFile = p->zInFile;
+    sCtx.nLine = p->lineno+1;
+    iLineOffset = p->lineno;
     while( sqlite3_fgets(zLine,sizeof(zLine),p->in) ){
-      if( ckEnd && cli_strncmp(&sCtx.zFile[2],zLine,nEndMark-2)==0 ){
+      if( ckEnd && cli_strncmp(zLine,zEndMark,nEndMark)==0 ){
         ckEnd = 2;
         if( strchr(zLine,'\n') ) p->lineno++;
         break;
@@ -7533,8 +7538,7 @@ static int dotCmdImport(ShellState *p){
     if( ckEnd<2 ){
       i64 savedLn = p->lineno;
       p->lineno = iStart;
-      dotCmdError(p, 0, 0,"Content terminator \"%s\" not found.",
-                  &sCtx.zFile[2]);
+      dotCmdError(p, 0, 0,"Content terminator \"%s\" not found.",zEndMark);
       p->lineno = savedLn;
       import_cleanup(&sCtx);
       return 1;
@@ -7732,6 +7736,7 @@ static int dotCmdImport(ShellState *p){
         cli_printf(stderr,"%s:%d: INSERT failed: %s\n",
               sCtx.zFile, startLine, sqlite3_errmsg(p->db));
         sCtx.nErr++;
+        if( bail_on_error ) break;
       }else{
         sCtx.nRow++;
       }
@@ -7744,9 +7749,9 @@ static int dotCmdImport(ShellState *p){
   if( eVerbose>0 ){
     cli_printf(p->out,
           "Added %d rows with %d errors using %d lines of input\n",
-          sCtx.nRow, sCtx.nErr, sCtx.nLine-1);
+          sCtx.nRow, sCtx.nErr, sCtx.nLine-1-iLineOffset);
   }
-  return 0;
+  return sCtx.nErr ? 1 : 0;
 }
 
 
