@@ -7462,7 +7462,7 @@ static int dotCmdImport(ShellState *p){
     }
   }
   if( zTable==0 ){
-    cli_printf(p->out, "ERROR: missing %s argument\n",
+    dotCmdError(p, nArg, 0, "Missing %s argument\n",
           zFile==0 ? "FILE" : "TABLE");
     return 1;
   }
@@ -7508,29 +7508,41 @@ static int dotCmdImport(ShellState *p){
     /* Input text comes from subsequent lines of script until the zFile
     ** delimiter */
     int nEndMark = strlen30(sCtx.zFile);
-    sqlite3_str *pPattern = sqlite3_str_new(p->db);
+    sqlite3_str *pContent = sqlite3_str_new(p->db);
     int ckEnd = 1;
+    i64 iStart = p->lineno;
     char zLine[2000];
     while( sqlite3_fgets(zLine,sizeof(zLine),p->in) ){
-      if( ckEnd && cli_strncmp(&sCtx.zFile[2],zLine,nEndMark-2)==0 ) break;
+      if( ckEnd && cli_strncmp(&sCtx.zFile[2],zLine,nEndMark-2)==0 ){
+        ckEnd = 2;
+        if( strchr(zLine,'\n') ) p->lineno++;
+        break;
+      }
       if( strchr(zLine,'\n') ){
         p->lineno++;
         ckEnd = 1;
       }else{
         ckEnd = 0;
       }
-      sqlite3_str_appendall(pPattern, zLine);
+      sqlite3_str_appendall(pContent, zLine);
     }
-    sCtx.zIn = sqlite3_str_finish(pPattern);
+    sCtx.zIn = sqlite3_str_finish(pContent);
     if( sCtx.zIn==0 ){
       sCtx.zIn = sqlite3_mprintf("");
+    }
+    if( ckEnd<2 ){
+      cli_printf(stderr, "%s:%lld: Content terminator \"%s\" not found.\n",
+            p->zInFile, iStart, &sCtx.zFile[2]);
+      import_cleanup(&sCtx);
+      return 1;
     }
   }else{
     sCtx.in = sqlite3_fopen(sCtx.zFile, "rb");
     sCtx.xCloser = fclose;
   }
   if( sCtx.in==0 && sCtx.zIn==0 ){
-    cli_printf(stderr,"Error: cannot open \"%s\"\n", zFile);
+    cli_printf(stderr,"%s:%lld: cannot open \"%s\"\n", zFile, p->lineno);
+    import_cleanup(&sCtx);
     return 1;
   }
   if( eVerbose>=1 ){
@@ -8602,7 +8614,6 @@ dotCmdOutput_error:
 ** All pattern lines and the ENDMARK are discarded.
 **
 ** Options:
-**   --error-prefix TEXT    Change error message prefix text to TEXT
 **   --exact                Do an exact comparison including leading and
 **                          trailing whitespace.
 **   --glob                 Treat PATTERN as a GLOB
