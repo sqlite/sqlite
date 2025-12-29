@@ -1,5 +1,5 @@
-C Test\scases\sfor\s.import,\sas\swell\sas\sminor\senhancements\sto\s.import\sand\sto\s.check.
-D 2025-12-28T21:37:58.718
+C Fix\sthe\s"testfixture"\smakefile\starget\sso\sthat\sit\sbuilds\swith\sa\sstatic\sTCL\nlibrary\son\sMac-ARM.\s\sFix\sthe\s"tool-zip"\starget\sso\sthat\sit\suses\sordinary\ntclsh\srather\sthan\stestfixture\sto\srun\sthe\stool/mmktoolzip.tcl\sscript\sthat\nbuilds\sthe\sarchive.
+D 2025-12-29T12:34:37.919
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -658,7 +658,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 822f9eda3e689748341597f4327a071c2b0ce41cc3ed477d72f2560b956eb5c0
+F main.mk df51cfa9eb8cb3efec181435825eebfd7f8cc4ab5e2fd7e4381d17f2f40cdf64
 F make.bat a136fd0b1c93e89854a86d5f4edcf0386d211e5d5ec2434480f6eea436c7420c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c f40bccf0236f8bcc34b299781b7d34cb269ace23afe5c1b8a9d966e2fa1ce9e5
-P 6e8ab51fbe0ee918bce6ab960c9fb078764aa9721ef41d39818127eb98045d46
-R 8eadc3683ae1edb25c521107f8b2e915
+P 0252ac1c946cd2101f0084f11951b1aeea330dea23b707934c8852d9abe136b9
+R 27ae43293521fe056da9725ef3932881
 U drh
-Z 6d2e0ca98a0f666557e439a5406ebfa3
+Z 749aace6c80441a11e9bb9d69bba9d8f
 # Remove this line to create a well-formed Fossil manifest.
