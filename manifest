@@ -1,5 +1,5 @@
-C Fix\sthe\s"testfixture"\smakefile\starget\sso\sthat\sit\sbuilds\swith\sa\sstatic\sTCL\nlibrary\son\sMac-ARM.\s\sFix\sthe\s"tool-zip"\starget\sso\sthat\sit\suses\sordinary\ntclsh\srather\sthan\stestfixture\sto\srun\sthe\stool/mmktoolzip.tcl\sscript\sthat\nbuilds\sthe\sarchive.
-D 2025-12-29T12:34:37.919
+C Update\sto\sthe\sunix\sbuild\sdocumentation.
+D 2025-12-29T12:46:35.028
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -56,7 +56,7 @@ F autosetup/teaish/tester.tcl 1799514c2652db49561b3386c5242b94534d1663f2cfac861a
 F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
-F doc/compile-for-unix.md c9dce1ddd4bf0d25efccc5c63eb047e78c01ce06a6ff29c73e0a8af4a0f4adbc
+F doc/compile-for-unix.md c8f05bf9ff8c588c501515eb11642540572203e53d0b5eb5bf60983acdd47643
 F doc/compile-for-windows.md 36601c95fa4070eebfe757684271d17a7c4a586912ba706d0b5e7817e1df54ad
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md acd77fc3a709f51242655ad7803510c886aa8304202fa9cf2abc5f5c4e9d7ae5
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c f40bccf0236f8bcc34b299781b7d34cb269ace23afe5c1b8a9d966e2fa1ce9e5
-P 0252ac1c946cd2101f0084f11951b1aeea330dea23b707934c8852d9abe136b9
-R 27ae43293521fe056da9725ef3932881
+P adf5d624cf109ebd05952e5df62f143f40829070cbcbe43280d371a60db7470b
+R d9c87e99e2eda5a65dccb1c2239e0357
 U drh
-Z 749aace6c80441a11e9bb9d69bba9d8f
+Z d9b7bd5e3ec50be58dc81d2728d15b04
 # Remove this line to create a well-formed Fossil manifest.
