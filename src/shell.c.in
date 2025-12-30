@@ -556,6 +556,14 @@ static char mainPrompt[PROMPT_LEN_MAX];
 /* Continuation prompt. default: "   ...> " */
 static char continuePrompt[PROMPT_LEN_MAX];
 
+/*
+** Write I/O traces to the following stream.
+*/
+#ifdef SQLITE_ENABLE_IOTRACE
+static FILE *iotrace = 0;
+#endif
+
+
 /* This is variant of the standard-library strncpy() routine with the
 ** one change that the destination string is always zero-terminated, even
 ** if there is no zero-terminator in the first n-1 characters of the source
@@ -674,13 +682,6 @@ static void shell_out_of_memory(void){
 static void shell_check_oom(const void *p){
   if( p==0 ) shell_out_of_memory();
 }
-
-/*
-** Write I/O traces to the following stream.
-*/
-#ifdef SQLITE_ENABLE_IOTRACE
-static FILE *iotrace = 0;
-#endif
 
 /*
 ** This routine works like printf in that its first argument is a
@@ -12654,25 +12655,60 @@ static int vfstraceOut(const char *z, void *pArg){
   return 1;
 }
 
-#ifndef SQLITE_SHELL_IS_UTF8
-#  if (defined(_WIN32) || defined(WIN32)) \
-   && (defined(_MSC_VER) || (defined(UNICODE) && defined(__GNUC__)))
-#    define SQLITE_SHELL_IS_UTF8          (0)
-#  else
-#    define SQLITE_SHELL_IS_UTF8          (1)
-#  endif
-#endif
-
+/* Alternative name to the entry point for Fiddle */
 #ifdef SQLITE_SHELL_FIDDLE
 #  define main fiddle_main
 #endif
 
-#if SQLITE_SHELL_IS_UTF8
-int SQLITE_CDECL main(int argc, char **argv){
-#else
+/* Use the wmain() entry point on Windows.  Translate arguments to
+** UTF8, then invoke the traditional main() entry point which is
+** renamed using a #define to utf8_main() .
+*/
+#if defined(_WIN32) && !defined(main)
+#  define main utf8_main                 /* Rename entry point to utf_main() */
+int SQLITE_CDECL utf8_main(int,char**);  /* Forward declaration */  
 int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
-  char **argv;
-#endif
+  int rc, i;
+  char **argv = malloc( sizeof(char*) * (argc+1) );
+  char **orig = argv;
+  if( argv==0 ){
+    fprintf(stderr, "malloc failed\n");
+    exit(1);
+  }
+  for(i=0; i<argc; i++){
+    int nByte = WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, 0, 0, 0, 0);
+    if( nByte==0 ){
+      argv[i] = 0;
+    }else{
+      argv[i] = malloc( nByte );
+      if( argv[i]==0 ){
+        fprintf(stderr, "malloc failed\n");
+        exit(1);
+      }
+      nByte = WideCharToMultiByte(CP_UTF8, 0, wargv[i], -1, argv[i],nByte,0,0);
+      if( nByte==0 ){
+        free(argv[i]);
+        argv[i] = 0;
+      }
+    }
+  }
+  argv[argc] = 0;
+  rc = utf8_main(argc, argv);
+  for(i=0; i<argc; i++) free(orig[i]);
+  return rc;
+}
+#endif /* WIN32 */
+
+/*
+** This is the main entry point for the process.  Everything starts here.
+**
+** The "main" identifier may have been #defined to something else:
+**
+**     utf8_main            On Windows
+**     fiddle_main          In Fiddle
+**     sqlite3_shell        Other projects that use shell.c as a subroutine
+*/
+int SQLITE_CDECL main(int argc, char **argv){
 #ifdef SQLITE_DEBUG
   sqlite3_int64 mem_main_enter = 0;
 #endif
@@ -12694,10 +12730,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   char **azCmd = 0;
   int *aiCmd = 0;
   const char *zVfs = 0;           /* Value of -vfs command-line option */
-#if !SQLITE_SHELL_IS_UTF8
-  char **argvToFree = 0;
-  int argcToFree = 0;
-#endif
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
 
 #ifdef SQLITE_SHELL_FIDDLE
@@ -12751,32 +12783,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
 #endif
   main_init(&data);
-
-  /* On Windows, we must translate command-line arguments into UTF-8.
-  ** The SQLite memory allocator subsystem has to be enabled in order to
-  ** do this.  But we want to run an sqlite3_shutdown() afterwards so that
-  ** subsequent sqlite3_config() calls will work.  So copy all results into
-  ** memory that does not come from the SQLite memory allocator.
-  */
-#if !SQLITE_SHELL_IS_UTF8
-  sqlite3_initialize();
-  argvToFree = malloc(sizeof(argv[0])*argc*2);
-  shell_check_oom(argvToFree);
-  argcToFree = argc;
-  argv = argvToFree + argc;
-  for(i=0; i<argc; i++){
-    char *z = sqlite3_win32_unicode_to_utf8(wargv[i]);
-    i64 n;
-    shell_check_oom(z);
-    n = strlen(z);
-    argv[i] = malloc( n+1 );
-    shell_check_oom(argv[i]);
-    memcpy(argv[i], z, n+1);
-    argvToFree[i] = argv[i];
-    sqlite3_free(z);
-  }
-  sqlite3_shutdown();
-#endif
 
   assert( argc>=1 && argv && argv[0] );
   Argv0 = argv[0];
@@ -12973,6 +12979,16 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-escape")==0 && i+1<argc ){
       /* skip over the argument */
       i++;
+    }else if( cli_strcmp(z,"-test-argv")==0 ){
+      /* Undocumented test option.  Print the values in argv[] and exit.
+      ** Use this to verify that any translation of the argv[], for example
+      ** on Windows that receives wargv[] from the OS and must convert
+      ** to UTF8 prior to calling this routine. */
+      int kk;
+      for(kk=0; kk<argc; kk++){
+        fprintf(stdout,"argv[%d] = \"%s\"\n", kk, argv[kk]);
+      }
+      return 0;
     }
   }
 #ifndef SQLITE_SHELL_FIDDLE
@@ -13391,10 +13407,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   output_reset(&data);
   data.doXdgOpen = 0;
   clearTempFile(&data);
-#if !SQLITE_SHELL_IS_UTF8
-  for(i=0; i<argcToFree; i++) free(argvToFree[i]);
-  free(argvToFree);
-#endif
   modeFree(&data.mode);
   if( data.nSavedModes ){
     int ii;
