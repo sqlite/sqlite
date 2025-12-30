@@ -74,5 +74,6 @@ int wmain(int argc, wchar_t **wargv){
   argv[argc] = 0;
   rc = utf8_main(argc, argv);
   for(i=0; i<argc; i++) free(orig[i]);
+  free(argv);
   return rc;
 }
