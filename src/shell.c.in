@@ -12987,7 +12987,7 @@ int SQLITE_CDECL main(int argc, char **argv){
       ** to UTF8 prior to calling this routine. */
       int kk;
       for(kk=0; kk<argc; kk++){
-        fprintf(stdout,"argv[%d] = \"%s\"\n", kk, argv[kk]);
+        sqlite3_fprintf(stdout,"argv[%d] = \"%s\"\n", kk, argv[kk]);
       }
       return 0;
     }
