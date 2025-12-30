@@ -60,6 +60,9 @@ typedef sqlite3_uint64 u64;
 # define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 # define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
+# define LARGEST_INT32  ((int)(0x7fffffff))
+# define SMALLEST_INT32 ((int)((-1) - LARGEST_INT32))
+
 /*
 ** This macro is used in a single assert() within fts5 to check that an
 ** allocation is aligned to an 8-byte boundary. But it is a complicated
