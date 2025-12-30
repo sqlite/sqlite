@@ -1,5 +1,5 @@
-C Avoid\ssigned\sinteger\soverflow\swhen\san\sfts5\s'merge'\scommand\sis\spassed\s-2147483648\sas\sa\sparameter.
-D 2025-12-30T11:19:27.790
+C Fix\sthe\schange\son\sthis\sbranch\sso\sthat\sit\sworks\swith\samalgamation\sbuilds.
+D 2025-12-30T11:33:30.820
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -107,7 +107,7 @@ F ext/fts3/unicode/mkunicode.tcl cbf5f7b5c8ce8014bad731f246f2e520eece908465de477
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl 009cf59c77afa86d137b0cca3e3b1a5efbe2264faa2df233f9a7aa8563926d15
 F ext/fts5/fts5.h ff5d3cc88b29e41612bfb29eb723e29e38973de62ca75ba3e8f94ccb67f5b5f2
-F ext/fts5/fts5Int.h 8bfb50e7b30ac90ddc2746e57f4dc1c0132513bedada8d0267969121ad3681b6
+F ext/fts5/fts5Int.h 8d98f8e180fe28d6067e240ed45b9011735d29d5cfb5bac194e1e376baa7c708
 F ext/fts5/fts5_aux.c da4a7a9a11ec15c6df0699d908915a209bcde48f0b04101461316b59f71abffb
 F ext/fts5/fts5_buffer.c f1e6d0324d7c55329d340673befc26681a372a4d36086caa8d1ec7d7c53066c7
 F ext/fts5/fts5_config.c e7d8dd062b44a66cd77e5a0f74f23a2354cd1f3f8575afb967b2773c3384f7f8
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c f40bccf0236f8bcc34b299781b7d34cb269ace23afe5c1b8a9d966e2fa1ce9e5
-P d58846e74b6971a5fd80e5f030985273b7dfa0087c2f3c9d0c088c248e183f8a
-R 85813c23bee9063645fc098f8c19e5b9
+P 4c5d18d7f5bdcf95efdf96062c7434d5d10584a1fdfd65b18d331b8aae42e26a
+R 4b14869b8ea6686a23e18d14ecb69d10
 U dan
-Z 1b3211ec0683f1899de62403478ae5ef
+Z b97b54c5cc90887e2cc5440212367449
 # Remove this line to create a well-formed Fossil manifest.
