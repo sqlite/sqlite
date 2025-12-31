@@ -1,5 +1,5 @@
-C Add\sthe\snew\s"retest"\scommand\sto\stestrunner.tcl,\swhich\sreruns\sany\stests\sthat\nfailed\sor\snever\scompleted\sin\sthe\sprevious\sinvocation.\s\sNew\smakefile\starget\n"retest"\sfor\sboth\sunix\sand\sWindows\sthat\sruns\stestrunner.tcl\swith\s"retest".
-D 2025-12-31T17:21:30.104
+C Use\s64-bit\sintegers\sto\strack\smemory\sallocation\ssizes\sin\sthe\sCSV\sextension.\n[forum:/forumpost/e66a458339|Forum\spost\se66a458339].
+D 2025-12-31T18:30:45.051
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -367,7 +367,7 @@ F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001
 F ext/misc/closure.c 5559daf1daf742228431db929d1aa86dd535a4224cc634a81d2fd0d1e6ad7839
 F ext/misc/completion.c c27b64fdd0943c1b7f152376599814cee2641f7d67a7bb9bd2b957c2a64a5591
 F ext/misc/compress.c 8191118b9b73e7796c961790db62d35d9b0fb724b045e005a5713dc9e0795565
-F ext/misc/csv.c 22eb38dcf2a9b6b440969874bcc9c9f829864fbc84fd1f6428ef217e666565d2
+F ext/misc/csv.c e82124eabee0e692d7b90ab8b2c34fadbf7b375279f102567fa06e4da4b771bf
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
 F ext/misc/decimal.c d4883de142f6dcd36eda23da40b55e2b51374e7b01eb54a7173940191389fc5e
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1a08b85a862e8c9ac56c11e05f76abc25ad98b510fb13ad0716206ba797e53a8
-R 34155ecd52cb0eaf53cc76f6ad9cec0c
+P 9b668d56bf0eca3eb826df3edd6705cc809d920494c192a9949cafda791d83f9
+R 394695039b751bd4516d9d6a39bd496c
 U drh
-Z 46906462963f9767b867e2617393e282
+Z 319840f0b9cbd492657d765e7ddc32c3
 # Remove this line to create a well-formed Fossil manifest.
