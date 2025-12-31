@@ -228,3 +228,40 @@ SELECT a AS 'abcd', b FROM t2 WHERE c=3;
 ...: The quick fox jumps over the lazy brown dog
   b: 2
 END
+
+# https://sqlite.org/forum/forumpost/2025-12-31T19:14:24z
+#
+# For legacy compatibility, ".header" settings are not changed
+# by ".mode" unless the --title or --reset option is used on .mode.
+#
+.testcase 600
+DROP TABLE IF EXISTS t1;
+CREATE TABLE t1(a,b,c);
+INSERT INTO t1 VALUES(1,2,3);
+.header on
+.mode csv
+SELECT * FROM t1;
+.check --glob a,b,c*
+
+.testcase 610
+.mode csv -reset
+SELECT * FROM t1;
+.check 1,2,3
+
+.testcase 620
+.mode tty
+.mode csv
+.header on
+SELECT * FROM t1;
+.check --glob a,b,c*
+
+.testcase 630
+.mode tty
+.mode csv --title on
+SELECT * FROM t1;
+.check --glob a,b,c*
+.testcase 631
+.mode tty
+.mode csv --title off
+SELECT * FROM t1;
+.check 1,2,3
