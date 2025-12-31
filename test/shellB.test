@@ -10,9 +10,8 @@
 #***********************************************************************
 # TESTRUNNER: shell
 #
-# Test cases for the command-line shell using the new ".output memory"
-# feature.
-#
+# Test cases for the command-line shell using the newly renovated
+# ".testcase" and ".check" commands.
 #
 
 set testdir [file dirname $argv0]
@@ -44,6 +43,8 @@ do_clitest dblwidth-a.sql
 do_clitest vt100-a.sql
 do_clitest regexp1.sql
 do_clitest imposter1.sql
-do_clitest import01.sql
+ifcapable vtab {
+  do_clitest import01.sql
+}
 
 finish_test
