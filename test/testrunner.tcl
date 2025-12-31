@@ -120,19 +120,20 @@ Usage:
     --stop-on-error          Stop running after any reported error
     --zipvfs ZIPVFSDIR       ZIPVFS source directory
 
-Special values for PERMUTATION that work with plain tclsh:
+Special values for PERMUTATION include:
 
-    list      - show all allowed PERMUTATION arguments.
+    list      - show allowed PERMUTATION arguments.
     mdevtest  - tests recommended prior to normal development check-ins.
+    devtest   - alias for "mdevtest"
     release   - full release test with various builds.
     sdevtest  - like mdevtest but using ASAN and UBSAN.
-
-Other PERMUTATION arguments must be run using testfixture, not tclsh:
-
     all       - all tcl test scripts, plus a subset of test scripts rerun
                 with various permutations.
     full      - all tcl test scripts.
     veryquick - a fast subset of the tcl test scripts. This is the default.
+
+The interpreter that runs this script can be an ordinary "tclsh" as long
+as "package require sqlite3" works, or it can be "testfixture".
 
 If no PATTERN arguments are present, all tests specified by the PERMUTATION
 are run. Otherwise, each pattern is interpreted as a glob pattern. Only
@@ -298,6 +299,8 @@ switch -nocase -glob -- $tcl_platform(os) {
     error "cannot determine platform!"
   }
 }
+set TRG(testfixture-fullpath) [file join $dir $TRG(testfixture)]
+set TRG(interp) [info nameofexec]
 #-------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------
@@ -1158,7 +1161,7 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   set testrunner_tcl [file normalize [info script]]
 
   if {$build==""} {
-    set testfixture [info nameofexec]
+    set testfixture $TRG(interp)
   } else {
     set testfixture [file join [lindex $build 1] $TRG(testfixture)]
   }
@@ -1389,14 +1392,30 @@ proc add_devtest_jobs {lBld patternlist} {
   }
 }
 
-# Check to ensure that the interpreter is a full-blown "testfixture"
-# build and not just a "tclsh".  If this is not the case, issue an
-# error message and exit.
+# Check to ensure that TRG(interp) is a full-blown "testfixture" and
+# not just a "tclsh".
+#
+# The value of TRG(interp) defaults to whatever interpreter is running
+# this script, which might be either tclsh or testfixture.  If tclsh is
+# running this script, change $TRG(interp) to be an instance of testfixture.
+# If no testfixture exists in the directory from which this script is run,
+# attempt to build one.
+#
+# Do not return unless $TRG(interp) is a valid testfixture.  If unable
+# to find and/or construct one, abort with an error message.
 #
 proc must_be_testfixture {} {
+  global TRG
   if {[lsearch [info commands] sqlite3_soft_heap_limit]<0} {
-    puts "Use testfixture, not tclsh, for these arguments."
-    exit 1
+    if {![file exec $TRG(testfixture-fullpath)]} {
+      puts "make testfixture"
+      catch {exec make testfixture >@stdout 2>@stderr}
+    }
+    if {![file exec $TRG(testfixture-fullpath)]} {
+      puts "Requires testfixture, and I was unable to build it."
+      exit 1
+    }
+    set TRG(interp) $TRG(testfixture-fullpath)
   }
 }
 
@@ -1471,7 +1490,7 @@ proc add_jobs_from_cmdline {patternlist} {
 
     list {
       set allperm [array names ::testspec]
-      lappend allperm all mdevtest sdevtest release list
+      lappend allperm all devtest mdevtest sdevtest release list
       puts "Allowed values for the PERMUTATION argument: [lsort $allperm]"
       exit 0
     }
@@ -1512,6 +1531,8 @@ proc add_jobs_from_cmdline {patternlist} {
   }
 }
 
+# Initializer, or reinitialize, the testrunner.db database file.
+#
 proc make_new_testset {} {
   global TRG
 
@@ -1627,7 +1648,7 @@ proc launch_another_job {iJob} {
   global O
   global T
 
-  set testfixture [info nameofexec]
+  set testfixture $TRG(interp)
   set script $TRG(info_script)
 
   set O($iJob) ""
