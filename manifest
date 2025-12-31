@@ -1,5 +1,5 @@
-C Update\sthe\sautoconf\starball\sMakefile.msc\sto\salign\swith\sthe\scanonical\smakefile.
-D 2025-12-31T11:00:51.432
+C Use\s64-bit\sintegers\sto\strack\smemory\sallocation\ssizes\sin\sthe\sCSV\sextension.
+D 2025-12-31T18:46:13.516
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -367,7 +367,7 @@ F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001
 F ext/misc/closure.c 5559daf1daf742228431db929d1aa86dd535a4224cc634a81d2fd0d1e6ad7839
 F ext/misc/completion.c c27b64fdd0943c1b7f152376599814cee2641f7d67a7bb9bd2b957c2a64a5591
 F ext/misc/compress.c 8191118b9b73e7796c961790db62d35d9b0fb724b045e005a5713dc9e0795565
-F ext/misc/csv.c 7cae8c2666a058a58fb8994ed2457339a06c97d31c251d9a8445cdd966629890
+F ext/misc/csv.c d9dab032420d81cdf0abc4b8523711d20a355704f82d958f963c86be48387dd9
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
 F ext/misc/decimal.c d4883de142f6dcd36eda23da40b55e2b51374e7b01eb54a7173940191389fc5e
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
@@ -2171,8 +2171,9 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 15400ce39b83ebc384b5eb17eba87452b937c0b00117c1575a51c6e6139fe3b1
-R 860aee095ddd905dfe33a5cc6c4c963f
+P 390dfd6366a7e9a9b4c6454c0b281279d8fcf8ffdb14b8b4d945591cb37812bc
+Q +f293a2b3ffcfe20fcda954bd31e88bbfcba18d007e9b5f29a473983f6030f2ce
+R 1cad0409a236c60fee4f449d5e5f8f2f
 U drh
-Z 23a44e6e6792ee157915ead59172b862
+Z cd89d9fab6c9de0dbb67594ce33d5309
 # Remove this line to create a well-formed Fossil manifest.
