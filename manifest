@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sfileio\sextension\son\swindows.\s\sOther\schanges\sto\nmakefiles\sand\ssimilar\sto\sget\szipfile\stesting\sworking\son\sWindows.
-D 2025-12-19T23:47:07.922
+C Fix\sa\stypo\sin\scheck-in\s0819fe670f9ceec7\sthat\slead\sto\sincomplete\sprotection\sagainst\nbuffer\soverflow\sin\sthe\szipfile\sextension.
+D 2025-12-31T01:11:36.738
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -414,7 +414,7 @@ F ext/misc/vtablog.c 2d04386c2f5a3bb93bc9ae978f0b7dcd5a264e126abd640dd6d82aa9067
 F ext/misc/vtshim.c e5bce24ab8c532f4fdc600148718fe1802cb6ed57417f1c1032d8961f72b0e8f
 F ext/misc/wholenumber.c 0fa0c082676b7868bf2fa918e911133f2b349bcdceabd1198bba5f65b4fc0668
 F ext/misc/windirent.h 02211ce51f3034c675f2dbf4d228194d51b3ee05734678bad5106fff6292e60c
-F ext/misc/zipfile.c 09e6e3a3ff40a99677de3c0bc6569bd5f4709b1844ac3d1c1452a456c5a62f1c
+F ext/misc/zipfile.c 71d3fd3155ed5e738473e286e550cf0bcf346cc2fd63646eaf944e7b40531a1b
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2078,7 +2078,7 @@ F test/writecrash.test 13520af28f376bfc8c0bcd130efc1fff20bb165198e8b94cf153f1f75
 F test/zeroblob.test 7b74cefc7b281dfa2b07cd237987fbe94b4a2037a7771e9e83f2d5f608b1d99e
 F test/zeroblobfault.test 861d8191a0d944dfebb3cb4d2c5b4e46a5a119eaec5a63dd996c2389f8063441
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test ca3fb01d900c06efd7cf61b709576b714eeb249cbc7cae30af303536f1b4e91e
+F test/zipfile.test c52db63e31a66ae4245affa3e4e65e302442a87e5fd5f2ad29060bc849a83480
 F test/zipfile2.test a577e0775e32ef8972e7d5e9a45bc071a5ae061b5b965a08c9c4b709ad036a25
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -2171,12 +2171,9 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f65aa46796068800905f6ff25efcb6338f864ce5bf8dcf6c7b9f5613b3973ab2
-Q +19e5ae6e20a1e2f41c5bc77b7bb99211b22d6fabf21e5f2f7f82028615eb791e
-Q +7bb633df97678b98515e603c5154ffc5b54055cff187d74a2c5d010e5b3720d1
-Q +ab916bad188b150321e420ec0009d909c287e3790b5d6ec683e2df9ed457ff15
-Q +ba003c7c74fb4dd665a8ec6dea7d030f1e7e9cbb13e60bb728860ebffdff5aaf
-R 145561ed197e324382aa282e9f872b25
+P 121b327f1f3941a9a44ab2d98e60f6e25b928ca9b54bbaa109239ba9012b3c3c
+Q +a6abbadacbb88c1ddcc236b40fb34eddf3bb0891189bd00a5af8d34b42871967
+R 132f49d12d6de124128a27a7c7eb78ab
 U drh
-Z 7959d07ae5ba316d612ee7dc685aa1e5
+Z 747cfe5ae01d826f2c4cd687b22a19f5
 # Remove this line to create a well-formed Fossil manifest.
