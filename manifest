@@ -1,5 +1,5 @@
-C The\sheader\ssetting\sfrom\sthe\slegacy\s".headers"\sdot-command\stakes\sprecedence\nover\sthe\scurrent\s".mode"\ssetting,\sfor\sbackwards\scompatibility.\n[forum:/forumpost/2025-12-31T19:14:24z|Forum\spost\s2025-12-31T19:14:24z].
-D 2025-12-31T20:35:16.273
+C Verify\sthe\seffect\sof\s"--titles\son"\sin\sthe\s"insert"\smode\sin\sthe\sCLI.
+D 2025-12-31T20:43:31.772
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1444,7 +1444,7 @@ F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
 F test/mmapcorrupt.test 470fb44fe92e99c1d23701d156f8c17865f5b027063c9119dcfdb842791f4465
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
-F test/modeA.sql 2b2e41bdb157b3af5a71ae700f303e81f547abb150fb693a9f0501cdfb423822
+F test/modeA.sql 6d0a1b91844d378553c71526e62ee7da1cc01fb5779ab6d3a935e4dcafb2eb59
 F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test fac575e0b1b852025575a6a8357701d80933e98b5d2fe6d35ddaa68f92f6a1f7
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 326d29ac7ecd933d6fca80d3d538783ed46939e7bc6e3aa60ded4b619aa73730
-R b567dd9c0c74c7f7e98db841f70a2525
+P d2c5df41285a9c8a66e9bdea4e28d86fe10665ad01cfbab5a7ce43b8e39b4e34
+R 0430ecb6b12c6a794879456e6400ecec
 U drh
-Z 047f31d5fa580b2b91a2d9800561212f
+Z 30b7479fb2fd2c8bcd423b72d9fa94de
 # Remove this line to create a well-formed Fossil manifest.

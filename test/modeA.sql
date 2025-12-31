@@ -265,3 +265,29 @@ SELECT * FROM t1;
 .mode csv --title off
 SELECT * FROM t1;
 .check 1,2,3
+
+# Verification of claims about .insert mode in the climode.html
+# documentation.
+.testcase 700
+CREATE TABLE tbl1(one,two);
+INSERT INTO tbl1 VALUES('hello!',10),('goodbye',20);
+.mode insert new_table
+SELECT * FROM tbl1;
+.check <<END
+INSERT INTO new_table VALUES('hello!',10);
+INSERT INTO new_table VALUES('goodbye',20);
+END
+.testcase 710
+.mode insert new_table --titles on
+SELECT * FROM tbl1;
+.check <<END
+INSERT INTO new_table(one,two) VALUES('hello!',10);
+INSERT INTO new_table(one,two) VALUES('goodbye',20);
+END
+.testcase 720
+.mode insert new_table --titles off
+SELECT * FROM tbl1;
+.check <<END
+INSERT INTO new_table VALUES('hello!',10);
+INSERT INTO new_table VALUES('goodbye',20);
+END
