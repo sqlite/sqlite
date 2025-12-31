@@ -101,6 +101,7 @@ Usage:
     $a0 help
     $a0 joblist ?PATTERN?
     $a0 njob ?NJOB?
+    $a0 retest
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
     $a0 halt
@@ -167,6 +168,9 @@ are used.  Otherwise, an attempt is made to minimize the output to show
 only the parts that contain the error messages.  The --summary option just
 shows the jobs that failed.  If PATTERN are provided, the error information
 is only provided for jobs that match PATTERN.
+
+The "retest" command reruns tests that failed or were never completed
+by a prior invocation of testrunner.tcl.
 
 Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
@@ -1495,6 +1499,10 @@ proc add_jobs_from_cmdline {patternlist} {
       exit 0
     }
 
+    retest {
+      # no-op
+    }
+
     default {
       must_be_testfixture
       if {[info exists ::testspec($first)]} {
@@ -1576,7 +1584,8 @@ proc mark_job_as_finished {jobid output state endtm} {
         SET output=$output, state=$state, endtime=$endtm, span=$endtm-starttime,
             ntest=$ntest, nerr=$nerr, svers=$svers, pltfm=$pltfm
         WHERE jobid=$jobid;
-      UPDATE jobs SET state=$childstate WHERE depid=$jobid AND state!='halt';
+      UPDATE jobs SET state=$childstate
+       WHERE depid=$jobid AND state!='halt' AND state!='done';
       UPDATE config SET value=value+$nerr WHERE name='nfail';
       UPDATE config SET value=value+$ntest WHERE name='ntest';
     }
@@ -1849,6 +1858,27 @@ proc run_testset {} {
 
 }
 
+# If the argument is "retest", simply rerun all tests from the previous
+# run that are marked as one of "ready", "running", "failed", or "omit"
+# plus redo any build of dependencies those tests.
+#
+proc handle_retest {} {
+  set cnt 0
+  if {[catch {trdb exists {SELECT jobid FROM jobs}} cnt] || $cnt==0} {
+    puts "No test available to rerun"
+    exit 1
+  }
+  trdb eval {UPDATE jobs SET state='ready'
+              WHERE state IN ('running','failed','omit')}
+  for {set kk 0} {$kk<2} {incr kk} {
+    trdb eval {
+      UPDATE jobs SET state='ready'
+       WHERE jobid IN (SELECT depid FROM jobs WHERE state='ready');
+      UPDATE jobs SET state='' WHERE state='ready' AND depid<>'';
+    }
+  }
+}
+
 # Handle the --buildonly option, if it was specified.
 #
 proc handle_buildonly {} {
@@ -1887,14 +1917,21 @@ proc explain_tests {} {
 
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
-set tm [lindex [time { make_new_testset }] 0]
+if {[llength $TRG(patternlist)]==1 && $TRG(patternlist) eq "retest"} {
+  set tm 0
+  handle_retest
+} else {  
+  set tm [lindex [time { make_new_testset }] 0]
+}
 if {$TRG(explain)} {
   explain_tests
 } else {
   if {$TRG(nJob)>1} {
     puts "splitting work across $TRG(nJob) cores"
   }
-  puts "built testset in [expr $tm/1000]ms.."
+  if {$tm>0} {
+    puts "built testset in [expr $tm/1000]ms.."
+  }
   handle_buildonly
   run_testset
 }

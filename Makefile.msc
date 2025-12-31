@@ -2601,6 +2601,11 @@ devtest:	srctree-check sourcetest
 mdevtest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
+# Rerun test cases that failed on the previous testrunner invocation
+#
+retest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl retest
+
 # Show all errors from the most reason testrunner invocation
 #
 errors:

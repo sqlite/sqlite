@@ -1863,6 +1863,9 @@ mdevtest: srctree-check has_tclsh85
 sdevtest: has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
 
+retest: has_tclsh85
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl retest
+
 errors:
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl errors
 

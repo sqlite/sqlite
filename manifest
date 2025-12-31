@@ -1,12 +1,12 @@
-C Enhance\stestrunner.tcl\sso\sthat\sit\scan\salways\sbe\srun\sfrom\san\sordinary\stclsh\nas\slong\sas\sthat\stclsh\scan\sload\sthe\ssqlite3\spackage.
-D 2025-12-31T14:17:51.271
+C Add\sthe\snew\s"retest"\scommand\sto\stestrunner.tcl,\swhich\sreruns\sany\stests\sthat\nfailed\sor\snever\scompleted\sin\sthe\sprevious\sinvocation.\s\sNew\smakefile\starget\n"retest"\sfor\sboth\sunix\sand\sWindows\sthat\sruns\stestrunner.tcl\swith\s"retest".
+D 2025-12-31T17:21:30.104
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc fcf72b1401e1b2b1cb6f9b84ee961f6dff5bc808c249d76353a4a5447dbaf0b9
+F Makefile.msc 276e8e231fc30a3d17f2110b50952e5dc1223534ea914b57a0212c22d1aee52b
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
 F VERSION 74672bfd4c7826c0fc6f84762488a707c52e7d2d94af42ccb0edcc6c74311c41
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -658,7 +658,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk df51cfa9eb8cb3efec181435825eebfd7f8cc4ab5e2fd7e4381d17f2f40cdf64
+F main.mk ba9ac943f81c80cd2d7b502759e60d23a988be74cc7b4b1575419932fe2afcb0
 F make.bat a136fd0b1c93e89854a86d5f4edcf0386d211e5d5ec2434480f6eea436c7420c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1709,7 +1709,7 @@ F test/temptrigfault.tes fc5918e64f3867156fefe7cfca9d8e1f495134a5229b2b511b0dc11
 F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3fb4769d61
 F test/tester.tcl 2d943f60200e0a36bcd3f1f0baf181a751cd3604ef6b6bd4c8dc39b4e8a53116
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
-F test/testrunner.tcl 8cae0769b6f01507dc2aeb1c6b8ba2c754731f5ae036cae7eb775eb90950a5d2 x
+F test/testrunner.tcl 78d67079fc39caf2af3fd9d4c30bdac78dae7ec50b9fc802835e7a5189581e07 x
 F test/testrunner_data.tcl 87b8afd37c8e517fa87b7936540b2fc1ede8291f0567fb88744b9bff272a2e8b
 F test/testrunner_estwork.tcl 81e2ae10238f50540f42fbf2d94913052a99bfb494b69e546506323f195dcff9
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 836d02468c7749fa9cdb656c9f80cfef9a41e2eb1321d4bb56c0e0cbc5f37df4
-R 29a7f3f332915b70196981855d02afe4
+P 1a08b85a862e8c9ac56c11e05f76abc25ad98b510fb13ad0716206ba797e53a8
+R 34155ecd52cb0eaf53cc76f6ad9cec0c
 U drh
-Z f0a9c37585cca686d5b22d1156748ba3
+Z 46906462963f9767b867e2617393e282
 # Remove this line to create a well-formed Fossil manifest.
