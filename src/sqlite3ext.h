@@ -710,11 +710,6 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.44.0 and later */
 #define sqlite3_get_clientdata         sqlite3_api->get_clientdata
 #define sqlite3_set_clientdata         sqlite3_api->set_clientdata
-<<<<<<< HEAD
-/* Version 3.45.0 and later */
-#define sqlite3_column_table_alias     sqlite3_api->column_table_alias
-#define sqlite3_column_table_alias16   sqlite3_api->column_table_alias16
-=======
 /* Version 3.50.0 and later */
 #define sqlite3_setlk_timeout          sqlite3_api->setlk_timeout
 /* Version 3.51.0 and later */
@@ -723,7 +718,9 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.52.0 and later */
 #define sqlite3_str_truncate           sqlite3_api->str_truncate
 #define sqlite3_str_free               sqlite3_api->str_free
->>>>>>> db4d8946ef5074c34086983b5a3446bd43cc9c93
+/* Version 3.53.0 and later */
+#define sqlite3_column_table_alias     sqlite3_api->column_table_alias
+#define sqlite3_column_table_alias16   sqlite3_api->column_table_alias16
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
