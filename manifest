@@ -1,5 +1,5 @@
-C Updates\sto\sthe\stestrunner\sdocumentation.
-D 2026-01-01T15:41:50.965
+C Further\simprovements\sto\stestrunner.tcl\sdocumentation.
+D 2026-01-01T21:35:25.298
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -63,7 +63,7 @@ F doc/jsonb.md acd77fc3a709f51242655ad7803510c886aa8304202fa9cf2abc5f5c4e9d7ae5
 F doc/lemon.html 2085fda0a90a94fe92159a79dccc5c30d5a2313524887a31659cd66162f17233
 F doc/pager-invariants.txt 83aa3a4724b2d7970cc3f3461f0295c46d4fc19a835a5781cbb35cb52feb0577
 F doc/tcl-extension-testing.md b88861804fc1eaf83249f8e206334189b61e150c360e1b80d0dcf91af82354f5
-F doc/testrunner.md 1232d8095a15a6aa6fbb6685313558038dde49e6b0b7b1daebd5cbeec5d0abf9
+F doc/testrunner.md daffa0ebbbe397a73537ae1b19b3124d489ce5f89dfe570781d1f1ef1809597c
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
 F doc/vfs-shm.txt 1a55f3f0e7b6745931b117ba5c9df3640d7a0536f532ef0052563100f4416f86
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a5f922b0832d9544b083f3d55d4029aa80e320bf5505547c5a1ddb21f4685e3e
-R 9df0730403c6e3e10d8224307f93708f
+P bcac99f962c6403fddfcaeef309ea9f825fa661fee0b3e3fd24f04c861be1d1b
+R 9387e28ba84b235b58989d6495dd42c1
 U drh
-Z 4765444ce4544ead9159cfe583142a35
+Z a047d21b7e9c1686bf63375354e2eb38
 # Remove this line to create a well-formed Fossil manifest.
