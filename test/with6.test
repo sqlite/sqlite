@@ -325,6 +325,12 @@ do_eqp_test 331 {
 # marked with M10d_Yes and hence prohibited from participating in the
 # query flattening optimization.
 #
+# Updated 2025-01-02.
+# https://sqlite.org/forum/forumpost/8f38fc9878a92aa9
+#
+# The same optimization that made Grunthos's query fast made
+# Jean-Noël Mayor's query slow.  Bummer.
+#
 reset_db
 db eval {
   CREATE TABLE raw(country,date,total,delta, UNIQUE(country,date));

@@ -1,4 +1,4 @@
-//#ifnot omit-oo1
+//#if not omit-oo1
 /**
   2022-07-22
 
@@ -279,11 +279,11 @@
   The arguments are in the same form accepted by oo1.DB.exec(), with
   the exceptions noted below.
 
-  If the `countChanges` arguments property (added in version 3.43) is
-  truthy then the `result` property contained by the returned object
-  will have a `changeCount` property which holds the number of changes
-  made by the provided SQL. Because the SQL may contain an arbitrary
-  number of statements, the `changeCount` is calculated by calling
+  If `args.countChanges` (added in version 3.43) is truthy then the
+  `result` property contained by the returned object will have a
+  `changeCount` property which holds the number of changes made by the
+  provided SQL. Because the SQL may contain an arbitrary number of
+  statements, the `changeCount` is calculated by calling
   `sqlite3_total_changes()` before and after the SQL is evaluated. If
   the value of `countChanges` is 64 then the `changeCount` property
   will be returned as a 64-bit integer in the form of a BigInt (noting
@@ -291,6 +291,15 @@
   build).  In the latter case, the number of changes is calculated by
   calling `sqlite3_total_changes64()` before and after the SQL is
   evaluated.
+
+  If the `args.lastInsertRowId` (added in version 3.50.0) is truthy
+  then the `result` property contained by the returned object will
+  have a `lastInsertRowId` will hold a BigInt-type value corresponding
+  to the result of sqlite3_last_insert_rowid(). This value is only
+  fetched once, after the SQL is run, regardless of how many
+  statements the SQL contains. This API has no idea whether the SQL
+  contains any INSERTs, so it is up to the client to apply/rely on
+  this property only when it makes sense to do so.
 
   A function-type args.callback property cannot cross
   the window/Worker boundary, so is not useful here. If
@@ -376,10 +385,19 @@ sqlite3.initWorker1API = function(){
   const getDbId = function(db){
     let id = wState.idMap.get(db);
     if(id) return id;
-    id = 'db#'+(++wState.idSeq)+'@'+db.pointer;
+    id = 'db#'+(++wState.idSeq)+':'+
+      Math.floor(Math.random() * 100000000)+':'+
+      Math.floor(Math.random() * 100000000);
     /** ^^^ can't simply use db.pointer b/c closing/opening may re-use
         the same address, which could map pending messages to a wrong
-        instance. */
+        instance.
+
+        2025-07: https://github.com/sqlite/sqlite-wasm/issues/113
+        demonstrates that two Worker1s can end up with the same IDs,
+        despite using different instances of the library, so we need
+        to add some randomness to the IDs instead of relying on the
+        pointer addresses.
+    */
     wState.idMap.set(db, id);
     return id;
   };
@@ -542,6 +560,12 @@ sqlite3.initWorker1API = function(){
         if(undefined !== changeCount){
           rc.changeCount = db.changes(true,64===rc.countChanges) - changeCount;
         }
+        const lastInsertRowId = !!rc.lastInsertRowId
+              ? sqlite3.capi.sqlite3_last_insert_rowid(db)
+              : undefined;
+        if( undefined!==lastInsertRowId ){
+          rc.lastInsertRowId = lastInsertRowId;
+        }
         if(rc.callback instanceof Function){
           rc.callback = theCallback;
           /* Post a sentinel message to tell the client that the end
@@ -653,4 +677,4 @@ sqlite3.initWorker1API = function(){
 });
 //#else
 /* Built with the omit-oo1 flag. */
-//#endif ifnot omit-oo1
+//#endif if not omit-oo1

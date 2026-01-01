@@ -668,8 +668,8 @@ int main(int argc, char **argv){
   printf("/* Check to see if z[0..n-1] is a keyword. If it is, write the\n");
   printf("** parser symbol code for that keyword into *pType.  Always\n");
   printf("** return the integer n (the length of the token). */\n");
-  printf("static int keywordCode(const char *z, int n, int *pType){\n");
-  printf("  int i, j;\n");
+  printf("static i64 keywordCode(const char *z, i64 n, int *pType){\n");
+  printf("  i64 i, j;\n");
   printf("  const char *zKW;\n");
   printf("  assert( n>=2 );\n");
   printf("  i = ((charMap(z[0])*%d) %c", HASH_C0, HASH_CC);

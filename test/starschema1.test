@@ -10,7 +10,7 @@
 #***********************************************************************
 # 
 # Test cases for the ability of the query planner to cope with
-# star-schema queries on databases with goofy indexes.
+# star-schema queries.
 #
 
 set testdir [file dirname $argv0]

@@ -325,8 +325,28 @@ utc_to_local 6.24 {3000-10-30 11:30:00} {3000-10-30 12:00:00}
 # timezone extension, then the time will already be UTC and subsequent
 # 'utc' modifiers are no-ops.
 #
-do_execsql_test date-6.25 {
+# Forum post 2025-09-17T10:12:14 - The "+00:00" suffix should work like "Z"
+#
+do_execsql_test date-6.25.1 {
   SELECT datetime('2000-10-29 12:00Z','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.2 {
+  SELECT datetime('2000-10-29 12:00 +00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.3 {
+  SELECT datetime('2000-10-29 12:00+00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.4 {
+  SELECT datetime('2000-10-29 12:00:00+00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.5 {
+  SELECT datetime('2000-10-29 12:00 -00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.6 {
+  SELECT datetime('2000-10-29 12:00-00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.7 {
+  SELECT datetime('2000-10-29 12:00:00-00:00','utc','utc');
 } {{2000-10-29 12:00:00}}
 do_execsql_test date-6.26 {
   SELECT datetime('2000-10-29 12:00:00+05:00');
@@ -584,7 +604,7 @@ datetest 16.30 {datetime(5373484,'-14712 years')} {-4713-12-31 12:00:00}
 datetest 16.31 {datetime(5373484,'-14713 years')} NULL
 
 # 2017-03-02: Wrong 'start of day' computation.
-# https://www.sqlite.org/src/info/6097cb92745327a1
+# https://sqlite.org/src/info/6097cb92745327a1
 #
 datetest 17.1 {datetime(2457754, 'start of day')} {2016-12-31 00:00:00}
 datetest 17.2 {datetime(2457828)} {2017-03-15 12:00:00}
@@ -651,5 +671,13 @@ datetest 19.51 {date('2000-08-31','+0022-06-00','floor')} {2023-02-28}
 datetest 19.52 {date('2000-08-31','+0023-06-00','ceiling')} {2024-03-02}
 datetest 19.53 {date('2000-08-31','+0022-06-00','ceiling')} {2023-03-03}
 
+# 2025-01-21
+# https://sqlite.org/forum/forumpost/766a2c9231
+#
+datetest 20.1 {datetime('2024-12-31 23:59:59.9990')} {2024-12-31 23:59:59}
+datetest 20.2 {datetime('2024-12-31 23:59:59.9999999999999')} \
+                 {2024-12-31 23:59:59}
+datetest 20.3 {datetime('2024-12-31 23:59:59.9995')} {2024-12-31 23:59:59}
+datetest 20.4 {datetime('2024-12-31 23:59:58.9995')} {2024-12-31 23:59:58}
 
 finish_test

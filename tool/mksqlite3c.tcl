@@ -88,7 +88,7 @@ set fname sqlite3.c
 if {$enable_recover} { set fname sqlite3r.c }
 set out [open $fname wb]
 # Force the output to use unix line endings, even on Windows.
-fconfigure $out -translation lf
+fconfigure $out -translation binary
 set today [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S UTC" -gmt 1]
 puts $out [subst \
 {/******************************************************************************
@@ -111,7 +111,7 @@ puts $out [subst \
 ** separate file. This file contains only code for the core SQLite library.
 **}]
 set srcroot [file dirname [file dirname [info script]]]
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   set vsrcprog src-verify.exe
 } else {
   set vsrcprog ./src-verify
@@ -130,7 +130,7 @@ if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
   } else {
     puts $out " with changes in files:\n**"
     foreach f [lrange $res 1 end] {
-       puts $out "**    $f"
+       puts $out "**    [string trim $f]"
     }
   }
 } else {
@@ -491,6 +491,7 @@ set flist {
    sqlite3rbu.c
    dbstat.c
    dbpage.c
+   carray.c
    sqlite3session.c
    fts5.c
    stmt.c

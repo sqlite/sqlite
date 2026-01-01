@@ -650,6 +650,44 @@ do_eqp_test subquery-10.2 {
 # |--SCAN v2
 # `--SEARCH t1 USING INDEX x12 (aa=?)
 #
+#---------------------------------------------------------------------------
+# Follow-up on 2025-04-14.  Performance issue found while working
+# on Fossil (Fossil check-in 2025-04-13T19:54).
+#
+do_execsql_test 10.3 {
+  CREATE TABLE blob(
+    rid INTEGER PRIMARY KEY,
+    size INT,
+    uuid TEXT
+  );
+  CREATE TABLE delta(
+    rid INTEGER PRIMARY KEY,
+    srcid INT
+  );
+  CREATE INDEX delta_i1 ON delta(srcid);
+}
+do_eqp_test subquery-10.4 {
+  WITH RECURSIVE deltasof(rid) AS (
+    SELECT rid FROM delta WHERE srcid=125020
+    UNION
+    SELECT delta.rid FROM deltasof, delta
+     WHERE delta.srcid=deltasof.rid)
+  SELECT deltasof.rid, blob.uuid FROM deltasof, blob
+   WHERE blob.rid=deltasof.rid;
+} {
+  QUERY PLAN
+  |--CO-ROUTINE deltasof
+  |  |--SETUP
+  |  |  `--SEARCH delta USING COVERING INDEX delta_i1 (srcid=?)
+  |  `--RECURSIVE STEP
+  |     |--SCAN deltasof
+  |     `--SEARCH delta USING COVERING INDEX delta_i1 (srcid=?)
+  |--SCAN deltasof
+  `--SEARCH blob USING INTEGER PRIMARY KEY (rowid=?)
+}
+# ^^^^^^^^^^^^^^^^^^
+# deltasof should be the outer loop and blob the inner loop
+# Prior to the fix, SQLite was doing it the other way around.
 
 #-----------------------------------------------------------------------------
 # 2024-04-25 Column affinities for columns of compound subqueries

@@ -294,7 +294,6 @@ static int lookupName(
   Schema *pSchema = 0;              /* Schema of the expression */
   int eNewExprOp = TK_COLUMN;       /* New value for pExpr->op on success */
   Table *pTab = 0;                  /* Table holding the row */
-  Column *pCol;                     /* A column of pTab */
   ExprList *pFJMatch = 0;           /* Matches for FULL JOIN .. USING */
   const char *zCol = pRight->u.zToken;
 
@@ -345,7 +344,6 @@ static int lookupName(
 
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
-        u8 hCol;
         pTab = pItem->pSTab;
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 || pParse->nErr );
@@ -375,10 +373,13 @@ static int lookupName(
               if( cnt>0 ){
                 if( pItem->fg.isUsing==0
                  || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
+                 || pMatch==pItem
                 ){
                   /* Two or more tables have the same column name which is
-                  ** not joined by USING.  This is an error.  Signal as much
-                  ** by clearing pFJMatch and letting cnt go above 1. */
+                  ** not joined by USING. Or, a single table has two columns
+                  ** that match a USING term (if pMatch==pItem). These are both
+                  ** "ambiguous column name" errors. Signal as much by clearing
+                  ** pFJMatch and letting cnt go above 1. */
                   sqlite3ExprListDelete(db, pFJMatch);
                   pFJMatch = 0;
                 }else
@@ -433,43 +434,38 @@ static int lookupName(
             sqlite3RenameTokenRemap(pParse, 0, (void*)&pExpr->y.pTab);
           }
         }
-        hCol = sqlite3StrIHash(zCol);
-        for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
-          if( pCol->hName==hCol
-           && sqlite3StrICmp(pCol->zCnName, zCol)==0
-          ){
-            if( cnt>0 ){
-              if( pItem->fg.isUsing==0
-               || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
-              ){
-                /* Two or more tables have the same column name which is
-                ** not joined by USING.  This is an error.  Signal as much
-                ** by clearing pFJMatch and letting cnt go above 1. */
-                sqlite3ExprListDelete(db, pFJMatch);
-                pFJMatch = 0;
-              }else
-              if( (pItem->fg.jointype & JT_RIGHT)==0 ){
-                /* An INNER or LEFT JOIN.  Use the left-most table */
-                continue;
-              }else
-              if( (pItem->fg.jointype & JT_LEFT)==0 ){
-                /* A RIGHT JOIN.  Use the right-most table */
-                cnt = 0;
-                sqlite3ExprListDelete(db, pFJMatch);
-                pFJMatch = 0;
-              }else{
-                /* For a FULL JOIN, we must construct a coalesce() func */
-                extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
-              }
+        j = sqlite3ColumnIndex(pTab, zCol);
+        if( j>=0 ){
+          if( cnt>0 ){
+            if( pItem->fg.isUsing==0
+             || sqlite3IdListIndex(pItem->u3.pUsing, zCol)<0
+            ){
+              /* Two or more tables have the same column name which is
+              ** not joined by USING.  This is an error.  Signal as much
+              ** by clearing pFJMatch and letting cnt go above 1. */
+              sqlite3ExprListDelete(db, pFJMatch);
+              pFJMatch = 0;
+            }else
+            if( (pItem->fg.jointype & JT_RIGHT)==0 ){
+              /* An INNER or LEFT JOIN.  Use the left-most table */
+              continue;
+            }else
+            if( (pItem->fg.jointype & JT_LEFT)==0 ){
+              /* A RIGHT JOIN.  Use the right-most table */
+              cnt = 0;
+              sqlite3ExprListDelete(db, pFJMatch);
+              pFJMatch = 0;
+            }else{
+              /* For a FULL JOIN, we must construct a coalesce() func */
+              extendFJMatch(pParse, &pFJMatch, pMatch, pExpr->iColumn);
             }
-            cnt++;
-            pMatch = pItem;
-            /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
-            pExpr->iColumn = j==pTab->iPKey ? -1 : (i16)j;
-            if( pItem->fg.isNestedFrom ){
-              sqlite3SrcItemColumnUsed(pItem, j);
-            }
-            break;
+          }
+          cnt++;
+          pMatch = pItem;
+          /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
+          pExpr->iColumn = j==pTab->iPKey ? -1 : (i16)j;
+          if( pItem->fg.isNestedFrom ){
+            sqlite3SrcItemColumnUsed(pItem, j);
           }
         }
         if( 0==cnt && VisibleRowid(pTab) ){
@@ -559,22 +555,17 @@ static int lookupName(
 
       if( pTab ){
         int iCol;
-        u8 hCol = sqlite3StrIHash(zCol);
         pSchema = pTab->pSchema;
         cntTab++;
-        for(iCol=0, pCol=pTab->aCol; iCol<pTab->nCol; iCol++, pCol++){
-          if( pCol->hName==hCol
-           && sqlite3StrICmp(pCol->zCnName, zCol)==0
-          ){
-            if( iCol==pTab->iPKey ){
-              iCol = -1;
-            }
-            break;
+        iCol = sqlite3ColumnIndex(pTab, zCol);
+        if( iCol>=0 ){
+          if( pTab->iPKey==iCol ) iCol = -1;
+        }else{
+          if( sqlite3IsRowid(zCol) && VisibleRowid(pTab) ){
+            iCol = -1;
+          }else{
+            iCol = pTab->nCol;
           }
-        }
-        if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) && VisibleRowid(pTab) ){
-          /* IMP: R-51414-32910 */
-          iCol = -1;
         }
         if( iCol<pTab->nCol ){
           cnt++;
@@ -938,8 +929,8 @@ static void notValidImpl(
 
 /*
 ** Expression p should encode a floating point value between 1.0 and 0.0.
-** Return 1024 times this value.  Or return -1 if p is not a floating point
-** value between 1.0 and 0.0.
+** Return 134,217,728 (2^27) times this value.  Or return -1 if p is not
+** a floating point value between 1.0 and 0.0.
 */
 static int exprProbability(Expr *p){
   double r = -1.0;
@@ -1214,13 +1205,12 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           ** sqlite_version() that might change over time cannot be used
           ** in an index or generated column.  Curiously, they can be used
           ** in a CHECK constraint.  SQLServer, MySQL, and PostgreSQL all
-          ** all this. */
+          ** allow this. */
           sqlite3ResolveNotValid(pParse, pNC, "non-deterministic functions",
                                  NC_IdxExpr|NC_PartIdx|NC_GenCol, 0, pExpr);
         }else{
           assert( (NC_SelfRef & 0xff)==NC_SelfRef ); /* Must fit in 8 bits */
           pExpr->op2 = pNC->ncFlags & NC_SelfRef;
-          if( pNC->ncFlags & NC_FromDDL ) ExprSetProperty(pExpr, EP_FromDDL);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
          && pParse->nested==0
@@ -1236,6 +1226,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         if( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0
          && !IN_RENAME_OBJECT
         ){
+          if( pNC->ncFlags & NC_FromDDL ) ExprSetProperty(pExpr, EP_FromDDL);
           sqlite3ExprFunctionUsable(pParse, pExpr, pDef);
         }
       }
@@ -1370,11 +1361,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       return WRC_Prune;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
+    case TK_EXISTS:
     case TK_SELECT:
-    case TK_EXISTS:  testcase( pExpr->op==TK_EXISTS );
 #endif
     case TK_IN: {
       testcase( pExpr->op==TK_IN );
+      testcase( pExpr->op==TK_EXISTS );
+      testcase( pExpr->op==TK_SELECT );
       if( ExprUseXSelect(pExpr) ){
         int nRef = pNC->nRef;
         testcase( pNC->ncFlags & NC_IsCheck );
@@ -1382,6 +1375,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pNC->ncFlags & NC_IdxExpr );
         testcase( pNC->ncFlags & NC_GenCol );
         assert( pExpr->x.pSelect );
+        if( pExpr->op==TK_EXISTS )  pParse->bHasExists = 1;
         if( pNC->ncFlags & NC_SelfRef ){
           notValidImpl(pParse, pNC, "subqueries", pExpr, pExpr);
         }else{
@@ -1662,10 +1656,8 @@ static int resolveCompoundOrderBy(
         /* Convert the ORDER BY term into an integer column number iCol,
         ** taking care to preserve the COLLATE clause if it exists. */
         if( !IN_RENAME_OBJECT ){
-          Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
+          Expr *pNew = sqlite3ExprInt32(db, iCol);
           if( pNew==0 ) return 1;
-          pNew->flags |= EP_IntValue;
-          pNew->u.iValue = iCol;
           if( pItem->pExpr==pE ){
             pItem->pExpr = pNew;
           }else{
@@ -2019,10 +2011,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     }
 #endif
 
-    /* The ORDER BY and GROUP BY clauses may not refer to terms in
-    ** outer queries
-    */
-    sNC.pNext = 0;
     sNC.ncFlags |= NC_AllowAgg|NC_AllowWin;
 
     /* If this is a converted compound query, move the ORDER BY clause from
@@ -2289,20 +2277,25 @@ int sqlite3ResolveSelfReference(
   Expr *pExpr,     /* Expression to resolve.  May be NULL. */
   ExprList *pList  /* Expression list to resolve.  May be NULL. */
 ){
-  SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
+  SrcList *pSrc;                  /* Fake SrcList for pParse->pNewTable */
   NameContext sNC;                /* Name context for pParse->pNewTable */
   int rc;
+  union {
+    SrcList sSrc;
+    u8 srcSpace[SZ_SRCLIST_1];     /* Memory space for the fake SrcList */
+  } uSrc;
 
   assert( type==0 || pTab!=0 );
   assert( type==NC_IsCheck || type==NC_PartIdx || type==NC_IdxExpr
           || type==NC_GenCol || pTab==0 );
   memset(&sNC, 0, sizeof(sNC));
-  memset(&sSrc, 0, sizeof(sSrc));
+  memset(&uSrc, 0, sizeof(uSrc));
+  pSrc = &uSrc.sSrc;
   if( pTab ){
-    sSrc.nSrc = 1;
-    sSrc.a[0].zName = pTab->zName;
-    sSrc.a[0].pSTab = pTab;
-    sSrc.a[0].iCursor = -1;
+    pSrc->nSrc = 1;
+    pSrc->a[0].zName = pTab->zName;
+    pSrc->a[0].pSTab = pTab;
+    pSrc->a[0].iCursor = -1;
     if( pTab->pSchema!=pParse->db->aDb[1].pSchema ){
       /* Cause EP_FromDDL to be set on TK_FUNCTION nodes of non-TEMP
       ** schema elements */
@@ -2310,7 +2303,7 @@ int sqlite3ResolveSelfReference(
     }
   }
   sNC.pParse = pParse;
-  sNC.pSrcList = &sSrc;
+  sNC.pSrcList = pSrc;
   sNC.ncFlags = type | NC_IsDDL;
   if( (rc = sqlite3ResolveExprNames(&sNC, pExpr))!=SQLITE_OK ) return rc;
   if( pList ) rc = sqlite3ResolveExprListNames(&sNC, pList);

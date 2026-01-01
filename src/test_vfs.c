@@ -130,8 +130,9 @@ struct Testvfs {
 #define TESTVFS_LOCK_MASK         0x00040000
 #define TESTVFS_CKLOCK_MASK       0x00080000
 #define TESTVFS_FCNTL_MASK        0x00100000
+#define TESTVFS_SLEEP_MASK        0x00200000
 
-#define TESTVFS_ALL_MASK          0x001FFFFF
+#define TESTVFS_ALL_MASK          0x003FFFFF
 
 
 #define TESTVFS_MAX_PAGES 1024
@@ -813,6 +814,10 @@ static int tvfsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
 ** actually slept.
 */
 static int tvfsSleep(sqlite3_vfs *pVfs, int nMicro){
+  Testvfs *p = (Testvfs *)pVfs->pAppData;
+  if( p->pScript && (p->mask&TESTVFS_SLEEP_MASK) ){
+    tvfsExecTcl(p, "xSleep", Tcl_NewIntObj(nMicro), 0, 0, 0);
+  }
   return sqlite3OsSleep(PARENTVFS(pVfs), nMicro);
 }
 
@@ -1133,7 +1138,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
       );
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp, "failed to get full path: ",
-                         Tcl_GetString(objv[2]), 0);
+                         Tcl_GetString(objv[2]), NULL);
         ckfree(zName);
         return TCL_ERROR;
       }
@@ -1142,7 +1147,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
       }
       ckfree(zName);
       if( !pBuffer ){
-        Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]), 0);
+        Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]), NULL);
         return TCL_ERROR;
       }
       if( objc==4 ){
@@ -1197,6 +1202,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
         { "xLock",              TESTVFS_LOCK_MASK },
         { "xCheckReservedLock", TESTVFS_CKLOCK_MASK },
         { "xFileControl",       TESTVFS_FCNTL_MASK },
+        { "xSleep",             TESTVFS_SLEEP_MASK },
       };
       Tcl_Obj **apElem = 0;
       Tcl_Size nElem = 0;
@@ -1219,7 +1225,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
           }
         }
         if( iMethod==ArraySize(vfsmethod) ){
-          Tcl_AppendResult(interp, "unknown method: ", zElem, 0);
+          Tcl_AppendResult(interp, "unknown method: ", zElem, NULL);
           return TCL_ERROR;
         }
       }
@@ -1347,7 +1353,7 @@ static int SQLITE_TCLAPI testvfs_obj_cmd(
             return TCL_ERROR;
           }
           if( aFlag[idx].iValue<0 && nFlags>1 ){
-            Tcl_AppendResult(interp, "bad flags: ", Tcl_GetString(objv[2]), 0);
+            Tcl_AppendResult(interp, "bad flags: ", Tcl_GetString(objv[2]), NULL);
             return TCL_ERROR;
           }
           iNew |= aFlag[idx].iValue;
@@ -1667,7 +1673,7 @@ static int SQLITE_TCLAPI test_vfs_set_readmark(
     return TCL_ERROR;
   }
   if( pShm==0 ){
-    Tcl_AppendResult(interp, "*-shm is not yet mapped", 0);
+    Tcl_AppendResult(interp, "*-shm is not yet mapped", NULL);
     return TCL_ERROR;
   }
   aShm = (u32*)pShm;

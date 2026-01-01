@@ -188,6 +188,10 @@ static int parseTimezone(const char *zDate, DateTime *p){
   }
   zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
+  if( p->tz==0 ){   /* Forum post 2025-09-17T10:12:14z */
+    p->isLocal = 0;
+    p->isUtc = 1;
+  }
 zulu_time:
   while( sqlite3Isspace(*zDate) ){ zDate++; }
   return *zDate!=0;
@@ -222,6 +226,9 @@ static int parseHhMmSs(const char *zDate, DateTime *p){
         zDate++;
       }
       ms /= rScale;
+      /* Truncate to avoid problems with sub-milliseconds
+      ** rounding. https://sqlite.org/forum/forumpost/766a2c9231 */
+      if( ms>0.999 ) ms = 0.999;
     }
   }else{
     s = 0;
@@ -1354,7 +1361,7 @@ static int daysAfterMonday(DateTime *pDate){
 ** In other words, return the day of the week according
 ** to this code:
 **
-**   0=Sunday, 1=Monday, 2=Tues, ..., 6=Saturday
+**   0=Sunday, 1=Monday, 2=Tuesday, ..., 6=Saturday
 */
 static int daysAfterSunday(DateTime *pDate){
   assert( pDate->validJD );
@@ -1380,8 +1387,8 @@ static int daysAfterSunday(DateTime *pDate){
 **   %l  hour  1-12  (leading zero converted to space)
 **   %m  month 01-12
 **   %M  minute 00-59
-**   %p  "am" or "pm"
-**   %P  "AM" or "PM"
+**   %p  "AM" or "PM"
+**   %P  "am" or "pm"
 **   %R  time as HH:MM
 **   %s  seconds since 1970-01-01
 **   %S  seconds 00-59
@@ -1429,7 +1436,7 @@ static void strftimeFunc(
       }
       case 'f': {  /* Fractional seconds.  (Non-standard) */
         double s = x.s;
-        if( s>59.999 ) s = 59.999;
+        if( NEVER(s>59.999) ) s = 59.999;
         sqlite3_str_appendf(&sRes, "%06.3f", s);
         break;
       }

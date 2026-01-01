@@ -12,7 +12,7 @@
 **
 ** This module implements the spellfix1 VIRTUAL TABLE that can be used
 ** to search a large vocabulary for close matches.  See separate
-** documentation (http://www.sqlite.org/spellfix1.html) for details.
+** documentation (http://sqlite.org/spellfix1.html) for details.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1

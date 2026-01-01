@@ -42,7 +42,7 @@ run_test_suite pcache100
 run_test_suite prepare
 run_test_suite mmap
 
-if {$::tcl_platform(platform)=="unix"} {
+if {$::tcl_platform(platform) eq "unix"} {
   ifcapable !default_autovacuum {
     run_test_suite autovacuum_crash
   }

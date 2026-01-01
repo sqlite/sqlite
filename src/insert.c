@@ -185,12 +185,15 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
       ** by one slot and insert a new OP_TypeCheck where the current
       ** OP_MakeRecord is found */
       VdbeOp *pPrev;
+      int p3;
       sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
       pPrev = sqlite3VdbeGetLastOp(v);
       assert( pPrev!=0 );
       assert( pPrev->opcode==OP_MakeRecord || sqlite3VdbeDb(v)->mallocFailed );
       pPrev->opcode = OP_TypeCheck;
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, pPrev->p1, pPrev->p2, pPrev->p3);
+      p3 = pPrev->p3;
+      pPrev->p3 = 0;
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, pPrev->p1, pPrev->p2, p3);
     }else{
       /* Insert an isolated OP_Typecheck */
       sqlite3VdbeAddOp2(v, OP_TypeCheck, iReg, pTab->nNVCol);
@@ -693,7 +696,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
       f = (f & pLeft->selFlags);
     }
     pSelect = sqlite3SelectNew(pParse, pRow, 0, 0, 0, 0, 0, f, 0);
-    pLeft->selFlags &= ~SF_MultiValue;
+    pLeft->selFlags &= ~(u32)SF_MultiValue;
     if( pSelect ){
       pSelect->op = TK_ALL;
       pSelect->pPrior = pLeft;
@@ -927,6 +930,7 @@ void sqlite3Insert(
   int regRowid;         /* registers holding insert rowid */
   int regData;          /* register holding first column to insert */
   int *aRegIdx = 0;     /* One register allocated to each index */
+  int *aTabColMap = 0;  /* Mapping from pTab columns to pCol entries */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                 /* True if attempting to insert into a view */
@@ -1071,31 +1075,25 @@ void sqlite3Insert(
   */
   bIdListInOrder = (pTab->tabFlags & (TF_OOOHidden|TF_HasStored))==0;
   if( pColumn ){
-    assert( pColumn->eU4!=EU4_EXPR );
-    pColumn->eU4 = EU4_IDX;
+    aTabColMap = sqlite3DbMallocZero(db, pTab->nCol*sizeof(int));
+    if( aTabColMap==0 ) goto insert_cleanup;
     for(i=0; i<pColumn->nId; i++){
-      pColumn->a[i].u4.idx = -1;
-    }
-    for(i=0; i<pColumn->nId; i++){
-      for(j=0; j<pTab->nCol; j++){
-        if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zCnName)==0 ){
-          pColumn->a[i].u4.idx = j;
-          if( i!=j ) bIdListInOrder = 0;
-          if( j==pTab->iPKey ){
-            ipkColumn = i;  assert( !withoutRowid );
-          }
-#ifndef SQLITE_OMIT_GENERATED_COLUMNS
-          if( pTab->aCol[j].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL) ){
-            sqlite3ErrorMsg(pParse,
-               "cannot INSERT into generated column \"%s\"",
-               pTab->aCol[j].zCnName);
-            goto insert_cleanup;
-          }
-#endif
-          break;
+      j = sqlite3ColumnIndex(pTab, pColumn->a[i].zName);
+      if( j>=0 ){
+        if( aTabColMap[j]==0 ) aTabColMap[j] = i+1;
+        if( i!=j ) bIdListInOrder = 0;
+        if( j==pTab->iPKey ){
+          ipkColumn = i;  assert( !withoutRowid );
         }
-      }
-      if( j>=pTab->nCol ){
+#ifndef SQLITE_OMIT_GENERATED_COLUMNS
+        if( pTab->aCol[j].colFlags & (COLFLAG_STORED|COLFLAG_VIRTUAL) ){
+          sqlite3ErrorMsg(pParse,
+             "cannot INSERT into generated column \"%s\"",
+             pTab->aCol[j].zCnName);
+          goto insert_cleanup;
+        }
+#endif
+      }else{
         if( sqlite3IsRowid(pColumn->a[i].zName) && !withoutRowid ){
           ipkColumn = i;
           bIdListInOrder = 0;
@@ -1393,7 +1391,7 @@ void sqlite3Insert(
         continue;
       }else if( pColumn==0 ){
         /* Hidden columns that are not explicitly named in the INSERT
-        ** get there default value */
+        ** get their default value */
         sqlite3ExprCodeFactorable(pParse,
             sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
             iRegStore);
@@ -1401,9 +1399,9 @@ void sqlite3Insert(
       }
     }
     if( pColumn ){
-      assert( pColumn->eU4==EU4_IDX );
-      for(j=0; j<pColumn->nId && pColumn->a[j].u4.idx!=i; j++){}
-      if( j>=pColumn->nId ){
+      j = aTabColMap[i];
+      assert( j>=0 && j<=pColumn->nId );   
+      if( j==0 ){
         /* A column not named in the insert column list gets its
         ** default value */
         sqlite3ExprCodeFactorable(pParse,
@@ -1411,7 +1409,7 @@ void sqlite3Insert(
             iRegStore);
         continue;
       }
-      k = j;
+      k = j - 1;
     }else if( nColumn==0 ){
       /* This is INSERT INTO ... DEFAULT VALUES.  Load the default value. */
       sqlite3ExprCodeFactorable(pParse,
@@ -1656,7 +1654,10 @@ insert_cleanup:
   sqlite3ExprListDelete(db, pList);
   sqlite3UpsertDelete(db, pUpsert);
   sqlite3SelectDelete(db, pSelect);
-  sqlite3IdListDelete(db, pColumn);
+  if( pColumn ){
+    sqlite3IdListDelete(db, pColumn);
+    sqlite3DbFree(db, aTabColMap);
+  }
   if( aRegIdx ) sqlite3DbNNFreeNN(db, aRegIdx);
 }
 
@@ -2115,7 +2116,7 @@ void sqlite3GenerateConstraintChecks(
   ** could happen in any order, but they are grouped up front for
   ** convenience.
   **
-  ** 2018-08-14: Ticket https://www.sqlite.org/src/info/908f001483982c43
+  ** 2018-08-14: Ticket https://sqlite.org/src/info/908f001483982c43
   ** The order of constraints used to have OE_Update as (2) and OE_Abort
   ** and so forth as (1). But apparently PostgreSQL checks the OE_Update
   ** constraint before any others, so it had to be moved.

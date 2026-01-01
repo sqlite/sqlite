@@ -33,7 +33,8 @@ static void corruptSchema(
     static const char *azAlterType[] = {
        "rename",
        "drop column",
-       "add column"
+       "add column",
+       "drop constraint"
     };
     *pData->pzErrMsg = sqlite3MPrintf(db, 
         "error in %s %s after %s: %s", azObj[0], azObj[1], 
@@ -860,9 +861,11 @@ static int sqlite3LockAndPrepare(
     rc = sqlite3Prepare(db, zSql, nBytes, prepFlags, pOld, ppStmt, pzTail);
     assert( rc==SQLITE_OK || *ppStmt==0 );
     if( rc==SQLITE_OK || db->mallocFailed ) break;
-  }while( (rc==SQLITE_ERROR_RETRY && (cnt++)<SQLITE_MAX_PREPARE_RETRY)
-       || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt++)==0) );
+    cnt++;
+  }while( (rc==SQLITE_ERROR_RETRY && ALWAYS(cnt<=SQLITE_MAX_PREPARE_RETRY))
+       || (rc==SQLITE_SCHEMA && (sqlite3ResetOneSchema(db,-1), cnt)==1) );
   sqlite3BtreeLeaveAll(db);
+  assert( rc!=SQLITE_ERROR_RETRY );
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
   db->busyHandler.nBusy = 0;

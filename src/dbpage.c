@@ -46,8 +46,8 @@ typedef struct DbpageCursor DbpageCursor;
 
 struct DbpageCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
-  int pgno;                       /* Current page number */
-  int mxPgno;                     /* Last page to visit on this scan */
+  Pgno pgno;                      /* Current page number */
+  Pgno mxPgno;                    /* Last page to visit on this scan */
   Pager *pPager;                  /* Pager being read/written */
   DbPage *pPage1;                 /* Page 1 of the database */
   int iDb;                        /* Index of database to analyze */
@@ -184,7 +184,7 @@ static int dbpageOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   }else{
     memset(pCsr, 0, sizeof(DbpageCursor));
     pCsr->base.pVtab = pVTab;
-    pCsr->pgno = -1;
+    pCsr->pgno = 0;
   }
 
   *ppCursor = (sqlite3_vtab_cursor *)pCsr;
@@ -227,7 +227,7 @@ static int dbpageEof(sqlite3_vtab_cursor *pCursor){
 ** idxStr is not used
 */
 static int dbpageFilter(
-  sqlite3_vtab_cursor *pCursor, 
+  sqlite3_vtab_cursor *pCursor,
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
@@ -237,10 +237,11 @@ static int dbpageFilter(
   sqlite3 *db = pTab->db;
   Btree *pBt;
 
-  (void)idxStr;
-  
+  UNUSED_PARAMETER(idxStr);
+  UNUSED_PARAMETER(argc);
+
   /* Default setting is no rows of result */
-  pCsr->pgno = 1; 
+  pCsr->pgno = 1;
   pCsr->mxPgno = 0;
 
   if( idxNum & 2 ){
@@ -275,20 +276,20 @@ static int dbpageFilter(
 }
 
 static int dbpageColumn(
-  sqlite3_vtab_cursor *pCursor, 
-  sqlite3_context *ctx, 
+  sqlite3_vtab_cursor *pCursor,
+  sqlite3_context *ctx,
   int i
 ){
   DbpageCursor *pCsr = (DbpageCursor *)pCursor;
   int rc = SQLITE_OK;
   switch( i ){
     case 0: {           /* pgno */
-      sqlite3_result_int(ctx, pCsr->pgno);
+      sqlite3_result_int64(ctx, (sqlite3_int64)pCsr->pgno);
       break;
     }
     case 1: {           /* data */
       DbPage *pDbPage = 0;
-      if( pCsr->pgno==((PENDING_BYTE/pCsr->szPage)+1) ){
+      if( pCsr->pgno==(Pgno)((PENDING_BYTE/pCsr->szPage)+1) ){
         /* The pending byte page. Assume it is zeroed out. Attempting to
         ** request this page from the page is an SQLITE_CORRUPT error. */
         sqlite3_result_zeroblob(ctx, pCsr->szPage);
@@ -315,6 +316,24 @@ static int dbpageRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   DbpageCursor *pCsr = (DbpageCursor *)pCursor;
   *pRowid = pCsr->pgno;
   return SQLITE_OK;
+}
+
+/* 
+** Open write transactions. Since we do not know in advance which database
+** files will be written by the sqlite_dbpage virtual table, start a write
+** transaction on them all.
+**
+** Return SQLITE_OK if successful, or an SQLite error code otherwise.
+*/
+static int dbpageBeginTrans(DbpageTable *pTab){
+  sqlite3 *db = pTab->db;
+  int rc = SQLITE_OK;
+  int i;
+  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ) rc = sqlite3BtreeBeginTrans(pBt, 1, 0);
+  }
+  return rc;
 }
 
 static int dbpageUpdate(
@@ -344,10 +363,10 @@ static int dbpageUpdate(
     goto update_fail;
   }
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
-    pgno = (Pgno)sqlite3_value_int(argv[2]);
+    pgno = (Pgno)sqlite3_value_int64(argv[2]);
     isInsert = 1;
   }else{
-    pgno = sqlite3_value_int(argv[0]);
+    pgno = (Pgno)sqlite3_value_int64(argv[0]);
     if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
       zErr = "cannot insert";
       goto update_fail;
@@ -377,13 +396,19 @@ static int dbpageUpdate(
       /* "INSERT INTO dbpage($PGNO,NULL)" causes page number $PGNO and
       ** all subsequent pages to be deleted. */
       pTab->iDbTrunc = iDb;
-      pgno--;
-      pTab->pgnoTrunc = pgno;
+      pTab->pgnoTrunc = pgno-1;
+      pgno = 1;
     }else{
       zErr = "bad page value";
       goto update_fail;
     }
   }
+
+  if( dbpageBeginTrans(pTab)!=SQLITE_OK ){
+    zErr = "failed to open transaction";
+    goto update_fail;
+  }
+
   pPager = sqlite3BtreePager(pBt);
   rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pDbPage, 0);
   if( rc==SQLITE_OK ){
@@ -393,30 +418,22 @@ static int dbpageUpdate(
       memcpy(aPage, pData, szPage);
       pTab->pgnoTrunc = 0;
     }
-  }else{
+  }
+  if( rc!=SQLITE_OK ){
     pTab->pgnoTrunc = 0;
   }
   sqlite3PagerUnref(pDbPage);
   return rc;
 
 update_fail:
+  pTab->pgnoTrunc = 0;
   sqlite3_free(pVtab->zErrMsg);
   pVtab->zErrMsg = sqlite3_mprintf("%s", zErr);
   return SQLITE_ERROR;
 }
 
-/* Since we do not know in advance which database files will be
-** written by the sqlite_dbpage virtual table, start a write transaction
-** on them all.
-*/
 static int dbpageBegin(sqlite3_vtab *pVtab){
   DbpageTable *pTab = (DbpageTable *)pVtab;
-  sqlite3 *db = pTab->db;
-  int i;
-  for(i=0; i<db->nDb; i++){
-    Btree *pBt = db->aDb[i].pBt;
-    if( pBt ) (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
-  }
   pTab->pgnoTrunc = 0;
   return SQLITE_OK;
 }
@@ -452,7 +469,7 @@ static int dbpageRollbackTo(sqlite3_vtab *pVtab, int notUsed1){
 */
 int sqlite3DbpageRegister(sqlite3 *db){
   static sqlite3_module dbpage_module = {
-    0,                            /* iVersion */
+    2,                            /* iVersion */
     dbpageConnect,                /* xCreate */
     dbpageConnect,                /* xConnect */
     dbpageBestIndex,              /* xBestIndex */

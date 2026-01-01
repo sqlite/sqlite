@@ -37,6 +37,12 @@ do_execsql_test 2.1 {
   INSERT INTO yy(yy) VALUES('integrity-check');
 }
 
+db close
+sqlite3 db test.db
+do_execsql_test 2.1 {
+  INSERT INTO yy(yy) VALUES('integrity-check');
+}
+
 #--------------------------------------------------------------------
 #
 do_execsql_test 3.0 {

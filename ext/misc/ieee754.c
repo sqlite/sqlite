@@ -79,7 +79,7 @@
 **    WITH c(name,bin) AS (VALUES
 **       ('minimum positive value',        x'0000000000000001'),
 **       ('maximum subnormal value',       x'000fffffffffffff'),
-**       ('mininum positive nornal value', x'0010000000000000'),
+**       ('minimum positive normal value', x'0010000000000000'),
 **       ('maximum value',                 x'7fefffffffffffff'))
 **    SELECT c.name, decimal_mul(ieee754_mantissa(c.bin),pow2.v)
 **      FROM pow2, c WHERE pow2.x=ieee754_exponent(c.bin);
@@ -134,6 +134,9 @@ static void ieee754func(
     if( a==0 ){
       e = 0;
       m = 0;
+    }else if( a==(sqlite3_int64)0x8000000000000000LL ){
+      e = -1996;
+      m = -1;
     }else{
       e = a>>52;
       m = a & ((((sqlite3_int64)1)<<52)-1);
@@ -176,9 +179,9 @@ static void ieee754func(
     }
 
     if( m<0 ){
+      if( m<(-9223372036854775807LL) ) return;
       isNeg = 1;
       m = -m;
-      if( m<0 ) return;
     }else if( m==0 && e>-1000 && e<1000 ){
       sqlite3_result_double(context, 0.0);
       return;

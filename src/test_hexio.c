@@ -122,7 +122,7 @@ static int SQLITE_TCLAPI hexio_read(
     in = fopen(zFile, "r");
   }
   if( in==0 ){
-    Tcl_AppendResult(interp, "cannot open input file ", zFile, 0);
+    Tcl_AppendResult(interp, "cannot open input file ", zFile, NULL);
     return TCL_ERROR;
   }
   fseek(in, offset, SEEK_SET);
@@ -132,7 +132,7 @@ static int SQLITE_TCLAPI hexio_read(
     got = 0;
   }
   sqlite3TestBinToHex(zBuf, got);
-  Tcl_AppendResult(interp, zBuf, 0);
+  Tcl_AppendResult(interp, zBuf, NULL);
   sqlite3_free(zBuf);
   return TCL_OK;
 }
@@ -175,7 +175,7 @@ static int SQLITE_TCLAPI hexio_write(
     out = fopen(zFile, "r+");
   }
   if( out==0 ){
-    Tcl_AppendResult(interp, "cannot open output file ", zFile, 0);
+    Tcl_AppendResult(interp, "cannot open output file ", zFile, NULL);
     return TCL_ERROR;
   }
   fseek(out, offset, SEEK_SET);
@@ -324,12 +324,12 @@ static int SQLITE_TCLAPI utf8_to_utf8(
   z[n] = 0;
   nOut = sqlite3Utf8To8(z);
   sqlite3TestBinToHex(z,nOut);
-  Tcl_AppendResult(interp, (char*)z, 0);
+  Tcl_AppendResult(interp, (char*)z, NULL);
   sqlite3_free(z);
   return TCL_OK;
 #else
   Tcl_AppendResult(interp, 
-      "[utf8_to_utf8] unavailable - SQLITE_DEBUG not defined", 0
+      "[utf8_to_utf8] unavailable - SQLITE_DEBUG not defined", NULL
   );
   return TCL_ERROR;
 #endif

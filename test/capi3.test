@@ -689,7 +689,9 @@ do_test capi3-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-if {[clang_sanitize_address]==0} {
+if {0 && [clang_sanitize_address]==0} {
+  # This use-after-free occasionally causes segfaults during ordinary
+  # builds.  Let's just disable it completely.
   do_test capi3-6.4-misuse {
     db cache flush
     sqlite3_close $DB

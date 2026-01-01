@@ -17,7 +17,7 @@ source $testdir/tester.tcl
 set testprefix symlink2
 
 # This only runs on Windows.
-if {$::tcl_platform(platform)!="windows"} {
+if {$::tcl_platform(platform) ne "windows"} {
   finish_test
   return
 }

@@ -225,8 +225,8 @@ static int SQLITE_TCLAPI test_install_mutex_counters(
   assert(isInstall==0 || isInstall==1);
   assert(g.isInstalled==0 || g.isInstalled==1);
   if( isInstall==g.isInstalled ){
-    Tcl_AppendResult(interp, "mutex counters are ", 0);
-    Tcl_AppendResult(interp, isInstall?"already installed":"not installed", 0);
+    Tcl_AppendResult(interp, "mutex counters are ", NULL);
+    Tcl_AppendResult(interp, isInstall?"already installed":"not installed", NULL);
     return TCL_ERROR;
   }
 

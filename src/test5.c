@@ -67,7 +67,7 @@ static int SQLITE_TCLAPI test_value_overhead(
 
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-        Tcl_GetStringFromObj(objv[0], 0), " <repeat-count> <do-calls>", 0);
+        Tcl_GetStringFromObj(objv[0], 0), " <repeat-count> <do-calls>", NULL);
     return TCL_ERROR;
   }
 
@@ -106,7 +106,7 @@ static u8 name_to_enc(Tcl_Interp *interp, Tcl_Obj *pObj){
     }
   }
   if( !pEnc->enc ){
-    Tcl_AppendResult(interp, "No such encoding: ", z, 0);
+    Tcl_AppendResult(interp, "No such encoding: ", z, NULL);
   }
   if( pEnc->enc==SQLITE_UTF16 ){
     return SQLITE_UTF16NATIVE;
@@ -135,7 +135,7 @@ static int SQLITE_TCLAPI test_translate(
   if( objc!=4 && objc!=5 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
         Tcl_GetStringFromObj(objv[0], 0), 
-        " <string/blob> <from enc> <to enc>", 0
+        " <string/blob> <from enc> <to enc>", NULL
     );
     return TCL_ERROR;
   }

@@ -205,6 +205,11 @@ static int fts5StorageGetStmt(
       if( rc!=SQLITE_OK && pzErrMsg ){
         *pzErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pC->db));
       }
+      if( rc==SQLITE_ERROR && eStmt>FTS5_STMT_LOOKUP2 && eStmt<FTS5_STMT_SCAN ){
+        /* One of the internal tables - not the %_content table - is missing.
+        ** This counts as a corrupted table.  */
+       rc = SQLITE_CORRUPT;
+      }
     }
   }
 
@@ -534,6 +539,7 @@ static int fts5StorageDeleteFromIndex(
   for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
     if( pConfig->abUnindexed[iCol-1]==0 ){
       sqlite3_value *pVal = 0;
+      sqlite3_value *pFree = 0;
       const char *pText = 0;
       int nText = 0;
       const char *pLoc = 0;
@@ -550,11 +556,22 @@ static int fts5StorageDeleteFromIndex(
       if( pConfig->bLocale && sqlite3Fts5IsLocaleValue(pConfig, pVal) ){
         rc = sqlite3Fts5DecodeLocaleValue(pVal, &pText, &nText, &pLoc, &nLoc);
       }else{
-        pText = (const char*)sqlite3_value_text(pVal);
-        nText = sqlite3_value_bytes(pVal);
-        if( pConfig->bLocale && pSeek ){
-          pLoc = (const char*)sqlite3_column_text(pSeek, iCol + pConfig->nCol);
-          nLoc = sqlite3_column_bytes(pSeek, iCol + pConfig->nCol);
+        if( sqlite3_value_type(pVal)!=SQLITE_TEXT ){
+          /* Make a copy of the value to work with. This is because the call
+          ** to sqlite3_value_text() below forces the type of the value to
+          ** SQLITE_TEXT, and we may need to use it again later. */
+          pFree = pVal = sqlite3_value_dup(pVal);
+          if( pVal==0 ){
+            rc = SQLITE_NOMEM;
+          }
+        }
+        if( rc==SQLITE_OK ){
+          pText = (const char*)sqlite3_value_text(pVal);
+          nText = sqlite3_value_bytes(pVal);
+          if( pConfig->bLocale && pSeek ){
+            pLoc = (const char*)sqlite3_column_text(pSeek, iCol+pConfig->nCol);
+            nLoc = sqlite3_column_bytes(pSeek, iCol + pConfig->nCol);
+          }
         }
       }
 
@@ -570,6 +587,7 @@ static int fts5StorageDeleteFromIndex(
         }
         sqlite3Fts5ClearLocale(pConfig);
       }
+      sqlite3_value_free(pFree);
     }
   }
   if( rc==SQLITE_OK && p->nTotalRow<1 ){

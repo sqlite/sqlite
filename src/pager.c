@@ -700,6 +700,9 @@ struct Pager {
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
   char *zWal;                 /* File name for write-ahead log */
 #endif
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  sqlite3 *dbWal;
+#endif
 };
 
 /*
@@ -808,8 +811,10 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
   if( pPager->pWal ){
     u32 iRead = 0;
     (void)sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
-    return iRead==0; /* Condition (4) */
+    if( iRead ) return 0;  /* Case (4) */
   }
+#else
+  UNUSED_PARAMETER(pgno);
 #endif
   assert( pPager->fd->pMethods->xDeviceCharacteristics!=0 );
   if( (pPager->fd->pMethods->xDeviceCharacteristics(pPager->fd)
@@ -1291,7 +1296,7 @@ static void checkPage(PgHdr *pPg){
 ** If an error occurs while reading from the journal file, an SQLite
 ** error code is returned.
 */
-static int readSuperJournal(sqlite3_file *pJrnl, char *zSuper, u32 nSuper){
+static int readSuperJournal(sqlite3_file *pJrnl, char *zSuper, u64 nSuper){
   int rc;                    /* Return code */
   u32 len;                   /* Length in bytes of super-journal name */
   i64 szJ;                   /* Total size in bytes of journal file pJrnl */
@@ -1846,6 +1851,15 @@ static void pager_unlock(Pager *pPager){
 
   if( pagerUseWal(pPager) ){
     assert( !isOpen(pPager->jfd) );
+    if( pPager->eState==PAGER_ERROR ){
+      /* If an IO error occurs in wal.c while attempting to wrap the wal file,
+      ** then the Wal object may be holding a write-lock but no read-lock.
+      ** This call ensures that the write-lock is dropped as well. We cannot
+      ** have sqlite3WalEndReadTransaction() drop the write-lock, as it once
+      ** did, because this would break "BEGIN EXCLUSIVE" handling for
+      ** SQLITE_ENABLE_SETLK_TIMEOUT builds.  */
+      (void)sqlite3WalEndWriteTransaction(pPager->pWal);
+    }
     sqlite3WalEndReadTransaction(pPager->pWal);
     pPager->eState = PAGER_OPEN;
   }else if( !pPager->exclusiveMode ){
@@ -2527,12 +2541,12 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   char *zJournal;           /* Pointer to one journal within MJ file */
   char *zSuperPtr;          /* Space to hold super-journal filename */
   char *zFree = 0;          /* Free this buffer */
-  int nSuperPtr;            /* Amount of space allocated to zSuperPtr[] */
+  i64 nSuperPtr;            /* Amount of space allocated to zSuperPtr[] */
 
   /* Allocate space for both the pJournal and pSuper file descriptors.
   ** If successful, open the super-journal file for reading.
   */
-  pSuper = (sqlite3_file *)sqlite3MallocZero(pVfs->szOsFile * 2);
+  pSuper = (sqlite3_file *)sqlite3MallocZero(2 * (i64)pVfs->szOsFile);
   if( !pSuper ){
     rc = SQLITE_NOMEM_BKPT;
     pJournal = 0;
@@ -2550,11 +2564,14 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   */
   rc = sqlite3OsFileSize(pSuper, &nSuperJournal);
   if( rc!=SQLITE_OK ) goto delsuper_out;
-  nSuperPtr = pVfs->mxPathname+1;
+  nSuperPtr = 1 + (i64)pVfs->mxPathname;
+  assert( nSuperJournal>=0 && nSuperPtr>0 );
   zFree = sqlite3Malloc(4 + nSuperJournal + nSuperPtr + 2);
   if( !zFree ){
     rc = SQLITE_NOMEM_BKPT;
     goto delsuper_out;
+  }else{
+    assert( nSuperJournal<=0x7fffffff );
   }
   zFree[0] = zFree[1] = zFree[2] = zFree[3] = 0;
   zSuperJournal = &zFree[4];
@@ -2815,7 +2832,7 @@ static int pager_playback(Pager *pPager, int isHot){
   ** for pageSize.
   */
   zSuper = pPager->pTmpSpace;
-  rc = readSuperJournal(pPager->jfd, zSuper, pPager->pVfs->mxPathname+1);
+  rc = readSuperJournal(pPager->jfd, zSuper, 1+(i64)pPager->pVfs->mxPathname);
   if( rc==SQLITE_OK && zSuper[0] ){
     rc = sqlite3OsAccess(pVfs, zSuper, SQLITE_ACCESS_EXISTS, &res);
   }
@@ -2954,7 +2971,7 @@ end_playback:
     ** which case it requires 4 0x00 bytes in memory immediately before
     ** the filename. */
     zSuper = &pPager->pTmpSpace[4];
-    rc = readSuperJournal(pPager->jfd, zSuper, pPager->pVfs->mxPathname+1);
+    rc = readSuperJournal(pPager->jfd, zSuper, 1+(i64)pPager->pVfs->mxPathname);
     testcase( rc!=SQLITE_OK );
   }
   if( rc==SQLITE_OK
@@ -3597,14 +3614,27 @@ void sqlite3PagerSetFlags(
   unsigned pgFlags      /* Various flags */
 ){
   unsigned level = pgFlags & PAGER_SYNCHRONOUS_MASK;
-  if( pPager->tempFile ){
+  if( pPager->tempFile || level==PAGER_SYNCHRONOUS_OFF ){
     pPager->noSync = 1;
     pPager->fullSync = 0;
     pPager->extraSync = 0;
   }else{
-    pPager->noSync =  level==PAGER_SYNCHRONOUS_OFF ?1:0;
+    pPager->noSync =  0;
     pPager->fullSync = level>=PAGER_SYNCHRONOUS_FULL ?1:0;
-    pPager->extraSync = level==PAGER_SYNCHRONOUS_EXTRA ?1:0;
+
+    /* Set Pager.extraSync if "PRAGMA synchronous=EXTRA" is requested, or 
+    ** if the file-system supports F2FS style atomic writes. If this flag
+    ** is set, SQLite syncs the directory to disk immediately after deleting 
+    ** a journal file in "PRAGMA journal_mode=DELETE" mode.  */
+    if( level==PAGER_SYNCHRONOUS_EXTRA 
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+     || (sqlite3OsDeviceCharacteristics(pPager->fd) & SQLITE_IOCAP_BATCH_ATOMIC)
+#endif
+    ){
+      pPager->extraSync = 1;
+    }else{
+      pPager->extraSync = 0;
+    }
   }
   if( pPager->noSync ){
     pPager->syncFlags = 0;
@@ -4164,6 +4194,8 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
     sqlite3WalClose(pPager->pWal, db, pPager->walSyncFlags, pPager->pageSize,a);
     pPager->pWal = 0;
   }
+#else
+  UNUSED_PARAMETER(db);
 #endif
   pager_reset(pPager);
   if( MEMDB ){
@@ -4724,6 +4756,7 @@ int sqlite3PagerOpen(
   u32 szPageDflt = SQLITE_DEFAULT_PAGE_SIZE;  /* Default page size */
   const char *zUri = 0;    /* URI args to copy */
   int nUriByte = 1;        /* Number of bytes of URI args at *zUri */
+  
 
   /* Figure out how much space is required for each journal file-handle
   ** (there are two of them, the main journal and the sub-journal).  */
@@ -4750,8 +4783,8 @@ int sqlite3PagerOpen(
   */
   if( zFilename && zFilename[0] ){
     const char *z;
-    nPathname = pVfs->mxPathname+1;
-    zPathname = sqlite3DbMallocRaw(0, nPathname*2);
+    nPathname = pVfs->mxPathname + 1;
+    zPathname = sqlite3DbMallocRaw(0, 2*(i64)nPathname);
     if( zPathname==0 ){
       return SQLITE_NOMEM_BKPT;
     }
@@ -4838,14 +4871,14 @@ int sqlite3PagerOpen(
     ROUND8(sizeof(*pPager)) +            /* Pager structure */
     ROUND8(pcacheSize) +                 /* PCache object */
     ROUND8(pVfs->szOsFile) +             /* The main db file */
-    journalFileSize * 2 +                /* The two journal files */
+    (u64)journalFileSize * 2 +           /* The two journal files */
     SQLITE_PTRSIZE +                     /* Space to hold a pointer */
     4 +                                  /* Database prefix */
-    nPathname + 1 +                      /* database filename */
-    nUriByte +                           /* query parameters */
-    nPathname + 8 + 1 +                  /* Journal filename */
+    (u64)nPathname + 1 +                 /* database filename */
+    (u64)nUriByte +                      /* query parameters */
+    (u64)nPathname + 8 + 1 +             /* Journal filename */
 #ifndef SQLITE_OMIT_WAL
-    nPathname + 4 + 1 +                  /* WAL filename */
+    (u64)nPathname + 4 + 1 +             /* WAL filename */
 #endif
     3                                    /* Terminator */
   );
@@ -7496,7 +7529,7 @@ int sqlite3PagerCheckpoint(
   }
   if( pPager->pWal ){
     rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
-        (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
+        (eMode<=SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt
@@ -7568,6 +7601,11 @@ static int pagerOpenWal(Pager *pPager){
         pPager->fd, pPager->zWal, pPager->exclusiveMode,
         pPager->journalSizeLimit, &pPager->pWal
     );
+#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+    if( rc==SQLITE_OK ){
+      sqlite3WalDb(pPager->pWal, pPager->dbWal);
+    }
+#endif
   }
   pagerFixMaplimit(pPager);
 
@@ -7687,6 +7725,7 @@ int sqlite3PagerWalWriteLock(Pager *pPager, int bLock){
 ** blocking locks are required.
 */
 void sqlite3PagerWalDb(Pager *pPager, sqlite3 *db){
+  pPager->dbWal = db;
   if( pagerUseWal(pPager) ){
     sqlite3WalDb(pPager->pWal, db);
   }

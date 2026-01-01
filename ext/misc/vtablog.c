@@ -14,7 +14,16 @@
 ** on stdout when its key interfaces are called.  This is intended for
 ** interactive analysis and debugging of virtual table interfaces.
 **
-** Usage example:
+** HOW TO COMPILE:
+**
+** To build this extension as a separately loaded shared library or
+** DLL, use compiler command-lines similar to the following:
+**
+**   (linux)    gcc -fPIC -shared vtablog.c -o vtablog.so
+**   (mac)      clang -fPIC -dynamiclib vtablog.c -o vtablog.dylib
+**   (windows)  cl vtablog.c -link -dll -out:vtablog.dll
+**
+** USAGE EXAMPLE:
 **
 **     .load ./vtablog
 **     CREATE VIRTUAL TABLE temp.log USING vtablog(
@@ -22,6 +31,23 @@
 **        rows=25
 **     );
 **     SELECT * FROM log;
+**
+** ARGUMENTS TO CREATE VIRTUAL TABLE:
+**
+** In "CREATE VIRTUAL TABLE temp.log AS vtablog(ARGS....)" statement, the
+** ARGS argument is a list of key-value pairs that can be any of the
+** following.
+**
+**     schema=TEXT            Text is a CREATE TABLE statement that defines
+**                            the schema of the new virtual table.
+**
+**     rows=N                 The table as N rows.
+**
+**     consume_order_by=N     If the left-most ORDER BY terms is ASC and
+**                            against column N (where the leftmost column
+**                            is #1) then set the orderByConsumed=1 flag in
+**                            xBestIndex.  Or if the left-most ORDER BY is
+**                            DESC and against column -N, do likewise.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -42,6 +68,8 @@ struct vtablog_vtab {
   char *zName;        /* Table name.  argv[2] of xConnect/xCreate */
   int nRow;           /* Number of rows in the table */
   int nCursor;        /* Number of cursors created */
+  int iConsumeOB;     /* Consume the ORDER BY clause if on column N-th
+                      ** and consumeOB=N or consumeOB=(-N) and DESC */
 };
 
 /* vtablog_cursor is a subclass of sqlite3_vtab_cursor which will
@@ -173,6 +201,7 @@ static int vtablogConnectCreate(
   int rc;
   char *zSchema = 0;
   char *zNRow = 0;
+  char *zConsumeOB = 0;
 
   printf("%s.%s.%s():\n", argv[1], argv[2], 
          isCreate ? "xCreate" : "xConnect");
@@ -196,9 +225,17 @@ static int vtablogConnectCreate(
       rc = SQLITE_ERROR;
       goto vtablog_end_connect;
     }
+    if( vtablog_string_parameter(pzErr, "consume_order_by", z, &zConsumeOB) ){
+      rc = SQLITE_ERROR;
+      goto vtablog_end_connect;
+    }
   }
   if( zSchema==0 ){
     zSchema = sqlite3_mprintf("%s","CREATE TABLE x(a,b);");
+    if( zSchema==0 ){
+      rc = SQLITE_NOMEM;
+      goto vtablog_end_connect;
+    }
   }
   printf("  schema = '%s'\n", zSchema);
   rc = sqlite3_declare_vtab(db, zSchema);
@@ -210,6 +247,10 @@ static int vtablogConnectCreate(
     pNew->nRow = 10;
     if( zNRow ) pNew->nRow = atoi(zNRow);
     printf("  nrow = %d\n", pNew->nRow);
+    if( zConsumeOB ) pNew->iConsumeOB = atoi(zConsumeOB);
+    if( pNew->iConsumeOB ){
+      printf("  consume_order_by = %d\n", pNew->iConsumeOB);
+    }
     pNew->zDb = sqlite3_mprintf("%s", argv[1]);
     pNew->zName = sqlite3_mprintf("%s", argv[2]);
   }
@@ -217,6 +258,7 @@ static int vtablogConnectCreate(
 vtablog_end_connect:
   sqlite3_free(zSchema);
   sqlite3_free(zNRow);
+  sqlite3_free(zConsumeOB);
   return rc;
 }
 static int vtablogCreate(
@@ -240,7 +282,7 @@ static int vtablogConnect(
 
 
 /*
-** This method is the destructor for vtablog_cursor objects.
+** This method is the destructor for vtablog_vtab objects.
 */
 static int vtablogDisconnect(sqlite3_vtab *pVtab){
   vtablog_vtab *pTab = (vtablog_vtab*)pVtab;
@@ -252,7 +294,7 @@ static int vtablogDisconnect(sqlite3_vtab *pVtab){
 }
 
 /*
-** This method is the destructor for vtablog_cursor objects.
+** This method is (also) the destructor for vtablog_vtab objects.
 */
 static int vtablogDestroy(sqlite3_vtab *pVtab){
   vtablog_vtab *pTab = (vtablog_vtab*)pVtab;
@@ -436,6 +478,39 @@ static int vtablogFilter(
 }
 
 /*
+** Return an sqlite3_index_info operator name in static space.
+** The name is possibly overwritten on subsequent calls.
+*/
+static char *vtablogOpName(unsigned char op){
+  static char zUnknown[30];
+  char *zOut;
+  switch( op ){
+    case SQLITE_INDEX_CONSTRAINT_EQ:        zOut = "EQ";        break;
+    case SQLITE_INDEX_CONSTRAINT_GT:        zOut = "GT";        break;
+    case SQLITE_INDEX_CONSTRAINT_LE:        zOut = "LE";        break;
+    case SQLITE_INDEX_CONSTRAINT_LT:        zOut = "LT";        break;
+    case SQLITE_INDEX_CONSTRAINT_GE:        zOut = "GE";        break;
+    case SQLITE_INDEX_CONSTRAINT_MATCH:     zOut = "MATCH";     break;
+    case SQLITE_INDEX_CONSTRAINT_LIKE:      zOut = "LIKE";      break;
+    case SQLITE_INDEX_CONSTRAINT_GLOB:      zOut = "GLOB";      break;
+    case SQLITE_INDEX_CONSTRAINT_REGEXP:    zOut = "REGEXP";    break;
+    case SQLITE_INDEX_CONSTRAINT_NE:        zOut = "NE";        break;
+    case SQLITE_INDEX_CONSTRAINT_ISNOT:     zOut = "ISNOT";     break;
+    case SQLITE_INDEX_CONSTRAINT_ISNOTNULL: zOut = "ISNOTNULL"; break;
+    case SQLITE_INDEX_CONSTRAINT_ISNULL:    zOut = "ISNULL";    break;
+    case SQLITE_INDEX_CONSTRAINT_IS:        zOut = "IS";        break;
+    case SQLITE_INDEX_CONSTRAINT_LIMIT:     zOut = "LIMIT";     break;
+    case SQLITE_INDEX_CONSTRAINT_OFFSET:    zOut = "OFFSET";    break;
+    case SQLITE_INDEX_CONSTRAINT_FUNCTION:  zOut = "FUNCTION";  break;
+    default:
+      sqlite3_snprintf(sizeof(zUnknown),zUnknown,"%d",op);
+      zOut = zUnknown;
+      break;
+  }
+  return zOut;
+}
+
+/*
 ** SQLite will invoke this method one or more times while planning a query
 ** that uses the vtablog virtual table.  This routine needs to create
 ** a query plan for each invocation and compute an estimated cost for that
@@ -451,26 +526,46 @@ static int vtablogBestIndex(
   printf("  colUsed: 0x%016llx\n", p->colUsed);
   printf("  nConstraint: %d\n", p->nConstraint);
   for(i=0; i<p->nConstraint; i++){
+    sqlite3_value *pVal = 0;
+    int rc = sqlite3_vtab_rhs_value(p, i, &pVal);
     printf(
-       "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
+      "  constraint[%d]: col=%d termid=%d op=%s usabled=%d coll=%s rhs=",
        i,
        p->aConstraint[i].iColumn,
        p->aConstraint[i].iTermOffset,
-       p->aConstraint[i].op,
+       vtablogOpName(p->aConstraint[i].op),
        p->aConstraint[i].usable,
-       sqlite3_vtab_collation(p,i));
+       sqlite3_vtab_collation(p,i)
+    );
+    if( rc==SQLITE_OK ){
+      vtablogQuote(pVal);
+      printf("\n");
+    }else{
+      printf("N/A\n");
+    }
   }
   printf("  nOrderBy: %d\n", p->nOrderBy);
-  for(i=0; i<p->nOrderBy; i++){
-    printf("  orderby[%d]: col=%d desc=%d\n",
-       i,
-       p->aOrderBy[i].iColumn,
-       p->aOrderBy[i].desc);
+  if( p->nOrderBy ){
+    for(i=0; i<p->nOrderBy; i++){
+      printf("  orderby[%d]: col=%d desc=%d\n",
+         i,
+         p->aOrderBy[i].iColumn,
+         p->aOrderBy[i].desc);
+    }
+    if( pTab->iConsumeOB ){
+      int N = p->aOrderBy[0].iColumn+1;
+      if( (p->aOrderBy[0].desc && N==-pTab->iConsumeOB)
+       || (!p->aOrderBy[0].desc && N==pTab->iConsumeOB)
+      ){
+        p->orderByConsumed = 1;
+      }
+    }
   }
   p->estimatedCost = (double)500;
   p->estimatedRows = 500;
   printf("  idxNum=%d\n", p->idxNum);
   printf("  idxStr=NULL\n");
+  printf("  sqlite3_vtab_distinct()=%d\n", sqlite3_vtab_distinct(p));
   printf("  orderByConsumed=%d\n", p->orderByConsumed);
   printf("  estimatedCost=%g\n", p->estimatedCost);
   printf("  estimatedRows=%lld\n", p->estimatedRows);

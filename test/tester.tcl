@@ -809,6 +809,15 @@ proc do_test {name cmd expected} {
   flush stdout
 }
 
+# Like do_test except the test is not run in a slave interpreter
+# on Windows because of issues with ANSI and UTF8 I/O on Win11.
+#
+proc do_test_with_ansi_output {name cmd expected} {
+  if {![info exists ::SLAVE] || $::tcl_platform(platform) ne "windows"} {
+    uplevel 1 [list do_test $name $cmd $expected]
+  }
+}
+
 proc dumpbytes {s} {
   set r ""
   for {set i 0} {$i < [string length $s]} {incr i} {
@@ -863,7 +872,7 @@ proc catchcmdex {db {cmd ""}} {
 
 proc filepath_normalize {p} {
   # test cases should be written to assume "unix"-like file paths
-  if {$::tcl_platform(platform)!="unix"} {
+  if {$::tcl_platform(platform) ne "unix"} {
     string map [list \\ / \{/ / .db\} .db] \
         [regsub -nocase -all {[a-z]:[/\\]+} $p {/}]
   } {
@@ -1724,7 +1733,7 @@ proc ifcapable {expr code {else ""} {elsecode ""}} {
   return -code $c $r
 }
 
-# This proc execs a seperate process that crashes midway through executing
+# This proc execs a separate process that crashes midway through executing
 # the SQL script $sql on database test.db.
 #
 # The crash occurs during a sync() of file $crashfile. When the crash
@@ -1818,7 +1827,7 @@ proc crashsql {args} {
   # error message.  We map that to the expected message
   # so that we don't have to change all of the test
   # cases.
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     if {$msg=="child killed: unknown signal"} {
       set msg "child process exited abnormally"
     }
@@ -1869,7 +1878,7 @@ proc crash_on_write {args} {
   # error message.  We map that to the expected message
   # so that we don't have to change all of the test
   # cases.
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     if {$msg=="child killed: unknown signal"} {
       set msg "child process exited abnormally"
     }
@@ -2518,7 +2527,7 @@ proc test_restore_config_pagecache {} {
 }
 
 proc test_binary_name {nm} {
-  if {$::tcl_platform(platform)=="windows"} {
+  if {$::tcl_platform(platform) eq "windows"} {
     set ret "$nm.exe"
   } else {
     set ret $nm

@@ -13,7 +13,7 @@
 **
 ** The "lemon" program processes an LALR(1) input grammar file, then uses
 ** this template to construct a parser.  The "lemon" program inserts text
-** at each "%%" line.  Also, any "P-a-r-s-e" identifer prefix (without the
+** at each "%%" line.  Also, any "P-a-r-s-e" identifier prefix (without the
 ** interstitial "-" characters) contained in this template is changed into
 ** the value of the %name directive from the grammar.  Otherwise, the content
 ** of this template is copied straight through into the generate parser
@@ -299,15 +299,24 @@ static int yyGrowStack(yyParser *p){
   int newSize;
   int idx;
   yyStackEntry *pNew;
+#ifdef YYSIZELIMIT
+  int nLimit = YYSIZELIMIT(ParseCTX(p));
+#endif
 
   newSize = oldSize*2 + 100;
+#ifdef YYSIZELIMIT
+  if( newSize>nLimit ){
+    newSize = nLimit;
+    if( newSize<=oldSize ) return 1;
+  }
+#endif
   idx = (int)(p->yytos - p->yystack);
   if( p->yystack==p->yystk0 ){
-    pNew = YYREALLOC(0, newSize*sizeof(pNew[0]));
+    pNew = YYREALLOC(0, newSize*sizeof(pNew[0]), ParseCTX(p));
     if( pNew==0 ) return 1;
     memcpy(pNew, p->yystack, oldSize*sizeof(pNew[0]));
   }else{
-    pNew = YYREALLOC(p->yystack, newSize*sizeof(pNew[0]));
+    pNew = YYREALLOC(p->yystack, newSize*sizeof(pNew[0]), ParseCTX(p));
     if( pNew==0 ) return 1;
   }
   p->yystack = pNew;
@@ -459,7 +468,9 @@ void ParseFinalize(void *p){
   }
 
 #if YYGROWABLESTACK
-  if( pParser->yystack!=pParser->yystk0 ) YYFREE(pParser->yystack);
+  if( pParser->yystack!=pParser->yystk0 ){
+    YYFREE(pParser->yystack, ParseCTX(pParser));
+  }
 #endif
 }
 

@@ -254,4 +254,44 @@ do_execsql_test 810 {
   SELECT * FROM v0 LEFT JOIN t0 ON c3<NULL LEFT JOIN t1 ON 1 WHERE c2/0.1;
 } {0.2 NULL NULL 0.2}
 
+#-------------------------------------------------------------------------
+# 2025-04-10 https://sqlite.org/forum/forumpost/0109bca824
+reset_db
+
+do_execsql_test 900 {
+  SELECT * FROM (SELECT 1.0 AS abc) WHERE abc=1;
+} {1.0}
+do_execsql_test 910 {
+  SELECT * FROM (SELECT 1.0 AS abc) WHERE abc LIKE '1.0';
+} {1.0}
+do_execsql_test 920 {
+  SELECT * FROM (SELECT 1.0 AS abc) WHERE abc=1 AND abc LIKE '1.0';
+} {1.0}
+
+do_execsql_test 930 {
+  CREATE TABLE IF NOT EXISTS t0 (c0 BLOB);
+  CREATE TABLE IF NOT EXISTS t1 (c0 INTEGER);
+
+  INSERT INTO t1 VALUES ('1');
+  INSERT INTO t0 VALUES (''), (''), ('2');
+}
+
+do_execsql_test 940 {
+  SELECT *
+    FROM (SELECT 0.0 AS col_0) as subQuery
+    LEFT JOIN t0 ON ((CASE ''
+          WHEN t0.c0 THEN subQuery.col_0
+          ELSE (t0.c0) END) LIKE (((((subQuery.col_0))))))
+    LEFT JOIN t1 ON ((subQuery.col_0) == (false));
+} {0.0 {} 1 0.0 {} 1}
+
+do_execsql_test 950 {
+  SELECT *
+    FROM (SELECT 0.0 AS col_0) as subQuery
+    LEFT JOIN t0 ON ((CASE ''
+          WHEN t0.c0 THEN subQuery.col_0
+          ELSE (t0.c0) END) LIKE (((((subQuery.col_0))))))
+    LEFT JOIN t1 ON ((subQuery.col_0) == (false)) WHERE t1.c0;
+} {0.0 {} 1 0.0 {} 1}
+
 finish_test

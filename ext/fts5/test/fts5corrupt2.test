@@ -109,12 +109,12 @@ for {set i [expr $nbyte-2]} {$i>=0} {incr i -1} {
 
   do_catchsql_test 2.$i.2 {
     INSERT INTO t1(t1) VALUES('integrity-check');
-  } {1 {database disk image is malformed}}
+  } {/1.*fts5: corruption.*/}
 
   do_test 2.$i.3 {
     set res [catchsql {SELECT rowid FROM t1 WHERE t1 MATCH 'x*'}]
     expr {
-        $res=="1 {database disk image is malformed}" 
+        [string match {*fts5: corruption*} $res]
      || $res=="0 {$all}" 
     }
   } 1
@@ -160,17 +160,17 @@ foreach {tn hdr} {
       close $fd
 
       set res [catchsql {SELECT rowid FROM x3 WHERE x3 MATCH 'x AND a'}]
-      if {$res == "1 {database disk image is malformed}"} {incr nCorrupt}
+      if {[string match {*fts5: corruption*} $res]} {incr nCorrupt}
       set {} 1
     } {1}
 
     if {($tn2 % 10)==0 && $existing != $hdr} {
       do_test 3.$tn.$tn2.2 {
         catchsql { INSERT INTO x3(x3) VALUES('integrity-check') }
-      } {1 {database disk image is malformed}}
+      } {/.*fts5: corruption.*/}
       do_execsql_test 3.$tn.$tn2.3 {
         PRAGMA integrity_check(x3);
-      } {{malformed inverted index for FTS5 table main.x3}}
+      } {/.*fts5: corruption.*/}
     }
 
     execsql ROLLBACK
@@ -209,7 +209,7 @@ foreach {tn nCut} {
       set res [catchsql {
         SELECT rowid FROM x4 WHERE x4 MATCH 'a' ORDER BY 1 DESC
       }]
-      if {$res == "1 {database disk image is malformed}"} {incr nCorrupt}
+      if {[string match {*fts5: corruption*} $res]} {incr nCorrupt}
       set {} 1
     } {1}
 

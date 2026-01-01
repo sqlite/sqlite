@@ -205,7 +205,7 @@ static int percentBinarySearch(Percentile *p, double y, int bExact){
 /*
 ** Generate an error for a percentile function.
 **
-** The error format string must have exactly one occurrance of "%%s()"
+** The error format string must have exactly one occurrence of "%%s()"
 ** (with two '%' characters).  That substring will be replaced by the name
 ** of the function.
 */

@@ -755,12 +755,12 @@ static int processDevSymArgs(
     ){
       Tcl_AppendResult(interp,
         "Bad option: \"", zOpt,
-        "\" - must be \"-characteristics\" or \"-sectorsize\"", 0
+        "\" - must be \"-characteristics\" or \"-sectorsize\"", NULL
       );
       return TCL_ERROR;
     }
     if( i==objc-1 ){
-      Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"",0);
+      Tcl_AppendResult(interp, "Option requires an argument: \"", zOpt, "\"", NULL);
       return TCL_ERROR;
     }
 
@@ -934,7 +934,7 @@ static int SQLITE_TCLAPI crashParamsObjCmd(
 
   zCrashFile = Tcl_GetStringFromObj(objv[objc-1], &nCrashFile);
   if( nCrashFile>=sizeof(g.zCrashFile) ){
-    Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", 0);
+    Tcl_AppendResult(interp, "Filename is too long: \"", zCrashFile, "\"", NULL);
     goto error;
   }
   if( Tcl_GetIntFromObj(interp, objv[objc-2], &iDelay) ){
@@ -1044,7 +1044,7 @@ static int SQLITE_TCLAPI jtObjCmd(
   if( objc==3 ){
     if( strcmp(zParent, "-default") ){
       Tcl_AppendResult(interp,
-          "bad option \"", zParent, "\": must be -default", 0
+          "bad option \"", zParent, "\": must be -default", NULL
       );
       return TCL_ERROR;
     }
@@ -1055,7 +1055,7 @@ static int SQLITE_TCLAPI jtObjCmd(
     zParent = 0;
   }
   if( jt_register(zParent, objc==3) ){
-    Tcl_AppendResult(interp, "Error in jt_register", 0);
+    Tcl_AppendResult(interp, "Error in jt_register", NULL);
     return TCL_ERROR;
   }
 

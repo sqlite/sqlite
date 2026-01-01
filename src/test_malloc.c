@@ -41,8 +41,9 @@ static struct MemFault {
 ** fire on any simulated malloc() failure.
 */
 static void sqlite3Fault(void){
-  static int cnt = 0;
+  static u64 cnt = 0;
   cnt++;
+  if( cnt>((u64)1<<63) ) abort();
 }
 
 /*
@@ -52,8 +53,9 @@ static void sqlite3Fault(void){
 ** This routine only runs on the first such failure.
 */
 static void sqlite3FirstFault(void){
-  static int cnt2 = 0;
+  static u64 cnt2 = 0;
   cnt2++;
+  if( cnt2>((u64)1<<63) ) abort();
 }
 
 /*
@@ -644,7 +646,7 @@ static int SQLITE_TCLAPI test_memdebug_fail(
     }
 
     if( zErr ){
-      Tcl_AppendResult(interp, zErr, zOption, 0);
+      Tcl_AppendResult(interp, zErr, zOption, NULL);
       return TCL_ERROR;
     }
   }
@@ -1366,6 +1368,7 @@ static int SQLITE_TCLAPI test_db_status(
     { "DEFERRED_FKS",        SQLITE_DBSTATUS_DEFERRED_FKS        },
     { "CACHE_USED_SHARED",   SQLITE_DBSTATUS_CACHE_USED_SHARED   },
     { "CACHE_SPILL",         SQLITE_DBSTATUS_CACHE_SPILL         },
+    { "TEMPBUF_SPILL",       SQLITE_DBSTATUS_TEMPBUF_SPILL       },
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){

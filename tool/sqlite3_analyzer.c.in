@@ -55,12 +55,13 @@ static int subst_puts(
     }else if( strcmp(zArg, "-nonewline")==0 ){
       addNewLine = 0;
     }else{
-      Tcl_AppendResult(interp, "bad argument: ", zArg, 0);
+      Tcl_AppendResult(interp, "bad argument: ", zArg, NULL);
       return TCL_ERROR;
     }
   }
   sqlite3_fputs(zOut, pOut);
   if( addNewLine ) sqlite3_fputs("\n", pOut);
+  fflush(pOut);
   return TCL_OK;
 }
 #endif /* defined(_WIN32) */

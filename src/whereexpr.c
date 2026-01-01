@@ -219,12 +219,12 @@ static int isLikeOrGlob(
      z = (u8*)pRight->u.zToken;
   }
   if( z ){
-    /* Count the number of prefix bytes prior to the first wildcard.
-    ** or U+fffd character.  If the underlying database has a UTF16LE
-    ** encoding, then only consider ASCII characters.  Note that the
-    ** encoding of z[] is UTF8 - we are dealing with only UTF8 here in
-    ** this code, but the database engine itself might be processing
-    ** content using a different encoding. */
+    /* Count the number of prefix bytes prior to the first wildcard,
+    ** U+fffd character, or malformed utf-8. If the underlying database
+    ** has a UTF16LE encoding, then only consider ASCII characters.  Note that
+    ** the encoding of z[] is UTF8 - we are dealing with only UTF8 here in this
+    ** code, but the database engine itself might be processing content using a
+    ** different encoding. */
     cnt = 0;
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
@@ -232,7 +232,9 @@ static int isLikeOrGlob(
         cnt++;
       }else if( c>=0x80 ){
         const u8 *z2 = z+cnt-1;
-        if( sqlite3Utf8Read(&z2)==0xfffd || ENC(db)==SQLITE_UTF16LE ){
+        if( c==0xff || sqlite3Utf8Read(&z2)==0xfffd  /* bad utf-8 */
+         || ENC(db)==SQLITE_UTF16LE 
+        ){
           cnt--;
           break;
         }else{
@@ -929,30 +931,42 @@ static void exprAnalyzeOrTerm(
 **   1.  The SQLITE_Transitive optimization must be enabled
 **   2.  Must be either an == or an IS operator
 **   3.  Not originating in the ON clause of an OUTER JOIN
-**   4.  The affinities of A and B must be compatible
-**   5a. Both operands use the same collating sequence OR
-**   5b. The overall collating sequence is BINARY
+**   4.  The operator is not IS or else the query does not contain RIGHT JOIN
+**   5.  The affinities of A and B must be compatible
+**   6a. Both operands use the same collating sequence OR
+**   6b. The overall collating sequence is BINARY
 ** If this routine returns TRUE, that means that the RHS can be substituted
 ** for the LHS anyplace else in the WHERE clause where the LHS column occurs.
 ** This is an optimization.  No harm comes from returning 0.  But if 1 is
 ** returned when it should not be, then incorrect answers might result.
 */
-static int termIsEquivalence(Parse *pParse, Expr *pExpr){
+static int termIsEquivalence(Parse *pParse, Expr *pExpr, SrcList *pSrc){
   char aff1, aff2;
   CollSeq *pColl;
-  if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;
-  if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;
-  if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;
+  if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;  /* (1) */
+  if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;                 /* (2) */
+  if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;                   /* (3) */
+  assert( pSrc!=0 );
+  if( pExpr->op==TK_IS
+   && pSrc->nSrc>=2
+   && (pSrc->a[0].fg.jointype & JT_LTORJ)!=0
+  ){
+    return 0;                                                          /* (4) */
+  }
   aff1 = sqlite3ExprAffinity(pExpr->pLeft);
   aff2 = sqlite3ExprAffinity(pExpr->pRight);
   if( aff1!=aff2
    && (!sqlite3IsNumericAffinity(aff1) || !sqlite3IsNumericAffinity(aff2))
   ){
-    return 0;
+    return 0;                                                          /* (5) */
   }
   pColl = sqlite3ExprCompareCollSeq(pParse, pExpr);
-  if( sqlite3IsBinary(pColl) ) return 1;
-  return sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight);
+  if( !sqlite3IsBinary(pColl)
+   && !sqlite3ExprCollSeqMatch(pParse, pExpr->pLeft, pExpr->pRight)
+  ){
+    return 0;                                                          /* (6) */
+  }
+  return 1;
 }
 
 /*
@@ -1110,6 +1124,9 @@ static void exprAnalyze(
   }
   assert( pWC->nTerm > idxTerm );
   pTerm = &pWC->a[idxTerm];
+#ifdef SQLITE_DEBUG
+  pTerm->iTerm = idxTerm;
+#endif
   pMaskSet = &pWInfo->sMaskSet;
   pExpr = pTerm->pExpr;
   assert( pExpr!=0 ); /* Because malloc() has not failed */
@@ -1153,21 +1170,7 @@ static void exprAnalyze(
       prereqAll |= x;
       extraRight = x-1;  /* ON clause terms may not be used with an index
                          ** on left table of a LEFT JOIN.  Ticket #3015 */
-      if( (prereqAll>>1)>=x ){
-        sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
-        return;
-      }
     }else if( (prereqAll>>1)>=x ){
-      /* The ON clause of an INNER JOIN references a table to its right.
-      ** Most other SQL database engines raise an error.  But SQLite versions
-      ** 3.0 through 3.38 just put the ON clause constraint into the WHERE
-      ** clause and carried on.   Beginning with 3.39, raise an error only
-      ** if there is a RIGHT or FULL JOIN in the query.  This makes SQLite
-      ** more like other systems, and also preserves legacy. */
-      if( ALWAYS(pSrc->nSrc>0) && (pSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
-        sqlite3ErrorMsg(pParse, "ON clause references tables to its right");
-        return;
-      }
       ExprClearProperty(pExpr, EP_InnerON);
     }
   }
@@ -1217,8 +1220,8 @@ static void exprAnalyze(
         if( op==TK_IS ) pNew->wtFlags |= TERM_IS;
         pTerm = &pWC->a[idxTerm];
         pTerm->wtFlags |= TERM_COPIED;
-
-        if( termIsEquivalence(pParse, pDup) ){
+        assert( pWInfo->pTabList!=0 );
+        if( termIsEquivalence(pParse, pDup, pWInfo->pTabList) ){
           pTerm->eOperator |= WO_EQUIV;
           eExtraOp = WO_EQUIV;
         }
@@ -1384,9 +1387,8 @@ static void exprAnalyze(
     }
 
     if( !db->mallocFailed ){
-      u8 c, *pC;       /* Last character before the first wildcard */
+      u8 *pC;       /* Last character before the first wildcard */
       pC = (u8*)&pStr2->u.zToken[sqlite3Strlen30(pStr2->u.zToken)-1];
-      c = *pC;
       if( noCase ){
         /* The point is to increment the last character before the first
         ** wildcard.  But if we increment '@', that will push it into the
@@ -1394,10 +1396,17 @@ static void exprAnalyze(
         ** inequality.  To avoid this, make sure to also run the full
         ** LIKE on all candidate expressions by clearing the isComplete flag
         */
-        if( c=='A'-1 ) isComplete = 0;
-        c = sqlite3UpperToLower[c];
+        if( *pC=='A'-1 ) isComplete = 0;
+        *pC = sqlite3UpperToLower[*pC];
       }
-      *pC = c + 1;
+
+      /* Increment the value of the last utf8 character in the prefix. */
+      while( *pC==0xBF && pC>(u8*)pStr2->u.zToken ){
+        *pC = 0x80;
+        pC--;
+      }
+      assert( *pC!=0xFF );        /* isLikeOrGlob() guarantees this */
+      (*pC)++;
     }
     zCollSeqName = noCase ? "NOCASE" : sqlite3StrBINARY;
     pNewExpr1 = sqlite3ExprDup(db, pLeft, 0);
@@ -1518,7 +1527,7 @@ static void exprAnalyze(
         idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
         pNewTerm = &pWC->a[idxNew];
-        pNewTerm->prereqRight = prereqExpr;
+        pNewTerm->prereqRight = prereqExpr | extraRight;
         pNewTerm->leftCursor = pLeft->iTable;
         pNewTerm->u.x.leftColumn = pLeft->iColumn;
         pNewTerm->eOperator = WO_AUX;
@@ -1600,13 +1609,11 @@ static void whereAddLimitExpr(
   int iVal = 0;
 
   if( sqlite3ExprIsInteger(pExpr, &iVal, pParse) && iVal>=0 ){
-    Expr *pVal = sqlite3Expr(db, TK_INTEGER, 0);
+    Expr *pVal = sqlite3ExprInt32(db, iVal);
     if( pVal==0 ) return;
-    ExprSetProperty(pVal, EP_IntValue);
-    pVal->u.iValue = iVal;
     pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);
   }else{
-    Expr *pVal = sqlite3Expr(db, TK_REGISTER, 0);
+    Expr *pVal = sqlite3ExprAlloc(db, TK_REGISTER, 0, 0);
     if( pVal==0 ) return;
     pVal->iTable = iReg;
     pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);
@@ -1629,7 +1636,7 @@ static void whereAddLimitExpr(
 **
 **   1. The SELECT statement has a LIMIT clause, and
 **   2. The SELECT statement is not an aggregate or DISTINCT query, and
-**   3. The SELECT statement has exactly one object in its from clause, and
+**   3. The SELECT statement has exactly one object in its FROM clause, and
 **      that object is a virtual table, and
 **   4. There are no terms in the WHERE clause that will not be passed
 **      to the virtual table xBestIndex method.
@@ -1666,8 +1673,22 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
         ** (leftCursor==iCsr) test below.  */
         continue;
       }
-      if( pWC->a[ii].leftCursor!=iCsr ) return;
-      if( pWC->a[ii].prereqRight!=0 ) return;
+      if( pWC->a[ii].leftCursor==iCsr && pWC->a[ii].prereqRight==0 ) continue;
+
+      /* If this term has a parent with exactly one child, and the parent will
+      ** be passed through to xBestIndex, then this term can be ignored.  */
+      if( pWC->a[ii].iParent>=0 ){
+        WhereTerm *pParent = &pWC->a[ pWC->a[ii].iParent ];
+        if( pParent->leftCursor==iCsr
+         && pParent->prereqRight==0
+         && pParent->nChild==1
+        ){
+          continue;
+        }
+      }
+
+      /* This term will not be passed through. Do not add a LIMIT clause. */
+      return;
     }
 
     /* Check condition (5). Return early if it is not met. */

@@ -199,7 +199,7 @@ static int getToken(const unsigned char **pz){
   int t;                          /* Token type to return */
   do {
     z += sqlite3GetToken(z, &t);
-  }while( t==TK_SPACE );
+  }while( t==TK_SPACE || t==TK_COMMENT );
   if( t==TK_ID 
    || t==TK_STRING 
    || t==TK_JOIN_KW 
@@ -270,8 +270,9 @@ static int analyzeFilterKeyword(const unsigned char *z, int lastToken){
 ** Return the length (in bytes) of the token that begins at z[0]. 
 ** Store the token type in *tokenType before returning.
 */
-int sqlite3GetToken(const unsigned char *z, int *tokenType){
-  int i, c;
+i64 sqlite3GetToken(const unsigned char *z, int *tokenType){
+  i64 i;
+  int c;
   switch( aiClass[*z] ){  /* Switch on the character-class of the first byte
                           ** of the token. See the comment on the CC_ defines
                           ** above. */
@@ -288,7 +289,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     case CC_MINUS: {
       if( z[1]=='-' ){
         for(i=2; (c=z[i])!=0 && c!='\n'; i++){}
-        *tokenType = TK_SPACE;   /* IMP: R-22934-25134 */
+        *tokenType = TK_COMMENT;
         return i;
       }else if( z[1]=='>' ){
         *tokenType = TK_PTR;
@@ -324,7 +325,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       }
       for(i=3, c=z[2]; (c!='*' || z[i]!='/') && (c=z[i])!=0; i++){}
       if( c ) i++;
-      *tokenType = TK_SPACE;   /* IMP: R-22934-25134 */
+      *tokenType = TK_COMMENT;
       return i;
     }
     case CC_PERCENT: {
@@ -507,7 +508,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case CC_DOLLAR:
     case CC_VARALPHA: {
-      int n = 0;
+      i64 n = 0;
       testcase( z[0]=='$' );  testcase( z[0]=='@' );
       testcase( z[0]==':' );  testcase( z[0]=='#' );
       *tokenType = TK_VARIABLE;
@@ -599,11 +600,11 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 int sqlite3RunParser(Parse *pParse, const char *zSql){
   int nErr = 0;                   /* Number of errors encountered */
   void *pEngine;                  /* The LEMON-generated LALR(1) parser */
-  int n = 0;                      /* Length of the next token token */
+  i64 n = 0;                      /* Length of the next token token */
   int tokenType;                  /* type of the next token */
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
-  int mxSqlLen;                   /* Max length of an SQL string */
+  i64 mxSqlLen;                   /* Max length of an SQL string */
   Parse *pParentParse = 0;        /* Outer parse context, if any */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */
@@ -653,12 +654,12 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
     if( tokenType>=TK_WINDOW ){
       assert( tokenType==TK_SPACE || tokenType==TK_OVER || tokenType==TK_FILTER
            || tokenType==TK_ILLEGAL || tokenType==TK_WINDOW 
-           || tokenType==TK_QNUMBER
+           || tokenType==TK_QNUMBER || tokenType==TK_COMMENT
       );
 #else
     if( tokenType>=TK_SPACE ){
       assert( tokenType==TK_SPACE || tokenType==TK_ILLEGAL 
-           || tokenType==TK_QNUMBER 
+           || tokenType==TK_QNUMBER || tokenType==TK_COMMENT
       );
 #endif /* SQLITE_OMIT_WINDOWFUNC */
       if( AtomicLoad(&db->u1.isInterrupted) ){
@@ -692,16 +693,23 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
         assert( n==6 );
         tokenType = analyzeFilterKeyword((const u8*)&zSql[6], lastTokenParsed);
 #endif /* SQLITE_OMIT_WINDOWFUNC */
+      }else if( tokenType==TK_COMMENT
+             && (db->init.busy || (db->flags & SQLITE_Comments)!=0)
+      ){
+        /* Ignore SQL comments if either (1) we are reparsing the schema or
+        ** (2) SQLITE_DBCONFIG_ENABLE_COMMENTS is turned on (the default). */
+        zSql += n;
+        continue;
       }else if( tokenType!=TK_QNUMBER ){
         Token x;
         x.z = zSql;
-        x.n = n;
+        x.n = (u32)n;
         sqlite3ErrorMsg(pParse, "unrecognized token: \"%T\"", &x);
         break;
       }
     }
     pParse->sLastToken.z = zSql;
-    pParse->sLastToken.n = n;
+    pParse->sLastToken.n = (u32)n;
     sqlite3Parser(pEngine, tokenType, pParse->sLastToken);
     lastTokenParsed = tokenType;
     zSql += n;
@@ -777,7 +785,7 @@ char *sqlite3Normalize(
 ){
   sqlite3 *db;       /* The database connection */
   int i;             /* Next unread byte of zSql[] */
-  int n;             /* length of current token */
+  i64 n;             /* length of current token */
   int tokenType;     /* type of current token */
   int prevType = 0;  /* Previous non-whitespace token */
   int nParen;        /* Number of nested levels of parentheses */
@@ -798,6 +806,7 @@ char *sqlite3Normalize(
     n = sqlite3GetToken((unsigned char*)zSql+i, &tokenType);
     if( NEVER(n<=0) ) break;
     switch( tokenType ){
+      case TK_COMMENT:
       case TK_SPACE: {
         break;
       }

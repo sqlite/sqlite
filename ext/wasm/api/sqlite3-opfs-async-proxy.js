@@ -61,7 +61,7 @@ const installAsyncProxy = function(){
   }
 
   /**
-     Will hold state copied to this object from the syncronous side of
+     Will hold state copied to this object from the synchronous side of
      this API.
   */
   const state = Object.create(null);
@@ -722,7 +722,7 @@ const installAsyncProxy = function(){
 
              https://github.com/tomayac/sqlite-wasm/issues/12
 
-             is reporting that this occassionally, under high loads,
+             is reporting that this occasionally, under high loads,
              returns 'ok', which leads to the whichOp being 0 (which
              isn't a valid operation ID and leads to an exception,
              along with a corresponding ugly console log

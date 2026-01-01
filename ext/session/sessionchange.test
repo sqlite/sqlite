@@ -96,6 +96,22 @@ do_test 1.5 {
 $iter finalize
 grp delete
 
+do_test 1.6 { 
+  set C [changeset_from_sql {
+    INSERT INTO t1 VALUES(1001, hex(randomblob(10000)), hex(randomblob(10000)));
+    INSERT INTO t1 VALUES(2001, hex(randomblob(10000)), hex(randomblob(10000)));
+    INSERT INTO t1 VALUES(3001, hex(randomblob(10000)), hex(randomblob(10000)));
+  }]
+
+  sqlite3changegroup grp
+  set iter [sqlite3changeset_start $C]
+  while {[$iter next]=="SQLITE_ROW"} {
+    grp add_change $iter
+  }
+  $iter finalize
+} SQLITE_OK
+
+grp delete
 
 
 finish_test

@@ -33,6 +33,16 @@ typedef unsigned int u32;
 typedef unsigned char u8;
 typedef sqlite3_int64 i64;
 
+/*
+** Work around C99 "flex-array" syntax for pre-C99 compilers, so as
+** to avoid complaints from -fsanitize=strict-bounds.
+*/
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define FLEXARRAY
+#else
+# define FLEXARRAY 1
+#endif
+
 typedef struct RecoverTable RecoverTable;
 typedef struct RecoverColumn RecoverColumn;
 
@@ -140,8 +150,11 @@ struct RecoverColumn {
 typedef struct RecoverBitmap RecoverBitmap;
 struct RecoverBitmap {
   i64 nPg;                        /* Size of bitmap */
-  u32 aElem[1];                   /* Array of 32-bit bitmasks */
+  u32 aElem[FLEXARRAY];           /* Array of 32-bit bitmasks */
 };
+
+/* Size in bytes of a RecoverBitmap object sufficient to cover 32 pages */
+#define SZ_RECOVERBITMAP_32  (16)
 
 /*
 ** State variables (part of the sqlite3_recover structure) used while
@@ -382,7 +395,7 @@ static int recoverError(
 */
 static RecoverBitmap *recoverBitmapAlloc(sqlite3_recover *p, i64 nPg){
   int nElem = (nPg+1+31) / 32;
-  int nByte = sizeof(RecoverBitmap) + nElem*sizeof(u32);
+  int nByte = SZ_RECOVERBITMAP_32 + nElem*sizeof(u32);
   RecoverBitmap *pRet = (RecoverBitmap*)recoverMalloc(p, nByte);
 
   if( pRet ){
@@ -2574,37 +2587,53 @@ static void recoverUninstallWrapper(sqlite3_recover *p){
 static void recoverStep(sqlite3_recover *p){
   assert( p && p->errCode==SQLITE_OK );
   switch( p->eState ){
-    case RECOVER_STATE_INIT:
+    case RECOVER_STATE_INIT: {
+      int bUseWrapper = 1;
       /* This is the very first call to sqlite3_recover_step() on this object.
       */
       recoverSqlCallback(p, "BEGIN");
       recoverSqlCallback(p, "PRAGMA writable_schema = on");
+      recoverSqlCallback(p, "PRAGMA foreign_keys = off");
 
       recoverEnterMutex();
-      recoverInstallWrapper(p);
 
       /* Open the output database. And register required virtual tables and 
       ** user functions with the new handle. */
       recoverOpenOutput(p);
 
-      /* Open transactions on both the input and output databases. */
-      sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_RESET_CACHE, 0);
-      recoverExec(p, p->dbIn, "PRAGMA writable_schema = on");
-      recoverExec(p, p->dbIn, "BEGIN");
-      if( p->errCode==SQLITE_OK ) p->bCloseTransaction = 1;
-      recoverExec(p, p->dbIn, "SELECT 1 FROM sqlite_schema");
-      recoverTransferSettings(p);
-      recoverOpenRecovery(p);
-      recoverCacheSchema(p);
+      /* Attempt to open a transaction and read page 1 of the input database.
+      ** Two attempts may be made - one with a wrapper installed to ensure
+      ** that the database header is sane, and then if that attempt returns
+      ** SQLITE_NOTADB, then again with no wrapper. The second attempt is
+      ** required for encrypted databases.  */
+      if( p->errCode==SQLITE_OK ){
+        do{
+          p->errCode = SQLITE_OK;
+          if( bUseWrapper ) recoverInstallWrapper(p);
 
-      recoverUninstallWrapper(p);
+          /* Open a transaction on the input database. */
+          sqlite3_file_control(p->dbIn, p->zDb, SQLITE_FCNTL_RESET_CACHE, 0);
+          recoverExec(p, p->dbIn, "PRAGMA writable_schema = on");
+          recoverExec(p, p->dbIn, "BEGIN");
+          if( p->errCode==SQLITE_OK ) p->bCloseTransaction = 1;
+          recoverExec(p, p->dbIn, "SELECT 1 FROM sqlite_schema");
+          recoverTransferSettings(p);
+          recoverOpenRecovery(p);
+          recoverCacheSchema(p);
+
+          if( bUseWrapper ) recoverUninstallWrapper(p);
+        }while( p->errCode==SQLITE_NOTADB 
+             && (bUseWrapper--) 
+             && SQLITE_OK==sqlite3_exec(p->dbIn, "ROLLBACK", 0, 0, 0)
+        );
+      }
+
       recoverLeaveMutex();
-
       recoverExec(p, p->dbOut, "BEGIN");
-
       recoverWriteSchema1(p);
       p->eState = RECOVER_STATE_WRITING;
       break;
+    }
       
     case RECOVER_STATE_WRITING: {
       if( p->w1.pTbls==0 ){

@@ -36,7 +36,7 @@ sqlite3 db test.db
 # different.  This causes problems for the tests below.  To avoid
 # issues, these tests are disabled for windows.
 #
-if {$::tcl_platform(platform)=="windows"} {
+if {$::tcl_platform(platform) eq "windows"} {
   finish_test
   return
 }

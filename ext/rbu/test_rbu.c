@@ -139,7 +139,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
       }else{
         Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
         if( zErrmsg ){
-          Tcl_AppendResult(interp, " - ", zErrmsg, 0);
+          Tcl_AppendResult(interp, " - ", zErrmsg, NULL);
           sqlite3_free(zErrmsg);
         }
         ret = TCL_ERROR;
@@ -399,7 +399,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_internal_test(
 
   db = sqlite3rbu_db(0, 0);
   if( db!=0 ){
-    Tcl_AppendResult(interp, "sqlite3rbu_db(0, 0)!=0", 0);
+    Tcl_AppendResult(interp, "sqlite3rbu_db(0, 0)!=0", NULL);
     return TCL_ERROR;
   }
 

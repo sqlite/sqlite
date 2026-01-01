@@ -49,6 +49,10 @@
 # define CONST const
 #elif !defined(Tcl_Size)
   typedef int Tcl_Size;
+# ifndef Tcl_BounceRefCount
+#  define Tcl_BounceRefCount(X) Tcl_IncrRefCount(X); Tcl_DecrRefCount(X)
+   /* https://www.tcl-lang.org/man/tcl9.0/TclLib/Object.html */
+# endif
 #endif
 /**** End copy of tclsqlite.h ****/
 
@@ -76,7 +80,9 @@
 #     define SQLITE_PTRSIZE 8
 #   endif
 # endif /* SQLITE_PTRSIZE */
-# if defined(HAVE_STDINT_H)
+# if defined(HAVE_STDINT_H) || (defined(__STDC_VERSION__) &&  \
+                                (__STDC_VERSION__ >= 199901L))
+#   include <stdint.h>
     typedef uintptr_t uptr;
 # elif SQLITE_PTRSIZE==4
     typedef unsigned int uptr;
@@ -117,6 +123,15 @@
 
 /* Forward declaration */
 typedef struct SqliteDb SqliteDb;
+
+/* Add -DSQLITE_ENABLE_QRF_IN_TCL to add the Query Result Formatter (QRF)
+** into the build of the TCL extension, when building using separate
+** source files.  The QRF is included automatically when building from
+** the tclsqlite3.c amalgamation.
+*/
+#if defined(SQLITE_ENABLE_QRF_IN_TCL)
+#include "qrf.h"
+#endif
 
 /*
 ** New SQL functions can be created as TCL scripts.  Each such function
@@ -341,7 +356,7 @@ static int SQLITE_TCLAPI incrblobInput(
 */
 static int SQLITE_TCLAPI incrblobOutput(
   ClientData instanceData,
-  CONST char *buf,
+  const char *buf,
   int toWrite,
   int *errorCodePtr
 ){
@@ -510,7 +525,7 @@ static int createIncrblobChannel(
 ** or {...} or ; to be seen anywhere.  Most callback scripts consist
 ** of just a single procedure name and they meet this requirement.
 */
-static int safeToUseEvalObjv(Tcl_Interp *interp, Tcl_Obj *pCmd){
+static int safeToUseEvalObjv(Tcl_Obj *pCmd){
   /* We could try to do something with Tcl_Parse().  But we will instead
   ** just do a search for forbidden characters.  If any of the forbidden
   ** characters appear in pCmd, we will report the string as unsafe.
@@ -1082,7 +1097,9 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     Tcl_DecrRefCount(pCmd);
   }
 
-  if( rc && rc!=TCL_RETURN ){
+  if( TCL_BREAK==rc ){
+    sqlite3_result_null(context);
+  }else if( rc && rc!=TCL_RETURN ){
     sqlite3_result_error(context, Tcl_GetStringResult(p->interp), -1);
   }else{
     Tcl_Obj *pVar = Tcl_GetObjResult(p->interp);
@@ -1097,9 +1114,10 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
         /* Only return a BLOB type if the Tcl variable is a bytearray and
         ** has no string representation. */
         eType = SQLITE_BLOB;
-      }else if( (c=='b' && strcmp(zType,"boolean")==0)
+      }else if( (c=='b' && pVar->bytes==0 && strcmp(zType,"boolean")==0 )
+             || (c=='b' && pVar->bytes==0 && strcmp(zType,"booleanString")==0 )
              || (c=='w' && strcmp(zType,"wideInt")==0)
-             || (c=='i' && strcmp(zType,"int")==0) 
+             || (c=='i' && strcmp(zType,"int")==0)
       ){
         eType = SQLITE_INTEGER;
       }else if( c=='d' && strcmp(zType,"double")==0 ){
@@ -1231,6 +1249,7 @@ static int auth_callback(
 }
 #endif /* SQLITE_OMIT_AUTHORIZATION */
 
+#if 0
 /*
 ** This routine reads a line of text from FILE in, stores
 ** the text in memory obtained from malloc() and returns a pointer
@@ -1275,6 +1294,7 @@ static char *local_getline(char *zPrompt, FILE *in){
   zLine = realloc( zLine, n+1 );
   return zLine;
 }
+#endif
 
 
 /*
@@ -1505,9 +1525,12 @@ static int dbPrepareAndBind(
           sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);
           Tcl_IncrRefCount(pVar);
           pPreStmt->apParm[iParm++] = pVar;
-        }else if( c=='b' && strcmp(zType,"boolean")==0 ){
+        }else if( c=='b' && pVar->bytes==0 
+               && (strcmp(zType,"booleanString")==0
+                   || strcmp(zType,"boolean")==0)
+        ){
           int nn;
-          Tcl_GetIntFromObj(interp, pVar, &nn);
+          Tcl_GetBooleanFromObj(interp, pVar, &nn);
           sqlite3_bind_int(pStmt, i, nn);
         }else if( c=='d' && strcmp(zType,"double")==0 ){
           double r;
@@ -1608,11 +1631,12 @@ struct DbEvalContext {
   SqlPreparedStmt *pPreStmt;      /* Current statement */
   int nCol;                       /* Number of columns returned by pStmt */
   int evalFlags;                  /* Flags used */
-  Tcl_Obj *pArray;                /* Name of array variable */
+  Tcl_Obj *pVarName;              /* Name of target array/dict variable */
   Tcl_Obj **apColName;            /* Array of column names */
 };
 
 #define SQLITE_EVAL_WITHOUTNULLS  0x00001  /* Unset array(*) for NULL */
+#define SQLITE_EVAL_ASDICT        0x00002  /* Use dict instead of array */
 
 /*
 ** Release any cache of column names currently held as part of
@@ -1633,20 +1657,20 @@ static void dbReleaseColumnNames(DbEvalContext *p){
 /*
 ** Initialize a DbEvalContext structure.
 **
-** If pArray is not NULL, then it contains the name of a Tcl array
+** If pVarName is not NULL, then it contains the name of a Tcl array
 ** variable. The "*" member of this array is set to a list containing
 ** the names of the columns returned by the statement as part of each
 ** call to dbEvalStep(), in order from left to right. e.g. if the names
 ** of the returned columns are a, b and c, it does the equivalent of the
 ** tcl command:
 **
-**     set ${pArray}(*) {a b c}
+**     set ${pVarName}(*) {a b c}
 */
 static void dbEvalInit(
   DbEvalContext *p,               /* Pointer to structure to initialize */
   SqliteDb *pDb,                  /* Database handle */
   Tcl_Obj *pSql,                  /* Object containing SQL script */
-  Tcl_Obj *pArray,                /* Name of Tcl array to set (*) element of */
+  Tcl_Obj *pVarName,              /* Name of Tcl array to set (*) element of */
   int evalFlags                   /* Flags controlling evaluation */
 ){
   memset(p, 0, sizeof(DbEvalContext));
@@ -1654,9 +1678,9 @@ static void dbEvalInit(
   p->zSql = Tcl_GetString(pSql);
   p->pSql = pSql;
   Tcl_IncrRefCount(pSql);
-  if( pArray ){
-    p->pArray = pArray;
-    Tcl_IncrRefCount(pArray);
+  if( pVarName ){
+    p->pVarName = pVarName;
+    Tcl_IncrRefCount(pVarName);
   }
   p->evalFlags = evalFlags;
   addDatabaseRef(p->pDb);
@@ -1679,7 +1703,7 @@ static void dbEvalRowInfo(
     Tcl_Obj **apColName = 0;      /* Array of column names */
 
     p->nCol = nCol = sqlite3_column_count(pStmt);
-    if( nCol>0 && (papColName || p->pArray) ){
+    if( nCol>0 && (papColName || p->pVarName) ){
       apColName = (Tcl_Obj**)Tcl_Alloc( sizeof(Tcl_Obj*)*nCol );
       for(i=0; i<nCol; i++){
         apColName[i] = Tcl_NewStringObj(sqlite3_column_name(pStmt,i), -1);
@@ -1688,20 +1712,35 @@ static void dbEvalRowInfo(
       p->apColName = apColName;
     }
 
-    /* If results are being stored in an array variable, then create
-    ** the array(*) entry for that array
+    /* If results are being stored in a variable then create the
+    ** array(*) or dict(*) entry for that variable.
     */
-    if( p->pArray ){
+    if( p->pVarName ){
       Tcl_Interp *interp = p->pDb->interp;
       Tcl_Obj *pColList = Tcl_NewObj();
       Tcl_Obj *pStar = Tcl_NewStringObj("*", -1);
 
+      Tcl_IncrRefCount(pColList);
+      Tcl_IncrRefCount(pStar);
       for(i=0; i<nCol; i++){
         Tcl_ListObjAppendElement(interp, pColList, apColName[i]);
       }
-      Tcl_IncrRefCount(pStar);
-      Tcl_ObjSetVar2(interp, p->pArray, pStar, pColList, 0);
+      if( 0==(SQLITE_EVAL_ASDICT & p->evalFlags) ){
+        Tcl_ObjSetVar2(interp, p->pVarName, pStar, pColList, 0);
+      }else{
+        Tcl_Obj * pDict = Tcl_ObjGetVar2(interp, p->pVarName, NULL, 0);
+        if( !pDict ){
+          pDict = Tcl_NewDictObj();
+        }else if( Tcl_IsShared(pDict) ){
+          pDict = Tcl_DuplicateObj(pDict);
+        }
+        if( Tcl_DictObjPut(interp, pDict, pStar, pColList)==TCL_OK ){
+          Tcl_ObjSetVar2(interp, p->pVarName, NULL, pDict, 0);
+        }
+        Tcl_BounceRefCount(pDict);
+      }
       Tcl_DecrRefCount(pStar);
+      Tcl_DecrRefCount(pColList);
     }
   }
 
@@ -1743,7 +1782,7 @@ static int dbEvalStep(DbEvalContext *p){
       if( rcs==SQLITE_ROW ){
         return TCL_OK;
       }
-      if( p->pArray ){
+      if( p->pVarName ){
         dbEvalRowInfo(p, 0, 0);
       }
       rcs = sqlite3_reset(pStmt);
@@ -1794,9 +1833,9 @@ static void dbEvalFinalize(DbEvalContext *p){
     dbReleaseStmt(p->pDb, p->pPreStmt, 0);
     p->pPreStmt = 0;
   }
-  if( p->pArray ){
-    Tcl_DecrRefCount(p->pArray);
-    p->pArray = 0;
+  if( p->pVarName ){
+    Tcl_DecrRefCount(p->pVarName);
+    p->pVarName = 0;
   }
   Tcl_DecrRefCount(p->pSql);
   dbReleaseColumnNames(p);
@@ -1843,7 +1882,8 @@ static Tcl_Obj *dbEvalColumnValue(DbEvalContext *p, int iCol){
 ** are 8.6 or newer, the code still tests the Tcl version at runtime.
 ** This allows stubs-enabled builds to be used with older Tcl libraries.
 */
-#if TCL_MAJOR_VERSION>8 || (TCL_MAJOR_VERSION==8 && TCL_MINOR_VERSION>=6)
+#if TCL_MAJOR_VERSION>8 || !defined(TCL_MINOR_VERSION) \
+                        || TCL_MINOR_VERSION>=6
 # define SQLITE_TCL_NRE 1
 static int DbUseNre(void){
   int major, minor;
@@ -1870,7 +1910,7 @@ static int DbUseNre(void){
 /*
 ** This function is part of the implementation of the command:
 **
-**   $db eval SQL ?ARRAYNAME? SCRIPT
+**   $db eval SQL ?TGT-NAME? SCRIPT
 */
 static int SQLITE_TCLAPI DbEvalNextCmd(
   ClientData data[],                   /* data[0] is the (DbEvalContext*) */
@@ -1884,8 +1924,8 @@ static int SQLITE_TCLAPI DbEvalNextCmd(
   ** is a pointer to a Tcl_Obj containing the script to run for each row
   ** returned by the queries encapsulated in data[0]. */
   DbEvalContext *p = (DbEvalContext *)data[0];
-  Tcl_Obj *pScript = (Tcl_Obj *)data[1];
-  Tcl_Obj *pArray = p->pArray;
+  Tcl_Obj * const pScript = (Tcl_Obj *)data[1];
+  Tcl_Obj * const pVarName = p->pVarName;
 
   while( (rc==TCL_OK || rc==TCL_CONTINUE) && TCL_OK==(rc = dbEvalStep(p)) ){
     int i;
@@ -1893,15 +1933,46 @@ static int SQLITE_TCLAPI DbEvalNextCmd(
     Tcl_Obj **apColName;
     dbEvalRowInfo(p, &nCol, &apColName);
     for(i=0; i<nCol; i++){
-      if( pArray==0 ){
+      if( pVarName==0 ){
         Tcl_ObjSetVar2(interp, apColName[i], 0, dbEvalColumnValue(p,i), 0);
       }else if( (p->evalFlags & SQLITE_EVAL_WITHOUTNULLS)!=0
-             && sqlite3_column_type(p->pPreStmt->pStmt, i)==SQLITE_NULL 
+             && sqlite3_column_type(p->pPreStmt->pStmt, i)==SQLITE_NULL
       ){
-        Tcl_UnsetVar2(interp, Tcl_GetString(pArray), 
-                      Tcl_GetString(apColName[i]), 0);
+        /* Remove NULL-containing column from the target container... */
+        if( 0==(SQLITE_EVAL_ASDICT & p->evalFlags) ){
+          /* Target is an array */
+          Tcl_UnsetVar2(interp, Tcl_GetString(pVarName),
+                        Tcl_GetString(apColName[i]), 0);
+        }else{
+          /* Target is a dict */
+          Tcl_Obj *pDict = Tcl_ObjGetVar2(interp, pVarName, NULL, 0);
+          if( pDict ){
+            if( Tcl_IsShared(pDict) ){
+              pDict = Tcl_DuplicateObj(pDict);
+            }
+            if( Tcl_DictObjRemove(interp, pDict, apColName[i])==TCL_OK ){
+              Tcl_ObjSetVar2(interp, pVarName, NULL, pDict, 0);
+            }
+            Tcl_BounceRefCount(pDict);
+          }
+        }
+      }else if( 0==(SQLITE_EVAL_ASDICT & p->evalFlags) ){
+        /* Target is an array: set target(colName) = colValue */
+        Tcl_ObjSetVar2(interp, pVarName, apColName[i],
+                       dbEvalColumnValue(p,i), 0);
       }else{
-        Tcl_ObjSetVar2(interp, pArray, apColName[i], dbEvalColumnValue(p,i), 0);
+        /* Target is a dict: set target(colName) = colValue */
+        Tcl_Obj *pDict = Tcl_ObjGetVar2(interp, pVarName, NULL, 0);
+        if( !pDict ){
+          pDict = Tcl_NewDictObj();
+        }else if( Tcl_IsShared(pDict) ){
+          pDict = Tcl_DuplicateObj(pDict);
+        }
+        if( Tcl_DictObjPut(interp, pDict, apColName[i],
+                           dbEvalColumnValue(p,i))==TCL_OK ){
+          Tcl_ObjSetVar2(interp, pVarName, NULL, pDict, 0);
+        }
+        Tcl_BounceRefCount(pDict);
       }
     }
 
@@ -1959,7 +2030,7 @@ static void DbHookCmd(
   }
   if( pArg ){
     assert( !(*ppHook) );
-    if( Tcl_GetCharLength(pArg)>0 ){
+    if( Tcl_GetString(pArg)[0] ){
       *ppHook = pArg;
       Tcl_IncrRefCount(*ppHook);
     }
@@ -1971,6 +2042,367 @@ static void DbHookCmd(
   sqlite3_update_hook(db, (pDb->pUpdateHook?DbUpdateHandler:0), pDb);
   sqlite3_rollback_hook(db, (pDb->pRollbackHook?DbRollbackHandler:0), pDb);
   sqlite3_wal_hook(db, (pDb->pWalHook?DbWalHandler:0), pDb);
+}
+
+/*
+** Implementation of the "db format" command.
+**
+** Based on provided options, format the results of the SQL statement(s)
+** provided into human-readable form using the Query Result Formatter (QRF)
+** and return the resuling text.
+**
+** Syntax:    db format OPTIONS SQL
+**
+** OPTIONS may be:
+**
+**     -style ("auto"|"box"|"column"|...)      Output style
+**     -esc ("auto"|"off"|"ascii"|"symbol")    How to deal with ctrl chars
+**     -text ("auto"|"off"|"sql"|"csv"|...)    How to escape TEXT values
+**     -title ("auto"|"off"|"sql"|...|"off")   How to escape column names
+**     -blob ("auto"|"text"|"sql"|...)         How to escape BLOB values
+**     -wordwrap ("auto"|"off"|"on")           Try to wrap at word boundry?
+**     -textjsonb ("auto"|"off"|"on")          Auto-convert JSONB to text?
+**     -splitcolumn ("auto"|"off"|"on")        Enable split-column mode
+**     -defaultalign ("auto"|"left"|...)       Default alignment
+**     -titalalign ("auto"|"left"|"right"|...) Default column name alignment
+**     -border ("auto"|"off"|"on")             Border for box and table styles
+**     -wrap NUMBER                            Max width of any single column
+**     -screenwidth NUMBER                     Width of the display TTY
+**     -linelimit NUMBER                       Max lines for any cell
+**     -charlimit NUMBER                       Content truncated to this size
+**     -titlelimit NUMBER                      Max width of column titles
+**     -align LIST-OF-ALIGNMENT                Alignment of columns
+**     -widths LIST-OF-NUMBERS                 Widths for individual columns
+**     -columnsep TEXT                         Column separator text
+**     -rowsep TEXT                            Row separator text
+**     -tablename TEXT                         Table name for style "insert"
+**     -null TEXT                              Text for NULL values
+**
+** A mapping from TCL "format" command options to sqlite3_qrf_spec fields
+** is below.  Use this to reference the QRF documentation:
+**
+**     TCL Option        spec field
+**     ----------        ----------
+**     -style            eStyle
+**     -esc              eEsc
+**     -text             eText
+**     -title            eTitle, bTitle
+**     -blob             eBlob
+**     -wordwrap         bWordWrap
+**     -textjsonb        bTextJsonb
+**     -splitcolumn      bSplitColumn
+**     -defaultalign     eDfltAlign
+**     -titlealign       eTitleAlign
+**     -border           bBorder
+**     -wrap             nWrap
+**     -screenwidth      nScreenWidth
+**     -linelimit        nLineLimit
+**     -charlimit        nCharLimit
+**     -titlelimit       nTitleLimit
+**     -align            nAlign, aAlign
+**     -widths           nWidth, aWidth
+**     -columnsep        zColumnSep
+**     -rowsep           zRowSep
+**     -tablename        zTableName
+**     -null             zNull
+*/
+static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
+#ifndef SQLITE_QRF_H
+  Tcl_SetResult(pDb->interp, "QRF not available in this build", TCL_VOLATILE);
+  return TCL_ERROR;
+#else
+  char *zResult = 0;             /* Result to be returned */
+  const char *zSql = 0;          /* SQL to run */
+  int i;                         /* Loop counter */
+  int rc;                        /* Result code */
+  sqlite3_qrf_spec qrf;          /* Formatting spec */
+  static const char *azAlign[] = {
+    "auto",           "bottom",          "c",
+    "center",         "e",               "left",
+    "middle",         "n",               "ne",
+    "nw",             "right",           "s",
+    "se",             "sw",              "top",
+    "w",              0
+  };
+  static const unsigned char aAlignMap[] = {
+    QRF_ALIGN_Auto,   QRF_ALIGN_Bottom,  QRF_ALIGN_C,
+    QRF_ALIGN_Center, QRF_ALIGN_E,       QRF_ALIGN_Left,
+    QRF_ALIGN_Middle, QRF_ALIGN_N,       QRF_ALIGN_NE,
+    QRF_ALIGN_NW,     QRF_ALIGN_Right,   QRF_ALIGN_S,
+    QRF_ALIGN_SE,     QRF_ALIGN_SW,      QRF_ALIGN_Top,
+    QRF_ALIGN_W
+  };
+
+  memset(&qrf, 0, sizeof(qrf));
+  qrf.iVersion = 1;
+  qrf.pzOutput = &zResult;
+  for(i=2; i<objc; i++){
+    const char *zArg = Tcl_GetString(objv[i]);
+    const char *azBool[] = { "auto", "yes", "no", "on", "off", 0 };
+    const unsigned char aBoolMap[] = { 0, 2, 1, 2, 1 };
+    if( zArg[0]!='-' ){
+      if( zSql ){
+        Tcl_AppendResult(pDb->interp, "unknown argument: ", zArg, (char*)0);
+        rc = TCL_ERROR;
+        goto format_failed;
+      }
+      zSql  = zArg;
+    }else if( i==objc-1 ){
+      Tcl_AppendResult(pDb->interp, "option has no argument: ", zArg, (char*)0);
+      rc = TCL_ERROR;
+      goto format_failed;
+    }else if( strcmp(zArg,"-style")==0 ){
+      static const char *azStyles[] = {
+        "auto",             "box",              "column",
+        "count",            "csv",              "eqp",
+        "explain",          "html",             "insert",
+        "jobject",          "json",             "line",
+        "list",             "markdown",         "quote",
+        "stats",            "stats-est",        "stats-vm",
+        "table",            0
+      };
+      static unsigned char aStyleMap[] = {
+        QRF_STYLE_Auto,     QRF_STYLE_Box,      QRF_STYLE_Column,
+        QRF_STYLE_Count,    QRF_STYLE_Csv,      QRF_STYLE_Eqp,
+        QRF_STYLE_Explain,  QRF_STYLE_Html,     QRF_STYLE_Insert,
+        QRF_STYLE_JObject,  QRF_STYLE_Json,     QRF_STYLE_Line,
+        QRF_STYLE_List,     QRF_STYLE_Markdown, QRF_STYLE_Quote,
+        QRF_STYLE_Stats,    QRF_STYLE_StatsEst, QRF_STYLE_StatsVm,
+        QRF_STYLE_Table
+      };
+      int style;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azStyles,
+                              "format style (-style)", 0, &style);
+      if( rc ) goto format_failed;
+      qrf.eStyle = aStyleMap[style];
+      i++;
+    }else if( strcmp(zArg,"-esc")==0 ){
+      static const char *azEsc[] = {
+        "ascii",        "auto",         "off",      "symbol",   0
+      };
+      static unsigned char aEscMap[] = {
+        QRF_ESC_Ascii,  QRF_ESC_Auto,   QRF_ESC_Off, QRF_ESC_Symbol
+      };
+      int esc;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azEsc,
+                              "control character escape (-esc)", 0, &esc);
+      if( rc ) goto format_failed;
+      qrf.eEsc = aEscMap[esc];
+      i++;
+    }else if( strcmp(zArg,"-text")==0 || strcmp(zArg, "-title")==0 ){
+      /* NB: --title can be "off" or "on but --text may not be.  Thus we put
+      ** the "off" and "on" choices first and start the search on the
+      ** thrid element of the array when processing --text */
+      static const char *azText[] = {           "off",   "on",
+        "auto",             "csv",              "html",
+        "json",             "plain",            "relaxed",
+        "sql",              "tcl",              0
+      };
+      static unsigned char aTextMap[] = {
+        QRF_TEXT_Auto,      QRF_TEXT_Csv,       QRF_TEXT_Html,
+        QRF_TEXT_Json,      QRF_TEXT_Plain,     QRF_TEXT_Relaxed,
+        QRF_TEXT_Sql,       QRF_TEXT_Tcl
+      };
+      int txt;
+      int k = zArg[2]=='e';
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], &azText[k*2], zArg,
+                               0, &txt);
+      if( rc ) goto format_failed;
+      if( k ){
+        qrf.eText = aTextMap[txt];
+      }else if( txt<=1 ){
+        qrf.bTitles = txt ? QRF_Yes : QRF_No;
+        qrf.eTitle = QRF_TEXT_Auto;
+      }else{
+        qrf.bTitles = QRF_Yes;
+        qrf.eTitle = aTextMap[txt-2];
+      }
+      i++;
+    }else if( strcmp(zArg,"-blob")==0 ){
+      static const char *azBlob[] = {
+        "auto",             "hex",              "json",
+        "tcl",              "text",             "sql",
+        "size",             0
+      };
+      static unsigned char aBlobMap[] = {
+        QRF_BLOB_Auto,      QRF_BLOB_Hex,       QRF_BLOB_Json,
+        QRF_BLOB_Tcl,       QRF_BLOB_Text,      QRF_BLOB_Sql,
+        QRF_BLOB_Size
+      };
+      int blob;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBlob,
+                              "BLOB encoding (-blob)", 0, &blob);
+      if( rc ) goto format_failed;
+      qrf.eBlob = aBlobMap[blob];
+      i++;
+    }else if( strcmp(zArg,"-wordwrap")==0 ){
+      int v = 0;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
+                              "-wordwrap", 0, &v);
+      if( rc ) goto format_failed;
+      qrf.bWordWrap = aBoolMap[v];
+      i++;
+    }else if( strcmp(zArg,"-textjsonb")==0
+           || strcmp(zArg,"-splitcolumn")==0
+           || strcmp(zArg,"-border")==0
+    ){
+      int v = 0;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azBool,
+                              zArg, 0, &v);
+      if( rc ) goto format_failed;
+      if( zArg[1]=='t' ){
+        qrf.bTextJsonb = aBoolMap[v];
+      }else if( zArg[1]=='b' ){
+        qrf.bBorder = aBoolMap[v];
+      }else{
+        qrf.bSplitColumn = aBoolMap[v];
+      }
+      i++;
+    }else if( strcmp(zArg,"-defaultalign")==0 || strcmp(zArg,"-titlealign")==0){
+      int ax = 0;
+      rc = Tcl_GetIndexFromObj(pDb->interp, objv[i+1], azAlign,
+                    zArg[1]=='d' ?  "default alignment (-defaultalign)" :
+                                    "title alignment (-titlealign)",
+                    0, &ax);
+      if( rc ) goto format_failed;
+      if( zArg[1]=='d' ){
+        qrf.eDfltAlign = aAlignMap[ax];
+      }else{
+        qrf.eTitleAlign = aAlignMap[ax];
+      }
+      i++;
+    }else if( strcmp(zArg,"-wrap")==0
+           || strcmp(zArg,"-screenwidth")==0 
+           || strcmp(zArg,"-linelimit")==0 
+           || strcmp(zArg,"-titlelimit")==0 
+    ){
+      int v = 0;
+      rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
+      if( rc ) goto format_failed;
+      if( v<QRF_MIN_WIDTH ){
+        v = QRF_MIN_WIDTH;
+      }else if( v>QRF_MAX_WIDTH ){
+        v = QRF_MAX_WIDTH;
+      }
+      if( zArg[1]=='w' ){
+        qrf.nWrap = v;
+      }else if( zArg[1]=='s' ){
+        qrf.nScreenWidth = v;
+      }else if( zArg[1]=='t' ){
+        qrf.nTitleLimit = v;
+      }else{
+        qrf.nLineLimit = v;
+      }
+      i++;
+    }else if( strcmp(zArg,"-charlimit")==0 ){
+      int v = 0;
+      rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
+      if( rc ) goto format_failed;
+      if( v<0 ) v = 0;
+      qrf.nCharLimit = v;
+      i++;
+    }else if( strcmp(zArg,"-align")==0 ){
+      Tcl_Size n = 0;
+      int jj;
+      rc = Tcl_ListObjLength(pDb->interp, objv[i+1], &n);
+      if( rc ) goto format_failed;
+      sqlite3_free(qrf.aAlign);
+      qrf.aAlign = sqlite3_malloc64( (n+1)*sizeof(qrf.aAlign[0]) );
+      if( qrf.aAlign==0 ){
+        Tcl_AppendResult(pDb->interp, "out of memory", (char*)0);
+        rc = TCL_ERROR;
+        goto format_failed;
+      }
+      memset(qrf.aAlign, 0, (n+1)*sizeof(qrf.aAlign[0]));
+      qrf.nAlign = n;
+      for(jj=0; jj<n; jj++){
+        int x;
+        Tcl_Obj *pTerm;
+        rc = Tcl_ListObjIndex(pDb->interp, objv[i+1], jj, &pTerm);
+        if( rc ) goto format_failed;
+        rc = Tcl_GetIndexFromObj(pDb->interp, pTerm, azAlign,
+                          "column alignment (-align)", 0, &x);
+        if( rc ) goto format_failed;
+        qrf.aAlign[jj] = aAlignMap[x];
+      }
+      i++;
+    }else if( strcmp(zArg,"-widths")==0 ){
+      Tcl_Size n = 0;
+      int jj;
+      rc = Tcl_ListObjLength(pDb->interp, objv[i+1], &n);
+      if( rc ) goto format_failed;
+      sqlite3_free(qrf.aWidth);
+      qrf.aWidth = sqlite3_malloc64( (n+1)*sizeof(qrf.aWidth[0]) );
+      if( qrf.aWidth==0 ){
+        Tcl_AppendResult(pDb->interp, "out of memory", (char*)0);
+        rc = TCL_ERROR;
+        goto format_failed;
+      }
+      memset(qrf.aWidth, 0, (n+1)*sizeof(qrf.aWidth[0]));
+      qrf.nWidth = n;
+      for(jj=0; jj<n; jj++){
+        Tcl_Obj *pTerm;
+        int v;
+        rc = Tcl_ListObjIndex(pDb->interp, objv[i+1], jj, &pTerm);
+        if( rc ) goto format_failed;
+        rc = Tcl_GetIntFromObj(pDb->interp, pTerm, &v);
+        if( v<(-QRF_MAX_WIDTH) ){
+          v = -QRF_MAX_WIDTH;
+        }else if( v>QRF_MAX_WIDTH ){
+          v = QRF_MAX_WIDTH;
+        }
+        qrf.aWidth[jj] = (short int)v;
+      }
+      i++;
+    }else if( strcmp(zArg,"-columnsep")==0 ){
+      qrf.zColumnSep = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-rowsep")==0 ){
+      qrf.zRowSep = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-tablename")==0 ){
+      qrf.zTableName = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-null")==0 ){
+      qrf.zNull = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-version")==0 ){
+      /* Undocumented. Testing use only */
+      qrf.iVersion = atoi(Tcl_GetString(objv[i+1]));
+      i++;
+    }else{
+      Tcl_AppendResult(pDb->interp, "unknown option: ", zArg, (char*)0);
+      rc = TCL_ERROR;
+      goto format_failed;
+    }
+  }
+  while( zSql && zSql[0] ){
+    SqlPreparedStmt *pStmt = 0;        /* Next statement to run */
+    char *zErr = 0;                    /* Error message from QRF */
+
+    rc = dbPrepareAndBind(pDb, zSql, &zSql, &pStmt);
+    if( rc ) goto format_failed;
+    if( pStmt==0 ) continue;
+    rc = sqlite3_format_query_result(pStmt->pStmt, &qrf, &zErr);
+    dbReleaseStmt(pDb, pStmt, 0);
+    if( rc ){
+      Tcl_SetResult(pDb->interp, zErr, TCL_VOLATILE);
+      sqlite3_free(zErr);
+      rc = TCL_ERROR;
+      goto format_failed;
+    }
+  }
+  Tcl_SetResult(pDb->interp, zResult, TCL_VOLATILE);
+  rc = TCL_OK;
+  /* Fall through...*/
+  
+format_failed:
+  sqlite3_free(qrf.aWidth);
+  sqlite3_free(qrf.aAlign);
+  sqlite3_free(zResult);
+  return rc;
+
+#endif
 }
 
 /*
@@ -2002,15 +2434,15 @@ static int SQLITE_TCLAPI DbObjCmd(
     "commit_hook",            "complete",              "config",
     "copy",                   "deserialize",           "enable_load_extension",
     "errorcode",              "erroroffset",           "eval",
-    "exists",                 "function",              "incrblob",
-    "interrupt",              "last_insert_rowid",     "nullvalue",
-    "onecolumn",              "preupdate",             "profile",
-    "progress",               "rekey",                 "restore",
-    "rollback_hook",          "serialize",             "status",
-    "timeout",                "total_changes",         "trace",
-    "trace_v2",               "transaction",           "unlock_notify",
-    "update_hook",            "version",               "wal_hook",
-    0                        
+    "exists",                 "format",                "function",
+    "incrblob",               "interrupt",             "last_insert_rowid",
+    "nullvalue",              "onecolumn",             "preupdate",
+    "profile",                "progress",              "rekey",
+    "restore",                "rollback_hook",         "serialize",
+    "status",                 "timeout",               "total_changes",
+    "trace",                  "trace_v2",              "transaction",
+    "unlock_notify",          "update_hook",           "version",
+    "wal_hook",               0                        
   };
   enum DB_enum {
     DB_AUTHORIZER,            DB_BACKUP,               DB_BIND_FALLBACK,
@@ -2019,14 +2451,15 @@ static int SQLITE_TCLAPI DbObjCmd(
     DB_COMMIT_HOOK,           DB_COMPLETE,             DB_CONFIG,
     DB_COPY,                  DB_DESERIALIZE,          DB_ENABLE_LOAD_EXTENSION,
     DB_ERRORCODE,             DB_ERROROFFSET,          DB_EVAL,
-    DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
-    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_NULLVALUE,
-    DB_ONECOLUMN,             DB_PREUPDATE,            DB_PROFILE,
-    DB_PROGRESS,              DB_REKEY,                DB_RESTORE,
-    DB_ROLLBACK_HOOK,         DB_SERIALIZE,            DB_STATUS,
-    DB_TIMEOUT,               DB_TOTAL_CHANGES,        DB_TRACE,
-    DB_TRACE_V2,              DB_TRANSACTION,          DB_UNLOCK_NOTIFY,
-    DB_UPDATE_HOOK,           DB_VERSION,              DB_WAL_HOOK,
+    DB_EXISTS,                DB_FORMAT,               DB_FUNCTION,
+    DB_INCRBLOB,              DB_INTERRUPT,            DB_LAST_INSERT_ROWID,
+    DB_NULLVALUE,             DB_ONECOLUMN,            DB_PREUPDATE,
+    DB_PROFILE,               DB_PROGRESS,             DB_REKEY,
+    DB_RESTORE,               DB_ROLLBACK_HOOK,        DB_SERIALIZE,
+    DB_STATUS,                DB_TIMEOUT,              DB_TOTAL_CHANGES,
+    DB_TRACE,                 DB_TRACE_V2,             DB_TRANSACTION,
+    DB_UNLOCK_NOTIFY,         DB_UPDATE_HOOK,          DB_VERSION,
+    DB_WAL_HOOK
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2052,7 +2485,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   **   (4) Name of the database (ex: "main", "temp")
   **   (5) Name of trigger that is doing the access
   **
-  ** The callback should return on of the following strings: SQLITE_OK,
+  ** The callback should return one of the following strings: SQLITE_OK,
   ** SQLITE_IGNORE, or SQLITE_DENY.  Any other return value is an error.
   **
   ** If this method is invoked with no arguments, the current authorization
@@ -2515,9 +2948,10 @@ static int SQLITE_TCLAPI DbObjCmd(
     char *zLine;                /* A single line of input from the file */
     char **azCol;               /* zLine[] broken up into columns */
     const char *zCommit;        /* How to commit changes */
-    FILE *in;                   /* The input file */
+    Tcl_Channel in;             /* The input file */
     int lineno = 0;             /* Line number of input file */
     char zLineNum[80];          /* Line number print buffer */
+    Tcl_Obj *str;
     Tcl_Obj *pResult;           /* interp result */
 
     const char *zSep;
@@ -2596,23 +3030,27 @@ static int SQLITE_TCLAPI DbObjCmd(
       sqlite3_finalize(pStmt);
       return TCL_ERROR;
     }
-    in = fopen(zFile, "rb");
+    in = Tcl_OpenFileChannel(interp, zFile, "rb", 0666);
     if( in==0 ){
-      Tcl_AppendResult(interp, "Error: cannot open file: ", zFile, (char*)0);
       sqlite3_finalize(pStmt);
       return TCL_ERROR;
     }
+    Tcl_SetChannelOption(NULL, in, "-translation", "auto");
     azCol = malloc( sizeof(azCol[0])*(nCol+1) );
     if( azCol==0 ) {
       Tcl_AppendResult(interp, "Error: can't malloc()", (char*)0);
-      fclose(in);
+      Tcl_Close(interp, in);
       return TCL_ERROR;
     }
+    str = Tcl_NewObj();
+    Tcl_IncrRefCount(str);
     (void)sqlite3_exec(pDb->db, "BEGIN", 0, 0, 0);
     zCommit = "COMMIT";
-    while( (zLine = local_getline(0, in))!=0 ){
+    while( Tcl_GetsObj(in, str)>=0 ) {
       char *z;
+      Tcl_Size byteLen;
       lineno++;
+      zLine = (char *)Tcl_GetByteArrayFromObj(str, &byteLen);
       azCol[0] = zLine;
       for(i=0, z=zLine; *z; z++){
         if( *z==zSep[0] && strncmp(z, zSep, nSep)==0 ){
@@ -2650,15 +3088,16 @@ static int SQLITE_TCLAPI DbObjCmd(
       }
       sqlite3_step(pStmt);
       rc = sqlite3_reset(pStmt);
-      free(zLine);
+      Tcl_SetObjLength(str, 0);
       if( rc!=SQLITE_OK ){
         Tcl_AppendResult(interp,"Error: ", sqlite3_errmsg(pDb->db), (char*)0);
         zCommit = "ROLLBACK";
         break;
       }
     }
+    Tcl_DecrRefCount(str);
     free(azCol);
-    fclose(in);
+    Tcl_Close(interp, in);
     sqlite3_finalize(pStmt);
     (void)sqlite3_exec(pDb->db, zCommit, 0, 0, 0);
 
@@ -2838,13 +3277,15 @@ deserialize_error:
   }
 
   /*
-  **    $db eval ?options? $sql ?array? ?{  ...code... }?
+  **    $db eval ?options? $sql ?varName? ?{  ...code... }?
   **
-  ** The SQL statement in $sql is evaluated.  For each row, the values are
-  ** placed in elements of the array named "array" and ...code... is executed.
-  ** If "array" and "code" are omitted, then no callback is every invoked.
-  ** If "array" is an empty string, then the values are placed in variables
-  ** that have the same name as the fields extracted by the query.
+  ** The SQL statement in $sql is evaluated.  For each row, the values
+  ** are placed in elements of the array or dict named $varName and
+  ** ...code... is executed.  If $varName and $code are omitted, then
+  ** no callback is ever invoked.  If $varName is an empty string,
+  ** then the values are placed in variables that have the same name
+  ** as the fields extracted by the query, and those variables are
+  ** accessible during the eval of $code.
   */
   case DB_EVAL: {
     int evalFlags = 0;
@@ -2852,8 +3293,9 @@ deserialize_error:
     while( objc>3 && (zOpt = Tcl_GetString(objv[2]))!=0 && zOpt[0]=='-' ){
       if( strcmp(zOpt, "-withoutnulls")==0 ){
         evalFlags |= SQLITE_EVAL_WITHOUTNULLS;
-      }
-      else{
+      }else if( strcmp(zOpt, "-asdict")==0 ){
+        evalFlags |= SQLITE_EVAL_ASDICT;
+      }else{
         Tcl_AppendResult(interp, "unknown option: \"", zOpt, "\"", (void*)0);
         return TCL_ERROR;
       }
@@ -2861,8 +3303,8 @@ deserialize_error:
       objv++;
     }
     if( objc<3 || objc>5 ){
-      Tcl_WrongNumArgs(interp, 2, objv, 
-          "?OPTIONS? SQL ?ARRAY-NAME? ?SCRIPT?");
+      Tcl_WrongNumArgs(interp, 2, objv,
+          "?OPTIONS? SQL ?VAR-NAME? ?SCRIPT?");
       return TCL_ERROR;
     }
 
@@ -2888,22 +3330,34 @@ deserialize_error:
     }else{
       ClientData cd2[2];
       DbEvalContext *p;
-      Tcl_Obj *pArray = 0;
+      Tcl_Obj *pVarName = 0;
       Tcl_Obj *pScript;
 
       if( objc>=5 && *(char *)Tcl_GetString(objv[3]) ){
-        pArray = objv[3];
+        pVarName = objv[3];
       }
       pScript = objv[objc-1];
       Tcl_IncrRefCount(pScript);
 
       p = (DbEvalContext *)Tcl_Alloc(sizeof(DbEvalContext));
-      dbEvalInit(p, pDb, objv[2], pArray, evalFlags);
+      dbEvalInit(p, pDb, objv[2], pVarName, evalFlags);
 
       cd2[0] = (void *)p;
       cd2[1] = (void *)pScript;
       rc = DbEvalNextCmd(cd2, interp, TCL_OK);
     }
+    break;
+  }
+
+  /*
+  **     $db format [OPTIONS] SQL
+  **
+  ** Run the SQL statement(s) given as the final argument.  Use the
+  ** Query Result Formatter extension of SQLite to format the output as
+  ** text and return that text.
+  */
+  case DB_FORMAT: {
+    rc = dbQrf(pDb, objc, objv);
     break;
   }
 
@@ -2988,7 +3442,7 @@ deserialize_error:
     }
     pFunc->pScript = pScript;
     Tcl_IncrRefCount(pScript);
-    pFunc->useEvalObjv = safeToUseEvalObjv(interp, pScript);
+    pFunc->useEvalObjv = safeToUseEvalObjv(pScript);
     pFunc->eType = eType;
     rc = sqlite3_create_function(pDb->db, zName, nArg, flags,
         pFunc, tclSqlFunc, 0, 0);
@@ -4016,7 +4470,9 @@ EXTERN int Tclsqlite_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
 EXTERN int Sqlite_SafeInit(Tcl_Interp *interp){ return TCL_ERROR; }
 EXTERN int Sqlite_SafeUnload(Tcl_Interp *interp, int flags){return TCL_ERROR;}
 
-/* Also variants with a lowercase "s" */
+/* Also variants with a lowercase "s".  I'm told that these are
+** deprecated in Tcl9, but they continue to be included for backwards
+** compatibility. */
 EXTERN int sqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 
@@ -4027,8 +4483,8 @@ EXTERN int sqlite_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp);}
 #if defined(TCLSH)
 
 /* This is the main routine for an ordinary TCL shell.  If there are
-** are arguments, run the first argument as a script.  Otherwise,
-** read TCL commands from standard input
+** arguments, run the first argument as a script.  Otherwise, read TCL
+** commands from standard input
 */
 static const char *tclsh_main_loop(void){
   static const char zMainloop[] =

@@ -16,7 +16,7 @@
 */
 'use strict';
 (function(){
-  const T = self.SqliteTestUtil;
+  const T = globalThis.SqliteTestUtil;
   const toss = function(...args){throw new Error(args.join(' '))};
   const debug = console.debug.bind(console);
   const eOutput = document.querySelector('#test-output');
@@ -40,7 +40,7 @@
   const error = function(...args){
     logHtml('error',...args);
   };
-  
+
   const runTests = function(sqlite3){
     const capi = sqlite3.capi,
           oo = sqlite3.oo1,
@@ -51,7 +51,7 @@
       error("This build is not kvvfs-capable.");
       return;
     }
-    
+
     const dbStorage = 0 ? 'session' : 'local';
     const theStore = 's'===dbStorage[0] ? sessionStorage : localStorage;
     const db = new oo.JsStorageDb( dbStorage );
@@ -103,12 +103,12 @@
     if(0===db.selectValue('select count(*) from sqlite_master')){
       log("DB is empty. Use the init button to populate it.");
     }else{
-      log("DB contains data from a previous session. Use the Clear Ctorage button to delete it.");
+      log("DB contains data from a previous session. Use the Clear Storage button to delete it.");
       btnSelect.click();
     }
   };
 
-  sqlite3InitModule(self.sqlite3TestModule).then((sqlite3)=>{
+  sqlite3InitModule(globalThis.sqlite3TestModule).then((sqlite3)=>{
     runTests(sqlite3);
   });
 })();

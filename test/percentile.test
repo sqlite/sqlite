@@ -19,7 +19,6 @@ source $testdir/tester.tcl
 # Basic test of the percentile() function.
 #
 do_test percentile-1.0 {
-  load_static_extension db percentile
   execsql {
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(1),(4),(6),(7),(8),(9),(11),(11),(11);

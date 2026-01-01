@@ -135,7 +135,7 @@ static int SQLITE_TCLAPI backupTestInit(
 
   pBackup = sqlite3_backup_init(pDestDb, zDestName, pSrcDb, zSrcName);
   if( !pBackup ){
-    Tcl_AppendResult(interp, "sqlite3_backup_init() failed", 0);
+    Tcl_AppendResult(interp, "sqlite3_backup_init() failed", NULL);
     return TCL_ERROR;
   }
 

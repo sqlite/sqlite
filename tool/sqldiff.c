@@ -205,7 +205,7 @@ static char **columnNames(
   int naz = 0;             /* Number of entries in az[] */
   sqlite3_stmt *pStmt;     /* SQL statement being run */
   char *zPkIdxName = 0;    /* Name of the PRIMARY KEY index */
-  int truePk = 0;          /* PRAGMA table_info indentifies the PK to use */
+  int truePk = 0;          /* PRAGMA table_info identifies the PK to use */
   int nPK = 0;             /* Number of PRIMARY KEY columns */
   int i, j;                /* Loop counters */
 
@@ -1895,6 +1895,11 @@ static void showHelp(void){
 "See https://sqlite.org/sqldiff.html for detailed explanation.\n"
   );
 }
+
+/* work-around the Microsoft "WorstFit" bug */
+#ifdef _WIN32
+#define main utf8_main
+#endif
 
 int main(int argc, char **argv){
   const char *zDb1 = 0;

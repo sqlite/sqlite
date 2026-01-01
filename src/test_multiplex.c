@@ -1315,8 +1315,8 @@ static int SQLITE_TCLAPI test_multiplex_control(
   }
 
   if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
-    Tcl_AppendResult(interp, "expected database handle, got \"", 0);
-    Tcl_AppendResult(interp, Tcl_GetString(objv[1]), "\"", 0);
+    Tcl_AppendResult(interp, "expected database handle, got \"", NULL);
+    Tcl_AppendResult(interp, Tcl_GetString(objv[1]), "\"", NULL);
     return TCL_ERROR;
   }else{
     db = *(sqlite3 **)cmdInfo.objClientData;

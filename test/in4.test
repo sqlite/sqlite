@@ -442,7 +442,7 @@ do_execsql_test 10.0 {
 } {10}
 
 # 2021-06-13 dbsqlfuzz e41762333a4d6e90a49e628f488d0873b2dba4c5
-# The opcode that preceeds OP_SeekScan is usually OP_IdxGT, but can
+# The opcode that precedes OP_SeekScan is usually OP_IdxGT, but can
 # sometimes be OP_IdxGE
 #
 reset_db

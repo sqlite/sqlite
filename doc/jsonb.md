@@ -149,11 +149,10 @@ RFC 8259 format, without extensions.  The payload is the ASCII
 text representation of that numeric value.
 
 <li value="4"><p><b>INT5</b> &rarr;
-The element is a JSON integer value that is not in the
-canonical format.   The payload is the ASCII
-text representation of that numeric value.  Because the payload is in a
-non-standard format, it will need to be translated when the JSONB is
-converted into RFC 8259 text JSON.
+The element is a JSON integer literal in hexadecimal notation.
+The payload is the ASCII text representation of the literal.
+Because the payload is in a non-standard format, it will need
+to be translated when the JSONB is converted into RFC 8259 text JSON.
 
 <li value="5"><p><b>FLOAT</b> &rarr;
 The element is a JSON floating-point value in the canonical
@@ -162,10 +161,10 @@ text representation of that numeric value.
 
 <li value="6"><p><b>FLOAT5</b> &rarr;
 The element is a JSON floating-point value that is not in the
-canonical format.   The payload is the ASCII
-text representation of that numeric value.  Because the payload is in a
-non-standard format, it will need to be translated when the JSONB is
-converted into RFC 8259 text JSON.
+canonical JSON format but rather the extended JSON5 format.
+The payload is the ASCII text representation of that numeric value.
+Because the payload is in a non-standard format, it will need to
+be translated when the JSONB is converted into RFC 8259 text JSON.
 
 <li value="7"><p><b>TEXT</b> &rarr;
 The element is a JSON string value that does not contain
@@ -281,7 +280,7 @@ happen if and when they are actually needed.
 A valid JSONB BLOB consists of a single JSON element.  The element must
 exactly fill the BLOB.  This one element is often a JSON object or array
 and those usually contain additional elements as its payload, but the
-element can be a primite value such a string, number, boolean, or null.
+element can be a primitive value such a string, number, boolean, or null.
 
 When the built-in JSON functions are attempting to determine if a BLOB
 argument is a JSONB or just a random BLOB, they look at the header of

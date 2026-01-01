@@ -4,6 +4,8 @@ Here are step-by-step instructions on how to build SQLite from
 canonical source on any modern machine that isn't Windows.  These
 notes are tested (on 2024-10-11) on Ubuntu and on MacOS, but they
 are general and should work on most any modern unix platform.
+See the companion document ([](./compile-for-windows.md>)) for
+guidance on building for Windows.
 
   1.  Install a C-compiler.  GCC or Clang both work fine.  If you are
       reading this document, you've probably already done that.
@@ -12,15 +14,18 @@ are general and should work on most any modern unix platform.
       we'll do a private install in the $HOME/local directory,
       but you can make adjustments to install TCL wherever you like.
       This document assumes you are working with TCL version 9.0.
+      See also the [](./tcl-extension-testing.md) document that contains
+      more details on compiling Tcl for use with SQLite.
       <ol type="a">
       <li>Get the TCL source archive, perhaps from
       <https://www.tcl.tk/software/tcltk/download.html>
       or <https://sqlite.org/tmp/tcl9.0.0.tar.gz>.
       <li>Untar the source archive.  CD into the "unix/" subfolder
           of the source tree.
-      <li>Run: `mkdir $HOME/local`
-      <li>Run: `./configure --prefix=$HOME/local`
-      <li>Run: `make install`
+      <li>Run: &ensp; `mkdir $HOME/local`
+      <li>Run: &ensp; `./configure --prefix=$HOME/local`<br>
+          SQLite deliverable builds add: &emsp; `--static CFLAGS=-Os`
+      <li>Run: &ensp; `make install`
       </ol>
       <p>
       As of 2024-10-25, TCL is not longer required for many
@@ -37,6 +42,12 @@ are general and should work on most any modern unix platform.
       You do not need to use --with-tclsh if the tclsh you want to use is the
       first one on your PATH or if you are building without TCL.
 
+      The SQLite developers typically add the
+      &ensp; `--with-linenoise=$HOME/linenoise` &ensp; option
+      to provide command-line editing.  "$HOME/linenoise" is a directory
+      that contains [linenoise](https://github.com/antirez/linenoise) source
+      code files, `linenoise.c` and `linenoise.h`.
+
   6.  Run the "`Makefile`" makefile with an appropriate target.
       Examples:
       <ul>
@@ -45,7 +56,7 @@ are general and should work on most any modern unix platform.
       <li>  `make sqldiff`
       <li>  `make sqlite3_rsync`
       </ul>
-      <p>None of the targets above require TCL.  TCL is only needed
+      <p>None of the targets above require TCL.  TCL is needed
       for the following targets:
       <ul>
       <li>  `make tclextension-install`

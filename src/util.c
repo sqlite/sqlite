@@ -1130,7 +1130,11 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   }
   p->z = &p->zBuf[i+1];
   assert( i+p->n < sizeof(p->zBuf) );
-  while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }
+  assert( p->n>0 );
+  while( p->z[p->n-1]=='0' ){
+    p->n--;
+    assert( p->n>0 );
+  }
 }
 
 /*
@@ -1635,7 +1639,7 @@ int sqlite3MulInt64(i64 *pA, i64 iB){
 }
 
 /*
-** Compute the absolute value of a 32-bit signed integer, of possible.  Or
+** Compute the absolute value of a 32-bit signed integer, if possible.  Or
 ** if the integer has a value of -2147483648, return +2147483647
 */
 int sqlite3AbsInt32(int x){

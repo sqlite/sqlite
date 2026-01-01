@@ -20,6 +20,7 @@ SQLITE_EXTENSION_INIT1
 
 #include <string.h>
 #include <assert.h>
+#include <stddef.h>
 
 #ifndef SQLITE_AMALGAMATION
 
@@ -59,23 +60,34 @@ typedef sqlite3_uint64 u64;
 # define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 # define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
-/* The uptr type is an unsigned integer large enough to hold a pointer
+/*
+** This macro is used in a single assert() within fts5 to check that an
+** allocation is aligned to an 8-byte boundary. But it is a complicated
+** macro to get right for multiple platforms without generating warnings.
+** So instead of reproducing the entire definition from sqliteInt.h, we
+** just do without this assert() for the rare non-amalgamation builds.
 */
-#if defined(HAVE_STDINT_H)
-  typedef uintptr_t uptr;
-#elif SQLITE_PTRSIZE==4
-  typedef u32 uptr;
+#define EIGHT_BYTE_ALIGNMENT(x) 1
+
+/*
+** Macros needed to provide flexible arrays in a portable way
+*/
+#ifndef offsetof
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
+#endif
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+# define FLEXARRAY
 #else
-  typedef u64 uptr;
+# define FLEXARRAY 1
 #endif
 
-#ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
-# define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&3)==0)
-#else
-# define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&7)==0)
-#endif
+#endif /* SQLITE_AMALGAMATION */
 
-#endif
+/*
+** Constants for the largest and smallest possible 32-bit signed integers.
+*/
+# define LARGEST_INT32  ((int)(0x7fffffff))
+# define SMALLEST_INT32 ((int)((-1) - LARGEST_INT32))
 
 /* Truncate very long tokens to this many bytes. Hard limit is 
 ** (65536-1-1-4-9)==65521 bytes. The limiting factor is the 16-bit offset
@@ -147,10 +159,11 @@ typedef struct Fts5Colset Fts5Colset;
 */
 struct Fts5Colset {
   int nCol;
-  int aiCol[1];
+  int aiCol[FLEXARRAY];
 };
 
-
+/* Size (int bytes) of a complete Fts5Colset object with N columns. */
+#define SZ_FTS5COLSET(N) (sizeof(i64)*((N+2)/2))
 
 /**************************************************************************
 ** Interface to code in fts5_config.c. fts5_config.c contains contains code
@@ -808,7 +821,7 @@ int sqlite3Fts5ExprPattern(
 **   i64 iRowid = sqlite3Fts5ExprRowid(pExpr);
 ** }
 */
-int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, i64 iMin, int bDesc);
+int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, i64 iMin, i64, int bDesc);
 int sqlite3Fts5ExprNext(Fts5Expr*, i64 iMax);
 int sqlite3Fts5ExprEof(Fts5Expr*);
 i64 sqlite3Fts5ExprRowid(Fts5Expr*);

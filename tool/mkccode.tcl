@@ -1,17 +1,16 @@
-#!/usr/bin/tclsh
+#!/bin/env tclsh
 #
-# Use this script to build C-language source code for a program that uses
-# tclsqlite.c together with custom TCL scripts and/or C extensions for
-# either SQLite or TCL.
+# This script is used to amalgamate C source code files into a single
+# unit.
 #
 # Usage example:
 #
 #     tclsh mkccode.tcl -DENABLE_FEATURE_XYZ demoapp.c.in >demoapp.c
 #
 # The demoapp.c.in file contains a mixture of C code, TCL script, and
-# processing directives used by mktclsqliteprog.tcl to build the final C-code
-# output file.  Most lines of demoapp.c.in are copied straight through into
-# the output.  The following control directives are recognized:
+# processing directives used by mkccode.tcl to build the final C-code
+# output file.  Most lines of demoapp.c.in are copied straight through
+# into the output.  The following control directives are recognized:
 #
 # BEGIN_STRING
 #

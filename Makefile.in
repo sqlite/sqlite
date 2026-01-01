@@ -11,17 +11,6 @@
 #
 all:
 ########################################################################
-#
-# Known TODOs/FIXMEs/TOIMPROVEs for the autosetup port, in no
-# particular order...
-#
-# - TEA pieces.
-#
-# - Replace the autotools-specific distribution deliverable(s).
-#
-# - Confirm whether cross-compilation works and patch it
-# appropriately.
-#
 # Maintenance reminders:
 #
 # - This makefile should remain as POSIX-make-compatible as possible:
@@ -79,7 +68,7 @@ libdir      = @libdir@
 
 INSTALL = @BIN_INSTALL@
 AR = @AR@
-AR.flags = cr # TODO? Add a configure test to determine this?
+AR.flags = cr
 CC = @CC@
 B.cc = @CC_FOR_BUILD@ @BUILD_CFLAGS@
 T.cc = $(CC)
@@ -118,23 +107,33 @@ LDFLAGS.dlopen = @LDFLAGS_DLOPEN@
 LDFLAGS.readline = @LDFLAGS_READLINE@
 CFLAGS.readline = @CFLAGS_READLINE@
 LDFLAGS.icu = @LDFLAGS_ICU@
+LDFLAGS.rt = @LDFLAGS_RT@
 CFLAGS.icu = @CFLAGS_ICU@
 LDFLAGS.libsqlite3.soname = @LDFLAGS_LIBSQLITE3_SONAME@
 # soname: see https://sqlite.org/src/forumpost/5a3b44f510df8ded
-ENABLE_SHARED = @ENABLE_SHARED@
-ENABLE_STATIC = @ENABLE_STATIC@
+LDFLAGS.libsqlite3.os-specific = \
+  @LDFLAGS_MAC_CVERSION@ @LDFLAGS_MAC_INSTALL_NAME@ @LDFLAGS_OUT_IMPLIB@
+# os-specific: see
+# - https://sqlite.org/forum/forumpost/9dfd5b8fd525a5d7
+# - https://sqlite.org/forum/forumpost/0c7fc097b2
+# - https://sqlite.org/forum/forumpost/5651662b8875ec0a
+
+libsqlite3.DLL.basename = @SQLITE_DLL_BASENAME@
+# DLL.basename: see https://sqlite.org/forum/forumpost/828fdfe904
+libsqlite3.out.implib = @SQLITE_OUT_IMPLIB@
+# libsqlite3.out.implib => the output filename part of LDFLAGS_OUT_IMPLIB.
+ENABLE_LIB_SHARED = @ENABLE_LIB_SHARED@
+ENABLE_LIB_STATIC = @ENABLE_LIB_STATIC@
 HAVE_WASI_SDK = @HAVE_WASI_SDK@
+libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 
-T.cc.sqlite = $(T.cc) @TARGET_DEBUG@
+# -fsanitize flags for the fuzzcheck-asap app
+CFLAGS.fuzzcheck-asan.fsanitize = @CFLAGS_ASAN_FSANITIZE@
 
 #
-# Define -D_HAVE_SQLITE_CONFIG_H so that the code knows it
-# can include the generated sqlite_cfg.h.
+# Intended to either be empty or be set to -g -DSQLITE_DEBUG=1.
 #
-# main.mk will fill out T.cc.sqlite with additional flags common to
-# all builds.
-#
-T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
+T.cc.TARGET_DEBUG = @TARGET_DEBUG@
 
 #
 # $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
@@ -142,7 +141,7 @@ T.cc.sqlite += -D_HAVE_SQLITE_CONFIG_H -DBUILD_sqlite
 # shell command.
 #
 CFLAGS.jimsh = @CFLAGS_JIMSH@
-JIMSH = ./jimsh$(TEXE)
+JIMSH = ./jimsh$(T.exe)
 
 #
 # $(B.tclsh) is documented in main.mk.
@@ -203,6 +202,13 @@ TCL_CONFIG_SH = @TCL_CONFIG_SH@
 #TCL_STUB_LIB_SPEC = @TCL_STUB_LIB_SPEC@
 #TCL_EXEC_PREFIX = @TCL_EXEC_PREFIX@
 #TCL_VERSION = @TCL_VERSION@
+TCL_MAJOR_VERSION = @TCL_MAJOR_VERSION@
+# ^^^ main.mk optionally uses this for determining the Tcl extension's
+# DLL name.
+TCL_EXT_DLL_BASENAME = @TCL_EXT_DLL_BASENAME@
+# ^^^ base name of the Tcl extension DLL. It varies by platform and
+# Tcl version.
+
 #
 # $(TCLLIBDIR) = where to install the tcl plugin. If this is empty, it
 # is calculated at make-time by the targets which need it but we
@@ -233,8 +239,8 @@ TSTRNNR_OPTS = @TSTRNNR_OPTS@
 CFLAGS.gcov1 = -DSQLITE_COVERAGE_TEST=1 -fprofile-arcs -ftest-coverage
 LDFLAGS.gcov1 = -lgcov
 USE_GCOV = @USE_GCOV@
-T.compile.extras = $(CFLAGS.gcov$(USE_GCOV))
-T.link.extras = $(LDFLAGS.gcov$(USE_GCOV))
+T.compile.gcov = $(CFLAGS.gcov$(USE_GCOV))
+T.link.gcov = $(LDFLAGS.gcov$(USE_GCOV))
 
 #
 # Vars with the AS_ prefix are specifically related to AutoSetup.
@@ -247,10 +253,15 @@ AS_AUTO_DEF = $(TOP)/auto.def
 # invoked with to produce this makefile.
 #
 AS_AUTORECONFIG = @SQLITE_AUTORECONFIG@
-
+.PHONY: config reconfigure
+config reconfigure:
+	$(AS_AUTORECONFIG)
 USE_AMALGAMATION ?= @USE_AMALGAMATION@
 LINK_TOOLS_DYNAMICALLY ?= @LINK_TOOLS_DYNAMICALLY@
 AMALGAMATION_GEN_FLAGS ?= --linemacros=@AMALGAMATION_LINE_MACROS@
+EXTRA_SRC ?= @AMALGAMATION_EXTRA_SRC@
+STATIC_TCLSQLITE3 = @STATIC_TCLSQLITE3@
+STATIC_CLI_SHELL = @STATIC_CLI_SHELL@
 
 #
 # CFLAGS for sqlite3$(T.exe)
@@ -302,9 +313,8 @@ fiddle: sqlite3.c shell.c
 ./custom.rws: ./tool/custom.txt
 	@echo 'Updating custom dictionary from tool/custom.txt'
 	aspell --lang=en create master ./custom.rws < ./tool/custom.txt
-# Note that jimsh does not work here:
-# https://github.com/msteveb/jimtcl/issues/319
 misspell: ./custom.rws has_tclsh84
+# $(JIMSH) does not work with spellsift.tcl
 	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in
 
 #
@@ -312,25 +322,16 @@ misspell: ./custom.rws has_tclsh84
 # perform cleanup known to be relevant to (only) the autosetup-driven
 # build.
 #
-#clean-autosetup:
-#	-if [ -f ext/wasm/GNUmakefile ]; then \
-#		gmake --no-print-directory --ignore-errors -C ext/wasm clean; \
-#	fi >/dev/null 2>&1; true
-#clean: clean-autosetup
-
-distclean-autosetup:	clean
+distclean-autosetup:
 	rm -f sqlite_cfg.h config.log config.status config.defines.* Makefile sqlite3.pc
 	rm -f $(TOP)/tool/emcc.sh
 	rm -f libsqlite3*$(T.dll)
 	rm -f jimsh0*
-#	-if [ -f ext/wasm/GNUmakefile ]; then \
-#		gmake --no-print-directory  --ignore-errors -C ext/wasm distclean; \
-#	fi >/dev/null 2>&1; true
 distclean: distclean-autosetup
 
 #
 # tool/version-info: a utility for emitting sqlite3 version info
-# in various forms.
+# in various forms. It's used by ext/wasm/.
 #
 version-info$(T.exe): $(TOP)/tool/version-info.c Makefile sqlite3.h
 	$(T.link) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c

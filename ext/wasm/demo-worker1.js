@@ -18,7 +18,7 @@
 */
 'use strict';
 (function(){
-  const T = self.SqliteTestUtil;
+  const T = globalThis.SqliteTestUtil;
   const SW = new Worker("jswasm/sqlite3-worker1.js");
   const DbState = {
     id: undefined
@@ -156,11 +156,14 @@
       sql: ["create table t(a,b);",
             "insert into t(a,b) values(1,2),(3,4),(5,6)"
            ],
+      lastInsertRowId: true,
       resultRows: [], columnNames: []
     }, function(ev){
       ev = ev.result;
       T.assert(0===ev.resultRows.length)
-        .assert(0===ev.columnNames.length);
+        .assert(0===ev.columnNames.length)
+        .assert('bigint'===typeof ev.lastInsertRowId)
+        .assert(ev.lastInsertRowId>=3);
     });
     runOneTest('exec',{
       sql: 'select a a, b b from t order by a',
@@ -320,7 +323,7 @@
           switch(ev.result){
               case 'worker1-ready':
                 log("Message:",ev);
-                self.sqlite3TestModule.setStatus(null);
+                globalThis.sqlite3TestModule.setStatus(null);
                 runTests();
                 return;
               default:
@@ -341,5 +344,5 @@
   };
   log("Init complete, but async init bits may still be running.");
   log("Installing Worker into global scope SW for dev purposes.");
-  self.SW = SW;
+  globalThis.SW = SW;
 })();

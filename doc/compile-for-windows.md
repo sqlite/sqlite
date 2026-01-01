@@ -1,19 +1,31 @@
 # Notes On Compiling SQLite On Windows 11
 
-Here are step-by-step instructions on how to build SQLite from
-canonical source on a new Windows 11 PC, as of 2024-10-09:
+Below are step-by-step instructions on how to build SQLite from
+canonical source on a new Windows 11 PC, as of 2025-10-31.
+See [](./compile-for-unix.md) for a similar guide for unix-like
+systems, including MacOS.
 
   1.  Install Microsoft Visual Studio. The free "community edition" 
       will work fine.  Do a standard install for C++ development.
       SQLite only needs the
       "cl" compiler and the "nmake" build tool.
+      <ul><li><b>Note:</b>
+      VS2015 or later is required for the procedures below to
+      all work.  You *might* be able to get the build to work with
+      earlier versions of MSVC, but in that case the TCL installation
+      of step 3 will be required, since the "jimsh0.c" program of
+      Autosetup that is used as a substitute for "tclsh.exe" won't
+      compile with versions of Visual Studio prior to VS2015.  In any
+      event, building SQLite from canonical source code on Windows
+      is not supported for earlier versions of Visual Studio.</ul>
 
   2.  Under the "Start" menu, find "All Apps" then go to "Visual Studio 20XX"
       and find "x64 Native Tools Command Prompt for VS 20XX".  Pin that
       application to your task bar, as you will use it a lot.  Bring up
       an instance of this command prompt and do all of the subsequent steps
       in that "x64 Native Tools" command prompt.  (Or use "x86" if you want
-      a 32-bit build.)  The subsequent steps will not work in a vanilla
+      a 32-bit build. Or use "ARM64" if you want to do a build for Windows
+      on ARM.)  The subsequent steps will not work in a vanilla
       DOS prompt.  Nor will they work in PowerShell.
 
   3.  *(Optional):* Install TCL development libraries.
@@ -24,16 +36,21 @@ canonical source on a new Windows 11 PC, as of 2024-10-09:
       "tclsh90.exe" command-line tool as part of the build process, and
       the "tcl90.lib" and "tclstub.lib" libraries in order to run tests.
       This document assumes you are working with TCL version 9.0.
-      See versions of this document from prior to 2024-10-10 for
-      instructions on how to build using TCL version 8.6.
+      See [](./tcl-extension-testing.md#windows) for guidance on how
+      to compile TCL version 8.6 for use with SQLite.
       <ol type="a">
       <li>Get the TCL source archive, perhaps from
       <https://www.tcl.tk/software/tcltk/download.html>
       or <https://sqlite.org/tmp/tcl9.0.0.tar.gz>.
       <li>Untar or unzip the source archive.  CD into the "win/" subfolder
           of the source tree.
-      <li>Run: `nmake /f makefile.vc release`
-      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl install`
+      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl release`
+      <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl install` <br>
+          Notes:
+          <ol type="i">
+          <li> The previous two `nmake` commands must be run separately.
+          <li> Also, the INSTALLDIR=... argument is required on both.
+          </ol>
       <li><i>Optional:</i> CD to `c:\Tcl\bin` and make a copy of
           `tclsh90.exe` over into just `tclsh.exe`.
       <li><i>Optional:</i>
@@ -117,9 +134,7 @@ following minor changes:
 The command the developers use for building the deliverable DLL on the 
 [download page](https://sqlite.org/download.html) is as follows:
 
-> ~~~~
-nmake /f Makefile.msc sqlite3.dll USE_NATIVE_LIBPATHS=1 "OPTS=-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_JSON1=1 -DSQLITE_ENABLE_GEOPOLY=1 -DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 -DSQLITE_ENABLE_SERIALIZE=1 -DSQLITE_ENABLE_MATH_FUNCTIONS=1"
-~~~~
+> nmake /f Makefile.msc sqlite3.dll USE_NATIVE_LIBPATHS=1 "OPTS=-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_RTREE=1 -DSQLITE_ENABLE_JSON1=1 -DSQLITE_ENABLE_GEOPOLY=1 -DSQLITE_ENABLE_SESSION=1 -DSQLITE_ENABLE_PREUPDATE_HOOK=1 -DSQLITE_ENABLE_SERIALIZE=1 -DSQLITE_ENABLE_MATH_FUNCTIONS=1"
 
 That command generates both the sqlite3.dll and sqlite3.def files.  The same
 command works for both 32-bit and 64-bit builds.
@@ -131,9 +146,7 @@ with TCL in order to function.  The [sqlite3_analyzer.exe program](https://sqlit
 is an example.  You can build as described above, and then
 enter:
 
-> ~~~~
-nmake /f Makefile.msc sqlite3_analyzer.exe
-~~~~
+> nmake /f Makefile.msc sqlite3_analyzer.exe
 
 And you will end up with a working executable.  However, that executable
 will depend on having the "tcl98.dll" library somewhere on your %PATH%.
@@ -159,17 +172,47 @@ statically linked so that it does not depend on separate DLL:
   5.  CD into your SQLite source code directory and build the desired
       utility program, but add the following extra argument to the
       nmake command line:
-      <blockquote><pre>
-      STATICALLY_LINK_TCL=1
-      </pre></blockquote>
+      <blockquote><pre>STATICALLY_LINK_TCL=1</pre></blockquote>
       <p>So, for example, to build a statically linked version of
       sqlite3_analyzer.exe, you might type:
-      <blockquote><pre>
-      nmake /f Makefile.msc STATICALLY_LINK_TCL=1 sqlite3_analyzer.exe
-      </pre></blockquote>
+      <blockquote><pre>nmake /f Makefile.msc STATICALLY_LINK_TCL=1 sqlite3_analyzer.exe</pre></blockquote>
 
   6.  After your executable is built, you can verify that it does not
       depend on the TCL DLL by running:
-      <blockquote><pre>
-      dumpbin /dependents sqlite3_analyzer.exe
-      </pre></blockquote>
+      <blockquote><pre>dumpbin /dependents sqlite3_analyzer.exe</pre></blockquote>
+
+## Linking Against ZLIB
+
+Some feature (such as zip-file support in the CLI) require the ZLIB
+compression library.  That library is more or less universally available
+on unix platforms, but is seldom provided on Windows.  You will probably
+need to provide it yourself.  Here the the steps needed:
+
+  1.  Download the zlib-1.3.1.tar.gz tarball (or a similar version).
+      Unpack the tarball sources.  You can put them wherever you like.
+      For the purposes of this document, let's assume you put the source
+      tree in c:\\zlib-64.  Note:  If you are building for both x64 and
+      x86, you will need separate builds of ZLIB for each, thus separate
+      build directories.
+
+  2.  Before building SQLite (as described above) first make these
+      environment changes.  The lead-programmer for SQLite (who writes
+      these words) has BAT files named "env-x64.bat" and "env-x32.bat"
+      and "env-arm64.bat" that make these changes, and he runs those
+      BAT file whenever he starts a new shell.  These are the settings
+      needed:
+      <blockquote>
+         set USE_ZLIB=1<br>
+         set BUILD_ZLIB=0<br>
+         set ZLIBDIR=c:\\zlib-64
+      </blockquote>
+
+  3.  Because the settings in step 2 specify "BUILD_ZLIB=0", you will need
+      to build the library at least once.  I recommand:
+      <blockquote>
+         make clean sqlite3.exe BUILD_ZLIB=1
+      </blockquote>
+
+  4.  After making the environment changes specified in steps 1 through 3
+      above, you then build and test SQLite as you normally would.  The
+      environment variable changes will cause ZLIB to be linked automatically.

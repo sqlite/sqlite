@@ -201,7 +201,7 @@ static int SQLITE_TCLAPI init_wrapper_install(
     }else if( strcmp(z, "pcache")==0 ){
       wrapped.pcache_fail = 1;
     }else{
-      Tcl_AppendResult(interp, "Unknown argument: \"", z, "\"");
+      Tcl_AppendResult(interp, "Unknown argument: \"", z, "\"", NULL);
       return TCL_ERROR;
     }
   }

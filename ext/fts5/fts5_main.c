@@ -170,9 +170,11 @@ struct Fts5Sorter {
   i64 iRowid;                     /* Current rowid */
   const u8 *aPoslist;             /* Position lists for current row */
   int nIdx;                       /* Number of entries in aIdx[] */
-  int aIdx[1];                    /* Offsets into aPoslist for current row */
+  int aIdx[FLEXARRAY];            /* Offsets into aPoslist for current row */
 };
 
+/* Size (int bytes) of an Fts5Sorter object with N indexes */
+#define SZ_FTS5SORTER(N) (offsetof(Fts5Sorter,nIdx)+((N+2)/2)*sizeof(i64))
 
 /*
 ** Virtual-table cursor object.
@@ -509,6 +511,17 @@ static void fts5SetUniqueFlag(sqlite3_index_info *pIdxInfo){
 #endif
 }
 
+static void fts5SetEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
+#if SQLITE_VERSION_NUMBER>=3008002
+#ifndef SQLITE_CORE
+  if( sqlite3_libversion_number()>=3008002 )
+#endif
+  {
+    pIdxInfo->estimatedRows = nRow;
+  }
+#endif
+}
+
 static int fts5UsePatternMatch(
   Fts5Config *pConfig, 
   struct sqlite3_index_constraint *p
@@ -644,7 +657,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
           nSeenMatch++;
           idxStr[iIdxStr++] = 'M';
           sqlite3_snprintf(6, &idxStr[iIdxStr], "%d", iCol);
-          idxStr += strlen(&idxStr[iIdxStr]);
+          iIdxStr += (int)strlen(&idxStr[iIdxStr]);
           assert( idxStr[iIdxStr]=='\0' );
         }
         pInfo->aConstraintUsage[i].argvIndex = ++iCons;
@@ -663,6 +676,7 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
         idxStr[iIdxStr++] = '=';
         bSeenEq = 1;
         pInfo->aConstraintUsage[i].argvIndex = ++iCons;
+        pInfo->aConstraintUsage[i].omit = 1;
       }
     }
   }
@@ -710,17 +724,21 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 
   /* Calculate the estimated cost based on the flags set in idxFlags. */
   if( bSeenEq ){
-    pInfo->estimatedCost = nSeenMatch ? 1000.0 : 10.0;
-    if( nSeenMatch==0 ) fts5SetUniqueFlag(pInfo);
-  }else if( bSeenLt && bSeenGt ){
-    pInfo->estimatedCost = nSeenMatch ? 5000.0 : 250000.0;
-  }else if( bSeenLt || bSeenGt ){
-    pInfo->estimatedCost = nSeenMatch ? 7500.0 : 750000.0;
+    pInfo->estimatedCost = nSeenMatch ? 1000.0 : 25.0;
+    fts5SetUniqueFlag(pInfo);
+    fts5SetEstimatedRows(pInfo, 1);
   }else{
-    pInfo->estimatedCost = nSeenMatch ? 10000.0 : 1000000.0;
-  }
-  for(i=1; i<nSeenMatch; i++){
-    pInfo->estimatedCost *= 0.4;
+    if( bSeenLt && bSeenGt ){
+      pInfo->estimatedCost = nSeenMatch ? 5000.0 :   750000.0;
+    }else if( bSeenLt || bSeenGt ){
+      pInfo->estimatedCost = nSeenMatch ? 7500.0 :  2250000.0;
+    }else{
+      pInfo->estimatedCost = nSeenMatch ? 10000.0 : 3000000.0;
+    }
+    for(i=1; i<nSeenMatch; i++){
+      pInfo->estimatedCost *= 0.4;
+    }
+    fts5SetEstimatedRows(pInfo, (i64)(pInfo->estimatedCost / 4.0));
   }
 
   pInfo->idxNum = idxFlags;
@@ -919,7 +937,9 @@ static int fts5CursorReseek(Fts5Cursor *pCsr, int *pbSkip){
     int bDesc = pCsr->bDesc;
     i64 iRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
 
-    rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->p.pIndex, iRowid, bDesc);
+    rc = sqlite3Fts5ExprFirst(
+        pCsr->pExpr, pTab->p.pIndex, iRowid, pCsr->iLastRowid, bDesc
+    );
     if( rc==SQLITE_OK &&  iRowid!=sqlite3Fts5ExprRowid(pCsr->pExpr) ){
       *pbSkip = 1;
     }
@@ -1050,7 +1070,7 @@ static int fts5CursorFirstSorted(
   const char *zRankArgs = pCsr->zRankArgs;
   
   nPhrase = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
-  nByte = sizeof(Fts5Sorter) + sizeof(int) * (nPhrase-1);
+  nByte = SZ_FTS5SORTER(nPhrase);
   pSorter = (Fts5Sorter*)sqlite3_malloc64(nByte);
   if( pSorter==0 ) return SQLITE_NOMEM;
   memset(pSorter, 0, (size_t)nByte);
@@ -1091,7 +1111,9 @@ static int fts5CursorFirstSorted(
 static int fts5CursorFirst(Fts5FullTable *pTab, Fts5Cursor *pCsr, int bDesc){
   int rc;
   Fts5Expr *pExpr = pCsr->pExpr;
-  rc = sqlite3Fts5ExprFirst(pExpr, pTab->p.pIndex, pCsr->iFirstRowid, bDesc);
+  rc = sqlite3Fts5ExprFirst(
+      pExpr, pTab->p.pIndex, pCsr->iFirstRowid, pCsr->iLastRowid, bDesc
+  );
   if( sqlite3Fts5ExprEof(pExpr) ){
     CsrFlagSet(pCsr, FTS5CSR_EOF);
   }
@@ -1901,7 +1923,6 @@ static int fts5UpdateMethod(
   Fts5Config *pConfig = pTab->p.pConfig;
   int eType0;                     /* value_type() of apVal[0] */
   int rc = SQLITE_OK;             /* Return code */
-  int bUpdateOrDelete = 0;
 
   /* A transaction must be open when this is called. */
   assert( pTab->ts.eState==1 || pTab->ts.eState==2 );
@@ -1913,7 +1934,7 @@ static int fts5UpdateMethod(
   );
   assert( pTab->p.pConfig->pzErrmsg==0 );
   if( pConfig->pgsz==0 ){
-    rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+    rc = sqlite3Fts5ConfigLoad(pTab->p.pConfig, pTab->p.pConfig->iCookie);
     if( rc!=SQLITE_OK ) return rc;
   }
 
@@ -1938,7 +1959,6 @@ static int fts5UpdateMethod(
         rc = SQLITE_ERROR;
       }else{
         rc = fts5SpecialDelete(pTab, apVal);
-        bUpdateOrDelete = 1;
       }
     }else{
       rc = fts5SpecialInsert(pTab, z, apVal[2 + pConfig->nCol + 1]);
@@ -1975,7 +1995,6 @@ static int fts5UpdateMethod(
       }else{
         i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
         rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, 0, 0);
-        bUpdateOrDelete = 1;
       }
     }
 
@@ -2003,7 +2022,6 @@ static int fts5UpdateMethod(
         if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
           i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
           rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0, 0);
-          bUpdateOrDelete = 1;
         }
         fts5StorageInsert(&rc, pTab, apVal, pRowid);
       }
@@ -2057,27 +2075,13 @@ static int fts5UpdateMethod(
           rc = sqlite3Fts5StorageDelete(pStorage, iOld, 0, 1);
           fts5StorageInsert(&rc, pTab, apVal, pRowid);
         }
-        bUpdateOrDelete = 1;
         sqlite3Fts5StorageReleaseDeleteRow(pStorage);
       }
-
-    }
-  }
-
-  if( rc==SQLITE_OK 
-   && bUpdateOrDelete 
-   && pConfig->bSecureDelete 
-   && pConfig->iVersion==FTS5_CURRENT_VERSION 
-  ){
-    rc = sqlite3Fts5StorageConfigValue(
-        pTab->pStorage, "version", 0, FTS5_CURRENT_VERSION_SECUREDELETE
-    );
-    if( rc==SQLITE_OK ){
-      pConfig->iVersion = FTS5_CURRENT_VERSION_SECUREDELETE;
     }
   }
 
  update_out:
+  sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
   pTab->p.pConfig->pzErrmsg = 0;
   return rc;
 }
@@ -2126,6 +2130,7 @@ static int fts5RollbackMethod(sqlite3_vtab *pVtab){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACK, 0);
   rc = sqlite3Fts5StorageRollback(pTab->pStorage);
+  pTab->p.pConfig->pgsz = 0;
   return rc;
 }
 
@@ -3617,9 +3622,9 @@ static void fts5LocaleFunc(
   sqlite3_value **apArg           /* Function arguments */
 ){
   const char *zLocale = 0;
-  int nLocale = 0;
+  i64 nLocale = 0;
   const char *zText = 0;
-  int nText = 0;
+  i64 nText = 0;
 
   assert( nArg==2 );
   UNUSED_PARAM(nArg);
@@ -3636,10 +3641,10 @@ static void fts5LocaleFunc(
     Fts5Global *p = (Fts5Global*)sqlite3_user_data(pCtx);
     u8 *pBlob = 0;
     u8 *pCsr = 0;
-    int nBlob = 0;
+    i64 nBlob = 0;
 
     nBlob = FTS5_LOCALE_HDR_SIZE + nLocale + 1 + nText;
-    pBlob = (u8*)sqlite3_malloc(nBlob);
+    pBlob = (u8*)sqlite3_malloc64(nBlob);
     if( pBlob==0 ){
       sqlite3_result_error_nomem(pCtx);
       return;
@@ -3717,8 +3722,9 @@ static int fts5IntegrityMethod(
           " FTS5 table %s.%s: %s",
           zSchema, zTabname, sqlite3_errstr(rc));
     }
+  }else if( (rc&0xff)==SQLITE_CORRUPT ){
+    rc = SQLITE_OK;
   }
-
   sqlite3Fts5IndexCloseReader(pTab->p.pIndex);
   pTab->p.pConfig->pzErrmsg = 0;
 
@@ -3819,8 +3825,8 @@ static int fts5Init(sqlite3 *db){
   ** its entry point to enable the matchinfo() demo.  */
 #ifdef SQLITE_FTS5_ENABLE_TEST_MI
   if( rc==SQLITE_OK ){
-    extern int sqlite3Fts5TestRegisterMatchinfo(sqlite3*);
-    rc = sqlite3Fts5TestRegisterMatchinfo(db);
+    extern int sqlite3Fts5TestRegisterMatchinfoAPI(fts5_api*);
+    rc = sqlite3Fts5TestRegisterMatchinfoAPI(&pGlobal->api);
   }
 #endif
 

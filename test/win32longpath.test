@@ -13,7 +13,7 @@
 # by the "win32-longpath" VFS.
 #
 
-if {$tcl_platform(platform)!="windows"} return
+if {$tcl_platform(platform) ne "windows"} return
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -115,7 +115,8 @@ do_test 1.6 {
 
 db3 close
 
-foreach tn {1a 1b 1c 1d 1e 1f} {
+set lUri [list 1a 1b 1c 1d 1e 1f]
+foreach tn $lUri {
   sqlite3 db3 $uri($tn) -vfs win32-longpath -uri 1 -translatefilename 0
 
   do_test 1.7.$tn {

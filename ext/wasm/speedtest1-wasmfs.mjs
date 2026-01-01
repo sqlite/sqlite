@@ -1,4 +1,4 @@
-import sqlite3InitModule from './jswasm/speedtest1-wasmfs.mjs';
+import sqlite3InitModule from './jswasm/sqlite3-wasmfs.mjs';
 const wMsg = (type,...args)=>{
   postMessage({type, args});
 };

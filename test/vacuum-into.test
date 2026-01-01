@@ -111,7 +111,7 @@ do_catchsql_test vacuum-into-420 {
 
 # The ability to VACUUM INTO a read-only database
 db close
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   file attributes test.db -readonly 1
 } else {
   file attributes test.db -permissions 292  ;# 292 == 0444
@@ -121,7 +121,7 @@ forcedelete test.db2
 do_execsql_test vacuum-into-500 {
   VACUUM INTO 'test.db2';
 }
-if {$tcl_platform(platform)=="windows"} {
+if {$tcl_platform(platform) eq "windows"} {
   file attributes test.db -readonly 0
 } else {
   file attributes test.db -permissions 420   ;# 420 = 0644

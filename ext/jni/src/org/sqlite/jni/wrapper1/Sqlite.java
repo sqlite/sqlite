@@ -19,7 +19,6 @@ import org.sqlite.jni.capi.sqlite3_stmt;
 import org.sqlite.jni.capi.sqlite3_backup;
 import org.sqlite.jni.capi.sqlite3_blob;
 import org.sqlite.jni.capi.OutputPointer;
-import java.nio.ByteBuffer;
 
 /**
    This class represents a database connection, analog to the C-side
@@ -172,6 +171,7 @@ public final class Sqlite implements AutoCloseable  {
   public static final int DBSTATUS_DEFERRED_FKS = CApi.SQLITE_DBSTATUS_DEFERRED_FKS;
   public static final int DBSTATUS_CACHE_USED_SHARED = CApi.SQLITE_DBSTATUS_CACHE_USED_SHARED;
   public static final int DBSTATUS_CACHE_SPILL = CApi.SQLITE_DBSTATUS_CACHE_SPILL;
+  public static final int DBSTATUS_TEMPBUF_SPILL = CApi.SQLITE_DBSTATUS_TEMPBUF_SPILL;
 
   // Limits
   public static final int LIMIT_LENGTH = CApi.SQLITE_LIMIT_LENGTH;
@@ -388,10 +388,10 @@ public final class Sqlite implements AutoCloseable  {
     return CApi.sqlite3_compileoption_used(optName);
   }
 
-  private static boolean hasNormalizeSql =
+  private static final boolean hasNormalizeSql =
     compileOptionUsed("ENABLE_NORMALIZE");
 
-  private static boolean hasSqlLog =
+  private static final boolean hasSqlLog =
     compileOptionUsed("ENABLE_SQLLOG");
 
   /**
@@ -450,7 +450,7 @@ public final class Sqlite implements AutoCloseable  {
     long current;
     /** The peak value for the requested status() or libStatus() metric. */
     long peak;
-  };
+  }
 
   /**
      As per sqlite3_status64(), but returns its current and high-water
@@ -661,7 +661,7 @@ public final class Sqlite implements AutoCloseable  {
   }
 
   /**
-     Equivallent to prepareMulti(X,prepFlags,visitor), where X is
+     Equivalent to prepareMulti(X,prepFlags,visitor), where X is
      sql.getBytes(StandardCharsets.UTF_8).
   */
   public void prepareMulti(String sql, int prepFlags, PrepareMulti visitor){
@@ -696,7 +696,7 @@ public final class Sqlite implements AutoCloseable  {
     final org.sqlite.jni.capi.OutputPointer.Int32 oTail =
       new org.sqlite.jni.capi.OutputPointer.Int32();
     while( pos < sqlChunk.length ){
-      sqlite3_stmt stmt = null;
+      sqlite3_stmt stmt;
       if( pos>0 ){
         sqlChunk = java.util.Arrays.copyOfRange(sqlChunk, pos, sqlChunk.length);
       }
@@ -988,15 +988,15 @@ public final class Sqlite implements AutoCloseable  {
           }
         };
     checkRc( CApi.sqlite3_trace_v2(thisDb(), traceMask, tc) );
-  };
+  }
 
   /**
      Corresponds to the sqlite3_stmt class. Use Sqlite.prepare() to
      create new instances.
   */
   public static final class Stmt implements AutoCloseable {
-    private Sqlite _db = null;
-    private sqlite3_stmt stmt = null;
+    private Sqlite _db;
+    private sqlite3_stmt stmt;
 
     /** Only called by the prepare() factory functions. */
     Stmt(Sqlite db, sqlite3_stmt stmt){
@@ -1379,9 +1379,9 @@ public final class Sqlite implements AutoCloseable  {
      Sqlite.initBackup() to create new instances.
   */
   public static final class Backup implements AutoCloseable {
-    private sqlite3_backup b = null;
-    private Sqlite dbTo = null;
-    private Sqlite dbFrom = null;
+    private sqlite3_backup b;
+    private Sqlite dbTo;
+    private Sqlite dbFrom;
 
     Backup(Sqlite dbDest, String schemaDest,Sqlite dbSrc, String schemaSrc){
       this.dbTo = dbDest;
@@ -1491,7 +1491,7 @@ public final class Sqlite implements AutoCloseable  {
        Warning: the SQLite core has no mechanism for reporting errors
        from custom collations and its workflow does not accommodate
        propagation of exceptions from callbacks. Any exceptions thrown
-       from collations will be silently supressed and sorting results
+       from collations will be silently suppressed and sorting results
        will be unpredictable.
     */
     int call(byte[] lhs, byte[] rhs);
@@ -1506,7 +1506,7 @@ public final class Sqlite implements AutoCloseable  {
   */
   public void createCollation(String name, int encoding, Collation c){
     thisDb();
-    if( null==name || 0==name.length()){
+    if( null==name || name.isEmpty()){
       throw new IllegalArgumentException("Collation name may not be null or empty.");
     }
     if( null==c ){
@@ -1599,11 +1599,12 @@ public final class Sqlite implements AutoCloseable  {
   public void setBusyHandler( BusyHandler b ){
     org.sqlite.jni.capi.BusyHandlerCallback bhc = null;
     if( null!=b ){
-      bhc = new org.sqlite.jni.capi.BusyHandlerCallback(){
+      /*bhc = new org.sqlite.jni.capi.BusyHandlerCallback(){
           @Override public int call(int n){
             return b.call(n);
           }
-        };
+        };*/
+      bhc = b::call;
     }
     checkRc( CApi.sqlite3_busy_handler(thisDb(), bhc) );
   }
@@ -1781,9 +1782,10 @@ public final class Sqlite implements AutoCloseable  {
   public void setProgressHandler( int n, ProgressHandler p ){
     org.sqlite.jni.capi.ProgressHandlerCallback phc = null;
     if( null!=p ){
-      phc = new org.sqlite.jni.capi.ProgressHandlerCallback(){
+      /*phc = new org.sqlite.jni.capi.ProgressHandlerCallback(){
           @Override public int call(){ return p.call(); }
-        };
+          };*/
+      phc = p::call;
     }
     CApi.sqlite3_progress_handler( thisDb(), n, phc );
   }
@@ -1808,11 +1810,12 @@ public final class Sqlite implements AutoCloseable  {
   public void setAuthorizer( Authorizer a ) {
     org.sqlite.jni.capi.AuthorizerCallback ac = null;
     if( null!=a ){
-      ac = new org.sqlite.jni.capi.AuthorizerCallback(){
+      /*ac = new org.sqlite.jni.capi.AuthorizerCallback(){
           @Override public int call(int opId, String s1, String s2, String s3, String s4){
             return a.call(opId, s1, s2, s3, s4);
           }
-        };
+          };*/
+      ac = a::call;
     }
     checkRc( CApi.sqlite3_set_authorizer( thisDb(), ac ) );
   }
@@ -1932,11 +1935,12 @@ public final class Sqlite implements AutoCloseable  {
     final org.sqlite.jni.capi.ConfigLogCallback l =
       null==log
       ? null
-      : new org.sqlite.jni.capi.ConfigLogCallback() {
+      /*: new org.sqlite.jni.capi.ConfigLogCallback() {
           @Override public void call(int errCode, String msg){
             log.call(errCode, msg);
           }
-        };
+          };*/
+      : log::call;
       checkRcStatic(CApi.sqlite3_config(l));
   }
 

@@ -116,7 +116,7 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm, Expr *pInto){
 #else
     /* When SQLITE_BUG_COMPATIBLE_20160819 is defined, unrecognized arguments
     ** to VACUUM are silently ignored.  This is a back-out of a bug fix that
-    ** occurred on 2016-08-19 (https://www.sqlite.org/src/info/083f9e6270).
+    ** occurred on 2016-08-19 (https://sqlite.org/src/info/083f9e6270).
     ** The buggy behavior is required for binary compatibility with some
     ** legacy applications. */
     iDb = sqlite3FindDb(pParse->db, pNm);
@@ -195,7 +195,8 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
   saved_mTrace = db->mTrace;
-  db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
+  db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks | SQLITE_Comments
+               | SQLITE_AttachCreate | SQLITE_AttachWrite;
   db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum;
   db->flags &= ~(u64)(SQLITE_ForeignKeys | SQLITE_ReverseOrder
                    | SQLITE_Defensive | SQLITE_CountRows);

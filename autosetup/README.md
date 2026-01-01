@@ -14,7 +14,9 @@ build infrastructure. It is not an [Autosetup][] reference.
   - Symbolic Names of Feature Flags
   - Do Not Update Global Shared State
 - [Updating Autosetup](#updating)
-  - [Patching Autosetup for Project-local changes](#patching)
+  - ***[Patching Autosetup for Project-local changes](#patching)***
+- [Branch-specific Customization](#branch-customization)
+
 
 ------------------------------------------------------------------------
 
@@ -33,12 +35,27 @@ $ ./configure --reference | less
 That will include any docs from any TCL files in the `./autosetup` dir
 which contain certain (simple) markup defined by autosetup.
 
-This project's own autosetup-related APIs are in [proj.tcl][] or
-[auto.def][].  The former contains helper APIs which are, more or
-less, portable across projects (that file is re-used as-is in other
-projects) and all have a `proj-` name prefix. The latter is the main
-configure script driver and contains related functions which are
-specific to this tree.
+This project's own configuration-related TCL code is spread across the
+following files:
+
+- [proj.tcl][]: project-agnostic utility code for autosetup-driven
+  projects. This file is designed to be shared between this project,
+  other projects managed under the SQLite/Hwaci umbrella
+  (e.g. Fossil), and personal projects of SQLite's developers.  It is
+  essentially an amalgamation of a decade's worth of autosetup-related
+  utility code.
+- [sqlite-config.tcl][]: utility code which is too project-specific
+  for `proj.tcl`. We split this out of `auto.def` so that it can be
+  used by both `auto.def` and...
+- [auto.def][]: the primary driver for the `./configure` process.
+  When we talk about "the configure script," we're technically
+  referring to this file, though it actually contains very little
+  of the TCL code.
+- [autoconf/auto.def][]: the main driver script for the "autoconf"
+  bundle's configure script. It is essentially a slightly trimmed-down
+  version of the main `auto.def` file. The `autoconf` dir was ported
+  from the Autotools to Autosetup in the 3.49.0 dev cycle but retains
+  the "autoconf" name to minimize downstream disruption.
 
 
 <a name="apitips"></a>
@@ -47,9 +64,11 @@ Autosetup API Tips
 
 This section briefly covers only APIs which are frequently useful in
 day-to-day maintenance and might not be immediately recognized as such
-obvious from a casual perusal of [auto.def][]. The complete docs of
-those with `proj-` prefix can be found in [proj.tcl][]. The others are
-scattered around [the TCL files in ./autosetup](/dir/autosetup).
+from a casual perusal of the relevant TCL files. The complete docs of
+those with `proj-` prefix can be found in [proj.tcl][] and those with
+an `sqlite-` prefix are in [sqlite-config.tcl][]. The others are part
+of Autosetup's core packages and are scattered around [the TCL files
+in ./autosetup](/dir/autosetup).
 
 In (mostly) alphabetical order:
 
@@ -67,19 +86,14 @@ In (mostly) alphabetical order:
     Works like `get-env` but will, if that function finds no match,
     look for a file named `./.env-$VAR` and, if found, return its
     trimmed contents. This can be used, e.g., to set a developer's
-    local preferences for the default `CFLAGS`.
-
-- **`define-for-opt flag defineName ?checkingMsg? ?yesVal=1? ?noVal=0?`**\  
-  `[define $defineName]` to either `$yesVal` or `$noVal`, depending on
-  whether `--$flag` is truthy or not. `$checkingMsg` is a
-  human-readable description of the check being made, e.g. "enable foo?"
-  If no `checkingMsg` is provided, the operation is silent.\  
-  Potential TODO: change the final two args to `-yes` and `-no`
-  flags. They're rarely needed, though: search [auto.def][] for
-  `TSTRNNR_OPTS` for an example of where they are used.
+    local preferences for the default `CFLAGS`.\  
+    Tip: adding `-O0` to `.env-CFLAGS` reduces rebuild times
+    considerably at the cost of performance in `make devtest` and the
+    like.
 
 - **`proj-fatal msg`**\  
-  Emits `$msg` to stderr and exits with non-zero.
+  Emits `$msg` to stderr and exits with non-zero. Its differences from
+  autosetup's `user-error` are purely cosmetic.
 
 - **`proj-if-opt-truthy flag thenScript ?elseScript?`**\  
   Evals `thenScript` if the given `--flag` is truthy, else it
@@ -101,7 +115,10 @@ In (mostly) alphabetical order:
   else 0. This distinction can be used to determine, e.g., whether
   `--with-readline` was provided or whether we're searching for
   readline by default. In the former case, failure to find it should
-  be treated as fatal, where in the latter case it's not.
+  be treated as fatal, where in the latter case it's not.\  
+  Unlike most functions which deal with `--flags`, this one does not
+  validate that `$FLAG` is a registered flag so will not fail fatally
+  if `$FLAG` is not registered as an Autosetup option.
 
 - **`proj-val-truthy value`**\  
   Returns 1 if `$value` is "truthy," See `proj-opt-truthy` for the definition
@@ -123,6 +140,15 @@ In (mostly) alphabetical order:
   The shell-specific counterpart of `sqlite-add-feature-flag` which
   only adds the given flag(s) to the CLI-shell-specific CFLAGS.
 
+- **`sqlite-configure BUILD-NAME {script}`**\  
+  This is where all configure `--flags` are defined for all known
+  build modes ("canonical" or "autoconf"). After processing all flags,
+  this function runs `$script`, which contains the build-mode-specific
+  configuration bits, and then runs any finalization bits which are
+  common to all build modes. The `auto.def` files are intended to contain
+  exactly two commands:
+  `use sqlite-config; sqlite-configure BUILD-NAME {script}`
+
 - **`user-notice msg`**\  
   Queues `$msg` to be sent to stderr, but does not emit it until
   either `show-notices` is called or the next time autosetup would
@@ -136,13 +162,18 @@ In (mostly) alphabetical order:
 Ensuring TCL Compatibility
 ========================================================================
 
-It is important that any TCL files used by the configure process
-remain compatible with both [JimTCL][] and the canonical TCL. Though
-JimTCL has outstanding compatibility with canonical TCL, it does have
-a few corners with incompatibilities, e.g. regular expressions. If a
-script runs in JimTCL without using any JimTCL-specific features, then
-it's a certainty that it will run in canonical TCL as well. The
-opposite, however, is not _always_ the case.
+One of the significant benefits of using Autosetup is that (A) this
+project uses many TCL scripts in the build process and (B) Autosetup
+comes with a TCL interpreter named [JimTCL][].
+
+It is important that any TCL files used by the configure process and
+makefiles remain compatible with both [JimTCL][] and the canonical
+TCL. Though JimTCL has outstanding compatibility with canonical TCL,
+it does have a few corners with incompatibilities, e.g. regular
+expressions. If a script runs in JimTCL without using any
+JimTCL-specific features, then it's a certainty that it will run in
+canonical TCL as well. The opposite, however, is not _always_ the
+case.
 
 When [`./configure`](/file/configure) is run, it goes through a
 bootstrapping process to find a suitable TCL with which to run the
@@ -171,14 +202,42 @@ compatibility across TCL implementations:
    before looking for a system-level `tclsh`. Be aware, though, that
    `make distclean` will remove that file.
 
-**Note that `jimsh0` is distinctly different from the `jimsh`** which
-gets built for code-generation purposes.  The latter requires
+**Note that `./jimsh0` is distinctly different from the `./jimsh`**
+which gets built for code-generation purposes.  The latter requires
 non-default build flags to enable features which are
 platform-dependent, most notably to make its `[file normalize]` work.
 This means, for example, that the configure script and its utility
 APIs must not use `[file normalize]`, but autosetup provides a
 TCL-only implementation of `[file-normalize]` (note the dash) for
-portable use in the configure script.
+portable use in the configure script. Contrariwise, code-generation
+scripts invoked via `make` may use `[file normalize]`, as they'll use
+`./jimsh` or `tclsh` instead of `./jimsh0`.
+
+
+Known TCL Incompatibilities
+------------------------------------------------------------------------
+
+A summary of known incompatibilities in JimTCL
+
+- **CRNL line endings**: prior to 2025-02-05 `fconfigure -translation ...`
+  was a no-op in JimTCL, and it emits CRNL line endings by default on
+  Windows.  Since then, it supports `-translation binary`, which is
+  close enough to `-translation lf` for our purposes. When working
+  with files using the `open` command, it is important to use mode
+  `"rb"` or `"wb"`, as appropriate, so that the output does not get
+  CRNL-mangled on Windows.
+
+- **`file copy`** does not support multiple source files. See
+  [](/info/61f18c96183867fe) for a workaround.
+
+- **Regular expressions**:
+
+  - Patterns treat `\nnn` octal values as back-references (which it
+    does not support). Those can be reformulated as demonstrated in
+    [](/info/aeac23359bb681c0).
+
+  - `regsub` does not support the `\y` flag. A workaround is demonstrated
+    in [](/info/c2e5dd791cce3ec4).
 
 
 <a name="conventions"></a>
@@ -207,8 +266,9 @@ dots are not permitted.
 The `X.y` convention is used in the makefiles primarily because the
 person who did the initial port finds that considerably easier on the
 eyes and fingers. In practice, the `X_Y` form of such exports is used
-exactly once in [Makefile.in][], where it's translated into into `X.y`
-form for consumption by [Makefile.in][] and [main.mk][]. For example:
+exactly once in [Makefile.in][], where it's translated from `@X_Y@`
+into into `X.y` form for consumption by [Makefile.in][] and
+[main.mk][]. For example:
 
 >
 ```
@@ -225,9 +285,9 @@ of taste, for which there is no accounting.)
 Do Not Update Global Shared State
 ------------------------------------------------------------------------
 
-In both the legacy Autotools-driven build and in common Autosetup
-usage, feature tests performed by the configure script may amend
-global flags such as `LIBS`, `LDFLAGS`, and `CFLAGS`[^as-cflags].  That's
+In both the legacy Autotools-driven build and common Autosetup usage,
+feature tests performed by the configure script may amend global flags
+such as `LIBS`, `LDFLAGS`, and `CFLAGS`[^as-cflags].  That's
 appropriate for a makefile which builds a single deliverable, but less
 so for makefiles which produce multiple deliverables. Drawbacks of
 that approach include:
@@ -235,8 +295,8 @@ that approach include:
 - It's unlikely that every single deliverable will require the same
   core set of those flags.
 - It can be difficult to determine the origin of any given change to
-  that global state because those changes are hidden behind voodoo performed
-  outside the immediate visibility of the configure script's
+  that global state because those changes are hidden behind voodoo
+  performed outside the immediate visibility of the configure script's
   maintainer.
 - It can force the maintainers of the configure script to place tests
   in a specific order so that the resulting flags get applied at
@@ -315,24 +375,90 @@ configure process, and check it in.
 Patching Autosetup for Project-local Changes
 ------------------------------------------------------------------------
 
+The autosetup files require the following patches after updating
+from their upstream sources:
+
+### `--debug` flag
+
 Autosetup reserves the flag name **`--debug`** for its own purposes,
 and its own special handling of `--enable-...` flags makes `--debug`
-an alias for `--enable-debug`. As we have a long history of using
-`--enable-debug` for this project's own purposes, we patch autosetup
-to use the name `--autosetup-debug` in place of `--debug`. That
-requires (as of this writing) four small edits in
-[](/file/autosetup/autosetup), as demonstrated in [check-in
-3296c8d3](/info/3296c8d3).
+an alias for `--enable-debug`. As this project has a long history of
+using `--enable-debug`, we patch autosetup to use the name
+`--autosetup-debug` in place of `--debug`. That requires (as of this
+writing) four small edits in
+[/autosetup/autosetup](/file/autosetup/autosetup), as demonstrated in
+[check-in 3296c8d3](/info/3296c8d3).
 
 If autosetup is upgraded and this patch is _not_ applied the invoking
 `./configure` will fail loudly because of the declaration of the
 `debug` flag in `auto.def` - duplicated flags are not permitted.
 
+### Fail on `malloc()` error
+
+See [check-in 72c8a5b94cdf5d](/info/72c8a5b94cdf5d).
+
+
+<a name="branch-customization"></a>
+Branch-specific Customization
+========================================================================
+
+Certain vendor-specific branches require slight configure script
+customization. Rather than editing `sqlite-config.tcl` for this,
+which frequently leads to merge conflicts, the following approach
+is recommended:
+
+In the vendor-specific branch, create a file named
+`autosetup/sqlite-custom.tcl`.
+
+That file should contain the following content...
+
+If flag customization is required, add:
+
+>
+```
+proc sqlite-custom-flags {} {
+  # If any existing --flags require different default values
+  # then call:
+  options-defaults {
+    flag-name new-default-value
+    ...
+  }
+  # ^^^ That will replace the default value but will not update
+  # the --help text, which may lead to some confusion:
+  # https://github.com/msteveb/autosetup/issues/77
+
+  return {
+   {*} {
+     new-flag-name => {Help text}
+     ...
+   }
+  }; #see below
+}
+```
+
+That function must return either an empty string or a list in the form
+used internally by [sqlite-config.tcl][]'s `sqlite-configure`.
+
+Next, define:
+
+>
+```
+proc sqlite-custom-handle-flags {} {
+  ... do any custom flag handling here ...
+}
+```
+
+That function, if defined, will be called relatively late in the
+configure process, before any filtered files are generated but after
+all other significant processing.
+
 
 [Autosetup]: https://msteveb.github.io/autosetup/
 [auto.def]: /file/auto.def
+[autoconf/auto.def]: /file/autoconf/auto.def
 [autosetup-git]: https://github.com/msteveb/autosetup
 [proj.tcl]: /file/autosetup/proj.tcl
+[sqlite-config.tcl]: /file/autosetup/sqlite-config.tcl
 [Makefile.in]: /file/Makefile.in
 [main.mk]: /file/main.mk
 [JimTCL]: https://jim.tcl.tk

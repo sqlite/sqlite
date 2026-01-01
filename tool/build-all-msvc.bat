@@ -105,7 +105,6 @@ REM When set, these values are expanded and passed to the NMAKE command line,
 REM after its other arguments.  These may be used to specify additional NMAKE
 REM options, for example:
 REM
-REM                        SET NMAKE_ARGS=FOR_WINRT=1
 REM                        SET NMAKE_ARGS_DEBUG=MEMDEBUG=1
 REM                        SET NMAKE_ARGS_RETAIL=WIN32HEAP=1
 REM
@@ -198,7 +197,7 @@ IF NOT DEFINED ComSpec (
 
 REM
 REM NOTE: This batch file requires the VcInstallDir environment variable to be
-REM       set.  Tyipcally, this means this batch file needs to be run from an
+REM       set.  Typically, this means this batch file needs to be run from an
 REM       MSVC command prompt.
 REM
 IF NOT DEFINED VCINSTALLDIR (
