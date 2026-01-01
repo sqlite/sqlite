@@ -81,24 +81,21 @@ Both of the commands above accomplish about the same thing, but the second
 one has the advantage of not requiring "watch" to be installed on your
 system.
 
-Sometimes testrunner.tcl uses the `testfixture` binary that it is run with
-to run tests (see "Binary Tests" below). Sometimes it builds testfixture and
+Sometimes testrunner.tcl uses the `testfixture` and `sqlite3` binaries that
+are in the directory from which testrunner.tcl is run.
+(see "Binary Tests" below). Sometimes it builds testfixture and
 other binaries in specific configurations to test (see "Source Tests").
 
 <a name=binary_tests></a>
 # 2. Binary Tests
 
 The commands described in this section all run various combinations of the Tcl
-test scripts using the `testfixture` binary used to run the testrunner.tcl
-script (i.e. they do not invoke the compiler to build new binaries, or the
-`make` command to run tests that are not Tcl scripts). The procedure to run
-these tests is therefore:
-
-  1. Build the "testfixture" (or "testfixture.exe" for windows) binary using
-     whatever method seems convenient.
-
-  2. Test the binary built in step 1 by running testrunner.tcl with it, 
-     perhaps with various options.
+test scripts using whatever `testfixture` binary (and maybe also the `sqlite3`
+binary, depending on the test) that is found in the directory from which
+testrunner.tcl is launched.  So typically, one must first run something
+like "`make testfixture sqlite3`" before launching binary tests.  In other
+words, testrunner.tcl does not build the binaries under test itself; it
+expects them to be available already.
 
 The following sub-sections describe the various options that can be
 passed to testrunner.tcl to test binary testfixture builds.
@@ -140,22 +137,22 @@ are defined in file *testrunner_data.tcl*.
 To run the "veryquick" test set, use either of the following:
 
 ```
-  ./testfixture $TESTDIR/testrunner.tcl
-  ./testfixture $TESTDIR/testrunner.tcl veryquick
+  tclsh $TESTDIR/testrunner.tcl
+  tclsh $TESTDIR/testrunner.tcl veryquick
 ```
 
 To run the "full" test suite:
 
 ```
-  ./testfixture $TESTDIR/testrunner.tcl full
+  tclsh $TESTDIR/testrunner.tcl full
 ```
 
 To run the subset of the "full" test suite for which the test file name matches
 a specified pattern (e.g. all tests that start with "fts5"), either of:
 
 ```
-  ./testfixture $TESTDIR/testrunner.tcl fts5%
-  ./testfixture $TESTDIR/testrunner.tcl 'fts5*'
+  tclsh $TESTDIR/testrunner.tcl fts5%
+  tclsh $TESTDIR/testrunner.tcl 'fts5*'
 ```
 
 Strictly speaking, for a test to be run the pattern must match the script
@@ -167,8 +164,13 @@ characters specified as part of the pattern are transformed to "\*".
 To run "all" tests (full + permutations):
 
 ```
-  ./testfixture $TESTDIR/testrunner.tcl all
+  tclsh $TESTDIR/testrunner.tcl all
 ```
+
+Note that in all of the previous examples, when running on Unix, the
+initial "<tt>tclsh</tt>" on the command-line may be omitted.  The
+testrunner.tcl is marked as executable and begins with an appropriate
+"<tt>#!</tt>" line to invoke tclsh automatically.
 
 <a name=binary_test_failures></a>
 ## 2.3. Investigating Binary Test Failures
@@ -180,16 +182,21 @@ be retrieved from either *testrunner.log* or *testrunner.db*.
 If there is no permutation, the individual test script may be run with:
 
 ```
-  ./testfixture $PATH_TO_SCRIPT
+  tclsh $PATH_TO_SCRIPT
 ```
 
 Or, if the failure occured as part of a permutation:
 
 ```
-  ./testfixture $TESTDIR/testrunner.tcl $PERMUTATION $PATH_TO_SCRIPT
+  tclsh $TESTDIR/testrunner.tcl $PERMUTATION $PATH_TO_SCRIPT
 ```
 
-TODO: An example instead of "$PERMUTATION" and $PATH\_TO\_SCRIPT?
+One can also run all tests that failed in the previous invocation by
+typing:
+
+```
+  tclsh $TESTDIR/testrunner.tcl retest
+```
 
 <a name=source_code_tests></a>
 # 3. Source Code Tests
@@ -204,11 +211,9 @@ other tests. The advantages of this are that:
   *  it ensures that tests are always run using binaries created with the
      same set of compiler options.
 
-The testrunner.tcl commands described in this section may be run using
-either a *testfixture* (or testfixture.exe) build, or with any other Tcl
-shell that supports SQLite 3.31.1 or newer via "package require sqlite3".
-
-TODO: ./configure + Makefile.msc build systems.
+The testrunner.tcl commands described in this section do not require that
+the testfixture and/or sqlite3 binaries be built ahead of time.  Those
+binaries will be constructed automatically.
 
 <a name=commands_to_run_tests></a>
 ## 3.1. Commands to Run SQLite Tests
@@ -227,13 +232,13 @@ In other words, it is equivalent to running:
   $TOP/configure --enable-all --enable-debug
   make fuzztest
   make testfixture
-  ./testfixture $TOP/test/testrunner.tcl veryquick
+  tclsh $TOP/test/testrunner.tcl veryquick
 
   # Then, after removing files created by the tests above:
   $TOP/configure --enable-all OPTS="-O0"
   make fuzztest
   make testfixture
-  ./testfixture $TOP/test/testrunner.tcl veryquick
+  tclsh $TOP/test/testrunner.tcl veryquick
 ```
 
 The **sdevtest** command is identical to the mdevtest command, except that the
@@ -380,7 +385,7 @@ When running either binary or source code tests, testrunner.tcl reports the
 number of jobs it intends to use to stdout. e.g.
 
 ```
-  $ ./testfixture $TESTDIR/testrunner.tcl
+  $ tclsh $TESTDIR/testrunner.tcl
   splitting work across 16 jobs
   ... more output ...
 ```
@@ -390,7 +395,7 @@ of real cores on the machine. This can be overridden using the "--jobs" (or -j)
 switch:
 
 ```
-  $ ./testfixture $TESTDIR/testrunner.tcl --jobs 8
+  $ tclsh $TESTDIR/testrunner.tcl --jobs 8
   splitting work across 8 jobs
   ... more output ...
 ```
@@ -400,5 +405,5 @@ running by exucuting the following command from the directory containing the
 testrunner.log and testrunner.db files:
 
 ```
-  $ ./testfixture $TESTDIR/testrunner.tcl njob $NEW_NUMBER_OF_JOBS
+  $ tclsh $TESTDIR/testrunner.tcl njob $NEW_NUMBER_OF_JOBS
 ```
