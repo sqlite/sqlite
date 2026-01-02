@@ -1,12 +1,12 @@
-C Further\simprovements\sto\stestrunner.tcl\sdocumentation.
-D 2026-01-01T21:35:25.298
+C Change\sthe\sshelltest\starget\son\sthe\swindows\smakefile\sto\suse\stestrunner.tcl
+D 2026-01-02T00:23:22.904
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 276e8e231fc30a3d17f2110b50952e5dc1223534ea914b57a0212c22d1aee52b
+F Makefile.msc 48c5be34727fd835c675eb9a6ba21900d66088fcec81210cb2e134927aa0fa4f
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
 F VERSION 74672bfd4c7826c0fc6f84762488a707c52e7d2d94af42ccb0edcc6c74311c41
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bcac99f962c6403fddfcaeef309ea9f825fa661fee0b3e3fd24f04c861be1d1b
-R 9387e28ba84b235b58989d6495dd42c1
+P c71402031ce81b4415a793afa3152f5691b197dce634c1322948f39086b8c819
+R 8f2a98c47e462679ca465f5107892d47
 U drh
-Z a047d21b7e9c1686bf63375354e2eb38
+Z 83ab26b7043d05127e347a3a2b406c38
 # Remove this line to create a well-formed Fossil manifest.

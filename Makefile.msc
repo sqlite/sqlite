@@ -2640,8 +2640,8 @@ smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
-shelltest: $(TESTPROGS)
-	.\testfixture.exe $(TOP)\test\permutations.test shell
+shelltest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release shell
 
 sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) tclsqlite-ex.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl -DINCLUDE_SQLITE3_C $(TOP)\tool\sqlite3_analyzer.c.in > $@
