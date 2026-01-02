@@ -321,7 +321,7 @@ static int cli_strncmp(const char *a, const char *b, size_t n){
 ** Unix epoch (1970-01-01T00:00:00Z)
 */
 static sqlite3_int64 timeOfDay(void){
-#if defined(_WIN64)
+#if defined(_WIN64) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
   sqlite3_uint64 t;
   FILETIME tm;
   GetSystemTimePreciseAsFileTime(&tm);
