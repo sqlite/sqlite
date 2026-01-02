@@ -15,7 +15,6 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set testprefix existsexpr
 
-
 do_execsql_test 1.0 {
   CREATE TABLE x1(a, b, PRIMARY KEY(a)) WITHOUT ROWID;
   INSERT INTO x1 VALUES(1, 2), (3, 4), (5, 6);
@@ -477,4 +476,25 @@ catch { optimization_control db exists-to-join 0 }
 db cache flush
 do_execsql_test 9.6 $Q {{big string value}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 10.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE x1(x);
+}
+
+do_execsql_test 10.1 {
+  SELECT EXISTS( SELECT 1 FROM t1 ) aaa FROM x1 WHERE aaa AND aaa
+}
+
+do_execsql_test 10.2 {
+  SELECT 
+    EXISTS( SELECT 1 FROM t1 ) aaa
+  WHERE (
+    SELECT 1 FROM x1 WHERE aaa AND aaa
+  );
+}
+
 finish_test
+
