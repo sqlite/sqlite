@@ -7465,6 +7465,7 @@ static SQLITE_NOINLINE void existsToJoin(
        && (pSub->selFlags & SF_Aggregate)==0
        && !pSub->pSrc->a[0].fg.isSubquery
        && pSub->pLimit==0
+       && pSub->pPrior==0
       ){
         /* Before combining the sub-select with the parent, renumber the 
         ** cursor used by the subselect. This is because the EXISTS expression

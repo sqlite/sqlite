@@ -496,5 +496,22 @@ do_execsql_test 10.2 {
   );
 }
 
-finish_test
+# https://sqlite.org/forum/forumpost/2026-01-03T14:05:48z
+do_execsql_test 11.0 {
+  CREATE TABLE parent (id TEXT PRIMARY KEY);
+  CREATE TABLE child_a (id TEXT);
+  CREATE TABLE child_b (id TEXT);
+  INSERT INTO parent VALUES ('p1');
+  INSERT INTO child_a VALUES ('p1');
+}
+do_execsql_test 11.1 {
+  SELECT count(*), parent.id FROM parent
+   WHERE EXISTS (
+      SELECT 1 FROM child_a WHERE child_a.id = parent.id
+      UNION
+      SELECT 1 FROM child_b WHERE child_b.id = parent.id
+   )
+   GROUP BY id;
+} {1 p1}
 
+finish_test
