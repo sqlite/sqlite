@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svar\suse\sreported\sin\s[forum:88561a4a1e|forum\spost\s88561a4a1e].
-D 2026-01-04T11:05:05.639
+C Update\sthe\sregexp\sextension\sso\sthat\sthe\s"-"\scharacter\smay\sbe\sescaped\swith\sa\sbackslash.\sForum\spost\s[forum:c5e7358f82\s|\sc5e7358f82].
+D 2026-01-05T18:29:07.217
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -387,7 +387,7 @@ F ext/misc/percentile.c 72e05a21db20a2fa85264b99515941f00ae698824c9db82d7edfbb16
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
-F ext/misc/regexp.c 84691212927260db6bc66e86c791f0c813f5f2cd756c525e47a93f0de1af083b
+F ext/misc/regexp.c 69bd45f6931bdc6801c1059b65a3e8b15ba88255e6abe387a34b653ce17e8908
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -1534,7 +1534,7 @@ F test/rdonly.test 64e2696c322e3538df0b1ed624e21f9a23ed9ff8
 F test/readonly.test 0d307c335b3421898cfe64a783a376138aa003849b6bff61ee2d21e805bc0051
 F test/recover.test 643139b911ac880a1e881d7621f02cfb546b608b8f2494d7d26fd5ed103b1ceb
 F test/regexp1.sql de2b5b33b16b664d655b41e780f2efca38de3e5559fc254b4c9783ff0bea96b0
-F test/regexp1.test 8f2a8bc1569666e29a4cee6c1a666cd224eb6d50e2470d1dc1df995170f3e0f1
+F test/regexp1.test 0023eae4073265641b826a70d81ba34d4dd66ad71871a5b4a1b7cf500d5c0c51
 F test/regexp2.test 64f9726b2ddc71aea06725fcad53231833d038d58b936d49083ace658b370a13
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
 F test/reservebytes.test 6163640b5a5120c0dee6591481e673a0fa0bf0d12d4da7513bad692c1a49a162
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f60e863e0ca2d8ab853fa5f48d3cd7b062b13167fcddffc4563bde9285b92320
-R 4acf967c5b59de5937342771fb22d43f
-U stephan
-Z d4f1135862bcdc1161b210d6bfccd00f
+P 707c0f6442e946f23de061ee2753eb5994ab55d411c49b232799f309ba0f10cf
+R 3f1b503176903404170911d36e2abbac
+U dan
+Z bf1de2a9fd08e119da62ec400a492573
 # Remove this line to create a well-formed Fossil manifest.

@@ -32,7 +32,7 @@
 **     ^X      X occurring at the beginning of the string
 **     X$      X occurring at the end of the string
 **     .       Match any single character
-**     \c      Character c where c is one of \{}()[]|*+?.
+**     \c      Character c where c is one of \{}()[]|*+?-.
 **     \c      C-language escapes for c in afnrtv.  ex: \t or \n
 **     \uXXXX  Where XXXX is exactly 4 hex digits, unicode value XXXX
 **     \xXX    Where XX is exactly 2 hex digits, unicode value XX
@@ -417,7 +417,7 @@ static int re_hex(int c, int *pV){
 ** return its interpretation.
 */
 static unsigned re_esc_char(ReCompiled *p){
-  static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";
+  static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]-";
   static const char zTrans[] = "\a\f\n\r\t\v";
   int i, v = 0;
   char c;
