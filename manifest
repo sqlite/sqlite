@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\stmstmpvfs.c\sextension\sthat\sadds\sa\stimestamp\sand\sother\ndebugging\sinformation\son\seach\spage\sof\sa\sdatabase\sas\sthat\spage\sis\swritten,\nif\sthe\sdatabase\sis\sconfigured\sfor\sexactly\s16\sbytes\sof\sreserve\sspace.
-D 2026-01-05T17:28:33.434
+C Enhance\sthe\stimestamp-vfs\sprototype\sso\sthat\sit\salso\skeeps\san\sevent\slog.
+D 2026-01-06T20:51:06.241
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -402,7 +402,7 @@ F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bf
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/tmstmpvfs.c 742c76f7e6705c547a66932186decf3097a5c3e36a57b84582c64c95994f54f8
+F ext/misc/tmstmpvfs.c 406df06b8ce336dbbe144771b944237aee7de659b8a67ac98d7cc02b3177bdfc
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
@@ -2190,11 +2190,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 707c0f6442e946f23de061ee2753eb5994ab55d411c49b232799f309ba0f10cf
-R eebbc04e39ff5bc6f1027ece05be9308
-T *branch * timestamp-vfs
-T *sym-timestamp-vfs *
-T -sym-trunk *
+P 703e593dfc92676a2d44c67ca8282a78a1943b9c1e3f2447c0a9917d70a383c4
+R 5eb4c6b81b2d4f64da6be7537e974747
 U drh
-Z edde794cfb79a18a07337a2e938e02dc
+Z a329d47bfb1365429e97ed4ed3ca25c0
 # Remove this line to create a well-formed Fossil manifest.

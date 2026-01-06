@@ -94,14 +94,34 @@
 **
 ** The timestamp layout is as follows:
 **
-**   bytes 0-5     Milliseconds since the Unix Epoch
-**   bytes 6-9     WAL frame number
-**   bytes 10-12   Lower 24 bits of Salt-1
-**   byte  13      bit 0 (0x01) set if last frame of a transaction
-**   bytes 14,15   Reserved for future expansion
+**   bytes 0,1     Zero.  Reserved for future expansion
+**   bytes 2-7     Milliseconds since the Unix Epoch
+**   bytes 8-11    WAL frame number
+**   bytes 12      0: WAL write  1: WAL txn  2: rollback write
+**   bytes 13-15   Lower 24 bits of Salt-1
 **
 ** For transactions that occur in rollback mode, bytes 6-15 are all
 ** zero.
+**
+** LOGGING
+**
+** Every open VFS creates a log file.  The Database connection and the
+** WAL connection are both logged to the same file.  If the name of the
+** database file is BASE then the logfile is named something like:
+**
+**     BASE-tmstmp-UNIQUEID
+**
+** Where UNIQUEID is a character string that is unique to that particular
+** connection.  The log consists of 16-byte records.  Each record consists
+** of five unsigned integers:
+**
+**      1   1   6    4   4   <---  bytes
+**     op  a1  ts   a2  a3
+**
+** The meanings of the a1-a3 values depend on op.  ts is the timestamp
+** in milliseconds since 1970-01-01.  (6 bytes is sufficient for timestamps
+** for almost 9000 years.) Opcodes are defined by the ELOG_* #defines
+** below.
 */
 #if defined(SQLITE_AMALGAMATION) && !defined(SQLITE_TMSTMPVFS_STATIC)
 # define SQLITE_TMSTMPVFS_STATIC
@@ -114,7 +134,7 @@
 #endif
 #include <string.h>
 #include <assert.h>
-
+#include <stdio.h>
 
 /*
 ** Forward declaration of objects used by this utility
@@ -140,6 +160,17 @@ typedef struct TmstmpFile TmstmpFile;
   typedef unsigned int u32;
 #endif
 
+/*
+** Current process id
+*/
+#if defined(_WIN32)
+#  include <windows.h>
+#  define GETPID (u32)GetCurrentProcessId()
+#else
+#  include <unistd.h>
+#  define GETPID (u32)getpid()
+#endif
+
 /* Access to a lower-level VFS that (might) implement dynamic loading,
 ** access to randomness, etc.
 */
@@ -152,15 +183,32 @@ struct TmstmpFile {
   u32 uMagic;            /* Magic number for sanity checking */
   u32 salt1;             /* Last WAL salt-1 value */
   u32 iFrame;            /* Last WAL frame number */
+  u32 pgno;              /* Current page number */
+  u32 pgsz;              /* Size of each page, in bytes */
   u8 isWal;              /* True if this is a WAL file */
   u8 isDb;               /* True if this is a DB file */
   u8 isCommit;           /* Last WAL frame header was a transaction commit */
   u8 hasCorrectReserve;  /* File has the correct reserve size */
+  u8 inCkpt;             /* True if in a checkpoint */
+  FILE *log;             /* Write logging records on this file.  DB only */
   TmstmpFile *pPartner;  /* DB->WAL or WAL->DB mapping */
   sqlite3_int64 iOfst;   /* Offset of last WAL frame header */
   sqlite3_vfs *pSubVfs;  /* Underlying VFS */
 };
 
+/*
+** Event log opcodes
+*/
+#define ELOG_OPEN_DB      0x01
+#define ELOG_OPEN_WAL     0x02
+#define ELOG_WAL_PAGE     0x03
+#define ELOG_DB_PAGE      0x04
+#define ELOG_CKPT_START   0x05
+#define ELOG_CKPT_PAGE    0x06
+#define ELOG_CKPT_DONE    0x07
+#define ELOG_WAL_RESET    0x08
+#define ELOG_CLOSE_WAL    0x0e
+#define ELOG_CLOSE_DB     0x0f
 
 /*
 ** Methods for TmstmpFile
@@ -252,35 +300,70 @@ static const sqlite3_io_methods tmstmp_io_methods = {
 };
 
 /*
-** SQL function:    tmstmp_init(SCHEMANAME)
-**
-** This SQL functions invokes:
-**
-**   sqlite3_file_control(db, SCHEMANAME, SQLITE_FCNTL_RESERVE_BYTE, &n);
-**
-** In order to set the reserve bytes value to 16, so that tmstmpvfs will
-** operation.  This interface is undocumented, apart from this comment.
-** Usage example:
-**
-**    SELECT tmstmp_init('main'); VACUUM;
+** Write a 6-byte millisecond timestamp into aOut[]
 */
-static void tmstmpInitFunc(
-  sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
-){
-  int nByte = TMSTMP_RESERVE;
-  const char *zSchemaName = (const char*)sqlite3_value_text(argv[0]);
-  sqlite3 *db = sqlite3_context_db_handle(context);
-  sqlite3_file_control(db, zSchemaName, SQLITE_FCNTL_RESERVE_BYTES, &nByte);
+static void tmstmpPutTS(TmstmpFile *p, unsigned char *aOut){
+  sqlite3_uint64 tm = 0;
+  p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, &tm);
+  aOut[0] = (tm>>40)&0xff;
+  aOut[1] = (tm>>32)&0xff;
+  aOut[2] = (tm>>24)&0xff;
+  aOut[3] = (tm>>16)&0xff;
+  aOut[4] = (tm>>8)&0xff;
+  aOut[5] = tm&0xff;
 }
 
+/*
+** Read a 32-bit big-endian unsigned integer and return it.
+*/
+static u32 tmstmpGetU32(const unsigned char *a){
+  return (a[0]<<24) + (a[1]<<16) + (a[2]<<8) + a[3];
+}
+
+/* Write a 32-bit integer as big-ending into a[]
+*/
+static void tmstmpPutU32(u32 v, unsigned char *a){
+  a[0] = (v>>24) & 0xff;
+  a[1] = (v>>16) & 0xff;
+  a[2] = (v>>8) & 0xff;
+  a[3] = v & 0xff;
+}
+
+
+/*
+** Write a record onto the event log
+*/
+static void tmstmpEvent(
+  TmstmpFile *p,
+  u8 op,
+  u8 a1,
+  u32 a2,
+  u32 a3
+){
+  unsigned char a[16];
+  if( p->isWal ){
+    p = p->pPartner;
+    assert( p!=0 );
+    assert( p->isDb );
+  }
+  if( p->log==0 ) return;
+  a[0] = op;
+  a[1] = a1;
+  tmstmpPutTS(p, a+2);
+  tmstmpPutU32(a2, a+8);
+  tmstmpPutU32(a3, a+12);
+  (void)fwrite(a, sizeof(a), 1, p->log);
+}
 
 /*
 ** Close a connection
 */
 static int tmstmpClose(sqlite3_file *pFile){
   TmstmpFile *p = (TmstmpFile *)pFile;
+  if( p->hasCorrectReserve ){
+    tmstmpEvent(p, p->isDb ? ELOG_CLOSE_DB : ELOG_CLOSE_WAL, 0, 0, 0);
+  }
+  if( p->log ) fclose(p->log);
   if( p->pPartner ){
     assert( p->pPartner->pPartner==p );
     p->pPartner->pPartner = 0;
@@ -303,14 +386,18 @@ static int tmstmpRead(
   TmstmpFile *p = (TmstmpFile*)pFile;
   pFile = ORIGFILE(pFile);
   rc = pFile->pMethods->xRead(pFile, zBuf, iAmt, iOfst);
-  if( rc==SQLITE_OK
-   && p->isDb
+  if( rc!=SQLITE_OK ) return rc;
+  if( p->isDb
    && iOfst==0
    && iAmt>=100
   ){
-    p->hasCorrectReserve = (((u8*)zBuf)[20]==TMSTMP_RESERVE);
+    const unsigned char *a = (unsigned char*)zBuf;
+    p->hasCorrectReserve = (a[20]==TMSTMP_RESERVE);
+    p->pgsz = (a[16]<<8) + a[17];
+    if( p->pgsz==1 ) p->pgsz = 65536;
     if( p->pPartner ){
       p->pPartner->hasCorrectReserve = p->hasCorrectReserve;
+      p->pPartner->pgsz = p->pgsz;
     }
   }
   return rc;
@@ -333,40 +420,36 @@ static int tmstmpWrite(
     /* Writing into a WAL file */
     if( iAmt==24 ){
       /* A frame header */
-      u32 x;
-      memcpy(&p->iFrame, zBuf, 4);
-      memcpy(&p->salt1, zBuf+8, 4);
-      memcpy(&x, zBuf+4, 4);
+      u32 x = 0;
+      p->iFrame = (iOfst - 32)/(p->pgsz+24);
+      p->pgno = tmstmpGetU32((const u8*)zBuf);
+      p->salt1 = tmstmpGetU32(((const u8*)zBuf)+8);
+      memcpy(&x, ((const u8*)zBuf)+4, 4);
       p->isCommit = (x!=0);
       p->iOfst = iOfst;
     }else if( iAmt>=512 && iOfst==p->iOfst+24 ){
-      sqlite3_uint64 tm = 0;
-      int rc;
       unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
-      p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, &tm);
       memset(s, 0, TMSTMP_RESERVE);
-      s[0] = (tm>>40)&0xff;
-      s[1] = (tm>>32)&0xff;
-      s[2] = (tm>>24)&0xff;
-      s[3] = (tm>>16)&0xff;
-      s[4] = (tm>>8)&0xff;
-      s[5] = tm&0xff;
-      memcpy(&s[9], &p->salt1, 4);
-      memcpy(&s[6], &p->iFrame, 4);
-      s[13] = p->isCommit ? 1 : 0;
+      tmstmpPutTS(p, s+2);
+      tmstmpPutU32(p->iFrame, s+8);
+      tmstmpPutU32(p->salt1, s+12);
+      s[12] = p->isCommit ? 1 : 0;
+      tmstmpEvent(p, ELOG_WAL_PAGE, s[12], p->pgno, p->iFrame);
+    }else if( iAmt==32 && iOfst==0 ){
+      u32 salt1 = tmstmpGetU32(((const u8*)zBuf)+16);
+      tmstmpEvent(p, ELOG_WAL_RESET, 0, 0, salt1);
     }
+  }else if( p->inCkpt ){
+    assert( p->pgsz>0 );
+    tmstmpEvent(p, ELOG_CKPT_PAGE, 0, iOfst/p->pgsz, 0);
   }else if( p->pPartner==0 ){
     /* Writing into a database in rollback mode */
-    sqlite3_uint64 tm = 0;
     unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
-    p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, &tm);
     memset(s, 0, TMSTMP_RESERVE);
-    s[0] = (tm>>40)&0xff;
-    s[1] = (tm>>32)&0xff;
-    s[2] = (tm>>24)&0xff;
-    s[3] = (tm>>16)&0xff;
-    s[4] = (tm>>8)&0xff;
-    s[5] = tm&0xff;
+    tmstmpPutTS(p, s+2);
+    s[12] = 2;
+    assert( p->pgsz>0 );
+    tmstmpEvent(p, ELOG_DB_PAGE, 0, (u32)(iOfst/p->pgsz), 0);
   }
   return pSub->pMethods->xWrite(pSub,zBuf,iAmt,iOfst);
 }
@@ -428,11 +511,35 @@ static int tmstmpFileControl(sqlite3_file *pFile, int op, void *pArg){
   TmstmpFile *p = (TmstmpFile*)pFile;
   pFile = ORIGFILE(pFile);
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
-  if( rc==SQLITE_OK
-   && op==SQLITE_FCNTL_VFSNAME
-   && p->hasCorrectReserve
-  ){
-    *(char**)pArg = sqlite3_mprintf("tmstmp/%z", *(char**)pArg);
+  if( rc==SQLITE_OK ){
+    switch( op ){
+      case SQLITE_FCNTL_VFSNAME: {
+        if( p->hasCorrectReserve ){
+          *(char**)pArg = sqlite3_mprintf("tmstmp/%z", *(char**)pArg);
+        }
+        break;
+      }
+      case SQLITE_FCNTL_CKPT_START: {
+        p->inCkpt = 1;
+        assert( p->isDb );
+        assert( p->pPartner!=0 );
+        p->pPartner->inCkpt = 1;
+        if( p->hasCorrectReserve ){
+          tmstmpEvent(p, ELOG_CKPT_START, 0, 0, 0);
+        }
+        break;
+      }
+      case SQLITE_FCNTL_CKPT_DONE: {
+        p->inCkpt = 0;
+        assert( p->isDb );
+        assert( p->pPartner!=0 );
+        p->pPartner->inCkpt = 0;
+        if( p->hasCorrectReserve ){
+          tmstmpEvent(p, ELOG_CKPT_DONE, 0, 0, 0);
+        }
+        break;
+      }
+    }
   }
   return rc;
 }
@@ -517,6 +624,11 @@ static int tmstmpOpen(
   sqlite3_file *pSubFile;
   sqlite3_vfs *pSubVfs;
   int rc;
+  sqlite3_uint64 r1;
+  u32 r2;
+  u32 pid;
+  char *zLogName;
+  
   pSubVfs = ORIGVFS(pVfs);
   if( (flags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_WAL))==0 ){
     /* If the file is not a persistent database or a WAL file, then
@@ -549,7 +661,17 @@ static int tmstmpOpen(
     pDb->pPartner = p;
   }else{
     p->isDb = 1;
+    r1 = 0;
+    p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, &r1);
+    sqlite3_randomness(sizeof(r2), &r2);
+    pid = GETPID;
+    zLogName = sqlite3_mprintf("%s-%llx%08x%08x.tmstmp", zName, r1, pid, r2);
+    if( zLogName ){
+      p->log = fopen(zLogName, "wb");
+      sqlite3_free(zLogName);
+    }
   }
+  tmstmpEvent(p, p->isWal ? ELOG_OPEN_WAL : ELOG_OPEN_DB, 0, GETPID, 0);
 
 tmstmp_open_done:
   if( rc ) pFile->pMethods = 0;
@@ -672,11 +794,6 @@ int sqlite3_tmstmpvfs_init(
   int rc;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg; /* not used */
-#ifdef SQLITE_TMSTMPVFS_INIT_FUNCNAME
-  rc = sqlite3_create_function(db, SQLITE_TMSTMPVFS_INIT_FUNCTNAME, 1,
-                               SQLITE_UTF8, 0, tmstmpInitFunc, 0, 0);
-  if( rc ) return rc;
-#endif
   rc = tmstmpRegisterVfs();
   if( rc==SQLITE_OK ) rc = SQLITE_OK_LOAD_PERMANENTLY;
   return rc;
