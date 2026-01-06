@@ -1,5 +1,5 @@
-C Update\sthe\sregexp\sextension\sso\sthat\sthe\s"-"\scharacter\smay\sbe\sescaped\swith\sa\sbackslash.\sForum\spost\s[forum:c5e7358f82\s|\sc5e7358f82].
-D 2026-01-05T18:29:07.217
+C Update\sto\sthe\ssqlite3_get_clientdata()\sdocumentation.\s\sNo\scode\schanges.
+D 2026-01-06T13:00:24.986
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -738,7 +738,7 @@ F src/resolve.c 47aa7fdc9ec4c19b103ac5e79d7887d30119b5675309facf5eed1118391c868b
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4d45a04431db072040d6625ee21c1dc483c9b2b64a5ab419f4a4e05aabed1204
 F src/shell.c.in 587ec295ced5204e7a172cd090a470776ca58c2875ee7cc18194f18fa0d3ff2a
-F src/sqlite.h.in b6599377f02ef9d545a8da48959213928b63291ad83ff65e5f3a72bf4fec595d
+F src/sqlite.h.in 476f3efeb5dd26ad94dcbce262ca7eb9d042d797a92d624059c67ef37d5b3ab4
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d5330f5f8461f5ce74960436ddcfa53ecd09c2b8b23901e22ae38aec3243998
 F src/sqliteInt.h af67bc95fa6b66cd3c7f3d18d2d040ad386e4cbb02965ee318cc721ee9d5fa45
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 707c0f6442e946f23de061ee2753eb5994ab55d411c49b232799f309ba0f10cf
-R 3f1b503176903404170911d36e2abbac
-U dan
-Z bf1de2a9fd08e119da62ec400a492573
+P 80013129361fb81ce5db1f6390cad640c2cb547e5ba16724dfb55d0aceecdf6d
+R c09e31c1feff488b6b2ab24f5ff4bec5
+U drh
+Z 6659d43353b434958e641fbf51dd2025
 # Remove this line to create a well-formed Fossil manifest.
