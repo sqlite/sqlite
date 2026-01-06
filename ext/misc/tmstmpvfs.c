@@ -11,10 +11,19 @@
 ******************************************************************************
 **
 ** This file implements a VFS shim that writes a timestamp and other tracing
-** information into reserved space at the end of each page of the database
-** file.  The additional data is written as the page is added to the WAL
-** file for databases in WAL mode, or as the database file itself is modified
-** in rollback modes.
+** information into 16 byts of reserved space at the end of each page of the
+** database file.  The additional data is written as the page is added to
+** the WAL file for databases in WAL mode, or as the database file itself
+** is modified in rollback modes.
+**
+** The VFS also generates log-files with names of the form:
+**
+**         $(DATABASE)-$(TIME)$(PID)$(ID).tmstmp
+**
+** In the same directory as the database file.  This log file contain one
+** 16-byte record for various events, such as opening or close of the
+** database or WAL file, writes to the WAL file, checkpoints, and similar.
+** There is one log file for each open database connection.
 **
 ** COMPILING
 **
@@ -90,7 +99,9 @@
 ** The timestamp information is stored in the last 16 bytes of each page.
 ** This module only operates if the "bytes of reserved space on each page"
 ** value at offset 20 the SQLite database header is exactly 16.  If
-** the reserved-space value is not 16, this module is a no-op.
+** the reserved-space value is not 16, no timestamp information is added
+** to database pages.  Some, but not all, logfile entries will be made
+** still, but the size of the logs will be greatly reduced.
 **
 ** The timestamp layout is as follows:
 **
@@ -100,8 +111,9 @@
 **   bytes 12      0: WAL write  1: WAL txn  2: rollback write
 **   bytes 13-15   Lower 24 bits of Salt-1
 **
-** For transactions that occur in rollback mode, bytes 6-15 are all
-** zero.
+** For transactions that occur in rollback mode, only the timestamp
+** in bytes 2-7 and byte 12 are non-zero.  Byte 12 is set to 2 for
+** rollback writes.
 **
 ** LOGGING
 **
@@ -109,11 +121,18 @@
 ** WAL connection are both logged to the same file.  If the name of the
 ** database file is BASE then the logfile is named something like:
 **
-**     BASE-tmstmp-UNIQUEID
+**     $(DATABASE)-$(TIMESTAMP)$(PID)$(RANDOM)
 **
-** Where UNIQUEID is a character string that is unique to that particular
-** connection.  The log consists of 16-byte records.  Each record consists
-** of five unsigned integers:
+** Where DATABASE is the database filename, TIMESTAMP is the millisecond
+** resolution timestamp of when the database connection was opened, PID
+** is the process ID of the process that opened the database connection,
+** and RANDOM is 32-bits of randomness used to distinguish between multiple
+** connections being opened on the same database from the same process.
+** The last three values are all expressed in hexadecimal and are joined
+** together without punctuation.
+**
+** The log consists of 16-byte records.  Each record consists of five
+** unsigned integers:
 **
 **      1   1   6    4   4   <---  bytes
 **     op  a1  ts   a2  a3
