@@ -1,5 +1,5 @@
-C Update\sto\sthe\ssqlite3_get_clientdata()\sdocumentation.\s\sNo\scode\schanges.
-D 2026-01-06T13:00:24.986
+C Add\sthe\s-p\sor\s--port\soption\sto\ssqlite3_rsync.
+D 2026-01-06T21:39:12.874
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2170,7 +2170,7 @@ F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d
 F tool/split-sqlite3c.tcl 4969fd642dad0ea483e4e104163021d92baf98f6a8eac981fe48525f9b873430
 F tool/sqldiff.c 68f88017de3bed3aa65c93a4cf3a04d0989d158bc6fad8f1475beeeea1aae3ac
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
-F tool/sqlite3_rsync.c d0e58a1e49fe2192c3ee0b697aed182d502bebfe5b4b406ba6b2baa52a04ecbe
+F tool/sqlite3_rsync.c 695ec8892ae7527db30019947132f7307a4828d311d1b933af6a066426057b6c
 F tool/sqltclsh.c.in c103c6fc7d42bce611f9d4596774d60b7ef3d0b291a1f58c9e6184e458b89296
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
 F tool/src-verify.c 6c655d9a8d6b30f3648fc78a79bf3838ed68f8543869d380c43ea9f17b3b8501
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 80013129361fb81ce5db1f6390cad640c2cb547e5ba16724dfb55d0aceecdf6d
-R c09e31c1feff488b6b2ab24f5ff4bec5
+P 395b7168b873390c05ea2cc71fe14bafb5bdee77f32a047bec8d7ed6feb9ed90
+R 61e691278319c14f8aaf1e887223f62c
 U drh
-Z 6659d43353b434958e641fbf51dd2025
+Z 1ebada17ce6751bcaffca669ab289ad4
 # Remove this line to create a well-formed Fossil manifest.
