@@ -140,6 +140,15 @@ static void qrfOom(Qrf *p){
   qrfError(p, SQLITE_NOMEM, "out of memory");
 }
 
+/*
+** Transfer any error in pStr over into p.
+*/
+static void qrfStrErr(Qrf *p, sqlite3_str *pStr){
+  int rc = pStr ? sqlite3_str_errcode(pStr) : 0;
+  if( rc ){
+    qrfError(p, rc, sqlite3_errstr(rc));
+  }
+}
 
 
 /*
@@ -362,7 +371,9 @@ static void qrfEqpStats(Qrf *p){
       qrfEqpAppend(p, iId, iPid, zo);
     }
   }
+  qrfStrErr(p, pLine);
   sqlite3_free(sqlite3_str_finish(pLine));
+  qrfStrErr(p, pStats);
   sqlite3_free(sqlite3_str_finish(pStats));
 #endif
 }
@@ -1876,6 +1887,7 @@ static void qrfColumnar(Qrf *p){
       pStr = sqlite3_str_new(p->db);
       qrfEncodeText(p, pStr, z ? z : "");
       n = sqlite3_str_length(pStr);
+      qrfStrErr(p, pStr);
       z = data.az[data.n] = sqlite3_str_finish(pStr);
       if( p->spec.nTitleLimit ){
         nNL = 0;
@@ -1903,6 +1915,7 @@ static void qrfColumnar(Qrf *p){
       pStr = sqlite3_str_new(p->db);
       qrfRenderValue(p, pStr, i);
       n = sqlite3_str_length(pStr);
+      qrfStrErr(p, pStr);
       z = data.az[data.n] = sqlite3_str_finish(pStr);
       data.abNum[data.n] = eType==SQLITE_INTEGER || eType==SQLITE_FLOAT;
       data.aiWth[data.n] = w = qrfDisplayWidth(z, n, &nNL);
@@ -2057,7 +2070,7 @@ static void qrfColumnar(Qrf *p){
   }else{
     bRTrim = 0;
   }
-  for(i=0; i<data.n; i+=nColumn){
+  for(i=0; i<data.n && sqlite3_str_errcode(p->pOut)==SQLITE_OK; i+=nColumn){
     int bMore;
     int nRow = 0;
 
@@ -2244,7 +2257,7 @@ static void qrfExplain(Qrf *p){
   assert( 0==sqlite3_stricmp( sqlite3_column_name(p->pStmt, 2), "p1" ) );
   assert( 0==sqlite3_stricmp( sqlite3_column_name(p->pStmt, 3), "p2" ) );
 
-  for(iOp=0; SQLITE_ROW==sqlite3_step(p->pStmt); iOp++){
+  for(iOp=0; SQLITE_ROW==sqlite3_step(p->pStmt) && !p->iErr; iOp++){
     int iAddr = sqlite3_column_int(p->pStmt, 0);
     const char *zOp = (const char*)sqlite3_column_text(p->pStmt, 1);
     int p1 = sqlite3_column_int(p->pStmt, 2);
@@ -2301,7 +2314,7 @@ static void qrfExplain(Qrf *p){
     }
     if( nArg>nWidth ) nArg = nWidth;
 
-    for(iOp=0; sqlite3_step(p->pStmt)==SQLITE_ROW; iOp++){
+    for(iOp=0; sqlite3_step(p->pStmt)==SQLITE_ROW && !p->iErr; iOp++){
       /* If this is the first row seen, print out the headers */
       if( iOp==0 ){
         for(i=0; i<nArg; i++){
@@ -2557,6 +2570,7 @@ static void qrfOneSimpleRow(Qrf *p){
         }while( zVal[0] );
         sqlite3_str_reset(pVal);
       }
+      qrfStrErr(p, pVal);
       sqlite3_free(sqlite3_str_finish(pVal));
       qrfWrite(p);
       break;
@@ -2620,7 +2634,7 @@ static void qrfInitialize(
     qrfOom(p);
     return;
   }
-  p->iErr = 0;
+  p->iErr = SQLITE_OK;
   p->nCol = sqlite3_column_count(p->pStmt);
   p->nRow = 0;
   sz = sizeof(sqlite3_qrf_spec);
@@ -2798,6 +2812,7 @@ static void qrfFinalize(Qrf *p){
       break;
     }
   }
+  qrfStrErr(p, p->pOut);
   if( p->spec.pzOutput ){
     if( p->spec.pzOutput[0] ){
       sqlite3_int64 n, sz;

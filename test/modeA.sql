@@ -291,3 +291,13 @@ SELECT * FROM tbl1;
 INSERT INTO new_table VALUES('hello!',10);
 INSERT INTO new_table VALUES('goodbye',20);
 END
+
+# QRF reports an error if the string is too big.
+#
+.testcase 800
+.mode box
+.limit length 1000
+WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<100)
+SELECT hex(randomblob(100)) c;
+.check -glob "*: string or blob too big"
+.limit length 10000000
