@@ -16,14 +16,19 @@
 ** the WAL file for databases in WAL mode, or as the database file itself
 ** is modified in rollback modes.
 **
-** The VFS also generates log-files with names of the form:
+** The VFS also tries to generate log-files with names of the form:
 **
-**         $(DATABASE)-$(TIME)$(PID)$(ID).tmstmp
+**         $(DATABASE)-tmstmp/$(TIME)-$(PID)-$(ID)
 **
-** In the same directory as the database file.  This log file contain one
-** 16-byte record for various events, such as opening or close of the
-** database or WAL file, writes to the WAL file, checkpoints, and similar.
-** There is one log file for each open database connection.
+** Log files are only generated if directory $(DATABASE)-tmstmp exists.
+** The name of each log file is the current unix-epoch time in millisecond,
+** the process ID, and a random 32-bit value (to disambiguate multiple
+** connections from the same process) separated by spaces.  The log file
+** contains one 16-byte record for various events, such as opening or close
+** of the database or WAL file, writes to the WAL file, checkpoints, and
+** similar.   The logfile is only generated if the connection attempts to
+** modify the database.  There is a separate log file for each open database
+** connection.
 **
 ** COMPILING
 **
@@ -58,6 +63,11 @@
 ** it might be important to ensure that tmstmpvfs is loaded in the
 ** correct order so that it sequences itself into the default VFS
 ** Shim stack in the right order.
+**
+** An application can see if the tmstmpvfs is being used by examining
+** the results from SQLITE_FCNTL_VFSNAME (or the .vfsname command in
+** the CLI).  If the answer include "tmstmp", then this VFS is being
+** used.
 **
 ** USING
 **
@@ -117,19 +127,15 @@
 **
 ** LOGGING
 **
-** Every open VFS creates a log file.  The Database connection and the
-** WAL connection are both logged to the same file.  If the name of the
-** database file is BASE then the logfile is named something like:
+** An open database connection that attempts to write to the database
+** will create a log file if a directory name $(DATABASE)-tmstmp exists.
+** The name of the log file is:
 **
-**     $(DATABASE)-$(TIMESTAMP)$(PID)$(RANDOM)
+**         $(TIME)-$(PID)-$(RANDOM)
 **
-** Where DATABASE is the database filename, TIMESTAMP is the millisecond
-** resolution timestamp of when the database connection was opened, PID
-** is the process ID of the process that opened the database connection,
-** and RANDOM is 32-bits of randomness used to distinguish between multiple
-** connections being opened on the same database from the same process.
-** The last three values are all expressed in hexadecimal and are joined
-** together without punctuation.
+** Where TIME is the number of milliseconds since 1970, PID is the process
+** ID, and RANDOM is a 32-bit random number.  All values are expressed
+** in hexadecimal.
 **
 ** The log consists of 16-byte records.  Each record consists of five
 ** unsigned integers:
@@ -141,6 +147,44 @@
 ** in milliseconds since 1970-01-01.  (6 bytes is sufficient for timestamps
 ** for almost 9000 years.) Opcodes are defined by the ELOG_* #defines
 ** below.
+**
+**   ELOG_OPEN_DB         "Open a connection to the database file"
+**                        op = 0x01
+**                        a2 = process-ID
+**
+**   ELOG_OPEN_WAL        "Open a connection to the -wal file"
+**                        op = 0x02
+**                        a2 = process-ID
+**
+**   ELOG_WAL_PAGE        "New page added to the WAL file"
+**                        op = 0x03
+**                        a1 = 1 if last page of a txn.  0 otherwise.
+**                        a2 = page number in the DB file
+**                        a3 = frame number in the WAL file
+**
+**   ELOG_DB_PAGE         "Database page updated using rollback mode"
+**                        op = 0x04
+**                        a2 = page number in the DB file
+**
+**   ELOG_CKPT_START      "Start of a checkpoint operation"
+**                        op = 0x05
+**
+**   ELOG_CKPT_PAGE       "Page xfer from WAL to database"
+**                        op = 0x06
+**                        a2 = database page number
+**
+**   ELOG_CKPT_END        "Start of a checkpoint operation"
+**                        op = 0x07
+**
+**   ELOG_WAL_RESET       "WAL file header overwritten"
+**                        op = 0x08
+**                        a3 = Salt1 value
+**
+**   ELOG_CLOSE_WAL       "Close the WAL file connection"
+**                        op = 0x0e
+**
+**   ELOG_CLOSE_DB        "Close the DB connection"
+**                        op = 0x0f
 */
 #if defined(SQLITE_AMALGAMATION) && !defined(SQLITE_TMSTMPVFS_STATIC)
 # define SQLITE_TMSTMPVFS_STATIC
@@ -160,6 +204,7 @@
 */
 typedef struct sqlite3_vfs TmstmpVfs;
 typedef struct TmstmpFile TmstmpFile;
+typedef struct TmstmpLog TmstmpLog;
 
 /*
 ** Bytes of reserved space used by this extension
@@ -196,6 +241,14 @@ typedef struct TmstmpFile TmstmpFile;
 #define ORIGVFS(p)  ((sqlite3_vfs*)((p)->pAppData))
 #define ORIGFILE(p) ((sqlite3_file*)(((TmstmpFile*)(p))+1))
 
+/* Information for the tmstmp log file. */
+struct  TmstmpLog {
+  char *zLogname;        /* Log filename */
+  FILE *log;             /* Open log file */
+  int n;                 /* Bytes of a[] used */
+  unsigned char a[16*6]; /* Buffered header for the log */
+};
+
 /* An open WAL file */
 struct TmstmpFile {
   sqlite3_file base;     /* IO methods */
@@ -209,7 +262,7 @@ struct TmstmpFile {
   u8 isCommit;           /* Last WAL frame header was a transaction commit */
   u8 hasCorrectReserve;  /* File has the correct reserve size */
   u8 inCkpt;             /* True if in a checkpoint */
-  FILE *log;             /* Write logging records on this file.  DB only */
+  TmstmpLog *pLog;       /* Log file */
   TmstmpFile *pPartner;  /* DB->WAL or WAL->DB mapping */
   sqlite3_int64 iOfst;   /* Offset of last WAL frame header */
   sqlite3_vfs *pSubVfs;  /* Underlying VFS */
@@ -323,7 +376,7 @@ static const sqlite3_io_methods tmstmp_io_methods = {
 */
 static void tmstmpPutTS(TmstmpFile *p, unsigned char *aOut){
   sqlite3_uint64 tm = 0;
-  p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, &tm);
+  p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, (sqlite3_int64*)&tm);
   aOut[0] = (tm>>40)&0xff;
   aOut[1] = (tm>>32)&0xff;
   aOut[2] = (tm>>24)&0xff;
@@ -348,6 +401,30 @@ static void tmstmpPutU32(u32 v, unsigned char *a){
   a[3] = v & 0xff;
 }
 
+/* Free a TmstmpLog object */
+static void tmstmpLogFree(TmstmpLog *pLog){
+  if( pLog==0 ) return;
+  sqlite3_free(pLog->zLogname);
+  sqlite3_free(pLog);
+}
+
+/* Flush log content.  Open the file if necessary. Return the
+** number of errors. */
+static int tmstmpLogFlush(TmstmpFile *p){
+  TmstmpLog *pLog = p->pLog;
+  assert( pLog!=0 );
+  if( pLog->log==0 ){
+    pLog->log = fopen(pLog->zLogname, "wb");
+    if( pLog->log==0 ){
+      tmstmpLogFree(pLog);
+      p->pLog = 0;
+      return 1;
+    }
+  }
+  (void)fwrite(pLog->a, pLog->n, 1, pLog->log);
+  pLog->n = 0;
+  return 0;
+}
 
 /*
 ** Write a record onto the event log
@@ -359,19 +436,28 @@ static void tmstmpEvent(
   u32 a2,
   u32 a3
 ){
-  unsigned char a[16];
+  unsigned char *a;
+  TmstmpLog *pLog;
   if( p->isWal ){
     p = p->pPartner;
     assert( p!=0 );
     assert( p->isDb );
   }
-  if( p->log==0 ) return;
+  pLog = p->pLog;
+  if( pLog==0 ) return;
+  if( pLog->n >= (int)sizeof(pLog->a) ){
+    if( tmstmpLogFlush(p) ) return;
+  }
+  a = pLog->a + pLog->n;
   a[0] = op;
   a[1] = a1;
   tmstmpPutTS(p, a+2);
   tmstmpPutU32(a2, a+8);
   tmstmpPutU32(a3, a+12);
-  (void)fwrite(a, sizeof(a), 1, p->log);
+  pLog->n += 16;
+  if( pLog->log || (op>=ELOG_WAL_PAGE && op<=ELOG_WAL_RESET) ){
+    (void)tmstmpLogFlush(p);
+  }
 }
 
 /*
@@ -382,7 +468,7 @@ static int tmstmpClose(sqlite3_file *pFile){
   if( p->hasCorrectReserve ){
     tmstmpEvent(p, p->isDb ? ELOG_CLOSE_DB : ELOG_CLOSE_WAL, 0, 0, 0);
   }
-  if( p->log ) fclose(p->log);
+  tmstmpLogFree(p->pLog);
   if( p->pPartner ){
     assert( p->pPartner->pPartner==p );
     p->pPartner->pPartner = 0;
@@ -643,10 +729,6 @@ static int tmstmpOpen(
   sqlite3_file *pSubFile;
   sqlite3_vfs *pSubVfs;
   int rc;
-  sqlite3_uint64 r1;
-  u32 r2;
-  u32 pid;
-  char *zLogName;
   
   pSubVfs = ORIGVFS(pVfs);
   if( (flags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_WAL))==0 ){
@@ -679,16 +761,24 @@ static int tmstmpOpen(
     p->pPartner = pDb;
     pDb->pPartner = p;
   }else{
+    sqlite3_uint64 r1;
+    u32 r2;
+    u32 pid;
+    TmstmpLog *pLog;
+
     p->isDb = 1;
     r1 = 0;
-    p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, &r1);
+    pLog = sqlite3_malloc64( sizeof(TmstmpLog) );
+    if( pLog==0 ){
+      return SQLITE_NOMEM;
+    }
+    memset(pLog, 0, sizeof(pLog[0]));
+    p->pLog = pLog;
+    p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, (sqlite3_int64*)&r1);
     sqlite3_randomness(sizeof(r2), &r2);
     pid = GETPID;
-    zLogName = sqlite3_mprintf("%s-%llx%08x%08x.tmstmp", zName, r1, pid, r2);
-    if( zLogName ){
-      p->log = fopen(zLogName, "wb");
-      sqlite3_free(zLogName);
-    }
+    pLog->zLogname = sqlite3_mprintf("%s-tmstmp/%llx-%08x-%08x",
+                                     zName, r1, pid, r2);
   }
   tmstmpEvent(p, p->isWal ? ELOG_OPEN_WAL : ELOG_OPEN_DB, 0, GETPID, 0);
 
@@ -813,6 +903,7 @@ int sqlite3_tmstmpvfs_init(
   int rc;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg; /* not used */
+  (void)db;       /* not used */
   rc = tmstmpRegisterVfs();
   if( rc==SQLITE_OK ) rc = SQLITE_OK_LOAD_PERMANENTLY;
   return rc;

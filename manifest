@@ -1,5 +1,5 @@
-C Documentation\stweaks.
-D 2026-01-06T21:18:42.496
+C Improvements\sto\slogging.\s\sBetter\slog-file\snames.\s\sLog\sfiles\sare\sin\sa\nsubdirectory\snamed\safter\sthe\sdatabase.\s\sOnly\sconnections\sthat\swrite\sto\nthe\sdatabase\screate\slogs.\s\sBetter\sdocumentation\sin\sthe\sheader\scomment.
+D 2026-01-07T18:45:23.292
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -402,7 +402,7 @@ F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bf
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/tmstmpvfs.c 05e80557222c648bc676e599343d8d33f9e2d4801476592271ffb580cebbab69
+F ext/misc/tmstmpvfs.c 2d2f92a85e9a55ae3abd9d66d1638096fad30ebc0bfcf9431f3370e34b550a0b
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
@@ -2190,8 +2190,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f087c6c0cdd542ec24b4668fff9cb434f46caf554f8856a49fd062ab3f72014e
-R 877edad71f16bed2b67db9da4be832cc
+P b10b0aa7658a04b9354ca09a2dcb807eecd9421451537f3230ba5f47269ec5c1
+R be812e8a766a17494547e7727dd97033
 U drh
-Z ee16842ec8595f9621e28d3f57b47daa
+Z 8f9cae05ac0b26a0b4ebaaea59bfec9f
 # Remove this line to create a well-formed Fossil manifest.
