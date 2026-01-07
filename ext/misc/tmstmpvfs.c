@@ -878,7 +878,6 @@ int sqlite3_register_tmstmpvfs(const char *NotUsed){
 int sqlite3_unregister_tmstmpvfs(void){
   if( sqlite3_vfs_find("tmstmpvfs") ){
     sqlite3_vfs_unregister(&tmstmp_vfs);
-    sqlite3_cancel_auto_extension((void(*)(void))tmstmpRegisterFunc);
   }
   return SQLITE_OK;
 }
