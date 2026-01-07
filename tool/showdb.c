@@ -32,6 +32,7 @@ static struct GlobalData {
   u32 mxPage;                     /* Last page number */
   int perLine;                    /* HEX elements to print per line */
   int bRaw;                       /* True to access db file via OS APIs */
+  int bCSV;                       /* CSV output for "pgidx" */
   sqlite3_file *pFd;              /* File descriptor for non-raw mode */
   sqlite3 *pDb;                   /* Database handle that owns pFd */
 } g = {1024, -1, 0, 16,   0, 0, 0};
@@ -1042,9 +1043,40 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
   sqlite3_close(db);
 
   /* Print the report and free memory used */
+  if( g.bCSV ){
+    printf("pgno,txt,parent,child,ovfl\r\n");
+  }
   for(i=1; i<=g.mxPage; i++){
-    if( zPageUse[i]==0 ) page_usage_btree(i, -1, 0, 0);
-    printf("%5u: %s\n", i, zPageUse[i] ? zPageUse[i] : "???");
+    if( zPageUse[i]==0 ){
+      zPageUse[i] = sqlite3_mprintf("???");
+      if( zPageUse[i]==0 ) continue;
+    }
+    if( !g.bCSV ){
+      printf("%5u: %s\n", i, zPageUse[i]);
+    }else{
+      const char *z = zPageUse[i];
+      const char *s;
+      printf("%u,\"%s\",", i, zPageUse[i]);
+      if( (s = strstr(z, " of page "))!=0 ){
+        printf("%d,", atoi(s+9));
+      }else if( (s = strstr(z, " of trunk page "))!=0 ){
+        printf("%d,", atoi(s+15));
+      }else{
+        printf("0,");
+      }
+      if( (s = strstr(z, "], child "))!=0 ){
+        printf("%d,", atoi(s+9));
+      }else if( (s = strstr(z, " from cell "))!=0 ){
+        printf("%d,", atoi(s+12));
+      }else{
+        printf("-1,");
+      }
+      if( strncmp(z,"overflow ", 9)==0 ){
+        printf("%d\r\n", atoi(z+9));
+      }else{
+        printf("-1\r\n");
+      }
+    }
   }
   for(i=1; i<=g.mxPage; i++){
     sqlite3_free(zPageUse[i]);
@@ -1115,7 +1147,7 @@ static void ptrmap_coverage_report(const char *zDbName){
 ** Check the range validity for a page number.  Print an error and
 ** exit if the page is out of range.
 */
-static void checkPageValidity(int iPage){
+static void checkPageValidity(unsigned int iPage){
   if( iPage<1 || iPage>g.mxPage ){
     fprintf(stderr, "Invalid page number %d:  valid range is 1..%d\n",
             iPage, g.mxPage);
@@ -1131,6 +1163,7 @@ static void usage(const char *argv0){
   fprintf(stderr,
     "switches:\n"
     "    --raw           Read db file directly, bypassing SQLite VFS\n"
+    "    --csv           CSV output for \"pgidx\"\n"
     "args:\n"
     "    dbheader        Show database header\n"
     "    pgidx           Index of how each page is used\n"
@@ -1154,14 +1187,23 @@ int main(int argc, char **argv){
   char **azArg = argv;
   int nArg = argc;
 
-  /* Check for the "--uri" or "-uri" switch. */
-  if( nArg>1 ){
-    if( sqlite3_stricmp("-raw", azArg[1])==0 
-     || sqlite3_stricmp("--raw", azArg[1])==0
-    ){
+  /* Check for the switches. */
+  while( nArg>1 && azArg[1][0]=='-' ){
+    const char *z = azArg[1];
+    if( z[1]=='-' && z[2]!=0 ) z++;
+    if( sqlite3_stricmp("-raw", z)==0 ){
       g.bRaw = 1;
       azArg++;
       nArg--;
+    }else
+    if( strcmp("-csv", z)==0 ){
+      g.bCSV = 1;
+      azArg++;
+      nArg--;
+    }else
+    {
+      usage(zPrg);
+      exit(1);
     }
   }
 
@@ -1181,7 +1223,9 @@ int main(int argc, char **argv){
   printf("Pagesize: %d\n", (int)g.pagesize);
   g.mxPage = (u32)((szFile+g.pagesize-1)/g.pagesize);
 
-  printf("Available pages: 1..%u\n", g.mxPage);
+  if( !g.bCSV ){
+    printf("Available pages: 1..%u\n", g.mxPage);
+  }
   if( nArg==2 ){
     u32 i;
     for(i=1; i<=g.mxPage; i++) print_page(i);

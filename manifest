@@ -1,5 +1,5 @@
-C Enhance\sQRF\sso\sthat\sit\sterminates\smore\squickly\sif\sit\sencounters\san\sOOM\nor\soversize\sstring\serror,\sand\sfix\sit\sso\sthat\sit\sreports\ssuch\serrors.
-D 2026-01-07T16:19:18.474
+C Add\sthe\s--csv\soption\sto\sthe\s"pgidx"\soption\sto\sthe\s"showdb"\sutility.
+D 2026-01-07T23:46:44.054
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2158,7 +2158,7 @@ F tool/pagesig.c f98909b4168d9cac11a2de7f031adea0e2f3131faa7515a72807c03ec58eafe
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 3956d71e5193162609a60e8c9edfcf09274c00cfea2b1d221261427adb2b5cca
+F tool/showdb.c 3071a801f2a630bf9f615f9cbc018d20c7b6dcbc01baf639274de3c693f243cc
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 53f806fdab7161e439a165af47bd45332c15233b87bc35c2272621256a2dc337
-R cf85c1397cc1b2d22a690795998c55cf
+P ebedeb6169cc3bc3708130d4061065af600a8851e896fc3eeaf33c8c83fe3b95
+R 4e24675c048a8ee4fad0f422ed2a04f2
 U drh
-Z 90a7bdaa1645e01c822a73d7422497a0
+Z 121e5d997135b09ccc3ebccbf3bcbc0b
 # Remove this line to create a well-formed Fossil manifest.
