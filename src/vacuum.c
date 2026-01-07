@@ -230,9 +230,11 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   pDb = &db->aDb[nDb];
   assert( strcmp(pDb->zDbSName,zDbVacuum)==0 );
   pTemp = pDb->pBt;
+  nRes = sqlite3BtreeGetRequestedReserve(pMain);
   if( pOut ){
     sqlite3_file *id = sqlite3PagerFile(sqlite3BtreePager(pTemp));
     i64 sz = 0;
+    const char *zFilename;
     if( id->pMethods!=0 && (sqlite3OsFileSize(id, &sz)!=SQLITE_OK || sz>0) ){
       rc = SQLITE_ERROR;
       sqlite3SetString(pzErrMsg, db, "output file already exists");
@@ -244,8 +246,17 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
     ** they are for the database being vacuumed, except that PAGER_CACHESPILL
     ** is always set. */
     pgflags = db->aDb[iDb].safety_level | (db->flags & PAGER_FLAGS_MASK);
+
+    /* If the VACUUM INTO target file is a URI filename and if the
+    ** "reserve=N" query parameter is present, reset the reserve to the
+    ** amount specified, if the amount is within range */
+    zFilename = sqlite3BtreeGetFilename(pTemp);
+    if( zFilename ){
+      nRes = (int)sqlite3_uri_int64(zFilename, "reserve", nRes);
+      if( nRes<0 ) nRes = 0;
+      if( nRes>255 ) nRes = 255;
+    }
   }
-  nRes = sqlite3BtreeGetRequestedReserve(pMain);
 
   sqlite3BtreeSetCacheSize(pTemp, db->aDb[iDb].pSchema->cache_size);
   sqlite3BtreeSetSpillSize(pTemp, sqlite3BtreeSetSpillSize(pMain,0));

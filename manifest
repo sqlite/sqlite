@@ -1,5 +1,5 @@
-C Enhance\sQRF\sso\sthat\sit\sterminates\smore\squickly\sif\sit\sencounters\san\sOOM\nor\soversize\sstring\serror,\sand\sfix\sit\sso\sthat\sit\sreports\ssuch\serrors.
-D 2026-01-07T16:19:18.474
+C Enhance\sthe\sVACUUM\sINTO\scommand\ssuch\sthat\sif\sthe\starget\sfile\sis\sa\sURI\nwith\sa\sreserve=N\squery\sparameter,\sthen\sthe\sreserve_bytes\svalue\sis\sset\sto\nN\sprovided\sthat\sN\sis\swithin\sthe\sallowed\srange.\s\sThis\scan\seven\sreduce\sthe\nsize\sof\sthe\sreserve,\sall\sthe\sway\sto\szero.\s\sThis\sprovides\sa\sway\sto\sremove\nreserve\sfrom\sa\sdatabase\swithout\shaving\sto\sdo\sa\scomplete\sdump/restore.
+D 2026-01-07T21:19:42.469
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -802,7 +802,7 @@ F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
-F src/vacuum.c 1bacdd0a81d2b5dc1c508fbf0d938c89fa78dd8d5b46ec92686d44030d4f4789
+F src/vacuum.c 09196d1d36d260cc73f4d1079fe6c9c228f879a559fe477cbb6c36b1a85c0d13
 F src/vdbe.c b44c366e83412d3b8c190feb1f029b7d02e1bd69252a57b32f195107f0d03964
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
 F src/vdbeInt.h 2aaeb6df2938b181b4700a9328688a3986f2bba71e8b96f6a80671316618fa49
@@ -2189,8 +2189,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 53f806fdab7161e439a165af47bd45332c15233b87bc35c2272621256a2dc337
-R cf85c1397cc1b2d22a690795998c55cf
+P ebedeb6169cc3bc3708130d4061065af600a8851e896fc3eeaf33c8c83fe3b95
+R e7bd6852978f7187c19f7af8715f2c9b
+T *branch * reset-reserve
+T *sym-reset-reserve *
+T -sym-trunk *
 U drh
-Z 90a7bdaa1645e01c822a73d7422497a0
+Z 61fb77209c8b97e80b941b8f996389a6
 # Remove this line to create a well-formed Fossil manifest.
