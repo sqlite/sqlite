@@ -13023,6 +13023,21 @@ int SQLITE_CDECL main(int argc, char **argv){
     sqlite3_vfs *pVfs = sqlite3_vfs_find(zVfs);
     if( pVfs ){
       sqlite3_vfs_register(pVfs, 1);
+    }else if( access(zVfs,0)==0 ){
+      /* If the VFS name is not the name of an existing VFS, but it is
+      ** the name of a file, then try to load that file as an extension.
+      ** Presumably the extension implements the desired VFS. */
+      sqlite3 *db = 0;
+      char *zErr = 0;
+      sqlite3_open(":memory:", &db);
+      sqlite3_enable_load_extension(db, 1);
+      rc = sqlite3_load_extension(db, zVfs, 0, &zErr);
+      sqlite3_close(db);
+      if( (rc&0xff)!=SQLITE_OK ){
+        cli_printf(stderr, "could not load extension VFS \"%s\": %s\n",
+                   zVfs, zErr);
+        exit(1);
+      }
     }else{
       cli_printf(stderr,"no such VFS: \"%s\"\n", zVfs);
       exit(1);
