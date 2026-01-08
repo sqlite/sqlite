@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3-worker1.mjs\s(ESM,\snon-bundler)\sbuild\sand\shave\sdemo-worker1-promiser\suse\sthat\sfile\srather\sthan\sthe\svanilla\sone,\sas\sa\stest\scase.\sDelete\sthe\sglobal\ssymbol\sinstalled\sby\sthat\sfile\sin\sESM\sand\sbundler\sbuilds,\sas\sit's\sunnecessary\sthere.\sThe\sfirst\schange\sshould\sresolve\s[https://github.com/sqlite/sqlite-wasm/issues/123|downstream\ssqlite-wasm/issues/123],\swith\sthanks\sto\sJure\sRotar\sfor\shis\shelp.
-D 2026-01-08T18:15:23.259
+C Change\sthe\sname\sof\sthe\slog\sfile\sfor\stmstmpvfs.c\sto\sbe\san\sISO8601\sdate/time,\nfor\simproved\sreadability\sand\ssituational\sawareness.
+D 2026-01-08T18:55:49.653
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -402,7 +402,7 @@ F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bf
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/tmstmpvfs.c 95994e33526581b75bebb320628d220d86c0734807d9780b4f1804e6c7248df2
+F ext/misc/tmstmpvfs.c 6145eb362e3cd48a687c8878766f1eeae396ef29c4c76d3cb9d129ecc3f804e9
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6fafd010de2d9820f77ee6d2a5f0a7ab1260872d09e95b6932c959ef017aaa77
-R 05da49736bf115619e14c3b0d995d02d
-U stephan
-Z 63f1243a80186c2d392a85af3d86a66e
+P 11f5ab0dd8efc68112c3dc5ea0ed486c32bcdb9fde85352180f40a77c6354cac
+R f760f142fa5973d7d03af8a924d0ca1c
+U drh
+Z 5f2bcf12496f1679771c4516b68a0789
 # Remove this line to create a well-formed Fossil manifest.
