@@ -2018,6 +2018,10 @@ showshm$(T.exe):	$(TOP)/tool/showshm.c
 	$(T.link) -o $@ $(TOP)/tool/showshm.c $(LDFLAGS.configure)
 xbin: showshm$(T.exe)
 
+showtmlog$(T.exe):	$(TOP)/tool/showtmlog.c
+	$(T.link) -o $@ $(TOP)/tool/showtmlog.c $(LDFLAGS.configure)
+xbin: showshm$(T.exe)
+
 index_usage$(T.exe): $(TOP)/tool/index_usage.c sqlite3.o
 	$(T.link) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.o \
 		$(LDFLAGS.libsqlite3)

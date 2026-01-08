@@ -144,9 +144,8 @@
 **     op  a1  ts   a2  a3
 **
 ** The meanings of the a1-a3 values depend on op.  ts is the timestamp
-** in milliseconds since 1970-01-01.  (6 bytes is sufficient for timestamps
-** for almost 9000 years.) Opcodes are defined by the ELOG_* #defines
-** below.
+** in milliseconds since the unix epoch (1970-01-01 00:00:00).
+** Opcodes are defined by the ELOG_* #defines below.
 **
 **   ELOG_OPEN_DB         "Open a connection to the database file"
 **                        op = 0x01
@@ -377,6 +376,7 @@ static const sqlite3_io_methods tmstmp_io_methods = {
 static void tmstmpPutTS(TmstmpFile *p, unsigned char *aOut){
   sqlite3_uint64 tm = 0;
   p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, (sqlite3_int64*)&tm);
+  tm -= 210866760000000LL;
   aOut[0] = (tm>>40)&0xff;
   aOut[1] = (tm>>32)&0xff;
   aOut[2] = (tm>>24)&0xff;
@@ -775,6 +775,7 @@ static int tmstmpOpen(
     memset(pLog, 0, sizeof(pLog[0]));
     p->pLog = pLog;
     p->pSubVfs->xCurrentTimeInt64(p->pSubVfs, (sqlite3_int64*)&r1);
+    r1 -= 210866760000000LL;
     sqlite3_randomness(sizeof(r2), &r2);
     pid = GETPID;
     pLog->zLogname = sqlite3_mprintf("%s-tmstmp/%llx-%08x-%08x",
