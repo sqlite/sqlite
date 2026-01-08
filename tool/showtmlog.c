@@ -64,7 +64,7 @@ static const char *decodeTimestamp(const unsigned char *a){
 }
 
 int main(int argc, char **argv){
-  int i;
+  int i,j;
   FILE *in;
   unsigned int a2, a3;
   unsigned char a[16];
@@ -79,8 +79,8 @@ int main(int argc, char **argv){
     }
     while( 16==fread(a, 1, 16, in) ){
       printf("%s ", decodeTimestamp(a+2));
-      for(a2=0, i=8; i<=11; i++) a2 = (a2<<8)+a[i];
-      for(a3=0, i=12; i<=15; i++) a3 = (a3<<8)+a[i];
+      for(a2=0, j=8; j<=11; j++) a2 = (a2<<8)+a[j];
+      for(a3=0, j=12; j<=15; j++) a3 = (a3<<8)+a[j];
       switch( a[0] ){
         case 0x01: {
           printf("open-db   pid %u\n", a2);

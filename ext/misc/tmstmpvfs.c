@@ -616,34 +616,34 @@ static int tmstmpFileControl(sqlite3_file *pFile, int op, void *pArg){
   TmstmpFile *p = (TmstmpFile*)pFile;
   pFile = ORIGFILE(pFile);
   rc = pFile->pMethods->xFileControl(pFile, op, pArg);
-  if( rc==SQLITE_OK ){
-    switch( op ){
-      case SQLITE_FCNTL_VFSNAME: {
-        if( p->hasCorrectReserve ){
-          *(char**)pArg = sqlite3_mprintf("tmstmp/%z", *(char**)pArg);
-        }
-        break;
+  switch( op ){
+    case SQLITE_FCNTL_VFSNAME: {
+      if( p->hasCorrectReserve && rc==SQLITE_OK ){
+        *(char**)pArg = sqlite3_mprintf("tmstmp/%z", *(char**)pArg);
       }
-      case SQLITE_FCNTL_CKPT_START: {
-        p->inCkpt = 1;
-        assert( p->isDb );
-        assert( p->pPartner!=0 );
-        p->pPartner->inCkpt = 1;
-        if( p->hasCorrectReserve ){
-          tmstmpEvent(p, ELOG_CKPT_START, 0, 0, 0);
-        }
-        break;
+      break;
+    }
+    case SQLITE_FCNTL_CKPT_START: {
+      p->inCkpt = 1;
+      assert( p->isDb );
+      assert( p->pPartner!=0 );
+      p->pPartner->inCkpt = 1;
+      if( p->hasCorrectReserve ){
+        tmstmpEvent(p, ELOG_CKPT_START, 0, 0, 0);
       }
-      case SQLITE_FCNTL_CKPT_DONE: {
-        p->inCkpt = 0;
-        assert( p->isDb );
-        assert( p->pPartner!=0 );
-        p->pPartner->inCkpt = 0;
-        if( p->hasCorrectReserve ){
-          tmstmpEvent(p, ELOG_CKPT_DONE, 0, 0, 0);
-        }
-        break;
+      rc = SQLITE_OK;
+      break;
+    }
+    case SQLITE_FCNTL_CKPT_DONE: {
+      p->inCkpt = 0;
+      assert( p->isDb );
+      assert( p->pPartner!=0 );
+      p->pPartner->inCkpt = 0;
+      if( p->hasCorrectReserve ){
+        tmstmpEvent(p, ELOG_CKPT_DONE, 0, 0, 0);
       }
+      rc = SQLITE_OK;
+      break;
     }
   }
   return rc;

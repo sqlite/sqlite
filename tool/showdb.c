@@ -175,8 +175,8 @@ static unsigned char *fileRead(sqlite3_int64 ofst, int nByte){
     }
   }
   if( g.aPageTag && nByte==(int)g.pagesize ){
-    unsigned int pgno = (unsigned int)(ofst/g.pagesize);
-    if( pgno>=0 && pgno<=g.mxPage ){
+    unsigned int pgno = (unsigned int)(ofst/g.pagesize) + 1;
+    if( pgno>0 && pgno<=g.mxPage ){
       memcpy(g.aPageTag[pgno].a, &aData[nByte-16], 16);
     }
   }
@@ -856,7 +856,7 @@ static void page_usage_cell(
     while( ovfl && (cnt++)<g.mxPage ){
       page_usage_msg(ovfl, "overflow %d from cell %d of page %u",
                      cnt, cellno, pgno);
-      a = fileRead((ovfl-1)*(sqlite3_int64)g.pagesize, 4);
+      a = fileRead((ovfl-1)*(sqlite3_int64)g.pagesize, g.pagesize);
       ovfl = decodeInt32(a);
       sqlite3_free(a);
     }
@@ -1220,7 +1220,7 @@ static void ptrmap_coverage_report(const char *zDbName){
   for(pgno=2; pgno<=g.mxPage; pgno += perPage+1){
     printf("%5llu: PTRMAP page covering %llu..%llu\n", pgno,
            pgno+1, pgno+perPage);
-    a = fileRead((pgno-1)*g.pagesize, usable);
+    a = fileRead((pgno-1)*g.pagesize, g.pagesize);
     for(i=0; i+5<=usable; i+=5){
       const char *zType;
       u32 iFrom = decodeInt32(&a[i+1]);
