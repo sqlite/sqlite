@@ -34,9 +34,11 @@ static const char *decodeTimestamp(const unsigned char *a){
   static char zOut[50];      /* Return results here */
 
   for(ms=0, i=0; i<=5; i++) ms = (ms<<8) + a[i];
-  if( ms>253402300800000LL ){
+  if( ms==0 ){
+    return "                       ";
+  }else if( ms>4102444800000LL ){  /* 2100-01-01 */
         /*  YYYY-MM-DD HH:MM:SS.SSS */
-    return "---date out of range---";
+    return "      (bad date)       ";
   }
   days = ms/86400000;
   sod = (ms%86400000)/1000;

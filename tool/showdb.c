@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdint.h>
 
 #if !defined(_MSC_VER)
 #include <unistd.h>
@@ -1009,6 +1010,63 @@ static void page_usage_ptrmap(u8 *a){
 }
 
 /*
+** The six bytes at a[] are a big-endian unsigned integer which is the
+** number of milliseconds since 1970.  Decode that value into an ISO 8601
+** date/time string stored in static space and return a pointer to that
+** string.
+*/
+static const char *decodeTimestamp(const unsigned char *a){
+  uint64_t ms;               /* Milliseconds since 1970 */
+  uint64_t days;             /* Days since 1970-01-01 */
+  uint64_t sod;              /* Start of date specified by ms */
+  uint64_t z;                /* Days since 0000-03-01 */
+  uint64_t era;              /* 400-year era */
+  int i;                     /* Loop counter */
+  int h;                     /* hour */
+  int m;                     /* minute */
+  int s;                     /* second */
+  int f;                     /* millisecond */
+  int Y;                     /* year */
+  int M;                     /* month */
+  int D;                     /* day */
+  int y;                     /* year assuming March is first month */
+  unsigned int doe;          /* day of 400-year era */
+  unsigned int yoe;          /* year of 400-year era */
+  unsigned int doy;          /* day of year */
+  unsigned int mp;           /* month with March==0 */
+  static char zOut[50];      /* Return results here */
+
+  for(ms=0, i=0; i<=5; i++) ms = (ms<<8) + a[i];
+  if( ms==0 ){
+    return "                       ";
+  }else if( ms>4102444800000LL ){  /* 2100-01-01 */
+        /*  YYYY-MM-DD HH:MM:SS.SSS */
+    return "      (bad date)       ";
+  }
+  days = ms/86400000;
+  sod = (ms%86400000)/1000;
+  f = (int)(ms%1000);
+
+  h = sod/3600;
+  m = (sod%3600)/60;
+  s = sod%60;
+  z = days + 719468;
+  era = z/147097;
+  doe = (unsigned)(z - era*146097);
+  yoe = (doe - doe/1460 + doe/36524 - doe/146096)/365;
+  y = (int)yoe + era*400;
+  doy = doe - (365*yoe + yoe/4 - yoe/100);
+  mp = (5*doy + 2)/153;
+  D = doy - (153*mp + 2)/5 + 1;
+  M = mp + (mp<10 ? 3 : -9);
+  Y = y + (M <=2);
+  snprintf(zOut, sizeof(zOut),
+         "%04d-%02d-%02d %02d:%02d:%02d.%03d",
+             Y,   M,   D,   h,   m,   s,   f);
+  return zOut;
+}
+
+/*
 ** Try to figure out how every page in the database file is being used.
 */
 static void page_usage_report(const char *zPrg, const char *zDbName){
@@ -1080,9 +1138,7 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
       g.zPageUse[i] = sqlite3_mprintf("???");
       if( g.zPageUse[i]==0 ) continue;
     }
-    if( !g.bCSV ){
-      printf("%5u: %s\n", i, g.zPageUse[i]);
-    }else{
+    if( g.bCSV ){
       const char *z = g.zPageUse[i];
       const char *s;
       printf("%u,", i);
@@ -1119,6 +1175,12 @@ static void page_usage_report(const char *zPrg, const char *zDbName){
         printf("-1,");
       }
       printf("\"%s\"\r\n", z);
+    }else if( g.bTmstmp ){
+      printf("%5u: %s %s\n", i,
+             decodeTimestamp(&g.aPageTag[i].a[2]),
+             g.zPageUse[i]);
+    }else{
+      printf("%5u: %s\n", i, g.zPageUse[i]);
     }
   }
   for(i=1; i<=g.mxPage; i++){

@@ -1,5 +1,5 @@
-C Fix\sESCALE\stypo\sin\sshell.c,\sreported\sin\s[forum:b8f6a41c8b|forum\spost\sb8f6a41c8b].
-D 2026-01-08T12:43:21.947
+C In\sthe\sshowdb\sutility,\sthe\s-tmstmp\soption\sworks\swithout\s-csv\sfor\sthe\spgidx\ncommand.
+D 2026-01-08T13:20:36.301
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2159,12 +2159,12 @@ F tool/pagesig.c f98909b4168d9cac11a2de7f031adea0e2f3131faa7515a72807c03ec58eafe
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 9c2c783a64b4d3b1f5fa9fe8e64add8c620c21b1831e10a2cec51ab59768da71
+F tool/showdb.c 99b1061df9077c0370042a0e414d8f17b30db01d83bbe74ab7fb8fbaf1301bfc
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
 F tool/showstat4.c b706fcbc4cd1a6e4a73ac32549afc4b460479d650402d64b23e8d813516e8de4
-F tool/showtmlog.c 5e5d8b217ce48056583f97c7c16d68287bbaeff77ef6d4b54cbc2c7ca298a44f
+F tool/showtmlog.c eb0e6d3f6345da795edcd8dd1f395b52985c1d3c8e861722a60e7651ded33360
 F tool/showwal.c 11eca547980a066b081f512636151233350ac679f29ecf4ebfce7f4530230b3d
 F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdaddf
 F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4c6f646bd2910e6dc80dfec7546a3ed7b47bb9d00402e7c3871ece2c185f4ec0
-R 94649a4f0c351b0b1058fefe4e31412a
-U stephan
-Z 58d0934d295cf5006c627f2984459682
+P 6fa09449738af03d096208e26447b795f2825d6aaa397de09590cf18b065f82d
+R 8fd9691005ccfe6bf27e94848c7c9911
+U drh
+Z 0bc0a7bcfad2b426d91d7190bf1fff2a
 # Remove this line to create a well-formed Fossil manifest.
