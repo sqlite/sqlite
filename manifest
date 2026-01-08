@@ -1,5 +1,5 @@
-C Enhance\sthe\s--vfs\scommand-line\soption\sto\sthe\sCLI\ssuch\sthat\sif\sthe\sargument\nis\snot\sa\svalid\sVFS\sname,\sbut\sis\sthe\sname\sof\sa\sfile,\sattempt\sto\sload\sthat\nfile\sas\san\sextension,\swhich\spresumably\sadds\sthe\sdesired\sVFS.
-D 2026-01-08T13:43:15.539
+C Fix\sthe\s--size\sX\sflag\sfor\sspeedtest1.html\swhen\sX=0\sand\sforce\sthe\sjob\ssize\sto\s5\sfor\skvvfs\sso\sthat\sit\sdoesn't\sblock\sthe\smain\sthread\sfor\stoo\sawful\slong.
+D 2026-01-08T15:03:00.621
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -641,7 +641,7 @@ F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2
 F ext/wasm/speedtest1-wasmfs.mjs 60dd5842f6d2a70a6d0bef12633a11491bde6984aff75a37c2040980d8cbf36a
 F ext/wasm/speedtest1-worker.html 068d4190f304fa1c34e6501a1b3a4c32fe8d8dac93c2d0f53d667a1cb386eedc
 F ext/wasm/speedtest1-worker.js 8acad67bfd6aeeb799bd5ae007ea32af85a082a287d8877c5a10adf4bd7efd89
-F ext/wasm/speedtest1.html 856ddb26af6f21c228614614ccff73abc1f8bd877447c1c8da15cfabba5615c2
+F ext/wasm/speedtest1.html f32c66997eb0b036c4546e6302cd0673157912661df0b290ab65816f713feac6
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c0aecd2189b431d82eca1c1d6718920cf928d910d443ea506e7b3bf3c5d7e246
-R 8831b900d82357c1d3aa973bdb8ea7c9
-U drh
-Z b7d5cc86868374aca5662283466f56bc
+P 509954b44eb305a4401ddcbcce24d8f9ed5534717290888899d716b9df40c981
+R a11927462ed458c83a2a286cf6394157
+U stephan
+Z 327465c2c2c011f71541533cf20af8e5
 # Remove this line to create a well-formed Fossil manifest.

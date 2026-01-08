@@ -118,7 +118,7 @@
         argv.push("--vfs", vfs);
         log2('',"Using VFS:",vfs);
         if('kvvfs' === vfs){
-          //forceSize = 10
+          forceSize = 5
           /* --size > 2 is too big for local/session storage
              as of mid-2025, but kvvfs v2 (late 2025)
              lets us use transient storage. */;
@@ -135,7 +135,7 @@
           'size'
         ].forEach(function(k){
           const v = urlParams.get(k);
-          if(v) argv.push('--'+k, urlParams[k]);
+          if(v && +v) argv.push('--'+k, urlParams[k]);
         });
       }
       argv.push(
