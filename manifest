@@ -1,5 +1,5 @@
-C Add\sthe\stmstmpvfs.c\sextension\sto\strunk.\s\sIt\sis\snot\sa\spart\sof\sany\sdeliverable\nand\scan\seasily\sbe\sremoved\slater,\sif\sfound\sto\snot\sbe\sdesirable.
-D 2026-01-08T00:41:12.638
+C Improve\sshowdb\sso\sthat\sit\sdoes\sa\sbetter\sjob\sof\shandling\sreserve-bytes.\nAdd\sthe\s--tmstmp\soption\sthat\scauses\spgidx\sto\sinterpret\stmstmpvfs\stags\nif\sthey\sare\savailable.
+D 2026-01-08T01:37:13.895
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2159,7 +2159,7 @@ F tool/pagesig.c f98909b4168d9cac11a2de7f031adea0e2f3131faa7515a72807c03ec58eafe
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 3071a801f2a630bf9f615f9cbc018d20c7b6dcbc01baf639274de3c693f243cc
+F tool/showdb.c 9c2c783a64b4d3b1f5fa9fe8e64add8c620c21b1831e10a2cec51ab59768da71
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -2190,9 +2190,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b6ad93f62eb883ee8f4c43dd90c69b31398be6b13186866a7b05d85fe588d967 4e1a1b6aeffaa5b8c11e165803c6d33becabd1f646f39e4309dfba6892fd4bd6
-R c62a88b6743ccf33134c23eac604ca1b
-T +closed 4e1a1b6aeffaa5b8c11e165803c6d33becabd1f646f39e4309dfba6892fd4bd6
+P 869f306592a86d2a78f00266c615f033cd2318a7bff0a97b3dcdd3348d99fc66
+R 84dfc7b9c377c2c122ebbcbfef876fb5
 U drh
-Z 16554405872f41bd820dd07a6083967e
+Z da6fd7cd7ce3a4452ba602eb99ca3b3b
 # Remove this line to create a well-formed Fossil manifest.
