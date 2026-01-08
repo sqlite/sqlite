@@ -10479,7 +10479,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       }
     }
     if( bNoSystemTabs ){
-      sqlite3_str_appendf(pSql, " name NOT LIKE 'sqlite__%%' ESCALE '_' AND ");
+      sqlite3_str_appendf(pSql, " name NOT LIKE 'sqlite__%%' ESCAPE '_' AND ");
     }
     sqlite3_str_appendf(pSql, "sql IS NOT NULL ORDER BY snum, rowid");
     if( bDebug ){
