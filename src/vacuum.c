@@ -251,10 +251,9 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
     ** "reserve=N" query parameter is present, reset the reserve to the
     ** amount specified, if the amount is within range */
     zFilename = sqlite3BtreeGetFilename(pTemp);
-    if( zFilename ){
-      nRes = (int)sqlite3_uri_int64(zFilename, "reserve", nRes);
-      if( nRes<0 ) nRes = 0;
-      if( nRes>255 ) nRes = 255;
+    if( ALWAYS(zFilename) ){
+      int nNew = (int)sqlite3_uri_int64(zFilename, "reserve", nRes);
+      if( nNew>=0 && nNew<=255 ) nRes = nNew;
     }
   }
 
