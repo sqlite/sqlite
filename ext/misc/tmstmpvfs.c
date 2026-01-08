@@ -546,7 +546,7 @@ static int tmstmpWrite(
     }
   }else if( p->inCkpt ){
     assert( p->pgsz>0 );
-    tmstmpEvent(p, ELOG_CKPT_PAGE, 0, iOfst/p->pgsz, 0);
+    tmstmpEvent(p, ELOG_CKPT_PAGE, 0, (iOfst/p->pgsz)+1, 0);
   }else if( p->pPartner==0 ){
     /* Writing into a database in rollback mode */
     unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;

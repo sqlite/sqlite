@@ -1,5 +1,5 @@
-C Add\sa\smissing\s#if\scheck\sfor\sSQLITE_OMIT_LOAD_EXTENSION\sto\sshell.c.in,\strigged\sby\sthe\sfiddle\sbuild.
-D 2026-01-08T15:26:19.338
+C Fix\san\soff-by-one\serror\sin\sthe\spage\snumber\sof\sELOG_CKPT_PAGE\slog\nmessages\sin\stmstmpvfs.c
+D 2026-01-08T17:52:42.103
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -402,7 +402,7 @@ F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bf
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/tmstmpvfs.c ff66db6b88bc5bd011d5a92e8f5e35af93499d4d615330ab14a61a23ce5c7856
+F ext/misc/tmstmpvfs.c 95994e33526581b75bebb320628d220d86c0734807d9780b4f1804e6c7248df2
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1fee8265f7eab649ee8b28456c37d95198f5cde54e905154e3eccc0b328ece9a
-R fe4ee4892cd00e82736e5e46be687a34
-U stephan
-Z 9dd4f85e828d41aa6fa3065c0d3c9df1
+P 1091f3371f4af75344c2e6da26656c259fa96c8a8da9acde3db79df8aa95fd0a
+R 35b1dce7128d82186c4ed7ed350ed492
+U drh
+Z 095da220d3fdcc217b40575d36e33cc3
 # Remove this line to create a well-formed Fossil manifest.
