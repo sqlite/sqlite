@@ -39,6 +39,10 @@ typedef unsigned short int u16;
 ** and this build mode rewires the user input subsystem to account for
 ** that.
 */
+#if defined(SQLITE_SHELL_FIDDLE)
+# undef SQLITE_OMIT_LOAD_EXTENSION
+# define SQLITE_OMIT_LOAD_EXTENSION 1
+#endif
 
 /*
 ** Warning pragmas copied from msvc.h in the core.
@@ -10411,13 +10415,15 @@ static int do_meta_command(const char *zLine, ShellState *p){
                   || sqlite3_strlike(zName,"sqlite_temp_schema", '\\')==0;
       if( isSchema ){
         cli_printf(p->out,
-                      "CREATE TABLE %s (\n"
+                      "CREATE TABLE %ssqlite_schema (\n"
                       "  type text,\n"
                       "  name text,\n"
                       "  tbl_name text,\n"
                       "  rootpage integer,\n"
                       "  sql text\n"
-                      ");\n", zName);
+                      ");\n",
+               sqlite3_strlike("sqlite_t%",zName,0)==0 ? "temp." : ""
+        );
       }
     }
     rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);
@@ -10477,7 +10483,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       }
     }
     if( bNoSystemTabs ){
-      sqlite3_str_appendf(pSql, " name NOT LIKE 'sqlite__%%' ESCALE '_' AND ");
+      sqlite3_str_appendf(pSql, " name NOT LIKE 'sqlite__%%' ESCAPE '_' AND ");
     }
     sqlite3_str_appendf(pSql, "sql IS NOT NULL ORDER BY snum, rowid");
     if( bDebug ){
@@ -13021,7 +13027,26 @@ int SQLITE_CDECL main(int argc, char **argv){
     sqlite3_vfs *pVfs = sqlite3_vfs_find(zVfs);
     if( pVfs ){
       sqlite3_vfs_register(pVfs, 1);
-    }else{
+    }
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+    else if( access(zVfs,0)==0 ){
+      /* If the VFS name is not the name of an existing VFS, but it is
+      ** the name of a file, then try to load that file as an extension.
+      ** Presumably the extension implements the desired VFS. */
+      sqlite3 *db = 0;
+      char *zErr = 0;
+      sqlite3_open(":memory:", &db);
+      sqlite3_enable_load_extension(db, 1);
+      rc = sqlite3_load_extension(db, zVfs, 0, &zErr);
+      sqlite3_close(db);
+      if( (rc&0xff)!=SQLITE_OK ){
+        cli_printf(stderr, "could not load extension VFS \"%s\": %s\n",
+                   zVfs, zErr);
+        exit(1);
+      }
+    }
+#endif
+    else{
       cli_printf(stderr,"no such VFS: \"%s\"\n", zVfs);
       exit(1);
     }

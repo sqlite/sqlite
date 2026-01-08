@@ -2709,6 +2709,9 @@ showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C) $(SQLITE3H)
 showshm.exe:	$(TOP)\tool\showshm.c
 	$(LTLINK) $(NO_WARN)	$(TOP)\tool\showshm.c /link $(LDFLAGS) $(LTLINKOPTS)
 
+showtmlog.exe:	$(TOP)\tool\showtmlog.c
+	$(LTLINK) $(NO_WARN)	$(TOP)\tool\showtmlog.c /link $(LDFLAGS) $(LTLINKOPTS)
+
 index_usage.exe: $(TOP)\tool\index_usage.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\tool\index_usage.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
