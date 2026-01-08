@@ -6,10 +6,10 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
-//#if target=es6-module
-    <title>worker-promise (via ESM) tests</title>
+//#if target:es6-module
+    <title>Worker1-promiser (ESM) tests</title>
 //#else
-    <title>worker-promise tests</title>
+    <title>Worker1-promiser tests</title>
 //#endif
   </head>
   <body>
@@ -32,7 +32,7 @@
     <hr>
     <div id='test-output'></div>
     <script src="common/SqliteTestUtil.js"></script>
-//#if target=es6-module
+//#if target:es6-module
     <script src="demo-worker1-promiser.mjs" type="module"></script>
 //#else
     <script src="jswasm/sqlite3-worker1-promiser.js"></script>
