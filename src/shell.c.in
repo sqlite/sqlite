@@ -10411,13 +10411,15 @@ static int do_meta_command(const char *zLine, ShellState *p){
                   || sqlite3_strlike(zName,"sqlite_temp_schema", '\\')==0;
       if( isSchema ){
         cli_printf(p->out,
-                      "CREATE TABLE %s (\n"
+                      "CREATE TABLE %ssqlite_schema (\n"
                       "  type text,\n"
                       "  name text,\n"
                       "  tbl_name text,\n"
                       "  rootpage integer,\n"
                       "  sql text\n"
-                      ");\n", zName);
+                      ");\n",
+               sqlite3_strlike("sqlite_t%",zName,0)==0 ? "temp." : ""
+        );
       }
     }
     rc = sqlite3_prepare_v2(p->db, "PRAGMA database_list", -1, &pStmt, 0);

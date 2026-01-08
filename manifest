@@ -1,5 +1,5 @@
-C Add\sthe\sshowtmlog\sutility\sfor\sdecoding\sthe\stmstmpvfs\slog\sfiles.\nFix\stmstmpvfs\sso\sthat\sit\srecords\stimestamps\sin\smilliseconds\ssince\sthe\nUnix\sepoch,\snot\sin\sJDN\smilliseconds.
-D 2026-01-08T12:22:50.349
+C Do\snot\sshow\sLIKE\swildcards\son\stable\snames\sin\sthe\soutput\sof\sthe\s".schema"\ncommand\sin\sthe\sCLI.\n[forum:/info/6ebb57b41691293d|Forum\spost\s6ebb57b41691293d].
+D 2026-01-08T12:39:49.442
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -738,7 +738,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 47aa7fdc9ec4c19b103ac5e79d7887d30119b5675309facf5eed1118391c868b
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4d45a04431db072040d6625ee21c1dc483c9b2b64a5ab419f4a4e05aabed1204
-F src/shell.c.in 587ec295ced5204e7a172cd090a470776ca58c2875ee7cc18194f18fa0d3ff2a
+F src/shell.c.in 9678c58254450a00fa93931f0d9f4552478fa0ea02d52a33bbd7ed945165c86c
 F src/sqlite.h.in 476f3efeb5dd26ad94dcbce262ca7eb9d042d797a92d624059c67ef37d5b3ab4
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d5330f5f8461f5ce74960436ddcfa53ecd09c2b8b23901e22ae38aec3243998
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d7e6e9a5781f467a5b5f02f46134099cf01607a0cf55510155533d57d4a4618a
-R 480580b84284dc2078a6aa5caacd15c8
+P 762d3cbf06218f1010425a98a71ebf7623b84b45a90e6419b7dec7f10ad0c5a5
+R bffa6e5c27e1b1d54b2f1e31deac907b
 U drh
-Z 20a5cec87f22c6e120bc0b5fcbbfb23d
+Z 97460544afe91d918809138a211e67c2
 # Remove this line to create a well-formed Fossil manifest.
