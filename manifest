@@ -1,5 +1,5 @@
-C Fix\sthe\s--size\sX\sflag\sfor\sspeedtest1.html\swhen\sX=0\sand\sforce\sthe\sjob\ssize\sto\s5\sfor\skvvfs\sso\sthat\sit\sdoesn't\sblock\sthe\smain\sthread\sfor\stoo\sawful\slong.
-D 2026-01-08T15:03:00.621
+C Remove\san\sobsolete\s'32-bit'\slabel\sfrom\stester1-worker.
+D 2026-01-08T15:06:28.736
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -647,7 +647,7 @@ F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d826
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
-F ext/wasm/tester1-worker.c-pp.html 0e432ec2c0d99cd470484337066e8d27e7aee4641d97115338f7d962bf7b081a
+F ext/wasm/tester1-worker.c-pp.html d0032241d0b24d996cf1c4dd0dde364189693af9b5c986e48af7d3d720fcd244
 F ext/wasm/tester1.c-pp.html 52d88fe2c6f21a046030a36410b4839b632f4424028197a45a3d5669ea724ddb
 F ext/wasm/tester1.c-pp.js 7bc90f6e3d133c735fad05d5409915bd1389f4b5d6ce7c5daca33856669e706b
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 509954b44eb305a4401ddcbcce24d8f9ed5534717290888899d716b9df40c981
-R a11927462ed458c83a2a286cf6394157
+P e2634e500cce44650ad5dd95b722b993b1f999b9f8b2396ab15154e67cb065c7
+R 09c7e4f9e51b68995275f1b08c5fc647
 U stephan
-Z 327465c2c2c011f71541533cf20af8e5
+Z 3ce2c4087e51df424d65b55ac9e30b7a
 # Remove this line to create a well-formed Fossil manifest.
