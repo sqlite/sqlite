@@ -86,6 +86,7 @@ emo.strip     = 💈
 emo.test      = 🧪
 emo.tool      = 🔨
 emo.wasm-opt  = 🧼
+emo.cleanup   = 🧼
 # 👷🪄🧮🧫🧽🍿⛽🚧🎱🪚🏆🧼
 
 #
@@ -317,7 +318,7 @@ endif
 #
 sqlite3.canonical.c = $(dir.top)/sqlite3.c
 sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
-sqlite3.h = $(dir $(sqlite3.c))/sqlite3.h
+sqlite3.h = $(dir $(sqlite3.c))sqlite3.h
 
 #
 # bin.version-info = binary to output various sqlite3 version info for
@@ -1591,6 +1592,39 @@ snapshot:
 endif
 # ^^^ making dist/snapshot
 CLEAN_FILES += $(wildcard sqlite-wasm-*.zip)
+
+########################################################################
+# The npm target is specifically for preparing files for the downstream
+# https://github.com/sqlite/sqlite-wasm (npm) distribution.
+#
+# Per agreement with that project's maintainers, these filenames need
+# to remain stable. To avoid breakage in their deployment process, any
+# changes (like renaming files) which potentially break their deployment
+# needs to be communicated to that project via opening a new ticket or
+# direct coordination with its maintainers.
+#
+# This target does a full clean/rebuild so that we can ensure that the
+# optimization level is set consistently across all files.
+#
+npm.bundle.zip = npm-bundle.zip
+CLEAN_FILES += $(npm.bundle.zip)
+# Distributables which need to be built for npm:
+npm_files = $(addprefix $(dir.dout)/, \
+sqlite3-bundler-friendly.mjs \
+sqlite3-opfs-async-proxy.js \
+sqlite3-worker1-bundler-friendly.mjs \
+sqlite3-worker1-promiser.mjs \
+sqlite3-worker1.mjs \
+sqlite3.mjs \
+sqlite3.wasm \
+sqlite3-node.mjs \
+)
+npm: $(sqlite3.canonical.c)
+	@echo "$(emo.cleanup) Forcing a clean rebuild to ensure consistent optimization flags."
+	$(MAKE) clean
+	$(MAKE) -e "emcc_opt=-Oz $(emcc-opt-extra)" $(npm_files)
+	rm -f $(npm.bundle.zip); zip -r $(npm.bundle.zip) $(npm_files)
+	unzip -l $(npm.bundle.zip)
 
 ########################################################################
 # Explanation of, and some commentary on, various emcc build flags
