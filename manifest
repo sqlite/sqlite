@@ -1,5 +1,5 @@
-C Fix\syet\sanother\sbug\sin\sthe\sEXISTS-to-JOIN\soptimization.
-D 2026-01-03T15:22:08.352
+C Fix\spotential\sOOB\sread\son\sthe\sundocumented\stest\sfunction\srtreenode()\sin\nthe\sRTREE\sextension.
+D 2026-01-09T00:45:41.901
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -493,7 +493,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c f0573d5109fdc658a180db0db6eec86ab2a1cf5ce58ec66cbf3356167ea757eb
-F ext/rtree/rtree.c 95401e6812a399b5ef2e5de1249ab7e2844601cb4153ca2c3f14122ff3625569
+F ext/rtree/rtree.c 9331997a76b88a9bc04e156bdfd6e2fe35c0aa93bc338ebc6aa0ae470fe4a852
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -505,7 +505,7 @@ F ext/rtree/rtree7.test c8fb2e555b128dd0f0bdb520c61380014f497f8a23c40f2e820acc9f
 F ext/rtree/rtree8.test 4da84c7f328bbdca15052fa13da6e8b8d426433347bf75fc85574c2f5a411a02
 F ext/rtree/rtree9.test fd3c9384ef8aabbc127b3878764070398f136eebc551cd20484b570f2cc1956a
 F ext/rtree/rtreeA.test 14e67fccc5b41efbad7ea99d21d11aaa66d2067da7d5b296ee86e4de64391d82
-F ext/rtree/rtreeB.test 4cec297f8e5c588654bbf3c6ed0903f10612be8a2878055dd25faf8c71758bc9
+F ext/rtree/rtreeB.test ab93136c45cf25af78d22665c2a6d75068eef6bf3a710356e4ba8d5f37bed364
 F ext/rtree/rtreeC.test 2978b194d09b13e106bdb0e1c5b408b9d42eb338c1082bf43c87ef43bd626147
 F ext/rtree/rtreeD.test fe46aa7f012e137bd58294409b16c0d43976c3bb92c8f710481e577c4a1100dc
 F ext/rtree/rtreeE.test e65d3fc625da1800b412fc8785817327d43ccfec5f5973912d8c9e471928caa9
@@ -2171,9 +2171,9 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d485e8fccc7cae338bd4cfe3e23d488926cf09a8c0ccc68b70446bbd8ceda652
-Q +f60e863e0ca2d8ab853fa5f48d3cd7b062b13167fcddffc4563bde9285b92320
-R 190bb0d864b12d23bc8aba1cef9f145c
+P a23d3b50fd7c2013d83f868a3a4114880887ec8fb6e9917b43c243607caab67c
+Q +9adab8b2bef4130abd358d53384cb5f4dd691b808336bb7102793b0165b1c516
+R da98a9735070591af65e2b833e66203f
 U drh
-Z cc3eb3235bc40e8818f84f2dcdfa9507
+Z e310c8b92b93b0a750c14b33cf237076
 # Remove this line to create a well-formed Fossil manifest.
