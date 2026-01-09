@@ -1,5 +1,5 @@
-C To\sensure\sthat\sthe\ssqlite3_hard_heap_limit()\scall\sit\smakes\sis\seffective,\sadd\s"sqlite3_config(SQLITE_CONFIG_MEMSTATUS,\s1);"\sto\sfuzzcheck.c.
-D 2026-01-09T16:21:26.137
+C Version\s3.51.2
+D 2026-01-09T17:27:48.405
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2171,9 +2171,10 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 127b3270f8716e0eda06ea6979def88283e15aecdceb5d56c82105b300c98bdc
-Q +f7736af849d910f04d8622ed7c6e705d84cf22f0a73dca0f30eead9bd1f28bc7
+P 10e11b9c539a8be50fd93bdf7cf5afe97d9757ce8577cac58426a1b218063e47
 R ec4161915fdee7c9c786931b31f64669
-U dan
-Z 4113356ea07d7c9aa4b77fe0b994c7f1
+T +sym-release *
+T +sym-version-3.51.2 *
+U drh
+Z 6e3a819551f499011e2275a586e8d608
 # Remove this line to create a well-formed Fossil manifest.
