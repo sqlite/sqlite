@@ -1527,9 +1527,9 @@ update-docs:
 	exit 127
 else
 wasm.docs.jswasm = $(wasm.docs.home)/jswasm
-update-docs: $(bin.stripccomments) $(out.sqlite3.js) $(out.sqlite3.wasm)
+update-docs: $(bin.stripccomments) $(out.vanilla.js) $(out.vanilla.wasm)
 	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!";
-	cp -p $(sqlite3.wasm) $(wasm.docs.jswasm)/.
+	cp -p $(out.vanilla.wasm) $(wasm.docs.jswasm)/.
 	$(bin.stripccomments) -k -k < $(out.vanilla.js) \
 		| sed -e '/^[ \t]*$$/d' > $(wasm.docs.jswasm)/sqlite3.js
 	cp -p demo-123.js demo-123.html demo-123-worker.html $(wasm.docs.home)/.
