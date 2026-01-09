@@ -1,5 +1,5 @@
-C Avoid\ssigned\sinteger\soverflow\swhen\san\sfts5\s'merge'\scommand\sis\spassed\s-2147483648\sas\sa\sparameter.
-D 2026-01-09T16:01:51.048
+C To\sensure\sthat\sthe\ssqlite3_hard_heap_limit()\scall\sit\smakes\sis\seffective,\sadd\s"sqlite3_config(SQLITE_CONFIG_MEMSTATUS,\s1);"\sto\sfuzzcheck.c.
+D 2026-01-09T16:21:26.137
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1238,7 +1238,7 @@ F test/fuzz3.test 70ba57260364b83e964707b9d4b5625284239768ab907dd387c740c0370ce3
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 02824a0a8d84242f616e4ffd249b75eade48ecb7d10c18d2ac19a38218ff9c13
+F test/fuzzcheck.c 34a025386f84d818cd3343e69e9d9083091af83153e226d71d4e1c126b5f1dd0
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2171,9 +2171,9 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f567ea96905ec58bb073b675e820ba505d3306338fdefd64bdd5cf965a3a9e88
-Q +52738908b04848b93d54431def37ffaa9723043270ff8ba1e2fa59ab0040afc5
-R c88fddcd46bbddec1ec76e59b00e967b
-U drh
-Z 4674c15fabf2e764d1d77dc8996ae9ae
+P 127b3270f8716e0eda06ea6979def88283e15aecdceb5d56c82105b300c98bdc
+Q +f7736af849d910f04d8622ed7c6e705d84cf22f0a73dca0f30eead9bd1f28bc7
+R ec4161915fdee7c9c786931b31f64669
+U dan
+Z 4113356ea07d7c9aa4b77fe0b994c7f1
 # Remove this line to create a well-formed Fossil manifest.
