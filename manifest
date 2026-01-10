@@ -1,5 +1,5 @@
-C Fix\sa\shelp\stext\stypo\sin\sspeedtest1.tcl,\spointed\sout\soff-list\sby\sBrickViking.
-D 2026-01-10T00:38:00.277
+C Update\sspeedtest.md\sto\spoint\sout\sxdg-open\son\sLinux.
+D 2026-01-10T14:12:40.882
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1659,7 +1659,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest.md ee958457ae1b729d9715ae33c0320600000bf1d9ddea1a88dcf79f56729d6fad
+F test/speedtest.md ea0c85ebe0ecff8b45ba6cdb26e694871f469009a5a29dcfe634b055f05ab241
 F test/speedtest.tcl b06f6321ef90bb68f18f7b0e430e25203d9da79b80f8926986a0d5f21ac485fb x
 F test/speedtest1.c 6c01252e66f46de0b6b8d5316e03521e2151782104f3608c10262aa5dce85721
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a4752c18a85bee0cef61ee5ac7911661c1894fb861412c957692069195a001a5
-R f592d402e29dbd48c7ec426e6e54ffae
+P 1fd02a75a914f131948fe06fc99f851d3e226f9f1270e25393d79c493c28a347
+R f99373b64f4383b8ffa2b873c9ef4cc1
 U stephan
-Z f8dd66f6573bc46927e848c75fb014e5
+Z 273f52e377b6c28d06ca80fa3137d862
 # Remove this line to create a well-formed Fossil manifest.
