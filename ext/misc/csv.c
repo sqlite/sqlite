@@ -24,8 +24,8 @@
 ** schema= parameter, like this:
 **
 **    CREATE VIRTUAL TABLE temp.csv2 USING csv(
-**       filename = "../http.log",
-**       schema = "CREATE TABLE x(date,ipaddr,url,referrer,userAgent)"
+**       filename = '../http.log',
+**       schema = 'CREATE TABLE x(date,ipaddr,url,referrer,userAgent)'
 **    );
 **
 ** Instead of specifying a file, the text of the CSV can be loaded using
@@ -62,6 +62,9 @@ SQLITE_EXTENSION_INIT1
 #  define CSV_NOINLINE
 #endif
 
+#ifndef SQLITEINT_H
+typedef sqlite3_int64 i64;
+#endif
 
 /* Max size of the error message in a CsvReader */
 #define CSV_MXERR 200
@@ -74,9 +77,9 @@ typedef struct CsvReader CsvReader;
 struct CsvReader {
   FILE *in;              /* Read the CSV text from this input stream */
   char *z;               /* Accumulated text for a field */
-  int n;                 /* Number of bytes in z */
-  int nAlloc;            /* Space allocated for z[] */
-  int nLine;             /* Current line number */
+  i64 n;                 /* Number of bytes in z */
+  i64 nAlloc;            /* Space allocated for z[] */
+  i64 nLine;             /* Current line number */
   int bNotFirst;         /* True if prior text has been seen */
   int cTerm;             /* Character that terminated the most recent field */
   size_t iIn;            /* Next unread character in the input buffer */
@@ -174,7 +177,7 @@ static int csv_getc(CsvReader *p){
 ** Return 0 on success and non-zero if there is an OOM error */
 static CSV_NOINLINE int csv_resize_and_append(CsvReader *p, char c){
   char *zNew;
-  int nNew = p->nAlloc*2 + 100;
+  i64 nNew = p->nAlloc*2 + 100;
   zNew = sqlite3_realloc64(p->z, nNew);
   if( zNew ){
     p->z = zNew;
@@ -509,7 +512,6 @@ static int csvtabConnect(
 # define CSV_FILENAME (azPValue[0])
 # define CSV_DATA     (azPValue[1])
 # define CSV_SCHEMA   (azPValue[2])
-
 
   assert( sizeof(azPValue)==sizeof(azParam) );
   memset(&sRdr, 0, sizeof(sRdr));

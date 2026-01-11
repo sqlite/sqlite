@@ -329,6 +329,7 @@ static int fileStat(
   b1[sz] = 0;
   rc = _wstat(b1, pStatBuf);
   if( rc==0 ) statTimesToUtc(zPath, pStatBuf);
+  sqlite3_free(b1);
   return rc;
 #else
   return stat(zPath, pStatBuf);
@@ -459,7 +460,6 @@ static int writeFile(
 
   if( mtime>=0 ){
 #if defined(_WIN32)
-#if !SQLITE_OS_WINRT
     /* Windows */
     FILETIME lastAccess;
     FILETIME lastWrite;
@@ -490,7 +490,6 @@ static int writeFile(
     }else{
       return 1;
     }
-#endif
 #elif defined(AT_FDCWD) && 0 /* utimensat() is not universally available */
     /* Recent unix */
     struct timespec times[2];
@@ -760,7 +759,7 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
     pCur->zPath = 0;
     pLvl->pDir = opendir(pLvl->zDir);
     if( pLvl->pDir==0 ){
-      fsdirSetErrmsg(pCur, "cannot read directory: %s", pCur->zPath);
+      fsdirSetErrmsg(pCur, "cannot read directory: %s", pLvl->zDir);
       return SQLITE_ERROR;
     }
   }
@@ -1122,11 +1121,3 @@ int sqlite3_fileio_init(
   }
   return rc;
 }
-
-#if defined(FILEIO_WIN32_DLL) && (defined(_WIN32) || defined(WIN32))
-/* To allow a standalone DLL, make test_windirent.c use the same
- * redefined SQLite API calls as the above extension code does.
- * Just pull in this .c to accomplish this. As a beneficial side
- * effect, this extension becomes a single translation unit. */
-#  include "test_windirent.c"
-#endif

@@ -813,6 +813,8 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
     (void)sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
     if( iRead ) return 0;  /* Case (4) */
   }
+#else
+  UNUSED_PARAMETER(pgno);
 #endif
   assert( pPager->fd->pMethods->xDeviceCharacteristics!=0 );
   if( (pPager->fd->pMethods->xDeviceCharacteristics(pPager->fd)
@@ -1856,7 +1858,7 @@ static void pager_unlock(Pager *pPager){
       ** have sqlite3WalEndReadTransaction() drop the write-lock, as it once
       ** did, because this would break "BEGIN EXCLUSIVE" handling for
       ** SQLITE_ENABLE_SETLK_TIMEOUT builds.  */
-      sqlite3WalEndWriteTransaction(pPager->pWal);
+      (void)sqlite3WalEndWriteTransaction(pPager->pWal);
     }
     sqlite3WalEndReadTransaction(pPager->pWal);
     pPager->eState = PAGER_OPEN;
@@ -3612,14 +3614,27 @@ void sqlite3PagerSetFlags(
   unsigned pgFlags      /* Various flags */
 ){
   unsigned level = pgFlags & PAGER_SYNCHRONOUS_MASK;
-  if( pPager->tempFile ){
+  if( pPager->tempFile || level==PAGER_SYNCHRONOUS_OFF ){
     pPager->noSync = 1;
     pPager->fullSync = 0;
     pPager->extraSync = 0;
   }else{
-    pPager->noSync =  level==PAGER_SYNCHRONOUS_OFF ?1:0;
+    pPager->noSync =  0;
     pPager->fullSync = level>=PAGER_SYNCHRONOUS_FULL ?1:0;
-    pPager->extraSync = level==PAGER_SYNCHRONOUS_EXTRA ?1:0;
+
+    /* Set Pager.extraSync if "PRAGMA synchronous=EXTRA" is requested, or 
+    ** if the file-system supports F2FS style atomic writes. If this flag
+    ** is set, SQLite syncs the directory to disk immediately after deleting 
+    ** a journal file in "PRAGMA journal_mode=DELETE" mode.  */
+    if( level==PAGER_SYNCHRONOUS_EXTRA 
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+     || (sqlite3OsDeviceCharacteristics(pPager->fd) & SQLITE_IOCAP_BATCH_ATOMIC)
+#endif
+    ){
+      pPager->extraSync = 1;
+    }else{
+      pPager->extraSync = 0;
+    }
   }
   if( pPager->noSync ){
     pPager->syncFlags = 0;
@@ -4179,6 +4194,8 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
     sqlite3WalClose(pPager->pWal, db, pPager->walSyncFlags, pPager->pageSize,a);
     pPager->pWal = 0;
   }
+#else
+  UNUSED_PARAMETER(db);
 #endif
   pager_reset(pPager);
   if( MEMDB ){
@@ -7512,7 +7529,7 @@ int sqlite3PagerCheckpoint(
   }
   if( pPager->pWal ){
     rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
-        (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
+        (eMode<=SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt

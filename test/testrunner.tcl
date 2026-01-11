@@ -93,7 +93,7 @@ if {[info commands clock_milliseconds]==""} {
 proc usage {} {
   set a0 [file tail $::argv0]
 
-  puts stderr [string trim [subst -nocommands {
+  puts [string trim [subst -nocommands {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
     $a0 PERMUTATION FILE
@@ -101,6 +101,7 @@ Usage:
     $a0 help
     $a0 joblist ?PATTERN?
     $a0 njob ?NJOB?
+    $a0 retest
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
     $a0 halt
@@ -108,6 +109,7 @@ Usage:
 
   where SWITCHES are:
     --buildonly              Build test exes but do not run tests
+    --cases DISPLAYNAME      Only run test that match DISPLAYNAME
     --config CONFIGS         Only use configs on comma-separate list CONFIGS
     --dryrun                 Write what would have happened to testrunner.log
     --explain                Write summary to stdout
@@ -119,19 +121,20 @@ Usage:
     --stop-on-error          Stop running after any reported error
     --zipvfs ZIPVFSDIR       ZIPVFS source directory
 
-Special values for PERMUTATION that work with plain tclsh:
+Special values for PERMUTATION include:
 
-    list      - show all allowed PERMUTATION arguments.
+    list      - show allowed PERMUTATION arguments.
     mdevtest  - tests recommended prior to normal development check-ins.
+    devtest   - alias for "mdevtest"
     release   - full release test with various builds.
     sdevtest  - like mdevtest but using ASAN and UBSAN.
-
-Other PERMUTATION arguments must be run using testfixture, not tclsh:
-
     all       - all tcl test scripts, plus a subset of test scripts rerun
                 with various permutations.
     full      - all tcl test scripts.
     veryquick - a fast subset of the tcl test scripts. This is the default.
+
+The interpreter that runs this script can be an ordinary "tclsh" as long
+as "package require sqlite3" works, or it can be "testfixture".
 
 If no PATTERN arguments are present, all tests specified by the PERMUTATION
 are run. Otherwise, each pattern is interpreted as a glob pattern. Only
@@ -165,6 +168,9 @@ are used.  Otherwise, an attempt is made to minimize the output to show
 only the parts that contain the error messages.  The --summary option just
 shows the jobs that failed.  If PATTERN are provided, the error information
 is only provided for jobs that match PATTERN.
+
+The "retest" command reruns tests that failed or were never completed
+by a prior invocation of testrunner.tcl.
 
 Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
@@ -211,7 +217,8 @@ proc default_njob {} {
   if {$nCore<=2} {
     set nHelper 1
   } else {
-    set nHelper [expr int($nCore*0.5)]
+    set nHelper [expr int($nCore*0.8)]
+    if {$nHelper>20} {set nHelper 20}
   }
   return $nHelper
 }
@@ -239,6 +246,7 @@ set TRG(explain) 0                  ;# True for the --explain option
 set TRG(stopOnError) 0              ;# Stop running at first failure
 set TRG(stopOnCore) 0               ;# Stop on a core-dump
 set TRG(fullstatus) 0               ;# Full "status" report while running
+set TRG(case) {}                    ;# Only run cases matching this GLOB pattern
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -295,6 +303,8 @@ switch -nocase -glob -- $tcl_platform(os) {
     error "cannot determine platform!"
   }
 }
+set TRG(testfixture-fullpath) [file join $dir $TRG(testfixture)]
+set TRG(interp) [info nameofexec]
 #-------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------
@@ -360,7 +370,8 @@ set TRG(schema) {
     nerr INT,                           -- Number of errors reported
     svers TEXT,                         -- Reported SQLite version
     pltfm TEXT,                         -- Host platform reported
-    output TEXT                         -- test output
+    output TEXT,                        -- test output
+    cwd TEXT                            -- working directory for test
   );
 
   CREATE TABLE config(
@@ -703,9 +714,18 @@ if {[llength $argv]>=1
     }
   }
 
-  if {![file readable $TRG(dbname)]} {
-    puts "Database missing: $TRG(dbname)"
-    exit
+  set once 1
+  while {![file readable $TRG(dbname)]} {
+    if {$delay==0} {
+      puts "Database missing: $TRG(dbname)"
+      exit
+    }
+    if {$once} {
+      set once 0
+      puts "Waiting for testing to start...."
+      flush stdout
+    }
+    after [expr {$delay*1000}]
   }
   sqlite3 mydb $TRG(dbname)
   mydb timeout 2000
@@ -870,10 +890,13 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       set TRG(dryrun) 1
     } elseif {($n>2 && [string match "$a*" --explain]) || $a=="-e"} {
       set TRG(explain) 1
-    } elseif {($n>2 && [string match "$a*" --omit]) || $a=="-c"} {
+    } elseif {$n>2 && [string match "$a*" --omit]} {
       incr ii
       set TRG(omitconfig) [lindex $argv $ii]
-    } elseif {($n>2 && [string match "$a*" --fuzzdb])} {
+    } elseif {$n>2 && [string match "$a*" --cases]} {
+      incr ii
+      set TRG(case) [lindex $argv $ii]
+    } elseif {$n>2 && [string match "$a*" --fuzzdb]} {
       incr ii
       set env(FUZZDB) [lindex $argv $ii]
     } elseif {[string match "$a*" --stop-on-error]} {
@@ -992,8 +1015,15 @@ proc r_get_next_job {iJob} {
       set T($iJob) $tm
       set jobid $job(jobid)
 
+      set cwd $job(dirname) 
+      if {$cwd==""} {
+        set cwd [dirname $iJob]
+      }
+
       trdb eval {
-        UPDATE jobs SET starttime=$tm, state='running' WHERE jobid=$jobid
+        UPDATE jobs 
+        SET starttime=$tm, state='running', cwd=$cwd 
+        WHERE jobid=$jobid
       }
 
       set ret [array get job]
@@ -1135,7 +1165,7 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   set testrunner_tcl [file normalize [info script]]
 
   if {$build==""} {
-    set testfixture [info nameofexec]
+    set testfixture $TRG(interp)
   } else {
     set testfixture [file join [lindex $build 1] $TRG(testfixture)]
   }
@@ -1256,6 +1286,26 @@ proc add_fuzztest_jobs {buildname patternlist} {
     set subcmd [lrange $interpreter 1 end]
     set interpreter [lindex $interpreter 0]
 
+    # For fuzzcheck-asan and fuzzcheck-ubsan, break up some
+    # fuzzdata files into multiple slices, for improved
+    # concurrency.
+    #
+    if {[string match *fuzzcheck-*san $interpreter]} {
+      set newscripts {}
+      foreach s $scripts {
+        if {[string match {*fuzzdata[12].db} $s]
+            && ![string match slice $s]} {
+          set N 6
+          for {set i 0} {$i<$N} {incr i} {
+            lappend newscripts [list --slice $i $N $s]
+          }
+        } else {
+          lappend newscripts $s
+        }
+      }
+      set scripts $newscripts
+    }
+
     if {[string match fuzzcheck* $interpreter]
      && [info exists env(FUZZDB)]
      && [file readable $env(FUZZDB)]
@@ -1346,14 +1396,30 @@ proc add_devtest_jobs {lBld patternlist} {
   }
 }
 
-# Check to ensure that the interpreter is a full-blown "testfixture"
-# build and not just a "tclsh".  If this is not the case, issue an
-# error message and exit.
+# Check to ensure that TRG(interp) is a full-blown "testfixture" and
+# not just a "tclsh".
+#
+# The value of TRG(interp) defaults to whatever interpreter is running
+# this script, which might be either tclsh or testfixture.  If tclsh is
+# running this script, change $TRG(interp) to be an instance of testfixture.
+# If no testfixture exists in the directory from which this script is run,
+# attempt to build one.
+#
+# Do not return unless $TRG(interp) is a valid testfixture.  If unable
+# to find and/or construct one, abort with an error message.
 #
 proc must_be_testfixture {} {
+  global TRG
   if {[lsearch [info commands] sqlite3_soft_heap_limit]<0} {
-    puts "Use testfixture, not tclsh, for these arguments."
-    exit 1
+    if {![file exec $TRG(testfixture-fullpath)]} {
+      puts "make testfixture"
+      catch {exec make testfixture >@stdout 2>@stderr}
+    }
+    if {![file exec $TRG(testfixture-fullpath)]} {
+      puts "Requires testfixture, and I was unable to build it."
+      exit 1
+    }
+    set TRG(interp) $TRG(testfixture-fullpath)
   }
 }
 
@@ -1428,9 +1494,13 @@ proc add_jobs_from_cmdline {patternlist} {
 
     list {
       set allperm [array names ::testspec]
-      lappend allperm all mdevtest sdevtest release list
+      lappend allperm all devtest mdevtest sdevtest release list
       puts "Allowed values for the PERMUTATION argument: [lsort $allperm]"
       exit 0
+    }
+
+    retest {
+      # no-op
     }
 
     default {
@@ -1442,8 +1512,35 @@ proc add_jobs_from_cmdline {patternlist} {
       }
     }
   }
+
+  # If the "--case DISPLAYNAME" option appears on the command-line, mark
+  # all tests other than DISPLAYNAME as 'omit'.
+  #
+  if {[info exists TRG(case)] && $TRG(case) ne ""} {
+    set jid [trdb one {
+      SELECT jobid FROM jobs WHERE displayname GLOB $TRG(case)
+    }]
+    if {$jid eq ""} {
+      puts "ERROR: No jobs match \"$TRG(case)\"."
+      puts "The argument to --cases must GLOB match the jobs.displayname column"
+      puts "of the testrunner.db database."
+      trdb eval {UPDATE jobs SET state='omit'}
+    } else {
+      trdb eval {
+        WITH RECURSIVE keepers(jid,did) AS (
+           SELECT jobid,depid FROM jobs
+            WHERE displayname GLOB $TRG(case)
+           UNION
+           SELECT jobid,depid FROM jobs, keepers WHERE jobid=did
+        )
+        DELETE FROM jobs WHERE jobid NOT IN (SELECT jid FROM keepers);
+      }
+    }
+  }
 }
 
+# Initializer, or reinitialize, the testrunner.db database file.
+#
 proc make_new_testset {} {
   global TRG
 
@@ -1487,7 +1584,8 @@ proc mark_job_as_finished {jobid output state endtm} {
         SET output=$output, state=$state, endtime=$endtm, span=$endtm-starttime,
             ntest=$ntest, nerr=$nerr, svers=$svers, pltfm=$pltfm
         WHERE jobid=$jobid;
-      UPDATE jobs SET state=$childstate WHERE depid=$jobid AND state!='halt';
+      UPDATE jobs SET state=$childstate
+       WHERE depid=$jobid AND state!='halt' AND state!='done';
       UPDATE config SET value=value+$nerr WHERE name='nfail';
       UPDATE config SET value=value+$ntest WHERE name='ntest';
     }
@@ -1559,7 +1657,7 @@ proc launch_another_job {iJob} {
   global O
   global T
 
-  set testfixture [info nameofexec]
+  set testfixture $TRG(interp)
   set script $TRG(info_script)
 
   set O($iJob) ""
@@ -1711,6 +1809,7 @@ proc run_testset {} {
   }
   close $TRG(log)
   progress_report
+  puts ""
 
   r_write_db {
     set tm [clock_milliseconds]
@@ -1730,7 +1829,7 @@ proc run_testset {} {
     }
   }
 
-  puts "\nTest database is $TRG(dbname)"
+  puts "Test database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
   if {[info exists TRG(FUZZDB)]} {
     puts "Extra fuzzcheck data taken from $TRG(FUZZDB)"
@@ -1757,6 +1856,27 @@ proc run_testset {} {
      SELECT DISTINCT substr(svers,1,79) as v1 FROM jobs WHERE svers IS NOT NULL
   } {puts $v1}
 
+}
+
+# If the argument is "retest", simply rerun all tests from the previous
+# run that are marked as one of "ready", "running", "failed", or "omit"
+# plus redo any build of dependencies those tests.
+#
+proc handle_retest {} {
+  set cnt 0
+  if {[catch {trdb exists {SELECT jobid FROM jobs}} cnt] || $cnt==0} {
+    puts "No test available to rerun"
+    exit 1
+  }
+  trdb eval {UPDATE jobs SET state='ready'
+              WHERE state IN ('running','failed','omit')}
+  for {set kk 0} {$kk<2} {incr kk} {
+    trdb eval {
+      UPDATE jobs SET state='ready'
+       WHERE jobid IN (SELECT depid FROM jobs WHERE state='ready');
+      UPDATE jobs SET state='' WHERE state='ready' AND depid<>'';
+    }
+  }
 }
 
 # Handle the --buildonly option, if it was specified.
@@ -1787,20 +1907,7 @@ proc explain_layer {indent depid} {
       puts "${indent}$displayname in $dirname"
       explain_layer "${indent}   " $jobid
     } elseif {$showtests} {
-      if {[lindex $displayname end-3] eq "--slice"} {
-        set M [lindex $displayname end-2]
-        set N [lindex $displayname end-1]
-        set tail "[lindex $displayname end] (slice $M/$N)"
-      } else {
-        set tail [lindex $displayname end]
-      }
-      set e1 [lindex $displayname 1]
-      if {[string match config=* $e1]} {
-        set cfg [string range $e1 7 end]
-        puts "${indent}($cfg) $tail"
-      } else {
-        puts "${indent}$tail"
-      }
+      puts "${indent}$displayname"
     }
   }
 }
@@ -1810,14 +1917,21 @@ proc explain_tests {} {
 
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
-set tm [lindex [time { make_new_testset }] 0]
+if {[llength $TRG(patternlist)]==1 && $TRG(patternlist) eq "retest"} {
+  set tm 0
+  handle_retest
+} else {  
+  set tm [lindex [time { make_new_testset }] 0]
+}
 if {$TRG(explain)} {
   explain_tests
 } else {
   if {$TRG(nJob)>1} {
     puts "splitting work across $TRG(nJob) cores"
   }
-  puts "built testset in [expr $tm/1000]ms.."
+  if {$tm>0} {
+    puts "built testset in [expr $tm/1000]ms.."
+  }
   handle_buildonly
   run_testset
 }

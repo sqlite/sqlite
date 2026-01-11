@@ -325,8 +325,28 @@ utc_to_local 6.24 {3000-10-30 11:30:00} {3000-10-30 12:00:00}
 # timezone extension, then the time will already be UTC and subsequent
 # 'utc' modifiers are no-ops.
 #
-do_execsql_test date-6.25 {
+# Forum post 2025-09-17T10:12:14 - The "+00:00" suffix should work like "Z"
+#
+do_execsql_test date-6.25.1 {
   SELECT datetime('2000-10-29 12:00Z','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.2 {
+  SELECT datetime('2000-10-29 12:00 +00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.3 {
+  SELECT datetime('2000-10-29 12:00+00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.4 {
+  SELECT datetime('2000-10-29 12:00:00+00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.5 {
+  SELECT datetime('2000-10-29 12:00 -00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.6 {
+  SELECT datetime('2000-10-29 12:00-00:00','utc','utc');
+} {{2000-10-29 12:00:00}}
+do_execsql_test date-6.25.7 {
+  SELECT datetime('2000-10-29 12:00:00-00:00','utc','utc');
 } {{2000-10-29 12:00:00}}
 do_execsql_test date-6.26 {
   SELECT datetime('2000-10-29 12:00:00+05:00');

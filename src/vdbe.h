@@ -186,7 +186,7 @@ typedef struct VdbeOpList VdbeOpList;
 ** Additional non-public SQLITE_PREPARE_* flags
 */
 #define SQLITE_PREPARE_SAVESQL  0x80  /* Preserve SQL text */
-#define SQLITE_PREPARE_MASK     0x1f  /* Mask of public flags */
+#define SQLITE_PREPARE_MASK     0x3f  /* Mask of public flags */
 
 /*
 ** Prototypes for the VDBE interface.  See comments on the implementation
@@ -300,6 +300,9 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 #endif
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3BlobCompare(const Mem*, const Mem*);
+#ifdef SQLITE_ENABLE_PERCENTILE
+  const char *sqlite3VdbeFuncName(const sqlite3_context*);
+#endif
 
 void sqlite3VdbeRecordUnpack(int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);

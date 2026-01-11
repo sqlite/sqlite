@@ -1609,13 +1609,11 @@ static void whereAddLimitExpr(
   int iVal = 0;
 
   if( sqlite3ExprIsInteger(pExpr, &iVal, pParse) && iVal>=0 ){
-    Expr *pVal = sqlite3Expr(db, TK_INTEGER, 0);
+    Expr *pVal = sqlite3ExprInt32(db, iVal);
     if( pVal==0 ) return;
-    ExprSetProperty(pVal, EP_IntValue);
-    pVal->u.iValue = iVal;
     pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);
   }else{
-    Expr *pVal = sqlite3Expr(db, TK_REGISTER, 0);
+    Expr *pVal = sqlite3ExprAlloc(db, TK_REGISTER, 0, 0);
     if( pVal==0 ) return;
     pVal->iTable = iReg;
     pNew = sqlite3PExpr(pParse, TK_MATCH, 0, pVal);

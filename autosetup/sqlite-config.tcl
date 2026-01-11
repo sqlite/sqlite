@@ -65,7 +65,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
   # The list of feature --flags which the --all flag implies. This
   # requires special handling in a few places.
   #
-  all-flag-enables {fts4 fts5 rtree geopoly session}
+  all-flag-enables {fts4 fts5 rtree geopoly session dbpage dbstat carray}
 
   #
   # Default value for the --all flag. Can hypothetically be modified
@@ -220,6 +220,9 @@ proc sqlite-configure {buildMode configScript} {
         geopoly              => {Enable the GEOPOLY extension}
         rtree                => {Enable the RTREE extension}
         session              => {Enable the SESSION extension}
+        dbpage               => {Enable the sqlite3_dbpage extension}
+        dbstat               => {Enable the sqlite3_dbstat extension}
+        carray=1             => {Disable the CARRAY extension}
         all=$::sqliteConfig(all-flag-default) => {$allFlagHelp}
         largefile=1
           => {This legacy flag has no effect on the library but may influence
@@ -518,6 +521,7 @@ proc sqlite-configure-phase1 {buildMode} {
   if {[file exists $srcdir/sqlite3.pc.in]} {
     proj-dot-ins-append $srcdir/sqlite3.pc.in
   }
+  sqlite-handle-hpux; # must be relatively early so that other config tests can work
 }; # sqlite-configure-phase1
 
 ########################################################################
@@ -570,7 +574,25 @@ proc proc-debug {msg} {
 }
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
-define OPT_SHELL {}         ; # Feature-related CFLAGS for the sqlite3 CLI app
+#
+# OPT_SHELL = feature-related CFLAGS for the sqlite3 CLI app. The
+# list's initial values are defaults which are always applied and not
+# affected by --feature-flags. The list is appended to by various
+# --feature-flags.
+define OPT_SHELL {
+  -DSQLITE_DQS=0
+  -DSQLITE_ENABLE_FTS4
+  -DSQLITE_ENABLE_RTREE
+  -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  -DSQLITE_ENABLE_STMTVTAB
+  -DSQLITE_ENABLE_DBPAGE_VTAB
+  -DSQLITE_ENABLE_DBSTAT_VTAB
+  -DSQLITE_ENABLE_BYTECODE_VTAB
+  -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+  -DSQLITE_ENABLE_PERCENTILE
+  -DSQLITE_STRICT_SUBTYPE=1
+}
 ########################################################################
 # Adds $args, if not empty, to OPT_FEATURE_FLAGS.  If the first arg is
 # -shell then it strips that arg and passes the remaining args the
@@ -644,7 +666,7 @@ proc sqlite-check-common-system-deps {} {
 
   # Check for needed/wanted functions
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
-    strchrnul usleep utime pread pread64 pwrite pwrite64
+    usleep utime pread pread64 pwrite pwrite64
 
   apply {{} {
     set ldrt ""
@@ -674,6 +696,7 @@ proc sqlite-check-common-system-deps {} {
     define HAVE_ZLIB 1
     define LDFLAGS_ZLIB -lz
     sqlite-add-shell-opt -DSQLITE_HAVE_ZLIB=1
+    sqlite-add-feature-flag -DSQLITE_HAVE_ZLIB=1
   } else {
     define HAVE_ZLIB 0
     define LDFLAGS_ZLIB ""
@@ -800,8 +823,12 @@ proc sqlite-handle-common-feature-flags {} {
         sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
       }
     }
-    scanstatus      -DSQLITE_ENABLE_STMT_SCANSTATUS {}
+    bytecode-vtab   -DSQLITE_ENABLE_BYTECODE_VTAB {}
+    scanstatus      {-DSQLITE_ENABLE_STMT_SCANSTATUS -DSQLITE_ENABLE_BYTECODE_VTAB} {}
     column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
+    dbpage          -DSQLITE_ENABLE_DBPAGE_VTAB {}
+    dbstat          -DSQLITE_ENABLE_DBSTAT_VTAB {}
+    carray          -DSQLITE_ENABLE_CARRAY {}
   }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
@@ -1500,7 +1527,7 @@ proc sqlite-handle-math {} {
     }
     define LDFLAGS_MATH [get-define lib_ceil]
     undefine lib_ceil
-    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS
+    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_ENABLE_PERCENTILE
     msg-result "Enabling math SQL functions"
   } {
     define LDFLAGS_MATH ""
@@ -1560,6 +1587,19 @@ proc sqlite-handle-mac-install-name {} {
     }
   }
   return $rc
+}
+
+#
+# Checks specific to HP-UX.
+#
+proc sqlite-handle-hpux {} {
+  switch -glob -- [get-define host] {
+    *hpux* {
+      if {[cc-check-flags "-Ae"]} {
+        define-append CFLAGS -Ae
+      }
+    }
+  }
 }
 
 ########################################################################

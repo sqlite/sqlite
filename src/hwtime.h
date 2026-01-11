@@ -16,34 +16,25 @@
 #ifndef SQLITE_HWTIME_H
 #define SQLITE_HWTIME_H
 
-/*
-** The following routine only works on Pentium-class (or newer) processors.
-** It uses the RDTSC opcode to read the cycle count value out of the
-** processor and returns that value.  This can be used for high-res
-** profiling.
-*/
-#if !defined(__STRICT_ANSI__) && \
-    (defined(__GNUC__) || defined(_MSC_VER)) && \
-    (defined(i386) || defined(__i386__) || defined(_M_IX86))
+#if defined(_MSC_VER) && defined(_WIN32)
 
-  #if defined(__GNUC__)
+  #include "windows.h"
+  #include <profileapi.h>
+
+  __inline sqlite3_uint64 sqlite3Hwtime(void){
+    LARGE_INTEGER tm;
+    QueryPerformanceCounter(&tm);
+    return (sqlite3_uint64)tm.QuadPart;
+  }
+
+#elif !defined(__STRICT_ANSI__) && defined(__GNUC__) && \
+    (defined(i386) || defined(__i386__) || defined(_M_IX86))
 
   __inline__ sqlite_uint64 sqlite3Hwtime(void){
      unsigned int lo, hi;
      __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
      return (sqlite_uint64)hi << 32 | lo;
   }
-
-  #elif defined(_MSC_VER)
-
-  __declspec(naked) __inline sqlite_uint64 __cdecl sqlite3Hwtime(void){
-     __asm {
-        rdtsc
-        ret       ; return value at EDX:EAX
-     }
-  }
-
-  #endif
 
 #elif !defined(__STRICT_ANSI__) && (defined(__GNUC__) && defined(__x86_64__))
 
@@ -51,6 +42,14 @@
      unsigned int lo, hi;
      __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
      return (sqlite_uint64)hi << 32 | lo;
+  }
+
+#elif !defined(__STRICT_ANSI__) && defined(__GNUC__) &&  defined(__aarch64__)
+
+  __inline__ sqlite_uint64 sqlite3Hwtime(void){
+     sqlite3_uint64 cnt;
+     __asm__ __volatile__ ("mrs %0, cntvct_el0" : "=r" (cnt));
+     return cnt;
   }
  
 #elif !defined(__STRICT_ANSI__) && (defined(__GNUC__) && defined(__ppc__))

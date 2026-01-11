@@ -44,7 +44,7 @@ do_test shell2-1.1.1 {
 # Shell silently ignores extra parameters.
 # Ticket [f5cb008a65].
 do_test shell2-1.2.1 {
-  catchcmdex {:memory: "select+3" "select+4"}
+  catchcmdex {:memory: -list "select+3" "select+4"}
 } {0 {3
 4
 }}
@@ -64,7 +64,7 @@ do_test shell2-1.3 {
 
     UPDATE OR REPLACE t5 SET a = 4 WHERE a = 1;
   }
-} {1 {Runtime error near line 9: too many levels of trigger recursion}}
+} {1 {Error near line 9: too many levels of trigger recursion}}
 
 
 
@@ -75,7 +75,8 @@ do_test shell2-1.3 {
 # NB. whitespace is important
 do_test shell2-1.4.1 {
   forcedelete foo.db
-  catchcmd "foo.db" {CREATE TABLE foo(a);
+  catchcmd "foo.db" {.mode batch
+CREATE TABLE foo(a);
 INSERT INTO foo(a) VALUES(1);
 SELECT * FROM foo;}
 } {0 1}
@@ -96,7 +97,9 @@ SELECT * FROM foo;
 # NB. whitespace is important
 do_test shell2-1.4.3 {
   forcedelete foo.db
-  catchcmd "foo.db" {.echo ON
+  catchcmd "foo.db" {
+.mode batch
+.echo ON
 CREATE TABLE foo(a);
 INSERT INTO foo(a) VALUES(1);
 SELECT * FROM foo;}
@@ -110,7 +113,9 @@ SELECT * FROM foo;
 # NB. whitespace is important
 do_test shell2-1.4.4 {
   forcedelete foo.db
-  catchcmd "foo.db" {.echo ON
+  catchcmd "foo.db" {
+.mode batch
+.echo ON
 CREATE TABLE foo(a);
 .echo OFF
 INSERT INTO foo(a) VALUES(1);
@@ -124,7 +129,9 @@ SELECT * FROM foo;}
 # NB. whitespace is important
 do_test shell2-1.4.5 {
   forcedelete foo.db
-  catchcmdex "foo.db" {.echo ON
+  catchcmdex "foo.db" {
+.mode batch
+.echo ON
 CREATE TABLE foo1(a);
 INSERT INTO foo1(a) VALUES(1);
 CREATE TABLE foo2(b);
@@ -153,7 +160,9 @@ SELECT * FROM foo1; SELECT * FROM foo2;
 # NB. whitespace is important
 do_test shell2-1.4.6 {
   forcedelete foo.db
-  catchcmdex "foo.db" {.echo ON
+  catchcmdex "foo.db" {
+.mode batch
+.echo ON
 .headers ON
 CREATE TABLE foo1(a);
 INSERT INTO foo1(a) VALUES(1);
@@ -208,6 +217,7 @@ do_test shell2-1.4.9 {
 do_test shell2-1.4.9 {
   forcedelete clone.db
   set res [catchcmd :memory: [string trim {
+.mode batch
  CREATE TABLE t(id INTEGER PRIMARY KEY AUTOINCREMENT);
  INSERT INTO t VALUES (1),(2);
 .clone clone.db
@@ -222,6 +232,7 @@ ifcapable vtab {
 # See overflow report at https://sqlite.org/forum/forumpost/5d34ce5280
 do_test shell2-1.4.10 {
  set res [catchcmd :memory: [string trim {
+ .mode batch
  SELECT * FROM generate_series(9223372036854775807,9223372036854775807,1);
  SELECT * FROM generate_series(9223372036854775807,9223372036854775807,-1);
  SELECT avg(value),min(value),max(value) FROM generate_series(
@@ -248,6 +259,65 @@ do_test shell2-1.4.10 {
 0
 1
 2}}
+do_test shell2-1.4.10b {
+ set res [catchcmd :memory: [string trim {
+ .mode tty
+.print
+ SELECT * FROM generate_series(9223372036854775807,9223372036854775807,1);
+ SELECT * FROM generate_series(9223372036854775807,9223372036854775807,-1);
+ SELECT avg(value),min(value),max(value) FROM generate_series(
+  -9223372036854775808,9223372036854775807,1085102592571150095);
+ SELECT * FROM generate_series(-9223372036854775808,9223372036854775807,
+  9223372036854775807);
+ SELECT value FROM generate_series(-4611686018427387904,
+  4611686018427387904, 4611686018427387904) ORDER BY value DESC;
+ SELECT * FROM generate_series(0,-2,-1);
+ SELECT * FROM generate_series(0,-2);
+ SELECT * FROM generate_series(0,2) LIMIT 3;}]]
+} {0 {
+╭─────────────────────╮
+│        value        │
+╞═════════════════════╡
+│ 9223372036854775807 │
+╰─────────────────────╯
+╭─────────────────────╮
+│        value        │
+╞═════════════════════╡
+│ 9223372036854775807 │
+╰─────────────────────╯
+╭────────────┬──────────────────────┬─────────────────────╮
+│ avg(value) │      min(value)      │     max(value)      │
+╞════════════╪══════════════════════╪═════════════════════╡
+│       -0.5 │ -9223372036854775808 │ 9223372036854775807 │
+╰────────────┴──────────────────────┴─────────────────────╯
+╭──────────────────────╮
+│        value         │
+╞══════════════════════╡
+│ -9223372036854775808 │
+│                   -1 │
+│  9223372036854775806 │
+╰──────────────────────╯
+╭──────────────────────╮
+│        value         │
+╞══════════════════════╡
+│  4611686018427387904 │
+│                    0 │
+│ -4611686018427387904 │
+╰──────────────────────╯
+╭───────╮
+│ value │
+╞═══════╡
+│     0 │
+│    -1 │
+│    -2 │
+╰───────╯
+╭───────╮
+│ value │
+╞═══════╡
+│     0 │
+│     1 │
+│     2 │
+╰───────╯}}
 }  ;# ifcapable vtab
 
 ifcapable vtab {
@@ -260,21 +330,113 @@ do_test shell2-1.4.11 {
   close $df
   set res [catchcmd :memory: [string trim {
  CREATE TABLE t(line text);
-.mode ascii
-.separator "\377" "\n"
+.mode ascii -colsep "\377" -rowsep "\n"
 .import dummy.csv t
  SELECT count(*) FROM t;}]]
-} {0 1}
+} {1 {0
+Error: .import column separator must be ASCII}}
 } ;# ifcapable vtab
 
 # Bug from forum post 7cbe081746dd3803
 # Keywords as column names were producing an error message.
 do_test shell2-1.4.12 {
-  set res [catchcmd :memory: [string trim {
+  set res [catchcmd :memory: [string trim {.mode batch
  CREATE TABLE "group"("order" text);
  INSERT INTO "group" VALUES ('ABC');
 .sha3sum}]]
 } {0 ca08bc02b7e95c7df431a3a4b1cc0f8d8743914793473f55b5558e03}
+
+#-------------------------------------------------------------------------
+
+foreach {tn hexdump expect} {
+  0 {
+| size 8192 pagesize 4096 filename my.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 03 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03   ................
+|     96: 00 2e 8d f8 0d 00 00 00 01 0f df 00 0f df 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1f   ................
+|   4064: 01 06 17 0f 0f 01 2f 74 61 62 6c 65 74 74 02 43   ....../tablett.C
+|   4080: 52 45 41 54 45 20 54 41 42 4c 45 20 74 28 78 29   REATE TABLE t(x)
+| page 2 offset 4096
+|      0: 0d 00 00 00 02 0f ee 00 0f f7 0f ee 00 00 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02   ................
+|   4080: 02 17 77 6f 72 6c 64 07 01 02 17 68 65 6c 6c 6f   ..world....hello
+| end my.db
+  }
+  {0 {}}
+
+  1 {
+| size 2147483647 pagesize 4096 filename my.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 03 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03   ................
+|     96: 00 2e 8d f8 0d 00 00 00 01 0f df 00 0f df 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1f   ................
+|   4064: 01 06 17 0f 0f 01 2f 74 61 62 6c 65 74 74 02 43   ....../tablett.C
+|   4080: 52 45 41 54 45 20 54 41 42 4c 45 20 74 28 78 29   REATE TABLE t(x)
+| page 2 offset 4096
+|      0: 0d 00 00 00 02 0f ee 00 0f f7 0f ee 00 00 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02   ................
+|   4080: 02 17 77 6f 72 6c 64 07 01 02 17 68 65 6c 6c 6f   ..world....hello
+| end my.db
+  }
+  {1 {Error: out of memory}}
+
+  2 {
+| size 8192 pagesize 4096 filename my.db
+| page 1 offset 2147483647
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 03 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03   ................
+|     96: 00 2e 8d f8 0d 00 00 00 01 0f df 00 0f df 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1f   ................
+|   4064: 01 06 17 0f 0f 01 2f 74 61 62 6c 65 74 74 02 43   ....../tablett.C
+|   4080: 52 45 41 54 45 20 54 41 42 4c 45 20 74 28 78 29   REATE TABLE t(x)
+| page 2 offset 4096
+|      0: 0d 00 00 00 02 0f ee 00 0f f7 0f ee 00 00 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02   ................
+|   4080: 02 17 77 6f 72 6c 64 07 01 02 17 68 65 6c 6c 6f   ..world....hello
+| end my.db
+  }
+  {0 {}}
+
+ 3 {
+| size 8192 pagesize 4096 filename my.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 03 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 03   ................
+|     96: 00 2e 8d f8 0d 00 00 00 01 0f df 00 0f df 00 00   ................
+|   4048: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1f   ................
+|   4064: 01 06 17 0f 0f 01 2f 74 61 62 6c 65 74 74 02 43   ....../tablett.C
+|   4080: 52 45 41 54 45 20 54 41 42 4c 45 20 74 28 78 29   REATE TABLE t(x)
+| page 2 offset 4096
+|      2147483647: 0d 00 00 00 02 0f ee 00 0f f7 0f ee 00 00 00 00   ................
+|   4064: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 07 02   ................
+|   4080: 02 17 77 6f 72 6c 64 07 01 02 17 68 65 6c 6c 6f   ..world....hello
+| end my.db
+}
+  {0 {}}
+
+} {
+  set fd [open dump.txt w]
+  puts $fd [string trim $hexdump]
+  close $fd
+  do_test shell2-2.$tn.1 {
+    set rc [ catchcmd "" ".open --hexdb dump.txt"]
+  } $expect
+}
 
 
 finish_test

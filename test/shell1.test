@@ -216,10 +216,14 @@ do_test shell1-2.2.4 {
 } {0 {}}
 do_test shell1-2.2.5 {
   catchcmd "test.db" ".mode \"insert FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
+} {1 {line 1: .mode "insert FOO
+line 1:        ^--- unknown mode
+line 1: Use ".help .mode" for more info}}
 do_test shell1-2.2.6 {
   catchcmd "test.db" ".mode \'insert FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
+} {1 {line 1: .mode 'insert FOO
+line 1:        ^--- unknown mode
+line 1: Use ".help .mode" for more info}}
 
 # check multiple tokens, and quoted tokens
 do_test shell1-2.3.1 {
@@ -247,7 +251,9 @@ do_test shell1-2.3.7 {
 # check quoted args are unquoted
 do_test shell1-2.4.1 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
+} {1 {line 1: .mode FOO
+line 1:       ^--- unknown mode
+line 1: Use ".help .mode" for more info}}
 do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -296,9 +302,7 @@ do_test shell1-3.2.4 {
   catchcmd "test.db" ".bail OFF BAD"
 } {1 {Usage: .bail on|off}}
 
-# This test will not work on winrt, as winrt has no concept of the absolute
-# paths that the test expects in the result. It uses relative paths only.
-ifcapable vtab&&!winrt {
+ifcapable vtab {
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
@@ -364,7 +368,6 @@ do_test shell1-3.7.4 {
   catchcmd "test.db" ".explain OFF BAD"
 } {0 {}}
 
-
 # .header(s) ON|OFF      Turn display of headers on or off
 do_test shell1-3.9.1 {
   catchcmd "test.db" ".header"
@@ -400,7 +403,7 @@ do_test shell1-3.10.1 {
   # look for a few of the possible help commands
   list [regexp {.help} $res] \
        [regexp {.quit} $res] \
-       [regexp {.show} $res]
+       [regexp {.mode} $res]
 } {1 1 1}
 do_test shell1-3.10.2 {
   # we allow .help to take extra args (it is help after all)
@@ -408,20 +411,24 @@ do_test shell1-3.10.2 {
   # look for a few of the possible help commands
   list [regexp {.help} $res] \
        [regexp {.quit} $res] \
-       [regexp {.show} $res]
+       [regexp {.mode} $res]
 } {1 1 1}
 
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell1-3.11.1 {
   catchcmd "test.db" ".import"
-} {/1 .ERROR: missing FILE argument.*/}
+} {/1 .line 1: Missing FILE argument.*/}
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
-} {/1 .ERROR: missing TABLE argument.*/}
+} {/1 .line 1: Missing TABLE argument.*/}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
-} {/1 .ERROR: extra argument: "BAD".*./}
+} {1 {line 1: .import FOO BAR BAD
+line 1:                 ^--- unknown argument}}
+do_test shell1-3.11.4 {
+  catchcmd "test.db" ".import <<END t1\na,b,c\n1,2,3"
+} {1 {line 1: Content terminator "END" not found.}}
 
 # .indexes ?TABLE?       Show names of all indexes
 #                          If TABLE specified, only show indexes for tables
@@ -451,11 +458,13 @@ do_test shell1-3.12.3 {
 #                          tabs     Tab-separated values
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
-  catchcmd "test.db" ".mode"
-} {0 {current output mode: list --escape ascii}}
+  catchcmd "test.db" ".mode batch\n.mode"
+} {0 {.mode list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
+} {1 {line 1: .mode FOO
+line 1:       ^--- unknown mode
+line 1: Use ".help .mode" for more info}}
 do_test shell1-3.13.3 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -503,7 +512,7 @@ do_test shell1-3.15.1 {
 .print x"
 } {0 x}
 do_test shell1-3.15.2 {
-  catchcmd "test.db" ".output FOO
+  catchcmd "test.db" ".mode batch\n.output FOO
 .print x
 .output
 SELECT readfile('FOO');"
@@ -512,17 +521,8 @@ SELECT readfile('FOO');"
 do_test shell1-3.15.3 {
   # too many arguments
   catchcmd "test.db" ".output FOO BAD"
-} {1 {ERROR: extra parameter: "BAD".  Usage:
-.output ?FILE?           Send output to FILE or stdout if FILE is omitted
-   If FILE begins with '|' then open it as a pipe.
-   If FILE is 'off' then output is disabled.
-   Options:
-     --bom                 Prefix output with a UTF8 byte-order mark
-     -e                    Send output to the system text editor
-     --plain               Use text/plain for -w option
-     -w                    Send output to a web browser
-     -x                    Send output as CSV to a spreadsheet
-child process exited abnormally}}
+} {1 {line 1: .output FOO BAD
+line 1:             ^--- surplus argument}}
 
 # .output stdout         Send output to the screen
 do_test shell1-3.16.1 {
@@ -531,17 +531,8 @@ do_test shell1-3.16.1 {
 do_test shell1-3.16.2 {
   # too many arguments
   catchcmd "test.db" ".output stdout BAD"
-} {1 {ERROR: extra parameter: "BAD".  Usage:
-.output ?FILE?           Send output to FILE or stdout if FILE is omitted
-   If FILE begins with '|' then open it as a pipe.
-   If FILE is 'off' then output is disabled.
-   Options:
-     --bom                 Prefix output with a UTF8 byte-order mark
-     -e                    Send output to the system text editor
-     --plain               Use text/plain for -w option
-     -w                    Send output to a web browser
-     -x                    Send output as CSV to a spreadsheet
-child process exited abnormally}}
+} {1 {line 1: .output stdout BAD
+line 1:                ^--- surplus argument}}
 
 # .prompt MAIN CONTINUE  Replace the standard prompts
 do_test shell1-3.17.1 {
@@ -625,6 +616,20 @@ CREATE VIEW v1 AS SELECT y+1 FROM v2
 
   catch {db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}}
 }
+do_test shell1-3.21.5 {
+  exec {*}$CLI -noinit test.db \
+   {CREATE TABLE t2(a INTEGER PRIMARY KEY, b BLOB DEFAULT(jsonb('[]')),c TEXT NOT NULL)STRICT;} \
+   {.schema -indent t2}
+} {CREATE TABLE t2(
+  a INTEGER PRIMARY KEY,
+  b BLOB DEFAULT(jsonb('[]')),
+  c TEXT NOT NULL
+)STRICT;}
+do_test shell1-3.21.6 {
+  exec {*}$CLI -noinit test.db \
+   {DROP TABLE t2;} \
+   {.schema -indent t2}
+} {}
 
 # .separator STRING  Change column separator used by output and .import
 do_test shell1-3.22.1 {
@@ -643,7 +648,7 @@ do_test shell1-3.22.4 {
 
 # .show                  Show the current values for various settings
 do_test shell1-3.23.1 {
-  set res [catchcmd "test.db" ".show"]
+  set res [catchcmd "test.db" ".mode batch\n.show"]
   list [regexp {echo:} $res] \
        [regexp {explain:} $res] \
        [regexp {headers:} $res] \
@@ -679,7 +684,7 @@ do_test shell1-3.23b.4 {
 # Adverse interaction between .stats and .eqp
 #
 do_test shell1-3.23b.5 {
-  catchcmd "test.db" [string map {"\n    " "\n"} {
+  catchcmd "test.db" [string map {"\n    " "\n"} {.mode batch
     CREATE TEMP TABLE t1(x);
     INSERT INTO t1 VALUES(1),(2);
     .stats on
@@ -741,19 +746,16 @@ do_test shell1-3.26.5 {
 do_test shell1-3.26.6 {
   catchcmd "test.db" ".mode column\n.header off\n.width -10 10\nSELECT 'abcdefg', 123456;"
   # this should be treated the same as a '1' width for col 1 and 2
-} {0 {   abcdefg  123456    }}
+} {0 {   abcdefg  123456}}
 
 
 # .timer ON|OFF          Turn the CPU timer measurement on or off
 do_test shell1-3.27.1 {
   catchcmd "test.db" ".timer"
 } {1 {Usage: .timer on|off}}
-ifcapable !winrt {
-  # No timer support on winrt.
-  do_test shell1-3.27.2 {
-    catchcmd "test.db" ".timer ON"
-  } {0 {}}
-}
+do_test shell1-3.27.2 {
+  catchcmd "test.db" ".timer ON"
+} {0 {}}
 do_test shell1-3.27.3 {
   catchcmd "test.db" ".timer OFF"
 } {0 {}}
@@ -762,9 +764,9 @@ do_test shell1-3.27.4 {
   catchcmd "test.db" ".timer OFF BAD"
 } {1 {Usage: .timer on|off}}
 
-do_test shell1-3-28.1 {
+do_test shell1-3.28.1 {
   catchcmd test.db \
-     ".log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
+     ".mode batch\n.log stdout\nSELECT coalesce(sqlite_log(123,'hello'),'456');"
 } "0 {(123) hello\n456}"
 
 do_test shell1-3-29.1 {
@@ -803,14 +805,14 @@ INSERT INTO t1 VALUES('');
 INSERT INTO t1 VALUES(1);
 INSERT INTO t1 VALUES(2.25);
 INSERT INTO t1 VALUES('hello');
-INSERT INTO t1 VALUES(X'807f');
+INSERT INTO t1 VALUES(x'807f');
 CREATE TABLE t3(x,y);
 INSERT INTO t3 VALUES(1,NULL);
 INSERT INTO t3 VALUES(2,'');
 INSERT INTO t3 VALUES(3,1);
 INSERT INTO t3 VALUES(4,2.25);
 INSERT INTO t3 VALUES(5,'hello');
-INSERT INTO t3 VALUES(6,X'807f');
+INSERT INTO t3 VALUES(6,x'807f');
 COMMIT;}}
 
 
@@ -828,14 +830,14 @@ INSERT INTO t1(rowid,x) VALUES(2,'');
 INSERT INTO t1(rowid,x) VALUES(3,1);
 INSERT INTO t1(rowid,x) VALUES(4,2.25);
 INSERT INTO t1(rowid,x) VALUES(5,'hello');
-INSERT INTO t1(rowid,x) VALUES(6,X'807f');
+INSERT INTO t1(rowid,x) VALUES(6,x'807f');
 CREATE TABLE t3(x,y);
 INSERT INTO t3(rowid,x,y) VALUES(1,1,NULL);
 INSERT INTO t3(rowid,x,y) VALUES(2,2,'');
 INSERT INTO t3(rowid,x,y) VALUES(3,3,1);
 INSERT INTO t3(rowid,x,y) VALUES(4,4,2.25);
 INSERT INTO t3(rowid,x,y) VALUES(5,5,'hello');
-INSERT INTO t3(rowid,x,y) VALUES(6,6,X'807f');
+INSERT INTO t3(rowid,x,y) VALUES(6,6,x'807f');
 COMMIT;}}
 
 # If the table contains an INTEGER PRIMARY KEY, do not record a separate
@@ -854,12 +856,12 @@ do_test shell1-4.1.2 {
 } {0 {PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
-INSERT INTO t1 VALUES(1,NULL);
-INSERT INTO t1 VALUES(2,'');
-INSERT INTO t1 VALUES(3,1);
-INSERT INTO t1 VALUES(4,2.25);
-INSERT INTO t1 VALUES(5,'hello');
-INSERT INTO t1 VALUES(6,X'807f');
+INSERT INTO t1(x,y) VALUES(1,NULL);
+INSERT INTO t1(x,y) VALUES(2,'');
+INSERT INTO t1(x,y) VALUES(3,1);
+INSERT INTO t1(x,y) VALUES(4,2.25);
+INSERT INTO t1(x,y) VALUES(5,'hello');
+INSERT INTO t1(x,y) VALUES(6,x'807f');
 COMMIT;}}
 
 # Verify that the table named [table] is correctly quoted and that
@@ -883,7 +885,7 @@ INSERT INTO "table"(rowid,x,y) VALUES(2,12,'');
 INSERT INTO "table"(rowid,x,y) VALUES(3,23,1);
 INSERT INTO "table"(rowid,x,y) VALUES(4,34,2.25);
 INSERT INTO "table"(rowid,x,y) VALUES(5,45,'hello');
-INSERT INTO "table"(rowid,x,y) VALUES(6,56,X'807f');
+INSERT INTO "table"(rowid,x,y) VALUES(6,56,x'807f');
 COMMIT;}}
 
 # Do not record rowids for a WITHOUT ROWID table.  Also check correct quoting
@@ -902,12 +904,12 @@ do_test shell1-4.1.4 {
 } {0 {PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE [ta<>ble](x INTEGER PRIMARY KEY, y) WITHOUT ROWID;
-INSERT INTO "ta<>ble" VALUES(1,NULL);
-INSERT INTO "ta<>ble" VALUES(12,'');
-INSERT INTO "ta<>ble" VALUES(23,1);
-INSERT INTO "ta<>ble" VALUES(34,2.25);
-INSERT INTO "ta<>ble" VALUES(45,'hello');
-INSERT INTO "ta<>ble" VALUES(56,X'807f');
+INSERT INTO "ta<>ble"(x,y) VALUES(1,NULL);
+INSERT INTO "ta<>ble"(x,y) VALUES(12,'');
+INSERT INTO "ta<>ble"(x,y) VALUES(23,1);
+INSERT INTO "ta<>ble"(x,y) VALUES(34,2.25);
+INSERT INTO "ta<>ble"(x,y) VALUES(45,'hello');
+INSERT INTO "ta<>ble"(x,y) VALUES(56,x'807f');
 COMMIT;}}
 
 # Do not record rowids if the rowid is inaccessible
@@ -924,9 +926,9 @@ do_test shell1-4.1.5 {
 } {0 {PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE t1(_ROWID_,rowid,oid);
-INSERT INTO t1 VALUES(1,NULL,'alpha');
-INSERT INTO t1 VALUES(12,'',99);
-INSERT INTO t1 VALUES(23,1,X'b0b1b2');
+INSERT INTO t1(_ROWID_,rowid,oid) VALUES(1,NULL,'alpha');
+INSERT INTO t1(_ROWID_,rowid,oid) VALUES(12,'',99);
+INSERT INTO t1(_ROWID_,rowid,oid) VALUES(23,1,x'b0b1b2');
 COMMIT;}}
 
 } else {
@@ -941,10 +943,75 @@ do_test shell1-4.1.6 {
                          (4,2.25), (5,'hello'), (6,x'807f');
   }
   catchcmd test2.db {.dump --preserve-rowids}
-} {1 {The --preserve-rowids option is not compatible with SQLITE_OMIT_VIRTUALTABLE}}
+} {/.* --preserve-rowids option is not compatible with SQLITE_OMIT_VIRTUALTABLE/}
 
 }
 
+# DELETE content of sqlite_sequence prior to repopulating,
+# but only if the sqlite_sequence table is non-empty.
+# Forum: 2024-10-13T17:10:01z and 2025-10-29T19:38:43z
+#
+do_test shell1-4.1.7 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    INSERT INTO t1 VALUES(1,2),(20,21),(15,16);
+  }
+  catchcmd test2.db {.dump}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+INSERT INTO t1 VALUES(1,2);
+INSERT INTO t1 VALUES(15,16);
+INSERT INTO t1 VALUES(20,21);
+PRAGMA writable_schema=ON;
+CREATE TABLE IF NOT EXISTS sqlite_sequence(name,seq);
+DELETE FROM sqlite_sequence;
+INSERT INTO sqlite_sequence VALUES('t1',20);
+PRAGMA writable_schema=OFF;
+COMMIT;}}
+do_test shell1-4.1.8 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    INSERT INTO t1 VALUES(1,2),(20,21),(15,16);
+    CREATE TABLE t2(x,y);
+    INSERT INTO t2 VALUES(99,88);
+    DROP TABLE t1;
+  }
+  catchcmd test2.db {.dump}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t2(x,y);
+INSERT INTO t2 VALUES(99,88);
+COMMIT;}}
+do_test shell1-4.1.9 {
+  db close
+  forcedelete test2.db
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    INSERT INTO t1 VALUES(1,2),(20,21),(15,16);
+    CREATE TABLE t2(x,y);
+    INSERT INTO t2 VALUES(99,88);
+    INSERT INTO sqlite_sequence VALUES('extra',999);
+    DROP TABLE t1;
+  }
+  catchcmd test2.db {.dump}
+} {0 {PRAGMA foreign_keys=OFF;
+BEGIN TRANSACTION;
+CREATE TABLE t2(x,y);
+INSERT INTO t2 VALUES(99,88);
+PRAGMA writable_schema=ON;
+CREATE TABLE IF NOT EXISTS sqlite_sequence(name,seq);
+DELETE FROM sqlite_sequence;
+INSERT INTO sqlite_sequence VALUES('extra',999);
+PRAGMA writable_schema=OFF;
+COMMIT;}}
 
 # Test the output of ".mode insert"
 #
@@ -955,7 +1022,7 @@ INSERT INTO t1 VALUES('');
 INSERT INTO t1 VALUES(1);
 INSERT INTO t1 VALUES(2.25);
 INSERT INTO t1 VALUES('hello');
-INSERT INTO t1 VALUES(X'807f');}}
+INSERT INTO t1 VALUES(x'807f');}}
 
 # Test the output of ".mode insert" with headers
 #
@@ -966,7 +1033,7 @@ INSERT INTO t1(x) VALUES('');
 INSERT INTO t1(x) VALUES(1);
 INSERT INTO t1(x) VALUES(2.25);
 INSERT INTO t1(x) VALUES('hello');
-INSERT INTO t1(x) VALUES(X'807f');}}
+INSERT INTO t1(x) VALUES(x'807f');}}
 
 # Test the output of ".mode insert"
 #
@@ -977,7 +1044,7 @@ INSERT INTO t3 VALUES(2,'');
 INSERT INTO t3 VALUES(3,1);
 INSERT INTO t3 VALUES(4,2.25);
 INSERT INTO t3 VALUES(5,'hello');
-INSERT INTO t3 VALUES(6,X'807f');}}
+INSERT INTO t3 VALUES(6,x'807f');}}
 
 # Test the output of ".mode insert" with headers
 #
@@ -988,7 +1055,7 @@ INSERT INTO t3(x,y) VALUES(2,'');
 INSERT INTO t3(x,y) VALUES(3,1);
 INSERT INTO t3(x,y) VALUES(4,2.25);
 INSERT INTO t3(x,y) VALUES(5,'hello');
-INSERT INTO t3(x,y) VALUES(6,X'807f');}}
+INSERT INTO t3(x,y) VALUES(6,x'807f');}}
 
 # Test the output of ".mode tcl"
 #
@@ -1004,8 +1071,8 @@ do_test shell1-4.3 {
   catchcmd test.db ".mode tcl\nselect * from t1;"
 } {0 {""
 ""
-"1"
-"2.25"
+1
+2.25
 "hello"
 "\200\177"}}
 
@@ -1018,15 +1085,15 @@ do_test shell1-4.4 {
   }
   catchcmd test.db ".mode tcl\nselect * from t2;"
 } {0 {"" ""
-"1" "2.25"
+1 2.25
 "hello" "\200\177"}}
 
 # Test the output of ".mode tcl" with ".nullvalue"
 #
 do_test shell1-4.5 {
   catchcmd test.db ".mode tcl\n.nullvalue NULL\nselect * from t2;"
-} {0 {"NULL" ""
-"1" "2.25"
+} {0 {NULL ""
+1 2.25
 "hello" "\200\177"}}
 
 # Test the output of ".mode tcl" with Tcl reserved characters
@@ -1050,7 +1117,7 @@ do_test shell1-4.6 {
 #
 do_test shell1-4.7 {
   catchcmd test.db ".mode quote\nselect x'0123456789ABCDEF';"
-} {0 X'0123456789abcdef'}
+} {0 x'0123456789abcdef'}
 
 # Test using arbitrary byte data with the shell via standard input/output.
 #
@@ -1209,7 +1276,7 @@ do_test shell1-7.1.7 {
 # information.
 #
 do_test shell1-8.1 {
-  catchcmd ":memory:" {
+  catchcmd ":memory:" {.mode batch
     -- The pow2 table will hold all the necessary powers of two.
     CREATE TABLE pow2(x INTEGER PRIMARY KEY, v TEXT);
     WITH RECURSIVE c(x,v) AS (
@@ -1235,20 +1302,20 @@ do_test_with_ansi_output shell1-8.2 {
 .mode box
 SELECT ieee754(47.49) AS x;
   }
-} {0 {┌───────────────────────────────┐
+} {0 {╭───────────────────────────────╮
 │               x               │
-├───────────────────────────────┤
+╞═══════════════════════════════╡
 │ ieee754(6683623321994527,-47) │
-└───────────────────────────────┘}}
+╰───────────────────────────────╯}}
 do_test_with_ansi_output shell1-8.3 {
   catchcmd ":memory: --box" {
     select ieee754(6683623321994527,-47) as x;
   }
-} {0 {┌───────┐
+} {0 {╭───────╮
 │   x   │
-├───────┤
+╞═══════╡
 │ 47.49 │
-└───────┘}}
+╰───────╯}}
 do_test shell1-8.4 {
   catchcmd ":memory: --table" {SELECT ieee754_mantissa(47.49) AS M, ieee754_exponent(47.49) AS E;}
 } {0 {+------------------+-----+
@@ -1256,35 +1323,42 @@ do_test shell1-8.4 {
 +------------------+-----+
 | 6683623321994527 | -47 |
 +------------------+-----+}}
+do_test shell1-8.4b {
+  catchcmd ":memory: --psql" \
+    {SELECT ieee754_mantissa(47.49) AS M, ieee754_exponent(47.49) AS E;}
+} {0 {        M         |  E
+------------------+-----
+ 6683623321994527 | -47}}
 do_test_with_ansi_output shell1-8.5 {
   catchcmd ":memory: --box" {
 create table t(a text, b int);
 insert into t values ('too long for one line', 1), ('shorter', NULL);
 .header on
+.mode box --wordwrap off
 .width 10 10
 .nullvalue NADA
 select * from t;}
-} {0 {┌────────────┬────────────┐
+} {0 {╭────────────┬────────────╮
 │     a      │     b      │
-├────────────┼────────────┤
-│ too long f │ 1          │
+╞════════════╪════════════╡
+│ too long f │          1 │
 │ or one lin │            │
 │ e          │            │
 ├────────────┼────────────┤
 │ shorter    │ NADA       │
-└────────────┴────────────┘}}
+╰────────────┴────────────╯}}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
 #
 do_test shell1-9.1 {
   catchcmd :memory: {
-.mode csv
+.mode csv --rowsep "\n"
 /*
 x */ select 1,2; --x
  -- .nada
 ;
-.mode csv
+.mode csv --rowsep "\n"
 --x
 select 2,1; select 3,4;
 }
@@ -1303,5 +1377,49 @@ select base64(base64(cast('digity-doo' as blob))),
  base85(base85(cast('digity-doo' as blob)));
 }
 } {0 digity-doo|digity-doo}
+
+#----------------------------------------------------------------------------
+# Test cases shell1-11.*: 
+#
+do_test shell1-11.1 {
+  catchcmd :memory: {
+.mode list
+.header off
+select base64(zeroblob(2000000000));
+}
+} {/1.*too big.*/}
+do_test shell1-11.2 {
+  catchcmd :memory: {
+.mode list
+.header off
+select base85(zeroblob(2000000000));
+}
+} {/1.*too big.*/}
+
+#----------------------------------------------------------------------------
+# As of 2025-11-17, the default mode is:
+#
+#     qbox --screenwidth auto --linelimit 5 --charlimit 300 --textjsonb on
+#
+do_test shell1-12.1 {
+  catchcmd :memory: {.mode tty -quote sql
+.print
+SELECT jsonb(1234) AS x;}
+} {0 {
+╭───────────────╮
+│       x       │
+╞═══════════════╡
+│ jsonb('1234') │
+╰───────────────╯}}
+do_test shell1-12.2 {
+  catchcmd :memory: {.mode box --textjsonb on
+.print
+SELECT jsonb(1234) AS x;}
+} {0 {
+╭──────╮
+│  x   │
+╞══════╡
+│ 1234 │
+╰──────╯}}
 
 finish_test

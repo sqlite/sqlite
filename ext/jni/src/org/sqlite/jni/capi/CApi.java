@@ -115,8 +115,9 @@ public final class CApi {
      JNIEnv is not cached, else returns true, but this information is
      primarily for testing of the JNI bindings and is not information
      which client-level code can use to make any informed
-     decisions. Its return type and semantics are not considered
-     stable and may change at any time.
+     decisions. The semantics of its return type and value are not
+     considered stable and may change at any time. i.e. act as if it
+     returns null.
   */
   public static native boolean sqlite3_java_uncache_thread();
 
@@ -1197,10 +1198,15 @@ public final class CApi {
 
   public static native String sqlite3_errmsg(@NotNull sqlite3 db);
 
+  /** Added in 3.51.0. */
+  public static native int sqlite3_set_errmsg(@NotNull sqlite3 db,
+                                              int resultCode,
+                                              String msg);
+
   private static native int sqlite3_error_offset(@NotNull long ptrToDb);
 
   /**
-     Note that the returned byte offset values assume UTF-8-encoded
+     Caveat: the returned byte offset values assume UTF-8-encoded
      inputs, so won't always match character offsets in Java Strings.
   */
   public static int sqlite3_error_offset(@NotNull sqlite3 db){
@@ -2580,7 +2586,8 @@ public final class CApi {
   public static final int SQLITE_DBSTATUS_DEFERRED_FKS = 10;
   public static final int SQLITE_DBSTATUS_CACHE_USED_SHARED = 11;
   public static final int SQLITE_DBSTATUS_CACHE_SPILL = 12;
-  public static final int SQLITE_DBSTATUS_MAX = 12;
+  public static final int SQLITE_DBSTATUS_TEMPBUF_SPILL = 13;
+  public static final int SQLITE_DBSTATUS_MAX = 13;
 
   // encodings
   public static final int SQLITE_UTF8 = 1;

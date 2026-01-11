@@ -119,7 +119,7 @@ TCLLIBDIR         = @TCLLIBDIR@
 # typically come from the ./configure command-line invocation).
 #
 CFLAGS.configure = @SH_CFLAGS@ @TEAISH_CFLAGS@ @CFLAGS@ @CPPFLAGS@ $(TCL_INCLUDE_SPEC)
-#CFLAGS.configure += -DUSE_TCL_STUBS=1
+CFLAGS.configure += -DUSE_TCL_STUBS=@TEAISH_USE_STUBS@
 
 #
 # LDFLAGS.configure = LDFLAGS as known at configure-time.
@@ -153,6 +153,7 @@ tx.src     = @TEAISH_EXT_SRC@
 # gets set up via the configure script.
 #
 tx.CFLAGS  =
+tx.CPPFLAGS  =
 
 #
 # tx.LDFLAGS is typically set by teaish.make, whereas TEAISH_LDFLAGS
@@ -218,7 +219,7 @@ config.log: @TEAISH_TEST_TCL_IN@
 # CC variant for compiling Tcl-using sources.
 #
 CC.tcl = \
-  $(CC) -o $@ $(CFLAGS.configure) $(CFLAGS) $(tx.CFLAGS)
+  $(CC) -o $@ $(CFLAGS.configure) $(CFLAGS) $(tx.CFLAGS) $(tx.CPPFLAGS)
 
 #
 # CC variant for linking $(tx.src) into an extension DLL.  Note that

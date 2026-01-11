@@ -171,8 +171,6 @@ static struct GlobalVars {
 */
 extern int sqlite3_vt02_init(sqlite3*,char**,const sqlite3_api_routines*);
 extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
-extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
-
 
 /*
 ** Print an error message and quit.
@@ -1059,11 +1057,14 @@ static int recoverDatabase(sqlite3 *db){
   }
   return rc;
 }
+
 /*
 ** Special parameter binding, for testing and debugging purposes.
 **
-**     $int_NNN      ->   integer value NNN
-**     $text_TTTT    ->   floating point value TTT with destructor
+**     $int_NNN        ->   integer value NNN
+**     $text_TTTT      ->   floating point value TTT with destructor
+**     $carray_clr     ->   First argument to carray() for color names
+**     $carray_primes  ->   First argument to carray() for prime numbers
 */
 static void bindDebugParameters(sqlite3_stmt *pStmt){
   int nVar = sqlite3_bind_parameter_count(pStmt);
@@ -1071,6 +1072,24 @@ static void bindDebugParameters(sqlite3_stmt *pStmt){
   for(i=1; i<=nVar; i++){
     const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
     if( zVar==0 ) continue;
+#ifdef SQLITE_ENABLE_CARRAY
+    if( strcmp(zVar,"$carray_clr")==0 ){
+      static char *azColorNames[] = {
+        "azure", "black", "blue",   "brown", "cyan",   "fuchsia", "gold",
+        "gray",  "green", "indigo", "khaki", "lime",   "magenta", "maroon",
+        "navy",  "olive", "orange", "pink",  "purple", "red",     "silver",
+        "tan",   "teal",  "violet", "white", "yellow"
+      };
+      sqlite3_carray_bind(pStmt,i,azColorNames,26,SQLITE_CARRAY_TEXT,0);
+    }else
+    if( strcmp(zVar,"$carray_primes")==0 ){
+      static int aPrimes[] = {
+        1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
+       53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+      };
+      sqlite3_carray_bind(pStmt,i,aPrimes,26,SQLITE_CARRAY_INT32,0);
+    }else
+#endif
     if( strncmp(zVar, "$int_", 5)==0 ){
       sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
     }else
@@ -1362,7 +1381,6 @@ int runCombinedDbSqlInput(
   sqlite3_vt02_init(cx.db, 0, 0);
 
   /* Activate extensions */
-  sqlite3_percentile_init(cx.db, 0, 0);
   sqlite3_randomjson_init(cx.db, 0, 0);
 
   /* Add support for sqlite_dbdata and sqlite_dbptr virtual tables used
@@ -1959,6 +1977,7 @@ int main(int argc, char **argv){
   int iSliceIdx = 0;           /* Only run the piece with this index */
 
   sqlite3_config(SQLITE_CONFIG_URI,1);
+  sqlite3_config(SQLITE_CONFIG_MEMSTATUS,1);
   registerOomSimulator();
   sqlite3_initialize();
   iBegin = timeOfDay();

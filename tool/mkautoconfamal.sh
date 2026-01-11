@@ -59,7 +59,8 @@ cp $TOP/src/sqlite3.rc    $TMPSPACE
 cp $TOP/tool/Replace.cs   $TMPSPACE
 cp $TOP/VERSION           $TMPSPACE
 cp $TOP/main.mk           $TMPSPACE
-
+cp $TOP/make.bat          $TMPSPACE
+tree $TMPSPACE
 cd $TMPSPACE
 
 #if true; then
@@ -86,7 +87,7 @@ find . -type f -name '#*#' -exec rm -f \{} \; # emacs lock files
 find . -type f -name '*.o' -exec rm -f \{} \;
 find . -type f -name '*.so' -exec rm -f \{} \;
 
-./configure && make dist
+./configure && ${MAKE-make} dist
 tar xzf sqlite-$VERSION.tar.gz
 mv sqlite-$VERSION $TARBALLNAME
 tar czf $TARBALLNAME.tar.gz $TARBALLNAME

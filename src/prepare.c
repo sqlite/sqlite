@@ -33,7 +33,8 @@ static void corruptSchema(
     static const char *azAlterType[] = {
        "rename",
        "drop column",
-       "add column"
+       "add column",
+       "drop constraint"
     };
     *pData->pzErrMsg = sqlite3MPrintf(db, 
         "error in %s %s after %s: %s", azObj[0], azObj[1], 

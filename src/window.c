@@ -717,7 +717,7 @@ void sqlite3WindowUpdate(
           pWin->eEnd = aUp[i].eEnd;
           pWin->eExclude = 0;
           if( pWin->eStart==TK_FOLLOWING ){
-            pWin->pStart = sqlite3Expr(db, TK_INTEGER, "1");
+            pWin->pStart = sqlite3ExprInt32(db, 1);
           }
           break;
         }
@@ -1062,9 +1062,7 @@ int sqlite3WindowRewrite(Parse *pParse, Select *p){
     ** keep everything legal in this case.
     */
     if( pSublist==0 ){
-      pSublist = sqlite3ExprListAppend(pParse, 0,
-        sqlite3Expr(db, TK_INTEGER, "0")
-      );
+      pSublist = sqlite3ExprListAppend(pParse, 0, sqlite3ExprInt32(db, 0));
     }
 
     pSub = sqlite3SelectNew(
@@ -2553,7 +2551,7 @@ static int windowExprGtZero(Parse *pParse, Expr *pExpr){
 **
 **   ROWS BETWEEN <expr1> FOLLOWING AND <expr2> FOLLOWING
 **
-**     ... loop started by sqlite3WhereBegin() ...
+**   ... loop started by sqlite3WhereBegin() ...
 **     if( new partition ){
 **       Gosub flush
 **     }
@@ -3071,6 +3069,12 @@ void sqlite3WindowCodeStep(
       addrBreak2 = windowCodeOp(&s, WINDOW_AGGINVERSE, 0, 1);
     }else{
       assert( pMWin->eEnd==TK_FOLLOWING );
+      /* assert( regStart>=0 );
+      ** regEnd = regEnd - regStart;
+      ** regStart = 0;   */ 
+      sqlite3VdbeAddOp3(v, OP_Subtract, regStart, regEnd, regEnd);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, regStart);
+
       addrStart = sqlite3VdbeCurrentAddr(v);
       addrBreak1 = windowCodeOp(&s, WINDOW_RETURN_ROW, regEnd, 1);
       addrBreak2 = windowCodeOp(&s, WINDOW_AGGINVERSE, regStart, 1);

@@ -258,7 +258,7 @@ int sqlite3_fputs(const char *z, FILE *out){
 
 
 /*
-** Work-alike for fprintf() from the standard C library.
+** Work-alikes for fprintf() and vfprintf() from the standard C library.
 */
 int sqlite3_fprintf(FILE *out, const char *zFormat, ...){
   int rc;
@@ -282,6 +282,24 @@ int sqlite3_fprintf(FILE *out, const char *zFormat, ...){
     va_start(ap, zFormat);
     rc = vfprintf(out, zFormat, ap);
     va_end(ap);
+  }
+  return rc;
+}
+int sqlite3_vfprintf(FILE *out, const char *zFormat, va_list ap){
+  int rc;
+  if( UseWtextForOutput(out) ){
+    /* When writing to the command-prompt in Windows, it is necessary
+    ** to use _O_WTEXT input mode and write UTF-16 characters.
+    */
+    char *z;
+    z = sqlite3_vmprintf(zFormat, ap);
+    sqlite3_fputs(z, out);
+    rc = (int)strlen(z);
+    sqlite3_free(z);
+  }else{
+    /* Writing to a file or other destination, just write bytes without
+    ** any translation. */
+    rc = vfprintf(out, zFormat, ap);
   }
   return rc;
 }

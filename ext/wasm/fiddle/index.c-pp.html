@@ -5,20 +5,29 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>SQLite3 Fiddle</title>
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+//#if jqterm
     <!--
         To add a terminal-style view using jquery.terminal[^1],
         uncomment the following two HTML lines and ensure that these
         files are on the web server.
 
-        jquery-bundle.min.js is a concatenation of jquery.min.js from
+        jquery.terminal.bundle.min.js is a concatenation of jquery.min.js from
         [^2] and jquery.terminal.min.js from [^1].
-        jquery.terminal.min.css is from [^1].
+        jquery.terminal.min.css is from [^1]. Alterntely, jquery-VERSION.min.js
+        can be found in jquery.terminal's source tree.
+
+        Fiddle automatically enables support for this if it's installed.
+
+        In the canonical build process, if the JQTERM env var is set
+        to a dir containing a clone of [^1] then this block gets
+        enabled and a copy of [^1] is integrated automatically.
 
         [^1]: https://github.com/jcubic/jquery.terminal
         [^2]: https://jquery.com
     -->
-    <!--script src="jqterm/jqterm-bundle.min.js"></script>
-    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"-->
+    <script src="jqterm/jquery.terminal.bundle.min.js"></script>
+    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css">
+//#endif
     <style>
       /* The following styles are for app-level use. */
       :root {
@@ -383,6 +392,9 @@
       <input type='checkbox' id='opt-cb-autoclear'
              data-config='autoClearOutput'>
       <label for='opt-cb-autoclear'>Auto-clear output</label>
+    </span>
+    <span class='labeled-input'>
+      <span id='opt-wasm-info'>WASM: ???</span>
     </span>
   </div>
 </fieldset><!-- .options -->

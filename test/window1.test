@@ -2394,4 +2394,34 @@ do_execsql_test 78.2 {
     )) FROM (SELECT 'abc' AS x, 1 AS y);
 } NULL
 
+#-------------------------------------------------------------------------
+# Test that the following queries do not run for a very long time.
+#
+#   https://sqlite.org/forum/forumpost/b1993c858f
+#
+do_execsql_test 79.0 {
+  CREATE TABLE t0 (c0 INTEGER );
+  INSERT INTO t0 VALUES(1);
+  INSERT INTO t0 VALUES(2);
+  INSERT INTO t0 VALUES(3);
+}
+
+do_execsql_test 79.1 {
+  SELECT COUNT(*) 
+  OVER ( ROWS BETWEEN 0 FOLLOWING AND 100 FOLLOWING) 
+  FROM t0;
+} {3 2 1}
+
+do_execsql_test 79.2 {
+  SELECT COUNT(*) 
+  OVER ( ORDER BY c0 RANGE BETWEEN 0 FOLLOWING AND 10_000_000_000 FOLLOWING ) 
+  FROM t0;
+} {3 2 1}
+
+do_execsql_test 79.3 {
+  SELECT sum(c0), COUNT(*) 
+  OVER ( ORDER BY c0 RANGE BETWEEN 0 FOLLOWING AND 10_000_000_000 FOLLOWING ) 
+  FROM t0;
+} {6 1}
+
 finish_test

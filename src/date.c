@@ -188,6 +188,10 @@ static int parseTimezone(const char *zDate, DateTime *p){
   }
   zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
+  if( p->tz==0 ){   /* Forum post 2025-09-17T10:12:14z */
+    p->isLocal = 0;
+    p->isUtc = 1;
+  }
 zulu_time:
   while( sqlite3Isspace(*zDate) ){ zDate++; }
   return *zDate!=0;
@@ -1383,8 +1387,8 @@ static int daysAfterSunday(DateTime *pDate){
 **   %l  hour  1-12  (leading zero converted to space)
 **   %m  month 01-12
 **   %M  minute 00-59
-**   %p  "am" or "pm"
-**   %P  "AM" or "PM"
+**   %p  "AM" or "PM"
+**   %P  "am" or "pm"
 **   %R  time as HH:MM
 **   %s  seconds since 1970-01-01
 **   %S  seconds 00-59

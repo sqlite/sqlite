@@ -1368,6 +1368,7 @@ static int SQLITE_TCLAPI test_db_status(
     { "DEFERRED_FKS",        SQLITE_DBSTATUS_DEFERRED_FKS        },
     { "CACHE_USED_SHARED",   SQLITE_DBSTATUS_CACHE_USED_SHARED   },
     { "CACHE_SPILL",         SQLITE_DBSTATUS_CACHE_SPILL         },
+    { "TEMPBUF_SPILL",       SQLITE_DBSTATUS_TEMPBUF_SPILL       },
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){

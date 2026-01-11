@@ -1,4 +1,4 @@
-//#ifnot target=node
+//#if not target:node
 /*
   2022-09-18
 
@@ -16,7 +16,7 @@
   asynchronous Origin-Private FileSystem (OPFS) APIs using a second
   Worker, implemented in sqlite3-opfs-async-proxy.js.  This file is
   intended to be appended to the main sqlite3 JS deliverable somewhere
-  after sqlite3-api-oo1.js and before sqlite3-api-cleanup.js.
+  after sqlite3-api-oo1.js.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
@@ -209,9 +209,9 @@ const installOpfsVfs = function callee(options){
       return promiseResolve_(sqlite3);
     };
     const W =
-//#if target=es6-bundler-friendly
+//#if target:es6-bundler-friendly
     new Worker(new URL("sqlite3-opfs-async-proxy.js", import.meta.url));
-//#elif target=es6-module
+//#elif target:es6-module
     new Worker(new URL(options.proxyUri, import.meta.url));
 //#else
     new Worker(options.proxyUri);
@@ -589,7 +589,7 @@ const installOpfsVfs = function callee(options){
 
       /**
          Returns an array of the deserialized state stored by the most
-         recent serialize() operation (from from this thread or the
+         recent serialize() operation (from this thread or the
          counterpart thread), or null if the serialization buffer is
          empty.  If passed a truthy argument, the serialization buffer
          is cleared after deserialization.
@@ -805,7 +805,7 @@ const installOpfsVfs = function callee(options){
                Because the heap is _not_ a SharedArrayBuffer, we have
                to copy the results. TypedArray.set() seems to be the
                fastest way to copy this. */
-            wasm.heap8u().set(f.sabView.subarray(0, n), pDest);
+            wasm.heap8u().set(f.sabView.subarray(0, n), Number(pDest));
           }
         }catch(e){
           error("xRead(",arguments,") failed:",e,f);
@@ -844,7 +844,9 @@ const installOpfsVfs = function callee(options){
         const f = __openFiles[pFile];
         let rc;
         try {
-          f.sabView.set(wasm.heap8u().subarray(pSrc, pSrc+n));
+          f.sabView.set(wasm.heap8u().subarray(
+            Number(pSrc), Number(pSrc) + n
+          ));
           rc = opRun('xWrite', pFile, n, Number(offset64));
         }catch(e){
           error("xWrite(",arguments,") failed:",e,f);
@@ -922,7 +924,7 @@ const installOpfsVfs = function callee(options){
         fh.filename = zName;
         fh.sab = new SharedArrayBuffer(state.fileBufferSize);
         fh.flags = flags;
-        fh.readOnly = !(sqlite3.SQLITE_OPEN_CREATE & flags)
+        fh.readOnly = !(capi.SQLITE_OPEN_CREATE & flags)
           && !!(flags & capi.SQLITE_OPEN_READONLY);
         const rc = opRun('xOpen', pFile, zName, flags, opfsFlags);
         if(!rc){
@@ -951,7 +953,8 @@ const installOpfsVfs = function callee(options){
       vfsSyncWrappers.xRandomness = function(pVfs, nOut, pOut){
         const heap = wasm.heap8u();
         let i = 0;
-        for(; i < nOut; ++i) heap[pOut + i] = (Math.random()*255000) & 0xFF;
+        const npOut = Number(pOut);
+        for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
         return i;
       };
     }
@@ -1195,7 +1198,7 @@ const installOpfsVfs = function callee(options){
         sah.truncate(0);
         while( undefined !== (chunk = await callback()) ){
           if(chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
-          if( 0===nWrote && chunk.byteLength>=15 ){
+          if( !checkedHeader && 0===nWrote && chunk.byteLength>=15 ){
             util.affirmDbHeader(chunk);
             checkedHeader = true;
           }
@@ -1438,7 +1441,7 @@ installOpfsVfs.defaultProxyUri =
 globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   try{
     let proxyJs = installOpfsVfs.defaultProxyUri;
-    if(sqlite3.scriptInfo.sqlite3Dir){
+    if( sqlite3?.scriptInfo?.sqlite3Dir ){
       installOpfsVfs.defaultProxyUri =
         sqlite3.scriptInfo.sqlite3Dir + proxyJs;
       //sqlite3.config.warn("installOpfsVfs.defaultProxyUri =",installOpfsVfs.defaultProxyUri);
@@ -1454,4 +1457,4 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
 }/*sqlite3ApiBootstrap.initializers.push()*/);
 //#else
 /* The OPFS VFS parts are elided from builds targeting node.js. */
-//#endif target=node
+//#endif target:node

@@ -935,34 +935,22 @@ Expr *sqlite3ExprAlloc(
   int dequote             /* True to dequote */
 ){
   Expr *pNew;
-  int nExtra = 0;
-  int iValue = 0;
+  int nExtra = pToken ? pToken->n+1 : 0;
 
   assert( db!=0 );
-  if( pToken ){
-    if( op!=TK_INTEGER || pToken->z==0
-          || sqlite3GetInt32(pToken->z, &iValue)==0 ){
-      nExtra = pToken->n+1;  /* tag-20240227-a */
-      assert( iValue>=0 );
-    }
-  }
   pNew = sqlite3DbMallocRawNN(db, sizeof(Expr)+nExtra);
   if( pNew ){
     memset(pNew, 0, sizeof(Expr));
     pNew->op = (u8)op;
     pNew->iAgg = -1;
-    if( pToken ){
-      if( nExtra==0 ){
-        pNew->flags |= EP_IntValue|EP_Leaf|(iValue?EP_IsTrue:EP_IsFalse);
-        pNew->u.iValue = iValue;
-      }else{
-        pNew->u.zToken = (char*)&pNew[1];
-        assert( pToken->z!=0 || pToken->n==0 );
-        if( pToken->n ) memcpy(pNew->u.zToken, pToken->z, pToken->n);
-        pNew->u.zToken[pToken->n] = 0;
-        if( dequote && sqlite3Isquote(pNew->u.zToken[0]) ){
-          sqlite3DequoteExpr(pNew);
-        }
+    if( nExtra ){
+      assert( pToken!=0 );
+      pNew->u.zToken = (char*)&pNew[1];
+      assert( pToken->z!=0 || pToken->n==0 );
+      if( pToken->n ) memcpy(pNew->u.zToken, pToken->z, pToken->n);
+      pNew->u.zToken[pToken->n] = 0;
+      if( dequote && sqlite3Isquote(pNew->u.zToken[0]) ){
+        sqlite3DequoteExpr(pNew);
       }
     }
 #if SQLITE_MAX_EXPR_DEPTH>0
@@ -985,6 +973,24 @@ Expr *sqlite3Expr(
   x.z = zToken;
   x.n = sqlite3Strlen30(zToken);
   return sqlite3ExprAlloc(db, op, &x, 0);
+}
+
+/*
+** Allocate an expression for a 32-bit signed integer literal.
+*/
+Expr *sqlite3ExprInt32(sqlite3 *db, int iVal){
+  Expr *pNew = sqlite3DbMallocRawNN(db, sizeof(Expr));
+  if( pNew ){
+    memset(pNew, 0, sizeof(Expr));
+    pNew->op = TK_INTEGER;
+    pNew->iAgg = -1;
+    pNew->flags = EP_IntValue|EP_Leaf|(iVal?EP_IsTrue:EP_IsFalse);
+    pNew->u.iValue = iVal;
+#if SQLITE_MAX_EXPR_DEPTH>0
+    pNew->nHeight = 1;
+#endif 
+  }
+  return pNew;
 }
 
 /*
@@ -1149,7 +1155,7 @@ Expr *sqlite3ExprAnd(Parse *pParse, Expr *pLeft, Expr *pRight){
     ){
       sqlite3ExprDeferredDelete(pParse, pLeft);
       sqlite3ExprDeferredDelete(pParse, pRight);
-      return sqlite3Expr(db, TK_INTEGER, "0");
+      return sqlite3ExprInt32(db, 0);
     }else{
       return sqlite3PExpr(pParse, TK_AND, pLeft, pRight);
     }
@@ -1274,7 +1280,9 @@ void sqlite3ExprFunctionUsable(
 ){
   assert( !IN_RENAME_OBJECT );
   assert( (pDef->funcFlags & (SQLITE_FUNC_DIRECT|SQLITE_FUNC_UNSAFE))!=0 );
-  if( ExprHasProperty(pExpr, EP_FromDDL) ){
+  if( ExprHasProperty(pExpr, EP_FromDDL) 
+   || pParse->prepFlags & SQLITE_PREPARE_FROM_DDL
+  ){
     if( (pDef->funcFlags & SQLITE_FUNC_DIRECT)!=0
      || (pParse->db->flags & SQLITE_TrustedSchema)==0
     ){
@@ -2440,9 +2448,8 @@ static int exprComputeOperands(
   if( addrIsNull==0 ){
     /*
     ** If the right operand contains a subquery and the left operand does not
-    ** and the left operand might be NULL, then check the left operand do
-    ** an IsNull check on the left operand before computing the right
-    ** operand.
+    ** and the left operand might be NULL, then do an IsNull check
+    ** check on the left operand before computing the right operand.
     */
     if( ExprHasProperty(pExpr->pRight, EP_Subquery)
      && sqlite3ExprCanBeNull(pExpr->pLeft)
@@ -2625,7 +2632,7 @@ static int exprIsConst(Parse *pParse, Expr *p, int initFlag){
 
 /*
 ** Walk an expression tree.  Return non-zero if the expression is constant
-** and 0 if it involves variables or function calls.
+** or return zero if the expression involves variables or function calls.
 **
 ** For the purposes of this function, a double-quoted string (ex: "abc")
 ** is considered a variable but a single-quoted string (ex: 'abc') is
@@ -3892,9 +3899,22 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   pParse->nMem += nReg;
   if( pExpr->op==TK_SELECT ){
     dest.eDest = SRT_Mem;
-    dest.iSdst = dest.iSDParm;
+    if( (pSel->selFlags&SF_Distinct) && pSel->pLimit && pSel->pLimit->pRight ){
+      /* If there is both a DISTINCT and an OFFSET clause, then allocate
+      ** a separate dest.iSdst array for sqlite3Select() and other
+      ** routines to populate. In this case results will be copied over
+      ** into the dest.iSDParm array only after OFFSET processing. This
+      ** ensures that in the case where OFFSET excludes all rows, the
+      ** dest.iSDParm array is not left populated with the contents of the
+      ** last row visited - it should be all NULLs if all rows were
+      ** excluded by OFFSET.  */ 
+      dest.iSdst = pParse->nMem+1;
+      pParse->nMem += nReg;
+    }else{
+      dest.iSdst = dest.iSDParm;
+    }
     dest.nSdst = nReg;
-    sqlite3VdbeAddOp3(v, OP_Null, 0, dest.iSDParm, dest.iSDParm+nReg-1);
+    sqlite3VdbeAddOp3(v, OP_Null, 0, dest.iSDParm, pParse->nMem);
     VdbeComment((v, "Init subquery result"));
   }else{
     dest.eDest = SRT_Exists;
@@ -3910,7 +3930,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
      || (pLeft->u.iValue!=1 && pLeft->u.iValue!=0)
     ){
       sqlite3 *db = pParse->db;
-      pLimit = sqlite3Expr(db, TK_INTEGER, "0");
+      pLimit = sqlite3ExprInt32(db, 0);
       if( pLimit ){
         pLimit->affExpr = SQLITE_AFF_NUMERIC;
         pLimit = sqlite3PExpr(pParse, TK_NE,
@@ -3921,7 +3941,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     }
   }else{
     /* If there is no pre-existing limit add a limit of 1 */
-    pLimit = sqlite3Expr(pParse->db, TK_INTEGER, "1");
+    pLimit = sqlite3ExprInt32(pParse->db, 1);
     pSel->pLimit = sqlite3PExpr(pParse, TK_LIMIT, pLimit, 0);
   }
   pSel->iLimit = 0;
@@ -4811,6 +4831,80 @@ static int exprPartidxExprLookup(Parse *pParse, Expr *pExpr, int iTarget){
   return 0;
 }
 
+/*
+** Generate code that evaluates an AND or OR operator leaving a
+** boolean result in a register.  pExpr is the AND/OR expression.
+** Store the result in the "target" register.  Use short-circuit
+** evaluation to avoid computing both operands, if possible.
+**
+** The code generated might require the use of a temporary register.
+** If it does, then write the number of that temporary register
+** into *pTmpReg.  If not, leave *pTmpReg unchanged.
+*/
+static SQLITE_NOINLINE int exprCodeTargetAndOr(
+  Parse *pParse,     /* Parsing context */
+  Expr *pExpr,       /* AND or OR expression to be coded */
+  int target,        /* Put result in this register, guaranteed */
+  int *pTmpReg       /* Write a temporary register here */
+){
+  int op;            /* The opcode.  TK_AND or TK_OR */
+  int skipOp;        /* Opcode for the branch that skips one operand */
+  int addrSkip;      /* Branch instruction that skips one of the operands */
+  int regSS = 0;     /* Register holding computed operand when other omitted */
+  int r1, r2;        /* Registers for left and right operands, respectively */
+  Expr *pAlt;        /* Alternative, simplified expression */
+  Vdbe *v;           /* statement being coded */
+
+  assert( pExpr!=0 );
+  op = pExpr->op;
+  assert( op==TK_AND || op==TK_OR );
+  assert( TK_AND==OP_And );            testcase( op==TK_AND );
+  assert( TK_OR==OP_Or );              testcase( op==TK_OR );
+  assert( pParse->pVdbe!=0 );
+  v = pParse->pVdbe;
+  pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
+  if( pAlt!=pExpr ){
+    r1 = sqlite3ExprCodeTarget(pParse, pAlt, target);
+    sqlite3VdbeAddOp3(v, OP_And, r1, r1, target);
+    return target;
+  }
+  skipOp = op==TK_AND ? OP_IfNot : OP_If;
+  if( exprEvalRhsFirst(pExpr) ){
+    /* Compute the right operand first.  Skip the computation of the left
+    ** operand if the right operand fully determines the result */
+    r2 = regSS = sqlite3ExprCodeTarget(pParse, pExpr->pRight, target);
+    addrSkip = sqlite3VdbeAddOp1(v, skipOp, r2);
+    VdbeComment((v, "skip left operand"));
+    VdbeCoverage(v); 
+    r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, pTmpReg);
+  }else{
+    /* Compute the left operand first */
+    r1 = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+    if( ExprHasProperty(pExpr->pRight, EP_Subquery) ){
+      /* Skip over the computation of the right operand if the right
+      ** operand is a subquery and the left operand completely determines
+      ** the result */
+      regSS = r1;
+      addrSkip = sqlite3VdbeAddOp1(v, skipOp, r1);
+      VdbeComment((v, "skip right operand"));
+      VdbeCoverage(v);
+    }else{
+      addrSkip = regSS = 0;
+    }
+    r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, pTmpReg);
+  }
+  sqlite3VdbeAddOp3(v, op, r2, r1, target);
+  testcase( (*pTmpReg)==0 );
+  if( addrSkip ){
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3VdbeCurrentAddr(v)+2);
+    sqlite3VdbeJumpHere(v, addrSkip);
+    sqlite3VdbeAddOp3(v, OP_Or, regSS, regSS, target);
+    VdbeComment((v, "short-circut value"));
+  }
+  return target;
+}
+
+
 
 /*
 ** Generate code into the current Vdbe to evaluate the given
@@ -5099,12 +5193,14 @@ expr_code_doover:
         }
         testcase( regFree1==0 );
         testcase( regFree2==0 );
-    
       }
       break;
     }
     case TK_AND:
-    case TK_OR:
+    case TK_OR: {
+      inReg = exprCodeTargetAndOr(pParse, pExpr, target, &regFree1);
+      break;
+    }
     case TK_PLUS:
     case TK_STAR:
     case TK_MINUS:
@@ -5116,8 +5212,6 @@ expr_code_doover:
     case TK_RSHIFT:
     case TK_CONCAT: {
       int addrIsNull;
-      assert( TK_AND==OP_And );            testcase( op==TK_AND );
-      assert( TK_OR==OP_Or );              testcase( op==TK_OR );
       assert( TK_PLUS==OP_Add );           testcase( op==TK_PLUS );
       assert( TK_MINUS==OP_Subtract );     testcase( op==TK_MINUS );
       assert( TK_REM==OP_Remainder );      testcase( op==TK_REM );

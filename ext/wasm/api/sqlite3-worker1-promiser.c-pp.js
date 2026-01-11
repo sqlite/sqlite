@@ -1,4 +1,4 @@
-//#ifnot omit-oo1
+//#if not omit-oo1
 /*
   2022-08-24
 
@@ -19,10 +19,12 @@
   slightly simpler client-side interface than the slightly-lower-level
   Worker API does.
 
-  This script necessarily exposes one global symbol, but clients may
-  freely `delete` that symbol after calling it.
+  In non-ESM builds this file necessarily exposes one global symbol,
+  but clients may freely `delete` that symbol after calling it.
 */
+//#if not defined target:es6-module
 'use strict';
+//#endif
 /**
    Configures an sqlite3 Worker API #1 Worker such that it can be
    manipulated via a Promise-based interface and returns a factory
@@ -109,10 +111,12 @@
    the callback is called one time for each row of the result set,
    passed the same worker message format as the worker API emits:
 
-     {type:typeString,
+   {
+      type:typeString,
       row:VALUE,
       rowNumber:1-based-#,
-      columnNames: array}
+      columnNames: array
+   }
 
    Where `typeString` is an internally-synthesized message type string
    used temporarily for worker message dispatching. It can be ignored
@@ -123,10 +127,9 @@
    callback.
 
    At the end of the result set, the same event is fired with
-   (row=undefined, rowNumber=null) to indicate that
-   the end of the result set has been reached. Note that the rows
-   arrive via worker-posted messages, with all the implications
-   of that.
+   (row=undefined, rowNumber=null) to indicate that the end of the
+   result set has been reached. The rows arrive via worker-posted
+   messages, with all the implications of that.
 
    Notable shortcomings:
 
@@ -252,8 +255,12 @@ globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfi
 
 globalThis.sqlite3Worker1Promiser.defaultConfig = {
   worker: function(){
-//#if target=es6-module
+//#if target:es6-bundler-friendly
     return new Worker(new URL("sqlite3-worker1-bundler-friendly.mjs", import.meta.url),{
+      type: 'module'
+    });
+//#elif target:es6-module
+    return new Worker(new URL("sqlite3-worker1.mjs", import.meta.url),{
       type: 'module'
     });
 //#else
@@ -273,13 +280,13 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
     return new Worker(theJs + globalThis.location.search);
 //#endif
   }
-//#ifnot target=es6-module
+//#if not target:es6-module
   .bind({
     currentScript: globalThis?.document?.currentScript
   })
 //#endif
   ,
-  onerror: (...args)=>console.error('worker1 promiser error',...args)
+  onerror: (...args)=>console.error('sqlite3Worker1Promiser():',...args)
 }/*defaultConfig*/;
 
 /**
@@ -332,7 +339,7 @@ globalThis.sqlite3Worker1Promiser.v2 = function callee(config = callee.defaultCo
 globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
   globalThis.sqlite3Worker1Promiser.defaultConfig;
 
-//#if target=es6-module
+//#if target:es6-module
 /**
   When built as a module, we export sqlite3Worker1Promiser.v2()
   instead of sqlite3Worker1Promise() because (A) its interface is more
@@ -341,7 +348,8 @@ globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
   incompatibility.
 */
 export default sqlite3Worker1Promiser.v2;
-//#endif /* target=es6-module */
+delete globalThis.sqlite3Worker1Promiser;
+//#endif /* target:es6-module */
 //#else
 /* Built with the omit-oo1 flag. */
-//#endif ifnot omit-oo1
+//#endif if not omit-oo1

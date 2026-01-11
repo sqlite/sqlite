@@ -1060,6 +1060,30 @@ static void shellDtostr(
   sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
 }
 
+/*
+** We need a method for setting the pointer values created by the
+** intarray_addr, int64array_addr, doublearray_addr, and textarray_addr
+** routines below.  The inttoptr(X) SQL function accomplishes
+** this.  Tcl scripts will bind an array address as an integer X and
+** the inttoptr() SQL function will use sqlite3_result_pointer() to
+** convert that integer into a pointer usable by carray().
+*/
+static void inttoptrFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  void *p;
+  sqlite3_int64 i64;
+  i64 = sqlite3_value_int64(argv[0]);
+  if( sizeof(i64)==sizeof(p) ){
+    memcpy(&p, &i64, sizeof(p));
+  }else{
+    int i32 = i64 & 0xffffffff;
+    memcpy(&p, &i32, sizeof(p));
+  }
+  sqlite3_result_pointer(context, p, "carray", 0);
+}
 
 /*
 ** Usage:  sqlite3_create_function DB
@@ -1074,7 +1098,8 @@ static void shellDtostr(
 **
 ** The original motivation for this routine was to be able to call the
 ** sqlite3_create_function function while a query is in progress in order
-** to test the SQLITE_MISUSE detection logic.
+** to test the SQLITE_MISUSE detection logic.  It is now also used to register
+** a bunch of SQL functions that are useful for testing.
 */
 static int SQLITE_TCLAPI test_create_function(
   void *NotUsed,
@@ -1168,6 +1193,10 @@ static int SQLITE_TCLAPI test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "dtostr", 2, SQLITE_UTF8, 0,
                                  shellDtostr, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "inttoptr", 1, SQLITE_UTF8, 0,
+                                 inttoptrFunc, 0, 0);
   }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -3830,7 +3859,7 @@ static int SQLITE_TCLAPI test_intarray_addr(
   return TCL_OK;
 }
 /*
-** Usage:   intarray_addr  INT  ...
+** Usage:   int64array_addr  INT  ...
 **
 ** Return the address of a C-language array of 32-bit integers.
 **
@@ -3932,7 +3961,6 @@ static int SQLITE_TCLAPI test_textarray_addr(
   Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
   return TCL_OK;
 }
-
 
 /*
 ** Usage:   sqlite3_bind_int64  STMT N VALUE
@@ -4360,10 +4388,71 @@ static int SQLITE_TCLAPI test_bind_value_from_select(
 #endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+
+/*
+** These two are used by the -malloc option to sqlite3_carray_bind()
+*/
+static void *testCarrayAlloc(int n){
+  u8 *pRet = (u8*)sqlite3_malloc(n+16);
+  if( pRet ){
+    pRet = &pRet[16];
+  }
+  return (void*)pRet;
+}
+static void testCarrayFree(void *p){
+  if( p ){
+    u8 *p2 = (u8*)p;
+    sqlite3_free(&p2[-16]);
+  }
+}
+
+static void delIntptr(void *p){
+  ckfree(p);
+}
+
+/*
+** bind_carray_intptr STMT IPARAM  INT0 INT1 INT2...
+*/
+static int SQLITE_TCLAPI bind_carray_intptr(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt = 0;
+  int iVar = 0;
+  int *aInt = 0;
+  int nInt = 0;
+  int ii = 0;
+  int rc = SQLITE_OK;
+
+  if( objc<3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &iVar) ) return TCL_ERROR;
+  nInt = objc - 3;
+
+  aInt = ckalloc((nInt+1) * sizeof(int));
+  for(ii=0; ii<nInt; ii++){
+    if( Tcl_GetIntFromObj(interp, objv[3+ii], &aInt[ii]) ){
+      ckfree(aInt);
+      return TCL_ERROR;
+    }
+  }
+
+  rc = sqlite3_bind_pointer(pStmt, iVar, (void*)aInt, "carray", delIntptr);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
+
+  return TCL_OK;
+}
+
 /*
 ** sqlite3_carray_bind [options...] STMT NAME VALUE ...
 **
 ** Options:
+**    -malloc
 **    -transient
 **    -static
 **    -int32
@@ -4383,25 +4472,19 @@ static int SQLITE_TCLAPI test_carray_bind(
 ){
   sqlite3_stmt *pStmt;
   int eType = 0;   /* CARRAY_INT32 */
+  int mFlagsOverride = 0;
   int nData = 0;
   void *aData = 0;
   int isTransient = 0;
   int isStatic = 0;
+  int isMalloc = 0;               /* True to use custom xDel function */
   int idx;
   int i, j;
-  int rc;
+  int rc = SQLITE_OK;
   void (*xDel)(void*) = sqlite3_free;
   static void *aStaticData = 0;
   static int nStaticData = 0;
   static int eStaticType = 0;
-  extern int sqlite3_carray_bind(
-    sqlite3_stmt *pStmt,
-    int i,
-    void *aData,
-    int nData,
-    int mFlags,
-    void (*xDestroy)(void*)
-  );
   
   if( aStaticData ){
     /* Always clear preexisting static data on every call */
@@ -4432,6 +4515,10 @@ static int SQLITE_TCLAPI test_carray_bind(
       isStatic = 1;
       xDel = SQLITE_STATIC;
     }else
+    if( strcmp(z, "-malloc")==0 ){
+      isMalloc = 1;
+      xDel = testCarrayFree;
+    }else
     if( strcmp(z, "-int32")==0 ){
       eType = 0;  /* CARRAY_INT32 */
     }else
@@ -4446,6 +4533,12 @@ static int SQLITE_TCLAPI test_carray_bind(
     }else
     if( strcmp(z, "-blob")==0 ){
       eType = 4;  /* CARRAY_BLOB */
+    }else
+    if( i<(objc-1) && strcmp(z, "-flags")==0 ){
+      i++;
+      if( Tcl_GetIntFromObj(interp, objv[i], &mFlagsOverride) ){
+        return TCL_ERROR;
+      }
     }else
     if( strcmp(z, "--")==0 ){
       break;
@@ -4524,24 +4617,36 @@ static int SQLITE_TCLAPI test_carray_bind(
     }
     case 3: { /* TEXT */
       char **a = sqlite3_malloc( sizeof(char*)*nData );
-      if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
-      for(j=0; j<nData; j++){
+      if( a==0 ){ 
+        rc = SQLITE_NOMEM;
+      }else{
+        memset(a, 0, sizeof(char*)*nData);
+      }
+      for(j=0; rc==SQLITE_OK && j<nData; j++){
         const char *v = Tcl_GetString(objv[i+j]);
-        a[j] = sqlite3_mprintf("%s", v);
+        if( v && strcmp(v, "NULL") ){
+          a[j] = sqlite3_mprintf("%s", v);
+          if( a[j]==0 ) rc = SQLITE_NOMEM;
+        }
       }
       aData = a;
       break;
     }
     case 4: { /* BLOB */
       struct iovec *a = sqlite3_malloc( sizeof(struct iovec)*nData );
-      if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
-      for(j=0; j<nData; j++){
+      if( a==0 ){ 
+        rc = SQLITE_NOMEM; 
+      }else{
+        memset(a, 0, sizeof(struct iovec)*nData);
+      }
+      for(j=0; rc==SQLITE_OK && j<nData; j++){
         Tcl_Size n = 0;
         unsigned char *v = Tcl_GetByteArrayFromObj(objv[i+i], &n);
         a[j].iov_len = (size_t)n;
         a[j].iov_base = sqlite3_malloc64( n );
         if( a[j].iov_base==0 ){
           a[j].iov_len = 0;
+          rc = SQLITE_NOMEM;
         }else{
           memcpy(a[j].iov_base, v, n);
         }
@@ -4557,17 +4662,38 @@ static int SQLITE_TCLAPI test_carray_bind(
       break;
     }
   }
-  if( isStatic ){
-    aStaticData = aData;
-    nStaticData = nData;
-    eStaticType = eType;
+
+  if( rc==SQLITE_OK ){
+    if( isStatic ){
+      aStaticData = aData;
+      nStaticData = nData;
+      eStaticType = eType;
+    }
+    else if( isMalloc ){
+      int nByte = ((eType==0) ? sizeof(int) : sizeof(i64)) * nData;
+      void *aByte = testCarrayAlloc(nByte);
+      if( aByte==0 ){
+        sqlite3_free(aData);
+        rc = SQLITE_NOMEM;
+      }else{
+        memcpy(aByte, aData, nByte);
+        sqlite3_free(aData);
+        aData = aByte;
+        xDel = testCarrayFree;
+      }
+      assert( eType==0 || eType==1 || eType==2 );
+    }
   }
-  rc = sqlite3_carray_bind(pStmt, idx, aData, nData, eType, xDel);
+
+  if( rc==SQLITE_OK ){
+    if( mFlagsOverride==0 ) mFlagsOverride = eType;
+    rc = sqlite3_carray_bind(pStmt, idx, aData, nData, mFlagsOverride, xDel);
+  }
   if( isTransient ){
-    if( eType==3 ){
+    if( eType==3 && aData ){
       for(i=0; i<nData; i++) sqlite3_free(((char**)aData)[i]);
     }
-    if( eType==4 ){
+    if( eType==4 && aData ){
       for(i=0; i<nData; i++) sqlite3_free(((struct iovec*)aData)[i].iov_base);
     }
     sqlite3_free(aData);
@@ -4843,6 +4969,37 @@ static int SQLITE_TCLAPI test_errmsg16(
   }
   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(zErr, bytes));
 #endif /* SQLITE_OMIT_UTF16 */
+  return TCL_OK;
+}
+
+/*
+** Usage:   sqlite3_set_errmsg DB ERRCODE ERRMSG
+*/
+static int SQLITE_TCLAPI test_set_errmsg(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zDb = 0;
+  const char *zErr = 0;
+  int iErr = 0;
+  sqlite3 *db = 0;
+  int rc;
+
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ERRCODE ERRMSG");
+    return TCL_ERROR;
+  }
+  zDb = Tcl_GetString(objv[1]);
+  if( zDb[0] ){
+    if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &iErr) ) return TCL_ERROR;
+  zErr = Tcl_GetString(objv[3]);
+
+  rc = sqlite3_set_errmsg(db, iErr, (zErr[0] ? zErr : 0));
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
   return TCL_OK;
 }
 
@@ -7213,6 +7370,7 @@ static int SQLITE_TCLAPI test_limit(
     { "SQLITE_LIMIT_SQL_LENGTH",          SQLITE_LIMIT_SQL_LENGTH           },
     { "SQLITE_LIMIT_COLUMN",              SQLITE_LIMIT_COLUMN               },
     { "SQLITE_LIMIT_EXPR_DEPTH",          SQLITE_LIMIT_EXPR_DEPTH           },
+    { "SQLITE_LIMIT_PARSER_DEPTH",        SQLITE_LIMIT_PARSER_DEPTH         },
     { "SQLITE_LIMIT_COMPOUND_SELECT",     SQLITE_LIMIT_COMPOUND_SELECT      },
     { "SQLITE_LIMIT_VDBE_OP",             SQLITE_LIMIT_VDBE_OP              },
     { "SQLITE_LIMIT_FUNCTION_ARG",        SQLITE_LIMIT_FUNCTION_ARG         },
@@ -7224,7 +7382,7 @@ static int SQLITE_TCLAPI test_limit(
     
     /* Out of range test cases */
     { "SQLITE_LIMIT_TOOSMALL",            -1,                               },
-    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_WORKER_THREADS+1     },
+    { "SQLITE_LIMIT_TOOBIG",              SQLITE_LIMIT_PARSER_DEPTH+1       },
   };
   int i, id = 0;
   int val;
@@ -7518,7 +7676,8 @@ static int SQLITE_TCLAPI test_wal_checkpoint_v2(
   int nCkpt = -555;
   Tcl_Obj *pRet;
 
-  const char * aMode[] = { "passive", "full", "restart", "truncate", 0 };
+  const char * aMode[] = {"noop", "passive", "full", "restart", "truncate", 0};
+  assert( SQLITE_CHECKPOINT_NOOP==-1 );
   assert( SQLITE_CHECKPOINT_PASSIVE==0 );
   assert( SQLITE_CHECKPOINT_FULL==1 );
   assert( SQLITE_CHECKPOINT_RESTART==2 );
@@ -7532,11 +7691,14 @@ static int SQLITE_TCLAPI test_wal_checkpoint_v2(
   if( objc==4 ){
     zDb = Tcl_GetString(objv[3]);
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) || (
-      TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eMode)
-   && TCL_OK!=Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0, &eMode) 
-  )){
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
     return TCL_ERROR;
+  }
+  if( TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eMode) ){
+    if( TCL_OK!=Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0,&eMode) ){
+      return TCL_ERROR;
+    }
+    eMode = eMode - 1;
   }
 
   rc = sqlite3_wal_checkpoint_v2(db, zDb, eMode, &nLog, &nCkpt);
@@ -8148,6 +8310,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "balanced-merge",      SQLITE_BalancedMerge  },
     { "propagate-const",     SQLITE_PropagateConst },
     { "one-pass",            SQLITE_OnePass        },
+    { "exists-to-join",      SQLITE_ExistsToJoin   },
   };
 
   if( objc!=4 ){
@@ -8191,7 +8354,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_amatch_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_appendvfs_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_basexx_init(sqlite3*,char**,const sqlite3_api_routines*);
-  extern int sqlite3_carray_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_csv_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_eval_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -8201,7 +8363,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
-  extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   extern int sqlite3_prefixes_init(sqlite3*,char**,const sqlite3_api_routines*);
 #endif
@@ -8225,7 +8386,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "amatch",                sqlite3_amatch_init               },
     { "appendvfs",             sqlite3_appendvfs_init            },
     { "basexx",                sqlite3_basexx_init               },
-    { "carray",                sqlite3_carray_init               },
     { "closure",               sqlite3_closure_init              },
     { "csv",                   sqlite3_csv_init                  },
     { "decimal",               sqlite3_decimal_init              },
@@ -8235,7 +8395,6 @@ static int SQLITE_TCLAPI tclLoadStaticExtensionCmd(
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },
     { "nextchar",              sqlite3_nextchar_init             },
-    { "percentile",            sqlite3_percentile_init           },
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     { "prefixes",              sqlite3_prefixes_init             },
 #endif
@@ -8943,6 +9102,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_bind_value_from_preupdate",test_bind_value_from_preupdate ,0 },
 #ifndef SQLITE_OMIT_VIRTUALTABLE
      { "sqlite3_carray_bind",           test_carray_bind   ,0 },
+     { "bind_carray_intptr",            bind_carray_intptr   ,0 },
 #endif
      { "sqlite3_bind_parameter_count",  test_bind_parameter_count, 0},
      { "sqlite3_bind_parameter_name",   test_bind_parameter_name,  0},
@@ -8954,6 +9114,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_errmsg",                test_errmsg        ,0 },
      { "sqlite3_error_offset",          test_error_offset  ,0 },
      { "sqlite3_errmsg16",              test_errmsg16      ,0 },
+     { "sqlite3_set_errmsg",            test_set_errmsg    ,0 },
      { "sqlite3_open",                  test_open          ,0 },
      { "sqlite3_open16",                test_open16        ,0 },
      { "sqlite3_open_v2",               test_open_v2       ,0 },

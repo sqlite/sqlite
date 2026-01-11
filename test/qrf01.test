@@ -1,0 +1,1167 @@
+# 2025-11-05
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test cases for the Query Result Formatter (QRF)
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix qrf01
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1,2.5,'three'),(x'424c4f42',NULL,'Ἀμήν');
+}
+
+do_test 1.10 {
+  set result "\n[db format {SELECT * FROM t1}]"
+} {
+╭──────┬─────┬───────╮
+│  a   │  b  │   c   │
+╞══════╪═════╪═══════╡
+│    1 │ 2.5 │ three │
+│ BLOB │     │ Ἀμήν  │
+╰──────┴─────┴───────╯
+}
+do_test 1.11a {
+  set result "\n[db format -title off {SELECT * FROM t1}]"
+} {
+╭──────┬─────┬───────╮
+│    1 │ 2.5 │ three │
+│ BLOB │     │ Ἀμήν  │
+╰──────┴─────┴───────╯
+}
+do_test 1.11b {
+  set result "\n[db format -text sql {SELECT * FROM t1}]"
+} {
+╭─────────────┬─────┬─────────╮
+│      a      │  b  │    c    │
+╞═════════════╪═════╪═════════╡
+│           1 │ 2.5 │ 'three' │
+│ x'424c4f42' │     │ 'Ἀμήν'  │
+╰─────────────┴─────┴─────────╯
+}
+do_test 1.11c {
+  set result "\n[db format -text sql -border off {SELECT * FROM t1}]"
+} {
+      a      │  b  │    c
+═════════════╪═════╪═════════
+ 1           │ 2.5 │ 'three'
+ x'424c4f42' │     │ 'Ἀμήν'
+}
+do_test 1.11d {
+  set result "\n[db format -text relaxed -blob sql -border off \
+                 {SELECT * FROM t1}]"
+} {
+      a      │  b  │   c
+═════════════╪═════╪═══════
+ 1           │ 2.5 │ three
+ x'424c4f42' │     │ Ἀμήν
+}
+do_test 1.12 {
+  set result "\n[db format -text csv {SELECT * FROM t1}]"
+} {
+╭────────────────────┬─────┬────────╮
+│         a          │  b  │   c    │
+╞════════════════════╪═════╪════════╡
+│                  1 │ 2.5 │ three  │
+│ "\102\114\117\102" │     │ "Ἀμήν" │
+╰────────────────────┴─────┴────────╯
+}
+do_test 1.13 {
+  set result "\n[db format -text csv -blob hex {SELECT * FROM t1}]"
+} {
+╭──────────┬─────┬────────╮
+│    a     │  b  │   c    │
+╞══════════╪═════╪════════╡
+│        1 │ 2.5 │ three  │
+│ 424c4f42 │     │ "Ἀμήν" │
+╰──────────┴─────┴────────╯
+}
+do_test 1.14 {
+  catch {db format -text unk -blob hex {SELECT * FROM t1}} res
+  set res
+} {bad -text "unk": must be auto, csv, html, json, plain, relaxed, sql, or tcl}
+do_test 1.15 {
+  catch {db format -text sql -blob unk {SELECT * FROM t1}} res
+  set res
+} {bad BLOB encoding (-blob) "unk": must be auto, hex, json, tcl, text, sql, or size}
+do_test 1.16 {
+  catch {db format -text sql -style unk {SELECT * FROM t1}} res
+  set res
+} {bad format style (-style) "unk": must be auto, box, column, count, csv, eqp, explain, html, insert, jobject, json, line, list, markdown, quote, stats, stats-est, stats-vm, or table}
+
+	
+do_test 1.20 {
+  set result "\n[db format -style box {SELECT * FROM t1}]"
+} {
+╭──────┬─────┬───────╮
+│  a   │  b  │   c   │
+╞══════╪═════╪═══════╡
+│    1 │ 2.5 │ three │
+│ BLOB │     │ Ἀμήν  │
+╰──────┴─────┴───────╯
+}
+
+do_test 1.30 {
+  set result "\n[db format -style table {SELECT * FROM t1}]"
+} {
++------+-----+-------+
+|  a   |  b  |   c   |
++------+-----+-------+
+| 1    | 2.5 | three |
+| BLOB |     | Ἀμήν  |
++------+-----+-------+
+}
+do_test 1.31 {
+  set result "\n[db format -style table -title off {SELECT * FROM t1}]"
+} {
++------+-----+-------+
+| 1    | 2.5 | three |
+| BLOB |     | Ἀμήν  |
++------+-----+-------+
+}
+do_test 1.32 {
+  set result "\n[db format -style table -border off {SELECT * FROM t1}]"
+} {
+  a   |  b  |   c
+------+-----+-------
+    1 | 2.5 | three
+ BLOB |     | Ἀμήν
+}
+do_test 1.33 {
+  set result "\n[db format -style table -border off \
+                 -screenwidth 15 \
+                 {SELECT * FROM t1}]"
+} {
+ a  | b |  c
+----+---+-----
+   1|2.5|three
+BLOB|   |Ἀμήν
+}
+do_test 1.34 {
+  set result "\n[db format -style box -border off \
+                 -screenwidth 30 \
+                 {SELECT * FROM t1}]"
+} {
+  a   │  b  │   c
+══════╪═════╪═══════
+    1 │ 2.5 │ three
+ BLOB │     │ Ἀμήν
+}
+do_test 1.35 {
+  set result "\n[db format -style box -border off \
+                 -screenwidth 15 \
+                 {SELECT * FROM t1}]"
+} {
+ a  │ b │  c
+════╪═══╪═════
+   1│2.5│three
+BLOB│   │Ἀμήν
+}
+
+do_test 1.40 {
+  set result "\n[db format -style column {SELECT * FROM t1}]"
+} {
+a     b    c
+----  ---  -----
+1     2.5  three
+BLOB       Ἀμήν
+}
+do_test 1.41 {
+  set result "\n[db format -style column -title off {SELECT * FROM t1}]"
+} {
+1     2.5  three
+BLOB       Ἀμήν
+}
+
+do_test 1.50 {
+  db format -style count {SELECT * FROM t1}
+} 2
+
+do_test 1.60a {
+  db format -style list -columnsep , -rowsep \r\n -text csv -blob tcl {SELECT * FROM t1}
+} "1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
+do_test 1.60b {
+  db format -style csv -columnsep xyz -rowsep pqr -text sql -blob sql {SELECT * FROM t1}
+} "1,2.5,three\r\nx'424c4f42',,\"Ἀμήν\"\r\n"
+do_test 1.61a {
+  db format -style list -columnsep , -rowsep \r\n -text csv -title auto -blob tcl {SELECT * FROM t1}
+} "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
+do_test 1.61b {
+  db format -style csv -title auto -blob tcl {SELECT * FROM t1}
+} "a,b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
+do_test 1.62a {
+  db format -style list -columnsep , -rowsep \r\n -text csv -title csv -blob tcl {SELECT a AS 'a x y', b, c FROM t1}
+} "\"a x y\",b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
+do_test 1.62b {
+  db format -style csv -title csv -blob tcl {SELECT a AS 'a x y', b, c FROM t1}
+} "\"a x y\",b,c\r\n1,2.5,three\r\n\"\\102\\114\\117\\102\",,\"Ἀμήν\"\r\n"
+
+do_test 1.70 {
+  set result "\n[db format -style html {SELECT * FROM t1}]"
+} {
+<TR>
+<TD>1
+<TD>2.5
+<TD>three
+</TR>
+<TR>
+<TD>BLOB
+<TD>null
+<TD>Ἀμήν
+</TR>
+}
+do_test 1.71 {
+  set result "\n[db format -style html -title auto {SELECT * FROM t1}]"
+} {
+<TR>
+<TH>a
+<TH>b
+<TH>c
+</TR>
+<TR>
+<TD>1
+<TD>2.5
+<TD>three
+</TR>
+<TR>
+<TD>BLOB
+<TD>null
+<TD>Ἀμήν
+</TR>
+}
+
+do_test 1.80 {
+  set result "\n[db format -style insert {SELECT * FROM t1}]"
+} {
+INSERT INTO tab VALUES(1,2.5,'three');
+INSERT INTO tab VALUES(x'424c4f42',NULL,'Ἀμήν');
+}
+do_test 1.81 {
+  set result "\n[db format -style insert -tablename t1 {SELECT * FROM t1}]"
+} {
+INSERT INTO t1 VALUES(1,2.5,'three');
+INSERT INTO t1 VALUES(x'424c4f42',NULL,'Ἀμήν');
+}
+do_test 1.82 {
+  set result "\n[db format -style insert -tablename t1 -title auto \
+      {SELECT * FROM t1}]"
+} {
+INSERT INTO t1(a,b,c) VALUES(1,2.5,'three');
+INSERT INTO t1(a,b,c) VALUES(x'424c4f42',NULL,'Ἀμήν');
+}
+do_test 1.83 {
+  set result "\n[db format -style insert -tablename drop -title on \
+      {SELECT a AS "a-b", b, c AS "123" FROM t1}]"
+} {
+INSERT INTO "drop"("a-b",b,"123") VALUES(1,2.5,'three');
+INSERT INTO "drop"("a-b",b,"123") VALUES(x'424c4f42',NULL,'Ἀμήν');
+}
+
+do_test 1.90 {
+  set result "\n[db format -style json {SELECT * FROM t1}]"
+} {
+[{"a":1,"b":2.5,"c":"three"},
+{"a":"\u0042\u004c\u004f\u0042","b":null,"c":"Ἀμήν"}]
+}
+do_test 1.91 {
+  set result "\n[db format -style jobject {SELECT * FROM t1}]"
+} {
+{"a":1,"b":2.5,"c":"three"}
+{"a":"\u0042\u004c\u004f\u0042","b":null,"c":"Ἀμήν"}
+}
+do_test 1.92 {
+  set result "\n[db format -style jobject {SELECT *, unistr('abc\u000a123\u000d\u000axyz') AS xyz FROM t1}]"
+} {
+{"a":1,"b":2.5,"c":"three","xyz":"abc\n123\r\nxyz"}
+{"a":"\u0042\u004c\u004f\u0042","b":null,"c":"Ἀμήν","xyz":"abc\n123\r\nxyz"}
+}
+
+do_test 1.100 {
+  set result "\n[db format -style line {SELECT * FROM t1}]"
+} {
+a: 1
+b: 2.5
+c: three
+
+a: BLOB
+b: 
+c: Ἀμήν
+}
+do_test 1.101 {
+  set result "\n[db format -style line -null (NULL) {SELECT * FROM t1}]"
+} {
+a: 1
+b: 2.5
+c: three
+
+a: BLOB
+b: (NULL)
+c: Ἀμήν
+}
+do_test 1.102 {
+  set result "\n[db format -style line -null (NULL) -columnsep { = } \
+                 -text sql {SELECT * FROM t1}]"
+} {
+a = 1
+b = 2.5
+c = 'three'
+
+a = x'424c4f42'
+b = (NULL)
+c = 'Ἀμήν'
+}
+
+do_test 1.110 {
+  set result "\n[db format -style list {SELECT * FROM t1}]"
+} {
+1|2.5|three
+BLOB||Ἀμήν
+}
+do_test 1.111 {
+  set result "\n[db format -style list -title on {SELECT * FROM t1}]"
+} {
+a|b|c
+1|2.5|three
+BLOB||Ἀμήν
+}
+do_test 1.112 {
+  set result "\n[db format -style list -title on -text sql -null NULL \
+                 -title plain {SELECT * FROM t1}]"
+} {
+a|b|c
+1|2.5|'three'
+x'424c4f42'|NULL|'Ἀμήν'
+}
+do_test 1.118 {
+  set rc [catch {db format -style list -title unk {SELECT * FROM t1}} res]
+  lappend rc $res
+} {1 {bad -title "unk": must be off, on, auto, csv, html, json, plain, relaxed, sql, or tcl}}
+
+
+do_test 1.120 {
+  set result "\n[db format -style markdown {SELECT * FROM t1}]"
+} {
+|  a   |  b  |   c   |
+|------|-----|-------|
+| 1    | 2.5 | three |
+| BLOB |     | Ἀμήν  |
+}
+do_test 1.121 {
+  set result "\n[db format -style markdown -title off {SELECT * FROM t1}]"
+} {
+| 1    | 2.5 | three |
+| BLOB |     | Ἀμήν  |
+}
+
+do_test 1.130 {
+  set result "\n[db format -style quote {SELECT * FROM t1}]"
+} {
+1,2.5,'three'
+x'424c4f42',NULL,'Ἀμήν'
+}
+do_test 1.131 {
+  set result "\n[db format -style quote -title on {SELECT * FROM t1}]"
+} {
+'a','b','c'
+1,2.5,'three'
+x'424c4f42',NULL,'Ἀμήν'
+}
+
+
+do_execsql_test 2.0 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(1,2,'The quick fox jumps over the lazy brown dog.');
+}
+do_test 2.1 {
+  set result "\n[db format -widths {5 -5 19} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬─────────────────────╮
+│   a   │   b   │          c          │
+╞═══════╪═══════╪═════════════════════╡
+│     1 │     2 │ The quick fox jumps │
+│       │       │ over the lazy brown │
+│       │       │ dog.                │
+╰───────┴───────┴─────────────────────╯
+}
+do_test 2.2 {
+  set result "\n[db format -widths {5 -5 19} -wordwrap off \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬─────────────────────╮
+│   a   │   b   │          c          │
+╞═══════╪═══════╪═════════════════════╡
+│     1 │     2 │ The quick fox jumps │
+│       │       │ over the lazy brown │
+│       │       │ dog.                │
+╰───────┴───────┴─────────────────────╯
+}
+do_test 2.3 {
+  set result "\n[db format -widths {5 -5 18} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬────────────────────╮
+│   a   │   b   │         c          │
+╞═══════╪═══════╪════════════════════╡
+│     1 │     2 │ The quick fox      │
+│       │       │ jumps over the     │
+│       │       │ lazy brown dog.    │
+╰───────┴───────┴────────────────────╯
+}
+do_test 2.4 {
+  set result "\n[db format -widths {5 -5 -18} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬────────────────────╮
+│   a   │   b   │         c          │
+╞═══════╪═══════╪════════════════════╡
+│     1 │     2 │      The quick fox │
+│       │       │     jumps over the │
+│       │       │    lazy brown dog. │
+╰───────┴───────┴────────────────────╯
+}
+do_test 2.5 {
+  set result "\n[db format -widths {5 -5 19} -wordwrap off \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬─────────────────────╮
+│   a   │   b   │          c          │
+╞═══════╪═══════╪═════════════════════╡
+│     1 │     2 │ The quick fox jumps │
+│       │       │ over the lazy brown │
+│       │       │ dog.                │
+╰───────┴───────┴─────────────────────╯
+}
+do_test 2.6 {
+  set result "\n[db format -widths {5 -5 18} -wordwrap off \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬────────────────────╮
+│   a   │   b   │         c          │
+╞═══════╪═══════╪════════════════════╡
+│     1 │     2 │ The quick fox jump │
+│       │       │ s over the lazy br │
+│       │       │ own dog.           │
+╰───────┴───────┴────────────────────╯
+}
+do_test 2.7 {
+  set result "\n[db format -widths {5 5 18} -wordwrap yes \
+                 -align {left center right} -titlealign right \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬────────────────────╮
+│     a │     b │                  c │
+╞═══════╪═══════╪════════════════════╡
+│ 1     │   2   │      The quick fox │
+│       │       │     jumps over the │
+│       │       │    lazy brown dog. │
+╰───────┴───────┴────────────────────╯
+}
+do_test 2.8 {
+  set result "\n[db format -widths {5 8 11} -wordwrap yes \
+                 -align {auto auto center} -titlealign left \
+                 -defaultalign right \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬──────────┬─────────────╮
+│ a     │ b        │ c           │
+╞═══════╪══════════╪═════════════╡
+│     1 │        2 │  The quick  │
+│       │          │  fox jumps  │
+│       │          │  over the   │
+│       │          │ lazy brown  │
+│       │          │    dog.     │
+╰───────┴──────────┴─────────────╯
+}
+do_test 2.9 {
+  catch {db format -align {auto xyz 123} {SELECT * FROM t1}} res
+  set res
+} {bad column alignment (-align) "xyz": must be auto, bottom, c, center, e, left, middle, n, ne, nw, right, s, se, sw, top, or w}
+do_test 2.10 {
+  catch {db format -defaultalign xyz {SELECT * FROM t1}} res
+  set res
+} {bad default alignment (-defaultalign) "xyz": must be auto, bottom, c, center, e, left, middle, n, ne, nw, right, s, se, sw, top, or w}
+do_test 2.11 {
+  catch {db format -titlealign xyz {SELECT * FROM t1}} res
+  set res
+} {bad title alignment (-titlealign) "xyz": must be auto, bottom, c, center, e, left, middle, n, ne, nw, right, s, se, sw, top, or w}
+
+
+do_execsql_test 2.30 {
+  UPDATE t1 SET c='Η γρήγορη αλεπού πηδάει πάνω από το τεμπέλικο καφέ σκυλί';
+  SELECT hex(c) FROM t1;
+} {CE9720CEB3CF81CEAECEB3CEBFCF81CEB720CEB1CEBBCEB5CF80CEBFCF8D20CF80CEB7CEB4CEACCEB5CEB920CF80CEACCEBDCF8920CEB1CF80CF8C20CF84CEBF20CF84CEB5CEBCCF80CEADCEBBCEB9CEBACEBF20CEBACEB1CF86CEAD20CF83CEBACF85CEBBCEAF}
+do_test 2.31 {
+  set result "\n[db format -widths {5 -5 18} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬────────────────────╮
+│   a   │   b   │         c          │
+╞═══════╪═══════╪════════════════════╡
+│     1 │     2 │ Η γρήγορη αλεπού   │
+│       │       │ πηδάει πάνω από το │
+│       │       │ τεμπέλικο καφέ     │
+│       │       │ σκυλί              │
+╰───────┴───────┴────────────────────╯
+}
+do_test 2.32 {
+  set result "\n[db format -widths {5 5 18} -align {left center center} -wordwrap on \
+                 {SELECT * FROM t1}]"
+} {
+╭───────┬───────┬────────────────────╮
+│   a   │   b   │         c          │
+╞═══════╪═══════╪════════════════════╡
+│ 1     │   2   │  Η γρήγορη αλεπού  │
+│       │       │ πηδάει πάνω από το │
+│       │       │   τεμπέλικο καφέ   │
+│       │       │       σκυλί        │
+╰───────┴───────┴────────────────────╯
+}
+
+
+do_execsql_test 3.0 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(1,2,unistr('abc\u001b[1;31m123\u001b[0mxyz'));
+}
+do_test 3.1 {
+  set result "\n[db format {SELECT * FROM t1}]"
+} {
+╭───┬───┬────────────────────────╮
+│ a │ b │           c            │
+╞═══╪═══╪════════════════════════╡
+│ 1 │ 2 │ abc^[[1;31m123^[[0mxyz │
+╰───┴───┴────────────────────────╯
+}
+do_test 3.2 {
+  set result "\n[db format -esc off {SELECT * FROM t1}]"
+  string map [list \033 X] $result
+} {
+╭───┬───┬───────────╮
+│ a │ b │     c     │
+╞═══╪═══╪═══════════╡
+│ 1 │ 2 │ abcX[1;31m123X[0mxyz │
+╰───┴───┴───────────╯
+}
+do_test 3.3 {
+  set result "\n[db format -esc symbol {SELECT * FROM t1}]"
+} {
+╭───┬───┬──────────────────────╮
+│ a │ b │          c           │
+╞═══╪═══╪══════════════════════╡
+│ 1 │ 2 │ abc␛[1;31m123␛[0mxyz │
+╰───┴───┴──────────────────────╯
+}
+do_test 3.4 {
+  set result "\n[db format -esc ascii {SELECT * FROM t1}]"
+} {
+╭───┬───┬────────────────────────╮
+│ a │ b │           c            │
+╞═══╪═══╪════════════════════════╡
+│ 1 │ 2 │ abc^[[1;31m123^[[0mxyz │
+╰───┴───┴────────────────────────╯
+}
+do_test 3.5 {
+  catch {db format -esc unk {SELECT * FROM t1}} res
+  set res
+} {bad control character escape (-esc) "unk": must be ascii, auto, off, or symbol}
+
+do_execsql_test 4.0 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(json('{a:5,b:6}'), jsonb('{c:1,d:2}'), 99);
+}
+do_test 4.1 {
+  set result "\n[db format -text sql {SELECT * FROM t1}]"
+} {
+╭─────────────────┬───────────────────────┬────╮
+│        a        │           b           │ c  │
+╞═════════════════╪═══════════════════════╪════╡
+│ '{"a":5,"b":6}' │ x'8c1763133117641332' │ 99 │
+╰─────────────────┴───────────────────────┴────╯
+}
+do_test 4.2 {
+  set result "\n[db format -text sql -textjsonb on {SELECT * FROM t1}]"
+} {
+╭─────────────────┬────────────────────────┬────╮
+│        a        │           b            │ c  │
+╞═════════════════╪════════════════════════╪════╡
+│ '{"a":5,"b":6}' │ jsonb('{"c":1,"d":2}') │ 99 │
+╰─────────────────┴────────────────────────┴────╯
+}
+do_test 4.3 {
+  set result "\n[db format -text plain -textjsonb on -wrap 11 \
+              {SELECT a AS json, b AS jsonb, c AS num FROM t1}]"
+} {
+╭─────────────┬─────────────┬─────╮
+│    json     │    jsonb    │ num │
+╞═════════════╪═════════════╪═════╡
+│ {"a":5,"b": │ {"c":1,"d": │  99 │
+│ 6}          │ 2}          │     │
+╰─────────────┴─────────────┴─────╯
+}
+
+do_execsql_test 5.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(name, mtime, value);
+  INSERT INTO t1 VALUES
+    ('entry-one',1708791504,zeroblob(300)),
+    (unistr('one\u000atwo\u000athree'),1333206973,NULL),
+    ('sample-jsonb',1333101221,jsonb('{
+       "alpha":53.11688723,
+       "beta":"qrfWidthPrint(p, p->pOut, -p->u.sLine.mxColWth);",
+       "zeta":[15,null,1333206973,"fd8ffe000104a46494600010101"]}'));
+}
+do_test 5.1 {
+  set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
+                        value FROM t1 ORDER BY mtime}
+  set result "\n[db format -style line -screenwidth 60 -blob sql \
+                   -text sql -wordwrap off -linelimit 77 \
+                   -columnsep { = } $sql]"
+} {
+ name = 'sample-jsonb'
+mtime = 1333101221
+ time = '2012-03-30 09:53:41'
+value = x'cc7c57616c706861b535332e31313638383732334762657461
+        c73071726657696474685072696e7428702c20702d3e704f7574
+        2c202d702d3e752e734c696e652e6d78436f6c577468293b477a
+        657461cb2c23313500a331333333323036393733c71b66643866
+        6665303030313034613436343934363030303130313031'
+
+ name = unistr('one\u000atwo\u000athree')
+mtime = 1333206973
+ time = '2012-03-31 15:16:13'
+value = 
+
+ name = 'entry-one'
+mtime = 1708791504
+ time = '2024-02-24 16:18:24'
+value = x'00000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        000000000000000000000000000000'
+}
+do_test 5.2a {
+  set sql {SELECT name, mtime, datetime(mtime,'unixepoch') AS time,
+                        value FROM t1 ORDER BY mtime}
+  set result "\n[db format -style line -screenwidth 60 -blob sql \
+                   -text plain -esc off -textjsonb yes -columnsep { = }\
+                   -wordwrap yes -linelimit 3 $sql]"
+} {
+ name = sample-jsonb
+mtime = 1333101221
+ time = 2012-03-30 09:53:41
+value = {"alpha":53.11688723,"beta":"qrfWidthPrint(p,
+        p->pOut, -p->u.sLine.mxColWth);","zeta":[15,null,
+        1333206973,"fd8ffe000104a46494600010101"]}
+
+ name = one
+        two
+        three
+mtime = 1333206973
+ time = 2012-03-31 15:16:13
+value = 
+
+ name = entry-one
+mtime = 1708791504
+ time = 2024-02-24 16:18:24
+value = x'00000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        0000000000000000000000000000000000000000000000000000
+        ...
+}
+set sqlnolabel "SELECT name, mtime, datetime(mtime,'unixepoch'),\
+                      value FROM t1 ORDER BY mtime"
+do_test 5.2b {
+  set result "\n[db format -style line -screenwidth 60 -blob sql \
+                   -text plain -esc off -textjsonb no -titlelimit 12 \
+                   -wordwrap yes -linelimit 3 $sqlnolabel ]"
+} {
+        name: sample-jsonb
+       mtime: 1333101221
+datetime(...: 2012-03-30 09:53:41
+       value: x'cc7c57616c706861b535332e31313638383732334762
+               657461c73071726657696474685072696e7428702c2070
+               2d3e704f75742c202d702d3e752e734c696e652e6d7843
+               ...
+
+        name: one
+               two
+               three
+       mtime: 1333206973
+datetime(...: 2012-03-31 15:16:13
+       value: 
+
+        name: entry-one
+       mtime: 1708791504
+datetime(...: 2024-02-24 16:18:24
+       value: x'00000000000000000000000000000000000000000000
+               0000000000000000000000000000000000000000000000
+               0000000000000000000000000000000000000000000000
+               ...
+}
+set sql "SELECT name, mtime, datetime(mtime,'unixepoch') AS time,\
+                      value FROM t1 ORDER BY mtime"
+do_test 5.3a {
+  set result "\n[db format -style box -widths {0 10 10 14}\
+                 -align {left right right center} \
+                 -blob sql \
+                 -text plain -esc off -textjsonb no \
+                   -wordwrap yes -linelimit 2 $sql]"
+} {
+╭──────────────┬────────────┬────────────┬────────────────╮
+│     name     │   mtime    │    time    │     value      │
+╞══════════════╪════════════╪════════════╪════════════════╡
+│ sample-jsonb │ 1333101221 │ 2012-03-30 │ x'cc7c57616c70 │
+│              │            │   09:53:41 │ 6861b535332e31 │
+│              │            │            │      ...       │
+├──────────────┼────────────┼────────────┼────────────────┤
+│ one          │ 1333206973 │ 2012-03-31 │                │
+│ two          │            │   15:16:13 │                │
+│ ...          │            │            │                │
+├──────────────┼────────────┼────────────┼────────────────┤
+│ entry-one    │ 1708791504 │ 2024-02-24 │ x'000000000000 │
+│              │            │   16:18:24 │ 00000000000000 │
+│              │            │            │      ...       │
+╰──────────────┴────────────┴────────────┴────────────────╯
+}
+do_test 5.3b {
+  set result "\n[db format -style box -widths {0 10 0 14} \
+                 -align {left right right center} \
+                 -blob sql -titlelimit 12 \
+                 -text plain -esc off -textjsonb no \
+                   -wordwrap yes -linelimit 2 $sqlnolabel ]"
+} {
+╭──────────────┬────────────┬─────────────────────┬────────────────╮
+│     name     │   mtime    │    datetime(...     │     value      │
+╞══════════════╪════════════╪═════════════════════╪════════════════╡
+│ sample-jsonb │ 1333101221 │ 2012-03-30 09:53:41 │ x'cc7c57616c70 │
+│              │            │                     │ 6861b535332e31 │
+│              │            │                     │      ...       │
+├──────────────┼────────────┼─────────────────────┼────────────────┤
+│ one          │ 1333206973 │ 2012-03-31 15:16:13 │                │
+│ two          │            │                     │                │
+│ ...          │            │                     │                │
+├──────────────┼────────────┼─────────────────────┼────────────────┤
+│ entry-one    │ 1708791504 │ 2024-02-24 16:18:24 │ x'000000000000 │
+│              │            │                     │ 00000000000000 │
+│              │            │                     │      ...       │
+╰──────────────┴────────────┴─────────────────────┴────────────────╯
+}
+do_test 5.3c {
+  set result "\n[db format -style table -widths {0 10 10 14}\
+                 -align {center right right right} \
+                 -blob sql \
+                 -text plain -esc off -textjsonb no \
+                   -wordwrap yes -linelimit 2 $sql]"
+} {
++--------------+------------+------------+----------------+
+|     name     |   mtime    |    time    |     value      |
++--------------+------------+------------+----------------+
+| sample-jsonb | 1333101221 | 2012-03-30 | x'cc7c57616c70 |
+|              |            |   09:53:41 | 6861b535332e31 |
+|              |            |            |            ... |
++--------------+------------+------------+----------------+
+|     one      | 1333206973 | 2012-03-31 |                |
+|     two      |            |   15:16:13 |                |
+|     ...      |            |            |                |
++--------------+------------+------------+----------------+
+|  entry-one   | 1708791504 | 2024-02-24 | x'000000000000 |
+|              |            |   16:18:24 | 00000000000000 |
+|              |            |            |            ... |
++--------------+------------+------------+----------------+
+}
+do_test 5.3c {
+  set result "\n[db format -style column -widths {0 10 10 14}\
+                 -align {center right right right} \
+                 -blob sql \
+                 -text plain -esc off -textjsonb no \
+                   -wordwrap yes -linelimit 2 $sql]"
+} {
+    name        mtime        time         value
+------------  ----------  ----------  --------------
+sample-jsonb  1333101221  2012-03-30  x'cc7c57616c70
+                            09:53:41  6861b535332e31
+                                                 ...
+
+    one       1333206973  2012-03-31
+    two                     15:16:13
+    ...
+
+ entry-one    1708791504  2024-02-24  x'000000000000
+                            16:18:24  00000000000000
+                                                 ...
+}
+do_test 5.4 {
+  db eval {
+    CREATE TABLE t2(a,b,c,d,e);
+    WITH v(x) AS (SELECT 'abcdefghijklmnopqrstuvwxyz')
+    INSERT INTO t2 SELECT x,x,x,x,x FROM v;
+  }
+  set sql {SELECT char(0x61,0xa,0x62,0xa,0x63,0xa,0x64) a,
+           mtime b, mtime c, mtime d, mtime e FROM t1}
+  set result "\n[db format -style box -widths {1 2 3 4 5}\
+                -linelimit 3 -wordwrap off {SELECT *, 'x' AS x FROM t2}]"
+} {
+╭────┬────┬─────┬──────┬───────┬───╮
+│ a  │ b  │  c  │  d   │   e   │ x │
+╞════╪════╪═════╪══════╪═══════╪═══╡
+│ ab │ ab │ abc │ abcd │ abcde │ x │
+│ cd │ cd │ def │ efgh │ fghij │   │
+│ ef │ ef │ ghi │ ijkl │ klmno │   │
+│ .. │ .. │ ... │ ...  │ ...   │   │
+╰────┴────┴─────┴──────┴───────┴───╯
+}
+
+do_execsql_test 6.0 {
+  DELETE FROM t2;
+  INSERT INTO t2 VALUES
+     (1, 2.5, 'three', x'342028666f757229', null);
+}
+do_test 6.1a {
+  set result "\n[db format -style list -null NULL \
+                 -text tcl -columnsep , \
+                 {SELECT * FROM t2}]"
+} {
+1,2.5,"three","\064\040\050\146\157\165\162\051",NULL
+}
+
+do_execsql_test 7.0 {
+  CREATE TABLE t7(a,b);
+  INSERT INTO t7 VALUES('abcdefghijklmnop',
+    'abcぁdefかghiのjklはmnop');
+}
+do_test 7.1 {
+  set result "\n[db format -style list -charlimit 13 \
+                 {SELECT * FROM t7}]"
+} {
+abcdefghijklm...|abcぁdefかghi...
+}
+do_test 7.2 {
+  set result "\n[db format -style list -charlimit 14 \
+                 {SELECT * FROM t7}]"
+} {
+abcdefghijklmn...|abcぁdefかghi...
+}
+do_test 7.3 {
+  set result "\n[db format -style list -charlimit 15 \
+                 {SELECT * FROM t7}]"
+} {
+abcdefghijklmno...|abcぁdefかghiの...
+}
+do_test 7.4 {
+  set result "\n[db format -style list -charlimit 16 \
+                 {SELECT * FROM t7}]"
+} {
+abcdefghijklmnop|abcぁdefかghiのj...
+}
+
+do_test 8.0 {
+  set result "\n[db format -style table {
+    WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<10)
+    SELECT 'aaa' AS 'a', format('%.*c',n,'b')||char(9)||'xx' AS x FROM c}]"
+} {
++-----+--------------------+
+|  a  |         x          |
++-----+--------------------+
+| aaa | b       xx         |
+| aaa | bb      xx         |
+| aaa | bbb     xx         |
+| aaa | bbbb    xx         |
+| aaa | bbbbb   xx         |
+| aaa | bbbbbb  xx         |
+| aaa | bbbbbbb xx         |
+| aaa | bbbbbbbb        xx |
+| aaa | bbbbbbbbb       xx |
+| aaa | bbbbbbbbbb      xx |
++-----+--------------------+
+}
+do_test 8.1 {
+  set result "\n[db format -style table {
+    WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<10)
+    SELECT 'aaaa' AS 'a', format('%.*c',n,'b')||char(9)||'xx' AS x FROM c}]"
+} {
++------+--------------------+
+|  a   |         x          |
++------+--------------------+
+| aaaa | b       xx         |
+| aaaa | bb      xx         |
+| aaaa | bbb     xx         |
+| aaaa | bbbb    xx         |
+| aaaa | bbbbb   xx         |
+| aaaa | bbbbbb  xx         |
+| aaaa | bbbbbbb xx         |
+| aaaa | bbbbbbbb        xx |
+| aaaa | bbbbbbbbb       xx |
+| aaaa | bbbbbbbbbb      xx |
++------+--------------------+
+}
+do_test 8.3 {
+  set result "\n[db format -style table -esc off {
+    WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<15)
+    SELECT 'aaa' AS 'a',n, 'xx'||char(n)||'yy' AS xy FROM c
+     WHERE n NOT IN (8,10,13,14)}]"
+} {
++-----+----+------------+
+|  a  | n  |     xy     |
++-----+----+------------+
+| aaa | 1  | xx␁yy      |
+| aaa | 2  | xx␂yy      |
+| aaa | 3  | xx␃yy      |
+| aaa | 4  | xx␄yy      |
+| aaa | 5  | xx␅yy      |
+| aaa | 6  | xx␆yy      |
+| aaa | 7  | xx␇yy      |
+| aaa | 9  | xx      yy |
+| aaa | 11 | xx␋yy      |
+| aaa | 12 | xx␌yy      |
+| aaa | 15 | xx␏yy      |
++-----+----+------------+
+}
+do_test 8.4 {
+  set result "\n[db format -style table -esc off {
+    WITH c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<15)
+    SELECT 'aaa' AS 'a',n, 'xx'||char(n)||'yy'||char(9)||'zz' AS xyz FROM c
+     WHERE n NOT IN (8,10,13,14)}]"
+} {
++-----+----+--------------------+
+|  a  | n  |        xyz         |
++-----+----+--------------------+
+| aaa | 1  | xx␁yy   zz         |
+| aaa | 2  | xx␂yy   zz         |
+| aaa | 3  | xx␃yy   zz         |
+| aaa | 4  | xx␄yy   zz         |
+| aaa | 5  | xx␅yy   zz         |
+| aaa | 6  | xx␆yy   zz         |
+| aaa | 7  | xx␇yy   zz         |
+| aaa | 9  | xx      yy      zz |
+| aaa | 11 | xx␋yy   zz         |
+| aaa | 12 | xx␌yy   zz         |
+| aaa | 15 | xx␏yy   zz         |
++-----+----+--------------------+
+}
+
+do_test 9.1 {
+  db eval {
+    CREATE TABLE t9(x);
+    INSERT INTO t9 VALUES
+      (x'4331323334'),
+      (x'c30431323334'),
+      (x'd3000431323334'),
+      (x'e30000000431323334'),
+      (x'f3000000000000000431323334');
+  }
+  db format -style list -text plain -rowsep , -textjsonb on \
+               {SELECT * FROM t9}
+} {1234,1234,1234,1234,1234,}
+do_test 9.2 {
+  db format -style list -text sql -rowsep , -textjsonb on \
+               {SELECT * FROM t9}
+} {jsonb('1234'),jsonb('1234'),jsonb('1234'),jsonb('1234'),jsonb('1234'),}
+do_test 9.3 {
+  db format -style json  {SELECT * FROM t9 WHERE rowid<0}
+} {}
+do_test 9.4 {
+  db format -style jobject  {SELECT * FROM t9 WHERE rowid<0}
+} {}
+
+do_test 10.1 {
+  db eval {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(x);
+    INSERT INTO t1(x) VALUES
+      ('alice'),
+      ('bob'),
+      ('cinderella-cinderella'),
+      ('daniel'),
+      ('emma'),
+      ('fred'),
+      ('gertrude'),
+      ('harold'),
+      ('ingrid'),
+      ('jake'),
+      ('lisa'),
+      ('mike'),
+      ('nina'),
+      ('octavian'),
+      ('paula'),
+      ('quintus'),
+      ('rita'),
+      ('sam'),
+      ('tammy'),
+      ('ulysses'),
+      ('violet'),
+      ('william'),
+      ('xanthippe'),
+      ('yates'),
+      ('zoe');
+  }
+  set result "\n[db format -style column -title off -screenwidth 41 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  octavian
+bob                    paula
+cinderella-cinderella  quintus
+daniel                 rita
+emma                   sam
+fred                   tammy
+gertrude               ulysses
+harold                 violet
+ingrid                 william
+jake                   xanthippe
+lisa                   yates
+mike                   zoe
+nina
+}
+do_test 10.2 {
+  set result "\n[db format -style column -title off -screenwidth 42 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  jake      tammy
+bob                    lisa      ulysses
+cinderella-cinderella  mike      violet
+daniel                 nina      william
+emma                   octavian  xanthippe
+fred                   paula     yates
+gertrude               quintus   zoe
+harold                 rita
+ingrid                 sam
+}
+do_test 10.3 {
+  set result "\n[db format -style column -title off -screenwidth 51 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  harold    paula    william
+bob                    ingrid    quintus  xanthippe
+cinderella-cinderella  jake      rita     yates
+daniel                 lisa      sam      zoe
+emma                   mike      tammy
+fred                   nina      ulysses
+gertrude               octavian  violet
+}
+do_test 10.4 {
+  set result "\n[db format -style column -title off -screenwidth 61 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  fred      lisa      quintus  violet
+bob                    gertrude  mike      rita     william
+cinderella-cinderella  harold    nina      sam      xanthippe
+daniel                 ingrid    octavian  tammy    yates
+emma                   jake      paula     ulysses  zoe
+}
+do_test 10.5 {
+  set result "\n[db format -style column -title off -screenwidth 74 -splitcolumn on \
+                    {SELECT x FROM t1}]"
+} {
+alice                  emma      ingrid  nina      rita     violet     zoe
+bob                    fred      jake    octavian  sam      william
+cinderella-cinderella  gertrude  lisa    paula     tammy    xanthippe
+daniel                 harold    mike    quintus   ulysses  yates
+}
+
+do_test 11.1 {
+  set result "\n[db format -style table -blob size {SELECT randomblob(1234)}]"
+} {
++------------------+
+| randomblob(1234) |
++------------------+
+| (1234-byte blob) |
++------------------+
+}
+
+do_test 12.1 {
+  set result "\n[db format -style box -text html \
+                  {SELECT 'abc','','xyz'}]"
+} {
+╭───────┬────┬───────╮
+│ 'abc' │ '' │ 'xyz' │
+╞═══════╪════╪═══════╡
+│ abc   │    │ xyz   │
+╰───────┴────┴───────╯
+}
+
+# Tests for "relaxed" quoting
+#
+do_test 13.2 {
+  db eval {
+    CREATE TABLE t13(a,b);
+    INSERT INTO t13(a,b) VALUES
+      (1,'NULL'),
+      (0,'-NULL-'),
+      (0,''),
+      (1,'''abcde'),
+      (1,'abcde'''),
+      (0,'abcde'),
+      (1,' abcde'),
+      (1,'abcde '),
+      (1,'+0'),
+      (1,'-0'),
+      (1,'012345'),
+      (0,'012xyz345'),
+      (1,'0123.45'),
+      (0,'12.34.56'),
+      (0,'12.3e'),
+      (1,'12.3e+123'),
+      (1,'12.3e-34'),
+      (1,'12.3E56'),
+      (1,'12E56'),
+      (0,'12.5E5.6'),
+      (0,'12.5e+'),
+      (0,'12.5e-'),
+      (1,'+Inf'),(1,'-Inf'),(1,'Inf');
+  }
+  set result \n[db format -style box -text relaxed -null NULL \
+                 -align {center left} \
+                 {SELECT if(a,'yes','') AS 'quoted?', b AS string
+                   FROM t13 ORDER BY rowid}]
+} {
+╭─────────┬─────────────╮
+│ quoted? │   string    │
+╞═════════╪═════════════╡
+│   yes   │ 'NULL'      │
+│         │ -NULL-      │
+│         │             │
+│   yes   │ '''abcde'   │
+│   yes   │ 'abcde'''   │
+│         │ abcde       │
+│   yes   │ ' abcde'    │
+│   yes   │ 'abcde '    │
+│   yes   │ '+0'        │
+│   yes   │ '-0'        │
+│   yes   │ '012345'    │
+│         │ 012xyz345   │
+│   yes   │ '0123.45'   │
+│         │ 12.34.56    │
+│         │ 12.3e       │
+│   yes   │ '12.3e+123' │
+│   yes   │ '12.3e-34'  │
+│   yes   │ '12.3E56'   │
+│   yes   │ '12E56'     │
+│         │ 12.5E5.6    │
+│         │ 12.5e+      │
+│         │ 12.5e-      │
+│   yes   │ '+Inf'      │
+│   yes   │ '-Inf'      │
+│   yes   │ 'Inf'       │
+╰─────────┴─────────────╯
+}
+
+db close
+
+finish_test

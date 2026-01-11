@@ -815,7 +815,9 @@ public class Tester1 implements Runnable {
       };
 
     // Register and use the function...
-    int rc = sqlite3_create_function(db, "myfunc", -1, SQLITE_UTF8, func);
+    int rc = sqlite3_create_function(db, "myfunc", -1,
+                                     SQLITE_UTF8 | SQLITE_INNOCUOUS,
+                                     func);
     affirm(0 == rc);
     affirm(0 == xFuncAccum.value);
     final sqlite3_stmt stmt = prepare(db, "SELECT myfunc(1,2,3)");
@@ -1871,6 +1873,20 @@ public class Tester1 implements Runnable {
     rc = sqlite3_prepare_multi(db, "SELECT 1", m);
     affirm( SQLITE_ERROR==rc );
     affirm( sqlite3_errmsg(db).indexOf(toss.value)>0 );
+    sqlite3_close_v2(db);
+  }
+
+  private void testSetErrmsg(){
+    final sqlite3 db = createNewDb();
+
+    int rc = sqlite3_set_errmsg(db, SQLITE_RANGE, "nope");
+    affirm( 0==rc );
+    affirm( SQLITE_MISUSE == sqlite3_set_errmsg(null, 0, null) );
+    affirm( "nope".equals(sqlite3_errmsg(db)) );
+    affirm( SQLITE_RANGE == sqlite3_errcode(db) );
+    rc = sqlite3_set_errmsg(db, 0, null);
+    affirm( "not an error".equals(sqlite3_errmsg(db)) );
+    affirm( 0 == sqlite3_errcode(db) );
     sqlite3_close_v2(db);
   }
 

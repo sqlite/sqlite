@@ -572,9 +572,8 @@ char *speedtest1_once(const char *zFormat, ...){
     }
     rc = sqlite3_reset(pStmt);
     if( rc!=SQLITE_OK ){
-      fprintf(stderr, "%s\nError code %d: %s\n",
-              sqlite3_sql(pStmt), rc, sqlite3_errmsg(g.db));
-      exit(1);
+      fatal_error("%s\nError code %d: %s\n",
+                  sqlite3_sql(pStmt), rc, sqlite3_errmsg(g.db));
     }
     sqlite3_finalize(pStmt);
   }
@@ -666,9 +665,8 @@ void speedtest1_run(void){
     sqlite3_prepare_v2(g.db, sqlite3_sql(g.pStmt), -1, &pNew, 0);
     rc = sqlite3_finalize(g.pStmt);
     if( rc!=SQLITE_OK ){
-      fprintf(stderr, "%s\nError code %d: %s\n",
-                      sqlite3_sql(pNew), rc, sqlite3_errmsg(g.db));
-      exit(1);
+      fatal_error("%s\nError code %d: %s\n",
+                  sqlite3_sql(pNew), rc, sqlite3_errmsg(g.db));
     }
     g.pStmt = pNew;
   }else
@@ -676,9 +674,8 @@ void speedtest1_run(void){
   {
     rc = sqlite3_reset(g.pStmt);
     if( rc!=SQLITE_OK ){
-      fprintf(stderr, "%s\nError code %d: %s\n",
-                      sqlite3_sql(g.pStmt), rc, sqlite3_errmsg(g.db));
-      exit(1);
+      fatal_error("%s\nError code %d: %s\n",
+                  sqlite3_sql(g.pStmt), rc, sqlite3_errmsg(g.db));
     }
   }
   speedtest1_shrink_memory();
@@ -2152,7 +2149,7 @@ void testset_rtree(int p1, int p2){
     }
     speedtest1_end_test();
   }
-  
+
   n = g.szTest*200;
   speedtest1_begin_test(120, "%d one-dimensional overlap slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE y1>=?1 AND y0<=?2");
@@ -2181,7 +2178,6 @@ void testset_rtree(int p1, int p2){
     }
     speedtest1_end_test();
   }
-  
 
   n = g.szTest*200;
   speedtest1_begin_test(125, "%d custom geometry callback queries", n);

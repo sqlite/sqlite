@@ -21,9 +21,11 @@
 */
 }
 
-// Function used to enlarge the parser stack, if needed
-%realloc parserStackRealloc
-%free    sqlite3_free
+// Setup for the parser stack
+%stack_size        50                        // Initial stack size
+%stack_size_limit  parserStackSizeLimit      // Function returning max stack size
+%realloc           parserStackRealloc        // realloc() for the stack
+%free              parserStackFree           // free() for the stack
 
 // All token codes are small integers with #defines that begin with "TK_"
 %token_prefix TK_
@@ -49,7 +51,7 @@
   }
 }
 %stack_overflow {
-  sqlite3OomFault(pParse->db);
+  if( pParse->nErr==0 ) sqlite3ErrorMsg(pParse, "Recursion limit");
 }
 
 // The name of the generated procedure that implements the parser
@@ -583,8 +585,23 @@ cmd ::= select(X).  {
   ** sqlite3_realloc() that includes a call to sqlite3FaultSim() to facilitate
   ** testing.
   */
-  static void *parserStackRealloc(void *pOld, sqlite3_uint64 newSize){
-    return sqlite3FaultSim(700) ? 0 : sqlite3_realloc(pOld, newSize);
+  static void *parserStackRealloc(
+    void *pOld,               /* Prior allocation */
+    sqlite3_uint64 newSize,   /* Requested new alloation size */
+    Parse *pParse             /* Parsing context */
+  ){
+    void *p = sqlite3FaultSim(700) ? 0 : sqlite3_realloc(pOld, newSize);
+    if( p==0 ) sqlite3OomFault(pParse->db);
+    return p;
+  }
+  static void parserStackFree(void *pOld, Parse *pParse){
+    (void)pParse;
+    sqlite3_free(pOld); 
+  }
+
+  /* Return an integer that is the maximum allowed stack size */
+  static int parserStackSizeLimit(Parse *pParse){
+    return pParse->db->aLimit[SQLITE_LIMIT_PARSER_DEPTH];
   }
 }
 
@@ -816,18 +833,35 @@ fullname(A) ::= nm(X) DOT nm(Y). {
 
 %type xfullname {SrcList*}
 %destructor xfullname {sqlite3SrcListDelete(pParse->db, $$);}
-xfullname(A) ::= nm(X).  
-   {A = sqlite3SrcListAppend(pParse,0,&X,0); /*A-overwrites-X*/}
-xfullname(A) ::= nm(X) DOT nm(Y).  
-   {A = sqlite3SrcListAppend(pParse,0,&X,&Y); /*A-overwrites-X*/}
-xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z).  {
-   A = sqlite3SrcListAppend(pParse,0,&X,&Y); /*A-overwrites-X*/
-   if( A ) A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+xfullname(A) ::= nm(X).  {
+  A = sqlite3SrcListAppend(pParse,0,&X,0);
+  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
 }
-xfullname(A) ::= nm(X) AS nm(Z). {  
-   A = sqlite3SrcListAppend(pParse,0,&X,0); /*A-overwrites-X*/
-   if( A ) A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+xfullname(A) ::= nm(X) DOT nm(Y). {
+  A = sqlite3SrcListAppend(pParse,0,&X,&Y);
+  if( IN_RENAME_OBJECT && A ) sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
 }
+xfullname(A) ::= nm(X) AS nm(Z).  {
+  A = sqlite3SrcListAppend(pParse,0,&X,0);
+  if( A ){
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameTokenMap(pParse, A->a[0].zName, &X);
+    }else{
+      A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+    }
+  }
+}
+xfullname(A) ::= nm(X) DOT nm(Y) AS nm(Z). {
+  A = sqlite3SrcListAppend(pParse,0,&X,&Y);
+  if( A ){
+    if( IN_RENAME_OBJECT ){
+      sqlite3RenameTokenMap(pParse, A->a[0].zName, &Y);
+    }else{
+      A->a[0].zAlias = sqlite3NameFromToken(pParse->db, &Z);
+    }
+  }
+}
+
 
 %type joinop {int}
 joinop(X) ::= COMMA|JOIN.              { X = JT_INNER; }
@@ -1159,7 +1193,12 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
 term(A) ::= NULL|FLOAT|BLOB(X). {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
 term(A) ::= STRING(X).          {A=tokenExpr(pParse,@X,X); /*A-overwrites-X*/}
 term(A) ::= INTEGER(X). {
-  A = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 1);
+  int iValue;
+  if( sqlite3GetInt32(X.z, &iValue)==0 ){
+    A = sqlite3ExprAlloc(pParse->db, TK_INTEGER, &X, 0);
+  }else{
+    A = sqlite3ExprInt32(pParse->db, iValue);
+  }
   if( A ) A->w.iOfst = (int)(X.z - pParse->zTail);
 }
 expr(A) ::= VARIABLE(X).     {
@@ -1341,43 +1380,67 @@ expr(A) ::= expr(A) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
   if( A ) A->flags |= EP_InfixFunc;
 }
 
-expr(A) ::= expr(A) ISNULL|NOTNULL(E).   {A = sqlite3PExpr(pParse,@E,A,0);}
-expr(A) ::= expr(A) NOT NULL.    {A = sqlite3PExpr(pParse,TK_NOTNULL,A,0);}
-
 %include {
-  /* A routine to convert a binary TK_IS or TK_ISNOT expression into a
-  ** unary TK_ISNULL or TK_NOTNULL expression. */
-  static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
-    sqlite3 *db = pParse->db;
-    if( pA && pY && pY->op==TK_NULL && !IN_RENAME_OBJECT ){
-      pA->op = (u8)op;
-      sqlite3ExprDelete(db, pA->pRight);
-      pA->pRight = 0;
+  /* Create a TK_ISNULL or TK_NOTNULL expression, perhaps optimized to
+  ** to TK_TRUEFALSE, if possible */
+  static Expr *sqlite3PExprIsNull(
+    Parse *pParse,  /* Parsing context */
+    int op,         /* TK_ISNULL or TK_NOTNULL */
+    Expr *pLeft     /* Operand */
+  ){
+    Expr *p = pLeft;
+    assert( op==TK_ISNULL || op==TK_NOTNULL );
+    assert( pLeft!=0 );
+    while( p->op==TK_UPLUS || p->op==TK_UMINUS ){
+      p = p->pLeft;
+      assert( p!=0 );
     }
+    switch( p->op ){
+      case TK_INTEGER:
+      case TK_STRING:
+      case TK_FLOAT:
+      case TK_BLOB:
+        sqlite3ExprDeferredDelete(pParse, pLeft);
+        return sqlite3ExprInt32(pParse->db, op==TK_NOTNULL);
+      default:
+        break;
+    }
+    return sqlite3PExpr(pParse, op, pLeft, 0);
+  }
+
+  /* Create a TK_IS or TK_ISNOT operator, perhaps optimized to
+  ** TK_ISNULL or TK_NOTNULL or TK_TRUEFALSE. */
+  static Expr *sqlite3PExprIs(
+    Parse *pParse,  /* Parsing context */
+    int op,         /* TK_IS or TK_ISNOT */
+    Expr *pLeft,    /* Left operand */
+    Expr *pRight    /* Right operand */
+  ){
+    if( pRight && pRight->op==TK_NULL ){
+      sqlite3ExprDeferredDelete(pParse, pRight);
+      return sqlite3PExprIsNull(pParse, op==TK_IS ? TK_ISNULL : TK_NOTNULL, pLeft);
+    }
+    return sqlite3PExpr(pParse, op, pLeft, pRight);
   }
 }
 
-//    expr1 IS expr2
-//    expr1 IS NOT expr2
+expr(A) ::= expr(A) ISNULL|NOTNULL(E).   {A = sqlite3PExprIsNull(pParse,@E,A);}
+expr(A) ::= expr(A) NOT NULL.    {A = sqlite3PExprIsNull(pParse,TK_NOTNULL,A);}
+
+//    expr1 IS expr2       same as    expr1 IS NOT DISTICT FROM expr2
+//    expr1 IS NOT expr2   same as    expr1 IS DISTINCT FROM expr2
 //
-// If expr2 is NULL then code as TK_ISNULL or TK_NOTNULL.  If expr2
-// is any other expression, code as TK_IS or TK_ISNOT.
-// 
 expr(A) ::= expr(A) IS expr(Y).     {
-  A = sqlite3PExpr(pParse,TK_IS,A,Y);
-  binaryToUnaryIfNull(pParse, Y, A, TK_ISNULL);
+  A = sqlite3PExprIs(pParse, TK_IS, A, Y);
 }
 expr(A) ::= expr(A) IS NOT expr(Y). {
-  A = sqlite3PExpr(pParse,TK_ISNOT,A,Y);
-  binaryToUnaryIfNull(pParse, Y, A, TK_NOTNULL);
+  A = sqlite3PExprIs(pParse, TK_ISNOT, A, Y);
 }
 expr(A) ::= expr(A) IS NOT DISTINCT FROM expr(Y).     {
-  A = sqlite3PExpr(pParse,TK_IS,A,Y);
-  binaryToUnaryIfNull(pParse, Y, A, TK_ISNULL);
+  A = sqlite3PExprIs(pParse, TK_IS, A, Y);
 }
 expr(A) ::= expr(A) IS DISTINCT FROM expr(Y). {
-  A = sqlite3PExpr(pParse,TK_ISNOT,A,Y);
-  binaryToUnaryIfNull(pParse, Y, A, TK_NOTNULL);
+  A = sqlite3PExprIs(pParse, TK_ISNOT, A, Y);
 }
 
 expr(A) ::= NOT(B) expr(X).  
@@ -1707,26 +1770,11 @@ when_clause(A) ::= WHEN expr(X). { A = X; }
 %type trigger_cmd_list {TriggerStep*}
 %destructor trigger_cmd_list {sqlite3DeleteTriggerStep(pParse->db, $$);}
 trigger_cmd_list(A) ::= trigger_cmd_list(A) trigger_cmd(X) SEMI. {
-  assert( A!=0 );
   A->pLast->pNext = X;
   A->pLast = X;
 }
 trigger_cmd_list(A) ::= trigger_cmd(A) SEMI. { 
-  assert( A!=0 );
   A->pLast = A;
-}
-
-// Disallow qualified table names on INSERT, UPDATE, and DELETE statements
-// within a trigger.  The table to INSERT, UPDATE, or DELETE is always in 
-// the same database as the table that the trigger fires on.
-//
-%type trnm {Token}
-trnm(A) ::= nm(A).
-trnm(A) ::= nm DOT nm(X). {
-  A = X;
-  sqlite3ErrorMsg(pParse, 
-        "qualified table names are not allowed on INSERT, UPDATE, and DELETE "
-        "statements within triggers");
 }
 
 // Disallow the INDEX BY and NOT INDEXED clauses on UPDATE and DELETE
@@ -1751,17 +1799,17 @@ tridxby ::= NOT INDEXED. {
 %destructor trigger_cmd {sqlite3DeleteTriggerStep(pParse->db, $$);}
 // UPDATE 
 trigger_cmd(A) ::=
-   UPDATE(B) orconf(R) trnm(X) tridxby SET setlist(Y) from(F) where_opt(Z) scanpt(E).  
-   {A = sqlite3TriggerUpdateStep(pParse, &X, F, Y, Z, R, B.z, E);}
+   UPDATE(B) orconf(R) xfullname(X) tridxby SET setlist(Y) from(F) where_opt(Z) scanpt(E).  
+   {A = sqlite3TriggerUpdateStep(pParse, X, F, Y, Z, R, B.z, E);}
 
 // INSERT
 trigger_cmd(A) ::= scanpt(B) insert_cmd(R) INTO
-                      trnm(X) idlist_opt(F) select(S) upsert(U) scanpt(Z). {
-   A = sqlite3TriggerInsertStep(pParse,&X,F,S,R,U,B,Z);/*A-overwrites-R*/
+                   xfullname(X) idlist_opt(F) select(S) upsert(U) scanpt(Z). {
+   A = sqlite3TriggerInsertStep(pParse,X,F,S,R,U,B,Z);/*A-overwrites-R*/
 }
 // DELETE
-trigger_cmd(A) ::= DELETE(B) FROM trnm(X) tridxby where_opt(Y) scanpt(E).
-   {A = sqlite3TriggerDeleteStep(pParse, &X, Y, B.z, E);}
+trigger_cmd(A) ::= DELETE(B) FROM xfullname(X) tridxby where_opt(Y) scanpt(E).
+   {A = sqlite3TriggerDeleteStep(pParse, X, Y, B.z, E);}
 
 // SELECT
 trigger_cmd(A) ::= scanpt(B) select(X) scanpt(E).
@@ -1831,21 +1879,41 @@ cmd ::= ANALYZE nm(X) dbnm(Y).  {sqlite3Analyze(pParse, &X, &Y);}
 cmd ::= ALTER TABLE fullname(X) RENAME TO nm(Z). {
   sqlite3AlterRenameTable(pParse,X,&Z);
 }
-cmd ::= ALTER TABLE add_column_fullname
-        ADD kwcolumn_opt columnname(Y) carglist. {
+
+// The ALTER TABLE ADD COLUMN command. This is broken into two sections so
+// that sqlite3AlterBeginAddColumn() is called before parsing the various
+// constraints and so on (carglist) attached to the new column definition.
+cmd ::= alter_add(Y) carglist. {
   Y.n = (int)(pParse->sLastToken.z-Y.z) + pParse->sLastToken.n;
   sqlite3AlterFinishAddColumn(pParse, &Y);
 }
+alter_add(A) ::= ALTER TABLE fullname(X) ADD kwcolumn_opt nm(Y) typetoken(Z). {
+  disableLookaside(pParse);
+  sqlite3AlterBeginAddColumn(pParse, X);
+  sqlite3AddColumn(pParse, Y, Z);
+  A = Y;
+}
+
 cmd ::= ALTER TABLE fullname(X) DROP kwcolumn_opt nm(Y). {
   sqlite3AlterDropColumn(pParse, X, &Y);
 }
-
-add_column_fullname ::= fullname(X). {
-  disableLookaside(pParse);
-  sqlite3AlterBeginAddColumn(pParse, X);
-}
 cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
   sqlite3AlterRenameColumn(pParse, X, &Y, &Z);
+}
+cmd ::= ALTER TABLE fullname(X) DROP CONSTRAINT nm(Y). {
+  sqlite3AlterDropConstraint(pParse, X, &Y, 0);
+}
+cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) DROP NOT NULL. {
+  sqlite3AlterDropConstraint(pParse, X, 0, &Y);
+}
+cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) SET NOT(Z) NULL onconf. {
+  sqlite3AlterSetNotNull(pParse, X, &Y, &Z);
+}
+cmd ::= ALTER TABLE fullname(X) ADD CONSTRAINT(Y) nm(Z) CHECK LP(A) expr RP(B) onconf. {
+  sqlite3AlterAddConstraint(pParse, X, &Y, &Z, A.z+1, (B.z-A.z-1));
+}
+cmd ::= ALTER TABLE fullname(X) ADD CHECK(Y) LP(A) expr RP(B) onconf. {
+  sqlite3AlterAddConstraint(pParse, X, &Y, 0, A.z+1, (B.z-A.z-1));
 }
 
 kwcolumn_opt ::= .

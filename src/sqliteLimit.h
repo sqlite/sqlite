@@ -60,19 +60,40 @@
 ** It used to be the case that setting this value to zero would
 ** turn the limit off.  That is no longer true.  It is not possible
 ** to turn this limit off.
+**
+** The hard limit is the largest possible 32-bit signed integer less
+** 1024, or 2147482624.
 */
 #ifndef SQLITE_MAX_SQL_LENGTH
 # define SQLITE_MAX_SQL_LENGTH 1000000000
 #endif
 
 /*
-** The maximum depth of an expression tree. This is limited to
-** some extent by SQLITE_MAX_SQL_LENGTH. But sometime you might
-** want to place more severe limits on the complexity of an
-** expression. A value of 0 means that there is no limit.
+** The maximum depth of an expression tree. The expression tree depth
+** is also limited indirectly by SQLITE_MAX_SQL_LENGTH and by
+** SQLITE_MAX_PARSER_DEPTH.  Reducing the maximum complexity of
+** expressions can help prevent excess memory usage by hostile SQL.
+**
+** A value of 0 for this compile-time option causes all expression
+** depth limiting code to be omitted.
 */
 #ifndef SQLITE_MAX_EXPR_DEPTH
 # define SQLITE_MAX_EXPR_DEPTH 1000
+#endif
+
+/*
+** The maximum depth of the LALR(1) stack used in the parser that
+** interprets SQL inputs. The parser stack depth can also be limited
+** indirectly by SQLITE_MAX_SQL_LENGTH.  Limiting the parser stack
+** depth can help prevent excess memory usage and excess CPU stack
+** usage when processing hostile SQL.
+**
+** Prior to version 3.45.0 (2024-01-15), the parser stack was
+** hard-coded to 100 entries, and that worked fine for almost all
+** applications.  So the upper bound on this limit need not be large.
+*/
+#ifndef SQLITE_MAX_PARSER_DEPTH
+# define SQLITE_MAX_PARSER_DEPTH 2500
 #endif
 
 /*
