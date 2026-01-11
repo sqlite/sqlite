@@ -374,6 +374,9 @@ struct sqlite3_api_routines {
   /* Version 3.52.0 and later */
   void (*str_truncate)(sqlite3_str*,int);
   void (*str_free)(sqlite3_str*);
+  /* Version 3.53.0 and later */
+  const char * (*column_table_alias)(sqlite3_stmt*,int);
+  const void * (*column_table_alias16)(sqlite3_stmt*,int);
 };
 
 /*
@@ -715,6 +718,9 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.52.0 and later */
 #define sqlite3_str_truncate           sqlite3_api->str_truncate
 #define sqlite3_str_free               sqlite3_api->str_free
+/* Version 3.53.0 and later */
+#define sqlite3_column_table_alias     sqlite3_api->column_table_alias
+#define sqlite3_column_table_alias16   sqlite3_api->column_table_alias16
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

@@ -1,0 +1,121 @@
+# 2021 January 22
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script testing the callback-free C/C++ API.
+#
+# $Id: capi3f.test,v 1.70 2009/01/09 02:49:32 d3x0r Exp $
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix capi3f
+
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
+
+# Return the UTF-16 representation of the supplied UTF-8 string $str.
+# If $nt is true, append two 0x00 bytes as a nul terminator.
+proc utf16 {str {nt 1}} {
+  set r [encoding convertto unicode $str]
+  if {$nt} {
+    append r "\x00\x00"
+  }
+  return $r
+}
+
+# Return the UTF-8 representation of the supplied UTF-16 string $str. 
+proc utf8 {str} {
+  # If $str ends in two 0x00 0x00 bytes, knock these off before
+  # converting to UTF-8 using TCL.
+  binary scan $str \c* vals
+  if {[lindex $vals end]==0 && [lindex $vals end-1]==0} {
+    set str [binary format \c* [lrange $vals 0 end-2]]
+  }
+
+  set r [encoding convertfrom unicode $str]
+  return $r
+}
+
+
+# This proc is used to test the following API calls:
+#
+# sqlite3_column_table_alias
+# sqlite3_column_table_alias16
+
+#
+# $STMT is a compiled SQL statement. $test is a prefix
+# to use for test names within this proc. $names is a list
+# of the column names that should be returned by $STMT.
+# $decltypes is a list of column declaration types for $STMT.
+#
+# Example:
+#
+# set STMT [sqlite3_prepare "SELECT 1, 2, 2;" -1 DUMMY]
+# check_header test1.1 {1 2 3} {"" "" ""}
+#
+proc check_origin_header2 {STMT test als } {
+  # If sqlite3_column_origin_name() and friends are not compiled into
+  # this build, this proc is a no-op.
+  ifcapable columnmetadata {
+
+    # Use the return value of sqlite3_column_count() to build
+    # a list of column indexes. i.e. If sqlite3_column_count
+    # is 3, build the list {0 1 2}.
+    set ::idxlist [list]
+    set ::numcols [sqlite3_column_count $STMT]
+    for {set i 0} {$i < $::numcols} {incr i} {lappend ::idxlist $i}
+  
+    # Table alias in UTF-8
+    do_test $test.3 {
+      set caliaslist [list]
+      foreach i $idxlist {
+        lappend caliaslist [sqlite3_column_table_alias $STMT $i]
+      } 
+      set caliaslist
+    } $als
+  
+    # Table alias in UTF-16
+    ifcapable {utf16} {
+      do_test $test.4 {
+        set caliaslist [list]
+        foreach i $idxlist {
+          lappend caliaslist [utf8 [sqlite3_column_table_alias16 $STMT $i]]
+        }
+        set caliaslist
+      } $als
+    }
+
+  }
+}
+
+sqlite3 db test.db
+set DB [sqlite3_connection_pointer db]
+
+do_test capi3f-1 {
+  execsql {
+    CREATE TABLE t1(a VARINT, b BLOB, c VARCHAR(16));
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t1 VALUES('one', 'two', NULL);
+    INSERT INTO t1 VALUES(1.2, 1.3, 1.4);
+  }
+  set sql "SELECT * FROM t1 tz"
+  set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
+  sqlite3_column_count $STMT
+} 3
+
+check_origin_header2 $STMT capi3f-1 {tz tz tz}
+
+db close
+
+finish_test

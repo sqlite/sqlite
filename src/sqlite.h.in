@@ -5119,7 +5119,10 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** ^The name of the database or table or column can be returned as
 ** either a UTF-8 or UTF-16 string.  ^The _database_ routines return
 ** the database name, the _table_ routines return the table name, and
-** the origin_ routines return the column name.
+** the origin_ routines return the column name.  _table_alias_ results
+** with the alias(if any) of the table associated with the column;
+** _table_ always returns the source table name, even if it has been
+** aliased, this returns the original table name if there is no alias.
 ** ^The returned string is valid until the [prepared statement] is destroyed
 ** using [sqlite3_finalize()] or until the statement is automatically
 ** reprepared by the first call to [sqlite3_step()] for a particular run
@@ -5157,6 +5160,8 @@ const char *sqlite3_column_table_name(sqlite3_stmt*,int);
 const void *sqlite3_column_table_name16(sqlite3_stmt*,int);
 const char *sqlite3_column_origin_name(sqlite3_stmt*,int);
 const void *sqlite3_column_origin_name16(sqlite3_stmt*,int);
+const char *sqlite3_column_table_alias(sqlite3_stmt*,int);
+const void *sqlite3_column_table_alias16(sqlite3_stmt*,int);
 
 /*
 ** CAPI3REF: Declared Datatype Of A Query Result

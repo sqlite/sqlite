@@ -154,13 +154,14 @@ typedef struct VdbeOpList VdbeOpList;
 ** The Vdbe.aColName array contains 5n Mem structures, where n is the 
 ** number of columns of data returned by the statement.
 */
-#define COLNAME_NAME     0
-#define COLNAME_DECLTYPE 1
-#define COLNAME_DATABASE 2
-#define COLNAME_TABLE    3
-#define COLNAME_COLUMN   4
+#define COLNAME_NAME        0
+#define COLNAME_DECLTYPE    1
+#define COLNAME_DATABASE    2
+#define COLNAME_TABLE       3
+#define COLNAME_COLUMN      4
+#define COLNAME_TABLE_ALIAS 5
 #ifdef SQLITE_ENABLE_COLUMN_METADATA
-# define COLNAME_N        5      /* Number of COLNAME_xxx symbols */
+# define COLNAME_N          6      /* Number of COLNAME_xxx symbols */
 #else
 # ifdef SQLITE_OMIT_DECLTYPE
 #   define COLNAME_N      1      /* Store only the name */
