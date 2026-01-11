@@ -495,7 +495,7 @@ proc sqlite-configure-phase1 {buildMode} {
   # --compile-commands must be checked relatively early or else flags
   # added later, like -Werror, break it.
   #
-  if {![proj-check-compile-commands -assume-for-clang compile-commands]} {
+  if {![proj-check-compile-commands compile-commands]} {
     if {[proj-opt-was-provided compile-commands] && [opt-bool compile-commands]} {
       proj-indented-notice -error {
         --compile-commands was provided but the compiler does not
