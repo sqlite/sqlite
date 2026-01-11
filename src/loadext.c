@@ -525,7 +525,12 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_db_status64,
   /* Version 3.52.0 and later */
   sqlite3_str_truncate,
-  sqlite3_str_free
+  sqlite3_str_free,
+#ifdef SQLITE_ENABLE_CARRAY
+  sqlite3_carray_bind
+#else
+  0
+#endif
 };
 
 /* True if x is the directory separator character

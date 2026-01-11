@@ -374,6 +374,7 @@ struct sqlite3_api_routines {
   /* Version 3.52.0 and later */
   void (*str_truncate)(sqlite3_str*,int);
   void (*str_free)(sqlite3_str*);
+  int (*carray_bind)(sqlite3_stmt*,int,void*,int,int,void(*)(void*));
 };
 
 /*
@@ -715,6 +716,7 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.52.0 and later */
 #define sqlite3_str_truncate           sqlite3_api->str_truncate
 #define sqlite3_str_free               sqlite3_api->str_free
+#define sqlite3_carray_bind            sqlite3_api->carray_bind
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
