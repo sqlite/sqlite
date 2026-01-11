@@ -869,7 +869,7 @@ $(sqlite3-license-version.js): $(bin.version-info) \
   $(dir.api)/sqlite3-license-version-header.js $(MAKEFILE)
 	@$(call b.mkdir@); echo '$(logtag.@) $(emo.disk)'; { \
 		cat $(dir.api)/sqlite3-license-version-header.js || exit $$?;  \
-		echo '/*'; \
+		echo '/* @preserve'; \
 		echo '** This code was built from sqlite3 version...'; \
 		echo '**'; \
 		awk '/define SQLITE_VERSION/{$$1=""; print "**" $$0}' $(sqlite3.h); \
