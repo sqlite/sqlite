@@ -1,5 +1,5 @@
-C Avoid\sunsigned\sinteger\soverflow\sin\sthe\sdelta_apply()\sextension\sfunction.\nNot\spart\sof\sany\sstandard\sdeliverable.\s\s\n[forum:/forumpost/d41879b367c7f7ec|Forum\sthread\sd41879b367c7f7ec].
-D 2026-01-12T19:56:00.298
+C Fix\san\sOOB\sread\sin\sthe\ssessions\smodule\sthat\scould\soccur\swhile\sprocessing\sa\scorrupt\schangeset.
+D 2026-01-12T20:16:04.115
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -577,7 +577,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 837f81e5d2e74175cb8f4929d0aaa5f5ea49092828fa8bb886be770205f28db5
+F ext/session/sqlite3session.c 203b3778367733d95c06c5f10965ce66d6448df93ece107cb93dc3fdf0f4f26c
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/GNUmakefile c3d007dd181527283d8674c812cc60518353f1f69c9a9d3008f10f53cea4a3c1
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d98653bdbc9781970f1c5d66f69c81c93ad14549223ceae02e74c1b99ab05377
-R 3f9dab5c6c5ab8ad7249618d441d5de4
-U drh
-Z 401dca944da578f646785c1e8ff1019c
+P b354dd12c25c820c04b08e0be4ba8c095fc648dfb4b71345aacce50a17fd269a
+R b5cf0aa17b2da63c5f412d3871c029c3
+U dan
+Z a12cf382376e4a9edf2d9ca0eaf1a8b7
 # Remove this line to create a well-formed Fossil manifest.
