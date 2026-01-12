@@ -42,6 +42,16 @@
 ** You may want to add additional compiler options, of course,
 ** according to the needs of your project.
 **
+** Another option is to statically link both SQLite and this extension
+** into your application.  If both this file and "sqlite3.c" are statically
+** linked, and if "sqlite3.c" is compiled with -DSQLITE_EXTRA_INIT=
+** SQLite amalgamation "sqlite3.c" file with the option like:
+**
+**       -DSQLITE_EXTRA_INIT=sqlite3_register_tmstmpvfs
+**
+** Then SQLite will use the tmstmp VFS by default throughout your
+** application.
+**
 ** LOADING
 **
 ** To load this extension as a shared library, you first have to
@@ -63,6 +73,14 @@
 ** it might be important to ensure that tmstmpvfs is loaded in the
 ** correct order so that it sequences itself into the default VFS
 ** Shim stack in the right order.
+**
+** When running the CLI, you can load this extension at invocation by
+** adding a command-line option like this:  "--vfs ./tmstmpvfs.so".
+** The --vfs option usually specifies the symbolic name of a built-in VFS.
+** But if the argument to --vfs is not a built-in VFS but is instead the
+** name of a file, the CLI tries to load that file as an extension.  Note
+** that the full name of the extension file must be provided, including
+** the ".so" or ".dylib" or ".dll" suffix.
 **
 ** An application can see if the tmstmpvfs is being used by examining
 ** the results from SQLITE_FCNTL_VFSNAME (or the .vfsname command in
@@ -96,13 +114,16 @@
 ** From the CLI, use the ".filectrl reserve_bytes 16" command, 
 ** followed by "VACUUM;".
 **
-** Note that SQLite allows the number of reserve-bytes to be
-** increased but not decreased.  So if a database file already
-** has a reserve-bytes value greater than 16, there is no way to
-** activate timestamping on that database, other than to dump
-** and restore the database file.  Note also that other extensions
-** might also make use of the reserve-bytes.  Timestamping will
-** be incompatible with those other extensions.
+** SQLite allows the number of reserve-bytes to be increased, but
+** not decreased.  If you want to restore the reserve-bytes to 0
+** (to disable tmstmpvfs), the easiest approach is to use VACUUM INTO
+** with a URI filename as the argument and include "reserve=0" query
+** parameter on the URI.  Example:
+**
+**     VACUUM INTO  'file:notimestamps.db?reserve=0';
+**
+** Then switch over to using the new database file.  The reserve=0 query
+** parameter only works on SQLite 3.52.0 and later.
 **
 ** IMPLEMENTATION NOTES
 **
