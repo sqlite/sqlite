@@ -1896,6 +1896,11 @@ static void showHelp(void){
   );
 }
 
+/* work-around the Microsoft "WorstFit" bug */
+#ifdef _WIN32
+#define main utf8_main
+#endif
+
 int main(int argc, char **argv){
   const char *zDb1 = 0;
   const char *zDb2 = 0;

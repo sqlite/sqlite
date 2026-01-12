@@ -41,6 +41,7 @@ struct sqlite3_qrf_spec {
   short int nWrap;            /* Wrap columns wider than this */
   short int nScreenWidth;     /* Maximum overall table width */
   short int nLineLimit;       /* Maximum number of lines for any row */
+  short int nTitleLimit;      /* Maximum number of characters in a title */
   int nCharLimit;             /* Maximum number of characters in a cell */
   int nWidth;                 /* Number of entries in aWidth[] */
   int nAlign;                 /* Number of entries in aAlignment[] */
@@ -109,6 +110,7 @@ int sqlite3_format_query_result(
 #define QRF_TEXT_Html    4 /* HTML-style quoting */
 #define QRF_TEXT_Tcl     5 /* C/Tcl quoting */
 #define QRF_TEXT_Json    6 /* JSON quoting */
+#define QRF_TEXT_Relaxed 7 /* Relaxed SQL quoting */
 
 /*
 ** Quoting styles for BLOBs
@@ -176,12 +178,20 @@ int sqlite3_format_query_result(
 ** character c.  For normal characters, the answer is always 1.  But the
 ** estimate might be 0 or 2 for zero-width and double-width characters.
 **
-** Different display devices display unicode using different widths.  So
+** Different devices display unicode using different widths.  So
 ** it is impossible to know that true display width with 100% accuracy.
 ** Inaccuracies in the width estimates might cause columns to be misaligned.
 ** Unfortunately, there is nothing we can do about that.
 */
 int sqlite3_qrf_wcwidth(int c);
+
+/*
+** Return an estimate of the number of display columns used by the
+** string in the argument.  The width of individual characters is
+** determined as for sqlite3_qrf_wcwidth().  VT100 escape code sequences
+** are assigned a width of zero.
+*/
+size_t sqlite3_qrf_wcswidth(const char*);
 
 
 #ifdef __cplusplus

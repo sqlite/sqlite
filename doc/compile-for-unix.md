@@ -22,9 +22,10 @@ guidance on building for Windows.
       or <https://sqlite.org/tmp/tcl9.0.0.tar.gz>.
       <li>Untar the source archive.  CD into the "unix/" subfolder
           of the source tree.
-      <li>Run: `mkdir $HOME/local`
-      <li>Run: `./configure --prefix=$HOME/local`
-      <li>Run: `make install`
+      <li>Run: &ensp; `mkdir $HOME/local`
+      <li>Run: &ensp; `./configure --prefix=$HOME/local`<br>
+          SQLite deliverable builds add: &emsp; `--static CFLAGS=-Os`
+      <li>Run: &ensp; `make install`
       </ol>
       <p>
       As of 2024-10-25, TCL is not longer required for many
@@ -40,6 +41,12 @@ guidance on building for Windows.
 
       You do not need to use --with-tclsh if the tclsh you want to use is the
       first one on your PATH or if you are building without TCL.
+
+      The SQLite developers typically add the
+      &ensp; `--with-linenoise=$HOME/linenoise` &ensp; option
+      to provide command-line editing.  "$HOME/linenoise" is a directory
+      that contains [linenoise](https://github.com/antirez/linenoise) source
+      code files, `linenoise.c` and `linenoise.h`.
 
   6.  Run the "`Makefile`" makefile with an appropriate target.
       Examples:

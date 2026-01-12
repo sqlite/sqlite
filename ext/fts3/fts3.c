@@ -1816,9 +1816,7 @@ static int fts3CursorSeekStmt(Fts3Cursor *pCsr){
       zSql = sqlite3_mprintf("SELECT %s WHERE rowid = ?", p->zReadExprlist);
       if( !zSql ) return SQLITE_NOMEM;
       p->bLock++;
-      rc = sqlite3_prepare_v3(
-          p->db, zSql,-1,SQLITE_PREPARE_PERSISTENT,&pCsr->pStmt,0
-      );
+      rc = sqlite3Fts3PrepareStmt(p, zSql, 1, 1, &pCsr->pStmt);
       p->bLock--;
       sqlite3_free(zSql);
     }
@@ -3393,9 +3391,7 @@ static int fts3FilterMethod(
     }
     if( zSql ){
       p->bLock++;
-      rc = sqlite3_prepare_v3(
-          p->db,zSql,-1,SQLITE_PREPARE_PERSISTENT,&pCsr->pStmt,0
-      );
+      rc = sqlite3Fts3PrepareStmt(p, zSql, 1, 1, &pCsr->pStmt);
       p->bLock--;
       sqlite3_free(zSql);
     }else{
@@ -4018,6 +4014,7 @@ static int fts3IntegrityMethod(
 
   UNUSED_PARAMETER(isQuick);
   rc = sqlite3Fts3IntegrityCheck(p, &bOk);
+  assert( pVtab->zErrMsg==0 || rc!=SQLITE_OK );
   assert( rc!=SQLITE_CORRUPT_VTAB );
   if( rc==SQLITE_ERROR || (rc&0xFF)==SQLITE_CORRUPT ){
     *pzErr = sqlite3_mprintf("unable to validate the inverted index for"

@@ -7753,7 +7753,8 @@ static int SQLITE_TCLAPI test_wal_checkpoint_v2(
   int nCkpt = -555;
   Tcl_Obj *pRet;
 
-  const char * aMode[] = { "passive", "full", "restart", "truncate", 0 };
+  const char * aMode[] = {"noop", "passive", "full", "restart", "truncate", 0};
+  assert( SQLITE_CHECKPOINT_NOOP==-1 );
   assert( SQLITE_CHECKPOINT_PASSIVE==0 );
   assert( SQLITE_CHECKPOINT_FULL==1 );
   assert( SQLITE_CHECKPOINT_RESTART==2 );
@@ -7767,11 +7768,14 @@ static int SQLITE_TCLAPI test_wal_checkpoint_v2(
   if( objc==4 ){
     zDb = Tcl_GetString(objv[3]);
   }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) || (
-      TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eMode)
-   && TCL_OK!=Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0, &eMode) 
-  )){
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
     return TCL_ERROR;
+  }
+  if( TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eMode) ){
+    if( TCL_OK!=Tcl_GetIndexFromObj(interp, objv[2], aMode, "mode", 0,&eMode) ){
+      return TCL_ERROR;
+    }
+    eMode = eMode - 1;
   }
 
   rc = sqlite3_wal_checkpoint_v2(db, zDb, eMode, &nLog, &nCkpt);

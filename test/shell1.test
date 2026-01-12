@@ -48,7 +48,7 @@ do_test shell1-1.1.1b {
 } {1 1}
 # error on extra options
 do_test shell1-1.1.2 {
-  catchcmd "-compat 20250101 test.db \"select+3\" \"select+4\"" ""
+  catchcmd "test.db \"select+3\" \"select+4\"" ""
 } {0 {3
 4}}
 # error on extra options
@@ -182,7 +182,7 @@ do_test shell1-1.17.1 {
   catchcmd {-- --db "CREATE TABLE T(c1);"}
 } {0 {}}
 do_test shell1-1.17.2 {
-  catchcmd {-compat 20250101 -- --db "SELECT name from sqlite_schema;"}
+  catchcmd {-- --db "SELECT name from sqlite_schema;"}
 } {0 T}
 forcedelete ./--db
 
@@ -302,9 +302,7 @@ do_test shell1-3.2.4 {
   catchcmd "test.db" ".bail OFF BAD"
 } {1 {Usage: .bail on|off}}
 
-# This test will not work on winrt, as winrt has no concept of the absolute
-# paths that the test expects in the result. It uses relative paths only.
-ifcapable vtab&&!winrt {
+ifcapable vtab {
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
@@ -419,15 +417,18 @@ do_test shell1-3.10.2 {
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell1-3.11.1 {
   catchcmd "test.db" ".import"
-} {/1 .ERROR: missing FILE argument.*/}
+} {/1 .line 1: Missing FILE argument.*/}
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
-} {/1 .ERROR: missing TABLE argument.*/}
+} {/1 .line 1: Missing TABLE argument.*/}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
 } {1 {line 1: .import FOO BAR BAD
 line 1:                 ^--- unknown argument}}
+do_test shell1-3.11.4 {
+  catchcmd "test.db" ".import <<END t1\na,b,c\n1,2,3"
+} {1 {line 1: Content terminator "END" not found.}}
 
 # .indexes ?TABLE?       Show names of all indexes
 #                          If TABLE specified, only show indexes for tables
@@ -458,7 +459,7 @@ do_test shell1-3.12.3 {
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
   catchcmd "test.db" ".mode batch\n.mode"
-} {0 {current output mode: list}}
+} {0 {.mode list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
 } {1 {line 1: .mode FOO
@@ -615,6 +616,20 @@ CREATE VIEW v1 AS SELECT y+1 FROM v2
 
   catch {db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}}
 }
+do_test shell1-3.21.5 {
+  exec {*}$CLI -noinit test.db \
+   {CREATE TABLE t2(a INTEGER PRIMARY KEY, b BLOB DEFAULT(jsonb('[]')),c TEXT NOT NULL)STRICT;} \
+   {.schema -indent t2}
+} {CREATE TABLE t2(
+  a INTEGER PRIMARY KEY,
+  b BLOB DEFAULT(jsonb('[]')),
+  c TEXT NOT NULL
+)STRICT;}
+do_test shell1-3.21.6 {
+  exec {*}$CLI -noinit test.db \
+   {DROP TABLE t2;} \
+   {.schema -indent t2}
+} {}
 
 # .separator STRING  Change column separator used by output and .import
 do_test shell1-3.22.1 {
@@ -738,12 +753,9 @@ do_test shell1-3.26.6 {
 do_test shell1-3.27.1 {
   catchcmd "test.db" ".timer"
 } {1 {Usage: .timer on|off}}
-ifcapable !winrt {
-  # No timer support on winrt.
-  do_test shell1-3.27.2 {
-    catchcmd "test.db" ".timer ON"
-  } {0 {}}
-}
+do_test shell1-3.27.2 {
+  catchcmd "test.db" ".timer ON"
+} {0 {}}
 do_test shell1-3.27.3 {
   catchcmd "test.db" ".timer OFF"
 } {0 {}}
@@ -1290,20 +1302,20 @@ do_test_with_ansi_output shell1-8.2 {
 .mode box
 SELECT ieee754(47.49) AS x;
   }
-} {0 {┌───────────────────────────────┐
+} {0 {╭───────────────────────────────╮
 │               x               │
-├───────────────────────────────┤
+╞═══════════════════════════════╡
 │ ieee754(6683623321994527,-47) │
-└───────────────────────────────┘}}
+╰───────────────────────────────╯}}
 do_test_with_ansi_output shell1-8.3 {
   catchcmd ":memory: --box" {
     select ieee754(6683623321994527,-47) as x;
   }
-} {0 {┌───────┐
+} {0 {╭───────╮
 │   x   │
-├───────┤
+╞═══════╡
 │ 47.49 │
-└───────┘}}
+╰───────╯}}
 do_test shell1-8.4 {
   catchcmd ":memory: --table" {SELECT ieee754_mantissa(47.49) AS M, ieee754_exponent(47.49) AS E;}
 } {0 {+------------------+-----+
@@ -1326,15 +1338,15 @@ insert into t values ('too long for one line', 1), ('shorter', NULL);
 .width 10 10
 .nullvalue NADA
 select * from t;}
-} {0 {┌────────────┬────────────┐
+} {0 {╭────────────┬────────────╮
 │     a      │     b      │
-├────────────┼────────────┤
-│ too long f │ 1          │
+╞════════════╪════════════╡
+│ too long f │          1 │
 │ or one lin │            │
 │ e          │            │
 ├────────────┼────────────┤
 │ shorter    │ NADA       │
-└────────────┴────────────┘}}
+╰────────────┴────────────╯}}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
@@ -1390,24 +1402,24 @@ select base85(zeroblob(2000000000));
 #     qbox --screenwidth auto --linelimit 5 --charlimit 300 --textjsonb on
 #
 do_test shell1-12.1 {
-  catchcmd :memory: {.mode tty
+  catchcmd :memory: {.mode tty -quote sql
 .print
 SELECT jsonb(1234) AS x;}
 } {0 {
-┌───────────────┐
+╭───────────────╮
 │       x       │
-├───────────────┤
+╞═══════════════╡
 │ jsonb('1234') │
-└───────────────┘}}
+╰───────────────╯}}
 do_test shell1-12.2 {
   catchcmd :memory: {.mode box --textjsonb on
 .print
 SELECT jsonb(1234) AS x;}
 } {0 {
-┌──────┐
+╭──────╮
 │  x   │
-├──────┤
+╞══════╡
 │ 1234 │
-└──────┘}}
+╰──────╯}}
 
 finish_test

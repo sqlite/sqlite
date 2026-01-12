@@ -1490,7 +1490,7 @@ typedef const char *sqlite3_filename;
 ** greater and the function pointer is not NULL) and will fall back
 ** to xCurrentTime() if xCurrentTimeInt64() is unavailable.
 **
-** ^The xSetSystemCall(), xGetSystemCall(), and xNestSystemCall() interfaces
+** ^The xSetSystemCall(), xGetSystemCall(), and xNextSystemCall() interfaces
 ** are not used by the SQLite core.  These optional interfaces are provided
 ** by some VFSes to facilitate testing of the VFS code. By overriding
 ** system calls with functions under its control, a test program can
@@ -4174,6 +4174,7 @@ void sqlite3_free_filename(sqlite3_filename);
 ** <li> sqlite3_errmsg()
 ** <li> sqlite3_errmsg16()
 ** <li> sqlite3_error_offset()
+** <li> sqlite3_db_handle()
 ** </ul>
 **
 ** ^The sqlite3_errmsg() and sqlite3_errmsg16() return English-language
@@ -4432,12 +4433,28 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** fails, the sqlite3_prepare_v3() call returns the same error indications
 ** with or without this flag; it just omits the call to [sqlite3_log()] that
 ** logs the error.
+**
+** [[SQLITE_PREPARE_FROM_DDL]] <dt>SQLITE_PREPARE_FROM_DDL</dt>
+** <dd>The SQLITE_PREPARE_FROM_DDL flag causes the SQL compiler to behave as if
+** the SQL statement is part of a database schema. This makes a difference
+** when the [SQLITE_DBCONFIG_TRUSTED_SCHEMA] option is set to off.
+** When this option is used and SQLITE_DBCONFIG_TRUSTED_SCHEMA is off,
+** SQL functions may not be called unless they are tagged with
+** [SQLITE_INNOCUOUS] and virtual tables may not be used unless tagged
+** with [SQLITE_VTAB_INNOCUOUS].  Use the SQLITE_PREPARE_FROM_DDL option
+** when preparing SQL that is derived from parts of the database
+** schema. In particular, virtual table implementations that
+** run SQL statements based on the arguments to their CREATE VIRTUAL
+** TABLE statement should use [sqlite3_prepare_v3()] and set the
+** SQLITE_PREPARE_FROM_DLL flag to prevent bypass of the
+** [SQLITE_DBCONFIG_TRUSTED_SCHEMA] security checks.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01
 #define SQLITE_PREPARE_NORMALIZE               0x02
 #define SQLITE_PREPARE_NO_VTAB                 0x04
 #define SQLITE_PREPARE_DONT_LOG                0x10
+#define SQLITE_PREPARE_FROM_DDL                0x20
 
 /*
 ** CAPI3REF: Compiling An SQL Statement
@@ -4451,8 +4468,9 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** The preferred routine to use is [sqlite3_prepare_v2()].  The
 ** [sqlite3_prepare()] interface is legacy and should be avoided.
-** [sqlite3_prepare_v3()] has an extra "prepFlags" option that is used
-** for special purposes.
+** [sqlite3_prepare_v3()] has an extra 
+** [SQLITE_PREPARE_FROM_DDL|"prepFlags" option] that is some times
+** needed for special purpose or to pass along security restrictions.
 **
 ** The use of the UTF-8 interfaces is preferred, as SQLite currently
 ** does all parsing using UTF-8.  The UTF-16 interfaces are provided
@@ -6286,10 +6304,14 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 **
 ** There is no limit (other than available memory) on the number of different
 ** client data pointers (with different names) that can be attached to a
-** single database connection.  However, the implementation is optimized
-** for the case of having only one or two different client data names.
-** Applications and wrapper libraries are discouraged from using more than
-** one client data name each.
+** single database connection.  However, the current implementation stores
+** the content on a linked list.  Insert and retrieval performance will
+** be proportional to the number of entries.  The design use case, and
+** the use case for which the implementation is optimized, is
+** that an application will store only small number of client data names,
+** typically just one or two.  This interface is not intended to be a
+** generalized key/value store for thousands or millions of keys.  It
+** will work for that, but performance might be disappointing.
 **
 ** There is no way to enumerate the client data pointers
 ** associated with a database connection.  The N parameter can be thought
@@ -7426,7 +7448,7 @@ int sqlite3_table_column_metadata(
 ** ^The sqlite3_load_extension() interface attempts to load an
 ** [SQLite extension] library contained in the file zFile.  If
 ** the file cannot be loaded directly, attempts are made to load
-** with various operating-system specific extensions added.
+** with various operating-system specific filename extensions added.
 ** So for example, if "samplelib" cannot be loaded, then names like
 ** "samplelib.so" or "samplelib.dylib" or "samplelib.dll" might
 ** be tried also.
@@ -7434,10 +7456,10 @@ int sqlite3_table_column_metadata(
 ** ^The entry point is zProc.
 ** ^(zProc may be 0, in which case SQLite will try to come up with an
 ** entry point name on its own.  It first tries "sqlite3_extension_init".
-** If that does not work, it constructs a name "sqlite3_X_init" where
-** X consists of the lower-case equivalent of all ASCII alphabetic
-** characters in the filename from the last "/" to the first following
-** "." and omitting any initial "lib".)^
+** If that does not work, it tries names of the form "sqlite3_X_init"
+** where X consists of the lower-case equivalent of all ASCII alphabetic
+** characters or all ASCII alphanumeric characters in the filename from
+** the last "/" to the first following "." and omitting any initial "lib".)^
 ** ^The sqlite3_load_extension() interface returns
 ** [SQLITE_OK] on success and [SQLITE_ERROR] if something goes wrong.
 ** ^If an error occurs and pzErrMsg is not 0, then the
@@ -8730,7 +8752,7 @@ sqlite3_str *sqlite3_str_new(sqlite3*);
 ** pass the returned value to [sqlite3_free()] to avoid a memory leak.
 ** ^The [sqlite3_str_finish(X)] interface may return a NULL pointer if any
 ** errors were encountered during construction of the string.  ^The
-** [sqlite3_str_finish(X)] interface will also return a NULL pointer if the
+** [sqlite3_str_finish(X)] interface might also return a NULL pointer if the
 ** string in [sqlite3_str] object X is zero bytes long.
 **
 ** ^The [sqlite3_str_free(X)] interface destroys both the sqlite3_str object

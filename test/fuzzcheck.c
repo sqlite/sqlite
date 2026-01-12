@@ -1977,6 +1977,7 @@ int main(int argc, char **argv){
   int iSliceIdx = 0;           /* Only run the piece with this index */
 
   sqlite3_config(SQLITE_CONFIG_URI,1);
+  sqlite3_config(SQLITE_CONFIG_MEMSTATUS,1);
   registerOomSimulator();
   sqlite3_initialize();
   iBegin = timeOfDay();
