@@ -679,6 +679,7 @@ proc sqlite-check-common-system-deps {} {
     define HAVE_ZLIB 1
     define LDFLAGS_ZLIB -lz
     sqlite-add-shell-opt -DSQLITE_HAVE_ZLIB=1
+    sqlite-add-feature-flag -DSQLITE_HAVE_ZLIB=1
   } else {
     define HAVE_ZLIB 0
     define LDFLAGS_ZLIB ""

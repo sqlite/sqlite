@@ -752,6 +752,11 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     toss: function(...args){throw new Error(args.join(' '))},
     toss3,
     typedArrayPart: wasm.typedArrayPart,
+    assert: function(arg,msg){
+      if( !arg ){
+        util.toss("Assertion failed:",msg);
+      }
+    },
     /**
        Given a byte array or ArrayBuffer, this function throws if the
        lead bytes of that buffer do not hold a SQLite3 database header,
@@ -887,7 +892,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
 
        Like this.alloc.impl(), this.realloc.impl() is a direct binding
        to the underlying realloc() implementation which does not throw
-       exceptions, instead returning 0 on allocation error.
+       exceptions, instead returning 0 (or 0n) on allocation error.
     */
     realloc: undefined/*installed later*/,
 
@@ -1408,7 +1413,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
      or not provided, then "main" is assumed.
   */
   capi.sqlite3_js_db_vfs =
-    (dbPointer, dbName=0)=>util.sqlite3__wasm_db_vfs(dbPointer, dbName);
+    (dbPointer, dbName=wasm.ptr.null)=>util.sqlite3__wasm_db_vfs(dbPointer, dbName);
 
   /**
      A thin wrapper around capi.sqlite3_aggregate_context() which
@@ -2029,6 +2034,9 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     */
     scriptInfo: undefined
   };
+  if( ('undefined'!==typeof sqlite3IsUnderTest/* from post-js-header.js */) ){
+    sqlite3.__isUnderTest = !!sqlite3IsUnderTest;
+  }
   try{
     sqlite3ApiBootstrap.initializers.forEach((f)=>{
       f(sqlite3);
@@ -2051,9 +2059,6 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
        builds, this would need to be injected in somewhere to get
        that VFS loading. */ = sqlite3InitScriptInfo;
   }
-  sqlite3.__isUnderTest =
-    ('undefined'===typeof sqlite3IsUnderTest /* from post-js-header.js */)
-    ? false : !!sqlite3IsUnderTest;
   if( sqlite3.__isUnderTest ){
     if( 'undefined'!==typeof EmscriptenModule ){
       sqlite3.config.emscripten = EmscriptenModule;

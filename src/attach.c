@@ -599,7 +599,7 @@ int sqlite3FixTriggerStep(
     if( sqlite3WalkSelect(&pFix->w, pStep->pSelect)
      || sqlite3WalkExpr(&pFix->w, pStep->pWhere) 
      || sqlite3WalkExprList(&pFix->w, pStep->pExprList)
-     || sqlite3FixSrcList(pFix, pStep->pFrom)
+     || sqlite3FixSrcList(pFix, pStep->pSrc)
     ){
       return 1;
     }

@@ -1368,8 +1368,8 @@ static int renameResolveTrigger(Parse *pParse){
       sqlite3SelectPrep(pParse, pStep->pSelect, &sNC);
       if( pParse->nErr ) rc = pParse->rc;
     }
-    if( rc==SQLITE_OK && pStep->zTarget ){
-      SrcList *pSrc = sqlite3TriggerStepSrc(pParse, pStep);
+    if( rc==SQLITE_OK && pStep->pSrc ){
+      SrcList *pSrc = sqlite3SrcListDup(db, pStep->pSrc, 0);
       if( pSrc ){
         Select *pSel = sqlite3SelectNew(
             pParse, pStep->pExprList, pSrc, 0, 0, 0, 0, 0, 0
@@ -1397,10 +1397,10 @@ static int renameResolveTrigger(Parse *pParse){
           pSel->pSrc = 0;
           sqlite3SelectDelete(db, pSel);
         }
-        if( pStep->pFrom ){
+        if( ALWAYS(pStep->pSrc) ){
           int i;
-          for(i=0; i<pStep->pFrom->nSrc && rc==SQLITE_OK; i++){
-            SrcItem *p = &pStep->pFrom->a[i];
+          for(i=0; i<pStep->pSrc->nSrc && rc==SQLITE_OK; i++){
+            SrcItem *p = &pStep->pSrc->a[i];
             if( p->fg.isSubquery ){
               assert( p->u4.pSubq!=0 );
               sqlite3SelectPrep(pParse, p->u4.pSubq->pSelect, 0);
@@ -1469,13 +1469,13 @@ static void renameWalkTrigger(Walker *pWalker, Trigger *pTrigger){
       sqlite3WalkExpr(pWalker, pUpsert->pUpsertWhere);
       sqlite3WalkExpr(pWalker, pUpsert->pUpsertTargetWhere);
     }
-    if( pStep->pFrom ){
+    if( pStep->pSrc ){
       int i;
-      SrcList *pFrom = pStep->pFrom;
-      for(i=0; i<pFrom->nSrc; i++){
-        if( pFrom->a[i].fg.isSubquery ){
-          assert( pFrom->a[i].u4.pSubq!=0 );
-          sqlite3WalkSelect(pWalker, pFrom->a[i].u4.pSubq->pSelect);
+      SrcList *pSrc = pStep->pSrc;
+      for(i=0; i<pSrc->nSrc; i++){
+        if( pSrc->a[i].fg.isSubquery ){
+          assert( pSrc->a[i].u4.pSubq!=0 );
+          sqlite3WalkSelect(pWalker, pSrc->a[i].u4.pSubq->pSelect);
         }
       }
     }
@@ -1646,8 +1646,8 @@ static void renameColumnFunc(
     if( rc!=SQLITE_OK ) goto renameColumnFunc_done;
 
     for(pStep=sParse.pNewTrigger->step_list; pStep; pStep=pStep->pNext){
-      if( pStep->zTarget ){
-        Table *pTarget = sqlite3LocateTable(&sParse, 0, pStep->zTarget, zDb);
+      if( pStep->pSrc ){
+        Table *pTarget = sqlite3LocateTableItem(&sParse, 0, &pStep->pSrc->a[0]);
         if( pTarget==pTab ){
           if( pStep->pUpsert ){
             ExprList *pUpsertSet = pStep->pUpsert->pUpsertSet;
@@ -1658,7 +1658,6 @@ static void renameColumnFunc(
         }
       }
     }
-
 
     /* Find tokens to edit in UPDATE OF clause */
     if( sParse.pTriggerTab==pTab ){
@@ -1861,13 +1860,10 @@ static void renameTableFunc(
           if( rc==SQLITE_OK ){
             renameWalkTrigger(&sWalker, pTrigger);
             for(pStep=pTrigger->step_list; pStep; pStep=pStep->pNext){
-              if( pStep->zTarget && 0==sqlite3_stricmp(pStep->zTarget, zOld) ){
-                renameTokenFind(&sParse, &sCtx, pStep->zTarget);
-              }
-              if( pStep->pFrom ){
+              if( pStep->pSrc ){
                 int i;
-                for(i=0; i<pStep->pFrom->nSrc; i++){
-                  SrcItem *pItem = &pStep->pFrom->a[i];
+                for(i=0; i<pStep->pSrc->nSrc; i++){
+                  SrcItem *pItem = &pStep->pSrc->a[i];
                   if( 0==sqlite3_stricmp(pItem->zName, zOld) ){
                     renameTokenFind(&sParse, &sCtx, pItem->zName);
                   }
@@ -2114,6 +2110,57 @@ static void renameTableTest(
 #endif
 }
 
+
+/*
+** Return the number of bytes until the end of the next non-whitespace and
+** non-comment token.  For the purpose of this function, a "(" token includes
+** all of the bytes through and including the matching ")", or until the
+** first illegal token, whichever comes first.
+**
+** Write the token type into *piToken.
+**
+** The value returned is the number of bytes in the token itself plus
+** the number of bytes of leading whitespace and comments skipped plus
+** all bytes through the next matching ")" if the token is TK_LP.
+**
+** Example:    (Note: '.' used in place of '*' in the example z[] text)
+**
+**                                    ,--------- *piToken := TK_RP
+**                                    v
+**    z[] = " /.comment./ --comment\n (two three four) five"
+**          |                                        |
+**          |<-------------------------------------->|
+**                              |
+**                              `--- return value
+*/
+static int getConstraintToken(const u8 *z, int *piToken){
+  int iOff = 0;
+  int t = 0;
+  do {
+    iOff += sqlite3GetToken(&z[iOff], &t);
+  }while( t==TK_SPACE || t==TK_COMMENT );
+
+  *piToken = t;
+
+  if( t==TK_LP ){
+    int nNest = 1;
+    while( nNest>0 ){
+      iOff += sqlite3GetToken(&z[iOff], &t);
+      if( t==TK_LP ){
+        nNest++;
+      }else if( t==TK_RP ){
+        t = TK_LP;
+        nNest--;
+      }else if( t==TK_ILLEGAL ){
+        break;
+      }
+    }
+  }
+
+  *piToken = t;
+  return iOff;
+}
+
 /*
 ** The implementation of internal UDF sqlite_drop_column().
 **
@@ -2158,15 +2205,24 @@ static void dropColumnFunc(
     goto drop_column_done;
   }
 
-  pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zCnName);
   if( iCol<pTab->nCol-1 ){
     RenameToken *pEnd;
+    pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol].zCnName);
     pEnd = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol+1].zCnName);
     zEnd = (const char*)pEnd->t.z;
   }else{
+    int eTok;
     assert( IsOrdinaryTable(pTab) );
+    assert( iCol!=0 );
+    /* Point pCol->t.z at the "," immediately preceding the definition of
+    ** the column being dropped. To do this, start at the name of the 
+    ** previous column, and tokenize until the next ",".  */
+    pCol = renameTokenFind(&sParse, 0, (void*)pTab->aCol[iCol-1].zCnName);
+    do {
+      pCol->t.z += getConstraintToken((const u8*)pCol->t.z, &eTok);
+    }while( eTok!=TK_COMMA );
+    pCol->t.z--;
     zEnd = (const char*)&zSql[pTab->u.tab.addColOffset];
-    while( ALWAYS(pCol->t.z[0]!=0) && pCol->t.z[0]!=',' ) pCol->t.z--;
   }
 
   zNew = sqlite3MPrintf(db, "%.*s%s", pCol->t.z-zSql, zSql, zEnd);
@@ -2351,56 +2407,6 @@ static int getWhitespace(const u8 *z){
 
 
 /*
-** Return the number of bytes until the end of the next non-whitespace and
-** non-comment token.  For the purpose of this function, a "(" token includes
-** all of the bytes through and including the matching ")", or until the
-** first illegal token, whichever comes first.
-**
-** Write the token type into *piToken.
-**
-** The value returned is the number of bytes in the token itself plus
-** the number of bytes of leading whitespace and comments skipped plus
-** all bytes through the next matching ")" if the token is TK_LP.
-**
-** Example:    (Note: '.' used in place of '*' in the example z[] text)
-**
-**                                    ,--------- *piToken := TK_RP
-**                                    v
-**    z[] = " /.comment./ --comment\n (two three four) five"
-**          |                                        |
-**          |<-------------------------------------->|
-**                              |
-**                              `--- return value
-*/
-static int getConstraintToken(const u8 *z, int *piToken){
-  int iOff = 0;
-  int t = 0;
-  do {
-    iOff += sqlite3GetToken(&z[iOff], &t);
-  }while( t==TK_SPACE || t==TK_COMMENT );
-
-  *piToken = t;
-
-  if( t==TK_LP ){
-    int nNest = 1;
-    while( nNest>0 ){
-      iOff += sqlite3GetToken(&z[iOff], &t);
-      if( t==TK_LP ){
-        nNest++;
-      }else if( t==TK_RP ){
-        t = TK_LP;
-        nNest--;
-      }else if( t==TK_ILLEGAL ){
-        break;
-      }
-    }
-  }
-
-  *piToken = t;
-  return iOff;
-}
-
-/*
 ** Argument z points into the body of a constraint - specifically the 
 ** second token of the constraint definition.  For a named constraint,
 ** z points to the first token past the CONSTRAINT keyword.  For an
@@ -2449,6 +2455,7 @@ static int getConstraint(const u8 *z){
 */
 static int quotedCompare(
   sqlite3_context *ctx,  /* Function context on which to report errors */
+  int t,                 /* Token type */
   const u8 *zQuote,      /* Possibly quoted text.  Not zero-terminated. */
   int nQuote,            /* Length of zQuote in bytes */
   const u8 *zCmp,        /* Zero-terminated, unquoted name to compare against */
@@ -2456,6 +2463,10 @@ static int quotedCompare(
 ){
   char *zCopy = 0;       /* De-quoted, zero-terminated copy of zQuote[] */
 
+  if( t==TK_ILLEGAL ){
+    *pRes = 1;
+    return SQLITE_OK;
+  }
   zCopy = sqlite3MallocZero(nQuote+1);
   if( zCopy==0 ){
     sqlite3_result_error_nomem(ctx);
@@ -2554,7 +2565,7 @@ static void dropConstraintFunc(
         ** the constraint being dropped.  */
         nTok = getConstraintToken(&zSql[iOff], &t);
         if( zCons ){
-          if( quotedCompare(ctx, &zSql[iOff], nTok, zCons, &cmp) ) return;
+          if( quotedCompare(ctx, t, &zSql[iOff], nTok, zCons, &cmp) ) return;
         }
         iOff += nTok;
 
@@ -2948,7 +2959,7 @@ static void findConstraintFunc(
       int cmp = 0;
       iOff += getWhitespace(&zSql[iOff]);
       nTok = getConstraintToken(&zSql[iOff], &t);
-      if( quotedCompare(ctx, &zSql[iOff], nTok, zCons, &cmp) ) return;
+      if( quotedCompare(ctx, t, &zSql[iOff], nTok, zCons, &cmp) ) return;
       if( cmp==0 ){
         sqlite3_result_int(ctx, 1);
         return;

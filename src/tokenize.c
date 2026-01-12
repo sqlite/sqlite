@@ -508,7 +508,7 @@ i64 sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case CC_DOLLAR:
     case CC_VARALPHA: {
-      int n = 0;
+      i64 n = 0;
       testcase( z[0]=='$' );  testcase( z[0]=='@' );
       testcase( z[0]==':' );  testcase( z[0]=='#' );
       *tokenType = TK_VARIABLE;
@@ -604,7 +604,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
   int tokenType;                  /* type of the next token */
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
-  int mxSqlLen;                   /* Max length of an SQL string */
+  i64 mxSqlLen;                   /* Max length of an SQL string */
   Parse *pParentParse = 0;        /* Outer parse context, if any */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */

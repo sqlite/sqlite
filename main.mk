@@ -1799,7 +1799,7 @@ TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 testfixture$(T.exe):	$(T.tcl.env.sh) has_tclsh85 $(TESTFIXTURE_SRC)
 	$(T.link.tcl) -DSQLITE_NO_SYNC=1 $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) \
-		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC \
+		$$TCL_LIB_SPEC $$TCL_INCLUDE_SPEC $$TCL_LIBS \
 		$(LDFLAGS.libsqlite3)
 
 coretestprogs:	testfixture$(B.exe) sqlite3$(B.exe)
@@ -1865,6 +1865,9 @@ mdevtest: srctree-check has_tclsh85
 
 sdevtest: has_tclsh85
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl sdevtest $(TSTRNNR_OPTS)
+
+retest: has_tclsh85
+	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl retest
 
 errors:
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl errors
@@ -2018,6 +2021,10 @@ showshm$(T.exe):	$(TOP)/tool/showshm.c
 	$(T.link) -o $@ $(TOP)/tool/showshm.c $(LDFLAGS.configure)
 xbin: showshm$(T.exe)
 
+showtmlog$(T.exe):	$(TOP)/tool/showtmlog.c
+	$(T.link) -o $@ $(TOP)/tool/showtmlog.c $(LDFLAGS.configure)
+xbin: showshm$(T.exe)
+
 index_usage$(T.exe): $(TOP)/tool/index_usage.c sqlite3.o
 	$(T.link) $(SHELL_OPT) -o $@ $(TOP)/tool/index_usage.c sqlite3.o \
 		$(LDFLAGS.libsqlite3)
@@ -2116,16 +2123,19 @@ src-archives: sqlite-amalgamation.zip amalgamation-tarball sqlite-src.zip
 
 # Build a ZIP archive containing various command-line tools.
 #
-tool-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
+tool-zip:	sqlite3$(T.exe) sqldiff$(T.exe) \
             sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe) $(TOP)/tool/mktoolzip.tcl
 	strip sqlite3$(T.exe) sqldiff$(T.exe) sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe)
-	./testfixture$(T.exe) $(TOP)/tool/mktoolzip.tcl
+	$(TCLSH_CMD) $(TOP)/tool/mktoolzip.tcl
+
 snapshot-zip:	testfixture$(T.exe) sqlite3$(T.exe) sqldiff$(T.exe) \
             sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe) $(TOP)/tool/mktoolzip.tcl
 	strip sqlite3$(T.exe) sqldiff$(T.exe) sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe)
-	./testfixture$(T.exe) $(TOP)/tool/mktoolzip.tcl --snapshot
+	$(TCLSH_CMD) $(TOP)/tool/mktoolzip.tcl --snapshot
+
 clean-tool-zip:
 	rm -f sqlite-tools-*.zip
+
 clean: clean-tool-zip
 
 #

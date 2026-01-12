@@ -4541,7 +4541,6 @@ void ReportTable(
     FILE *sql = file_open(lemp, ".sql", "wb");
     if( sql==0 ){
       fclose(in);
-      fclose(out);
       return;
     }
     fprintf(sql,

@@ -4175,19 +4175,19 @@ struct Trigger {
 ** orconf    -> stores the ON CONFLICT algorithm
 ** pSelect   -> The content to be inserted - either a SELECT statement or
 **              a VALUES clause.
-** zTarget   -> Dequoted name of the table to insert into.
+** pSrc      -> Table to insert into.
 ** pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ...
 **              statement, then this stores the column-names to be
 **              inserted into.
 ** pUpsert   -> The ON CONFLICT clauses for an Upsert
 **
 ** (op == TK_DELETE)
-** zTarget   -> Dequoted name of the table to delete from.
+** pSrc      -> Table to delete from
 ** pWhere    -> The WHERE clause of the DELETE statement if one is specified.
 **              Otherwise NULL.
 **
 ** (op == TK_UPDATE)
-** zTarget   -> Dequoted name of the table to update.
+** pSrc      -> Table to update, followed by any FROM clause tables.
 ** pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
 **              Otherwise NULL.
 ** pExprList -> A list of the columns to update and the expressions to update
@@ -4207,8 +4207,7 @@ struct TriggerStep {
   u8 orconf;           /* OE_Rollback etc. */
   Trigger *pTrig;      /* The trigger that this step is a part of */
   Select *pSelect;     /* SELECT statement or RHS of INSERT INTO SELECT ... */
-  char *zTarget;       /* Target table for DELETE, UPDATE, INSERT */
-  SrcList *pFrom;      /* FROM clause for UPDATE statement (if any) */
+  SrcList *pSrc;       /* Table to insert/update/delete */
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
   ExprList *pExprList; /* SET clause for UPDATE, or RETURNING clause */
   IdList *pIdList;     /* Column names for INSERT */
@@ -4958,6 +4957,7 @@ int sqlite3NoTempsInRange(Parse*,int,int);
 #endif
 Expr *sqlite3ExprAlloc(sqlite3*,int,const Token*,int);
 Expr *sqlite3Expr(sqlite3*,int,const char*);
+Expr *sqlite3ExprInt32(sqlite3*,int);
 void sqlite3ExprAttachSubtrees(sqlite3*,Expr*,Expr*,Expr*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*);
 void sqlite3PExprAddSelect(Parse*, Expr*, Select*);
@@ -5276,17 +5276,16 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerInsertStep(Parse*,Token*, IdList*,
+  TriggerStep *sqlite3TriggerInsertStep(Parse*,SrcList*, IdList*,
                                         Select*,u8,Upsert*,
                                         const char*,const char*);
-  TriggerStep *sqlite3TriggerUpdateStep(Parse*,Token*,SrcList*,ExprList*,
+  TriggerStep *sqlite3TriggerUpdateStep(Parse*,SrcList*,SrcList*,ExprList*,
                                         Expr*, u8, const char*,const char*);
-  TriggerStep *sqlite3TriggerDeleteStep(Parse*,Token*, Expr*,
+  TriggerStep *sqlite3TriggerDeleteStep(Parse*,SrcList*, Expr*,
                                         const char*,const char*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
   u32 sqlite3TriggerColmask(Parse*,Trigger*,ExprList*,int,int,Table*,int);
-  SrcList *sqlite3TriggerStepSrc(Parse*, TriggerStep*);
 # define sqlite3ParseToplevel(p) ((p)->pToplevel ? (p)->pToplevel : (p))
 # define sqlite3IsToplevel(p) ((p)->pToplevel==0)
 #else
@@ -5300,7 +5299,6 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, ExprList*,Expr*,int);
 # define sqlite3ParseToplevel(p) p
 # define sqlite3IsToplevel(p) 1
 # define sqlite3TriggerColmask(A,B,C,D,E,F,G) 0
-# define sqlite3TriggerStepSrc(A,B) 0
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);

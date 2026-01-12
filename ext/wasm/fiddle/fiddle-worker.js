@@ -175,10 +175,6 @@
                "features (e.g. upload) do not yet work with OPFS.");
       }
       stdout('\nEnter ".help" for usage hints.');
-      this.exec([ // initialization commands...
-        '.nullvalue NULL',
-        '.headers on'
-      ].join('\n'));
       return true;
     },
     /**
