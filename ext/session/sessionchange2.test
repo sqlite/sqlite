@@ -1,0 +1,205 @@
+# 2026 January 09
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix sessionchange2
+
+do_test 1.0 {
+  sqlite3changegroup grp
+  list [catch { grp change_begin INSERT "nosuchtable" 0 } msg] $msg
+} {1 {SQLITE_ERROR - no such table: nosuchtable}}
+
+do_test 1.1 {
+  grp schema db main
+  list [catch { grp change_begin INSERT "nosuchtable" 0 } msg] $msg
+} {1 {SQLITE_ERROR - no such table: nosuchtable}}
+
+do_execsql_test 1.2.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+}
+do_test 1.2.2 {
+  list [catch { grp change_begin 435 "t1" 0 } msg] $msg
+} {1 SQLITE_ERROR}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(a, b);
+}
+
+do_test 2.1.1 {
+  sqlite3changegroup grp
+  grp schema db main
+  grp change_begin INSERT "t1" 0
+  grp change_int64 new 0 55
+  grp change_int64 new 1 101
+  grp change_finish false
+} {}
+
+do_test 2.1.2 {
+  set C [grp output]
+  grp delete
+  changeset_to_list $C
+} {
+  {INSERT t1 0 X. {} {i 55 i 101}}
+}
+
+do_test 2.2.1 {
+  sqlite3changegroup grp
+  grp schema db main
+  grp change_begin INSERT "t2" 0
+  grp change_int64 new 0 -5
+  grp change_int64 new 1 -10
+  grp change_int64 new 2 -20
+  grp change_finish false
+} {}
+
+do_test 2.2.2 {
+  set C [grp output]
+  grp delete
+  changeset_to_list $C
+} {
+  {INSERT t2 0 X.. {} {i -5 i -10 i -20}}
+}
+
+do_test 2.2.3 {
+  sqlite3changegroup grp
+  grp schema db main
+  grp change_begin INSERT "t1" 0
+  grp change_int64 new 0 223344
+  grp change_null  new 1
+  grp change_finish false
+} {}
+
+do_test 2.2.4 {
+  set C [grp output]
+  grp delete
+  changeset_to_list $C
+} {
+  {INSERT t1 0 X. {} {i 223344 n {}}}
+}
+
+do_test 2.2.5 {
+  sqlite3changegroup grp
+  grp schema db main
+  grp change_begin DELETE "t1" 0
+
+  grp change_int64 old 0 1
+  grp change_int64 old 1 123
+
+  grp change_finish false
+} {}
+
+do_test 2.2.6 {
+  set C [grp output]
+  grp delete
+  changeset_to_list $C
+} {
+  {DELETE t1 0 X. {i 1 i 123} {}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c);
+  CREATE TABLE t2(x, y);
+}
+
+foreach {tn script error} {
+  1 {
+    grp change_begin UPDATE t1 0
+  } {SQLITE_ERROR - invalid change: undefined value in PK of old.* record}
+
+  2 {
+    grp change_begin UPDATE t1 0
+    grp change_int64 old 0 1234
+    grp change_int64 new 0 5678
+  } {SQLITE_ERROR - invalid change: defined value in PK of new.* record}
+
+  3 {
+    grp change_begin UPDATE t1 0
+    grp change_null old 0
+  } {SQLITE_ERROR - invalid change: null value in PK of old.* record}
+
+  4 {
+    grp change_begin UPDATE t1 0
+    grp change_int64 old 0 1234
+    grp change_int64 old 1 20
+  } {SQLITE_ERROR - invalid change: column 1 - old.* value is defined but new.* is undefined}
+
+  5 {
+    grp change_begin UPDATE t1 0
+    grp change_int64 old 0 1234
+    grp change_int64 new 1 20
+  } {SQLITE_ERROR - invalid change: column 1 - old.* value is undefined but new.* is defined}
+
+  6 {
+    grp change_begin INSERT t1 0
+    grp change_null  new 0
+    grp change_int64 new 1 20
+  } {SQLITE_ERROR - invalid change: null value in PK}
+
+  7 {
+    grp change_begin INSERT t1 0
+    grp change_int64 new 1 20
+  } {SQLITE_ERROR - invalid change: column 0 is undefined}
+
+  8 {
+    grp change_begin INSERT t1 0
+    grp change_int64 new 0 20
+  } {SQLITE_ERROR - invalid change: column 1 is undefined}
+
+  9 {
+    grp change_begin DELETE t1 0
+    grp change_int64 old 0 20
+  } {SQLITE_ERROR - invalid change: column 1 is undefined}
+
+  10 {
+    grp change_begin DELETE t1 0
+    grp change_int64 old 1 20
+  } {SQLITE_ERROR - invalid change: column 0 is undefined}
+
+} {
+  sqlite3changegroup grp
+  grp schema db main
+  eval $script
+  do_test 3.1.$tn {
+    list [catch { grp change_finish false } msg] $msg
+  } [list 1 $error]
+  grp delete
+}
+
+
+do_test 3.2.1 {
+  sqlite3changegroup grp
+  grp schema db main
+  grp change_begin DELETE t1 0
+  list [catch {grp change_int64 new 0 20} msg] $msg
+} {1 SQLITE_ERROR}
+do_test 3.2.2 {
+  grp change_finish true
+  grp change_begin INSERT t1 0
+  list [catch {grp change_int64 old 0 20} msg] $msg
+} {1 SQLITE_ERROR}
+
+grp delete
+
+finish_test
+

@@ -11,6 +11,8 @@
   typedef unsigned char u8;
 #endif
 
+extern const char *sqlite3ErrName(int);
+
 typedef struct TestSession TestSession;
 struct TestSession {
   sqlite3_session *pSession;
@@ -395,7 +397,6 @@ static int SQLITE_TCLAPI test_session_cmd(
       }
       rc = sqlite3session_object_config(pSession, aOpt[iOpt].opt, &iArg);
       if( rc!=SQLITE_OK ){
-        extern const char *sqlite3ErrName(int);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
       }else{
         Tcl_SetObjResult(interp, Tcl_NewIntObj(iArg));
@@ -1530,6 +1531,14 @@ static void test_changegroup_del(void *clientData){
   ckfree(pGrp);
 }
 
+static int testGetNewOrOld(Tcl_Interp *interp, Tcl_Obj *pObj, int *pbNew){
+  const char *azVal[] = { "old", "new", 0 };
+  int iIdx = 0;
+  int rc = Tcl_GetIndexFromObj(interp, pObj, azVal, "record", 0, &iIdx);
+  *pbNew = iIdx;
+  return rc;
+}
+
 /*
 ** Tclcmd:  $changegroup schema DB DBNAME
 ** Tclcmd:  $changegroup add CHANGESET
@@ -1547,14 +1556,21 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
     const char *zSub;
     int nArg;
     const char *zMsg;
-    int iSub;
   } aSub[] = {
-    { "schema",       2, "DB DBNAME",  }, /* 0 */
-    { "add",          1, "CHANGESET",  }, /* 1 */
-    { "output",       0, "",           }, /* 2 */
-    { "delete",       0, "",           }, /* 3 */
-    { "add_change",   1, "ITERATOR",   }, /* 4 */
-    { 0 }
+    { "schema",        2, "DB DBNAME"            },    /* 0 */
+    { "add",           1, "CHANGESET"            },    /* 1 */
+    { "output",        0, ""                     },    /* 2 */
+    { "delete",        0, ""                     },    /* 3 */
+    { "add_change",    1, "ITERATOR"             },    /* 4 */
+
+    { "change_begin",  3, "TYPE TABLE INDIRECT"  },    /* 5 */
+    { "change_int64",  3, "[new|old] ICOL VALUE" },    /* 6 */
+    { "change_null",   2, "[new|old] ICOL"       },    /* 7 */
+    { "change_double", 3, "[new|old] ICOL VALUE" },    /* 8 */
+    { "change_text",   3, "[new|old] ICOL VALUE" },    /* 9 */
+    { "change_blob",   3, "[new|old] ICOL VALUE" },    /* 10 */
+    { "change_finish", 1, "BDISCARD"             },    /* 11 */
+    { 0, 0, 0 }
   };
   int rc = TCL_OK;
   int iSub = 0;
@@ -1622,6 +1638,145 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       }
       break;
     };
+
+    case 5: {      /* change_begin */
+      struct ChangeType {
+        const char *zType;
+        int eType;
+      } aType[] = {
+        { "INSERT", SQLITE_INSERT },
+        { "UPDATE", SQLITE_UPDATE },
+        { "DELETE", SQLITE_DELETE },
+        { 0, 0 }
+      };
+      int eType = 0;
+      const char *zTab = 0;
+      int bIndirect;
+      int iIdx = 0;
+      char *zErr = 0;
+
+      if( TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eType) ){
+        rc = Tcl_GetIndexFromObjStruct(
+            interp, objv[2], aType, sizeof(aType[0]), "TYPE", 0, &iIdx
+        );
+        if( rc!=TCL_OK ) return rc;
+        eType = aType[iIdx].eType;
+      }
+      zTab = Tcl_GetString(objv[3]);
+      if( Tcl_GetBooleanFromObj(interp, objv[4], &bIndirect) ){
+        return TCL_ERROR;
+      }
+
+      rc = sqlite3changegroup_change_begin(p->pGrp, eType,zTab,bIndirect,&zErr);
+      assert( zErr==0 || rc!=SQLITE_OK );
+      if( rc!=SQLITE_OK ){
+        rc = test_session_error(interp, rc, zErr);
+      }
+
+      break;
+    }
+
+    case 6: {      /* change_int64 */
+      int bNew = 0;
+      int iCol = 0;
+      sqlite3_int64 iVal = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+       || TCL_OK!=Tcl_GetWideIntFromObj(interp, objv[4], &iVal)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        rc = sqlite3changegroup_change_int64(p->pGrp, bNew, iCol, iVal);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 7: {      /* change_null */
+      int bNew = 0;
+      int iCol = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        rc = sqlite3changegroup_change_null(p->pGrp, bNew, iCol);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 8: {      /* change_double */
+      int bNew = 0;
+      int iCol = 0;
+      double rVal = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+       || TCL_OK!=Tcl_GetDoubleFromObj(interp, objv[4], &rVal)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        rc = sqlite3changegroup_change_double(p->pGrp, bNew, iCol, rVal);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 9: {      /* change_text */
+      int bNew = 0;
+      int iCol = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        int nVal = 0;
+        const char *pVal = Tcl_GetStringFromObj(objv[4], &nVal);
+        rc = sqlite3changegroup_change_text(p->pGrp, bNew, iCol, pVal, nVal);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 10: {      /* change_blob */
+      int bNew = 0;
+      int iCol = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        int nVal = 0;
+        const u8 *pVal = Tcl_GetByteArrayFromObj(objv[4], &nVal);
+        rc = sqlite3changegroup_change_blob(p->pGrp, bNew, iCol, pVal, nVal);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 11: {      /* change_finish */
+      int bDiscard = 0;
+      if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[2], &bDiscard) ){
+        rc = TCL_ERROR;
+      }else{
+        char *zErr = 0;
+        rc = sqlite3changegroup_change_finish(p->pGrp, bDiscard, &zErr);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, zErr);
+        }
+      }
+      break;
+    }
 
     default: {     /* delete */
       assert( iSub==3 );
