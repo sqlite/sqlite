@@ -215,4 +215,72 @@ do_execsql_test 5.1 {
   SELECT ( SELECT y FROM t2 WHERE x = y ORDER BY y, z) FROM t1;
 } {ALFKI ANATR}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1234);
+}
+
+do_execsql_test 6.1 {
+  SELECT DISTINCT 'string' FROM t1 LIMIT 1 OFFSET 5;
+}
+
+do_execsql_test 6.2 {
+  SELECT (
+      SELECT 'string' FROM t1 LIMIT 1 OFFSET 5
+  );
+} {{}}
+
+do_execsql_test 6.3 {
+  SELECT (
+      SELECT DISTINCT 'string' FROM t1 LIMIT 1 OFFSET 5
+  );
+} {{}}
+
+do_execsql_test 6.4 {
+  SELECT (
+      SELECT DISTINCT 'string' FROM t1 ORDER BY 1 LIMIT 1 OFFSET 5
+  );
+} {{}}
+
+do_execsql_test 6.5 {
+  SELECT (
+      SELECT 'string' FROM t1 ORDER BY 1 LIMIT 1 OFFSET 5
+  );
+} {{}}
+
+do_execsql_test 6.6 {
+  SELECT (SELECT DISTINCT x, x FROM t1 LIMIT 1 OFFSET 5)==(1234, 1234)
+} {{}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(x);
+  CREATE INDEX i1 ON t1(x);
+  INSERT INTO t1 VALUES(1234);
+}
+
+do_execsql_test 7.1 {
+  SELECT (
+    SELECT DISTINCT 'string' FROM t1 ORDER BY x LIMIT 1 OFFSET 5
+  );
+} {{}}
+
+do_execsql_test 7.2 {
+  DROP INDEX i1;
+  CREATE UNIQUE INDEX i1 ON t1(x);
+}
+
+do_execsql_test 7.3 {
+  SELECT (
+    SELECT DISTINCT x FROM t1 ORDER BY 1 LIMIT 1 OFFSET 5
+  );
+} {{}}
+
+do_execsql_test 7.4 {
+  SELECT (SELECT DISTINCT x FROM t1 ORDER BY +x LIMIT 1 OFFSET 0);
+} {1234}
+
 finish_test

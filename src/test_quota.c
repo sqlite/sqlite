@@ -387,11 +387,7 @@ static char *quota_utf8_to_mbcs(const char *zUtf8){
   zTmpWide = (LPWSTR)sqlite3_malloc( (nWide+1)*sizeof(zTmpWide[0]) );
   if( zTmpWide==0 ) return 0;
   MultiByteToWideChar(CP_UTF8, 0, zUtf8, -1, zTmpWide, nWide);
-#ifdef SQLITE_OS_WINRT
-  codepage = CP_ACP;
-#else
   codepage = AreFileApisANSI() ? CP_ACP : CP_OEMCP;
-#endif
   nMbcs = WideCharToMultiByte(codepage, 0, zTmpWide, nWide, 0, 0, 0, 0);
   zMbcs = nMbcs ? (char*)sqlite3_malloc( nMbcs+1 ) : 0;
   if( zMbcs ){

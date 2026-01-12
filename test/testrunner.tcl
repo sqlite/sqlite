@@ -101,6 +101,7 @@ Usage:
     $a0 help
     $a0 joblist ?PATTERN?
     $a0 njob ?NJOB?
+    $a0 retest
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
     $a0 halt
@@ -120,19 +121,20 @@ Usage:
     --stop-on-error          Stop running after any reported error
     --zipvfs ZIPVFSDIR       ZIPVFS source directory
 
-Special values for PERMUTATION that work with plain tclsh:
+Special values for PERMUTATION include:
 
-    list      - show all allowed PERMUTATION arguments.
+    list      - show allowed PERMUTATION arguments.
     mdevtest  - tests recommended prior to normal development check-ins.
+    devtest   - alias for "mdevtest"
     release   - full release test with various builds.
     sdevtest  - like mdevtest but using ASAN and UBSAN.
-
-Other PERMUTATION arguments must be run using testfixture, not tclsh:
-
     all       - all tcl test scripts, plus a subset of test scripts rerun
                 with various permutations.
     full      - all tcl test scripts.
     veryquick - a fast subset of the tcl test scripts. This is the default.
+
+The interpreter that runs this script can be an ordinary "tclsh" as long
+as "package require sqlite3" works, or it can be "testfixture".
 
 If no PATTERN arguments are present, all tests specified by the PERMUTATION
 are run. Otherwise, each pattern is interpreted as a glob pattern. Only
@@ -166,6 +168,9 @@ are used.  Otherwise, an attempt is made to minimize the output to show
 only the parts that contain the error messages.  The --summary option just
 shows the jobs that failed.  If PATTERN are provided, the error information
 is only provided for jobs that match PATTERN.
+
+The "retest" command reruns tests that failed or were never completed
+by a prior invocation of testrunner.tcl.
 
 Full documentation here: https://sqlite.org/src/doc/trunk/doc/testrunner.md
   }]]
@@ -298,6 +303,8 @@ switch -nocase -glob -- $tcl_platform(os) {
     error "cannot determine platform!"
   }
 }
+set TRG(testfixture-fullpath) [file join $dir $TRG(testfixture)]
+set TRG(interp) [info nameofexec]
 #-------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------
@@ -1158,7 +1165,7 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   set testrunner_tcl [file normalize [info script]]
 
   if {$build==""} {
-    set testfixture [info nameofexec]
+    set testfixture $TRG(interp)
   } else {
     set testfixture [file join [lindex $build 1] $TRG(testfixture)]
   }
@@ -1389,14 +1396,30 @@ proc add_devtest_jobs {lBld patternlist} {
   }
 }
 
-# Check to ensure that the interpreter is a full-blown "testfixture"
-# build and not just a "tclsh".  If this is not the case, issue an
-# error message and exit.
+# Check to ensure that TRG(interp) is a full-blown "testfixture" and
+# not just a "tclsh".
+#
+# The value of TRG(interp) defaults to whatever interpreter is running
+# this script, which might be either tclsh or testfixture.  If tclsh is
+# running this script, change $TRG(interp) to be an instance of testfixture.
+# If no testfixture exists in the directory from which this script is run,
+# attempt to build one.
+#
+# Do not return unless $TRG(interp) is a valid testfixture.  If unable
+# to find and/or construct one, abort with an error message.
 #
 proc must_be_testfixture {} {
+  global TRG
   if {[lsearch [info commands] sqlite3_soft_heap_limit]<0} {
-    puts "Use testfixture, not tclsh, for these arguments."
-    exit 1
+    if {![file exec $TRG(testfixture-fullpath)]} {
+      puts "make testfixture"
+      catch {exec make testfixture >@stdout 2>@stderr}
+    }
+    if {![file exec $TRG(testfixture-fullpath)]} {
+      puts "Requires testfixture, and I was unable to build it."
+      exit 1
+    }
+    set TRG(interp) $TRG(testfixture-fullpath)
   }
 }
 
@@ -1471,9 +1494,13 @@ proc add_jobs_from_cmdline {patternlist} {
 
     list {
       set allperm [array names ::testspec]
-      lappend allperm all mdevtest sdevtest release list
+      lappend allperm all devtest mdevtest sdevtest release list
       puts "Allowed values for the PERMUTATION argument: [lsort $allperm]"
       exit 0
+    }
+
+    retest {
+      # no-op
     }
 
     default {
@@ -1512,6 +1539,8 @@ proc add_jobs_from_cmdline {patternlist} {
   }
 }
 
+# Initializer, or reinitialize, the testrunner.db database file.
+#
 proc make_new_testset {} {
   global TRG
 
@@ -1555,7 +1584,8 @@ proc mark_job_as_finished {jobid output state endtm} {
         SET output=$output, state=$state, endtime=$endtm, span=$endtm-starttime,
             ntest=$ntest, nerr=$nerr, svers=$svers, pltfm=$pltfm
         WHERE jobid=$jobid;
-      UPDATE jobs SET state=$childstate WHERE depid=$jobid AND state!='halt';
+      UPDATE jobs SET state=$childstate
+       WHERE depid=$jobid AND state!='halt' AND state!='done';
       UPDATE config SET value=value+$nerr WHERE name='nfail';
       UPDATE config SET value=value+$ntest WHERE name='ntest';
     }
@@ -1627,7 +1657,7 @@ proc launch_another_job {iJob} {
   global O
   global T
 
-  set testfixture [info nameofexec]
+  set testfixture $TRG(interp)
   set script $TRG(info_script)
 
   set O($iJob) ""
@@ -1828,6 +1858,27 @@ proc run_testset {} {
 
 }
 
+# If the argument is "retest", simply rerun all tests from the previous
+# run that are marked as one of "ready", "running", "failed", or "omit"
+# plus redo any build of dependencies those tests.
+#
+proc handle_retest {} {
+  set cnt 0
+  if {[catch {trdb exists {SELECT jobid FROM jobs}} cnt] || $cnt==0} {
+    puts "No test available to rerun"
+    exit 1
+  }
+  trdb eval {UPDATE jobs SET state='ready'
+              WHERE state IN ('running','failed','omit')}
+  for {set kk 0} {$kk<2} {incr kk} {
+    trdb eval {
+      UPDATE jobs SET state='ready'
+       WHERE jobid IN (SELECT depid FROM jobs WHERE state='ready');
+      UPDATE jobs SET state='' WHERE state='ready' AND depid<>'';
+    }
+  }
+}
+
 # Handle the --buildonly option, if it was specified.
 #
 proc handle_buildonly {} {
@@ -1866,14 +1917,21 @@ proc explain_tests {} {
 
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
-set tm [lindex [time { make_new_testset }] 0]
+if {[llength $TRG(patternlist)]==1 && $TRG(patternlist) eq "retest"} {
+  set tm 0
+  handle_retest
+} else {  
+  set tm [lindex [time { make_new_testset }] 0]
+}
 if {$TRG(explain)} {
   explain_tests
 } else {
   if {$TRG(nJob)>1} {
     puts "splitting work across $TRG(nJob) cores"
   }
-  puts "built testset in [expr $tm/1000]ms.."
+  if {$tm>0} {
+    puts "built testset in [expr $tm/1000]ms.."
+  }
   handle_buildonly
   run_testset
 }

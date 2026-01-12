@@ -525,7 +525,12 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_db_status64,
   /* Version 3.52.0 and later */
   sqlite3_str_truncate,
-  sqlite3_str_free
+  sqlite3_str_free,
+#ifdef SQLITE_ENABLE_CARRAY
+  sqlite3_carray_bind
+#else
+  0
+#endif
 };
 
 /* True if x is the directory separator character
@@ -627,33 +632,42 @@ static int sqlite3LoadExtension(
   ** entry point name "sqlite3_extension_init" was not found, then
   ** construct an entry point name "sqlite3_X_init" where the X is
   ** replaced by the lowercase value of every ASCII alphabetic 
-  ** character in the filename after the last "/" upto the first ".",
-  ** and eliding the first three characters if they are "lib".  
+  ** character in the filename after the last "/" up to the first ".",
+  ** and skipping the first three characters if they are "lib".  
   ** Examples:
   **
   **    /usr/local/lib/libExample5.4.3.so ==>  sqlite3_example_init
   **    C:/lib/mathfuncs.dll              ==>  sqlite3_mathfuncs_init
+  **
+  ** If that still finds no entry point, repeat a second time but this
+  ** time include both alphabetic and numeric characters up to the first
+  ** ".".  Example:
+  **
+  **    /usr/local/lib/libExample5.4.3.so ==>  sqlite3_example5_init
   */
   if( xInit==0 && zProc==0 ){
     int iFile, iEntry, c;
     int ncFile = sqlite3Strlen30(zFile);
+    int cnt = 0;
     zAltEntry = sqlite3_malloc64(ncFile+30);
     if( zAltEntry==0 ){
       sqlite3OsDlClose(pVfs, handle);
       return SQLITE_NOMEM_BKPT;
     }
-    memcpy(zAltEntry, "sqlite3_", 8);
-    for(iFile=ncFile-1; iFile>=0 && !DirSep(zFile[iFile]); iFile--){}
-    iFile++;
-    if( sqlite3_strnicmp(zFile+iFile, "lib", 3)==0 ) iFile += 3;
-    for(iEntry=8; (c = zFile[iFile])!=0 && c!='.'; iFile++){
-      if( sqlite3Isalpha(c) ){
-        zAltEntry[iEntry++] = (char)sqlite3UpperToLower[(unsigned)c];
+    do{
+      memcpy(zAltEntry, "sqlite3_", 8);
+      for(iFile=ncFile-1; iFile>=0 && !DirSep(zFile[iFile]); iFile--){}
+      iFile++;
+      if( sqlite3_strnicmp(zFile+iFile, "lib", 3)==0 ) iFile += 3;
+      for(iEntry=8; (c = zFile[iFile])!=0 && c!='.'; iFile++){
+        if( sqlite3Isalpha(c) || (cnt && sqlite3Isdigit(c)) ){
+          zAltEntry[iEntry++] = (char)sqlite3UpperToLower[(unsigned)c];
+        }
       }
-    }
-    memcpy(zAltEntry+iEntry, "_init", 6);
-    zEntry = zAltEntry;
-    xInit = (sqlite3_loadext_entry)sqlite3OsDlSym(pVfs, handle, zEntry);
+      memcpy(zAltEntry+iEntry, "_init", 6);
+      zEntry = zAltEntry;
+      xInit = (sqlite3_loadext_entry)sqlite3OsDlSym(pVfs, handle, zEntry);
+    }while( xInit==0 && (++cnt)<2 );
   }
   if( xInit==0 ){
     if( pzErrMsg ){

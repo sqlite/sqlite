@@ -306,6 +306,10 @@ static int binfoCompute(sqlite3 *db, int pgno, BinfoCursor *pCsr){
     nEntry *= (nCell+1);
     if( aData[0]==10 || aData[0]==13 ) break;
     nPage *= (nCell+1);
+    if( 14+2*(nCell/2)>=pgsz ){
+      rc = SQLITE_CORRUPT;
+      break;
+    }
     if( nCell<=1 ){
       pgno = get_uint32(aData+8);
     }else{
@@ -339,7 +343,7 @@ static int binfoColumn(
     sqlite3 *db = sqlite3_context_db_handle(ctx);
     int rc = binfoCompute(db, pgno, pCsr);
     if( rc ){
-      pCursor->pVtab->zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+      pCursor->pVtab->zErrMsg = sqlite3_mprintf("%s", sqlite3_errstr(rc));
       return SQLITE_ERROR;
     }
   }

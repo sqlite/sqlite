@@ -101,13 +101,6 @@ NO_WARN = $(NO_WARN) -wd4210 -wd4232 -wd4244 -wd4305 -wd4306 -wd4702 -wd4706
 !ENDIF
 !ENDIF
 
-# Set this non-0 to use the library paths and other options necessary for
-# Windows Phone 8.1.
-#
-!IFNDEF USE_WP81_OPTS
-USE_WP81_OPTS = 0
-!ENDIF
-
 # Set this non-0 to split the SQLite amalgamation file into chunks to
 # be used for debugging with Visual Studio.
 #
@@ -154,14 +147,6 @@ USE_NATIVE_LIBPATHS = 0
 #
 !IFNDEF USE_RC
 USE_RC = 1
-!ENDIF
-
-# Set this non-0 to compile binaries suitable for the WinRT environment.
-# This setting does not apply to any binaries that require Tcl to operate
-# properly (i.e. the text fixture, etc).
-#
-!IFNDEF FOR_WINRT
-FOR_WINRT = 0
 !ENDIF
 
 # Set this non-0 to compile binaries suitable for the UWP environment.
@@ -563,10 +548,14 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) $(RCOPTS) $(RCCOPTS)
 !IF "$(PLATFORM)"=="x86"
 CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+
+
 !ELSE
 !IFNDEF PLATFORM
 CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+
+
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
@@ -667,18 +656,6 @@ SHELL_LINK_OPTS = $(SHELL_CORE_LIB)
 TCC = $(TCC) -FAcs
 !ENDIF
 
-# When compiling the library for use in the WinRT environment,
-# the following compile-time options must be used as well to
-# disable use of Win32 APIs that are not available and to enable
-# use of Win32 APIs that are specific to Windows 8 and/or WinRT.
-#
-!IF $(FOR_WINRT)!=0
-TCC = $(TCC) -DSQLITE_OS_WINRT=1
-RCC = $(RCC) -DSQLITE_OS_WINRT=1
-TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
-RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
-!ENDIF
-
 # C compiler options for the Windows 10 platform (needs MSVC 2015).
 #
 !IF $(FOR_WIN10)!=0
@@ -691,34 +668,28 @@ BCC = $(BCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 # USE_CRT_DLL option is set to force dynamically linking to the
 # MSVC runtime library.
 #
-!IF $(FOR_WINRT)!=0 || $(USE_CRT_DLL)!=0
+!IF $(USE_CRT_DLL)!=0
 !IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
+ZLIBCFLAGS = -nologo -MDd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MD
 BCC = $(BCC) -MD
+ZLIBCFLAGS = -nologo -MD -W3 -O2 -Oy- -Zi
 !ENDIF
 !ELSE
 !IF $(DEBUG)>1
 TCC = $(TCC) -MTd
 BCC = $(BCC) -MTd
+ZLIBCFLAGS = -nologo -MTd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MT
 BCC = $(BCC) -MT
+ZLIBCFLAGS = -nologo -MT -W3 -O2 -Oy- -Zi
 !ENDIF
 !ENDIF
 
-
-# Define -DNDEBUG to compile without debugging (i.e., for production usage)
-# Omitting the define will cause extra debugging code to be inserted and
-# includes extra comments when "EXPLAIN stmt" is used.
-#
-!IF $(DEBUG)==0
-TCC = $(TCC) -DNDEBUG
-BCC = $(BCC) -DNDEBUG
-RCC = $(RCC) -DNDEBUG
-!ENDIF
 
 !IF $(DEBUG)>0 || $(API_ARMOR)!=0 || $(FOR_WIN10)!=0
 TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR=1
@@ -909,56 +880,6 @@ LTLINKOPTS = /NOLOGO
 LTLIBOPTS = /NOLOGO
 !ENDIF
 
-# When compiling for use in the WinRT environment, the following
-# linker option must be used to mark the executable as runnable
-# only in the context of an application container.
-#
-!IF $(FOR_WINRT)!=0
-LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
-!IF "$(VISUALSTUDIOVERSION)"=="12.0" || "$(VISUALSTUDIOVERSION)"=="14.0"
-!IFNDEF STORELIBPATH
-!IF "$(PLATFORM)"=="x86"
-STORELIBPATH = $(CRTLIBPATH)\store
-!ELSEIF "$(PLATFORM)"=="x64"
-STORELIBPATH = $(CRTLIBPATH)\store\amd64
-!ELSEIF "$(PLATFORM)"=="ARM"
-STORELIBPATH = $(CRTLIBPATH)\store\arm
-!ELSE
-STORELIBPATH = $(CRTLIBPATH)\store
-!ENDIF
-!ENDIF
-STORELIBPATH = $(STORELIBPATH:\\=\)
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(STORELIBPATH)"
-!ENDIF
-!ENDIF
-
-# When compiling for Windows Phone 8.1, an extra library path is
-# required.
-#
-!IF $(USE_WP81_OPTS)!=0
-!IFNDEF WP81LIBPATH
-!IF "$(PLATFORM)"=="x86"
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
-!ELSEIF "$(PLATFORM)"=="ARM"
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\ARM
-!ELSE
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
-!ENDIF
-!ENDIF
-!ENDIF
-
-# When compiling for Windows Phone 8.1, some extra linker options
-# are also required.
-#
-!IF $(USE_WP81_OPTS)!=0
-!IFDEF WP81LIBPATH
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(WP81LIBPATH)"
-!ENDIF
-LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE
-LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib
-LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
-!ENDIF
-
 # When compiling for UWP or the Windows 10 platform, some extra linker
 # options are also required.
 #
@@ -982,9 +903,9 @@ LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:libucrt.lib /DEFAULTLIB:ucrt.lib
 # If either debugging or symbols are enabled, enable PDBs.
 #
 !IF $(DEBUG)>1 || $(SYMBOLS)!=0
-LDFLAGS = /DEBUG $(LDOPTS)
+LDFLAGS = /NODEFAULTLIB:msvcrt /DEBUG $(LDOPTS)
 !ELSE
-LDFLAGS = $(LDOPTS)
+LDFLAGS = /NODEFAULTLIB:msvcrt $(LDOPTS)
 !ENDIF
 
 

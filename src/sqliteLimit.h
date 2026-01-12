@@ -60,6 +60,9 @@
 ** It used to be the case that setting this value to zero would
 ** turn the limit off.  That is no longer true.  It is not possible
 ** to turn this limit off.
+**
+** The hard limit is the largest possible 32-bit signed integer less
+** 1024, or 2147482624.
 */
 #ifndef SQLITE_MAX_SQL_LENGTH
 # define SQLITE_MAX_SQL_LENGTH 1000000000

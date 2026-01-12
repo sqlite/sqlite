@@ -38,9 +38,9 @@ do_execsql_test shellA-1.0 {
 do_test_with_ansi_output shellA-1.2 {
   exec {*}$CLI -noinit test.db {.mode box -quote off --escape symbol} {SELECT * FROM t1;}
 } {
-┌───┬──────────────────────────┐
+╭───┬──────────────────────────╮
 │ a │            x             │
-├───┼──────────────────────────┤
+╞═══╪══════════════════════════╡
 │ 1 │ line with ' single quote │
 ├───┼──────────────────────────┤
 │ 2 │ ␛[31mVT-100 codes␛[0m    │
@@ -57,7 +57,7 @@ do_test_with_ansi_output shellA-1.2 {
 │ 7 │ carriage␍return          │
 ├───┼──────────────────────────┤
 │ 8 │ last line                │
-└───┴──────────────────────────┘
+╰───┴──────────────────────────╯
 }
 
 # ".mode list"
@@ -124,13 +124,13 @@ do_test shellA-2.1 {
 }
 do_test shellA-2.2 {
   exec {*}$CLI -noinit test.db --quote {.mode -v}
-} {/*current output mode: quote* --escape auto*/}
+} {/*.mode quote* --escape auto*/}
 do_test shellA-2.3 {
-  exec {*}$CLI -noinit -compat 20250101 test.db --quote --escape SYMBOL {.mode}
-} {current output mode: quote --escape symbol}
+  exec {*}$CLI -noinit test.db --quote --escape SYMBOL {.mode}
+} {.mode quote --escape symbol}
 do_test shellA-2.4 {
-  exec {*}$CLI -noinit -compat 20250101 test.db --quote --escape OFF {.mode}
-} {current output mode: quote --escape off}
+  exec {*}$CLI -noinit test.db --quote --escape OFF {.mode}
+} {.mode quote --escape off}
 
 
 # ".mode line"
@@ -139,41 +139,41 @@ do_test_with_ansi_output shellA-3.1 {
  exec {*}$CLI -noinit test.db --line --escape symbol \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-    a = 1
-    x = line with ' single quote
+    a: 1
+    x: line with ' single quote
 
-    a = 2
-    x = ␛[31mVT-100 codes␛[0m
+    a: 2
+    x: ␛[31mVT-100 codes␛[0m
 
-    a = 6
-    x = new
-line
+    a: 6
+    x: new
+       line
 
-    a = 7
-    x = carriage␍return
+    a: 7
+    x: carriage␍return
 
-    a = 8
-    x = last line
+    a: 8
+    x: last line
 }
 do_test shellA-3.2 {
  exec {*}$CLI -noinit test.db --line --escape ascii \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-    a = 1
-    x = line with ' single quote
+    a: 1
+    x: line with ' single quote
 
-    a = 2
-    x = ^[[31mVT-100 codes^[[0m
+    a: 2
+    x: ^[[31mVT-100 codes^[[0m
 
-    a = 6
-    x = new
-line
+    a: 6
+    x: new
+       line
 
-    a = 7
-    x = carriage^Mreturn
+    a: 7
+    x: carriage^Mreturn
 
-    a = 8
-    x = last line
+    a: 8
+    x: last line
 }
 
 # ".mode box"
@@ -182,9 +182,9 @@ do_test_with_ansi_output shellA-4.1 {
  exec {*}$CLI -noinit test.db --box --escape ascii \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-┌───┬──────────────────────────┐
+╭───┬──────────────────────────╮
 │ a │            x             │
-├───┼──────────────────────────┤
+╞═══╪══════════════════════════╡
 │ 1 │ line with ' single quote │
 ├───┼──────────────────────────┤
 │ 2 │ ^[[31mVT-100 codes^[[0m  │
@@ -195,7 +195,7 @@ do_test_with_ansi_output shellA-4.1 {
 │ 7 │ carriage^Mreturn         │
 ├───┼──────────────────────────┤
 │ 8 │ last line                │
-└───┴──────────────────────────┘
+╰───┴──────────────────────────╯
 }
 do_test_with_ansi_output shellA-4.1b {
  exec {*}$CLI -noinit test.db --box --escape ascii \
@@ -203,7 +203,7 @@ do_test_with_ansi_output shellA-4.1b {
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
  a │            x
-───┼──────────────────────────
+═══╪══════════════════════════
  1 │ line with ' single quote
 ───┼──────────────────────────
  2 │ ^[[31mVT-100 codes^[[0m
@@ -218,22 +218,22 @@ do_test_with_ansi_output shellA-4.1b {
 do_test_with_ansi_output shellA-4.2 {
  exec {*}$CLI -noinit test.db {.mode qbox} {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
-┌───┬───────────────────────────────────────────┐
+╭───┬───────────────────────────────────────────╮
 │ a │                     x                     │
-├───┼───────────────────────────────────────────┤
+╞═══╪═══════════════════════════════════════════╡
 │ 1 │ 'line with '' single quote'               │
 │ 2 │ unistr('\u001b[31mVT-100 codes\u001b[0m') │
 │ 6 │ unistr('new\u000aline')                   │
 │ 7 │ unistr('carriage\u000dreturn')            │
 │ 8 │ 'last line'                               │
-└───┴───────────────────────────────────────────┘
+╰───┴───────────────────────────────────────────╯
 }
 do_test_with_ansi_output shellA-4.2b {
  exec {*}$CLI -noinit test.db {.mode qbox -border off} \
     {SELECT a, x FROM t1 WHERE a IN (1,2,6,7,8)}
 } {
  a │                     x
-───┼───────────────────────────────────────────
+═══╪═══════════════════════════════════════════
  1 │ 'line with '' single quote'
  2 │ unistr('\u001b[31mVT-100 codes\u001b[0m')
  6 │ unistr('new\u000aline')
