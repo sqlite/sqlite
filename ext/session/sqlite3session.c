@@ -3631,8 +3631,15 @@ static int sessionChangesetBufferTblhdr(SessionInput *pIn, int *pnByte){
     while( (pIn->iNext + nRead)<pIn->nData && pIn->aData[pIn->iNext + nRead] ){
       nRead++;
     }
+
+    /* Break out of the loop if if the nul-terminator byte has been found.
+    ** Otherwise, read some more input data and keep seeking. If there is
+    ** no more input data, consider the changeset corrupt.  */
     if( (pIn->iNext + nRead)<pIn->nData ) break;
     rc = sessionInputBuffer(pIn, nRead + 100);
+    if( rc==SQLITE_OK && (pIn->iNext + nRead)>=pIn->nData ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }
   }
   *pnByte = nRead+1;
   return rc;
