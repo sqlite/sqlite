@@ -59,7 +59,8 @@ cp $TOP/src/sqlite3.rc    $TMPSPACE
 cp $TOP/tool/Replace.cs   $TMPSPACE
 cp $TOP/VERSION           $TMPSPACE
 cp $TOP/main.mk           $TMPSPACE
-
+cp $TOP/make.bat          $TMPSPACE
+tree $TMPSPACE
 cd $TMPSPACE
 
 #if true; then

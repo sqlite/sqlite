@@ -93,7 +93,7 @@
 //#endif target:es6-module
   }.bind(sIMS);
 
-//#if Module.instantiateWasm and not wasmfs
+//#if Module.instantiateWasm and not wasmfs and not target:node
   /**
      Override Module.instantiateWasm().
 
@@ -102,6 +102,9 @@
      https://github.com/emscripten-core/emscripten/issues/17951
 
      In such builds we must disable this.
+
+     It's disabled in the (unsupported/untested) node builds because
+     node does not do fetch().
   */
   Module['instantiateWasm'] = function callee(imports,onSuccess){
     const sims = this;

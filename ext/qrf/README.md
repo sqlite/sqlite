@@ -90,16 +90,10 @@ while( zSql && zSql[0] ){
 }
 ~~~
 
+<a id="spec"></a>
 ## 2.0 The `sqlite3_qrf_spec` object
 
-The most recent definition of `sqlite3_qrf_spec` is shown below.
-
-Do not be alarmed by the complexity of this structure.  You only need
-to understand the properties you want to modify.  Zero is always a good
-default for all of the attributes (except iVersion and pzOutput/xWrite)
-and so simply zeroing out the bulk of this structure is a good start.
-You can then slowly make adjustments to individual fields to get the
-results you desire.
+The `sqlite3_qrf_spec` looks like this:
 
 > ~~~
 typedef struct sqlite3_qrf_spec sqlite3_qrf_spec;
@@ -120,6 +114,7 @@ struct sqlite3_qrf_spec {
   short int nWrap;            /* Wrap columns wider than this */
   short int nScreenWidth;     /* Maximum overall table width */
   short int nLineLimit;       /* Maximum number of lines for any row */
+  short int nTitleLimit;      /* Maximum number of characters in a title */
   int nCharLimit;             /* Maximum number of characters in a cell */
   int nWidth;                 /* Number of entries in aWidth[] */
   int nAlign;                 /* Number of entries in aAlignment[] */
@@ -138,16 +133,19 @@ struct sqlite3_qrf_spec {
 };
 ~~~
 
-Again, the only fields that must initialized are:
+Do not be alarmed by the complexity of this structure.  Everything can
+be zeroed except for:
 
   *  `.iVersion`
   *  One of `.pzOutput` or `.xWrite`.
 
-All other fields can be zeroed.  Or they can contain other values to
-alter the formatting of the query results.
+You do not need to understand and configure every field of this object
+in order to use QRF effectively.  Start by zeroing out the whole structure,
+then initializing iVersion and one of pzOutput or xWrite.  Then maybe
+tweak one or two other settings to get the output you want.
 
 Further detail on the meanings of each of the fields in the
-`sqlite3_qrf_spec` object are described below.
+`sqlite3_qrf_spec` object is in the subsequent sections.
 
 ### 2.1 Structure Version Number
 
@@ -254,6 +252,7 @@ Both fields can have one of the following values:
 #define QRF_TEXT_Html    4 /* HTML-style quoting */
 #define QRF_TEXT_Tcl     5 /* C/Tcl quoting */
 #define QRF_TEXT_Json    6 /* JSON quoting */
+#define QRF_TEXT_Relaxed 7 /* Relaxed SQL quoting */
 ~~~
 
 A value of QRF_TEXT_Auto means that the query result formatter will choose
@@ -266,6 +265,14 @@ A value of QRF_TEXT_Sql means that text values are escaped so that they
 look like SQL literals.  That means the value will be surrounded by
 single-quotes (U+0027) and any single-quotes contained within the text
 will be doubled.
+
+QRF_TEXT_Relaxed is similar to QRF_TEXT_Sql, except that it automatically
+reverts to QRF_TEXT_Plain if the value to be displayed does not contain
+special characters and is not easily confused with a NULL or a numeric
+value.  QRF_TEXT_Relaxed strives to minimize the amount of quoting syntax
+while keeping the result unambiguous and easy for humans to read.  The
+precise rules for when quoting is omitted in QRF_TEXT_Relaxed, and when
+it is applied, might be adjusted in future releases.
 
 A value of QRF_TEXT_Csv means that text values are escaped in accordance
 with RFC&nbsp;4180, which defines Comma-Separated-Value or CSV files.
@@ -337,7 +344,7 @@ A value of QRF_BLOB_Size does not show any BLOB content at all.
 Instead, it substitutes a text string that says how many bytes
 the BLOB contains.
 
-### 2.8 Maximum size of displayed content (nLineLimit, nCharLimit)
+### 2.8 Maximum size of displayed content (nLineLimit, nCharLimit, nTitleLimit)
 
 If the sqlite3_qrf_spec.nCharLimit setting is non-zero, then the formatter
 will display only the first nCharLimit characters of each value.
@@ -353,12 +360,26 @@ If the sqlite3_qrf_spec.nLineLimit setting is non-zero, then the
 formatter will only display the first nLineLimit lines of each value.
 It does not matter if the value is split because it contains a newline
 character, or if it split by wrapping.  This setting merely limits
-the number of displayed lines.  This setting only works for
-**Box**, **Column**, **Line**, **Markdown**, and **Table** styles.
+the number of displayed lines.  The nLineLimit setting currently only 
+works for **Box**, **Column**, **Line**, **Markdown**, and **Table**
+styles, though that limitation might change in future releases.
 
 The idea behind both of these settings is to prevent large renderings
 when doing a query that (unexpectedly) contains very large text or
 blob values: perhaps megabyes of text.
+
+If the sqlite3_qrf_spec.nTitleLimit is non-zero, then the formatter
+attempts to limits the size of column titles to at most nTitleLimit
+display characters in width and a single line of text.  The nTitleLimit
+is useful for queries that have result columns that are scalar
+subqueries or complex expressions.  If those columns lack an AS
+clause, then the name of the column will be a copy of the expression
+that defines the column, which in some queries can be hundreds of
+characters and multiple lines in length, which can reduce the readability
+of tabular displays.  An nTitleLimit somewhere in the range of 10 to 20.
+can improve readability.   The nTitleLimit setting currently only 
+works for **Box**, **Column**, **Line**, **Markdown**, and **Table**
+styles, though that limitation might change in future releases.
 
 ### 2.9 Word Wrapping In Columnar Styles (nWrap, bWordWrap)
 
@@ -555,6 +576,13 @@ after it has finished using it.
 The eText, eBlob, and eEsc settings above become no-ops if the xRender
 routine returns non-NULL.  In other words, the application-supplied
 xRender routine is expected to do all of its own quoting and formatting.
+
+The xRender routine is expected to do character length limiting itself.
+So the nCharLimit setting becomes a no-op if xRender is used.  However
+the nLineLimit setting is still applied.  The nTitleLimit setting is
+not applicable to xRender because title values come from the
+sqlite3_column_name() interface not from sqlite3_column_value(),
+and so that names of columns are never processed by xRender.
 
 ## 3.0 The `sqlite3_format_query_result()` Interface
 

@@ -1,7 +1,7 @@
 'use strict';
 (function(){
   let speedtestJs = 'speedtest1.js';
-  const urlParams = new URL(self.location.href).searchParams;
+  const urlParams = new URL(globalThis.location.href).searchParams;
   if(urlParams.has('sqlite3.dir')){
     speedtestJs = urlParams.get('sqlite3.dir') + '/' + speedtestJs;
   }
@@ -14,9 +14,9 @@
   const wasmfsDir = function f(wasmUtil){
     if(undefined !== f._) return f._;
     const pdir = '/opfs';
-    if( !self.FileSystemHandle
-        || !self.FileSystemDirectoryHandle
-        || !self.FileSystemFileHandle){
+    if( !globalThis.FileSystemHandle
+        || !globalThis.FileSystemDirectoryHandle
+        || !globalThis.FileSystemFileHandle){
       return f._ = "";
     }
     try{
@@ -92,7 +92,7 @@
     }
   };
 
-  self.onmessage = function(msg){
+  globalThis.onmessage = function(msg){
     msg = msg.data;
     switch(msg.type){
         case 'run':
@@ -111,7 +111,8 @@
     setStatus: (text)=>mPost('load-status',text)
   };
   log("Initializing speedtest1 module...");
-  self.sqlite3InitModule(EmscriptenModule).then(async (sqlite3)=>{
+  globalThis.sqlite3InitModule.__isUnderTest = true;
+  globalThis.sqlite3InitModule(EmscriptenModule).then(async (sqlite3)=>{
     const S = globalThis.S = App.sqlite3 = sqlite3;
     log("Loaded speedtest1 module. Setting up...");
     App.pDir = wasmfsDir(S.wasm);

@@ -8,8 +8,9 @@ You will need:
   *  valgrind
   *  tclsh
   *  A script or program named "open" that brings up *.txt files in an
-     editor for viewing.  (Macs provide this by default.  You'll need to
-     come up with your own on Linux and Windows.)
+     editor for viewing.  (Macs provide this by default.  On Linux it's
+     called xdg-open and some distributions symlink it to "open". You'll
+     need to come up with your own on Windows.)
   *  An SQLite source tree
 
 The procedure described in this document is not the only way to make

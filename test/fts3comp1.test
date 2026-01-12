@@ -112,4 +112,51 @@ do_catchsql_test 2.2 {
   CREATE VIRTUAL TABLE t2 USING fts4(x, uncompress=unzip)
 } {1 {missing compress parameter in fts4 constructor}}
 
+#--------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA trusted_schema = OFF;
+}
+
+set ::myfunc_invoked 0
+proc myfunc {data} {
+  incr ::myfunc_invoked
+  return $data
+}
+db func myfunc myfunc
+
+do_execsql_test 3.1 {
+  CREATE VIEW v1 AS SELECT myfunc('xyz');
+}
+
+do_catchsql_test 3.2 {
+  SELECT * FROM v1
+} {1 {unsafe use of myfunc()}}
+
+do_execsql_test 3.3 {
+  CREATE VIRTUAL TABLE f1 USING fts4(x, compress=myfunc, uncompress=myfunc);
+}
+
+do_catchsql_test 3.4 {
+  INSERT INTO f1(rowid, x) VALUES(123, 'one two three');
+} {1 {SQL logic error}}
+
+do_test 3.5 {
+  set ::myfunc_invoked
+} {0}
+
+do_execsql_test 3.6.1 {
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+
+  CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2 VALUES( myfunc(new.x) );
+  END;
+}
+
+do_catchsql_test 3.6.2 {
+  INSERT INTO t1 VALUES('hello world');
+} {1 {unsafe use of myfunc()}}
+  
+
 finish_test

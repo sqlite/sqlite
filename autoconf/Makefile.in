@@ -282,7 +282,7 @@ DIST_FILES := \
   README.txt VERSION \
   auto.def autosetup configure tea \
   sqlite3.h sqlite3.c shell.c sqlite3ext.h \
-  Makefile.in Makefile.msc Makefile.fallback \
+  Makefile.in Makefile.msc Makefile.fallback make.bat \
   sqlite3.rc sqlite3rc.h Replace.cs \
   sqlite3.pc.in sqlite3.1
 

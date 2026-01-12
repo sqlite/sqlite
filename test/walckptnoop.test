@@ -102,7 +102,11 @@ do_catchsql_test 1.8 {
   PRAGMA wal_checkpoint = noop;
 } {0 {0 5 0}}
 
-do_execsql_test 1.9 {
+do_test 1.9 {
+  sqlite3_wal_checkpoint_v2 db noop
+} {0 5 0}
+
+do_execsql_test 1.10 {
   PRAGMA journal_mode = delete;
   PRAGMA wal_checkpoint = noop;
 } {delete 0 -1 -1}

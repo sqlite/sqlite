@@ -1,4 +1,4 @@
-/*
+/* @preserve
   2022-09-16
 
   The author disclaims copyright to this source code.  In place of a

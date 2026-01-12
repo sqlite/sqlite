@@ -32,6 +32,7 @@ static const char zUsage[] =
   "\n"
   "   --exe PATH      Name of the sqlite3_rsync program on the remote side\n"
   "   --help          Show this help screen\n"
+  "   -p|--port PORT  Run SSH over TCP port PORT instead of the default 22\n"
   "   --protocol N    Use sync protocol version N.\n"
   "   --ssh PATH      Name of the SSH program used to reach the remote side\n"
   "   -v              Verbose.  Multiple v's for increasing output\n"
@@ -2054,6 +2055,7 @@ int main(int argc, char const * const *argv){
   FILE *pOut = 0;
   int childPid = 0;
   const char *zSsh = "ssh";
+  int iPort = 0;
   const char *zExe = "sqlite3_rsync";
   char *zCmd = 0;
   sqlite3_int64 tmStart;
@@ -2092,6 +2094,15 @@ int main(int argc, char const * const *argv){
     }
     if( strcmp(z, "-ssh")==0 ){
       zSsh = cli_opt_val;
+      continue;
+    }
+    if( strcmp(z, "-port")==0 || strcmp(z, "-p")==0 ){
+      const char *zPort = cli_opt_val;
+      iPort = atoi(zPort);
+      if( iPort<1 || iPort>65535 ){
+        fprintf(stderr, "invalid TCP port number: \"%s\"\n", zPort);
+        return 1;
+      }
       continue;
     }
     if( strcmp(z, "-exe")==0 ){
@@ -2235,6 +2246,7 @@ int main(int argc, char const * const *argv){
     for(iRetry=0; 1 /*exit-via-break*/; iRetry++){
       sqlite3_str *pStr = sqlite3_str_new(0);
       append_escaped_arg(pStr, zSsh, 1);
+      if( iPort>0 ) sqlite3_str_appendf(pStr, " -p %d", iPort);
       sqlite3_str_appendf(pStr, " -e none");
       append_escaped_arg(pStr, ctx.zOrigin, 0);
       if( iRetry ) add_path_argument(pStr);
@@ -2283,6 +2295,7 @@ int main(int argc, char const * const *argv){
     for(iRetry=0; 1 /*exit-by-break*/; iRetry++){
       sqlite3_str *pStr = sqlite3_str_new(0);
       append_escaped_arg(pStr, zSsh, 1);
+      if( iPort>0 ) sqlite3_str_appendf(pStr, " -p %d", iPort);
       sqlite3_str_appendf(pStr, " -e none");
       append_escaped_arg(pStr, ctx.zReplica, 0);
       if( iRetry==1 ) add_path_argument(pStr);

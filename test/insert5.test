@@ -96,22 +96,19 @@ do_test insert5-2.8 {
   }
 } {1}
 
-# UPDATE: Using a column from the outer query (main.id) in the GROUP BY
-# or ORDER BY of a sub-query is no longer supported.
-#
-# do_test insert5-2.9 {
-#   uses_temp_table { 
-#     INSERT INTO b 
-#     SELECT * FROM main 
-#     WHERE id > 10 AND (SELECT count(*) FROM v2 GROUP BY main.id)
-#   }
-# } {}
 do_test insert5-2.9 {
   catchsql { 
     INSERT INTO b 
     SELECT * FROM main 
     WHERE id > 10 AND (SELECT count(*) FROM v2 GROUP BY main.id)
   }
-} {1 {no such column: main.id}}
+} {0 {}}
+do_execsql_test insert5-2.10 {
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1 VALUES(2);
+  CREATE TABLE t2(c INT, d INT);
+  INSERT INTO t2 VALUES(3,4),(10,NULL);
+  SELECT (SELECT c FROM t2 ORDER BY coalesce(d,a) LIMIT 1) FROM t1;
+} {10}
 
 finish_test

@@ -180,3 +180,39 @@ statically linked so that it does not depend on separate DLL:
   6.  After your executable is built, you can verify that it does not
       depend on the TCL DLL by running:
       <blockquote><pre>dumpbin /dependents sqlite3_analyzer.exe</pre></blockquote>
+
+## Linking Against ZLIB
+
+Some feature (such as zip-file support in the CLI) require the ZLIB
+compression library.  That library is more or less universally available
+on unix platforms, but is seldom provided on Windows.  You will probably
+need to provide it yourself.  Here the the steps needed:
+
+  1.  Download the zlib-1.3.1.tar.gz tarball (or a similar version).
+      Unpack the tarball sources.  You can put them wherever you like.
+      For the purposes of this document, let's assume you put the source
+      tree in c:\\zlib-64.  Note:  If you are building for both x64 and
+      x86, you will need separate builds of ZLIB for each, thus separate
+      build directories.
+
+  2.  Before building SQLite (as described above) first make these
+      environment changes.  The lead-programmer for SQLite (who writes
+      these words) has BAT files named "env-x64.bat" and "env-x32.bat"
+      and "env-arm64.bat" that make these changes, and he runs those
+      BAT file whenever he starts a new shell.  These are the settings
+      needed:
+      <blockquote>
+         set USE_ZLIB=1<br>
+         set BUILD_ZLIB=0<br>
+         set ZLIBDIR=c:\\zlib-64
+      </blockquote>
+
+  3.  Because the settings in step 2 specify "BUILD_ZLIB=0", you will need
+      to build the library at least once.  I recommand:
+      <blockquote>
+         make clean sqlite3.exe BUILD_ZLIB=1
+      </blockquote>
+
+  4.  After making the environment changes specified in steps 1 through 3
+      above, you then build and test SQLite as you normally would.  The
+      environment variable changes will cause ZLIB to be linked automatically.

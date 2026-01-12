@@ -93,7 +93,7 @@ foreach fn [lsort [array names allSource]] {
 puts $out {**
 ** To modify this program, get a copy of the canonical SQLite source tree,
 ** edit the src/shell.c.in file and/or some of the other files that are
-** listed above, then rerun the rerun "make shell.c".
+** listed above, then rerun the command "make shell.c".
 */}
 seek $in 0 start
 puts $out "/************************* Begin src/shell.c.in ******************/"

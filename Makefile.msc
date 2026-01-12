@@ -11,6 +11,8 @@
 TOP = .
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # Set this non-0 to create and use the SQLite amalgamation file.
 #
 !IFNDEF USE_AMALGAMATION
@@ -101,13 +103,6 @@ NO_WARN = $(NO_WARN) -wd4210 -wd4232 -wd4244 -wd4305 -wd4306 -wd4702 -wd4706
 !ENDIF
 !ENDIF
 
-# Set this non-0 to use the library paths and other options necessary for
-# Windows Phone 8.1.
-#
-!IFNDEF USE_WP81_OPTS
-USE_WP81_OPTS = 0
-!ENDIF
-
 # Set this non-0 to split the SQLite amalgamation file into chunks to
 # be used for debugging with Visual Studio.
 #
@@ -116,14 +111,8 @@ SPLIT_AMALGAMATION = 0
 !ENDIF
 
 # <<mark>>
-# Set this non-0 to have this makefile assume the Tcl shell executable
-# (tclsh*.exe) is available in the PATH.  By default, this is disabled
-# for compatibility with older build environments.  This setting only
-# applies if TCLSH_CMD is not set manually.
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
 #
-!IFNDEF USE_TCLSH_IN_PATH
-USE_TCLSH_IN_PATH = 0
-!ENDIF
 
 # Set this non-0 to use zlib, possibly compiling it from source code.
 #
@@ -186,14 +175,6 @@ USE_NATIVE_LIBPATHS = 0
 USE_RC = 1
 !ENDIF
 
-# Set this non-0 to compile binaries suitable for the WinRT environment.
-# This setting does not apply to any binaries that require Tcl to operate
-# properly (i.e. the text fixture, etc).
-#
-!IFNDEF FOR_WINRT
-FOR_WINRT = 0
-!ENDIF
-
 # Set this non-0 to compile binaries suitable for the UWP environment.
 # This setting does not apply to any binaries that require Tcl to operate
 # properly (i.e. the text fixture, etc).
@@ -209,6 +190,8 @@ FOR_WIN10 = 0
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # Set this non-0 to skip attempting to look for and/or link with the Tcl
 # runtime library.
 #
@@ -265,6 +248,8 @@ DEBUG = 0
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # By default, use --linemacros=1 argument to the mksqlite3c.tcl tool, which
 # is used to build the amalgamation. This can be turned off to ease debug
 # of the amalgamation away from the source tree.
@@ -360,6 +345,8 @@ SQLITE3EXEPDB = /pdb:sqlite3sh.pdb
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # These are the names of the customized Tcl header files used by various parts
 # of this makefile when the stdcall calling convention is in use.  It is not
 # used for any other purpose.
@@ -641,16 +628,24 @@ RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 !IF "$(PLATFORM)"=="x86"
 CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 TEST_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
 # <</mark>>
+
 !ELSE
 !IFNDEF PLATFORM
 CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
 SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
+
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 TEST_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
 # <</mark>>
+
 !ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
@@ -777,18 +772,6 @@ SHELL_LINK_OPTS = $(SHELL_CORE_LIB)
 TCC = $(TCC) -FAcs
 !ENDIF
 
-# When compiling the library for use in the WinRT environment,
-# the following compile-time options must be used as well to
-# disable use of Win32 APIs that are not available and to enable
-# use of Win32 APIs that are specific to Windows 8 and/or WinRT.
-#
-!IF $(FOR_WINRT)!=0
-TCC = $(TCC) -DSQLITE_OS_WINRT=1
-RCC = $(RCC) -DSQLITE_OS_WINRT=1
-TCC = $(TCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
-RCC = $(RCC) -DWINAPI_FAMILY=WINAPI_FAMILY_APP
-!ENDIF
-
 # C compiler options for the Windows 10 platform (needs MSVC 2015).
 #
 !IF $(FOR_WIN10)!=0
@@ -801,25 +784,31 @@ BCC = $(BCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 # USE_CRT_DLL option is set to force dynamically linking to the
 # MSVC runtime library.
 #
-!IF $(FOR_WINRT)!=0 || $(USE_CRT_DLL)!=0
+!IF $(USE_CRT_DLL)!=0
 !IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
+ZLIBCFLAGS = -nologo -MDd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MD
 BCC = $(BCC) -MD
+ZLIBCFLAGS = -nologo -MD -W3 -O2 -Oy- -Zi
 !ENDIF
 !ELSE
 !IF $(DEBUG)>1
 TCC = $(TCC) -MTd
 BCC = $(BCC) -MTd
+ZLIBCFLAGS = -nologo -MTd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MT
 BCC = $(BCC) -MT
+ZLIBCFLAGS = -nologo -MT -W3 -O2 -Oy- -Zi
 !ENDIF
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # The mksqlite3c.tcl and mksqlite3h.tcl scripts will pull in
 # any extension header files by default.  For non-amalgamation
 # builds, we need to make sure the compiler can find these.
@@ -869,16 +858,6 @@ MKSQLITE3H_ARGS =
 !ENDIF
 !ENDIF
 # <</mark>>
-
-# Define -DNDEBUG to compile without debugging (i.e., for production usage)
-# Omitting the define will cause extra debugging code to be inserted and
-# includes extra comments when "EXPLAIN stmt" is used.
-#
-!IF $(DEBUG)==0
-TCC = $(TCC) -DNDEBUG
-BCC = $(BCC) -DNDEBUG
-RCC = $(RCC) -DNDEBUG
-!ENDIF
 
 !IF $(DEBUG)>0 || $(API_ARMOR)!=0 || $(FOR_WIN10)!=0
 TCC = $(TCC) -DSQLITE_ENABLE_API_ARMOR=1
@@ -945,6 +924,8 @@ TCC = $(TCC) /fsanitize=address
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # The locations of the Tcl header and library files.  Also, the library that
 # non-stubs enabled programs using Tcl must link against.  These variables
 # (TCLINCDIR, TCLLIBDIR, and LIBTCL) may be overridden via the environment
@@ -1184,6 +1165,8 @@ BCC = $(BCC) -Zi
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # If zlib support is enabled, add the compiler options for it.
 #
 !IF $(USE_ZLIB)!=0
@@ -1236,56 +1219,6 @@ LTLINKOPTS = /NOLOGO
 LTLIBOPTS = /NOLOGO
 !ENDIF
 
-# When compiling for use in the WinRT environment, the following
-# linker option must be used to mark the executable as runnable
-# only in the context of an application container.
-#
-!IF $(FOR_WINRT)!=0
-LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
-!IF "$(VISUALSTUDIOVERSION)"=="12.0" || "$(VISUALSTUDIOVERSION)"=="14.0"
-!IFNDEF STORELIBPATH
-!IF "$(PLATFORM)"=="x86"
-STORELIBPATH = $(CRTLIBPATH)\store
-!ELSEIF "$(PLATFORM)"=="x64"
-STORELIBPATH = $(CRTLIBPATH)\store\amd64
-!ELSEIF "$(PLATFORM)"=="ARM"
-STORELIBPATH = $(CRTLIBPATH)\store\arm
-!ELSE
-STORELIBPATH = $(CRTLIBPATH)\store
-!ENDIF
-!ENDIF
-STORELIBPATH = $(STORELIBPATH:\\=\)
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(STORELIBPATH)"
-!ENDIF
-!ENDIF
-
-# When compiling for Windows Phone 8.1, an extra library path is
-# required.
-#
-!IF $(USE_WP81_OPTS)!=0
-!IFNDEF WP81LIBPATH
-!IF "$(PLATFORM)"=="x86"
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
-!ELSEIF "$(PLATFORM)"=="ARM"
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\ARM
-!ELSE
-WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
-!ENDIF
-!ENDIF
-!ENDIF
-
-# When compiling for Windows Phone 8.1, some extra linker options
-# are also required.
-#
-!IF $(USE_WP81_OPTS)!=0
-!IFDEF WP81LIBPATH
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(WP81LIBPATH)"
-!ENDIF
-LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE
-LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib
-LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
-!ENDIF
-
 # When compiling for UWP or the Windows 10 platform, some extra linker
 # options are also required.
 #
@@ -1309,12 +1242,14 @@ LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:libucrt.lib /DEFAULTLIB:ucrt.lib
 # If either debugging or symbols are enabled, enable PDBs.
 #
 !IF $(DEBUG)>1 || $(SYMBOLS)!=0
-LDFLAGS = /DEBUG $(LDOPTS)
+LDFLAGS = /NODEFAULTLIB:msvcrt /DEBUG $(LDOPTS)
 !ELSE
-LDFLAGS = $(LDOPTS)
+LDFLAGS = /NODEFAULTLIB:msvcrt $(LDOPTS)
 !ENDIF
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # Start with the Tcl related linker options.
 #
 !IF $(NO_TCL)==0
@@ -1341,6 +1276,8 @@ LTLIBS = $(LTLIBS) $(LIBICU)
 ###############################################################################
 
 # <<mark>>
+# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
+#
 # Object files for the SQLite library (non-amalgamation).
 #
 LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
@@ -1930,8 +1867,8 @@ $(SQLITE3EXE):	shell.c $(SHELL_CORE_DEP) $(LIBRESOBJS) $(SHELL_CORE_SRC) $(SQLIT
 		/link $(SQLITE3EXEPDB) $(LDFLAGS) $(LTLINKOPTS) $(SHELL_LINK_OPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
 # <<mark>>
-sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\misc $(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
+sqldiff.exe:	$(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS) $(TOP)\tool\winmain.c
+	$(LTLINK) $(NO_WARN) -I$(TOP)\ext\misc $(TOP)\tool\sqldiff.c $(TOP)\ext\misc\sqlite3_stdio.c $(TOP)\tool\winmain.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
 dbhash.exe:	$(TOP)\tool\dbhash.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\tool\dbhash.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
@@ -2430,7 +2367,7 @@ shell.c:	$(SHELL_DEP) $(TOP)\tool\mkshellc.tcl $(JIM_TCLSH)
 	$(JIM_TCLSH) $(TOP)\tool\mkshellc.tcl shell.c
 
 zlib:
-	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) && popd
+	pushd $(ZLIBDIR) && $(MAKE) /f win32\Makefile.msc clean $(ZLIBLIB) CFLAGS="$(ZLIBCFLAGS)" && popd
 
 # Rules to build the extension objects.
 #
@@ -2665,6 +2602,11 @@ devtest:	srctree-check sourcetest
 mdevtest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
 
+# Rerun test cases that failed on the previous testrunner invocation
+#
+retest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl retest
+
 # Show all errors from the most reason testrunner invocation
 #
 errors:
@@ -2699,8 +2641,8 @@ smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
-shelltest: $(TESTPROGS)
-	.\testfixture.exe $(TOP)\test\permutations.test shell
+shelltest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release shell
 
 sqlite3_analyzer.c:	$(SQLITE3C) $(SQLITE3H) tclsqlite-ex.c $(TOP)\tool\spaceanal.tcl $(TOP)\tool\mkccode.tcl $(TOP)\tool\sqlite3_analyzer.c.in $(TOP)\ext\misc\sqlite3_stdio.h $(TOP)\ext\misc\sqlite3_stdio.c $(SQLITE_TCL_DEP)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl -DINCLUDE_SQLITE3_C $(TOP)\tool\sqlite3_analyzer.c.in > $@
@@ -2767,6 +2709,9 @@ showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C) $(SQLITE3H)
 
 showshm.exe:	$(TOP)\tool\showshm.c
 	$(LTLINK) $(NO_WARN)	$(TOP)\tool\showshm.c /link $(LDFLAGS) $(LTLINKOPTS)
+
+showtmlog.exe:	$(TOP)\tool\showtmlog.c
+	$(LTLINK) $(NO_WARN)	$(TOP)\tool\showtmlog.c /link $(LDFLAGS) $(LTLINKOPTS)
 
 index_usage.exe: $(TOP)\tool\index_usage.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
@@ -2835,6 +2780,135 @@ tcl-env:
 	@echo TCLSH_CMD = $(TCLSH_CMD)
 	@echo JIM_TCLSH = $(JIM_TCLSH)
 	@echo VISUALSTUDIOVERSION = $(VISUALSTUDIOVERSION)
+
+env:
+	@echo ALL_TCL_TARGETS = $(ALL_TCL_TARGETS)
+	@echo API_ARMOR = $(API_ARMOR)
+	@echo ASAN = $(ASAN)
+	@echo BCC = $(BCC)
+	@echo BUILD_ZLIB = $(BUILD_ZLIB)
+	@echo CC = $(CC)
+	@echo CCOPTS = $(CCOPTS)
+	@echo CHECKER_DEPS = $(CHECKER_DEPS)
+	@echo CORE_CCONV_OPTS = $(CORE_CCONV_OPTS)
+	@echo CORE_COMPILE_OPTS = $(CORE_COMPILE_OPTS)
+	@echo CORE_LINK_DEP = $(CORE_LINK_DEP)
+	@echo CORE_LINK_OPTS = $(CORE_LINK_OPTS)
+	@echo CRTLIBPATH = $(CRTLIBPATH)
+	@echo CSC = $(CSC)
+	@echo DBFUZZ_COMPILE_OPTS = $(DBFUZZ_COMPILE_OPTS)
+	@echo DEBUG = $(DEBUG)
+	@echo DYNAMIC_SHELL = $(DYNAMIC_SHELL)
+	@echo EXT_FEATURE_FLAGS = $(EXT_FEATURE_FLAGS)
+	@echo EXTHDR = $(EXTHDR)
+	@echo EXTRA_SRC = $(EXTRA_SRC)
+	@echo FOR_UWP = $(FOR_UWP)
+	@echo FUZZCHECK_OPTS = $(FUZZCHECK_OPTS)
+	@echo FUZZCHECK_SRC = $(FUZZCHECK_SRC)
+	@echo FUZZDATA = $(FUZZDATA)
+	@echo FUZZERSHELL_COMPILE_OPTS = $(FUZZERSHELL_COMPILE_OPTS)
+	@echo HDR = $(HDR)
+	@echo ICUDIR = $(ICUDIR)
+	@echo ICUINCDIR = $(ICUINCDIR)
+	@echo ICULIBDIR = $(ICULIBDIR)
+	@echo JIM_TCLSH = $(JIM_TCLSH)
+	@echo KV_COMPILE_OPTS = $(KV_COMPILE_OPTS)
+	@echo LDFLAGS = $(LDFLAGS)
+	@echo LD = $(LD)
+	@echo LIBICU = $(LIBICU)
+	@echo LIBOBJ = $(LIBOBJ)
+	@echo LIBREADLINE = $(LIBREADLINE)
+	@echo LIBRESOBJS = $(LIBRESOBJS)
+	@echo LIBTCLPATH = $(LIBTCLPATH)
+	@echo LIBTCLSTUB = $(LIBTCLSTUB)
+	@echo LIBTCL = $(LIBTCL)
+	@echo LTCOMPILE = $(LTCOMPILE)
+	@echo LTLIB = $(LTLIB)
+	@echo LTLIBOPTS = $(LTLIBOPTS)
+	@echo LTLIBPATHS = $(LTLIBPATHS)
+	@echo LTLIBS = $(LTLIBS)
+	@echo LTLINK = $(LTLINK)
+	@echo LTLINKOPTS = $(LTLINKOPTS)
+	@echo LTRCOMPILE = $(LTRCOMPILE)
+	@echo MEMDEBUG = $(MEMDEBUG)
+	@echo MINIMAL_AMALGAMATION = $(MINIMAL_AMALGAMATION)
+	@echo MPTESTER_COMPILE_OPTS = $(MPTESTER_COMPILE_OPTS)
+	@echo NCC = $(NCC)
+	@echo NCRTLIBPATH = $(NCRTLIBPATH)
+	@echo NLTLIBPATHS = $(NLTLIBPATHS)
+	@echo NO_LINEMACROS = $(NO_LINEMACROS)
+	@echo NO_TCL = $(NO_TCL)
+	@echo NO_WARN = $(NO_WARN)
+	@echo NSDKLIBPATH = $(NSDKLIBPATH)
+	@echo NUCRTLIBPATH = $(NUCRTLIBPATH)
+	@echo OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS)
+	@echo OPTIMIZATIONS = $(OPTIMIZATIONS)
+	@echo OSSSHELL_SRC = $(OSSSHELL_SRC)
+	@echo OSTRACE = $(OSTRACE)
+	@echo RBU = $(RBU)
+	@echo RCC = $(RCC)
+	@echo RC = $(RC)
+	@echo READLINE_FLAGS = $(READLINE_FLAGS)
+	@echo REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS)
+	@echo RSYNC_OPT = $(RSYNC_OPT)
+	@echo RSYNC_SRC = $(RSYNC_SRC)
+	@echo SESSION = $(SESSION)
+	@echo SETLK_TIMEOUT = $(SETLK_TIMEOUT)
+	@echo SHELL_CCONV_OPTS = $(SHELL_CCONV_OPTS)
+	@echo SHELL_COMPILE_OPTS = $(SHELL_COMPILE_OPTS)
+	@echo SHELL_CORE_DEP = $(SHELL_CORE_DEP)
+	@echo SHELL_CORE_LIB = $(SHELL_CORE_LIB)
+	@echo SHELL_CORE_SRC = $(SHELL_CORE_SRC)
+	@echo SHELL_DEP = $(SHELL_DEP)
+	@echo SHELL_LINK_OPTS = $(SHELL_LINK_OPTS)
+	@echo SPLIT_AMALGAMATION = $(SPLIT_AMALGAMATION)
+	@echo SQLITETCLDECLSH = $(SQLITETCLDECLSH)
+	@echo SQLITE_TCL_DEP = $(SQLITE_TCL_DEP)
+	@echo SQLITETCLH = $(SQLITETCLH)
+	@echo SRC = $(SRC)
+	@echo STATICALLY_LINK_TCL = $(STATICALLY_LINK_TCL)
+	@echo ST_COMPILE_OPTS = $(ST_COMPILE_OPTS)
+	@echo STORELIBPATH = $(STORELIBPATH)
+	@echo SYMBOLS = $(SYMBOLS)
+	@echo TCC = $(TCC)
+	@echo TCLDIR = $(TCLDIR)
+	@echo TCLINCDIR = $(TCLINCDIR)
+	@echo TCLLIBDIR = $(TCLLIBDIR)
+	@echo TCLLIBPATHS = $(TCLLIBPATHS)
+	@echo TCLLIBS = $(TCLLIBS)
+	@echo TCLSH_CMD = $(TCLSH_CMD)
+	@echo TCLSQLITEEX = $(TCLSQLITEEX)
+	@echo TCLSUFFIX = $(TCLSUFFIX)
+	@echo TCLVERSION = $(TCLVERSION)
+	@echo TEST_CCONV_OPTS = $(TEST_CCONV_OPTS)
+	@echo TESTEXT = $(TESTEXT)
+	@echo TESTFIXTURE_DEP = $(TESTFIXTURE_DEP)
+	@echo TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS)
+	@echo TESTFIXTURE_SRC = $(TESTFIXTURE_SRC)
+	@echo TESTOPTS = $(TESTOPTS)
+	@echo TESTPROGS = $(TESTPROGS)
+	@echo TESTSRC = $(TESTSRC)
+	@echo TLIBS = $(TLIBS)
+	@echo TOP = $(TOP)
+	@echo UCRTLIBPATH = $(UCRTLIBPATH)
+	@echo USE_AMALGAMATION = $(USE_AMALGAMATION)
+	@echo USE_CRT_DLL = $(USE_CRT_DLL)
+	@echo USE_FATAL_WARN = $(USE_FATAL_WARN)
+	@echo USE_FULLWARN = $(USE_FULLWARN)
+	@echo USE_ICU = $(USE_ICU)
+	@echo USE_LISTINGS = $(USE_LISTINGS)
+	@echo USE_NATIVE_LIBPATHS = $(USE_NATIVE_LIBPATHS)
+	@echo USE_RC = $(USE_RC)
+	@echo USE_RUNTIME_CHECKS = $(USE_RUNTIME_CHECKS)
+	@echo USE_SEH = $(USE_SEH)
+	@echo USE_STDCALL = $(USE_STDCALL)
+	@echo USE_ZLIB = $(USE_ZLIB)
+	@echo XCOMPILE = $(XCOMPILE)
+	@echo ZLIBCFLAGS = $(ZLIBCFLAGS)
+	@echo ZLIBDIR = $(ZLIBDIR)
+	@echo ZLIBINCDIR = $(ZLIBINCDIR)
+	@echo ZLIBLIBDIR = $(ZLIBLIBDIR)
+	@echo ZLIBLIB = $(ZLIBLIB)
 
 moreclean:	clean
 	del /Q $(SQLITE3C) $(SQLITE3H) 2>NUL

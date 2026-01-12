@@ -52,7 +52,7 @@ for arg in $@; do
                    ;;
 
         --snapshot)
-            snapshotSuffix=$(date +%Y%m%d)
+            snapshotSuffix=-snapshot-$(date +%Y%m%d)
             ;;
 
         -?|--help)
