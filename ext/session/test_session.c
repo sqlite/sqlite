@@ -1570,6 +1570,8 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
     { "change_text",   3, "[new|old] ICOL VALUE" },    /* 9 */
     { "change_blob",   3, "[new|old] ICOL VALUE" },    /* 10 */
     { "change_finish", 1, "BDISCARD"             },    /* 11 */
+
+    { "config",        2, "OPTION INTVAL"        },    /* 12 */
     { 0, 0, 0 }
   };
   int rc = TCL_OK;
@@ -1773,6 +1775,35 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
         rc = sqlite3changegroup_change_finish(p->pGrp, bDiscard, &zErr);
         if( rc!=SQLITE_OK ){
           rc = test_session_error(interp, rc, zErr);
+        }
+      }
+      break;
+    }
+
+    case 12: {      /* config */
+      struct OptionName {
+        const char *zOpt;
+        int op;
+      } aOp[] = {
+        { "patchset", SQLITE_CHANGEGROUP_CONFIG_PATCHSET },
+        { 0, 0 }
+      };
+      int iIdx = 0;
+      int iArg = 0;
+      rc = Tcl_GetIndexFromObjStruct(
+          interp, objv[2], aOp, sizeof(aOp[0]), "option", 0, &iIdx
+      );
+      if( rc==TCL_OK 
+       && (rc = Tcl_GetIntFromObj(interp, objv[3], &iArg))==TCL_OK 
+      ){
+        int op = aOp[iIdx].op;
+        void *pArg = (void*)&iArg;
+
+        rc = sqlite3changegroup_config(p->pGrp, op, pArg);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }else{
+          Tcl_SetObjResult(interp, Tcl_NewIntObj(iArg));
         }
       }
       break;

@@ -6272,6 +6272,33 @@ int sqlite3changegroup_new(sqlite3_changegroup **pp){
 }
 
 /*
+** Configure a changegroup object.
+*/
+int sqlite3changegroup_config(
+  sqlite3_changegroup *pGrp, 
+  int op, 
+  void *pArg
+){
+  int rc = SQLITE_OK;
+
+  switch( op ){
+    case SQLITE_CHANGEGROUP_CONFIG_PATCHSET: {
+      int arg = *(int*)pArg;
+      if( pGrp->pList==0  && arg>=0 ){
+        pGrp->bPatch = (arg>0);
+      }
+      *(int*)pArg = pGrp->bPatch;
+      break;
+    }
+    default:
+      rc = SQLITE_MISUSE;
+      break;
+  }
+
+  return rc;
+}
+
+/*
 ** Provide a database schema to the changegroup object.
 */
 int sqlite3changegroup_schema(
@@ -6879,6 +6906,10 @@ int sqlite3changegroup_change_begin(
   return rc;
 }
 
+/*
+** This function does processing common to the _change_int64(), _change_text()
+** and other similar APIs.
+*/
 static int checkChangeParams(
   sqlite3_changegroup *pGrp, 
   int bNew,
@@ -6992,6 +7023,7 @@ int sqlite3changegroup_change_text(
   pBuf->aBuf[0] = SQLITE_TEXT;
   pBuf->nBuf = (1 + sessionVarintPut(&pBuf->aBuf[1], nText));
   memcpy(&pBuf->aBuf[pBuf->nBuf], pVal, nText);
+  pBuf->nBuf += nText;
 
   return SQLITE_OK;
 }
@@ -7017,6 +7049,7 @@ int sqlite3changegroup_change_blob(
   pBuf->aBuf[0] = SQLITE_BLOB;
   pBuf->nBuf = (1 + sessionVarintPut(&pBuf->aBuf[1], nVal));
   memcpy(&pBuf->aBuf[pBuf->nBuf], pVal, nVal);
+  pBuf->nBuf += nVal;
 
   return SQLITE_OK;
 }
@@ -7033,7 +7066,6 @@ int sqlite3changegroup_change_finish(
 
     if( bDiscard==0 ){
       int nBuf = pGrp->cd.pTab->nCol;
-      int nRec = 0;
       u8 eUndef = SQLITE_NULL;
       if( pGrp->cd.eOp==SQLITE_UPDATE ){
         for(ii=0; ii<nBuf; ii++){
@@ -7052,7 +7084,8 @@ int sqlite3changegroup_change_finish(
               rc = SQLITE_ERROR;
               break;
             }
-          }else if( (aBuf[ii].nBuf>0)!=(aBuf[ii+nBuf].nBuf>0) ){
+          }else 
+          if( pGrp->bPatch==0 && (aBuf[ii].nBuf>0)!=(aBuf[ii+nBuf].nBuf>0) ){
             *pzErr = sqlite3_mprintf(
                 "invalid change: column %d "
                 "- old.* value is %sdefined but new.* is %sdefined",
@@ -7063,17 +7096,20 @@ int sqlite3changegroup_change_finish(
           }
         }
         eUndef = 0x00;
-        nBuf = nBuf * 2;
+        if( pGrp->bPatch==0 ) nBuf = nBuf * 2;
       }else{
         for(ii=0; ii<nBuf; ii++){
-          if( aBuf[ii].nBuf==0 ){
+          int isPK = pGrp->cd.pTab->abPK[ii];
+          if( (pGrp->cd.eOp==SQLITE_INSERT || pGrp->bPatch==0 || isPK)
+           && aBuf[ii].nBuf==0
+          ){
             *pzErr = sqlite3_mprintf(
                 "invalid change: column %d is undefined", ii
             );
             rc = SQLITE_ERROR;
             break;
           }
-          if( aBuf[ii].nBuf==1 && pGrp->cd.pTab->abPK[ii] ){
+          if( aBuf[ii].nBuf==1 && isPK ){
             *pzErr = sqlite3_mprintf(
                 "invalid change: null value in PK"
             );
@@ -7083,13 +7119,19 @@ int sqlite3changegroup_change_finish(
         }
       }
 
+      pGrp->cd.record.nBuf = 0;
       for(ii=0; ii<nBuf; ii++){
-        SessionBuffer *pBuf = &pGrp->cd.aBuf[ii];
-        nRec += (pBuf->nBuf ? pBuf->nBuf : 1);
-      }
-      if( 0==sessionBufferGrow(&pGrp->cd.record, nRec, &rc) ){
-        for(ii=0; ii<nBuf; ii++){
-          SessionBuffer *p = &pGrp->cd.aBuf[ii];
+        SessionBuffer *p = &pGrp->cd.aBuf[ii];
+        if( pGrp->bPatch ){
+          if( pGrp->cd.pTab->abPK[ii]==0 ){
+            if( pGrp->cd.eOp==SQLITE_UPDATE ){
+              p += pGrp->cd.pTab->nCol;
+            }else if( pGrp->cd.eOp==SQLITE_DELETE ){
+              continue;
+            }
+          }
+        }
+        if( 0==sessionBufferGrow(&pGrp->cd.record, p->nBuf?p->nBuf:1, &rc) ){
           if( p->nBuf ){
             memcpy(&pGrp->cd.record.aBuf[pGrp->cd.record.nBuf],p->aBuf,p->nBuf);
             pGrp->cd.record.nBuf += p->nBuf;
@@ -7097,6 +7139,8 @@ int sqlite3changegroup_change_finish(
             pGrp->cd.record.aBuf[pGrp->cd.record.nBuf++] = eUndef;
           }
         }
+      }
+      if( rc==SQLITE_OK ){
         rc = sessionOneChangeToHash(
             pGrp,
             pGrp->cd.pTab,
@@ -7110,6 +7154,7 @@ int sqlite3changegroup_change_finish(
       }
     }
 
+    /* Reset all aBuf[] entries to "undefined". */
     {
       int nZero = pGrp->cd.pTab->nCol;
       if( pGrp->cd.eOp==SQLITE_UPDATE ) nZero += nZero;

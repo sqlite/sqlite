@@ -1854,6 +1854,43 @@ int sqlite3session_config(int op, void *pArg);
 #define SQLITE_SESSION_CONFIG_STRMSIZE 1
 
 /*
+** CAPI3REF: Configure a changegroup object
+**
+** Configure the changegroup object passes as the first argument. 
+** At present the only valid value for the second parameter is
+** [SQLITE_CHANGEGROUP_CONFIG_PATCHSET].
+*/
+int sqlite3changegroup_config(sqlite3_changegroup*, int, void *pArg);
+
+/*
+** CAPI3REF: Options for sqlite3changegroup_config().
+**
+** The following values may passed as the the 2nd parameter to
+** sqlite3session_object_config().
+**
+** <dt>SQLITE_CHANGEGROUP_CONFIG_PATCHSET <dd>
+**   A changegroup object generates either a changeset or patchset. Usually,
+**   which is determined by whether the first call to sqlite3changegroup_add()
+**   is passed a changeset or a patchset. Or, if the first changes are added
+**   to the changegroup object using the sqlite3changegroup_change_xxx()
+**   APIs, then this option may be used to configure whether the changegroup
+**   object generates a changeset or patchset. 
+**
+**   When this option is invoked, parameter pArg must point to a value of
+**   type int. If the changegroup currently contains zero changes, and the
+**   value of the int variable is zero or greater than zero, then the
+**   changegroup is configured to generate a changeset or patchset,
+**   respectively. It is not an error if the changegroup is not configured
+**   because it has already started accumuting changes, just a no-op.
+**
+**   Before returning, the int variable is set to 0 if the changegroup is
+**   configured to generate a changeset, or 1 if it is configured to generate
+**   a patchset.
+*/
+#define SQLITE_CHANGEGROUP_CONFIG_PATCHSET 1
+
+
+/*
 ** CAPI3REF: Begin adding a change to a changegroup
 **
 ** This API is used, in concert with other sqlite3changegroup_change_xxx()
@@ -1982,7 +2019,8 @@ int sqlite3changegroup_change_blob(
 ** returned.
 **
 ** If paramter bDiscard is zero, then an attempt is made to add the current
-** change to the changegroup. This requires that:
+** change to the changegroup. Assuming the changegroup is configured to
+** produce a changeset (not a patchset), this requires that:
 **
 **   *  If the change is an INSERT or DELETE, then a value must be specified
 **      for all columns of the new.* or old.* record, respectively.
@@ -2004,6 +2042,12 @@ int sqlite3changegroup_change_blob(
 ** change for the same row (identified by PRIMARY KEY columns), then the 
 ** current change is combined with the existing change as for 
 ** sqlite3changegroup_add().
+**
+** For a patchset, all of the above rules apply except that it doesn't matter
+** whether or not values are provided for the non-PK old.* record columns
+** for an UPDATE or DELETE change. This means that code used to produce
+** a changeset using the sqlite3changegroup_change_xxx() APIs may also
+** be used to produce patchsets.
 **
 ** If the call is successful, SQLITE_OK is returned. Otherwise, if an error
 ** occurs, an SQLite error code is returned. If an error is returned and

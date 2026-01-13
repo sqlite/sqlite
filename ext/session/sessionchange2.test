@@ -186,7 +186,6 @@ foreach {tn script error} {
   grp delete
 }
 
-
 do_test 3.2.1 {
   sqlite3changegroup grp
   grp schema db main
@@ -200,6 +199,134 @@ do_test 3.2.2 {
 } {1 SQLITE_ERROR}
 
 grp delete
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(a, b);
+}
+
+proc do_changegroup_script_test {tn script changeset patchset} {
+
+breakpoint
+  sqlite3changegroup grp
+  grp schema db main
+  eval $script
+  do_test $tn.1 {
+    changeset_to_list [grp output]
+  } [list {*}$changeset]
+  grp delete
+
+  sqlite3changegroup grp
+  grp config patchset 1
+  grp schema db main
+  eval $script
+  do_test $tn.2 {
+    changeset_to_list [grp output]
+  } [list {*}$patchset]
+  grp delete
+
+}
+
+proc do_changegroup_patchset_test {tn script patchset} {
+
+  sqlite3changegroup grp
+  grp config patchset 1
+  grp schema db main
+  eval $script
+  do_test $tn {
+    changeset_to_list [grp output]
+  } [list {*}$patchset]
+  grp delete
+
+}
+
+do_changegroup_script_test 3.1 {
+  grp change_begin UPDATE t1 0
+  grp change_int64 old 0 123
+  grp change_int64 old 1 456
+  grp change_int64 new 1 789
+  grp change_finish false
+
+  grp change_begin INSERT t1 0
+  grp change_int64 new 0 124
+  grp change_text  new 1 hello_world
+  grp change_finish false
+
+  grp change_begin  DELETE t1 0
+  grp change_int64  old 0 125
+  grp change_double old 1 45.67
+  grp change_finish false
+} {
+  {DELETE t1 0 X. {i 125 f 45.67} {}}
+  {INSERT t1 0 X. {} {i 124 t hello_world}}
+  {UPDATE t1 0 X. {i 123 i 456} {{} {} i 789}}
+} {
+  {DELETE t1 0 X. {i 125 {} {}} {}}
+  {INSERT t1 0 X. {} {i 124 t hello_world}}
+  {UPDATE t1 0 X. {i 123 {} {}} {{} {} i 789}}
+}
+
+do_changegroup_script_test 3.1.2 {
+  grp change_begin INSERT t1 0
+  grp change_int64 new 0 124
+  grp change_text  new 1 hello_world
+  grp change_finish false
+} {
+  {INSERT t1 0 X. {} {i 124 t hello_world}}
+} {
+  {INSERT t1 0 X. {} {i 124 t hello_world}}
+}
+
+do_changegroup_patchset_test 3.2 {
+  grp change_begin UPDATE t1 0
+  grp change_int64 old 0 123
+  grp change_int64 new 1 789
+  grp change_finish false
+
+  grp change_begin DELETE t1 1
+  grp change_int64 old 0 122
+  grp change_finish false
+} {
+  {DELETE t1 1 X. {i 122 {} {}} {}}
+  {UPDATE t1 0 X. {i 123 {} {}} {{} {} i 789}}
+}
+
+do_changegroup_patchset_test 3.3 {
+  grp change_begin DELETE t1 0
+  grp change_int64 old 0 123
+  grp change_finish false
+} {
+  {DELETE t1 0 X. {i 123 {} {}} {}}
+}
+
+do_changegroup_script_test 3.4 {
+  grp change_begin INSERT t1 0
+  grp change_int64 new 0 124
+  grp change_text  new 1 hello_world
+  grp change_finish false
+
+  grp change_begin DELETE t1 0
+  grp change_int64 old 0 124
+  grp change_text  old 1 hello_world
+  grp change_finish false
+
+  grp change_begin INSERT t1 0
+  grp change_int64 new 0 1000
+  grp change_blob  new 1 abcd
+  grp change_finish false
+
+  grp change_begin UPDATE t1 0
+  grp change_int64 old 0 1000
+  grp change_blob  old 1 abcd
+  grp change_blob  new 1 bcda
+  grp change_finish false
+} {
+  {INSERT t1 0 X. {} {i 1000 b bcda}}
+} {
+  {INSERT t1 0 X. {} {i 1000 b bcda}}
+}
 
 finish_test
 
