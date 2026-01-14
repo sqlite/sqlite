@@ -3072,10 +3072,13 @@ static int sessionGenerateChangeset(
   }
 
   if( pSession->rc ) return pSession->rc;
-  rc = sqlite3_exec(pSession->db, "SAVEPOINT changeset", 0, 0, 0);
-  if( rc!=SQLITE_OK ) return rc;
 
   sqlite3_mutex_enter(sqlite3_db_mutex(db));
+  rc = sqlite3_exec(pSession->db, "SAVEPOINT changeset", 0, 0, 0);
+  if( rc!=SQLITE_OK ){
+    sqlite3_mutex_leave(sqlite3_db_mutex(db));
+    return rc;
+  }
 
   for(pTab=pSession->pTable; rc==SQLITE_OK && pTab; pTab=pTab->pNext){
     if( pTab->nEntry ){

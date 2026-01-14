@@ -1,5 +1,5 @@
-C Guard\sagainst\soversized\sindex\sentries\sin\sdatabases\slarger\sthan\s2GiB.
-D 2026-01-14T13:43:32.416
+C Update\ssessions\smodule\sso\sthat\sit\stakes\sthe\sdb\smutex\sbefore,\sinstead\sof\sjust\safter,\sopening\sa\ssavepoint\swhen\sgenerating\sa\schangeset.
+D 2026-01-14T17:52:27.085
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -577,7 +577,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 203b3778367733d95c06c5f10965ce66d6448df93ece107cb93dc3fdf0f4f26c
+F ext/session/sqlite3session.c 4cb3921d93bf65c9c4f74c046a469d953f3070fb5a0c6f50bbbe365aa8be9f48
 F ext/session/sqlite3session.h 7404723606074fcb2afdc6b72c206072cdb2b7d8ba097ca1559174a80bc26f7a
 F ext/session/test_session.c 8766b5973a6323934cb51248f621c3dc87ad2a98f023c3cc280d79e7d78d36fb
 F ext/wasm/GNUmakefile c3d007dd181527283d8674c812cc60518353f1f69c9a9d3008f10f53cea4a3c1
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8e656a483557bc5385219d560b9155c232e7dc9d62642249abc879fb37bacd2a
-R e4a21a4b0c8374195b8c7e4077a8aa5c
-U drh
-Z 3811ba8eb57fe99f7ac42f617514bf6f
+P ed17a878e5a2e0cd1e9b69d528f5ac2ba8452d7c83deaf3cc72ecbff054f5ca3
+R 4e3c79d7cbf0272105acaf029cf74fe8
+U dan
+Z 20c60aa475163f8a4c75029dee5ddc16
 # Remove this line to create a well-formed Fossil manifest.
