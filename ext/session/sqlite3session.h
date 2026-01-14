@@ -1856,7 +1856,7 @@ int sqlite3session_config(int op, void *pArg);
 /*
 ** CAPI3REF: Configure a changegroup object
 **
-** Configure the changegroup object passes as the first argument. 
+** Configure the changegroup object passed as the first argument. 
 ** At present the only valid value for the second parameter is
 ** [SQLITE_CHANGEGROUP_CONFIG_PATCHSET].
 */
@@ -1865,12 +1865,12 @@ int sqlite3changegroup_config(sqlite3_changegroup*, int, void *pArg);
 /*
 ** CAPI3REF: Options for sqlite3changegroup_config().
 **
-** The following values may passed as the the 2nd parameter to
-** sqlite3session_object_config().
+** The following values may be passed as the 2nd parameter to
+** sqlite3changegroup_config().
 **
 ** <dt>SQLITE_CHANGEGROUP_CONFIG_PATCHSET <dd>
 **   A changegroup object generates either a changeset or patchset. Usually,
-**   which is determined by whether the first call to sqlite3changegroup_add()
+**   this is determined by whether the first call to sqlite3changegroup_add()
 **   is passed a changeset or a patchset. Or, if the first changes are added
 **   to the changegroup object using the sqlite3changegroup_change_xxx()
 **   APIs, then this option may be used to configure whether the changegroup
@@ -1880,8 +1880,8 @@ int sqlite3changegroup_config(sqlite3_changegroup*, int, void *pArg);
 **   type int. If the changegroup currently contains zero changes, and the
 **   value of the int variable is zero or greater than zero, then the
 **   changegroup is configured to generate a changeset or patchset,
-**   respectively. It is not an error if the changegroup is not configured
-**   because it has already started accumuting changes, just a no-op.
+**   respectively. It is a no-op, not an error, if the changegroup is not
+**   configured because it has already started accumulating changes.
 **
 **   Before returning, the int variable is set to 0 if the changegroup is
 **   configured to generate a changeset, or 1 if it is configured to generate
@@ -1917,7 +1917,7 @@ int sqlite3changegroup_config(sqlite3_changegroup*, int, void *pArg);
 ** bIndirect is non-zero) or not indirect (if bIndirect is zero).
 **
 ** Following a successful call to this function, this function may not be
-** called again on the same changegroup until after
+** called again on the same changegroup object until after
 ** sqlite3changegroup_change_finish() has been called. Doing so is an
 ** SQLITE_MISUSE error.
 **
@@ -1928,7 +1928,11 @@ int sqlite3changegroup_config(sqlite3_changegroup*, int, void *pArg);
 ** table. If the changegroup object has not been configured with a schema for
 ** the specified table when this function is called, SQLITE_ERROR is returned.
 **
-** If successful, SQLITE_OK is returned.
+** If successful, SQLITE_OK is returned. Otherwise, if an error occurs, an
+** SQLite error code is returned. In this case, if argument pzErr is non-NULL,
+** then (*pzErr) may be set to point to a buffer containing a utf-8 formated,
+** nul-terminated, English language error message. It is the responsibility
+** of the caller to eventually free this buffer using sqlite3_free().
 */
 int sqlite3changegroup_change_begin(
   sqlite3_changegroup*,
@@ -1939,7 +1943,7 @@ int sqlite3changegroup_change_begin(
 );
 
 /*
-** This function may only be called between a succesful call to 
+** This function may only be called between a successful call to 
 ** sqlite3changegroup_change_begin() and its matching
 ** sqlite3changegroup_change_finish() call. If it is called at any
 ** other time, it is an SQLITE_MISUSE error. Calling this function 
@@ -1964,8 +1968,8 @@ int sqlite3changegroup_change_begin(
 ** The fourth parameter is the integer value to use as part of the old.* or
 ** new.* record.
 **
-** If this call is successful, SQLITE_OK is returned. Otherwise, an SQLite
-** error code.
+** If this call is successful, SQLITE_OK is returned. Otherwise, if an
+** error occurs, an SQLite error code is returned.
 */
 int sqlite3changegroup_change_int64(
   sqlite3_changegroup*, 
@@ -2018,7 +2022,7 @@ int sqlite3changegroup_change_blob(
 ** discarded. In this case this function is always successful and SQLITE_OK
 ** returned.
 **
-** If paramter bDiscard is zero, then an attempt is made to add the current
+** If parameter bDiscard is zero, then an attempt is made to add the current
 ** change to the changegroup. Assuming the changegroup is configured to
 ** produce a changeset (not a patchset), this requires that:
 **
@@ -2038,10 +2042,11 @@ int sqlite3changegroup_change_blob(
 **
 **   *  All values specified for PRIMARY KEY columns must be non-NULL.
 **
-** Otherwise, it is an error. If the changegroup already contains a
-** change for the same row (identified by PRIMARY KEY columns), then the 
-** current change is combined with the existing change as for 
-** sqlite3changegroup_add().
+** Otherwise, it is an error. 
+**
+** If the changegroup already contains a change for the same row (identified
+** by PRIMARY KEY columns), then the current change is combined with the
+** existing change in the same way as for sqlite3changegroup_add().
 **
 ** For a patchset, all of the above rules apply except that it doesn't matter
 ** whether or not values are provided for the non-PK old.* record columns
@@ -2052,9 +2057,9 @@ int sqlite3changegroup_change_blob(
 ** If the call is successful, SQLITE_OK is returned. Otherwise, if an error
 ** occurs, an SQLite error code is returned. If an error is returned and
 ** parameter pzErr is not NULL, then (*pzErr) may be set to point to a buffer
-** containing a nul-terminated utf-8 encoded English language error message.
-** It is the responsibility of the caller to free any such error message
-** buffer using sqlite3_free().
+** containing a nul-terminated, utf-8 encoded, English language error message.
+** It is the responsibility of the caller to eventually free any such error 
+** message buffer using sqlite3_free().
 */
 int sqlite3changegroup_change_finish(
   sqlite3_changegroup*, 

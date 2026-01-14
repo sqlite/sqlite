@@ -7036,7 +7036,7 @@ int sqlite3changegroup_change_text(
 }
 
 /*
-** Configure the change currently under construction with a text value.
+** Configure the change currently under construction with a blob value.
 */
 int sqlite3changegroup_change_blob(
   sqlite3_changegroup *pGrp, 
@@ -7061,6 +7061,9 @@ int sqlite3changegroup_change_blob(
   return SQLITE_OK;
 }
 
+/*
+** Finish any change currently being constructed by the changegroup object.
+*/
 int sqlite3changegroup_change_finish(
   sqlite3_changegroup *pGrp, 
   int bDiscard, 
@@ -7149,14 +7152,9 @@ int sqlite3changegroup_change_finish(
       }
       if( rc==SQLITE_OK ){
         rc = sessionOneChangeToHash(
-            pGrp,
-            pGrp->cd.pTab,
-            pGrp->cd.eOp,
-            pGrp->cd.bIndirect,
-            pGrp->cd.pTab->nCol,
-            pGrp->cd.record.aBuf,
-            pGrp->cd.record.nBuf,
-            0
+            pGrp, pGrp->cd.pTab,
+            pGrp->cd.eOp, pGrp->cd.bIndirect, pGrp->cd.pTab->nCol,
+            pGrp->cd.record.aBuf, pGrp->cd.record.nBuf, 0
         );
       }
     }
