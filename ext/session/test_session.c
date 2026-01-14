@@ -1557,21 +1557,23 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
     int nArg;
     const char *zMsg;
   } aSub[] = {
-    { "schema",        2, "DB DBNAME"            },    /* 0 */
-    { "add",           1, "CHANGESET"            },    /* 1 */
-    { "output",        0, ""                     },    /* 2 */
-    { "delete",        0, ""                     },    /* 3 */
-    { "add_change",    1, "ITERATOR"             },    /* 4 */
+    { "schema",          2, "DB DBNAME"            },    /* 0 */
+    { "add",             1, "CHANGESET"            },    /* 1 */
+    { "output",          0, ""                     },    /* 2 */
+    { "delete",          0, ""                     },    /* 3 */
+    { "add_change",      1, "ITERATOR"             },    /* 4 */
 
-    { "change_begin",  3, "TYPE TABLE INDIRECT"  },    /* 5 */
-    { "change_int64",  3, "[new|old] ICOL VALUE" },    /* 6 */
-    { "change_null",   2, "[new|old] ICOL"       },    /* 7 */
-    { "change_double", 3, "[new|old] ICOL VALUE" },    /* 8 */
-    { "change_text",   3, "[new|old] ICOL VALUE" },    /* 9 */
-    { "change_blob",   3, "[new|old] ICOL VALUE" },    /* 10 */
-    { "change_finish", 1, "BDISCARD"             },    /* 11 */
+    { "change_begin",    3, "TYPE TABLE INDIRECT"  },    /* 5 */
+    { "change_int64",    3, "[new|old] ICOL VALUE" },    /* 6 */
+    { "change_null",     2, "[new|old] ICOL"       },    /* 7 */
+    { "change_double",   3, "[new|old] ICOL VALUE" },    /* 8 */
+    { "change_text",     3, "[new|old] ICOL VALUE" },    /* 9 */
+    { "change_blob",     3, "[new|old] ICOL VALUE" },    /* 10 */
+    { "change_finish",   1, "BDISCARD"             },    /* 11 */
 
-    { "config",        2, "OPTION INTVAL"        },    /* 12 */
+    { "config",          2, "OPTION INTVAL"        },    /* 12 */
+    { "change_text-1",   3, "[new|old] ICOL VALUE" },    /* 13 */
+    { "change_begin_ne", 3, "TYPE TABLE INDIRECT"  },    /* 14 */
     { 0, 0, 0 }
   };
   int rc = TCL_OK;
@@ -1641,7 +1643,8 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       break;
     };
 
-    case 5: {      /* change_begin */
+    case 14:        /* change_beginne */
+    case 5: {       /* change_begin */
       struct ChangeType {
         const char *zType;
         int eType;
@@ -1656,6 +1659,7 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       int bIndirect;
       int iIdx = 0;
       char *zErr = 0;
+      char **pz = ((iSub==5) ? &zErr : 0);
 
       if( TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eType) ){
         rc = Tcl_GetIndexFromObjStruct(
@@ -1669,7 +1673,7 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
         return TCL_ERROR;
       }
 
-      rc = sqlite3changegroup_change_begin(p->pGrp, eType,zTab,bIndirect,&zErr);
+      rc = sqlite3changegroup_change_begin(p->pGrp, eType, zTab, bIndirect, pz);
       assert( zErr==0 || rc!=SQLITE_OK );
       if( rc!=SQLITE_OK ){
         rc = test_session_error(interp, rc, zErr);
@@ -1804,6 +1808,23 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
           rc = test_session_error(interp, rc, 0);
         }else{
           Tcl_SetObjResult(interp, Tcl_NewIntObj(iArg));
+        }
+      }
+      break;
+    }
+
+    case 13: {      /* change_text-1 */
+      int bNew = 0;
+      int iCol = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        const char *pVal = Tcl_GetString(objv[4]);
+        rc = sqlite3changegroup_change_text(p->pGrp, bNew, iCol, pVal, -1);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
         }
       }
       break;

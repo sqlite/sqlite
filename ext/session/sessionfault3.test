@@ -43,12 +43,26 @@ set C2 [changeset_from_sql {
   INSERT INTO t1 VALUES(0, 0, 0, 0);
 }]
 
-do_faultsim_test 1 -faults oom* -prep {
+do_faultsim_test 1.2 -faults oom* -prep {
   sqlite3changegroup G
 } -body {
   G schema db main
   G add $::C1
   G add $::C2
+  G output
+  set {} {}
+} -test {
+  catch { G delete }
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+}
+
+do_faultsim_test 1.3 -faults oom* -prep {
+  sqlite3changegroup G
+} -body {
+  G schema db main
+  G change_begin INSERT t1 0
+  G change_int64 new 0 12345
+  G change_int64 new 1 67890
   G output
   set {} {}
 } -test {
