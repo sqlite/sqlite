@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverrun\sthat\scould\soccur\swhen\sdeleting\srows\sin\ssecure-delete\smode\sfrom\sa\sstrategically\scorrupted\sfts5\sdatabase.
-D 2026-01-15T16:09:35.948
+C Add\sextra\stest\sfor\shandling\scorrupt\sdelta\srecords\sin\srbu.
+D 2026-01-15T17:00:58.135
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -425,7 +425,7 @@ F ext/qrf/qrf.h 2ac14b0aaacf44636d8c81051bfeab4afae50a98fbb2e10ff5aed0c28a87b2b2
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
 F ext/rbu/rbu10.test 7c22caa32c2ff26983ca8320779a31495a6555737684af7aba3daaf762ef3363
-F ext/rbu/rbu11.test 8584f80ef4be00e6beec4154f638847ffc40b5f2832ffadfbaf558ae40e50cb5
+F ext/rbu/rbu11.test 3b71377c018b05dd39c30ea2feb272a087eb0faeff1b7b4511144f87219c478e
 F ext/rbu/rbu12.test ec63aa7bfc3c65c1d774bf4357ed731723827d211d9d7cb0efa171bbaeeebaf4
 F ext/rbu/rbu13.test 658edbc3325d79252a98b761fde95460e439f80e820ff29e10261e25f870b3b6
 F ext/rbu/rbu14.test 05dac607a62f62102f4db92135979a8a4501143638060019aca08c753822cf39
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P dddaeff4ce552f3aa57cc6e18ed35051138b591338242df5f3af39e24006a834
-R 82b79cfe571cab3f5ba269075207d0f5
+P 1e66d6e3276cc6aab4d002a1df13b044e61f3946322bf97cac06d98dbb68e433
+R 58e1d7e12124d5707f4e3d40f49b5d04
 U dan
-Z b44e6446834bcedd7360f23e9f1b0fb0
+Z 26224f6797176329858502266bc22add
 # Remove this line to create a well-formed Fossil manifest.
