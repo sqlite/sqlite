@@ -1,5 +1,5 @@
-C Add\sextra\stest\sfor\shandling\scorrupt\sdelta\srecords\sin\srbu.
-D 2026-01-15T17:00:58.135
+C Fix\san\serror\sin\snew\stest\sscript\sfts5corrupt9.test.
+D 2026-01-15T17:17:00.283
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -168,7 +168,7 @@ F ext/fts5/test/fts5corrupt5.test 73985d4fe6d8f0d5d5c7bcf79ae7c6522c376cd6ad710a
 F ext/fts5/test/fts5corrupt6.test 2d72db743db7b5d9c9a6d0cfef24d799ed1aa5e8192b66c40e871a37ed9eed06
 F ext/fts5/test/fts5corrupt7.test 814aab492d7a09abb5bfdd81cc66fc206d7f3868f9a3bae91876e02efc466fb3
 F ext/fts5/test/fts5corrupt8.test 0b10750caf8aa23fa1c379ca4caf6130d41454505e4d5315590f4061eedcbe44
-F ext/fts5/test/fts5corrupt9.test 55a9628a7435b77a30a5b7f0292f61440c0dc0c30fd755bc086ede4e810e090e
+F ext/fts5/test/fts5corrupt9.test 65a3a64f0e930fcc37e0389ae26224a4faba3a2c938d2f8eb4811a45b5b495fe
 F ext/fts5/test/fts5corruptbig.test 9f95b40fa36e292feceab02b2ef06e21878bfa1ac7afefa138aae05518b51774
 F ext/fts5/test/fts5delete.test 2a5008f8b1174ef41d1974e606928c20e4f9da77d9f8347aed818994d89cced4
 F ext/fts5/test/fts5detail.test 54015e9c43ec4ba542cfb93268abdf280e0300f350efd08ee411284b03595cc4
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1e66d6e3276cc6aab4d002a1df13b044e61f3946322bf97cac06d98dbb68e433
-R 58e1d7e12124d5707f4e3d40f49b5d04
+P 7dba05100fbef3614e6ee8eff39dab7a4713550e5672c2f6cf8f4b490a96aa25
+R e5ae868d19f8185c7788371766a283c2
 U dan
-Z 26224f6797176329858502266bc22add
+Z 9c33949f9da6885ad84443c160d9c802
 # Remove this line to create a well-formed Fossil manifest.
