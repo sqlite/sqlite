@@ -1,5 +1,5 @@
-C The\soptimization\sat\s[8bdda827a3d26800]\sis\sincorrect\sfor\sthe\scase\swhere\sone\nof\sthe\stwo\sexpressions\shas\sbeen\scommuted\ssuch\sthat\sthe\scollating\ssequence\nhas\schanged.\s\sThis\scheck-in\sfixes\sthe\sproblem.\s\sProblem\sreported\sby\n[forum:/forumpost/2026-01-16T11:35:28Z|forum\spost\s2026-01-16T11:35:28Z].
-D 2026-01-16T15:53:20.470
+C Try\sto\sprevent\sfalse\spositives\sin\sfuzzinvariants.c\sdue\sto\sscalar\ssubqueries.
+D 2026-01-16T17:48:46.056
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1256,7 +1256,7 @@ F test/fuzzdata8.db 8f34ae00d8d5d4747dd80983cf46161065e4f78324dcff3c893506ff8db3
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c 3ddfec7f5b970b018f1a982532de905cf180e0c1e48cd653be9365d3e6177625
+F test/fuzzinvariants.c 6768bcd03290776cd982624729d2abee2e89e6aba62b4a2b839a98332725a167
 F test/gcfault.test 4ea410ac161e685f17b19e1f606f58514a2850e806c65b846d05f60d436c5b0d
 F test/gencol1.test ceb3163b59cb77f4ad57ae4f01a143ce36b06fdd6a8dab1149235db89979ffd8
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 766c89e009578aa5c1a92cbb2dcc34b3529cf4dd6157f07c84f08470d81942a9
-R bdcc204a60ddb01f203734624d8fbe88
+P 9d8fb7a9e23d5ef76d05824401976247debe51be6f658f132609257a068a73de
+R 4e077735a8520f49ee1ea41b00679698
 U drh
-Z 38e9f9ef4cf328d41d09316ce8aaeefa
+Z 24dcfeae0ba1eabe26ce67568cf46193
 # Remove this line to create a well-formed Fossil manifest.
