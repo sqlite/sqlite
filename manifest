@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\snew\stest\sscript\sfts5corrupt9.test.
-D 2026-01-15T17:17:00.283
+C Change\sthe\scopyright\son\sthe\stool/dbtotxt.c\ssource\scode\sfile\sto\sthe\nstandard\sSQLite\sblessing.
+D 2026-01-16T12:13:42.015
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2111,7 +2111,7 @@ F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629c
 F tool/cp.tcl 9a0d663ad45828de13763ee7ca0200f31f56c6d742cf104a56ae80e027c242d8
 F tool/custom.txt 24ed55e71c5edae0067ba159bbf09240d58b160331f7716e95816cd3aa0ba5c4
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
-F tool/dbtotxt.c ca48d34eaca6d6b6e4bd6a7be2b72caf34475869054240244c60fa7e69a518d6
+F tool/dbtotxt.c cfeb957571735af345f253ba8417256031fa0dddf79468eefad184262d17211e
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
 F tool/emcc.sh.in 41a049468c8155433e37e656ba5bae063a000768b1d627025f277732c4e7c4a4
 F tool/enlargedb.c 3e8b2612b985cfa7e3e8800031ee191b43ae80de96abb5abbd5eada62651ee21
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7dba05100fbef3614e6ee8eff39dab7a4713550e5672c2f6cf8f4b490a96aa25
-R e5ae868d19f8185c7788371766a283c2
-U dan
-Z 9c33949f9da6885ad84443c160d9c802
+P a5918835e172fd4eda6511d297b61368952d617eac33950b67368671e3bd40fe
+R c602375ef72a479dcec90722a6270c60
+U drh
+Z cd561f5e126a2aa4688b11fcaa2ab0b6
 # Remove this line to create a well-formed Fossil manifest.
