@@ -1,5 +1,5 @@
-C Fix\sfurther\sproblems\swith\sdeleting\sfrom\scorrupt\sfts5\sdatabases\sin\ssecure-delete\smode.
-D 2026-01-16T20:04:04.079
+C Add\snew\sSQL\sfunction:\sjson_array_insert().\s\sSuggested\sin\n[forum:/forumpost/2026-01-17T10:40:39z|forum\sthread\s2026-01-17T10:40:39z].\nThis\scheck-in\sseems\sto\swork,\sbut\scontains\sno\stest\scases.\s\sAlso,\sno\serror\nis\sraised\sif\sthe\sPATH\sdoes\snot\sreference\san\sarray.\s\sPrototype\sonly.
+D 2026-01-17T14:23:28.371
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -699,7 +699,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 21c2cf1f736e7b97502c3674d0c386db3f06870d6f10d0cf8174e2a4b8cb726e
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
-F src/json.c fb031340edee159c07ad37dbe668ffe945ed86f525b0eb3822e4a67cbc498a72
+F src/json.c 091c280965ebc673b8d0d15bd132b3243298d7603ce25749c9f0de28429e328e
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c d6559d2b39c9bde6b104b83adeafbe5db3a514aae4d3d40afc58de522a03043b
 F src/main.c 21fb86045bbf6b6329251a0ce6771735b6c71287cc9fcda1f2005d4ac5f25b52
@@ -2192,8 +2192,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c20be882a62e75abc50fd2dcae26ebbe83a01f09369525392fa22223627a04ea
-R ee90822939fe28aadced0a97da085c1b
-U dan
-Z 9872c75b452bc62f180f7192829b6f58
+P f8f89d2e10f06b54acf58a3b0543aef749c3d2b65670d4cc71530dea7997651e
+R 5eaa4c6199eb51b03923e8f6a4a1b985
+T *branch * json_array_insert
+T *sym-json_array_insert *
+T -sym-trunk *
+U drh
+Z 59a65265ad7dd2e433c1fd0eebddff23
 # Remove this line to create a well-formed Fossil manifest.
