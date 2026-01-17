@@ -2874,7 +2874,8 @@ static int jsonLabelCompare(
 */
 #define JSON_LOOKUP_ERROR      0xffffffff
 #define JSON_LOOKUP_NOTFOUND   0xfffffffe
-#define JSON_LOOKUP_PATHERROR  0xfffffffd
+#define JSON_LOOKUP_NOTARRAY   0xfffffffd
+#define JSON_LOOKUP_PATHERROR  0xfffffffc
 #define JSON_LOOKUP_ISERROR(x) ((x)>=JSON_LOOKUP_PATHERROR)
 
 /* Forward declaration */
@@ -2903,7 +2904,7 @@ static u32 jsonLookupStep(JsonParse*,u32,const char*,u32);
 static u32 jsonCreateEditSubstructure(
   JsonParse *pParse,  /* The original JSONB that is being edited */
   JsonParse *pIns,    /* Populate this with the blob data to insert */
-  const char *zTail   /* Tail of the path that determins substructure */
+  const char *zTail   /* Tail of the path that determines substructure */
 ){
   static const u8 emptyObject[] = { JSONB_ARRAY, JSONB_OBJECT };
   int rc;
@@ -2968,7 +2969,11 @@ static u32 jsonLookupStep(
         /* Already exists, so json_insert() is a no-op */
       }else if( pParse->eEdit==JEDIT_AINS ){
         /* json_array_insert() */
-        jsonBlobEdit(pParse, iRoot, 0, pParse->aIns, pParse->nIns);
+        if( zPath[-1]!=']' ){
+          return JSON_LOOKUP_NOTARRAY;
+        }else{
+          jsonBlobEdit(pParse, iRoot, 0, pParse->aIns, pParse->nIns);
+        }
       }else{
         /* json_set() or json_replace() */
         jsonBlobEdit(pParse, iRoot, sz, pParse->aIns, pParse->nIns);
@@ -3041,6 +3046,9 @@ static u32 jsonLookupStep(
       testcase( pParse->eEdit==JEDIT_INS );
       testcase( pParse->eEdit==JEDIT_SET );
       testcase( pParse->eEdit==JEDIT_AINS );
+      if( pParse->eEdit==JEDIT_AINS && sqlite3_strglob("*]",&zPath[i])!=0 ){
+        return JSON_LOOKUP_NOTARRAY;
+      }
       memset(&ix, 0, sizeof(ix));
       ix.db = pParse->db;
       jsonBlobAppendNode(&ix, rawKey?JSONB_TEXTRAW:JSONB_TEXT5, nKey, 0);
@@ -3441,9 +3449,15 @@ static int jsonFunctionArgToBlob(
 */
 static char *jsonBadPathError(
   sqlite3_context *ctx,     /* The function call containing the error */
-  const char *zPath         /* The path with the problem */
+  const char *zPath,        /* The path with the problem */
+  int rc                    /* Maybe JSON_LOOKUP_NOTARRAY */
 ){
-  char *zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
+  char *zMsg;
+  if( rc==JSON_LOOKUP_NOTARRAY ){
+    zMsg = sqlite3_mprintf("not an array element: %Q", zPath);
+  }else{
+    zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
+  }
   if( ctx==0 ) return zMsg;
   if( zMsg ){
     sqlite3_result_error(ctx, zMsg, -1);
@@ -3518,7 +3532,7 @@ jsonInsertIntoBlob_patherror:
   if( rc==JSON_LOOKUP_ERROR ){
     sqlite3_result_error(ctx, "malformed JSON", -1);
   }else{
-    jsonBadPathError(ctx, zPath);
+    jsonBadPathError(ctx, zPath, rc);
   }
   return;
 }
@@ -3960,7 +3974,7 @@ static void jsonArrayLengthFunc(
       if( i==JSON_LOOKUP_NOTFOUND ){
         /* no-op */
       }else if( i==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath);
+        jsonBadPathError(ctx, zPath, 0);
       }else{
         sqlite3_result_error(ctx, "malformed JSON", -1);
       }
@@ -4065,7 +4079,7 @@ static void jsonExtractFunc(
       j = jsonLookupStep(p, 0, jx.zBuf, 0);
       jsonStringReset(&jx);
     }else{
-      jsonBadPathError(ctx, zPath);
+      jsonBadPathError(ctx, zPath, 0);
       goto json_extract_error;
     }
     if( j<p->nBlob ){
@@ -4100,7 +4114,7 @@ static void jsonExtractFunc(
       sqlite3_result_error(ctx, "malformed JSON", -1);
       goto json_extract_error;
     }else{
-      jsonBadPathError(ctx, zPath);
+      jsonBadPathError(ctx, zPath, 0);
       goto json_extract_error;
     }
   }
@@ -4429,7 +4443,7 @@ static void jsonRemoveFunc(
       if( rc==JSON_LOOKUP_NOTFOUND ){
         continue;  /* No-op */
       }else if( rc==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath);
+        jsonBadPathError(ctx, zPath, rc);
       }else{
         sqlite3_result_error(ctx, "malformed JSON", -1);
       }
@@ -4441,7 +4455,7 @@ static void jsonRemoveFunc(
   return;
 
 json_remove_patherror:
-  jsonBadPathError(ctx, zPath);
+  jsonBadPathError(ctx, zPath, 0);
 
 json_remove_done:
   jsonParseFree(p);
@@ -4521,7 +4535,7 @@ static void jsonTypeFunc(
     zPath = (const char*)sqlite3_value_text(argv[1]);
     if( zPath==0 ) goto json_type_done;
     if( zPath[0]!='$' ){
-      jsonBadPathError(ctx, zPath);
+      jsonBadPathError(ctx, zPath, 0);
       goto json_type_done;
     }
     i = jsonLookupStep(p, 0, zPath+1, 0);
@@ -4529,7 +4543,7 @@ static void jsonTypeFunc(
       if( i==JSON_LOOKUP_NOTFOUND ){
         /* no-op */
       }else if( i==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath);
+        jsonBadPathError(ctx, zPath, 0);
       }else{
         sqlite3_result_error(ctx, "malformed JSON", -1);
       }
@@ -5433,7 +5447,7 @@ static int jsonEachFilter(
     if( zRoot==0 ) return SQLITE_OK;
     if( zRoot[0]!='$' ){
       sqlite3_free(cur->pVtab->zErrMsg);
-      cur->pVtab->zErrMsg = jsonBadPathError(0, zRoot);
+      cur->pVtab->zErrMsg = jsonBadPathError(0, zRoot, 0);
       jsonEachCursorReset(p);
       return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
     }
@@ -5451,7 +5465,7 @@ static int jsonEachFilter(
           return SQLITE_OK;
         }
         sqlite3_free(cur->pVtab->zErrMsg);
-        cur->pVtab->zErrMsg = jsonBadPathError(0, zRoot);
+        cur->pVtab->zErrMsg = jsonBadPathError(0, zRoot, 0);
         jsonEachCursorReset(p);
         return cur->pVtab->zErrMsg ? SQLITE_ERROR : SQLITE_NOMEM;
       }
