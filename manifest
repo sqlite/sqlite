@@ -1,5 +1,5 @@
-C wasm:\sremove\sthe\sbundler-friend\sbuilds\sfrom\sthe\s'all'\starget,\sas\sthey're\sonly\sneeded\sfor\sthe\s'npm'\starget.
-D 2026-01-19T22:01:10.095
+C Minor\sdoc\supdates\sin\smkwasmbuilds.c.
+D 2026-01-19T22:20:12.220
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -634,7 +634,7 @@ F ext/wasm/index.html 475bc283338749db4e3fbf24cf3f5aa020cc85a1fffb780d400a915fcb
 F ext/wasm/jaccwabyt/jaccwabyt.js 4e2b797dc170851c9c530c3567679f4aa509eec0fab73b466d945b00b356574b
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
-F ext/wasm/mkwasmbuilds.c 1611a8d0a56fb99faf1ea0af8c8e0c6d4d0d683ec730e1e548fc25eff3dd350e
+F ext/wasm/mkwasmbuilds.c 5d7baa9258299fd492351578a93dff960317822a08ee3ad6dd91ef5d21209812
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 67c0d11701842baaa5227ccce02483ead07bec8426b9861f2e2a0465414ae382
-R efc64949e85940e17bcc69431d2b9822
+P dfe4b788ca6596ea9f26445c864f56f81c7816798f5fedfc4e89ba1eb097b0aa
+R fa51d38900cab116d6f57002d22a4966
 U stephan
-Z 4c7d1c784953bb323249ad2660014d87
+Z 05cbd873e079ce2b55a58f6226132035
 # Remove this line to create a well-formed Fossil manifest.
