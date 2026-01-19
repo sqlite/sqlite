@@ -2983,6 +2983,13 @@ static int multiSelect(
   */
   if( p->pOrderBy ){
     return multiSelectOrderBy(pParse, p, pDest);
+  }else if( p->op!=TK_ALL && (p->selFlags & SF_NoopOrderBy)==0 ){
+    Expr *pOne = sqlite3ExprInt32(db, 1);
+    p->pOrderBy = sqlite3ExprListAppend(pParse, 0, pOne);
+    if( pParse->nErr ) goto multi_select_end;
+    assert( p->pOrderBy!=0 );
+    p->pOrderBy->a[0].u.x.iOrderByCol = 1;
+    return multiSelectOrderBy(pParse, p, pDest);
   }else{
 
 #ifndef SQLITE_OMIT_EXPLAIN
@@ -2991,6 +2998,7 @@ static int multiSelect(
       ExplainQueryPlan((pParse, 1, "LEFT-MOST SUBQUERY"));
     }
 #endif
+    pPrior->selFlags |= SF_NoopOrderBy;
 
     /* Generate code for the left and right SELECT statements.
     */
