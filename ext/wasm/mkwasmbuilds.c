@@ -341,7 +341,7 @@ const BuildDefs oBuildDefs = {
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM
+    .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM | F_NOT_IN_ALL
   },
 
   /* 64-bit bundler-friendly. */
