@@ -68,6 +68,14 @@
      approach.
   */
   Module['locateFile'] = function(path, prefix) {
+    if( this.emscriptenLocateFile instanceof Function ){
+      /* [tag:locateFile] Client-overridden impl. We do not support
+         this but offer it as a back-door which will go away the
+         moment either Emscripten changes that interface or we manage
+         to get non-Emscripten builds working.
+         https://sqlite.org/forum/forumpost/1eec339854c935bd */
+      return this.emscriptenLocateFile(path, prefix);
+    }
 //#if target:es6-module
     return new URL(path, import.meta.url).href;
 //#else
@@ -107,6 +115,10 @@
      node does not do fetch().
   */
   Module['instantiateWasm'] = function callee(imports,onSuccess){
+    if( this.emscriptenInstantiateWasm instanceof Function ){
+      /* See [tag:locateFile]. Same story here */
+      return this.emscriptenInstantiateWasm(imports, onSuccess);
+    }
     const sims = this;
     const uri = Module.locateFile(
       sims.wasmFilename, (
