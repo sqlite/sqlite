@@ -4244,7 +4244,9 @@ static int isScriptFile(const char *z, int bLeaveUninit){
   sqlite3_int64 sz = fileSize(z);
   if( sz<=0 ) return 0;
   if( (sz%512)==0 ){
-    int rc = isDatabaseFile(z, SQLITE_OPEN_READONLY);
+    int rc;
+    sqlite3_initialize();
+    rc = isDatabaseFile(z, SQLITE_OPEN_READONLY);
     if( bLeaveUninit ){
       sqlite3_shutdown();
     }
