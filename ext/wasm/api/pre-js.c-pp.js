@@ -31,6 +31,7 @@
    environments are supported and tested.
 */
 //#endif
+//#if not target:es6-bundler-friendly
 (function(Module){
   const sIMS =
         globalThis.sqlite3InitModuleState/*from extern-post-js.c-pp.js*/
@@ -146,4 +147,5 @@
   }.bind(sIMS);
 //#endif Module.instantiateWasm and not wasmfs
 })(Module);
+//#endif not target:es6-bundler-friendly
 /* END FILE: api/pre-js.js. */
