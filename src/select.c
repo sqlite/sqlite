@@ -2779,7 +2779,6 @@ static void generateWithRecursiveQuery(
   /* Store the results of the setup-query in Queue. */
   pSetup = pFirstRec->pPrior;
   pSetup->pNext = 0;
-  pSetup->selFlags |= SF_NoMerge;
   ExplainQueryPlan((pParse, 1, "SETUP"));
   rc = sqlite3Select(pParse, pSetup, &destQueue);
   pSetup->pNext = p;
@@ -3325,8 +3324,8 @@ void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p){
 ** Code an output subroutine for a coroutine implementation of a
 ** SELECT statement.
 **
-** The data to be output is contained in pIn->iSdst.  There are
-** pIn->nSdst columns to be output.  pDest is where the output should
+** The data to be output is contained in an array of pIn->nSdst registers
+** starting at register pIn->iSdst.  pDest is where the output should
 ** be sent.
 **
 ** regReturn is the number of the register holding the subroutine
@@ -3381,13 +3380,31 @@ static int generateOutputSubroutine(
   switch( pDest->eDest ){
     /* Store the result as data using a unique key.
     */
+    case SRT_Fifo:
+    case SRT_DistFifo:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);
+      int iParm = pDest->iSDParm;
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r1);
-      sqlite3VdbeAddOp2(v, OP_NewRowid, pDest->iSDParm, r2);
-      sqlite3VdbeAddOp3(v, OP_Insert, pDest->iSDParm, r1, r2);
+#ifndef SQLITE_OMIT_CTE
+      if( pDest->eDest==SRT_DistFifo ){
+        /* If the destination is DistFifo, then cursor (iParm+1) is open
+        ** on an ephemeral index. If the current row is already present
+        ** in the index, do not write it to the output. If not, add the
+        ** current row to the index and proceed with writing it to the
+        ** output table as well.  */
+        int addr = sqlite3VdbeCurrentAddr(v) + 4; /* After OP_Insert */
+        sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, addr, r1, 0); /* 20260120a */
+        VdbeCoverage(v);
+        sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm+1, r1,
+                             pIn->iSdst, pIn->nSdst);
+      }
+#endif
+      sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, r2);
+      sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, r2);
       sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+      /* The OP_Found at 20260120a jumps here, after the OP_Insert */
       sqlite3ReleaseTempReg(pParse, r2);
       sqlite3ReleaseTempReg(pParse, r1);
       break;
@@ -3438,6 +3455,55 @@ static int generateOutputSubroutine(
       sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       break;
     }
+
+#ifndef SQLITE_OMIT_CTE
+    /* Write the results into a priority queue that is order according to
+    ** pDest->pOrderBy (in pSO).  pDest->iSDParm (in iParm) is the cursor for an
+    ** index with pSO->nExpr+2 columns.  Build a key using pSO for the first
+    ** pSO->nExpr columns, then make sure all keys are unique by adding a
+    ** final OP_Sequence column.  The last column is the record as a blob.
+    */
+    case SRT_DistQueue:
+    case SRT_Queue: {
+      int nKey;
+      int r1, r2, r3, ii;
+      int addrTest = 0;
+      ExprList *pSO;
+      int iParm = pDest->iSDParm;
+      pSO = pDest->pOrderBy;
+      assert( pSO );
+      nKey = pSO->nExpr;
+      r1 = sqlite3GetTempReg(pParse);
+      r2 = sqlite3GetTempRange(pParse, nKey+2);
+      r3 = r2+nKey+1;
+      if( pDest->eDest==SRT_DistQueue ){
+        /* If the destination is DistQueue, then cursor (iParm+1) is open
+        ** on a second ephemeral index that holds all values every previously
+        ** added to the queue. */
+        addrTest = sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, 0,
+                                        pIn->iSdst, pIn->nSdst);
+        VdbeCoverage(v);
+      }
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r3);
+      if( pDest->eDest==SRT_DistQueue ){
+        sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r3);
+        sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+      }
+      for(ii=0; ii<nKey; ii++){
+        sqlite3VdbeAddOp2(v, OP_SCopy,
+                          pIn->iSdst + pSO->a[ii].u.x.iOrderByCol - 1,
+                          r2+ii);
+      }
+      sqlite3VdbeAddOp2(v, OP_Sequence, iParm, r2+nKey);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, r2, nKey+2, r1);
+      sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, r2, nKey+2);
+      if( addrTest ) sqlite3VdbeJumpHere(v, addrTest);
+      sqlite3ReleaseTempReg(pParse, r1);
+      sqlite3ReleaseTempRange(pParse, r2, nKey+2);
+      break;
+    }
+#endif /* SQLITE_OMIT_CTE */
+
 
     /* If none of the above, then the result destination must be
     ** SRT_Output.  This routine is never called with any other

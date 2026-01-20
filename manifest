@@ -1,5 +1,5 @@
-C Fix\sanother\stest\scase\sto\swork\swith\sunion-by-merge.
-D 2026-01-20T18:20:26.522
+C Strive\sto\suse\ssort-and-merge\sfor\scompounds\sin\sCTEs.
+D 2026-01-20T20:10:41.063
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -738,7 +738,7 @@ F src/printf.c b1b29b5e58e1530d5daeee5963d3c318d8ab2d7e38437580e28755753e0c1ded
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 47aa7fdc9ec4c19b103ac5e79d7887d30119b5675309facf5eed1118391c868b
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c db7af5c5e3cdcbf4ce443f5540cfa782e0fd4de5481af9814c188f05aef8193c
+F src/select.c a300ac348b149c82da7172c5e3f26db241da78bf49c845123d1e58857bb8962b
 F src/shell.c.in 3bc4c6aa962bdf950dc144c2138eb4bc734bf7e305f2ac42dbda5a83c4a4c660
 F src/sqlite.h.in 476f3efeb5dd26ad94dcbce262ca7eb9d042d797a92d624059c67ef37d5b3ab4
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 305ae331f5e791941c12b04b727656ac8d80f7c5cb6343277b979a456eb3b834
-R 1dcd216b82c87d29b591dc0d9d114a92
+P 8279c10e2465838010508f6018aa6fdb0e07ca3639f65e727a03a4222573ea57
+R 16b4bd1b72d09c171ba72aad5924a60e
 U drh
-Z 1a9bb683198c5bd95f9016dd1a04cf65
+Z a45ecc98b465af55dedd358b42f7fbbf
 # Remove this line to create a well-formed Fossil manifest.
