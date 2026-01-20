@@ -2779,6 +2779,7 @@ static void generateWithRecursiveQuery(
   /* Store the results of the setup-query in Queue. */
   pSetup = pFirstRec->pPrior;
   pSetup->pNext = 0;
+  pSetup->selFlags |= SF_NoMerge;
   ExplainQueryPlan((pParse, 1, "SETUP"));
   rc = sqlite3Select(pParse, pSetup, &destQueue);
   pSetup->pNext = p;
@@ -2983,7 +2984,7 @@ static int multiSelect(
   */
   if( p->pOrderBy ){
     return multiSelectOrderBy(pParse, p, pDest);
-  }else if( p->op!=TK_ALL && (p->selFlags & SF_NoopOrderBy)==0 ){
+  }else if( p->op!=TK_ALL && (p->selFlags & SF_NoMerge)==0 ){
     Expr *pOne = sqlite3ExprInt32(db, 1);
     p->pOrderBy = sqlite3ExprListAppend(pParse, 0, pOne);
     if( pParse->nErr ) goto multi_select_end;
@@ -2998,7 +2999,7 @@ static int multiSelect(
       ExplainQueryPlan((pParse, 1, "LEFT-MOST SUBQUERY"));
     }
 #endif
-    pPrior->selFlags |= SF_NoopOrderBy;
+    pPrior->selFlags |= SF_NoMerge;
 
     /* Generate code for the left and right SELECT statements.
     */
@@ -7759,7 +7760,7 @@ int sqlite3Select(
       p->pOrderBy = 0;
     }
     p->selFlags &= ~(u32)SF_Distinct;
-    p->selFlags |= SF_NoopOrderBy;
+    p->selFlags |= SF_NoopOrderBy|SF_NoMerge;
   }
   sqlite3SelectPrep(pParse, p, 0);
   if( pParse->nErr ){

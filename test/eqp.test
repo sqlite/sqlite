@@ -124,10 +124,10 @@ do_eqp_test 1.8 {
 } {
   QUERY PLAN
   |--CO-ROUTINE (subquery-xxxxxx)
-  |  `--COMPOUND QUERY
-  |     |--LEFT-MOST SUBQUERY
+  |  `--MERGE (UNION)
+  |     |--LEFT
   |     |  `--SCAN CONSTANT ROW
-  |     `--UNION USING TEMP B-TREE
+  |     `--RIGHT
   |        `--SCAN CONSTANT ROW
   |--SCAN (subquery-xxxxxx)
   `--SCAN t3
@@ -137,24 +137,26 @@ do_eqp_test 1.9 {
 } {
   QUERY PLAN
   |--CO-ROUTINE abc
-  |  `--COMPOUND QUERY
-  |     |--LEFT-MOST SUBQUERY
+  |  `--MERGE (EXCEPT)
+  |     |--LEFT
   |     |  `--SCAN CONSTANT ROW
-  |     `--EXCEPT USING TEMP B-TREE
-  |        `--SCAN t3
-  |--SCAN abc
-  `--SCAN t3
+  |     `--RIGHT
+  |        |--SCAN t3
+  |        `--USE TEMP B-TREE FOR ORDER BY
+  |--SCAN t3
+  `--SCAN abc
 }
 do_eqp_test 1.10 {
   SELECT * FROM t3 JOIN (SELECT 1 INTERSECT SELECT a FROM t3 LIMIT 17) AS abc
 } {
   QUERY PLAN
   |--CO-ROUTINE abc
-  |  `--COMPOUND QUERY
-  |     |--LEFT-MOST SUBQUERY
+  |  `--MERGE (INTERSECT)
+  |     |--LEFT
   |     |  `--SCAN CONSTANT ROW
-  |     `--INTERSECT USING TEMP B-TREE
-  |        `--SCAN t3
+  |     `--RIGHT
+  |        |--SCAN t3
+  |        `--USE TEMP B-TREE FOR ORDER BY
   |--SCAN abc
   `--SCAN t3
 }
@@ -455,10 +457,11 @@ do_eqp_test 4.3.1 {
   SELECT x FROM t1 UNION SELECT x FROM t2
 } {
   QUERY PLAN
-  `--COMPOUND QUERY
-     |--LEFT-MOST SUBQUERY
-     |  `--SCAN t1
-     `--UNION USING TEMP B-TREE
+  `--MERGE (UNION)
+     |--LEFT
+     |  |--SCAN t1
+     |  `--USE TEMP B-TREE FOR ORDER BY
+     `--RIGHT
         `--SCAN t2 USING COVERING INDEX t2i1
 }
 
@@ -466,13 +469,17 @@ do_eqp_test 4.3.2 {
   SELECT x FROM t1 UNION SELECT x FROM t2 UNION SELECT x FROM t1
 } {
   QUERY PLAN
-  `--COMPOUND QUERY
-     |--LEFT-MOST SUBQUERY
-     |  `--SCAN t1
-     |--UNION USING TEMP B-TREE
-     |  `--SCAN t2 USING COVERING INDEX t2i1
-     `--UNION USING TEMP B-TREE
-        `--SCAN t1
+  `--MERGE (UNION)
+     |--LEFT
+     |  `--MERGE (UNION)
+     |     |--LEFT
+     |     |  |--SCAN t1
+     |     |  `--USE TEMP B-TREE FOR ORDER BY
+     |     `--RIGHT
+     |        `--SCAN t2 USING COVERING INDEX t2i1
+     `--RIGHT
+        |--SCAN t1
+        `--USE TEMP B-TREE FOR ORDER BY
 }
 do_eqp_test 4.3.3 {
   SELECT x FROM t1 UNION SELECT x FROM t2 UNION SELECT x FROM t1 ORDER BY 1
