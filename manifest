@@ -1,5 +1,5 @@
-C Minor\sfixes.\s\sTests\sare\spassing\snow.
-D 2026-01-20T15:07:28.159
+C Fix\sanother\stest\scase\sto\swork\swith\sunion-by-merge.
+D 2026-01-20T18:20:26.522
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1593,7 +1593,7 @@ F test/select5.test 8afc5e5dcdebc2be54472e73ebd9cd1adef1225fd15d37a1c62f969159f3
 F test/select6.test da91e61d26b8dea4b61e4a862088dd6ab19998f7be22a16a5b0cfe806e597639
 F test/select7.test b825420da8a0b5722fdb77f3369f6396a3d198c46e8787eb26ff9425d4ac9d27
 F test/select8.test 8c8f5ae43894c891efc5755ed905467d1d67ad5d
-F test/select9.test f7586b207ce2304ab80dc93d3146469a28fd4403621dd3a82d06644563d3c812
+F test/select9.test 108ceff733f31698fef41eb9a0c332f150c54e98be534ee38019a19943f3f5ae
 F test/selectA.test 1da8ce3884c326e11d2855baffb76436b0d7e044404af8a2a70d1399a4ff7e29
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 38c530b0cc5728b793c3c11f52b52c70290d39822224acd39011c89c1853bd31
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e534af8a78f5458bd656f70eb9f68084c0ed3f97360f5a033fba3564849e970c
-R 1d72d9705c75984ccfe6b20a584dbf44
+P 305ae331f5e791941c12b04b727656ac8d80f7c5cb6343277b979a456eb3b834
+R 1dcd216b82c87d29b591dc0d9d114a92
 U drh
-Z 5c48ba141145c0386883674b17f13be2
+Z 1a9bb683198c5bd95f9016dd1a04cf65
 # Remove this line to create a well-formed Fossil manifest.
