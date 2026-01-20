@@ -27,8 +27,10 @@
 
    This SQLite JS build configuration is entirely unsupported! It has
    not been tested beyond the ability to compile it. It may not
-   load. It may not work properly. Only builds targeting browser
-   environments are supported and tested.
+   load. It may not work properly. Only builds _directly_ targeting
+   browser environments ("vanilla" JS and ESM modules) are supported
+   and tested. Builds which _indirectly_ target browsers (namely
+   bundler-friendly builds) are not supported deliverables.
 */
 //#endif
 //#if not target:es6-bundler-friendly
