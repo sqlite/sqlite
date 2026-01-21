@@ -1238,7 +1238,7 @@ static void unistrFunc(
     }
   }
   zOut[j] = 0;
-  sqlite3_result_text64(context, zOut, j, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, zOut, j, sqlite3_free, SQLITE_UTF8_ZT);
   return;
 
 unistr_error:
@@ -1331,7 +1331,7 @@ static void charFunc(
     }                                                    \
   }
   *zOut = 0;
-  sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, (char*)z, zOut-z,sqlite3_free,SQLITE_UTF8_ZT);
 }
 
 /*
@@ -1360,7 +1360,7 @@ static void hexFunc(
     }
     *z = 0;
     sqlite3_result_text64(context, zHex, (u64)(z-zHex),
-                          sqlite3_free, SQLITE_UTF8);
+                          sqlite3_free, SQLITE_UTF8_ZT);
   }
 }
 
@@ -1698,7 +1698,7 @@ static void concatFuncCore(
   }
   z[j] = 0;
   assert( j<=n );
-  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8_ZT);
 }
 
 /*
