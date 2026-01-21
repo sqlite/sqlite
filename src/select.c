@@ -3354,6 +3354,8 @@ static int generateOutputSubroutine(
   int iContinue;
   int addr;
 
+  assert( pIn->eDest==SRT_Coroutine );
+
   addr = sqlite3VdbeCurrentAddr(v);
   iContinue = sqlite3VdbeMakeLabel(pParse);
 
