@@ -7485,7 +7485,6 @@ static SQLITE_NOINLINE void existsToJoin(
         ExprSetProperty(pWhere, EP_IntValue);
         assert( p->pWhere!=0 );
         pSub->pSrc->a[0].fg.fromExists = 1;
-        pSub->pSrc->a[0].fg.jointype |= JT_CROSS;
         p->pSrc = sqlite3SrcListAppendList(pParse, p->pSrc, pSub->pSrc);
         if( pSubWhere ){
           p->pWhere = sqlite3PExpr(pParse, TK_AND, p->pWhere, pSubWhere);
