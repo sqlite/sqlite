@@ -5701,7 +5701,7 @@ int sqlite3BtreeIsEmpty(BtCursor *pCur, int *pRes){
 
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
-  if( pCur->eState==CURSOR_VALID ){
+  if( NEVER(pCur->eState==CURSOR_VALID) ){
     *pRes = 0;
     return SQLITE_OK;
   }
