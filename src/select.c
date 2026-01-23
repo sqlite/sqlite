@@ -3014,12 +3014,12 @@ static int multiSelect(
     if( addr ){
       sqlite3VdbeJumpHere(v, addr);
     }
-  }
 #ifndef SQLITE_OMIT_EXPLAIN
-  if( p->pNext==0 ){
-    ExplainQueryPlanPop(pParse);
-  }
+    if( p->pNext==0 ){
+      ExplainQueryPlanPop(pParse);
+    }
 #endif
+  }
   if( pParse->nErr ) goto multi_select_end;
  
   /* Compute collating sequences used by
@@ -3269,7 +3269,7 @@ static int generateOutputSubroutine(
       r1 = sqlite3GetTempReg(pParse);
       r2 = sqlite3GetTempRange(pParse, nKey+2);
       r3 = r2+nKey+1;
-      if( NEVER(pDest->eDest==SRT_DistQueue) ){
+      if( pDest->eDest==SRT_DistQueue ){
         /* If the destination is DistQueue, then cursor (iParm+1) is open
         ** on a second ephemeral index that holds all values every previously
         ** added to the queue. */
