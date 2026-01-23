@@ -1254,6 +1254,84 @@ int sqlite3VdbeMemSetStr(
   return SQLITE_OK;
 }
 
+/* Like sqlite3VdbeMemSetStr() except:
+**
+**   enc is always SQLITE_UTF8
+**   pMem->db is always non-NULL
+*/
+int sqlite3VdbeMemSetText(
+  Mem *pMem,          /* Memory cell to set to string value */
+  const char *z,      /* String pointer */
+  i64 n,              /* Bytes in string, or negative */
+  void (*xDel)(void*) /* Destructor function */
+){
+  i64 nByte = n;      /* New value for pMem->n */
+  u16 flags;
+
+  assert( pMem!=0 );
+  assert( pMem->db!=0 );
+  assert( sqlite3_mutex_held(pMem->db->mutex) );
+  assert( !sqlite3VdbeMemIsRowSet(pMem) );
+
+  /* If z is a NULL pointer, set pMem to contain an SQL NULL. */
+  if( !z ){
+    sqlite3VdbeMemSetNull(pMem);
+    return SQLITE_OK;
+  }
+
+  if( nByte<0 ){
+    nByte = strlen(z);
+    flags = MEM_Str|MEM_Term;
+  }else{
+    flags = MEM_Str;
+  }
+  if( nByte>(i64)pMem->db->aLimit[SQLITE_LIMIT_LENGTH] ){
+    if( xDel && xDel!=SQLITE_TRANSIENT ){
+      if( xDel==SQLITE_DYNAMIC ){
+        sqlite3DbFree(pMem->db, (void*)z);
+      }else{
+        xDel((void*)z);
+      }
+    }
+    sqlite3VdbeMemSetNull(pMem);
+    return sqlite3ErrorToParser(pMem->db, SQLITE_TOOBIG);
+  }
+
+  /* The following block sets the new values of Mem.z and Mem.xDel. It
+  ** also sets a flag in local variable "flags" to indicate the memory
+  ** management (one of MEM_Dyn or MEM_Static).
+  */
+  if( xDel==SQLITE_TRANSIENT ){
+    i64 nAlloc = nByte + 1;
+    testcase( nAlloc==31 );
+    testcase( nAlloc==32 );
+    if( sqlite3VdbeMemClearAndResize(pMem, (int)MAX(nAlloc,32)) ){
+      return SQLITE_NOMEM_BKPT;
+    }
+    assert( pMem->z!=0 );
+    memcpy(pMem->z, z, nByte);
+    pMem->z[nByte] = 0;
+  }else{
+    sqlite3VdbeMemRelease(pMem);
+    pMem->z = (char *)z;
+    if( xDel==SQLITE_DYNAMIC ){
+      pMem->zMalloc = pMem->z;
+      pMem->szMalloc = sqlite3DbMallocSize(pMem->db, pMem->zMalloc);
+      pMem->xDel = 0;
+    }else if( xDel==SQLITE_STATIC ){
+      pMem->xDel = xDel;
+      flags |= MEM_Static;
+    }else{
+      pMem->xDel = xDel;
+      flags |= MEM_Dyn;
+    }
+  }
+  pMem->flags = flags;
+  pMem->n = (int)(nByte & 0x7fffffff);
+  pMem->enc = SQLITE_UTF8;
+  return SQLITE_OK;
+}
+
 /*
 ** Move data out of a btree key or data field and into a Mem structure.
 ** The data is payload from the entry that pCur is currently pointing

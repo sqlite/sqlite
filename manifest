@@ -1,5 +1,5 @@
-C Enhance\sthe\s[/info/e33da6d5dc964db8|EXISTS-to-JOIN\soptimization]\sso\sthat\nthe\sinserted\sJOIN\sterms\sare\snot\srequired\sto\sbe\son\sthe\sinner-most\sloops,\nas\slong\sas\sall\sdependencies\sfor\sthe\sEXISTS-to-JOIN\sloops\sare\sin\souter\nloops.\s\sThis\saddresses\sthe\sperformance\sconcern\sof\n[forum:/forumpost/2026-01-21T19:49:04z|forum\spost\s2026-01-21T19:49:04z].\nTest\scases\sin\sTH3.
-D 2026-01-22T19:02:32.952
+C Add\sthe\sSQLITE_UTF8_ZT\svalue\swhich\scan\sbe\sthe\sencoding\sargument\sto\nsqlite3_result_text64()\sor\ssqlite3_bind_test64()\sto\sindicate\sthat\sthe\nargument\sis\sUTF-8\stext\sthat\sis\szero-terminated.
+D 2026-01-23T00:55:36.962
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -692,7 +692,7 @@ F src/delete.c e020dde34838369e2f0eff75f25c44a4e56a41262593f7c48d1223689d674e4d
 F src/expr.c 252e62742f5bb01517377c93057b6040ab954034ec3dde4d6fc583565d859a9c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c c065da737307a29e4d240ac727758dbf4102cb3218a1f651eb689b6a6fa12531
-F src/func.c 0b802107498048d3dcac0b757720bcb8506507ce02159e213ab8161458eb293b
+F src/func.c efbcfe7cb7fc92fe5299c9aaa141075eb60d2108253e99bc235384ed6a90d937
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -740,7 +740,7 @@ F src/resolve.c 47aa7fdc9ec4c19b103ac5e79d7887d30119b5675309facf5eed1118391c868b
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c f6ab7ed61778798626c2655d67f43506545d75becb1736c1f0dbc6a2830bf644
 F src/shell.c.in e8818572acd50464bc00426fe0d755e98239f73d531437c3dc7721d1fecb1231
-F src/sqlite.h.in 476f3efeb5dd26ad94dcbce262ca7eb9d042d797a92d624059c67ef37d5b3ab4
+F src/sqlite.h.in d463dcdd67d4865991cd62dc8d3f678086b38365593861f77c09c3401551d59f
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h f590cd8cb4c36fc727632c9b5fbbafc85f7efe2c6890f9958d7e711dc26ec01e
 F src/sqliteInt.h af67bc95fa6b66cd3c7f3d18d2d040ad386e4cbb02965ee318cc721ee9d5fa45
@@ -807,11 +807,11 @@ F src/util.c 36fb1150062957280777655976f3f9a75db236cb8207a0770ceae8d5ec17fcd3
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c b44c366e83412d3b8c190feb1f029b7d02e1bd69252a57b32f195107f0d03964
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
-F src/vdbeInt.h 2aaeb6df2938b181b4700a9328688a3986f2bba71e8b96f6a80671316618fa49
-F src/vdbeapi.c c7c8477fa2d4fca015a0b1d555f771153ebf088c8e4b7ca878d31bd974cf0735
-F src/vdbeaux.c 908d8a191aed444b2e4c920159249127f3ff67b94c56a16fad1dfdf9c7488f20
+F src/vdbeInt.h c45d0195dad0a9099132109e3b63697f4f119baddeb391c36ca226cee530a485
+F src/vdbeapi.c cf69a8a230a271f0935f2e819828667e80f186a4cfa0e0002517ad017b3bd249
+F src/vdbeaux.c 396d38a62a357b807eabae0cae441fc89d2767a57ab08026b7072bf7aa2dd00c
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
-F src/vdbemem.c fdd023e357ad3129e1dcae46df47fccceeb8bd1ffa6c5d43a1e3f04460bb59b7
+F src/vdbemem.c aeaef3bb000fd2599e9b0741a45fe9e306606ae9b06b3eb573d54847cec9847d
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
 F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b41
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
@@ -2193,8 +2193,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 756484fcaa7efed0691814f3affeb2449d3301c5c764530f2ec8e290caea567f
-R eaa1f3917dc945edf4c3fa8d74ac8c4b
+P 298d5c8fa6207afb6cdcca3b312a1eeddda0edeb6d840aa5476a7195047a2158 0dd1633d34a0c6a6d56e32ca3b05bc0aa55e47097f600d1fc9f00022a53681b3
+R 1c96ab7e93f80b0c39a48b13383397ea
+T +closed 0dd1633d34a0c6a6d56e32ca3b05bc0aa55e47097f600d1fc9f00022a53681b3
 U drh
-Z 48ecc3b553956c6b2d376be4e206c0f9
+Z af381fe3ee4b322b4cf005f5df07c71c
 # Remove this line to create a well-formed Fossil manifest.
