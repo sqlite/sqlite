@@ -3260,8 +3260,14 @@ static int shell_exec(
         }
         sqlite3_reset(pStmt);
         spec.eStyle = QRF_STYLE_Auto;
-        sqlite3_stmt_explain(pStmt, 2-(pArg->mode.autoEQP>=AUTOEQP_full));
+        sqlite3_stmt_explain(pStmt, 2);
         sqlite3_format_query_result(pStmt, &spec, 0);
+        if( pArg->mode.autoEQP>=AUTOEQP_full ){
+          sqlite3_reset(pStmt);
+          sqlite3_stmt_explain(pStmt, 1);
+          sqlite3_format_query_result(pStmt, &spec, 0);
+        }
+
         if( pArg->mode.autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
         }
@@ -4244,7 +4250,9 @@ static int isScriptFile(const char *z, int bLeaveUninit){
   sqlite3_int64 sz = fileSize(z);
   if( sz<=0 ) return 0;
   if( (sz%512)==0 ){
-    int rc = isDatabaseFile(z, SQLITE_OPEN_READONLY);
+    int rc;
+    sqlite3_initialize();
+    rc = isDatabaseFile(z, SQLITE_OPEN_READONLY);
     if( bLeaveUninit ){
       sqlite3_shutdown();
     }

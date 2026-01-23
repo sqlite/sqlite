@@ -4880,6 +4880,17 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
       if( pItem->fg.jointype & JT_LTORJ ) hasRightJoin = 1;
       mPrereq |= mPrior;
       bFirstPastRJ = (pItem->fg.jointype & JT_RIGHT)!=0;
+    }else if( pItem->fg.fromExists ){
+      /* joins that result from the EXISTS-to-JOIN optimization should not
+      ** be moved to the left of any of their dependencies */
+      WhereClause *pWC = &pWInfo->sWC;
+      WhereTerm *pTerm;
+      int i;
+      for(i=pWC->nBase, pTerm=pWC->a; i>0; i--, pTerm++){
+        if( (pNew->maskSelf & pTerm->prereqAll)!=0 ){
+          mPrereq |= (pTerm->prereqAll & (pNew->maskSelf-1));
+        }
+      }
     }else if( !hasRightJoin ){
       mPrereq = 0;
     }
@@ -7432,14 +7443,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
     }
-    if( pTabList->a[pLevel->iFrom].fg.fromExists && i==pWInfo->nLevel-1 ){
-      /* If the EXISTS-to-JOIN optimization was applied, then the EXISTS
-      ** loop(s) will be the inner-most loops of the join. There might be
-      ** multiple EXISTS loops, but they will all be nested, and the join
-      ** order will not have been changed by the query planner.  If the
-      ** inner-most EXISTS loop sees a single successful row, it should
-      ** break out of *all* EXISTS loops.  But only the inner-most of the
-      ** nested EXISTS loops should do this breakout. */
+    if( pTabList->a[pLevel->iFrom].fg.fromExists
+     && (i==pWInfo->nLevel-1
+           || pTabList->a[pWInfo->a[i+1].iFrom].fg.fromExists==0)
+    ){
+      /* This is an EXISTS-to-JOIN optimization which is either the
+      ** inner-most loop, or the inner-most of a group of nested
+      ** EXISTS-to-JOIN optimization loops.  If this loop sees a successful
+      ** row, it should break out of itself as well as other EXISTS-to-JOIN
+      ** loops in which is is directly nested. */
       int nOuter = 0; /* Nr of outer EXISTS that this one is nested within */
       while( nOuter<i ){
         if( !pTabList->a[pLevel[-nOuter-1].iFrom].fg.fromExists ) break;
@@ -7447,7 +7459,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
       testcase( nOuter>0 );
       sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel[-nOuter].addrBrk);
-      VdbeComment((v, "EXISTS break"));
+      if( nOuter ){
+        VdbeComment((v, "EXISTS break %d..%d", i-nOuter, i));
+      }else{
+        VdbeComment((v, "EXISTS break %d", i));
+      }
     }
     sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     if( pLevel->op!=OP_Noop ){

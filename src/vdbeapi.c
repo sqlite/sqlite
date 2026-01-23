@@ -392,7 +392,15 @@ static void setResultStrOrError(
   void (*xDel)(void*)     /* Destructor function */
 ){
   Mem *pOut = pCtx->pOut;
-  int rc = sqlite3VdbeMemSetStr(pOut, z, n, enc, xDel);
+  int rc;
+  if( enc==SQLITE_UTF8 ){
+    rc = sqlite3VdbeMemSetText(pOut, z, n, xDel);
+  }else if( enc==SQLITE_UTF8_ZT ){
+    rc = sqlite3VdbeMemSetText(pOut, z, n, xDel);
+    pOut->flags |= MEM_Term;
+  }else{
+    rc = sqlite3VdbeMemSetStr(pOut, z, n, enc, xDel);
+  }
   if( rc ){
     if( rc==SQLITE_TOOBIG ){
       sqlite3_result_error_toobig(pCtx);
@@ -585,7 +593,7 @@ void sqlite3_result_text64(
 #endif
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   assert( xDel!=SQLITE_DYNAMIC );
-  if( enc!=SQLITE_UTF8 ){
+  if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF8_ZT ){
     if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
     n &= ~(u64)1;
   }
@@ -1694,13 +1702,17 @@ static int bindText(
     assert( p!=0 && p->aVar!=0 && i>0 && i<=p->nVar ); /* tag-20240917-01 */
     if( zData!=0 ){
       pVar = &p->aVar[i-1];
-      rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
-      if( rc==SQLITE_OK ){
-        if( encoding==0 ){
-          pVar->enc = ENC(p->db);
-        }else{
-          rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
-        }
+      if( encoding==SQLITE_UTF8 ){
+        rc = sqlite3VdbeMemSetText(pVar, zData, nData, xDel);
+      }else if( encoding==SQLITE_UTF8_ZT ){
+        rc = sqlite3VdbeMemSetText(pVar, zData, nData, xDel);
+        pVar->flags |= MEM_Term;
+      }else{
+        rc = sqlite3VdbeMemSetStr(pVar, zData, nData, encoding, xDel);
+        if( encoding==0 ) pVar->enc = ENC(p->db);
+      }
+      if( rc==SQLITE_OK && encoding!=0 ){
+        rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
       }
       if( rc ){
         sqlite3Error(p->db, rc);
@@ -1812,7 +1824,7 @@ int sqlite3_bind_text64(
   unsigned char enc
 ){
   assert( xDel!=SQLITE_DYNAMIC );
-  if( enc!=SQLITE_UTF8 ){
+  if( enc!=SQLITE_UTF8 && enc!=SQLITE_UTF8_ZT ){
     if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
     nData &= ~(u64)1;
   }
