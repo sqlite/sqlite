@@ -3485,6 +3485,7 @@ static int whereLoopAddBtreeIndex(
     pNew->rRun += nInMul + nIn;
     pNew->nOut += nInMul + nIn;
     whereLoopOutputAdjust(pBuilder->pWC, pNew, rSize);
+    if( pSrc->fg.fromExists ) pNew->nOut = 0;
     rc = whereLoopInsert(pBuilder, pNew);
 
     if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
@@ -4081,6 +4082,8 @@ static int whereLoopAddBtree(
       if( pSrc->fg.isSubquery ){
         if( pSrc->fg.viaCoroutine ) pNew->wsFlags |= WHERE_COROUTINE;
         pNew->u.btree.pOrderBy = pSrc->u4.pSubq->pSelect->pOrderBy;
+      }else if( pSrc->fg.fromExists ){
+        pNew->nOut = 0;
       }
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
@@ -4183,6 +4186,7 @@ static int whereLoopAddBtree(
           ** positioned to the correct row during the right-join no-match
           ** loop. */
         }else{
+          if( pSrc->fg.fromExists ) pNew->nOut = 0;
           rc = whereLoopInsert(pBuilder, pNew);
         }
         pNew->nOut = rSize;
