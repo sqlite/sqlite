@@ -2998,7 +2998,6 @@ static int multiSelect(
       ExplainQueryPlan((pParse, 1, "LEFT-MOST SUBQUERY"));
     }
 #endif
-    pPrior->selFlags |= SF_NoMerge;
 
     /* Generate code for the left and right SELECT statements.
     */
@@ -3009,9 +3008,10 @@ static int multiSelect(
         assert( !pPrior->pLimit );
         pPrior->iLimit = p->iLimit;
         pPrior->iOffset = p->iOffset;
-        pPrior->pLimit = p->pLimit;
+        pPrior->pLimit = sqlite3ExprDup(db, p->pLimit, 0);
         TREETRACE(0x200, pParse, p, ("multiSelect UNION ALL left...\n"));
         rc = sqlite3Select(pParse, pPrior, &dest);
+        sqlite3ExprDelete(db, pPrior->pLimit);
         pPrior->pLimit = 0;
         if( rc ){
           goto multi_select_end;
@@ -3377,18 +3377,31 @@ static int generateOutputSubroutine(
   */
   codeOffset(v, p->iOffset, iContinue);
 
-  assert( pDest->eDest!=SRT_Exists );
-  assert( pDest->eDest!=SRT_Table );
   switch( pDest->eDest ){
     /* Store the result as data using a unique key.
     */
     case SRT_Fifo:
     case SRT_DistFifo:
+    case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);
       int iParm = pDest->iSDParm;
+      testcase( pDest->eDest==SRT_Table );
+      testcase( pDest->eDest==SRT_EphemTab );
+      testcase( pDest->eDest==SRT_Fifo );
+      testcase( pDest->eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r1);
+#if !defined(SQLITE_ENABLE_NULL_TRIM) && defined(SQLITE_DEBUG)
+      /* A destination of SRT_Table and a non-zero iSDParm2 parameter means
+      ** that this is an "UPDATE ... FROM" on a virtual table or view. In this
+      ** case set the p5 parameter of the OP_MakeRecord to OPFLAG_NOCHNG_MAGIC.
+      ** This does not affect operation in any way - it just allows MakeRecord
+      ** to process OPFLAG_NOCHANGE values without an assert() failing. */
+      if( pDest->eDest==SRT_Table && pDest->iSDParm2 ){
+        sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);
+      }
+#endif
 #ifndef SQLITE_OMIT_CTE
       if( pDest->eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -3409,6 +3422,14 @@ static int generateOutputSubroutine(
       /* The OP_Found at 20260120a jumps here, after the OP_Insert */
       sqlite3ReleaseTempReg(pParse, r2);
       sqlite3ReleaseTempReg(pParse, r1);
+      break;
+    }
+
+    /* If any row exist in the result set, record that fact and abort.
+    */
+    case SRT_Exists: {
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, pDest->iSDParm);
+      /* The LIMIT clause will terminate the loop for us */
       break;
     }
 
@@ -3506,18 +3527,22 @@ static int generateOutputSubroutine(
     }
 #endif /* SQLITE_OMIT_CTE */
 
-
-    /* If none of the above, then the result destination must be
-    ** SRT_Output.  This routine is never called with any other
-    ** destination other than the ones handled above or SRT_Output.
-    **
+    /*
     ** For SRT_Output, results are stored in a sequence of registers. 
     ** Then the OP_ResultRow opcode is used to cause sqlite3_step() to
     ** return the next row of result.
     */
-    default: {
-      assert( pDest->eDest==SRT_Output );
+    case SRT_Output: {
       sqlite3VdbeAddOp2(v, OP_ResultRow, pIn->iSdst, pIn->nSdst);
+      break;
+    }
+
+
+    /* If none of the above, then the result destination must be
+    ** SRT_Discard.  Ignore the results.
+    */
+    default: {
+      assert( pDest->eDest==SRT_Discard );
       break;
     }
   }
@@ -7827,7 +7852,7 @@ int sqlite3Select(
       p->pOrderBy = 0;
     }
     p->selFlags &= ~(u32)SF_Distinct;
-    p->selFlags |= SF_NoopOrderBy|SF_NoMerge;
+    p->selFlags |= SF_NoopOrderBy;
   }
   sqlite3SelectPrep(pParse, p, 0);
   if( pParse->nErr ){
