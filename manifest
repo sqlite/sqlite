@@ -1,5 +1,5 @@
-C Expound\supon\sthe\smeaning\sof\sSQLITE_UTF8_ZT,\sin\san\sattempt\sto\shead\soff\nconfusion.
-D 2026-01-24T12:19:00.053
+C Assert()\sstatements\sadded\sto\ssqlite3_result_text64()\sand\nsqlite3_bind_text64()\sto\sdetect\smisuse\sof\sSQLITE_UTF8_ZT\sthat\scan\nresult\sin\sundefined\sbehavior.
+D 2026-01-24T17:18:56.431
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -808,7 +808,7 @@ F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c b44c366e83412d3b8c190feb1f029b7d02e1bd69252a57b32f195107f0d03964
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
 F src/vdbeInt.h c45d0195dad0a9099132109e3b63697f4f119baddeb391c36ca226cee530a485
-F src/vdbeapi.c cf69a8a230a271f0935f2e819828667e80f186a4cfa0e0002517ad017b3bd249
+F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
 F src/vdbeaux.c 396d38a62a357b807eabae0cae441fc89d2767a57ab08026b7072bf7aa2dd00c
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c aeaef3bb000fd2599e9b0741a45fe9e306606ae9b06b3eb573d54847cec9847d
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d931831ce9d2dea3730f33afc046e159ad886842114831a6bbe56d5b746ab0af
-R b6310b010b0cd1549f829e25e9f96b16
+P 9a74d0c3e78eef9a32775f445ecb3fae76e2f3886b9173a16971d7c7506967fe
+R c79a46eab177fdedae3e814f563b3681
 U drh
-Z 253e0d47080fbade0ed407fedf0fe786
+Z c308db82b83854e9c2eb927c4f63f8d7
 # Remove this line to create a well-formed Fossil manifest.

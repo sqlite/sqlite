@@ -396,6 +396,14 @@ static void setResultStrOrError(
   if( enc==SQLITE_UTF8 ){
     rc = sqlite3VdbeMemSetText(pOut, z, n, xDel);
   }else if( enc==SQLITE_UTF8_ZT ){
+    /* It is usually considered improper to assert() on an input. However,
+    ** the following assert() is checking for inputs that are documented
+    ** to result in undefined behavior. */
+    assert( z==0
+         || n<0 
+         || n>pOut->db->aLimit[SQLITE_LIMIT_LENGTH]
+         || z[n]==0
+    );
     rc = sqlite3VdbeMemSetText(pOut, z, n, xDel);
     pOut->flags |= MEM_Term;
   }else{
@@ -1705,6 +1713,14 @@ static int bindText(
       if( encoding==SQLITE_UTF8 ){
         rc = sqlite3VdbeMemSetText(pVar, zData, nData, xDel);
       }else if( encoding==SQLITE_UTF8_ZT ){
+        /* It is usually consider improper to assert() on an input.
+        ** However, the following assert() is checking for inputs
+        ** that are documented to result in undefined behavior. */
+        assert( zData==0
+             || nData<0 
+             || nData>pVar->db->aLimit[SQLITE_LIMIT_LENGTH]
+             || ((u8*)zData)[nData]==0
+        );
         rc = sqlite3VdbeMemSetText(pVar, zData, nData, xDel);
         pVar->flags |= MEM_Term;
       }else{
