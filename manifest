@@ -1,5 +1,5 @@
-C In\sthe\scost\smetrics\sof\sthe\squery\splanner,\sthe\sestimated\snumber\sof\soutput\srows\nfrom\san\sEXISTS-to-JOIN\sloop\sshould\snot\sbe\smore\sthan\s1.\n[forum:/forumpost/989880d0aa|Forum\spost\s989880d0aa].
-D 2026-01-23T20:46:54.560
+C Expose\sSQLITE_UTF_ZT\sto\sWASM\sfor\scompleteness's\ssake,\sbut\sthe\sWASM\sbuild\sdoes\snot\sexpose\ssqlite3_bind_text64()\sor\ssqlite3_result_text64()\sbecause\sit\sonly\ssupports\sUTF8\sencoding,\sso\sZT\sdoes\snot\scurrently\shave\sa\sgenuine\suse\sthere.
+D 2026-01-24T01:17:06.334
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -607,7 +607,7 @@ F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 27592749a2967e472533bebc485358bcf97a4e1
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 1575ea6bbcf2da1e6df6892c17521a0c1c1c199a672e9090176ea0b88de48bd9
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 88ce2078267a2d1af57525a32d896295f4a8db7664de0e17e82dc9ff006ed8d3
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
-F ext/wasm/api/sqlite3-wasm.c 6d69ca57b772a5a194b3acf879ef39b865f634c5bc92718c6ef56cb4cd7dc0b2
+F ext/wasm/api/sqlite3-wasm.c 45bb20e19b245136711f9b78584371233975811b6560c29ed9b650e225417e29
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js aa9715f661fb700459a5a6cb1c32a4d6a770723b47aa9ac0e16c2cf87d622a66
 F ext/wasm/api/sqlite3-worker1.c-pp.js bd0655687090e3b1657268a6a9cacde1ea2a734079d194e16dbbed9083e51b38
 F ext/wasm/c-pp-lite.c f38254fba42561728c2e4764a7ba8d68700091e7c2f4418112868c0daba16783
@@ -650,7 +650,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.c-pp.html d0032241d0b24d996cf1c4dd0dde364189693af9b5c986e48af7d3d720fcd244
 F ext/wasm/tester1.c-pp.html 52d88fe2c6f21a046030a36410b4839b632f4424028197a45a3d5669ea724ddb
-F ext/wasm/tester1.c-pp.js 7bc90f6e3d133c735fad05d5409915bd1389f4b5d6ce7c5daca33856669e706b
+F ext/wasm/tester1.c-pp.js 6b946cd6d4da130dbae4a401057716d27117ca02cad2ea8c29ae9c46c675d618
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P cef0eed8054f3f760cf3142a897c7eead20869157da8b2a0ee9443733eecd371
-R 5f6c8ce43cf8c4127278372ef4296a91
-U drh
-Z 0efb18be63458c3b5b0479d61ab25568
+P fc4e93a381dfb99dddfd2ef001bf56b92ab89ee3c7044c7ce13ad32f38b3f418
+R a9cdfbbcb1ff104986a8b31da02f4969
+U stephan
+Z ee2348f029e196ec88a93e6054116c63
 # Remove this line to create a well-formed Fossil manifest.
