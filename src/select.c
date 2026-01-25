@@ -4631,7 +4631,7 @@ static int flattenSubquery(
     }
     pSubitem->fg.jointype |= jointype;
  
-    /* Now begin substituting subquery result set expressions for
+    /* Begin substituting subquery result set expressions for
     ** references to the iParent in the outer query.
     **
     ** Example:
@@ -4643,7 +4643,7 @@ static int flattenSubquery(
     ** We look at every expression in the outer query and every place we see
     ** "a" we substitute "x*3" and every place we see "b" we substitute "y+10".
     */
-    if( pSub->pOrderBy && (pParent->selFlags & SF_NoopOrderBy)==0 ){
+    if( pSub->pOrderBy ){
       /* At this point, any non-zero iOrderByCol values indicate that the
       ** ORDER BY column expression is identical to the iOrderByCol'th
       ** expression returned by SELECT statement pSub. Since these values
@@ -4651,9 +4651,9 @@ static int flattenSubquery(
       ** zero them before transferring the ORDER BY clause.
       **
       ** Not doing this may cause an error if a subsequent call to this
-      ** function attempts to flatten a compound sub-query into pParent
-      ** (the only way this can happen is if the compound sub-query is
-      ** currently part of pSub->pSrc). See ticket [d11a6e908f].  */
+      ** function attempts to flatten a compound sub-query into pParent.
+      ** See ticket [d11a6e908f].
+      */
       ExprList *pOrderBy = pSub->pOrderBy;
       for(i=0; i<pOrderBy->nExpr; i++){
         pOrderBy->a[i].u.x.iOrderByCol = 0;
@@ -7626,7 +7626,6 @@ int sqlite3Select(
       p->pOrderBy = 0;
     }
     p->selFlags &= ~(u32)SF_Distinct;
-    p->selFlags |= SF_NoopOrderBy;
   }
   sqlite3SelectPrep(pParse, p, 0);
   if( pParse->nErr ){
