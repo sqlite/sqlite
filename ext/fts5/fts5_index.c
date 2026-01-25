@@ -5416,14 +5416,14 @@ static void fts5DoSecureDelete(
       nPrefix = MIN(nPrefix, nPrefix2);
       nSuffix = (nPrefix2 + nSuffix2) - nPrefix;
 
-      if( (iKeyOff+nSuffix)>iPgIdx || (iNextOff+nSuffix2)>iPgIdx ){
+      if( (iKeyOff+nSuffix)>(u64)iPgIdx || (iNextOff+nSuffix2)>(u64)iPgIdx ){
         FTS5_CORRUPT_IDX(p);
       }else{
         if( iKey!=1 ){
           iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
         }
         iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
-        if( nPrefix2>pSeg->term.n ){
+        if( nPrefix2>(u64)pSeg->term.n ){
           FTS5_CORRUPT_IDX(p);
         }else if( nPrefix2>nPrefix ){
           memcpy(&aPg[iOff], &pSeg->term.p[nPrefix], nPrefix2-nPrefix);

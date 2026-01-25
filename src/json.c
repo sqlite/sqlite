@@ -3453,7 +3453,7 @@ static char *jsonBadPathError(
   int rc                    /* Maybe JSON_LOOKUP_NOTARRAY */
 ){
   char *zMsg;
-  if( rc==JSON_LOOKUP_NOTARRAY ){
+  if( rc==(int)JSON_LOOKUP_NOTARRAY ){
     zMsg = sqlite3_mprintf("not an array element: %Q", zPath);
   }else{
     zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
