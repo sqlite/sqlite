@@ -151,7 +151,6 @@ Select *sqlite3SelectNew(
   pNew->iLimit = 0;
   pNew->iOffset = 0;
   pNew->selId = ++pParse->nSelect;
-  pNew->addrOpenEphm = -1;
   pNew->nSelectRow = 0;
   if( pSrc==0 ) pSrc = sqlite3DbMallocZero(pParse->db, SZ_SRCLIST_1);
   pNew->pSrc = pSrc;
@@ -2729,8 +2728,28 @@ static void generateWithRecursiveQuery(
   }
   VdbeComment((v, "Queue table"));
   if( iDistinct ){
-    p->addrOpenEphm = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iDistinct, 0);
-    p->selFlags |= SF_UsesEphemeral;
+    /* Generate an ephemeral table used to enforce distinctness on the
+    ** output of the recursive part of the CTE.
+    */
+    KeyInfo *pKeyInfo;            /* Collating sequence for the result set */
+    CollSeq **apColl;             /* For looping through pKeyInfo->aColl[] */
+
+    assert( p->pNext==0 );
+    assert( p->pEList!=0 );
+    nCol = p->pEList->nExpr;
+    pKeyInfo = sqlite3KeyInfoAlloc(pParse->db, nCol, 1);
+    if( !pKeyInfo ){
+      rc = SQLITE_NOMEM_BKPT;
+      goto end_of_recursive_query;
+    }
+    for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
+      *apColl = multiSelectCollSeq(pParse, p, i);
+      if( 0==*apColl ){
+        *apColl = pParse->db->pDfltColl;
+      }
+    }
+    sqlite3VdbeAddOp4(v, OP_OpenEphemeral, iDistinct, nCol, 0,
+                         (void*)pKeyInfo, P4_KEYINFO);
   }
 
   /* Detach the ORDER BY clause from the compound SELECT */
@@ -2954,9 +2973,6 @@ static int multiSelect(
     generateWithRecursiveQuery(pParse, p, &dest);
   }else
 #endif
-
-  /* Compound SELECTs that have an ORDER BY clause are handled separately.
-  */
   if( p->pOrderBy ){
     /* If the compound has an ORDER BY clause, then always use the merge
     ** algorithm. */
@@ -3027,50 +3043,6 @@ static int multiSelect(
       ExplainQueryPlanPop(pParse);
     }
 #endif
-  }
-  if( pParse->nErr ) goto multi_select_end;
- 
-  /* Compute collating sequences used by
-  ** temporary table needed to implement the compound select.
-  ** Attach the KeyInfo structure to all temporary tables.
-  **
-  ** This section is run by the right-most SELECT statement only.
-  ** SELECT statements to the left always skip this part.  The right-most
-  ** SELECT might also skip this part if it has no ORDER BY clause and
-  ** no temp tables are required.
-  */
-  if( p->selFlags & SF_UsesEphemeral ){
-    int i;                        /* Loop counter */
-    KeyInfo *pKeyInfo;            /* Collating sequence for the result set */
-    Select *pLoop;                /* For looping through SELECT statements */
-    CollSeq **apColl;             /* For looping through pKeyInfo->aColl[] */
-    int nCol;                     /* Number of columns in result set */
-
-    assert( p->pNext==0 );
-    assert( p->pEList!=0 );
-    nCol = p->pEList->nExpr;
-    pKeyInfo = sqlite3KeyInfoAlloc(db, nCol, 1);
-    if( !pKeyInfo ){
-      rc = SQLITE_NOMEM_BKPT;
-      goto multi_select_end;
-    }
-    for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
-      *apColl = multiSelectCollSeq(pParse, p, i);
-      if( 0==*apColl ){
-        *apColl = db->pDfltColl;
-      }
-    }
-
-    for(pLoop=p; pLoop; pLoop=pLoop->pPrior){
-      int addr = pLoop->addrOpenEphm;
-      if( addr>=0 ){
-        sqlite3VdbeChangeP2(v, addr, nCol);
-        sqlite3VdbeChangeP4(v, addr, (char*)sqlite3KeyInfoRef(pKeyInfo),
-                            P4_KEYINFO);
-        pLoop->addrOpenEphm = -1;
-      }
-    }
-    sqlite3KeyInfoUnref(pKeyInfo);
   }
 
 multi_select_end:

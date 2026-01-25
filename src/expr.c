@@ -1978,8 +1978,7 @@ Select *sqlite3SelectDup(sqlite3 *db, const Select *pDup, int flags){
     pNew->pLimit = sqlite3ExprDup(db, p->pLimit, flags);
     pNew->iLimit = 0;
     pNew->iOffset = 0;
-    pNew->selFlags = p->selFlags & ~(u32)SF_UsesEphemeral;
-    pNew->addrOpenEphm = -1;
+    pNew->selFlags = p->selFlags;
     pNew->nSelectRow = p->nSelectRow;
     pNew->pWith = sqlite3WithDup(db, p->pWith);
 #ifndef SQLITE_OMIT_WINDOWFUNC

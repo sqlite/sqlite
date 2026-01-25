@@ -3585,16 +3585,6 @@ struct Upsert {
 /*
 ** An instance of the following structure contains all information
 ** needed to generate code for a single SELECT statement.
-**
-** See the header comment on the computeLimitRegisters() routine for a
-** detailed description of the meaning of the iLimit and iOffset fields.
-**
-** addrOpenEphm entries contain the address of an OP_OpenEphemeral opcode.
-** This address must be stored so that we can go back and fill in
-** the P4_KEYINFO and P2 parameters later.  Neither the KeyInfo nor
-** the number of columns in P2 can be computed at the same time
-** as the OP_OpenEphm instruction is coded because not
-** enough information about the compound query is known at that point.
 */
 struct Select {
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
@@ -3602,7 +3592,6 @@ struct Select {
   u32 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
   u32 selId;             /* Unique identifier number for this SELECT */
-  int addrOpenEphm;      /* OP_OpenEphem opcodes related to this select */
   ExprList *pEList;      /* The fields of the result */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
@@ -3634,7 +3623,7 @@ struct Select {
 #define SF_Resolved      0x0000004 /* Identifiers have been resolved */
 #define SF_Aggregate     0x0000008 /* Contains agg functions or a GROUP BY */
 #define SF_HasAgg        0x0000010 /* Contains aggregate functions */
-#define SF_UsesEphemeral 0x0000020 /* Uses the OpenEphemeral opcode */
+/*                       0x0000020 // available for reuse */
 #define SF_Expanded      0x0000040 /* sqlite3SelectExpand() called on this */
 #define SF_HasTypeInfo   0x0000080 /* FROM subqueries have Table metadata */
 #define SF_Compound      0x0000100 /* Part of a compound query */
