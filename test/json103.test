@@ -27,6 +27,9 @@ do_execsql_test json103-100 {
 do_catchsql_test json103-101 {
   SELECT json_group_array(a) FROM t1;
 } {1 {JSON cannot hold BLOB values}}
+do_execsql_test json103-102 {
+  SELECT quote(jsonb_group_array(a)) FROM t1 WHERE a<0 AND typeof(a)!='blob';
+} {X'0B'}
 do_execsql_test json103-110 {
   SELECT json_group_array(a) FROM t1
    WHERE rowid BETWEEN 31 AND 39;
@@ -45,6 +48,10 @@ do_execsql_test json103-200 {
 do_catchsql_test json103-201 {
   SELECT json_group_object(c,a) FROM t1;
 } {1 {JSON cannot hold BLOB values}}
+do_execsql_test json103-202 {
+  SELECT quote(jsonb_group_object(c,a)) FROM t1 WHERE a<0 AND typeof(a)!='blob';
+} {X'0C'}
+
 
 do_execsql_test json103-210 {
   SELECT json_group_object(c,a) FROM t1

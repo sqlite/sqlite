@@ -4799,12 +4799,11 @@ static void jsonArrayStep(
 }
 static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
   JsonString *pStr;
+  int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
-    int flags;
     pStr->pCtx = ctx;
     jsonAppendChar(pStr, ']');
-    flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
     if( pStr->eErr ){
       jsonReturnString(pStr, 0, 0);
       return;
@@ -4825,6 +4824,9 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
       jsonStringTrimOneChar(pStr);
     }
+  }else if( flags & JSON_BLOB ){
+    static const u8 emptyArray = 0x0b;
+    sqlite3_result_blob(ctx, &emptyArray, 1, SQLITE_STATIC);
   }else{
     sqlite3_result_text(ctx, "[]", 2, SQLITE_STATIC);
   }
@@ -4921,12 +4923,11 @@ static void jsonObjectStep(
 }
 static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
   JsonString *pStr;
+  int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
-    int flags;
     jsonAppendChar(pStr, '}');
     pStr->pCtx = ctx;
-    flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
     if( pStr->eErr ){
       jsonReturnString(pStr, 0, 0);
       return;
@@ -4947,6 +4948,9 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
       jsonStringTrimOneChar(pStr);
     }
+  }else if( flags & JSON_BLOB ){
+    static const unsigned char emptyObject = 0x0c;
+    sqlite3_result_blob(ctx, &emptyObject, 1, SQLITE_STATIC); 
   }else{
     sqlite3_result_text(ctx, "{}", 2, SQLITE_STATIC);
   }
