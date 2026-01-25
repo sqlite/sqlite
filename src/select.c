@@ -3175,13 +3175,12 @@ static int generateOutputSubroutine(
 #ifndef SQLITE_OMIT_CTE
       if( pDest->eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
-        ** on an ephemeral index. If the current row is already present
-        ** in the index, do not write it to the output. If not, add the
-        ** current row to the index and proceed with writing it to the
-        ** output table as well.  */
-        int addr = sqlite3VdbeCurrentAddr(v) + 4; /* After OP_Insert */
-        sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, addr, r1, 0); /* 20260120a */
-        VdbeCoverage(v);
+        ** on an ephemeral index that is used to enforce uniqueness on the
+        ** total result.  At this point, we are processing the setup portion
+        ** of the recursive CTE using the merge algorithm, so the results are
+        ** guaranteed to be unique anyhow.  But we still need to populate the
+        ** (iParm+1) cursor for use by the subsequent recursive phase.
+        */
         sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm+1, r1,
                              pIn->iSdst, pIn->nSdst);
       }
@@ -3189,7 +3188,6 @@ static int generateOutputSubroutine(
       sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, r2);
       sqlite3VdbeAddOp3(v, OP_Insert, iParm, r1, r2);
       sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
-      /* The OP_Found at 20260120a jumps here, after the OP_Insert */
       sqlite3ReleaseTempReg(pParse, r2);
       sqlite3ReleaseTempReg(pParse, r1);
       break;
@@ -3260,7 +3258,6 @@ static int generateOutputSubroutine(
     case SRT_Queue: {
       int nKey;
       int r1, r2, r3, ii;
-      int addrTest = 0;
       ExprList *pSO;
       int iParm = pDest->iSDParm;
       pSO = pDest->pOrderBy;
@@ -3269,14 +3266,21 @@ static int generateOutputSubroutine(
       r1 = sqlite3GetTempReg(pParse);
       r2 = sqlite3GetTempRange(pParse, nKey+2);
       r3 = r2+nKey+1;
+
+#if 0 /* <-- Why the next block of code is commented out: (tag-20260125-a)
+      **
+      ** If the destination is DistQueue, then cursor (iParm+1) is open
+      ** on a second ephemeral index that holds all values previously
+      ** added to the queue.  This code only runs during the setup phase
+      ** using the merge algorithm, and so the values here are already
+      ** guaranteed to be unique.
+      */
       if( pDest->eDest==SRT_DistQueue ){
-        /* If the destination is DistQueue, then cursor (iParm+1) is open
-        ** on a second ephemeral index that holds all values every previously
-        ** added to the queue. */
         addrTest = sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, 0,
                                         pIn->iSdst, pIn->nSdst);
         VdbeCoverage(v);
       }
+#endif
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r3);
       if( pDest->eDest==SRT_DistQueue ){
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r3);
@@ -3290,7 +3294,9 @@ static int generateOutputSubroutine(
       sqlite3VdbeAddOp2(v, OP_Sequence, iParm, r2+nKey);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, r2, nKey+2, r1);
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, r2, nKey+2);
+#if 0 /* tag-20260125-a */
       if( addrTest ) sqlite3VdbeJumpHere(v, addrTest);
+#endif
       sqlite3ReleaseTempReg(pParse, r1);
       sqlite3ReleaseTempRange(pParse, r2, nKey+2);
       break;
