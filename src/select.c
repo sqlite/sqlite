@@ -2585,7 +2585,7 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
 ** function is responsible for ensuring that this structure is eventually
 ** freed.
 */
-static KeyInfo *multiSelectOrderByKeyInfo(Parse *pParse, Select *p, int nExtra){
+static KeyInfo *multiSelectByMergeKeyInfo(Parse *pParse, Select *p, int nExtra){
   ExprList *pOrderBy = p->pOrderBy;
   int nOrderBy = ALWAYS(pOrderBy!=0) ? pOrderBy->nExpr : 0;
   sqlite3 *db = pParse->db;
@@ -2720,7 +2720,7 @@ static void generateWithRecursiveQuery(
   regCurrent = ++pParse->nMem;
   sqlite3VdbeAddOp3(v, OP_OpenPseudo, iCurrent, regCurrent, nCol);
   if( pOrderBy ){
-    KeyInfo *pKeyInfo = multiSelectOrderByKeyInfo(pParse, p, 1);
+    KeyInfo *pKeyInfo = multiSelectByMergeKeyInfo(pParse, p, 1);
     sqlite3VdbeAddOp4(v, OP_OpenEphemeral, iQueue, pOrderBy->nExpr+2, 0,
                       (char*)pKeyInfo, P4_KEYINFO);
     destQueue.pOrderBy = pOrderBy;
@@ -2805,7 +2805,7 @@ end_of_recursive_query:
 #endif /* SQLITE_OMIT_CTE */
 
 /* Forward references */
-static int multiSelectOrderBy(
+static int multiSelectByMerge(
   Parse *pParse,        /* Parsing context */
   Select *p,            /* The right-most of SELECTs to be coded */
   SelectDest *pDest     /* What to do with query results */
@@ -2958,15 +2958,23 @@ static int multiSelect(
   /* Compound SELECTs that have an ORDER BY clause are handled separately.
   */
   if( p->pOrderBy ){
-    return multiSelectOrderBy(pParse, p, pDest);
+    /* If the compound has an ORDER BY clause, then always use the merge
+    ** algorithm. */
+    return multiSelectByMerge(pParse, p, pDest);
   }else if( p->op!=TK_ALL ){
+    /* If the compound is EXCEPT, INTERSECT, or UNION (anything other than
+    ** UNION ALL) then also always use the merge algorithm.  However, the
+    ** multiSelectByMerge() routine requires that the compound have an
+    ** ORDER BY clause, and it doesn't right now.  So invent one first. */
     Expr *pOne = sqlite3ExprInt32(db, 1);
     p->pOrderBy = sqlite3ExprListAppend(pParse, 0, pOne);
     if( pParse->nErr ) goto multi_select_end;
     assert( p->pOrderBy!=0 );
     p->pOrderBy->a[0].u.x.iOrderByCol = 1;
-    return multiSelectOrderBy(pParse, p, pDest);
+    return multiSelectByMerge(pParse, p, pDest);
   }else{
+    /* For a UNION ALL compound without ORDER BY, simply run the left
+    ** query, then run the right query */
     int addr = 0;
     int nLimit = 0;  /* Initialize to suppress harmless compiler warning */
 
@@ -3023,7 +3031,7 @@ static int multiSelect(
   if( pParse->nErr ) goto multi_select_end;
  
   /* Compute collating sequences used by
-  ** temporary tables needed to implement the compound select.
+  ** temporary table needed to implement the compound select.
   ** Attach the KeyInfo structure to all temporary tables.
   **
   ** This section is run by the right-most SELECT statement only.
@@ -3337,8 +3345,9 @@ static int generateOutputSubroutine(
 }
 
 /*
-** Alternative compound select code generator for cases when there
-** is an ORDER BY clause.
+** Generate code for a compound SELECT statement using a merge
+** algorithm.  The compound must have an ORDER BY clause for this
+** to work.
 **
 ** We assume a query of the following form:
 **
@@ -3355,7 +3364,7 @@ static int generateOutputSubroutine(
 **
 **    outB:    Move the output of the selectB coroutine into the output
 **             of the compound query.  (Only generated for UNION and
-**             UNION ALL.  EXCEPT and INSERTSECT never output a row that
+**             UNION ALL.  EXCEPT and INTERSECT never output a row that
 **             appears only in B.)
 **
 **    AltB:    Called when there is data from both coroutines and A<B.
@@ -3419,10 +3428,10 @@ static int generateOutputSubroutine(
 ** We call AltB, AeqB, AgtB, EofA, and EofB "subroutines" but they are not
 ** actually called using Gosub and they do not Return.  EofA and EofB loop
 ** until all data is exhausted then jump to the "end" label.  AltB, AeqB,
-** and AgtB jump to either L2 or to one of EofA or EofB.
+** and AgtB jump to either Cmpr or to one of EofA or EofB.
 */
 #ifndef SQLITE_OMIT_COMPOUND_SELECT
-static int multiSelectOrderBy(
+static int multiSelectByMerge(
   Parse *pParse,        /* Parsing context */
   Select *p,            /* The right-most of SELECTs to be coded */
   SelectDest *pDest     /* What to do with query results */
@@ -3519,7 +3528,7 @@ static int multiSelectOrderBy(
       assert( pItem->u.x.iOrderByCol<=p->pEList->nExpr );
       aPermute[i] = pItem->u.x.iOrderByCol - 1;
     }
-    pKeyMerge = multiSelectOrderByKeyInfo(pParse, p, 1);
+    pKeyMerge = multiSelectByMergeKeyInfo(pParse, p, 1);
   }else{
     pKeyMerge = 0;
   }
@@ -5505,14 +5514,14 @@ int sqlite3IndexedByLookup(Parse *pParse, SrcItem *pFrom){
 **    SELECT * FROM (SELECT ... FROM t1 EXCEPT SELECT ... FROM t2)
 **     ORDER BY ... COLLATE ...
 **
-** This transformation is necessary because the multiSelectOrderBy() routine
+** This transformation is necessary because the multiSelectByMerge() routine
 ** above that generates the code for a compound SELECT with an ORDER BY clause
 ** uses a merge algorithm that requires the same collating sequence on the
 ** result columns as on the ORDER BY clause.  See ticket
 ** http://sqlite.org/src/info/6709574d2a
 **
 ** This transformation is only needed for EXCEPT, INTERSECT, and UNION.
-** The UNION ALL operator works fine with multiSelectOrderBy() even when
+** The UNION ALL operator works fine with multiSelectByMerge() even when
 ** there are COLLATE terms in the ORDER BY.
 */
 static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
