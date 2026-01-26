@@ -192,6 +192,7 @@
 **   ELOG_CKPT_PAGE       "Page xfer from WAL to database"
 **                        op = 0x06
 **                        a2 = database page number
+**                        a3 = frame number in the WAL file
 **
 **   ELOG_CKPT_END        "Start of a checkpoint operation"
 **                        op = 0x07
@@ -269,7 +270,7 @@ struct  TmstmpLog {
   unsigned char a[16*6]; /* Buffered header for the log */
 };
 
-/* An open WAL file */
+/* An open WAL or DB file */
 struct TmstmpFile {
   sqlite3_file base;     /* IO methods */
   u32 uMagic;            /* Magic number for sanity checking */
@@ -455,7 +456,8 @@ static void tmstmpEvent(
   u8 op,
   u8 a1,
   u32 a2,
-  u32 a3
+  u32 a3,
+  u8 *pTS
 ){
   unsigned char *a;
   TmstmpLog *pLog;
@@ -472,7 +474,11 @@ static void tmstmpEvent(
   a = pLog->a + pLog->n;
   a[0] = op;
   a[1] = a1;
-  tmstmpPutTS(p, a+2);
+  if( pTS ){
+    memcpy(a+2, pTS, 6);
+  }else{
+    tmstmpPutTS(p, a+2);
+  }
   tmstmpPutU32(a2, a+8);
   tmstmpPutU32(a3, a+12);
   pLog->n += 16;
@@ -487,7 +493,7 @@ static void tmstmpEvent(
 static int tmstmpClose(sqlite3_file *pFile){
   TmstmpFile *p = (TmstmpFile *)pFile;
   if( p->hasCorrectReserve ){
-    tmstmpEvent(p, p->isDb ? ELOG_CLOSE_DB : ELOG_CLOSE_WAL, 0, 0, 0);
+    tmstmpEvent(p, p->isDb ? ELOG_CLOSE_DB : ELOG_CLOSE_WAL, 0, 0, 0, 0);
   }
   tmstmpLogFree(p->pLog);
   if( p->pPartner ){
@@ -526,6 +532,12 @@ static int tmstmpRead(
       p->pPartner->pgsz = p->pgsz;
     }
   }
+  if( p->isWal
+   && p->inCkpt
+   && iAmt>=512 && iAmt<=65535 && (iAmt&(iAmt-1))==0
+  ){
+    p->pPartner->iFrame = (iOfst - 8)/(p->pgsz + 48) + 1;
+  }
   return rc;
 }
 
@@ -560,14 +572,14 @@ static int tmstmpWrite(
       tmstmpPutU32(p->iFrame, s+8);
       tmstmpPutU32(p->salt1, s+12);
       s[12] = p->isCommit ? 1 : 0;
-      tmstmpEvent(p, ELOG_WAL_PAGE, s[12], p->pgno, p->iFrame);
+      tmstmpEvent(p, ELOG_WAL_PAGE, s[12], p->pgno, p->iFrame, s+2);
     }else if( iAmt==32 && iOfst==0 ){
       u32 salt1 = tmstmpGetU32(((const u8*)zBuf)+16);
-      tmstmpEvent(p, ELOG_WAL_RESET, 0, 0, salt1);
+      tmstmpEvent(p, ELOG_WAL_RESET, 0, 0, salt1, 0);
     }
   }else if( p->inCkpt ){
     assert( p->pgsz>0 );
-    tmstmpEvent(p, ELOG_CKPT_PAGE, 0, (iOfst/p->pgsz)+1, 0);
+    tmstmpEvent(p, ELOG_CKPT_PAGE, 0, (iOfst/p->pgsz)+1, p->iFrame, 0);
   }else if( p->pPartner==0 ){
     /* Writing into a database in rollback mode */
     unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
@@ -575,7 +587,7 @@ static int tmstmpWrite(
     tmstmpPutTS(p, s+2);
     s[12] = 2;
     assert( p->pgsz>0 );
-    tmstmpEvent(p, ELOG_DB_PAGE, 0, (u32)(iOfst/p->pgsz), 0);
+    tmstmpEvent(p, ELOG_DB_PAGE, 0, (u32)(iOfst/p->pgsz), 0, s+2);
   }
   return pSub->pMethods->xWrite(pSub,zBuf,iAmt,iOfst);
 }
@@ -650,7 +662,7 @@ static int tmstmpFileControl(sqlite3_file *pFile, int op, void *pArg){
       assert( p->pPartner!=0 );
       p->pPartner->inCkpt = 1;
       if( p->hasCorrectReserve ){
-        tmstmpEvent(p, ELOG_CKPT_START, 0, 0, 0);
+        tmstmpEvent(p, ELOG_CKPT_START, 0, 0, 0, 0);
       }
       rc = SQLITE_OK;
       break;
@@ -661,7 +673,7 @@ static int tmstmpFileControl(sqlite3_file *pFile, int op, void *pArg){
       assert( p->pPartner!=0 );
       p->pPartner->inCkpt = 0;
       if( p->hasCorrectReserve ){
-        tmstmpEvent(p, ELOG_CKPT_DONE, 0, 0, 0);
+        tmstmpEvent(p, ELOG_CKPT_DONE, 0, 0, 0, 0);
       }
       rc = SQLITE_OK;
       break;
@@ -836,7 +848,7 @@ static int tmstmpOpen(
          "%s-tmstmp/%04d%02d%02dT%02d%02d%02d%03d-%08d-%08x",
           zName,       Y,  M,  D,   h,  m,  s,  f, pid,  r2);
   }
-  tmstmpEvent(p, p->isWal ? ELOG_OPEN_WAL : ELOG_OPEN_DB, 0, GETPID, 0);
+  tmstmpEvent(p, p->isWal ? ELOG_OPEN_WAL : ELOG_OPEN_DB, 0, GETPID, 0, 0);
 
 tmstmp_open_done:
   if( rc ) pFile->pMethods = 0;

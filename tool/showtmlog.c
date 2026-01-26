@@ -104,7 +104,7 @@ int main(int argc, char **argv){
           break;
         }
         case 0x06: {
-          printf("ckpt-page pgno %-8u\n", a2);
+          printf("ckpt-page pgno %-8u frame %-8u\n", a2, a3);
           break;
         }
         case 0x07: {
