@@ -1,5 +1,5 @@
-C Add\salternative\ssqlite3_carray_bind_v2()\sinterface.
-D 2026-01-26T13:44:42.812
+C Fix\sthe\sinitialization\sof\sthe\ssqlite3Api&#91;&#93;\sconstant\sto\sconform\nwith\sthe\sprevious\scheck-in.
+D 2026-01-26T13:54:05.263
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -701,7 +701,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
 F src/json.c 519fa46cc3e11d836c264c628ca9ca537ce6f18042151cf7a5c71e3ac5a4a970
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c d6559d2b39c9bde6b104b83adeafbe5db3a514aae4d3d40afc58de522a03043b
+F src/loadext.c 56a542244fbefc739a2ef57fac007c16b2aefdb4377f584e9547db2ce3e071f9
 F src/main.c e95aa130478fc98a49181ddf094baab45f319286411129253618efe0008f0dc4
 F src/malloc.c 422f7e0498e1c9ef967f06283b6f2c0b16db6b905d8e06f6dbc8baaa3e4e6c5a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4733d351ec2376291f093ba8d2ba71d82c6f100c68dc860eee0532986c154e71
-R 6915ffc4b5955ec1130e76c663a36e6f
+P 925384d7711867428644595c0903682e6e365eb974c57e6680b51d511c980054
+R 3daf5163e8b291357ab116f4bec90549
 U drh
-Z f6d7b74ce0e68fae0513da37a10a7a67
+Z 80a0a2c751c2033e7b7396c45c50bd8d
 # Remove this line to create a well-formed Fossil manifest.
