@@ -2738,17 +2738,18 @@ static void generateWithRecursiveQuery(
     assert( p->pEList!=0 );
     nCol = p->pEList->nExpr;
     pKeyInfo = sqlite3KeyInfoAlloc(pParse->db, nCol, 1);
-    if( !pKeyInfo ){
-      goto end_of_recursive_query;
-    }
-    for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
-      *apColl = multiSelectCollSeq(pParse, p, i);
-      if( 0==*apColl ){
-        *apColl = pParse->db->pDfltColl;
+    if( pKeyInfo ){
+      for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
+        *apColl = multiSelectCollSeq(pParse, p, i);
+        if( 0==*apColl ){
+          *apColl = pParse->db->pDfltColl;
+        }
       }
+      sqlite3VdbeAddOp4(v, OP_OpenEphemeral, iDistinct, nCol, 0,
+                           (void*)pKeyInfo, P4_KEYINFO);
+    }else{
+      assert( pParse->nErr>0 );
     }
-    sqlite3VdbeAddOp4(v, OP_OpenEphemeral, iDistinct, nCol, 0,
-                         (void*)pKeyInfo, P4_KEYINFO);
   }
 
   /* Detach the ORDER BY clause from the compound SELECT */
