@@ -3582,7 +3582,7 @@ static int multiSelectByMerge(
   */
   addrSelectA = sqlite3VdbeCurrentAddr(v) + 1;
   addr1 = sqlite3VdbeAddOp3(v, OP_InitCoroutine, regAddrA, 0, addrSelectA);
-  VdbeComment((v, "left SELECT"));
+  VdbeComment((v, "SUBR: next-A"));
   pPrior->iLimit = regLimitA;
   ExplainQueryPlan((pParse, 1, "LEFT"));
   sqlite3Select(pParse, pPrior, &destA);
@@ -3594,7 +3594,7 @@ static int multiSelectByMerge(
   */
   addrSelectB = sqlite3VdbeCurrentAddr(v) + 1;
   addr1 = sqlite3VdbeAddOp3(v, OP_InitCoroutine, regAddrB, 0, addrSelectB);
-  VdbeComment((v, "right SELECT"));
+  VdbeComment((v, "SUBR: next-B"));
   savedLimit = p->iLimit;
   savedOffset = p->iOffset;
   p->iLimit = regLimitB;
@@ -3608,7 +3608,7 @@ static int multiSelectByMerge(
   /* Generate a subroutine that outputs the current row of the A
   ** select as the next output row of the compound select.
   */
-  VdbeNoopComment((v, "Output routine for A"));
+  VdbeNoopComment((v, "SUBR: out-A"));
   addrOutA = generateOutputSubroutine(pParse,
                  p, &destA, pDest, regOutA,
                  regPrev, pKeyDup, labelEnd);
@@ -3617,7 +3617,7 @@ static int multiSelectByMerge(
   ** select as the next output row of the compound select.
   */
   if( op==TK_ALL || op==TK_UNION ){
-    VdbeNoopComment((v, "Output routine for B"));
+    VdbeNoopComment((v, "SUBR: out-B"));
     addrOutB = generateOutputSubroutine(pParse,
                  p, &destB, pDest, regOutB,
                  regPrev, pKeyDup, labelEnd);
@@ -3630,10 +3630,12 @@ static int multiSelectByMerge(
   if( op==TK_EXCEPT || op==TK_INTERSECT ){
     addrEofA_noB = addrEofA = labelEnd;
   }else{ 
-    VdbeNoopComment((v, "eof-A subroutine"));
+    VdbeNoopComment((v, "SUBR: eof-A"));
     addrEofA = sqlite3VdbeAddOp2(v, OP_Gosub, regOutB, addrOutB);
+    VdbeComment((v, "out-B"));
     addrEofA_noB = sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, labelEnd);
                                      VdbeCoverage(v);
+    VdbeComment((v, "next-B"));
     sqlite3VdbeGoto(v, addrEofA);
     p->nSelectRow = sqlite3LogEstAdd(p->nSelectRow, pPrior->nSelectRow);
   }
@@ -3645,17 +3647,21 @@ static int multiSelectByMerge(
     addrEofB = addrEofA;
     if( p->nSelectRow > pPrior->nSelectRow ) p->nSelectRow = pPrior->nSelectRow;
   }else{ 
-    VdbeNoopComment((v, "eof-B subroutine"));
+    VdbeNoopComment((v, "SUBR: eof-B"));
     addrEofB = sqlite3VdbeAddOp2(v, OP_Gosub, regOutA, addrOutA);
+    VdbeComment((v, "out-A"));
     sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, labelEnd); VdbeCoverage(v);
+    VdbeComment((v, "next-A"));
     sqlite3VdbeGoto(v, addrEofB);
   }
 
   /* Generate code to handle the case of A<B
   */
-  VdbeNoopComment((v, "A-lt-B subroutine"));
+  VdbeNoopComment((v, "SUBR: A-lt-B"));
   addrAltB = sqlite3VdbeAddOp2(v, OP_Gosub, regOutA, addrOutA);
+  VdbeComment((v, "out-A"));
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA); VdbeCoverage(v);
+  VdbeComment((v, "next-A"));
   sqlite3VdbeGoto(v, labelCmpr);
 
   /* Generate code to handle the case of A==B
@@ -3666,20 +3672,23 @@ static int multiSelectByMerge(
     addrAeqB = addrAltB;
     addrAltB++;
   }else{
-    VdbeNoopComment((v, "A-eq-B subroutine"));
+    VdbeNoopComment((v, "SUBR: A-eq-B"));
     addrAeqB =
     sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA); VdbeCoverage(v);
+    VdbeComment((v, "next-A"));
     sqlite3VdbeGoto(v, labelCmpr);
   }
 
   /* Generate code to handle the case of A>B
   */
-  VdbeNoopComment((v, "A-gt-B subroutine"));
+  VdbeNoopComment((v, "SUBR: A-gt-B"));
   addrAgtB = sqlite3VdbeCurrentAddr(v);
   if( op==TK_ALL || op==TK_UNION ){
     sqlite3VdbeAddOp2(v, OP_Gosub, regOutB, addrOutB);
+    VdbeComment((v, "out-B"));
   }
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, addrEofB); VdbeCoverage(v);
+  VdbeComment((v, "next-B"));
   sqlite3VdbeGoto(v, labelCmpr);
 
   /* This code runs once to initialize everything.
