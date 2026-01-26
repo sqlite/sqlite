@@ -1,5 +1,5 @@
-C Improve\sthe\scomments\son\sthe\sgenerated\sbyte-code\sfor\sthe\smerge\salgorithm.
-D 2026-01-26T19:37:57.101
+C Add\stest\sfor\sfts3\scompress=\sand\suncompress=\soptions.
+D 2026-01-26T20:17:10.707
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1155,7 +1155,7 @@ F test/fts3aux1.test 1880eaa75c586cd10f53080479a2b819b3915ae7ce55c4e0ba8f1fe05ac
 F test/fts3aux2.test 2459e7fa3e22734aed237d1e2ae192f5541c4d8b218956ad2d90754977bf907f
 F test/fts3b.test c15c4a9d04e210d0be67e54ce6a87b927168fbf9c1e3faec8c1a732c366fd491
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
-F test/fts3comp1.test f1b05ece56481f3973ece6a968cbabeeb0866c43f5375318313c003518ac53fb
+F test/fts3comp1.test 73a53ada3d25bf242c4b2a24cfe9d39e658be56cfa74754279b9e6db776ed7ce
 F test/fts3conf.test c9cd45433b6787d48a43e84949aa2eb8b3b3d242bac7276731c1476290d31f29
 F test/fts3corrupt.test 6732477c5ace050c5758a40a8b5706c8c0cccd416b9c558e0e15224805a40e57
 F test/fts3corrupt2.test e318f0676e5e78d5a4b702637e2bb25265954c08a1b1e4aaf93c7880bb0c67d0
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0a31a740843404958f61798aa17f94b5162bcf467c1c863d745346a316160d13
-R a646da844a0a9f4eff9b8bd2ff9a13ac
-U drh
-Z 374041111aeec3f87f7b10d8573edbe3
+P 4468c9e1a262d3d7efd8edff19e22e13b64ebed606ce2f18c9cabce93ef257d3
+R dd521bf1fe7458e258d3cdab4a0b84ba
+U dan
+Z c038d80545b5e1ae4728eba6d366053e
 # Remove this line to create a well-formed Fossil manifest.
