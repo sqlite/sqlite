@@ -1,5 +1,5 @@
-C For\sCSV\simport\sin\sthe\sCLI,\swhen\sthe\stable\sis\screated\sautomatically\nbecause\sit\sdoes\snot\spreviously\sexist,\smake\sthe\scolumn\stypes\s"ANY"\ninstead\sof\s"TEXT"\sso\sthat\sthey\swill\sautomatically\sadjust\sto\sdifferent\ndatatypes\sin\sthe\sinput\stext.
-D 2026-01-27T14:59:08.986
+C The\stmstmpvfs.c\sextension\sshould\snot\smodify\sthe\scontent\sof\spages\sgoing\sinto\nthe\sWAL\sfile,\sas\sthat\swould\scorrupt\sthe\spage\schecksum\sused\sfor\srecovery.\nInstead,\sonly\sinsert\stimestamp\sinformation\sas\scontent\sis\swritten\sinto\sthe\ndatabase\sfile.
+D 2026-01-27T16:18:35.538
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -403,7 +403,7 @@ F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bf
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/tmstmpvfs.c 877edddc075dc303442f5746508e89d070a4a5bd0180978fe51134ac3eeffbde
+F ext/misc/tmstmpvfs.c 1c335f1df51a60896e84721e262fc23e8a3130ba52b1a34e2b8e4870e5be74e9
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2e96e8efa9a331b0f7d928c55e7d85be64e7c60c85032c1e972f77fe790bdec4
-R 7425e3e93488d3528f9b79136e611cf9
+P aff74e71ea734e1ad8fa893652885fd8c6c432fb60e92913a799e6df5e980b47
+R c1c4f0f314e0c4017374b4b85c1bf563
 U drh
-Z 39d96bb3dde9e9ef67c539c3b80d5726
+Z 890f1169d388ee61b94fe2eac35c478f
 # Remove this line to create a well-formed Fossil manifest.

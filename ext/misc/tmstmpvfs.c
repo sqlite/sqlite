@@ -12,9 +12,7 @@
 **
 ** This file implements a VFS shim that writes a timestamp and other tracing
 ** information into 16 byts of reserved space at the end of each page of the
-** database file.  The additional data is written as the page is added to
-** the WAL file for databases in WAL mode, or as the database file itself
-** is modified in rollback modes.
+** database file.
 **
 ** The VFS also tries to generate log-files with names of the form:
 **
@@ -138,12 +136,17 @@
 **   bytes 0,1     Zero.  Reserved for future expansion
 **   bytes 2-7     Milliseconds since the Unix Epoch
 **   bytes 8-11    WAL frame number
-**   bytes 12      0: WAL write  1: WAL txn  2: rollback write
+**   bytes 12      0: WAL write  2: rollback write
 **   bytes 13-15   Lower 24 bits of Salt-1
 **
 ** For transactions that occur in rollback mode, only the timestamp
 ** in bytes 2-7 and byte 12 are non-zero.  Byte 12 is set to 2 for
 ** rollback writes.
+**
+** The 16-byte tag is added to each database page when the content
+** is written into the database file itself.  This shim does not make
+** any changes to the page as it is written to the WAL file, since
+** that would mess up the WAL checksum.
 **
 ** LOGGING
 **
@@ -616,23 +619,25 @@ static int tmstmpWrite(
       u32 x = 0;
       p->iFrame = (iOfst - 32)/(p->pgsz+24)+1;
       p->pgno = tmstmpGetU32((const u8*)zBuf);
-      p->salt1 = tmstmpGetU32(((const u8*)zBuf)+8);
+      p->salt1 = tmstmpGetU32(((const u8*)zBuf)+16);
       memcpy(&x, ((const u8*)zBuf)+4, 4);
       p->isCommit = (x!=0);
       p->iOfst = iOfst;
     }else if( iAmt>=512 && iOfst==p->iOfst+24 ){
-      unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
+      unsigned char s[TMSTMP_RESERVE];
       memset(s, 0, TMSTMP_RESERVE);
       tmstmpPutTS(p, s+2);
-      tmstmpPutU32(p->iFrame, s+8);
-      tmstmpPutU32(p->salt1, s+12);
-      s[12] = p->isCommit ? 1 : 0;
-      tmstmpEvent(p, ELOG_WAL_PAGE, s[12], p->pgno, p->iFrame, s+2);
+      tmstmpEvent(p, ELOG_WAL_PAGE, p->isCommit, p->pgno, p->iFrame, s+2);
     }else if( iAmt==32 && iOfst==0 ){
-      u32 salt1 = tmstmpGetU32(((const u8*)zBuf)+16);
-      tmstmpEvent(p, ELOG_WAL_RESET, 0, 0, salt1, 0);
+      p->salt1 = tmstmpGetU32(((const u8*)zBuf)+16);
+      tmstmpEvent(p, ELOG_WAL_RESET, 0, 0, p->salt1, 0);
     }
   }else if( p->inCkpt ){
+    unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
+    memset(s, 0, TMSTMP_RESERVE);
+    tmstmpPutTS(p, s+2);
+    tmstmpPutU32(p->iFrame, s+8);
+    tmstmpPutU32(p->pPartner->salt1, s+12);
     assert( p->pgsz>0 );
     tmstmpEvent(p, ELOG_CKPT_PAGE, 0, (iOfst/p->pgsz)+1, p->iFrame, 0);
   }else if( p->pPartner==0 ){
