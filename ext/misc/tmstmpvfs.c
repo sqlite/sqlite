@@ -536,7 +536,7 @@ static int tmstmpRead(
    && p->inCkpt
    && iAmt>=512 && iAmt<=65535 && (iAmt&(iAmt-1))==0
   ){
-    p->pPartner->iFrame = (iOfst - 8)/(p->pgsz + 48) + 1;
+    p->pPartner->iFrame = (iOfst-56)/(p->pgsz+24) + 1;
   }
   return rc;
 }
@@ -559,7 +559,7 @@ static int tmstmpWrite(
     if( iAmt==24 ){
       /* A frame header */
       u32 x = 0;
-      p->iFrame = (iOfst - 32)/(p->pgsz+24);
+      p->iFrame = (iOfst - 32)/(p->pgsz+24)+1;
       p->pgno = tmstmpGetU32((const u8*)zBuf);
       p->salt1 = tmstmpGetU32(((const u8*)zBuf)+8);
       memcpy(&x, ((const u8*)zBuf)+4, 4);
