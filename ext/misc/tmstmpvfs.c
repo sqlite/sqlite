@@ -211,17 +211,56 @@
 ** The command-line utility at tool/showtmlog.c will read and display
 ** the content of one or more tmstmpvfs.c log files.  If all of the
 ** log files are stored in directory $(DATABASE)-tmstmp, then you can
-** view them all using a command like:
+** view them all using a command like shown below (with an extra "?"
+** inserted on the wildcard to avoid closing the C-language comment
+** that contains this text):
 **
-**    showtmlog $(DATABASE)-tmstmp/*
+**    showtmlog $(DATABASE)-tmstmp/?*
 **
 ** The command-line utility at tools/showdb.c can be used to show the
 ** timestamps on pages of a database file, using a command like this:
 **
-**    showdb -tmstmp $(DATABASE) pgidx
+**    showdb --tmstmp $(DATABASE) pgidx
+*
+** The command above shows the timestamp and the intended use of every
+** pages in the database, in human-readable form.  If you also add
+** the --csv option to the command above, then the command generates
+** a Comma-Separated-Value (CSV) file as output, which contains a
+** decoding of the complete timestamp tag on each page of the database.
+** This CVS file can be easily imported into another SQLite database
+** using a CLI command like the following:
 **
-** Both utility programs can be built by running "make showtmlog showdb"
-** from the top-level of a recent SQLite source tree.
+**    .import --csv '|showdb --tmstmp -csv orig.db pgidx' ts_table
+**
+** In the command above, the database containing the timestamps is
+** "orig.db" and the content is imported into a new table named "ts_table".
+** The "ts_table" is created automatically, using the column names found
+** in the first line of the CSV file.  All columns of the automatically
+** created ts_table are of type TEXT.  It might make more sense to
+** create the table yourself, using more sensible datatypes, like this:
+**
+**   CREATE TABLE ts_table (
+**     pgno INT,        -- page number
+**     tm REAL,         -- seconds since 1970-01-01
+**     frame INT,       -- WAL frame number
+**     flg INT,         -- flag (tag byte 12)
+**     salt INT,        -- WAL salt (tag bytes 13-15)
+**     parent INT,      -- Parent page number
+**     child INT,       -- Index of this page in its parent
+**     ovfl INT,        -- Index of this page on the overflow chain
+**     txt TEXT         -- Description of this page
+**   );
+**
+** Then import using:
+**
+**   .import --csv --skip 1 '|showdb --tmstmp --csv orig.db pgidx' ts_table
+**
+** Note the addition of the "--skip 1" option on ".import" to bypass the
+** first line of the CSV file that contains the column names.
+**
+** Both programs "showdb" and "showtmlog" can be built by running
+** "make showtmlog showdb" from the top-level of a recent SQLite
+** source tree.
 */
 #if defined(SQLITE_AMALGAMATION) && !defined(SQLITE_TMSTMPVFS_STATIC)
 # define SQLITE_TMSTMPVFS_STATIC
