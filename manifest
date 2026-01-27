@@ -1,5 +1,5 @@
-C Fix\strivial\sbuffer\soverreads\sin\sthe\ssessions\smodule\sthat\scould\soccur\swhen\sparsing\schangeset\sblobs.
-D 2026-01-27T14:00:59.953
+C Add\sthe\s--csv\soption\sto\sthe\sshowtmlog\sutility\sprogram.
+D 2026-01-27T14:27:19.439
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2166,7 +2166,7 @@ F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
 F tool/showstat4.c b706fcbc4cd1a6e4a73ac32549afc4b460479d650402d64b23e8d813516e8de4
-F tool/showtmlog.c c31b358b802d4522c84c3fb44cf2f5838c7a84a244dd41f1c8d2573b5dc1bb78
+F tool/showtmlog.c cbdc5f1b21cc8b821a39118b85f2d2616fc7bf3377ddaf02bb1cbcbeb4169f92
 F tool/showwal.c 11eca547980a066b081f512636151233350ac679f29ecf4ebfce7f4530230b3d
 F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdaddf
 F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d1b8e7740bee13a8cf199c6477ee20a4f8bcbbd9ec4096bcdc05a996fadf0d56
-R bc760db4f6d40a1b040ea672b3ec64be
-U dan
-Z 5871de5b90660b7eb05ce757898385bf
+P 661878a62870023f7f54e8c591a0823dc457cb89780ab40c1891fb3d5e8f095f
+R f143497d4f1b8f3a0b5fa858e243dd36
+U drh
+Z cab853d8a0c200d46160f103af9c4268
 # Remove this line to create a well-formed Fossil manifest.
