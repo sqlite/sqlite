@@ -3704,7 +3704,11 @@ static int multiSelectByMerge(
   sqlite3VdbeAddOp4(v, OP_Compare, destA.iSdst, destB.iSdst, nOrderBy,
                          (char*)pKeyMerge, P4_KEYINFO);
   sqlite3VdbeChangeP5(v, OPFLAG_PERMUTE);
-  sqlite3VdbeAddOp3(v, OP_Jump, addrAltB, addrAeqB, addrAgtB); VdbeCoverage(v);
+  sqlite3VdbeAddOp3(v, OP_Jump, addrAltB, addrAeqB, addrAgtB);
+  VdbeCoverageIf(v, op==TK_ALL);
+  VdbeCoverageIf(v, op==TK_UNION);
+  VdbeCoverageIf(v, op==TK_EXCEPT);
+  VdbeCoverageIf(v, op==TK_INTERSECT);
 
   /* Jump to the this point in order to terminate the query.
   */
