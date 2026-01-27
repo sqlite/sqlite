@@ -3076,28 +3076,32 @@ static u32 jsonLookupStep(
       return rc;
     }
   }else if( zPath[0]=='[' ){
+    u64 kk = 0;
     x = pParse->aBlob[iRoot] & 0x0f;
     if( x!=JSONB_ARRAY )  return JSON_LOOKUP_NOTFOUND;
     n = jsonbPayloadSize(pParse, iRoot, &sz);
-    k = 0;
     i = 1;
     while( sqlite3Isdigit(zPath[i]) ){
-      k = k*10 + zPath[i] - '0';
+      if( kk<0xffffffff ) kk = kk*10 + zPath[i] - '0';
+      /*     ^^^^^^^^^^--- Allow kk to be bigger than any JSON array so that
+      ** we get NOTFOUND instead of PATHERROR, without overflowing kk. */
       i++;
     }
     if( i<2 || zPath[i]!=']' ){
       if( zPath[1]=='#' ){
-        k = jsonbArrayCount(pParse, iRoot);
+        kk = jsonbArrayCount(pParse, iRoot);
         i = 2;
         if( zPath[2]=='-' && sqlite3Isdigit(zPath[3]) ){
-          unsigned int nn = 0;
+          u64 nn = 0;
           i = 3;
           do{
-            nn = nn*10 + zPath[i] - '0';
+            if( nn<0xffffffff ) nn = nn*10 + zPath[i] - '0';
+            /*     ^^^^^^^^^^--- Allow nn to be bigger than any JSON array to
+            ** get NOTFOUND instead of PATHERROR, without overflowing nn. */
             i++;
           }while( sqlite3Isdigit(zPath[i]) );
-          if( nn>k ) return JSON_LOOKUP_NOTFOUND;
-          k -= nn;
+          if( nn>kk ) return JSON_LOOKUP_NOTFOUND;
+          kk -= nn;
         }
         if( zPath[i]!=']' ){
           return JSON_LOOKUP_PATHERROR;
@@ -3109,18 +3113,18 @@ static u32 jsonLookupStep(
     j = iRoot+n;
     iEnd = j+sz;
     while( j<iEnd ){
-      if( k==0 ){
+      if( kk==0 ){
         rc = jsonLookupStep(pParse, j, &zPath[i+1], 0);
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
         return rc;
       }
-      k--;
+      kk--;
       n = jsonbPayloadSize(pParse, j, &sz);
       if( n==0 ) return JSON_LOOKUP_ERROR;
       j += n+sz;
     }
     if( j>iEnd ) return JSON_LOOKUP_ERROR;
-    if( k>0 ) return JSON_LOOKUP_NOTFOUND;
+    if( kk>0 ) return JSON_LOOKUP_NOTFOUND;
     if( pParse->eEdit>=JEDIT_INS ){
       JsonParse v;
       testcase( pParse->eEdit==JEDIT_INS );
