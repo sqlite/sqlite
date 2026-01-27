@@ -1,5 +1,5 @@
-C Fix\sframe\snumber\scomputation\sin\sthe\slog\sgenerated\sby\stmstmpvfs.c.
-D 2026-01-27T11:19:49.385
+C Enhanced\sdocumentation\sin\sthe\sheader\scomment\sof\stmstmpvfs.c.
+D 2026-01-27T12:02:02.699
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -403,7 +403,7 @@ F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bf
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/tmstmpvfs.c 1bb804100d759ab4e9b9c159c3acaf17a5fe18338e72405d24d9f37ef5dccb1e
+F ext/misc/tmstmpvfs.c 81d61c92b927a8ddfd6d3257c791cf40824078435371fae0fe45a561098fa567
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P fcf16297850abf5186b0d414b4f31d4b515925ef5cca5e7d7d84984c26160d00
-R 2c2d3cabed9084db11b18b51926b8e75
+P 57fda9dd85f0de8c5d4a4d8015e67982d73ab96ad6f1cd590a48d8995dc28140
+R 01d1e54ad42c4692717d8be6eeeed235
 U drh
-Z 02fec7b49f36372491b3d2810e741abd
+Z c3d5e8ed054e270e3a2e94497ce20be7
 # Remove this line to create a well-formed Fossil manifest.

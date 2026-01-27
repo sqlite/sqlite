@@ -44,8 +44,7 @@
 **
 ** Another option is to statically link both SQLite and this extension
 ** into your application.  If both this file and "sqlite3.c" are statically
-** linked, and if "sqlite3.c" is compiled with -DSQLITE_EXTRA_INIT=
-** SQLite amalgamation "sqlite3.c" file with the option like:
+** linked, and if "sqlite3.c" is compiled with an option like:
 **
 **       -DSQLITE_EXTRA_INIT=sqlite3_register_tmstmpvfs
 **
@@ -206,6 +205,23 @@
 **
 **   ELOG_CLOSE_DB        "Close the DB connection"
 **                        op = 0x0f
+**
+** VIEWING TIMESTAMPS AND LOGS
+**
+** The command-line utility at tool/showtmlog.c will read and display
+** the content of one or more tmstmpvfs.c log files.  If all of the
+** log files are stored in directory $(DATABASE)-tmstmp, then you can
+** view them all using a command like:
+**
+**    showtmlog $(DATABASE)-tmstmp/*
+**
+** The command-line utility at tools/showdb.c can be used to show the
+** timestamps on pages of a database file, using a command like this:
+**
+**    showdb -tmstmp $(DATABASE) pgidx
+**
+** Both utility programs can be built by running "make showtmlog showdb"
+** from the top-level of a recent SQLite source tree.
 */
 #if defined(SQLITE_AMALGAMATION) && !defined(SQLITE_TMSTMPVFS_STATIC)
 # define SQLITE_TMSTMPVFS_STATIC
