@@ -2028,6 +2028,11 @@ int sqlite3Stat4ValueFromExpr(
 **
 ** If *ppVal is initially NULL then the caller is responsible for 
 ** ensuring that the value written into *ppVal is eventually freed.
+**
+** If the buffer does not contain a well-formed record, this routine may
+** read several bytes past the end of the buffer. Callers must therefore
+** ensure that any buffer which may contain a corrupt record is padded
+** with at least 8 bytes of addressable memory.
 */
 int sqlite3Stat4Column(
   sqlite3 *db,                    /* Database handle */
