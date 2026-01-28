@@ -2586,7 +2586,7 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
 */
 static KeyInfo *multiSelectByMergeKeyInfo(Parse *pParse, Select *p, int nExtra){
   ExprList *pOrderBy = p->pOrderBy;
-  int nOrderBy = ALWAYS(pOrderBy!=0) ? pOrderBy->nExpr : 0;
+  int nOrderBy = (pOrderBy!=0) ? pOrderBy->nExpr : 0;
   sqlite3 *db = pParse->db;
   KeyInfo *pRet = sqlite3KeyInfoAlloc(db, nOrderBy+nExtra, 1);
   if( pRet ){
@@ -3389,10 +3389,8 @@ static int generateOutputSubroutine(
 **    AeqB: ...
 **    AgtB: ...
 **    Init: initialize coroutine registers
-**          yield coA
-**          if eof(A) goto EofA
-**          yield coB
-**          if eof(B) goto EofB
+**          yield coA, on eof goto EofA
+**          yield coB, on eof goto EofB
 **    Cmpr: Compare A, B
 **          Jump AltB, AeqB, AgtB
 **     End: ...
@@ -3484,26 +3482,29 @@ static int multiSelectByMerge(
   }
 
   /* Compute the comparison permutation and keyinfo that is used with
-  ** the permutation used to determine if the next
-  ** row of results comes from selectA or selectB.  Also add explicit
-  ** collations to the ORDER BY clause terms so that when the subqueries
-  ** to the right and the left are evaluated, they use the correct
-  ** collation.
+  ** the permutation to determine if the next row of results comes
+  ** from selectA or selectB.  Also add literal collations to the
+  ** ORDER BY clause terms so that when selectA and selectB are
+  ** evaluated, they use the correct collation.
   */
   aPermute = sqlite3DbMallocRawNN(db, sizeof(u32)*(nOrderBy + 1));
   if( aPermute ){
     struct ExprList_item *pItem;
+    int bKeep = 0;
     aPermute[0] = nOrderBy;
     for(i=1, pItem=pOrderBy->a; i<=nOrderBy; i++, pItem++){
       assert( pItem!=0 );
       assert( pItem->u.x.iOrderByCol>0 );
       assert( pItem->u.x.iOrderByCol<=p->pEList->nExpr );
       aPermute[i] = pItem->u.x.iOrderByCol - 1;
+      if( aPermute[i]!=i-1 ) bKeep = 1;
     }
-    pKeyMerge = multiSelectByMergeKeyInfo(pParse, p, 1);
-  }else{
-    pKeyMerge = 0;
+     if( bKeep==0 ){
+      sqlite3DbFreeNN(db, aPermute);
+      aPermute = 0;
+    }
   }
+  pKeyMerge = multiSelectByMergeKeyInfo(pParse, p, 1);
 
   /* Allocate a range of temporary registers and the KeyInfo needed
   ** for the logic that removes duplicate result rows when the
@@ -3657,7 +3658,6 @@ static int multiSelectByMerge(
 
   /* Generate code to handle the case of A<B
   */
-  VdbeNoopComment((v, "SUBR: A-lt-B"));
   addrAltB = sqlite3VdbeAddOp2(v, OP_Gosub, regOutA, addrOutA);
   VdbeComment((v, "out-A"));
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA); VdbeCoverage(v);
@@ -3672,38 +3672,43 @@ static int multiSelectByMerge(
     addrAeqB = addrAltB;
     addrAltB++;
   }else{
-    VdbeNoopComment((v, "SUBR: A-eq-B"));
-    addrAeqB =
-    sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA); VdbeCoverage(v);
-    VdbeComment((v, "next-A"));
-    sqlite3VdbeGoto(v, labelCmpr);
+    addrAeqB = addrAltB + 1;
   }
 
   /* Generate code to handle the case of A>B
   */
-  VdbeNoopComment((v, "SUBR: A-gt-B"));
   addrAgtB = sqlite3VdbeCurrentAddr(v);
   if( op==TK_ALL || op==TK_UNION ){
     sqlite3VdbeAddOp2(v, OP_Gosub, regOutB, addrOutB);
     VdbeComment((v, "out-B"));
+    sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, addrEofB); VdbeCoverage(v);
+    VdbeComment((v, "next-B"));
+    sqlite3VdbeGoto(v, labelCmpr);
+  }else{
+    addrAgtB++; /* Just do next-B.  Might as well use the next-B call
+                ** in the next code block */
   }
-  sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, addrEofB); VdbeCoverage(v);
-  VdbeComment((v, "next-B"));
-  sqlite3VdbeGoto(v, labelCmpr);
 
   /* This code runs once to initialize everything.
   */
   sqlite3VdbeJumpHere(v, addr1);
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA_noB); VdbeCoverage(v);
+  VdbeComment((v, "next-A"));
+  /* v---  Also the A>B case for EXCEPT and INTERSECT */
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, addrEofB); VdbeCoverage(v);
+  VdbeComment((v, "next-B"));
 
   /* Implement the main merge loop
   */
+  if( aPermute!=0 ){
+    sqlite3VdbeAddOp4(v, OP_Permutation, 0, 0, 0, (char*)aPermute, P4_INTARRAY);
+  }
   sqlite3VdbeResolveLabel(v, labelCmpr);
-  sqlite3VdbeAddOp4(v, OP_Permutation, 0, 0, 0, (char*)aPermute, P4_INTARRAY);
   sqlite3VdbeAddOp4(v, OP_Compare, destA.iSdst, destB.iSdst, nOrderBy,
                          (char*)pKeyMerge, P4_KEYINFO);
-  sqlite3VdbeChangeP5(v, OPFLAG_PERMUTE);
+  if( aPermute!=0 ){
+    sqlite3VdbeChangeP5(v, OPFLAG_PERMUTE);
+  }
   sqlite3VdbeAddOp3(v, OP_Jump, addrAltB, addrAeqB, addrAgtB);
   VdbeCoverageIf(v, op==TK_ALL);
   VdbeCoverageIf(v, op==TK_UNION);
