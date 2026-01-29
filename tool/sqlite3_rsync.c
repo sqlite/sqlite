@@ -608,7 +608,7 @@ void add_path_argument(sqlite3_str *pStr){
 # if defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
      defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
      defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
-     defined(__arm__)
+     defined(__arm__)  || defined(__loongarch__)
 #   define Hash_BYTEORDER    1234
 # elif defined(sparc)    || defined(__ppc__)
 #   define Hash_BYTEORDER    4321

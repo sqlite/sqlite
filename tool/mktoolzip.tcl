@@ -52,6 +52,9 @@ switch $tcl_platform(machine) {
   arm64 {
     set ARCH arm64
   }
+  loongarch64 {
+    set ARCH loongarch64
+  }
   x86_64 {
     set ARCH x64
   }
