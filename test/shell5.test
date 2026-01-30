@@ -338,6 +338,25 @@ do_test shell5-1.10 {
   db eval {SELECT hex(c) FROM t1 ORDER BY rowid}
 } {636F6C756D6E33 783320220D0A64617461222033 783320220A64617461222033}
 
+# Import columns containing quoted strings that contain
+# a backslash-escaped quote.  This is not complaint with
+# RFC 4180, but people do it all the same.
+#
+do_test shell5-1.10.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {column1,column2,column3,column4}
+  puts $out "x1,x2,\"x3 \\\"data\\\" 3\",x4"
+  close $out
+  forcedelete test.db
+  catchcmd test.db {
+    CREATE TABLE t1(a,b,c,d);
+.import -csv shell5.csv t1
+  }
+  sqlite3 db test.db
+  db eval {SELECT c FROM t1 ORDER BY rowid}
+} {column3 {x3 "data" 3}}
+
 # Blank last column with \r\n line endings.
 do_test shell5-1.11 {
   set out [open shell5.csv w]

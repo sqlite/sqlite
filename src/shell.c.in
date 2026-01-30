@@ -5008,8 +5008,17 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
         break;
       }
       if( pc==cQuote && c!='\r' ){
-        cli_printf(stderr,"%s:%d: unescaped %c character\n", 
-                        p->zFile, p->nLine, cQuote);
+        if( ppc=='\\' ){
+          /* Deal backslash-escaped double-quote within a quoted string.
+          ** This is not RFC 4180 compliant, but one sees this in the
+          ** wild, so we might as well deal with it rather than raise 
+          ** an error. */
+          p->z[p->n-2] = '"';
+          p->n--;
+        }else{
+          cli_printf(stderr,"%s:%d: unescaped %c character\n", 
+                     p->zFile, p->nLine, cQuote);
+        }
       }
       if( c==EOF ){
         cli_printf(stderr,"%s:%d: unterminated %c-quoted field\n",
