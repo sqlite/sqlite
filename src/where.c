@@ -4849,7 +4849,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   sqlite3 *db = pWInfo->pParse->db;
   int rc = SQLITE_OK;
   int bFirstPastRJ = 0;
-  int hasRightJoin = 0;
+  int hasRightCrossJoin = 0;
   WhereLoop *pNew;
 
 
@@ -4876,12 +4876,20 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
       ** prevents the right operand of a RIGHT JOIN from being swapped with
       ** other elements even further to the right.
       **
-      ** The JT_LTORJ case and the hasRightJoin flag work together to
-      ** prevent FROM-clause terms from moving from the right side of
-      ** a LEFT JOIN over to the left side of that join if the LEFT JOIN
-      ** is itself on the left side of a RIGHT JOIN.
+      ** The hasRightCrossJoin flag prevent FROM-clause terms from moving
+      ** from the right side of a LEFT JOIN or CROSS JOIN over to the
+      ** left side of that same join.  This is a required restriction in
+      ** the case of LEFT JOIN - an incorrect answer may results if it is
+      ** not enforced.  This restriction is not required for CROSS JOIN.
+      ** It is provided merely as a means of controlling join order, under
+      ** the theory that no real-world queries that care about performance
+      ** actually use the CROSS JOIN syntax.
       */
-      if( pItem->fg.jointype & JT_LTORJ ) hasRightJoin = 1;
+      if( pItem->fg.jointype & (JT_LTORJ|JT_CROSS) ){
+        testcase( pItem->fg.jointype & JT_LTORJ );
+        testcase( pItem->fg.jointype & JT_CROSS );
+        hasRightCrossJoin = 1;
+      }
       mPrereq |= mPrior;
       bFirstPastRJ = (pItem->fg.jointype & JT_RIGHT)!=0;
     }else if( pItem->fg.fromExists ){
@@ -4895,7 +4903,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
           mPrereq |= (pTerm->prereqAll & (pNew->maskSelf-1));
         }
       }
-    }else if( !hasRightJoin ){
+    }else if( !hasRightCrossJoin ){
       mPrereq = 0;
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE

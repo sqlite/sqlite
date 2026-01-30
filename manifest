@@ -1,5 +1,5 @@
-C Fix\sthe\snew\sCLI\sso\sthat\sthe\s".eqp"\ssetting\sdoes\snot\saffect\sthe\soutput\sof\sother\sdot\ncommands\ssuch\sas\s.schema\sor\s.tables.
-D 2026-01-30T16:03:22.503
+C Make\sCROSS\sJOIN\sa\sjoin\sreorder\sbarrier\sagain,\sas\sthe\sSQLite\sdocumentation\ssays\sit\sis.\s\sIt\nmistakenly\sstopped\sbeing\sa\sjoin\sbarrier\swith\scheck-in\s[c1ea064948ba08c4].
+D 2026-01-30T17:10:22.815
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -820,7 +820,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 505a98fbc599a971d92cb90371cf54546c404cd61e04fd093e7b0c8ff978f9b6
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 13ba955e83c92d60d7da92f22ffc332741c720638f149b0783f9de2446963c2d
+F src/where.c 4992c31e356b185a71bb3e9fc1ac6d747864240d5da4e81ec39b7ab38706332e
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 71c5c6804b7f882dec8ec858758accae02fcfca13df3cc720f1f258e663ec7c5
 F src/whereexpr.c cadb37fbaa2cb6d1ec1687923c3ac21aed4187d198f4500c00a01abb24c3cb44
@@ -2024,7 +2024,7 @@ F test/walslow.test 0c51843836c9dcf40a5ac05aa781bfb977b396ee2c872d92bd48b79d5dd9
 F test/walthread.test d562f51a61191ccfab64940df7aa1cef87c902fa5ab742590ef7f859dfe6a44b
 F test/walvfs.test e1a6ad0f3c78e98b55c3d5f0889cf366cc0d0a1cb2bccb44ac9ec67384adc4a1
 F test/where.test 5087c72d26fd075a1644c8512be9fe18de9bf2d2b0754f7fd9b74a1c6540c4fc
-F test/where2.test 52237a8cb27ebbf6583469429bb5733d1b94ac37d09c3dbd0f487952ed0ab3f8
+F test/where2.test 1dbff4ab847068a52b927a0c1a7cf7faed4c8cae081fbcdac9b052a3a209aefa
 F test/where3.test 4ccb156ae33de86414a52775a6f590a9d60ba2cbc7a93a24fa331b7bcf5b6030
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 293ec20e29e46d822a98302f8a0ba52ad6f74a7e93f780536d393730c2edbf61
-R 6219427f72f1032a75f0a00a557f2be0
+P a5a1b69b3feedb507ecfe2e9ddc039d7c01e1bb54e3e881df5010481886cdef9
+R 2c69c84e0f52c569a5c3b3b4ea6a7f1a
 U drh
-Z 9a3047fdcb8c1ee9e50be3311ebce2d4
+Z fa98c5b69b350e02a0236ff7a868f9da
 # Remove this line to create a well-formed Fossil manifest.
