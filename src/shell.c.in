@@ -4920,6 +4920,7 @@ struct ImportCtx {
   int cTerm;          /* Character that terminated the most recent field */
   int cColSep;        /* The column separator character.  (Usually ",") */
   int cRowSep;        /* The row separator character.  (Usually "\n") */
+  int cEscape;        /* Escape character.  0 for none */
 };
 
 /* Clean up resourced used by an ImportCtx */
@@ -4978,6 +4979,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
   int c;
   int cSep = (u8)p->cColSep;
   int rSep = (u8)p->cRowSep;
+  int cEsc = (u8)p->cEscape;
   p->n = 0;
   c = import_getc(p);
   if( c==EOF || seenInterrupt ){
@@ -4992,6 +4994,13 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
     while( 1 ){
       c = import_getc(p);
       if( c==rSep ) p->nLine++;
+      if( c==cEsc && cEsc!=0 ){
+        c = import_getc(p);
+        import_append_char(p, c);
+        ppc = pc;
+        pc = c;
+        continue;
+      }
       if( c==cQuote ){
         if( pc==cQuote ){
           pc = 0;
@@ -5008,17 +5017,8 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
         break;
       }
       if( pc==cQuote && c!='\r' ){
-        if( ppc=='\\' ){
-          /* Deal backslash-escaped double-quote within a quoted string.
-          ** This is not RFC 4180 compliant, but one sees this in the
-          ** wild, so we might as well deal with it rather than raise 
-          ** an error. */
-          p->z[p->n-2] = '"';
-          p->n--;
-        }else{
-          cli_printf(stderr,"%s:%d: unescaped %c character\n", 
-                     p->zFile, p->nLine, cQuote);
-        }
+        cli_printf(stderr,"%s:%d: unescaped %c character\n", 
+                   p->zFile, p->nLine, cQuote);
       }
       if( c==EOF ){
         cli_printf(stderr,"%s:%d: unterminated %c-quoted field\n",
@@ -5047,6 +5047,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
       }
     }
     while( c!=EOF && c!=cSep && c!=rSep ){
+      if( c==cEsc && cEsc!=0 ) c = import_getc(p);
       import_append_char(p, c);
       c = import_getc(p);
     }
@@ -7410,6 +7411,7 @@ static int pickStr(const char *zArg, char **pzErr, ...){
 **                   delimiters are specified using --colsep and/or --rowsep
 **   --colsep CHAR   Use CHAR as the column separator.
 **   --csv           Input is standard RFC-4180 CSV.
+**   --escape CHAR   Use CHAR as an escape character in CSV imports.
 **   --rowsep CHAR   Use CHAR as the row separator.
 **   --schema S      When creating TABLE, put it in schema S
 **   --skip N        Ignore the first N rows of input
@@ -7468,6 +7470,8 @@ static int dotCmdImport(ShellState *p){
       if( sCtx.cColSep==0 ) sCtx.cColSep = ',';
       if( sCtx.cRowSep==0 ) sCtx.cRowSep = '\n';
       xRead = csv_read_one_field;
+    }else if( cli_strcmp(z,"-escape")==0 ){
+      sCtx.cEscape = azArg[++i][0];
     }else if( cli_strcmp(z,"-colsep")==0 ){
       if( i==nArg-1 ){
         dotCmdError(p, i, "missing argument", 0);
