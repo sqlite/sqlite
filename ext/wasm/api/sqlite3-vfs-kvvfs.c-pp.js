@@ -1013,7 +1013,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           util.assert(h, "Missing KVVfsFile handle");
           kvvfs?.log?.xFileControl && debug("xFileControl",h,'op =',opId);
           if( opId===capi.SQLITE_FCNTL_PRAGMA
-              && kvvfs.internal.disablePageSizeChange ){
+              && kvvfsInternal.disablePageSizeChange ){
             /* pArg== length-3 (char**) */
             //const argv = wasm.cArgvToJs(3, pArg); // the easy way
             const zName = wasm.peekPtr(wasm.ptr.add(pArg, wasm.ptr.size));
