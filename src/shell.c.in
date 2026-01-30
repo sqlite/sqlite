@@ -3251,7 +3251,7 @@ static int shell_exec(
      
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
       isExplain = sqlite3_stmt_isexplain(pStmt);
-      if( pArg && pArg->mode.autoEQP && isExplain==0 ){
+      if( pArg && pArg->mode.autoEQP && isExplain==0 && pArg->dot.nArg==0 ){
         int triggerEQP = 0;
         disable_debug_trace_modes();
         sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
@@ -11907,6 +11907,7 @@ meta_command_exit:
     if( p->nPopOutput==0 ) output_reset(p);
   }
   p->bSafeMode = p->bSafeModePersist;
+  p->dot.nArg = 0;
   return rc;
 }
 
