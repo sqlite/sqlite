@@ -7393,7 +7393,10 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       if( pIEpr==0 ) break;
       if( NEVER(!ExprUseYTab(pExpr)) ) break;
       for(i=0; i<pSrcList->nSrc; i++){
-         if( pSrcList->a[0].iCursor==pIEpr->iDataCur ) break;
+         if( pSrcList->a[i].iCursor==pIEpr->iDataCur ){
+           testcase( i>0 );
+           break;
+         }
       }
       if( i>=pSrcList->nSrc ) break;
       if( NEVER(pExpr->pAggInfo!=0) ) break; /* Resolved by outer context */

@@ -1,5 +1,5 @@
-C Make\sCROSS\sJOIN\sa\sjoin\sreorder\sbarrier\sagain,\sas\sthe\sSQLite\sdocumentation\ssays\sit\sis.\s\sIt\nmistakenly\sstopped\sbeing\sa\sjoin\sbarrier\swith\scheck-in\s[c1ea064948ba08c4].
-D 2026-01-30T17:10:22.815
+C Fix\sa\smissed\soptimization\sopportunity\sdue\sto\sa\stypo\sin\scheck-in\s[898bfa1afd8260ea].\nReported\sby\s[forum:/forumpost/2026-01-31T00:49:53z|forum\spost\s2026-01-31T00:49:53z].
+D 2026-01-31T02:17:55.945
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -689,7 +689,7 @@ F src/date.c e19e0cfff9a41bfdd884c655755f6f00bca4c1a22272b56e0dd6667b7ea893a2
 F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 901499bed747c3b4b2be45be1abe912ba50a3f6a40ba88cc006ccf279f2d0e97
-F src/expr.c 2857569c0f81c6b5bb6a5de824f6f8a6fcf974ff86604d5f43a7a7e71678e563
+F src/expr.c 1ca95a1f8d0ef5113ca948ffac815183e30d754403f871e91d9ebb94ec92ee0d
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c c065da737307a29e4d240ac727758dbf4102cb3218a1f651eb689b6a6fa12531
 F src/func.c efbcfe7cb7fc92fe5299c9aaa141075eb60d2108253e99bc235384ed6a90d937
@@ -1764,7 +1764,7 @@ F test/tkt-8454a207b9.test ead80b7a01438ca1436cee029694a96c821346cf1e24f06de12f8
 F test/tkt-868145d012.test a5f941107ece6a64410ca4755c6329b7eb57a356
 F test/tkt-8c63ff0ec.test 258b7fc8d7e4e1cb5362c7d65c143528b9c4cbed
 F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
-F test/tkt-99378177930f87bd.test 9d6cff39b50d062c813ae1cb0ebbd1b7acf81ecc23ae5d5215e5bb05667dc137
+F test/tkt-99378177930f87bd.test 1ee631d155f0d51a4547e9405ef35a3a9a32977352a37a10bcbbacc5e38356ad
 F test/tkt-9a8b09f8e6.test b2ef151d0984b2ebf237760dbeaa50724e5a0667
 F test/tkt-9d68c883.test 16f7cb96781ba579bc2e19bb14b4ad609d9774b6
 F test/tkt-9f2eb3abac.test cb6123ac695a08b4454c3792fbe85108f67fabf8
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a5a1b69b3feedb507ecfe2e9ddc039d7c01e1bb54e3e881df5010481886cdef9
-R 2c69c84e0f52c569a5c3b3b4ea6a7f1a
+P d294106ecb78d765305ab740007f4a678e28baa13ae403fe57ea9cbfc259620f
+R 464b9c781876348fa88209b9bcbdb4fe
 U drh
-Z fa98c5b69b350e02a0236ff7a868f9da
+Z fade084440f5178d675ec00dcd7ba976
 # Remove this line to create a well-formed Fossil manifest.
