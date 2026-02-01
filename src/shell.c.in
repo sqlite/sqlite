@@ -1129,6 +1129,7 @@ struct ShellState {
   u8 enableTimer;        /* Enable the timer.  2: permanently 1: only once */
   int inputNesting;      /* Track nesting level of .read and other redirects */
   double prevTimer;      /* Last reported timer value */
+  double tmProgress;     /* --timeout option for .progress */
   i64 lineno;            /* Line number of last line read from in */
   const char *zInFile;   /* Name of the input file */
   int openFlags;         /* Additional flags to open.  (SQLITE_OPEN_NOFOLLOW) */
@@ -1224,6 +1225,7 @@ static ShellState shellState;
                                    ** callback limit is reached, and for each
                                    ** top-level SQL statement */
 #define SHELL_PROGRESS_ONCE  0x04  /* Cancel the --limit after firing once */
+#define SHELL_PROGRESS_TMOUT 0x08  /* Stop after tmProgress seconds */
 
 /* Names of values for Mode.spec.eEsc and Mode.spec.eText
 */
@@ -1406,7 +1408,7 @@ static sqlite3_int64 iBegin;  /* Wall-clock time at start */
 ** Begin timing an operation
 */
 static void beginTimer(ShellState *p){
-  if( p->enableTimer ){
+  if( p->enableTimer || (p->flgProgress & SHELL_PROGRESS_TMOUT)!=0 ){
     getrusage(RUSAGE_SELF, &sBegin);
     iBegin = timeOfDay();
   }
@@ -1416,6 +1418,14 @@ static void beginTimer(ShellState *p){
 static double timeDiff(struct timeval *pStart, struct timeval *pEnd){
   return (pEnd->tv_usec - pStart->tv_usec)*0.000001 +
          (double)(pEnd->tv_sec - pStart->tv_sec);
+}
+
+/* Return the time since the start of the timer in
+** seconds. */
+static double elapseTime(ShellState *NotUsed){
+  (void)NotUsed;
+  if( iBegin==0 ) return 0.0;
+  return (timeOfDay() - iBegin)*0.000001;
 }
 
 /*
@@ -1432,11 +1442,13 @@ static void endTimer(ShellState *p){
           timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
           timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
     if( p->enableTimer==1 ) p->enableTimer = 0;
+    iBegin = 0;
   }
 }
 
 #define BEGIN_TIMER(X) beginTimer(X)
 #define END_TIMER(X)   endTimer(X)
+#define ELAPSE_TIME(X) elapseTime(X)
 #define HAS_TIMER 1
 
 #elif (defined(_WIN32) || defined(WIN32))
@@ -1482,7 +1494,9 @@ static int hasTimer(void){
 ** Begin timing an operation
 */
 static void beginTimer(ShellState *p){
-  if( p->enableTimer && getProcessTimesAddr ){
+  if( (p->enableTimer || (p->flgProgress & SHELL_PROGRESS_TMOUT)!=0)
+   && getProcessTimesAddr
+  ){
     FILETIME ftCreation, ftExit;
     getProcessTimesAddr(hProcess,&ftCreation,&ftExit,
                         &ftKernelBegin,&ftUserBegin);
@@ -1495,6 +1509,14 @@ static double timeDiff(FILETIME *pStart, FILETIME *pEnd){
   sqlite_int64 i64Start = *((sqlite_int64 *) pStart);
   sqlite_int64 i64End = *((sqlite_int64 *) pEnd);
   return (double) ((i64End - i64Start) / 10000000.0);
+}
+
+/* Return the time since the start of the timer in
+** seconds. */
+static double elapseTime(ShellState *NotUsed){
+  (void)NotUsed;
+  if( ftWallBegin==0 ) return 0.0;
+  return (timeOfDay() - ftWallBegin)*0.000001;
 }
 
 /*
@@ -1520,15 +1542,18 @@ static void endTimer(ShellState *p){
           timeDiff(&ftKernelBegin, &ftKernelEnd));
 #endif
     if( p->enableTimer==1 ) p->enableTimer = 0;
+    ftWallBegin = 0;
   }
 }
 
 #define BEGIN_TIMER(X) beginTimer(X)
+#define ELAPSE_TIME(X) elapseTime(X)
 #define END_TIMER(X)   endTimer(X)
 #define HAS_TIMER      hasTimer()
 
 #else
 #define BEGIN_TIMER(X) /* no-op */
+#define ELAPSE_TIME(X) 0.0
 #define END_TIMER(X)   /*no-op*/
 #define HAS_TIMER 0
 #endif
@@ -2458,6 +2483,13 @@ shellFormatSchema_finish:
 static int progress_handler(void *pClientData) {
   ShellState *p = (ShellState*)pClientData;
   p->nProgress++;
+  if( (p->flgProgress & SHELL_PROGRESS_TMOUT)!=0
+   && ELAPSE_TIME(p)>=p->tmProgress
+  ){
+    cli_printf(p->out, "Progress timeout after %.6f seconds\n", 
+               ELAPSE_TIME(p));
+    return 1;
+  }
   if( p->nProgress>=p->mxProgress && p->mxProgress>0 ){
     cli_printf(p->out, "Progress limit reached (%u)\n", p->nProgress);
     if( p->flgProgress & SHELL_PROGRESS_RESET ) p->nProgress = 0;
@@ -3819,6 +3851,7 @@ static const char *(azHelp[]) = {
   "   --once                    Do no more than one progress interrupt",
   "   --quiet|-q                No output except at interrupts",
   "   --reset                   Reset the count for each input and interrupt",
+  "   --timeout S               Halt after running for S seconds",
 #endif
   ".prompt MAIN CONTINUE    Replace the standard prompts",
 #ifndef SQLITE_SHELL_FIDDLE
@@ -10241,6 +10274,19 @@ static int do_meta_command(const char *zLine, ShellState *p){
         }
         if( cli_strcmp(z,"once")==0 ){
           p->flgProgress |= SHELL_PROGRESS_ONCE;
+          continue;
+        }
+        if( cli_strcmp(z,"timeout")==0 ){
+          if( i==nArg-1 ){
+            dotCmdError(p, i, "missing argument", 0);
+            return 1;
+          }
+          i++;
+          p->tmProgress = atof(azArg[i]);
+          if( p->tmProgress>0.0 ){
+            p->flgProgress = SHELL_PROGRESS_QUIET|SHELL_PROGRESS_TMOUT;
+            if( nn==0 ) nn = 100;
+          }
           continue;
         }
         if( cli_strcmp(z,"limit")==0 ){
