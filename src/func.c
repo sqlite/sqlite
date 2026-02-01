@@ -2370,8 +2370,45 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 }
 
 /*
-** pExpr points to an expression which implements a function.  If
-** it is appropriate to apply the LIKE optimization to that function
+** Callback for sqlite3ExprStrlenEst().
+**
+** If this node is a string literal that is longer pWalker->sz, then set
+** pWalker->sz to the byte length of that string literal.
+*/
+static int exprNodeStrlenEst(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_STRING ){
+    int sz = sqlite3Strlen30(pExpr->u.zToken);
+    if( sz>pWalker->u.sz ) pWalker->u.sz = sz;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Return the length of the longest string literal in the given
+** expression.
+*/
+int sqlite3ExprStrlenEst(Expr *p){
+  Walker w;
+  w.u.sz = 0;
+  w.xExprCallback = exprNodeStrlenEst;
+  w.xSelectCallback = sqlite3SelectWalkFail;
+#ifdef SQLITE_DEBUG
+  w.xSelectCallback2 = sqlite3SelectWalkAssert2;
+#endif
+  sqlite3WalkExpr(&w, p);
+  return w.u.sz;
+}
+
+/*
+** pExpr points to an expression which implements a function. 
+** If pExpr is anything other than a LIKE or GLOB operator, return
+** false (0) and skip all the rest.
+**
+** There are two cases.
+**
+** Case 1:  pIsNocase and aWc are both non-NULL
+**
+** If it is appropriate to apply the LIKE optimization to that function
 ** then set aWc[0] through aWc[2] to the wildcard characters and the
 ** escape character and then return TRUE.  If the function is not a
 ** LIKE-style function then return FALSE.
@@ -2385,10 +2422,16 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 ** the function (default for LIKE).  If the function makes the distinction
 ** between uppercase and lowercase (as does GLOB) then *pIsNocase is set to
 ** false.
+**
+** Case 2:  pIsNocase and aWc are both NULL
+**
+** Return the estimated length  of the pattern. Zero is a possible return
+** value in this case.
 */
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
   int nExpr;
+  assert( (aWc==0)==(pIsNocase==0) );
   assert( pExpr!=0 );
   assert( pExpr->op==TK_FUNCTION );
   assert( ExprUseXList(pExpr) );
@@ -2405,31 +2448,34 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
     return 0;
   }
 
-  /* The memcpy() statement assumes that the wildcard characters are
-  ** the first three statements in the compareInfo structure.  The
-  ** asserts() that follow verify that assumption
-  */
-  memcpy(aWc, pDef->pUserData, 3);
-  assert( (char*)&likeInfoAlt == (char*)&likeInfoAlt.matchAll );
-  assert( &((char*)&likeInfoAlt)[1] == (char*)&likeInfoAlt.matchOne );
-  assert( &((char*)&likeInfoAlt)[2] == (char*)&likeInfoAlt.matchSet );
-
-  if( nExpr<3 ){
-    aWc[3] = 0;
+  if( aWc!=0 ){
+    /* The memcpy() statement assumes that the wildcard characters are
+    ** the first three statements in the compareInfo structure.  The
+    ** asserts() that follow verify that assumption
+    */
+    memcpy(aWc, pDef->pUserData, 3);
+    assert( (char*)&likeInfoAlt == (char*)&likeInfoAlt.matchAll );
+    assert( &((char*)&likeInfoAlt)[1] == (char*)&likeInfoAlt.matchOne );
+    assert( &((char*)&likeInfoAlt)[2] == (char*)&likeInfoAlt.matchSet );
+  
+    if( nExpr<3 ){
+      aWc[3] = 0;
+    }else{
+      Expr *pEscape = pExpr->x.pList->a[2].pExpr;
+      char *zEscape;
+      if( pEscape->op!=TK_STRING ) return 0;
+      assert( !ExprHasProperty(pEscape, EP_IntValue) );
+      zEscape = pEscape->u.zToken;
+      if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
+      if( zEscape[0]==aWc[0] ) return 0;
+      if( zEscape[0]==aWc[1] ) return 0;
+      aWc[3] = zEscape[0];
+    }
+    *pIsNocase = (pDef->funcFlags & SQLITE_FUNC_CASE)==0;
+    return 1;
   }else{
-    Expr *pEscape = pExpr->x.pList->a[2].pExpr;
-    char *zEscape;
-    if( pEscape->op!=TK_STRING ) return 0;
-    assert( !ExprHasProperty(pEscape, EP_IntValue) );
-    zEscape = pEscape->u.zToken;
-    if( zEscape[0]==0 || zEscape[1]!=0 ) return 0;
-    if( zEscape[0]==aWc[0] ) return 0;
-    if( zEscape[0]==aWc[1] ) return 0;
-    aWc[3] = zEscape[0];
+    return sqlite3ExprStrlenEst(pExpr->x.pList->a[0].pExpr);
   }
-
-  *pIsNocase = (pDef->funcFlags & SQLITE_FUNC_CASE)==0;
-  return 1;
 }
 
 /* Mathematical Constants */

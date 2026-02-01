@@ -2960,6 +2960,11 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 ** "x" column is boolean or else -1 or 0 or 1 is a common default value
 ** on the "x" column and so in that case only cap the output row estimate
 ** at 1/2 instead of 1/4.
+**
+** Heuristic 3:  If there is a LIKE or GLOB operator with a large
+** constant pattern, then reduce the size of the search space according
+** to the length of the pattern, under the theory that longer patterns
+** are less likely to match.
 */
 static void whereLoopOutputAdjust(
   WhereClause *pWC,      /* The WHERE clause */
@@ -3024,6 +3029,15 @@ static void whereLoopOutputAdjust(
           if( iReduce<k ){
             pTerm->wtFlags |= TERM_HEURTRUTH;
             iReduce = k;
+          }
+        }else
+        if( pTerm->pExpr->op==TK_FUNCTION ){
+          int szPattern;
+          Expr *pExpr = pTerm->pExpr;
+          sqlite3 *db = pWC->pWInfo->pParse->db;
+          szPattern = sqlite3IsLikeFunction(db, pExpr, 0, 0);
+          if( szPattern>3 ){
+            pLoop->nOut -= szPattern*3-6;
           }
         }
       }

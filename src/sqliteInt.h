@@ -4380,6 +4380,7 @@ struct Walker {
     NameContext *pNC;                         /* Naming context */
     int n;                                    /* A counter */
     int iCur;                                 /* A cursor number */
+    int sz;                                   /* String literal length */
     SrcList *pSrcList;                        /* FROM clause */
     struct CCurHint *pCCurHint;               /* Used by codeCursorHint() */
     struct RefSrcList *pRefSrcList;           /* sqlite3ReferencesSrcList() */
@@ -5474,6 +5475,7 @@ void sqlite3DeleteIndexSamples(sqlite3*,Index*);
 void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
+int sqlite3ExprStrlenEst(Expr*);
 void sqlite3SchemaClear(void *);
 Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
