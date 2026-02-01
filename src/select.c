@@ -3497,7 +3497,7 @@ static int multiSelectByMerge(
       assert( pItem->u.x.iOrderByCol>0 );
       assert( pItem->u.x.iOrderByCol<=p->pEList->nExpr );
       aPermute[i] = pItem->u.x.iOrderByCol - 1;
-      if( aPermute[i]!=i-1 ) bKeep = 1;
+      if( aPermute[i]!=(u32)i-1 ) bKeep = 1;
     }
      if( bKeep==0 ){
       sqlite3DbFreeNN(db, aPermute);
