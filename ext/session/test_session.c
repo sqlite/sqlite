@@ -864,11 +864,11 @@ static int testStreamInput(
 ** because Tcl's buffers are often padded by a few bytes, which prevents
 ** small overreads from being detected when tests are run under asan.
 */
-static void *testGetByteArrayFromObj(Tcl_Obj *p, int *pnByte){
-  int nByte = 0;
+static void *testGetByteArrayFromObj(Tcl_Obj *p, Tcl_Size *pnByte){
+  Tcl_Size nByte = 0;
   void *aByte = Tcl_GetByteArrayFromObj(p, &nByte);
-  void *aCopy = malloc(nByte ? nByte : 1);
-  memcpy(aCopy, aByte, nByte);
+  void *aCopy = malloc(nByte ? (size_t)nByte : 1);
+  memcpy(aCopy, aByte, (size_t)nByte);
   *pnByte = nByte;
   return aCopy;
 }
