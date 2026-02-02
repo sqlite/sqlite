@@ -2374,10 +2374,35 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 **
 ** If this node is a string literal that is longer pWalker->sz, then set
 ** pWalker->sz to the byte length of that string literal.
+**
+** pWalker->eCode indicates how to count characters:
+**
+**    eCode==0     Count as a GLOB pattern
+**    eCode==1     Count as a LIKE pattern
 */
 static int exprNodeStrlenEst(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_STRING ){
-    int sz = sqlite3Strlen30(pExpr->u.zToken);
+    int sz = 0;                    /* Pattern size in bytes */
+    u8 *z = (u8*)pExpr->u.zToken;  /* The pattern */
+    u8 c;                          /* Next character of the pattern */
+    u8 c1, c2, c3;                 /* Wildcards */
+    if( pWalker->eCode ){
+      c1 = '%';
+      c2 = '_';
+      c3 = 0;
+    }else{
+      c1 = '*';
+      c2 = '?';
+      c3 = '[';
+    }
+    while( (c = *(z++))!=0 ){
+      if( c==c3 ){
+        if( *z ) z++;
+        while( *z && *z!=']' ) z++;
+      }else if( c!=c1 && c!=c2 ){
+        sz++;
+      }
+    }
     if( sz>pWalker->u.sz ) pWalker->u.sz = sz;
   }
   return WRC_Continue;
@@ -2386,10 +2411,16 @@ static int exprNodeStrlenEst(Walker *pWalker, Expr *pExpr){
 /*
 ** Return the length of the longest string literal in the given
 ** expression.
+**
+** eCode indicates how to count characters:
+**
+**    eCode==0     Count as a GLOB pattern
+**    eCode==1     Count as a LIKE pattern
 */
-int sqlite3ExprStrlenEst(Expr *p){
+int sqlite3ExprStrlenEst(Expr *p, u16 eCode){
   Walker w;
   w.u.sz = 0;
+  w.eCode = eCode;
   w.xExprCallback = exprNodeStrlenEst;
   w.xSelectCallback = sqlite3SelectWalkFail;
 #ifdef SQLITE_DEBUG
@@ -2425,8 +2456,10 @@ int sqlite3ExprStrlenEst(Expr *p){
 **
 ** Case 2:  pIsNocase and aWc are both NULL
 **
-** Return the estimated length  of the pattern. Zero is a possible return
-** value in this case.
+** Return the estimated length of the pattern, in bytes, not counting
+** wildcards.   Zero is a possible return value for this case.  The value
+** returned is used to estimate the percentage of rows in a table for which
+** the LIKE or GLOB operator will be true.
 */
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
@@ -2474,7 +2507,8 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
     *pIsNocase = (pDef->funcFlags & SQLITE_FUNC_CASE)==0;
     return 1;
   }else{
-    return sqlite3ExprStrlenEst(pExpr->x.pList->a[0].pExpr);
+    u16 eCode = pDef->pUserData != (void*)&globInfo;
+    return sqlite3ExprStrlenEst(pExpr->x.pList->a[0].pExpr, eCode);
   }
 }
 

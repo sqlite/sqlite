@@ -3036,8 +3036,8 @@ static void whereLoopOutputAdjust(
           Expr *pExpr = pTerm->pExpr;
           sqlite3 *db = pWC->pWInfo->pParse->db;
           szPattern = sqlite3IsLikeFunction(db, pExpr, 0, 0);
-          if( szPattern>3 ){
-            pLoop->nOut -= szPattern-3;
+          if( szPattern>0 ){
+            pLoop->nOut -= szPattern*2;
           }
         }
       }
