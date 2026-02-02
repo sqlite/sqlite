@@ -346,6 +346,7 @@ do_test shell5-1.10.1 {
   puts $out {column1,column2,column3,column4}
   puts $out "x1,x2%\"x3,\"x3\\\"data\\\"3\",x4"
   close $out
+  db close
   forcedelete test.db
   catchcmd test.db {
     CREATE TABLE t1(a,b,c,d);
