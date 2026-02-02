@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sprune-by-like-glob\sbranch.
-D 2026-02-02T14:24:47.744
+C Do\snot\sreduce\sthe\sestimated\struth\sprobability\sof\sLIKE\sand\sGLOB\soperators\nby\squite\sso\smuch.\s\sFix\sa\ssingle\stest\scase\swhose\soutput\schanged.
+D 2026-02-02T16:03:24.852
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -820,7 +820,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 505a98fbc599a971d92cb90371cf54546c404cd61e04fd093e7b0c8ff978f9b6
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 3ad5ed6958610deaacda7e0b7add8e9844fab10c3f36f31178e69476dbbdd531
+F src/where.c d2272132d973644548967121c97ca5a1f392b3439dae7d9bd719929debbc9e43
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 71c5c6804b7f882dec8ec858758accae02fcfca13df3cc720f1f258e663ec7c5
 F src/whereexpr.c cadb37fbaa2cb6d1ec1687923c3ac21aed4187d198f4500c00a01abb24c3cb44
@@ -1010,7 +1010,7 @@ F test/corruptK.test ac13504593d89d69690d45479547616ed12644d42b5cb7eeb2e759a76fc
 F test/corruptL.test f15de2b4729c0851ea89916a26766b094d74bac79f9f9f2b0191935aa3b344c9
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test a034bb217bebd8d007625dfb078e76ec3d53515052dbceb68bd47b2c27674d5c
-F test/cost.test cc434a026b1e9d0d98137a147e24e5daf1b1ad09e9ff7da63b34c83ddd136d92
+F test/cost.test 3786cd1cc6d1ab416004a1e39387fb0db0c8e259f46b0bce62cbdc328f2c55a0
 F test/count.test cd4bd531066e8d77ef8fe1e3fc8253d042072e117ccab214b290cf83f1602249
 F test/countofview.test 4088e461a10ee33e69803c177a69aa1d7bba81a9ffc2df66d76465a22ca7fdfc
 F test/coveridxscan.test f35c7208dedc4f98e471c569df64c0f95a49f6e072d8dc7c8f99bdee2697de1b
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 97bcb56a208af0687750a6438981bbfe36a8d516d996178e62551d302ef811ee 619060c2267a889089bf5328ba83640806688164a096df8582a5cf91b173741d
-R 62cbeaab246bf7be473ea1e9581b87b2
+P d9d3d3a807710957f35b023ddc89cb80eea529f654ce3aa0f9aafe6c15b3ce88
+R 25e1fe96e498f9b8b55553d9e6865338
 U drh
-Z bf4e81b961ceef9495be92ccd267ecbc
+Z d3b61653b3cf360015a3aeda2564e235
 # Remove this line to create a well-formed Fossil manifest.

@@ -3037,7 +3037,7 @@ static void whereLoopOutputAdjust(
           sqlite3 *db = pWC->pWInfo->pParse->db;
           szPattern = sqlite3IsLikeFunction(db, pExpr, 0, 0);
           if( szPattern>3 ){
-            pLoop->nOut -= szPattern*3-6;
+            pLoop->nOut -= szPattern-3;
           }
         }
       }
