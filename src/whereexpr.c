@@ -342,6 +342,34 @@ static int isLikeOrGlob(
 }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
+/*
+** If pExpr is one of "like", "glob", "match", or "regexp", then
+** return the corresponding SQLITE_INDEX_CONSTRAINT_xxxx value.
+** If not, return 0.
+**
+** pExpr is guaranteed to be a TK_FUNCTION.
+*/
+int sqlite3ExprIsLikeOperator(const Expr *pExpr){
+  static const struct {
+    const char *zOp;
+    unsigned char eOp;
+  } aOp[] = {
+    { "match",  SQLITE_INDEX_CONSTRAINT_MATCH },
+    { "glob",   SQLITE_INDEX_CONSTRAINT_GLOB },
+    { "like",   SQLITE_INDEX_CONSTRAINT_LIKE },
+    { "regexp", SQLITE_INDEX_CONSTRAINT_REGEXP }
+  };
+  int i;
+  assert( pExpr->op==TK_FUNCTION );
+  assert( !ExprHasProperty(pExpr, EP_IntValue) );
+  for(i=0; i<ArraySize(aOp); i++){
+    if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
+      return aOp[i].eOp;
+    }
+  }
+  return 0;
+}
+
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
@@ -378,15 +406,6 @@ static int isAuxiliaryVtabOperator(
   Expr **ppRight                  /* Expression to left of MATCH/op2 */
 ){
   if( pExpr->op==TK_FUNCTION ){
-    static const struct Op2 {
-      const char *zOp;
-      unsigned char eOp2;
-    } aOp[] = {
-      { "match",  SQLITE_INDEX_CONSTRAINT_MATCH },
-      { "glob",   SQLITE_INDEX_CONSTRAINT_GLOB },
-      { "like",   SQLITE_INDEX_CONSTRAINT_LIKE },
-      { "regexp", SQLITE_INDEX_CONSTRAINT_REGEXP }
-    };
     ExprList *pList;
     Expr *pCol;                     /* Column reference */
     int i;
@@ -406,16 +425,11 @@ static int isAuxiliaryVtabOperator(
     */
     pCol = pList->a[1].pExpr;
     assert( pCol->op!=TK_COLUMN || (ExprUseYTab(pCol) && pCol->y.pTab!=0) );
-    if( ExprIsVtab(pCol) ){
-      for(i=0; i<ArraySize(aOp); i++){
-        assert( !ExprHasProperty(pExpr, EP_IntValue) );
-        if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
-          *peOp2 = aOp[i].eOp2;
-          *ppRight = pList->a[0].pExpr;
-          *ppLeft = pCol;
-          return 1;
-        }
-      }
+    if( ExprIsVtab(pCol) && (i = sqlite3ExprIsLikeOperator(pExpr))!=0 ){
+      *peOp2 = i;
+      *ppRight = pList->a[0].pExpr;
+      *ppLeft = pCol;
+      return 1;
     }
 
     /* We can also match against the first column of overloaded

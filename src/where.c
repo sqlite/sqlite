@@ -2933,6 +2933,67 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 }
 
 /*
+** Callback for estLikePatternLength().
+**
+** If this node is a string literal that is longer pWalker->sz, then set
+** pWalker->sz to the byte length of that string literal.
+**
+** pWalker->eCode indicates how to count characters:
+**
+**    eCode==0     Count as a GLOB pattern
+**    eCode==1     Count as a LIKE pattern
+*/
+static int exprNodePatternLengthEst(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_STRING ){
+    int sz = 0;                    /* Pattern size in bytes */
+    u8 *z = (u8*)pExpr->u.zToken;  /* The pattern */
+    u8 c;                          /* Next character of the pattern */
+    u8 c1, c2, c3;                 /* Wildcards */
+    if( pWalker->eCode ){
+      c1 = '%';
+      c2 = '_';
+      c3 = 0;
+    }else{
+      c1 = '*';
+      c2 = '?';
+      c3 = '[';
+    }
+    while( (c = *(z++))!=0 ){
+      if( c==c3 ){
+        if( *z ) z++;
+        while( *z && *z!=']' ) z++;
+      }else if( c!=c1 && c!=c2 ){
+        sz++;
+      }
+    }
+    if( sz>pWalker->u.sz ) pWalker->u.sz = sz;
+  }
+  return WRC_Continue;
+}
+
+/*
+** Return the length of the longest string literal in the given
+** expression.
+**
+** eCode indicates how to count characters:
+**
+**    eCode==0     Count as a GLOB pattern
+**    eCode==1     Count as a LIKE pattern
+*/
+static int estLikePatternLength(Expr *p, u16 eCode){
+  Walker w;
+  w.u.sz = 0;
+  w.eCode = eCode;
+  w.xExprCallback = exprNodePatternLengthEst;
+  w.xSelectCallback = sqlite3SelectWalkFail;
+#ifdef SQLITE_DEBUG
+  w.xSelectCallback2 = sqlite3SelectWalkAssert2;
+#endif
+  sqlite3WalkExpr(&w, p);
+  return w.u.sz;
+}
+
+/*
 ** Adjust the WhereLoop.nOut value downward to account for terms of the
 ** WHERE clause that reference the loop but which are not used by an
 ** index.
@@ -3014,13 +3075,14 @@ static void whereLoopOutputAdjust(
       }else{
         /* In the absence of explicit truth probabilities, use heuristics to
         ** guess a reasonable truth probability. */
+        Expr *pOpExpr = pTerm->pExpr;
         pLoop->nOut--;
         if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0
          && (pTerm->wtFlags & TERM_HIGHTRUTH)==0  /* tag-20200224-1 */
         ){
-          Expr *pRight = pTerm->pExpr->pRight;
+          Expr *pRight = pOpExpr->pRight;
           int k = 0;
-          testcase( pTerm->pExpr->op==TK_IS );
+          testcase( pOpExpr->op==TK_IS );
           if( sqlite3ExprIsInteger(pRight, &k, 0) && k>=(-1) && k<=1 ){
             k = 10;
           }else{
@@ -3031,13 +3093,21 @@ static void whereLoopOutputAdjust(
             iReduce = k;
           }
         }else
-        if( pTerm->pExpr->op==TK_FUNCTION ){
-          int szPattern;
-          Expr *pExpr = pTerm->pExpr;
-          sqlite3 *db = pWC->pWInfo->pParse->db;
-          szPattern = sqlite3IsLikeFunction(db, pExpr, 0, 0);
-          if( szPattern>0 ){
-            pLoop->nOut -= szPattern*2;
+        if( ExprHasProperty(pOpExpr, EP_InfixFunc) 
+         && pOpExpr->op==TK_FUNCTION
+        ){
+          int eOp;
+          assert( ExprUseXList(pOpExpr) );
+          assert( pOpExpr->x.pList->nExpr>=2 );
+          eOp = sqlite3ExprIsLikeOperator(pOpExpr);
+          if( ALWAYS(eOp>0) ){
+            int szPattern;
+            Expr *pRHS = pOpExpr->x.pList->a[0].pExpr;
+            eOp = eOp==SQLITE_INDEX_CONSTRAINT_LIKE;
+            szPattern = estLikePatternLength(pRHS, eOp);
+            if( szPattern>0 ){
+              pLoop->nOut -= szPattern*2;
+            }
           }
         }
       }

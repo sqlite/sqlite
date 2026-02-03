@@ -5164,6 +5164,7 @@ int sqlite3ExprContainsSubquery(Expr*);
 int sqlite3ExprIsInteger(const Expr*, int*, Parse*);
 int sqlite3ExprCanBeNull(const Expr*);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
+int sqlite3ExprIsLikeOperator(const Expr*);
 int sqlite3IsRowid(const char*);
 const char *sqlite3RowidAlias(Table *pTab);
 void sqlite3GenerateRowDelete(
@@ -5475,7 +5476,6 @@ void sqlite3DeleteIndexSamples(sqlite3*,Index*);
 void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);
-int sqlite3ExprStrlenEst(Expr*,u16);
 void sqlite3SchemaClear(void *);
 Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
