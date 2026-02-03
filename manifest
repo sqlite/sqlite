@@ -1,5 +1,5 @@
-C Minor\schange\sto\stest/dotcmd01.test\sso\sthat\sit\sworks\swith\sSTAT4.
-D 2026-02-03T17:07:28.257
+C Improve\sthe\squery\splanner\sby\sreducing\sthe\sestimated\snumber\sof\soutput\srows\nfor\seach\sstage\sof\sa\sjoin\sif\sthere\sare\sLIKE,\sGLOB,\sREGEXP,\sor\sMATCH\nconstraints\son\sthe\stable\swhere\sthe\spattern\sstring\sis\sa\sconstant.\s\sThe\nreduction\sin\sthe\soutput\srow\sestimate\sis\sproportional\sto\sthe\slength\sof\nthe\spattern\sstring.
+D 2026-02-03T17:21:59.699
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -743,7 +743,7 @@ F src/shell.c.in fe1ad71964401a1bd1fc396aa524634096bcbe6cb20b0091a19490e1789431f
 F src/sqlite.h.in 8bcbaecfe2cbecf8c5c1381354fcdd7d307443e88b4953fccb222456c1267b61
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 1b7a0ee438bb5c2896d0609c537e917d8057b3340f6ad004d2de44f03e3d3cca
-F src/sqliteInt.h f4b50f8c287b858bb23dd51daee29ff424697be9a0753cf37df98fbe1806125b
+F src/sqliteInt.h a1c9e55b677379987ebf7294737df387e5fe4017b2b365272ed4108c2218d3c8
 F src/sqliteLimit.h 904a3f520362c7065c18165aaabd504fb13cc1b76cb411f38bd41ac219e4af1e
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -820,10 +820,10 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 505a98fbc599a971d92cb90371cf54546c404cd61e04fd093e7b0c8ff978f9b6
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 4992c31e356b185a71bb3e9fc1ac6d747864240d5da4e81ec39b7ab38706332e
+F src/where.c f1237550a01ccbc70141a523661173ddf802f48f7fe94feab9151a66f80c0d9d
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 71c5c6804b7f882dec8ec858758accae02fcfca13df3cc720f1f258e663ec7c5
-F src/whereexpr.c cadb37fbaa2cb6d1ec1687923c3ac21aed4187d198f4500c00a01abb24c3cb44
+F src/whereexpr.c bb649ce81bd6dc0eabfa2533ff5656fc7a16411e520a6c59be43e73e51503cce
 F src/window.c c0a38cd32473e8e8e7bc435039f914a36ca42465506dc491c65870c01ddac9fb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -1010,7 +1010,7 @@ F test/corruptK.test ac13504593d89d69690d45479547616ed12644d42b5cb7eeb2e759a76fc
 F test/corruptL.test f15de2b4729c0851ea89916a26766b094d74bac79f9f9f2b0191935aa3b344c9
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test a034bb217bebd8d007625dfb078e76ec3d53515052dbceb68bd47b2c27674d5c
-F test/cost.test cc434a026b1e9d0d98137a147e24e5daf1b1ad09e9ff7da63b34c83ddd136d92
+F test/cost.test 3786cd1cc6d1ab416004a1e39387fb0db0c8e259f46b0bce62cbdc328f2c55a0
 F test/count.test cd4bd531066e8d77ef8fe1e3fc8253d042072e117ccab214b290cf83f1602249
 F test/countofview.test 4088e461a10ee33e69803c177a69aa1d7bba81a9ffc2df66d76465a22ca7fdfc
 F test/coveridxscan.test f35c7208dedc4f98e471c569df64c0f95a49f6e072d8dc7c8f99bdee2697de1b
@@ -2194,8 +2194,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 619060c2267a889089bf5328ba83640806688164a096df8582a5cf91b173741d
-R 971a6a06931dcbfd5e0803267961b549
+P 8aaf5b6b6c3d71789eebd2b8f440dd2fdaad2ef2adc9c7b2b019f08853d0b195 510a6738e5d186a74a45fa7385f4722f4e090d85562f259b02c49393ca56860b
+R 029e1e172165301b2bc0a3bca8bb2f42
+T +closed 510a6738e5d186a74a45fa7385f4722f4e090d85562f259b02c49393ca56860b
 U drh
-Z b6684e32a3d0d6883283ef0b1bce9008
+Z 160dfcf3845ec6e10ab58cf4182fb30d
 # Remove this line to create a well-formed Fossil manifest.
