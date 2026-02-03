@@ -3022,10 +3022,12 @@ static int estLikePatternLength(Expr *p, u16 eCode){
 ** on the "x" column and so in that case only cap the output row estimate
 ** at 1/2 instead of 1/4.
 **
-** Heuristic 3:  If there is a LIKE or GLOB operator with a large
-** constant pattern, then reduce the size of the search space according
-** to the length of the pattern, under the theory that longer patterns
-** are less likely to match.
+** Heuristic 3:  If there is a LIKE or GLOB (or REGEXP or MATCH) operator
+** with a large constant pattern, then reduce the size of the search
+** space according to the length of the pattern, under the theory that
+** longer patterns are less likely to match.  This heuristic was added
+** to give better output-row count estimates when preparing queries for
+** the Join-Order Benchmarks.  See forum thread 2026-01-30T09:57:54z
 */
 static void whereLoopOutputAdjust(
   WhereClause *pWC,      /* The WHERE clause */
