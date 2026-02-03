@@ -24,6 +24,7 @@
 # The ".eqp on" setting does not affect the output from .fullschema
 # and similar.
 #
+.testctrl opt -Stat4
 .testcase 100
 CREATE TABLE t1(a,b,c);
 WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<300)

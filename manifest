@@ -1,5 +1,5 @@
-C Update\ssession\smodule\stest\scode\sto\scorrectly\suse\sTcl_Size\sinstead\sof\sint.
-D 2026-02-02T11:42:19.019
+C Minor\schange\sto\stest/dotcmd01.test\sso\sthat\sit\sworks\swith\sSTAT4.
+D 2026-02-03T17:07:28.257
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1060,7 +1060,7 @@ F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 691c9e850b0d0b56b66e7e235453198cb4cf0760e324b7403d3c5abbeab0a014
 F test/distinct2.test a6af6a90b2c1eea64c3cc87ea7f8feb832053f7276fe3c212abacf646de4762a
 F test/distinctagg.test 40d7169ae5846caaf62c6e307d2ca3c333daf9b6f7cde888956a339a97afe85f
-F test/dotcmd01.sql 3aca4a41ee5d2ccc3386e429148e04f4d57328f573cec863b66892da0595cab4
+F test/dotcmd01.sql 0388a778912ed08436ae5c80e03389d8bd347fa724611193257a18c69692019d
 F test/e_blobbytes.test 4c01dfe4f12087b92b20705a3fdfded45dc4ed16d5a211fed4e1d2786ba68a52
 F test/e_blobclose.test 692fc02a058476c2222a63d97e3f3b2b809c1842e5525ded7f854d540ac2e075
 F test/e_blobopen.test 29f6055ee453b8e679fe9570c4d3acfedbef821622c5dad16875148c5952ef50
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8eb5c88aeb37279f68f5bb0b268339a8f6fb0b927b1e398ac4c83bf42c281273
-R 0626610f1baa6b001c5c157abce6e6f4
-U dan
-Z fb06a25c06a0486196376fb2b3816a0a
+P 619060c2267a889089bf5328ba83640806688164a096df8582a5cf91b173741d
+R 971a6a06931dcbfd5e0803267961b549
+U drh
+Z b6684e32a3d0d6883283ef0b1bce9008
 # Remove this line to create a well-formed Fossil manifest.
