@@ -54,6 +54,10 @@ jobs:
             echo "::error::No ${{ matrix.platform }} ${{ matrix.process-mode }} artifact found"
             exit 1
           fi
+          # Extract Nanvix commit SHA from artifact filename (format: nanvix-platform-mode-release-SHA.tar.bz2)
+          NANVIX_SHA=$(basename "$ARTIFACT_FILE" | sed -E 's/.*-([a-f0-9]{40})\.tar\.bz2$/\1/')
+          echo "Nanvix commit SHA: $NANVIX_SHA"
+          echo "NANVIX_SHA=$NANVIX_SHA" >> "$GITHUB_ENV"
           mkdir -p nanvix-artifacts/extracted
           tar -xjf "$ARTIFACT_FILE" -C nanvix-artifacts/extracted
           NANVIX_HOME=$(find nanvix-artifacts/extracted -maxdepth 2 -type d -name "bin" -exec dirname {} \; | head -1)
@@ -64,13 +68,39 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          echo "Downloading zlib for ${{ matrix.platform }}-${{ matrix.process-mode }}..."
-          # Get the latest zlib release for the matching platform
+          echo "Downloading zlib for ${{ matrix.platform }}-${{ matrix.process-mode }} (Nanvix SHA: $NANVIX_SHA)..."
+
+          # First, try to find a zlib release that matches the Nanvix SHA
+          # zlib releases include the Nanvix SHA in their release notes
           ZLIB_ARTIFACT="zlib-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          ZLIB_URL="https://github.com/nanvix/zlib/releases/latest/download/${ZLIB_ARTIFACT}"
           mkdir -p zlib-dep
+
+          # Get list of zlib releases and find one built with matching Nanvix SHA
+          echo "Looking for zlib release built with Nanvix commit $NANVIX_SHA..."
+          ZLIB_RELEASES=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/nanvix/zlib/releases?per_page=20" 2>/dev/null || echo "[]")
+
+          # Try to find a release that matches our Nanvix SHA (check release body for SHA reference)
+          MATCHING_RELEASE_TAG=""
+          for tag in $(echo "$ZLIB_RELEASES" | jq -r '.[].tag_name' 2>/dev/null); do
+            RELEASE_BODY=$(echo "$ZLIB_RELEASES" | jq -r ".[] | select(.tag_name == \"$tag\") | .body" 2>/dev/null)
+            if echo "$RELEASE_BODY" | grep -q "$NANVIX_SHA"; then
+              MATCHING_RELEASE_TAG="$tag"
+              echo "Found matching zlib release: $tag"
+              break
+            fi
+          done
+
+          # If no matching release found, fall back to latest
+          if [[ -z "$MATCHING_RELEASE_TAG" ]]; then
+            echo "::warning::No zlib release found matching Nanvix SHA $NANVIX_SHA, falling back to latest"
+            ZLIB_URL="https://github.com/nanvix/zlib/releases/latest/download/${ZLIB_ARTIFACT}"
+          else
+            ZLIB_URL="https://github.com/nanvix/zlib/releases/download/${MATCHING_RELEASE_TAG}/${ZLIB_ARTIFACT}"
+          fi
+
+          echo "Downloading zlib from: $ZLIB_URL"
           if curl -fsSL -o "zlib-dep/${ZLIB_ARTIFACT}" "$ZLIB_URL"; then
-            echo "Downloaded zlib from: $ZLIB_URL"
             tar -xjf "zlib-dep/${ZLIB_ARTIFACT}" -C zlib-dep
             # Find extracted directory and copy files to sysroot
             ZLIB_DIR=$(find zlib-dep -maxdepth 1 -type d -name "zlib-*" | head -1)
@@ -83,7 +113,8 @@ jobs:
               echo "::warning::Could not find extracted zlib directory"
             fi
           else
-            echo "::warning::Could not download zlib release, build may fail if zlib is required"
+            echo "::error::Could not download zlib release"
+            exit 1
           fi
 
       - name: Build

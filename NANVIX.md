@@ -46,12 +46,15 @@ For experienced users who want to build quickly:
 # 1. Pull the Docker image
 docker pull nanvix/toolchain:v0.11.x-minimal
 
-# 2. Download Nanvix sysroot
+# 2. Download Nanvix sysroot and extract Nanvix commit SHA
 curl -fsSL https://raw.githubusercontent.com/nanvix/nanvix/refs/heads/dev/scripts/get-nanvix.sh | bash -s -- nanvix-artifacts
 tar -xjf nanvix-artifacts/*microvm*single*.tar.bz2 -C nanvix-artifacts
 export NANVIX_HOME=$(find nanvix-artifacts -maxdepth 2 -type d -name "bin" -exec dirname {} \; | head -1)
+# Extract Nanvix SHA from artifact filename for version matching
+export NANVIX_SHA=$(ls nanvix-artifacts/*microvm*single*.tar.bz2 | sed -E 's/.*-([a-f0-9]{40})\.tar\.bz2$/\1/')
 
-# 3. Download zlib dependency (matching platform)
+# 3. Download zlib dependency (must match Nanvix version)
+# Find zlib release built with same Nanvix SHA, or use latest as fallback
 curl -fsSL -o zlib-release.tar.bz2 "https://github.com/nanvix/zlib/releases/latest/download/zlib-microvm-single-process.tar.bz2"
 tar -xjf zlib-release.tar.bz2
 cp -f zlib-*/lib/libz.a "$NANVIX_HOME/lib/"
@@ -76,7 +79,9 @@ You need the following components to build SQLite for Nanvix:
 |-----------|-------------|------------------|
 | **Nanvix Toolchain** | i686-nanvix cross-compiler | `$HOME/toolchain` |
 | **Nanvix Sysroot** | System libraries and linker script | `$HOME/nanvix` |
-| **zlib** | Compression library (from nanvix/zlib releases) | Installed in sysroot |
+| **zlib** | Compression library (must match Nanvix version) | Installed in sysroot |
+
+> **Important:** The zlib library must be built against the same Nanvix version you are using. The CI workflow automatically finds and downloads matching zlib releases based on the Nanvix commit SHA.
 
 ### Available Platform Configurations
 
@@ -97,16 +102,26 @@ The script downloads all release artifacts. Extract the one matching your target
 
 ### Downloading zlib Dependency
 
-SQLite requires zlib for compression support. Download the matching zlib release from the nanvix organization:
+SQLite requires zlib for compression support. **You must use a zlib release that was built against the same Nanvix version.** The Nanvix commit SHA is embedded in the artifact filename (e.g., `nanvix-microvm-single-process-release-<SHA>.tar.bz2`).
+
+To find matching zlib releases:
 
 ```bash
-# Replace PLATFORM and PROCESS_MODE with your target (e.g., microvm, single-process)
+# 1. Extract Nanvix SHA from artifact filename
+NANVIX_SHA=$(ls nanvix-artifacts/*microvm*single*.tar.bz2 | sed -E 's/.*-([a-f0-9]{40})\.tar\.bz2$/\1/')
+
+# 2. Check zlib releases for one built with matching Nanvix SHA
+# The zlib release notes contain the Nanvix commit SHA they were built against
+
+# 3. Download matching zlib (replace PLATFORM and PROCESS_MODE)
 curl -fsSL -o zlib-release.tar.bz2 \
   "https://github.com/nanvix/zlib/releases/latest/download/zlib-PLATFORM-PROCESS_MODE.tar.bz2"
 tar -xjf zlib-release.tar.bz2
 cp -f zlib-*/lib/libz.a "$NANVIX_HOME/lib/"
 cp -f zlib-*/include/*.h "$NANVIX_HOME/include/"
 ```
+
+> **Note:** The CI workflow automatically finds and downloads zlib releases that match the Nanvix version by checking release notes for the Nanvix commit SHA.
 
 ---
 
