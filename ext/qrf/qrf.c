@@ -35,7 +35,8 @@ typedef struct qrfEQPGraph qrfEQPGraph;
 struct qrfEQPGraph {
   qrfEQPGraphRow *pRow;  /* Linked list of all rows of the EQP output */
   qrfEQPGraphRow *pLast; /* Last element of the pRow list */
-  char zPrefix[100];     /* Graph prefix */
+  int nWidth;            /* Width of the graph */
+  char zPrefix[400];     /* Graph prefix */
 };
 
 /*
@@ -235,20 +236,20 @@ static void qrfEqpRenderLevel(Qrf *p, int iEqpId){
 ** pOut.
 **
 **   +  Only show the first three significant digits.
-**   +  Append suffixes K, M, G, or T for 1e3, 1e6, 1e9, 1e12
+**   +  Append suffixes K, M, G, T, P, and E for 1e3, 1e6, ... 1e18
 */
 static void qrfApproxInt64(sqlite3_str *pOut, i64 N){
-  static const char aSuffix[] = { 'K', 'M', 'G', 'T' };
+  static const char aSuffix[] = { 'K', 'M', 'G', 'T', 'P', 'E' };
   int i;
   if( N<0 ){
     N = N==INT64_MIN ? INT64_MAX : -N;
     sqlite3_str_append(pOut, "-", 1);
   }
   if( N<10000 ){
-    sqlite3_str_appendf(pOut, "%lld", N);
+    sqlite3_str_appendf(pOut, "%4lld ", N);
     return;
   }
-  for(i=1; i<=12; i++){
+  for(i=1; i<=18; i++){
     N = (N+5)/10;
     if( N<10000 ){
       int n = (int)N;
@@ -257,34 +258,15 @@ static void qrfApproxInt64(sqlite3_str *pOut, i64 N){
           sqlite3_str_appendf(pOut, "%d.%02d", n/1000, (n%1000)/10);
           break;
         case 1:
-          sqlite3_str_appendf(pOut, "%d.%d", n/100, (n%100)/10);
+          sqlite3_str_appendf(pOut, "%2d.%d", n/100, (n%100)/10);
           break;
         case 2:
-          sqlite3_str_appendf(pOut, "%d", n/10);
+          sqlite3_str_appendf(pOut, "%4d", n/10);
           break;
       }
       sqlite3_str_append(pOut, &aSuffix[i/3], 1);
-      return;
+      break;
     }
-  }
-  sqlite3_str_appendf(pOut, "%lldT", N);
-}
-
-/*
-** Render a double r into pOut for use in scan-stats reporting.
-**
-** If r is greater than or equal to 1000, then render using qrfApproxInt64.
-** Otherwise render using %.1g.
-*/
-static void qrfApproxDouble(sqlite3_str *pOut, double r){
-  if( r<0.0 ){
-    sqlite3_str_append(pOut, "-", 1);
-    r = -r;
-  }
-  if( r>=1000.0 ){
-    qrfApproxInt64(pOut, (i64)r);
-  }else{
-    sqlite3_str_appendf(pOut, "%.1g", r);
   }
 }
 
@@ -303,9 +285,26 @@ static void qrfEqpRender(Qrf *p, i64 nCycle){
       p->u.pGraph->pRow = pRow->pNext;
       sqlite3_free(pRow);
     }else if( nCycle>0 ){
-      sqlite3_str_appendf(p->pOut, "QUERY PLAN (cycles=");
+      int nSp = p->u.pGraph->nWidth - 2;
+      if( p->spec.eStyle==QRF_STYLE_StatsEst ){
+        sqlite3_str_appendchar(p->pOut, nSp, ' ');
+        sqlite3_str_appendall(p->pOut,
+                                "Cycles      Loops  (est)  Rows   (est)\n");
+        sqlite3_str_appendchar(p->pOut, nSp, ' ');
+        sqlite3_str_appendall(p->pOut,
+                                "----------  ------------  ------------\n");
+      }else{
+        sqlite3_str_appendchar(p->pOut, nSp, ' ');
+        sqlite3_str_appendall(p->pOut,
+                                "Cycles      Loops  Rows \n");
+        sqlite3_str_appendchar(p->pOut, nSp, ' ');
+        sqlite3_str_appendall(p->pOut,
+                                "----------  -----  -----\n");
+      }
+      sqlite3_str_appendall(p->pOut, "QUERY PLAN");
+      sqlite3_str_appendchar(p->pOut, nSp - 10, ' ');
       qrfApproxInt64(p->pOut, nCycle);
-      sqlite3_str_appendf(p->pOut, " [100%%])\n");
+      sqlite3_str_appendall(p->pOut, " 100%\n");
     }else{
       sqlite3_str_appendall(p->pOut, "QUERY PLAN\n");
     }
@@ -375,7 +374,7 @@ static void qrfEqpStats(Qrf *p){
     n = (int)strlen(z) + qrfStatsHeight(pS,i)*3;
     if( n>nWidth ) nWidth = n;
   }
-  nWidth += 4;
+  nWidth += 2;
 
   sqlite3_stmt_scanstatus_v2(pS,-1, SQLITE_SCANSTAT_NCYCLE, f, (void*)&nTotal);
   for(i=0; 1; i++){
@@ -405,38 +404,35 @@ static void qrfEqpStats(Qrf *p){
     sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NAME,f,(void*)&zName);
 
     if( nCycle>=0 || nLoop>=0 || nRow>=0 ){
-      const char *zSp = "";
+      int nSp = 0;
       sqlite3_str_reset(pStats);
       if( nCycle>=0 && nTotal>0 ){
-        sqlite3_str_appendf(pStats, "cycles=");
         qrfApproxInt64(pStats, nCycle);
-        sqlite3_str_appendf(pStats, " [%d%%]",
+        sqlite3_str_appendf(pStats, " %3d%%",
             ((nCycle*100)+nTotal/2) / nTotal
         );
-        zSp = " ";
+        nSp = 2;
       }
       if( nLoop>=0 ){
-        sqlite3_str_appendf(pStats, "%sloops=", zSp);
+        if( nSp ) sqlite3_str_appendchar(pStats, nSp, ' ');
         qrfApproxInt64(pStats, nLoop);
-        zSp = " ";
+        nSp = 2;
         if( p->spec.eStyle==QRF_STYLE_StatsEst ){
-          sqlite3_str_appendf(pStats, " [est ");
-          qrfApproxDouble(pStats, rEstCum/rEst);
-          sqlite3_str_appendf(pStats, "]");
+          sqlite3_str_appendf(pStats, "  ");
+          qrfApproxInt64(pStats, (i64)(rEstCum/rEst));
         }
       }
       if( nRow>=0 ){
-        sqlite3_str_appendf(pStats, "%srows=", zSp);
+        if( nSp ) sqlite3_str_appendchar(pStats, nSp, ' ');
         qrfApproxInt64(pStats, nRow);
-        zSp = " ";
+        nSp = 2;
         if( p->spec.eStyle==QRF_STYLE_StatsEst ){
-          sqlite3_str_appendf(pStats, " [est ");
-          qrfApproxDouble(pStats, rEstCum);
-          sqlite3_str_appendf(pStats, "]");
+          sqlite3_str_appendf(pStats, "  ");
+          qrfApproxInt64(pStats, (i64)rEstCum);
         }
       }
       sqlite3_str_appendf(pLine,
-          "% *s (%s)", -1*(nWidth-qrfStatsHeight(pS,i)*3), zo,
+          "% *s %s", -1*(nWidth-qrfStatsHeight(pS,i)*3), zo,
           sqlite3_str_value(pStats)
       );
       sqlite3_str_reset(pStats);
@@ -446,6 +442,7 @@ static void qrfEqpStats(Qrf *p){
       qrfEqpAppend(p, iId, iPid, zo);
     }
   }
+  if( p->u.pGraph ) p->u.pGraph->nWidth = nWidth;
   qrfStrErr(p, pLine);
   sqlite3_free(sqlite3_str_finish(pLine));
   qrfStrErr(p, pStats);
