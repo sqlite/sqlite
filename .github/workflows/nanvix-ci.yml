@@ -229,7 +229,9 @@ jobs:
         run: |
           set -euo pipefail
           # Get zlib tag from any matrix build (they all use the same)
-          ZLIB_TAG=$(cat dep-info-artifacts/dep-info-*/zlib-tag.txt | head -1)
+          # Use find to get one file to avoid broken pipe with cat|head
+          ZLIB_TAG_FILE=$(find dep-info-artifacts -name "zlib-tag.txt" | head -1)
+          ZLIB_TAG=$(cat "$ZLIB_TAG_FILE")
           echo "zlib_tag=${ZLIB_TAG}" >> "$GITHUB_OUTPUT"
           echo "Using zlib tag: ${ZLIB_TAG}"
 
