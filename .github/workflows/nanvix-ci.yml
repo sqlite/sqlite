@@ -273,7 +273,7 @@ jobs:
       - name: Trigger Dependent Workflows
         if: success()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
         run: |
           echo "Triggering cpython workflow..."
           gh api repos/nanvix/cpython/dispatches \
