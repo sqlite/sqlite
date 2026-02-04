@@ -90,6 +90,7 @@ jobs:
           echo "NANVIX_HOME=$NANVIX_HOME" >> "$GITHUB_ENV"
 
       - name: Download and Install zlib Dependency
+        id: zlib-dep
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -119,9 +120,17 @@ jobs:
           if [[ -z "$MATCHING_RELEASE_TAG" ]]; then
             echo "::warning::No zlib release found matching Nanvix SHA $NANVIX_SHA, falling back to latest"
             ZLIB_URL="https://github.com/nanvix/zlib/releases/latest/download/${ZLIB_ARTIFACT}"
+            # Get the actual tag of latest release for recording
+            MATCHING_RELEASE_TAG=$(curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" \
+              "https://api.github.com/repos/nanvix/zlib/releases/latest" 2>/dev/null | jq -r '.tag_name // "latest"')
           else
             ZLIB_URL="https://github.com/nanvix/zlib/releases/download/${MATCHING_RELEASE_TAG}/${ZLIB_ARTIFACT}"
           fi
+
+          # Record the exact zlib tag used for downstream consumers
+          echo "ZLIB_TAG=${MATCHING_RELEASE_TAG}" >> "$GITHUB_ENV"
+          echo "zlib_tag=${MATCHING_RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Recording zlib dependency tag: ${MATCHING_RELEASE_TAG}"
 
           echo "Downloading zlib from: $ZLIB_URL"
           if curl -fsSL -o "zlib-dep/${ZLIB_ARTIFACT}" "$ZLIB_URL"; then
@@ -140,6 +149,20 @@ jobs:
             echo "::error::Could not download zlib release"
             exit 1
           fi
+
+      - name: Save Dependency Info
+        run: |
+          set -euo pipefail
+          mkdir -p dep-info
+          echo "${ZLIB_TAG}" > dep-info/zlib-tag.txt
+          echo "Saved dependency info: zlib=${ZLIB_TAG}"
+
+      - name: Upload Dependency Info
+        uses: actions/upload-artifact@v4
+        with:
+          name: dep-info-${{ matrix.platform }}-${{ matrix.process-mode }}
+          path: dep-info/
+          retention-days: 7
 
       - name: Build
         run: |
@@ -188,12 +211,27 @@ jobs:
           path: release-artifacts
           pattern: sqlite-*
 
+      - name: Download Dependency Info
+        uses: actions/download-artifact@v4
+        with:
+          path: dep-info-artifacts
+          pattern: dep-info-*
+
       - name: Prepare Release Assets
         run: |
           set -euo pipefail
           mkdir -p release-assets
           find release-artifacts -name "*.tar.bz2" -exec cp {} release-assets/ \;
           ls -la release-assets/
+
+      - name: Get Dependency Tags
+        id: deps
+        run: |
+          set -euo pipefail
+          # Get zlib tag from any matrix build (they all use the same)
+          ZLIB_TAG=$(cat dep-info-artifacts/dep-info-*/zlib-tag.txt | head -1)
+          echo "zlib_tag=${ZLIB_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Using zlib tag: ${ZLIB_TAG}"
 
       - name: Get Nanvix Release Info
         id: nanvix-release
@@ -217,6 +255,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NANVIX_NAME: ${{ steps.nanvix-release.outputs.name }}
           NANVIX_PUBLISHED: ${{ steps.nanvix-release.outputs.published }}
+          ZLIB_TAG: ${{ steps.deps.outputs.zlib_tag }}
         run: |
           # Release tag format: {commit-sha}-nanvix-{nanvix-sha}
           # This enables easy lookup of releases built with a specific Nanvix version
@@ -236,8 +275,8 @@ jobs:
           - Commit: [${NANVIX_SHA_FULL}](https://github.com/nanvix/nanvix/commit/${NANVIX_SHA_FULL})
           - Nanvix SHA: \`${NANVIX_SHA}\`
 
-          **Dependencies:**
-          - zlib: Built with Nanvix SHA \`${NANVIX_SHA}\`" \
+          **Dependencies (exact tags for reproducibility):**
+          - zlib: \`${ZLIB_TAG}\`" \
             --latest \
             release-assets/*.tar.bz2
 
