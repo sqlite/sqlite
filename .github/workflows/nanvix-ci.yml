@@ -232,8 +232,11 @@ jobs:
           # Use find to get one file to avoid broken pipe with cat|head
           ZLIB_TAG_FILE=$(find dep-info-artifacts -name "zlib-tag.txt" | head -1)
           ZLIB_TAG=$(cat "$ZLIB_TAG_FILE")
+          # Extract commit SHA from tag (format: {commit-sha}-nanvix-{nanvix-sha})
+          ZLIB_SHA=$(echo "$ZLIB_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
           echo "zlib_tag=${ZLIB_TAG}" >> "$GITHUB_OUTPUT"
-          echo "Using zlib tag: ${ZLIB_TAG}"
+          echo "zlib_sha=${ZLIB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Using zlib tag: ${ZLIB_TAG} (SHA: ${ZLIB_SHA})"
 
       - name: Get Nanvix Release Info
         id: nanvix-release
@@ -258,6 +261,7 @@ jobs:
           NANVIX_NAME: ${{ steps.nanvix-release.outputs.name }}
           NANVIX_PUBLISHED: ${{ steps.nanvix-release.outputs.published }}
           ZLIB_TAG: ${{ steps.deps.outputs.zlib_tag }}
+          ZLIB_SHA: ${{ steps.deps.outputs.zlib_sha }}
         run: |
           # Release tag format: {commit-sha}-nanvix-{nanvix-sha}
           # This enables easy lookup of releases built with a specific Nanvix version
@@ -278,7 +282,7 @@ jobs:
           - Nanvix SHA: \`${NANVIX_SHA}\`
 
           **Dependencies:**
-          - zlib: \`${ZLIB_TAG}\`" \
+          - zlib: [\`${ZLIB_TAG}\`](https://github.com/nanvix/zlib/releases/tag/${ZLIB_TAG})" \
             --latest \
             release-assets/*.tar.bz2
 
