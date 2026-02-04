@@ -1,5 +1,5 @@
-C Fix\sscanstatus\soutput\sin\sQRF\sso\sthat\sit\sshows\sthe\stotal\snumber\sof\scycles\non\sthe\s"QUERY\sPLAN"\sline.
-D 2026-02-04T11:51:20.221
+C Render\sscan-status\svalues\swith\s3\sor\s4\ssignificant\sdigits\sonly,\sfor\nimproved\sreadability.
+D 2026-02-04T13:35:32.765
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -420,7 +420,7 @@ F ext/misc/zipfile.c 837591f0505d21f7f7937ea046c9b0fc594f7fa3ca00c2bd54ffa1c94bf
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md e6e0ce2700acf6fd06312b42726a8f08ca240f30e1b122bff87c71c602046352
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
-F ext/qrf/qrf.c 2679e7d31c8f560ea08d256fb78e528492aef87ae8889d1b0bd7cec996ee4b1d
+F ext/qrf/qrf.c 1b9df1070489d0e82abbd5eec844bf20ef65787cc44f69b02649e47dc03bde7d
 F ext/qrf/qrf.h 2ac14b0aaacf44636d8c81051bfeab4afae50a98fbb2e10ff5aed0c28a87b2b2
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6852843e6aa23051de0884593ce64b96a16f16c4d63b222bd324297581f7cf75
-R 4942f96654121dcb448939cb1dd44a80
+P 611cef0ec281ae06eac97df8048d617fd445c348c2fc1673202b9cc081a365db
+R 948a2925b6f14b356c852d71e9b3a7e0
 U drh
-Z 91037e821426352cbdf9cb6287b69533
+Z acac1c8caf17f6287150425d80569e65
 # Remove this line to create a well-formed Fossil manifest.
