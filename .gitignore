@@ -1,1 +1,48 @@
-.z.cache
+# Nanvix build artifacts
+.nanvix-configured
+nanvix-artifacts/
+
+# SQLite build artifacts
+.main.mk.checks
+.target_source
+Makefile
+*.o
+*.a
+*.elf
+*.so
+*.dll
+*.exe
+sqlite3
+sqlite3.c
+sqlite3.h
+sqlite3ext.h
+sqlite3session.h
+sqlite_cfg.h
+shell.c
+config.log
+sqlite3.pc
+
+# Generated source files
+fts5.c
+fts5.h
+fts5parse.*
+keywordhash.h
+lempar.c
+opcodes.c
+opcodes.h
+parse.c
+parse.h
+parse.out
+parse.sql
+parse.y
+
+# Build tools
+jimsh
+jimsh0
+lemon
+mkkeywordhash
+mksourceid
+src-verify
+
+# Temp directories
+tsrc/
