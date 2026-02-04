@@ -274,7 +274,7 @@ static void qrfApproxInt64(sqlite3_str *pOut, i64 N){
 ** Render a double r into pOut for use in scan-stats reporting.
 **
 ** If r is greater than or equal to 1000, then render using qrfApproxInt64.
-** Otherwise render using %.1f.
+** Otherwise render using %.1g.
 */
 static void qrfApproxDouble(sqlite3_str *pOut, double r){
   if( r<0.0 ){
@@ -284,7 +284,7 @@ static void qrfApproxDouble(sqlite3_str *pOut, double r){
   if( r>=1000.0 ){
     qrfApproxInt64(pOut, (i64)r);
   }else{
-    sqlite3_str_appendf(pOut, "%.1f", r);
+    sqlite3_str_appendf(pOut, "%.1g", r);
   }
 }
 
@@ -360,6 +360,8 @@ static void qrfEqpStats(Qrf *p){
   int i = 0;
   i64 nTotal = 0;
   int nWidth = 0;
+  int prevPid = -1;             /* Previous iPid */
+  double rEstCum = 1.0;         /* Cumulative row estimate */
   sqlite3_str *pLine = sqlite3_str_new(p->db);
   sqlite3_str *pStats = sqlite3_str_new(p->db);
   qrfEqpReset(p);
@@ -389,17 +391,21 @@ static void qrfEqpStats(Qrf *p){
     if( sqlite3_stmt_scanstatus_v2(pS,i,SQLITE_SCANSTAT_EXPLAIN,f,(void*)&zo) ){
       break;
     }
+    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_PARENTID,f,(void*)&iPid);
+    if( iPid!=prevPid ){
+      prevPid = iPid;
+      rEstCum = 1.0;
+    }
     sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_EST,f,(void*)&rEst);
+    rEstCum *= rEst;
     sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NLOOP,f,(void*)&nLoop);
     sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NVISIT,f,(void*)&nRow);
     sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NCYCLE,f,(void*)&nCycle);
     sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_SELECTID,f,(void*)&iId);
-    sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_PARENTID,f,(void*)&iPid);
     sqlite3_stmt_scanstatus_v2(pS,i, SQLITE_SCANSTAT_NAME,f,(void*)&zName);
 
     if( nCycle>=0 || nLoop>=0 || nRow>=0 ){
       const char *zSp = "";
-      double rpl;
       sqlite3_str_reset(pStats);
       if( nCycle>=0 && nTotal>0 ){
         sqlite3_str_appendf(pStats, "cycles=");
@@ -413,21 +419,22 @@ static void qrfEqpStats(Qrf *p){
         sqlite3_str_appendf(pStats, "%sloops=", zSp);
         qrfApproxInt64(pStats, nLoop);
         zSp = " ";
+        if( p->spec.eStyle==QRF_STYLE_StatsEst ){
+          sqlite3_str_appendf(pStats, " [est ");
+          qrfApproxDouble(pStats, rEstCum/rEst);
+          sqlite3_str_appendf(pStats, "]");
+        }
       }
       if( nRow>=0 ){
         sqlite3_str_appendf(pStats, "%srows=", zSp);
         qrfApproxInt64(pStats, nRow);
         zSp = " ";
+        if( p->spec.eStyle==QRF_STYLE_StatsEst ){
+          sqlite3_str_appendf(pStats, " [est ");
+          qrfApproxDouble(pStats, rEstCum);
+          sqlite3_str_appendf(pStats, "]");
+        }
       }
-
-      if( p->spec.eStyle==QRF_STYLE_StatsEst ){
-        rpl = nLoop ? (double)nRow / (double)nLoop : 0.0;
-        sqlite3_str_appendf(pStats, "%srpl=", zSp);
-        qrfApproxDouble(pStats, rpl);
-        sqlite3_str_appendf(pStats, " est=");
-        qrfApproxDouble(pStats, rEst);
-      }
-
       sqlite3_str_appendf(pLine,
           "% *s (%s)", -1*(nWidth-qrfStatsHeight(pS,i)*3), zo,
           sqlite3_str_value(pStats)
