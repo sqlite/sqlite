@@ -2805,7 +2805,14 @@ static void qrfFinalize(Qrf *p){
       break;
     }
     case QRF_STYLE_Stats:
-    case QRF_STYLE_StatsEst:
+    case QRF_STYLE_StatsEst: {
+      i64 nCycle = 0;
+      sqlite3_stmt_scanstatus_v2(p->pStmt, -1, SQLITE_SCANSTAT_NCYCLE,
+                                 SQLITE_SCANSTAT_COMPLEX, (void*)&nCycle);
+      qrfEqpRender(p, nCycle);
+      qrfWrite(p);
+      break;
+    }
     case QRF_STYLE_Eqp: {
       qrfEqpRender(p, 0);
       qrfWrite(p);
