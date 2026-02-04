@@ -11,7 +11,8 @@ on:
       - nanvix/**
   workflow_dispatch:
   repository_dispatch:
-    types: [nanvix-minor-release, nanvix-major-release]
+    # Triggered by zlib when it completes a release (dependency chain)
+    types: [zlib-release]
 
 permissions:
   contents: write
@@ -48,6 +49,8 @@ jobs:
   build:
     needs: get-nanvix-info
     runs-on: ubuntu-latest
+    outputs:
+      zlib_tag: ${{ steps.zlib-dep.outputs.zlib_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -150,20 +153,6 @@ jobs:
             exit 1
           fi
 
-      - name: Save Dependency Info
-        run: |
-          set -euo pipefail
-          mkdir -p dep-info
-          echo "${ZLIB_TAG}" > dep-info/zlib-tag.txt
-          echo "Saved dependency info: zlib=${ZLIB_TAG}"
-
-      - name: Upload Dependency Info
-        uses: actions/upload-artifact@v4
-        with:
-          name: dep-info-${{ matrix.platform }}-${{ matrix.process-mode }}
-          path: dep-info/
-          retention-days: 7
-
       - name: Build
         run: |
           make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" all
@@ -211,12 +200,6 @@ jobs:
           path: release-artifacts
           pattern: sqlite-*
 
-      - name: Download Dependency Info
-        uses: actions/download-artifact@v4
-        with:
-          path: dep-info-artifacts
-          pattern: dep-info-*
-
       - name: Prepare Release Assets
         run: |
           set -euo pipefail
@@ -226,12 +209,12 @@ jobs:
 
       - name: Get Dependency Tags
         id: deps
+        env:
+          ZLIB_TAG: ${{ needs.build.outputs.zlib_tag }}
         run: |
           set -euo pipefail
-          # Get zlib tag from any matrix build (they all use the same)
-          # Use find to get one file to avoid broken pipe with cat|head
-          ZLIB_TAG_FILE=$(find dep-info-artifacts -name "zlib-tag.txt" | head -1)
-          ZLIB_TAG=$(cat "$ZLIB_TAG_FILE")
+          # Dependency tags come from job outputs (all matrix builds use the same)
+          echo "Using zlib tag from job outputs: ${ZLIB_TAG}"
           # Extract commit SHA from tag (format: {commit-sha}-nanvix-{nanvix-sha})
           ZLIB_SHA=$(echo "$ZLIB_TAG" | sed -E 's/^([a-f0-9]+)-nanvix-.*$/\1/')
           echo "zlib_tag=${ZLIB_TAG}" >> "$GITHUB_OUTPUT"
@@ -286,12 +269,27 @@ jobs:
             --latest \
             release-assets/*.tar.bz2
 
+      # Trigger dependent workflows (cpython depends on sqlite)
+      - name: Trigger Dependent Workflows
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering cpython workflow..."
+          gh api repos/nanvix/cpython/dispatches \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -f event_type="sqlite-release" \
+            -f "client_payload[nanvix_sha]=${NANVIX_SHA}" \
+            -f "client_payload[sqlite_tag]=${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}" \
+            -f "client_payload[zlib_tag]=${ZLIB_TAG}" || echo "::warning::Failed to trigger cpython workflow"
+
   report-minor-release-failure:
     needs:
       - build
     if: >-
       ${{ always() && github.event_name == 'repository_dispatch' &&
-          (github.event.action == 'nanvix-minor-release' || github.event.action == 'nanvix-major-release') &&
+          (github.event.action == 'zlib-release') &&
           needs.build.result == 'failure' }}
     runs-on: ubuntu-latest
     steps:
@@ -302,14 +300,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const isMajor = context.payload.action === 'nanvix-major-release';
-            const releaseType = isMajor ? 'major' : 'minor';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const title = `Nanvix ${releaseType} release CI failure (run ${context.runNumber})`;
+            const title = `Dependency release CI failure (run ${context.runNumber})`;
             const body = [
-              `The Nanvix ${releaseType} release CI workflow failed.`,
+              `The sqlite CI workflow failed after dependency release.`,
+              `- Trigger: ${context.payload.action}`,
               `- Run: [#${context.runNumber}](${runUrl})`,
               `- SHA: ${context.sha}`,
               `- build: ${process.env.BUILD_RESULT}`,
