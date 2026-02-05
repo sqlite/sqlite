@@ -1420,6 +1420,7 @@ static double timeDiff(struct timeval *pStart, struct timeval *pEnd){
          (double)(pEnd->tv_sec - pStart->tv_sec);
 }
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /* Return the time since the start of the timer in
 ** seconds. */
 static double elapseTime(ShellState *NotUsed){
@@ -1427,6 +1428,7 @@ static double elapseTime(ShellState *NotUsed){
   if( iBegin==0 ) return 0.0;
   return (timeOfDay() - iBegin)*0.000001;
 }
+#endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
 /*
 ** Print the timing results.
@@ -1511,6 +1513,7 @@ static double timeDiff(FILETIME *pStart, FILETIME *pEnd){
   return (double) ((i64End - i64Start) / 10000000.0);
 }
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
 /* Return the time since the start of the timer in
 ** seconds. */
 static double elapseTime(ShellState *NotUsed){
@@ -1518,6 +1521,7 @@ static double elapseTime(ShellState *NotUsed){
   if( ftWallBegin==0 ) return 0.0;
   return (timeOfDay() - ftWallBegin)*0.000001;
 }
+#endif /* SQLITE_OMIT_PROGRESS_CALLBACK */
 
 /*
 ** Print the timing results.
