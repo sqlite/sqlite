@@ -3420,6 +3420,7 @@ int sqlite3FindInIndex(
     */
     u32 savedNQueryLoop = pParse->nQueryLoop;
     int rMayHaveNull = 0;
+    int bloomOk = (inFlags & IN_INDEX_MEMBERSHIP)!=0;
     eType = IN_INDEX_EPH;
     if( inFlags & IN_INDEX_LOOP ){
       pParse->nQueryLoop = 0;
@@ -3427,7 +3428,13 @@ int sqlite3FindInIndex(
       *prRhsHasNull = rMayHaveNull = ++pParse->nMem;
     }
     assert( pX->op==TK_IN );
-    sqlite3CodeRhsOfIN(pParse, pX, iTab);
+    if( !bloomOk
+     && ExprUseXSelect(pX)
+     && (pX->x.pSelect->selFlags & SF_ClonedRhsIn)!=0
+    ){
+      bloomOk = 1;
+    }
+    sqlite3CodeRhsOfIN(pParse, pX, iTab, bloomOk);
     if( rMayHaveNull ){
       sqlite3SetHasNullFlag(v, iTab, rMayHaveNull);
     }
@@ -3585,7 +3592,8 @@ static int findCompatibleInRhsSubrtn(
 void sqlite3CodeRhsOfIN(
   Parse *pParse,          /* Parsing context */
   Expr *pExpr,            /* The IN operator */
-  int iTab                /* Use this cursor number */
+  int iTab,               /* Use this cursor number */
+  int allowBloom          /* True to allow the use of a Bloom filter */
 ){
   int addrOnce = 0;           /* Address of the OP_Once instruction at top */
   int addr;                   /* Address of OP_OpenEphemeral instruction */
@@ -3707,7 +3715,10 @@ void sqlite3CodeRhsOfIN(
       sqlite3SelectDestInit(&dest, SRT_Set, iTab);
       dest.zAffSdst = exprINAffinity(pParse, pExpr);
       pSelect->iLimit = 0;
-      if( addrOnce && OptimizationEnabled(pParse->db, SQLITE_BloomFilter) ){
+      if( addrOnce
+       && allowBloom
+       && OptimizationEnabled(pParse->db, SQLITE_BloomFilter)
+      ){
         int regBloom = ++pParse->nMem;
         addrBloom = sqlite3VdbeAddOp2(v, OP_Blob, 10000, regBloom);
         VdbeComment((v, "Bloom filter"));

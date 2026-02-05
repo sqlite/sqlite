@@ -3623,7 +3623,7 @@ struct Select {
 #define SF_Resolved      0x0000004 /* Identifiers have been resolved */
 #define SF_Aggregate     0x0000008 /* Contains agg functions or a GROUP BY */
 #define SF_HasAgg        0x0000010 /* Contains aggregate functions */
-/*                       0x0000020 // available for reuse */
+#define SF_ClonedRhsIn   0x0000020 /* Cloned RHS of an IN operator */
 #define SF_Expanded      0x0000040 /* sqlite3SelectExpand() called on this */
 #define SF_HasTypeInfo   0x0000080 /* FROM subqueries have Table metadata */
 #define SF_Compound      0x0000100 /* Part of a compound query */
@@ -5438,7 +5438,7 @@ void sqlite3AlterSetNotNull(Parse*, SrcList*, Token*, Token*);
 i64 sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*, int);
-void sqlite3CodeRhsOfIN(Parse*, Expr*, int);
+void sqlite3CodeRhsOfIN(Parse*, Expr*, int, int);
 int sqlite3CodeSubselect(Parse*, Expr*);
 void sqlite3SelectPrep(Parse*, Select*, NameContext*);
 int sqlite3ExpandSubquery(Parse*, SrcItem*);

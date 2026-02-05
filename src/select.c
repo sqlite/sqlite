@@ -5270,6 +5270,16 @@ static int pushDownWhereTerms(
       x.pEList = pSubq->pEList;
       x.pCList = findLeftmostExprlist(pSubq);
       pNew = substExpr(&x, pNew);
+      assert( pNew!=0 || pParse->nErr!=0 );
+      if( pParse->nErr==0 && pNew->op==TK_IN && ExprUseXSelect(pNew) ){
+        assert( pNew->x.pSelect!=0 );
+        pNew->x.pSelect->selFlags |= SF_ClonedRhsIn;
+        assert( pWhere!=0 );
+        assert( pWhere->op==TK_IN );
+        assert( ExprUseXSelect(pWhere) );
+        assert( pWhere->x.pSelect!=0 );
+        pWhere->x.pSelect->selFlags |= SF_ClonedRhsIn;
+      }
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSubq->pWin && 0==pushDownWindowCheck(pParse, pSubq, pNew) ){
         /* Restriction 6c has prevented push-down in this case */
