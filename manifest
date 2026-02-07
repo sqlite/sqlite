@@ -1,5 +1,5 @@
-C Do\sa\sbetter\sjob\sof\snot\sgenerating\sunnecessary\sBloom\sfilters\sassociated\nwith\sIN\soperators.
-D 2026-02-05T21:14:34.271
+C Improved\soutput\sfrom\scalls\sto\ssqlite3ShowSrcList()\smade\sfrom\sa\ssymbolic\sdebugger.
+D 2026-02-07T13:41:05.559
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -798,7 +798,7 @@ F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c f297bbf02037639e7a93b37d9c6e4415b3de1273395ee8fa8183e741e1e7fb72
-F src/treeview.c 3ce7ac9835d2d70cc1c868b01b747ae8a062322e155701e58e3d62ca79aada7a
+F src/treeview.c feaa59f14db4f7b5aacca9c5ad5aeb562c1f98262c1ffd74371f4186ade91fc5
 F src/trigger.c cb894db98083c68c4a17c72566ed39434aa91286db20d2891279ee49e6bfec0c
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d6150c813ce43e15285a07d24135b10a7c254b3c175dee4f61c3b6a6ce91c29f
-R 4cfdd7681ac2e26f4d04032b5b7ca3e4
+P 3861df5c127f82becea80c48c547de8ed0d01eebcf6a6a9d7f234dde31f50394
+R 5d835e7d0f0a1e7a8d344067e9efb8d2
 U drh
-Z 1d69fead23474cce92304dcd4ae165da
+Z 8b376a22b0cf42ae79912f5e4a759a95
 # Remove this line to create a well-formed Fossil manifest.
