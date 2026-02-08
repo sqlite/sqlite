@@ -1897,7 +1897,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               }
               return rc;
             }catch(e){
-              return VT.xErrror('xConnect', e, capi.SQLITE_ERROR);
+              return VT.xError('xConnect', e, capi.SQLITE_ERROR);
             }
           },
           xCreate: wasm.ptr.null, // eponymous only
