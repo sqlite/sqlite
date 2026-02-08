@@ -146,9 +146,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          kvvfsMethods.$nBufferSize is slightly larger than the output
          space needed for a kvvfs-encoded 64kb db page in a worse-cast
          encoding (128kb). It is not suitable for arbitrary buffer
-         use, only page de/encoding.  As the VFS system has no hook
-         into library finalization, these buffers are effectively
-         leaked except in the few places which use memBufferFree().
+         use, only page de/encoding.
       */
       n: kvvfsMethods.$nBufferSize,
       /**
@@ -187,10 +185,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   const noop = ()=>{};
   const debug = sqlite3.__isUnderTest
-        ? (...args)=>sqlite3.config.debug("kvvfs:", ...args)
+        ? (...args)=>sqlite3.config.debug?.("kvvfs:", ...args)
         : noop;
-  const warn = (...args)=>sqlite3.config.warn("kvvfs:", ...args);
-  const error = (...args)=>sqlite3.config.error("kvvfs:", ...args);
+  const warn = (...args)=>sqlite3.config.warn?.("kvvfs:", ...args);
+  const error = (...args)=>sqlite3.config.error?.("kvvfs:", ...args);
 
   /**
      Implementation of JS's Storage interface for use as backing store
