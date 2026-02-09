@@ -659,6 +659,10 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
       pRight->fg.isOn = 1;
       p->selFlags |= SF_OnToWhere;
     }
+
+    if( IsVirtual(pRightTab) && joinType==EP_OuterON && pRight->u1.pFuncArg ){
+      p->selFlags |= SF_OnToWhere;
+    }
   }
   return 0;
 }
@@ -7398,6 +7402,7 @@ typedef struct CheckOnCtx CheckOnCtx;
 struct CheckOnCtx {
   SrcList *pSrc;                  /* SrcList for this context */
   int iJoin;                      /* Cursor numbers must be =< than this */
+  int bFuncArg;                   /* True for table-function arg */
   CheckOnCtx *pParent;            /* Parent context */
 };
 
@@ -7449,7 +7454,9 @@ static int selectCheckOnClausesExpr(Walker *pWalker, Expr *pExpr){
       if( iTab>=pSrc->a[0].iCursor && iTab<=pSrc->a[pSrc->nSrc-1].iCursor ){
         if( pCtx->iJoin && iTab>pCtx->iJoin ){
           sqlite3ErrorMsg(pWalker->pParse, 
-              "ON clause references tables to its right");
+              "%s references tables to its right",
+              (pCtx->bFuncArg ? "table-function argument" : "ON clause")
+          );
           return WRC_Abort;
         }
         break;
@@ -7487,6 +7494,7 @@ static int selectCheckOnClausesSelect(Walker *pWalker, Select *pSelect){
 static void selectCheckOnClauses(Parse *pParse, Select *pSelect){
   Walker w;
   CheckOnCtx sCtx;
+  int ii;
   assert( pSelect->selFlags & SF_OnToWhere );
   assert( pSelect->pSrc!=0 && pSelect->pSrc->nSrc>=2 );
   memset(&w, 0, sizeof(w));
@@ -7496,8 +7504,22 @@ static void selectCheckOnClauses(Parse *pParse, Select *pSelect){
   w.u.pCheckOnCtx = &sCtx;
   memset(&sCtx, 0, sizeof(sCtx));
   sCtx.pSrc = pSelect->pSrc;
-  sqlite3WalkExprNN(&w, pSelect->pWhere);
+  sqlite3WalkExpr(&w, pSelect->pWhere);
   pSelect->selFlags &= ~SF_OnToWhere;
+
+  /* Check for any table-function args that are attached to virtual tables 
+  ** on the RHS of an outer join. They are subject to the same constraints
+  ** as ON clauses. */
+  sCtx.bFuncArg = 1;
+  for(ii=0; ii<pSelect->pSrc->nSrc; ii++){
+    SrcItem *pItem = &pSelect->pSrc->a[ii];
+    if( pItem->fg.isTabFunc
+     && (pItem->fg.jointype & JT_OUTER)
+    ){
+      sCtx.iJoin = pItem->iCursor;
+      sqlite3WalkExprList(&w, pItem->u1.pFuncArg);
+    }
+  }
 }
 
 /*
