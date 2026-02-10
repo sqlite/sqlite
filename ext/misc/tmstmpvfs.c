@@ -859,7 +859,7 @@ static int tmstmpOpen(
     TmstmpLog *pLog;
     sqlite3_uint64 r1;         /* Milliseconds since 1970-01-01 */
     sqlite3_uint64 days;       /* Days since 1970-01-01 */
-    sqlite3_uint64 sod;        /* Start of date specified by ms */
+    sqlite3_uint64 sod;        /* Start of date specified by r1 */
     sqlite3_uint64 z;          /* Days since 0000-03-01 */
     sqlite3_uint64 era;        /* 400-year era */
     int h;                     /* hour */
@@ -893,7 +893,7 @@ static int tmstmpOpen(
     m = (sod%3600)/60;
     s = sod%60;
     z = days + 719468;
-    era = z/147097;
+    era = z/146097;
     doe = (unsigned)(z - era*146097);
     yoe = (doe - doe/1460 + doe/36524 - doe/146096)/365;
     y = (int)yoe + era*400;

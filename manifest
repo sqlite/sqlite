@@ -1,5 +1,5 @@
-C Minor\stweaks\sto\sthe\sstar-query\soptimization\sin\sthe\squery\splanner.
-D 2026-02-10T18:28:41.694
+C Correction\sto\sdate/time\scomputations\sassociated\swith\sthe\stimestamp-vfs.
+D 2026-02-10T19:33:11.305
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -403,7 +403,7 @@ F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bf
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/tmstmpvfs.c 1c335f1df51a60896e84721e262fc23e8a3130ba52b1a34e2b8e4870e5be74e9
+F ext/misc/tmstmpvfs.c 3eb28a9f22f58883f38085daa312467e31ddfd2042c21dcc07173e02a01d68d8
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
@@ -2162,12 +2162,12 @@ F tool/pagesig.c f98909b4168d9cac11a2de7f031adea0e2f3131faa7515a72807c03ec58eafe
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c db1fba9149d29bc4d9fe2826b881d66da980a5f01e0c0858244e93f18d388321
+F tool/showdb.c 1faa3661d2d634f206c76794cb21d89d3ea9082d07d5e983be0f025e40f21320
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
 F tool/showstat4.c b706fcbc4cd1a6e4a73ac32549afc4b460479d650402d64b23e8d813516e8de4
-F tool/showtmlog.c cbdc5f1b21cc8b821a39118b85f2d2616fc7bf3377ddaf02bb1cbcbeb4169f92
+F tool/showtmlog.c 2e9da6c4b4767113a0ad5ddabd4337ea100d38ff9c7fee260f9ccdefb2ffdc23
 F tool/showwal.c 11eca547980a066b081f512636151233350ac679f29ecf4ebfce7f4530230b3d
 F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdaddf
 F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5c0468acd1a12f7fd01b9974250fb42c5811939dc2319729a1ef93c073dc0071
-R a8a8cc651a9935d9d998addfdb1931ef
+P 5021e114b251467fee6a39749c88ec581ee1f7d50093b02a44dc300db0c0a1c5
+R 8c009ef3edcff15260e9e11c075a8dac
 U drh
-Z 9ecd247afb8d5321506fc416f50001e3
+Z 82c25fcaf85be039db084b2683a2f369
 # Remove this line to create a well-formed Fossil manifest.
