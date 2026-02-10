@@ -5588,12 +5588,21 @@ static LogEst whereSortingCost(
 **     12    otherwise
 **
 ** For the purposes of this heuristic, a star-query is defined as a query
-** with a large central table that is joined using an INNER JOIN,
-** not CROSS or OUTER JOINs, against four or more smaller tables.
-** The central table is called the "fact" table.  The smaller tables
-** that get joined are "dimension tables".  Also, any table that is
-** self-joined cannot be a dimension table; we assume that dimension
-** tables may only be joined against fact tables.
+** with a central "fact" table that is joined against multiple
+** "dimension" tables, subject to the following constraints:
+**
+**   (aa)  Only a five-way or larger join is considered for this
+**         optimization.  If there are fewer than four terms in the FROM
+**         clause, this heuristic does not apply.
+**
+**   (bb)  The join between the fact table and the dimension tables must
+**         be an INNER join.  CROSS and OUTER JOINs do not qualify.
+**
+**   (cc)  A table must have 3 or more dimension tables in order to be
+**         considered a fact table. (Was 4 prior to 2026-02-10.)
+**
+**   (dd)  A table that is a self-join cannot be a dimension table.
+**         Dimension tables are joined against fact tables.
 **
 ** SIDE EFFECT:  (and really the whole point of this subroutine)
 **
@@ -5646,7 +5655,7 @@ static int computeMxChoice(WhereInfo *pWInfo){
   }
 #endif /* SQLITE_DEBUG */
 
-  if( nLoop>=5
+  if( nLoop>=4  /* Constraint (aa) */
    && !pWInfo->bStarDone
    && OptimizationEnabled(pWInfo->pParse->db, SQLITE_StarQuery)
   ){
@@ -5658,7 +5667,7 @@ static int computeMxChoice(WhereInfo *pWInfo){
 
     pWInfo->bStarDone = 1; /* Only do this computation once */
 
-    /* Look for fact tables with four or more dimensions where the
+    /* Look for fact tables with three or more dimensions where the
     ** dimension tables are not separately from the fact tables by an outer
     ** or cross join.  Adjust cost weights if found.
     */
@@ -5675,18 +5684,17 @@ static int computeMxChoice(WhereInfo *pWInfo){
       if( (pFactTab->fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
         /* If the candidate fact-table is the right table of an outer join
         ** restrict the search for dimension-tables to be tables to the right
-        ** of the fact-table. */
-        if( iFromIdx+4 > nLoop ) break;  /* Impossible to reach nDep>=4 */
+        ** of the fact-table.  Constraint (bb) */
+        if( iFromIdx+3 > nLoop ){
+          break;  /* ^-- Impossible to reach nDep>=2 - Constraint (cc) */
+        }
         while( pStart && pStart->iTab<=iFromIdx ){
           pStart = pStart->pNextLoop;
         }
       }
       for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
         if( (aFromTabs[pWLoop->iTab].fg.jointype & (JT_OUTER|JT_CROSS))!=0 ){
-          /* Fact-tables and dimension-tables cannot be separated by an
-          ** outer join (at least for the definition of fact- and dimension-
-          ** used by this heuristic). */
-          break;
+          break; /* Constraint (bb) */
         }
         if( (pWLoop->prereq & m)!=0        /* pWInfo depends on iFromIdx */
          && (pWLoop->maskSelf & mSeen)==0  /* pWInfo not already a dependency */
@@ -5700,7 +5708,9 @@ static int computeMxChoice(WhereInfo *pWInfo){
           }
         }
       }
-      if( nDep<=3 ) continue;
+      if( nDep<=2 ){
+        continue; /* Constraint (cc) */
+      }
 
       /* If we reach this point, it means that pFactTab is a fact table
       ** with four or more dimensions connected by inner joins.  Proceed
@@ -5712,6 +5722,23 @@ static int computeMxChoice(WhereInfo *pWInfo){
         for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
           pWLoop->rStarDelta = 0;
         }
+      }
+#endif
+#ifdef WHERETRACE_ENABLED /* 0x80000 */
+      if( sqlite3WhereTrace & 0x80000 ){
+        Bitmask mShow = mSeen;
+        sqlite3DebugPrintf("Fact table %s(%d), dimensions:",
+            pFactTab->zAlias ? pFactTab->zAlias : pFactTab->pSTab->zName,
+            iFromIdx);
+        for(pWLoop=pStart; pWLoop; pWLoop=pWLoop->pNextLoop){
+          if( mShow & pWLoop->maskSelf ){
+            SrcItem *pDim = aFromTabs + pWLoop->iTab;
+            mShow &= ~pWLoop->maskSelf;
+            sqlite3DebugPrintf(" %s(%d)",
+              pDim->zAlias ? pDim->zAlias: pDim->pSTab->zName, pWLoop->iTab);
+          }
+        }
+        sqlite3DebugPrintf("\n");
       }
 #endif
       pWInfo->bStarUsed = 1;
@@ -5736,10 +5763,8 @@ static int computeMxChoice(WhereInfo *pWInfo){
           if( sqlite3WhereTrace & 0x80000 ){
             SrcItem *pDim = aFromTabs + pWLoop->iTab;
             sqlite3DebugPrintf(
-              "Increase SCAN cost of dimension %s(%d) of fact %s(%d) to %d\n",
-              pDim->zAlias ? pDim->zAlias: pDim->pSTab->zName, pWLoop->iTab,
-              pFactTab->zAlias ? pFactTab->zAlias : pFactTab->pSTab->zName,
-              iFromIdx, mxRun
+              "Increase SCAN cost of %s to %d\n",
+              pDim->zAlias ? pDim->zAlias: pDim->pSTab->zName, mxRun
             );
           }
           pWLoop->rStarDelta = mxRun - pWLoop->rRun;

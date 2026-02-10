@@ -1,5 +1,5 @@
-C Immediately\sreset\sall\spending\sprepared\sstatements\son\sany\scall\sto\nsqlite3_set_authorizer(),\seven\sif\sthe\sauthorizer\sis\sbeing\sdisabled.
-D 2026-02-09T19:58:04.336
+C Minor\stweaks\sto\sthe\sstar-query\soptimization\sin\sthe\squery\splanner.
+D 2026-02-10T18:28:41.694
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -820,7 +820,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 505a98fbc599a971d92cb90371cf54546c404cd61e04fd093e7b0c8ff978f9b6
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c f1237550a01ccbc70141a523661173ddf802f48f7fe94feab9151a66f80c0d9d
+F src/where.c 7a7fe745dd8104d0276a3d3f6e6ac7f087af3dd9f34a90bc937e5e7aea817e15
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 783ecd30061c875c919a5163e4b55f9a0eccdaf7c9b17ad2908a1668a8766bc4
 F src/whereexpr.c bb649ce81bd6dc0eabfa2533ff5656fc7a16411e520a6c59be43e73e51503cce
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 021e48e28931afd781e76db6293e60fd2ffb8377cb1051e8b802f2743a10fa5d
-R 8e691803f449515bcdce3d4bea85fe54
+P 5c0468acd1a12f7fd01b9974250fb42c5811939dc2319729a1ef93c073dc0071
+R a8a8cc651a9935d9d998addfdb1931ef
 U drh
-Z d57a142f836bbfe387f4f44113a90926
+Z 9ecd247afb8d5321506fc416f50001e3
 # Remove this line to create a well-formed Fossil manifest.
