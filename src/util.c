@@ -1092,7 +1092,25 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   /* Extract significant digits. */
   i = sizeof(p->zBuf)-1;
   assert( v>0 );
-  while( v ){  p->zBuf[i--] = (v%10) + '0'; v /= 10; }
+  while( v>=10 ){
+    static const char dig[] = 
+      "00010203040506070809"
+      "10111213141516171819"
+      "20212223242526272829"
+      "30313233343536373839"
+      "40414243444546474849"
+      "50515253545556575859"
+      "60616263646566676869"
+      "70717273747576777879"
+      "80818283848586878889"
+      "90919293949596979899";
+    int kk = (v%100)*2;
+    p->zBuf[i] = dig[kk+1];
+    p->zBuf[i-1] = dig[kk];
+    i -= 2;
+    v /=100;
+  }
+  if( v ){  p->zBuf[i--] = (v%10) + '0'; v /= 10; }
   assert( i>=0 && i<sizeof(p->zBuf)-1 );
   p->n = sizeof(p->zBuf) - 1 - i;
   assert( p->n>0 );
