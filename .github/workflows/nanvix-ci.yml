@@ -141,7 +141,7 @@ jobs:
           if curl -fsSL -o "zlib-dep/${ZLIB_ARTIFACT}" "$ZLIB_URL"; then
             tar -xjf "zlib-dep/${ZLIB_ARTIFACT}" -C zlib-dep
             # Find extracted directory and copy files to sysroot
-            ZLIB_DIR=$(find zlib-dep -maxdepth 1 -type d -name "zlib-*" | head -1)
+            ZLIB_DIR=$(find zlib-dep -mindepth 1 -maxdepth 1 -type d -name "zlib-*" | head -1)
             if [[ -n "$ZLIB_DIR" ]]; then
               echo "Installing zlib from $ZLIB_DIR to $NANVIX_HOME..."
               cp -f "${ZLIB_DIR}/lib/libz.a" "${NANVIX_HOME}/lib/" 2>/dev/null || true
