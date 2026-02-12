@@ -1,5 +1,5 @@
-C Correction\sto\sdate/time\scomputations\sassociated\swith\sthe\stimestamp-vfs.
-D 2026-02-10T19:33:11.305
+C Respect\s"const"\sstrings\sin\sthe\ssqlite3ShadowTableName()\sfunction.\nPatch\smoved\sto\strunk,\swhere\sit\swas\sintended.
+D 2026-02-12T18:15:26.908
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -681,7 +681,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c b744bf69d520534751c742cababe7ad28c3892f1e3a75242e75a20bca15a834a
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c 4e1afafc56504ed6253e1b115c1502de4243c2287a0c799f4967fcd2d7716ad9
+F src/build.c d2cd51e482e33cc76a8dc94081f922ff327f57532e97ccd7bd31dc058669a36c
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -2194,8 +2194,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5021e114b251467fee6a39749c88ec581ee1f7d50093b02a44dc300db0c0a1c5
-R 8c009ef3edcff15260e9e11c075a8dac
+P b67889e4f17c3280f839ee7045256cc47d6ce3ed60d880925e3d30f9ebbcf3ff
+Q +0343ecfaa7e82044807de9fc4cb728a3b5f52cb06e8dd52e39265fd7fbcc68a5
+R bcce8e05e7748a962d1ba7d88458ae7d
 U drh
-Z 82c25fcaf85be039db084b2683a2f369
+Z b0f5cb83b882516729ed30a0b3ccb5f9
 # Remove this line to create a well-formed Fossil manifest.
