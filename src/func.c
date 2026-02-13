@@ -1201,7 +1201,7 @@ static void unistrFunc(
   }
   i = j = 0;
   while( i<nIn ){
-    char *z = strchr(&zIn[i],'\\');
+    const char *z = strchr(&zIn[i],'\\');
     if( z==0 ){
       n = nIn - i;
       memmove(&zOut[j], &zIn[i], n);

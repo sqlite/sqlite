@@ -1,5 +1,5 @@
-C Respect\s"const"\sstrings\sin\sthe\ssqlite3ShadowTableName()\sfunction.\nPatch\smoved\sto\strunk,\swhere\sit\swas\sintended.
-D 2026-02-12T18:15:26.908
+C Add\sa\s"const"\sto\savoid\sa\sharmless\sfalse-positive\scompiler\swarning.
+D 2026-02-13T11:40:28.552
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -692,7 +692,7 @@ F src/delete.c 901499bed747c3b4b2be45be1abe912ba50a3f6a40ba88cc006ccf279f2d0e97
 F src/expr.c c4ff8dcacbc8962fb670fc7c9723c8346398795b16ce2f78439234769baee2e6
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c c065da737307a29e4d240ac727758dbf4102cb3218a1f651eb689b6a6fa12531
-F src/func.c efbcfe7cb7fc92fe5299c9aaa141075eb60d2108253e99bc235384ed6a90d937
+F src/func.c 6b6797b1b8d90c40482795a9a571041ca09bd520c5fa85cb1a49be143eda0bcf
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2194,9 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b67889e4f17c3280f839ee7045256cc47d6ce3ed60d880925e3d30f9ebbcf3ff
-Q +0343ecfaa7e82044807de9fc4cb728a3b5f52cb06e8dd52e39265fd7fbcc68a5
-R bcce8e05e7748a962d1ba7d88458ae7d
+P 51b5afdfac401cbf74af6383d4559439cb6defe2ce23ebcf7ed9a5b526a07b51
+R cb69b3884e549b4404e64346093ca8ca
 U drh
-Z b0f5cb83b882516729ed30a0b3ccb5f9
+Z 70fb0b81d08bfaa7d2ae98d0d6846069
 # Remove this line to create a well-formed Fossil manifest.
