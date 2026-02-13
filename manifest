@@ -1,5 +1,5 @@
-C Use\sonly\sa\ssingle\sbit,\srather\sthan\sa\swhole\sbyte,\sto\sstore\sinfrequently\naccessed\sboolean\svalues\sin\sthe\sParse\sobject.
-D 2026-02-13T12:20:57.401
+C Add\snew\sassert()\sstatements\sto\sdemonstrate\sthat\sthe\scomplaint\sgiven\sin\n[forum:/forumpost/56ad8b632c|forum\spost\s56ad8b632c]\sis\snot\sa\sreal\sbug.
+D 2026-02-13T16:02:27.451
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -681,7 +681,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c b744bf69d520534751c742cababe7ad28c3892f1e3a75242e75a20bca15a834a
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c d2cd51e482e33cc76a8dc94081f922ff327f57532e97ccd7bd31dc058669a36c
+F src/build.c cc0afd3ec8417f5f774650f612e755b7ffce392d14ab4441bf5588867893fd3c
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -691,7 +691,7 @@ F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 901499bed747c3b4b2be45be1abe912ba50a3f6a40ba88cc006ccf279f2d0e97
 F src/expr.c c4ff8dcacbc8962fb670fc7c9723c8346398795b16ce2f78439234769baee2e6
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
-F src/fkey.c c065da737307a29e4d240ac727758dbf4102cb3218a1f651eb689b6a6fa12531
+F src/fkey.c fb0f74c57d19a2d3f113f3476826919d68feda7ff334abfdb479a9a6353b9fcd
 F src/func.c 6b6797b1b8d90c40482795a9a571041ca09bd520c5fa85cb1a49be143eda0bcf
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
@@ -799,7 +799,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c f297bbf02037639e7a93b37d9c6e4415b3de1273395ee8fa8183e741e1e7fb72
 F src/treeview.c feaa59f14db4f7b5aacca9c5ad5aeb562c1f98262c1ffd74371f4186ade91fc5
-F src/trigger.c cb894db98083c68c4a17c72566ed39434aa91286db20d2891279ee49e6bfec0c
+F src/trigger.c a40440614bdf523090cc07223f4878f7e3c892bcd1a13afe18f90190daa5945d
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d44af6cc093ab6b5a196249a84681148bbae3f624abf4bc8cc42c88f3f7320b2
-R cbdb4d0c2bb8d137d8354aa3e44e5e41
+P e1bcd7e1cf6d6b1add49deac65e1b64bcae52fbbad094e561846bb92959db76a
+R c74731d37412a2c05c1fa7cff1868fd9
 U drh
-Z 28a3e25dd757a4231831a264b2087419
+Z b29676545410aaf5a0438a51228bcee0
 # Remove this line to create a well-formed Fossil manifest.
