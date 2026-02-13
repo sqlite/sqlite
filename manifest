@@ -1,5 +1,5 @@
-C Add\sa\s"const"\sto\savoid\sa\sharmless\sfalse-positive\scompiler\swarning.
-D 2026-02-13T11:40:28.552
+C Use\sonly\sa\ssingle\sbit,\srather\sthan\sa\swhole\sbyte,\sto\sstore\sinfrequently\naccessed\sboolean\svalues\sin\sthe\sParse\sobject.
+D 2026-02-13T12:20:57.401
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -743,7 +743,7 @@ F src/shell.c.in b944a21d98cc4c6107bfd1ec702440579cb4bf86435125b67ff661180e9453b
 F src/sqlite.h.in 8bcbaecfe2cbecf8c5c1381354fcdd7d307443e88b4953fccb222456c1267b61
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 1b7a0ee438bb5c2896d0609c537e917d8057b3340f6ad004d2de44f03e3d3cca
-F src/sqliteInt.h 7f42e42286634092758864472ea445feb45e654c1659b7f5e723ea70939b34dc
+F src/sqliteInt.h 9d390349b1e8db865aca6a5bee1d8db9dac8d426ed9e5d944d789d6d57470f00
 F src/sqliteLimit.h 904a3f520362c7065c18165aaabd504fb13cc1b76cb411f38bd41ac219e4af1e
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 51b5afdfac401cbf74af6383d4559439cb6defe2ce23ebcf7ed9a5b526a07b51
-R cb69b3884e549b4404e64346093ca8ca
+P d44af6cc093ab6b5a196249a84681148bbae3f624abf4bc8cc42c88f3f7320b2
+R cbdb4d0c2bb8d137d8354aa3e44e5e41
 U drh
-Z 70fb0b81d08bfaa7d2ae98d0d6846069
+Z 28a3e25dd757a4231831a264b2087419
 # Remove this line to create a well-formed Fossil manifest.

@@ -3880,17 +3880,12 @@ struct Parse {
   u8 nested;           /* Number of nested calls to the parser/code generator */
   u8 nTempReg;         /* Number of temporary registers in aTempReg[] */
   u8 isMultiWrite;     /* True if statement may modify/insert multiple rows */
-  u8 mayAbort;         /* True if statement may throw an ABORT exception */
-  u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
   u8 disableLookaside; /* Number of times lookaside has been disabled */
   u8 prepFlags;        /* SQLITE_PREPARE_* flags */
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
-  u8 bHasExists;       /* Has a correlated "EXISTS (SELECT ....)" expression */
   u8 mSubrtnSig;       /* mini Bloom filter on available SubrtnSig.selId */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
-  u8 bReturning;       /* Coding a RETURNING trigger */
   u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
-  u8 disableTriggers;  /* True to disable triggers */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
 #endif
@@ -3899,10 +3894,15 @@ struct Parse {
   u8 isCreate;         /* CREATE TABLE, INDEX, or VIEW (but not TRIGGER)
                        ** and ALTER TABLE ADD COLUMN. */
 #endif
-  bft colNamesSet :1;   /* TRUE after OP_ColumnName has been issued to pVdbe */
-  bft bHasWith :1;      /* True if statement contains WITH */
-  bft okConstFactor :1; /* OK to factor out constants */
-  bft checkSchema :1;   /* Causes schema cookie check after an error */
+  bft disableTriggers:1; /* True to disable triggers */
+  bft mayAbort :1;     /* True if statement may throw an ABORT exception */
+  bft hasCompound :1;  /* Need to invoke convertCompoundSelectToSubquery() */
+  bft bReturning :1;   /* Coding a RETURNING trigger */
+  bft bHasExists :1;   /* Has a correlated "EXISTS (SELECT ....)" expression */
+  bft colNamesSet :1;  /* TRUE after OP_ColumnName has been issued to pVdbe */
+  bft bHasWith :1;     /* True if statement contains WITH */
+  bft okConstFactor:1; /* OK to factor out constants */
+  bft checkSchema :1;  /* Causes schema cookie check after an error */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
   int nErr;            /* Number of errors seen */
