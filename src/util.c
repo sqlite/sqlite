@@ -1837,12 +1837,16 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
       "80818283848586878889"
       "90919293949596979899";
     int kk = (v%100)*2;
-    p->zBuf[i] = dig[kk+1];
-    p->zBuf[i-1] = dig[kk];
+    assert( TWO_BYTE_ALIGNMENT(&dig[kk]) );
+    assert( TWO_BYTE_ALIGNMENT(&p->zBuf[i-1]) );
+    *(u16*)(&p->zBuf[i-1]) = *(u16*)&dig[kk];
     i -= 2;
-    v /=100;
+    v /= 100;
   }
-  if( v ){  p->zBuf[i--] = (v%10) + '0'; v /= 10; }
+  if( v ){
+    assert( v<10 );
+    p->zBuf[i--] = v + '0';
+  }
   assert( i>=0 && i<sizeof(p->zBuf)-1 );
   p->n = sizeof(p->zBuf) - 1 - i;
   assert( p->n>0 );
