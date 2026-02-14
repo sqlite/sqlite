@@ -1188,18 +1188,16 @@ static u64 sqlite3Multiply128(u64 a, u64 b){
 #elif defined(_MSC_VER) && defined(_M_X64)
   return __umulh(a, b);
 #else
-  u32 a1 = (u32)a;
-  u32 a2 = a >> 32;
-  u32 b1 = (u32)b;
-  u32 b2 = b >> 32;
-  u32 p0 = a1 * b1;
-  u32 p1 = a1 * b2;
-  u32 p2 = a2 * b1;
-  u32 p3 = a2 * b2;
-  u32 mid = p1 + (p0 >> 32);
-  mid += p2;
-  u32 carry = (mid < p2) ? 1 : 0;
-  return p3 + (mid >> 32) + carry;
+  u64 a1 = (u32)a;
+  u64 a2 = a >> 32;
+  u64 b1 = (u32)b;
+  u64 b2 = b >> 32;
+  u64 p0 = a1 * b1;
+  u64 p1 = a1 * b2;
+  u64 p2 = a2 * b1;
+  u64 p3 = a2 * b2;
+  u64 carry = ((p0 >> 32) + (u32)p1 + (u32)p2) >> 32;
+  return p3 + (p1 >> 32) + (p2 >> 32) + carry;
 #endif
 }
 
