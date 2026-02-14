@@ -461,6 +461,19 @@ u8 sqlite3StrIHash(const char *z){
 ** The following array holds (approximate) powers-of-ten between
 ** 1.0e-348 and 1.0e+347.  Each value is an unsigned 64-bit integer,
 ** shifted so that its most significant bit is 1.
+**
+** For the power-of-ten whose value is pow(10,p), the value
+** is shifted left or right in order to multiply it by
+** pow(2,63-pow10to2(p)).  Hence, another way to think of the
+** entries in this table is:
+**
+**    for p from -348 to +347:
+**      int( pow(10,p)*pow(2,63-pow10to2(p)) )
+**
+** The int(x) function means the integer part of value x.  See
+** the definition of pow10to2() below for more details about that
+** function.  There is an assert() in the utility program that
+** generates this table that verifies the invariant described above.
 */
 static const u64 sqlite3PowerOfTen[] = {
   0xfa8fd5a0081c0288, /*   0: 1.0e-348 << 1220 */
