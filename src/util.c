@@ -1270,8 +1270,6 @@ static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
 
 /*
 ** Return an IEEE754 floating point value that approximates d*pow(10,p).
-**
-** The "d" value must not have its most significant bit set.
 */
 static double sqlite3Fp10Convert2(u64 d, int p){
   u64 out;
@@ -1282,7 +1280,9 @@ static double sqlite3Fp10Convert2(u64 d, int p){
   int idx;
   u64 h;
   double r;
-  if( p<POWERSOF10_FIRST || d==0 ){
+  assert( (d & U64_BIT(63))==0 );
+  assert( d!=0 );
+  if( p<POWERSOF10_FIRST ){
     return 0.0;
   }
   if( p>POWERSOF10_LAST ){
