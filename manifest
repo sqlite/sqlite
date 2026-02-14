@@ -1,5 +1,5 @@
-C Fix\sto\sthe\sgeneric\sversion\sof\sthe\s128-bit\smultiple\ssubroutine.
-D 2026-02-14T21:31:31.986
+C Add\sthe\s"LLU"\ssuffix\sto\s64-bit\sinteger\sconstants,\sfor\sportability\sto\solder\ncompilers.
+D 2026-02-14T21:47:08.084
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/trigger.c cb894db98083c68c4a17c72566ed39434aa91286db20d2891279ee49e6bfec0c
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 7a7c52c4a5a5df105fd1241d93a775089f912f385eb3487c7b0d596f9ce2c7d2
+F src/util.c d7cd5a4c9859c260b17d3e2d821306a265f6a4d0962941a1d187b4ccaf74c455
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c fa28a8f740f3d94c4e6b6d42ba90c220472683486268e753017512a70ef715f5
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9d3a12d3926d55efffdc84bff342bd1dbccd08426104aeb2d339b064bf6f02f4
-R b8f25725ba219a819a702d1e3e67df67
+P 9c3d09ee75beb26447161c0bf5ea252520a6ec051774f1a4e9f18204281d504f
+R 81af0af5ea2a6b0d90ff8f5528e1d00d
 U drh
-Z 27cc9fc5582f41e3830c232fedfd6c40
+Z d1c5742bcc364eb12a36c71331cc2f0e
 # Remove this line to create a well-formed Fossil manifest.
