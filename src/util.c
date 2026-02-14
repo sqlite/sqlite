@@ -1823,7 +1823,10 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   i = sizeof(p->zBuf)-1;
   assert( v>0 );
   while( v>=10 ){
-    static const char dig[] = 
+    static const union {
+      char a[200];
+      short int forAlignment;
+    } dig = {
       "00010203040506070809"
       "10111213141516171819"
       "20212223242526272829"
@@ -1833,11 +1836,12 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
       "60616263646566676869"
       "70717273747576777879"
       "80818283848586878889"
-      "90919293949596979899";
+      "90919293949596979899"
+    };
     int kk = (v%100)*2;
-    assert( TWO_BYTE_ALIGNMENT(&dig[kk]) );
+    assert( TWO_BYTE_ALIGNMENT(&dig.a[kk]) );
     assert( TWO_BYTE_ALIGNMENT(&p->zBuf[i-1]) );
-    *(u16*)(&p->zBuf[i-1]) = *(u16*)&dig[kk];
+    *(u16*)(&p->zBuf[i-1]) = *(u16*)&dig.a[kk];
     i -= 2;
     v /= 100;
   }
