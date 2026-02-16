@@ -708,8 +708,7 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 ** The string z[] is an text representation of a real number.
 ** Convert this string to a double and write it into *pResult.
 **
-** The string z[] is length bytes in length (bytes, not characters) and
-** uses the encoding enc.  The string is not necessarily zero-terminated.
+** z[] must be UTF-8 and zero-terminated.
 **
 ** Return TRUE if the result is a valid real number (or integer) and FALSE
 ** if the string is empty or contains extraneous text.  More specifically
@@ -736,10 +735,8 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 #if defined(_MSC_VER)
 #pragma warning(disable : 4756)
 #endif
-int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
+int sqlite3AtoF(const char *z, double *pResult){
 #ifndef SQLITE_OMIT_FLOATING_POINT
-  int incr;
-  const char *zEnd;
   /* sign * significand * (10 ^ (esign * exponent)) */
   int sign = 1;    /* sign of significand */
   u64 s = 0;       /* significand */
@@ -748,103 +745,76 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int e = 0;       /* exponent */
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   int nDigit = 0;  /* Number of digits processed */
-  int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
+  int eType = 1;   /* 1: pure integer,  2+: fractional */
 
-  assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
-  if( length==0 ) return 0;
-
-  if( enc==SQLITE_UTF8 ){
-    incr = 1;
-    zEnd = z + length;
-  }else{
-    int i;
-    incr = 2;
-    length &= ~1;
-    assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
-    testcase( enc==SQLITE_UTF16LE );
-    testcase( enc==SQLITE_UTF16BE );
-    for(i=3-enc; i<length && z[i]==0; i+=2){}
-    if( i<length ) eType = -100;
-    zEnd = &z[i^1];
-    z += (enc&1);
-  }
 
   /* skip leading spaces */
-  while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
-  if( z>=zEnd ) return 0;
+  while( sqlite3Isspace(*z) ) z++;
 
   /* get sign of significand */
   if( *z=='-' ){
     sign = -1;
-    z+=incr;
+    z++;
   }else if( *z=='+' ){
-    z+=incr;
+    z++;
   }
 
   /* copy max significant digits to significand */
-  while( z<zEnd && sqlite3Isdigit(*z) ){
+  while( sqlite3Isdigit(*z) ){
     s = s*10 + (*z - '0');
-    z+=incr; nDigit++;
+    z++; nDigit++;
     if( s>=((LARGEST_INT64-9)/10) ){
       /* skip non-significant significand digits
       ** (increase exponent by d to shift decimal left) */
-      while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; d++; }
+      while( sqlite3Isdigit(*z) ){ z++; d++; }
     }
   }
-  if( z>=zEnd ) goto do_atof_calc;
 
   /* if decimal point is present */
   if( *z=='.' ){
-    z+=incr;
+    z++;
     eType++;
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
-    while( z<zEnd && sqlite3Isdigit(*z) ){
+    while( sqlite3Isdigit(*z) ){
       if( s<((LARGEST_INT64-9)/10) ){
         s = s*10 + (*z - '0');
         d--;
         nDigit++;
       }
-      z+=incr;
+      z++;
     }
   }
-  if( z>=zEnd ) goto do_atof_calc;
 
   /* if exponent is present */
   if( *z=='e' || *z=='E' ){
-    z+=incr;
+    z++;
     eValid = 0;
     eType++;
-
-    /* This branch is needed to avoid a (harmless) buffer overread.  The
-    ** special comment alerts the mutation tester that the correct answer
-    ** is obtained even if the branch is omitted */
-    if( z>=zEnd ) goto do_atof_calc;              /*PREVENTS-HARMLESS-OVERREAD*/
 
     /* get sign of exponent */
     if( *z=='-' ){
       esign = -1;
-      z+=incr;
+      z++;
     }else if( *z=='+' ){
-      z+=incr;
+      z++;
     }
     /* copy digits to exponent */
-    while( z<zEnd && sqlite3Isdigit(*z) ){
+    while( sqlite3Isdigit(*z) ){
       e = e<10000 ? (e*10 + (*z - '0')) : 10000;
-      z+=incr;
+      z++;
       eValid = 1;
     }
   }
 
   /* skip trailing spaces */
-  while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
+  while( sqlite3Isspace(*z) ) z++;
 
-do_atof_calc:
   /* Zero is a special case */
   if( s==0 ){
     *pResult = sign<0 ? -0.0 : +0.0;
-    goto atof_return;
+    goto atofz_return;
   }
 
   /* adjust exponent by d, and update sign */
@@ -854,9 +824,9 @@ do_atof_calc:
   if( sign<0 ) *pResult = -*pResult;
   assert( !sqlite3IsNaN(*pResult) );
 
-atof_return:
+atofz_return:
   /* return true if number and no extra non-whitespace characters after */
-  if( z==zEnd && nDigit>0 && eValid && eType>0 ){
+  if( z[0]==0 && nDigit>0 && eValid ){
     return eType;
   }else if( eType>=2 && (eType==3 || eValid) && nDigit>0 ){
     return -1;
@@ -864,12 +834,15 @@ atof_return:
     return 0;
   }
 #else
-  return !sqlite3Atoi64(z, pResult, length, enc);
+  return !sqlite3Atoi64(z, pResult, strlen(z), SQLITE_UTF8);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
 #if defined(_MSC_VER)
 #pragma warning(default : 4756)
 #endif
+
+
+
 
 /*
 ** Render an signed 64-bit integer as text.  Store the result in zOut[] and

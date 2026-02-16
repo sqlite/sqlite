@@ -353,10 +353,9 @@ static int alsoAnInt(Mem *pRec, double rValue, i64 *piValue){
 */
 static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   double rValue;
-  u8 enc = pRec->enc;
   int rc;
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str );
-  rc = sqlite3AtoF(pRec->z, &rValue, pRec->n, enc);
+  rValue = sqlite3MemRealValueRC(pRec, &rc);
   if( rc<=0 ) return;
   if( rc==1 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
     pRec->flags |= MEM_Int;
@@ -438,7 +437,10 @@ int sqlite3_value_numeric_type(sqlite3_value *pVal){
   int eType = sqlite3_value_type(pVal);
   if( eType==SQLITE_TEXT ){
     Mem *pMem = (Mem*)pVal;
+    assert( pMem->db!=0 );
+    sqlite3_mutex_enter(pMem->db->mutex);
     applyNumericAffinity(pMem, 0);
+    sqlite3_mutex_leave(pMem->db->mutex);
     eType = sqlite3_value_type(pVal);
   }
   return eType;
@@ -471,7 +473,7 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
     pMem->u.i = 0;
     return MEM_Int;
   }
-  rc = sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
+  pMem->u.r = sqlite3MemRealValueRC(pMem, &rc);
   if( rc<=0 ){
     if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
       pMem->u.i = ix;
