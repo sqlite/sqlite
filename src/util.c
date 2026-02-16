@@ -458,40 +458,250 @@ u8 sqlite3StrIHash(const char *z){
   return h;
 }
 
-/* Double-Double multiplication.  (x[0],x[1]) *= (y,yy)
-**
-** Reference:
-**   T. J. Dekker, "A Floating-Point Technique for Extending the
-**   Available Precision".  1971-07-26.
+/*
+** Two inputs are multiplied to get a 128-bit result.  Return
+** the high-order 64 bits of that result.
 */
-static void dekkerMul2(volatile double *x, double y, double yy){
-  /*
-  ** The "volatile" keywords on parameter x[] and on local variables
-  ** below are needed force intermediate results to be truncated to
-  ** binary64 rather than be carried around in an extended-precision
-  ** format.  The truncation is necessary for the Dekker algorithm to
-  ** work.  Intel x86 floating point might omit the truncation without
-  ** the use of volatile. 
-  */
-  volatile double tx, ty, p, q, c, cc;
-  double hx, hy;
-  u64 m;
-  memcpy(&m, (void*)&x[0], 8);
-  m &= 0xfffffffffc000000LL;
-  memcpy(&hx, &m, 8);
-  tx = x[0] - hx;
-  memcpy(&m, &y, 8);
-  m &= 0xfffffffffc000000LL;
-  memcpy(&hy, &m, 8);
-  ty = y - hy;
-  p = hx*hy;
-  q = hx*ty + tx*hy;
-  c = p+q;
-  cc = p - c + q + tx*ty;
-  cc = x[0]*yy + x[1]*y + cc;
-  x[0] = c + cc;
-  x[1] = c - x[0];
-  x[1] += cc;
+static u64 sqlite3Multiply128(u64 a, u64 b){
+#if (defined(__GNUC__) || defined(__clang__)) \
+        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv))
+  return ((__uint128_t)a * b) >> 64;
+#elif defined(_MSC_VER) && defined(_M_X64)
+  return __umulh(a, b);
+#else
+  u64 a1 = (u32)a;
+  u64 a2 = a >> 32;
+  u64 b1 = (u32)b;
+  u64 b2 = b >> 32;
+  u64 p0 = a1 * b1;
+  u64 p1 = a1 * b2;
+  u64 p2 = a2 * b1;
+  u64 p3 = a2 * b2;
+  u64 carry = ((p0 >> 32) + (u32)p1 + (u32)p2) >> 32;
+  return p3 + (p1 >> 32) + (p2 >> 32) + carry;
+#endif
+}
+
+/*
+** Return a u64 with the N-th bit set.
+*/
+#define U64_BIT(N)  (((u64)1)<<(N))
+
+/*
+** Range of powers of 10 that we need to deal with when converting
+** IEEE754 doubles to and from decimal.
+*/
+#define POWERSOF10_FIRST (-348)
+#define POWERSOF10_LAST  (+347)
+
+/*
+** For any p between -348 and +347, return the integer part of
+**
+**    pow(10,p) * pow(2,63-pow10to2(p))
+**
+** Or, in other words, for any p in range, return the most significant
+** 64 bits of pow(10,p).  The pow(10,p) value is shifted left or right,
+** as appropriate so the most significant 64 bits fit exactly into a
+** 64-bit unsigned integer.
+**
+** Algorithm:
+**
+** (1) For p between 0 and 26, return the value directly from the aBase[]
+**     lookup table.
+**
+** (2) For p outside the range 0 to 26, use aScale[] for the initial value
+**     then refine that result (if necessary) by a single multiplication
+**     against aBase[].
+*/
+static u64 powerOfTen(int p){
+  static const u64 aBase[] = {
+    0x8000000000000000LLU, /*  0: 1.0e+0 << 63 */
+    0xa000000000000000LLU, /*  1: 1.0e+1 << 60 */
+    0xc800000000000000LLU, /*  2: 1.0e+2 << 57 */
+    0xfa00000000000000LLU, /*  3: 1.0e+3 << 54 */
+    0x9c40000000000000LLU, /*  4: 1.0e+4 << 50 */
+    0xc350000000000000LLU, /*  5: 1.0e+5 << 47 */
+    0xf424000000000000LLU, /*  6: 1.0e+6 << 44 */
+    0x9896800000000000LLU, /*  7: 1.0e+7 << 40 */
+    0xbebc200000000000LLU, /*  8: 1.0e+8 << 37 */
+    0xee6b280000000000LLU, /*  9: 1.0e+9 << 34 */
+    0x9502f90000000000LLU, /* 10: 1.0e+10 << 30 */
+    0xba43b74000000000LLU, /* 11: 1.0e+11 << 27 */
+    0xe8d4a51000000000LLU, /* 12: 1.0e+12 << 24 */
+    0x9184e72a00000000LLU, /* 13: 1.0e+13 << 20 */
+    0xb5e620f480000000LLU, /* 14: 1.0e+14 << 17 */
+    0xe35fa931a0000000LLU, /* 15: 1.0e+15 << 14 */
+    0x8e1bc9bf04000000LLU, /* 16: 1.0e+16 << 10 */
+    0xb1a2bc2ec5000000LLU, /* 17: 1.0e+17 << 7 */
+    0xde0b6b3a76400000LLU, /* 18: 1.0e+18 << 4 */
+    0x8ac7230489e80000LLU, /* 19: 1.0e+19 >> 0 */
+    0xad78ebc5ac620000LLU, /* 20: 1.0e+20 >> 3 */
+    0xd8d726b7177a8000LLU, /* 21: 1.0e+21 >> 6 */
+    0x878678326eac9000LLU, /* 22: 1.0e+22 >> 10 */
+    0xa968163f0a57b400LLU, /* 23: 1.0e+23 >> 13 */
+    0xd3c21bcecceda100LLU, /* 24: 1.0e+24 >> 16 */
+    0x84595161401484a0LLU, /* 25: 1.0e+25 >> 20 */
+    0xa56fa5b99019a5c8LLU, /* 26: 1.0e+26 >> 23 */
+  };
+  static const u64 aScale[] = {
+    0x8049a4ac0c5811aeLLU, /*  0: 1.0e-351 << 1229 */
+    0xcf42894a5dce35eaLLU, /*  1: 1.0e-324 << 1140 */
+    0xa76c582338ed2621LLU, /*  2: 1.0e-297 << 1050 */
+    0x873e4f75e2224e68LLU, /*  3: 1.0e-270 << 960 */
+    0xda7f5bf590966848LLU, /*  4: 1.0e-243 << 871 */
+    0xb080392cc4349decLLU, /*  5: 1.0e-216 << 781 */
+    0x8e938662882af53eLLU, /*  6: 1.0e-189 << 691 */
+    0xe65829b3046b0afaLLU, /*  7: 1.0e-162 << 602 */
+    0xba121a4650e4ddebLLU, /*  8: 1.0e-135 << 512 */
+    0x964e858c91ba2655LLU, /*  9: 1.0e-108 << 422 */
+    0xf2d56790ab41c2a2LLU, /* 10: 1.0e-81 << 333 */
+    0xc428d05aa4751e4cLLU, /* 11: 1.0e-54 << 243 */
+    0x9e74d1b791e07e48LLU, /* 12: 1.0e-27 << 153 */
+    0x8000000000000000LLU, /* 13: 1.0e+0 << 63 */
+    0xcecb8f27f4200f3aLLU, /* 14: 1.0e+27 >> 26 */
+    0xa70c3c40a64e6c51LLU, /* 15: 1.0e+54 >> 116 */
+    0x86f0ac99b4e8dafdLLU, /* 16: 1.0e+81 >> 206 */
+    0xda01ee641a708de9LLU, /* 17: 1.0e+108 >> 295 */
+    0xb01ae745b101e9e4LLU, /* 18: 1.0e+135 >> 385 */
+    0x8e41ade9fbebc27dLLU, /* 19: 1.0e+162 >> 475 */
+    0xe5d3ef282a242e81LLU, /* 20: 1.0e+189 >> 564 */
+    0xb9a74a0637ce2ee1LLU, /* 21: 1.0e+216 >> 654 */
+    0x95f83d0a1fb69cd9LLU, /* 22: 1.0e+243 >> 744 */
+    0xf24a01a73cf2dccfLLU, /* 23: 1.0e+270 >> 833 */
+    0xc3b8358109e84f07LLU, /* 24: 1.0e+297 >> 923 */
+    0x9e19db92b4e31ba9LLU, /* 25: 1.0e+324 >> 1013 */
+  };
+  int g, n;
+  u64 x, y;
+
+  assert( p>=POWERSOF10_FIRST && p<=POWERSOF10_LAST );
+  if( p<0 ){
+    g = p/27;
+    n = p%27;
+    if( n ){
+      g--;
+      n += 27;
+    }
+  }else if( p<27 ){
+    return aBase[p];
+  }else{
+    g = p/27;
+    n = p%27;
+  }
+  y = aScale[g+13];
+  if( n==0 ){
+    return y;
+  }
+  x = sqlite3Multiply128(aBase[n],y);
+  if( (U64_BIT(63) & x)==0 ){
+    x <<= 1;
+  }
+  return x;
+}
+
+/*
+** pow10to2(x) computes floor(log2(pow(10,x))).
+** pow2to10(y) computes floor(log10(pow(2,y))).
+**
+** Conceptually, pow10to2(p) converts a base-10 exponent p into
+** a corresponding base-2 exponent, and pow2to10(e) converts a base-2
+** exponent into a base-10 exponent.
+**
+** The conversions are based on the observation that:
+**
+**     ln(10.0)/ln(2.0) == 108853/32768     (approximately)
+**     ln(2.0)/ln(10.0) == 78913/262144     (approximately)
+**
+** These ratios are approximate, but they are accurate to 5 digits,
+** which is close enough for the usage here.  Right-shift is used
+** for division so that rounding of negative numbers happens in the
+** right direction.
+*/
+static int pwr10to2(int p){ return (p*108853) >> 15; }
+static int pwr2to10(int p){ return (p*78913) >> 18; }
+
+/*
+** Count leading zeros for a 64-bit unsigned integer.
+*/
+static int countLeadingZeros(u64 m){
+#if defined(__GNUC__) || defined(__clang__)
+  return __builtin_clzll(m);
+#else
+  int n = 0;
+  if( m <= 0x00000000ffffffffULL) { n += 32; m <<= 32; }
+  if( m <= 0x0000ffffffffffffULL) { n += 16; m <<= 16; }
+  if( m <= 0x00ffffffffffffffULL) { n += 8;  m <<= 8;  }
+  if( m <= 0x0fffffffffffffffULL) { n += 4;  m <<= 4;  }
+  if( m <= 0x3fffffffffffffffULL) { n += 2;  m <<= 2;  }
+  if( m <= 0x7fffffffffffffffULL) { n += 1;            }
+  return n;
+#endif
+}
+
+/*
+** Given m and e, which represent a quantity r == m*pow(2,e),
+** return values *pD and *pP such that r == (*pD)*pow(10,*pP),
+** approximately.  *pD should contain at least n significant digits.
+**
+** The input m is required to have its highest bit set.  In other words,
+** m should be left-shifted, and e decremented, to maximize the value of m.
+*/
+static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
+  int p;
+  u64 h, out;
+  p = n - 1 - pwr2to10(e+63);
+  h = sqlite3Multiply128(m, powerOfTen(p));
+  assert( -(e + pwr10to2(p) + 3) >=0 );
+  assert( -(e + pwr10to2(p) + 3) <64 );
+  out = h >> -(e + pwr10to2(p) + 3);
+  *pD = (out + 2 + ((out>>2)&1)) >> 2;
+  *pP = -p;
+}
+
+/*
+** Return an IEEE754 floating point value that approximates d*pow(10,p).
+*/
+static double sqlite3Fp10Convert2(u64 d, int p){
+  u64 out;
+  int b;
+  int e1;
+  int e2;
+  int lp;
+  u64 h;
+  double r;
+  assert( (d & U64_BIT(63))==0 );
+  assert( d!=0 );
+  if( p<POWERSOF10_FIRST ){
+    return 0.0;
+  }
+  if( p>POWERSOF10_LAST ){
+    return INFINITY;
+  }
+  b = 64 - countLeadingZeros(d);
+  lp = pwr10to2(p);
+  e1 = 53 - b - lp;
+  if( e1>1074 ){
+    if( -(b + lp) >= 1077 ) return 0.0;
+    e1 = 1074;
+  }
+  e2 = e1 - (64-b);
+  h = sqlite3Multiply128(d<<(64-b), powerOfTen(p));
+  assert( -(e2 + lp + 3) >=0 );
+  assert( -(e2 + lp + 3) <64 );
+  out = (h >> -(e2 + lp + 3)) | 1;
+  if( out >= U64_BIT(55)-2 ){
+    out = (out>>1) | (out&1);
+    e1--;
+  }
+  if( e1<=(-972) ){
+    return INFINITY;
+  }
+  out = (out + 1 + ((out>>2)&1)) >> 2;
+  if( (out & U64_BIT(52))!=0 ){
+    out = (out & ~U64_BIT(52)) | ((u64)(1075-e1)<<52);
+  }
+  memcpy(&r, &out, 8);
+  return r;
 }
 
 /*
@@ -539,8 +749,6 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   int eValid = 1;  /* True exponent is either not used or is well-formed */
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
-  u64 s2;          /* round-tripped significand */
-  double rr[2];
 
   assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   *pResult = 0.0;   /* Default return value, in case of an error */
@@ -578,7 +786,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   while( z<zEnd && sqlite3Isdigit(*z) ){
     s = s*10 + (*z - '0');
     z+=incr; nDigit++;
-    if( s>=((LARGEST_UINT64-9)/10) ){
+    if( s>=((LARGEST_INT64-9)/10) ){
       /* skip non-significant significand digits
       ** (increase exponent by d to shift decimal left) */
       while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; d++; }
@@ -593,7 +801,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
     while( z<zEnd && sqlite3Isdigit(*z) ){
-      if( s<((LARGEST_UINT64-9)/10) ){
+      if( s<((LARGEST_INT64-9)/10) ){
         s = s*10 + (*z - '0');
         d--;
         nDigit++;
@@ -642,62 +850,7 @@ do_atof_calc:
   /* adjust exponent by d, and update sign */
   e = (e*esign) + d;
 
-  /* Try to adjust the exponent to make it smaller */
-  while( e>0 && s<((LARGEST_UINT64-0x7ff)/10) ){
-    s *= 10;
-    e--;
-  }
-  while( e<0 && (s%10)==0 ){
-    s /= 10;
-    e++;
-  }
-
-  rr[0] = (double)s;
-  assert( sizeof(s2)==sizeof(rr[0]) );
-#ifdef SQLITE_DEBUG
-  rr[1] = 18446744073709549568.0;
-  memcpy(&s2, &rr[1], sizeof(s2));
-  assert( s2==0x43efffffffffffffLL );
-#endif
-  /* Largest double that can be safely converted to u64
-  **         vvvvvvvvvvvvvvvvvvvvvv   */
-  if( rr[0]<=18446744073709549568.0 ){
-    s2 = (u64)rr[0];
-    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
-  }else{
-    rr[1] = 0.0;
-  }
-  assert( rr[1]<=1.0e-10*rr[0] );  /* Equal only when rr[0]==0.0 */
-  
-  if( e>0 ){
-    while( e>=100  ){
-      e -= 100;
-      dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
-    }
-    while( e>=10   ){
-      e -= 10;
-      dekkerMul2(rr, 1.0e+10, 0.0);
-    }
-    while( e>=1    ){
-      e -= 1;
-      dekkerMul2(rr, 1.0e+01, 0.0);
-    }
-  }else{
-    while( e<=-100 ){
-      e += 100;
-      dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
-    }
-    while( e<=-10  ){
-      e += 10;
-      dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
-    }
-    while( e<=-1   ){
-      e += 1;
-      dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
-    }
-  }
-  *pResult = rr[0]+rr[1];
-  if( sqlite3IsNaN(*pResult) ) *pResult = 1e300*1e300;
+  *pResult = sqlite3Fp10Convert2(s,e);
   if( sign<0 ) *pResult = -*pResult;
   assert( !sqlite3IsNaN(*pResult) );
 
@@ -1018,7 +1171,6 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
   u64 v;
   int e, exp = 0;
-  double rr[2];
 
   p->isSpecial = 0;
   p->z = p->zBuf;
@@ -1039,60 +1191,54 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     p->sign = '+';
   }
   memcpy(&v,&r,8);
-  e = v>>52;
-  if( (e&0x7ff)==0x7ff ){
+  e = (v>>52)&0x7ff;
+  if( e==0x7ff ){
     p->isSpecial = 1 + (v!=0x7ff0000000000000LL);
     p->n = 0;
     p->iDP = 0;
     return;
   }
-
-  /* Multiply r by powers of ten until it lands somewhere in between
-  ** 1.0e+19 and 1.0e+17.
-  **
-  ** Use Dekker-style double-double computation to increase the
-  ** precision.
-  **
-  ** The error terms on constants like 1.0e+100 computed using the
-  ** decimal extension, for example as follows:
-  **
-  **   SELECT decimal_exp(decimal_sub('1.0e+100',decimal(1.0e+100)));
-  */
-  rr[0] = r;
-  rr[1] = 0.0;
-  if( rr[0]>9.223372036854774784e+18 ){
-    while( rr[0]>9.223372036854774784e+118 ){
-      exp += 100;
-      dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
-    }
-    while( rr[0]>9.223372036854774784e+28 ){
-      exp += 10;
-      dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
-    }
-    while( rr[0]>9.223372036854774784e+18 ){
-      exp += 1;
-      dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
-    }
+  v &= 0x000fffffffffffffULL;
+  if( e==0 ){
+    int n = countLeadingZeros(v);
+    v <<= n;
+    e = -1074 - n;
   }else{
-    while( rr[0]<9.223372036854774784e-83  ){
-      exp -= 100;
-      dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
-    }
-    while( rr[0]<9.223372036854774784e+07  ){
-      exp -= 10;
-      dekkerMul2(rr, 1.0e+10, 0.0);
-    }
-    while( rr[0]<9.22337203685477478e+17  ){
-      exp -= 1;
-      dekkerMul2(rr, 1.0e+01, 0.0);
-    }
+    v = (v<<11) | U64_BIT(63);
+    e -= 1086;
   }
-  v = rr[1]<0.0 ? (u64)rr[0]-(u64)(-rr[1]) : (u64)rr[0]+(u64)rr[1];
+  sqlite3Fp2Convert10(v, e, 17, &v, &exp);  
 
   /* Extract significant digits. */
   i = sizeof(p->zBuf)-1;
   assert( v>0 );
-  while( v ){  p->zBuf[i--] = (v%10) + '0'; v /= 10; }
+  while( v>=10 ){
+    static const union {
+      char a[200];
+      short int forAlignment;
+    } dig = {
+      "00010203040506070809"
+      "10111213141516171819"
+      "20212223242526272829"
+      "30313233343536373839"
+      "40414243444546474849"
+      "50515253545556575859"
+      "60616263646566676869"
+      "70717273747576777879"
+      "80818283848586878889"
+      "90919293949596979899"
+    };
+    int kk = (v%100)*2;
+    assert( TWO_BYTE_ALIGNMENT(&dig.a[kk]) );
+    assert( TWO_BYTE_ALIGNMENT(&p->zBuf[i-1]) );
+    *(u16*)(&p->zBuf[i-1]) = *(u16*)&dig.a[kk];
+    i -= 2;
+    v /= 100;
+  }
+  if( v ){
+    assert( v<10 );
+    p->zBuf[i--] = v + '0';
+  }
   assert( i>=0 && i<sizeof(p->zBuf)-1 );
   p->n = sizeof(p->zBuf) - 1 - i;
   assert( p->n>0 );
