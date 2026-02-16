@@ -738,12 +738,9 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 int sqlite3AtoF(const char *z, double *pResult){
 #ifndef SQLITE_OMIT_FLOATING_POINT
   /* sign * significand * (10 ^ (esign * exponent)) */
-  int sign = 1;    /* sign of significand */
-  u64 s = 0;       /* significand */
-  int d = 0;       /* adjust exponent for shifting decimal point */
-  int esign = 1;   /* sign of exponent */
-  int e = 0;       /* exponent */
-  int eValid = 1;  /* True exponent is either not used or is well-formed */
+  int neg = 0;     /* True for a negative value */
+  u64 s = 0;       /* mantissa */
+  int d = 0;       /* Value is s * pow(10,d) */
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional */
 
@@ -754,7 +751,7 @@ int sqlite3AtoF(const char *z, double *pResult){
 
   /* get sign of significand */
   if( *z=='-' ){
-    sign = -1;
+    neg = 1;
     z++;
   }else if( *z=='+' ){
     z++;
@@ -789,8 +786,8 @@ int sqlite3AtoF(const char *z, double *pResult){
 
   /* if exponent is present */
   if( *z=='e' || *z=='E' ){
+    int esign = 1;   /* sign of exponent */
     z++;
-    eValid = 0;
     eType++;
 
     /* get sign of exponent */
@@ -801,10 +798,16 @@ int sqlite3AtoF(const char *z, double *pResult){
       z++;
     }
     /* copy digits to exponent */
-    while( sqlite3Isdigit(*z) ){
-      e = e<10000 ? (e*10 + (*z - '0')) : 10000;
+    if( sqlite3Isdigit(*z) ){
+      int exp = *z - '0';
       z++;
-      eValid = 1;
+      while( sqlite3Isdigit(*z) ){
+        exp = exp<10000 ? (exp*10 + (*z - '0')) : 10000;
+        z++;
+      }
+      d += esign*exp;
+    }else{
+      eType = -1;
     }
   }
 
@@ -813,22 +816,17 @@ int sqlite3AtoF(const char *z, double *pResult){
 
   /* Zero is a special case */
   if( s==0 ){
-    *pResult = sign<0 ? -0.0 : +0.0;
-    goto atofz_return;
+    *pResult = neg ? -0.0 : +0.0;
+  }else{
+    *pResult = sqlite3Fp10Convert2(s,d);
+    if( neg ) *pResult = -*pResult;
+    assert( !sqlite3IsNaN(*pResult) );
   }
 
-  /* adjust exponent by d, and update sign */
-  e = (e*esign) + d;
-
-  *pResult = sqlite3Fp10Convert2(s,e);
-  if( sign<0 ) *pResult = -*pResult;
-  assert( !sqlite3IsNaN(*pResult) );
-
-atofz_return:
   /* return true if number and no extra non-whitespace characters after */
-  if( z[0]==0 && nDigit>0 && eValid ){
+  if( z[0]==0 && nDigit>0 ){
     return eType;
-  }else if( eType>=2 && (eType==3 || eValid) && nDigit>0 ){
+  }else if( eType>=2 && nDigit>0 ){
     return -1;
   }else{
     return 0;
