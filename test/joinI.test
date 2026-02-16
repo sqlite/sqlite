@@ -121,5 +121,30 @@ do_execsql_test 5.1 {
     INNER JOIN child2 ON child2.child2key = parent1.child2key;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t5(a, d);
+  CREATE TABLE t6(a, e);
+  INSERT INTO t5 VALUES(1, 'red');
+  INSERT INTO t6 VALUES(0, 1000);
+
+  CREATE TABLE t7(x);
+  CREATE TABLE t8(y);
+}
+
+do_catchsql_test 6.1 {
+  SELECT * FROM t6 CROSS JOIN (t7 RIGHT JOIN t8 ON (t6.a));
+} {1 {no such column: t6.a}}
+
+do_catchsql_test 6.4 {
+  SELECT * FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6;
+} {1 {ON clause references tables to its right}}
+
+do_catchsql_test 6.5 {
+  SELECT * FROM 
+  (SELECT * FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6);
+} {1 {ON clause references tables to its right}}
+
 finish_test
 

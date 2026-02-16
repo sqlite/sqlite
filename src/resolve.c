@@ -2250,6 +2250,14 @@ void sqlite3ResolveSelectNames(
   w.pParse = pParse;
   w.u.pNC = pOuterNC;
   sqlite3WalkSelect(&w, p);
+
+  /* If the SELECT statement contains ON clauses that were moved into
+  ** the WHERE clause, go through and verify that none of the terms
+  ** in the ON clauses reference tables to the right of the ON clause.
+  ** Do this now, immediately after name resolution. */
+  if( pParse->nErr==0 && (p->selFlags & SF_OnToWhere) ){
+    sqlite3SelectCheckOnClauses(pParse, p);
+  }
 }
 
 /*

@@ -7491,7 +7491,7 @@ static int selectCheckOnClausesSelect(Walker *pWalker, Select *pSelect){
 ** Check all ON clauses in pSelect to verify that they do not reference
 ** columns to the right.
 */
-static void selectCheckOnClauses(Parse *pParse, Select *pSelect){
+void sqlite3SelectCheckOnClauses(Parse *pParse, Select *pSelect){
   Walker w;
   CheckOnCtx sCtx;
   int ii;
@@ -7670,18 +7670,6 @@ int sqlite3Select(
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
-
-  /* If the SELECT statement contains ON clauses that were moved into
-  ** the WHERE clause, go through and verify that none of the terms
-  ** in the ON clauses reference tables to the right of the ON clause.
-  ** Do this now, after name resolution, but before query flattening
-  */
-  if( p->selFlags & SF_OnToWhere ){
-    selectCheckOnClauses(pParse, p);
-    if( pParse->nErr ){
-      goto select_end;
-    }
-  }
 
   /* If the SF_UFSrcCheck flag is set, then this function is being called
   ** as part of populating the temp table for an UPDATE...FROM statement.
