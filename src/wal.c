@@ -4823,6 +4823,29 @@ int sqlite3WalUpgradeSnapshot(Wal *pWal){
   } SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
   return rc;
 }
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Return a 64-bit value that identifies the snapshot currently in use.
+*/
+u64 sqlite3WalCommitId(Wal *pWal){
+  return ((u64)(pWal->hdr.aCksum[0]) << 32) + pWal->hdr.aCksum[1];
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Return a 64-bit value that identifies the snapshot currently at the
+** head of the wal file.
+*/
+u64 sqlite3WalLiveId(Wal *pWal){
+  WalIndexHdr hdr;
+  assert( pWal->writeLock );
+  SEH_TRY {
+    walIndexLoadHdr(pWal, &hdr);
+  } SEH_EXCEPT( memset(&hdr, 0, sizeof(hdr)); )
+  return ((u64)(hdr.aCksum[0]) << 32) + hdr.aCksum[1];
+}
+
 #endif   /* SQLITE_OMIT_CONCURRENT */
 
 /*

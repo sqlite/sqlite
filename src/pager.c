@@ -1865,6 +1865,25 @@ void sqlite3PagerEndConcurrent(Pager *pPager){
 int sqlite3PagerIsWal(Pager *pPager){
   return pPager->pWal!=0;
 }
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** If in wal-mode, return a 64-bit value that identifies the snapshot currently
+** in use. Otherwise, return 0.
+*/
+u64 sqlite3PagerWalCommitId(Pager *pPager){
+  return pPager->pWal ? sqlite3WalCommitId(pPager->pWal) : 0;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** If in wal-mode, return a 64-bit value that identifies the snapshot 
+** currently at the head of the wal file. Otherwise, return 0.
+*/
+u64 sqlite3PagerWalLiveId(Pager *pPager){
+  return pPager->pWal ? sqlite3WalLiveId(pPager->pWal) : 0;
+}
+
 #endif /* SQLITE_OMIT_CONCURRENT */
 
 /*
@@ -5575,6 +5594,7 @@ int sqlite3PagerUsePage(Pager *pPager, Pgno pgno){
   }
   return rc;
 }
+
 #endif
 
 /*
@@ -6578,9 +6598,10 @@ int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1, u32 *aConflict){
 #ifndef SQLITE_OMIT_CONCURRENT
 /*
 ** This function is called as part of committing an CONCURRENT transaction.
-** At this point the wal WRITER lock is held, and all pages in the cache 
-** except for page 1 are compatible with the snapshot at the head of the
-** wal file. 
+** At this point the wal WRITER lock is held. If parameter bReset is 0,
+** all pages in the cache except for page 1 are compatible with the snapshot 
+** at the head of the wal file. Or, if bReset is non-zero, the cache is
+** cleared of all pages except for page 1.
 **
 ** This function updates the in-memory data structures and reloads the
 ** contents of page 1 so that the client is operating on the snapshot 
@@ -6588,7 +6609,7 @@ int sqlite3PagerExclusiveLock(Pager *pPager, PgHdr *pPage1, u32 *aConflict){
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
-int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage *pPage1){
+int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage *pPage1, int bReset){
   int rc;
 
   assert( pPager->pWal && pPager->pAllRead );
@@ -6596,7 +6617,9 @@ int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage *pPage1){
   if( rc==SQLITE_OK ){
     rc = readDbPage(pPage1);
   }
-
+  if( bReset && rc==SQLITE_OK ){
+    sqlite3PcacheTruncate(pPager->pPCache, 1);
+  }
   return rc;
 }
 

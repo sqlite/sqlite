@@ -234,6 +234,15 @@ typedef struct BtLock BtLock;
 typedef struct CellInfo CellInfo;
 typedef struct BtreePtrmap BtreePtrmap;
 
+typedef struct BtConcurrent BtConcurrent;
+typedef struct BtReadIndex BtReadIndex;
+typedef struct BtReadIntkey BtReadIntkey;
+typedef struct BtSharedLog BtSharedLog;
+typedef struct BtSharedLogEntry BtSharedLogEntry;
+typedef struct BtWrite BtWrite;
+typedef struct BtWriteIndex BtWriteIndex;
+typedef struct BtWriteIntkey BtWriteIntkey;
+
 /*
 ** This is a magic string that appears at the beginning of every
 ** SQLite database in order to identify the file as a real database.
@@ -324,6 +333,186 @@ struct BtLock {
 /* Candidate values for BtLock.eLock */
 #define READ_LOCK     1
 #define WRITE_LOCK    2
+
+/*
+** All connections to a single database file that use BEGIN CONCURRENT within 
+** the process share an instance of this object. Its purpose is to store
+** a list of BtSharedLogEntry objects associated with the database file.
+*/
+struct BtSharedLog {
+  sqlite3_mutex *mutex;           /* Mutex protecting this object */
+  int nRef;                       /* Number of users of this struct */
+  char *zFullname;                /* Path identifying this database */
+
+  BtSharedLogEntry *pFirst;
+  BtSharedLogEntry *pLast;
+  int nEntry;                     /* Current number of entries */
+
+  /* Linked list protected by SQLITE_MUTEX_STATIC_MAIN */
+  BtSharedLog *pSharedNext;  /* Next shared log in process */
+};
+
+/*
+** Each time a BEGIN CONCURRENT transaction is committed, an instance of
+** the following object is added to the list maintained by the database
+** file's BtSharedLog object. 
+**
+** iBaseId:
+**   The sqlite3WalCommitId() value at the head of the wal file when this
+**   transaction was written.
+**
+** iThisId:
+**   The sqlite3WalCommitId() value at the head of the wal file after this
+**   transaction was written. i.e. the snapshot created by this write.
+**
+** iFirstFrame:
+**   First wal frame written by this transaction. If in a *-wal2 file, the
+**   0x80000000 bit is set.
+**
+** nFrame:
+**   Total number of frames written by this transaction.
+**
+** aIntkey/nIntkey:
+**   Array of rowids modified by this transaction.
+**
+** aIndex/nIndex:
+**   Array of index keys modified by this transaction.
+*/
+struct BtSharedLogEntry {
+  u64 iBaseId;                    /* Snapshot this transaction was based on */
+  u64 iThisId;                    /* Snapshot this transaction created */
+  u32 iFirstFrame;                /* First frame written by this transaction */
+  u32 nFrame;                     /* Number of frames written by transaction */
+
+  BtWriteIntkey *aIntkey;         /* Writes to intkeys */
+  int nIntkey;                    /* Size of aIntkey[] */
+  BtWriteIndex *aIndex;           /* Writes to indexes */
+  int nIndex;                     /* Size of aIndex[] in bytes */
+
+  BtSharedLogEntry *pLogNext;     /* Transaction commited after this one */
+};
+
+/*
+** Any more savepoints than this and the BtConcurrent object is retired.
+*/
+#define BTCONC_MAX_SAVEPOINT 8
+
+/*
+** An single object of this type is permanently part of each BtShared
+** object. It stores things related to BEGIN CONCURRENT transactions
+** and the in-process shared-log.
+*/
+struct BtConcurrent {
+  BtSharedLog *pBtLog;
+  int eState;                     /* One of the BTCONC_STATE_XXX values */
+  u64 iBase;                      /* WalCommitId() transaction is prepared on */
+
+  /* Reads performed by this transaction */
+  BtReadIntkey *aReadIntkey;
+  BtReadIndex *aReadIndex;
+  int nReadIntkey;
+  int nReadIndex;
+  int nReadIntkeyAlloc;
+  int nReadIndexAlloc;
+  int bReadSorted;                /* True if the aRead[] arrays are sorted */
+
+  /* Changes made by this transaction. */
+  BtWrite *aWrite;
+  int nWrite;
+  int nWriteAlloc;
+
+  /* An UnpackedRecord structure created pKeyInfo->nKeyField==nUnpackedField */
+  UnpackedRecord *pUnpacked;
+  int nUnpackedField;
+
+  int aSvpt[BTCONC_MAX_SAVEPOINT];/* Set nWrite=aSvpt[i] when savepoint i rb. */
+  int nSvpt;                      /* Current number of open savepoints */
+
+  /* Total size of all allocations managed by this object. */
+  i64 nAlloc;
+};
+
+/*
+** NONE:    No BEGIN CONCURRENT transaction is open. 
+** INUSE:   BEGIN CONCURRENT transaction is open and object is accumulating
+**          reads and writes.
+** RETIRED: BEGIN CONCURRENT transaction is open but object is not in use.
+**          Because it grew too large or some such reason.
+*/
+#define BTCONC_STATE_NONE    0
+#define BTCONC_STATE_INUSE   1
+#define BTCONC_STATE_RETIRED 2
+
+/*
+** Each read of an intkey or index btree by a BEGIN CONCURRENT transaction is
+** represented by an object of one of the following types.
+*/
+struct BtReadIntkey {
+  Pgno iRoot;                     /* Root page of table read */
+  i64 iMin;                       /* Smallest rowid scanned */
+  i64 iMax;                       /* Largest rowid scanned */
+};
+
+/*
+** Each scan of an index is represented by an instance of the following
+** structure. The start of the range is encoded in (aRecMin, nRecMin, 
+** drc_min) and the end of the range by (aRecMax, nRecMax, drc_max). 
+** According to the sort order defined by pKeyInfo:
+**
+**     (aRecMin, nRecMin, drc_min) <= (aRecMax, nRecMax, drc_max)
+*/
+struct BtReadIndex {
+  Pgno iRoot;                     /* Root page of index b-tree read */
+  i16 drc_min;
+  i16 drc_max;
+  KeyInfo *pKeyInfo;              /* KeyInfo structure for b-tree */
+  int nRecMin;                    /* Size of aRecFirst[] in bytes */
+  int nRecMax;                    /* Size of aRecLast[] in bytes */
+  u8 *aRecMin;                    /* Record for this change */
+  u8 *aRecMax;                    /* Record for this change */
+};
+
+/*
+** During a BEGIN CONCURRENT transaction, each insert or delete of a b-tree 
+** key is represented by an instance of this structure.
+**
+** If the transaction is succesfully committed, the information in an 
+** array of this type is used to populate arrays of BtWriteIntkey and
+** BtWriteIndex structs, which are stored as part of the shared-log
+** entry to use for future conflict detection.
+*/
+struct BtWrite {
+  Pgno iRoot;                     /* Root page of btree this change affects */
+  int bDel;                       /* True for a delete, false for insert */
+  KeyInfo *pKeyInfo;              /* KeyInfo for index-btree, NULL for intkey */
+  i64 iKey;                       /* Key for intkey updates */             
+  int nRec;                       /* Size of aRec[] in bytes */
+  u8 *aRec;                       /* Record for this change */
+};
+
+struct BtWriteIntkey {
+  Pgno iRoot;                     /* Root page of table read */
+  i64 iKey;                       /* Key written */
+};
+
+struct BtWriteIndex {
+  Pgno iRoot;                     /* Root page of table read */
+  int nRec;                       /* Size of aRec[] in bytes (or 0) */
+  u8 *aRec;                       /* Pointer to record */
+};
+
+/* Values for BtRead.eRead - how the scan was started. */
+#define BTCONC_READ_FIRST  1
+#define BTCONC_READ_MOVETO 2
+#define BTCONC_READ_LAST   3
+#define BTCONC_READ_COUNT  4
+
+int sqlite3BcSerializeRecord(
+  UnpackedRecord *pRec,           /* Record to serialize */
+  u8 **ppRec,                     /* OUT: buffer containing serialization */
+  int *pnRec                      /* OUT: size of (*ppRec) in bytes */
+);
+
 
 /* A Btree handle
 **
@@ -468,6 +657,7 @@ struct BtShared {
   u8 *pTmpSpace;        /* Temp space sufficient to hold a single cell */
 #ifndef SQLITE_OMIT_CONCURRENT
   BtreePtrmap *pMap;
+  BtConcurrent conc;
 #endif
   int nPreformatSize;   /* Size of last cell written by TransferRow() */
 };
@@ -551,6 +741,11 @@ struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
   Pgno *aOverflow;          /* Cache of overflow page locations */
   void *pKey;               /* Saved key that was cursor last known position */
+#ifndef SQLITE_OMIT_CONCURRENT
+  int eScanType;            /* BTCONC_READ_FIRST, LAST or MOVETO */
+  int iScanDir;             /* +1 if Next(), -1 if Prev(), 0 if neither */
+  int iScanIndex;           /* Index of pBt->conc.aReadXXX[] array plus 1 */
+#endif
   /* All fields above are zeroed when the cursor is allocated.  See
   ** sqlite3BtreeCursorZero().  Fields that follow must be manually
   ** initialized. */
@@ -758,3 +953,4 @@ struct IntegrityCk {
 #else
 # define get2byteAligned(x)  ((x)[0]<<8 | (x)[1])
 #endif
+

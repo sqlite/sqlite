@@ -248,9 +248,11 @@ int sqlite3PagerUsePage(Pager*, Pgno);
 void sqlite3PagerEndConcurrent(Pager*);
 int sqlite3PagerBeginConcurrent(Pager*);
 void sqlite3PagerDropExclusiveLock(Pager*);
-int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage*);
+int sqlite3PagerUpgradeSnapshot(Pager *pPager, DbPage*, int);
 void sqlite3PagerSetDbsize(Pager *pPager, Pgno);
 int sqlite3PagerIsWal(Pager*);
+u64 sqlite3PagerWalCommitId(Pager *pPager);
+u64 sqlite3PagerWalLiveId(Pager *pPager);
 #else
 # define sqlite3PagerEndConcurrent(x)
 # define sqlite3PagerUsePage(x, y) SQLITE_OK

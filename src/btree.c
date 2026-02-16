@@ -623,10 +623,66 @@ static int btreePtrmapStore(
 
 /* !defined(SQLITE_OMIT_CONCURRENT)
 **
-** Open savepoint iSavepoint, if it is not already open.
+** Free the contents of the array of BtWrite objects (but not the
+** array itself).
+*/
+static void btreeBcFreeWriteArray(BtWrite *aWrite, int nWrite){
+  int ii;
+  for(ii=0; ii<nWrite; ii++){
+    sqlite3KeyInfoUnref(aWrite[ii].pKeyInfo);
+    sqlite3_free(aWrite[ii].aRec);
+  }
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** If this is a BEGIN CONCURRENT transactin, update the BtShared.conc 
+** object to reflect the fact that nSvpt savepoints are now open.
+*/
+static void btreeBcSavepointBegin(BtShared *pBt, int nSvpt){
+  if( nSvpt>=BTCONC_MAX_SAVEPOINT ){
+    /* More than 8 nested savepoints. No logical OCC this transaction. */
+    pBt->conc.eState = BTCONC_STATE_RETIRED;
+  }else if( nSvpt>pBt->conc.nSvpt ){
+    int ii;
+    for(ii=pBt->conc.nSvpt; ii<nSvpt; ii++){
+      pBt->conc.aSvpt[ii] = pBt->conc.nWrite;
+    }
+    pBt->conc.nSvpt = nSvpt;
+  }
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** If this is a BEGIN CONCURRENT transaction, update the BtShared.conc 
+** object to reflect the fact that savepoint iSvpt has just been 
+** released (if op==SAVEPOINT_RELEASE) or rolled back (if
+** op==SAVEPOINT_ROLLBACK).
+*/
+static void btreeBcSavepointEnd(BtShared *pBt, int op, int iSvpt){
+  assert( op==SAVEPOINT_ROLLBACK || op==SAVEPOINT_RELEASE );
+  assert( iSvpt>=0 || (iSvpt==-1 && op==SAVEPOINT_ROLLBACK) );
+  assert( pBt->conc.nSvpt>=0 );
+
+  if( iSvpt<pBt->conc.nSvpt ){
+    if( op==SAVEPOINT_RELEASE ){
+      pBt->conc.nSvpt = iSvpt;
+    }else{
+      int nNew = (iSvpt<0) ? 0 : pBt->conc.aSvpt[iSvpt];
+      btreeBcFreeWriteArray(&pBt->conc.aWrite[nNew], pBt->conc.nWrite - nNew);
+      pBt->conc.nWrite = nNew;
+      pBt->conc.nSvpt = iSvpt+1;
+    }
+  }
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Open savepoint iSvpt, if it is not already open.
 */
 static int btreePtrmapBegin(BtShared *pBt, int nSvpt){
   BtreePtrmap *pMap = pBt->pMap;
+  btreeBcSavepointBegin(pBt, nSvpt);
   if( pMap && nSvpt>pMap->nSvpt ){
     int i;
     if( nSvpt>=pMap->nSvptAlloc ){
@@ -656,6 +712,7 @@ static int btreePtrmapBegin(BtShared *pBt, int nSvpt){
 */
 static void btreePtrmapEnd(BtShared *pBt, int op, int iSvpt){
   BtreePtrmap *pMap = pBt->pMap;
+  btreeBcSavepointEnd(pBt, op, iSvpt);
   if( pMap ){
     assert( op==SAVEPOINT_ROLLBACK || op==SAVEPOINT_RELEASE );
     assert( iSvpt>=0 || (iSvpt==-1 && op==SAVEPOINT_ROLLBACK) );
@@ -753,12 +810,1276 @@ static void btreePtrmapCheck(BtShared *pBt, Pgno nPage){
   }
 }
 
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** (*ppArray) points to an array of elements size szElem. (*pnArrayAlloc)
+** is the current allocated size of the array, (*pnArray) is the currently
+** used size. Ensure there is enough space to append an element. Return
+** SQLITE_OK if successful, or SQLITE_NOMEM if an OOM occurs.
+*/
+static int btreeBcGrowArray(
+  void **ppArray,
+  int *pnArray,
+  int *pnArrayAlloc,
+  int szElem
+){
+  if( (*pnArray)>=(*pnArrayAlloc) ){
+    i64 nNew = (*pnArray)==0 ? 100 : ((*pnArray) * 2);
+    void *pNew = sqlite3_realloc64(*ppArray, nNew * szElem);
+
+    if( pNew ){
+      *ppArray = pNew;
+      *pnArrayAlloc = (int)nNew;
+    }else{
+      return SQLITE_NOMEM_BKPT;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** A new entry is to be appended to the write-array of the BtConcurrent
+** object passed as the only argument. Ensure sufficient space is available.
+** Return SQLITE_NOMEM if an OOM occurs, or SQLITE_OK otherwise.
+*/
+static int btreeBcGrowWriteArray(BtConcurrent *pBtConc){
+  return btreeBcGrowArray(
+      (void**)&pBtConc->aWrite,
+      &pBtConc->nWrite,
+      &pBtConc->nWriteAlloc,
+      sizeof(BtWrite)
+  );
+}
+
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Global linked list of all shared-logs in the process. Protected by
+** mutex SQLITE_MUTEX_STATIC_MAIN.
+*/
+static BtSharedLog *pGlobalBtSharedLog = 0;
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Start using BtShared.conc, if it is not already in use.
+*/
+static int btreeBcBeginConcurrent(BtShared *pBt){
+  int rc = SQLITE_OK;
+  assert( pBt->conc.eState==BTCONC_STATE_NONE
+       || pBt->conc.eState==BTCONC_STATE_INUSE
+       || pBt->conc.eState==BTCONC_STATE_RETIRED
+  );
+  assert( pBt->conc.eState==BTCONC_STATE_NONE || pBt->conc.pBtLog!=0 );
+  if( pBt->conc.eState==BTCONC_STATE_NONE ){
+
+    /* If this BtShared does not yet have a connection to the global
+    ** BtSharedLog object for this database, establish one now. Creating
+    ** the BtSharedLog if it does not already exist.  */
+    if( pBt->conc.pBtLog==0 ){
+      const char *zFull = sqlite3PagerFilename(pBt->pPager, 0);
+      BtSharedLog *p = 0;
+      sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MAIN) );
+      for(p=pGlobalBtSharedLog; p; p=p->pSharedNext){
+        if( 0==strcmp(zFull, p->zFullname) ) break;
+      }
+      if( p ){
+        p->nRef++;
+      }else{
+        int nFull = sqlite3Strlen30(zFull) + 1;
+        p = (BtSharedLog*)sqlite3MallocZero(sizeof(BtSharedLog) + nFull);
+        if( p==0 ){
+          rc = SQLITE_NOMEM_BKPT;
+        }else{
+          p->zFullname = (char*)&p[1];
+          memcpy(p->zFullname, zFull, nFull);
+          p->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+          if( p->mutex==0 ){
+            sqlite3_free(p);
+            p = 0;
+            rc = SQLITE_NOMEM_BKPT;
+          }else{
+            p->nRef = 1;
+            p->pSharedNext = pGlobalBtSharedLog;
+            pGlobalBtSharedLog = p;
+          }
+        }
+      }
+      sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MAIN) );
+
+      pBt->conc.pBtLog = p;
+    }
+
+    pBt->conc.eState = BTCONC_STATE_INUSE;
+    pBt->conc.iBase = sqlite3PagerWalCommitId(pBt->pPager);
+    pBt->conc.nSvpt = 0;
+  }
+
+  return rc;
+}
+
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Remove and free the oldest entry in the BtSharedLog indicated by the
+** only argument.
+*/
+static void btreeBcRemoveOldest(BtSharedLog *pBtLog){
+  BtSharedLogEntry *pFree = pBtLog->pFirst;
+  int ii;
+
+  pBtLog->pFirst = pFree->pLogNext;
+  if( pBtLog->pFirst==0 ){
+    assert( pBtLog->pLast==pFree );
+    pBtLog->pLast = 0;
+  }
+
+  for(ii=0; ii<pFree->nIndex; ii++){
+    BtWriteIndex *p = &pFree->aIndex[ii];
+    sqlite3_free(p->aRec);
+  }
+  sqlite3_free(pFree);
+
+  pBtLog->nEntry--;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Macro to implement an in-place sort of an array of objects. Arguments:
+**
+**    Type:          The type of the array. e.g. BtReadIntkey
+**    aObj:          The array.
+**    nObj:          The size of the array in objects.
+**    compare_pA_pB: An expression that evaluates to true if (*pA)<=(*pB)
+**                   when evaluated, where pA and pB are pointers to
+**                   members of the aObj array, type (Type*).
+*/
+#define BT_MERGESORT_BODY(Type, aObj, nObj, compare_pA_pB) {    \
+  if( nObj>1 ){                                                 \
+    Type *aTemp;                                                \
+    Type *pSrc;                                                 \
+    Type *pDst;                                                 \
+    int width;                                                  \
+    int i;                                                      \
+    aTemp = sqlite3Malloc(sizeof(Type) * nObj);                 \
+    if( aTemp==0 ){                                             \
+      return SQLITE_NOMEM;                                      \
+    }                                                           \
+    pSrc = aObj;                                                \
+    pDst = aTemp;                                               \
+    for(width=1; width<nObj; width*=2){                         \
+      for(i=0; i<nObj; i += 2*width){                           \
+        int left = i;                                           \
+        int mid = i + width;                                    \
+        int right = i + 2*width;                                \
+        int p, q, k;                                            \
+        if( mid>nObj ) mid = nObj;                              \
+        if( right>nObj ) right = nObj;                          \
+        p = left;                                               \
+        q = mid;                                                \
+        k = left;                                               \
+        while( p<mid && q<right ){                              \
+          Type *pA = &pSrc[p];                                  \
+          Type *pB = &pSrc[q];                                  \
+          if( (compare_pA_pB) ){                                \
+            pDst[k++] = pSrc[p++];                              \
+          }else{                                                \
+            pDst[k++] = pSrc[q++];                              \
+          }                                                     \
+        }                                                       \
+        while( p<mid ){                                         \
+          pDst[k++] = pSrc[p++];                                \
+        }                                                       \
+        while( q<right ){                                       \
+          pDst[k++] = pSrc[q++];                                \
+        }                                                       \
+      }                                                         \
+      SWAP(Type*, pSrc, pDst);                                  \
+    }                                                           \
+    if( pSrc!=aObj ){                                           \
+      memcpy(aObj, pSrc, sizeof(Type)*nObj);                    \
+    }                                                           \
+    sqlite3_free(aTemp);                                        \
+  }                                                             \
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Sort array aRead[], first by root page and then by minimum key value.
+** Then merge any overlapping ranges. Update (*pnRead) with the new
+** size of the array before returning.
+**
+** Return SQLITE_NOMEM if an OOM error occurs, or SQLITE_OK otherwise.
+*/
+static int btreeBcReadIntkeySort(BtReadIntkey *aRead, int *pnRead){
+  int nRead = *pnRead;
+
+  BT_MERGESORT_BODY(BtReadIntkey, aRead, nRead, (
+        pA->iRoot<pB->iRoot 
+    || (pA->iRoot==pB->iRoot && pA->iMin<=pB->iMin)
+  ));
+
+  /* Merge any overlapping ranges. */
+  {
+    int iIn;
+    int iOut = 0;
+
+    for(iIn=0; iIn<nRead; iIn++){
+      /* assert() that the merge-sort worked */
+      assert( iIn==nRead-1 || aRead[iIn].iRoot<aRead[iIn+1].iRoot || (
+              aRead[iIn].iRoot==aRead[iIn+1].iRoot 
+           && aRead[iIn].iMin<=aRead[iIn+1].iMin
+      ));
+      if( iOut>0
+       && aRead[iIn].iRoot==aRead[iOut-1].iRoot
+       && aRead[iIn].iMin <= aRead[iOut-1].iMax + 1
+      ){
+        /* Merge into existing range */
+        if( aRead[iIn].iMax > aRead[iOut-1].iMax ){
+          aRead[iOut-1].iMax = aRead[iIn].iMax;
+        }
+      }else{
+        /* Start new range */
+        aRead[iOut++] = aRead[iIn];
+      }
+    }
+
+    *pnRead = iOut;
+  }
+
+  return SQLITE_OK;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Return the result of comparing the two records:
+**
+**    (aLeft, nLeft, drc_left) - (aRight, nRight, drc_right)
+**
+** Argument pUnpacked is guaranteed to point to an UnpackedRecord structure
+** large enough to decode one of the records. However, the values of 
+** UnpackedRecord.pKeyInfo and UnpackedRecord.nField must be set manually
+** before it is used.
+*/
+static int btreeBcRecordCompare(
+  UnpackedRecord *pUnpacked,
+  KeyInfo *pKeyInfo,
+  const u8 *aLeft, int nLeft, int drc_left,
+  const u8 *aRight, int nRight, int drc_right
+){
+  int res = 0;
+  pUnpacked->pKeyInfo = pKeyInfo;
+  pUnpacked->nField = pKeyInfo->nKeyField + 1;
+  sqlite3VdbeRecordUnpack(nRight, aRight, pUnpacked);
+  res = sqlite3VdbeRecordCompare(nLeft, aLeft, pUnpacked);
+  if( res==0 ){
+    res = (drc_right - drc_left);
+  }
+  if( res<0 ){
+    res = -1;
+  }else if( res>0 ){
+    res = +1;
+  }
+  assert( res>=-1 && res<=+1 );
+  return res;
+}
+
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Return the result of comparing the two BtReadIndex arguments:
+**
+**    (*pA) - (*pB)
+**
+** Argument pUnpacked is guaranteed to point to an UnpackedRecord structure
+** large enough to use with btreeBcRecordCompare().
+*/
+static int btreeBcReadIndexCmp(
+  UnpackedRecord *pUnpacked,
+  BtReadIndex *pA,
+  BtReadIndex *pB
+){
+  if( pA->iRoot<pB->iRoot ) return -1;
+  if( pA->iRoot>pB->iRoot ) return +1;
+
+  return btreeBcRecordCompare(pUnpacked, pA->pKeyInfo, 
+      pA->aRecMin, pA->nRecMin, pA->drc_min,
+      pB->aRecMin, pB->nRecMin, pB->drc_min
+  );
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Sort the BtConcurrent.aReadIndex[] array by root page number, then
+** by minimum record value. Then merge overlapping ranges.
+** Updates *pnRead.
+**
+** Return SQLITE_NOMEM if an OOM is encountered, or SQLITE_OK otherwise.
+*/
+int btreeBcReadIndexSort(BtConcurrent *pBtConc){
+  int rc = SQLITE_OK;
+  int nRead = pBtConc->nReadIndex;
+  BtReadIndex *aRead = pBtConc->aReadIndex;
+
+  BT_MERGESORT_BODY(BtReadIndex, aRead, nRead, (
+    btreeBcReadIndexCmp(pBtConc->pUnpacked, pA, pB)<=0
+  ));
+
+  /* Merge overlapping ranges */
+  if( rc==SQLITE_OK && nRead>1 ){
+    int iIn;
+    int iOut = 1;
+
+    for(iIn=1; iIn<nRead; iIn++){
+      if( aRead[iIn].iRoot==aRead[iOut-1].iRoot ){
+
+        /* Compare aRecMin of this range to the aRecMax of the previous. */
+        int res = btreeBcRecordCompare(
+          pBtConc->pUnpacked,
+          aRead[iIn].pKeyInfo,
+          aRead[iIn].aRecMin, aRead[iIn].nRecMin, aRead[iIn].drc_min,
+          aRead[iOut-1].aRecMax, aRead[iOut-1].nRecMax, aRead[iOut-1].drc_max
+        );
+
+        if( res<=0 ){
+          /* This range overlaps with the previous one */
+          res = btreeBcRecordCompare(
+            pBtConc->pUnpacked,
+            aRead[iIn].pKeyInfo,
+            aRead[iIn].aRecMax, aRead[iIn].nRecMax, aRead[iIn].drc_max,
+            aRead[iOut-1].aRecMax, aRead[iOut-1].nRecMax, aRead[iOut-1].drc_max
+          );
+
+          if( res>0 ){
+            aRead[iOut-1].aRecMax  = aRead[iIn].aRecMax;
+            aRead[iOut-1].nRecMax  = aRead[iIn].nRecMax;
+            aRead[iOut-1].drc_max  = aRead[iIn].drc_max;
+          }
+
+          continue;
+        }
+      }
+
+      /* Start new range */
+      aRead[iOut++] = aRead[iIn];
+    }
+
+    pBtConc->nReadIndex = iOut;
+  }
+
+  return SQLITE_OK;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Sort the aWrite[] array by root page and key value.
+**
+** Return SQLITE_NOMEM if an OOM is encountered, or SQLITE_OK otherwise.
+*/
+static int btreeBcWriteIntkeySort(
+  BtWriteIntkey *aWrite,
+  int nWrite
+){
+  BT_MERGESORT_BODY(BtWriteIntkey, aWrite, nWrite, (
+        pA->iRoot<pB->iRoot
+    || (pA->iRoot==pB->iRoot && pA->iKey <= pB->iKey)
+  ));
+  return SQLITE_OK;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Helper function for btreeBcWriteIndexSort().
+*/
+static int btreeBcWriteIndexCmp(
+  UnpackedRecord *pUnpacked,
+  BtWrite *aWrite,
+  BtWriteIndex *pA,
+  BtWriteIndex *pB
+){
+  BtWrite *pWA = &aWrite[pA->iRoot];
+  BtWrite *pWB = &aWrite[pB->iRoot];
+  int res;
+
+  if( pWA->iRoot<pWB->iRoot ) return -1;
+  if( pWA->iRoot>pWB->iRoot ) return +1;
+
+  return btreeBcRecordCompare(
+      pUnpacked, pWA->pKeyInfo, pA->aRec, pA->nRec, 0, pB->aRec, pB->nRec, 0
+  );
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Sort the aWriteIndex[] array, first in order of root page, then record.
+** At this point the BtWriteIndex.iRoot values are actually indexes
+** into the BtConcurrent.aWrite[] array. When sorting, this index is 
+** used to find the actual root page number and the required KeyInfo
+** struct.
+**
+** After sorting, replace the BtWriteIndex.iRoot values with the actual
+** value from the aWrite[] array.
+**
+** Return SQLITE_NOMEM if an OOM is encountered, or SQLITE_OK otherwise.
+*/
+int btreeBcWriteIndexSort(
+  BtWriteIndex *aWriteIndex,
+  int nWriteIndex,
+  BtConcurrent *pBtConc
+){
+  int ii;
+
+  BT_MERGESORT_BODY(BtWriteIndex, aWriteIndex, nWriteIndex, (
+    btreeBcWriteIndexCmp(pBtConc->pUnpacked, pBtConc->aWrite, pA, pB)<=0
+  ));
+
+  /* Replace the aWriteIndex[ii].iRoot values with actual root page numbers */
+  for(ii=0; ii<nWriteIndex; ii++){
+    aWriteIndex[ii].iRoot = pBtConc->aWrite[ aWriteIndex[ii].iRoot ].iRoot;
+  }
+
+  return SQLITE_OK;
+}
+
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Check if any of the reads accumulated in pBtConc conflict with the
+** writes in the aWrite[] array. If so, return SQLITE_BUSY_SNAPSHOT.
+** Otherwise, if no conflicts are found, return SQLITE_OK.
+*/
+int btreeBcDetectIntkeyConflict(
+  BtConcurrent *pBtConc,
+  BtWriteIntkey *aWrite,
+  int nWrite
+){
+  BtReadIntkey *aRead = pBtConc->aReadIntkey;
+  int nRead = pBtConc->nReadIntkey;
+  int iRead = 0;
+  int iWrite = 0;
+
+  while( iRead<nRead && iWrite<nWrite ){
+    Pgno iRootRead = aRead[iRead].iRoot;
+    Pgno iRootWrite = aWrite[iWrite].iRoot;
+
+    if( iRootWrite < iRootRead ){
+      iWrite++;
+    }
+    else if( iRootWrite > iRootRead ){
+      iRead++;
+    }
+    else{
+      /* Same root page */
+      i64 iKey = aWrite[iWrite].iKey;
+
+      if( iKey < aRead[iRead].iMin ){
+        iWrite++;
+      }
+      else if( iKey > aRead[iRead].iMax ){
+        iRead++;
+      }
+      else{
+        /* iMin <= iKey <= iMax */
+        return SQLITE_BUSY_SNAPSHOT;  /* Conflict */
+      }
+    }
+  }
+
+  return SQLITE_OK;  /* No conflict */
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Test for conflicts between the index ranges accumulated in pBtConc
+** and the write-keys in the aWriteIndex[] array. Return 
+** SQLITE_BUSY_SNAPSHOT if there is a conflict, or SQLITE_OK otherwise.
+*/
+int btreeBcDetectIndexConflict(
+  BtConcurrent *pBtConc,
+  BtWriteIndex *aWriteIndex,
+  int nWriteIndex
+){
+  BtReadIndex *aReadIndex = pBtConc->aReadIndex;
+  int nReadIndex = pBtConc->nReadIndex;
+  int iRead = 0;
+  int iWrite = 0;
+
+  while( iRead<nReadIndex && iWrite<nWriteIndex ){
+    BtReadIndex *pRead = &aReadIndex[iRead];
+    BtWriteIndex *pWrite = &aWriteIndex[iWrite];
+
+    if( pWrite->iRoot < pRead->iRoot ){
+      iWrite++;
+    }else if( pWrite->iRoot > pRead->iRoot ){
+      iRead++;
+    }else{
+      int cmp = btreeBcRecordCompare(
+          pBtConc->pUnpacked,
+          pRead->pKeyInfo,
+          pWrite->aRec, pWrite->nRec, 0,
+          pRead->aRecMin, pRead->nRecMin, pRead->drc_min
+      );
+      if( cmp < 0 ){
+        /* Write key is less than aRecMin */
+        iWrite++;
+      }else{
+        cmp = btreeBcRecordCompare(
+            pBtConc->pUnpacked,
+            pRead->pKeyInfo,
+            pWrite->aRec, pWrite->nRec, 0,
+            pRead->aRecMax, pRead->nRecMax, pRead->drc_max
+        );
+        if( cmp<=0 ){
+          /* Write key is between aRecMin and aRecMax - conflict! */
+          return SQLITE_BUSY_SNAPSHOT;
+        }
+        /* Write key is greater than aRecMax */
+        iRead++;
+      }
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+*/
+static int btreeBcSharedLogEntry(BtShared *pBt, BtSharedLogEntry **ppOut){
+  BtSharedLogEntry *pRet = 0;
+  int ii;
+  int nIntkey = 0;
+  int nIndex = 0;
+  int nByte = 0;
+  BtWrite *aWrite = pBt->conc.aWrite;
+  int rc = SQLITE_OK;
+
+  /* Count the two different types of writes. */
+  for(ii=0; ii<pBt->conc.nWrite; ii++){
+    if( aWrite[ii].pKeyInfo ) nIndex++;
+  }
+  nIntkey = pBt->conc.nWrite - nIndex;
+
+  /* Allocate for the BtSharedLogEntry, and the two arrays. */
+  nByte = sizeof(BtSharedLogEntry) 
+        + nIntkey * sizeof(BtWriteIntkey)
+        + nIndex * sizeof(BtWriteIndex);
+
+  pRet = (BtSharedLogEntry*)sqlite3MallocZero(nByte);
+  if( pRet==0 ){
+    rc = SQLITE_NOMEM_BKPT;
+  }else{
+
+    /* Populate the aIntkey[] and aIndex[] arrays */
+    pRet->aIntkey = (BtWriteIntkey*)&pRet[1];
+    pRet->aIndex = (BtWriteIndex*)&pRet->aIntkey[nIntkey];
+    for(ii=0; ii<pBt->conc.nWrite; ii++){
+      if( aWrite[ii].pKeyInfo ){
+        BtWriteIndex *p = &pRet->aIndex[pRet->nIndex++];
+
+        p->iRoot = ii;
+        p->nRec = aWrite[ii].nRec;
+        p->aRec = aWrite[ii].aRec;
+
+        aWrite[ii].aRec = 0;
+
+      }else{
+        BtWriteIntkey *p = &pRet->aIntkey[pRet->nIntkey++];
+        p->iRoot = aWrite[ii].iRoot;
+        p->iKey = aWrite[ii].iKey;
+      }
+    }
+
+    /* Sort the aIntkey[] array */
+    rc = btreeBcWriteIntkeySort(pRet->aIntkey, pRet->nIntkey);
+
+    /* Sort the aIndex[] array */
+    if( rc==SQLITE_OK ){
+      rc = btreeBcWriteIndexSort(pRet->aIndex, pRet->nIndex, &pBt->conc);
+    }
+  }
+
+  *ppOut = pRet;
+  return rc;
+}
+
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** A transaction has just been committed. If BtConcurrent info was collected
+** for the transaction, add it to the BtSharedLog object.
+*/
+static int btreeBcUpdateSharedLog(
+  BtShared *pBt, 
+  u64 iBaseId, 
+  u32 iFirstFrame,
+  u32 nFrame
+){
+  int rc = SQLITE_OK;
+  if( pBt->conc.eState==BTCONC_STATE_INUSE ){
+    BtSharedLogEntry *pNew = 0;
+    BtSharedLog *pBtLog = pBt->conc.pBtLog;
+
+    rc = btreeBcSharedLogEntry(pBt, &pNew);
+    if( rc==SQLITE_OK ){
+      BtSharedLogEntry *pLast = 0;
+
+      /* Set the two versions in the new log-entry object. */
+      pNew->iBaseId = iBaseId;
+      pNew->iThisId = sqlite3PagerWalCommitId(pBt->pPager);
+      pNew->iFirstFrame = iFirstFrame;
+      pNew->nFrame = nFrame;
+
+      /* Take the BtSharedLog mutex */
+      sqlite3_mutex_enter(pBtLog->mutex);
+
+      pLast = pBtLog->pLast;
+      if( pLast && pLast->iThisId!=iBaseId ){
+        /* This new log entry does not immediately follow the previous
+        ** entry in the BtSharedLog object. This means that an external
+        ** process wrote to the db, or some connection in this process
+        ** wrote to the db but did not update the BtSharedLog for some
+        ** reason. Either way, discard the entire contents of the 
+        ** BtSharedLog before adding pNew as the first and only entry. */
+        while( pBtLog->pFirst ){
+          btreeBcRemoveOldest(pBtLog);
+        }
+      }
+
+      if( (iFirstFrame & 0x7FFFFFFF)==1 ){
+        /* This was the first entry written into a wal file. *-wal if the
+        ** 0x80000000 bit of iFirst is clear, or *-wal2 if it is set.
+        ** Either way, remove all entries corresponding to that wal file
+        ** from the BtSharedLog. The initial snapshot belonging to each of
+        ** these entries is no longer available, so there can be no chance
+        ** of it being required.  */
+        const u32 m = 0x80000000;
+        u32 v = (iFirstFrame & m);
+        while( pBtLog->pFirst && (pBtLog->pFirst->iFirstFrame & m)==v ){
+          btreeBcRemoveOldest(pBtLog);
+        }
+      }
+
+      /* Link the new entry into the BtSharedLog object. */
+      if( pBtLog->pLast ){
+        pBtLog->pLast->pLogNext = pNew;
+      }else{
+        pBtLog->pFirst = pNew;
+      }
+      pBtLog->pLast = pNew;
+      pBtLog->nEntry++;
+
+      /* Free any old log-entries no longer required. TODO: Could do
+      ** this by querying wal.c to see what snapshots are still available
+      ** or in use. Maybe we can even lock the required BtSharedLogEntry
+      ** objects in memory when each concurrent transaction is opened. */
+      while( pBtLog->nEntry>sqlite3GlobalConfig.nMaxSharedLogEntry ){
+        btreeBcRemoveOldest(pBtLog);
+      }
+
+      /* Release BtSharedLog mutex */
+      sqlite3_mutex_leave(pBtLog->mutex);
+    }
+  }
+
+  return rc;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Clear the state of pBt->conc.
+*/
+static void btreeBcEndTransaction(sqlite3 *db, BtShared *pBt){
+  if( pBt->conc.eState!=BTCONC_STATE_NONE ){
+
+    {
+      BtReadIndex *aRead = pBt->conc.aReadIndex;
+      int ii;
+      for(ii=0; ii<pBt->conc.nReadIndex; ii++){
+        sqlite3_free(aRead[ii].aRecMin);
+        sqlite3_free(aRead[ii].aRecMax);
+        sqlite3KeyInfoUnref(aRead[ii].pKeyInfo);
+      }
+      sqlite3_free(aRead);
+
+      sqlite3_free(pBt->conc.aReadIntkey);
+
+      pBt->conc.aReadIndex = 0;
+      pBt->conc.nReadIndex = 0;
+      pBt->conc.nReadIndexAlloc = 0;
+      pBt->conc.aReadIntkey = 0;
+      pBt->conc.nReadIntkey = 0;
+      pBt->conc.nReadIntkeyAlloc = 0;
+    }
+
+    {
+      btreeBcFreeWriteArray(pBt->conc.aWrite, pBt->conc.nWrite);
+      sqlite3_free(pBt->conc.aWrite);
+      pBt->conc.aWrite = 0;
+      pBt->conc.nWrite = 0;
+      pBt->conc.nWriteAlloc = 0;
+    }
+
+    sqlite3DbFree(db, pBt->conc.pUnpacked);
+    pBt->conc.pUnpacked = 0;
+    pBt->conc.nUnpackedField = 0;
+    pBt->conc.eState = BTCONC_STATE_NONE;
+  }
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+*/
+static void btreeBcDisconnect(BtShared *pBt){
+  if( pBt->conc.pBtLog ){
+    BtSharedLog *pFree = pBt->conc.pBtLog;
+    pBt->conc.pBtLog = 0;
+
+    sqlite3_mutex_enter( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MAIN) );
+    pFree->nRef--;
+    if( pFree->nRef==0 ){
+      BtSharedLog **pp = &pGlobalBtSharedLog;
+      while( *pp!=pFree ){ pp = &(*pp)->pSharedNext; }
+      *pp = (*pp)->pSharedNext;
+    }else{
+      pFree = 0;
+    }
+    sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MAIN) );
+
+    if( pFree ){
+      /* TODO: Free existing log entries */
+      while( pFree->pFirst ){
+        btreeBcRemoveOldest(pFree);
+      }
+
+      sqlite3_mutex_free(pFree->mutex);
+      sqlite3_free(pFree);
+    }
+  }
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Finish a scan.
+*/
+static int btreeBcScanFinish(BtCursor *pCsr){
+  int rc = SQLITE_OK;
+  BtConcurrent *pBtConc = &pCsr->pBt->conc;
+  if( pBtConc->eState==BTCONC_STATE_INUSE && pCsr->iScanIndex>0 ){
+    int bIsValid = sqlite3BtreeCursorIsValidNN(pCsr);
+
+    if( pCsr->pKeyInfo ){
+      BtReadIndex *p = &pBtConc->aReadIndex[pCsr->iScanIndex-1];
+      u8 *aRec = 0;
+      int nRec = 0;
+
+      if( sqlite3BtreeCursorIsValidNN(pCsr) ){
+        nRec = sqlite3BtreePayloadSize(pCsr);
+        aRec = sqlite3_malloc(nRec + 8+9);
+        if( !aRec ){
+          rc = SQLITE_NOMEM_BKPT;
+        }else{
+          rc = sqlite3BtreePayload(pCsr, 0, nRec, aRec);
+        }
+        if( rc!=SQLITE_OK ){
+          sqlite3_free(aRec);
+          return rc;
+        }
+      }
+
+      assert( pCsr->eScanType==BTCONC_READ_MOVETO||(!p->aRecMin&&!p->nRecMin));
+      assert( p->aRecMax==0 && p->nRecMax==0 );
+
+      switch( pCsr->eScanType ){
+        case BTCONC_READ_FIRST: {
+          p->aRecMax = aRec;
+          p->nRecMax = nRec;
+          break;
+        }
+
+        case BTCONC_READ_LAST: {
+          p->aRecMin = aRec;
+          p->nRecMin = nRec;
+          break;
+        }
+
+        case BTCONC_READ_MOVETO: {
+          /* The value used in the seek op is currently stored in p->aRecMin */
+
+          if( pCsr->iScanDir==0 ){
+            if( aRec==0 ){
+              sqlite3_free(p->aRecMin);
+              p->aRecMin = 0;
+              p->nRecMin = 0;
+              p->drc_min = 0;
+            }else{
+              pCsr->iScanDir = btreeBcRecordCompare(
+                  pBtConc->pUnpacked, p->pKeyInfo, 
+                  aRec, nRec, 0,
+                  p->aRecMin, p->nRecMin, p->drc_min
+              );
+            }
+          }
+
+          if( pCsr->iScanDir<0 ){
+            p->aRecMax = p->aRecMin;
+            p->nRecMax = p->nRecMin;
+            p->drc_max = p->drc_min;
+            p->aRecMin = aRec;
+            p->nRecMin = nRec;
+            p->drc_min = 0;
+          }else{
+            p->aRecMax = aRec;
+            p->nRecMax = nRec;
+          }
+
+          break;
+        }
+      }
+
+    }else{
+      i64 iKey = bIsValid ? sqlite3BtreeIntegerKey(pCsr) : 0;
+      BtReadIntkey *p = &pBtConc->aReadIntkey[pCsr->iScanIndex-1];
+      switch( pCsr->eScanType ){
+        case BTCONC_READ_FIRST: {
+          p->iMin = SMALLEST_INT64;
+          p->iMax = bIsValid ? iKey : LARGEST_INT64;
+          break;
+        }
+
+        case BTCONC_READ_LAST: {
+          p->iMax = LARGEST_INT64;
+          if( bIsValid ){
+            p->iMin = iKey;
+          }else{
+            p->iMin = SMALLEST_INT64;
+          }
+          break;
+        }
+
+        case BTCONC_READ_MOVETO: {
+          /* The value used in the seek op is currently stored in p->iMin */
+          if( bIsValid ){
+            p->iMax = iKey;
+          }else{
+            if( pCsr->iScanDir==0 ){
+              p->iMin = SMALLEST_INT64;
+              p->iMax = LARGEST_INT64;
+            }else if( pCsr->iScanDir>0 ){
+              p->iMax = LARGEST_INT64;
+            }else{
+              p->iMax = p->iMin;
+              p->iMin = SMALLEST_INT64;
+            }
+          }
+          if( p->iMin>p->iMax ){
+            SWAP(i64, p->iMin, p->iMax);
+          }
+          break;
+        }
+      }
+    }
+    pCsr->iScanIndex = 0;
+    pCsr->iScanDir = 0;
+  }
+  return rc;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Allocate and return a BtReadIntkey object.
+*/
+static BtReadIntkey *btreeBcIntkeyRead(
+  BtConcurrent *pBtConc,
+  int *piScanIndex,
+  int *pRc
+){
+  int rc = btreeBcGrowArray(
+      (void**)&pBtConc->aReadIntkey, 
+      &pBtConc->nReadIntkey, 
+      &pBtConc->nReadIntkeyAlloc, 
+      sizeof(BtReadIntkey)
+  );
+  if( rc==SQLITE_OK ){
+    pBtConc->nReadIntkey++;
+    *piScanIndex = pBtConc->nReadIntkey;
+    return &pBtConc->aReadIntkey[pBtConc->nReadIntkey-1];
+  }
+  return 0;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Allocate and return a BtReadIndex object.
+*/
+static BtReadIndex *btreeBcIndexRead(
+  BtConcurrent *pBtConc,
+  int *piScanIndex,
+  int *pRc
+){
+  int rc = btreeBcGrowArray(
+      (void**)&pBtConc->aReadIndex, 
+      &pBtConc->nReadIndex, 
+      &pBtConc->nReadIndexAlloc, 
+      sizeof(BtReadIndex)
+  );
+  if( rc==SQLITE_OK ){
+    pBtConc->nReadIndex++;
+    *piScanIndex = pBtConc->nReadIndex;
+    return &pBtConc->aReadIndex[pBtConc->nReadIndex-1];
+  }
+  return 0;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Ensure the UnpackedRecord structure at BtConcurrent.pUnpacked is
+** large enough to unpack keys that are compared using pKeyInfo.
+** Return SQLITE_NOMEM if an OOM error is encountered, or SQLITE_OK
+** otherwise.
+*/
+static int btreeBcUpdateUnpacked(BtConcurrent *pBtConc, KeyInfo *pKeyInfo){
+  if( pKeyInfo->nKeyField>pBtConc->nUnpackedField ){
+    sqlite3 *db = pKeyInfo->db;
+    sqlite3DbFree(db, pBtConc->pUnpacked );
+    pBtConc->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
+    pBtConc->nUnpackedField = pKeyInfo->nKeyField;
+    return db->mallocFailed ? SQLITE_NOMEM : SQLITE_OK;
+  }
+  return SQLITE_OK;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Start a scan.
+*/
+static int btreeBcScanStart(
+  BtCursor *pCsr,                 /* Cursor to start scan on */
+  int eRead,                      /* BTCONC_READ_XXX value */
+  i64 iKey, UnpackedRecord *pKey  /* Key value for BTCONC_READ_MOVETO */
+){
+  int rc = SQLITE_OK;
+  BtConcurrent *pBtConc = &pCsr->pBt->conc;
+
+  rc = btreeBcScanFinish(pCsr);
+  if( rc==SQLITE_OK && pBtConc->eState==BTCONC_STATE_INUSE ){
+    pCsr->iScanDir = 0;
+    pCsr->eScanType = eRead;
+    if( pCsr->pKeyInfo ){
+      BtReadIndex *pRead = btreeBcIndexRead(pBtConc, &pCsr->iScanIndex, &rc);
+      if( pRead==0 ) return rc;
+      memset(pRead, 0, sizeof(*pRead));
+      pRead->iRoot = pCsr->pgnoRoot;
+      pRead->pKeyInfo = sqlite3KeyInfoRef(pCsr->pKeyInfo);
+      rc = btreeBcUpdateUnpacked(pBtConc, pRead->pKeyInfo);
+      if( rc==SQLITE_OK && pKey ){
+        int drc = 0;
+        assert( eRead==BTCONC_READ_MOVETO );
+        rc = sqlite3BcSerializeRecord(pKey, &pRead->aRecMin, &pRead->nRecMin);
+        assert( pKey->default_rc>=-1 && pKey->default_rc<=+1 );
+        assert( pCsr->pKeyInfo->nAllField>=pKey->nField );
+        drc = pKey->default_rc * (pCsr->pKeyInfo->nAllField+1 - pKey->nField);
+        pRead->drc_min = (i16)drc;
+      }
+    }else{
+      BtReadIntkey *pRead = btreeBcIntkeyRead(pBtConc, &pCsr->iScanIndex, &rc);
+      if( pRead==0 ) return rc;
+      pRead->iRoot = pCsr->pgnoRoot;
+
+      pRead->iMin = iKey;
+      pRead->iMax = 0;
+      if( eRead==BTCONC_READ_COUNT ){
+        pRead->iMax = LARGEST_INT64;
+        pRead->iMin = SMALLEST_INT64;
+      }
+    }
+
+    if( eRead==BTCONC_READ_COUNT ){
+      pCsr->iScanIndex = 0;
+      pCsr->iScanDir = 0;
+    }
+  }
+
+  return rc;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Append an insert to the BtConcurrent object, if it is in use. Return
+** SQLITE_OK if successful, or SQLITE_NOMEM if an OOM occurs.
+*/
+static int btreeBcInsert(
+  BtCursor *pCsr,                 /* Cursor to write to */
+  const BtreePayload *pPay        /* Payload to write */
+){
+  BtConcurrent *pBtConc = &pCsr->pBt->conc;
+  int rc = SQLITE_OK;
+
+  if( SQLITE_OK==(rc = btreeBcScanFinish(pCsr))
+   && pBtConc->eState==BTCONC_STATE_INUSE 
+   && SQLITE_OK==(rc = btreeBcGrowWriteArray(pBtConc))
+  ){
+    int nByte = (pPay->pKey? pPay->nKey : pPay->nData);
+    BtWrite *p = &pBtConc->aWrite[pBtConc->nWrite];
+    memset(p, 0, sizeof(BtWrite));
+    pBtConc->nWrite++;
+    p->iRoot = pCsr->pgnoRoot;
+    p->aRec = sqlite3_malloc(nByte);
+    if( p->aRec==0 ){
+      rc = SQLITE_NOMEM_BKPT;
+    }else if( pCsr->pKeyInfo ){
+      p->pKeyInfo = sqlite3KeyInfoRef(pCsr->pKeyInfo);
+      p->nRec = pPay->nKey;
+      memcpy(p->aRec, pPay->pKey, p->nRec);
+      rc = btreeBcUpdateUnpacked(pBtConc, p->pKeyInfo);
+    }else{
+      p->iKey = pPay->nKey;
+      p->nRec = pPay->nData;
+      memcpy(p->aRec, pPay->pData, p->nRec);
+    }
+  }
+
+  return rc;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** The entry under pCur is to be deleted. If this is a BEGIN CONCURRENT
+** transaction, add an entry for the delete to the BtConcurrent object.
+** Return SQLITE_OK if successful, or an SQLite error code (SQLITE_NOMEM)
+** if something goes wrong.
+*/
+static int btreeBcDelete(BtCursor *pCsr){
+  BtConcurrent *pBtConc = &pCsr->pBt->conc;
+  int rc;
+
+  if( SQLITE_OK==(rc = btreeBcScanFinish(pCsr))
+   && pBtConc->eState==BTCONC_STATE_INUSE 
+   && SQLITE_OK==(rc = btreeBcGrowWriteArray(pBtConc))
+  ){
+    BtWrite *p = &pBtConc->aWrite[pBtConc->nWrite];
+    int nRec = 0;
+
+    pBtConc->nWrite++;
+    memset(p, 0, sizeof(BtWrite));
+    p->bDel = 1;
+    p->iRoot = pCsr->pgnoRoot;
+    if( pCsr->pKeyInfo ){
+      p->pKeyInfo = sqlite3KeyInfoRef(pCsr->pKeyInfo);
+      p->nRec = sqlite3BtreePayloadSize(pCsr);
+      p->aRec = sqlite3_malloc(p->nRec + 8+9);
+      if( p->aRec==0 ){
+        rc = SQLITE_NOMEM_BKPT;
+      }else{
+        rc = sqlite3BtreePayload(pCsr, 0, p->nRec, p->aRec);
+      }
+      if( rc==SQLITE_OK ){
+        rc = btreeBcUpdateUnpacked(pBtConc, p->pKeyInfo);
+      }
+    }else{
+      p->iKey = sqlite3BtreeIntegerKey(pCsr);
+    }
+  }
+
+  return rc;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Close all cursors open on the b-tree object. It is the responsibility
+** of the caller to ensure none of the cursors will be used after
+** this call.
+*/
+static void btreeCloseAllCursors(BtShared *pBt){
+  while( pBt->pCursor ){
+    BtCursor *pCsr = pBt->pCursor;
+    sqlite3BtreeCloseCursor(pCsr);
+    sqlite3_free(pCsr);
+  }
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Allocate memory for and open a cursor.
+*/
+static int btreeCursorOpen(
+  Btree *p, 
+  Pgno iRoot, 
+  int flags, 
+  KeyInfo *pKeyInfo,
+  BtCursor **ppCsr
+){
+  BtCursor *pCsr = 0;
+  int rc = SQLITE_OK;
+
+  pCsr = (BtCursor*)sqlite3MallocZero(sqlite3BtreeCursorSize());
+  if( pCsr==0 ){
+    rc = SQLITE_NOMEM_BKPT;
+  }else{
+    rc = sqlite3BtreeCursor(p, iRoot, flags, pKeyInfo, pCsr);
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(pCsr);
+      pCsr = 0;
+    }
+  }
+  *ppCsr = pCsr;
+  return rc;
+}
+
+/* Used by btreeBcTryLogicalCommit() */
+static int btreeMoveto(BtCursor*, const void*, i64, int, int*);
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Attempt to validate and write the transaction in BtShared.conc to the
+** page cache. Return SQLITE_OK if successful. SQLITE_BUSY_SNAPSHOT if 
+** the transaction cannot be written because validation failed, or an
+** SQLite error code if some other error occurred.
+*/
+static int btreeBcTryLogicalCommit(Btree *p){
+  int rc = SQLITE_OK;
+  BtShared *pBt = p->pBt;
+
+  u64 cksum1 = 0;
+  u64 cksum2 = 0;
+
+  BtConcurrent *pBtConc = &pBt->conc;
+  assert( pBtConc->eState==BTCONC_STATE_INUSE );
+  pBtConc->eState = BTCONC_STATE_RETIRED;
+
+  /* If the read arrays have not been pre-sorted, sort them now. */
+  if( pBtConc->bReadSorted==0 ){
+    rc = btreeBcReadIntkeySort(pBtConc->aReadIntkey, &pBtConc->nReadIntkey);
+    if( rc==SQLITE_OK ){
+      rc = btreeBcReadIndexSort(pBtConc);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    BtSharedLog *pBtLog = pBt->conc.pBtLog;
+    BtSharedLogEntry *pEntry;
+    u64 iLiveId = sqlite3PagerWalLiveId(pBt->pPager);
+
+    sqlite3_mutex_enter(pBtLog->mutex);
+
+    /* Skip past log entries corresponding to transactions that were 
+    ** committed before the snapshot on which this transaction is based
+    ** was created. */
+    for(pEntry=pBtLog->pFirst; pEntry; pEntry=pEntry->pLogNext){
+      if( pEntry->iBaseId==pBt->conc.iBase ) break;
+    }
+
+    if( pEntry==0 || pBtLog->pLast->iThisId!=iLiveId ){
+      /* The shared-log does not contain all required entries. Either it
+      ** does not have entries back as far as the snapshot that this
+      ** snapshot was prepared against (pEntry==0), or the last entry
+      ** is older than the current live head of the wal file. Either
+      ** way, logical validation cannot run.  */
+      rc = SQLITE_BUSY_SNAPSHOT;
+    }else{
+      /* We know the frame that page-level validation failed at. Since
+      ** page-level validation scans transactions in the order committed,
+      ** skip over BtSharedLogEntry structures until we come to the
+      ** one that wrote the conflicting frame. Everything before this
+      ** in the list is guaranteed not to conflict.  */
+      u32 iConf = p->db->aCommit[SQLITE_COMMIT_CONFLICT_FRAME];
+      while( iConf<pEntry->iFirstFrame 
+          || iConf>=(pEntry->iFirstFrame+pEntry->nFrame) 
+      ){
+        pEntry = pEntry->pLogNext;
+        assert( pEntry );
+      }
+    }
+
+    /* Loop through all remaining shared-log entries checking for
+    ** conflicts. If none are found, then the transaction may be
+    ** committed. This block sets rc to SQLITE_BUSY_SNAPSHOT if conflicts
+    ** are found.  */
+    for(; pEntry && rc==SQLITE_OK; pEntry=pEntry->pLogNext){
+      rc = btreeBcDetectIntkeyConflict(
+          pBtConc, pEntry->aIntkey, pEntry->nIntkey
+      );
+      if( rc==SQLITE_OK ){
+        rc = btreeBcDetectIndexConflict(pBtConc,pEntry->aIndex,pEntry->nIndex);
+      }
+    }
+    sqlite3_mutex_leave(pBtLog->mutex);
+  }
+
+  if( rc==SQLITE_OK ){
+    /* Update the snapshot to the head of the wal file. Drop the contents
+    ** of the page-cache at the same time. Then ensure that the database
+    ** size is set correctly at both the btree and pager level.  */
+    btreePtrmapDelete(pBt);
+    rc = sqlite3PagerUpgradeSnapshot(pBt->pPager, pBt->pPage1->pDbPage, 1);
+    if( rc==SQLITE_OK ){
+      const u8 *aPg1 = (const u8*)pBt->pPage1->pDbPage->pData;
+      u32 dbSize = get4byte(&aPg1[28]);
+      sqlite3PagerSetDbsize(pBt->pPager, dbSize);
+      pBt->nPage = dbSize;
+    }
+  }
+
+  /* If everything still looks ok, proceed with the commit. */
+  if( rc==SQLITE_OK ){
+    int ii;
+
+    for(ii=0; ii<pBtConc->nWrite; ii++){
+      BtWrite *pWrite = &pBtConc->aWrite[ii];
+      BtCursor *pCsr = 0;
+      for(pCsr=pBt->pCursor; pCsr; pCsr=pCsr->pNext){
+        if( pCsr->pgnoRoot==pWrite->iRoot ) break;
+      }
+
+      if( pCsr==0 ){
+        rc = btreeCursorOpen(p, pWrite->iRoot, 
+            BTREE_WRCSR, pWrite->pKeyInfo, &pCsr
+        );
+      }
+
+      if( pCsr ){
+        if( pWrite->bDel ){
+          int res = 0;
+          if( pWrite->pKeyInfo ){
+            rc = btreeMoveto(pCsr, pWrite->aRec, pWrite->nRec, 0, &res);
+          }else{
+            rc = btreeMoveto(pCsr, 0, pWrite->iKey, 0, &res);
+          }
+          if( rc==SQLITE_OK && res==0 ){
+            sqlite3BtreeDelete(pCsr, 0);
+          }
+        }else{
+          BtreePayload pay;
+          memset(&pay, 0, sizeof(pay));
+          if( pWrite->pKeyInfo ){
+            pay.pKey = (const void*)pWrite->aRec;
+            pay.nKey = pWrite->nRec;
+          }else{
+            pay.nKey = pWrite->iKey;
+            pay.pData = (const void*)pWrite->aRec;
+            pay.nData = pWrite->nRec;
+          }
+          rc = sqlite3BtreeInsert(pCsr, &pay, 0, 0);
+        }
+      }
+    }
+
+    btreeCloseAllCursors(pBt);
+  }
+
+  pBtConc->eState = BTCONC_STATE_INUSE;
+  return rc;
+}
+
+
 #else  /* SQLITE_OMIT_CONCURRENT */
 # define btreePtrmapAllocate(x) SQLITE_OK
 # define btreePtrmapDelete(x) 
 # define btreePtrmapBegin(x,y)  SQLITE_OK
 # define btreePtrmapEnd(x,y,z) 
 # define btreePtrmapCheck(y,z) 
+
+# define btreeBcEndTransaction(db, pBt)
 #endif /* SQLITE_OMIT_CONCURRENT */
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
@@ -3204,6 +4525,7 @@ int sqlite3BtreeClose(Btree *p){
     ** Clean out and delete the BtShared object.
     */
     assert( !pBt->pCursor );
+    btreeBcDisconnect(pBt);
     sqlite3PagerClose(pBt->pPager, p->db);
     if( pBt->xFreeSchema && pBt->pSchema ){
       pBt->xFreeSchema(pBt->pSchema);
@@ -4036,7 +5358,10 @@ static SQLITE_NOINLINE int btreeBeginTrans(
 trans_begun:
 #ifndef SQLITE_OMIT_CONCURRENT
   if( bConcurrent && rc==SQLITE_OK && sqlite3PagerIsWal(pBt->pPager) ){
-    rc = sqlite3PagerBeginConcurrent(pBt->pPager);
+    rc = btreeBcBeginConcurrent(pBt);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3PagerBeginConcurrent(pBt->pPager);
+    }
     if( rc==SQLITE_OK && wrflag ){
       rc = btreePtrmapAllocate(pBt);
     }
@@ -4662,7 +5987,7 @@ static int btreeFixUnlocked(Btree *p){
   u32 nFree = get4byte(&p1[36]);
 
   assert( pBt->pMap );
-  rc = sqlite3PagerUpgradeSnapshot(pPager, pPage1->pDbPage);
+  rc = sqlite3PagerUpgradeSnapshot(pPager, pPage1->pDbPage, 0);
   assert( p1==pPage1->aData );
 
   if( rc==SQLITE_OK ){
@@ -4767,10 +6092,12 @@ static int btreeFixUnlocked(Btree *p){
 int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zSuperJrnl){
   int rc = SQLITE_OK;
   if( p->inTrans==TRANS_WRITE ){
+    u64 iBaseId = 0;
     BtShared *pBt = p->pBt;
     sqlite3BtreeEnter(p);
 
 #ifndef SQLITE_OMIT_CONCURRENT
+    iBaseId = sqlite3PagerWalLiveId(pBt->pPager);
     memset(p->aCommit, 0, sizeof(p->aCommit));
 #endif
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -4803,6 +6130,11 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zSuperJrnl){
 
       p->aCommit[SQLITE_COMMIT_FIRSTFRAME] = iPrev+1;
       p->aCommit[SQLITE_COMMIT_NFRAME] = iCurrent-iPrev;
+
+      rc = btreeBcUpdateSharedLog(pBt, iBaseId, 
+          p->aCommit[SQLITE_COMMIT_FIRSTFRAME],
+          p->aCommit[SQLITE_COMMIT_NFRAME]
+      );
     }
 #endif
     sqlite3BtreeLeave(p);
@@ -4851,6 +6183,8 @@ static void btreeEndTransaction(Btree *p){
   ** Also call PagerEndConcurrent() to ensure that the pager has discarded
   ** the record of all pages read within the transaction.  */
   btreePtrmapDelete(pBt);
+  btreeBcEndTransaction(db, pBt);
+  pBt->conc.eState = BTCONC_STATE_NONE;
   sqlite3PagerEndConcurrent(pBt->pPager);
   btreeIntegrity(p);
 }
@@ -5319,6 +6653,15 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     BtShared *pBt = pCur->pBt;
     sqlite3BtreeEnter(pBtree);
     assert( pBt->pCursor!=0 );
+
+    if( SQLITE_OK!=btreeBcScanFinish(pCur) ){
+      /* Allocation failed in btreeBcScanFinish(), but we have no way
+      ** to return the error to the user. So just disable the BtConcurrent
+      ** object.  */
+      assert( pBt->conc.eState==BTCONC_STATE_INUSE );
+      pBt->conc.eState = BTCONC_STATE_RETIRED;
+    }
+
     if( pBt->pCursor==pCur ){
       pBt->pCursor = pCur->pNext;
     }else{
@@ -6176,6 +7519,10 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
 
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+
+  rc = btreeBcScanStart(pCur, BTCONC_READ_FIRST, 0, 0);
+  if( rc!=SQLITE_OK ) return rc;
+
   rc = moveToRoot(pCur);
   if( rc==SQLITE_OK ){
     assert( pCur->pPage->nCell>0 );
@@ -6256,6 +7603,13 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
 
+#ifndef SQLITE_OMIT_CONCURRENT
+  {
+    int rc = btreeBcScanStart(pCur, BTCONC_READ_LAST, 0, 0);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+#endif
+
   /* If the cursor already points to the last entry, this is a no-op. */
   if( CURSOR_VALID==pCur->eState && (pCur->curFlags & BTCF_AtLast)!=0 ){
     assert( cursorIsAtLastEntry(pCur) || CORRUPT_DB );
@@ -6301,6 +7655,9 @@ int sqlite3BtreeTableMoveto(
   assert( pRes );
   assert( pCur->pKeyInfo==0 );
   assert( pCur->eState!=CURSOR_VALID || pCur->curIntKey!=0 );
+
+  rc = btreeBcScanStart(pCur, BTCONC_READ_MOVETO, intKey, 0);
+  if( rc!=SQLITE_OK ) return rc;
 
   /* If the cursor is already positioned at the point we are trying
   ** to move to, then just return without doing any work */
@@ -6531,6 +7888,9 @@ int sqlite3BtreeIndexMoveto(
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( pRes );
   assert( pCur->pKeyInfo!=0 );
+
+  rc = btreeBcScanStart(pCur, BTCONC_READ_MOVETO, 0, pIdxKey);
+  if( rc!=SQLITE_OK ) return rc;
 
 #ifdef SQLITE_DEBUG
   pCur->pBtree->nSeek++;   /* Performance measurement during testing */
@@ -6870,6 +8230,9 @@ int sqlite3BtreeNext(BtCursor *pCur, int flags){
   UNUSED_PARAMETER( flags );  /* Used in COMDB2 but not native SQLite */
   assert( cursorOwnsBtShared(pCur) );
   assert( flags==0 || flags==1 );
+#ifndef SQLITE_OMIT_CONCURRENT
+  pCur->iScanDir = +1;
+#endif
   pCur->info.nSize = 0;
   pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
   if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur);
@@ -6961,6 +8324,9 @@ int sqlite3BtreePrevious(BtCursor *pCur, int flags){
   assert( cursorOwnsBtShared(pCur) );
   assert( flags==0 || flags==1 );
   UNUSED_PARAMETER( flags );  /* Used in COMDB2 but not native SQLite */
+#ifndef SQLITE_OMIT_CONCURRENT
+  pCur->iScanDir = -1;
+#endif
   pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey);
   pCur->info.nSize = 0;
   if( pCur->eState!=CURSOR_VALID
@@ -9871,6 +11237,22 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
   }
 }
 
+#ifndef SQLITE_OMIT_CONCURRENT
+# define BTCONC_DISABLE(pBtConc)            \
+    int eConcStateSave = pBtConc->eState;   \
+    pBtConc->eState = BTCONC_STATE_RETIRED
+
+# define BTCONC_RESTORE(pBtConc) pBtConc->eState = eConcStateSave
+
+# define SAVE_BTCONC \
+  int eConcStateSave = pCur->pBt->conc.eState;   \
+  pCur->pBt->conc.eState = BTCONC_STATE_RETIRED
+
+# define RESTORE_BTCONC pCur->pBt->conc.eState = eConcStateSave
+#else
+# define SAVE_BTCONC
+# define RESTORE_BTCONC
+#endif
 
 /*
 ** Insert a new record into the BTree.  The content of the new record
@@ -9920,6 +11302,11 @@ int sqlite3BtreeInsert(
   assert( (flags & (BTREE_SAVEPOSITION|BTREE_APPEND|BTREE_PREFORMAT))==flags );
   assert( (flags & BTREE_PREFORMAT)==0 || seekResult || pCur->pKeyInfo==0 );
 
+#ifndef SQLITE_OMIT_CONCURRENT
+  rc = btreeBcInsert(pCur, pX);
+  if( rc!=SQLITE_OK ) return rc;
+#endif
+
   /* Save the positions of any other cursors open on this table.
   **
   ** In some cases, the call to btreeMoveto() below is a no-op. For
@@ -9968,6 +11355,8 @@ int sqlite3BtreeInsert(
   assert( (flags & BTREE_PREFORMAT) || (pX->pKey==0)==(pCur->pKeyInfo==0) );
 
   if( pCur->pKeyInfo==0 ){
+    SAVE_BTCONC;
+
     assert( pX->pKey==0 );
     /* If this is an insert into a table b-tree, invalidate any incrblob
     ** cursors open on the row being replaced */
@@ -9998,6 +11387,7 @@ int sqlite3BtreeInsert(
        && pCur->info.nPayload==(u32)pX->nData+pX->nZero
       ){
         /* New entry is the same size as the old.  Do an overwrite */
+        RESTORE_BTCONC;
         return btreeOverwriteCell(pCur, pX);
       }
       assert( loc==0 );
@@ -10008,9 +11398,12 @@ int sqlite3BtreeInsert(
       */
       rc = sqlite3BtreeTableMoveto(pCur, pX->nKey,
                (flags & BTREE_APPEND)!=0, &loc);
+      RESTORE_BTCONC;
       if( rc ) return rc;
     }
+    RESTORE_BTCONC;
   }else{
+    SAVE_BTCONC;
     /* This is an index or a WITHOUT ROWID table */
 
     /* If BTREE_SAVEPOSITION is set, the cursor must already be pointing
@@ -10036,8 +11429,10 @@ int sqlite3BtreeInsert(
         rc = btreeMoveto(pCur, pX->pKey, pX->nKey,
                     (flags & BTREE_APPEND)!=0, &loc);
       }
+      RESTORE_BTCONC;
       if( rc ) return rc;
     }
+    RESTORE_BTCONC;
 
     /* If the cursor is currently pointing to an entry to be overwritten
     ** and the new content is the same as as the old, then use the
@@ -10366,6 +11761,11 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
     }
   }
   assert( pCur->eState==CURSOR_VALID );
+
+#ifndef SQLITE_OMIT_CONCURRENT
+  rc = btreeBcDelete(pCur);
+  if( rc!=SQLITE_OK ) return rc;
+#endif
 
   iCellDepth = pCur->iPage;
   iCellIdx = pCur->ix;
@@ -11008,6 +12408,9 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
 int sqlite3BtreeCount(sqlite3 *db, BtCursor *pCur, i64 *pnEntry){
   i64 nEntry = 0;                      /* Value to return in *pnEntry */
   int rc;                              /* Return code */
+
+  rc = btreeBcScanStart(pCur, BTCONC_READ_COUNT, 0, 0);
+  if( rc!=SQLITE_OK ) return rc;
 
   rc = moveToRoot(pCur);
   if( rc==SQLITE_EMPTY ){
@@ -12090,6 +13493,18 @@ int sqlite3BtreeExclusiveLock(Btree *p){
 #ifdef SQLITE_OMIT_CONCURRENT
   assert( db->aCommit[SQLITE_COMMIT_CONFLICT_PGNO]==0 );
 #else
+
+  if( rc==SQLITE_BUSY_SNAPSHOT 
+   && db->aCommit[SQLITE_COMMIT_CONFLICT_PGNO]>1
+   && pBt->conc.eState==BTCONC_STATE_INUSE 
+   && pBt->pCursor==0 
+  ){
+    /* Page-level locking has detected a conflict. But it is not a 
+    ** schema conflict (SQLITE_COMMIT_CONFLICT_PGNO>1) and the BtConcurrent
+    ** object is populated. So attempt a logical commit. */
+    rc = btreeBcTryLogicalCommit(p);
+  }
+
   if( (rc==SQLITE_BUSY_SNAPSHOT)
    && (pgno = db->aCommit[SQLITE_COMMIT_CONFLICT_PGNO]) 
   ){

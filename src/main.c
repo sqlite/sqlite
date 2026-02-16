@@ -83,6 +83,9 @@ static int (*const sqlite3BuiltinExtensions[])(sqlite3*) = {
 #ifdef SQLITE_EXTRA_AUTOEXT
   SQLITE_EXTRA_AUTOEXT,
 #endif
+#ifndef SQLITE_OMIT_CONCURRENT
+  sqlite3ConcurrentRegister,
+#endif
 };
 
 #ifndef SQLITE_AMALGAMATION

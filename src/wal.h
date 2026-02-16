@@ -145,6 +145,9 @@ int sqlite3WalLockForCommit(Wal *pWal, PgHdr *pPg, Bitvec *pRead, u32*);
 /* Upgrade the state of the client to take into account changes written
 ** by other connections */
 int sqlite3WalUpgradeSnapshot(Wal *pWal);
+
+u64 sqlite3WalCommitId(Wal *pWal);
+u64 sqlite3WalLiveId(Wal *pWal);
 #endif /* SQLITE_OMIT_CONCURRENT */
 
 #ifdef SQLITE_ENABLE_ZIPVFS
