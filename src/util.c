@@ -834,7 +834,7 @@ atofz_return:
     return 0;
   }
 #else
-  return !sqlite3Atoi64(z, pResult, strlen(z), SQLITE_UTF8);
+  return !sqlite3Atoi64(z, pResult, -1, SQLITE_UTF8);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
 #if defined(_MSC_VER)
@@ -918,8 +918,11 @@ static int compare2pow63(const char *zNum, int incr){
 **     3    Special case of 9223372036854775808
 **
 ** length is the number of bytes in the string (bytes, not characters).
-** The string is not necessarily zero-terminated.  The encoding is
+** The string is not necessarily zero-terminated. The encoding is
 ** given by enc.
+**
+** As a special case, if length is negative, then the string is
+** zero-terminated and must be UTF8.
 */
 int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int incr;
@@ -930,32 +933,53 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
   int rc;          /* Baseline return code */
   const char *zStart;
-  const char *zEnd = zNum + length;
-  assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
-  if( enc==SQLITE_UTF8 ){
+  const char *zEnd;
+  if( length<0 ){
+    /* Fast special case for zero-terminated UTF8 */
+    assert( enc==SQLITE_UTF8 );
     incr = 1;
-  }else{
-    incr = 2;
-    length &= ~1;
-    assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
-    for(i=3-enc; i<length && zNum[i]==0; i+=2){}
-    nonNum = i<length;
-    zEnd = &zNum[i^1];
-    zNum += (enc&1);
-  }
-  while( zNum<zEnd && sqlite3Isspace(*zNum) ) zNum+=incr;
-  if( zNum<zEnd ){
+    while( sqlite3Isspace(*zNum) ) zNum++;
     if( *zNum=='-' ){
       neg = 1;
-      zNum+=incr;
+      zNum++;
     }else if( *zNum=='+' ){
-      zNum+=incr;
+      zNum++;
     }
-  }
-  zStart = zNum;
-  while( zNum<zEnd && zNum[0]=='0' ){ zNum+=incr; } /* Skip leading zeros. */
-  for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
-    u = u*10 + c - '0';
+    zStart = zNum;
+    while( zNum[0]=='0' ){ zNum++; } /* Skip leading zeros. */
+    for(i=0; (c=zNum[i])>='0' && c<='9'; i++){
+      u = u*10 + c - '0';
+    }
+    zEnd = &zNum[i];
+    if( zEnd[0] ) zEnd++;
+  }else{
+    assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
+    zEnd = zNum + length;
+    if( enc==SQLITE_UTF8 ){
+      incr = 1;
+    }else{
+      incr = 2;
+      length &= ~1;
+      assert( SQLITE_UTF16LE==2 && SQLITE_UTF16BE==3 );
+      for(i=3-enc; i<length && zNum[i]==0; i+=2){}
+      nonNum = i<length;
+      zEnd = &zNum[i^1];
+      zNum += (enc&1);
+    }
+    while( zNum<zEnd && sqlite3Isspace(*zNum) ) zNum+=incr;
+    if( zNum<zEnd ){
+      if( *zNum=='-' ){
+        neg = 1;
+        zNum+=incr;
+      }else if( *zNum=='+' ){
+        zNum+=incr;
+      }
+    }
+    zStart = zNum;
+    while( zNum<zEnd && zNum[0]=='0' ){ zNum+=incr; } /* Skip leading zeros. */
+    for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
+      u = u*10 + c - '0';
+    }
   }
   testcase( i==18*incr );
   testcase( i==19*incr );
@@ -1042,9 +1066,7 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
   }else
 #endif /* SQLITE_OMIT_HEX_INTEGER */
   {
-    int n = (int)(0x3fffffff&strspn(z,"+- \n\t0123456789"));
-    if( z[n] ) n++;
-    return sqlite3Atoi64(z, pOut, n, SQLITE_UTF8);
+    return sqlite3Atoi64(z, pOut, -1, SQLITE_UTF8);
   }
 }
 

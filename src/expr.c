@@ -1340,7 +1340,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
         i = z[1]-'0';  /* The common case of ?N for a single digit N */
         bOk = 1;
       }else{
-        bOk = 0==sqlite3Atoi64(&z[1], &i, n-1, SQLITE_UTF8);
+        bOk = 0==sqlite3Atoi64(&z[1], &i, -1, SQLITE_UTF8);
       }
       testcase( i==0 );
       testcase( i==1 );

@@ -5261,7 +5261,7 @@ static int jsonEachColumn(
           break;
         }else if( p->path.zBuf[j]=='[' ){
           i64 x;
-          sqlite3Atoi64(&p->path.zBuf[j+1], &x, n-1, SQLITE_UTF8);
+          sqlite3Atoi64(&p->path.zBuf[j+1], &x, -1, SQLITE_UTF8);
           sqlite3_result_int64(ctx, x);
         }else if( p->path.zBuf[j+1]=='"' ){
           sqlite3_result_text(ctx, &p->path.zBuf[j+2], n-3, SQLITE_TRANSIENT);
