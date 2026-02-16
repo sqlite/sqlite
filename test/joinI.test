@@ -146,5 +146,27 @@ do_catchsql_test 6.5 {
   (SELECT * FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6);
 } {1 {ON clause references tables to its right}}
 
+do_catchsql_test 6.6 {
+  SELECT *, NOT EXISTS (
+      SELECT * FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6
+  ) FROM t5;
+} {1 {ON clause references tables to its right}}
+
+do_catchsql_test 6.7 {
+  SELECT *, NOT EXISTS (
+      SELECT 1 
+        EXCEPT 
+      SELECT 11 FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6
+  ) FROM t5;
+} {1 {ON clause references tables to its right}}
+
+do_catchsql_test 6.8 {
+  SELECT *, NOT EXISTS (
+      SELECT 11 FROM t7 RIGHT JOIN t8 ON (t6.a) CROSS JOIN t6
+        EXCEPT 
+      SELECT 1 
+  ) FROM t5;
+} {1 {ON clause references tables to its right}}
+
 finish_test
 
