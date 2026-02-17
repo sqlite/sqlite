@@ -844,7 +844,7 @@ int sqlite3AtoF(const char *z, double *pResult){
 ** at a time.
 */
 static const union {
-  char a[200];
+  char a[201];
   short int forceAlignment;
 } sqlite3DigitPairs = {
   "00010203040506070809"

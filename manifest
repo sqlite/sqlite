@@ -1,5 +1,5 @@
-C New\sassert()s\sfor\sthe\sreturn\svalue\sfrom\ssqlite3SchemaToIndex().
-D 2026-02-17T11:28:48.505
+C Fix\sa\sharmless\scompiler\swarning\sfrom\sMSVC.
+D 2026-02-17T12:23:12.724
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/trigger.c a40440614bdf523090cc07223f4878f7e3c892bcd1a13afe18f90190daa5945d
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c a5d1c01e9ac773b2a783db45169fc7674ed2f6e05dadc88052702273ec94928c
+F src/util.c 10572efe1bcf43fc2f6015cfba6126a4a5e32e7d6478a946a2b27d5ce189328b
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 5328c99dd256ee8132383565a86e253543a85daccfd7477c52f20bac6b385a7f
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P dd5af703e1082951a4295a3453611db12b23cfbcfee4258ec3985abe96ab54ba
-R 752a788ebe8252b2a0286d1bd66fa125
+P 2610105a439e25c050b2deb32953861187c81b1d97407f41dc188e6627e0ac4d
+R 5886af748abe9a72a68682d3ad979bc9
 U drh
-Z a9505c2d735590a5b6c9434f3d545798
+Z 7efc95a8fc6e07536942a6656313d09e
 # Remove this line to create a well-formed Fossil manifest.
