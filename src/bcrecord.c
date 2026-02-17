@@ -207,91 +207,90 @@ static char *bcRecordToText(const u8 *aRec, int nRec, int delta){
   u64 nHdr;                       /* Bytes in record header */
   const char *zDelta = 0;
 
-  if( nRec==0 ){
-    return sqlite3_mprintf("()");
-  }
+  if( nRec>0 ){
 
-  pHdr = aRec + sqlite3GetVarint(aRec, &nHdr);
-  pBody = pEndHdr = &aRec[nHdr];
-  while( pHdr<pEndHdr ){
-    u64 iSerialType = 0;
-    int nByte = 0;
-
-    pHdr += sqlite3GetVarint(pHdr, &iSerialType);
-    nByte = sqlite3VdbeSerialTypeLen((u32)iSerialType);
-
-    switch( iSerialType ){
-      case 0: {  /* Null */
-        zRet = sqlite3_mprintf("%z%sNULL", zRet, zSep);
-        break;
-      }
-      case 1: case 2: case 3: case 4: case 5: case 6: {
-        i64 iVal = 0;
-
-        switch( iSerialType ){
-          case 1: 
-            iVal = (i64)pBody[0];
-            break;
-          case 2: 
-            iVal = ((i64)pBody[0] << 8) + (i64)pBody[1];
-            break;
-          case 3: 
-            iVal = ((i64)pBody[0] << 16) + ((i64)pBody[1] << 8) + (i64)pBody[2];
-            break;
-          case 4: 
-            iVal = ((i64)pBody[0] << 24) + ((i64)pBody[1] << 16) 
-                 + ((i64)pBody[2] << 8) + (i64)pBody[3];
-            break;
-          case 5: 
-            iVal = ((i64)pBody[0] << 40) + ((i64)pBody[1] << 32) 
-                 + ((i64)pBody[2] << 24) + ((i64)pBody[3] << 16) 
-                 + ((i64)pBody[4] << 8) + (i64)pBody[5];
-            break;
-          case 6: 
-            iVal = ((i64)pBody[0] << 56) + ((i64)pBody[1] << 48) 
-                 + ((i64)pBody[2] << 40) + ((i64)pBody[3] << 32) 
-                 + ((i64)pBody[4] << 24) + ((i64)pBody[5] << 16) 
-                 + ((i64)pBody[6] << 8) + (i64)pBody[7];
-            break;
+    pHdr = aRec + sqlite3GetVarint(aRec, &nHdr);
+    pBody = pEndHdr = &aRec[nHdr];
+    while( pHdr<pEndHdr ){
+      u64 iSerialType = 0;
+      int nByte = 0;
+  
+      pHdr += sqlite3GetVarint(pHdr, &iSerialType);
+      nByte = sqlite3VdbeSerialTypeLen((u32)iSerialType);
+  
+      switch( iSerialType ){
+        case 0: {  /* Null */
+          zRet = sqlite3_mprintf("%z%sNULL", zRet, zSep);
+          break;
         }
-
-        zRet = sqlite3_mprintf("%z%s%lld", zRet, zSep, iVal);
-        break;
-      }
-      case 7: {
-        double d;
-        u64 i = ((u64)pBody[0] << 56) + ((u64)pBody[1] << 48) 
-            + ((u64)pBody[2] << 40) + ((u64)pBody[3] << 32) 
-            + ((u64)pBody[4] << 24) + ((u64)pBody[5] << 16) 
-            + ((u64)pBody[6] << 8) + (u64)pBody[7];
-        memcpy(&d, &i, 8);
-        zRet = sqlite3_mprintf("%z%s%f", zRet, zSep, d);
-        break;
-      }
-
-      case 8: {  /* 0 */
-        zRet = sqlite3_mprintf("%z%s0", zRet, zSep);
-        break;
-      }
-      case 9: {  /* 1 */
-        zRet = sqlite3_mprintf("%z%s1", zRet, zSep);
-        break;
-      }
-
-      default: {
-        if( (iSerialType % 2) ){
-          /* A text value */
-          zRet = sqlite3_mprintf("%z%s%.*Q", zRet, zSep, nByte, pBody);
-        }else{  
-          /* A blob value */
-          char *zHex = hex_encode(pBody, nByte);
-          zRet = sqlite3_mprintf("%z%sX'%z'", zRet, zSep, zHex);
+        case 1: case 2: case 3: case 4: case 5: case 6: {
+          i64 iVal = 0;
+  
+          switch( iSerialType ){
+            case 1: 
+              iVal = (i64)pBody[0];
+              break;
+            case 2: 
+              iVal = ((i64)pBody[0] << 8) + (i64)pBody[1];
+              break;
+            case 3: 
+              iVal = ((i64)pBody[0]<<16) + ((i64)pBody[1]<<8) + (i64)pBody[2];
+              break;
+            case 4: 
+              iVal = ((i64)pBody[0] << 24) + ((i64)pBody[1] << 16) 
+                   + ((i64)pBody[2] << 8) + (i64)pBody[3];
+              break;
+            case 5: 
+              iVal = ((i64)pBody[0] << 40) + ((i64)pBody[1] << 32) 
+                   + ((i64)pBody[2] << 24) + ((i64)pBody[3] << 16) 
+                   + ((i64)pBody[4] << 8) + (i64)pBody[5];
+              break;
+            case 6: 
+              iVal = ((i64)pBody[0] << 56) + ((i64)pBody[1] << 48) 
+                   + ((i64)pBody[2] << 40) + ((i64)pBody[3] << 32) 
+                   + ((i64)pBody[4] << 24) + ((i64)pBody[5] << 16) 
+                   + ((i64)pBody[6] << 8) + (i64)pBody[7];
+              break;
+          }
+  
+          zRet = sqlite3_mprintf("%z%s%lld", zRet, zSep, iVal);
+          break;
         }
-        break;
+        case 7: {
+          double d;
+          u64 i = ((u64)pBody[0] << 56) + ((u64)pBody[1] << 48) 
+              + ((u64)pBody[2] << 40) + ((u64)pBody[3] << 32) 
+              + ((u64)pBody[4] << 24) + ((u64)pBody[5] << 16) 
+              + ((u64)pBody[6] << 8) + (u64)pBody[7];
+          memcpy(&d, &i, 8);
+          zRet = sqlite3_mprintf("%z%s%f", zRet, zSep, d);
+          break;
+        }
+  
+        case 8: {  /* 0 */
+          zRet = sqlite3_mprintf("%z%s0", zRet, zSep);
+          break;
+        }
+        case 9: {  /* 1 */
+          zRet = sqlite3_mprintf("%z%s1", zRet, zSep);
+          break;
+        }
+  
+        default: {
+          if( (iSerialType % 2) ){
+            /* A text value */
+            zRet = sqlite3_mprintf("%z%s%.*Q", zRet, zSep, nByte, pBody);
+          }else{  
+            /* A blob value */
+            char *zHex = hex_encode(pBody, nByte);
+            zRet = sqlite3_mprintf("%z%sX'%z'", zRet, zSep, zHex);
+          }
+          break;
+        }
       }
+      pBody += nByte;
+      zSep = ",";
     }
-    pBody += nByte;
-    zSep = ",";
   }
 
   zDelta = "";
@@ -323,12 +322,8 @@ struct ConcTable {
   sqlite3 *db;                    /* The database */
 };
 
-#define CONC_SCHEMA "CREATE TABLE x(root, op, k1, k2)"
-
-/* Columns */
-#define DBPAGE_COLUMN_PGNO    0
-#define DBPAGE_COLUMN_DATA    1
-#define DBPAGE_COLUMN_SCHEMA  2
+#define CONC_SCHEMA "CREATE TABLE x(root, op, k1, k2, sortem HIDDEN)"
+#define CONCURRENT_SORTEM 4
 
 /*
 ** Connect to or create a concvfs virtual table.
@@ -374,14 +369,20 @@ static int concDisconnect(sqlite3_vtab *pVtab){
 }
 
 /*
-** idxNum:
-**
-**     0     schema=main, full table scan
-**     1     schema=main, pgno=?1
-**     2     schema=?1, full table scan
-**     3     schema=?1, pgno=?2
+** xBestIndex method for sqlite_concurrent.
 */
 static int concBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  int ii;
+  for(ii=0; ii<pIdxInfo->nConstraint; ii++){
+    struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[ii];
+    if( p->iColumn!=CONCURRENT_SORTEM ) continue;
+    if( p->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
+    if( !p->usable ) return SQLITE_CONSTRAINT;
+    pIdxInfo->idxNum = 1;
+    pIdxInfo->aConstraintUsage[ii].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[ii].omit = 1;
+    break;
+  }
   return SQLITE_OK;
 }
 
@@ -441,14 +442,7 @@ static int concEof(sqlite3_vtab_cursor *pCursor){
 }
 
 /*
-** idxNum:
-**
-**     0     schema=main, full table scan
-**     1     schema=main, pgno=?1
-**     2     schema=?1, full table scan
-**     3     schema=?1, pgno=?2
-**
-** idxStr is not used
+** xFilter method.
 */
 static int concFilter(
   sqlite3_vtab_cursor *pCursor,
@@ -461,7 +455,14 @@ static int concFilter(
   BtConcurrent *pConc = &db->aDb[0].pBt->pBt->conc;
   int rc = SQLITE_OK;
 
-  if( 1 ){
+  if( idxNum==1 ){
+    int bSort = sqlite3_value_int(argv[0]);
+    if( bSort ){
+      rc = sqlite3BtreeSortReadArrays(pConc);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
     int ii;
 
     for(ii=0; rc==SQLITE_OK && ii<pConc->nWrite; ii++){
@@ -489,7 +490,7 @@ static int concFilter(
       }
     }
 
-    for(ii=0; rc==SQLITE_OK && ii<pConc->nReadIndex; ii++){
+    for(ii=pConc->nReadIndex-1; rc==SQLITE_OK && ii>=0; ii--){
       BtReadIndex *p = &pConc->aReadIndex[ii];
       ConcRow *pRow = (ConcRow*)sqlite3MallocZero(sizeof(ConcRow));
       if( pRow==0 ){
@@ -507,7 +508,7 @@ static int concFilter(
       }
     }
 
-    for(ii=0; rc==SQLITE_OK && ii<pConc->nReadIntkey; ii++){
+    for(ii=pConc->nReadIntkey-1; rc==SQLITE_OK && ii>=0; ii--){
       BtReadIntkey *p = &pConc->aReadIntkey[ii];
       ConcRow *pRow = (ConcRow*)sqlite3MallocZero(sizeof(ConcRow));
       if( pRow==0 ){
@@ -592,6 +593,6 @@ int sqlite3ConcurrentRegister(sqlite3 *db){
     0,                            /* xShadowName */
     0                             /* xIntegrity */
   };
-  return sqlite3_create_module(db, "sqlite_conc", &conc_module, 0);
+  return sqlite3_create_module(db, "sqlite_concurrent", &conc_module, 0);
 }
 

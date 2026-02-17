@@ -1015,37 +1015,39 @@ static void btreeBcRemoveOldest(BtSharedLog *pBtLog){
 static int btreeBcReadIntkeySort(BtReadIntkey *aRead, int *pnRead){
   int nRead = *pnRead;
 
-  BT_MERGESORT_BODY(BtReadIntkey, aRead, nRead, (
-        pA->iRoot<pB->iRoot 
-    || (pA->iRoot==pB->iRoot && pA->iMin<=pB->iMin)
-  ));
+  if( nRead>1 ){
+    BtReadIntkey *pIn;
+    BtReadIntkey *pOut = &aRead[0];
+    BtReadIntkey * const pEof = &aRead[nRead];
 
-  /* Merge any overlapping ranges. */
-  {
-    int iIn;
-    int iOut = 0;
+    BT_MERGESORT_BODY(BtReadIntkey, aRead, nRead, (
+          pA->iRoot<pB->iRoot 
+       || (pA->iRoot==pB->iRoot && pA->iMin<=pB->iMin)
+    ));
 
-    for(iIn=0; iIn<nRead; iIn++){
-      /* assert() that the merge-sort worked */
-      assert( iIn==nRead-1 || aRead[iIn].iRoot<aRead[iIn+1].iRoot || (
-              aRead[iIn].iRoot==aRead[iIn+1].iRoot 
-           && aRead[iIn].iMin<=aRead[iIn+1].iMin
-      ));
-      if( iOut>0
-       && aRead[iIn].iRoot==aRead[iOut-1].iRoot
-       && aRead[iIn].iMin <= aRead[iOut-1].iMax + 1
+    for(pIn=&aRead[1]; pIn<pEof; pIn++){
+
+      /* assert() that the merge-sort really did sort the array entries. */
+      assert( (pIn[0].iRoot>pIn[-1].iRoot)
+          || (pIn[0].iRoot==pIn[-1].iRoot && pIn[0].iMin>=pIn[-1].iMin)
+      );
+
+      if( pIn->iRoot==pOut->iRoot 
+       && (pIn->iMin<=pOut->iMax || (pIn->iMin==pOut->iMax+1))
       ){
-        /* Merge into existing range */
-        if( aRead[iIn].iMax > aRead[iOut-1].iMax ){
-          aRead[iOut-1].iMax = aRead[iIn].iMax;
+        /* Range pIn overlaps with the previous range pOut. The second
+        ** part of the if() statement above cannot be written more simply
+        ** due to potential integer overflow. */
+        if( pIn->iMax>pOut->iMax ){
+          pOut->iMax = pIn->iMax;
         }
       }else{
-        /* Start new range */
-        aRead[iOut++] = aRead[iIn];
+        /* No overlap. Start a new range. */
+        *(++pOut) = *pIn;
       }
     }
 
-    *pnRead = iOut;
+    *pnRead = (pOut - aRead) + 1;
   }
 
   return SQLITE_OK;
@@ -1069,18 +1071,31 @@ static int btreeBcRecordCompare(
   const u8 *aRight, int nRight, int drc_right
 ){
   int res = 0;
-  pUnpacked->pKeyInfo = pKeyInfo;
-  pUnpacked->nField = pKeyInfo->nKeyField + 1;
-  sqlite3VdbeRecordUnpack(nRight, aRight, pUnpacked);
-  res = sqlite3VdbeRecordCompare(nLeft, aLeft, pUnpacked);
-  if( res==0 ){
-    res = (drc_right - drc_left);
+  if( aLeft==0 ){
+    /* If the record is NULL, then the value depends on the drc. (drc>0)
+    ** implies the smallest possible value, (drc<0) implies the largest
+    ** possible valaue */
+    res = drc_left * -1;
+    assert( drc_left!=0 );
+  }else if( aRight==0 ){
+    res = drc_right;
+    assert( drc_right!=0 );
+  }else{
+    pUnpacked->pKeyInfo = pKeyInfo;
+    pUnpacked->nField = pKeyInfo->nKeyField + 1;
+    sqlite3VdbeRecordUnpack(nRight, aRight, pUnpacked);
+    res = sqlite3VdbeRecordCompare(nLeft, aLeft, pUnpacked);
+    if( res==0 ){
+      res = (drc_right - drc_left);
+    }
   }
+
   if( res<0 ){
     res = -1;
   }else if( res>0 ){
     res = +1;
   }
+
   assert( res>=-1 && res<=+1 );
   return res;
 }
@@ -1113,12 +1128,10 @@ static int btreeBcReadIndexCmp(
 **
 ** Sort the BtConcurrent.aReadIndex[] array by root page number, then
 ** by minimum record value. Then merge overlapping ranges.
-** Updates *pnRead.
 **
 ** Return SQLITE_NOMEM if an OOM is encountered, or SQLITE_OK otherwise.
 */
 int btreeBcReadIndexSort(BtConcurrent *pBtConc){
-  int rc = SQLITE_OK;
   int nRead = pBtConc->nReadIndex;
   BtReadIndex *aRead = pBtConc->aReadIndex;
 
@@ -1127,45 +1140,54 @@ int btreeBcReadIndexSort(BtConcurrent *pBtConc){
   ));
 
   /* Merge overlapping ranges */
-  if( rc==SQLITE_OK && nRead>1 ){
-    int iIn;
-    int iOut = 1;
+  if( nRead>1 ){
+    BtReadIndex *pIn;
+    BtReadIndex *pOut = &aRead[0];
+    BtReadIndex * const pEof = &aRead[nRead];
 
-    for(iIn=1; iIn<nRead; iIn++){
-      if( aRead[iIn].iRoot==aRead[iOut-1].iRoot ){
+    for(pIn=&aRead[1]; pIn<pEof; pIn++){
+      if( pIn->iRoot==pOut->iRoot ){
 
         /* Compare aRecMin of this range to the aRecMax of the previous. */
         int res = btreeBcRecordCompare(
-          pBtConc->pUnpacked,
-          aRead[iIn].pKeyInfo,
-          aRead[iIn].aRecMin, aRead[iIn].nRecMin, aRead[iIn].drc_min,
-          aRead[iOut-1].aRecMax, aRead[iOut-1].nRecMax, aRead[iOut-1].drc_max
+          pBtConc->pUnpacked, pIn->pKeyInfo,
+          pIn->aRecMin, pIn->nRecMin, pIn->drc_min,
+          pOut->aRecMax, pOut->nRecMax, pOut->drc_max
         );
 
         if( res<=0 ){
-          /* This range overlaps with the previous one */
+          /* This range overlaps with the previous one. This call is to
+          ** figure out if it is entirely encapsulated within the previous
+          ** range (if res<=0) or if it only partially overlaps and the
+          ** max of the previous range needs to be extended (res>0). */
           res = btreeBcRecordCompare(
-            pBtConc->pUnpacked,
-            aRead[iIn].pKeyInfo,
-            aRead[iIn].aRecMax, aRead[iIn].nRecMax, aRead[iIn].drc_max,
-            aRead[iOut-1].aRecMax, aRead[iOut-1].nRecMax, aRead[iOut-1].drc_max
+            pBtConc->pUnpacked, pIn->pKeyInfo,
+            pIn->aRecMax, pIn->nRecMax, pIn->drc_max,
+            pOut->aRecMax, pOut->nRecMax, pOut->drc_max
           );
 
+          sqlite3KeyInfoUnref(pIn->pKeyInfo);
+          sqlite3_free(pIn->aRecMin);
+
           if( res>0 ){
-            aRead[iOut-1].aRecMax  = aRead[iIn].aRecMax;
-            aRead[iOut-1].nRecMax  = aRead[iIn].nRecMax;
-            aRead[iOut-1].drc_max  = aRead[iIn].drc_max;
+            sqlite3_free(pOut->aRecMax);
+            pOut->aRecMax = pIn->aRecMax;
+            pOut->nRecMax = pIn->nRecMax;
+            pOut->drc_max = pIn->drc_max;
+          }else{
+            sqlite3_free(pIn->aRecMax);
           }
 
           continue;
         }
       }
 
-      /* Start new range */
-      aRead[iOut++] = aRead[iIn];
+      /* This range does not overlap with the previous. Copy it directly
+      ** to the output.  */
+      *(++pOut) = *pIn;
     }
 
-    pBtConc->nReadIndex = iOut;
+    pBtConc->nReadIndex = 1 + pOut - aRead;
   }
 
   return SQLITE_OK;
@@ -1605,7 +1627,6 @@ static int btreeBcScanFinish(BtCursor *pCsr){
 
         case BTCONC_READ_MOVETO: {
           /* The value used in the seek op is currently stored in p->aRecMin */
-
           if( pCsr->iScanDir==0 ){
             if( aRec==0 ){
               sqlite3_free(p->aRecMin);
@@ -1636,6 +1657,9 @@ static int btreeBcScanFinish(BtCursor *pCsr){
           break;
         }
       }
+
+      if( p->aRecMin==0 ) p->drc_min = +1;
+      if( p->aRecMax==0 ) p->drc_max = -1;
 
     }else{
       i64 iKey = bIsValid ? sqlite3BtreeIntegerKey(pCsr) : 0;
@@ -1766,9 +1790,12 @@ static int btreeBcScanStart(
     pCsr->iScanDir = 0;
     pCsr->eScanType = eRead;
     if( pCsr->pKeyInfo ){
+
+      /* Reserve a BtReadIndex structure from the array */
       BtReadIndex *pRead = btreeBcIndexRead(pBtConc, &pCsr->iScanIndex, &rc);
       if( pRead==0 ) return rc;
       memset(pRead, 0, sizeof(*pRead));
+
       pRead->iRoot = pCsr->pgnoRoot;
       pRead->pKeyInfo = sqlite3KeyInfoRef(pCsr->pKeyInfo);
       rc = btreeBcUpdateUnpacked(pBtConc, pRead->pKeyInfo);
@@ -1780,7 +1807,33 @@ static int btreeBcScanStart(
         assert( pCsr->pKeyInfo->nAllField>=pKey->nField );
         drc = pKey->default_rc * (pCsr->pKeyInfo->nAllField+1 - pKey->nField);
         pRead->drc_min = (i16)drc;
+
+        /* If the BTREE_SEEK_EQ flag is set, then the caller is only 
+        ** interested in index entries that exactly match the supplied prefix.
+        ** In this case we can set the first and last keys of the scan
+        ** directly instead of tracking where the cursor finishes up.
+        */
+        if( (pCsr->hints & BTREE_SEEK_EQ) && rc==SQLITE_OK ){
+          pRead->aRecMax = (u8*)sqlite3_malloc(pRead->nRecMin + 8+9);
+          if( pRead->aRecMax==0 ){
+            rc = SQLITE_NOMEM_BKPT;
+          }else{
+            pRead->nRecMax = pRead->nRecMin;
+            memcpy(pRead->aRecMax, pRead->aRecMin, pRead->nRecMax);
+            if( pRead->drc_min<0 ){
+              pRead->drc_min = pRead->drc_min * -1;
+            }
+            pRead->drc_max = pRead->drc_min * -1;
+          }
+          pCsr->iScanIndex = 0;
+        }
       }
+
+      if( eRead==BTCONC_READ_COUNT ){
+        pRead->drc_min = +1;
+        pRead->drc_max = -1;
+      }
+
     }else{
       BtReadIntkey *pRead = btreeBcIntkeyRead(pBtConc, &pCsr->iScanIndex, &rc);
       if( pRead==0 ) return rc;
@@ -1929,6 +1982,17 @@ static int btreeCursorOpen(
 /* Used by btreeBcTryLogicalCommit() */
 static int btreeMoveto(BtCursor*, const void*, i64, int, int*);
 
+/*
+** Sort the pBtConc->aReadIntkey[] and aReadIndex[] arrays.
+*/
+int sqlite3BtreeSortReadArrays(BtConcurrent *pBtConc){
+  int rc = btreeBcReadIntkeySort(pBtConc->aReadIntkey, &pBtConc->nReadIntkey);
+  if( rc==SQLITE_OK ){
+    rc = btreeBcReadIndexSort(pBtConc);
+  }
+  return rc;
+}
+
 /* !defined(SQLITE_OMIT_CONCURRENT)
 **
 ** Attempt to validate and write the transaction in BtShared.conc to the
@@ -1947,13 +2011,8 @@ static int btreeBcTryLogicalCommit(Btree *p){
   assert( pBtConc->eState==BTCONC_STATE_INUSE );
   pBtConc->eState = BTCONC_STATE_RETIRED;
 
-  /* If the read arrays have not been pre-sorted, sort them now. */
-  if( pBtConc->bReadSorted==0 ){
-    rc = btreeBcReadIntkeySort(pBtConc->aReadIntkey, &pBtConc->nReadIntkey);
-    if( rc==SQLITE_OK ){
-      rc = btreeBcReadIndexSort(pBtConc);
-    }
-  }
+  /* Sort the read arrays */
+  rc = sqlite3BtreeSortReadArrays(pBtConc);
 
   if( rc==SQLITE_OK ){
     BtSharedLog *pBtLog = pBt->conc.pBtLog;
@@ -7787,6 +7846,29 @@ moveto_table_finish:
   assert( (pCur->curFlags & BTCF_ValidOvfl)==0 );
   return rc;
 }
+
+#ifndef SQLITE_OMIT_CONCURRENT
+/* !SQLITE_OMIT_CONCURRENT
+**
+** This is called on a cursor open on an intkey btree immediately after
+** an unsuccessful seek. It tells the BC layer that the cursor was only
+** used to search for the specific rowid, not the one it landed on. And
+** so the OCC range lock is only required on the sought rowid, not on
+** the range between the sought rowid and whereever it landed.
+**
+** e.g. if the table contains rowids 1, 3 and 5, and the user queries
+** for rowid 4, the cursor will land on rowid 3. But we want the OCC
+** range lock on 4-4, not 3-4. That's what this call is for.
+*/
+void sqlite3BtreeCursorNoScan(BtCursor *pCsr){
+  if( pCsr->iScanIndex>0 ){
+    BtReadIntkey *p = &pCsr->pBt->conc.aReadIntkey[pCsr->iScanIndex-1];
+    p->iMax = p->iMin;
+    pCsr->iScanIndex = 0;
+  }
+}
+#endif
+
 
 /*
 ** Compare the "idx"-th cell on the page pPage against the key

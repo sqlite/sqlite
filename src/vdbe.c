@@ -5576,6 +5576,9 @@ notExistsWithKey:
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
   if( res!=0 ){
+#ifndef SQLITE_OMIT_CONCURRENT
+    sqlite3BtreeCursorNoScan(pCrsr);
+#endif
     assert( rc==SQLITE_OK );
     if( pOp->p2==0 ){
       rc = SQLITE_CORRUPT_BKPT;

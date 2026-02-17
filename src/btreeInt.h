@@ -414,7 +414,6 @@ struct BtConcurrent {
   int nReadIndex;
   int nReadIntkeyAlloc;
   int nReadIndexAlloc;
-  int bReadSorted;                /* True if the aRead[] arrays are sorted */
 
   /* Changes made by this transaction. */
   BtWrite *aWrite;
@@ -512,6 +511,8 @@ int sqlite3BcSerializeRecord(
   u8 **ppRec,                     /* OUT: buffer containing serialization */
   int *pnRec                      /* OUT: size of (*ppRec) in bytes */
 );
+
+int sqlite3BtreeSortReadArrays(BtConcurrent *pBtConc);
 
 
 /* A Btree handle
