@@ -158,7 +158,7 @@ jobs:
 
       - name: Build
         run: |
-          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" all
+          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" INSTALL_PREFIX="/sysroot" all
 
       - name: Test
         run: |
@@ -168,16 +168,18 @@ jobs:
         run: |
           set -euo pipefail
           ARTIFACT_NAME="sqlite-${{ matrix.platform }}-${{ matrix.process-mode }}"
-          DIST_DIR="dist/${ARTIFACT_NAME}"
-          mkdir -p "${DIST_DIR}/bin" "${DIST_DIR}/lib" "${DIST_DIR}/include"
-          # Copy executables
-          cp -f sqlite3.elf "${DIST_DIR}/bin/" 2>/dev/null || true
-          # Copy libraries
-          cp -f .libs/libsqlite3.a "${DIST_DIR}/lib/" 2>/dev/null || cp -f libsqlite3.a "${DIST_DIR}/lib/" 2>/dev/null || true
-          # Copy headers
-          cp -f sqlite3.h "${DIST_DIR}/include/" 2>/dev/null || true
-          # Create tarball
-          tar -cjf "dist/${ARTIFACT_NAME}.tar.bz2" -C dist "${ARTIFACT_NAME}"
+          STAGING="$(pwd)/staging"
+          make -f Makefile.nanvix CONFIG_NANVIX=y NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" INSTALL_PREFIX="/sysroot" install DESTDIR="$STAGING"
+
+          # Preserve .elf naming convention expected by downstream consumers
+          SQLITE_BIN="$STAGING/sysroot/bin/sqlite3"
+          SQLITE_BIN_ELF="$STAGING/sysroot/bin/sqlite3.elf"
+          if [ -f "$SQLITE_BIN" ] && [ ! -e "$SQLITE_BIN_ELF" ]; then
+            cp "$SQLITE_BIN" "$SQLITE_BIN_ELF"
+          fi
+
+          mkdir -p dist
+          tar -cjf "dist/${ARTIFACT_NAME}.tar.bz2" -C "$STAGING" sysroot
           echo "ARTIFACT_TARBALL=dist/${ARTIFACT_NAME}.tar.bz2" >> "$GITHUB_ENV"
 
       - name: Upload Build Artifacts

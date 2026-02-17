@@ -85,6 +85,16 @@ ifdef CONFIG_NANVIX
     LIBPOSIX := $(abspath $(NANVIX_HOME))/lib/libposix.a
     LIBZ := $(abspath $(NANVIX_HOME))/lib/libz.a
   endif
+
+  # INSTALL_PREFIX: the prefix baked into compiled artifacts.
+  # Native local builds default to SYSROOT_PATH; CI overrides to /sysroot so that
+  # release artifacts don't contain ephemeral runner paths. In Docker mode,
+  # default to a stable in-container path (/sysroot) instead of the host mount.
+  ifdef CONFIG_NANVIX_DOCKER
+  INSTALL_PREFIX ?= /sysroot
+  else
+  INSTALL_PREFIX ?= $(SYSROOT_PATH)
+  endif
 else
   # Allow clean target without CONFIG_NANVIX
   ifneq ($(MAKECMDGOALS),clean)
@@ -109,7 +119,7 @@ CONFIGURE_ENV = \
 CONFIGURE_OPTS = \
 	--disable-shared \
 	--sysroot="$(SYSROOT_PATH)" \
-	--prefix="$(SYSROOT_PATH)" \
+	--prefix="$(INSTALL_PREFIX)" \
 	--host=i686-nanvix \
 	--disable-tcl \
 	--disable-threadsafe
@@ -168,11 +178,22 @@ distclean: clean
 	git clean -fdx -e Makefile.nanvix -e NANVIX.md -e .github -e nanvix-artifacts 2>/dev/null || true
 
 # Install target (for Nanvix sysroot)
+# Use DESTDIR for staged installs: make install DESTDIR=/path/to/staging
 install: build
 ifdef CONFIG_NANVIX_DOCKER
+  ifdef DESTDIR
+	docker run --rm --user $(DOCKER_UID):$(DOCKER_GID) \
+	  -v $(CURDIR):$(DOCKER_WORKSPACE_PATH) \
+	  -v $(abspath $(NANVIX_HOME)):$(DOCKER_SYSROOT_PATH):ro \
+	  -v $(abspath $(DESTDIR)):$(abspath $(DESTDIR)) \
+	  -w $(DOCKER_WORKSPACE_PATH) \
+	  -e HOME=/tmp \
+	  $(NANVIX_DOCKER_IMAGE) make install DESTDIR="$(abspath $(DESTDIR))"
+  else
 	$(DOCKER_RUN) make install
+  endif
 else
-	make install
+	make install DESTDIR="$(DESTDIR)"
 endif
 
 .PHONY: all configure build clean distclean test install
