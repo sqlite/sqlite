@@ -1,5 +1,5 @@
-C Further\ssimplifications,\sperformance\simprovements,\sand\ssize\sreductions\nto\sthe\snumeric\sto\stext\sconversion\slogic.
-D 2026-02-17T01:04:23.976
+C New\sassert()s\sfor\sthe\sreturn\svalue\sfrom\ssqlite3SchemaToIndex().
+D 2026-02-17T11:28:48.505
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -681,7 +681,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c b744bf69d520534751c742cababe7ad28c3892f1e3a75242e75a20bca15a834a
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c cc0afd3ec8417f5f774650f612e755b7ffce392d14ab4441bf5588867893fd3c
+F src/build.c b993e4adef4c4cdfd7abf62e2676c467bb1923f25f40c3c7ab2a7bfbace3de7f
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -2194,9 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e956b36063e77b5ad0d8b8afb5dc942665f570d762929ff277e320c06ded8ce6 90300e02f0de45b57d53976cae72928b3e56532d90b8b8cdc988e14762777930
-R b1ffbc813bb58c2693a15c98e01b4b2a
-T +closed 90300e02f0de45b57d53976cae72928b3e56532d90b8b8cdc988e14762777930
+P dd5af703e1082951a4295a3453611db12b23cfbcfee4258ec3985abe96ab54ba
+R 752a788ebe8252b2a0286d1bd66fa125
 U drh
-Z d14f3cc379cb89f415ec0148cadbccca
+Z a9505c2d735590a5b6c9434f3d545798
 # Remove this line to create a well-formed Fossil manifest.

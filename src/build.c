@@ -486,6 +486,7 @@ Table *sqlite3LocateTableItem(
   const char *zDb;
   if( p->fg.fixedSchema ){
     int iDb = sqlite3SchemaToIndex(pParse->db, p->u4.pSchema);
+    assert( iDb>=0 && iDb<pParse->db->nDb );
     zDb = pParse->db->aDb[iDb].zDbSName;
   }else{
     assert( !p->fg.isSubquery );
@@ -2730,6 +2731,7 @@ void sqlite3EndTable(
     convertToWithoutRowidTable(pParse, p);
   }
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
+  assert( iDb>=0 && iDb<=db->nDb );
 
 #ifndef SQLITE_OMIT_CHECK
   /* Resolve names in all CHECK constraint expressions.
@@ -3025,6 +3027,7 @@ void sqlite3CreateView(
 
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
+  assert( iDb>=0 && iDb<db->nDb );
   sqlite3FixInit(&sFix, pParse, iDb, "view", pName);
   if( sqlite3FixSelect(&sFix, pSelect) ) goto create_view_fail;
 
