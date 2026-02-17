@@ -51,6 +51,10 @@ do_test 101 {
   run_stmt $STMT
 } {1}
 do_test 102 {
+  sqlite3_carray_bind -v2 -malloc $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT
+} {1}
+do_test 103 {
   set STMT2 [sqlite3_prepare_v2 db {
        SELECT DISTINCT typeof(value) FROM carray(?3)} -1]
   sqlite3_carray_bind $STMT2 3 1 2 3 4 5 6 7
@@ -122,6 +126,10 @@ do_test 150 {
 } {0}
 do_test 160 {
   sqlite3_carray_bind -double $STMT 3 1 2 3 4 5 6 7
+  run_stmt $STMT
+} {1}
+do_test 161 {
+  sqlite3_carray_bind -double -v2 $STMT 3 1 2 3 4 5 6 7
   run_stmt $STMT
 } {1}
 do_test 170 {

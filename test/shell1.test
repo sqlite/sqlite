@@ -752,7 +752,7 @@ do_test shell1-3.26.6 {
 # .timer ON|OFF          Turn the CPU timer measurement on or off
 do_test shell1-3.27.1 {
   catchcmd "test.db" ".timer"
-} {1 {Usage: .timer on|off}}
+} {1 {Usage: .timer on|off|once}}
 do_test shell1-3.27.2 {
   catchcmd "test.db" ".timer ON"
 } {0 {}}
@@ -762,7 +762,7 @@ do_test shell1-3.27.3 {
 do_test shell1-3.27.4 {
   # too many arguments
   catchcmd "test.db" ".timer OFF BAD"
-} {1 {Usage: .timer on|off}}
+} {1 {Usage: .timer on|off|once}}
 
 do_test shell1-3.28.1 {
   catchcmd test.db \

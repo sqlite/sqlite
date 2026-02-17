@@ -146,9 +146,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          kvvfsMethods.$nBufferSize is slightly larger than the output
          space needed for a kvvfs-encoded 64kb db page in a worse-cast
          encoding (128kb). It is not suitable for arbitrary buffer
-         use, only page de/encoding.  As the VFS system has no hook
-         into library finalization, these buffers are effectively
-         leaked except in the few places which use memBufferFree().
+         use, only page de/encoding.
       */
       n: kvvfsMethods.$nBufferSize,
       /**
@@ -187,10 +185,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   const noop = ()=>{};
   const debug = sqlite3.__isUnderTest
-        ? (...args)=>sqlite3.config.debug("kvvfs:", ...args)
+        ? (...args)=>sqlite3.config.debug?.("kvvfs:", ...args)
         : noop;
-  const warn = (...args)=>sqlite3.config.warn("kvvfs:", ...args);
-  const error = (...args)=>sqlite3.config.error("kvvfs:", ...args);
+  const warn = (...args)=>sqlite3.config.warn?.("kvvfs:", ...args);
+  const error = (...args)=>sqlite3.config.error?.("kvvfs:", ...args);
 
   /**
      Implementation of JS's Storage interface for use as backing store
@@ -1013,7 +1011,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           util.assert(h, "Missing KVVfsFile handle");
           kvvfs?.log?.xFileControl && debug("xFileControl",h,'op =',opId);
           if( opId===capi.SQLITE_FCNTL_PRAGMA
-              && kvvfs.internal.disablePageSizeChange ){
+              && kvvfsInternal.disablePageSizeChange ){
             /* pArg== length-3 (char**) */
             //const argv = wasm.cArgvToJs(3, pArg); // the easy way
             const zName = wasm.peekPtr(wasm.ptr.add(pArg, wasm.ptr.size));
@@ -1899,7 +1897,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               }
               return rc;
             }catch(e){
-              return VT.xErrror('xConnect', e, capi.SQLITE_ERROR);
+              return VT.xError('xConnect', e, capi.SQLITE_ERROR);
             }
           },
           xCreate: wasm.ptr.null, // eponymous only
