@@ -158,13 +158,24 @@ endif
 # Test target: run tests using nanvixd.elf
 test: build
 	@echo "Running SQLite tests on Nanvix..."
-	@echo "Testing sqlite3 CLI basic functionality..."
-	cd "$(abspath $(NANVIX_HOME))" && echo "SELECT 'Hello, Nanvix!';" | ./bin/nanvixd.elf -- $(abspath sqlite3$(EXE)) 2>/dev/null || true
-	@echo "Testing sqlite3 version..."
-	cd "$(abspath $(NANVIX_HOME))" && echo ".version" | ./bin/nanvixd.elf -- $(abspath sqlite3$(EXE)) 2>/dev/null || true
-	@echo "Testing CREATE TABLE and INSERT..."
-	cd "$(abspath $(NANVIX_HOME))" && echo "CREATE TABLE test(id INTEGER PRIMARY KEY, name TEXT); INSERT INTO test VALUES(1, 'nanvix'); SELECT * FROM test;" | ./bin/nanvixd.elf -- $(abspath sqlite3$(EXE)) 2>/dev/null || true
-	@echo "		*** SQLite tests OK ***"
+	@echo ".bail on" > /tmp/sqlite_test.sql
+	@echo "SELECT 'SQLITE_TEST_HELLO: Hello from SQLite';" >> /tmp/sqlite_test.sql
+	@echo "CREATE TABLE nanvix_test(id INTEGER PRIMARY KEY, name TEXT);" >> /tmp/sqlite_test.sql
+	@echo "INSERT INTO nanvix_test VALUES(1, 'nanvix');" >> /tmp/sqlite_test.sql
+	@echo "INSERT INTO nanvix_test VALUES(2, 'python');" >> /tmp/sqlite_test.sql
+	@echo "SELECT 'SQLITE_TEST_COUNT:', count(*) FROM nanvix_test;" >> /tmp/sqlite_test.sql
+	@echo "SELECT 'SQLITE_TEST_ROW:', id, name FROM nanvix_test WHERE id=1;" >> /tmp/sqlite_test.sql
+	@echo "Test 1: SQLite CLI operations..."
+	cd "$(abspath $(NANVIX_HOME))" && \
+		timeout 120 ./bin/nanvixd.elf -- $(abspath sqlite3$(EXE)) < /tmp/sqlite_test.sql > /tmp/sqlite_test.log 2>&1; \
+		if grep -q 'SQLITE_TEST_HELLO:' /tmp/sqlite_test.log && grep -q 'SQLITE_TEST_COUNT:' /tmp/sqlite_test.log; then \
+			echo "  PASS: SQLite basic operations work"; \
+			grep 'SQLITE_TEST_' /tmp/sqlite_test.log | sed 's/^/    /'; \
+		else \
+			echo "  FAIL: SQLite test did not produce expected output"; cat /tmp/sqlite_test.log; exit 1; \
+		fi
+	@rm -f /tmp/sqlite_test.sql /tmp/sqlite_test.log
+	@echo "		*** SQLite tests PASSED ***"
 
 # Clean target
 clean:
