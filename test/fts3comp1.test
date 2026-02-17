@@ -157,6 +157,36 @@ do_execsql_test 3.6.1 {
 do_catchsql_test 3.6.2 {
   INSERT INTO t1 VALUES('hello world');
 } {1 {unsafe use of myfunc()}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE v1 USING fts4(x, compress=comp, uncompress=uncomp);
+}
+
+proc comp {data} { return $data }
+proc uncomp {data} { return $data }
+
+db func comp comp
+db func uncomp uncomp
+
+do_catchsql_test 4.1 {
+  INSERT INTO v1 VALUES('one two three');
+} {0 {}}
+
+db close
+sqlite3 db test.db
+db func comp -directonly comp
+
+do_catchsql_test 4.2 {
+  INSERT INTO v1 VALUES('one two three');
+} {1 {SQL logic error}}
+
+db func uncomp -directonly uncomp
+
+do_catchsql_test 4.3 {
+  SELECT * FROM v1
+} {1 {SQL logic error}}
   
 
 finish_test

@@ -33,6 +33,8 @@ do_execsql_test tkt-99378-100 {
     (2, '{"x":2}',  4,  5),
     (3, '{"x":1}',  6,  7);
   CREATE INDEX t1x ON t1(d, a, b->>'x', c);
+  CREATE TABLE t2(y);
+  INSERT INTO t2(y) VALUES(9);
 } {}
 do_execsql_test tkt-99378-110 {
   SELECT a,
@@ -41,6 +43,20 @@ do_execsql_test tkt-99378-110 {
          SUM(c)                              AS t3,
          SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
     FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {
+  1  2  1 16 12
+  2  2  1 26 22
+  3  1  1  6  6
+}
+do_execsql_test tkt-99378-111 {
+  SELECT if(a,a,y),
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t2 CROSS JOIN t1
    WHERE d BETWEEN 0 and 10
    GROUP BY a;
 } {
@@ -62,6 +78,17 @@ do_execsql_test tkt-99378-120 {
          SUM(c)                              AS t3,
          SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
     FROM t1
+   WHERE d BETWEEN 0 and 10
+   GROUP BY a;
+} {~/Function/}
+do_execsql_test tkt-99378-121 {
+  EXPLAIN
+  SELECT if(a,a,y),
+         SUM(1)                              AS t1,
+         SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+         SUM(c)                              AS t3,
+         SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t2 CROSS JOIN t1
    WHERE d BETWEEN 0 and 10
    GROUP BY a;
 } {~/Function/}
@@ -182,6 +209,7 @@ do_execsql_test tkt-99378-310 {
 #
 do_execsql_test tkt-99378-400 {
   DROP TABLE t1;
+  DROP TABLE t2;
   CREATE TABLE t0(w);
   INSERT INTO t0(w) VALUES(1);
   CREATE TABLE t1(x);

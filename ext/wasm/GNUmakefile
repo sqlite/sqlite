@@ -1221,7 +1221,7 @@ $(foreach B,$(b.names),$(eval post: $(post-js.$(B).js)))
 # These flags get applied via $(bin.mkwb).
 emcc.speedtest1.common = $(emcc_opt_full)
 emcc.speedtest1 = -I. -I$(dir $(sqlite3.canonical.c))
-emcc.speedtest1 += -sENVIRONMENT=web
+emcc.speedtest1 += -sENVIRONMENT=web,worker
 emcc.speedtest1 += -sALLOW_MEMORY_GROWTH
 emcc.speedtest1 += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.32)
 emcc.speedtest1.common += -sINVOKE_RUN=0
