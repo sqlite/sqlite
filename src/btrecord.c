@@ -9,6 +9,9 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
+**
+** This file contains utility routines used by btree.c when compiled to
+** support BEGIN CONCURRENT.
 */
 
 #include "sqliteInt.h"
@@ -18,7 +21,10 @@
 #include <string.h>
 #include <assert.h>
 
-/*
+#ifndef SQLITE_OMIT_CONCURRENT
+
+/* !SQLITE_OMIT_CONCURRENT
+**
 ** Write the serialized data blob for the value stored in pMem into 
 ** buf. It is assumed that the caller has allocated sufficient space.
 ** Return the number of bytes written.
@@ -67,8 +73,10 @@ static u32 bcRecordSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
   return 0;
 }
 
-/*
-** Return the serial-type for the value stored in pMem.
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Return the serial-type for the value stored in pMem. Before returning,
+** set (*pLen) to the size in bytes of the serialized form of the value.
 **
 ** This routine might convert a large MEM_IntReal value into MEM_Real.
 */
@@ -133,7 +141,13 @@ static u32 bcRecordSerialType(Mem *pMem, u32 *pLen){
 }
 
 
-/*
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Serialize the unpacked record in pRec into a buffer obtained from
+** sqlite3_malloc(). If successful, (*ppRec) is set to point to the 
+** buffer and (*pnRec) to its size in bytes before returning SQLITE_OK.
+** Or, if an OOM error occurs, return SQLITE_NOMEM. The final values
+** of (*ppRec) and (*pnRec) are undefined in this case.
 **
 */
 int sqlite3BcSerializeRecord(
@@ -186,6 +200,14 @@ int sqlite3BcSerializeRecord(
   return SQLITE_OK;
 }
 
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Helper function for bcRecordToText(). Return a buffer obtained from
+** sqlite3_malloc() containing a nul-terminated string containing the hex 
+** form of blob aIn[], size nIn bytes. It is the responsibility of the
+** caller to eventually free the buffer using sqlite3_free(). If an OOM
+** occurs, NULL may be returned.
+*/
 static char *hex_encode(const u8 *aIn, int nIn){
   char *zRet = sqlite3_malloc(nIn*2+1);
   static const char aDigit[] = "0123456789ABCDEF";
@@ -198,6 +220,19 @@ static char *hex_encode(const u8 *aIn, int nIn){
 }
 
 
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Buffer aRec[], which is nRec bytes in size, contains a serialized SQLite
+** record. This function decodes the record and returns a nul-terminated
+** string containing a human-readable version of the record.
+**
+** The value returned points to a buffer obtained from sqlite3_malloc(). It
+** is the responsibility of the caller to eventually free this buffer using
+** sqlite3_free(). If an OOM error occurs, NULL may be returned.
+**
+** If parameter delta is -ve, a "+" is appended to the text record. If it
+** is +ve, a "-" is appended.
+*/
 static char *bcRecordToText(const u8 *aRec, int nRec, int delta){
   char *zRet = 0;
   const char *zSep = "";
@@ -299,7 +334,8 @@ static char *bcRecordToText(const u8 *aRec, int nRec, int delta){
   return sqlite3_mprintf("(%z)%s", zRet, zDelta);
 }
 
-/*
+/* !SQLITE_OMIT_CONCURRENT
+**
 ** There has just been a conflict between pWrite and pRead on index zIdx, which
 ** is attached to table zTab. Issue a log message.
 */
@@ -328,6 +364,12 @@ void sqlite3BcLogIndexConflict(
   sqlite3EndBenignMalloc();
 }
 
+/*************************************************************************
+** Start of virtual table "sqlite_concurrent" implementation. 
+*/
+#define CONC_SCHEMA "CREATE TABLE x(root, op, k1, k2, sortem HIDDEN)"
+#define CONCURRENT_SORTEM 4
+
 typedef struct ConcTable ConcTable;
 typedef struct ConcCursor ConcCursor;
 typedef struct ConcRow ConcRow;
@@ -340,7 +382,6 @@ struct ConcRow {
   ConcRow *pRowNext;
 };
 
-
 struct ConcCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
   ConcRow *pRow;
@@ -351,11 +392,9 @@ struct ConcTable {
   sqlite3 *db;                    /* The database */
 };
 
-#define CONC_SCHEMA "CREATE TABLE x(root, op, k1, k2, sortem HIDDEN)"
-#define CONCURRENT_SORTEM 4
-
-/*
-** Connect to or create a concvfs virtual table.
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Connect to the sqlite_concurrent eponymous table.
 */
 static int concConnect(
   sqlite3 *db,
@@ -389,15 +428,17 @@ static int concConnect(
   return rc;
 }
 
-/*
-** Disconnect from or destroy a concvfs virtual table.
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Disconnect from sqlite_concurrent.
 */
 static int concDisconnect(sqlite3_vtab *pVtab){
   sqlite3_free(pVtab);
   return SQLITE_OK;
 }
 
-/*
+/* !SQLITE_OMIT_CONCURRENT
+**
 ** xBestIndex method for sqlite_concurrent.
 */
 static int concBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
@@ -416,8 +457,9 @@ static int concBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 }
 
 
-/*
-** Open a new concvfs cursor.
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Open a new cursor for sqlite_concurrent.
 */
 static int concOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   ConcCursor *pCsr;
@@ -433,8 +475,9 @@ static int concOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   return SQLITE_OK;
 }
 
-/*
-** Close a concvfs cursor.
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Close an sqlite_concurrent cursor.
 */
 static int concClose(sqlite3_vtab_cursor *pCursor){
   ConcCursor *pCsr = (ConcCursor *)pCursor;
@@ -450,8 +493,9 @@ static int concClose(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
-/*
-** Move a concvfs cursor to the next entry in the file.
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Advance the sqlite_concurrent cursor to the next row.
 */
 static int concNext(sqlite3_vtab_cursor *pCursor){
   ConcCursor *pCsr = (ConcCursor *)pCursor;
@@ -465,13 +509,25 @@ static int concNext(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Return true if the sqlite_concurrent cursor is at EOF.
+*/
 static int concEof(sqlite3_vtab_cursor *pCursor){
   ConcCursor *pCsr = (ConcCursor *)pCursor;
   return pCsr->pRow==0;
 }
 
-/*
-** xFilter method.
+/* !SQLITE_OMIT_CONCURRENT
+**
+** xFilter method for sqlite_concurrent.
+**
+** In all cases this function populates the cursor with rows for each
+** read and write currently accumulated by the datbase connection.
+**
+** idxNum may be either 0 or 1. If it is 1, then there is a single
+** argument passed. If this is a non-zero integer, the reads are
+** sorted before any rows are returned.
 */
 static int concFilter(
   sqlite3_vtab_cursor *pCursor,
@@ -483,6 +539,9 @@ static int concFilter(
   sqlite3 *db = pTab->db;
   BtConcurrent *pConc = &db->aDb[0].pBt->pBt->conc;
   int rc = SQLITE_OK;
+
+  assert( idxNum==0 || idxNum==1 );
+  assert( idxNum==argc );
 
   if( idxNum==1 ){
     int bSort = sqlite3_value_int(argv[0]);
@@ -559,6 +618,10 @@ static int concFilter(
   return rc;
 }
 
+/* !SQLITE_OMIT_CONCURRENT
+**
+** xColumn method for sqlite_concurrent.
+*/
 static int concColumn(
   sqlite3_vtab_cursor *pCursor,
   sqlite3_context *ctx,
@@ -589,11 +652,21 @@ static int concColumn(
   return rc;
 }
 
+/* !SQLITE_OMIT_CONCURRENT
+**
+** xRowid method for sqlite_concurrent.
+*/
 static int concRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   *pRowid = 0;
   return SQLITE_OK;
 }
 
+/* !SQLITE_OMIT_CONCURRENT
+**
+** Register the sqlite_concurrent eponymous virtual table with database
+** connection db. Return SQLITE_OK if successful, or an SQLite error code
+** if an error occurs.
+*/
 int sqlite3ConcurrentRegister(sqlite3 *db){
   static sqlite3_module conc_module = {
     2,                            /* iVersion */
@@ -625,3 +698,4 @@ int sqlite3ConcurrentRegister(sqlite3 *db){
   return sqlite3_create_module(db, "sqlite_concurrent", &conc_module, 0);
 }
 
+#endif /* !SQLITE_OMIT_CONCURRENT */
