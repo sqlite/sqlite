@@ -5445,9 +5445,14 @@ case OP_Found: {        /* jump, in3, ncycle */
     rc = sqlite3BtreeIndexMoveto(pC->uc.pCursor, pIdxKey, &pC->seekResult);
     sqlite3DbFreeNN(db, pIdxKey);
   }
+#ifndef SQLITE_OMIT_CONCURRENT
+  if( rc==SQLITE_OK && pOp->opcode==OP_NoConflict ){
+    rc = sqlite3BtreeCursorNoScan(pC->uc.pCursor);
+  }
   if( rc!=SQLITE_OK ){
     goto abort_due_to_error;
   }
+#endif
   alreadyExists = (pC->seekResult==0);
   pC->nullRow = 1-alreadyExists;
   pC->deferredMoveto = 0;
@@ -5577,7 +5582,7 @@ notExistsWithKey:
   pC->seekResult = res;
   if( res!=0 ){
 #ifndef SQLITE_OMIT_CONCURRENT
-    sqlite3BtreeCursorNoScan(pCrsr);
+    (void)sqlite3BtreeCursorNoScan(pCrsr);
 #endif
     assert( rc==SQLITE_OK );
     if( pOp->p2==0 ){

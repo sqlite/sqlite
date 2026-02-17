@@ -534,7 +534,7 @@ clean: clean-sanity-check
 # Object files for the SQLite library (non-amalgamation).
 #
 LIBOBJS0 = alter.o analyze.o attach.o auth.o \
-         backup.o bcrecord.o bitvec.o btmutex.o btree.o build.o \
+         backup.o btrecord.o bitvec.o btmutex.o btree.o build.o \
          callback.o carray.o complete.o ctime.o \
          date.o dbpage.o dbstat.o delete.o \
          expr.o fault.o fkey.o \
@@ -581,7 +581,7 @@ SRC = \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
   $(TOP)/src/backup.c \
-  $(TOP)/src/bcrecord.c \
+  $(TOP)/src/btrecord.c \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
@@ -1178,8 +1178,8 @@ auth.o:	$(TOP)/src/auth.c $(DEPS_OBJ_COMMON)
 backup.o:	$(TOP)/src/backup.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/backup.c
 
-bcrecord.o:	$(TOP)/src/bcrecord.c $(DEPS_OBJ_COMMON)
-	$(T.cc.sqlite) -c $(TOP)/src/bcrecord.c
+btrecord.o:	$(TOP)/src/btrecord.c $(DEPS_OBJ_COMMON)
+	$(T.cc.sqlite) -c $(TOP)/src/btrecord.c
 
 bitvec.o:	$(TOP)/src/bitvec.c $(DEPS_OBJ_COMMON)
 	$(T.cc.sqlite) -c $(TOP)/src/bitvec.c

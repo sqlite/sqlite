@@ -496,7 +496,7 @@ set flist {
    fts5.c
    stmt.c
 
-   bcrecord.c
+   btrecord.c
 }
 if {$enable_recover} {
   lappend flist sqlite3recover.c dbdata.c

@@ -1,0 +1,253 @@
+# 2023 January 12
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix concurrentC
+
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a PRIMARY KEY, b TEXT) WITHOUT ROWID;
+  CREATE UNIQUE INDEX i1 ON t1(b);
+} {wal}
+
+sqlite3 db2 test.db
+
+do_test 1.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(1, 'one');
+      INSERT INTO t1 VALUES(3, 'three');
+      INSERT INTO t1 VALUES(5, 'five');
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(2, 'two');
+      INSERT INTO t1 VALUES(4, 'four');
+      INSERT INTO t1 VALUES(6, 'six');
+    COMMIT;
+  } db2
+  execsql COMMIT
+} {}
+
+do_test 1.2 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(7, 'seven');
+      INSERT INTO t1 VALUES(10, 'nine');
+      INSERT INTO t1 VALUES(11, 'eleven');
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(8, 'eight');
+      INSERT INTO t1 VALUES(10, 'ten');
+      INSERT INTO t1 VALUES(12, 'twelve');
+    COMMIT;
+  } db2
+  catchsql COMMIT
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_test 1.3 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(13, 'thirteen');
+      INSERT INTO t1 VALUES(15, 'sixteen');
+      INSERT INTO t1 VALUES(17, 'seventeen');
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(14, 'fourteen');
+      INSERT INTO t1 VALUES(16, 'sixteen');
+      INSERT INTO t1 VALUES(18, 'eighteen');
+    COMMIT;
+  } db2
+  catchsql COMMIT
+} {1 {database is locked}}
+
+db2 close
+
+
+#-----------------------------------------------------------------
+# Check that different databases use different shared-logs.
+#
+reset_db
+
+forcedelete test.db2
+forcedelete test.db3
+
+sqlite3 db1 test.db
+sqlite3 db2 test.db2
+sqlite3 db3 test.db3
+
+do_test 2.0 {
+  execsql {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(a PRIMARY KEY, b TEXT) WITHOUT ROWID;
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES('a1', 'one');
+  } db1
+  execsql {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(a PRIMARY KEY, b TEXT) WITHOUT ROWID;
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES('a2', 'two');
+  } db2
+  execsql {
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1(a PRIMARY KEY, b TEXT) WITHOUT ROWID;
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES('a3', 'three');
+  } db3
+} {wal}
+
+do_execsql_test 2.1 {
+  ATTACH 'test.db2' AS 'd2';
+  ATTACH 'test.db3' AS 'd3';
+  BEGIN CONCURRENT;
+    INSERT INTO t1 VALUES('a2', 'one.2');
+    INSERT INTO d2.t1 VALUES('a1', 'two.2');
+    INSERT INTO d3.t1 VALUES('a2', 'three.2');
+}
+
+do_test 2.2 {
+  execsql COMMIT db1;
+  execsql COMMIT db2;
+  execsql COMMIT db3;
+  execsql COMMIT
+} {}
+
+
+
+#---------------------------------------------------------------
+#
+# 9.1: Test that interwoven writes on WITHOUT ROWID tables work.
+# 9.2: Test the same with 7 nested savepoints.
+# 9.3: Test the same with 8 nested savepoints. This fails, because
+#      the logical validation code gives up recording things if
+#      that many savepoints are used.
+# 9.4: Test the same with 32 nested savepoints. 
+#
+
+reset_db
+do_execsql_test 9.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a PRIMARY KEY, b TEXT) WITHOUT ROWID;
+} {wal}
+
+sqlite3 db2 test.db
+
+
+do_test 9.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES('aa', 'ten');
+      INSERT INTO t1 VALUES('ba', 'twenty');
+      INSERT INTO t1 VALUES('ca', 'thirty');
+  }
+
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES('ab', 'one');
+      INSERT INTO t1 VALUES('bb', 'two');
+      INSERT INTO t1 VALUES('cb', 'three');
+    COMMIT;
+  } db2
+
+  execsql {
+    COMMIT
+  }
+} {}
+
+do_test 9.2 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES('da', 'ten');
+      INSERT INTO t1 VALUES('ea', 'twenty');
+      INSERT INTO t1 VALUES('fa', 'thirty');
+  }
+
+  execsql {
+    BEGIN CONCURRENT;
+      SAVEPOINT a1;
+        INSERT INTO t1 VALUES('db', 'one');
+        INSERT INTO t1 VALUES('eb', 'two');
+        SAVEPOINT a2; SAVEPOINT a3; SAVEPOINT a4; SAVEPOINT a5; 
+        SAVEPOINT a6; SAVEPOINT a7; 
+          INSERT INTO t1 VALUES('fb', 'three');
+    COMMIT;
+  } db2
+
+  execsql {
+    COMMIT
+  }
+} {}
+
+do_test 9.3 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES('ga', 'ten');
+      INSERT INTO t1 VALUES('ha', 'twenty');
+      INSERT INTO t1 VALUES('ia', 'thirty');
+  }
+
+  execsql {
+    BEGIN CONCURRENT;
+      SAVEPOINT a1;
+        INSERT INTO t1 VALUES('gb', 'one');
+        INSERT INTO t1 VALUES('hb', 'two');
+        SAVEPOINT a2; SAVEPOINT a3; SAVEPOINT a4; SAVEPOINT a5; 
+        SAVEPOINT a6; SAVEPOINT a7; SAVEPOINT a8;
+          INSERT INTO t1 VALUES('ib', 'three');
+    COMMIT;
+  } db2
+
+  catchsql {
+    COMMIT
+  }
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_test 9.4 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES('ja', 'ten');
+      INSERT INTO t1 VALUES('ka', 'twenty');
+      INSERT INTO t1 VALUES('la', 'thirty');
+  }
+
+  execsql {
+    BEGIN CONCURRENT;
+      SAVEPOINT a1;
+        INSERT INTO t1 VALUES('jb', 'one');
+        INSERT INTO t1 VALUES('kb', 'two');
+        SAVEPOINT a2; SAVEPOINT a3; SAVEPOINT a4; SAVEPOINT a5; 
+        SAVEPOINT a6; SAVEPOINT a7; SAVEPOINT a8; SAVEPOINT a9;
+        SAVEPOINT a2; SAVEPOINT a3; SAVEPOINT a4; SAVEPOINT a5; 
+        SAVEPOINT a6; SAVEPOINT a7; SAVEPOINT a8; SAVEPOINT a9;
+        SAVEPOINT a2; SAVEPOINT a3; SAVEPOINT a4; SAVEPOINT a5; 
+        SAVEPOINT a6; SAVEPOINT a7; SAVEPOINT a8; SAVEPOINT a9;
+          INSERT INTO t1 VALUES('lb', 'three');
+    COMMIT;
+  } db2
+
+  catchsql {
+    COMMIT
+  }
+} {1 {database is locked}}
+
+
+
+finish_test
+
+

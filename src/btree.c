@@ -919,6 +919,18 @@ static int btreeBcBeginConcurrent(BtShared *pBt){
   return rc;
 }
 
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
+** Free the BtSharedLogEntry object passed as the only argument.
+*/
+static void btreeBcSharedLogEntryDelete(BtSharedLogEntry *pFree){
+  int ii;
+  for(ii=0; ii<pFree->nIndex; ii++){
+    BtWriteIndex *p = &pFree->aIndex[ii];
+    sqlite3_free(p->aRec);
+  }
+  sqlite3_free(pFree);
+}
 
 /* !defined(SQLITE_OMIT_CONCURRENT)
 **
@@ -927,21 +939,15 @@ static int btreeBcBeginConcurrent(BtShared *pBt){
 */
 static void btreeBcRemoveOldest(BtSharedLog *pBtLog){
   BtSharedLogEntry *pFree = pBtLog->pFirst;
-  int ii;
 
   pBtLog->pFirst = pFree->pLogNext;
   if( pBtLog->pFirst==0 ){
     assert( pBtLog->pLast==pFree );
     pBtLog->pLast = 0;
   }
-
-  for(ii=0; ii<pFree->nIndex; ii++){
-    BtWriteIndex *p = &pFree->aIndex[ii];
-    sqlite3_free(p->aRec);
-  }
-  sqlite3_free(pFree);
-
   pBtLog->nEntry--;
+
+  btreeBcSharedLogEntryDelete(pFree);
 }
 
 /* !defined(SQLITE_OMIT_CONCURRENT)
@@ -1467,6 +1473,11 @@ static int btreeBcSharedLogEntry(BtShared *pBt, BtSharedLogEntry **ppOut){
     if( rc==SQLITE_OK ){
       rc = btreeBcWriteIndexSort(pRet->aIndex, pRet->nIndex, &pBt->conc);
     }
+
+    if( rc!=SQLITE_OK ){
+      btreeBcSharedLogEntryDelete(pRet);
+      pRet = 0;
+    }
   }
 
   *ppOut = pRet;
@@ -1823,6 +1834,27 @@ static int btreeBcUpdateUnpacked(BtConcurrent *pBtConc, KeyInfo *pKeyInfo){
 
 /* !defined(SQLITE_OMIT_CONCURRENT)
 **
+*/
+static int btreeBcScanIsExact(BtCursor *pCsr){
+  int rc = SQLITE_OK;
+  BtReadIndex *p = &pCsr->pBt->conc.aReadIndex[pCsr->iScanIndex-1];
+  p->aRecMax = (u8*)sqlite3_malloc(p->nRecMin + 8+9);
+  if( p->aRecMax==0 ){
+    rc = SQLITE_NOMEM_BKPT;
+  }else{
+    p->nRecMax = p->nRecMin;
+    memcpy(p->aRecMax, p->aRecMin, p->nRecMax);
+    if( p->drc_min<0 ){
+      p->drc_min = p->drc_min * -1;
+    }
+    p->drc_max = p->drc_min * -1;
+  }
+  pCsr->iScanIndex = 0;
+  return rc;
+}
+
+/* !defined(SQLITE_OMIT_CONCURRENT)
+**
 ** Start a scan.
 */
 static int btreeBcScanStart(
@@ -1862,18 +1894,7 @@ static int btreeBcScanStart(
         ** directly instead of tracking where the cursor finishes up.
         */
         if( (pCsr->hints & BTREE_SEEK_EQ) && rc==SQLITE_OK ){
-          pRead->aRecMax = (u8*)sqlite3_malloc(pRead->nRecMin + 8+9);
-          if( pRead->aRecMax==0 ){
-            rc = SQLITE_NOMEM_BKPT;
-          }else{
-            pRead->nRecMax = pRead->nRecMin;
-            memcpy(pRead->aRecMax, pRead->aRecMin, pRead->nRecMax);
-            if( pRead->drc_min<0 ){
-              pRead->drc_min = pRead->drc_min * -1;
-            }
-            pRead->drc_max = pRead->drc_min * -1;
-          }
-          pCsr->iScanIndex = 0;
+          rc = btreeBcScanIsExact(pCsr);
         }
       }
 
@@ -6049,6 +6070,7 @@ static int btreeRelocateRange(
       ** (i.e. pgno>=iFirst), then discard it and allocate another.  */
       do {
         rc = allocateBtreePage(pBt, &pFree, &iNew, 0, 0);
+        if( rc!=SQLITE_OK ) break;
         if( iNew>=iFirst ){
           assert( sqlite3PagerPageRefcount(pFree->pDbPage)==1 );
           assert( iNew>iPg );
@@ -7907,12 +7929,18 @@ moveto_table_finish:
 ** for rowid 4, the cursor will land on rowid 3. But we want the OCC
 ** range lock on 4-4, not 3-4. That's what this call is for.
 */
-void sqlite3BtreeCursorNoScan(BtCursor *pCsr){
+int sqlite3BtreeCursorNoScan(BtCursor *pCsr){
+  int rc = SQLITE_OK;
   if( pCsr->iScanIndex>0 ){
-    BtReadIntkey *p = &pCsr->pBt->conc.aReadIntkey[pCsr->iScanIndex-1];
-    p->iMax = p->iMin;
-    pCsr->iScanIndex = 0;
+    if( pCsr->pKeyInfo ){
+      rc = btreeBcScanIsExact(pCsr);
+    }else{
+      BtReadIntkey *p = &pCsr->pBt->conc.aReadIntkey[pCsr->iScanIndex-1];
+      p->iMax = p->iMin;
+      pCsr->iScanIndex = 0;
+    }
   }
+  return rc;
 }
 #endif
 

@@ -360,6 +360,8 @@ foreach file {
 
    main.c
    notify.c
+
+   btrecord.c
 } {
   copy_file tsrc/$file
 }

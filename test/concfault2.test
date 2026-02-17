@@ -42,7 +42,7 @@ do_test 1.1 {
 
 faultsim_save_and_close
 
-do_faultsim_test 1 -prep {
+do_faultsim_test 1.1 -prep {
   faultsim_restore_and_reopen
   execsql {
     SELECT * FROM t1;
@@ -62,6 +62,27 @@ do_faultsim_test 1 -prep {
   catchsql { ROLLBACK }
   set res [catchsql { SELECT count(*) FROM t1 }]
   if {$res!="0 9"} { error "expected {0 9} got {$res}" }
+  faultsim_integrity_check
+}
+
+do_faultsim_test 1.2 -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    SELECT * FROM t1;
+  }
+} -body {
+  execsql { 
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES( randomblob(1000), randomblob(1000) );
+      SAVEPOINT xyz;
+        INSERT INTO t1 VALUES( randomblob(1000), randomblob(1000) );
+      ROLLBACK TO xyz;
+        INSERT INTO t1 VALUES( randomblob(1000), randomblob(1000) );
+      RELEASE xyz;
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}} 
   faultsim_integrity_check
 }
 
