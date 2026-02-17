@@ -1,5 +1,5 @@
-C Increase\sthe\snumber\sof\sfloating-point\sprecision\stest\scases\sby\s9x,\sand\nincrease\sthe\srequire\sprecision\sto\s16\sdigits.
-D 2026-02-17T14:02:27.515
+C Minor\sfixes\sto\stmstmpvfs.c.
+D 2026-02-17T14:28:18.685
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -403,7 +403,7 @@ F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bf
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 59cffa5d8e158943ff1ce078956d8e208e8c04e67307e8f249dece2436dcb7fc
 F ext/misc/templatevtab.c 10f15b165b95423ddef593bc5dcb915ec4eb5e0f1066d585e5435a368b8bc22b
-F ext/misc/tmstmpvfs.c 3eb28a9f22f58883f38085daa312467e31ddfd2042c21dcc07173e02a01d68d8
+F ext/misc/tmstmpvfs.c 240caad4441328dc52bd2871f48811db46dff858d5598030e389176837a2f4df
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 12f3a6d0aaff8818c427d79e2b9394328625b3a60ccaa7b628d064084c65cfaf
-R bcf6cb540190f93195962d583ed6f2e0
+P 62c2cf74db5e47f975d1f47818f82f060ddecad4b68c4d4dbc6190cc9a8fc397
+R bae7bcc1d98d32b5cc1ad4c718984cec
 U drh
-Z 9f6a9fb600611e6d6cb6106d77d50061
+Z b56da0878ac4e43a938e2a3c2eed45b5
 # Remove this line to create a well-formed Fossil manifest.
