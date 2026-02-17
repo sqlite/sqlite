@@ -839,7 +839,25 @@ int sqlite3AtoF(const char *z, double *pResult){
 #pragma warning(default : 4756)
 #endif
 
-
+/*
+** Digit pairs used to convert a U64 or I64 into text, two digits
+** at a time.
+*/
+static const union {
+  char a[200];
+  short int forceAlignment;
+} sqlite3DigitPairs = {
+  "00010203040506070809"
+  "10111213141516171819"
+  "20212223242526272829"
+  "30313233343536373839"
+  "40414243444546474849"
+  "50515253545556575859"
+  "60616263646566676869"
+  "70717273747576777879"
+  "80818283848586878889"
+  "90919293949596979899"
+};
 
 
 /*
@@ -853,23 +871,35 @@ int sqlite3AtoF(const char *z, double *pResult){
 int sqlite3Int64ToText(i64 v, char *zOut){
   int i;
   u64 x;
-  char zTemp[22];
-  if( v<0 ){
-    x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : (u64)-v;
-  }else{
+  union {
+    char a[23];
+    u16 forceAlignment;
+  } u;
+  if( v>0 ){
     x = v;
+  }else if( v==0 ){
+    zOut[0] = '0';
+    zOut[1] = 0;
+    return 1;
+  }else{
+    x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : (u64)-v;
   }
-  i = sizeof(zTemp)-2;
-  zTemp[sizeof(zTemp)-1] = 0;
-  while( 1 /*exit-by-break*/ ){
-    zTemp[i] = (x%10) + '0';
-    x = x/10;
-    if( x==0 ) break;
-    i--;
-  };
-  if( v<0 ) zTemp[--i] = '-';
-  memcpy(zOut, &zTemp[i], sizeof(zTemp)-i);
-  return sizeof(zTemp)-1-i;
+  i = sizeof(u.a)-1;
+  u.a[i] = 0;
+  while( x>=10 ){
+    int kk = (x%100)*2;
+    assert( TWO_BYTE_ALIGNMENT(&sqlite3DigitPairs.a[kk]) );
+    assert( TWO_BYTE_ALIGNMENT(&u.a[i-2]) );
+    *(u16*)(&u.a[i-2]) = *(u16*)&sqlite3DigitPairs.a[kk];
+    i -= 2;
+    x /= 100;
+  }
+  if( x ){
+    u.a[--i] = x + '0';
+  }
+  if( v<0 ) u.a[--i] = '-';
+  memcpy(zOut, &u.a[i], sizeof(u.a)-i);
+  return sizeof(u.a)-1-i;
 }
 
 /*
@@ -1184,25 +1214,10 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   i = sizeof(p->zBuf)-1;
   assert( v>0 );
   while( v>=10 ){
-    static const union {
-      char a[200];
-      short int forAlignment;
-    } dig = {
-      "00010203040506070809"
-      "10111213141516171819"
-      "20212223242526272829"
-      "30313233343536373839"
-      "40414243444546474849"
-      "50515253545556575859"
-      "60616263646566676869"
-      "70717273747576777879"
-      "80818283848586878889"
-      "90919293949596979899"
-    };
     int kk = (v%100)*2;
-    assert( TWO_BYTE_ALIGNMENT(&dig.a[kk]) );
+    assert( TWO_BYTE_ALIGNMENT(&sqlite3DigitPairs.a[kk]) );
     assert( TWO_BYTE_ALIGNMENT(&p->zBuf[i-1]) );
-    *(u16*)(&p->zBuf[i-1]) = *(u16*)&dig.a[kk];
+    *(u16*)(&p->zBuf[i-1]) = *(u16*)&sqlite3DigitPairs.a[kk];
     i -= 2;
     v /= 100;
   }

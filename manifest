@@ -1,5 +1,5 @@
-C Simplifications\sto\ssqlite3AtoF(),\sresulting\sin\sslightly\sfaster\sperformance\nand\sslightly\ssmaller\ssize.
-D 2026-02-16T23:52:51.130
+C Faster\sconversion\sof\sintegers\sto\stext,\sby\sconverting\stwo\sdigits\sat\sa\stime.
+D 2026-02-17T00:37:12.629
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/trigger.c a40440614bdf523090cc07223f4878f7e3c892bcd1a13afe18f90190daa5945d
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 06313141ca1d9cf6a80961a6a2084e1f682dfecc741b5c2f527f257f47d61b0a
+F src/util.c a5d1c01e9ac773b2a783db45169fc7674ed2f6e05dadc88052702273ec94928c
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 5328c99dd256ee8132383565a86e253543a85daccfd7477c52f20bac6b385a7f
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a4540582b5b704af13b570b3dc609dbacada719302372a038cf74eee3688d5e7
-R b9f18dca12593a3b130cb73988b798a1
+P 6b9ab641763bc1620a01beec71589506b3b0827bff1c6cd98a5d17c6070050b3
+R 576ef9ddbda75f09f3eafbf37da65a3c
 U drh
-Z c47bffdb8f799c234ea9ad61d838f43a
+Z 308ac5fa17afdaa5c0816c0d53c230b6
 # Remove this line to create a well-formed Fossil manifest.
