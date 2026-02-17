@@ -466,7 +466,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       sqlite3_result_error_nomem(context);
       return;
     }
-    sqlite3AtoF(zBuf, &r, sqlite3Strlen30(zBuf), SQLITE_UTF8);
+    sqlite3AtoF(zBuf, &r);
     sqlite3_free(zBuf);
   }
   sqlite3_result_double(context, r);
@@ -1104,7 +1104,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
       sqlite3_str_appendf(pStr, "%!0.15g", r1);
       zVal = sqlite3_str_value(pStr);
       if( zVal ){
-        sqlite3AtoF(zVal, &r2, pStr->nChar, SQLITE_UTF8);
+        sqlite3AtoF(zVal, &r2);
         if( r1!=r2 ){
           sqlite3_str_reset(pStr);
           sqlite3_str_appendf(pStr, "%!0.20e", r1);

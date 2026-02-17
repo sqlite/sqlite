@@ -3266,7 +3266,7 @@ static void jsonReturnFromBlob(
     to_double:
       z = sqlite3DbStrNDup(db, (const char*)&pParse->aBlob[i+n], (int)sz);
       if( z==0 ) goto returnfromblob_oom;
-      rc = sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
+      rc = sqlite3AtoF(z, &r);
       sqlite3DbFree(db, z);
       if( rc<=0 ) goto returnfromblob_malformed;
       sqlite3_result_double(pCtx, r);

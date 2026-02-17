@@ -320,13 +320,16 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
 **
 ** This is an optimization.  Correct operation continues even if
 ** this routine is a no-op.
+**
+** Return true if the strig is zero-terminated after this routine is
+** called and false if it is not.
 */
-void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
+int sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
   if( (pMem->flags & (MEM_Str|MEM_Term|MEM_Ephem|MEM_Static))!=MEM_Str ){
     /* pMem must be a string, and it cannot be an ephemeral or static string */
-    return;
+    return 0;
   }
-  if( pMem->enc!=SQLITE_UTF8 ) return;
+  if( pMem->enc!=SQLITE_UTF8 ) return 0;
   assert( pMem->z!=0 );
   if( pMem->flags & MEM_Dyn ){
     if( pMem->xDel==sqlite3_free
@@ -334,18 +337,19 @@ void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
     ){
       pMem->z[pMem->n] = 0;
       pMem->flags |= MEM_Term;
-      return;
+      return 1;
     }
     if( pMem->xDel==sqlite3RCStrUnref ){
       /* Blindly assume that all RCStr objects are zero-terminated */
       pMem->flags |= MEM_Term;
-      return;
+      return 1;
     }
   }else if( pMem->szMalloc >= pMem->n+1 ){
     pMem->z[pMem->n] = 0;
     pMem->flags |= MEM_Term;
-    return;
+    return 1;
   }
+  return 0;
 }
 
 /*
@@ -644,17 +648,69 @@ i64 sqlite3VdbeIntValue(const Mem *pMem){
 }
 
 /*
+** Invoke sqlite3AtoF() on the text value of pMem and return the
+** double result.  If sqlite3AtoF() returns an error code, write
+** that code into *pRC if (*pRC)!=NULL.
+**
+** The caller must ensure that pMem->db!=0 and that pMem is in
+** mode MEM_Str or MEM_Blob.
+*/
+SQLITE_NOINLINE double sqlite3MemRealValueRC(Mem *pMem, int *pRC){
+  double val = (double)0;
+  int rc = 0;
+  assert( pMem->db!=0 );
+  assert( pMem->flags & (MEM_Str|MEM_Blob) );
+  if( pMem->z==0 ){
+    /* no-op */
+  }else if( pMem->enc==SQLITE_UTF8 
+   && ((pMem->flags & MEM_Term)!=0 || sqlite3VdbeMemZeroTerminateIfAble(pMem)) 
+  ){
+    rc = sqlite3AtoF(pMem->z, &val);
+  }else if( pMem->n==0 ){
+    /* no-op */
+  }else if( pMem->enc==SQLITE_UTF8 ){
+    char *zCopy = sqlite3DbStrNDup(pMem->db, pMem->z, pMem->n);
+    if( zCopy ){
+      rc = sqlite3AtoF(zCopy, &val);
+      sqlite3DbFree(pMem->db, zCopy);
+    }
+  }else{
+    int n, i, j;
+    char *zCopy;
+    const char *z;
+
+    n = pMem->n & ~1;
+    zCopy = sqlite3DbMallocRaw(pMem->db, n/2 + 2);
+    if( zCopy ){
+      z = pMem->z;
+      if( pMem->enc==SQLITE_UTF16LE ){
+        for(i=j=0; i<n-1; i+=2, j++){
+          zCopy[j] = z[i];
+          if( z[i+1]!=0 ) break;
+        }
+      }else{
+        for(i=j=0; i<n-1; i+=2, j++){
+          if( z[i]!=0 ) break;
+          zCopy[j] = z[i+1];
+        }
+      }     
+      assert( j<=n/2 );
+      zCopy[j] = 0;
+      rc = sqlite3AtoF(zCopy, &val);
+      if( i<n ) rc = -100;
+      sqlite3DbFree(pMem->db, zCopy);
+    }
+  }
+  if( pRC ) *pRC = rc;
+  return val;
+}
+
+/*
 ** Return the best representation of pMem that we can get into a
 ** double.  If pMem is already a double or an integer, return its
 ** value.  If it is a string or blob, try to convert it to a double.
 ** If it is a NULL, return 0.0.
 */
-static SQLITE_NOINLINE double memRealValue(Mem *pMem){
-  /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
-  double val = (double)0;
-  sqlite3AtoF(pMem->z, &val, pMem->n, pMem->enc);
-  return val;
-}
 double sqlite3VdbeRealValue(Mem *pMem){
   assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
@@ -665,7 +721,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
     testcase( pMem->flags & MEM_IntReal );
     return (double)pMem->u.i;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    return memRealValue(pMem);
+    return sqlite3MemRealValueRC(pMem, 0);
   }else{
     /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
     return (double)0;
@@ -789,7 +845,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     sqlite3_int64 ix;
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    rc = sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
+    pMem->u.r = sqlite3MemRealValueRC(pMem, &rc);
     if( ((rc==0 || rc==1) && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1)
      || sqlite3RealSameAsInt(pMem->u.r, (ix = sqlite3RealToI64(pMem->u.r)))
     ){
@@ -1760,7 +1816,7 @@ static int valueFromExpr(
     if( affinity==SQLITE_AFF_BLOB ){
       if( op==TK_FLOAT ){
         assert( pVal && pVal->z && pVal->flags==(MEM_Str|MEM_Term) );
-        sqlite3AtoF(pVal->z, &pVal->u.r, pVal->n, SQLITE_UTF8);
+        sqlite3AtoF(pVal->z, &pVal->u.r);
         pVal->flags = MEM_Real;
       }else if( op==TK_INTEGER ){
         /* This case is required by -9223372036854775808 and other strings

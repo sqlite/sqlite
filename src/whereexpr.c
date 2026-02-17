@@ -293,13 +293,14 @@ static int isLikeOrGlob(
         ){
           int isNum;
           double rDummy;
-          isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
+          assert( zNew[iTo]==0 );
+          isNum = sqlite3AtoF(zNew, &rDummy);
           if( isNum<=0 ){
             if( iTo==1 && zNew[0]=='-' ){
               isNum = +1;
             }else{
               zNew[iTo-1]++;
-              isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
+              isNum = sqlite3AtoF(zNew, &rDummy);
               zNew[iTo-1]--;
             }
           }
