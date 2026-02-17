@@ -630,6 +630,7 @@ void sqlite3VdbeMemShallowCopy(Mem*, const Mem*, int);
 void sqlite3VdbeMemMove(Mem*, Mem*);
 int sqlite3VdbeMemNulTerminate(Mem*);
 int sqlite3VdbeMemSetStr(Mem*, const char*, i64, u8, void(*)(void*));
+int sqlite3VdbeMemSetText(Mem*, const char*, i64, void(*)(void*));
 void sqlite3VdbeMemSetInt64(Mem*, i64);
 #ifdef SQLITE_OMIT_FLOATING_POINT
 # define sqlite3VdbeMemSetDouble sqlite3VdbeMemSetInt64
@@ -648,13 +649,14 @@ int sqlite3VdbeMemSetZeroBlob(Mem*,int);
 int sqlite3VdbeMemIsRowSet(const Mem*);
 #endif
 int sqlite3VdbeMemSetRowSet(Mem*);
-void sqlite3VdbeMemZeroTerminateIfAble(Mem*);
+int sqlite3VdbeMemZeroTerminateIfAble(Mem*);
 int sqlite3VdbeMemMakeWriteable(Mem*);
 int sqlite3VdbeMemStringify(Mem*, u8, u8);
 int sqlite3IntFloatCompare(i64,double);
 i64 sqlite3VdbeIntValue(const Mem*);
 int sqlite3VdbeMemIntegerify(Mem*);
 double sqlite3VdbeRealValue(Mem*);
+SQLITE_NOINLINE double sqlite3MemRealValueRC(Mem*, int*);
 int sqlite3VdbeBooleanValue(Mem*, int ifNull);
 void sqlite3VdbeIntegerAffinity(Mem*);
 int sqlite3VdbeMemRealify(Mem*);

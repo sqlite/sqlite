@@ -69,4 +69,17 @@ do_execsql_test 1.5eqp {
    ORDER BY +a;
 } {/SEARCH t1 USING INDEX t1bc/}
 
+# https://sqlite.org/forum/forumpost/2026-01-16T11:35:28Z
+do_execsql_test 2.1 {
+  DROP TABLE t1;
+  CREATE TABLE t0(x COLLATE NOCASE);
+  CREATE INDEX t0x ON t0(x);
+  CREATE TABLE t1(y);
+  INSERT INTO t0 VALUES('a');
+  INSERT INTO t1 VALUES('AB');
+  SELECT count(*) FROM t0, t1 WHERE (y BETWEEN 1 AND x) OR (x>=y AND x);
+  SELECT count(*) FROM t0, t1 WHERE (x>=y AND x) OR (y BETWEEN 1 AND x);
+} {1 1}
+
+
 finish_test

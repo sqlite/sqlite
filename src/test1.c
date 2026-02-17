@@ -4411,7 +4411,7 @@ static void delIntptr(void *p){
 }
 
 /*
-** bind_carray_intptr STMT IPARAM  INT0 INT1 INT2...
+** bind_carray_intptr STMT IPARAM INT-0 INT-1 INT-2...
 */
 static int SQLITE_TCLAPI bind_carray_intptr(
   void * clientData,
@@ -4455,6 +4455,7 @@ static int SQLITE_TCLAPI bind_carray_intptr(
 **    -malloc
 **    -transient
 **    -static
+**    -v2
 **    -int32
 **    -int64
 **    -double
@@ -4477,6 +4478,7 @@ static int SQLITE_TCLAPI test_carray_bind(
   void *aData = 0;
   int isTransient = 0;
   int isStatic = 0;
+  int isV2 = 0;
   int isMalloc = 0;               /* True to use custom xDel function */
   int idx;
   int i, j;
@@ -4509,15 +4511,21 @@ static int SQLITE_TCLAPI test_carray_bind(
     const char *z = Tcl_GetString(objv[i]);
     if( strcmp(z, "-transient")==0 ){
       isTransient = 1;
+      isStatic = isMalloc = 0;
       xDel = SQLITE_TRANSIENT;
     }else
     if( strcmp(z, "-static")==0 ){
       isStatic = 1;
+      isMalloc = isTransient = 0;
       xDel = SQLITE_STATIC;
     }else
     if( strcmp(z, "-malloc")==0 ){
       isMalloc = 1;
+      isStatic = isTransient = 0;
       xDel = testCarrayFree;
+    }else
+    if( strcmp(z, "-v2")==0 ){
+      isV2 = 1;
     }else
     if( strcmp(z, "-int32")==0 ){
       eType = 0;  /* CARRAY_INT32 */
@@ -4687,7 +4695,20 @@ static int SQLITE_TCLAPI test_carray_bind(
 
   if( rc==SQLITE_OK ){
     if( mFlagsOverride==0 ) mFlagsOverride = eType;
-    rc = sqlite3_carray_bind(pStmt, idx, aData, nData, mFlagsOverride, xDel);
+    if( isV2 ){
+      void *pDel;
+      if( xDel==testCarrayFree ){
+        u8 *p2 = (u8*)aData;
+        pDel = (void*)&p2[-16];
+        xDel = sqlite3_free;
+      }else{
+        pDel = aData;
+      }
+      rc = sqlite3_carray_bind_v2(pStmt, idx, aData, nData, mFlagsOverride,
+                                  xDel, pDel);
+    }else{
+      rc = sqlite3_carray_bind(pStmt, idx, aData, nData, mFlagsOverride, xDel);
+    }
   }
   if( isTransient ){
     if( eType==3 && aData ){

@@ -293,13 +293,14 @@ static int isLikeOrGlob(
         ){
           int isNum;
           double rDummy;
-          isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
+          assert( zNew[iTo]==0 );
+          isNum = sqlite3AtoF(zNew, &rDummy);
           if( isNum<=0 ){
             if( iTo==1 && zNew[0]=='-' ){
               isNum = +1;
             }else{
               zNew[iTo-1]++;
-              isNum = sqlite3AtoF(zNew, &rDummy, iTo, SQLITE_UTF8);
+              isNum = sqlite3AtoF(zNew, &rDummy);
               zNew[iTo-1]--;
             }
           }
@@ -342,6 +343,34 @@ static int isLikeOrGlob(
 }
 #endif /* SQLITE_OMIT_LIKE_OPTIMIZATION */
 
+/*
+** If pExpr is one of "like", "glob", "match", or "regexp", then
+** return the corresponding SQLITE_INDEX_CONSTRAINT_xxxx value.
+** If not, return 0.
+**
+** pExpr is guaranteed to be a TK_FUNCTION.
+*/
+int sqlite3ExprIsLikeOperator(const Expr *pExpr){
+  static const struct {
+    const char *zOp;
+    unsigned char eOp;
+  } aOp[] = {
+    { "match",  SQLITE_INDEX_CONSTRAINT_MATCH },
+    { "glob",   SQLITE_INDEX_CONSTRAINT_GLOB },
+    { "like",   SQLITE_INDEX_CONSTRAINT_LIKE },
+    { "regexp", SQLITE_INDEX_CONSTRAINT_REGEXP }
+  };
+  int i;
+  assert( pExpr->op==TK_FUNCTION );
+  assert( !ExprHasProperty(pExpr, EP_IntValue) );
+  for(i=0; i<ArraySize(aOp); i++){
+    if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
+      return aOp[i].eOp;
+    }
+  }
+  return 0;
+}
+
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
@@ -378,15 +407,6 @@ static int isAuxiliaryVtabOperator(
   Expr **ppRight                  /* Expression to left of MATCH/op2 */
 ){
   if( pExpr->op==TK_FUNCTION ){
-    static const struct Op2 {
-      const char *zOp;
-      unsigned char eOp2;
-    } aOp[] = {
-      { "match",  SQLITE_INDEX_CONSTRAINT_MATCH },
-      { "glob",   SQLITE_INDEX_CONSTRAINT_GLOB },
-      { "like",   SQLITE_INDEX_CONSTRAINT_LIKE },
-      { "regexp", SQLITE_INDEX_CONSTRAINT_REGEXP }
-    };
     ExprList *pList;
     Expr *pCol;                     /* Column reference */
     int i;
@@ -406,16 +426,11 @@ static int isAuxiliaryVtabOperator(
     */
     pCol = pList->a[1].pExpr;
     assert( pCol->op!=TK_COLUMN || (ExprUseYTab(pCol) && pCol->y.pTab!=0) );
-    if( ExprIsVtab(pCol) ){
-      for(i=0; i<ArraySize(aOp); i++){
-        assert( !ExprHasProperty(pExpr, EP_IntValue) );
-        if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
-          *peOp2 = aOp[i].eOp2;
-          *ppRight = pList->a[0].pExpr;
-          *ppLeft = pCol;
-          return 1;
-        }
-      }
+    if( ExprIsVtab(pCol) && (i = sqlite3ExprIsLikeOperator(pExpr))!=0 ){
+      *peOp2 = i;
+      *ppRight = pList->a[0].pExpr;
+      *ppLeft = pCol;
+      return 1;
     }
 
     /* We can also match against the first column of overloaded
@@ -549,16 +564,22 @@ static void whereCombineDisjuncts(
   Expr *pNew;            /* New virtual expression */
   int op;                /* Operator for the combined expression */
   int idxNew;            /* Index in pWC of the next virtual term */
+  Expr *pA, *pB;         /* Expressions associated with pOne and pTwo */
 
   if( (pOne->wtFlags | pTwo->wtFlags) & TERM_VNULL ) return;
   if( (pOne->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
   if( (pTwo->eOperator & (WO_EQ|WO_LT|WO_LE|WO_GT|WO_GE))==0 ) return;
   if( (eOp & (WO_EQ|WO_LT|WO_LE))!=eOp
    && (eOp & (WO_EQ|WO_GT|WO_GE))!=eOp ) return;
-  assert( pOne->pExpr->pLeft!=0 && pOne->pExpr->pRight!=0 );
-  assert( pTwo->pExpr->pLeft!=0 && pTwo->pExpr->pRight!=0 );
-  if( sqlite3ExprCompare(0,pOne->pExpr->pLeft, pTwo->pExpr->pLeft, -1) ) return;
-  if( sqlite3ExprCompare(0,pOne->pExpr->pRight, pTwo->pExpr->pRight,-1) )return;
+  pA = pOne->pExpr;
+  pB = pTwo->pExpr;
+  assert( pA->pLeft!=0 && pA->pRight!=0 );
+  assert( pB->pLeft!=0 && pB->pRight!=0 );
+  if( sqlite3ExprCompare(0,pA->pLeft, pB->pLeft, -1) )  return;
+  if( sqlite3ExprCompare(0,pA->pRight, pB->pRight,-1) ) return;
+  if( ExprHasProperty(pA,EP_Commuted)!=ExprHasProperty(pB,EP_Commuted) ){
+    return;
+  }
   /* If we reach this point, it means the two subterms can be combined */
   if( (eOp & (eOp-1))!=0 ){
     if( eOp & (WO_LT|WO_LE) ){
@@ -569,7 +590,7 @@ static void whereCombineDisjuncts(
     }
   }
   db = pWC->pWInfo->pParse->db;
-  pNew = sqlite3ExprDup(db, pOne->pExpr, 0);
+  pNew = sqlite3ExprDup(db, pA, 0);
   if( pNew==0 ) return;
   for(op=TK_EQ; eOp!=(WO_EQ<<(op-TK_EQ)); op++){ assert( op<TK_GE ); }
   pNew->op = op;

@@ -2903,7 +2903,7 @@ int sqlite3VdbeSetColName(
   }
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx+var*p->nResAlloc]);
-  rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, xDel);
+  rc = sqlite3VdbeMemSetText(pColName, zName, -1, xDel);
   assert( rc!=0 || !zName || (pColName->flags&MEM_Term)!=0 );
   return rc;
 }

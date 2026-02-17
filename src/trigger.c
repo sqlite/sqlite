@@ -363,6 +363,7 @@ void sqlite3FinishTrigger(
   if( NEVER(pParse->nErr) || !pTrig ) goto triggerfinish_cleanup;
   zName = pTrig->zName;
   iDb = sqlite3SchemaToIndex(pParse->db, pTrig->pSchema);
+  assert( iDb>=00 && iDb<db->nDb );
   pTrig->step_list = pStepList;
   while( pStepList ){
     pStepList->pTrig = pTrig;

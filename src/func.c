@@ -466,7 +466,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       sqlite3_result_error_nomem(context);
       return;
     }
-    sqlite3AtoF(zBuf, &r, sqlite3Strlen30(zBuf), SQLITE_UTF8);
+    sqlite3AtoF(zBuf, &r);
     sqlite3_free(zBuf);
   }
   sqlite3_result_double(context, r);
@@ -1104,7 +1104,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
       sqlite3_str_appendf(pStr, "%!0.15g", r1);
       zVal = sqlite3_str_value(pStr);
       if( zVal ){
-        sqlite3AtoF(zVal, &r2, pStr->nChar, SQLITE_UTF8);
+        sqlite3AtoF(zVal, &r2);
         if( r1!=r2 ){
           sqlite3_str_reset(pStr);
           sqlite3_str_appendf(pStr, "%!0.20e", r1);
@@ -1201,7 +1201,7 @@ static void unistrFunc(
   }
   i = j = 0;
   while( i<nIn ){
-    char *z = strchr(&zIn[i],'\\');
+    const char *z = strchr(&zIn[i],'\\');
     if( z==0 ){
       n = nIn - i;
       memmove(&zOut[j], &zIn[i], n);
@@ -1238,7 +1238,7 @@ static void unistrFunc(
     }
   }
   zOut[j] = 0;
-  sqlite3_result_text64(context, zOut, j, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, zOut, j, sqlite3_free, SQLITE_UTF8_ZT);
   return;
 
 unistr_error:
@@ -1331,7 +1331,7 @@ static void charFunc(
     }                                                    \
   }
   *zOut = 0;
-  sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, (char*)z, zOut-z,sqlite3_free,SQLITE_UTF8_ZT);
 }
 
 /*
@@ -1360,7 +1360,7 @@ static void hexFunc(
     }
     *z = 0;
     sqlite3_result_text64(context, zHex, (u64)(z-zHex),
-                          sqlite3_free, SQLITE_UTF8);
+                          sqlite3_free, SQLITE_UTF8_ZT);
   }
 }
 
@@ -1698,7 +1698,7 @@ static void concatFuncCore(
   }
   z[j] = 0;
   assert( j<=n );
-  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8_ZT);
 }
 
 /*

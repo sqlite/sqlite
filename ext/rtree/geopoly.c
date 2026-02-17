@@ -200,7 +200,7 @@ static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
      /* The sqlite3AtoF() routine is much much faster than atof(), if it
      ** is available */
      double r;
-     (void)sqlite3AtoF((const char*)p->z, &r, j, SQLITE_UTF8);
+     (void)sqlite3AtoF((const char*)p->z, &r);
      *pVal = r;
 #else
      *pVal = (GeoCoord)atof((const char*)p->z);

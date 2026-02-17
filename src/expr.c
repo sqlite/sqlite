@@ -1978,9 +1978,7 @@ Select *sqlite3SelectDup(sqlite3 *db, const Select *pDup, int flags){
     pNew->pLimit = sqlite3ExprDup(db, p->pLimit, flags);
     pNew->iLimit = 0;
     pNew->iOffset = 0;
-    pNew->selFlags = p->selFlags & ~(u32)SF_UsesEphemeral;
-    pNew->addrOpenEphm[0] = -1;
-    pNew->addrOpenEphm[1] = -1;
+    pNew->selFlags = p->selFlags;
     pNew->nSelectRow = p->nSelectRow;
     pNew->pWith = sqlite3WithDup(db, p->pWith);
 #ifndef SQLITE_OMIT_WINDOWFUNC
@@ -3422,6 +3420,7 @@ int sqlite3FindInIndex(
     */
     u32 savedNQueryLoop = pParse->nQueryLoop;
     int rMayHaveNull = 0;
+    int bloomOk = (inFlags & IN_INDEX_MEMBERSHIP)!=0;
     eType = IN_INDEX_EPH;
     if( inFlags & IN_INDEX_LOOP ){
       pParse->nQueryLoop = 0;
@@ -3429,7 +3428,13 @@ int sqlite3FindInIndex(
       *prRhsHasNull = rMayHaveNull = ++pParse->nMem;
     }
     assert( pX->op==TK_IN );
-    sqlite3CodeRhsOfIN(pParse, pX, iTab);
+    if( !bloomOk
+     && ExprUseXSelect(pX)
+     && (pX->x.pSelect->selFlags & SF_ClonedRhsIn)!=0
+    ){
+      bloomOk = 1;
+    }
+    sqlite3CodeRhsOfIN(pParse, pX, iTab, bloomOk);
     if( rMayHaveNull ){
       sqlite3SetHasNullFlag(v, iTab, rMayHaveNull);
     }
@@ -3587,7 +3592,8 @@ static int findCompatibleInRhsSubrtn(
 void sqlite3CodeRhsOfIN(
   Parse *pParse,          /* Parsing context */
   Expr *pExpr,            /* The IN operator */
-  int iTab                /* Use this cursor number */
+  int iTab,               /* Use this cursor number */
+  int allowBloom          /* True to allow the use of a Bloom filter */
 ){
   int addrOnce = 0;           /* Address of the OP_Once instruction at top */
   int addr;                   /* Address of OP_OpenEphemeral instruction */
@@ -3709,7 +3715,10 @@ void sqlite3CodeRhsOfIN(
       sqlite3SelectDestInit(&dest, SRT_Set, iTab);
       dest.zAffSdst = exprINAffinity(pParse, pExpr);
       pSelect->iLimit = 0;
-      if( addrOnce && OptimizationEnabled(pParse->db, SQLITE_BloomFilter) ){
+      if( addrOnce
+       && allowBloom
+       && OptimizationEnabled(pParse->db, SQLITE_BloomFilter)
+      ){
         int regBloom = ++pParse->nMem;
         addrBloom = sqlite3VdbeAddOp2(v, OP_Blob, 10000, regBloom);
         VdbeComment((v, "Bloom filter"));
@@ -4202,8 +4211,9 @@ static void sqlite3ExprCodeIN(
       if( ExprHasProperty(pExpr, EP_Subrtn) ){
         const VdbeOp *pOp = sqlite3VdbeGetOp(v, pExpr->y.sub.iAddr);
         assert( pOp->opcode==OP_Once || pParse->nErr );
-        if( pOp->opcode==OP_Once && pOp->p3>0 ){  /* tag-202407032019 */
-          assert( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) );
+        if( pOp->p3>0 ){  /* tag-202407032019 */
+          assert( OptimizationEnabled(pParse->db, SQLITE_BloomFilter)
+                 || pParse->nErr );
           sqlite3VdbeAddOp4Int(v, OP_Filter, pOp->p3, destIfFalse,
                                rLhs, nVector); VdbeCoverage(v);
         }
@@ -4293,7 +4303,7 @@ sqlite3ExprCodeIN_oom_error:
 static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
   if( ALWAYS(z!=0) ){
     double value;
-    sqlite3AtoF(z, &value, sqlite3Strlen30(z), SQLITE_UTF8);
+    sqlite3AtoF(z, &value);
     assert( !sqlite3IsNaN(value) ); /* The new AtoF never returns NaN */
     if( negateFlag ) value = -value;
     sqlite3VdbeAddOp4Dup8(v, OP_Real, 0, iMem, 0, (u8*)&value, P4_REAL);
@@ -7394,7 +7404,10 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       if( pIEpr==0 ) break;
       if( NEVER(!ExprUseYTab(pExpr)) ) break;
       for(i=0; i<pSrcList->nSrc; i++){
-         if( pSrcList->a[0].iCursor==pIEpr->iDataCur ) break;
+         if( pSrcList->a[i].iCursor==pIEpr->iDataCur ){
+           testcase( i>0 );
+           break;
+         }
       }
       if( i>=pSrcList->nSrc ) break;
       if( NEVER(pExpr->pAggInfo!=0) ) break; /* Resolved by outer context */
