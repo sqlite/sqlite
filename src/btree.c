@@ -1264,6 +1264,41 @@ int btreeBcWriteIndexSort(
   return SQLITE_OK;
 }
 
+/*
+** Argument iRoot is the root page number of a b-tree within the database.
+** Figure out which table or index this is using the schema managed by
+** pBt. Return the name of the table. If pzIdx is not NULL and the root
+** page belongs to an index, set (*pzIdx) to the name of the index.
+*/
+static const char *btreeBcRootToObject(
+  BtShared *pBt, 
+  Pgno iRoot, 
+  const char **pzIdx
+){
+  Schema *pSchema = pBt->pSchema;
+  const char *zRet = 0;
+  if( pSchema ){
+    HashElem *pE = sqliteHashFirst(&pSchema->tblHash);
+    for( ; zRet==0 && pE; pE=sqliteHashNext(pE)){
+      Table *pTab = (Table*)sqliteHashData(pE);
+      if( pTab->tnum==iRoot ){
+        zRet = pTab->zName;
+        break;
+      }else{
+        Index *pIdx;
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          if( pIdx->tnum==iRoot ){
+            zRet = pTab->zName;
+            if( pzIdx ) *pzIdx = pIdx->zName;
+          }
+        }
+      }
+    }
+  }
+
+  return zRet;
+}
+
 
 /* !defined(SQLITE_OMIT_CONCURRENT)
 **
@@ -1272,12 +1307,12 @@ int btreeBcWriteIndexSort(
 ** Otherwise, if no conflicts are found, return SQLITE_OK.
 */
 int btreeBcDetectIntkeyConflict(
-  BtConcurrent *pBtConc,
+  BtShared *pBt,
   BtWriteIntkey *aWrite,
   int nWrite
 ){
-  BtReadIntkey *aRead = pBtConc->aReadIntkey;
-  int nRead = pBtConc->nReadIntkey;
+  BtReadIntkey *aRead = pBt->conc.aReadIntkey;
+  int nRead = pBt->conc.nReadIntkey;
   int iRead = 0;
   int iWrite = 0;
 
@@ -1302,8 +1337,17 @@ int btreeBcDetectIntkeyConflict(
         iRead++;
       }
       else{
-        /* iMin <= iKey <= iMax */
-        return SQLITE_BUSY_SNAPSHOT;  /* Conflict */
+        /* A conflict. Before returning, issue a log message. */
+        const char *zTab = 0;
+
+        zTab = btreeBcRootToObject(pBt, iRootRead, 0);
+        sqlite3_log(SQLITE_OK,
+            "cannot commit CONCURRENT transaction - conflict in table %s - "
+            "range (%lld,%lld) conflicts with write to rowid %lld", 
+            (zTab ? zTab : "UNKNOWN"), 
+            aRead[iRead].iMin, aRead[iRead].iMax, iKey
+        );
+        return SQLITE_BUSY_SNAPSHOT;
       }
     }
   }
@@ -1318,10 +1362,11 @@ int btreeBcDetectIntkeyConflict(
 ** SQLITE_BUSY_SNAPSHOT if there is a conflict, or SQLITE_OK otherwise.
 */
 int btreeBcDetectIndexConflict(
-  BtConcurrent *pBtConc,
+  BtShared *pBt,
   BtWriteIndex *aWriteIndex,
   int nWriteIndex
 ){
+  BtConcurrent *pBtConc = &pBt->conc;
   BtReadIndex *aReadIndex = pBtConc->aReadIndex;
   int nReadIndex = pBtConc->nReadIndex;
   int iRead = 0;
@@ -1354,6 +1399,9 @@ int btreeBcDetectIndexConflict(
         );
         if( cmp<=0 ){
           /* Write key is between aRecMin and aRecMax - conflict! */
+          const char *zIdx = 0;
+          const char *zTab = btreeBcRootToObject(pBt, pRead->iRoot, &zIdx);
+          sqlite3BcLogIndexConflict(zTab, zIdx, pWrite, pRead);
           return SQLITE_BUSY_SNAPSHOT;
         }
         /* Write key is greater than aRecMax */
@@ -2000,7 +2048,7 @@ int sqlite3BtreeSortReadArrays(BtConcurrent *pBtConc){
 ** the transaction cannot be written because validation failed, or an
 ** SQLite error code if some other error occurred.
 */
-static int btreeBcTryLogicalCommit(Btree *p){
+static int btreeBcTryLogicalCommit(Btree *p, int *pbLog){
   int rc = SQLITE_OK;
   BtShared *pBt = p->pBt;
 
@@ -2048,6 +2096,7 @@ static int btreeBcTryLogicalCommit(Btree *p){
         pEntry = pEntry->pLogNext;
         assert( pEntry );
       }
+      *pbLog = 1;
     }
 
     /* Loop through all remaining shared-log entries checking for
@@ -2055,11 +2104,9 @@ static int btreeBcTryLogicalCommit(Btree *p){
     ** committed. This block sets rc to SQLITE_BUSY_SNAPSHOT if conflicts
     ** are found.  */
     for(; pEntry && rc==SQLITE_OK; pEntry=pEntry->pLogNext){
-      rc = btreeBcDetectIntkeyConflict(
-          pBtConc, pEntry->aIntkey, pEntry->nIntkey
-      );
+      rc = btreeBcDetectIntkeyConflict(pBt, pEntry->aIntkey, pEntry->nIntkey);
       if( rc==SQLITE_OK ){
-        rc = btreeBcDetectIndexConflict(pBtConc,pEntry->aIndex,pEntry->nIndex);
+        rc = btreeBcDetectIndexConflict(pBt, pEntry->aIndex, pEntry->nIndex);
       }
     }
     sqlite3_mutex_leave(pBtLog->mutex);
@@ -13563,6 +13610,7 @@ int sqlite3HeaderSizeBtree(void){ return ROUND8(sizeof(MemPage)); }
 int sqlite3BtreeExclusiveLock(Btree *p){
   sqlite3 *db = p->db;
   int rc;
+  int bLog = 0;
   Pgno pgno = 0;
   BtShared *pBt = p->pBt;
   assert( p->inTrans==TRANS_WRITE && pBt->pPage1 );
@@ -13584,10 +13632,11 @@ int sqlite3BtreeExclusiveLock(Btree *p){
     /* Page-level locking has detected a conflict. But it is not a 
     ** schema conflict (SQLITE_COMMIT_CONFLICT_PGNO>1) and the BtConcurrent
     ** object is populated. So attempt a logical commit. */
-    rc = btreeBcTryLogicalCommit(p);
+    rc = btreeBcTryLogicalCommit(p, &bLog);
   }
 
-  if( (rc==SQLITE_BUSY_SNAPSHOT)
+  if( bLog==0 
+   && (rc==SQLITE_BUSY_SNAPSHOT)
    && (pgno = db->aCommit[SQLITE_COMMIT_CONFLICT_PGNO]) 
   ){
     int iDb;
@@ -13597,7 +13646,7 @@ int sqlite3BtreeExclusiveLock(Btree *p){
     (void)sqlite3PagerGet(pBt->pPager, pgno, &pPg, 0);
     if( pPg ){
       int bWrite = -1;
-      const char *zObj = 0;
+      const char *zIdx = 0;
       const char *zTab = 0;
       char zContent[17];
 
@@ -13621,24 +13670,7 @@ int sqlite3BtreeExclusiveLock(Btree *p){
         bWrite = sqlite3PagerIswriteable(pPg);
         sqlite3PagerUnref(pPg);
 
-        pSchema = sqlite3SchemaGet(p->db, p);
-        if( pSchema ){
-          for(pE=sqliteHashFirst(&pSchema->tblHash); pE; pE=sqliteHashNext(pE)){
-            Table *pTab = (Table *)sqliteHashData(pE);
-            if( pTab->tnum==pgnoRoot ){
-              zObj = pTab->zName;
-              zTab = 0;
-            }else{
-              Index *pIdx;
-              for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-                if( pIdx->tnum==pgnoRoot ){
-                  zObj = pIdx->zName;
-                  zTab = pTab->zName;
-                }
-              }
-            }
-          }
-        }
+        zTab = btreeBcRootToObject(pBt, pgnoRoot, &zIdx);
       }
 
       sqlite3_log(SQLITE_OK,
@@ -13647,8 +13679,8 @@ int sqlite3BtreeExclusiveLock(Btree *p){
           "(%s page; part of db %s %s%s%s; content=%s...)",
           (int)pgno,
           (bWrite==0?"read-only":(bWrite>0?"read/write":"unknown")),
-          (zTab ? "index" : "table"),
-          (zTab ? zTab : ""), (zTab ? "." : ""), (zObj ? zObj : "UNKNOWN"),
+          (zIdx ? "index" : "table"),
+          (zTab ? zTab : "UNKNOWN"), (zIdx ? "." : ""), (zIdx ? zIdx : ""),
           zContent
       );
     }

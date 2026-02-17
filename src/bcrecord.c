@@ -299,6 +299,35 @@ static char *bcRecordToText(const u8 *aRec, int nRec, int delta){
   return sqlite3_mprintf("(%z)%s", zRet, zDelta);
 }
 
+/*
+** There has just been a conflict between pWrite and pRead on index zIdx, which
+** is attached to table zTab. Issue a log message.
+*/
+void sqlite3BcLogIndexConflict(
+  const char *zTab, 
+  const char *zIdx, 
+  BtWriteIndex *pWrite, 
+  BtReadIndex *pRead
+){
+  sqlite3BeginBenignMalloc();
+  {
+    char *zMin = bcRecordToText(pRead->aRecMin, pRead->nRecMin, pRead->drc_min);
+    char *zMax = bcRecordToText(pRead->aRecMax, pRead->nRecMax, pRead->drc_max);
+    char *zKey = bcRecordToText(pWrite->aRec, pWrite->nRec, 0);
+    sqlite3_log(SQLITE_OK,
+        "cannot commit CONCURRENT transaction - conflict in index %s.%s - "
+        "range (%s,%s) conflicts with write to key %s", 
+        (zTab ? zTab : "UNKNOWN"), 
+        (zIdx ? zIdx : "UNKNOWN"), 
+        zMin, zMax, zKey
+    );
+    sqlite3_free(zMin);
+    sqlite3_free(zMax);
+    sqlite3_free(zKey);
+  }
+  sqlite3EndBenignMalloc();
+}
+
 typedef struct ConcTable ConcTable;
 typedef struct ConcCursor ConcCursor;
 typedef struct ConcRow ConcRow;

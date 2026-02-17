@@ -514,6 +514,13 @@ int sqlite3BcSerializeRecord(
 
 int sqlite3BtreeSortReadArrays(BtConcurrent *pBtConc);
 
+void sqlite3BcLogIndexConflict(
+  const char *zTab, 
+  const char *zIdx, 
+  BtWriteIndex *pWrite, 
+  BtReadIndex *pRead
+);
+
 
 /* A Btree handle
 **

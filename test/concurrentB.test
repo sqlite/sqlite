@@ -1,0 +1,155 @@
+# 2026 February 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
+set ::testprefix concurrentB
+
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+db close
+sqlite3_shutdown
+test_sqlite3_log [list lappend ::log]
+set ::log [list]
+
+sqlite3 db test.db
+
+proc do_test_conflict_msg {tn msg} {
+  set m "cannot commit CONCURRENT transaction - conflict in [string trim $msg]"
+  uplevel [list do_test $tn {lindex $::log end} $m]
+}
+
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+  INSERT INTO t1 VALUES(10, 1), (20, 2), (30, 3), (40, 4), (50, 5);
+} {wal}
+
+sqlite3 db2 test.db
+
+do_test 1.1.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      SELECT x FROM t1 WHERE x=20;
+      UPDATE t1 SET y=y*2 WHERE x=40;
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      UPDATE t1 SET y=y*2 WHERE x=20;
+    COMMIT;
+  } db2
+  catchsql COMMIT
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_test_conflict_msg 1.1.2 {
+  table t1 - range (20,20) conflicts with write to rowid 20
+}
+
+do_test 1.2.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      SELECT x FROM t1 WHERE x<=30;
+      UPDATE t1 SET y=y*2 WHERE x=50;
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      UPDATE t1 SET y=y*2 WHERE x=10;
+    COMMIT;
+  } db2
+  catchsql COMMIT
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_test_conflict_msg 1.2.2 {
+  table t1 - range (-9223372036854775808,40) conflicts with write to rowid 10
+}
+
+#-------------------------------------------------------------------------
+do_execsql_test 2.0 {
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y);
+  CREATE INDEX i2 ON t2(y);
+
+  INSERT INTO t2 VALUES(1, 'a');
+  INSERT INTO t2 VALUES(2, 'b');
+  INSERT INTO t2 VALUES(3, 'c');
+  INSERT INTO t2 VALUES(4, 'd');
+  INSERT INTO t2 VALUES(5, 'e');
+  INSERT INTO t2 VALUES(6, 'a');
+  INSERT INTO t2 VALUES(7, 'b');
+  INSERT INTO t2 VALUES(8, 'c');
+  INSERT INTO t2 VALUES(9, 'd');
+  INSERT INTO t2 VALUES(10, 'e');
+  INSERT INTO t2 VALUES(11, 'a');
+  INSERT INTO t2 VALUES(12, 'b');
+  INSERT INTO t2 VALUES(13, 'c');
+  INSERT INTO t2 VALUES(14, 'd');
+  INSERT INTO t2 VALUES(15, 'e');
+
+} {}
+
+do_test 2.1.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      SELECT x FROM t2 WHERE y='b';
+      INSERT INTO t2 VALUES(16, 'a');
+  };
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t2 VALUES(17, 'b');
+    COMMIT
+  } db2
+  catchsql COMMIT
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_test_conflict_msg 2.1.2 {
+  index t2.i2 - range (('b')-,('b')+) conflicts with write to key ('b',17)
+}
+
+do_test 2.2.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      SELECT x FROM t2 WHERE y>'c';
+      INSERT INTO t2 VALUES(18, 'a');
+  };
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t2 VALUES(19, 'd');
+    COMMIT
+  } db2
+  catchsql COMMIT
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_test_conflict_msg 2.2.2 {
+  index t2.i2 - range (('c')+,()+) conflicts with write to key ('d',19)
+}
+
+do_execsql_test 2.3 {
+  SELECT * FROM t2 WHERE x>15
+} {17 b 19 d}
+
+db close
+db2 close
+sqlite3_shutdown
+test_sqlite3_log 
+sqlite3_initialize
+finish_test
+
+
