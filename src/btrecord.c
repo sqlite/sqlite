@@ -216,6 +216,7 @@ static char *hex_encode(const u8 *aIn, int nIn){
     zRet[i*2] = aDigit[ (aIn[i] >> 4) ];
     zRet[i*2+1] = aDigit[ (aIn[i] & 0xF) ];
   }
+  zRet[i*2] = '\0';
   return zRet;
 }
 

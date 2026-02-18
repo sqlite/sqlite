@@ -1,0 +1,97 @@
+# 2026 February 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.
+#
+# More specifically, it implements tests for BEGIN CONCURRENT with wal2
+# databases.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix concurrentD
+
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = wal2;
+  PRAGMA foreign_keys = on;
+  CREATE TABLE p1(a PRIMARY KEY, b TEXT UNIQUE) WITHOUT ROWID;
+  CREATE TABLE c1(
+    x PRIMARY KEY, 
+    y TEXT REFERENCES p1(b) DEFERRABLE INITIALLY DEFERRED 
+  ) WITHOUT ROWID;
+  CREATE INDEX c1b ON c1(y);
+
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<20
+  ) 
+  INSERT INTO p1 SELECT i, randomblob(16) FROM s;
+  INSERT INTO c1 SELECT a, b FROM p1;
+
+} {wal2}
+
+expr srand(5)
+
+proc randomint {min max} {
+  set ret [expr {$min + int(abs(rand()) * ($max-$min))}]
+  return $ret
+}
+
+set DBLIST [list db1 db2 db3 db4]
+
+set T {
+  UPDATE c1 SET y = (
+    SELECT b FROM p1 WHERE a = randomint(1, 20)
+  ) WHERE x = randomint(1, 20);
+  UPDATE p1 SET b = randomblob(16) WHERE a=randomint(1,25);
+}
+
+foreach hdl $DBLIST {
+  sqlite3 $hdl test.db
+  $hdl func randomint randomint
+  $hdl eval {
+    PRAGMA foreign_keys = ON
+  }
+}
+
+for {set i 0} {$i < 2000} {incr i} {
+  foreach hdl $DBLIST {
+    $hdl eval "BEGIN CONCURRENT"
+    $hdl eval $T
+    if {$i==6} {
+      execsql_pp { SELECT * FROM sqlite_concurrent } $hdl
+    }
+  }
+
+  set tag ""
+  foreach hdl $DBLIST {
+    if {[catch {$hdl eval COMMIT }]} {
+      $hdl eval ROLLBACK
+      append tag R
+    } else {
+      append tag C
+    }
+  }
+
+  do_execsql_test 1.1.$i.$tag {
+    PRAGMA foreign_key_check;
+    PRAGMA integrity_check;
+  } {ok}
+
+  if {[set_test_counter errors]} break
+}
+
+foreach hdl $DBLIST {
+  $hdl close
+}
+
+
+finish_test
+
+

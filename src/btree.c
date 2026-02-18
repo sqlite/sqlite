@@ -1837,8 +1837,13 @@ static int btreeBcUpdateUnpacked(BtConcurrent *pBtConc, KeyInfo *pKeyInfo){
     sqlite3 *db = pKeyInfo->db;
     sqlite3DbFree(db, pBtConc->pUnpacked );
     pBtConc->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pKeyInfo);
-    pBtConc->nUnpackedField = pKeyInfo->nKeyField;
-    return db->mallocFailed ? SQLITE_NOMEM : SQLITE_OK;
+    if( pBtConc->pUnpacked ){
+      pBtConc->nUnpackedField = pKeyInfo->nKeyField;
+      pBtConc->pUnpacked->default_rc = 0;
+    }else{
+      pBtConc->nUnpackedField = 0;
+      return SQLITE_NOMEM;
+    }
   }
   return SQLITE_OK;
 }
@@ -2190,8 +2195,24 @@ static int btreeBcTryLogicalCommit(Btree *p, int *pbLog){
           BtreePayload pay;
           memset(&pay, 0, sizeof(pay));
           if( pWrite->pKeyInfo ){
+            UnpackedRecord *pUnpacked = pBtConc->pUnpacked;
             pay.pKey = (const void*)pWrite->aRec;
             pay.nKey = pWrite->nRec;
+
+            /* For most indexes, this would not be necessary -
+            ** sqlite3BtreeInsert() would decode pay.pKey/pay.nKey 
+            ** automatically. But that case doesn't work if this is
+            ** an UPDATE of a WITHOUT ROWID PRIMARY KEY index. In that
+            ** case sqlite3BtreeInsert() needs the unpacked record - 
+            ** otherwise it inserts a second record instead of correctly
+            ** clobbering the first.  */
+            assert( pUnpacked->default_rc==0 );
+            pUnpacked->pKeyInfo = pWrite->pKeyInfo;
+            pUnpacked->nField = pWrite->pKeyInfo->nKeyField + 1;
+            sqlite3VdbeRecordUnpack(pay.nKey, pay.pKey, pUnpacked);
+            pay.aMem = pUnpacked->aMem;
+            pay.nMem = pWrite->pKeyInfo->nKeyField;
+
           }else{
             pay.nKey = pWrite->iKey;
             pay.pData = (const void*)pWrite->aRec;

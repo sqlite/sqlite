@@ -619,6 +619,46 @@ foreach {tn val res} {
   db2 close
 }
 
+#-------------------------------------------------------------------------
+# Test UPDATE statements on WITHOUT ROWID tables.
+#
+reset_db
+do_execsql_test 11.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+
+  CREATE TABLE t2(a PRIMARY KEY, b TEXT) WITHOUT ROWID;
+  INSERT INTO t2 VALUES(10, 'ten');
+  INSERT INTO t2 VALUES(20, 'twenty');
+  INSERT INTO t2 VALUES(30, 'thirty');
+} {wal}
+
+sqlite3 db2 test.db
+
+
+do_test 11.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      UPDATE t2 SET b='twenty+1' WHERE a=20;
+      SELECT * FROM t1 WHERE a=2;
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      UPDATE t1 SET b='one+1' WHERE a=1;
+    COMMIT;
+  } db2
+  breakpoint
+  execsql {
+    COMMIT
+  }
+} {}
+
+do_execsql_test 11.2 {
+  PRAGMA integrity_check;
+} ok
+
 finish_test
 
 
