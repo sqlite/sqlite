@@ -68,11 +68,14 @@ ifdef CONFIG_NANVIX
       -w $(DOCKER_WORKSPACE_PATH) \
       -e HOME=/tmp \
       $(NANVIX_DOCKER_IMAGE)
+    DOCKER_KVM_GID := $(shell stat -c '%g' /dev/kvm 2>/dev/null || echo 0)
     DOCKER_RUN_FUNCTIONAL := docker run --rm --device /dev/kvm \
+      --user $(DOCKER_UID):$(DOCKER_GID) --group-add $(DOCKER_KVM_GID) \
       -v $(CURDIR):$(DOCKER_WORKSPACE_PATH) \
       -v $(SYSROOT_PATH):$(DOCKER_SYSROOT_PATH) \
       -w $(DOCKER_SYSROOT_PATH) \
       -e HOME=/tmp \
+      -e USER=$(shell whoami) \
       $(NANVIX_DOCKER_IMAGE)
     TOOLCHAIN_PREFIX := $(DOCKER_TOOLCHAIN_PATH)
     SYSROOT_PREFIX := $(DOCKER_SYSROOT_PATH)
@@ -128,7 +131,8 @@ CONFIGURE_OPTS = \
 --prefix="$(INSTALL_PREFIX)" \
 --host=i686-nanvix \
 --disable-tcl \
---disable-threadsafe
+--disable-threadsafe \
+--disable-load-extension
 
 CONFIGURED_MARKER = .nanvix-configured
 
@@ -187,24 +191,24 @@ test-integration: build
 # --- Functional tests: run SQL queries on nanvixd.elf ---
 test-functional: build
 	@echo "=== SQLite functional tests ==="
-	@echo ".bail on" > /tmp/sqlite_test.sql
-	@echo "SELECT 'SQLITE_TEST_HELLO: Hello from SQLite';" >> /tmp/sqlite_test.sql
-	@echo "CREATE TABLE nanvix_test(id INTEGER PRIMARY KEY, name TEXT);" >> /tmp/sqlite_test.sql
-	@echo "INSERT INTO nanvix_test VALUES(1, 'nanvix');" >> /tmp/sqlite_test.sql
-	@echo "INSERT INTO nanvix_test VALUES(2, 'python');" >> /tmp/sqlite_test.sql
-	@echo "SELECT 'SQLITE_TEST_COUNT:', count(*) FROM nanvix_test;" >> /tmp/sqlite_test.sql
-	@echo "SELECT 'SQLITE_TEST_ROW:', id, name FROM nanvix_test WHERE id=1;" >> /tmp/sqlite_test.sql
+	@echo ".bail on" > _sqlite_test.sql
+	@echo "SELECT 'SQLITE_TEST_HELLO: Hello from SQLite';" >> _sqlite_test.sql
+	@echo "CREATE TABLE nanvix_test(id INTEGER PRIMARY KEY, name TEXT);" >> _sqlite_test.sql
+	@echo "INSERT INTO nanvix_test VALUES(1, 'nanvix');" >> _sqlite_test.sql
+	@echo "INSERT INTO nanvix_test VALUES(2, 'python');" >> _sqlite_test.sql
+	@echo "SELECT 'SQLITE_TEST_COUNT:', count(*) FROM nanvix_test;" >> _sqlite_test.sql
+	@echo "SELECT 'SQLITE_TEST_ROW:', id, name FROM nanvix_test WHERE id=1;" >> _sqlite_test.sql
 ifdef CONFIG_NANVIX_DOCKER
 	@echo "  Running sqlite3$(EXE) via nanvixd.elf (Docker)..."
 	$(DOCKER_RUN_FUNCTIONAL) sh -c \
-	  'timeout 120 ./bin/nanvixd.elf -- $(DOCKER_WORKSPACE_PATH)/sqlite3$(EXE) < /tmp/sqlite_test.sql'
+	  'timeout --foreground 120 ./bin/nanvixd.elf -- $(DOCKER_WORKSPACE_PATH)/sqlite3$(EXE) < $(DOCKER_WORKSPACE_PATH)/_sqlite_test.sql'
 	@echo "  PASS: sqlite3 (exit code 0)"
 else
 	@echo "  Running sqlite3$(EXE) via nanvixd.elf..."
-	cd "$(SYSROOT_PATH)" && timeout 120 ./bin/nanvixd.elf -- $(abspath sqlite3$(EXE)) < /tmp/sqlite_test.sql
+	cd "$(SYSROOT_PATH)" && timeout --foreground 120 ./bin/nanvixd.elf -- $(abspath sqlite3$(EXE)) < $(abspath _sqlite_test.sql)
 	@echo "  PASS: sqlite3 (exit code 0)"
 endif
-	@rm -f /tmp/sqlite_test.sql
+	@rm -f _sqlite_test.sql
 	@echo "  PASS: SQLite functional tests"
 
 # --- Run all test levels ---
@@ -230,7 +234,7 @@ ifdef CONFIG_NANVIX_DOCKER
 	  -e HOME=/tmp \
 	  $(NANVIX_DOCKER_IMAGE) make install DESTDIR="$(STAGING)"
   else
-	$(DOCKER_RUN) make install DESTDIR="$(STAGING)"
+	$(DOCKER_RUN) make install DESTDIR="$(DOCKER_WORKSPACE_PATH)/dist/$(ARTIFACT_NAME)"
   endif
 else
 	make install DESTDIR="$(STAGING)"
@@ -275,7 +279,7 @@ endif
 
 clean:
 	-make clean 2>/dev/null || true
-	rm -f $(CONFIGURED_MARKER) sqlite3$(EXE)
+	rm -f $(CONFIGURED_MARKER) sqlite3$(EXE) _sqlite_test.sql
 	rm -rf dist/
 
 distclean: clean
