@@ -649,7 +649,6 @@ do_test 11.1 {
       UPDATE t1 SET b='one+1' WHERE a=1;
     COMMIT;
   } db2
-  breakpoint
   execsql {
     COMMIT
   }
@@ -658,6 +657,107 @@ do_test 11.1 {
 do_execsql_test 11.2 {
   PRAGMA integrity_check;
 } ok
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 12.0 {
+  PRAGMA  journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE UNIQUE INDEX i1 ON t1(b);
+} {wal}
+
+do_execsql_test 12.1 {
+  BEGIN CONCURRENT;
+    INSERT INTO t1 VALUES(45, 'hello');
+    SELECT * FROM sqlite_concurrent;
+} {
+  2 read 45 45 
+  3 read ('hello') ('hello') 
+  2 insert 45 (NULL,'hello') 
+  3 insert ('hello',45) {}
+}
+execsql ROLLBACK
+
+#-------------------------------------------------------------------------
+# Test that logical retry is not attempted if the transaction wrote
+# using an incremental blob handle.
+#
+db2 close
+reset_db
+do_execsql_test 13.0 {
+  PRAGMA  journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t2 VALUES(1, zeroblob(32));
+} {wal}
+
+sqlite3 db2 test.db
+
+do_test 13.1.1 {
+
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(45, 'hello');
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(46, 'goodbye');
+    COMMIT
+  } db2
+
+  set fd [db incrblob t2 b 1]
+  puts $fd "onetwothree"
+  close $fd
+
+  catchsql COMMIT
+} {1 {database is locked}}
+
+do_test 13.1.2 { catchsql COMMIT } {1 {database is locked}}
+do_test 13.1.3 { catchsql COMMIT } {1 {database is locked}}
+execsql ROLLBACK
+do_execsql_test 13.1.4 {
+  SELECT hex(b) FROM t2
+} {0000000000000000000000000000000000000000000000000000000000000000}
+
+do_execsql_test 13.2.1 {
+  INSERT INTO t2(b) SELECT b FROM t2;  -- 2
+  INSERT INTO t2(b) SELECT b FROM t2;  -- 4
+  INSERT INTO t2(b) SELECT b FROM t2;  -- 8
+  INSERT INTO t2(b) SELECT b FROM t2;  -- 16
+  INSERT INTO t2(b) SELECT b FROM t2;  -- 32
+  INSERT INTO t2(b) SELECT b FROM t2;  -- 64
+}
+
+do_test 13.2.2 {
+  execsql { BEGIN CONCURRENT }
+
+  set fd [db incrblob -readonly t2 b 5]
+  read $fd
+  close $fd
+
+  set fd [db incrblob -readonly t2 b 64]
+  read $fd
+  close $fd
+
+  set fd [db incrblob -readonly t2 b 20]
+  read $fd
+  sqlite3_blob_reopen $fd 25
+  read $fd
+  sqlite3_blob_reopen $fd 30
+  read $fd
+  close $fd
+} {}
+do_execsql_test 13.2.3 {
+  SELECT * FROM sqlite_concurrent
+} {
+  3 read 5 5 
+  3 read 64 64 
+  3 read 20 20
+  3 read 25 25
+  3 read 30 30
+}
+execsql ROLLBACK
 
 finish_test
 

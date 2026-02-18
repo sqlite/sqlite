@@ -13589,6 +13589,11 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
 ** Mark this cursor as an incremental blob cursor.
 */
 void sqlite3BtreeIncrblobCursor(BtCursor *pCur){
+#ifndef SQLITE_OMIT_CONCURRENT
+  if( pCur->curFlags & BTCF_WriteFlag ){
+    pCur->pBt->conc.eState = BTCONC_STATE_RETIRED;
+  }
+#endif
   pCur->curFlags |= BTCF_Incrblob;
   pCur->pBtree->hasIncrblobCur = 1;
 }
