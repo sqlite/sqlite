@@ -148,7 +148,7 @@ jobs:
 
       - name: Functional Tests
         run: |
-          make -f Makefile.nanvix CONFIG_NANVIX=y \
+          timeout --foreground 300 make -f Makefile.nanvix CONFIG_NANVIX=y \
             NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" test-functional
 
       - name: Package
@@ -160,6 +160,21 @@ jobs:
             package
           ARTIFACT_NAME="sqlite-${{ matrix.platform }}-${{ matrix.process-mode }}"
           echo "ARTIFACT_TARBALL=dist/${ARTIFACT_NAME}.tar.bz2" >> "$GITHUB_ENV"
+
+      - name: Verify Package
+        run: |
+          set -euo pipefail
+          TARBALL="dist/sqlite-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
+          if [[ ! -f "$TARBALL" ]]; then
+            echo "::error::Package tarball not found: $TARBALL"
+            exit 1
+          fi
+          echo "Package contents:"
+          tar tjf "$TARBALL"
+          if ! (set +o pipefail; tar tjf "$TARBALL" | grep -q 'sysroot/lib/'); then
+            echo "::error::Package missing sysroot/lib/ entries"
+            exit 1
+          fi
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
