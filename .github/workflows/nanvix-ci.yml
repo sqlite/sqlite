@@ -164,17 +164,17 @@ jobs:
       - name: Verify Package
         run: |
           set -euo pipefail
-          if [[ ! -f "$ARTIFACT_TARBALL" ]]; then
-            echo "::error::Package tarball not found: $ARTIFACT_TARBALL"
-            exit 1
-          fi
-          if ! tar tjf "$ARTIFACT_TARBALL" | grep -q '^sysroot/lib/'; then
-            echo "::error::Package missing sysroot/lib/ entries"
-            tar tjf "$ARTIFACT_TARBALL"
+          TARBALL="dist/sqlite-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
+          if [[ ! -f "$TARBALL" ]]; then
+            echo "::error::Package tarball not found: $TARBALL"
             exit 1
           fi
           echo "Package contents:"
-          tar tjf "$ARTIFACT_TARBALL"
+          tar tjf "$TARBALL"
+          if ! tar tjf "$TARBALL" | grep -q 'sysroot/lib/'; then
+            echo "::error::Package missing sysroot/lib/ entries"
+            exit 1
+          fi
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
