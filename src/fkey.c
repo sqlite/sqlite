@@ -908,6 +908,7 @@ void sqlite3FkCheck(
   if( !IsOrdinaryTable(pTab) ) return;
 
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  assert( iDb>=00 && iDb<db->nDb );
   zDb = db->aDb[iDb].zDbSName;
 
   /* Loop through all the foreign key constraints for which pTab is the

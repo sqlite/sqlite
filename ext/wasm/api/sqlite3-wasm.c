@@ -594,6 +594,7 @@ SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_enum_json,(void)){
   DefGroup(encodings) {
     /* Noting that the wasm binding only aims to support UTF-8. */
     DefInt(SQLITE_UTF8);
+    DefInt(SQLITE_UTF8_ZT);
     DefInt(SQLITE_UTF16LE);
     DefInt(SQLITE_UTF16BE);
     DefInt(SQLITE_UTF16);

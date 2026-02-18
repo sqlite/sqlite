@@ -26,19 +26,20 @@ sqlite3_create_function db
 do_execsql_test fpconv1-1.0 {
   WITH RECURSIVE
        /* Number of random floating-point values to try.
-       ** On a circa 2016 x64 linux box, this test runs at
-       ** about 80000 cases per second  -------------------vvvvvv */
-    c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100000),
+       ** On a circa 2021 Ryzen 5950X running Mint Linux, and
+       ** compiled with -O0 -DSQLITE_DEBUG, this test runs at
+       ** about 150000 cases per second  ------------------vvvvvv */
+    c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<900000),
     fp(y) AS MATERIALIZED (
        SELECT CAST( format('%+d.%019d0e%+03d',
                            random()%10,abs(random()),random()%200) AS real)
         FROM c
     )
   SELECT y FROM fp
-   WHERE -log10(abs(decimal_sub(dtostr(y,24),format('%!.24e',y))/y))<15.0;
+   WHERE -log10(abs(decimal_sub(dtostr(y,24),format('%!.24e',y))/y))<16.0;
                      /* Number of digits of accuracy required -------^^^^ */
 } {}
 #  ^---- Expect a empty set as the result.  The output is all tested numbers
-#        that fail to preserve at least 15 significant digits of accuracy.
+#        that fail to preserve at least 16 significant digits of accuracy.
 
 finish_test

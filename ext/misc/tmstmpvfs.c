@@ -12,9 +12,7 @@
 **
 ** This file implements a VFS shim that writes a timestamp and other tracing
 ** information into 16 byts of reserved space at the end of each page of the
-** database file.  The additional data is written as the page is added to
-** the WAL file for databases in WAL mode, or as the database file itself
-** is modified in rollback modes.
+** database file.
 **
 ** The VFS also tries to generate log-files with names of the form:
 **
@@ -44,8 +42,7 @@
 **
 ** Another option is to statically link both SQLite and this extension
 ** into your application.  If both this file and "sqlite3.c" are statically
-** linked, and if "sqlite3.c" is compiled with -DSQLITE_EXTRA_INIT=
-** SQLite amalgamation "sqlite3.c" file with the option like:
+** linked, and if "sqlite3.c" is compiled with an option like:
 **
 **       -DSQLITE_EXTRA_INIT=sqlite3_register_tmstmpvfs
 **
@@ -139,12 +136,17 @@
 **   bytes 0,1     Zero.  Reserved for future expansion
 **   bytes 2-7     Milliseconds since the Unix Epoch
 **   bytes 8-11    WAL frame number
-**   bytes 12      0: WAL write  1: WAL txn  2: rollback write
+**   bytes 12      0: WAL write  2: rollback write
 **   bytes 13-15   Lower 24 bits of Salt-1
 **
 ** For transactions that occur in rollback mode, only the timestamp
 ** in bytes 2-7 and byte 12 are non-zero.  Byte 12 is set to 2 for
 ** rollback writes.
+**
+** The 16-byte tag is added to each database page when the content
+** is written into the database file itself.  This shim does not make
+** any changes to the page as it is written to the WAL file, since
+** that would mess up the WAL checksum.
 **
 ** LOGGING
 **
@@ -192,6 +194,7 @@
 **   ELOG_CKPT_PAGE       "Page xfer from WAL to database"
 **                        op = 0x06
 **                        a2 = database page number
+**                        a3 = frame number in the WAL file
 **
 **   ELOG_CKPT_END        "Start of a checkpoint operation"
 **                        op = 0x07
@@ -205,6 +208,62 @@
 **
 **   ELOG_CLOSE_DB        "Close the DB connection"
 **                        op = 0x0f
+**
+** VIEWING TIMESTAMPS AND LOGS
+**
+** The command-line utility at tool/showtmlog.c will read and display
+** the content of one or more tmstmpvfs.c log files.  If all of the
+** log files are stored in directory $(DATABASE)-tmstmp, then you can
+** view them all using a command like shown below (with an extra "?"
+** inserted on the wildcard to avoid closing the C-language comment
+** that contains this text):
+**
+**    showtmlog $(DATABASE)-tmstmp/?*
+**
+** The command-line utility at tools/showdb.c can be used to show the
+** timestamps on pages of a database file, using a command like this:
+**
+**    showdb --tmstmp $(DATABASE) pgidx
+*
+** The command above shows the timestamp and the intended use of every
+** pages in the database, in human-readable form.  If you also add
+** the --csv option to the command above, then the command generates
+** a Comma-Separated-Value (CSV) file as output, which contains a
+** decoding of the complete timestamp tag on each page of the database.
+** This CVS file can be easily imported into another SQLite database
+** using a CLI command like the following:
+**
+**    .import --csv '|showdb --tmstmp -csv orig.db pgidx' ts_table
+**
+** In the command above, the database containing the timestamps is
+** "orig.db" and the content is imported into a new table named "ts_table".
+** The "ts_table" is created automatically, using the column names found
+** in the first line of the CSV file.  All columns of the automatically
+** created ts_table are of type TEXT.  It might make more sense to
+** create the table yourself, using more sensible datatypes, like this:
+**
+**   CREATE TABLE ts_table (
+**     pgno INT,        -- page number
+**     tm REAL,         -- seconds since 1970-01-01
+**     frame INT,       -- WAL frame number
+**     flg INT,         -- flag (tag byte 12)
+**     salt INT,        -- WAL salt (tag bytes 13-15)
+**     parent INT,      -- Parent page number
+**     child INT,       -- Index of this page in its parent
+**     ovfl INT,        -- Index of this page on the overflow chain
+**     txt TEXT         -- Description of this page
+**   );
+**
+** Then import using:
+**
+**   .import --csv --skip 1 '|showdb --tmstmp --csv orig.db pgidx' ts_table
+**
+** Note the addition of the "--skip 1" option on ".import" to bypass the
+** first line of the CSV file that contains the column names.
+**
+** Both programs "showdb" and "showtmlog" can be built by running
+** "make showtmlog showdb" from the top-level of a recent SQLite
+** source tree.
 */
 #if defined(SQLITE_AMALGAMATION) && !defined(SQLITE_TMSTMPVFS_STATIC)
 # define SQLITE_TMSTMPVFS_STATIC
@@ -269,7 +328,7 @@ struct  TmstmpLog {
   unsigned char a[16*6]; /* Buffered header for the log */
 };
 
-/* An open WAL file */
+/* An open WAL or DB file */
 struct TmstmpFile {
   sqlite3_file base;     /* IO methods */
   u32 uMagic;            /* Magic number for sanity checking */
@@ -425,6 +484,7 @@ static void tmstmpPutU32(u32 v, unsigned char *a){
 /* Free a TmstmpLog object */
 static void tmstmpLogFree(TmstmpLog *pLog){
   if( pLog==0 ) return;
+  if( pLog->log ) fclose(pLog->log);
   sqlite3_free(pLog->zLogname);
   sqlite3_free(pLog);
 }
@@ -443,6 +503,7 @@ static int tmstmpLogFlush(TmstmpFile *p){
     }
   }
   (void)fwrite(pLog->a, pLog->n, 1, pLog->log);
+  fflush(pLog->log);
   pLog->n = 0;
   return 0;
 }
@@ -455,7 +516,8 @@ static void tmstmpEvent(
   u8 op,
   u8 a1,
   u32 a2,
-  u32 a3
+  u32 a3,
+  u8 *pTS
 ){
   unsigned char *a;
   TmstmpLog *pLog;
@@ -472,7 +534,11 @@ static void tmstmpEvent(
   a = pLog->a + pLog->n;
   a[0] = op;
   a[1] = a1;
-  tmstmpPutTS(p, a+2);
+  if( pTS ){
+    memcpy(a+2, pTS, 6);
+  }else{
+    tmstmpPutTS(p, a+2);
+  }
   tmstmpPutU32(a2, a+8);
   tmstmpPutU32(a3, a+12);
   pLog->n += 16;
@@ -487,7 +553,7 @@ static void tmstmpEvent(
 static int tmstmpClose(sqlite3_file *pFile){
   TmstmpFile *p = (TmstmpFile *)pFile;
   if( p->hasCorrectReserve ){
-    tmstmpEvent(p, p->isDb ? ELOG_CLOSE_DB : ELOG_CLOSE_WAL, 0, 0, 0);
+    tmstmpEvent(p, p->isDb ? ELOG_CLOSE_DB : ELOG_CLOSE_WAL, 0, 0, 0, 0);
   }
   tmstmpLogFree(p->pLog);
   if( p->pPartner ){
@@ -526,6 +592,12 @@ static int tmstmpRead(
       p->pPartner->pgsz = p->pgsz;
     }
   }
+  if( p->isWal
+   && p->inCkpt
+   && iAmt>=512 && iAmt<=65535 && (iAmt&(iAmt-1))==0
+  ){
+    p->pPartner->iFrame = (iOfst-56)/(p->pgsz+24) + 1;
+  }
   return rc;
 }
 
@@ -547,27 +619,29 @@ static int tmstmpWrite(
     if( iAmt==24 ){
       /* A frame header */
       u32 x = 0;
-      p->iFrame = (iOfst - 32)/(p->pgsz+24);
+      p->iFrame = (iOfst - 32)/(p->pgsz+24)+1;
       p->pgno = tmstmpGetU32((const u8*)zBuf);
       p->salt1 = tmstmpGetU32(((const u8*)zBuf)+8);
       memcpy(&x, ((const u8*)zBuf)+4, 4);
       p->isCommit = (x!=0);
       p->iOfst = iOfst;
     }else if( iAmt>=512 && iOfst==p->iOfst+24 ){
-      unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
+      unsigned char s[TMSTMP_RESERVE];
       memset(s, 0, TMSTMP_RESERVE);
       tmstmpPutTS(p, s+2);
-      tmstmpPutU32(p->iFrame, s+8);
-      tmstmpPutU32(p->salt1, s+12);
-      s[12] = p->isCommit ? 1 : 0;
-      tmstmpEvent(p, ELOG_WAL_PAGE, s[12], p->pgno, p->iFrame);
+      tmstmpEvent(p, ELOG_WAL_PAGE, p->isCommit, p->pgno, p->iFrame, s+2);
     }else if( iAmt==32 && iOfst==0 ){
-      u32 salt1 = tmstmpGetU32(((const u8*)zBuf)+16);
-      tmstmpEvent(p, ELOG_WAL_RESET, 0, 0, salt1);
+      p->salt1 = tmstmpGetU32(((const u8*)zBuf)+16);
+      tmstmpEvent(p, ELOG_WAL_RESET, 0, 0, p->salt1, 0);
     }
   }else if( p->inCkpt ){
+    unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
+    memset(s, 0, TMSTMP_RESERVE);
+    tmstmpPutTS(p, s+2);
+    tmstmpPutU32(p->iFrame, s+8);
+    tmstmpPutU32(p->pPartner->salt1 & 0xffffff, s+12);
     assert( p->pgsz>0 );
-    tmstmpEvent(p, ELOG_CKPT_PAGE, 0, (iOfst/p->pgsz)+1, 0);
+    tmstmpEvent(p, ELOG_CKPT_PAGE, 0, (iOfst/p->pgsz)+1, p->iFrame, 0);
   }else if( p->pPartner==0 ){
     /* Writing into a database in rollback mode */
     unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
@@ -575,7 +649,7 @@ static int tmstmpWrite(
     tmstmpPutTS(p, s+2);
     s[12] = 2;
     assert( p->pgsz>0 );
-    tmstmpEvent(p, ELOG_DB_PAGE, 0, (u32)(iOfst/p->pgsz), 0);
+    tmstmpEvent(p, ELOG_DB_PAGE, 0, (u32)(iOfst/p->pgsz)+1, 0, s+2);
   }
   return pSub->pMethods->xWrite(pSub,zBuf,iAmt,iOfst);
 }
@@ -650,7 +724,7 @@ static int tmstmpFileControl(sqlite3_file *pFile, int op, void *pArg){
       assert( p->pPartner!=0 );
       p->pPartner->inCkpt = 1;
       if( p->hasCorrectReserve ){
-        tmstmpEvent(p, ELOG_CKPT_START, 0, 0, 0);
+        tmstmpEvent(p, ELOG_CKPT_START, 0, 0, 0, 0);
       }
       rc = SQLITE_OK;
       break;
@@ -661,7 +735,7 @@ static int tmstmpFileControl(sqlite3_file *pFile, int op, void *pArg){
       assert( p->pPartner!=0 );
       p->pPartner->inCkpt = 0;
       if( p->hasCorrectReserve ){
-        tmstmpEvent(p, ELOG_CKPT_DONE, 0, 0, 0);
+        tmstmpEvent(p, ELOG_CKPT_DONE, 0, 0, 0, 0);
       }
       rc = SQLITE_OK;
       break;
@@ -787,7 +861,7 @@ static int tmstmpOpen(
     TmstmpLog *pLog;
     sqlite3_uint64 r1;         /* Milliseconds since 1970-01-01 */
     sqlite3_uint64 days;       /* Days since 1970-01-01 */
-    sqlite3_uint64 sod;        /* Start of date specified by ms */
+    sqlite3_uint64 sod;        /* Start of date specified by r1 */
     sqlite3_uint64 z;          /* Days since 0000-03-01 */
     sqlite3_uint64 era;        /* 400-year era */
     int h;                     /* hour */
@@ -807,7 +881,9 @@ static int tmstmpOpen(
     r1 = 0;
     pLog = sqlite3_malloc64( sizeof(TmstmpLog) );
     if( pLog==0 ){
-      return SQLITE_NOMEM;
+      pSubFile->pMethods->xClose(pSubFile);
+      rc = SQLITE_NOMEM;
+      goto tmstmp_open_done;
     }
     memset(pLog, 0, sizeof(pLog[0]));
     p->pLog = pLog;
@@ -821,7 +897,7 @@ static int tmstmpOpen(
     m = (sod%3600)/60;
     s = sod%60;
     z = days + 719468;
-    era = z/147097;
+    era = z/146097;
     doe = (unsigned)(z - era*146097);
     yoe = (doe - doe/1460 + doe/36524 - doe/146096)/365;
     y = (int)yoe + era*400;
@@ -836,7 +912,7 @@ static int tmstmpOpen(
          "%s-tmstmp/%04d%02d%02dT%02d%02d%02d%03d-%08d-%08x",
           zName,       Y,  M,  D,   h,  m,  s,  f, pid,  r2);
   }
-  tmstmpEvent(p, p->isWal ? ELOG_OPEN_WAL : ELOG_OPEN_DB, 0, GETPID, 0);
+  tmstmpEvent(p, p->isWal ? ELOG_OPEN_WAL : ELOG_OPEN_DB, 0, GETPID, 0, 0);
 
 tmstmp_open_done:
   if( rc ) pFile->pMethods = 0;

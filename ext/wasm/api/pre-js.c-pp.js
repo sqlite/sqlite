@@ -27,10 +27,13 @@
 
    This SQLite JS build configuration is entirely unsupported! It has
    not been tested beyond the ability to compile it. It may not
-   load. It may not work properly. Only builds targeting browser
-   environments are supported and tested.
+   load. It may not work properly. Only builds _directly_ targeting
+   browser environments ("vanilla" JS and ESM modules) are supported
+   and tested. Builds which _indirectly_ target browsers (namely
+   bundler-friendly builds) are not supported deliverables.
 */
 //#endif
+//#if not target:es6-bundler-friendly
 (function(Module){
   const sIMS =
         globalThis.sqlite3InitModuleState/*from extern-post-js.c-pp.js*/
@@ -68,6 +71,14 @@
      approach.
   */
   Module['locateFile'] = function(path, prefix) {
+    if( this.emscriptenLocateFile instanceof Function ){
+      /* [tag:locateFile] Client-overridden impl. We do not support
+         this but offer it as a back-door which will go away the
+         moment either Emscripten changes that interface or we manage
+         to get non-Emscripten builds working.
+         https://sqlite.org/forum/forumpost/1eec339854c935bd */
+      return this.emscriptenLocateFile(path, prefix);
+    }
 //#if target:es6-module
     return new URL(path, import.meta.url).href;
 //#else
@@ -107,6 +118,10 @@
      node does not do fetch().
   */
   Module['instantiateWasm'] = function callee(imports,onSuccess){
+    if( this.emscriptenInstantiateWasm instanceof Function ){
+      /* See [tag:locateFile]. Same story here */
+      return this.emscriptenInstantiateWasm(imports, onSuccess);
+    }
     const sims = this;
     const uri = Module.locateFile(
       sims.wasmFilename, (
@@ -134,4 +149,5 @@
   }.bind(sIMS);
 //#endif Module.instantiateWasm and not wasmfs
 })(Module);
+//#endif not target:es6-bundler-friendly
 /* END FILE: api/pre-js.js. */

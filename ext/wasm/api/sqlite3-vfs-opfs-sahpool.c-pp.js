@@ -410,7 +410,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*vfsMethods*/;
 
   /**
-     Creates and initializes an sqlite3_vfs instance for an
+     Creates, initializes, and returns an sqlite3_vfs instance for an
      OpfsSAHPool. The argument is the VFS's name (JS string).
 
      Throws if the VFS name is already registered or if something
@@ -1157,8 +1157,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      described at the end of these docs.
 
      This function accepts an options object to configure certain
-     parts but it is only acknowledged for the very first call and
-     ignored for all subsequent calls.
+     parts but it is only acknowledged for the very first call for
+     each distinct name and ignored for all subsequent calls with that
+     same name.
 
      The options, in alphabetical order:
 
@@ -1224,7 +1225,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - Paths given to it _must_ be absolute. Relative paths will not
      be properly recognized. This is arguably a bug but correcting it
      requires some hoop-jumping in routines which have no business
-     doing such tricks.
+     doing such tricks. (2026-01-19 (2.5 years later): the specifics
+     are lost to history, but this was a side effect of xOpen()
+     receiving an immutable C-string filename, to which no implicit
+     "/" can be prefixed without causing a discrepancy between what
+     the user provided and what the VFS stores. Its conceivable that
+     that quirk could be glossed over in xFullPathname(), but
+     regressions when doing so cannot be ruled out, so there are no
+     current plans to change this behavior.)
 
      - It is possible to install multiple instances under different
      names, each sandboxed from one another inside their own private
