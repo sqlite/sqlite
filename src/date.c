@@ -429,7 +429,7 @@ static int parseDateOrTime(
     return 0;
   }else if( sqlite3StrICmp(zDate,"now")==0 && sqlite3NotPureFunc(context) ){
     return setDateTimeToCurrent(context, p);
-  }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8)>0 ){
+  }else if( sqlite3AtoF(zDate, &r)>0 ){
     setRawDateNumber(p, r);
     return 0;
   }else if( (sqlite3StrICmp(zDate,"subsec")==0
@@ -875,7 +875,7 @@ static int parseModifier(
       ** date is already on the appropriate weekday, this is a no-op.
       */
       if( sqlite3_strnicmp(z, "weekday ", 8)==0
-               && sqlite3AtoF(&z[8], &r, sqlite3Strlen30(&z[8]), SQLITE_UTF8)>0
+               && sqlite3AtoF(&z[8], &r)>0
                && r>=0.0 && r<7.0 && (n=(int)r)==r ){
         sqlite3_int64 Z;
         computeYMD_HMS(p);
@@ -946,9 +946,11 @@ static int parseModifier(
     case '8':
     case '9': {
       double rRounder;
-      int i;
+      int i, rx;
       int Y,M,D,h,m,x;
       const char *z2 = z;
+      char *zCopy;
+      sqlite3 *db = sqlite3_context_db_handle(pCtx);
       char z0 = z[0];
       for(n=1; z[n]; n++){
         if( z[n]==':' ) break;
@@ -958,7 +960,11 @@ static int parseModifier(
           if( n==6 && getDigits(&z[1], "50f", &Y)==1 ) break;
         }
       }
-      if( sqlite3AtoF(z, &r, n, SQLITE_UTF8)<=0 ){
+      zCopy = sqlite3DbStrNDup(db, z, n);
+      if( zCopy==0 ) break;
+      rx = sqlite3AtoF(zCopy, &r)<=0;
+      sqlite3DbFree(db, zCopy);
+      if( rx ){
         assert( rc==1 );
         break;
       }

@@ -668,6 +668,20 @@ do_execsql_test 1370 {
   SELECT * FROM generate_series(0,0,0);
 } {}
 
+reset_db
+load_static_extension db series
+do_execsql_test 1400 {
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+}
+do_catchsql_test 1410 {
+  SELECT x, y, value
+  FROM (t1 RIGHT JOIN generate_series(t2.y,5) AS value) JOIN t2;
+} {1 {table-function argument references tables to its right}}
+do_catchsql_test 1420 {
+  SELECT x, y, value 
+  FROM t2 JOIN (t1 RIGHT JOIN generate_series(t2.y,5) AS value) 
+} {1 {no such column: t2.y}}
 
 
 # Free up memory allocations

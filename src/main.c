@@ -3857,6 +3857,12 @@ int sqlite3_collation_needed16(
 */
 void *sqlite3_get_clientdata(sqlite3 *db, const char *zName){
   DbClientData *p;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( !zName || !sqlite3SafetyCheckOk(db) ){
+    (void)SQLITE_MISUSE_BKPT;
+    return 0;
+  }
+#endif
   sqlite3_mutex_enter(db->mutex);
   for(p=db->pDbData; p; p=p->pNext){
     if( strcmp(p->zName, zName)==0 ){

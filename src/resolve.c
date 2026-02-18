@@ -936,7 +936,7 @@ static int exprProbability(Expr *p){
   double r = -1.0;
   if( p->op!=TK_FLOAT ) return -1;
   assert( !ExprHasProperty(p, EP_IntValue) );
-  sqlite3AtoF(p->u.zToken, &r, sqlite3Strlen30(p->u.zToken), SQLITE_UTF8);
+  sqlite3AtoF(p->u.zToken, &r);
   assert( r>=0.0 );
   if( r>1.0 ) return -1;
   return (int)(r*134217728.0);
@@ -2071,6 +2071,14 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     if( p->pNext && p->pEList->nExpr!=p->pNext->pEList->nExpr ){
       sqlite3SelectWrongNumTermsError(pParse, p->pNext);
       return WRC_Abort;
+    }
+
+    /* If the SELECT statement contains ON clauses that were moved into
+    ** the WHERE clause, go through and verify that none of the terms
+    ** in the ON clauses reference tables to the right of the ON clause. */
+    if( (p->selFlags & SF_OnToWhere) ){
+      sqlite3SelectCheckOnClauses(pParse, p);
+      if( pParse->nErr ) return WRC_Abort;
     }
 
     /* Advance to the next term of the compound

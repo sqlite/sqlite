@@ -1954,6 +1954,7 @@ int main(int argc, char **argv){
   char **azSrcDb = 0;          /* Array of source database names */
   int iSrcDb;                  /* Loop over all source databases */
   int nTest = 0;               /* Total number of tests performed */
+  int nSliceSkip = 0;          /* Skipped due to --slice */
   char *zDbName = "";          /* Appreviated name of a source database */
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE env variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
@@ -2520,6 +2521,7 @@ int main(int argc, char **argv){
       if( isDbSql(pSql->a, pSql->sz) ){
         if( iSliceSz>0 && (nTest%iSliceSz)!=iSliceIdx ){
           nTest++;
+          nSliceSkip++;
           continue;
         }
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d",pSql->id);
@@ -2582,6 +2584,7 @@ int main(int argc, char **argv){
         const char *zVfs = "inmem";
         if( iSliceSz>0 && (nTest%iSliceSz)!=iSliceIdx ){
           nTest++;
+          nSliceSkip++;
           continue;
         }
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d,dbid=%d",
@@ -2693,12 +2696,13 @@ int main(int argc, char **argv){
     if( briefFlag ){
       sqlite3_int64 iElapse = timeOfDay() - iBegin;
       if( iSliceSz>0 ){
-        printf("%s %s: slice %d/%d of %d tests, %d.%03d seconds\n",
-               pathTail(argv[0]), pathTail(g.zDbFile),
-               iSliceIdx, iSliceSz, nTest,
-               (int)(iElapse/1000), (int)(iElapse%1000));
+        printf(
+          "%s %s: 0 errors out of %d tests, slice %d/%d, %d.%03d seconds\n",
+          pathTail(argv[0]), pathTail(g.zDbFile),
+          nTest - nSliceSkip, iSliceIdx, iSliceSz,
+          (int)(iElapse/1000), (int)(iElapse%1000));
       }else{
-        printf("%s %s: 0 errors, %d tests, %d.%03d seconds\n",
+        printf("%s %s: 0 errors out of %d tests, %d.%03d seconds\n",
                pathTail(argv[0]), pathTail(g.zDbFile), nTest,
                (int)(iElapse/1000), (int)(iElapse%1000));
       }

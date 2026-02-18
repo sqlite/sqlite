@@ -520,7 +520,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         assert(wasmCtypes.structs[1/*sqlite3_io_methods*/
                                  ].members.xFileSize.offset>0);
       [ /* Spot-check a handful of constants to make sure they got installed... */
-        'SQLITE_SCHEMA','SQLITE_NULL','SQLITE_UTF8',
+        'SQLITE_SCHEMA','SQLITE_NULL','SQLITE_UTF8','SQLITE_UTF8_ZT',
         'SQLITE_STATIC', 'SQLITE_DIRECTONLY',
         'SQLITE_OPEN_CREATE', 'SQLITE_OPEN_DELETEONCLOSE'
       ].forEach((k)=>T.assert('number' === typeof capi[k]));

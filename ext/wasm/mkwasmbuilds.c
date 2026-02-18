@@ -40,14 +40,22 @@
 /*
 ** Flags for use with BuildDef::flags.
 **
-** Maintenance reminder: do not combine flags within this enum,
-** e.g. F_BUNDLER_FRIENDLY=0x02|F_ESM, as that will lead
-** to breakage in some of the flag checks.
+** Maintenance reminder: do not combine F_... flags within this enum,
+** e.g. F_BUNDLER_FRIENDLY=0x02|F_ESM, as that will lead to breakage
+** in some of the flag checks.
 */
 enum BuildDefFlags {
   /* Indicates an ESM module build. */
   F_ESM              = 0x01,
-  /* Indicates a "bundler-friendly" build mode. */
+  /* Indicates a "bundler-friendly" build mode. These are untested and
+  ** unsupported, provided solely for the downstream npm subproject
+  ** (who is responsible for any testing of these).
+  **
+  ** The only difference beween bundler-friendly and esm builds is
+  ** that bundlers require static filename strings in a few places due
+  ** to limitations of bundler tooling, whereas vanilla and JS can
+  ** both work with dynamic strings.
+  */
   F_BUNDLER_FRIENDLY = 1<<1,
   /* Indicates that this build is unsupported. Such builds are not
   ** added to the 'all' target. The unsupported builds exist primarily
@@ -57,8 +65,11 @@ enum BuildDefFlags {
   F_NOT_IN_ALL       = 1<<3,
   /* If it's a 64-bit build. */
   F_64BIT            = 1<<4,
-  /* Indicates a node.js-for-node.js build (untested and
-  ** unsupported). */
+  /* Indicates a node.js-for-node.js build. This build is very
+  ** specificially untested and unsupported, but the downstream npm
+  ** project makes use of it. None of our JS code is specific to node,
+  ** but Emscripten's generated sqlite3.js differs between
+  ** for-the-browser and for-node builds. */
   F_NODEJS           = 1<<5,
   /* Indicates a wasmfs build (untested and unsupported). */
   F_WASMFS           = 1<<6,
@@ -77,7 +88,7 @@ enum BuildDefFlags {
   ** differ, however.
   */
   CP_JS              = 1 << 30, /* X.js or X.mjs, depending on F_ESM */
-  CP_WASM            = 1 << 31, /* X,wasm */
+  CP_WASM            = 1 << 31, /* X.wasm */
   CP_ALL             = CP_JS | CP_WASM
 };
 
@@ -140,7 +151,7 @@ struct BuildDef {
   **
   ** The convention for 32- vs 64-bit pairs is to give them similar
   ** emoji, e.g. a cookie for 32-bit and a donut or cake for 64.
-  ** Alternately, the same emoji a "64" suffix, except that that
+  ** Alternately, the same emoji with a "64" suffix, except that that
   ** throws off the output alignment in parallel builds ;).
   */
   const char *zEmo;
@@ -164,7 +175,7 @@ struct BuildDef {
   ** Makefile code "ifeq (...)". If set, this build is enclosed in a
   ** $zIfCond/endif block.
   */
-  const char *zIfCond;    /* makefile "ifeq (...)" or similar */
+  const char *zIfCond;
   int flags;              /* Flags from BuildDefFlags */
 };
 typedef struct BuildDef BuildDef;
@@ -180,7 +191,7 @@ typedef struct BuildDef BuildDef;
 **  logtag.NAME   = Used for decorating log output
 **
 ** etc.
-***/
+*/
 #define BuildDefs_map(E)  \
   E(vanilla) E(vanilla64) \
   E(esm)     E(esm64)     \
@@ -341,7 +352,7 @@ const BuildDefs oBuildDefs = {
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM
+    .flags       = CP_JS | F_BUNDLER_FRIENDLY | F_ESM | F_NOT_IN_ALL
   },
 
   /* 64-bit bundler-friendly. */
@@ -482,8 +493,8 @@ static void mk_prologue(void){
       ** configuration). Comments like "saves nothing" may not be
       ** technically correct: "nothing" means "some neglible amount."
       **
-      ** Note that performance gains/losses are _not_ taken into
-      ** account here: only wasm file size.
+      ** Performance gains or losses are _not_ taken into account
+      ** here, only wasm file size.
       */
       "--enable-bulk-memory-opt " /* required */
       "--all-features "           /* required */
@@ -1052,7 +1063,7 @@ int main(int argc, char const ** argv){
       BuildDefs_map(E) if( 0==strcmp("prologue",zArg) ){
         mk_prologue();
       }else {
-        fprintf(stderr,"Unkown build name: %s\n", zArg);
+        fprintf(stderr,"Unknown build name: %s\n", zArg);
         rc = 1;
         break;
       }

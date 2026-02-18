@@ -353,10 +353,9 @@ static int alsoAnInt(Mem *pRec, double rValue, i64 *piValue){
 */
 static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   double rValue;
-  u8 enc = pRec->enc;
   int rc;
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str );
-  rc = sqlite3AtoF(pRec->z, &rValue, pRec->n, enc);
+  rValue = sqlite3MemRealValueRC(pRec, &rc);
   if( rc<=0 ) return;
   if( rc==1 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
     pRec->flags |= MEM_Int;
@@ -438,7 +437,10 @@ int sqlite3_value_numeric_type(sqlite3_value *pVal){
   int eType = sqlite3_value_type(pVal);
   if( eType==SQLITE_TEXT ){
     Mem *pMem = (Mem*)pVal;
+    assert( pMem->db!=0 );
+    sqlite3_mutex_enter(pMem->db->mutex);
     applyNumericAffinity(pMem, 0);
+    sqlite3_mutex_leave(pMem->db->mutex);
     eType = sqlite3_value_type(pVal);
   }
   return eType;
@@ -471,7 +473,7 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
     pMem->u.i = 0;
     return MEM_Int;
   }
-  rc = sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
+  pMem->u.r = sqlite3MemRealValueRC(pMem, &rc);
   if( rc<=0 ){
     if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
       pMem->u.i = ix;
@@ -6664,20 +6666,15 @@ case OP_SorterInsert: {     /* in2 */
   break;
 }
 
-/* Opcode: IdxDelete P1 P2 P3 * P5
+/* Opcode: IdxDelete P1 P2 P3 * *
 ** Synopsis: key=r[P2@P3]
 **
 ** The content of P3 registers starting at register P2 form
 ** an unpacked index key. This opcode removes that entry from the
 ** index opened by cursor P1.
 **
-** If P5 is not zero, then raise an SQLITE_CORRUPT_INDEX error
-** if no matching index entry is found.  This happens when running
-** an UPDATE or DELETE statement and the index entry to be updated
-** or deleted is not found.  For some uses of IdxDelete
-** (example:  the EXCEPT operator) it does not matter that no matching
-** entry is found.  For those cases, P5 is zero.  Also, do not raise
-** this (self-correcting and non-critical) error if in writable_schema mode.
+** Raise an SQLITE_CORRUPT_INDEX error if no matching index entry is found
+** and not in writable_schema mode.
 */
 case OP_IdxDelete: {
   VdbeCursor *pC;
@@ -6703,7 +6700,7 @@ case OP_IdxDelete: {
   if( res==0 ){
     rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
     if( rc ) goto abort_due_to_error;
-  }else if( pOp->p5 && !sqlite3WritableSchema(db) ){
+  }else if( !sqlite3WritableSchema(db) ){
     rc = sqlite3ReportError(SQLITE_CORRUPT_INDEX, __LINE__, "index corruption");
     goto abort_due_to_error;
   }

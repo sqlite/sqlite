@@ -261,9 +261,12 @@ int fuzz_invariant(
     sqlite3_finalize(pCk);
 
     /* Invariants do not necessarily work if there are virtual tables
-    ** involved in the query */
-    rc = sqlite3_prepare_v2(db, 
-            "SELECT 1 FROM bytecode(?1) WHERE opcode='VOpen'", -1, &pCk, 0);
+    ** or scalar subqueries involved in the query */
+    rc = sqlite3_prepare_v2(db,
+            "SELECT 1 FROM bytecode(?1)"
+            " WHERE opcode='VOpen' OR"
+            "      (opcode='Explain' AND p4 GLOB 'SCALAR SUBQUERY*')",
+            -1, &pCk, 0);
     if( rc==SQLITE_OK ){
       if( eVerbosity>=2 ){
         char *zSql = sqlite3_expanded_sql(pCk);
