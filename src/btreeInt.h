@@ -346,7 +346,7 @@ struct BtSharedLog {
 
   BtSharedLogEntry *pFirst;
   BtSharedLogEntry *pLast;
-  int nEntry;                     /* Current number of entries */
+  i64 nByte;                      /* Total size of all entries in bytes */
 
   /* Linked list protected by SQLITE_MUTEX_STATIC_MAIN */
   BtSharedLog *pSharedNext;  /* Next shared log in process */
@@ -377,6 +377,10 @@ struct BtSharedLog {
 **
 ** aIndex/nIndex:
 **   Array of index keys modified by this transaction.
+**
+** nByte:
+**   Total size in bytes of all allocations belonging to this object 
+**   (including itself).
 */
 struct BtSharedLogEntry {
   u64 iBaseId;                    /* Snapshot this transaction was based on */
@@ -388,6 +392,8 @@ struct BtSharedLogEntry {
   int nIntkey;                    /* Size of aIntkey[] */
   BtWriteIndex *aIndex;           /* Writes to indexes */
   int nIndex;                     /* Size of aIndex[] in bytes */
+
+  i64 nByte;                      /* Total size in bytes */
 
   BtSharedLogEntry *pLogNext;     /* Transaction commited after this one */
 };

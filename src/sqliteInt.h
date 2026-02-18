@@ -1831,6 +1831,12 @@ struct sqlite3 {
 #define CONCURRENT_OPEN   1
 #define CONCURRENT_SCHEMA 2
 
+/*
+** Maximum size in bytes of all allocations associated with a single 
+** BEGIN CONCURRENT shared-log.
+*/
+#define SQLITE_DEFAULT_SHAREDLOG_MAXSIZE (1*1024*1024*1024)
+
 #ifndef SQLITE_OMIT_CONCURRENT
 int sqlite3ConcurrentRegister(sqlite3 *db);
 #endif
@@ -4395,7 +4401,7 @@ struct Sqlite3Config {
   u32 szSorterRef;                  /* Min size in bytes to use sorter-refs */
   unsigned int iPrngSeed;           /* Alternative fixed seed for the PRNG */
 #ifndef SQLITE_OMIT_CONCURRENT
-  int nMaxSharedLogEntry;           /* Max number of shared-log entries */
+  i64 nSharedLogMaxSize;            /* Max number of all shared-log entries */
 #endif
   /* vvvv--- must be last ---vvv */
 #ifdef SQLITE_DEBUG
@@ -5934,7 +5940,5 @@ sqlite3_uint64 sqlite3Hwtime(void);
 #else
 # define IS_STMT_SCANSTATUS(db) 0
 #endif
-
-#define SQLITE_DEFAULT_MAXSHAREDLOGENTRY 64
 
 #endif /* SQLITEINT_H */

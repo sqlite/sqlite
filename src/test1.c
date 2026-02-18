@@ -2549,6 +2549,29 @@ static int SQLITE_TCLAPI test_config_sorterref(
 }
 
 /*
+** Usage:  sqlite3_config_sharedlog_maxsize
+**
+** Set the SQLITE_CONFIG_SHAREDLOG_MAXSIZE configuration option
+*/
+static int SQLITE_TCLAPI test_config_sharedlog_maxsize(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_int64 iVal;
+  int rc;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NBYTE");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetWideIntFromObj(interp, objv[1], &iVal) ) return TCL_ERROR;
+  rc = sqlite3_config(SQLITE_CONFIG_SHAREDLOG_MAXSIZE, iVal);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
+  return TCL_OK;
+}
+
+/*
 ** Usage: vfs_current_time_int64
 **
 ** Return the value returned by the default VFS's xCurrentTimeInt64 method.
@@ -9413,6 +9436,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "atomic_batch_write",      test_atomic_batch_write,     0   },
      { "sqlite3_mmap_warm",       test_mmap_warm,          0 },
      { "sqlite3_config_sorterref", test_config_sorterref,   0 },
+     { "sqlite3_config_sharedlog_maxsize", test_config_sharedlog_maxsize,   0 },
      { "sqlite3_autovacuum_pages", test_autovacuum_pages,   0 },
      { "decode_hexdb",             test_decode_hexdb,       0 },
      { "test_write_db",            test_write_db,           0 },

@@ -872,7 +872,9 @@ static int btreeBcBeginConcurrent(BtShared *pBt){
        || pBt->conc.eState==BTCONC_STATE_RETIRED
   );
   assert( pBt->conc.eState==BTCONC_STATE_NONE || pBt->conc.pBtLog!=0 );
-  if( pBt->conc.eState==BTCONC_STATE_NONE ){
+  if( pBt->conc.eState==BTCONC_STATE_NONE 
+   && sqlite3GlobalConfig.nSharedLogMaxSize!=0
+  ){
 
     /* If this BtShared does not yet have a connection to the global
     ** BtSharedLog object for this database, establish one now. Creating
@@ -945,7 +947,16 @@ static void btreeBcRemoveOldest(BtSharedLog *pBtLog){
     assert( pBtLog->pLast==pFree );
     pBtLog->pLast = 0;
   }
-  pBtLog->nEntry--;
+  pBtLog->nByte -= pFree->nByte;
+
+#ifdef SQLITE_DEBUG
+  {
+    i64 nTotal = 0;
+    BtSharedLogEntry *pEntry = pBtLog->pFirst;
+    for( ; pEntry; pEntry=pEntry->pLogNext) nTotal += pEntry->nByte;
+    assert( nTotal==pBtLog->nByte );
+  }
+#endif
 
   btreeBcSharedLogEntryDelete(pFree);
 }
@@ -1426,7 +1437,7 @@ static int btreeBcSharedLogEntry(BtShared *pBt, BtSharedLogEntry **ppOut){
   int ii;
   int nIntkey = 0;
   int nIndex = 0;
-  int nByte = 0;
+  i64 nByte = 0;
   BtWrite *aWrite = pBt->conc.aWrite;
   int rc = SQLITE_OK;
 
@@ -1446,19 +1457,19 @@ static int btreeBcSharedLogEntry(BtShared *pBt, BtSharedLogEntry **ppOut){
     rc = SQLITE_NOMEM_BKPT;
   }else{
 
+    pRet->nByte = nByte;
+
     /* Populate the aIntkey[] and aIndex[] arrays */
     pRet->aIntkey = (BtWriteIntkey*)&pRet[1];
     pRet->aIndex = (BtWriteIndex*)&pRet->aIntkey[nIntkey];
     for(ii=0; ii<pBt->conc.nWrite; ii++){
       if( aWrite[ii].pKeyInfo ){
         BtWriteIndex *p = &pRet->aIndex[pRet->nIndex++];
-
         p->iRoot = ii;
         p->nRec = aWrite[ii].nRec;
         p->aRec = aWrite[ii].aRec;
-
         aWrite[ii].aRec = 0;
-
+        pRet->nByte += (p->nRec + 8+9);
       }else{
         BtWriteIntkey *p = &pRet->aIntkey[pRet->nIntkey++];
         p->iRoot = aWrite[ii].iRoot;
@@ -1548,13 +1559,13 @@ static int btreeBcUpdateSharedLog(
         pBtLog->pFirst = pNew;
       }
       pBtLog->pLast = pNew;
-      pBtLog->nEntry++;
+      pBtLog->nByte += pNew->nByte;
 
       /* Free any old log-entries no longer required. TODO: Could do
       ** this by querying wal.c to see what snapshots are still available
       ** or in use. Maybe we can even lock the required BtSharedLogEntry
       ** objects in memory when each concurrent transaction is opened. */
-      while( pBtLog->nEntry>sqlite3GlobalConfig.nMaxSharedLogEntry ){
+      while( pBtLog->nByte>sqlite3GlobalConfig.nSharedLogMaxSize ){
         btreeBcRemoveOldest(pBtLog);
       }
 

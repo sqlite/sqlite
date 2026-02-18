@@ -752,6 +752,16 @@ int sqlite3_config(int op, ...){
       break;
     }
 
+    case SQLITE_CONFIG_SHAREDLOG_MAXSIZE: {
+      i64 iVal = va_arg(ap, sqlite3_int64);
+      if( iVal<0 ){
+        sqlite3GlobalConfig.nSharedLogMaxSize =SQLITE_DEFAULT_SHAREDLOG_MAXSIZE;
+      }else{
+        sqlite3GlobalConfig.nSharedLogMaxSize = iVal;
+      }
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;

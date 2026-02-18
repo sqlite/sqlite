@@ -4916,9 +4916,10 @@ int sqlite3WalUndo(
       }
       if( walidxGetFile(&pWal->hdr)!=iWal ){
         assert( bConcurrent && isWalMode2(pWal) );
-        return SQLITE_OK;
-      }
+        assert( rc==SQLITE_OK );
+      }else
 #endif
+      {
       assert( walidxGetFile(&pWal->hdr)==iWal );
   
       for(iFrame=iNew+1; ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; iFrame++){
@@ -4943,6 +4944,7 @@ int sqlite3WalUndo(
         rc = xUndo(pUndoCtx, pgno);
       }
       if( iMax!=iNew ) walCleanupHash(pWal);
+      }
     }
     SEH_EXCEPT( rc = SQLITE_IOERR_IN_PAGE; )
     pWal->iReCksum = 0;
