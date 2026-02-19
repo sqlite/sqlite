@@ -1,5 +1,5 @@
-C Restore\sthe\sCLI\sfunction\sdtostr()\sback\sto\sits\soriginal\spurpose\sof\sconverting\nfloating\spoint\svalues\sto\sdecimal\susing\sthe\shost\scomputer's\sC-library.
-D 2026-02-17T20:28:25.509
+C Improvements\sto\srounding\sbehavior\sin\sthe\snew\sfloating-point\sconversion\slogic.
+D 2026-02-19T12:59:42.005
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/trigger.c a40440614bdf523090cc07223f4878f7e3c892bcd1a13afe18f90190daa5945d
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 10572efe1bcf43fc2f6015cfba6126a4a5e32e7d6478a946a2b27d5ce189328b
+F src/util.c 72874125f70f61082bfb82b4580c1a320ab22b8cded2fb98e42ab98b39dc7bf1
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 5328c99dd256ee8132383565a86e253543a85daccfd7477c52f20bac6b385a7f
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 091bd90ed5a6a326fd532e93bd17903e052476da14dc6aee2599a9acf75a3276
-R cd671e340350caab6a75edc7dcce7710
+P f3cc05ba7fa9cb77573de5cd28ab90f10844567692ed57a706c5dc35b1348009
+R c76121d106ccfa4ba10f05ce6b9cda5e
 U drh
-Z af08287ac982b3bc21237452366bd06d
+Z d2d61bfcd3046306c59cf37d2f198b36
 # Remove this line to create a well-formed Fossil manifest.

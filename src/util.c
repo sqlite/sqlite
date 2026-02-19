@@ -648,13 +648,12 @@ static int countLeadingZeros(u64 m){
 */
 static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
   int p;
-  u64 h, out;
+  u64 h;
   p = n - 1 - pwr2to10(e+63);
   h = sqlite3Multiply128(m, powerOfTen(p));
-  assert( -(e + pwr10to2(p) + 3) >=0 );
-  assert( -(e + pwr10to2(p) + 3) <64 );
-  out = h >> -(e + pwr10to2(p) + 3);
-  *pD = (out + 2 + ((out>>2)&1)) >> 2;
+  assert( -(e + pwr10to2(p) + 1) >=0 );
+  assert( -(e + pwr10to2(p) + 1) <64 );
+  *pD = h >> -(e + pwr10to2(p) + 1);
   *pP = -p;
 }
 
@@ -1156,7 +1155,7 @@ int sqlite3Atoi(const char *z){
 ** representation.
 **
 ** If iRound<=0 then round to -iRound significant digits to the
-** the left of the decimal point, or to a maximum of mxRound total
+** the right of the decimal point, or to a maximum of mxRound total
 ** significant digits.
 **
 ** If iRound>0 round to min(iRound,mxRound) significant digits total.
@@ -1208,7 +1207,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     v = (v<<11) | U64_BIT(63);
     e -= 1086;
   }
-  sqlite3Fp2Convert10(v, e, 17, &v, &exp);  
+  sqlite3Fp2Convert10(v, e, (iRound<=0||iRound>=18)?18:iRound+1, &v, &exp);  
 
   /* Extract significant digits. */
   i = sizeof(p->zBuf)-1;
