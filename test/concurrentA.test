@@ -749,15 +749,113 @@ do_test 13.2.2 {
   close $fd
 } {}
 do_execsql_test 13.2.3 {
-  SELECT * FROM sqlite_concurrent
+  SELECT sortem, rowid, * FROM sqlite_concurrent(0)
 } {
-  3 read 5 5 
-  3 read 64 64 
-  3 read 20 20
-  3 read 25 25
-  3 read 30 30
+  {} 0 3 read 5 5 
+  {} 0 3 read 64 64 
+  {} 0 3 read 20 20
+  {} 0 3 read 25 25
+  {} 0 3 read 30 30
 }
 execsql ROLLBACK
+
+#-------------------------------------------------------------------------
+# Test that unusual values - reals or zero length texts or blobs - can
+# be used in range constraints.
+#
+reset_db
+do_execsql_test 14.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  CREATE INDEX i1bc ON t1(b, c);
+  CREATE INDEX i1cb ON t1(c, b);
+
+  INSERT INTO t1 VALUES(-1, 50, 'dog');
+  INSERT INTO t1 VALUES(-2, 55, 'cat');
+  INSERT INTO t1 VALUES(-3, 60, 'mouse');
+  INSERT INTO t1 VALUES(-4, 65, 'rabbit');
+  INSERT INTO t1 VALUES(-5, 70, 'hamster');
+} {wal}
+
+sqlite3 db2 test.db
+do_test 14.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      SELECT * FROM t1 WHERE b>52.5 AND b<66.0;
+      INSERT INTO t1 VALUES(0, 45, 'snake');
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(-6, 64, '');
+    COMMIT;
+  } db2
+  catchsql {
+    COMMIT;
+  }
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_test 14.2 {
+  execsql {
+    BEGIN CONCURRENT;
+      SELECT * FROM t1 WHERE c>'';
+      INSERT INTO t1 VALUES(0, 45, 'snake');
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(-7, 75, 'parrot');
+    COMMIT;
+  } db2
+  catchsql {
+    COMMIT;
+  }
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_execsql_test 14.x.1 {
+  BEGIN CONCURRENT;
+    DELETE FROM t1 WHERE a=-2;
+    SELECT * FROM sqlite_concurrent WHERE op!='read';
+} {
+  2 delete -2 {} 
+  3 delete (55,'cat',254) {} 
+  4 delete ('cat',55,254) {}
+}
+do_execsql_test 14.x.2 {
+  SELECT * FROM sqlite_concurrent WHERE sortem IS NOT NULL;
+} {}
+do_catchsql_test 14.x.3 {
+  SELECT * FROM sqlite_concurrent A JOIN sqlite_concurrent B USING (sortem);
+} {1 {no query solution}}
+execsql ROLLBACK
+
+foreach {tn iVal} {
+  1 0
+  2 1
+  3 500
+  4 10000
+  5 10000000
+  6 1024*1024*1024
+  7 -9223372036854775808
+  8 9223372036854775807
+  9  1000*1024
+  10 2147483648
+} {
+  set iVal [expr $iVal]
+  do_test 14.5.$tn {
+    execsql {
+      BEGIN CONCURRENT;
+        SELECT * FROM t1 WHERE b < $iVal ORDER BY b DESC;
+    }
+    execsql {
+      SELECT * FROM sqlite_concurrent;
+    }
+  } "3 read ()- ($iVal)-"
+
+  execsql ROLLBACK
+}
+
+
 
 finish_test
 

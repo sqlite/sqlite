@@ -28,14 +28,6 @@
 ** Write the serialized data blob for the value stored in pMem into 
 ** buf. It is assumed that the caller has allocated sufficient space.
 ** Return the number of bytes written.
-**
-** nBuf is the amount of space left in buf[].  The caller is responsible
-** for allocating enough space to buf[] to hold the entire field, exclusive
-** of the pMem->u.nZero bytes for a MEM_Zero value.
-**
-** Return the number of bytes actually written into buf[].  The number
-** of bytes in the zero-filled tail is included in the return value only
-** if those bytes were zeroed in buf[].
 */ 
 static u32 bcRecordSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
   u32 len;
@@ -94,8 +86,6 @@ static u32 bcRecordSerialType(Mem *pMem, u32 *pLen){
 #   define MAX_6BYTE ((((i64)0x00008000)<<32)-1)
     i64 i = pMem->u.i;
     u64 u;
-    testcase( flags & MEM_Int );
-    testcase( flags & MEM_IntReal );
     if( i<0 ){
       u = ~i;
     }else{
@@ -115,15 +105,6 @@ static u32 bcRecordSerialType(Mem *pMem, u32 *pLen){
     if( u<=2147483647 ){ *pLen = 4; return 4; }
     if( u<=MAX_6BYTE ){ *pLen = 6; return 5; }
     *pLen = 8;
-    if( flags&MEM_IntReal ){
-      /* If the value is IntReal and is going to take up 8 bytes to store
-      ** as an integer, then we might as well make it an 8-byte floating
-      ** point value */
-      pMem->u.r = (double)pMem->u.i;
-      pMem->flags &= ~MEM_IntReal;
-      pMem->flags |= MEM_Real;
-      return 7;
-    }
     return 6;
   }
   if( flags&MEM_Real ){
@@ -148,7 +129,6 @@ static u32 bcRecordSerialType(Mem *pMem, u32 *pLen){
 ** buffer and (*pnRec) to its size in bytes before returning SQLITE_OK.
 ** Or, if an OOM error occurs, return SQLITE_NOMEM. The final values
 ** of (*ppRec) and (*pnRec) are undefined in this case.
-**
 */
 int sqlite3BcSerializeRecord(
   UnpackedRecord *pRec,           /* Record to serialize */
@@ -208,15 +188,17 @@ int sqlite3BcSerializeRecord(
 ** caller to eventually free the buffer using sqlite3_free(). If an OOM
 ** occurs, NULL may be returned.
 */
-static char *hex_encode(const u8 *aIn, int nIn){
+static char *bcHexEncode(const u8 *aIn, int nIn){
   char *zRet = sqlite3_malloc(nIn*2+1);
-  static const char aDigit[] = "0123456789ABCDEF";
-  int i;
-  for(i=0; i<nIn; i++){
-    zRet[i*2] = aDigit[ (aIn[i] >> 4) ];
-    zRet[i*2+1] = aDigit[ (aIn[i] & 0xF) ];
+  if( zRet ){
+    static const char aDigit[] = "0123456789ABCDEF";
+    int i;
+    for(i=0; i<nIn; i++){
+      zRet[i*2] = aDigit[ (aIn[i] >> 4) ];
+      zRet[i*2+1] = aDigit[ (aIn[i] & 0xF) ];
+    }
+    zRet[i*2] = '\0';
   }
-  zRet[i*2] = '\0';
   return zRet;
 }
 
@@ -281,7 +263,8 @@ static char *bcRecordToText(const u8 *aRec, int nRec, int delta){
                    + ((i64)pBody[2] << 24) + ((i64)pBody[3] << 16) 
                    + ((i64)pBody[4] << 8) + (i64)pBody[5];
               break;
-            case 6: 
+            default:
+              assert( iSerialType==6 );
               iVal = ((i64)pBody[0] << 56) + ((i64)pBody[1] << 48) 
                    + ((i64)pBody[2] << 40) + ((i64)pBody[3] << 32) 
                    + ((i64)pBody[4] << 24) + ((i64)pBody[5] << 16) 
@@ -318,12 +301,19 @@ static char *bcRecordToText(const u8 *aRec, int nRec, int delta){
             zRet = sqlite3_mprintf("%z%s%.*Q", zRet, zSep, nByte, pBody);
           }else{  
             /* A blob value */
-            char *zHex = hex_encode(pBody, nByte);
-            zRet = sqlite3_mprintf("%z%sX'%z'", zRet, zSep, zHex);
+            char *zHex = bcHexEncode(pBody, nByte);
+            if( zHex ){
+              zRet = sqlite3_mprintf("%z%sX'%z'", zRet, zSep, zHex);
+            }else{
+              sqlite3_free(zRet);
+              zRet = 0;
+            }
           }
           break;
         }
       }
+      if( zRet==0 ) return 0;
+
       pBody += nByte;
       zSep = ",";
     }
@@ -354,8 +344,7 @@ void sqlite3BcLogIndexConflict(
     sqlite3_log(SQLITE_OK,
         "cannot commit CONCURRENT transaction - conflict in index %s.%s - "
         "range (%s,%s) conflicts with write to key %s", 
-        (zTab ? zTab : "UNKNOWN"), 
-        (zIdx ? zIdx : "UNKNOWN"), 
+        zTab, (zIdx ? zIdx : "pk"), 
         zMin, zMax, zKey
     );
     sqlite3_free(zMin);
@@ -375,6 +364,13 @@ typedef struct ConcTable ConcTable;
 typedef struct ConcCursor ConcCursor;
 typedef struct ConcRow ConcRow;
 
+/*
+** Each row returned from the sqlite_concurrent table is represented by
+** an instance of this structure. Each call to the xFilter() method 
+** constructs a linked-list of these objects representing all the rows
+** that will be returned by the virtual table scan. Then the xNext()
+** method walks through the list.
+*/
 struct ConcRow {
   Pgno root;
   const char *zOp;
@@ -383,11 +379,17 @@ struct ConcRow {
   ConcRow *pRowNext;
 };
 
+/*
+** Cursor type for the sqlite_concurrent virtual table.
+*/
 struct ConcCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
   ConcRow *pRow;
 };
 
+/*
+** Table type for the sqlite_concurrent virtual table.
+*/
 struct ConcTable {
   sqlite3_vtab base;              /* Base class.  Must be first */
   sqlite3 *db;                    /* The database */
@@ -440,7 +442,19 @@ static int concDisconnect(sqlite3_vtab *pVtab){
 
 /* !SQLITE_OMIT_CONCURRENT
 **
-** xBestIndex method for sqlite_concurrent.
+** xBestIndex method for sqlite_concurrent. There are two possible plans:
+**
+**   idxNum==0 - full table scan.
+**   idxNum==1 - full table scan after possibly sorting and merging 
+**               read ranges.
+**
+** idxNum==1 is used if there is an equality constraint on hidden column
+** "sortem". In this case the RHS of the = is passed to xFilter(). xFilter()
+** will sort and merge the read ranges if this parameter is non-zero. The
+** SQL syntax is usually:
+**
+**     SELECT * FROM sqlite_concurrent;          -- full table scan
+**     SELECT * FROM sqlite_concurrent(1);       -- sort + merge reads first
 */
 static int concBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int ii;
@@ -501,12 +515,11 @@ static int concClose(sqlite3_vtab_cursor *pCursor){
 static int concNext(sqlite3_vtab_cursor *pCursor){
   ConcCursor *pCsr = (ConcCursor *)pCursor;
   ConcRow *pFree = pCsr->pRow;
-  if( pFree ){
-    pCsr->pRow = pFree->pRowNext;
-    sqlite3_free(pFree->zK1);
-    sqlite3_free(pFree->zK2);
-    sqlite3_free(pFree);
-  }
+  assert( pFree );
+  pCsr->pRow = pFree->pRowNext;
+  sqlite3_free(pFree->zK1);
+  sqlite3_free(pFree->zK2);
+  sqlite3_free(pFree);
   return SQLITE_OK;
 }
 

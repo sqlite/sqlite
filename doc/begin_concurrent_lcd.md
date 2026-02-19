@@ -72,6 +72,46 @@ In other words, the system first attempts to commit the transaction using
 the regular BEGIN CONCURRENT page-level locking system, then falls back 
 to logical conflict detection and transaction application if that fails.
 
+There is an eponymous virtual table named "sqlite\_concurrent" that may be
+queried from within an ongoing BEGIN CONCURRENT transaction. It returns a
+list of the reads and writes currently accumulated for the transaction. For
+example, given the following schema and transaction:
 
+        CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT UNIQUE);
+        INSERT INTO t1 VALUES(1, 'one'), (2, 'two'), (3, 'three'),
+                             (4, 'four'), (5, 'five'), (6, 'six');
+        
+        BEGIN CONCURRENT;
+          SELECT * FROM t1 WHERE b='two';
+          SELECT * FROM t1 WHERE a BETWEEN 2 AND 3;
+          INSERT INTO t1 VALUES(7, 'seven');
+
+Then sqlite\_concurrent contains the following:
+
+        sqlite> SELECT * FROM sqlite_concurrent;
+        ╭──────┬────────┬─────────────┬────────────────╮
+        │ root │   op   │     k1      │       k2       │
+        ╞══════╪════════╪═════════════╪════════════════╡
+        │    2 │ read   │ 2           │ 4              │
+        │    2 │ read   │ 7           │ 7              │
+        │    3 │ read   │ ('two')-    │ ('two')+       │
+        │    3 │ read   │ ('seven')   │ ('seven')      │
+        │    2 │ insert │ 7           │ (NULL,'seven') │
+        │    3 │ insert │ ('seven',7) │ NULL           │
+        ╰──────┴────────┴─────────────┴────────────────╯
+        
+The first row indicates that the transaction scanned rowids between 2 and 4,
+inclusive. This is confusing, as the WHERE clause on the relevent SELECT 
+query was "BETWEEN 2 AND 3". This is a consequence of the way this extension
+collects scans at the b-tree level - sometimes a range scan is recorded as 
+having one extra row at the end of it that does not actually match the
+predicate.
+
+The second row says it also read rowid 7. This was to detect a conflict on 
+the rowid when inserting the new row. Index keys between ('seven') and
+('seven') were scanned for a similar purpose - to check if the new row
+causes a conflict in the UNIQUE index.
+
+And so on.
 
 

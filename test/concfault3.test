@@ -1,0 +1,81 @@
+# 2018 Dec 28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains fault injection tests designed to test the concurrent
+# transactions feature.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
+set testprefix concfault3
+
+ifcapable !concurrent {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT UNIQUE);
+  INSERT INTO t1 VALUES
+    (1, 'one'), (2, 'two'), (3, 'three'),
+    (4, 'four'), (5, 'five'), (6, 'six');
+} {wal2}
+
+set res [list                        \
+  2 read 2 4                         \
+  2 read 7 7                         \
+  3 read ('seven') ('seven')         \
+  3 read ('two')- ('two')+           \
+  2 insert 7 (NULL,'seven')          \
+  3 insert ('seven',7) {}            \
+]
+
+do_faultsim_test 1.1 -prep {
+  sqlite3 db test.db
+  execsql {
+    SELECT * FROM t1;
+    BEGIN CONCURRENT;
+      SELECT * FROM t1 WHERE b='two';
+      SELECT * FROM t1 WHERE a BETWEEN 2 AND 3;
+      INSERT INTO t1 VALUES(7, 'seven');
+  }
+} -body {
+  execsql { SELECT * FROM sqlite_concurrent(1) }
+} -test {
+  faultsim_test_result [list 0 $::res] \
+    {1 {unable to open a temporary database file for storing temporary tables}}
+
+  catchsql { ROLLBACK }
+}
+
+set res [list 3 read ()- (X'ABCDEF')-]
+
+do_faultsim_test 1.2 -prep {
+  sqlite3 db test.db
+  execsql {
+    SELECT * FROM t1;
+    BEGIN CONCURRENT;
+      SELECT * FROM t1 WHERE b < X'ABCDEF' ORDER BY b DESC;
+  }
+} -body {
+  execsql { SELECT * FROM sqlite_concurrent(1) }
+} -test {
+  faultsim_test_result [list 0 $::res] \
+    {1 {unable to open a temporary database file for storing temporary tables}}
+
+  catchsql { ROLLBACK }
+}
+
+
+finish_test
+

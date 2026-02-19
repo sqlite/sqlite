@@ -127,6 +127,73 @@ do_test 2.2 {
   execsql COMMIT
 } {}
 
+#---------------------------------------------------------------
+#
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a REAL PRIMARY KEY, b TEXT) WITHOUT ROWID;
+} {wal}
+
+do_execsql_test 3.1 {
+  BEGIN CONCURRENT;
+    SELECT * FROM t1 WHERE a>35;
+    SELECT * FROM sqlite_concurrent;
+} {2 read (35)+ ()+}
+execsql ROLLBACK
+
+do_execsql_test 3.2 {
+  BEGIN CONCURRENT;
+    INSERT INTO t1 VALUES(zeroblob(16), 16);
+    SELECT * FROM sqlite_concurrent WHERE op='insert';
+} {2 insert (X'00000000000000000000000000000000','16') {}}
+execsql ROLLBACK
+
+#---------------------------------------------------------------
+#
+reset_db
+proc joinup {txt n} {
+  join [string repeat "[list $txt] " $n] ,
+}
+proc cols {n} {
+  set ret [list]
+  for {set i 0} {$i < $n} {incr i} {
+    lappend ret "c$i"
+  }
+  join $ret ,
+}
+
+do_execsql_test 3.0 "
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1([cols 200]);
+  CREATE INDEX i1 ON t1([cols 200]);
+
+  INSERT INTO t1 VALUES( [joinup 10 200] );
+  INSERT INTO t1 VALUES( [joinup 20 200] );
+  INSERT INTO t1 VALUES( [joinup 30 200] );
+  INSERT INTO t1 VALUES( [joinup 40 200] );
+" {wal}
+
+do_execsql_test 3.1 "
+  BEGIN CONCURRENT;
+    SELECT * FROM t1 WHERE ([cols 150]) = ([joinup 30 150]);
+    SELECT * FROM sqlite_concurrent;
+" "
+  [string repeat {30 } 200]
+  4 read ([joinup 30 150])- ([joinup 30 150])+
+"
+execsql ROLLBACK
+
+do_execsql_test 3.1 "
+  BEGIN CONCURRENT;
+    SELECT * FROM t1 WHERE ([cols 127]) = ([joinup 30 127]);
+    SELECT * FROM sqlite_concurrent;
+" "
+  [string repeat {30 } 200]
+  4 read ([joinup 30 127])- ([joinup 30 127])+
+"
+execsql ROLLBACK
+
 
 
 #---------------------------------------------------------------
