@@ -163,7 +163,7 @@ proc cols {n} {
   join $ret ,
 }
 
-do_execsql_test 3.0 "
+do_execsql_test 4.0 "
   PRAGMA journal_mode = wal;
   CREATE TABLE t1([cols 200]);
   CREATE INDEX i1 ON t1([cols 200]);
@@ -174,7 +174,7 @@ do_execsql_test 3.0 "
   INSERT INTO t1 VALUES( [joinup 40 200] );
 " {wal}
 
-do_execsql_test 3.1 "
+do_execsql_test 4.1 "
   BEGIN CONCURRENT;
     SELECT * FROM t1 WHERE ([cols 150]) = ([joinup 30 150]);
     SELECT * FROM sqlite_concurrent;
@@ -184,7 +184,7 @@ do_execsql_test 3.1 "
 "
 execsql ROLLBACK
 
-do_execsql_test 3.1 "
+do_execsql_test 4.1 "
   BEGIN CONCURRENT;
     SELECT * FROM t1 WHERE ([cols 127]) = ([joinup 30 127]);
     SELECT * FROM sqlite_concurrent;
@@ -194,7 +194,50 @@ do_execsql_test 3.1 "
 "
 execsql ROLLBACK
 
+#---------------------------------------------------------------
+# Tests for zeroblob().
+#
+reset_db
+do_execsql_test 5.0 {
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+  CREATE INDEX i1 ON t1(y);
+} {wal2}
 
+sqlite3 db2 test.db
+
+do_test 5.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(10, zeroblob(500));
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(20, zeroblob(500));
+    COMMIT;
+  } db2
+  execsql {
+    COMMIT;
+    SELECT count(*) FROM t1 WHERE y=zeroblob(500);
+  }
+} {2}
+
+do_test 5.2 {
+  execsql {
+    BEGIN CONCURRENT;
+      SELECT x FROM t1 WHERE y=zeroblob(500);
+      INSERT INTO t1 VALUES(30, zeroblob(100));
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(40, zeroblob(500));
+    COMMIT;
+  } db2
+  catchsql COMMIT
+
+} {1 {database is locked}}
+execsql ROLLBACK
+ 
 
 #---------------------------------------------------------------
 #

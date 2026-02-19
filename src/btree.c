@@ -1957,7 +1957,7 @@ static int btreeBcInsert(
    && pBtConc->eState==BTCONC_STATE_INUSE 
    && SQLITE_OK==(rc = btreeBcGrowWriteArray(pBtConc))
   ){
-    int nByte = (pPay->pKey? pPay->nKey : pPay->nData);
+    int nByte = (pPay->pKey? pPay->nKey : (pPay->nData + pPay->nZero));
     BtWrite *p = &pBtConc->aWrite[pBtConc->nWrite];
     memset(p, 0, sizeof(BtWrite));
     pBtConc->nWrite++;
@@ -1972,8 +1972,11 @@ static int btreeBcInsert(
       rc = btreeBcUpdateUnpacked(pBtConc, p->pKeyInfo);
     }else{
       p->iKey = pPay->nKey;
-      p->nRec = pPay->nData;
-      memcpy(p->aRec, pPay->pData, p->nRec);
+      p->nRec = nByte;
+      memcpy(p->aRec, pPay->pData, pPay->nData);
+      if( pPay->nZero ){
+        memset(&p->aRec[pPay->nData], 0, pPay->nZero);
+      }
     }
   }
 

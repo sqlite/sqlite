@@ -58,6 +58,10 @@ static u32 bcRecordSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
              == (int)sqlite3VdbeSerialTypeLen(serial_type) );
     len = pMem->n;
     if( len>0 ) memcpy(buf, pMem->z, len);
+    if( (pMem->flags & MEM_Zero) && pMem->u.nZero>0 ){
+      memset(&buf[len], 0, pMem->u.nZero);
+      len += pMem->u.nZero;
+    }
     return len;
   }
 
@@ -145,6 +149,7 @@ int sqlite3BcSerializeRecord(
   for(ii=0; ii<pRec->nField; ii++){
     u32 n;
     u32 stype = bcRecordSerialType(&pRec->aMem[ii], &n);
+    assert( sqlite3VdbeSerialTypeLen(stype)==n );
     nData += n;
     nHdr += sqlite3VarintLen(stype);
     pRec->aMem[ii].uTemp = stype;
