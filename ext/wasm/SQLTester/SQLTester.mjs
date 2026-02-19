@@ -863,6 +863,7 @@ class TestScript {
         case "INCRVACUUM":
           tester.appendDbInitSql("pragma auto_vacuum=incremental;");
           ++nOk;
+          break;
         default:
           break;
       }
