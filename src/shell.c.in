@@ -13346,7 +13346,7 @@ int SQLITE_CDECL main(int argc, char **argv){
       z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
         rc = do_meta_command(z, &data);
-        if( rc && bail_on_error ){
+        if( rc && (bail_on_error || rc==2) ){
           if( rc==2 ) rc = 0;
           goto shell_main_exit;
         }
