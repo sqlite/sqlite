@@ -1,5 +1,5 @@
-C Ensure\sincremental\sblob\sreads\sand\swrites\sare\shandled\scorrectly\sby\sthis\sbranch.
-D 2026-02-18T18:12:36.544
+C Add\sdoc/begin_concurrent_lcd.md\sto\sdocument\sthe\schange\son\sthis\sbranch.
+D 2026-02-19T11:41:40.568
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -57,6 +57,7 @@ F configure 9a00b21dfd13757bbfb8d89b30660a89ec1f8f3a79402b8f9f9b6fc475c3303a x
 F contrib/sqlitecon.tcl eb4c6578e08dd353263958da0dc620f8400b869a50d06e271ab0be85a51a08d3
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/begin_concurrent.md 4bee2c3990d1eb800f1ce3726a911292a8e4b889300b2ffd4b08d357370db299
+F doc/begin_concurrent_lcd.md 70793c762e22bce3611919b5e48b7380f61dfc66c081df4c546d5e88e0162d4b
 F doc/compile-for-unix.md c8f05bf9ff8c588c501515eb11642540572203e53d0b5eb5bf60983acdd47643
 F doc/compile-for-windows.md 36601c95fa4070eebfe757684271d17a7c4a586912ba706d0b5e7817e1df54ad
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
@@ -2236,8 +2237,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P eb8afe5b69770dbea07df3490a86f360868de8f1dd6c30b1e4a72dd61b295d1d
-R 03a367283521c95c677d39793f0920d1
+P 5de9e1084f57407ec72afbef4e56292a37ad7024d14e2a6b4ed60c773c4a63ff
+R 2015540e601787d5aa6050c6705440ef
 U dan
-Z a3144c07161228bac70256a247a73700
+Z 3e5352e7b4a8fbb91dacf70b5e6ca67d
 # Remove this line to create a well-formed Fossil manifest.
