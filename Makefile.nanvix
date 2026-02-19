@@ -257,6 +257,24 @@ endif
 	@tar tjf dist/$(ARTIFACT_NAME).tar.bz2 | head -20
 
 # ===========================================================================
+# Verify Package
+# ===========================================================================
+
+verify-package:
+	@echo "=== Verifying SQLite package ==="
+	$(eval ARTIFACT_NAME := sqlite-$(PLATFORM)-$(PROCESS_MODE))
+	@TARBALL="dist/$(ARTIFACT_NAME).tar.bz2"; \
+	if [ ! -f "$$TARBALL" ]; then \
+	  echo "FAIL: Package tarball not found: $$TARBALL"; exit 1; \
+	fi; \
+	echo "Package contents:"; \
+	tar tjf "$$TARBALL"; \
+	if ! tar tjf "$$TARBALL" | grep -q 'sysroot/lib/'; then \
+	  echo "FAIL: Package missing sysroot/lib/ entries"; exit 1; \
+	fi; \
+	echo "  PASS: SQLite package verification"
+
+# ===========================================================================
 # Install / Clean
 # ===========================================================================
 
@@ -286,4 +304,4 @@ distclean: clean
 	-make distclean 2>/dev/null || true
 	git clean -fdx -e Makefile.nanvix -e NANVIX.md -e .github -e nanvix-artifacts 2>/dev/null || true
 
-.PHONY: all configure build clean distclean test test-smoke test-integration test-functional package install
+.PHONY: all configure build clean distclean test test-smoke test-integration test-functional package verify-package install

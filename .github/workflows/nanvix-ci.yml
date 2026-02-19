@@ -163,18 +163,10 @@ jobs:
 
       - name: Verify Package
         run: |
-          set -euo pipefail
-          TARBALL="dist/sqlite-${{ matrix.platform }}-${{ matrix.process-mode }}.tar.bz2"
-          if [[ ! -f "$TARBALL" ]]; then
-            echo "::error::Package tarball not found: $TARBALL"
-            exit 1
-          fi
-          echo "Package contents:"
-          tar tjf "$TARBALL"
-          if ! (set +o pipefail; tar tjf "$TARBALL" | grep -q 'sysroot/lib/'); then
-            echo "::error::Package missing sysroot/lib/ entries"
-            exit 1
-          fi
+          make -f Makefile.nanvix CONFIG_NANVIX=y \
+            NANVIX_HOME="$NANVIX_HOME" NANVIX_TOOLCHAIN="/opt/nanvix" \
+            PLATFORM="${{ matrix.platform }}" PROCESS_MODE="${{ matrix.process-mode }}" \
+            verify-package
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -270,13 +262,14 @@ jobs:
           GH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           ZLIB_TAG: ${{ steps.deps.outputs.zlib_tag }}
         run: |
+          RELEASE_TAG="${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}"
           echo "Triggering cpython workflow..."
           gh api repos/nanvix/cpython/dispatches \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -f event_type="sqlite-release" \
             -f "client_payload[nanvix_sha]=${NANVIX_SHA}" \
-            -f "client_payload[sqlite_tag]=${GITHUB_SHA::7}-nanvix-${NANVIX_SHA}" \
+            -f "client_payload[sqlite_tag]=${RELEASE_TAG}" \
             -f "client_payload[zlib_tag]=${ZLIB_TAG}" || echo "::warning::Failed to trigger cpython workflow"
 
   report-failure:
