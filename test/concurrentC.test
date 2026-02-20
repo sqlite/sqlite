@@ -305,7 +305,75 @@ do_test 7.1 {
   execsql COMMIT db2
 } {}
 
+#-------------------------------------------------------------------------
+# Check that deleting a record added by the same transaction causes
+# no problems.
+#
+reset_db
+do_execsql_test 8.0 {
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y) WITHOUT ROWID;
+} {wal2}
+sqlite3 db2 test.db
 
+do_test 8.1 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(1, 'one');
+      INSERT INTO t1 VALUES(3, 'three');
+      INSERT INTO t1 VALUES(5, 'five');
+      DELETE FROM t1 WHERE x=3;
+
+      INSERT INTO t2 VALUES(1, 'one');
+      INSERT INTO t2 VALUES(3, 'three');
+      INSERT INTO t2 VALUES(5, 'five');
+      DELETE FROM t2 WHERE x=3;
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(7, 'seven');
+    COMMIT;
+  } db2
+  execsql COMMIT;
+} {}
+
+do_execsql_test 8.2 {
+  SELECT * FROM t1;
+  SELECT * FROM t2;
+} {1 one 5 five 7 seven    1 one 5 five}
+
+do_test 8.3 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(9, 'nine');
+      DELETE FROM t2 WHERE x=1;
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(10, 'ten');
+    COMMIT;
+    INSERT INTO t1 VALUES(8, 'eight');
+  } db2
+  catchsql COMMIT;
+} {1 {database is locked}}
+execsql ROLLBACK
+
+do_test 8.4 {
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(-1, 'minus one');
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t2 VALUES(-1, 'negative one');
+    COMMIT;
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(-2, 'minustwo');
+    COMMIT;
+  } db2
+  execsql COMMIT;
+} {}
 
 #---------------------------------------------------------------
 #
@@ -423,6 +491,58 @@ do_test 9.4 {
     COMMIT
   }
 } {1 {database is locked}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 11.0 {
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 8192;
+  PRAGMA wal_autocheckpoint = 0;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t2 VALUES(1, 1);
+  INSERT INTO t1 VALUES(2, 2);
+  INSERT INTO t2 VALUES(2, 2);
+  INSERT INTO t1 VALUES(3, 3);
+  INSERT INTO t2 VALUES(3, 3);
+} {wal2 8192 0}
+
+do_test 11.1 {
+  list [file size test.db-wal] [file size test.db-wal2]
+} {8416 2128}
+
+do_execsql_test 11.2 {
+  PRAGMA wal_checkpoint;
+  BEGIN CONCURRENT;
+    INSERT INTO t2 VALUES(5, 5);
+} {0 10 8}
+
+sqlite3 db2 test.db
+
+do_test 11.3 {
+  execsql {
+    PRAGMA journal_size_limit = 8192;
+    BEGIN CONCURRENT; INSERT INTO t1 VALUES(4, 4); COMMIT;
+    BEGIN CONCURRENT; INSERT INTO t1 VALUES(5, 5); COMMIT;
+    BEGIN CONCURRENT; INSERT INTO t1 VALUES(6, 6); COMMIT;
+    BEGIN CONCURRENT; INSERT INTO t1 VALUES(7, 7); COMMIT;
+    BEGIN CONCURRENT; INSERT INTO t1 VALUES(8, 8); COMMIT;
+    BEGIN CONCURRENT; INSERT INTO t1 VALUES(9, 9); COMMIT;
+    BEGIN CONCURRENT; INSERT INTO t1 VALUES(10, 10); COMMIT;
+    BEGIN CONCURRENT; INSERT INTO t1 VALUES(11, 11); COMMIT;
+    BEGIN CONCURRENT; INSERT INTO t2 VALUES(4, 4); COMMIT;
+  } db2
+
+} {}
+
+do_test 11.1 {
+  list [file size test.db-wal] [file size test.db-wal2]
+} {8416 2128}
+
+do_execsql_test 11.5 COMMIT
+
 
 
 

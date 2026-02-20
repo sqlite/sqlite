@@ -523,6 +523,36 @@ foreach {tn sql reads sorted} {
     3 read (NULL)+ ()+
   }
 
+  24 {
+    SELECT * FROM x1 WHERE b=20;
+    SELECT * FROM x1 WHERE (b, c) = (20, 20);
+  } {
+    3 read (20)- (20)+ 
+    3 read (20,20)- (20,20)+
+  } {
+    3 read (20)- (20)+ 
+  }
+
+  25 {
+    SELECT * FROM x1 WHERE b=20;
+    SELECT * FROM x1 WHERE (b, c) BETWEEN (20, 20) AND (30, 10);
+  } {
+    3 read (20)- (20)+ 
+    3 read (20,20)- (30,20,10,64)
+  } {
+    3 read (20)- (30,20,10,64)
+  }
+
+  26 {
+    SELECT * FROM x1 WHERE b=20;
+    SELECT * FROM x1 WHERE (b, c) BETWEEN (10, 30) AND (20, 20);
+  } {
+    3 read (20)- (20)+ 
+    3 read (10,30)- (20,30,10,46)
+  } {
+    3 read (10,30)- (20)+ 
+  }
+
 } {
   execsql { BEGIN CONCURRENT }
   execsql $sql

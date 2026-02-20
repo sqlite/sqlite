@@ -31,6 +31,8 @@ do_execsql_test 1.0 {
     (4, 'four'), (5, 'five'), (6, 'six');
 } {wal2}
 
+faultsim_save_and_close
+
 set res [list                        \
   2 read 2 4                         \
   2 read 7 7                         \
@@ -158,6 +160,41 @@ do_faultsim_test 1.5 -prep {
   catchsql { ROLLBACK }
 }
 
+do_faultsim_test 1.6 -prep {
+  sqlite3 db test.db
+  execsql {
+    SELECT * FROM t1;
+    BEGIN CONCURRENT;
+  }
+} -body {
+  execsql { DELETE FROM t1 WHERE b='five' }
+  execsql { SELECT * FROM sqlite_concurrent; }
+} -test {
+  faultsim_test_result [list 0 $::res] [list 0 {}] \
+    {1 {unable to open a temporary database file for storing temporary tables}}
+  catchsql { ROLLBACK }
+}
+
+do_faultsim_test 1.7 -prep {
+  faultsim_restore_and_reopen
+  sqlite3 db2 test.db
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(0, 'zero');
+      DELETE FROM t1 WHERE a=4;
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(7, 'seven');
+    COMMIT;
+  } db2
+} -body {
+  execsql COMMIT
+} -test {
+  faultsim_test_result [list 0 {}] \
+    {1 {unable to open a temporary database file for storing temporary tables}}
+  catchsql ROLLBACK
+}
 
 finish_test
 

@@ -62,11 +62,11 @@ foreach hdl $DBLIST {
 
 for {set i 0} {$i < 2000} {incr i} {
   foreach hdl $DBLIST {
+    if {$i==1000} {
+      $hdl eval "PRAGMA journal_size_limit=8192;"
+    }
     $hdl eval "BEGIN CONCURRENT"
     $hdl eval $T
-    if {$i==6} {
-      execsql_pp { SELECT * FROM sqlite_concurrent } $hdl
-    }
   }
 
   set tag ""
@@ -76,6 +76,9 @@ for {set i 0} {$i < 2000} {incr i} {
       append tag R
     } else {
       append tag C
+    }
+    if {$i>1000 && ($i % 5)==0} {
+      $hdl eval "PRAGMA wal_checkpoint"
     }
   }
 
@@ -90,6 +93,73 @@ for {set i 0} {$i < 2000} {incr i} {
 foreach hdl $DBLIST {
   $hdl close
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  PRAGMA journal_mode = wal2;
+  PRAGMA journal_size_limit = 8192;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
+  CREATE TABLE t2(a INTEGER PRIMARY KEY, b UNIQUE);
+  CREATE TABLE t3(a INTEGER PRIMARY KEY, b UNIQUE);
+} {wal2 8192}
+
+do_test 2.1.1 { expr [file size test.db-wal2]>1000 } {0}
+do_execsql_test 10.1.2 {
+  INSERT INTO t1 VALUES(0, 'xyz');
+  PRAGMA wal_checkpoint;
+} {0 11 9}
+
+do_test 2.1.3 { expr [file size test.db-wal]>1000  } {1}
+do_test 2.1.4 { expr [file size test.db-wal2]>1000 } {1}
+
+sqlite3 db1 test.db
+sqlite3 db2 test.db
+sqlite3 db3 test.db
+
+db1 eval "PRAGMA journal_size_limit=8192;"
+db2 eval "PRAGMA journal_size_limit=8192;"
+db3 eval "PRAGMA journal_size_limit=8192;"
+
+proc random {} {
+  expr int(rand()*(2*1024*1024*1024*1024))
+}
+db func random random
+db1 func random random
+db2 func random random
+db3 func random random
+
+for {set i 0} {$i < 1000} {incr i} {
+  do_test 2.2.$i {
+    execsql {
+      BEGIN CONCURRENT;
+        INSERT INTO t3 VALUES( random(), randomblob(100) );
+    }
+    execsql {
+      BEGIN CONCURRENT;
+        INSERT INTO t1 VALUES( random(), randomblob(100) );
+      COMMIT;
+      PRAGMA wal_checkpoint;
+    } db1
+    execsql {
+      BEGIN CONCURRENT;
+        INSERT INTO t2 VALUES( random(), randomblob(100) );
+      COMMIT;
+      PRAGMA wal_checkpoint;
+    } db2
+    execsql {
+      BEGIN CONCURRENT;
+        INSERT INTO t3 VALUES( random(), randomblob(100) );
+      COMMIT;
+      PRAGMA wal_checkpoint;
+    } db3
+    execsql COMMIT
+  } {}
+}
+
+db1 close
+db2 close
+db3 close
 
 
 finish_test
