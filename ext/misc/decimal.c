@@ -292,11 +292,35 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
 }
 
 /*
+** Round a decimal value to N significant digits.  N must be positive.
+*/
+static void decimal_round(Decimal *p, int N){
+  int i;
+  int nZero;
+  if( N<1 ) return;
+  for(nZero=0; nZero<p->nDigit && p->a[nZero]==0; nZero++){}
+  N += nZero;
+  if( p->nDigit<=N ) return;
+  if( p->a[N]>4 ){
+    p->a[N-1]++;
+    for(i=N-1; i>0 && p->a[i]>9; i--){
+      p->a[i] = 0;
+      p->a[i-1]++;
+    }
+    if( p->a[0]>9 ){
+      p->a[0] = 1;
+      p->nFrac--;
+    }
+  }
+  memset(&p->a[N], 0, p->nDigit - N);
+}
+
+/*
 ** Make the given Decimal the result in an format similar to  '%+#e'.
 ** In other words, show exponential notation with leading and trailing
 ** zeros omitted.
 */
-static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p){
+static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p, int N){
   char *z;       /* The output buffer */
   int i;         /* Loop counter */
   int nZero;     /* Number of leading zeros */
@@ -314,8 +338,10 @@ static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p){
     sqlite3_result_null(pCtx);
     return;
   }
-  for(nDigit=p->nDigit; nDigit>0 && p->a[nDigit-1]==0; nDigit--){}
+  if( N<1 ) N = 0;
+  for(nDigit=p->nDigit; nDigit>N && p->a[nDigit-1]==0; nDigit--){}
   for(nZero=0; nZero<nDigit && p->a[nZero]==0; nZero++){}
+  N += nZero;
   nFrac = p->nFrac + (nDigit - p->nDigit);
   nDigit -= nZero;
   z = sqlite3_malloc64( (sqlite3_int64)nDigit+20 );
@@ -677,10 +703,16 @@ static void decimalFunc(
   sqlite3_value **argv
 ){
   Decimal *p =  decimal_new(context, argv[0], 0);
-  UNUSED_PARAMETER(argc);
+  int N;
+  if( argc==2 ){
+    N = sqlite3_value_int(argv[1]);
+    if( N>0 ) decimal_round(p, N);
+  }else{
+    N = 0;
+  }
   if( p ){
     if( sqlite3_user_data(context)!=0 ){
-      decimal_result_sci(context, p);
+      decimal_result_sci(context, p, N);
     }else{
       decimal_result(context, p);
     }
@@ -850,7 +882,7 @@ static void decimalPow2Func(
   UNUSED_PARAMETER(argc);
   if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
     Decimal *pA = decimalPow2(sqlite3_value_int(argv[0]));
-    decimal_result_sci(context, pA);
+    decimal_result_sci(context, pA, 0);
     decimal_free(pA);
   }
 }
@@ -871,7 +903,9 @@ int sqlite3_decimal_init(
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
     { "decimal",       1, 0,  decimalFunc        },
+    { "decimal",       2, 0,  decimalFunc        },
     { "decimal_exp",   1, 1,  decimalFunc        },
+    { "decimal_exp",   2, 1,  decimalFunc        },
     { "decimal_cmp",   2, 0,  decimalCmpFunc     },
     { "decimal_add",   2, 0,  decimalAddFunc     },
     { "decimal_sub",   2, 0,  decimalSubFunc     },
