@@ -266,9 +266,9 @@ int sqlite3BtreeCursorRestore(BtCursor*, int*);
 int sqlite3BtreeDelete(BtCursor*, u8 flags);
 
 #ifndef SQLITE_OMIT_CONCURRENT
-int sqlite3BtreeCursorNoScan(BtCursor*);
+void sqlite3BtreeCursorNoScan(BtCursor*);
 #else
-# define sqlite3BtreeCursorNoScan(x) SQLITE_OK
+# define sqlite3BtreeCursorNoScan(x)
 #endif
 
 /* Allowed flags for sqlite3BtreeDelete() and sqlite3BtreeInsert() */

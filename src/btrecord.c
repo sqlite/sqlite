@@ -562,73 +562,75 @@ static int concFilter(
   assert( idxNum==0 || idxNum==1 );
   assert( idxNum==argc );
 
-  if( idxNum==1 ){
-    int bSort = sqlite3_value_int(argv[0]);
-    if( bSort ){
-      rc = sqlite3BtreeSortReadArrays(pConc);
+  if( pConc->eState==BTCONC_STATE_INUSE ){
+    if( idxNum==1 ){
+      int bSort = sqlite3_value_int(argv[0]);
+      if( bSort ){
+        rc = sqlite3BtreeSortReadArrays(pConc);
+      }
     }
-  }
-
-  if( rc==SQLITE_OK ){
-    int ii;
-
-    for(ii=0; rc==SQLITE_OK && ii<pConc->nWrite; ii++){
-      BtWrite *pWrite = &pConc->aWrite[ii];
-      ConcRow *pRow = (ConcRow*)sqlite3MallocZero(sizeof(ConcRow));
-      if( pRow==0 ){
-        rc = SQLITE_NOMEM_BKPT;
-      }else{
-        pRow->root = pWrite->iRoot;
-        pRow->zOp = pWrite->bDel ? "delete" : "insert";
-        if( pWrite->pKeyInfo ){
-          pRow->zK1 = bcRecordToText(pWrite->aRec, pWrite->nRec, 0);
-          if( pRow->zK1==0 ) rc = SQLITE_NOMEM_BKPT;
+  
+    if( rc==SQLITE_OK ){
+      int ii;
+  
+      for(ii=0; rc==SQLITE_OK && ii<pConc->nWrite; ii++){
+        BtWrite *pWrite = &pConc->aWrite[ii];
+        ConcRow *pRow = (ConcRow*)sqlite3MallocZero(sizeof(ConcRow));
+        if( pRow==0 ){
+          rc = SQLITE_NOMEM_BKPT;
         }else{
-          pRow->zK1 = sqlite3_mprintf("%lld", pWrite->iKey);
-          if( pRow->zK1==0 ){
+          pRow->root = pWrite->iRoot;
+          pRow->zOp = pWrite->bDel ? "delete" : "insert";
+          if( pWrite->pKeyInfo ){
+            pRow->zK1 = bcRecordToText(pWrite->aRec, pWrite->nRec, 0);
+            if( pRow->zK1==0 ) rc = SQLITE_NOMEM_BKPT;
+          }else{
+            pRow->zK1 = sqlite3_mprintf("%lld", pWrite->iKey);
+            if( pRow->zK1==0 ){
+              rc = SQLITE_NOMEM_BKPT;
+            }else if( pWrite->bDel==0 ){
+              pRow->zK2 = bcRecordToText(pWrite->aRec, pWrite->nRec, 0);
+              if( pRow->zK2==0 ) rc = SQLITE_NOMEM_BKPT;
+            }
+          }
+          pRow->pRowNext = pCsr->pRow;
+          pCsr->pRow = pRow;
+        }
+      }
+  
+      for(ii=pConc->nReadIndex-1; rc==SQLITE_OK && ii>=0; ii--){
+        BtReadIndex *p = &pConc->aReadIndex[ii];
+        ConcRow *pRow = (ConcRow*)sqlite3MallocZero(sizeof(ConcRow));
+        if( pRow==0 ){
+          rc = SQLITE_NOMEM_BKPT;
+        }else{
+          pRow->root = p->iRoot;
+          pRow->zOp = "read";
+          pRow->zK1 = bcRecordToText(p->aRecMin, p->nRecMin, p->drc_min);
+          pRow->zK2 = bcRecordToText(p->aRecMax, p->nRecMax, p->drc_max);
+          pRow->pRowNext = pCsr->pRow;
+          pCsr->pRow = pRow;
+          if( pRow->zK1==0 || pRow->zK2==0 ){
             rc = SQLITE_NOMEM_BKPT;
-          }else if( pWrite->bDel==0 ){
-            pRow->zK2 = bcRecordToText(pWrite->aRec, pWrite->nRec, 0);
-            if( pRow->zK2==0 ) rc = SQLITE_NOMEM_BKPT;
           }
         }
-        pRow->pRowNext = pCsr->pRow;
-        pCsr->pRow = pRow;
       }
-    }
-
-    for(ii=pConc->nReadIndex-1; rc==SQLITE_OK && ii>=0; ii--){
-      BtReadIndex *p = &pConc->aReadIndex[ii];
-      ConcRow *pRow = (ConcRow*)sqlite3MallocZero(sizeof(ConcRow));
-      if( pRow==0 ){
-        rc = SQLITE_NOMEM_BKPT;
-      }else{
-        pRow->root = p->iRoot;
-        pRow->zOp = "read";
-        pRow->zK1 = bcRecordToText(p->aRecMin, p->nRecMin, p->drc_min);
-        pRow->zK2 = bcRecordToText(p->aRecMax, p->nRecMax, p->drc_max);
-        pRow->pRowNext = pCsr->pRow;
-        pCsr->pRow = pRow;
-        if( pRow->zK1==0 || pRow->zK2==0 ){
+  
+      for(ii=pConc->nReadIntkey-1; rc==SQLITE_OK && ii>=0; ii--){
+        BtReadIntkey *p = &pConc->aReadIntkey[ii];
+        ConcRow *pRow = (ConcRow*)sqlite3MallocZero(sizeof(ConcRow));
+        if( pRow==0 ){
           rc = SQLITE_NOMEM_BKPT;
-        }
-      }
-    }
-
-    for(ii=pConc->nReadIntkey-1; rc==SQLITE_OK && ii>=0; ii--){
-      BtReadIntkey *p = &pConc->aReadIntkey[ii];
-      ConcRow *pRow = (ConcRow*)sqlite3MallocZero(sizeof(ConcRow));
-      if( pRow==0 ){
-        rc = SQLITE_NOMEM_BKPT;
-      }else{
-        pRow->root = p->iRoot;
-        pRow->zOp = "read";
-        pRow->zK1 = sqlite3_mprintf("%lld", p->iMin);
-        pRow->zK2 = sqlite3_mprintf("%lld", p->iMax);
-        pRow->pRowNext = pCsr->pRow;
-        pCsr->pRow = pRow;
-        if( pRow->zK1==0 || pRow->zK2==0 ){
-          rc = SQLITE_NOMEM_BKPT;
+        }else{
+          pRow->root = p->iRoot;
+          pRow->zOp = "read";
+          pRow->zK1 = sqlite3_mprintf("%lld", p->iMin);
+          pRow->zK2 = sqlite3_mprintf("%lld", p->iMax);
+          pRow->pRowNext = pCsr->pRow;
+          pCsr->pRow = pRow;
+          if( pRow->zK1==0 || pRow->zK2==0 ){
+            rc = SQLITE_NOMEM_BKPT;
+          }
         }
       }
     }

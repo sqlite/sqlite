@@ -237,7 +237,75 @@ do_test 5.2 {
 
 } {1 {database is locked}}
 execsql ROLLBACK
+
+do_test 5.3 {
+  execsql {
+    BEGIN CONCURRENT;
+      SELECT x FROM t1 WHERE y=zeroblob(0);
+      INSERT INTO t1 VALUES(50, zeroblob(100));
+  }
+  execsql {
+    BEGIN CONCURRENT;
+      INSERT INTO t1 VALUES(60, zeroblob(0));
+    COMMIT;
+  } db2
+  catchsql COMMIT
+
+} {1 {database is locked}}
+execsql ROLLBACK
  
+#---------------------------------------------------------------
+#
+reset_db
+do_execsql_test 6.0 {
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+  CREATE INDEX i1 ON t1(y);
+} {wal2}
+
+do_execsql_test 6.1 {
+  BEGIN CONCURRENT;
+    INSERT INTO t1 VALUES(1, 'xyz');
+    SAVEPOINT one;
+      SAVEPOINT two;
+        CREATE TEMP TABLE t2(x);
+    RELEASE one;
+    INSERT INTO t1 VALUES(2, 'XYZ');
+  COMMIT;
+}
+
+#---------------------------------------------------------------
+#
+reset_db
+do_execsql_test 7.0 {
+  PRAGMA journal_mode = wal2;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, b UNIQUE);
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, b UNIQUE);
+} {wal2}
+
+sqlite3 db2 test.db
+
+do_test 7.1 {
+  execsql { BEGIN CONCURRENT }
+  execsql { BEGIN CONCURRENT } db2
+  for {set ii 0} {$ii < 1000} {incr ii 4} {
+    execsql "INSERT INTO t1 VALUES($ii, $ii)"
+    execsql "INSERT INTO t2 VALUES($ii, $ii)"
+    execsql "INSERT INTO t1 VALUES([expr $ii+1], [expr $ii+1])" db2
+    execsql "INSERT INTO t2 VALUES([expr $ii+1], [expr $ii+1])" db2
+  }
+  for {set ii 0} {$ii < 1000} {incr ii 4} {
+    execsql "INSERT INTO t1 VALUES([expr $ii+2], [expr $ii+2])"
+    execsql "INSERT INTO t2 VALUES([expr $ii+2], [expr $ii+2])"
+    execsql "INSERT INTO t1 VALUES([expr $ii+3], [expr $ii+3])" db2
+    execsql "INSERT INTO t2 VALUES([expr $ii+3], [expr $ii+3])" db2
+  }
+
+  execsql COMMIT
+  execsql COMMIT db2
+} {}
+
+
 
 #---------------------------------------------------------------
 #

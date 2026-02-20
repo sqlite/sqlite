@@ -664,14 +664,17 @@ static void btreeBcSavepointEnd(BtShared *pBt, int op, int iSvpt){
   assert( iSvpt>=0 || (iSvpt==-1 && op==SAVEPOINT_ROLLBACK) );
   assert( pBt->conc.nSvpt>=0 );
 
-  if( iSvpt<pBt->conc.nSvpt ){
-    if( op==SAVEPOINT_RELEASE ){
-      pBt->conc.nSvpt = iSvpt;
-    }else{
-      int nNew = (iSvpt<0) ? 0 : pBt->conc.aSvpt[iSvpt];
-      btreeBcFreeWriteArray(&pBt->conc.aWrite[nNew], pBt->conc.nWrite - nNew);
-      pBt->conc.nWrite = nNew;
-      pBt->conc.nSvpt = iSvpt+1;
+  if( pBt->conc.eState==BTCONC_STATE_INUSE ){
+    assert( iSvpt>=0 );
+    if( iSvpt<pBt->conc.nSvpt ){
+      if( op==SAVEPOINT_RELEASE ){
+        pBt->conc.nSvpt = iSvpt;
+      }else{
+        int nNew = pBt->conc.aSvpt[iSvpt];
+        btreeBcFreeWriteArray(&pBt->conc.aWrite[nNew], pBt->conc.nWrite - nNew);
+        pBt->conc.nWrite = nNew;
+        pBt->conc.nSvpt = iSvpt+1;
+      }
     }
   }
 }
@@ -1032,15 +1035,14 @@ static void btreeBcRemoveOldest(BtSharedLog *pBtLog){
 static int btreeBcReadIntkeySort(BtReadIntkey *aRead, int *pnRead){
   int nRead = *pnRead;
 
+  BT_MERGESORT_BODY(BtReadIntkey, aRead, nRead, (
+       (pA->iRoot<pB->iRoot)
+    || (pA->iRoot==pB->iRoot && pA->iMin<=pB->iMin)
+  ));
   if( nRead>1 ){
     BtReadIntkey *pIn;
     BtReadIntkey *pOut = &aRead[0];
     BtReadIntkey * const pEof = &aRead[nRead];
-
-    BT_MERGESORT_BODY(BtReadIntkey, aRead, nRead, (
-          pA->iRoot<pB->iRoot 
-       || (pA->iRoot==pB->iRoot && pA->iMin<=pB->iMin)
-    ));
 
     for(pIn=&aRead[1]; pIn<pEof; pIn++){
 
@@ -1184,10 +1186,10 @@ int btreeBcReadIndexSort(BtConcurrent *pBtConc){
           );
 
           sqlite3KeyInfoUnref(pIn->pKeyInfo);
-          sqlite3_free(pIn->aRecMin);
+          if( pIn->aRecMin!=pIn->aRecMax ) sqlite3_free(pIn->aRecMin);
 
           if( res>0 ){
-            sqlite3_free(pOut->aRecMax);
+            if( pOut->aRecMax!=pOut->aRecMin ) sqlite3_free(pOut->aRecMax);
             pOut->aRecMax = pIn->aRecMax;
             pOut->nRecMax = pIn->nRecMax;
             pOut->drc_max = pIn->drc_max;
@@ -1361,8 +1363,7 @@ int btreeBcDetectIntkeyConflict(
         sqlite3_log(SQLITE_OK,
             "cannot commit CONCURRENT transaction - conflict in table %s - "
             "range (%lld,%lld) conflicts with write to rowid %lld", 
-            (zTab ? zTab : "UNKNOWN"), 
-            aRead[iRead].iMin, aRead[iRead].iMax, iKey
+            zTab, aRead[iRead].iMin, aRead[iRead].iMax, iKey
         );
         return SQLITE_BUSY_SNAPSHOT;
       }
@@ -1398,22 +1399,38 @@ int btreeBcDetectIndexConflict(
     }else if( pWrite->iRoot > pRead->iRoot ){
       iRead++;
     }else{
+      /* Most index scans are not really scans, but exact lookups. In
+      ** this case pRead->aRecMin==pRead->aRecMax. */
+      assert( (pRead->aRecMin!=pRead->aRecMax) || pRead->drc_min>0 );
+
       int cmp = btreeBcRecordCompare(
           pBtConc->pUnpacked,
           pRead->pKeyInfo,
           pWrite->aRec, pWrite->nRec, 0,
-          pRead->aRecMin, pRead->nRecMin, pRead->drc_min
+          pRead->aRecMin, pRead->nRecMin, 
+          (pRead->drc_min>0 ? 0 : pRead->drc_min)
       );
+
       if( cmp < 0 ){
         /* Write key is less than aRecMin */
         iWrite++;
       }else{
-        cmp = btreeBcRecordCompare(
-            pBtConc->pUnpacked,
-            pRead->pKeyInfo,
-            pWrite->aRec, pWrite->nRec, 0,
-            pRead->aRecMax, pRead->nRecMax, pRead->drc_max
-        );
+        /* Write key is greater than aRecMin */
+        iRead++;
+
+        /* If cmp==0, then this is definitely a conflict. Or, if cmp>0 and this
+        ** is a true range scan, not an exact lookup, compare the write-key to
+        ** BtReadIndex.aRedMax. If it is less than or equal, this is also a
+        ** conflict.  */
+        if( cmp>0 && (pRead->aRecMin!=pRead->aRecMax) ){
+          cmp = btreeBcRecordCompare(
+              pBtConc->pUnpacked,
+              pRead->pKeyInfo,
+              pWrite->aRec, pWrite->nRec, 0,
+              pRead->aRecMax, pRead->nRecMax, pRead->drc_max
+          );
+        }
+
         if( cmp<=0 ){
           /* Write key is between aRecMin and aRecMax - conflict! */
           const char *zIdx = 0;
@@ -1421,8 +1438,6 @@ int btreeBcDetectIndexConflict(
           sqlite3BcLogIndexConflict(zTab, zIdx, pWrite, pRead);
           return SQLITE_BUSY_SNAPSHOT;
         }
-        /* Write key is greater than aRecMax */
-        iRead++;
       }
     }
   }
@@ -1588,9 +1603,10 @@ static void btreeBcEndTransaction(sqlite3 *db, BtShared *pBt){
       BtReadIndex *aRead = pBt->conc.aReadIndex;
       int ii;
       for(ii=0; ii<pBt->conc.nReadIndex; ii++){
-        sqlite3_free(aRead[ii].aRecMin);
-        sqlite3_free(aRead[ii].aRecMax);
-        sqlite3KeyInfoUnref(aRead[ii].pKeyInfo);
+        BtReadIndex *p = &aRead[ii];
+        if( p->aRecMin!=p->aRecMax ) sqlite3_free(p->aRecMin);
+        sqlite3_free(p->aRecMax);
+        sqlite3KeyInfoUnref(p->pKeyInfo);
       }
       sqlite3_free(aRead);
 
@@ -1695,7 +1711,8 @@ static int btreeBcScanFinish(BtCursor *pCsr){
           break;
         }
 
-        case BTCONC_READ_MOVETO: {
+        default: {
+          assert( pCsr->eScanType==BTCONC_READ_MOVETO );
           /* The value used in the seek op is currently stored in p->aRecMin */
           if( pCsr->iScanDir==0 ){
             if( aRec==0 ){
@@ -1751,7 +1768,8 @@ static int btreeBcScanFinish(BtCursor *pCsr){
           break;
         }
 
-        case BTCONC_READ_MOVETO: {
+        default: {
+          assert( pCsr->eScanType==BTCONC_READ_MOVETO );
           /* The value used in the seek op is currently stored in p->iMin */
           if( bIsValid ){
             p->iMax = iKey;
@@ -1799,6 +1817,7 @@ static BtReadIntkey *btreeBcIntkeyRead(
     *piScanIndex = pBtConc->nReadIntkey;
     return &pBtConc->aReadIntkey[pBtConc->nReadIntkey-1];
   }
+  *pRc = rc;
   return 0;
 }
 
@@ -1822,6 +1841,7 @@ static BtReadIndex *btreeBcIndexRead(
     *piScanIndex = pBtConc->nReadIndex;
     return &pBtConc->aReadIndex[pBtConc->nReadIndex-1];
   }
+  *pRc = rc;
   return 0;
 }
 
@@ -1851,22 +1871,15 @@ static int btreeBcUpdateUnpacked(BtConcurrent *pBtConc, KeyInfo *pKeyInfo){
 /* !defined(SQLITE_OMIT_CONCURRENT)
 **
 */
-static int btreeBcScanIsExact(BtCursor *pCsr){
-  int rc = SQLITE_OK;
+static void btreeBcScanIsExact(BtCursor *pCsr){
   BtReadIndex *p = &pCsr->pBt->conc.aReadIndex[pCsr->iScanIndex-1];
-  p->aRecMax = (u8*)sqlite3_malloc(p->nRecMin + 8+9);
-  if( p->aRecMax==0 ){
-    rc = SQLITE_NOMEM_BKPT;
-  }else{
-    p->nRecMax = p->nRecMin;
-    memcpy(p->aRecMax, p->aRecMin, p->nRecMax);
-    if( p->drc_min<0 ){
-      p->drc_min = p->drc_min * -1;
-    }
-    p->drc_max = p->drc_min * -1;
+  p->nRecMax = p->nRecMin;
+  p->aRecMax = p->aRecMin;
+  if( p->drc_min<0 ){
+    p->drc_min = p->drc_min * -1;
   }
+  p->drc_max = p->drc_min * -1;
   pCsr->iScanIndex = 0;
-  return rc;
 }
 
 /* !defined(SQLITE_OMIT_CONCURRENT)
@@ -1910,7 +1923,7 @@ static int btreeBcScanStart(
         ** directly instead of tracking where the cursor finishes up.
         */
         if( (pCsr->hints & BTREE_SEEK_EQ) && rc==SQLITE_OK ){
-          rc = btreeBcScanIsExact(pCsr);
+          btreeBcScanIsExact(pCsr);
         }
       }
 
@@ -7964,18 +7977,16 @@ moveto_table_finish:
 ** for rowid 4, the cursor will land on rowid 3. But we want the OCC
 ** range lock on 4-4, not 3-4. That's what this call is for.
 */
-int sqlite3BtreeCursorNoScan(BtCursor *pCsr){
-  int rc = SQLITE_OK;
+void sqlite3BtreeCursorNoScan(BtCursor *pCsr){
   if( pCsr->iScanIndex>0 ){
     if( pCsr->pKeyInfo ){
-      rc = btreeBcScanIsExact(pCsr);
+      btreeBcScanIsExact(pCsr);
     }else{
       BtReadIntkey *p = &pCsr->pBt->conc.aReadIntkey[pCsr->iScanIndex-1];
       p->iMax = p->iMin;
       pCsr->iScanIndex = 0;
     }
   }
-  return rc;
 }
 #endif
 
