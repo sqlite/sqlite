@@ -4820,12 +4820,12 @@ struct PrintfArguments {
 ** value into an approximate decimal representation.
 */
 struct FpDecode {
-  char sign;           /* '+' or '-' */
-  char isSpecial;      /* 1: Infinity  2: NaN */
   int n;               /* Significant digits in the decode */
   int iDP;             /* Location of the decimal point */
   char *z;             /* Start of significant digits */
-  char zBuf[24];       /* Storage for significant digits */
+  char zBuf[20];       /* Storage for significant digits */
+  char sign;           /* '+' or '-' */
+  char isSpecial;      /* 1: Infinity  2: NaN */
 };
 
 void sqlite3FpDecode(FpDecode*,double,int,int);
