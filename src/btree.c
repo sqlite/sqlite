@@ -636,19 +636,21 @@ static void btreeBcFreeWriteArray(BtWrite *aWrite, int nWrite){
 
 /* !defined(SQLITE_OMIT_CONCURRENT)
 **
-** If this is a BEGIN CONCURRENT transactin, update the BtShared.conc 
+** If this is a BEGIN CONCURRENT transaction, update the BtShared.conc 
 ** object to reflect the fact that nSvpt savepoints are now open.
 */
 static void btreeBcSavepointBegin(BtShared *pBt, int nSvpt){
-  if( nSvpt>=BTCONC_MAX_SAVEPOINT ){
-    /* More than 8 nested savepoints. No logical OCC this transaction. */
-    pBt->conc.eState = BTCONC_STATE_RETIRED;
-  }else if( nSvpt>pBt->conc.nSvpt ){
-    int ii;
-    for(ii=pBt->conc.nSvpt; ii<nSvpt; ii++){
-      pBt->conc.aSvpt[ii] = pBt->conc.nWrite;
+  if( pBt->conc.eState==BTCONC_STATE_INUSE ){
+    if( nSvpt>=BTCONC_MAX_SAVEPOINT ){
+      /* More than 8 nested savepoints. No logical OCC this transaction. */
+      pBt->conc.eState = BTCONC_STATE_RETIRED;
+    }else if( nSvpt>pBt->conc.nSvpt ){
+      int ii;
+      for(ii=pBt->conc.nSvpt; ii<nSvpt; ii++){
+        pBt->conc.aSvpt[ii] = pBt->conc.nWrite;
+      }
+      pBt->conc.nSvpt = nSvpt;
     }
-    pBt->conc.nSvpt = nSvpt;
   }
 }
 
@@ -954,6 +956,8 @@ static void btreeBcRemoveOldest(BtSharedLog *pBtLog){
 
 #ifdef SQLITE_DEBUG
   {
+    /* Check that BtSharedLog.nByte is the sum of the nByte member of
+    ** all log entries. */
     i64 nTotal = 0;
     BtSharedLogEntry *pEntry = pBtLog->pFirst;
     for( ; pEntry; pEntry=pEntry->pLogNext) nTotal += pEntry->nByte;
@@ -1175,15 +1179,22 @@ int btreeBcReadIndexSort(BtConcurrent *pBtConc){
         );
 
         if( res<=0 ){
-          /* This range overlaps with the previous one. This call is to
-          ** figure out if it is entirely encapsulated within the previous
-          ** range (if res<=0) or if it only partially overlaps and the
-          ** max of the previous range needs to be extended (res>0). */
-          res = btreeBcRecordCompare(
-            pBtConc->pUnpacked, pIn->pKeyInfo,
-            pIn->aRecMax, pIn->nRecMax, pIn->drc_max,
-            pOut->aRecMax, pOut->nRecMax, pOut->drc_max
-          );
+
+          if( pIn->aRecMax!=pIn->aRecMin || pOut->aRecMax!=pOut->aRecMin ){
+            /* This range overlaps with the previous one. This call is to
+            ** figure out if it is entirely encapsulated within the previous
+            ** range (if res<=0) or if it only partially overlaps and the
+            ** max of the previous range needs to be extended (res>0). 
+            **
+            ** This test is not required if both pOut and pIn are an exact 
+            ** key searchs, not true ranges (if aRecMax==aRecMin). In that 
+            ** case, pIn is always wholly encapsulated by pOut.  */
+            res = btreeBcRecordCompare(
+                pBtConc->pUnpacked, pIn->pKeyInfo,
+                pIn->aRecMax, pIn->nRecMax, pIn->drc_max,
+                pOut->aRecMax, pOut->nRecMax, pOut->drc_max
+            );
+          }
 
           sqlite3KeyInfoUnref(pIn->pKeyInfo);
           if( pIn->aRecMin!=pIn->aRecMax ) sqlite3_free(pIn->aRecMin);
@@ -1288,11 +1299,14 @@ int btreeBcWriteIndexSort(
 ** Figure out which table or index this is using the schema managed by
 ** pBt. Return the name of the table. If pzIdx is not NULL and the root
 ** page belongs to an index, set (*pzIdx) to the name of the index.
+**
+** This is used to identify the specific table and index on which a 
+** conflict occurred in an sqlite3_log() message.
 */
 static const char *btreeBcRootToObject(
-  BtShared *pBt, 
-  Pgno iRoot, 
-  const char **pzIdx
+  BtShared *pBt,                  /* Shared b-tree object */
+  Pgno iRoot,                     /* Root page of table or index */
+  const char **pzIdx              /* OUT: Index name (or NULL) */
 ){
   Schema *pSchema = pBt->pSchema;
   const char *zRet = 0;
@@ -1401,7 +1415,7 @@ int btreeBcDetectIndexConflict(
     }else{
       /* Most index scans are not really scans, but exact lookups. In
       ** this case pRead->aRecMin==pRead->aRecMax. */
-      assert( (pRead->aRecMin!=pRead->aRecMax) || pRead->drc_min>0 );
+      assert( (pRead->aRecMin!=pRead->aRecMax) || pRead->drc_min>=0 );
 
       int cmp = btreeBcRecordCompare(
           pBtConc->pUnpacked,
@@ -1655,11 +1669,9 @@ static void btreeBcDisconnect(BtShared *pBt){
     sqlite3_mutex_leave( sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MAIN) );
 
     if( pFree ){
-      /* TODO: Free existing log entries */
       while( pFree->pFirst ){
         btreeBcRemoveOldest(pFree);
       }
-
       sqlite3_mutex_free(pFree->mutex);
       sqlite3_free(pFree);
     }
@@ -2255,6 +2267,9 @@ static int btreeBcTryLogicalCommit(Btree *p, int *pbLog){
 # define btreePtrmapCheck(y,z) 
 
 # define btreeBcEndTransaction(db, pBt)
+# define btreeBcDisconnect(pBt)
+# define btreeBcScanFinish(pCsr) SQLITE_OK
+# define btreeBcScanStart(pCsr,eRead,pKey,iKey) SQLITE_OK
 #endif /* SQLITE_OMIT_CONCURRENT */
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
@@ -6360,7 +6375,6 @@ static void btreeEndTransaction(Btree *p){
   ** the record of all pages read within the transaction.  */
   btreePtrmapDelete(pBt);
   btreeBcEndTransaction(db, pBt);
-  pBt->conc.eState = BTCONC_STATE_NONE;
   sqlite3PagerEndConcurrent(pBt->pPager);
   btreeIntegrity(p);
 }
@@ -6830,6 +6844,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     sqlite3BtreeEnter(pBtree);
     assert( pBt->pCursor!=0 );
 
+#ifndef SQLITE_OMIT_CONCURRENT
     if( SQLITE_OK!=btreeBcScanFinish(pCur) ){
       /* Allocation failed in btreeBcScanFinish(), but we have no way
       ** to return the error to the user. So just disable the BtConcurrent
@@ -6837,6 +6852,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
       assert( pBt->conc.eState==BTCONC_STATE_INUSE );
       pBt->conc.eState = BTCONC_STATE_RETIRED;
     }
+#endif
 
     if( pBt->pCursor==pCur ){
       pBt->pCursor = pCur->pNext;
@@ -13693,15 +13709,16 @@ int sqlite3BtreeExclusiveLock(Btree *p){
   Pgno pgno = 0;
   BtShared *pBt = p->pBt;
   assert( p->inTrans==TRANS_WRITE && pBt->pPage1 );
-  memset(db->aCommit, 0, sizeof(db->aCommit));
   sqlite3BtreeEnter(p);
+
+#ifdef SQLITE_OMIT_CONCURRENT
+  rc = sqlite3PagerExclusiveLock(pBt->pPager, 0, 0);
+#else
+  memset(db->aCommit, 0, sizeof(db->aCommit));
   rc = sqlite3PagerExclusiveLock(pBt->pPager, 
     (db->eConcurrent==CONCURRENT_SCHEMA) ? 0 : pBt->pPage1->pDbPage,
     db->aCommit
   );
-#ifdef SQLITE_OMIT_CONCURRENT
-  assert( db->aCommit[SQLITE_COMMIT_CONFLICT_PGNO]==0 );
-#else
 
   if( rc==SQLITE_BUSY_SNAPSHOT 
    && db->aCommit[SQLITE_COMMIT_CONFLICT_PGNO]>1

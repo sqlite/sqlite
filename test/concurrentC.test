@@ -534,12 +534,11 @@ do_test 11.3 {
     BEGIN CONCURRENT; INSERT INTO t1 VALUES(11, 11); COMMIT;
     BEGIN CONCURRENT; INSERT INTO t2 VALUES(4, 4); COMMIT;
   } db2
+} {8192}
 
-} {}
-
-do_test 11.1 {
+do_test 11.4 {
   list [file size test.db-wal] [file size test.db-wal2]
-} {8416 2128}
+} {8416 8416}
 
 do_execsql_test 11.5 COMMIT
 
