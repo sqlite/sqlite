@@ -206,7 +206,7 @@ b.mkdir@ = if [ ! -d $(dir $@) ]; then \
 # $1 = logtag, $2 = src file(s). $3 = dest dir
 b.cp = $(call b.mkdir@); \
   echo '$(logtag.$(1)) $(emo.disk) $(2) ==> $3'; \
-  cp -p $(2) $(3) || exit
+  cp -f -p $(2) $(3) || exit
 
 #
 # $(call b.c-pp.shcmd,LOGTAG,src,dest,-Dx=y...)

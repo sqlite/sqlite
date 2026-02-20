@@ -994,10 +994,17 @@ static void mk_fiddle(void){
       pf("$(out.%s.js): $(MAKEFILE_LIST) "
          "$(EXPORTED_FUNCTIONS.fiddle) "
          "$(fiddle.c.in) "
-         "$(pre-post.%s.deps)\n",
+         "$(pre-post.%s.deps)",
          zBuildName, zBuildName);
+      if( isDebug ){
+        pf(" $(dir.fiddle)/fiddle-worker.js"
+           " $(dir.fiddle)/fiddle.js"
+           " $(dir.fiddle)/index.html");
+      }
+      ps("");
       emit_compile_start(zBuildName);
-      pf("\t$(b.cmd@)$(bin.emcc) -o $@"
+      pf("\t@$(call b.mkdir@)\n"
+         "\t$(b.cmd@)$(bin.emcc) -o $@"
          " $(emcc.flags.%s)" /* set in GNUmakefile */
          " $(pre-post.%s.flags)"
          " $(fiddle.c.in)"
