@@ -649,11 +649,17 @@ static int countLeadingZeros(u64 m){
 static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
   int p;
   u64 h;
+  assert( n>=1 && n<=18 );
   p = n - 1 - pwr2to10(e+63);
   h = sqlite3Multiply128(m, powerOfTen(p));
-  assert( -(e + pwr10to2(p) + 1) >=0 );
-  assert( -(e + pwr10to2(p) + 1) <64 );
-  *pD = h >> -(e + pwr10to2(p) + 1);
+  assert( -(e + pwr10to2(p) + 2) >= 0  );
+  assert( -(e + pwr10to2(p) + 1) <= 63 );
+  if( n==18 ){
+    h >>= -(e + pwr10to2(p) + 2);
+    *pD = (h + ((h<<1)&2))>>1;
+  }else{
+    *pD = h >> -(e + pwr10to2(p) + 1);
+  }
   *pP = -p;
 }
 

@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\sthe\s".quit"\scommand\sin\sa\s--cmd\sargument\scauses\san\simmediate\nexit.\s\s[forum:/forumpost/f057122b68|Forum\spost\sf057122b68].
-D 2026-02-19T17:20:40.116
+C Improved\srounding\sof\sfloating-point\sconversions\sin\ssome\scorner\scases.
+D 2026-02-20T12:27:52.339
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/trigger.c a40440614bdf523090cc07223f4878f7e3c892bcd1a13afe18f90190daa5945d
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 72874125f70f61082bfb82b4580c1a320ab22b8cded2fb98e42ab98b39dc7bf1
+F src/util.c 43dce657e603820a31f196c703eb2213e10ef0c35b7960ac82312784294b6e4a
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 5328c99dd256ee8132383565a86e253543a85daccfd7477c52f20bac6b385a7f
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -872,6 +872,7 @@ F test/analyzeF.test 40b5cc3ad7b10e81020d7ca86f1417647ecfae7477cfd88acc5aa7ae106
 F test/analyzeG.test 623be33038c49648872746c8dd8b23b5792c08fef173c55e82f1b12fca259852
 F test/analyzer1.test b6a624ec0af92eec209e1328465b66937c8fdf2fb442a3fa45321ddb3700f4aa
 F test/atof1.test bd21c4a0e718ab1470de07a2a79f2544d7903be34feebcc80de04beee4807b00
+F test/atof2.test 12912add57230495450e2fc94cb8ad1c9f3277f8843a3bc27079cae45c9782a1
 F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d061
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
 F test/atrc.c c388fac43dbba05c804432a7135ae688b32e8f25818e9994ffba4b64cf60c27c
@@ -2194,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e540f6c370675ae043af8cdbb80f7eb17c08e50f7634e0b78f0b1dccf7bd4b18
-R e8a52a3904398a00cac725666cd6d19d
+P 4731cc8856aa4dcfad5db501648bfd0afef43d8c5f339e7b11a1e3ee64348b87
+R f79214badaf5b7fbc5067c602383d74f
 U drh
-Z ee96430e99114f754ef74526e72d7a91
+Z d75fc23742e879c6b1e0a5a3257032f9
 # Remove this line to create a well-formed Fossil manifest.
