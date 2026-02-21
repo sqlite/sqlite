@@ -17,13 +17,37 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+
+# Unusual rendering cases:
+#
+do_execsql_test fpconv1-1.0 {
+  SELECT 1.23 - 2.34;
+} {-1.1099999999999999}
+#  ^---  Not -1.11 as you would expect.  -1.11 has a different bit pattern
+
+do_execsql_test fpconv1-1.1 {
+  SELECT 1.23 * 2.34;
+} {2.8781999999999996}
+#  ^---  Not 2.8782 as you would expect.  2.8782 has a different bit pattern
+
+# Change significant digits to 15 and get a different result.
+sqlite3_db_config db FP_DIGITS 15
+do_execsql_test fpconv1-1.2 {
+  SELECT 1.23 - 2.34;
+} {-1.11}
+do_execsql_test fpconv1-1.3 {
+  SELECT 1.23 * 2.34;
+} {2.8782}
+sqlite3_db_config db FP_DIGITS 17
+
+
 if {[catch {load_static_extension db decimal} error]} {
   puts "Skipping decimal tests, hit load error: $error"
   finish_test; return
 }
 
 sqlite3_create_function db
-do_execsql_test fpconv1-1.0 {
+do_execsql_test fpconv1-2.0 {
   WITH RECURSIVE
        /* Number of random floating-point values to try.
        ** On a circa 2021 Ryzen 5950X running Mint Linux, and
@@ -49,7 +73,7 @@ do_execsql_test fpconv1-1.0 {
 
 load_static_extension db ieee754
 
-do_execsql_test fpconv1-2.0 {
+do_execsql_test fpconv1-3.0 {
   WITH RECURSIVE
     c(x,s) AS MATERIALIZED (VALUES(1,random()&0xffefffffffffffff)
                UNION ALL
@@ -70,17 +94,5 @@ do_execsql_test fpconv1-2.0 {
    WHERE ieee754_to_int(CAST(yt AS real))<>s;
 } {}
 #  ^---- Values that fail to round-trip will be reported
-
-# Unusual rendering cases:
-#
-do_execsql_test fpconv1-3.0 {
-  SELECT 1.23 - 2.34;
-} {-1.1099999999999999}
-#  ^---  Not -1.11 as you would expect.  -1.11 has a different bit pattern
-
-do_execsql_test fpconv1-3.1 {
-  SELECT 1.23 * 2.34;
-} {2.8781999999999996}
-#  ^---  Not 2.8782 as you would expect.  2.8782 has a different bit pattern
 
 finish_test
