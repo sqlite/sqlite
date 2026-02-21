@@ -120,7 +120,7 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
 #endif
   }else{
     sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
-    sqlite3_str_appendf(&acc, "%!.15g", 
+    sqlite3_str_appendf(&acc, "%!.17g", 
          (p->flags & MEM_IntReal)!=0 ? (double)p->u.i : p->u.r);
     assert( acc.zText==zBuf && acc.mxAlloc<=0 );
     zBuf[acc.nChar] = 0; /* Fast version of sqlite3StrAccumFinish(&acc) */

@@ -1254,6 +1254,37 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   z = &zBuf[i+1];  /* z points to the first digit */
   if( iRound>0 && (iRound<n || n>mxRound) ){
     if( iRound>mxRound ) iRound = mxRound;
+    if( iRound==17 ){
+      /* If the precision is exactly 17, which only happens with the "!"
+      ** flag (ex: "%!.17g") then try to reduce the precision if that
+      ** yields text that will round-trip to the original floating-point.
+      ** value.  Thus, for exaple, 49.47 will render as 49.47, rather than
+      ** as 49.469999999999999. */
+      if( z[15]=='9' && z[14]=='9' ){
+        int jj, kk;
+        u64 v2;
+        for(jj=14; jj>0 && z[jj-1]=='9'; jj--){}
+        if( jj==0 ){
+          v2 = 1;
+        }else{
+          v2 = z[0] - '0';
+          for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
+          v2++;
+        }
+        if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){
+          iRound = jj+1;
+        }
+      }else if( p->iDP>=n || (z[15]=='0' && z[14]=='0' && z[13]=='0') ){
+        int jj, kk;
+        u64 v2;
+        for(jj=14; jj>0 && z[jj-1]=='0'; jj--){}
+        v2 = z[0] - '0';
+        for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
+        if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){
+          iRound = jj+1;
+        }
+      }
+    }
     n = iRound;
     if( z[iRound]>='5' ){
       int j = iRound-1;

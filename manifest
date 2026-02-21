@@ -1,5 +1,5 @@
-C Further\ssimplification,\sperformance\sgain,\sand\ssize\sreduction\sin\nsqlite3FpDecode().
-D 2026-02-21T00:56:11.032
+C Increase\sthe\sprecision\sof\sdouble\s&rarr;\stext\sconversions\sthat\shappen\sin\nsqlite3_column_text(),\sor\ssqlite3_value_text(),\sor\sin\sthe\sCAST()\soperator,\nor\ssimilar,\sso\sthat\sround-tripping\sthe\svalue\sback\sto\sdouble\sresults\sin\nexactly\sthe\ssame\svalue.
+D 2026-02-21T10:57:02.002
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/trigger.c a40440614bdf523090cc07223f4878f7e3c892bcd1a13afe18f90190daa5945d
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 1aa25fd0e8a9e7e7038dc35576ca084ab1ce305808683ed9fc34c0a911cd7cfe
+F src/util.c 2bff4df366c4af1b50176f7a6b9517782d80bd7a9fd755f132ee6c989001fb24
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 5328c99dd256ee8132383565a86e253543a85daccfd7477c52f20bac6b385a7f
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -811,7 +811,7 @@ F src/vdbeInt.h 42488247a80cd9d300627833c6c85ace067ae5011a99e7614e2358130d62feea
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
 F src/vdbeaux.c 396d38a62a357b807eabae0cae441fc89d2767a57ab08026b7072bf7aa2dd00c
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
-F src/vdbemem.c bdfda8e65933cfee34aa29c2bfa31fc07609f3d56d147aa8a367a297533d33d1
+F src/vdbemem.c 61b014628c6db12dd10b094b84f3e83ea0f85a1c485891bf0b5f370f3625d4ca
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
 F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b41
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
@@ -1071,7 +1071,7 @@ F test/e_createtable.test 31b9bcb6ac8876bc7ec342d86d9c231a84c62b442093a6651dfd0f
 F test/e_delete.test ab39084f26ae1f033c940b70ebdbbd523dc4962e
 F test/e_droptrigger.test 235c610f8bf8ec44513e222b9085c7e49fad65ad0c1975ac2577109dd06fd8fa
 F test/e_dropview.test 74e405df7fa0f762e0c9445b166fe03955856532e2bb234c372f7c51228d75e7
-F test/e_expr.test 0a1e175caddc78b27306647cb4ce2362c55790190f8cdd178b75fd6262eb8f76
+F test/e_expr.test 9bdb347b78b9f4eff9153ea97797facc179a821898588471a70808b4471a69b0
 F test/e_fkey.test feeba6238aeff9d809fb6236b351da8df4ae9bda89e088e54526b31a0cbfeec5
 F test/e_fts3.test 17ba7c373aba4d4f5696ba147ee23fd1a1ef70782af050e03e262ca187c5ee07
 F test/e_insert.test f02f7f17852b2163732c6611d193f84fc67bc641fb4882c77a464076e5eba80e
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b4c378bba582205aa676e45b21ffa17ad6199e2a017ec73cf41a0243f693b589
-R 2ba85f29f79912c10542f94e5fe0f51a
+P 5954f22ceb6b43ed160ec085cd86b66299d8aab3e349a41941a4f1c2eade7457
+R 273816acc4ad445067b918c67e26e2bb
 U drh
-Z 6f74841077f4058908580abdb7a6af5c
+Z 8c81f31c7c681f8cd4928433e40b84e9
 # Remove this line to create a well-formed Fossil manifest.
