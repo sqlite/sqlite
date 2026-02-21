@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch.
-D 2026-02-21T13:40:07.301
+C New\stest\scases\sfor\sfloating-point\sconversions.
+D 2026-02-21T13:57:40.503
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1131,7 +1131,7 @@ F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958
 F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
 F test/fp-speed-1.c b37de94eba034e1703668816225f54510ec60fb0685406608cc707afe6b8234d
-F test/fpconv1.test ac9616f36ac8b8bc16b78f389978d8fb1420f53c1fc93d2793a9553ca2755f72
+F test/fpconv1.test d9e1e1bdeaf22b2e800aa6847466468a930f6aea6b59eea348711f9445a043b1
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts3.test 672a040ea57036fb4b6fdc09027c18d7d24ab654
 F test/fts3_common.tcl dffad248f9ce090800e272017d2898005c28ee6314fc1dd5550643a02666907a
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ef0049e3ade304f64e1ab97e52e1e21379e4db461f3fa80dac8e544fb90d622f
-R 4284bb3336406325134043995228dfd1
+P 93f90eacc0c5b2ae0042ec525359298883f8473e24967208feef4029d9fa2d08
+R e68f89bae9b5fbd05cf0e0e735a13171
 U drh
-Z 6f1ea06f09642b6d8ff481a030d40fdb
+Z 5a9c96d60317e775f664966a4b06b2ad
 # Remove this line to create a well-formed Fossil manifest.
