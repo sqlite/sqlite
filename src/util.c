@@ -1277,7 +1277,8 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
       }else if( p->iDP>=n || (z[15]=='0' && z[14]=='0' && z[13]=='0') ){
         int jj, kk;
         u64 v2;
-        for(jj=14; jj>0 && z[jj-1]=='0'; jj--){}
+        assert( z[0]!='0' );
+        for(jj=14; z[jj-1]=='0'; jj--){}
         v2 = z[0] - '0';
         for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
         if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){
