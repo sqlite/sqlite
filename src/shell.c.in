@@ -9267,6 +9267,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
         { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
         { "enable_view",        SQLITE_DBCONFIG_ENABLE_VIEW           },
         { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+        { "fp_digits",          SQLITE_DBCONFIG_FP_DIGITS             },
         { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
         { "legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    },
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
@@ -9283,11 +9284,19 @@ static int do_meta_command(const char *zLine, ShellState *p){
     for(ii=0; ii<ArraySize(aDbConfig); ii++){
       if( nArg>1 && cli_strcmp(azArg[1], aDbConfig[ii].zName)!=0 ) continue;
       if( nArg>=3 ){
-        sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
+        if( aDbConfig[ii].op==SQLITE_DBCONFIG_FP_DIGITS ){
+          sqlite3_db_config(p->db, aDbConfig[ii].op, atoi(azArg[2]), 0);
+        }else{
+          sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
+        }
       }
       sqlite3_db_config(p->db, aDbConfig[ii].op, -1, &v);
-      cli_printf(p->out, "%19s %s\n",
-                      aDbConfig[ii].zName, v ? "on" : "off");
+      if( aDbConfig[ii].op==SQLITE_DBCONFIG_FP_DIGITS ){
+        cli_printf(p->out, "%19s %d\n", aDbConfig[ii].zName, v);
+      }else{
+        cli_printf(p->out, "%19s %s\n",
+                        aDbConfig[ii].zName, v ? "on" : "off");
+      }
       if( nArg>1 ) break;
     }
     if( nArg>1 && ii==ArraySize(aDbConfig) ){

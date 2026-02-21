@@ -2648,6 +2648,21 @@ struct sqlite3_mem_methods {
 ** comments are allowed in SQL text after processing the first argument.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_FP_DIGITS]]
+** <dt>SQLITE_DBCONFIG_FP_DIGITS</dt>
+** <dd>The SQLITE_DBCONFIG_FP_DIGITS option is a small integer is the number
+** of significant digits that SQLite attempts to preserve when converting
+** floating point numbers (IEEE 754 "doubles") into text.  The default value
+** (as of SQLite version 3.52.0) is 17.<p>
+** This option takes two arguments which are an integer and a pointer
+** to an integer.  The first argument is a small integer, between 3 and 20, or
+** zero.  The FP_DIGITS setting is changed to the small integer, or left
+** altered if the first argument is out of range.  The second argument is a
+** pointer to an integer.  If the pointer is not NULL, then the value of
+** the FP_DIGITS setting, after possibly being modified by the first
+** arguments, is written into the integer to which the second argument points.
+** </dd>
+**
 ** </dl>
 **
 ** [[DBCONFIG arguments]] <h3>Arguments To SQLITE_DBCONFIG Options</h3>
@@ -2692,7 +2707,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE  1020 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE   1021 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_COMMENTS       1022 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1022 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_FP_DIGITS             1023 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1023 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes

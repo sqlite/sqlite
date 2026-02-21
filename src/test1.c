@@ -8644,6 +8644,7 @@ static int SQLITE_TCLAPI test_sqlite3_db_config(
     { "ATTACH_CREATE",      SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE },
     { "ATTACH_WRITE",       SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE },
     { "COMMENTS",           SQLITE_DBCONFIG_ENABLE_COMMENTS },
+    { "FP_DIGITS",          SQLITE_DBCONFIG_FP_DIGITS },
   };
   int i;
   int v = 0;

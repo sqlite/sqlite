@@ -1174,12 +1174,14 @@ int sqlite3Atoi(const char *z){
 ** The p->z[] array is *not* zero-terminated.
 */
 void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
-  int i;
-  u64 v;
-  int e, exp = 0;
+  int i;               /* Index into zBuf[] where to put next character */
+  int n;               /* Number of digits */
+  u64 v;               /* mantissa */
+  int e, exp = 0;      /* Base-2 and base-10 exponent */
+  char *zBuf;          /* Local alias for p->zBuf */
+  char *z;             /* Local alias for p->z */
 
   p->isSpecial = 0;
-  p->z = p->zBuf;
   assert( mxRound>0 );
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
@@ -1202,53 +1204,89 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     p->isSpecial = 1 + (v!=0x7ff0000000000000LL);
     p->n = 0;
     p->iDP = 0;
+    p->z = p->zBuf;
     return;
   }
   v &= 0x000fffffffffffffULL;
   if( e==0 ){
-    int n = countLeadingZeros(v);
-    v <<= n;
-    e = -1074 - n;
+    int nn = countLeadingZeros(v);
+    v <<= nn;
+    e = -1074 - nn;
   }else{
     v = (v<<11) | U64_BIT(63);
     e -= 1086;
   }
   sqlite3Fp2Convert10(v, e, (iRound<=0||iRound>=18)?18:iRound+1, &v, &exp);  
 
-  /* Extract significant digits. */
+  /* Extract significant digits, start at the right-most slot in p->zBuf
+  ** and working back to the right.  "i" keeps track of the next slot in
+  ** which to store a digit. */
   i = sizeof(p->zBuf)-1;
+  zBuf = p->zBuf;
   assert( v>0 );
   while( v>=10 ){
     int kk = (v%100)*2;
     assert( TWO_BYTE_ALIGNMENT(&sqlite3DigitPairs.a[kk]) );
-    assert( TWO_BYTE_ALIGNMENT(&p->zBuf[i-1]) );
-    *(u16*)(&p->zBuf[i-1]) = *(u16*)&sqlite3DigitPairs.a[kk];
+    assert( TWO_BYTE_ALIGNMENT(&zBuf[i-1]) );
+    *(u16*)(&zBuf[i-1]) = *(u16*)&sqlite3DigitPairs.a[kk];
     i -= 2;
     v /= 100;
   }
   if( v ){
     assert( v<10 );
-    p->zBuf[i--] = v + '0';
+    zBuf[i--] = v + '0';
   }
   assert( i>=0 && i<sizeof(p->zBuf)-1 );
-  p->n = sizeof(p->zBuf) - 1 - i;
-  assert( p->n>0 );
-  assert( p->n<sizeof(p->zBuf) );
-  testcase( p->n==sizeof(p->zBuf)-1 );
-  p->iDP = p->n + exp;
+  n = sizeof(p->zBuf) - 1 - i;  /* Total number of digits extracted */
+  assert( n>0 );
+  assert( n<sizeof(p->zBuf) );
+  testcase( n==sizeof(p->zBuf)-1 );
+  p->iDP = n + exp;
   if( iRound<=0 ){
     iRound = p->iDP - iRound;
-    if( iRound==0 && p->zBuf[i+1]>='5' ){
+    if( iRound==0 && zBuf[i+1]>='5' ){
       iRound = 1;
-      p->zBuf[i--] = '0';
-      p->n++;
+      zBuf[i--] = '0';
+      n++;
       p->iDP++;
     }
   }
-  if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
-    char *z = &p->zBuf[i+1];
+  z = &zBuf[i+1];  /* z points to the first digit */
+  if( iRound>0 && (iRound<n || n>mxRound) ){
     if( iRound>mxRound ) iRound = mxRound;
-    p->n = iRound;
+    if( iRound==17 ){
+      /* If the precision is exactly 17, which only happens with the "!"
+      ** flag (ex: "%!.17g") then try to reduce the precision if that
+      ** yields text that will round-trip to the original floating-point.
+      ** value.  Thus, for exaple, 49.47 will render as 49.47, rather than
+      ** as 49.469999999999999. */
+      if( z[15]=='9' && z[14]=='9' ){
+        int jj, kk;
+        u64 v2;
+        for(jj=14; jj>0 && z[jj-1]=='9'; jj--){}
+        if( jj==0 ){
+          v2 = 1;
+        }else{
+          v2 = z[0] - '0';
+          for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
+          v2++;
+        }
+        if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){
+          iRound = jj+1;
+        }
+      }else if( p->iDP>=n || (z[15]=='0' && z[14]=='0' && z[13]=='0') ){
+        int jj, kk;
+        u64 v2;
+        assert( z[0]!='0' );
+        for(jj=14; z[jj-1]=='0'; jj--){}
+        v2 = z[0] - '0';
+        for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
+        if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){
+          iRound = jj+1;
+        }
+      }
+    }
+    n = iRound;
     if( z[iRound]>='5' ){
       int j = iRound-1;
       while( 1 /*exit-by-break*/ ){
@@ -1256,8 +1294,9 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         if( z[j]<='9' ) break;
         z[j] = '0';
         if( j==0 ){
-          p->z[i--] = '1';
-          p->n++;
+          z--;
+          z[0] = '1';
+          n++;
           p->iDP++;
           break;
         }else{
@@ -1266,13 +1305,13 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
       }
     }
   }
-  p->z = &p->zBuf[i+1];
-  assert( i+p->n < sizeof(p->zBuf) );
-  assert( p->n>0 );
-  while( p->z[p->n-1]=='0' ){
-    p->n--;
-    assert( p->n>0 );
+  assert( n>0 );
+  while( z[n-1]=='0' ){
+    n--;
+    assert( n>0 );
   }
+  p->n = n;
+  p->z = z;
 }
 
 /*
