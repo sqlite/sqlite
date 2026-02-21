@@ -1174,9 +1174,10 @@ int sqlite3Atoi(const char *z){
 ** The p->z[] array is *not* zero-terminated.
 */
 void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
-  int i;
+  int i, n;
   u64 v;
   int e, exp = 0;
+  char *zBuf;
 
   p->isSpecial = 0;
   p->z = p->zBuf;
@@ -1206,9 +1207,9 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   }
   v &= 0x000fffffffffffffULL;
   if( e==0 ){
-    int n = countLeadingZeros(v);
-    v <<= n;
-    e = -1074 - n;
+    int nn = countLeadingZeros(v);
+    v <<= nn;
+    e = -1074 - nn;
   }else{
     v = (v<<11) | U64_BIT(63);
     e -= 1086;
@@ -1217,38 +1218,39 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
 
   /* Extract significant digits. */
   i = sizeof(p->zBuf)-1;
+  zBuf = p->zBuf;
   assert( v>0 );
   while( v>=10 ){
     int kk = (v%100)*2;
     assert( TWO_BYTE_ALIGNMENT(&sqlite3DigitPairs.a[kk]) );
-    assert( TWO_BYTE_ALIGNMENT(&p->zBuf[i-1]) );
-    *(u16*)(&p->zBuf[i-1]) = *(u16*)&sqlite3DigitPairs.a[kk];
+    assert( TWO_BYTE_ALIGNMENT(&zBuf[i-1]) );
+    *(u16*)(&zBuf[i-1]) = *(u16*)&sqlite3DigitPairs.a[kk];
     i -= 2;
     v /= 100;
   }
   if( v ){
     assert( v<10 );
-    p->zBuf[i--] = v + '0';
+    zBuf[i--] = v + '0';
   }
   assert( i>=0 && i<sizeof(p->zBuf)-1 );
-  p->n = sizeof(p->zBuf) - 1 - i;
-  assert( p->n>0 );
-  assert( p->n<sizeof(p->zBuf) );
-  testcase( p->n==sizeof(p->zBuf)-1 );
-  p->iDP = p->n + exp;
+  n = sizeof(p->zBuf) - 1 - i;
+  assert( n>0 );
+  assert( n<sizeof(p->zBuf) );
+  testcase( n==sizeof(p->zBuf)-1 );
+  p->iDP = n + exp;
   if( iRound<=0 ){
     iRound = p->iDP - iRound;
-    if( iRound==0 && p->zBuf[i+1]>='5' ){
+    if( iRound==0 && zBuf[i+1]>='5' ){
       iRound = 1;
-      p->zBuf[i--] = '0';
-      p->n++;
+      zBuf[i--] = '0';
+      n++;
       p->iDP++;
     }
   }
-  if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
-    char *z = &p->zBuf[i+1];
+  if( iRound>0 && (iRound<n || n>mxRound) ){
+    char *z = &zBuf[i+1];
     if( iRound>mxRound ) iRound = mxRound;
-    p->n = iRound;
+    n = iRound;
     if( z[iRound]>='5' ){
       int j = iRound-1;
       while( 1 /*exit-by-break*/ ){
@@ -1257,7 +1259,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         z[j] = '0';
         if( j==0 ){
           p->z[i--] = '1';
-          p->n++;
+          n++;
           p->iDP++;
           break;
         }else{
@@ -1266,13 +1268,15 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
       }
     }
   }
-  p->z = &p->zBuf[i+1];
-  assert( i+p->n < sizeof(p->zBuf) );
-  assert( p->n>0 );
-  while( p->z[p->n-1]=='0' ){
-    p->n--;
-    assert( p->n>0 );
+  p->z = &zBuf[i+1];
+  assert( i+n < sizeof(p->zBuf) );
+  assert( n>0 );
+  zBuf = p->z;
+  while( zBuf[n-1]=='0' ){
+    n--;
+    assert( n>0 );
   }
+  p->n = n;
 }
 
 /*
