@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\swarning\sin\sthe\sdecimal\sextension.
-D 2026-02-21T20:20:06.720
+C Fix\stypos\sand\sinclude\swording\sin\sthe\sdocumentation\sfor\nSQLITE_DBCONFIG_FP_DIGITS.
+D 2026-02-21T21:19:41.549
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -740,7 +740,7 @@ F src/resolve.c 928ff887f2a7c64275182060d94d06fdddbe32226c569781cf7e7edc6f58d7fd
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 615d62112f5c14fb24facf9391492b42403875bfd4288db6ba10d7e6fbc22c4c
 F src/shell.c.in 3e87584890a4e9797865e4771689d8d1aca3b0f824f973192784716ecfa320a2
-F src/sqlite.h.in b8a0b4dd92b1e52caa9676e39971bdaaf44eef30c4b148c9c2fa99e88ed6cf3a
+F src/sqlite.h.in c7582608c8270428b288a529f4a4170298a19548266b55edaa2e70ce8d607f0e
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 1b7a0ee438bb5c2896d0609c537e917d8057b3340f6ad004d2de44f03e3d3cca
 F src/sqliteInt.h ffa3071dc3b9172acfe1a4edd8bc699928b0d5e02f0b8b9067676aa8e5f8f787
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 78c12b4f6ae869c3ea5e368c97b45991442bdd2d3a60935f1e6fc02a8e01cd41
-R 49ff7c0b58fdceea8cbf4269b84e9dc8
+P f16c7c4000f2b992f7245dcaf669f13ed464579f8894f3c16842eebf41285c70
+R 944ea7c224f9333bdc2c56f7b2ed487a
 U drh
-Z 066b8dfa63132b7df4fb39636455127f
+Z ef2f611c8a724472ddbfbfc7d613ba7b
 # Remove this line to create a well-formed Fossil manifest.

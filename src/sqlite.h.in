@@ -2650,15 +2650,16 @@ struct sqlite3_mem_methods {
 **
 ** [[SQLITE_DBCONFIG_FP_DIGITS]]
 ** <dt>SQLITE_DBCONFIG_FP_DIGITS</dt>
-** <dd>The SQLITE_DBCONFIG_FP_DIGITS option is a small integer is the number
-** of significant digits that SQLite attempts to preserve when converting
-** floating point numbers (IEEE 754 "doubles") into text.  The default value
-** (as of SQLite version 3.52.0) is 17.<p>
+** <dd>The SQLITE_DBCONFIG_FP_DIGITS setting is a small integer that determines
+** the number of significant digits that SQLite will attempt to preserve when
+** converting floating point numbers (IEEE 754 "doubles") into text.  The
+** default value 17, as of SQLite version 3.52.0.  The value was 15 in all
+** prior versions.<p>
 ** This option takes two arguments which are an integer and a pointer
-** to an integer.  The first argument is a small integer, between 3 and 20, or
-** zero.  The FP_DIGITS setting is changed to the small integer, or left
-** altered if the first argument is out of range.  The second argument is a
-** pointer to an integer.  If the pointer is not NULL, then the value of
+** to an integer.  The first argument is a small integer, between 3 and 23, or
+** zero.  The FP_DIGITS setting is changed to that small integer, or left
+** altered if the first argument is zero or out of range.  The second argument
+** is a pointer to an integer.  If the pointer is not NULL, then the value of
 ** the FP_DIGITS setting, after possibly being modified by the first
 ** arguments, is written into the integer to which the second argument points.
 ** </dd>
@@ -2680,9 +2681,10 @@ struct sqlite3_mem_methods {
 ** the first argument.
 **
 ** <p>While most SQLITE_DBCONFIG options use the argument format
-** described in the previous paragraph, the [SQLITE_DBCONFIG_MAINDBNAME]
-** and [SQLITE_DBCONFIG_LOOKASIDE] options are different.  See the
-** documentation of those exceptional options for details.
+** described in the previous paragraph, the [SQLITE_DBCONFIG_MAINDBNAME],
+** [SQLITE_DBCONFIG_LOOKASIDE], and [SQLITE_DBCONFIG_FP_DIGITS] options
+** are different.  See the documentation of those exceptional options for
+** details.
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
 #define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
