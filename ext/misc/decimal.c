@@ -341,7 +341,6 @@ static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p, int N){
   if( N<1 ) N = 0;
   for(nDigit=p->nDigit; nDigit>N && p->a[nDigit-1]==0; nDigit--){}
   for(nZero=0; nZero<nDigit && p->a[nZero]==0; nZero++){}
-  N += nZero;
   nFrac = p->nFrac + (nDigit - p->nDigit);
   nDigit -= nZero;
   z = sqlite3_malloc64( (sqlite3_int64)nDigit+20 );
