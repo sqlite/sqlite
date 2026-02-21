@@ -1,5 +1,5 @@
-C Small\sperformance\sincrease\sand\ssize\sreduction\sin\ssqlite3FpDecode()\sby\susing\nlocal\svariables\sinstead\sof\sstructure\selements.
-D 2026-02-21T00:20:29.013
+C Further\ssimplification,\sperformance\sgain,\sand\ssize\sreduction\sin\nsqlite3FpDecode().
+D 2026-02-21T00:56:11.032
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/trigger.c a40440614bdf523090cc07223f4878f7e3c892bcd1a13afe18f90190daa5945d
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 2578230d8c15e11cb86b7e6c4c069e5ea880a058d1d9aa25887fb607ac6942cd
+F src/util.c 1aa25fd0e8a9e7e7038dc35576ca084ab1ce305808683ed9fc34c0a911cd7cfe
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 5328c99dd256ee8132383565a86e253543a85daccfd7477c52f20bac6b385a7f
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6d9c29123b6b143b0f7c8f5d018f170c72edfc5b1a4d67edd45e5552def2af6c
-R ab113b7f537cba0046252b74a0cfbdbd
+P b4c378bba582205aa676e45b21ffa17ad6199e2a017ec73cf41a0243f693b589
+R 2ba85f29f79912c10542f94e5fe0f51a
 U drh
-Z eb44db8829fa7401363a7a2fe662819e
+Z 6f74841077f4058908580abdb7a6af5c
 # Remove this line to create a well-formed Fossil manifest.
