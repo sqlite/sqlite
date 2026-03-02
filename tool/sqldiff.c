@@ -28,6 +28,9 @@
 #include "sqlite3.h"
 #include "sqlite3_stdio.h"
 
+typedef sqlite3_int64 i64;
+typedef sqlite3_uint64 u64;
+
 /*
 ** All global variables are gathered into the "g" singleton.
 */
@@ -202,12 +205,12 @@ static char **columnNames(
   int *pbRowid                    /* OUT: True if PK is an implicit rowid */
 ){
   char **az = 0;           /* List of column names to be returned */
-  int naz = 0;             /* Number of entries in az[] */
+  i64 naz = 0;             /* Number of entries in az[] */
   sqlite3_stmt *pStmt;     /* SQL statement being run */
   char *zPkIdxName = 0;    /* Name of the PRIMARY KEY index */
   int truePk = 0;          /* PRAGMA table_info identifies the PK to use */
-  int nPK = 0;             /* Number of PRIMARY KEY columns */
-  int i, j;                /* Loop counters */
+  i64 nPK = 0;             /* Number of PRIMARY KEY columns */
+  i64 i, j;                /* Loop counters */
 
   if( g.bSchemaPK==0 ){
     /* Normal case:  Figure out what the true primary key is for the table.
@@ -271,7 +274,7 @@ static char **columnNames(
   }
   *pnPKey = nPK;
   naz = nPK;
-  az = sqlite3_malloc( sizeof(char*)*(nPK+1) );
+  az = sqlite3_malloc64( sizeof(char*)*(nPK+1) );
   if( az==0 ) runtimeError("out of memory");
   memset(az, 0, sizeof(char*)*(nPK+1));
   if( g.bSchemaCompare ){
@@ -288,7 +291,7 @@ static char **columnNames(
           || !(strcmp(sid,"rootpage")==0
                ||strcmp(sid,"name")==0
                ||strcmp(sid,"type")==0)){
-        az = sqlite3_realloc(az, sizeof(char*)*(naz+2) );
+        az = sqlite3_realloc64(az, sizeof(char*)*(naz+2) );
         if( az==0 ) runtimeError("out of memory");
         az[naz++] = sid;
       }
@@ -954,7 +957,7 @@ static int rbuDeltaCreate(
   unsigned int i, base;
   char *zOrigDelta = zDelta;
   hash h;
-  int nHash;                 /* Number of hash table entries */
+  i64 nHash;                 /* Number of hash table entries */
   int *landmark;             /* Primary hash table */
   int *collide;              /* Collision chain */
   int lastRead = -1;         /* Last byte of zSrc read by a COPY command */
@@ -982,7 +985,7 @@ static int rbuDeltaCreate(
   ** source file.
   */
   nHash = lenSrc/NHASH;
-  collide = sqlite3_malloc( nHash*2*sizeof(int) );
+  collide = sqlite3_malloc64( nHash*2*sizeof(int) );
   landmark = &collide[nHash];
   memset(landmark, -1, nHash*sizeof(int));
   memset(collide, -1, nHash*sizeof(int));
@@ -1286,9 +1289,9 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
       }
     }else{
       char *zOtaControl;
-      int nOtaControl = sqlite3_column_bytes(pStmt, nCol);
+      i64 nOtaControl = sqlite3_column_bytes(pStmt, nCol);
 
-      zOtaControl = (char*)sqlite3_malloc(nOtaControl+1);
+      zOtaControl = (char*)sqlite3_malloc64(nOtaControl+1);
       memcpy(zOtaControl, sqlite3_column_text(pStmt, nCol), nOtaControl+1);
 
       for(i=0; i<nCol; i++){
@@ -1300,11 +1303,11 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
           const char *aSrc = sqlite3_column_blob(pStmt, nCol+1+i);
           int nSrc = sqlite3_column_bytes(pStmt, nCol+1+i);
           const char *aFinal = sqlite3_column_blob(pStmt, i);
-          int nFinal = sqlite3_column_bytes(pStmt, i);
+          i64 nFinal = sqlite3_column_bytes(pStmt, i);
           char *aDelta;
           int nDelta;
 
-          aDelta = sqlite3_malloc(nFinal + 60);
+          aDelta = sqlite3_malloc64(nFinal + 60);
           nDelta = rbuDeltaCreate(aSrc, nSrc, aFinal, nFinal, aDelta);
           if( nDelta<nFinal ){
             int j;
@@ -1549,10 +1552,10 @@ static void changeset_one_table(const char *zTab, FILE *out){
   sqlite3_stmt *pStmt;          /* SQL statment */
   char *zId = safeId(zTab);     /* Escaped name of the table */
   char **azCol = 0;             /* List of escaped column names */
-  int nCol = 0;                 /* Number of columns */
+  i64 nCol = 0;                 /* Number of columns */
   int *aiFlg = 0;               /* 0 if column is not part of PK */
   int *aiPk = 0;                /* Column numbers for each PK column */
-  int nPk = 0;                  /* Number of PRIMARY KEY columns */
+  i64 nPk = 0;                  /* Number of PRIMARY KEY columns */
   sqlite3_str *pSql;            /* SQL for the diff query */
   int i, k;                     /* Loop counters */
   const char *zSep;             /* List separator */
@@ -1564,16 +1567,16 @@ static void changeset_one_table(const char *zTab, FILE *out){
   pStmt = db_prepare("PRAGMA main.table_info=%Q", zTab);
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
     nCol++;
-    azCol = sqlite3_realloc(azCol, sizeof(char*)*nCol);
+    azCol = sqlite3_realloc64(azCol, sizeof(char*)*nCol);
     if( azCol==0 ) runtimeError("out of memory");
-    aiFlg = sqlite3_realloc(aiFlg, sizeof(int)*nCol);
+    aiFlg = sqlite3_realloc64(aiFlg, sizeof(int)*nCol);
     if( aiFlg==0 ) runtimeError("out of memory");
     azCol[nCol-1] = safeId((const char*)sqlite3_column_text(pStmt,1));
     aiFlg[nCol-1] = i = sqlite3_column_int(pStmt,5);
     if( i>0 ){
       if( i>nPk ){
         nPk = i;
-        aiPk = sqlite3_realloc(aiPk, sizeof(int)*nPk);
+        aiPk = sqlite3_realloc64(aiPk, sizeof(int)*nPk);
         if( aiPk==0 ) runtimeError("out of memory");
       }
       aiPk[i-1] = nCol-1;
@@ -1913,7 +1916,7 @@ int main(int argc, char **argv){
   FILE *out = stdout;
   void (*xDiff)(const char*,FILE*) = diff_one_table;
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
-  int nExt = 0;
+  i64 nExt = 0;
   char **azExt = 0;
 #endif
   int useTransaction = 0;
