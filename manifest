@@ -1,5 +1,5 @@
-C More\sfloating\spoint\sconversion\stest\scases.
-D 2026-03-01T23:23:52.724
+C The\sintck01.sql\stest\sshould\sonly\sbe\srun\sif\svirtual\stables\swork.
+D 2026-03-02T00:06:02.937
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1631,7 +1631,7 @@ F test/shell7.test 43fd8e511c533bab5232e95c7b4be93b243451709e89582600d4b6e67693d
 F test/shell8.test 38c9e4d7e85d2a3ecfacaa9f6cda4f7a81bf4fffb5f3f37f9cd76827c6883192
 F test/shell9.test 8742a5b390cdcef6369f5aa223e415aa4255a4129ef249b177887dc635a87209
 F test/shellA.test 05cdaafa1f79913654487ce3aefa038d4106245d58f52e02faf506140a76d480
-F test/shellB.test 73fd5aa8c126f6941493e22598bc9864be4af670bc989b426443a2baebc104dd
+F test/shellB.test 7123d231158588401f332bf278754687b83ba5fc5b352ec8679fb19edfb4cc0a
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f353399932e9797198e635405a594c2987850070e3f9aee87a05c5a65d4c1e00
-R 6cbc7c2f243f2aec8662e3be08e46909
+P 44a736a700ab12b398873400dc06cd334817842b4fa08bf8070a9ad6dbff0b51
+R 223513abbf0ce70fff122c39b03fcaaa
 U drh
-Z bb1e7d38e72f541a9df8b1768869daa5
+Z d849c91a511c5348b9d66726e2bd71d7
 # Remove this line to create a well-formed Fossil manifest.
