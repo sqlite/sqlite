@@ -1,5 +1,5 @@
-C Fix\sTEMP\sINSTEAD\sOF\striggers\sso\sthat\sthey\swork\son\sTEMP\sviews.\n[forum:/forumpost/2026-02-28T23:33:04z|Forum\spost\s2026-02-28T23:33:04z].
-D 2026-03-02T15:34:16.932
+C Omit\sexplain_i\scalls\sfrom\sTCL\stest\sscripts.
+D 2026-03-02T16:40:16.246
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -199,7 +199,7 @@ F ext/fts5/test/fts5first.test bfd685b96905bf541d99d8644e0a7219d1d833455a08ab64e
 F ext/fts5/test/fts5full.test 97d263c1072f4a560929cca31e70f65d2ae232610e17e6affcf7e979df59547b
 F ext/fts5/test/fts5fuzz1.test 238d8c45f3b81342aa384de3e581ff2fa330bf922a7b69e484bbc06051a1080e
 F ext/fts5/test/fts5hash.test fd3e0367fbf0b0944d6936fdb22696350f57b9871069c6766251578a103e8a14
-F ext/fts5/test/fts5integrity.test c423ce16fd1ccadcac7fc22f794226b2bb00f5a187c0ab1d9f8502521b1bae05
+F ext/fts5/test/fts5integrity.test 613efcebe16b2d7a4096f03bcfb164f79a000b3354420ceda4a6f3e035090789
 F ext/fts5/test/fts5integrity2.test 4c3636615c0201232c44a8105d5cb14fd5499fd0ee3014d7ffd7e83aac76ece8
 F ext/fts5/test/fts5interrupt.test af7834ac6c2e71c05aea42d92f272eef3655e89b7a14a5620a2cd9de35e2e8ea
 F ext/fts5/test/fts5join.test 48b7ed36956948c5b8456c8bcaa5b087808d99000675918a43c4f51a925f1514
@@ -908,7 +908,7 @@ F test/bestindex7.test f094c669a6400777f4d2ddc3ed28e39169f1adb5be3d59b55f22ccf8c
 F test/bestindex8.test 4d8b1e8f30a7f405988ce4dbcc2b95c0775f0bed9ec08e0291a07e2f35f7e653
 F test/bestindex9.test 1a4b93db117fd8abe74ae9be982f86aa72f01e60cd4ac541e6ede39673a451a0
 F test/bestindexA.test e1b5def6b190797cacf008e6815ffb78fb30261999030d60a728d572eef44c7f
-F test/bestindexB.test 328b97b69cd1a20928d5997f9ecb04d2e00f1d18e19ab27f9e9adb44d7bc51ce
+F test/bestindexB.test 14db2f66ec9cc5064a74996033b74e5eec0fd2f3a327fbe34ff18de67e9d2671
 F test/bestindexC.test 95b4a527b1a5d07951d731604a6d4cf7e5a806b39cea0e7819d4c9667e11c3fc
 F test/bestindexD.test 6a8f6f84990bcf17dfa59652a1f935beddb7afd96f8302830fbc86b0a13df3c3
 F test/bestindexE.test 297f3ea8500a8f3c17d6f78e55bdfee089064c6144ee84a110bd005a03338f49
@@ -1940,7 +1940,7 @@ F test/vacuum4.test 7ea76b769fffeb41f925303b04cbcf5a5bbeabe55e4c60ae754ff24eeeb7
 F test/vacuum5.test 263b144d537e92ad8e9ca8a73cc6e1583f41cfd0dda9432b87f7806174a2f48c
 F test/vacuum6.test b137b04bf3392d3f5c3b8fda0ce85a6775a70ca112f6559f74ff52dc9ce042fd
 F test/vacuummem.test 4b30f5b95a9ff86e9d5c20741e50a898b2dc10b0962a3211571eb165357003fb
-F test/values.test 0eda08a6ce6545f1ab012dff4cc72a7dd0fee2510f42444136bb2b2b5ed84bc0
+F test/values.test 0e037c50789ac2a308746567d07b53b2f6026c1bb3a435d1b099424600e64caf
 F test/valuesfault.test 2ef23ed965e3bd08e268cdc38a0d11653390ddbbe1e8e2e98d16f55edd30f6e8
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
@@ -2188,8 +2188,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 213b1c6608af4b3e9d6e0d8de6432cc6857931427baf4beac1e0a4294e4dc6ce
-R 996b11c4e53e27c110bbd4ecdaab164e
+P 0596bd508f0bc548158858a1dc113af2235d02632ce8c41cd27d1029e1a7e48d
+R 09fb7350cf7b99eaff61319652331acd
 U drh
-Z b315db4b82b7c9cbeaa07c1d78d09cfe
+Z ef9eec11b410335060f4678d866b0a03
 # Remove this line to create a well-formed Fossil manifest.
