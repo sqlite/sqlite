@@ -576,7 +576,7 @@ int sqlite3Fts5ConfigParse(
   sqlite3_int64 nByte;
   int bUnindexed = 0;             /* True if there are one or more UNINDEXED */
 
-  *ppOut = pRet = (Fts5Config*)sqlite3_malloc(sizeof(Fts5Config));
+  *ppOut = pRet = (Fts5Config*)sqlite3_malloc64(sizeof(Fts5Config));
   if( pRet==0 ) return SQLITE_NOMEM;
   memset(pRet, 0, sizeof(Fts5Config));
   pRet->pGlobal = pGlobal;
@@ -1123,5 +1123,3 @@ void sqlite3Fts5ConfigErrmsg(Fts5Config *pConfig, const char *zFmt, ...){
 
   va_end(ap);
 }
-
-
