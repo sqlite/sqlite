@@ -1,5 +1,5 @@
-C Use\sonly\s64-bit\smemory\sallocation\sin\sFTS5.\s\sFix\sfor\sUAF\sreported\sby\nZijie\sZhao.
-D 2026-03-02T11:41:48.072
+C Disable\stest\sshell1-5.0\sas\sit\sis\scausing\sa\suse\sof\sinitialized\sdeep\sinside\nof\sTCL.
+D 2026-03-02T13:43:08.964
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1621,7 +1621,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 5055a13bde31e92590311c91777d6b646082dc13250de8c07dc0db1efbdd864d
+F test/shell1.test 2d658ceee13d9e4361d04d0ea16340ad17784ddf378fb6e9ca6d49c682cb4bae
 F test/shell2.test dc541d2681503e55466a24d35a4cbf8ca5b90b8fcdef37fc4db07373a67d31d3
 F test/shell3.test 603b448e917537cf77be0f265c05c6f63bc677c63a533c8e96aae923b56f4a0e
 F test/shell4.test e25580a792b7b54560c3a76b6968bd8189261f38979fe28e6bc6312c5db280db
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5db21813d126554d80db903be6d36ab6c1f73f9135a54af6dcfcfce0bcc18e68
-R 011ac2456c3bd87bb595ab34085bd4d8
+P e8976d5041c929675772039b7a8fc4ff0b609537d86f9aa6e445ecd512a10673
+R 196e96eb644b7fb48b6564a67ba146cd
 U drh
-Z 31223c2ab955576e443d0b82ea2b6a5d
+Z db4a137667e1314416d854cef3854055
 # Remove this line to create a well-formed Fossil manifest.
