@@ -546,28 +546,28 @@ static u64 powerOfTen(int p){
   static const u64 aScale[] = {
     0x8049a4ac0c5811aeLLU, /*  0: 1.0e-351 << 1229 */
     0xcf42894a5dce35eaLLU, /*  1: 1.0e-324 << 1140 */
-    0xa76c582338ed2621LLU, /*  2: 1.0e-297 << 1050 */
+    0xa76c582338ed2622LLU, /*  2: 1.0e-297 << 1050 */
     0x873e4f75e2224e68LLU, /*  3: 1.0e-270 << 960 */
-    0xda7f5bf590966848LLU, /*  4: 1.0e-243 << 871 */
-    0xb080392cc4349decLLU, /*  5: 1.0e-216 << 781 */
+    0xda7f5bf590966849LLU, /*  4: 1.0e-243 << 871 */
+    0xb080392cc4349dedLLU, /*  5: 1.0e-216 << 781 */
     0x8e938662882af53eLLU, /*  6: 1.0e-189 << 691 */
     0xe65829b3046b0afaLLU, /*  7: 1.0e-162 << 602 */
-    0xba121a4650e4ddebLLU, /*  8: 1.0e-135 << 512 */
+    0xba121a4650e4ddecLLU, /*  8: 1.0e-135 << 512 */
     0x964e858c91ba2655LLU, /*  9: 1.0e-108 << 422 */
-    0xf2d56790ab41c2a2LLU, /* 10: 1.0e-81 << 333 */
-    0xc428d05aa4751e4cLLU, /* 11: 1.0e-54 << 243 */
+    0xf2d56790ab41c2a3LLU, /* 10: 1.0e-81 << 333 */
+    0xc428d05aa4751e4dLLU, /* 11: 1.0e-54 << 243 */
     0x9e74d1b791e07e48LLU, /* 12: 1.0e-27 << 153 */
     0x8000000000000000LLU, /* 13: 1.0e+0 << 63 */
     0xcecb8f27f4200f3aLLU, /* 14: 1.0e+27 >> 26 */
-    0xa70c3c40a64e6c51LLU, /* 15: 1.0e+54 >> 116 */
+    0xa70c3c40a64e6c52LLU, /* 15: 1.0e+54 >> 116 */
     0x86f0ac99b4e8dafdLLU, /* 16: 1.0e+81 >> 206 */
-    0xda01ee641a708de9LLU, /* 17: 1.0e+108 >> 295 */
+    0xda01ee641a708deaLLU, /* 17: 1.0e+108 >> 295 */
     0xb01ae745b101e9e4LLU, /* 18: 1.0e+135 >> 385 */
     0x8e41ade9fbebc27dLLU, /* 19: 1.0e+162 >> 475 */
-    0xe5d3ef282a242e81LLU, /* 20: 1.0e+189 >> 564 */
+    0xe5d3ef282a242e82LLU, /* 20: 1.0e+189 >> 564 */
     0xb9a74a0637ce2ee1LLU, /* 21: 1.0e+216 >> 654 */
     0x95f83d0a1fb69cd9LLU, /* 22: 1.0e+243 >> 744 */
-    0xf24a01a73cf2dccfLLU, /* 23: 1.0e+270 >> 833 */
+    0xf24a01a73cf2dcd0LLU, /* 23: 1.0e+270 >> 833 */
     0xc3b8358109e84f07LLU, /* 24: 1.0e+297 >> 923 */
     0x9e19db92b4e31ba9LLU, /* 25: 1.0e+324 >> 1013 */
   };
@@ -594,7 +594,7 @@ static u64 powerOfTen(int p){
   }
   x = sqlite3Multiply128(aBase[n],y);
   if( (U64_BIT(63) & x)==0 ){
-    x <<= 1;
+    x  = (x<<1)|1;
   }
   return x;
 }
@@ -668,10 +668,10 @@ static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
 */
 static double sqlite3Fp10Convert2(u64 d, int p){
   u64 out;
-  int b;
   int e1;
-  int e2;
+  int lz;
   int lp;
+  int x;
   u64 h;
   double r;
   assert( (d & U64_BIT(63))==0 );
@@ -682,26 +682,26 @@ static double sqlite3Fp10Convert2(u64 d, int p){
   if( p>POWERSOF10_LAST ){
     return INFINITY;
   }
-  b = 64 - countLeadingZeros(d);
+  lz = countLeadingZeros(d);
   lp = pwr10to2(p);
-  e1 = 53 - b - lp;
+  e1 = lz - (lp + 11);
   if( e1>1074 ){
-    if( -(b + lp) >= 1077 ) return 0.0;
+    if( e1>=1130 ) return 0.0;
     e1 = 1074;
   }
-  e2 = e1 - (64-b);
-  h = sqlite3Multiply128(d<<(64-b), powerOfTen(p));
-  assert( -(e2 + lp + 3) >=0 );
-  assert( -(e2 + lp + 3) <64 );
-  out = (h >> -(e2 + lp + 3)) | 1;
+  h = sqlite3Multiply128(d<<lz, powerOfTen(p));
+  x = lz - (e1 + lp + 3);
+  assert( x >= 0  );
+  assert( x <= 63 );
+  out = h >> x;
   if( out >= U64_BIT(55)-2 ){
-    out = (out>>1) | (out&1);
+    out >>= 1;
     e1--;
   }
   if( e1<=(-972) ){
     return INFINITY;
   }
-  out = (out + 1 + ((out>>2)&1)) >> 2;
+  out = (out + 2) >> 2;
   if( (out & U64_BIT(52))!=0 ){
     out = (out & ~U64_BIT(52)) | ((u64)(1075-e1)<<52);
   }

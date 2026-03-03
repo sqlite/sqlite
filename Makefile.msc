@@ -2660,23 +2660,6 @@ sqltclsh.exe: sqltclsh.c  $(SHELL_CORE_DEP) $(LIBRESOBJS)
 sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c
 	$(LTLINK) $(NO_WARN)	$(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c $(SQLITE3C) $(TLIBS)
 
-CHECKER_DEPS =\
-  $(TOP)\tool\mkccode.tcl \
-  sqlite3.c \
-  tclsqlite-ex.c \
-  $(TOP)\ext\repair\sqlite3_checker.tcl \
-  $(TOP)\ext\repair\checkindex.c \
-  $(TOP)\ext\repair\checkfreelist.c \
-  $(TOP)\ext\misc\btreeinfo.c \
-  $(TOP)\ext\repair\sqlite3_checker.c.in
-
-sqlite3_checker.c:	$(CHECKER_DEPS)
-	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\ext\repair\sqlite3_checker.c.in > $@
-
-sqlite3_checker.exe:	sqlite3_checker.c $(LIBRESOBJS)
-	$(LTLINK) $(NO_WARN) -DBUILD_sqlite -I$(TCLINCDIR) sqlite3_checker.c \
-		/link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
-
 dbdump.exe:	$(TOP)\ext\misc\dbdump.c $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
 	$(LTLINK) $(NO_WARN) -DDBDUMP_STANDALONE $(TOP)\ext\misc\dbdump.c $(SQLITE3C) \
 		/link $(LDFLAGS) $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS)

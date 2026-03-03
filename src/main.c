@@ -3386,7 +3386,7 @@ static int openDatabase(
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
   if( isThreadsafe
-#ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
+#if defined(SQLITE_THREAD_MISUSE_WARNINGS)
    || sqlite3GlobalConfig.bCoreMutex
 #endif
   ){
