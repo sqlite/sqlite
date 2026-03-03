@@ -679,6 +679,14 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "trace", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_THREAD_MISUSE_WARNINGS
+  Tcl_SetVar2(interp, "sqlite_options", "thread_misuse_warnings",
+                                        "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "thread_misuse_warnings",
+                                        "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_TRIGGER
   Tcl_SetVar2(interp, "sqlite_options", "trigger", "0", TCL_GLOBAL_ONLY);
 #else
