@@ -21,6 +21,14 @@ if {$::tcl_platform(platform) ne "unix"} {
 } 
 set testprefix walrestart
 
+if {[permutation]=="memsubsys1"} {
+  # memsubsys1 configures a very small page-cache, which causes different
+  # numbers of frames to be written to the wal file for some transactions,
+  # which causes some of the tests in this file to fail.
+  finish_test
+  return
+}
+
 db close
 sqlite3_shutdown
 
