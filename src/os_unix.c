@@ -4337,22 +4337,28 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
 #endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
+#if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
     case SQLITE_FCNTL_IS_UNLINKED: {
       struct stat statbuf;
       if( (pFile->ctrlFlags & UNIXFILE_DELETE)!=0 ){
         return SQLITE_OK;
-      }else if( osFstat(pFile->h, &statbuf)!=0 ){
-        return SQLITE_IOERR_FSTAT;
-      }else if( statbuf.st_nlink==0 ){
-        return SQLITE_ERROR;
       }
-#if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
-      if( unixShmFstat(pFile, &statbuf)==0 && statbuf.st_nlink==0 ){
-        return SQLITE_ERROR;
+      if( pArg==0 ){
+        /* When pArg==NULL, check only the file itself */
+        if( osFstat(pFile->h, &statbuf)!=0 ){
+          return SQLITE_IOERR_FSTAT;
+        }else if( statbuf.st_nlink==0 ){
+          return SQLITE_ERROR;
+        }
+      }else{
+        /* When pArg!=NULL, check the associated SHM file (if any) */
+        if( unixShmFstat(pFile, &statbuf)==0 && statbuf.st_nlink==0 ){
+          return SQLITE_ERROR;
+        }
       }
-#endif
       return SQLITE_OK;
     }
+#endif /* !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL) */
   }
   return SQLITE_NOTFOUND;
 }

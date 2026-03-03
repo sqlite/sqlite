@@ -3667,12 +3667,9 @@ static int walIsUnlinked(Wal *pWal){
   int rc;
   rc = sqlite3OsFileControl(pWal->pWalFd, SQLITE_FCNTL_IS_UNLINKED, 0);
   if( (rc & 0xff)==SQLITE_ERROR ) return 1;
-  /* Only check WAL and SHM files.  If the DB file has come unlinked,
-  ** it doesn't hurt that we write to it.
-  **
-  **  rc = sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_IS_UNLINKED, 0);
-  **  if( (rc & 0xff)==SQLITE_ERROR ) return 1;
-  */
+  /* Also check the DB file since it controls the SHM file */
+  rc = sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_IS_UNLINKED, pWal);
+  if( (rc & 0xff)==SQLITE_ERROR ) return 1;
   return 0;
 }
 

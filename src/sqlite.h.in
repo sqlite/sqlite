@@ -1245,6 +1245,9 @@ struct sqlite3_io_methods {
 ** in the filesystem, or SQLITE_ERROR if the file has been unlinked out from
 ** under SQLite.  This file control might also return SQLITE_NOTFOUND if it has
 ** not been implemented or SQLITE_IOERR_FSTAT if the fstat() system call fails.
+** The file itself is checked if the pointer argument to sqlite3_file_control()
+** (the third argument) is NULL.  If the pointer argument is non-NULL, then
+** the SHM file associated with the file is checked, if such a file exists.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
