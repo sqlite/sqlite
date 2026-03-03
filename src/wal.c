@@ -3659,6 +3659,23 @@ Pgno sqlite3WalDbsize(Wal *pWal){
   return 0;
 }
 
+/*
+** Return true if either the WAL file or the SHM file or the DB file
+** has become unlinked.
+*/
+static int walIsUnlinked(Wal *pWal){
+  int rc;
+  rc = sqlite3OsFileControl(pWal->pWalFd, SQLITE_FCNTL_IS_UNLINKED, 0);
+  if( (rc & 0xff)==SQLITE_ERROR ) return 1;
+  /* Only check WAL and SHM files.  If the DB file has come unlinked,
+  ** it doesn't hurt that we write to it.
+  **
+  **  rc = sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_IS_UNLINKED, 0);
+  **  if( (rc & 0xff)==SQLITE_ERROR ) return 1;
+  */
+  return 0;
+}
+
 
 /*
 ** This function starts a write transaction on the WAL.
@@ -3691,7 +3708,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   assert( pWal->readLock>=0 );
   assert( pWal->writeLock==0 && pWal->iReCksum==0 );
 
-  if( pWal->readOnly ){
+  if( pWal->readOnly || walIsUnlinked(pWal) ){
     return SQLITE_READONLY;
   }
 
@@ -4301,6 +4318,7 @@ int sqlite3WalCheckpoint(
   assert( eMode>SQLITE_CHECKPOINT_PASSIVE || xBusy==0 );
 
   if( pWal->readOnly ) return SQLITE_READONLY;
+  if( walIsUnlinked(pWal) ) return SQLITE_READONLY;
   WALTRACE(("WAL%p: checkpoint begins\n", pWal));
 
   /* Enable blocking locks, if possible. */

@@ -4129,6 +4129,7 @@ static void unixModeBit(unixFile *pFile, unsigned char mask, int *pArg){
 static int unixGetTempname(int nBuf, char *zBuf);
 #if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
  static int unixFcntlExternalReader(unixFile*, int*);
+ static int unixShmFstat(unixFile*, struct stat*);
 #endif
 #if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
  static void unixDescribeShm(sqlite3_str*,unixShm*);
@@ -4336,6 +4337,22 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
 #endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
+    case SQLITE_FCNTL_IS_UNLINKED: {
+      struct stat statbuf;
+      if( (pFile->ctrlFlags & UNIXFILE_DELETE)!=0 ){
+        return SQLITE_OK;
+      }else if( osFstat(pFile->h, &statbuf)!=0 ){
+        return SQLITE_IOERR_FSTAT;
+      }else if( statbuf.st_nlink==0 ){
+        return SQLITE_ERROR;
+      }
+#if !defined(SQLITE_WASI) && !defined(SQLITE_OMIT_WAL)
+      if( unixShmFstat(pFile, &statbuf)==0 && statbuf.st_nlink==0 ){
+        return SQLITE_ERROR;
+      }
+#endif
+      return SQLITE_OK;
+    }
   }
   return SQLITE_NOTFOUND;
 }
@@ -4652,6 +4669,19 @@ static int unixFcntlExternalReader(unixFile *pFile, int *piOut){
     sqlite3_mutex_leave(pShmNode->pShmMutex);
   }
 
+  return rc;
+}
+
+/*
+** fstat() the SHM file if it exists.
+*/
+static int unixShmFstat(unixFile *pFile, struct stat *pBuf){
+  int rc;
+  if( pFile->pShm ){
+    rc = osFstat(pFile->pShm->pShmNode->hShm, pBuf);
+  }else{
+    rc = -1;
+  }
   return rc;
 }
 

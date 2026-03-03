@@ -1238,6 +1238,13 @@ struct sqlite3_io_methods {
 ** various aspects of the sqlite3_file object is appended to the sqlite3_str.
 ** The SQLITE_FCNTL_FILESTAT opcode is usually a no-op, unless compile-time
 ** options are used to enable it.
+**
+** <li>[[SQLITE_FCNTL_IS_UNLINKED]]
+** The [SQLITE_FCNTL_IS_UNLINKED] opcode runs fstat() or the equivalent on the
+** underlying file descriptor and reruns SQLITE_OK if the file still exists
+** in the filesystem, or SQLITE_ERROR if the file has been unlinked out from
+** under SQLite.  This file control might also return SQLITE_NOTFOUND if it has
+** not been implemented or SQLITE_IOERR_FSTAT if the fstat() system call fails.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1284,6 +1291,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_NULL_IO                43
 #define SQLITE_FCNTL_BLOCK_ON_CONNECT       44
 #define SQLITE_FCNTL_FILESTAT               45
+#define SQLITE_FCNTL_IS_UNLINKED            46
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
