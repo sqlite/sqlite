@@ -2364,6 +2364,8 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
     sqlite3CreateFunc(db, "like", nArg, SQLITE_UTF8, pInfo, likeFunc, 
                       0, 0, 0, 0, 0);
     pDef = sqlite3FindFunction(db, "like", nArg, SQLITE_UTF8, 0);
+    assert( pDef!=0 ); /* The sqlite3CreateFunc() call above cannot fail
+                       ** because the "like" SQL-function already exists */
     pDef->funcFlags |= flags;
     pDef->funcFlags &= ~SQLITE_FUNC_UNSAFE;
   }

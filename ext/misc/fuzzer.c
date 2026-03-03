@@ -617,7 +617,7 @@ static int fuzzerRender(
   int *pnBuf            /* Size of the buffer */
 ){
   const fuzzer_rule *pRule = pStem->pRule;
-  int n;                          /* Size of output term without nul-term */
+  sqlite3_int64 n;                /* Size of output term without nul-term */
   char *z;                        /* Buffer to assemble output term in */
 
   n = pStem->nBasis + pRule->nTo - pRule->nFrom;

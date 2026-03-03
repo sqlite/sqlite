@@ -1971,24 +1971,6 @@ sqlite3_expert$(T.exe): $(TOP)/ext/expert/sqlite3expert.h $(TOP)/ext/expert/sqli
 		$(TOP)/ext/expert/expert.c sqlite3.c -o sqlite3_expert $(LDFLAGS.libsqlite3)
 xbin: sqlite3_expert$(T.exe)
 
-CHECKER_DEPS =\
-  $(TOP)/tool/mkccode.tcl \
-  sqlite3.c \
-  tclsqlite-ex.c \
-  $(TOP)/ext/repair/sqlite3_checker.tcl \
-  $(TOP)/ext/repair/checkindex.c \
-  $(TOP)/ext/repair/checkfreelist.c \
-  $(TOP)/ext/misc/btreeinfo.c \
-  $(TOP)/ext/repair/sqlite3_checker.c.in
-
-sqlite3_checker.c:	$(CHECKER_DEPS)
-	$(B.tclsh) $(TOP)/tool/mkccode.tcl $(TOP)/ext/repair/sqlite3_checker.c.in >$@
-
-sqlite3_checker$(T.exe):	$(T.tcl.env.sh) sqlite3_checker.c
-	$(T.link.tcl) sqlite3_checker.c -o $@ $$TCL_INCLUDE_SPEC \
-		$$TCL_LIB_SPEC $(LDFLAGS.libsqlite3)
-xbin: sqlite3_checker$(T.exe)
-
 dbdump$(T.exe): $(TOP)/ext/misc/dbdump.c sqlite3.o
 	$(T.link) -DDBDUMP_STANDALONE -o $@ \
 		$(TOP)/ext/misc/dbdump.c sqlite3.o $(LDFLAGS.libsqlite3)
