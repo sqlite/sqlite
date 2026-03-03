@@ -994,7 +994,8 @@ static void mk_fiddle(void){
       pf("$(out.%s.js): $(MAKEFILE_LIST) "
          "$(EXPORTED_FUNCTIONS.fiddle) "
          "$(fiddle.c.in) "
-         "$(pre-post.%s.deps)",
+         "$(pre-post.%s.deps) "
+         "$(dir.dout)/sqlite3-opfs-async-proxy.js",
          zBuildName, zBuildName);
       if( isDebug ){
         pf(" $(dir.fiddle)/fiddle-worker.js"
@@ -1014,10 +1015,6 @@ static void mk_fiddle(void){
       pf("\t@$(call b.call.wasm-strip,%s)\n", zBuildName);
       pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n",
          zBuildName);
-      pf("\t@$(call b.cp,"
-         "%s,"
-         "$(dir.api)/sqlite3-opfs-async-proxy.js,"
-         "$(dir $@))\n", zBuildName);
       if( isDebug ){
         pf("\t@$(call b.cp,%s,"
            "$(dir.fiddle)/index.html "

@@ -11,54 +11,51 @@
 
   ***********************************************************************
 
-  This file is a placeholder for a reimplementation of the "opfs" VFS
-  (as distinct from "opfs-sahpool") which uses WebLocks instead
-  locking based on a bespoke custom Atomics.wait()/notify()
-  protocol. This file holds the "synchronous half" of the VFS, whereas
-  it shares the "asynchronous half" of the "opfs" VFS.
+  This file is a reimplementation of the "opfs" VFS (as distinct from
+  "opfs-sahpool") which uses WebLocks for locking instead of a bespoke
+  custom Atomics.wait()/notify() protocol. This file holds the
+  "synchronous half" of the VFS, whereas it shares the "asynchronous
+  half" of the "opfs" VFS.
 
   This file is intended to be appended to the main sqlite3 JS
   deliverable somewhere after sqlite3-api-oo1.js.
+
+  TODOs (2026-0303):
+
+  - Move pieces of this file which are common to it,
+  sqlite3-vfs-opfs.c-pp.js, and/or sqlite3-opfs-async-proxy.js into
+  separate files and #include them in each using the preprocessor.
+  e.g. the s11n namespace object is duplicated in all three files.
+
+  - For purposes of tester1.js we need to figure out which of these
+  VFSes will install the (internal-use-only) sqlite3.opfs utility code
+  namespace. We need that in order to clean up OPFS files during test
+  runs. Alternately, move those into their own
+  sqlite3ApiBootstrap.initializers entry which precedes both of the
+  VFSes, so they'll have access to it during bootstrapping. The
+  sqlite3.opfs namespace is removed at the end of bootstrapping unless
+  the library is told to run in testing mode (which is not a
+  documented feature).
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 /**
    installOpfsVfs() returns a Promise which, on success, installs an
-   sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
+   sqlite3_vfs named "opfs-wl", suitable for use with all sqlite3 APIs
    which accept a VFS. It is intended to be called via
    sqlite3ApiBootstrap.initializers or an equivalent mechanism.
 
-   The installed VFS uses the Origin-Private FileSystem API for
-   all file storage. On error it is rejected with an exception
-   explaining the problem. Reasons for rejection include, but are
-   not limited to:
+   This VFS is essentially a copy of the "opfs" VFS but uses
+   WebLocks for its xLock() and xUnlock() implementations.
 
-   - The counterpart Worker (see below) could not be loaded.
+   Quirks specific to this VFS:
 
-   - The environment does not support OPFS. That includes when
-     this function is called from the main window thread.
+   - Because WebLocks effectively block until they return, they will
+   effectively hang on locks rather than returning SQLITE_BUSY.
 
-  Significant notes and limitations:
 
-  - The OPFS features used here are only available in dedicated Worker
-    threads. This file tries to detect that case, resulting in a
-    rejected Promise if those features do not seem to be available.
-
-  - It requires the SharedArrayBuffer and Atomics classes, and the
-    former is only available if the HTTP server emits the so-called
-    COOP and COEP response headers. These features are required for
-    proxying OPFS's synchronous API via the synchronous interface
-    required by the sqlite3_vfs API.
-
-  - This function may only be called a single time. When called, this
-    function removes itself from the sqlite3 object.
-
-  All arguments to this function are for internal/development purposes
-  only. They do not constitute a public API and may change at any
-  time.
-
-  The argument may optionally be a plain object with the following
-  configuration options:
+   The argument may optionally be a plain object with the following
+   configuration options:
 
   - proxyUri: name of the async proxy JS file.
 
@@ -67,14 +64,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     additionally enables debugging info. Logging is performed
     via the sqlite3.config.{log|warn|error}() functions.
 
-  - sanityChecks (=false): if true, some basic sanity tests are run on
-    the OPFS VFS API after it's initialized, before the returned
-    Promise resolves. This is only intended for testing and
-    development of the VFS, not client-side use.
-
   On success, the Promise resolves to the top-most sqlite3 namespace
-  object and that object gets a new object installed in its
-  `opfs` property, containing several OPFS-specific utilities.
+  object.
 */
 const installOpfsVfs = function callee(options){
   if(!globalThis.SharedArrayBuffer
@@ -115,9 +106,6 @@ const installOpfsVfs = function callee(options){
   if(undefined===options.proxyUri){
     options.proxyUri = callee.defaultProxyUri;
   }
-
-  //sqlite3.config.warn("OPFS options =",options,globalThis.location);
-
   if('function' === typeof options.proxyUri){
     options.proxyUri = options.proxyUri();
   }
@@ -524,171 +512,8 @@ const installOpfsVfs = function callee(options){
       }
     };
 
-    const initS11n = ()=>{
-      /**
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         ACHTUNG: this code is 100% duplicated in the other half of
-         this proxy! The documentation is maintained in the
-         "synchronous half".
-         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-         This proxy de/serializes cross-thread function arguments and
-         output-pointer values via the state.sabIO SharedArrayBuffer,
-         using the region defined by (state.sabS11nOffset,
-         state.sabS11nOffset + state.sabS11nSize]. Only one dataset is
-         recorded at a time.
-
-         This is not a general-purpose format. It only supports the
-         range of operations, and data sizes, needed by the
-         sqlite3_vfs and sqlite3_io_methods operations. Serialized
-         data are transient and this serialization algorithm may
-         change at any time.
-
-         The data format can be succinctly summarized as:
-
-         Nt...Td...D
-
-         Where:
-
-         - N = number of entries (1 byte)
-
-         - t = type ID of first argument (1 byte)
-
-         - ...T = type IDs of the 2nd and subsequent arguments (1 byte
-         each).
-
-         - d = raw bytes of first argument (per-type size).
-
-         - ...D = raw bytes of the 2nd and subsequent arguments (per-type
-         size).
-
-         All types except strings have fixed sizes. Strings are stored
-         using their TextEncoder/TextDecoder representations. It would
-         arguably make more sense to store them as Int16Arrays of
-         their JS character values, but how best/fastest to get that
-         in and out of string form is an open point. Initial
-         experimentation with that approach did not gain us any speed.
-
-         Historical note: this impl was initially about 1% this size by
-         using using JSON.stringify/parse(), but using fit-to-purpose
-         serialization saves considerable runtime.
-      */
-      if(state.s11n) return state.s11n;
-      const textDecoder = new TextDecoder(),
-            textEncoder = new TextEncoder('utf-8'),
-            viewU8 = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize),
-            viewDV = new DataView(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
-      state.s11n = Object.create(null);
-      /* Only arguments and return values of these types may be
-         serialized. This covers the whole range of types needed by the
-         sqlite3_vfs API. */
-      const TypeIds = Object.create(null);
-      TypeIds.number  = { id: 1, size: 8, getter: 'getFloat64', setter: 'setFloat64' };
-      TypeIds.bigint  = { id: 2, size: 8, getter: 'getBigInt64', setter: 'setBigInt64' };
-      TypeIds.boolean = { id: 3, size: 4, getter: 'getInt32', setter: 'setInt32' };
-      TypeIds.string =  { id: 4 };
-
-      const getTypeId = (v)=>(
-        TypeIds[typeof v]
-          || toss("Maintenance required: this value type cannot be serialized.",v)
-      );
-      const getTypeIdById = (tid)=>{
-        switch(tid){
-            case TypeIds.number.id: return TypeIds.number;
-            case TypeIds.bigint.id: return TypeIds.bigint;
-            case TypeIds.boolean.id: return TypeIds.boolean;
-            case TypeIds.string.id: return TypeIds.string;
-            default: toss("Invalid type ID:",tid);
-        }
-      };
-
-      /**
-         Returns an array of the deserialized state stored by the most
-         recent serialize() operation (from this thread or the
-         counterpart thread), or null if the serialization buffer is
-         empty.  If passed a truthy argument, the serialization buffer
-         is cleared after deserialization.
-      */
-      state.s11n.deserialize = function(clear=false){
-        ++metrics.s11n.deserialize.count;
-        const t = performance.now();
-        const argc = viewU8[0];
-        const rc = argc ? [] : null;
-        if(argc){
-          const typeIds = [];
-          let offset = 1, i, n, v;
-          for(i = 0; i < argc; ++i, ++offset){
-            typeIds.push(getTypeIdById(viewU8[offset]));
-          }
-          for(i = 0; i < argc; ++i){
-            const t = typeIds[i];
-            if(t.getter){
-              v = viewDV[t.getter](offset, state.littleEndian);
-              offset += t.size;
-            }else{/*String*/
-              n = viewDV.getInt32(offset, state.littleEndian);
-              offset += 4;
-              v = textDecoder.decode(viewU8.slice(offset, offset+n));
-              offset += n;
-            }
-            rc.push(v);
-          }
-        }
-        if(clear) viewU8[0] = 0;
-        //log("deserialize:",argc, rc);
-        metrics.s11n.deserialize.time += performance.now() - t;
-        return rc;
-      };
-
-      /**
-         Serializes all arguments to the shared buffer for consumption
-         by the counterpart thread.
-
-         This routine is only intended for serializing OPFS VFS
-         arguments and (in at least one special case) result values,
-         and the buffer is sized to be able to comfortably handle
-         those.
-
-         If passed no arguments then it zeroes out the serialization
-         state.
-      */
-      state.s11n.serialize = function(...args){
-        const t = performance.now();
-        ++metrics.s11n.serialize.count;
-        if(args.length){
-          //log("serialize():",args);
-          const typeIds = [];
-          let i = 0, offset = 1;
-          viewU8[0] = args.length & 0xff /* header = # of args */;
-          for(; i < args.length; ++i, ++offset){
-            /* Write the TypeIds.id value into the next args.length
-               bytes. */
-            typeIds.push(getTypeId(args[i]));
-            viewU8[offset] = typeIds[i].id;
-          }
-          for(i = 0; i < args.length; ++i) {
-            /* Deserialize the following bytes based on their
-               corresponding TypeIds.id from the header. */
-            const t = typeIds[i];
-            if(t.setter){
-              viewDV[t.setter](offset, args[i], state.littleEndian);
-              offset += t.size;
-            }else{/*String*/
-              const s = textEncoder.encode(args[i]);
-              viewDV.setInt32(offset, s.byteLength, state.littleEndian);
-              offset += 4;
-              viewU8.set(s, offset);
-              offset += s.byteLength;
-            }
-          }
-          //log("serialize() result:",viewU8.slice(0,offset));
-        }else{
-          viewU8[0] = 0;
-        }
-        metrics.s11n.serialize.time += performance.now() - t;
-      };
-      return state.s11n;
-    }/*initS11n()*/;
+//#define opfs-has-metrics
+//#include api/opfs-common.c-pp.js
 
     /**
        Generates a random ASCII string len characters long, intended for
@@ -1323,14 +1148,14 @@ const installOpfsVfs = function callee(options){
     };
 
     if(sqlite3.oo1){
-      const OpfsDb = function(...args){
+      const OpfsWlDb = function(...args){
         const opt = sqlite3.oo1.DB.dbCtorHelper.normalizeArgs(...args);
         opt.vfs = opfsVfs.$zName;
         sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
-      OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
-      sqlite3.oo1.OpfsDb = OpfsDb;
-      OpfsDb.importDb = opfsUtil.importDb;
+      OpfsWlDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
+      sqlite3.oo1.OpfsWlDb = OpfsWlDb;
+      OpfsWlDb.importDb = opfsUtil.importDb;
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenCallback(
         opfsVfs.pointer,
         function(oo1Db, sqlite3){
@@ -1446,7 +1271,7 @@ const installOpfsVfs = function callee(options){
                 navigator.storage.getDirectory().then((d)=>{
                   W.onerror = W._originalOnError;
                   delete W._originalOnError;
-                  sqlite3.opfs = opfsUtil;
+                  //sqlite3.opfs = opfsUtil;
                   opfsUtil.rootDirectory = d;
                   log("End of OPFS sqlite3_vfs setup.", opfsVfs);
                   promiseResolve();

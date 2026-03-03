@@ -913,6 +913,7 @@ endif
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-kvvfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
+#sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-wl.c-pp.js
 
 # Parallel builds can fail if $(sqlite3-license-version.js) is not
 # created early enough, so make all files in $(sqlite-api.jses) except
@@ -1182,13 +1183,13 @@ all: demos
 #######################################################################
 
 #
-# "SOAP" is a static file which is not part of the amalgamation but
-# gets copied into the build output folder and into each of the fiddle
-# builds.
+# "SOAP" is not part of the amalgamation but gets copied into the
+# build output folder and into each of the fiddle builds.
 #
 sqlite3.ext.js += $(dir.dout)/sqlite3-opfs-async-proxy.js
-$(dir.dout)/sqlite3-opfs-async-proxy.js: $(dir.api)/sqlite3-opfs-async-proxy.js
-	@$(call b.cp,@,$<,$@)
+$(eval $(call b.c-pp.target,soap,\
+  $(dir.api)/sqlite3-opfs-async-proxy.c-pp.js,\
+  $(dir.dout)/sqlite3-opfs-async-proxy.js))
 
 #
 # Add a dep of $(sqlite3.ext.js) on every individual build's JS file.

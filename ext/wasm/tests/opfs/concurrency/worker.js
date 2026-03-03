@@ -1,8 +1,9 @@
 importScripts(
-  (new URL(self.location.href).searchParams).get('sqlite3.dir') + '/sqlite3.js'
+  (new URL(globalThis.location.href).searchParams).get('sqlite3.dir') + '/sqlite3.js'
 );
-self.sqlite3InitModule().then(async function(sqlite3){
-  const urlArgs = new URL(self.location.href).searchParams;
+globalThis.sqlite3InitModule.__isUnderTest = true;
+globalThis.sqlite3InitModule().then(async function(sqlite3){
+  const urlArgs = new URL(globalThis.location.href).searchParams;
   const options = {
     workerName: urlArgs.get('workerId') || Math.round(Math.random()*10000),
     unlockAsap: urlArgs.get('opfs-unlock-asap') || 0 /*EXPERIMENTAL*/
@@ -98,7 +99,7 @@ self.sqlite3InitModule().then(async function(sqlite3){
     }
   }/*run()*/;
 
-  self.onmessage = function({data}){
+  globalThis.onmessage = function({data}){
     switch(data.type){
         case 'run': run().catch((e)=>{
           if(!interval.error) interval.error = e;

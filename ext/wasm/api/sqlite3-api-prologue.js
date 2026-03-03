@@ -2002,6 +2002,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
              so that we can add tests for them. */
           delete sqlite3.util;
           delete sqlite3.StructBinder;
+          delete sqlite3.opfs;
         }
         return sqlite3;
       };
@@ -2034,7 +2035,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     */
     scriptInfo: undefined
   };
-  if( ('undefined'!==typeof sqlite3IsUnderTest/* from post-js-header.js */) ){
+  if( 'undefined'!==typeof sqlite3IsUnderTest/* from post-js-header.js */ ){
     sqlite3.__isUnderTest = !!sqlite3IsUnderTest;
   }
   try{
