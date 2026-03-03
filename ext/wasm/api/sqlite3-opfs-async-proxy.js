@@ -318,7 +318,7 @@ const installAsyncProxy = function(){
       }
       log("Got",opName+"() sync handle for",fh.filenameAbs,
           'in',performance.now() - t,'ms');
-      if(!fh.xLock){
+      if(!fh.xLock && !state.lock/*set by opfs-wl*/){
         __implicitLocks.add(fh.fid);
         log("Acquired implicit lock for",opName+"()",fh.fid,fh.filenameAbs);
       }
@@ -703,6 +703,39 @@ const installAsyncProxy = function(){
     return state.s11n;
   }/*initS11n()*/;
 
+  /**
+     Starts a new WebLock request.
+  */
+  const handleLockRequest = async function(){
+    const args = state.s11n.deserialize(true)
+          || toss("Expecting a filename argument from the proxy xLock()");
+    const view = state.sabOPView;
+    const slock = state.lock;
+    const lockType = Atomics.load(view, slock.type);
+
+    await navigator.locks.request('sqlite3-vfs-opfs:'+args[0], {
+      mode: (lockType===state.sq3Codes.SQLITE_LOCK_EXCLUSIVE)
+        ? 'exclusive' : 'shared'
+    }, async (wl)=>{
+      /**
+         A. Tell the C-side we have the browser lock. We use the same
+         handshake slot, but a specific 'Granted' value.
+      */
+      Atomics.store(view, slock.atomicsHandshake, 2);
+      Atomics.notify(view, slock.atomicsHandshake);
+      /**
+         B. Sit here and keep the lock room occupied until the
+         Receptionist receives 'unlockControl'.
+      */
+      while( 1!==Atomics.load(view, slock.atomicsHandshake) ){
+        Atomics.wait(view. slock.atomicsHandshake, 2);
+      }
+      /* C. Reset the handshake slot. */
+      Atomics.store(view, slock.atomicsHandshake, 0);
+      Atomics.notify(view, lock.atomicsHandshake);
+    });
+  };
+
   const waitLoop = async function f(){
     const opHandlers = Object.create(null);
     for(let k of Object.keys(state.opIds)){
@@ -713,10 +746,11 @@ const installAsyncProxy = function(){
       o.key = k;
       o.f = vi;
     }
+    const opIds = state.opIds;
     while(!flagAsyncShutdown){
       try {
         if('not-equal'!==Atomics.wait(
-          state.sabOPView, state.opIds.whichOp, 0, state.asyncIdleWaitTime
+          state.sabOPView, opIds.whichOp, 0, state.asyncIdleWaitTime
         )){
           /* Maintenance note: we compare against 'not-equal' because
 
@@ -736,8 +770,11 @@ const installAsyncProxy = function(){
           await releaseImplicitLocks();
           continue;
         }
-        const opId = Atomics.load(state.sabOPView, state.opIds.whichOp);
-        Atomics.store(state.sabOPView, state.opIds.whichOp, 0);
+        const opId = Atomics.exchange(state.sabOPView, opIds.whichOp, 0);
+        if( opId===opIds.lockControl ){
+          handleLockRequest();
+          continue;
+        }
         const hnd = opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
         const args = state.s11n.deserialize(
           true /* clear s11n to keep the caller from confusing this with

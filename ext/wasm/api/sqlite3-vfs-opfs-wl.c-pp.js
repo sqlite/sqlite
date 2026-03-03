@@ -372,7 +372,6 @@ const installOpfsVfs = function callee(options){
       state.opIds.xWrite = i++;
       state.opIds.mkdir = i++;
       state.opIds.lockControl = i++ /* we signal the intent to lock here */;
-      state.opIds.lockType
       /** Internal signals which are used only during development and
           testing via the dev console. */
       state.opIds['opfs-async-metrics'] = i++;
@@ -384,8 +383,8 @@ const installOpfsVfs = function callee(options){
 
       /* Slots for submitting the lock type and receiving its acknowledgement. */
       state.lock = nu({
-        type: i++,
-        atomicsHandshake: i++
+        type: i++ /* SQLITE_LOCK_xyz value */,
+        atomicsHandshake: i++ /* 1=release, 2=granted */
       });
       state.sabOP = new SharedArrayBuffer(
         i * 4/* ==sizeof int32, noting that Atomics.wait() and friends
@@ -425,7 +424,12 @@ const installOpfsVfs = function callee(options){
       'SQLITE_OPEN_CREATE',
       'SQLITE_OPEN_DELETEONCLOSE',
       'SQLITE_OPEN_MAIN_DB',
-      'SQLITE_OPEN_READONLY'
+      'SQLITE_OPEN_READONLY',
+      'SQLITE_LOCK_NONE',
+      'SQLITE_LOCK_SHARED',
+      'SQLITE_LOCK_RESERVED',
+      'SQLITE_LOCK_PENDING',
+      'SQLITE_LOCK_EXCLUSIVE'
     ].forEach((k)=>{
       if(undefined === (state.sq3Codes[k] = capi[k])){
         toss("Maintenance required: not found:",k);
@@ -787,7 +791,7 @@ const installOpfsVfs = function callee(options){
         mTimeEnd();
         return rc;
       },
-      xLock: function(pFile,lockType){
+      xLock: function(pFile, lockType){
         mTimeStart('xLock');
         const f = __openFiles[pFile];
         let rc = 0;
@@ -796,8 +800,23 @@ const installOpfsVfs = function callee(options){
            type. If no lock is active, have the async counterpart
            lock the file. */
         if( !f.lockType ) {
-          rc = opRun('xLock', pFile, lockType);
-          if( 0===rc ) f.lockType = lockType;
+          try{
+            const view = state.sabOPView;
+            /* We need to pass pFile's name through so that the other
+               side can create the WebLock name. */
+            state.s11n.serialize(f.filename)
+            Atomics.store(view, state.lock.type, lockType);
+            Atomics.store(view, state.opIds.whichOp, state.opIds.lockControl);
+            Atomics.notify(state.sabOPView, state.opIds.whichOp)
+            while('not-equal'!==Atomics.wait(view, state.lock.atomicsHandshake, 0)){
+              /* Loop is a workaround for environment-specific quirks. See
+                 notes in similar loops. */
+            }
+            f.lockType = lockType;
+          }catch(e){
+            error("xLock(",arguments,") failed", e, f);
+            rc = capi.SQLITE_IOERR_LOCK;
+          }
         }else{
           f.lockType = lockType;
         }
@@ -842,9 +861,16 @@ const installOpfsVfs = function callee(options){
         mTimeStart('xUnlock');
         const f = __openFiles[pFile];
         let rc = 0;
-        if( capi.SQLITE_LOCK_NONE === lockType
-          && f.lockType ){
-          rc = opRun('xUnlock', pFile, lockType);
+        if( lockType < f.lockType ){
+          try{
+            const view = state.sabOPView;
+            Atomics.store(view, state.lock.atomicsHandshake, 1);
+            Atomics.notify(view, state.lock.atomicsHandshake);
+            Atomics.wait(view, state.lock.atomicsHandshake, 1);
+          }catch(e){
+            error("xUnlock(",pFile,lockType,") failed",e, f);
+            rc = capi.SQLITE_IOERR_LOCK;
+          }
         }
         if( 0===rc ) f.lockType = lockType;
         mTimeEnd();
@@ -932,7 +958,7 @@ const installOpfsVfs = function callee(options){
         }
         const fh = Object.create(null);
         fh.fid = pFile;
-        fh.filename = zName;
+        fh.filename = wasm.cstrToJs(zName);
         fh.sab = new SharedArrayBuffer(state.fileBufferSize);
         fh.flags = flags;
         fh.readOnly = !(capi.SQLITE_OPEN_CREATE & flags)
