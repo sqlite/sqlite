@@ -2263,8 +2263,8 @@ static int walCheckpoint(
       ** pInfo->nBackfill had already been set to 0 by the writer that wrapped
       ** the wal file. It would also be dangerous to proceed, as there may be
       ** fewer than pWal->hdr.mxFrame valid frames in the wal file.  */
-      if( 0==memcmp(pLive->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt)) ){
-
+      int bChg = memcmp(pLive->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt));
+      if( 0==bChg ){
         pInfo->nBackfillAttempted = mxSafeFrame; SEH_INJECT_FAULT;
   
         /* Sync the WAL to disk */
