@@ -805,6 +805,7 @@ const installOpfsVfs = function callee(options){
             /* We need to pass pFile's name through so that the other
                side can create the WebLock name. */
             state.s11n.serialize(f.filename)
+            Atomics.store(view, state.lock.atomicsHandshake, 0);
             Atomics.store(view, state.lock.type, lockType);
             Atomics.store(view, state.opIds.whichOp, state.opIds.lockControl);
             Atomics.notify(state.sabOPView, state.opIds.whichOp)
