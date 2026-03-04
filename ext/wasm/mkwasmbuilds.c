@@ -747,6 +747,12 @@ static void emit_api_js(char const *zBuildName){
      zBuildName, zBuildName, zBuildName);
   pf("$(out.%s.js): $(sqlite3-api.%s.js)\n",
      zBuildName, zBuildName);
+  pf("$(sqlite3-api.%s.js):"
+     /* Extra deps needed by the OPFS pieces... */
+     " $(dir.api)/opfs-common-shared.c-pp.js"
+     " $(dir.api)/opfs-common-inline.c-pp.js"
+     "\n",
+     zBuildName);
 }
 
 /*

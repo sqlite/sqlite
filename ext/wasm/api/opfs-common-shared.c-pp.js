@@ -453,6 +453,40 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const vfsName = wasm.cstrToJs(opfsVfs.$zName);
     const isWebLocker = 'opfs-wl'===vfsName;
     const state = util.nu();
+    opfsVfs.metrics = util.nu({
+      counters: util.nu(),
+      dump: function(){
+        let k, n = 0, t = 0, w = 0;
+        for(k in state.opIds){
+          const m = metrics[k];
+          n += m.count;
+          t += m.time;
+          w += m.wait;
+          m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
+          m.avgWait = (m.count && m.wait) ? (m.wait / m.count) : 0;
+        }
+        sqlite3.config.log(globalThis.location.href,
+                    "metrics for",globalThis.location.href,":",metrics,
+                    "\nTotal of",n,"op(s) for",t,
+                    "ms (incl. "+w+" ms of waiting on the async side)");
+        sqlite3.config.log("Serialization metrics:",opfsVfs.metrics.counters.s11n);
+        //W.postMessage({type:'opfs-async-metrics'});
+      },
+      reset: function(){
+        let k;
+        const r = (m)=>(m.count = m.time = m.wait = 0);
+        const m = opfsVfs.metrics.counters;
+        for(k in state.opIds){
+          r(m[k] = Object.create(null));
+        }
+        let s = m.s11n = Object.create(null);
+        s = s.serialize = Object.create(null);
+        s.count = s.time = 0;
+        s = m.s11n.deserialize = Object.create(null);
+        s.count = s.time = 0;
+      }
+    })/*opfsVfs.metrics*/;
+
     /**
        asyncIdleWaitTime is how long (ms) to wait, in the async proxy,
        for each Atomics.wait() when waiting on inbound VFS API calls.
@@ -638,12 +672,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       defaultUnlockAsap: false
     });
 
-//#if nope
-/* does not yet work this way */
-//#define opfs-has-metrics
+    opfsVfs.metrics.reset();
+//#if not defined nope
+//#// does not yet work this way
+//#define vfs.metrics.enable
+    const metrics = opfsVfs.metrics.counters;
 //#include api/opfs-common-inline.c-pp.js
-//#undef opfs-has-metrics
-    state.initS11n = initS11n;
+//#// import initS11n()
+//#undef vfs.metrics.enable
+    opfsVfs.initS11n = initS11n;
 //#endif
     return state;
   }/*createVfsStateObject()*/;

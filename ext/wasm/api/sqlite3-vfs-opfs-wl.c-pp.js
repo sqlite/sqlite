@@ -134,43 +134,8 @@ const installOpfsWlVfs = function callee(options){
     );
     const state = opfsUtil.createVfsStateObject(opfsVfs);
     state.verbose = options.verbose;
-    const metrics = Object.create(null);
-//#define opfs-has-metrics
-//#include api/opfs-common-inline.c-pp.js
-//#undef opfs-has-metrics
+    const metrics = opfsVfs.metrics.counters;
 
-    const vfsMetrics = {
-      dump: function(){
-        let k, n = 0, t = 0, w = 0;
-        for(k in state.opIds){
-          const m = metrics[k];
-          n += m.count;
-          t += m.time;
-          w += m.wait;
-          m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
-          m.avgWait = (m.count && m.wait) ? (m.wait / m.count) : 0;
-        }
-        sqlite3.config.log(globalThis.location.href,
-                    "metrics for",globalThis.location.href,":",metrics,
-                    "\nTotal of",n,"op(s) for",t,
-                    "ms (incl. "+w+" ms of waiting on the async side)");
-        sqlite3.config.log("Serialization metrics:",metrics.s11n);
-        W.postMessage({type:'opfs-async-metrics'});
-      },
-      reset: function(){
-        let k;
-        const r = (m)=>(m.count = m.time = m.wait = 0);
-        for(k in state.opIds){
-          r(metrics[k] = Object.create(null));
-        }
-        let s = metrics.s11n = Object.create(null);
-        s = s.serialize = Object.create(null);
-        s.count = s.time = 0;
-        s = metrics.s11n.deserialize = Object.create(null);
-        s.count = s.time = 0;
-      }
-    }/*vfsMetrics*/;
-    vfsMetrics.reset();
     let promiseWasRejected = undefined;
     const promiseReject = (err)=>{
       promiseWasRejected = true;
@@ -643,8 +608,6 @@ const installOpfsWlVfs = function callee(options){
       }
     }/*sanityCheck()*/;
 
-    //const initS11n = state.initS11n || toss("Missing state.initS11n()");
-    //delete state.initS11n;
     W.onmessage = function({data}){
       //log("Worker.onmessage:",data);
       switch(data.type){
@@ -674,7 +637,8 @@ const installOpfsWlVfs = function callee(options){
               state.sabOPView = new Int32Array(state.sabOP);
               state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
               state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
-              initS11n();
+              opfsVfs.initS11n();
+              delete opfsVfs.initS11n;
               if(options.sanityChecks){
                 warn("Running sanity checks because of opfs-sanity-check URL arg...");
                 sanityCheck();
@@ -720,7 +684,7 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
       //sqlite3.config.warn("installOpfsWlVfs.defaultProxyUri =",installOpfsWlVfs.defaultProxyUri);
     }
     return installOpfsWlVfs().catch((e)=>{
-      sqlite3.config.warn("Ignoring inability to install OPFS-WL sqlite3_vfs:",e.message);
+      sqlite3.config.warn("Ignoring inability to install OPFS-WL sqlite3_vfs:",e);
     });
   }catch(e){
     sqlite3.config.error("installOpfsWlVfs() exception:",e);
