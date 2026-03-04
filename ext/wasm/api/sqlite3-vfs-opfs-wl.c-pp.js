@@ -34,10 +34,11 @@
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+  const util = sqlite3.util,
+        toss  = sqlite3.util.toss;
+  const opfsUtil = sqlite3.opfs || sqlite3.util.toss("Missing sqlite3.opfs")
   /* These get removed from sqlite3 during bootstrap, so we need an
-     early reference to it. */
-  const util = sqlite3.util;
-  const opfsUtil = sqlite3.opfs || sqlite3.util.toss("Missing sqlite3.opfs");
+     early reference to it. */;
 
 /**
    installOpfsWlVfs() returns a Promise which, on success, installs an
@@ -64,12 +65,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     additionally enables debugging info. Logging is performed
     via the sqlite3.config.{log|warn|error}() functions.
 
-  On success, the Promise resolves to the top-most sqlite3 namespace
-  object.
 
-  Code-diver notes: this file is particularly sparse on documentation
-  because much of it is identical to the code in
-  sqlite3-vfs-opfs.c-pp.js. See that file for more details.
+  On success, the Promise resolves to the top-most sqlite3 namespace
+  object. Success does not necessarily mean that it installs the VFS,
+  as there are legitimate non-error reasons for OPFS not to be
+  available.
 */
 const installOpfsWlVfs = function callee(options){
   try{
@@ -77,25 +77,11 @@ const installOpfsWlVfs = function callee(options){
   }catch(e){
     return Promise.reject(e);
   }
-  options = util.nu(options);
-  const urlParams = new URL(globalThis.location.href).searchParams;
-  if(urlParams.has('opfs-disable')){
-    //sqlite3.config.warn('Explicitly not installing 'opfs-wl' VFS due to opfs-disable flag.');
+  options = opfsUtil.initOptions(options, callee);
+  if( options.disableOpfs ){
     return Promise.resolve(sqlite3);
   }
-  if(undefined===options.verbose){
-    options.verbose = urlParams.has('opfs-verbose')
-      ? (+urlParams.get('opfs-verbose') || 2) : 1;
-  }
-  if(undefined===options.sanityChecks){
-    options.sanityChecks = urlParams.has('opfs-sanity-check');
-  }
-  if(undefined===options.proxyUri){
-    options.proxyUri = callee.defaultProxyUri;
-  }
-  if('function' === typeof options.proxyUri){
-    options.proxyUri = options.proxyUri();
-  }
+
   const thePromise = new Promise(function(promiseResolve_, promiseReject_){
     const loggers = [
       sqlite3.config.error,
@@ -105,36 +91,80 @@ const installOpfsWlVfs = function callee(options){
     const logImpl = (level,...args)=>{
       if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
     };
-    const log =    (...args)=>logImpl(2, ...args);
-    const warn =   (...args)=>logImpl(1, ...args);
-    const error =  (...args)=>logImpl(0, ...args);
-    const toss = sqlite3.util.toss;
-    const capi = sqlite3.capi;
-    const wasm = sqlite3.wasm;
-    const sqlite3_vfs = capi.sqlite3_vfs;
-    const sqlite3_file = capi.sqlite3_file;
-    const sqlite3_io_methods = capi.sqlite3_io_methods;
-    const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
-    const dVfs = pDVfs
-          ? new sqlite3_vfs(pDVfs)
-          : null /* dVfs will be null when sqlite3 is built with
-                    SQLITE_OS_OTHER. */;
-    const opfsIoMethods = new sqlite3_io_methods();
-    const opfsVfs = new sqlite3_vfs()
-          .addOnDispose( ()=>opfsIoMethods.dispose());
-    opfsIoMethods.$iVersion = 1;
-    opfsVfs.$iVersion = 2/*yes, two*/;
-    opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
-    opfsVfs.$mxPathname = 1024/* sure, why not? The OPFS name length limit
-                                 is undocumented/unspecified. */;
-    opfsVfs.$zName = wasm.allocCString('opfs-wl');
-    opfsVfs.addOnDispose(
-      '$zName', opfsVfs.$zName,
-      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null)
-    );
-    const state = opfsUtil.createVfsStateObject(opfsVfs);
-    state.verbose = options.verbose;
-    const metrics = opfsVfs.metrics.counters;
+    const log   = (...args)=>logImpl(2, ...args),
+          warn  = (...args)=>logImpl(1, ...args),
+          error = (...args)=>logImpl(0, ...args),
+          capi  = sqlite3.capi,
+          wasm  = sqlite3.wasm;
+    const state = opfsUtil.createVfsState('opfs-wl', options),
+          opfsVfs = state.vfs,
+          metrics = opfsVfs.metrics.counters,
+          mTimeStart = opfsVfs.mTimeStart,
+          mTimeEnd = opfsVfs.mTimeEnd,
+          __openFiles = opfsVfs.__openFiles;
+    delete state.vfs;
+
+    /* At this point, createVfsState() has populated state and
+       opfsVfs with any code common to both the "opfs" and "opfs-wl"
+       VFSes. Now comes the VFS-dependent work... */
+
+    opfsVfs.ioSyncWrappers.xLock = function(pFile, lockType){
+      mTimeStart('xLock');
+      ++metrics.xLock.count;
+      const f = __openFiles[pFile];
+      let rc = 0;
+      /* All OPFS locks are exclusive locks. If xLock() has
+         previously succeeded, do nothing except record the lock
+         type. If no lock is active, have the async counterpart
+         lock the file. */
+      if( f.lockType ) {
+        f.lockType = lockType;
+      }else{
+        try{
+          const view = state.sabOPView;
+          /* We need to pass pFile's name to the async proxy so that
+             it can create the WebLock name. */
+          state.s11n.serialize(f.filename)
+          Atomics.store(view, state.lock.atomicsHandshake, 0);
+          Atomics.store(view, state.lock.type, lockType);
+          Atomics.store(view, state.opIds.whichOp, state.opIds.lockControl);
+          Atomics.notify(state.sabOPView, state.opIds.whichOp)
+          while('not-equal'!==Atomics.wait(view, state.lock.atomicsHandshake, 0)){
+            /* Loop is a workaround for environment-specific quirks. See
+               notes in similar loops. */
+          }
+          f.lockType = lockType;
+        }catch(e){
+          error("xLock(",arguments,") failed", e, f);
+          rc = capi.SQLITE_IOERR_LOCK;
+        }
+      }
+      mTimeEnd();
+      return rc;
+    };
+
+    opfsVfs.ioSyncWrappers.xUnlock =function(pFile,lockType){
+      mTimeStart('xUnlock');
+      ++metrics.xUnlock.count;
+      const f = __openFiles[pFile];
+      let rc = 0;
+      if( lockType < f.lockType ){
+        try{
+          const view = state.sabOPView;
+          Atomics.store(view, state.lock.atomicsHandshake, 1);
+          Atomics.notify(view, state.lock.atomicsHandshake);
+          Atomics.wait(view, state.lock.atomicsHandshake, 1);
+        }catch(e){
+          error("xUnlock(",pFile,lockType,") failed",e, f);
+          rc = capi.SQLITE_IOERR_LOCK;
+        }
+      }
+      if( 0===rc ) f.lockType = lockType;
+      mTimeEnd();
+      return rc;
+    };
+
+
 
     let promiseWasRejected = undefined;
     const promiseReject = (err)=>{
@@ -147,7 +177,7 @@ const installOpfsWlVfs = function callee(options){
       return promiseResolve_(sqlite3);
     };
     options.proxyUri += '?vfs=opfs-wl';
-    const W =
+    const W = opfsVfs.worker =
 //#if target:es6-bundler-friendly
     new Worker(new URL("sqlite3-opfs-async-proxy.js?vfs=opfs-wl", import.meta.url));
 //#elif target:es6-module
@@ -175,47 +205,7 @@ const installOpfsWlVfs = function callee(options){
       promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
     };
 
-    /**
-       Runs the given operation (by name) in the async worker
-       counterpart, waits for its response, and returns the result
-       which the async worker writes to SAB[state.opIds.rc]. The
-       2nd and subsequent arguments must be the arguments for the
-       async op.
-    */
-    const opRun = (op,...args)=>{
-      const opNdx = state.opIds[op] || toss("Invalid op ID:",op);
-      state.s11n.serialize(...args);
-      Atomics.store(state.sabOPView, state.opIds.rc, -1);
-      Atomics.store(state.sabOPView, state.opIds.whichOp, opNdx);
-      Atomics.notify(state.sabOPView, state.opIds.whichOp)
-      /* async thread will take over here */;
-      const t = performance.now();
-      while('not-equal'!==Atomics.wait(state.sabOPView, state.opIds.rc, -1)){
-        /*
-          The reason for this loop is buried in the details of a long
-          discussion at:
-
-          https://github.com/sqlite/sqlite-wasm/issues/12
-
-          Summary: in at least one browser flavor, under high loads,
-          the wait()/notify() pairings can get out of sync. Calling
-          wait() here until it returns 'not-equal' gets them back in
-          sync.
-        */
-      }
-      /* When the above wait() call returns 'not-equal', the async
-         half will have completed the operation and reported its results
-         in the state.opIds.rc slot of the SAB. */
-      const rc = Atomics.load(state.sabOPView, state.opIds.rc);
-      metrics[op].wait += performance.now() - t;
-      if(rc && state.asyncS11nExceptions){
-        const err = state.s11n.deserialize();
-        if(err) error(op+"() async error:",...err);
-      }
-      return rc;
-    };
-
-//#if nope
+    const opRun = opfsVfs.opRun;
     /**
        Not part of the public API. Only for test/development use.
     */
@@ -229,296 +219,6 @@ const installOpfsWlVfs = function callee(options){
         W.postMessage({type: 'opfs-async-restart'});
       }
     };
-//#endif
-
-    /**
-       Map of sqlite3_file pointers to objects constructed by xOpen().
-    */
-    const __openFiles = Object.create(null);
-
-    const opTimer = Object.create(null);
-    opTimer.op = undefined;
-    opTimer.start = undefined;
-    const mTimeStart = (op)=>{
-      opTimer.start = performance.now();
-      opTimer.op = op;
-      ++metrics[op].count;
-    };
-    const mTimeEnd = ()=>(
-      metrics[opTimer.op].time += performance.now() - opTimer.start
-    );
-
-    /**
-       Impls for the sqlite3_io_methods methods. Maintenance reminder:
-       members are in alphabetical order to simplify finding them.
-    */
-    const ioSyncWrappers = {
-      xCheckReservedLock: function(pFile,pOut){
-        /**
-           After consultation with a topic expert: "opfs-wl" will
-           continue to use the same no-op impl which "opfs" does
-           because:
-
-           - xCheckReservedLock() is just a hint. If SQLite needs to
-           lock, it's still going to try to lock.
-
-           - We cannot do this check synchronously in "opfs-wl",
-           so would need to pass it to the async proxy. That would
-           make it inordinately expensive considering that it's
-           just a hint.
-        */
-        wasm.poke(pOut, 0, 'i32');
-        return 0;
-      },
-      xClose: function(pFile){
-        mTimeStart('xClose');
-        let rc = 0;
-        const f = __openFiles[pFile];
-        if(f){
-          delete __openFiles[pFile];
-          rc = opRun('xClose', pFile);
-          if(f.sq3File) f.sq3File.dispose();
-        }
-        mTimeEnd();
-        return rc;
-      },
-      xDeviceCharacteristics: function(pFile){
-        return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
-      },
-      xFileControl: function(pFile, opId, pArg){
-        /*mTimeStart('xFileControl');
-          mTimeEnd();*/
-        return capi.SQLITE_NOTFOUND;
-      },
-      xFileSize: function(pFile,pSz64){
-        mTimeStart('xFileSize');
-        let rc = opRun('xFileSize', pFile);
-        if(0==rc){
-          try {
-            const sz = state.s11n.deserialize()[0];
-            wasm.poke(pSz64, sz, 'i64');
-          }catch(e){
-            error("Unexpected error reading xFileSize() result:",e);
-            rc = state.sq3Codes.SQLITE_IOERR;
-          }
-        }
-        mTimeEnd();
-        return rc;
-      },
-      xLock: function(pFile, lockType){
-        mTimeStart('xLock');
-        const f = __openFiles[pFile];
-        let rc = 0;
-        /* All OPFS locks are exclusive locks. If xLock() has
-           previously succeeded, do nothing except record the lock
-           type. If no lock is active, have the async counterpart
-           lock the file. */
-        if( !f.lockType ) {
-          try{
-            const view = state.sabOPView;
-            /* We need to pass pFile's name through so that the other
-               side can create the WebLock name. */
-            state.s11n.serialize(f.filename)
-            Atomics.store(view, state.lock.atomicsHandshake, 0);
-            Atomics.store(view, state.lock.type, lockType);
-            Atomics.store(view, state.opIds.whichOp, state.opIds.lockControl);
-            Atomics.notify(state.sabOPView, state.opIds.whichOp)
-            while('not-equal'!==Atomics.wait(view, state.lock.atomicsHandshake, 0)){
-              /* Loop is a workaround for environment-specific quirks. See
-                 notes in similar loops. */
-            }
-            f.lockType = lockType;
-          }catch(e){
-            error("xLock(",arguments,") failed", e, f);
-            rc = capi.SQLITE_IOERR_LOCK;
-          }
-        }else{
-          f.lockType = lockType;
-        }
-        mTimeEnd();
-        return rc;
-      },
-      xRead: function(pFile,pDest,n,offset64){
-        mTimeStart('xRead');
-        const f = __openFiles[pFile];
-        let rc;
-        try {
-          rc = opRun('xRead',pFile, n, Number(offset64));
-          if(0===rc || capi.SQLITE_IOERR_SHORT_READ===rc){
-            /**
-               Results get written to the SharedArrayBuffer f.sabView.
-               Because the heap is _not_ a SharedArrayBuffer, we have
-               to copy the results. TypedArray.set() seems to be the
-               fastest way to copy this. */
-            wasm.heap8u().set(f.sabView.subarray(0, n), Number(pDest));
-          }
-        }catch(e){
-          error("xRead(",arguments,") failed:",e,f);
-          rc = capi.SQLITE_IOERR_READ;
-        }
-        mTimeEnd();
-        return rc;
-      },
-      xSync: function(pFile,flags){
-        mTimeStart('xSync');
-        ++metrics.xSync.count;
-        const rc = opRun('xSync', pFile, flags);
-        mTimeEnd();
-        return rc;
-      },
-      xTruncate: function(pFile,sz64){
-        mTimeStart('xTruncate');
-        const rc = opRun('xTruncate', pFile, Number(sz64));
-        mTimeEnd();
-        return rc;
-      },
-      xUnlock: function(pFile,lockType){
-        mTimeStart('xUnlock');
-        const f = __openFiles[pFile];
-        let rc = 0;
-        if( lockType < f.lockType ){
-          try{
-            const view = state.sabOPView;
-            Atomics.store(view, state.lock.atomicsHandshake, 1);
-            Atomics.notify(view, state.lock.atomicsHandshake);
-            Atomics.wait(view, state.lock.atomicsHandshake, 1);
-          }catch(e){
-            error("xUnlock(",pFile,lockType,") failed",e, f);
-            rc = capi.SQLITE_IOERR_LOCK;
-          }
-        }
-        if( 0===rc ) f.lockType = lockType;
-        mTimeEnd();
-        return rc;
-      },
-      xWrite: function(pFile,pSrc,n,offset64){
-        mTimeStart('xWrite');
-        const f = __openFiles[pFile];
-        let rc;
-        try {
-          f.sabView.set(wasm.heap8u().subarray(
-            Number(pSrc), Number(pSrc) + n
-          ));
-          rc = opRun('xWrite', pFile, n, Number(offset64));
-        }catch(e){
-          error("xWrite(",arguments,") failed:",e,f);
-          rc = capi.SQLITE_IOERR_WRITE;
-        }
-        mTimeEnd();
-        return rc;
-      }
-    }/*ioSyncWrappers*/;
-
-    /**
-       Impls for the sqlite3_vfs methods. Maintenance reminder: members
-       are in alphabetical order to simplify finding them.
-    */
-    const vfsSyncWrappers = {
-      xAccess: function(pVfs,zName,flags,pOut){
-        mTimeStart('xAccess');
-        const rc = opRun('xAccess', wasm.cstrToJs(zName));
-        wasm.poke( pOut, (rc ? 0 : 1), 'i32' );
-        mTimeEnd();
-        return 0;
-      },
-      xCurrentTime: function(pVfs,pOut){
-        /* If it turns out that we need to adjust for timezone, see:
-           https://stackoverflow.com/a/11760121/1458521 */
-        wasm.poke(pOut, 2440587.5 + (new Date().getTime()/86400000),
-                  'double');
-        return 0;
-      },
-      xCurrentTimeInt64: function(pVfs,pOut){
-        wasm.poke(pOut, (2440587.5 * 86400000) + new Date().getTime(),
-                  'i64');
-        return 0;
-      },
-      xDelete: function(pVfs, zName, doSyncDir){
-        mTimeStart('xDelete');
-        const rc = opRun('xDelete', wasm.cstrToJs(zName), doSyncDir, false);
-        mTimeEnd();
-        return rc;
-      },
-      xFullPathname: function(pVfs,zName,nOut,pOut){
-        /* Until/unless we have some notion of "current dir"
-           in OPFS, simply copy zName to pOut... */
-        const i = wasm.cstrncpy(pOut, zName, nOut);
-        return i<nOut ? 0 : capi.SQLITE_CANTOPEN
-        /*CANTOPEN is required by the docs but SQLITE_RANGE would be a closer match*/;
-      },
-      xGetLastError: function(pVfs,nOut,pOut){
-        /* TODO: store exception.message values from the async
-           partner in a dedicated SharedArrayBuffer, noting that we'd have
-           to encode them... TextEncoder can do that for us. */
-        warn("OPFS xGetLastError() has nothing sensible to return.");
-        return 0;
-      },
-      //xSleep is optionally defined below
-      xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
-        mTimeStart('xOpen');
-        let opfsFlags = 0;
-        if(0===zName){
-          zName = opfsUtil.randomFilename();
-        }else if(wasm.isPtr(zName)){
-          if(capi.sqlite3_uri_boolean(zName, "opfs-unlock-asap", 0)){
-            /* -----------------------^^^^^ MUST pass the untranslated
-               C-string here. */
-            opfsFlags |= state.opfsFlags.OPFS_UNLOCK_ASAP;
-          }
-          if(capi.sqlite3_uri_boolean(zName, "delete-before-open", 0)){
-            opfsFlags |= state.opfsFlags.OPFS_UNLINK_BEFORE_OPEN;
-          }
-          zName = wasm.cstrToJs(zName);
-          //warn("xOpen zName =",zName, "opfsFlags =",opfsFlags);
-        }
-        const fh = Object.create(null);
-        fh.fid = pFile;
-        fh.filename = wasm.cstrToJs(zName);
-        fh.sab = new SharedArrayBuffer(state.fileBufferSize);
-        fh.flags = flags;
-        fh.readOnly = !(capi.SQLITE_OPEN_CREATE & flags)
-          && !!(flags & capi.SQLITE_OPEN_READONLY);
-        const rc = opRun('xOpen', pFile, zName, flags, opfsFlags);
-        if(!rc){
-          /* Recall that sqlite3_vfs::xClose() will be called, even on
-             error, unless pFile->pMethods is NULL. */
-          if(fh.readOnly){
-            wasm.poke(pOutFlags, capi.SQLITE_OPEN_READONLY, 'i32');
-          }
-          __openFiles[pFile] = fh;
-          fh.sabView = state.sabFileBufView;
-          fh.sq3File = new sqlite3_file(pFile);
-          fh.sq3File.$pMethods = opfsIoMethods.pointer;
-          fh.lockType = capi.SQLITE_LOCK_NONE;
-        }
-        mTimeEnd();
-        return rc;
-      }/*xOpen()*/
-    }/*vfsSyncWrappers*/;
-
-    if(dVfs){
-      opfsVfs.$xRandomness = dVfs.$xRandomness;
-      opfsVfs.$xSleep = dVfs.$xSleep;
-    }
-    if(!opfsVfs.$xRandomness){
-      /* If the default VFS has no xRandomness(), add a basic JS impl... */
-      vfsSyncWrappers.xRandomness = function(pVfs, nOut, pOut){
-        const heap = wasm.heap8u();
-        let i = 0;
-        const npOut = Number(pOut);
-        for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
-        return i;
-      };
-    }
-    if(!opfsVfs.$xSleep){
-      /* If we can inherit an xSleep() impl from the default VFS then
-         assume it's sane and use it, otherwise install a JS-based
-         one. */
-      vfsSyncWrappers.xSleep = function(pVfs,ms){
-        Atomics.wait(state.sabOPView, state.opIds.xSleep, 0, ms);
-        return 0;
-      };
-    }
 
     if(sqlite3.oo1){
       const OpfsWlDb = function(...args){
@@ -544,7 +244,7 @@ const installOpfsWlVfs = function callee(options){
 
     const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
-      const sq3File = new sqlite3_file();
+      const sq3File = new capi.sqlite3_file();
       try{
         const fid = sq3File.pointer;
         const openFlags = capi.SQLITE_OPEN_CREATE
@@ -559,10 +259,10 @@ const installOpfsWlVfs = function callee(options){
         rc = state.s11n.deserialize();
         log("deserialize() says:",rc);
         if("This is ä string."!==rc[0]) toss("String d13n error.");
-        vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+        opfsVfs.vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
         rc = wasm.peek(pOut,'i32');
         log("xAccess(",dbFile,") exists ?=",rc);
-        rc = vfsSyncWrappers.xOpen(opfsVfs.pointer, zDbFile,
+        rc = opfsVfs.vfsSyncWrappers.xOpen(opfsVfs.pointer, zDbFile,
                                    fid, openFlags, pOut);
         log("open rc =",rc,"state.sabOPView[xOpen] =",
             state.sabOPView[state.opIds.xOpen]);
@@ -570,35 +270,35 @@ const installOpfsWlVfs = function callee(options){
           error("open failed with code",rc);
           return;
         }
-        vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+        opfsVfs.vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
         rc = wasm.peek(pOut,'i32');
         if(!rc) toss("xAccess() failed to detect file.");
-        rc = ioSyncWrappers.xSync(sq3File.pointer, 0);
+        rc = opfsVfs.ioSyncWrappers.xSync(sq3File.pointer, 0);
         if(rc) toss('sync failed w/ rc',rc);
-        rc = ioSyncWrappers.xTruncate(sq3File.pointer, 1024);
+        rc = opfsVfs.ioSyncWrappers.xTruncate(sq3File.pointer, 1024);
         if(rc) toss('truncate failed w/ rc',rc);
         wasm.poke(pOut,0,'i64');
-        rc = ioSyncWrappers.xFileSize(sq3File.pointer, pOut);
+        rc = opfsVfs.ioSyncWrappers.xFileSize(sq3File.pointer, pOut);
         if(rc) toss('xFileSize failed w/ rc',rc);
         log("xFileSize says:",wasm.peek(pOut, 'i64'));
-        rc = ioSyncWrappers.xWrite(sq3File.pointer, zDbFile, 10, 1);
+        rc = opfsVfs.ioSyncWrappers.xWrite(sq3File.pointer, zDbFile, 10, 1);
         if(rc) toss("xWrite() failed!");
         const readBuf = wasm.scopedAlloc(16);
-        rc = ioSyncWrappers.xRead(sq3File.pointer, readBuf, 6, 2);
+        rc = opfsVfs.ioSyncWrappers.xRead(sq3File.pointer, readBuf, 6, 2);
         wasm.poke(readBuf+6,0);
         let jRead = wasm.cstrToJs(readBuf);
         log("xRead() got:",jRead);
         if("sanity"!==jRead) toss("Unexpected xRead() value.");
-        if(vfsSyncWrappers.xSleep){
+        if(opfsVfs.vfsSyncWrappers.xSleep){
           log("xSleep()ing before close()ing...");
-          vfsSyncWrappers.xSleep(opfsVfs.pointer,2000);
+          opfsVfs.vfsSyncWrappers.xSleep(opfsVfs.pointer,2000);
           log("waking up from xSleep()");
         }
-        rc = ioSyncWrappers.xClose(fid);
+        rc = opfsVfs.ioSyncWrappers.xClose(fid);
         log("xClose rc =",rc,"sabOPView =",state.sabOPView);
         log("Deleting file:",dbFile);
-        vfsSyncWrappers.xDelete(opfsVfs.pointer, zDbFile, 0x1234);
-        vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+        opfsVfs.vfsSyncWrappers.xDelete(opfsVfs.pointer, zDbFile, 0x1234);
+        opfsVfs.vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
         rc = wasm.peek(pOut,'i32');
         if(rc) toss("Expecting 0 from xAccess(",dbFile,") after xDelete().");
         warn("End of OPFS sanity checks.");
@@ -631,8 +331,8 @@ const installOpfsWlVfs = function callee(options){
             }
             try {
               sqlite3.vfs.installVfs({
-                io: {struct: opfsIoMethods, methods: ioSyncWrappers},
-                vfs: {struct: opfsVfs, methods: vfsSyncWrappers}
+                io: {struct: opfsVfs.ioMethods, methods: opfsVfs.ioSyncWrappers},
+                vfs: {struct: opfsVfs, methods: opfsVfs.vfsSyncWrappers}
               });
               state.sabOPView = new Int32Array(state.sabOP);
               state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);

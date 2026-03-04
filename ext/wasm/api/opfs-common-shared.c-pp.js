@@ -421,38 +421,80 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   };
 
+  opfsUtil.initOptions = function(options, callee){
+    options = util.nu(options);
+    const urlParams = new URL(globalThis.location.href).searchParams;
+    if(urlParams.has('opfs-disable')){
+      //sqlite3.config.warn('Explicitly not installing "opfs" VFS due to opfs-disable flag.');
+      options.disableOpfs = true;
+      return options;
+    }
+    if(undefined===options.verbose){
+      options.verbose = urlParams.has('opfs-verbose')
+        ? (+urlParams.get('opfs-verbose') || 2) : 1;
+    }
+    if(undefined===options.sanityChecks){
+      options.sanityChecks = urlParams.has('opfs-sanity-check');
+    }
+    if(undefined===options.proxyUri){
+      options.proxyUri = callee.defaultProxyUri;
+    }
+    if('function' === typeof options.proxyUri){
+      options.proxyUri = options.proxyUri();
+    }
+    return options;
+  };
+
   /**
-     Populates the main state object used by "opfs" and "opfs-wl", and
+     Creates and populates the main state object used by "opfs" and "opfs-wl", and
      transfered from those to their async counterpart.
 
-     State which we send to the async-api Worker or share with it.
-     This object must initially contain only cloneable or sharable
-     objects. After the worker's "inited" message arrives, other types
-     of data may be added to it.
+     Returns an object containing state which we send to the async-api
+     Worker or share with it.
 
-     For purposes of Atomics.wait() and Atomics.notify(), we use a
-     SharedArrayBuffer with one slot reserved for each of the API
-     proxy's methods. The sync side of the API uses Atomics.wait()
-     on the corresponding slot and the async side uses
-     Atomics.notify() on that slot.
+     Because the returned object must be serializable to be posted to
+     the async proxy, after this returns, the caller must:
 
-     The approach of using a single SAB to serialize comms for all
-     instances might(?) lead to deadlock situations in multi-db
-     cases. We should probably have one SAB here with a single slot
-     for locking a per-file initialization step and then allocate a
-     separate SAB like the above one for each file. That will
-     require a bit of acrobatics but should be feasible. The most
-     problematic part is that xOpen() would have to use
-     postMessage() to communicate its SharedArrayBuffer, and mixing
-     that approach with Atomics.wait/notify() gets a bit messy.
+     - Make a local-scope reference of state.vfs then (delete
+       state.vfs). That's the capi.sqlite3_vfs instance for the VFS.
+
+     This object must, when it's passed to the async part, contain
+     only cloneable or sharable objects. After the worker's "inited"
+     message arrives, other types of data may be added to it.
   */
-  opfsUtil.createVfsStateObject = function(opfsVfs){
-    if( !(opfsVfs instanceof capi.sqlite3_vfs) ){
-      toss("Expecting a sqlite3_vfs instance");
-    }
-    const vfsName = wasm.cstrToJs(opfsVfs.$zName);
-    const isWebLocker = 'opfs-wl'===vfsName;
+  opfsUtil.createVfsState = function(vfsName, options){
     const state = util.nu();
+    state.verbose = options.verbose;
+
+    const opfsVfs = state.vfs = new capi.sqlite3_vfs();
+    const opfsIoMethods = opfsVfs.ioMethods = new capi.sqlite3_io_methods();
+
+    opfsIoMethods.$iVersion = 1;
+    opfsVfs.$iVersion = 2/*yes, two*/;
+    opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
+    opfsVfs.$mxPathname = 1024/* sure, why not? The OPFS name length limit
+                                 is undocumented/unspecified. */;
+    opfsVfs.$zName = wasm.allocCString(vfsName);
+    opfsVfs.addOnDispose(
+      '$zName', opfsVfs.$zName, opfsIoMethods
+      /**
+         Pedantic sidebar: the entries in this array are items to
+         clean up when opfsVfs.dispose() is called, but in this
+         environment it will never be called. The VFS instance simply
+         hangs around until the WASM module instance is cleaned up. We
+         "could" _hypothetically_ clean it up by "importing" an
+         sqlite3_os_end() impl into the wasm build, but the shutdown
+         order of the wasm engine and the JS one are undefined so
+         there is no guaranty that the opfsVfs instance would be
+         available in one environment or the other when
+         sqlite3_os_end() is called (_if_ it gets called at all in a
+         wasm build, which is undefined). i.e. addOnDispose() here is
+         a matter of "correctness", not necessity. It just wouldn't do
+         to leave the impression that we're blindly leaking memory.
+      */
+    );
+
+    const isWebLocker = 'opfs-wl'===vfsName;
     opfsVfs.metrics = util.nu({
       counters: util.nu(),
       dump: function(){
@@ -470,7 +512,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                     "\nTotal of",n,"op(s) for",t,
                     "ms (incl. "+w+" ms of waiting on the async side)");
         sqlite3.config.log("Serialization metrics:",opfsVfs.metrics.counters.s11n);
-        //W.postMessage({type:'opfs-async-metrics'});
+        opfsVfs.worker?.postMessage?.({type:'opfs-async-metrics'});
       },
       reset: function(){
         let k;
@@ -533,6 +575,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       state.fileBufferSize/* file i/o block */
       + state.sabS11nSize/* argument/result serialization block */
     );
+
+    /**
+       For purposes of Atomics.wait() and Atomics.notify(), we use a
+       SharedArrayBuffer with one slot reserved for each of the API
+       proxy's methods. The sync side of the API uses Atomics.wait()
+       on the corresponding slot and the async side uses
+       Atomics.notify() on that slot. state.opIds holds the SAB slot
+       IDs of each of those.
+    */
     state.opIds = Object.create(null);
     {
       /*
@@ -582,9 +633,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          for that, doing so might lead to undesired side effects. */
       state.opIds.retry = i++;
 
-      /* Slots for submitting the lock type and receiving its acknowledgement.
-         Only used by "opfs-wl". */
       state.lock = util.nu({
+        /* Slots for submitting the lock type and receiving its
+           acknowledgement.  Only used by "opfs-wl". */
         type: i++ /* SQLITE_LOCK_xyz value */,
         atomicsHandshake: i++ /* 0=pending, 1=release, 2=granted */
       });
@@ -673,17 +724,297 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     });
 
     opfsVfs.metrics.reset();
-//#if not defined nope
-//#// does not yet work this way
-//#define vfs.metrics.enable
     const metrics = opfsVfs.metrics.counters;
-//#include api/opfs-common-inline.c-pp.js
+
+    /**
+       Runs the given operation (by name) in the async worker
+       counterpart, waits for its response, and returns the result
+       which the async worker writes to SAB[state.opIds.rc]. The
+       2nd and subsequent arguments must be the arguments for the
+       async op.
+    */
+    const opRun = opfsVfs.opRun = (op,...args)=>{
+      const opNdx = state.opIds[op] || toss("Invalid op ID:",op);
+      state.s11n.serialize(...args);
+      Atomics.store(state.sabOPView, state.opIds.rc, -1);
+      Atomics.store(state.sabOPView, state.opIds.whichOp, opNdx);
+      Atomics.notify(state.sabOPView, state.opIds.whichOp)
+      /* async thread will take over here */;
+      const t = performance.now();
+      while('not-equal'!==Atomics.wait(state.sabOPView, state.opIds.rc, -1)){
+        /*
+          The reason for this loop is buried in the details of a long
+          discussion at:
+
+          https://github.com/sqlite/sqlite-wasm/issues/12
+
+          Summary: in at least one browser flavor, under high loads,
+          the wait()/notify() pairings can get out of sync. Calling
+          wait() here until it returns 'not-equal' gets them back in
+          sync.
+        */
+      }
+      /* When the above wait() call returns 'not-equal', the async
+         half will have completed the operation and reported its results
+         in the state.opIds.rc slot of the SAB. */
+      const rc = Atomics.load(state.sabOPView, state.opIds.rc);
+      metrics[op].wait += performance.now() - t;
+      if(rc && state.asyncS11nExceptions){
+        const err = state.s11n.deserialize();
+        if(err) error(op+"() async error:",...err);
+      }
+      return rc;
+    };
+
+    const opTimer = Object.create(null);
+    opTimer.op = undefined;
+    opTimer.start = undefined;
+    const mTimeStart = opfsVfs.mTimeStart = (op)=>{
+      opTimer.start = performance.now();
+      opTimer.op = op;
+      ++metrics[op].count;
+    };
+    const mTimeEnd = opfsVfs.mTimeEnd = ()=>(
+      metrics[opTimer.op].time += performance.now() - opTimer.start
+    );
+
+    /**
+       Map of sqlite3_file pointers to objects constructed by xOpen().
+    */
+    const __openFiles = opfsVfs.__openFiles = Object.create(null);
+
+    /**
+       Impls for the sqlite3_io_methods methods. Maintenance reminder:
+       members are in alphabetical order to simplify finding them.
+    */
+    const ioSyncWrappers = opfsVfs.ioSyncWrappers = util.nu({
+      xCheckReservedLock: function(pFile,pOut){
+        /**
+           After consultation with a topic expert: "opfs-wl" will
+           continue to use the same no-op impl which "opfs" does
+           because:
+
+           - xCheckReservedLock() is just a hint. If SQLite needs to
+           lock, it's still going to try to lock.
+
+           - We cannot do this check synchronously in "opfs-wl",
+           so would need to pass it to the async proxy. That would
+           make it inordinately expensive considering that it's
+           just a hint.
+        */
+        wasm.poke(pOut, 0, 'i32');
+        return 0;
+      },
+      xClose: function(pFile){
+        mTimeStart('xClose');
+        let rc = 0;
+        const f = __openFiles[pFile];
+        if(f){
+          delete __openFiles[pFile];
+          rc = opRun('xClose', pFile);
+          if(f.sq3File) f.sq3File.dispose();
+        }
+        mTimeEnd();
+        return rc;
+      },
+      xDeviceCharacteristics: function(pFile){
+        return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
+      },
+      xFileControl: function(pFile, opId, pArg){
+        /*mTimeStart('xFileControl');
+         mTimeEnd();*/
+        return capi.SQLITE_NOTFOUND;
+      },
+      xFileSize: function(pFile,pSz64){
+        mTimeStart('xFileSize');
+        let rc = opRun('xFileSize', pFile);
+        if(0==rc){
+          try {
+            const sz = state.s11n.deserialize()[0];
+            wasm.poke(pSz64, sz, 'i64');
+          }catch(e){
+            error("Unexpected error reading xFileSize() result:",e);
+            rc = state.sq3Codes.SQLITE_IOERR;
+          }
+        }
+        mTimeEnd();
+        return rc;
+      },
+      xRead: function(pFile,pDest,n,offset64){
+       mTimeStart('xRead');
+        const f = __openFiles[pFile];
+        let rc;
+        try {
+          rc = opRun('xRead',pFile, n, Number(offset64));
+          if(0===rc || capi.SQLITE_IOERR_SHORT_READ===rc){
+            /**
+               Results get written to the SharedArrayBuffer f.sabView.
+               Because the heap is _not_ a SharedArrayBuffer, we have
+               to copy the results. TypedArray.set() seems to be the
+               fastest way to copy this. */
+            wasm.heap8u().set(f.sabView.subarray(0, n), Number(pDest));
+          }
+        }catch(e){
+          error("xRead(",arguments,") failed:",e,f);
+          rc = capi.SQLITE_IOERR_READ;
+        }
+        mTimeEnd();
+        return rc;
+      },
+      xSync: function(pFile,flags){
+        mTimeStart('xSync');
+        ++metrics.xSync.count;
+        const rc = opRun('xSync', pFile, flags);
+        mTimeEnd();
+        return rc;
+      },
+      xTruncate: function(pFile,sz64){
+        mTimeStart('xTruncate');
+        const rc = opRun('xTruncate', pFile, Number(sz64));
+        mTimeEnd();
+        return rc;
+      },
+      xWrite: function(pFile,pSrc,n,offset64){
+        mTimeStart('xWrite');
+        const f = __openFiles[pFile];
+        let rc;
+        try {
+          f.sabView.set(wasm.heap8u().subarray(
+            Number(pSrc), Number(pSrc) + n
+          ));
+          rc = opRun('xWrite', pFile, n, Number(offset64));
+        }catch(e){
+          error("xWrite(",arguments,") failed:",e,f);
+          rc = capi.SQLITE_IOERR_WRITE;
+        }
+        mTimeEnd();
+        return rc;
+      }
+    })/*ioSyncWrappers*/;
+
+    /**
+       Impls for the sqlite3_vfs methods. Maintenance reminder: members
+       are in alphabetical order to simplify finding them.
+    */
+    const vfsSyncWrappers = opfsVfs.vfsSyncWrappers = {
+      xAccess: function(pVfs,zName,flags,pOut){
+       mTimeStart('xAccess');
+        const rc = opRun('xAccess', wasm.cstrToJs(zName));
+        wasm.poke( pOut, (rc ? 0 : 1), 'i32' );
+        mTimeEnd();
+        return 0;
+      },
+      xCurrentTime: function(pVfs,pOut){
+        wasm.poke(pOut, 2440587.5 + (new Date().getTime()/86400000),
+                  'double');
+        return 0;
+      },
+      xCurrentTimeInt64: function(pVfs,pOut){
+        wasm.poke(pOut, (2440587.5 * 86400000) + new Date().getTime(),
+                  'i64');
+        return 0;
+      },
+      xDelete: function(pVfs, zName, doSyncDir){
+        mTimeStart('xDelete');
+        const rc = opRun('xDelete', wasm.cstrToJs(zName), doSyncDir, false);
+        mTimeEnd();
+        return rc;
+      },
+      xFullPathname: function(pVfs,zName,nOut,pOut){
+        /* Until/unless we have some notion of "current dir"
+           in OPFS, simply copy zName to pOut... */
+        const i = wasm.cstrncpy(pOut, zName, nOut);
+        return i<nOut ? 0 : capi.SQLITE_CANTOPEN
+        /*CANTOPEN is required by the docs but SQLITE_RANGE would be a closer match*/;
+      },
+      xGetLastError: function(pVfs,nOut,pOut){
+        /* Mutex use in the overlying APIs cause xGetLastError() to
+           not be terribly useful for us. e.g. it can't be used to
+           convey error messages from xOpen() because there would be a
+           race condition between sqlite3_open()'s call to xOpen() and
+           this function. */
+        warn("OPFS xGetLastError() has nothing sensible to return.");
+        return 0;
+      },
+      //xSleep is optionally defined below
+      xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
+        mTimeStart('xOpen');
+        let opfsFlags = 0;
+        if(0===zName){
+          zName = opfsUtil.randomFilename();
+        }else if(wasm.isPtr(zName)){
+          if(capi.sqlite3_uri_boolean(zName, "opfs-unlock-asap", 0)){
+            /* -----------------------^^^^^ MUST pass the untranslated
+               C-string here. */
+            opfsFlags |= state.opfsFlags.OPFS_UNLOCK_ASAP;
+          }
+          if(capi.sqlite3_uri_boolean(zName, "delete-before-open", 0)){
+            opfsFlags |= state.opfsFlags.OPFS_UNLINK_BEFORE_OPEN;
+          }
+          zName = wasm.cstrToJs(zName);
+          //warn("xOpen zName =",zName, "opfsFlags =",opfsFlags);
+        }
+        const fh = Object.create(null);
+        fh.fid = pFile;
+        fh.filename = wasm.cstrToJs(zName);
+        fh.sab = new SharedArrayBuffer(state.fileBufferSize);
+        fh.flags = flags;
+        fh.readOnly = !(capi.SQLITE_OPEN_CREATE & flags)
+          && !!(flags & capi.SQLITE_OPEN_READONLY);
+        const rc = opRun('xOpen', pFile, zName, flags, opfsFlags);
+        if(!rc){
+          /* Recall that sqlite3_vfs::xClose() will be called, even on
+             error, unless pFile->pMethods is NULL. */
+          if(fh.readOnly){
+            wasm.poke(pOutFlags, capi.SQLITE_OPEN_READONLY, 'i32');
+          }
+          __openFiles[pFile] = fh;
+          fh.sabView = state.sabFileBufView;
+          fh.sq3File = new capi.sqlite3_file(pFile);
+          fh.sq3File.$pMethods = opfsIoMethods.pointer;
+          fh.lockType = capi.SQLITE_LOCK_NONE;
+        }
+        mTimeEnd();
+        return rc;
+      }/*xOpen()*/
+    }/*vfsSyncWrappers*/;
+
+    const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
+    if(pDVfs){
+      const dVfs = new capi.sqlite3_vfs(pDVfs);
+      opfsVfs.$xRandomness = dVfs.$xRandomness;
+      opfsVfs.$xSleep = dVfs.$xSleep;
+      dVfs.dispose();
+    }
+    if(!opfsVfs.$xRandomness){
+      /* If the default VFS has no xRandomness(), add a basic JS impl... */
+      opfsVfs.vfsSyncWrappers.xRandomness = function(pVfs, nOut, pOut){
+        const heap = wasm.heap8u();
+        let i = 0;
+        const npOut = Number(pOut);
+        for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
+        return i;
+      };
+    }
+    if(!opfsVfs.$xSleep){
+      /* If we can inherit an xSleep() impl from the default VFS then
+         assume it's sane and use it, otherwise install a JS-based
+         one. */
+      opfsVfs.vfsSyncWrappers.xSleep = function(pVfs,ms){
+        mTimeStart('xSleep');
+        Atomics.wait(state.sabOPView, state.opIds.xSleep, 0, ms);
+        mTimeEnd();
+        return 0;
+      };
+    }
+
+//#define vfs.metrics.enable
 //#// import initS11n()
+//#include api/opfs-common-inline.c-pp.js
 //#undef vfs.metrics.enable
     opfsVfs.initS11n = initS11n;
-//#endif
     return state;
-  }/*createVfsStateObject()*/;
+  }/*createVfsState()*/;
 
 }/*sqlite3ApiBootstrap.initializers*/);
 //#endif target:node
