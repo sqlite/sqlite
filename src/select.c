@@ -3268,7 +3268,6 @@ static int generateOutputSubroutine(
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r3);
       if( pDest->eDest==SRT_DistQueue ){
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r3);
-        sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
       }
       for(ii=0; ii<nKey; ii++){
         sqlite3VdbeAddOp2(v, OP_SCopy,
