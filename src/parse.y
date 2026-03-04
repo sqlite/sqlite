@@ -1427,7 +1427,7 @@ expr(A) ::= expr(A) likeop(OP) expr(Y) ESCAPE expr(E).  [LIKE_KW]  {
 expr(A) ::= expr(A) ISNULL|NOTNULL(E).   {A = sqlite3PExprIsNull(pParse,@E,A);}
 expr(A) ::= expr(A) NOT NULL.    {A = sqlite3PExprIsNull(pParse,TK_NOTNULL,A);}
 
-//    expr1 IS expr2       same as    expr1 IS NOT DISTICT FROM expr2
+//    expr1 IS expr2       same as    expr1 IS NOT DISTINCT FROM expr2
 //    expr1 IS NOT expr2   same as    expr1 IS DISTINCT FROM expr2
 //
 expr(A) ::= expr(A) IS expr(Y).     {

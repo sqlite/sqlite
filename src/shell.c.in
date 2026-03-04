@@ -931,7 +931,7 @@ static void shellDtostr(
   char z[400];
   if( n<1 ) n = 1;
   if( n>350 ) n = 350;
-  sqlite3_snprintf(sizeof(z), z, "%#+.*e", n, r);
+  sprintf(z, "%#+.*e", n, r);
   sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
 }
 
@@ -6683,11 +6683,15 @@ static int arRemoveCommand(ArCommand *pAr){
 */
 static int arExtractCommand(ArCommand *pAr){
   const char *zSql1 =
-    "SELECT "
-    " ($dir || name),"
-    " writefile(($dir || name), %s, mode, mtime) "
-    "FROM %s WHERE (%s) AND (data IS NULL OR $dirOnly = 0)"
-    " AND name NOT GLOB '*..[/\\]*'";
+    "WITH dest(dpath,dlen) AS (SELECT realpath($dir),length(realpath($dir)))\n"
+    "SELECT ($dir || name),\n"
+    "       CASE WHEN $dryrun THEN 0\n"
+    "            ELSE writefile($dir||name, %s, mode, mtime) END\n"
+    "  FROM dest CROSS JOIN %s\n"
+    " WHERE (%s)\n"
+    "   AND (data IS NULL OR $pass==0)\n"                /* Dirs both passes */
+    "   AND dpath=substr(realpath($dir||name),1,dlen)\n" /* No escapes */
+    "   AND name NOT GLOB '*..[/\\]*'\n";                /* No /../ in paths */
 
   const char *azExtraArg[] = {
     "sqlar_uncompress(data, sz)",
@@ -6722,24 +6726,28 @@ static int arExtractCommand(ArCommand *pAr){
   if( rc==SQLITE_OK ){
     j = sqlite3_bind_parameter_index(pSql, "$dir");
     sqlite3_bind_text(pSql, j, zDir, -1, SQLITE_STATIC);
+    j = sqlite3_bind_parameter_index(pSql, "$dryrun");
+    sqlite3_bind_int(pSql, j, pAr->bDryRun);
 
-    /* Run the SELECT statement twice. The first time, writefile() is called
-    ** for all archive members that should be extracted. The second time,
-    ** only for the directories. This is because the timestamps for
-    ** extracted directories must be reset after they are populated (as
-    ** populating them changes the timestamp).  */
+    /* Run the SELECT statement twice
+    **   (0) writefile() all files and directories
+    **   (1) writefile() for directory again
+    ** The second pass is so that the timestamps for extracted directories
+    ** will be reset to the value in the archive, since populating them
+    ** in the first pass will have changed the timestamp. */
     for(i=0; i<2; i++){
-      j = sqlite3_bind_parameter_index(pSql, "$dirOnly");
+      j = sqlite3_bind_parameter_index(pSql, "$pass");
       sqlite3_bind_int(pSql, j, i);
       if( pAr->bDryRun ){
         cli_printf(pAr->out, "%s\n", sqlite3_sql(pSql));
-      }else{
-        while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
-          if( i==0 && pAr->bVerbose ){
-            cli_printf(pAr->out, "%s\n", sqlite3_column_text(pSql, 0));
-          }
+        if( pAr->bVerbose==0 ) break;
+      }
+      while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
+        if( i==0 && pAr->bVerbose ){
+          cli_printf(pAr->out, "%s\n", sqlite3_column_text(pSql, 0));
         }
       }
+      if( pAr->bDryRun ) break;
       shellReset(&rc, pSql);
     }
     shellFinalize(&rc, pSql);
@@ -9554,6 +9562,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
         { "enable_trigger",     SQLITE_DBCONFIG_ENABLE_TRIGGER        },
         { "enable_view",        SQLITE_DBCONFIG_ENABLE_VIEW           },
         { "fts3_tokenizer",     SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER },
+        { "fp_digits",          SQLITE_DBCONFIG_FP_DIGITS             },
         { "legacy_alter_table", SQLITE_DBCONFIG_LEGACY_ALTER_TABLE    },
         { "legacy_file_format", SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    },
         { "load_extension",     SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION },
@@ -9570,11 +9579,19 @@ static int do_meta_command(const char *zLine, ShellState *p){
     for(ii=0; ii<ArraySize(aDbConfig); ii++){
       if( nArg>1 && cli_strcmp(azArg[1], aDbConfig[ii].zName)!=0 ) continue;
       if( nArg>=3 ){
-        sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
+        if( aDbConfig[ii].op==SQLITE_DBCONFIG_FP_DIGITS ){
+          sqlite3_db_config(p->db, aDbConfig[ii].op, atoi(azArg[2]), 0);
+        }else{
+          sqlite3_db_config(p->db, aDbConfig[ii].op, booleanValue(azArg[2]), 0);
+        }
       }
       sqlite3_db_config(p->db, aDbConfig[ii].op, -1, &v);
-      cli_printf(p->out, "%19s %s\n",
-                      aDbConfig[ii].zName, v ? "on" : "off");
+      if( aDbConfig[ii].op==SQLITE_DBCONFIG_FP_DIGITS ){
+        cli_printf(p->out, "%19s %d\n", aDbConfig[ii].zName, v);
+      }else{
+        cli_printf(p->out, "%19s %s\n",
+                        aDbConfig[ii].zName, v ? "on" : "off");
+      }
       if( nArg>1 ) break;
     }
     if( nArg>1 && ii==ArraySize(aDbConfig) ){
@@ -13644,7 +13661,7 @@ int SQLITE_CDECL main(int argc, char **argv){
       z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
         rc = do_meta_command(z, &data);
-        if( rc && bail_on_error ){
+        if( rc && (bail_on_error || rc==2) ){
           if( rc==2 ) rc = 0;
           goto shell_main_exit;
         }

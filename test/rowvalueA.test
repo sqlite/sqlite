@@ -73,4 +73,29 @@ do_catchsql_test 2.3 {
   SELECT 2 IN ( (1, 2), (3, 4), (5, 6) )
 } {1 {row value misused}}
 
+#-------------------------------------------------------------------------
+# Test the fix for forum post https://sqlite.org/forum/forumpost/6ceca07fc3
+#
+do_execsql_test 3.0 {
+  CREATE TABLE x2 (x, y);
+  INSERT INTO x2 VALUES (1234, 'abc');
+
+  CREATE TABLE x1 (a, b PRIMARY KEY COLLATE NOCASE) WITHOUT ROWID;
+  INSERT INTO x1 VALUES (1234, 'ABCD');
+}
+
+do_execsql_test 3.1 {
+  SELECT * FROM x2 CROSS JOIN x1 WHERE (1234, x2.y) > (x1.a, x1.b);
+} {1234 abc 1234 ABCD}
+
+do_execsql_test 3.2 {
+  CREATE INDEX x1a ON x1(a);
+}
+
+do_execsql_test 3.3 {
+  SELECT * FROM x2 CROSS JOIN x1 WHERE (1234, x2.y) > (x1.a, x1.b);
+} {1234 abc 1234 ABCD}
+
+
+
 finish_test

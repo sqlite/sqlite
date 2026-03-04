@@ -546,28 +546,28 @@ static u64 powerOfTen(int p){
   static const u64 aScale[] = {
     0x8049a4ac0c5811aeLLU, /*  0: 1.0e-351 << 1229 */
     0xcf42894a5dce35eaLLU, /*  1: 1.0e-324 << 1140 */
-    0xa76c582338ed2621LLU, /*  2: 1.0e-297 << 1050 */
+    0xa76c582338ed2622LLU, /*  2: 1.0e-297 << 1050 */
     0x873e4f75e2224e68LLU, /*  3: 1.0e-270 << 960 */
-    0xda7f5bf590966848LLU, /*  4: 1.0e-243 << 871 */
-    0xb080392cc4349decLLU, /*  5: 1.0e-216 << 781 */
+    0xda7f5bf590966849LLU, /*  4: 1.0e-243 << 871 */
+    0xb080392cc4349dedLLU, /*  5: 1.0e-216 << 781 */
     0x8e938662882af53eLLU, /*  6: 1.0e-189 << 691 */
     0xe65829b3046b0afaLLU, /*  7: 1.0e-162 << 602 */
-    0xba121a4650e4ddebLLU, /*  8: 1.0e-135 << 512 */
+    0xba121a4650e4ddecLLU, /*  8: 1.0e-135 << 512 */
     0x964e858c91ba2655LLU, /*  9: 1.0e-108 << 422 */
-    0xf2d56790ab41c2a2LLU, /* 10: 1.0e-81 << 333 */
-    0xc428d05aa4751e4cLLU, /* 11: 1.0e-54 << 243 */
+    0xf2d56790ab41c2a3LLU, /* 10: 1.0e-81 << 333 */
+    0xc428d05aa4751e4dLLU, /* 11: 1.0e-54 << 243 */
     0x9e74d1b791e07e48LLU, /* 12: 1.0e-27 << 153 */
     0x8000000000000000LLU, /* 13: 1.0e+0 << 63 */
     0xcecb8f27f4200f3aLLU, /* 14: 1.0e+27 >> 26 */
-    0xa70c3c40a64e6c51LLU, /* 15: 1.0e+54 >> 116 */
+    0xa70c3c40a64e6c52LLU, /* 15: 1.0e+54 >> 116 */
     0x86f0ac99b4e8dafdLLU, /* 16: 1.0e+81 >> 206 */
-    0xda01ee641a708de9LLU, /* 17: 1.0e+108 >> 295 */
+    0xda01ee641a708deaLLU, /* 17: 1.0e+108 >> 295 */
     0xb01ae745b101e9e4LLU, /* 18: 1.0e+135 >> 385 */
     0x8e41ade9fbebc27dLLU, /* 19: 1.0e+162 >> 475 */
-    0xe5d3ef282a242e81LLU, /* 20: 1.0e+189 >> 564 */
+    0xe5d3ef282a242e82LLU, /* 20: 1.0e+189 >> 564 */
     0xb9a74a0637ce2ee1LLU, /* 21: 1.0e+216 >> 654 */
     0x95f83d0a1fb69cd9LLU, /* 22: 1.0e+243 >> 744 */
-    0xf24a01a73cf2dccfLLU, /* 23: 1.0e+270 >> 833 */
+    0xf24a01a73cf2dcd0LLU, /* 23: 1.0e+270 >> 833 */
     0xc3b8358109e84f07LLU, /* 24: 1.0e+297 >> 923 */
     0x9e19db92b4e31ba9LLU, /* 25: 1.0e+324 >> 1013 */
   };
@@ -594,7 +594,7 @@ static u64 powerOfTen(int p){
   }
   x = sqlite3Multiply128(aBase[n],y);
   if( (U64_BIT(63) & x)==0 ){
-    x <<= 1;
+    x  = (x<<1)|1;
   }
   return x;
 }
@@ -648,13 +648,18 @@ static int countLeadingZeros(u64 m){
 */
 static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
   int p;
-  u64 h, out;
+  u64 h;
+  assert( n>=1 && n<=18 );
   p = n - 1 - pwr2to10(e+63);
   h = sqlite3Multiply128(m, powerOfTen(p));
-  assert( -(e + pwr10to2(p) + 3) >=0 );
-  assert( -(e + pwr10to2(p) + 3) <64 );
-  out = h >> -(e + pwr10to2(p) + 3);
-  *pD = (out + 2 + ((out>>2)&1)) >> 2;
+  assert( -(e + pwr10to2(p) + 2) >= 0  );
+  assert( -(e + pwr10to2(p) + 1) <= 63 );
+  if( n==18 ){
+    h >>= -(e + pwr10to2(p) + 2);
+    *pD = (h + ((h<<1)&2))>>1;
+  }else{
+    *pD = h >> -(e + pwr10to2(p) + 1);
+  }
   *pP = -p;
 }
 
@@ -663,10 +668,10 @@ static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
 */
 static double sqlite3Fp10Convert2(u64 d, int p){
   u64 out;
-  int b;
   int e1;
-  int e2;
+  int lz;
   int lp;
+  int x;
   u64 h;
   double r;
   assert( (d & U64_BIT(63))==0 );
@@ -677,26 +682,26 @@ static double sqlite3Fp10Convert2(u64 d, int p){
   if( p>POWERSOF10_LAST ){
     return INFINITY;
   }
-  b = 64 - countLeadingZeros(d);
+  lz = countLeadingZeros(d);
   lp = pwr10to2(p);
-  e1 = 53 - b - lp;
+  e1 = lz - (lp + 11);
   if( e1>1074 ){
-    if( -(b + lp) >= 1077 ) return 0.0;
+    if( e1>=1130 ) return 0.0;
     e1 = 1074;
   }
-  e2 = e1 - (64-b);
-  h = sqlite3Multiply128(d<<(64-b), powerOfTen(p));
-  assert( -(e2 + lp + 3) >=0 );
-  assert( -(e2 + lp + 3) <64 );
-  out = (h >> -(e2 + lp + 3)) | 1;
+  h = sqlite3Multiply128(d<<lz, powerOfTen(p));
+  x = lz - (e1 + lp + 3);
+  assert( x >= 0  );
+  assert( x <= 63 );
+  out = h >> x;
   if( out >= U64_BIT(55)-2 ){
-    out = (out>>1) | (out&1);
+    out >>= 1;
     e1--;
   }
   if( e1<=(-972) ){
     return INFINITY;
   }
-  out = (out + 1 + ((out>>2)&1)) >> 2;
+  out = (out + 2) >> 2;
   if( (out & U64_BIT(52))!=0 ){
     out = (out & ~U64_BIT(52)) | ((u64)(1075-e1)<<52);
   }
@@ -1156,7 +1161,7 @@ int sqlite3Atoi(const char *z){
 ** representation.
 **
 ** If iRound<=0 then round to -iRound significant digits to the
-** the left of the decimal point, or to a maximum of mxRound total
+** the right of the decimal point, or to a maximum of mxRound total
 ** significant digits.
 **
 ** If iRound>0 round to min(iRound,mxRound) significant digits total.
@@ -1169,12 +1174,14 @@ int sqlite3Atoi(const char *z){
 ** The p->z[] array is *not* zero-terminated.
 */
 void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
-  int i;
-  u64 v;
-  int e, exp = 0;
+  int i;               /* Index into zBuf[] where to put next character */
+  int n;               /* Number of digits */
+  u64 v;               /* mantissa */
+  int e, exp = 0;      /* Base-2 and base-10 exponent */
+  char *zBuf;          /* Local alias for p->zBuf */
+  char *z;             /* Local alias for p->z */
 
   p->isSpecial = 0;
-  p->z = p->zBuf;
   assert( mxRound>0 );
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
@@ -1197,52 +1204,89 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     p->isSpecial = 1 + (v!=0x7ff0000000000000LL);
     p->n = 0;
     p->iDP = 0;
+    p->z = p->zBuf;
     return;
   }
   v &= 0x000fffffffffffffULL;
   if( e==0 ){
-    int n = countLeadingZeros(v);
-    v <<= n;
-    e = -1074 - n;
+    int nn = countLeadingZeros(v);
+    v <<= nn;
+    e = -1074 - nn;
   }else{
     v = (v<<11) | U64_BIT(63);
     e -= 1086;
   }
-  sqlite3Fp2Convert10(v, e, 17, &v, &exp);  
+  sqlite3Fp2Convert10(v, e, (iRound<=0||iRound>=18)?18:iRound+1, &v, &exp);  
 
-  /* Extract significant digits. */
+  /* Extract significant digits, start at the right-most slot in p->zBuf
+  ** and working back to the right.  "i" keeps track of the next slot in
+  ** which to store a digit. */
   i = sizeof(p->zBuf)-1;
+  zBuf = p->zBuf;
   assert( v>0 );
   while( v>=10 ){
     int kk = (v%100)*2;
     assert( TWO_BYTE_ALIGNMENT(&sqlite3DigitPairs.a[kk]) );
-    assert( TWO_BYTE_ALIGNMENT(&p->zBuf[i-1]) );
-    *(u16*)(&p->zBuf[i-1]) = *(u16*)&sqlite3DigitPairs.a[kk];
+    assert( TWO_BYTE_ALIGNMENT(&zBuf[i-1]) );
+    *(u16*)(&zBuf[i-1]) = *(u16*)&sqlite3DigitPairs.a[kk];
     i -= 2;
     v /= 100;
   }
   if( v ){
     assert( v<10 );
-    p->zBuf[i--] = v + '0';
+    zBuf[i--] = v + '0';
   }
   assert( i>=0 && i<sizeof(p->zBuf)-1 );
-  p->n = sizeof(p->zBuf) - 1 - i;
-  assert( p->n>0 );
-  assert( p->n<sizeof(p->zBuf) );
-  p->iDP = p->n + exp;
+  n = sizeof(p->zBuf) - 1 - i;  /* Total number of digits extracted */
+  assert( n>0 );
+  assert( n<sizeof(p->zBuf) );
+  testcase( n==sizeof(p->zBuf)-1 );
+  p->iDP = n + exp;
   if( iRound<=0 ){
     iRound = p->iDP - iRound;
-    if( iRound==0 && p->zBuf[i+1]>='5' ){
+    if( iRound==0 && zBuf[i+1]>='5' ){
       iRound = 1;
-      p->zBuf[i--] = '0';
-      p->n++;
+      zBuf[i--] = '0';
+      n++;
       p->iDP++;
     }
   }
-  if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
-    char *z = &p->zBuf[i+1];
+  z = &zBuf[i+1];  /* z points to the first digit */
+  if( iRound>0 && (iRound<n || n>mxRound) ){
     if( iRound>mxRound ) iRound = mxRound;
-    p->n = iRound;
+    if( iRound==17 ){
+      /* If the precision is exactly 17, which only happens with the "!"
+      ** flag (ex: "%!.17g") then try to reduce the precision if that
+      ** yields text that will round-trip to the original floating-point.
+      ** value.  Thus, for exaple, 49.47 will render as 49.47, rather than
+      ** as 49.469999999999999. */
+      if( z[15]=='9' && z[14]=='9' ){
+        int jj, kk;
+        u64 v2;
+        for(jj=14; jj>0 && z[jj-1]=='9'; jj--){}
+        if( jj==0 ){
+          v2 = 1;
+        }else{
+          v2 = z[0] - '0';
+          for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
+          v2++;
+        }
+        if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){
+          iRound = jj+1;
+        }
+      }else if( p->iDP>=n || (z[15]=='0' && z[14]=='0' && z[13]=='0') ){
+        int jj, kk;
+        u64 v2;
+        assert( z[0]!='0' );
+        for(jj=14; z[jj-1]=='0'; jj--){}
+        v2 = z[0] - '0';
+        for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
+        if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){
+          iRound = jj+1;
+        }
+      }
+    }
+    n = iRound;
     if( z[iRound]>='5' ){
       int j = iRound-1;
       while( 1 /*exit-by-break*/ ){
@@ -1250,8 +1294,9 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         if( z[j]<='9' ) break;
         z[j] = '0';
         if( j==0 ){
-          p->z[i--] = '1';
-          p->n++;
+          z--;
+          z[0] = '1';
+          n++;
           p->iDP++;
           break;
         }else{
@@ -1260,13 +1305,13 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
       }
     }
   }
-  p->z = &p->zBuf[i+1];
-  assert( i+p->n < sizeof(p->zBuf) );
-  assert( p->n>0 );
-  while( p->z[p->n-1]=='0' ){
-    p->n--;
-    assert( p->n>0 );
+  assert( n>0 );
+  while( z[n-1]=='0' ){
+    n--;
+    assert( n>0 );
   }
+  p->n = n;
+  p->z = z;
 }
 
 /*

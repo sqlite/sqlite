@@ -3182,7 +3182,7 @@ static int whereRangeVectorLen(
     idxaff = sqlite3TableColumnAffinity(pIdx->pTable, pLhs->iColumn);
     if( aff!=idxaff ) break;
 
-    pColl = sqlite3BinaryCompareCollSeq(pParse, pLhs, pRhs);
+    pColl = sqlite3ExprCompareCollSeq(pParse, pTerm->pExpr);
     if( pColl==0 ) break;
     if( sqlite3StrICmp(pColl->zName, pIdx->azColl[i+nEq]) ) break;
   }
