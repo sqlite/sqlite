@@ -46,6 +46,8 @@ do_clitest imposter1.sql
 do_clitest dotcmd01.sql
 ifcapable vtab {
   do_clitest import01.sql
+  do_clitest intck01.sql
 }
+do_clitest fptest01.sql
 
 finish_test

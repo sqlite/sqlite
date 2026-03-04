@@ -192,6 +192,7 @@ namespace eval trd {
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_MAX_ATTACHED=125
     -DSQLITE_MUTATION_TEST
+    -DSQLITE_THREAD_MISUSE_ABORT
     --enable-fts5
   }
   set build(Debug-Two) {

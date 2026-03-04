@@ -1705,6 +1705,7 @@ struct sqlite3 {
   u8 noSharedCache;             /* True if no shared-cache backends */
   u8 nSqlExec;                  /* Number of pending OP_SqlExec opcodes */
   u8 eOpenState;                /* Current condition of the connection */
+  u8 nFpDigit;                  /* Significant digits to keep on double->text */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   FastPrng sPrng;               /* State of the per-connection PRNG */
   i64 nChange;                  /* Value returned by sqlite3_changes() */
@@ -4814,7 +4815,20 @@ int sqlite3LookasideUsed(sqlite3*,int*);
 sqlite3_mutex *sqlite3Pcache1Mutex(void);
 sqlite3_mutex *sqlite3MallocMutex(void);
 
-#if defined(SQLITE_ENABLE_MULTITHREADED_CHECKS) && !defined(SQLITE_MUTEX_OMIT)
+
+/* The SQLITE_THREAD_MISUSE_WARNINGS compile-time option used to be called
+** SQLITE_ENABLE_MULTITHREADED_CHECKS.  Keep that older macro for backwards
+** compatibility, at least for a while... */
+#ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
+# define SQLITE_THREAD_MISUSE_WARNINGS 1
+#endif
+
+/* SQLITE_THREAD_MISUSE_ABORT implies SQLITE_THREAD_MISUSE_WARNINGS */
+#ifdef SQLITE_THREAD_MISUSE_ABORT
+# define SQLITE_THREAD_MISUSE_WARNINGS 1
+#endif
+
+#if defined(SQLITE_THREAD_MISUSE_WARNINGS) && !defined(SQLITE_MUTEX_OMIT)
 void sqlite3MutexWarnOnContention(sqlite3_mutex*);
 #else
 # define sqlite3MutexWarnOnContention(x)
@@ -4848,12 +4862,12 @@ struct PrintfArguments {
 ** value into an approximate decimal representation.
 */
 struct FpDecode {
-  char sign;           /* '+' or '-' */
-  char isSpecial;      /* 1: Infinity  2: NaN */
   int n;               /* Significant digits in the decode */
   int iDP;             /* Location of the decimal point */
   char *z;             /* Start of significant digits */
-  char zBuf[24];       /* Storage for significant digits */
+  char zBuf[20];       /* Storage for significant digits */
+  char sign;           /* '+' or '-' */
+  char isSpecial;      /* 1: Infinity  2: NaN */
 };
 
 void sqlite3FpDecode(FpDecode*,double,int,int);
