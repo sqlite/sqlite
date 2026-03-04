@@ -120,15 +120,15 @@
   const optArgs = function(obj){
     const li = [];
     for(const k of [
-      'interval','iterations','unlock-asap',
-      'verbose','vfs','workers',
+      'interval', 'iterations', 'unlock-asap',
+      'verbose', 'vfs', 'workers'
     ]){
       if( obj.hasOwnProperty(k) ) li.push(k+'='+obj[k]);
     }
     return li.join('&');
   };
   for(const opt of [
-    {interval: 500, workers: 3, iterations: 30, vfs: 'opfs-wl'},
+    {interval: 500, workers: 2, iterations: 30, vfs: 'opfs-wl', verbose: 2},
     {interval: 1000, workers: 5, iterations: 30},
     {interval: 500, workers: 5, iterations: 30},
     {interval: 250, workers: 3, iterations: 30},
@@ -154,7 +154,7 @@
       + '&opfs-unlock-asap='+options.unlockAsap
   );
   for(let i = 0; i < options.workerCount; ++i){
-    stdout("Launching worker...");
+    stdout("Launching worker...", i, );
     workers.push(new Worker(
       workers.uri+'&workerId='+(i+1)+(
         (i || options.noUnlink) ? '' : '&unlink-db'

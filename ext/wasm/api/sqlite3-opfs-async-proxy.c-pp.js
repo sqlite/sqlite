@@ -620,11 +620,12 @@ const installAsyncProxy = function(){
     const view = state.sabOPView;
     const slock = state.lock;
     const lockType = Atomics.load(view, slock.type);
-
-    await navigator.locks.request('sqlite3-vfs-opfs:'+args[0], {
+    warn("handleLockRequest()", args, lockType);
+    navigator.locks.request('sqlite3-vfs-opfs:'+args[0], {
       mode: (lockType===state.sq3Codes.SQLITE_LOCK_EXCLUSIVE)
         ? 'exclusive' : 'shared'
     }, async (wl)=>{
+      warn("handleLockRequest() starting lock", args, lockType);
       /**
          A. Tell the C-side we have the browser lock. We use the same
          handshake slot, but a specific 'Granted' value.
@@ -642,6 +643,7 @@ const installAsyncProxy = function(){
       Atomics.store(view, slock.atomicsHandshake, 0);
       Atomics.notify(view, lock.atomicsHandshake);
     });
+    warn("handleLockRequest() ending", args, lockType);
   };
 
   const waitLoop = async function f(){
@@ -679,6 +681,7 @@ const installAsyncProxy = function(){
           continue;
         }
         const opId = Atomics.exchange(state.sabOPView, opIds.whichOp, 0);
+        warn("opId =",opId, opIds);
         if( opId===opIds.lockControl ){
           handleLockRequest();
           continue;

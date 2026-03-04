@@ -60,13 +60,14 @@ const installOpfsWlVfs = async function callee(options){
   options = opfsUtil.initOptions(options, callee);
   if( !options ) return sqlite3;
   const capi = sqlite3.capi,
-        debug = sqlite3.config.debug,
+        debug = (...args)=>sqlite3.config.warn("opfs-wl:",...args),
         state = opfsUtil.createVfsState('opfs-wl', options),
         opfsVfs = state.vfs,
         metrics = opfsVfs.metrics.counters,
         mTimeStart = opfsVfs.mTimeStart,
         mTimeEnd = opfsVfs.mTimeEnd,
         __openFiles = opfsVfs.__openFiles;
+  debug("state",JSON.stringify(state,false,'  '));
   /* At this point, createVfsState() has populated state and opfsVfs
      with any code common to both the "opfs" and "opfs-wl" VFSes. Now
      comes the VFS-dependent work... */
@@ -75,6 +76,7 @@ const installOpfsWlVfs = async function callee(options){
       mTimeStart('xLock');
       ++metrics.xLock.count;
       const f = __openFiles[pFile];
+      debug("xLock()",f,lockType);
       let rc = 0;
       /* See notes in sqlite3-vfs-opfs.c-pp.js. */
       if( f.lockType ) {
@@ -89,10 +91,13 @@ const installOpfsWlVfs = async function callee(options){
           Atomics.store(view, state.lock.type, lockType);
           Atomics.store(view, state.opIds.whichOp, state.opIds.lockControl);
           Atomics.notify(state.sabOPView, state.opIds.whichOp)
+          debug("xLock waiting...");
           while('not-equal'!==Atomics.wait(view, state.lock.atomicsHandshake, 0)){
             /* Loop is a workaround for environment-specific quirks. See
                notes in similar loops. */
+            debug("xLock still waiting...");
           }
+          debug("xLock done waiting");
           f.lockType = lockType;
         }catch(e){
           sqlite3.config.error("xLock(",arguments,") failed", e, f);
@@ -103,6 +108,7 @@ const installOpfsWlVfs = async function callee(options){
       return rc;
     },
     xUnlock: function(pFile,lockType){
+      debug("xUnlock()",f,lockType);
       mTimeStart('xUnlock');
       ++metrics.xUnlock.count;
       const f = __openFiles[pFile];

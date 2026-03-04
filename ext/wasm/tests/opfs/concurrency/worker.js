@@ -36,8 +36,7 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
     count: 0
   });
   const finish = ()=>{
-    if(db){
-      if(!db.pointer) return;
+    if(db?.pointer){
       db.close();
     }
     if(interval.error){
@@ -71,7 +70,7 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
 
     const maxIterations =
           urlArgs.has('iterations') ? (+urlArgs.get('iterations') || 10) : 10;
-    stdout("Starting interval-based db updates with delay of",interval.delay,"ms.");
+    stdout("Starting",maxIterations,"interval-based db updates with delay of",interval.delay,"ms.");
     const doWork = async ()=>{
       const tm = new Date().getTime();
       ++interval.count;
@@ -86,39 +85,32 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
       }catch(e){
         interval.error = e;
       }
+      stdout("doWork()",prefix,"error ",interval.error);
     };
-    if(1){/*use setInterval()*/
-      setTimeout(async function timer(){
-        await doWork();
-        if(interval.error || maxIterations === interval.count){
-          finish();
-        }else{
-          setTimeout(timer, interval.delay);
-        }
-      }, interval.delay);
-    }else{
-      /*This approach provides no concurrency whatsoever: each worker
-        is run to completion before any others can work.*/
-      let i;
-      for(i = 0; i < maxIterations; ++i){
-        await doWork();
-        if(interval.error) break;
-        await wait(interval.ms);
+    setTimeout(async function timer(){
+      await doWork();
+      if(interval.error || maxIterations === interval.count){
+        finish();
+      }else{
+        setTimeout(timer, interval.delay);
       }
-      finish();
-    }
+    }, interval.delay);
   }/*run()*/;
 
   globalThis.onmessage = function({data}){
     switch(data.type){
-        case 'run': run().catch((e)=>{
+      case 'run':
+        run().catch((e)=>{
           if(!interval.error) interval.error = e;
+        }).catch(e=>{
+          /* Don't do this in finally() - it fires too soon. */
           finish();
+          throw e;
         });
-          break;
-        default:
-          stderr("Unhandled message type '"+data.type+"'.");
-          break;
+        break;
+      default:
+        stderr("Unhandled message type '"+data.type+"'.");
+        break;
     }
   };
 });
