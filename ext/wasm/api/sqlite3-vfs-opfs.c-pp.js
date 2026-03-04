@@ -122,6 +122,41 @@ const installOpfsVfs = function callee(options){
     const sqlite3_file = capi.sqlite3_file;
     const sqlite3_io_methods = capi.sqlite3_io_methods;
 
+    const opfsIoMethods = new sqlite3_io_methods();
+    const opfsVfs = new sqlite3_vfs()
+          .addOnDispose( ()=>opfsIoMethods.dispose());
+    const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
+    const dVfs = pDVfs
+          ? new sqlite3_vfs(pDVfs)
+          : null /* dVfs will be null when sqlite3 is built with
+                    SQLITE_OS_OTHER. */;
+
+    opfsIoMethods.$iVersion = 1;
+    opfsVfs.$iVersion = 2/*yes, two*/;
+    opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
+    opfsVfs.$mxPathname = 1024/* sure, why not? The OPFS name length limit
+                                 is undocumented/unspecified. */;
+    opfsVfs.$zName = wasm.allocCString("opfs");
+    // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
+    opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
+    opfsVfs.addOnDispose(
+      '$zName', opfsVfs.$zName,
+      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null)
+      /**
+         Pedantic sidebar: the entries in this array are items to
+         clean up when opfsVfs.dispose() is called, but in this
+         environment it will never be called. The VFS instance simply
+         hangs around until the WASM module instance is cleaned up. We
+         "could" _hypothetically_ clean it up by "importing" an
+         sqlite3_os_end() impl into the wasm build, but the shutdown
+         order of the wasm engine and the JS one are undefined so
+         there is no guaranty that the opfsVfs instance would be
+         available in one environment or the other when
+         sqlite3_os_end() is called (_if_ it gets called at all in a
+         wasm build, which is undefined).
+      */
+    );
+
     /**
        State which we send to the async-api Worker or share with it.
        This object must initially contain only cloneable or sharable
@@ -144,7 +179,8 @@ const installOpfsVfs = function callee(options){
        postMessage() to communicate its SharedArrayBuffer, and mixing
        that approach with Atomics.wait/notify() gets a bit messy.
     */
-    const state = Object.create(null);
+    const state = opfsUtil.createVfsStateObject(opfsVfs);
+    state.verbose = options.verbose;
     const metrics = Object.create(null);
 //#define opfs-has-metrics
 //#include api/opfs-common-inline.c-pp.js
@@ -181,9 +217,7 @@ const installOpfsVfs = function callee(options){
         s.count = s.time = 0;
       }
     }/*metrics*/;
-    const opfsIoMethods = new sqlite3_io_methods();
-    const opfsVfs = new sqlite3_vfs()
-          .addOnDispose( ()=>opfsIoMethods.dispose());
+    vfsMetrics.reset();
     let promiseWasRejected = undefined;
     const promiseReject = (err)=>{
       promiseWasRejected = true;
@@ -222,201 +256,6 @@ const installOpfsVfs = function callee(options){
       error("Error initializing OPFS asyncer:",err);
       promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
     };
-    const pDVfs = capi.sqlite3_vfs_find(null)/*pointer to default VFS*/;
-    const dVfs = pDVfs
-          ? new sqlite3_vfs(pDVfs)
-          : null /* dVfs will be null when sqlite3 is built with
-                    SQLITE_OS_OTHER. */;
-    opfsIoMethods.$iVersion = 1;
-    opfsVfs.$iVersion = 2/*yes, two*/;
-    opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
-    opfsVfs.$mxPathname = 1024/* sure, why not? The OPFS name length limit
-                                 is undocumented/unspecified. */;
-    opfsVfs.$zName = wasm.allocCString("opfs");
-    // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
-    opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
-    opfsVfs.addOnDispose(
-      '$zName', opfsVfs.$zName,
-      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null)
-    );
-    /**
-       Pedantic sidebar about opfsVfs.ondispose: the entries in that array
-       are items to clean up when opfsVfs.dispose() is called, but in this
-       environment it will never be called. The VFS instance simply
-       hangs around until the WASM module instance is cleaned up. We
-       "could" _hypothetically_ clean it up by "importing" an
-       sqlite3_os_end() impl into the wasm build, but the shutdown order
-       of the wasm engine and the JS one are undefined so there is no
-       guaranty that the opfsVfs instance would be available in one
-       environment or the other when sqlite3_os_end() is called (_if_ it
-       gets called at all in a wasm build, which is undefined).
-    */
-    state.verbose = options.verbose;
-    state.littleEndian = (()=>{
-      const buffer = new ArrayBuffer(2);
-      new DataView(buffer).setInt16(0, 256, true /* ==>littleEndian */);
-      // Int16Array uses the platform's endianness.
-      return new Int16Array(buffer)[0] === 256;
-    })();
-    /**
-       asyncIdleWaitTime is how long (ms) to wait, in the async proxy,
-       for each Atomics.wait() when waiting on inbound VFS API calls.
-       We need to wake up periodically to give the thread a chance to
-       do other things. If this is too high (e.g. 500ms) then even two
-       workers/tabs can easily run into locking errors. Some multiple
-       of this value is also used for determining how long to wait on
-       lock contention to free up.
-    */
-    state.asyncIdleWaitTime = 150;
-
-    /**
-       Whether the async counterpart should log exceptions to
-       the serialization channel. That produces a great deal of
-       noise for seemingly innocuous things like xAccess() checks
-       for missing files, so this option may have one of 3 values:
-
-       0 = no exception logging.
-
-       1 = only log exceptions for "significant" ops like xOpen(),
-       xRead(), and xWrite().
-
-       2 = log all exceptions.
-    */
-    state.asyncS11nExceptions = 1;
-    /* Size of file I/O buffer block. 64k = max sqlite3 page size, and
-       xRead/xWrite() will never deal in blocks larger than that. */
-    state.fileBufferSize = 1024 * 64;
-    state.sabS11nOffset = state.fileBufferSize;
-    /**
-       The size of the block in our SAB for serializing arguments and
-       result values. Needs to be large enough to hold serialized
-       values of any of the proxied APIs. Filenames are the largest
-       part but are limited to opfsVfs.$mxPathname bytes. We also
-       store exceptions there, so it needs to be long enough to hold
-       a reasonably long exception string.
-    */
-    state.sabS11nSize = opfsVfs.$mxPathname * 2;
-    /**
-       The SAB used for all data I/O between the synchronous and
-       async halves (file i/o and arg/result s11n).
-    */
-    state.sabIO = new SharedArrayBuffer(
-      state.fileBufferSize/* file i/o block */
-      + state.sabS11nSize/* argument/result serialization block */
-    );
-    state.opIds = Object.create(null);
-    {
-      /* Indexes for use in our SharedArrayBuffer... */
-      let i = 0;
-      /* SAB slot used to communicate which operation is desired
-         between both workers. This worker writes to it and the other
-         listens for changes. */
-      state.opIds.whichOp = i++;
-      /* Slot for storing return values. This worker listens to that
-         slot and the other worker writes to it. */
-      state.opIds.rc = i++;
-      /* Each function gets an ID which this worker writes to
-         the whichOp slot. The async-api worker uses Atomic.wait()
-         on the whichOp slot to figure out which operation to run
-         next. */
-      state.opIds.xAccess = i++;
-      state.opIds.xClose = i++;
-      state.opIds.xDelete = i++;
-      state.opIds.xDeleteNoWait = i++;
-      state.opIds.xFileSize = i++;
-      state.opIds.xLock = i++;
-      state.opIds.xOpen = i++;
-      state.opIds.xRead = i++;
-      state.opIds.xSleep = i++;
-      state.opIds.xSync = i++;
-      state.opIds.xTruncate = i++;
-      state.opIds.xUnlock = i++;
-      state.opIds.xWrite = i++;
-      state.opIds.mkdir = i++;
-      state.opIds['opfs-async-metrics'] = i++;
-      state.opIds['opfs-async-shutdown'] = i++;
-      /* The retry slot is used by the async part for wait-and-retry
-         semantics. Though we could hypothetically use the xSleep slot
-         for that, doing so might lead to undesired side effects. */
-      state.opIds.retry = i++;
-      state.sabOP = new SharedArrayBuffer(
-        i * 4/* ==sizeof int32, noting that Atomics.wait() and friends
-                can only function on Int32Array views of an SAB. */);
-      vfsMetrics.reset();
-    }
-    /**
-       SQLITE_xxx constants to export to the async worker
-       counterpart...
-    */
-    state.sq3Codes = Object.create(null);
-    [
-      'SQLITE_ACCESS_EXISTS',
-      'SQLITE_ACCESS_READWRITE',
-      'SQLITE_BUSY',
-      'SQLITE_CANTOPEN',
-      'SQLITE_ERROR',
-      'SQLITE_IOERR',
-      'SQLITE_IOERR_ACCESS',
-      'SQLITE_IOERR_CLOSE',
-      'SQLITE_IOERR_DELETE',
-      'SQLITE_IOERR_FSYNC',
-      'SQLITE_IOERR_LOCK',
-      'SQLITE_IOERR_READ',
-      'SQLITE_IOERR_SHORT_READ',
-      'SQLITE_IOERR_TRUNCATE',
-      'SQLITE_IOERR_UNLOCK',
-      'SQLITE_IOERR_WRITE',
-      'SQLITE_LOCK_EXCLUSIVE',
-      'SQLITE_LOCK_NONE',
-      'SQLITE_LOCK_PENDING',
-      'SQLITE_LOCK_RESERVED',
-      'SQLITE_LOCK_SHARED',
-      'SQLITE_LOCKED',
-      'SQLITE_MISUSE',
-      'SQLITE_NOTFOUND',
-      'SQLITE_OPEN_CREATE',
-      'SQLITE_OPEN_DELETEONCLOSE',
-      'SQLITE_OPEN_MAIN_DB',
-      'SQLITE_OPEN_READONLY'
-    ].forEach((k)=>{
-      if(undefined === (state.sq3Codes[k] = capi[k])){
-        toss("Maintenance required: not found:",k);
-      }
-    });
-    state.opfsFlags = Object.assign(Object.create(null),{
-      /**
-         Flag for use with xOpen(). URI flag "opfs-unlock-asap=1"
-         enables this. See defaultUnlockAsap, below.
-       */
-      OPFS_UNLOCK_ASAP: 0x01,
-      /**
-         Flag for use with xOpen(). URI flag "delete-before-open=1"
-         tells the VFS to delete the db file before attempting to open
-         it. This can be used, e.g., to replace a db which has been
-         corrupted (without forcing us to expose a delete/unlink()
-         function in the public API).
-
-         Failure to unlink the file is ignored but may lead to
-         downstream errors.  An unlink can fail if, e.g., another tab
-         has the handle open.
-
-         It goes without saying that deleting a file out from under another
-         instance results in Undefined Behavior.
-      */
-      OPFS_UNLINK_BEFORE_OPEN: 0x02,
-      /**
-         If true, any async routine which implicitly acquires a sync
-         access handle (i.e. an OPFS lock) will release that lock at
-         the end of the call which acquires it. If false, such
-         "autolocks" are not released until the VFS is idle for some
-         brief amount of time.
-
-         The benefit of enabling this is much higher concurrency. The
-         down-side is much-reduced performance (as much as a 4x decrease
-         in speedtest1).
-      */
-      defaultUnlockAsap: false
-    });
 
     /**
        Runs the given operation (by name) in the async worker
@@ -827,6 +666,8 @@ const installOpfsVfs = function callee(options){
       }
     }/*sanityCheck()*/;
 
+    //const initS11n = state.initS11n || toss("Missing state.initS11n()");
+    //delete state.initS11n;
     W.onmessage = function({data}){
       //log("Worker.onmessage:",data);
       switch(data.type){

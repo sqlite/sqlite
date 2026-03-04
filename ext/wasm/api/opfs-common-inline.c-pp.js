@@ -8,6 +8,8 @@
    but which has a 99% identical structure for each.
 */
 //#endif
+//#// vfs.metrics.enable is a refactoring crutch.
+//#define vfs.metrics.enable=0
 const initS11n = function(){
   /**
      This proxy de/serializes cross-thread function arguments and
@@ -88,7 +90,7 @@ const initS11n = function(){
      is cleared after deserialization.
   */
   state.s11n.deserialize = function(clear=false){
-//#if defined opfs-has-metrics
+//#if vfs.metrics.enable
     ++metrics.s11n.deserialize.count;
 //#endif
     const t = performance.now();
@@ -116,7 +118,7 @@ const initS11n = function(){
     }
     if(clear) viewU8[0] = 0;
     //log("deserialize:",argc, rc);
-//#if defined opfs-has-metrics
+//#if vfs.metrics.enable
     metrics.s11n.deserialize.time += performance.now() - t;
 //#endif
     return rc;
@@ -136,7 +138,7 @@ const initS11n = function(){
   */
   state.s11n.serialize = function(...args){
     const t = performance.now();
-//#if defined opfs-has-metrics
+//#if vfs.metrics.enable
     ++metrics.s11n.serialize.count;
 //#endif
     if(args.length){
@@ -169,7 +171,7 @@ const initS11n = function(){
     }else{
       viewU8[0] = 0;
     }
-//#if defined opfs-has-metrics
+//#if vfs.metrics.enable
     metrics.s11n.serialize.time += performance.now() - t;
 //#endif
   };
@@ -185,4 +187,5 @@ const initS11n = function(){
 //#endif
 
   return state.s11n;
+//#undef vfs.metrics.enable
 }/*initS11n()*/;

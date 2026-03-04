@@ -752,6 +752,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     toss: function(...args){throw new Error(args.join(' '))},
     toss3,
     typedArrayPart: wasm.typedArrayPart,
+    nu: (...obj)=>Object.assign(Object.create(null),...obj),
     assert: function(arg,msg){
       if( !arg ){
         util.toss("Assertion failed:",msg);
