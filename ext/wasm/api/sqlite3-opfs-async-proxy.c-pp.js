@@ -51,6 +51,14 @@
 */
 "use strict";
 const wPost = (type,...args)=>postMessage({type, payload:args});
+//#if nope
+const urlParams = new URL(globalThis.location.href).searchParams;
+if( !urlParams.has('vfs') ){
+  throw new Error("Expecting vfs=opfs|opfs-wl URL argument for this worker");
+}
+const isWebLocker = 'opfs-wl'===urlParams.get('vfs');
+const msgKeyPrefix = 'opfs-'; //isWebLocker ? 'opfs-wl-' : 'opfs-';
+//#endif
 const installAsyncProxy = function(){
   const toss = function(...args){throw new Error(args.join(' '))};
   if(globalThis.window === globalThis){

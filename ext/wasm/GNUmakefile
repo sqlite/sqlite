@@ -913,7 +913,7 @@ endif
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-kvvfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
-#sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-wl.c-pp.js
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-wl.c-pp.js
 
 # Parallel builds can fail if $(sqlite3-license-version.js) is not
 # created early enough, so make all files in $(sqlite-api.jses) except

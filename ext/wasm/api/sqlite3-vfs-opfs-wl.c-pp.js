@@ -197,13 +197,14 @@ const installOpfsVfs = function callee(options){
       promiseWasRejected = false;
       return promiseResolve_(sqlite3);
     };
+    const workerArgs = '?vfs=opfs-wl';
     const W =
 //#if target:es6-bundler-friendly
-    new Worker(new URL("sqlite3-opfs-async-proxy.js", import.meta.url));
+    new Worker(new URL("sqlite3-opfs-async-proxy.js"+workerArgs, import.meta.url));
 //#elif target:es6-module
-    new Worker(new URL(options.proxyUri, import.meta.url));
+    new Worker(new URL(options.proxyUri+workerArgs, import.meta.url));
 //#else
-    new Worker(options.proxyUri);
+    new Worker(options.proxyUri+workerArgs);
 //#endif
     setTimeout(()=>{
       /* At attempt to work around a browser-specific quirk in which
@@ -1156,6 +1157,7 @@ const installOpfsVfs = function callee(options){
       OpfsWlDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.OpfsWlDb = OpfsWlDb;
       OpfsWlDb.importDb = opfsUtil.importDb;
+//#if nope
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenCallback(
         opfsVfs.pointer,
         function(oo1Db, sqlite3){
@@ -1165,6 +1167,7 @@ const installOpfsVfs = function callee(options){
           sqlite3.capi.sqlite3_busy_timeout(oo1Db, 10000);
         }
       );
+//#endif
     }/*extend sqlite3.oo1*/
 
     const sanityCheck = function(){
