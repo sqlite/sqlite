@@ -1,26 +1,14 @@
 //#if nope
 /**
    This file is for preprocessor #include into the "opfs" and
-   "opfs-wl" impls, as well as their async-proxy part.
+   "opfs-wl" impls, as well as their async-proxy part. It must be
+   inlined in those files, as opposed to being a shared copy in the
+   library, because (A) the async proxy does not load the library and
+   (B) it references an object which is local to each of those files
+   but which has a 99% identical structure for each.
 */
 //#endif
-
-//#if not defined opfs-async-proxy
-/**
-   TODO: move the sqlite3.opfs (private/internal) namespace object
-   init from sqlite3-vfs-opfs*.js into here. That namespace gets
-   removed from the sqlite3 namespace in the final stages of library
-   bootstrapping except in test runs, where it's retained so that
-   tests can clean up OPFS so their test cases work (the down-side of
-   them being persistent).
-*/
-//#endif not defined opfs-async-proxy
-
-// This function won't work as-is if we #include it, but the
-// missing elements have not yet been identified.
 const initS11n = function(){
-  /* This function is needed by the "opfs" and "opfs-wl" VFSes
-     and sqlite-opfs-async-proxy.js (used by those of those). */
   /**
      This proxy de/serializes cross-thread function arguments and
      output-pointer values via the state.sabIO SharedArrayBuffer,

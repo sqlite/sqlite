@@ -20,7 +20,10 @@
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
-/**
+  const opfsUtil = sqlite3.opfs || sqlite3.util.toss("Missing sqlite3.opfs")
+  /* Gets removed from sqlite3 during bootstrap, so we need an
+     early reference to it. */;
+  /**
    installOpfsVfs() returns a Promise which, on success, installs an
    sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
    which accept a VFS. It is intended to be called via
@@ -74,30 +77,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   object.
 */
 const installOpfsVfs = function callee(options){
-  if(!globalThis.SharedArrayBuffer
-    || !globalThis.Atomics){
-    return Promise.reject(
-      new Error("Cannot install OPFS: Missing SharedArrayBuffer and/or Atomics. "+
-                "The server must emit the COOP/COEP response headers to enable those. "+
-                "See https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep")
-    );
-  }else if('undefined'===typeof WorkerGlobalScope){
-    return Promise.reject(
-      new Error("The OPFS sqlite3_vfs cannot run in the main thread "+
-                "because it requires Atomics.wait().")
-    );
-  }else if(!globalThis.FileSystemHandle ||
-           !globalThis.FileSystemDirectoryHandle ||
-           !globalThis.FileSystemFileHandle ||
-           !globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle ||
-           !navigator?.storage?.getDirectory){
-    return Promise.reject(
-      new Error("Missing required OPFS APIs.")
-    );
+  try{
+    opfsUtil.vfsInstallationFeatureCheck();
+  }catch(e){
+    return Promise.reject(e);
   }
-  if(!options || 'object'!==typeof options){
-    options = Object.create(null);
-  }
+  options = Object.assign(Object.create(null), options);
   const urlParams = new URL(globalThis.location.href).searchParams;
   if(urlParams.has('opfs-disable')){
     //sqlite3.config.warn('Explicitly not installing "opfs" VFS due to opfs-disable flag.');
@@ -113,12 +98,10 @@ const installOpfsVfs = function callee(options){
   if(undefined===options.proxyUri){
     options.proxyUri = callee.defaultProxyUri;
   }
-
-  //sqlite3.config.warn("OPFS options =",options,globalThis.location);
-
   if('function' === typeof options.proxyUri){
     options.proxyUri = options.proxyUri();
   }
+  //sqlite3.config.warn("OPFS options =",options,globalThis.location);
   const thePromise = new Promise(function(promiseResolve_, promiseReject_){
     const loggers = [
       sqlite3.config.error,
@@ -138,32 +121,36 @@ const installOpfsVfs = function callee(options){
     const sqlite3_vfs = capi.sqlite3_vfs;
     const sqlite3_file = capi.sqlite3_file;
     const sqlite3_io_methods = capi.sqlite3_io_methods;
-    /**
-       Generic utilities for working with OPFS. This will get filled out
-       by the Promise setup and, on success, installed as sqlite3.opfs.
-
-       ACHTUNG: do not rely on these APIs in client code. They are
-       experimental and subject to change or removal as the
-       OPFS-specific sqlite3_vfs evolves.
-    */
-    const opfsUtil = Object.create(null);
 
     /**
-       Returns true if _this_ thread has access to the OPFS APIs.
-    */
-    const thisThreadHasOPFS = ()=>{
-      return globalThis.FileSystemHandle &&
-        globalThis.FileSystemDirectoryHandle &&
-        globalThis.FileSystemFileHandle &&
-        globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle &&
-        navigator?.storage?.getDirectory;
-    };
+       State which we send to the async-api Worker or share with it.
+       This object must initially contain only cloneable or sharable
+       objects. After the worker's "inited" message arrives, other types
+       of data may be added to it.
 
-    /**
-       Not part of the public API. Solely for internal/development
-       use.
+       For purposes of Atomics.wait() and Atomics.notify(), we use a
+       SharedArrayBuffer with one slot reserved for each of the API
+       proxy's methods. The sync side of the API uses Atomics.wait()
+       on the corresponding slot and the async side uses
+       Atomics.notify() on that slot.
+
+       The approach of using a single SAB to serialize comms for all
+       instances might(?) lead to deadlock situations in multi-db
+       cases. We should probably have one SAB here with a single slot
+       for locking a per-file initialization step and then allocate a
+       separate SAB like the above one for each file. That will
+       require a bit of acrobatics but should be feasible. The most
+       problematic part is that xOpen() would have to use
+       postMessage() to communicate its SharedArrayBuffer, and mixing
+       that approach with Atomics.wait/notify() gets a bit messy.
     */
-    opfsUtil.metrics = {
+    const state = Object.create(null);
+    const metrics = Object.create(null);
+//#define opfs-has-metrics
+//#include api/opfs-common-inline.c-pp.js
+//#undef opfs-has-metrics
+
+    const vfsMetrics = {
       dump: function(){
         let k, n = 0, t = 0, w = 0;
         for(k in state.opIds){
@@ -264,29 +251,6 @@ const installOpfsVfs = function callee(options){
        environment or the other when sqlite3_os_end() is called (_if_ it
        gets called at all in a wasm build, which is undefined).
     */
-    /**
-       State which we send to the async-api Worker or share with it.
-       This object must initially contain only cloneable or sharable
-       objects. After the worker's "inited" message arrives, other types
-       of data may be added to it.
-
-       For purposes of Atomics.wait() and Atomics.notify(), we use a
-       SharedArrayBuffer with one slot reserved for each of the API
-       proxy's methods. The sync side of the API uses Atomics.wait()
-       on the corresponding slot and the async side uses
-       Atomics.notify() on that slot.
-
-       The approach of using a single SAB to serialize comms for all
-       instances might(?) lead to deadlock situations in multi-db
-       cases. We should probably have one SAB here with a single slot
-       for locking a per-file initialization step and then allocate a
-       separate SAB like the above one for each file. That will
-       require a bit of acrobatics but should be feasible. The most
-       problematic part is that xOpen() would have to use
-       postMessage() to communicate its SharedArrayBuffer, and mixing
-       that approach with Atomics.wait/notify() gets a bit messy.
-    */
-    const state = Object.create(null);
     state.verbose = options.verbose;
     state.littleEndian = (()=>{
       const buffer = new ArrayBuffer(2);
@@ -341,7 +305,6 @@ const installOpfsVfs = function callee(options){
       + state.sabS11nSize/* argument/result serialization block */
     );
     state.opIds = Object.create(null);
-    const metrics = Object.create(null);
     {
       /* Indexes for use in our SharedArrayBuffer... */
       let i = 0;
@@ -379,7 +342,7 @@ const installOpfsVfs = function callee(options){
       state.sabOP = new SharedArrayBuffer(
         i * 4/* ==sizeof int32, noting that Atomics.wait() and friends
                 can only function on Int32Array views of an SAB. */);
-      opfsUtil.metrics.reset();
+      vfsMetrics.reset();
     }
     /**
        SQLITE_xxx constants to export to the async worker
@@ -495,6 +458,7 @@ const installOpfsVfs = function callee(options){
       return rc;
     };
 
+//#if nope
     /**
        Not part of the public API. Only for test/development use.
     */
@@ -508,35 +472,7 @@ const installOpfsVfs = function callee(options){
         W.postMessage({type: 'opfs-async-restart'});
       }
     };
-
-//#define opfs-has-metrics
-//#include api/opfs-common.c-pp.js
-
-    /**
-       Generates a random ASCII string len characters long, intended for
-       use as a temporary file name.
-    */
-    const randomFilename = function f(len=16){
-      if(!f._chars){
-        f._chars = "abcdefghijklmnopqrstuvwxyz"+
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"+
-          "012346789";
-        f._n = f._chars.length;
-      }
-      const a = [];
-      let i = 0;
-      for( ; i < len; ++i){
-        const ndx = Math.random() * (f._n * 64) % f._n | 0;
-        a[i] = f._chars[ndx];
-      }
-      return a.join("");
-      /*
-        An alternative impl. with an unpredictable length
-        but much simpler:
-
-        Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36)
-      */
-    };
+//#endif
 
     /**
        Map of sqlite3_file pointers to objects constructed by xOpen().
@@ -743,7 +679,7 @@ const installOpfsVfs = function callee(options){
         mTimeStart('xOpen');
         let opfsFlags = 0;
         if(0===zName){
-          zName = randomFilename();
+          zName = opfsUtil.randomFilename();
         }else if(wasm.isPtr(zName)){
           if(capi.sqlite3_uri_boolean(zName, "opfs-unlock-asap", 0)){
             /* -----------------------^^^^^ MUST pass the untranslated
@@ -804,322 +740,6 @@ const installOpfsVfs = function callee(options){
         return 0;
       };
     }
-
-    /**
-       Expects an OPFS file path. It gets resolved, such that ".."
-       components are properly expanded, and returned. If the 2nd arg
-       is true, the result is returned as an array of path elements,
-       else an absolute path string is returned.
-    */
-    opfsUtil.getResolvedPath = function(filename,splitIt){
-      const p = new URL(filename, "file://irrelevant").pathname;
-      return splitIt ? p.split('/').filter((v)=>!!v) : p;
-    };
-
-    /**
-       Takes the absolute path to a filesystem element. Returns an
-       array of [handleOfContainingDir, filename]. If the 2nd argument
-       is truthy then each directory element leading to the file is
-       created along the way. Throws if any creation or resolution
-       fails.
-    */
-    opfsUtil.getDirForFilename = async function f(absFilename, createDirs = false){
-      const path = opfsUtil.getResolvedPath(absFilename, true);
-      const filename = path.pop();
-      let dh = opfsUtil.rootDirectory;
-      for(const dirName of path){
-        if(dirName){
-          dh = await dh.getDirectoryHandle(dirName, {create: !!createDirs});
-        }
-      }
-      return [dh, filename];
-    };
-
-    /**
-       Creates the given directory name, recursively, in
-       the OPFS filesystem. Returns true if it succeeds or the
-       directory already exists, else false.
-    */
-    opfsUtil.mkdir = async function(absDirName){
-      try {
-        await opfsUtil.getDirForFilename(absDirName+"/filepart", true);
-        return true;
-      }catch(e){
-        //sqlite3.config.warn("mkdir(",absDirName,") failed:",e);
-        return false;
-      }
-    };
-    /**
-       Checks whether the given OPFS filesystem entry exists,
-       returning true if it does, false if it doesn't or if an
-       exception is intercepted while trying to make the
-       determination.
-    */
-    opfsUtil.entryExists = async function(fsEntryName){
-      try {
-        const [dh, fn] = await opfsUtil.getDirForFilename(fsEntryName);
-        await dh.getFileHandle(fn);
-        return true;
-      }catch(e){
-        return false;
-      }
-    };
-
-    /**
-       Generates a random ASCII string, intended for use as a
-       temporary file name. Its argument is the length of the string,
-       defaulting to 16.
-    */
-    opfsUtil.randomFilename = randomFilename;
-
-    /**
-       Returns a promise which resolves to an object which represents
-       all files and directories in the OPFS tree. The top-most object
-       has two properties: `dirs` is an array of directory entries
-       (described below) and `files` is a list of file names for all
-       files in that directory.
-
-       Traversal starts at sqlite3.opfs.rootDirectory.
-
-       Each `dirs` entry is an object in this form:
-
-       ```
-       { name: directoryName,
-         dirs: [...subdirs],
-         files: [...file names]
-       }
-       ```
-
-       The `files` and `subdirs` entries are always set but may be
-       empty arrays.
-
-       The returned object has the same structure but its `name` is
-       an empty string. All returned objects are created with
-       Object.create(null), so have no prototype.
-
-       Design note: the entries do not contain more information,
-       e.g. file sizes, because getting such info is not only
-       expensive but is subject to locking-related errors.
-    */
-    opfsUtil.treeList = async function(){
-      const doDir = async function callee(dirHandle,tgt){
-        tgt.name = dirHandle.name;
-        tgt.dirs = [];
-        tgt.files = [];
-        for await (const handle of dirHandle.values()){
-          if('directory' === handle.kind){
-            const subDir = Object.create(null);
-            tgt.dirs.push(subDir);
-            await callee(handle, subDir);
-          }else{
-            tgt.files.push(handle.name);
-          }
-        }
-      };
-      const root = Object.create(null);
-      await doDir(opfsUtil.rootDirectory, root);
-      return root;
-    };
-
-    /**
-       Irrevocably deletes _all_ files in the current origin's OPFS.
-       Obviously, this must be used with great caution. It may throw
-       an exception if removal of anything fails (e.g. a file is
-       locked), but the precise conditions under which the underlying
-       APIs will throw are not documented (so we cannot tell you what
-       they are).
-    */
-    opfsUtil.rmfr = async function(){
-      const dir = opfsUtil.rootDirectory, opt = {recurse: true};
-      for await (const handle of dir.values()){
-        dir.removeEntry(handle.name, opt);
-      }
-    };
-
-    /**
-       Deletes the given OPFS filesystem entry.  As this environment
-       has no notion of "current directory", the given name must be an
-       absolute path. If the 2nd argument is truthy, deletion is
-       recursive (use with caution!).
-
-       The returned Promise resolves to true if the deletion was
-       successful, else false (but...). The OPFS API reports the
-       reason for the failure only in human-readable form, not
-       exceptions which can be type-checked to determine the
-       failure. Because of that...
-
-       If the final argument is truthy then this function will
-       propagate any exception on error, rather than returning false.
-    */
-    opfsUtil.unlink = async function(fsEntryName, recursive = false,
-                                     throwOnError = false){
-      try {
-        const [hDir, filenamePart] =
-              await opfsUtil.getDirForFilename(fsEntryName, false);
-        await hDir.removeEntry(filenamePart, {recursive});
-        return true;
-      }catch(e){
-        if(throwOnError){
-          throw new Error("unlink(",arguments[0],") failed: "+e.message,{
-            cause: e
-          });
-        }
-        return false;
-      }
-    };
-
-    /**
-       Traverses the OPFS filesystem, calling a callback for each
-       entry.  The argument may be either a callback function or an
-       options object with any of the following properties:
-
-       - `callback`: function which gets called for each filesystem
-         entry.  It gets passed 3 arguments: 1) the
-         FileSystemFileHandle or FileSystemDirectoryHandle of each
-         entry (noting that both are instanceof FileSystemHandle). 2)
-         the FileSystemDirectoryHandle of the parent directory. 3) the
-         current depth level, with 0 being at the top of the tree
-         relative to the starting directory. If the callback returns a
-         literal false, as opposed to any other falsy value, traversal
-         stops without an error. Any exceptions it throws are
-         propagated. Results are undefined if the callback manipulate
-         the filesystem (e.g. removing or adding entries) because the
-         how OPFS iterators behave in the face of such changes is
-         undocumented.
-
-       - `recursive` [bool=true]: specifies whether to recurse into
-         subdirectories or not. Whether recursion is depth-first or
-         breadth-first is unspecified!
-
-       - `directory` [FileSystemDirectoryEntry=sqlite3.opfs.rootDirectory]
-         specifies the starting directory.
-
-       If this function is passed a function, it is assumed to be the
-       callback.
-
-       Returns a promise because it has to (by virtue of being async)
-       but that promise has no specific meaning: the traversal it
-       performs is synchronous. The promise must be used to catch any
-       exceptions propagated by the callback, however.
-    */
-    opfsUtil.traverse = async function(opt){
-      const defaultOpt = {
-        recursive: true,
-        directory: opfsUtil.rootDirectory
-      };
-      if('function'===typeof opt){
-        opt = {callback:opt};
-      }
-      opt = Object.assign(defaultOpt, opt||{});
-      const doDir = async function callee(dirHandle, depth){
-        for await (const handle of dirHandle.values()){
-          if(false === opt.callback(handle, dirHandle, depth)) return false;
-          else if(opt.recursive && 'directory' === handle.kind){
-            if(false === await callee(handle, depth + 1)) break;
-          }
-        }
-      };
-      doDir(opt.directory, 0);
-    };
-
-    /**
-       impl of importDb() when it's given a function as its second
-       argument.
-    */
-    const importDbChunked = async function(filename, callback){
-      const [hDir, fnamePart] = await opfsUtil.getDirForFilename(filename, true);
-      const hFile = await hDir.getFileHandle(fnamePart, {create:true});
-      let sah = await hFile.createSyncAccessHandle();
-      let nWrote = 0, chunk, checkedHeader = false, err = false;
-      try{
-        sah.truncate(0);
-        while( undefined !== (chunk = await callback()) ){
-          if(chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
-          if( !checkedHeader && 0===nWrote && chunk.byteLength>=15 ){
-            util.affirmDbHeader(chunk);
-            checkedHeader = true;
-          }
-          sah.write(chunk, {at: nWrote});
-          nWrote += chunk.byteLength;
-        }
-        if( nWrote < 512 || 0!==nWrote % 512 ){
-          toss("Input size",nWrote,"is not correct for an SQLite database.");
-        }
-        if( !checkedHeader ){
-          const header = new Uint8Array(20);
-          sah.read( header, {at: 0} );
-          util.affirmDbHeader( header );
-        }
-        sah.write(new Uint8Array([1,1]), {at: 18}/*force db out of WAL mode*/);
-        return nWrote;
-      }catch(e){
-        await sah.close();
-        sah = undefined;
-        await hDir.removeEntry( fnamePart ).catch(()=>{});
-        throw e;
-      }finally {
-        if( sah ) await sah.close();
-      }
-    };
-
-    /**
-       Asynchronously imports the given bytes (a byte array or
-       ArrayBuffer) into the given database file.
-
-       Results are undefined if the given db name refers to an opened
-       db.
-
-       If passed a function for its second argument, its behaviour
-       changes: imports its data in chunks fed to it by the given
-       callback function. It calls the callback (which may be async)
-       repeatedly, expecting either a Uint8Array or ArrayBuffer (to
-       denote new input) or undefined (to denote EOF). For so long as
-       the callback continues to return non-undefined, it will append
-       incoming data to the given VFS-hosted database file. When
-       called this way, the resolved value of the returned Promise is
-       the number of bytes written to the target file.
-
-       It very specifically requires the input to be an SQLite3
-       database and throws if that's not the case.  It does so in
-       order to prevent this function from taking on a larger scope
-       than it is specifically intended to. i.e. we do not want it to
-       become a convenience for importing arbitrary files into OPFS.
-
-       This routine rewrites the database header bytes in the output
-       file (not the input array) to force disabling of WAL mode.
-
-       On error this throws and the state of the input file is
-       undefined (it depends on where the exception was triggered).
-
-       On success, resolves to the number of bytes written.
-    */
-    opfsUtil.importDb = async function(filename, bytes){
-      if( bytes instanceof Function ){
-        return importDbChunked(filename, bytes);
-      }
-      if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
-      util.affirmIsDb(bytes);
-      const n = bytes.byteLength;
-      const [hDir, fnamePart] = await opfsUtil.getDirForFilename(filename, true);
-      let sah, err, nWrote = 0;
-      try {
-        const hFile = await hDir.getFileHandle(fnamePart, {create:true});
-        sah = await hFile.createSyncAccessHandle();
-        sah.truncate(0);
-        nWrote = sah.write(bytes, {at: 0});
-        if(nWrote != n){
-          toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
-        }
-        sah.write(new Uint8Array([1,1]), {at: 18}) /* force db out of WAL mode */;
-        return nWrote;
-      }catch(e){
-        if( sah ){ await sah.close(); sah = undefined; }
-        await hDir.removeEntry( fnamePart ).catch(()=>{});
-        throw e;
-      }finally{
-        if( sah ) await sah.close();
-      }
-    };
 
     if(sqlite3.oo1){
       const OpfsDb = function(...args){
@@ -1241,12 +861,10 @@ const installOpfsVfs = function callee(options){
                 warn("Running sanity checks because of opfs-sanity-check URL arg...");
                 sanityCheck();
               }
-              if(thisThreadHasOPFS()){
-                navigator.storage.getDirectory().then((d)=>{
+              if(opfsUtil.thisThreadHasOPFS()){
+                opfsUtil.getRootDir().then((d)=>{
                   W.onerror = W._originalOnError;
                   delete W._originalOnError;
-                  sqlite3.opfs = opfsUtil;
-                  opfsUtil.rootDirectory = d;
                   log("End of OPFS sqlite3_vfs setup.", opfsVfs);
                   promiseResolve();
                 }).catch(promiseReject);

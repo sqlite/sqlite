@@ -46,19 +46,16 @@
   theFunc().then(...) is not compatible with the change to
   synchronous, but we do do not use those APIs that way. i.e. we don't
   _need_ to change anything for this, but at some point (after Chrome
-  versions (approximately) 104-107 are extinct) should change our
+  versions (approximately) 104-107 are extinct) we should change our
   usage of those methods to remove the "await".
 */
 "use strict";
 const wPost = (type,...args)=>postMessage({type, payload:args});
-//#if nope
 const urlParams = new URL(globalThis.location.href).searchParams;
 if( !urlParams.has('vfs') ){
   throw new Error("Expecting vfs=opfs|opfs-wl URL argument for this worker");
 }
 const isWebLocker = 'opfs-wl'===urlParams.get('vfs');
-const msgKeyPrefix = 'opfs-'; //isWebLocker ? 'opfs-wl-' : 'opfs-';
-//#endif
 const installAsyncProxy = function(){
   const toss = function(...args){throw new Error(args.join(' '))};
   if(globalThis.window === globalThis){
@@ -73,6 +70,9 @@ const installAsyncProxy = function(){
      this API.
   */
   const state = Object.create(null);
+//#define opfs-async-proxy
+//#include api/opfs-common-inline.c-pp.js
+//#undef opfs-async-proxy
 
   /**
      verbose:
@@ -326,7 +326,7 @@ const installAsyncProxy = function(){
       }
       log("Got",opName+"() sync handle for",fh.filenameAbs,
           'in',performance.now() - t,'ms');
-      if(!fh.xLock && !state.lock/*set by opfs-wl*/){
+      if(!isWebLocker && !fh.xLock){
         __implicitLocks.add(fh.fid);
         log("Acquired implicit lock for",opName+"()",fh.fid,fh.filenameAbs);
       }
@@ -610,9 +610,6 @@ const installAsyncProxy = function(){
       storeAndNotify('xWrite',rc);
     }
   }/*vfsAsyncImpls*/;
-
-//#define opfs-async-proxy
-//#include api/opfs-common.c-pp.js
 
   /**
      Starts a new WebLock request.

@@ -911,6 +911,7 @@ ifeq (0,$(wasm-bare-bones))
   sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
 endif
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-kvvfs.c-pp.js
+sqlite3-api.jses += $(dir.api)/opfs-common-shared.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-wl.c-pp.js
