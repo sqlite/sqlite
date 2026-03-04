@@ -55,8 +55,8 @@
   const options = Object.create(null);
   options.sqlite3Dir = urlArgsJs.get('sqlite3.dir');
   options.workerCount = (
-    urlArgsHtml.has('workers') ? +urlArgsHtml.get('workers') : 3
-  ) || 4;
+    urlArgsHtml.has('workers') ? +urlArgsHtml.get('workers') : 0
+  ) || 3;
   options.opfsVerbose = (
     urlArgsHtml.has('verbose') ? +urlArgsHtml.get('verbose') : 1
   ) || 1;
@@ -69,6 +69,7 @@
   options.unlockAsap = (
     urlArgsHtml.has('unlock-asap') ? +urlArgsHtml.get('unlock-asap') : 0
   ) || 0;
+  options.vfs = urlArgsHtml.get('vfs') || 'opfs';
   options.noUnlink = !!urlArgsHtml.has('no-unlink');
   const workers = [];
   workers.post = (type,...args)=>{
@@ -118,12 +119,16 @@
   const eTestLinks = document.querySelector('#testlinks');
   const optArgs = function(obj){
     const li = [];
-    for(const k of ['interval','iterations','workers','verbose','unlock-asap']){
+    for(const k of [
+      'interval','iterations','unlock-asap',
+      'verbose','vfs','workers',
+    ]){
       if( obj.hasOwnProperty(k) ) li.push(k+'='+obj[k]);
     }
     return li.join('&');
   };
   for(const opt of [
+    {interval: 500, workers: 3, iterations: 30, vfs: 'opfs-wl'},
     {interval: 1000, workers: 5, iterations: 30},
     {interval: 500, workers: 5, iterations: 30},
     {interval: 250, workers: 3, iterations: 30},
@@ -142,6 +147,7 @@
   workers.uri = (
     'worker.js?'
       + 'sqlite3.dir='+options.sqlite3Dir
+      + '&vfs='+options.vfs
       + '&interval='+options.interval
       + '&iterations='+options.iterations
       + '&opfs-verbose='+options.opfsVerbose

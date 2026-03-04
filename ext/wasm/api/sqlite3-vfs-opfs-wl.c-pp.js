@@ -60,6 +60,7 @@ const installOpfsWlVfs = async function callee(options){
   options = opfsUtil.initOptions(options, callee);
   if( !options ) return sqlite3;
   const capi = sqlite3.capi,
+        debug = sqlite3.config.debug,
         state = opfsUtil.createVfsState('opfs-wl', options),
         opfsVfs = state.vfs,
         metrics = opfsVfs.metrics.counters,
@@ -94,7 +95,7 @@ const installOpfsWlVfs = async function callee(options){
           }
           f.lockType = lockType;
         }catch(e){
-          error("xLock(",arguments,") failed", e, f);
+          sqlite3.config.error("xLock(",arguments,") failed", e, f);
           rc = capi.SQLITE_IOERR_LOCK;
         }
       }
@@ -113,7 +114,7 @@ const installOpfsWlVfs = async function callee(options){
           Atomics.notify(view, state.lock.atomicsHandshake);
           Atomics.wait(view, state.lock.atomicsHandshake, 1);
         }catch(e){
-          error("xUnlock(",pFile,lockType,") failed",e, f);
+          sqlite3.config.error("xUnlock(",pFile,lockType,") failed",e, f);
           rc = capi.SQLITE_IOERR_LOCK;
         }
       }

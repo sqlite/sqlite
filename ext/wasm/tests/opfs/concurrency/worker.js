@@ -6,7 +6,8 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
   const urlArgs = new URL(globalThis.location.href).searchParams;
   const options = {
     workerName: urlArgs.get('workerId') || Math.round(Math.random()*10000),
-    unlockAsap: urlArgs.get('opfs-unlock-asap') || 0 /*EXPERIMENTAL*/
+    unlockAsap: urlArgs.get('opfs-unlock-asap') || 0 /*EXPERIMENTAL*/,
+    vfs: urlArgs.get('vfs')
   };
   const wPost = (type,...payload)=>{
     postMessage({type, worker: options.workerName, payload});
@@ -14,7 +15,7 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
   const stdout = (...args)=>wPost('stdout',...args);
   const stderr = (...args)=>wPost('stderr',...args);
   if(!sqlite3.opfs){
-    stderr("OPFS support not detected. Aborting.");
+    stderr("This code requires the (private) sqlite3.opfs object. Aborting.");
     return;
   }
 
@@ -47,7 +48,16 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
     }
   };
   const run = async function(){
-    db = new sqlite3.oo1.OpfsDb({
+    const Ctors = Object.assign(Object.create(null),{
+      opfs: sqlite3.oo1.OpfsDb,
+      'opfs-wl': sqlite3.oo1.OpfsWlDb
+    });
+    const ctor = Ctors[options.vfs];
+    if( !ctor ){
+      stderr("Invalid VFS name:",vfs);
+      return;
+    }
+    db = new ctor({
       filename: 'file:'+dbName+'?opfs-unlock-asap='+options.unlockAsap,
       flags: 'c'
     });

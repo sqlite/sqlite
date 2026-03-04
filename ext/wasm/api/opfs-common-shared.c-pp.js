@@ -499,6 +499,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const state = util.nu();
     state.verbose = options.verbose;
 
+    const loggers = [
+      sqlite3.config.error,
+      sqlite3.config.warn,
+      sqlite3.config.log
+    ];
+    const logImpl = (level,...args)=>{
+      if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
+    };
+    const log   = (...args)=>logImpl(2, ...args),
+          warn  = (...args)=>logImpl(1, ...args),
+          error = (...args)=>logImpl(0, ...args),
+          capi  = sqlite3.capi,
+          wasm  = sqlite3.wasm;
+
     const opfsVfs = state.vfs = new capi.sqlite3_vfs();
     const opfsIoMethods = opfsVfs.ioMethods = new capi.sqlite3_io_methods();
 
@@ -571,7 +585,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        of this value is also used for determining how long to wait on
        lock contention to free up.
     */
-    state.asyncIdleWaitTime = isWebLocker ? 100 : 150;
+    state.asyncIdleWaitTime = isWebLocker ? 300 : 150;
 
     /**
        Whether the async counterpart should log exceptions to
@@ -966,15 +980,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
            convey error messages from xOpen() because there would be a
            race condition between sqlite3_open()'s call to xOpen() and
            this function. */
-        warn("OPFS xGetLastError() has nothing sensible to return.");
+        sqlite3.config.warn("OPFS xGetLastError() has nothing sensible to return.");
         return 0;
       },
       //xSleep is optionally defined below
       xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
         mTimeStart('xOpen');
         let opfsFlags = 0;
-        if(0===zName){
-          zName = opfsUtil.randomFilename();
+        let jzName, zToFree;
+        if( !zName ){
+          jzName = opfsUtil.randomFilename();
+          zName = zToFree = wasm.allocCString(jzName);
         }else if(wasm.isPtr(zName)){
           if(capi.sqlite3_uri_boolean(zName, "opfs-unlock-asap", 0)){
             /* -----------------------^^^^^ MUST pass the untranslated
@@ -984,18 +1000,24 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           if(capi.sqlite3_uri_boolean(zName, "delete-before-open", 0)){
             opfsFlags |= state.opfsFlags.OPFS_UNLINK_BEFORE_OPEN;
           }
-          zName = wasm.cstrToJs(zName);
-          //warn("xOpen zName =",zName, "opfsFlags =",opfsFlags);
+          jzName = wasm.cstrToJs(zName);
+          //sqlite3.config.warn("xOpen zName =",zName, "opfsFlags =",opfsFlags);
+        }else{
+          sqlite3.config.error("Impossible zName value in xOpen?", zName);
+          return capi.SQLITE_CANTOPEN;
         }
-        const fh = Object.create(null);
-        fh.fid = pFile;
-        fh.filename = wasm.cstrToJs(zName);
-        fh.sab = new SharedArrayBuffer(state.fileBufferSize);
-        fh.flags = flags;
-        fh.readOnly = !(capi.SQLITE_OPEN_CREATE & flags)
-          && !!(flags & capi.SQLITE_OPEN_READONLY);
-        const rc = opRun('xOpen', pFile, zName, flags, opfsFlags);
-        if(!rc){
+        const fh = util.nu({
+          fid: pFile,
+          filename: jzName,
+          sab: new SharedArrayBuffer(state.fileBufferSize),
+          flags: flags,
+          readOnly: !(capi.SQLITE_OPEN_CREATE & flags)
+            && !!(flags & capi.SQLITE_OPEN_READONLY)
+        });
+        const rc = opRun('xOpen', pFile, jzName, flags, opfsFlags);
+        if(rc){
+          if( zToFree ) wasm.dealloc(zToFree);
+        }else{
           /* Recall that sqlite3_vfs::xClose() will be called, even on
              error, unless pFile->pMethods is NULL. */
           if(fh.readOnly){
@@ -1004,6 +1026,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           __openFiles[pFile] = fh;
           fh.sabView = state.sabFileBufView;
           fh.sq3File = new capi.sqlite3_file(pFile);
+          if( zToFree ) fh.sq3File.addOnDispose(zToFree);
           fh.sq3File.$pMethods = opfsIoMethods.pointer;
           fh.lockType = capi.SQLITE_LOCK_NONE;
         }
@@ -1060,20 +1083,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     opfsVfs.doTheThing = function(ioMethods, callback){
       Object.assign(opfsVfs.ioSyncWrappers, ioMethods);
       const thePromise = new Promise(function(promiseResolve_, promiseReject_){
-        const loggers = [
-          sqlite3.config.error,
-          sqlite3.config.warn,
-          sqlite3.config.log
-        ];
-        const logImpl = (level,...args)=>{
-          if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
-        };
-        const log   = (...args)=>logImpl(2, ...args),
-              warn  = (...args)=>logImpl(1, ...args),
-              error = (...args)=>logImpl(0, ...args),
-              capi  = sqlite3.capi,
-              wasm  = sqlite3.wasm;
-
         let promiseWasRejected = undefined;
         const promiseReject = (err)=>{
           promiseWasRejected = true;

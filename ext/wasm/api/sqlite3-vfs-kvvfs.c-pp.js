@@ -1137,9 +1137,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }/*.ioJrnl*/
   }/*methodOverrides*/;
 
+//#if nope
   debug("pVfs and friends", pVfs, pIoDb, pIoJrnl,
         kvvfsMethods, capi.sqlite3_file.structInfo,
         KVVfsFile.structInfo);
+//#endif
+
   try {
     util.assert( cache.buffer.n>1024*129, "Heap buffer is not large enough"
                  /* Native is SQLITE_KVOS_SZ is 133073 as of this writing */ );
