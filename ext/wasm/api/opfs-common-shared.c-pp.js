@@ -18,19 +18,18 @@
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
-  const toss = sqlite3.util.toss;
-  const capi = sqlite3.capi;
-  const util = sqlite3.util;
-  const wasm = sqlite3.wasm;
+  const toss = sqlite3.util.toss,
+        capi = sqlite3.capi,
+        util = sqlite3.util,
+        wasm = sqlite3.wasm;
 
   /**
      Generic utilities for working with OPFS. This will get filled out
      by the Promise setup and, on success, installed as sqlite3.opfs.
 
-     This is an internal/private namespace intended for use solely
-     by the OPFS VFSes and test code for them. The library bootstrapping
+     This is an internal/private namespace intended for use solely by
+     the OPFS VFSes and test code for them. The library bootstrapping
      process removes this object in non-testing contexts.
-
   */
   const opfsUtil = sqlite3.opfs = Object.create(null);
 
@@ -421,14 +420,44 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   };
 
+  /**
+     Must be called by the VFS's main installation routine and passed
+     the options object that function receives and a reference to that
+     function itself (which is assumed to have a defaultProxyUri
+     property set on it. See sqlite3-vfs-opfs{,-wl}.c-pp.js for
+     examples.
+
+     It throws if OPFS is not available.
+
+     If it returns falsy, it detected that OPFS should be disabled, in
+     which case the callee should immediately return/resolve to the
+     sqlite3 object.
+
+     Else it returns a new copy of the options object, fleshed out
+     with any missing defaults. The caller must:
+
+     - Set up any local state they need.
+
+     - Call opfsUtil.createVfsState(vfsName,opt), where opt is the
+     object returned by this function.
+
+     - Set up any references they may need to state returned
+     by the previous step.
+
+     - Call opfvs.doTheThing()
+  */
   opfsUtil.initOptions = function(options, callee){
-    options = util.nu(options);
     const urlParams = new URL(globalThis.location.href).searchParams;
     if(urlParams.has('opfs-disable')){
       //sqlite3.config.warn('Explicitly not installing "opfs" VFS due to opfs-disable flag.');
-      options.disableOpfs = true;
-      return options;
+      return;
     }
+    try{
+      opfsUtil.vfsInstallationFeatureCheck();
+    }catch(e){
+      return;
+    }
+    options = util.nu(options);
     if(undefined===options.verbose){
       options.verbose = urlParams.has('opfs-verbose')
         ? (+urlParams.get('opfs-verbose') || 2) : 1;
@@ -449,14 +478,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Creates and populates the main state object used by "opfs" and "opfs-wl", and
      transfered from those to their async counterpart.
 
-     Returns an object containing state which we send to the async-api
-     Worker or share with it.
+     Returns an object containing state which we send to the async
+     proxy Worker.
 
-     Because the returned object must be serializable to be posted to
-     the async proxy, after this returns, the caller must:
+     The returned object's vfs property holds the fully-populated
+     capi.sqlite3_vfs instance.
 
-     - Make a local-scope reference of state.vfs then (delete
-       state.vfs). That's the capi.sqlite3_vfs instance for the VFS.
+     After setting up any local state needed, the caller must
+     call theVfs.doTheThing(X,Y), where X is an object containing
+     the sqlite3_io_methods to override and Y is a callback which
+     gets triggered if init succeeds, before the final Promise
+     decides whether or not to reject. The result of doTheThing()
+     must be returned from their main installation function.
 
      This object must, when it's passed to the async part, contain
      only cloneable or sharable objects. After the worker's "inited"
@@ -1013,6 +1046,228 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 //#include api/opfs-common-inline.c-pp.js
 //#undef vfs.metrics.enable
     opfsVfs.initS11n = initS11n;
+
+    /**
+       To be called by the VFS's main installation routine after it has
+       wired up enough state to provide its overridden io-method impls
+       (which must be properties of the ioMethods argument). Returns a
+       Promise which the installation routine must return. callback must
+       be a function which performs any post-bootstrap touchups, namely
+       plugging in a sqlite3.oo1 wrapper. It is passed (sqlite3, opfsVfs),
+       where opfsVfs is the sqlite3_vfs object which was set up by
+       opfsUtil.createVfsState().
+    */
+    opfsVfs.doTheThing = function(ioMethods, callback){
+      Object.assign(opfsVfs.ioSyncWrappers, ioMethods);
+      const thePromise = new Promise(function(promiseResolve_, promiseReject_){
+        const loggers = [
+          sqlite3.config.error,
+          sqlite3.config.warn,
+          sqlite3.config.log
+        ];
+        const logImpl = (level,...args)=>{
+          if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
+        };
+        const log   = (...args)=>logImpl(2, ...args),
+              warn  = (...args)=>logImpl(1, ...args),
+              error = (...args)=>logImpl(0, ...args),
+              capi  = sqlite3.capi,
+              wasm  = sqlite3.wasm;
+
+        let promiseWasRejected = undefined;
+        const promiseReject = (err)=>{
+          promiseWasRejected = true;
+          opfsVfs.dispose();
+          return promiseReject_(err);
+        };
+        const promiseResolve = ()=>{
+          try{
+            callback(sqlite3, opfsVfs);
+          }catch(e){
+            return promiseReject(e);
+          }
+          promiseWasRejected = false;
+          return promiseResolve_(sqlite3);
+        };
+        options.proxyUri += '?vfs='+vfsName;
+        const W = opfsVfs.worker =
+//#if target:es6-bundler-friendly
+        new Worker(new URL("sqlite3-opfs-async-proxy.js?vfs=opfs", import.meta.url));
+//#elif target:es6-module
+        new Worker(new URL(options.proxyUri, import.meta.url));
+//#else
+        new Worker(options.proxyUri);
+//#endif
+        setTimeout(()=>{
+          /* At attempt to work around a browser-specific quirk in which
+             the Worker load is failing in such a way that we neither
+             resolve nor reject it. This workaround gives that resolve/reject
+             a time limit and rejects if that timer expires. Discussion:
+             https://sqlite.org/forum/forumpost/a708c98dcb3ef */
+          if(undefined===promiseWasRejected){
+            promiseReject(
+              new Error("Timeout while waiting for OPFS async proxy worker.")
+            );
+          }
+        }, 4000);
+        W._originalOnError = W.onerror /* will be restored later */;
+        W.onerror = function(err){
+          // The error object doesn't contain any useful info when the
+          // failure is, e.g., that the remote script is 404.
+          error("Error initializing OPFS asyncer:",err);
+          promiseReject(new Error("Loading OPFS async Worker failed for unknown reasons."));
+        };
+
+        const opRun = opfsVfs.opRun;
+//#if nope
+        /**
+           Not part of the public API. Only for test/development use.
+        */
+        opfsVfs.debug = {
+          asyncShutdown: ()=>{
+            warn("Shutting down OPFS async listener. The OPFS VFS will no longer work.");
+            opRun('opfs-async-shutdown');
+          },
+          asyncRestart: ()=>{
+            warn("Attempting to restart OPFS VFS async listener. Might work, might not.");
+            W.postMessage({type: 'opfs-async-restart'});
+          }
+        };
+//#endif
+
+        const sanityCheck = function(){
+          const scope = wasm.scopedAllocPush();
+          const sq3File = new capi.sqlite3_file();
+          try{
+            const fid = sq3File.pointer;
+            const openFlags = capi.SQLITE_OPEN_CREATE
+                  | capi.SQLITE_OPEN_READWRITE
+            //| capi.SQLITE_OPEN_DELETEONCLOSE
+                  | capi.SQLITE_OPEN_MAIN_DB;
+            const pOut = wasm.scopedAlloc(8);
+            const dbFile = "/sanity/check/file"+randomFilename(8);
+            const zDbFile = wasm.scopedAllocCString(dbFile);
+            let rc;
+            state.s11n.serialize("This is ä string.");
+            rc = state.s11n.deserialize();
+            log("deserialize() says:",rc);
+            if("This is ä string."!==rc[0]) toss("String d13n error.");
+            opfsVfs.vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+            rc = wasm.peek(pOut,'i32');
+            log("xAccess(",dbFile,") exists ?=",rc);
+            rc = opfsVfs.vfsSyncWrappers.xOpen(opfsVfs.pointer, zDbFile,
+                                               fid, openFlags, pOut);
+            log("open rc =",rc,"state.sabOPView[xOpen] =",
+                state.sabOPView[state.opIds.xOpen]);
+            if(0!==rc){
+              error("open failed with code",rc);
+              return;
+            }
+            opfsVfs.vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+            rc = wasm.peek(pOut,'i32');
+            if(!rc) toss("xAccess() failed to detect file.");
+            rc = opfsVfs.ioSyncWrappers.xSync(sq3File.pointer, 0);
+            if(rc) toss('sync failed w/ rc',rc);
+            rc = opfsVfs.ioSyncWrappers.xTruncate(sq3File.pointer, 1024);
+            if(rc) toss('truncate failed w/ rc',rc);
+            wasm.poke(pOut,0,'i64');
+            rc = opfsVfs.ioSyncWrappers.xFileSize(sq3File.pointer, pOut);
+            if(rc) toss('xFileSize failed w/ rc',rc);
+            log("xFileSize says:",wasm.peek(pOut, 'i64'));
+            rc = opfsVfs.ioSyncWrappers.xWrite(sq3File.pointer, zDbFile, 10, 1);
+            if(rc) toss("xWrite() failed!");
+            const readBuf = wasm.scopedAlloc(16);
+            rc = opfsVfs.ioSyncWrappers.xRead(sq3File.pointer, readBuf, 6, 2);
+            wasm.poke(readBuf+6,0);
+            let jRead = wasm.cstrToJs(readBuf);
+            log("xRead() got:",jRead);
+            if("sanity"!==jRead) toss("Unexpected xRead() value.");
+            if(opfsVfs.vfsSyncWrappers.xSleep){
+              log("xSleep()ing before close()ing...");
+              opfsVfs.vfsSyncWrappers.xSleep(opfsVfs.pointer,2000);
+              log("waking up from xSleep()");
+            }
+            rc = opfsVfs.ioSyncWrappers.xClose(fid);
+            log("xClose rc =",rc,"sabOPView =",state.sabOPView);
+            log("Deleting file:",dbFile);
+            opfsVfs.vfsSyncWrappers.xDelete(opfsVfs.pointer, zDbFile, 0x1234);
+            opfsVfs.vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
+            rc = wasm.peek(pOut,'i32');
+            if(rc) toss("Expecting 0 from xAccess(",dbFile,") after xDelete().");
+            warn("End of OPFS sanity checks.");
+          }finally{
+            sq3File.dispose();
+            wasm.scopedAllocPop(scope);
+          }
+        }/*sanityCheck()*/;
+
+        W.onmessage = function({data}){
+          //log("Worker.onmessage:",data);
+          switch(data.type){
+            case 'opfs-unavailable':
+              /* Async proxy has determined that OPFS is unavailable. There's
+                 nothing more for us to do here. */
+              promiseReject(new Error(data.payload.join(' ')));
+              break;
+            case 'opfs-async-loaded':
+              /* Arrives as soon as the asyc proxy finishes loading.
+                 Pass our config and shared state on to the async
+                 worker. */
+              delete state.vfs;
+              W.postMessage({type: 'opfs-async-init', args: util.nu(state)});
+              break;
+            case 'opfs-async-inited': {
+              /* Indicates that the async partner has received the 'init'
+                 and has finished initializing, so the real work can
+                 begin... */
+              if(true===promiseWasRejected){
+                break /* promise was already rejected via timer */;
+              }
+              try {
+                sqlite3.vfs.installVfs({
+                  io: {struct: opfsVfs.ioMethods, methods: opfsVfs.ioSyncWrappers},
+                  vfs: {struct: opfsVfs, methods: opfsVfs.vfsSyncWrappers}
+                });
+                state.sabOPView = new Int32Array(state.sabOP);
+                state.sabFileBufView = new Uint8Array(state.sabIO, 0, state.fileBufferSize);
+                state.sabS11nView = new Uint8Array(state.sabIO, state.sabS11nOffset, state.sabS11nSize);
+                opfsVfs.initS11n();
+                delete opfsVfs.initS11n;
+                if(options.sanityChecks){
+                  warn("Running sanity checks because of opfs-sanity-check URL arg...");
+                  sanityCheck();
+                }
+                if(opfsUtil.thisThreadHasOPFS()){
+                  opfsUtil.getRootDir().then((d)=>{
+                    W.onerror = W._originalOnError;
+                    delete W._originalOnError;
+                    log("End of OPFS sqlite3_vfs setup.", opfsVfs);
+                    promiseResolve();
+                  }).catch(promiseReject);
+                }else{
+                  promiseResolve();
+                }
+              }catch(e){
+                error(e);
+                promiseReject(e);
+              }
+              break;
+            }
+            default: {
+              const errMsg = (
+                "Unexpected message from the OPFS async worker: " +
+                  JSON.stringify(data)
+              );
+              error(errMsg);
+              promiseReject(new Error(errMsg));
+              break;
+            }
+          }/*switch(data.type)*/
+        }/*W.onmessage()*/;
+      })/*thePromise*/;
+      return thePromise;
+    }/*doTheThing()*/;
+
     return state;
   }/*createVfsState()*/;
 
