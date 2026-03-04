@@ -1,5 +1,5 @@
-C opfs-wl\sis\snow\sloading\sand\sregistering\sbut\sit's\sstill\suntested.
-D 2026-03-04T00:37:55.997
+C A\spotential\sfix\sfor\sthe\sprobable\sbreakage\sof\sbundler-friendly\sbuilds\sin\sthe\sprevious\scheck-in.\sPending\sreview\sfrom\ssomeone\swho\suses\sthose\stools.
+D 2026-03-04T00:48:03.758
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -597,8 +597,8 @@ F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js 041f24cd61d470072303b0cd1bb73dd2
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
 F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 2ccf4322f42063aefc150972943e750c77f7926b866f1639d40eec05df075b6e
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 1575ea6bbcf2da1e6df6892c17521a0c1c1c199a672e9090176ea0b88de48bd9
-F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 072abf5bd30e5a611f9d15039bb41795fb517b5ade1b1973cbdd70c171a1f822
-F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js e44649cf72b303b857ce4d7e33b13b88a1f97009514b1b84d2e9c2ecf511fca1
+F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 8c79bf3ea89102772225e6539c030787ea85203b6cc0354c545df69d81a2d910
+F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js b2b4c7570ec816c49e7b3293f451992bd7fb7154dcd4cec6fb05d032c6cedf52
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
 F ext/wasm/api/sqlite3-wasm.c 45bb20e19b245136711f9b78584371233975811b6560c29ed9b650e225417e29
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js aa9715f661fb700459a5a6cb1c32a4d6a770723b47aa9ac0e16c2cf87d622a66
@@ -2190,8 +2190,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1e0b72631aecb0bb72f4089116da221e6c4abf962db589de08132cd52c2be0e2
-R 32d905549a7b0f1874fdf6ef84b0e8af
+P 9a471f7491a371052bf1785098ba966dd0d03503e7d8b9fbcd65f07b038e5021
+R 8aa8acc5e3e3610acfaa4dc12ceb0c5d
 U stephan
-Z 466cb2ea030b3f6732fe2aeb3d4128c0
+Z dc633fdeffefdb99fdb4ea173110ea63
 # Remove this line to create a well-formed Fossil manifest.

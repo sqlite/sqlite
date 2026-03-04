@@ -200,7 +200,7 @@ const installOpfsVfs = function callee(options){
     const workerArgs = '?vfs=opfs-wl';
     const W =
 //#if target:es6-bundler-friendly
-    new Worker(new URL("sqlite3-opfs-async-proxy.js"+workerArgs, import.meta.url));
+    new Worker(new URL("sqlite3-opfs-async-proxy.js?vfs=opfs-wl", import.meta.url));
 //#elif target:es6-module
     new Worker(new URL(options.proxyUri+workerArgs, import.meta.url));
 //#else
