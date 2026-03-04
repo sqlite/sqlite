@@ -3251,24 +3251,9 @@ static int generateOutputSubroutine(
       r2 = sqlite3GetTempRange(pParse, nKey+2);
       r3 = r2+nKey+1;
 
-#if 0 /* <-- Why the next block of code is commented out: (tag-20260125-a)
-      **
-      ** If the destination is DistQueue, then cursor (iParm+1) is open
-      ** on a second ephemeral index that holds all values previously
-      ** added to the queue.  This code only runs during the setup phase
-      ** using the merge algorithm, and so the values here are already
-      ** guaranteed to be unique.
-      */
-      if( pDest->eDest==SRT_DistQueue ){
-        addrTest = sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, 0,
-                                        pIn->iSdst, pIn->nSdst);
-        VdbeCoverage(v);
-      }
-#endif
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iSdst, pIn->nSdst, r3);
       if( pDest->eDest==SRT_DistQueue ){
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r3);
-        sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
       }
       for(ii=0; ii<nKey; ii++){
         sqlite3VdbeAddOp2(v, OP_SCopy,
@@ -3278,9 +3263,6 @@ static int generateOutputSubroutine(
       sqlite3VdbeAddOp2(v, OP_Sequence, iParm, r2+nKey);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, r2, nKey+2, r1);
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, r2, nKey+2);
-#if 0 /* tag-20260125-a */
-      if( addrTest ) sqlite3VdbeJumpHere(v, addrTest);
-#endif
       sqlite3ReleaseTempReg(pParse, r1);
       sqlite3ReleaseTempRange(pParse, r2, nKey+2);
       break;
