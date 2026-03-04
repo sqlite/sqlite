@@ -2848,80 +2848,100 @@ static int walCheckpoint(
      || (rc = walBusyLock(pWal, xBusy, pBusyArg,WAL_READ_LOCK(0),1))==SQLITE_OK
     )){
       u32 nBackfill = pInfo->nBackfill;
-
       assert( bWal2==0 || nBackfill==0 );
-      pInfo->nBackfillAttempted = mxSafeFrame; SEH_INJECT_FAULT;
+      WalIndexHdr *pLive = (WalIndexHdr*)walIndexHdr(pWal);
 
-      /* Sync the wal file being checkpointed to disk */
-      rc = sqlite3OsSync(pWalFd, CKPT_SYNC_FLAGS(sync_flags));
-
-      /* If the database may grow as a result of this checkpoint, hint
-      ** about the eventual size of the db file to the VFS layer.  */
-      if( rc==SQLITE_OK ){
-        i64 nReq = ((i64)mxPage * szPage);
-        i64 nSize;                    /* Current size of database file */
-        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_CKPT_START, 0);
-        rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
-        if( rc==SQLITE_OK && nSize<nReq ){
-          i64 mx = pWal->hdr.mxFrame + (bWal2?walidxGetMxFrame(&pWal->hdr,1):0);
+      /* Now that read-lock slot 0 is locked, check that the wal has not been
+      ** wrapped since the header was read for this checkpoint. If it was, then
+      ** there was no work to do anyway.  In this case the
+      ** (pInfo->nBackfill<pWal->hdr.mxFrame) test above only passed because
+      ** pInfo->nBackfill had already been set to 0 by the writer that wrapped
+      ** the wal file. It would also be dangerous to proceed, as there may be
+      ** fewer than pWal->hdr.mxFrame valid frames in the wal file. 
+      **
+      ** This check is not required in wal mode, as the checkpointer has
+      ** and writers never operate on the same file. And are prevented by
+      ** locks from doing so. But it does not hurt to leave it in.  */
+      int bChg = memcmp(pLive->aSalt, pWal->hdr.aSalt, sizeof(pWal->hdr.aSalt));
+      if( 0==bChg ){
+        pInfo->nBackfillAttempted = mxSafeFrame; SEH_INJECT_FAULT;
+  
+        /* Sync the wal file being checkpointed to disk */
+        rc = sqlite3OsSync(pWalFd, CKPT_SYNC_FLAGS(sync_flags));
+  
+        /* If the database may grow as a result of this checkpoint, hint
+        ** about the eventual size of the db file to the VFS layer.
+        */
+        if( rc==SQLITE_OK ){
+          i64 nReq = ((i64)mxPage * szPage);
+          i64 nSize;                    /* Current size of database file */
+          sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_CKPT_START, 0);
+          rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
+          if( rc==SQLITE_OK && nSize<nReq ){
+            i64 mx = pWal->hdr.mxFrame + (bWal2?walidxGetMxFrame(&pWal->hdr,1):0);
           if( (nSize+65536+mx*szPage)<nReq ){
-            /* If the size of the final database is larger than the current
-            ** database plus the amount of data in the wal file, plus the
-            ** maximum size of the pending-byte page (65536 bytes), then
-            ** must be corruption somewhere.  Or in the case of wal2 mode,
+              /* If the size of the final database is larger than the current
+              ** database plus the amount of data in the wal file, plus the
+              ** maximum size of the pending-byte page (65536 bytes), then
+              ** must be corruption somewhere.  Or in the case of wal2 mode,
             ** plus the amount of data in both wal files. */
-            rc = SQLITE_CORRUPT_BKPT;
-          }else{
-            sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT,&nReq);
+              rc = SQLITE_CORRUPT_BKPT;
+            }else{
+              sqlite3OsFileControlHint(
+                  pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+            }
+          }
+  
+        }
+  
+        /* Iterate through the contents of the WAL, copying data to the 
+        ** db file */
+        while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
+          i64 iOffset;
+          assert( bWal2==1 || walFramePgno(pWal, iFrame)==iDbpage );
+          assert( bWal2==0 || walFramePgno2(pWal, iCkpt, iFrame)==iDbpage );
+
+        SEH_INJECT_FAULT;
+          if( AtomicLoad(&db->u1.isInterrupted) ){
+            rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
+            break;
+          }
+          if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ){
+            continue;
+          }
+          iOffset = walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE;
+          /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL file */
+          rc = sqlite3OsRead(pWalFd, zBuf, szPage, iOffset);
+          if( rc!=SQLITE_OK ) break;
+          iOffset = (iDbpage-1)*(i64)szPage;
+          testcase( IS_BIG_INT(iOffset) );
+          rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
+          if( rc!=SQLITE_OK ) break;
+        }
+        sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_CKPT_DONE, 0);
+  
+        /* If work was actually accomplished, truncate the db file, sync the wal
+        ** file and set WalCkptInfo.nBackfill to indicate so. */
+        if( rc==SQLITE_OK 
+         && (bWal2 || mxSafeFrame==walIndexHdr(pWal)->mxFrame) 
+        ){
+          if( !bWal2 ){
+            i64 szDb = pWal->hdr.nPage*(i64)szPage;
+            testcase( IS_BIG_INT(szDb) );
+            rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
+          }
+          if( rc==SQLITE_OK ){
+            rc = sqlite3OsSync(pWal->pDbFd, CKPT_SYNC_FLAGS(sync_flags));
+          }
+          if( rc==SQLITE_OK ){
+            AtomicStore(&pInfo->nBackfill, mxSafeFrame); SEH_INJECT_FAULT;
           }
         }
-      }
-
-      /* Iterate through the contents of the WAL, copying data to the db file */
-      while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
-        i64 iOffset;
-
-        assert( bWal2==1 || walFramePgno(pWal, iFrame)==iDbpage );
-        assert( bWal2==0 || walFramePgno2(pWal, iCkpt, iFrame)==iDbpage );
-
-        SEH_INJECT_FAULT;
-        if( AtomicLoad(&db->u1.isInterrupted) ){
-          rc = db->mallocFailed ? SQLITE_NOMEM_BKPT : SQLITE_INTERRUPT;
-          break;
-        }
-        if( iFrame<=nBackfill || iFrame>mxSafeFrame || iDbpage>mxPage ){
-          assert( bWal2==0 || iDbpage>mxPage );
-          continue;
-        }
-        iOffset = walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE;
-        WALTRACE(("WAL%p: checkpoint frame %d of wal %d to db page %d\n",
-              pWal, (int)iFrame, iCkpt, (int)iDbpage
-        ));
-        /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL file */
-        rc = sqlite3OsRead(pWalFd, zBuf, szPage, iOffset);
-        if( rc!=SQLITE_OK ) break;
-        iOffset = (iDbpage-1)*(i64)szPage;
-        testcase( IS_BIG_INT(iOffset) );
-        rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
-        if( rc!=SQLITE_OK ) break;
-      }
-      sqlite3OsFileControl(pWal->pDbFd, SQLITE_FCNTL_CKPT_DONE, 0);
-
-      /* If work was actually accomplished, truncate the db file, sync the wal
-      ** file and set WalCkptInfo.nBackfill to indicate so. */
-      if( rc==SQLITE_OK && (bWal2 || mxSafeFrame==walIndexHdr(pWal)->mxFrame) ){
-        if( !bWal2 ){
-          i64 szDb = pWal->hdr.nPage*(i64)szPage;
-          testcase( IS_BIG_INT(szDb) );
-          rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
-        }
         if( rc==SQLITE_OK ){
-          rc = sqlite3OsSync(pWal->pDbFd, CKPT_SYNC_FLAGS(sync_flags));
+          AtomicStore(&pInfo->nBackfill, (bWal2 ? 1 : mxSafeFrame));
+          SEH_INJECT_FAULT;
         }
-      }
-      if( rc==SQLITE_OK ){
-        AtomicStore(&pInfo->nBackfill, (bWal2 ? 1 : mxSafeFrame));
-        SEH_INJECT_FAULT;
+
       }
 
       /* Release the reader lock held while backfilling */
@@ -5210,9 +5230,10 @@ int sqlite3WalCheckpoint(
         sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
       }
     }
-  
+
     /* Copy data from the log to the database file. */
     if( rc==SQLITE_OK ){
+      sqlite3FaultSim(660);
       if( (walPagesize(pWal)!=nBuf) 
        && ((pWal->hdr.mxFrame2 & 0x7FFFFFFF) || pWal->hdr.mxFrame)
       ){

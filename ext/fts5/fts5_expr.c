@@ -314,7 +314,7 @@ int sqlite3Fts5ExprNew(
 
   assert( sParse.rc!=SQLITE_OK || sParse.zErr==0 );
   if( sParse.rc==SQLITE_OK ){
-    *ppNew = pNew = sqlite3_malloc(sizeof(Fts5Expr));
+    *ppNew = pNew = sqlite3_malloc64(sizeof(Fts5Expr));
     if( pNew==0 ){
       sParse.rc = SQLITE_NOMEM;
       sqlite3Fts5ParseNodeFree(sParse.pExpr);
@@ -466,7 +466,7 @@ int sqlite3Fts5ExprAnd(Fts5Expr **pp1, Fts5Expr *p2){
     p2->pRoot = 0;
 
     if( sParse.rc==SQLITE_OK ){
-      Fts5ExprPhrase **ap = (Fts5ExprPhrase**)sqlite3_realloc(
+      Fts5ExprPhrase **ap = (Fts5ExprPhrase**)sqlite3_realloc64(
           p1->apExprPhrase, nPhrase * sizeof(Fts5ExprPhrase*)
       );
       if( ap==0 ){

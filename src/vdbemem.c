@@ -107,21 +107,27 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
   StrAccum acc;
   assert( p->flags & (MEM_Int|MEM_Real|MEM_IntReal) );
   assert( sz>22 );
-  if( p->flags & MEM_Int ){
-#if GCC_VERSION>=7000000
-    /* Work-around for GCC bug
-    ** https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96270 */
+  if( p->flags & (MEM_Int|MEM_IntReal) ){
+#if GCC_VERSION>=7000000 && GCC_VERSION<15000000 && defined(__i386__)
+    /* Work-around for GCC bug or bugs:
+    ** https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96270
+    ** https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114659
+    ** The problem appears to be fixed in GCC 15 */
     i64 x;
-    assert( (p->flags&MEM_Int)*2==sizeof(x) );
-    memcpy(&x, (char*)&p->u, (p->flags&MEM_Int)*2);
+    assert( (MEM_Str&~p->flags)*4==sizeof(x) );
+    memcpy(&x, (char*)&p->u, (MEM_Str&~p->flags)*4);
     p->n = sqlite3Int64ToText(x, zBuf);
 #else
     p->n = sqlite3Int64ToText(p->u.i, zBuf);
 #endif
+    if( p->flags & MEM_IntReal ){
+      memcpy(zBuf+p->n,".0", 3);
+      p->n += 2;
+    }
   }else{
     sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
-    sqlite3_str_appendf(&acc, "%!.15g", 
-         (p->flags & MEM_IntReal)!=0 ? (double)p->u.i : p->u.r);
+    sqlite3_str_appendf(&acc, "%!.*g",
+         (p->db ? p->db->nFpDigit : 17), p->u.r);
     assert( acc.zText==zBuf && acc.mxAlloc<=0 );
     zBuf[acc.nChar] = 0; /* Fast version of sqlite3StrAccumFinish(&acc) */
     p->n = acc.nChar;
@@ -170,6 +176,9 @@ int sqlite3VdbeMemValidStrRep(Mem *p){
     assert( p->enc==SQLITE_UTF8 || p->z[((p->n+1)&~1)+1]==0 );
   }
   if( (p->flags & (MEM_Int|MEM_Real|MEM_IntReal))==0 ) return 1;
+  if( p->db==0 ){
+    return 1;  /* db->nFpDigit required to validate p->z[] */
+  }
   memcpy(&tmp, p, sizeof(tmp));
   vdbeMemRenderNum(sizeof(zBuf), zBuf, &tmp);
   z = p->z;

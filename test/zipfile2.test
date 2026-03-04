@@ -302,4 +302,19 @@ do_execsql_test 7.1 {
   SELECT length(name) FROM t1;
 } {60000}
 
+
+# https://sqlite.org/forum/forumpost/721a05d2c5
+#
+if {[catch { load_static_extension db fileio }]==0} {
+  forcedelete test.zip
+  set fd [open test.zip wb]
+  fconfigure $fd -translation binary
+  puts -nonewline $fd [db one {SELECT X'504b0506000000000100010030000000160000000000504b01021400140000000000000000000000000000000000000000000100010000000000000000000000000000006100'}]
+  close $fd
+
+  do_catchsql_test 8.0 {
+    SELECT name,sz FROM zipfile(readfile('test.zip'));
+  } {1 {failed to read LFH at offset 0}}
+}
+
 finish_test

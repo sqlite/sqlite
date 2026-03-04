@@ -1121,6 +1121,7 @@ do_test shell1-4.7 {
 
 # Test using arbitrary byte data with the shell via standard input/output.
 #
+if 0 {  # Causes a valgrind error in TCL.  Seems to be a TCL problem.
 do_test shell1-5.0 {
   #
   # NOTE: Skip NUL byte because it appears to be incompatible with command
@@ -1187,6 +1188,7 @@ do_test shell1-5.0 {
     }
   }
 } {}
+}
 
 # These test cases do not work on MinGW
 if 0 {

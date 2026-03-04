@@ -2648,6 +2648,22 @@ struct sqlite3_mem_methods {
 ** comments are allowed in SQL text after processing the first argument.
 ** </dd>
 **
+** [[SQLITE_DBCONFIG_FP_DIGITS]]
+** <dt>SQLITE_DBCONFIG_FP_DIGITS</dt>
+** <dd>The SQLITE_DBCONFIG_FP_DIGITS setting is a small integer that determines
+** the number of significant digits that SQLite will attempt to preserve when
+** converting floating point numbers (IEEE 754 "doubles") into text.  The
+** default value 17, as of SQLite version 3.52.0.  The value was 15 in all
+** prior versions.<p>
+** This option takes two arguments which are an integer and a pointer
+** to an integer.  The first argument is a small integer, between 3 and 23, or
+** zero.  The FP_DIGITS setting is changed to that small integer, or left
+** altered if the first argument is zero or out of range.  The second argument
+** is a pointer to an integer.  If the pointer is not NULL, then the value of
+** the FP_DIGITS setting, after possibly being modified by the first
+** arguments, is written into the integer to which the second argument points.
+** </dd>
+**
 ** </dl>
 **
 ** [[DBCONFIG arguments]] <h3>Arguments To SQLITE_DBCONFIG Options</h3>
@@ -2665,9 +2681,10 @@ struct sqlite3_mem_methods {
 ** the first argument.
 **
 ** <p>While most SQLITE_DBCONFIG options use the argument format
-** described in the previous paragraph, the [SQLITE_DBCONFIG_MAINDBNAME]
-** and [SQLITE_DBCONFIG_LOOKASIDE] options are different.  See the
-** documentation of those exceptional options for details.
+** described in the previous paragraph, the [SQLITE_DBCONFIG_MAINDBNAME],
+** [SQLITE_DBCONFIG_LOOKASIDE], and [SQLITE_DBCONFIG_FP_DIGITS] options
+** are different.  See the documentation of those exceptional options for
+** details.
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
 #define SQLITE_DBCONFIG_LOOKASIDE             1001 /* void* int int */
@@ -2692,7 +2709,8 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE  1020 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE   1021 /* int int* */
 #define SQLITE_DBCONFIG_ENABLE_COMMENTS       1022 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1022 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_FP_DIGITS             1023 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1023 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
@@ -4435,19 +4453,20 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** logs the error.
 **
 ** [[SQLITE_PREPARE_FROM_DDL]] <dt>SQLITE_PREPARE_FROM_DDL</dt>
-** <dd>The SQLITE_PREPARE_FROM_DDL flag causes the SQL compiler to behave as if
-** the SQL statement is part of a database schema. This makes a difference
-** when the [SQLITE_DBCONFIG_TRUSTED_SCHEMA] option is set to off.
-** When this option is used and SQLITE_DBCONFIG_TRUSTED_SCHEMA is off,
-** SQL functions may not be called unless they are tagged with
-** [SQLITE_INNOCUOUS] and virtual tables may not be used unless tagged
-** with [SQLITE_VTAB_INNOCUOUS].  Use the SQLITE_PREPARE_FROM_DDL option
-** when preparing SQL that is derived from parts of the database
-** schema. In particular, virtual table implementations that
-** run SQL statements based on the arguments to their CREATE VIRTUAL
-** TABLE statement should use [sqlite3_prepare_v3()] and set the
-** SQLITE_PREPARE_FROM_DLL flag to prevent bypass of the
-** [SQLITE_DBCONFIG_TRUSTED_SCHEMA] security checks.
+** <dd>The SQLITE_PREPARE_FROM_DDL flag causes the SQL compiler to enforce
+** security constraints that would otherwise only be enforced when parsing
+** the database schema.  In other words, the SQLITE_PREPARE_FROM_DDL flag
+** causes the SQL compiler to treat the SQL statement being prepared as if
+** it had come from an attacker.  When SQLITE_PREPARE_FROM_DDL is used and
+** [SQLITE_DBCONFIG_TRUSTED_SCHEMA] is off, SQL functions may only be called
+** if they are tagged with [SQLITE_INNOCUOUS] and virtual tables may only
+** be used if they are tagged with [SQLITE_VTAB_INNOCUOUS].  Best practice
+** is to use the SQLITE_PREPARE_FROM_DDL option when preparing any SQL that
+** is derived from parts of the database schema. In particular, virtual
+** table implementations that run SQL statements that are derived from
+** arguments to their CREATE VIRTUAL TABLE statement should always use
+** [sqlite3_prepare_v3()] and set the SQLITE_PREPARE_FROM_DDL flag to
+** prevent bypass of the [SQLITE_DBCONFIG_TRUSTED_SCHEMA] security checks.
 ** </dl>
 */
 #define SQLITE_PREPARE_PERSISTENT              0x01

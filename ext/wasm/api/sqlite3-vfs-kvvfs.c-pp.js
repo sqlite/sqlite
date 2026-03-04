@@ -209,17 +209,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      and recreating it whenever a property index might be invalidated.
   */
   class KVVfsStorage {
-    #map;
-    #keys;
-    #getKeys(){return this.#keys ??= Object.keys(this.#map);}
+    #map = Object.create(null);
+    #keys = null;
+    #size = 0;
 
     constructor(){
       this.clear();
     }
 
+    #getKeys(){
+      return this.#keys ??= Object.keys(this.#map);
+    }
+
     key(n){
-      const k = this.#getKeys();
-      return n<k.length ? k[n] : null;
+      if(n < 0 || n >= this.#size) return null;
+      return this.#getKeys()[n];
     }
 
     getItem(k){
@@ -227,14 +231,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     setItem(k,v){
-      if( !hop(this.#map, k) ){
+      if( !(k in this.#map) ){
+        ++this.#size;
         this.#keys = null;
       }
       this.#map[k] = ''+v;
     }
 
     removeItem(k){
-      if( delete this.#map[k] ){
+      if( k in this.#map ){
+        delete this.#map[k];
+        --this.#size;
         this.#keys = null;
       }
     }
@@ -242,10 +249,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     clear(){
       this.#map = Object.create(null);
       this.#keys = null;
+      this.#size = 0;
     }
 
     get length() {
-      return this.#getKeys().length;
+      return this.#size;
     }
   }/*KVVfsStorage*/;
 
