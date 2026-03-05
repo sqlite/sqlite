@@ -1,5 +1,5 @@
-C Add\sa\slittle\sflexibility\sto\scheckpoint\ssizes\sin\sthe\swalrestart.test\sscript.
-D 2026-03-05T00:30:05.130
+C Ensure\sxMutexInit()\sis\scalled\sin\sSQLITE_THREAD_MISUSE_WARNINGS\sbuilds.
+D 2026-03-05T16:23:04.263
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -703,7 +703,7 @@ F src/mem5.c b7da5c10a726aacacc9ad7cdcb0667deec643e117591cc69cf9b4b9e7f3e96ff
 F src/memdb.c a3feb427cdd4036ea2db0ba56d152f14c8212ca760ccb05fb7aa49ff6b897df3
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 80b35f95d93bf996ccb3e498535255f2ef1118c78764719a7cd15ab4106ccac9
-F src/mutex.c 5dc0dd69c4216dd976bd463f4ee62a0fa0c24860c0815238ff205f62e194431f
+F src/mutex.c 00b8cee206a67fd764d001f3a148494331d8d0b3b9c3974ecd69ff29bb444462
 F src/mutex.h a7b2293c48db5f27007c3bdb21d438873637d12658f5a0bf8ad025bb96803c4a
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c f7ee5a2061a4c11815a2bf4fc0e2bfa6fb8d9dc89390eb613ca0cec32fc9a3d1
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 61f8a28591a833b1f5834a347feefeba8414fecc7ff154f1b6ef19963f181812
-R ae5ae7b3ea3c5883e95986d59e781f25
-U drh
-Z 684be6d6a05353fa19523ecf503b665a
+P e438b564ca84377746464034d770e9c1f5899d935c6a4dffc546acb92afb800e
+R 98b343070b572cbf7a5ff6d9141f79c1
+U dan
+Z e4acde8ab7cdeb14914c6809a0a8cc28
 # Remove this line to create a well-formed Fossil manifest.
