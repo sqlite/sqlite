@@ -1,5 +1,5 @@
-C Ensure\sxMutexInit()\sis\scalled\sin\sSQLITE_THREAD_MISUSE_WARNINGS\sbuilds.
-D 2026-03-05T16:23:04.263
+C Fix\sthe\sbuild\sfor\s-DSQLITE_OMIT_FLOATING_POINT.
+D 2026-03-05T18:28:43.554
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -734,7 +734,7 @@ F src/shell.c.in 2acdfca982deb70cdfefb8b422822d4e0234fe4dde6ff2bd9020b2644585391
 F src/sqlite.h.in 1f853f1d836af3e5a0b451521041d05658988a45f6978aaae08286e483fee5ac
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 1b7a0ee438bb5c2896d0609c537e917d8057b3340f6ad004d2de44f03e3d3cca
-F src/sqliteInt.h 185abb373dc2a311e3292540ef177ea301d8140b976ecd8ba381a5a0162cd6e9
+F src/sqliteInt.h 1c7f23ab9d6efdf3dc434880b6320f158937284f6e2cebd2a024def0c749cb04
 F src/sqliteLimit.h 904a3f520362c7065c18165aaabd504fb13cc1b76cb411f38bd41ac219e4af1e
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e438b564ca84377746464034d770e9c1f5899d935c6a4dffc546acb92afb800e
-R 98b343070b572cbf7a5ff6d9141f79c1
-U dan
-Z e4acde8ab7cdeb14914c6809a0a8cc28
+P ac6a389e09a0de1b622af4a7136dc66875e8009c27950f2260a96f17fec4f9bc
+R d830c5400560d57c4c701eac20806654
+U drh
+Z 9616ac8ea29aa5673148444bb1d01109
 # Remove this line to create a well-formed Fossil manifest.

@@ -661,6 +661,7 @@
 # define float sqlite_int64
 # define fabs(X) ((X)<0?-(X):(X))
 # define sqlite3IsOverflow(X) 0
+# define INFINITY (9223372036854775807LL)
 # ifndef SQLITE_BIG_DBL
 #   define SQLITE_BIG_DBL (((sqlite3_int64)1)<<50)
 # endif
