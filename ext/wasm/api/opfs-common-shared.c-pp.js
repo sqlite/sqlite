@@ -585,7 +585,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        of this value is also used for determining how long to wait on
        lock contention to free up.
     */
-    state.asyncIdleWaitTime = isWebLocker ? 300 : 150;
+    state.asyncIdleWaitTime = isWebLocker ? 100 : 150;
 
     /**
        Whether the async counterpart should log exceptions to
@@ -1262,6 +1262,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               }
               break;
             }
+            case 'debug':
+              warn("debug message from worker:",data);
+              break;
             default: {
               const errMsg = (
                 "Unexpected message from the OPFS async worker: " +

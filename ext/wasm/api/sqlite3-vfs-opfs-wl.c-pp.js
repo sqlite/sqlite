@@ -92,11 +92,17 @@ const installOpfsWlVfs = async function callee(options){
           Atomics.store(view, state.opIds.whichOp, state.opIds.lockControl);
           Atomics.notify(state.sabOPView, state.opIds.whichOp)
           debug("xLock waiting...");
+//#if not nope
+          while( 2 !== Atomics.load(view, state.lock.atomicsHandshake) ){
+            Atomics.wait(view, state.lock.atomicsHandshake, 0);
+          }
+//#else
           while('not-equal'!==Atomics.wait(view, state.lock.atomicsHandshake, 0)){
             /* Loop is a workaround for environment-specific quirks. See
                notes in similar loops. */
             debug("xLock still waiting...");
           }
+//#endif
           debug("xLock done waiting");
           f.lockType = lockType;
         }catch(e){

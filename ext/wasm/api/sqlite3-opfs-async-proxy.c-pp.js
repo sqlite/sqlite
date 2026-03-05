@@ -615,15 +615,18 @@ const installAsyncProxy = function(){
      Starts a new WebLock request.
   */
   const handleLockRequest = async function(){
+    const view = state.sabOPView;
+//#if not nope
     const args = state.s11n.deserialize(true)
           || toss("Expecting a filename argument from the proxy xLock()");
-    const view = state.sabOPView;
     const slock = state.lock;
     const lockType = Atomics.load(view, slock.type);
-    warn("handleLockRequest()", args, lockType);
-    navigator.locks.request('sqlite3-vfs-opfs:'+args[0], {
-      mode: (lockType===state.sq3Codes.SQLITE_LOCK_EXCLUSIVE)
-        ? 'exclusive' : 'shared'
+    warn("handleLockRequest()", args, lockType, JSON.stringify(slock));
+    //hangs warn(JSON.stringify((await navigator.locks.query()).held));
+    //warn("Navigator locks:", !!navigator.locks);
+    await navigator.locks.request('sqlite3-vfs-opfs:'+args[0], {
+      mode: 'exclusive' /*(lockType===state.sq3Codes.SQLITE_LOCK_EXCLUSIVE)
+        ? 'exclusive' : 'shared'*/
     }, async (wl)=>{
       warn("handleLockRequest() starting lock", args, lockType);
       /**
@@ -637,24 +640,57 @@ const installAsyncProxy = function(){
          Receptionist receives 'unlockControl'.
       */
       while( 1!==Atomics.load(view, slock.atomicsHandshake) ){
-        Atomics.wait(view. slock.atomicsHandshake, 2);
+        Atomics.wait(view, slock.atomicsHandshake, 2);
       }
       /* C. Reset the handshake slot. */
       Atomics.store(view, slock.atomicsHandshake, 0);
       Atomics.notify(view, lock.atomicsHandshake);
     });
     warn("handleLockRequest() ending", args, lockType);
+    //setTimeout(waitLoop, 0);
+//#else
+    warn("handleLockRequest()", ...arguments);
+    const [filename] = state.s11n.deserialize(true);
+    const lockType = Atomics.load(view, state.lock.type);
+    warn("handleLockRequest()", filename, lockType);
+    // Use 'exclusive' to ensure we aren't getting a weak shared lock
+    navigator.locks.request(filename, { mode: 'exclusive' }, (lock) => {
+      warn("handleLockRequest() inside the lock");
+      // VIOLENT DEBUGGING: Use globalThis.postMessage to bypass Atomics
+      globalThis.postMessage({type: 'debug', msg: 'CALLBACK ENTERED'});
+
+      // 1. Signal C-side: "I have it"
+      Atomics.store(view, state.lock.atomicsHandshake, 2);
+      Atomics.notify(view, state.lock.atomicsHandshake);
+
+      // 2. The Guard: This loop must not be async.
+      // It must stay synchronous to keep the callback alive.
+      while(Atomics.load(view, state.lock.atomicsHandshake) !== 1){
+        Atomics.wait(view, state.lock.atomicsHandshake, 2, 100);
+      }
+
+      // 3. Departure
+      Atomics.store(view, state.lock.atomicsHandshake, 0);
+      globalThis.postMessage({type: 'debug', msg: 'CALLBACK EXITING'});
+      return new Promise(()=>{/* never resolve to keep lock held until Departure */});
+    }).catch(e => {
+      globalThis.postMessage({type: 'debug', msg: 'LOCK ERROR: ' + e.message});
+    });
+//#endif
   };
 
   const waitLoop = async function f(){
-    const opHandlers = Object.create(null);
-    for(let k of Object.keys(state.opIds)){
-      const vi = vfsAsyncImpls[k];
-      if(!vi) continue;
-      const o = Object.create(null);
-      opHandlers[state.opIds[k]] = o;
-      o.key = k;
-      o.f = vi;
+    if( !f.inited ){
+      f.inited = true;
+      f.opHandlers = Object.create(null);
+      for(let k of Object.keys(state.opIds)){
+        const vi = vfsAsyncImpls[k];
+        if(!vi) continue;
+        const o = Object.create(null);
+        f.opHandlers[state.opIds[k]] = o;
+        o.key = k;
+        o.f = vi;
+      }
     }
     const opIds = state.opIds;
     while(!flagAsyncShutdown){
@@ -684,9 +720,10 @@ const installAsyncProxy = function(){
         warn("opId =",opId, opIds);
         if( opId===opIds.lockControl ){
           handleLockRequest();
-          continue;
+          setTimeout(f, 50);
+          return;
         }
-        const hnd = opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
+        const hnd = f.opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
         const args = state.s11n.deserialize(
           true /* clear s11n to keep the caller from confusing this with
                   an exception string written by the upcoming
