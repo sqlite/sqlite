@@ -7554,6 +7554,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       ){
         int r1 = pParse->nMem+1;
         int j, op;
+        int addrIfNull;
+        if( pLevel->iLeftJoin ){
+          addrIfNull = sqlite3VdbeAddOp2(v, OP_IfNullRow, pLevel->iIdxCur, r1);
+        }
         for(j=0; j<n; j++){
           sqlite3VdbeAddOp3(v, OP_Column, pLevel->iIdxCur, j, r1+j);
         }
@@ -7563,6 +7567,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         VdbeCoverageIf(v, op==OP_SeekLT);
         VdbeCoverageIf(v, op==OP_SeekGT);
         sqlite3VdbeAddOp2(v, OP_Goto, 1, pLevel->p2);
+        if( pLevel->iLeftJoin ){
+          sqlite3VdbeJumpHere(v, addrIfNull);
+        }
       }
 #endif /* SQLITE_DISABLE_SKIPAHEAD_DISTINCT */
     }
