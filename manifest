@@ -1,5 +1,5 @@
-C Version\s3.44.5
-D 2025-07-24T14:26:41.002
+C Avoid\san\sobscure\srace\scondition\sbetween\sa\scheckpointer\sand\sa\swriter\swrapping\saround\sto\sthe\sstart\sof\sthe\swal\sfile.\n(This\scherry\spick\somits\stesting\sinfrastructure.)
+D 2026-03-05T01:24:55.378
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -807,7 +807,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c 2143db7db0ceed69b21422581f434baffc507a08d831565193a7a02882a1b6a7
 F src/vtab.c 154725ebecd3bc02f7fbd7ad3974334f73fff76e02a964e828e48a7c5fb7efff
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 01e051a1e713d9eabdb25df38602837cec8f4c2cae448ce2cf6accc87af903e9
+F src/wal.c ce30a6fb3bb1de9c44081a90e1df18d870f63b4902f9f7a4ae2d57ed8467e7e6
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 66480f67be576184265b1583a1855a33e4ffd0f7e4618d7eef9456b29aa9e96a
@@ -2144,9 +2144,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b0aba8674ce5506a04cfa2c017fc761faf61bcea2f9a6c21f2fcb0baede458a
-R 71bc53329ba4b098d6c5ac140c955c58
-T +sym-version-3.44.5 *
+P a88185782279322fea69eebb4bad1fc9c215dc5a7cb2f3d79fcf19f15e90c6ce
+Q +7168988acbec2d8d51106a263e553f8942b8b23d983dbbe5028e0f9be68cbb83
+R 81cb9567c32fb0922568fc91c77c6f36
 U drh
-Z 93c8b1ba720f6945992646c57c14af4d
+Z e0de943e87fb103e213affd3babc8551
 # Remove this line to create a well-formed Fossil manifest.
