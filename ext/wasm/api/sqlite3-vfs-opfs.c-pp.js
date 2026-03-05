@@ -95,7 +95,7 @@ const installOpfsVfs = async function callee(options){
   /* At this point, createVfsState() has populated state and
      opfsVfs with any code common to both the "opfs" and "opfs-wl"
      VFSes. Now comes the VFS-dependent work... */
-  return opfsVfs.doTheThing(util.nu({
+  return opfsVfs.bindVfs(util.nu({
     xLock: function(pFile,lockType){
       mTimeStart('xLock');
       ++metrics.xLock.count;
@@ -147,7 +147,7 @@ const installOpfsVfs = async function callee(options){
         }
       );
     }/*extend sqlite3.oo1*/
-  })/*doTheThing()*/;
+  })/*bindVfs()*/;
 }/*installOpfsVfs()*/;
 installOpfsVfs.defaultProxyUri = "sqlite3-opfs-async-proxy.js";
 globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{

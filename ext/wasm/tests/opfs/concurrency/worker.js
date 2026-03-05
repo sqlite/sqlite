@@ -1,6 +1,7 @@
 importScripts(
   (new URL(globalThis.location.href).searchParams).get('sqlite3.dir') + '/sqlite3.js'
 );
+//const sqlite3InitModule = (await import("../../../jswasm/sqlite3.mjs", )).default;
 globalThis.sqlite3InitModule.__isUnderTest = true;
 globalThis.sqlite3InitModule().then(async function(sqlite3){
   const urlArgs = new URL(globalThis.location.href).searchParams;
@@ -85,7 +86,7 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
       }catch(e){
         interval.error = e;
       }
-      stdout("doWork()",prefix,"error ",interval.error);
+      //stdout("doWork()",prefix,"error ",interval.error);
     };
     setTimeout(async function timer(){
       await doWork();

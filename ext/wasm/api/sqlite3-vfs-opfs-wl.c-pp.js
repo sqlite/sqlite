@@ -59,6 +59,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 const installOpfsWlVfs = async function callee(options){
   options = opfsUtil.initOptions(options, callee);
   if( !options ) return sqlite3;
+  options.verbose = 2;
   const capi = sqlite3.capi,
         debug = (...args)=>sqlite3.config.warn("opfs-wl:",...args),
         state = opfsUtil.createVfsState('opfs-wl', options),
@@ -67,85 +68,55 @@ const installOpfsWlVfs = async function callee(options){
         mTimeStart = opfsVfs.mTimeStart,
         mTimeEnd = opfsVfs.mTimeEnd,
         __openFiles = opfsVfs.__openFiles;
-  debug("state",JSON.stringify(state,false,'  '));
+  //debug("state",JSON.stringify(state,false,'  '));
   /* At this point, createVfsState() has populated state and opfsVfs
      with any code common to both the "opfs" and "opfs-wl" VFSes. Now
      comes the VFS-dependent work... */
-  return opfsVfs.doTheThing(util.nu({
-    xLock: function(pFile, lockType){
+  return opfsVfs.bindVfs(util.nu({
+     xLock: function(pFile,lockType){
       mTimeStart('xLock');
       ++metrics.xLock.count;
       const f = __openFiles[pFile];
-      debug("xLock()",f,lockType);
       let rc = 0;
-      /* See notes in sqlite3-vfs-opfs.c-pp.js. */
+      /* All OPFS locks are exclusive locks. If xLock() has
+         previously succeeded, do nothing except record the lock
+         type. If no lock is active, have the async counterpart
+         lock the file. */
       if( f.lockType ) {
         f.lockType = lockType;
       }else{
-        try{
-          const view = state.sabOPView;
-          /* We need to pass pFile's name to the async proxy so that
-             it can create the WebLock name. */
-          state.s11n.serialize(f.filename)
-          Atomics.store(view, state.lock.atomicsHandshake, 0);
-          Atomics.store(view, state.lock.type, lockType);
-          Atomics.store(view, state.opIds.whichOp, state.opIds.lockControl);
-          Atomics.notify(state.sabOPView, state.opIds.whichOp)
-          debug("xLock waiting...");
-//#if not nope
-          while( 2 !== Atomics.load(view, state.lock.atomicsHandshake) ){
-            Atomics.wait(view, state.lock.atomicsHandshake, 0);
-          }
-//#else
-          while('not-equal'!==Atomics.wait(view, state.lock.atomicsHandshake, 0)){
-            /* Loop is a workaround for environment-specific quirks. See
-               notes in similar loops. */
-            debug("xLock still waiting...");
-          }
-//#endif
-          debug("xLock done waiting");
-          f.lockType = lockType;
-        }catch(e){
-          sqlite3.config.error("xLock(",arguments,") failed", e, f);
-          rc = capi.SQLITE_IOERR_LOCK;
-        }
+        rc = opRun('xLock', pFile, lockType);
+        if( 0===rc ) f.lockType = lockType;
       }
       mTimeEnd();
       return rc;
     },
     xUnlock: function(pFile,lockType){
-      debug("xUnlock()",f,lockType);
       mTimeStart('xUnlock');
       ++metrics.xUnlock.count;
       const f = __openFiles[pFile];
       let rc = 0;
-      if( lockType < f.lockType ){
-        try{
-          const view = state.sabOPView;
-          Atomics.store(view, state.lock.atomicsHandshake, 1);
-          Atomics.notify(view, state.lock.atomicsHandshake);
-          Atomics.wait(view, state.lock.atomicsHandshake, 1);
-        }catch(e){
-          sqlite3.config.error("xUnlock(",pFile,lockType,") failed",e, f);
-          rc = capi.SQLITE_IOERR_LOCK;
-        }
+      if( capi.SQLITE_LOCK_NONE === lockType
+          && f.lockType ){
+        rc = opRun('xUnlock', pFile, lockType);
       }
       if( 0===rc ) f.lockType = lockType;
       mTimeEnd();
       return rc;
     }
   }), function(sqlite3, vfs){
+    //debug("registered VFS");
     if(sqlite3.oo1){
       const OpfsWlDb = function(...args){
         const opt = sqlite3.oo1.DB.dbCtorHelper.normalizeArgs(...args);
-        opt.vfs = opfsVfs.$zName;
+        opt.vfs = vfs.$zName;
         sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
       OpfsWlDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.OpfsWlDb = OpfsWlDb;
       OpfsWlDb.importDb = opfsUtil.importDb;
     }/*extend sqlite3.oo1*/
-  })/*doTheThing()*/;
+  })/*bindVfs()*/;
 }/*installOpfsWlVfs()*/;
 installOpfsWlVfs.defaultProxyUri = "sqlite3-opfs-async-proxy.js";
 globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{

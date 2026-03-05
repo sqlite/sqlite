@@ -444,7 +444,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - Set up any references they may need to state returned
      by the previous step.
 
-     - Call opfvs.doTheThing()
+     - Call opfvs.bindVfs()
   */
   opfsUtil.initOptions = function(options, callee){
     const urlParams = new URL(globalThis.location.href).searchParams;
@@ -485,10 +485,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      capi.sqlite3_vfs instance.
 
      After setting up any local state needed, the caller must
-     call theVfs.doTheThing(X,Y), where X is an object containing
+     call theVfs.bindVfs(X,Y), where X is an object containing
      the sqlite3_io_methods to override and Y is a callback which
      gets triggered if init succeeds, before the final Promise
-     decides whether or not to reject. The result of doTheThing()
+     decides whether or not to reject. The result of bindVfs()
      must be returned from their main installation function.
 
      This object must, when it's passed to the async part, contain
@@ -505,7 +505,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       sqlite3.config.log
     ];
     const logImpl = (level,...args)=>{
-      if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
+      if(state.verbose>level) loggers[level]("OPFS syncer:",...args);
     };
     const log   = (...args)=>logImpl(2, ...args),
           warn  = (...args)=>logImpl(1, ...args),
@@ -670,7 +670,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       state.opIds.xUnlock = i++;
       state.opIds.xWrite = i++;
       state.opIds.mkdir = i++;
-      state.opIds.lockControl = i++ /* opfs-wl signals the intent to lock here */;
       /** Internal signals which are used only during development and
           testing via the dev console. */
       state.opIds['opfs-async-metrics'] = i++;
@@ -679,13 +678,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          semantics. Though we could hypothetically use the xSleep slot
          for that, doing so might lead to undesired side effects. */
       state.opIds.retry = i++;
-
-      state.lock = util.nu({
-        /* Slots for submitting the lock type and receiving its
-           acknowledgement.  Only used by "opfs-wl". */
-        type: i++ /* SQLITE_LOCK_xyz value */,
-        atomicsHandshake: i++ /* 0=pending, 1=release, 2=granted */
-      });
       state.sabOP = new SharedArrayBuffer(
         i * 4/* ==sizeof int32, noting that Atomics.wait() and friends
                 can only function on Int32Array views of an SAB. */);
@@ -1080,7 +1072,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        where opfsVfs is the sqlite3_vfs object which was set up by
        opfsUtil.createVfsState().
     */
-    opfsVfs.doTheThing = function(ioMethods, callback){
+    opfsVfs.bindVfs = function(ioMethods, callback){
       Object.assign(opfsVfs.ioSyncWrappers, ioMethods);
       const thePromise = new Promise(function(promiseResolve_, promiseReject_){
         let promiseWasRejected = undefined;
@@ -1101,13 +1093,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         options.proxyUri += '?vfs='+vfsName;
         const W = opfsVfs.worker =
 //#if target:es6-bundler-friendly
-        new Worker(new URL("sqlite3-opfs-async-proxy.js?vfs=opfs", import.meta.url));
+              (()=>{
+                /* _Sigh_... */
+                switch(vfsName){
+                  case 'opfs':
+                    return new Worker(new URL("sqlite3-opfs-async-proxy.js?vfs=opfs", import.meta.url));
+                  case 'opfs-wl':
+                    return new Worker(new URL("sqlite3-opfs-async-proxy.js?vfs=opfs-wl", import.meta.url));
+                }
+              })();
 //#elif target:es6-module
         new Worker(new URL(options.proxyUri, import.meta.url));
 //#else
         new Worker(options.proxyUri);
 //#endif
-        setTimeout(()=>{
+        let zombieTimer = setTimeout(()=>{
           /* At attempt to work around a browser-specific quirk in which
              the Worker load is failing in such a way that we neither
              resolve nor reject it. This workaround gives that resolve/reject
@@ -1211,7 +1211,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }/*sanityCheck()*/;
 
         W.onmessage = function({data}){
-          //log("Worker.onmessage:",data);
+          //sqlite3.config.warn(vfsName,"Worker.onmessage:",data);
           switch(data.type){
             case 'opfs-unavailable':
               /* Async proxy has determined that OPFS is unavailable. There's
@@ -1232,6 +1232,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               if(true===promiseWasRejected){
                 break /* promise was already rejected via timer */;
               }
+              clearTimeout(zombieTimer);
+              zombieTimer = null;
               try {
                 sqlite3.vfs.installVfs({
                   io: {struct: opfsVfs.ioMethods, methods: opfsVfs.ioSyncWrappers},
@@ -1278,7 +1280,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }/*W.onmessage()*/;
       })/*thePromise*/;
       return thePromise;
-    }/*doTheThing()*/;
+    }/*bindVfs()*/;
 
     return state;
   }/*createVfsState()*/;

@@ -121,14 +121,15 @@
     const li = [];
     for(const k of [
       'interval', 'iterations', 'unlock-asap',
-      'verbose', 'vfs', 'workers'
+      'opfsVerbose', 'vfs', 'workers'
     ]){
       if( obj.hasOwnProperty(k) ) li.push(k+'='+obj[k]);
     }
     return li.join('&');
   };
   for(const opt of [
-    {interval: 500, workers: 2, iterations: 30, vfs: 'opfs-wl', verbose: 2},
+    {interval: 500, workers: 1, iterations: 5, vfs: 'opfs-wl', opfsVerbose: 2},
+    {interval: 500, workers: 2, iterations: 5, vfs: 'opfs-wl', opfsVerbose: 2},
     {interval: 1000, workers: 5, iterations: 30},
     {interval: 500, workers: 5, iterations: 30},
     {interval: 250, workers: 3, iterations: 30},
