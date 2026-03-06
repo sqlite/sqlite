@@ -51,7 +51,8 @@
 */
 "use strict";
 const urlParams = new URL(globalThis.location.href).searchParams;
-if( !urlParams.has('vfs') ){
+const vfsName = urlParams.get('vfs');
+if( !vfsName ){
   throw new Error("Expecting vfs=opfs|opfs-wl URL argument for this worker");
 }
 const workerId = urlParams.get('opfs-async-proxy-id')
@@ -111,12 +112,13 @@ const installAsyncProxy = function(){
   */
   const __openFiles = Object.create(null);
   /**
-     __implicitLocks is a Set of sqlite3_file pointers (integers) which were
-     "auto-locked".  i.e. those for which we obtained a sync access
-     handle without an explicit xLock() call. Such locks will be
-     released during db connection idle time, whereas a sync access
-     handle obtained via xLock(), or subsequently xLock()'d after
-     auto-acquisition, will not be released until xUnlock() is called.
+     __implicitLocks is a Set of sqlite3_file pointers (integers)
+     which were "auto-locked".  i.e. those for which we necessarily
+     obtain a sync access handle without an explicit xLock() call
+     guarding access. Such locks will be released during
+     `waitLoop()`'s idle time, whereas a sync access handle obtained
+     via xLock(), or subsequently xLock()'d after auto-acquisition,
+     will not be released until xUnlock() is called.
 
      Maintenance reminder: if we relinquish auto-locks at the end of the
      operation which acquires them, we pay a massive performance
@@ -853,16 +855,21 @@ const installAsyncProxy = function(){
     wPost('opfs-async-loaded');
   }).catch((e)=>error("error initializing OPFS asyncer:",e));
 }/*installAsyncProxy()*/;
-if(!globalThis.SharedArrayBuffer){
+if(globalThis.window === globalThis){
+  wPost('opfs-unavailable',
+        "This code cannot run from the main thread.",
+        "Load it as a Worker from a separate Worker.");
+}else if(!globalThis.SharedArrayBuffer){
   wPost('opfs-unavailable', "Missing SharedArrayBuffer API.",
         "The server must emit the COOP/COEP response headers to enable that.");
 }else if(!globalThis.Atomics){
   wPost('opfs-unavailable', "Missing Atomics API.",
         "The server must emit the COOP/COEP response headers to enable that.");
+}else if('opfs-wl'===vfsName && !globalThis.Atomics.waitAsync){
+  wPost('opfs-unavailable',"Missing required Atomics.waitSync() for "+vfsName);
 }else if(!globalThis.FileSystemHandle ||
          !globalThis.FileSystemDirectoryHandle ||
-         !globalThis.FileSystemFileHandle ||
-         !globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle ||
+         !globalThis.FileSystemFileHandle?.prototype?.createSyncAccessHandle ||
          !navigator?.storage?.getDirectory){
   wPost('opfs-unavailable',"Missing required OPFS APIs.");
 }else{

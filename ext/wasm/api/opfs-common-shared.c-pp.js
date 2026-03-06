@@ -423,9 +423,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /**
      Must be called by the VFS's main installation routine and passed
      the options object that function receives and a reference to that
-     function itself (which is assumed to have a defaultProxyUri
-     property set on it. See sqlite3-vfs-opfs{,-wl}.c-pp.js for
-     examples.
+     function itself (we don't need this anymore).
 
      It throws if OPFS is not available.
 
@@ -446,9 +444,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - Call opfvs.bindVfs()
   */
-  opfsUtil.initOptions = function callee(options, callee){
+  opfsUtil.initOptions = function callee(vfsName, options){
     const urlParams = new URL(globalThis.location.href).searchParams;
-    if(urlParams.has('opfs-disable')){
+    if(urlParams.has(vfsName+'-disable')){
       //sqlite3.config.warn('Explicitly not installing "opfs" VFS due to opfs-disable flag.');
       return;
     }
@@ -458,10 +456,23 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return;
     }
     options = util.nu(options);
+    options.vfsName = vfsName;
     options.verbose ??= urlParams.has('opfs-verbose')
       ? (+urlParams.get('opfs-verbose') || 2) : 1;
     options.sanityChecks ??= urlParams.has('opfs-sanity-check');
-    options.proxyUri ??= callee.defaultProxyUri;
+
+    if( true ){
+      /* Doing this from one scope up does not work */
+      opfsUtil.proxyUri = "sqlite3-opfs-async-proxy.js";
+      if( sqlite3.scriptInfo?.sqlite3Dir ){
+        opfsUtil.proxyUri = (
+          sqlite3.scriptInfo.sqlite3Dir + opfsUtil.proxyUri
+        );
+      }
+      //sqlite3.config.error("proxyUri =",opfsUtil.proxyUri, sqlite3.scriptInfo);
+    }
+
+    options.proxyUri ??= opfsUtil.proxyUri;
     if('function' === typeof options.proxyUri){
       options.proxyUri = options.proxyUri();
     }
@@ -474,7 +485,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       options.workerId ??= (Math.random() * 10000000) | 0;
     }
     //sqlite3.config.warn("opfsUtil options =",JSON.stringify(options), 'urlParams =', urlParams);
-    return options;
+    return opfsUtil.options = options;
   };
 
   /**
@@ -498,8 +509,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      only cloneable or sharable objects. After the worker's "inited"
      message arrives, other types of data may be added to it.
   */
-  opfsUtil.createVfsState = function(vfsName, options){
+  opfsUtil.createVfsState = function(){
     const state = util.nu();
+    const options = opfsUtil.options;
     state.verbose = options.verbose;
 
     const loggers = [
@@ -507,8 +519,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       sqlite3.config.warn,
       sqlite3.config.log
     ];
+    const vfsName = options.vfsName
+          || toss("Maintenance required: missing VFS name");
     const logImpl = (level,...args)=>{
-      if(state.verbose>level) loggers[level]("OPFS syncer:",...args);
+      if(state.verbose>level) loggers[level](vfsName+":",...args);
     };
     const log   = (...args)=>logImpl(2, ...args),
           warn  = (...args)=>logImpl(1, ...args),
@@ -544,7 +558,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       */
     );
 
-    const isWebLocker = 'opfs-wl'===vfsName;
     opfsVfs.metrics = util.nu({
       counters: util.nu(),
       dump: function(){
@@ -588,7 +601,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        of this value is also used for determining how long to wait on
        lock contention to free up.
     */
-    state.asyncIdleWaitTime = isWebLocker ? 250 : 150;
+    state.asyncIdleWaitTime = 150;
 
     /**
        Whether the async counterpart should log exceptions to
@@ -771,7 +784,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        (see sqlite3-opfs-async-proxy.c-pp.js).
     */
     const opRun = opfsVfs.opRun = (op,...args)=>{
-      const opNdx = state.opIds[op] || toss("Invalid op ID:",op);
+      const opNdx = state.opIds[op] || toss(opfsVfs.vfsName+": Invalid op ID:",op);
       state.s11n.serialize(...args);
       Atomics.store(state.sabOPView, state.opIds.rc, -1);
       Atomics.store(state.sabOPView, state.opIds.whichOp, opNdx);
@@ -1088,12 +1101,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           promiseWasRejected = false;
           return promiseResolve_(sqlite3);
         };
+        const options = opfsUtil.options;
         let proxyUri = options.proxyUri +(
           (options.proxyUri.indexOf('?')<0) ? '?' : '&'
         )+'vfs='+vfsName;
         if( options.workerId ){
           proxyUri += '&opfs-async-proxy-id='+encodeURIComponent(options.workerId);
         }
+        //sqlite3.config.error("proxyUri",options.proxyUri, (new Error()));
         const W = opfsVfs.worker =
 //#if target:es6-bundler-friendly
               (()=>{

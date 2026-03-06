@@ -49,63 +49,60 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
    Quirks specific to this VFS:
 
-   - Because WebLocks effectively block until they return, they will
-   effectively hang on locks rather than returning SQLITE_BUSY.
+   - The (officially undocumented) 'opfs-wl-disable' URL
+   argument will disable OPFS, making this function a no-op.
 
    Aside from locking differences in the VFSes, this function
    otherwise behaves the same as
    sqlite3-vfs-opfs.c-pp.js:installOpfsVfs().
 */
-const installOpfsWlVfs = async function callee(options){
-  options = opfsUtil.initOptions(options, callee);
+const installOpfsWlVfs = async function(options){
+  options = opfsUtil.initOptions('opfs-wl',options);
   if( !options ) return sqlite3;
   options.verbose = 2;
   const capi = sqlite3.capi,
-        debug = (...args)=>sqlite3.config.warn("opfs-wl:",...args),
-        state = opfsUtil.createVfsState('opfs-wl', options),
+        state = opfsUtil.createVfsState(),
         opfsVfs = state.vfs,
         metrics = opfsVfs.metrics.counters,
         mTimeStart = opfsVfs.mTimeStart,
         mTimeEnd = opfsVfs.mTimeEnd,
+        opRun = opfsVfs.opRun,
+        debug = (...args)=>sqlite3.config.debug("opfs-wl:",...args),
+        warn = (...args)=>sqlite3.config.warn("opfs-wl:",...args),
         __openFiles = opfsVfs.__openFiles;
-  //debug("state",JSON.stringify(state,false,'  '));
-  /* At this point, createVfsState() has populated state and opfsVfs
-     with any code common to both the "opfs" and "opfs-wl" VFSes. Now
-     comes the VFS-dependent work... */
+
+  //debug("state",JSON.stringify(options));
+  /*
+    At this point, createVfsState() has populated:
+
+    - state: the configuration object we share with the async proxy.
+
+    - opfsVfs: an sqlite3_vfs instance with lots of JS state attached
+    to it.
+
+    with any code common to both the "opfs" and "opfs-wl" VFSes. Now
+    comes the VFS-dependent work...
+  */
   return opfsVfs.bindVfs(util.nu({
-     xLock: function(pFile,lockType){
+    xLock: function(pFile,lockType){
       mTimeStart('xLock');
-      ++metrics.xLock.count;
+      //debug("xLock()...");
       const f = __openFiles[pFile];
-      let rc = 0;
-      /* All OPFS locks are exclusive locks. If xLock() has
-         previously succeeded, do nothing except record the lock
-         type. If no lock is active, have the async counterpart
-         lock the file. */
-      if( f.lockType ) {
-        f.lockType = lockType;
-      }else{
-        rc = opRun('xLock', pFile, lockType);
-        if( 0===rc ) f.lockType = lockType;
-      }
+      const rc = opRun('xLock', pFile, lockType);
+      if( !rc ) f.lockType = lockType;
       mTimeEnd();
       return rc;
     },
     xUnlock: function(pFile,lockType){
       mTimeStart('xUnlock');
-      ++metrics.xUnlock.count;
       const f = __openFiles[pFile];
-      let rc = 0;
-      if( capi.SQLITE_LOCK_NONE === lockType
-          && f.lockType ){
-        rc = opRun('xUnlock', pFile, lockType);
-      }
-      if( 0===rc ) f.lockType = lockType;
+      const rc = opRun('xUnlock', pFile, lockType);
+      if( !rc ) f.lockType = lockType;
       mTimeEnd();
       return rc;
     }
   }), function(sqlite3, vfs){
-    //debug("registered VFS");
+    /* Post-VFS-registration initialization... */
     if(sqlite3.oo1){
       const OpfsWlDb = function(...args){
         const opt = sqlite3.oo1.DB.dbCtorHelper.normalizeArgs(...args);
@@ -115,25 +112,20 @@ const installOpfsWlVfs = async function callee(options){
       OpfsWlDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.OpfsWlDb = OpfsWlDb;
       OpfsWlDb.importDb = opfsUtil.importDb;
-    }/*extend sqlite3.oo1*/
+      /* The "opfs" VFS variant adds a
+         oo1.DB.dbCtorHelper.setVfsPostOpenCallback() callback to set
+         a high busy_timeout. That was a design mis-decision and is
+         inconsistent with sqlite3_open() and friends, but is retained
+         against the risk of introducing regressions if it's removed.
+         This variant does not repeat that mistake.
+      */
+    }
   })/*bindVfs()*/;
 }/*installOpfsWlVfs()*/;
-installOpfsWlVfs.defaultProxyUri = "sqlite3-opfs-async-proxy.js";
 globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
-  try{
-    let proxyJs = installOpfsWlVfs.defaultProxyUri;
-    if( sqlite3.scriptInfo?.sqlite3Dir ){
-      installOpfsWlVfs.defaultProxyUri =
-        sqlite3.scriptInfo.sqlite3Dir + proxyJs;
-      //sqlite3.config.warn("installOpfsWlVfs.defaultProxyUri =",installOpfsWlVfs.defaultProxyUri);
-    }
-    return installOpfsWlVfs().catch((e)=>{
-      sqlite3.config.warn("Ignoring inability to install OPFS-WL sqlite3_vfs:",e);
-    });
-  }catch(e){
-    sqlite3.config.error("installOpfsWlVfs() exception:",e);
-    return Promise.reject(e);
-  }
+  return installOpfsWlVfs().catch((e)=>{
+    sqlite3.config.warn("Ignoring inability to install the 'opfs-wl' sqlite3_vfs:",e);
+  });
 });
 }/*sqlite3ApiBootstrap.initializers.push()*/);
 //#endif target:node
