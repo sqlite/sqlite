@@ -90,6 +90,7 @@ const installOpfsVfs = async function callee(options){
         mTimeEnd = opfsVfs.mTimeEnd,
         opRun = opfsVfs.opRun,
         debug = (...args)=>sqlite3.config.debug("opfs:",...args),
+        warn = (...args)=>sqlite3.config.warn("opfs:",...args),
         __openFiles = opfsVfs.__openFiles;
 
   //debug("options:",JSON.stringify(options));
@@ -99,11 +100,14 @@ const installOpfsVfs = async function callee(options){
   return opfsVfs.bindVfs(util.nu({
     xLock: function(pFile,lockType){
       mTimeStart('xLock');
-      debug("xLock()...");
+      //debug("xLock()...");
       const f = __openFiles[pFile];
       const rc = opRun('xLock', pFile, lockType);
-      debug("xLock() rc ",rc);
-      if( 0===rc ) f.lockType = lockType;
+      if( rc ){
+        warn("xLock() rc ",rc);
+      }else{
+        f.lockType = lockType;
+      }
       mTimeEnd();
       return rc;
     },

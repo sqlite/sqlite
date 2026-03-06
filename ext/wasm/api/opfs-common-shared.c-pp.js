@@ -588,7 +588,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        of this value is also used for determining how long to wait on
        lock contention to free up.
     */
-    state.asyncIdleWaitTime = isWebLocker ? 150 : 150;
+    state.asyncIdleWaitTime = isWebLocker ? 250 : 150;
 
     /**
        Whether the async counterpart should log exceptions to
@@ -599,7 +599,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        0 = no exception logging.
 
        1 = only log exceptions for "significant" ops like xOpen(),
-       xRead(), and xWrite().
+       xRead(), and xWrite(). Exceptions related to, e.g., wait/retry
+       loops in acquiring SyncAccessHandles are not logged.
 
        2 = log all exceptions.
     */
@@ -636,29 +637,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     state.opIds = Object.create(null);
     {
-      /*
-        Maintenance reminder:
-
-        Some of these fields are only for use by the "opfs-wl" VFS,
-        but they must also be set up for the "ofps" VFS so that the
-        sizes and offsets calculated here are consistent in the async
-        proxy. Hypothetically they could differ and it would cope
-        but... why invite disaster over eliding a few superfluous (for
-        "opfs') properties?
-      */
       /* Indexes for use in our SharedArrayBuffer... */
       let i = 0;
       /* SAB slot used to communicate which operation is desired
          between both workers. This worker writes to it and the other
-         listens for changes. */
+         listens for changes and clears it. The values written to it
+         are state.opIds.x[A-Z][a-z]+, defined below.*/
       state.opIds.whichOp = i++;
-      /* Slot for storing return values. This worker listens to that
-         slot and the other worker writes to it. */
+      /* Slot for storing return values. This side listens to that
+         slot and the async proxy writes to it. */
       state.opIds.rc = i++;
-      /* Each function gets an ID which this worker writes to
-         the whichOp slot. The async-api worker uses Atomic.wait()
-         on the whichOp slot to figure out which operation to run
-         next. */
+      /* Each function gets an ID which this worker writes to the
+         state.opIds.whichOp slot. The async-api worker uses
+         Atomic.wait() on the whichOp slot to figure out which
+         operation to run next. */
       state.opIds.xAccess = i++;
       state.opIds.xClose = i++;
       state.opIds.xDelete = i++;
@@ -672,25 +664,28 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       state.opIds.xTruncate = i++;
       state.opIds.xUnlock = i++;
       state.opIds.xWrite = i++;
-      state.opIds.mkdir = i++;
+      state.opIds.mkdir = i++ /*currently unused*/;
       /** Internal signals which are used only during development and
           testing via the dev console. */
       state.opIds['opfs-async-metrics'] = i++;
       state.opIds['opfs-async-shutdown'] = i++;
       /* The retry slot is used by the async part for wait-and-retry
-         semantics. Though we could hypothetically use the xSleep slot
-         for that, doing so might lead to undesired side effects. */
+         semantics. It is never written to, only used as a convenient
+         place to wait-with-timeout for a value which will never be
+         written, i.e. sleep()ing, before retrying a failed attempt to
+         acquire a SharedAccessHandle. */
       state.opIds.retry = i++;
       state.sabOP = new SharedArrayBuffer(
-        i * 4/* ==sizeof int32, noting that Atomics.wait() and friends
-                can only function on Int32Array views of an SAB. */);
+        i * 4/* 4==sizeof int32, noting that Atomics.wait() and
+                friends can only function on Int32Array views of an
+                SAB. */);
     }
     /**
        SQLITE_xxx constants to export to the async worker
        counterpart...
     */
     state.sq3Codes = Object.create(null);
-    [
+    for(const k of [
       'SQLITE_ACCESS_EXISTS',
       'SQLITE_ACCESS_READWRITE',
       'SQLITE_BUSY',
@@ -724,17 +719,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       'SQLITE_LOCK_RESERVED',
       'SQLITE_LOCK_PENDING',
       'SQLITE_LOCK_EXCLUSIVE'
-    ].forEach((k)=>{
-      if(undefined === (state.sq3Codes[k] = capi[k])){
-        toss("Maintenance required: not found:",k);
-      }
-    });
+    ]){
+      state.sq3Codes[k] =
+        capi[k] ?? toss("Maintenance required: not found:",k);
+    }
 
     state.opfsFlags = Object.assign(Object.create(null),{
       /**
          Flag for use with xOpen(). URI flag "opfs-unlock-asap=1"
          enables this. See defaultUnlockAsap, below.
-       */
+      */
       OPFS_UNLOCK_ASAP: 0x01,
       /**
          Flag for use with xOpen(). URI flag "delete-before-open=1"
@@ -747,33 +741,34 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          downstream errors.  An unlink can fail if, e.g., another tab
          has the handle open.
 
-         It goes without saying that deleting a file out from under another
-         instance results in Undefined Behavior.
+         It goes without saying that deleting a file out from under
+         another instance results in Undefined Behavior.
       */
       OPFS_UNLINK_BEFORE_OPEN: 0x02,
       /**
-         If true, any async routine which implicitly acquires a sync
-         access handle (i.e. an OPFS lock) will release that lock at
-         the end of the call which acquires it. If false, such
-         "autolocks" are not released until the VFS is idle for some
-         brief amount of time.
+         If true, any async routine which must implicitly acquire a
+         sync access handle (i.e. an OPFS lock), without an active
+         xLock(), will release that lock at the end of the call which
+         acquires it. If false, such implicit locks are not released
+         until the VFS is idle for some brief amount of time, as
+         defined by state.asyncIdleWaitTime.
 
-         The benefit of enabling this is much higher concurrency. The
-         down-side is much-reduced performance (as much as a 4x decrease
-         in speedtest1).
+         The benefit of enabling this is higher concurrency. The
+         down-side is much-reduced performance (as much as a 4x
+         decrease in speedtest1).
       */
       defaultUnlockAsap: false
     });
 
-    opfsVfs.metrics.reset();
+    opfsVfs.metrics.reset()/*must not be called until state.opIds is set up*/;
     const metrics = opfsVfs.metrics.counters;
 
     /**
        Runs the given operation (by name) in the async worker
        counterpart, waits for its response, and returns the result
-       which the async worker writes to SAB[state.opIds.rc]. The
-       2nd and subsequent arguments must be the arguments for the
-       async op.
+       which the async worker writes to SAB[state.opIds.rc]. The 2nd
+       and subsequent arguments must be the arguments for the async op
+       (see sqlite3-opfs-async-proxy.c-pp.js).
     */
     const opRun = opfsVfs.opRun = (op,...args)=>{
       const opNdx = state.opIds[op] || toss("Invalid op ID:",op);
@@ -791,14 +786,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           https://github.com/sqlite/sqlite-wasm/issues/12
 
           Summary: in at least one browser flavor, under high loads,
-          the wait()/notify() pairings can get out of sync. Calling
-          wait() here until it returns 'not-equal' gets them back in
-          sync.
+          the wait()/notify() pairings can get out of sync and/or
+          spuriously wake up. Calling wait() here until it returns
+          'not-equal' gets them back in sync.
         */
       }
       /* When the above wait() call returns 'not-equal', the async
-         half will have completed the operation and reported its results
-         in the state.opIds.rc slot of the SAB. */
+         half will have completed the operation and reported its
+         results in the state.opIds.rc slot of the SAB. It may have
+         also serialized an exception for us. */
       const rc = Atomics.load(state.sabOPView, state.opIds.rc);
       metrics[op].wait += performance.now() - t;
       if(rc && state.asyncS11nExceptions){

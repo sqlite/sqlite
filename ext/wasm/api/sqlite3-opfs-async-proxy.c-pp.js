@@ -618,7 +618,6 @@ const installAsyncProxy = function(){
                                          isFromUnlock/*only if called from this.xUnlock()*/){
       const whichOp = isFromUnlock ? 'xUnlock' : 'xLock';
       const fh = __openFiles[fid];
-      const lockName = "sqlite3-vfs-opfs:" + fh.filenameAbs;
       //error("xLock()",fid, lockType, isFromUnlock, fh);
       const requestedMode = (lockType >= state.sq3Codes.SQLITE_LOCK_RESERVED)
             ? 'exclusive' : 'shared';
@@ -627,38 +626,48 @@ const installAsyncProxy = function(){
         if( existing.mode === requestedMode
             || (existing.mode === 'exclusive'
                 && requestedMode === 'shared') ) {
-          storeAndNotify(whichOp, 0);
-          existing.mode = requestedMode/* ??? */;
           fh.xLock = lockType;
+          storeAndNotify(whichOp, 0);
+          /* Don't do this: existing.mode = requestedMode;
+
+             Paraphrased from advice given by a consultanting
+             developer:
+
+             If you hold an exclusive lock and SQLite requests shared,
+             you should keep exiting.mode as exclusive in because the
+             underlying Web Lock is still exclusive. Changing it to
+             shared would trick xLock into thinking it needs to
+             perform a release/re-acquire dance if an exclusive is
+             later requested.
+          */
           return 0 /* Already held at required or higher level */;
         }
         /*
           Upgrade path: we must release shared and acquire exclusive.
           This transition is NOT atomic in Web Locks API.
+
+          Except that it _effectively_ is atomic if we don't call
+          closeSyncHandle(fh), as no other worker can lock that
+          until we let it go. But we can't do that without leading
+          to a deadly embrace, so...
         */
-        if( 1 ){
-          /* Except that it _effectively_ is atomic if we don't call
-             closeSyncHandle(fh), as no other worker can lock that
-             until we let it go. But we can't do that without leading
-             to a deadly embrace, so... */
-          await closeSyncHandle(fh);
-        }
+        await closeSyncHandle(fh);
         existing.resolveRelease();
         delete __activeWebLocks[fid];
       }
 
+      const lockName = "sqlite3-vfs-opfs:" + fh.filenameAbs;
       const oldLockType = fh.xLock;
       return new Promise((resolveWaitLoop) => {
         //error("xLock() initial promise entered...");
         navigator.locks.request(lockName, { mode: requestedMode }, async (lock) => {
           //error("xLock() Web Lock entered.", fh);
-          fh.xLock = lockType/*must be set before getSyncHandle() is called*/;
+          fh.xLock = lockType/*must be set before getSyncHandle() is called!*/;
           __implicitLocks.delete(fid);
           let rc = 0;
           try{
-            /* Make ONE attempt to get the handle, but with a
-               higher-than-default retry-wait. */
-            await getSyncHandle(fh, 'xLock', 317, 5);
+            /* Make only one attempt to get the handle. */
+            await getSyncHandle(fh, 'xLock');
           }catch(e){
             fh.xLock = oldLockType;
             state.s11n.storeException(1, e);
@@ -669,16 +678,19 @@ const installAsyncProxy = function(){
                 : new Promise((resolveRelease) => {
                   __activeWebLocks[fid] = { mode: requestedMode, resolveRelease };
                 });
-          storeAndNotify(whichOp, rc) /* Unblock the C side */;
-          resolveWaitLoop(0) /* Unblock waitLoop() */;
-          await releasePromise; // Hold the lock until xUnlock
+          storeAndNotify(whichOp, rc) /* unblock the C side */;
+          resolveWaitLoop(0) /* unblock waitLoop() */;
+          await releasePromise /* hold the lock until xUnlock */;
         });
       });
     };
 
+    /** Internal helper for the opfs-wl xUnlock() */
     const wlCloseHandle = async(fh)=>{
       let rc = 0;
       try{
+        /* For the record, we've never once seen closeSyncHandle()
+           throw, nor should it because destructors do not throw. */
         await closeSyncHandle(fh);
       }catch(e){
         state.s11n.storeException(1,e);
@@ -696,7 +708,7 @@ const installAsyncProxy = function(){
         storeAndNotify('xUnlock', rc);
         return rc;
       }
-      error("xUnlock()",fid, lockType, fh);
+      //error("xUnlock()",fid, lockType, fh);
       let rc = 0;
       if( lockType === state.sq3Codes.SQLITE_LOCK_NONE ){
         /* SQLite usually unlocks all the way to NONE */
@@ -723,8 +735,8 @@ const installAsyncProxy = function(){
     }
 
   }else{
-
     /* Original/"legacy" xLock() and xUnlock() */
+
     vfsAsyncImpls.xLock = async function(fid/*sqlite3_file pointer*/,
                                          lockType/*SQLITE_LOCK_...*/){
       const fh = __openFiles[fid];

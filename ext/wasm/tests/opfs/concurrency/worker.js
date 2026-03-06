@@ -61,17 +61,31 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
       stderr("Invalid VFS name:",vfs);
       return;
     }
-    db = new ctor({
-      filename: 'file:'+dbName+'?opfs-unlock-asap='+options.unlockAsap,
-      flags: 'c'
-    });
-    sqlite3.capi.sqlite3_busy_timeout(db.pointer, 5000);
-    db.transaction((db)=>{
-      db.exec([
-        "create table if not exists t1(w TEXT UNIQUE ON CONFLICT REPLACE,v);",
-        "create table if not exists t2(w TEXT UNIQUE ON CONFLICT REPLACE,v);"
-      ]);
-    });
+    while(true){
+      try{
+        if( !db ){
+          db = new ctor({
+            filename: 'file:'+dbName+'?opfs-unlock-asap='+options.unlockAsap,
+              flags: 'c'
+          });
+          sqlite3.capi.sqlite3_busy_timeout(db.pointer, 15000);
+        }
+        db.transaction((db)=>{
+          db.exec([
+            "create table if not exists t1(w TEXT UNIQUE ON CONFLICT REPLACE,v);",
+            "create table if not exists t2(w TEXT UNIQUE ON CONFLICT REPLACE,v);"
+          ]);
+        });
+        break;
+      }catch(e){
+        if(e instanceof sqlite3.SQLite3Error
+           && sqlite3.capi.SQLITE_BUSY===e.resultCode){
+          stderr("Retrying for BUSY: ",e.message);
+          continue;
+        }
+        throw e;
+      }
+    }
 
     const maxIterations =
           urlArgs.has('iterations') ? (+urlArgs.get('iterations') || 10) : 10;
@@ -81,14 +95,24 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
       ++interval.count;
       const prefix = "v(#"+interval.count+")";
       stdout("Setting",prefix,"=",tm);
-      try{
-        db.exec({
-          sql:"INSERT OR REPLACE INTO t1(w,v) VALUES(?,?)",
-          bind: [options.workerName, new Date().getTime()]
-        });
-        //stdout("Set",prefix);
-      }catch(e){
-        interval.error = e;
+      while(true){
+        try{
+          db.exec({
+            sql:"INSERT OR REPLACE INTO t1(w,v) VALUES(?,?)",
+            bind: [options.workerName, new Date().getTime()]
+          });
+          //stdout("Set",prefix);
+          break;
+        }catch(e){
+          if(e instanceof sqlite3.SQLite3Error
+             && sqlite3.capi.SQLITE_BUSY===e.resultCode){
+            stderr("Retrying for BUSY: ",e.message);
+            continue;
+          }
+          stderr("Error: ",e.message);
+          interval.error = e;
+          throw e;
+        }
       }
       //stdout("doWork()",prefix,"error ",interval.error);
     };
