@@ -1643,6 +1643,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       case capi.SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE:
       case capi.SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE:
       case capi.SQLITE_DBCONFIG_ENABLE_COMMENTS:
+      case capi.SQLITE_DBCONFIG_FP_DIGITS:
         if( !this.ip ){
           this.ip = wasm.xWrap('sqlite3__wasm_db_config_ip','int',
                                ['sqlite3*', 'int', 'int', '*']);
