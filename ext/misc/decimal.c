@@ -298,6 +298,7 @@ static void decimal_round(Decimal *p, int N){
   int i;
   int nZero;
   if( N<1 ) return;
+  if( p==0 ) return;
   for(nZero=0; nZero<p->nDigit && p->a[nZero]==0; nZero++){}
   N += nZero;
   if( p->nDigit<=N ) return;
