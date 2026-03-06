@@ -69,6 +69,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
   int i;
   int iExp = 0;
 
+  if( zIn==0 ) goto new_from_text_failed;
   p = sqlite3_malloc( sizeof(*p) );
   if( p==0 ) goto new_from_text_failed;
   p->sign = 0;
