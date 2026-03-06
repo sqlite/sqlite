@@ -84,4 +84,6 @@ do_catchsql_test 1.5 {
   PRAGMA integrity_check
 } {0 ok}
 
+sqlite3_test_control_fault_install
+
 finish_test

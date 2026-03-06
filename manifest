@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sfor\s-DSQLITE_OMIT_FLOATING_POINT.
-D 2026-03-05T18:28:43.554
+C Uninstall\sfaultsim\sat\sthe\send\sof\sthe\swalrestart.test\sscript.
+D 2026-03-06T11:18:12.116
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2004,7 +2004,7 @@ F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8d78a1ec91299163451417b451a2bac3481f8eb9f455b1ca507a6625c927ca6e
 F test/walprotocol.test 1b3f922125e341703f6e946d77fdc564d38fb3e07a9385cfdc6c99cac1ecf878
 F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db868eebc131
-F test/walrestart.test df92e581d169429f0cc44f49cacccc9dfd749495d536467379668a6d073369dc
+F test/walrestart.test 5168c0c2414d1971d8dec949c1070a0144cf15402361ba0d0e6a8054f5598a64
 F test/walro.test 78a84bc0fdae1385c06b017215c426b6845734d6a5a3ac75c918dd9b801b1b9d
 F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766cdc
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ac6a389e09a0de1b622af4a7136dc66875e8009c27950f2260a96f17fec4f9bc
-R d830c5400560d57c4c701eac20806654
-U drh
-Z 9616ac8ea29aa5673148444bb1d01109
+P f41b9ad98c474755c6701eb6ab3dc9864ace9b52a81581f73ca0912cedbc3c37
+R 03d8212f429198d99a6abf4dff94f1bb
+U dan
+Z 94f4389a9d22dd05b3615fbebb37a126
 # Remove this line to create a well-formed Fossil manifest.
