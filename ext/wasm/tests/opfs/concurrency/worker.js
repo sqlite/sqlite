@@ -1,15 +1,17 @@
-importScripts(
-  (new URL(globalThis.location.href).searchParams).get('sqlite3.dir') + '/sqlite3.js'
-);
-//const sqlite3InitModule = (await import("../../../jswasm/sqlite3.mjs", )).default;
+'use strict';
+const urlArgs = new URL(globalThis.location.href).searchParams;
+const options = {
+  workerName: urlArgs.get('workerId') || Math.round(Math.random()*10000),
+  unlockAsap: urlArgs.get('opfs-unlock-asap') || 0,
+  vfs: urlArgs.get('vfs')
+};
+const jsSqlite = urlArgs.get('sqlite3.dir')
+  +'/sqlite3.js?opfs-async-proxy-id='
+      +options.workerName;
+importScripts(jsSqlite)/*Sigh - URL args are not propagated this way*/;
+//const sqlite3InitModule = (await import(jsSqlite)).default;
 globalThis.sqlite3InitModule.__isUnderTest = true;
 globalThis.sqlite3InitModule().then(async function(sqlite3){
-  const urlArgs = new URL(globalThis.location.href).searchParams;
-  const options = {
-    workerName: urlArgs.get('workerId') || Math.round(Math.random()*10000),
-    unlockAsap: urlArgs.get('opfs-unlock-asap') || 0 /*EXPERIMENTAL*/,
-    vfs: urlArgs.get('vfs')
-  };
   const wPost = (type,...payload)=>{
     postMessage({type, worker: options.workerName, payload});
   };
@@ -41,7 +43,9 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
       db.close();
     }
     if(interval.error){
-      wPost('failed',"Ending work after interval #"+interval.count,
+      stderr("Ending work at interval #"+interval.count,
+             "due to error:", interval.error);
+      wPost('failed', "at interval #"+interval.count,
             "due to error:",interval.error);
     }else{
       wPost('finished',"Ending work after",interval.count,"intervals.");

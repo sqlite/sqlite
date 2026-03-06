@@ -446,7 +446,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - Call opfvs.bindVfs()
   */
-  opfsUtil.initOptions = function(options, callee){
+  opfsUtil.initOptions = function callee(options, callee){
     const urlParams = new URL(globalThis.location.href).searchParams;
     if(urlParams.has('opfs-disable')){
       //sqlite3.config.warn('Explicitly not installing "opfs" VFS due to opfs-disable flag.');
@@ -458,19 +458,22 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return;
     }
     options = util.nu(options);
-    if(undefined===options.verbose){
-      options.verbose = urlParams.has('opfs-verbose')
-        ? (+urlParams.get('opfs-verbose') || 2) : 1;
-    }
-    if(undefined===options.sanityChecks){
-      options.sanityChecks = urlParams.has('opfs-sanity-check');
-    }
-    if(undefined===options.proxyUri){
-      options.proxyUri = callee.defaultProxyUri;
-    }
+    options.verbose ??= urlParams.has('opfs-verbose')
+      ? (+urlParams.get('opfs-verbose') || 2) : 1;
+    options.sanityChecks ??= urlParams.has('opfs-sanity-check');
+    options.proxyUri ??= callee.defaultProxyUri;
     if('function' === typeof options.proxyUri){
       options.proxyUri = options.proxyUri();
     }
+    if( false ){
+      /* This ends up with the same values for all Worker instances. */
+      callee.counter ??= 0;
+      ++callee.counter;
+      options.workerId ??= urlParams.get('opfs-async-proxy-id') ?? callee.counter;
+    }else{
+      options.workerId ??= (Math.random() * 10000000) | 0;
+    }
+    //sqlite3.config.warn("opfsUtil options =",JSON.stringify(options), 'urlParams =', urlParams);
     return options;
   };
 
@@ -585,7 +588,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        of this value is also used for determining how long to wait on
        lock contention to free up.
     */
-    state.asyncIdleWaitTime = isWebLocker ? 100 : 150;
+    state.asyncIdleWaitTime = isWebLocker ? 150 : 150;
 
     /**
        Whether the async counterpart should log exceptions to
@@ -1089,7 +1092,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           promiseWasRejected = false;
           return promiseResolve_(sqlite3);
         };
-        options.proxyUri += '?vfs='+vfsName;
+        let proxyUri = options.proxyUri +(
+          (options.proxyUri.indexOf('?')<0) ? '?' : '&'
+        )+'vfs='+vfsName;
+        if( options.workerId ){
+          proxyUri += '&opfs-async-proxy-id='+encodeURIComponent(options.workerId);
+        }
         const W = opfsVfs.worker =
 //#if target:es6-bundler-friendly
               (()=>{
@@ -1102,9 +1110,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 }
               })();
 //#elif target:es6-module
-        new Worker(new URL(options.proxyUri, import.meta.url));
+        new Worker(new URL(proxyUri, import.meta.url));
 //#else
-        new Worker(options.proxyUri);
+        new Worker(proxyUri);
 //#endif
         let zombieTimer = setTimeout(()=>{
           /* At attempt to work around a browser-specific quirk in which

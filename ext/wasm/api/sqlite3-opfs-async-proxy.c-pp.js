@@ -54,7 +54,9 @@ const urlParams = new URL(globalThis.location.href).searchParams;
 if( !urlParams.has('vfs') ){
   throw new Error("Expecting vfs=opfs|opfs-wl URL argument for this worker");
 }
-const isWebLocker = 'opfs-wl'===urlParams.get('vfs');
+const workerId = urlParams.get('opfs-async-proxy-id')
+      ?? 'unnamed';
+const isWebLocker = true; //'opfs-wl'===urlParams.get('vfs');
 const wPost = (type,...args)=>postMessage({type, payload:args});
 const installAsyncProxy = function(){
   const toss = function(...args){throw new Error(args.join(' '))};
@@ -70,6 +72,10 @@ const installAsyncProxy = function(){
      this API.
   */
   const state = Object.create(null);
+
+  /* initS11n() is preprocessor-injected so that we have identical
+     copies in the synchronous and async halves. This side does not
+     load the SQLite library, so does not have access to that copy. */
 //#define opfs-async-proxy
 //#include api/opfs-common-inline.c-pp.js
 //#undef opfs-async-proxy
@@ -82,7 +88,7 @@ const installAsyncProxy = function(){
      2 = warnings and errors
      3 = debug, warnings, and errors
   */
-  state.verbose = 1;
+  state.verbose = 2;
 
   const loggers = {
     0:console.error.bind(console),
@@ -90,7 +96,7 @@ const installAsyncProxy = function(){
     2:console.log.bind(console)
   };
   const logImpl = (level,...args)=>{
-    if(state.verbose>level) loggers[level]("OPFS asyncer:",...args);
+    if(state.verbose>level) loggers[level]('opfs-async-proxy',workerId+":",...args);
   };
   const log =    (...args)=>logImpl(2, ...args);
   const warn =   (...args)=>logImpl(1, ...args);
@@ -297,13 +303,26 @@ const installAsyncProxy = function(){
      there's another race condition there). That's easy to say but
      creating a viable test for that condition has proven challenging
      so far.
+
+     2026-03-06:
+
+     - baseWaitTime is the number of milliseconds to wait for the
+     first retry, doubling for each retry. It defaults to
+     (state.asyncIdleWaitTime*2).
+
+     - maxTries is the number of attempt to make, each one spaced out
+     by one additional factor of the baseWaitTime (e.g. 300, then 600,
+     then 900, the 1200...). This MUST be an integer >0 and defaults
+     to 6.
+
+     Only the Web Locks impl should use the 3rd and 4th parameters.
   */
-  const getSyncHandle = async (fh,opName)=>{
+  const getSyncHandle = async (fh,opName, baseWaitTime, maxTries)=>{
     if(!fh.syncHandle){
       const t = performance.now();
       log("Acquiring sync handle for",fh.filenameAbs);
-      const maxTries = 6,
-            msBase = state.asyncIdleWaitTime * 2;
+      const msBase = baseWaitTime ?? (state.asyncIdleWaitTime * 2);
+      maxTries ??= 6;
       let i = 1, ms = msBase;
       for(; true; ms = msBase * ++i){
         try {
@@ -337,6 +356,9 @@ const installAsyncProxy = function(){
   /**
      Stores the given value at state.sabOPView[state.opIds.rc] and then
      Atomics.notify()'s it.
+
+     The opName is only used for logging and debugging - all result
+     codes are expected on the same state.sabOPView slot.
   */
   const storeAndNotify = (opName, value)=>{
     log(opName+"() => notify(",value,")");
@@ -466,24 +488,12 @@ const installAsyncProxy = function(){
       await releaseImplicitLock(fh);
       storeAndNotify('xFileSize', rc);
     },
-    xLock: async function(fid/*sqlite3_file pointer*/,
-                          lockType/*SQLITE_LOCK_...*/){
-      const fh = __openFiles[fid];
-      let rc = 0;
-      const oldLockType = fh.xLock;
-      fh.xLock = lockType;
-      if( !fh.syncHandle ){
-        try {
-          await getSyncHandle(fh,'xLock');
-          __implicitLocks.delete(fid);
-        }catch(e){
-          state.s11n.storeException(1,e);
-          rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_LOCK);
-          fh.xLock = oldLockType;
-        }
-      }
-      storeAndNotify('xLock',rc);
-    },
+    /**
+       The first argument is semantically invalid here - it's an
+       address in the synchronous side's heap. We can do nothing with
+       it here except use it as a unique-per-file identifier.
+       i.e. a lookup key.
+    */
     xOpen: async function(fid/*sqlite3_file pointer*/, filename,
                           flags/*SQLITE_OPEN_...*/,
                           opfsFlags/*OPFS_...*/){
@@ -575,22 +585,6 @@ const installAsyncProxy = function(){
       await releaseImplicitLock(fh);
       storeAndNotify('xTruncate',rc);
     },
-    xUnlock: async function(fid/*sqlite3_file pointer*/,
-                            lockType/*SQLITE_LOCK_...*/){
-      let rc = 0;
-      const fh = __openFiles[fid];
-      if( fh.syncHandle
-          && state.sq3Codes.SQLITE_LOCK_NONE===lockType
-          /* Note that we do not differentiate between lock types in
-             this VFS. We're either locked or unlocked. */ ){
-        try { await closeSyncHandle(fh) }
-        catch(e){
-          state.s11n.storeException(1,e);
-          rc = state.sq3Codes.SQLITE_IOERR_UNLOCK;
-        }
-      }
-      storeAndNotify('xUnlock',rc);
-    },
     xWrite: async function(fid/*sqlite3_file pointer*/,n,offset64){
       let rc;
       const fh = __openFiles[fid];
@@ -610,6 +604,187 @@ const installAsyncProxy = function(){
       storeAndNotify('xWrite',rc);
     }
   }/*vfsAsyncImpls*/;
+
+  if( isWebLocker ){
+    /* We require separate xLock() and xUnlock() implementations for the
+       original and Web Lock implementations. The ones in this block
+       are for the WebLock impl. */
+
+    /** Registry of active Web Locks: fid -> { mode, resolveRelease } */
+    const __activeWebLocks = Object.create(null);
+
+    vfsAsyncImpls.xLock = async function(fid/*sqlite3_file pointer*/,
+                                         lockType/*SQLITE_LOCK_...*/,
+                                         isFromUnlock/*only if called from this.xUnlock()*/){
+      const whichOp = isFromUnlock ? 'xUnlock' : 'xLock';
+      const fh = __openFiles[fid];
+      const lockName = "sqlite3-vfs-opfs:" + fh.filenameAbs;
+      //error("xLock()",fid, lockType, isFromUnlock, fh);
+      const requestedMode = (lockType >= state.sq3Codes.SQLITE_LOCK_RESERVED)
+            ? 'exclusive' : 'shared';
+      const existing = __activeWebLocks[fid];
+      if( existing ){
+        if( existing.mode === requestedMode
+            || (existing.mode === 'exclusive'
+                && requestedMode === 'shared') ) {
+          storeAndNotify(whichOp, 0);
+          existing.mode = requestedMode/* ??? */;
+          fh.lockType = lockType;
+          return 0 /* Already held at required or higher level */;
+        }
+        /*
+          Upgrade path: we must release shared and acquire exclusive.
+          This transition is NOT atomic in Web Locks API.
+        */
+        if( 0 ){
+          /* Except that it _effectively_ is atomic if we don't call
+             closeSyncHandle(fh), as no other worker can lock that
+             until we let it go. */
+          await closeSyncHandle(fh);
+        }
+        existing.resolveRelease();
+        delete __activeWebLocks[fid];
+      }
+
+      const oldLockType = fh.xLock;
+      let didNotify = false;
+      return new Promise((resolveWaitLoop) => {
+        //error("xLock() initial promise entered...");
+        navigator.locks.request(lockName, { mode: requestedMode }, async (lock) => {
+          //error("xLock() Web Lock entered.", fh);
+          fh.xLock = lockType;
+          __implicitLocks.delete(fid);
+          if( 1 ){
+            /* Make ONE attempt to get the handle, but with a
+               higher-than-default retry-wait time. */
+            await getSyncHandle(fh, 'xLock', 1000, 5);
+          }else{
+            /* Try to get a lock until either we get one or trying to
+               results in a "not found" error (see getSyncHandle() docs). */
+            while( !fh.syncHandle ){
+              try{
+                await getSyncHandle(fh, 'xLock', 1000, 3);
+              }catch(e){
+                const rc = GetSyncHandleError.convertRc(e, 0);
+                if( rc === state.sq3Codes.SQLITE_CANTOPEN ){
+                  /* File was deleted - see getSyncHandle() */
+                  throw e;
+                }
+                error("xLock() still waiting to unlock SyncAccessHandle",fh);
+              }
+            }
+          }
+          error("xLock() SAH acquired.", fh);
+          const releasePromise = new Promise((resolveRelease) => {
+            __activeWebLocks[fid] = { mode: requestedMode, resolveRelease };
+          });
+          didNotify = true;
+          storeAndNotify(whichOp, 0) /* Unblock the C side */;
+          resolveWaitLoop(0) /* Unblock waitLoop() */;
+          await releasePromise; // Hold the lock until xUnlock
+        }).catch(e=>{
+          /**
+             We have(?) a potential deadlock situation: if the above
+             throws, we can't just blindly storeAndNotify() here to
+             unlock the C side, as it might interfere with an
+             unrelated operation. The `didNotify` check here assumes
+             that any exception which can be thrown will happen before
+             the above `didNotify=true`.  e.g. getSyncHandle() can
+             throw. Apropos: we probably need to be able to configure
+             the async side with busy timeout values, and try until
+             that limit is reached, or tell it to wait indefinitely.
+
+             Because waitLoop() is `await`ing on this Promise, we can
+             be sure that the following storeAndNotify() is not
+             crossing wires with a different operation.
+          */
+          fh.xLock = oldLockType;
+          error("Exception acquiring Web Lock", e);
+          if( !didNotify ){
+            state.s11n.storeException(1, e);
+            const rc = GetSyncHandleError.convertRc(e, state.sq3Codes.SQLITE_IOERR_LOCK);
+            storeAndNotify(whichOp, rc);
+          }
+          throw e /* what else can we do? */;
+        })
+      });
+    };
+
+    vfsAsyncImpls.xUnlock = async function(fid/*sqlite3_file pointer*/,
+                                           lockType/*SQLITE_LOCK_...*/){
+      const fh = __openFiles[fid];
+      const existing = __activeWebLocks[fid];
+      if( !existing ){
+        await closeSyncHandle(fh);
+        storeAndNotify('xUnlock', 0);
+        return 0;
+      }
+      error("xUnlock()",fid, lockType, fh);
+      let rc = 0;
+      if( lockType === state.sq3Codes.SQLITE_LOCK_NONE ){
+        /* SQLite usually unlocks all the way to NONE */
+        existing.resolveRelease();
+        delete __activeWebLocks[fid];
+        try {await closeSyncHandle(fh)}
+        catch(e){
+          state.s11n.storeException(1,e);
+          rc = state.sq3Codes.SQLITE_IOERR_UNLOCK;
+        }
+      }else if( lockType === state.sq3Codes.SQLITE_LOCK_SHARED
+                && existing.mode === 'exclusive' ){
+        /* downgrade Exclusive -> Shared */
+        existing.resolveRelease();
+        delete __activeWebLocks[fid];
+        return vfsAsyncImpls.xLock(fid, lockType, true);
+      }else{
+        /* ??? */
+        error("xUnlock() unhandled condition", fh);
+      }
+      storeAndNotify('xUnlock', rc);
+      if( 0===rc ) fh.lockType = lockType;
+      return 0;
+    }
+
+  }else{
+
+    /* Original/"legacy" xLock() and xUnlock() */
+    vfsAsyncImpls.xLock = async function(fid/*sqlite3_file pointer*/,
+                                         lockType/*SQLITE_LOCK_...*/){
+      const fh = __openFiles[fid];
+      let rc = 0;
+      const oldLockType = fh.xLock;
+      fh.xLock = lockType;
+      if( !fh.syncHandle ){
+        try {
+          await getSyncHandle(fh,'xLock');
+          __implicitLocks.delete(fid);
+        }catch(e){
+          state.s11n.storeException(1,e);
+          rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_LOCK);
+          fh.xLock = oldLockType;
+        }
+      }
+      storeAndNotify('xLock',rc);
+    };
+
+    vfsAsyncImpls.xUnlock = async function(fid/*sqlite3_file pointer*/,
+                                           lockType/*SQLITE_LOCK_...*/){
+      let rc = 0;
+      const fh = __openFiles[fid];
+      if( fh.syncHandle
+          && state.sq3Codes.SQLITE_LOCK_NONE===lockType
+          /* Note that we do not differentiate between lock types in
+             this VFS. We're either locked or unlocked. */ ){
+        try { await closeSyncHandle(fh) }
+        catch(e){
+          state.s11n.storeException(1,e);
+          rc = state.sq3Codes.SQLITE_IOERR_UNLOCK;
+        }
+      }
+      storeAndNotify('xUnlock',rc);
+    }
+
+  }/*xLock() and xUnlock() impls*/
 
   const waitLoop = async function f(){
     if( !f.inited ){
@@ -645,7 +820,7 @@ const installAsyncProxy = function(){
                   an exception string written by the upcoming
                   operation */
         ) || [];
-        //warn("waitLoop() whichOp =",opId, hnd, args);
+        //error("waitLoop() whichOp =",opId, f.opHandlers[opId].key, args);
         await hnd(...args);
       }catch(e){
         error('in waitLoop():', e);
@@ -656,7 +831,7 @@ const installAsyncProxy = function(){
   navigator.storage.getDirectory().then(function(d){
     state.rootDir = d;
     globalThis.onmessage = function({data}){
-      warn(globalThis.location.href,"onmessage()",data);
+      //log(globalThis.location.href,"onmessage()",data);
       switch(data.type){
           case 'opfs-async-init':{
             /* Receive shared state from synchronous partner */

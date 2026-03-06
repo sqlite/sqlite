@@ -129,17 +129,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       };
     }
   }
-  const reportFinalTestStatus = function(pass){
-    if(isUIThread()){
-      let e = document.querySelector('#color-target');
-      e.classList.add(pass ? 'tests-pass' : 'tests-fail');
-      e = document.querySelector('title');
-      e.innerText = (pass ? 'PASS' : 'FAIL') + ': ' + e.innerText;
-    }else{
-      postMessage({type:'test-result', payload:{pass}});
-    }
-    TestUtil.checkHeapSize(true);
-  };
   const log = (...args)=>{
     //console.log(...args);
     logClass('',...args);
@@ -155,6 +144,19 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   const debug = (...args)=>{
     console.debug('tester1',...args);
+  };
+
+  const reportFinalTestStatus = function(pass){
+    debug("Final test status:",pass);
+    if(isUIThread()){
+      let e = document.querySelector('#color-target');
+      e.classList.add(pass ? 'tests-pass' : 'tests-fail');
+      e = document.querySelector('title');
+      e.innerText = (pass ? 'PASS' : 'FAIL') + ': ' + e.innerText;
+    }else{
+      postMessage({type:'test-result', payload:{pass}});
+    }
+    TestUtil.checkHeapSize(true);
   };
 
   const toss = (...args)=>{

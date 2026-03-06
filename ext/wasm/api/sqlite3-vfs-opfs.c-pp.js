@@ -86,43 +86,31 @@ const installOpfsVfs = async function callee(options){
   const capi = sqlite3.capi,
         state = opfsUtil.createVfsState('opfs', options),
         opfsVfs = state.vfs,
-        metrics = opfsVfs.metrics.counters,
         mTimeStart = opfsVfs.mTimeStart,
         mTimeEnd = opfsVfs.mTimeEnd,
         opRun = opfsVfs.opRun,
+        debug = (...args)=>sqlite3.config.debug("opfs:",...args),
         __openFiles = opfsVfs.__openFiles;
 
-  /* At this point, createVfsState() has populated state and
-     opfsVfs with any code common to both the "opfs" and "opfs-wl"
+  //debug("options:",JSON.stringify(options));
+  /* At this point, createVfsState() has populated `state` and
+     `opfsVfs` with any code common to both the "opfs" and "opfs-wl"
      VFSes. Now comes the VFS-dependent work... */
   return opfsVfs.bindVfs(util.nu({
     xLock: function(pFile,lockType){
       mTimeStart('xLock');
-      ++metrics.xLock.count;
+      debug("xLock()...");
       const f = __openFiles[pFile];
-      let rc = 0;
-      /* All OPFS locks are exclusive locks. If xLock() has
-         previously succeeded, do nothing except record the lock
-         type. If no lock is active, have the async counterpart
-         lock the file. */
-      if( f.lockType ) {
-        f.lockType = lockType;
-      }else{
-        rc = opRun('xLock', pFile, lockType);
-        if( 0===rc ) f.lockType = lockType;
-      }
+      const rc = opRun('xLock', pFile, lockType);
+      debug("xLock() rc ",rc);
+      if( 0===rc ) f.lockType = lockType;
       mTimeEnd();
       return rc;
     },
     xUnlock: function(pFile,lockType){
       mTimeStart('xUnlock');
-      ++metrics.xUnlock.count;
       const f = __openFiles[pFile];
-      let rc = 0;
-      if( capi.SQLITE_LOCK_NONE === lockType
-          && f.lockType ){
-        rc = opRun('xUnlock', pFile, lockType);
-      }
+      const rc = opRun('xUnlock', pFile, lockType);
       if( 0===rc ) f.lockType = lockType;
       mTimeEnd();
       return rc;
@@ -137,15 +125,17 @@ const installOpfsVfs = async function callee(options){
       OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.OpfsDb = OpfsDb;
       OpfsDb.importDb = opfsUtil.importDb;
-      sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenCallback(
-        opfsVfs.pointer,
-        function(oo1Db, sqlite3){
-          /* Set a relatively high default busy-timeout handler to
-             help OPFS dbs deal with multi-tab/multi-worker
-             contention. */
-          sqlite3.capi.sqlite3_busy_timeout(oo1Db, 10000);
-        }
-      );
+      if( false ){
+        sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenCallback(
+          opfsVfs.pointer,
+          function(oo1Db, sqlite3){
+            /* Set a relatively high default busy-timeout handler to
+               help OPFS dbs deal with multi-tab/multi-worker
+               contention. */
+            sqlite3.capi.sqlite3_busy_timeout(oo1Db, 10000);
+          }
+        );
+      }
     }/*extend sqlite3.oo1*/
   })/*bindVfs()*/;
 }/*installOpfsVfs()*/;
