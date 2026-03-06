@@ -1195,7 +1195,7 @@ proc sqlite-check-line-editing {} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
       user-notice "Adding linenoise support to jimsh."
     } else {
-      user-notice "Using linenoise at [file normalize $dirLn]"
+      msg-result "Using linenoise at [file normalize $dirLn]"
     }
     return "linenoise ($flavor)"
   } elseif {[opt-bool editline]} {
