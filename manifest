@@ -1,5 +1,5 @@
-C Fix\sa\sNULL\spointer\sdereference\sin\sthe\s(undocumented)\stwo-argument\sversion\nof\sthe\sdecimal()\sextension\sSQL\sfunction.\n[forum:/forumpost/fa9c2dc83f|Forum\spost\sfa9c2dc83f].
-D 2026-03-06T21:31:07.243
+C Increase\sthe\sversion\snumber\sto\s3.52.1.
+D 2026-03-06T21:34:49.052
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -8,7 +8,7 @@ F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 174764cb7e80c80f9003c46b3e388d74c68c8c40230208904b3af8fcabee5f4e
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
-F VERSION 74672bfd4c7826c0fc6f84762488a707c52e7d2d94af42ccb0edcc6c74311c41
+F VERSION ed5325177122f86b7a25c21bee36fda8171a34ab86e4c72007798d7837a752be
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0286f97f34fd560d4ba423bd28d18ac080c918b0e99b8d16c4a213cf205b5e5b
-R d74b29182b81b1577e729e296083a691
+P a0266351df8700383d50c2ef2d179dd82b0e0fd7fc70d05a91d5e4e845983b46
+R ef47400364456c50ccaf35d3e0213c06
 U drh
-Z ea2fda05a11c54db1476c63179e8b074
+Z 4b5606aa812b4812b9b3f4dc11c310ee
 # Remove this line to create a well-formed Fossil manifest.
