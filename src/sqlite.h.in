@@ -2644,7 +2644,7 @@ struct sqlite3_mem_methods {
 ** to an integer.  The first argument is 1, 0, or -1 to enable, disable, or
 ** leave unchanged the ability to use comments in SQL text,
 ** respectively.  If the second argument is not NULL, then 0 or 1 is written
-** into the integer that the second argument points to depending on if 
+** into the integer that the second argument points to depending on if
 ** comments are allowed in SQL text after processing the first argument.
 ** </dd>
 **
@@ -2658,7 +2658,7 @@ struct sqlite3_mem_methods {
 ** This option takes two arguments which are an integer and a pointer
 ** to an integer.  The first argument is a small integer, between 3 and 23, or
 ** zero.  The FP_DIGITS setting is changed to that small integer, or left
-** altered if the first argument is zero or out of range.  The second argument
+** unaltered if the first argument is zero or out of range.  The second argument
 ** is a pointer to an integer.  If the pointer is not NULL, then the value of
 ** the FP_DIGITS setting, after possibly being modified by the first
 ** arguments, is written into the integer to which the second argument points.
