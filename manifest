@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sdecimal\sextension\sthat\sfollows\san\sOOM.
-D 2026-03-06T23:37:45.381
+C Fix\sa\smemory\sleak\sfollowing\sOOM\sin\sthe\scompletion\sextension.
+D 2026-03-06T23:56:03.830
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -366,7 +366,7 @@ F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0e
 F ext/misc/btreeinfo.c 13bc9e9f1c13cde370d0e4a6a2683e9f1926a4cead7fb72c71871b11a06d78a1
 F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001259913
 F ext/misc/closure.c 5559daf1daf742228431db929d1aa86dd535a4224cc634a81d2fd0d1e6ad7839
-F ext/misc/completion.c c27b64fdd0943c1b7f152376599814cee2641f7d67a7bb9bd2b957c2a64a5591
+F ext/misc/completion.c 99589a9f04113e9a169312d132730131963451a30abd6704d780862333cb091c
 F ext/misc/compress.c 8191118b9b73e7796c961790db62d35d9b0fb724b045e005a5713dc9e0795565
 F ext/misc/csv.c e82124eabee0e692d7b90ab8b2c34fadbf7b375279f102567fa06e4da4b771bf
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P af18b68978ec9b1ff732505bfb92bb65e4f7381b904123f42c638b747569fa28
-R 11f0753acd82d511ab8c1d1c160af2a5
+P 8d59e47e7ae0aae01cb25c6c054cf9a4d9651e858bc0dd1a0e2a013ec6579012
+R d09aa847db130508a6d4900fb29fd697
 U drh
-Z 81ddf101166dcc9f59cb1dc6cb89c1a9
+Z 0dec6b08e07aa5f4cda86237d4ed7b37
 # Remove this line to create a well-formed Fossil manifest.
