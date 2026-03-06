@@ -89,7 +89,7 @@ const installAsyncProxy = function(){
      2 = warnings and errors
      3 = debug, warnings, and errors
   */
-  state.verbose = 2;
+  state.verbose = 1;
 
   const loggers = {
     0:console.error.bind(console),

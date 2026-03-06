@@ -80,7 +80,7 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
       }catch(e){
         if(e instanceof sqlite3.SQLite3Error
            && sqlite3.capi.SQLITE_BUSY===e.resultCode){
-          stderr("Retrying for BUSY: ",e.message);
+          stderr("Retrying",(db ? "db init" : "open()"),"for BUSY:",e.message);
           continue;
         }
         throw e;
@@ -106,7 +106,7 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
         }catch(e){
           if(e instanceof sqlite3.SQLite3Error
              && sqlite3.capi.SQLITE_BUSY===e.resultCode){
-            stderr("Retrying for BUSY: ",e.message);
+            stderr("Retrying interval #",interval.count,"for BUSY:",e.message);
             continue;
           }
           stderr("Error: ",e.message);
@@ -121,7 +121,8 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
       if(interval.error || maxIterations === interval.count){
         finish();
       }else{
-        setTimeout(timer, interval.delay);
+        const jitter = (Math.random()*150 - Math.random()*150) | 0;
+        setTimeout(timer, interval.delay + jitter);
       }
     }, interval.delay);
   }/*run()*/;

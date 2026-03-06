@@ -402,21 +402,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      descriptive error message if they're not found. This is intended
      to be run as part of async VFS installation steps.
   */
-  opfsUtil.vfsInstallationFeatureCheck = function(){
-    if(!globalThis.SharedArrayBuffer
-       || !globalThis.Atomics){
-      throw new Error("Cannot install OPFS: Missing SharedArrayBuffer and/or Atomics. "+
-                      "The server must emit the COOP/COEP response headers to enable those. "+
-                      "See https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep");
-    }else if('undefined'===typeof WorkerGlobalScope){
-      throw new Error("The OPFS sqlite3_vfs cannot run in the main thread "+
-                      "because it requires Atomics.wait().");
-    }else if(!globalThis.FileSystemHandle ||
-             !globalThis.FileSystemDirectoryHandle ||
-             !globalThis.FileSystemFileHandle ||
-             !globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle ||
-             !navigator?.storage?.getDirectory){
-      throw new newError("Missing required OPFS APIs.");
+  opfsUtil.vfsInstallationFeatureCheck = function(vfsName){
+    if( !globalThis.SharedArrayBuffer || !globalThis.Atomics ){
+      toss("Cannot install OPFS: Missing SharedArrayBuffer and/or Atomics.",
+           "The server must emit the COOP/COEP response headers to enable those.",
+           "See https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep");
+    }else if( 'undefined'===typeof WorkerGlobalScope ){
+      toss("The OPFS sqlite3_vfs cannot run in the main thread",
+           "because it requires Atomics.wait().");
+    }else if( !globalThis.FileSystemHandle ||
+              !globalThis.FileSystemDirectoryHandle ||
+              !globalThis.FileSystemFileHandle?.prototype?.createSyncAccessHandle ||
+              !navigator?.storage?.getDirectory ){
+      toss("Missing required OPFS APIs.");
+    }else if( 'opfs-wl'===vfsName && !globalThis.Atomics.waitAsync ){
+      toss('The',vfsName,'VFS requires Atomics.waitAsync(), which is not available.');
     }
   };
 
@@ -446,12 +446,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   opfsUtil.initOptions = function callee(vfsName, options){
     const urlParams = new URL(globalThis.location.href).searchParams;
-    if(urlParams.has(vfsName+'-disable')){
+    if( urlParams.has(vfsName+'-disable') ){
       //sqlite3.config.warn('Explicitly not installing "opfs" VFS due to opfs-disable flag.');
       return;
     }
     try{
-      opfsUtil.vfsInstallationFeatureCheck();
+      opfsUtil.vfsInstallationFeatureCheck(vfsName);
     }catch(e){
       return;
     }

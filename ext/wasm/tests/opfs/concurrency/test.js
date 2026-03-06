@@ -59,7 +59,7 @@
   ) || 3;
   options.opfsVerbose = (
     urlArgsHtml.has('verbose') ? +urlArgsHtml.get('verbose') : 1
-  ) || 1;
+  ) || 0;
   options.interval = (
     urlArgsHtml.has('interval') ? +urlArgsHtml.get('interval') : 1000
   ) || 1000;
@@ -76,41 +76,52 @@
     for(const w of workers) w.postMessage({type, payload:args});
   };
   workers.counts = {loaded: 0, passed: 0, failed: 0};
+  let timeStart;
+  const calcTime = (endDate)=>{
+    return endDate.getTime() - timeStart?.getTime?.();
+  };
   const checkFinished = function(){
     if(workers.counts.passed + workers.counts.failed !== workers.length){
       return;
     }
+    stdout("Total Worker run time:",calcTime(new Date()),"ms");
     if(workers.counts.failed>0){
       logCss('tests-fail',"Finished with",workers.counts.failed,"failure(s).");
     }else{
       logCss('tests-pass',"All",workers.length,"workers finished.");
     }
   };
+
   workers.onmessage = function(msg){
     msg = msg.data;
     const prefix = 'Worker #'+msg.worker+':';
     switch(msg.type){
-        case 'loaded':
-          stdout(prefix,"loaded");
-          if(++workers.counts.loaded === workers.length){
-            stdout("All",workers.length,"workers loaded. Telling them to run...");
-            workers.post('run');
-          }
-          break;
-        case 'stdout': stdout(prefix,...msg.payload); break;
-        case 'stderr': stderr(prefix,...msg.payload); break;
-        case 'error': stderr(prefix,"ERROR:",...msg.payload); break;
-        case 'finished':
-          ++workers.counts.passed;
-          logCss('tests-pass',prefix,...msg.payload);
-          checkFinished();
-          break;
-        case 'failed':
-          ++workers.counts.failed;
-          logCss('tests-fail',prefix,"FAILED:",...msg.payload);
-          checkFinished();
-          break;
-        default: logCss('error',"Unhandled message type:",msg); break;
+      case 'loaded':
+        stdout(prefix,"loaded");
+        if(++workers.counts.loaded === workers.length){
+          timeStart = new Date();
+          stdout(timeStart,"All",workers.length,"workers loaded. Telling them to run...");
+          workers.post('run');
+        }
+        break;
+      case 'stdout': stdout(prefix,...msg.payload); break;
+      case 'stderr': stderr(prefix,...msg.payload); break;
+      case 'error': stderr(prefix,"ERROR:",...msg.payload); break;
+      case 'finished': {
+        ++workers.counts.passed;
+        const timeEnd = new Date();
+        logCss('tests-pass',prefix,timeEnd,"("+calcTime(timeEnd)+"ms) ", ...msg.payload);
+        checkFinished();
+        break;
+      }
+      case 'failed': {
+        ++workers.counts.failed;
+        const timeEnd = new Date();
+        logCss('tests-fail',prefix,timeEnd,"("+calcTime(timeEnd)+"ms) FAILED:",...msg.payload);
+        checkFinished();
+        break;
+      }
+      default: logCss('error',"Unhandled message type:",msg); break;
     }
   };
 
