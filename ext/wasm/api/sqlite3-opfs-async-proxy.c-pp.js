@@ -625,31 +625,21 @@ const installAsyncProxy = function(){
       }
     }
     const opIds = state.opIds;
+    const opView = state.sabOPView;
+    const slotWhichOp = opIds.whichOp;
+    const idleWaitTime = state.asyncIdleWaitTime;
     while(!flagAsyncShutdown){
       try {
-        if('not-equal'!==Atomics.wait(
-          state.sabOPView, opIds.whichOp, 0, state.asyncIdleWaitTime
-        )){
-          /* Maintenance note: we compare against 'not-equal' because
-
-             https://github.com/tomayac/sqlite-wasm/issues/12
-
-             is reporting that this occasionally, under high loads,
-             returns 'ok', which leads to the whichOp being 0 (which
-             isn't a valid operation ID and leads to an exception,
-             along with a corresponding ugly console log
-             message). Unfortunately, the conditions for that cannot
-             be reliably reproduced. The only place in our code which
-             writes a 0 to the state.opIds.whichOp SharedArrayBuffer
-             index is a few lines down from here, and that instance
-             is required in order for clear communication between
-             the sync half of this proxy and this half.
-          */
+        const opId = Atomics.load(opView, slotWhichOp);
+        if( 0===opId ){
+          const rv = Atomics.waitAsync(opView, slotWhichOp, 0,
+                                       idleWaitTime);
+          if( rv.async ) await rv.value;
           await releaseImplicitLocks();
           continue;
         }
-        const opId = Atomics.exchange(state.sabOPView, opIds.whichOp, 0);
         const hnd = f.opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
+        Atomics.store(opView, slotWhichOp, 0);
         const args = state.s11n.deserialize(
           true /* clear s11n to keep the caller from confusing this with
                   an exception string written by the upcoming
@@ -659,7 +649,7 @@ const installAsyncProxy = function(){
         if(hnd.f) await hnd.f(...args);
         else error("Missing callback for opId",opId);
       }catch(e){
-        error('in waitLoop():',e);
+        error('in waitLoop():', e);
       }
     }
   };
