@@ -638,16 +638,15 @@ const installAsyncProxy = function(){
           await releaseImplicitLocks();
           continue;
         }
-        const hnd = f.opHandlers[opId] ?? toss("No waitLoop handler for whichOp #",opId);
         Atomics.store(opView, slotWhichOp, 0);
+        const hnd = f.opHandlers[opId]?.f ?? toss("No waitLoop handler for whichOp #",opId);
         const args = state.s11n.deserialize(
           true /* clear s11n to keep the caller from confusing this with
                   an exception string written by the upcoming
                   operation */
         ) || [];
         //warn("waitLoop() whichOp =",opId, hnd, args);
-        if(hnd.f) await hnd.f(...args);
-        else error("Missing callback for opId",opId);
+        await hnd(...args);
       }catch(e){
         error('in waitLoop():', e);
       }
