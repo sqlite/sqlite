@@ -307,8 +307,8 @@ const installAsyncProxy = function(){
      2026-03-06:
 
      - baseWaitTime is the number of milliseconds to wait for the
-     first retry, doubling for each retry. It defaults to
-     (state.asyncIdleWaitTime*2).
+     first retry, increasing by one factor for each retry. It defaults
+     to (state.asyncIdleWaitTime*2).
 
      - maxTries is the number of attempt to make, each one spaced out
      by one additional factor of the baseWaitTime (e.g. 300, then 600,
