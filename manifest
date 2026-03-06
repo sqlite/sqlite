@@ -1,5 +1,5 @@
-C Add\sthe\snew\srealpath()\sextension\sfunction\sto\sthe\slist\sof\sfunctions\nprohibited\sin\s--safe\smode\sof\sthe\sCLI.
-D 2026-03-06T14:33:12.191
+C Version\s3.52.0
+D 2026-03-06T16:01:44.367
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2189,8 +2189,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 798905a1277ecb17245f2a7378fdc8dc608374fde50bdfe44d09195a7c78cb5c
+P 5fa49c4d592778fb82c4e25c77cf0442d3dc23cc7f8d91d25952c722af866930
 R b4a00b0f2cf0b157145ad751c36ae742
+T +sym-major-release *
+T +sym-release *
+T +sym-version-3.52.0 *
 U drh
-Z 5fa431d1c8b551cd38716eecab285bc0
+Z ee8b8689818d3dfbd1a3f7d6f78a36ce
 # Remove this line to create a well-formed Fossil manifest.
