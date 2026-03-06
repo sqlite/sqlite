@@ -902,7 +902,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       },
       xSync: function(pFile,flags){
         mTimeStart('xSync');
-        ++metrics.xSync.count;
         const rc = opRun('xSync', pFile, flags);
         mTimeEnd();
         return rc;
