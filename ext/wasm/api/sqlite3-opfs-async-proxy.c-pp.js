@@ -629,17 +629,18 @@ const installAsyncProxy = function(){
                 && requestedMode === 'shared') ) {
           storeAndNotify(whichOp, 0);
           existing.mode = requestedMode/* ??? */;
-          fh.lockType = lockType;
+          fh.xLock = lockType;
           return 0 /* Already held at required or higher level */;
         }
         /*
           Upgrade path: we must release shared and acquire exclusive.
           This transition is NOT atomic in Web Locks API.
         */
-        if( 0 ){
+        if( 1 ){
           /* Except that it _effectively_ is atomic if we don't call
              closeSyncHandle(fh), as no other worker can lock that
-             until we let it go. */
+             until we let it go. But we can't do that without leading
+             to a deadly embrace, so... */
           await closeSyncHandle(fh);
         }
         existing.resolveRelease();
@@ -647,67 +648,43 @@ const installAsyncProxy = function(){
       }
 
       const oldLockType = fh.xLock;
-      let didNotify = false;
       return new Promise((resolveWaitLoop) => {
         //error("xLock() initial promise entered...");
         navigator.locks.request(lockName, { mode: requestedMode }, async (lock) => {
           //error("xLock() Web Lock entered.", fh);
-          fh.xLock = lockType;
+          fh.xLock = lockType/*must be set before getSyncHandle() is called*/;
           __implicitLocks.delete(fid);
-          if( 1 ){
+          let rc = 0;
+          try{
             /* Make ONE attempt to get the handle, but with a
-               higher-than-default retry-wait time. */
-            await getSyncHandle(fh, 'xLock', 1000, 5);
-          }else{
-            /* Try to get a lock until either we get one or trying to
-               results in a "not found" error (see getSyncHandle() docs). */
-            while( !fh.syncHandle ){
-              try{
-                await getSyncHandle(fh, 'xLock', 1000, 3);
-              }catch(e){
-                const rc = GetSyncHandleError.convertRc(e, 0);
-                if( rc === state.sq3Codes.SQLITE_CANTOPEN ){
-                  /* File was deleted - see getSyncHandle() */
-                  throw e;
-                }
-                error("xLock() still waiting to unlock SyncAccessHandle",fh);
-              }
-            }
+               higher-than-default retry-wait. */
+            await getSyncHandle(fh, 'xLock', 317, 5);
+          }catch(e){
+            fh.xLock = oldLockType;
+            state.s11n.storeException(1, e);
+            rc = GetSyncHandleError.convertRc(e, state.sq3Codes.SQLITE_BUSY);
           }
-          error("xLock() SAH acquired.", fh);
-          const releasePromise = new Promise((resolveRelease) => {
-            __activeWebLocks[fid] = { mode: requestedMode, resolveRelease };
-          });
-          didNotify = true;
-          storeAndNotify(whichOp, 0) /* Unblock the C side */;
+          const releasePromise = rc
+                ? undefined
+                : new Promise((resolveRelease) => {
+                  __activeWebLocks[fid] = { mode: requestedMode, resolveRelease };
+                });
+          storeAndNotify(whichOp, rc) /* Unblock the C side */;
           resolveWaitLoop(0) /* Unblock waitLoop() */;
           await releasePromise; // Hold the lock until xUnlock
-        }).catch(e=>{
-          /**
-             We have(?) a potential deadlock situation: if the above
-             throws, we can't just blindly storeAndNotify() here to
-             unlock the C side, as it might interfere with an
-             unrelated operation. The `didNotify` check here assumes
-             that any exception which can be thrown will happen before
-             the above `didNotify=true`.  e.g. getSyncHandle() can
-             throw. Apropos: we probably need to be able to configure
-             the async side with busy timeout values, and try until
-             that limit is reached, or tell it to wait indefinitely.
-
-             Because waitLoop() is `await`ing on this Promise, we can
-             be sure that the following storeAndNotify() is not
-             crossing wires with a different operation.
-          */
-          fh.xLock = oldLockType;
-          error("Exception acquiring Web Lock", e);
-          if( !didNotify ){
-            state.s11n.storeException(1, e);
-            const rc = GetSyncHandleError.convertRc(e, state.sq3Codes.SQLITE_IOERR_LOCK);
-            storeAndNotify(whichOp, rc);
-          }
-          throw e /* what else can we do? */;
-        })
+        });
       });
+    };
+
+    const wlCloseHandle = async(fh)=>{
+      let rc = 0;
+      try{
+        await closeSyncHandle(fh);
+      }catch(e){
+        state.s11n.storeException(1,e);
+        rc = state.sq3Codes.SQLITE_IOERR_UNLOCK;
+      }
+      return rc;
     };
 
     vfsAsyncImpls.xUnlock = async function(fid/*sqlite3_file pointer*/,
@@ -715,33 +692,33 @@ const installAsyncProxy = function(){
       const fh = __openFiles[fid];
       const existing = __activeWebLocks[fid];
       if( !existing ){
-        await closeSyncHandle(fh);
-        storeAndNotify('xUnlock', 0);
-        return 0;
+        const rc = await wlCloseHandle(fh);
+        storeAndNotify('xUnlock', rc);
+        return rc;
       }
       error("xUnlock()",fid, lockType, fh);
       let rc = 0;
       if( lockType === state.sq3Codes.SQLITE_LOCK_NONE ){
         /* SQLite usually unlocks all the way to NONE */
+        rc = await wlCloseHandle(fh);
         existing.resolveRelease();
         delete __activeWebLocks[fid];
-        try {await closeSyncHandle(fh)}
-        catch(e){
-          state.s11n.storeException(1,e);
-          rc = state.sq3Codes.SQLITE_IOERR_UNLOCK;
-        }
+        fh.xLock = lockType;
       }else if( lockType === state.sq3Codes.SQLITE_LOCK_SHARED
                 && existing.mode === 'exclusive' ){
         /* downgrade Exclusive -> Shared */
-        existing.resolveRelease();
-        delete __activeWebLocks[fid];
-        return vfsAsyncImpls.xLock(fid, lockType, true);
+        rc = await wlCloseHandle(fh);
+        if( 0===rc ){
+          fh.xLock = lockType;
+          existing.resolveRelease();
+          delete __activeWebLocks[fid];
+          return vfsAsyncImpls.xLock(fid, lockType, true);
+        }
       }else{
         /* ??? */
         error("xUnlock() unhandled condition", fh);
       }
       storeAndNotify('xUnlock', rc);
-      if( 0===rc ) fh.lockType = lockType;
       return 0;
     }
 
