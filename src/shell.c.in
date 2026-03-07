@@ -1024,12 +1024,7 @@ INCLUDE ../ext/misc/shathree.c
 INCLUDE ../ext/misc/sha1.c
 INCLUDE ../ext/misc/uint.c
 INCLUDE ../ext/misc/decimal.c
-#undef sqlite3_base_init
-#define sqlite3_base_init sqlite3_base64_init
 INCLUDE ../ext/misc/base64.c
-#undef sqlite3_base_init
-#define sqlite3_base_init sqlite3_base85_init
-#define OMIT_BASE85_CHECKER
 INCLUDE ../ext/misc/base85.c
 INCLUDE ../ext/misc/ieee754.c
 INCLUDE ../ext/misc/series.c

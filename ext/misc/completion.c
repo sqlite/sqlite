@@ -224,20 +224,22 @@ static int completionNext(sqlite3_vtab_cursor *cur){
       case COMPLETION_TABLES: {
         if( pCur->pStmt==0 ){
           sqlite3_stmt *pS2;
+          sqlite3_str* pStr = sqlite3_str_new(pCur->db);
           char *zSql = 0;
           const char *zSep = "";
           sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
           while( sqlite3_step(pS2)==SQLITE_ROW ){
             const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
-            zSql = sqlite3_mprintf(
-               "%z%s"
+            sqlite3_str_appendf(pStr,
+               "%s"
                "SELECT name FROM \"%w\".sqlite_schema",
-               zSql, zSep, zDb
+               zSep, zDb
             );
-            if( zSql==0 ) return SQLITE_NOMEM;
             zSep = " UNION ";
           }
           sqlite3_finalize(pS2);
+          zSql = sqlite3_str_finish(pStr);
+          if( zSql==0 ) return SQLITE_NOMEM;
           sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
           sqlite3_free(zSql);
         }
@@ -248,22 +250,24 @@ static int completionNext(sqlite3_vtab_cursor *cur){
       case COMPLETION_COLUMNS: {
         if( pCur->pStmt==0 ){
           sqlite3_stmt *pS2;
+          sqlite3_str *pStr = sqlite3_str_new(pCur->db);
           char *zSql = 0;
           const char *zSep = "";
           sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
           while( sqlite3_step(pS2)==SQLITE_ROW ){
             const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
-            zSql = sqlite3_mprintf(
-               "%z%s"
+            sqlite3_str_appendf(pStr,
+               "%s"
                "SELECT pti.name FROM \"%w\".sqlite_schema AS sm"
                        " JOIN pragma_table_xinfo(sm.name,%Q) AS pti"
                " WHERE sm.type='table'",
-               zSql, zSep, zDb, zDb
+               zSep, zDb, zDb
             );
-            if( zSql==0 ) return SQLITE_NOMEM;
             zSep = " UNION ";
           }
           sqlite3_finalize(pS2);
+          zSql = sqlite3_str_finish(pStr);
+          if( zSql==0 ) return SQLITE_NOMEM;
           sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
           sqlite3_free(zSql);
         }
