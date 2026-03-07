@@ -462,6 +462,7 @@ cmp_done:
 static void decimal_expand(Decimal *p, int nDigit, int nFrac){
   int nAddSig;
   int nAddFrac;
+  signed char *a;
   if( p==0 ) return;
   nAddFrac = nFrac - p->nFrac;
   nAddSig = (nDigit - p->nDigit) - nAddFrac;
@@ -469,11 +470,12 @@ static void decimal_expand(Decimal *p, int nDigit, int nFrac){
 #if SQLITE_DECIMAL_MAX_DIGIT+0>10
   if( nDigit+1>SQLITE_DECIMAL_MAX_DIGIT ){ p->oom = 1; return; }
 #endif
-  p->a = sqlite3_realloc64(p->a, nDigit+1);
-  if( p->a==0 ){
+  a = sqlite3_realloc64(p->a, nDigit+1);
+  if( a==0 ){
     p->oom = 1;
     return;
   }
+  p->a = a;
   if( nAddSig ){
     memmove(p->a+nAddSig, p->a, p->nDigit);
     memset(p->a, 0, nAddSig);
