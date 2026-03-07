@@ -1325,11 +1325,13 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     pTab = pItem->pSTab;
     assert( pTab!=0 );
     sz = sqlite3LogEstToInt(pTab->nRowLogEst);
+    sz = 10000000; // FORCE LARGE FILTER
     if( sz<10000 ){
       sz = 10000;
     }else if( sz>10000000 ){
       sz = 10000000;
     }
+    sz = (sz + 3) & ~3;
     sqlite3VdbeAddOp2(v, OP_Blob, (int)sz, pLevel->regFilter);
 
     addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
@@ -6619,7 +6621,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
   assert( OptimizationEnabled(pWInfo->pParse->db, SQLITE_BloomFilter) );
   for(i=0; i<pWInfo->nLevel; i++){
     WhereLoop *pLoop = pWInfo->a[i].pWLoop;
-    const unsigned int reqFlags = (WHERE_SELFCULL|WHERE_COLUMN_EQ);
+    const unsigned int reqFlags = WHERE_COLUMN_EQ;
     SrcItem *pItem = &pWInfo->pTabList->a[pLoop->iTab];
     Table *pTab = pItem->pSTab;
     if( (pTab->tabFlags & TF_HasStat1)==0 ) break;
