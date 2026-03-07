@@ -164,6 +164,9 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
     for(i=0; i<p->nDigit && p->a[i]==0; i++){}
     if( i>=p->nDigit ) p->sign = 0;
   }
+#if SQLITE_DECIMAL_MAX_DIGIT+0>10
+  if( p->nDigit>SQLITE_DECIMAL_MAX_DIGIT ) goto new_from_text_failed;
+#endif
   return p;
 
 new_from_text_failed:
@@ -463,6 +466,9 @@ static void decimal_expand(Decimal *p, int nDigit, int nFrac){
   nAddFrac = nFrac - p->nFrac;
   nAddSig = (nDigit - p->nDigit) - nAddFrac;
   if( nAddFrac==0 && nAddSig==0 ) return;
+#if SQLITE_DECIMAL_MAX_DIGIT+0>10
+  if( nDigit+1>SQLITE_DECIMAL_MAX_DIGIT ){ p->oom = 1; return; }
+#endif
   p->a = sqlite3_realloc64(p->a, nDigit+1);
   if( p->a==0 ){
     p->oom = 1;
@@ -562,14 +568,20 @@ static void decimalMul(Decimal *pA, Decimal *pB){
   signed char *acc = 0;
   int i, j, k;
   int minFrac;
+  sqlite3_int64 sumDigit;
 
   if( pA==0 || pA->oom || pA->isNull
    || pB==0 || pB->oom || pB->isNull 
   ){
     goto mul_end;
   }
-  acc = sqlite3_malloc64( (sqlite3_int64)pA->nDigit +
-                          (sqlite3_int64)pB->nDigit + 2 );
+  sumDigit = pA->nDigit;
+  sumDigit += pB->nDigit;
+  sumDigit += 2;
+#if SQLITE_DECIMAL_MAX_DIGIT+0>10
+  if( sumDigit>SQLITE_DECIMAL_MAX_DIGIT ){ pA->oom = 1; return; }
+#endif
+  acc = sqlite3_malloc64( sumDigit );
   if( acc==0 ){
     pA->oom = 1;
     goto mul_end;
