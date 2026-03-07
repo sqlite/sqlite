@@ -465,13 +465,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ? +urlParams.get('opfs-verbose') : 1;
     options.sanityChecks ??= urlParams.has('opfs-sanity-check');
 
-    opfsUtil.proxyUri ??= "sqlite3-opfs-async-proxy.js";
-    if( sqlite3.scriptInfo?.sqlite3Dir ){
-      /* Doing this from one scope up, outside of this function, does
-         not work. */
-      opfsUtil.proxyUri = (
-        sqlite3.scriptInfo.sqlite3Dir + opfsUtil.proxyUri
-      );
+    if( !opfsUtil.proxyUri ){
+      opfsUtil.proxyUri = "sqlite3-opfs-async-proxy.js";
+      if( sqlite3.scriptInfo?.sqlite3Dir ){
+        /* Doing this from one scope up, outside of this function, does
+           not work. */
+        opfsUtil.proxyUri = (
+          sqlite3.scriptInfo.sqlite3Dir + opfsUtil.proxyUri
+        );
+      }
     }
     options.proxyUri ??= opfsUtil.proxyUri;
     if('function' === typeof options.proxyUri){
