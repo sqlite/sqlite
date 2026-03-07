@@ -20,6 +20,9 @@
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+  if( !sqlite3.opfs || sqlite3.config.disable?.vfs?.opfs ){
+    return;
+  }
   const util = sqlite3.util,
         opfsUtil = sqlite3.opfs || sqlite3.util.toss("Missing sqlite3.opfs");
   /**

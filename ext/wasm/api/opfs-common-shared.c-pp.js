@@ -21,6 +21,10 @@
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
+  if( sqlite3.config.disable?.vfs?.opfs &&
+      sqlite3.config.disable.vfs['opfs-vfs'] ){
+    return;
+  }
   const toss = sqlite3.util.toss,
         capi = sqlite3.capi,
         util = sqlite3.util,

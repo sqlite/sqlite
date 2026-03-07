@@ -99,6 +99,13 @@
      used in WASMFS-capable builds of the library (which the canonical
      builds do not include).
 
+     - `disable` (as of 3.53.0) may be an object with the following
+     properties:
+       - `vfs`, an object, may contain a map of VFS names to booleans.
+       Any mapping to falsy are disabled. The supported names
+       are: "kvvfs", "opfs", "opfs-sahpool", "opfs-wl".
+       - Other disabling options may be added in the future.
+
    [^1] = This property may optionally be a function, in which case
           this function calls that function to fetch the value,
           enabling delayed evaluation.
@@ -145,7 +152,8 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     );
     return sqlite3ApiBootstrap.sqlite3;
   }
-  const config = Object.assign(Object.create(null),{
+  const nu = (...obj)=>Object.assign(Object.create(null),...obj);
+  const config = nu({
     exports: undefined,
     memory: undefined,
     bigIntEnabled: !!globalThis.BigInt64Array,
@@ -162,7 +170,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
        certain wasm.xWrap.resultAdapter()s.
     */
     useStdAlloc: false
-  }, apiConfig || {});
+  }, apiConfig);
 
   Object.assign(config, {
     allocExportName: config.useStdAlloc ? 'malloc' : 'sqlite3_malloc',
@@ -195,7 +203,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       not documented are installed as 1-to-1 proxies for their
       C-side counterparts.
   */
-  const capi = Object.create(null);
+  const capi = nu();
   /**
      Holds state which are specific to the WASM-related
      infrastructure and glue code.
@@ -204,7 +212,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
      dynamically after the api object is fully constructed, so
      not all are documented in this file.
   */
-  const wasm = Object.create(null);
+  const wasm = nu();
 
   /** Internal helper for SQLite3Error ctor. */
   const __rcStr = (rc)=>{
@@ -752,7 +760,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
     toss: function(...args){throw new Error(args.join(' '))},
     toss3,
     typedArrayPart: wasm.typedArrayPart,
-    nu: (...obj)=>Object.assign(Object.create(null),...obj),
+    nu,
     assert: function(arg,msg){
       if( !arg ){
         util.toss("Assertion failed:",msg);
@@ -1009,7 +1017,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
           rv[1] = m ? (f._rxInt.test(m[2]) ? +m[2] : m[2]) : true;
         };
       }
-      const rc = Object.create(null), ov = [0,0];
+      const rc = nu(), ov = [0,0];
       let i = 0, k;
       while((k = capi.sqlite3_compileoption_get(i++))){
         f._opt(k,ov);
@@ -1017,7 +1025,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       }
       return f._result = rc;
     }else if(Array.isArray(optName)){
-      const rc = Object.create(null);
+      const rc = nu();
       optName.forEach((v)=>{
         rc[v] = capi.sqlite3_compileoption_used(v);
       });
@@ -1068,7 +1076,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
      The memory lives in the WASM heap and can be used with routines
      such as wasm.poke() and wasm.heap8u().slice().
   */
-  wasm.pstack = Object.assign(Object.create(null),{
+  wasm.pstack = nu({
     /**
        Sets the current pstack position to the given pointer. Results
        are undefined if the passed-in value did not come from
@@ -1290,7 +1298,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       // sqlite3__wasm_init_wasmfs() is not available
       return this.dir = "";
     }
-  }.bind(Object.create(null));
+  }.bind(nu());
 
   /**
      Returns true if sqlite3.capi.sqlite3_wasmfs_opfs_dir() is a
@@ -1665,7 +1673,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       default:
         return capi.SQLITE_MISUSE;
     }
-  }.bind(Object.create(null));
+  }.bind(nu());
 
   /**
      Given a (sqlite3_value*), this function attempts to convert it
@@ -1899,7 +1907,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       if(rc) return SQLite3Error.toss(rc,arguments[2]+"() failed with code "+rc);
       const pv = wasm.peekPtr(this.ptr);
       return pv ? capi.sqlite3_value_to_js( pv, true ) : undefined;
-    }.bind(Object.create(null));
+    }.bind(nu());
 
     /**
        A wrapper around sqlite3_preupdate_new() which fetches the
@@ -2013,7 +2021,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
        This object is initially a placeholder which gets replaced by a
        build-generated object.
     */
-    version: Object.create(null),
+    version: nu(),
 
     /**
        The library reserves the 'client' property for client-side use

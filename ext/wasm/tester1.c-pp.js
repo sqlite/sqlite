@@ -66,15 +66,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   const haveWasmCTests = ()=>{
     return !!wasm.exports.sqlite3__wasm_test_intptr;
   };
-  const hasOpfs = ()=>{
-    return globalThis.FileSystemHandle
-      && globalThis.FileSystemDirectoryHandle
-      && globalThis.FileSystemFileHandle
-      && globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle
-      && navigator?.storage?.getDirectory;
-  };
 
   let SQLite3 /* populated after module load */;
+  const hasOpfs = ()=>!!SQLite3?.oo1?.OpfsDb;
 
   {
     const mapToString = (v)=>{
@@ -3773,8 +3767,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   T.g('OPFS: Origin-Private File System',
-      (sqlite3)=>(sqlite3.capi.sqlite3_vfs_find("opfs")
-                  || 'requires "opfs" VFS'))
+      (sqlite3)=>(hasOpfs() || 'requires "opfs" VFS'))
     .t({
       name: 'OPFS db sanity checks',
       test: async function(sqlite3){
@@ -3914,7 +3907,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   T.g('OPFS SyncAccessHandle Pool VFS',
-      (sqlite3)=>(hasOpfs() || "requires OPFS APIs"))
+      (sqlite3)=>(!!sqlite3.installOpfsSAHPoolVfs || "requires OPFS SAH Pool APIs"))
     .t({
       name: 'SAH sanity checks',
       test: async function(sqlite3){
@@ -4430,12 +4423,17 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");
-  if(0){
+  if(1){
     globalThis.sqlite3ApiConfig = {
-      debug: ()=>{},
-      log: ()=>{},
-      warn: ()=>{},
-      error: ()=>{}
+      //debug: ()=>{}, log: ()=>{}, warn: ()=>{}, error: ()=>{},
+      disable: {
+        vfs: {
+          kvvfs: false,
+          opfs: false,
+          "opfs-sahpool": false,
+          "opfs-wl": false
+        }
+      }
     }
   }
 //#if not target:es6-module

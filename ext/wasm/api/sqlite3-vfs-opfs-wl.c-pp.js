@@ -34,10 +34,13 @@
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+  if( !sqlite3.opfs || sqlite3.config.disable?.vfs?.['opfs-wl'] ){
+    return;
+  }
   const util = sqlite3.util,
         toss  = sqlite3.util.toss;
-  const opfsUtil = sqlite3.opfs || toss("Missing sqlite3.opfs");
-
+  const opfsUtil = sqlite3.opfs;
+  const vfsName = 'opfs-wl';
 /**
    installOpfsWlVfs() returns a Promise which, on success, installs an
    sqlite3_vfs named "opfs-wl", suitable for use with all sqlite3 APIs
@@ -57,7 +60,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
    sqlite3-vfs-opfs.c-pp.js:installOpfsVfs().
 */
 const installOpfsWlVfs = async function(options){
-  options = opfsUtil.initOptions('opfs-wl',options);
+  options = opfsUtil.initOptions(vfsName,options);
   if( !options ) return sqlite3;
   const capi = sqlite3.capi,
         state = opfsUtil.createVfsState(),
@@ -66,8 +69,8 @@ const installOpfsWlVfs = async function(options){
         mTimeStart = opfsVfs.mTimeStart,
         mTimeEnd = opfsVfs.mTimeEnd,
         opRun = opfsVfs.opRun,
-        debug = (...args)=>sqlite3.config.debug("opfs-wl:",...args),
-        warn = (...args)=>sqlite3.config.warn("opfs-wl:",...args),
+        debug = (...args)=>sqlite3.config.debug(vfsName+":",...args),
+        warn = (...args)=>sqlite3.config.warn(vfsName+":",...args),
         __openFiles = opfsVfs.__openFiles;
 
   //debug("state",JSON.stringify(options));
@@ -123,7 +126,7 @@ const installOpfsWlVfs = async function(options){
 }/*installOpfsWlVfs()*/;
 globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   return installOpfsWlVfs().catch((e)=>{
-    sqlite3.config.warn("Ignoring inability to install the 'opfs-wl' sqlite3_vfs:",e);
+    sqlite3.config.warn("Ignoring inability to install the",vfsName,"sqlite3_vfs:",e);
   });
 });
 }/*sqlite3ApiBootstrap.initializers.push()*/);
