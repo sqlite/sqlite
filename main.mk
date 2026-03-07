@@ -957,6 +957,7 @@ FUZZCHECK_OPT += -I$(TOP)/test
 FUZZCHECK_OPT += -I$(TOP)/ext/recover
 FUZZCHECK_OPT += \
   -DSQLITE_OSS_FUZZ \
+  -DSQLITE_DECIMAL_MAX_DIGIT=1000 \
   -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_CARRAY \
   -DSQLITE_ENABLE_DBPAGE_VTAB \
@@ -988,13 +989,26 @@ FUZZCHECK_OPT += \
   -DSQLITE_STRICT_SUBTYPE=1 \
   -DSQLITE_STATIC_RANDOMJSON
 
-FUZZCHECK_SRC += $(TOP)/test/fuzzcheck.c
-FUZZCHECK_SRC += $(TOP)/test/ossfuzz.c
-FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
-FUZZCHECK_SRC += $(TOP)/ext/recover/dbdata.c
-FUZZCHECK_SRC += $(TOP)/ext/recover/sqlite3recover.c
-FUZZCHECK_SRC += $(TOP)/test/vt02.c
-FUZZCHECK_SRC += $(TOP)/ext/misc/randomjson.c
+FUZZCHECK_SRC = sqlite3.c \
+   $(TOP)/test/fuzzcheck.c \
+   $(TOP)/test/ossfuzz.c \
+   $(TOP)/test/fuzzinvariants.c \
+   $(TOP)/ext/recover/dbdata.c \
+   $(TOP)/ext/recover/sqlite3recover.c \
+   $(TOP)/test/vt02.c \
+   $(TOP)/ext/misc/base64.c \
+   $(TOP)/ext/misc/base85.c \
+   $(TOP)/ext/misc/completion.c \
+   $(TOP)/ext/misc/decimal.c \
+   $(TOP)/ext/misc/ieee754.c \
+   $(TOP)/ext/misc/randomjson.c \
+   $(TOP)/ext/misc/regexp.c \
+   $(TOP)/ext/misc/series.c \
+   $(TOP)/ext/misc/shathree.c \
+   $(TOP)/ext/misc/sha1.c \
+   $(TOP)/ext/misc/stmtrand.c
+
+FUZZCHECK_DEP = sqlite3.h
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
@@ -2261,23 +2275,23 @@ fuzzershell$(T.exe):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 fuzzy: fuzzershell$(T.exe)
 xbin: fuzzershell$(T.exe)
 
-fuzzcheck$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-	$(T.link) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(LDFLAGS.libsqlite3)
+fuzzcheck$(T.exe):	$(FUZZCHECK_SRC) $(FUZZCHECK_DEP)
+	$(T.link) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) $(LDFLAGS.libsqlite3)
 fuzzy: fuzzcheck$(T.exe)
 xbin: fuzzcheck$(T.exe)
 
 # -fsanitize=... flags for fuzzcheck-asan.
 CFLAGS.fuzzcheck-asan.fsanitize ?= -fsanitize=address
 
-fuzzcheck-asan$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
+fuzzcheck-asan$(T.exe):	$(FUZZCHECK_SRC) $(FUZZCHECK_DEP)
 	$(T.link) -o $@ $(CFLAGS.fuzzcheck-asan.fsanitize) $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
-		sqlite3.c $(LDFLAGS.libsqlite3)
+		$(LDFLAGS.libsqlite3)
 fuzzy: fuzzcheck-asan$(T.exe)
 xbin: fuzzcheck-asan$(T.exe)
 
-fuzzcheck-ubsan$(T.exe):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
+fuzzcheck-ubsan$(T.exe):	$(FUZZCHECK_SRC) $(FUZZCHECK_DEP)
 	$(T.link) -o $@ -fsanitize=undefined $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) \
-		sqlite3.c $(LDFLAGS.libsqlite3)
+		$(LDFLAGS.libsqlite3)
 fuzzy: fuzzcheck-ubsan$(T.exe)
 xbin: fuzzcheck-ubsan$(T.exe)
 
