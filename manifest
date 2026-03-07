@@ -1,5 +1,5 @@
-C An\sattempt\sto\sget\sthe\sCLI\sbuild\sto\swork\swith\smingw32.\n[forum:/forumpost/086cb1ef66|Forum\spost\s086cb1ef66].
-D 2026-03-07T12:00:56.357
+C Minor\stypo\sfixes\sfrom\s[forum:8fc8bc34291d6f45|forum\spost\s8fc8bc34291d6f45].
+D 2026-03-07T15:15:37.009
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -731,7 +731,7 @@ F src/resolve.c 928ff887f2a7c64275182060d94d06fdddbe32226c569781cf7e7edc6f58d7fd
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c ffe199f025a0dd74670d2a77232bdea364a4d7b36f32c64a6572d39ba6a11576
 F src/shell.c.in d74e8b78bbbf0297e427c7e76abdbfb2769d5e9d67fec69806b1812c56316d8c
-F src/sqlite.h.in 307c7c1d1a71071b8572e8c6943f7a2e9483b008afb375758871881366f33e59
+F src/sqlite.h.in 4d657846d68a58b028f0c4c331b9d3b4a79306f25c3b0d04fb56060343f73d85
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 1b7a0ee438bb5c2896d0609c537e917d8057b3340f6ad004d2de44f03e3d3cca
 F src/sqliteInt.h 1c7f23ab9d6efdf3dc434880b6320f158937284f6e2cebd2a024def0c749cb04
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 414f6dbc09c2a3cf04ccdfd8f11eecb7ef781facff979ae4236a452913001391
-R fb5997ea5564a7223207fc543e841a6b
-U drh
-Z 2f19e76929c8a5d942993c71d8f7951f
+P d95b9e7c1746b9cbd067aa65806b1f74d0dfe77ab6084cb3da9ef2242cac9134
+R cb1a2c68558e309e187139402ca5ab2b
+U stephan
+Z 961086411a3f50c7f371dac5d105ca77
 # Remove this line to create a well-formed Fossil manifest.

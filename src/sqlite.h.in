@@ -4487,8 +4487,8 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** The preferred routine to use is [sqlite3_prepare_v2()].  The
 ** [sqlite3_prepare()] interface is legacy and should be avoided.
-** [sqlite3_prepare_v3()] has an extra 
-** [SQLITE_PREPARE_FROM_DDL|"prepFlags" option] that is some times
+** [sqlite3_prepare_v3()] has an extra
+** [SQLITE_PREPARE_FROM_DDL|"prepFlags" option] that is sometimes
 ** needed for special purpose or to pass along security restrictions.
 **
 ** The use of the UTF-8 interfaces is preferred, as SQLite currently
@@ -6495,7 +6495,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** of [SQLITE_UTF8], [SQLITE_UTF8_ZT], [SQLITE_UTF16], [SQLITE_UTF16BE],
 ** or [SQLITE_UTF16LE].  ^The special value [SQLITE_UTF8_ZT] means that
 ** the result text is both UTF-8 and zero-terminated.  In other words,
-** SQLITE_UTF8_ZT means that the Z array holds at least N+1 byes and that
+** SQLITE_UTF8_ZT means that the Z array holds at least N+1 bytes and that
 ** the Z&#91;N&#93; is zero.
 ** ^SQLite takes the text result from the application from
 ** the 2nd parameter of the sqlite3_result_text* interfaces.
@@ -8862,10 +8862,10 @@ void sqlite3_str_free(sqlite3_str*);
 ** ^This method can be used, for example, to add whitespace indentation.
 **
 ** ^The [sqlite3_str_reset(X)] method resets the string under construction
-** inside [sqlite3_str] object X back to zero bytes in length. 
+** inside [sqlite3_str] object X back to zero bytes in length.
 **
 ** ^The [sqlite3_str_truncate(X,N)] method changes the length of the string
-** under construction to be N bytes are less.  This routine is a no-op if
+** under construction to be N bytes or less.  This routine is a no-op if
 ** N is negative or if the string is already N bytes or smaller in size.
 **
 ** These methods do not return a result code.  ^If an error occurs, that fact
@@ -10729,7 +10729,7 @@ int sqlite3_vtab_rhs_value(sqlite3_index_info*, int, sqlite3_value **ppVal);
 ** the variable that pOut points to is unchanged.
 **
 ** See also: [sqlite3_stmt_scanstatus_reset()] and the
-** [nexec and ncycle] columnes of the [bytecode virtual table].
+** [nexec and ncycle] columns of the [bytecode virtual table].
 */
 int sqlite3_stmt_scanstatus(
   sqlite3_stmt *pStmt,      /* Prepared statement for which info desired */
@@ -11285,17 +11285,17 @@ int sqlite3_deserialize(
 ** values [SQLITE_STATIC] or [SQLITE_TRANSIENT], then SQLite will invoke
 ** the function X with argument D when it is finished using the data in P.
 ** The call to X(D) is a destructor for the array P. The destructor X(D)
-** is invoked even if the call to sqlite3_carray_bind() fails. If the X 
+** is invoked even if the call to sqlite3_carray_bind_v2() fails. If the X
 ** parameter is the special-case value [SQLITE_STATIC], then SQLite assumes
 ** that the data static and the destructor is never invoked.  If the X
 ** parameter is the special-case value [SQLITE_TRANSIENT], then
 ** sqlite3_carray_bind_v2() makes its own private copy of the data prior
 ** to returning and never invokes the destructor X.
 **
-** The sqlite3_carray_bind() function works the same as sqlite_carray_bind_v2()
+** The sqlite3_carray_bind() function works the same as sqlite3_carray_bind_v2()
 ** with a D parameter set to P.  In other words,
 ** sqlite3_carray_bind(S,I,P,N,F,X) is same as
-** sqlite3_carray_bind(S,I,P,N,F,X,P).
+** sqlite3_carray_bind_v2(S,I,P,N,F,X,P).
 */
 int sqlite3_carray_bind_v2(
   sqlite3_stmt *pStmt,        /* Statement to be bound */
