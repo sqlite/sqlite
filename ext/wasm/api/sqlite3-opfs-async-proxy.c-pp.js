@@ -55,8 +55,12 @@ const vfsName = urlParams.get('vfs');
 if( !vfsName ){
   throw new Error("Expecting vfs=opfs|opfs-wl URL argument for this worker");
 }
-const workerId = urlParams.get('opfs-async-proxy-id')
-      ?? 'unnamed';
+/**
+   We use this to allow us to differentiate debug output from
+   multiple instances, e.g. multiple Workers to the "opfs"
+   VFS or both the "opfs" and "opfs-wl" VFSes.
+*/
+const workerId = (Math.random() * 10000000) | 0;
 const isWebLocker = true; //'opfs-wl'===urlParams.get('vfs');
 const wPost = (type,...args)=>postMessage({type, payload:args});
 const installAsyncProxy = function(){
@@ -287,10 +291,11 @@ const installAsyncProxy = function(){
 
      In order to help alleviate cross-tab contention for a dabase, if
      an exception is thrown while acquiring the handle, this routine
-     will wait briefly and try again, up to some fixed number of
-     times. If acquisition still fails at that point it will give up
-     and propagate the exception. Client-level code will see that as
-     an I/O error.
+     will wait briefly and try again, up to `maxTries` of times. If
+     acquisition still fails at that point it will give up and
+     propagate the exception. Client-level code will see that either
+     as an I/O error or SQLITE_BUSY, depending on the exception and
+     the context.
 
      2024-06-12: there is a rare race condition here which has been
      reported a single time:
@@ -306,6 +311,12 @@ const installAsyncProxy = function(){
      creating a viable test for that condition has proven challenging
      so far.
 
+     Interface quirk: if fh.xLock is falsy and the handle is acquired
+     then fh.fid is added to __implicitLocks(). If fh.xLock is truthy,
+     it is not added as an implicit lock. i.e. xLock() impls must set
+     fh.xLock immediately _before_ calling this and must arrange to
+     restore it to its previous value if this function throws.
+
      2026-03-06:
 
      - baseWaitTime is the number of milliseconds to wait for the
@@ -314,12 +325,11 @@ const installAsyncProxy = function(){
 
      - maxTries is the number of attempt to make, each one spaced out
      by one additional factor of the baseWaitTime (e.g. 300, then 600,
-     then 900, the 1200...). This MUST be an integer >0 and defaults
-     to 6.
+     then 900, the 1200...). This MUST be an integer >0.
 
      Only the Web Locks impl should use the 3rd and 4th parameters.
   */
-  const getSyncHandle = async (fh,opName, baseWaitTime, maxTries)=>{
+  const getSyncHandle = async (fh, opName, baseWaitTime, maxTries = 6)=>{
     if(!fh.syncHandle){
       const t = performance.now();
       log("Acquiring sync handle for",fh.filenameAbs);
@@ -610,8 +620,15 @@ const installAsyncProxy = function(){
   if( isWebLocker ){
     /* We require separate xLock() and xUnlock() implementations for the
        original and Web Lock implementations. The ones in this block
-       are for the WebLock impl. */
+       are for the WebLock impl.
 
+       The Golden Rule for this impl is: if we have a web lock, we
+       must also hold the SAH. When "upgrading" an implicit lock to a
+       requested (explicit) lock, we must remove the SAH from the
+       __implicitLocks set. When we unlock, we release both the web
+       lock and the SAH. That invariant must be kept intact or race
+       conditions on SAHs will ensue.
+    */
     /** Registry of active Web Locks: fid -> { mode, resolveRelease } */
     const __activeWebLocks = Object.create(null);
 
@@ -632,8 +649,7 @@ const installAsyncProxy = function(){
           storeAndNotify(whichOp, 0);
           /* Don't do this: existing.mode = requestedMode;
 
-             Paraphrased from advice given by a consultanting
-             developer:
+             Paraphrased from advice given by a consulting developer:
 
              If you hold an exclusive lock and SQLite requests shared,
              you should keep exiting.mode as exclusive in because the
@@ -648,10 +664,11 @@ const installAsyncProxy = function(){
           Upgrade path: we must release shared and acquire exclusive.
           This transition is NOT atomic in Web Locks API.
 
-          Except that it _effectively_ is atomic if we don't call
-          closeSyncHandle(fh), as no other worker can lock that
-          until we let it go. But we can't do that without leading
-          to a deadly embrace, so...
+          It _effectively_ is atomic if we don't call
+          closeSyncHandle(fh), as no other worker can lock that until
+          we let it go. But we can't do that without eventually
+          leading to deadly embrace situations, so we don't do that.
+          (That's not a hypothetical, it has happened.)
         */
         await closeSyncHandle(fh);
         existing.resolveRelease();
@@ -664,10 +681,10 @@ const installAsyncProxy = function(){
         //error("xLock() initial promise entered...");
         navigator.locks.request(lockName, { mode: requestedMode }, async (lock) => {
           //error("xLock() Web Lock entered.", fh);
-          fh.xLock = lockType/*must be set before getSyncHandle() is called!*/;
           __implicitLocks.delete(fid);
           let rc = 0;
           try{
+            fh.xLock = lockType/*must be set before getSyncHandle() is called!*/;
             await getSyncHandle(fh, 'xLock', state.asyncIdleWaitTime, 5);
           }catch(e){
             fh.xLock = oldLockType;

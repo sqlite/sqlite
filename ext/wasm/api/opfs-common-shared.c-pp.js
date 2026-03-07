@@ -14,7 +14,10 @@
   This file holds code shared by sqlite3-vfs-opfs{,-wl}.c-pp.js. It
   creates a private/internal sqlite3.opfs namespace common to the two
   and used (only) by them and the test framework. It is not part of
-  the public API.
+  the public API. The library deletes sqlite3.opfs in its final
+  bootstrapping steps unless it's specifically told to keep them (for
+  testing purposes only) using an undocumented and unsupported
+  mechanism.
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
@@ -461,49 +464,36 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ? (+urlParams.get('opfs-verbose') || 2) : 1;
     options.sanityChecks ??= urlParams.has('opfs-sanity-check');
 
-    if( true ){
-      /* Doing this from one scope up does not work */
-      opfsUtil.proxyUri = "sqlite3-opfs-async-proxy.js";
-      if( sqlite3.scriptInfo?.sqlite3Dir ){
-        opfsUtil.proxyUri = (
-          sqlite3.scriptInfo.sqlite3Dir + opfsUtil.proxyUri
-        );
-      }
-      //sqlite3.config.error("proxyUri =",opfsUtil.proxyUri, sqlite3.scriptInfo);
+    opfsUtil.proxyUri ??= "sqlite3-opfs-async-proxy.js";
+    if( sqlite3.scriptInfo?.sqlite3Dir ){
+      /* Doing this from one scope up, outside of this function, does
+         not work. */
+      opfsUtil.proxyUri = (
+        sqlite3.scriptInfo.sqlite3Dir + opfsUtil.proxyUri
+      );
     }
-
     options.proxyUri ??= opfsUtil.proxyUri;
     if('function' === typeof options.proxyUri){
       options.proxyUri = options.proxyUri();
-    }
-    if( false ){
-      /* This ends up with the same values for all Worker instances. */
-      callee.counter ??= 0;
-      ++callee.counter;
-      options.workerId ??= urlParams.get('opfs-async-proxy-id') ?? callee.counter;
-    }else{
-      options.workerId ??= (Math.random() * 10000000) | 0;
     }
     //sqlite3.config.warn("opfsUtil options =",JSON.stringify(options), 'urlParams =', urlParams);
     return opfsUtil.options = options;
   };
 
   /**
-     Creates and populates the main state object used by "opfs" and "opfs-wl", and
-     transfered from those to their async counterpart.
-
-     Returns an object containing state which we send to the async
-     proxy Worker.
+     Creates, populates, and returns the main state object used by the
+     "opfs" and "opfs-wl" VFSes, and transfered from those to their
+     async counterparts.
 
      The returned object's vfs property holds the fully-populated
-     capi.sqlite3_vfs instance.
+     capi.sqlite3_vfs instance, tagged with lots of extra state which
+     the current VFSes need to have exposed to them.
 
-     After setting up any local state needed, the caller must
-     call theVfs.bindVfs(X,Y), where X is an object containing
-     the sqlite3_io_methods to override and Y is a callback which
-     gets triggered if init succeeds, before the final Promise
-     decides whether or not to reject. The result of bindVfs()
-     must be returned from their main installation function.
+     After setting up any local state needed, the caller must call
+     theVfs.bindVfs(X,Y), where X is an object containing the
+     sqlite3_io_methods to override and Y is a callback which gets
+     triggered if init succeeds, before the final Promise decides
+     whether or not to reject.
 
      This object must, when it's passed to the async part, contain
      only cloneable or sharable objects. After the worker's "inited"
@@ -1105,9 +1095,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         let proxyUri = options.proxyUri +(
           (options.proxyUri.indexOf('?')<0) ? '?' : '&'
         )+'vfs='+vfsName;
-        if( options.workerId ){
-          proxyUri += '&opfs-async-proxy-id='+encodeURIComponent(options.workerId);
-        }
         //sqlite3.config.error("proxyUri",options.proxyUri, (new Error()));
         const W = opfsVfs.worker =
 //#if target:es6-bundler-friendly
