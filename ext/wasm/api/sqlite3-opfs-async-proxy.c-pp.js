@@ -61,7 +61,7 @@ if( !vfsName ){
    VFS or both the "opfs" and "opfs-wl" VFSes.
 */
 const workerId = (Math.random() * 10000000) | 0;
-const isWebLocker = true; //'opfs-wl'===urlParams.get('vfs');
+const isWebLocker = 'opfs-wl'===urlParams.get('vfs');
 const wPost = (type,...args)=>postMessage({type, payload:args});
 const installAsyncProxy = function(){
   const toss = function(...args){throw new Error(args.join(' '))};
@@ -101,7 +101,7 @@ const installAsyncProxy = function(){
     2:console.log.bind(console)
   };
   const logImpl = (level,...args)=>{
-    if(state.verbose>level) loggers[level]('opfs-async-proxy',workerId+":",...args);
+    if(state.verbose>level) loggers[level](vfsName+' async-proxy',workerId+":",...args);
   };
   const log =    (...args)=>logImpl(2, ...args);
   const warn =   (...args)=>logImpl(1, ...args);
@@ -563,7 +563,7 @@ const installAsyncProxy = function(){
           rc = state.sq3Codes.SQLITE_IOERR_SHORT_READ;
         }
       }catch(e){
-        error("xRead() failed",e,fh);
+        //error("xRead() failed",e,fh);
         state.s11n.storeException(1,e);
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_READ);
       }
@@ -590,7 +590,7 @@ const installAsyncProxy = function(){
         affirmNotRO('xTruncate', fh);
         await (await getSyncHandle(fh,'xTruncate')).truncate(size);
       }catch(e){
-        error("xTruncate():",e,fh);
+        //error("xTruncate():",e,fh);
         state.s11n.storeException(2,e);
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_TRUNCATE);
       }
@@ -608,7 +608,7 @@ const installAsyncProxy = function(){
                    {at: Number(offset64)})
         ) ? 0 : state.sq3Codes.SQLITE_IOERR_WRITE;
       }catch(e){
-        error("xWrite():",e,fh);
+        //error("xWrite():",e,fh);
         state.s11n.storeException(1,e);
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR_WRITE);
       }
@@ -811,6 +811,11 @@ const installAsyncProxy = function(){
     const slotWhichOp = opIds.whichOp;
     const idleWaitTime = state.asyncIdleWaitTime;
     const hasWaitAsync = !!Atomics.waitAsync;
+//#if nope
+    error("waitLoop init: isWebLocker",isWebLocker,
+          "idleWaitTime",idleWaitTime,
+          "hasWaitAsync",hasWaitAsync);
+//#endif
     while(!flagAsyncShutdown){
       try {
         let opId;
@@ -834,17 +839,14 @@ const installAsyncProxy = function(){
              Safari: 16.4 (2023-03-27)
 
              The "opfs" VFS was not born until Chrome was somewhere in
-             the v104-108 range and did not work with Safari < v17
-             (2023-09-18) due to a WebKit bug which restricted OPFS
-             access from sub-Workers.
+             the v104-108 range (Summer/Autumn 2022) and did not work
+             with Safari < v17 (2023-09-18) due to a WebKit bug which
+             restricted OPFS access from sub-Workers.
 
-             The waitAsync() counterpart of this block has shown to be
-             slightly more performant for the "opfs" VFS than this
-             block (whereas "opfs-wl" _requires_ that block), so we
-             enable it where it's available, regardless of the value
-             of isWebLocker, with the note that if isWebLocker is true
-             then the bootstrapping of this script will have failed if
-             waitAsync() is not available.
+             The waitAsync() counterpart of this block can be used by
+             both "opfs" and "opfs-wl", whereas this block can only be
+             used by "opfs". Performance comparisons between the two
+             in high-contention tests have been indecisive.
           */
           if('not-equal'!==Atomics.wait(
             state.sabOPView, slotWhichOp, 0, state.asyncIdleWaitTime
@@ -863,6 +865,9 @@ const installAsyncProxy = function(){
                index is a few lines down from here, and that instance
                is required in order for clear communication between
                the sync half of this proxy and this half.
+
+               Much later (2026-03-07): that phenomenon is apparently
+               called a spurious wakeup.
             */
             await releaseImplicitLocks();
             continue;
@@ -913,6 +918,7 @@ const installAsyncProxy = function(){
               }
             });
             initS11n();
+            //warn("verbosity =",opt.verbose, state.verbose);
             log("init state",state);
             wPost('opfs-async-inited');
             waitLoop();

@@ -107,6 +107,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return false;
     }
   };
+
   /**
      Checks whether the given OPFS filesystem entry exists,
      returning true if it does, false if it doesn't or if an
@@ -461,7 +462,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     options = util.nu(options);
     options.vfsName = vfsName;
     options.verbose ??= urlParams.has('opfs-verbose')
-      ? (+urlParams.get('opfs-verbose') || 2) : 1;
+      ? +urlParams.get('opfs-verbose') : 1;
     options.sanityChecks ??= urlParams.has('opfs-sanity-check');
 
     opfsUtil.proxyUri ??= "sqlite3-opfs-async-proxy.js";

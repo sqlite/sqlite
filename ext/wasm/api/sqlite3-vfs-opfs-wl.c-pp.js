@@ -59,7 +59,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 const installOpfsWlVfs = async function(options){
   options = opfsUtil.initOptions('opfs-wl',options);
   if( !options ) return sqlite3;
-  options.verbose = 2;
   const capi = sqlite3.capi,
         state = opfsUtil.createVfsState(),
         opfsVfs = state.vfs,

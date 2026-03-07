@@ -1939,6 +1939,62 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
                                             'sqlite3changeset_old');
   }/*changeset/preupdate additions*/
 
+  /**
+     EXPERIMENTAL. For tentative addition in 3.53.0.
+
+     sqlite3_js_retry_busy(maxTimes,callback[,beforeRetry])
+
+     Calls the given _synchronous_ callback function. If that function
+     returns sqlite3.capi.SQLITE_BUSY _or_ throws an SQLite3Error
+     which a resultCode property of that value then it will suppress
+     that error and try again, up to the given maximum number of
+     times. If the callback returns any other value than that,
+     it is returned. If the maximum number of retries has been
+     reached, an SQLite3Error with a resultCode value of
+     sqlite3.capi.SQLITE_BUSY is thrown. If the callback throws any
+     exception other than the aforementioned BUSY exception, it is
+     propagated. If it throws a BUSY exception on its final attempt,
+     that is propagated as well.
+
+     If the beforeRetry argument is given, it must be a _synchronous_
+     function.  It is called immediately before each retry of the
+     callback (not for the initial call), passed the attempt number
+     (so it starts with 2, not 1). If it throws, the exception is
+     handled as described above. Its result value is ignored.
+
+     To effectively retry "forever", pass a negative maxTimes value,
+     with the caveat that there is no recovery from that if the code
+     gets stuck in a deadlock situation.
+
+     TODO: an async variant of this.
+  */
+  capi.sqlite3_js_retry_busy = function(maxTimes, callback, beforeRetry){
+    for(let n = 1; n <= maxTimes; ++n){
+      try{
+        if( beforeRetry && n>1 ) beforeRetry(n);
+        const rc = callback();
+        if( capi.SQLITE_BUSY===rc ){
+          if( n===maxTimes ){
+            throw new SQLite3Error(rc, [
+              "sqlite3_js_retry_busy() max retry attempts (",
+              maxTimes,
+              ") reached."
+            ].join(''));
+          }
+          continue;
+        }
+        return rc;
+      }catch(e){
+        if( n<maxTimes
+            && (e instanceof SQLite3Error)
+            && e.resultCode===capi.SQLITE_BUSY ){
+          continue;
+        }
+        throw e;
+      }
+    }
+  };
+
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
     WasmAllocError: WasmAllocError,

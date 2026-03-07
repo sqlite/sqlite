@@ -8,6 +8,7 @@
             return ''+v;
           default: break;
       }
+      if( v instanceof Date ) return v.toString();
       if(null===v) return 'null';
       if(v instanceof Error){
         v = {
@@ -84,11 +85,12 @@
     if(workers.counts.passed + workers.counts.failed !== workers.length){
       return;
     }
-    stdout("Total Worker run time:",calcTime(new Date()),"ms");
     if(workers.counts.failed>0){
-      logCss('tests-fail',"Finished with",workers.counts.failed,"failure(s).");
+      logCss('tests-fail',"Finished with",workers.counts.failed,"failure(s) in",
+             calcTime(new Date()),"ms");
     }else{
-      logCss('tests-pass',"All",workers.length,"workers finished.");
+      logCss('tests-pass',"All",workers.length,"workers finished in",
+             calcTime(new Date()),"ms");
     }
   };
 
