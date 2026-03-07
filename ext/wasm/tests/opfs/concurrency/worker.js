@@ -68,7 +68,7 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
             filename: 'file:'+dbName+'?opfs-unlock-asap='+options.unlockAsap,
               flags: 'c'
           });
-          sqlite3.capi.sqlite3_busy_timeout(db.pointer, 15000);
+          sqlite3.capi.sqlite3_busy_timeout(db.pointer, 5000);
         }
         db.transaction((db)=>{
           db.exec([
@@ -121,8 +121,11 @@ globalThis.sqlite3InitModule().then(async function(sqlite3){
       if(interval.error || maxIterations === interval.count){
         finish();
       }else{
-        const jitter = (Math.random()*150 - Math.random()*150) | 0;
-        setTimeout(timer, interval.delay + jitter);
+        const jitter = (Math.random()>=0.5)
+              ? ((Math.random()*100 - Math.random()*100) | 0)
+              : 0;
+        const n = interval.delay + jitter;
+        setTimeout(timer, n<50 ? interval.delay : n);
       }
     }, interval.delay);
   }/*run()*/;

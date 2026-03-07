@@ -668,8 +668,7 @@ const installAsyncProxy = function(){
           __implicitLocks.delete(fid);
           let rc = 0;
           try{
-            /* Make only one attempt to get the handle. */
-            await getSyncHandle(fh, 'xLock');
+            await getSyncHandle(fh, 'xLock', state.asyncIdleWaitTime, 5);
           }catch(e){
             fh.xLock = oldLockType;
             state.s11n.storeException(1, e);
@@ -794,15 +793,64 @@ const installAsyncProxy = function(){
     const opView = state.sabOPView;
     const slotWhichOp = opIds.whichOp;
     const idleWaitTime = state.asyncIdleWaitTime;
+    const hasWaitAsync = !!Atomics.waitAsync;
     while(!flagAsyncShutdown){
       try {
-        const opId = Atomics.load(opView, slotWhichOp);
-        if( 0===opId ){
-          const rv = Atomics.waitAsync(opView, slotWhichOp, 0,
-                                       idleWaitTime);
-          if( rv.async ) await rv.value;
-          await releaseImplicitLocks();
-          continue;
+        let opId;
+        if( hasWaitAsync ){
+          opId = Atomics.load(opView, slotWhichOp);
+          if( 0===opId ){
+            const rv = Atomics.waitAsync(opView, slotWhichOp, 0,
+                                         idleWaitTime);
+            if( rv.async ) await rv.value;
+            await releaseImplicitLocks();
+            continue;
+          }
+        }else{
+          /**
+             For browsers without Atomics.waitAsync(), we require
+             the legacy implementation. Browser versions where
+             waitAsync() arrived:
+
+             Chrome: 90 (2021-04-13)
+             Firefox: 145 (2025-11-11)
+             Safari: 16.4 (2023-03-27)
+
+             The "opfs" VFS was not born until Chrome was somewhere in
+             the v104-108 range and did not work with Safari < v17
+             (2023-09-18) due to a WebKit bug which restricted OPFS
+             access from sub-Workers.
+
+             The waitAsync() counterpart of this block has shown to be
+             slightly more performant for the "opfs" VFS than this
+             block (whereas "opfs-wl" _requires_ that block), so we
+             enable it where it's available, regardless of the value
+             of isWebLocker, with the note that if isWebLocker is true
+             then the bootstrapping of this script will have failed if
+             waitAsync() is not available.
+          */
+          if('not-equal'!==Atomics.wait(
+            state.sabOPView, slotWhichOp, 0, state.asyncIdleWaitTime
+          )){
+            /* Maintenance note: we compare against 'not-equal' because
+
+               https://github.com/tomayac/sqlite-wasm/issues/12
+
+               is reporting that this occasionally, under high loads,
+               returns 'ok', which leads to the whichOp being 0 (which
+               isn't a valid operation ID and leads to an exception,
+               along with a corresponding ugly console log
+               message). Unfortunately, the conditions for that cannot
+               be reliably reproduced. The only place in our code which
+               writes a 0 to the state.opIds.whichOp SharedArrayBuffer
+               index is a few lines down from here, and that instance
+               is required in order for clear communication between
+               the sync half of this proxy and this half.
+            */
+            await releaseImplicitLocks();
+            continue;
+          }
+          opId = Atomics.load(state.sabOPView, slotWhichOp);
         }
         Atomics.store(opView, slotWhichOp, 0);
         const hnd = f.opHandlers[opId]?.f ?? toss("No waitLoop handler for whichOp #",opId);
@@ -812,6 +860,16 @@ const installAsyncProxy = function(){
                   operation */
         ) || [];
         //error("waitLoop() whichOp =",opId, f.opHandlers[opId].key, args);
+//#if nope
+        if( isWebLocker && (opId==opIds.xLock || opIds==opIds.xUnlock) ){
+          /* An expert suggests that this introduces a race condition,
+             but my eyes aren't seeing it. The hope was that this
+             would improve the lock speed a tick, but it does not
+             appear to. */
+          hnd(...args);
+          continue;
+        }
+//#endif
         await hnd(...args);
       }catch(e){
         error('in waitLoop():', e);
@@ -865,7 +923,7 @@ if(globalThis.window === globalThis){
 }else if(!globalThis.Atomics){
   wPost('opfs-unavailable', "Missing Atomics API.",
         "The server must emit the COOP/COEP response headers to enable that.");
-}else if('opfs-wl'===vfsName && !globalThis.Atomics.waitAsync){
+}else if(isWebLocker && !globalThis.Atomics.waitAsync){
   wPost('opfs-unavailable',"Missing required Atomics.waitSync() for "+vfsName);
 }else if(!globalThis.FileSystemHandle ||
          !globalThis.FileSystemDirectoryHandle ||

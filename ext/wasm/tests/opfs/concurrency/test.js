@@ -139,12 +139,13 @@
     return li.join('&');
   };
   for(const opt of [
-    {interval: 500, workers: 1, iterations: 5, vfs: 'opfs-wl', opfsVerbose: 2},
-    {interval: 500, workers: 2, iterations: 5, vfs: 'opfs-wl', opfsVerbose: 2},
     {interval: 1000, workers: 5, iterations: 30},
     {interval: 500, workers: 5, iterations: 30},
     {interval: 250, workers: 3, iterations: 30},
-    {interval: 600, workers: 5, iterations: 100}
+    {interval: 600, workers: 5, iterations: 100},
+    {interval: 500, workers: 1, iterations: 5, vfs: 'opfs-wl'},
+    {interval: 500, workers: 2, iterations: 10, vfs: 'opfs-wl'},
+    {interval: 500, workers: 5, iterations: 20, vfs: 'opfs-wl'},
   ]){
     const li = document.createElement('li');
     eTestLinks.appendChild(li);
@@ -176,4 +177,4 @@
   // Have to delay onmessage assignment until after the loop
   // to avoid that early workers get an undue head start.
   workers.forEach((w)=>w.onmessage = workers.onmessage);
-})(self);
+})(globalThis);
