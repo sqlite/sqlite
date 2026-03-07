@@ -1,5 +1,5 @@
-C Cleanups\sand\sdocs\sin\sthe\snew\sopfs\scode\sstructure.
-D 2026-03-07T02:19:23.636
+C Elide\smore\sof\sthe\s64-bit\swas\sstuff\sfrom\sthe\sdefault\sbuild\starget.
+D 2026-03-07T03:29:26.758
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -628,7 +628,7 @@ F ext/wasm/index.html 475bc283338749db4e3fbf24cf3f5aa020cc85a1fffb780d400a915fcb
 F ext/wasm/jaccwabyt/jaccwabyt.js 4e2b797dc170851c9c530c3567679f4aa509eec0fab73b466d945b00b356574b
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
-F ext/wasm/mkwasmbuilds.c 5961177b9d6ad2b49efbdbb3076527e6886fecef7adf99d71cce58bfca89be08
+F ext/wasm/mkwasmbuilds.c d4479af2774a43104b819d9286961b7c09793ca39440e20191e693ceff21f911
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f2175f526c00cfe562e8f332eb197b5ef2c3d6be1fff2aab1566c2c533a293ac
-R 226e3a09fddd6452554266d606d70e1e
+P 3b470c4c7a1fcc710e6b9eae32134c7f6c3f6008b24c7351257f66f5e8f70311
+R fd6275af0aa6341e83c30c2e83b929c6
 U stephan
-Z 2eb7dcbdcae5965bf20b0b5469f42aa6
+Z 401ca0507277c8f3e4ba9832533ffae5
 # Remove this line to create a well-formed Fossil manifest.

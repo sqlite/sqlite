@@ -246,7 +246,7 @@ const BuildDefs oBuildDefs = {
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_64BIT
+    .flags       = CP_ALL | F_64BIT | F_NOT_IN_ALL
   },
 
   /* The canonical esm build. */
@@ -274,7 +274,7 @@ const BuildDefs oBuildDefs = {
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_JS | F_ESM | F_64BIT
+    .flags       = CP_JS | F_ESM | F_64BIT | F_NOT_IN_ALL
   },
 
  /* speedtest1, our primary benchmarking tool */
