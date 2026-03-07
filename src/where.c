@@ -7554,7 +7554,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       ){
         int r1 = pParse->nMem+1;
         int j, op;
-        int addrIfNull;
+        int addrIfNull = 0; /* Init to avoid false-positive compiler warning */
         if( pLevel->iLeftJoin ){
           addrIfNull = sqlite3VdbeAddOp2(v, OP_IfNullRow, pLevel->iIdxCur, r1);
         }

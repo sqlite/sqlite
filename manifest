@@ -1,5 +1,5 @@
-C Minor\stypo\sfixes\sfrom\s[forum:8fc8bc34291d6f45|forum\spost\s8fc8bc34291d6f45].
-D 2026-03-07T15:15:37.009
+C Fix\sharmless\scompiler\swarnings\son\sWindows.
+D 2026-03-07T17:50:32.369
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -787,7 +787,7 @@ F src/test_vdbecov.c 5c426d9cd2b351f5f9ceb30cabf8c64a63bfcad644c507e0bd9ce2f6ae1
 F src/test_vfs.c b4135c1308516adf0dfd494e6d6c33114e03732be899eace0502919b674586b5
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
+F src/threads.c 85d8b9f05f78211c61e3739ab5db761d7118766d1916ae7f2764735106bc4e13
 F src/tokenize.c f297bbf02037639e7a93b37d9c6e4415b3de1273395ee8fa8183e741e1e7fb72
 F src/treeview.c feaa59f14db4f7b5aacca9c5ad5aeb562c1f98262c1ffd74371f4186ade91fc5
 F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
@@ -811,7 +811,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 88d94fd15a75f6eda831fa32d1148a267ea37bf0a4b69829a73dfde06244b08f
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c d17b2ed5977d823bf0af8e78a029c05539b82f350cdf07e3427c288ce655e4ab
+F src/where.c 406d9ec8d12f646c28c4b4a645ea20329eb343b19cfa3dcd8aab938066c4ae66
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 783ecd30061c875c919a5163e4b55f9a0eccdaf7c9b17ad2908a1668a8766bc4
 F src/whereexpr.c e9f7185fba366d9365aa7a97329609e4cf00b3dd0400d069fbaa5187350c17c6
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d95b9e7c1746b9cbd067aa65806b1f74d0dfe77ab6084cb3da9ef2242cac9134
-R cb1a2c68558e309e187139402ca5ab2b
-U stephan
-Z 961086411a3f50c7f371dac5d105ca77
+P c8fb88c19ed91dc5e205f719aedb895f7ceb62b113f61ec94cc6e435051da15c
+R 850172d46551c7d57e3d40eea58d626b
+U drh
+Z dfa517086561e3dc7a550e4649699f74
 # Remove this line to create a well-formed Fossil manifest.
