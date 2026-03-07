@@ -79,7 +79,6 @@
 #include <memory.h>
 #include <string.h>
 #include <assert.h>
-#define OMIT_BASE85_CHECKER
 #ifndef OMIT_BASE85_CHECKER
 # include <ctype.h>
 #endif
