@@ -1,5 +1,5 @@
-C Fix\sa\sNULL\spointer\sdereference\sfollowing\sOOM\sin\sthe\ssha1\sextension.
-D 2026-03-07T00:03:47.603
+C Fix\sanother\sNULL\sptr\sderef\sfollowing\sOOM\sin\sthe\ssha1\sextension.
+D 2026-03-07T00:10:34.645
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -393,7 +393,7 @@ F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c 22c6d8f00cc1b5089b1b37392e9097e9df9a5db53be86daf9a7669d95bb179f4
-F ext/misc/sha1.c 7e7dafd21f99b0881f5ff86132bda6bb4b918de4a1b820a1fb63018a928865b9
+F ext/misc/sha1.c 8bf60344c11a525384c2efd1ae77f160b06be336db679effaadf292d4b41451c
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 693c8fd3293087fa821322967a97e59dfa24051e5d2ca7fa85790a4034db6fa4
@@ -2189,8 +2189,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P de37f30b2100e0c249e5c0853d6af90cd3c2069899747dcf0889e6a3d6b94061
-R 9ddd6b7b1d56576ec468a44fa084a4a6
+P 530b3f97ca4e8b1d263266855743b0d57d048104a6c3bed6c4d7958985767bc6
+R 68d7e539387dc166cbf2bf5523a7998a
 U drh
-Z b2af67a70e2f8c8bfde1636eeb5d1fa8
+Z a6d283ed4760a59d40fbc8bcecb600f0
 # Remove this line to create a well-formed Fossil manifest.
