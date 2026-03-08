@@ -10,7 +10,8 @@ const jsSqlite = urlArgs.get('sqlite3.dir')
       +options.workerName;
 importScripts(jsSqlite)/*Sigh - URL args are not propagated this way*/;
 //const sqlite3InitModule = (await import(jsSqlite)).default;
-globalThis.sqlite3InitModule.__isUnderTest = true;
+globalThis.sqlite3InitModule.__isUnderTest =
+  true /* causes sqlite3.opfs to be retained */;
 globalThis.sqlite3InitModule().then(async function(sqlite3){
   const wPost = (type,...payload)=>{
     postMessage({type, worker: options.workerName, payload});

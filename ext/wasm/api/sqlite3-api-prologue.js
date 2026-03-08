@@ -1955,7 +1955,7 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
 
      Calls the given _synchronous_ callback function. If that function
      returns sqlite3.capi.SQLITE_BUSY _or_ throws an SQLite3Error
-     which a resultCode property of that value then it will suppress
+     with a resultCode property of that value then it will suppress
      that error and try again, up to the given maximum number of
      times. If the callback returns any other value than that,
      it is returned. If the maximum number of retries has been
@@ -1972,8 +1972,8 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
      handled as described above. Its result value is ignored.
 
      To effectively retry "forever", pass a negative maxTimes value,
-     with the caveat that there is no recovery from that if the code
-     gets stuck in a deadlock situation.
+     with the caveat that there is no recovery from that unless the
+     beforeRetry() can figure out when to throw.
 
      TODO: an async variant of this.
   */
@@ -2088,13 +2088,15 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       return ff.isReady = p.catch(catcher);
     }.bind(sqlite3ApiBootstrap),
     /**
-       scriptInfo ideally gets injected into this object by the
-       infrastructure which assembles the JS/WASM module. It contains
-       state which must be collected before sqlite3ApiBootstrap() can
-       be declared. It is not necessarily available to any
-       sqlite3ApiBootstrap.initializers but "should" be in place (if
-       it's added at all) by the time that
-       sqlite3ApiBootstrap.initializersAsync is processed.
+       scriptInfo holds information about the currenty-loading script
+       so that we can locate the WASM file if it's somewhere other
+       than the build-time-defined directory. It ideally gets injected
+       into this object by the infrastructure which assembles the
+       JS/WASM module. It contains state which must be collected
+       before sqlite3ApiBootstrap() can be declared. It is not
+       necessarily available to any sqlite3ApiBootstrap.initializers
+       but "should" be in place (if it's added at all) by the time
+       that sqlite3ApiBootstrap.initializersAsync is processed.
 
        This state is not part of the public API, only intended for use
        with the sqlite3 API bootstrapping and wasm-loading process.
@@ -2138,10 +2140,10 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       loader, and if we lose that capability for some reason then
       we'll lose access to this metadata.
 
-      These data are interesting for exploring how the wasm/JS
-      pieces connect, e.g. for exploring exactly what Emscripten
-      imports into WASM from its JS glue, but it's not
-      SQLite-related.
+      These data are interesting for exploring how the wasm/JS pieces
+      connect, e.g. for exploring exactly what Emscripten imports into
+      WASM from its JS glue, but it's not SQLite-related and is not
+      required for the library to work.
     */
     const iw = sqlite3.scriptInfo?.instantiateWasm;
     if( iw ){
