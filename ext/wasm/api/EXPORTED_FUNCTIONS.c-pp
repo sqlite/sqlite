@@ -13,6 +13,7 @@ _sqlite3_bind_parameter_index
 _sqlite3_bind_parameter_name
 _sqlite3_bind_pointer
 _sqlite3_bind_text
+_sqlite3_bind_zeroblob
 _sqlite3_busy_handler
 _sqlite3_busy_timeout
 _sqlite3_cancel_auto_extension

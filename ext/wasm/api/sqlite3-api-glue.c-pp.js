@@ -98,6 +98,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_bind_parameter_name", "string", "sqlite3_stmt*", "int"],
       ["sqlite3_bind_pointer", "int",
        "sqlite3_stmt*", "int", "*", "string:static", "*"],
+      /* sqlite_bind_text() is hand-written */
+      ["sqlite3_bind_zeroblob", "int", "sqlite3_stmt*", "int", "int"],
       ["sqlite3_busy_handler","int", [
         "sqlite3*",
         new wasm.xWrap.FuncPtrAdapter({

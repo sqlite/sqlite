@@ -1,5 +1,5 @@
-C Use\sthe\sUINT64_C()\smacro\srather\sthan\sthe\sLLU\ssuffix\son\sinteger\sliterals\nfor\sportability\sto\solder\sMicrosoft\scompilers.\n[forum:/forumpost/0a9ffaff6fcdedb3|Forum\sthread\s0a9ffaff6fcdedb3].
-D 2026-03-07T22:37:28.390
+C Expose\ssqlite3_bind_zeroblob()\sto\sJS/WASM.
+D 2026-03-08T05:53:47.701
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -580,14 +580,14 @@ F ext/wasm/SQLTester/SQLTester.mjs 6b3c52ed36a5573ca4883176f326332a8d4c0cecf5efd
 F ext/wasm/SQLTester/SQLTester.run.mjs 57f2adb33f43f2784abbf8026c1bfd049d8013af1998e7dcb8b50c89ffc332e0
 F ext/wasm/SQLTester/index.html 64f3435084c7d6139b08d1f2a713828a73f68de2ae6a3112cbb5980d991ba06f
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
-F ext/wasm/api/EXPORTED_FUNCTIONS.c-pp 7ba933e8f1290cc65459dd371c0c9a031d96bdf14d7a2244fa761d9775117b90
+F ext/wasm/api/EXPORTED_FUNCTIONS.c-pp 6ad5ace0a16b3300e8d40d4e596eee1c773424e22d57f9b8d37cbe87a101638a
 F ext/wasm/api/README.md a905d5c6bfc3e2df875bd391d6d6b7b48d41b43bdee02ad115b47244781a7e81
 F ext/wasm/api/extern-post-js.c-pp.js d9f42ecbedc784c0d086bc37800e52946a14f7a21600b291daa3f963c314f930
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/post-js-footer.js a50c1a2c4d008aede7b2aa1f18891a7ee71437c2f415b8aeb3db237ddce2935b
 F ext/wasm/api/post-js-header.js d24bd0d065f3489c8b78ddf3ead6321e5d047187a162cd503c41700e03dd1f06
 F ext/wasm/api/pre-js.c-pp.js 9234ea680a2f6a2a177e8dcd934bdc5811a9f8409165433a252b87f4c07bba6f
-F ext/wasm/api/sqlite3-api-glue.c-pp.js 9b33e3ee467791dec4fd1b444b12a8545dfbb6c8b28ac651c7bdc7661a3b5a5c
+F ext/wasm/api/sqlite3-api-glue.c-pp.js 7afb3da3510facafd94ce31133ec847d0d4db5b2b5e4325941803fd3bca07c16
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js 45454631265d9ce82685f1a64e1650ee19c8e121c41db98a22b534c15e543cfa
 F ext/wasm/api/sqlite3-api-prologue.js 2eac3d601c8a824fda1529f9eb894518672d3e575b49c0601094afda442b294f
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667430f9d45167569633ffc7567938
@@ -641,7 +641,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.c-pp.html d0032241d0b24d996cf1c4dd0dde364189693af9b5c986e48af7d3d720fcd244
 F ext/wasm/tester1.c-pp.html 52d88fe2c6f21a046030a36410b4839b632f4424028197a45a3d5669ea724ddb
-F ext/wasm/tester1.c-pp.js 6b946cd6d4da130dbae4a401057716d27117ca02cad2ea8c29ae9c46c675d618
+F ext/wasm/tester1.c-pp.js 1c81b2b3f6c02adbb50ff48e07645946cd066cd215c0b8b500574fefecacf5c8
 F ext/wasm/tests/opfs/concurrency/index.html 657578a6e9ce1e9b8be951549ed93a6a471f4520a99e5b545928668f4285fb5e
 F ext/wasm/tests/opfs/concurrency/test.js d08889a5bb6e61937d0b8cbb78c9efbefbf65ad09f510589c779b7cc6a803a88
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2189,8 +2189,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d9c23b49e355233bbfcdc8305dcae21640e66a0bbf1daed0dd3f9d132c1ef69f
-R 9d2dec494ff9f4831260cc9b7a06a387
-U drh
-Z 3b9c42eed985a9a23d549d066c314144
+P 27be26566fdb4d01c44dc111f1c18c835797de0990d4fcc876e91edc216e9e93 0473eeb3cefa1d7882375e3f89d239d570649349c5a0a8ddd90b0a336a9bb493
+R 4c2e89b0f91b21484e69896ee4014c01
+T +closed 0473eeb3cefa1d7882375e3f89d239d570649349c5a0a8ddd90b0a336a9bb493 Closed\sby\sintegrate-merge.
+U stephan
+Z 8d110bf3e994011a5b14c867fd6c96aa
 # Remove this line to create a well-formed Fossil manifest.

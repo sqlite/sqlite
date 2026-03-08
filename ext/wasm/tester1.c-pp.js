@@ -4219,13 +4219,23 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }else{
           log("Column metadata APIs not enabled");
         } // column metadata APIs
-        stmt.finalize();
-        stmt = null;
+        stmt.finalize(); stmt = null;
         stmt = db.prepare("select ?1").bind(new Uint8Array([97,0,98,0,99]));
         stmt.step();
         const sv = capi.sqlite3_column_value(stmt,0);
         T.assert("a\0b\0c"===capi.sqlite3_value_text(sv),
                  "Expecting NULs to have survived.");
+        stmt.finalize(); stmt = null;
+
+        /* sqlite3_bind_zeroblob() (added in 3.53) */
+        stmt = db.prepare("select ?1");
+        T.assert( 0===capi.sqlite3_bind_zeroblob(stmt, 1, 53) );
+        T.assert( stmt.step() );
+        const b = stmt.get(0);
+        stmt.finalize(); stmt = null;
+        T.assert( b instanceof Uint8Array )
+          .assert( 53===b.length );
+
       }finally{
         if(stmt) stmt.finalize();
         db.close();
