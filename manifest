@@ -1,5 +1,5 @@
-C Use\sthe\sUINT64_C()\smacro\srather\sthan\sthe\sLLU\ssuffix\son\sinteger\sliterals\nfor\sportability\sto\solder\sMicrosoft\scompilers.\n[forum:/forumpost/0a9ffaff6fcdedb3|Forum\sthread\s0a9ffaff6fcdedb3].
-D 2026-03-07T22:37:28.390
+C Continue\sfixes\sto\s3.52\son\sa\sbranch.
+D 2026-03-08T10:44:28.528
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2189,8 +2189,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d9c23b49e355233bbfcdc8305dcae21640e66a0bbf1daed0dd3f9d132c1ef69f
+P 27be26566fdb4d01c44dc111f1c18c835797de0990d4fcc876e91edc216e9e93
 R 9d2dec494ff9f4831260cc9b7a06a387
+T *branch * branch-3.52
+T *sym-branch-3.52 *
+T -sym-trunk *
 U drh
-Z 3b9c42eed985a9a23d549d066c314144
+Z e6c8d80d84828814a3a3f293a6350b63
 # Remove this line to create a well-formed Fossil manifest.
