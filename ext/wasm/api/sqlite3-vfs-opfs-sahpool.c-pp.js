@@ -55,6 +55,10 @@
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
+  if( sqlite3.config.disable?.vfs?.['opfs-sahpool'] ){
+    return;
+  }
+
   const toss = sqlite3.util.toss;
   const toss3 = sqlite3.util.toss3;
   const initPromises = Object.create(null) /* cache of (name:result) of VFS init results */;
