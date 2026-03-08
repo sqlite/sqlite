@@ -7340,7 +7340,7 @@ static int outputDumpWarning(ShellState *p, const char *zLike){
   sqlite3_stmt *pStmt = 0;
   shellPreparePrintf(p->db, &rc, &pStmt,
     "SELECT 1 FROM sqlite_schema o WHERE "
-    "sql LIKE 'CREATE VIRTUAL TABLE%%' AND %s", zLike ? zLike : "true"
+    "sql LIKE 'CREATE VIRTUAL TABLE%%' AND (%s)", zLike ? zLike : "true"
   );
   if( rc==SQLITE_OK && sqlite3_step(pStmt)==SQLITE_ROW ){
     cli_puts("/* WARNING: "
