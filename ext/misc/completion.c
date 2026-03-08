@@ -199,6 +199,7 @@ static int completionNext(sqlite3_vtab_cursor *cur){
   completion_cursor *pCur = (completion_cursor*)cur;
   int eNextPhase = 0;  /* Next phase to try if current phase reaches end */
   int iCol = -1;       /* If >=0, step pCur->pStmt and use the i-th column */
+  int rc;
   pCur->iRowid++;
   while( pCur->ePhase!=COMPLETION_EOF ){
     switch( pCur->ePhase ){
@@ -237,11 +238,14 @@ static int completionNext(sqlite3_vtab_cursor *cur){
             );
             zSep = " UNION ";
           }
-          sqlite3_finalize(pS2);
+          rc = sqlite3_finalize(pS2);
           zSql = sqlite3_str_finish(pStr);
           if( zSql==0 ) return SQLITE_NOMEM;
-          sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          if( rc==SQLITE_OK ){
+            sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          }
           sqlite3_free(zSql);
+          if( rc ) return rc;
         }
         iCol = 0;
         eNextPhase = COMPLETION_COLUMNS;
@@ -265,11 +269,14 @@ static int completionNext(sqlite3_vtab_cursor *cur){
             );
             zSep = " UNION ";
           }
-          sqlite3_finalize(pS2);
+          rc = sqlite3_finalize(pS2);
           zSql = sqlite3_str_finish(pStr);
           if( zSql==0 ) return SQLITE_NOMEM;
-          sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          if( rc==SQLITE_OK ){
+            sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          }
           sqlite3_free(zSql);
+          if( rc ) return rc;
         }
         iCol = 0;
         eNextPhase = COMPLETION_EOF;
@@ -286,9 +293,10 @@ static int completionNext(sqlite3_vtab_cursor *cur){
         pCur->szRow = sqlite3_column_bytes(pCur->pStmt, iCol);
       }else{
         /* When all rows are finished, advance to the next phase */
-        sqlite3_finalize(pCur->pStmt);
+        rc = sqlite3_finalize(pCur->pStmt);
         pCur->pStmt = 0;
         pCur->ePhase = eNextPhase;
+        if( rc ) return rc;
         continue;
       }
     }
