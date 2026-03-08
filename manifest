@@ -1,5 +1,5 @@
-C Refactor\stester1\sOPFS\stest\sto\ssupport\sboth\sthe\s"opfs"\sand\s"opfs-wl"\sVFSes.
-D 2026-03-08T07:58:02.639
+C Update\sthe\stester1\sSEE\stests\sto\saccount\sfor\sopfs-wl.
+D 2026-03-08T08:09:09.808
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -644,7 +644,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.c-pp.html d0032241d0b24d996cf1c4dd0dde364189693af9b5c986e48af7d3d720fcd244
 F ext/wasm/tester1.c-pp.html 52d88fe2c6f21a046030a36410b4839b632f4424028197a45a3d5669ea724ddb
-F ext/wasm/tester1.c-pp.js bccc66cdb09477ef09bf7c871bdba85f2c8b936a32d5dc07dc8c882517f73b50
+F ext/wasm/tester1.c-pp.js a84541ec9cfedcb41279a0da6b34c052a2c7b397c696b8a8a8f85964c8d1e9ca
 F ext/wasm/tests/opfs/concurrency/index.html c8ac239f6fb45440adbdddb33a0fde2c61a20799189d60b8926be702a27dd226
 F ext/wasm/tests/opfs/concurrency/test.js 46c772bc18abb0fcbb058d57b5aaee9e7938f948ecdd802c6ca0850ad3519f92
 F ext/wasm/tests/opfs/concurrency/worker.js fc985ec86b70b057224e8caaa9c5a11892ea9b980a5c5da21b1efdf5f12bc3f6
@@ -2191,8 +2191,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9a07eb7a941479510891d1444aacbeb440efaad3e9a13f186833618d8b60a8da
-R 2c796a522d5a1762226997586fbd0bf5
+P 17ac8d7bdfaf96510abea8c11019045c1703b7040655d9c4c8d7001636260b50
+R 20c127d6b469936bc976ef9124b5bb85
 U stephan
-Z 681d2e8fff944e3c89259f16f4209f56
+Z c738f3c585f3f955ad9c9cce49c18902
 # Remove this line to create a well-formed Fossil manifest.

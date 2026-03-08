@@ -3599,7 +3599,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       test: function(sqlite3){
         const JDb = sqlite3.oo1.JsStorageDb;
         T.seeBaseCheck(JDb,
-                       (isInit)=>return {filename: "session"},
+                       (isInit)=>{
+                         return {filename: "session"};
+                       },
                        ()=>JDb.clearStorage('session'));
       }
     })/*kvvfs with SEE*/
@@ -3911,7 +3913,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 //#if enable-see
     .t({
       name: 'OPFS with SEE encryption',
-      predicate: ()=>!!sqlite3.oo1.OpfsDb,
+      predicate: (sqlite3)=>!!sqlite3.oo1.OpfsDb,
       test: function(sqlite3){
         T.seeBaseCheck(
           sqlite3.oo1.OpfsDb,
@@ -3945,7 +3947,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 //#if enable-see
     .t({
       name: 'OPFS-WL with SEE encryption',
-      predicate: ()=>!!sqlite3.oo1.OpfsWlDb,
+      predicate: (sqlite3)=>!!sqlite3.oo1.OpfsWlDb,
       test: function(sqlite3){
         T.seeBaseCheck(
           sqlite3.oo1.OpfsWlDb,
