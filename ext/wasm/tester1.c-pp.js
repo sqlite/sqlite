@@ -3890,33 +3890,42 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ;/*end of session API group*/;
 
   ////////////////////////////////////////////////////////////////////////
-  T.g('OPFS: Origin-Private File System',
-      (sqlite3)=>(!!sqlite3.oo1.OpfsDb || 'requires "opfs" VFS'))
+  // Tests for "opfs" and "opfs-wl" are essentially identical, so...
+//#query {
+  select 'opfs' vfsName, 'OPFS: Origin-Private File System' label, 'OpfsDb' oo1Ctor
+  UNION ALL
+  select 'opfs-wl', 'OPFS with Web Locks', 'OpfsWlDb'
+}
+   T.g('@vfsName@: @label@',
+      (sqlite3)=>(!!capi.sqlite3_vfs_find("@vfsName@") || 'requires "@vfsName@" VFS'))
     .t({
-      name: 'OPFS db sanity checks',
+      name: '@vfsName@ db sanity checks',
       test: async (sqlite3)=>{
-        await T.opfsCommon.sanityChecks('opfs', sqlite3.oo1.OpfsDb, sqlite3);
+        await T.opfsCommon.sanityChecks('@vfsName@', sqlite3.oo1.@oo1Ctor@, sqlite3);
       }
     })
     .t({
-      name: 'OPFS import/export',
+      name: '@vfsName@ import/export',
       test: async (sqlite3)=>{
-        await T.opfsCommon.importer('opfs', sqlite3.oo1.OpfsDb, sqlite3);
+        await T.opfsCommon.importer('@vfsName@', sqlite3.oo1.@oo1Ctor@, sqlite3);
       }
     })
+//#if vfsName = "opfs"
+//#// This is independent of the VFS, so only test this once
     .t({
       name: '(Internal-use) OPFS utility APIs',
       test: async (sqlite3)=>{
-        await T.opfsCommon.opfsUtil("opfs", sqlite3.oo1.OpfsDb, sqlite3);
+        await T.opfsCommon.opfsUtil("@vfsName@", sqlite3.oo1.@oo1Ctor@, sqlite3);
       }
     })
+//#/if
 //#if enable-see
     .t({
-      name: 'OPFS with SEE encryption',
-      predicate: (sqlite3)=>!!sqlite3.oo1.OpfsDb,
+      name: '@vfsName@ with SEE encryption',
+      predicate: (sqlite3)=>!!sqlite3.oo1.@oo1Ctor@,
       test: function(sqlite3){
         T.seeBaseCheck(
-          sqlite3.oo1.OpfsDb,
+          sqlite3.oo1.@oo1Ctor@,
           function(isInit){
             const opt = {filename: 'file:///sqlite3-see.edb'};
             if( isInit ) opt.filename += '?delete-before-open=1';
@@ -3928,41 +3937,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     })
 //#/if enable-see
   ;/* end OPFS tests */
-
-  ////////////////////////////////////////////////////////////////////////
-  T.g('OPFS-WL: Origin-Private File System with Web Locks',
-      (sqlite3)=>(!!sqlite3.oo1.OpfsWlDb || 'requires "opfs-wl" VFS'))
-    .t({
-      name: 'OPFS-WL db sanity checks',
-      test: async (sqlite3)=>{
-        await T.opfsCommon.sanityChecks('opfs-wl', sqlite3.oo1.OpfsWlDb, sqlite3);
-      }
-    })
-    .t({
-      name: 'OPFS-WL import/export',
-      test: async (sqlite3)=>{
-        await T.opfsCommon.importer('opfs-wl', sqlite3.oo1.OpfsWlDb, sqlite3);
-      }
-    })
-//#if enable-see
-    .t({
-      name: 'OPFS-WL with SEE encryption',
-      predicate: (sqlite3)=>!!sqlite3.oo1.OpfsWlDb,
-      test: function(sqlite3){
-        T.seeBaseCheck(
-          sqlite3.oo1.OpfsWlDb,
-          function(isInit){
-            const opt = {filename: 'file:///sqlite3-see.edb'};
-            if( isInit ) opt.filename += '?delete-before-open=1';
-            return opt;
-          },
-          ()=>{}
-        );
-      }
-    })
-//#/if enable-see
-  ;/* end OPFS tests */
-
+//#/query
   ////////////////////////////////////////////////////////////////////////
   T.g('OPFS SyncAccessHandle Pool VFS',
       (sqlite3)=>(!!sqlite3.installOpfsSAHPoolVfs || "requires OPFS SAH Pool APIs"))

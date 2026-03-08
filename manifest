@@ -1,5 +1,5 @@
-C Upgrade\sext/wasm/c-pp-lite.c\sto\sits\snewer\ssibling\sbecause\swe've\sreached\sthe\solder\sone's\slimits.\sThis\srenames\sc-pp-lite.c\sto\slibcmpp.c\sto\smaintain\sboth\sthe\sSCM-\sand\scode\slineage\sbut\sthat\smay\send\sup\slooking\sa\sbit\sweird\sbecause\sthe\sdiff\sbetween\sthe\stwo\sis\svast.
-D 2026-03-08T16:03:08.690
+C Consolidate\sthe\sopfs\sand\sopfs-wl\stester1\stests\susing\sthe\spreprocessor.
+D 2026-03-08T17:07:01.581
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -626,7 +626,7 @@ F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73
 F ext/wasm/index.html 5bf6cf1b0a3c8b9f5f54d77f2219d7ae87a15162055ce308109c49b1dcab4239
 F ext/wasm/jaccwabyt/jaccwabyt.js 4e2b797dc170851c9c530c3567679f4aa509eec0fab73b466d945b00b356574b
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
-F ext/wasm/libcmpp.c 0e2cec7de7c9cbe7941e6a4dc0c123cec736578a3eeae7828ac18706acd3cea6 w ext/wasm/c-pp-lite.c
+F ext/wasm/libcmpp.c 0e2cec7de7c9cbe7941e6a4dc0c123cec736578a3eeae7828ac18706acd3cea6
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
 F ext/wasm/mkwasmbuilds.c d4479af2774a43104b819d9286961b7c09793ca39440e20191e693ceff21f911
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
@@ -644,7 +644,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.c-pp.html 7171022e7f4da8f46e5f50ea81dd6ce840b9235c47653a5deeb3764ccc2fe472
 F ext/wasm/tester1.c-pp.html bd927ccf51ddd65e924660a0487add99e1b044afe03950e49d87ccf44efdddb6
-F ext/wasm/tester1.c-pp.js 604e3e8e01a734f0d2e176cd6c7674c64a808923aac6624fc8a257de07e1aefd
+F ext/wasm/tester1.c-pp.js 581be6f3228351bc77512ba743912d1ad52f40dde1fef1a943fd568b0cfc51b1
 F ext/wasm/tests/opfs/concurrency/index.html c8ac239f6fb45440adbdddb33a0fde2c61a20799189d60b8926be702a27dd226
 F ext/wasm/tests/opfs/concurrency/test.js 46c772bc18abb0fcbb058d57b5aaee9e7938f948ecdd802c6ca0850ad3519f92
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 699295f84ef2c4da363f13126abde6af07697d0959896cd868b14513d4278964
-R c74e99e5f80136211b846c84cc94f61a
+P 2e2339bd9e4293bad04ece7673a3048b99c2143cf9573ade2ec082d95744b981
+R 9cd4639cecfa2ed218f49daad5bfc92b
 U stephan
-Z 6f57cbae6afc2acefab069dcb231bf44
+Z 873b4faa43addc72711cdf46682db1a4
 # Remove this line to create a well-formed Fossil manifest.
