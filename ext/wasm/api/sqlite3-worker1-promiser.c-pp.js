@@ -24,7 +24,7 @@
 */
 //#if not defined target:es6-module
 'use strict';
-//#endif
+//#/if
 /**
    Configures an sqlite3 Worker API #1 Worker such that it can be
    manipulated via a Promise-based interface and returns a factory
@@ -278,13 +278,13 @@ globalThis.sqlite3Worker1Promiser.defaultConfig = {
       }
     }
     return new Worker(theJs + globalThis.location.search);
-//#endif
+//#/if
   }
 //#if not target:es6-module
   .bind({
     currentScript: globalThis?.document?.currentScript
   })
-//#endif
+//#/if
   ,
   onerror: (...args)=>console.error('sqlite3Worker1Promiser():',...args)
 }/*defaultConfig*/;
@@ -349,7 +349,7 @@ globalThis.sqlite3Worker1Promiser.v2.defaultConfig =
 */
 export default sqlite3Worker1Promiser.v2;
 delete globalThis.sqlite3Worker1Promiser;
-//#endif /* target:es6-module */
+//#/if /* target:es6-module */
 //#else
 /* Built with the omit-oo1 flag. */
-//#endif if not omit-oo1
+//#/if if not omit-oo1

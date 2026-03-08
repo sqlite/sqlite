@@ -1,4 +1,4 @@
-//#if nope
+//#if 0
 /**
    This file is for preprocessor #include into the "opfs" and
    "opfs-wl" impls, as well as their async-proxy part. It must be
@@ -7,9 +7,9 @@
    (B) it references an object which is local to each of those files
    but which has a 99% identical structure for each.
 */
-//#endif
+//#/if
 //#// vfs.metrics.enable is a refactoring crutch.
-//#define vfs.metrics.enable=0
+//#define vfs.metrics.enable 0
 const initS11n = function(){
   /**
      This proxy de/serializes cross-thread function arguments and
@@ -92,7 +92,7 @@ const initS11n = function(){
   state.s11n.deserialize = function(clear=false){
 //#if vfs.metrics.enable
     ++metrics.s11n.deserialize.count;
-//#endif
+//#/if
     const t = performance.now();
     const argc = viewU8[0];
     const rc = argc ? [] : null;
@@ -120,7 +120,7 @@ const initS11n = function(){
     //log("deserialize:",argc, rc);
 //#if vfs.metrics.enable
     metrics.s11n.deserialize.time += performance.now() - t;
-//#endif
+//#/if
     return rc;
   };
 
@@ -140,7 +140,7 @@ const initS11n = function(){
     const t = performance.now();
 //#if vfs.metrics.enable
     ++metrics.s11n.serialize.count;
-//#endif
+//#/if
     if(args.length){
       //log("serialize():",args);
       const typeIds = [];
@@ -173,7 +173,7 @@ const initS11n = function(){
     }
 //#if vfs.metrics.enable
     metrics.s11n.serialize.time += performance.now() - t;
-//#endif
+//#/if
   };
 
 //#if defined opfs-async-proxy
@@ -184,7 +184,7 @@ const initS11n = function(){
       }
     })
     : ()=>{};
-//#endif
+//#/if
 
   return state.s11n;
 //#undef vfs.metrics.enable

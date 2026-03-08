@@ -1471,4 +1471,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   The OPFS SAH Pool VFS parts are elided from builds targeting
   node.js.
 */
-//#endif target:node
+//#/if target:node

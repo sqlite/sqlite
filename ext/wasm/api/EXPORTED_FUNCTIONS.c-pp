@@ -226,14 +226,14 @@ _sqlite3session_object_config
 _sqlite3session_patchset
 _sqlite3session_patchset_strm
 _sqlite3session_table_filter
-//#endif not bare-bones
+//#/if not bare-bones
 //#if enable-see
 _sqlite3_key
 _sqlite3_key_v2
 _sqlite3_rekey
 _sqlite3_rekey_v2
 _sqlite3_activate_see
-//#endif enable-see
+//#/if enable-see
 //#if fiddle
 _fiddle_db_arg
 _fiddle_db_filename
@@ -245,4 +245,4 @@ _fiddle_reset_db
 _fiddle_db_handle
 _fiddle_db_vfs
 _fiddle_export_db
-//#endif fiddle
+//#/if fiddle

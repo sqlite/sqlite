@@ -177,4 +177,4 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   })
 });
 }/*sqlite3ApiBootstrap.initializers.push()*/);
-//#endif target:node
+//#/if target:node

@@ -1118,7 +1118,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         new Worker(new URL(proxyUri, import.meta.url));
 //#else
         new Worker(proxyUri);
-//#endif
+//#/if
         let zombieTimer = setTimeout(()=>{
           /* At attempt to work around a browser-specific quirk in which
              the Worker load is failing in such a way that we neither
@@ -1140,7 +1140,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         };
 
         const opRun = opfsVfs.opRun;
-//#if nope
+//#if 0
         /**
            Not part of the public API. Only for test/development use.
         */
@@ -1154,7 +1154,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             W.postMessage({type: 'opfs-async-restart'});
           }
         };
-//#endif
+//#/if
 
         const sanityCheck = function(){
           const scope = wasm.scopedAllocPush();
@@ -1298,4 +1298,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*createVfsState()*/;
 
 }/*sqlite3ApiBootstrap.initializers*/);
-//#endif target:node
+//#/if target:node

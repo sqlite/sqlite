@@ -811,11 +811,11 @@ const installAsyncProxy = function(){
     const slotWhichOp = opIds.whichOp;
     const idleWaitTime = state.asyncIdleWaitTime;
     const hasWaitAsync = !!Atomics.waitAsync;
-//#if nope
+//#if 0
     error("waitLoop init: isWebLocker",isWebLocker,
           "idleWaitTime",idleWaitTime,
           "hasWaitAsync",hasWaitAsync);
-//#endif
+//#/if
     while(!flagAsyncShutdown){
       try {
         let opId;
@@ -882,7 +882,7 @@ const installAsyncProxy = function(){
                   operation */
         ) || [];
         //error("waitLoop() whichOp =",opId, f.opHandlers[opId].key, args);
-//#if nope
+//#if 0
         if( isWebLocker && (opId==opIds.xLock || opIds==opIds.xUnlock) ){
           /* An expert suggests that this introduces a race condition,
              but my eyes aren't seeing it. The hope was that this
@@ -891,7 +891,7 @@ const installAsyncProxy = function(){
           hnd(...args);
           continue;
         }
-//#endif
+//#/if
         await hnd(...args);
       }catch(e){
         error('in waitLoop():', e);

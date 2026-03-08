@@ -25,9 +25,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   delete sqlite3.capi.KVVfsFile;
 }
 //#else
-//#@policy error
+//#@ policy error
 //#savepoint begin
-//#define kvvfs-v2-added-in=3.52.0
+//#define kvvfs-v2-added-in "3.52.0"
 
 /**
    kvvfs - the Key/Value VFS - is an SQLite3 VFS which delegates
@@ -581,7 +581,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         ? cache.storagePool[zClass]
         : cache.storagePool[wasm.cstrToJs(zClass)];
 
-//#if nope
+//#if 0
   // fileForDb() works but we don't have a current need for it.
   /**
      Expects an (sqlite3*). Uses sqlite3_file_control() to extract its
@@ -624,7 +624,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       throw e;
     }
   };
-//#endif nope
+//#/if
 
   const kvvfsMakeKey = wasm.exports.sqlite3__wasm_kvvfsMakeKey;
   /**
@@ -968,7 +968,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return 0;
       }
 
-//#if nope
+//#if 0
       // these impls work but there's currently no pressing need _not_ use
       // the native impls.
       xCurrentTime: function(pVfs,pOut){
@@ -980,7 +980,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         wasm.poke64(pOut, (2440587.5 * 86400000) + Date.now());
         return 0;
       }
-//#endif
+//#/if
     }/*.vfs*/,
 
     /**
@@ -1076,7 +1076,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
       },
 
-//#if not nope
+//#if 0
       // We override xRead/xWrite only for logging/debugging. They
       // should otherwise be disabled (it's faster that way).
       xRead: function(pFile,pTgt,n,iOff64){
@@ -1107,9 +1107,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           return cache.setError(e);
         }
       },
-//#endif nope
+//#/if
 
-//#if nope
+//#if 0
       xTruncate: function(pFile,i64){},
       xFileSize: function(pFile,pi64Out){},
       xLock: function(pFile,iLock){},
@@ -1117,7 +1117,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xCheckReservedLock: function(pFile,piOut){},
       xSectorSize: function(pFile){},
       xDeviceCharacteristics: function(pFile){}
-//#endif
+//#/if
     }/*.ioDb*/,
 
     ioJrnl:{
@@ -1125,7 +1125,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          are copied as-is from the ioDb objects. Others are specific
          to journal files. */
       xClose: true,
-//#if nope
+//#if 0
       xRead: function(pFile,pTgt,n,iOff64){},
       xWrite: function(pFile,pSrc,n,iOff64){},
       xTruncate: function(pFile,i64){},
@@ -1137,15 +1137,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xCheckReservedLock: true,
       xSectorSize: true,
       xDeviceCharacteristics: true
-//#endif
+//#/if
     }/*.ioJrnl*/
   }/*methodOverrides*/;
 
-//#if nope
+//#if 0
   debug("pVfs and friends", pVfs, pIoDb, pIoJrnl,
         kvvfsMethods, capi.sqlite3_file.structInfo,
         KVVfsFile.structInfo);
-//#endif
+//#/if
 
   try {
     util.assert( cache.buffer.n>1024*129, "Heap buffer is not large enough"
@@ -1235,7 +1235,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      limitation which has since been overcome, but removal of
      JsStorageDb.prototype.clearStorage() would be a backwards compatibility
      break, so this function permits wiping the storage for those two
-     cases even if they are opened. Use with case.
+     cases even if they are opened. Use with care.
   */
   const sqlite3_js_kvvfs_clear = function callee(which){
     if( ''===which ){
@@ -1844,7 +1844,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return jdb.storageSize(this.affirmOpen().dbFilename(), true);
     };
   }/*sqlite3.oo1.JsStorageDb*/
-//#endif not omit-oo1
+//#/if not omit-oo1
 
   if( sqlite3.__isUnderTest && sqlite3.vtab ){
     /**
@@ -2008,7 +2008,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   }/* virtual table */
 
-//#if nope
+//#if 0
   /**
      The idea here is a simpler wrapper for listening to kvvfs
      changes.  Clients would override its onXyz() event methods
@@ -2095,8 +2095,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     async onOpen(count){}
     async onClose(count){}
   }/*KvvfsListener*/;
-//#endif nope
+//#/if nope
 
 })/*globalThis.sqlite3ApiBootstrap.initializers*/;
 //#savepoint rollback
-//#endif not omit-kvvfs
+//#/if not omit-kvvfs

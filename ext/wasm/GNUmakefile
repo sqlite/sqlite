@@ -566,12 +566,14 @@ WASM_CUSTOM_INSTANTIATE = 1
 # -D... flags which should be included in all invocations should be
 # appended to $(b.c-pp.target.flags).
 #
-bin.c-pp = ./c-pp-lite
-$(bin.c-pp): c-pp-lite.c $(sqlite3.c) $(MAKEFILE)
-	$(CC) -O0 -o $@ c-pp-lite.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
+bin.c-pp = ./c-pp
+$(bin.c-pp): libcmpp.c $(sqlite3.c) $(MAKEFILE)
+	$(CC) -O0 -o $@ libcmpp.c $(dir.top)/sqlite3.c -I$(dir.top) \
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
-		-DSQLITE_TEMP_STORE=3
+		-DSQLITE_TEMP_STORE=3 \
+		'-DCMPP_DEFAULT_DELIM="//#"' -DCMPP_MAIN -DCMPP_OMIT_D_MODULE \
+		-DCMPP_OMIT_D_PIPE
 DISTCLEAN_FILES += $(bin.c-pp)
 b.c-pp.target.flags ?=
 ifeq (1,$(SQLITE_C_IS_SEE))

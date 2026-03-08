@@ -43,13 +43,13 @@
 
      ./c-pp -f tester1.c-pp.js -o tester1-esm.mjs -Dtarget:es6-module
 */
-//#@policy error
+//#@ policy error
 //#if target:es6-module
 import {default as sqlite3InitModule} from "@sqlite3.js@";
 globalThis.sqlite3InitModule = sqlite3InitModule;
 //#else
 'use strict';
-//#endif
+//#/if
 (function(self){
   /**
      Set up our output channel differently depending
@@ -452,7 +452,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     tryKey('hexkey', hexFoo, 6);
     dbUnlink();
   };
-//#endif enable-see
+//#/if enable-see
 
   /* Tests common to "opfs" and "opfs-wl".  These tests manipulate
      "this" and must run in order.
@@ -3605,7 +3605,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                        ()=>JDb.clearStorage('session'));
       }
     })/*kvvfs with SEE*/
-//#endif enable-see
+//#/if enable-see
   ;/* end kvvfs tests */
 
   ////////////////////////////////////////////////////////////////////////
@@ -3926,7 +3926,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         );
       }
     })
-//#endif enable-see
+//#/if enable-see
   ;/* end OPFS tests */
 
   ////////////////////////////////////////////////////////////////////////
@@ -3960,7 +3960,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         );
       }
     })
-//#endif enable-see
+//#/if enable-see
   ;/* end OPFS tests */
 
   ////////////////////////////////////////////////////////////////////////
@@ -4170,7 +4170,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         poolUtil.removeVfs();
       }
     })/*opfs-sahpool with SEE*/
-//#endif enable-see
+//#/if enable-see
   ;
 
   ////////////////////////////////////////////////////////////////////////
@@ -4532,7 +4532,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }
     importScripts(sqlite3Js);
   }
-//#endif
+//#/if
   globalThis.sqlite3InitModule.__isUnderTest =
     true /* disables certain API-internal cleanup so that we can
             test internal APIs from here */;
