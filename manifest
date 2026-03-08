@@ -1,5 +1,5 @@
-C Merge\sopfs-wl\sinto\strunk,\snot\sso\smuch\sfor\sthe\s"opfs-wl"\sVFS,\swhich\sis\sstil\stentative\s(working\sfine\sbut\swith\slittle\sperceived\sbenefit),\sbut\sfor\sthe\s"opfs"\sVFS\scleanups\swhich\snecessarily\shappened\saround\sit.
-D 2026-03-08T08:32:22.078
+C Increase\sthe\sversion\snumber\son\strunk\sto\s3.53.0
+D 2026-03-08T10:51:47.666
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -8,7 +8,7 @@ F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc d6448b1066932640e0ab2b01376c4ee7615a2b978c3c92e010f8fe222183c201
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
-F VERSION ed5325177122f86b7a25c21bee36fda8171a34ab86e4c72007798d7837a752be
+F VERSION 31435e19ded2aae3c1c67dacf06a995a37fd1b253baec5899b78d64cd29db4f7
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -594,7 +594,7 @@ F ext/wasm/api/sqlite3-api-oo1.c-pp.js 45454631265d9ce82685f1a64e1650ee19c8e121c
 F ext/wasm/api/sqlite3-api-prologue.js db1ba33ca7092f12d5bb6cb615c78c457432be4a1d26785686993a8909950d72
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1041dd645e8e821c082b628cd8d9acf70c667430f9d45167569633ffc7567938
 F ext/wasm/api/sqlite3-license-version-header.js 98d90255a12d02214db634e041c8e7f2f133d9361a8ebf000ba9c9af4c6761cc
-F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js c2236c9037ccac368be6eeed3e5f6ed3cefed0d20539c9092139f27a76aaf1ba w ext/wasm/api/sqlite3-opfs-async-proxy.js
+F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js c2236c9037ccac368be6eeed3e5f6ed3cefed0d20539c9092139f27a76aaf1ba
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
 F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js f907fa712d1c9d98a3c08393f3e97a664857782da11670e129d39e383f45f968
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js cf5fba74978d3e0983f68505d9695ee7836853855590a92ccc5a96e27db5350b
@@ -2192,9 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P da3ad170aebf57f2202e56673ac149bc51077d126ab5928f1db16492e403d5b9 616d32c8380ef47c5a7c2eb765e7b6fbec9500d4e16c837f4ee11d71c239a55f
-R 7fa9d9bc620afcdc086430a72b380676
-T +closed 616d32c8380ef47c5a7c2eb765e7b6fbec9500d4e16c837f4ee11d71c239a55f Closed\sby\sintegrate-merge.
-U stephan
-Z eb8fc8dc10da8c389057ea48d94a3dd6
+P bcaa876c6dafee0995d239f59b6ce7810b6f5faa219b9c392966211ae3dec17a
+R 5bb3db34ea0d888edcdd73b8c86f90de
+U drh
+Z 5075d03aea4dc83f8f3561051268639a
 # Remove this line to create a well-formed Fossil manifest.
