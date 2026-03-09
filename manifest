@@ -1,5 +1,5 @@
-C In\sQRF,\sfix\sline-wrap\sindentation\sfor\s"line"\smode\swhen\susing\sa\nnon-standard\scolumn\sseparator.
-D 2026-03-09T13:53:58.066
+C Remove\san\sobsolete\spragraph\sfrom\sthe\sheader\scomment\son\sthe\sfileio.c\sextension.
+D 2026-03-09T14:04:34.278
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -373,7 +373,7 @@ F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a0
 F ext/misc/decimal.c b64911bcc77ed86e40075a6a51a9efb48520720f289b9be544adf6e2587094d5
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 606100185fb90d6a1eade1ed0414d53503c86820d8956a06e3b0a56291894f2b
-F ext/misc/fileio.c 33165b3cd99f83dcd333a338eb51491f6b01c8d96cb6ae81f96a6a096834e030
+F ext/misc/fileio.c f24c7ea70f1a53f319d31034fd0001ca4015ad4bde8577faa1ecfc58b8e5a5e3
 F ext/misc/fossildelta.c 86dfa83f85f7ccd640591d8a5c6865346d0c2ee6a949d78591eceb892f1cbfec
 F ext/misc/fuzzer.c 684a4996b523ea89f495b38fd8a14a2ae00695089a88031366a4df6adc2c873b
 F ext/misc/ieee754.c 2901d08a586d00a1d3c0fd89e03c57ee9e2b5f013b0daab9e49c7a48a9d5946b
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f27d578edac06eb28739f23351ab1cf07531bc7b32f4077e4dc9c8166f551d95
-R b2edc51df772ad7fd0108ab782052acc
+P 00c96cca3de709e40207feb9c10a94e38e7857c9bc01938849c6c5daee7148c7
+R fcb7762703850ff4a223c73c86d8213b
 U drh
-Z 178a9185162938e5c5d54006300512f6
+Z 5feea05abb68b14007f15d510b4cd497
 # Remove this line to create a well-formed Fossil manifest.
