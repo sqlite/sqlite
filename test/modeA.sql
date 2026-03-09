@@ -229,6 +229,26 @@ SELECT a AS 'abcd', b FROM t2 WHERE c=3;
   b: 2
 END
 
+# line --screenwidth and --colsep
+#
+.testcase 550
+.mode line --sw 40 --colsep ":-hi-:"
+SELECT a AS 'abc', b FROM t2 WHERE c=3;
+.check <<END
+abc:-hi-:The quick fox jumps over the
+         lazy brown dog
+  b:-hi-:2
+END
+.testcase 551
+.mode line --sw 40 --colsep ":-hi-:" --wordwrap off
+SELECT a AS 'abc', b FROM t2 WHERE c=3;
+.check <<END
+abc:-hi-:The quick fox jumps over the la
+         zy brown dog
+  b:-hi-:2
+END
+# 23456789 123456789 123456789 123456789
+
 # https://sqlite.org/forum/forumpost/2025-12-31T19:14:24z
 #
 # For legacy compatibility, ".header" settings are not changed

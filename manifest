@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sRIGHT\sJOIN\sand\sexpressions\son\sindexes.\s[forum:e3dba5426a\s|\sForum\spost\se3dba5426a].
-D 2026-03-09T11:49:51.925
+C In\sQRF,\sfix\sline-wrap\sindentation\sfor\s"line"\smode\swhen\susing\sa\nnon-standard\scolumn\sseparator.
+D 2026-03-09T13:53:58.066
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -420,7 +420,7 @@ F ext/misc/zipfile.c c8ee04e1b349270b5df401ad732f5d7c387146e69b33c02fa90322760cc
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md e6e0ce2700acf6fd06312b42726a8f08ca240f30e1b122bff87c71c602046352
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
-F ext/qrf/qrf.c cd48c23500c3b129be5e0627ce9d41b5df3c2d715525b00a6ccbd1f30689fb17
+F ext/qrf/qrf.c 6eaa4376ace0dbffd8ae80ac558090ce3f8b4ebea969fb0ae475a105da672ec9
 F ext/qrf/qrf.h 2ac14b0aaacf44636d8c81051bfeab4afae50a98fbb2e10ff5aed0c28a87b2b2
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -1445,7 +1445,7 @@ F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
 F test/mmapcorrupt.test 470fb44fe92e99c1d23701d156f8c17865f5b027063c9119dcfdb842791f4465
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
-F test/modeA.sql 3f2b5a7ce7074a52b2b7ec07b07dc1a08edba19e40bce9b4d65d3965413bbea3
+F test/modeA.sql b751103d73e86be297cd939cb6401cb9703c4798471d8cab0493831f0cec5000
 F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test fac575e0b1b852025575a6a8357701d80933e98b5d2fe6d35ddaa68f92f6a1f7
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P eebcdcceef8a436e5fb1397cad6eb5bcf0722060fe1cd6acb26cdf1e86f07293
-R 5a80bb0b1d754cc3a2e289dfe8e5dfcc
-U dan
-Z e57722fae5d8606063093e2b68e02a6b
+P f27d578edac06eb28739f23351ab1cf07531bc7b32f4077e4dc9c8166f551d95
+R b2edc51df772ad7fd0108ab782052acc
+U drh
+Z 178a9185162938e5c5d54006300512f6
 # Remove this line to create a well-formed Fossil manifest.
