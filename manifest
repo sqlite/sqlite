@@ -1,5 +1,5 @@
-C Fix\sthe\scompletion.c\sTVF\sso\sthat\sthe\sxNext\smethod\sreports\serrors\sit\sencounters\nwhile\srunning\squeries.
-D 2026-03-08T19:31:40.426
+C Fix\sa\sproblem\swith\sRIGHT\sJOIN\sand\sexpressions\son\sindexes.\s[forum:e3dba5426a\s|\sForum\spost\se3dba5426a].
+D 2026-03-09T11:49:51.925
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -816,7 +816,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 406d9ec8d12f646c28c4b4a645ea20329eb343b19cfa3dcd8aab938066c4ae66
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
-F src/wherecode.c 783ecd30061c875c919a5163e4b55f9a0eccdaf7c9b17ad2908a1668a8766bc4
+F src/wherecode.c 676cb6cb02878643e817d9917a2d3522b83a3736b2cedd3dc8a01d7bb92af6c2
 F src/whereexpr.c e9f7185fba366d9365aa7a97329609e4cf00b3dd0400d069fbaa5187350c17c6
 F src/window.c c0a38cd32473e8e8e7bc435039f914a36ca42465506dc491c65870c01ddac9fb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1339,7 +1339,7 @@ F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
 F test/joinH.test 1d2fc3190be68525fd9ce749b9468c40ba2930181e52fb5ee6f836051b38effb
-F test/joinI.test 249802b168ce96d8d57943ef9abafc1e36e28d91829f68bc2b6e87f2b4d33241
+F test/joinI.test a4d37143fcc39e915d9feb08e614a13f88dfe332d77152a3c526a2370ddb9a70
 F test/journal1.test bc61a4228db11bffca118bd358ba4b868524bf080f3532749de6c539656e20fa
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test e5aeff93a7776cf644dbc48dec277655cff80a1cd24689036abc87869b120ea6
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d0e23423d1bdd0482db4b74ef0fde2fbc2bbad02a7b92ba45a27ca57f4740e16
-R 696b1859587bbdaa9b360e1479bf8272
-U drh
-Z 3bd2617ab7e2ff87d1210b38e63ada46
+P eebcdcceef8a436e5fb1397cad6eb5bcf0722060fe1cd6acb26cdf1e86f07293
+R 5a80bb0b1d754cc3a2e289dfe8e5dfcc
+U dan
+Z e57722fae5d8606063093e2b68e02a6b
 # Remove this line to create a well-formed Fossil manifest.
