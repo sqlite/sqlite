@@ -2564,7 +2564,7 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_STYLE_Insert: {
-      int mxIns = p->spec.iVersion>=2 ? p->spec.nMultiInsert : 0;
+      unsigned int mxIns = p->spec.iVersion>=2 ? p->spec.nMultiInsert : 0;
       int szStart = sqlite3_str_length(p->pOut);
       if( p->u.nIns==0 || p->u.nIns>=mxIns ){
         if( p->u.nIns ){
