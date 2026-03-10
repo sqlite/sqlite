@@ -66,7 +66,7 @@ struct Qrf {
       int iIndent;              /* Current slot */
       int *aiIndent;            /* Indentation for each opcode */
     } sExpln;
-    unsigned int nTuple;      /* Tuples issued under QRF_STYLE_Insert */
+    unsigned int nIns;        /* Bytes used for current INSERT stmt */
   } u;
   sqlite3_int64 nRow;         /* Number of rows handled so far */
   int *actualWidth;           /* Actual width of each column */
@@ -2564,12 +2564,13 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_STYLE_Insert: {
-      int mxTuple = p->spec.iVersion>=2 ? p->spec.mxTuple : 1;
-      if( p->u.nTuple==0 || p->u.nTuple>=mxTuple ){
-        if( p->u.nTuple ){
+      int mxIns = p->spec.iVersion>=2 ? p->spec.nMultiInsert : 0;
+      int szStart = sqlite3_str_length(p->pOut);
+      if( p->u.nIns==0 || p->u.nIns>=mxIns ){
+        if( p->u.nIns ){
           sqlite3_str_append(p->pOut, ";\n", 2);
+          p->u.nIns = 0;
         }
-        p->u.nTuple = 0;
         if( qrf_need_quote(p->spec.zTableName) ){
           sqlite3_str_appendf(p->pOut,"INSERT INTO \"%w\"",p->spec.zTableName);
         }else{
@@ -2596,10 +2597,10 @@ static void qrfOneSimpleRow(Qrf *p){
         if( i>0 ) sqlite3_str_append(p->pOut, ",", 1);
         qrfRenderValue(p, p->pOut, i);
       }
-      p->u.nTuple++;
-      if( p->u.nTuple>=mxTuple ){
+      p->u.nIns += sqlite3_str_length(p->pOut) + 2 - szStart;
+      if( p->u.nIns>=mxIns ){
         sqlite3_str_append(p->pOut, ");\n", 3);
-        p->u.nTuple = 0;
+        p->u.nIns = 0;
       }else{
         sqlite3_str_append(p->pOut, ")", 1);
       }
@@ -2771,7 +2772,7 @@ qrf_reinit:
       if( p->spec.zTableName==0 || p->spec.zTableName[0]==0 ){
         p->spec.zTableName = "tab";
       }
-      p->u.nTuple = 0;
+      p->u.nIns = 0;
       break;
     }
     case QRF_STYLE_Line: {
@@ -2885,7 +2886,7 @@ static void qrfFinalize(Qrf *p){
       break;
     }
     case QRF_STYLE_Insert: {
-      if( p->u.nTuple ){
+      if( p->u.nIns ){
         sqlite3_str_append(p->pOut, ";\n", 2);
       }
       break;

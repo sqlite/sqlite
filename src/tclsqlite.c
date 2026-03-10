@@ -2071,7 +2071,7 @@ static void DbHookCmd(
 **     -linelimit NUMBER                       Max lines for any cell
 **     -charlimit NUMBER                       Content truncated to this size
 **     -titlelimit NUMBER                      Max width of column titles
-**     -mxtuple NUMBER                         Max tuples per INSERT
+**     -multiinsert NUMBER                     Multi-row INSERT byte size
 **     -align LIST-OF-ALIGNMENT                Alignment of columns
 **     -widths LIST-OF-NUMBERS                 Widths for individual columns
 **     -columnsep TEXT                         Column separator text
@@ -2100,7 +2100,7 @@ static void DbHookCmd(
 **     -linelimit        nLineLimit
 **     -charlimit        nCharLimit
 **     -titlelimit       nTitleLimit
-**     -mxtuple          mxTuple
+**     -multiinsert      nMultiInsert
 **     -align            nAlign, aAlign
 **     -widths           nWidth, aWidth
 **     -columnsep        zColumnSep
@@ -2303,12 +2303,12 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       if( v<0 ) v = 0;
       qrf.nCharLimit = v;
       i++;
-    }else if( strcmp(zArg,"-mxtuple")==0 ){
+    }else if( strcmp(zArg,"-multiinsert")==0 ){
       int v = 0;
       rc = Tcl_GetIntFromObj(pDb->interp, objv[i+1], &v);
       if( rc ) goto format_failed;
       if( v<0 ) v = 0;
-      qrf.mxTuple = v;
+      qrf.nMultiInsert = v;
       i++;
     }else if( strcmp(zArg,"-align")==0 ){
       Tcl_Size n = 0;
