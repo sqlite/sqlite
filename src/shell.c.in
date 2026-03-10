@@ -12213,7 +12213,12 @@ static int doAutoDetectRestore(ShellState *p, const char *zSql){
 /*
 ** Run a single line of SQL.  Return the number of errors.
 */
-static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
+static int runOneSqlLine(
+  ShellState *p,            /* Execution context */
+  char *zSql,               /* SQL to be run */
+  const char *zFilename,    /* Source file of the sql */
+  int startline             /* linenumber */
+){
   int rc;
   char *zErrMsg = 0;
 
@@ -12240,9 +12245,17 @@ static int runOneSqlLine(ShellState *p, char *zSql, FILE *in, int startline){
       zErrorType = "Error";
       zErrorTail = zErrMsg;
     }
-    if( in!=0 || !stdin_is_interactive ){
-      sqlite3_snprintf(sizeof(zPrefix), zPrefix,
-                       "%s near line %d:", zErrorType, startline);
+    if( zFilename || !stdin_is_interactive ){
+      if( cli_strcmp(zFilename,"cmdline")==0 ){
+        sqlite3_snprintf(sizeof(zPrefix), zPrefix,
+                  "%s in %r command line argument:", zErrorType, startline);
+      }else if( cli_strcmp(zFilename,"<stdin>")==0 ){
+        sqlite3_snprintf(sizeof(zPrefix), zPrefix,
+                  "%s near line %d:", zErrorType, startline);
+      }else{
+        sqlite3_snprintf(sizeof(zPrefix), zPrefix,
+                  "%s near line %d of %s:", zErrorType, startline, zFilename);
+      }
     }else{
       sqlite3_snprintf(sizeof(zPrefix), zPrefix, "%s:", zErrorType);
     }
@@ -12405,7 +12418,7 @@ static int process_input(ShellState *p, const char *zSrc){
       break;
     }else if( nSql && QSS_SEMITERM(qss) && sqlite3_complete(zSql) ){
       echo_group_input(p, zSql);
-      errCnt += runOneSqlLine(p, zSql, p->in, startline);
+      errCnt += runOneSqlLine(p, zSql, p->zInFile, startline);
       CONTINUE_PROMPT_RESET;
       nSql = 0;
       if( p->nPopOutput ){
@@ -12429,7 +12442,7 @@ static int process_input(ShellState *p, const char *zSrc){
   if( nSql ){
     /* This may be incomplete. Let the SQL parser deal with that. */
     echo_group_input(p, zSql);
-    errCnt += runOneSqlLine(p, zSql, p->in, startline);
+    errCnt += runOneSqlLine(p, zSql, p->zInFile, startline);
     CONTINUE_PROMPT_RESET;
   }
   free(zSql);
@@ -12826,7 +12839,6 @@ int SQLITE_CDECL main(int argc, char **argv){
 #ifdef SQLITE_DEBUG
   sqlite3_int64 mem_main_enter = 0;
 #endif
-  char *zErrMsg = 0;
 #ifdef SQLITE_SHELL_FIDDLE
 #  define data shellState
 #else
@@ -13365,15 +13377,7 @@ int SQLITE_CDECL main(int argc, char **argv){
           goto shell_main_exit;
         }
       }else{
-        open_db(&data, 0);
-        rc = shell_exec(&data, z, &zErrMsg);
-        if( zErrMsg!=0 ){
-          shellEmitError(zErrMsg);
-          sqlite3_free(zErrMsg);
-          if( !rc ) rc = 1;
-        }else if( rc!=0 ){
-          cli_printf(stderr,"Error: unable to process SQL \"%s\"\n", z);
-        }
+        rc = runOneSqlLine(&data, z, "cmdline", i);
         if( bail_on_error ) goto shell_main_exit;
       }
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_HAVE_ZLIB)
@@ -13439,25 +13443,13 @@ int SQLITE_CDECL main(int argc, char **argv){
           goto shell_main_exit;
         }
       }else{
-        open_db(&data, 0);
-        rc = shell_exec(&data, azCmd[i], &zErrMsg);
-        if( zErrMsg || rc ){
-          if( zErrMsg!=0 ){
-            shellEmitError(zErrMsg);
-          }else{
-            cli_printf(stderr,
-                            "Error: unable to process SQL: %s\n", azCmd[i]);
-          }
-          sqlite3_free(zErrMsg);
-          if( rc==0 ) rc = 1;
-          goto shell_main_exit;
-        }
+        rc = runOneSqlLine(&data, azCmd[i], "cmdline", aiCmd[i]);
         if( data.nPopMode ){
           modePop(&data);
           data.nPopMode = 0;
         }
       }
-      if( data.nPopOutput ){
+      if( data.nPopOutput && azCmd[i][0]!='.' ){
         output_reset(&data);
         data.nPopOutput = 0;
       }else{
