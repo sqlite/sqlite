@@ -1571,7 +1571,7 @@ static void modeFree(Mode *p){
   free(p->spec.zTableName);
   free(p->spec.zNull);
   memset(p, 0, sizeof(*p));
-  p->spec.iVersion = 1;
+  p->spec.iVersion = 2;
   p->autoExplain = autoExplain;
 }
 
@@ -1686,7 +1686,7 @@ static void modeChange(ShellState *p, unsigned char eMode){
 ** already been freed and zeroed prior to calling this routine.
 */
 static void modeDefault(ShellState *p){
-  p->mode.spec.iVersion = 1;
+  p->mode.spec.iVersion = 2;
   p->mode.autoExplain = 1;
   if( stdin_is_interactive || stdout_is_console ){
     modeChange(p, MODE_TTY);
@@ -7920,6 +7920,9 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            can also be "off" to mean "0,0,0" or "on" to
 **                            mean "5,300,20".
 **   --list                   List available modes
+**   --mxtuple N              In "insert" mode, try to put as many as N
+**                            comma-separated tuples after the VALUES in each
+**                            INSERT statement.
 **   --null STRING            Render SQL NULL values as the given string
 **   --once                   Setting changes to the right are reverted after
 **                            the next SQL command.
@@ -8035,8 +8038,9 @@ static int dotCmdMode(ShellState *p){
         p->mode.spec.bBorder = k & 0x3;
       }
       chng = 1;
-    }else if( 0<=(k=pickStr(z,0,"-charlimit","-linelimit","-titlelimit","")) ){
-      int w;                /*   0            1  */
+    }else if( 0<=(k=pickStr(z,0,
+                  "-charlimit","-linelimit","-titlelimit","-mxtuple","")) ){
+      int w;   /*  0            1            2             3 */
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
@@ -8045,7 +8049,8 @@ static int dotCmdMode(ShellState *p){
       switch( k ){
         case 0:   p->mode.spec.nCharLimit = w;   break;
         case 1:   p->mode.spec.nLineLimit = w;   break;
-        default:  p->mode.spec.nTitleLimit = w;  break;
+        case 2:   p->mode.spec.nTitleLimit = w;  break;
+        default:  p->mode.spec.mxTuple = w;      break;
       }
       chng = 1;
     }else if( 0<=(k=pickStr(z,0,"-tablename","-rowsep","-colsep","-null","")) ){
@@ -8387,6 +8392,11 @@ static int dotCmdMode(ShellState *p){
            p->mode.spec.nLineLimit, p->mode.spec.nCharLimit,
            p->mode.spec.nTitleLimit);
       }
+    }
+    if( bAll
+     || (p->mode.spec.mxTuple>1 && p->mode.spec.eStyle==QRF_STYLE_Insert)
+    ){
+      sqlite3_str_appendf(pDesc, " --mxtuple %u", p->mode.spec.mxTuple);
     }
     zSetting = aModeStr[pI->eNull];
     if( bAll || (zSetting && cli_strcmp(zSetting,p->mode.spec.zNull)!=0) ){

@@ -56,6 +56,8 @@ struct sqlite3_qrf_spec {
   void *pRenderArg;           /* First argument to the xRender callback */
   void *pWriteArg;            /* First argument to the xWrite callback */
   char **pzOutput;            /* Storage location for output string */
+  /* Fields below are only available if iVersion>=2 */
+  unsigned int mxTuple;       /* Tuples per INSERT in QRF_STYLE_Insert */
   /* Additional fields may be added in the future */
 };
 

@@ -87,7 +87,7 @@ END
 .testcase 140
 .mode -v
 .check <<END
-.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits on --null "NULL" --quote relaxed --rowsep "" --sw auto --tablename "" --textjsonb on --titles on --widths "" --wordwrap off --wrap 10
+.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits on --mxtuple 0 --null "NULL" --quote relaxed --rowsep "" --sw auto --tablename "" --textjsonb on --titles on --widths "" --wordwrap off --wrap 10
 END
 .testcase 150 --error-prefix "Error:"
 .mode foo
@@ -146,7 +146,7 @@ END
 .mode --limits 0,0,0
 .mode -v
 .check <<END
-.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --limits off --null "" --quote off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles on --widths "" --wordwrap off
+.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --limits off --mxtuple 0 --null "" --quote off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles on --widths "" --wordwrap off
 END
 
 .testcase 400

@@ -266,6 +266,25 @@ do_test 1.83 {
 INSERT INTO "drop"("a-b",b,"123") VALUES(1,2.5,'three');
 INSERT INTO "drop"("a-b",b,"123") VALUES(x'424c4f42',NULL,'Ἀμήν');
 }
+do_test 1.84 {
+  set result "\n[db format -style insert {SELECT * FROM t1} -mxtuple 2]"
+} {
+INSERT INTO tab VALUES(1,2.5,'three'),
+  (x'424c4f42',NULL,'Ἀμήν');
+}
+do_test 1.85 {
+  set result "\n[db format -style insert {
+     WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<7)
+       SELECT n, n*10 AS m FROM c;} -mxtuple 5]"
+} {
+INSERT INTO tab VALUES(1,10),
+  (2,20),
+  (3,30),
+  (4,40),
+  (5,50);
+INSERT INTO tab VALUES(6,60),
+  (7,70);
+}
 
 do_test 1.90 {
   set result "\n[db format -style json {SELECT * FROM t1}]"
