@@ -198,6 +198,31 @@ test-functional: build
 	@echo "INSERT INTO nanvix_test VALUES(2, 'python');" >> _sqlite_test.sql
 	@echo "SELECT 'SQLITE_TEST_COUNT:', count(*) FROM nanvix_test;" >> _sqlite_test.sql
 	@echo "SELECT 'SQLITE_TEST_ROW:', id, name FROM nanvix_test WHERE id=1;" >> _sqlite_test.sql
+ifeq ($(PROCESS_MODE),standalone)
+ifdef CONFIG_NANVIX_DOCKER
+	@echo "  Running sqlite3$(EXE) via nanvixd.elf standalone (Docker)..."
+	$(DOCKER_RUN_FUNCTIONAL) sh -c '\
+	  mkdir -p /tmp/nanvix-ramfs && \
+	  cp $(DOCKER_WORKSPACE_PATH)/sqlite3$(EXE) /tmp/nanvix-ramfs/ && \
+	  cp $(DOCKER_WORKSPACE_PATH)/_sqlite_test.sql /tmp/nanvix-ramfs/ && \
+	  ./bin/mkramfs.elf -o /tmp/rootfs.img /tmp/nanvix-ramfs/ && \
+	  timeout --foreground 120 ./bin/nanvixd.elf \
+	    -bin-dir ./bin -ramfs /tmp/rootfs.img \
+	    -- ./sqlite3$(EXE) < $(DOCKER_WORKSPACE_PATH)/_sqlite_test.sql'
+	@echo "  PASS: sqlite3 standalone (exit code 0)"
+else
+	@echo "  Running sqlite3$(EXE) via nanvixd.elf standalone..."
+	@rm -rf /tmp/nanvix-ramfs && mkdir -p /tmp/nanvix-ramfs
+	@cp $(abspath sqlite3$(EXE)) /tmp/nanvix-ramfs/
+	@cp $(abspath _sqlite_test.sql) /tmp/nanvix-ramfs/
+	"$(SYSROOT_PATH)/bin/mkramfs.elf" -o /tmp/rootfs.img /tmp/nanvix-ramfs/
+	cd "$(SYSROOT_PATH)" && timeout --foreground 120 ./bin/nanvixd.elf \
+	  -bin-dir ./bin -ramfs /tmp/rootfs.img \
+	  -- ./sqlite3$(EXE) < $(abspath _sqlite_test.sql)
+	@rm -rf /tmp/nanvix-ramfs /tmp/rootfs.img
+	@echo "  PASS: sqlite3 standalone (exit code 0)"
+endif
+else
 ifdef CONFIG_NANVIX_DOCKER
 	@echo "  Running sqlite3$(EXE) via nanvixd.elf (Docker)..."
 	$(DOCKER_RUN_FUNCTIONAL) sh -c \
@@ -207,6 +232,7 @@ else
 	@echo "  Running sqlite3$(EXE) via nanvixd.elf..."
 	cd "$(SYSROOT_PATH)" && timeout --foreground 120 ./bin/nanvixd.elf -- $(abspath sqlite3$(EXE)) < $(abspath _sqlite_test.sql)
 	@echo "  PASS: sqlite3 (exit code 0)"
+endif
 endif
 	@rm -f _sqlite_test.sql
 	@echo "  PASS: SQLite functional tests"
