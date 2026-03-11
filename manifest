@@ -1,5 +1,5 @@
-C Improved\sdefenses\sagainst\smischief.
-D 2026-03-11T14:43:29.846
+C Replace\sseveral\scomment-based\sswitch-fall-through\snotices\swith\sattribute\sbased\sones,\sas\ssuggested\sin\s[forum:b6ab8dc547|forum\spost\sb6ab8dc547].
+D 2026-03-11T15:17:14.597
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -81,8 +81,8 @@ F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 6cc7bbc307f27e7b6ee2e1d5ff63ffff4df3b42529dfe00eb34ddded417961b3
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h fd6051f7aa4db93e05fdc703ef35faf79f78170419e809139109d7aef28f4170
-F ext/fts3/fts3_aux.c 7eab82a9cf0830f6551ba3abfdbe73ed39e322a4d3940ee82fbf723674ecd9f3
+F ext/fts3/fts3Int.h 277f32f304e82f4397fc2a74793c0a95318b7abb9670b519e4805a00946cbd9b
+F ext/fts3/fts3_aux.c 37ba1b10bbd163ddc6b05dbc3a306a0d5d68aee3d30f33b4dc5794955cc50887
 F ext/fts3/fts3_expr.c 5c13796638d8192c388777166075cdc8bc4b6712024cd5b72c31acdbefce5984
 F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641814672a
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
@@ -683,7 +683,7 @@ F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 901499bed747c3b4b2be45be1abe912ba50a3f6a40ba88cc006ccf279f2d0e97
-F src/expr.c 8c3b23cb35f43c2d0570c1058b9a269e561e769e09c81ba192992c95022c1939
+F src/expr.c 51e9c77ff5d9a21439e611fe6571a3cd50387e526e13c5614fd407e5b8571930
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c fb0f74c57d19a2d3f113f3476826919d68feda7ff334abfdb479a9a6353b9fcd
 F src/func.c 6e7de3551ae0f8205006e5109f025223246edd20186d54d90746dee7c1c5c093
@@ -791,7 +791,7 @@ F src/test_vfs.c b4135c1308516adf0dfd494e6d6c33114e03732be899eace0502919b674586b
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 85d8b9f05f78211c61e3739ab5db761d7118766d1916ae7f2764735106bc4e13
-F src/tokenize.c f297bbf02037639e7a93b37d9c6e4415b3de1273395ee8fa8183e741e1e7fb72
+F src/tokenize.c 2bbf16801d8c59aaf5435b066364da9e39ec3a379084b8a697881e7e52733c63
 F src/treeview.c feaa59f14db4f7b5aacca9c5ad5aeb562c1f98262c1ffd74371f4186ade91fc5
 F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d7b4a4a3d3d6296a012cc14fc2d95fe810b5bdb625209a2d28bf2c7a026749bf
-R 8ea9bae9922a2abd16a2c13b79a5bb21
-U drh
-Z d9fa776a4032f958fb973d5be66dbc82
+P 8bdc0d485e3ad0c7a1e818da66f106951d496b05cbe61d12c2c448f2f24b6d5d
+R 972103126ec9cc40e818b813c25d441f
+U stephan
+Z 566ee1f145fbb3affa8311cd968d1d29
 # Remove this line to create a well-formed Fossil manifest.
