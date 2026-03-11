@@ -113,6 +113,7 @@ endif
 PREFIX ?= $(SYSROOT_PATH)
 PLATFORM ?= unknown
 PROCESS_MODE ?= unknown
+MEMORY_SIZE ?= unknown
 
 CONFIGURE_ENV = \
 AR="$(TOOLCHAIN_PREFIX)/bin/i686-nanvix-ar" \
@@ -247,7 +248,7 @@ test: test-smoke test-integration test-functional
 
 package: build
 	@echo "=== Packaging SQLite release ==="
-	$(eval ARTIFACT_NAME := sqlite-$(PLATFORM)-$(PROCESS_MODE))
+	$(eval ARTIFACT_NAME := sqlite-$(PLATFORM)-$(PROCESS_MODE)-$(MEMORY_SIZE))
 	$(eval STAGING := $(CURDIR)/dist/$(ARTIFACT_NAME))
 	rm -rf $(STAGING)
 ifdef CONFIG_NANVIX_DOCKER
@@ -288,7 +289,7 @@ endif
 
 verify-package:
 	@echo "=== Verifying SQLite package ==="
-	$(eval ARTIFACT_NAME := sqlite-$(PLATFORM)-$(PROCESS_MODE))
+	$(eval ARTIFACT_NAME := sqlite-$(PLATFORM)-$(PROCESS_MODE)-$(MEMORY_SIZE))
 	@TARBALL="dist/$(ARTIFACT_NAME).tar.bz2"; \
 	if [ ! -f "$$TARBALL" ]; then \
 	  echo "FAIL: Package tarball not found: $$TARBALL"; exit 1; \
