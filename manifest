@@ -1,5 +1,5 @@
-C Replace\sseveral\scomment-based\sswitch-fall-through\snotices\swith\sattribute\sbased\sones,\sas\ssuggested\sin\s[forum:b6ab8dc547|forum\spost\sb6ab8dc547].
-D 2026-03-11T15:17:14.597
+C Update\sthe\scanonical\sJimTcl\shome\spage\slink\s(it\swas\smoved\searlier\stoday).
+D 2026-03-12T08:33:14.451
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -33,7 +33,7 @@ F autoconf/tea/teaish.tcl 81feb417e718ed75cdd7e2fdf6771f3da80dae97377a90c4d5b62b
 F autoconf/tea/teaish.test.tcl cfe94e1fb79dd078f650295be59843d470125e0cc3a17a1414c1fb8d77f4aea6
 F autosetup/LICENSE 41a26aebdd2cd185d1e2b210f71b7ce234496979f6b35aef2cbf6b80cbed4ce4
 F autosetup/README.autosetup a78ff8c4a3d2636a4268736672a74bf14a82f42687fcf0631a70c516075c031e
-F autosetup/README.md e8503618f6cb31b692383ca662f6eb9ef4345463f5e3c1fc84a5d6863c7058be
+F autosetup/README.md 18478aa27d13664abbdf9d40b90b040f7796570ef0591214731ef202692464e4
 F autosetup/autosetup b16e44924c197783df67366762dda985b45d49ebc4af15f4054e3ee0e3b65169 x
 F autosetup/autosetup-config.guess dfa101c5e8220e864d5e9c72a85e87110df60260d36cb951ad0a85d6d9eaa463 x
 F autosetup/autosetup-config.sub a38fb074d0dece01cf919e9fb534a26011608aa8fa606490864295328526cd73 x
@@ -2192,8 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8bdc0d485e3ad0c7a1e818da66f106951d496b05cbe61d12c2c448f2f24b6d5d
-R 972103126ec9cc40e818b813c25d441f
+P 2b0209a3bd3fb19af424386dcd13ff49a0c86edfd5d283fd5e5c42c266872100
+R c9be20cfda6b57ae60e864988161ba77
 U stephan
-Z 566ee1f145fbb3affa8311cd968d1d29
+Z 1f16d821846f5facf8a8ebbc5986e77c
 # Remove this line to create a well-formed Fossil manifest.
