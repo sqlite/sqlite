@@ -1,5 +1,5 @@
-C Changes\ssome\slegacy\stesting\stargets\sin\sthe\smakefiles\sinto\saliases\sfor\n"devtest"\sand\s"releasetest"
-D 2026-03-13T14:31:13.710
+C Fix\sa\sharmless\stypo\sin\sa\scomment\sthat\sresults\sin\sa\stypo\sin\sthe\ndocumentation.
+D 2026-03-13T14:49:08.930
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -738,7 +738,7 @@ F src/resolve.c 243888da9f31c48d0890f8c9df30ed4be6fd098d295b0fe1c297a7f3c453ca53
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 5abbd22cae7469dae0a600d78636be77a5682cc372cf8da744d68bbe23298df2
 F src/shell.c.in 2c7e751795f38bb1855c35b556419cab5b8ba22e0f6758f5a629338065d6b79f
-F src/sqlite.h.in c0979f9ac1f5be887397dd2a0bb485636893a81b34d64df85123aae9650c42f2
+F src/sqlite.h.in 43c106fccae5bbc230182cb11f181d8b5440f57f4e8d7babb55d264bbc5068ea
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 7f236ca1b175ffe03316d974ef57df79b3938466c28d2f95caef5e08c57f3a52
 F src/sqliteInt.h 601512a60e48f88e5148fc0e15f1efd03372df2a18bdee312d1590d14da6b5c1
@@ -2173,8 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cb45dcca130c10fb7b848ab2fa86ad06edb3870233df2a633a5b79bd0be18386
-R d1c6ba3b92259a0cba743367fe78874f
+P 238e70fec074005a53794bfe9550db95a8e5ef7b520d58b6b383a339ac50f900
+R 506444aa6352c3daa1d800553e12fcd7
 U drh
-Z 19233dc62503a53350d5c77a6b7f92d6
+Z a8ba5951800267b22ab159ee905d7872
 # Remove this line to create a well-formed Fossil manifest.
