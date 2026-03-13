@@ -1,12 +1,12 @@
-C Fix\sthe\s"testfixture"\smakefile\starget\sso\sthat\sit\sbuilds\swith\sa\sstatic\sTCL\nlibrary\son\sMac-ARM.\s\sFix\sthe\s"tool-zip"\starget\sso\sthat\sit\suses\sordinary\ntclsh\srather\sthan\stestfixture\sto\srun\sthe\stool/mmktoolzip.tcl\sscript\sthat\nbuilds\sthe\sarchive.\s\sMakefile\schanges\sonly.
-D 2026-03-13T11:32:52.192
+C Changes\ssome\slegacy\stesting\stargets\sin\sthe\smakefiles\sinto\saliases\sfor\n"devtest"\sand\s"releasetest"
+D 2026-03-13T14:31:13.710
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc d4459fad28b388063698cbb7a73bfce8684da998a844a04b21d4b9b10291196a
+F Makefile.msc 592320202aef41bcc12ff91201be52ea03525d0db863cf7e67cb275a282345c3
 F README.md dae499194b75deed76a13a4a83c82493f2530331882d7dfe5754d63287d3f8f7
 F VERSION 04eea51aa150c240c9a4dbd740393c575e73b04428482dc2b14ca6b98967b53c
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -659,7 +659,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk ba458079f5fa5ad577e7af317ffdedf2b8795137890aac5c976a1ab7cb22830a
+F main.mk b3618a894ddbb7606c85d27408499a9731f64f92232ddc6e64e86d954927a3ea
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test 61e61469e257df0850df4293d7d4d6c2af301421
@@ -2173,9 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 737ae4a34738ffa0c3ff7f9bb18df914dd1cad163f28fd6b6e114a344fe6d618
-Q +adf5d624cf109ebd05952e5df62f143f40829070cbcbe43280d371a60db7470b
-R cca366bda01e2e76ee4261dbaf52f911
+P cb45dcca130c10fb7b848ab2fa86ad06edb3870233df2a633a5b79bd0be18386
+R d1c6ba3b92259a0cba743367fe78874f
 U drh
-Z dcd141940512a2a0311f2dce3b0c7f5a
+Z 19233dc62503a53350d5c77a6b7f92d6
 # Remove this line to create a well-formed Fossil manifest.

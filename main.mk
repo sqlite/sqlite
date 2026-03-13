@@ -1814,20 +1814,6 @@ coretestprogs:	testfixture$(B.exe) sqlite3$(B.exe)
 
 testprogs:	$(TESTPROGS) srcck1$(B.exe) fuzzcheck$(T.exe) sessionfuzz$(T.exe)
 
-# A very detailed test running most or all test cases
-fulltest:	alltest fuzztest
-
-# Run most or all tcl test cases
-alltest:	$(TESTPROGS)
-	./testfixture$(T.exe) $(TOP)/test/all.test $(TESTOPTS)
-
-# Really really long testing
-soaktest:	$(TESTPROGS)
-	./testfixture$(T.exe) $(TOP)/test/all.test -soak=1 $(TESTOPTS)
-
-# Do extra testing but not everything.
-fulltestonly:	$(TESTPROGS) fuzztest
-	./testfixture$(T.exe) $(TOP)/test/full.test
 
 #
 # Fuzz testing
@@ -1894,19 +1880,15 @@ releasetest: srctree-check has_tclsh85 verify-source
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release $(TSTRNNR_OPTS)
 
 #
-# Minimal testing that runs in less than 3 minutes
+# Legacy testing targets, no longer used by the developers and
+# now aliased to one of the commonly used testing targets.
 #
-quicktest:	./testfixture$(T.exe)
-	./testfixture$(T.exe) $(TOP)/test/extraquick.test $(TESTOPTS)
-
-#
-# Try to run tests on whatever options are specified by the
-# ./configure.  The developers seldom use this target.  Instead
-# they use "make devtest" which runs tests on a standard set of
-# options regardless of how SQLite is configured.  This "test"
-# target is provided for legacy only.
-#
-test:	srctree-check fuzztest sourcetest $(TESTPROGS) tcltest
+quicktest:	devtest
+test:	devtest
+fulltest:	releasetest
+alltest:	releasetest
+soaktest:	releasetest
+fulltestonly:	releasetest
 
 #
 # Run a test using valgrind.  This can take a really long time
