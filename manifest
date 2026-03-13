@@ -1,5 +1,5 @@
-C Fix\sthe\sbehavior\sdot-commands\sthat\sappear\sas\scommand\sline\sarguments\sto\sthe\nCLI\sso\sthat\stheir\seffect\spersists\sinto\ssubsequent\scommands\son\sthe\scommand\nline.\s\sThis\sfix\salso\simproves\serror\smessages\scaused\sby\scommand\sline\narguments.
-D 2026-03-10T21:07:07.467
+C Version\s3.51.3
+D 2026-03-13T10:27:09.723
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2189,9 +2189,10 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 72414aff7252a522fa482943d9a83df583f85a2d715a34cf86638daeca8def44
-Q +ff084ae341eab5c4ce9403defee03adc448c05f77648a954f0942a38f640080b
+P 236ab102df55c8279177c076292417c9a163c39365daf388e5d6114bd0e6850c
 R 4ffe0043b7457e8180b9a3b81dd3f16c
+T +sym-release *
+T +sym-version-3.51.3 *
 U drh
-Z 50a1068655db8db086ba7f09055d35ee
+Z c833b1fc9a207912a0ffb2b4d9b68491
 # Remove this line to create a well-formed Fossil manifest.
