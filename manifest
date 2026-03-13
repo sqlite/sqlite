@@ -1,5 +1,5 @@
-C Fix\sa\sproblems\swith\sRIGHT\sJOINs.
-D 2026-03-12T22:55:20.962
+C Version\s3.51.3
+D 2026-03-13T10:38:09.694
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2173,11 +2173,10 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5aadfbbdd83b051b5f4a3f06eb60cf9b37aa1d62e676584719e6f785ecf148c7
-Q +cf2dc6dfad275dad8fef763a57baaaf6301b0d3bf1916be90f22200cbe0115d0
-Q +e956b36063e77b5ad0d8b8afb5dc942665f570d762929ff277e320c06ded8ce6
-Q +f27d578edac06eb28739f23351ab1cf07531bc7b32f4077e4dc9c8166f551d95
+P 6ca269b677c6cdc03628fc4f3634ee1b9b956170f9bc41ba8d37b15cc6571a88
 R 6723709c10ad0e4cbb0f48842d99491e
+T +sym-release *
+T +sym-version-3.51.3 *
 U drh
-Z 29bff4da4929fc4302c97fa479ce6268
+Z 8a6b03453203488391a91516890c1c7d
 # Remove this line to create a well-formed Fossil manifest.
