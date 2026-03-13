@@ -544,4 +544,54 @@ do_catchsql_test 22.1 {
 } {1 {no such column: sqlite_master.name}}
 
 
+#-------------------------------------------------------------------------
+reset_db 
+do_execsql_test 23.0 {
+  PRAGMA recursive_triggers = 1;
+  CREATE TABLE t1(x, y);
+  CREATE TRIGGER t1insert AFTER INSERT ON t1 WHEN new.x<5 BEGIN
+    INSERT INTO t1 VALUES(new.x+1, new.y);
+  END;
+}
+
+do_execsql_test 23.1 {
+  INSERT INTO t1 VALUES(1, 'one') RETURNING *;
+} {1 one}
+
+do_execsql_test 23.2 {
+  SELECT * FROM t1
+} {1 one 2 one 3 one 4 one 5 one}
+
+#-------------------------------------------------------------------------
+reset_db 
+ifcapable fts5 {
+
+  do_execsql_test 24.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(c);
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES('x');
+  }
+  
+  db close
+  
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  
+  do_execsql_test 24.1 {
+    SELECT * FROM t1
+  } {x}
+  
+  do_execsql_test -db db2 24.2 {
+    CREATE TABLE t2(y);
+    INSERT INTO t2 VALUES('y');
+  } {}
+
+  db2 close
+  
+  do_execsql_test 24.3 {
+    INSERT INTO ft VALUES('hello world') RETURNING *
+  } {{hello world}}
+}
+
+
 finish_test

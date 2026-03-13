@@ -15,7 +15,6 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 set testprefix existsexpr
 
-
 do_execsql_test 1.0 {
   CREATE TABLE x1(a, b, PRIMARY KEY(a)) WITHOUT ROWID;
   INSERT INTO x1 VALUES(1, 2), (3, 4), (5, 6);
@@ -428,5 +427,91 @@ do_execsql_test 8.0 {
   CREATE TABLE t1(c0 INT);   INSERT INTO t1(c0) VALUES (2);
   SELECT * FROM t1 WHERE EXISTS (SELECT 1 FROM t0 LIMIT 0);
 } {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 9.0 {
+  CREATE TABLE t1(xx);
+  INSERT INTO t1 VALUES('big string value');
+} {}
+
+do_execsql_test 9.1 {
+  PRAGMA automatic_index = off;
+  CREATE TABLE t2(ii);
+  INSERT INTO t2 VALUES(100);
+  INSERT INTO t2 VALUES(200);
+}
+
+do_execsql_test 9.2 {
+  CREATE TABLE t3(yy);
+  INSERT INTO t3 VALUES(200);
+}
+
+do_execsql_test 9.3 {
+  SELECT 1 FROM t2 WHERE EXISTS ( SELECT 1 FROM t3 WHERE yy==t2.ii )
+} {1}
+
+do_execsql_test 9.4 {
+  SELECT EXISTS (
+    SELECT 1 FROM t2 WHERE EXISTS ( SELECT 1 FROM t3 WHERE yy==t2.ii )
+  )
+} {1}
+
+do_execsql_test 9.5 {
+  SELECT 1234 WHERE EXISTS (
+    SELECT 1 FROM t2 WHERE EXISTS ( SELECT 1 FROM t3 WHERE yy==t2.ii )
+  )
+} {1234}
+
+set Q {
+  SELECT * FROM t1 WHERE 
+    EXISTS (
+      SELECT 1 FROM t2 WHERE EXISTS ( SELECT 1 FROM t3 WHERE yy==t2.ii ) 
+    )
+}
+
+do_execsql_test 9.5 $Q {{big string value}}
+catch { optimization_control db exists-to-join 0 }
+db cache flush
+do_execsql_test 9.6 $Q {{big string value}}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 10.0 {
+  CREATE TABLE t1(a);
+  CREATE TABLE x1(x);
+}
+
+do_execsql_test 10.1 {
+  SELECT EXISTS( SELECT 1 FROM t1 ) aaa FROM x1 WHERE aaa AND aaa
+}
+
+do_execsql_test 10.2 {
+  SELECT 
+    EXISTS( SELECT 1 FROM t1 ) aaa
+  WHERE (
+    SELECT 1 FROM x1 WHERE aaa AND aaa
+  );
+}
+
+# https://sqlite.org/forum/forumpost/2026-01-03T14:05:48z
+do_execsql_test 11.0 {
+  CREATE TABLE parent (id TEXT PRIMARY KEY);
+  CREATE TABLE child_a (id TEXT);
+  CREATE TABLE child_b (id TEXT);
+  INSERT INTO parent VALUES ('p1');
+  INSERT INTO child_a VALUES ('p1');
+}
+do_execsql_test 11.1 {
+  SELECT count(*), parent.id FROM parent
+   WHERE EXISTS (
+      SELECT 1 FROM child_a WHERE child_a.id = parent.id
+      UNION
+      SELECT 1 FROM child_b WHERE child_b.id = parent.id
+   )
+   GROUP BY id;
+} {1 p1}
 
 finish_test

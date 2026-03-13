@@ -2038,11 +2038,17 @@ static int unixLock(sqlite3_file *id, int eFileLock){
       pInode->nLock++;
       pInode->nShared = 1;
     }
-  }else if( (eFileLock==EXCLUSIVE_LOCK && pInode->nShared>1)
-         || unixIsSharingShmNode(pFile)
-  ){
+  }else if( eFileLock==EXCLUSIVE_LOCK && pInode->nShared>1 ){
     /* We are trying for an exclusive lock but another thread in this
     ** same process is still holding a shared lock. */
+    rc = SQLITE_BUSY;
+  }else if( unixIsSharingShmNode(pFile) ){
+    /* We are in WAL mode and attempting to delete the SHM and WAL
+    ** files due to closing the connection or changing out of WAL mode,
+    ** but another process still holds locks on the SHM file, thus
+    ** indicating that database locks have been broken, perhaps due
+    ** to a rogue close(open(dbFile)) or similar.
+    */
     rc = SQLITE_BUSY;
   }else{
     /* The request was for a RESERVED or EXCLUSIVE lock.  It is
@@ -4693,26 +4699,21 @@ static int unixFcntlExternalReader(unixFile *pFile, int *piOut){
 ** still not a disaster.
 */
 static int unixIsSharingShmNode(unixFile *pFile){
-  int rc;
   unixShmNode *pShmNode;
+  struct flock lock;
   if( pFile->pShm==0 ) return 0;
   if( pFile->ctrlFlags & UNIXFILE_EXCL ) return 0;
   pShmNode = pFile->pShm->pShmNode;
-  rc = 1;
-  unixEnterMutex();
-  if( ALWAYS(pShmNode->nRef==1) ){
-    struct flock lock;
-    lock.l_whence = SEEK_SET;
-    lock.l_start = UNIX_SHM_DMS;
-    lock.l_len = 1;
-    lock.l_type = F_WRLCK;
-    osFcntl(pShmNode->hShm, F_GETLK, &lock);
-    if( lock.l_type==F_UNLCK ){
-      rc = 0;
-    }
-  }
-  unixLeaveMutex();
-  return rc;
+#if SQLITE_ATOMIC_INTRINSICS
+  assert( AtomicLoad(&pShmNode->nRef)==1 );
+#endif
+  memset(&lock, 0, sizeof(lock));
+  lock.l_whence = SEEK_SET;
+  lock.l_start = UNIX_SHM_DMS;
+  lock.l_len = 1;
+  lock.l_type = F_WRLCK;
+  osFcntl(pShmNode->hShm, F_GETLK, &lock);
+  return (lock.l_type!=F_UNLCK);
 }
 
 /*

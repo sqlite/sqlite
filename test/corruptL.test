@@ -234,7 +234,7 @@ do_execsql_test 2.1 {
 
 do_catchsql_test 2.2 {
   SELECT b,c FROM t1 ORDER BY a;
-} {1 {database disk image is malformed}}
+} {1 {out of memory}}
 
 #-------------------------------------------------------------------------
 reset_db

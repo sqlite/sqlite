@@ -695,17 +695,21 @@ BCC = $(BCC) /d2guard4 -D_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE
 !IF $(DEBUG)>1
 TCC = $(TCC) -MDd
 BCC = $(BCC) -MDd
+ZLIBCFLAGS = -nologo -MDd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MD
 BCC = $(BCC) -MD
+ZLIBCFLAGS = -nologo -MD -W3 -O2 -Oy- -Zi
 !ENDIF
 !ELSE
 !IF $(DEBUG)>1
 TCC = $(TCC) -MTd
 BCC = $(BCC) -MTd
+ZLIBCFLAGS = -nologo -MTd -W3 -O2 -Oy- -Zi
 !ELSE
 TCC = $(TCC) -MT
 BCC = $(BCC) -MT
+ZLIBCFLAGS = -nologo -MT -W3 -O2 -Oy- -Zi
 !ENDIF
 !ENDIF
 
