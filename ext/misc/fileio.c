@@ -329,6 +329,7 @@ static int fileStat(
   b1[sz] = 0;
   rc = _wstat(b1, pStatBuf);
   if( rc==0 ) statTimesToUtc(zPath, pStatBuf);
+  sqlite3_free(b1);
   return rc;
 #else
   return stat(zPath, pStatBuf);

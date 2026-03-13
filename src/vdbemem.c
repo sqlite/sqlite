@@ -1277,7 +1277,12 @@ int sqlite3VdbeMemFromBtree(
 ){
   int rc;
   pMem->flags = MEM_Null;
-  if( sqlite3BtreeMaxRecordSize(pCur)<offset+amt ){
+  testcase( amt==SQLITE_MAX_ALLOCATION_SIZE-1 );
+  testcase( amt==SQLITE_MAX_ALLOCATION_SIZE );
+  if( amt>=SQLITE_MAX_ALLOCATION_SIZE ){
+    return SQLITE_NOMEM_BKPT;
+  }
+  if( (u64)amt + (u64)offset > (u64)sqlite3BtreeMaxRecordSize(pCur) ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( SQLITE_OK==(rc = sqlite3VdbeMemClearAndResize(pMem, amt+1)) ){

@@ -921,9 +921,11 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       srcTypedArray = new Uint8Array(srcTypedArray);
     }
     affirmBindableTypedArray(srcTypedArray);
-    const heap = wasm.heapForSize(srcTypedArray.constructor);
     const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
-    heap.set(srcTypedArray.byteLength ? srcTypedArray : [0], Number(pRet));
+    wasm.heapForSize(srcTypedArray.constructor)
+      .set(srcTypedArray.byteLength ? srcTypedArray : [0], Number(pRet))
+    /* Maintenance note: the order of alloc() and heapForSize() calls
+       is significant: https://sqlite.org/forum/forumpost/05b77273be104532 */;
     return pRet;
   };
 

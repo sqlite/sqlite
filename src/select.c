@@ -1445,9 +1445,14 @@ static void selectInnerLoop(
         assert( nResultCol<=pDest->nSdst );
         pushOntoSorter(
             pParse, pSort, p, regResult, regOrig, nResultCol, nPrefixReg);
+        pDest->iSDParm = regResult;
       }else{
         assert( nResultCol==pDest->nSdst );
-        assert( regResult==iParm );
+        if( regResult!=iParm ){
+          /* This occurs in cases where the SELECT had both a DISTINCT and
+          ** an OFFSET clause.  */
+          sqlite3VdbeAddOp3(v, OP_Copy, regResult, iParm, nResultCol-1);
+        }
         /* The LIMIT clause will jump out of the loop for us */
       }
       break;
@@ -7462,12 +7467,24 @@ static SQLITE_NOINLINE void existsToJoin(
        && (pSub->selFlags & SF_Aggregate)==0
        && !pSub->pSrc->a[0].fg.isSubquery
        && pSub->pLimit==0
+       && pSub->pPrior==0
       ){
+        /* Before combining the sub-select with the parent, renumber the 
+        ** cursor used by the subselect. This is because the EXISTS expression
+        ** might be a copy of another EXISTS expression from somewhere
+        ** else in the tree, and in this case it is important that it use
+        ** a unique cursor number.  */
+        sqlite3 *db = pParse->db;
+        int *aCsrMap = sqlite3DbMallocZero(db, (pParse->nTab+2)*sizeof(int));
+        if( aCsrMap==0 ) return;
+        aCsrMap[0] = (pParse->nTab+1);
+        renumberCursors(pParse, pSub, -1, aCsrMap);
+        sqlite3DbFree(db, aCsrMap);
+
         memset(pWhere, 0, sizeof(*pWhere));
         pWhere->op = TK_INTEGER;
         pWhere->u.iValue = 1;
         ExprSetProperty(pWhere, EP_IntValue);
-
         assert( p->pWhere!=0 );
         pSub->pSrc->a[0].fg.fromExists = 1;
         pSub->pSrc->a[0].fg.jointype |= JT_CROSS;
@@ -7584,7 +7601,7 @@ static int selectCheckOnClausesSelect(Walker *pWalker, Select *pSelect){
 ** Check all ON clauses in pSelect to verify that they do not reference
 ** columns to the right.
 */
-static void selectCheckOnClauses(Parse *pParse, Select *pSelect){
+void sqlite3SelectCheckOnClauses(Parse *pParse, Select *pSelect){
   Walker w;
   CheckOnCtx sCtx;
   assert( pSelect->selFlags & SF_OnToWhere );
@@ -7726,18 +7743,6 @@ int sqlite3Select(
     sqlite3TreeViewSelect(0, p, 0);
   }
 #endif
-
-  /* If the SELECT statement contains ON clauses that were moved into
-  ** the WHERE clause, go through and verify that none of the terms
-  ** in the ON clauses reference tables to the right of the ON clause.
-  ** Do this now, after name resolution, but before query flattening
-  */
-  if( p->selFlags & SF_OnToWhere ){
-    selectCheckOnClauses(pParse, p);
-    if( pParse->nErr ){
-      goto select_end;
-    }
-  }
 
   /* If the SF_UFSrcCheck flag is set, then this function is being called
   ** as part of populating the temp table for an UPDATE...FROM statement.

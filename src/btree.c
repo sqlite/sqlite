@@ -5120,7 +5120,7 @@ static int accessPayload(
 
   getCellInfo(pCur);
   aPayload = pCur->info.pPayload;
-  assert( offset+amt <= pCur->info.nPayload );
+  assert( (u64)offset+(u64)amt <= (u64)pCur->info.nPayload );
 
   assert( aPayload > pPage->aData );
   if( (uptr)(aPayload - pPage->aData) > (pBt->usableSize - pCur->info.nLocal) ){

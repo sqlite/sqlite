@@ -2074,6 +2074,7 @@ static void fts5SegIterReverseInitPage(Fts5Index *p, Fts5SegIter *pIter){
   while( 1 ){
     u64 iDelta = 0;
 
+    if( i>=n ) break;
     if( eDetail==FTS5_DETAIL_NONE ){
       /* todo */
       if( i<n && a[i]==0 ){
@@ -5239,7 +5240,7 @@ static void fts5DoSecureDelete(
   int iSegid = pSeg->pSeg->iSegid;
   u8 *aPg = pSeg->pLeaf->p;
   int nPg = pSeg->pLeaf->nn;
-  int iPgIdx = pSeg->pLeaf->szLeaf;
+  int iPgIdx = pSeg->pLeaf->szLeaf;         /* Offset of page footer */
 
   u64 iDelta = 0;
   int iNextOff = 0;
@@ -5318,7 +5319,7 @@ static void fts5DoSecureDelete(
         iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
       }
       assert_nc( iSOP==pSeg->iLeafOffset );
-      iNextOff = pSeg->iLeafOffset + pSeg->nPos;
+      iNextOff = iSOP + pSeg->nPos;
     }
   }
 
@@ -5930,7 +5931,7 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
       fts5StructureRelease(pStruct);
       pStruct = pNew;
       nMin = 1;
-      nMerge = nMerge*-1;
+      nMerge = (nMerge==SMALLEST_INT32 ? LARGEST_INT32 : (nMerge*-1));
     }
     if( pStruct && pStruct->nLevel ){
       if( fts5IndexMerge(p, &pStruct, nMerge, nMin) ){
