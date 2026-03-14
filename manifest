@@ -1,5 +1,5 @@
-C Changes\ssome\slegacy\stesting\stargets\sin\sthe\smakefiles\sinto\saliases\sfor\n"devtest"\sand\s"releasetest"
-D 2026-03-13T15:03:55.602
+C Add\sa\smissing\sreturn\sfor\sthe\sinvalid\sarguments\serror\scase\sin\ssqlite3_test_control_fault_install.\sNo\scurrent\sscripts\strigger\sthis\serror.
+D 2026-03-14T16:30:13.321
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -744,7 +744,7 @@ F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 71230da35d81b7234c5e4dc3747ca2302390884b051052956deb3dbf680a6ed4
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
 F src/test1.c 3e3b013f59ffcb57dce00c90d55907072d71d4e970cb0a590cb261efe11bae9c
-F src/test2.c 62f0830958f9075692c29c6de51b495ae8969e1bef85f239ffcd9ba5fb44a5ff
+F src/test2.c 2b9ab96bba63a1c369d5769390475259ad210f144a877805f2e32e563f9e93c1
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
 F src/test5.c 38fa635a70a94f2aa8b47ecbab15d821386205d27ad4159c3551ab3ba45efa11
@@ -2192,9 +2192,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 568573f872733bf32c2fde6a3a43100bdac17fc762e5c9a6d7a47b988fdcea4e
-Q +238e70fec074005a53794bfe9550db95a8e5ef7b520d58b6b383a339ac50f900
-R 2e28588353138e4191972bbabcb605f5
-U drh
-Z bb5ae496bb0470667de5869ba7269144
+P 4c54f22f7abbf5403e554fbf3dd70ddee97352d7de1f7fe19f540bdf681f4e75
+R 9a46f2704968b9ff8483cbaac9c355df
+U stephan
+Z 7e9e58dae5593d350ceb379161db40c2
 # Remove this line to create a well-formed Fossil manifest.
