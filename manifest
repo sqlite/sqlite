@@ -1,5 +1,5 @@
-C Add\sa\smissing\sreturn\sfor\sthe\sinvalid\sarguments\serror\scase\sin\ssqlite3_test_control_fault_install.\sNo\scurrent\sscripts\strigger\sthis\serror.
-D 2026-03-14T16:35:32.294
+C Add\sa\smissing\ssqlite3_test_control_fault_install\sto\swalrestart.test,\sas\spointed\sout\sin\s[forum:c3f17017b45f661c|forum\spost\sc3f17017b45f661c].
+D 2026-03-14T16:40:44.489
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1991,7 +1991,7 @@ F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
 F test/walpersist.test 8d78a1ec91299163451417b451a2bac3481f8eb9f455b1ca507a6625c927ca6e
 F test/walprotocol.test 1b3f922125e341703f6e946d77fdc564d38fb3e07a9385cfdc6c99cac1ecf878
 F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db868eebc131
-F test/walrestart.test 3b0a9198ad2eb9f716d8f3846b133ba9f4619fb56decb1e67bba27743c766289
+F test/walrestart.test b428030485ce425902f9d9581f8ec5795114349dff71518452c33cec5d312a92
 F test/walro.test 78a84bc0fdae1385c06b017215c426b6845734d6a5a3ac75c918dd9b801b1b9d
 F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766cdc
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
@@ -2173,9 +2173,8 @@ F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6dd
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2db74737e0b4766e666b78f4f012cbdf5e470621a4e69c87fbde9bf7188cc2f8
-Q +dc78d258745a1350685b37da56f0a2ac2e437b422415d634522dc61d340d06eb
-R 849db6421f60f3f547256c291752fb0b
+P 4d1a4ad6bbea303744cdf5d5f70c48086237c7455405a2e2afa2be01445c239f
+R 2bc6a4f68020827b58d4f28e007d9194
 U stephan
-Z 631ae8d57928a1cd4b74ed68a116a0dd
+Z 9eec583809d8877f7802ee61cc2e1dfe
 # Remove this line to create a well-formed Fossil manifest.
