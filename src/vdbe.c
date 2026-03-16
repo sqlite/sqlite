@@ -6653,13 +6653,22 @@ case OP_IdxDelete: {
   r.aMem = &aMem[pOp->p2];
   rc = sqlite3BtreeIndexMoveto(pCrsr, &r, &res);
   if( rc ) goto abort_due_to_error;
-  if( res==0 ){
-    rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
-    if( rc ) goto abort_due_to_error;
-  }else if( !sqlite3WritableSchema(db) ){
-    rc = sqlite3ReportError(SQLITE_CORRUPT_INDEX, __LINE__, "index corruption");
-    goto abort_due_to_error;
+  if( res!=0 ){
+    rc = sqlite3VdbeFindDeleteKey(pCrsr, &r, &res);
+    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    if( res!=0 ){
+      if( !sqlite3WritableSchema(db) ){
+        rc = sqlite3ReportError(
+            SQLITE_CORRUPT_INDEX, __LINE__, "index corruption");
+        goto abort_due_to_error;
+      }
+      pC->cacheStatus = CACHE_STALE;
+      pC->seekResult = 0;
+      break;
+    }
   }
+  rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
+  if( rc ) goto abort_due_to_error;
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
   pC->seekResult = 0;

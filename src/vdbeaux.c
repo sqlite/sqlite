@@ -5393,6 +5393,151 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+/*
+** This function compares the unpacked record with the current key that
+** cursor pCur points to. It returns the usual less than zero, zero, or
+** greater than zero if the cursor key is less than, equal to or greater
+** than p. i.e.
+**
+**          (pCur->pKey) - (p)
+**
+** Except that:
+**
+**   * if the PK fields of the keys match, zero is always returned, even
+**     if the preceding fields do not match.
+**
+**   * otherwise, if the preceding fields are not identical, the result
+**     of comparing them is returned.
+**
+**   * finally, if the preceding fields all match but the PK fields do 
+**     not, the result of comparing the PK fields is returned.
+**
+** This function is not optimized. It is not expected to be called often.
+*/
+static int vdbeIsDeleteKey(
+  BtCursor *pCur,                 /* Cursor open on index */
+  UnpackedRecord *p,              /* Index key being deleted */
+  int *piRes                      /* 0 for a match, non-zero for not a match */
+){
+  u8 *aRec = 0;
+  u32 nRec = 0;
+  Mem mem;
+  int rc = SQLITE_OK;
+
+  memset(&mem, 0, sizeof(mem));
+  mem.enc = p->pKeyInfo->enc;
+  mem.db = p->pKeyInfo->db;
+  nRec = sqlite3BtreePayloadSize(pCur);
+  aRec = sqlite3MallocZero(nRec);
+  if( aRec==0 ){
+    rc = SQLITE_NOMEM_BKPT;
+  }else{
+    rc = sqlite3BtreePayload(pCur, 0, nRec, aRec);
+  }
+
+  if( rc==SQLITE_OK ){
+    int szHdr = 0;                /* Size of record header in bytes */
+    int idxHdr = 0;               /* Current index in header */
+    int idxRec = 0;               /* Current index in record */
+    int ii = 0;
+    int nCol = 0;
+    int res = 0;
+
+    idxHdr = getVarint32(aRec, szHdr);
+    if( szHdr>98307 ){
+      rc = SQLITE_CORRUPT;
+    }else{
+      int recres = 0;             /* Result of comparing record fields */
+      int res = 0;                /* Result of this function call */
+
+      idxRec = szHdr; 
+      nCol = p->pKeyInfo->nAllField;
+      for(ii=0; ii<nCol && rc==SQLITE_OK; ii++){
+        u32 iSerial = 0;
+        int nSerial = 0;
+        int r2 = 0;
+
+        idxHdr += getVarint32(&aRec[idxHdr], iSerial);
+        nSerial = sqlite3VdbeSerialTypeLen(iSerial);
+        if( (idxRec+nSerial)>nRec ){
+          rc = SQLITE_CORRUPT_BKPT;
+        }else{
+          sqlite3VdbeSerialGet(&aRec[idxRec], iSerial, &mem);
+          idxRec += sqlite3VdbeSerialTypeLen(iSerial);
+          r2 = sqlite3MemCompare(&mem, &p->aMem[ii], p->pKeyInfo->aColl[ii]);
+          if( r2!=0 ){
+            if( ii<p->pKeyInfo->nKeyField ){
+              if( recres==0 ) recres = r2;
+            }else{
+              res = recres;
+              if( res==0 ) res = r2;
+              break;
+            }
+          }
+        }
+      }
+
+      *piRes = res;
+    }
+  }
+
+  sqlite3_free(aRec);
+  return rc;
+}
+
+/*
+** This is called when the record in (*p) is to be deleted from the index
+** opened by cursor pCur, but an exact match for the record was not found
+** in the index. The result of searching for it was (*pRes) - if (*pRes)
+** is -1, then the cursor points at a record that is smaller than (*p),
+** if it is +1, then it points to a record greater than (*p).
+**
+** One reason that an exact match was not found may be the EIIB bug - that
+** a text-to-float conversion may have caused a real value in record (*p)
+** to be slightly different from its counterpart on disk. This function
+** attempts to find the right record to delete. If it does find the right
+** record, it leaves *pCur pointing to it and sets (*pRes) to 0 before
+** returning. Otherwise, (*pRes) is set to non-zero and an SQLite error
+** code returned.
+**
+** The algorithm used to find the correct record is:
+**
+**   * Test the PK columns of the current record to see if they match (*p).
+**     If so, delete the current record.
+**
+**   * If the caller's (*pRes) value was -ve, advance the cursor forward one
+**     entry. Then test the PK fields again. Repeat until the cursor points
+**     to an entry larger than (*p).
+**
+**   * Or, if the caller's (*pRes) value was +ve, move the cursor backwards 
+**     one entry. Then test the PK fields again. Repeat until the cursor 
+**     points to an entry larger than (*p).
+*/
+int sqlite3VdbeFindDeleteKey(BtCursor *pCur, UnpackedRecord *p, int *pRes){
+  int resCaller = *pRes;
+  int res = resCaller;
+  int rc = SQLITE_OK;
+
+  assert( resCaller==-1 || resCaller==0 || resCaller==+1 );
+  while( sqlite3BtreeEof(pCur)==0 && rc==SQLITE_OK ){
+    rc = vdbeIsDeleteKey(pCur, p, &res);
+    assert( res==-1 || res==0 || res==+1 );
+    if( res!=resCaller ) break;
+
+    if( rc==SQLITE_OK ){
+      if( resCaller<0 ){
+        rc = sqlite3BtreeNext(pCur, 0);
+      }else{
+        rc = sqlite3BtreePrevious(pCur, 0);
+      }
+    }
+  }
+
+  if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+  *pRes = res;
+  return rc;
+}
+
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
 /*
 ** Cause a function to throw an error if it was call from OP_PureFunc
