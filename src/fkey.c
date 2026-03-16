@@ -1326,7 +1326,6 @@ static Trigger *fkActionTrigger(
     nFrom = sqlite3Strlen30(zFrom);
 
     if( action==OE_Restrict ){
-      int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
       SrcList *pSrc;
       Expr *pRaise; 
 

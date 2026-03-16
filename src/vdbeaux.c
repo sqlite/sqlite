@@ -5438,7 +5438,6 @@ static int vdbeIsDeleteKey(
       for(ii=0; ii<nCol && rc==SQLITE_OK; ii++){
         u32 iSerial = 0;
         int nSerial = 0;
-        int r2 = 0;
 
         idxHdr += getVarint32(&aRec[idxHdr], iSerial);
         nSerial = sqlite3VdbeSerialTypeLen(iSerial);
