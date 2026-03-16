@@ -445,7 +445,8 @@ do_test shell1-3.12.2-legacy {
 do_test shell1-3.12.3 {
   # too many arguments
   catchcmd "test.db" ".indexes FOO BAD"
-} {1 {Usage: .indexes ?LIKE-PATTERN?}}
+} {1 {line 1: .indexes FOO BAD
+line 1:              ^--- unknown argument}}
 
 # .mode MODE ?TABLE?     Set output mode where MODE is one of:
 #                          ascii    Columns/rows delimited by 0x1F and 0x1E
