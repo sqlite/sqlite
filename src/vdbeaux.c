@@ -5395,24 +5395,10 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 
 /*
 ** This function compares the unpacked record with the current key that
-** cursor pCur points to. It returns the usual less than zero, zero, or
-** greater than zero if the cursor key is less than, equal to or greater
-** than p. i.e.
-**
-**          (pCur->pKey) - (p)
-**
-** Except that:
-**
-**   * if the PK fields of the keys match, zero is always returned, even
-**     if the preceding fields do not match.
-**
-**   * otherwise, if the preceding fields are not identical, the result
-**     of comparing them is returned.
-**
-**   * finally, if the preceding fields all match but the PK fields do 
-**     not, the result of comparing the PK fields is returned.
-**
-** This function is not optimized. It is not expected to be called often.
+** cursor pCur points to, ignoring the first nKeyCol fields. It returns 
+** the usual less than zero, zero, or greater than zero if the remaining
+** fields of the cursor cursor key are less than, equal to or greater 
+** than those in (*p).
 */
 static int vdbeIsDeleteKey(
   BtCursor *pCur,                 /* Cursor open on index */
@@ -5439,20 +5425,16 @@ static int vdbeIsDeleteKey(
   if( rc==SQLITE_OK ){
     int szHdr = 0;                /* Size of record header in bytes */
     int idxHdr = 0;               /* Current index in header */
-    int idxRec = 0;               /* Current index in record */
-    int ii = 0;
-    int nCol = 0;
-    int res = 0;
 
     idxHdr = getVarint32(aRec, szHdr);
     if( szHdr>98307 ){
       rc = SQLITE_CORRUPT;
     }else{
-      int recres = 0;             /* Result of comparing record fields */
       int res = 0;                /* Result of this function call */
+      int idxRec = szHdr;         /* Index of next field in record body */
+      int ii = 0;                 /* Iterator variable */
 
-      idxRec = szHdr; 
-      nCol = p->pKeyInfo->nAllField;
+      int nCol = p->pKeyInfo->nAllField;
       for(ii=0; ii<nCol && rc==SQLITE_OK; ii++){
         u32 iSerial = 0;
         int nSerial = 0;
@@ -5462,20 +5444,12 @@ static int vdbeIsDeleteKey(
         nSerial = sqlite3VdbeSerialTypeLen(iSerial);
         if( (idxRec+nSerial)>nRec ){
           rc = SQLITE_CORRUPT_BKPT;
-        }else{
+        }else if( ii>=nKeyCol ){
           sqlite3VdbeSerialGet(&aRec[idxRec], iSerial, &mem);
-          idxRec += sqlite3VdbeSerialTypeLen(iSerial);
-          r2 = sqlite3MemCompare(&mem, &p->aMem[ii], p->pKeyInfo->aColl[ii]);
-          if( r2!=0 ){
-            if( ii<nKeyCol ){
-              if( recres==0 ) recres = r2;
-            }else{
-              res = recres;
-              if( res==0 ) res = r2;
-              break;
-            }
-          }
+          res = sqlite3MemCompare(&mem, &p->aMem[ii], p->pKeyInfo->aColl[ii]);
+          if( res!=0 ) break;
         }
+        idxRec += sqlite3VdbeSerialTypeLen(iSerial);
       }
 
       *piRes = res;
@@ -5503,16 +5477,9 @@ static int vdbeIsDeleteKey(
 **
 ** The algorithm used to find the correct record is:
 **
-**   * Test the PK columns of the current record to see if they match (*p).
-**     If so, delete the current record.
+**   * Scan up to BTREE_FDK_RANGE entries either side of the current entry.
 **
-**   * If the caller's (*pRes) value was -ve, advance the cursor forward one
-**     entry. Then test the PK fields again. Repeat until the cursor points
-**     to an entry larger than (*p).
-**
-**   * Or, if the caller's (*pRes) value was +ve, move the cursor backwards 
-**     one entry. Then test the PK fields again. Repeat until the cursor 
-**     points to an entry larger than (*p).
+**   * If the above fails to find an entry to delete, search the entire index.
 */
 int sqlite3VdbeFindDeleteKey(
   BtCursor *pCur, 
@@ -5520,26 +5487,50 @@ int sqlite3VdbeFindDeleteKey(
   UnpackedRecord *p, 
   int *pRes
 ){
-  int resCaller = *pRes;
-  int res = resCaller;
+#define BTREE_FDK_RANGE 10
+  int nStep = 0;
+  int res = 1;
   int rc = SQLITE_OK;
+  int ii = 0;
 
-  assert( resCaller==-1 || resCaller==0 || resCaller==+1 );
-  while( sqlite3BtreeEof(pCur)==0 && rc==SQLITE_OK ){
-    rc = vdbeIsDeleteKey(pCur, nKeyCol, p, &res);
-    assert( res==-1 || res==0 || res==+1 );
-    if( res!=resCaller ) break;
-
-    if( rc==SQLITE_OK ){
-      if( resCaller<0 ){
-        rc = sqlite3BtreeNext(pCur, 0);
-      }else{
-        rc = sqlite3BtreePrevious(pCur, 0);
-      }
-    }
+  /* Move the cursor back BTREE_FDK_RANGE entries. If this hits an EOF, 
+  ** position the cursor at the first entry in the index and set nStep
+  ** to -1 so that the first loop below scans the entire index. Otherwise,
+  ** set nStep to BTREE_FDK_RANGE*2 so that the first loop below scans
+  ** just that many entries.  */
+  for(ii=0; sqlite3BtreeEof(pCur)==0 && ii<BTREE_FDK_RANGE; ii++){
+    rc = sqlite3BtreePrevious(pCur, 0);
+  }
+  if( rc==SQLITE_DONE ){
+    rc = sqlite3BtreeFirst(pCur, &res);
+    nStep = -1;
+  }else{
+    nStep = BTREE_FDK_RANGE*2;
   }
 
-  if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+  /* This loop runs at most twice to search for a key with matching PK 
+  ** fields in the index. The second iteration always searches the entire 
+  ** index. The first iteration searches nStep entries starting with the
+  ** current cursor entry if (nStep>=0), or the entire index if (nStep<0).  */
+  while( 1 ){
+    for(ii=0; rc==SQLITE_OK && (ii<nStep || nStep<0); ii++){
+      rc = vdbeIsDeleteKey(pCur, nKeyCol, p, &res);
+      if( res==0 || rc!=SQLITE_OK ) break;
+      rc = sqlite3BtreeNext(pCur, 0);
+    }
+    if( rc==SQLITE_DONE ){
+      rc = SQLITE_OK;
+      assert( res!=0 );
+    }
+    if( nStep<0 || rc!=SQLITE_OK || res==0 ) break;
+
+    /* The first, non-exhaustive, search failed to find an entry with 
+    ** matching PK fields. So restart for an exhaustive search of the 
+    ** entire index.  */
+    nStep = -1;
+    rc = sqlite3BtreeFirst(pCur, &res);
+  }
+
   *pRes = res;
   return rc;
 }
