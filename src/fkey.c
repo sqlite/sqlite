@@ -1337,10 +1337,10 @@ static Trigger *fkActionTrigger(
       }
       pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
       if( pSrc ){
-        assert( pSrc->nSrc==1 );
-        pSrc->a[0].zName = sqlite3DbStrDup(db, zFrom);
-        assert( pSrc->a[0].fg.fixedSchema==0 && pSrc->a[0].fg.isSubquery==0 );
-        pSrc->a[0].u4.zDatabase = sqlite3DbStrDup(db, db->aDb[iDb].zDbSName);
+        SrcItem *pItem = &pSrc->a[0];
+        pItem->zName = sqlite3DbStrDup(db, zFrom);
+        pItem->fg.fixedSchema = 1;
+        pItem->u4.pSchema = pTab->pSchema;
       }
       pSelect = sqlite3SelectNew(pParse, 
           sqlite3ExprListAppend(pParse, 0, pRaise),
@@ -1362,7 +1362,10 @@ static Trigger *fkActionTrigger(
       pStep = pTrigger->step_list = (TriggerStep *)&pTrigger[1];
       pStep->pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
       if( pStep->pSrc ){
-        pStep->pSrc->a[0].zName = sqlite3DbStrNDup(db, zFrom, nFrom);
+        SrcItem *pItem = &pStep->pSrc->a[0];
+        pItem->zName = sqlite3DbStrNDup(db, zFrom, nFrom);
+        pItem->u4.pSchema = pTab->pSchema;
+        pItem->fg.fixedSchema = 1;
       }
       pStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
       pStep->pExprList = sqlite3ExprListDup(db, pList, EXPRDUP_REDUCE);
