@@ -1,5 +1,5 @@
-C If\sOP_IdxDelete\scannot\sfind\san\sindex\sentry\sto\sdelete,\sfirst\ssearch\s10\sentries\sin\seither\sdirection\sof\swhere\sthe\sentry\sshould\sbe\sin\sthe\sindex.\sIf\sthat\sfails,\ssearch\sthe\sentire\sindex\sfor\san\sentry\swith\smatching\sPK\sfields.
-D 2026-03-16T16:21:43.376
+C Further\stests\sfor\sthe\scode\son\sthis\sbranch.
+D 2026-03-16T16:44:14.299
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1081,7 +1081,7 @@ F test/e_wal.test db7c33642711cf3c7959714b5f012aca08cacfa78da0382f95e849eb3ba66a
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 16e7d006e8687654ee59e7ad5a6d285ba23f0fe0eeb87f790afd6bc9cf1d1924
 F test/e_walhook.test 01b494287ba9e60b70f6ebf3c6c62e0ffe01788e344a4846b08e5de0b344cb66
-F test/eiib1.test 810da7aa9d55c07c891599d48ef8f45a0fa37f036c9341884505e9e815fedab5
+F test/eiib1.test b1e4361242f6215dd82ca3903bbec7832f1085f68bbf9d4d773ab0fbc71e924c
 F test/emptytable.test a38110becbdfa6325cd65cb588dca658cd885f62
 F test/enc.test b5503a87b31cea8a5084c6e447383f9ca08933bd2f29d97b6b6201081b2343eb
 F test/enc2.test 872afe58db772e7dfa1ad8e0759f8cc820e9efc8172d460fae83023101c2e435
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6f49b5ecad5d924999d045a1ade93d95e731182be1781aefa5bc763b6202e9c3
-R 07aad91547589b98e374a31de7dba336
+P 2cb9f4e4178549144acd82e317a1646e71c9281ac9fc4aa26bf129f1068ded45
+R 18949e9426303c3e4e5aa3e3a54fd78c
 U dan
-Z da974e9658962ed0763a3b684d15cc9b
+Z 8e56ca346bd009f8b629175fc6f3e9c7
 # Remove this line to create a well-formed Fossil manifest.
