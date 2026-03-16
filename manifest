@@ -1,5 +1,5 @@
-C Make\sOP_IdxDelete\stolerant\sof\ssmall\svariations\sin\sindex\skey\svalues.
-D 2026-03-16T15:16:13.147
+C Fix\sa\sproblem\swith\sthe\sfind-delete-key\smethod\son\sthis\sbranch.
+D 2026-03-16T15:49:58.396
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -682,7 +682,7 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
-F src/delete.c 901499bed747c3b4b2be45be1abe912ba50a3f6a40ba88cc006ccf279f2d0e97
+F src/delete.c cc318f7e5e9d9606c3600c7af96e836597f0f4d77ff7914ef03c5f906f4a43b4
 F src/expr.c 51e9c77ff5d9a21439e611fe6571a3cd50387e526e13c5614fd407e5b8571930
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 9a5b5b56af9f8fd5ddff8f83816de3e6d9b91ff392eeaefe707a59623e55aae7
@@ -799,11 +799,11 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 0cb2e590e9dcac6807352017fcbf5a52e0f836d74a338cb8c02ee3162bcf6508
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 303e8070a9d77509c754c2948cf1b61944930f1136001733e2bd5daaadefb8d1
+F src/vdbe.c 31ca4aaad332c3b973c5fb74bc76972a856fcb99c581e68efc35b6e9299a6d6c
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
-F src/vdbeInt.h e2ac1de191ba71b98daee4757950548f00b8bb169a794cf8cde51587cb147fe9
+F src/vdbeInt.h 68d4adddb1eb48cdbaff8cce1305ac6bc5ad9115f1a37087a13d01a045303e7a
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
-F src/vdbeaux.c 4885cfc6a58b8bf7a8a367673649057dc4a076c0c8797edb6bf1470bb082a31d
+F src/vdbeaux.c 6af3a26cd0ecde496eb3a0ad5ac90da098ce923a5c93f48c8d4f0bbc768863bc
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 317ec5e870ddb16951b606c9fe8be22baef22ecbe46f58fdefc259662238afb7
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -1081,6 +1081,7 @@ F test/e_wal.test db7c33642711cf3c7959714b5f012aca08cacfa78da0382f95e849eb3ba66a
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 16e7d006e8687654ee59e7ad5a6d285ba23f0fe0eeb87f790afd6bc9cf1d1924
 F test/e_walhook.test 01b494287ba9e60b70f6ebf3c6c62e0ffe01788e344a4846b08e5de0b344cb66
+F test/eiib1.test 810da7aa9d55c07c891599d48ef8f45a0fa37f036c9341884505e9e815fedab5
 F test/emptytable.test a38110becbdfa6325cd65cb588dca658cd885f62
 F test/enc.test b5503a87b31cea8a5084c6e447383f9ca08933bd2f29d97b6b6201081b2343eb
 F test/enc2.test 872afe58db772e7dfa1ad8e0759f8cc820e9efc8172d460fae83023101c2e435
@@ -2192,11 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 80bc5bc07e221f837c28066f0a438f11c8ab6be4c8ba93615439eb1667967003
-R 5a3b7bcea17f97d45cd400c7992de61b
-T *branch * idxdelete-tolerance
-T *sym-idxdelete-tolerance *
-T -sym-trunk *
+P c4b0081f08bd0458dbcf269b43a4051941eec8067393aa8e6810d4b8422ce44a
+R a18915b4118c3d28a02387e1bb9fac1b
 U dan
-Z 7bca9a15e7fe96dadf1d72ae49f0c8d2
+Z ddfe823bdcd5bb4257cbd5344ccd28d9
 # Remove this line to create a well-formed Fossil manifest.

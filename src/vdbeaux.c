@@ -5416,6 +5416,7 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 */
 static int vdbeIsDeleteKey(
   BtCursor *pCur,                 /* Cursor open on index */
+  int nKeyCol,
   UnpackedRecord *p,              /* Index key being deleted */
   int *piRes                      /* 0 for a match, non-zero for not a match */
 ){
@@ -5466,7 +5467,7 @@ static int vdbeIsDeleteKey(
           idxRec += sqlite3VdbeSerialTypeLen(iSerial);
           r2 = sqlite3MemCompare(&mem, &p->aMem[ii], p->pKeyInfo->aColl[ii]);
           if( r2!=0 ){
-            if( ii<p->pKeyInfo->nKeyField ){
+            if( ii<nKeyCol ){
               if( recres==0 ) recres = r2;
             }else{
               res = recres;
@@ -5513,14 +5514,19 @@ static int vdbeIsDeleteKey(
 **     one entry. Then test the PK fields again. Repeat until the cursor 
 **     points to an entry larger than (*p).
 */
-int sqlite3VdbeFindDeleteKey(BtCursor *pCur, UnpackedRecord *p, int *pRes){
+int sqlite3VdbeFindDeleteKey(
+  BtCursor *pCur, 
+  int nKeyCol, 
+  UnpackedRecord *p, 
+  int *pRes
+){
   int resCaller = *pRes;
   int res = resCaller;
   int rc = SQLITE_OK;
 
   assert( resCaller==-1 || resCaller==0 || resCaller==+1 );
   while( sqlite3BtreeEof(pCur)==0 && rc==SQLITE_OK ){
-    rc = vdbeIsDeleteKey(pCur, p, &res);
+    rc = vdbeIsDeleteKey(pCur, nKeyCol, p, &res);
     assert( res==-1 || res==0 || res==+1 );
     if( res!=resCaller ) break;
 

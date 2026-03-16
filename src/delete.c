@@ -922,8 +922,8 @@ void sqlite3GenerateRowIndexDelete(
     VdbeModuleComment((v, "GenRowIdxDel for %s", pIdx->zName));
     r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1,
         &iPartIdxLabel, pPrior, r1);
-    sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
-        pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
+    sqlite3VdbeAddOp4Int(v, OP_IdxDelete, iIdxCur+i, r1,
+        pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn, pIdx->nKeyCol);
     sqlite3ResolvePartIdxLabel(pParse, iPartIdxLabel);
     pPrior = pIdx;
   }

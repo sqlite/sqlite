@@ -6622,12 +6622,14 @@ case OP_SorterInsert: {     /* in2 */
   break;
 }
 
-/* Opcode: IdxDelete P1 P2 P3 * *
+/* Opcode: IdxDelete P1 P2 P3 P4 *
 ** Synopsis: key=r[P2@P3]
 **
 ** The content of P3 registers starting at register P2 form
 ** an unpacked index key. This opcode removes that entry from the
 ** index opened by cursor P1.
+**
+** P4 is the number of non-PK columns in the index entry.
 **
 ** Raise an SQLITE_CORRUPT_INDEX error if no matching index entry is found
 ** and not in writable_schema mode.
@@ -6654,7 +6656,7 @@ case OP_IdxDelete: {
   rc = sqlite3BtreeIndexMoveto(pCrsr, &r, &res);
   if( rc ) goto abort_due_to_error;
   if( res!=0 ){
-    rc = sqlite3VdbeFindDeleteKey(pCrsr, &r, &res);
+    rc = sqlite3VdbeFindDeleteKey(pCrsr, pOp->p4.i, &r, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res!=0 ){
       if( !sqlite3WritableSchema(db) ){
