@@ -5534,7 +5534,7 @@ int sqlite3VdbeFindDeleteKey(
     ** fields in the index. The second iteration always searches the entire 
     ** index. The first iteration searches nStep entries starting with the
     ** current cursor entry if (nStep>=0), or the entire index if (nStep<0).  */
-    while( 1 ){
+    while( sqlite3BtreeCursorIsValidNN(pCur) ){
       for(ii=0; rc==SQLITE_OK && (ii<nStep || nStep<0); ii++){
         rc = vdbeIsDeleteKey(pCur, mask, p, &res);
         if( res==0 || rc!=SQLITE_OK ) break;

@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements\sinto\sthe\sidxdelete-tolerance\sbranch
-D 2026-03-17T12:16:47.706
+C Do\snot\srun\sindex\shealing\son\san\sinvalid\scursor.
+D 2026-03-17T13:13:02.624
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/vdbe.c 8442ec7a77cca0b8c465bfcc57b1f548865aec44e8cf16aa21adb6772a2803b5
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h e876d6c5fd5f2eee4d818d49dabd615c88147a131f773edf5bd329e5b66cd365
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
-F src/vdbeaux.c 2d03037bd7a9e41886d2bfbc94636353e66fec3b79e3c17f5e3d421d43eb338a
+F src/vdbeaux.c 35016310d8a9694c41afd2a03aa2624a36cbb4de51ad1dee7a5f1aa74f6d87c4
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 317ec5e870ddb16951b606c9fe8be22baef22ecbe46f58fdefc259662238afb7
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e717017f0213441da2ef8a9e1f1e88ebfdefa26fc4773711968417c0bd6ebe5f ed29fe973e6cbf291eff6fc582aeb34556ea4f8df105ec61b361e4cdda017e62
-R 5a8ef14681129d08ac81808dc20cddad
+P 9d84fdb7819a9850919e2c1977811bcf514b3baad29eb8cc9fc78451d500c8b6
+R 7b31f014b775adbe80ab3ab634f5173f
 U drh
-Z e90b6df63372c1895e6eeec02a39dd63
+Z 25de1929fb81984a62a4f42e91b6530b
 # Remove this line to create a well-formed Fossil manifest.
