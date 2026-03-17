@@ -1,5 +1,5 @@
-C Rework\sthe\s".indexes"\scommand\sof\sthe\sCLI.\s\s(1)\sThe\sPATTERN\snow\smatches\nthe\sname\sof\sthe\sindex\sitself,\snot\sthe\sname\sof\sthe\stable\scontaining\nthe\sindex,\sthus\smaking\sthe\spattern\sactually\suseful.\s\s(2)\s\sSystem-generated\nindexes\s(for\sUNIQUE\sconstraints\sand\ssimilar)\sare\somitted\sunless\nthe\s-a|-all\sor\s--sys\soptions\sare\sadded.\s\s(3)\sThe\s--expr\soption\scauses\nonly\sexpression\sindexes\sto\sbe\sshown.
-D 2026-03-16T15:35:41.736
+C Enhance\stext&rarr;float\sconversions\sfor\sexact\srounding\sin\sall\scases.
+D 2026-03-17T09:49:07.391
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -797,7 +797,7 @@ F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 0cb2e590e9dcac6807352017fcbf5a52e0f836d74a338cb8c02ee3162bcf6508
+F src/util.c cf91389b58590edfb5978199ef59488ef8e3723e1ba1aa0ff15c62f8a658b95f
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 5328c99dd256ee8132383565a86e253543a85daccfd7477c52f20bac6b385a7f
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -2136,6 +2136,7 @@ F tool/mkautoconfamal.sh 06fbe090b81c24e592c1f22b404334f805ba74d482a9260f2ac81e6
 F tool/mkccode.tcl c42a8f8cf78f92e83795d5447460dbce7aaf78a3bbf9082f1507dc71a3665f3c x
 F tool/mkcombo.tcl 2a5189b219c4a495e1ff7fc980bd568d3cfb82ae9d50c84e77f7a161e96fc132
 F tool/mkctimec.tcl 3fb5cad05922f5da61262cb6bcd5868a34e94a49ca8833ae2d7796e7df075576 x
+F tool/mkfptab.c 24ea40113f96584caca3f6dd06b4ad5adffa0f39023910cb83fa7ef2ffa9b0ba
 F tool/mkkeywordhash.c 82d5af1d0e677900739fba59155cddac172d8c712c2d91ab73d6e6bcb30060f0
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2192,8 +2193,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 80bc5bc07e221f837c28066f0a438f11c8ab6be4c8ba93615439eb1667967003
-R 3ad37f8e404f71b8ecba081b76070ad6
+P 13e2cad810bfd59a9e18eb38bda1241715b76756ffec7d617e9ce99b89f19284 4ab10b251d870af8297b9e505452393f6000f83784c822ff128e7aec06f8c72f
+R db8308d0c3df23a204d08754ac698c9d
+T +closed 4ab10b251d870af8297b9e505452393f6000f83784c822ff128e7aec06f8c72f
 U drh
-Z d82e0cbe9c28448c805d23a2e1afab0e
+Z e98267478d6bb8562b872b8867d13830
 # Remove this line to create a well-formed Fossil manifest.
