@@ -1,5 +1,5 @@
-C Fix\scompiler\swarning\san\sinefficiency\sintroduced\sby\sprevious\scommit.
-D 2026-03-17T11:22:51.236
+C Fix\sdisplay\sof\sP4_INDEX\svalues\sin\sEXPLAIN\soutput.
+D 2026-03-17T11:26:57.847
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/vdbe.c 8442ec7a77cca0b8c465bfcc57b1f548865aec44e8cf16aa21adb6772a2803b5
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h e876d6c5fd5f2eee4d818d49dabd615c88147a131f773edf5bd329e5b66cd365
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
-F src/vdbeaux.c 34641d8268fcf86434eb8fe7d0afb4bcd858e0107c2df3f341e7e76c25eb3bc9
+F src/vdbeaux.c 2d03037bd7a9e41886d2bfbc94636353e66fec3b79e3c17f5e3d421d43eb338a
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 317ec5e870ddb16951b606c9fe8be22baef22ecbe46f58fdefc259662238afb7
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P eccd9fcfa7e34ddcdeb671544c6afac7aa0d4665c5e1df7c8e53c41387ed0386
-R cc9c5b3319bc05f03c5fbf20b1d70c69
+P 03058d73d3a88ab30e874b4231cc5b263b874a577f8bf5189a452d7376e25a47
+R f2a661a323fa447e9ef4d45e92c17764
 U dan
-Z da4a57e2892565c8c7c092b3a4fc5238
+Z 5f4c13dd3d9c19174dc84f86e2f27471
 # Remove this line to create a well-formed Fossil manifest.
