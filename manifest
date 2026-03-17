@@ -1,5 +1,5 @@
-C Change\sthe\ssqlite3VdbeFindDeleteKey()\sroutine\sso\sthat\sall\sindex\sfields\sthat\sare\snot\sexpressions\sor\svirtual\scolumns\smust\smatch\sthe\stable\sfor\sthe\sdelete\sto\ssucceed.
-D 2026-03-17T11:17:54.759
+C Fix\scompiler\swarning\san\sinefficiency\sintroduced\sby\sprevious\scommit.
+D 2026-03-17T11:22:51.236
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -682,7 +682,7 @@ F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
-F src/delete.c 39258c930aabe3e4949cfa634f27684a1a4dd27fbd3c0e151bc968d007d1f84f
+F src/delete.c 1f2268d6fe3c78fc1bf794ba65d7026498b78e2342ffaf85825dedae546e6fde
 F src/expr.c 51e9c77ff5d9a21439e611fe6571a3cd50387e526e13c5614fd407e5b8571930
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
@@ -800,7 +800,7 @@ F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c cf91389b58590edfb5978199ef59488ef8e3723e1ba1aa0ff15c62f8a658b95f
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 8442ec7a77cca0b8c465bfcc57b1f548865aec44e8cf16aa21adb6772a2803b5
-F src/vdbe.h fd7a85ab0d538db5c036b06c9c2e6493d6df4b22ce6f7c3ef64799d71fbbaa1c
+F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h e876d6c5fd5f2eee4d818d49dabd615c88147a131f773edf5bd329e5b66cd365
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
 F src/vdbeaux.c 34641d8268fcf86434eb8fe7d0afb4bcd858e0107c2df3f341e7e76c25eb3bc9
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5f5ab3eb3618b6a2799355df50bfdf94121161f7cadba6253963036d9f284f08
-R 3a87a584039b1feb9335e171078664f3
+P eccd9fcfa7e34ddcdeb671544c6afac7aa0d4665c5e1df7c8e53c41387ed0386
+R cc9c5b3319bc05f03c5fbf20b1d70c69
 U dan
-Z 85992f44adf014214f0cee4e807ed494
+Z da4a57e2892565c8c7c092b3a4fc5238
 # Remove this line to create a well-formed Fossil manifest.

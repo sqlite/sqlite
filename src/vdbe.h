@@ -132,7 +132,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_TABLE      (-5)  /* P4 is a pointer to a Table structure */
 #define P4_INDEX      (-6)  /* P4 is a pointer to an Index structure */
 /* Above do not own any resources.  Must free those below */
-#define P4_FREE_IF_LE (-6)
+#define P4_FREE_IF_LE (-7)
 #define P4_DYNAMIC    (-7)  /* Pointer to memory from sqliteMalloc() */
 #define P4_FUNCDEF    (-8)  /* P4 is a pointer to a FuncDef structure */
 #define P4_KEYINFO    (-9)  /* P4 is a pointer to a KeyInfo structure */
