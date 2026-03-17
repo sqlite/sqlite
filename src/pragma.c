@@ -2058,7 +2058,7 @@ void sqlite3Pragma(
         if( !isQuick ){ /* Omit the remaining tests for quick_check */
           /* Validate index entries for the current row */
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-            int jmp3, jmp4, jmp5, label6;
+            int jmp2, jmp3, jmp4, jmp5, label6;
             int kk;
             int ckUniq = sqlite3VdbeMakeLabel(pParse);
             if( pPk==pIdx ) continue;
@@ -2069,9 +2069,20 @@ void sqlite3Pragma(
             /* Verify that an index entry exists for the current table row */
             sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
                                         pIdx->nColumn); VdbeCoverage(v);
-            sqlite3VdbeAddOp3(v, OP_IFindKey, iIdxCur+j, ckUniq, r1); 
+            jmp2 = sqlite3VdbeAddOp3(v, OP_IFindKey, iIdxCur+j, ckUniq, r1); 
             VdbeCoverage(v);
             sqlite3VdbeChangeP4(v, -1, (const char*)pIdx, P4_INDEX);
+
+            sqlite3VdbeLoadString(v, 3, "WARNING: expression index ");
+            sqlite3VdbeLoadString(v, 4, pIdx->zName);
+            sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
+            sqlite3VdbeLoadString(v, 4, " stores an imprecise value for row ");
+            sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
+            sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
+            integrityCheckResultRow(v);
+            sqlite3VdbeAddOp2(v, OP_Goto, 0, ckUniq);
+
+            sqlite3VdbeJumpHere(v, jmp2);
             sqlite3VdbeLoadString(v, 3, "row ");
             sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
             sqlite3VdbeLoadString(v, 4, " missing from index ");

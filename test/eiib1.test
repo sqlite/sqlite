@@ -56,7 +56,7 @@ do_execsql_test 1.1.1 {
 }
 do_execsql_test 1.1.1b {
   PRAGMA integrity_check;
-} {ok}
+} {{row 3 missing from index i1}}
 do_execsql_test 1.1.1c $idxcheck {20}
 
 do_execsql_test 1.1.2 {
@@ -70,7 +70,9 @@ do_execsql_test 1.1.4 $idxcheck {}
 do_execsql_test 1.2.1 {
   UPDATE x1 SET b=26.0 WHERE rowid=25;
   PRAGMA integrity_check;
-} {ok}
+} {
+  {row 3 missing from index i1}
+}
 do_execsql_test 1.2.2 $idxcheck {25}
 
 do_execsql_test 1.2.3 {
@@ -93,7 +95,13 @@ do_execsql_test 1.3.1 {
 
   UPDATE x1 SET b=19.0 WHERE b=20.0;
   PRAGMA integrity_check;
-} {ok}
+} {
+  {row 2 missing from index i1} 
+  {row 3 missing from index i1} 
+  {row 4 missing from index i1} 
+  {row 5 missing from index i1}
+  {row 6 missing from index i1}
+}
 
 do_execsql_test 1.3.2 $idxcheck {10 15 20 25 30}
 
@@ -186,7 +194,47 @@ do_execsql_test 3.3 $idxcheck 2
 do_execsql_test 3.4 {
   DELETE FROM y1 WHERE a=4;
 }
-
 do_execsql_test 3.5 $idxcheck {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE z1(a INTEGER PRIMARY KEY, b);
+  CREATE INDEX z1b ON z1(b+0.0);
+  INSERT INTO z1 VALUES(1, 1.0);
+  INSERT INTO z1 VALUES(2, 4.0);
+  INSERT INTO z1 VALUES(3, 4.0);
+  INSERT INTO z1 VALUES(4, 4.0);
+  INSERT INTO z1 VALUES(5, 4.0);
+  INSERT INTO z1 VALUES(6, 4.0);
+  INSERT INTO z1 VALUES(7, 4.0);
+  INSERT INTO z1 VALUES(8, 1.0);
+}
+
+set root [db one {SELECT rootpage FROM sqlite_schema WHERE name='z1b'}]
+do_test 4.1 { 
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $root
+  db eval { CREATE TABLE x1(b, a, PRIMARY KEY(b, a)) WITHOUT ROWID; }
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
+} {}
+
+do_execsql_test 4.2 {
+  UPDATE x1 SET b=4.000000000000001 WHERE a=2;
+  UPDATE x1 SET b=4.000000000000002 WHERE a=3;
+  UPDATE x1 SET b=4.000000000000003 WHERE a=4;
+}
+
+do_execsql_test 4.3 {
+  PRAGMA integrity_check
+} {
+  {WARNING: expression index z1b stores an imprecise value for row 2}
+  {WARNING: expression index z1b stores an imprecise value for row 3}
+  {row 4 missing from index z1b}
+}
+
+
+
+
+
 
 finish_test

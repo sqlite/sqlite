@@ -5397,15 +5397,59 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+
+/*
+** Helper function for vdbeIsMatchingIndexKey(). Return true if column
+** iCol should be ignored when comparing a record with a record from 
+** an index on disk. The field should be ignored if:
+**
+**   * the corresponding bit in mask is set, and
+**   * either bIntegrity is false, or
+**   * the two Mem values are both real values that differ by 
+**     BTREE_ULPDISTORTION or fewer ULPs.
+*/
+static int vdbeSkipField(
+  Bitmask mask,                   /* Mask of indexed expression fields */
+  int iCol,                       /* Column of index being considered */
+  Mem *pMem1,                     /* Expected index value */
+  Mem *pMem2,                     /* Actual indexed value */
+  int bIntegrity
+){
+#define BTREE_MANTISSA64 ((u64)0x0FFF << 52)
+#define BTREE_ULPDISTORTION 2
+  if( iCol>=BMS || (mask & MASKBIT(iCol))==0 ) return 0;
+  if( bIntegrity==0 ) return 1;
+  if( (pMem1->flags & MEM_Real) && (pMem2->flags & MEM_Real) ){
+    u64 r1 = *(u64*)&pMem1->u.r;
+    u64 r2 = *(u64*)&pMem2->u.r;
+    if( (r1 & BTREE_MANTISSA64)==(r2 & BTREE_MANTISSA64) ){
+      u64 diff;
+      r1 = r1 & ~BTREE_MANTISSA64;
+      r2 = r2 & ~BTREE_MANTISSA64;
+      diff = MIN(r1-r2, r2-r1);
+      if( diff<=BTREE_ULPDISTORTION ){
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
+
 /*
 ** This function compares the unpacked record with the current key that
-** cursor pCur points to, ignoring any fields for which the corresponding
-** bit in parameter "mask" is set.  Return the usual less than zero, zero, or
-** greater than zero if the remaining fields of the cursor cursor key are less
-** than, equal to or greater than those in (*p).
+** cursor pCur points to. If bInt is false, all fields for which the 
+** corresponding bit in parameter "mask" is set are ignored. Or, if
+** bInt is true, then a difference of BTREE_ULPDISTORTION or fewer ULPs
+** in real values is overlooked for fields with the corresponding bit
+** set in mask.  
+**
+** Return the usual less than zero, zero, or greater than zero if the 
+** remaining fields of the cursor cursor key are less than, equal to or 
+** greater than those in (*p).
 */
 static int vdbeIsMatchingIndexKey(
   BtCursor *pCur,                 /* Cursor open on index */
+  int bInt,
   Bitmask mask,
   UnpackedRecord *p,              /* Index key being deleted */
   int *piRes                      /* 0 for a match, non-zero for not a match */
@@ -5450,10 +5494,12 @@ static int vdbeIsMatchingIndexKey(
         nSerial = sqlite3VdbeSerialTypeLen(iSerial);
         if( (idxRec+nSerial)>nRec ){
           rc = SQLITE_CORRUPT_BKPT;
-        }else if( ii>=BMS || (mask & MASKBIT(ii))==0 ){
+        }else{
           sqlite3VdbeSerialGet(&aRec[idxRec], iSerial, &mem);
-          res = sqlite3MemCompare(&mem, &p->aMem[ii], p->pKeyInfo->aColl[ii]);
-          if( res!=0 ) break;
+          if( vdbeSkipField(mask, ii, &p->aMem[ii], &mem, bInt)==0 ){
+            res = sqlite3MemCompare(&mem, &p->aMem[ii], p->pKeyInfo->aColl[ii]);
+            if( res!=0 ) break;
+          }
         }
         idxRec += sqlite3VdbeSerialTypeLen(iSerial);
       }
@@ -5467,16 +5513,14 @@ static int vdbeIsMatchingIndexKey(
 }
 
 /*
-** This is called when the record in (*p) is to be deleted from the index
-** opened by cursor pCur, but an exact match for the record was not found
-** in the index. The result of searching for it was (*pRes) - if (*pRes)
-** is -1, then the cursor points at a record that is smaller than (*p),
-** if it is +1, then it points to a record greater than (*p).
+** This is called when the record in (*p) should be found in the index 
+** opened by cursor pCur, but was not. This may happen as part of a DELETE
+** operation or an integrity check.
 **
 ** One reason that an exact match was not found may be the EIIB bug - that
 ** a text-to-float conversion may have caused a real value in record (*p)
 ** to be slightly different from its counterpart on disk. This function
-** attempts to find the right record to delete. If it does find the right
+** attempts to find the right index record. If it does find the right
 ** record, it leaves *pCur pointing to it and sets (*pRes) to 0 before
 ** returning. Otherwise, (*pRes) is set to non-zero and an SQLite error
 ** code returned.
@@ -5484,15 +5528,21 @@ static int vdbeIsMatchingIndexKey(
 ** The algorithm used to find the correct record is:
 **
 **   * Scan up to BTREE_FDK_RANGE entries either side of the current entry.
+**     If parameter bIntegrity is false, then all fields that are indexed
+**     expressions or virtual table columns are omitted from the comparison.
+**     If bIntegrity is true, then small differences in real values in
+**     such fields are overlooked, but they are not omitted from the comparison
+**     altogether.
 **
-**   * If the above fails to find an entry to delete, search the entire index.
+**   * If the above fails to find an entry and bIntegrity is false, search 
+**     the entire index.
 */
 int sqlite3VdbeFindIndexKey(
   BtCursor *pCur, 
   Index *pIdx,
-  int bExhaustive,
   UnpackedRecord *p, 
-  int *pRes
+  int *pRes,
+  int bIntegrity
 ){
 #define BTREE_FDK_RANGE 10
   int nStep = 0;
@@ -5540,7 +5590,7 @@ int sqlite3VdbeFindIndexKey(
     ** current cursor entry if (nStep>=0), or the entire index if (nStep<0).  */
     while( sqlite3BtreeCursorIsValidNN(pCur) ){
       for(ii=0; rc==SQLITE_OK && (ii<nStep || nStep<0); ii++){
-        rc = vdbeIsMatchingIndexKey(pCur, mask, p, &res);
+        rc = vdbeIsMatchingIndexKey(pCur, bIntegrity, mask, p, &res);
         if( res==0 || rc!=SQLITE_OK ) break;
         rc = sqlite3BtreeNext(pCur, 0);
       }
@@ -5548,7 +5598,7 @@ int sqlite3VdbeFindIndexKey(
         rc = SQLITE_OK;
         assert( res!=0 );
       }
-      if( nStep<0 || rc!=SQLITE_OK || res==0 || bExhaustive==0 ) break;
+      if( nStep<0 || rc!=SQLITE_OK || res==0 || bIntegrity ) break;
   
       /* The first, non-exhaustive, search failed to find an entry with 
       ** matching PK fields. So restart for an exhaustive search of the 
