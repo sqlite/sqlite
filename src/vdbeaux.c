@@ -5395,14 +5395,14 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 
 /*
 ** This function compares the unpacked record with the current key that
-** cursor pCur points to, ignoring the first nKeyCol fields. It returns 
-** the usual less than zero, zero, or greater than zero if the remaining
-** fields of the cursor cursor key are less than, equal to or greater 
-** than those in (*p).
+** cursor pCur points to, ignoring any fields for which the corresponding
+** bit in parameter "mask" is set.  Return the usual less than zero, zero, or
+** greater than zero if the remaining fields of the cursor cursor key are less
+** than, equal to or greater than those in (*p).
 */
 static int vdbeIsDeleteKey(
   BtCursor *pCur,                 /* Cursor open on index */
-  int nKeyCol,
+  Bitmask mask,
   UnpackedRecord *p,              /* Index key being deleted */
   int *piRes                      /* 0 for a match, non-zero for not a match */
 ){
@@ -5443,7 +5443,7 @@ static int vdbeIsDeleteKey(
         nSerial = sqlite3VdbeSerialTypeLen(iSerial);
         if( (idxRec+nSerial)>nRec ){
           rc = SQLITE_CORRUPT_BKPT;
-        }else if( ii>=nKeyCol ){
+        }else if( ii>=BMS || (mask & MASKBIT(ii))==0 ){
           sqlite3VdbeSerialGet(&aRec[idxRec], iSerial, &mem);
           res = sqlite3MemCompare(&mem, &p->aMem[ii], p->pKeyInfo->aColl[ii]);
           if( res!=0 ) break;
@@ -5482,7 +5482,7 @@ static int vdbeIsDeleteKey(
 */
 int sqlite3VdbeFindDeleteKey(
   BtCursor *pCur, 
-  int nKeyCol, 
+  Index *pIdx,
   UnpackedRecord *p, 
   int *pRes
 ){
@@ -5492,42 +5492,62 @@ int sqlite3VdbeFindDeleteKey(
   int rc = SQLITE_OK;
   int ii = 0;
 
-  /* Move the cursor back BTREE_FDK_RANGE entries. If this hits an EOF, 
-  ** position the cursor at the first entry in the index and set nStep
-  ** to -1 so that the first loop below scans the entire index. Otherwise,
-  ** set nStep to BTREE_FDK_RANGE*2 so that the first loop below scans
-  ** just that many entries.  */
-  for(ii=0; sqlite3BtreeEof(pCur)==0 && ii<BTREE_FDK_RANGE; ii++){
-    rc = sqlite3BtreePrevious(pCur, 0);
-  }
-  if( rc==SQLITE_DONE ){
-    rc = sqlite3BtreeFirst(pCur, &res);
-    nStep = -1;
-  }else{
-    nStep = BTREE_FDK_RANGE*2;
+  /* Calculate a mask based on the first 64 columns of the index. The mask
+  ** bit is set if the corresponding index field is either an expression
+  ** or a virtual column of the table.  */
+  Bitmask mask = 0;
+  for(ii=0; ii<MIN(pIdx->nColumn, BMS); ii++){
+    int iCol = pIdx->aiColumn[ii];
+    if( (iCol==XN_EXPR)
+     || (iCol>=0 && (pIdx->pTable->aCol[iCol].colFlags & COLFLAG_VIRTUAL))
+    ){
+      mask |= MASKBIT(ii);
+    }
   }
 
-  /* This loop runs at most twice to search for a key with matching PK 
-  ** fields in the index. The second iteration always searches the entire 
-  ** index. The first iteration searches nStep entries starting with the
-  ** current cursor entry if (nStep>=0), or the entire index if (nStep<0).  */
-  while( 1 ){
-    for(ii=0; rc==SQLITE_OK && (ii<nStep || nStep<0); ii++){
-      rc = vdbeIsDeleteKey(pCur, nKeyCol, p, &res);
-      if( res==0 || rc!=SQLITE_OK ) break;
-      rc = sqlite3BtreeNext(pCur, 0);
+  /* If the mask is 0 at this point, then the index contains no expressions
+  ** or virtual columns. So do not search for a match - return so that the
+  ** caller may declare the db corrupt immediately. Or, if mask is non-zero,
+  ** proceed.  */
+  if( mask!=0 ){
+
+    /* Move the cursor back BTREE_FDK_RANGE entries. If this hits an EOF, 
+    ** position the cursor at the first entry in the index and set nStep
+    ** to -1 so that the first loop below scans the entire index. Otherwise,
+    ** set nStep to BTREE_FDK_RANGE*2 so that the first loop below scans
+    ** just that many entries.  */
+    for(ii=0; sqlite3BtreeEof(pCur)==0 && ii<BTREE_FDK_RANGE; ii++){
+      rc = sqlite3BtreePrevious(pCur, 0);
     }
     if( rc==SQLITE_DONE ){
-      rc = SQLITE_OK;
-      assert( res!=0 );
+      rc = sqlite3BtreeFirst(pCur, &res);
+      nStep = -1;
+    }else{
+      nStep = BTREE_FDK_RANGE*2;
     }
-    if( nStep<0 || rc!=SQLITE_OK || res==0 ) break;
-
-    /* The first, non-exhaustive, search failed to find an entry with 
-    ** matching PK fields. So restart for an exhaustive search of the 
-    ** entire index.  */
-    nStep = -1;
-    rc = sqlite3BtreeFirst(pCur, &res);
+  
+    /* This loop runs at most twice to search for a key with matching PK 
+    ** fields in the index. The second iteration always searches the entire 
+    ** index. The first iteration searches nStep entries starting with the
+    ** current cursor entry if (nStep>=0), or the entire index if (nStep<0).  */
+    while( 1 ){
+      for(ii=0; rc==SQLITE_OK && (ii<nStep || nStep<0); ii++){
+        rc = vdbeIsDeleteKey(pCur, mask, p, &res);
+        if( res==0 || rc!=SQLITE_OK ) break;
+        rc = sqlite3BtreeNext(pCur, 0);
+      }
+      if( rc==SQLITE_DONE ){
+        rc = SQLITE_OK;
+        assert( res!=0 );
+      }
+      if( nStep<0 || rc!=SQLITE_OK || res==0 ) break;
+  
+      /* The first, non-exhaustive, search failed to find an entry with 
+      ** matching PK fields. So restart for an exhaustive search of the 
+      ** entire index.  */
+      nStep = -1;
+      rc = sqlite3BtreeFirst(pCur, &res);
+    }
   }
 
   *pRes = res;

@@ -6629,7 +6629,7 @@ case OP_SorterInsert: {     /* in2 */
 ** an unpacked index key. This opcode removes that entry from the
 ** index opened by cursor P1.
 **
-** P4 is the number of non-PK columns in the index entry.
+** P4 is a pointer to an Index structure.
 **
 ** Raise an SQLITE_CORRUPT_INDEX error if no matching index entry is found
 ** and not in writable_schema mode.
@@ -6656,7 +6656,7 @@ case OP_IdxDelete: {
   rc = sqlite3BtreeIndexMoveto(pCrsr, &r, &res);
   if( rc ) goto abort_due_to_error;
   if( res!=0 ){
-    rc = sqlite3VdbeFindDeleteKey(pCrsr, pOp->p4.i, &r, &res);
+    rc = sqlite3VdbeFindDeleteKey(pCrsr, pOp->p4.pIdx, &r, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res!=0 ){
       if( !sqlite3WritableSchema(db) ){

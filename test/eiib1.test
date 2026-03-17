@@ -28,7 +28,7 @@ do_execsql_test 1.0.1 {
   INSERT INTO t1 VALUES(20, 20.0);
   INSERT INTO t1 VALUES(25, 25.0);
   INSERT INTO t1 VALUES(30, 30.0);
-  CREATE INDEX i1 ON t1(b);
+  CREATE INDEX i1 ON t1((b+0.0));
 }
 
 set root [db one {SELECT rootpage FROM sqlite_schema WHERE name='i1'}]
@@ -110,7 +110,7 @@ do_execsql_test 2.0 {
     SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<$nRow
   )
   INSERT INTO t1 SELECT i, random(), hex(randomblob(50)) FROM s;
-  CREATE INDEX t1c ON t1(c);
+  CREATE INDEX t1c ON t1(+c);
 }
 
 set root [db one {SELECT rootpage FROM sqlite_schema WHERE name='t1c'}]
@@ -134,5 +134,30 @@ do_test 2.3 {
   execsql {PRAGMA integrity_check}
 } {ok}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE y1(a, b, c GENERATED ALWAYS AS (a*b) VIRTUAL);
+  CREATE INDEX i1 ON y1(c);
+  INSERT INTO y1 VALUES(2, 3);
+  INSERT INTO y1 VALUES(4, 5);
+}
+
+set root [db one {SELECT rootpage FROM sqlite_schema WHERE name='i1'}]
+
+do_test 3.1 { 
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $root
+  db eval { CREATE TABLE x1(c, rowid, PRIMARY KEY(c, rowid)) WITHOUT ROWID; }
+  sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
+} {}
+
+do_execsql_test 3.2 {
+  UPDATE x1 SET c=19 WHERE rowid=2;
+}
+
+breakpoint
+do_execsql_test 3.3 {
+  DELETE FROM y1 WHERE a=4;
+}
 
 finish_test

@@ -687,7 +687,7 @@ void sqlite3VdbePreUpdateHook(
     Vdbe*,VdbeCursor*,int,const char*,Table*,i64,int,int);
 #endif
 int sqlite3VdbeTransferError(Vdbe *p);
-int sqlite3VdbeFindDeleteKey(BtCursor*, int, UnpackedRecord*, int*);
+int sqlite3VdbeFindDeleteKey(BtCursor*, Index*, UnpackedRecord*, int*);
 
 int sqlite3VdbeSorterInit(sqlite3 *, int, VdbeCursor *);
 void sqlite3VdbeSorterReset(sqlite3 *, VdbeSorter *);
