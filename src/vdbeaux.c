@@ -5419,6 +5419,9 @@ static int vdbeIsMatchingIndexKey(
   mem.enc = p->pKeyInfo->enc;
   mem.db = p->pKeyInfo->db;
   nRec = sqlite3BtreePayloadSize(pCur);
+  if( nRec<=0 || nRec>0x7fffffff ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   aRec = sqlite3MallocZero(nRec);
   if( aRec==0 ){
     rc = SQLITE_NOMEM_BKPT;

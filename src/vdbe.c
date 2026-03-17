@@ -7325,6 +7325,7 @@ case OP_IFindKey: {     /* jump, in3 */
   r.pKeyInfo = pC->pKeyInfo;
 
   rc = sqlite3VdbeFindIndexKey(pC->uc.pCursor, pOp->p4.pIdx, 0, &r, &res);
+  if( rc ) goto abort_due_to_error;
   if( res==0 ){
     pC->nullRow = 0;
     goto jump_to_p2;
