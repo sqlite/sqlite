@@ -3790,9 +3790,10 @@ static const char *(azHelp[]) = {
 #ifndef SQLITE_OMIT_TEST_CONTROL
   ".imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
 #endif
-  ".indexes ?TABLE?         Show names of indexes",
-  "                           If TABLE is specified, only show indexes for",
-  "                           tables matching TABLE using the LIKE operator.",
+  ".indexes ?PATTERN?       Show names of indexes matching PATTERN",
+  "   -a|--all                Also show system-generated indexes",
+  "   --expr                  Show only expression indexes",
+  "   --sys                   Show only system-generated indexes",
   ".intck ?STEPS_PER_UNLOCK?  Run an incremental integrity check on the db",
 #ifdef SQLITE_ENABLE_IOTRACE
   ",iotrace FILE            Enable I/O diagnostic logging to FILE",
@@ -9869,6 +9870,92 @@ static int do_meta_command(const char *zLine, ShellState *p){
   }else
 #endif /* !defined(SQLITE_OMIT_TEST_CONTROL) */
 
+  if( c=='i' && (cli_strncmp(azArg[0], "indices", n)==0
+                 || cli_strncmp(azArg[0], "indexes", n)==0)
+  ){
+    sqlite3_str *pSql;
+    int i;
+    int allFlag = 0;
+    int sysFlag = 0;
+    int exprFlag = 0;
+    int debugFlag = 0;  /* Undocument --debug flag */
+    const char *zPattern = 0;
+    const char *zSep = "WHERE";
+
+    for(i=1; i<nArg; i++){
+      if( azArg[i][0]=='-' ){
+        const char *z = azArg[i]+1;
+        if( z[0]=='-' ) z++;
+        if( cli_strcmp(z,"all")==0 || cli_strcmp(z,"a")==0 ){
+          allFlag = 1;
+        }else
+        if( cli_strcmp(z,"sys")==0 ){
+          sysFlag = 1;
+          allFlag = 0;
+        }else
+        if( cli_strcmp(z,"expr")==0 ){
+          exprFlag = 1;
+          allFlag = 0;
+        }else
+        if( cli_strcmp(z,"debug")==0 ){
+          debugFlag = 1;
+        }else
+        {
+          dotCmdError(p, i, "unknown option", 0);
+          rc = 1;
+          goto meta_command_exit;
+        }
+      }else if( zPattern==0 ){
+        zPattern = azArg[i];
+      }else{
+        dotCmdError(p, i, "unknown argument", 0);
+        rc = 1;
+        goto meta_command_exit;
+      }
+    }
+
+    open_db(p, 0);
+    pSql = sqlite3_str_new(p->db);
+    sqlite3_str_appendf(pSql,
+      "SELECT if(t.schema='main',i.name,t.schema||'.'||i.name)\n"
+      "FROM pragma_table_list t, pragma_index_list(t.name,t.schema) i\n"
+    );
+    if( exprFlag ){
+      allFlag = 0;
+      sqlite3_str_appendf(pSql,
+        "%s (EXISTS(SELECT 1 FROM pragma_index_xinfo(i.name) WHERE cid=-2)\n"
+        "       OR\n"
+        "       EXISTS(SELECT cid FROM pragma_table_xinfo(t.name) WHERE hidden=2"
+        " INTERSECT "
+        " SELECT cid FROM pragma_index_info(i.name)))\n", zSep);
+      zSep = "AND";
+    }
+    if( sysFlag ){
+      sqlite3_str_appendf(pSql,
+           "%s i.name LIKE 'sqlite__autoindex__%%' ESCAPE '_'\n", zSep);
+      zSep = "AND";
+    }else if( !allFlag ){
+      sqlite3_str_appendf(pSql,
+           "%s i.name NOT LIKE 'sqlite__%%' ESCAPE '_'\n", zSep);
+      zSep = "AND";
+    }
+    if( zPattern ){
+      sqlite3_str_appendf(pSql, "%s i.name LIKE '%%%q%%'\n", zSep, zPattern);
+    }
+    sqlite3_str_appendf(pSql, "ORDER BY 1");
+
+    /* Run the SQL statement in "split" mode. */
+    if( debugFlag ){
+      cli_printf(stdout,"%s;\n", sqlite3_str_value(pSql));
+    }else{
+      modePush(p);
+      modeChange(p, MODE_Split);
+      shell_exec(p, sqlite3_str_value(pSql), 0);
+      modePop(p);
+    }
+    sqlite3_str_free(pSql);
+  }else
+
   if( c=='i' && cli_strncmp(azArg[0], "intck", n)==0 ){
     i64 iArg = 0;
     if( nArg==2 ){
@@ -11246,10 +11333,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
     }
   }else
 
-  if( (c=='t' && n>1 && cli_strncmp(azArg[0], "tables", n)==0)
-   || (c=='i' && (cli_strncmp(azArg[0], "indices", n)==0
-                 || cli_strncmp(azArg[0], "indexes", n)==0) )
-  ){
+  if( (c=='t' && n>1 && cli_strncmp(azArg[0], "tables", n)==0) ){
     sqlite3_stmt *pStmt;
     sqlite3_str *pSql;
     const char *zPattern = nArg>1 ? azArg[1] : 0;
@@ -11261,15 +11345,6 @@ static int do_meta_command(const char *zLine, ShellState *p){
       return shellDatabaseError(p->db);
     }
 
-    if( nArg>2 && c=='i' ){
-      /* It is an historical accident that the .indexes command shows an error
-      ** when called with the wrong number of arguments whereas the .tables
-      ** command does not. */
-      eputz("Usage: .indexes ?LIKE-PATTERN?\n");
-      rc = 1;
-      sqlite3_finalize(pStmt);
-      goto meta_command_exit;
-    }
     pSql = sqlite3_str_new(p->db);
     while( sqlite3_step(pStmt)==SQLITE_ROW ){
       const char *zDbName = (const char*)sqlite3_column_text(pStmt, 1);
@@ -11283,19 +11358,12 @@ static int do_meta_command(const char *zLine, ShellState *p){
         sqlite3_str_appendf(pSql, "SELECT %Q||'.'||name FROM ", zDbName);
       }
       sqlite3_str_appendf(pSql, "\"%w\".sqlite_schema", zDbName);
-      if( c=='t' ){
-        sqlite3_str_appendf(pSql,
-            " WHERE type IN ('table','view')"
-            "   AND name NOT LIKE 'sqlite__%%' ESCAPE '_'"
-        );
-        if( zPattern ){
-          sqlite3_str_appendf(pSql," AND name LIKE %Q", zPattern);
-        }
-      }else{
-        sqlite3_str_appendf(pSql, " WHERE type='index'");
-        if( zPattern ){
-          sqlite3_str_appendf(pSql," AND tbl_name LIKE %Q", zPattern);
-        }
+      sqlite3_str_appendf(pSql,
+          " WHERE type IN ('table','view')"
+          "   AND name NOT LIKE 'sqlite__%%' ESCAPE '_'"
+      );
+      if( zPattern ){
+        sqlite3_str_appendf(pSql," AND name LIKE %Q", zPattern);
       }
     }
     rc = sqlite3_finalize(pStmt);
