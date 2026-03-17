@@ -2058,7 +2058,7 @@ void sqlite3Pragma(
         if( !isQuick ){ /* Omit the remaining tests for quick_check */
           /* Validate index entries for the current row */
           for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-            int jmp2, jmp3, jmp4, jmp5, label6;
+            int jmp3, jmp4, jmp5, label6;
             int kk;
             int ckUniq = sqlite3VdbeMakeLabel(pParse);
             if( pPk==pIdx ) continue;
@@ -2067,8 +2067,11 @@ void sqlite3Pragma(
             pPrior = pIdx;
             sqlite3VdbeAddOp2(v, OP_AddImm, 8+j, 1);/* increment entry count */
             /* Verify that an index entry exists for the current table row */
-            jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
+            sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
                                         pIdx->nColumn); VdbeCoverage(v);
+            sqlite3VdbeAddOp3(v, OP_IFindKey, iIdxCur+j, ckUniq, r1); 
+            VdbeCoverage(v);
+            sqlite3VdbeChangeP4(v, -1, (const char*)pIdx, P4_INDEX);
             sqlite3VdbeLoadString(v, 3, "row ");
             sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
             sqlite3VdbeLoadString(v, 4, " missing from index ");
@@ -2076,7 +2079,7 @@ void sqlite3Pragma(
             jmp5 = sqlite3VdbeLoadString(v, 4, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
             jmp4 = integrityCheckResultRow(v);
-            sqlite3VdbeJumpHere(v, jmp2);
+            sqlite3VdbeResolveLabel(v, ckUniq);
 
             /* The OP_IdxRowid opcode is an optimized version of OP_Column
             ** that extracts the rowid off the end of the index record.

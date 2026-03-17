@@ -6656,7 +6656,7 @@ case OP_IdxDelete: {
   rc = sqlite3BtreeIndexMoveto(pCrsr, &r, &res);
   if( rc ) goto abort_due_to_error;
   if( res!=0 ){
-    rc = sqlite3VdbeFindDeleteKey(pCrsr, pOp->p4.pIdx, &r, &res);
+    rc = sqlite3VdbeFindIndexKey(pCrsr, pOp->p4.pIdx, 1, &r, &res);
     if( rc!=SQLITE_OK ) goto abort_due_to_error;
     if( res!=0 ){
       if( !sqlite3WritableSchema(db) ){
@@ -7297,6 +7297,40 @@ case OP_IntegrityCk: {
   sqlite3VdbeChangeEncoding(pIn1, encoding);
   goto check_for_interrupt;
 }
+
+/* Opcode: IFindKey P1 P2 P3 P4 *
+**
+** This instruction always follows an OP_Found with the same P1, P2 and P3
+** values as this instruction, and a non-zero P4 value. The P4 value to
+** this opcode is always of type P4_INDEX.
+**
+** This opcode uses sqlite3VdbeFindIndexKey() to search around the current
+** location for an index key for which all fields that are not indexed
+** expressions or virtual columns match the expected values from the table.
+** If one is found, jump to P2. Otherwise, fall through.
+*/
+case OP_IFindKey: {     /* jump, in3 */
+  VdbeCursor *pC;
+  int res;
+  UnpackedRecord r;
+
+  pC = p->apCsr[pOp->p1];
+  assert( pC->eCurType==CURTYPE_BTREE );
+  assert( pC->uc.pCursor!=0 );
+  assert( pC->isTable==0 );
+
+  memset(&r, 0, sizeof(r));
+  r.aMem = &aMem[pOp->p3];
+  r.nField = pOp->p4.pIdx->nColumn;
+  r.pKeyInfo = pC->pKeyInfo;
+
+  rc = sqlite3VdbeFindIndexKey(pC->uc.pCursor, pOp->p4.pIdx, 0, &r, &res);
+  if( res==0 ){
+    pC->nullRow = 0;
+    goto jump_to_p2;
+  }
+  break;
+};
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 /* Opcode: RowSetAdd P1 P2 * * *

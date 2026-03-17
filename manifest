@@ -1,5 +1,5 @@
-C Do\snot\srun\sindex\shealing\son\san\sinvalid\scursor.
-D 2026-03-17T13:13:02.624
+C When\sintegrity-check\sfinds\sa\smissing\sindex\sentry,\ssearch\sa\ssmall\srange\s(currently\s10)\sof\sentries\saround\sthe\smissing\skey\sfor\san\sentry\sthat\smatches\sall\snon-virtual\sand\snon-expression\sfields.
+D 2026-03-17T17:05:45.395
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/parse.y 3b784d6083380a950e3b1b32ce5ddd303e8c7c209d8ab788df2c62aaf9ee8eb3
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 092b758d2c5e4dabb30eae46d8dfad77c0f70b16bf3ff1943f7a232b0fe0d4ba
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
-F src/pragma.c ecec75795c1821520266e4f93fa8840cce48979af532db06f085e36a7813860f
+F src/pragma.c aee946eefb15d3c587528391781c8cffe7b790aacd08929dcacd5f4638b10274
 F src/prepare.c f6a6e28a281bd1d1da12f47d370a81af46159b40f73bf7fa0b276b664f9c8b7d
 F src/printf.c 9cff219dba73b1aa9a8113e83e962f03f7bea8b6eb51cefb25bc468d5a69fb2d
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
@@ -799,11 +799,11 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 0dbd633bdc509a1c967e4b49b1555820494d936131017634d7dec96c0b8343ce
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 8442ec7a77cca0b8c465bfcc57b1f548865aec44e8cf16aa21adb6772a2803b5
+F src/vdbe.c 3feabce53a3cdac0ba0915ecc4018907bb094bfc8623304f215ad76c1ce2dcdb
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
-F src/vdbeInt.h e876d6c5fd5f2eee4d818d49dabd615c88147a131f773edf5bd329e5b66cd365
+F src/vdbeInt.h 9909bdaaa2ef3d47b05d93b3e22a4211903305f1ba0afb902c7448258c6418e2
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
-F src/vdbeaux.c 35016310d8a9694c41afd2a03aa2624a36cbb4de51ad1dee7a5f1aa74f6d87c4
+F src/vdbeaux.c bc86f76fb2c3888b10f1157c3a5fa1a1ca5427981c621d4494757697f04308fa
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 317ec5e870ddb16951b606c9fe8be22baef22ecbe46f58fdefc259662238afb7
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -1081,7 +1081,7 @@ F test/e_wal.test db7c33642711cf3c7959714b5f012aca08cacfa78da0382f95e849eb3ba66a
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 16e7d006e8687654ee59e7ad5a6d285ba23f0fe0eeb87f790afd6bc9cf1d1924
 F test/e_walhook.test 01b494287ba9e60b70f6ebf3c6c62e0ffe01788e344a4846b08e5de0b344cb66
-F test/eiib1.test 92df1db7db9ba2024e4151019caf0d2f00b7855b548e8df4e773ec963b6fbe0c
+F test/eiib1.test fac8ac065d8d62af280dbbbf07c2bc278f6c251f4823fa341f49564a56cfdcae
 F test/emptytable.test a38110becbdfa6325cd65cb588dca658cd885f62
 F test/enc.test b5503a87b31cea8a5084c6e447383f9ca08933bd2f29d97b6b6201081b2343eb
 F test/enc2.test 872afe58db772e7dfa1ad8e0759f8cc820e9efc8172d460fae83023101c2e435
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9d84fdb7819a9850919e2c1977811bcf514b3baad29eb8cc9fc78451d500c8b6
-R 7b31f014b775adbe80ab3ab634f5173f
-U drh
-Z 25de1929fb81984a62a4f42e91b6530b
+P eb6403f02c113f58030c0b4143d91b6327ee21dcb324d3f235c2bf6bf3d6577c
+R 12804263c5e1f22ccb67d371c61b22bd
+U dan
+Z 2465f05d9225397370c730d2cd3ac6f7
 # Remove this line to create a well-formed Fossil manifest.

@@ -5404,7 +5404,7 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 ** greater than zero if the remaining fields of the cursor cursor key are less
 ** than, equal to or greater than those in (*p).
 */
-static int vdbeIsDeleteKey(
+static int vdbeIsMatchingIndexKey(
   BtCursor *pCur,                 /* Cursor open on index */
   Bitmask mask,
   UnpackedRecord *p,              /* Index key being deleted */
@@ -5484,9 +5484,10 @@ static int vdbeIsDeleteKey(
 **
 **   * If the above fails to find an entry to delete, search the entire index.
 */
-int sqlite3VdbeFindDeleteKey(
+int sqlite3VdbeFindIndexKey(
   BtCursor *pCur, 
   Index *pIdx,
+  int bExhaustive,
   UnpackedRecord *p, 
   int *pRes
 ){
@@ -5536,7 +5537,7 @@ int sqlite3VdbeFindDeleteKey(
     ** current cursor entry if (nStep>=0), or the entire index if (nStep<0).  */
     while( sqlite3BtreeCursorIsValidNN(pCur) ){
       for(ii=0; rc==SQLITE_OK && (ii<nStep || nStep<0); ii++){
-        rc = vdbeIsDeleteKey(pCur, mask, p, &res);
+        rc = vdbeIsMatchingIndexKey(pCur, mask, p, &res);
         if( res==0 || rc!=SQLITE_OK ) break;
         rc = sqlite3BtreeNext(pCur, 0);
       }
@@ -5544,7 +5545,7 @@ int sqlite3VdbeFindDeleteKey(
         rc = SQLITE_OK;
         assert( res!=0 );
       }
-      if( nStep<0 || rc!=SQLITE_OK || res==0 ) break;
+      if( nStep<0 || rc!=SQLITE_OK || res==0 || bExhaustive==0 ) break;
   
       /* The first, non-exhaustive, search failed to find an entry with 
       ** matching PK fields. So restart for an exhaustive search of the 
