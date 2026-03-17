@@ -1,5 +1,5 @@
-C Typo\sfix\sin\ssqlite3Multiply128():\s\sThe\sdatatype\sshould\sbe\s*unsigned*.
-D 2026-03-17T11:19:16.315
+C Fix\san\sassertion\sfault\sthat\scould\soccur\sin\sRTree\swhen\sgiven\sa\scorrupt\ndatabase.
+D 2026-03-17T12:07:49.388
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -490,7 +490,7 @@ F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c bd1971479184d559499ff3087c37f2823977d7b0ec80916141ae66f70345c88d
-F ext/rtree/rtree.c 9331997a76b88a9bc04e156bdfd6e2fe35c0aa93bc338ebc6aa0ae470fe4a852
+F ext/rtree/rtree.c 44abdd5df278ca1901daf29c82cce6785f0ee82ce59e28160ee988c17a9a185b
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2193,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P aa23d6cc69471eacb3fb0d789c34169e047e4a09a50beb430eb8e8e63b5bce78
-R 6176a5b9f14bf0b0b85bdb55e94971e6
+P b459f6ff63325f71d4056dad2ebb536e0d414c973f3c6e167e8f67e94e6f0e2d
+R bb184015ffe40d514d42157c68150626
 U drh
-Z 7583a9be18c30e63e4fbeae4b1cd5990
+Z fbfa20b11c4c5ba2c7155c634a7ba929
 # Remove this line to create a well-formed Fossil manifest.
