@@ -555,6 +555,9 @@ static u64 sqlite3Multiply160(u64 a, u32 aLo, u64 b, u32 *pLo){
 ** (2) For p outside the range 0 to 26, use aScale[] for the initial value
 **     then refine that result (if necessary) by a single multiplication
 **     against aBase[].
+**
+** The constant tables aBase[], aScale[], and aScaleLo[] are generated
+** by the C program at ../tool/mkfptab.c run with the --round option.
 */
 static u64 powerOfTen(int p, u32 *pLo){
   static const u64 aBase[] = {
@@ -600,7 +603,7 @@ static u64 powerOfTen(int p, u32 *pLo){
     UINT64_C(0xf2d56790ab41c2a2), /* 10: 1.0e-81 << 333 */
     UINT64_C(0xc428d05aa4751e4c), /* 11: 1.0e-54 << 243 */
     UINT64_C(0x9e74d1b791e07e48), /* 12: 1.0e-27 << 153 */
-    UINT64_C(0xcccccccccccccccc), /* 13: 1.0e+0 << 63 (Special case) */
+    UINT64_C(0xcccccccccccccccc), /* 13: 1.0e-1 << 67 (special case) */
     UINT64_C(0xcecb8f27f4200f3a), /* 14: 1.0e+27 >> 26 */
     UINT64_C(0xa70c3c40a64e6c51), /* 15: 1.0e+54 >> 116 */
     UINT64_C(0x86f0ac99b4e8dafd), /* 16: 1.0e+81 >> 206 */
@@ -628,7 +631,7 @@ static u64 powerOfTen(int p, u32 *pLo){
     0xfae27299, /* 10: 1.0e-81 << 333 */
     0xaa97e14c, /* 11: 1.0e-54 << 243 */
     0x775ea265, /* 12: 1.0e-27 << 153 */
-    0xcccccccc, /* 13: 1.0e-1 << 67 (Special case) */
+    0xcccccccc, /* 13: 1.0e-1 << 67 (special case) */
     0x00000000, /* 14: 1.0e+27 >> 26 */
     0x999090b6, /* 15: 1.0e+54 >> 116 */
     0x69a028bb, /* 16: 1.0e+81 >> 206 */

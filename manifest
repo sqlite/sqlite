@@ -1,5 +1,5 @@
-C Reorder\sbounds\schecking\sin\ssqlite3Fp10Convert2()
-D 2026-03-17T09:18:36.777
+C Include\sthe\sfloat-point\stable\sgenerator\sutility\sin\sthe\stools\sdirectory.
+D 2026-03-17T09:45:47.412
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -797,7 +797,7 @@ F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c ced03971dad5ae9418a2ced329506de16e5ff2ed7152e059400499332c1a593b
+F src/util.c cf91389b58590edfb5978199ef59488ef8e3723e1ba1aa0ff15c62f8a658b95f
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 5328c99dd256ee8132383565a86e253543a85daccfd7477c52f20bac6b385a7f
 F src/vdbe.h 966d0677a540b7ea6549b7c4e1312fc0d830fce3a235a58c801f2cc31cf5ecf9
@@ -2136,6 +2136,7 @@ F tool/mkautoconfamal.sh 06fbe090b81c24e592c1f22b404334f805ba74d482a9260f2ac81e6
 F tool/mkccode.tcl c42a8f8cf78f92e83795d5447460dbce7aaf78a3bbf9082f1507dc71a3665f3c x
 F tool/mkcombo.tcl 2a5189b219c4a495e1ff7fc980bd568d3cfb82ae9d50c84e77f7a161e96fc132
 F tool/mkctimec.tcl 3fb5cad05922f5da61262cb6bcd5868a34e94a49ca8833ae2d7796e7df075576 x
+F tool/mkfptab.c 24ea40113f96584caca3f6dd06b4ad5adffa0f39023910cb83fa7ef2ffa9b0ba
 F tool/mkkeywordhash.c 82d5af1d0e677900739fba59155cddac172d8c712c2d91ab73d6e6bcb30060f0
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2192,8 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a19c0785dcfb9fb74963c45b161b12ac8f4379e2b990f6c5de0d7b959c5be98d
-R 31509aecbe36d702bbcca4c3d7b1c6e3
+P 23ad656edb3a63e7e6602770e1f2c4a5ef1f3d41565e7f13408b5305619dfa3d
+R 0212d90b78d20068a702d7e70e4b68de
 U drh
-Z 3ad3a7a0646ac1e8f0a50096402694d2
+Z a52753c1b6f0991d0a121a4d3cb8bc3e
 # Remove this line to create a well-formed Fossil manifest.
