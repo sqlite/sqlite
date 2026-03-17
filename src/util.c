@@ -748,6 +748,8 @@ static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
 ** Return an IEEE754 floating point value that approximates d*pow(10,p).
 */
 static double sqlite3Fp10Convert2(u64 d, int p){
+  if( p<POWERSOF10_FIRST ) return 0.0;
+  if( p>POWERSOF10_LAST ) return INFINITY;
   int b = 64 - countLeadingZeros(d);
   int lp = pwr10to2(p);
   int e = 53 - b - lp;
@@ -755,8 +757,6 @@ static double sqlite3Fp10Convert2(u64 d, int p){
     if( e>=1130 ) return 0.0;
     e = 1074;
   }
-  if( p<POWERSOF10_FIRST ) return 0.0;
-  if( p>POWERSOF10_LAST ) return INFINITY;
   int s = -(e-(64-b) + lp + 3);
   u32 pwr10l;
   u64 pwr10h = powerOfTen(p, &pwr10l);
