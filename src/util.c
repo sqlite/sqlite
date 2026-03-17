@@ -466,7 +466,7 @@ u8 sqlite3StrIHash(const char *z){
 static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
 #if (defined(__GNUC__) || defined(__clang__)) \
         && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv))
-  __uint128_t r = (__int128_t)a * b;
+  __uint128_t r = (__uint128_t)a * b;
   *pLo = (u64)r;
   return (u64)(r>>64);
 #elif defined(_MSC_VER) && defined(_M_X64)
