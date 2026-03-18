@@ -2072,13 +2072,10 @@ void sqlite3Pragma(
             jmp2 = sqlite3VdbeAddOp3(v, OP_IFindKey, iIdxCur+j, ckUniq, r1); 
             VdbeCoverage(v);
             sqlite3VdbeChangeP4(v, -1, (const char*)pIdx, P4_INDEX);
-
-            sqlite3VdbeLoadString(v, 3, "index ");
-            sqlite3VdbeLoadString(v, 4, pIdx->zName);
-            sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
-            sqlite3VdbeLoadString(v, 4, 
-                        " stores an imprecise floating-point value for row ");
-            sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
+            sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
+              sqlite3MPrintf(db, "index %s stores an imprecise floating-point "
+                                 "value for row ", pIdx->zName),
+              P4_DYNAMIC);
             sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
             integrityCheckResultRow(v);
             sqlite3VdbeAddOp2(v, OP_Goto, 0, ckUniq);
