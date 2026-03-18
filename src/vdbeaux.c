@@ -5488,6 +5488,10 @@ static int vdbeIsMatchingIndexKey(
         u32 iSerial = 0;
         int nSerial = 0;
 
+        if( idxHdr>=szHdr ){
+          rc = SQLITE_CORRUPT_BKPT;
+          break;
+        }
         idxHdr += getVarint32(&aRec[idxHdr], iSerial);
         nSerial = sqlite3VdbeSerialTypeLen(iSerial);
         if( (idxRec+nSerial)>nRec ){
