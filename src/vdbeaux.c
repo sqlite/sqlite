@@ -5457,10 +5457,14 @@ static int vdbeIsMatchingIndexKey(
   mem.enc = p->pKeyInfo->enc;
   mem.db = p->pKeyInfo->db;
   nRec = sqlite3BtreePayloadSize(pCur);
-  if( nRec<=0 || nRec>0x7fffffff ){
+  if( nRec>0x7fffffff ){
     return SQLITE_CORRUPT_BKPT;
   }
-  aRec = sqlite3MallocZero(nRec);
+
+  /* Allocate 5 extra bytes at the end of the buffer. This allows the
+  ** getVarint32() call below to read slightly past the end of the buffer 
+  ** if the record is corrupt. */
+  aRec = sqlite3MallocZero(nRec+5);
   if( aRec==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }else{
