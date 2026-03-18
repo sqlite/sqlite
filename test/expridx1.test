@@ -1,4 +1,4 @@
-# 2026 March 16
+# 2026-03-16
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -9,10 +9,13 @@
 #
 #***********************************************************************
 #
-
+# This file contains test cases for handling stale expression indexes -
+# expression indexes for which the value of the expression is different
+# from (though usually very close to) the value stored on disk.
+#
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix eiib1
+set testprefix expridx1
 
 # Check that OP_IdxDelete works when:
 #
@@ -230,11 +233,11 @@ do_execsql_test 4.2 {
 do_execsql_test 4.3 {
   PRAGMA integrity_check
 } {
-  {WARNING: expression index z1b stores an imprecise value for row 2}
-  {WARNING: expression index z1b stores an imprecise value for row 3}
+  {index z1b stores an imprecise floating-point value for row 2}
+  {index z1b stores an imprecise floating-point value for row 3}
   {row 4 missing from index z1b}
-  {WARNING: expression index z1b stores an imprecise value for row 5}
-  {WARNING: expression index z1b stores an imprecise value for row 6}
+  {index z1b stores an imprecise floating-point value for row 5}
+  {index z1b stores an imprecise floating-point value for row 6}
   {row 7 missing from index z1b}
 }
 
@@ -255,11 +258,11 @@ do_execsql_test 4.5 {
 do_execsql_test 4.6 {
   PRAGMA integrity_check
 } {
-  {WARNING: expression index z1b stores an imprecise value for row 2}
-  {WARNING: expression index z1b stores an imprecise value for row 3}
+  {index z1b stores an imprecise floating-point value for row 2}
+  {index z1b stores an imprecise floating-point value for row 3}
   {row 4 missing from index z1b}
-  {WARNING: expression index z1b stores an imprecise value for row 5}
-  {WARNING: expression index z1b stores an imprecise value for row 6}
+  {index z1b stores an imprecise floating-point value for row 5}
+  {index z1b stores an imprecise floating-point value for row 6}
   {row 7 missing from index z1b}
 }
 

@@ -1,5 +1,5 @@
-C Take\scare\snot\sto\soverread\sthe\srecord\sheader\swhen\sdecoding\sthe\srecord\nin\svdbeIsMatchingIndexKey().
-D 2026-03-18T14:47:20.951
+C Improve\sthe\sintegrity-check\serror\smessage\swhen\sfloating\spoint\sindex\svalues\nare\soff\sby\sone\sor\stwo\sULPs.\s\sChange\sthe\sname\sof\sthe\seiib1.test\stest\smodule\nto\sexpridx1.test.
+D 2026-03-18T15:51:15.435
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/parse.y 3b784d6083380a950e3b1b32ce5ddd303e8c7c209d8ab788df2c62aaf9ee8eb3
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 092b758d2c5e4dabb30eae46d8dfad77c0f70b16bf3ff1943f7a232b0fe0d4ba
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
-F src/pragma.c 8b7aefee546ac7c5e599aee1ced7f40b1dba55f05e06b95dec9144ea7e541ce1
+F src/pragma.c 267d13065ab9af6b67368f654ea047714e5274e04ffe10c86721d7a4c3f846a2
 F src/prepare.c f6a6e28a281bd1d1da12f47d370a81af46159b40f73bf7fa0b276b664f9c8b7d
 F src/printf.c 9cff219dba73b1aa9a8113e83e962f03f7bea8b6eb51cefb25bc468d5a69fb2d
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
@@ -1081,7 +1081,6 @@ F test/e_wal.test db7c33642711cf3c7959714b5f012aca08cacfa78da0382f95e849eb3ba66a
 F test/e_walauto.test 248af31e73c98df23476a22bdb815524c9dc3ba8
 F test/e_walckpt.test 16e7d006e8687654ee59e7ad5a6d285ba23f0fe0eeb87f790afd6bc9cf1d1924
 F test/e_walhook.test 01b494287ba9e60b70f6ebf3c6c62e0ffe01788e344a4846b08e5de0b344cb66
-F test/eiib1.test a08d9c035508951d0145fe51f9476d10d4f67c5c422c0314b49c61cc9c2f3747
 F test/emptytable.test a38110becbdfa6325cd65cb588dca658cd885f62
 F test/enc.test b5503a87b31cea8a5084c6e447383f9ca08933bd2f29d97b6b6201081b2343eb
 F test/enc2.test 872afe58db772e7dfa1ad8e0759f8cc820e9efc8172d460fae83023101c2e435
@@ -1103,6 +1102,7 @@ F test/expr.test db981f8a85520e99ae20aab7ad2e9b5b0437ed09159b57ced434c672075d2e6
 F test/expr2.test c27327ae9c017a7ff6280123f67aff496f912da74d78c888926d68b46ec75fd8
 F test/exprfault.test da33606d799718e2f8e34efd0e5858884a1ad87f608774c552a7f5517cc27181
 F test/exprfault2.test c49e84273898969af5dbc4fe6a3f4335f14639799f343590336c9ddf84425965
+F test/expridx1.test b464520126e1d781a7800f8540621c82e8bbc526f089ff8b0b57ffc51feea6b7 w test/eiib1.test
 F test/extension01.test 5de412c66276105901c370770175003381fdcb0c4da7054fa43cf4a31e0bfa3a
 F test/external_reader.test 6fdec43eeca23eb32faad1e95a4d1abc402bc8b3db70df12d6fc08a637f4a2b5
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9b0671a4f58098948d530f5e238b483a0e9f1309021aff0d6b5ea90e6c8f4e7b
-R b8f2431a3170169ff614376e506c5e3a
+P 3a275b5848767b61011b9d1d3d1a62328a80906386375d1b1e13fd92b6983e05
+R b47a2aab0717b2997fd16ba127788d40
 U drh
-Z 399fe0cc6e8662d24092a4f0c31f2585
+Z 205f83abec79a9fa80f1b84699019aad
 # Remove this line to create a well-formed Fossil manifest.

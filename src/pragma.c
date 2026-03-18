@@ -2073,10 +2073,11 @@ void sqlite3Pragma(
             VdbeCoverage(v);
             sqlite3VdbeChangeP4(v, -1, (const char*)pIdx, P4_INDEX);
 
-            sqlite3VdbeLoadString(v, 3, "WARNING: expression index ");
+            sqlite3VdbeLoadString(v, 3, "index ");
             sqlite3VdbeLoadString(v, 4, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
-            sqlite3VdbeLoadString(v, 4, " stores an imprecise value for row ");
+            sqlite3VdbeLoadString(v, 4, 
+                        " stores an imprecise floating-point value for row ");
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
             sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
             integrityCheckResultRow(v);
