@@ -4167,7 +4167,12 @@ static int whereLoopAddBtree(
       whereLoopOutputAdjust(pWC, pNew, rSize);
       if( pSrc->fg.isSubquery ){
         if( pSrc->fg.viaCoroutine ) pNew->wsFlags |= WHERE_COROUTINE;
-        pNew->u.btree.pOrderBy = pSrc->u4.pSubq->pSelect->pOrderBy;
+        /* Do not set btree.pOrderBy for a recursive CTE. In this case
+        ** the ORDER BY clause does not determine the overall order that
+        ** rows are emitted from the CTE in.  */
+        if( pSrc->u4.pSubq->pSelect->selFlags & SF_Recursive ){
+          pNew->u.btree.pOrderBy = pSrc->u4.pSubq->pSelect->pOrderBy;
+        }
       }else if( pSrc->fg.fromExists ){
         pNew->nOut = 0;
       }
