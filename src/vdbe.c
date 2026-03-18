@@ -7301,20 +7301,37 @@ case OP_IntegrityCk: {
 /* Opcode: IFindKey P1 P2 P3 P4 *
 **
 ** This instruction always follows an OP_Found with the same P1, P2 and P3
-** values as this instruction, and a non-zero P4 value. The P4 value to
-** this opcode is always of type P4_INDEX.
+** values as this instruction and a non-zero P4 value. The P4 value to
+** this opcode is of type P4_INDEX and contains a pointer to the Index
+** object of for the index being searched.
 **
 ** This opcode uses sqlite3VdbeFindIndexKey() to search around the current
-** location for an index key for which all fields that are not indexed
-** expressions or virtual columns match the expected values from the table.
-** If one is not found, jump to P2. Otherwise, fall through.
+** cursor location for an index key that exactly matches all fields that
+** are not indexed expressions or references to VIRTUAL generated columns,
+** and either exactly match or are real numbers that are within 2 ULPs of
+** each other if the don't match.
+**
+** To put it another way, this opcode looks for nearby index entries that
+** are very close to the search key, but which might have small differences
+** in floating-point values that come via an expression.
+**
+** If no nearby alternative entry is found in cursor P1, then jump to P2.
+** But if a close match is found, fall through.
+**
+** This opcode is used by PRAGMA integrity_check to help distinguish
+** between truely corrupt indexes and expression indexes that are holding
+** floating-point values that are off by one or two ULPs.
 */
 case OP_IFindKey: {     /* jump, in3 */
   VdbeCursor *pC;
   int res;
   UnpackedRecord r;
 
+  assert( pOp[-1].opcode==OP_Found );
+  assert( pOp[-1].p1==pOp->p1 );
+  assert( pOp[-1].p3==pOp->p3 );
   pC = p->apCsr[pOp->p1];
+  assert( pOp->p4type==P4_INDEX );
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );
   assert( pC->isTable==0 );

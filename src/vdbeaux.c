@@ -5413,7 +5413,7 @@ static int vdbeSkipField(
   int iCol,                       /* Column of index being considered */
   Mem *pMem1,                     /* Expected index value */
   Mem *pMem2,                     /* Actual indexed value */
-  int bIntegrity
+  int bIntegrity                  /* True if running PRAGMA integrity_check */
 ){
 #define BTREE_ULPDISTORTION 2
   if( iCol>=BMS || (mask & MASKBIT(iCol))==0 ) return 0;
@@ -5442,11 +5442,11 @@ static int vdbeSkipField(
 ** greater than those in (*p).
 */
 static int vdbeIsMatchingIndexKey(
-  BtCursor *pCur,                 /* Cursor open on index */
-  int bInt,
-  Bitmask mask,
-  UnpackedRecord *p,              /* Index key being deleted */
-  int *piRes                      /* 0 for a match, non-zero for not a match */
+  BtCursor *pCur,            /* Cursor open on index */
+  int bInt,                  /* True for integrity_check-style search */
+  Bitmask mask,              /* Mask of columns to skip */
+  UnpackedRecord *p,         /* Index key being deleted */
+  int *piRes                 /* 0 for a match, non-zero for not a match */
 ){
   u8 *aRec = 0;
   u32 nRec = 0;

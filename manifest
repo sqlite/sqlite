@@ -1,5 +1,5 @@
-C Improve\sthe\sintegrity-check\serror\smessage\swhen\sfloating\spoint\sindex\svalues\nare\soff\sby\sone\sor\stwo\sULPs.\s\sChange\sthe\sname\sof\sthe\seiib1.test\stest\smodule\nto\sexpridx1.test.
-D 2026-03-18T15:51:15.435
+C Comment\simprovements.\s\sEnsure\sthat\stests\sin\sshellB.test\sthat\srequire\nvirtual\stables\sdo\snot\srun\swhen\scompiling\swithout\svirtual\stable\ssupport.
+D 2026-03-18T17:16:18.380
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -799,11 +799,11 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 0dbd633bdc509a1c967e4b49b1555820494d936131017634d7dec96c0b8343ce
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c efb45e9c234a85ccb3c515a1af93832530a480bbc0a940929bf156c174c1df64
+F src/vdbe.c 01e380d1847dd934f9c6c73b2bb9df68915b3f917e63244f6f02c95641ca3acb
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h f7157f110f88f1d9d8338c292faf23a9129f6712563ade2b408537c95e17bdef
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
-F src/vdbeaux.c 2cfb8fc61e3ae446c2bed2f4c44aebfb4f4bf5b406c4d40dc03a52a4d87304a7
+F src/vdbeaux.c 81687c55682b9f4d942186695f4f7fa4743c564a985e0889def52eded9076d61
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 317ec5e870ddb16951b606c9fe8be22baef22ecbe46f58fdefc259662238afb7
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -1102,7 +1102,7 @@ F test/expr.test db981f8a85520e99ae20aab7ad2e9b5b0437ed09159b57ced434c672075d2e6
 F test/expr2.test c27327ae9c017a7ff6280123f67aff496f912da74d78c888926d68b46ec75fd8
 F test/exprfault.test da33606d799718e2f8e34efd0e5858884a1ad87f608774c552a7f5517cc27181
 F test/exprfault2.test c49e84273898969af5dbc4fe6a3f4335f14639799f343590336c9ddf84425965
-F test/expridx1.test b464520126e1d781a7800f8540621c82e8bbc526f089ff8b0b57ffc51feea6b7 w test/eiib1.test
+F test/expridx1.test b464520126e1d781a7800f8540621c82e8bbc526f089ff8b0b57ffc51feea6b7
 F test/extension01.test 5de412c66276105901c370770175003381fdcb0c4da7054fa43cf4a31e0bfa3a
 F test/external_reader.test 6fdec43eeca23eb32faad1e95a4d1abc402bc8b3db70df12d6fc08a637f4a2b5
 F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
@@ -1626,7 +1626,7 @@ F test/shell7.test 43fd8e511c533bab5232e95c7b4be93b243451709e89582600d4b6e67693d
 F test/shell8.test 38c9e4d7e85d2a3ecfacaa9f6cda4f7a81bf4fffb5f3f37f9cd76827c6883192
 F test/shell9.test c0e8871061a92151450b3332279a893b516fa73a6c46d4f51a0998407cbf8c89
 F test/shellA.test 05cdaafa1f79913654487ce3aefa038d4106245d58f52e02faf506140a76d480
-F test/shellB.test 7123d231158588401f332bf278754687b83ba5fc5b352ec8679fb19edfb4cc0a
+F test/shellB.test 31df04230f6062069bb7c5d0e5c5439ca44448fa9da1a55aa461a4b872fe6bd9
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3a275b5848767b61011b9d1d3d1a62328a80906386375d1b1e13fd92b6983e05
-R b47a2aab0717b2997fd16ba127788d40
+P 4e996c183ea8d270b4448b471d4d032e13cef89f537674599d1e7c367cc2d0f8
+R fffb821a24289be0806305bca2026d2b
 U drh
-Z 205f83abec79a9fa80f1b84699019aad
+Z 284483328b4916f94a2e5cff06a45a22
 # Remove this line to create a well-formed Fossil manifest.
