@@ -5478,15 +5478,15 @@ static int vdbeIsMatchingIndexKey(
   }
 
   if( rc==SQLITE_OK ){
-    int szHdr = 0;                /* Size of record header in bytes */
-    int idxHdr = 0;               /* Current index in header */
+    u32 szHdr = 0;                /* Size of record header in bytes */
+    u32 idxHdr = 0;               /* Current index in header */
 
     idxHdr = getVarint32(aRec, szHdr);
     if( szHdr>98307 ){
       rc = SQLITE_CORRUPT;
     }else{
       int res = 0;                /* Result of this function call */
-      int idxRec = szHdr;         /* Index of next field in record body */
+      u32 idxRec = szHdr;         /* Index of next field in record body */
       int ii = 0;                 /* Iterator variable */
 
       int nCol = p->pKeyInfo->nAllField;
