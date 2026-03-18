@@ -5398,26 +5398,15 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 }
 
 /*
-** Convert double value r to a 64-bit index such that real values separated
-** by a single ULP are adjacent (separated by 1 integer value).
-*/
-static i64 vdbeDoubleToIndex(double r){
-  static const u64 signbit = ((u64)1 << 63);
-  u64 u;
-  assert( sizeof(u)==sizeof(r) );
-  memcpy(&u, &r, sizeof(u));
-  return (u & signbit) ? (i64)(signbit - u) : (i64)(signbit + u);
-}
-
-/*
 ** Helper function for vdbeIsMatchingIndexKey(). Return true if column
 ** iCol should be ignored when comparing a record with a record from 
 ** an index on disk. The field should be ignored if:
 **
 **   * the corresponding bit in mask is set, and
-**   * either bIntegrity is false, or
-**   * the two Mem values are both real values that differ by 
-**     BTREE_ULPDISTORTION or fewer ULPs.
+**   * either:
+**       - bIntegrity is false, or
+**       - the two Mem values are both real values that differ by 
+**         BTREE_ULPDISTORTION or fewer ULPs.
 */
 static int vdbeSkipField(
   Bitmask mask,                   /* Mask of indexed expression fields */
@@ -5430,9 +5419,10 @@ static int vdbeSkipField(
   if( iCol>=BMS || (mask & MASKBIT(iCol))==0 ) return 0;
   if( bIntegrity==0 ) return 1;
   if( (pMem1->flags & MEM_Real) && (pMem2->flags & MEM_Real) ){
-    i64 i1 = vdbeDoubleToIndex(pMem1->u.r);
-    i64 i2 = vdbeDoubleToIndex(pMem2->u.r);
-    if( ((i1<i2) ? (i2 - i1) : (i1 - i2))<=BTREE_ULPDISTORTION ){
+    u64 m1, m2;
+    memcpy(&m1,&pMem1->u.r,8);
+    memcpy(&m2,&pMem2->u.r,8);
+    if( (m1<m2 ? m2-m1 : m1-m2) <= BTREE_ULPDISTORTION ){
       return 1;
     }
   }
