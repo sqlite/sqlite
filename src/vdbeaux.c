@@ -5397,6 +5397,17 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+/*
+** Convert double value r to a 64-bit index such that real values separated
+** by a single ULP are adjacent (separated by 1 integer value).
+*/
+static i64 vdbeDoubleToIndex(double r){
+  static const u64 signbit = ((u64)1 << 63);
+  u64 u;
+  assert( sizeof(u)==sizeof(r) );
+  memcpy(&u, &r, sizeof(u));
+  return (u & signbit) ? (i64)(signbit - u) : (i64)(signbit + u);
+}
 
 /*
 ** Helper function for vdbeIsMatchingIndexKey(). Return true if column
@@ -5415,21 +5426,14 @@ static int vdbeSkipField(
   Mem *pMem2,                     /* Actual indexed value */
   int bIntegrity
 ){
-#define BTREE_MANTISSA64 ((u64)0x0FFF << 52)
 #define BTREE_ULPDISTORTION 2
   if( iCol>=BMS || (mask & MASKBIT(iCol))==0 ) return 0;
   if( bIntegrity==0 ) return 1;
   if( (pMem1->flags & MEM_Real) && (pMem2->flags & MEM_Real) ){
-    u64 r1 = *(u64*)&pMem1->u.r;
-    u64 r2 = *(u64*)&pMem2->u.r;
-    if( (r1 & BTREE_MANTISSA64)==(r2 & BTREE_MANTISSA64) ){
-      u64 diff;
-      r1 = r1 & ~BTREE_MANTISSA64;
-      r2 = r2 & ~BTREE_MANTISSA64;
-      diff = MIN(r1-r2, r2-r1);
-      if( diff<=BTREE_ULPDISTORTION ){
-        return 1;
-      }
+    i64 i1 = vdbeDoubleToIndex(pMem1->u.r);
+    i64 i2 = vdbeDoubleToIndex(pMem2->u.r);
+    if( ((i1<i2) ? (i2 - i1) : (i1 - i2))<=BTREE_ULPDISTORTION ){
+      return 1;
     }
   }
   return 0;

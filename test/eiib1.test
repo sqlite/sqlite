@@ -219,9 +219,12 @@ do_test 4.1 {
 } {}
 
 do_execsql_test 4.2 {
-  UPDATE x1 SET b=4.000000000000001 WHERE a=2;
-  UPDATE x1 SET b=4.000000000000002 WHERE a=3;
-  UPDATE x1 SET b=4.000000000000003 WHERE a=4;
+  UPDATE x1 SET b=4.000000000000001 WHERE a=2;          -- 1 ULP
+  UPDATE x1 SET b=4.000000000000002 WHERE a=3;          -- 2 ULP
+  UPDATE x1 SET b=4.000000000000003 WHERE a=4;          -- 3 ULP
+  UPDATE x1 SET b=3.9999999999999996 WHERE a=5;         -- -1 ULP
+  UPDATE x1 SET b=3.9999999999999992 WHERE a=6;         -- -2 ULP
+  UPDATE x1 SET b=3.9999999999999988 WHERE a=7;         -- -3 ULP
 }
 
 do_execsql_test 4.3 {
@@ -230,8 +233,35 @@ do_execsql_test 4.3 {
   {WARNING: expression index z1b stores an imprecise value for row 2}
   {WARNING: expression index z1b stores an imprecise value for row 3}
   {row 4 missing from index z1b}
+  {WARNING: expression index z1b stores an imprecise value for row 5}
+  {WARNING: expression index z1b stores an imprecise value for row 6}
+  {row 7 missing from index z1b}
 }
 
+do_execsql_test 4.4 {
+  UPDATE z1 SET b=-4.0 WHERE b=4.0;
+  PRAGMA integrity_check;
+} {ok}
+
+do_execsql_test 4.5 {
+  UPDATE x1 SET b=-4.000000000000001 WHERE a=2;          -- -1 ULP
+  UPDATE x1 SET b=-4.000000000000002 WHERE a=3;          -- -2 ULP
+  UPDATE x1 SET b=-4.000000000000003 WHERE a=4;          -- -3 ULP
+  UPDATE x1 SET b=-3.9999999999999996 WHERE a=5;         -- 1 ULP
+  UPDATE x1 SET b=-3.9999999999999992 WHERE a=6;         -- 2 ULP
+  UPDATE x1 SET b=-3.9999999999999988 WHERE a=7;         -- 3 ULP
+}
+
+do_execsql_test 4.6 {
+  PRAGMA integrity_check
+} {
+  {WARNING: expression index z1b stores an imprecise value for row 2}
+  {WARNING: expression index z1b stores an imprecise value for row 3}
+  {row 4 missing from index z1b}
+  {WARNING: expression index z1b stores an imprecise value for row 5}
+  {WARNING: expression index z1b stores an imprecise value for row 6}
+  {row 7 missing from index z1b}
+}
 
 
 
