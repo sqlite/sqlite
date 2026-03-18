@@ -1,5 +1,5 @@
-C Modify\sintegrity-check\sso\sthat\sit\sis\sonly\stolerant\sof\svery\ssmall\sdistortions\sof\sreal\svalues\sin\sindexed\sexpression\sfields.
-D 2026-03-17T21:17:42.003
+C Fix\sharmless\s"unused\svariable"\scompiler\swarning.
+D 2026-03-18T11:04:15.573
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -799,7 +799,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 0dbd633bdc509a1c967e4b49b1555820494d936131017634d7dec96c0b8343ce
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 034ccc09f315f6d30ed95b0e6af0a4279ed1e78579343e48cad9f12f2ed9f67e
+F src/vdbe.c ad2275c459f088076b8a99a63230cd9514bb21a4cff98ce73d90e9611c57cad2
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h f7157f110f88f1d9d8338c292faf23a9129f6712563ade2b408537c95e17bdef
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
@@ -2194,8 +2194,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f7389cdb129d3386b7dfb8acacf84816cf10864c6800a9bd9a61c6364b850a31
-R 82803ca4f78db5dcdf077da2e4845bd5
-U dan
-Z 1601c9d521a1531b56905fb2ee04daaf
+P 82e6de835bde306778425d18ab1a15ae80fdf01af7f577ead89c09f9d53b5b2f
+R 72ffe4d6e682e49227b41b5636605cfd
+U drh
+Z 86e027f5e76c04c51f93e46c660cde54
 # Remove this line to create a well-formed Fossil manifest.

@@ -7312,7 +7312,6 @@ case OP_IntegrityCk: {
 case OP_IFindKey: {     /* jump, in3 */
   VdbeCursor *pC;
   int res;
-  int ulp;
   UnpackedRecord r;
 
   pC = p->apCsr[pOp->p1];
