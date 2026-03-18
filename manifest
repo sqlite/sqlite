@@ -1,5 +1,5 @@
-C Add\slogic\sto\ssilently\sand\stransparently\sdeal\swith\sstale\sexpression\sindex\nvalues\swhen\sdeleting\sor\supdate\sa\stable\srow,\sinstead\sof\sreporting\sa\scorrupt\ndatabase.\s\sEnhance\sPRAGMA\sintegrity_check\sto\sidentify\snon-serious\nstale\sexpression\sindex\sentries\sas\ssuch,\srather\sthan\sproclaiming\sthat\sthe\nindexes\sis\sbroken.
-D 2026-03-18T20:17:48.248
+C Continue\senforcing\sthe\slegacy\sdeclaration-before-statement\sC-language\srule,\nsince\ssome\sdownstream\sstill\suses\sit.
+D 2026-03-18T22:31:56.220
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -388,7 +388,7 @@ F ext/misc/percentile.c 72e05a21db20a2fa85264b99515941f00ae698824c9db82d7edfbb16
 F ext/misc/prefixes.c 82645f79229877afab08c8b08ca1e7fa31921280906b90a61c294e4f540cd2a6
 F ext/misc/qpvtab.c fc189e127f68f791af90a487f4460ec91539a716daf45a0c357e963fd47cc06c
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
-F ext/misc/regexp.c 69bd45f6931bdc6801c1059b65a3e8b15ba88255e6abe387a34b653ce17e8908
+F ext/misc/regexp.c fa2d4c479e8bfe8c228d57dd4dde8e4aecb5b0abee70713853dcaa3c52d3fd8a
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -797,7 +797,7 @@ F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 0dbd633bdc509a1c967e4b49b1555820494d936131017634d7dec96c0b8343ce
+F src/util.c 7a4ba925c70380c06279fe14414227c9e23e8797a564cee61241da7ab47cf3d0
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 01e380d1847dd934f9c6c73b2bb9df68915b3f917e63244f6f02c95641ca3acb
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
@@ -814,7 +814,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 88d94fd15a75f6eda831fa32d1148a267ea37bf0a4b69829a73dfde06244b08f
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 406d9ec8d12f646c28c4b4a645ea20329eb343b19cfa3dcd8aab938066c4ae66
+F src/where.c dbaddfdbaddb6f74949fb13c452dc81c543f1c0ece87ecd6582524b5103f4709
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 676cb6cb02878643e817d9917a2d3522b83a3736b2cedd3dc8a01d7bb92af6c2
 F src/whereexpr.c e9f7185fba366d9365aa7a97329609e4cf00b3dd0400d069fbaa5187350c17c6
@@ -2191,12 +2191,11 @@ F tool/vdbe-compress.tcl fa2f37ab39b2a0087fafb6a7f3ce19503e25e624ffa8ed9951717ab
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
 F tool/version-info.c 33d0390ef484b3b1cb685d59362be891ea162123cea181cb8e6d2cf6ddf2700c
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
-F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
+F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ed29fe973e6cbf291eff6fc582aeb34556ea4f8df105ec61b361e4cdda017e62 e0fa7c500052af9d36cb2d232131ef93361403187f4a60f53279b102c7a95860
-R 26ade8ca132e7215ac38ba62aa36e2a7
-T +closed e0fa7c500052af9d36cb2d232131ef93361403187f4a60f53279b102c7a95860
+P 0ed040128b7ebb5be438b1841607ed9c525b271cac81021bc356cf573d1cd516
+R a75aa214db84be6ac02e6aea8c773e8c
 U drh
-Z db3c9769fb8ffa82bf7a8a46fc08c9cd
+Z 09d0cda01676f0ea240a2ce1a1243393
 # Remove this line to create a well-formed Fossil manifest.

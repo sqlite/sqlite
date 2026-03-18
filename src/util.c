@@ -751,44 +751,45 @@ static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
 ** Return an IEEE754 floating point value that approximates d*pow(10,p).
 */
 static double sqlite3Fp10Convert2(u64 d, int p){
+  int b, lp, e, adj, s;
+  u32 pwr10l, mid1;
+  u64 pwr10h, x, hi, lo, sticky, u, m;
+  double r;
   if( p<POWERSOF10_FIRST ) return 0.0;
   if( p>POWERSOF10_LAST ) return INFINITY;
-  int b = 64 - countLeadingZeros(d);
-  int lp = pwr10to2(p);
-  int e = 53 - b - lp;
+  b = 64 - countLeadingZeros(d);
+  lp = pwr10to2(p);
+  e = 53 - b - lp;
   if( e > 1074 ){
     if( e>=1130 ) return 0.0;
     e = 1074;
   }
-  int s = -(e-(64-b) + lp + 3);
-  u32 pwr10l;
-  u64 pwr10h = powerOfTen(p, &pwr10l);
+  s = -(e-(64-b) + lp + 3);
+  pwr10h = powerOfTen(p, &pwr10l);
   if( pwr10l!=0 ){
     pwr10h++;
     pwr10l = ~pwr10l;
   }
-  u64 x = d<<(64-b);
-  u64 lo;
-  u64 hi = sqlite3Multiply128(x,pwr10h,&lo);
-  u32 mid1 = lo>>32;
-  u64 sticky = 1;
+  x = d<<(64-b);
+  hi = sqlite3Multiply128(x,pwr10h,&lo);
+  mid1 = lo>>32;
+  sticky = 1;
   if( (hi & (U64_BIT(s)-1))==0 ) {
     u32 mid2 = sqlite3Multiply128(x,((u64)pwr10l)<<32,&lo)>>32;
     sticky = (mid1-mid2 > 1);
     hi -= mid1 < mid2;
   }
-  u64 u = (hi>>s) | sticky;
-  int adj = (u >= U64_BIT(55)-2);
+  u = (hi>>s) | sticky;
+  adj = (u >= U64_BIT(55)-2);
   if( adj ){
     u = (u>>adj) | (u&1);
     e -= adj;
   }
-  u64 m = (u + 1 + ((u>>2)&1)) >> 2;
+  m = (u + 1 + ((u>>2)&1)) >> 2;
   if( e<=(-972) ) return INFINITY;
   if((m & U64_BIT(52)) != 0){
     m = (m & ~U64_BIT(52)) | ((u64)(1075-e)<<52);
   }
-  double r;
   memcpy(&r,&m,8);
   return r;
 }

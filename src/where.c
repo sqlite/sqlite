@@ -2449,11 +2449,16 @@ void sqlite3WhereClausePrint(WhereClause *pWC){
 void sqlite3WhereLoopPrint(const WhereLoop *p, const WhereClause *pWC){
   WhereInfo *pWInfo;
   if( pWC ){
+    int nb;
+    SrcItem *pItem;
+    Table *pTab;
+    Bitmask mAll;
+
     pWInfo = pWC->pWInfo;
-    int nb = 1+(pWInfo->pTabList->nSrc+3)/4;
-    SrcItem *pItem = pWInfo->pTabList->a + p->iTab;
-    Table *pTab = pItem->pSTab;
-    Bitmask mAll = (((Bitmask)1)<<(nb*4)) - 1;
+    nb = 1+(pWInfo->pTabList->nSrc+3)/4;
+    pItem = pWInfo->pTabList->a + p->iTab;
+    pTab = pItem->pSTab;
+    mAll = (((Bitmask)1)<<(nb*4)) - 1;
     sqlite3DebugPrintf("%c%2d.%0*llx.%0*llx", p->cId,
                        p->iTab, nb, p->maskSelf, nb, p->prereq & mAll);
     sqlite3DebugPrintf(" %12s",
