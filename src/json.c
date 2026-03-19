@@ -850,6 +850,7 @@ static void jsonReturnString(
 ){
   assert( (pParse!=0)==(ctx!=0) );
   assert( ctx==0 || ctx==p->pCtx );
+  jsonStringTerminate(p);
   if( p->eErr==0 ){
     int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(p->pCtx));
     if( flags & JSON_BLOB ){
@@ -857,7 +858,7 @@ static void jsonReturnString(
     }else if( p->bStatic ){
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             SQLITE_TRANSIENT, SQLITE_UTF8);
-    }else if( jsonStringTerminate(p) ){
+    }else{
       if( pParse && pParse->bJsonIsRCStr==0 && pParse->nBlobAlloc>0 ){
         int rc;
         pParse->zJson = sqlite3RCStrRef(p->zBuf);
@@ -873,8 +874,6 @@ static void jsonReturnString(
       sqlite3_result_text64(p->pCtx, sqlite3RCStrRef(p->zBuf), p->nUsed,
                             sqlite3RCStrUnref,
                             SQLITE_UTF8);
-    }else{
-      sqlite3_result_error_nomem(p->pCtx);
     }
   }else if( p->eErr & JSTRING_OOM ){
     sqlite3_result_error_nomem(p->pCtx);
@@ -2088,12 +2087,8 @@ static int jsonConvertTextToBlob(
 */
 static void jsonReturnStringAsBlob(JsonString *pStr){
   JsonParse px;
+  assert( pStr->eErr==0 );
   memset(&px, 0, sizeof(px));
-  jsonStringTerminate(pStr);
-  if( pStr->eErr ){
-    sqlite3_result_error_nomem(pStr->pCtx);
-    return;
-  }
   px.zJson = pStr->zBuf;
   px.nJson = pStr->nUsed;
   px.db = sqlite3_context_db_handle(pStr->pCtx);
@@ -4808,7 +4803,8 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
     pStr->pCtx = ctx;
-    jsonAppendChar(pStr, ']');
+    jsonAppendRawNZ(pStr, "]", 2);
+    jsonStringTrimOneChar(pStr);
     if( pStr->eErr ){
       jsonReturnString(pStr, 0, 0);
       return;
@@ -4931,7 +4927,8 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
   int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
-    jsonAppendChar(pStr, '}');
+    jsonAppendRawNZ(pStr, "}", 2);
+    jsonStringTrimOneChar(pStr);
     pStr->pCtx = ctx;
     if( pStr->eErr ){
       jsonReturnString(pStr, 0, 0);
