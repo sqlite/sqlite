@@ -656,7 +656,7 @@ int sqlite3IntFloatCompare(i64,double);
 i64 sqlite3VdbeIntValue(const Mem*);
 int sqlite3VdbeMemIntegerify(Mem*);
 double sqlite3VdbeRealValue(Mem*);
-SQLITE_NOINLINE double sqlite3MemRealValueRC(Mem*, int*);
+int sqlite3MemRealValueRC(Mem*, double*);
 int sqlite3VdbeBooleanValue(Mem*, int ifNull);
 void sqlite3VdbeIntegerAffinity(Mem*);
 int sqlite3VdbeMemRealify(Mem*);

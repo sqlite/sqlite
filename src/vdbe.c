@@ -355,7 +355,7 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   double rValue;
   int rc;
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str );
-  rValue = sqlite3MemRealValueRC(pRec, &rc);
+  rc = sqlite3MemRealValueRC(pRec, &rValue);
   if( rc<=0 ) return;
   if( rc==1 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
     pRec->flags |= MEM_Int;
@@ -473,7 +473,7 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
     pMem->u.i = 0;
     return MEM_Int;
   }
-  pMem->u.r = sqlite3MemRealValueRC(pMem, &rc);
+  rc = sqlite3MemRealValueRC(pMem, &pMem->u.r);
   if( rc<=0 ){
     if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
       pMem->u.i = ix;
