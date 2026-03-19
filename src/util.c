@@ -499,6 +499,20 @@ static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
 ** The lower 64 bits of A*B are discarded.
 */
 static u64 sqlite3Multiply160(u64 a, u32 aLo, u64 b, u32 *pLo){
+#if (defined(__GNUC__) || defined(__clang__)) \
+        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv))
+  __uint128_t r = (__uint128_t)a * b;
+  r += ((__uint128_t)aLo * b) >> 32;
+  *pLo = (r>>32)&0xffffffff;
+  return r>>64;
+#elif defined(_MSC_VER) && defined(_M_X64)
+  u64 r1_hi = __umulh(a,b);
+  u64 r1_lo = a*b;
+  u64 r2 = (__umulh((u64)aLo,b)<<32) + ((aLo*b)>>32);
+  r1_hi += _addcarry_u64(0, r1_lo, r2, &r1_lo);
+  *pLo = r1_lo>>32;
+  return r1_hi;
+#else
   u64 x2 = a>>32;
   u64 x1 = a&0xffffffff;
   u64 x0 = aLo;
@@ -520,6 +534,7 @@ static u64 sqlite3Multiply160(u64 a, u32 aLo, u64 b, u32 *pLo){
   r3 += r2>>32;
   *pLo = r2&0xffffffff;
   return (r4<<32) + r3;
+#endif
 }
 
 /*
