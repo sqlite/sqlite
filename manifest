@@ -1,5 +1,5 @@
-C Do\snot\sassume\sthat\sa\srecursive\sCTE\semits\srows\sin\sORDER\sBY\sorder.\sForum\s[forum:deb1eadf4d677bd5\s|\sdeb1eadf4d677bd5].
-D 2026-03-18T15:40:26.024
+C Reverse\sthe\sif()\scondition\sadded\sby\sthis\sbranch.
+D 2026-03-19T10:39:24.828
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -814,7 +814,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 88d94fd15a75f6eda831fa32d1148a267ea37bf0a4b69829a73dfde06244b08f
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c a6c639db5e261a2c1ba945685ea71a123e97806ee5e18fc795fc1152ef4135fd
+F src/where.c 42a43510928fbc527d2e50266f712d6948340e170c3f2c9f6ac30c97a0c9450f
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 676cb6cb02878643e817d9917a2d3522b83a3736b2cedd3dc8a01d7bb92af6c2
 F src/whereexpr.c e9f7185fba366d9365aa7a97329609e4cf00b3dd0400d069fbaa5187350c17c6
@@ -2193,11 +2193,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh d924598cf2f55a4ecbc2aeb055c10bd5f48114793e7ba25f9585435da29e7e98
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ed29fe973e6cbf291eff6fc582aeb34556ea4f8df105ec61b361e4cdda017e62
-R ce193fca07cb796b51865442d7f00151
-T *branch * forum-deb1eadf4d
-T *sym-forum-deb1eadf4d *
-T -sym-trunk *
+P 971aa34b3fd86ba30fe170886d9f83c17159b1638c4bd4fb6cdef79b1c9a88e2
+R 774677314db52e2452554f361a3d0b1a
 U dan
-Z afbe47970c288361eeb734177e8054f4
+Z 243bb51eb67cad9073e7a851babde808
 # Remove this line to create a well-formed Fossil manifest.

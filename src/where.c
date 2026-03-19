@@ -4170,7 +4170,7 @@ static int whereLoopAddBtree(
         /* Do not set btree.pOrderBy for a recursive CTE. In this case
         ** the ORDER BY clause does not determine the overall order that
         ** rows are emitted from the CTE in.  */
-        if( pSrc->u4.pSubq->pSelect->selFlags & SF_Recursive ){
+        if( (pSrc->u4.pSubq->pSelect->selFlags & SF_Recursive)==0 ){
           pNew->u.btree.pOrderBy = pSrc->u4.pSubq->pSelect->pOrderBy;
         }
       }else if( pSrc->fg.fromExists ){
