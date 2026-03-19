@@ -1,5 +1,5 @@
-C Continue\senforcing\sthe\slegacy\sdeclaration-before-statement\sC-language\srule,\nsince\ssome\sdownstream\sstill\suses\sit.
-D 2026-03-18T22:31:56.220
+C Do\snot\sassume\sthat\sa\srecursive\sCTE\semits\srows\sin\sORDER\sBY\sorder.\sFix\sfor\sforum\spost\s[forum:deb1eadf4d677bd5\s|\sdeb1eadf4d677bd5].
+D 2026-03-19T10:51:40.690
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -814,7 +814,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c 88d94fd15a75f6eda831fa32d1148a267ea37bf0a4b69829a73dfde06244b08f
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c dbaddfdbaddb6f74949fb13c452dc81c543f1c0ece87ecd6582524b5103f4709
+F src/where.c bffca5e4ef20d0bfbdc24f1dc13fd3f955284225a8ad25a4454635f6be39aad0
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c 676cb6cb02878643e817d9917a2d3522b83a3736b2cedd3dc8a01d7bb92af6c2
 F src/whereexpr.c e9f7185fba366d9365aa7a97329609e4cf00b3dd0400d069fbaa5187350c17c6
@@ -2082,7 +2082,7 @@ F test/with1.test 31db84788e0429885b63995149fab57d32e26196b752a3a926249ae74c0add
 F test/with2.test 181674a6cc86a601ca2ac052741cdfad5b529e07e870435d2f6cdb92d589ff17
 F test/with3.test e30369ea27aa27eb1bda4c5e510c8a9f782c8afd2ab99d1a02b8a7f25a5d3e65
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
-F test/with5.test 6248213c41fab36290b5b73aa3f937309dfba337004d9d8434c3fabc8c7d4be8
+F test/with5.test 0e5e141fee75aa170289467542a2ffd71933d4fb006bfb135275b1787bdc8fbe
 F test/with6.test 281e4861b5e517f6c3c2f08517a520c1e2ee7c11966545d3901f258a4fe8ef76
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
 F test/without_rowid1.test f6e75e32821eb423ac3812434d12bdd8098f17e3b2206da61575e1db77f82428
@@ -2194,8 +2194,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0ed040128b7ebb5be438b1841607ed9c525b271cac81021bc356cf573d1cd516
-R a75aa214db84be6ac02e6aea8c773e8c
-U drh
-Z 09d0cda01676f0ea240a2ce1a1243393
+P 5c237f1f863a32cf229010d2024d0d1e76a07a4d8b9492b26503b959f1c32485 a9a0dd521c7c24b0c8b22abf2a131028f4dc9cd233678dc1f658da81a4a70e4b
+R 05ecba0cebbda621ad1348997fcbfa48
+T +closed a9a0dd521c7c24b0c8b22abf2a131028f4dc9cd233678dc1f658da81a4a70e4b
+U dan
+Z a3e30a0c8e137f9263850331b9b6cc54
 # Remove this line to create a well-formed Fossil manifest.

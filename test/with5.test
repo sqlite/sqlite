@@ -190,5 +190,26 @@ do_execsql_test 220 {
   SELECT x FROM closure ORDER BY +x;
 } {1 2 3 4 5 6 7 8 9 11 13}
 
+#-------------------------------------------------------------------------
+# Forum: https://sqlite.org/forum/forumpost/deb1eadf4d677bd5
+#
+# For a recursive CTE, do not assume rows are delivered in the order
+# specified by the ORDER BY clause. In this case ORDER BY governs the
+# order in which the queue is processed, not the overall order in which
+# rows are emitted by the CTE.
+#
+reset_db
+do_execsql_test 300 {
+  CREATE TABLE tree(id INTEGER PRIMARY KEY, parent INTEGER);
+  INSERT INTO tree VALUES(3, 1);
+  INSERT INTO tree VALUES(2, 3);
+}
+
+do_execsql_test 310 {
+  WITH RECURSIVE tt(ii) AS (
+      VALUES(1) UNION ALL SELECT id FROM tree, tt WHERE parent=ii ORDER BY id
+  )
+  SELECT * FROM tt ORDER BY ii;
+} {1 2 3}
 
 finish_test
