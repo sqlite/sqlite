@@ -576,7 +576,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
     }else{
       Index *p;
       /* Justification of ALWAYS();  The index must be on the list of
-      ** indices. */
+      ** indexes. */
       p = pIndex->pTable->pIndex;
       while( ALWAYS(p) && p->pNext!=pIndex ){ p = p->pNext; }
       if( ALWAYS(p && p->pNext==pIndex) ){
@@ -787,7 +787,7 @@ void sqlite3DeleteColumnNames(sqlite3 *db, Table *pTable){
 **
 ** This routine just deletes the data structure.  It does not unlink
 ** the table data structure from the hash table.  But it does destroy
-** memory structures of the indices and foreign keys associated with
+** memory structures of the indexes and foreign keys associated with
 ** the table.
 **
 ** The db parameter is optional.  It is needed if the Table object
@@ -814,7 +814,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   }
 #endif
 
-  /* Delete all indices associated with this table. */
+  /* Delete all indexes associated with this table. */
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
     pNext = pIndex->pNext;
     assert( pIndex->pSchema==pTable->pSchema
@@ -868,7 +868,7 @@ void sqlite3DeleteTableGeneric(sqlite3 *db, void *pTable){
 
 /*
 ** Unlink the given table from the hash tables and the delete the
-** table structure with all its indices and foreign keys.
+** table structure with all its indexes and foreign keys.
 */
 void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   Table *p;
@@ -1320,8 +1320,8 @@ void sqlite3StartTable(
   ** the schema table.  Note in particular that we must go ahead
   ** and allocate the record number for the table entry now.  Before any
   ** PRIMARY KEY or UNIQUE keywords are parsed.  Those keywords will cause
-  ** indices to be created and the table record must come before the
-  ** indices.  Hence, the record number for the table must be allocated
+  ** indexes to be created and the table record must come before the
+  ** indexes.  Hence, the record number for the table must be allocated
   ** now.
   */
   if( !db->init.busy && (v = sqlite3GetVdbe(pParse))!=0 ){
@@ -2347,7 +2347,7 @@ static void recomputeColumnsNotIndexed(Index *pIdx){
 **          columns are part of KeyInfo.nAllField and are not used for
 **          sorting or lookup or uniqueness checks.
 **     (6)  Replace the rowid tail on all automatically generated UNIQUE
-**          indices with the PRIMARY KEY columns.
+**          indexes with the PRIMARY KEY columns.
 **
 ** For virtual tables, only (1) is performed.
 */
@@ -2448,7 +2448,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   /* The root page of the PRIMARY KEY is the table root page */
   pPk->tnum = pTab->tnum;
 
-  /* Update the in-memory representation of all UNIQUE indices by converting
+  /* Update the in-memory representation of all UNIQUE indexes by converting
   ** the final rowid column into one or more columns of the PRIMARY KEY.
   */
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -2781,7 +2781,7 @@ void sqlite3EndTable(
   }
 #endif
 
-  /* Estimate the average row size for the table and for all implied indices */
+  /* Estimate the average row size for the table and for all implied indexes */
   estimateTableWidth(p);
   for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
     estimateIndexWidth(pIdx);
@@ -3241,13 +3241,13 @@ static void sqliteViewResetAll(sqlite3 *db, int idx){
 ** to iTo.
 **
 ** Ticket #1728:  The symbol table might still contain information
-** on tables and/or indices that are the process of being deleted.
-** If you are unlucky, one of those deleted indices or tables might
+** on tables and/or indexes that are the process of being deleted.
+** If you are unlucky, one of those deleted indexes or tables might
 ** have the same rootpage number as the real table or index that is
 ** being moved.  So we cannot stop searching after the first match
-** because the first match might be for one of the deleted indices
+** because the first match might be for one of the deleted indexes
 ** or tables and not the table/index that is actually being moved.
-** We must continue looping until all tables and indices with
+** We must continue looping until all tables and indexes with
 ** rootpage==iFrom have been converted to have a rootpage of iTo
 ** in order to be certain that we got the right one.
 */
@@ -3307,7 +3307,7 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
 }
 
 /*
-** Write VDBE code to erase table pTab and all associated indices on disk.
+** Write VDBE code to erase table pTab and all associated indexes on disk.
 ** Code to update the sqlite_schema tables and internal schema definitions
 ** in case a root-page belonging to another table is moved by the btree layer
 ** is also added (this can happen with an auto-vacuum database).
@@ -3946,7 +3946,7 @@ void sqlite3CreateIndex(
   ExprList *pList,   /* A list of columns to be indexed */
   int onError,       /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   Token *pStart,     /* The CREATE token that begins this statement */
-  Expr *pPIWhere,    /* WHERE clause for partial indices */
+  Expr *pPIWhere,    /* WHERE clause for partial indexes */
   int sortOrder,     /* Sort order of primary key when pList==NULL */
   int ifNotExist,    /* Omit error if index already exists */
   u8 idxType         /* The index type */
@@ -4060,7 +4060,7 @@ void sqlite3CreateIndex(
   ** Find the name of the index.  Make sure there is not already another
   ** index or table with the same name. 
   **
-  ** Exception:  If we are reading the names of permanent indices from the
+  ** Exception:  If we are reading the names of permanent indexes from the
   ** sqlite_schema table (because some other process changed the schema) and
   ** one of the index names collides with the name of a temporary table or
   ** index, then we will continue to process this index.
@@ -4323,8 +4323,8 @@ void sqlite3CreateIndex(
     **
     ** Either way, check to see if the table already has such an index. If
     ** so, don't bother creating this one. This only applies to
-    ** automatically created indices. Users can do as they wish with
-    ** explicit indices.
+    ** automatically created indexes. Users can do as they wish with
+    ** explicit indexes.
     **
     ** Two UNIQUE or PRIMARY KEY constraints are considered equivalent
     ** (and thus suppressing the second one) even if they have different
@@ -4332,7 +4332,7 @@ void sqlite3CreateIndex(
     **
     ** If there are different collating sequences or if the columns of
     ** the constraint occur in different orders, then the constraints are
-    ** considered distinct and both result in separate indices.
+    ** considered distinct and both result in separate indexes.
     */
     Index *pIdx;
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -4546,7 +4546,7 @@ exit_create_index:
 **
 ** Apart from that, we have little to go on besides intuition as to
 ** how aiRowEst[] should be initialized.  The numbers generated here
-** are based on typical values found in actual indices.
+** are based on typical values found in actual indexes.
 */
 void sqlite3DefaultRowEst(Index *pIdx){
                /*                10,  9,  8,  7,  6 */
@@ -5523,18 +5523,43 @@ void sqlite3RowidConstraint(
 }
 
 /*
+** KEYWORD "expressions".  Identify the magic "expressions" collating
+** sequence name in collationMatch() by pointer comparison to this
+** value.
+*/
+static const char zExpressionsKW[] = "expressions";
+
+/*
 ** Check to see if pIndex uses the collating sequence pColl.  Return
 ** true if it does and false if it does not.
+**
+** If zColl==zExpressionsKW, then match only if index is an expression
+** index.
 */
 #ifndef SQLITE_OMIT_REINDEX
 static int collationMatch(const char *zColl, Index *pIndex){
   int i;
   assert( zColl!=0 );
   for(i=0; i<pIndex->nColumn; i++){
-    const char *z = pIndex->azColl[i];
-    assert( z!=0 || pIndex->aiColumn[i]<0 );
-    if( pIndex->aiColumn[i]>=0 && 0==sqlite3StrICmp(z, zColl) ){
-      return 1;
+    const char *z;
+    i16 iCol = pIndex->aiColumn[i];
+    if( iCol==XN_ROWID ) continue;
+    if( iCol==XN_EXPR ){
+      if( zColl==zExpressionsKW ){
+        return 1;   /* Index on an expression */
+      }
+      continue;
+    }
+    z = pIndex->azColl[i];
+    assert( z!=0 );
+    if( 0==sqlite3StrICmp(z, zColl) ){
+      assert( zColl!=zExpressionsKW );
+      return 1;   /* Index using collating sequence zColl */
+    }
+    if( zColl==zExpressionsKW
+     && (pIndex->pTable->aCol[iCol].colFlags & COLFLAG_VIRTUAL)!=0
+    ){
+      return 1;   /* Index on a VIRTUAL generated column */
     }
   }
   return 0;
@@ -5542,8 +5567,8 @@ static int collationMatch(const char *zColl, Index *pIndex){
 #endif
 
 /*
-** Recompute all indices of pTab that use the collating sequence pColl.
-** If pColl==0 then recompute all indices of pTab.
+** Recompute all indexes of pTab that use the collating sequence pColl.
+** If pColl==0 then recompute all indexes of pTab.
 */
 #ifndef SQLITE_OMIT_REINDEX
 static void reindexTable(Parse *pParse, Table *pTab, char const *zColl){
@@ -5562,9 +5587,9 @@ static void reindexTable(Parse *pParse, Table *pTab, char const *zColl){
 #endif
 
 /*
-** Recompute all indices of all tables in all databases where the
-** indices use the collating sequence pColl.  If pColl==0 then recompute
-** all indices everywhere.
+** Recompute all indexes of all tables in all databases where the
+** indexes use the collating sequence zColl.  If zColl==0 then recompute
+** all indexes everywhere.
 */
 #ifndef SQLITE_OMIT_REINDEX
 static void reindexDatabases(Parse *pParse, char const *zColl){
@@ -5593,15 +5618,18 @@ static void reindexDatabases(Parse *pParse, char const *zColl){
 **        REINDEX  ?<database>.?<tablename>  -- 3
 **        REINDEX  ?<database>.?<indexname>  -- 4
 **
-** Form 1 causes all indices in all attached databases to be rebuilt.
-** Form 2 rebuilds all indices in all databases that use the named
+** Form 1 causes all indexes in all attached databases to be rebuilt.
+** Form 2 rebuilds all indexes in all databases that use the named
 ** collating function.  Forms 3 and 4 rebuild the named index or all
-** indices associated with the named table.
+** indexes associated with the named table.
+**
+** If the argument to form 2 does not match any known collation, but
+** it does match "EXPRESSIONS", then all expression indexes are rebuilt.
 */
 #ifndef SQLITE_OMIT_REINDEX
 void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   CollSeq *pColl;             /* Collating sequence to be reindexed, or NULL */
-  char *z;                    /* Name of a table or index */
+  char *z;                    /* Name of a table or index or collation */
   const char *zDb;            /* Name of the database */
   Table *pTab;                /* A table in the database */
   Index *pIndex;              /* An index associated with pTab */
@@ -5619,17 +5647,15 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     reindexDatabases(pParse, 0);
     return;
   }else if( NEVER(pName2==0) || pName2->z==0 ){
-    char *zColl;
     assert( pName1->z );
-    zColl = sqlite3NameFromToken(pParse->db, pName1);
-    if( !zColl ) return;
-    pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
+    z = sqlite3NameFromToken(pParse->db, pName1);
+    if( z==0 ) return;
+    pColl = sqlite3FindCollSeq(db, ENC(db), z, 0);
     if( pColl ){
-      reindexDatabases(pParse, zColl);
-      sqlite3DbFree(db, zColl);
-      return;
+      reindexDatabases(pParse, z);
+      goto reindex_done;
     }
-    sqlite3DbFree(db, zColl);
+    sqlite3DbFree(db, z);
   }
   iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pObjName);
   if( iDb<0 ) return;
@@ -5639,18 +5665,24 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   pTab = sqlite3FindTable(db, z, zDb);
   if( pTab ){
     reindexTable(pParse, pTab, 0);
-    sqlite3DbFree(db, z);
-    return;
+    goto reindex_done;
   }
   pIndex = sqlite3FindIndex(db, z, zDb);
-  sqlite3DbFree(db, z);
   if( pIndex ){
     iDb = sqlite3SchemaToIndex(db, pIndex->pTable->pSchema);
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3RefillIndex(pParse, pIndex, -1);
-    return;
+    goto reindex_done;
+  }
+  if( zDb==0 && sqlite3StrICmp(z,zExpressionsKW)==0 ){
+    reindexDatabases(pParse, zExpressionsKW);
+    goto reindex_done;
   }
   sqlite3ErrorMsg(pParse, "unable to identify the object to be reindexed");
+
+reindex_done:
+  sqlite3DbFree(db, z);
+  return;
 }
 #endif
 

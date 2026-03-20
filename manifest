@@ -1,5 +1,5 @@
-C Ensure\sthat\scollation\ssequences\son\snon-PK\scolumns\sof\sa\sWITHOUT\sROWID\stable\sare\sused\scorrectly\swhen\sthey\sare\spart\sof\sa\srow\svalue\scomparison.\sFix\sfor\sforum\spost\s[forum:7a308e933d\s|\s7a308e933d].
-D 2026-03-20T11:35:15.730
+C If\sthere\sare\snot\scollating\ssequences,\stables,\sor\sindexes\snamed\s"EXPRESSIONS"\nthen\sthe\s"REINDEX\sEXPRESSIONS"\scommand\srebuilds\sall\sexpression\sindexes.
+D 2026-03-20T14:37:39.310
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -676,7 +676,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c fb350c445316c1cc0529703c0b76450770a1de0ab0440641a56b19f05d6fefbe
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c b6efb70b142fd0f6a88ec1d9d43b905f2e38a59973c6f0e329e5cbe376a7f035
+F src/build.c beb8069bccb2ddd101b384df95f45b300999e70ab1be4061dd8da7bd27fb3579
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -2195,8 +2195,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 88a931ea2ae734478928c2a6021b00b0f2be490328260630e176cf3cc7111472
-R 3a8ae62427f2beb0c4936f72e745b41a
-U dan
-Z 3025019227a8a6014385337b8f60a744
+P 078b3162d0d3d3035f4d3ad88664066d99c218a731ac481b9f1172529e26e4eb
+R fffd90b5bfe8609c91e78fb9093e3446
+T *branch * reindex-expressions
+T *sym-reindex-expressions *
+T -sym-trunk *
+U drh
+Z 9182359fa4b768364b8403c0c94e4fa6
 # Remove this line to create a well-formed Fossil manifest.
