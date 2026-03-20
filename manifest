@@ -1,5 +1,5 @@
-C If\sthere\sare\snot\scollating\ssequences,\stables,\sor\sindexes\snamed\s"EXPRESSIONS"\nthen\sthe\s"REINDEX\sEXPRESSIONS"\scommand\srebuilds\sall\sexpression\sindexes.
-D 2026-03-20T14:37:39.310
+C If\sthe\sargument\sto\sREINDEX\sis\sEXPRESSIONS\s(with\sno\sschema\sprefix)\sthen\sit\nupdates\sboth\sexpression\sindexes,\sand\sany\sindexes\snamed\s"expressions"\sor\nall\sindexes\sof\sany\stables\sname\s"expressions".
+D 2026-03-20T19:30:58.886
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -676,7 +676,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c fb350c445316c1cc0529703c0b76450770a1de0ab0440641a56b19f05d6fefbe
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
-F src/build.c beb8069bccb2ddd101b384df95f45b300999e70ab1be4061dd8da7bd27fb3579
+F src/build.c c180fbb25a3c3e02c7eacdf1d5911a0f29bbd4b4c5e1b64fe5d8772096419a69
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -876,7 +876,7 @@ F test/attach2.test 6d1e3a457ce260d6fc8e5945c07fba6c76dc2aa90e1c701f067b50ee88f7
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 00e754484859998d124d144de6d114d920f2ed6ca2f961e6a7f4183c714f885e
 F test/attachmalloc.test 67309af95c6b765c13e7d2279d7fccbef78e6eb0565d75d51cefd5dc88784549
-F test/auth.test 5b8558a40571ebc55c1581cb7cec3b2348a699542a0a51b83ef21c6a953d95e3
+F test/auth.test 2a01bf5bf3a0f10adf8ae3a3fd2c05af8a8c1b7a52fae227adb4ccd931915b5c
 F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test 76d20a7fa136d63bcfcf8bcb65c0b1455ed71078d81f22bcd0550d3eb18594ab
 F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
@@ -2195,11 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 078b3162d0d3d3035f4d3ad88664066d99c218a731ac481b9f1172529e26e4eb
-R fffd90b5bfe8609c91e78fb9093e3446
-T *branch * reindex-expressions
-T *sym-reindex-expressions *
-T -sym-trunk *
+P df5c5aa26758e0dc00a9ccba29eac83071176d257e121207e0a13c54833b18c0
+R fa2d2188fd0c121dfe90e3d57a7a9881
 U drh
-Z 9182359fa4b768364b8403c0c94e4fa6
+Z 99001bf01c3f8b11e63f25852a2515f5
 # Remove this line to create a well-formed Fossil manifest.
