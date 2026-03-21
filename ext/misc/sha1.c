@@ -249,16 +249,19 @@ static void sha1Func(
   SHA1Context cx;
   int eType = sqlite3_value_type(argv[0]);
   int nByte = sqlite3_value_bytes(argv[0]);
+  const unsigned char *pData;
   char zOut[44];
 
   assert( argc==1 );
   if( eType==SQLITE_NULL ) return;
   hash_init(&cx);
   if( eType==SQLITE_BLOB ){
-    hash_step(&cx, sqlite3_value_blob(argv[0]), nByte);
+    pData = (const unsigned char*)sqlite3_value_blob(argv[0]);
   }else{
-    hash_step(&cx, sqlite3_value_text(argv[0]), nByte);
+    pData = (const unsigned char*)sqlite3_value_text(argv[0]);
   }
+  if( pData==0 ) return;
+  hash_step(&cx, pData, nByte);
   if( sqlite3_user_data(context)!=0 ){
     /* sha1b() - binary result */
     hash_finish(&cx, zOut, 1);
@@ -320,6 +323,7 @@ static void sha1QueryFunc(
     }
     nCol = sqlite3_column_count(pStmt);
     z = sqlite3_sql(pStmt);
+    if( z==0 ) z = "";
     n = (int)strlen(z);
     hash_step_vformat(&cx,"S%d:",n);
     hash_step(&cx,(unsigned char*)z,n);

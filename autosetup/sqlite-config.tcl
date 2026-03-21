@@ -1138,6 +1138,27 @@ proc sqlite-check-line-editing {} {
   set editLibName "readline"     ; # "readline" or "editline"
   set editLibDef "HAVE_READLINE" ; # "HAVE_READLINE" or "HAVE_EDITLINE"
   set dirLn [opt-val with-linenoise]
+
+  # If none of --with-linenoise, --enable-readline, or --enable-editline
+  # are provided, but there exists a directory "linenoise" at $HOME or
+  # a sibling of the build or source directory, then try to use that linenoise
+  # direcctory.
+  #
+  if {"" eq $dirLn
+   && ![proj-opt-was-provided readline]
+   && ![proj-opt-was-provided editline]
+  } {
+    set dirlist ../linenoise
+    catch {lappend dirlist [file normalize $::autosetup(srcdir)/../linenoise]}
+    catch {lappend dirlist $::env(HOME)/linenoise}
+    foreach d $dirlist {
+      if {[file exists $d/linenoise.c] && [file exists $d/linenoise.h]} {
+        set dirLn $d
+        break
+      }
+    }
+  }
+
   if {"" ne $dirLn} {
     # Use linenoise from a copy of its sources (not a library)...
     if {![file isdir $dirLn]} {
@@ -1173,6 +1194,8 @@ proc sqlite-check-line-editing {} {
     if {$::sqliteConfig(use-jim-for-codegen) && 2 == $lnVal} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
       user-notice "Adding linenoise support to jimsh."
+    } else {
+      msg-result "Using linenoise at [file normalize $dirLn]"
     }
     return "linenoise ($flavor)"
   } elseif {[opt-bool editline]} {

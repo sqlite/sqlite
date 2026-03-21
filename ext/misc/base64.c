@@ -275,7 +275,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int sqlite3_base_init
+int sqlite3_base64_init
 #else
 static int sqlite3_base64_init
 #endif

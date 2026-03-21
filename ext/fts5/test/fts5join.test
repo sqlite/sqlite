@@ -65,5 +65,14 @@ do_eqp_test 1.4 {
   `--SCAN vt VIRTUAL TABLE INDEX 0:=
 }
 
+do_eqp_test 1.5 {
+  SELECT * FROM vt, t1 
+  WHERE vt.rowid = t1.rowid AND vt MATCH ? AND b = ?
+} {
+  QUERY PLAN
+  |--SCAN vt VIRTUAL TABLE INDEX 0:M1
+  `--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?)
+}
+
 
 finish_test

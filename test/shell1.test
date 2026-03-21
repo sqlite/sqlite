@@ -54,7 +54,7 @@ do_test shell1-1.1.2 {
 # error on extra options
 do_test shell1-1.1.3 {
   catchcmd "test.db FOO test.db BAD" ".quit"
-} {/1 .Error: in prepare, near "FOO": syntax error*/}
+} {/1 .Parse error in 3rd command line argument: near "FOO": syntax error*/}
 
 # -help
 do_test shell1-1.2.1 {
@@ -79,7 +79,7 @@ do_test shell1-1.3.2 {
 } {0 {}}
 do_test shell1-1.3.3 {
   catchcmd "-init FOO test.db BAD .quit" ""
-} {/1 .Error: in prepare, near "BAD": syntax error*/}
+} {/1 .Parse error in 5th command line argument: near "BAD": syntax error*/}
 
 # -echo                print commands before execution
 do_test shell1-1.4.1 {
@@ -445,7 +445,8 @@ do_test shell1-3.12.2-legacy {
 do_test shell1-3.12.3 {
   # too many arguments
   catchcmd "test.db" ".indexes FOO BAD"
-} {1 {Usage: .indexes ?LIKE-PATTERN?}}
+} {1 {line 1: .indexes FOO BAD
+line 1:              ^--- unknown argument}}
 
 # .mode MODE ?TABLE?     Set output mode where MODE is one of:
 #                          ascii    Columns/rows delimited by 0x1F and 0x1E

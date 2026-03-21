@@ -68,6 +68,7 @@ gcc -c $WARNING_OPTS -std=c99 \
 echo '**** Optimized -O3.  Includes FTS4/5, GEOPOLY, JSON1 ******'
 echo '****' $WARNING_OPTS
 gcc -O3 -c $WARNING_OPTS -std=c99 \
+      -Wdeclaration-after-statement \
       -DHAVE_STDINT_H \
       -DSQLITE_ENABLE_FTS4 \
       -DSQLITE_ENABLE_FTS5 \
