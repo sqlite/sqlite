@@ -636,6 +636,7 @@ static int SQLITE_TCLAPI faultInstallCmd(
   if( argc!=1 && argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
                      " SCRIPT\"", (void*)0);
+    return SQLITE_ERROR;
   }
   zScript = argc==2 ? argv[1] : "";
   nScript = (int)strlen(zScript);

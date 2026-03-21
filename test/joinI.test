@@ -168,5 +168,48 @@ do_catchsql_test 6.8 {
   ) FROM t5;
 } {1 {ON clause references tables to its right}}
 
+#-------------------------------------------------------------------------
+# Forum post: https://sqlite.org/forum/forumpost/e3dba5426a
+#
+reset_db
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(d, e);
+  CREATE INDEX t2def ON t2(d, (e+1));
+  INSERT INTO t2 VALUES(1, 3);
+  INSERT INTO t2 VALUES(2, 555);
+  INSERT INTO t2 VALUES(3, 3);
+}
+do_execsql_test 7.1 {
+  SELECT * FROM t1 RIGHT JOIN t2 ON ( a=d ) WHERE (t2.e+1)!=4;
+} {{} 2 555}
+
+reset_db
+do_execsql_test 7.2 {
+  CREATE TABLE rt0(c0 INTEGER PRIMARY KEY, c1, c2);
+  CREATE TABLE t1 (c1 INTEGER, c2 BLOB, c4 INTEGER);
+  CREATE UNIQUE INDEX i81 ON t1(c1, c4, +c2);
+
+  INSERT INTO t1(c4) VALUES ('a');
+  INSERT INTO rt0(c1, c2) VALUES (0.0, 0.0);
+  INSERT INTO t1(c2, c1) VALUES (1, 'b');
+}
+do_execsql_test 7.2 {
+  SELECT count(*) FROM (
+      SELECT DISTINCT * FROM rt0 FULL JOIN t1 ON rt0.c0=t1.c1
+      WHERE ((rt0.c1 OR t1.c4)) IS NOT (+ t1.c2)
+  );
+} {1}
+do_execsql_test 7.3 {
+  SELECT count(*) FROM (
+      SELECT DISTINCT * FROM rt0 LEFT JOIN t1 ON rt0.c0=t1.c1
+      WHERE ((rt0.c1 OR t1.c4)) IS NOT (+ t1.c2)
+      UNION
+      SELECT DISTINCT * FROM rt0 RIGHT JOIN t1 ON rt0.c0=t1.c1
+      WHERE ((rt0.c1 OR t1.c4)) IS NOT (+ t1.c2)
+  );
+} {1}
+
 finish_test
 

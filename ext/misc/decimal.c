@@ -31,6 +31,10 @@ SQLITE_EXTENSION_INIT1
 #define IsSpace(X)  isspace((unsigned char)X)
 #endif
 
+#ifndef SQLITE_DECIMAL_MAX_DIGIT
+# define SQLITE_DECIMAL_MAX_DIGIT 10000000
+#endif
+
 /* A decimal object */
 typedef struct Decimal Decimal;
 struct Decimal {
@@ -69,6 +73,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
   int i;
   int iExp = 0;
 
+  if( zIn==0 ) goto new_from_text_failed;
   p = sqlite3_malloc( sizeof(*p) );
   if( p==0 ) goto new_from_text_failed;
   p->sign = 0;
@@ -128,9 +133,10 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
       }
     }
     if( iExp>0 ){   
-      p->a = sqlite3_realloc64(p->a, (sqlite3_int64)p->nDigit
+      signed char *a = sqlite3_realloc64(p->a, (sqlite3_int64)p->nDigit
                                      + (sqlite3_int64)iExp + 1 );
-      if( p->a==0 ) goto new_from_text_failed;
+      if( a==0 ) goto new_from_text_failed;
+      p->a = a;
       memset(p->a+p->nDigit, 0, iExp);
       p->nDigit += iExp;
     }
@@ -148,9 +154,10 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
       }
     }
     if( iExp>0 ){
-      p->a = sqlite3_realloc64(p->a, (sqlite3_int64)p->nDigit
+      signed char *a = sqlite3_realloc64(p->a, (sqlite3_int64)p->nDigit
                                      + (sqlite3_int64)iExp + 1 );
-      if( p->a==0 ) goto new_from_text_failed;
+      if( a==0 ) goto new_from_text_failed;
+      p->a = a;
       memmove(p->a+iExp, p->a, p->nDigit);
       memset(p->a, 0, iExp);
       p->nDigit += iExp;
@@ -161,6 +168,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
     for(i=0; i<p->nDigit && p->a[i]==0; i++){}
     if( i>=p->nDigit ) p->sign = 0;
   }
+  if( p->nDigit>SQLITE_DECIMAL_MAX_DIGIT ) goto new_from_text_failed;
   return p;
 
 new_from_text_failed:
@@ -298,6 +306,8 @@ static void decimal_round(Decimal *p, int N){
   int i;
   int nZero;
   if( N<1 ) return;
+  if( p==0 ) return;
+  if( p->nDigit<=N ) return;
   for(nZero=0; nZero<p->nDigit && p->a[nZero]==0; nZero++){}
   N += nZero;
   if( p->nDigit<=N ) return;
@@ -455,15 +465,18 @@ cmp_done:
 static void decimal_expand(Decimal *p, int nDigit, int nFrac){
   int nAddSig;
   int nAddFrac;
+  signed char *a;
   if( p==0 ) return;
   nAddFrac = nFrac - p->nFrac;
   nAddSig = (nDigit - p->nDigit) - nAddFrac;
   if( nAddFrac==0 && nAddSig==0 ) return;
-  p->a = sqlite3_realloc64(p->a, nDigit+1);
-  if( p->a==0 ){
+  if( nDigit+1>SQLITE_DECIMAL_MAX_DIGIT ){ p->oom = 1; return; }
+  a = sqlite3_realloc64(p->a, nDigit+1);
+  if( a==0 ){
     p->oom = 1;
     return;
   }
+  p->a = a;
   if( nAddSig ){
     memmove(p->a+nAddSig, p->a, p->nDigit);
     memset(p->a, 0, nAddSig);
@@ -558,14 +571,18 @@ static void decimalMul(Decimal *pA, Decimal *pB){
   signed char *acc = 0;
   int i, j, k;
   int minFrac;
+  sqlite3_int64 sumDigit;
 
   if( pA==0 || pA->oom || pA->isNull
    || pB==0 || pB->oom || pB->isNull 
   ){
     goto mul_end;
   }
-  acc = sqlite3_malloc64( (sqlite3_int64)pA->nDigit +
-                          (sqlite3_int64)pB->nDigit + 2 );
+  sumDigit = pA->nDigit;
+  sumDigit += pB->nDigit;
+  sumDigit += 2;
+  if( sumDigit>SQLITE_DECIMAL_MAX_DIGIT ){ pA->oom = 1; return; }
+  acc = sqlite3_malloc64( sumDigit );
   if( acc==0 ){
     pA->oom = 1;
     goto mul_end;

@@ -169,8 +169,18 @@ static struct GlobalVars {
 /*
 ** Include various extensions.
 */
-extern int sqlite3_vt02_init(sqlite3*,char**,const sqlite3_api_routines*);
-extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
+extern int sqlite3_vt02_init(sqlite3*,char**,void*);
+extern int sqlite3_randomjson_init(sqlite3*,char**,void*);
+extern int sqlite3_series_init(sqlite3*,char**,void*);
+extern int sqlite3_base64_init(sqlite3*,char**,void*);
+extern int sqlite3_base85_init(sqlite3*,char**,void*);
+extern int sqlite3_completion_init(sqlite3*,char**,void*);
+extern int sqlite3_decimal_init(sqlite3*,char**,void*);
+extern int sqlite3_ieee_init(sqlite3*,char**,void*);
+extern int sqlite3_regexp_init(sqlite3*,char**,void*);
+extern int sqlite3_shathree_init(sqlite3*,char**,void*);
+extern int sqlite3_sha_init(sqlite3*,char**,void*);
+extern int sqlite3_stmtrand_init(sqlite3*,char**,void*);
 
 /*
 ** Print an error message and quit.
@@ -1382,6 +1392,16 @@ int runCombinedDbSqlInput(
 
   /* Activate extensions */
   sqlite3_randomjson_init(cx.db, 0, 0);
+  sqlite3_series_init(cx.db, 0, 0);
+  sqlite3_base64_init(cx.db, 0, 0);
+  sqlite3_base85_init(cx.db, 0, 0);
+  sqlite3_completion_init(cx.db, 0, 0);
+  sqlite3_decimal_init(cx.db, 0, 0);
+  sqlite3_ieee_init(cx.db, 0, 0);
+  sqlite3_regexp_init(cx.db, 0, 0);
+  sqlite3_shathree_init(cx.db, 0, 0);
+  sqlite3_sha_init(cx.db, 0, 0);
+  sqlite3_stmtrand_init(cx.db, 0, 0);
 
   /* Add support for sqlite_dbdata and sqlite_dbptr virtual tables used
   ** by the recovery API */

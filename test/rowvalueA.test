@@ -96,6 +96,30 @@ do_execsql_test 3.3 {
   SELECT * FROM x2 CROSS JOIN x1 WHERE (1234, x2.y) > (x1.a, x1.b);
 } {1234 abc 1234 ABCD}
 
+#-------------------------------------------------------------------------
+# Test the fix for forum post https://sqlite.org/forum/forumpost/7a308e933d
+#
+do_execsql_test 4.0 {
+  CREATE TABLE t1 (a PRIMARY KEY, b COLLATE NOCASE) WITHOUT ROWID;
+  INSERT INTO t1 VALUES ('BBB', 'a');
+}
+do_execsql_test 4.1 {
+  SELECT * FROM t1 WHERE (t1.a, t1.b) <= ('BBB', 'CCC');
+} {BBB a}
+
+do_execsql_test 4.2 {
+  DROP TABLE t1;
+  CREATE TABLE t0 (c0);
+  INSERT INTO t0 VALUES ('True');
+
+  CREATE TABLE t1 (c0 COLLATE NOCASE, c1 PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t1 VALUES ('a', 1);
+  INSERT INTO t1 VALUES ('a', 'True');
+}
+
+do_execsql_test 4.3 {
+  SELECT * FROM t0, t1 WHERE (t1.c1, t1.c0) <= (t0.c0, t0.c0);
+} {True a 1 True a True}
 
 
 finish_test
