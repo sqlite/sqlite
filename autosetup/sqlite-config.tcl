@@ -1142,7 +1142,7 @@ proc sqlite-check-line-editing {} {
   # If none of --with-linenoise, --enable-readline, or --enable-editline
   # are provided, but there exists a directory "linenoise" at $HOME or
   # a sibling of the build or source directory, then try to use that linenoise
-  # direcctory.
+  # directory.
   #
   if {"" eq $dirLn
    && ![proj-opt-was-provided readline]

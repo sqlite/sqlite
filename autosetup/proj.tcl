@@ -125,7 +125,7 @@ proc proj-fatal {args} {
 #
 # @proj-error ?-up...? msg...
 #
-# Works like proj-fatal but uses [error] intead of [exit].
+# Works like proj-fatal but uses [error] instead of [exit].
 #
 proc proj-error {args} {
   tailcall proj__faterr 0 {*}$args

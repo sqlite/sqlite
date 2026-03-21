@@ -28,7 +28,7 @@ sqlite-configure canonical {
     define CFLAGS [get-env CFLAGS {-O0 -g}]
     # -------------^^^^^^^ intentionally using [get-env] instead of
     # [proj-get-env] here because [sqlite-setup-default-cflags] uses
-    # [proj-get-env] and we want this to supercede that.
+    # [proj-get-env] and we want this to supersede that.
     sqlite-munge-cflags; # straighten out -DSQLITE_ENABLE/OMIT flags
   }
   sqlite-handle-debug      ;# must come after --dev flag check

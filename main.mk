@@ -1119,7 +1119,7 @@ libsqlite3.out.implib ?=
 libsqlite3.LIB = libsqlite3$(T.lib)
 
 #
-# libsqlite3.DLL.install-rules => the suffix of the symoblic name of
+# libsqlite3.DLL.install-rules => the suffix of the symbolic name of
 # the makefile rules for installing the DLL. Must be one of
 # (unix-generic, msys, mingw, cygwin, darwin) and a target named
 # install-dll-THATNAME is responsible for DLL installation.

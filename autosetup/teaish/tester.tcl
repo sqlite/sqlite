@@ -46,7 +46,7 @@ proc test-current-scope {{lvl 0}} {
 
 # @test-msg
 #
-# Emits all arugments to stdout.
+# Emits all arguments to stdout.
 #
 proc test-msg {args} {
   puts "$args"
@@ -54,7 +54,7 @@ proc test-msg {args} {
 
 # @test-warn
 #
-# Emits all arugments to stderr.
+# Emits all arguments to stderr.
 #
 proc test-warn {args} {
   puts stderr "WARNING: $args"
