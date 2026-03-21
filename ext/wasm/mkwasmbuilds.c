@@ -246,7 +246,7 @@ const BuildDefs oBuildDefs = {
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_ALL | F_64BIT
+    .flags       = CP_ALL | F_64BIT | F_NOT_IN_ALL
   },
 
   /* The canonical esm build. */
@@ -274,7 +274,7 @@ const BuildDefs oBuildDefs = {
     .zEnv        = 0,
     .zDeps       = 0,
     .zIfCond     = 0,
-    .flags       = CP_JS | F_ESM | F_64BIT
+    .flags       = CP_JS | F_ESM | F_64BIT | F_NOT_IN_ALL
   },
 
  /* speedtest1, our primary benchmarking tool */
@@ -747,6 +747,12 @@ static void emit_api_js(char const *zBuildName){
      zBuildName, zBuildName, zBuildName);
   pf("$(out.%s.js): $(sqlite3-api.%s.js)\n",
      zBuildName, zBuildName);
+  pf("$(sqlite3-api.%s.js):"
+     /* Extra deps needed by the OPFS pieces... */
+     " $(dir.api)/opfs-common-shared.c-pp.js"
+     " $(dir.api)/opfs-common-inline.c-pp.js"
+     "\n",
+     zBuildName);
 }
 
 /*
@@ -994,7 +1000,8 @@ static void mk_fiddle(void){
       pf("$(out.%s.js): $(MAKEFILE_LIST) "
          "$(EXPORTED_FUNCTIONS.fiddle) "
          "$(fiddle.c.in) "
-         "$(pre-post.%s.deps)",
+         "$(pre-post.%s.deps) "
+         "$(dir.dout)/sqlite3-opfs-async-proxy.js",
          zBuildName, zBuildName);
       if( isDebug ){
         pf(" $(dir.fiddle)/fiddle-worker.js"
@@ -1014,10 +1021,6 @@ static void mk_fiddle(void){
       pf("\t@$(call b.call.wasm-strip,%s)\n", zBuildName);
       pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n",
          zBuildName);
-      pf("\t@$(call b.cp,"
-         "%s,"
-         "$(dir.api)/sqlite3-opfs-async-proxy.js,"
-         "$(dir $@))\n", zBuildName);
       if( isDebug ){
         pf("\t@$(call b.cp,%s,"
            "$(dir.fiddle)/index.html "

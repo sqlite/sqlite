@@ -566,12 +566,14 @@ WASM_CUSTOM_INSTANTIATE = 1
 # -D... flags which should be included in all invocations should be
 # appended to $(b.c-pp.target.flags).
 #
-bin.c-pp = ./c-pp-lite
-$(bin.c-pp): c-pp-lite.c $(sqlite3.c) $(MAKEFILE)
-	$(CC) -O0 -o $@ c-pp-lite.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
+bin.c-pp = ./c-pp
+$(bin.c-pp): libcmpp.c $(sqlite3.c) $(MAKEFILE)
+	$(CC) -O0 -o $@ libcmpp.c $(dir.top)/sqlite3.c -I$(dir.top) \
 		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
 		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
-		-DSQLITE_TEMP_STORE=3
+		-DSQLITE_TEMP_STORE=3 \
+		'-DCMPP_DEFAULT_DELIM="//#"' -DCMPP_MAIN -DCMPP_OMIT_D_MODULE \
+		-DCMPP_OMIT_D_PIPE
 DISTCLEAN_FILES += $(bin.c-pp)
 b.c-pp.target.flags ?=
 ifeq (1,$(SQLITE_C_IS_SEE))
@@ -911,8 +913,10 @@ ifeq (0,$(wasm-bare-bones))
   sqlite3-api.jses += $(dir.api)/sqlite3-vtab-helper.c-pp.js
 endif
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-kvvfs.c-pp.js
+sqlite3-api.jses += $(dir.api)/opfs-common-shared.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-wl.c-pp.js
 
 # Parallel builds can fail if $(sqlite3-license-version.js) is not
 # created early enough, so make all files in $(sqlite-api.jses) except
@@ -1182,13 +1186,13 @@ all: demos
 #######################################################################
 
 #
-# "SOAP" is a static file which is not part of the amalgamation but
-# gets copied into the build output folder and into each of the fiddle
-# builds.
+# "SOAP" is not part of the amalgamation but gets copied into the
+# build output folder and into each of the fiddle builds.
 #
 sqlite3.ext.js += $(dir.dout)/sqlite3-opfs-async-proxy.js
-$(dir.dout)/sqlite3-opfs-async-proxy.js: $(dir.api)/sqlite3-opfs-async-proxy.js
-	@$(call b.cp,@,$<,$@)
+$(eval $(call b.c-pp.target,soap,\
+  $(dir.api)/sqlite3-opfs-async-proxy.c-pp.js,\
+  $(dir.dout)/sqlite3-opfs-async-proxy.js))
 
 #
 # Add a dep of $(sqlite3.ext.js) on every individual build's JS file.

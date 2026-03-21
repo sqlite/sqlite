@@ -84,11 +84,12 @@ static int checkMutexNotheld(sqlite3_mutex *p){
 */
 static int checkMutexInit(void){ 
   pGlobalMutexMethods = sqlite3DefaultMutex();
-  return SQLITE_OK; 
+  return pGlobalMutexMethods->xMutexInit(); 
 }
 static int checkMutexEnd(void){ 
+  int rc = pGlobalMutexMethods->xMutexEnd(); 
   pGlobalMutexMethods = 0;
-  return SQLITE_OK; 
+  return rc;
 }
 
 /*

@@ -1720,6 +1720,7 @@ FUZZERSHELL_COMPILE_OPTS =
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -I$(TOP)\test -I$(TOP)\ext\recover
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_MEMSYS5
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_OSS_FUZZ
+FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_DECIMAL_MAX_DIGIT=1000
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_BYTECODE_VTAB
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_CARRAY
 FUZZCHECK_OPTS = $(FUZZCHECK_OPTS) -DSQLITE_ENABLE_DBPAGE_VTAB
@@ -1766,7 +1767,17 @@ FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\fuzzinvariants.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\test\vt02.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\dbdata.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\recover\sqlite3recover.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\base64.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\base85.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\completion.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\decimal.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\ieee754.c
 FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\randomjson.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\regexp.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\series.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\shathree.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\sha1.c
+FUZZCHECK_SRC = $(FUZZCHECK_SRC) $(TOP)\ext\misc\stmtrand.c
 
 OSSSHELL_SRC = $(TOP)\test\ossshell.c $(TOP)\test\ossfuzz.c
 DBFUZZ_COMPILE_OPTS = -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
@@ -2541,43 +2552,19 @@ coretestprogs:	testfixture.exe sqlite3.exe
 
 testprogs:	$(TESTPROGS) srcck1.exe fuzzcheck.exe sessionfuzz.exe
 
-fulltest:	alltest fuzztest
-
-alltest:	$(TESTPROGS)
-	@set PATH=$(LIBTCLPATH);$(PATH)
-	.\testfixture.exe $(TOP)\test\all.test $(TESTOPTS)
-
-soaktest:	$(TESTPROGS)
-	@set PATH=$(LIBTCLPATH);$(PATH)
-	.\testfixture.exe $(TOP)\test\all.test -soak=1 $(TESTOPTS)
-
-fulltestonly:	$(TESTPROGS) fuzztest
-	@set PATH=$(LIBTCLPATH);$(PATH)
-	.\testfixture.exe $(TOP)\test\full.test
-
-queryplantest:	testfixture.exe shell
-	@set PATH=$(LIBTCLPATH);$(PATH)
-	.\testfixture.exe $(TOP)\test\permutations.test queryplanner $(TESTOPTS)
-
 fuzztest:	fuzzcheck.exe
 	.\fuzzcheck.exe $(FUZZDATA)
 
-# Legacy testing target for third-party integrators.  The SQLite
-# developers seldom use this target themselves.  Instead
-# they use "nmake /f Makefile.msc devtest" which runs tests on
-# a standard set of options
 #
-test:	$(TESTPROGS) sourcetest fuzztest tcltest
-
-# Minimal testing that runs in less than 3 minutes (on a fast machine)
+# Legacy testing targets, no longer used by the developers and
+# now aliased to one of the commonly used testing targets.
 #
-quicktest:	testfixture.exe sourcetest
-	@set PATH=$(LIBTCLPATH);$(PATH)
-	.\testfixture.exe $(TOP)\test\extraquick.test $(TESTOPTS)
-
-# This is the common case.  Run many tests that do not take too long,
-# including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
-#
+quicktest:	devtest
+test:	devtest
+fulltest:	releasetest
+alltest:	releasetest
+soaktest:	releasetest
+fulltestonly:	releasetest
 
 # The veryquick.test TCL tests.
 #
