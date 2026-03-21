@@ -14,7 +14,7 @@
 */
 //#if target:es6-module
 const toExportForESM =
-//#endif
+//#/if
 (function(){
   //console.warn("this is extern-post-js");
   /**
@@ -97,7 +97,7 @@ const toExportForESM =
         //console.warn("sqlite3InitModule() returning E-module.",EmscriptenModule);
         return EmscriptenModule;
       }
-//#endif
+//#/if
       return s;
     }).catch((e)=>{
       console.error("Exception loading sqlite3 module:",e);
@@ -128,10 +128,10 @@ const toExportForESM =
   }
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
-//#endif // !target:es6-module
+//#/if // !target:es6-module
   return sIM;
 })();
 //#if target:es6-module
 sqlite3InitModule = toExportForESM;
 export default sqlite3InitModule;
-//#endif
+//#/if

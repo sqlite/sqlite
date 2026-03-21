@@ -815,7 +815,7 @@ char *sqlite3Normalize(
           sqlite3_str_append(pStr, " NULL", 5);
           break;
         }
-        /* Fall through */
+        /* no break */ deliberate_fall_through
       }
       case TK_STRING:
       case TK_INTEGER:
@@ -879,7 +879,7 @@ char *sqlite3Normalize(
       }
       case TK_SELECT: {
         iStartIN = 0;
-        /* fall through */
+        /* no break */ deliberate_fall_through
       }
       default: {
         if( sqlite3IsIdChar(zSql[i]) ) addSpaceSeparator(pStr);

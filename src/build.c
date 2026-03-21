@@ -2494,9 +2494,10 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     if( !hasColumn(pPk->aiColumn, j, i)
      && (pTab->aCol[i].colFlags & COLFLAG_VIRTUAL)==0
     ){
+      const char *zColl = sqlite3ColumnColl(&pTab->aCol[i]);
       assert( j<pPk->nColumn );
       pPk->aiColumn[j] = i;
-      pPk->azColl[j] = sqlite3StrBINARY;
+      pPk->azColl[j] = zColl ? zColl : sqlite3StrBINARY;
       j++;
     }
   }
@@ -5522,8 +5523,7 @@ void sqlite3RowidConstraint(
 }
 
 /*
-** Check to see if pIndex uses the collating sequence pColl.  Return
-** true if it does and false if it does not.
+** Return true if any column of pIndex uses the zColl collation
 */
 #ifndef SQLITE_OMIT_REINDEX
 static int collationMatch(const char *zColl, Index *pIndex){
@@ -5531,8 +5531,8 @@ static int collationMatch(const char *zColl, Index *pIndex){
   assert( zColl!=0 );
   for(i=0; i<pIndex->nColumn; i++){
     const char *z = pIndex->azColl[i];
-    assert( z!=0 || pIndex->aiColumn[i]<0 );
-    if( pIndex->aiColumn[i]>=0 && 0==sqlite3StrICmp(z, zColl) ){
+    assert( z!=0 );
+    if( 0==sqlite3StrICmp(z, zColl) ){
       return 1;
     }
   }
@@ -5541,72 +5541,39 @@ static int collationMatch(const char *zColl, Index *pIndex){
 #endif
 
 /*
-** Recompute all indices of pTab that use the collating sequence pColl.
-** If pColl==0 then recompute all indices of pTab.
-*/
-#ifndef SQLITE_OMIT_REINDEX
-static void reindexTable(Parse *pParse, Table *pTab, char const *zColl){
-  if( !IsVirtual(pTab) ){
-    Index *pIndex;              /* An index associated with pTab */
-
-    for(pIndex=pTab->pIndex; pIndex; pIndex=pIndex->pNext){
-      if( zColl==0 || collationMatch(zColl, pIndex) ){
-        int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
-        sqlite3BeginWriteOperation(pParse, 0, iDb);
-        sqlite3RefillIndex(pParse, pIndex, -1);
-      }
-    }
-  }
-}
-#endif
-
-/*
-** Recompute all indices of all tables in all databases where the
-** indices use the collating sequence pColl.  If pColl==0 then recompute
-** all indices everywhere.
-*/
-#ifndef SQLITE_OMIT_REINDEX
-static void reindexDatabases(Parse *pParse, char const *zColl){
-  Db *pDb;                    /* A single database */
-  int iDb;                    /* The database index number */
-  sqlite3 *db = pParse->db;   /* The database connection */
-  HashElem *k;                /* For looping over tables in pDb */
-  Table *pTab;                /* A table in the database */
-
-  assert( sqlite3BtreeHoldsAllMutexes(db) );  /* Needed for schema access */
-  for(iDb=0, pDb=db->aDb; iDb<db->nDb; iDb++, pDb++){
-    assert( pDb!=0 );
-    for(k=sqliteHashFirst(&pDb->pSchema->tblHash);  k; k=sqliteHashNext(k)){
-      pTab = (Table*)sqliteHashData(k);
-      reindexTable(pParse, pTab, zColl);
-    }
-  }
-}
-#endif
-
-/*
 ** Generate code for the REINDEX command.
 **
 **        REINDEX                            -- 1
 **        REINDEX  <collation>               -- 2
-**        REINDEX  ?<database>.?<tablename>  -- 3
-**        REINDEX  ?<database>.?<indexname>  -- 4
+**        REINDEX  ?<database>.?<indexname>  -- 3
+**        REINDEX  ?<database>.?<tablename>  -- 4
+**        REINDEX  EXPRESSIONS               -- 5
 **
-** Form 1 causes all indices in all attached databases to be rebuilt.
-** Form 2 rebuilds all indices in all databases that use the named
+** Form 1 causes all indexes in all attached databases to be rebuilt.
+** Form 2 rebuilds all indexes in all databases that use the named
 ** collating function.  Forms 3 and 4 rebuild the named index or all
-** indices associated with the named table.
+** indexes associated with the named table, respectively.  Form 5
+** rebuilds all expression indexes in addition to all collations,
+** indexes, or tables named "EXPRESSIONS".
+**
+** If the name is ambiguous such that it matches two or more of
+** forms 2 through 5, then rebuild the union of all matching indexes,
+** taken care to avoid rebuilding the same index more than once.
 */
 #ifndef SQLITE_OMIT_REINDEX
 void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   CollSeq *pColl;             /* Collating sequence to be reindexed, or NULL */
-  char *z;                    /* Name of a table or index */
-  const char *zDb;            /* Name of the database */
-  Table *pTab;                /* A table in the database */
-  Index *pIndex;              /* An index associated with pTab */
-  int iDb;                    /* The database index number */
+  char *z = 0;                /* Name of a table or index or collation */
+  const char *zDb = 0;        /* Name of the database */
+  int iReDb = -1;             /* The database index number */
   sqlite3 *db = pParse->db;   /* The database connection */
   Token *pObjName;            /* Name of the table or index to be reindexed */
+  int bMatch = 0;             /* At least one name match */
+  const char *zColl = 0;      /* Rebuild indexes using this collation */
+  Table *pReTab = 0;          /* Rebuild all indexes of this table */
+  Index *pReIndex = 0;        /* Rebuild this index */
+  int isExprIdx = 0;          /* Rebuild all expression indexes */
+  int bAll = 0;               /* Rebuild all indexes */
 
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
@@ -5615,41 +5582,66 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
   }
 
   if( pName1==0 ){
-    reindexDatabases(pParse, 0);
-    return;
+    /* rebuild all indexes */
+    bMatch = 1;
+    bAll = 1;
   }else if( NEVER(pName2==0) || pName2->z==0 ){
-    char *zColl;
     assert( pName1->z );
-    zColl = sqlite3NameFromToken(pParse->db, pName1);
-    if( !zColl ) return;
-    pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
-    if( pColl ){
-      reindexDatabases(pParse, zColl);
-      sqlite3DbFree(db, zColl);
-      return;
+    z = sqlite3NameFromToken(pParse->db, pName1);
+    if( z==0 ) return;
+  }else{
+    iReDb = sqlite3TwoPartName(pParse, pName1, pName2, &pObjName);
+    if( iReDb<0 ) return;
+    z = sqlite3NameFromToken(db, pObjName);
+    if( z==0 ) return;
+    zDb = db->aDb[iReDb].zDbSName;
+  }
+  if( !bAll ){
+    if( zDb==0 && sqlite3StrICmp(z, "expressions")==0 ){
+      isExprIdx = 1;
+      bMatch = 1;
     }
-    sqlite3DbFree(db, zColl);
+    if( zDb==0 && (pColl = sqlite3FindCollSeq(db, ENC(db), z, 0))!=0 ){
+      zColl = z;
+      bMatch = 1;
+    }
+    if( zColl==0 && (pReTab = sqlite3FindTable(db, z, zDb))!=0 ){
+      bMatch = 1; 
+    }
+    if( zColl==0 && (pReIndex = sqlite3FindIndex(db, z, zDb))!=0 ){
+      bMatch = 1;
+    }
   }
-  iDb = sqlite3TwoPartName(pParse, pName1, pName2, &pObjName);
-  if( iDb<0 ) return;
-  z = sqlite3NameFromToken(db, pObjName);
-  if( z==0 ) return;
-  zDb = pName2->n ? db->aDb[iDb].zDbSName : 0;
-  pTab = sqlite3FindTable(db, z, zDb);
-  if( pTab ){
-    reindexTable(pParse, pTab, 0);
-    sqlite3DbFree(db, z);
-    return;
+  if( bMatch ){
+    int iDb;
+    HashElem *k;
+    Table *pTab;
+    Index *pIdx;
+    Db *pDb;
+    for(iDb=0, pDb=db->aDb; iDb<db->nDb; iDb++, pDb++){
+      assert( pDb!=0 );
+      if( iReDb>=0 && iReDb!=iDb ) continue;
+      for(k=sqliteHashFirst(&pDb->pSchema->tblHash); k; k=sqliteHashNext(k)){
+        pTab = (Table*)sqliteHashData(k);
+        if( IsVirtual(pTab) ) continue;
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          if( bAll
+           || pTab==pReTab
+           || pIdx==pReIndex
+           || (isExprIdx && pIdx->bHasExpr)
+           || (zColl!=0 && collationMatch(zColl,pIdx))
+          ){
+            sqlite3BeginWriteOperation(pParse, 0, iDb);
+            sqlite3RefillIndex(pParse, pIdx, -1);
+          }
+        } /* End loop over indexes of pTab */
+      } /* End loop over tables of iDb */
+    } /* End loop over databases */
+  }else{
+    sqlite3ErrorMsg(pParse, "unable to identify the object to be reindexed");
   }
-  pIndex = sqlite3FindIndex(db, z, zDb);
   sqlite3DbFree(db, z);
-  if( pIndex ){
-    iDb = sqlite3SchemaToIndex(db, pIndex->pTable->pSchema);
-    sqlite3BeginWriteOperation(pParse, 0, iDb);
-    sqlite3RefillIndex(pParse, pIndex, -1);
-    return;
-  }
-  sqlite3ErrorMsg(pParse, "unable to identify the object to be reindexed");
+  return;
 }
 #endif
 
