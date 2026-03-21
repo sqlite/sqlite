@@ -1575,7 +1575,7 @@ static void modeFree(Mode *p){
   free(p->spec.zTableName);
   free(p->spec.zNull);
   memset(p, 0, sizeof(*p));
-  p->spec.iVersion = 2;
+  p->spec.iVersion = 1;
   p->autoExplain = autoExplain;
 }
 
@@ -1691,7 +1691,7 @@ static void modeChange(ShellState *p, unsigned char eMode){
 ** already been freed and zeroed prior to calling this routine.
 */
 static void modeDefault(ShellState *p){
-  p->mode.spec.iVersion = 2;
+  p->mode.spec.iVersion = 1;
   p->mode.autoExplain = 1;
   if( stdin_is_interactive || stdout_is_console ){
     modeChange(p, MODE_TTY);
