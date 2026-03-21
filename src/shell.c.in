@@ -96,6 +96,7 @@ typedef unsigned short int u16;
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include "sqlite3.h"
 typedef sqlite3_int64 i64;
 typedef sqlite3_uint64 u64;
@@ -3242,10 +3243,12 @@ static int shell_exec(
   memcpy(&spec, &pArg->mode.spec, sizeof(spec));
   spec.xWrite = shellWriteQR;
   spec.pWriteArg = (void*)pArg;
-  if( pArg->mode.eMode==MODE_Insert && ShellHasFlag(pArg, SHFLG_PreserveRowid) ){
+  if( pArg->mode.eMode==MODE_Insert && ShellHasFlag(pArg,SHFLG_PreserveRowid) ){
     spec.bTitles = QRF_SW_On;
   }
-  assert( pArg->mode.eMode>=0 && pArg->mode.eMode<ArraySize(aModeInfo) );
+         /*                        ,- This is true, but it is omitted
+         ** vvvvvvvvvvvvvvvvvvv ----- to avoid compiler warnings.         */
+  assert( /*pArg->mode.eMode>=0 &&*/ pArg->mode.eMode<ArraySize(aModeInfo) );
   eStyle = aModeInfo[pArg->mode.eMode].eStyle;
   if( pArg->mode.bAutoScreenWidth ){
     spec.nScreenWidth = shellScreenWidth();
@@ -7872,9 +7875,9 @@ static int modeTitleDsply(ShellState *p, int bAll){
   /* Variable "v" is the truth table that will determine the answer
   **
   **                   Actual encoding is different from default 
-  **                   vvvvvvvv                                 */
-  sqlite3_uint64 v = 0x0133013311220102;
-  /*                   ^^^^    ^^^^
+  **                            vvvvvvvv                                    */
+  sqlite3_uint64 v = UINT64_C(0x0133013311220102);
+  /*                            ^^^^    ^^^^
   **                   Upper 2-byte groups for when ON/OFF disagrees with
   **                   the default.                                         */
 
