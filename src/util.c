@@ -882,18 +882,13 @@ int sqlite3AtoF(const char *z, double *pResult){
     seenFP = 1;
     if( sqlite3Isdigit(z[0]) ){
       seenDigit = 1;
-      if( s<((LARGEST_INT64-9)/10) ){
-        s = s*10 + z[0] - '0';
-        d = -1;
-      }
-      z++;
-      while( sqlite3Isdigit(z[0]) ){
+      do{
         if( s<((LARGEST_INT64-9)/10) ){
-          s = s*10 + (*z - '0');
+          s = s*10 + z[0] - '0';
           d--;
         }
         z++;
-      }
+      }while( sqlite3Isdigit(z[0]) );
     }
   }
 
