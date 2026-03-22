@@ -842,99 +842,112 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 #endif
 int sqlite3AtoF(const char *z, double *pResult){
 #ifndef SQLITE_OMIT_FLOATING_POINT
-  /* sign * significand * (10 ^ (esign * exponent)) */
-  int neg = 0;     /* True for a negative value */
-  u64 s = 0;       /* mantissa */
-  int d = 0;       /* Value is s * pow(10,d) */
-  int nDigit = 0;  /* Number of digits processed */
-  int eType = 1;   /* 1: pure integer,  2+: fractional */
+  int neg = 0;       /* True for a negative value */
+  u64 s = 0;         /* mantissa */
+  int d = 0;         /* Value is s * pow(10,d) */
+  int seenDigit = 0; /* true if any digits seen */
+  int seenFP = 0;    /* True if we've seen a "." or a "e" */
 
-  *pResult = 0.0;   /* Default return value, in case of an error */
-
-  /* skip leading spaces */
-  while( sqlite3Isspace(*z) ) z++;
-
-  /* get sign of significand */
-  if( *z=='-' ){
+  start_of_text:
+  if( sqlite3Isdigit(z[0]) ){
+    parse_integer_part:
+    seenDigit = 1;
+    s = z[0] - '0';
+    z++;
+    while( sqlite3Isdigit(z[0]) ){
+      s = s*10 + (z[0] - '0');
+      z++;
+      if( s>=(LARGEST_INT64-9)/10 ){
+        while( sqlite3Isdigit(z[0]) ){ z++; d++; }
+        break;
+      }
+    }
+  }else if( z[0]=='-' ){
     neg = 1;
     z++;
-  }else if( *z=='+' ){
+    if( sqlite3Isdigit(z[0]) ) goto parse_integer_part;
+  }else if( z[0]=='+' ){
     z++;
-  }
-
-  /* copy max significant digits to significand */
-  while( sqlite3Isdigit(*z) ){
-    s = s*10 + (*z - '0');
-    z++; nDigit++;
-    if( s>=((LARGEST_INT64-9)/10) ){
-      /* skip non-significant significand digits
-      ** (increase exponent by d to shift decimal left) */
-      while( sqlite3Isdigit(*z) ){ z++; d++; }
-    }
+    if( sqlite3Isdigit(z[0]) ) goto parse_integer_part;
+  }else if( sqlite3Isspace(z[0]) ){
+    do{ z++; }while( sqlite3Isspace(z[0]) );
+    goto start_of_text;
+  }else{
+    s = 0;
   }
 
   /* if decimal point is present */
   if( *z=='.' ){
     z++;
-    eType++;
-    /* copy digits from after decimal to significand
-    ** (decrease exponent by d to shift decimal right) */
-    while( sqlite3Isdigit(*z) ){
+    seenFP = 1;
+    if( sqlite3Isdigit(z[0]) ){
+      seenDigit = 1;
       if( s<((LARGEST_INT64-9)/10) ){
-        s = s*10 + (*z - '0');
-        d--;
-        nDigit++;
+        s = s*10 + z[0] - '0';
+        d = -1;
       }
       z++;
+      while( sqlite3Isdigit(z[0]) ){
+        if( s<((LARGEST_INT64-9)/10) ){
+          s = s*10 + (*z - '0');
+          d--;
+        }
+        z++;
+      }
     }
+  }
+
+  if( !seenDigit ){
+    *pResult = 0.0;
+    return 0;
   }
 
   /* if exponent is present */
   if( *z=='e' || *z=='E' ){
-    int esign = 1;   /* sign of exponent */
+    int esign;
     z++;
-    eType++;
-
+ 
     /* get sign of exponent */
     if( *z=='-' ){
       esign = -1;
       z++;
-    }else if( *z=='+' ){
-      z++;
+    }else{
+      esign = +1;
+      if( *z=='+' ){
+        z++;
+      }
     }
     /* copy digits to exponent */
     if( sqlite3Isdigit(*z) ){
       int exp = *z - '0';
       z++;
+      seenFP = 1;
       while( sqlite3Isdigit(*z) ){
         exp = exp<10000 ? (exp*10 + (*z - '0')) : 10000;
         z++;
       }
       d += esign*exp;
     }else{
-      eType = -1;
+      z--;  /* Leave z[0] at 'e' or '+' or '-',
+            ** so that the return is 0 or -1 */
     }
   }
 
   /* skip trailing spaces */
   while( sqlite3Isspace(*z) ) z++;
 
-  /* Zero is a special case */
-  if( s==0 ){
-    *pResult = neg ? -0.0 : +0.0;
-  }else{
-    *pResult = sqlite3Fp10Convert2(s,d);
-    if( neg ) *pResult = -*pResult;
-    assert( !sqlite3IsNaN(*pResult) );
-  }
+  /* Convert s*pow(10,d) into real */
+  *pResult = s ? sqlite3Fp10Convert2(s,d) : 0.0;
+  if( neg ) *pResult = -*pResult;
+  assert( !sqlite3IsNaN(*pResult) );
 
   /* return true if number and no extra non-whitespace characters after */
-  if( z[0]==0 && nDigit>0 ){
-    return eType;
-  }else if( eType>=2 && nDigit>0 ){
-    return -1;
+  if( z[0]==0 ){
+    return seenFP+1;
+  }else if( seenFP ){
+    return -1;   /* Prefix is a floating point number */
   }else{
-    return 0;
+    return 0;    /* Prefix is just an integer */
   }
 #else
   return !sqlite3Atoi64(z, pResult, strlen(z), SQLITE_UTF8);
