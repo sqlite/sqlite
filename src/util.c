@@ -963,9 +963,14 @@ int sqlite3AtoF(const char *zIn, double *pResult){
   return !sqlite3Atoi64(z, pResult, strlen(z), SQLITE_UTF8);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
-#if defined(_MSC_VER)
-#pragma warning(default : 4756)
-#endif
+
+/*
+** Access to sqlite3AtoF()
+*/
+double sqlite3_atof(const char *z){
+  double r;
+  return sqlite3AtoF(z,&r)>0 ? r : 0.0;
+}
 
 /*
 ** Digit pairs used to convert a U64 or I64 into text, two digits
