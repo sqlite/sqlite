@@ -1,5 +1,5 @@
-C Use\ssqlite3_atof()\sinstead\sof\satof()\sin\sthe\sCLI.\s\sDogfooding.
-D 2026-03-23T13:00:56.709
+C Require\sa\sbutton\sclick\sto\sstart\sthe\sOPFS\sconcurrency\stester,\srather\sthan\ssimply\slaunching\sall\sN\sworkers\simmediately\son\spage\sload.
+D 2026-03-23T13:17:13.272
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -646,8 +646,8 @@ F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f80
 F ext/wasm/tester1-worker.c-pp.html 7171022e7f4da8f46e5f50ea81dd6ce840b9235c47653a5deeb3764ccc2fe472
 F ext/wasm/tester1.c-pp.html bd927ccf51ddd65e924660a0487add99e1b044afe03950e49d87ccf44efdddb6
 F ext/wasm/tester1.c-pp.js 581be6f3228351bc77512ba743912d1ad52f40dde1fef1a943fd568b0cfc51b1
-F ext/wasm/tests/opfs/concurrency/index.html c8ac239f6fb45440adbdddb33a0fde2c61a20799189d60b8926be702a27dd226
-F ext/wasm/tests/opfs/concurrency/test.js 46c772bc18abb0fcbb058d57b5aaee9e7938f948ecdd802c6ca0850ad3519f92
+F ext/wasm/tests/opfs/concurrency/index.html 706eab6308343c04ac2360aba6001af4ffaf46d8f33a0ccd02c64d93e3216a43
+F ext/wasm/tests/opfs/concurrency/test.js 6919778fceaac1b7cc78caf41d796f545d2c4433b31188aa9689f05b5ad28828
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
 F ext/wasm/tests/opfs/sahpool/digest-worker.js b0ab6218588f1f0a6d15a363b493ceaf29bfb87804d9e0165915a9996377cf79
 F ext/wasm/tests/opfs/sahpool/digest.html 206d08a34dc8bd570b2581d3d9ab3ecad3201b516a598dd096dcf3cf8cd81df8
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1553a60506fa29b5f00535ae0f7aeb8cc94ebe84015386b3248fd8491108fc60
-R c34e2f8b898cd5e3781f1359e92b7f32
-U drh
-Z 6ec9a012cca6d40f0f465835c10b3fb3
+P 276c350313a1ac2ebc70c1e8e50ed4baecd4be4d4c93ba04cf5e0078da18700e
+R d8845e730ad8ece5c023a65e81ce4e5a
+U stephan
+Z b977c4ea22736a6a2da0f6286818f4bb
 # Remove this line to create a well-formed Fossil manifest.
