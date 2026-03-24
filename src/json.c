@@ -2898,7 +2898,8 @@ static int jsonLabelCompare(
 #define JSON_LOOKUP_ERROR      0xffffffff
 #define JSON_LOOKUP_NOTFOUND   0xfffffffe
 #define JSON_LOOKUP_NOTARRAY   0xfffffffd
-#define JSON_LOOKUP_PATHERROR  0xfffffffc
+#define JSON_LOOKUP_TOODEEP    0xfffffffc
+#define JSON_LOOKUP_PATHERROR  0xfffffffb
 #define JSON_LOOKUP_ISERROR(x) ((x)>=JSON_LOOKUP_PATHERROR)
 
 /* Forward declaration */
@@ -2945,7 +2946,12 @@ static u32 jsonCreateEditSubstructure(
     pIns->eEdit = pParse->eEdit;
     pIns->nIns = pParse->nIns;
     pIns->aIns = pParse->aIns;
+    pIns->iDepth = pParse->iDepth+1;
+    if( pIns->iDepth >= JSON_MAX_DEPTH ){
+      return JSON_LOOKUP_TOODEEP;
+    }
     rc = jsonLookupStep(pIns, 0, zTail, 0);
+    pParse->iDepth--;
     pParse->oom |= pIns->oom;
   }
   return rc;  /* Error code only */
@@ -3051,7 +3057,11 @@ static u32 jsonLookupStep(
         n = jsonbPayloadSize(pParse, v, &sz);
         if( n==0 || v+n+sz>iEnd ) return JSON_LOOKUP_ERROR;
         assert( j>0 );
+        if( ++pParse->iDepth >= JSON_MAX_DEPTH ){
+          return JSON_LOOKUP_TOODEEP;
+        }
         rc = jsonLookupStep(pParse, v, &zPath[i], j);
+        pParse->iDepth--;
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
         return rc;
       }
@@ -3137,7 +3147,11 @@ static u32 jsonLookupStep(
     iEnd = j+sz;
     while( j<iEnd ){
       if( kk==0 ){
+        if( ++pParse->iDepth >= JSON_MAX_DEPTH ){
+          return JSON_LOOKUP_TOODEEP;
+        }
         rc = jsonLookupStep(pParse, j, &zPath[i+1], 0);
+        pParse->iDepth--;
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
         return rc;
       }
@@ -3473,9 +3487,10 @@ static int jsonFunctionArgToBlob(
 **
 ** The specifics of the error are determined by the rc argument.
 **
-**          rc                   error
-**  -----------------       ----------------
+**          rc                        error
+**  -----------------       ----------------------
 **  JSON_LOOKUP_ARRAY       "not an array"
+**  JSON_LOOKUP_TOODEEP     "JSON nested too deep"
 **  JSON_LOOKUP_ERROR       "malformed JSON"
 **  otherwise...            "bad JSON path"
 **
@@ -3492,6 +3507,8 @@ static char *jsonBadPathError(
     zMsg = sqlite3_mprintf("not an array element: %Q", zPath);
   }else if( rc==(int)JSON_LOOKUP_ERROR ){
     zMsg = sqlite3_mprintf("malformed JSON");
+  }else if( rc==(int)JSON_LOOKUP_TOODEEP ){
+    zMsg = sqlite3_mprintf("JSON path too deep");
   }else{
     zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
   }
@@ -3554,6 +3571,7 @@ static void jsonInsertIntoBlob(
       p->nIns = ax.nBlob;
       p->aIns = ax.aBlob;
       p->delta = 0;
+      p->iDepth = 0;
       rc = jsonLookupStep(p, 0, zPath+1, 0);
     }
     jsonParseReset(&ax);
