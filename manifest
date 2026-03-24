@@ -1,5 +1,5 @@
-C Minor\ssimplification\sto\sJSON\spath\serror\sreporting.
-D 2026-03-24T11:25:44.474
+C Remove\sa\sstale\sreference\sto\sthe\slong-removed\sSQLITE_MUTEX_APPDEF,\sas\spointed\sout\sin\s[forum:348453389b|forum\spost\s348453389b].
+D 2026-03-24T11:33:22.229
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -735,7 +735,7 @@ F src/resolve.c f0834917f2b1719d545a0d7eaad693283788f68ecd99871a81c7ff3b12b26209
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c ffe199f025a0dd74670d2a77232bdea364a4d7b36f32c64a6572d39ba6a11576
 F src/shell.c.in 38f05b2dde7e1de21d5499bdf6cad979a51e277c0b268997d40f5054d53a2236
-F src/sqlite.h.in 08ce865d8d1af6d6bac10400b5809bf395e442b6537c0fcb994161005f8d3989
+F src/sqlite.h.in b2b7d9ee568cc28fb659dff932881a3b00043b25d7463dbfc26bcb91d70ad2c3
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d48df11327acaabc45690a1957f0f4643e07afd9f77c5f2326115239fe5a3bc
 F src/sqliteInt.h 9716721fb57e32938a1d30a84560ce7633c63860a2209e188c87afad15d4b464
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P adac4ed1f13a9a1c4a34c8f59438eac68867981748629ca3957055ad9f940299
-R d7c4a72f588f42f424f9631fb25edda4
-U drh
-Z d6560f44df864865afe983cc9283e3ff
+P 1cd30c4827e382861cf12af48579eedc9685b9612dedb6a2844f20355b910e7e
+R 8780cbb3021d5a878a547468e242a47c
+U stephan
+Z 08035a5f34f6050f5dbf728c38a452eb
 # Remove this line to create a well-formed Fossil manifest.
