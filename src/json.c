@@ -313,7 +313,8 @@ struct JsonString {
 /* Allowed values for JsonString.eErr */
 #define JSTRING_OOM         0x01   /* Out of memory */
 #define JSTRING_MALFORMED   0x02   /* Malformed JSONB */
-#define JSTRING_ERR         0x04   /* Error already sent to sqlite3_result */
+#define JSTRING_TOODEEP     0x04   /* JSON nested too deep */
+#define JSTRING_ERR         0x08   /* Error already sent to sqlite3_result */
 
 /* The "subtype" set for text JSON values passed through using
 ** sqlite3_result_subtype() and sqlite3_value_subtype().
@@ -558,6 +559,15 @@ static void jsonStringReset(JsonString *p){
 static void jsonStringOom(JsonString *p){
   p->eErr |= JSTRING_OOM;
   if( p->pCtx ) sqlite3_result_error_nomem(p->pCtx);
+  jsonStringReset(p);
+}
+
+/* Report JSON nested too deep
+*/
+static void jsonStringTooDeep(JsonString *p){
+  p->eErr |= JSTRING_TOODEEP;
+  assert( p->pCtx!=0 );
+  sqlite3_result_error(p->pCtx, "JSON nested too deep", -1);
   jsonStringReset(p);
 }
 
@@ -877,6 +887,8 @@ static void jsonReturnString(
     }
   }else if( p->eErr & JSTRING_OOM ){
     sqlite3_result_error_nomem(p->pCtx);
+  }else if( p->eErr & JSTRING_TOODEEP ){
+    /* error already in p->pCtx */
   }else if( p->eErr & JSTRING_MALFORMED ){
     sqlite3_result_error(p->pCtx, "malformed JSON", -1);
   }
@@ -2361,7 +2373,7 @@ static u32 jsonTranslateBlobToText(
       j = i+n;
       iEnd = j+sz;
       if( ++pParse->iDepth > JSON_MAX_DEPTH ){
-        jsonStringOom(pOut);
+        jsonStringTooDeep(pOut);
       }
       while( j<iEnd && pOut->eErr==0 ){
         j = jsonTranslateBlobToText(pParse, j, pOut);
@@ -2379,7 +2391,7 @@ static u32 jsonTranslateBlobToText(
       j = i+n;
       iEnd = j+sz;
       if( ++pParse->iDepth > JSON_MAX_DEPTH ){
-        jsonStringOom(pOut);
+        jsonStringTooDeep(pOut);
       }
       while( j<iEnd && pOut->eErr==0 ){
         j = jsonTranslateBlobToText(pParse, j, pOut);
@@ -2458,7 +2470,7 @@ static u32 jsonTranslateBlobToPrettyText(
         jsonAppendChar(pOut, '\n');
         pPretty->nIndent++;
         if( pPretty->nIndent >= JSON_MAX_DEPTH ){
-          jsonStringOom(pOut);
+          jsonStringTooDeep(pOut);
         }
         while( pOut->eErr==0 ){
           jsonPrettyIndent(pPretty);
@@ -2482,7 +2494,7 @@ static u32 jsonTranslateBlobToPrettyText(
         jsonAppendChar(pOut, '\n');
         pPretty->nIndent++;
         if( pPretty->nIndent >= JSON_MAX_DEPTH ){
-          jsonStringOom(pOut);
+          jsonStringTooDeep(pOut);
         }
         pParse->iDepth = pPretty->nIndent;
         while( pOut->eErr==0 ){
