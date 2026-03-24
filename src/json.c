@@ -403,7 +403,7 @@ struct JsonParse {
 **************************************************************************/
 static void jsonReturnStringAsBlob(JsonString*);
 static int jsonArgIsJsonb(sqlite3_value *pJson, JsonParse *p);
-static u32 jsonTranslateBlobToText(const JsonParse*,u32,JsonString*);
+static u32 jsonTranslateBlobToText(JsonParse*,u32,JsonString*);
 static void jsonReturnParse(sqlite3_context*,JsonParse*);
 static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
 static void jsonParseFree(JsonParse*);
@@ -2178,7 +2178,7 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
 ** The pOut->eErr JSTRING_OOM flag is set on a OOM.
 */
 static u32 jsonTranslateBlobToText(
-  const JsonParse *pParse,       /* the complete parse of the JSON */
+  JsonParse *pParse,             /* the complete parse of the JSON */
   u32 i,                         /* Start rendering at this index */
   JsonString *pOut               /* Write JSON here */
 ){
@@ -2360,10 +2360,14 @@ static u32 jsonTranslateBlobToText(
       jsonAppendChar(pOut, '[');
       j = i+n;
       iEnd = j+sz;
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+        jsonStringOom(pOut);
+      }
       while( j<iEnd && pOut->eErr==0 ){
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, ',');
       }
+      pParse->iDepth--;
       if( j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
       if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, ']');
@@ -2374,10 +2378,14 @@ static u32 jsonTranslateBlobToText(
       jsonAppendChar(pOut, '{');
       j = i+n;
       iEnd = j+sz;
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+        jsonStringOom(pOut);
+      }
       while( j<iEnd && pOut->eErr==0 ){
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
       }
+      pParse->iDepth--;
       if( (x & 1)!=0 || j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
       if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, '}');
@@ -2434,7 +2442,7 @@ static u32 jsonTranslateBlobToPrettyText(
   u32 i                      /* Start rendering at this index */
 ){
   u32 sz, n, j, iEnd;
-  const JsonParse *pParse = pPretty->pParse;
+  JsonParse *pParse = pPretty->pParse;
   JsonString *pOut = pPretty->pOut;
   n = jsonbPayloadSize(pParse, i, &sz);
   if( n==0 ){
@@ -2449,6 +2457,9 @@ static u32 jsonTranslateBlobToPrettyText(
       if( j<iEnd ){
         jsonAppendChar(pOut, '\n');
         pPretty->nIndent++;
+        if( pPretty->nIndent >= JSON_MAX_DEPTH ){
+          jsonStringOom(pOut);
+        }
         while( pOut->eErr==0 ){
           jsonPrettyIndent(pPretty);
           j = jsonTranslateBlobToPrettyText(pPretty, j);
@@ -2470,6 +2481,10 @@ static u32 jsonTranslateBlobToPrettyText(
       if( j<iEnd ){
         jsonAppendChar(pOut, '\n');
         pPretty->nIndent++;
+        if( pPretty->nIndent >= JSON_MAX_DEPTH ){
+          jsonStringOom(pOut);
+        }
+        pParse->iDepth = pPretty->nIndent;
         while( pOut->eErr==0 ){
           jsonPrettyIndent(pPretty);
           j = jsonTranslateBlobToText(pParse, j, pOut);
