@@ -3457,7 +3457,15 @@ static int jsonFunctionArgToBlob(
 }
 
 /*
-** Generate a bad path error.
+** Generate a path error.
+**
+** The specifics of the error are determined by the rc argument.
+**
+**          rc                   error
+**  -----------------       ----------------
+**  JSON_LOOKUP_ARRAY       "not an array"
+**  JSON_LOOKUP_ERROR       "malformed JSON"
+**  otherwise...            "bad JSON path"
 **
 ** If ctx is not NULL then push the error message into ctx and return NULL.
 ** If ctx is NULL, then return the text of the error message.
@@ -3470,6 +3478,8 @@ static char *jsonBadPathError(
   char *zMsg;
   if( rc==(int)JSON_LOOKUP_NOTARRAY ){
     zMsg = sqlite3_mprintf("not an array element: %Q", zPath);
+  }else if( rc==(int)JSON_LOOKUP_ERROR ){
+    zMsg = sqlite3_mprintf("malformed JSON");
   }else{
     zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
   }
@@ -3544,11 +3554,7 @@ static void jsonInsertIntoBlob(
 
 jsonInsertIntoBlob_patherror:
   jsonParseFree(p);
-  if( rc==JSON_LOOKUP_ERROR ){
-    sqlite3_result_error(ctx, "malformed JSON", -1);
-  }else{
-    jsonBadPathError(ctx, zPath, rc);
-  }
+  jsonBadPathError(ctx, zPath, rc);
   return;
 }
 
@@ -3988,10 +3994,8 @@ static void jsonArrayLengthFunc(
     if( JSON_LOOKUP_ISERROR(i) ){
       if( i==JSON_LOOKUP_NOTFOUND ){
         /* no-op */
-      }else if( i==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath, 0);
       }else{
-        sqlite3_result_error(ctx, "malformed JSON", -1);
+        jsonBadPathError(ctx, zPath, i);
       }
       eErr = 1;
       i = 0;
@@ -4125,11 +4129,8 @@ static void jsonExtractFunc(
         jsonAppendSeparator(&jx);
         jsonAppendRawNZ(&jx, "null", 4);
       }
-    }else if( j==JSON_LOOKUP_ERROR ){
-      sqlite3_result_error(ctx, "malformed JSON", -1);
-      goto json_extract_error;
     }else{
-      jsonBadPathError(ctx, zPath, 0);
+      jsonBadPathError(ctx, zPath, j);
       goto json_extract_error;
     }
   }
@@ -4457,10 +4458,8 @@ static void jsonRemoveFunc(
     if( JSON_LOOKUP_ISERROR(rc) ){
       if( rc==JSON_LOOKUP_NOTFOUND ){
         continue;  /* No-op */
-      }else if( rc==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath, rc);
       }else{
-        sqlite3_result_error(ctx, "malformed JSON", -1);
+        jsonBadPathError(ctx, zPath, rc);
       }
       goto json_remove_done;
     }
@@ -4557,10 +4556,8 @@ static void jsonTypeFunc(
     if( JSON_LOOKUP_ISERROR(i) ){
       if( i==JSON_LOOKUP_NOTFOUND ){
         /* no-op */
-      }else if( i==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath, 0);
       }else{
-        sqlite3_result_error(ctx, "malformed JSON", -1);
+        jsonBadPathError(ctx, zPath, i);
       }
       goto json_type_done;
     }
