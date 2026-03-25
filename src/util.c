@@ -1086,8 +1086,8 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int incr;
   u64 u = 0;
   int neg = 0; /* assume positive */
-  int i;
-  int c = 0;
+  int i, j;
+  unsigned int c = 0;
   int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
   int rc;          /* Baseline return code */
   const char *zStart;
@@ -1115,8 +1115,8 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   }
   zStart = zNum;
   while( zNum<zEnd && zNum[0]=='0' ){ zNum+=incr; } /* Skip leading zeros. */
-  for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
-    u = u*10 + c - '0';
+  for(i=0; &zNum[i]<zEnd && (c=(unsigned)zNum[i]-'0')<=9; i+=incr){
+    u = u*10 + c;
   }
   testcase( i==18*incr );
   testcase( i==19*incr );
@@ -1153,14 +1153,14 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     return rc;
   }else{
     /* zNum is a 19-digit numbers.  Compare it against 9223372036854775808. */
-    c = i>19*incr ? 1 : compare2pow63(zNum, incr);
-    if( c<0 ){
+    j = i>19*incr ? 1 : compare2pow63(zNum, incr);
+    if( j<0 ){
       /* zNum is less than 9223372036854775808 so it fits */
       assert( u<=LARGEST_INT64 );
       return rc;
     }else{
       *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
-      if( c>0 ){
+      if( j>0 ){
         /* zNum is greater than 9223372036854775808 so it overflows */
         return 2;
       }else{

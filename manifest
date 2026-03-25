@@ -1,5 +1,5 @@
-C Signification\soptimizations\sto\slayout\sof\stext\sfor\sfloating\spoint\nconversions\sin\ssqlite3_str_vappendf().
-D 2026-03-25T17:59:22.677
+C Small\ssize\sreduction\sand\sperformance\sincrease\sin\ssqlite3Atoi64().
+D 2026-03-25T19:36:16.063
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -798,7 +798,7 @@ F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 32e5aed34f20508356a297f4a28762ecd1db0c81bfcbe5aa9d9ebcc6a52b6a85
+F src/util.c 2e5433101a395eda9e465fb7387436a6b06b95ba6b20a8f5ae372228d3d647e2
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c dbafc6f5762f9ae90d9dc9ed065a31743a8ceafbdbfb1a0a3a228921fb3cc36a
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3aea251f238277c68d7a80a4fa643bb0f80b274cef77ef32c4eb833cfaf46740
-R c228eec8690691b2b76c67015dec8b56
+P 6a74df6d6ecfda8e0ff72ca0f4167190e989973ad124412892f7d36f1666ccfc
+R 2192d32e7f354c98f60eff9fb924e812
 U drh
-Z 55019f6bf99dff3aea5283f658746475
+Z d63a496224ec875179c4f578c57d7a6a
 # Remove this line to create a well-formed Fossil manifest.
