@@ -496,9 +496,11 @@ void sqlite3_str_vappendf(
           }while( longvalue>0 );
         }
         length = (int)(&zOut[nOut-1]-bufpt);
-        while( precision>length ){
-          *(--bufpt) = '0';                             /* Zero pad */
-          length++;
+        if( precision>length ){                         /* zero pad */
+          int nn = precision-length;
+          bufpt -= nn;
+          memset(bufpt,'0',nn);
+          length = precision;
         }
         if( cThousand ){
           int nn = (length - 1)/3;  /* Number of "," to insert */
