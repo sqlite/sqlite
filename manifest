@@ -1,5 +1,5 @@
-C Prevent\soverly\slong\sJSON\spaths\sfrom\susing\stoo\smuch\sstack\sspace.
-D 2026-03-24T19:26:05.509
+C Handle\sthe\scase\swhere\sthe\scompile-time\sdefault\spage-size\sis\sgreater\sthan\s8192\sbytes.
+D 2026-03-25T11:19:38.088
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -739,7 +739,7 @@ F src/sqlite.h.in b2b7d9ee568cc28fb659dff932881a3b00043b25d7463dbfc26bcb91d70ad2
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 5d48df11327acaabc45690a1957f0f4643e07afd9f77c5f2326115239fe5a3bc
 F src/sqliteInt.h 9716721fb57e32938a1d30a84560ce7633c63860a2209e188c87afad15d4b464
-F src/sqliteLimit.h 904a3f520362c7065c18165aaabd504fb13cc1b76cb411f38bd41ac219e4af1e
+F src/sqliteLimit.h c70656b67ab5b96741a8f1c812bdd80c81f2b1c1e443d0cc3ea8c33bb1f1a092
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 7401c73c917a4d1b380c896a324c8d8eb533a999559d9e339d479596553bebfd
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f8659b700c0088abe19ce65fec032c1005a1f750566488f4578256d41558770c
-R 758e0af8a0882e7e9923c695c5403a23
-U drh
-Z 1af8ca46b9aa6ac26d04c5ed95b2b6cf
+P 82a0794814bbc095235f8158a4129a5d83f6af1b0c27cb56449ea32feb44faf5
+R ccb1cabe9c5727fead3d6194bdb038c8
+U dan
+Z 9568f2e92e105cd07d1e0d9287adaf4e
 # Remove this line to create a well-formed Fossil manifest.
