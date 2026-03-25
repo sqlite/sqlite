@@ -1406,7 +1406,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         int jj, kk;
         u64 v2;
         assert( z[0]!='0' );
-        for(jj=14; z[jj-1]=='0'; jj--){}
+        for(jj=13; z[jj-1]=='0'; jj--){}
         v2 = z[0] - '0';
         for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
         if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){
