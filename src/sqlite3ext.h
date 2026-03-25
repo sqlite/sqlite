@@ -377,7 +377,7 @@ struct sqlite3_api_routines {
   int (*carray_bind)(sqlite3_stmt*,int,void*,int,int,void(*)(void*));
   int (*carray_bind_v2)(sqlite3_stmt*,int,void*,int,int,void(*)(void*),void*);
   /* Version 3.53.0 and later */
-  double (*atof)(const char*);
+  double (*atof)(const char*,double);
 };
 
 /*

@@ -967,9 +967,9 @@ int sqlite3AtoF(const char *zIn, double *pResult){
 /*
 ** Access to sqlite3AtoF()
 */
-double sqlite3_atof(const char *z){
+double sqlite3_atof(const char *x, double y){
   double r;
-  return sqlite3AtoF(z,&r)>0 ? r : 0.0;
+  return sqlite3AtoF(x,&r)>0 ? r : y;
 }
 
 /*

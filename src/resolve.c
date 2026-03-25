@@ -936,7 +936,7 @@ static int exprProbability(Expr *p){
   double r = -1.0;
   if( p->op!=TK_FLOAT ) return -1;
   assert( !ExprHasProperty(p, EP_IntValue) );
-  r = sqlite3_atof(p->u.zToken);
+  r = sqlite3_atof(p->u.zToken, 0.0);
   assert( r>=0.0 );
   if( r>1.0 ) return -1;
   return (int)(r*134217728.0);

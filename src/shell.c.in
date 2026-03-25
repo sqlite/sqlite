@@ -10406,7 +10406,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
             return 1;
           }
           i++;
-          p->tmProgress = sqlite3_atof(azArg[i]);
+          p->tmProgress = sqlite3_atof(azArg[i], 0.0);
           if( p->tmProgress>0.0 ){
             p->flgProgress = SHELL_PROGRESS_QUIET|SHELL_PROGRESS_TMOUT;
             if( nn==0 ) nn = 100;
