@@ -828,6 +828,7 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 **                    This bit is zero if the input is an integer
 **   bit 2       =>   The input is exactly 0.0, not an underflow from
 **                    some value near zero
+**   bit 3       =>   More than 19 significant digits in the input
 **
 ** If the input contains a syntax error but begins with text that might
 ** be a valid number of some kind, then the result is negative.  The
@@ -873,7 +874,8 @@ int sqlite3AtoF(const char *zIn, double *pResult){
     while( (v = (unsigned)z[0] - '0')<10 ){
       s = s*10 + v;
       z++;
-      if( s>=(LARGEST_INT64-9)/10 ){
+      if( s>=(LARGEST_UINT64-9)/10 ){
+        mState = 9;
         while( sqlite3Isdigit(z[0]) ){ z++; d++; }
         break;
       }
@@ -898,12 +900,13 @@ int sqlite3AtoF(const char *zIn, double *pResult){
     if( sqlite3Isdigit(z[0]) ){
       mState |= 1;
       do{
-        if( s<((LARGEST_INT64-9)/10) ){
+        if( s<(LARGEST_UINT64-9)/10 ){
           s = s*10 + z[0] - '0';
           d--;
+        }else{
+          mState = 11;
         }
-        z++;
-      }while( sqlite3Isdigit(z[0]) );
+      }while( sqlite3Isdigit(*++z) );
     }else if( mState==0 ){
       *pResult = 0.0;
       return 0;
