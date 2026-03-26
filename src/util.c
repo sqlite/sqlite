@@ -965,14 +965,6 @@ int sqlite3AtoF(const char *zIn, double *pResult){
 }
 
 /*
-** Access to sqlite3AtoF()
-*/
-double sqlite3_atof(const char *z){
-  double r;
-  return sqlite3AtoF(z,&r)>0 ? r : 0.0;
-}
-
-/*
 ** Digit pairs used to convert a U64 or I64 into text, two digits
 ** at a time.
 */

@@ -3231,28 +3231,6 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 char *sqlite3_vsnprintf(int,char*,const char*, va_list);
 
 /*
-** CAPI3REF: Text-to-float conversion
-**
-** The sqlite3_atof(X) interface returns a "double" derived from the
-** text representation of a floating point value in X.
-** This interface provides applications with access to the
-** same text&rarr;float conversion routine used by SQLite for SQL parsing
-** and type coercion.  The sqlite3_atof(X) routine works like the standard
-** C-library atof(X) routine with the following exceptions:
-**
-** <ul>
-** <li> Parsing of the input X is strict. If anything about X
-**      is not well-formed, 0.0 is returned.
-** <li> Special values such like "INF", "INFINITY", and "NAN" are not
-**      recognized.
-** <li> Hexadecimal floating point literals are not recognized.
-** <li> The current locale is ignored. The radix character is always ".".
-** <li> The sqlite3_atof() interface does not set errno.
-** </ul>
-*/
-double sqlite3_atof(const char*);
-
-/*
 ** CAPI3REF: Memory Allocation Subsystem
 **
 ** The SQLite core uses these three routines for all of its own

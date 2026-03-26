@@ -376,8 +376,6 @@ struct sqlite3_api_routines {
   void (*str_free)(sqlite3_str*);
   int (*carray_bind)(sqlite3_stmt*,int,void*,int,int,void(*)(void*));
   int (*carray_bind_v2)(sqlite3_stmt*,int,void*,int,int,void(*)(void*),void*);
-  /* Version 3.53.0 and later */
-  double (*atof)(const char*);
 };
 
 /*
@@ -721,8 +719,6 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_str_free               sqlite3_api->str_free
 #define sqlite3_carray_bind            sqlite3_api->carray_bind
 #define sqlite3_carray_bind_v2         sqlite3_api->carray_bind_v2
-/* Version 3.53.0 and later */
-#define sqlite3_atof                   sqlite3_api->atof
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
