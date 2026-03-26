@@ -666,12 +666,13 @@ i64 sqlite3VdbeIntValue(const Mem *pMem){
 **
 ** A text->float translation of pMem->z is written into *pValue.
 **
-** Return values:
+** Result code invariants:
 **
-**    0 or less     =>   ERROR: Input string not well-formed, or OOM
-**    1             =>   Input string is a well-formed integer
-**    2 or more     =>   Input string is well-formed
-**   
+**    rc==0         =>   ERROR: Input string not well-formed, or OOM
+**    rc<0          =>   Some prefix of the input is well-formed
+**    rc>0          =>   All of the input is well-formed
+**    (rc&2)==0     =>   The number is expressed as an integer, with no
+**                       decimal point or eNNN suffix.
 */
 static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
   Mem *pMem,
@@ -723,12 +724,13 @@ static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
 ** The caller must ensure that pMem->db!=0 and that pMem is in
 ** mode MEM_Str or MEM_Blob.
 **
-** Return values:
+** Result code invariants:
 **
-**    0 or less     =>   ERROR: Input string not well-formed, or OOM
-**    1             =>   Input string is a well-formed integer
-**    2 or more     =>   Input string is well-formed
-**   
+**    rc==0         =>   ERROR: Input string not well-formed, or OOM
+**    rc<0          =>   Some prefix of the input is well-formed
+**    rc>0          =>   All of the input is well-formed
+**    (rc&2)==0     =>   The number is expressed as an integer, with no
+**                       decimal point or eNNN suffix.
 */
 int sqlite3MemRealValueRC(Mem *pMem, double *pValue){
   assert( pMem->db!=0 );
@@ -900,7 +902,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
     rc = sqlite3MemRealValueRC(pMem, &pMem->u.r);
-    if( (rc<2 && rc>-2 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<2)
+    if( ((rc&2)==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<2)
      || sqlite3RealSameAsInt(pMem->u.r, (ix = sqlite3RealToI64(pMem->u.r)))
     ){
       pMem->u.i = ix;
