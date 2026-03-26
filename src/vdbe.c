@@ -475,7 +475,7 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
   }
   rc = sqlite3MemRealValueRC(pMem, &pMem->u.r);
   if( rc<=0 ){
-    if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
+    if( rc>=(-1) && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
       pMem->u.i = ix;
       return MEM_Int;
     }else{

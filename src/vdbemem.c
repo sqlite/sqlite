@@ -658,9 +658,20 @@ i64 sqlite3VdbeIntValue(const Mem *pMem){
 
 /*
 ** This routine implements the uncommon and slower path for
-** sqlite3MemValueRC().  It is broken out into a separate
-** no-inline routine so that the main routine can avoid unnecessary
+** sqlite3MemRealValueRC() that has to deal with input strings
+** that are not UTF8 or that are not zero-terminated.  It is
+** broken out into a separate no-inline routine so that the
+** main sqlite3MemRealValueRC() routine can avoid unnecessary
 ** stack pushes.
+**
+** A text->float translation of pMem->z is written into *pValue.
+**
+** Return values:
+**
+**    0 or less     =>   ERROR: Input string not well-formed, or OOM
+**    1             =>   Input string is a well-formed integer
+**    2 or more     =>   Input string is well-formed
+**   
 */
 static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
   Mem *pMem,
@@ -706,12 +717,18 @@ static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
 }
 
 /*
-** Invoke sqlite3AtoF() on the text value of pMem and return the
-** double result.  If sqlite3AtoF() returns an error code, write
-** that code into *pRC if (*pRC)!=NULL.
+** Invoke sqlite3AtoF() on the text value of pMem.  Write the
+** translation of the text input into *pValue.
 **
 ** The caller must ensure that pMem->db!=0 and that pMem is in
 ** mode MEM_Str or MEM_Blob.
+**
+** Return values:
+**
+**    0 or less     =>   ERROR: Input string not well-formed, or OOM
+**    1             =>   Input string is a well-formed integer
+**    2 or more     =>   Input string is well-formed
+**   
 */
 int sqlite3MemRealValueRC(Mem *pMem, double *pValue){
   assert( pMem->db!=0 );
@@ -883,7 +900,7 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
     rc = sqlite3MemRealValueRC(pMem, &pMem->u.r);
-    if( ((rc==0 || rc==1) && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1)
+    if( (rc<2 && rc>-2 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<2)
      || sqlite3RealSameAsInt(pMem->u.r, (ix = sqlite3RealToI64(pMem->u.r)))
     ){
       pMem->u.i = ix;
