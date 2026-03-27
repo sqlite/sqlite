@@ -13,8 +13,7 @@
 **
 ** To run the test:
 **
-**    ./a.out 0 10000000     <-- standard library
-**    ./a.out 1 10000000     <-- SQLite
+**    ./a.out 10000000
 */
 #include "sqlite3.h"
 #include <stdio.h>
@@ -165,35 +164,42 @@ static sqlite3_int64 timeOfDay(void){
 int main(int argc, char **argv){
   int i;
   int cnt;
-  int fg;
-  sqlite3_int64 tm;
+  static const char *zFmt = "%.17g";
+  sqlite3_int64 tm1, tm2;
   char zBuf[1000];
 
-  if( argc!=3 ){
-    fprintf(stderr, "Usage:  %s FLAG COUNT\n", argv[0]);
+  if( argc!=2 ){
+    printf("Usage:  %s COUNT\n", argv[0]);
+    printf("Suggested value for COUNT is 10 million\n");
     return 1;
   }
-  cnt = atoi(argv[2]);
-  fg = atoi(argv[1]);
-
-  tm = timeOfDay();
-  switch( fg % 3 ){
-    case 0: {
-      printf("Doing %d calls to C-lib sprintf()\n", cnt);
-      for(i=0; i<cnt; i++){
-        sprintf(zBuf, "%.17g", aVal[i%NN]);
-      }
-      break;
-    }
-    case 1: {
-      printf("Doing %d calls to sqlite3_snprintf()\n", cnt);
-      for(i=0; i<cnt; i++){
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "%.17g", aVal[i%NN]);
-      }
-      break;
-    }
+  cnt = atoi(argv[1]);
+  if( cnt<100 ){
+    printf("Minimum COUNT value is 100");
+    return 1;
   }
-  tm = timeOfDay() - tm;
-  printf("Elapse time: %lld.%06lld seconds\n", tm/1000000, tm%1000000);
+
+  tm1 = timeOfDay();
+  printf("C-library sprintf(\"%s\"): ", zFmt);
+  fflush(stdout);
+  for(i=0; i<cnt; i++){
+    sprintf(zBuf, zFmt, aVal[i%NN]);
+  }
+  tm1 = timeOfDay() - tm1;
+  printf("%6.1f ns/call, %9.6f sec total\n", tm1*1.0e+3/(double)cnt,tm1*1.0e-6);
+  tm2 = timeOfDay();
+  printf("sqlite3_snprintf(\"%s\"):  ", zFmt);
+  for(i=0; i<cnt; i++){
+    sqlite3_snprintf(sizeof(zBuf), zBuf, zFmt, aVal[i%NN]);
+  }
+  tm2 = timeOfDay() - tm2;
+  printf("%6.1f ns/call, %9.6f sec total\n", tm2*1.0e+3/(double)cnt,tm2*1.0e-6);
+  if( tm1 < tm2 ){
+    printf("sprintf() is about %g times faster than sqlite3_snprintf()\n",
+           (double)tm2/(double)tm1);
+  }else{
+    printf("sqlite3_snprintf() is about %g times faster than sprintf()\n",
+           (double)tm1/(double)tm2);
+  }
   return 0;
 }

@@ -1,12 +1,12 @@
-C Add\sa\scomment\sto\stest/fptest01.sql\sto\sremind\sus\sthat\sfailures\sin\sthat\nscript\smight\snot\sbe\sthe\sfault\sof\sSQLite.
-D 2026-03-27T19:25:25.815
+C Fix\sup\sthe\sfloating-point\sspeed\stests\sso\sthat\sthey\sonly\sneed\sto\sbe\srun\sonce\nto\sget\sa\sperformance\scomparision.\s\sProvide\sthe\sfp-speed-test\smakefile\starget\nto\sbuild\sand\srun\sthem\sboth.
+D 2026-03-27T20:18:06.002
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 3ce07126d7e87c7464301482e161fdae6a51d0a2aa06b200b8f0000ef4d6163b
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc bee487191dcc9394d0e38854aa311b79d4488e0b877cc1a1a61ba5ad8ef225a6
+F Makefile.msc 05dffae7914a3e3accd6056d71ec2bf5dff563a728592373b828882a52141067
 F README.md 3fa51fc7ababc32edd175ae8b2986c86d5ea120c1cb1e57c7f7849492d1405ec
 F VERSION 31435e19ded2aae3c1c67dacf06a995a37fd1b253baec5899b78d64cd29db4f7
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -655,7 +655,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 64479b612d66a3f1a3ab498a3a40607937f614168987d8cda8320fa8be517fac
+F main.mk ac1cafc6f08d108f99cf74f686f1a7f8a08569279341f9d6ffb7745c1fba66f6
 F make.bat a136fd0b1c93e89854a86d5f4edcf0386d211e5d5ec2434480f6eea436c7420c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1126,8 +1126,8 @@ F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
-F test/fp-speed-1.c 34216fbd0a98613f20cfaf234d8206afdff5312c2bd266f588e1cd40c5f25c3e
-F test/fp-speed-2.c af6b1fbd368c3981566b14e3c1932badf31c65624456e10dd36433ef3be6b8fb
+F test/fp-speed-1.c 0e2c6d117ba08979392db480042d44a2ebb16447f831676b5388911b357134a7
+F test/fp-speed-2.c 26638811adc2f98618569bb90b2ed1c409c36ba79b543e6961d923d2a177931c
 F test/fpconv1.test 63f352682fa65601a326563ad633086df6ab194e6ed5e7366786f38a525a7fd7
 F test/fptest01.sql 3d84f10bb1cc220b59207354c887d720289903adeb9972a29d6bfcb3fec0df95
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
@@ -2196,8 +2196,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bbf2d648376a965605d5c641a889ab7ef365bc53788d984c054468e9889deee6
-R 971109cd33785e0666135a8a29743846
+P 65efcb0a2ed49fa2fd747b5f034d976ed3cb4a01a185bcada70bf8a5208f3841
+R 9241b33114a318ec370d37f5c35f3684
 U drh
-Z 5fc5b64177dcf49d75363f6b7491a851
+Z c5759a178764214d2ef838560a990f1c
 # Remove this line to create a well-formed Fossil manifest.

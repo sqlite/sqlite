@@ -1920,6 +1920,12 @@ smoketest:	$(TESTPROGS) fuzzcheck$(T.exe)
 shelltest:
 	$(TCLSH_CMD) $(TOP)/test/testrunner.tcl release shell
 
+# Test performance of floating-point conversions.
+#
+fp-speed-test:	fp-speed-1$(T.exe) fp-speed-2$(T.exe)
+	./fp-speed-1 10000000
+	./fp-speed-2 10000000
+
 #
 # sqlite3_analyzer.c build depends on $(LINK_TOOLS_DYNAMICALLY).
 #
@@ -2036,6 +2042,14 @@ speedtest1$(T.exe):	$(TOP)/test/speedtest1.c sqlite3.c Makefile
 	$(T.link) $(ST_OPT) -o $@ $(TOP)/test/speedtest1.c sqlite3.c \
 		$(LDFLAGS.libsqlite3)
 xbin: speedtest1$(T.exe)
+
+fp-speed-1$(T.exe):	$(TOP)/test/fp-speed-1.c sqlite3.o Makefile
+	$(T.link) $(ST_OPT) -o $@ $(TOP)/test/fp-speed-1.c sqlite3.o \
+		$(LDFLAGS.libsqlite3)
+
+fp-speed-2$(T.exe):	$(TOP)/test/fp-speed-2.c sqlite3.o Makefile
+	$(T.link) $(ST_OPT) -o $@ $(TOP)/test/fp-speed-2.c sqlite3.o \
+		$(LDFLAGS.libsqlite3)
 
 startup$(T.exe):	$(TOP)/test/startup.c sqlite3.c
 	$(T.link) -Os -g -USQLITE_THREADSAFE -DSQLITE_THREADSAFE=0 \
@@ -2482,6 +2496,7 @@ tidy:
 	rm -f tclsqlite3$(T.exe) $(TESTPROGS)
 	rm -f LogEst$(T.exe) fts3view$(T.exe) rollback-test$(T.exe) showdb$(T.exe)
 	rm -f showjournal$(T.exe) showstat4$(T.exe) showwal$(T.exe) speedtest1$(T.exe)
+	rm -f fp-speed-1$(T.exe) fp-speed-2$(T.exe)
 	rm -f wordcount$(T.exe) changeset$(T.exe) version-info$(T.exe)
 	rm -f *.exp *.vsix pkgIndex.tcl
 	rm -f sqlite3_analyzer$(T.exe) sqlite3_rsync$(T.exe) sqlite3_expert$(T.exe)
