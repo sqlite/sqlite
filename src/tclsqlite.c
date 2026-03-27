@@ -2136,7 +2136,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
   };
 
   memset(&qrf, 0, sizeof(qrf));
-  qrf.iVersion = 2;
+  qrf.iVersion = 1;
   qrf.pzOutput = &zResult;
   for(i=2; i<objc; i++){
     const char *zArg = Tcl_GetString(objv[i]);

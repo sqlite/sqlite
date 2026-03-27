@@ -4744,6 +4744,17 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /* sqlite3_test_control(SQLITE_TESTCTRL_ATOF, const char *z, double *p);
+    **
+    ** Test access to the sqlite3AtoF() routine.
+    */
+    case SQLITE_TESTCTRL_ATOF: {
+      const char *z = va_arg(ap,const char*);
+      double *pR = va_arg(ap,double*);
+      rc = sqlite3AtoF(z,pR);
+      break;
+    }
+
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_TUNE, id, *piValue)
     **

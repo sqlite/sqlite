@@ -2564,7 +2564,7 @@ static void qrfOneSimpleRow(Qrf *p){
       break;
     }
     case QRF_STYLE_Insert: {
-      unsigned int mxIns = p->spec.iVersion>=2 ? p->spec.nMultiInsert : 0;
+      unsigned int mxIns = p->spec.nMultiInsert;
       int szStart = sqlite3_str_length(p->pOut);
       if( p->u.nIns==0 || p->u.nIns>=mxIns ){
         if( p->u.nIns ){
@@ -2712,7 +2712,7 @@ static void qrfInitialize(
   size_t sz;                     /* Size of pSpec[], based on pSpec->iVersion */
   memset(p, 0, sizeof(*p));
   p->pzErr = pzErr;
-  if( pSpec->iVersion>2 ){
+  if( pSpec->iVersion>1 ){
     qrfError(p, SQLITE_ERROR,
        "unusable sqlite3_qrf_spec.iVersion (%d)",
        pSpec->iVersion);
