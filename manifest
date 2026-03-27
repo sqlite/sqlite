@@ -1,5 +1,5 @@
-C Add\sa\scomment\sshowing\sreserved\sfile-control\snumbers\sto\ssqlite3.h
-D 2026-03-27T11:46:11.333
+C Add\sthe\sfp-speed-2.c\sperformance\stest\sprogram.
+D 2026-03-27T14:03:41.832
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1126,7 +1126,8 @@ F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
-F test/fp-speed-1.c b37de94eba034e1703668816225f54510ec60fb0685406608cc707afe6b8234d
+F test/fp-speed-1.c a3a59b8822857918ed3aa90f195884c00f542efa8afd7529188550f948cb0995
+F test/fp-speed-2.c 2f3b208ce8a6324a0fd74321a9040f46f0e09fc4d0dd20e721517e12704dde31
 F test/fpconv1.test 63f352682fa65601a326563ad633086df6ab194e6ed5e7366786f38a525a7fd7
 F test/fptest01.sql 210562ad8d5a7895f26273dd3be56561a41bcb51d78a28a337af0f1ceaa3bb8d
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
@@ -2195,8 +2196,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c5af6a10245b6b847d30002806c1577b020c36ab27f7b1cf202ade136aa4779c
-R 51ff65a6bd1b538cf25dd22d8d1484ee
+P cd472d7c85f3fda54bba5166eae72b5f9b86861c4a1160583e8ee902ba992255
+R f34e0fa460503e1caaba2303ab84843f
 U drh
-Z d9594447f664fc3f5df800bf2243aaf0
+Z 1b7a44c07f55210ac3d9d7d1d33633e4
 # Remove this line to create a well-formed Fossil manifest.

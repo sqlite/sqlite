@@ -2,6 +2,9 @@
 ** Performance testing of floating-point binary-to-decimal conversion for
 ** SQLite versus the standard library.
 **
+** This module compares library sprintf() against SQLite's sqlite3_snprintf().
+** To go the other direction (decimal-to-binary) see fp-speed-2.c.
+**
 ** To compile:
 **
 **    make sqlite3.c
