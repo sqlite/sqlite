@@ -11,7 +11,21 @@
 #
 #***********************************************************************
 #
-# Floating-point to text conversions
+# Floating-point <-> text conversions
+#
+# FAILURES IN THIS SCRIPT ARE NOT NECESSARILY THE FAULT OF SQLITE.
+#
+# Some of the tests below use the system strtod() function as
+# an oracle of truth.  These tests assume that the system strtod()
+# is always correct.  That is the case for Win11, Macs, most Linux
+# boxes and so forth.  But it possible to find a machine for which
+# is not true.  (One example, is Macs from around 2005.)  On such
+# machines, some of these tests might fail.
+#
+# So, in other words, a failure in any of the tests below does not
+# necessarily mean that SQLite is wrong.  It might mean that the
+# strtod() function in the standard library of the machine on which
+# the test is running is wrong.
 #
 
 # Verify that binary64 -> text -> binary64 conversions round-trip
