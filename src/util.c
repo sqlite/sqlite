@@ -465,11 +465,12 @@ u8 sqlite3StrIHash(const char *z){
 */
 static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
 #if (defined(__GNUC__) || defined(__clang__)) \
-        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv))
+        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv)) \
+        && !defined(SQLITE_DISABLE_INTRINSIC)
   __uint128_t r = (__uint128_t)a * b;
   *pLo = (u64)r;
   return (u64)(r>>64);
-#elif defined(_MSC_VER) && defined(_M_X64)
+#elif defined(_MSC_VER) && !defined(SQLITE_DISABLE_INTRINSIC)
   *pLo = a*b;
   return __umulh(a, b);
 #else
@@ -500,17 +501,19 @@ static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
 */
 static u64 sqlite3Multiply160(u64 a, u32 aLo, u64 b, u32 *pLo){
 #if (defined(__GNUC__) || defined(__clang__)) \
-        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv))
+        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv)) \
+        && !defined(SQLITE_DISABLE_INTRINSIC)
   __uint128_t r = (__uint128_t)a * b;
   r += ((__uint128_t)aLo * b) >> 32;
   *pLo = (r>>32)&0xffffffff;
   return r>>64;
-#elif defined(_MSC_VER) && defined(_M_X64)
+#elif defined(_MSC_VER) && !defined(SQLITE_DISABLE_INTRINSIC)
   u64 r1_hi = __umulh(a,b);
   u64 r1_lo = a*b;
   u64 r2 = (__umulh((u64)aLo,b)<<32) + ((aLo*b)>>32);
-  r1_hi += _addcarry_u64(0, r1_lo, r2, &r1_lo);
-  *pLo = r1_lo>>32;
+  u64 t = r1_lo + r2;
+  if( t<r1_lo ) r1_hi++;
+  *pLo = t>>32;
   return r1_hi;
 #else
   u64 x2 = a>>32;
@@ -722,7 +725,8 @@ static int pwr2to10(int p){ return (p*78913) >> 18; }
 ** Count leading zeros for a 64-bit unsigned integer.
 */
 static int countLeadingZeros(u64 m){
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GNUC__) || defined(__clang__)) \
+    && !defined(SQLITE_DISABLE_INTRINSIC)
   return __builtin_clzll(m);
 #else
   int n = 0;
