@@ -1,4 +1,5 @@
 (async function(self){
+  const btnGo = document.querySelector('#gogogo');
 
   const logCss = (function(){
     const mapToString = (v)=>{
@@ -92,6 +93,7 @@
       logCss('tests-pass',"All",workers.length,"workers finished in",
              calcTime(new Date()),"ms");
     }
+    logCss("Reload page to run the test again.");
   };
 
   workers.onmessage = function(msg){
@@ -158,25 +160,28 @@
     a.innerText = args;
   }
 
-  stdout("Launching",options.workerCount,"workers. Options:",options);
-  workers.uri = (
-    'worker.js?'
-      + 'sqlite3.dir='+options.sqlite3Dir
-      + '&vfs='+options.vfs
-      + '&interval='+options.interval
-      + '&iterations='+options.iterations
-      + '&opfs-verbose='+options.opfsVerbose
-      + '&opfs-unlock-asap='+options.unlockAsap
-  );
-  for(let i = 0; i < options.workerCount; ++i){
-    stdout("Launching worker...", i, );
-    workers.push(new Worker(
-      workers.uri+'&workerId='+(i+1)+(
-        (i || options.noUnlink) ? '' : '&unlink-db'
-      )
-    ));
-  }
-  // Have to delay onmessage assignment until after the loop
-  // to avoid that early workers get an undue head start.
-  workers.forEach((w)=>w.onmessage = workers.onmessage);
+  btnGo.addEventListener('click', ()=>{
+    btnGo.remove();
+    stdout("Launching",options.workerCount,"workers. Options:",options);
+    workers.uri = (
+      'worker.js?'
+        + 'sqlite3.dir='+options.sqlite3Dir
+        + '&vfs='+options.vfs
+        + '&interval='+options.interval
+        + '&iterations='+options.iterations
+        + '&opfs-verbose='+options.opfsVerbose
+        + '&opfs-unlock-asap='+options.unlockAsap
+    );
+    for(let i = 0; i < options.workerCount; ++i){
+      stdout("Launching worker...", i, );
+      workers.push(new Worker(
+        workers.uri+'&workerId='+(i+1)+(
+          (i || options.noUnlink) ? '' : '&unlink-db'
+        )
+      ));
+    }
+    // Have to delay onmessage assignment until after the loop
+    // to avoid that early workers get an undue head start.
+    workers.forEach((w)=>w.onmessage = workers.onmessage);
+  });
 })(globalThis);

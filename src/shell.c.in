@@ -20,6 +20,22 @@ typedef unsigned int u32;
 typedef unsigned short int u16;
 
 /*
+** Limit input nesting via .read or any other input redirect.
+** It's not too expensive, so a generous allowance can be made.
+*/
+#define MAX_INPUT_NESTING 25
+
+/*
+** Used to prevent warnings about unused parameters
+*/
+#define UNUSED_PARAMETER(x) (void)(x)
+
+/*
+** Number of elements in an array
+*/
+#define ArraySize(X)  (int)(sizeof(X)/sizeof(X[0]))
+
+/*
 ** Optionally #include a user-defined header, whereby compilation options
 ** may be set prior to where they take effect, but after platform setup.
 ** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
@@ -244,770 +260,6 @@ INCLUDE ../ext/qrf/qrf.c
 # define SQLITE_CIO_NO_SETMODE
 # define SQLITE_CIO_NO_FLUSH
 #endif
-
-/*
-** Output routines that are able to redirect to memory rather than
-** doing actually I/O.
-**                                                Works like.
-**                                                --------------
-**   cli_printf(FILE*, const char*, ...);         fprintf()
-**   cli_puts(const char*, FILE*);                fputs()
-**   cli_vprintf(FILE*, const char*, va_list);    vfprintf()
-**
-** These are just thin wrappers with the following added semantics:
-** If the file-scope variable cli_output_capture is not NULL, and
-** if the FILE* argument is stdout or stderr, then rather than
-** writing to stdout/stdout, append the text to the cli_output_capture
-** variable.
-**
-** The cli_exit(int) routine works like exit() except that it
-** first dumps any capture output to stdout.
-*/
-static sqlite3_str *cli_output_capture = 0; 
-static int cli_printf(FILE *out, const char *zFormat, ...){
-  va_list ap;
-  int rc;
-  va_start(ap,zFormat);
-  if( cli_output_capture && (out==stdout || out==stderr) ){
-    sqlite3_str_vappendf(cli_output_capture, zFormat, ap);
-    rc = 1;
-  }else{
-    rc = sqlite3_vfprintf(out, zFormat, ap);
-  }
-  va_end(ap);
-  return rc;
-}
-static int cli_puts(const char *zText, FILE *out){
-  if( cli_output_capture && (out==stdout || out==stderr) ){
-    sqlite3_str_appendall(cli_output_capture, zText);
-    return 1;
-  }
-  return sqlite3_fputs(zText, out);
-}
-#if 0 /* Not currently used - available if we need it later */
-static int cli_vprintf(FILE *out, const char *zFormat, va_list ap){
-  if( cli_output_capture && (out==stdout || out==stderr) ){
-    sqlite3_str_vappendf(cli_output_capture, zFormat, ap);
-    return 1;
-  }else{
-    return sqlite3_vfprintf(out, zFormat, ap);
-  }
-}
-#endif
-static void cli_exit(int rc){
-  if( cli_output_capture ){
-    char *z = sqlite3_str_finish(cli_output_capture);
-    sqlite3_fputs(z, stdout);
-    fflush(stdout);
-  }
-  exit(rc);
-}
-
-
-#define eputz(z) cli_puts(z,stderr)
-#define sputz(fp,z) cli_puts(z,fp)
-
-/* A version of strcmp() that works with NULL values */
-static int cli_strcmp(const char *a, const char *b){
-  if( a==0 ) a = "";
-  if( b==0 ) b = "";
-  return strcmp(a,b);
-}
-static int cli_strncmp(const char *a, const char *b, size_t n){
-  if( a==0 ) a = "";
-  if( b==0 ) b = "";
-  return strncmp(a,b,n);
-}
-
-/* Return the current wall-clock time in microseconds since the
-** Unix epoch (1970-01-01T00:00:00Z)
-*/
-static sqlite3_int64 timeOfDay(void){
-#if defined(_WIN64) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
-  sqlite3_uint64 t;
-  FILETIME tm;
-  GetSystemTimePreciseAsFileTime(&tm);
-  t =  ((u64)tm.dwHighDateTime<<32) | (u64)tm.dwLowDateTime;
-  t += 116444736000000000LL;
-  t /= 10;
-  return t;
-#elif defined(_WIN32)
-  static sqlite3_vfs *clockVfs = 0;
-  sqlite3_int64 t;
-  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
-  if( clockVfs==0 ) return 0;  /* Never actually happens */
-  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
-    clockVfs->xCurrentTimeInt64(clockVfs, &t);
-  }else{
-    double r;
-    clockVfs->xCurrentTime(clockVfs, &r);
-    t = (sqlite3_int64)(r*86400000.0);
-  }
-  return t*1000;
-#else
-  struct timeval sNow;
-  (void)gettimeofday(&sNow,0);
-  return ((i64)sNow.tv_sec)*1000000 + sNow.tv_usec;
-#endif
-}
-
-
-/*
-** Used to prevent warnings about unused parameters
-*/
-#define UNUSED_PARAMETER(x) (void)(x)
-
-/*
-** Number of elements in an array
-*/
-#define ArraySize(X)  (int)(sizeof(X)/sizeof(X[0]))
-
-/*
-** If the following flag is set, then command execution stops
-** at an error if we are not interactive.
-*/
-static int bail_on_error = 0;
-
-/*
-** Treat stdin as an interactive input if the following variable
-** is true.  Otherwise, assume stdin is connected to a file or pipe.
-*/
-static int stdin_is_interactive = 1;
-
-/*
-** Treat stdout like a TTY if true.
-*/
-static int stdout_is_console = 1;
-
-/*
-** Use this value as the width of the output device.  Or, figure it
-** out at runtime if the value is negative.  Or use a default width
-** if this value is zero.
-*/
-static int stdout_tty_width = -1;
-
-/*
-** The following is the open SQLite database.  We make a pointer
-** to this database a static variable so that it can be accessed
-** by the SIGINT handler to interrupt database processing.
-*/
-static sqlite3 *globalDb = 0;
-
-/*
-** True if an interrupt (Control-C) has been received.
-*/
-static volatile int seenInterrupt = 0;
-
-/*
-** This is the name of our program. It is set in main(), used
-** in a number of other places, mostly for error messages.
-*/
-static char *Argv0;
-
-/*
-** Prompt strings. Initialized in main. Settable with
-**   .prompt main continue
-*/
-#define PROMPT_LEN_MAX 128
-/* First line prompt.   default: "sqlite> " */
-static char mainPrompt[PROMPT_LEN_MAX];
-/* Continuation prompt. default: "   ...> " */
-static char continuePrompt[PROMPT_LEN_MAX];
-
-/*
-** Write I/O traces to the following stream.
-*/
-#ifdef SQLITE_ENABLE_IOTRACE
-static FILE *iotrace = 0;
-#endif
-
-
-/* This is variant of the standard-library strncpy() routine with the
-** one change that the destination string is always zero-terminated, even
-** if there is no zero-terminator in the first n-1 characters of the source
-** string.
-*/
-static char *shell_strncpy(char *dest, const char *src, size_t n){
-  size_t i;
-  for(i=0; i<n-1 && src[i]!=0; i++) dest[i] = src[i];
-  dest[i] = 0;
-  return dest;
-}
-
-/*
-** strcpy() workalike to squelch an unwarranted link-time warning
-** from OpenBSD.
-*/
-static void shell_strcpy(char *dest, const char *src){
-  while( (*(dest++) = *(src++))!=0 ){}
-}
-
-/*
-** Optionally disable dynamic continuation prompt.
-** Unless disabled, the continuation prompt shows open SQL lexemes if any,
-** or open parentheses level if non-zero, or continuation prompt as set.
-** This facility interacts with the scanner and process_input() where the
-** below 5 macros are used.
-*/
-#ifdef SQLITE_OMIT_DYNAPROMPT
-# define CONTINUATION_PROMPT continuePrompt
-# define CONTINUE_PROMPT_RESET
-# define CONTINUE_PROMPT_AWAITS(p,s)
-# define CONTINUE_PROMPT_AWAITC(p,c)
-# define CONTINUE_PAREN_INCR(p,n)
-# define CONTINUE_PROMPT_PSTATE 0
-typedef void *t_NoDynaPrompt;
-# define SCAN_TRACKER_REFTYPE t_NoDynaPrompt
-#else
-# define CONTINUATION_PROMPT dynamicContinuePrompt()
-# define CONTINUE_PROMPT_RESET \
-  do {setLexemeOpen(&dynPrompt,0,0); trackParenLevel(&dynPrompt,0);} while(0)
-# define CONTINUE_PROMPT_AWAITS(p,s) \
-  if(p && stdin_is_interactive) setLexemeOpen(p, s, 0)
-# define CONTINUE_PROMPT_AWAITC(p,c) \
-  if(p && stdin_is_interactive) setLexemeOpen(p, 0, c)
-# define CONTINUE_PAREN_INCR(p,n) \
-  if(p && stdin_is_interactive) (trackParenLevel(p,n))
-# define CONTINUE_PROMPT_PSTATE (&dynPrompt)
-typedef struct DynaPrompt *t_DynaPromptRef;
-# define SCAN_TRACKER_REFTYPE t_DynaPromptRef
-
-static struct DynaPrompt {
-  char dynamicPrompt[PROMPT_LEN_MAX];
-  char acAwait[2];
-  int inParenLevel;
-  char *zScannerAwaits;
-} dynPrompt = { {0}, {0}, 0, 0 };
-
-/* Record parenthesis nesting level change, or force level to 0. */
-static void trackParenLevel(struct DynaPrompt *p, int ni){
-  p->inParenLevel += ni;
-  if( ni==0 ) p->inParenLevel = 0;
-  p->zScannerAwaits = 0;
-}
-
-/* Record that a lexeme is opened, or closed with args==0. */
-static void setLexemeOpen(struct DynaPrompt *p, char *s, char c){
-  if( s!=0 || c==0 ){
-    p->zScannerAwaits = s;
-    p->acAwait[0] = 0;
-  }else{
-    p->acAwait[0] = c;
-    p->zScannerAwaits = p->acAwait;
-  }
-}
-
-/* Upon demand, derive the continuation prompt to display. */
-static char *dynamicContinuePrompt(void){
-  if( continuePrompt[0]==0
-      || (dynPrompt.zScannerAwaits==0 && dynPrompt.inParenLevel == 0) ){
-    return continuePrompt;
-  }else{
-    if( dynPrompt.zScannerAwaits ){
-      size_t ncp = strlen(continuePrompt);
-      size_t ndp = strlen(dynPrompt.zScannerAwaits);
-      if( ndp > ncp-3 ) return continuePrompt;
-      shell_strcpy(dynPrompt.dynamicPrompt, dynPrompt.zScannerAwaits);
-      while( ndp<3 ) dynPrompt.dynamicPrompt[ndp++] = ' ';
-      shell_strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
-              PROMPT_LEN_MAX-4);
-    }else{
-      if( dynPrompt.inParenLevel>9 ){
-        shell_strncpy(dynPrompt.dynamicPrompt, "(..", 4);
-      }else if( dynPrompt.inParenLevel<0 ){
-        shell_strncpy(dynPrompt.dynamicPrompt, ")x!", 4);
-      }else{
-        shell_strncpy(dynPrompt.dynamicPrompt, "(x.", 4);
-        dynPrompt.dynamicPrompt[2] = (char)('0'+dynPrompt.inParenLevel);
-      }
-      shell_strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
-                    PROMPT_LEN_MAX-4);
-    }
-  }
-  return dynPrompt.dynamicPrompt;
-}
-#endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
-
-/* Indicate out-of-memory and exit. */
-static void shell_out_of_memory(void){
-  eputz("Error: out of memory\n");
-  cli_exit(1);
-}
-
-/* Check a pointer to see if it is NULL.  If it is NULL, exit with an
-** out-of-memory error.
-*/
-static void shell_check_oom(const void *p){
-  if( p==0 ) shell_out_of_memory();
-}
-
-/*
-** This routine works like printf in that its first argument is a
-** format string and subsequent arguments are values to be substituted
-** in place of % fields.  The result of formatting this string
-** is written to iotrace.
-*/
-#ifdef SQLITE_ENABLE_IOTRACE
-static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
-  va_list ap;
-  char *z;
-  if( iotrace==0 ) return;
-  va_start(ap, zFormat);
-  z = sqlite3_vmprintf(zFormat, ap);
-  va_end(ap);
-  cli_printf(iotrace, "%s", z);
-  sqlite3_free(z);
-}
-#endif
-
-/*
-** Compute a string length that is limited to what can be stored in
-** lower 30 bits of a 32-bit signed integer.
-*/
-static int strlen30(const char *z){
-  size_t n;
-  if( z==0 ) return 0;
-  n = strlen(z);
-  return n>0x3fffffff ? 0x3fffffff : (int)n;
-}
-
-/*
-** Return open FILE * if zFile exists, can be opened for read
-** and is an ordinary file or a character stream source.
-** Otherwise return 0.
-*/
-static FILE * openChrSource(const char *zFile){
-#if defined(_WIN32) || defined(WIN32)
-  struct __stat64 x = {0};
-# define STAT_CHR_SRC(mode) ((mode & (_S_IFCHR|_S_IFIFO|_S_IFREG))!=0)
-  /* On Windows, open first, then check the stream nature. This order
-  ** is necessary because _stat() and sibs, when checking a named pipe,
-  ** effectively break the pipe as its supplier sees it. */
-  FILE *rv = sqlite3_fopen(zFile, "rb");
-  if( rv==0 ) return 0;
-  if( _fstat64(_fileno(rv), &x) != 0
-      || !STAT_CHR_SRC(x.st_mode)){
-    fclose(rv);
-    rv = 0;
-  }
-  return rv;
-#else
-  struct stat x = {0};
-  int rc = stat(zFile, &x);
-# define STAT_CHR_SRC(mode) (S_ISREG(mode)||S_ISFIFO(mode)||S_ISCHR(mode))
-  if( rc!=0 ) return 0;
-  if( STAT_CHR_SRC(x.st_mode) ){
-    return sqlite3_fopen(zFile, "rb");
-  }else{
-    return 0;
-  }
-#endif
-#undef STAT_CHR_SRC
-}
-
-/*
-** This routine reads a line of text from FILE in, stores
-** the text in memory obtained from malloc() and returns a pointer
-** to the text.  NULL is returned at end of file, or if malloc()
-** fails, or if the length of the line is longer than about a gigabyte.
-**
-** If zLine is not NULL then it is a malloced buffer returned from
-** a previous call to this routine that may be reused.
-*/
-static char *local_getline(char *zLine, FILE *in){
-  int nLine = zLine==0 ? 0 : 100;
-  int n = 0;
-
-  while( 1 ){
-    if( n+100>nLine ){
-      if( nLine>=1073741773 ){
-        free(zLine);
-        return 0;
-      }
-      nLine = nLine*2 + 100;
-      zLine = realloc(zLine, nLine);
-      shell_check_oom(zLine);
-    }
-    if( sqlite3_fgets(&zLine[n], nLine - n, in)==0 ){
-      if( n==0 ){
-        free(zLine);
-        return 0;
-      }
-      zLine[n] = 0;
-      break;
-    }
-    while( zLine[n] ) n++;
-    if( n>0 && zLine[n-1]=='\n' ){
-      n--;
-      if( n>0 && zLine[n-1]=='\r' ) n--;
-      zLine[n] = 0;
-      break;
-    }
-  }
-  return zLine;
-}
-
-/*
-** Retrieve a single line of input text.
-**
-** If in==0 then read from standard input and prompt before each line.
-** If isContinuation is true, then a continuation prompt is appropriate.
-** If isContinuation is zero, then the main prompt should be used.
-**
-** If zPrior is not NULL then it is a buffer from a prior call to this
-** routine that can be reused.
-**
-** The result is stored in space obtained from malloc() and must either
-** be freed by the caller or else passed back into this routine via the
-** zPrior argument for reuse.
-*/
-#ifndef SQLITE_SHELL_FIDDLE
-static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
-  char *zPrompt;
-  char *zResult;
-  if( in!=0 ){
-    zResult = local_getline(zPrior, in);
-  }else{
-    zPrompt = isContinuation ? CONTINUATION_PROMPT : mainPrompt;
-#if SHELL_USE_LOCAL_GETLINE
-    sputz(stdout, zPrompt);
-    fflush(stdout);
-    do{
-      zResult = local_getline(zPrior, stdin);
-      zPrior = 0;
-      /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
-      if( zResult==0 ) sqlite3_sleep(50);
-    }while( zResult==0 && seenInterrupt>0 );
-#else
-    free(zPrior);
-    zResult = shell_readline(zPrompt);
-    while( zResult==0 ){
-      /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
-      sqlite3_sleep(50);
-      if( seenInterrupt==0 ) break;
-      zResult = shell_readline("");
-    }
-    if( zResult && *zResult ) shell_add_history(zResult);
-#endif
-  }
-  return zResult;
-}
-#endif /* !SQLITE_SHELL_FIDDLE */
-
-/*
-** Return the value of a hexadecimal digit.  Return -1 if the input
-** is not a hex digit.
-*/
-static int hexDigitValue(char c){
-  if( c>='0' && c<='9' ) return c - '0';
-  if( c>='a' && c<='f' ) return c - 'a' + 10;
-  if( c>='A' && c<='F' ) return c - 'A' + 10;
-  return -1;
-}
-
-/*
-** Interpret zArg as an integer value, possibly with suffixes.
-**
-** If the value specified by zArg is outside the range of values that
-** can be represented using a 64-bit twos-complement integer, then return
-** the nearest representable value.
-*/
-static sqlite3_int64 integerValue(const char *zArg){
-  sqlite3_uint64 v = 0;
-  static const struct { char *zSuffix; unsigned int iMult; } aMult[] = {
-    { "KiB", 1024 },
-    { "MiB", 1024*1024 },
-    { "GiB", 1024*1024*1024 },
-    { "KB",  1000 },
-    { "MB",  1000000 },
-    { "GB",  1000000000 },
-    { "K",   1000 },
-    { "M",   1000000 },
-    { "G",   1000000000 },
-  };
-  int i;
-  int isNeg = 0;
-  if( zArg[0]=='-' ){
-    isNeg = 1;
-    zArg++;
-  }else if( zArg[0]=='+' ){
-    zArg++;
-  }
-  if( zArg[0]=='0' && zArg[1]=='x' ){
-    int x;
-    zArg += 2;
-    while( (x = hexDigitValue(zArg[0]))>=0 ){
-      if( v > 0x0fffffffffffffffULL ) goto integer_overflow;
-      v = (v<<4) + x;
-      zArg++;
-    }
-  }else{
-    while( IsDigit(zArg[0]) ){
-      if( v>=922337203685477580LL ){
-        if( v>922337203685477580LL || zArg[0]>='8' ) goto integer_overflow;
-      }
-      v = v*10 + (zArg[0] - '0');
-      zArg++;
-    }
-  }
-  for(i=0; i<ArraySize(aMult); i++){
-    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
-      if( 0x7fffffffffffffffULL/aMult[i].iMult < v ) goto integer_overflow;
-      v *= aMult[i].iMult;
-      break;
-    }
-  }
-  if( isNeg && v>0x7fffffffffffffffULL ) goto integer_overflow;
-  return isNeg? -(sqlite3_int64)v : (sqlite3_int64)v;
-integer_overflow:
-  return isNeg ? (i64)0x8000000000000000LL : 0x7fffffffffffffffLL;
-}
-
-/*
-** A variable length string to which one can append text.
-*/
-typedef struct ShellText ShellText;
-struct ShellText {
-  char *zTxt;       /* The text */
-  i64 n;            /* Number of bytes of zTxt[] actually used */
-  i64 nAlloc;       /* Number of bytes allocated for zTxt[] */
-};
-
-/*
-** Initialize and destroy a ShellText object
-*/
-static void initText(ShellText *p){
-  memset(p, 0, sizeof(*p));
-}
-static void freeText(ShellText *p){
-  sqlite3_free(p->zTxt);
-  initText(p);
-}
-
-/* zIn is either a pointer to a NULL-terminated string in memory obtained
-** from malloc(), or a NULL pointer. The string pointed to by zAppend is
-** added to zIn, and the result returned in memory obtained from malloc().
-** zIn, if it was not NULL, is freed.
-**
-** If the third argument, quote, is not '\0', then it is used as a
-** quote character for zAppend.
-*/
-static void appendText(ShellText *p, const char *zAppend, char quote){
-  i64 len;
-  i64 i;
-  i64 nAppend = strlen30(zAppend);
-
-  len = nAppend+p->n+1;
-  if( quote ){
-    len += 2;
-    for(i=0; i<nAppend; i++){
-      if( zAppend[i]==quote ) len++;
-    }
-  }
-
-  if( p->zTxt==0 || p->n+len>=p->nAlloc ){
-    p->nAlloc = p->nAlloc*2 + len + 20;
-    p->zTxt = sqlite3_realloc64(p->zTxt, p->nAlloc);
-    shell_check_oom(p->zTxt);
-  }
-
-  if( quote ){
-    char *zCsr = p->zTxt+p->n;
-    *zCsr++ = quote;
-    for(i=0; i<nAppend; i++){
-      *zCsr++ = zAppend[i];
-      if( zAppend[i]==quote ) *zCsr++ = quote;
-    }
-    *zCsr++ = quote;
-    p->n = (i64)(zCsr - p->zTxt);
-    *zCsr = '\0';
-  }else{
-    memcpy(p->zTxt+p->n, zAppend, nAppend);
-    p->n += nAppend;
-    p->zTxt[p->n] = '\0';
-  }
-}
-
-/*
-** Attempt to determine if identifier zName needs to be quoted, either
-** because it contains non-alphanumeric characters, or because it is an
-** SQLite keyword.  Be conservative in this estimate:  When in doubt assume
-** that quoting is required.
-**
-** Return '"' if quoting is required.  Return 0 if no quoting is required.
-*/
-static char quoteChar(const char *zName){
-  int i;
-  if( zName==0 ) return '"';
-  if( !IsAlpha(zName[0]) && zName[0]!='_' ) return '"';
-  for(i=0; zName[i]; i++){
-    if( !IsAlnum(zName[i]) && zName[i]!='_' ) return '"';
-  }
-  return sqlite3_keyword_check(zName, i) ? '"' : 0;
-}
-
-/*
-** Construct a fake object name and column list to describe the structure
-** of the view, virtual table, or table valued function zSchema.zName.
-**
-** The returned string comes from sqlite3_mprintf() and should be freed
-** by the caller using sqlite3_free().
-*/
-static char *shellFakeSchema(
-  sqlite3 *db,            /* The database connection containing the vtab */
-  const char *zSchema,    /* Schema of the database holding the vtab */
-  const char *zName       /* The name of the virtual table */
-){
-  sqlite3_stmt *pStmt = 0;
-  char *zSql;
-  ShellText s;
-  char cQuote;
-  char *zDiv = "(";
-  int nRow = 0;
-
-  zSql = sqlite3_mprintf("PRAGMA \"%w\".table_info=%Q;",
-                         zSchema ? zSchema : "main", zName);
-  shell_check_oom(zSql);
-  sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  sqlite3_free(zSql);
-  initText(&s);
-  if( zSchema ){
-    cQuote = quoteChar(zSchema);
-    if( cQuote && sqlite3_stricmp(zSchema,"temp")==0 ) cQuote = 0;
-    appendText(&s, zSchema, cQuote);
-    appendText(&s, ".", 0);
-  }
-  cQuote = quoteChar(zName);
-  appendText(&s, zName, cQuote);
-  while( sqlite3_step(pStmt)==SQLITE_ROW ){
-    const char *zCol = (const char*)sqlite3_column_text(pStmt, 1);
-    nRow++;
-    appendText(&s, zDiv, 0);
-    zDiv = ",";
-    if( zCol==0 ) zCol = "";
-    cQuote = quoteChar(zCol);
-    appendText(&s, zCol, cQuote);
-  }
-  appendText(&s, ")", 0);
-  sqlite3_finalize(pStmt);
-  if( nRow==0 ){
-    freeText(&s);
-    s.zTxt = 0;
-  }
-  return s.zTxt;
-}
-
-/*
-** SQL function:  strtod(X)
-**
-** Use the C-library strtod() function to convert string X into a double.
-** Used for comparing the accuracy of SQLite's internal text-to-float conversion
-** routines against the C-library.
-*/
-static void shellStrtod(
-  sqlite3_context *pCtx,
-  int nVal,
-  sqlite3_value **apVal
-){
-  char *z = (char*)sqlite3_value_text(apVal[0]);
-  UNUSED_PARAMETER(nVal);
-  if( z==0 ) return;
-  sqlite3_result_double(pCtx, strtod(z,0));
-}
-
-/*
-** SQL function:  dtostr(X)
-**
-** Use the C-library printf() function to convert real value X into a string.
-** Used for comparing the accuracy of SQLite's internal float-to-text conversion
-** routines against the C-library.
-*/
-static void shellDtostr(
-  sqlite3_context *pCtx,
-  int nVal,
-  sqlite3_value **apVal
-){
-  double r = sqlite3_value_double(apVal[0]);
-  int n = nVal>=2 ? sqlite3_value_int(apVal[1]) : 26;
-  char z[400];
-  if( n<1 ) n = 1;
-  if( n>350 ) n = 350;
-  sprintf(z, "%#+.*e", n, r);
-  sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
-}
-
-/*
-** SQL function:  shell_add_schema(S,X)
-**
-** Add the schema name X to the CREATE statement in S and return the result.
-** Examples:
-**
-**    CREATE TABLE t1(x)   ->   CREATE TABLE xyz.t1(x);
-**
-** Also works on
-**
-**    CREATE INDEX
-**    CREATE UNIQUE INDEX
-**    CREATE VIEW
-**    CREATE TRIGGER
-**    CREATE VIRTUAL TABLE
-**
-** This UDF is used by the .schema command to insert the schema name of
-** attached databases into the middle of the sqlite_schema.sql field.
-*/
-static void shellAddSchemaName(
-  sqlite3_context *pCtx,
-  int nVal,
-  sqlite3_value **apVal
-){
-  static const char *aPrefix[] = {
-     "TABLE",
-     "INDEX",
-     "UNIQUE INDEX",
-     "VIEW",
-     "TRIGGER",
-     "VIRTUAL TABLE"
-  };
-  int i = 0;
-  const char *zIn = (const char*)sqlite3_value_text(apVal[0]);
-  const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
-  const char *zName = (const char*)sqlite3_value_text(apVal[2]);
-  sqlite3 *db = sqlite3_context_db_handle(pCtx);
-  UNUSED_PARAMETER(nVal);
-  if( zIn!=0 && cli_strncmp(zIn, "CREATE ", 7)==0 ){
-    for(i=0; i<ArraySize(aPrefix); i++){
-      int n = strlen30(aPrefix[i]);
-      if( cli_strncmp(zIn+7, aPrefix[i], n)==0 && zIn[n+7]==' ' ){
-        char *z = 0;
-        char *zFake = 0;
-        if( zSchema ){
-          char cQuote = quoteChar(zSchema);
-          if( cQuote && sqlite3_stricmp(zSchema,"temp")!=0 ){
-            z = sqlite3_mprintf("%.*s \"%w\".%s", n+7, zIn, zSchema, zIn+n+8);
-          }else{
-            z = sqlite3_mprintf("%.*s %s.%s", n+7, zIn, zSchema, zIn+n+8);
-          }
-        }
-        if( zName
-         && aPrefix[i][0]=='V'
-         && (zFake = shellFakeSchema(db, zSchema, zName))!=0
-        ){
-          if( z==0 ){
-            z = sqlite3_mprintf("%s\n/* %s */", zIn, zFake);
-          }else{
-            z = sqlite3_mprintf("%z\n/* %s */", z, zFake);
-          }
-          sqlite3_free(zFake);
-        }
-        if( z ){
-          sqlite3_result_text(pCtx, z, -1, sqlite3_free);
-          return;
-        }
-      }
-    }
-  }
-  sqlite3_result_value(pCtx, apVal[0]);
-}
 
 /*
 ** The source code for several run-time loadable extensions is inserted
@@ -1381,10 +633,760 @@ static const ModeInfo aModeInfo[] = {
 #endif
 
 /*
-** Limit input nesting via .read or any other input redirect.
-** It's not too expensive, so a generous allowance can be made.
+** If the following flag is set, then command execution stops
+** at an error if we are not interactive.
 */
-#define MAX_INPUT_NESTING 25
+static int bail_on_error = 0;
+
+/*
+** Treat stdin as an interactive input if the following variable
+** is true.  Otherwise, assume stdin is connected to a file or pipe.
+*/
+static int stdin_is_interactive = 1;
+
+/*
+** Treat stdout like a TTY if true.
+*/
+static int stdout_is_console = 1;
+
+/*
+** Use this value as the width of the output device.  Or, figure it
+** out at runtime if the value is negative.  Or use a default width
+** if this value is zero.
+*/
+static int stdout_tty_width = -1;
+
+/*
+** The following is the open SQLite database.  We make a pointer
+** to this database a static variable so that it can be accessed
+** by the SIGINT handler to interrupt database processing.
+*/
+static sqlite3 *globalDb = 0;
+
+/*
+** True if an interrupt (Control-C) has been received.
+*/
+static volatile int seenInterrupt = 0;
+
+/*
+** This is the name of our program. It is set in main(), used
+** in a number of other places, mostly for error messages.
+*/
+static char *Argv0;
+
+/*
+** Prompt strings. Initialized in main. Settable with
+**   .prompt main continue
+*/
+#define PROMPT_LEN_MAX 128
+/* First line prompt.   default: "sqlite> " */
+static char mainPrompt[PROMPT_LEN_MAX];
+/* Continuation prompt. default: "   ...> " */
+static char continuePrompt[PROMPT_LEN_MAX];
+
+/*
+** Write I/O traces to the following stream.
+*/
+#ifdef SQLITE_ENABLE_IOTRACE
+static FILE *iotrace = 0;
+#endif
+
+/*
+** Output routines that are able to redirect to memory rather than
+** doing actually I/O.
+**                                                Works like.
+**                                                --------------
+**   cli_printf(FILE*, const char*, ...);         fprintf()
+**   cli_puts(const char*, FILE*);                fputs()
+**   cli_vprintf(FILE*, const char*, va_list);    vfprintf()
+**
+** These are just thin wrappers with the following added semantics:
+** If the file-scope variable cli_output_capture is not NULL, and
+** if the FILE* argument is stdout or stderr, then rather than
+** writing to stdout/stdout, append the text to the cli_output_capture
+** variable.
+**
+** The cli_exit(int) routine works like exit() except that it
+** first dumps any capture output to stdout.
+*/
+static sqlite3_str *cli_output_capture = 0; 
+static int cli_printf(FILE *out, const char *zFormat, ...){
+  va_list ap;
+  int rc;
+  va_start(ap,zFormat);
+  if( cli_output_capture && (out==stdout || out==stderr) ){
+    sqlite3_str_vappendf(cli_output_capture, zFormat, ap);
+    rc = 1;
+  }else{
+    rc = sqlite3_vfprintf(out, zFormat, ap);
+  }
+  va_end(ap);
+  return rc;
+}
+static int cli_puts(const char *zText, FILE *out){
+  if( cli_output_capture && (out==stdout || out==stderr) ){
+    sqlite3_str_appendall(cli_output_capture, zText);
+    return 1;
+  }
+  return sqlite3_fputs(zText, out);
+}
+#if 0 /* Not currently used - available if we need it later */
+static int cli_vprintf(FILE *out, const char *zFormat, va_list ap){
+  if( cli_output_capture && (out==stdout || out==stderr) ){
+    sqlite3_str_vappendf(cli_output_capture, zFormat, ap);
+    return 1;
+  }else{
+    return sqlite3_vfprintf(out, zFormat, ap);
+  }
+}
+#endif
+static void cli_exit(int rc){
+  if( cli_output_capture ){
+    char *z = sqlite3_str_finish(cli_output_capture);
+    sqlite3_fputs(z, stdout);
+    fflush(stdout);
+  }
+  exit(rc);
+}
+
+
+#define eputz(z) cli_puts(z,stderr)
+#define sputz(fp,z) cli_puts(z,fp)
+
+/* A version of strcmp() that works with NULL values */
+static int cli_strcmp(const char *a, const char *b){
+  if( a==0 ) a = "";
+  if( b==0 ) b = "";
+  return strcmp(a,b);
+}
+static int cli_strncmp(const char *a, const char *b, size_t n){
+  if( a==0 ) a = "";
+  if( b==0 ) b = "";
+  return strncmp(a,b,n);
+}
+
+/* Return the current wall-clock time in microseconds since the
+** Unix epoch (1970-01-01T00:00:00Z)
+*/
+static sqlite3_int64 timeOfDay(void){
+#if defined(_WIN64) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
+  sqlite3_uint64 t;
+  FILETIME tm;
+  GetSystemTimePreciseAsFileTime(&tm);
+  t =  ((u64)tm.dwHighDateTime<<32) | (u64)tm.dwLowDateTime;
+  t += 116444736000000000LL;
+  t /= 10;
+  return t;
+#elif defined(_WIN32)
+  static sqlite3_vfs *clockVfs = 0;
+  sqlite3_int64 t;
+  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs==0 ) return 0;  /* Never actually happens */
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
+    clockVfs->xCurrentTimeInt64(clockVfs, &t);
+  }else{
+    double r;
+    clockVfs->xCurrentTime(clockVfs, &r);
+    t = (sqlite3_int64)(r*86400000.0);
+  }
+  return t*1000;
+#else
+  struct timeval sNow;
+  (void)gettimeofday(&sNow,0);
+  return ((i64)sNow.tv_sec)*1000000 + sNow.tv_usec;
+#endif
+}
+
+
+
+/* This is variant of the standard-library strncpy() routine with the
+** one change that the destination string is always zero-terminated, even
+** if there is no zero-terminator in the first n-1 characters of the source
+** string.
+*/
+static char *shell_strncpy(char *dest, const char *src, size_t n){
+  size_t i;
+  for(i=0; i<n-1 && src[i]!=0; i++) dest[i] = src[i];
+  dest[i] = 0;
+  return dest;
+}
+
+/*
+** strcpy() workalike to squelch an unwarranted link-time warning
+** from OpenBSD.
+*/
+static void shell_strcpy(char *dest, const char *src){
+  while( (*(dest++) = *(src++))!=0 ){}
+}
+
+/*
+** Optionally disable dynamic continuation prompt.
+** Unless disabled, the continuation prompt shows open SQL lexemes if any,
+** or open parentheses level if non-zero, or continuation prompt as set.
+** This facility interacts with the scanner and process_input() where the
+** below 5 macros are used.
+*/
+#ifdef SQLITE_OMIT_DYNAPROMPT
+# define CONTINUATION_PROMPT continuePrompt
+# define CONTINUE_PROMPT_RESET
+# define CONTINUE_PROMPT_AWAITS(p,s)
+# define CONTINUE_PROMPT_AWAITC(p,c)
+# define CONTINUE_PAREN_INCR(p,n)
+# define CONTINUE_PROMPT_PSTATE 0
+typedef void *t_NoDynaPrompt;
+# define SCAN_TRACKER_REFTYPE t_NoDynaPrompt
+#else
+# define CONTINUATION_PROMPT dynamicContinuePrompt()
+# define CONTINUE_PROMPT_RESET \
+  do {setLexemeOpen(&dynPrompt,0,0); trackParenLevel(&dynPrompt,0);} while(0)
+# define CONTINUE_PROMPT_AWAITS(p,s) \
+  if(p && stdin_is_interactive) setLexemeOpen(p, s, 0)
+# define CONTINUE_PROMPT_AWAITC(p,c) \
+  if(p && stdin_is_interactive) setLexemeOpen(p, 0, c)
+# define CONTINUE_PAREN_INCR(p,n) \
+  if(p && stdin_is_interactive) (trackParenLevel(p,n))
+# define CONTINUE_PROMPT_PSTATE (&dynPrompt)
+typedef struct DynaPrompt *t_DynaPromptRef;
+# define SCAN_TRACKER_REFTYPE t_DynaPromptRef
+
+static struct DynaPrompt {
+  char dynamicPrompt[PROMPT_LEN_MAX];
+  char acAwait[2];
+  int inParenLevel;
+  char *zScannerAwaits;
+} dynPrompt = { {0}, {0}, 0, 0 };
+
+/* Record parenthesis nesting level change, or force level to 0. */
+static void trackParenLevel(struct DynaPrompt *p, int ni){
+  p->inParenLevel += ni;
+  if( ni==0 ) p->inParenLevel = 0;
+  p->zScannerAwaits = 0;
+}
+
+/* Record that a lexeme is opened, or closed with args==0. */
+static void setLexemeOpen(struct DynaPrompt *p, char *s, char c){
+  if( s!=0 || c==0 ){
+    p->zScannerAwaits = s;
+    p->acAwait[0] = 0;
+  }else{
+    p->acAwait[0] = c;
+    p->zScannerAwaits = p->acAwait;
+  }
+}
+
+/* Upon demand, derive the continuation prompt to display. */
+static char *dynamicContinuePrompt(void){
+  if( continuePrompt[0]==0
+      || (dynPrompt.zScannerAwaits==0 && dynPrompt.inParenLevel == 0) ){
+    return continuePrompt;
+  }else{
+    if( dynPrompt.zScannerAwaits ){
+      size_t ncp = strlen(continuePrompt);
+      size_t ndp = strlen(dynPrompt.zScannerAwaits);
+      if( ndp > ncp-3 ) return continuePrompt;
+      shell_strcpy(dynPrompt.dynamicPrompt, dynPrompt.zScannerAwaits);
+      while( ndp<3 ) dynPrompt.dynamicPrompt[ndp++] = ' ';
+      shell_strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
+              PROMPT_LEN_MAX-4);
+    }else{
+      if( dynPrompt.inParenLevel>9 ){
+        shell_strncpy(dynPrompt.dynamicPrompt, "(..", 4);
+      }else if( dynPrompt.inParenLevel<0 ){
+        shell_strncpy(dynPrompt.dynamicPrompt, ")x!", 4);
+      }else{
+        shell_strncpy(dynPrompt.dynamicPrompt, "(x.", 4);
+        dynPrompt.dynamicPrompt[2] = (char)('0'+dynPrompt.inParenLevel);
+      }
+      shell_strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
+                    PROMPT_LEN_MAX-4);
+    }
+  }
+  return dynPrompt.dynamicPrompt;
+}
+#endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
+
+/* Indicate out-of-memory and exit. */
+static void shell_out_of_memory(void){
+  eputz("Error: out of memory\n");
+  cli_exit(1);
+}
+
+/* Check a pointer to see if it is NULL.  If it is NULL, exit with an
+** out-of-memory error.
+*/
+static void shell_check_oom(const void *p){
+  if( p==0 ) shell_out_of_memory();
+}
+
+/*
+** This routine works like printf in that its first argument is a
+** format string and subsequent arguments are values to be substituted
+** in place of % fields.  The result of formatting this string
+** is written to iotrace.
+*/
+#ifdef SQLITE_ENABLE_IOTRACE
+static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
+  va_list ap;
+  char *z;
+  if( iotrace==0 ) return;
+  va_start(ap, zFormat);
+  z = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  cli_printf(iotrace, "%s", z);
+  sqlite3_free(z);
+}
+#endif
+
+/*
+** Compute a string length that is limited to what can be stored in
+** lower 30 bits of a 32-bit signed integer.
+*/
+static int strlen30(const char *z){
+  size_t n;
+  if( z==0 ) return 0;
+  n = strlen(z);
+  return n>0x3fffffff ? 0x3fffffff : (int)n;
+}
+
+/*
+** Return open FILE * if zFile exists, can be opened for read
+** and is an ordinary file or a character stream source.
+** Otherwise return 0.
+*/
+static FILE * openChrSource(const char *zFile){
+#if defined(_WIN32) || defined(WIN32)
+  struct __stat64 x = {0};
+# define STAT_CHR_SRC(mode) ((mode & (_S_IFCHR|_S_IFIFO|_S_IFREG))!=0)
+  /* On Windows, open first, then check the stream nature. This order
+  ** is necessary because _stat() and sibs, when checking a named pipe,
+  ** effectively break the pipe as its supplier sees it. */
+  FILE *rv = sqlite3_fopen(zFile, "rb");
+  if( rv==0 ) return 0;
+  if( _fstat64(_fileno(rv), &x) != 0
+      || !STAT_CHR_SRC(x.st_mode)){
+    fclose(rv);
+    rv = 0;
+  }
+  return rv;
+#else
+  struct stat x = {0};
+  int rc = stat(zFile, &x);
+# define STAT_CHR_SRC(mode) (S_ISREG(mode)||S_ISFIFO(mode)||S_ISCHR(mode))
+  if( rc!=0 ) return 0;
+  if( STAT_CHR_SRC(x.st_mode) ){
+    return sqlite3_fopen(zFile, "rb");
+  }else{
+    return 0;
+  }
+#endif
+#undef STAT_CHR_SRC
+}
+
+/*
+** This routine reads a line of text from FILE in, stores
+** the text in memory obtained from malloc() and returns a pointer
+** to the text.  NULL is returned at end of file, or if malloc()
+** fails, or if the length of the line is longer than about a gigabyte.
+**
+** If zLine is not NULL then it is a malloced buffer returned from
+** a previous call to this routine that may be reused.
+*/
+static char *local_getline(char *zLine, FILE *in){
+  int nLine = zLine==0 ? 0 : 100;
+  int n = 0;
+
+  while( 1 ){
+    if( n+100>nLine ){
+      if( nLine>=1073741773 ){
+        free(zLine);
+        return 0;
+      }
+      nLine = nLine*2 + 100;
+      zLine = realloc(zLine, nLine);
+      shell_check_oom(zLine);
+    }
+    if( sqlite3_fgets(&zLine[n], nLine - n, in)==0 ){
+      if( n==0 ){
+        free(zLine);
+        return 0;
+      }
+      zLine[n] = 0;
+      break;
+    }
+    while( zLine[n] ) n++;
+    if( n>0 && zLine[n-1]=='\n' ){
+      n--;
+      if( n>0 && zLine[n-1]=='\r' ) n--;
+      zLine[n] = 0;
+      break;
+    }
+  }
+  return zLine;
+}
+
+/*
+** Retrieve a single line of input text.
+**
+** If in==0 then read from standard input and prompt before each line.
+** If isContinuation is true, then a continuation prompt is appropriate.
+** If isContinuation is zero, then the main prompt should be used.
+**
+** If zPrior is not NULL then it is a buffer from a prior call to this
+** routine that can be reused.
+**
+** The result is stored in space obtained from malloc() and must either
+** be freed by the caller or else passed back into this routine via the
+** zPrior argument for reuse.
+*/
+#ifndef SQLITE_SHELL_FIDDLE
+static char *one_input_line(ShellState *p, char *zPrior, int isContinuation){
+  char *zPrompt;
+  char *zResult;
+  FILE *in = p->in;
+  if( in!=0 ){
+    zResult = local_getline(zPrior, in);
+  }else{
+    zPrompt = isContinuation ? CONTINUATION_PROMPT : mainPrompt;
+#if SHELL_USE_LOCAL_GETLINE
+    sputz(stdout, zPrompt);
+    fflush(stdout);
+    do{
+      zResult = local_getline(zPrior, stdin);
+      zPrior = 0;
+      /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
+      if( zResult==0 ) sqlite3_sleep(50);
+    }while( zResult==0 && seenInterrupt>0 );
+#else
+    free(zPrior);
+    zResult = shell_readline(zPrompt);
+    while( zResult==0 ){
+      /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
+      sqlite3_sleep(50);
+      if( seenInterrupt==0 ) break;
+      zResult = shell_readline("");
+    }
+    if( zResult && *zResult ) shell_add_history(zResult);
+#endif
+  }
+  return zResult;
+}
+#endif /* !SQLITE_SHELL_FIDDLE */
+
+/*
+** Return the value of a hexadecimal digit.  Return -1 if the input
+** is not a hex digit.
+*/
+static int hexDigitValue(char c){
+  if( c>='0' && c<='9' ) return c - '0';
+  if( c>='a' && c<='f' ) return c - 'a' + 10;
+  if( c>='A' && c<='F' ) return c - 'A' + 10;
+  return -1;
+}
+
+/*
+** Interpret zArg as an integer value, possibly with suffixes.
+**
+** If the value specified by zArg is outside the range of values that
+** can be represented using a 64-bit twos-complement integer, then return
+** the nearest representable value.
+*/
+static sqlite3_int64 integerValue(const char *zArg){
+  sqlite3_uint64 v = 0;
+  static const struct { char *zSuffix; unsigned int iMult; } aMult[] = {
+    { "KiB", 1024 },
+    { "MiB", 1024*1024 },
+    { "GiB", 1024*1024*1024 },
+    { "KB",  1000 },
+    { "MB",  1000000 },
+    { "GB",  1000000000 },
+    { "K",   1000 },
+    { "M",   1000000 },
+    { "G",   1000000000 },
+  };
+  int i;
+  int isNeg = 0;
+  if( zArg[0]=='-' ){
+    isNeg = 1;
+    zArg++;
+  }else if( zArg[0]=='+' ){
+    zArg++;
+  }
+  if( zArg[0]=='0' && zArg[1]=='x' ){
+    int x;
+    zArg += 2;
+    while( (x = hexDigitValue(zArg[0]))>=0 ){
+      if( v > 0x0fffffffffffffffULL ) goto integer_overflow;
+      v = (v<<4) + x;
+      zArg++;
+    }
+  }else{
+    while( IsDigit(zArg[0]) ){
+      if( v>=922337203685477580LL ){
+        if( v>922337203685477580LL || zArg[0]>='8' ) goto integer_overflow;
+      }
+      v = v*10 + (zArg[0] - '0');
+      zArg++;
+    }
+  }
+  for(i=0; i<ArraySize(aMult); i++){
+    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
+      if( 0x7fffffffffffffffULL/aMult[i].iMult < v ) goto integer_overflow;
+      v *= aMult[i].iMult;
+      break;
+    }
+  }
+  if( isNeg && v>0x7fffffffffffffffULL ) goto integer_overflow;
+  return isNeg? -(sqlite3_int64)v : (sqlite3_int64)v;
+integer_overflow:
+  return isNeg ? (i64)0x8000000000000000LL : 0x7fffffffffffffffLL;
+}
+
+/*
+** A variable length string to which one can append text.
+*/
+typedef struct ShellText ShellText;
+struct ShellText {
+  char *zTxt;       /* The text */
+  i64 n;            /* Number of bytes of zTxt[] actually used */
+  i64 nAlloc;       /* Number of bytes allocated for zTxt[] */
+};
+
+/*
+** Initialize and destroy a ShellText object
+*/
+static void initText(ShellText *p){
+  memset(p, 0, sizeof(*p));
+}
+static void freeText(ShellText *p){
+  sqlite3_free(p->zTxt);
+  initText(p);
+}
+
+/* zIn is either a pointer to a NULL-terminated string in memory obtained
+** from malloc(), or a NULL pointer. The string pointed to by zAppend is
+** added to zIn, and the result returned in memory obtained from malloc().
+** zIn, if it was not NULL, is freed.
+**
+** If the third argument, quote, is not '\0', then it is used as a
+** quote character for zAppend.
+*/
+static void appendText(ShellText *p, const char *zAppend, char quote){
+  i64 len;
+  i64 i;
+  i64 nAppend = strlen30(zAppend);
+
+  len = nAppend+p->n+1;
+  if( quote ){
+    len += 2;
+    for(i=0; i<nAppend; i++){
+      if( zAppend[i]==quote ) len++;
+    }
+  }
+
+  if( p->zTxt==0 || p->n+len>=p->nAlloc ){
+    p->nAlloc = p->nAlloc*2 + len + 20;
+    p->zTxt = sqlite3_realloc64(p->zTxt, p->nAlloc);
+    shell_check_oom(p->zTxt);
+  }
+
+  if( quote ){
+    char *zCsr = p->zTxt+p->n;
+    *zCsr++ = quote;
+    for(i=0; i<nAppend; i++){
+      *zCsr++ = zAppend[i];
+      if( zAppend[i]==quote ) *zCsr++ = quote;
+    }
+    *zCsr++ = quote;
+    p->n = (i64)(zCsr - p->zTxt);
+    *zCsr = '\0';
+  }else{
+    memcpy(p->zTxt+p->n, zAppend, nAppend);
+    p->n += nAppend;
+    p->zTxt[p->n] = '\0';
+  }
+}
+
+/*
+** Attempt to determine if identifier zName needs to be quoted, either
+** because it contains non-alphanumeric characters, or because it is an
+** SQLite keyword.  Be conservative in this estimate:  When in doubt assume
+** that quoting is required.
+**
+** Return '"' if quoting is required.  Return 0 if no quoting is required.
+*/
+static char quoteChar(const char *zName){
+  int i;
+  if( zName==0 ) return '"';
+  if( !IsAlpha(zName[0]) && zName[0]!='_' ) return '"';
+  for(i=0; zName[i]; i++){
+    if( !IsAlnum(zName[i]) && zName[i]!='_' ) return '"';
+  }
+  return sqlite3_keyword_check(zName, i) ? '"' : 0;
+}
+
+/*
+** Construct a fake object name and column list to describe the structure
+** of the view, virtual table, or table valued function zSchema.zName.
+**
+** The returned string comes from sqlite3_mprintf() and should be freed
+** by the caller using sqlite3_free().
+*/
+static char *shellFakeSchema(
+  sqlite3 *db,            /* The database connection containing the vtab */
+  const char *zSchema,    /* Schema of the database holding the vtab */
+  const char *zName       /* The name of the virtual table */
+){
+  sqlite3_stmt *pStmt = 0;
+  char *zSql;
+  ShellText s;
+  char cQuote;
+  char *zDiv = "(";
+  int nRow = 0;
+
+  zSql = sqlite3_mprintf("PRAGMA \"%w\".table_info=%Q;",
+                         zSchema ? zSchema : "main", zName);
+  shell_check_oom(zSql);
+  sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  sqlite3_free(zSql);
+  initText(&s);
+  if( zSchema ){
+    cQuote = quoteChar(zSchema);
+    if( cQuote && sqlite3_stricmp(zSchema,"temp")==0 ) cQuote = 0;
+    appendText(&s, zSchema, cQuote);
+    appendText(&s, ".", 0);
+  }
+  cQuote = quoteChar(zName);
+  appendText(&s, zName, cQuote);
+  while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    const char *zCol = (const char*)sqlite3_column_text(pStmt, 1);
+    nRow++;
+    appendText(&s, zDiv, 0);
+    zDiv = ",";
+    if( zCol==0 ) zCol = "";
+    cQuote = quoteChar(zCol);
+    appendText(&s, zCol, cQuote);
+  }
+  appendText(&s, ")", 0);
+  sqlite3_finalize(pStmt);
+  if( nRow==0 ){
+    freeText(&s);
+    s.zTxt = 0;
+  }
+  return s.zTxt;
+}
+
+/*
+** SQL function:  strtod(X)
+**
+** Use the C-library strtod() function to convert string X into a double.
+** Used for comparing the accuracy of SQLite's internal text-to-float conversion
+** routines against the C-library.
+*/
+static void shellStrtod(
+  sqlite3_context *pCtx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  char *z = (char*)sqlite3_value_text(apVal[0]);
+  UNUSED_PARAMETER(nVal);
+  if( z==0 ) return;
+  sqlite3_result_double(pCtx, strtod(z,0));
+}
+
+/*
+** SQL function:  dtostr(X)
+**
+** Use the C-library printf() function to convert real value X into a string.
+** Used for comparing the accuracy of SQLite's internal float-to-text conversion
+** routines against the C-library.
+*/
+static void shellDtostr(
+  sqlite3_context *pCtx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  double r = sqlite3_value_double(apVal[0]);
+  int n = nVal>=2 ? sqlite3_value_int(apVal[1]) : 26;
+  char z[400];
+  if( n<1 ) n = 1;
+  if( n>350 ) n = 350;
+  sprintf(z, "%#+.*e", n, r);
+  sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
+}
+
+/*
+** SQL function:  shell_add_schema(S,X)
+**
+** Add the schema name X to the CREATE statement in S and return the result.
+** Examples:
+**
+**    CREATE TABLE t1(x)   ->   CREATE TABLE xyz.t1(x);
+**
+** Also works on
+**
+**    CREATE INDEX
+**    CREATE UNIQUE INDEX
+**    CREATE VIEW
+**    CREATE TRIGGER
+**    CREATE VIRTUAL TABLE
+**
+** This UDF is used by the .schema command to insert the schema name of
+** attached databases into the middle of the sqlite_schema.sql field.
+*/
+static void shellAddSchemaName(
+  sqlite3_context *pCtx,
+  int nVal,
+  sqlite3_value **apVal
+){
+  static const char *aPrefix[] = {
+     "TABLE",
+     "INDEX",
+     "UNIQUE INDEX",
+     "VIEW",
+     "TRIGGER",
+     "VIRTUAL TABLE"
+  };
+  int i = 0;
+  const char *zIn = (const char*)sqlite3_value_text(apVal[0]);
+  const char *zSchema = (const char*)sqlite3_value_text(apVal[1]);
+  const char *zName = (const char*)sqlite3_value_text(apVal[2]);
+  sqlite3 *db = sqlite3_context_db_handle(pCtx);
+  UNUSED_PARAMETER(nVal);
+  if( zIn!=0 && cli_strncmp(zIn, "CREATE ", 7)==0 ){
+    for(i=0; i<ArraySize(aPrefix); i++){
+      int n = strlen30(aPrefix[i]);
+      if( cli_strncmp(zIn+7, aPrefix[i], n)==0 && zIn[n+7]==' ' ){
+        char *z = 0;
+        char *zFake = 0;
+        if( zSchema ){
+          char cQuote = quoteChar(zSchema);
+          if( cQuote && sqlite3_stricmp(zSchema,"temp")!=0 ){
+            z = sqlite3_mprintf("%.*s \"%w\".%s", n+7, zIn, zSchema, zIn+n+8);
+          }else{
+            z = sqlite3_mprintf("%.*s %s.%s", n+7, zIn, zSchema, zIn+n+8);
+          }
+        }
+        if( zName
+         && aPrefix[i][0]=='V'
+         && (zFake = shellFakeSchema(db, zSchema, zName))!=0
+        ){
+          if( z==0 ){
+            z = sqlite3_mprintf("%s\n/* %s */", zIn, zFake);
+          }else{
+            z = sqlite3_mprintf("%z\n/* %s */", z, zFake);
+          }
+          sqlite3_free(zFake);
+        }
+        if( z ){
+          sqlite3_result_text(pCtx, z, -1, sqlite3_free);
+          return;
+        }
+      }
+    }
+  }
+  sqlite3_result_value(pCtx, apVal[0]);
+}
+
 
 /************************* BEGIN PERFORMANCE TIMER *****************************/
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__minux)
@@ -1575,7 +1577,7 @@ static void modeFree(Mode *p){
   free(p->spec.zTableName);
   free(p->spec.zNull);
   memset(p, 0, sizeof(*p));
-  p->spec.iVersion = 2;
+  p->spec.iVersion = 1;
   p->autoExplain = autoExplain;
 }
 
@@ -1691,7 +1693,7 @@ static void modeChange(ShellState *p, unsigned char eMode){
 ** already been freed and zeroed prior to calling this routine.
 */
 static void modeDefault(ShellState *p){
-  p->mode.spec.iVersion = 2;
+  p->mode.spec.iVersion = 1;
   p->mode.autoExplain = 1;
   if( stdin_is_interactive || stdout_is_console ){
     modeChange(p, MODE_TTY);
@@ -12373,12 +12375,13 @@ static void echo_group_input(ShellState *p, const char *zDo){
 ** impl because we need the global shellState and cannot access it from that
 ** function without moving lots of code around (creating a larger/messier diff).
 */
-static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
+static char *one_input_line(ShellState *p, char *zPrior, int isContinuation){
   /* Parse the next line from shellState.wasm.zInput. */
   const char *zBegin = shellState.wasm.zPos;
   const char *z = zBegin;
   char *zLine = 0;
   i64 nZ = 0;
+  FILE *in = p->in;
 
   UNUSED_PARAMETER(in);
   UNUSED_PARAMETER(isContinuation);
@@ -12436,7 +12439,7 @@ static int process_input(ShellState *p, const char *zSrc){
   CONTINUE_PROMPT_RESET;
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
     fflush(p->out);
-    zLine = one_input_line(p->in, zLine, nSql>0);
+    zLine = one_input_line(p, zLine, nSql>0);
     if( zLine==0 ){
       /* End of input */
       if( p->in==0 && stdin_is_interactive ) cli_puts("\n", p->out);
