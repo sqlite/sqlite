@@ -181,14 +181,14 @@ int main(int argc, char **argv){
     case 0: {
       printf("Doing %d calls to C-lib sprintf()\n", cnt);
       for(i=0; i<cnt; i++){
-        sprintf(zBuf, "%.26g", aVal[i%NN]);
+        sprintf(zBuf, "%.17g", aVal[i%NN]);
       }
       break;
     }
     case 1: {
       printf("Doing %d calls to sqlite3_snprintf()\n", cnt);
       for(i=0; i<cnt; i++){
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.26g", aVal[i%NN]);
+        sqlite3_snprintf(sizeof(zBuf), zBuf, "%.17g", aVal[i%NN]);
       }
       break;
     }
