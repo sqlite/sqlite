@@ -764,6 +764,9 @@ static void sqlite3Fp2Convert10(u64 m, int e, int n, u64 *pD, int *pP){
 
 /*
 ** Return an IEEE754 floating point value that approximates d*pow(10,p).
+**
+** The (current) algorithm is adapted from the work of Ross Cox at
+** https://github.com/rsc/fpfmt
 */
 static double sqlite3Fp10Convert2(u64 d, int p){
   int b, lp, e, adj, s;
@@ -815,134 +818,161 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 **
 ** z[] must be UTF-8 and zero-terminated.
 **
-** Return TRUE if the result is a valid real number (or integer) and FALSE
-** if the string is empty or contains extraneous text.  More specifically
-** return
-**      1          =>  The input string is a pure integer
-**      2 or more  =>  The input has a decimal point or eNNN clause
-**      0 or less  =>  The input string is not a valid number
-**     -1          =>  Not a valid number, but has a valid prefix which
-**                     includes a decimal point and/or an eNNN clause
+** Return positive if the result is a valid real number (or integer) and
+** zero or negative if the string is empty or contains extraneous text.
+** Lower bits of the return value contain addition information about the
+** parse:
 **
-** Valid numbers are in one of these formats:
+**   bit 0       =>   Set for any valid input
+**   bit 1       =>   Input contains a decimal point or eNNN clause
+**                    This bit is zero if the input is an integer
+**   bit 2       =>   The input is exactly 0.0, not an underflow from
+**                    some value near zero
+**   bit 3       =>   More than 19 significant digits in the input
+**
+** If the input contains a syntax error but begins with text that might
+** be a valid number of some kind, then the result is negative.  The
+** result is only zero if no prefix of the input could be interpreted as
+** a number.
+**
+** Leading and trailing whitespace is ignored.  Valid numbers are in
+** one of the formats below:
 **
 **    [+-]digits[E[+-]digits]
 **    [+-]digits.[digits][E[+-]digits]
 **    [+-].digits[E[+-]digits]
 **
-** Leading and trailing whitespace is ignored for the purpose of determining
-** validity.
-**
-** If some prefix of the input string is a valid number, this routine
-** returns FALSE but it still converts the prefix and writes the result
-** into *pResult.
+** Algorithm sketch:  Compute an unsigned 64-bit integer s and a base-10
+** exponent d such that the value encoding by the input is s*pow(10,d).
+** Then invoke sqlite3Fp10Convert2() to calculated the closest possible
+** IEEE754 double.  The sign is added back afterwards, if the input string
+** starts with a "-".  The use of an unsigned 64-bit s mantissa means that
+** only about the first 19 significant digits of the input can contribute
+** to the result.  This can result in suboptimal rounding decisions when
+** correct rounding requires more than 19 input digits.  For example,
+** this routine renders "3500000000000000.2500001" as
+** 3500000000000000.0 instead of 3500000000000000.5 because the decision
+** to round up instead of using banker's rounding to round down is determined
+** by the 23rd significant digit, which this routine ignores. It is not
+** possible to do better without some kind of BigNum.
 */
-#if defined(_MSC_VER)
-#pragma warning(disable : 4756)
-#endif
-int sqlite3AtoF(const char *z, double *pResult){
+int sqlite3AtoF(const char *zIn, double *pResult){
 #ifndef SQLITE_OMIT_FLOATING_POINT
-  /* sign * significand * (10 ^ (esign * exponent)) */
-  int neg = 0;     /* True for a negative value */
-  u64 s = 0;       /* mantissa */
-  int d = 0;       /* Value is s * pow(10,d) */
-  int nDigit = 0;  /* Number of digits processed */
-  int eType = 1;   /* 1: pure integer,  2+: fractional */
+  const unsigned char *z = (const unsigned char*)zIn;
+  int neg = 0;       /* True for a negative value */
+  u64 s = 0;         /* mantissa */
+  int d = 0;         /* Value is s * pow(10,d) */
+  int mState = 0;    /* 1: digit seen 2: fp 4: hard-zero */
+  unsigned v;        /* Value of a single digit */
 
-  *pResult = 0.0;   /* Default return value, in case of an error */
-
-  /* skip leading spaces */
-  while( sqlite3Isspace(*z) ) z++;
-
-  /* get sign of significand */
-  if( *z=='-' ){
+  start_of_text:
+  if( (v = (unsigned)z[0] - '0')<10 ){
+    parse_integer_part:
+    mState = 1;
+    s = v;
+    z++;
+    while( (v = (unsigned)z[0] - '0')<10 ){
+      s = s*10 + v;
+      z++;
+      if( s>=(LARGEST_UINT64-9)/10 ){
+        mState = 9;
+        while( sqlite3Isdigit(z[0]) ){ z++; d++; }
+        break;
+      }
+    }
+  }else if( z[0]=='-' ){
     neg = 1;
     z++;
-  }else if( *z=='+' ){
+    if( (v = (unsigned)z[0] - '0')<10 ) goto parse_integer_part;
+  }else if( z[0]=='+' ){
     z++;
-  }
-
-  /* copy max significant digits to significand */
-  while( sqlite3Isdigit(*z) ){
-    s = s*10 + (*z - '0');
-    z++; nDigit++;
-    if( s>=((LARGEST_INT64-9)/10) ){
-      /* skip non-significant significand digits
-      ** (increase exponent by d to shift decimal left) */
-      while( sqlite3Isdigit(*z) ){ z++; d++; }
-    }
+    if( (v = (unsigned)z[0] - '0')<10 ) goto parse_integer_part;
+  }else if( sqlite3Isspace(z[0]) ){
+    do{ z++; }while( sqlite3Isspace(z[0]) );
+    goto start_of_text;
+  }else{
+    s = 0;
   }
 
   /* if decimal point is present */
   if( *z=='.' ){
     z++;
-    eType++;
-    /* copy digits from after decimal to significand
-    ** (decrease exponent by d to shift decimal right) */
-    while( sqlite3Isdigit(*z) ){
-      if( s<((LARGEST_INT64-9)/10) ){
-        s = s*10 + (*z - '0');
-        d--;
-        nDigit++;
-      }
-      z++;
+    if( sqlite3Isdigit(z[0]) ){
+      mState |= 1;
+      do{
+        if( s<(LARGEST_UINT64-9)/10 ){
+          s = s*10 + z[0] - '0';
+          d--;
+        }else{
+          mState = 11;
+        }
+      }while( sqlite3Isdigit(*++z) );
+    }else if( mState==0 ){
+      *pResult = 0.0;
+      return 0;
     }
+    mState |= 2;
+  }else if( mState==0 ){
+    *pResult = 0.0;
+    return 0;
   }
 
   /* if exponent is present */
   if( *z=='e' || *z=='E' ){
-    int esign = 1;   /* sign of exponent */
+    int esign;
     z++;
-    eType++;
-
+ 
     /* get sign of exponent */
     if( *z=='-' ){
       esign = -1;
       z++;
-    }else if( *z=='+' ){
-      z++;
+    }else{
+      esign = +1;
+      if( *z=='+' ){
+        z++;
+      }
     }
     /* copy digits to exponent */
-    if( sqlite3Isdigit(*z) ){
-      int exp = *z - '0';
+    if( (v = (unsigned)z[0] - '0')<10 ){
+      int exp = v;
       z++;
-      while( sqlite3Isdigit(*z) ){
-        exp = exp<10000 ? (exp*10 + (*z - '0')) : 10000;
+      mState |= 2;
+      while( (v = (unsigned)z[0] - '0')<10 ){
+        exp = exp<10000 ? (exp*10 + v) : 10000;
         z++;
       }
       d += esign*exp;
     }else{
-      eType = -1;
+      z--;  /* Leave z[0] at 'e' or '+' or '-',
+            ** so that the return is 0 or -1 */
     }
   }
 
-  /* skip trailing spaces */
-  while( sqlite3Isspace(*z) ) z++;
-
-  /* Zero is a special case */
+  /* Convert s*pow(10,d) into real */
   if( s==0 ){
-    *pResult = neg ? -0.0 : +0.0;
+    *pResult = 0.0;
+    mState |= 4;
   }else{
     *pResult = sqlite3Fp10Convert2(s,d);
-    if( neg ) *pResult = -*pResult;
-    assert( !sqlite3IsNaN(*pResult) );
   }
+  if( neg ) *pResult = -*pResult;
+  assert( !sqlite3IsNaN(*pResult) );
 
   /* return true if number and no extra non-whitespace characters after */
-  if( z[0]==0 && nDigit>0 ){
-    return eType;
-  }else if( eType>=2 && nDigit>0 ){
-    return -1;
-  }else{
-    return 0;
+  if( z[0]==0 ){
+    return mState;
   }
+  if( sqlite3Isspace(z[0]) ){
+    do{ z++; }while( sqlite3Isspace(*z) );
+    if( z[0]==0 ){
+      return mState;
+    }
+  }
+  return 0xfffffff0 | mState;
 #else
-  return !sqlite3Atoi64(z, pResult, strlen(z), SQLITE_UTF8);
+  return sqlite3Atoi64(z, pResult, strlen(z), SQLITE_UTF8)==0;
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
-#if defined(_MSC_VER)
-#pragma warning(default : 4756)
-#endif
 
 /*
 ** Digit pairs used to convert a U64 or I64 into text, two digits
@@ -1058,8 +1088,8 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   int incr;
   u64 u = 0;
   int neg = 0; /* assume positive */
-  int i;
-  int c = 0;
+  int i, j;
+  unsigned int c = 0;
   int nonNum = 0;  /* True if input contains UTF16 with high byte non-zero */
   int rc;          /* Baseline return code */
   const char *zStart;
@@ -1087,8 +1117,8 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   }
   zStart = zNum;
   while( zNum<zEnd && zNum[0]=='0' ){ zNum+=incr; } /* Skip leading zeros. */
-  for(i=0; &zNum[i]<zEnd && (c=zNum[i])>='0' && c<='9'; i+=incr){
-    u = u*10 + c - '0';
+  for(i=0; &zNum[i]<zEnd && (c=(unsigned)zNum[i]-'0')<=9; i+=incr){
+    u = u*10 + c;
   }
   testcase( i==18*incr );
   testcase( i==19*incr );
@@ -1125,14 +1155,14 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     return rc;
   }else{
     /* zNum is a 19-digit numbers.  Compare it against 9223372036854775808. */
-    c = i>19*incr ? 1 : compare2pow63(zNum, incr);
-    if( c<0 ){
+    j = i>19*incr ? 1 : compare2pow63(zNum, incr);
+    if( j<0 ){
       /* zNum is less than 9223372036854775808 so it fits */
       assert( u<=LARGEST_INT64 );
       return rc;
     }else{
       *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
-      if( c>0 ){
+      if( j>0 ){
         /* zNum is greater than 9223372036854775808 so it overflows */
         return 2;
       }else{
@@ -1378,7 +1408,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         int jj, kk;
         u64 v2;
         assert( z[0]!='0' );
-        for(jj=14; z[jj-1]=='0'; jj--){}
+        for(jj=13; z[jj-1]=='0'; jj--){}
         v2 = z[0] - '0';
         for(kk=1; kk<jj; kk++) v2 = (v2*10) + z[kk] - '0';
         if( r==sqlite3Fp10Convert2(v2, exp + n - jj) ){

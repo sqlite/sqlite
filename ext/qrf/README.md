@@ -115,6 +115,7 @@ struct sqlite3_qrf_spec {
   short int nScreenWidth;     /* Maximum overall table width */
   short int nLineLimit;       /* Maximum number of lines for any row */
   short int nTitleLimit;      /* Maximum number of characters in a title */
+  unsigned int nMultiInsert;  /* Add rows to one INSERT until size exceeds */
   int nCharLimit;             /* Maximum number of characters in a cell */
   int nWidth;                 /* Number of entries in aWidth[] */
   int nAlign;                 /* Number of entries in aAlignment[] */
@@ -381,7 +382,16 @@ can improve readability.   The nTitleLimit setting currently only
 works for **Box**, **Column**, **Line**, **Markdown**, and **Table**
 styles, though that limitation might change in future releases.
 
-### 2.9 Word Wrapping In Columnar Styles (nWrap, bWordWrap)
+### 2.9 Multiple Tuples Per INSERT In QRF_STYLE_Insert (nMultiInsert)
+
+If the sqlite3_qrf_spec.nMultiInsert value is positive, then the
+QRF_STYLE_Insert output mode will generate multiple tuples in
+each INSERT statement until the total number of bytes in the
+statement exceeds nMultiInsert.  A value of a few thousand is
+recommended here, in order to generate SQL output that is parsed
+and inserted at maximum speed by SQLite.
+
+### 2.10 Word Wrapping In Columnar Styles (nWrap, bWordWrap)
 
 When using columnar formatting modes (QRF_STYLE_Box, QRF_STYLE_Column,
 QRF_STYLE_Markdown, or QRF_STYLE_Table), the formatter attempts to limit
@@ -400,7 +410,7 @@ anywhere, including in the middle of a word.
 For narrow columns and wide words, it might sometimes be necessary to split
 a column in the middle of a word, even when bWordWrap is QRF_Yes.
 
-### 2.10 Helping The Output To Fit On The Terminal (nScreenWidth)
+### 2.11 Helping The Output To Fit On The Terminal (nScreenWidth)
 
 The sqlite3_qrf_spec.nScreenWidth field can be set the number of
 characters that will fit on one line on the viewer output device.
@@ -420,7 +430,7 @@ The nScreenWidth field currently only makes a difference in
 columnar styles (**Box**, **Column**, **Markdown**, and **Table**)
 and in the **Line** style.
 
-### 2.11 Individual Column Width (nWidth and aWidth)
+### 2.12 Individual Column Width (nWidth and aWidth)
 
 The sqlite3_qrf_spec.aWidth field is a pointer to an array of
 signed 16-bit integers that control the width of individual columns
@@ -458,7 +468,7 @@ Again, negative values for aWidth\[\] entries are supported for
 backwards compatibility only, and are not recommended for new
 applications.
 
-### 2.12 Alignment (nAlignment, aAlignment, eDfltAlign, eTitleAlign)
+### 2.13 Alignment (nAlignment, aAlignment, eDfltAlign, eTitleAlign)
 
 Some cells in a display table might contain a lot of text and thus
 be wide, or they might contain newline characters or be wrapped by
@@ -537,7 +547,7 @@ specify a vertical alignment, then values are top-aligned
 The vertical alignment settings are currently ignored and 
 the vertical alignment is always QRF_ALIGN_Top.*
 
-### 2.13 Row and Column Separator Strings
+### 2.14 Row and Column Separator Strings
 
 The sqlite3_qrf_spec.zColumnSep and sqlite3_qrf_spec.zRowSep strings
 are alternative column and row separator character sequences.  If not
@@ -545,18 +555,18 @@ specified (if these pointers are left as NULL) then appropriate defaults
 are used.  Some output styles have hard-coded column and row separators
 and these settings are ignored for those styles.
 
-### 2.14 The Output Table Name
+### 2.15 The Output Table Name
 
 The sqlite3_qrf_spec.zTableName value is the name of the output table
 when eStyle is QRF_STYLE_Insert.
 
-### 2.15 The Rendering Of NULL (zNull)
+### 2.16 The Rendering Of NULL (zNull)
 
 If a value is NULL then show the NULL using the string
 found in sqlite3_qrf_spec.zNull.  If zNull is itself a NULL pointer
 then NULL values are rendered as an empty string.
 
-### 2.16 Optional Value Rendering Callback
+### 2.17 Optional Value Rendering Callback
 
 If the sqlite3_qrf_spec.xRender field is not NULL, then each
 sqlite3_value coming out of the query is first passed to the
@@ -709,7 +719,10 @@ the `<TABLE>..</TABLE>` around the outside.
 The **Insert** style generates a series of SQL "INSERT" statements
 that will inserts the data that is output into a table whose name is defined
 by the zTableName field of `sqlite3_qrf_spec`.  If zTableName is NULL,
-then a substitute name is used.
+then a substitute name is used.  If nMultiInsert is positive, then the
+output will add multiple rows to each INSERT statement until the size
+of the INSERT statement exceeds nMultiInsert bytes before starting
+a new INSERT statement.
 
 The **Json** and **JObject** styles generates JSON text for the query result.
 The **Json** style produces a JSON array of structures with one 
