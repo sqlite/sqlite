@@ -13,13 +13,19 @@
 **
 ** To run the test:
 **
-**    time ./a.out 0 10000000     <-- standard library
-**    time ./a.out 1 10000000     <-- SQLite
-**    time ./a.out 2 10000000     <-- test program overhead
+**    ./a.out 0 10000000     <-- standard library
+**    ./a.out 1 10000000     <-- SQLite
+**    ./a.out 2 10000000     <-- test program overhead
 */
+#include "sqlite3.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef _WIN32
+# include <windows.h>
+#else
+# include <sys/time.h>
+#endif
 
 static const char *aVal[] = {
   "-1.01638304862856430",
@@ -125,15 +131,45 @@ static const char *aVal[] = {
 };
 #define NN (sizeof(aVal)/sizeof(aVal[0]))
 
+/* Return the current wall-clock time in microseconds since the
+** Unix epoch (1970-01-01T00:00:00Z)
+*/
+static sqlite3_int64 timeOfDay(void){
+#if defined(_WIN64) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
+  sqlite3_uint64 t;
+  FILETIME tm;
+  GetSystemTimePreciseAsFileTime(&tm);
+  t =  ((sqlite3_uint64)tm.dwHighDateTime<<32) |
+          (sqlite3_uint64)tm.dwLowDateTime;
+  t += 116444736000000000LL;
+  t /= 10;
+  return t;
+#elif defined(_WIN32)
+  static sqlite3_vfs *clockVfs = 0;
+  sqlite3_int64 t;
+  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs==0 ) return 0;  /* Never actually happens */
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
+    clockVfs->xCurrentTimeInt64(clockVfs, &t);
+  }else{
+    double r;
+    clockVfs->xCurrentTime(clockVfs, &r);
+    t = (sqlite3_int64)(r*86400000.0);
+  }
+  return t*1000;
+#else
+  struct timeval sNow;
+  (void)gettimeofday(&sNow,0);
+  return ((sqlite3_int64)sNow.tv_sec)*1000000 + sNow.tv_usec;
+#endif
+}
 
-#include "sqlite3.h"
-#include <stdio.h>
-#include <stdlib.h>
 
 int main(int argc, char **argv){
   int i;
   int cnt;
   int fg;
+  sqlite3_int64 tm;
   double arSum[401];
   char z[1000];
 
@@ -144,6 +180,7 @@ int main(int argc, char **argv){
   cnt = atoi(argv[2]);
   fg = atoi(argv[1]);
 
+  tm = timeOfDay();
   switch( fg % 4 ){
     case 0: printf("Doing %d calls to C-lib atof()\n", cnt); break;
     case 1: printf("Doing %d calls to sqlite3AtoF()\n", cnt); break;
@@ -193,6 +230,8 @@ int main(int argc, char **argv){
     }
   }
   for(i=1; i<=400; i++) arSum[0] += arSum[i];
-  printf("Grand total: %g\n", arSum[0]);
+  printf("Checksum: %g\n", arSum[0]);
+  tm = timeOfDay() - tm;
+  printf("Elapse time: %lld.%06lld seconds\n", tm/1000000, tm%1000000);
   return 0;
 }
