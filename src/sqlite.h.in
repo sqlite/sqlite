@@ -1290,6 +1290,12 @@ struct sqlite3_io_methods {
 #define SQLITE_SET_LOCKPROXYFILE      SQLITE_FCNTL_SET_LOCKPROXYFILE
 #define SQLITE_LAST_ERRNO             SQLITE_FCNTL_LAST_ERRNO
 
+/* reserved file-control numbers:
+**                                         101
+**                                         102
+**                                         103
+*/
+
 
 /*
 ** CAPI3REF: Mutex Handle

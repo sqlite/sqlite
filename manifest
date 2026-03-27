@@ -1,5 +1,5 @@
-C Add\sSQLITE_STRICT_SUBTYPE\sto\sPRAGMA\scompile_options,\san\somission\sreported\sin\s[forum:3906a71526|forum\spost\s3906a71526].
-D 2026-03-26T19:11:57.079
+C Add\sa\scomment\sshowing\sreserved\sfile-control\snumbers\sto\ssqlite3.h
+D 2026-03-27T11:46:11.333
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -735,7 +735,7 @@ F src/resolve.c 928ff887f2a7c64275182060d94d06fdddbe32226c569781cf7e7edc6f58d7fd
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c ffe199f025a0dd74670d2a77232bdea364a4d7b36f32c64a6572d39ba6a11576
 F src/shell.c.in 91ee40ec3f75192362cbaa0ad85316140b8dde00a184113d73a837fb6173dbcc
-F src/sqlite.h.in 757b3dbcc4560c02bf9713a395f28a33c66202c1750c740f336df4a118424f6b
+F src/sqlite.h.in e7acbb01518f05c5a342149ec1eeb1afcdccf9b90a6e9770a4893ae9a3c756ae
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 1b7a0ee438bb5c2896d0609c537e917d8057b3340f6ad004d2de44f03e3d3cca
 F src/sqliteInt.h 9716721fb57e32938a1d30a84560ce7633c63860a2209e188c87afad15d4b464
@@ -2195,8 +2195,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1721c8da769816ca16104cd636299d84f682fc004938a50056b76b269e49e915
-R cfd257cd02bb1386c8a17c1b329afb51
-U stephan
-Z e1521015954d6443ecab380002341b57
+P c5af6a10245b6b847d30002806c1577b020c36ab27f7b1cf202ade136aa4779c
+R 51ff65a6bd1b538cf25dd22d8d1484ee
+U drh
+Z d9594447f664fc3f5df800bf2243aaf0
 # Remove this line to create a well-formed Fossil manifest.
