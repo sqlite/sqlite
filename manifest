@@ -1,5 +1,5 @@
-C Enable\sthe\suse\sof\sintrinsic\shigh-precision\smultiplies\son\sWindows\sARM.\nMake\sthe\sSQLITE_DISABLE_INTRINSIC\soption\seffective\son\shigh-precision\nmultiple\ssubroutines,\sfor\stesting\spurposes.
-D 2026-03-27T16:09:10.848
+C New\stest\scases\sfor\stext&rarr;float\sconversions.
+D 2026-03-27T18:58:50.301
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1129,7 +1129,7 @@ F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f
 F test/fp-speed-1.c 34216fbd0a98613f20cfaf234d8206afdff5312c2bd266f588e1cd40c5f25c3e
 F test/fp-speed-2.c af6b1fbd368c3981566b14e3c1932badf31c65624456e10dd36433ef3be6b8fb
 F test/fpconv1.test 63f352682fa65601a326563ad633086df6ab194e6ed5e7366786f38a525a7fd7
-F test/fptest01.sql 210562ad8d5a7895f26273dd3be56561a41bcb51d78a28a337af0f1ceaa3bb8d
+F test/fptest01.sql 8dc67238038a1725e6ce3cb1562f584b68e7ad69250ca274247751c85bff63ed
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts3.test 672a040ea57036fb4b6fdc09027c18d7d24ab654
 F test/fts3_common.tcl dffad248f9ce090800e272017d2898005c28ee6314fc1dd5550643a02666907a
@@ -2196,8 +2196,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c687b32a956315ddf4336df42deb4037c37d51b536b8a24c5cef4c5a0bc4c79b
-R 217cc40eefb63df69bf27558fb090280
+P efb6212de4ca998546329b06b43122f0fffa3759e4615ca3357ef9fa13606d44
+R 96cf7d11c9d9a0697c24c31185bc2fb9
 U drh
-Z e23febd3b8e71bad9713a72ada23a3d4
+Z 328751dec3cf891ce4c1bd65d7c9ec65
 # Remove this line to create a well-formed Fossil manifest.

@@ -74,3 +74,99 @@ WITH
   fp(r) AS (SELECT ieee754_from_int(n) FROM fpint)
 SELECT r FROM fp WHERE r<>strtod(r||'');
 .check ''
+
+# Comparing SQLite's text-to-double conversion against strtod()
+# for 200,000 random floating-point literals.
+#
+.param set $N 50_000
+.testcase 300
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  VALUES(1,'1234.5789')
+  UNION ALL
+  SELECT n+1, format('%.*s.%.*se%+d',
+                     (n%3)+1,
+                     random()%1000,
+                     abs(random()%16)+1,
+                     abs(random()),
+                     random()%308)
+    FROM fp WHERE n<$N
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
+.testcase 301
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  VALUES(1,'1234.5789')
+  UNION ALL
+  SELECT n+1, format('%.*s.%.*s',
+                     (n%3)+1,
+                     random()%1000,
+                     abs(random()%16)+1,
+                     abs(random()))
+    FROM fp WHERE n<$N
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
+.testcase 302
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  VALUES(1,'1234.5789')
+  UNION ALL
+  SELECT n+1, format('%.*s.%.*s',
+                     abs(random()%7)+1,
+                     random(),
+                     abs(random()%10)+1,
+                     abs(random()))
+    FROM fp WHERE n<$N
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
+.testcase 303
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  VALUES(1,'1234.5789')
+  UNION ALL
+  SELECT n+1, format('%de%+03d',
+                     random(),
+                     random()%308)
+    FROM fp WHERE n<$N
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
+
+# Another 500,000 comparisions between SQLite and strtod() from completely
+# random floating point literals.
+#
+.testcase 310
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  SELECT 1,   format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+  UNION ALL
+  SELECT n+1, format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+    FROM fp WHERE n<$N*2
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
+.testcase 311
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  SELECT 1,   format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+  UNION ALL
+  SELECT n+1, format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+    FROM fp WHERE n<$N*2
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
+.testcase 312
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  SELECT 1,   format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+  UNION ALL
+  SELECT n+1, format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+    FROM fp WHERE n<$N*2
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
+.testcase 313
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  SELECT 1,   format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+  UNION ALL
+  SELECT n+1, format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+    FROM fp WHERE n<$N*2
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
+.testcase 314
+WITH RECURSIVE fp(n,x) AS MATERIALIZED (
+  SELECT 1,   format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+  UNION ALL
+  SELECT n+1, format('%+.*g',abs(random()%18), ieee754_from_int(random()))
+    FROM fp WHERE n<$N*2
+) SELECT x FROM fp WHERE (x+0.0)<>strtod(x);
+.check ''
