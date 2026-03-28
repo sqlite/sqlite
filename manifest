@@ -1,5 +1,5 @@
-C Turn\san\ssqlite3VMPrintf()\sinto\san\ssqlite3DbStrDup().
-D 2026-03-28T13:30:47.092
+C Reduce\sthe\scompiled\ssize\sof\sthe\squote()\sSQL\sfunction.
+D 2026-03-28T13:59:34.275
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -687,7 +687,7 @@ F src/delete.c 1f2268d6fe3c78fc1bf794ba65d7026498b78e2342ffaf85825dedae546e6fde
 F src/expr.c 51e9c77ff5d9a21439e611fe6571a3cd50387e526e13c5614fd407e5b8571930
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
-F src/func.c 6e7de3551ae0f8205006e5109f025223246edd20186d54d90746dee7c1c5c093
+F src/func.c 706ac012bf87d8ad7416a56a1d2b1f19e5dea03506a4606a01aa9d3bacf392c7
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2196,8 +2196,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 09e0e78a8265c2e2bc36fef1fa88bd5bf414f9b776966c1c91a4ed4b7866331d
-R 8a5229b421fe3aa2a9ce1241cb8894ed
+P 75e8703664ae94244284819d9021877a5fc33a268fb86f3e70de20875a766d80
+R 53c0174f1ec620322f6cab99495c3f2a
 U drh
-Z 58d9ca70f5fba59996f1ad6010cd6655
+Z 4c1395d7057fba4fd91b56b6ca2cdace
 # Remove this line to create a well-formed Fossil manifest.
