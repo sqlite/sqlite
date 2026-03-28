@@ -531,6 +531,7 @@ void sqlite3_str_vappendf(
         FpDecode s;
         int iRound;
         int j;
+        i64 szBufNeeded;       /* Size needed to hold the output */
 
         if( bArgList ){
           realvalue = getDoubleArg(pArgList);
@@ -619,17 +620,15 @@ void sqlite3_str_vappendf(
         }else{
           e2 = s.iDP - 1;
         }
-        bufpt = buf;
-        {
-          i64 szBufNeeded;           /* Size of a temporary buffer needed */
-          szBufNeeded = MAX(e2,0)+(i64)precision+(i64)width+15;
-          if( cThousand && e2>0 ) szBufNeeded += (e2+2)/3;
-          if( szBufNeeded > etBUFSIZE ){
-            bufpt = zExtra = printfTempBuf(pAccum, szBufNeeded);
-            if( bufpt==0 ) return;
-          }
+
+        szBufNeeded = MAX(e2,0)+(i64)precision+(i64)width+8;
+        if( cThousand && e2>0 ) szBufNeeded += (e2+2)/3;
+        if( sqlite3StrAccumEnlargeIfNeeded(pAccum, szBufNeeded) ){
+          width = length = 0;
+          break;
         }
-        zOut = bufpt;
+        bufpt = zOut = pAccum->zText + pAccum->nChar;
+
         flag_dp = (precision>0 ?1:0) | flag_alternateform | flag_altform2;
         /* The sign in front of the number */
         if( prefix ){
@@ -714,27 +713,31 @@ void sqlite3_str_vappendf(
           *(bufpt++) = (char)(exp/10+'0');             /* 10's digit */
           *(bufpt++) = (char)(exp%10+'0');             /* 1's digit */
         }
-        *bufpt = 0;
 
-        /* The converted number is in buf[] and zero terminated. Output it.
-        ** Note that the number is in the usual order, not reversed as with
-        ** integer conversions. */
         length = (int)(bufpt-zOut);
-        bufpt = zOut;
-
-        /* Special case:  Add leading zeros if the flag_zeropad flag is
-        ** set and we are not left justified */
-        if( flag_zeropad && !flag_leftjustify && length < width){
-          int i;
-          int nPad = width - length;
-          for(i=width; i>=nPad; i--){
-            bufpt[i] = bufpt[i-nPad];
+        assert( length <= szBufNeeded );
+        if( length<width ){
+          i64 nPad = width - length;
+          if( flag_leftjustify ){
+            memset(bufpt, ' ', nPad);
+          }else if( !flag_zeropad ){
+            memmove(zOut+nPad, zOut, length);
+            memset(zOut, ' ', nPad);
+          }else{
+            int adj = prefix!=0;
+            memmove(zOut+nPad+adj, zOut+adj, length-adj);
+            memset(zOut+adj, '0', nPad);
           }
-          i = prefix!=0;
-          while( nPad-- ) bufpt[i++] = '0';
           length = width;
         }
-        break;
+        pAccum->nChar += length;
+        zOut[length] = 0;
+
+        /* Floating point conversions render directly into the output
+        ** buffer.  Hence, don't just break out of the switch().  Bypass the
+        ** output buffer writing that occurs after the switch() by continuing
+        ** to the next character in the format string. */
+        continue;
       }
       case etSIZE:
         if( !bArgList ){
@@ -778,11 +781,10 @@ void sqlite3_str_vappendf(
             i64 nCopyBytes;
             if( nPrior > precision-1 ) nPrior = precision - 1;
             nCopyBytes = length*nPrior;
-            if( nCopyBytes + pAccum->nChar >= pAccum->nAlloc ){
-              sqlite3StrAccumEnlarge(pAccum, nCopyBytes);
+            if( sqlite3StrAccumEnlargeIfNeeded(pAccum, nCopyBytes) ){
+              break;
             }
-            if( pAccum->accError ) break;
-            sqlite3_str_append(pAccum,
+           sqlite3_str_append(pAccum,
                  &pAccum->zText[pAccum->nChar-nCopyBytes], nCopyBytes);
             precision -= nPrior;
             nPrior *= 2;
@@ -1126,6 +1128,13 @@ int sqlite3StrAccumEnlarge(StrAccum *p, i64 N){
   }
   assert( N>=0 && N<=0x7fffffff );
   return (int)N;
+}
+
+int sqlite3StrAccumEnlargeIfNeeded(StrAccum *p, i64 N){
+  if( N + p->nChar >= p->nAlloc ){
+    sqlite3StrAccumEnlarge(p, N);
+  }
+  return p->accError;
 }
 
 /*
