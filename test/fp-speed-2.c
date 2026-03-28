@@ -196,7 +196,6 @@ static int fpLiteral(int i, char *z){
 int main(int argc, char **argv){
   int i;
   int cnt;
-  int fg;
   sqlite3_int64 tm[3];
   double arSum[401];
   char z[1000];

@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sfp-speed-N.c\sprograms,\ssuggested\sby\sAndreas\sKupries.
-D 2026-03-28T14:17:53.130
+C Remove\sa\sharmless\sunused\svariable\sfrom\sthe\sfp-speed-2.c\sbenchmark.
+D 2026-03-28T14:21:53.670
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1127,7 +1127,7 @@ F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958
 F test/fork-test.c 9ac2e6423a1d38df3d6be0e8ac15608b545de21e2b19d9d876254c5931b63edb
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
 F test/fp-speed-1.c 34a2fe8dc30d0b24bb3e7c16efca0a30452287da6caff7dde86eef882db155a4
-F test/fp-speed-2.c 8afff93f00ac034a48e49182b971404480a495c7be4b8a4310e2075cbbb801d5
+F test/fp-speed-2.c 15830b061832bb51f68f0985cf7a06f4f5d49eb25cc399854f1ff60d6a878ee9
 F test/fpconv1.test 63f352682fa65601a326563ad633086df6ab194e6ed5e7366786f38a525a7fd7
 F test/fptest01.sql 3d84f10bb1cc220b59207354c887d720289903adeb9972a29d6bfcb3fec0df95
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
@@ -2196,8 +2196,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9ea980a35628f7d0741ab6c65840ab9dab8abb576c6c60109147336452f9637a
-R c4218918ce643c1d84226f485b2be1d8
+P 7d81ff4c509d4039ef9e2f1066284ec560131422db0cbffa7e1826d71bb8f8e1
+R f9e8bfd72c320957630f960480c7f849
 U drh
-Z 734c45e6bb399241b8bc1b6c0f71f745
+Z 1dff429b17934e0b3d9099df4f195e64
 # Remove this line to create a well-formed Fossil manifest.
