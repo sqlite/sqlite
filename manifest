@@ -1,5 +1,5 @@
-C Fix\sup\sthe\sfloating-point\sspeed\stests\sso\sthat\sthey\sonly\sneed\sto\sbe\srun\sonce\nto\sget\sa\sperformance\scomparision.\s\sProvide\sthe\sfp-speed-test\smakefile\starget\nto\sbuild\sand\srun\sthem\sboth.
-D 2026-03-27T20:18:06.002
+C Turn\san\ssqlite3VMPrintf()\sinto\san\ssqlite3DbStrDup().
+D 2026-03-28T13:30:47.092
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -792,7 +792,7 @@ F src/test_vfs.c b4135c1308516adf0dfd494e6d6c33114e03732be899eace0502919b674586b
 F src/test_window.c 6d80e11fba89a1796525e6f0048ff0c7789aa2c6b0b11c80827dc1437bd8ea72
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/threads.c 85d8b9f05f78211c61e3739ab5db761d7118766d1916ae7f2764735106bc4e13
-F src/tokenize.c 2bbf16801d8c59aaf5435b066364da9e39ec3a379084b8a697881e7e52733c63
+F src/tokenize.c e9d52d9f7374d82dadcd11726bea8a597d43709d6672704f3f0375bf1d726912
 F src/treeview.c feaa59f14db4f7b5aacca9c5ad5aeb562c1f98262c1ffd74371f4186ade91fc5
 F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
@@ -2196,8 +2196,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 65efcb0a2ed49fa2fd747b5f034d976ed3cb4a01a185bcada70bf8a5208f3841
-R 9241b33114a318ec370d37f5c35f3684
+P 09e0e78a8265c2e2bc36fef1fa88bd5bf414f9b776966c1c91a4ed4b7866331d
+R 8a5229b421fe3aa2a9ce1241cb8894ed
 U drh
-Z c5759a178764214d2ef838560a990f1c
+Z 58d9ca70f5fba59996f1ad6010cd6655
 # Remove this line to create a well-formed Fossil manifest.
