@@ -179,21 +179,23 @@ int main(int argc, char **argv){
     return 1;
   }
 
-  tm1 = timeOfDay();
   printf("C-library sprintf(\"%s\"): ", zFmt);
   fflush(stdout);
+  tm1 = timeOfDay();
   for(i=0; i<cnt; i++){
     sprintf(zBuf, zFmt, aVal[i%NN]);
   }
   tm1 = timeOfDay() - tm1;
   printf("%6.1f ns/call, %9.6f sec total\n", tm1*1.0e+3/(double)cnt,tm1*1.0e-6);
-  tm2 = timeOfDay();
+
   printf("sqlite3_snprintf(\"%s\"):  ", zFmt);
+  tm2 = timeOfDay();
   for(i=0; i<cnt; i++){
     sqlite3_snprintf(sizeof(zBuf), zBuf, zFmt, aVal[i%NN]);
   }
   tm2 = timeOfDay() - tm2;
   printf("%6.1f ns/call, %9.6f sec total\n", tm2*1.0e+3/(double)cnt,tm2*1.0e-6);
+
   if( tm1 < tm2 ){
     printf("sprintf() is about %g times faster than sqlite3_snprintf()\n",
            (double)tm2/(double)tm1);

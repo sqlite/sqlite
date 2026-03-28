@@ -14,6 +14,13 @@
 ** To run the test:
 **
 **    ./a.out 10000000
+**
+** Notes:
+**
+**   *  A first loop is run to measure the testing overhead.  This
+**      overhead is then subtracted from the times of subsequent loops
+**      so that the estimates are for the calls to atof() or
+**      sqlite3AtoF() only.
 */
 #include "sqlite3.h"
 #include <string.h>
@@ -162,6 +169,29 @@ static sqlite3_int64 timeOfDay(void){
 #endif
 }
 
+/*
+** Generate text of the i-th test floating-point literal.
+*/
+static int fpLiteral(int i, char *z){
+  int e, ex, len, ix;
+  ex = i%401;
+  e = ex - 200;
+  len = (i/401)%16 + 4;
+  ix = (i/(401*16))%NN;
+  memcpy(z, aVal[ix], len);
+  z[len++] = 'e';
+  if( e<0 ){
+    z[len++] = '-';
+    e = -e;
+  }else{
+    z[len++] = '+';
+  }
+  z[len++] = e/100 + '0';
+  z[len++] = (e/10)%10 + '0';
+  z[len++] = e%10 + '0';
+  z[len] = 0;
+  return ex;
+}
 
 int main(int argc, char **argv){
   int i;
@@ -182,63 +212,47 @@ int main(int argc, char **argv){
     return 1;
   }
 
-  for(fg=0; fg<=2; fg++){
-    tm[fg] = timeOfDay();
-    switch( fg ){
-      case 0: printf("C-lib atof():  "); break;
-      case 1: printf("sqlite3AtoF(): "); break;
-      case 2: printf("Test overhead: "); break;
-    }
-    fflush(stdout);
-    memset(arSum, 0, sizeof(arSum));
-    for(i=0; i<cnt; i++){
-      int e, ex, len, ix;
-      ex = i%401;
-      e = ex - 200;
-      len = (i/401)%16 + 4;
-      ix = (i/(401*16))%NN;
-      memcpy(z, aVal[ix], len);
-      z[len++] = 'e';
-      if( e<0 ){
-        z[len++] = '-';
-        e = -e;
-      }else{
-        z[len++] = '+';
-      }
-      z[len++] = e/100 + '0';
-      z[len++] = (e/10)%10 + '0';
-      z[len++] = e%10 + '0';
-      z[len] = 0;
-      switch( fg ){
-        case 0: {
-          arSum[ex] += atof(z);
-          break;
-        }
-        case 1: {
-          double r = 0.0;
-          sqlite3_test_control(SQLITE_TESTCTRL_ATOF, z, &r);
-          arSum[ex] += r;
-          break;
-        }
-        case 2: {
-          double r = (double)i;
-          arSum[ex] += r;
-          break;
-        }
-        break;
-      }
-    }
-    for(i=1; i<=400; i++) arSum[0] += arSum[i];
-    tm[fg] = timeOfDay() - tm[fg];
-    printf("%6.1f ns/test, %9.6f sec total", tm[fg]*1e3/cnt, tm[fg]*1e-6);
-    if( fg<2 ){
-      printf(", cksum: %g\n", arSum[0]);
-    }else{
-      printf("\n");
-    }
+  printf("test-overhead: ");
+  fflush(stdout);
+  memset(arSum, 0, sizeof(arSum));
+  tm[2] = timeOfDay();
+  for(i=0; i<cnt; i++){
+    double r = (double)i;
+    int ex = fpLiteral(i,z);
+    arSum[ex] += r;
   }
-  tm[0] -= tm[2];
-  tm[1] -= tm[2];
+  tm[2] = timeOfDay() - tm[2];
+  for(i=1; i<=400; i++) arSum[0] += arSum[i];
+  printf("%6.1f ns/test, %9.6f sec total\n", tm[2]*1e3/cnt, tm[2]*1e-6);
+
+  printf("C-lib atof():  ");
+  fflush(stdout);
+  memset(arSum, 0, sizeof(arSum));
+  tm[0] = timeOfDay();
+  for(i=0; i<cnt; i++){
+    int ex = fpLiteral(i,z);
+    arSum[ex] += atof(z);
+  }
+  tm[0] = timeOfDay() - tm[0] - tm[2];
+  for(i=1; i<=400; i++) arSum[0] += arSum[i];
+  printf("%6.1f ns/test, %9.6f sec net", tm[0]*1e3/cnt, tm[0]*1e-6);
+  printf(", cksum: %g\n", arSum[0]);
+
+  printf("sqlite3AtoF(): ");
+  fflush(stdout);
+  memset(arSum, 0, sizeof(arSum));
+  tm[1] = timeOfDay();
+  for(i=0; i<cnt; i++){
+    double r = 0.0;
+    int ex = fpLiteral(i,z);
+    sqlite3_test_control(SQLITE_TESTCTRL_ATOF, z, &r);
+    arSum[ex] += r;
+  }
+  tm[1] = timeOfDay() - tm[1] - tm[2];
+  for(i=1; i<=400; i++) arSum[0] += arSum[i];
+  printf("%6.1f ns/test, %9.6f sec net", tm[1]*1e3/cnt, tm[1]*1e-6);
+  printf(", cksum: %g\n", arSum[0]);
+
   if( tm[0] < tm[1] ){
     printf("atof() is about %g times faster than sqlite3AtoF()\n",
            (double)tm[1]/(double)tm[0]);
