@@ -1,5 +1,5 @@
-C Merge\strunk\sperformance\senhancements\sand\sfixes\sinto\sthe\sdirect-printf\sbranch.
-D 2026-03-29T19:23:47.581
+C Fix\sharmless\scompiler\swarnings\sabout\sunused\svariable\sassignments.
+D 2026-03-29T22:41:12.963
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -729,7 +729,7 @@ F src/pcache.h 092b758d2c5e4dabb30eae46d8dfad77c0f70b16bf3ff1943f7a232b0fe0d4ba
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
 F src/pragma.c 789ef67117b74b5be0a2db6681f7f0c55e6913791b9da309aefd280de2c8a74d
 F src/prepare.c f6a6e28a281bd1d1da12f47d370a81af46159b40f73bf7fa0b276b664f9c8b7d
-F src/printf.c 3dc62b9608e75aabea38f83fa7ce004ce2de0cef957b99e9b70edff56be9a5e0
+F src/printf.c 9abec48ffb0fc1aac72a461e2ca456b5284a39c84cddc932c86822311e059882
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 928ff887f2a7c64275182060d94d06fdddbe32226c569781cf7e7edc6f58d7fd
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -2196,8 +2196,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e4e040e7aaaf5bfccbf0414fee3d08c5fdc24e03d1118dce92d2dd16c614ce63 2197677491dfc5ec87b57bbf807776875248a250f80ce9a5ce94ae385bb1d2bc
-R b7bb3beb8b659bc0a16361f92809136c
+P 9fa9cd11f8f5f7591168870c6e41121221b58a4a3094e708e3fa5bab1502f190
+R 3d9d1b868f679fc05545d2cf5aa8e36a
 U drh
-Z ed52eb6a4e94c6e2b9a1f0169bd17bee
+Z e2629b4a210900f82e89295566df240e
 # Remove this line to create a well-formed Fossil manifest.

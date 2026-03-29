@@ -676,13 +676,11 @@ void sqlite3_str_vappendf(
           if( nn>0 ){
             memcpy(bufpt, s.z+j, nn);
             bufpt += nn;
-            j += nn;
             precision -= nn;
           }
           if( precision>0 && !flag_rtz ){
             memset(bufpt, '0', precision);
             bufpt += precision;
-            precision = 0;
           }
         }
         /* Remove trailing zeros and the "." if no digits follow the "." */
