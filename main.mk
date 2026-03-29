@@ -1923,8 +1923,8 @@ shelltest:
 # Test performance of floating-point conversions.
 #
 fp-speed-test:	fp-speed-1$(T.exe) fp-speed-2$(T.exe)
-	./fp-speed-1 10000000
-	./fp-speed-2 10000000
+	./fp-speed-1 1000000
+	./fp-speed-2 1000000
 
 #
 # sqlite3_analyzer.c build depends on $(LINK_TOOLS_DYNAMICALLY).
