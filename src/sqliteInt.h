@@ -5531,6 +5531,7 @@ char *sqlite3RCStrResize(char*,u64);
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
 int sqlite3StrAccumEnlarge(StrAccum*, i64);
+int sqlite3StrAccumEnlargeIfNeeded(StrAccum*, i64);
 char *sqlite3StrAccumFinish(StrAccum*);
 void sqlite3StrAccumSetError(StrAccum*, u8);
 void sqlite3ResultStrAccum(sqlite3_context*,StrAccum*);
