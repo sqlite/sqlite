@@ -2630,8 +2630,8 @@ smoketest:	$(TESTPROGS)
 # Measure the performance of floating-point conversions.
 #
 fp-speed-test:	fp-speed-1.exe fp-speed-2.exe
-	fp-speed-1 10000000
-	fp-speed-2 10000000
+	fp-speed-1 1000000
+	fp-speed-2 1000000
 
 shelltest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release shell
