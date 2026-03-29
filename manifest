@@ -1,5 +1,5 @@
-C Remove\sa\sharmless\sunused\svariable\sfrom\sthe\sfp-speed-2.c\sbenchmark.
-D 2026-03-28T14:21:53.670
+C The\s_umulh()\sintrinsic\sfunction\sis\snot\savailable\son\s32-bit\swindows.\s\sSo\sdon't\nuse\sit\sthere.
+D 2026-03-29T10:32:25.815
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -798,7 +798,7 @@ F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 3e6ae9bde9a108d92bbb9ce5c6139efef5a1d5949d79912b7aabf67bfa3000a5
+F src/util.c 1fe895c652b3b1b9f4a298b95ebfcfd95e3383952dd26a5baf1c47655c483e5d
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 6c57525d7db0232d52687d30da1093db0c152f14206c2ef1adf0c19a09d863e3
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
@@ -2196,8 +2196,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7d81ff4c509d4039ef9e2f1066284ec560131422db0cbffa7e1826d71bb8f8e1
-R f9e8bfd72c320957630f960480c7f849
+P ff9008e7615d877e6cc852c60097777006b274971646d368eaa56b99a7acf6c7
+R ff4274da2fda9408dbca94e175d79321
 U drh
-Z 1dff429b17934e0b3d9099df4f195e64
+Z 399684f83892f09fa733c31059114ff6
 # Remove this line to create a well-formed Fossil manifest.

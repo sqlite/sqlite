@@ -470,7 +470,7 @@ static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
   __uint128_t r = (__uint128_t)a * b;
   *pLo = (u64)r;
   return (u64)(r>>64);
-#elif defined(_MSC_VER) && !defined(SQLITE_DISABLE_INTRINSIC)
+#elif defined(_WIN64) && !defined(SQLITE_DISABLE_INTRINSIC)
   *pLo = a*b;
   return __umulh(a, b);
 #else
@@ -507,7 +507,7 @@ static u64 sqlite3Multiply160(u64 a, u32 aLo, u64 b, u32 *pLo){
   r += ((__uint128_t)aLo * b) >> 32;
   *pLo = (r>>32)&0xffffffff;
   return r>>64;
-#elif defined(_MSC_VER) && !defined(SQLITE_DISABLE_INTRINSIC)
+#elif defined(_WIN64) && !defined(SQLITE_DISABLE_INTRINSIC)
   u64 r1_hi = __umulh(a,b);
   u64 r1_lo = a*b;
   u64 r2 = (__umulh((u64)aLo,b)<<32) + ((aLo*b)>>32);
