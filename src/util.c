@@ -827,12 +827,15 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 ** Lower bits of the return value contain addition information about the
 ** parse:
 **
-**   bit 0       =>   Set for any valid input
-**   bit 1       =>   Input contains a decimal point or eNNN clause
-**                    This bit is zero if the input is an integer
+**   bit 0       =>   Set if any prefix of the input is valid.  Clear if
+**                    there is no prefix of the input that can be seen as
+**                    a valid floating point number.
+**   bit 1       =>   Set if the input contains a decimal point or eNNN
+**                    clause.  Zero if the input is an integer.
 **   bit 2       =>   The input is exactly 0.0, not an underflow from
-**                    some value near zero
-**   bit 3       =>   More than 19 significant digits in the input
+**                    some value near zero.
+**   bit 3       =>   Set if there are more than about 19 significant
+**                    digits in the input.
 **
 ** If the input contains a syntax error but begins with text that might
 ** be a valid number of some kind, then the result is negative.  The
