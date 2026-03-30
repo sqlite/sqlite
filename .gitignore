@@ -1,5 +1,10 @@
-# Nanvix build artifacts
-.nanvix-configured
+# Nanvix build state (keep .nanvix/z.py tracked)
+.nanvix/venv/
+.nanvix/cache/
+.nanvix/sysroot/
+.nanvix/buildroot/
+.nanvix/env.json
+.nanvix/nanvix.lock
 nanvix-artifacts/
 
 # SQLite build artifacts
