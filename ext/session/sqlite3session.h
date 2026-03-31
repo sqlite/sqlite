@@ -1943,6 +1943,8 @@ int sqlite3changegroup_change_begin(
 );
 
 /*
+** CAPI3REF: Add a 64-bit integer to a changegroup
+**
 ** This function may only be called between a successful call to 
 ** sqlite3changegroup_change_begin() and its matching
 ** sqlite3changegroup_change_finish() call. If it is called at any
@@ -1979,6 +1981,8 @@ int sqlite3changegroup_change_int64(
 );
 
 /*
+** CAPI3REF: Add a NULL to a changegroup
+**
 ** This function is similar to sqlite3changegroup_change_int64(). Except that
 ** it configures the change currently under construction with a NULL value
 ** instead of a 64-bit integer.
@@ -1986,6 +1990,8 @@ int sqlite3changegroup_change_int64(
 int sqlite3changegroup_change_null(sqlite3_changegroup*, int, int);
 
 /*
+** CAPI3REF: Add an double to a changegroup
+**
 ** This function is similar to sqlite3changegroup_change_int64(). Except that
 ** it configures the change currently being constructed with a real value
 ** instead of a 64-bit integer.
@@ -1993,6 +1999,8 @@ int sqlite3changegroup_change_null(sqlite3_changegroup*, int, int);
 int sqlite3changegroup_change_double(sqlite3_changegroup*, int, int, double);
 
 /*
+** CAPI3REF: Add a text value to a changegroup
+**
 ** This function is similar to sqlite3changegroup_change_int64(). It configures
 ** the currently accumulated change with a text value instead of a 64-bit
 ** integer. Parameter pVal points to a buffer containing the text encoded using 
@@ -2005,6 +2013,8 @@ int sqlite3changegroup_change_text(
 );
 
 /*
+** CAPI3REF: Add a blob to a changegroup
+**
 ** This function is similar to sqlite3changegroup_change_int64(). It configures
 ** the currently accumulated change with a blob value instead of a 64-bit
 ** integer. Parameter pVal points to a buffer containing the blob. Parameter 
@@ -2015,6 +2025,8 @@ int sqlite3changegroup_change_blob(
 );
 
 /*
+** CAPI3REF: Finish adding one-at-at-time changes to a changegroup
+**
 ** This function may only be called following a successful call to
 ** sqlite3changegroup_change_begin(). Otherwise, it is an SQLITE_MISUSE error.
 **
