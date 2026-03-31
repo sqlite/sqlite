@@ -325,15 +325,29 @@ static int popen2(
 ** Close the connection to a child process previously created using
 ** popen2().
 */
-static void pclose2(FILE *pIn, FILE *pOut, int childPid){
+static int pclose2(FILE *pIn, FILE *pOut, int childPid){
 #ifdef _WIN32
   /* Not implemented, yet */
   fclose(pIn);
   fclose(pOut);
+  return 0;
 #else
+  int wp, rc = 0;
   fclose(pIn);
   fclose(pOut);
-  while( waitpid(0, 0, WNOHANG)>0 ) {}
+  do{
+    wp = waitpid(0, &rc, WNOHANG);
+    if( wp>0 ){
+      if( WIFEXITED(rc) ){
+        rc = WEXITSTATUS(rc);
+      }else if( WIFSIGNALED(rc) ){
+        rc = WTERMSIG(rc);
+      }else{
+        rc = 0/*???*/;
+      }
+    }
+  } while( wp>0 );
+  return rc;
 #endif
 }
 /*****************************************************************************
@@ -2362,7 +2376,7 @@ int main(int argc, char const * const *argv){
     }
     originSide(&ctx);
   }
-  pclose2(ctx.pIn, ctx.pOut, childPid);
+  ctx.nErr += !!pclose2(ctx.pIn, ctx.pOut, childPid);
   if( ctx.pLog ) fclose(ctx.pLog);
   tmEnd = currentTime();
   tmElapse = tmEnd - tmStart;  /* Elapse time in milliseconds */

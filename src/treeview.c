@@ -1300,7 +1300,13 @@ void sqlite3TreeViewTrigger(
 void sqlite3ShowExpr(const Expr *p){ sqlite3TreeViewExpr(0,p,0); }
 void sqlite3ShowExprList(const ExprList *p){ sqlite3TreeViewExprList(0,p,0,0);}
 void sqlite3ShowIdList(const IdList *p){ sqlite3TreeViewIdList(0,p,0,0); }
-void sqlite3ShowSrcList(const SrcList *p){ sqlite3TreeViewSrcList(0,p); }
+void sqlite3ShowSrcList(const SrcList *p){
+  TreeView *pView = 0;
+  sqlite3TreeViewPush(&pView, 0);
+  sqlite3TreeViewLine(pView, "SRCLIST");
+  sqlite3TreeViewSrcList(pView,p);
+  sqlite3TreeViewPop(&pView);
+}
 void sqlite3ShowSelect(const Select *p){ sqlite3TreeViewSelect(0,p,0); }
 void sqlite3ShowWith(const With *p){ sqlite3TreeViewWith(0,p,0); }
 void sqlite3ShowUpsert(const Upsert *p){ sqlite3TreeViewUpsert(0,p,0); }

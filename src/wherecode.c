@@ -1573,7 +1573,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         if( SMASKBIT32(j) & pLoop->u.vtab.mHandleIn ){
           int iTab = pParse->nTab++;
           int iCache = ++pParse->nMem;
-          sqlite3CodeRhsOfIN(pParse, pTerm->pExpr, iTab);
+          sqlite3CodeRhsOfIN(pParse, pTerm->pExpr, iTab, 0);
           sqlite3VdbeAddOp3(v, OP_VInitIn, iTab, iTarget, iCache);
         }else{
           codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
@@ -2891,6 +2891,15 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
       pSubWhere = sqlite3ExprAnd(pParse, pSubWhere,
                                  sqlite3ExprDup(pParse->db, pTerm->pExpr, 0));
     }
+  }
+  if( pLevel->iIdxCur ){
+    /* pSubWhere may contain expressions that read from an index on the
+    ** table on the RHS of the right join. All such expressions first test
+    ** if the index is pointing at a NULL row, and if so, read from the
+    ** table cursor instead. So ensure that the index cursor really is 
+    ** pointing at a NULL row here, so that no values are read from it during
+    ** the scan of the RHS of the RIGHT join below.  */
+    sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
   }
   pFrom = &uSrc.sSrc;
   pFrom->nSrc = 1;

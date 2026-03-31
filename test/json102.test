@@ -375,6 +375,27 @@ do_execsql_test json102-440-3 {
 do_execsql_test json102-440-4 {
   SELECT json(jsonb_remove(jsonb('[0,1,2,3,4]'),'$[2]'));
 } {{[0,1,3,4]}}
+do_execsql_test json102-445-1 {
+  SELECT json_remove('[0,1,2,3,4]','$[5]');
+} {{[0,1,2,3,4]}}
+do_execsql_test json102-445-2 {
+  SELECT json_remove('[0,1,2,3,4]','$[6]');
+} {{[0,1,2,3,4]}}
+do_execsql_test json102-445-3 {
+  SELECT json_remove('[0,1,2,3,4]','$[4294967295]');
+} {{[0,1,2,3,4]}}
+do_execsql_test json102-445-4 {
+  SELECT json_remove('[0,1,2,3,4]','$[4294967296]');
+} {{[0,1,2,3,4]}}
+do_execsql_test json102-445-5 {
+  SELECT json_remove('[0,1,2,3,4]','$[4294967297]');
+} {{[0,1,2,3,4]}}
+do_execsql_test json102-445-6 {
+  SELECT json_remove('[0,1,2,3,4]','$[42949672950]');
+} {{[0,1,2,3,4]}}
+do_execsql_test json102-445-7 {
+  SELECT json_remove('[0,1,2,3,4]','$[42949672960]');
+} {{[0,1,2,3,4]}}
 do_execsql_test json102-450 {
   SELECT json_remove('[0,1,2,3,4]','$[2]','$[0]');
 } {{[1,3,4]}}

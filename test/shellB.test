@@ -44,7 +44,10 @@ do_clitest vt100-a.sql
 do_clitest regexp1.sql
 do_clitest imposter1.sql
 ifcapable vtab {
+  do_clitest dotcmd01.sql
   do_clitest import01.sql
+  do_clitest intck01.sql
 }
+do_clitest fptest01.sql
 
 finish_test

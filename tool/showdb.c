@@ -1051,7 +1051,7 @@ static const char *decodeTimestamp(const unsigned char *a){
   m = (sod%3600)/60;
   s = sod%60;
   z = days + 719468;
-  era = z/147097;
+  era = z/146097;
   doe = (unsigned)(z - era*146097);
   yoe = (doe - doe/1460 + doe/36524 - doe/146096)/365;
   y = (int)yoe + era*400;

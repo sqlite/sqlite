@@ -215,7 +215,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(stmt) stmt.finalize();
     }
   };
-//#endif enable-see
+//#/if enable-see
 
   /**
      A proxy for DB class constructors. It must be called with the
@@ -301,7 +301,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try{
 //#if enable-see
         dbCtorApplySEEKey(this,opt);
-//#endif
+//#/if
         // Check for per-VFS post-open SQL/callback...
         const pVfs = capi.sqlite3_js_db_vfs(pDb)
               || toss3("Internal error: cannot get VFS for new db handle.");
@@ -453,7 +453,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      is supplied and the database is encrypted, execution of the
      post-initialization SQL will fail, causing the constructor to
      throw.
-//#endif enable-see
+//#/if enable-see
 
      The `filename` and `vfs` arguments may be either JS strings or
      C-strings allocated via WASM. `flags` is required to be a JS
@@ -1141,7 +1141,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return arg.returnVal();
     }/*exec()*/,
 
-//#if nope
+//#if 0
     /**
        Experimental and untested - do not use.
 
@@ -1265,7 +1265,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       return this;
     }/*forEachStmt()*/,
-//#endif nope
+//#/if nope
 
     /**
        Creates a new UDF (User-Defined Function) which is accessible
@@ -2426,4 +2426,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 });
 //#else
 /* Built with the omit-oo1 flag. */
-//#endif if not omit-oo1
+//#/if if not omit-oo1

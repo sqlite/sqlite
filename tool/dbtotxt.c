@@ -1,6 +1,12 @@
 /*
-** Copyright 2008 D. Richard Hipp and Hipp, Wyrick & Company, Inc.
-** All Rights Reserved
+** 2018-12-13
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 ******************************************************************************
 **

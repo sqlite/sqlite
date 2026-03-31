@@ -794,4 +794,41 @@ do_execsql_test where2-15.1 {
    ORDER BY a,EXISTS(SELECT 1 FROM t1 LEFT JOIN (SELECT x AS y FROM t2) AS s2 ON t1.b=s2.y),x;
 } {12 34 NULL | 56 78 78 | 90 12 12 |}
 
+# Demonstrate that CROSS JOIN is a join reordering barrier.
+#
+reset_db
+do_execsql_test where2-16.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+  CREATE TABLE t2(c INTEGER PRIMARY KEY, d INT);
+  CREATE TABLE t3(e INTEGER PRIMARY KEY, f INT);
+  CREATE TABLE t4(g INTEGER PRIMARY KEY, h INT);
+}
+
+# Here the query planner wants to move t4 forward so that it is in front of
+# t1.  Ensure that does not happen.
+do_execsql_test where2-16.2 {
+  EXPLAIN QUERY PLAN
+  SELECT *
+    FROM t1, t2 CROSS JOIN t3, t4
+   WHERE t4.g=1
+     AND t1.a=t4.h
+     AND t2.c=t1.b
+     AND t3.e=t2.d;
+} {~/.* t4 .* t[12] .*/}
+
+# In this case the planner wants to move t1 to come after t4.  Ensure that
+# does not happen.
+do_execsql_test where2-16.2 {
+  EXPLAIN QUERY PLAN
+  SELECT *
+    FROM t1, t2 CROSS JOIN t3, t4
+   WHERE t2.c=1
+     AND t3.e=t2.d
+     AND t4.g=t3.f
+     AND t1.a=t4.h;
+} {~/.* t[34] .* t1 .*/}
+
+
+
+
 finish_test

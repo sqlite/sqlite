@@ -266,6 +266,25 @@ do_test 1.83 {
 INSERT INTO "drop"("a-b",b,"123") VALUES(1,2.5,'three');
 INSERT INTO "drop"("a-b",b,"123") VALUES(x'424c4f42',NULL,'Ἀμήν');
 }
+do_test 1.84 {
+  set result "\n[db format -style insert {SELECT * FROM t1} -multiinsert 2000]"
+} {
+INSERT INTO tab VALUES(1,2.5,'three'),
+  (x'424c4f42',NULL,'Ἀμήν');
+}
+do_test 1.85 {
+  set result "\n[db format -style insert {
+     WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<7)
+       SELECT n, n*10 AS m FROM c;} -multiinsert 70]"
+} {
+INSERT INTO tab VALUES(1,10),
+  (2,20),
+  (3,30),
+  (4,40),
+  (5,50);
+INSERT INTO tab VALUES(6,60),
+  (7,70);
+}
 
 do_test 1.90 {
   set result "\n[db format -style json {SELECT * FROM t1}]"
@@ -697,13 +716,13 @@ do_test 5.2b {
        mtime: 1333101221
 datetime(...: 2012-03-30 09:53:41
        value: x'cc7c57616c706861b535332e31313638383732334762
-               657461c73071726657696474685072696e7428702c2070
-               2d3e704f75742c202d702d3e752e734c696e652e6d7843
-               ...
+              657461c73071726657696474685072696e7428702c2070
+              2d3e704f75742c202d702d3e752e734c696e652e6d7843
+              ...
 
         name: one
-               two
-               three
+              two
+              three
        mtime: 1333206973
 datetime(...: 2012-03-31 15:16:13
        value: 
@@ -712,9 +731,9 @@ datetime(...: 2012-03-31 15:16:13
        mtime: 1708791504
 datetime(...: 2024-02-24 16:18:24
        value: x'00000000000000000000000000000000000000000000
-               0000000000000000000000000000000000000000000000
-               0000000000000000000000000000000000000000000000
-               ...
+              0000000000000000000000000000000000000000000000
+              0000000000000000000000000000000000000000000000
+              ...
 }
 set sql "SELECT name, mtime, datetime(mtime,'unixepoch') AS time,\
                       value FROM t1 ORDER BY mtime"

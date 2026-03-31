@@ -119,12 +119,12 @@ END
 .testcase 141
 SELECT sql FROM sqlite_schema WHERE name='t1';
 .check <<END
-╭──────────────────────────────────────╮
-│                 sql                  │
-╞══════════════════════════════════════╡
-│ CREATE TABLE "t1"(                   │
-│ "abc" TEXT, "def" TEXT, "xy z" TEXT) │
-╰──────────────────────────────────────╯
+╭───────────────────────────────────╮
+│                sql                │
+╞═══════════════════════════════════╡
+│ CREATE TABLE "t1"(                │
+│ "abc" ANY, "def" ANY, "xy z" ANY) │
+╰───────────────────────────────────╯
 END
 
 .testcase 150
@@ -138,7 +138,7 @@ SELECT * FROM t1;
 .check <<END
 Column separator ",", row separator "\n"
 CREATE TABLE "main"."t1"(
-"abc" TEXT, "def" TEXT, "xy z" TEXT)
+"abc" ANY, "def" ANY, "xy z" ANY)
 
 Added 2 rows with 0 errors using 3 lines of input
 ╭──────┬─────┬──────╮
