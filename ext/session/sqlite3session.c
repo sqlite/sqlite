@@ -354,9 +354,9 @@ static int sessionVarintGet(const u8 *aBuf, int *piVal){
 ** Return the number of bytes read.
 */
 static int sessionVarintGetSafe(const u8 *aBuf, int nBuf, int *piVal){
-  u8 aCopy[5];
+  u8 aCopy[9];
   const u8 *aRead = aBuf;
-  if( nBuf<5 ){
+  if( nBuf<sizeof(aCopy) ){
     memcpy(aCopy, aBuf, nBuf);
     aRead = aCopy;
   }

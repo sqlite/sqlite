@@ -195,13 +195,27 @@ do_test 3.3 {
 #-------------------------------------------------------------------------
 #
 reset_db
-set C [binary format c* 0x54 0x01 0x01 0x00 0x12 0x00 0x05]
+set C [binary format c* {0x54 0x01 0x01 0x00 0x12 0x00 0x05}]
 
 do_test 4.0 {
   sqlite3changegroup grp
   list [catch { grp add $C } msg] $msg
-} {1 SQLITE_CORRUPT}
+} {0 {}}
 grp delete
+
+#-------------------------------------------------------------------------
+#
+reset_db
+set C [binary format c* {0x54 0xda 0xda 0xda 0xda 0xda}]
+
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c, d);
+}
+
+breakpoint
+do_test 4.1 {
+  list [catch { sqlite3changeset_apply db $C noop xFilter } msg] $msg
+} {1 SQLITE_CORRUPT}
 
 finish_test
 
