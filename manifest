@@ -1,5 +1,5 @@
-C Minor\simprovements\sto\sthe\sdocumentation\son\show\sto\scompile\sfor\sUnix.\nNo\schanges\sto\scode.
-D 2026-04-01T11:54:20.065
+C Fix\sa\sproblem\sin\sthe\ssessions\smodule\sallowing\sa\sNULL\spointer\sto\sbe\spassed\sto\smemcpy().
+D 2026-04-01T16:11:47.577
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -571,7 +571,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c bcec91b7fc7f7acdf7fae6020de5f9131ce91c61b6d9953d5f96fc058f6d25d4
+F ext/session/sqlite3session.c f9c10ae4516f53c5cf67ea2067d898ed6d2c98f3d4f496ab8f9b783198e294c6
 F ext/session/sqlite3session.h 063e7bf7be2fff874456f452a224b5b3013b25682d108933b0351c93a1279b9c
 F ext/session/test_session.c beefbb051a2baa2636f463ad1c50558294a418f955219be9423de54dff946f0f
 F ext/wasm/GNUmakefile 68c750f173106d9d63f12c1edf1256c6f4bad9894b155da5db64322f4912de4b
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 009b576dcd5fccaaa52459dbfaa1b2a6fcf6d372e4b8d63553dfa88aab9a759c
-R 69fbaa5471461d4552236c3891f3c59f
-U drh
-Z 9b85cb8923038df787bb419493d010ed
+P 7bc1d0c4572f126cfe68fa51fe992d2bd46b1e57c04721991bd5fad36dd795c5
+R 510b2509214ab4b189d04b3a1f65fccd
+U dan
+Z f43fec148ff8819e5f30350270b67469
 # Remove this line to create a well-formed Fossil manifest.

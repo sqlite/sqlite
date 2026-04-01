@@ -6052,7 +6052,9 @@ static int sessionChangesetFindTable(
     memset(pTab, 0, sizeof(SessionTable));
     pTab->nCol = nCol;
     pTab->abPK = (u8*)&pTab[1];
-    memcpy(pTab->abPK, abPK, nCol);
+    if( nCol>0 ){
+      memcpy(pTab->abPK, abPK, nCol);
+    }
     pTab->zName = (char*)&pTab->abPK[nCol];
     memcpy(pTab->zName, zTab, nTab+1);
 
