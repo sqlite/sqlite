@@ -556,7 +556,7 @@ static int fuzzerConnect(
 static int fuzzerOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   fuzzer_vtab *p = (fuzzer_vtab*)pVTab;
   fuzzer_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->pVtab = p;
@@ -622,7 +622,7 @@ static int fuzzerRender(
 
   n = pStem->nBasis + pRule->nTo - pRule->nFrom;
   if( (*pnBuf)<n+1 ){
-    (*pzBuf) = sqlite3_realloc((*pzBuf), n+100);
+    (*pzBuf) = sqlite3_realloc64((*pzBuf), n+100);
     if( (*pzBuf)==0 ) return SQLITE_NOMEM;
     (*pnBuf) = n+100;
   }

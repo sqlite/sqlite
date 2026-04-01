@@ -240,7 +240,7 @@ static int vtablogConnectCreate(
   printf("  schema = '%s'\n", zSchema);
   rc = sqlite3_declare_vtab(db, zSchema);
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -313,7 +313,7 @@ static int vtablogOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   vtablog_cursor *pCur;
   printf("%s.%s.xOpen(cursor=%d)\n", pTab->zDb, pTab->zName,
          ++pTab->nCursor);
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->iCursor = pTab->nCursor;
