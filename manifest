@@ -1,5 +1,5 @@
-C Add\sappropriate\sheaders\sto\sext/session/sqlite3session.h\sso\sthat\sthe\ndocumentation\sgenerator\swill\spick\sup\sthe\sAPI\sdocumentation\sfor\sthe\nnew\sone-at-a-time\schangegroup\sAPIs.
-D 2026-03-31T18:49:23.742
+C Doc\scleanups\sin\sopfs-wl.\sNo\scode\schanges.
+D 2026-04-01T11:39:13.240
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -596,11 +596,11 @@ F ext/wasm/api/sqlite3-api-oo1.c-pp.js 5f203f5bb5d48a9e43ec51e791dc411c24dca8258
 F ext/wasm/api/sqlite3-api-prologue.js 4336f02ac24ba58e68e355adb9da2804a1eef15a4aee961fa813c7d812a56b54
 F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1fa34e9b0e3b90a8898e4f700d7125e44c81877f182627bb8564b97989bc6e78
 F ext/wasm/api/sqlite3-license-version-header.js 98d90255a12d02214db634e041c8e7f2f133d9361a8ebf000ba9c9af4c6761cc
-F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js 3f85af55609f1452b29c476e59893cbeed417c59560795f50911318e916083b1
+F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js 7df77f9d9fe4c6b31b63f2ffc7dccbc4146ee7db6bc6e1ff201db72b5bf5500c
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
 F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 27fb135ba3b805b66c90a7333b56080345bf1db79335c3e48b6d01ad7aa09607
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 1c742ed92c0515c8ef97d2b132feb01168252bfd847fed5d52607d8a42d23c6a
-F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 0d95dc35dfb518f0cd7bac993289a7f0753fe39c60fd6f0a5742b3f55c6e6347
+F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 3dbd918ef037cd8fa9c7b4dccb3c8637b228638654c429e7df6acab5981c75e2
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 3da8fe72dc9e76614a9c102b92e777ce03f81d788b607701c828d8fcbac44b06
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
 F ext/wasm/api/sqlite3-wasm.c ddf9d435b2e901eaceb805ff694e9609c2f32b5cf89a4f164e734a6fa303fdd2
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P cf1122ea6409bcbd341b67ae45147abb8d5cd491ae95491c801d0621181da40b
-R d079d3d6c192abb2fec9c7dad0aa7226
-U drh
-Z bc742dfff42c3cbadf42e1ec9f9dd77a
+P da514f10b7804fd0affaf0fd4b8089012288ba99c165ef4ab78ab28edd331211
+R 84fd73b1fdfc760e3c6ca3676f621065
+U stephan
+Z b41cf55f935781bf6c407d18f3e36fd9
 # Remove this line to create a well-formed Fossil manifest.

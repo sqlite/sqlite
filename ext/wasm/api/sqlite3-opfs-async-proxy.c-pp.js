@@ -678,9 +678,9 @@ const installAsyncProxy = function(){
       const lockName = "sqlite3-vfs-opfs:" + fh.filenameAbs;
       const oldLockType = fh.xLock;
       return new Promise((resolveWaitLoop) => {
-        //error("xLock() initial promise entered...");
+        //log("xLock() initial promise entered...");
         navigator.locks.request(lockName, { mode: requestedMode }, async (lock) => {
-          //error("xLock() Web Lock entered.", fh);
+          //log("xLock() Web Lock entered.", fh);
           __implicitLocks.delete(fid);
           let rc = 0;
           try{
@@ -726,7 +726,7 @@ const installAsyncProxy = function(){
         storeAndNotify('xUnlock', rc);
         return rc;
       }
-      //error("xUnlock()",fid, lockType, fh);
+      //log("xUnlock()",fid, lockType, fh);
       let rc = 0;
       if( lockType === state.sq3Codes.SQLITE_LOCK_NONE ){
         /* SQLite usually unlocks all the way to NONE */
@@ -736,7 +736,7 @@ const installAsyncProxy = function(){
         fh.xLock = lockType;
       }else if( lockType === state.sq3Codes.SQLITE_LOCK_SHARED
                 && existing.mode === 'exclusive' ){
-        /* downgrade Exclusive -> Shared */
+        /* downgrade EXCLUSIVE -> SHARED */
         rc = await wlCloseHandle(fh);
         if( 0===rc ){
           fh.xLock = lockType;
@@ -882,16 +882,6 @@ const installAsyncProxy = function(){
                   operation */
         ) || [];
         //error("waitLoop() whichOp =",opId, f.opHandlers[opId].key, args);
-//#if 0
-        if( isWebLocker && (opId==opIds.xLock || opIds==opIds.xUnlock) ){
-          /* An expert suggests that this introduces a race condition,
-             but my eyes aren't seeing it. The hope was that this
-             would improve the lock speed a tick, but it does not
-             appear to. */
-          hnd(...args);
-          continue;
-        }
-//#/if
         await hnd(...args);
       }catch(e){
         error('in waitLoop():', e);
