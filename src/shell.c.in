@@ -812,14 +812,6 @@ static char *shell_strncpy(char *dest, const char *src, size_t n){
 }
 
 /*
-** strcpy() workalike to squelch an unwarranted link-time warning
-** from OpenBSD.
-*/
-static void shell_strcpy(char *dest, const char *src){
-  while( (*(dest++) = *(src++))!=0 ){}
-}
-
-/*
 ** Optionally disable dynamic continuation prompt.
 ** Unless disabled, the continuation prompt shows open SQL lexemes if any,
 ** or open parentheses level if non-zero, or continuation prompt as set.
@@ -876,31 +868,41 @@ static void setLexemeOpen(struct DynaPrompt *p, char *s, char c){
 
 /* Upon demand, derive the continuation prompt to display. */
 static char *dynamicContinuePrompt(void){
-  if( continuePrompt[0]==0
-      || (dynPrompt.zScannerAwaits==0 && dynPrompt.inParenLevel == 0) ){
+  int k;         /* Number of context hint characters */
+  int nSpace;    /* Spaces at the start of continuePrompt */
+  int nDot;      /* Dots following spaces */
+  int nOrig;     /* Total size of continuePrompt in bytes */
+  int nCore;     /* nOrig + 1 - nSpace */
+
+  nOrig = (int)strlen(continuePrompt);
+  if( nOrig<=1
+   || (dynPrompt.zScannerAwaits==0 && dynPrompt.inParenLevel == 0)
+  ){
     return continuePrompt;
-  }else{
-    if( dynPrompt.zScannerAwaits ){
-      size_t ncp = strlen(continuePrompt);
-      size_t ndp = strlen(dynPrompt.zScannerAwaits);
-      if( ndp > ncp-3 ) return continuePrompt;
-      shell_strcpy(dynPrompt.dynamicPrompt, dynPrompt.zScannerAwaits);
-      while( ndp<3 ) dynPrompt.dynamicPrompt[ndp++] = ' ';
-      shell_strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
-              PROMPT_LEN_MAX-4);
-    }else{
-      if( dynPrompt.inParenLevel>9 ){
-        shell_strncpy(dynPrompt.dynamicPrompt, "(..", 4);
-      }else if( dynPrompt.inParenLevel<0 ){
-        shell_strncpy(dynPrompt.dynamicPrompt, ")x!", 4);
-      }else{
-        shell_strncpy(dynPrompt.dynamicPrompt, "(x.", 4);
-        dynPrompt.dynamicPrompt[2] = (char)('0'+dynPrompt.inParenLevel);
-      }
-      shell_strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
-                    PROMPT_LEN_MAX-4);
+  }
+  for(nSpace=0; continuePrompt[nSpace]==' '; nSpace++){}
+  for(nDot=0; continuePrompt[nSpace+nDot]=='.'; nDot++){}
+  nCore = nOrig + 1 - nSpace;
+  for(k=0; k<dynPrompt.inParenLevel && k+nCore<PROMPT_LEN_MAX; k++){
+    dynPrompt.dynamicPrompt[k] = '(';
+  }
+  if( dynPrompt.zScannerAwaits ){
+    int i = 0;
+    const char *z = dynPrompt.zScannerAwaits;
+    while( z[i] && k+nCore<PROMPT_LEN_MAX ){
+      dynPrompt.dynamicPrompt[k++] = z[i++];
     }
   }
+  while( k<nSpace ){
+    dynPrompt.dynamicPrompt[k++] = ' ';
+  }
+  if( k>nSpace && nDot ){
+    nSpace++;
+    nDot--;
+  }
+  memcpy(&dynPrompt.dynamicPrompt[k],
+         &continuePrompt[nSpace],
+         nCore);
   return dynPrompt.dynamicPrompt;
 }
 #endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
@@ -12125,8 +12127,10 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
         }
         break;
       case '[':
-        cin = ']';
-        deliberate_fall_through; /* FALLTHRU */
+        cWait = ']';
+        qss = QSS_HasDark | cWait;
+        CONTINUE_PROMPT_AWAITC(pst, cin);
+        goto TermScan;
       case '`': case '\'': case '"':
         cWait = cin;
         qss = QSS_HasDark | cWait;
