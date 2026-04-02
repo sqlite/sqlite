@@ -743,12 +743,11 @@ proc sqlite-setup-default-cflags {} {
   # compiling binaries for the target system (CC a.k.a. $(T.cc)).
   # Normally they're the same, but they will differ when
   # cross-compiling.
-  #
-  # When cross-compiling we default to not using the -g flag, based on a
-  # /chat discussion prompted by
-  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
   set defaultCFlags {-O2}
   if {!$::sqliteConfig(is-cross-compiling)} {
+    # When cross-compiling we default to not using the -g flag, based
+    # on a /chat discussion prompted by
+    # https://sqlite.org/forum/forumpost/9a67df63eda9925c
     lappend defaultCFlags -g
   }
   define CFLAGS [proj-get-env CFLAGS $defaultCFlags]

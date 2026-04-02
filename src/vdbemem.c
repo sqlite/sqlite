@@ -733,7 +733,7 @@ static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
 **                       decimal point or eNNN suffix.
 */
 int sqlite3MemRealValueRC(Mem *pMem, double *pValue){
-  assert( pMem->db!=0 );
+  testcase( pMem->db==0 );
   assert( pMem->flags & (MEM_Str|MEM_Blob) );
   if( pMem->z==0 ){
     *pValue = 0.0;

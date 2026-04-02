@@ -101,8 +101,8 @@ FILE *sqlite3_fopen(const char *zFilename, const char *zMode){
 
   sz1 = (int)strlen(zFilename);
   sz2 = (int)strlen(zMode);
-  b1 = sqlite3_malloc( (sz1+1)*sizeof(b1[0]) );
-  b2 = sqlite3_malloc( (sz2+1)*sizeof(b1[0]) );
+  b1 = sqlite3_malloc64( (sz1+1)*sizeof(b1[0]) );
+  b2 = sqlite3_malloc64( (sz2+1)*sizeof(b1[0]) );
   if( b1 && b2 ){
     sz1 = MultiByteToWideChar(CP_UTF8, 0, zFilename, sz1, b1, sz1);
     b1[sz1] = 0;
@@ -127,8 +127,8 @@ FILE *sqlite3_popen(const char *zCommand, const char *zMode){
 
   sz1 = (int)strlen(zCommand);
   sz2 = (int)strlen(zMode);
-  b1 = sqlite3_malloc( (sz1+1)*sizeof(b1[0]) );
-  b2 = sqlite3_malloc( (sz2+1)*sizeof(b1[0]) );
+  b1 = sqlite3_malloc64( (sz1+1)*sizeof(b1[0]) );
+  b2 = sqlite3_malloc64( (sz2+1)*sizeof(b1[0]) );
   if( b1 && b2 ){
     sz1 = MultiByteToWideChar(CP_UTF8, 0, zCommand, sz1, b1, sz1);
     b1[sz1] = 0;
@@ -151,7 +151,7 @@ char *sqlite3_fgets(char *buf, int sz, FILE *in){
     ** that into UTF-8.  Otherwise, non-ASCII characters all get translated
     ** into '?'.
     */
-    wchar_t *b1 = sqlite3_malloc( sz*sizeof(wchar_t) );
+    wchar_t *b1 = sqlite3_malloc64( sz*sizeof(wchar_t) );
     if( b1==0 ) return 0;
 #ifdef SQLITE_USE_W32_FOR_CONSOLE_IO
     DWORD nRead = 0;
@@ -226,7 +226,7 @@ int sqlite3_fputs(const char *z, FILE *out){
     ** to the console on Windows. 
     */
     int sz = (int)strlen(z);
-    wchar_t *b1 = sqlite3_malloc( (sz+1)*sizeof(wchar_t) );
+    wchar_t *b1 = sqlite3_malloc64( (sz+1)*sizeof(wchar_t) );
     if( b1==0 ) return 0;
     sz = MultiByteToWideChar(CP_UTF8, 0, z, sz, b1, sz);
     b1[sz] = 0;

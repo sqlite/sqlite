@@ -13,24 +13,19 @@
 
   This file is a reimplementation of the "opfs" VFS (as distinct from
   "opfs-sahpool") which uses WebLocks for locking instead of a bespoke
-  custom Atomics.wait()/notify() protocol. This file holds the
-  "synchronous half" of the VFS, whereas it shares the "asynchronous
-  half" of the "opfs" VFS.
+  Atomics.wait()/notify() protocol. This file holds the "synchronous
+  half" of the VFS, whereas it shares the "asynchronous half" with the
+  "opfs" VFS.
+
+  Testing has failed to show any genuine functional difference between
+  these VFSes other than "opfs-wl" being able to dole out xLock()
+  requests in a strictly FIFO manner by virtue of WebLocks being
+  globally managed by the browser. This tends to lead to, but does not
+  guaranty, fairer distribution of locks. Differences are unlikely to
+  be noticed except, perhaps, under very high contention.
 
   This file is intended to be appended to the main sqlite3 JS
-  deliverable somewhere after sqlite3-api-oo1.js.
-
-  TODOs (2026-03-03):
-
-  - For purposes of tester1.js we need to figure out which of these
-  VFSes will install the (internal-use-only) sqlite3.opfs utility code
-  namespace. We need that in order to clean up OPFS files during test
-  runs. Alternately, move those into their own
-  sqlite3ApiBootstrap.initializers entry which precedes both of the
-  VFSes, so they'll have access to it during bootstrapping. The
-  sqlite3.opfs namespace is removed at the end of bootstrapping unless
-  the library is told to run in testing mode (which is not a
-  documented feature).
+  deliverable somewhere after opfs-common-shared.c-pp.js.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
