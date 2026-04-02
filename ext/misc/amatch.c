@@ -847,7 +847,7 @@ static int amatchConnect(
 
   (void)pAux;
   *ppVtab = 0;
-  pNew = sqlite3_malloc( sizeof(*pNew) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
   rc = SQLITE_NOMEM;
   memset(pNew, 0, sizeof(*pNew));
@@ -928,7 +928,7 @@ amatchConnectError:
 static int amatchOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   amatch_vtab *p = (amatch_vtab*)pVTab;
   amatch_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->pVtab = p;

@@ -2628,6 +2628,12 @@ smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
 
+# Measure the performance of floating-point conversions.
+#
+fp-speed-test:	fp-speed-1.exe fp-speed-2.exe
+	fp-speed-1 1000000
+	fp-speed-2 1000000
+
 shelltest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl release shell
 
@@ -2719,6 +2725,14 @@ wordcount.exe:	$(TOP)\test\wordcount.c $(SQLITE3C) $(SQLITE3H)
 speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(ST_COMPILE_OPTS) -DSQLITE_OMIT_LOAD_EXTENSION \
 		$(TOP)\test\speedtest1.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+fp-speed-1.exe:	$(TOP)\test\fp-speed-1.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(ST_COMPILE_OPTS) -DSQLITE_OMIT_LOAD_EXTENSION \
+		$(TOP)\test\fp-speed-1.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
+
+fp-speed-2.exe:	$(TOP)\test\fp-speed-2.c $(SQLITE3C) $(SQLITE3H)
+	$(LTLINK) $(NO_WARN) $(ST_COMPILE_OPTS) -DSQLITE_OMIT_LOAD_EXTENSION \
+		$(TOP)\test\fp-speed-2.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
 kvtest.exe:	$(TOP)\test\kvtest.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(KV_COMPILE_OPTS) \
@@ -2909,6 +2923,7 @@ clean:
 	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe dbdump.exe 2>NUL
 	del /Q changeset.exe 2>NUL
 	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe 2>NUL
+	del /Q fp-speed-1.exe fp-speed-2.exe 2>NUL
 	del /Q mptester.exe wordcount.exe rbu.exe srcck1.exe 2>NUL
 	del /Q sqlite3.c sqlite3-*.c sqlite3.h 2>NUL
 	del /Q sqlite3rc.h 2>NUL

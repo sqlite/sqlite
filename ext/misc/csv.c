@@ -129,7 +129,7 @@ static int csv_reader_open(
   const char *zData           /*  ... or use this data */
 ){
   if( zFilename ){
-    p->zIn = sqlite3_malloc( CSV_INBUFSZ );
+    p->zIn = sqlite3_malloc64( CSV_INBUFSZ );
     if( p->zIn==0 ){
       csv_errmsg(p, "out of memory");
       return 1;
@@ -564,7 +564,7 @@ static int csvtabConnect(
   ){
     goto csvtab_connect_error;
   }
-  pNew = sqlite3_malloc( sizeof(*pNew) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) );
   *ppVtab = (sqlite3_vtab*)pNew;
   if( pNew==0 ) goto csvtab_connect_oom;
   memset(pNew, 0, sizeof(*pNew));
