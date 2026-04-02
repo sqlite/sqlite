@@ -1,5 +1,5 @@
-C Fix\sa\spotential\s4-byte\soverread\sin\sthe\ssessions\smodule\swhen\sprocessing\sa\scorrupt\schangeset.
-D 2026-04-01T17:43:22.311
+C Minor\spatch\sto\stest/json/json-speed-check.sh.\s\sThat\sscript\sis\snot\smaintained,\nbut\sthis\sfix\sat\sleast\sgets\sit\sworking\sfor\snow.
+D 2026-04-02T16:21:47.245
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1353,7 +1353,7 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json/README.md de59d5ba0bd2796d797115688630a6405bbf43a2891bad445ac6b9f38b83f236
 F test/json/json-generator.tcl dc0dd0f393800c98658fc4c47eaa6af29d4e17527380cd28656fb261bddc8a3f
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
-F test/json/json-speed-check.sh 7d5898808ce7542762318306ae6075a30f5e7ee115c4a409f487e123afe91d88 x
+F test/json/json-speed-check.sh 45862b216f1f8bbf16d74e2ad6ea20c773ee77774b299a7e0f76a22eb98e91f1 x
 F test/json/jsonb-q1.txt 1e180fe6491efab307e318b22879e3a736ac9a96539bbde7911a13ee5b33abc7
 F test/json101.test cf53254f0f0c1399a01b21fc58fee0e63a12a556be91b9ee9faccdb8b82c083c
 F test/json102.test ea5c9811e408e115c8fc539548deef431fda4924c23cacd79dd4b783f4449f07
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6194f3b5314ef98b5d73060450de8e3497272494b47e6f96992453418894ded1
-R 4ad096384f9f8cacd7e16ef1bb17dd21
-U dan
-Z 55c63e5fbaf3fe2821f0bfdd0d47e9c0
+P c1c7e024c34da8eb0258ce552f3f81921280ccf0f1fea59374f381c0c7b43b74
+R ac53c3b2ced059da4ac7bc638c54b886
+U drh
+Z df1c635b117e94e95ff04bfd11201f5f
 # Remove this line to create a well-formed Fossil manifest.

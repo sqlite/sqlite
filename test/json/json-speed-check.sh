@@ -72,7 +72,7 @@ done
 echo "NAME           = $NAME" | tee summary-$NAME.txt
 echo "CC_OPTS        = $CC_OPTS" | tee -a summary-$NAME.txt
 rm -f cachegrind.out.* jsonshell
-$CC -g -Os -Wall -I. $CC_OPTS ./shell.c ./sqlite3.c -o jsonshell -ldl -lpthread
+$CC -g -Os -Wall -I. $CC_OPTS ./shell.c ./sqlite3.c -o jsonshell -lm -ldl -lpthread
 ls -l jsonshell | tee -a summary-$NAME.txt
 home=`echo $0 | sed -e 's,/[^/]*$,,'`
 DB=$TYPE''100mb.db
