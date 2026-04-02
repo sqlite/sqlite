@@ -5564,7 +5564,6 @@ static int collationMatch(const char *zColl, Index *pIndex){
 */
 #ifndef SQLITE_OMIT_REINDEX
 void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
-  CollSeq *pColl;             /* Collating sequence to be reindexed, or NULL */
   char *z = 0;                /* Name of a table or index or collation */
   const char *zDb = 0;        /* Name of the database */
   int iReDb = -1;             /* The database index number */
@@ -5603,7 +5602,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
       isExprIdx = 1;
       bMatch = 1;
     }
-    if( zDb==0 && (pColl = sqlite3FindCollSeq(db, ENC(db), z, 0))!=0 ){
+    if( zDb==0 && sqlite3FindCollSeq(db, ENC(db), z, 0)!=0 ){
       zColl = z;
       bMatch = 1;
     }
