@@ -97,6 +97,8 @@ the build products.  It is recommended, but not required, that the
 build directory be separate from the source directory.  Cd into the
 build directory and then from the build directory run the configure
 script found at the root of the source tree.  Then run "make".
+See the [compile-for-unix.md](doc/compile-for-unix.md) document for
+more detail.
 
 For example:
 

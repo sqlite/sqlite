@@ -232,7 +232,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
       sqlite3_result_text(context,"",-1,SQLITE_STATIC);
       break;
     }
-    cBuf = sqlite3_malloc(nc);
+    cBuf = sqlite3_malloc64(nc);
     if( !cBuf ) goto memFail;
     nc = (int)(toBase64(bBuf, nb, cBuf) - cBuf);
     sqlite3_result_text(context, cBuf, nc, sqlite3_free);
@@ -254,7 +254,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
       sqlite3_result_zeroblob(context, 0);
       break;
     }
-    bBuf = sqlite3_malloc(nb);
+    bBuf = sqlite3_malloc64(nb);
     if( !bBuf ) goto memFail;
     nb = (int)(fromBase64(cBuf, nc, bBuf) - bBuf);
     sqlite3_result_blob(context, bBuf, nb, sqlite3_free);

@@ -74,7 +74,7 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
   int iExp = 0;
 
   if( zIn==0 ) goto new_from_text_failed;
-  p = sqlite3_malloc( sizeof(*p) );
+  p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ) goto new_from_text_failed;
   p->sign = 0;
   p->oom = 0;
@@ -814,7 +814,7 @@ static void decimalSumStep(
   if( p==0 ) return;
   if( !p->isInit ){
     p->isInit = 1;
-    p->a = sqlite3_malloc(2);
+    p->a = sqlite3_malloc64(2);
     if( p->a==0 ){
       p->oom = 1;
     }else{

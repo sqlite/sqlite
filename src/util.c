@@ -465,11 +465,12 @@ u8 sqlite3StrIHash(const char *z){
 */
 static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
 #if (defined(__GNUC__) || defined(__clang__)) \
-        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv))
+        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv)) \
+        && !defined(SQLITE_DISABLE_INTRINSIC)
   __uint128_t r = (__uint128_t)a * b;
   *pLo = (u64)r;
   return (u64)(r>>64);
-#elif defined(_MSC_VER) && defined(_M_X64)
+#elif defined(_WIN64) && !defined(SQLITE_DISABLE_INTRINSIC)
   *pLo = a*b;
   return __umulh(a, b);
 #else
@@ -500,17 +501,19 @@ static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
 */
 static u64 sqlite3Multiply160(u64 a, u32 aLo, u64 b, u32 *pLo){
 #if (defined(__GNUC__) || defined(__clang__)) \
-        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv))
+        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv)) \
+        && !defined(SQLITE_DISABLE_INTRINSIC)
   __uint128_t r = (__uint128_t)a * b;
   r += ((__uint128_t)aLo * b) >> 32;
   *pLo = (r>>32)&0xffffffff;
   return r>>64;
-#elif defined(_MSC_VER) && defined(_M_X64)
+#elif defined(_WIN64) && !defined(SQLITE_DISABLE_INTRINSIC)
   u64 r1_hi = __umulh(a,b);
   u64 r1_lo = a*b;
   u64 r2 = (__umulh((u64)aLo,b)<<32) + ((aLo*b)>>32);
-  r1_hi += _addcarry_u64(0, r1_lo, r2, &r1_lo);
-  *pLo = r1_lo>>32;
+  u64 t = r1_lo + r2;
+  if( t<r1_lo ) r1_hi++;
+  *pLo = t>>32;
   return r1_hi;
 #else
   u64 x2 = a>>32;
@@ -722,7 +725,8 @@ static int pwr2to10(int p){ return (p*78913) >> 18; }
 ** Count leading zeros for a 64-bit unsigned integer.
 */
 static int countLeadingZeros(u64 m){
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GNUC__) || defined(__clang__)) \
+    && !defined(SQLITE_DISABLE_INTRINSIC)
   return __builtin_clzll(m);
 #else
   int n = 0;
@@ -823,12 +827,15 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 ** Lower bits of the return value contain addition information about the
 ** parse:
 **
-**   bit 0       =>   Set for any valid input
-**   bit 1       =>   Input contains a decimal point or eNNN clause
-**                    This bit is zero if the input is an integer
+**   bit 0       =>   Set if any prefix of the input is valid.  Clear if
+**                    there is no prefix of the input that can be seen as
+**                    a valid floating point number.
+**   bit 1       =>   Set if the input contains a decimal point or eNNN
+**                    clause.  Zero if the input is an integer.
 **   bit 2       =>   The input is exactly 0.0, not an underflow from
-**                    some value near zero
-**   bit 3       =>   More than 19 significant digits in the input
+**                    some value near zero.
+**   bit 3       =>   Set if there are more than about 19 significant
+**                    digits in the input.
 **
 ** If the input contains a syntax error but begins with text that might
 ** be a valid number of some kind, then the result is negative.  The
@@ -994,6 +1001,69 @@ static const union {
   "90919293949596979899"
 };
 
+/*
+** ARMv6, ARMv7, PPC32 are known to not support hardware u64 division.
+*/
+#if (defined(__arm__) && !defined(__aarch64__)) || \
+    (defined(__ppc__) && !defined(__ppc64__))
+# define SQLITE_AVOID_U64_DIVIDE 1
+#endif
+
+#ifdef SQLITE_AVOID_U64_DIVIDE
+/*
+** Render an unsigned 64-bit integer as text onto the end of a 2-byte
+** aligned buffer that is SQLITE_U64_DIGIT+1 bytes long.  The last byte
+** of the buffer will be filled with a \000 byte.
+**
+** Return the index into the buffer of the first byte.
+**
+** This routine is used on platforms where u64-division is slow because
+** it is not available in hardware and has to be emulated in software.
+** It seeks to minimize the number of u64 divisions and use u32 divisions
+** instead.  It is slower on platforms that have hardware u64 division,
+** but much faster on platforms that do not.
+*/
+static int sqlite3UInt64ToText(u64 v, char *zOut){
+  u32 x32, kk;
+  int i;
+  zOut[SQLITE_U64_DIGITS] = 0;
+  i = SQLITE_U64_DIGITS;
+  assert( TWO_BYTE_ALIGNMENT(&sqlite3DigitPairs.a[0]) );
+  assert( TWO_BYTE_ALIGNMENT(zOut) );
+  while( (v>>32)!=0 ){
+    u32 y, x0, x1, y0, y1;
+    x32 = v % 100000000;
+    v   = v / 100000000;
+    y = x32 % 10000;
+    x32 /= 10000;
+    x1 = x32 / 100;
+    x0 = x32 % 100;
+    y1 = y / 100;
+    y0 = y % 100;
+    assert( i>=8 );
+    i -= 8;
+    *(u16*)(&zOut[i]) = *(u16*)&sqlite3DigitPairs.a[x1*2];
+    *(u16*)(&zOut[i+2]) = *(u16*)&sqlite3DigitPairs.a[x0*2];
+    *(u16*)(&zOut[i+4]) = *(u16*)&sqlite3DigitPairs.a[y1*2];
+    *(u16*)(&zOut[i+6]) = *(u16*)&sqlite3DigitPairs.a[y0*2];
+  }
+  x32 = v;
+  while( x32>=10 ){
+    kk  = x32 % 100;
+    x32 = x32 / 100;
+    assert( TWO_BYTE_ALIGNMENT(&sqlite3DigitPairs.a[kk*2]) );
+    assert( i>=2 );
+    i -= 2;
+    assert( TWO_BYTE_ALIGNMENT(&zOut[i]) );
+    *(u16*)(&zOut[i]) = *(u16*)&sqlite3DigitPairs.a[kk*2];
+  }
+  if( x32 ){
+    assert( i>0 );
+    zOut[--i] = x32 + '0';
+  }
+  return i;
+}
+#endif /* defined(SQLITE_AVOID_U64_DIVIDE) */
 
 /*
 ** Render an signed 64-bit integer as text.  Store the result in zOut[] and
@@ -1007,7 +1077,7 @@ int sqlite3Int64ToText(i64 v, char *zOut){
   int i;
   u64 x;
   union {
-    char a[23];
+    char a[SQLITE_U64_DIGITS+1];
     u16 forceAlignment;
   } u;
   if( v>0 ){
@@ -1019,6 +1089,9 @@ int sqlite3Int64ToText(i64 v, char *zOut){
   }else{
     x = (v==SMALLEST_INT64) ? ((u64)1)<<63 : (u64)-v;
   }
+#ifdef SQLITE_AVOID_U64_DIVIDE
+  i = sqlite3UInt64ToText(x, u.a);
+#else
   i = sizeof(u.a)-1;
   u.a[i] = 0;
   while( x>=10 ){
@@ -1032,6 +1105,7 @@ int sqlite3Int64ToText(i64 v, char *zOut){
   if( x ){
     u.a[--i] = x + '0';
   }
+#endif /* SQLITE_AVOID_U64_DIVIDE */
   if( v<0 ) u.a[--i] = '-';
   memcpy(zOut, &u.a[i], sizeof(u.a)-i);
   return sizeof(u.a)-1-i;
@@ -1351,37 +1425,43 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   /* Extract significant digits, start at the right-most slot in p->zBuf
   ** and working back to the right.  "i" keeps track of the next slot in
   ** which to store a digit. */
-  i = sizeof(p->zBuf)-1;
-  zBuf = p->zBuf;
+  assert( sizeof(p->zBuf)==SQLITE_U64_DIGITS+1 );
   assert( v>0 );
+  zBuf = p->zBuf;
+#ifdef SQLITE_AVOID_U64_DIVIDE
+  i = sqlite3UInt64ToText(v, zBuf);
+#else
+  i = SQLITE_U64_DIGITS;
   while( v>=10 ){
     int kk = (v%100)*2;
     assert( TWO_BYTE_ALIGNMENT(&sqlite3DigitPairs.a[kk]) );
-    assert( TWO_BYTE_ALIGNMENT(&zBuf[i-1]) );
-    *(u16*)(&zBuf[i-1]) = *(u16*)&sqlite3DigitPairs.a[kk];
+    assert( TWO_BYTE_ALIGNMENT(&zBuf[i]) );
+    assert( i-2>=0 );
+    *(u16*)(&zBuf[i-2]) = *(u16*)&sqlite3DigitPairs.a[kk];
     i -= 2;
     v /= 100;
   }
   if( v ){
     assert( v<10 );
-    zBuf[i--] = v + '0';
+    assert( i>0 );
+    zBuf[--i] = v + '0';
   }
-  assert( i>=0 && i<sizeof(p->zBuf)-1 );
-  n = sizeof(p->zBuf) - 1 - i;  /* Total number of digits extracted */
+#endif /* SQLITE_AVOID_U64_DIVIDE */
+  assert( i>=0 && i<SQLITE_U64_DIGITS );
+  n = SQLITE_U64_DIGITS - i;  /* Total number of digits extracted */
   assert( n>0 );
-  assert( n<sizeof(p->zBuf) );
-  testcase( n==sizeof(p->zBuf)-1 );
+  assert( n<=SQLITE_U64_DIGITS );
   p->iDP = n + exp;
   if( iRound<=0 ){
     iRound = p->iDP - iRound;
-    if( iRound==0 && zBuf[i+1]>='5' ){
+    if( iRound==0 && zBuf[i]>='5' ){
       iRound = 1;
-      zBuf[i--] = '0';
+      zBuf[--i] = '0';
       n++;
       p->iDP++;
     }
   }
-  z = &zBuf[i+1];  /* z points to the first digit */
+  z = &zBuf[i];  /* z points to the first digit */
   if( iRound>0 && (iRound<n || n>mxRound) ){
     if( iRound>mxRound ) iRound = mxRound;
     if( iRound==17 ){
