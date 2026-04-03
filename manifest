@@ -1,5 +1,5 @@
-C Minor\spatch\sto\stest/json/json-speed-check.sh.\s\sThat\sscript\sis\snot\smaintained,\nbut\sthis\sfix\sat\sleast\sgets\sit\sworking\sfor\snow.
-D 2026-04-02T16:21:47.245
+C Fix\sTcl9\scompatibility\sissues\sin\stest_session.c.
+D 2026-04-03T11:48:00.386
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -573,7 +573,7 @@ F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
 F ext/session/sqlite3session.c 165a880952fdc1e6397cb05e7d337ff5174596078c1fb0abd4f9933141c565e3
 F ext/session/sqlite3session.h 063e7bf7be2fff874456f452a224b5b3013b25682d108933b0351c93a1279b9c
-F ext/session/test_session.c beefbb051a2baa2636f463ad1c50558294a418f955219be9423de54dff946f0f
+F ext/session/test_session.c 21b820d8b8007587fa32721e4cba104765f796345656fd277e94c58ecba9c34d
 F ext/wasm/GNUmakefile 68c750f173106d9d63f12c1edf1256c6f4bad9894b155da5db64322f4912de4b
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c1c7e024c34da8eb0258ce552f3f81921280ccf0f1fea59374f381c0c7b43b74
-R ac53c3b2ced059da4ac7bc638c54b886
+P 9d92e371ca375776d251fe446f17a437823cc96e48a5c45f42cb0768d0a47f65
+R 4aef566da9e3886c4c753082e80df783
 U drh
-Z df1c635b117e94e95ff04bfd11201f5f
+Z 154b089b95f9b72f632e5d5a79cb3c8d
 # Remove this line to create a well-formed Fossil manifest.
