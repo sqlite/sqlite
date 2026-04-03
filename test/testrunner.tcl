@@ -141,7 +141,10 @@ are run. Otherwise, each pattern is interpreted as a glob pattern. Only
 those tcl tests for which the final component of the filename matches at
 least one specified pattern are run.  The glob wildcard '*' is prepended
 to the pattern if it does not start with '^' and appended to every
-pattern that does not end with '$'.
+pattern that does not end with '$'.  If PATTERN begins with "~", then it
+is an anti-pattern that only matches tests that do not match PATTERN.
+Tests or only run if they match one or more patterns and match no
+anti-patterns.
 
 If no PATTERN arguments are present, then various fuzztest, threadtest
 and other tests are run as part of the "release" permutation. These are
@@ -1124,10 +1127,21 @@ proc add_job {args} {
 #
 # An empty patternlist matches everything
 #
+# Entries of patternlist that begin with "~" mean "match anything that
+# does not match the following pattern".  For example, a patternlist
+# of {fuzzcheck ~san} will match "fuzzcheck" but not "fuzzcheck-asan".
+#
 proc job_matches_any_pattern {patternlist jobcmd} {
   set bMatch 0
+  set bMiss 0
   if {[llength $patternlist]==0} {return 1}
   foreach p $patternlist {
+    if {[string index $p 0] eq "~"} {
+      set p [string range $p 1 end]
+      set not 1
+    } else {
+      set not 0
+    }
     set p [string trim $p *]
     if {[string index $p 0]=="^"} {
       set p [string range $p 1 end]
@@ -1139,10 +1153,18 @@ proc job_matches_any_pattern {patternlist jobcmd} {
     } else {
       set p "$p*"
     }
-    if {[string match $p $jobcmd]} {
-      set bMatch 1
-      break
+    if {$not} {
+      if {[string match $p $jobcmd]} {return 0}
+    } else {
+      if {[string match $p $jobcmd]} {
+        set bMatch 1
+      } else {
+        set bMiss 1
+      }
     }
+  }
+  if {!$bMiss} {
+    set bMatch 1
   }
   return $bMatch
 }

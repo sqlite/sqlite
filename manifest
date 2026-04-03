@@ -1,5 +1,5 @@
-C configure\sscript:\sreplace\stwo\s'file\snormalize'\scalls\swith\sfile-normalize\s(a\stcl/jimsh\scompatibility\sissue)\sto\sfix\s--with-linenoise.\sProblem\sreported\sin\s[forum:ce688d13793bd78f|forum\spost\sce688d13793bd78f].
-D 2026-04-03T13:54:48.361
+C Enhance\stestrunner.tcl\sso\sthat\sa\sPATTERN\sargument\sthat\sbegins\swith\s"~"\sis\nan\s"anti-pattern".\s\sOnly\srun\stests\sthat\smatch\sone\sor\smore\spatterns\sif\sthere\nare\sany\spatterns\s*and*\sdo\snot\smatch\sany\santi-pattern.
+D 2026-04-03T19:48:01.124
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1714,7 +1714,7 @@ F test/temptrigfault.tes fc5918e64f3867156fefe7cfca9d8e1f495134a5229b2b511b0dc11
 F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3fb4769d61
 F test/tester.tcl 2d943f60200e0a36bcd3f1f0baf181a751cd3604ef6b6bd4c8dc39b4e8a53116
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
-F test/testrunner.tcl 78d67079fc39caf2af3fd9d4c30bdac78dae7ec50b9fc802835e7a5189581e07 x
+F test/testrunner.tcl 6b232f0d4825dec8b967754503080fc9609fad077f582d02f86bd2d95bec4110 x
 F test/testrunner_data.tcl 078e251983c8fc573567125147655f68132210f226c92922daf21fb913779717
 F test/testrunner_estwork.tcl 81e2ae10238f50540f42fbf2d94913052a99bfb494b69e546506323f195dcff9
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1387b5819085146cafb0e8740410faaa48bfb5aefc78ff763aaa8e85744d48b3
-R 535d7e5efcb850895cffdd42f2a91851
-U stephan
-Z 0526328b3729dcce012da94c6ab86937
+P 2be1c5a3e47f1276b9f0a4771f2d5fb0bc1ccb907c855caa04d757b4145533f5
+R fb320f829f7981007da6fed7c98fe352
+U drh
+Z 2a88cf0b8fe57448638ae0fcc1526344
 # Remove this line to create a well-formed Fossil manifest.
