@@ -1148,7 +1148,7 @@ proc sqlite-check-line-editing {} {
    && ![proj-opt-was-provided editline]
   } {
     set dirlist ../linenoise
-    catch {lappend dirlist [file normalize $::autosetup(srcdir)/../linenoise]}
+    catch {lappend dirlist [file-normalize $::autosetup(srcdir)/../linenoise]}
     catch {lappend dirlist $::env(HOME)/linenoise}
     foreach d $dirlist {
       if {[file exists $d/linenoise.c] && [file exists $d/linenoise.h]} {
@@ -1194,7 +1194,7 @@ proc sqlite-check-line-editing {} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
       user-notice "Adding linenoise support to jimsh."
     } else {
-      msg-result "Using linenoise at [file normalize $dirLn]"
+      msg-result "Using linenoise at [file-normalize $dirLn]"
     }
     return "linenoise ($flavor)"
   } elseif {[opt-bool editline]} {

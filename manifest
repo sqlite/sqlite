@@ -1,5 +1,5 @@
-C Fix\sTcl9\scompatibility\sissues\sin\stest_session.c.
-D 2026-04-03T11:48:00.386
+C configure\sscript:\sreplace\stwo\s'file\snormalize'\scalls\swith\sfile-normalize\s(a\stcl/jimsh\scompatibility\sissue)\sto\sfix\s--with-linenoise.\sProblem\sreported\sin\s[forum:ce688d13793bd78f|forum\spost\sce688d13793bd78f].
+D 2026-04-03T13:54:48.361
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c 916bbdf8023fbda9937afae57d81a853d8c2ea00f2320aa27becbc33574f963d
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl ce301197f364f7ce2acabbbd84b43d19e917ec73653157ca134a06f32d322712
-F autosetup/sqlite-config.tcl 6f8b3a88f5e7fdb86ba920fc97fd4dbfaaf92d0d91c60bb006fb8a52780a68b2
+F autosetup/sqlite-config.tcl 8fecce2838b7e7d990d161d08998034f3e3b0b2ddf4d7a99dbfafba9c902e302
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl e014dd95900c7f9a34e8e0f460f47e94841059827bce8b4c49668b0c7ae3f1a0
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9d92e371ca375776d251fe446f17a437823cc96e48a5c45f42cb0768d0a47f65
-R 4aef566da9e3886c4c753082e80df783
-U drh
-Z 154b089b95f9b72f632e5d5a79cb3c8d
+P 1387b5819085146cafb0e8740410faaa48bfb5aefc78ff763aaa8e85744d48b3
+R 535d7e5efcb850895cffdd42f2a91851
+U stephan
+Z 0526328b3729dcce012da94c6ab86937
 # Remove this line to create a well-formed Fossil manifest.
