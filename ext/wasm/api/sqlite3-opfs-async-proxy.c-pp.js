@@ -49,6 +49,36 @@
   versions (approximately) 104-107 are extinct) we should change our
   usage of those methods to remove the "await".
 */
+//#if 0
+/**
+   2026-04-04: this file gets included by both the "opfs" and "opfs-wl"
+   VFSes. It would, in hindsight, hypothetically be possible to restructure
+   it very slightly to support both VFSes via a single Worker instance.
+
+   Some of the changes we would need for that:
+
+   - The xLock/xUnlock "op codes" would need to differ for each impl.
+   i.e. we'd need state.opIds.xLock{,WL} and state.opIds.xUnlock{,WL}
+   to distinguish between the two, rather than doing so when this Worker
+   is loaded.
+
+   - We would need to centralize loading of this Worker, outside of
+   the VFS-specific pieces, and change the handshake in order to be
+   able to distinguish between clients which support
+   Atomics.waitAsync() and those which do not ("opfs-wl" requires
+   waitAsync()).
+
+   One down-side would be for clients which, for whatever reason, want
+   to use both "opfs" and "opfs-wl" within the same session: because
+   both would go through the same Worker, any operations for one VFS
+   would, while they're being processed on this side of the proxy,
+   effectively block the other VFS from doing anything, potentially
+   deadlocking. This use case seems unlikely enough that it can
+   possibly be ruled out (or even reasonably flat-out prohibited by
+   the library).
+*/
+//#/if
+
 "use strict";
 const urlParams = new URL(globalThis.location.href).searchParams;
 const vfsName = urlParams.get('vfs');
