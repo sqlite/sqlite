@@ -1126,7 +1126,7 @@ static void walUnlockExclusive(Wal *pWal, int lockIdx, int n){
 
 /*
 ** Compute a hash on a page number.  The resulting hash value must land
-** between 0 and (HASHTABLE_NSLOT-1).  The walHashNext() function advances
+** between 0 and (HASHTABLE_NSLOT-1).  The walNextHash() function advances
 ** the hash to the next value in the event of a collision.
 */
 static int walHash(u32 iPage){
@@ -1334,7 +1334,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     for(iKey=walHash(iPage); sLoc.aHash[iKey]; iKey=walNextHash(iKey)){
       if( (nCollide--)==0 ) return SQLITE_CORRUPT_BKPT;
     }
-    sLoc.aPgno[idx-1] = iPage;
+    sLoc.aPgno[(idx-1)&(HASHTABLE_NPAGE-1)] = iPage;
     AtomicStore(&sLoc.aHash[iKey], (ht_slot)idx);
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
@@ -3582,7 +3582,10 @@ static int walFindFrame(
     SEH_INJECT_FAULT;
     while( (iH = AtomicLoad(&sLoc.aHash[iKey]))!=0 ){
       u32 iFrame = iH + sLoc.iZero;
-      if( iFrame<=iLast && iFrame>=pWal->minFrame && sLoc.aPgno[iH-1]==pgno ){
+      if( iFrame<=iLast
+       && iFrame>=pWal->minFrame
+       && sLoc.aPgno[(iH-1)&(HASHTABLE_NPAGE-1)]==pgno
+      ){
         assert( iFrame>iRead || CORRUPT_DB );
         iRead = iFrame;
       }

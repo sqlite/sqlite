@@ -1,5 +1,5 @@
-C Add\ssome\scomments\sto\sthe\sOPFS\sasync\sproxy\sabout\spotential\sfuture\sexperimentation.\sNo\scode\schanges.
-D 2026-04-04T08:07:25.615
+C Appease\sstatic\sanalyzers\sby\smasking\sthe\sindex\sto\sthe\nWalHashLoc.aPgno\sarray\sto\smake\sit\seasy\sto\sprove\sthat\sthere\nis\snever\sOOB\sread\sor\swrite.
+D 2026-04-04T14:43:37.411
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -813,7 +813,7 @@ F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 5437ce986db2f70e639ce8a3fe68dcdfe64b0f1abb14eaebecdabd5e0766cc68
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
-F src/wal.c 88d94fd15a75f6eda831fa32d1148a267ea37bf0a4b69829a73dfde06244b08f
+F src/wal.c 7340d4f9bb827bd349127cac6b2cf0cb7f76b9fda645f7b9b0bf7a6e0b1e2e7c
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c bffca5e4ef20d0bfbdc24f1dc13fd3f955284225a8ad25a4454635f6be39aad0
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c313d91bb67b56be2db46194c3baa5a72b469595de3b2abe249612838dc175e4
-R 4f271a48c11daebd341db4e7e0c227b8
-U stephan
-Z f88cf2e725cab1ec2385a60dfe7d326c
+P 9c14ee74305a5db3be95dbd9ae8d1db0abf39b323001be4e2f02b7226e6ca0d3
+R f81fdad4028ee2ac9be01a40b4d29ee5
+U drh
+Z a0430d4a538d5e9e3d77059bf0c0fc22
 # Remove this line to create a well-formed Fossil manifest.
