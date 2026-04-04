@@ -5140,9 +5140,9 @@ static int unixShmMap(
   nReqRegion = ((iRegion+nShmPerMap) / nShmPerMap) * nShmPerMap;
 
   if( pShmNode->nRegion<nReqRegion ){
-    char **apNew;                      /* New apRegion[] array */
-    int nByte = nReqRegion*szRegion;   /* Minimum required file size */
-    struct stat sStat;                 /* Used by fstat() */
+    char **apNew;                          /* New apRegion[] array */
+    i64 nByte = nReqRegion*(i64)szRegion;  /* Minimum required file size */
+    struct stat sStat;                     /* Used by fstat() */
 
     pShmNode->szRegion = szRegion;
 

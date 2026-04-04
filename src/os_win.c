@@ -4581,9 +4581,9 @@ static int winShmMap(
   assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
   if( pShmNode->nRegion<=iRegion ){
     HANDLE hShared = pShmNode->hSharedShm;
-    struct ShmRegion *apNew;           /* New aRegion[] array */
-    int nByte = (iRegion+1)*szRegion;  /* Minimum required file size */
-    sqlite3_int64 sz;                  /* Current size of wal-index file */
+    struct ShmRegion *apNew;                /* New aRegion[] array */
+    i64 nByte = (iRegion+1)*(i64)szRegion;  /* Minimum required file size */
+    sqlite3_int64 sz;                       /* Current size of wal-index file */
 
     pShmNode->szRegion = szRegion;
 
