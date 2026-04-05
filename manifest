@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\sthe\sGLOB\soperator.
-D 2026-04-05T16:05:42.860
+C New\sassert()s\shelp\sclarify\sconstraints\son\sxOpen\smethod.
+D 2026-04-05T17:56:15.576
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -719,7 +719,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c e7d96727db5b67e39d590a68cc61c86daf4c093c36c011a09ebfb521182ec28d
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c 44050a8e6c3fb34a5b456246a9e2148f9c503b64d23f8f8f4e569e6daed8499f
+F src/os_unix.c 11e0ce682fbf7b191de66fba9e8cf97957a88810b884342b2f175eabd1b8b933
 F src/os_win.c 774546a5b9c48cc751df9327ff71d6375042ad22b4b5ab2a191c56858eaff121
 F src/os_win.h 5e168adf482484327195d10f9c3bce3520f598e04e07ffe62c9c5a8067c1037b
 F src/pager.c 230dbf96b3ef762f008af0fad17bdadfabe0525530ba2e7406affd19de81ed1c
@@ -2197,8 +2197,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e1c68b8032563f7d836d08e2dff558d374d34e0755126bdc705ebf1fcc9b3518
-R 44d96afad681bb307af9b5b7cc884585
+P 8189532419790d4b9e03a259356591a362f141b6e5e1af2bddc8af499a3f3a40
+R bdf1939308a8f53a79b8bcf080b33034
 U drh
-Z b4b6aa495ff7072739dda14d3c84aeeb
+Z 98e538cb2d161bca6003864ce895d9fd
 # Remove this line to create a well-formed Fossil manifest.

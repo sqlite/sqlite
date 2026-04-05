@@ -6646,7 +6646,10 @@ static int unixOpen(
 
   }else if( !zName ){
     /* If zName is NULL, the upper layer is requesting a temp file. */
-    assert(isDelete && !isNewJrnl);
+    assert( isDelete );
+    assert( !isNewJrnl );
+    assert( isExclusive );
+    assert( isReadWrite );
     rc = unixGetTempname(pVfs->mxPathname, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
