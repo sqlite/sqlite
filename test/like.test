@@ -1160,4 +1160,62 @@ do_execsql_test 18.2 {
   SELECT * FROM t2;
 } {1 abc}
 
+# 2026-04-05
+# Pathological GLOB patterns which an AI said should take exponential
+# stack space.  (The AI that said this is hallucinating.  The whole
+# point of this sequence to tests is to prove that AI wrong.)
+#
+do_execsql_test 19.0 {
+  WITH RECURSIVE p(n,x) AS (
+     VALUES(1,'*[A]')
+     UNION ALL
+     SELECT n+1, '*[A]'||x FROM p WHERE n<3000
+  )
+  SELECT format('%.500000c','A') GLOB x FROM p WHERE n=3000;
+} {1}
+do_execsql_test 19.1 {
+  WITH RECURSIVE p(n,x) AS (
+     VALUES(1,'*[A]*')
+     UNION ALL
+     SELECT n+1, '*[A]'||x FROM p WHERE n<3000
+  )
+  SELECT format('%.500000c','A') GLOB x FROM p WHERE n=3000;
+} {1}
+do_execsql_test 19.2 {
+  WITH RECURSIVE
+    p(n,x) AS (
+      VALUES(1,'*[A]')
+      UNION ALL
+      SELECT n+1, '*[A]'||x FROM p WHERE n<3000),
+    q(m,y) AS (
+      VALUES(1,'XAY')
+      UNION ALL
+      SELECT m+1, y||y FROM q WHERE m<19)
+  SELECT y GLOB x FROM p, q WHERE n=3000 AND m=19;
+} {0}
+do_execsql_test 19.3 {
+  WITH RECURSIVE
+    p(n,x) AS (
+      VALUES(1,'*[A]*')
+      UNION ALL
+      SELECT n+1, '*[A]'||x FROM p WHERE n<3000),
+    q(m,y) AS (
+      VALUES(1,'XAY')
+      UNION ALL
+      SELECT m+1, y||y FROM q WHERE m<19)
+  SELECT y GLOB x FROM p, q WHERE n=3000 AND m=19;
+} {1}
+do_execsql_test 19.4 {
+  WITH RECURSIVE
+    p(n,x) AS (
+      VALUES(1,'*[B]')
+      UNION ALL
+      SELECT n+1, '*[A]'||x FROM p WHERE n<3000),
+    q(m,y) AS (
+      VALUES(1,'XAY')
+      UNION ALL
+      SELECT m+1, y||y FROM q WHERE m<19)
+  SELECT y GLOB x FROM p, q WHERE n=3000 AND m=19;
+} {0}
+
 finish_test
