@@ -20,6 +20,10 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#ifndef SQLITE_BLOOM_HASH
+# define SQLITE_BLOOM_HASH 0
+#endif
+static int bloom_trace_count = 0;
 
 /*
 ** High-resolution hardware timer used for debugging and testing only.
@@ -687,6 +691,30 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
 }
 
 /*
+** Helpers for the 2-bit same-word Bloom filter experiment.
+*/
+static u64 bloomMix(u64 h){
+  h = (h ^ (h >> 30)) * 0xbf58476d1ce4e5b9ULL;
+  h = (h ^ (h >> 27)) * 0x94d049bb133111ebULL;
+  h = h ^ (h >> 31);
+  return h;
+}
+static u64 bloomHashBytes(const u8 *z, int n, u64 h){
+  while( n-- > 0 ){
+    h = (h * 31) + *(z++);
+  }
+  return h;
+}
+static u32 bloomGetWord(const u8 *z, int i){
+  u32 w;
+  memcpy(&w, &z[i*4], 4);
+  return w;
+}
+static void bloomPutWord(u8 *z, int i, u32 w){
+  memcpy(&z[i*4], &w, 4);
+}
+
+/*
 ** Compute a bloom filter hash using pOp->p4.i registers from aMem[] beginning
 ** with pOp->p3.  Return the hash.
 */
@@ -702,15 +730,24 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
     }else if( p->flags & MEM_Real ){
       h += sqlite3VdbeIntValue(p);
     }else if( p->flags & (MEM_Str|MEM_Blob) ){
-      /* All strings have the same hash and all blobs have the same hash,
-      ** though, at least, those hashes are different from each other and
-      ** from NULL. */
+#if SQLITE_BLOOM_HASH == 0
       h += 4093 + (p->flags & (MEM_Str|MEM_Blob));
+#elif SQLITE_BLOOM_HASH == 1
+      h += bloomMix(4093 + (p->flags & (MEM_Str|MEM_Blob)));
+#elif SQLITE_BLOOM_HASH == 2 || SQLITE_BLOOM_HASH == 3
+      int n = p->n;
+#if SQLITE_BLOOM_HASH == 3
+      if( n>64 ) n = 64;
+#endif
+      h = bloomHashBytes((const u8*)p->z, n, h + 4093);
+#endif
     }
   }
+#if SQLITE_BLOOM_HASH >= 1
+  h = bloomMix(h);
+#endif
   return h;
 }
-
 
 /*
 ** For OP_Column, factor out the case where content is loaded from
@@ -8972,8 +9009,27 @@ case OP_FilterAdd: {
     printf("hash: %llu modulo %d -> %u\n", h, pIn1->n, (int)(h%pIn1->n));
   }
 #endif
+#ifdef SQLITE_BLOOM2
+  {
+    u32 idx, b1, b2, mask, w;
+    int nWord = pIn1->n / 4;
+    if( nWord>0 ){
+      idx = (u32)((h >> 0) % nWord);
+      b1 = (u32)((h >> 32) & 31);
+      b2 = (u32)((h >> 37) & 31);
+      mask = (1u << b1) | (1u << b2);
+      w = bloomGetWord((const u8*)pIn1->z, idx);
+      bloomPutWord((u8*)pIn1->z, idx, w | mask);
+      if( bloom_trace_count < 10 ){
+        fprintf(stderr, "Bloom ADD: h=%llu idx=%u mask=%x w_after=%x nWord=%d hash_variant=%d\n", h, idx, mask, w|mask, nWord, SQLITE_BLOOM_HASH);
+        bloom_trace_count++;
+      }
+    }
+  }
+#else
   h %= (pIn1->n*8);
   pIn1->z[h/8] |= 1<<(h&7);
+#endif
   break;
 }
 
@@ -9008,15 +9064,37 @@ case OP_Filter: {          /* jump */
     printf("hash: %llu modulo %d -> %u\n", h, pIn1->n, (int)(h%pIn1->n));
   }
 #endif
+#ifdef SQLITE_BLOOM2
+  {
+    u32 idx, b1, b2, mask, w;
+    int nWord = pIn1->n / 4;
+    if( nWord>0 ){
+      idx = (u32)((h >> 0) % nWord);
+      b1 = (u32)((h >> 32) & 31);
+      b2 = (u32)((h >> 37) & 31);
+      mask = (1u << b1) | (1u << b2);
+      w = bloomGetWord((const u8*)pIn1->z, idx);
+      if( bloom_trace_count < 20 ){
+        fprintf(stderr, "Bloom Probe: h=%llu idx=%u mask=%x w=%x nWord=%d match=%d\n", h, idx, mask, w, nWord, (w&mask)==mask);
+        bloom_trace_count++;
+      }
+      if( (w & mask) != mask ){
+        VdbeBranchTaken(1, 2);
+        p->aCounter[SQLITE_STMTSTATUS_FILTER_HIT]++;
+        goto jump_to_p2;
+      }
+    }
+  }
+#else
   h %= (pIn1->n*8);
   if( (pIn1->z[h/8] & (1<<(h&7)))==0 ){
     VdbeBranchTaken(1, 2);
     p->aCounter[SQLITE_STMTSTATUS_FILTER_HIT]++;
     goto jump_to_p2;
-  }else{
-    p->aCounter[SQLITE_STMTSTATUS_FILTER_MISS]++;
-    VdbeBranchTaken(0, 2);
   }
+#endif
+  p->aCounter[SQLITE_STMTSTATUS_FILTER_MISS]++;
+  VdbeBranchTaken(0, 2);
   break;
 }
 
