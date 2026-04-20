@@ -44,7 +44,7 @@
 **   }
 **   rc = sqlite3_intck_error(p, &zErr);
 **   if( rc!=SQLITE_OK ){
-**     printf("error occured (rc=%d), (errmsg=%s)\n", rc, zErr);
+**     printf("error occurred (rc=%d), (errmsg=%s)\n", rc, zErr);
 **   }
 **   sqlite3_intck_close(p);
 **
