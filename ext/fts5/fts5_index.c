@@ -6311,9 +6311,9 @@ static void fts5MergePrefixLists(
 ** all index terms corresponding to pToken/nToken are collapsed into a single
 ** term before the callback is invoked.
 **
-** The callback invoked for each entry visited is specified by paramter xVisit.
+** The callback invoked for each entry visited is specified by parameter xVisit.
 ** Each time it is invoked, it is passed a pointer to the Fts5Index object,
-** a copy of the 7th paramter to this function (pCtx) and a pointer to the
+** a copy of the 7th parameter to this function (pCtx) and a pointer to the
 ** iterator that indicates the current entry. If the current entry is the
 ** first with a new term (i.e. different from that of the previous entry,
 ** including the very first term), then the final two parameters are passed
