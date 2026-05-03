@@ -175,3 +175,72 @@ SELECT shell_prompt_test('abc/e[1;32m/e[0m/e[/exyz',NULL,NULL,1);
 .testcase 5005
 SELECT shell_prompt_test('abc/e[1,32m/e[0m/e[/exyz',NULL,NULL,1);
 .check abc^[[1,32m^A^[[0m^B^[[^[xyz
+
+# Additional tests for octal escapes
+#
+.testcase 6000
+SELECT shell_prompt_test('/7');
+.check ^G
+.testcase 6001
+SELECT shell_prompt_test('/78');
+.check ^G8
+.testcase 6002
+SELECT shell_prompt_test('/7//');
+.check ^G/
+.testcase 6003
+SELECT shell_prompt_test('/7/');
+.check ^G
+.testcase 6004
+SELECT shell_prompt_test('/57');
+.check /
+.testcase 6005
+SELECT shell_prompt_test('/578');
+.check /8
+.testcase 6006
+SELECT shell_prompt_test('/57//');
+.check //
+.testcase 6007
+SELECT shell_prompt_test('/57/');
+.check /
+.testcase 6008
+SELECT shell_prompt_test('/10');
+.check ^H
+.testcase 6009
+SELECT shell_prompt_test('/101');
+.check A
+.testcase 6010
+SELECT shell_prompt_test('/1011');
+.check A1
+.testcase 6011
+SELECT shell_prompt_test('/33[0');
+.check ^[[0
+
+# The UNKNOWN() error is shown regardless of whether or not the
+# escape is part of an active branch.
+.testcase 6012
+SELECT shell_prompt_test('/x/z/:/y/;');
+.check 'UNKNOWN("/z")UNKNOWN("/y")'
+
+# Additional tests of \001..\002 escapes
+#
+# Two or more disconneted ANSI escapes
+#
+.testcase 7000
+SELECT shell_prompt_test('a-/e[1m-/e[0m-z',null,null,1);
+.check a-^A^[[1m^B-^A^[[0m^B-z
+
+# Empty parameter
+.testcase 7001
+SELECT shell_prompt_test('a-/e[m-z',null,null,1);
+.check a-^A^[[m^B-z
+
+# /e followed by non-[
+.testcase 7002
+SELECT shell_prompt_test('a-/eX-z',null,null,1);
+.check a-^[X-z
+.testcase 7003
+SELECT shell_prompt_test('a-/eX/e[m-z',null,null,1);
+.check a-^[X^A^[[m^B-z
+.testcase 7004
+SELECT shell_prompt_test('a-/e[m/eX-z',null,null,1);
+.check a-^A^[[m^B^[X-z

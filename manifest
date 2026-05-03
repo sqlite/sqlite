@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\snon-printing\scharacter\sdelimiter\slogic\sin\sthe\sCLI\nprompt,\sfor\simproved\saccuracy\sand\sfor\simproved\stestability.
-D 2026-05-03T15:53:52.474
+C New\stest\scases\sfor\sthe\sshell\sprompt
+D 2026-05-03T18:31:49.934
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1624,7 +1624,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell-prompt.sql 96c055ac09aff7f96b7e2bca8f0192c36ed34d11df4cf4a58b9d4540b387ff3f
+F test/shell-prompt.sql b062f7778cf5529ccac2e0c07364b8a050c87397706d28ea2240dc5c43e920ac
 F test/shell1.test c84eff209f93ad17ccdf7e1634969fc8231684254edeb21d9b13d67c3179cdb5
 F test/shell2.test dc541d2681503e55466a24d35a4cbf8ca5b90b8fcdef37fc4db07373a67d31d3
 F test/shell3.test 91efdd545097a61a1f72cf79c9ad5b49da080f3f10282eaf4c3c272cd1012db2
@@ -2203,8 +2203,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b9545b0f0b6fa0a777a064e1410b17f52cb49d853c188f9b8b3a772bd810ece3
-R 2722a106bcabd9853ab1b6613af68b1b
+P f5649795cd8d7a1f270037ef0b212ea605c1665ec05a75a6da0b250f2aeab070
+R daac4c37beafe71b6d5a94bfbd982640
 U drh
-Z 4349d7842f8a2c527da152c639edc6d0
+Z 55650fa07137fdaa2a9585b2911bac41
 # Remove this line to create a well-formed Fossil manifest.
