@@ -95,25 +95,26 @@ SELECT shell_prompt_test(NULL);
 SELECT shell_prompt_test(NULL,'SELECT');
 .check --glob ' *;*-> ';
 .testcase 1002
-SELECT shell_prompt_test(NULL,'SELECT ((("');
+SELECT shell_prompt_test(NULL,'SELECT ((("',null,2);
 .check --glob ' *[ m]")));*-> ';
 .testcase 1003
-SELECT shell_prompt_test(NULL,'SELECT ((()[');
+SELECT shell_prompt_test(NULL,'SELECT ((()[',null,2);
 .check --glob ' *[ m]]));*-> ';
 .testcase 1004
-SELECT shell_prompt_test(NULL,'SELECT ''');
+SELECT shell_prompt_test(NULL,'SELECT ''',null,2);
 .check --glob " *[ m]';*-> ";
 .testcase 1005
-SELECT shell_prompt_test(NULL,'CREATE TRIGGER t1 BEGIN');
+SELECT shell_prompt_test(NULL,'CREATE TRIGGER t1 BEGIN',null,2);
 .check --glob " *[ m];END;*-> ";
 .testcase 1006
-SELECT shell_prompt_test(NULL,'CREATE TRIGGER t1 BEGIN SELECT ((([');
+SELECT shell_prompt_test(NULL,'CREATE TRIGGER t1 BEGIN SELECT ((([',null,2);
 .check --glob " *[ m]])));END;*-> ";
 .testcase 1007
-SELECT shell_prompt_test(NULL,'CREATE TRIGGER t1 BEGIN SELECT ((/*a(((''bc');
+SELECT shell_prompt_test(NULL,'CREATE TRIGGER t1 BEGIN SELECT ((/*a(((''bc',
+                         null,2);
 .check --glob " *[ m][*]/));END;*-> ";
 .testcase 1008
-SELECT shell_prompt_test(NULL,'CREATE TRIGGER t1 BEGIN SELECT 1;');
+SELECT shell_prompt_test(NULL,'CREATE TRIGGER t1 BEGIN SELECT 1;',null,2);
 .check --glob " *[ m]END;*-> ";
 
 .testcase 2000
@@ -146,3 +147,31 @@ SELECT shell_prompt_test('(/A-/v)');
 .testcase 3002
 SELECT shell_prompt_test('(/A-/D%Y-%m-%dT%H:%M:%S/D)');
 .check --glob '(SQLite-20#-#-#T#:#:#)'
+
+.testcase 4000
+.mode list -rowsep '' -escape ascii
+SELECT shell_prompt_test('</myes/:no/;>',NULL,':memory:');
+.check <yes>
+.testcase 4001
+.mode list -rowsep '' -escape ascii
+SELECT shell_prompt_test('</myes/:no/;>',NULL,'t1.db');
+.check <no>
+
+.testcase 5000
+SELECT shell_prompt_test('abc/e[0mxyz',NULL,NULL,1);
+.check abc^A^[[0m^Bxyz
+.testcase 5001
+SELECT shell_prompt_test('abc/e[0mxyz',NULL,NULL,2);
+.check abc^[[0mxyz
+.testcase 5002
+SELECT shell_prompt_test('/e[0mxyz',NULL,NULL,1);
+.check ^A^[[0m^Bxyz
+.testcase 5003
+SELECT shell_prompt_test('abc/e[0m',NULL,NULL,1);
+.check abc^A^[[0m^B
+.testcase 5004
+SELECT shell_prompt_test('abc/e[1;32m/e[0m/e[/exyz',NULL,NULL,1);
+.check abc^A^[[1;32m^[[0m^B^[[^[xyz
+.testcase 5005
+SELECT shell_prompt_test('abc/e[1,32m/e[0m/e[/exyz',NULL,NULL,1);
+.check abc^[[1,32m^A^[[0m^B^[[^[xyz
