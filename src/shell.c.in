@@ -4334,6 +4334,9 @@ static const char *(azHelp[]) = {
 #endif
   ".prompt MAIN CONTINUE    Replace the standard prompts",
   "   --hard-reset              Unset SQLITE_PS1/2 and then --reset",
+#ifndef SQLITE_NO_COLOR
+  "   --no-color                Disable color prompts. Use --color to re-enable",
+#endif
   "   --reset                   Revert to default prompts",
   "   --show                    Show the current prompt strings",
   "   --                        No more options. Subsequent args are prompts",
@@ -11100,6 +11103,22 @@ static int do_meta_command(const char *zLine, ShellState *p){
           cli_printf(stdout,"Main prompt:  '%s'\n", prompt_string(p, 0));
           cli_printf(stdout,"Continuation: '%s'\n", prompt_string(p, 1));
         }else
+#ifndef SQLITE_NO_COLOR
+        if( strcmp(z,"-color")==0 ){
+#ifdef _WIN32
+          _putenv("NO_COLOR=");
+#else
+          unsetenv("NO_COLOR");
+#endif
+        }else
+        if( strcmp(z,"-no-color")==0 ){
+#ifdef _WIN32
+          _putenv("NO_COLOR=1");
+#else
+          setenv("NO_COLOR","1",1);
+#endif
+        }else
+#endif
         if( strcmp(z,"-")==0 ){
           noOpt = 1;
         }else
