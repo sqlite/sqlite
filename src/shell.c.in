@@ -928,6 +928,18 @@ static char *local_getline(char *zLine, FILE *in){
 }
 
 /*
+** Return true if either the SQLITE_NO_COLOR compile-time option is used
+** or if the NO_COLOR environment variable exists
+*/
+static int shellNoColor(void){
+#ifdef SQLITE_NO_COLOR
+  return 1;
+#else
+  return getenv("NO_COLOR")!=0;
+#endif
+}
+
+/*
 ** The SQLITE_PS_APPDEF macro should be set to the name of a function
 ** that accepts a single "int" argument and returns a "const char *"
 ** that is guaranteed to be non-NULL.  The value returned depends on the
@@ -952,20 +964,24 @@ static const char *shellPromptAppDef(int c){
     case 1:
 #if   defined(SQLITE_PS1)
       return SQLITE_PS1;
-#elif defined(SQLITE_PS_NOANSI)
-      return "/A-/v /~> ";
 #else
-      return "/e[1;32m/A-/v /e[1;/x33/:36/;m/m/e[3m/;/f/;/e[0m-> ";
+      if( shellNoColor() ){
+        return "/A-/v /~> ";
+      }else{
+        return "/e[1;32m/A-/v /e[1;/x33/:36/;m/m/e[3m/;/f/;/e[0m-> ";
+      }
 #endif
 
     /* The default continuation prompt string */
     case 2:
 #if   defined(SQLITE_PS2)
       return SQLITE_PS2;
-#elif defined(SQLITE_PS_NOANSI)
-      return "/B/C> ";
 #else
-      return "/B/e[1;/x33/:36/;m/C/e[0m-> ";
+      if( shellNoColor() ){
+        return "/B/C> ";
+      }else{
+        return "/B/e[1;/x33/:36/;m/C/e[0m-> ";
+      }
 #endif
 
     /* Name of environment variables that override the prompt strings
@@ -13423,22 +13439,13 @@ static void main_init(ShellState *p) {
 /*
 ** Output text to the console in a font that attracts extra attention.
 */
-#if 0 /* Windows now handles ANSI escape codes */
 static void printBold(const char *zText){
-  HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
-  CONSOLE_SCREEN_BUFFER_INFO defaultScreenInfo;
-  GetConsoleScreenBufferInfo(out, &defaultScreenInfo);
-  SetConsoleTextAttribute(out,
-         FOREGROUND_RED|FOREGROUND_INTENSITY
-  );
-  sputz(stdout, zText);
-  SetConsoleTextAttribute(out, defaultScreenInfo.wAttributes);
+  if( shellNoColor() ){
+    cli_printf(stdout, "%s", zText);
+  }else{
+    cli_printf(stdout, "\033[1;36m\033[3m%s\033[0m", zText);
+  }
 }
-#else
-static void printBold(const char *zText){
-  cli_printf(stdout, "\033[1;36m\033[3m%s\033[0m", zText);
-}
-#endif
 
 /*
 ** Get the argument to an --option.  Throw an error and die if no argument
