@@ -1,5 +1,5 @@
-C Add\sa\smissing\stcl\squote\swhich\sbreaks\sthe\sbuild\son\smsys2.
-D 2026-05-04T16:18:25.379
+C When\susing\sthe\sOR-optimization\son\sa\sloop\screated\sby\sexists-to-join,\sdo\sthe\searly-exit\slogic\sfor\sthe\swhole\sloop,\snot\sfor\seach\sindividual\sOR\sbranch.\sPossible\sfix\sfor\sforum\spost\s[forum:c8b205720c\s|\sc8b205720c].
+D 2026-05-04T17:16:43.654
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -819,7 +819,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 7241a71725d8c193ddd9e69a299820fcd755943f3b5ac376a84b2716e2848401
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
-F src/wherecode.c 676cb6cb02878643e817d9917a2d3522b83a3736b2cedd3dc8a01d7bb92af6c2
+F src/wherecode.c 4d573077652f79780d6b50840ab8cbb72053dbb4eb230780dd2a146ab034475d
 F src/whereexpr.c e9f7185fba366d9365aa7a97329609e4cf00b3dd0400d069fbaa5187350c17c6
 F src/window.c c0a38cd32473e8e8e7bc435039f914a36ca42465506dc491c65870c01ddac9fb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1100,7 +1100,7 @@ F test/exclusive.test 7ff63be7503990921838d5c9f77f6e33e68e48ed1a9d48cd28745bf650
 F test/exclusive2.test cd70b1d9c6fffd336f9795b711dcc5d9ceba133ad3f7001da3fda63615bdc91e
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 79a75323c78f02bbe9c251ea502a092f9ef63dac
-F test/existsexpr.test b39974adaa7fa1deccc065a57f10db96f9005d2ba9e6f933a5f35c9128bcc1ad
+F test/existsexpr.test 1ce70ac41fb6d52525774388aa23e982428e883a850f9d56d49776d234865552
 F test/existsexpr2.test dc23e76389eff3d29f6488ff733012a3560cd67ec8cfaecbecd52cced5d5af11
 F test/existsfault.test ff41c11f3052c1bbd4f8dd557802310026253d67d7c4e3a180c16d2f0862973e
 F test/expr.test db981f8a85520e99ae20aab7ad2e9b5b0437ed09159b57ced434c672075d2e61
@@ -2203,8 +2203,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1590b401ff0670b68910504c281e67ecae7ae357ba3ed65f96dabaabd7aaeb7f
-R f6afb94d6f7a0184b2ca6d644d4ddddd
-U stephan
-Z f82247fc4627c7c9d5cb9e3eb03ef077
+P 9380be51c76392eca9544f1fd56373406d2ce001e77a8d476deb772968f2aacc
+R b0c5fee1261e3ede23c06abcb314461f
+T *branch * exists-or-expr-fix
+T *sym-exists-or-expr-fix *
+T -sym-trunk *
+U dan
+Z 9ca98967ce2f5b33bad22608c4948005
 # Remove this line to create a well-formed Fossil manifest.

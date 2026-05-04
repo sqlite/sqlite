@@ -2297,7 +2297,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** by this loop in the a[0] slot and all notReady tables in a[1..] slots.
     ** This becomes the SrcList in the recursive call to sqlite3WhereBegin().
     */
-    if( pWInfo->nLevel>1 ){
+    if( pWInfo->nLevel>1 || pTabItem->fg.fromExists ){
       int nNotReady;                 /* The number of notReady tables */
       SrcItem *origSrc;              /* Original list of tables */
       nNotReady = pWInfo->nLevel - iLevel - 1;
@@ -2310,6 +2310,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
       for(k=1; k<=nNotReady; k++){
         memcpy(&pOrTab->a[k], &origSrc[pLevel[k].iFrom], sizeof(pOrTab->a[k]));
       }
+
+      /* Clear the fromExists flag on the OR-optimized table entry so that
+      ** the calls to sqlite3WhereEnd() do not code early-exits after the
+      ** first row is visited. The early exit applies to this table's
+      ** overall loop - including the multiple OR branches and any WHERE
+      ** conditions not passed to the sub-loops - not to the sub-loops.  */
+      pOrTab->a[0].fg.fromExists = 0;
     }else{
       pOrTab = pWInfo->pTabList;
     }
@@ -2553,7 +2560,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     assert( pLevel->op==OP_Return );
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
 
-    if( pWInfo->nLevel>1 ){ sqlite3DbFreeNN(db, pOrTab); }
+    if( pWInfo->pTabList!=pOrTab ){ sqlite3DbFreeNN(db, pOrTab); }
     if( !untestedTerms ) disableTerm(pLevel, pTerm);
   }else
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
