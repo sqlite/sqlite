@@ -1,5 +1,5 @@
-C When\susing\sthe\sOR-optimization\son\sa\sloop\screated\sby\sexists-to-join,\sdo\sthe\searly-exit\slogic\sfor\sthe\swhole\sloop,\snot\sfor\seach\sindividual\sOR\sbranch.\sPossible\sfix\sfor\sforum\spost\s[forum:c8b205720c\s|\sc8b205720c].
-D 2026-05-04T18:16:09.656
+C Fix\sa\stest\scase\son\sCLI\s".help"\soutput\sdue\sto\sthe\soutput\schanging\sbecause\nof\scheck-in\s[1590b401ff0670b6].
+D 2026-05-04T18:36:04.075
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1624,7 +1624,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell-prompt.sql b062f7778cf5529ccac2e0c07364b8a050c87397706d28ea2240dc5c43e920ac
+F test/shell-prompt.sql 8a320a78812d75349bd5e1a95178f7ff1f2194bb4cceee572865d127c51684b3
 F test/shell1.test c84eff209f93ad17ccdf7e1634969fc8231684254edeb21d9b13d67c3179cdb5
 F test/shell2.test dc541d2681503e55466a24d35a4cbf8ca5b90b8fcdef37fc4db07373a67d31d3
 F test/shell3.test 91efdd545097a61a1f72cf79c9ad5b49da080f3f10282eaf4c3c272cd1012db2
@@ -2203,9 +2203,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9380be51c76392eca9544f1fd56373406d2ce001e77a8d476deb772968f2aacc 3d197dd03c47a0fb687064131dbf519b8c587a47f9c2bccfdb83d7eae8418336
-R b0c5fee1261e3ede23c06abcb314461f
-T +closed 3d197dd03c47a0fb687064131dbf519b8c587a47f9c2bccfdb83d7eae8418336
-U dan
-Z 92beec4134947b285dd07240a0b36b61
+P 70a5d091241748aea63aa13bb218b573d0b84615a0682c2ec693addbfe9bc2f4
+R 41efec9390e8fadec3a7cb77a05fe781
+U drh
+Z 2bf4d4132c9b0c311f450ec4c319877f
 # Remove this line to create a well-formed Fossil manifest.

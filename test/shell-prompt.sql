@@ -75,6 +75,7 @@ END
 .check <<END
 .prompt MAIN CONTINUE    Replace the standard prompts
    --hard-reset              Unset SQLITE_PS1/2 and then --reset
+   --no-color                Disable color prompts. Use --color to re-enable
    --reset                   Revert to default prompts
    --show                    Show the current prompt strings
    --                        No more options. Subsequent args are prompts
