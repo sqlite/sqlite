@@ -3957,6 +3957,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             .assert( 6 === db.selectValue("select sum(a) from t") );
         }finally{
           db.close();
+          await opfs.unlink(filename);
         }
       }
     })

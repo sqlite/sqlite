@@ -1,5 +1,5 @@
-C Add\simportDb()\stests\sof\sSEE\sdatabases\sfor\sthe\sopfs/opfs-wl\sVFSes,\sanalog\sto\sthe\sopfs-sahpool\stest\sin\s[a5a9ac7ad6622b].
-D 2026-05-05T15:26:24.464
+C Delete\sthe\sOPFS\sSEE\stest\sdbs\swhen\sdone\swith\sthem.
+D 2026-05-05T15:31:41.913
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -647,7 +647,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.c-pp.html 7171022e7f4da8f46e5f50ea81dd6ce840b9235c47653a5deeb3764ccc2fe472
 F ext/wasm/tester1.c-pp.html bd927ccf51ddd65e924660a0487add99e1b044afe03950e49d87ccf44efdddb6
-F ext/wasm/tester1.c-pp.js 803af078fe11b06482b5aa85d38478d2f37e9cdc3f85eacbeaea40c1b61359f1
+F ext/wasm/tester1.c-pp.js 38beb509f2136851760db79becd41a1ec0abcaaec01de27749b0fafcb0372e54
 F ext/wasm/tests/opfs/concurrency/index.html 706eab6308343c04ac2360aba6001af4ffaf46d8f33a0ccd02c64d93e3216a43
 F ext/wasm/tests/opfs/concurrency/test.js 6919778fceaac1b7cc78caf41d796f545d2c4433b31188aa9689f05b5ad28828
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
@@ -2203,8 +2203,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a5a9ac7ad6622b5b07193aa279deefde7d59ca17f81aba9dd78ee90718446993
-R 25cccb4d818ffb318cddd785d9828f48
+P 534d388031dfacf83cb40c712150a376db10393c98936a33ea80da0166b3dbeb
+R 1d76228767230556edce5baebfe2894c
 U stephan
-Z 70c153abce31c38c75f7b3a78b65123e
+Z 0e7d056d361ca3a9032b9f582b2c056b
 # Remove this line to create a well-formed Fossil manifest.
