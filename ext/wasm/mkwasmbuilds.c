@@ -1021,11 +1021,15 @@ static void mk_fiddle(void){
       pf("\t@$(call b.call.wasm-strip,%s)\n", zBuildName);
       pf("\t@$(call b.strip-js-emcc-bindings,$(logtag.%s))\n",
          zBuildName);
+      pf("\t@$(call b.cp,%s,$(dir.dout)/sqlite3-opfs-async-proxy.js,"
+         "$(dir $@)"
+         ")\n", zBuildName);
       if( isDebug ){
         pf("\t@$(call b.cp,%s,"
            "$(dir.fiddle)/index.html "
            "$(dir.fiddle)/fiddle.js "
-           "$(dir.fiddle)/fiddle-worker.js,"
+           "$(dir.fiddle)/fiddle-worker.js "
+           "$(dir.fiddle)/sqlite3-opfs-async-proxy.js,"
            "$(dir $@)"
            ")\n",
            zBuildName);

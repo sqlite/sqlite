@@ -1476,6 +1476,7 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   A = sqlite3PExpr(pParse, TK_BETWEEN, A, 0);
   if( A ){
     A->x.pList = pList;
+    sqlite3ExprSetHeightAndFlags(pParse, A);
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
   } 

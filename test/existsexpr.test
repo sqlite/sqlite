@@ -477,6 +477,29 @@ db cache flush
 do_execsql_test 9.6 $Q {{big string value}}
 
 #-------------------------------------------------------------------------
+# Forum post 2026-04-21T10:57:09Z
+do_execsql_test 9.7.1 {
+  DROP TABLE t3;
+  CREATE TABLE t3(x INT, y INT);
+  CREATE TABLE t4(z INT);
+  INSERT INTO t3 VALUES (1,0),(2,2),(3,3);
+  INSERT INTO t4 VALUES (4),(5);
+}
+set Q {
+  SELECT x FROM t3
+   WHERE EXISTS(SELECT 1 FROM t4 WHERE z>y)
+   LIMIT 1 OFFSET 1
+}
+catch { optimization_control db all 1 }
+db cache flush
+do_execsql_test 9.7.2 $Q {2}
+catch { optimization_control db exists-to-join 0 }
+db cache flush
+do_execsql_test 9.7.3 $Q {2}
+catch { optimization_control db all 1 }
+db cache flush
+
+#-------------------------------------------------------------------------
 reset_db
 
 do_execsql_test 10.0 {
@@ -513,5 +536,97 @@ do_execsql_test 11.1 {
    )
    GROUP BY id;
 } {1 p1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 12.0 {
+  CREATE TABLE t2(id INT, data INT);
+  CREATE TABLE t3(amount INT);
+
+  INSERT INTO t2 VALUES (1,0),(2,0);
+  INSERT INTO t3 VALUES (1),(1);
+}
+
+do_execsql_test 12.1 {
+  SELECT * FROM t2
+    WHERE EXISTS (SELECT 1 FROM t3 WHERE t3.amount > t2.data)
+} {
+  1 0
+  2 0
+}
+
+do_execsql_test 12.2 {
+  SELECT * FROM t2
+    WHERE EXISTS (SELECT 1 FROM t3 WHERE t3.amount > t2.data)
+  LIMIT 2 OFFSET 3
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 13.0 {
+  CREATE TABLE t1(b,c);
+  CREATE TABLE t2(x,y);
+  CREATE TABLE t3(p,q);
+
+  INSERT INTO t1 VALUES(7,10);
+  INSERT INTO t2 VALUES(1,1), (4,7);
+  INSERT INTO t3 VALUES(4,7);
+
+  PRAGMA automatic_index = 0;
+}
+
+do_execsql_test 13.1 {
+  SELECT * FROM t1 WHERE EXISTS (
+      SELECT 1 FROM t2
+      WHERE EXISTS (
+        SELECT 1 FROM t3 WHERE t3.p=t2.x AND t3.q=t1.b
+      )
+  )
+} {7 10}
+
+#-------------------------------------------------------------------------
+# Forum post https://sqlite.org/forum/forumpost/c8b205720c
+#
+reset_db
+do_execsql_test 14.1.0 {
+  CREATE TABLE t(n INTEGER, parent INTEGER);
+  CREATE INDEX idx ON t(parent);
+  INSERT INTO t VALUES (1,  NULL);
+  INSERT INTO t VALUES (10, NULL);
+}
+
+do_execsql_test 14.1.1 {
+  SELECT count(*) FROM t b
+    WHERE (b.parent IS NULL OR b.parent = 99)
+    AND 5 <= +b.n
+} 1
+
+do_execsql_test 14.1.2 {
+  SELECT 'match' WHERE EXISTS (
+      SELECT 1 FROM t b
+      WHERE (b.parent IS NULL OR b.parent = 99)
+      AND 5 <= +b.n
+  )
+} {match}
+
+do_execsql_test 14.2.1 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(20, 20);
+
+  CREATE TABLE t2(c, d);
+  CREATE INDEX t2c ON t2(c);
+  CREATE INDEX t2d ON t2(d);
+
+  INSERT INTO t2 VALUES(20, -1);
+  INSERT INTO t2 VALUES(20,  0);
+}
+
+do_execsql_test 14.2.2 {
+  SELECT * FROM t1 WHERE EXISTS (
+    SELECT 1 FROM t2 WHERE (c=a OR d=a) AND (d+1)>0
+  )
+} {20 20}
+
 
 finish_test

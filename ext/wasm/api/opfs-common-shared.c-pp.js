@@ -1099,20 +1099,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           return promiseResolve_(sqlite3);
         };
         const options = opfsUtil.options;
-        let proxyUri = options.proxyUri +(
+//#if not target:es6-bundler-friendly
+        const proxyUri = options.proxyUri +(
           (options.proxyUri.indexOf('?')<0) ? '?' : '&'
         )+'vfs='+vfsName;
         //sqlite3.config.error("proxyUri",options.proxyUri, (new Error()));
+//#/if
         const W = opfsVfs.worker =
 //#if target:es6-bundler-friendly
               (()=>{
                 /* _Sigh_... */
-                switch(vfsName){
-                  case 'opfs':
-                    return new Worker(new URL("sqlite3-opfs-async-proxy.js?vfs=opfs", import.meta.url));
-                  case 'opfs-wl':
-                    return new Worker(new URL("sqlite3-opfs-async-proxy.js?vfs=opfs-wl", import.meta.url));
-                }
+                /* Discussion explaining this formulation:
+                   https://github.com/sqlite/sqlite-wasm/pull/159 */
+                const url = new URL('sqlite3-opfs-async-proxy.js', import.meta.url);
+                url.searchParams.set('vfs', vfsName);
+                return new Worker(url.toString());
               })();
 //#elif target:es6-module
         new Worker(new URL(proxyUri, import.meta.url));

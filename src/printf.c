@@ -165,7 +165,7 @@ static char *printfTempBuf(sqlite3_str *pAccum, sqlite3_int64 n){
     sqlite3StrAccumSetError(pAccum, SQLITE_TOOBIG);
     return 0;
   }
-  z = sqlite3DbMallocRaw(pAccum->db, n);
+  z = sqlite3_malloc(n);
   if( z==0 ){
     sqlite3StrAccumSetError(pAccum, SQLITE_NOMEM);
   }
@@ -623,11 +623,27 @@ void sqlite3_str_vappendf(
 
         szBufNeeded = MAX(e2,0)+(i64)precision+(i64)width+10;
         if( cThousand && e2>0 ) szBufNeeded += (e2+2)/3;
-        if( sqlite3StrAccumEnlargeIfNeeded(pAccum, szBufNeeded) ){
-          width = length = 0;
-          break;
+        if( szBufNeeded + pAccum->nChar >= pAccum->nAlloc ){
+          if( pAccum->mxAlloc==0 && pAccum->accError==0 ){
+            /* Unable to allocate space in pAccum, perhaps because it
+            ** is coming from sqlite3_snprintf() or similar.  We'll have
+            ** to render into temporary space and the memcpy() it over. */
+            bufpt = sqlite3_malloc(szBufNeeded);
+            if( bufpt==0 ){
+              sqlite3StrAccumSetError(pAccum, SQLITE_NOMEM);
+              return;
+            }
+            zExtra = bufpt;
+          }else if( sqlite3StrAccumEnlarge(pAccum, szBufNeeded)<szBufNeeded ){
+            width = length = 0;
+            break;
+          }else{
+            bufpt = pAccum->zText + pAccum->nChar;
+          }
+        }else{
+          bufpt = pAccum->zText + pAccum->nChar;
         }
-        bufpt = zOut = pAccum->zText + pAccum->nChar;
+        zOut = bufpt;
 
         flag_dp = (precision>0 ?1:0) | flag_alternateform | flag_altform2;
         /* The sign in front of the number */
@@ -728,14 +744,22 @@ void sqlite3_str_vappendf(
           }
           length = width;
         }
-        pAccum->nChar += length;
-        zOut[length] = 0;
 
-        /* Floating point conversions render directly into the output
-        ** buffer.  Hence, don't just break out of the switch().  Bypass the
-        ** output buffer writing that occurs after the switch() by continuing
-        ** to the next character in the format string. */
-        continue;
+        if( zExtra==0 ){
+          /* The result is being rendered directory into pAccum.  This
+          ** is the command and fast case */
+          pAccum->nChar += length;
+          zOut[length] = 0;
+          continue;
+        }else{
+          /* We were unable to render directly into pAccum because we
+          ** couldn't allocate sufficient memory.  We need to memcpy()
+          ** the rendering (or some prefix thereof) into the output
+          ** buffer. */
+          bufpt[0] = 0;
+          bufpt = zExtra;
+          break;
+        }
       }
       case etSIZE:
         if( !bArgList ){
@@ -782,7 +806,7 @@ void sqlite3_str_vappendf(
             if( sqlite3StrAccumEnlargeIfNeeded(pAccum, nCopyBytes) ){
               break;
             }
-           sqlite3_str_append(pAccum,
+            sqlite3_str_append(pAccum,
                  &pAccum->zText[pAccum->nChar-nCopyBytes], nCopyBytes);
             precision -= nPrior;
             nPrior *= 2;
@@ -1298,7 +1322,7 @@ void sqlite3_str_reset(StrAccum *p){
 ** of its content, all in one call.
 */
 void sqlite3_str_free(sqlite3_str *p){
-  if( p ){
+  if( p!=0 && p!=&sqlite3OomStr ){
     sqlite3_str_reset(p);
     sqlite3_free(p);
   }

@@ -386,7 +386,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 
      This function initializes the db described by ctorOptFunc(...),
      writes some secret info into it, and re-opens it twice to
-     confirmi that it can be read with an SEE key and cannot be read
+     confirm that it can be read with an SEE key and cannot be read
      without one.
   */
   T.seeBaseCheck = function(ctor, ctorOptFunc, dbUnlink){
@@ -3940,7 +3940,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 //#/query
   ////////////////////////////////////////////////////////////////////////
   T.g('OPFS SyncAccessHandle Pool VFS',
-      (sqlite3)=>(!!sqlite3.installOpfsSAHPoolVfs || "requires OPFS SAH Pool APIs"))
+      (sqlite3)=>(isWorker() && !!sqlite3.installOpfsSAHPoolVfs || "requires OPFS SAH Pool APIs"))
     .t({
       name: 'SAH sanity checks',
       test: async function(sqlite3){

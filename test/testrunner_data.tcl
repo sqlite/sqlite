@@ -601,6 +601,7 @@ proc make_script {cfg srcdir bMsvc} {
           }
           --enable-all {
           }
+          --enable-debug -
           --with-debug {
             # lappend makeOpts OPTIMIZATIONS=0
             lappend opts -DSQLITE_DEBUG

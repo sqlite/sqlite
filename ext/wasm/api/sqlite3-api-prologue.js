@@ -1949,8 +1949,6 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   }/*changeset/preupdate additions*/
 
   /**
-     EXPERIMENTAL. For tentative addition in 3.53.0.
-
      sqlite3_js_retry_busy(maxTimes,callback[,beforeRetry])
 
      Calls the given _synchronous_ callback function. If that function
@@ -1971,11 +1969,14 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
      (so it starts with 2, not 1). If it throws, the exception is
      handled as described above. Its result value is ignored.
 
-     To effectively retry "forever", pass a negative maxTimes value,
-     with the caveat that there is no recovery from that unless the
-     beforeRetry() can figure out when to throw.
+     To effectively retry "forever", pass a huge maxTimes value such
+     as Number.MAX_SAFE_INTEGER, with the caveat that there is no
+     recovery from that unless the beforeRetry() can figure out when
+     to throw.
 
-     TODO: an async variant of this.
+     Added in 3.53.0.
+
+     TODO?: an async variant of this.
   */
   capi.sqlite3_js_retry_busy = function(maxTimes, callback, beforeRetry){
     for(let n = 1; n <= maxTimes; ++n){

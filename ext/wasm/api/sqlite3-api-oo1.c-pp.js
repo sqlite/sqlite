@@ -1559,18 +1559,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        only argument. On success, returns the result of the
        callback. Throws on error.
 
-       Note that transactions may not be nested, so this will throw if
-       it is called recursively. For nested transactions, use the
+       Transactions may not be nested, so this will throw if it is
+       called recursively. For nested transactions, use the
        savepoint() method or manually manage SAVEPOINTs using exec().
 
        If called with 2 arguments, the first must be a keyword which
        is legal immediately after a BEGIN statement, e.g. one of
-       "DEFERRED", "IMMEDIATE", or "EXCLUSIVE". Though the exact list
+       "DEFERRED", "IMMEDIATE", or "EXCLUSIVE", though the exact list
        of supported keywords is not hard-coded here, in order to be
        future-compatible, if the argument does not look like a single
        keyword then an exception is triggered with a description of
        the problem.
-     */
+    */
     transaction: function(/* [beginQualifier,] */callback){
       let opener = 'BEGIN';
       if(arguments.length>1){

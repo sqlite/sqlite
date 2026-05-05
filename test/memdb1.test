@@ -280,4 +280,41 @@ do_test 900 {
 } 1
 dbempty close
 
+
+#-------------------------------------------------------------------------
+# Make sure a database cannot be overwritten by deserialize() if 
+# there is an open transaction on it. 
+#
+do_execsql_test 1000 {
+  CREATE TABLE t(x); 
+  INSERT INTO t VALUES(1),(2);
+}
+
+set blob [db serialize main]
+
+do_test 1010 {
+  set seen 0
+  list [catch {
+    db eval {SELECT x FROM t} {
+      incr seen
+      if {$seen == 1} {
+        db deserialize main $blob
+      }
+    }
+  } msg] $msg
+} {1 {unable to set MEMDB content}}
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+do_test 1020 {
+  set seen 0
+  sqlite3_backup B db2 main db main
+  B step 2
+  set res [list [catch {
+    db deserialize main $blob
+  } msg] $msg]
+  B finish
+  set res
+} {1 {unable to set MEMDB content}}
+
 finish_test
