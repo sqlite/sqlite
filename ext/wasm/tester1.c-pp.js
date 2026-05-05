@@ -380,14 +380,14 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
      function which must return a constructor args object for ctor. It
      is passed true if the db needs to be cleaned up/unlinked before
      opening it (OPFS) and false if not (how that is done is
-     VFS-dependent).  dbUnlink is a function which is expected to
-     unlink() the db file if the ctorOpfFunc does not do so when
-     passed true (kvvfs).
+     VFS-dependent).  dbUnlink is a _synchronous_ function which is
+     expected to unlink() the db file if the ctorOpfFunc does not do
+     so when passed true (namely for kvvfs).
 
-     This function initializes the db described by ctorOptFunc(...),
-     writes some secret info into it, and re-opens it twice to
-     confirm that it can be read with an SEE key and cannot be read
-     without one.
+     This function initializes the db described by the result of
+     ctorOptFunc(bool), writes some secret info into it, and re-opens
+     it twice to confirm that it can be read with an SEE key and
+     cannot be read without one.
 
      If unlinkDbAtEnd is truthy then dbUnlink() is (on success)
      called before returning.
@@ -3599,7 +3599,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: 'kvvfs SEE encryption in sessionStorage',
       predicate: ()=>(!!globalThis.sessionStorage
                       || "sessionStorage is not available"),
-      test: function(sqlite3){
+      test: async function(sqlite3){
         const JDb = sqlite3.oo1.JsStorageDb;
         T.seeBaseCheck(JDb,
                        (isInit)=>{
@@ -3926,17 +3926,38 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: '@vfsName@ with SEE encryption',
       predicate: (sqlite3)=>!!sqlite3.oo1.@oo1Ctor@,
-      test: function(sqlite3){
+      test: async function(sqlite3){
         const ctor = sqlite3.oo1.@oo1Ctor@;
-        T.seeBaseCheck(
-          ctor,
-          function(isInit){
-            const opt = {filename: 'file:///sqlite3-see.edb'};
-            if( isInit ) opt.filename += '?delete-before-open=1';
-            return opt;
-          },
-          ()=>{}
-        );
+        const filename = 'sqlite3-see.edb';
+        const ctorOpt = {filename: 'file:///'+filename};
+        const opfs = sqlite3.opfs;
+        const initer = function(isInit){
+          const opt = {...ctorOpt};
+          if( isInit ) opt.filename += '?delete-before-open=1';
+          return opt;
+        };
+
+        T.seeBaseCheck(ctor, initer, ()=>{}, false);
+        /*
+          Ensure that ctor.importDb() correctly handles SEE-encrypted
+          dbs. For more details search below for forumpost/f84bef3552.
+        */
+        let exp = await opfs.getRootDir()
+            .then(d=>d.getFileHandle(filename))
+            .then(fh=>fh.getFile())
+            .then(f=>f.bytes());
+        await opfs.unlink(filename);
+        T.assert( exp.byteLength > 100 && 0===(exp.byteLength % 512) );
+        const got = await ctor.importDb(filename, exp);
+        T.assert(exp.byteLength === got);
+        exp = null;
+        const db = new ctor({...initer(false), key: 'foo'});
+        try{
+          T.assert( 4 === db.selectValue("select count(*) from t") )
+            .assert( 6 === db.selectValue("select sum(a) from t") );
+        }finally{
+          db.close();
+        }
       }
     })
 //#/if enable-see
@@ -4149,8 +4170,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           false
         );
         /* Ensure that importDb() does the right thing for an
-           SEE-encrypted DB:
-           https://sqlite.org/see/forumpost/f84bef3552 */
+           SEE-encrypted DB: https://sqlite.org/see/forumpost/f84bef3552 */
         let exp = poolUtil.exportFile(dbFile);
         T.assert( exp.byteLength > 100 && 0===(exp.byteLength % 512) );
         poolUtil.unlink(dbFile);
