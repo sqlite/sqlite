@@ -352,7 +352,7 @@ else
     SQLITE_C_IS_SEE = 0
   else
     SQLITE_C_IS_SEE = 1
-    $(info This is an SEE build)
+    $(info $(emo.lock)$(emo.lock)$(emo.lock) This is an SEE build $(emo.lock)$(emo.lock)$(emo.lock))
   endif
 endif
 

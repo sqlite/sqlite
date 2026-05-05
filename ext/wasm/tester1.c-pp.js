@@ -388,8 +388,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
      writes some secret info into it, and re-opens it twice to
      confirm that it can be read with an SEE key and cannot be read
      without one.
+
+     If unlinkDbAtEnd is truthy then dbUnlink() is (on success)
+     called before returning.
   */
-  T.seeBaseCheck = function(ctor, ctorOptFunc, dbUnlink){
+  T.seeBaseCheck = function(ctor, ctorOptFunc, dbUnlink, unlinkDbAtEnd=true){
     let initDb = true;
     const tryKey = function(keyKey, key, expectCount){
       let db;
@@ -450,7 +453,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     tryKey('hexkey', hexFoo, 3);
     T.assert( !initDb );
     tryKey('hexkey', hexFoo, 6);
-    dbUnlink();
+    if( unlinkDbAtEnd ) dbUnlink();
   };
 //#/if enable-see
 
@@ -3924,8 +3927,9 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       name: '@vfsName@ with SEE encryption',
       predicate: (sqlite3)=>!!sqlite3.oo1.@oo1Ctor@,
       test: function(sqlite3){
+        const ctor = sqlite3.oo1.@oo1Ctor@;
         T.seeBaseCheck(
-          sqlite3.oo1.@oo1Ctor@,
+          ctor,
           function(isInit){
             const opt = {filename: 'file:///sqlite3-see.edb'};
             if( isInit ) opt.filename += '?delete-before-open=1';
@@ -3940,7 +3944,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
 //#/query
   ////////////////////////////////////////////////////////////////////////
   T.g('OPFS SyncAccessHandle Pool VFS',
-      (sqlite3)=>(isWorker() && !!sqlite3.installOpfsSAHPoolVfs || "requires OPFS SAH Pool APIs"))
+      (sqlite3)=>((isWorker() && !!sqlite3.installOpfsSAHPoolVfs) || "requires OPFS SAH Pool APIs"))
     .t({
       name: 'SAH sanity checks',
       test: async function(sqlite3){
@@ -4136,12 +4140,33 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         }
         let poolUtil;
         const P1 = await inst(poolConfig).then(u=>poolUtil = u).catch(catcher);
+        if( !poolUtil ) return;
         const dbFile = '/sqlite3-see.edb';
         T.seeBaseCheck(
           poolUtil.OpfsSAHPoolDb,
           (isInit)=>{return {filename: dbFile}},
-          ()=>poolUtil.unlink(dbFile)
+          ()=>poolUtil.unlink(dbFile),
+          false
         );
+        /* Ensure that importDb() does the right thing for an
+           SEE-encrypted DB:
+           https://sqlite.org/see/forumpost/f84bef3552 */
+        let exp = poolUtil.exportFile(dbFile);
+        T.assert( exp.byteLength > 100 && 0===(exp.byteLength % 512) );
+        poolUtil.unlink(dbFile);
+        const got = poolUtil.importDb(dbFile, exp);
+        T.assert(exp.byteLength === got);
+        exp = null;
+        const db = new poolUtil.OpfsSAHPoolDb({
+          filename: dbFile,
+          key: 'foo'
+        });
+        try{
+          T.assert( 4 === db.selectValue("select count(*) from t") )
+            .assert( 6 === db.selectValue("select sum(a) from t") );
+        }finally{
+          db.close();
+        }
         poolUtil.removeVfs();
       }
     })/*opfs-sahpool with SEE*/
