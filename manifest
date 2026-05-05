@@ -1,5 +1,5 @@
-C Fix\sa\spredicate\swhich\scauses\sa\sfalse\serror\sin\sthe\sOPFS\sSAHPool\stests\swhen\sbuilding\swith\sSEE.
-D 2026-05-05T08:12:37.766
+C Version\s3.53.1
+D 2026-05-05T10:34:17.344
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2197,9 +2197,10 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b827cdcb371d07cd4ffba4d3c7b404bece43fcc808db528b94a66bf77b6aab4f
-Q +97ab0a2fd56501d08bc2ab2adbe70a4130f6c5b5db343941fa16c7b34c550bd3
+P 1d2f770713f9d75d0de923515f4cee8ff83e95826d77f049b7bb1fbfad042248
 R 9347e8a0cd885b5583c5865d60ed1eac
-U stephan
-Z 998edce1b0084f561253daa03497fa94
+T +sym-release *
+T +sym-version-3.53.1 *
+U drh
+Z 312c96b4c11e74d0ea93a2c45332ff6e
 # Remove this line to create a well-formed Fossil manifest.
