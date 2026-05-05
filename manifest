@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\son\sCLI\s".help"\soutput\sdue\sto\sthe\soutput\schanging\sbecause\nof\scheck-in\s[1590b401ff0670b6].
-D 2026-05-04T18:36:04.075
+C Add\s#include\stime.h\sto\sshell.c.in\sto\sget\sfiddle\sbuilding\swith\semcc\s5.x.
+D 2026-05-05T07:57:54.930
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c fcc406bfb055bee9954ee77c023f4a2a66a24bcdf1573516a72280811a269c20
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4c05cde130f26991b7411d8c6809e0630625e18078742c963a047b4b9cc01d49
-F src/shell.c.in 51167ca344ac180efcf6339353c11800981bed97f37c9b8d9e940e659b7d181f
+F src/shell.c.in 3763f326d01b9736efacff017e720c4c190c7cd8c202c782684fa5ab1c7d730e
 F src/sqlite.h.in 39d2e09114d2bdb7afd998f4a469c8f8cd065f8093835a7d0422f260fc78fb4f
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 9788c301f95370fa30e808861f1d2e6f022a816ddbe2a4f67486784c1b31db2e
@@ -2203,8 +2203,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 70a5d091241748aea63aa13bb218b573d0b84615a0682c2ec693addbfe9bc2f4
-R 41efec9390e8fadec3a7cb77a05fe781
-U drh
-Z 2bf4d4132c9b0c311f450ec4c319877f
+P b6ad35096d48de29fd8da498ac23cd7eba9194a70cad05ec49c318f11fe77199
+R ddec9706b75c850c56829ad5c228f9c8
+U stephan
+Z 0abd79f2fc21e1bff27b7db2e19b84f3
 # Remove this line to create a well-formed Fossil manifest.
