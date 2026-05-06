@@ -2771,7 +2771,7 @@ static int shellAuth(
 #endif
 
 /*
-** Print a schema statement.  This is helper routine to dump_callbac().
+** Print a schema statement.  This is a helper routine to dump_callback().
 **
 ** This routine converts some CREATE TABLE statements for shadow tables
 ** in FTS3/4/5 into CREATE TABLE IF NOT EXISTS statements.
