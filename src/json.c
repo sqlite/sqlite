@@ -2340,7 +2340,7 @@ static u32 jsonTranslateBlobToText(
             break;
           case 0xe2:
             /* '\' followed by either U+2028 or U+2029 is ignored as
-            ** whitespace.  Not that in UTF8, U+2028 is 0xe2 0x80 0x29.
+            ** whitespace.  Note that in UTF8, U+2028 is 0xe2 0x80 0x29.
             ** U+2029 is the same except for the last byte */
             if( sz2<4
              || 0x80!=(u8)zIn[2]
