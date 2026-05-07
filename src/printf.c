@@ -872,7 +872,7 @@ void sqlite3_str_vappendf(
         break;
       case etJSONSTR: {         /* %J: Generate a JSON string literal */
         char *escarg;
-        int i, j;
+        i64 i, j, px;
         unsigned char ch;
 
         if( bArgList ){
@@ -884,7 +884,17 @@ void sqlite3_str_vappendf(
           sqlite3_str_append(pAccum, "null", 4);
         }else{
           sqlite3_str_append(pAccum, "\"", 1);
-          for(i=j=0; 1; i++){
+          px = precision;
+          if( px<=0 ){
+            px = 0x7fffffff;
+          }else if( flag_altform2 ){
+            /* Convert precision from code-points to bytes */
+            for(i=0; i<px && escarg[i]; i++){
+              if( (escarg[i]&0xc0)==0x80 ) px++;
+            }
+            while( (escarg[px]&0xc0)==0x80 ) px++;
+          }
+          for(i=j=0; i<px; i++){
             if( (ch = ((u8*)escarg)[i])<0x1f || ch=='"' || ch=='\\' ){
               if( j<i-1 ) sqlite3_str_append(pAccum, &escarg[j], i-j);
               j = i+1;
@@ -902,6 +912,7 @@ void sqlite3_str_vappendf(
               }
             }
           }
+          if( j<i-1 ) sqlite3_str_append(pAccum, &escarg[j], i-j);
           sqlite3_str_append(pAccum, "\"", 1);
         }
         length = 0;
