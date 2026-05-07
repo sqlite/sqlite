@@ -896,10 +896,12 @@ void sqlite3_str_vappendf(
             for(i=0; i<px && escarg[i]; i++){
               if( (escarg[i]&0xc0)==0x80 ) px++;
             }
-            while( (escarg[px]&0xc0)==0x80 ) px++;
+            if( i==px ){
+              while( (escarg[px]&0xc0)==0x80 ) px++;
+            }
           }
           for(i=j=0; i<px; i++){
-            if( (ch = ((u8*)escarg)[i])<0x1f || ch=='"' || ch=='\\' ){
+            if( (ch = ((u8*)escarg)[i])<=0x1f || ch=='"' || ch=='\\' ){
               if( j<i-1 ) sqlite3_str_append(pAccum, &escarg[j], i-j);
               j = i+1;
               if( ch==0 ) break;
@@ -916,23 +918,33 @@ void sqlite3_str_vappendf(
               }
             }
           }
-          if( j<i-1 ) sqlite3_str_append(pAccum, &escarg[j], i-j);
+          if( j<i ) sqlite3_str_append(pAccum, &escarg[j], i-j);
           if( xtype==etESCAPE_J ) sqlite3_str_append(pAccum, "\"", 1);
         }
-        if( width>0 ){
+        if( width>0 && sqlite3_str_errcode(pAccum)==SQLITE_OK ){
           sqlite3_int64 n = sqlite3_str_length(pAccum) - iStart;
           sqlite3_int64 len = n;
-          if( flag_altform2 ){
-            const char *zz = sqlite3_str_value(pAccum) + iStart;
-            for(i=0; zz[i]; i++){
+          char *zz;
+          if( flag_altform2 && n>0 ){
+            zz = sqlite3_str_value(pAccum);
+            assert( zz!=0 );
+            assert( strlen(zz)==iStart + n );
+            for(i=iStart; zz[i]; i++){
               if( (zz[i]&0xc0)==0x80 ) len--;
             }
           }
           if( width>len ){
             sqlite3_int64 sp = width-len;
-            sqlite3_str_appendchar(pAccum, sp, ' ');
-            if( !flag_leftjustify ){
-              char *zz = sqlite3_str_value(pAccum) + iStart;
+            assert( sp>0 && sp<0x7fffffff );
+            sqlite3_str_appendchar(pAccum, (int)sp, ' ');
+            if( !flag_leftjustify
+             && n>0
+             && sqlite3_str_errcode(pAccum)==0
+            ){
+              zz = sqlite3_str_value(pAccum);
+              assert( zz!=0 );
+              assert( strlen(zz)==iStart+n+sp );
+              zz += iStart;
               memmove(zz+sp, zz, n);
               memset(zz, ' ', sp);
             }

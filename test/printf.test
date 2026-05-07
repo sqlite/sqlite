@@ -3928,5 +3928,12 @@ do_execsql_test printf-20.21 {
 do_execsql_test printf-20.22 {
   SELECT format('<%!-6.2j>','いち, に, さん');
 } {{<いち    >}}
+do_execsql_test printf-20.23 {
+  SELECT format('<%.7j>','abc"""def');
+} {{<abc\"\"\"d>}}
+do_execsql_test printf-20.24 {
+  SELECT format('<%j>','abc'||char(0x1f)||'def');
+} {{<abc\u001fdef>}}
+
 
 finish_test
