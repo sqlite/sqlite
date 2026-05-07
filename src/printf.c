@@ -875,7 +875,7 @@ void sqlite3_str_vappendf(
       case etESCAPE_j:           /* %j: JSON string literal w/o "..." */
       case etESCAPE_J: {         /* %J: Generate a JSON string literal */
         char *escarg;
-        i64 i, j, px;
+        i64 i, j, px, iStart;
         unsigned char ch;
 
         if( bArgList ){
@@ -883,6 +883,7 @@ void sqlite3_str_vappendf(
         }else{
           escarg = va_arg(ap,char*);
         }
+        iStart = sqlite3_str_length(pAccum);
         if( escarg==0 ){
           if( xtype==etESCAPE_J ) sqlite3_str_append(pAccum, "null", 4);
         }else{
@@ -918,9 +919,26 @@ void sqlite3_str_vappendf(
           if( j<i-1 ) sqlite3_str_append(pAccum, &escarg[j], i-j);
           if( xtype==etESCAPE_J ) sqlite3_str_append(pAccum, "\"", 1);
         }
-        length = 0;
-        width = 0;
-        break;
+        if( width>0 ){
+          sqlite3_int64 n = sqlite3_str_length(pAccum) - iStart;
+          sqlite3_int64 len = n;
+          if( flag_altform2 ){
+            const char *zz = sqlite3_str_value(pAccum) + iStart;
+            for(i=0; zz[i]; i++){
+              if( (zz[i]&0xc0)==0x80 ) len--;
+            }
+          }
+          if( width>len ){
+            sqlite3_int64 sp = width-len;
+            sqlite3_str_appendchar(pAccum, sp, ' ');
+            if( !flag_leftjustify ){
+              char *zz = sqlite3_str_value(pAccum) + iStart;
+              memmove(zz+sp, zz, n);
+              memset(zz, ' ', sp);
+            }
+          }
+        }
+        continue;
       }
       case etESCAPE_q:          /* %q: Escape ' characters */
       case etESCAPE_Q:          /* %Q: Escape ' and enclose in '...' */

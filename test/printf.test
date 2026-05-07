@@ -3892,5 +3892,41 @@ do_execsql_test printf-20.10 {
   SELECT format('1-%j-2-%J-3',null,null);
 } {1--2-null-3}
 
+do_execsql_test printf-20.11 {
+  SELECT format('<%6J>','いち');
+} {<\"いち\">}
+do_execsql_test printf-20.12 {
+  SELECT format('<%!6J>','いち');
+} {{<  "いち">}}
+do_execsql_test printf-20.13 {
+  SELECT format('<%!-6J>','いち');
+} {{<"いち"  >}}
+do_execsql_test printf-20.14 {
+  SELECT format('<%6.8J>','いち, に, さん');
+} {{<"いち, ">}}
+do_execsql_test printf-20.15 {
+  SELECT format('<%!6.2J>','いち, に, さん');
+} {{<  "いち">}}
+do_execsql_test printf-20.16 {
+  SELECT format('<%!-6.2J>','いち, に, さん');
+} {{<"いち"  >}}
+do_execsql_test printf-20.17 {
+  SELECT format('<%6j>','いち');
+} {{<いち>}}
+do_execsql_test printf-20.18 {
+  SELECT format('<%!6j>','いち');
+} {{<    いち>}}
+do_execsql_test printf-20.19 {
+  SELECT format('<%!-6j>','いち');
+} {{<いち    >}}
+do_execsql_test printf-20.20 {
+  SELECT format('<%6.8j>','いち, に, さん');
+} {{<いち,   >}}
+do_execsql_test printf-20.21 {
+  SELECT format('<%!6.2j>','いち, に, さん');
+} {{<    いち>}}
+do_execsql_test printf-20.22 {
+  SELECT format('<%!-6.2j>','いち, に, さん');
+} {{<いち    >}}
 
 finish_test
