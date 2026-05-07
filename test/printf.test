@@ -3854,5 +3854,43 @@ do_execsql_test printf-19.3 {
   SELECT format('%,.0f %,.0f',12345e+10, 12345e+11);
 } {{123,450,000,000,000 1,234,500,000,000,000}}
 
+# %J and %j
+#
+do_execsql_test printf-20.1 {
+  SELECT format('{%!.3J:5}','abcdefg')->>'abc';
+} 5
+do_execsql_test printf-20.2 {
+  SELECT format('{%!.3J:5}','αβγδεζη')->>'αβγ';
+} 5
+do_execsql_test printf-20.3 {
+  SELECT format('{%.6J:5}','abcdefg')->>'abcdef';
+} 5
+do_execsql_test printf-20.4 {
+  SELECT format('{%.6J:5}','αβγδεζη')->>'αβγ';
+} 5
+do_execsql_test printf-20.5 {
+  SELECT format('{"%!.3j":5}','abcdefg')->>'abc';
+} 5
+do_execsql_test printf-20.6 {
+  SELECT format('{"%!.3j":5}','αβγδεζη')->>'αβγ';
+} 5
+do_execsql_test printf-20.7 {
+  SELECT format('{"%.6j":5}','abcdefg')->>'abcdef';
+} 5
+do_execsql_test printf-20.8 {
+  SELECT format('{"%.6j":5}','αβγδεζη')->>'αβγ';
+} 5
+do_execsql_test printf-20.9 {
+  WITH RECURSIVE c(n,t) AS (
+    VALUES(1,char(1))
+    UNION ALL
+    SELECT n+1, t||char(n+1) FROM c WHERE n<0x7e
+  )
+  SELECT hex(format('{"a":%J}',t)->>'a') FROM c WHERE n=0x7e;
+} {0102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E}
+do_execsql_test printf-20.10 {
+  SELECT format('1-%j-2-%J-3',null,null);
+} {1--2-null-3}
+
 
 finish_test

@@ -34,9 +34,10 @@
 #define etESCAPE_w    14 /* %w -> Strings with '\"' doubled */
 #define etORDINAL     15 /* %r -> 1st, 2nd, 3rd, 4th, etc.  English only */
 #define etDECIMAL     16 /* %d or %u, but not %x, %o */
-#define etJSONSTR     17 /* %J -> generate a JSON string literal */
+#define etESCAPE_j    17 /* %j -> JSON string literal w/o "..." */
+#define etESCAPE_J    18 /* %J -> JSON string literal with "..." */
 
-#define etINVALID     18 /* Any unrecognized conversion type */
+#define etINVALID     19 /* Any unrecognized conversion type */
 
 
 /*
@@ -66,20 +67,20 @@ typedef struct et_info {   /* Information about each format field */
 
 /*
 ** The table is searched by hash.  In the case of %C where C is the character
-** and that character has ASCII value j, then the hash is j%24.
+** and that character has ASCII value j, then the hash is j%25.
 **
 ** The order of the entries in fmtinfo[] and the hash chain was entered
 ** manually, but based on the output of the following TCL script:
 */
 #if 0  /*****  Beginning of script ******/
-foreach c {d s g z q Q w c o u x X f e E G i n % p T S r J} {
+foreach c {d s g z q Q w c o u x X f e E G i n % p T S r J j} {
   scan $c %c x
   set n($c) $x
 }
 set mx [llength [array names n]]
 puts "count: $mx"
 
-set mx 27
+set mx 25
 puts "*********** mx=$mx ************"
 for {set r 0} {$r<$mx} {incr r} {
   puts -nonewline [format %2d: $r]
@@ -93,31 +94,32 @@ for {set r 0} {$r<$mx} {incr r} {
 static const char aDigits[] = "0123456789ABCDEF0123456789abcdef";
 static const char aHex[]    = "0123456789abcdef";
 static const char aPrefix[] = "-x0\000X0";
-static const et_info fmtinfo[24] = {
-  /*  0 */  {  'x', 16, 0, etRADIX,      16, 1,  0 },
-  /*  1 */  {  'J',  0, 0, etJSONSTR,    0,  0,  0 },  /* Hash: 2 */
-  /*  2 */  {  'z',  0, 4, etDYNSTRING,  0,  0,  1 },
-  /*  3 */  {  'c',  0, 0, etCHARX,      0,  0,  0 },
-  /*  4 */  {  'd', 10, 1, etDECIMAL,    0,  0,  0 },
-  /*  5 */  {  'e',  0, 1, etEXP,        30, 0,  0 },
-  /*  6 */  {  'f',  0, 1, etFLOAT,      0,  0,  0 },
-  /*  7 */  {  'g',  0, 1, etGENERIC,    30, 0,  0 },
-  /*  8 */  {  'i', 10, 1, etDECIMAL,    0,  0,  0 },  /* Hash: 9 */
-  /*  9 */  {  'Q',  0, 4, etESCAPE_Q,   0,  0,  8 },
-  /* 10 */  {  'X', 16, 0, etRADIX,      0,  4,  0 },  /* Hash: 16 */
-  /* 11 */  {  'S',  0, 0, etSRCITEM,    0,  0,  0 },
-  /* 12 */  {  'T',  0, 0, etTOKEN,      0,  0,  0 },
-  /* 13 */  {  '%',  0, 0, etPERCENT,    0,  0,  0 },
-  /* 14 */  {  'n',  0, 0, etSIZE,       0,  0,  0 },
-  /* 15 */  {  'o',  8, 0, etRADIX,      0,  2,  0 },
-  /* 16 */  {  'p', 16, 0, etPOINTER,    0,  1, 10 },
-  /* 17 */  {  'q',  0, 4, etESCAPE_q,   0,  0,  0 },
-  /* 18 */  {  'r', 10, 1, etORDINAL,    0,  0,  0 },
-  /* 19 */  {  's',  0, 4, etSTRING,     0,  0,  0 },
-  /* 20 */  {  'E',  0, 1, etEXP,        14, 0,  0 },  /* Hash: 21 */
-  /* 21 */  {  'u', 10, 0, etDECIMAL,    0,  0, 20 },
-  /* 22 */  {  'G',  0, 1, etGENERIC,    14, 0,  0 },  /* Hash: 23 */
-  /* 23 */  {  'w',  0, 4, etESCAPE_w,   0,  0, 22 }
+static const et_info fmtinfo[25] = {
+  /*  0 */  {  'd', 10, 1, etDECIMAL,    0,  0,  0 },
+  /*  1 */  {  'e',  0, 1, etEXP,        30, 0,  0 },
+  /*  2 */  {  'f',  0, 1, etFLOAT,      0,  0,  0 },
+  /*  3 */  {  'g',  0, 1, etGENERIC,    30, 0,  0 },
+  /*  4 */  {  'j',  0, 0, etESCAPE_j,   0,  0,  0 },  /* Hash: 6 */
+  /*  5 */  {  'i', 10, 1, etDECIMAL,    0,  0,  0 },
+  /*  6 */  {  'Q',  0, 4, etESCAPE_Q,   0,  0,  4 },
+  /*  7 */  {  'p', 16, 0, etPOINTER,    0,  1,  0 },  /* Hash: 12 */
+  /*  8 */  {  'S',  0, 0, etSRCITEM,    0,  0,  0 },
+  /*  9 */  {  'T',  0, 0, etTOKEN,      0,  0,  0 },
+  /* 10 */  {  'n',  0, 0, etSIZE,       0,  0,  0 },
+  /* 11 */  {  'o',  8, 0, etRADIX,      0,  2,  0 },
+  /* 12 */  {  '%',  0, 0, etPERCENT,    0,  0,  7 },
+  /* 13 */  {  'q',  0, 4, etESCAPE_q,   0,  0, 16 },
+  /* 14 */  {  'r', 10, 1, etORDINAL,    0,  0,  0 },
+  /* 15 */  {  's',  0, 4, etSTRING,     0,  0,  0 },
+  /* 16 */  {  'X', 16, 0, etRADIX,      0,  4,  0 },  /* Hash: 13 */
+  /* 17 */  {  'u', 10, 0, etDECIMAL,    0,  0,  0 },
+  /* 18 */  {  'w',  0, 4, etESCAPE_w,   0,  0,  0 },  /* Hash: 19 */
+  /* 19 */  {  'E',  0, 1, etEXP,        14, 0, 18 },
+  /* 20 */  {  'x', 16, 0, etRADIX,      16, 1,  0 },
+  /* 21 */  {  'G',  0, 1, etGENERIC,    14, 0,  0 },
+  /* 22 */  {  'z',  0, 4, etDYNSTRING,  0,  0,  0 },
+  /* 23 */  {  'J',  0, 0, etESCAPE_J,   0,  0,  0 },  /* Hash: 24 */
+  /* 24 */  {  'c',  0, 0, etCHARX,      0,  0, 23 }
 };
 
 /* Additional Notes:
@@ -378,8 +380,8 @@ void sqlite3_str_vappendf(
     }
 #else
     /* Fast hash-table lookup */
-    assert( ArraySize(fmtinfo)==24 );
-    idx = ((unsigned)c) % 24;
+    assert( ArraySize(fmtinfo)==25 );
+    idx = ((unsigned)c) % 25;
     if( fmtinfo[idx].fmttype==c
      || fmtinfo[idx = fmtinfo[idx].iNxt].fmttype==c
     ){
@@ -870,7 +872,8 @@ void sqlite3_str_vappendf(
           while( ii>=0 ) if( (bufpt[ii--] & 0xc0)==0x80 ) width++;
         }
         break;
-      case etJSONSTR: {         /* %J: Generate a JSON string literal */
+      case etESCAPE_j:           /* %j: JSON string literal w/o "..." */
+      case etESCAPE_J: {         /* %J: Generate a JSON string literal */
         char *escarg;
         i64 i, j, px;
         unsigned char ch;
@@ -881,9 +884,9 @@ void sqlite3_str_vappendf(
           escarg = va_arg(ap,char*);
         }
         if( escarg==0 ){
-          sqlite3_str_append(pAccum, "null", 4);
+          if( xtype==etESCAPE_J ) sqlite3_str_append(pAccum, "null", 4);
         }else{
-          sqlite3_str_append(pAccum, "\"", 1);
+          if( xtype==etESCAPE_J ) sqlite3_str_append(pAccum, "\"", 1);
           px = precision;
           if( px<=0 ){
             px = 0x7fffffff;
@@ -913,7 +916,7 @@ void sqlite3_str_vappendf(
             }
           }
           if( j<i-1 ) sqlite3_str_append(pAccum, &escarg[j], i-j);
-          sqlite3_str_append(pAccum, "\"", 1);
+          if( xtype==etESCAPE_J ) sqlite3_str_append(pAccum, "\"", 1);
         }
         length = 0;
         width = 0;
