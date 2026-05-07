@@ -908,7 +908,7 @@ void sqlite3_str_vappendf(
               sqlite3_str_appendchar(pAccum, 1, '\\');
               if( ch>0x1f ){
                 sqlite3_str_appendchar(pAccum, 1, ch);
-              }else if( ((1<<ch)&0x3700)!=0 ){
+              }else if( ((1u<<ch)&0x3700)!=0 ){
                 ch = "btn?fr"[ch-8];
                 sqlite3_str_appendchar(pAccum, 1, ch);
               }else{
