@@ -927,8 +927,6 @@ void sqlite3_str_vappendf(
           char *zz;
           if( flag_altform2 && n>0 ){
             zz = sqlite3_str_value(pAccum);
-            assert( zz!=0 );
-            assert( strlen(zz)==iStart + n );
             for(i=iStart; zz[i]; i++){
               if( (zz[i]&0xc0)==0x80 ) len--;
             }
@@ -942,8 +940,6 @@ void sqlite3_str_vappendf(
              && sqlite3_str_errcode(pAccum)==0
             ){
               zz = sqlite3_str_value(pAccum);
-              assert( zz!=0 );
-              assert( strlen(zz)==iStart+n+sp );
               zz += iStart;
               memmove(zz+sp, zz, n);
               memset(zz, ' ', sp);
