@@ -902,7 +902,7 @@ void sqlite3_str_vappendf(
           }
           for(i=j=0; i<px; i++){
             if( (ch = ((u8*)escarg)[i])<=0x1f || ch=='"' || ch=='\\' ){
-              if( j<i-1 ) sqlite3_str_append(pAccum, &escarg[j], i-j);
+              if( j<i ) sqlite3_str_append(pAccum, &escarg[j], i-j);
               j = i+1;
               if( ch==0 ) break;
               sqlite3_str_appendchar(pAccum, 1, '\\');
