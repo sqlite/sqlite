@@ -1,5 +1,5 @@
-C In\ssqlite-config.tcl\sremove\sa\sreference\sto\sthe\splatform\sname\sapple\swhen\schecking\sfor\sMac\splatforms,\srelying\son\sa\scheck\sfor\sdarwin\sinstead,\sanalog\sto\s[b5c6cb13cff53f].\sIntended\sto\sresolve\s[forum:c26b856db7dd5caf|forum\spost\sc26b856db7dd5caf].
-D 2026-05-09T14:01:57.913
+C Minor\sconfig\sscript\sdoc\stweaks.
+D 2026-05-09T14:32:16.288
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -46,7 +46,7 @@ F autosetup/cc.tcl c0fcc50ca91deff8741e449ddad05bcd08268bc31177e613a6343bbd1fd3e
 F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1821baf61bc86a7e
 F autosetup/jimsh0.c 740dc8cbfaedaff1f27b54b32e0015b22fa6c1a439492b9795968d61e56bab75
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
-F autosetup/proj.tcl ce301197f364f7ce2acabbbd84b43d19e917ec73653157ca134a06f32d322712
+F autosetup/proj.tcl 67683f214977a416baafc4c1020f9940ff047a7306b2292c5872d6287460b7d5
 F autosetup/sqlite-config.tcl 7c582ea156b2d0b8d3532f08bf8f435930385454e33ddda0b3cc93382667df1d
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
@@ -2203,8 +2203,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0372dd717b852da8dc2c6b0ff2da02a2ac25bc0486a38e4c2a970694d897b6c9
-R 061767b0c590ba09350342dfd0c41cfb
+P 7ccffe38b4b99c61e4bfc703dc4b3516d7c2a72d73680b699886ee43eea9bd21
+R e62a8bf4b58e16f7438a5a8fc71aae88
 U stephan
-Z dfc4cf6f56c2c45c11eed0b638acf018
+Z 2bc7e1ba00887abd15c2a4bb28cc76df
 # Remove this line to create a well-formed Fossil manifest.
