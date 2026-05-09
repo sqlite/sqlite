@@ -114,4 +114,20 @@ do_execsql_test amatch1-2.22 {
      WHERE word MATCH 'joxxph' AND distance<300;
 } {}
 
+# Forum post 2026-05-09T05:48:28Z
+reset_db
+load_static_extension db amatch
+do_execsql_test amatch1-3.0 {
+  CREATE TABLE cost(iLang,cFrom,cTo,Cost);
+  INSERT INTO cost VALUES(0,'?','?',1);
+  CREATE TABLE vocab(word TEXT PRIMARY KEY);
+  CREATE VIRTUAL TABLE am USING approximate_match(
+      vocabulary_table=vocab,
+      vocabulary_word=word,
+      edit_distances=cost
+  );
+  INSERT INTO vocab(word) VALUES(format('%.81c','a'));
+  SELECT length(word) FROM am WHERE word MATCH format('%.81c','a');
+} {81}
+
 finish_test

@@ -1157,7 +1157,7 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
 #endif
     nWord = (int)strlen(pWord->zWord+2);
     if( nWord+20>nBuf ){
-      nBuf = (char)(nWord+100);
+      nBuf = nWord+100;
       zBuf = sqlite3_realloc64(zBuf, nBuf);
       if( zBuf==0 ) return SQLITE_NOMEM;
     }
