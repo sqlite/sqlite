@@ -1,5 +1,5 @@
-C Fix\supward\spropagation\sof\sexpression\sproperties\sinto\srow-value\sexpressions.
-D 2026-05-09T13:57:11.846
+C In\ssqlite-config.tcl\sremove\sa\sreference\sto\sthe\splatform\sname\sapple\swhen\schecking\sfor\sMac\splatforms,\srelying\son\sa\scheck\sfor\sdarwin\sinstead,\sanalog\sto\s[b5c6cb13cff53f].\sResolves\show\sDLL\snames\sare\sformulated\son\ssome\ssystems.
+D 2026-05-09T15:07:27.236
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c 916bbdf8023fbda9937afae57d81a853d8c2ea00f2320aa27becbc33574f963d
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl ce301197f364f7ce2acabbbd84b43d19e917ec73653157ca134a06f32d322712
-F autosetup/sqlite-config.tcl 8fecce2838b7e7d990d161d08998034f3e3b0b2ddf4d7a99dbfafba9c902e302
+F autosetup/sqlite-config.tcl 7ff8dad28d6ea2ad95f0288c61274042e6594145511b58ec4d42daacbee15f0d
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl e014dd95900c7f9a34e8e0f460f47e94841059827bce8b4c49668b0c7ae3f1a0
@@ -2197,9 +2197,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 931119281252ba73693770ac301010a84eb9c2b06247b17e3252271163341ab0
-Q +0372dd717b852da8dc2c6b0ff2da02a2ac25bc0486a38e4c2a970694d897b6c9
-R 3364ad2080207e7ac998fb5b7332a79a
-U drh
-Z 3febd5106e5da3f4d7a8a10032e49d68
+P 5e639b7f15c1de773a83eccfeea67122616a62105299af41dd7c2df2ea74102c
+Q +7ccffe38b4b99c61e4bfc703dc4b3516d7c2a72d73680b699886ee43eea9bd21
+R 5d34b562e0723c79f540ed667f4d08a0
+U stephan
+Z 407dfce71e95ee0967b66e6083dea2bb
 # Remove this line to create a well-formed Fossil manifest.
