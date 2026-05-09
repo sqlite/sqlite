@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\sOOM\sin\sthe\sregexp_bytecode()\sSQLite\sfunction\n(available\sin\sdebug\sbuilds\sonly).\n[forum:/forumpost/a3a10e1c7b5dd1d2|Forum\spost\sa3a10e1c7b5dd1d2].
-D 2026-05-09T13:16:18.019
+C Fix\supward\spropagation\sof\sexpression\sproperties\sinto\srow-value\sexpressions.\n[forum:/info/8387cc287240643e|Forum\spost\s8387cc287240643e].
+D 2026-05-09T13:54:40.808
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -725,7 +725,7 @@ F src/os_win.c 4786b1123beea22a9cd8f8e9d781cc1b4bf4679c56103edbf60a519ce23a2781
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fbec9063ea139dfa5d94ce540671752b89f8e8dc38f8a1f614bab1aa04a2dd40
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
-F src/parse.y 8c8003a932f6f98ac612fd239d3cdc7ca64480f61ca5f4f680c4fe69b1bc68c9
+F src/parse.y 1302f85ec4b85a25e47055a35606336b58a9403da04a00b9e4850a079fb49833
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 092b758d2c5e4dabb30eae46d8dfad77c0f70b16bf3ff1943f7a232b0fe0d4ba
 F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
@@ -1559,7 +1559,7 @@ F test/round1.test 29c3c9039936ed024d672f003c4d35ee11c14c0acb75c5f7d6188ff16190c
 F test/rowallock.test 3f88ec6819489d0b2341c7a7528ae17c053ab7cc
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test d27191b5ce794c05bf61081e8b2c546a1844c1641321dcaf7fb785234256cc8e
-F test/rowvalue.test 93474d8e1c496e970bdcc3a7f54ac835adda667d2fd971957b4bce0c0b11707b
+F test/rowvalue.test ba43ff378f78c81579dd0f9f2b1e92876d29fb767f090acb7d4cbc6ff4a3c42c
 F test/rowvalue2.test 060d238b7e5639a7c5630cb5e63e311b44efef2b
 F test/rowvalue3.test 103e9a224ca0548dd0d67e439f39c5dd16de4200221a333927372408c025324c
 F test/rowvalue4.test 6e160977d44ee715e142f63ec0e339586c61f12bbbffacee369b1cdc0b7390f0
@@ -2203,8 +2203,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2881e17cc030814b350ca371fd2fd2089d3ff2fcc4ea52654de8bc5c2fc95222
-R d42d5489195d72421a2ef01abab77013
+P 172e8c35badadc3c5eb5065da8ed2161093a0adff0ecfb5b162f78a9fb55bb34
+R 3e56272138e1f250bbc132dda56b3e3f
 U drh
-Z 9ec6dc194d963bcbf6724b5bd90d8eec
+Z f37261344bfd74732b1cfe3e81170851
 # Remove this line to create a well-formed Fossil manifest.

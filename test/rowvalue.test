@@ -854,5 +854,19 @@ do_execsql_test 35.1 {
   SELECT (1, 'a') IN (SELECT c2, c1 from t1);
 } 1
 
+# Forum post 2026-05-09T07:55:45Z
+#
+do_execsql_test 36.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1),(2),(3);
+  SELECT (1,2,3,max(x)) IN () FROM t1;
+} 0
+do_execsql_test 36.1 {
+  SELECT (1,2,max(x),3) IN () FROM t1;
+} 0
+do_execsql_test 36.2 {
+  SELECT (max(x),1,23) IN () FROM t1;
+} 0
 
 finish_test
