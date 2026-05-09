@@ -668,6 +668,39 @@ do_execsql_test 1370 {
   SELECT * FROM generate_series(0,0,0);
 } {}
 
+# Forum post 2026-05-09T07:41:32Z
+set subtest 1
+foreach bound {
+  9007199254740991.0
+  9007199254740991.1
+  9007199254740991.5
+  9007199254740991.9
+  9007199254740992.0
+  9007199254740992.1
+  9007199254740992.5
+  9007199254740992.9
+  9007199254740993.0
+  9007199254740993.1
+  9007199254740993.5
+} {
+  foreach {range boundsign} {
+    (+9007199254740990,+9007199254740995)  +
+    (-9007199254740995,-9007199254740990)  -
+  } {
+    set bx $boundsign$bound
+    foreach op {< > <= >=} {
+      do_execsql_test 1380.$subtest "
+         SELECT 'value $op $bx' WHERE (
+            SELECT group_concat(value) FROM generate_series $range
+             WHERE value $op $bx)<>(
+            SELECT group_concat(value) FROM generate_series $range
+             WHERE +value $op $bx);
+      " {}
+      incr subtest
+    }
+  }
+}
+
 reset_db
 load_static_extension db series
 do_execsql_test 1400 {
