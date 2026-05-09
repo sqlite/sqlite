@@ -1334,9 +1334,11 @@ expr(A) ::= LP nexprlist(X) COMMA expr(Y) RP. {
   ExprList *pList = sqlite3ExprListAppend(pParse, X, Y);
   A = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);
   if( A ){
+    int i;
     A->x.pList = pList;
-    if( ALWAYS(pList->nExpr) ){
-      A->flags |= pList->a[0].pExpr->flags & EP_Propagate;
+    for(i=0; i<pList->nExpr; i++){
+      assert( pList->a[i].pExpr!=0 );
+      A->flags |= pList->a[i].pExpr->flags & EP_Propagate;
     }
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
