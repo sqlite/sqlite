@@ -1216,6 +1216,7 @@ expr(A) ::= VARIABLE(X).     {
       parserSyntaxError(pParse, &t);
       A = 0;
     }else{
+      assert( pParse->bFailFuncOnly==0 );
       A = sqlite3PExpr(pParse, TK_REGISTER, 0, 0);
       if( A ) sqlite3GetInt32(&t.z[1], &A->iTable);
     }

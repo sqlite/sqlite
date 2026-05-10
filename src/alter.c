@@ -3017,11 +3017,15 @@ void sqlite3AlterAddConstraint(
   }
 
   /* Search for a constraint violation. Throw an exception if one is found. */
+  assert( pParse->bFailFuncOnly==0 );
+  pParse->bFailFuncOnly = 1;
   sqlite3NestedParse(pParse,
       "SELECT sqlite_fail('constraint failed', %d) "
       "FROM %Q.%Q WHERE (%.*s) IS NOT TRUE", 
       SQLITE_CONSTRAINT, zDb, pTab->zName, nExpr, pExpr
   );
+  pParse->bFailFuncOnly = 0;
+  if( pParse->nErr ) pParse->db->errByteOffset = -1;
 
   /* Edit the SQL for the named table. */
   pCons = pFirst->z;

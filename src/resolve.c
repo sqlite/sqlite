@@ -1211,13 +1211,17 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           pExpr->op2 = pNC->ncFlags & NC_SelfRef;
         }
         if( (pDef->funcFlags & SQLITE_FUNC_INTERNAL)!=0
-         && pParse->nested==0
+         && (pParse->nested==0 || 
+              (pParse->bFailFuncOnly && strcmp(pDef->zName,"sqlite_fail")!=0) )
          && (pParse->db->mDbFlags & DBFLAG_InternalFunc)==0
         ){
           /* Internal-use-only functions are disallowed unless the
           ** SQL is being compiled using sqlite3NestedParse() or
           ** the SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test-control has be
-          ** used to activate internal functions for testing purposes */
+          ** used to activate internal functions for testing purposes.
+          ** Internal-use-only functions are also disallowed within
+          ** sqlite3NestedPase() if pParse->bFailFuncOnly is set and
+          ** the function is anything other than sqlite_fail(). */
           no_such_func = 1;
           pDef = 0;
         }else

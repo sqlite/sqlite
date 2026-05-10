@@ -438,5 +438,23 @@ do_execsql_test 9.2.5 {
   SELECT sql FROM aux.sqlite_schema WHERE name='t2';
 } {{CREATE TABLE t2(x, y, z)}}
 
-finish_test
+# Cannot add constraints the use internal functions.
+# Forum post 2026-05-10T01:11:28Z
+#
+reset_db
+do_execsql_test 10.1 {
+  CREATE TABLE t1(x,y,z);
+  INSERT INTO t1 VALUES(1,'two',x'3333');
+}
+do_catchsql_test 10.2 {
+  ALTER TABLE t1 ADD CONSTRAINT c1 CHECK( sqlite_drop_column(22,'CREATE TABLE a(b,c)', 0));
+} {1 {no such function: sqlite_drop_column}}
+do_catchsql_test 10.3 {
+  ALTER TABLE t1 ADD CONSTRAINT c1 CHECK( x>#2 );
+} {1 {near "#2": syntax error}}
+do_catchsql_test 10.4 {
+  ALTER TABLE t1 ADD CONSTRAINT c1 CHECK( if(x>22,1,RAISE(abort,'too big')) );
+} {1 {RAISE() may only be used within a trigger-program}}
 
+
+finish_test
