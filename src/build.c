@@ -715,6 +715,19 @@ Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
 }
 
 /*
+** Suppress false-positive warning message generated with -O3 in GCC
+** on the second call to sqlite3Strlen30() in the sqlite3ColumnSetColl()
+** function below.  See the forum thread beginning on 2026-05-10T01:11:22Z.
+**
+** See also the "pop" pragma to undo this warning suppression immediately
+** after the function.
+*/
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstringop-overread"
+#endif
+
+/*
 ** Set the collating sequence name for a column.
 */
 void sqlite3ColumnSetColl(
@@ -738,6 +751,11 @@ void sqlite3ColumnSetColl(
     pCol->colFlags |= COLFLAG_HASCOLL;
   }
 }
+
+/* Undo the false-positive warning suppression above. */
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic pop
+#endif
 
 /*
 ** Return the collating sequence name for a column
