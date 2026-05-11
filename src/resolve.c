@@ -1450,6 +1450,21 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       }
       break;
     }
+    case TK_RAISE: {
+      if( pParse->pTriggerTab==0 && pParse->db->init.busy==0 ){
+        /*                          ^^^^^^^^^^^^^^^^^^^^^^^^
+        ** Older versions of SQLite would allow a CREATE TABLE statement that
+        ** contains a CHECK constraint holding a RAISE().  Those tables would
+        ** not function, but they might be in schemas.  We don't want to
+        ** fail the schema parse on those legacy databases, so we do allow
+        ** RAISE() within CHECK() and similar on the schema.  The misuse of
+        ** RAISE() is caught during byte-code generation if the table is
+        ** actually used.  tag-20260511a */
+        sqlite3ErrorMsg(pParse,
+                       "RAISE() may only be used within a trigger-program");
+      }
+      break;
+    }
   }
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   return pParse->nErr ? WRC_Abort : WRC_Continue;
