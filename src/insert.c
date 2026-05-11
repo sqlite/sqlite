@@ -3113,8 +3113,19 @@ static int xferOptimization(
   if( pDest->iPKey!=pSrc->iPKey ){
     return 0;   /* Both tables must have the same INTEGER PRIMARY KEY */
   }
-  if( (pDest->tabFlags & TF_Strict)!=0 && (pSrc->tabFlags & TF_Strict)==0 ){
-    return 0;   /* Cannot feed from a non-strict into a strict table */
+  if( (pDest->tabFlags & TF_Strict)!=0 ){
+    if( (pSrc->tabFlags & TF_Strict)==0 ){
+      return 0;  /* Cannot feed from a non-strict into a strict table */
+    }
+    for(i=0; i<pDest->nCol; i++){
+      unsigned eDestType = pDest->aCol[i].eCType;
+      unsigned eSrcType = pSrc->aCol[i].eCType;
+      if( eDestType==COLTYPE_ANY ) continue;
+      if( eDestType==eSrcType ) continue;
+      if( eDestType==COLTYPE_INT && eSrcType==COLTYPE_INTEGER ) continue;
+      if( eDestType==COLTYPE_INTEGER && eSrcType==COLTYPE_INT ) continue;
+      return 0; /* Incompatible types in source and destination */
+    }
   }
   for(i=0; i<pDest->nCol; i++){
     Column *pDestCol = &pDest->aCol[i];

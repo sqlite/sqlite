@@ -1,5 +1,5 @@
-C Minor\sconfig\sscript\sdoc\stweaks.
-D 2026-05-09T14:32:16.288
+C Fix\sthe\sxfer\soptimization\sso\sthat\sit\sdoes\snot\swork\sif\sthe\sdestination\sis\na\sSTRICT\stable\sthat\sis\sincompatible\swith\sthe\ssource.\n[forum:/forumpost/4955d2235c22ef4e|Forum\spost\s4955d2235c22ef4e].
+D 2026-05-11T00:53:44.081
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -695,7 +695,7 @@ F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 21c2cf1f736e7b97502c3674d0c386db3f06870d6f10d0cf8174e2a4b8cb726e
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 77aa90e7ddbebf131c5de504854b5a61c25b11d53580649fb375b23752793651
+F src/insert.c 2b84fbcb063c29648f15f3704f902e404a0be7580c8d9559a9d369f03d6b6598
 F src/json.c ed93368fab7943a4822bc179fd914e63f5a2a18d6ef429c16ac49ea13eaffd49
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 78d5b06f18996ffa1203129b28fea043f63a87a4117539678f1d761c30b4ff65
@@ -2203,8 +2203,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7ccffe38b4b99c61e4bfc703dc4b3516d7c2a72d73680b699886ee43eea9bd21
-R e62a8bf4b58e16f7438a5a8fc71aae88
-U stephan
-Z 2bc7e1ba00887abd15c2a4bb28cc76df
+P 678954553e123de9eb0bbe7c3101039218edd27d282b015f51e69a2eba683feb
+R 2eb76a263e26d18a3f4abdb44fd7e284
+U drh
+Z a213e57345e5887f0c1d5b4fa5b71541
 # Remove this line to create a well-formed Fossil manifest.
