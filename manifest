@@ -1,5 +1,5 @@
-C Hush-up\sa\sfalse-positive\scompiler\swarning\sfrom\sGCC.\s\sSee\n[forum:/forumpost/281ace196961082c|forum\sthread\s281ace196961082c].
-D 2026-05-11T10:25:58.467
+C Fix\sharmless\sbug\sin\stesting\slogic.\s\sNo\schanges\sto\sdeliverables.
+D 2026-05-11T11:05:17.268
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -746,7 +746,7 @@ F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 7401c73c917a4d1b380c896a324c8d8eb533a999559d9e339d479596553bebfd
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c 3e3b013f59ffcb57dce00c90d55907072d71d4e970cb0a590cb261efe11bae9c
+F src/test1.c fe1316579a1778eb96d0bd12807f9dddc5e3984f5950127e2e1718c050cb6304
 F src/test2.c 2b9ab96bba63a1c369d5769390475259ad210f144a877805f2e32e563f9e93c1
 F src/test3.c 432646f581d8af1bb495e58fc98234380250954f5d5535e507fc785eccc3987a
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -2203,8 +2203,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5e916b2a8fd41ffc42c29bfc9b5333b7a579f37fe094bd0b6b00e2f176c4e3fe
-R 26ddf3c5e7372fb7ca19fe9a97e68e6c
+P 45a215290896eee9776c2b1727363f6e1c1aad5b521f4f92b13981a5da5d0f54
+R 56d8e81cc54933505be73d3c91d90f52
 U drh
-Z d4a0131f2fac368cca399f71a3f2907a
+Z 9629b616a8c58068be0a9d9501b3e230
 # Remove this line to create a well-formed Fossil manifest.
