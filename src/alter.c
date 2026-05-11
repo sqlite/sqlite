@@ -3007,8 +3007,7 @@ void sqlite3AlterAddConstraint(
   }
 
   /* Verify that the new CHECK constraint does not contain any
-  ** internal-use-only function or RAISE() expressions.
-  ** Forum post 026-05-10T01:11:28Z
+  ** internal-use-only function.  Forum post 2026-05-10T01:11:28Z
   */
   rc = sqlite3ResolveSelfReference(pParse, pTab, NC_IsCheck, pExpr, 0);
   sqlite3ExprDelete(pParse->db, pExpr);
