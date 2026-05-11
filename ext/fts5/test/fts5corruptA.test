@@ -68,5 +68,34 @@ do_catchsql_test 1.5 {
   SELECT rowid FROM t WHERE t MATCH 'a'
 } {1 {fts5: corruption found reading blob 137438953481 from table "t"}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  BEGIN;
+    INSERT INTO t1(rowid, a) VALUES(1, 'aaaa');
+    INSERT INTO t1(rowid, a) VALUES(2, 'bbbb');
+    INSERT INTO t1(rowid, a) VALUES(3, 'cccc');
+  COMMIT;
+}
+
+db close
+
+do_test 2.1 {
+  set hex [hexio_read test.db 0 [file size test.db]]
+  set off [string first "010463636363" $hex]
+  set hex [string replace $hex $off [expr $off+11] 017F63636363]
+  hexio_write test.db 0 $hex
+  set {} {}
+} {}
+
+sqlite3 db test.db
+
+do_catchsql_test 2.2 {
+  SELECT rowid FROM t1('cccccccccccccccccccccccccccccccccccccccccccccccc');
+} {1 {fts5: corruption on page 1, segment 1, table "t1"}}
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
+
