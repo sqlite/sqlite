@@ -625,4 +625,45 @@ do_execsql_test 11.0 {
   PRAGMA integrity_check;
 } {1 1 1  2 2 2  3 3 3  ok}
 
+#-------------------------------------------------------------------------
+# forum post 2026-05-11T13:15:57Z
+#
+do_execsql_test 12.0 {
+  CREATE TABLE src(x,y,z, CONSTRAINT c1 CHECK(rowid<=5));
+  CREATE TABLE dest(x,y,z, CONSTRAINT c2 CHECK(rowid<=5));
+  INSERT INTO src(x) VALUES(22),(33),(44);
+  UPDATE src SET y=x+100, z=x*100;
+  INSERT INTO dest(x) VALUES(55),(66),(77);
+  UPDATE dest SET y=x+100, z=x*100;
+  PRAGMA integrity_check;
+} ok
+set sqlite3_xferopt_count 0
+do_catchsql_test 12.1 {
+  INSERT INTO dest SELECT * FROM src;
+} {1 {CHECK constraint failed: c2}}
+do_test 12.2 {
+  set sqlite3_xferopt_count
+} 0
+do_execsql_test 12.3 {
+  SELECT rowid, x FROM dest;
+  PRAGMA integrity_check;
+} {1 55 2 66 3 77 ok}
+do_execsql_test 12.4 {
+  ALTER TABLE src DROP CONSTRAINT c1;
+  ALTER TABLE dest DROP CONSTRAINT c2;
+}
+set sqlite3_xferopt_count 0
+do_catchsql_test 12.5 {
+  INSERT INTO dest SELECT * FROM src;
+} {0 {}}
+do_test 12.6 {
+  set sqlite3_xferopt_count
+} 1
+do_execsql_test 12.7 {
+  SELECT rowid, x FROM dest;
+  PRAGMA integrity_check;
+} {1 55 2 66 3 77 4 22 5 33 6 44 ok}
+
+
+
 finish_test

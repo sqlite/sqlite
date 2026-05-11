@@ -2988,6 +2988,44 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
 }
 
 /*
+** Examine an expression node and abort if it references the ROWID.
+** This is a Walker callback used by xferCompatibleCheck()
+*/
+static int xferCheckRowid(Walker *pWalk, Expr *pExpr){
+  if( pExpr->op==TK_COLUMN && pExpr->iColumn<0 ){
+    pWalk->eCode = 1;
+    return WRC_Abort;
+  }else{
+    return WRC_Continue;
+  }
+}
+
+/*
+** Analyze CHECK constraints on the source and destination tables and
+** return true if those CHECK constraints are compatible with the
+** xfer-optimization.
+**
+**    *  The pDest and pSrc tables must have identical CHECK constraints.
+**
+**    *  If the destination table, pDest, does not have an
+**       INTEGER PRIMARY KEY column, then no CHECK constraint may
+**       referenced the ROWID.  (See forum post 2026-05-11T13:15:57Z)
+*/
+static int xferCompatibleCheck(Table *pDest, Table *pSrc){
+  if( sqlite3ExprListCompare(pSrc->pCheck,pDest->pCheck,-1) ){
+    return 0;
+  }
+  if( pDest->iPKey<0 ){
+    Walker w;
+    memset(&w, 0, sizeof(w));
+    w.xExprCallback = xferCheckRowid;
+    sqlite3WalkExprList(&w,pDest->pCheck);
+    if( w.eCode ) return 0;
+  }
+  return 1;
+}
+
+/*
 ** Attempt the transfer optimization on INSERTs of the form
 **
 **     INSERT INTO tab1 SELECT * FROM tab2;
@@ -3219,7 +3257,7 @@ static int xferOptimization(
 #ifndef SQLITE_OMIT_CHECK
   if( pDest->pCheck
    && (db->mDbFlags & DBFLAG_Vacuum)==0
-   && sqlite3ExprListCompare(pSrc->pCheck,pDest->pCheck,-1)
+   && !xferCompatibleCheck(pDest,pSrc)
   ){
     return 0;   /* Tables have different CHECK constraints.  Ticket #2252 */
   }
