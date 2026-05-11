@@ -1912,11 +1912,11 @@ cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) DROP NOT NULL. {
 cmd ::= ALTER TABLE fullname(X) ALTER kwcolumn_opt nm(Y) SET NOT(Z) NULL onconf. {
   sqlite3AlterSetNotNull(pParse, X, &Y, &Z);
 }
-cmd ::= ALTER TABLE fullname(X) ADD CONSTRAINT(Y) nm(Z) CHECK LP(A) expr RP(B) onconf. {
-  sqlite3AlterAddConstraint(pParse, X, &Y, &Z, A.z+1, (B.z-A.z-1));
+cmd ::= ALTER TABLE fullname(X) ADD CONSTRAINT(Y) nm(Z) CHECK LP(A) expr(E) RP(B) onconf. {
+  sqlite3AlterAddConstraint(pParse, X, &Y, &Z, A.z+1, (B.z-A.z-1), E);
 }
-cmd ::= ALTER TABLE fullname(X) ADD CHECK(Y) LP(A) expr RP(B) onconf. {
-  sqlite3AlterAddConstraint(pParse, X, &Y, 0, A.z+1, (B.z-A.z-1));
+cmd ::= ALTER TABLE fullname(X) ADD CHECK(Y) LP(A) expr(E) RP(B) onconf. {
+  sqlite3AlterAddConstraint(pParse, X, &Y, 0, A.z+1, (B.z-A.z-1), E);
 }
 
 kwcolumn_opt ::= .
