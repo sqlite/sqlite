@@ -1,5 +1,5 @@
-C Attempt\sto\sdisable\sfalse-positive\sGCC\scompiler\swarning.
-D 2026-05-12T11:47:01.159
+C Fix\sthe\sinsert4.test\stest\smodule\sso\sthat\sit\sworks\swhen\sSQLite\sis\ncompiled\swith\sSQLITE_OMIT_VIRTUALTABLE.
+D 2026-05-12T12:34:16.894
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1313,7 +1313,7 @@ F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 97cfb30b83ca1622b9422a1e4c4831b4cb767cf5d654660945036d1e72067e70
 F test/insert2.test 4d14b8f1b810a41995f6286b64a6943215d52208
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
-F test/insert4.test c57951c5db531509b3ad55a65c642b6250d51fa4f92bc67613ef900a32e9c3bd
+F test/insert4.test 3186fea9f85a4c88f50a9a9b64d23a064fb765c34505691244952fc51c243382
 F test/insert5.test 79f6b6efd0d3db5f4e3ff442300b7d9e7185adb345b29aacc3ea5a9c58ab9beb
 F test/insertfault.test ac63d14ea3b49c573673a572f4014b9117383a03e497c58f308b5c776e4a7f74
 F test/instr.test 67ba309e9697c24a304e98a7c8f372456177dd4e32237d2a305e1e05f7bb79c2
@@ -2204,8 +2204,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P da9ca357fb24f39a4a3292ca447773c6233a3084721abfbd5665a45ee8a4bed4
-R 36de76d168f8f1505aca8d5a3bb09dab
+P e377b4d375f2ec64085d953e87739904bbbccf09d82db99fe0579368c985ca84
+R 09b39a567a0ac7dc9a4f4fed7a908836
 U drh
-Z 00bfac3e0c253446e0032e413f90fae8
+Z 1887f1fcbf1c27effba4d4746cbf2349
 # Remove this line to create a well-formed Fossil manifest.
