@@ -1,5 +1,5 @@
-C Fix\sthe\sinsert4.test\stest\smodule\sso\sthat\sit\sworks\swhen\sSQLite\sis\ncompiled\swith\sSQLITE_OMIT_VIRTUALTABLE.
-D 2026-05-12T12:34:16.894
+C Fix\sa\scopy/paste\serror\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2026-05-12T18:06:44.577
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -741,7 +741,7 @@ F src/shell.c.in 9ee66535e9da2ca2bd504a5925be1958c0e8f269d80a87109ffdc5ec6e9b416
 F src/sqlite.h.in 39d2e09114d2bdb7afd998f4a469c8f8cd065f8093835a7d0422f260fc78fb4f
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 9788c301f95370fa30e808861f1d2e6f022a816ddbe2a4f67486784c1b31db2e
-F src/sqliteInt.h 6a4f617776f89a7a36e85a4b14c8c21bc27336f3767e0c3c6f6d9cee886189d6
+F src/sqliteInt.h e0cdf7f4418e84fecf4826756867a9dfc4981f7cf5b3b294043c8c887a817729
 F src/sqliteLimit.h c70656b67ab5b96741a8f1c812bdd80c81f2b1c1e443d0cc3ea8c33bb1f1a092
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2204,8 +2204,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e377b4d375f2ec64085d953e87739904bbbccf09d82db99fe0579368c985ca84
-R 09b39a567a0ac7dc9a4f4fed7a908836
+P bff9db9b5eb05ec3f99e35cb4c198d24bcb9ee7ceb2401bf55627788ac2b96db
+R 852861e2b81cf0ca8aa8c224723f706f
 U drh
-Z 1887f1fcbf1c27effba4d4746cbf2349
+Z f2a1c09491e8f12c62b204209b7c8f58
 # Remove this line to create a well-formed Fossil manifest.
