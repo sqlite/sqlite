@@ -16,6 +16,16 @@
 #include "btreeInt.h"
 
 /*
+** Suppress false-positive compiler warnings from GCC.  Warnings are
+** re-enabled at the bottom of this source file.
+*/
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstringop-overread"
+# pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
+
+/*
 ** The header string that appears at the beginning of every
 ** SQLite database.
 */
@@ -11565,4 +11575,11 @@ int sqlite3BtreeConnectionCount(Btree *p){
   testcase( p->sharable );
   return p->pBt->nRef;
 }
+#endif
+
+/* Re-enable GCC compiler warnings that were suppressed at the top
+** of this source file to prevent annoying false-positives.
+*/
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic pop
 #endif

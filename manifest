@@ -1,5 +1,5 @@
-C Fix\sthe\sxfer-optimization\ssuch\sthat\sif\sthe\sdestination\stable\shas\nconstraints\son\sthe\shidden\srowid,\sthe\soptimization\sis\snot\sattempted.\n[forum:/forumpost/6dcc95e3ca|Forum\spost\s6dcc95e3ca].
-D 2026-05-11T16:58:05.251
+C Attempt\sto\sdisable\sfalse-positive\sGCC\scompiler\swarning.
+D 2026-05-12T11:47:01.159
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -396,7 +396,7 @@ F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c df54e202887e480bf9cd73168c9ac829e3b0211381b68b9809e0cb5bc1bdc2cf
 F ext/misc/series.c 496f43bac9bad2ee2cea63fb5212036f30ad3003b4cd317d5c2d6f3ad7c7d264
-F ext/misc/sha1.c 8bf60344c11a525384c2efd1ae77f160b06be336db679effaadf292d4b41451c
+F ext/misc/sha1.c 9a11826db885e8afd997c0a1b28bb799a43e462ef770ac33f19e744887c9c6fa
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 693c8fd3293087fa821322967a97e59dfa24051e5d2ca7fa85790a4034db6fa4
@@ -676,7 +676,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c 6ebe22ccbedfcb92423833992130e8d65824be4e6599c3a03f540ab38fc7d13c
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 216ffbe197e330118a2999adc7d3f09b0e2eeb163df8746ba9a2b27fed3d4335
+F src/btree.c 6a111fbcc9f4fa1450f81f9531f2045ab75c1fe33112fb7d7a20b631fa9ca4b9
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 866e584cdf40fbc83f530af9fd4d0991582a6fdbd8a9911b7cdbbea5f26a4a9e
@@ -2204,8 +2204,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 07beb966daddd0dfea36265eb38ebfcfbb10b0cbccda458dea501eda330a49f0
-R 1955398b2f2da5d960daeec18f38ded2
+P da9ca357fb24f39a4a3292ca447773c6233a3084721abfbd5665a45ee8a4bed4
+R 36de76d168f8f1505aca8d5a3bb09dab
 U drh
-Z 071b161c34e74b182ba62199af464639
+Z 00bfac3e0c253446e0032e413f90fae8
 # Remove this line to create a well-formed Fossil manifest.
