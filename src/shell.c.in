@@ -13469,7 +13469,7 @@ static void main_init(ShellState *p) {
   p->bDelimitNonprint = 0;
 #endif
 #if DO_SET_LOCALE
-  setlocale(LC_ALL,"");
+  setlocale(LC_CTYPE,"");
 #endif
 #undef DO_SET_LOCALE
 }
