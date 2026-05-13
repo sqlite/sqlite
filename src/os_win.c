@@ -410,7 +410,7 @@ static struct win_syscall {
 #define osFormatMessageW ((DWORD(WINAPI*)(DWORD,LPCVOID,DWORD,DWORD,LPWSTR, \
         DWORD,va_list*))aSyscall[7].pCurrent)
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_UWP)
   { "FreeLibrary",             (SYSCALL)FreeLibrary,             0 },
 #else
   { "FreeLibrary",             (SYSCALL)0,                       0 },
@@ -428,8 +428,9 @@ static struct win_syscall {
 #define osGetFileAttributesExW ((BOOL(WINAPI*)(LPCWSTR,GET_FILEEX_INFO_LEVELS, \
         LPVOID))aSyscall[11].pCurrent)
 
-  { "GetFileSize",             (SYSCALL)GetFileSize,             0 },
-#define osGetFileSize ((DWORD(WINAPI*)(HANDLE,LPDWORD))aSyscall[12].pCurrent)
+  { "GetFileSizeEx",           (SYSCALL)GetFileSizeEx,           0 },
+#define osGetFileSizeEx ((BOOL(WINAPI*)(HANDLE, \
+                        PLARGE_INTEGER))aSyscall[12].pCurrent)
 
   { "GetFullPathNameW",        (SYSCALL)GetFullPathNameW,        0 },
 #define osGetFullPathNameW ((DWORD(WINAPI*)(LPCWSTR,DWORD,LPWSTR, \
@@ -438,7 +439,7 @@ static struct win_syscall {
   { "GetLastError",            (SYSCALL)GetLastError,            0 },
 #define osGetLastError ((DWORD(WINAPI*)(VOID))aSyscall[14].pCurrent)
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_UWP)
   { "GetProcAddressA",         (SYSCALL)GetProcAddress,          0 },
 #else
   { "GetProcAddressA",         (SYSCALL)0,                       0 },
@@ -525,7 +526,7 @@ static struct win_syscall {
 #define osHeapCompact ((UINT(WINAPI*)(HANDLE,DWORD))aSyscall[27].pCurrent)
 
 
-#if !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_UWP)
   { "LoadLibraryW",            (SYSCALL)LoadLibraryW,            0 },
 #else
   { "LoadLibraryW",            (SYSCALL)0,                       0 },
@@ -572,9 +573,9 @@ static struct win_syscall {
   { "SetEndOfFile",            (SYSCALL)SetEndOfFile,            0 },
 #define osSetEndOfFile ((BOOL(WINAPI*)(HANDLE))aSyscall[36].pCurrent)
 
-  { "SetFilePointer",          (SYSCALL)SetFilePointer,          0 },
-#define osSetFilePointer ((DWORD(WINAPI*)(HANDLE,LONG,PLONG, \
-        DWORD))aSyscall[37].pCurrent)
+  { "SetFilePointerEx",        (SYSCALL)SetFilePointerEx,        0 },
+#define osSetFilePointerEx ((BOOL(WINAPI*)(HANDLE,LARGE_INTEGER,\
+        PLARGE_INTEGER,DWORD))aSyscall[37].pCurrent)
 
   { "Sleep",                   (SYSCALL)Sleep,                   0 },
 #define osSleep ((VOID(WINAPI*)(DWORD))aSyscall[38].pCurrent)
@@ -1754,27 +1755,11 @@ static int winHandleUnlock(HANDLE h, int iOff, int nByte){
 */
 static int winHandleSeek(HANDLE h, sqlite3_int64 iOffset){
   int rc = SQLITE_OK;             /* Return value */
+  LARGE_INTEGER x;                /* The offset */
 
-  LONG upperBits;                 /* Most sig. 32 bits of new offset */
-  LONG lowerBits;                 /* Least sig. 32 bits of new offset */
-  DWORD dwRet;                    /* Value returned by SetFilePointer() */
-
-  upperBits = (LONG)((iOffset>>32) & 0x7fffffff);
-  lowerBits = (LONG)(iOffset & 0xffffffff);
-
-  dwRet = osSetFilePointer(h, lowerBits, &upperBits, FILE_BEGIN);
-
-  /* API oddity: If successful, SetFilePointer() returns a dword
-  ** containing the lower 32-bits of the new file-offset. Or, if it fails,
-  ** it returns INVALID_SET_FILE_POINTER. However according to MSDN,
-  ** INVALID_SET_FILE_POINTER may also be a valid new offset. So to determine
-  ** whether an error has actually occurred, it is also necessary to call
-  ** GetLastError().  */
-  if( dwRet==INVALID_SET_FILE_POINTER ){
-    DWORD lastErrno = osGetLastError();
-    if( lastErrno!=NO_ERROR ){
-      rc = SQLITE_IOERR_SEEK;
-    }
+  x.QuadPart = iOffset;
+  if( osSetFilePointerEx(h, x, 0, FILE_BEGIN)==0 ){
+    rc = SQLITE_IOERR_SEEK;
   }
   OSTRACE(("SEEK file=%p, offset=%lld rc=%s\n", h, iOffset,sqlite3ErrName(rc)));
   return rc;
@@ -2057,14 +2042,13 @@ static int winHandleTruncate(HANDLE h, sqlite3_int64 nByte){
 */
 static int winHandleSize(HANDLE h, sqlite3_int64 *pnByte){ 
   int rc = SQLITE_OK;
-  DWORD upperBits = 0;
-  DWORD lowerBits = 0;
-
+  LARGE_INTEGER x;
   assert( pnByte );
-  lowerBits = osGetFileSize(h, &upperBits);
-  *pnByte = (((sqlite3_int64)upperBits)<<32) + lowerBits;
-  if( lowerBits==INVALID_FILE_SIZE && osGetLastError()!=NO_ERROR ){
+  if( osGetFileSizeEx(h, &x)==0 ){
     rc = SQLITE_IOERR_FSTAT;
+    *pnByte = 0;
+  }else{
+    *pnByte = x.QuadPart;
   }
   return rc;
 }
@@ -2265,17 +2249,14 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
   SimulateIOError(return SQLITE_IOERR_FSTAT);
   OSTRACE(("SIZE file=%p, pSize=%p\n", pFile->h, pSize));
   {
-    DWORD upperBits;
-    DWORD lowerBits;
-    DWORD lastErrno;
-
-    lowerBits = osGetFileSize(pFile->h, &upperBits);
-    *pSize = (((sqlite3_int64)upperBits)<<32) + lowerBits;
-    if(   (lowerBits == INVALID_FILE_SIZE)
-       && ((lastErrno = osGetLastError())!=NO_ERROR) ){
-      pFile->lastErrno = lastErrno;
+    LARGE_INTEGER x;
+    if( osGetFileSizeEx(pFile->h, &x)==0 ){
+      *pSize = 0;
+      pFile->lastErrno = osGetLastError();
       rc = winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
                        "winFileSize", pFile->zPath);
+    }else{
+      *pSize = x.QuadPart;
     }
   }
   OSTRACE(("SIZE file=%p, pSize=%p, *pSize=%lld, rc=%s\n",
@@ -4986,14 +4967,14 @@ static int winFullPathname(
 ** within the shared library, and closing the shared library.
 */
 static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
-  HANDLE h;
+  HANDLE h = 0;
   void *zConverted = winConvertFromUtf8Filename(zFilename);
   UNUSED_PARAMETER(pVfs);
   if( zConverted==0 ){
     OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
     return 0;
   }
-  h = osLoadLibraryW((LPCWSTR)zConverted);
+  h = osLoadLibraryW ? osLoadLibraryW((LPCWSTR)zConverted) : 0;
   OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)h));
   sqlite3_free(zConverted);
   return (void*)h;
@@ -5003,16 +4984,16 @@ static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   winGetLastErrorMsg(osGetLastError(), nBuf, zBufOut);
 }
 static void (*winDlSym(sqlite3_vfs *pVfs,void *pH,const char *zSym))(void){
-  FARPROC proc;
+  FARPROC proc = 0;
   UNUSED_PARAMETER(pVfs);
-  proc = osGetProcAddressA((HANDLE)pH, zSym);
+  proc = osGetProcAddressA ? osGetProcAddressA((HANDLE)pH, zSym) : 0;
   OSTRACE(("DLSYM handle=%p, symbol=%s, address=%p\n",
            (void*)pH, zSym, (void*)proc));
   return (void(*)(void))proc;
 }
 static void winDlClose(sqlite3_vfs *pVfs, void *pHandle){
   UNUSED_PARAMETER(pVfs);
-  osFreeLibrary((HANDLE)pHandle);
+  if( osFreeLibrary!=0 ) osFreeLibrary((HANDLE)pHandle);
   OSTRACE(("DLCLOSE handle=%p\n", (void*)pHandle));
 }
 #else /* if SQLITE_OMIT_LOAD_EXTENSION is defined: */
