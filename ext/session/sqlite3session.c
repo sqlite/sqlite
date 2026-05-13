@@ -7105,6 +7105,7 @@ int sqlite3changegroup_change_finish(
   char **pzErr
 ){
   int rc = SQLITE_OK;
+  char *zErr = 0;
   if( pGrp->cd.pTab ){
     SessionBuffer *aBuf = pGrp->cd.aBuf;
     int ii;
@@ -7116,14 +7117,14 @@ int sqlite3changegroup_change_finish(
         for(ii=0; ii<nBuf; ii++){
           if( pGrp->cd.pTab->abPK[ii] ){
             if( aBuf[ii].nBuf<=1 ){
-              *pzErr = sqlite3_mprintf(
+              zErr = sqlite3_mprintf(
                   "invalid change: %s value in PK of old.* record",
                   aBuf[ii].nBuf==1 ? "null" : "undefined"
               );
               rc = SQLITE_ERROR;
               break;
             }else if( aBuf[ii + nBuf].nBuf>0 ){
-              *pzErr = sqlite3_mprintf(
+              zErr = sqlite3_mprintf(
                   "invalid change: defined value in PK of new.* record"
               );
               rc = SQLITE_ERROR;
@@ -7131,7 +7132,7 @@ int sqlite3changegroup_change_finish(
             }
           }else 
           if( pGrp->bPatch==0 && (aBuf[ii].nBuf>0)!=(aBuf[ii+nBuf].nBuf>0) ){
-            *pzErr = sqlite3_mprintf(
+            zErr = sqlite3_mprintf(
                 "invalid change: column %d "
                 "- old.* value is %sdefined but new.* is %sdefined",
                 ii, aBuf[ii].nBuf ? "" : "un", aBuf[ii+nBuf].nBuf ? "" : "un"
@@ -7148,14 +7149,14 @@ int sqlite3changegroup_change_finish(
           if( (pGrp->cd.eOp==SQLITE_INSERT || pGrp->bPatch==0 || isPK)
            && aBuf[ii].nBuf==0
           ){
-            *pzErr = sqlite3_mprintf(
+            zErr = sqlite3_mprintf(
                 "invalid change: column %d is undefined", ii
             );
             rc = SQLITE_ERROR;
             break;
           }
           if( aBuf[ii].nBuf==1 && isPK ){
-            *pzErr = sqlite3_mprintf(
+            zErr = sqlite3_mprintf(
                 "invalid change: null value in PK"
             );
             rc = SQLITE_ERROR;
@@ -7205,6 +7206,11 @@ int sqlite3changegroup_change_finish(
     pGrp->cd.pTab = 0;
   }
 
+  if( pzErr ){
+    *pzErr = zErr;
+  }else{
+    sqlite3_free(zErr);
+  }
   return rc;
 }
 
