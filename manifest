@@ -1,5 +1,5 @@
-C Fix\sa\scopy/paste\serror\sin\sa\scomment.\s\sNo\schanges\sto\scode.
-D 2026-05-12T18:06:44.577
+C In\sHaiku\sOS\sbuilds,\sfix\sthe\s--editline\sconfigure\sflag\sto\sactually\slink\sagainst\slibedit\srather\sthan\slibreadline.
+D 2026-05-13T07:33:31.519
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c 740dc8cbfaedaff1f27b54b32e0015b22fa6c1a439492b9795968d61e56bab75
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 67683f214977a416baafc4c1020f9940ff047a7306b2292c5872d6287460b7d5
-F autosetup/sqlite-config.tcl 7c582ea156b2d0b8d3532f08bf8f435930385454e33ddda0b3cc93382667df1d
+F autosetup/sqlite-config.tcl 89bb129d9cd35f2779a4e69caec4ace0cd73a040910c24720b225897b9eca388
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl e014dd95900c7f9a34e8e0f460f47e94841059827bce8b4c49668b0c7ae3f1a0
@@ -2204,8 +2204,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bff9db9b5eb05ec3f99e35cb4c198d24bcb9ee7ceb2401bf55627788ac2b96db
-R 852861e2b81cf0ca8aa8c224723f706f
-U drh
-Z f2a1c09491e8f12c62b204209b7c8f58
+P 2741193e81750512cae8bb14ebc03fa11dde100da144488b4da1c81a351e4ff6
+R d5dd941ae29f91aac57119137237a7bd
+U stephan
+Z a9a308f5f006f1f56f22f1fa90b2cbfd
 # Remove this line to create a well-formed Fossil manifest.

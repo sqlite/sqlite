@@ -1067,7 +1067,7 @@ proc sqlite-get-readline-dir-list {} {
     }
     *-haiku {
       lappend dirs /boot/system/develop/headers
-      if {[opt-val with-readline-ldflags] in {auto ""}} {
+      if {![opt-bool editline] && [opt-val with-readline-ldflags] in {auto ""}} {
         # If the user did not supply their own --with-readline-ldflags
         # value, hijack that flag to inject options which are known to
         # work on Haiku OS installations.
