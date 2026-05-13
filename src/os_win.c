@@ -446,8 +446,8 @@ static struct win_syscall {
   { "GetTempPathW",            (SYSCALL)GetTempPathW,            0 },
 #define osGetTempPathW ((DWORD(WINAPI*)(DWORD,LPWSTR))aSyscall[18].pCurrent)
 
-  { "GetTickCount",            (SYSCALL)GetTickCount,            0 },
-#define osGetTickCount ((DWORD(WINAPI*)(VOID))aSyscall[19].pCurrent)
+  { "GetTickCount64",          (SYSCALL)GetTickCount64,          0 },
+#define osGetTickCount64 ((ULONGLONG(WINAPI*)(VOID))aSyscall[19].pCurrent)
 
   { "HeapAlloc",               (SYSCALL)HeapAlloc,               0 },
 #define osHeapAlloc ((LPVOID(WINAPI*)(HANDLE,DWORD, \
@@ -4995,7 +4995,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     xorMemory(&e, (unsigned char*)&pid, sizeof(DWORD));
   }
   {
-    DWORD cnt = osGetTickCount();
+    ULONGLONG cnt = osGetTickCount64();
     xorMemory(&e, (unsigned char*)&cnt, sizeof(DWORD));
   }
   {
