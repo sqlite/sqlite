@@ -383,7 +383,7 @@ static struct win_syscall {
 #define osCreateFileW ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD, \
         LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[2].pCurrent)
 
-#if defined(SQLITE_OS_WINRT)
+#if defined(SQLITE_UWP)
   { "CreateFileMappingFromApp",(SYSCALL)CreateFileMappingFromApp,0 },
 #else
   { "CreateFileMappingFromApp",(SYSCALL)0,                       0 },
@@ -392,7 +392,7 @@ static struct win_syscall {
         PSECURITY_ATTRIBUTES, \
         ULONG,ULONG64,PCWSTR))aSyscall[3].pCurrent)
 
-#if !defined(SQLITE_OS_WINRT)
+#if !defined(SQLITE_UWP)
   { "CreateFileMappingW",      (SYSCALL)CreateFileMappingW,      0 },
 #else
   { "CreateFileMappingW",      (SYSCALL)0,                       0 },
@@ -453,39 +453,75 @@ static struct win_syscall {
 #define osGetSystemTimeAsFileTime ((VOID(WINAPI*)( \
         LPFILETIME))aSyscall[17].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "GetTempPathW",            (SYSCALL)0,                       0 },
+#else
   { "GetTempPathW",            (SYSCALL)GetTempPathW,            0 },
+#endif
 #define osGetTempPathW ((DWORD(WINAPI*)(DWORD,LPWSTR))aSyscall[18].pCurrent)
 
   { "GetTickCount64",          (SYSCALL)GetTickCount64,          0 },
 #define osGetTickCount64 ((ULONGLONG(WINAPI*)(VOID))aSyscall[19].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "HeapAlloc",               (SYSCALL)0,                       0 },
+#else
   { "HeapAlloc",               (SYSCALL)HeapAlloc,               0 },
+#endif
 #define osHeapAlloc ((LPVOID(WINAPI*)(HANDLE,DWORD, \
         SIZE_T))aSyscall[20].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "HeapCreate",              (SYSCALL)0,                       0 },
+#else
   { "HeapCreate",              (SYSCALL)HeapCreate,              0 },
+#endif
 #define osHeapCreate ((HANDLE(WINAPI*)(DWORD,SIZE_T, \
         SIZE_T))aSyscall[21].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "HeapDestroy",             (SYSCALL)0,                       0 },
+#else
   { "HeapDestroy",             (SYSCALL)HeapDestroy,             0 },
+#endif
 #define osHeapDestroy ((BOOL(WINAPI*)(HANDLE))aSyscall[22].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "HeapFree",                (SYSCALL)0,                       0 },
+#else
   { "HeapFree",                (SYSCALL)HeapFree,                0 },
+#endif
 #define osHeapFree ((BOOL(WINAPI*)(HANDLE,DWORD,LPVOID))aSyscall[23].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "HeapReAlloc",             (SYSCALL)0,                       0 },
+#else
   { "HeapReAlloc",             (SYSCALL)HeapReAlloc,             0 },
+#endif
 #define osHeapReAlloc ((LPVOID(WINAPI*)(HANDLE,DWORD,LPVOID, \
         SIZE_T))aSyscall[24].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "HeapSize",                (SYSCALL)0,                       0 },
+#else
   { "HeapSize",                (SYSCALL)HeapSize,                0 },
+#endif
 #define osHeapSize ((SIZE_T(WINAPI*)(HANDLE,DWORD, \
         LPCVOID))aSyscall[25].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "HeapValidate",            (SYSCALL)0,                       0 },
+#else
   { "HeapValidate",            (SYSCALL)HeapValidate,            0 },
+#endif
 #define osHeapValidate ((BOOL(WINAPI*)(HANDLE,DWORD, \
         LPCVOID))aSyscall[26].pCurrent)
 
+#ifdef SQLITE_UWP
+  { "HeapCompact",             (SYSCALL)0,                       0 },
+#else
   { "HeapCompact",             (SYSCALL)HeapCompact,             0 },
+#endif
 #define osHeapCompact ((UINT(WINAPI*)(HANDLE,DWORD))aSyscall[27].pCurrent)
 
 
@@ -504,7 +540,7 @@ static struct win_syscall {
         LPOVERLAPPED))aSyscall[30].pCurrent)
 
 #if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
- && !defined(SQLITE_OS_WINRT)
+ && !defined(SQLITE_UWP)
   { "MapViewOfFile",           (SYSCALL)MapViewOfFile,           0 },
 #else
   { "MapViewOfFile",           (SYSCALL)0,                       0 },
@@ -513,7 +549,7 @@ static struct win_syscall {
         SIZE_T))aSyscall[31].pCurrent)
 
 #if (!defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0) \
- && defined(SQLITE_OS_WINRT)
+ && defined(SQLITE_UWP)
   { "MapViewOfFileFromApp",    (SYSCALL)MapViewOfFileFromApp,   0 },
 #else
   { "MapViewOfFileFromApp",    (SYSCALL)0,                      0 },
@@ -757,6 +793,9 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
 }
 
 #ifdef SQLITE_WIN32_MALLOC
+#ifdef SQLITE_UWP
+# error SQLITE_WIN32_MALLOC is incompatible with SQLITE_UWP
+#endif
 /*
 ** If a Win32 native heap has been configured, this function will attempt to
 ** compact it.  Upon success, SQLITE_OK will be returned.  Upon failure, one
@@ -3627,7 +3666,7 @@ static int winShmMap(
       HANDLE hMap = NULL;         /* file-mapping handle */
       void *pMap = 0;             /* Mapped memory region */
 
-#ifdef SQLITE_OS_WINRT
+#ifdef SQLITE_UWP
       hMap = osCreateFileMappingFromApp(hShared, NULL, protect, nByte, NULL);
 #else
       hMap = osCreateFileMappingW(hShared, NULL, protect, 0, nByte, NULL);
@@ -3638,7 +3677,7 @@ static int winShmMap(
       if( hMap ){
         int iOffset = pShmNode->nRegion*szRegion;
         int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
-#ifdef SQLITE_OS_WINRT
+#ifdef SQLITE_UWP
         pMap = osMapViewOfFileFromApp(hMap, flags,
             iOffset - iOffsetShift, szRegion + iOffsetShift
         );
@@ -3779,7 +3818,7 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
       flags |= FILE_MAP_WRITE;
     }
 #endif
-#ifdef SQLITE_OS_WINRT
+#ifdef SQLITE_UWP
     pFd->hMap = osCreateFileMappingFromApp(pFd->h, NULL, protect, nMap, NULL);
 #else
     pFd->hMap = osCreateFileMappingW(pFd->h, NULL, protect,
@@ -3797,7 +3836,7 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
     }
     assert( (nMap % winSysInfo.dwPageSize)==0 );
     assert( sizeof(SIZE_T)==sizeof(sqlite3_int64) || nMap<=0xffffffff );
-#ifdef SQLITE_OS_WINRT
+#ifdef SQLITE_UWP
     pNew = osMapViewOfFileFromApp(pFd->hMap, flags, 0, (SIZE_T)nMap);
 #else
     pNew = osMapViewOfFile(pFd->hMap, flags, 0, 0, (SIZE_T)nMap);
@@ -4144,7 +4183,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
       return SQLITE_IOERR_NOMEM_BKPT;
     }
-    if( osGetTempPathW(nMax, zWidePath)==0 ){
+    if( osGetTempPathW==0 || osGetTempPathW(nMax, zWidePath)==0 ){
       sqlite3_free(zWidePath);
       sqlite3_free(zBuf);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
@@ -5040,6 +5079,9 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
     xorMemory(&e, (unsigned char*)&i, sizeof(LARGE_INTEGER));
   }
 #if SQLITE_WIN32_USE_UUID
+#ifdef SQLITE_UWP
+# error SQLITE_WIN32_USE_UUID is incompatible with SQLITE_UWP
+#endif
   {
     UUID id;
     memset(&id, 0, sizeof(UUID));

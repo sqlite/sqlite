@@ -1,5 +1,5 @@
-C In\sthe\sWindows\sOS\sinterface,\suse\sCreateFileMappingFromApp()\sand\nMapViewOfFilFromApp()\sif\sSQLITE_OS_WINRT\sis\sdefined.
-D 2026-05-13T15:11:04.511
+C Change\sto\scompile-time\soption\sthat\somits\snon-UWP\ssystem\scalls\sto\nSQLITE_UWP.\s\sTakes\ssteps\sto\seliminate\sall\snon-UWP\ssystem\scalls\swhen\sthat\ncompile-time\soption\sis\sused.
+D 2026-05-13T18:07:01.202
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -722,7 +722,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c e7d96727db5b67e39d590a68cc61c86daf4c093c36c011a09ebfb521182ec28d
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c a07dce662f6c4e18098f6faa9f7ec7cf311f56ee9151bed2aad4dcd55852c9e2
-F src/os_win.c 8b717f9ceef3dae9de9b54fe8f5b58a11fc89f8a043ec35619d0dcbce8d64629
+F src/os_win.c c9e1a153e9060a9ce98ae447b305f74dbd619dc62f1e52c52f25f0709031554d
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fbec9063ea139dfa5d94ce540671752b89f8e8dc38f8a1f614bab1aa04a2dd40
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4b7f0130d68c7a0b98e87d09d0a661c85554215cb111478305307960deab3921
-R dbda3f62b7f97cec2a0b0264a507d59f
+P 3c51436b43ab77b88134851a2773147b49a3c4fb5b0416db5e318b6e12d3b708
+R 0f25f96371c055952175c297cbaf04d6
 U drh
-Z 0e29719eca3494ab962ae7aa1c9d1542
+Z 021116e6f51fa817faa469cbfc4eae38
 # Remove this line to create a well-formed Fossil manifest.
