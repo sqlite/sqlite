@@ -14,11 +14,13 @@ set fd [open $FILENAME rb]
 set newtext {}
 set ctr 0
 set entryPending 0
+set nocaps 0
 while {![eof $fd]} {
   set line [gets $fd]
   if {$line eq "" && [eof $fd]} break
   if {[regexp {^#define os([A-Z][_a-zA-Z0-9]+) } $line all nm]} {
-    if {[regexp {^Cygwin} $nm]} {set nm [string tolower $nm]}
+    if {$nm eq "Getenv"} {set nocaps 1}
+    if {$nocaps} {set nm [string tolower $nm]}
     set syscall_name($ctr) $nm
     set syscall_idx($nm) $ctr
     set entryPending 1

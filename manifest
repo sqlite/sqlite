@@ -1,5 +1,5 @@
-C On\sWindows,\suse\sonly\sGetSystemTimeAsFileTime()\sand\snot\sGetSystemTime().\nAlso\sadd\sa\sTCL\sscript\sthat\swill\srenumber\sthe\ssystemcall\sthunk\sfor\sWindows.
-D 2026-05-13T13:55:31.932
+C In\sthe\sWindows\sOS\sinterface,\suse\sCreateFileMappingFromApp()\sand\nMapViewOfFilFromApp()\sif\sSQLITE_OS_WINRT\sis\sdefined.
+D 2026-05-13T15:11:04.511
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -722,7 +722,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c e7d96727db5b67e39d590a68cc61c86daf4c093c36c011a09ebfb521182ec28d
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c a07dce662f6c4e18098f6faa9f7ec7cf311f56ee9151bed2aad4dcd55852c9e2
-F src/os_win.c 908bde3c5d029a5f338db5e21c9dca0979060390c4a8616cee786955f6c43603
+F src/os_win.c 8b717f9ceef3dae9de9b54fe8f5b58a11fc89f8a043ec35619d0dcbce8d64629
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fbec9063ea139dfa5d94ce540671752b89f8e8dc38f8a1f614bab1aa04a2dd40
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2169,7 +2169,7 @@ F tool/omittest-msvc.tcl d6b8f501ac1d7798c4126065030f89812379012cad98a1735d6d722
 F tool/omittest.tcl 436b7072e00e25e9b77145a9f67aa8e0eeabd186168827435fd03f8f981aac32
 F tool/opcodesum.tcl 740ed206ba8c5040018988129abbf3089a0ccf4a
 F tool/pagesig.c f98909b4168d9cac11a2de7f031adea0e2f3131faa7515a72807c03ec58eafeb
-F tool/renumber-win-thunk.tcl 19a06c1bd66fa9f0c58de6ee051aad1f6b956f020d71387ccbe456f048c12e8c
+F tool/renumber-win-thunk.tcl d6320eeba3a1ddfa4624003ad77e96a01819e56b4df58a698c2267ea71b79d39
 F tool/replace.tcl 511c61acfe563dfb58675efb4628bb158a13d48ff8322123ac447e9d25a82d9a
 F tool/restore_jrnl.tcl 1079ecba47cc82fa82115b81c1f68097ab1f956f357ee8da5fc4b2589af6bd98
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8be57f96f6a72753fd983d7b6b9924c3b60f57c5664eeb7dfe7a0799739597c0
-R 6bce906e3e36ec3e997e4af868126bac
+P 4b7f0130d68c7a0b98e87d09d0a661c85554215cb111478305307960deab3921
+R dbda3f62b7f97cec2a0b0264a507d59f
 U drh
-Z 9580b0800b750e87c90fb5dc45800b49
+Z 0e29719eca3494ab962ae7aa1c9d1542
 # Remove this line to create a well-formed Fossil manifest.
