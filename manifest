@@ -1,5 +1,5 @@
-C Use\sGetTickCount64()\sinstead\sof\sGetTickCount()\sin\sWindows,\sfor\sportability\nto\sUWP.
-D 2026-05-13T10:47:40.516
+C Slightly\srework\sthe\s--editline\sconfigure\sflag\sfor\spurposes\sof\sdistinguishing\sbetween\sthe\stwo\sconventional\slibedit\sheaders.\sWhen\susing\slibedit,\sinvoke\ssetlocale(),\swhich\sappears\sto\sresolve\s[forum:aad7a634916ff050|forum\spost\saad7a63491]'s\sreport\sof\snon-ASCII\sinput\sfailng\sto\swork\swhen\slinking\sagainst\slibedit.
+D 2026-05-13T12:06:27.818
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -47,7 +47,7 @@ F autosetup/find_tclconfig.tcl e64886ffe3b982d4df42cd28ed91fe0b5940c2c5785e126c1
 F autosetup/jimsh0.c 740dc8cbfaedaff1f27b54b32e0015b22fa6c1a439492b9795968d61e56bab75
 F autosetup/pkg-config.tcl 4e635bf39022ff65e0d5434339dd41503ea48fc53822c9c5bde88b02d3d952ba
 F autosetup/proj.tcl 67683f214977a416baafc4c1020f9940ff047a7306b2292c5872d6287460b7d5
-F autosetup/sqlite-config.tcl 89bb129d9cd35f2779a4e69caec4ace0cd73a040910c24720b225897b9eca388
+F autosetup/sqlite-config.tcl 2205b8bcc193a5d46584ebc1cf44c7a93a977d155e20dc38b18dcce720e58074
 F autosetup/system.tcl 51d4be76cd9a9074704b584e5c9cbba616202c8468cf9ba8a4f8294a7ab1dba9
 F autosetup/teaish/README.txt b40071e6f8506500a2f7f71d5fc69e0bf87b9d7678dd9da1e5b4d0acbf40b1ca
 F autosetup/teaish/core.tcl e014dd95900c7f9a34e8e0f460f47e94841059827bce8b4c49668b0c7ae3f1a0
@@ -737,7 +737,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c fcc406bfb055bee9954ee77c023f4a2a66a24bcdf1573516a72280811a269c20
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4c05cde130f26991b7411d8c6809e0630625e18078742c963a047b4b9cc01d49
-F src/shell.c.in 9ee66535e9da2ca2bd504a5925be1958c0e8f269d80a87109ffdc5ec6e9b4169
+F src/shell.c.in 94bbb5c4824f3f5ed08ccc4c3df4590f08b83fedbeed2be8d0569f8394ee6ac7
 F src/sqlite.h.in 39d2e09114d2bdb7afd998f4a469c8f8cd065f8093835a7d0422f260fc78fb4f
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 9788c301f95370fa30e808861f1d2e6f022a816ddbe2a4f67486784c1b31db2e
@@ -2204,8 +2204,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 642168d386074d1398b52c2d952e4cb153617f7bed82fb99d76b6d28dc8242bc
-R 687c24ced8b199134f3377cc1f9dfa5b
-U drh
-Z e9b0ac1110be2ac1d47ed3e85181d92f
+P ea65ae964e21541d8f7c00ec679a608d34bc94408d9cc479b2d7fb08bf0e3cdf
+R 0859fa6c24a008f93a8dc4c1c4810325
+U stephan
+Z d9aa541a927c3253adaef6fc67196579
 # Remove this line to create a well-formed Fossil manifest.
