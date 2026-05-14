@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3changegroup_change_finish()\sAPI\sso\sthat\sit\scorrectly\shandles\sNULL\sbeing\spassed\sfor\sthe\spzErr\sparameter.
-D 2026-05-13T20:37:30.527
+C Correction\sto\sthe\sdocumentation\sfor\ssqlite3_uri_int64().
+D 2026-05-14T10:36:50.153
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -738,7 +738,7 @@ F src/resolve.c fcc406bfb055bee9954ee77c023f4a2a66a24bcdf1573516a72280811a269c20
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4c05cde130f26991b7411d8c6809e0630625e18078742c963a047b4b9cc01d49
 F src/shell.c.in 9827c3a059dc5ffe17770e7f80d92988462f80a35486b84197cb4372dd9fd8c6
-F src/sqlite.h.in 39d2e09114d2bdb7afd998f4a469c8f8cd065f8093835a7d0422f260fc78fb4f
+F src/sqlite.h.in 749454ec71c875bc130d399ff9a7e47191d143d1b9d8b4af3839b6028df9eda9
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 9788c301f95370fa30e808861f1d2e6f022a816ddbe2a4f67486784c1b31db2e
 F src/sqliteInt.h e0cdf7f4418e84fecf4826756867a9dfc4981f7cf5b3b294043c8c887a817729
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3ddc07110dacef98c14b852dcdc4f11d1c0f4061008bf3a61e2df707b0dc6c6b
-R 1dab4a7992096fd33a1b7a8bbcb2d58c
-U dan
-Z 369ba48121df91d9d1fcfb40348f03a0
+P f81d6d7bc8943729f678a3b62921a96764b15b9cc11d8a5753e48210a1b59617
+R 10bfde9f38716ccd657233122c39e6ff
+U drh
+Z ea9fafa17a29cd047063425ba2cb3b43
 # Remove this line to create a well-formed Fossil manifest.
