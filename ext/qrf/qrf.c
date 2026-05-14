@@ -2746,7 +2746,7 @@ static void qrfInitialize(
   memcpy(&p->spec, pSpec, sz);
   if( p->spec.zNull==0 ) p->spec.zNull = "";
   p->mxWidth = p->spec.nScreenWidth;
-  if( p->mxWidth<=0 ) p->mxWidth = QRF_MAX_WIDTH;
+  if( p->mxWidth<=0 ) p->mxWidth = 2147483647;
   p->mxHeight = p->spec.nLineLimit;
   if( p->mxHeight<=0 ) p->mxHeight = 2147483647;
   if( p->spec.eStyle>QRF_STYLE_Table ) p->spec.eStyle = QRF_Auto;
