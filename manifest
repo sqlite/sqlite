@@ -1,5 +1,5 @@
-C In\sQRF,\srelax\sthe\sconstraint\son\sthe\sscreen\swidth\sso\sthat\sit\scan\sbe\sas\nwide\sas\sa\s32-bit\ssigned\sinteger\scan\scount.\n[forum:/forumpost/2570051b60|Forum\spost\s2570051b60].
-D 2026-05-14T12:46:41.607
+C Harden\sthe\sQRF\sextension\sagainst\sinteger\soverflow\sproblems.
+D 2026-05-14T13:29:59.720
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -423,7 +423,7 @@ F ext/misc/zipfile.c 5a583b5e72b4d777dc9f845529e6bd185d58024b633aafc93588679c787
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 9e644615d7d7b77ef7e9db798765679e50c5ed12eda48bce21c9ef9eb4715e9d
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
-F ext/qrf/qrf.c a022bcfb9c936ba5257e1e637146f2a7d3e850319bba35fda8a8179d0f1059e6
+F ext/qrf/qrf.c 02fce2add53dda452ca7b74a3e8f5de3c2b75919fd1a29f7393c1e4cf1272370
 F ext/qrf/qrf.h 7a832022bc3f40dc09fff1cb6f18025395a19313de090265a4a1d22bb9b400be
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 52dd437d51d3c1af0777350daeebf1159033eede3f58fcc5ebaeaec8869ffaff
-R 0ac368fe653982cb58aa5110e82ff16d
+P 91439d95dc81adebf8226f2b7c33ca62a4b7163cfc14e03993524aa17b5767f3
+R dcedd1032c06cce77f779cd3127058c3
 U drh
-Z 5e0583ded9ec751434acafae92224280
+Z b4410a4f1ed1fa549c084c2e69dfa599
 # Remove this line to create a well-formed Fossil manifest.
