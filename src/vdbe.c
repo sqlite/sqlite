@@ -7147,11 +7147,18 @@ case OP_SqlExec: {
   break;
 }
 
-/* Opcode: ParseSchema P1 * * P4 *
+/* Opcode: ParseSchema P1 * * P4 P5
 **
 ** Read and parse all entries from the schema table of database P1
 ** that match the WHERE clause P4.  If P4 is a NULL pointer, then the
 ** entire schema for P1 is reparsed.
+**
+** When P4 is NULL, the P5 value is used as the mFlags argument
+** to sqlite3InitOne().  In other words, P5 should be a mask composed
+** of INITFLAG_* values.
+**
+** The P4==0 case is only used by ALTER TABLE and P5!=0 for all such
+** cases.  For uses other than ALTER TABLE, P4<>0 and P5==0.
 **
 ** This opcode invokes the parser to create a new virtual machine,
 ** then runs the new virtual machine.  It is thus a re-entrant opcode.
@@ -7180,6 +7187,7 @@ case OP_ParseSchema: {
 
 #ifndef SQLITE_OMIT_ALTERTABLE
   if( pOp->p4.z==0 ){
+    assert( pOp->p5!=0 );
     sqlite3SchemaClear(db->aDb[iDb].pSchema);
     db->mDbFlags &= ~DBFLAG_SchemaKnownOk;
     rc = sqlite3InitOne(db, iDb, &p->zErrMsg, pOp->p5);
@@ -7188,6 +7196,7 @@ case OP_ParseSchema: {
   }else
 #endif
   {
+    assert( pOp->p5==0 );
     zSchema = LEGACY_SCHEMA_TABLE;
     initData.db = db;
     initData.iDb = iDb;

@@ -556,11 +556,21 @@ void sqlite3VdbeExplainPop(Parse *pParse){
 ** sqlite3VdbeAddOp4() since it needs to also needs to mark all btrees
 ** as having been used.
 **
-** The zWhere string must have been obtained from sqlite3_malloc().
+** zWhere is a WHERE clause that defines which entries of the schema
+** to reparse.  If zWhere==0, that means all entries.  p5 is a mask
+** of INITFLAG_* values for the parse.
+**
+** In the current usage, the following are always true:
+**
+**     ALTER TABLE:     zWhere==0,  p5!=0
+**     Otherwise:       zWhere!=0,  p5==0
+**
+** The zWhere string must have been obtained from sqlite3DbMalloc().
 ** This routine will take ownership of the allocated memory.
 */
 void sqlite3VdbeAddParseSchemaOp(Vdbe *p, int iDb, char *zWhere, u16 p5){
   int j;
+  assert( (zWhere==0)==(p5!=0) || p->db->mallocFailed );
   sqlite3VdbeAddOp4(p, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
   sqlite3VdbeChangeP5(p, p5);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
