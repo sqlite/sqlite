@@ -1,5 +1,5 @@
-C Have\sthe\ssqlite_dbpage\smodule\scorrectly\shandle\sconstraints\sof\sthe\sform\s"WHERE\spgno=$pgno"\swhen\s$pgno\sis\san\sinteger\sthat\scannot\sbe\srepresented\sas\sa\ssigned,\s32-bit\svalue.
-D 2026-05-15T17:24:34.926
+C Have\swindow\sfunctions\ssum(),\stotal()\sand\savg()\scorrectly\shandle\sthe\sobscure\scase\swhere\sinteger\soverflow\soccurs\sas\spart\sof\sthe\ssame\sstep\sthat\sadds\sthe\sfirst\sreal\svalue\sto\sthe\srunning\stotal.
+D 2026-05-15T18:36:11.222
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -690,7 +690,7 @@ F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c 68400681c5f6e41231d2c85abf6bb432aeeb2e36c4abdf90eb7b78551a5ce0f3
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
-F src/func.c e6a68dccc9c3c2f638bbf5d29ee84cadd48ded246fbd6c4cc56ddc957e99305f
+F src/func.c e8525e6c5493149680b0ebd3352e7f004ee7283181f24809b603329afe911443
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2083,7 +2083,7 @@ F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af
 F test/windowB.test aad7c31739999f68a98a813cfd78390918fc70f56d2d925317a1523cab548ecf
 F test/windowC.test 6fd75f5bb2f1343d34e470e36e68f0ff638d8a42f6aa7d99471261b31a0d42f2
 F test/windowD.test 65cf5a765fb8072450e8a0de2979ce7f09a38d87724fe1280c6444073e3da49b
-F test/windowE.test d045a5fbaaf50ecac9483e1249dd317ba4f9d189c405a730ba6effdefb87b94f
+F test/windowE.test a82a4213c7b923220de5e457cb76c537a5d10d5e94641e3055ba21b79870a7fb
 F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387019e0
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 15094c1529424e62f798bc679e3fe9dfab6e8ba2f7dfe8c923b6248c31660a7c
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1249eeb1b9759038b6d10dcd8d65f64f81e8529b28e5e24f9fc5759e9a1c88a5
-R b80f10bd411cc04d5c342560cb3972e4
+P 350152d5124b71b3dd640c109dbac5f05a3a9583a335fbe25f707e1b754c1c74
+R c50b0f6f28baeeeed7b287faad56d833
 U dan
-Z ff5ce32ec957688e6c74d7127922cd47
+Z 51fc95b4ddd107a4261fc9ca2af10aec
 # Remove this line to create a well-formed Fossil manifest.
