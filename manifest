@@ -1,5 +1,5 @@
-C If\sthere\sis\sa\sWHERE\sclause\sconstraint\sof\sthe\sform\s"a=$var",\sthen\nautomatically\sreprepare\sthe\squery\sif\sthe\sbinding\sof\s$var\schanges,\sas\nthat\scould\saffect\sthe\squery\splan.
-D 2026-05-14T22:39:41.142
+C Have\sthe\ssqlite_dbpage\smodule\scorrectly\shandle\sconstraints\sof\sthe\sform\s"WHERE\spgno=$pgno"\swhen\s$pgno\sis\san\sinteger\sthat\scannot\sbe\srepresented\sas\sa\ssigned,\s32-bit\svalue.
+D 2026-05-15T17:24:34.926
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -684,7 +684,7 @@ F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804a
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c f216b970ce99c5a657556cf1f17e7ddd494515d3beb63df426bf59ff43bd3d9a
 F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
-F src/dbpage.c c9ea81c11727f27e02874611e92773e68e2a90a875ef2404b084564c235fd91f
+F src/dbpage.c 98c716bc5c0c70af4e7934bfcddd707f14e78b5d4cf1e0602a07b485e1af2e74
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c 68400681c5f6e41231d2c85abf6bb432aeeb2e36c4abdf90eb7b78551a5ce0f3
@@ -1043,7 +1043,7 @@ F test/dbfuzz001.test 6c9a4622029d69dc38926f115864b055cb2f39badd25ec22cbfb130c8b
 F test/dbfuzz2-seed1.db e6225c6f3d7b63f9c5b6867146a5f329d997ab105bee64644dc2b3a2f2aebaee
 F test/dbfuzz2.c 4b3c12de4d98b1b2d908ab03d217d4619e47c8b23d5e67f8a6f2b1bdee7cae23
 F test/dblwidth-a.sql 59dd59aa78ce8fd8ab631a3816516831f4e947b143039257e6fe132c3cea4171
-F test/dbpage.test 63fab1eb026bada121107e53436fa749bbf83281dc9dea17af422f7a5c0f289f
+F test/dbpage.test 2e3a50548edea551ef974b8f121f975852de9c5b16cb3284ac4bf2c9f2ed5a62
 F test/dbpagefault.test ea39de2ca86041a9c6df1135645180a76d0a8da93ac159e2fafe38e39636530b
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test a36518c0f0951d8fd5a3dc36f99948ad1af93fb7fc0d2e03e5bb5a643186cf52
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 83d3a0d39b0b36a47003206d390935d4c94f7a906ada02f69e0ad1eef2f22d59 224e827e87ac8aa4b18ff9b2193decbdcd832579bf6b6e0883c03db90ebd5319
-R 7e1037d3313bf3f6b8b44b87c5454258
-U drh
-Z 047b8dbfe663ad9d31f3cd83ad393dda
+P 1249eeb1b9759038b6d10dcd8d65f64f81e8529b28e5e24f9fc5759e9a1c88a5
+R b80f10bd411cc04d5c342560cb3972e4
+U dan
+Z ff5ce32ec957688e6c74d7127922cd47
 # Remove this line to create a well-formed Fossil manifest.
