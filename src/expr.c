@@ -4705,6 +4705,11 @@ static int exprNodeCanReturnSubtype(Walker *pWalker, Expr *pExpr){
   int n;
   FuncDef *pDef;
   sqlite3 *db;
+  if( pExpr->op==TK_CASE || pExpr->op==TK_UPLUS 
+   || pExpr->op==TK_COLLATE || pExpr->op==TK_CAST 
+  ){
+    return WRC_Continue;
+  }
   if( pExpr->op!=TK_FUNCTION ){
     return WRC_Prune;
   }

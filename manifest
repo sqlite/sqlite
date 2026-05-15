@@ -1,5 +1,5 @@
-C Have\swindow\sfunctions\ssum(),\stotal()\sand\savg()\scorrectly\shandle\sthe\sobscure\scase\swhere\sinteger\soverflow\soccurs\sas\spart\sof\sthe\ssame\sstep\sthat\sadds\sthe\sfirst\sreal\svalue\sto\sthe\srunning\stotal.
-D 2026-05-15T18:36:11.222
+C When\susing\san\sindex\son\sa\sCASE\sexpression\sthat\smay\sreturn\sa\svalue\swith\sa\ssubtype,\savoid\sdiscarding\sany\ssubtype.
+D 2026-05-15T19:44:24.882
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -687,7 +687,7 @@ F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c 98c716bc5c0c70af4e7934bfcddd707f14e78b5d4cf1e0602a07b485e1af2e74
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
-F src/expr.c 68400681c5f6e41231d2c85abf6bb432aeeb2e36c4abdf90eb7b78551a5ce0f3
+F src/expr.c bacfbcd6b349bb836be3e09651923138614fe341b16cddc5b4dcce569cc11657
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c e8525e6c5493149680b0ebd3352e7f004ee7283181f24809b603329afe911443
@@ -1694,7 +1694,7 @@ F test/subquery.test 23087f9b1c15ab9cc5231d04946bdebc51db527c95eb9d7434a2222127e
 F test/subquery2.test ab96ff3fa9c4e3dce0d699f74e61c50250ed4335bc8f400e127707d552a8999e
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test a673e3763e247e9b5e497a6cacbaf3da2bd8ec8921c0677145c109f2e633f36b
-F test/subtype1.test 96fd2a59bfc845c955b5f339d23b37ef4d50de5f8a04acd1450a68605fa2e3e7
+F test/subtype1.test 1ca002dbda34c342c2dee7cffac220b77d67edfbffd43124978956747f534a96
 F test/superlock.test 85256830339a6871ce36a2ef591c3f67716a701b5497788fb2068b90159c2442
 F test/swarmvtab.test 250231404fcac88f61a6c147bb0e3a118ed879278cd3ccb0ae2d3a729e1e8e26
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
@@ -2205,8 +2205,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 350152d5124b71b3dd640c109dbac5f05a3a9583a335fbe25f707e1b754c1c74
-R c50b0f6f28baeeeed7b287faad56d833
+P 614f8cbc374c7a2d39826706f16ab1c17e75abb420a70be356c7eefa95b271a5
+R 7f712de5bacc1146fd2700d6cc08652f
+T *branch * index-on-case-expr-subtype
+T *sym-index-on-case-expr-subtype *
+T -sym-trunk *
 U dan
-Z 51fc95b4ddd107a4261fc9ca2af10aec
+Z 8202b1d00ea8af94563d96cd91a8fa5d
 # Remove this line to create a well-formed Fossil manifest.

@@ -84,4 +84,33 @@ do_execsql_test subtype1-400 {
   SELECT id, subtype(if(json_valid(j,6),j->'a')) FROM t400;
 } {1 74 2 0}
 
+#-------------------------------------------------------------------------
+# Test that indexes on expressions do not alter subtypes.
+#
+reset_db
+do_execsql_test subtype1-500 {
+  CREATE TABLE t1(id, j);
+  INSERT INTO t1 VALUES (1,'{a:{x:1,y:2},b:{x:3,y:4}}'), (2,'not json');
+}
+
+foreach {tn expr st} {
+  510 "(CASE WHEN json_valid(j, 6) THEN j->'a' ELSE j END)"  74
+  520 "+(CASE WHEN json_valid(j, 6) THEN j->'a' ELSE j END)" 74
+  530 "-(CASE WHEN json_valid(j, 6) THEN j->'a' ELSE j END)" 0
+  540 "if( json_valid(j, 6), j->'a' ) " 74
+  550 "if( json_valid(j, 6), j->'a' ) COLLATE nocase" 74
+  560 "CAST( if( json_valid(j, 6), j->'a' ) AS TEXT )" 74
+} {
+  do_execsql_test subtype1-$tn.1 "
+    SELECT id, subtype( $expr ) FROM t1;
+  " [list 1 $st 2 0]
+
+  do_execsql_test subtype1-$tn.2 "
+    DROP INDEX IF EXISTS i1;
+    CREATE INDEX i1 ON t1( $expr );
+    SELECT id, subtype( $expr ) FROM t1 INDEXED BY i1 ORDER BY id;
+  " [list 1 $st 2 0]
+}
+
+
 finish_test
