@@ -1,5 +1,5 @@
-C When\susing\san\sindex\son\sa\sCASE\sexpression\sthat\smay\sreturn\sa\svalue\swith\sa\ssubtype,\savoid\sdiscarding\sany\ssubtype.
-D 2026-05-15T19:44:24.882
+C Improved\scomment\son\ssqlite3ExprCanReturnSubtype()\sas\swell\sas\sone\svery\nminor\sefficiency\simprovement.
+D 2026-05-16T16:02:08.141
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -687,7 +687,7 @@ F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c 98c716bc5c0c70af4e7934bfcddd707f14e78b5d4cf1e0602a07b485e1af2e74
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
-F src/expr.c bacfbcd6b349bb836be3e09651923138614fe341b16cddc5b4dcce569cc11657
+F src/expr.c c7af3a4d0836d31ea5ce3afa769c371d04a5e6a31b5b28d08cc712acbe8c891e
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c e8525e6c5493149680b0ebd3352e7f004ee7283181f24809b603329afe911443
@@ -2205,11 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 614f8cbc374c7a2d39826706f16ab1c17e75abb420a70be356c7eefa95b271a5
-R 7f712de5bacc1146fd2700d6cc08652f
-T *branch * index-on-case-expr-subtype
-T *sym-index-on-case-expr-subtype *
-T -sym-trunk *
-U dan
-Z 8202b1d00ea8af94563d96cd91a8fa5d
+P 69c9a82cbaea7b6faa6a357dd884b1e0d2bc684d847efb31a2d64c75fabf5428
+R 2a2f348cdea2758e17a1878550fc52a0
+U drh
+Z e0cf26d7b2dbc3e008636c0b83266f18
 # Remove this line to create a well-formed Fossil manifest.
