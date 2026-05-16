@@ -211,5 +211,15 @@ do_execsql_test 7.3 {
   );
 } {1}
 
-finish_test
+#--------------------------------------------------------------------------
+# Forum post 2026-05-15T11:23:01Z
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(x REAL);
+  CREATE TABLE t2(x REAL);
+  INSERT INTO t1 VALUES(1.0);
+  SELECT count(*) FROM t1 FULL JOIN t2 USING(x) WHERE x='1';
+} 1
 
+finish_test
