@@ -1,5 +1,5 @@
-C Have\swindow\sfunctions\ssum(),\stotal()\sand\savg()\scorrectly\shandle\sthe\sobscure\scase\swhere\sinteger\soverflow\soccurs\sas\spart\sof\sthe\ssame\sstep\sthat\sadds\sthe\sfirst\sreal\svalue\sto\sthe\srunning\stotal.\sFix\sfor\sforum\spost\s[forum:ec538b04ce\s|\sec538b04ce].
-D 2026-05-16T17:09:12.577
+C Fix\sfalse-negatives\sin\sthe\ssqlite3ExprCanReturnSubtype()\sroutine\shaving\nto\sdo\swith\sCASE,\sCAST,\sand\sCOLLATE\sexpressions\sand\sthe\s"+"\sno-op\soperator.
+D 2026-05-16T17:34:27.395
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -686,7 +686,7 @@ F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c 98c716bc5c0c70af4e7934bfcddd707f14e78b5d4cf1e0602a07b485e1af2e74
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 1f2268d6fe3c78fc1bf794ba65d7026498b78e2342ffaf85825dedae546e6fde
-F src/expr.c 51e9c77ff5d9a21439e611fe6571a3cd50387e526e13c5614fd407e5b8571930
+F src/expr.c 36b66d6b5b44a88ec2d54009257b72ad80405905c3910782a35bd8be80dc19c3
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c ff7ac757da8ef84e8e2d6d060496678c7095291057ee0005efb3524a7ceda561
@@ -1688,7 +1688,7 @@ F test/subquery.test 23087f9b1c15ab9cc5231d04946bdebc51db527c95eb9d7434a2222127e
 F test/subquery2.test ab96ff3fa9c4e3dce0d699f74e61c50250ed4335bc8f400e127707d552a8999e
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test a673e3763e247e9b5e497a6cacbaf3da2bd8ec8921c0677145c109f2e633f36b
-F test/subtype1.test 96fd2a59bfc845c955b5f339d23b37ef4d50de5f8a04acd1450a68605fa2e3e7
+F test/subtype1.test 1ca002dbda34c342c2dee7cffac220b77d67edfbffd43124978956747f534a96
 F test/superlock.test 85256830339a6871ce36a2ef591c3f67716a701b5497788fb2068b90159c2442
 F test/swarmvtab.test 250231404fcac88f61a6c147bb0e3a118ed879278cd3ccb0ae2d3a729e1e8e26
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
@@ -2198,9 +2198,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b6ce57f807297966f305d257e616f1c88a2f25c29f622249194b19d6fa014580
-Q +614f8cbc374c7a2d39826706f16ab1c17e75abb420a70be356c7eefa95b271a5
-R 77d06bfbe62b997d7cac93e8723d523f
+P eb95d18aee8ffb9a2550aadbecccaf43c0a5778973386da1196a46f645e04286
+Q +9be94e961457967408cbd0acf11877fbb323a48eee405fff53755770f1b3261a
+R 1bab9ea2a478de0f624ff411c52250a0
 U drh
-Z b38886bbf861d2a802ea3517edfed28f
+Z b94d6c283fc57f04f9072cbb5f1c960c
 # Remove this line to create a well-formed Fossil manifest.
