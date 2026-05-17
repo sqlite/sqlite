@@ -968,7 +968,7 @@ static const char *shellPromptAppDef(int c){
       return SQLITE_PS1;
 #else
       if( shellNoColor() ){
-        return "/A-/v /~> ";
+        return "/A-/v /f-> ";
       }else{
         return "/e[1;32m/A-/v /e[1;/x33/:36/;m/m/e[3m/;/f/;/e[0m-> ";
       }
@@ -980,7 +980,7 @@ static const char *shellPromptAppDef(int c){
       return SQLITE_PS2;
 #else
       if( shellNoColor() ){
-        return "/B/C> ";
+        return "/B/C-> ";
       }else{
         return "/B/e[1;/x33/:36/;m/C/e[0m-> ";
       }

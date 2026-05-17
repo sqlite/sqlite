@@ -1,5 +1,5 @@
-C When\stwo\stables\sare\sjoined\sby\sUSING,\sthe\saffinity\sand\scollating\ssequence\sof\nthe\sjoin\scolumn\swill\sbe\sthe\ssame\sas\sone\sor\sthe\sother\sof\sthe\scolumns\sin\sthe\ntwo\stables\s(which\sare\shopefully\sthe\ssame).
-D 2026-05-16T20:21:55.055
+C In\sthe\sCLI,\smake\sthe\sNO_COLOR\sprompt\sthe\ssame\sas\sthe\sdefault\sprompt,\sonly\nwithout\sany\scolor.
+D 2026-05-17T16:35:36.259
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -737,7 +737,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 11134922dfc2c89d10c658a1ae9ae9e1af0df031d40b9e9171dc14d3f2e6d80f
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 4c05cde130f26991b7411d8c6809e0630625e18078742c963a047b4b9cc01d49
-F src/shell.c.in 9827c3a059dc5ffe17770e7f80d92988462f80a35486b84197cb4372dd9fd8c6
+F src/shell.c.in beb97bb27bed3cf1775cee13a3cae4d05e5f8437e2eaf88d297399dec26ce645
 F src/sqlite.h.in 749454ec71c875bc130d399ff9a7e47191d143d1b9d8b4af3839b6028df9eda9
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 9788c301f95370fa30e808861f1d2e6f022a816ddbe2a4f67486784c1b31db2e
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8cc0b52cca2d6b155b4b169e6f9de9e7d2dc61c40f89920c2b6bf86e549ab6f7
-R 6d896738349278127a88d5cdadd5a083
+P cbb6f72c10b1224088b9d604a0e014e7020e8d79a317ebb4af420ba3b72f40cc
+R 634c981470ce15d02406388726d097b3
 U drh
-Z 9ae5d8d40405d35095570ad39497e5b8
+Z 120d97f230f298aaf80f42e32734f0da
 # Remove this line to create a well-formed Fossil manifest.
