@@ -889,7 +889,8 @@ void sqlite3_str_vappendf(
         }else{
           if( xtype==etESCAPE_J ) sqlite3_str_append(pAccum, "\"", 1);
           px = precision;
-          if( px<=0 ){
+          testcase( px==0 );
+          if( px<0 ){
             px = 0x7fffffff;
           }else if( flag_altform2 ){
             /* Convert precision from code-points to bytes */

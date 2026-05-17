@@ -3937,6 +3937,12 @@ do_execsql_test printf-20.24 {
 do_execsql_test printf-20.25 {
   SELECT format('<%.4j>','a"b"c');
 } {{<a\"b\">}}
+do_execsql_test printf-20.26 {
+  SELECT format('<%.1J>','abcdef');
+} {{<"a">}}
+do_execsql_test printf-20.27 {
+  SELECT format('<%.0J>','abcdef');
+} {{<"">}}
 
 
 finish_test
