@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\smake\sthe\sNO_COLOR\sprompt\sthe\ssame\sas\sthe\sdefault\sprompt,\sonly\nwithout\sany\scolor.
-D 2026-05-17T16:35:36.259
+C Fix\sthe\ssqlite3_value_numeric_type()\sinterface\sso\sthat\sit\sworks\seven\sif\nthe\sargument\sis\san\ssqlite3_value\sobject\sthat\scame\sfrom\ssqlite3_value_dup().\n[forum:/forumpost/15c4a323bb|Forum\spost\s15c4a323bb].
+D 2026-05-17T17:18:12.080
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 98cf12c8ba65623a76c1eb6e6afa98ff40107c9919bf79af42f4bfc70e654232
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c b3038a711e33fef2c9813a9b7f8ad38c5f9e7c48d5b4b4dea1361046a2bd168e
+F src/vdbe.c a4048ce528a9003d83e5cfa30fa1f9f67ce863ba8591aba3272dd621bf2c5721
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h c31ba4dc8d280c2b1dc89c6fcee68f2555e3813ab34279552c20b964c0e338b1
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P cbb6f72c10b1224088b9d604a0e014e7020e8d79a317ebb4af420ba3b72f40cc
-R 634c981470ce15d02406388726d097b3
+P cc05e9749c14d6ff4e396ad387c42d53b696680ce74ce6a92f6fb71ed9a53ae5
+R 0bebbd65ea282d4809f02af17dcb8c16
 U drh
-Z 120d97f230f298aaf80f42e32734f0da
+Z 4cad0af50cbca291c827ec9c0f1f1d02
 # Remove this line to create a well-formed Fossil manifest.
