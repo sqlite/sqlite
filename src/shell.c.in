@@ -11135,6 +11135,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
         goto meta_command_exit;
       }else if( !p->dot.abQuot[i] && sqlite3_strglob("*[^a-z]*",z)!=0 ){
         dotCmdError(p, i, "use quotes around the prompt string", 0);
+        rc = 1;
       }else{
         free(p->azPrompt[cnt]);
         p->azPrompt[cnt] = strdup(z);
