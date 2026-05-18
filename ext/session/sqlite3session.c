@@ -5506,6 +5506,7 @@ static int sessionRetryConstraints(
         if( pApply->constraints.nBuf>=app.nBuf ){
           break;
         }
+        iSkip = -1;
       }
     }
 

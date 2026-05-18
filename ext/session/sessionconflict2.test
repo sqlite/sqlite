@@ -20,12 +20,6 @@ ifcapable !session {finish_test; return}
 
 set testprefix sessionconflict2
 
-#db close
-#sqlite3_shutdown
-#test_sqlite3_log log
-#proc log {code msg} { puts "LOG $code $msg" }
-#sqlite3 db test.db
-
 forcedelete test.db2
 sqlite3 db2 test.db2
 
@@ -62,7 +56,184 @@ do_execsql_test -db db2 1.3 {
   3 3 3 1
 }
 
+#--------------------------------------------------------------------------
+reset_db
+db2 close
+forcedelete test.db2
+sqlite3 db2 test.db2
 
+do_test 2.0 {
+  do_common_sql {
+    CREATE TABLE t1(a PRIMARY KEY, b, c UNIQUE) WITHOUT ROWID;
+    INSERT INTO t1 VALUES(1, 1, 1);
+    INSERT INTO t1 VALUES(2, 2, 2);
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+} {}
+
+do_test 2.1 {
+  do_then_apply_sql {
+    UPDATE t1 SET c=NULL WHERE a=1;
+    UPDATE t1 SET c=1 WHERE a=3;
+    UPDATE t1 SET c=3 WHERE a=1;
+  }
+} {}
+
+do_execsql_test -db db 2.2 {
+  SELECT * FROM t1
+} {
+  1 1 3
+  2 2 2
+  3 3 1
+}
+
+do_execsql_test -db db2 2.3 {
+  SELECT * FROM t1
+} {
+  1 1 3
+  2 2 2
+  3 3 1
+}
+
+#--------------------------------------------------------------------------
+reset_db
+db2 close
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 3.0 {
+  do_common_sql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c UNIQUE);
+    INSERT INTO t1 VALUES(1, 1, 1);
+    INSERT INTO t1 VALUES(2, 2, 2);
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+} {}
+
+do_test 3.1 {
+  do_then_apply_sql {
+    UPDATE t1 SET c=NULL WHERE a=1;
+    UPDATE t1 SET c=1 WHERE a=3;
+    UPDATE t1 SET c=3 WHERE a=1;
+  }
+} {}
+
+do_execsql_test -db db 3.2 {
+  SELECT rowid, * FROM t1
+} {
+  1 1 1 3
+  2 2 2 2
+  3 3 3 1
+}
+
+do_execsql_test -db db2 3.3 {
+  SELECT rowid, * FROM t1
+} {
+  1 1 1 3
+  2 2 2 2
+  3 3 3 1
+}
+
+#-------------------------------------------------------------------------
+reset_db
+db2 close
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+set ::conflict_list [list]
+proc xConflict {args} {
+  lappend ::conflict_list $args
+  return "OMIT"
+}
+
+proc do_conflict_test {tn script clist} {
+
+  uplevel [list do_test $tn.1 [subst -nocommands {
+    sqlite3session S db "main"
+    S attach *
+    eval {$script}
+    set ::changeset [S changeset]
+    S delete
+  }] {}]
+
+  uplevel [list do_test $tn.2 {
+    set ::conflict_list [list]
+    sqlite3changeset_apply_v2 db2 $::changeset xConflict
+    set ::conflict_list
+  } [list {*}$clist]]
+}
+
+do_test 4.0 {
+  do_common_sql {
+    CREATE TABLE t1(a INT PRIMARY KEY, b, c UNIQUE, d UNIQUE);
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10
+    )
+    INSERT INTO t1 SELECT i, i, i, i FROM s;
+  }
+} {}
+
+proc swap {tbl pkcol valcol pk1 pk2} {
+  set val1 [db one "SELECT $valcol FROM $tbl WHERE $pkcol = \$pk1"]
+  set val2 [db one "SELECT $valcol FROM $tbl WHERE $pkcol = \$pk2"]
+
+  db eval "
+    UPDATE $tbl SET $valcol = NULL WHERE $pkcol IN (\$pk1, \$pk2);
+    UPDATE $tbl SET $valcol = \$val2 WHERE $pkcol = \$pk1;
+    UPDATE $tbl SET $valcol = \$val1 WHERE $pkcol = \$pk2;
+  "
+}
+
+do_conflict_test 4.1.1 {
+  swap t1 a c 4 5
+  swap t1 a c 2 3
+  swap t1 a c 8 1
+} {
+}
+
+do_execsql_test -db db 4.1.2 {
+  SELECT a, c FROM t1
+} {
+  1 8 2 3 3 2 4 5 5 4 6 6 7 7 8 1 9 9 10 10
+}
+do_execsql_test -db db2 4.1.3 {
+  SELECT a, c FROM t1
+} {
+  1 8 2 3 3 2 4 5 5 4 6 6 7 7 8 1 9 9 10 10
+}
+
+do_conflict_test 4.2.1 {
+  swap t1 a d 10 9
+  swap t1 a d  8 7
+  swap t1 a d  7 6
+  swap t1 a d  5 4
+  swap t1 a d  4 8
+} {
+}
+
+do_execsql_test -db db 4.2.2 {
+  SELECT a, d FROM t1
+} {
+  1 1  2 2  3 3  4 7  5 4  6 8  7 6  8 5  9 10  10 9
+}
+do_execsql_test -db db2 4.2.3 {
+  SELECT a, d FROM t1
+} {
+  1 1  2 2  3 3  4 7  5 4  6 8  7 6  8 5  9 10  10 9
+}
+
+do_execsql_test -db db2 4.3 {
+  INSERT INTO t1(a, b, c, d) VALUES(11, 11, 11, 11);
+}
+
+do_conflict_test 4.3.1 {
+  swap t1 a c 3 6
+  db eval { UPDATE t1 SET d=11 WHERE a=10; }
+  swap t1 a d 4 8
+} {
+  {UPDATE t1 CONSTRAINT {i 10 {} {} {} {} i 9} {{} {} {} {} {} {} i 11}}
+}
 
 db2 close
 finish_test
+
