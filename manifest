@@ -1,5 +1,5 @@
-C Add\sa\sreference\sto\sthe\snew\ssqlite.org/bugs\sforum.
-D 2026-05-18T10:00:35.681
+C Raise\san\serror\sin\sthe\sdbpage\svirtual\stable\sif\sthe\spage\snumber\son\san\sinsert\nis\stoo\slarge.\s[bugs:/forumpost/f363b34881|Bug\sreport\sf363b34881].
+D 2026-05-18T10:19:14.413
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -684,7 +684,7 @@ F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804a
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c f216b970ce99c5a657556cf1f17e7ddd494515d3beb63df426bf59ff43bd3d9a
 F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
-F src/dbpage.c 98c716bc5c0c70af4e7934bfcddd707f14e78b5d4cf1e0602a07b485e1af2e74
+F src/dbpage.c c6a9de13b0a01f0bc94a41e16213ab1ecd15ccfe86df7255ced40fda9446257d
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c c7af3a4d0836d31ea5ce3afa769c371d04a5e6a31b5b28d08cc712acbe8c891e
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5b58bdd33f0410624523fc8adc230db4e5f57283d234a5f0d26a2790629bc0f9
-R 38cdaae1ebb2304b9e67f14ca3079401
-U stephan
-Z 6c8024d90f4fe068e290cc0996122cf6
+P f2fe7e7a184e482411ddf792a1964e6ce30a28185da9fa79488d097382c352fd
+R 8a61c50bd9c50e6a0a84ecd557f75498
+U drh
+Z 17c31f6a298efc9fa712e6fd9ca4256f
 # Remove this line to create a well-formed Fossil manifest.
