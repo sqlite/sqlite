@@ -1,5 +1,5 @@
-C Fix\sthe\swindow-function\svariant\sof\sthe\sjson_group_object()\sfunction\sso\nthat\sit\scorrectly\shandles\sNULL\sentries.\n[bugs:/forumpost/0de87b23b3|Bug\sreport\s0de87b23b3].
-D 2026-05-18T17:55:40.195
+C Update\sthe\ssession\smodule\sso\sthat\sit\scan\sapply\schangesets\scontaining\stwo\sor\smore\sUPDATE\schanges\sthat\sform\sa\sdependency\sloop\s-\sso\sthat\sno\ssingle\sUPDATE\scan\sbe\sapplied\sindependently\swithout\sviolating\sa\sconstraint.
+D 2026-05-18T18:59:06.664
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -546,7 +546,7 @@ F ext/session/sessionC.test de98b5e173fd86c79af0d0541534398d2ea75dc0d5d74a00103e
 F ext/session/sessionD.test 470ff917dc849e2eb78142ade63aaabd729d773833cff0ff01bca0eda68a21ce
 F ext/session/sessionE.test b2010949c9d7415306f64e3c2072ddabc4b8250c98478d3c0c4d064bce83111d
 F ext/session/sessionF.test d37ed800881e742c208df443537bf29aa49fd56eac520d0f0c6df3e6320f3401
-F ext/session/sessionG.test 3efe388282d641b65485b5462e67851002cd91a282dc95b685d085eb8efdad0a
+F ext/session/sessionG.test 64c2b69531aebdb36d5977a5f832d77e4c8bda0c746a6c630adf23660bb1c7c2
 F ext/session/sessionH.test 71bbff6b1abb2c4ac62b84dee53273c37e0b21e5fde3aed80929403e091ef859
 F ext/session/sessionI.test 11e7b6729fc942982a5104a40132f70a2e964d64d60dc5809b8206465af74822
 F ext/session/session_common.tcl a31f537a929a695a852d241c9434f2847cadf329856401921139fbb03a5a7697
@@ -559,6 +559,7 @@ F ext/session/sessionblob.test 87faf667870b72f08e91969abd9f52a383ab7b514506ee194
 F ext/session/sessionchange.test 6618cb1c1338a4b6df173b6ac42d09623fb71269962abf23ebb7617fe9f45a50
 F ext/session/sessionchange2.test 8f59185216882adc8b34bb5ba63887459acf3df58493bcffa12e4d05ab6a6b85
 F ext/session/sessionconflict.test 19e4a53795c4c930bfec49e809311e09b2a9e202d9446e56d7a8b139046a0c07 x
+F ext/session/sessionconflict2.test 9d65dd1b23c6ddd94134260c68ac3a7513683fbcfecc4d32344a416db115efa9 x
 F ext/session/sessiondiff.test e89f7aedcdd89e5ebac3a455224eb553a171e9586fc3e1e6a7b3388d2648ba8d
 F ext/session/sessionfault.test c2b43d01213b389a3f518e90775fca2120812ba51e50444c4066962263e45c11
 F ext/session/sessionfault2.test b0d6a7c1d7398a7e800d84657404909c7d385965ea8576dc79ed344c46fbf41c
@@ -573,7 +574,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c a23436c2ecaddf0b0301460aa3ff2986f151eb36e7510509521467ce669e9d45
+F ext/session/sqlite3session.c c29ee85aba67f456aad2abfe8cdfded71f4c5c7e1d741c98938be245cba1727a
 F ext/session/sqlite3session.h 063e7bf7be2fff874456f452a224b5b3013b25682d108933b0351c93a1279b9c
 F ext/session/test_session.c 21524e86610986c8296ad08e71a1af1804b823b5830ed1189623b15ceb886c7c
 F ext/wasm/GNUmakefile 65feef4ec48e62249f90278c4c08a3fe3c69e2461ff560b61c03cd73606e0949
@@ -2205,8 +2206,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 622882529558b4779dfb7246bd5a9de776555c8f940bb941397fb56fb9f97e43
-R d24f0da7d2c47dc861907e18b0a3ec5b
-U drh
-Z d5e5c346537f43415ecc1cfb3b15b0e6
+P ac3a958b0ab7766544bb406aa990668d2235ab26fb68c75ded3f71273d97b18c
+R bc7ae802611a6dcb6a03884dbae18d5f
+T *branch * session-update-loops
+T *sym-session-update-loops *
+T -sym-trunk *
+U dan
+Z b8bca31cc23b62b1a53ed4be75c6b16d
 # Remove this line to create a well-formed Fossil manifest.

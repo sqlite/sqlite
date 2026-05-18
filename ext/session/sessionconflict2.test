@@ -1,0 +1,68 @@
+# 2026 May 18
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix sessionconflict2
+
+#db close
+#sqlite3_shutdown
+#test_sqlite3_log log
+#proc log {code msg} { puts "LOG $code $msg" }
+#sqlite3 db test.db
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 1.0 {
+  do_common_sql {
+    CREATE TABLE t1(a PRIMARY KEY, b, c UNIQUE);
+    INSERT INTO t1 VALUES(1, 1, 1);
+    INSERT INTO t1 VALUES(2, 2, 2);
+    INSERT INTO t1 VALUES(3, 3, 3);
+  }
+} {}
+
+do_test 1.1 {
+  do_then_apply_sql {
+    UPDATE t1 SET c=NULL WHERE a=1;
+    UPDATE t1 SET c=1 WHERE a=3;
+    UPDATE t1 SET c=3 WHERE a=1;
+  }
+} {}
+
+do_execsql_test -db db 1.2 {
+  SELECT rowid, * FROM t1
+} {
+  1 1 1 3
+  2 2 2 2
+  3 3 3 1
+}
+
+do_execsql_test -db db2 1.3 {
+  SELECT rowid, * FROM t1
+} {
+  1 1 1 3
+  2 2 2 2
+  3 3 3 1
+}
+
+
+
+db2 close
+finish_test
