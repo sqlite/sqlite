@@ -1,5 +1,5 @@
-C Correction\sto\sthe\sbugfix\sat\s[212c68249cc0e890]\sso\sthat\sit\sworks\nfor\s2nd\sand\ssubsequent\sterms\sof\sa\srow\svalue.\n[bugs:/forumpost/ba8084256b|Bugs\sreport\sba8084256b].
-D 2026-05-18T11:35:44.441
+C Fix\sa\sharmless\scompiler\swarning\scaused\sby\s[460243ee4c28873d].
+D 2026-05-18T11:44:09.379
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -803,7 +803,7 @@ F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 98cf12c8ba65623a76c1eb6e6afa98ff40107c9919bf79af42f4bfc70e654232
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c a4048ce528a9003d83e5cfa30fa1f9f67ce863ba8591aba3272dd621bf2c5721
+F src/vdbe.c 8ed6f274dff8b9fb961d050a9ab933e7f6509221718bec862e85729d171c1606
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h c31ba4dc8d280c2b1dc89c6fcee68f2555e3813ab34279552c20b964c0e338b1
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2bbc8f1404e3cbaa8fe24e2ea2d774daf2bf3b232fbd8978a1a37e4f8f0f629d
-R b4a27388c916314813220f764701b364
+P 49a3c6ade45ea31187ac8dbba0452fcad487e76f2219bfa6435feab545b5f632
+R f29868624cf00be519c1a0fbe03bcc1c
 U drh
-Z ebdcdfc48f6d8bef4898262e479bed6f
+Z b8aa284a713462e6a9458c46f7af8ebd
 # Remove this line to create a well-formed Fossil manifest.

@@ -437,7 +437,9 @@ int sqlite3_value_numeric_type(sqlite3_value *pVal){
   int eType = sqlite3_value_type(pVal);
   if( eType==SQLITE_TEXT ){
     Mem *pMem = (Mem*)pVal;
+#if SQLITE_THREADSAFE>0
     sqlite3_mutex *pMutex = pMem->db ? pMem->db->mutex : 0;
+#endif
     sqlite3_mutex_enter(pMutex);
     applyNumericAffinity(pMem, 0);
     sqlite3_mutex_leave(pMutex);
