@@ -1,5 +1,5 @@
-C Prevent\sinteger\soverflow\sdue\sto\sdatabase\scorruption\sin.\nfts3auxNextMethod().\n[bugs:/forumpost/bce19272cf|Bug\sreport\sbce19272cf].
-D 2026-05-18T20:27:57.529
+C Limit\sthe\sNEAR\sspan\sin\sFTS3\sto\s1\sbillion,\sto\savoid\sinteger\soverflow.\n[bugs:/forumpost/4cfcf164d2|Bug\sreport\s4cfcf164d2].
+D 2026-05-18T20:43:15.141
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -83,7 +83,7 @@ F ext/fts3/fts3.c 6cc7bbc307f27e7b6ee2e1d5ff63ffff4df3b42529dfe00eb34ddded417961
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 277f32f304e82f4397fc2a74793c0a95318b7abb9670b519e4805a00946cbd9b
 F ext/fts3/fts3_aux.c c105f6502df588f49a383eb22aed953844fb0e31265361a0cc8dd73037b37e39
-F ext/fts3/fts3_expr.c 5c13796638d8192c388777166075cdc8bc4b6712024cd5b72c31acdbefce5984
+F ext/fts3/fts3_expr.c 907dd64deb881c0586d5ecbabc96cfebdbe2ff9e7a052d379fd3b606edfa21ea
 F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641814672a
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d75c08c8416bde3f510a135ea07cc217ba6183eacda6ba895bccbf57efe9284f
-R fb9e5a8193aabda22b0c7f7541c1f904
+P d903795e3bdf91607f23dace5a15a070139b32e34aed8540a6c2e19c39e997be
+R 7d66ba7a943cc3436c61e2bb2a74d35d
 U drh
-Z 1c49ffc7129044d57402911aa96f7225
+Z 23a84d4ea8613ad7e5364e12bc2b88d5
 # Remove this line to create a well-formed Fossil manifest.
