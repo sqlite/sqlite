@@ -1,5 +1,5 @@
-C Fix\sthe\s".prompt"\scommand\sso\sthat\sit\shonors\s-bail.
-D 2026-05-17T19:21:30.849
+C Add\sa\sreference\sto\sthe\snew\ssqlite.org/bugs\sforum.
+D 2026-05-18T10:00:35.681
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -7,7 +7,7 @@ F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 5fda086f33b144da08119255da1d2557f983d0764a13707f05acf0159fd89ba5
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 6f4294982758b5eeeac740c1a263186c3fcb9ba51d1b48261e321bcb37a41dbb
-F README.md e4f1a030f813c2fafc898c66d4f10bff2c75eb1a8f504eb9ad9a5ef80e3ff814
+F README.md f00091ffb5c6379b783afb57ca5f443a5742e119082f37c407f64a5e16c56346
 F VERSION 99cf3be5f13d091183e4314b7fc2e0c0e69accfbe64608b45a313338bbdd7b62
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 428b924dd6e228c879338c5c5edbe68bdc4d8d8e80c37e3d070a8a34b57300c1
-R 45743be3881e9dd4a1338be1e4981af8
-U drh
-Z e207268a53a92181f505449dfe914b46
+P 5b58bdd33f0410624523fc8adc230db4e5f57283d234a5f0d26a2790629bc0f9
+R 38cdaae1ebb2304b9e67f14ca3079401
+U stephan
+Z 6c8024d90f4fe068e290cc0996122cf6
 # Remove this line to create a well-formed Fossil manifest.

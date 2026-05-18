@@ -33,10 +33,11 @@ verify its integrity, there are hints on how to do that in the
 
 ## Contacting The SQLite Developers
 
-The preferred way to ask questions or make comments about SQLite or to
-report bugs against SQLite is to visit the 
-[SQLite Forum](https://sqlite.org/forum) at <https://sqlite.org/forum/>.
-Anonymous postings are permitted.
+The preferred way to ask questions or make comments about SQLite is to
+visit the [SQLite Forum](https://sqlite.org/forum) at
+<https://sqlite.org/forum/>.  Anonymous postings are permitted. For
+bug reports, please use the [SQLite bugs
+forum](https://sqlite.org/bugs) at <https://sqlite.org/bugs>.
 
 If you think you have found a bug that has security implications and
 you do not want to report it on the public forum, you can send a private
