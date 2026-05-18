@@ -1316,7 +1316,7 @@ static void exprAnalyze(
   /* Analyze a term that is composed of two or more subterms connected by
   ** an OR operator.
   */
-  else if( pExpr->op==TK_OR ){
+  else if( pExpr->op==TK_OR && !ExprHasProperty(pExpr, EP_Collate) ){
     assert( pWC->op==TK_AND );
     exprAnalyzeOrTerm(pSrc, pWC, idxTerm);
     pTerm = &pWC->a[idxTerm];
