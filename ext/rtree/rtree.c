@@ -1665,6 +1665,10 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
     if( rc ) return rc;
     nCell = NCELL(pNode);
     assert( nCell<200 );
+    if( nCell>RTREE_MAXCELLS ){
+      RTREE_IS_CORRUPT(pRtree);
+      return SQLITE_CORRUPT_VTAB;
+    }
     pCellData = pNode->zData + (4+pRtree->nBytesPerCell*p->iCell);
     while( p->iCell<nCell ){
       sqlite3_rtree_dbl rScore = (sqlite3_rtree_dbl)-1;
