@@ -1,5 +1,5 @@
-C Add\sthe\s"make"\ssubcommand\sto\stestrunner.tcl
-D 2026-05-19T15:13:03.161
+C Fix\sa\sincorrect\sassert()\sfrom\s[52dd437d51d3c1af]\sreported\sby\sOSSFuzz.
+D 2026-05-19T16:07:08.348
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -807,7 +807,7 @@ F src/vdbe.c 8ed6f274dff8b9fb961d050a9ab933e7f6509221718bec862e85729d171c1606
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h c31ba4dc8d280c2b1dc89c6fcee68f2555e3813ab34279552c20b964c0e338b1
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
-F src/vdbeaux.c f6ab3b2e238a01c69cbc72c8e4d3a07eab503a62f700102f70c20b239b03c0f2
+F src/vdbeaux.c bd3aaf77593a5590f617ce173e8677a21eca18522eadc1c4bc81b53f6d1c7e19
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c efacb8f229422d2a4db0ed38e49b7f3897862a98d82b261aa3b43d7a2d98c6da
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6193e4105b6a58eac2bc17c5b2d55fdae332816b59beed1fe24c15dff1372322
-R 47c0b19a1e0edb9eaefa4cec284fc032
+P 00d546812810252a4d51ff796931dc2ff5bdd5173ddb8f95fb5efccd897087ff
+R 541a9106a8552fed0080a45e95d38050
 U drh
-Z 86ab4f0d052a2398e753f15ef922bf21
+Z 37e30aa7a2f04d4eb35f54385ef9c967
 # Remove this line to create a well-formed Fossil manifest.
