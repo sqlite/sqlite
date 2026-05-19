@@ -1008,6 +1008,8 @@ static int editDist3Core(
   unsigned int stackSpace[SQLITE_SPELLFIX_STACKALLOC_SZ/sizeof(unsigned int)];
 
   /* allocate the Wagner matrix and the aTo[] array for the TO string */
+  if( n2>10000 ) return -2;
+  if( f.n>10000 ) return -2;
   n = (f.n+1)*(n2+1);
   n = (n+1)&~1;
   nByte = n*sizeof(m[0]) + sizeof(a2[0])*n2;
@@ -1198,6 +1200,8 @@ static void editDist3SqlFunc(
     editDist3FromStringDelete(pFrom);
     if( dist==(-1) ){
       sqlite3_result_error_nomem(context);
+    }else if( dist==(-2) ){
+      sqlite3_result_error_toobig(context);
     }else{
       sqlite3_result_int(context, dist);
     }
