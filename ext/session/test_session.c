@@ -1652,9 +1652,10 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
 
     case 1: {      /* add */
       Tcl_Size nByte = 0;
-      const u8 *aByte = Tcl_GetByteArrayFromObj(objv[2], &nByte);
-      rc = sqlite3changegroup_add(p->pGrp, (int)nByte, (void*)aByte);
+      void *aByte = testGetByteArrayFromObj(objv[2], &nByte);
+      rc = sqlite3changegroup_add(p->pGrp, (int)nByte, aByte);
       if( rc!=SQLITE_OK ) rc = test_session_error(interp, rc, 0);
+      free(aByte);
       break;
     };
 

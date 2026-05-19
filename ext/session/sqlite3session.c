@@ -3703,17 +3703,21 @@ static int sessionChangesetBufferRecord(
     int eType;
     rc = sessionInputBuffer(pIn, nByte + 10);
     if( rc==SQLITE_OK ){
-      eType = pIn->aData[pIn->iNext + nByte++];
-      if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
-        int n;
-        int nRem = pIn->nData - (pIn->iNext + nByte);
-        nByte += sessionVarintGetSafe(&pIn->aData[pIn->iNext+nByte], nRem, &n);
-        nByte += n;
-        rc = sessionInputBuffer(pIn, nByte);
-      }else if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
-        nByte += 8;
-      }else if( eType!=0 && eType!=SQLITE_NULL ){
+      if( pIn->iNext+nByte>=pIn->nData ){
         rc = SQLITE_CORRUPT_BKPT;
+      }else{
+        eType = pIn->aData[pIn->iNext + nByte++];
+        if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
+          int n;
+          int nRem = pIn->nData - (pIn->iNext + nByte);
+          nByte += sessionVarintGetSafe(&pIn->aData[pIn->iNext+nByte], nRem,&n);
+          nByte += n;
+          rc = sessionInputBuffer(pIn, nByte);
+        }else if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+          nByte += 8;
+        }else if( eType!=0 && eType!=SQLITE_NULL ){
+          rc = SQLITE_CORRUPT_BKPT;
+        }
       }
     }
     if( rc==SQLITE_OK && (pIn->iNext+nByte)>pIn->nData ){

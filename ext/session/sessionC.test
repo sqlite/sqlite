@@ -273,4 +273,15 @@ do_test 7.0 {
 } {1 SQLITE_CORRUPT}
 grp delete
 
+#-------------------------------------------------------------------------
+#
+reset_db
+set CS 54014f300009ff
+
+do_test 8.0 {
+  sqlite3changegroup grp
+  list [catch { grp add [db one {SELECT unhex($CS)}] } msg] $msg
+} {1 SQLITE_CORRUPT}
+grp delete
+
 finish_test

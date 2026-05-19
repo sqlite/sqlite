@@ -570,7 +570,7 @@ void sqlite3VdbeExplainPop(Parse *pParse){
 */
 void sqlite3VdbeAddParseSchemaOp(Vdbe *p, int iDb, char *zWhere, u16 p5){
   int j;
-  assert( (zWhere==0)==(p5!=0) || p->db->mallocFailed );
+  assert( p5==0 || zWhere==0 );
   sqlite3VdbeAddOp4(p, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
   sqlite3VdbeChangeP5(p, p5);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
