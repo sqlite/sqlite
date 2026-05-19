@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\serror\shandling\swhen\sapplying\schangesets\swith\supdate\sloops.
-D 2026-05-19T18:28:03.681
+C Remove\snew\sunreachable\scode\sfrom\sthis\sbranch.
+D 2026-05-19T18:58:59.031
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -574,7 +574,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c ed5a9930c6d4caefaab46c7725dcaf71dec315c39f5cae95326894e4a604cb4e
+F ext/session/sqlite3session.c 51d751a9303efba9bd6950023678db5e9846a032b8a11c4a9e16041e6674d5b9
 F ext/session/sqlite3session.h 063e7bf7be2fff874456f452a224b5b3013b25682d108933b0351c93a1279b9c
 F ext/session/test_session.c 3773e750b5c751956fdbef41a998cc1ba02d59c3dede74e75866e3446a900e69
 F ext/wasm/GNUmakefile 65feef4ec48e62249f90278c4c08a3fe3c69e2461ff560b61c03cd73606e0949
@@ -2206,8 +2206,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e480e126fc1550948bd1a3635f0e3a862353dcd8b0f1921ab6e66d699110b477
-R 555931a9156d91c5622ca72d0db559c6
+P f797925df05f1a53392dba416aa72067716bb6e38ebc679d313f8a98f89c5913
+R 4105156918feeda0715614d62a8791c2
 U dan
-Z 92799d9d997d3240b13f6af3f8d382c0
+Z 4ffef87e4004799d9693461ff924abb8
 # Remove this line to create a well-formed Fossil manifest.

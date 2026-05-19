@@ -5278,9 +5278,8 @@ static int sessionTableIsWithoutRowid(sqlite3 *db, const char *zTab, int *pbWR){
   }
 
   if( rc==SQLITE_OK ){
-    if( SQLITE_ROW==sqlite3_step(pList) ){
-      *pbWR = sqlite3_column_int(pList, 4);
-    }
+    sqlite3_step(pList);
+    *pbWR = sqlite3_column_int(pList, 4);
     rc = sqlite3_finalize(pList);
   }
 
@@ -5378,13 +5377,8 @@ static int sessionUpdateToDeleteInsert(
         pUp, sqlite3changeset_old, pApply->nCol, pApply->abPK, pSelect
     );
   }
-  if( rc==SQLITE_OK && sqlite3_step(pSelect)!=SQLITE_ROW ){
-    sessionFinalizeStmt(pSelect, &rc);
-    if( rc==SQLITE_OK ) rc = SQLITE_ERROR;
-    pSelect = 0;
-  }
 
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && sqlite3_step(pSelect)==SQLITE_ROW ){
     int iCol;
     for(iCol=0; iCol<pApply->nCol; iCol++){
       sqlite3_value *pVal = pUp->apValue[iCol+pApply->nCol];
