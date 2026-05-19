@@ -1,5 +1,5 @@
-C Prevent\sinteger\soverflow\sin\sthe\sICU\sextension.\n[bugs:/forumpost/844bdd7d5c|Bug\sreport\s844bdd7d5c].
-D 2026-05-19T18:56:11.055
+C Silently\signore\snested\sporter\stokenizers\sin\sFTS5.\s\sHaving\snested\sporter\ntokenizers\sis\spointless,\sbut\sit\sdoes\suse\sstack\sspace\sunnecessarily.\n[bugs:/forumpost/a7766198f1|Bug\sreport\sa7766198f1].
+D 2026-05-19T19:33:49.913
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -119,7 +119,7 @@ F ext/fts5/fts5_storage.c 19bc7c4cbe1e6a2dd9849ef7d84b5ca1fcbf194cefc3e386b901e0
 F ext/fts5/fts5_tcl.c 2be6cc14f9448f720fd4418339cd202961a0801ea9424cb3d9de946f8f5a051c
 F ext/fts5/fts5_test_mi.c 4308d5658cb1f5eee5998dcbaac7d5bdf7a2ef43c8192ca6e0c843f856ccee26
 F ext/fts5/fts5_test_tok.c 6021033bd4f4feffe8579efb6e1f58156ed462256bf99a2acdbd629246529204
-F ext/fts5/fts5_tokenize.c 03fa928dffcf1445f973f0994c4d2732812e32b264f45c303732aa0e8bb8dea7
+F ext/fts5/fts5_tokenize.c 0469b30e7bf25255fbb7c101e2b549a521fb501342e7269cf73cbb6b2dbd8da2
 F ext/fts5/fts5_unicode2.c 536a6dae41d16edadd6a6b58c56e2ebbb133f0dfe757562a2edbcdc9b8362e50
 F ext/fts5/fts5_varint.c e64d2113f6e1bfee0032972cffc1207b77af63319746951bf1d09885d1dadf80
 F ext/fts5/fts5_vocab.c bebee4aabcd056a44b3731166433cfdecf17ece750c08cb58733216222bd39e2
@@ -254,7 +254,7 @@ F ext/fts5/test/fts5synonym2.test 58f357b997cf2fedeeb9d0de4db9f880fa96fa2fe27a74
 F ext/fts5/test/fts5tok1.test 1f7817499f5971450d8c4a652114b3d833393c8134e32422d0af27884ffe9cef
 F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
 F ext/fts5/test/fts5tokendata.test 7cad79af82e8e81b7a36b450087233d2fca051bb0d584421afc375d6dd26d6f6
-F ext/fts5/test/fts5tokenizer.test 7937cec672b148223fff8746d21d3e7ed0965fd7caf35ccdc888a005bb452f98
+F ext/fts5/test/fts5tokenizer.test 738e9c3e1b338028e202d0fcd33aa39f1bd3f8444d14f9a408e8a617b1361d3f
 F ext/fts5/test/fts5tokenizer2.test ddb8b10fbe4b84b2a75812671f127774c1d2e3e2bf82d2e0e4f0bb1cd8a2b2d6
 F ext/fts5/test/fts5tokenizer3.test eea778f7bb7024c3e904e28915f9d53286141671b138722148be22a9c758bdc3
 F ext/fts5/test/fts5trigram.test a55fde7065ae69a0f82c5a7a5bf5286a97de11ae4bff6537fd3e27ca9a01416f
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7cf841f3613c8302a419638bdec83b1b9799f00cfedbfe40dca0a1a005c196b5
-R c09ea06136ac3cac53ec6500866ca74e
+P c20cb75ca07d0553d7a847c65a40efb2e5c587579ec32b02121a8963c70db12f
+R a0856429c8b463de3af8d046e5aa8425
 U drh
-Z 6b7926c233703a2415b0bb403daa663f
+Z 074530ae03de0bc55aa18e545a3a8127
 # Remove this line to create a well-formed Fossil manifest.
