@@ -391,7 +391,7 @@ static int SQLITE_TCLAPI xF5tApi(
       break;
     }
     CASE(12, "xSetAuxdata") {
-      F5tAuxData *pData = (F5tAuxData*)sqlite3_malloc(sizeof(F5tAuxData));
+      F5tAuxData *pData = (F5tAuxData*)sqlite3_malloc64(sizeof(F5tAuxData));
       if( pData==0 ){
         Tcl_AppendResult(interp, "out of memory", (char*)0);
         return TCL_ERROR;
@@ -780,7 +780,7 @@ static int SQLITE_TCLAPI f5tTokenize(
   }
 
   if( nText>0 ){
-    pCopy = sqlite3_malloc(nText);
+    pCopy = sqlite3_malloc64(nText);
     if( pCopy==0 ){
       tokenizer.xDelete(pTok);
       Tcl_AppendResult(interp, "error in sqlite3_malloc()", (char*)0);
@@ -1420,7 +1420,7 @@ static int f5tOrigintextCreate(
   void *pTokCtx = 0;
   int rc = SQLITE_OK;
 
-  pTok = (OriginTextTokenizer*)sqlite3_malloc(sizeof(OriginTextTokenizer));
+  pTok = (OriginTextTokenizer*)sqlite3_malloc64(sizeof(OriginTextTokenizer));
   if( pTok==0 ){
     rc = SQLITE_NOMEM;
   }else if( nArg<1 ){
@@ -1480,7 +1480,7 @@ static int xOriginToken(
     int nReq = nToken + 1 + (iEnd-iStart);
     if( nReq>p->nBuf ){
       sqlite3_free(p->aBuf);
-      p->aBuf = sqlite3_malloc(nReq*2);
+      p->aBuf = sqlite3_malloc64(nReq*2);
       if( p->aBuf==0 ) return SQLITE_NOMEM;
       p->nBuf = nReq*2;
     }

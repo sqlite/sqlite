@@ -2273,8 +2273,8 @@ static char *rbuObjIterGetIndexWhere(sqlite3rbu *p, RbuObjIter *pIter){
 
           /* If necessary, grow the pIter->aIdxCol[] array */
           if( iIdxCol==nIdxAlloc ){
-            RbuSpan *aIdxCol = (RbuSpan*)sqlite3_realloc(
-                pIter->aIdxCol, (nIdxAlloc+16)*sizeof(RbuSpan)
+            RbuSpan *aIdxCol = (RbuSpan*)sqlite3_realloc64(
+                pIter->aIdxCol, nIdxAlloc*sizeof(RbuSpan) + 16*sizeof(RbuSpan)
             );
             if( aIdxCol==0 ){
               rc = SQLITE_NOMEM;
@@ -3659,7 +3659,12 @@ static void rbuCreateTargetSchema(sqlite3rbu *p){
 
   while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
     const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
-    p->rc = sqlite3_exec(p->dbMain, zSql, 0, 0, &p->zErrmsg);
+    sqlite3_stmt *pStmt = 0;
+    p->rc = prepareAndCollectError(p->dbMain, &pStmt, &p->zErrmsg, zSql);
+    if( p->rc==SQLITE_OK ){
+      sqlite3_step(pStmt);
+      rbuFinalize(p, pStmt);
+    }
   }
   rbuFinalize(p, pSql);
   if( p->rc!=SQLITE_OK ) return;

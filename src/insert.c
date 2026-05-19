@@ -2809,7 +2809,10 @@ void sqlite3CompleteInsertion(
          || pIdx->pNext==0
          || pIdx->pNext->onError==OE_Replace );
     if( aRegIdx[i]==0 ) continue;
-    if( pIdx->pPartIdxWhere ){
+    if( pIdx->pPartIdxWhere || (update_flags && pIdx->bHasExpr) ){
+      /* If this is a partial index, or an UPDATE of an index on an
+      ** expression, then the record register may be set to NULL to indicate
+      ** that no record should be inserted into this index. */
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
       VdbeCoverage(v);
     }

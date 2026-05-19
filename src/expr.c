@@ -2650,7 +2650,7 @@ int sqlite3ExprIsConstant(Parse *pParse, Expr *p){
 ** Walk an expression tree.  Return non-zero if
 **
 **   (1) the expression is constant, and
-**   (2) the expression does originate in the ON or USING clause
+**   (2) the expression does not originate in the ON or USING clause
 **       of a LEFT JOIN, and
 **   (3) the expression does not contain any EP_FixedCol TK_COLUMN
 **       operands created by the constant propagation optimization.
@@ -5162,7 +5162,7 @@ expr_code_doover:
     case TK_ISNOT:
       op = (op==TK_IS) ? TK_EQ : TK_NE;
       p5 = SQLITE_NULLEQ;
-      /* fall-through */
+      /* no break */ deliberate_fall_through
     case TK_LT:
     case TK_LE:
     case TK_GT:

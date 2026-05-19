@@ -46,7 +46,7 @@ static void sqlarCompressFunc(
     uLongf nOut = compressBound(nData);
     Bytef *pOut;
 
-    pOut = (Bytef*)sqlite3_malloc(nOut);
+    pOut = (Bytef*)sqlite3_malloc64(nOut);
     if( pOut==0 ){
       sqlite3_result_error_nomem(context);
       return;
@@ -84,14 +84,14 @@ static void sqlarUncompressFunc(
   sqlite3_int64 sz;
 
   assert( argc==2 );
-  sz = sqlite3_value_int(argv[1]);
+  sz = sqlite3_value_int64(argv[1]);
 
   if( sz<=0 || sz==(nData = sqlite3_value_bytes(argv[0])) ){
     sqlite3_result_value(context, argv[0]);
   }else{
     uLongf szf = sz;
     const Bytef *pData= sqlite3_value_blob(argv[0]);
-    Bytef *pOut = sqlite3_malloc(sz);
+    Bytef *pOut = sqlite3_malloc64(sz);
     if( pOut==0 ){
       sqlite3_result_error_nomem(context);
     }else if( Z_OK!=uncompress(pOut, &szf, pData, nData) ){

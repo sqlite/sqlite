@@ -34,6 +34,7 @@ Module.runSQLite3PostLoadInit = async function(
        - sqlite3-vtab-helper.c-pp.js => Utilities for virtual table impls
        - sqlite3-vfs-opfs.c-pp.js => OPFS VFS
        - sqlite3-vfs-opfs-sahpool.c-pp.js => OPFS SAHPool VFS
+       - sqlite3-vfs-opfs-wl.c-pp.js => WebLock-using OPFS VFS
      - post-js-footer.js          => this file's epilogue
 
      And all of that gets sandwiched between extern-pre-js.js and

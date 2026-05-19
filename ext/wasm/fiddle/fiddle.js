@@ -349,9 +349,10 @@
     SF.e.wasmInfo.innerText = 'WASM: '+(
       4===v.pointerSize ? 32 : 64
     )+'-bit'
-    //+' heap size: '+Number(v.heapSize)
+    +' heap: '+Number(v.heapSize)
     // Heap size is not changing even when loading a huge db?
     ;
+    SF.jqTerm?.set_prompt?.(v.prompt);
   });
 
   /* querySelectorAll() proxy */
@@ -865,8 +866,14 @@
       const jqeTerm = window.jQuery(SF.e.terminal).empty();
       SF.jqTerm = jqeTerm.terminal(SF.dbExec.bind(SF),{
         prompt: 'sqlite> ',
-        greetings: false /* note that the docs incorrectly call this 'greeting' */
+        greetings: false /* the docs incorrectly call this 'greeting' */
       });
+      /* Disable all special handling of the input:
+         https://sqlite.org/forum/forumpost/c6665017c0dbba1f
+         https://github.com/jcubic/jquery.terminal/issues/1044 */
+      const no_formatting = (str)=>window.jQuery.terminal.escape_formatting(str);
+      no_formatting.__meta__ = true;
+      window.jQuery.terminal.new_formatter(no_formatting);
       EAll('.unhide-if-terminal-available').forEach(e=>{
         e.classList.remove('hidden');
       });
@@ -890,5 +897,6 @@
     SF.dbExec(urlParams.get('sql') || null);
     delete SF.ForceResizeKludge.$disabled;
     SF.ForceResizeKludge();
+    globalThis.fiddle = SF;
   }/*onSFLoaded()*/;
 })();

@@ -915,6 +915,7 @@ void sqlite3GenerateRowIndexDelete(
   v = pParse->pVdbe;
   pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(i=0, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+    int p3 = 0;
     assert( iIdxCur+i!=iDataCur || pPk==pIdx );
     if( aRegIdx!=0 && aRegIdx[i]==0 ) continue;
     if( pIdx==pPk ) continue;
@@ -922,8 +923,12 @@ void sqlite3GenerateRowIndexDelete(
     VdbeModuleComment((v, "GenRowIdxDel for %s", pIdx->zName));
     r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1,
         &iPartIdxLabel, pPrior, r1);
-    sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
-        pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
+    if( pIdx->bHasExpr && aRegIdx ){
+      p3 = aRegIdx[i];
+    }
+    sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1, p3);
+    sqlite3VdbeChangeP4(v, -1, (const char*)pIdx, P4_INDEX);
+    sqlite3VdbeChangeP5(v, pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
     sqlite3ResolvePartIdxLabel(pParse, iPartIdxLabel);
     pPrior = pIdx;
   }

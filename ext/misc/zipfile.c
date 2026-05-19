@@ -456,7 +456,7 @@ static int zipfileDisconnect(sqlite3_vtab *pVtab){
 static int zipfileOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCsr){
   ZipfileTab *pTab = (ZipfileTab*)p;
   ZipfileCsr *pCsr;
-  pCsr = sqlite3_malloc(sizeof(*pCsr));
+  pCsr = sqlite3_malloc64(sizeof(*pCsr));
   *ppCsr = (sqlite3_vtab_cursor*)pCsr;
   if( pCsr==0 ){
     return SQLITE_NOMEM;
@@ -705,7 +705,12 @@ static int zipfileScanExtra(u8 *aExtra, int nExtra, u32 *pmTime){
   u8 *p = aExtra;
   u8 *pEnd = &aExtra[nExtra];
 
-  while( p<pEnd ){
+  /* Stop when there are less than 9 bytes left to scan in the buffer. This
+  ** is because the timestamp field requires exactly 9 bytes - 4 bytes of
+  ** header fields and 5 bytes of data. If there are less than 9 bytes 
+  ** remaining, either it is some other field or else the extra data
+  ** is corrupt. Either way, do not process it.  */
+  while( p+(2*sizeof(u16) + 1 + sizeof(u32))<=pEnd ){
     u16 id = zipfileRead16(p);
     u16 nByte = zipfileRead16(p);
 
@@ -990,7 +995,7 @@ static void zipfileInflate(
   int nIn,                        /* Size of buffer aIn[] in bytes */
   int nOut                        /* Expected output size */
 ){
-  u8 *aRes = sqlite3_malloc(nOut);
+  u8 *aRes = sqlite3_malloc64(nOut);
   if( aRes==0 ){
     sqlite3_result_error_nomem(pCtx);
   }else{
@@ -1387,7 +1392,7 @@ static int zipfileBestIndex(
 
 static ZipfileEntry *zipfileNewEntry(const char *zPath){
   ZipfileEntry *pNew;
-  pNew = sqlite3_malloc(sizeof(ZipfileEntry));
+  pNew = sqlite3_malloc64(sizeof(ZipfileEntry));
   if( pNew ){
     memset(pNew, 0, sizeof(ZipfileEntry));
     pNew->cds.zFile = sqlite3_mprintf("%s", zPath);

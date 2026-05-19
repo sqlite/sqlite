@@ -34,7 +34,7 @@ proc vtab_command {method args} {
       set orderby [$hdl orderby]
 
       if {[info exists ::xbestindex_sql]} { 
-        explain_i $::xbestindex_sql 
+        # explain_i $::xbestindex_sql 
         set ::xbestindex_res [ execsql $::xbestindex_sql ]
       }
 

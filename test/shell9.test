@@ -74,7 +74,7 @@ do_execsql_test 1.2.1 {
 db close
 do_test 1.2.2 {
   catchcmd test.db ".read testdump.txt"
-} {1 {Parse error near line 5: table sqlite_master may not be modified}}
+} {1 {Parse error near line 5 of testdump.txt: table sqlite_master may not be modified}}
 
 # Check testdump.txt cannot be processed if the db is in safe mode
 #

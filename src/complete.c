@@ -49,11 +49,50 @@ extern const char sqlite3IsEbcdicIdChar[];
 #endif
 
 /*
-** Return TRUE if the given SQL string ends in a semicolon.
+** Return zero if the given SQL string is complete - if all comments,
+** string and blob literals, and quoted identifiers have been closed and
+** if the entire string ends with ";" and possible with ";END;" if the
+** string is a CREATE TRIGGER statement.  A non-zero return indicates
+** that the string is incomplete.  Bits of the return value indicate
+** what is missing and is needed to close out the statement.
 **
 ** Special handling is require for CREATE TRIGGER statements.
 ** Whenever the CREATE TRIGGER keywords are seen, the statement
 ** must end with ";END;".
+**
+** Let the return code be a value R.  R is split up into various
+** subfields, at byte boundaries:
+**
+**    R = 0xwwwwwwww00xxyyzz
+**
+** In other words, zz is the least significant byte, yy is the next
+** most significant byte, xx is the third byte, wwwwwwww is a 32-bit
+** value from the middle.
+**
+**   zz == SQLITE_OK       Input is complete
+**   zz == SQLITE_ERROR    Input is incomplete
+**   zz == SQLITE_MISUSE   Input is a NULL pointer
+**   zz != 0               New values for zz may be added in the future
+**
+**   yy == 0x01            Need a semicolon at the end
+**   yy == 0x02            Need "END" and a semicolon
+**   yy == 0x03            Need semicolon, "END", and semicolon
+**   yy != 0               New values for yy may be added in the future
+**
+**   xx == '\''            Incomplete string or blob literal
+**   xx == '"'             Incomplete quoted identifier
+**   xx == '`'             Incompelte MySQL-style quoted identifier
+**   xx == ']'             Incomplete SQLServer-style quoted identifer
+**   xx == '-'             Incomplete SQL-style comment
+**   xx == '/'             Incomplete C-style comment
+**   xx != 0               New values of xx may be added in the future
+**
+**   wwwwwwww              Interpret as a signed integer, the number
+**                         of unmatched "(".  Negative means there are
+**                         more ")" and "(".
+**
+**   ((R>>24)&0xff)!=0     New uses for the 4th byte may be added
+**                         in the future
 **
 ** This implementation uses a state machine with 8 states:
 **
@@ -101,9 +140,11 @@ extern const char sqlite3IsEbcdicIdChar[];
 ** to recognize the end of a trigger can be omitted.  All we have to do
 ** is look for a semicolon that is not part of an string or comment.
 */
-int sqlite3_complete(const char *zSql){
+sqlite3_int64 sqlite3_incomplete(const char *zSql){
   u8 state = 0;   /* Current state, using numbers defined in header comment */
   u8 token;       /* Value of the next token */
+  u8 pending = 0; /* unmatched structure character */
+  int nParen = 0; /* Nested parentheses */
 
 #ifndef SQLITE_OMIT_TRIGGER
   /* A complex statement machine used to detect the end of a CREATE TRIGGER
@@ -133,11 +174,21 @@ int sqlite3_complete(const char *zSql){
      /* 2  NORMAL: */ {    1,  2,     2, },
   };
 #endif /* SQLITE_OMIT_TRIGGER */
+  /* Mapping state number to yy value for the return */
+  static const u8 statemap[8] = {
+     /* 0 INVALID */ 1,
+     /* 1 START   */ 0,
+     /* 2 NORMAL  */ 1,
+     /* 3 EXPLAIN */ 1,
+     /* 4 CREATE  */ 1,
+     /* 5 TRIGGER */ 3,
+     /* 6 SEMI    */ 2,
+     /* 7 END     */ 1,
+  };
 
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( zSql==0 ){
-    (void)SQLITE_MISUSE_BKPT;
-    return 0;
+    return SQLITE_MISUSE_BKPT;
   }
 #endif
 
@@ -162,7 +213,10 @@ int sqlite3_complete(const char *zSql){
         }
         zSql += 2;
         while( zSql[0] && (zSql[0]!='*' || zSql[1]!='/') ){ zSql++; }
-        if( zSql[0]==0 ) return 0;
+        if( zSql[0]==0 ){
+          pending = '/';
+          goto incomplete_finish;
+        }
         zSql++;
         token = tkWS;
         break;
@@ -173,14 +227,20 @@ int sqlite3_complete(const char *zSql){
           break;
         }
         while( *zSql && *zSql!='\n' ){ zSql++; }
-        if( *zSql==0 ) return state==1;
+        if( *zSql==0 ){
+          if( state!=1 ) pending = '-';
+          goto incomplete_finish;
+        }
         token = tkWS;
         break;
       }
       case '[': {   /* Microsoft-style identifiers in [...] */
         zSql++;
         while( *zSql && *zSql!=']' ){ zSql++; }
-        if( *zSql==0 ) return 0;
+        if( *zSql==0 ){
+          pending = ']';
+          goto incomplete_finish;
+        }
         token = tkOTHER;
         break;
       }
@@ -190,7 +250,20 @@ int sqlite3_complete(const char *zSql){
         int c = *zSql;
         zSql++;
         while( *zSql && *zSql!=c ){ zSql++; }
-        if( *zSql==0 ) return 0;
+        if( *zSql==0 ){
+          pending = c;
+          goto incomplete_finish;
+        }
+        token = tkOTHER;
+        break;
+      }
+      case '(': {
+        nParen++;
+        token = tkOTHER;
+        break;
+      }
+      case ')': {
+        nParen--;
         token = tkOTHER;
         break;
       }
@@ -257,7 +330,15 @@ int sqlite3_complete(const char *zSql){
     state = trans[state][token];
     zSql++;
   }
-  return state==1;
+incomplete_finish:
+  if( state==1 ) nParen = 0;
+  return (i64)((((u64)nParen)<<32) |
+               ((u64)pending<<16) |
+               ((u64)statemap[state]<<8) |
+               (state!=1));
+}
+int sqlite3_complete(const char *zSql){
+  return sqlite3_incomplete(zSql)==0;
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -279,7 +360,7 @@ int sqlite3_complete16(const void *zSql){
   sqlite3ValueSetStr(pVal, -1, zSql, SQLITE_UTF16NATIVE, SQLITE_STATIC);
   zSql8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zSql8 ){
-    rc = sqlite3_complete(zSql8);
+    rc = sqlite3_incomplete(zSql8)==0;
   }else{
     rc = SQLITE_NOMEM_BKPT;
   }

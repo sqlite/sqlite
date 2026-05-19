@@ -92,7 +92,7 @@ static void scrubBackupErr(ScrubState *p, const char *zFormat, ...){
 static u8 *scrubBackupAllocPage(ScrubState *p){
   u8 *pPage;
   if( p->rcErr ) return 0;
-  pPage = sqlite3_malloc( p->szPage );
+  pPage = sqlite3_malloc64( p->szPage );
   if( pPage==0 ) p->rcErr = SQLITE_NOMEM;
   return pPage;
 }

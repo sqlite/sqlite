@@ -1237,4 +1237,23 @@ do_execsql_test 27.1 {
   SELECT k, cte_map, main_map, '|' FROM log ORDER BY k;
 } {1 cte1 main1 | 2 cte2 main2 |}
 
+# forum post https://sqlite.org/forum/forumpost/2026-03-04T05:06:26Z
+#
+db null NULL
+do_execsql_test 28.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x INTEGER PRIMARY KEY);
+  INSERT INTO t1 VALUES(1),(4),(999);
+  SELECT (
+    WITH RECURSIVE t2(y) AS (
+      SELECT 4
+      UNION
+      SELECT NULL
+      UNION
+      SELECT y+1 FROM t2 WHERE y=4 ORDER BY 1
+    )
+    SELECT 1 FROM t2 WHERE y=x
+  ) FROM t1;
+} {NULL 1 NULL}
+
 finish_test

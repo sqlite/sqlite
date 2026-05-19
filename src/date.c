@@ -1784,7 +1784,7 @@ static void datedebugFunc(
     char *zJson;
     zJson = sqlite3_mprintf(
       "{iJD:%lld,Y:%d,M:%d,D:%d,h:%d,m:%d,tz:%d,"
-      "s:%.3f,validJD:%d,validYMS:%d,validHMS:%d,"
+      "s:%.3f,validJD:%d,validYMD:%d,validHMS:%d,"
       "nFloor:%d,rawS:%d,isError:%d,useSubsec:%d,"
       "isUtc:%d,isLocal:%d}",
       x.iJD, x.Y, x.M, x.D, x.h, x.m, x.tz,

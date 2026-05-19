@@ -1922,8 +1922,8 @@ do_test auth-1.283 {
   execsql {
     REINDEX BINARY;
   }
-  set ::authargs
-} {t3_idx1 {} main {} sqlite_autoindex_t3_1 {} main {}}
+  lsort -unique $::authargs
+} {{} main sqlite_autoindex_t3_1 t3_idx1 t3_idx2}
 do_test auth-1.284 {
   set ::authargs {}
   execsql {
@@ -1963,8 +1963,8 @@ ifcapable tempdb {
     execsql {
       REINDEX BINARY;
     }
-    set ::authargs
-  } {t3_idx1 {} temp {} sqlite_autoindex_t3_1 {} temp {}}
+    lsort -unique $::authargs
+  } {{} sqlite_autoindex_t3_1 t3_idx1 t3_idx2 temp}
   do_test auth-1.290 {
     set ::authargs {}
     execsql {

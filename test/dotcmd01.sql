@@ -40,8 +40,8 @@ CREATE TABLE t1(a,b,c);
 CREATE INDEX t1a ON t1(a);
 CREATE INDEX t1b ON t1(b);
 ANALYZE sqlite_schema;
-INSERT INTO sqlite_stat1 VALUES('t1','t1b','300 10');
-INSERT INTO sqlite_stat1 VALUES('t1','t1a','300 30');
+INSERT INTO sqlite_stat1 VALUES('t1','t1b','300 10'),
+  ('t1','t1a','300 30');
 ANALYZE sqlite_schema;
 END
 

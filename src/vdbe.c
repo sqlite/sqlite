@@ -355,9 +355,9 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   double rValue;
   int rc;
   assert( (pRec->flags & (MEM_Str|MEM_Int|MEM_Real|MEM_IntReal))==MEM_Str );
-  rValue = sqlite3MemRealValueRC(pRec, &rc);
+  rc = sqlite3MemRealValueRC(pRec, &rValue);
   if( rc<=0 ) return;
-  if( rc==1 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
+  if( (rc&2)==0 && alsoAnInt(pRec, rValue, &pRec->u.i) ){
     pRec->flags |= MEM_Int;
   }else{
     pRec->u.r = rValue;
@@ -473,15 +473,15 @@ static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
     pMem->u.i = 0;
     return MEM_Int;
   }
-  pMem->u.r = sqlite3MemRealValueRC(pMem, &rc);
+  rc = sqlite3MemRealValueRC(pMem, &pMem->u.r);
   if( rc<=0 ){
-    if( rc==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
+    if( (rc&2)==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1 ){
       pMem->u.i = ix;
       return MEM_Int;
     }else{
       return MEM_Real;
     }
-  }else if( rc==1 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)==0 ){
+  }else if( (rc&2)==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)==0 ){
     pMem->u.i = ix;
     return MEM_Int;
   }
@@ -708,7 +708,6 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
   return h;
 }
 
-
 /*
 ** For OP_Column, factor out the case where content is loaded from
 ** overflow pages, so that the code to implement this case is separate
@@ -792,6 +791,40 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   }
   pDest->flags &= ~MEM_Ephem;
   return rc;
+}
+
+/*
+** Memory cell pMem may contain a blob or a NULL value. Cursor pCsr is
+** open on an index. If the current index entry matches the blob value in
+** pMem byte-for-byte, set pMem to NULL and return 1. Otherwise, return 0.
+**
+** If an error occurs, set (*pRc) to an SQLite error code. Return 1 in this
+** case as well.
+*/
+static SQLITE_NOINLINE int vdbeIndexKeyCompare(
+  BtCursor *pCsr,                 /* Cursor to compare key to */
+  Mem *pMem,
+  int *pRc
+){
+  int ret = 0;
+  u32 nKey = 0;
+
+  assert( pMem->flags & (MEM_Blob|MEM_Null) );
+  nKey = sqlite3BtreePayloadSize(pCsr);
+  if( nKey==pMem->n && ALWAYS((pMem->flags & MEM_Blob)!=0) ){
+    /* This code could just use sqlite3BtreePayloadFetch(). But calling that
+    ** function here apparently prevents compilers from inlining it in other,
+    ** more performance critical, places. So this code uses
+    ** MemFromBtreeZeroOffset(), which is just as fast in most cases, but also
+    ** handles the case where the index record uses overflow pages. */
+    Mem m;
+    memset(&m, 0, sizeof(m));
+    *pRc = sqlite3VdbeMemFromBtreeZeroOffset(pCsr, nKey, &m);
+    ret = (*pRc!=SQLITE_OK || 0==memcmp(pMem->z, m.z, nKey));
+    sqlite3VdbeMemReleaseMalloc(&m);
+  }
+
+  return ret;
 }
 
 /*
@@ -6666,12 +6699,19 @@ case OP_SorterInsert: {     /* in2 */
   break;
 }
 
-/* Opcode: IdxDelete P1 P2 P3 * *
-** Synopsis: key=r[P2@P3]
+/* Opcode: IdxDelete P1 P2 P3 P4 P5
+** Synopsis: key=r[P2@P5]
 **
-** The content of P3 registers starting at register P2 form
+** The content of P5 registers starting at register P2 form
 ** an unpacked index key. This opcode removes that entry from the
 ** index opened by cursor P1.
+**
+** P4 is a pointer to an Index structure.
+**
+** If P3 is non-zero, it is the register number of a register holding
+** a record that will be inserted into this index. If that record is
+** identical to the one that would be deleted by this instruction, 
+** skip the delete and set register P3 to NULL.
 **
 ** Raise an SQLITE_CORRUPT_INDEX error if no matching index entry is found
 ** and not in writable_schema mode.
@@ -6682,8 +6722,8 @@ case OP_IdxDelete: {
   int res;
   UnpackedRecord r;
 
-  assert( pOp->p3>0 );
-  assert( pOp->p2>0 && pOp->p2+pOp->p3<=(p->nMem+1 - p->nCursor)+1 );
+  assert( pOp->p5>0 );
+  assert( pOp->p2>0 && pOp->p2+pOp->p5<=(p->nMem+1 - p->nCursor)+1 );
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
@@ -6692,18 +6732,34 @@ case OP_IdxDelete: {
   pCrsr = pC->uc.pCursor;
   assert( pCrsr!=0 );
   r.pKeyInfo = pC->pKeyInfo;
-  r.nField = (u16)pOp->p3;
+  r.nField = pOp->p5;
   r.default_rc = 0;
   r.aMem = &aMem[pOp->p2];
   rc = sqlite3BtreeIndexMoveto(pCrsr, &r, &res);
   if( rc ) goto abort_due_to_error;
-  if( res==0 ){
-    rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
-    if( rc ) goto abort_due_to_error;
-  }else if( !sqlite3WritableSchema(db) ){
-    rc = sqlite3ReportError(SQLITE_CORRUPT_INDEX, __LINE__, "index corruption");
-    goto abort_due_to_error;
+  if( res!=0 ){
+    rc = sqlite3VdbeFindIndexKey(pCrsr, pOp->p4.pIdx, &r, &res, 0);
+    if( rc!=SQLITE_OK ) goto abort_due_to_error;
+    if( res!=0 ){
+      if( !sqlite3WritableSchema(db) ){
+        rc = sqlite3ReportError(
+            SQLITE_CORRUPT_INDEX, __LINE__, "index corruption");
+        goto abort_due_to_error;
+      }
+      pC->cacheStatus = CACHE_STALE;
+      pC->seekResult = 0;
+      break;
+    }
   }
+
+  if( pOp->p3 && vdbeIndexKeyCompare(pCrsr, &aMem[pOp->p3], &rc) ){
+    if( rc ) goto abort_due_to_error;
+    sqlite3VdbeMemSetNull(&aMem[pOp->p3]);
+    break;
+  }
+
+  rc = sqlite3BtreeDelete(pCrsr, BTREE_AUXDELETE);
+  if( rc ) goto abort_due_to_error;
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
   pC->seekResult = 0;
@@ -7330,6 +7386,58 @@ case OP_IntegrityCk: {
   sqlite3VdbeChangeEncoding(pIn1, encoding);
   goto check_for_interrupt;
 }
+
+/* Opcode: IFindKey P1 P2 P3 P4 *
+**
+** This instruction always follows an OP_Found with the same P1, P2 and P3
+** values as this instruction and a non-zero P4 value. The P4 value to
+** this opcode is of type P4_INDEX and contains a pointer to the Index
+** object of for the index being searched.
+**
+** This opcode uses sqlite3VdbeFindIndexKey() to search around the current
+** cursor location for an index key that exactly matches all fields that
+** are not indexed expressions or references to VIRTUAL generated columns,
+** and either exactly match or are real numbers that are within 2 ULPs of
+** each other if the don't match.
+**
+** To put it another way, this opcode looks for nearby index entries that
+** are very close to the search key, but which might have small differences
+** in floating-point values that come via an expression.
+**
+** If no nearby alternative entry is found in cursor P1, then jump to P2.
+** But if a close match is found, fall through.
+**
+** This opcode is used by PRAGMA integrity_check to help distinguish
+** between truely corrupt indexes and expression indexes that are holding
+** floating-point values that are off by one or two ULPs.
+*/
+case OP_IFindKey: {     /* jump, in3 */
+  VdbeCursor *pC;
+  int res;
+  UnpackedRecord r;
+
+  assert( pOp[-1].opcode==OP_Found );
+  assert( pOp[-1].p1==pOp->p1 );
+  assert( pOp[-1].p3==pOp->p3 );
+  pC = p->apCsr[pOp->p1];
+  assert( pOp->p4type==P4_INDEX );
+  assert( pC->eCurType==CURTYPE_BTREE );
+  assert( pC->uc.pCursor!=0 );
+  assert( pC->isTable==0 );
+
+  memset(&r, 0, sizeof(r));
+  r.aMem = &aMem[pOp->p3];
+  r.nField = pOp->p4.pIdx->nColumn;
+  r.pKeyInfo = pC->pKeyInfo;
+
+  rc = sqlite3VdbeFindIndexKey(pC->uc.pCursor, pOp->p4.pIdx, &r, &res, 1);
+  if( rc || res!=0 ){
+    rc = SQLITE_OK;
+    goto jump_to_p2;
+  }
+  pC->nullRow = 0;
+  break;
+};
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 /* Opcode: RowSetAdd P1 P2 * * *

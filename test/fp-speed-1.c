@@ -2,6 +2,9 @@
 ** Performance testing of floating-point binary-to-decimal conversion for
 ** SQLite versus the standard library.
 **
+** This module compares library sprintf() against SQLite's sqlite3_snprintf().
+** To go the other direction (decimal-to-binary) see fp-speed-2.c.
+**
 ** To compile:
 **
 **    make sqlite3.c
@@ -10,9 +13,17 @@
 **
 ** To run the test:
 **
-**    time ./a.out 0 10000000     <-- standard library
-**    time ./a.out 1 10000000     <-- SQLite
+**    ./a.out 10000000
 */
+#include "sqlite3.h"
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef _WIN32
+# include <windows.h>
+#else
+# include <sys/time.h>
+#endif
+
 static double aVal[] = {
   -1.0163830486285643089e+063,
   +0.0049243807391586981e-019,
@@ -117,38 +128,80 @@ static double aVal[] = {
 };
 #define NN (sizeof(aVal)/sizeof(aVal[0]))
 
-#include "sqlite3.h"
-#include <stdio.h>
-#include <stdlib.h>
+/* Return the current wall-clock time in microseconds since the
+** Unix epoch (1970-01-01T00:00:00Z)
+*/
+static sqlite3_int64 timeOfDay(void){
+#if defined(_WIN64) && _WIN32_WINNT >= _WIN32_WINNT_WIN8
+  sqlite3_uint64 t;
+  FILETIME tm;
+  GetSystemTimePreciseAsFileTime(&tm);
+  t =  ((sqlite3_uint64)tm.dwHighDateTime<<32) |
+          (sqlite3_uint64)tm.dwLowDateTime;
+  t += 116444736000000000LL;
+  t /= 10;
+  return t;
+#elif defined(_WIN32)
+  static sqlite3_vfs *clockVfs = 0;
+  sqlite3_int64 t;
+  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs==0 ) return 0;  /* Never actually happens */
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
+    clockVfs->xCurrentTimeInt64(clockVfs, &t);
+  }else{
+    double r;
+    clockVfs->xCurrentTime(clockVfs, &r);
+    t = (sqlite3_int64)(r*86400000.0);
+  }
+  return t*1000;
+#else
+  struct timeval sNow;
+  (void)gettimeofday(&sNow,0);
+  return ((sqlite3_int64)sNow.tv_sec)*1000000 + sNow.tv_usec;
+#endif
+}
 
 int main(int argc, char **argv){
   int i;
   int cnt;
-  int fg;
+  static const char *zFmt = "%.17g";
+  sqlite3_int64 tm1, tm2;
   char zBuf[1000];
 
-  if( argc!=3 ){
-    fprintf(stderr, "Usage:  %s FLAG COUNT\n", argv[0]);
+  if( argc!=2 ){
+    printf("Usage:  %s COUNT\n", argv[0]);
+    printf("Suggested value for COUNT is 10 million\n");
     return 1;
   }
-  cnt = atoi(argv[2]);
-  fg = atoi(argv[1]);
+  cnt = atoi(argv[1]);
+  if( cnt<100 ){
+    printf("Minimum COUNT value is 100");
+    return 1;
+  }
 
-  switch( fg % 3 ){
-    case 0: {
-      printf("Doing %d calls to C-lib sprintf()\n", cnt);
-      for(i=0; i<cnt; i++){
-        sprintf(zBuf, "%.26g", aVal[i%NN]);
-      }
-      break;
-    }
-    case 1: {
-      printf("Doing %d calls to sqlite3_snprintf()\n", cnt);
-      for(i=0; i<cnt; i++){
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "%!.26g", aVal[i%NN]);
-      }
-      break;
-    }
+  printf("C-library sprintf(\"%s\"): ", zFmt);
+  fflush(stdout);
+  tm1 = timeOfDay();
+  for(i=0; i<cnt; i++){
+    sprintf(zBuf, zFmt, aVal[i%NN]);
+  }
+  tm1 = timeOfDay() - tm1;
+  printf("%6.1f ns/call, %9.6f sec total\n", tm1*1.0e+3/(double)cnt,tm1*1.0e-6);
+
+  printf("sqlite3_snprintf(\"%s\"):  ", zFmt);
+  tm2 = timeOfDay();
+  for(i=0; i<cnt; i++){
+    sqlite3_snprintf(sizeof(zBuf), zBuf, zFmt, aVal[i%NN]);
+  }
+  tm2 = timeOfDay() - tm2;
+  printf("%6.1f ns/call, %9.6f sec total\n", tm2*1.0e+3/(double)cnt,tm2*1.0e-6);
+
+  if( tm1 < tm2 ){
+    printf("sprintf() is about %g times faster than sqlite3_snprintf()\n",
+           (double)tm2/(double)tm1);
+  }else{
+    printf("sqlite3_snprintf() is about %g times faster than sprintf()\n",
+           (double)tm1/(double)tm2);
   }
   return 0;
 }

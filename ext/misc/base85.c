@@ -262,7 +262,7 @@ static int allBase85( char *p, int len ){
 
 #ifndef BASE85_STANDALONE
 
-# ifndef OMIT_BASE85_CHECKER
+#ifndef OMIT_BASE85_CHECKER
 /* This function does the work for the SQLite is_base85(t) UDF. */
 static void is_base85(sqlite3_context *context, int na, sqlite3_value *av[]){
   assert(na==1);
@@ -282,7 +282,7 @@ static void is_base85(sqlite3_context *context, int na, sqlite3_value *av[]){
     return;
   }
 }
-# endif
+#endif
 
 /* This function does the work for the SQLite base85(x) UDF. */
 static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
@@ -309,7 +309,7 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
       sqlite3_result_text(context,"",-1,SQLITE_STATIC);
       break;
     }
-    cBuf = sqlite3_malloc(nc);
+    cBuf = sqlite3_malloc64(nc);
     if( !cBuf ) goto memFail;
     nc = (int)(toBase85(bBuf, nb, cBuf, "\n") - cBuf);
     sqlite3_result_text(context, cBuf, nc, sqlite3_free);
@@ -331,7 +331,7 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
       sqlite3_result_zeroblob(context, 0);
       break;
     }
-    bBuf = sqlite3_malloc(nb);
+    bBuf = sqlite3_malloc64(nb);
     if( !bBuf ) goto memFail;
     nb = (int)(fromBase85(cBuf, nc, bBuf) - bBuf);
     sqlite3_result_blob(context, bBuf, nb, sqlite3_free);
@@ -352,14 +352,14 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
-int sqlite3_base_init
+int sqlite3_base85_init
 #else
 static int sqlite3_base85_init
 #endif
 (sqlite3 *db, char **pzErr, const sqlite3_api_routines *pApi){
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErr;
-# ifndef OMIT_BASE85_CHECKER
+#ifndef OMIT_BASE85_CHECKER
   {
     int rc = sqlite3_create_function
       (db, "is_base85", 1,
@@ -367,7 +367,7 @@ static int sqlite3_base85_init
        0, is_base85, 0, 0);
     if( rc!=SQLITE_OK ) return rc;
   }
-# endif
+#endif
   return sqlite3_create_function
     (db, "base85", 1,
      SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS|SQLITE_DIRECTONLY|SQLITE_UTF8,
@@ -432,9 +432,9 @@ int main(int na, char *av[]){
         int nc = strlen(cBuf);
         size_t nbo = fromBase85( cBuf, nc, bBuf ) - bBuf;
         if( 1 != fwrite(bBuf, nbo, 1, fb) ) rc = 1;
-# ifndef OMIT_BASE85_CHECKER
+#ifndef OMIT_BASE85_CHECKER
         b85Clean &= allBase85( cBuf, nc );
-# endif
+#endif
       }
       break;
     default:

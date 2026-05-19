@@ -1243,17 +1243,17 @@ static int jrnlBufferSize(Pager *pPager){
 */
 #ifdef SQLITE_CHECK_PAGES
 /*
-** Return a 32-bit hash of the page data for pPage.
+** Return a 64-bit hash of the page data for pPage.
 */
-static u32 pager_datahash(int nByte, unsigned char *pData){
-  u32 hash = 0;
+static u64 pager_datahash(int nByte, unsigned char *pData){
+  u64 hash = 0;
   int i;
   for(i=0; i<nByte; i++){
     hash = (hash*1039) + pData[i];
   }
   return hash;
 }
-static u32 pager_pagehash(PgHdr *pPage){
+static u64 pager_pagehash(PgHdr *pPage){
   return pager_datahash(pPage->pPager->pageSize, (unsigned char *)pPage->pData);
 }
 static void pager_set_pagehash(PgHdr *pPage){
@@ -2066,7 +2066,7 @@ static int pagerFlushOnCommit(Pager *pPager, int bCommit){
 ** database transaction.
 **
 ** This routine is never called in PAGER_ERROR state. If it is called
-** in PAGER_NONE or PAGER_SHARED state and the lock held is less
+** in PAGER_OPEN or PAGER_READER state and the lock held is less
 ** exclusive than a RESERVED lock, it is a no-op.
 **
 ** Otherwise, any active savepoints are released.
@@ -3849,7 +3849,7 @@ void sqlite3PagerSetBusyHandler(
 **
 ** then the pager object page size is set to *pPageSize.
 **
-** If the page size is changed, then this function uses sqlite3PagerMalloc()
+** If the page size is changed, then this function uses sqlite3PageMalloc()
 ** to obtain a new Pager.pTmpSpace buffer. If this allocation attempt
 ** fails, SQLITE_NOMEM is returned and the page size remains unchanged.
 ** In all other cases, SQLITE_OK is returned.
@@ -5205,8 +5205,8 @@ sqlite3_file *sqlite3_database_file_object(const char *zName){
 
 
 /*
-** This function is called after transitioning from PAGER_UNLOCK to
-** PAGER_SHARED state. It tests if there is a hot journal present in
+** This function is called while transitioning from PAGER_OPEN to a
+** higher state. It tests if there is a hot journal present in
 ** the file-system for the given pager. A hot journal is one that
 ** needs to be played back. According to this function, a hot-journal
 ** file exists if the following criteria are met:

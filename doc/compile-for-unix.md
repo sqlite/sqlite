@@ -37,18 +37,35 @@ guidance on building for Windows.
   4.  Download the SQLite source tree and unpack it. CD into the
       toplevel directory of the source tree.
 
-  5.  Run: `./configure --enable-all --with-tclsh=$HOME/local/bin/tclsh9.0`
+  5.  *(Optional):* Download Antirez's "linenoise" command-line editing
+      library to provide command-line editing in the CLI.  You can find
+      a suitable copy of the linenoise sources at
+      <https://sqlite.org/linenoise.tar.gz> or at various other locations
+      on the internet.  If you put the linenoise source tree in
+      a directory named $HOME/linenoise or a directory "linenoise" which
+      is a sibling of the SQLite source tree, then the SQLite ./configure
+      script will automatically find and use that source code to provide
+      command-line editing in the CLI. If you would rather use the readline
+      or editline libraries or a precompiled linenoise library, there are
+      ./configure options to accommodate that choice. The SQLite developers
+      typically use $HOME/linenoise since linenoise is small, has no
+      external dependencies, "just works", and the ./configure script
+      will pick it up and use it automatically. But you do what works
+      best for you.
+      <p>
+      You are not required to have any command-line editing support in
+      order to use SQLite.  But command-line editing does make the
+      interactive experience more enjoyable.
+
+  6.  Run: `./configure --enable-all --with-tclsh=$HOME/local/bin/tclsh9.0`
 
       You do not need to use --with-tclsh if the tclsh you want to use is the
       first one on your PATH or if you are building without TCL.
 
-      The SQLite developers typically add the
-      &ensp; `--with-linenoise=$HOME/linenoise` &ensp; option
-      to provide command-line editing.  "$HOME/linenoise" is a directory
-      that contains [linenoise](https://github.com/antirez/linenoise) source
-      code files, `linenoise.c` and `linenoise.h`.
+      Lots of other options to ./configure are available.
+      Run `./configure --help` for further guidance.
 
-  6.  Run the "`Makefile`" makefile with an appropriate target.
+  7.  Run the "`Makefile`" makefile with an appropriate target.
       Examples:
       <ul>
       <li>  `make sqlite3.c`
@@ -73,5 +90,7 @@ guidance on building for Windows.
       of SQLite.
 
 
-  7.  For a debugging build of the CLI, where the ".treetrace" and ".wheretrace"
-      commands work, add the the --with-debug argument to configure.
+  8.  For a debugging build of the CLI, use `./configure --dev`.  A debugging
+      build contains lots of extra debugging code, so it is slow and a lot
+      bigger.  You probably do not want to deploy a debugging build.  But if
+      you are working on the code, a debugging build works much better.

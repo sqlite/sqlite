@@ -461,4 +461,4 @@ all other significant processing.
 [sqlite-config.tcl]: /file/autosetup/sqlite-config.tcl
 [Makefile.in]: /file/Makefile.in
 [main.mk]: /file/main.mk
-[JimTCL]: https://jim.tcl.tk
+[JimTCL]: https://msteveb.github.io/jimtcl/

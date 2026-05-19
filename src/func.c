@@ -130,13 +130,17 @@ static void lengthFunc(
     case SQLITE_TEXT: {
       const unsigned char *z = sqlite3_value_text(argv[0]);
       const unsigned char *z0;
-      unsigned char c;
       if( z==0 ) return;
       z0 = z;
-      while( (c = *z)!=0 ){
-        z++;
-        if( c>=0xc0 ){
-          while( (*z & 0xc0)==0x80 ){ z++; z0++; }
+      while( 1 /*exit-by-break*/ ){
+                      /*  vvvvvv----  See tag-20260418-01 */
+        if( (u8)(z[0]-1)<(0x80-1) ){
+          z++;
+        }else if( z[0]==0 ){
+          break;
+        }else{
+          z++;
+          while( (z[0]&0xc0)==0x80 ){ z++; z0++; }
         }
       }
       sqlite3_result_int(context, (int)(z-z0));
@@ -415,12 +419,25 @@ static void substrFunc(
   }
   assert( p1>=0 && p2>=0 );
   if( p0type!=SQLITE_BLOB ){
-    while( *z && p1 ){
-      SQLITE_SKIP_UTF8(z);
-      p1--;
+    for( ; p1>0; p1--){
+                    /*  vvvvvv----  See tag-20260418-01 */
+      if( (u8)(z[0]-1)<(0x80-1) ){
+        z++;
+      }else if( z[0]==0 ){
+        break;
+      }else{
+        do{ z++; }while( (z[0]&0xc0)==0x80 );
+      }
     }
-    for(z2=z; *z2 && p2; p2--){
-      SQLITE_SKIP_UTF8(z2);
+    for(z2=z; p2>0; p2--){
+                     /*  vvvvvv----  See tag-20260418-01 */
+      if( (u8)(z2[0]-1)<(0x80-1) ){
+        z2++;
+      }else if( z2[0]==0 ){
+        break;
+      }else{
+        do{ z2++; }while( (z2[0]&0xc0)==0x80 );
+      }
     }
     sqlite3_result_text64(context, (char*)z, z2-z, SQLITE_TRANSIENT,
                           SQLITE_UTF8);
@@ -1100,18 +1117,11 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
 
   switch( sqlite3_value_type(pValue) ){
     case SQLITE_FLOAT: {
-      double r1, r2;
-      const char *zVal;
-      r1 = sqlite3_value_double(pValue);
-      sqlite3_str_appendf(pStr, "%!0.15g", r1);
-      zVal = sqlite3_str_value(pStr);
-      if( zVal ){
-        sqlite3AtoF(zVal, &r2);
-        if( r1!=r2 ){
-          sqlite3_str_reset(pStr);
-          sqlite3_str_appendf(pStr, "%!0.20e", r1);
-        }
-      }
+                             /*    ,---  Show infinity as 9.0e+999
+                             **    |   
+                             **    | ,--- 17 precision guarantees round-trip
+                             **    v v                                       */
+      sqlite3_str_appendf(pStr, "%!0.17g", sqlite3_value_double(pValue));
       break;
     }
     case SQLITE_INTEGER: {
@@ -2366,6 +2376,8 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
     sqlite3CreateFunc(db, "like", nArg, SQLITE_UTF8, pInfo, likeFunc, 
                       0, 0, 0, 0, 0);
     pDef = sqlite3FindFunction(db, "like", nArg, SQLITE_UTF8, 0);
+    assert( pDef!=0 ); /* The sqlite3CreateFunc() call above cannot fail
+                       ** because the "like" SQL-function already exists */
     pDef->funcFlags |= flags;
     pDef->funcFlags &= ~SQLITE_FUNC_UNSAFE;
   }
@@ -3113,7 +3125,7 @@ static void filestatFunc(
     assert( pPager!=0 );
     fd = sqlite3PagerFile(pPager);
     pStr = sqlite3_str_new(db);
-    if( pStr==0 ){
+    if( sqlite3_str_errcode(pStr) ){
       sqlite3_result_error_nomem(context);
     }else{
       sqlite3_str_append(pStr, "{\"db\":", 6);
@@ -3216,7 +3228,7 @@ static void parseuriFunc(
   flgs = (unsigned int)sqlite3_value_int(argv[1]);
   rc = sqlite3ParseUri(zVfs, zUri, &flgs, &pVfs, &zFile, &zErr);
   pResult = sqlite3_str_new(0);
-  if( pResult ){
+  if( !sqlite3_str_errcode(pResult) ){
     int i;
     sqlite3_str_appendf(pResult, "rc=%d", rc);
     sqlite3_str_appendf(pResult, ", flags=0x%x", flgs);

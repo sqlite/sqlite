@@ -734,7 +734,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
   }
   if( pParse->zErrMsg || (pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE) ){
     if( pParse->zErrMsg==0 ){
-      pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));
+      pParse->zErrMsg = sqlite3DbStrDup(db, sqlite3ErrStr(pParse->rc));
     }
     if( (pParse->prepFlags & SQLITE_PREPARE_DONT_LOG)==0 ){
       sqlite3_log(pParse->rc, "%s in \"%s\"", pParse->zErrMsg, pParse->zTail);
@@ -815,7 +815,7 @@ char *sqlite3Normalize(
           sqlite3_str_append(pStr, " NULL", 5);
           break;
         }
-        /* Fall through */
+        /* no break */ deliberate_fall_through
       }
       case TK_STRING:
       case TK_INTEGER:
@@ -879,7 +879,7 @@ char *sqlite3Normalize(
       }
       case TK_SELECT: {
         iStartIN = 0;
-        /* fall through */
+        /* no break */ deliberate_fall_through
       }
       default: {
         if( sqlite3IsIdChar(zSql[i]) ) addSpaceSeparator(pStr);

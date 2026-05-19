@@ -194,7 +194,7 @@ static int fts5tokConnectMethod(
   }
 
   if( rc==SQLITE_OK ){
-    pTab = (Fts5tokTable*)sqlite3_malloc(sizeof(Fts5tokTable));
+    pTab = (Fts5tokTable*)sqlite3_malloc64(sizeof(Fts5tokTable));
     if( pTab==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -275,7 +275,7 @@ static int fts5tokBestIndexMethod(
 static int fts5tokOpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
   Fts5tokCursor *pCsr;
 
-  pCsr = (Fts5tokCursor *)sqlite3_malloc(sizeof(Fts5tokCursor));
+  pCsr = (Fts5tokCursor *)sqlite3_malloc64(sizeof(Fts5tokCursor));
   if( pCsr==0 ){
     return SQLITE_NOMEM;
   }
@@ -347,7 +347,7 @@ static int fts5tokCb(
   if( pCsr->nRow ){
     pRow->iPos = pRow[-1].iPos + ((tflags & FTS5_TOKEN_COLOCATED) ? 0 : 1);
   }
-  pRow->zToken = sqlite3_malloc(nToken+1);
+  pRow->zToken = sqlite3_malloc64((sqlite3_int64)nToken+1);
   if( pRow->zToken==0 ) return SQLITE_NOMEM;
   memcpy(pRow->zToken, pToken, nToken);
   pRow->zToken[nToken] = 0;
@@ -373,8 +373,8 @@ static int fts5tokFilterMethod(
   fts5tokResetCursor(pCsr);
   if( idxNum==1 ){
     const char *zByte = (const char *)sqlite3_value_text(apVal[0]);
-    int nByte = sqlite3_value_bytes(apVal[0]);
-    pCsr->zInput = sqlite3_malloc(nByte+1);
+    sqlite3_int64 nByte = sqlite3_value_bytes(apVal[0]);
+    pCsr->zInput = sqlite3_malloc64(nByte+1);
     if( pCsr->zInput==0 ){
       rc = SQLITE_NOMEM;
     }else{

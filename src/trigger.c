@@ -820,6 +820,7 @@ static SQLITE_NOINLINE Trigger *triggersReallyExist(
     p = pList;
     if( (pParse->db->flags & SQLITE_EnableTrigger)==0
      && pTab->pTrigger!=0
+     && sqlite3SchemaToIndex(pParse->db, pTab->pTrigger->pSchema)!=1
     ){
       /* The SQLITE_DBCONFIG_ENABLE_TRIGGER setting is off.  That means that
       ** only TEMP triggers are allowed.  Truncate the pList so that it

@@ -107,21 +107,27 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
   StrAccum acc;
   assert( p->flags & (MEM_Int|MEM_Real|MEM_IntReal) );
   assert( sz>22 );
-  if( p->flags & MEM_Int ){
-#if GCC_VERSION>=7000000
-    /* Work-around for GCC bug
-    ** https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96270 */
+  if( p->flags & (MEM_Int|MEM_IntReal) ){
+#if GCC_VERSION>=7000000 && GCC_VERSION<15000000 && defined(__i386__)
+    /* Work-around for GCC bug or bugs:
+    ** https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96270
+    ** https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114659
+    ** The problem appears to be fixed in GCC 15 */
     i64 x;
-    assert( (p->flags&MEM_Int)*2==sizeof(x) );
-    memcpy(&x, (char*)&p->u, (p->flags&MEM_Int)*2);
+    assert( (MEM_Str&~p->flags)*4==sizeof(x) );
+    memcpy(&x, (char*)&p->u, (MEM_Str&~p->flags)*4);
     p->n = sqlite3Int64ToText(x, zBuf);
 #else
     p->n = sqlite3Int64ToText(p->u.i, zBuf);
 #endif
+    if( p->flags & MEM_IntReal ){
+      memcpy(zBuf+p->n,".0", 3);
+      p->n += 2;
+    }
   }else{
     sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
-    sqlite3_str_appendf(&acc, "%!.15g", 
-         (p->flags & MEM_IntReal)!=0 ? (double)p->u.i : p->u.r);
+    sqlite3_str_appendf(&acc, "%!.*g",
+         (p->db ? p->db->nFpDigit : 17), p->u.r);
     assert( acc.zText==zBuf && acc.mxAlloc<=0 );
     zBuf[acc.nChar] = 0; /* Fast version of sqlite3StrAccumFinish(&acc) */
     p->n = acc.nChar;
@@ -170,6 +176,9 @@ int sqlite3VdbeMemValidStrRep(Mem *p){
     assert( p->enc==SQLITE_UTF8 || p->z[((p->n+1)&~1)+1]==0 );
   }
   if( (p->flags & (MEM_Int|MEM_Real|MEM_IntReal))==0 ) return 1;
+  if( p->db==0 ){
+    return 1;  /* db->nFpDigit required to validate p->z[] */
+  }
   memcpy(&tmp, p, sizeof(tmp));
   vdbeMemRenderNum(sizeof(zBuf), zBuf, &tmp);
   z = p->z;
@@ -648,32 +657,36 @@ i64 sqlite3VdbeIntValue(const Mem *pMem){
 }
 
 /*
-** Invoke sqlite3AtoF() on the text value of pMem and return the
-** double result.  If sqlite3AtoF() returns an error code, write
-** that code into *pRC if (*pRC)!=NULL.
+** This routine implements the uncommon and slower path for
+** sqlite3MemRealValueRC() that has to deal with input strings
+** that are not UTF8 or that are not zero-terminated.  It is
+** broken out into a separate no-inline routine so that the
+** main sqlite3MemRealValueRC() routine can avoid unnecessary
+** stack pushes.
 **
-** The caller must ensure that pMem->db!=0 and that pMem is in
-** mode MEM_Str or MEM_Blob.
+** A text->float translation of pMem->z is written into *pValue.
+**
+** Result code invariants:
+**
+**    rc==0         =>   ERROR: Input string not well-formed, or OOM
+**    rc<0          =>   Some prefix of the input is well-formed
+**    rc>0          =>   All of the input is well-formed
+**    (rc&2)==0     =>   The number is expressed as an integer, with no
+**                       decimal point or eNNN suffix.
 */
-SQLITE_NOINLINE double sqlite3MemRealValueRC(Mem *pMem, int *pRC){
-  double val = (double)0;
-  int rc = 0;
-  assert( pMem->db!=0 );
-  assert( pMem->flags & (MEM_Str|MEM_Blob) );
-  if( pMem->z==0 ){
-    /* no-op */
-  }else if( pMem->enc==SQLITE_UTF8 
-   && ((pMem->flags & MEM_Term)!=0 || sqlite3VdbeMemZeroTerminateIfAble(pMem)) 
-  ){
-    rc = sqlite3AtoF(pMem->z, &val);
-  }else if( pMem->n==0 ){
-    /* no-op */
-  }else if( pMem->enc==SQLITE_UTF8 ){
+static SQLITE_NOINLINE int sqlite3MemRealValueRCSlowPath(
+  Mem *pMem,
+  double *pValue
+){
+  int rc = SQLITE_OK;
+  *pValue = 0.0;
+  if( pMem->enc==SQLITE_UTF8 ){
     char *zCopy = sqlite3DbStrNDup(pMem->db, pMem->z, pMem->n);
     if( zCopy ){
-      rc = sqlite3AtoF(zCopy, &val);
+      rc = sqlite3AtoF(zCopy, pValue);
       sqlite3DbFree(pMem->db, zCopy);
     }
+    return rc;
   }else{
     int n, i, j;
     char *zCopy;
@@ -696,13 +709,56 @@ SQLITE_NOINLINE double sqlite3MemRealValueRC(Mem *pMem, int *pRC){
       }     
       assert( j<=n/2 );
       zCopy[j] = 0;
-      rc = sqlite3AtoF(zCopy, &val);
+      rc = sqlite3AtoF(zCopy, pValue);
       if( i<n ) rc = -100;
       sqlite3DbFree(pMem->db, zCopy);
     }
+    return rc;
   }
-  if( pRC ) *pRC = rc;
-  return val;
+}
+
+/*
+** Invoke sqlite3AtoF() on the text value of pMem.  Write the
+** translation of the text input into *pValue.
+**
+** The caller must ensure that pMem->db!=0 and that pMem is in
+** mode MEM_Str or MEM_Blob.
+**
+** Result code invariants:
+**
+**    rc==0         =>   ERROR: Input string not well-formed, or OOM
+**    rc<0          =>   Some prefix of the input is well-formed
+**    rc>0          =>   All of the input is well-formed
+**    (rc&2)==0     =>   The number is expressed as an integer, with no
+**                       decimal point or eNNN suffix.
+*/
+int sqlite3MemRealValueRC(Mem *pMem, double *pValue){
+  testcase( pMem->db==0 );
+  assert( pMem->flags & (MEM_Str|MEM_Blob) );
+  if( pMem->z==0 ){
+    *pValue = 0.0;
+    return 0;
+  }else if( pMem->enc==SQLITE_UTF8 
+   && ((pMem->flags & MEM_Term)!=0 || sqlite3VdbeMemZeroTerminateIfAble(pMem)) 
+  ){
+    return sqlite3AtoF(pMem->z, pValue);
+  }else if( pMem->n==0 ){
+    *pValue = 0.0;
+    return 0;
+  }else{
+    return sqlite3MemRealValueRCSlowPath(pMem, pValue);
+  }
+}
+
+/*
+** This routine acts as a bridge from sqlite3VdbeRealValue() to
+** sqlite3VdbeRealValueRC, allowing sqlite3VdbeRealValue() to avoid
+** stuffing values onto the stack.
+*/
+static SQLITE_NOINLINE double sqlite3MemRealValueNoRC(Mem *pMem){
+  double r;
+  (void)sqlite3MemRealValueRC(pMem, &r);
+  return r;
 }
 
 /*
@@ -721,7 +777,7 @@ double sqlite3VdbeRealValue(Mem *pMem){
     testcase( pMem->flags & MEM_IntReal );
     return (double)pMem->u.i;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    return sqlite3MemRealValueRC(pMem, 0);
+    return sqlite3MemRealValueNoRC(pMem);
   }else{
     /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
     return (double)0;
@@ -845,8 +901,8 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
     sqlite3_int64 ix;
     assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-    pMem->u.r = sqlite3MemRealValueRC(pMem, &rc);
-    if( ((rc==0 || rc==1) && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<=1)
+    rc = sqlite3MemRealValueRC(pMem, &pMem->u.r);
+    if( ((rc&2)==0 && sqlite3Atoi64(pMem->z, &ix, pMem->n, pMem->enc)<2)
      || sqlite3RealSameAsInt(pMem->u.r, (ix = sqlite3RealToI64(pMem->u.r)))
     ){
       pMem->u.i = ix;

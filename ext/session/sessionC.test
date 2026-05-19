@@ -195,13 +195,82 @@ do_test 3.3 {
 #-------------------------------------------------------------------------
 #
 reset_db
-set C [binary format c* 0x54 0x01 0x01 0x00 0x12 0x00 0x05]
+set C [binary format c* {0x54 0x01 0x01 0x00 0x12 0x00 0x05}]
 
 do_test 4.0 {
   sqlite3changegroup grp
   list [catch { grp add $C } msg] $msg
+} {0 {}}
+grp delete
+
+#-------------------------------------------------------------------------
+#
+reset_db
+set C [binary format c* {0x54 0xda 0xda 0xda 0xda 0xda}]
+
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c, d);
+}
+
+do_test 5.1 {
+  list [catch { sqlite3changeset_apply db $C noop xFilter } msg] $msg
+} {1 SQLITE_CORRUPT}
+
+#-------------------------------------------------------------------------
+#
+
+foreach {tn type C2hex C3hex} {
+  1 changeset 54020100743100170001000000000000000A030374656E000306656C6576656E
+              54020100743100170001000000000000000A030374656E0003FFFF01656C6576656E
+
+  2 patchset  50020100743100170001000000000000000A0306656C6576656E
+              50020100743100170001000000000000000A03FFFF06656C6576656E
+
+  3 changeset 54020100743100170001000000000000000A030374656E000306656C6576656E
+              54020100743100170001000000000000000A030374656E0003FFFF
+} {
+  reset_db
+
+  do_execsql_test 6.$tn.0 {
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y TEXT);
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+    INSERT INTO t1 VALUES(3, 'three');
+  } {}
+  
+  do_test 6.$tn.1 {
+    set C1 [${type}_from_sql {
+      INSERT INTO t1 VALUES(10, 'ten');
+    }]
+    set C2 [${type}_from_sql {
+      UPDATE t1 SET y='eleven' WHERE x=10;
+    }]
+    db one { SELECT quote($C2) }
+  } "X'$C2hex'"
+  
+  do_test 6.$tn.2 {
+    changeset_to_list [sqlite3changeset_concat $C1 $C2]
+  } {{INSERT t1 0 X. {} {i 10 t eleven}}}
+  
+  set C3 [db one {SELECT unhex($C3hex)}]
+  
+  do_test 6.$tn.3 {
+   list [catch { sqlite3changeset_concat $C1 $C3 } msg] $msg
+  } {1 SQLITE_CORRUPT}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+
+set CSD 5402010074000900010000000000000001030441414141
+set CSI 5402010074001200010000000000000001063258585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858585858
+
+do_test 7.0 {
+  sqlite3changegroup grp
+  grp add [db one {SELECT unhex($CSD)}]
+  list [catch { grp add [db one {SELECT unhex($CSI)}] } msg] $msg
 } {1 SQLITE_CORRUPT}
 grp delete
 
 finish_test
-

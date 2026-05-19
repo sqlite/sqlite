@@ -666,7 +666,7 @@ static int fts5VocabFilterMethod(
       const char *zCopy = (const char *)sqlite3_value_text(pLe);
       if( zCopy==0 ) zCopy = "";
       pCsr->nLeTerm = sqlite3_value_bytes(pLe);
-      pCsr->zLeTerm = sqlite3_malloc(pCsr->nLeTerm+1);
+      pCsr->zLeTerm = sqlite3_malloc64((i64)pCsr->nLeTerm+1);
       if( pCsr->zLeTerm==0 ){
         rc = SQLITE_NOMEM;
       }else{

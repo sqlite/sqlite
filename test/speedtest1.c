@@ -550,7 +550,6 @@ char *speedtest1_once(const char *zFormat, ...){
   char *zSql;
   sqlite3_stmt *pStmt;
   char *zResult = 0;
-  int rc;
   va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);

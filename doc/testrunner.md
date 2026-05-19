@@ -33,7 +33,7 @@
 The testrunner.tcl program is a Tcl script used to run multiple SQLite
 tests in parallel, thus reducing testing time on multi-core machines.
 The testrunner.tcl supports running tests that based on `testfixture`,
-`sqlite3`, and `fuzzcheck`.
+`sqlite3`, `fuzzcheck`, and C programs found in test/c.
 
 <a name="runtr"></a>
 ## 1.1 Running testrunner.tcl
@@ -59,10 +59,15 @@ up front.
 The standard Makefiles for SQLite include targets that invoke
 testrunner.tcl.  So the following commands also run testrunner.tcl:
 
+   *  `make test`
    *  `make devtest`
    *  `make releasetest`
    *  `make sdevtest`
    *  `make testrunner`
+
+Since SQLite 3.53.0, there is a "<tt>make.bat</tt>" script in the root
+of the source tree that causes the "make" command to work on Windows.
+There is no need to do something different using "nmake" on Windows.
 
 <a name="outputs"></a>
 ## 1.3 Outputs from testrunner.tcl

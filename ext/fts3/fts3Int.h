@@ -203,7 +203,16 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 #define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 #define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
-#define deliberate_fall_through
+#if !defined(deliberate_fall_through)
+# if defined(__has_attribute)
+#  if __has_attribute(fallthrough)
+#    define deliberate_fall_through __attribute__((fallthrough));
+#  endif
+# endif
+#endif
+#if !defined(deliberate_fall_through)
+# define deliberate_fall_through
+#endif
 
 /*
 ** Macros needed to provide flexible arrays in a portable way

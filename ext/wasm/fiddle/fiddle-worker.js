@@ -172,7 +172,7 @@
       if(capi.sqlite3_vfs_find("opfs")){
         stdout("\nOPFS is available. To open a persistent db, use:\n\n",
                "  .open file:name?vfs=opfs\n\nbut note that some",
-               "features (e.g. upload) do not yet work with OPFS.");
+               "features (e.g. upload) do not work with OPFS.");
       }
       stdout('\nEnter ".help" for usage hints.');
       return true;
@@ -186,6 +186,7 @@
       if(!f._){
         if(!this.runMain()) return;
         f._ = sqlite3.wasm.xWrap('fiddle_exec', undefined, ['string']);
+        f.getPrompt = sqlite3.wasm.xWrap('fiddle_get_prompt', 'string:dealloc', []);
       }
       if(fiddleModule.isDead){
         stderr("shell module has exit()ed. Cannot run SQL.");
@@ -207,7 +208,8 @@
         wMsg('working','end');
         wMsg('wasm-info', {
           pointerSize: sqlite3.wasm.ptr.size,
-          heapSize: sqlite3.wasm.heap8().byteLength
+          heapSize: sqlite3.wasm.heap8().byteLength,
+          prompt: f.getPrompt()
         });
       }
     },

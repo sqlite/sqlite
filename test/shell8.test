@@ -217,6 +217,46 @@ if {$tcl_platform(platform)=="unix"} {
   do_test 3.3 {
     catchcmd shell8.db {.ar -x} 
   } {0 {}}
+
+  # Test defenses against using symlinks to write outside
+  # of the destination directory.  See forum thread at
+  # sqlite.org/forum/forumpost/2026-02-21T11:04:36z
+  #
+  forcedelete shell8.db
+  forcedelete ar1
+  forcedelete ar2
+  forcedelete ar3
+  file mkdir ar2
+  file mkdir ar3
+  set pwd [pwd]
+  sqlite3 db shell8.db
+  db eval {
+    CREATE TABLE sqlar(
+      name TEXT PRIMARY KEY,  -- name of the file
+      mode INT,               -- access permissions
+      mtime INT,              -- last modification time
+      sz INT,                 -- original file size
+      data BLOB               -- compressed content
+    );
+    INSERT INTO sqlar VALUES
+         ('abc',33188,0,-1,'content for abc'),
+         ('escape',40960,0,-1,$pwd||'/ar3'),
+         ('escape/def',33188,0,-1,'content for escape/def'),
+         ('ghi',33188,0,-1,'content for ghi');
+  }
+  do_test 3.4.1 {
+    catchcmd shell8.db {.ar -x --directory ar2}
+    lsort [glob -tails -directory ar2 -nocomplain *]
+  } {abc escape ghi}
+  do_test 3.4.2 {
+    lsort [glob -tails -directory ar3 -nocomplain *]
+  } {}
+  # ^^---  An extraction into ar2 should not leak any files into ar3
+
+  forcedelete shell8.db
+  forcedelete ar2
+  forcedelete ar3
+
 }
 
 finish_test

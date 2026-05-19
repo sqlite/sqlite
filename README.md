@@ -80,8 +80,8 @@ Then run commands like this:
         fossil open https://sqlite.org/src
 
 The initial "fossil open" command will take two or three minutes.  Afterwards,
-you can do fast, bandwidth-efficient updates to the whatever versions
-of SQLite you like.  Some examples:
+you can do fast, bandwidth-efficient updates to whatever versions of SQLite you
+like.  Some examples:
 
         fossil update trunk             ;# latest trunk check-in
         fossil update release           ;# latest official release
@@ -97,6 +97,8 @@ the build products.  It is recommended, but not required, that the
 build directory be separate from the source directory.  Cd into the
 build directory and then from the build directory run the configure
 script found at the root of the source tree.  Then run "make".
+See the [compile-for-unix.md](doc/compile-for-unix.md) document for
+more detail.
 
 For example:
 

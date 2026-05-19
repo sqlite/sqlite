@@ -132,7 +132,7 @@ static int completionConnect(
       "  phase INT HIDDEN"        /* Used for debugging only */
       ")");
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -154,7 +154,7 @@ static int completionDisconnect(sqlite3_vtab *pVtab){
 */
 static int completionOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   completion_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->db = ((completion_vtab*)p)->db;
@@ -199,6 +199,7 @@ static int completionNext(sqlite3_vtab_cursor *cur){
   completion_cursor *pCur = (completion_cursor*)cur;
   int eNextPhase = 0;  /* Next phase to try if current phase reaches end */
   int iCol = -1;       /* If >=0, step pCur->pStmt and use the i-th column */
+  int rc;
   pCur->iRowid++;
   while( pCur->ePhase!=COMPLETION_EOF ){
     switch( pCur->ePhase ){
@@ -224,22 +225,27 @@ static int completionNext(sqlite3_vtab_cursor *cur){
       case COMPLETION_TABLES: {
         if( pCur->pStmt==0 ){
           sqlite3_stmt *pS2;
+          sqlite3_str* pStr = sqlite3_str_new(pCur->db);
           char *zSql = 0;
           const char *zSep = "";
           sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
           while( sqlite3_step(pS2)==SQLITE_ROW ){
             const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
-            zSql = sqlite3_mprintf(
-               "%z%s"
+            sqlite3_str_appendf(pStr,
+               "%s"
                "SELECT name FROM \"%w\".sqlite_schema",
-               zSql, zSep, zDb
+               zSep, zDb
             );
-            if( zSql==0 ) return SQLITE_NOMEM;
             zSep = " UNION ";
           }
-          sqlite3_finalize(pS2);
-          sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          rc = sqlite3_finalize(pS2);
+          zSql = sqlite3_str_finish(pStr);
+          if( zSql==0 ) return SQLITE_NOMEM;
+          if( rc==SQLITE_OK ){
+            sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          }
           sqlite3_free(zSql);
+          if( rc ) return rc;
         }
         iCol = 0;
         eNextPhase = COMPLETION_COLUMNS;
@@ -248,24 +254,29 @@ static int completionNext(sqlite3_vtab_cursor *cur){
       case COMPLETION_COLUMNS: {
         if( pCur->pStmt==0 ){
           sqlite3_stmt *pS2;
+          sqlite3_str *pStr = sqlite3_str_new(pCur->db);
           char *zSql = 0;
           const char *zSep = "";
           sqlite3_prepare_v2(pCur->db, "PRAGMA database_list", -1, &pS2, 0);
           while( sqlite3_step(pS2)==SQLITE_ROW ){
             const char *zDb = (const char*)sqlite3_column_text(pS2, 1);
-            zSql = sqlite3_mprintf(
-               "%z%s"
+            sqlite3_str_appendf(pStr,
+               "%s"
                "SELECT pti.name FROM \"%w\".sqlite_schema AS sm"
                        " JOIN pragma_table_xinfo(sm.name,%Q) AS pti"
                " WHERE sm.type='table'",
-               zSql, zSep, zDb, zDb
+               zSep, zDb, zDb
             );
-            if( zSql==0 ) return SQLITE_NOMEM;
             zSep = " UNION ";
           }
-          sqlite3_finalize(pS2);
-          sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          rc = sqlite3_finalize(pS2);
+          zSql = sqlite3_str_finish(pStr);
+          if( zSql==0 ) return SQLITE_NOMEM;
+          if( rc==SQLITE_OK ){
+            sqlite3_prepare_v2(pCur->db, zSql, -1, &pCur->pStmt, 0);
+          }
           sqlite3_free(zSql);
+          if( rc ) return rc;
         }
         iCol = 0;
         eNextPhase = COMPLETION_EOF;
@@ -282,9 +293,10 @@ static int completionNext(sqlite3_vtab_cursor *cur){
         pCur->szRow = sqlite3_column_bytes(pCur->pStmt, iCol);
       }else{
         /* When all rows are finished, advance to the next phase */
-        sqlite3_finalize(pCur->pStmt);
+        rc = sqlite3_finalize(pCur->pStmt);
         pCur->pStmt = 0;
         pCur->ePhase = eNextPhase;
+        if( rc ) return rc;
         continue;
       }
     }

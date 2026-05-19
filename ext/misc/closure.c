@@ -516,7 +516,7 @@ static int closureConnect(
 
   (void)pAux;
   *ppVtab = 0;
-  pNew = sqlite3_malloc( sizeof(*pNew) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
   rc = SQLITE_NOMEM;
   memset(pNew, 0, sizeof(*pNew));
@@ -579,7 +579,7 @@ closureConnectError:
 static int closureOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   closure_vtab *p = (closure_vtab*)pVTab;
   closure_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->pVtab = p;
@@ -638,7 +638,7 @@ static int closureInsertNode(
   sqlite3_int64 id,       /* The node ID */
   int iGeneration         /* The generation number for this node */
 ){
-  closure_avl *pNew = sqlite3_malloc( sizeof(*pNew) );
+  closure_avl *pNew = sqlite3_malloc64( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
   memset(pNew, 0, sizeof(*pNew));
   pNew->id = id;

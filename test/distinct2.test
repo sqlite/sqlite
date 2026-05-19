@@ -380,4 +380,36 @@ do_execsql_test 5080 {
               );
 } 0
 
+#-------------------------------------------------------------------------
+# 2026-03-05 - do not "skip-ahead" of a null-row on the RHS of a 
+# LEFT JOIN.
+#
+reset_db
+
+do_execsql_test 6000 {
+  CREATE TABLE t1(c1 UNIQUE NOT NULL);
+  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t0(c0 UNIQUE);
+  INSERT INTO t0 VALUES(0);
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<1000)
+    INSERT INTO t0(c0) SELECT NULL FROM c;
+} {}
+
+do_execsql_test 6010 {
+  SELECT DISTINCT * FROM t1 LEFT OUTER JOIN t0 ON c0>c1;
+} {1 {}}
+
+do_execsql_test 6020 {
+  SELECT DISTINCT * FROM t1 FULL OUTER JOIN t0 ON c0>c1;
+} {1 {} {} 0 {} {}}
+
+do_execsql_test 6040 {
+  ANALYZE;
+  SELECT DISTINCT * FROM t1 LEFT OUTER JOIN t0 ON c0>c1;
+} {1 {}}
+
+do_execsql_test 6050 {
+  SELECT DISTINCT * FROM t1 FULL OUTER JOIN t0 ON c0>c1;
+} {1 {} {} 0 {} {}}
+
 finish_test

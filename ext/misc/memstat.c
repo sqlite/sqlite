@@ -85,7 +85,7 @@ static int memstatConnect(
 
   rc = sqlite3_declare_vtab(db,"CREATE TABLE x(name,schema,value,hiwtr)");
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -107,7 +107,7 @@ static int memstatDisconnect(sqlite3_vtab *pVtab){
 */
 static int memstatOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   memstat_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->db = ((memstat_vtab*)p)->db;

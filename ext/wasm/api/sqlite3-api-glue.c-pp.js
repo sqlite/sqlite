@@ -98,6 +98,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_bind_parameter_name", "string", "sqlite3_stmt*", "int"],
       ["sqlite3_bind_pointer", "int",
        "sqlite3_stmt*", "int", "*", "string:static", "*"],
+      /* sqlite_bind_text() is hand-written */
+      ["sqlite3_bind_zeroblob", "int", "sqlite3_stmt*", "int", "int"],
       ["sqlite3_busy_handler","int", [
         "sqlite3*",
         new wasm.xWrap.FuncPtrAdapter({
@@ -120,11 +122,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_column_double","f64", "sqlite3_stmt*", "int"],
       ["sqlite3_column_int","int", "sqlite3_stmt*", "int"],
       ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],
-//#define proxy-text-apis=1
+//#define proxy-text-apis 1
 //#if not proxy-text-apis
 /* Search this file for tag:proxy-text-apis to see what this is about. */
       ["sqlite3_column_text","string", "sqlite3_stmt*", "int"],
-//#endif
+//#/if
       ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
       ["sqlite3_column_value","sqlite3_value*", "sqlite3_stmt*", "int"],
       ["sqlite3_commit_hook", "void*", [
@@ -324,7 +326,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_value_subtype", "int", "sqlite3_value*"],
 //#if not proxy-text-apis
       ["sqlite3_value_text", "string", "sqlite3_value*"],
-//#endif
+//#/if
       ["sqlite3_value_type", "int", "sqlite3_value*"],
       ["sqlite3_vfs_find", "*", "string"],
       ["sqlite3_vfs_register", "int", "sqlite3_vfs*", "int"],
@@ -500,7 +502,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ["sqlite3_activate_see", undefined, "string"]
     );
   }
-//#endif enable-see
+//#/if enable-see
 
   if( wasm.bigIntEnabled && !!wasm.exports.sqlite3_declare_vtab ){
     bindingSignatures.int64.push(
@@ -1694,7 +1696,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         : null;
     };
   }/*text-return-related bindings*/
-//#endif proxy-text-apis
+//#/if proxy-text-apis
 
   {/* sqlite3_config() */
     /**

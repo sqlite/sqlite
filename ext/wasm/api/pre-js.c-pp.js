@@ -17,9 +17,9 @@
 /**
    This file was preprocessed using:
 
-//#@policy error
+//#@ policy error
    @c-pp::argv@
-//#@policy off
+//#@ policy off
 */
 //#if unsupported-build
 /**
@@ -30,9 +30,10 @@
    load. It may not work properly. Only builds _directly_ targeting
    browser environments ("vanilla" JS and ESM modules) are supported
    and tested. Builds which _indirectly_ target browsers (namely
-   bundler-friendly builds) are not supported deliverables.
+   bundler-friendly builds and any node builds) are not supported
+   deliverables.
 */
-//#endif
+//#/if
 //#if not target:es6-bundler-friendly
 (function(Module){
   const sIMS =
@@ -101,7 +102,7 @@
       "result =", theFile
     );
     return theFile;
-//#endif target:es6-module
+//#/if target:es6-module
   }.bind(sIMS);
 
 //#if Module.instantiateWasm and not wasmfs and not target:node
@@ -147,7 +148,7 @@
           .then(finalThen)
     return loadWasm();
   }.bind(sIMS);
-//#endif Module.instantiateWasm and not wasmfs
+//#/if Module.instantiateWasm and not wasmfs
 })(Module);
-//#endif not target:es6-bundler-friendly
+//#/if not target:es6-bundler-friendly
 /* END FILE: api/pre-js.js. */

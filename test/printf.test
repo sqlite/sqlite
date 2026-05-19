@@ -3823,6 +3823,11 @@ do_execsql_test printf-17.11 {
   SELECT format('%.30f',1.0000000000000000076e-50);
 } 0.000000000000000000000000000000
 
+# Reported by OpenAI Codex Security on 2026-04-08
+do_execsql_test printf-17.12 {
+  SELECT format('%!.0e',-1e100);
+} -1.0e+100
+
 #-------------------------------------------------------------------------
 # dbsqlfuzz ad651aad4bb2100f3a724129a555d8d773366d46
 #

@@ -101,7 +101,7 @@ static int templatevtabConnect(
 #define TEMPLATEVTAB_A  0
 #define TEMPLATEVTAB_B  1
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -123,7 +123,7 @@ static int templatevtabDisconnect(sqlite3_vtab *pVtab){
 */
 static int templatevtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   templatevtab_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;

@@ -5258,7 +5258,7 @@ static int unixShmMap(
     }
 
     /* Map the requested memory region into this processes address space. */
-    apNew = (char **)sqlite3_realloc(
+    apNew = (char **)sqlite3_realloc64(
         pShmNode->apRegion, nReqRegion*sizeof(char *)
     );
     if( !apNew ){
@@ -6832,7 +6832,22 @@ static int unixOpen(
 
   }else if( !zName ){
     /* If zName is NULL, the upper layer is requesting a temp file. */
-    assert(isDelete && !isNewJrnl);
+    assert( isDelete );
+    assert( !isNewJrnl );
+    assert( isExclusive );
+    assert( isReadWrite );
+#if defined(__linux__) && defined(O_TMPFILE)
+    /* On systems that support O_TMPFILE, use that flag to create a more
+    ** secure temporary file that cannot be accessed by other processes
+    */
+    zName = unixTempFileDir();
+    if( zName 
+     && (fd = robust_open(zName, O_RDWR|O_CREAT|O_EXCL|O_TMPFILE, 0600))>=0
+    ){
+      rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
+      goto open_finished;
+    }
+#endif
     rc = unixGetTempname(pVfs->mxPathname, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;

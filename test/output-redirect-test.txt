@@ -1,0 +1,104 @@
+# This script is used to test certain output redirection commands
+# in the CLI, specifically:
+#
+#    .www
+#    .once -w
+#    .output -w
+#    .once -e
+#    .ooutput -e
+#    .excel
+#    .once -x
+#    .output -x
+#
+# Because of system interactions it is difficult to test these
+# commands automatically.  They must be tested manually, with the
+# aid of this script.  
+#
+# To run the test:
+#
+#    1.  Be on a console of the machine under test (not on ssh).
+#    2.  Run "./sqlite3 test/output-redir-test.txt" or similar.
+#    3.  Verify that all the right pop-ups appear.  More information
+#        on what popups to expect appears on the console output.
+#
+.print "Expect to see 8 output pop-ups:
+.print "  *  3 new tabs in your web-browser"
+.print "  *  2 editor windows"
+.print "  *  3 spreadsheets"
+.print "There is a 2-second pause between tests. Wait until"
+.print "prompted to verify results...."
+.print ""
+.print "Running web-browser tests first..."
+.mode box
+CREATE TABLE t1(x);
+INSERT INTO t1 VALUES
+  ('Web-browser test 1 of 3'),
+  ('Test for the ".www" commmand.');
+.www
+SELECT * FROM t1;
+
+DELETE FROM t1;
+INSERT INTO t1 VALUES
+  ('Web-browser test 2 of 3'),
+  ('Test for the ".once -w" commmand.');
+.once -w
+SELECT * FROM t1;
+
+DELETE FROM t1;
+INSERT INTO t1 VALUES
+  ('Web-browser test 3 of 3'),
+  ('Test for the ".output -w" commmand.'),
+  ('Confirm additional text below.');
+.output -w
+SELECT * FROM t1;
+.print "This test should also appear after the table."
+.print "in the web-browser output".
+.output
+
+.print "Web-browser tests are done.  Starting editor tests."
+
+DELETE FROM t1;
+INSERT INTO t1 VALUES
+  ('Editor test 1 of 2'),
+  ('Test for the ".once -e" commmand.');
+.once -e
+SELECT * FROM t1;
+
+DELETE FROM t1;
+INSERT INTO t1 VALUES
+  ('Editor test 2 of 2'),
+  ('Test for the ".output -e" commmand.'),
+  ('Confirm additional text below.');
+.output -e
+SELECT * FROM t1;
+.print "This test should also appear after the table."
+.print "in the pop-up editor window.".
+.output
+.print "Pop-up editor tests are done.  Starting spreadsheed tests"
+
+DELETE FROM t1;
+INSERT INTO t1 VALUES
+  ('Spreadsheet test 1 of 3'),
+  ('Test for the ".excel" commmand.');
+.excel
+SELECT * FROM t1;
+
+DELETE FROM t1;
+INSERT INTO t1 VALUES
+  ('Spreadsheet test 2 of 3'),
+  ('Test for the ".once -x" commmand.');
+.once -x
+SELECT * FROM t1;
+
+DELETE FROM t1;
+INSERT INTO t1 VALUES
+  ('Spreadsheet test 3 of 3'),
+  ('Test for the ".output -x" commmand.'),
+  ('Confirm additional text below.');
+.output -x
+SELECT * FROM t1;
+.print "This test should also appear after the table."
+.print "in the spreadsheet output".
+.output
+
+.print "All tests are done.  You may now verify the results."

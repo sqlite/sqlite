@@ -87,7 +87,7 @@ END
 .testcase 140
 .mode -v
 .check <<END
-.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits on --null "NULL" --quote relaxed --rowsep "" --sw auto --tablename "" --textjsonb on --titles on --widths "" --wordwrap off --wrap 10
+.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --limits on --multiinsert 3000 --null "NULL" --quote relaxed --rowsep "" --sw auto --tablename "" --textjsonb on --titles on --widths "" --wordwrap off --wrap 10
 END
 .testcase 150 --error-prefix "Error:"
 .mode foo
@@ -146,7 +146,7 @@ END
 .mode --limits 0,0,0
 .mode -v
 .check <<END
-.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --limits off --null "" --quote off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles on --widths "" --wordwrap off
+.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --limits off --multiinsert 0 --null "" --quote off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles on --widths "" --wordwrap off
 END
 
 .testcase 400
@@ -229,6 +229,26 @@ SELECT a AS 'abcd', b FROM t2 WHERE c=3;
   b: 2
 END
 
+# line --screenwidth and --colsep
+#
+.testcase 550
+.mode line --sw 40 --colsep ":-hi-:"
+SELECT a AS 'abc', b FROM t2 WHERE c=3;
+.check <<END
+abc:-hi-:The quick fox jumps over the
+         lazy brown dog
+  b:-hi-:2
+END
+.testcase 551
+.mode line --sw 40 --colsep ":-hi-:" --wordwrap off
+SELECT a AS 'abc', b FROM t2 WHERE c=3;
+.check <<END
+abc:-hi-:The quick fox jumps over the la
+         zy brown dog
+  b:-hi-:2
+END
+# 23456789 123456789 123456789 123456789
+
 # https://sqlite.org/forum/forumpost/2025-12-31T19:14:24z
 #
 # For legacy compatibility, ".header" settings are not changed
@@ -271,7 +291,7 @@ SELECT * FROM t1;
 .testcase 700
 CREATE TABLE tbl1(one,two);
 INSERT INTO tbl1 VALUES('hello!',10),('goodbye',20);
-.mode insert new_table
+.mode insert new_table --multiinsert 0
 SELECT * FROM tbl1;
 .check <<END
 INSERT INTO new_table VALUES('hello!',10);

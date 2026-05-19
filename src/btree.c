@@ -3013,7 +3013,7 @@ static void btreeParseCellPtr(
   CellInfo *pInfo         /* Fill in this structure */
 ){
   u8 *pIter;              /* For scanning through pCell */
-  u32 nPayload;           /* Number of bytes of cell payload */
+  u64 nPayload;           /* Number of bytes of cell payload */
   u64 iKey;               /* Extracted Key value */
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
@@ -3035,6 +3035,7 @@ static void btreeParseCellPtr(
     do{
       nPayload = (nPayload<<7) | (*++pIter & 0x7f);
     }while( (*pIter)>=0x80 && pIter<pEnd );
+    nPayload &= 0xffffffff;
   }
   pIter++;
 
@@ -3078,11 +3079,10 @@ static void btreeParseCellPtr(
   pIter++;
 
   pInfo->nKey = *(i64*)&iKey;
-  pInfo->nPayload = nPayload;
+  pInfo->nPayload = (u32)nPayload;
   pInfo->pPayload = pIter;
   testcase( nPayload==pPage->maxLocal );
   testcase( nPayload==(u32)pPage->maxLocal+1 );
-  assert( nPayload>=0 );
   assert( pPage->maxLocal <= BT_MAX_LOCAL );
   if( nPayload<=pPage->maxLocal ){
     /* This is the (easy) common case where the entire payload fits
@@ -8013,12 +8013,12 @@ void sqlite3BtreeCursorNoScan(BtCursor *pCsr){
 ** zero if the cell is less than or equal pIdxKey.  Return positive
 ** if unknown.
 **
-**    Return value negative:     Cell at pCur[idx] less than pIdxKey
+**    Return value negative:     Cell at pPage[idx] less than pIdxKey
 **
-**    Return value is zero:      Cell at pCur[idx] equals pIdxKey
+**    Return value is zero:      Cell at pPage[idx] equals pIdxKey
 **
 **    Return value positive:     Nothing is known about the relationship
-**                               of the cell at pCur[idx] and pIdxKey.
+**                               of the cell at pPage[idx] and pIdxKey.
 **
 ** This routine is part of an optimization.  It is always safe to return
 ** a positive value as that will cause the optimization to be skipped.

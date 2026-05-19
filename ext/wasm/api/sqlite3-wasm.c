@@ -571,6 +571,7 @@ SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_enum_json,(void)){
     DefInt(SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE);
     DefInt(SQLITE_DBCONFIG_ENABLE_COMMENTS);
     DefInt(SQLITE_DBCONFIG_MAX);
+    DefInt(SQLITE_DBCONFIG_FP_DIGITS);
   } _DefGroup;
 
   DefGroup(dbStatus){
@@ -698,6 +699,8 @@ SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_enum_json,(void)){
     DefInt(SQLITE_MAX_TRIGGER_DEPTH);
     DefInt(SQLITE_LIMIT_WORKER_THREADS);
     DefInt(SQLITE_MAX_WORKER_THREADS);
+    DefInt(SQLITE_LIMIT_PARSER_DEPTH);
+    DefInt(SQLITE_MAX_PARSER_DEPTH);
   } _DefGroup;
 
   DefGroup(openFlags) {
@@ -731,6 +734,7 @@ SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_enum_json,(void)){
     DefInt(SQLITE_PREPARE_PERSISTENT);
     DefInt(SQLITE_PREPARE_NORMALIZE);
     DefInt(SQLITE_PREPARE_NO_VTAB);
+    DefInt(SQLITE_PREPARE_FROM_DDL);
   } _DefGroup;
 
   DefGroup(resultCodes) {
@@ -1640,6 +1644,7 @@ SQLITE_WASM_EXPORT2(int,sqlite3__wasm_db_config_ip,
     case SQLITE_DBCONFIG_ENABLE_ATTACH_CREATE:
     case SQLITE_DBCONFIG_ENABLE_ATTACH_WRITE:
     case SQLITE_DBCONFIG_ENABLE_COMMENTS:
+    case SQLITE_DBCONFIG_FP_DIGITS:
       return sqlite3_db_config(pDb, op, arg1, pArg2);
     default: return SQLITE_MISUSE;
   }

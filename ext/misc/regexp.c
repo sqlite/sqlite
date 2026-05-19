@@ -676,7 +676,7 @@ static const char *re_compile(
   int i, j;
 
   *ppRe = 0;
-  pRe = sqlite3_malloc( sizeof(*pRe) );
+  pRe = sqlite3_malloc64( sizeof(*pRe) );
   if( pRe==0 ){
     return "out of memory";
   }
@@ -828,7 +828,6 @@ static void re_bytecode_func(
   int i;
   int n;
   char *z;
-  (void)argc;
   static const char *ReOpName[] = {
     "EOF",
     "MATCH",
@@ -851,6 +850,7 @@ static void re_bytecode_func(
     "ATSTART",
   };
 
+  (void)argc;
   zPattern = (const char*)sqlite3_value_text(argv[0]);
   if( zPattern==0 ) return;
   zErr = re_compile(&pRe, zPattern, re_maxnfa(re_maxlen(context)),

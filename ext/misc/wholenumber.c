@@ -47,7 +47,7 @@ static int wholenumberConnect(
   char **pzErr
 ){
   sqlite3_vtab *pNew;
-  pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+  pNew = *ppVtab = sqlite3_malloc64( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
   sqlite3_declare_vtab(db, "CREATE TABLE x(value)");
   sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
@@ -69,7 +69,7 @@ static int wholenumberDisconnect(sqlite3_vtab *pVtab){
 */
 static int wholenumberOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   wholenumber_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;

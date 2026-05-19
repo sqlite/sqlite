@@ -9,8 +9,8 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** Header file for the Result-Format or "resfmt" utility library for SQLite.
-** See the resfmt.md documentation for additional information.
+** Header file for the Query Result-Format or "qrf" utility library for
+** SQLite.  See the README.md documentation for additional information.
 */
 #ifndef SQLITE_QRF_H
 #define SQLITE_QRF_H
@@ -42,6 +42,7 @@ struct sqlite3_qrf_spec {
   short int nScreenWidth;     /* Maximum overall table width */
   short int nLineLimit;       /* Maximum number of lines for any row */
   short int nTitleLimit;      /* Maximum number of characters in a title */
+  unsigned int nMultiInsert;  /* Add rows to one INSERT until size exceeds */
   int nCharLimit;             /* Maximum number of characters in a cell */
   int nWidth;                 /* Number of entries in aWidth[] */
   int nAlign;                 /* Number of entries in aAlignment[] */

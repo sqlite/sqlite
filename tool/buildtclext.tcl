@@ -17,7 +17,8 @@ Options:
    --uninstall          Uninstall the extension
    --version-check      Check extension version against this source tree
    --destdir DIR        Installation root (used by "make install DESTDIR=...")
-   --tclConfig.sh FILE  Use this tclConfig.sh instead of looking for one
+  --tclConfig.sh FILE  Use this tclConfig.sh instead of looking for one
+  --extlibs             LDFLAGS required for external libs, e.g. ICU.
 
 Other options are retained and passed through into the compiler.}
 
@@ -29,8 +30,9 @@ set infoonly 0
 set versioncheck 0
 set CC {}
 set OPTS {}
-set DESTDIR ""; # --destdir "$(DESTDIR)"
+set DESTDIR ""    ; # --destdir "$(DESTDIR)"
 set tclConfigSh ""; # --tclConfig.sh FILE
+set LIBS {}       ; # --extlibs "-lx -ly ..."
 for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   set a0 [lindex $argv $ii]
   if {$a0=="--install-only"} {
@@ -61,6 +63,9 @@ for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   } elseif {$a0=="--tclConfig.sh" && $ii+1<[llength $argv]} {
     incr ii
     set tclConfigSh [lindex $argv $ii]
+  } elseif {$a0=="--extlibs" && $ii+1<[llength $argv]} {
+    incr ii
+    lappend LIBS [lindex $argv $ii]
   } elseif {[string match -* $a0]} {
     append OPTS " $a0"
   } else {
@@ -152,8 +157,8 @@ if {$tcl_platform(platform) eq "windows"} {
   }
   set CFLAGS -fPIC
   regexp {TCL_SHLIB_CFLAGS='([^']+)'} $tclConfig all CFLAGS
-  set LIBS {}
-  regexp {TCL_STUB_LIB_SPEC='([^']+)'} $tclConfig all LIBS
+  regexp {TCL_STUB_LIB_SPEC='([^']+)'} $tclConfig all LIBSTUB
+  lappend LIBS $LIBSTUB
   set INC "-I$srcdir/src"
   set inc {}
   regexp {TCL_INCLUDE_SPEC='([^']+)'} $tclConfig all inc
@@ -312,7 +317,7 @@ package ifneeded sqlite3 $VERSION \\
 
   # Generate and execute the command with which to do the compilation.
   #
-  set cmd "$CMD -DUSE_TCL_STUBS tclsqlite3.c -o $OUT $LIBS"
+  set cmd "$CMD -DUSE_TCL_STUBS tclsqlite3.c -o $OUT [join $LIBS { }]"
   puts $cmd
   file delete -force $OUT
   catch {exec {*}$cmd} errmsg

@@ -91,7 +91,7 @@ int sqlite3Fts5HashNew(Fts5Config *pConfig, Fts5Hash **ppNew, int *pnByte){
   int rc = SQLITE_OK;
   Fts5Hash *pNew;
 
-  *ppNew = pNew = (Fts5Hash*)sqlite3_malloc(sizeof(Fts5Hash));
+  *ppNew = pNew = (Fts5Hash*)sqlite3_malloc64(sizeof(Fts5Hash));
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{

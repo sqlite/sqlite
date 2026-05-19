@@ -243,5 +243,53 @@ do_execsql_test 11.2.3 {
 do_execsql_test 11.2.2 {ALTER TABLE t2 ALTER b SET NOT NULL --new cons
 ;
 }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 12.0 {
+  CREATE TABLE "Test" ( 
+      "IsActive" INTEGER, 
+      CONSTRAINT "BooleanZeroOrOne" CHECK ("IsActive" IN (0, 1)) 
+  );
+}
+
+do_execsql_test 12.1 {
+  ALTER TABLE Test DROP CONSTRAINT BooleanZeroOrOne
+}
+
+do_execsql_test 12.2 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE "Test" ( 
+      "IsActive" INTEGER)}
+}
+
+do_execsql_test 12.3 {
+  DROP TABLE Test;
+  CREATE TABLE "Test" ( 
+      "IsActive" INTEGER, 
+      CONSTRAINT "BooleanZeroOrOne" CHECK ("IsActive" IN (0, 1)) 
+  );
+}
+
+do_execsql_test 12.4 {
+  ALTER TABLE Test DROP CONSTRAINT "BooleanZeroOrOne"
+}
+
+do_execsql_test 12.5 {
+  SELECT sql FROM sqlite_schema
+} {
+  {CREATE TABLE "Test" ( 
+      "IsActive" INTEGER)}
+}
+
+do_execsql_test 12.6 {
+  CREATE TABLE t1(a, b CONSTRAINT "a""b" CHECK (b IS NOT NULL));
+}
+
+do_execsql_test 12.7 {
+  ALTER TABLE t1 DROP CONSTRAINT "a""b"
+}
+
 finish_test
 

@@ -24,7 +24,7 @@ SELECT 'abcdefg' REGEXP '((((((((((((((((((abcdefg))))))))))))))))))';
 .testcase 110
 .limit like_pattern_length 42
 SELECT 'abcdefg' REGEXP '((((((((((((((((((abcdefg))))))))))))))))))';
-.check -glob "Error near line #: REGEXP pattern too big*"
+.check -glob "Error near line *: REGEXP pattern too big*"
 
 .testcase 120
 .limit like_pattern_length 43

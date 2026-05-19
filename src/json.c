@@ -313,7 +313,8 @@ struct JsonString {
 /* Allowed values for JsonString.eErr */
 #define JSTRING_OOM         0x01   /* Out of memory */
 #define JSTRING_MALFORMED   0x02   /* Malformed JSONB */
-#define JSTRING_ERR         0x04   /* Error already sent to sqlite3_result */
+#define JSTRING_TOODEEP     0x04   /* JSON nested too deep */
+#define JSTRING_ERR         0x08   /* Error already sent to sqlite3_result */
 
 /* The "subtype" set for text JSON values passed through using
 ** sqlite3_result_subtype() and sqlite3_value_subtype().
@@ -403,7 +404,7 @@ struct JsonParse {
 **************************************************************************/
 static void jsonReturnStringAsBlob(JsonString*);
 static int jsonArgIsJsonb(sqlite3_value *pJson, JsonParse *p);
-static u32 jsonTranslateBlobToText(const JsonParse*,u32,JsonString*);
+static u32 jsonTranslateBlobToText(JsonParse*,u32,JsonString*);
 static void jsonReturnParse(sqlite3_context*,JsonParse*);
 static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
 static void jsonParseFree(JsonParse*);
@@ -558,6 +559,15 @@ static void jsonStringReset(JsonString *p){
 static void jsonStringOom(JsonString *p){
   p->eErr |= JSTRING_OOM;
   if( p->pCtx ) sqlite3_result_error_nomem(p->pCtx);
+  jsonStringReset(p);
+}
+
+/* Report JSON nested too deep
+*/
+static void jsonStringTooDeep(JsonString *p){
+  p->eErr |= JSTRING_TOODEEP;
+  assert( p->pCtx!=0 );
+  sqlite3_result_error(p->pCtx, "JSON nested too deep", -1);
   jsonStringReset(p);
 }
 
@@ -850,6 +860,7 @@ static void jsonReturnString(
 ){
   assert( (pParse!=0)==(ctx!=0) );
   assert( ctx==0 || ctx==p->pCtx );
+  jsonStringTerminate(p);
   if( p->eErr==0 ){
     int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(p->pCtx));
     if( flags & JSON_BLOB ){
@@ -857,7 +868,7 @@ static void jsonReturnString(
     }else if( p->bStatic ){
       sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                             SQLITE_TRANSIENT, SQLITE_UTF8);
-    }else if( jsonStringTerminate(p) ){
+    }else{
       if( pParse && pParse->bJsonIsRCStr==0 && pParse->nBlobAlloc>0 ){
         int rc;
         pParse->zJson = sqlite3RCStrRef(p->zBuf);
@@ -873,11 +884,11 @@ static void jsonReturnString(
       sqlite3_result_text64(p->pCtx, sqlite3RCStrRef(p->zBuf), p->nUsed,
                             sqlite3RCStrUnref,
                             SQLITE_UTF8);
-    }else{
-      sqlite3_result_error_nomem(p->pCtx);
     }
   }else if( p->eErr & JSTRING_OOM ){
     sqlite3_result_error_nomem(p->pCtx);
+  }else if( p->eErr & JSTRING_TOODEEP ){
+    /* error already in p->pCtx */
   }else if( p->eErr & JSTRING_MALFORMED ){
     sqlite3_result_error(p->pCtx, "malformed JSON", -1);
   }
@@ -1208,11 +1219,11 @@ static void jsonBlobAppendOneByte(JsonParse *pParse, u8 c){
 /* Slow version of jsonBlobAppendNode() that first resizes the
 ** pParse->aBlob structure.
 */
-static void jsonBlobAppendNode(JsonParse*,u8,u32,const void*);
+static void jsonBlobAppendNode(JsonParse*,u8,u64,const void*);
 static SQLITE_NOINLINE void jsonBlobExpandAndAppendNode(
   JsonParse *pParse,
   u8 eType,
-  u32 szPayload,
+  u64 szPayload,
   const void *aPayload
 ){
   if( jsonBlobExpand(pParse, pParse->nBlob+szPayload+9) ) return;
@@ -1232,7 +1243,7 @@ static SQLITE_NOINLINE void jsonBlobExpandAndAppendNode(
 static void jsonBlobAppendNode(
   JsonParse *pParse,          /* The JsonParse object under construction */
   u8 eType,                   /* Node type.  One of JSONB_* */
-  u32 szPayload,              /* Number of bytes of payload */
+  u64 szPayload,              /* Number of bytes of payload */
   const void *aPayload        /* The payload.  Might be NULL */
 ){
   u8 *a;
@@ -2088,12 +2099,8 @@ static int jsonConvertTextToBlob(
 */
 static void jsonReturnStringAsBlob(JsonString *pStr){
   JsonParse px;
+  assert( pStr->eErr==0 );
   memset(&px, 0, sizeof(px));
-  jsonStringTerminate(pStr);
-  if( pStr->eErr ){
-    sqlite3_result_error_nomem(pStr->pCtx);
-    return;
-  }
   px.zJson = pStr->zBuf;
   px.nJson = pStr->nUsed;
   px.db = sqlite3_context_db_handle(pStr->pCtx);
@@ -2183,7 +2190,7 @@ static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
 ** The pOut->eErr JSTRING_OOM flag is set on a OOM.
 */
 static u32 jsonTranslateBlobToText(
-  const JsonParse *pParse,       /* the complete parse of the JSON */
+  JsonParse *pParse,             /* the complete parse of the JSON */
   u32 i,                         /* Start rendering at this index */
   JsonString *pOut               /* Write JSON here */
 ){
@@ -2365,10 +2372,14 @@ static u32 jsonTranslateBlobToText(
       jsonAppendChar(pOut, '[');
       j = i+n;
       iEnd = j+sz;
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+        jsonStringTooDeep(pOut);
+      }
       while( j<iEnd && pOut->eErr==0 ){
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, ',');
       }
+      pParse->iDepth--;
       if( j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
       if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, ']');
@@ -2379,10 +2390,14 @@ static u32 jsonTranslateBlobToText(
       jsonAppendChar(pOut, '{');
       j = i+n;
       iEnd = j+sz;
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+        jsonStringTooDeep(pOut);
+      }
       while( j<iEnd && pOut->eErr==0 ){
         j = jsonTranslateBlobToText(pParse, j, pOut);
         jsonAppendChar(pOut, (x++ & 1) ? ',' : ':');
       }
+      pParse->iDepth--;
       if( (x & 1)!=0 || j>iEnd ) pOut->eErr |= JSTRING_MALFORMED;
       if( sz>0 ) jsonStringTrimOneChar(pOut);
       jsonAppendChar(pOut, '}');
@@ -2439,7 +2454,7 @@ static u32 jsonTranslateBlobToPrettyText(
   u32 i                      /* Start rendering at this index */
 ){
   u32 sz, n, j, iEnd;
-  const JsonParse *pParse = pPretty->pParse;
+  JsonParse *pParse = pPretty->pParse;
   JsonString *pOut = pPretty->pOut;
   n = jsonbPayloadSize(pParse, i, &sz);
   if( n==0 ){
@@ -2454,6 +2469,9 @@ static u32 jsonTranslateBlobToPrettyText(
       if( j<iEnd ){
         jsonAppendChar(pOut, '\n');
         pPretty->nIndent++;
+        if( pPretty->nIndent >= JSON_MAX_DEPTH ){
+          jsonStringTooDeep(pOut);
+        }
         while( pOut->eErr==0 ){
           jsonPrettyIndent(pPretty);
           j = jsonTranslateBlobToPrettyText(pPretty, j);
@@ -2475,6 +2493,10 @@ static u32 jsonTranslateBlobToPrettyText(
       if( j<iEnd ){
         jsonAppendChar(pOut, '\n');
         pPretty->nIndent++;
+        if( pPretty->nIndent >= JSON_MAX_DEPTH ){
+          jsonStringTooDeep(pOut);
+        }
+        pParse->iDepth = pPretty->nIndent;
         while( pOut->eErr==0 ){
           jsonPrettyIndent(pPretty);
           j = jsonTranslateBlobToText(pParse, j, pOut);
@@ -2632,6 +2654,7 @@ static void jsonBlobEdit(
   u32 nIns               /* Bytes of content to insert */
 ){
   i64 d = (i64)nIns - (i64)nDel;
+  assert( pParse->nBlob >= (u64)iDel + (u64)nDel );
   if( d<0 && d>=(-8) && aIns!=0
    && jsonBlobOverwrite(&pParse->aBlob[iDel], aIns, nIns, (int)-d)
   ){
@@ -2875,7 +2898,8 @@ static int jsonLabelCompare(
 #define JSON_LOOKUP_ERROR      0xffffffff
 #define JSON_LOOKUP_NOTFOUND   0xfffffffe
 #define JSON_LOOKUP_NOTARRAY   0xfffffffd
-#define JSON_LOOKUP_PATHERROR  0xfffffffc
+#define JSON_LOOKUP_TOODEEP    0xfffffffc
+#define JSON_LOOKUP_PATHERROR  0xfffffffb
 #define JSON_LOOKUP_ISERROR(x) ((x)>=JSON_LOOKUP_PATHERROR)
 
 /* Forward declaration */
@@ -2922,7 +2946,12 @@ static u32 jsonCreateEditSubstructure(
     pIns->eEdit = pParse->eEdit;
     pIns->nIns = pParse->nIns;
     pIns->aIns = pParse->aIns;
+    pIns->iDepth = pParse->iDepth+1;
+    if( pIns->iDepth >= JSON_MAX_DEPTH ){
+      return JSON_LOOKUP_TOODEEP;
+    }
     rc = jsonLookupStep(pIns, 0, zTail, 0);
+    pParse->iDepth--;
     pParse->oom |= pIns->oom;
   }
   return rc;  /* Error code only */
@@ -3028,7 +3057,11 @@ static u32 jsonLookupStep(
         n = jsonbPayloadSize(pParse, v, &sz);
         if( n==0 || v+n+sz>iEnd ) return JSON_LOOKUP_ERROR;
         assert( j>0 );
+        if( ++pParse->iDepth >= JSON_MAX_DEPTH ){
+          return JSON_LOOKUP_TOODEEP;
+        }
         rc = jsonLookupStep(pParse, v, &zPath[i], j);
+        pParse->iDepth--;
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
         return rc;
       }
@@ -3114,7 +3147,11 @@ static u32 jsonLookupStep(
     iEnd = j+sz;
     while( j<iEnd ){
       if( kk==0 ){
+        if( ++pParse->iDepth >= JSON_MAX_DEPTH ){
+          return JSON_LOOKUP_TOODEEP;
+        }
         rc = jsonLookupStep(pParse, j, &zPath[i+1], 0);
+        pParse->iDepth--;
         if( pParse->delta ) jsonAfterEditSizeAdjust(pParse, iRoot);
         return rc;
       }
@@ -3446,7 +3483,16 @@ static int jsonFunctionArgToBlob(
 }
 
 /*
-** Generate a bad path error.
+** Generate a path error.
+**
+** The specifics of the error are determined by the rc argument.
+**
+**          rc                        error
+**  -----------------       ----------------------
+**  JSON_LOOKUP_ARRAY       "not an array"
+**  JSON_LOOKUP_TOODEEP     "JSON nested too deep"
+**  JSON_LOOKUP_ERROR       "malformed JSON"
+**  otherwise...            "bad JSON path"
 **
 ** If ctx is not NULL then push the error message into ctx and return NULL.
 ** If ctx is NULL, then return the text of the error message.
@@ -3459,6 +3505,10 @@ static char *jsonBadPathError(
   char *zMsg;
   if( rc==(int)JSON_LOOKUP_NOTARRAY ){
     zMsg = sqlite3_mprintf("not an array element: %Q", zPath);
+  }else if( rc==(int)JSON_LOOKUP_ERROR ){
+    zMsg = sqlite3_mprintf("malformed JSON");
+  }else if( rc==(int)JSON_LOOKUP_TOODEEP ){
+    zMsg = sqlite3_mprintf("JSON path too deep");
   }else{
     zMsg = sqlite3_mprintf("bad JSON path: %Q", zPath);
   }
@@ -3521,6 +3571,7 @@ static void jsonInsertIntoBlob(
       p->nIns = ax.nBlob;
       p->aIns = ax.aBlob;
       p->delta = 0;
+      p->iDepth = 0;
       rc = jsonLookupStep(p, 0, zPath+1, 0);
     }
     jsonParseReset(&ax);
@@ -3533,11 +3584,7 @@ static void jsonInsertIntoBlob(
 
 jsonInsertIntoBlob_patherror:
   jsonParseFree(p);
-  if( rc==JSON_LOOKUP_ERROR ){
-    sqlite3_result_error(ctx, "malformed JSON", -1);
-  }else{
-    jsonBadPathError(ctx, zPath, rc);
-  }
+  jsonBadPathError(ctx, zPath, rc);
   return;
 }
 
@@ -3977,10 +4024,8 @@ static void jsonArrayLengthFunc(
     if( JSON_LOOKUP_ISERROR(i) ){
       if( i==JSON_LOOKUP_NOTFOUND ){
         /* no-op */
-      }else if( i==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath, 0);
       }else{
-        sqlite3_result_error(ctx, "malformed JSON", -1);
+        jsonBadPathError(ctx, zPath, i);
       }
       eErr = 1;
       i = 0;
@@ -4114,11 +4159,8 @@ static void jsonExtractFunc(
         jsonAppendSeparator(&jx);
         jsonAppendRawNZ(&jx, "null", 4);
       }
-    }else if( j==JSON_LOOKUP_ERROR ){
-      sqlite3_result_error(ctx, "malformed JSON", -1);
-      goto json_extract_error;
     }else{
-      jsonBadPathError(ctx, zPath, 0);
+      jsonBadPathError(ctx, zPath, j);
       goto json_extract_error;
     }
   }
@@ -4142,6 +4184,7 @@ json_extract_error:
 #define JSON_MERGE_BADTARGET   1     /* Malformed TARGET blob */
 #define JSON_MERGE_BADPATCH    2     /* Malformed PATCH blob */
 #define JSON_MERGE_OOM         3     /* Out-of-memory condition */
+#define JSON_MERGE_TOODEEP     4     /* Nested too deep */
 
 /*
 ** RFC-7396 MergePatch for two JSONB blobs.
@@ -4193,7 +4236,8 @@ static int jsonMergePatch(
   JsonParse *pTarget,      /* The JSON parser that contains the TARGET */
   u32 iTarget,             /* Index of TARGET in pTarget->aBlob[] */
   const JsonParse *pPatch, /* The PATCH */
-  u32 iPatch               /* Index of PATCH in pPatch->aBlob[] */
+  u32 iPatch,              /* Index of PATCH in pPatch->aBlob[] */
+  u32 iDepth               /* Nesting depth */
 ){
   u8 x;             /* Type of a single node */
   u32 n, sz=0;      /* Return values from jsonbPayloadSize() */
@@ -4302,7 +4346,8 @@ static int jsonMergePatch(
         /* Algorithm line 12 */
         int rc, savedDelta = pTarget->delta;
         pTarget->delta = 0;
-        rc = jsonMergePatch(pTarget, iTValue, pPatch, iPValue);
+        if( iDepth>=JSON_MAX_DEPTH ) return JSON_MERGE_TOODEEP;
+        rc = jsonMergePatch(pTarget, iTValue, pPatch, iPValue, iDepth+1);
         if( rc ) return rc;
         pTarget->delta += savedDelta;
       }        
@@ -4323,7 +4368,8 @@ static int jsonMergePatch(
         pTarget->aBlob[iTEnd+szNew] = 0x00;
         savedDelta = pTarget->delta;
         pTarget->delta = 0;
-        rc = jsonMergePatch(pTarget, iTEnd+szNew,pPatch,iPValue);
+        if( iDepth>=JSON_MAX_DEPTH ) return JSON_MERGE_TOODEEP;
+        rc = jsonMergePatch(pTarget, iTEnd+szNew,pPatch,iPValue,iDepth+1);
         if( rc ) return rc;
         pTarget->delta += savedDelta;
       }
@@ -4354,11 +4400,13 @@ static void jsonPatchFunc(
   if( pTarget==0 ) return;
   pPatch = jsonParseFuncArg(ctx, argv[1], 0);
   if( pPatch ){
-    rc = jsonMergePatch(pTarget, 0, pPatch, 0);
+    rc = jsonMergePatch(pTarget, 0, pPatch, 0, 0);
     if( rc==JSON_MERGE_OK ){
       jsonReturnParse(ctx, pTarget);
     }else if( rc==JSON_MERGE_OOM ){
       sqlite3_result_error_nomem(ctx);
+    }else if( rc==JSON_MERGE_TOODEEP ){
+      sqlite3_result_error(ctx, "JSON nested too deep", -1);
     }else{
       sqlite3_result_error(ctx, "malformed JSON", -1);
     }
@@ -4446,10 +4494,8 @@ static void jsonRemoveFunc(
     if( JSON_LOOKUP_ISERROR(rc) ){
       if( rc==JSON_LOOKUP_NOTFOUND ){
         continue;  /* No-op */
-      }else if( rc==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath, rc);
       }else{
-        sqlite3_result_error(ctx, "malformed JSON", -1);
+        jsonBadPathError(ctx, zPath, rc);
       }
       goto json_remove_done;
     }
@@ -4546,10 +4592,8 @@ static void jsonTypeFunc(
     if( JSON_LOOKUP_ISERROR(i) ){
       if( i==JSON_LOOKUP_NOTFOUND ){
         /* no-op */
-      }else if( i==JSON_LOOKUP_PATHERROR ){
-        jsonBadPathError(ctx, zPath, 0);
       }else{
-        sqlite3_result_error(ctx, "malformed JSON", -1);
+        jsonBadPathError(ctx, zPath, i);
       }
       goto json_type_done;
     }
@@ -4807,7 +4851,8 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
     pStr->pCtx = ctx;
-    jsonAppendChar(pStr, ']');
+    jsonAppendRawNZ(pStr, "]", 2);
+    jsonStringTrimOneChar(pStr);
     if( pStr->eErr ){
       jsonReturnString(pStr, 0, 0);
       return;
@@ -4930,7 +4975,8 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
   int flags = SQLITE_PTR_TO_INT(sqlite3_user_data(ctx));
   pStr = (JsonString*)sqlite3_aggregate_context(ctx, 0);
   if( pStr ){
-    jsonAppendChar(pStr, '}');
+    jsonAppendRawNZ(pStr, "}", 2);
+    jsonStringTrimOneChar(pStr);
     pStr->pCtx = ctx;
     if( pStr->eErr ){
       jsonReturnString(pStr, 0, 0);
