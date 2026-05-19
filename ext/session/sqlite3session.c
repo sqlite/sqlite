@@ -5206,7 +5206,12 @@ static int sessionRetryIterInit(
     pRet->abPK = pApply->abPK;
     sessionBufferGrow(&pRet->tblhdr, nByte, &rc);
     pRet->apValue = (sqlite3_value**)pRet->tblhdr.aBuf;
-    if( rc==SQLITE_OK ) memset(pRet->apValue, 0, nByte);
+    if( rc==SQLITE_OK ){
+      memset(pRet->apValue, 0, nByte);
+    }else{
+      sqlite3changeset_finalize(pRet);
+      pRet = 0;
+    }
   }
 
   *ppIter = pRet;
@@ -5374,7 +5379,9 @@ static int sessionUpdateToDeleteInsert(
     );
   }
   if( rc==SQLITE_OK && sqlite3_step(pSelect)!=SQLITE_ROW ){
-    rc = SQLITE_ERROR;
+    sessionFinalizeStmt(pSelect, &rc);
+    if( rc==SQLITE_OK ) rc = SQLITE_ERROR;
+    pSelect = 0;
   }
 
   if( rc==SQLITE_OK ){
@@ -5529,6 +5536,8 @@ static int sessionRetryConstraints(
       if( rc==SQLITE_OK ){
         rc = sqlite3_exec(db, "RELEASE update_op", 0, 0, 0);
       }
+    }else{
+      sqlite3_finalize(pInsert);
     }
 
     sqlite3_free(cons.aBuf);
