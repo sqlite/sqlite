@@ -1,5 +1,5 @@
-C Fix\sa\sincorrect\sassert()\sfrom\s[52dd437d51d3c1af]\sreported\sby\sOSSFuzz.
-D 2026-05-19T16:07:08.348
+C Add\san\ssqlite3FaultSim()\scall\sto\sthe\schanges\sat\s[6193e4105b6a58ea]\sto\nmake\sthem\stestable.
+D 2026-05-19T17:05:28.306
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -676,7 +676,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c 6ebe22ccbedfcb92423833992130e8d65824be4e6599c3a03f540ab38fc7d13c
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c eba3271a61031f5a930486416ae2ec8697221e86d1a3c68a014c5f78641f2116
+F src/btree.c 8aa7c903ef0181ff92c8365545ae75a1d648f57151b60c03c11b0a51da979edb
 F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 866e584cdf40fbc83f530af9fd4d0991582a6fdbd8a9911b7cdbbea5f26a4a9e
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 00d546812810252a4d51ff796931dc2ff5bdd5173ddb8f95fb5efccd897087ff
-R 541a9106a8552fed0080a45e95d38050
+P 64b49e4d431d35db0920c7fc8a89d38ce2d2d2dbf42a7caf76aaa9685d66601b
+R 5fd09034b175a95fc9136a6b2c5cb9c4
 U drh
-Z 37e30aa7a2f04d4eb35f54385ef9c967
+Z 1d89a0e4b6003dc00c2f1a5824b799b6
 # Remove this line to create a well-formed Fossil manifest.
