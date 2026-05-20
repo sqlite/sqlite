@@ -5044,20 +5044,20 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
   {
     FILETIME x;
     osGetSystemTimeAsFileTime(&x);
-    xorMemory(&e, (unsigned char*)&x, sizeof(FILETIME));
+    xorMemory(&e, (unsigned char*)&x, sizeof(x));
   }
   {
     DWORD pid = osGetCurrentProcessId();
-    xorMemory(&e, (unsigned char*)&pid, sizeof(DWORD));
+    xorMemory(&e, (unsigned char*)&pid, sizeof(pid));
   }
   {
     ULONGLONG cnt = osGetTickCount64();
-    xorMemory(&e, (unsigned char*)&cnt, sizeof(DWORD));
+    xorMemory(&e, (unsigned char*)&cnt, sizeof(cnt));
   }
   {
     LARGE_INTEGER i;
     osQueryPerformanceCounter(&i);
-    xorMemory(&e, (unsigned char*)&i, sizeof(LARGE_INTEGER));
+    xorMemory(&e, (unsigned char*)&i, sizeof(i));
   }
 #if SQLITE_WIN32_USE_UUID
 #ifdef SQLITE_UWP
@@ -5065,12 +5065,12 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 #endif
   {
     UUID id;
-    memset(&id, 0, sizeof(UUID));
+    memset(&id, 0, sizeof(id));
     osUuidCreate(&id);
-    xorMemory(&e, (unsigned char*)&id, sizeof(UUID));
+    xorMemory(&e, (unsigned char*)&id, sizeof(id));
     memset(&id, 0, sizeof(UUID));
     osUuidCreateSequential(&id);
-    xorMemory(&e, (unsigned char*)&id, sizeof(UUID));
+    xorMemory(&e, (unsigned char*)&id, sizeof(id));
   }
 #endif /* SQLITE_WIN32_USE_UUID */
   return e.nXor>nBuf ? nBuf : e.nXor;
