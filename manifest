@@ -1,5 +1,5 @@
-C Improvements\sto\stestrunner.tcl:\s\sMake\sC-program\stests\sresponsive\sto\sthe\npattern\slist.\s\sDo\snot\sremove\sbuild\ssteps\suntil\sthe\svery\send\swhen\swe\sare\ncertain\sthat\sthe\sbuild\sstep\sis\snot\srequired.\s\sThe\spattern\slist\smatches\nthe\sexact\stext\sof\sthe\sdisplayname\scolumn\sof\sthe\sjobs\stable.
-D 2026-05-20T00:16:20.863
+C Fix\sa\stest\scase\sadded\sby\s[1249eeb1b9759038]\sthat\sdoes\snot\swork\sfor\nthe\sconfig=prepare\spermutation.
+D 2026-05-20T01:32:30.881
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1093,7 +1093,7 @@ F test/enc2.test 872afe58db772e7dfa1ad8e0759f8cc820e9efc8172d460fae83023101c2e43
 F test/enc3.test 55ef64416d72975c66167310a51dc9fc544ba3ae4858b8d5ab22f4cb6500b087
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
 F test/eqp.test 1d653fe8d2612cd6764e5ea2f16dcf5f13a9f50448b9233bb1573804bccd7579
-F test/eqp2.test 950ca786db3e74cbca5105cfd160c84f81744275034b1e3cc3c75e3e3807a0cc
+F test/eqp2.test 188bc2293b9dab0932b6ac50c3fec62976815df072d7814d5547c821a8630819
 F test/errmsg.test eae9f091eb39ce7e20305de45d8e5d115b68fa856fba4ea6757b6ca3705ff7f9
 F test/errofst1.test 6da78363739ba8991f498396ab331b5d64e7ab5c4172c12b5884683ef523ac53
 F test/eval.test 73969a2d43a511bf44080c44485a8c4d796b6a4f038d19e491867081155692c0
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 70021c3291b38192832c99fa4d8155249dd39f5b26334595c71f5cee66d13ebb
-R bde1cba3c0bba5c618255ba565122029
+P 3f409c0e1be6b71eca92eccf0b9de3ef5923a6a57be49540ebe190fc6a6d06d4
+R 80d6a5b4e51775aa4bc7f74ac20d1507
 U drh
-Z 0437c967c95da1d4038d7af40fe68045
+Z 9a8c8fb68a1f533cc9a30611637e2cfc
 # Remove this line to create a well-formed Fossil manifest.
