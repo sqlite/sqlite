@@ -68,5 +68,61 @@ do_catchsql_test 1.5 {
   SELECT rowid FROM t WHERE t MATCH 'a'
 } {1 {fts5: corruption found reading blob 137438953481 from table "t"}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  BEGIN;
+    INSERT INTO t1(rowid, a) VALUES(1, 'aaaa');
+    INSERT INTO t1(rowid, a) VALUES(2, 'bbbb');
+    INSERT INTO t1(rowid, a) VALUES(3, 'cccc');
+  COMMIT;
+}
+
+db close
+
+do_test 2.1 {
+  set hex [hexio_read test.db 0 [file size test.db]]
+  set off [string first "010463636363" $hex]
+  set hex [string replace $hex $off [expr $off+11] 017F63636363]
+  hexio_write test.db 0 $hex
+  set {} {}
+} {}
+
+sqlite3 db test.db
+
+do_catchsql_test 2.2 {
+  SELECT rowid FROM t1('cccccccccccccccccccccccccccccccccccccccccccccccc');
+} {1 {fts5: corruption on page 1, segment 1, table "t1"}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
+  INSERT INTO t1 VALUES(
+      'hello',
+      'alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu',
+      'ant bear cat dog elephant fox gorilla hippo iguana jaguar kangaroo lion monkey newt octopus panda quail rabbit snake turtle unicorn vulture walrus xerus yak zebra'
+  );
+
+  UPDATE t1_data SET block = unhex(
+      -- Preserve bytes 0-168: header through hello's nSz field
+      hex(substr(block, 1, 169))
+      -- Inject 448 bytes of 0xFF: corrupted poslist + subsequent term data
+      || replace(hex(zeroblob(448)), '00', 'FF')
+      -- Preserve 16 bytes of page index needed for hello lookup
+      || hex(substr(block, 618, 16))
+      -- Corrupt remaining 37 footer bytes (not needed for hello lookup)
+      || replace(hex(zeroblob(37)), '00', 'FF')
+      )
+  WHERE id = 137438953473;
+}
+
+do_test 3.1 {
+  execsql { SELECT * FROM t1 WHERE t1 MATCH '{a b}: hello' }
+  set {} {}
+} {}
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
