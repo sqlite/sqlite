@@ -584,7 +584,7 @@ static int startScript(
     if( rc==SQLITE_ROW ){
       int n = sqlite3_column_bytes(pStmt, 0);
       *pzScript = sqlite3_malloc(n+1);
-      strcpy(*pzScript, (const char*)sqlite3_column_text(pStmt, 0));
+      memcpy(*pzScript, (const char*)sqlite3_column_text(pStmt, 0), n+1);
       *pTaskId = taskId = sqlite3_column_int(pStmt, 1);
       *pzTaskName = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 2));
       sqlite3_finalize(pStmt);
