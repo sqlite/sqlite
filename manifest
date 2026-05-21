@@ -1,5 +1,5 @@
-C Remove\sdead\scode\screated\sby\s[20c2f8ce9242c3db].
-D 2026-05-21T14:16:47.506
+C Performance\soptimization\sto\sthe\ssqlite3ExprCollSeqMatch()\sroutine.
+D 2026-05-21T14:48:43.158
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -687,7 +687,7 @@ F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c c6a9de13b0a01f0bc94a41e16213ab1ecd15ccfe86df7255ced40fda9446257d
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
-F src/expr.c c7af3a4d0836d31ea5ce3afa769c371d04a5e6a31b5b28d08cc712acbe8c891e
+F src/expr.c d2188a699ded4522f15cf23d4c82da0ad73dcda09cd943982906824ef019947f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c e8525e6c5493149680b0ebd3352e7f004ee7283181f24809b603329afe911443
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 51ebf0e04efcbe982e62f2228553700b8c1147a37c70fdfaa0e377184b3ac936
-R b1bed3dcb85482081eb45fecec058465
+P 68c5fd5fa0f986b782519472398b068ba7c295c56a0e0199b8e0509d0d1685fb
+R 87643aeff447c121e679837bf119a591
 U drh
-Z a2a13f44682c2c44f3ddabf41a81fee4
+Z be79c12f35d7863c4b03de65556dd9ce
 # Remove this line to create a well-formed Fossil manifest.
