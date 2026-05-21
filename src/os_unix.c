@@ -5140,9 +5140,9 @@ static int unixShmMap(
   nReqRegion = ((iRegion+nShmPerMap) / nShmPerMap) * nShmPerMap;
 
   if( pShmNode->nRegion<nReqRegion ){
-    char **apNew;                      /* New apRegion[] array */
-    int nByte = nReqRegion*szRegion;   /* Minimum required file size */
-    struct stat sStat;                 /* Used by fstat() */
+    char **apNew;                         /* New apRegion[] array */
+    i64 nByte = nReqRegion*(i64)szRegion; /* Minimum required file size */
+    struct stat sStat;                    /* Used by fstat() */
 
     pShmNode->szRegion = szRegion;
 
@@ -5173,7 +5173,7 @@ static int unixShmMap(
         */
         else{
           static const int pgsz = 4096;
-          int iPg;
+          i64 iPg;
 
           /* Write to the last byte of each newly allocated or extended page */
           assert( (nByte % pgsz)==0 );
@@ -5199,8 +5199,8 @@ static int unixShmMap(
     }
     pShmNode->apRegion = apNew;
     while( pShmNode->nRegion<nReqRegion ){
-      int nMap = szRegion*nShmPerMap;
-      int i;
+      i64 nMap = (i64)szRegion*(i64)nShmPerMap;
+      i64 i;
       void *pMem;
       if( pShmNode->hShm>=0 ){
         pMem = osMmap(0, nMap,

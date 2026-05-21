@@ -1,5 +1,5 @@
-C Limit\sthe\slength\sof\sinputs\sto\sthe\sspellfix1_editdist()\sextension\nfunction\s(not\spart\sof\sthe\sstandard\sSQLite\sbuild\sand\srarely\sused)\nto\s99999\scharacters,\sto\savoid\sany\spossibility\sof\sinteger\soverflow.
-D 2026-05-21T13:39:43.968
+C Fix\sthe\sVFSes\sso\sthat\sthere\sis\sno\s32-bit\sinteger\soverflow\sin\sthe\nxShmMap\smethod\sif\sthe\sWAL\sfile\ssize\sexceeds\sabout\s25\sterabytes,\sor\nif\sthe\sheader\sis\scorrupted\sto\smake\sSQLite\sthink\sthat\sthe\sWAL\sfile\ssize\nis\sthat\sbig.
+D 2026-05-21T15:27:55.376
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,8 +720,8 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c e7d96727db5b67e39d590a68cc61c86daf4c093c36c011a09ebfb521182ec28d
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
-F src/os_unix.c fa5e09b4df35ad845440cad67b86908cfe1fd4c28c51915f82e23633d1992bf4
-F src/os_win.c 0d553b6e8b92c8eb85e7f1b4a8036fe8638c8b32c9ad8d9d72a861c10f81b4c5
+F src/os_unix.c 92a1773139e0c6206a927c7e1648b06287583570b6e253210a06ee3886739d39
+F src/os_win.c 938805c15e855819cb0874aea560c3a7250175d311a5494b47a4f8b69dcd59c0
 F src/os_win.h 5e168adf482484327195d10f9c3bce3520f598e04e07ffe62c9c5a8067c1037b
 F src/pager.c fe34fd22ec251436985d7b6ebdd05bf238a17901c2cb23d3d28974dd2361a912
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2198,9 +2198,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4247f48eec004c311cb046b1e97fbd44bc35d4b09e33c2b930dd3e1baabdb813
-Q +51ebf0e04efcbe982e62f2228553700b8c1147a37c70fdfaa0e377184b3ac936
-R 9aa6f4e04a98b808569ed55dcef6b298
+P e56ac902fa4f1219d3affbe3ac9f822406a58486e456f0200a5d0f47fa4e5b43
+Q +9ac4a33a2932d353c4871fd8e09c10addf827f1fc3fc9380037d738cf2cd0353
+R 89b8fd0dd197f5fbe3ed54c8f0a320e5
 U drh
-Z d6849713423835b22af84932f217d239
+Z a3bffda940116eb40fda8aeab5258cd1
 # Remove this line to create a well-formed Fossil manifest.
