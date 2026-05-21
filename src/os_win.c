@@ -3599,7 +3599,7 @@ static int winShmMap(
   if( pShmNode->nRegion<=iRegion ){
     HANDLE hShared = pShmNode->hSharedShm;
     struct ShmRegion *apNew;           /* New aRegion[] array */
-    int nByte = (iRegion+1)*szRegion;  /* Minimum required file size */
+    i64 nByte = ((i64)iRegion+1)*(i64)szRegion;  /* Minimum file size */
     sqlite3_int64 sz;                  /* Current size of wal-index file */
 
     pShmNode->szRegion = szRegion;
@@ -3630,7 +3630,7 @@ static int winShmMap(
 
     /* Map the requested memory region into this processes address space. */
     apNew = (struct ShmRegion*)sqlite3_realloc64(
-        pShmNode->aRegion, (iRegion+1)*sizeof(apNew[0])
+        pShmNode->aRegion, ((i64)iRegion+1)*sizeof(apNew[0])
     );
     if( !apNew ){
       rc = SQLITE_IOERR_NOMEM_BKPT;
@@ -3652,19 +3652,19 @@ static int winShmMap(
 #else
       hMap = osCreateFileMappingW(hShared, NULL, protect, 0, nByte, NULL);
 #endif
-      OSTRACE(("SHM-MAP-CREATE pid=%lu, region=%d, size=%d, rc=%s\n",
+      OSTRACE(("SHM-MAP-CREATE pid=%lu, region=%d, size=%lld, rc=%s\n",
                osGetCurrentProcessId(), pShmNode->nRegion, nByte,
                hMap ? "ok" : "failed"));
       if( hMap ){
-        int iOffset = pShmNode->nRegion*szRegion;
+        i64 iOffset = pShmNode->nRegion*szRegion;
         int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
 #ifdef SQLITE_UWP
         pMap = osMapViewOfFileFromApp(hMap, flags,
-            iOffset - iOffsetShift, szRegion + iOffsetShift
+            iOffset - iOffsetShift, (i64)szRegion + iOffsetShift
         );
 #else
         pMap = osMapViewOfFile(hMap, flags,
-            0, iOffset - iOffsetShift, szRegion + iOffsetShift
+            0, iOffset - iOffsetShift, (i64)szRegion + iOffsetShift
         );
 #endif
         OSTRACE(("SHM-MAP-MAP pid=%lu, region=%d, offset=%d, size=%d, rc=%s\n",
@@ -3687,7 +3687,7 @@ static int winShmMap(
 
 shmpage_out:
   if( pShmNode->nRegion>iRegion ){
-    int iOffset = iRegion*szRegion;
+    i64 iOffset = (i64)iRegion*(i64)szRegion;
     int iOffsetShift = iOffset % winSysInfo.dwAllocationGranularity;
     char *p = (char *)pShmNode->aRegion[iRegion].pMap;
     *pp = (void *)&p[iOffsetShift];
