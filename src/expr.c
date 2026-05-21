@@ -331,7 +331,9 @@ CollSeq *sqlite3ExprNNCollSeq(Parse *pParse, const Expr *pExpr){
 int sqlite3ExprCollSeqMatch(Parse *pParse, const Expr *pE1, const Expr *pE2){
   CollSeq *pColl1 = sqlite3ExprNNCollSeq(pParse, pE1);
   CollSeq *pColl2 = sqlite3ExprNNCollSeq(pParse, pE2);
-  return sqlite3StrICmp(pColl1->zName, pColl2->zName)==0;
+  assert( (pColl1==pColl2) ==
+          (sqlite3_stricmp(pColl1->zName,pColl2->zName)==0) );
+  return pColl1==pColl2;
 }
 
 /*

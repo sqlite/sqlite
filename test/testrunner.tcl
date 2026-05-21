@@ -1319,10 +1319,6 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   # The ::testspec array is populated by permutations.test
   foreach f [dict get $::testspec($config) -files] {
 
-    if {![job_matches_any_pattern $patternlist "$config [file tail $f]"]} {
-      continue
-    }
-
     if {[file pathtype $f]!="absolute"} { set f [file join $::testdir $f] }
     set f [file normalize $f]
 
@@ -1335,6 +1331,10 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
     }
     if {$build!=""} {
       set displayname "[lindex $build 2] $displayname"
+    }
+
+    if {![job_matches_any_pattern $patternlist $displayname]} {
+      continue
     }
 
     set lProp [trd_test_script_properties $f]
@@ -1352,10 +1352,7 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
         -cmd $cmd                      \
         -depid $depid                  \
         -priority $priority
-  }
-  if {$ntcljob==0 && [llength $build]>0} {
-    set bldid [lindex $build 0]
-    trdb eval {DELETE FROM jobs WHERE rowid=$bldid}
+
   }
 }
 
@@ -1389,7 +1386,7 @@ proc add_build_job {buildname target {postcmd ""} {depid ""}} {
 # Add jobs to build and run all the *.c files in $testdir/c/ for build
 # configuration $buildname.
 # 
-proc add_c_jobs {buildname} {
+proc add_c_jobs {buildname patternlist} {
   global TRG
 
   set dir [file join $::testdir c]
@@ -1424,6 +1421,9 @@ proc add_c_jobs {buildname} {
       }
       append cmd "AUXTEST=$prg $TRG(makecmd) $prg\n"
       append cmd "./$prg\n"
+    }
+    if {![job_matches_any_pattern $patternlist "$prg ($buildname)"]} {
+      continue
     }
     
     set id [add_job                                \
@@ -1526,7 +1526,7 @@ proc add_fuzztest_jobs {buildname patternlist} {
         set tail [lrange $s 0 end-1]
         lappend tail [file tail $fname]
       }
-      if {![job_matches_any_pattern $patternlist "$interpreter $tail"]} {
+      if {![job_matches_any_pattern $patternlist "$buildname $interpreter $tail"]} {
         continue
       }
       if {!$bldDone} {
@@ -1685,7 +1685,7 @@ proc add_jobs_from_cmdline {patternlist} {
           }
         }
 
-        add_c_jobs $b
+        add_c_jobs $b $patternlist
       }
     }
 
@@ -2121,6 +2121,15 @@ if {[llength $TRG(patternlist)]==1 && $TRG(patternlist) eq "retest"} {
   handle_retest
 } else {  
   set tm [lindex [time { make_new_testset }] 0]
+  if {[llength $TRG(patternlist)]>0} {
+    r_write_db {
+      trdb eval {
+        DELETE FROM jobs
+         WHERE displaytype='bld'
+           AND NOT EXISTS(SELECT 1 FROM jobs chld WHERE chld.depid=jobs.jobid)
+      }
+    }
+  }
 }
 if {$TRG(explain)} {
   explain_tests
