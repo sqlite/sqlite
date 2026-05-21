@@ -352,6 +352,7 @@ static int substituteCost(char cPrev, char cFrom, char cTo){
 **    -1  One of the inputs is NULL
 **    -2  Non-ASCII characters on input
 **    -3  Unable to allocate memory
+**    -4  Inputs too large
 **
 ** If pnMatch is not NULL, then *pnMatch is set to the number of bytes
 ** of zB that matched the pattern in zA. If zA does not end with a '*',
@@ -390,9 +391,11 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
   for(nA=0; zA[nA]; nA++){
     if( zA[nA]&0x80 ) return -2;
   }
+  if( nA>=100000 ) return -4;
   for(nB=0; zB[nB]; nB++){
     if( zB[nB]&0x80 ) return -2;
   }
+  if( nB>=100000 ) return -4;
 
   /* Special processing if either string is empty */
   if( nA==0 ){
@@ -419,7 +422,7 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
   if( nB<(sizeof(mStack)*4)/(sizeof(mStack[0])*5) ){
     m = mStack;
   }else{
-    m = toFree = sqlite3_malloc64( (nB+1)*5*sizeof(m[0])/4 );
+    m = toFree = sqlite3_malloc64( (nB+1)*5LL*sizeof(m[0])/4 );
     if( m==0 ) return -3;
   }
   cx = (char*)&m[nB+1];
@@ -527,6 +530,8 @@ static void editdistSqlFunc(
   if( res<0 ){
     if( res==(-3) ){
       sqlite3_result_error_nomem(context);
+    }else if( res==(-4) ){
+      sqlite3_result_error_toobig(context);
     }else if( res==(-2) ){
       sqlite3_result_error(context, "non-ASCII input to editdist()", -1);
     }else{
@@ -2465,7 +2470,7 @@ static void spellfix1RunQuery(MatchQuery *p, const char *zQuery, int nQuery){
       iDist = editdist1(p->zPattern, zK1, 0);
     }
     if( iDist<0 ){
-      p->rc = SQLITE_NOMEM;
+      p->rc = iDist==(-4) ? SQLITE_TOOBIG : SQLITE_NOMEM;
       break;
     }
     pCur->nSearch++;
@@ -2777,7 +2782,7 @@ static int spellfix1Column(
           if( !zTranslit ) return SQLITE_NOMEM;
           res = editdist1(pCur->zPattern, zTranslit, &iMatchlen);
           sqlite3_free(zTranslit);
-          if( res<0 ) return SQLITE_NOMEM;
+          if( res<0 ) return res==(-4) ? SQLITE_TOOBIG : SQLITE_NOMEM;
           iMatchlen = translen_to_charlen(zWord, nWord, iMatchlen);
         }else{
           iMatchlen = utf8Charlen(zWord, nWord);
