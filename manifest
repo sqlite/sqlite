@@ -1,5 +1,5 @@
-C Improved\sentropy\scollection\son\sWindows.
-D 2026-05-20T20:03:07.680
+C Enhance\sthe\sxfer-optimization\sto\sverify\saccess\sto\sthe\ssource\stable\susing\nthe\sauthorizer,\sif\san\sauthorizer\sis\sregistered.\n[bugs:/info/2026-05-21T03:31:22Z|Bug\s2026-05-21T03:31:22Z].
+D 2026-05-21T12:04:20.183
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -696,7 +696,7 @@ F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 21c2cf1f736e7b97502c3674d0c386db3f06870d6f10d0cf8174e2a4b8cb726e
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
-F src/insert.c 66cb27a8cb3509ca4fa9204d8beba31baaf23a40dca2e23156393bce09655417
+F src/insert.c 8dbc22f6ddcc5f0af3abf11daeb89b1978f00059cda15ebc61251fa7724fc7ee
 F src/json.c fadf5f0a00c1af99dbc6ac78dd3c2064c40bb28e602a5746f7c66c1ec8cbb006
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 78d5b06f18996ffa1203129b28fea043f63a87a4117539678f1d761c30b4ff65
@@ -880,7 +880,7 @@ F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 00e754484859998d124d144de6d114d920f2ed6ca2f961e6a7f4183c714f885e
 F test/attachmalloc.test 67309af95c6b765c13e7d2279d7fccbef78e6eb0565d75d51cefd5dc88784549
 F test/auth.test 2a01bf5bf3a0f10adf8ae3a3fd2c05af8a8c1b7a52fae227adb4ccd931915b5c
-F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
+F test/auth2.test fb34df35ceca8d24e01219e993a3c1d9cb646e83b434627e158343bda1f6e0da
 F test/auth3.test 76d20a7fa136d63bcfcf8bcb65c0b1455ed71078d81f22bcd0550d3eb18594ab
 F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
 F test/autoinc.test 9df9930966dbe92c55ef37a4d89112cfd537be0d0596d397177c12db9e581be0
@@ -2205,8 +2205,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e807d4e3798efd532b3d78d1dfe513ed4fbd3cb793dd0ae5c30cae6031422b10
-R 9fb073d54839cd983592ba47e66f2d2d
+P b734b76af3f732e0db8a002781bae57aa7a01c4a7f5151605144a6aeef993a21
+R 16e182253f4ed39a9e324a0b8b991bbc
 U drh
-Z 4a00ae97dd5144a5bfbae9a91a5cf0c5
+Z 0545298a4cb19b3751644db37cc2eebd
 # Remove this line to create a well-formed Fossil manifest.

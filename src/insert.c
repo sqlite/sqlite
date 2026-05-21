@@ -3278,6 +3278,18 @@ static int xferOptimization(
   if( (db->flags & SQLITE_CountRows)!=0 ){
     return 0;  /* xfer opt does not play well with PRAGMA count_changes */
   }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  if( db->xAuth ){
+    int iDb = sqlite3SchemaToIndex(db, pSrc->pSchema);
+    if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 0;
+    for(i=0; i<pSrc->nCol; i++){
+      Column *pSrcCol = &pSrc->aCol[i];
+      if( sqlite3AuthReadCol(pParse, pSrc->zName, pSrcCol->zCnName, iDb) ){
+        return 0;
+      }
+    }
+  }
+#endif
 
   /* If we get this far, it means that the xfer optimization is at
   ** least a possibility, though it might only work if the destination
