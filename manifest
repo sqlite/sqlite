@@ -1,5 +1,5 @@
-C A\sjoin\sconstraint\sis\snot\san\sequivalence\sunless\sboth\soperands\shave\sthe\nsame\scollation.
-D 2026-05-21T13:06:04.420
+C Limit\sthe\slength\sof\sinputs\sto\sthe\sspellfix1_editdist()\sextension\nfunction\s(not\spart\sof\sthe\sstandard\sSQLite\sbuild\sand\srarely\sused)\nto\s99999\scharacters,\sto\savoid\sany\spossibility\sof\sinteger\soverflow.
+D 2026-05-21T13:39:43.968
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -398,7 +398,7 @@ F ext/misc/series.c 496f43bac9bad2ee2cea63fb5212036f30ad3003b4cd317d5c2d6f3ad7c7
 F ext/misc/sha1.c 8bf60344c11a525384c2efd1ae77f160b06be336db679effaadf292d4b41451c
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c 33c92014c4662c2678ec01fd7dfa622aeff2f6f0f7821f643b331d4cabac2c7e
+F ext/misc/spellfix.c 36b0f4893ff583b6dcc727beca44cc262e7855713aea57a0154766936352cf81
 F ext/misc/sqlar.c 97c100b010159c08a7a9acd8eb1ea510a5522e64741aaafcd7b6c629de682edc
 F ext/misc/sqlite3_stdio.c b43a0f530c6f0fb3d41d9af8c0b40f3f71198a1db55ab8ffffbef5c8cc329d22
 F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bfa08ab1ce99f
@@ -2198,9 +2198,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c813d9b777bedd58005b53d38fa3c235ca56bd57b76424cf9238c01a977a4b3d
-Q +20c2f8ce9242c3dbb8054f01c6c7338763c830b7c1491a99c8e1de98ce8f0a5b
-R 72ae83118be1f2d215858ffa7782c5bf
+P 4247f48eec004c311cb046b1e97fbd44bc35d4b09e33c2b930dd3e1baabdb813
+Q +51ebf0e04efcbe982e62f2228553700b8c1147a37c70fdfaa0e377184b3ac936
+R 9aa6f4e04a98b808569ed55dcef6b298
 U drh
-Z fee73dabdc82bbb85b2b5af089448ee2
+Z d6849713423835b22af84932f217d239
 # Remove this line to create a well-formed Fossil manifest.
