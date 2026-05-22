@@ -914,6 +914,9 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
       }
       else if( n>2 && n<=11 && 0==sqlite3_strnicmp("-ignorenoop", z1, n) ){
         flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
+      }
+      else if( n>3 && n<=13 && 0==sqlite3_strnicmp("-noupdateloop", z1, n) ){
+        flags |= SQLITE_CHANGESETAPPLY_NOUPDATELOOP;
       }else{
         break;
       }

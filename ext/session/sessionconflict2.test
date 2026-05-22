@@ -135,8 +135,8 @@ do_execsql_test -db db2 3.3 {
 }
 
 #-------------------------------------------------------------------------
-reset_db
 db2 close
+reset_db
 forcedelete test.db2
 sqlite3 db2 test.db2
 
@@ -146,7 +146,7 @@ proc xConflict {args} {
   return "OMIT"
 }
 
-proc do_conflict_test {tn script clist} {
+proc do_conflict_test {tn bNoUpdateLoop script clist} {
 
   uplevel [list do_test $tn.1 [subst -nocommands {
     sqlite3session S db "main"
@@ -156,11 +156,19 @@ proc do_conflict_test {tn script clist} {
     S delete
   }] {}]
 
-  uplevel [list do_test $tn.2 {
-    set ::conflict_list [list]
-    sqlite3changeset_apply_v2 db2 $::changeset xConflict
-    set ::conflict_list
-  } [list {*}$clist]]
+  if {$bNoUpdateLoop} {
+    uplevel [list do_test $tn.2.no {
+      set ::conflict_list [list]
+      sqlite3changeset_apply_v2 -noupdateloop db2 $::changeset xConflict
+      set ::conflict_list
+    } [list {*}$clist]]
+  } else {
+    uplevel [list do_test $tn.2 {
+      set ::conflict_list [list]
+      sqlite3changeset_apply_v2 db2 $::changeset xConflict
+      set ::conflict_list
+    } [list {*}$clist]]
+  }
 }
 
 do_test 4.0 {
@@ -184,7 +192,7 @@ proc swap {tbl pkcol valcol pk1 pk2} {
   "
 }
 
-do_conflict_test 4.1.1 {
+do_conflict_test 4.1.1 0 {
   swap t1 a c 4 5
   swap t1 a c 2 3
   swap t1 a c 8 1
@@ -202,7 +210,7 @@ do_execsql_test -db db2 4.1.3 {
   1 8 2 3 3 2 4 5 5 4 6 6 7 7 8 1 9 9 10 10
 }
 
-do_conflict_test 4.2.1 {
+do_conflict_test 4.2.1 0 {
   swap t1 a d 10 9
   swap t1 a d  8 7
   swap t1 a d  7 6
@@ -226,7 +234,7 @@ do_execsql_test -db db2 4.3 {
   INSERT INTO t1(a, b, c, d) VALUES(11, 11, 11, 11);
 }
 
-do_conflict_test 4.3.1 {
+do_conflict_test 4.3.1 0 {
   swap t1 a c 3 6
   db eval { UPDATE t1 SET d=11 WHERE a=10; }
   swap t1 a d 4 8
@@ -234,7 +242,7 @@ do_conflict_test 4.3.1 {
   {UPDATE t1 CONSTRAINT {i 10 {} {} {} {} i 9} {{} {} {} {} {} {} i 11}}
 }
 
-do_conflict_test 4.3.2 {
+do_conflict_test 4.3.2 0 {
   swap t1 a c 1 2
   swap t1 a c 3 4
   db eval { UPDATE t1 SET c=11 WHERE a=10; }
@@ -244,14 +252,47 @@ do_conflict_test 4.3.2 {
   {UPDATE t1 CONSTRAINT {i 10 {} {} i 10 {} {}} {{} {} {} {} i 11 {} {}}}
 }
 
-do_conflict_test 4.3.3 {
+do_conflict_test 4.3.3 0 {
   swap t1 a c 1 2
   swap t1 a c 2 3
   swap t1 a c 3 4
   swap t1 a c 4 1
 } {
 }
-
 db2 close
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_test 5.0 {
+  do_common_sql {
+    CREATE TABLE t1(a INT PRIMARY KEY, b UNIQUE);
+    INSERT INTO t1 VALUES('one', 'one');
+    INSERT INTO t1 VALUES('two', 'two');
+    INSERT INTO t1 VALUES('three', 'three');
+    INSERT INTO t1 VALUES('four', 'four');
+    INSERT INTO t1 VALUES('five', 'five');
+  }
+} {}
+
+do_conflict_test 5.1 1 {
+} {
+}
+
+do_conflict_test 5.2 1 {
+  swap t1 a b one two
+} {
+ {UPDATE t1 CONSTRAINT {t two t two} {{} {} t one}} 
+ {UPDATE t1 CONSTRAINT {t one t one} {{} {} t two}}
+}
+
+do_conflict_test 5.2 0 {
+  swap t1 a b four five
+} {
+}
+
+
 finish_test
 
