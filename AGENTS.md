@@ -15,7 +15,7 @@ However, the human SQLite developers will review a concise and well-written
 pull request as a proof-of-concept prior to reimplementing the changes
 themselves.
 
-SQLite does not (currently) accept agentic code.  However the project
+SQLite does not accept agentic code.  However the project
 will accept agentic bug reports that include a reproducible test case.
 Patches or pull requests demonstrating a possible fix, for documentation
 purposes, are welcomed.

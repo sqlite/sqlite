@@ -1,9 +1,9 @@
-C Update\sthe\ssession\smodule\sso\sthat\sit\scan\sapply\schangesets\scontaining\stwo\sor\smore\sUPDATE\schanges\sthat\sform\sa\sdependency\sloop\s-\sso\sthat\sno\ssingle\sUPDATE\scan\sbe\sapplied\sindependently\swithout\sviolating\sa\sconstraint.
-D 2026-05-22T14:29:33.548
+C Strengthen\sthe\sstatement\sabout\snot\saccepting\sagentic\scode.
+D 2026-05-22T17:51:15.016
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
-F AGENTS.md 911864e3bae0566aa318b4134ad3568fbbe7b250815f4a55fd3b6c6b0f9bcf47
+F AGENTS.md 44ddfb38ef23e277888bd70ae378e6cbf5f5cab0e2a4420bd21d89b6caff7a4a
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 5fda086f33b144da08119255da1d2557f983d0764a13707f05acf0159fd89ba5
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
@@ -2207,9 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3dd1181120b9910a96090b5b3cad5f0829fadeffeb6ffaad17031540a5749513 eba02092bcf1713a646ecf8febd53a83bc803cf1b17e2e4fc590c14d886a8d27
-R 1e0cffe8e9e92c4d63d8db26c0f0e206
-T +closed eba02092bcf1713a646ecf8febd53a83bc803cf1b17e2e4fc590c14d886a8d27
-U dan
-Z 8ebbbd55906ba3a7c1dd7b620b59bb89
+P 32c762bbb187e3bc964dcaad0949ebeb4da21331be842a5868feeac6088790ca
+R e2e491adc9615183ba561a57a2edcb75
+U drh
+Z 678d3979d92466dcd0eca2b9b77be3d3
 # Remove this line to create a well-formed Fossil manifest.
