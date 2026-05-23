@@ -992,7 +992,11 @@ static const char *shellPromptAppDef(int c){
     case 4:   return "SQLITE_PS2";
 
     /* Name of the application */
+#ifndef SQLITE_CLI_APPNAME
     case 'A': return "SQLite";
+#else
+    case 'A': return SHELL_STRINGIFY(SQLITE_CLI_APPNAME);
+#endif
 
     /* Full version number of the application, including patch level */
     case 'V': return sqlite3_libversion();
