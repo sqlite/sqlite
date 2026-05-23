@@ -113,6 +113,7 @@ Usage:
     $a0 joblist ?PATTERN?
     $a0 njob ?NJOB?
     $a0 retest
+    $a0 make CONFIG TARGETS
     $a0 script ?-msvc? CONFIG
     $a0 status ?-d SECS? ?--cls?
 
@@ -170,6 +171,8 @@ as complete.  Testing will halt when all tests currently running complete.
 
 The "clean" command removes files and directories created by a prior
 invocation of testrunner.tcl.
+
+The "make" command runs "make" configured for the specific CONFIG.
 
 The "script" command outputs the script used to build a configuration.
 Add the "-msvc" option for a Windows-compatible script. For a list of
@@ -582,6 +585,87 @@ if {[string compare -nocase script [lindex $argv 0]]==0} {
   set config [lindex $argv [expr [llength $argv]-1]]
 
   puts [trd_buildscript $config [file dirname $testdir] $bMsvc]
+  exit
+}
+
+#--------------------------------------------------------------------------
+# Check if this is the "make" command.  Example:
+#
+#    test/testrunner.tcl make Debug-Two clean testfixture
+#                             \_______/ \_______________/
+#         Configuration ----------^            ^---------- Arguments to "make"
+#
+# This works by running the equivalent of "testrunner.tcl script" to generate
+# the approprate shell script or BAT file, then invoking that script.  The 
+# generated script is usually deleted automatically, but that can be suppressed
+# using the --keep option.
+#
+if {[string compare -nocase "make" [lindex $argv 0]]==0} {
+  set bKeep 0
+  set bDryRun 0
+  set Config {}
+  set MakeArgs [list]
+  for {set i 1} {$i<[llength $argv]} {incr i} {
+    set arg [lindex $argv $i]
+    if {$arg eq "-keep" || $arg eq "--keep"} {
+      set bKeep 1
+      continue
+    }
+    if {[regexp {^--?dry-?run$} $arg] || [regexp {^--?n$} $arg]} {
+      set bDryRun 1
+      continue
+    }
+    if {$Config eq ""} {
+      if {![info exists ::trd::build($arg)]} {
+        puts stderr "No such configuration: $arg"
+        puts stderr "Should be one of: [lsort [array names ::trd::build]]"
+        exit 1
+      }
+      set Config $arg
+      continue
+    }
+    lappend MakeArgs $arg
+  }
+  if {$Config eq ""} {
+    puts stderr "Missing configuration name"
+    puts stderr "Run \"$argv0 help\" for help"
+    exit 1
+  }
+  set scriptname testrunner-[expr {int(rand()*1000000)}][clock seconds]
+  if {$tcl_platform(platform) eq "windows"} {
+    set bMsvc 1
+    append scriptname .bat
+  } else {
+    set bMsvc 0
+    append scriptname .sh
+  }
+  if {$bDryRun} {
+    puts "Script \"$scriptname\" would have been:"
+    puts [trd_buildscript $Config [file dirname $testdir] $bMsvc $MakeArgs]
+    exit 0
+  }
+  set fd [open $scriptname w]
+  puts $fd [trd_buildscript $Config [file dirname $testdir] $bMsvc $MakeArgs]
+  close $fd
+  if {$bMsvc} {
+    set rc [catch {
+      exec $scriptname >@stdout
+    } msg]
+    set rc 0
+  } else {
+    set rc [catch {
+      exec sh $scriptname >@stdout 2>@stderr
+    } msg]
+  }
+  if {$bKeep} {
+    puts "script retained in \"$scriptname\"
+  } else {
+    file delete -force $scriptname
+  }
+  if {$rc} {
+    puts stderr "make failed: $msg"
+    exit 1
+  }
   exit
 }
 
@@ -1235,10 +1319,6 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
   # The ::testspec array is populated by permutations.test
   foreach f [dict get $::testspec($config) -files] {
 
-    if {![job_matches_any_pattern $patternlist "$config [file tail $f]"]} {
-      continue
-    }
-
     if {[file pathtype $f]!="absolute"} { set f [file join $::testdir $f] }
     set f [file normalize $f]
 
@@ -1251,6 +1331,10 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
     }
     if {$build!=""} {
       set displayname "[lindex $build 2] $displayname"
+    }
+
+    if {![job_matches_any_pattern $patternlist $displayname]} {
+      continue
     }
 
     set lProp [trd_test_script_properties $f]
@@ -1268,10 +1352,7 @@ proc add_tcl_jobs {build config patternlist {shelldepid ""}} {
         -cmd $cmd                      \
         -depid $depid                  \
         -priority $priority
-  }
-  if {$ntcljob==0 && [llength $build]>0} {
-    set bldid [lindex $build 0]
-    trdb eval {DELETE FROM jobs WHERE rowid=$bldid}
+
   }
 }
 
@@ -1305,7 +1386,7 @@ proc add_build_job {buildname target {postcmd ""} {depid ""}} {
 # Add jobs to build and run all the *.c files in $testdir/c/ for build
 # configuration $buildname.
 # 
-proc add_c_jobs {buildname} {
+proc add_c_jobs {buildname patternlist} {
   global TRG
 
   set dir [file join $::testdir c]
@@ -1340,6 +1421,9 @@ proc add_c_jobs {buildname} {
       }
       append cmd "AUXTEST=$prg $TRG(makecmd) $prg\n"
       append cmd "./$prg\n"
+    }
+    if {![job_matches_any_pattern $patternlist "$prg ($buildname)"]} {
+      continue
     }
     
     set id [add_job                                \
@@ -1442,7 +1526,7 @@ proc add_fuzztest_jobs {buildname patternlist} {
         set tail [lrange $s 0 end-1]
         lappend tail [file tail $fname]
       }
-      if {![job_matches_any_pattern $patternlist "$interpreter $tail"]} {
+      if {![job_matches_any_pattern $patternlist "$buildname $interpreter $tail"]} {
         continue
       }
       if {!$bldDone} {
@@ -1602,7 +1686,7 @@ proc add_jobs_from_cmdline {patternlist} {
           }
         }
 
-        add_c_jobs $b
+        add_c_jobs $b $patternlist
       }
     }
 
@@ -1970,6 +2054,7 @@ proc run_testset {} {
      SELECT DISTINCT substr(svers,1,79) as v1 FROM jobs WHERE svers IS NOT NULL
   } {puts $v1}
 
+  return [expr {$nErr>0}]
 }
 
 # If the argument is "retest", simply rerun all tests from the previous
@@ -2029,6 +2114,7 @@ proc explain_tests {} {
   explain_layer "" ""
 }
 
+set exit_status 0
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
 if {[llength $TRG(patternlist)]==1 && $TRG(patternlist) eq "retest"} {
@@ -2036,6 +2122,15 @@ if {[llength $TRG(patternlist)]==1 && $TRG(patternlist) eq "retest"} {
   handle_retest
 } else {  
   set tm [lindex [time { make_new_testset }] 0]
+  if {[llength $TRG(patternlist)]>0} {
+    r_write_db {
+      trdb eval {
+        DELETE FROM jobs
+         WHERE displaytype='bld'
+           AND NOT EXISTS(SELECT 1 FROM jobs chld WHERE chld.depid=jobs.jobid)
+      }
+    }
+  }
 }
 if {$TRG(explain)} {
   explain_tests
@@ -2047,6 +2142,7 @@ if {$TRG(explain)} {
     puts "built testset in [expr $tm/1000]ms.."
   }
   handle_buildonly
-  run_testset
+  set exit_status [run_testset]
 }
 trdb close
+exit $exit_status

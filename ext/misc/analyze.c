@@ -419,7 +419,7 @@ static void analyzeFunc(
   int rc;
   sqlite3_stmt *pStmt;
   int n;
-  sqlite3_int64 i64;
+  sqlite3_int64 ii;
   sqlite3_int64 pgsz;
   sqlite3_int64 nPage;
   sqlite3_int64 nPageInUse;
@@ -429,6 +429,7 @@ static void analyzeFunc(
   Analysis s;
   sqlite3_uint64 r[2];
 
+  (void)argc;
   memset(&s, 0, sizeof(s));
   s.db = sqlite3_context_db_handle(context);
   s.context = context;
@@ -445,10 +446,10 @@ static void analyzeFunc(
     sqlite3_result_text(context, "cannot analyze \"temp\"",-1,SQLITE_STATIC);
     return;
   }
-  i64 = 0;
-  rc = analysisSqlInt(&s,&i64,"SELECT 1 FROM pragma_database_list"
+  ii = 0;
+  rc = analysisSqlInt(&s,&ii,"SELECT 1 FROM pragma_database_list"
                              " WHERE name=%Q COLLATE nocase",s.zSchema);
-  if( rc || i64==0 ){
+  if( rc || ii==0 ){
     analysisReset(&s);
     sqlite3_result_text(context,"no such database",-1,SQLITE_STATIC);
     return;
@@ -570,25 +571,25 @@ static void analyzeFunc(
   analysisLine(&s, "Pages on the freelist", "%-11lld ", nFreeList);
   analysisPercent(&s, (nFreeList*100.0)/(double)nPage);
 
-  i64 = 0;
-  rc = analysisSqlInt(&s, &i64, "PRAGMA \"%w\".auto_vacuum", s.zSchema);
+  ii = 0;
+  rc = analysisSqlInt(&s, &ii, "PRAGMA \"%w\".auto_vacuum", s.zSchema);
   if( rc ) return;
-  if( i64==0 || nPage<=1 ){
-    i64 = 0;
+  if( ii==0 || nPage<=1 ){
+    ii = 0;
   }else{
     double rPtrsPerPage = pgsz/5;
     double rAvPage = (nPage-1.0)/(rPtrsPerPage+1.0);
-    i64 = (sqlite3_int64)ceil(rAvPage);
+    ii = (sqlite3_int64)ceil(rAvPage);
   }
-  analysisLine(&s, "Pages of auto-vacuum overhead", "%-11lld ", i64);
-  analysisPercent(&s, (i64*100.0)/(double)nPage);
+  analysisLine(&s, "Pages of auto-vacuum overhead", "%-11lld ", ii);
+  analysisPercent(&s, (ii*100.0)/(double)nPage);
 
-  i64 = 0;
-  rc = analysisSqlInt(&s, &i64, 
+  ii = 0;
+  rc = analysisSqlInt(&s, &ii, 
        "SELECT count(*)+1 FROM \"%w\".sqlite_schema WHERE type='table'",
        s.zSchema);
   if( rc ) return;
-  analysisLine(&s, "Number of tables", "%lld\n", i64);
+  analysisLine(&s, "Number of tables", "%lld\n", ii);
   nWORowid = 0;
   rc = analysisSqlInt(&s, &nWORowid,
        "SELECT count(*) FROM \"%w\".pragma_table_list WHERE wr",
@@ -596,7 +597,7 @@ static void analyzeFunc(
   if( rc ) return;
   if( nWORowid>0 ){
     analysisLine(&s, "Number of WITHOUT ROWID tables", "%lld\n", nWORowid);
-    analysisLine(&s, "Number of rowid tables", "%lld\n", i64 - nWORowid);
+    analysisLine(&s, "Number of rowid tables", "%lld\n", ii - nWORowid);
   }
   nIndex = 0;
   rc = analysisSqlInt(&s, &nIndex, 
@@ -604,23 +605,23 @@ static void analyzeFunc(
        s.zSchema);
   if( rc ) return;
   analysisLine(&s, "Number of indexes", "%lld\n", nIndex);
-  i64 = 0;
-  rc = analysisSqlInt(&s, &i64, 
+  ii = 0;
+  rc = analysisSqlInt(&s, &ii, 
        "SELECT count(*) FROM \"%w\".sqlite_schema"
        " WHERE name GLOB 'sqlite_autoindex_*' AND type='index'",
        s.zSchema);
   if( rc ) return;
-  analysisLine(&s, "Number of defined indexes", "%lld\n", nIndex - i64);
-  analysisLine(&s, "Number of implied indexes", "%lld\n", i64);
+  analysisLine(&s, "Number of defined indexes", "%lld\n", nIndex - ii);
+  analysisLine(&s, "Number of implied indexes", "%lld\n", ii);
   analysisLine(&s, "Size of the database in bytes", "%lld\n", pgsz*nPage);
-  i64 = 0;
-  rc = analysisSqlInt(&s, &i64, 
+  ii = 0;
+  rc = analysisSqlInt(&s, &ii, 
        "SELECT sum(payload) FROM temp.%s"
        " WHERE NOT is_index AND name NOT LIKE 'sqlite_schema'",
        s.zSU);
   if( rc ) return;
-  analysisLine(&s, "Bytes of payload", "%-11lld ", i64);
-  analysisPercent(&s, i64*100.0/(double)(pgsz*nPage));
+  analysisLine(&s, "Bytes of payload", "%-11lld ", ii);
+  analysisPercent(&s, ii*100.0/(double)(pgsz*nPage));
 
   analysisTitle(&s, "Page counts for all tables with their indexes");
   pStmt = analysisPrepare(&s,

@@ -1220,7 +1220,7 @@ do_test 8.0 {
 
 do_catchsql_test 8.1 {
   SELECT rowid FROM t1('a* NOT ý') ;
-} {0 {1 2 3 4 5 6 7}}
+} {1 {fts5: corruption on page 1, segment 1, table "t1"}}
 
 #-------------------------------------------------------------------------
 reset_db

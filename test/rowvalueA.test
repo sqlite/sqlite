@@ -121,5 +121,25 @@ do_execsql_test 4.3 {
   SELECT * FROM t0, t1 WHERE (t1.c1, t1.c0) <= (t0.c0, t0.c0);
 } {True a 1 True a True}
 
+#-------------------------------------------------------------------------
+# Bug report https://sqlite.org/bugs/info/2026-05-17T11:59:19Z
+#
+do_execsql_test 5.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a TEXT, b TEXT);
+  CREATE INDEX t1_ab ON t1(a COLLATE NOCASE, b COLLATE NOCASE);
+  INSERT INTO t1 VALUES('a',null),('b', 'ABCD');
+}
+db null NULL
+do_execsql_test 5.2 {
+  SELECT * FROM t1
+   WHERE ('B' COLLATE nocase,'abc')>(a,b)
+   ORDER BY +a;
+} {a NULL b ABCD}
+do_execsql_test 5.3 {
+  SELECT * FROM t1 NOT INDEXED
+   WHERE ('B' COLLATE nocase,'abc')>(a,b)
+   ORDER BY +a;
+} {a NULL b ABCD}
 
 finish_test

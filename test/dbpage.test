@@ -251,5 +251,19 @@ do_execsql_test 720 {
   PRAGMA integrity_check
 } {ok}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 800 {
+  CREATE TABLE x1(x);
+}
+
+do_execsql_test 810 {
+  SELECT pgno FROM sqlite_dbpage WHERE pgno=555
+} {}
+
+do_execsql_test 820 {
+  SELECT pgno FROM sqlite_dbpage WHERE pgno=4294967297
+} {}
+
 
 finish_test
