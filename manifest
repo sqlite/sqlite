@@ -1,5 +1,5 @@
-C Enhance\sthe\sdefenses\sagainst\smalformed\sJSONB\sin\sthe\sjsonbPayloadSize()\nroutine.
-D 2026-05-25T18:46:42.889
+C Fix\sto\stestrunner.tcl\sso\sthat\sit\swill\srun\son\sFreeBSD.\n[forum:/info/2026-05-25T18:50:36Z|Forum\spost\s2026-05-25T18:50:36Z]
+D 2026-05-25T19:32:52.626
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1723,7 +1723,7 @@ F test/temptrigfault.tes fc5918e64f3867156fefe7cfca9d8e1f495134a5229b2b511b0dc11
 F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3fb4769d61
 F test/tester.tcl 2d943f60200e0a36bcd3f1f0baf181a751cd3604ef6b6bd4c8dc39b4e8a53116
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
-F test/testrunner.tcl 8f9cd46fe10f670f7f1f3430323f6031a13690303bd7810042d4bb20c47c5d9b x
+F test/testrunner.tcl 818f8b69ca6b98d6f33cd4e5645c23a17f3c4a50ec55bbc321c9eb73bd625701 x
 F test/testrunner_data.tcl 4b3cf036d39c98b83f9289a5c047eb01089c932d4f59a81bf764f6800589b959
 F test/testrunner_estwork.tcl 81e2ae10238f50540f42fbf2d94913052a99bfb494b69e546506323f195dcff9
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 897b443fb35d550891315890a5af473d347af3b6ecea11fcafafb5b06a1b50a5
-R c71d94874b145851b67d61b6f4d02ce9
+P 32c9f71a989fa4c81a613398ca5c1e68eb88b2a90ac4a4a7bf39e755717f43b1
+R 09baee8a0b949296eef577422e46367a
 U drh
-Z 3cc13306f6222d2b47b54b5c5cbe5b10
+Z 0a3f17ccacc062c3565febc751c0e11f
 # Remove this line to create a well-formed Fossil manifest.
