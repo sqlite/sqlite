@@ -210,8 +210,8 @@ do_test 3.2 {
 
 sqlite3 db test.db
 do_execsql_test 3.3 {
-  SELECT * FROM sqlite_schema
-} {table t1 t1 2 {CREATE TABLE t1(x, y)}}
+  SELECT type, name, tbl_name, sql FROM sqlite_schema
+} {table t1 t1 {CREATE TABLE t1(x, y)}}
 
 
 

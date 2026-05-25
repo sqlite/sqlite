@@ -1,5 +1,5 @@
-C Early\smalformed\sJSON\serrors\sin\sjson_each()\sand\sjson_tree()\sto\sprevent\nexcess\soutput.
-D 2026-05-25T19:47:58.165
+C Fix\sa\sminor\sproblem\swith\stest\scase\smjournal-3.3.
+D 2026-05-25T20:45:43.713
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1448,7 +1448,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test d595599972ec0b436985f0f02f243b68500ffc977b9b3194ec66c0866cfddcab
 F test/misc8.test 08d2380bc435486b12161521f225043ac2be26f02471c2c1ea4cac0b1548edbd
 F test/misuse.test 859f37014d9824ca66bd90c36372c08c80c51c9593a7cfa8a31d4f92cd4d5b7f
-F test/mjournal.test dcee98981209630e158537ea340501388cb57b7a56e806dee3128202432bee0a
+F test/mjournal.test 3570ca4241b0d19ca1f47616f5293722f7c2fc9f2d359fc7933d67ef51dc2137
 F test/mmap1.test 18de3fd7b70a777af6004ca2feecfcdd3d0be17fa04058e808baf530c94b1a1d
 F test/mmap2.test dba452dc7db91e9df10f70bdd73dc4190c7b8ee7b5133b4684f04277ada0b9ac
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 97b66687b3f772e225e1792194a7f54a2ae187c84de1d76227846503631b5c2f
-R 74567a213fb506570ddaaa75a2e01e7b
+P eb4d7e1b86b1d1bece01f621c9991a11f4812bf515a973b5036b09a1392134e2
+R 347b10d4187367005a47df3fcda8a7e8
 U drh
-Z e2046edbc8cf605e3c56bf12535a18b3
+Z 4658067a7a4b2c1debceef19f9f470b1
 # Remove this line to create a well-formed Fossil manifest.
