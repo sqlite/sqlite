@@ -1,5 +1,5 @@
-C Fix\sto\stestrunner.tcl\sso\sthat\sit\swill\srun\son\sFreeBSD.\n[forum:/info/2026-05-25T18:50:36Z|Forum\spost\s2026-05-25T18:50:36Z]
-D 2026-05-25T19:32:52.626
+C Early\smalformed\sJSON\serrors\sin\sjson_each()\sand\sjson_tree()\sto\sprevent\nexcess\soutput.
+D 2026-05-25T19:47:58.165
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -699,7 +699,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 21c2cf1f736e7b97502c3674d0c386db3f06870d6f10d0cf8174e2a4b8cb726e
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8dbc22f6ddcc5f0af3abf11daeb89b1978f00059cda15ebc61251fa7724fc7ee
-F src/json.c 4b92f3d961c839e05245d6e80410f207eca061f00bd15c7e24007fdddde93cd2
+F src/json.c 83122c47ac1c86a3870398e872b1d1afa6439f46fdb92975aa435267771c7ee4
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 78d5b06f18996ffa1203129b28fea043f63a87a4117539678f1d761c30b4ff65
 F src/main.c 6180079f53ccdd784df2eddc3751f49ea7153c5959bee792b19ad9f4bdbcf437
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 32c9f71a989fa4c81a613398ca5c1e68eb88b2a90ac4a4a7bf39e755717f43b1
-R 09baee8a0b949296eef577422e46367a
+P 97b66687b3f772e225e1792194a7f54a2ae187c84de1d76227846503631b5c2f
+R 74567a213fb506570ddaaa75a2e01e7b
 U drh
-Z 0a3f17ccacc062c3565febc751c0e11f
+Z e2046edbc8cf605e3c56bf12535a18b3
 # Remove this line to create a well-formed Fossil manifest.
