@@ -1,5 +1,5 @@
-C Use\s"-encoding\siso8859-1"\sinstead\sof\s"-encoding\sbinary"\sin\smjournal.test\sso\sthat\sthe\sscript\sworks\swith\sboth\sTcl\s8\sand\s9.
-D 2026-05-25T18:14:58.294
+C Enhance\sthe\sdefenses\sagainst\smalformed\sJSONB\sin\sthe\sjsonbPayloadSize()\nroutine.
+D 2026-05-25T18:46:42.889
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -699,7 +699,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 21c2cf1f736e7b97502c3674d0c386db3f06870d6f10d0cf8174e2a4b8cb726e
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 8dbc22f6ddcc5f0af3abf11daeb89b1978f00059cda15ebc61251fa7724fc7ee
-F src/json.c fadf5f0a00c1af99dbc6ac78dd3c2064c40bb28e602a5746f7c66c1ec8cbb006
+F src/json.c 4b92f3d961c839e05245d6e80410f207eca061f00bd15c7e24007fdddde93cd2
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 78d5b06f18996ffa1203129b28fea043f63a87a4117539678f1d761c30b4ff65
 F src/main.c 6180079f53ccdd784df2eddc3751f49ea7153c5959bee792b19ad9f4bdbcf437
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b3766c3afd0ac4d31f158ee5938f19d72a047872e422b5f19b1567c60640f54d
-R 68491f627fa8594d873043b14a1150c2
-U dan
-Z 5b697bd95f0c1528a1b9895f7511a4f8
+P 897b443fb35d550891315890a5af473d347af3b6ecea11fcafafb5b06a1b50a5
+R c71d94874b145851b67d61b6f4d02ce9
+U drh
+Z 3cc13306f6222d2b47b54b5c5cbe5b10
 # Remove this line to create a well-formed Fossil manifest.
