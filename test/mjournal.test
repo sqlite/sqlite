@@ -159,4 +159,60 @@ do_hasmj_test 2.3 {
   COMMIT;
 } {0}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 3.0 {
+  PRAGMA synchronous = OFF;
+  CREATE TABLE t1(x, y);
+}
+
+do_execsql_test 3.1 {
+  BEGIN;
+    INSERT INTO t1 VALUES(100, 200);
+}
+
+db_save
+db close
+db_restore
+
+do_test 3.2 {
+
+  # Append super-journal name to test.db-journal
+  #
+  set mjname [file join [pwd] test.db-super]
+  binary scan $mjname c* bytes
+  set cksum 0
+  foreach b $bytes { incr cksum $b }
+  set fd [open test.db-journal a+]
+  fconfigure $fd -translation binary -encoding binary
+  puts -nonewline $fd $mjname
+  puts -nonewline $fd [binary format I [string length $mjname]]
+  puts -nonewline $fd [binary format I $cksum]
+  puts -nonewline $fd [binary decode hex "d9d505f920a163d7"]
+  close $fd
+
+  # Create super-journal
+  #
+  set fd [open test.db-super w]
+  fconfigure $fd -translation binary -encoding binary
+  puts -nonewline $fd "test2.db-journal\0test.db-journal\0"
+  close $fd
+
+  # Create corrupt child journal
+  #
+  set fd [open test2.db-journal w]
+  fconfigure $fd -translation binary -encoding binary
+  puts -nonewline $fd [binary decode hex "00200001[string repeat 41 512]"]
+  puts -nonewline $fd [binary decode hex "0000020000008200d9d505f920a163d7"]
+  close $fd
+} {}
+
+sqlite3 db test.db
+do_execsql_test 3.3 {
+  SELECT * FROM sqlite_schema
+} {table t1 t1 2 {CREATE TABLE t1(x, y)}}
+
+
+
 finish_test
