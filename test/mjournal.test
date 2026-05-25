@@ -185,7 +185,7 @@ do_test 3.2 {
   set cksum 0
   foreach b $bytes { incr cksum $b }
   set fd [open test.db-journal a+]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary -encoding iso8859-1
   puts -nonewline $fd $mjname
   puts -nonewline $fd [binary format I [string length $mjname]]
   puts -nonewline $fd [binary format I $cksum]
@@ -195,14 +195,14 @@ do_test 3.2 {
   # Create super-journal
   #
   set fd [open test.db-super w]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary -encoding iso8859-1
   puts -nonewline $fd "test2.db-journal\0test.db-journal\0"
   close $fd
 
   # Create corrupt child journal
   #
   set fd [open test2.db-journal w]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary -encoding iso8859-1
   puts -nonewline $fd [binary decode hex "00200001[string repeat 41 512]"]
   puts -nonewline $fd [binary decode hex "0000020000008200d9d505f920a163d7"]
   close $fd
