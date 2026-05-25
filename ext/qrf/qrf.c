@@ -911,7 +911,7 @@ static void qrfEncodeText(Qrf *p, sqlite3_str *pOut, const char *zTxt){
           sqlite3_str_append(pOut, (const char*)z, i);
         }
         switch( z[i] ){
-          case '>':   sqlite3_str_append(pOut, "&lt;", 4);   break;
+          case '>':   sqlite3_str_append(pOut, "&gt;", 4);   break;
           case '&':   sqlite3_str_append(pOut, "&amp;", 5);  break;
           case '<':   sqlite3_str_append(pOut, "&lt;", 4);   break;
           case '"':   sqlite3_str_append(pOut, "&quot;", 6); break;
