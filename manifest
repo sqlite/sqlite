@@ -1,5 +1,5 @@
-C Fix\san\sOOM\scheck\sin\sshell.c.in.\sAddresses\s[forum:2026-05-26T15:02:35Z|forum\spost\s2026-05-26T15:02:35Z].
-D 2026-05-26T17:15:54.982
+C Patch\stest/indexexpr1.test\sto\swork\swhen\sbuilt\swith\sSQLITE_DQS=0.\sAddresses\s[forum:2026-05-26T18:08:20Z|forum\spost\s2026-05-26T18:08:20Z].
+D 2026-05-26T19:25:36.487
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1308,7 +1308,7 @@ F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a91
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
 F test/indexA.test 11d84f6995e6e5b9d8315953fb1b6d29772ee7c7803ee9112715e7e4dd3e4974
 F test/indexedby.test 444fb04ce0b21a3daf79f84e6735b49e5a5b3396623b37df5431eb09c8b8f557
-F test/indexexpr1.test d32dba192b8a566a81bb437ee8b6219931458e010c2d94610da775fa9d318f17
+F test/indexexpr1.test 830fec7ce07102f8e065f9486fa51d733f7443173f66c084d36232fa1628e635
 F test/indexexpr2.test 1c382e81ef996d8ae8b834a74f2a9013dddf59214c32201d7c8a656d739f999a
 F test/indexexpr3.test 47b91bc7999805c9a34d356f672259bc49295ecc797448511cae554a309b47cd
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 78eaa605cb6c14e5bd49a898b4c737957bd60c8714913cc2341f4ffe3bfe81fe
-R 0ea5d9e8131e03388e63afd6b28977de
+P e78198e6aec57c28e33a5b1c5ae9943115a35d2fbfa04c8428318567f17eefbe
+R a628ab30284205241205a853323276ec
 U stephan
-Z 42c9e13ccb4a757e025a153555bbaa63
+Z c98417d5ae241afbaee0903a7ef064d4
 # Remove this line to create a well-formed Fossil manifest.

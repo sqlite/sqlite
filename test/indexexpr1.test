@@ -566,6 +566,8 @@ do_execsql_test indexexpr1-2050 {
 } {/.*SCAN t1 USING COVERING INDEX t1x.*/}
 
 reset_db
+db config dqs_dml 1
+db config dqs_ddl 1
 do_execsql_test indexexpr1-2100 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
   INSERT INTO t1(a,b) VALUES(1,0);
@@ -590,6 +592,8 @@ do_execsql_test indexexpr1-2140 {
   UPDATE t1 SET b=400 WHERE (SELECT 'y') GLOB "y*";
   SELECT b FROM t1;
 } 400
+db config dqs_dml 0
+db config dqs_ddl 0
 
 # 2023-04-18 Forum post https://sqlite.org/forum/forumpost/f34e32d120 from
 # Alexis King.
