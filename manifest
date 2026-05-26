@@ -1,5 +1,5 @@
-C Fix\sQRF\sso\sthat\sit\sworks\ssensibly\swith\s"--wrap\s1"
-D 2026-05-26T13:54:57.292
+C Fix\sa\s32-bit\sinteger\soverflow\sin\ssqlite3changegroup_change_blob()\sthat\scould\slead\sto\sa\sbuffer\soverwrite.
+D 2026-05-26T14:18:50.589
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -575,7 +575,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 9d1cce13a48d821a31b36d99123ab25da87c3ae8b3bb96a926dfcc233a35ba9c
+F ext/session/sqlite3session.c 08c508d9d0d58546898b4ba0a3ed12785483e56c596aa949cba8fc4570dd57bd
 F ext/session/sqlite3session.h ca7c4422c1514a95056cc8d333217df6b1829d39058126b1de85d10cd62d7a9c
 F ext/session/test_session.c 05c1f90c04de5474158bf8f7712a6f7a1d47477ce0402bbe0e55fc4a9ef1f49b
 F ext/wasm/GNUmakefile 65feef4ec48e62249f90278c4c08a3fe3c69e2461ff560b61c03cd73606e0949
@@ -947,6 +947,7 @@ F test/btree02.test 7555a5440453d900410160a52554fe6478af4faf53098f7235f1f443d5a1
 F test/btreefault.test a82a23b0578bc587afbf9a622c8f54a54f63762f062ba8a35613cfee38ab42f9
 F test/busy.test caff7164c16ce06a53af51f9e4c2753d4cc64250e00790a5e48b9c4f4be37597
 F test/busy2.test 20823a5d7c42fb257d9f108c66312d90b1bb4ec3d80ba6b4e371073727560f98
+F test/c/changeblob1.c c2f51ff87ed628634badfe635d987c21ffcc6a03554a29bff7f68607e6deb9ab
 F test/c/malloc1.c 2869384011b5dc1f019ddd94e5248a1f2dfd07db06c6ce854793c91da173b811
 F test/c/snprintf1.c a66a1ce1195bd409740a60ebeea008686ce3fbacb445840fc0a45419823b7f3f
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
@@ -1723,7 +1724,7 @@ F test/temptrigfault.tes fc5918e64f3867156fefe7cfca9d8e1f495134a5229b2b511b0dc11
 F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3fb4769d61
 F test/tester.tcl 2d943f60200e0a36bcd3f1f0baf181a751cd3604ef6b6bd4c8dc39b4e8a53116
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
-F test/testrunner.tcl 818f8b69ca6b98d6f33cd4e5645c23a17f3c4a50ec55bbc321c9eb73bd625701 x
+F test/testrunner.tcl 8171b887ab78d55b73fd971e22690eff0fabec913fbf3b5fbeaf159b3f00b2dc x
 F test/testrunner_data.tcl 4b3cf036d39c98b83f9289a5c047eb01089c932d4f59a81bf764f6800589b959
 F test/testrunner_estwork.tcl 81e2ae10238f50540f42fbf2d94913052a99bfb494b69e546506323f195dcff9
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2207,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c84d596b6da22061627282d444913c88dc2f9bd82e86957183f7e732f2713b33
-R 682bd32621bea9add63458d4dce1213c
-U drh
-Z 9212579c576212859692f333cb9e3ef4
+P 48f950b2a1ef841d915ca733baf324a1af98e644b660f238dd5018015340a6c6
+R ac211fdd8011bdc4330e2cd695349ae9
+U dan
+Z 7ad07a9f853954f6806bffbf9fec054c
 # Remove this line to create a well-formed Fossil manifest.
