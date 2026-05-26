@@ -4153,7 +4153,13 @@ static int sessionChangesetInvert(
 
     /* Test for EOF. */
     if( (rc = sessionInputBuffer(pInput, 2)) ) goto finished_invert;
-    if( pInput->iNext>=pInput->nData ) break;
+    if( pInput->iNext+1>=pInput->nData ){
+      if( pInput->iNext!=pInput->nData ){ 
+        rc = SQLITE_CORRUPT_BKPT; 
+        goto finished_invert;
+      }
+      break;
+    }
     eType = pInput->aData[pInput->iNext];
 
     switch( eType ){

@@ -1095,7 +1095,7 @@ static int SQLITE_TCLAPI test_sqlite3changeset_invert(
   memset(&sIn, 0, sizeof(sIn));
   memset(&sOut, 0, sizeof(sOut));
   sIn.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
-  sIn.aData = Tcl_GetByteArrayFromObj(objv[1], &nn);
+  sIn.aData = testGetByteArrayFromObj(objv[1], &nn);
   sIn.nData = (int)nn;
 
   if( sIn.nStream ){
@@ -1112,6 +1112,7 @@ static int SQLITE_TCLAPI test_sqlite3changeset_invert(
     Tcl_SetObjResult(interp,Tcl_NewByteArrayObj((unsigned char*)sOut.p,sOut.n));
   }
   sqlite3_free(sOut.p);
+  free(sIn.aData);
   return rc;
 }
 
