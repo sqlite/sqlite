@@ -13440,7 +13440,7 @@ static void verify_uninitialized(void){
 /*
 ** https://sqlite.org/forum/forumpost/aad7a634916ff050:
 **
-** Calling setlocale(LC_ALL,"") is required to get libedit to accept
+** Calling setlocale(LC_...,"") is required to get libedit to accept
 ** non-ASCII input.
 */
 #define DO_SET_LOCALE 1
@@ -13717,7 +13717,7 @@ int SQLITE_CDECL main(int argc, char **argv){
         azCmd = realloc(azCmd, sizeof(azCmd[0])*nCmd);
         shell_check_oom(azCmd);
         aiCmd = realloc(aiCmd, sizeof(aiCmd[0])*nCmd);
-        shell_check_oom(azCmd);
+        shell_check_oom(aiCmd);
         azCmd[nCmd-1] = z;
         aiCmd[nCmd-1] = i;
       }
