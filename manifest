@@ -1,5 +1,5 @@
-C Fix\san\sinfinite\sloop\sthat\scan\soccur\sin\sthe\sunused,\suntested,\sand\nunsupported\sext/misc/btreeinfo.c\sextension\sif\sit\sis\spresented\swith\na\scorrupt\sdatabase\sfile.\n[bugs:/forumpost/b43c44cc1c|Bug\s2026-05-28T05:41:01Z].
-D 2026-05-28T11:16:55.098
+C Avoid\sa\sresource\sleak\sin\san\serror\spath\sin\sthe\sicu\sextension.
+D 2026-05-28T11:29:05.704
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -280,7 +280,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl 135b9e160f8e10211c10c5873d5e8c3eaebd3da9ec56a12ae4db157d4738ffe4
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 1f8d76e10d2385fc77914a14ccd99acfbaf68111dfcf26a360ad9063787f57fb
-F ext/icu/icu.c 535d0d61f109e760a56e1afc450414ebfb0e2d594e2233b30315b815e3433ac2
+F ext/icu/icu.c 1bc9a5b60e6ec12fc9795aa3a416547e44ee826d954e28a4c36de28eec14d907
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/intck/intck1.test 53d885075abeb45aeb1eeffeaa8560b329060835ade4af5c44cf5fcb581c1e63
 F ext/intck/intck2.test a29343a8e65c5c3400e10747f394924f3df95a5b2de94f46e9b5c9b97f5e7339
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c6d5793d5d2212c979e2fe5eb12c3844bfc1f2029bd8d076fec030a04f6d4bb5
-R 2e311218a6aa0bca58e97db2069270c9
-U drh
-Z ec76ca446a5f54989e38828d7a59e43c
+P 646e9b49153ebd7e09e3ef72cc4f64fb685d0cfd8b158ef7d11d37c50c3f0b7e
+R 81bf729d8c4142161698f7ae0f57bcc2
+U dan
+Z a8503d1e8f8b2786c97fea82e248cce7
 # Remove this line to create a well-formed Fossil manifest.

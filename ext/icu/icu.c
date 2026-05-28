@@ -516,6 +516,7 @@ static void icuLoadCollation(
       }
       sqlite3_result_error(p, sqlite3_str_value(pStr), -1);
       sqlite3_free(sqlite3_str_finish(pStr));
+      ucol_close(pUCollator);
       return;
     }
   }
