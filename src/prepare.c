@@ -216,7 +216,13 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
   assert( sqlite3_mutex_held(db->mutex) );
   assert( iDb==1 || sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
 
-  db->init.busy = 1;
+  db->init.busy = 1 + ((mFlags & INITFLAG_AlterAdd)!=0);
+  /* ^--- Any non-zero value for init.busy means that we are scanning
+  ** the sqlite_schema table to build the internal schema representation,
+  ** rather than running actual CREATE statements.  init.busy==2 has the
+  ** additional meaning that the scan is happening as part of
+  ** ALTER TABLE ADD COLUMN, which is stricter in its enforcement of
+  ** function name resolution. */
 
   /* Construct the in-memory representation schema tables (sqlite_schema or
   ** sqlite_temp_schema) by invoking the parser directly.  The appropriate

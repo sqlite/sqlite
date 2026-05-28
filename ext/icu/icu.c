@@ -362,7 +362,7 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   const UChar *zInput;            /* Pointer to input string */
   UChar *zOutput = 0;             /* Pointer to output buffer */
   int nInput;                     /* Size of utf-16 input string in bytes */
-  int nOut;                       /* Size of output buffer in bytes */
+  sqlite3_int64 nOut;             /* Size of output buffer in bytes */
   int cnt;
   int bToUpper;                   /* True for toupper(), false for tolower() */
   UErrorCode status;
@@ -385,7 +385,7 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
   }
 
   for(cnt=0; cnt<2; cnt++){
-    UChar *zNew = sqlite3_realloc(zOutput, nOut);
+    UChar *zNew = sqlite3_realloc64(zOutput, nOut);
     if( zNew==0 ){
       sqlite3_free(zOutput);
       sqlite3_result_error_nomem(p);
@@ -394,9 +394,9 @@ static void icuCaseFunc16(sqlite3_context *p, int nArg, sqlite3_value **apArg){
     zOutput = zNew;
     status = U_ZERO_ERROR;
     if( bToUpper ){
-      nOut = 2*u_strToUpper(zOutput,nOut/2,zInput,nInput/2,zLocale,&status);
+      nOut = 2LL*u_strToUpper(zOutput,nOut/2,zInput,nInput/2,zLocale,&status);
     }else{
-      nOut = 2*u_strToLower(zOutput,nOut/2,zInput,nInput/2,zLocale,&status);
+      nOut = 2LL*u_strToLower(zOutput,nOut/2,zInput,nInput/2,zLocale,&status);
     }
 
     if( U_SUCCESS(status) ){
@@ -516,6 +516,7 @@ static void icuLoadCollation(
       }
       sqlite3_result_error(p, sqlite3_str_value(pStr), -1);
       sqlite3_free(sqlite3_str_finish(pStr));
+      ucol_close(pUCollator);
       return;
     }
   }

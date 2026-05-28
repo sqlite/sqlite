@@ -202,7 +202,7 @@
 #include "sqlite3.h"
 
 /*
-** Reuse the STATIC_LRU for mutex access to sqlite3_temp_directory.
+** Reuse the STATIC_VFS1 for mutex access to sqlite3_temp_directory.
 */
 #define SQLITE_MUTEX_STATIC_TEMPDIR SQLITE_MUTEX_STATIC_VFS1
 
@@ -1711,7 +1711,7 @@ struct sqlite3 {
   struct sqlite3InitInfo {      /* Information used during initialization */
     Pgno newTnum;               /* Rootpage of table being initialized */
     u8 iDb;                     /* Which db file is being initialized */
-    u8 busy;                    /* TRUE if currently initializing */
+    u8 busy;                    /* TRUE if initing. 2 if due to ADD COLUMN */
     unsigned orphanTrigger : 1; /* Last statement is orphaned TEMP trigger */
     unsigned imposterTable : 2; /* Building an imposter table */
     unsigned reopenMemdb : 1;   /* ATTACH is really a reopen using MemDB */
@@ -4272,7 +4272,7 @@ typedef struct {
 #define INITFLAG_AlterRename   0x0001  /* Reparse after a RENAME */
 #define INITFLAG_AlterDrop     0x0002  /* Reparse after a DROP COLUMN */
 #define INITFLAG_AlterAdd      0x0003  /* Reparse after an ADD COLUMN */
-#define INITFLAG_AlterDropCons 0x0004  /* Reparse after an ADD COLUMN */
+#define INITFLAG_AlterDropCons 0x0004  /* Reparse after a DROP CONSTRAINT */
 
 /* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
 ** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
@@ -5527,7 +5527,15 @@ void sqlite3AlterFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 void sqlite3AlterRenameColumn(Parse*, SrcList*, Token*, Token*);
 void sqlite3AlterDropConstraint(Parse*,SrcList*,Token*,Token*);
-void sqlite3AlterAddConstraint(Parse*,SrcList*,Token*,Token*,const char*,int);
+void sqlite3AlterAddConstraint(
+  Parse *pParse,           /* Parse context */
+  SrcList *pSrc,           /* Table to add constraint to */
+  Token *pFirst,           /* First token of new constraint */
+  Token *pName,            /* Name of new constraint. NULL if name omitted. */
+  const char *zExpr,       /* Text of CHECK expression */
+  int nExpr,               /* Size of pExpr in bytes */
+  Expr *pExpr              /* The parsed CHECK expression */
+);
 void sqlite3AlterSetNotNull(Parse*, SrcList*, Token*, Token*);
 i64 sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);

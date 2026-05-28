@@ -189,8 +189,14 @@ void sqlite3AuthRead(
 ** either SQLITE_OK (zero) or SQLITE_IGNORE or SQLITE_DENY.  If SQLITE_DENY
 ** is returned, then the error count and error message in pParse are
 ** modified appropriately.
+**
+** Divided into two routines.  realAuthCheck() does the work.  The
+** sqlite3AuthCheck() routine is usually a fast no-op but invokes
+** realAuthCheck() (and spends time doing some stack pushes and pops
+** as a result) in the uncommon case where an authorization check is
+** actually needed.
 */
-int sqlite3AuthCheck(
+static int SQLITE_NOINLINE realAuthCheck(
   Parse *pParse,
   int code,
   const char *zArg1,
@@ -204,7 +210,7 @@ int sqlite3AuthCheck(
   ** or if the parser is being invoked from within sqlite3_declare_vtab.
   */
   assert( !IN_RENAME_OBJECT || db->xAuth==0 );
-  if( db->xAuth==0 || db->init.busy || IN_SPECIAL_PARSE ){
+  if( IN_SPECIAL_PARSE ){
     return SQLITE_OK;
   }
 
@@ -228,6 +234,19 @@ int sqlite3AuthCheck(
     sqliteAuthBadReturnCode(pParse);
   }
   return rc;
+}
+int sqlite3AuthCheck(
+  Parse *pParse,
+  int code,
+  const char *zArg1,
+  const char *zArg2,
+  const char *zArg3
+){
+  if( pParse->db->xAuth!=0 && pParse->db->init.busy==0 ){
+    return realAuthCheck(pParse,code,zArg1,zArg2,zArg3);
+  }else{
+    return SQLITE_OK;
+  }
 }
 
 /*

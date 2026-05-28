@@ -47,6 +47,29 @@ foreach {tn l x} [db eval { SELECT tn, length(x) AS l, x FROM f1 }] {
   } {1}
 }
 
+#--------------------------------------------------------------------------
+# Test that <https://sqlite.org/bugs/forumpost/e94b3920a3> is resolved.
+#
+if {[catch {db eval { SELECT * FROM dbstat }} msg]==0} {
+  do_execsql_test 2.0 {
+    CREATE TABLE t1(a, b);
+    CREATE INDEX i1 ON t1(b);
+    INSERT INTO t1 VALUES(1, 1), (2, 2);
+  }
 
+  do_test 2.1 {
+    catchcmd test.db "SELECT length( analyze('main') ) > 1000"
+  } {0 1}
+
+  do_execsql_test 2.2 {
+    CREATE TABLE "t2_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q"(a, b);
+    INSERT INTO  "t2_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q" VALUES(10, 10), (20, 20);
+    CREATE INDEX i2 ON "t2_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q_%q"(b);
+  }
+
+  do_test 2.3 {
+    catchcmd test.db "SELECT length( analyze('main') ) > 1000"
+  } {0 1}
+}
 
 finish_test

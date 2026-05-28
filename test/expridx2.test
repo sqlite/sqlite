@@ -16,6 +16,13 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix expridx2
 
+# This test requires wal mode, but the journaltest permutation installs
+# a custom VFS that does not support wal mode.
+if {[permutation]=="journaltest"} {
+  finish_test
+  return
+}
+
 do_execsql_test 1.0 {
   PRAGMA journal_mode = wal;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);

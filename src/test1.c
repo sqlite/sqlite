@@ -355,7 +355,7 @@ static int SQLITE_TCLAPI test_exec_hex(
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   zHex = argv[2];
   for(i=j=0; i<(sizeof(zSql)-1) && zHex[j]; i++, j++){
-    if( zHex[j]=='%' && zHex[j+2] && zHex[j+2] ){
+    if( zHex[j]=='%' && zHex[j+1] && zHex[j+2] ){
       zSql[i] = (testHexToInt(zHex[j+1])<<4) + testHexToInt(zHex[j+2]);
       j += 2;
     }else{

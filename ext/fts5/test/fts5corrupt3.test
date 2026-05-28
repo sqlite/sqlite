@@ -15153,9 +15153,9 @@ do_execsql_test 78.1 {
   CREATE VIRTUAL TABLE t3 USING fts5vocab('t1','col');
 }
 
-do_execsql_test 78.2 {
+do_catchsql_test 78.2 {
   SELECT count(rowid) FROM t3 WHERE term>='nsocse';
-} 2
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 reset_db

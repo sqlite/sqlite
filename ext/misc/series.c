@@ -536,7 +536,7 @@ static int seriesFilter(
           if( r<(double)SMALLEST_INT64 ){
             iMin = SMALLEST_INT64;
           }else if( (idxNum & 0x0200)!=0 && r==seriesCeil(r) ){
-            iMin = (sqlite3_int64)seriesCeil(r+1.0);
+            iMin = (sqlite3_int64)seriesCeil(r)+1;
           }else{
             iMin = (sqlite3_int64)seriesCeil(r);
           }
@@ -557,7 +557,7 @@ static int seriesFilter(
           if( r>(double)LARGEST_INT64 ){
             iMax = LARGEST_INT64;
           }else if( (idxNum & 0x2000)!=0 && r==seriesFloor(r) ){
-            iMax = (sqlite3_int64)(r-1.0);
+            iMax = ((sqlite3_int64)r)-1;
           }else{
             iMax = (sqlite3_int64)seriesFloor(r);
           }

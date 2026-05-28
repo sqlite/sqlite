@@ -465,15 +465,20 @@ u8 sqlite3StrIHash(const char *z){
   return h;
 }
 
+#if !defined(SQLITE_DISABLE_INTRINSIC)               \
+  && (defined(__GNUC__) || defined(__clang__))       \
+  && (defined(__x86_64__) || defined(__aarch64__) || \
+      (defined(__riscv) && defined(__riscv_xlen) && (__riscv_xlen>32)))
+#define SQLITE_USE_UINT128
+#endif
+
 /*
 ** Two inputs are multiplied to get a 128-bit result.  Write the
 ** lower 64-bits of the result into *pLo, and return the high-order
 ** 64 bits.
 */
 static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
-#if (defined(__GNUC__) || defined(__clang__)) \
-        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv)) \
-        && !defined(SQLITE_DISABLE_INTRINSIC)
+#if defined(SQLITE_USE_UINT128)
   __uint128_t r = (__uint128_t)a * b;
   *pLo = (u64)r;
   return (u64)(r>>64);
@@ -507,9 +512,7 @@ static u64 sqlite3Multiply128(u64 a, u64 b, u64 *pLo){
 ** The lower 64 bits of A*B are discarded.
 */
 static u64 sqlite3Multiply160(u64 a, u32 aLo, u64 b, u32 *pLo){
-#if (defined(__GNUC__) || defined(__clang__)) \
-        && (defined(__x86_64__) || defined(__aarch64__) || defined(__riscv)) \
-        && !defined(SQLITE_DISABLE_INTRINSIC)
+#if defined(SQLITE_USE_UINT128)
   __uint128_t r = (__uint128_t)a * b;
   r += ((__uint128_t)aLo * b) >> 32;
   *pLo = (r>>32)&0xffffffff;
@@ -546,6 +549,8 @@ static u64 sqlite3Multiply160(u64 a, u32 aLo, u64 b, u32 *pLo){
   return (r4<<32) + r3;
 #endif
 }
+
+#undef SQLITE_USE_UINT128
 
 /*
 ** Return a u64 with the N-th bit set.
@@ -785,7 +790,7 @@ static double sqlite3Fp10Convert2(u64 d, int p){
   u64 pwr10h, x, hi, lo, sticky, u, m;
   double r;
   if( p<POWERSOF10_FIRST ) return 0.0;
-  if( p>POWERSOF10_LAST ) return INFINITY;
+  if( p>POWERSOF10_LAST ) return (double)INFINITY;
   b = 64 - countLeadingZeros(d);
   lp = pwr10to2(p);
   e = 53 - b - lp;
@@ -815,7 +820,7 @@ static double sqlite3Fp10Convert2(u64 d, int p){
     e -= adj;
   }
   m = (u + 1 + ((u>>2)&1)) >> 2;
-  if( e<=(-972) ) return INFINITY;
+  if( e<=(-972) ) return (double)INFINITY;
   if((m & U64_BIT(52)) != 0){
     m = (m & ~U64_BIT(52)) | ((u64)(1075-e)<<52);
   }

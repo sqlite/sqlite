@@ -311,6 +311,7 @@ do_test shell5-1.9 {
   puts $out {"""",11,121}
   puts $out {"hello",12,132}
   close $out
+  catch {db close}
   forcedelete test.db
   catchcmd test.db {.mode csv
     CREATE TABLE t1(a,b,c);

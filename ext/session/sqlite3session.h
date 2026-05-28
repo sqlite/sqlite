@@ -1379,11 +1379,23 @@ int sqlite3changeset_apply_v3(
 **   database behave as if they were declared with "ON UPDATE NO ACTION ON
 **   DELETE NO ACTION", even if they are actually CASCADE, RESTRICT, SET NULL
 **   or SET DEFAULT.
+**
+** <dt>SQLITE_CHANGESETAPPLY_NOUPDATELOOP <dd>
+**   Sometimes, a changeset contains two or more update statements such that
+**   although after applying all updates the database will contain no 
+**   constraint violations, no single update can be applied before the others.
+**   The simplest example of this is a pair of UPDATEs that have "swapped"
+**   two column values with a UNIQUE constraint.
+**   <p>
+**   Usually, sqlite3changeset_apply() and similar functions work hard to try
+**   to find a way to apply such a changeset. However, if this flag is set,
+**   then all such updates are considered CONSTRAINT conflicts.
 */
 #define SQLITE_CHANGESETAPPLY_NOSAVEPOINT   0x0001
 #define SQLITE_CHANGESETAPPLY_INVERT        0x0002
 #define SQLITE_CHANGESETAPPLY_IGNORENOOP    0x0004
 #define SQLITE_CHANGESETAPPLY_FKNOACTION    0x0008
+#define SQLITE_CHANGESETAPPLY_NOUPDATELOOP  0x0010
 
 /* 
 ** CAPI3REF: Constants Passed To The Conflict Handler
