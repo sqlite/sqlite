@@ -5185,7 +5185,9 @@ static int accessPayload(
     ** means "not yet known" (the cache is lazily populated).
     */
     if( (pCur->curFlags & BTCF_ValidOvfl)==0 ){
-      int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
+      i64 nOvfl = pCur->info.nPayload;
+      testcase( nOvfl - pCur->info.nLocal + ovflSize - 1 > 0xffffffffU );
+      nOvfl = (nOvfl - pCur->info.nLocal + ovflSize-1)/ovflSize;
       if( pCur->aOverflow==0
        || nOvfl*(int)sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
       ){
