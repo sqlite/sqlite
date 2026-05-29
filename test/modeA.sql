@@ -79,7 +79,23 @@ SELECT * FROM t2;
 │            │ Quoted"    │         │         │
 ╰────────────┴────────────┴─────────┴─────────╯
 END
+.testcase 121
+.mode tty --wrap 1 --limits off
+SELECT 'xyz123' AS a, 2 AS b;
+.check <<END
+╭───┬───╮
+│ a │ b │
+╞═══╪═══╡
+│ x │ 2 │
+│ y │   │
+│ z │   │
+│ 1 │   │
+│ 2 │   │
+│ 3 │   │
+╰───┴───╯
+END
 .testcase 130
+.mode tty -wrap 10
 .mode
 .check <<END
 .mode qbox --limits on --quote relaxed --sw auto --textjsonb on

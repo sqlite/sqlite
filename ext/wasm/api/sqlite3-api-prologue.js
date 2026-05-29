@@ -771,7 +771,11 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
        lead bytes of that buffer do not hold a SQLite3 database header,
        else it returns without side effects.
 
-       Added in 3.44.
+       Added in 3.44. As of 3.54 in SEE builds it performs only a
+       rudimentary length check and does not fail for invalid header
+       bytes, under the assumption that the input may be an encrypted
+       db. We cannot unambiguously distinguish an encrypted db from
+       garbage bytes.
     */
     affirmDbHeader: function(bytes){
       if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
@@ -781,7 +785,12 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
       }
       for(let i = 0; i < header.length; ++i){
         if( header.charCodeAt(i) !== bytes[i] ){
+//#if enable-see
+          break /* assume this might be an encrypted db.
+                   https://sqlite.org/see/forumpost/f84bef3552 */;
+//#else
           toss3("Input does not contain an SQLite3 database header.");
+//#/if
         }
       }
     },
@@ -791,7 +800,8 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
        database. It only examines the size and header, but further
        checks may be added in the future.
 
-       Added in 3.44.
+       Added in 3.44. See notes in affirmDbHeader() regarding SEE
+       builds.
     */
     affirmIsDb: function(bytes){
       if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);

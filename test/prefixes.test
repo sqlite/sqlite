@@ -14,7 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix unionvtab
+set testprefix prefixes
 
 ifcapable !vtab {
   finish_test
@@ -84,5 +84,13 @@ foreach {tn INPUT expected} {
     SELECT str FROM finder WHERE length(str)==prefix_length(str, $INPUT) LIMIT 1
   } $expected
 }
+
+do_execsql_test 3.1 {
+  SELECT prefix_length(null,'abc');
+} 0
+do_execsql_test 3.2 {
+  SELECT prefix_length('abc',null);
+} 0
+
 
 finish_test

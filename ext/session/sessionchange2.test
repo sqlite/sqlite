@@ -184,9 +184,17 @@ foreach {tn script error} {
   sqlite3changegroup grp
   grp schema db main
   eval $script
-  do_test 3.1.$tn {
+  do_test 3.1.$tn.1 {
     list [catch { grp change_finish false } msg] $msg
   } [list 1 $error]
+  grp delete
+
+  sqlite3changegroup grp
+  grp schema db main
+  eval $script
+  do_test 3.1.$tn.2 {
+    list [catch { grp change_finishne false } msg] $msg
+  } [list 1 [lindex $error 0]]
   grp delete
 }
 

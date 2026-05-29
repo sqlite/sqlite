@@ -1,0 +1,128 @@
+# 2026 May 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5corruptA
+
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+sqlite3_fts5_may_be_corrupt 1
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x, detail='full');
+  INSERT INTO t(t, rank) VALUES('pgsz', 32);
+}
+
+set big [string repeat "a " 200]
+do_execsql_test 1.1 {
+  INSERT INTO t(rowid, x) VALUES(1, $big)
+}
+
+do_test 1.2 {
+  db eval { 
+      SELECT min(rowid) AS base_rowid, count(*) AS page_count FROM t_data
+      WHERE rowid>1000
+  } {}
+} {}
+
+do_test 1.3 {
+  for {set ii 0} {$ii < 5} {incr ii} {
+    db eval { 
+      INSERT INTO t_data(rowid, block) 
+      VALUES( $base_rowid + $page_count + $ii, zeroblob(4) );
+    }
+  }
+  db eval { 
+    INSERT INTO t_data(rowid, block) 
+      VALUES( $base_rowid + $page_count + 5, 
+      unhex('00000080' || 'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC') );
+  }
+  set {} {}
+} {}
+
+db close
+
+do_test 1.4 {
+  set hex [hexio_read test.db 0 [file size test.db]]
+
+  set off [string first "023061018310" $hex]
+  set hex [string replace $hex $off [expr $off+11] 023061018370]
+  hexio_write test.db 0 $hex
+} {6144}
+
+sqlite3 db test.db
+
+do_catchsql_test 1.5 {
+  SELECT rowid FROM t WHERE t MATCH 'a'
+} {1 {fts5: corruption found reading blob 137438953481 from table "t"}}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a);
+  BEGIN;
+    INSERT INTO t1(rowid, a) VALUES(1, 'aaaa');
+    INSERT INTO t1(rowid, a) VALUES(2, 'bbbb');
+    INSERT INTO t1(rowid, a) VALUES(3, 'cccc');
+  COMMIT;
+}
+
+db close
+
+do_test 2.1 {
+  set hex [hexio_read test.db 0 [file size test.db]]
+  set off [string first "010463636363" $hex]
+  set hex [string replace $hex $off [expr $off+11] 017F63636363]
+  hexio_write test.db 0 $hex
+  set {} {}
+} {}
+
+sqlite3 db test.db
+
+do_catchsql_test 2.2 {
+  SELECT rowid FROM t1('cccccccccccccccccccccccccccccccccccccccccccccccc');
+} {1 {fts5: corruption on page 1, segment 1, table "t1"}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, c);
+  INSERT INTO t1 VALUES(
+      'hello',
+      'alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu',
+      'ant bear cat dog elephant fox gorilla hippo iguana jaguar kangaroo lion monkey newt octopus panda quail rabbit snake turtle unicorn vulture walrus xerus yak zebra'
+  );
+
+  UPDATE t1_data SET block = unhex(
+      -- Preserve bytes 0-168: header through hello's nSz field
+      hex(substr(block, 1, 169))
+      -- Inject 448 bytes of 0xFF: corrupted poslist + subsequent term data
+      || replace(hex(zeroblob(448)), '00', 'FF')
+      -- Preserve 16 bytes of page index needed for hello lookup
+      || hex(substr(block, 618, 16))
+      -- Corrupt remaining 37 footer bytes (not needed for hello lookup)
+      || replace(hex(zeroblob(37)), '00', 'FF')
+      )
+  WHERE id = 137438953473;
+}
+
+do_test 3.1 {
+  execsql { SELECT * FROM t1 WHERE t1 MATCH '{a b}: hello' }
+  set {} {}
+} {}
+
+sqlite3_fts5_may_be_corrupt 0
+finish_test

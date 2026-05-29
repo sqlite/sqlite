@@ -914,6 +914,9 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
       }
       else if( n>2 && n<=11 && 0==sqlite3_strnicmp("-ignorenoop", z1, n) ){
         flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
+      }
+      else if( n>3 && n<=13 && 0==sqlite3_strnicmp("-noupdateloop", z1, n) ){
+        flags |= SQLITE_CHANGESETAPPLY_NOUPDATELOOP;
       }else{
         break;
       }
@@ -1095,7 +1098,7 @@ static int SQLITE_TCLAPI test_sqlite3changeset_invert(
   memset(&sIn, 0, sizeof(sIn));
   memset(&sOut, 0, sizeof(sOut));
   sIn.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
-  sIn.aData = Tcl_GetByteArrayFromObj(objv[1], &nn);
+  sIn.aData = testGetByteArrayFromObj(objv[1], &nn);
   sIn.nData = (int)nn;
 
   if( sIn.nStream ){
@@ -1112,6 +1115,7 @@ static int SQLITE_TCLAPI test_sqlite3changeset_invert(
     Tcl_SetObjResult(interp,Tcl_NewByteArrayObj((unsigned char*)sOut.p,sOut.n));
   }
   sqlite3_free(sOut.p);
+  free(sIn.aData);
   return rc;
 }
 
@@ -1615,10 +1619,11 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
     { "change_text",     3, "[new|old] ICOL VALUE" },    /* 9 */
     { "change_blob",     3, "[new|old] ICOL VALUE" },    /* 10 */
     { "change_finish",   1, "BDISCARD"             },    /* 11 */
+    { "change_finishne", 1, "BDISCARD"             },    /* 12 */
 
-    { "config",          2, "OPTION INTVAL"        },    /* 12 */
-    { "change_text-1",   3, "[new|old] ICOL VALUE" },    /* 13 */
-    { "change_begin_ne", 3, "TYPE TABLE INDIRECT"  },    /* 14 */
+    { "config",          2, "OPTION INTVAL"        },    /* 13 */
+    { "change_text-1",   3, "[new|old] ICOL VALUE" },    /* 14 */
+    { "change_begin_ne", 3, "TYPE TABLE INDIRECT"  },    /* 15 */
     { 0, 0, 0 }
   };
   int rc = TCL_OK;
@@ -1651,9 +1656,10 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
 
     case 1: {      /* add */
       Tcl_Size nByte = 0;
-      const u8 *aByte = Tcl_GetByteArrayFromObj(objv[2], &nByte);
-      rc = sqlite3changegroup_add(p->pGrp, (int)nByte, (void*)aByte);
+      void *aByte = testGetByteArrayFromObj(objv[2], &nByte);
+      rc = sqlite3changegroup_add(p->pGrp, (int)nByte, aByte);
       if( rc!=SQLITE_OK ) rc = test_session_error(interp, rc, 0);
+      free(aByte);
       break;
     };
 
@@ -1688,7 +1694,7 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       break;
     };
 
-    case 14:        /* change_beginne */
+    case 15:        /* change_beginne */
     case 5: {       /* change_begin */
       struct ChangeType {
         const char *zType;
@@ -1815,13 +1821,16 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       break;
     }
 
+    case 12:        /* change_finishne */
     case 11: {      /* change_finish */
       int bDiscard = 0;
       if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[2], &bDiscard) ){
         rc = TCL_ERROR;
       }else{
         char *zErr = 0;
-        rc = sqlite3changegroup_change_finish(p->pGrp, bDiscard, &zErr);
+        char **pz = &zErr;
+        if( iSub==12 ) pz = 0;
+        rc = sqlite3changegroup_change_finish(p->pGrp, bDiscard, pz);
         if( rc!=SQLITE_OK ){
           rc = test_session_error(interp, rc, zErr);
         }
@@ -1829,7 +1838,7 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       break;
     }
 
-    case 12: {      /* config */
+    case 13: {      /* config */
       struct OptionName {
         const char *zOpt;
         int op;
@@ -1858,7 +1867,7 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       break;
     }
 
-    case 13: {      /* change_text-1 */
+    case 14: {      /* change_text-1 */
       int bNew = 0;
       int iCol = 0;
       if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)

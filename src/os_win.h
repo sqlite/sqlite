@@ -28,52 +28,10 @@
 #endif
 
 /*
-** Determine if we are dealing with Windows NT.
-**
-** We ought to be able to determine if we are compiling for Windows 9x or
-** Windows NT using the _WIN32_WINNT macro as follows:
-**
-** #if defined(_WIN32_WINNT)
-** # define SQLITE_OS_WINNT 1
-** #else
-** # define SQLITE_OS_WINNT 0
-** #endif
-**
-** However, Visual Studio 2005 does not set _WIN32_WINNT by default, as
-** it ought to, so the above test does not work.  We'll just assume that
-** everything is Windows NT unless the programmer explicitly says otherwise
-** by setting SQLITE_OS_WINNT to 0.
-*/
-#if SQLITE_OS_WIN && !defined(SQLITE_OS_WINNT)
-# define SQLITE_OS_WINNT 1
-#endif
-
-/*
-** Determine if we are dealing with Windows CE - which has a much reduced
-** API.
-*/
-#if defined(_WIN32_WCE)
-# define SQLITE_OS_WINCE 1
-#else
-# define SQLITE_OS_WINCE 0
-#endif
-
-/*
-** For WinCE, some API function parameters do not appear to be declared as
-** volatile.
-*/
-#if SQLITE_OS_WINCE
-# define SQLITE_WIN32_VOLATILE
-#else
-# define SQLITE_WIN32_VOLATILE volatile
-#endif
-
-/*
 ** For some Windows sub-platforms, the _beginthreadex() / _endthreadex()
 ** functions are not available (e.g. those not using MSVC, Cygwin, etc).
 */
-#if SQLITE_OS_WIN && !SQLITE_OS_WINCE && \
-    SQLITE_THREADSAFE>0 && !defined(__CYGWIN__)
+#if SQLITE_OS_WIN && SQLITE_THREADSAFE>0 && !defined(__CYGWIN__)
 # define SQLITE_OS_WIN_THREADS 1
 #else
 # define SQLITE_OS_WIN_THREADS 0

@@ -2193,7 +2193,7 @@ int main(int argc, char const * const *argv){
       printf("%s\n", sqlite3_str_value(pStr));
       return 0;
     }
-    if( z[i]=='-' ){
+    if( z[0]=='-' ){
       fprintf(stderr,
          "unknown option: \"%s\". Use --help for more detail.\n", z);
       return 1;
@@ -2262,7 +2262,7 @@ int main(int argc, char const * const *argv){
       append_escaped_arg(pStr, zSsh, 1);
       if( iPort>0 ) sqlite3_str_appendf(pStr, " -p %d", iPort);
       sqlite3_str_appendf(pStr, " -e none");
-      append_escaped_arg(pStr, ctx.zOrigin, 0);
+      append_escaped_arg(pStr, ctx.zOrigin, 1);
       if( iRetry ) add_path_argument(pStr);
       append_escaped_arg(pStr, zExe, 1);
       append_escaped_arg(pStr, "--origin", 0);
@@ -2311,7 +2311,7 @@ int main(int argc, char const * const *argv){
       append_escaped_arg(pStr, zSsh, 1);
       if( iPort>0 ) sqlite3_str_appendf(pStr, " -p %d", iPort);
       sqlite3_str_appendf(pStr, " -e none");
-      append_escaped_arg(pStr, ctx.zReplica, 0);
+      append_escaped_arg(pStr, ctx.zReplica, 1);
       if( iRetry==1 ) add_path_argument(pStr);
       append_escaped_arg(pStr, zExe, 1);
       append_escaped_arg(pStr, "--replica", 0);

@@ -1067,7 +1067,7 @@ proc sqlite-get-readline-dir-list {} {
     }
     *-haiku {
       lappend dirs /boot/system/develop/headers
-      if {[opt-val with-readline-ldflags] in {auto ""}} {
+      if {![opt-bool editline] && [opt-val with-readline-ldflags] in {auto ""}} {
         # If the user did not supply their own --with-readline-ldflags
         # value, hijack that flag to inject options which are known to
         # work on Haiku OS installations.
@@ -1094,16 +1094,30 @@ proc sqlite-get-readline-dir-list {} {
 #   - HAVE_LINENOISE to 0, 1, or 2
 #   - HAVE_EDITLINE to 0 or 1
 #
-# Only one of ^^^ those will be set to non-0.
+#  Those will be set as follows:
+#
+#   HAVE_LINENOISE=0, HAVE_EDITLINE=0, HAVE_READLINE=0: no line editing
+#
+#   HAVE_LINENOISE>0: 1=antirez flavor, 2=msteveb flavor
+#
+#   HAVE_EDITLINE=0, HAVE_READLINE=1: use GNU readline
+#
+#   HAVE_EDITLINE=1, HAVE_READLINE=1: use BSD editline header
+#   <readline/readline.h>.
+#
+#   HAVE_EDITLINE=1, HAVE_READLINE=0: use BSD editline header
+#   <editline/readline.h>.
+#
+# Other defines it sets:
 #
 #   - LDFLAGS_READLINE = linker flags or empty string
 #
 #   - CFLAGS_READLINE = compilation flags for clients or empty string.
 #
-# Note that LDFLAGS_READLINE and CFLAGS_READLINE may refer to
-# linenoise or editline, not necessarily libreadline.  In some cases
-# it will set HAVE_READLINE=1 when it's really using editline, for
-# reasons described in this function's comments.
+# Both LDFLAGS_READLINE and CFLAGS_READLINE may refer to linenoise or
+# editline, not necessarily libreadline.  In some cases it will set
+# HAVE_READLINE=1 when it's really using editline, for reasons
+# described in this function's comments.
 #
 # Returns a string describing which line-editing approach to use, or
 # "none" if no option is available.
@@ -1141,7 +1155,7 @@ proc sqlite-check-line-editing {} {
   # If none of --with-linenoise, --enable-readline, or --enable-editline
   # are provided, but there exists a directory "linenoise" at $HOME or
   # a sibling of the build or source directory, then try to use that linenoise
-  # direcctory.
+  # directory.
   #
   if {"" eq $dirLn
    && ![proj-opt-was-provided readline]
@@ -1305,14 +1319,18 @@ proc sqlite-check-line-editing {} {
 
   # If we found a library, configure the build to use it...
   if {"" ne $rlLib} {
-    if {"editline" eq $editLibName && "HAVE_READLINE" eq $editLibDef} {
-      # Alert the user that, despite outward appearances, we won't be
-      # linking to the GPL'd libreadline. Presumably that distinction is
-      # significant for those using --editline.
-      proj-indented-notice {
-        NOTE: the local libedit uses <readline/readline.h> so we
-        will compile with -DHAVE_READLINE=1 but will link with
-        libedit.
+    if {"editline" eq $editLibName} {
+      # sqlite-add-shell-opt -DEL_WIDECHAR=1;
+      if {"HAVE_READLINE" eq $editLibDef} {
+        sqlite-add-shell-opt -DHAVE_EDITLINE=1
+        # Alert the user that, despite outward appearances, we won't be
+        # linking to the GPL'd libreadline. Presumably that distinction is
+        # significant for those using --editline.
+        proj-indented-notice {
+          NOTE: the local libedit uses <readline/readline.h> so we
+          will compile with -DHAVE_READLINE=1 but will link with
+          libedit.
+        }
       }
     }
     set rlLib [join $rlLib]
@@ -1745,8 +1763,12 @@ proc sqlite-handle-env-quirks {} {
   set autoDll 0; # true if --out-implib/--dll-basename should be implied
   set host [get-define host]
   switch -glob -- $host {
-    *apple* -
-    *darwin*    { set instName darwin }
+    *-*-darwin* {
+      set instName darwin
+      # We don't look for *apple* because:
+      # https://sqlite.org/forum/forumpost/7b218c3c9f207646
+      # There's at least one Linux out there which matches *apple*.
+    }
     default {
       set x [sqlite-env-is-unix-on-windows $host]
       if {"" ne $x} {
@@ -2042,7 +2064,7 @@ proc sqlite-check-tcl {} {
       }
     }
     if {![file-isexec $with_tclsh]} {
-      proj-warn "Cannot find a usable tclsh (tried: $tryThese)
+      proj-warn "Cannot find a usable tclsh (tried: $tryThese)"
     }
   }
   define TCLSH_CMD $with_tclsh

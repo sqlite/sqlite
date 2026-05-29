@@ -351,7 +351,7 @@ do_execsql_test transitive1-570 {
 do_execsql_test transitive1-570eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM c1 WHERE x=y AND z=y AND z='abc';
-} {/SEARCH c1 USING INDEX c1x/}
+} {/SCAN c1/}
 
 # 2021-05-04 forum https://sqlite.org/forum/forumpost/eb8613976a
 reset_db
@@ -425,5 +425,16 @@ do_execsql_test transitive1-812 {
 do_execsql_test transitive1-813 {
   SELECT * FROM t3 WHERE a=b AND a='5x';
 } {}
+
+# Bug 2026-05-21T03:39:28Z
+#
+reset_db
+do_execsql_test transitive1-900 {
+  CREATE TABLE t1(a TEXT);
+  CREATE TABLE t2(b TEXT COLLATE NOCASE);
+  INSERT INTO t1 VALUES('abc');
+  INSERT INTO t2 VALUES('abc');
+  SELECT * FROM t1 CROSS JOIN t2 WHERE a=b AND b='ABC';
+} {abc abc}
 
 finish_test
