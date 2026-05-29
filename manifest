@@ -1,5 +1,5 @@
-C Fix\spotential\sinteger\soverflow\sin\sbtree\soverflow\spage\scache\scomputation.
-D 2026-05-28T10:18:42.376
+C Be\ssure\sto\sdo\sfloating-point\sto\stext\sconversions\sin\sJSON\sto\sthe\sfull\n17-digits.
+D 2026-05-29T23:17:09.761
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -696,7 +696,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 21c2cf1f736e7b97502c3674d0c386db3f06870d6f10d0cf8174e2a4b8cb726e
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c dfd311b0ac2d4f6359e62013db67799757f4d2cc56cca5c10f4888acfbbfa3fd
-F src/json.c 07395d2ac4318038efd71ec44e40f279ed8203ddee0cdf0fece92a87fe9a51b7
+F src/json.c 82b685636c9ff9d677734682e170f637fbfef3a14febf8cb274c4b7e7a272dcc
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 56a542244fbefc739a2ef57fac007c16b2aefdb4377f584e9547db2ce3e071f9
 F src/main.c 387bb9d0216d6d35b221481ba8e661d94ad043060cd89581b6422c269ce680a0
@@ -1357,7 +1357,7 @@ F test/json/json-generator.tcl dc0dd0f393800c98658fc4c47eaa6af29d4e17527380cd286
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
 F test/json/json-speed-check.sh 45862b216f1f8bbf16d74e2ad6ea20c773ee77774b299a7e0f76a22eb98e91f1 x
 F test/json/jsonb-q1.txt 1e180fe6491efab307e318b22879e3a736ac9a96539bbde7911a13ee5b33abc7
-F test/json101.test cf53254f0f0c1399a01b21fc58fee0e63a12a556be91b9ee9faccdb8b82c083c
+F test/json101.test 34109fe1bfa384774ceea2a174de00e0b77e8a7b586bf30bdc9a60d7377ed15b
 F test/json102.test ea5c9811e408e115c8fc539548deef431fda4924c23cacd79dd4b783f4449f07
 F test/json103.test e626d109cd0bdb8282ec9bf755af3befa50e3e03a255362fc53433d31e1d66d4
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
@@ -2199,9 +2199,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 69554ec4e8354e8573071bc423e2dbd0059058388481be3e76fcb7c0fc1ff467
-Q +dfa674d6e6bffdb930dbefa767831db7862c322b6d3c7a6322f0fa0f087aaaf9
-R 6720d86b55a7d4bc94312afbba0be7c7
+P 093e23814e35f0cd0a4bded29b79ddecd7835626d9fe627bfbf4eb138403277f
+Q +61a776650cdc3fe632bdb1dc39f50f542b00a9e5b468180eb54b69750d0cd70c
+R 47fae2b50bb012213b72422b36dae9a3
 U drh
-Z 98c44a23a6dc62cccc38080934b0ae3d
+Z 7cf973088fbfada6f1fbfc4b736ac4e7
 # Remove this line to create a well-formed Fossil manifest.
