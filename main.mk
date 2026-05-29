@@ -982,11 +982,11 @@ FUZZCHECK_SRC = sqlite3.c \
    $(TOP)/ext/recover/dbdata.c \
    $(TOP)/ext/recover/sqlite3recover.c \
    $(TOP)/test/vt02.c \
-   $(TOP)/ext/misc/analyze.c \
    $(TOP)/ext/misc/base64.c \
    $(TOP)/ext/misc/base85.c \
    $(TOP)/ext/misc/completion.c \
    $(TOP)/ext/misc/decimal.c \
+   $(TOP)/ext/misc/diskused.c \
    $(TOP)/ext/misc/ieee754.c \
    $(TOP)/ext/misc/randomjson.c \
    $(TOP)/ext/misc/regexp.c \
@@ -2345,12 +2345,12 @@ SHELL_DEP = \
     $(TOP)/ext/expert/sqlite3expert.h \
     $(TOP)/ext/intck/sqlite3intck.c \
     $(TOP)/ext/intck/sqlite3intck.h \
-    $(TOP)/ext/misc/analyze.c \
     $(TOP)/ext/misc/appendvfs.c \
     $(TOP)/ext/misc/base64.c \
     $(TOP)/ext/misc/base85.c \
     $(TOP)/ext/misc/completion.c \
     $(TOP)/ext/misc/decimal.c \
+    $(TOP)/ext/misc/diskused.c \
     $(TOP)/ext/misc/fileio.c \
     $(TOP)/ext/misc/ieee754.c \
     $(TOP)/ext/misc/memtrace.c \

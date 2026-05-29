@@ -58,7 +58,7 @@ if {[catch {db eval { SELECT * FROM dbstat }} msg]==0} {
   }
 
   do_test 2.1 {
-    catchcmd test.db "SELECT length( analyze('main') ) > 1000"
+    catchcmd test.db "SELECT length( diskused('main') ) > 1000"
   } {0 1}
 
   do_execsql_test 2.2 {
@@ -68,7 +68,7 @@ if {[catch {db eval { SELECT * FROM dbstat }} msg]==0} {
   }
 
   do_test 2.3 {
-    catchcmd test.db "SELECT length( analyze('main') ) > 1000"
+    catchcmd test.db "SELECT length( diskused('main') ) > 1000"
   } {0 1}
 }
 
