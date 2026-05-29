@@ -1900,7 +1900,7 @@ static void showHelp(void){
 }
 
 /* work-around the Microsoft "WorstFit" bug */
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__) && !defined(main)
 #define main utf8_main
 #endif
 

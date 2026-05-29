@@ -363,11 +363,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      called this way, the resolved value of the returned Promise is
      the number of bytes written to the target file.
 
-     It very specifically requires the input to be an SQLite3
-     database and throws if that's not the case.  It does so in
-     order to prevent this function from taking on a larger scope
-     than it is specifically intended to. i.e. we do not want it to
-     become a convenience for importing arbitrary files into OPFS.
+     It very specifically requires the input to be an SQLite3 database
+     and throws if that's not the case.  It does so in order to
+     prevent this function from taking on a larger scope than it is
+     specifically intended to. i.e. we do not want it to become a
+     convenience for importing arbitrary files into OPFS.  Caveat: as
+     of 3.54 in SEE builds, the "is this a db?" check is necessarily
+     lax to account for SEE-encrypted databases not having a legible
+     header. In such builds, only the db size is relevant for the
+     check.
 
      This routine rewrites the database header bytes in the output
      file (not the input array) to force disabling of WAL mode.

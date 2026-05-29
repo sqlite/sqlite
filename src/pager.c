@@ -2620,7 +2620,7 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   if( rc!=SQLITE_OK ) goto delsuper_out;
   nSuperPtr = 1 + (i64)pVfs->mxPathname;
   assert( nSuperJournal>=0 && nSuperPtr>0 );
-  zFree = sqlite3Malloc(4 + nSuperJournal + nSuperPtr + 2);
+  zFree = sqlite3Malloc(4 + nSuperJournal + 2 + nSuperPtr + 2);
   if( !zFree ){
     rc = SQLITE_NOMEM_BKPT;
     goto delsuper_out;
@@ -2881,10 +2881,10 @@ static int pager_playback(Pager *pPager, int isHot){
   **
   ** TODO: Technically the following is an error because it assumes that
   ** buffer Pager.pTmpSpace is (mxPathname+1) bytes or larger. i.e. that
-  ** (pPager->pageSize >= pPager->pVfs->mxPathname+1). Using os_unix.c,
+  ** ((pPager->pageSize+8) >= pPager->pVfs->mxPathname+1). Using os_unix.c,
   ** mxPathname is 512, which is the same as the minimum allowable value
-  ** for pageSize.
-  */
+  ** for pageSize, and so this assumption holds. But it might not for some
+  ** custom VFS.  */
   zSuper = pPager->pTmpSpace;
   rc = readSuperJournal(pPager->jfd, zSuper, 1+(i64)pPager->pVfs->mxPathname);
   if( rc==SQLITE_OK && zSuper[0] ){

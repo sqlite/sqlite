@@ -876,10 +876,10 @@ int sqlite3_deserialize(
   if( rc ) goto end_deserialize;
   db->init.iDb = (u8)iDb;
   db->init.reopenMemdb = 1;
-  rc = sqlite3_step(pStmt);
+  sqlite3_step(pStmt);
   db->init.reopenMemdb = 0;
-  if( rc!=SQLITE_DONE ){
-    rc = SQLITE_ERROR;
+  rc = sqlite3_finalize(pStmt);
+  if( rc!=SQLITE_OK ){
     goto end_deserialize;
   }
   p = memdbFromDbSchema(db, zSchema);
@@ -900,7 +900,6 @@ int sqlite3_deserialize(
   }
 
 end_deserialize:
-  sqlite3_finalize(pStmt);
   if( pData && (mFlags & SQLITE_DESERIALIZE_FREEONCLOSE)!=0 ){
     sqlite3_free(pData);
   }

@@ -828,7 +828,17 @@ do_execsql_test where2-16.2 {
      AND t1.a=t4.h;
 } {~/.* t[34] .* t1 .*/}
 
-
-
+# 2026-05-18 bug report 2026-05-17T11:46:40Z
+#
+do_execsql_test where2-17.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a TEXT);
+  INSERT INTO t1 VALUES('A'),('b');
+  SELECT * FROM t1 WHERE (a='a' COLLATE nocase) OR a='b' ORDER BY +a;
+} {A b}
+do_execsql_test where2-17.1 {
+  CREATE INDEX t1_a ON t1(a);
+  SELECT * FROM t1 WHERE (a='a' COLLATE nocase) OR a='b' ORDER BY +a;
+} {A b}
 
 finish_test

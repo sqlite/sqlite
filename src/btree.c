@@ -16,6 +16,16 @@
 #include "btreeInt.h"
 
 /*
+** Suppress false-positive compiler warnings from GCC.  Warnings are
+** re-enabled at the bottom of this source file.
+*/
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstringop-overread"
+# pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
+
+/*
 ** The header string that appears at the beginning of every
 ** SQLite database.
 */
@@ -5675,7 +5685,9 @@ static int accessPayload(
     ** means "not yet known" (the cache is lazily populated).
     */
     if( (pCur->curFlags & BTCF_ValidOvfl)==0 ){
-      int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
+      i64 nOvfl = pCur->info.nPayload;
+      testcase( nOvfl - pCur->info.nLocal + ovflSize - 1 > 0xffffffffU );
+      nOvfl = (nOvfl - pCur->info.nLocal + ovflSize-1)/ovflSize;
       if( pCur->aOverflow==0
        || nOvfl*(int)sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
       ){
@@ -5782,6 +5794,14 @@ static int accessPayload(
               (eOp==0 ? PAGER_GET_READONLY : 0)
           );
           if( rc==SQLITE_OK ){
+            if( eOp!=0
+             && (sqlite3PagerPageRefcount(pDbPage)!=1
+                 || NEVER(((MemPage*)sqlite3PagerGetExtra(pDbPage))->isInit))
+             && sqlite3FaultSim(411)==SQLITE_OK
+            ){
+              sqlite3PagerUnref(pDbPage);
+              return SQLITE_CORRUPT_PAGE(pPage);
+            }
             setMempageRoot(
                 (MemPage*)sqlite3PagerGetExtra(pDbPage), pCur->pgnoRoot
             );
@@ -12224,3 +12244,10 @@ int sqlite3_commit_status(
 #endif
   return rc;
 }
+
+/* Re-enable GCC compiler warnings that were suppressed at the top
+** of this source file to prevent annoying false-positives.
+*/
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic pop
+#endif

@@ -239,6 +239,20 @@ do_test 1.71 {
 <TD>Ἀμήν
 </TR>
 }
+do_test 1.72 {
+  set result "\n[db format -style html {
+     SELECT 'ab<cd' AS a, 'ab&cd' as b,
+            'ab>cd' AS c, 'ab"cd' AS d,
+            'xy''z' AS e}]"
+} {
+<TR>
+<TD>ab&lt;cd
+<TD>ab&amp;cd
+<TD>ab&gt;cd
+<TD>ab&quot;cd
+<TD>xy&#39;z
+</TR>
+}
 
 do_test 1.80 {
   set result "\n[db format -style insert {SELECT * FROM t1}]"
