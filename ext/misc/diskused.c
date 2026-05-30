@@ -243,7 +243,7 @@ static void diskusedLine(
     diskusedError(p, 0);
     return;
   }
-  nDesc = strlen(zDesc);
+  nDesc = zDesc ? strlen(zDesc) : 0;
   if( nDesc>=50 ){
     sqlite3_str_appendf(p->pOut, "%s %z", zDesc, zTxt);
   }else{
@@ -637,6 +637,7 @@ static void diskusedFunc(
     "SELECT upper(tblname),\n"
     "       sum(int_pages+leaf_pages+ovfl_pages)\n"
     "  FROM temp.%s\n"
+    " WHERE tblname IS NOT NULL\n"
     " GROUP BY 1\n"
     " ORDER BY 2 DESC, 1;",
     s.zSU);
@@ -653,6 +654,7 @@ static void diskusedFunc(
     "SELECT upper(name),\n"
     "       sum(int_pages+leaf_pages+ovfl_pages)\n"
     "  FROM temp.%s\n"
+    " WHERE name IS NOT NULL\n"
     " GROUP BY 1\n"
     " ORDER BY 2 DESC, 1;",
     s.zSU);
