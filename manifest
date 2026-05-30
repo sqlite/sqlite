@@ -1,5 +1,5 @@
-C Be\ssure\sto\sdo\sfloating-point\sto\stext\sconversions\sin\sJSON\sto\sthe\sfull\n17-digits.
-D 2026-05-29T23:14:22.751
+C Remove\sthe\suntested\sand\sundocumented\s"scrub"\sutility\sprogram.\s\sIt\swas\swritten\nin\s2016,\sbut\smade\sobsolete\sby\sthe\s[VACUUM\sINTO]\scommand\sin\s2019.
+D 2026-05-30T10:09:33.845
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -7,7 +7,7 @@ F AGENTS.md 44ddfb38ef23e277888bd70ae378e6cbf5f5cab0e2a4420bd21d89b6caff7a4a
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 5fda086f33b144da08119255da1d2557f983d0764a13707f05acf0159fd89ba5
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 3b2129c90e15ea734682c8769b567012200ac30d7ff1e73c4717e23edbe1bb4b
+F Makefile.msc 46ff6560f0046d92017ccafc91a3cd6cb2b54fbd25c56b2b6890cd84ed268159
 F README.md f00091ffb5c6379b783afb57ca5f443a5742e119082f37c407f64a5e16c56346
 F VERSION 99cf3be5f13d091183e4314b7fc2e0c0e69accfbe64608b45a313338bbdd7b62
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -395,7 +395,6 @@ F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e
 F ext/misc/regexp.c 378e6e84516952a4b9f3f4df88927f20e6538e2609f55b773ed78899dab8206e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
-F ext/misc/scrub.c df54e202887e480bf9cd73168c9ac829e3b0211381b68b9809e0cb5bc1bdc2cf
 F ext/misc/series.c 496f43bac9bad2ee2cea63fb5212036f30ad3003b4cd317d5c2d6f3ad7c7d264
 F ext/misc/sha1.c 9a11826db885e8afd997c0a1b28bb799a43e462ef770ac33f19e744887c9c6fa
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
@@ -660,7 +659,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 0bbfd0c3d2d3ac908b2a6ab4017bd650be0e694291b7f97490877b7c28a147e4
+F main.mk 77e33a16a795abd4a07a55f7eb2e11136326998db597b67c8655d5d2d9b98054
 F make.bat a136fd0b1c93e89854a86d5f4edcf0386d211e5d5ec2434480f6eea436c7420c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2208,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c7839f7a1749b38f8a36c06d93a7b59095e91ce753e8dd020de273ca8f73a239
-R 98e56ce237be73746fac763491f7390f
+P 61a776650cdc3fe632bdb1dc39f50f542b00a9e5b468180eb54b69750d0cd70c
+R 9c2fc9974fe8017282e58f1c910cfd7a
 U drh
-Z 387ede1c1d94fbfd8f5814bf5cc8fe24
+Z 51c91ccc61b1424ccb83e3d868932c40
 # Remove this line to create a well-formed Fossil manifest.

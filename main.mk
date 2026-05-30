@@ -2236,11 +2236,6 @@ install: install-man1
 install-pc: sqlite3.pc $(install-dir.pkgconfig)
 	$(INSTALL.noexec) sqlite3.pc "$(install-dir.pkgconfig)"
 
-scrub$(T.exe):	$(TOP)/ext/misc/scrub.c sqlite3.o
-	$(T.link) -o $@ -I. -DSCRUB_STANDALONE \
-		$(TOP)/ext/misc/scrub.c sqlite3.o $(LDFLAGS.libsqlite3)
-xbin: scrub$(T.exe)
-
 srcck1$(B.exe):	$(TOP)/tool/srcck1.c
 	$(B.cc) -o srcck1$(B.exe) $(TOP)/tool/srcck1.c
 xbin: srcck1$(B.exe)
