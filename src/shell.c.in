@@ -934,7 +934,7 @@ static char *local_getline(char *zLine, FILE *in){
 ** or if the NO_COLOR environment variable exists
 */
 static int shellNoColor(void){
-#ifdef SQLITE_NO_COLOR
+#if defined(SQLITE_NO_COLOR) || defined(SQLITE_SHELL_FIDDLE)
   return 1;
 #else
   return getenv("NO_COLOR")!=0;
