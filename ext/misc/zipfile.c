@@ -890,7 +890,13 @@ static int zipfileGetEntry(
 
     if( rc==SQLITE_OK ){
       u32 *pt = &pNew->mUnixTime;
-      pNew->cds.zFile = sqlite3_mprintf("%.*s", nFile, aRead); 
+      /* aRead[0..nFile-1] might contain embedded \000 characters
+      ** See Bug 2026-05-31T11:43:05Z */
+      pNew->cds.zFile = sqlite3_malloc64(nFile+1);
+      if( pNew->cds.zFile!=0 ){
+        memcpy(pNew->cds.zFile, aRead, nFile);
+        pNew->cds.zFile[nFile] = 0;
+      }
       pNew->aExtra = (u8*)&pNew[1];
       memcpy(pNew->aExtra, &aRead[nFile], nExtra);
       if( pNew->cds.zFile==0 ){
