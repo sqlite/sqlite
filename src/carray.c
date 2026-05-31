@@ -258,36 +258,31 @@ static int carrayFilter(
   carray_cursor *pCur = (carray_cursor *)pVtabCursor;
   pCur->pPtr = 0;
   pCur->iCnt = 0;
-  switch( idxNum ){
-    case 1: {
-      carray_bind *pBind = sqlite3_value_pointer(argv[0], "carray-bind");
-      if( pBind==0 ) break;
+  if( idxNum==1 ){
+    carray_bind *pBind = sqlite3_value_pointer(argv[0], "carray-bind");
+    if( pBind ){
       pCur->pPtr = pBind->aData;
       pCur->iCnt = pBind->nData;
       pCur->eType = pBind->mFlags & 0x07;
-      break;
     }
-    case 2:
-    case 3: {
-      pCur->pPtr = sqlite3_value_pointer(argv[0], "carray");
-      pCur->iCnt = pCur->pPtr ? sqlite3_value_int64(argv[1]) : 0;
-      if( idxNum<3 ){
-        pCur->eType = CARRAY_INT32;
-      }else{
-        unsigned char i;
-        const char *zType = (const char*)sqlite3_value_text(argv[2]);
-        for(i=0; i<sizeof(azCarrayType)/sizeof(azCarrayType[0]); i++){
-          if( sqlite3_stricmp(zType, azCarrayType[i])==0 ) break;
-        }
-        if( i>=sizeof(azCarrayType)/sizeof(azCarrayType[0]) ){
-          pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
-            "unknown datatype: %Q", zType);
-          return SQLITE_ERROR;
-        }else{
-          pCur->eType = i;
-        }
+  }else if( ALWAYS(idxNum==2 || idxNum==3) ){
+    pCur->pPtr = sqlite3_value_pointer(argv[0], "carray");
+    pCur->iCnt = pCur->pPtr ? sqlite3_value_int64(argv[1]) : 0;
+    if( idxNum<3 ){
+      pCur->eType = CARRAY_INT32;
+    }else{
+      unsigned char i;
+      const char *zType = (const char*)sqlite3_value_text(argv[2]);
+      for(i=0; i<sizeof(azCarrayType)/sizeof(azCarrayType[0]); i++){
+        if( sqlite3_stricmp(zType, azCarrayType[i])==0 ) break;
       }
-      break;
+      if( i>=sizeof(azCarrayType)/sizeof(azCarrayType[0]) ){
+        pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
+          "unknown datatype: %Q", zType);
+        return SQLITE_ERROR;
+      }else{
+        pCur->eType = i;
+      }
     }
   }
   pCur->iRowid = 1;
@@ -367,9 +362,7 @@ static int carrayBestIndex(
       return SQLITE_CONSTRAINT;
     }
   }else{
-    pIdxInfo->estimatedCost = (double)2147483647;
-    pIdxInfo->estimatedRows = 2147483647;
-    pIdxInfo->idxNum = 0;
+    return SQLITE_CONSTRAINT;
   }
   return SQLITE_OK;
 }

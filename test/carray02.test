@@ -135,9 +135,9 @@ foreach {tn sql res} {
 # Test that not binding any pointer, or passing a value that is not a bound
 # pointer to carray() produces no rows of output.
 #
-do_execsql_test 3.0.0 {
+do_catchsql_test 3.0.0 {
   SELECT * FROM carray
-} {}
+} {1 {no query solution}}
 do_execsql_test 3.0.1 {
   SELECT * FROM carray('0xFFFF', 5)
 } {}
