@@ -1,5 +1,5 @@
-C For\sexpressions\sof\sthe\sform\s"(x,\sy...)\sIN\s(SELECT\sa,\sb\s...)"\swhere\sthe\s\nresult\sis\snot\strue,\sconsider\sthe\scollation\ssequences\sof\scolumns\s"a"\sand\s"b"\s\nwhen\sdeterminining\sif\sthe\sresult\sshould\sbe\sfalse\sor\sNULL.
-D 2026-06-01T16:38:10.425
+C Disable\stransitive\sWHERE\sconstraints\swhen\sthere\sare\sexplicit\sCOLLATE\s\noperators.
+D 2026-06-01T18:07:44.560
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -818,8 +818,8 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c a1caeb656f74e58de7e7310ee91c6dfb40e975c7dd9b18e61a965aea46a610f2
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
-F src/wherecode.c 4d573077652f79780d6b50840ab8cbb72053dbb4eb230780dd2a146ab034475d
-F src/whereexpr.c 95d97d148794a4afd751b899816da7286caa81ccda5840b6efdd9aed8218a804
+F src/wherecode.c bc39ccbe3648f01157038b16cc55bdbff128590972b7185521b5526dc2815765
+F src/whereexpr.c e167672449982d8b79bf3a2463324affc03399979689f735ac3a99ce87e14e2a
 F src/window.c c0a38cd32473e8e8e7bc435039f914a36ca42465506dc491c65870c01ddac9fb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -1885,7 +1885,7 @@ F test/trace3.test 2deeac66359c9f007f0fc9fb6336994a5d68fc1a65129f322a9e9546fd537
 F test/trans.test 45f6f9ab6f66a7b5744f1caac06b558f95da62501916906cf55586a896f9f439
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 91a100e5412b488e22a655fe423a14c26403ab94
-F test/transitive1.test 342b398e4c68deee65a940c5af22a95f44c3090b6539c7a19175afb48ac3fb93
+F test/transitive1.test d6252d06ddc104d13372fce0da93af501546bf5d75cb4d2a1f83b8c27238997a
 F test/trigger1.test 141bd2bbfa82fa91aed7391f50517373c9823ff8f55af35e56313dbc75112ca1
 F test/trigger2.test 30fcb3a6aa6782020d47968735ee6086ed795f73a7affa9406c8d5a36e7b5265
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -2198,9 +2198,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P dc1cc4d908df0e36447d0422ecbbbb6d2f59c7b49243407f8a9602e7bb0d1a00
-Q +04d7a9d788cf0bb811483baceb9142f67d4a2380d4af409d5300a92f7972472e
-R 407f163d07684535b5d14e92c70ec991
+P 5ceba3fe8d9fb2b1e44a048b6e010d427b7f464b727b58824a2af1b53d57f1ec
+Q +18ee3a17c589cfd34500b6a6547d0cb51aea4dd14b4e1e4b2d0cf0dbfb32378e
+R efb476f2dd13a8f5e05df48686e926f1
 U drh
-Z c6afdb83ed161a9d5b4f6c0be022d3c7
+Z 6e37514e385a146b4e0673a6db0f81b9
 # Remove this line to create a well-formed Fossil manifest.
