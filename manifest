@@ -1,5 +1,5 @@
-C Fix\sa\sminor\sproblem\swith\stest\scase\smjournal-3.3.
-D 2026-06-01T15:47:23.358
+C For\sexpressions\sof\sthe\sform\s"(x,\sy...)\sIN\s(SELECT\sa,\sb\s...)"\swhere\sthe\s\nresult\sis\snot\strue,\sconsider\sthe\scollation\ssequences\sof\scolumns\s"a"\sand\s"b"\s\nwhen\sdeterminining\sif\sthe\sresult\sshould\sbe\sfalse\sor\sNULL.
+D 2026-06-01T16:38:10.425
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -685,7 +685,7 @@ F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c 98c716bc5c0c70af4e7934bfcddd707f14e78b5d4cf1e0602a07b485e1af2e74
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 1f2268d6fe3c78fc1bf794ba65d7026498b78e2342ffaf85825dedae546e6fde
-F src/expr.c 36b66d6b5b44a88ec2d54009257b72ad80405905c3910782a35bd8be80dc19c3
+F src/expr.c 8a458928fe502526d4ce90fa4e084a6e1a4dceb6da747381973b5b0086b1492c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c 76e790b7b32895195e4c474259952d6a0ae10b53c0e35f4a2a2c4bc79eb29067
@@ -1468,7 +1468,7 @@ F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed
 F test/notnull2.test c2c7b670fb8fa6ffe5f9cc08af88864fbb8237e28b56ad528e8dee921019c5fe
 F test/notnullfault.test fc4bb7845582a2b3db376001ef49118393b1b11abe0d24adb03db057ee2b73d5
 F test/null.test b7ff206a1c60fe01aa2abd33ef9ea83c93727d993ca8a613de86e925c9f2bc6f
-F test/nulls1.test 7a5e4346ee4285034100b4cd20e6784f16a9d6c927e44ecdf10034086bbee9c9
+F test/nulls1.test 8fc70d75ab363b0f2ce9151669c2cb897def5064e2e30f7d9322970480bf6e87
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test c21e67d2d5ae8ed310243fbe84fc2f0dca49e9ffed3ea89110c0d5914c0de620
@@ -2198,9 +2198,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 27b4f821c752a65197746952cc168fab6a3aa0039d1a0100e3d8415225b5d4bf
-Q +80093dc0610438cd506d230eca12e699e05395aecb8048c5bc066379b927e8bb
-R 778148befaeb7e051c603e7b3044770a
+P dc1cc4d908df0e36447d0422ecbbbb6d2f59c7b49243407f8a9602e7bb0d1a00
+Q +04d7a9d788cf0bb811483baceb9142f67d4a2380d4af409d5300a92f7972472e
+R 407f163d07684535b5d14e92c70ec991
 U drh
-Z fb6b7414dfe7e76890f57c03d5307ec1
+Z c6afdb83ed161a9d5b4f6c0be022d3c7
 # Remove this line to create a well-formed Fossil manifest.
