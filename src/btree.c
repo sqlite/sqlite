@@ -10984,6 +10984,11 @@ static int checkTreePage(
       doCoverageCheck = 0;
       continue;
     }
+    if( info.nPayload && info.pPayload[0]<2 ){
+      checkAppendMsg(pCheck, "Bad cell header size");
+      doCoverageCheck = 0;
+      continue;
+    }
 
     /* Check for integer primary key out of range */
     if( pPage->intKey ){
