@@ -1,5 +1,5 @@
-C Fix\san\sinteger\soverflow\sthat\scould\slead\sto\sa\sbuffer\soverrun\sin\sthe\szipfile\sextension.\sBug\s[bugs:/info/2026-06-01T10:16:47Z\s|\s2026-06-01T10:16:47Z].
-D 2026-06-01T10:56:11.670
+C Update\snew\stest\sin\szipfile.test\sso\sthat\sit\sdoes\snot\srun\sif\sSQLITE_MAX_LENGTH\sis\stoo\ssmall.
+D 2026-06-01T11:50:55.743
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2109,7 +2109,7 @@ F test/writecrash.test 13520af28f376bfc8c0bcd130efc1fff20bb165198e8b94cf153f1f75
 F test/zeroblob.test 7b74cefc7b281dfa2b07cd237987fbe94b4a2037a7771e9e83f2d5f608b1d99e
 F test/zeroblobfault.test 861d8191a0d944dfebb3cb4d2c5b4e46a5a119eaec5a63dd996c2389f8063441
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 8e2bedf097956dff02c5bcee73876c183fe24ddb98bb74c144b83f846cdcdf33
+F test/zipfile.test f397d50cd625b6ae1487bf4e5f00f99d7fa3a98b7426450a22d220e95f746505
 F test/zipfile2.test 21afaffcf4f7769df38bf16e4a9c4dfa6ba1b0f5b695f844ec61fafb92db0db7
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2b073519b6080abc8872b0728c64827cc088d1b43f132cd2aeb396f06de3d36f
-R f791f1b1a44faf5cc9f729637c6068ee
+P 7c740d2cfd22a89258be2221860ca10985f0fc16dc7a17a99fc282d7105dc38e
+R 6fc3e7ce84a5a456338015adf8a6b339
 U dan
-Z cd6adb3820c6769b0caac2c0e91a3c94
+Z 96898ff5669e695c7929e27c8a9e78af
 # Remove this line to create a well-formed Fossil manifest.

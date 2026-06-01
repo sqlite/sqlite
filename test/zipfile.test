@@ -956,11 +956,15 @@ do_execsql_test 22.0 {
 reset_db 
 load_static_extension db zipfile
 
-do_catchsql_test 23.0 {
-  SELECT length(zipfile(name,0,0,data,0)) FROM (
-      SELECT 'a' AS name, zeroblob(1000000000) AS data
-      UNION ALL SELECT 'b', zeroblob(1200000000)
-  );
-} {1 {out of memory}}
+# This test requires a non-default SQLITE_MAX_LENGTH value to run.
+#
+if {[catch {db one {SELECT length( zeroblob(1200000000) )}}]==0} {
+  do_catchsql_test 23.0 {
+    SELECT length(zipfile(name,0,0,data,0)) FROM (
+        SELECT 'a' AS name, zeroblob(1000000000) AS data
+        UNION ALL SELECT 'b', zeroblob(1200000000)
+    );
+  } {1 {out of memory}}
+}
 
 finish_test
