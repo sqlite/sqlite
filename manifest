@@ -1,5 +1,5 @@
-C Fix\sminor\sproblems\ssurrounding\stransitive\sWHERE\sconstraints\sand\sexplicit\sCOLLATE\sterms.
-D 2026-06-01T17:40:23.826
+C Minor\sperformance\simprovement\sfor\sthe\spatch\son\sthis\sbranch.
+D 2026-06-01T17:56:11.723
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -822,7 +822,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 33e4a6558ee69f33d6a4e7069e3a40a55959d14e5653a9a83926e70305d471f3
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c bc39ccbe3648f01157038b16cc55bdbff128590972b7185521b5526dc2815765
-F src/whereexpr.c 93d4bc513853d30ea32812f0ccb450c40e24cc6320b6127fd51e0eaaae418515
+F src/whereexpr.c 61b1c9d98d39f6bcd79fcb4ebb4c9478effb259fefac4c7d3e78e4957f97f75a
 F src/window.c c0a38cd32473e8e8e7bc435039f914a36ca42465506dc491c65870c01ddac9fb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -2207,11 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 04d7a9d788cf0bb811483baceb9142f67d4a2380d4af409d5300a92f7972472e
-R 1e97b514b880ee32443ecbfc2b420010
-T *branch * transitive-where-collate-bugs
-T *sym-transitive-where-collate-bugs *
-T -sym-trunk *
+P 9500238a1d603a3f08a8fc0954725d5d217aab339720146ea0bc700e47b81c3c
+R a14c4b5ca955ef8bb4ab4c346aca6159
 U dan
-Z 922c3ff18e7c90a79ce111a4037533f3
+Z 64d4254ed5327965a348bb9713e58894
 # Remove this line to create a well-formed Fossil manifest.
