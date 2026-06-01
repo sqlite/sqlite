@@ -1,5 +1,5 @@
-C Improvements\sto\ssqlite3SelectCheckOnClauses()\sto\sbe\smore\saccurate\sin\nidentifying\stable-valued\sfunctions\sthat\sreferences\stables\sto\sthe\sright.
-D 2026-06-01T12:19:30.460
+C Test\scase\sto\sshow\sthat\sthe\schange\sfixes\sthe\soriginal\scarray\sproblem.
+D 2026-06-01T12:30:13.018
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -958,7 +958,7 @@ F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 31d3a6778f2d06f2d9222bd7660c41a516d1518a059b069e96ebbeadb5a490f7
 F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233dfbde
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
-F test/carray01.test 17c1cf8287862b15dda949dba626fd5fee5c58471dcc1cae0341471c2ae7da01
+F test/carray01.test 4a77d9f5711212bd209598913405d36dd48cc4f5f643e78cf589daa4d3047c54
 F test/carray02.test 9d070b54f24a34d1f3b3c552ba34db0375a9d1c4219067416fb07d1595987c9d
 F test/carrayfault.test 108a7d83904fc267c448e27c13b2a857c700bd6ddaa2f1e2518be718b159cb6b
 F test/cast.test a2a3b32df86e3c0601ffa2e9f028a18796305d251801efea807092dbf374a040
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 43e02dbb0dbe7192304125cd3298b3f4bbac02395d4d03f7f8d5f96b465eb43e
-R 1aa6df702c9a3bafd416c0ab2cbf418f
+P e5bae3687dbb470ead7e8d6bf428b1fbb1e9f10c214bc2a91e93e68fb2ae6ff7
+R 036188abda74603f186880ec3c6e0508
 U drh
-Z 980d33bdd2c6b1b1d249c4592eedfa4a
+Z e2640165a4faf7eff7fd44fcf98f9320
 # Remove this line to create a well-formed Fossil manifest.
