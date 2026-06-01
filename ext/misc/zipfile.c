@@ -2000,10 +2000,10 @@ struct ZipfileCtx {
 };
 
 static int zipfileBufferGrow(ZipfileBuffer *pBuf, i64 nByte){
-  if( pBuf->n+nByte>pBuf->nAlloc ){
+  if( (pBuf->nAlloc-pBuf->n)<nByte ){
     u8 *aNew;
-    sqlite3_int64 nNew = pBuf->n ? pBuf->n*2 : 512;
-    int nReq = pBuf->n + nByte;
+    i64 nNew = pBuf->n ? (i64)pBuf->n*2 : 512;
+    i64 nReq = pBuf->n + nByte;
 
     while( nNew<nReq ) nNew = nNew*2;
     aNew = sqlite3_realloc64(pBuf->a, nNew);
