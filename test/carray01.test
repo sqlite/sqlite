@@ -165,6 +165,8 @@ sqlite3_finalize $STMT
 sqlite3_finalize $STMT2
 
 # 2026-05-31 dbsqlfuzz case 55c60cf7eb9e0f14c811b7c9227b8d2a0c32f022
+# 2026-06-01 dbsqlfuzz case 78e187a0fb61b19ff2e0cb76d4e8609df5248302
+# Probably also Bug 2026-06-01T07:23:11Z
 do_catchsql_test 400 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a INT PRIMARY KEY, b INT) WITHOUT ROWID;
@@ -174,6 +176,6 @@ do_catchsql_test 400 {
     SELECT x+1 FROM (carray NATURAL FULL JOIN carray(t1.b)), t1, c
   )
   SELECT * FROM c;
-} {1 {no query solution}}
+} {1 {table-function argument references tables to its right}}
 
 finish_test
