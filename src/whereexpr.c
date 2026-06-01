@@ -954,7 +954,8 @@ static void exprAnalyzeOrTerm(
 **   3.  Not originating in the ON clause of an OUTER JOIN
 **   4.  The operator is not IS or else the query does not contain RIGHT JOIN
 **   5.  The affinities of A and B must be compatible
-**   6.  Both operands use the same collating sequence
+**   6.  Both operands use the same collating sequence, and they must not
+**       use explicit COLLATE clauses.
 ** If this routine returns TRUE, that means that the RHS can be substituted
 ** for the LHS anyplace else in the WHERE clause where the LHS column occurs.
 ** This is an optimization.  No harm comes from returning 0.  But if 1 is
@@ -963,6 +964,7 @@ static void exprAnalyzeOrTerm(
 static int termIsEquivalence(Parse *pParse, Expr *pExpr, SrcList *pSrc){
   char aff1, aff2;
   if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;  /* (1) */
+  if( ExprHasProperty(pExpr, EP_Collate) ) return 0;
   if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;                 /* (2) */
   if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;                   /* (3) */
   assert( pSrc!=0 );
