@@ -1,5 +1,5 @@
-C Add\sextra\stest\scase\sto\szipfile.test.\sNo\scode\schanges.
-D 2026-06-02T11:11:02.705
+C Fix\sa\scase\swhere\ssqlite3expert\scould\sbe\stricked\sinto\sexecuting\sarbitrary\sSQL\sby\sa\scorrupt\sdatabase\sschema.
+D 2026-06-02T15:20:37.168
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -72,8 +72,8 @@ F doc/wal-lock.md 7db0cd61e2000b545b78ce89b0c2a9a8dd8d64c097839258ac10d7c5c4156e
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
 F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
-F ext/expert/expert1.test d9dfbf7fb527cfd43049e30a6238ef02c94484041fa4461ed41acbc6435425d6
-F ext/expert/sqlite3expert.c 546010043fbec93544f762de5161b3d553165859e6bd853c4b85c05f93484260
+F ext/expert/expert1.test 5292f9f488ca396fa0973e8ed5d26914bc29a0cdb5979db3d9e05416f30858c3
+F ext/expert/sqlite3expert.c 1a5296245bf80c201b2f5fa5947ef54a7d2b7e90428cb86240dd18076242ec1f
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c c395134bd6d4efa594a7d26578a1cb624c4027b79b4b5fcd44736c5ef1f5f725
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 83adece349aed73b8d0a3aec141213ea329150eb529f4fd9774ca157b49d02fc
-R 5895367d2c01ff7b0c642a64e8135995
+P 83fe72bcdf866bdaf3043ae5b0c1eb45a9d50a01b24b7a531858271dd746baab
+R 143b4f8790f9d171f14ed00c4c3f7e44
 U dan
-Z e6705703785369a0e1f0dd8fe0bbadb7
+Z c03081a5d47dc2254e97d2e8de39c97f
 # Remove this line to create a well-formed Fossil manifest.

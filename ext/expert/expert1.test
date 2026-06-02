@@ -606,4 +606,40 @@ ifcapable fts5 {
   }
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+set ci {CREATE INDEX i1 ON t1(a COLLATE "binary,sqlite_expert_rem(999,0)");}
+
+do_execsql_test 8.0 {
+  BEGIN TRANSACTION;
+  CREATE TABLE t1(a TEXT, b TEXT);
+  INSERT INTO t1 VALUES('v0','d0');
+  INSERT INTO t1 VALUES('v1','d1');
+  INSERT INTO t1 VALUES('v2','d2');
+  INSERT INTO t1 VALUES('v3','d3');
+  INSERT INTO t1 VALUES('v4','d4');
+  INSERT INTO t1 VALUES('v5','d5');
+  INSERT INTO t1 VALUES('v6','d6');
+  INSERT INTO t1 VALUES('v7','d7');
+  INSERT INTO t1 VALUES('v8','d8');
+  INSERT INTO t1 VALUES('v9','d9');
+  CREATE INDEX i1 ON t1(a);
+  COMMIT;
+  PRAGMA writable_schema = ON;
+  UPDATE sqlite_schema SET sql = $ci WHERE name = 'i1';
+}
+
+db close
+sqlite3 db test.db
+
+do_test 8.1 {
+  set expert [sqlite3_expert_new db]
+  $expert sql { SELECT 1234 }
+  list [catch { $expert analyze } msg] $msg
+} {1 {no such collation sequence: binary,sqlite_expert_rem(999,0)}}
+
+$expert destroy
+
+
 finish_test
