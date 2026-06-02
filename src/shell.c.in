@@ -13525,7 +13525,7 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 /*
 ** The callback from atexit().
 */
-static void abnormalExit(void){
+static void SQLITE_CDECL abnormalExit(void){
   if( seenInterrupt ) eputz("Program interrupted.\n");
   if( globalShellState ){
     clearTempFile(globalShellState, 1, 1);
