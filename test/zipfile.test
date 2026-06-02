@@ -967,4 +967,28 @@ if {[catch {db one {SELECT length( zeroblob(1200000000) )}}]==0} {
   } {1 {out of memory}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.zip
+load_static_extension db zipfile
+load_static_extension db fileio
+
+do_execsql_test 24.0 {
+  CREATE VIRTUAL TABLE zzz USING zipfile('test.zip');
+  INSERT INTO zzz (name, data) VALUES ('f.txt','lotsoftext');
+}
+
+do_test 24.1 {
+  set zip [db one {SELECT hex( readfile('test.zip') )}]
+  set off [string first "504B0102" $zip]
+  set off [expr $off + 56]
+  set zip [string replace $zip $off [expr $off+3] 1F1F]
+  string length $zip
+} {272}
+
+do_catchsql_test 24.2 {
+  SELECT * FROM zipfile(unhex($zip))
+} {1 {zip archive is corrupt}}
+
 finish_test
+
