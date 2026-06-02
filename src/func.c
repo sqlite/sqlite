@@ -326,9 +326,18 @@ static void printfFunc(
     sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
     str.printfFlags = SQLITE_PRINTF_SQLFUNC;
     sqlite3_str_appendf(&str, zFormat, &x);
-    n = str.nChar;
-    sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
-                        SQLITE_DYNAMIC);
+    if( str.accError==SQLITE_OK ){
+      n = str.nChar;
+      sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
+                          SQLITE_DYNAMIC);
+    }else{
+      if( str.accError==SQLITE_NOMEM ){
+        sqlite3_result_error_nomem(context);
+      }else{
+        sqlite3_result_error_toobig(context);
+      }
+      sqlite3_str_reset(&str);
+    }
   }
 }
 
@@ -1966,11 +1975,16 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
     assert( p->cnt>0 );
     p->cnt--;
     if( !p->approx ){
-      if( sqlite3SubInt64(&p->iSum, sqlite3_value_int64(argv[0])) ){
-        p->ovrfl = 1;
-        p->approx = 1;
+      i64 x = p->iSum;
+      if( sqlite3SubInt64(&x, sqlite3_value_int64(argv[0]))==0 ){
+        p->iSum = x;
+        return;
       }
-    }else if( type==SQLITE_INTEGER ){
+      p->ovrfl = 1;
+      p->approx = 1;
+      kahanBabuskaNeumaierInit(p, p->iSum);
+    }
+    if( type==SQLITE_INTEGER ){
       i64 iVal = sqlite3_value_int64(argv[0]);
       if( iVal!=SMALLEST_INT64 ){
         kahanBabuskaNeumaierStepInt64(p, -iVal);

@@ -1897,9 +1897,6 @@ RSYNC_OPT = \
 sqlite3_rsync.exe:	$(RSYNC_SRC) $(LIBRESOBJS)
 	$(LTLINK) $(RSYNC_OPT) $(NO_WARN) $(RSYNC_SRC) /link $(LDFLAGS) $(LTLINKOPTS) $(LIBRESOBJS)
 
-scrub.exe:	$(TOP)\ext\misc\scrub.c $(SQLITE3C) $(SQLITE3H)
-	$(LTLINK) $(NO_WARN) -DSCRUB_STANDALONE=1 $(TOP)\ext\misc\scrub.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
-
 srcck1.exe:	$(TOP)\tool\srcck1.c
 	$(BCC) $(NO_WARN) -Fe$@ $(TOP)\tool\srcck1.c
 

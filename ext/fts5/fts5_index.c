@@ -922,7 +922,7 @@ static void fts5DataRelease(Fts5Data *pData){
 static Fts5Data *fts5LeafRead(Fts5Index *p, i64 iRowid){
   Fts5Data *pRet = fts5DataRead(p, iRowid);
   if( pRet ){
-    if( pRet->nn<4 || pRet->szLeaf>pRet->nn ){
+    if( pRet->szLeaf<4 || pRet->szLeaf>pRet->nn ){
       FTS5_CORRUPT_ROWID(p, iRowid);
       fts5DataRelease(pRet);
       pRet = 0;
@@ -2576,6 +2576,10 @@ static void fts5LeafSeek(
     if( nKeep<nMatch ){
       goto search_failed;
     }
+    if( (iOff+nNew)>n ){
+      FTS5_CORRUPT_ITER(p, pIter);
+      return;
+    }
 
     assert( nKeep>=nMatch );
     if( nKeep==nMatch ){
@@ -3702,7 +3706,7 @@ static void fts5IndexExtractColset(
       /* Advance pointer p until it points to pEnd or an 0x01 byte that is
       ** not part of a varint */
       while( p<pEnd && *p!=0x01 ){
-        while( *p++ & 0x80 );
+        while( p<pEnd && (*p++ & 0x80) );
       }
 
       if( pColset->aiCol[i]==iCurrent ){
@@ -3799,8 +3803,11 @@ static void fts5IterSetOutputs_Col100(Fts5Iter *pIter, Fts5SegIter *pSeg){
 
   assert( pIter->pIndex->pConfig->eDetail==FTS5_DETAIL_COLUMNS );
   assert( pIter->pColset );
+  assert( pIter->poslist.nSpace>=pIter->pIndex->pConfig->nCol );
 
-  if( pSeg->iLeafOffset+pSeg->nPos>pSeg->pLeaf->szLeaf ){
+  if( pSeg->iLeafOffset+pSeg->nPos>pSeg->pLeaf->szLeaf 
+   || pSeg->nPos>pIter->pIndex->pConfig->nCol
+  ){
     fts5IterSetOutputs_Col(pIter, pSeg);
   }else{
     u8 *a = (u8*)&pSeg->pLeaf->p[pSeg->iLeafOffset];

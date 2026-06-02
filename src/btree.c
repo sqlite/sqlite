@@ -5185,7 +5185,9 @@ static int accessPayload(
     ** means "not yet known" (the cache is lazily populated).
     */
     if( (pCur->curFlags & BTCF_ValidOvfl)==0 ){
-      int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
+      i64 nOvfl = pCur->info.nPayload;
+      testcase( nOvfl - pCur->info.nLocal + ovflSize - 1 > 0xffffffffU );
+      nOvfl = (nOvfl - pCur->info.nLocal + ovflSize-1)/ovflSize;
       if( pCur->aOverflow==0
        || nOvfl*(int)sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
       ){
@@ -5290,6 +5292,12 @@ static int accessPayload(
               (eOp==0 ? PAGER_GET_READONLY : 0)
           );
           if( rc==SQLITE_OK ){
+            if( eOp!=0
+             && (sqlite3PagerPageRefcount(pDbPage)!=1
+                 || NEVER(((MemPage*)sqlite3PagerGetExtra(pDbPage))->isInit)) ){
+              sqlite3PagerUnref(pDbPage);
+              return SQLITE_CORRUPT_PAGE(pPage);
+            }
             aPayload = sqlite3PagerGetData(pDbPage);
             nextPage = get4byte(aPayload);
             rc = copyPayload(&aPayload[offset+4], pBuf, a, eOp, pDbPage);

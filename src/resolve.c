@@ -774,6 +774,7 @@ static int lookupName(
         pExpr->op = TK_FUNCTION;
         pExpr->u.zToken = "coalesce";
         pExpr->x.pList = pFJMatch;
+        pExpr->affExpr = SQLITE_AFF_DEFER;
         cnt = 1;
         goto lookupname_end;
       }else{
@@ -940,6 +941,26 @@ static int exprProbability(Expr *p){
   assert( r>=0.0 );
   if( r>1.0 ) return -1;
   return (int)(r*134217728.0);
+}
+
+/*
+** Set the EP_SubtArg property on every expression inside of
+** pList.  If any subexpression is actually a subquery, then
+** also set the EP_SubtArg property on the first result-set
+** column of that subquery.
+*/
+static SQLITE_NOINLINE void resolveSetExprSubtypeArg(ExprList *pList){
+  int nn, ii;
+  nn = pList ? pList->nExpr : 0;
+  for(ii=0; ii<nn; ii++){
+    Expr *pExpr = pList->a[ii].pExpr;
+    ExprSetProperty(pExpr, EP_SubtArg);
+    if( pExpr->op==TK_SELECT ){
+      assert( ExprUseXSelect(pExpr) );
+      assert( pExpr->x.pSelect!=0 );
+      resolveSetExprSubtypeArg(pExpr->x.pSelect->pEList);
+    }
+  }
 }
 
 /*
@@ -1186,10 +1207,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         if( (pDef->funcFlags & SQLITE_SUBTYPE) 
          || ExprHasProperty(pExpr, EP_SubtArg) 
         ){
-          int ii;
-          for(ii=0; ii<n; ii++){
-            ExprSetProperty(pList->a[ii].pExpr, EP_SubtArg);
-          }
+          resolveSetExprSubtypeArg(pList);
         }
 
         if( pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG) ){

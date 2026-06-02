@@ -127,6 +127,7 @@ Special values for PERMUTATION include:
     mdevtest  - tests recommended prior to normal development check-ins.
     devtest   - alias for "mdevtest"
     release   - full release test with various builds.
+    c         - tests in test/c directory only.
     sdevtest  - like mdevtest but using ASAN and UBSAN.
     all       - all tcl test scripts, plus a subset of test scripts rerun
                 with various permutations.
@@ -1512,6 +1513,13 @@ proc add_jobs_from_cmdline {patternlist} {
             UPDATE jobs SET depid=$sbldid WHERE depid='SHELL'
           }
         }
+      }
+    }
+
+    c {
+      set patternlist [lrange $patternlist 1 end]
+      foreach b [trd_builds $TRG(platform)] {
+        add_c_jobs $b $patternlist
       }
     }
 

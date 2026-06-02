@@ -1251,6 +1251,11 @@ static int geopolyInit(
   int ii;
   (void)pAux;
 
+  if( argc>=RTREE_MAX_AUX_COLUMN+4 ){
+    *pzErr = sqlite3_mprintf("Too many columns for a geopoly table");
+    return SQLITE_ERROR;
+  }
+
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
   sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
 

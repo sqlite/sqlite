@@ -586,8 +586,14 @@ static int fts5PorterCreate(
   const char *zBase = "unicode61";
   fts5_tokenizer_v2 *pV2 = 0;
 
-  if( nArg>0 ){
-    zBase = azArg[0];
+  while( nArg>0 ){
+    if( sqlite3_stricmp(azArg[0],"porter")==0 ){
+      nArg--;
+      azArg++;
+    }else{
+      zBase = azArg[0];
+      break;
+    }
   }
 
   pRet = (PorterTokenizer*)sqlite3_malloc64(sizeof(PorterTokenizer));

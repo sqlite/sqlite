@@ -2137,7 +2137,7 @@ static int sessionDiffFindNew(
     rc = SQLITE_NOMEM;
   }else{
     sqlite3_stmt *pStmt;
-    rc = sqlite3_prepare(pSession->db, zStmt, -1, &pStmt, 0);
+    rc = sqlite3_prepare_v2(pSession->db, zStmt, -1, &pStmt, 0);
     if( rc==SQLITE_OK ){
       SessionDiffCtx *pDiffCtx = (SessionDiffCtx*)pSession->hook.pCtx;
       pDiffCtx->pStmt = pStmt;
@@ -2200,7 +2200,7 @@ static int sessionDiffFindModified(
       rc = SQLITE_NOMEM;
     }else{
       sqlite3_stmt *pStmt;
-      rc = sqlite3_prepare(pSession->db, zStmt, -1, &pStmt, 0);
+      rc = sqlite3_prepare_v2(pSession->db, zStmt, -1, &pStmt, 0);
 
       if( rc==SQLITE_OK ){
         SessionDiffCtx *pDiffCtx = (SessionDiffCtx*)pSession->hook.pCtx;
@@ -4153,7 +4153,13 @@ static int sessionChangesetInvert(
 
     /* Test for EOF. */
     if( (rc = sessionInputBuffer(pInput, 2)) ) goto finished_invert;
-    if( pInput->iNext>=pInput->nData ) break;
+    if( pInput->iNext+1>=pInput->nData ){
+      if( pInput->iNext!=pInput->nData ){ 
+        rc = SQLITE_CORRUPT_BKPT; 
+        goto finished_invert;
+      }
+      break;
+    }
     eType = pInput->aData[pInput->iNext];
 
     switch( eType ){
@@ -5044,7 +5050,7 @@ static int sessionApplyOneOp(
     for(i=0; rc==SQLITE_OK && i<nCol; i++){
       sqlite3_value *pOld = sessionChangesetOld(pIter, i);
       sqlite3_value *pNew = sessionChangesetNew(pIter, i);
-      if( p->abPK[i] || (bPatchset==0 && pOld) ){
+      if( pOld && (p->abPK[i] || bPatchset==0) ){
         rc = sessionBindValue(pUp, i*2+2, pOld);
       }
       if( rc==SQLITE_OK && pNew ){
@@ -7080,7 +7086,7 @@ int sqlite3changegroup_change_blob(
   const void *pVal, 
   int nVal
 ){
-  sqlite3_int64 nByte = 1 + sessionVarintLen(nVal) + nVal;
+  sqlite3_int64 nByte = 1 + sessionVarintLen(nVal) + (i64)nVal;
   int rc = SQLITE_OK;
   SessionBuffer *pBuf = 0;
 

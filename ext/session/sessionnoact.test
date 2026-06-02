@@ -228,5 +228,30 @@ do_execsql_test 3.8 {
   SELECT * FROM c1;
 } {two}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT, c INTEGER);
+  ATTACH ':memory:' AS aux;
+  CREATE TABLE aux.t1(a INTEGER PRIMARY KEY, b TEXT, c INTEGER);
+}
+
+do_test 4.1 {
+  sqlite3session S db main
+  S diff aux t1
+} {}
+
+do_test 4.2 {
+  sqlite3changeset_apply_v2 -ignorenoop -noaction db "" conflict 
+} {}
+
+breakpoint
+do_test 4.3 {
+  S diff aux t1
+} {}
+
+S delete
+
 finish_test
 
