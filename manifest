@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2026-06-03T18:51:23.167
+C Version\s3.53.2
+D 2026-06-03T19:12:13.350
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2199,8 +2199,10 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 004d85c5f1bf04409ce85d5131f1d9697f25f531046e60160e78b0bae7f55123
+P ac00a18dcf132180295d41299f31fbc68087a27b61782d00b9633dd9661ded2b
 R 58c568d42a018658d9c21e84f3d9ab9d
+T +sym-release *
+T +sym-version-3.53.2 *
 U drh
-Z 90a4dd0e232c39450fe3f4e4d6b819e5
+Z a64dcb64a02448f95d399730d70f1fe2
 # Remove this line to create a well-formed Fossil manifest.
