@@ -1,5 +1,5 @@
-C Make\sthe\s(unused,\suntested,\sand\sunsupported)\sext/misc/compress.c\sroutines\nresponsive\sto\sOOM\sconditions.
-D 2026-06-03T11:05:22.210
+C The\sprefix_length()\sfunction\sshould\sstop\sat\sthe\sfirst\sNUL\sterminator.
+D 2026-06-03T11:30:01.798
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -387,7 +387,7 @@ F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5
 F ext/misc/normalize.c fbb144a861809686ff2b5b6eee8bb2e1207f9bf13ce7376e5273c700a1eafbd5
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
 F ext/misc/percentile.c 72e05a21db20a2fa85264b99515941f00ae698824c9db82d7edfbb16cea8ec80
-F ext/misc/prefixes.c efc261429fd8ab43cedc0d38b94d86d87437af5550651bceb618bd7e84e25125
+F ext/misc/prefixes.c e7d3e7a39174db412c5f77c266fa221c2dc3cb2621a9422835a607ad08805eb2
 F ext/misc/qpvtab.c 470a5fffba005c8e1994209e59c1848122351e19522de71beb68d666c4fa39a5
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 9dada9e9aa91f0cc23e35429e5d1111f110cc201b4c8dcc49aa6d2fc4b2a865d
@@ -1515,7 +1515,7 @@ F test/pragma4.test 396ef9bff1fb966d41721545ad4b12bfc26aae315f5fe51d9b917828d49e
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
 F test/pragma6.test c5ec577ba087954b4dfa619a3cbe97b155b60a0af487527abe89b10fc17e6512
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
-F test/prefixes.test f2c4f30d5d439ca203ec69d72f5e1cc408916104e5310423542faef8003cf013
+F test/prefixes.test fe52bb0c2fee10fb9b918a095d443ebf31dd48e5e2c7a1b21feba594fe7ff2d0
 F test/printf.test bcb093ef5cbd17e2d94d93d62045ee61ed0f465c1ca123f284774e474e73a9ea
 F test/printf2.test 3f55c1871a5a65507416076f6eb97e738d5210aeda7595a74ee895f2224cce60
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
@@ -2199,9 +2199,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 919d393a3bc483bf58be1f8d6c2ef70f570d63cc9ad8d8df6a6562fb270ea7e5
-Q +e3120e2a4339d51210645b14d075abba27dd97bd6bd6d42f445dd5baf3d337e3
-R 11517b618b9e89b5ae2e54a90751a6fe
+P 2d1dc1c6c679d920e4f5d79acefbf318183ef37bc65bc78dc50f8512f317c1f5
+Q +a9b8bdea0683bb03015ea1ee38f75636c80c189eed4b786b6d3d654a831cfdfb
+R 9323c8b5ec325e0161ec7b66d56658f3
 U drh
-Z 13de7e4b75d7c2df03440814ccc7665b
+Z 8642700f1b3d092d4edddae03cad5946
 # Remove this line to create a well-formed Fossil manifest.
