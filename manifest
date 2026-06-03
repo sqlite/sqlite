@@ -1,5 +1,5 @@
-C Avoid\sexcessive\srecursion\sand\sstack\soverflow\sin\sfts3\swhen\sprocessing\sa\scorrupt\ndatabase.
-D 2026-06-03T11:37:45.419
+C Fix\snegative\sarray\sindex\sin\s"testing\sand\sdebugging\suses\sonly"\sextension\nqpvtab.c.\n[bugs:/info/2026-06-03T07:26:26Z|Bug\s2026-06-03T07:26:26Z].
+D 2026-06-03T12:43:50.425
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -390,7 +390,7 @@ F ext/misc/normalize.c fbb144a861809686ff2b5b6eee8bb2e1207f9bf13ce7376e5273c700a
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
 F ext/misc/percentile.c 72e05a21db20a2fa85264b99515941f00ae698824c9db82d7edfbb16cea8ec80
 F ext/misc/prefixes.c e7d3e7a39174db412c5f77c266fa221c2dc3cb2621a9422835a607ad08805eb2
-F ext/misc/qpvtab.c 470a5fffba005c8e1994209e59c1848122351e19522de71beb68d666c4fa39a5
+F ext/misc/qpvtab.c eeb04e4fcead64648629d6375077a5d5fd48c0384023edd21defa32730714d5e
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 378e6e84516952a4b9f3f4df88927f20e6538e2609f55b773ed78899dab8206e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a9b8bdea0683bb03015ea1ee38f75636c80c189eed4b786b6d3d654a831cfdfb
-R e2c53d1068820b4eb7e0de91d756c1f7
-U dan
-Z fc128474424deb8d4e6623bccb12dc27
+P 21369378769195f20f839231f625582552eaa3f79044ca3e3efb7f9476b515a8
+R 976afd00c6a0ed2a76d2acce24fa5cd4
+U drh
+Z ecf63694b4e2def4351af346475d1135
 # Remove this line to create a well-formed Fossil manifest.
