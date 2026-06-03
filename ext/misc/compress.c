@@ -60,6 +60,10 @@ static void compressFunc(
   nIn = sqlite3_value_bytes(argv[0]);
   nOut = 13 + nIn + (nIn+999)/1000;
   pOut = sqlite3_malloc64( nOut+5 );
+  if( pOut==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
   for(i=4; i>=0; i--){
     x[i] = (nIn >> (7*(4-i)))&0x7f;
   }
@@ -99,6 +103,10 @@ static void uncompressFunc(
     if( (pIn[i]&0x80)!=0 ){ i++; break; }
   }
   pOut = sqlite3_malloc64( nOut+1 );
+  if( pOut==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
   rc = uncompress(pOut, &nOut, &pIn[i], nIn-i);
   if( rc==Z_OK ){
     sqlite3_result_blob(context, pOut, nOut, sqlite3_free);
