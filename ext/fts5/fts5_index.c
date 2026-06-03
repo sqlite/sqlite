@@ -5300,6 +5300,11 @@ static void fts5DoSecureDelete(
     }else{
       iStart = fts5GetU16(&aPg[0]);
     }
+    if( iStart>nPg ){
+      FTS5_CORRUPT_IDX(p);
+      sqlite3_free(aIdx);
+      return;
+    }
 
     iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
     assert_nc( iSOP<=pSeg->iLeafOffset );
