@@ -322,4 +322,27 @@ do_catchsql_test 3.2 {
   SELECT * FROM fts WHERE fts MATCH 'x';
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(content);
+  DELETE FROM t1_segments;
+  DELETE FROM t1_segdir;
+}
+
+do_execsql_test 4.2 {
+  INSERT INTO t1_segdir
+  (level, idx, start_block, leaves_end_block, end_block, root)
+  VALUES(0, 0, 0, 0, 0, X'000568656C6C6F08010201FFFFFF7F00');
+}
+
+do_execsql_test 4.3 {
+  CREATE VIRTUAL TABLE t1_terms USING fts4aux(t1);
+}
+
+do_catchsql_test 4.4 {
+  SELECT * FROM t1_terms;
+} {1 {database disk image is malformed}}
+
 finish_test

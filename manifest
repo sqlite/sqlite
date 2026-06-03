@@ -1,5 +1,5 @@
-C Fix\sanother\sbuffer\soverread\sin\sfts5\sthat\scould\soccur\swhen\sprocessing\ncorrupt\srecords.
-D 2026-06-03T15:02:29.677
+C Fix\san\sinteger\soverflow\sproblem\sin\sfts3\sthat\scould\slead\sto\sa\sbuffer\soverwrite\son\splatforms\swhere\ssize_t\sis\s32-bits.
+D 2026-06-03T15:54:58.907
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -82,7 +82,7 @@ F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 1716994c40715223431d98e5132c40a3c1a00c011c5bde2270bad1bd06be3ccd
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 277f32f304e82f4397fc2a74793c0a95318b7abb9670b519e4805a00946cbd9b
-F ext/fts3/fts3_aux.c c105f6502df588f49a383eb22aed953844fb0e31265361a0cc8dd73037b37e39
+F ext/fts3/fts3_aux.c bbb614abcc995bf748cba4717e9fd8de67898e33c80f60379f6feb2358189b4b
 F ext/fts3/fts3_expr.c 907dd64deb881c0586d5ecbabc96cfebdbe2ff9e7a052d379fd3b606edfa21ea
 F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641814672a
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
@@ -1166,7 +1166,7 @@ F test/fts3corrupt3.test 0d5b69a0998b4adf868cc301fc78f3d0707745f1d984ce044c205cd
 F test/fts3corrupt4.test c7f414fe29b97a478d15c90382c4ae077a2bbd2283bf8c63bf66dadaaed3edb8
 F test/fts3corrupt5.test 0549f85ec4bd22e992f645f13c59b99d652f2f5e643dac75568bfd23a6db7ed5
 F test/fts3corrupt6.test f417c910254f32c0bc9ead7affa991a1d5aec35b3b32a183ffb05eea78289525
-F test/fts3corrupt7.test 446901d400cad0d896165fd568dca7174140b695806f8d219833cceb7889e36e
+F test/fts3corrupt7.test 93622a4336b161a733accbd66311d93749660243cdda268fd647c21e1e680770
 F test/fts3cov.test 1e5ecea0e4c1394cea97adcfb9fd3d2d5998fd563dacf465f413e6c7fa5cffb3
 F test/fts3d.test 2bd8c97bcb9975f2334147173b4872505b6a41359a4f9068960a36afe07a679f
 F test/fts3defer.test f4c20e4c7153d20a98ee49ee5f3faef624fefc9a067f8d8d629db380c4d9f1de
@@ -2199,9 +2199,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e583a723fa501d0c53ad124b571bcd6a42d76daba1ea983d3a547763c2c94c22
-Q +b5337c87cc314e6830615e4efe2d4723fa7cedf87ce404f60d6e520aeab77cbc
-R e0ece0eb9b1b23241fb865df499d9eba
+P 8427cac76455ecbef224ceaccbb37b79338015bcfe67209ae462f36ffefa8466
+Q +ef0c66d2a2e0b8f523633efca66a97236bb5a502525eb6a00a28a350ec7c76e6
+R 910838b4128744ec40874da2ee3790b3
 U drh
-Z 4d9479f361615ba543c2192b707f51df
+Z 6a2717f78ffa1ab06bf4822cb2b57eaf
 # Remove this line to create a well-formed Fossil manifest.
