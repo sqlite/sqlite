@@ -592,4 +592,15 @@ do_execsql_test percentile-6.0 {
   SELECT median(iif(n%2,0.1,1.0)) FROM c;
 } 0.55
 
+# Bug 2026-06-03T07:26:42Z
+# Use tail recursion in percentSort() to prevent stack overflow
+#
+do_execsql_test percentile-7.0 {
+  WITH RECURSIVE t1(n,x) AS (
+    VALUES(1,1.0)
+    UNION ALL
+    SELECT n+1, if(n%2,n*2.0,999998.0-2.0*n) FROM t1 WHERE n<1000000
+  ) SELECT median(x) FROM t1;
+} 499998.0
+
 finish_test

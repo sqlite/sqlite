@@ -1,5 +1,5 @@
-C Fix\san\sinteger\soverflow\sproblem\sin\sfts3\sthat\scould\slead\sto\sa\sbuffer\soverwrite\son\splatforms\swhere\ssize_t\sis\s32-bits.
-D 2026-06-03T15:54:58.907
+C Use\stail\srecursion\son\sthe\slarger\sof\sthe\stwo\spartitions\swhen\sdoing\sa\nquicksort\sas\spart\sof\sthe\simplementation\sof\sthe\smedian()\sfunction,\nto\savoid\sexcess\sstack\susage\son\spathological\sinputs.
+D 2026-06-03T16:23:45.376
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -386,7 +386,7 @@ F ext/misc/nextchar.c 7877914c2a80c2f181dd04c3dbef550dfb54c93495dc03da2403b5dd58
 F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
 F ext/misc/normalize.c fbb144a861809686ff2b5b6eee8bb2e1207f9bf13ce7376e5273c700a1eafbd5
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
-F ext/misc/percentile.c 72e05a21db20a2fa85264b99515941f00ae698824c9db82d7edfbb16cea8ec80
+F ext/misc/percentile.c b6b9c740f0dc42838efd776eec0f68a93bc5ac86524c71337a70950860bf6c4d
 F ext/misc/prefixes.c e7d3e7a39174db412c5f77c266fa221c2dc3cb2621a9422835a607ad08805eb2
 F ext/misc/qpvtab.c 470a5fffba005c8e1994209e59c1848122351e19522de71beb68d666c4fa39a5
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
@@ -689,7 +689,7 @@ F src/delete.c 1f2268d6fe3c78fc1bf794ba65d7026498b78e2342ffaf85825dedae546e6fde
 F src/expr.c 8a458928fe502526d4ce90fa4e084a6e1a4dceb6da747381973b5b0086b1492c
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
-F src/func.c 76e790b7b32895195e4c474259952d6a0ae10b53c0e35f4a2a2c4bc79eb29067
+F src/func.c 6f6abe78831fba92ebb5c3d347273f37656ae357f5902e1fb48aa297d57fbcc6
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -1505,7 +1505,7 @@ F test/parser1.test 131f4733472252d53d8ed681115257866f55740ab697fa05900d76604934
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
-F test/percentile.test eaee1ff3e35d5fe933ac98d927c9a7d2f4f1a1a19ee22e7d45e97a6d9ee32077
+F test/percentile.test fd78896fa882fa4fbf693640097859721f3629926c2ccf804af5bcb7001fd35b
 F test/permutations.test e6de4f5777f7785737ac3d1d964b8656e5477a134665b2fe8a91884ab9b685b3
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 7d07b7bb76e273215d6a20c4f83c3062cc28976c737ccb70a686025801e86c8f
@@ -2199,9 +2199,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8427cac76455ecbef224ceaccbb37b79338015bcfe67209ae462f36ffefa8466
-Q +ef0c66d2a2e0b8f523633efca66a97236bb5a502525eb6a00a28a350ec7c76e6
-R 910838b4128744ec40874da2ee3790b3
+P 1389ec7bf6a7f68406adae6fd532497b2496f01fb5b465e18bd683da3f8f53ad
+Q +7dc987165c030c260ba90a8878291b5ceb037c48c2f437a8fb3f05b6c4f84fde
+R 510223c0437e6e198dbbef629ce8230f
 U drh
-Z 6a2717f78ffa1ab06bf4822cb2b57eaf
+Z 9ca7eb5a47ad8d8f0aecdab545b3e602
 # Remove this line to create a well-formed Fossil manifest.
