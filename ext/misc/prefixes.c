@@ -296,7 +296,7 @@ static void prefixLengthFunc(
 
   nByte = (nL > nR ? nL : nR);
   for(i=0; i<nByte; i++){
-    if( zL[i]!=zR[i] ) break;
+    if( zL[i]==0 || zL[i]!=zR[i] ) break;
     if( (zL[i] & 0xC0)!=0x80 ) nRet++;
   }
 

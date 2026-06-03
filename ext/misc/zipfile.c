@@ -488,6 +488,7 @@ static void zipfileResetCursor(ZipfileCsr *pCsr){
     pNext = p->pNext;
     zipfileEntryFree(p);
   }
+  pCsr->pFreeEntry = 0;
 }
 
 /*

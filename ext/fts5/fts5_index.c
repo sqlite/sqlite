@@ -3556,8 +3556,7 @@ static void fts5PoslistFilterCallback(
 
     do {
       while( i<nChunk && pChunk[i]!=0x01 ){
-        while( pChunk[i] & 0x80 ) i++;
-        i++;
+        fts5IndexSkipVarint(pChunk, i);
       }
       if( pCtx->eState ){
         fts5BufferSafeAppendBlob(pCtx->pBuf, &pChunk[iStart], i-iStart);
@@ -5300,6 +5299,11 @@ static void fts5DoSecureDelete(
       iStart = pSeg->iTermLeafOffset;
     }else{
       iStart = fts5GetU16(&aPg[0]);
+    }
+    if( iStart>nPg ){
+      FTS5_CORRUPT_IDX(p);
+      sqlite3_free(aIdx);
+      return;
     }
 
     iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
