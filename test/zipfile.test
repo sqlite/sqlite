@@ -990,5 +990,16 @@ do_catchsql_test 24.2 {
   SELECT * FROM zipfile(unhex($zip))
 } {1 {zip archive is corrupt}}
 
-finish_test
+# Bug 2026-06-03T10:58:51Z
+do_catchsql_test 25.0 {
+  WITH t(v) AS (
+    SELECT unhex(
+     '504B03041400000000000000000000000000000000000000000001000000
+      61504B01021E031400000000000000000000000000000000000000000001
+      000000000000000000000000000000000061504B05060000000001000100
+      2F0000001F0000000000',char(10,13,32))
+    UNION ALL SELECT 'x'
+  ) SELECT z.name FROM t, zipfile(t.v) AS z;
+} {1 {cannot open file: x}}
 
+finish_test
