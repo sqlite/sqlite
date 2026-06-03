@@ -1,5 +1,5 @@
-C Use\stail\srecursion\son\sthe\slarger\sof\sthe\stwo\spartitions\swhen\sdoing\sa\nquicksort\sas\spart\sof\sthe\simplementation\sof\sthe\smedian()\sfunction,\nto\savoid\sexcess\sstack\susage\son\spathological\sinputs.
-D 2026-06-03T16:23:45.376
+C Fix\sa\sfaulty\sassert()\sin\srtree\sthat\scould\sfire\swhen\sprocessing\san\sunusually\slarge\srecord.
+D 2026-06-03T16:58:01.686
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -491,7 +491,7 @@ F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c 77bad24162b6ae84a2fd6de3f1f8ad0b255a4ceb572f50f8771d1ac9d4d986d8
-F ext/rtree/rtree.c a53d91522db6fa01bdaaa646285a5402a43334a319a8ca6bcb7362ec07731b76
+F ext/rtree/rtree.c e350bb1c7adefab45cd4ce77e11393c7f3a9ee21c27345a684b6e1c04fae1a12
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -502,7 +502,7 @@ F ext/rtree/rtree6.test 2f5ffc69670395c1a84fad7924e2d49e82a25460c5293fb1e54e1aa9
 F ext/rtree/rtree7.test c8fb2e555b128dd0f0bdb520c61380014f497f8a23c40f2e820acc9f9e4fdce5
 F ext/rtree/rtree8.test 4da84c7f328bbdca15052fa13da6e8b8d426433347bf75fc85574c2f5a411a02
 F ext/rtree/rtree9.test fd3c9384ef8aabbc127b3878764070398f136eebc551cd20484b570f2cc1956a
-F ext/rtree/rtreeA.test 14e67fccc5b41efbad7ea99d21d11aaa66d2067da7d5b296ee86e4de64391d82
+F ext/rtree/rtreeA.test c90dd34792aeb7e15909530b5e0e91a8ad69f4d4b7bb52c14c4ef5c60050cace
 F ext/rtree/rtreeB.test ab93136c45cf25af78d22665c2a6d75068eef6bf3a710356e4ba8d5f37bed364
 F ext/rtree/rtreeC.test 2978b194d09b13e106bdb0e1c5b408b9d42eb338c1082bf43c87ef43bd626147
 F ext/rtree/rtreeD.test fe46aa7f012e137bd58294409b16c0d43976c3bb92c8f710481e577c4a1100dc
@@ -2199,9 +2199,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1389ec7bf6a7f68406adae6fd532497b2496f01fb5b465e18bd683da3f8f53ad
-Q +7dc987165c030c260ba90a8878291b5ceb037c48c2f437a8fb3f05b6c4f84fde
-R 510223c0437e6e198dbbef629ce8230f
+P b8fce837cf633af7e489e9750bcd1764e96f9ad7ea01847d5ef9c7060f01a4bf
+Q +e7335dd377a73fc2b913076ee659ed2b0c4a131b16e04b1b55fae677d6b56e8a
+R 6be25d01f95abb70a7dd5dab78e15dac
 U drh
-Z 9ca7eb5a47ad8d8f0aecdab545b3e602
+Z a214f5f4ad648fbe73aedf83376ec0a6
 # Remove this line to create a well-formed Fossil manifest.
