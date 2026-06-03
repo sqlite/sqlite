@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\srtree\sthat\scould\sfire\swhen\sprocessing\san\sunusually\slarge\srecord.\sBug\s[bugs:/info/2026-06-03T14:44:46Z\s|\s2026-06-03T14:44:46Z].
-D 2026-06-03T16:46:15.931
+C Update\sthe\sutf-8\sdecoder\sin\sthe\sICU\sextension\sto\streat\sinvalid\ssequences\sas\scodepoint\s0xFFFD,\smatching\sthe\score.\sReport\s[bugs:/info/2026-06-03T04:04:46Z\s|\s2026-06-03T04:04:46Z].
+D 2026-06-03T17:21:12.153
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -280,7 +280,7 @@ F ext/fts5/tool/loadfts5.tcl 95b03429ee6b138645703c6ca192c3ac96eaf093
 F ext/fts5/tool/mkfts5c.tcl 135b9e160f8e10211c10c5873d5e8c3eaebd3da9ec56a12ae4db157d4738ffe4
 F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 1f8d76e10d2385fc77914a14ccd99acfbaf68111dfcf26a360ad9063787f57fb
-F ext/icu/icu.c 1bc9a5b60e6ec12fc9795aa3a416547e44ee826d954e28a4c36de28eec14d907
+F ext/icu/icu.c 4793f95ec022a2f77eade71a7fb2199095756e5b8187b4753ada0e25dbd134b5
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/intck/intck1.test 53d885075abeb45aeb1eeffeaa8560b329060835ade4af5c44cf5fcb581c1e63
 F ext/intck/intck2.test a29343a8e65c5c3400e10747f394924f3df95a5b2de94f46e9b5c9b97f5e7339
@@ -1273,7 +1273,7 @@ F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
 F test/hidden.test 23c1393a79e846d68fd902d72c85d5e5dcf98711
 F test/hook.test 2d89bf9480646feb8093be3a58ea502d6521906779ed960de31dd9c4502c0541
 F test/hook2.test b9ff3b8c6519fb67f33192f1afe86e7782ee4ac8
-F test/icu.test 8da7d52cd9722c82f33b0466ed915460cb03c23a38f18a9a2d3ff97da9a4a8c0
+F test/icu.test 3903d97f414741036e48d74af6be904eb69170f5bca7a0031ff3b33925c85582
 F test/ieee754.test 0d3ab84ab2069c9994c833a7cd820ee6037f0cf888e206a4a7fc05f735d5790a
 F test/import01.sql d9561059f4ad3f14eff20c269e64b09afd697b1aad00b03a7d5010e167dcba83
 F test/imposter1.sql fc5ad0945bb19622688c7a1cd7dfd1cefa4b013bac9e2628c22b03c7309f021f
@@ -2207,8 +2207,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7dc987165c030c260ba90a8878291b5ceb037c48c2f437a8fb3f05b6c4f84fde
-R 056def50376d704e02c7871679ce5c63
+P e7335dd377a73fc2b913076ee659ed2b0c4a131b16e04b1b55fae677d6b56e8a
+R 76459793b542cac7a653cb0d492caf87
 U dan
-Z 467d0cfd6a89b23199c93b4b27be9255
+Z c5b37e6b8e1169453987f78b56c34770
 # Remove this line to create a well-formed Fossil manifest.
