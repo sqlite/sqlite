@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\srtree\sthat\scould\sfire\swhen\sprocessing\san\sunusually\slarge\srecord.
-D 2026-06-03T16:58:01.686
+C Fix\sharmless\scompiler\swarning.
+D 2026-06-03T18:51:23.167
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -820,7 +820,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c a1caeb656f74e58de7e7310ee91c6dfb40e975c7dd9b18e61a965aea46a610f2
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c bc39ccbe3648f01157038b16cc55bdbff128590972b7185521b5526dc2815765
-F src/whereexpr.c e167672449982d8b79bf3a2463324affc03399979689f735ac3a99ce87e14e2a
+F src/whereexpr.c 61b1c9d98d39f6bcd79fcb4ebb4c9478effb259fefac4c7d3e78e4957f97f75a
 F src/window.c c0a38cd32473e8e8e7bc435039f914a36ca42465506dc491c65870c01ddac9fb
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -2199,9 +2199,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b8fce837cf633af7e489e9750bcd1764e96f9ad7ea01847d5ef9c7060f01a4bf
-Q +e7335dd377a73fc2b913076ee659ed2b0c4a131b16e04b1b55fae677d6b56e8a
-R 6be25d01f95abb70a7dd5dab78e15dac
+P 004d85c5f1bf04409ce85d5131f1d9697f25f531046e60160e78b0bae7f55123
+R 58c568d42a018658d9c21e84f3d9ab9d
 U drh
-Z a214f5f4ad648fbe73aedf83376ec0a6
+Z 90a4dd0e232c39450fe3f4e4d6b819e5
 # Remove this line to create a well-formed Fossil manifest.
