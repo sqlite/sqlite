@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\sexpressions\slike\s"(?,?,?)\sIN\s(SELECT\sc,b,a\sFROM\s...)"\swhen\sthere\sis\san\sindex\son\scolumns\s"c",\s"b"\sand\s"a",\sbut\snot\sin\sthat\sorder.
-D 2026-06-04T11:24:28.003
+C Increment\sthe\spatch\slevel\sto\s3.53.3.
+D 2026-06-04T11:29:09.294
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -8,7 +8,7 @@ F Makefile.in 5fda086f33b144da08119255da1d2557f983d0764a13707f05acf0159fd89ba5
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
 F Makefile.msc 1d6098faf066e14bc181f9460b002285248eee32cfaaa7babcb37f4381928408
 F README.md f49fbd826941842e348242f3ab62f240c985ceafdf8fbe576abf4eb75317468c
-F VERSION 7441adea0de9103e8e0541375ba322afed1a5d614a39bffcdbda09b69619bba7
+F VERSION 551445629533f95428785416faa9e19ebeb5032ceff903681dddc5deffc956d3
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
 F art/icon-80x90.gif 65509ce3e5f86a9cd64fe7fca2d23954199f31fe44c1e09e208c80fb83d87031
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -2200,9 +2200,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 06fcd92e667488b5f7e0f75cbe4c9b59a71713332c4574e348f09fe78c6de7a2
-Q +07667afd0f17b73b58df8ace6a2a5c3a593276f9b7804cb14d4705051258dd75
-R 63b90cdfba0c728daa6a673d3d2351db
+P af0bf4ee7778359d96b43605d947b44bbcef9f489732d0890103992cd970c3b5
+R e19642c370ddc04db7feae1ef11b22a4
 U drh
-Z 8cff188e03c12b5c83c40f67bf1f4444
+Z ec27d88e0cab74feb97c7d80c8a6f2f7
 # Remove this line to create a well-formed Fossil manifest.
