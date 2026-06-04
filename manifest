@@ -1,5 +1,5 @@
-C Extra\stestcase()\smacros\sto\sensure\sadequate\stesting\sof\sthe\sprevious\ncheck-in.
-D 2026-06-04T11:39:13.873
+C Fix\sa\spossible\sNULL\spointer\sderefence\sin\sthe\s(experimental\sand\suntested)\nuuid.c\sextension.\n[bugs:/info/2026-06-04T09:50:59Z|Bug\s2026-06-04T09:50:59Z].
+D 2026-06-04T11:42:23.818
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -411,7 +411,7 @@ F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762b
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
 F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
-F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
+F ext/misc/uuid.c 37297e61935c2d0c425b742100f904d02c866fdeabe0427fe59aed1543e7c0ec
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
 F ext/misc/vfsstat.c 2b21efa93062ce814fbe28e6dff2acfafa4073a14b8d02cacfb4da1d604d05a5
 F ext/misc/vfstrace.c fc8c393a8316a8c20867b7e6e92908c4f81060c9e1f24d6ad9aefdc91c01dd13
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 07667afd0f17b73b58df8ace6a2a5c3a593276f9b7804cb14d4705051258dd75
-R b75db38037ffabb53392cdd7516812c2
+P 003013ccabaaa7aea1e78844474ed5032ee9c9824f98c5d36687ac5256a5e128
+R cfa14dad181f100522dd042ae7f4e4d4
 U drh
-Z e7378d14a99a909a6178e4d49c510b79
+Z efd0a8837fd4c395161f3197f6024029
 # Remove this line to create a well-formed Fossil manifest.
