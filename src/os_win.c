@@ -982,10 +982,8 @@ static struct win_syscall {
 #define osWaitForSingleObjectEx ((DWORD(WINAPI*)(HANDLE,DWORD, \
         BOOL))aSyscall[63].pCurrent)
 
-  { "GetNativeSystemInfo",     (SYSCALL)GetNativeSystemInfo,     0 },
-
-#define osGetNativeSystemInfo ((VOID(WINAPI*)( \
-        LPSYSTEM_INFO))aSyscall[64].pCurrent)
+  { "GetNativeSystemInfo",     (SYSCALL)0,                       0 },
+  /* ^^^^^^^^^^^^^^^^^^^----------------^------- placeholder only */
 
 #if defined(SQLITE_WIN32_HAS_ANSI)
   { "OutputDebugStringA",      (SYSCALL)OutputDebugStringA,      0 },
