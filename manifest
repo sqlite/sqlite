@@ -1,5 +1,5 @@
-C Remove\sall\sreferences\sto\sGetNativeSystemInfo()\son\sWindows,\swhich\sis\s\n[forum:/info/f01dc61c5febbe19|reportedly]\snot\savailable\swhen\scompiling\nwith\sMinGW.
-D 2026-06-04T10:28:26.801
+C Fix\sproblems\swith\sexpressions\slike\s"(?,?,?)\sIN\s(SELECT\sc,b,a\sFROM\s...)"\swhen\sthere\sis\san\sindex\son\scolumns\s"c",\s"b"\sand\s"a",\sbut\snot\sin\sthat\sorder.
+D 2026-06-04T11:24:28.003
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -686,7 +686,7 @@ F src/date.c 61e92f1f7e2e88e1cd91e91dc69eb2b2854e7877254470f9fabd776bfac922b8
 F src/dbpage.c 98c716bc5c0c70af4e7934bfcddd707f14e78b5d4cf1e0602a07b485e1af2e74
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 1f2268d6fe3c78fc1bf794ba65d7026498b78e2342ffaf85825dedae546e6fde
-F src/expr.c 8a458928fe502526d4ce90fa4e084a6e1a4dceb6da747381973b5b0086b1492c
+F src/expr.c a7b8c6f9e8f63de44a46e76304ddbebf59c2a423ddc8c3ec31a691303e780078
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c 6f6abe78831fba92ebb5c3d347273f37656ae357f5902e1fb48aa297d57fbcc6
@@ -1469,7 +1469,8 @@ F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed
 F test/notnull2.test c2c7b670fb8fa6ffe5f9cc08af88864fbb8237e28b56ad528e8dee921019c5fe
 F test/notnullfault.test fc4bb7845582a2b3db376001ef49118393b1b11abe0d24adb03db057ee2b73d5
 F test/null.test b7ff206a1c60fe01aa2abd33ef9ea83c93727d993ca8a613de86e925c9f2bc6f
-F test/nulls1.test 8fc70d75ab363b0f2ce9151669c2cb897def5064e2e30f7d9322970480bf6e87
+F test/nulls1.test 642c27ae0792d5fc92969815eb8c4a17636cdcc164cb5b20f3d2b55a1a5d169d
+F test/nulls2.test 20356ab1de69f78363faed9c2cd8eb455bb92f805572c405131f1c5d8f2d37fb
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/numindex1.test 20a5450d4b056e48cd5db30e659f13347a099823
 F test/offset1.test c21e67d2d5ae8ed310243fbe84fc2f0dca49e9ffed3ea89110c0d5914c0de620
@@ -2199,8 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d6e03d8c777cfa2d35e3b60d8ec3e0187f3e9f99d8e2ee9cac695fd6fcdf1a24
-R 281c112cfd95c64ed2d174dd7b3f7d94
+P 06fcd92e667488b5f7e0f75cbe4c9b59a71713332c4574e348f09fe78c6de7a2
+Q +07667afd0f17b73b58df8ace6a2a5c3a593276f9b7804cb14d4705051258dd75
+R 63b90cdfba0c728daa6a673d3d2351db
 U drh
-Z 4e1c8c50321ebd306626ecc72b5ed10c
+Z 8cff188e03c12b5c83c40f67bf1f4444
 # Remove this line to create a well-formed Fossil manifest.
