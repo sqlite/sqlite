@@ -4170,6 +4170,7 @@ static void sqlite3ExprCodeIN(
       int rLhsOrig = rLhs;
       rLhs = sqlite3GetTempRange(pParse, nVector);
       for(i=0; i<nVector; i++){
+        testcase( aiMap[i]!=i );
         sqlite3VdbeAddOp3(v, OP_Copy, rLhsOrig+i, rLhs+aiMap[i], 0);
       }
       sqlite3ReleaseTempReg(pParse, rLhsOrig);
@@ -4190,6 +4191,7 @@ static void sqlite3ExprCodeIN(
     Expr *p = sqlite3VectorFieldSubexpr(pExpr->pLeft, i);
     if( pParse->nErr ) goto sqlite3ExprCodeIN_oom_error;
     if( sqlite3ExprCanBeNull(p) ){
+      testcase( aiMap[i]!=i );
       sqlite3VdbeAddOp2(v, OP_IsNull, rLhs+aiMap[i], destStep2);
       VdbeCoverage(v);
     }
@@ -4274,6 +4276,7 @@ static void sqlite3ExprCodeIN(
       ** ...)" is the collating sequence of x.".  */
       pColl = sqlite3ExprCollSeq(pParse, p);
     }
+    testcase( aiMap[i]!=i );
     sqlite3VdbeAddOp3(v, OP_Column, iTab, aiMap[i], r3);
     sqlite3VdbeAddOp4(v, OP_Ne, rLhs+aiMap[i], destNotNull, r3,
                       (void*)pColl, P4_COLLSEQ);
