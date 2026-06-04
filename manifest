@@ -1,5 +1,5 @@
-C Remove\sthe\sdata\stype\sANY\sadded\sto\sthe\sshell's\sCSV\simports.
-D 2026-06-04T11:35:15.199
+C Fix\sa\scrash\sthat\scould\sbe\scaused\sby\sconfiguring\sthe\spager-cache\swith\sa\sbulk\sallocation\stoo\ssmall\sto\sfit\seven\sone\spage.
+D 2026-06-04T12:27:17.262
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -728,7 +728,7 @@ F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 092b758d2c5e4dabb30eae46d8dfad77c0f70b16bf3ff1943f7a232b0fe0d4ba
-F src/pcache1.c 131ca0daf4e66b4608d2945ae76d6ed90de3f60539afbd5ef9ec65667a5f2fcd
+F src/pcache1.c d7ee0f95992501a65379f620b3de1430b64e52e397769938668a9fd9dd1c8145
 F src/pragma.c 789ef67117b74b5be0a2db6681f7f0c55e6913791b9da309aefd280de2c8a74d
 F src/prepare.c f6a6e28a281bd1d1da12f47d370a81af46159b40f73bf7fa0b276b664f9c8b7d
 F src/printf.c ed43bcd6b551b590e47b905115aa1c35504267f532680590102e79894230a06b
@@ -1504,7 +1504,7 @@ F test/pageropt.test 84e4cc5cbca285357f7906e99b21be4f2bf5abc0
 F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/parser1.test 131f4733472252d53d8ed681115257866f55740ab697fa05900d766049348f27
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
-F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
+F test/pcache2.test 8a801d2b8e4b0ebb99701f026a67a9e84634c8aa24799a842c44003b93250da1
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
 F test/percentile.test fd78896fa882fa4fbf693640097859721f3629926c2ccf804af5bcb7001fd35b
 F test/permutations.test e6de4f5777f7785737ac3d1d964b8656e5477a134665b2fe8a91884ab9b685b3
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 96818a375ad1d421b26e6c0be61be70735659e294f2cf7c073f8851d8c309430
-Q +a6a347aec5ff33b24d877ac0f04018f4e93748361da62ed27b1abec77840963e
-R fd6d475d7c1637c3f62566715e085b08
+P e14e19c1b33b4f4fe7d9008b0f7f8fa9522d901c13124b0eca4b91acd7156d0d
+Q +b4b9dc632b06f932759bc2fceeb6fa1dd6e0de329106ae1d34be874ea1695859
+R e654a944ebd6723fc3541626988d5ca3
 U drh
-Z 9fcc8bfde4a6b51472b4728226576119
+Z 53536550535db7d4dc003ca25f44e89c
 # Remove this line to create a well-formed Fossil manifest.
