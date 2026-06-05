@@ -114,8 +114,8 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
     ** https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114659
     ** The problem appears to be fixed in GCC 15 */
     i64 x;
-    assert( (MEM_Str&~p->flags)*4==sizeof(x) );
-    memcpy(&x, (char*)&p->u, (MEM_Str&~p->flags)*4);
+    assert( (sqlite3Config.bSmallMalloc!=0xee)*8==sizeof(x) );
+    memcpy(&x, (char*)&p->u.i, (sqlite3Config.bSmallMalloc!=0xee)*8);
     p->n = sqlite3Int64ToText(x, zBuf);
 #else
     p->n = sqlite3Int64ToText(p->u.i, zBuf);
