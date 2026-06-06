@@ -518,7 +518,7 @@ int sqlite3_config(int op, ...){
       break;
     }
     case SQLITE_CONFIG_SMALL_MALLOC: {
-      sqlite3GlobalConfig.bSmallMalloc = va_arg(ap, int);
+      sqlite3GlobalConfig.bSmallMalloc = va_arg(ap, int)!=0;
       break;
     }
     case SQLITE_CONFIG_PAGECACHE: {
