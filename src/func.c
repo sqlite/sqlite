@@ -2974,7 +2974,8 @@ static void percentSort(double *a, unsigned int n){
   int i;         /* Loop counter */
   double rPivot; /* The pivot value */
 
-  while( n>=2 ){
+  assert( n>=2 );
+  do{
     if( a[0]>a[n-1] ){
       SWAP_DOUBLE(a[0],a[n-1])
     }
@@ -3003,6 +3004,11 @@ static void percentSort(double *a, unsigned int n){
         i++;
       }
     }while( i<iGt );
+
+    /* Recurse on the smaller partition only.  The smaller partition
+    ** will hold n/2 or fewer entries, which assures that the stack
+    ** depth will not exceed O(log(n)), even for pathological cases.
+    ** Loop without recursion for the larger partition. */
     if( iLt>n/2 ){
       if( n-iGt>=2 ) percentSort(a+iGt, n-iGt);
       n = iLt;
@@ -3011,7 +3017,7 @@ static void percentSort(double *a, unsigned int n){
       a += iGt;
       n -= iGt;
     }
-  }
+  }while( n>=2 );
 }
 
 /*
