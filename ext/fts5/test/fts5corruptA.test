@@ -193,5 +193,46 @@ do_catchsql_test 4.6 {
   )
 } {0 4879}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x);
+  INSERT INTO t(t,rank) VALUES('pgsz', 64);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<80
+  )
+  INSERT INTO t SELECT 'shared word' || (i%10) || ' shared shared' FROM s;
+  INSERT INTO t(t) VALUES('optimize');
+}
+
+set lLeaf [db eval { SELECT id FROM t_data }]
+db_save_and_close
+
+foreach leaf $lLeaf {
+  db_restore_and_reopen
+  set leaf [expr $leaf]
+  set hex [db one { 
+    SELECT hex(block) FROM t_data WHERE id=$leaf 
+  }]
+
+  # Replace the first 4 bytes of each leaf page with the size of the leaf in
+  # bytes plus 50 as a 2 byte integer, followed by 0x7FFF.
+  #
+  set nn [expr [string length $hex]/2]
+  set first "[format %.4x [expr $nn+50]]7FFF"
+  set hex [string replace $hex 0 7 $first]
+
+  db eval { UPDATE t_data SET block=unhex($hex) WHERE id=$leaf }
+  do_test 5.1.$leaf {
+    catchsql {
+      SELECT rowid FROM t WHERE t MATCH 'shared' ORDER BY rowid DESC;
+    }
+    set {} {}
+  } {}
+}
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
+
+
