@@ -230,6 +230,13 @@ foreach leaf $lLeaf {
     }
     set {} {}
   } {}
+
+  do_test 5.1.$leaf.2 {
+    catchsql {
+      PRAGMA integrity_check;
+    }
+    set {} {}
+  } {}
 }
 
 sqlite3_fts5_may_be_corrupt 0
