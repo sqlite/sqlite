@@ -1,5 +1,5 @@
-C Change\sloop\scounter\svariables\sfrom\sint\sto\si64\sto\savoid\sa\spotential\ninteger\soverflow\sinside\san\sassert()\sstatement\swhen\sSQLite\sis\scompiled\s\nwith\sSQLITE_DEBUG\sand\san\sextra-large\sSQLITE_MAX_LENGTH.\s\sDoes\snot\naffect\sproduction\sbuilds.\n[bugs:/info/2026-06-09T08:53:14Z|Bug\s2026-06-09T08:53:14Z].
-D 2026-06-09T10:16:40.543
+C Avoid\sa\spossible\sinteger\soverflow\swhen\sfts5\stokenizes\sa\svery\slarge\sdocument.\sOnly\spossible\swith\snon-standard\sbuilds\sthat\suse\slarge\svalues\sof\sSQLITE_MAX_LENGTH.\sBug\s[bugs:/info/2026-06-09T05:27:16Z\s|\s2026-06-09T05:27:16Z].
+D 2026-06-09T10:43:37.008
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -113,7 +113,7 @@ F ext/fts5/fts5_aux.c 27af933e1a052d9f12d62a45bc60e0b65023997e0cea8f0476ef3cf66e
 F ext/fts5/fts5_buffer.c dcc3f0352339fe79c9d8abbc1c2009bc3469206467880bf43558447ef4f846fb
 F ext/fts5/fts5_config.c bfba970fe1e4eed18ee57c8d51458e226db9a960ddf775c5e50e3d76603a667e
 F ext/fts5/fts5_expr.c 20e41452e4f83899a3a1bc66d018701186a0bbbc3a1a524f8cae447e0b150f05
-F ext/fts5/fts5_hash.c d5871df92ce3fa210a650cf419ee916b87c29977e86084d06612edf772bff6f5
+F ext/fts5/fts5_hash.c 341a08ad0153b397b819ef3d7a7959c1dc3c84a6988a431d93dece8bd62ae10e
 F ext/fts5/fts5_index.c eabe4a6392cabb78bb0901b00b2eede6423a282823babe3d215366997bae5bc7
 F ext/fts5/fts5_main.c b0fed47b3b4420ba6810373480a75bc28a9c0b7d16478d19a396436fb3ff17d7
 F ext/fts5/fts5_storage.c 19bc7c4cbe1e6a2dd9849ef7d84b5ca1fcbf194cefc3e386b901e00e08bf05c2
@@ -147,6 +147,7 @@ F ext/fts5/test/fts5auxdata.test 372549088ff792655f73e62b9dfaf4863ce74f5e604c06c
 F ext/fts5/test/fts5bigid.test 2860854c2561a57594192b00c33a29f91cb85e25f3d6c03b5c2b8f62708f39dd
 F ext/fts5/test/fts5bigpl.test 8f09858aab866c33593560e6480b2b6975ae7ff29ca32ad7b77e2da61402f8ef
 F ext/fts5/test/fts5bigtok.test 541119e616c637caea925a8c028c37c2c29e94383e00aa2f9198d530724b6e36
+F ext/fts5/test/fts5bigtok2.test d519c0c7c45fcbe75093cb9f4ea47defabbb4e8dd5d44411c8b12da47df538d9
 F ext/fts5/test/fts5blob.test 9644a5f917306690e08c5f89a470a3f2489376eaa52026eeca3209d149d6af74
 F ext/fts5/test/fts5cat.test bf67dd335f964482ee658287521b81e2b88697b45eb7f73933e15f198ed447cb
 F ext/fts5/test/fts5circref.test 0918c69440a73fff429bc9797b07086fc74d018eb3abb1cf9738980390bb2713
@@ -1513,7 +1514,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test 8a801d2b8e4b0ebb99701f026a67a9e84634c8aa24799a842c44003b93250da1
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
 F test/percentile.test fd78896fa882fa4fbf693640097859721f3629926c2ccf804af5bcb7001fd35b
-F test/permutations.test e6de4f5777f7785737ac3d1d964b8656e5477a134665b2fe8a91884ab9b685b3
+F test/permutations.test 99c5e11130387da85c216a839412b882a779596f3f2e0ecb7e0703c564182cdb
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 7d07b7bb76e273215d6a20c4f83c3062cc28976c737ccb70a686025801e86c8f
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -2208,8 +2209,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4cb349370daab17123770c814c71872a3e4c616a3f984569b3d7f97f9c3f5ea0
-R 244394416ff09d564d1281a0fcc58993
-U drh
-Z d302b383b3f82b3d1b9b69e05a330016
+P 77f615d9833b1f5eaabcb1a6b59af3a6698752abcd16592091f1630beec5969e
+R 16273cfea2a855d2524f9d540b776984
+U dan
+Z fcb16bea414d9bbab848fe9569966094
 # Remove this line to create a well-formed Fossil manifest.
