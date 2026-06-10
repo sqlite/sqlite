@@ -1,5 +1,5 @@
-C Fix\sa\ssigned-integer\soverflow\sin\sfts5\sthat\smight\soccur\swhen\sdealing\swith\sstrategicly\scorrupted\srecords.\sBug\s[bugs:/info/2026-06-10T03:56:42Z\s|\s2026-06-10T03:56:42Z].
-D 2026-06-10T16:51:20.171
+C When\sreading\sa\ssuper-journal\sname\sfrom\sa\sjournal\sfile,\sallocate\sa\snew\sbuffer\srather\sthan\susing\sPager.pTmpSpace.\sThis\sprevents\sa\sbuffer\soverrun\sthat\scould\soccur\swhen\susing\sa\sVFS\swith\sa\slarge\ssqlite3_vfs.mxPathname\svalue\swith\sa\sdatabase\swith\sa\ssmall\spage\ssize.
+D 2026-06-10T20:10:19.569
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
 F src/os_win.c 8df4b34ec6a08616a7ac33164999524ef773fa359d39ae9ae0e7e1ae4f167440
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c e0b3b6e39c3a783957d640b28401401d1f3c556803c80695958dd2b9db4ef72d
+F src/pager.c cb691a81605f211d88d945e8d0ead84cf654ac7b19245cd65b3e5e69ea87e024
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2209,8 +2209,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8b961dc3d27c5aa62a5dc7c2e44f8b505817e184f8499f3bb903e06b5aec1b72
-R 1f6a43a747295a1933a4aa3b45b558bb
+P fc6442ee54795fbeb746539193716238aa653d80170523bc327ae3ce0d945ebf
+R d78d4f2bafad585e32d486b41a8f1c32
+T *branch * super-journal-malloc
+T *sym-super-journal-malloc *
+T -sym-trunk *
 U dan
-Z d194393ed734fcf872689abff265089a
+Z 2d91bb66833487307406c342f82ea2df
 # Remove this line to create a well-formed Fossil manifest.
