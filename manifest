@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\scorrupt\snode\sIDs\sin\sRTree\sshadow\stables.
-D 2026-06-11T01:37:00.208
+C Enhance\sthe\s".ar\s-x"\scommand\sto\sadd\sthe\sundocumented\s--debug\soption\sand\nto\sgive\senhanced\srobustness\sto\sdeliberately\smalformed\sarchives.
+D 2026-06-11T23:18:21.338
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c f5a780a7b604d43b78bca290cace7479bca0c7d8ef9ce855830d9498b975baec
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 5c3a5e3c1e6c3f8ccabeb414e18dce64e6f3e797de225ee93034f2c9e76f289c
-F src/shell.c.in 423a188b63a2fbdb968bd4af23b50e4c11522c2594f70d35db785c267303d933
+F src/shell.c.in 62559fae745668a0f3d229360844b37d5a7a49b50edbce4a762cafc784e86ba3
 F src/sqlite.h.in e2915e4a86d5e0783afb5cb72411df38d987c7f3c5aa2d5441b8e74d30b649d8
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 1b7a0ee438bb5c2896d0609c537e917d8057b3340f6ad004d2de44f03e3d3cca
@@ -2200,9 +2200,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a6eb055c35f091a8e864c1de3387d389e2bd3025c32596c0b7a78ebdf091898b
-Q +e01a185a699d0c4ad2341ce2114bc826f02768735cef67179a1127229a073d03
-R 1d442f9fa6ba5dbe84932cad0535b370
+P 4e875ae5c3f0cb28fd40be9f1327d7496f95a55785cad68cb37472e4d1c2e6fd
+Q +37a80d20fe1948db15ac72432ed7bf3d573c80807fe0a58c58440647e3c34ab8
+Q +3a040ffc47fa3e38b36716587c56d9b071d9c69d9daaa9cf0ef6baa654419ab5
+Q +6149b938c7a1e95a0fb8600a81557dd0e3efb7b312f3806e2c09d03acf9f4b17
+R 1b085ef1a9a6128f750621757a401900
 U drh
-Z 25f14b922fbbc9ceaaa18a981a21afa4
+Z 9def8c3af97262dda588f41b6fb5d448
 # Remove this line to create a well-formed Fossil manifest.
