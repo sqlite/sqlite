@@ -239,6 +239,34 @@ foreach leaf $lLeaf {
   } {}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO t(rowid,x) 
+    VALUES(1,'a b'), (2,'c d'), (3,'e f'), (4,'g h'), (5,'i j');
+  INSERT INTO t(t) VALUES('optimize');
+  DELETE FROM t WHERE rowid=2;
+}
+
+do_test 6.1 {
+  db eval {
+    SELECT rowid AS rid, hex(block) AS blk 
+    FROM t_data WHERE rowid>1_000_000_000_000
+  } {}
+
+  set blk [string replace $blk 8 15 20000000]
+  execsql {
+    UPDATE t_data SET block = unhex($blk) WHERE rowid=$rid
+  }
+} {}
+
+do_execsql_test 6.2 {
+  DELETE FROM t WHERE rowid=3;
+}
+
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
 
