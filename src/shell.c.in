@@ -7338,14 +7338,22 @@ static int arRemoveCommand(ArCommand *pAr){
 */
 static int arExtractCommand(ArCommand *pAr){
   const char *zSql1 =
-    "WITH dest(dpath,dlen) AS (SELECT realpath($dir),length(realpath($dir)))\n"
-    "SELECT ($dir || name),\n"
+    "WITH dest(dpath,dlen) AS (\n"
+#ifdef _WIN32
+    "  SELECT realpath($dir) || '\\',\n"
+#else
+    "  SELECT realpath($dir) || '/',\n"
+#endif
+    "  1+length(realpath($dir))\n"
+    ")\n"
+    "SELECT\n"
+    "    ($dir || name),\n"
     "    CASE $dryrun\n"
-    "    WHEN 0 THEN writefile($dir||name, %s, mode, mtime)\n"
-    "    WHEN 1 THEN 0\n"
-    "    ELSE shell_putsnl(format('writefile(%%Q,%%s,%%0o,%%d)',"
-                           "$dir||name,quote(%s),mode,mtime))\n"
-    "    END\n"
+    "      WHEN 0 THEN writefile($dir||name, %s, mode, mtime)\n"
+    "      WHEN 1 THEN 0\n"
+    "      ELSE shell_putsnl(format('writefile(%%Q,%%s,%%0o,%%d)',"
+                           "$dir||name,quote(%s),mode,mtime)) IS NULL\n"
+    "      END\n"
     "  FROM dest CROSS JOIN %s\n"
     " WHERE (%s)\n"
     "   AND (CASE $pass WHEN 0 THEN (mode&0xf000)<>0xa000\n"
