@@ -7337,6 +7337,14 @@ static int arRemoveCommand(ArCommand *pAr){
 ** Implementation of .ar "eXtract" command.
 */
 static int arExtractCommand(ArCommand *pAr){
+  /* The zSql1[] string is a template for the query that does the
+  ** extraction.  Notes:
+  **
+  **   *  $dir is the directory into which the archive is to be extracted
+  **   *  $pass is the integer pass number: 0, 1, or 2
+  **   *  The dest CTE is created so that realpath($dir) only needs
+  **      to be called once.
+  */
   const char *zSql1 =
     "WITH dest(dpath,dlen) AS (\n"
 #ifdef _WIN32
@@ -7348,14 +7356,15 @@ static int arExtractCommand(ArCommand *pAr){
     ")\n"
     "SELECT\n"
     "    ($dir || name),\n"
-    "    CASE $dryrun\n"
+    "    CASE $dryrun\n"                /*   vv--- azExtraArg */
     "      WHEN 0 THEN writefile($dir||name, %s, mode, mtime)\n"
     "      WHEN 1 THEN 0\n"
     "      ELSE shell_putsnl(format('writefile(%%Q,%%s,%%0o,%%d)',"
                            "$dir||name,quote(%s),mode,mtime)) IS NULL\n"
-    "      END\n"
+    "      END\n"                       /*   ^^--- azExtraArg */
     "  FROM dest CROSS JOIN %s\n"
-    " WHERE (%s)\n"
+    " WHERE (%s)\n"      /* ^^-- pAr->zSrcTable */
+         /*  ^^--- zWhere */
     "   AND (CASE $pass WHEN 0 THEN (mode&0xf000)<>0xa000\n"
     "                   WHEN 1 THEN (mode&0xf000)=0xa000\n"
     "                   ELSE data IS NULL END)\n"
@@ -7389,7 +7398,10 @@ static int arExtractCommand(ArCommand *pAr){
   }
 
   shellPreparePrintf(pAr->db, &rc, &pSql, zSql1,
-      azExtraArg[pAr->bZip], azExtraArg[pAr->bZip], pAr->zSrcTable, zWhere
+      azExtraArg[pAr->bZip],
+      azExtraArg[pAr->bZip],
+      pAr->zSrcTable,
+      zWhere
   );
 
   if( rc==SQLITE_OK ){
