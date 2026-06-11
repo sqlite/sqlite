@@ -3009,7 +3009,7 @@ static void percentSort(double *a, unsigned int n){
     ** will hold n/2 or fewer entries, which assures that the stack
     ** depth will not exceed O(log(n)), even for pathological cases.
     ** Loop without recursion for the larger partition. */
-    if( iLt>n/2 ){
+    if( iLt>(int)(n/2) ){
       if( n-iGt>=2 ) percentSort(a+iGt, n-iGt);
       n = iLt;
     }else{
