@@ -2073,8 +2073,13 @@ static void fts3PutDeltaVarint(
   sqlite3_int64 iVal              /* Write this value to the list */
 ){
   assert_fts3_nc( iVal-*piPrev > 0 || (*piPrev==0 && iVal==0) );
-  *pp += sqlite3Fts3PutVarint(*pp, iVal-*piPrev);
-  *piPrev = iVal;
+  if( iVal-(*piPrev)>=0 ){
+    /* Refuse to write a negative delta integer. This only happens with a 
+    ** corrupt db (see the assert above) and can cause buffer overwrites
+    ** in some cases.  */
+    *pp += sqlite3Fts3PutVarint(*pp, iVal-*piPrev);
+    *piPrev = iVal;
+  }
 }
 
 /*
