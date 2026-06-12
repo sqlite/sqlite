@@ -345,4 +345,17 @@ do_catchsql_test 4.4 {
   SELECT * FROM t1_terms;
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t USING fts3(x);
+  INSERT INTO t_segdir(level,idx,start_block,leaves_end_block,end_block,root)
+    VALUES(1,0,0,0,'0 -9223372036854775808',x'00');
+}
+
+do_execsql_test 7.1 {
+  INSERT INTO t(x) VALUES('alpha');
+}
+
 finish_test
