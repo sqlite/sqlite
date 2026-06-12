@@ -3258,9 +3258,17 @@ int sqlite3_win_test_unc_locking = 0;
 /*
 ** Return true if the string passed as the only argument is likely
 ** to be a UNC path. In other words, if it starts with "\\".
+** A local DOS-device drive path ("\\?\X:\...") also starts with "\\",
+** but is not a UNC path.
 */
 static int winIsUNCPath(const char *zFile){
   if( zFile[0]=='\\' && zFile[1]=='\\' ){
+    if( winIsLongPathPrefix(zFile)
+     && winIsDriveLetterAndColon(zFile+4)
+     && winIsDirSep(zFile[6])
+    ){
+      return sqlite3_win_test_unc_locking;
+    }
     return 1;
   }
   return sqlite3_win_test_unc_locking;
