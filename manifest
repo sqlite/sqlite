@@ -1,5 +1,5 @@
-C Fix\sa\ssigned\sinteger\soverflow\sthat\scould\soccur\sin\sfts3\swhen\sprocessing\scorrupt\sdatabase\srecords.\sBug\s[bugs:/info/2026-06-11T23:12:25Z\s|\s2026-06-11T23:12:25Z].
-D 2026-06-12T11:24:30.419
+C Add\sthe\s--raw\soption\sto\sthe\sdbtotxt\scommand-line\stool,\sfor\sdebugging.
+D 2026-06-12T11:55:39.989
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2126,7 +2126,7 @@ F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629c
 F tool/cp.tcl 9a0d663ad45828de13763ee7ca0200f31f56c6d742cf104a56ae80e027c242d8
 F tool/custom.txt 24ed55e71c5edae0067ba159bbf09240d58b160331f7716e95816cd3aa0ba5c4
 F tool/dbhash.c 5da0c61032d23d74f2ab84ffc5740f0e8abec94f2c45c0b4306be7eb3ae96df0
-F tool/dbtotxt.c cfeb957571735af345f253ba8417256031fa0dddf79468eefad184262d17211e
+F tool/dbtotxt.c 88805565e06596f8b2f7143054f74d7aeaf022769b4c3d916f148a1fa17082ef
 F tool/dbtotxt.md c9a57af8739957ef36d2cfad5c4b1443ff3688ed33e4901ee200c8b651f43f3c
 F tool/emcc.sh.in 41a049468c8155433e37e656ba5bae063a000768b1d627025f277732c4e7c4a4
 F tool/enlargedb.c 3e8b2612b985cfa7e3e8800031ee191b43ae80de96abb5abbd5eada62651ee21
@@ -2209,8 +2209,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5b939fb1a284088c4bd46adf517cf598816e2262cd77ee2d9caaab1cef2ce9a1
-R b052660c59032fb31708e82aa0979664
-U dan
-Z 7735d26eefa2a03d86b4df6aaeb15b4e
+P 978d04f051c06aff798f915b0774da19a0b4f89f9daee124f7e62b12afaaced8
+R 7c66ea3537cbc011e569c781fdca49d0
+U drh
+Z e22b66773a51df5d513a3cbc59192bb1
 # Remove this line to create a well-formed Fossil manifest.
