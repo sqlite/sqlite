@@ -1,2 +1,2 @@
-branch trunk
-tag trunk
+branch corrupt-readonly-wal
+tag corrupt-readonly-wal

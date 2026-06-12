@@ -2876,8 +2876,10 @@ static int walBeginShmUnreliable(Wal *pWal, int *pChanged){
   }
 
   /* Allocate a buffer to read frames into */
-  assert( (pWal->szPage & (pWal->szPage-1))==0 );
-  assert( pWal->szPage>=512 && pWal->szPage<=65536 );
+  if( (pWal->szPage & (pWal->szPage-1))!=0 || (pWal->szPage & 0x1fe00)==0 ){
+    rc = SQLITE_CANTOPEN;
+    goto begin_unreliable_shm_out;
+  }
   szFrame = pWal->szPage + WAL_FRAME_HDRSIZE;
   aFrame = (u8 *)sqlite3_malloc64(szFrame);
   if( aFrame==0 ){

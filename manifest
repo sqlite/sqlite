@@ -1,5 +1,5 @@
-C Comment\simprovements\son\sthe\s".ar\s-x"\scommand\sof\sthe\sCLI.\s\sNo\schanges\sto\scode.
-D 2026-06-11T23:11:14.635
+C Defense\sagainst\sa\sread-only\sWAL\sfile\sthat\shas\san\sinvalid\spage\ssize.
+D 2026-06-12T00:13:57.337
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -817,7 +817,7 @@ F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 5437ce986db2f70e639ce8a3fe68dcdfe64b0f1abb14eaebecdabd5e0766cc68
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
-F src/wal.c 7340d4f9bb827bd349127cac6b2cf0cb7f76b9fda645f7b9b0bf7a6e0b1e2e7c
+F src/wal.c 58c9392750be6a36b2aeae8bdc008c38da2ff7f4ea375eca7ba8c5053511e3bb
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 33e4a6558ee69f33d6a4e7069e3a40a55959d14e5653a9a83926e70305d471f3
@@ -2209,8 +2209,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P dd0c161fcd1619518cd4671d64afb6afeec44c140ec176ccb8616d381a88f42f
-R 0089f7a58023190900b7f739403086ea
+P 5b939fb1a284088c4bd46adf517cf598816e2262cd77ee2d9caaab1cef2ce9a1
+R e97ebe32562f1c6e73d19ebdb4ab3da1
+T *branch * corrupt-readonly-wal
+T *sym-corrupt-readonly-wal *
+T -sym-trunk *
 U drh
-Z 13f7465d66bf893ba8348c67ac5c7171
+Z e43e6c9b3e98abd5148e8a020e83bd8b
 # Remove this line to create a well-formed Fossil manifest.
