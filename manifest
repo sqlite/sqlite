@@ -1,5 +1,5 @@
-C Improved\sdocumentation\sfor\ssqlite3_deserialize().
-D 2026-06-12T16:47:45.833
+C When\sreading\sa\ssuper-journal\sname\sfrom\sa\sjournal\sfile,\sallocate\sa\snew\sbuffer\srather\sthan\susing\sPager.pTmpSpace.\sThis\sprevents\sa\sbuffer\soverrun\sthat\scould\soccur\swhen\susing\sa\sVFS\swith\sa\slarge\ssqlite3_vfs.mxPathname\svalue\swith\sa\sdatabase\swith\sa\ssmall\spage\ssize.
+D 2026-06-12T18:35:24.464
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
 F src/os_win.c 68b1c31693a5aeeb8126f618c95f7b53fb39e254836f9a95fbf2733461a7e01d
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c e0b3b6e39c3a783957d640b28401401d1f3c556803c80695958dd2b9db4ef72d
+F src/pager.c f88073a00933c885b167b6d25afc4d1b83c1706943572f5653fb64a7f5bde105
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2209,8 +2209,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a4691489f21bb1645bb8de649268dd457af53c5f613f2a7fd2e5569f029efa87
-R 004a022439a0f6ee88072759b334ba56
-U drh
-Z 3666e180ad4544fe7a3a870a71a92f1d
+P f15d076820f4a0d9e7fa32d99575bce27bde5e987bb415e6cfb69b06f0da7e1e ac17669e840dbac5c7c75e9b6014cca2d289aba8de36f9d1d0d61186e8cc6207
+R b4784016cdc66719536104e64f4ddb51
+T +closed ac17669e840dbac5c7c75e9b6014cca2d289aba8de36f9d1d0d61186e8cc6207
+U dan
+Z ae30c5c61ab231f09fb1164a547a0499
 # Remove this line to create a well-formed Fossil manifest.
