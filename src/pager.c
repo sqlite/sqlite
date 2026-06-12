@@ -1271,50 +1271,6 @@ static void checkPage(PgHdr *pPg){
 #define CHECK_PAGE(x)
 #endif  /* SQLITE_CHECK_PAGES */
 
-#if 0
-static int readSuperJournal(sqlite3_file *pJrnl, char *zSuper, u64 nSuper){
-  int rc;                    /* Return code */
-  u32 len;                   /* Length in bytes of super-journal name */
-  i64 szJ;                   /* Total size in bytes of journal file pJrnl */
-  u32 cksum;                 /* MJ checksum value read from journal */
-  u32 u;                     /* Unsigned loop counter */
-  unsigned char aMagic[8];   /* A buffer to hold the magic header */
-  zSuper[0] = '\0';
-
-  if( SQLITE_OK!=(rc = sqlite3OsFileSize(pJrnl, &szJ))
-   || szJ<16
-   || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-16, &len))
-   || len>=nSuper
-   || len>szJ-16
-   || len==0
-   || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-12, &cksum))
-   || SQLITE_OK!=(rc = sqlite3OsRead(pJrnl, aMagic, 8, szJ-8))
-   || memcmp(aMagic, aJournalMagic, 8)
-   || SQLITE_OK!=(rc = sqlite3OsRead(pJrnl, zSuper, len, szJ-16-len))
-  ){
-    return rc;
-  }
-
-  /* See if the checksum matches the super-journal name */
-  for(u=0; u<len; u++){
-    cksum -= zSuper[u];
-  }
-  if( cksum ){
-    /* If the checksum doesn't add up, then one or more of the disk sectors
-    ** containing the super-journal filename is corrupted. This means
-    ** definitely roll back, so just return SQLITE_OK and report a (nul)
-    ** super-journal filename.
-    */
-    len = 0;
-  }
-  zSuper[len] = '\0';
-  zSuper[len+1] = '\0';
-  
-  return SQLITE_OK;
-}
-#endif
-
-
 /*
 ** Free a buffer allocated by the readSuperJournal() function.
 */
@@ -1377,14 +1333,14 @@ static int readSuperJournal(sqlite3_file *pJrnl, u64 nSuper, char **pzSuper){
       for(u=0; u<len; u++){
         cksum -= zOut[u];
       }
-      if( cksum ){
-        /* If the checksum doesn't add up, then one or more of the disk sectors
-        ** containing the super-journal filename is corrupted. This means
-        ** definitely roll back, so just return SQLITE_OK and report a (nul)
-        ** super-journal filename.  */
-        freeSuperJournal(zOut);
-        zOut = 0;
-      }
+    }
+    if( rc!=SQLITE_OK || cksum ){
+      /* If the checksum doesn't add up, then one or more of the disk sectors
+      ** containing the super-journal filename is corrupted. This means
+      ** definitely roll back, so just return SQLITE_OK and report a (nul)
+      ** super-journal filename.  */
+      freeSuperJournal(zOut);
+      zOut = 0;
     }
   }
 
