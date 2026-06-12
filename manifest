@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sthat\scould\sfollow\san\sOOM\serror\sin\sthe\snew\scode\son\sthis\sbranch.
-D 2026-06-12T17:16:12.267
+C Fix\serrors\sin\scomments\son\sthis\sbranch.\sAlso\sprefer\sSQLITE_NOMEM_BKPT\sto\sSQLITE_NOMEM.
+D 2026-06-12T17:32:44.076
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -726,7 +726,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
 F src/os_win.c 8df4b34ec6a08616a7ac33164999524ef773fa359d39ae9ae0e7e1ae4f167440
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c b7635f6058437891b0c580955686dfe8c3e212c49f0a68fc9230a2ee1ecb444b
+F src/pager.c f88073a00933c885b167b6d25afc4d1b83c1706943572f5653fb64a7f5bde105
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2209,8 +2209,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 37aa82a50a0a1c5edb4c4f2de1cb00fa009ebbfeb420df3de72231c5d883518a
-R 772da6d981cb3b84c26401db02a8f3e5
+P d4774a898730d9ef7564bba0a8531748e31e6517ab29564c2f5a0196c1584451
+R 0e3a40c6a676437d4bacd3a78c13aea8
 U dan
-Z 42d4e0e9d2c0d710032a00cb77f8e03f
+Z 89b45f7095636c43a86f36eb5ddc7660
 # Remove this line to create a well-formed Fossil manifest.

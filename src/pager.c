@@ -1290,7 +1290,7 @@ static void freeSuperJournal(char *zSuper){
 ** Refer to comments above writeSuperJournal() for the format used to store 
 ** a super-journal file name at the end of a journal file.
 **
-** Parmeter nSuper is passed the maximum allowable size of the super journal
+** Parameter nSuper is passed the maximum allowable size of the super journal
 ** name in bytes. If the super-journal name in the journal is longer than
 ** nSuper bytes (including a nul-terminator), then this is handled as if no
 ** super-journal name were present in the journal.
@@ -1324,7 +1324,7 @@ static int readSuperJournal(sqlite3_file *pJrnl, u64 nSuper, char **pzSuper){
 
   zOut = (char*)sqlite3MallocZero(4 + len + 2);
   if( !zOut ){
-    rc = SQLITE_NOMEM;
+    rc = SQLITE_NOMEM_BKPT;
   }else{
     zOut = &zOut[4];
     if( SQLITE_OK==(rc = sqlite3OsRead(pJrnl, zOut, len, szJ-16-len)) ){
@@ -2835,13 +2835,7 @@ static int pager_playback(Pager *pPager, int isHot){
   ** If a super-journal file name is specified, but the file is not
   ** present on disk, then the journal is not hot and does not need to be
   ** played back.
-  **
-  ** TODO: Technically the following is an error because it assumes that
-  ** buffer Pager.pTmpSpace is (mxPathname+1) bytes or larger. i.e. that
-  ** ((pPager->pageSize+8) >= pPager->pVfs->mxPathname+1). Using os_unix.c,
-  ** mxPathname is 512, which is the same as the minimum allowable value
-  ** for pageSize, and so this assumption holds. But it might not for some
-  ** custom VFS.  */
+  */
   rc = readSuperJournal(pPager->jfd, 1+(i64)pPager->pVfs->mxPathname, &zSuper);
   if( rc==SQLITE_OK && zSuper ){
     rc = sqlite3OsAccess(pVfs, zSuper, SQLITE_ACCESS_EXISTS, &res);
