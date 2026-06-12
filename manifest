@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverwrite\sin\sfts3\sthat\scould\soccur\swhile\sprocessing\sNEAR\squeries\sagainst\scorrupt\srecords.\sBug\s[bugs:/info/2026-06-11T23:11:26Z\s|\s2026-06-11T23:11:26Z].
-D 2026-06-12T15:36:26.954
+C Do\snot\suse\sshared\slocks\son\sSHM\sfiles\swhen\sthe\sfilename\sis\sa\slong\sDOS-device\npath.\s\sOnly\sused\sshared\slocks\sfor\sUNC\spaths.\s\sDo\snot\sconfuse\sthe\nlong-DOS-device\ssyntax\swith\sUNC\spaths.
+D 2026-06-12T16:26:39.327
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -724,7 +724,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c e7d96727db5b67e39d590a68cc61c86daf4c093c36c011a09ebfb521182ec28d
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
-F src/os_win.c 8df4b34ec6a08616a7ac33164999524ef773fa359d39ae9ae0e7e1ae4f167440
+F src/os_win.c 68b1c31693a5aeeb8126f618c95f7b53fb39e254836f9a95fbf2733461a7e01d
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c e0b3b6e39c3a783957d640b28401401d1f3c556803c80695958dd2b9db4ef72d
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2209,8 +2209,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 09ab0a1bac4eb7de651f78cfd3027b452308da7e04c4ccd7f46c402c82fd6ca5
-R 5967f3842d7d977e9300115cbcd6053f
-U dan
-Z 04945b84a384653d50d2edd356b79f0b
+P b0f773e99eb45cde0953e4870a0a7436c35277c95146fdab3aa06ebbc076c79e
+R cbde54c8d4660413f5a887e1f51ea106
+U drh
+Z 0f121de5fdb547ed55f9fd6c5dd9eb75
 # Remove this line to create a well-formed Fossil manifest.
