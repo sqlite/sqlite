@@ -3129,6 +3129,10 @@ static void fts3ReadEndBlockField(
     for(/* no-op */; zText[i]>='0' && zText[i]<='9'; i++){
       iVal = iVal*10 + (zText[i] - '0');
     }
+
+    /* This if() clause is just to avoid an integer overflow. The record is 
+    ** corrupt in this case.  */
+    if( (i64)iVal==SMALLEST_INT64 ) iMul = 1;
     *pnByte = ((i64)iVal * (i64)iMul);
   }
 }
