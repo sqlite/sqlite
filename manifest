@@ -1,5 +1,5 @@
-C Do\snot\sallow\sridiculous\s"columns=N"\svalues\sin\sthe\s(unused)\scsv\svirtual\ntable\sin\sthe\sextensions\sfolder.\n[bugs:/info/2026-06-14T15:22:47Z|Bug\s2026-06-14T15:22:47Z]
-D 2026-06-14T20:10:28.306
+C Remove\sthe\sunused,\suntested,\sexperiemental\s"blobio.c"\sextension,\sto\navoid\sconfusing\sAIs.\n[bugs:/info/2026-06-14T15:12:50Z|Bug\s2026-06-14T15:12:50Z]
+D 2026-06-14T22:01:56.449
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -366,7 +366,6 @@ F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e
 F ext/misc/base64.c 1445761667c16356e827fc6418294c869468be934429aaa8315035e76dd58acf
 F ext/misc/base85.c c713c7c81b05558c488cbdd8c68d612d5a97f9f0b8adf1167148dd7c89ce3f96
 F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
-F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c 5fe97f798a9ee90e92b3031ed7969ec3f558661bb36b821c3ba045a17cfb951c
 F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001259913
 F ext/misc/closure.c c983987a8d7846c3e52b1885ed3e20af7d4ca52a81a8f94ec6d1cd68f93acc86
@@ -2209,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b19cef1862444ee694eeea2254aa9a8d74d2343da5a8257c22e3068f388aa2fd
-R d59154cd54b10a97004df6bb2198abf7
+P ecae4a2ddf103fe575c6864d201e83a9bb084b511685397db41b3349c91b38e6
+R 71f2f2cdfd58b7b9bd4dddcf7958dc0a
 U drh
-Z ac83713ac472a710a3b00f9e0bafc227
+Z 195d510236f803534616a27485b6d62b
 # Remove this line to create a well-formed Fossil manifest.
