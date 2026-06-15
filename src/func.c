@@ -3020,10 +3020,15 @@ static void percentSort(
     if( iReq>=0 ){
       /* In this case, the only elements that the caller requires sorted into 
       ** the correct positions are elements a[iReq] and a[iReq+1]. At this
-      ** point we know that element a[iLt] is in the correct position, so if
-      ** iReq is less than iLt, it is only necessary to sort the first
-      ** partition. Or, if iReq is greater than or equal to iLt, it is only
-      ** necessary to sort the second.  */
+      ** point we know that element a[iLt] is in the correct position and
+      ** all elements smaller than a[iLt] are in the left-hand partition.
+      ** So if (iReq<iLt), then it is only necessary to sort the left
+      ** partition.
+      **
+      ** If (iReq>=iLt), then elements iReq and iReq+1 are either in the
+      ** right partition or the equal partition (elements for which 
+      ** iLt<=iElem<iGt). Therefore it is always sufficient to sort only
+      ** the right partition in this case.  */
       if( iReq<iLt ){
         n = iLt;
       }else{
@@ -3112,6 +3117,10 @@ static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
     ix = p->rPct*(p->nUsed-1);
     i1 = (unsigned)ix;
     if( p->bSorted==0 ){
+      /* In cases where bIsFinal is non-zero, setting Percentile.bSorted 
+      ** after the percentSort() call here is not technically correct, as 
+      ** the array is not fully sorted. But in this case the object will be 
+      ** freed below anyway, so it doesn't matter.  */
       assert( p->nUsed>1 );
       percentSort(p->a, p->nUsed, (bIsFinal ? (int)i1 : -1));
       p->bSorted = 1;

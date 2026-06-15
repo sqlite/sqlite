@@ -1,5 +1,5 @@
-C Speed\sup\sSQL\saggregate\sfunctions\spercentile()\sand\smedian()\sby\savoiding\sa\sfull\ssort\sof\sthe\sarray\sof\sarguments.
-D 2026-06-13T20:16:54.656
+C Improve\scomments\sin\spercentSort().
+D 2026-06-15T17:13:40.288
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -692,7 +692,7 @@ F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c e97dd9f6ada4c448764e225d8963091bf630b3efb2c92e4d0762571cca2a14e5
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
-F src/func.c 038e454176de1729cc2a1fccce5629d86cc3fa6860546ba54827b394b1a5b4ed
+F src/func.c b62f451d670288d4b3fbd8b0a6aa98667de30de7e8c6de9b19112a9296b9ce1a
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2209,11 +2209,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7f71859841af7cb0806f58e9c8013a990fcca72b807a0513156d7127ce5c7b62
-R 440eb116549bb7b7e06b073447b72a9b
-T *branch * pecentile-partial-sort
-T *sym-pecentile-partial-sort *
-T -sym-trunk *
+P 9232b5f21d76dc702ccda5c689d61bcd0057fb1f2a4db6a70c607c25ad03a027
+R b1e9a3af3b2622c743c356f665ae72f1
 U dan
-Z 2032cb49443943956dfcd7d4c638a43c
+Z b980dcec4c22b5738b10f798acaf097d
 # Remove this line to create a well-formed Fossil manifest.
