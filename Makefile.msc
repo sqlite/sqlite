@@ -2754,6 +2754,21 @@ THREADTEST3_SRC = \
 threadtest3.exe: $(THREADTEST3_SRC) $(TOP)\src\test_multiplex.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(TOP)\test\threadtest3.c $(TOP)\src\test_multiplex.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
+# Convenienced targets for common executables that omit
+# the .exe suffix
+#
+sqldiff:	sqldiff.exe
+sqlite3_rsync: sqlite3_rsync.exe
+fuzzcheck: fuzzcheck.exe
+testfixture: testfixture.exe
+sqlite3: $(SQLITE3EXE)
+showdb: showdb.exe
+LogEst: LogEst.exe
+wordcount: wordcount.exe
+speedtest1: speedtest1.exe
+kvtest: kvtest.exe
+jimsh0: jimsh0.exe
+
 # Display key variables that control which version of TCL is to be used.
 #
 tcl-env:
