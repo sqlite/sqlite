@@ -331,7 +331,7 @@ struct sqlite3_kvvfs_methods {
   int (*xRcrdRead)(const char*, const char *zKey, char *zBuf, int nBuf);
   int (*xRcrdWrite)(const char*, const char *zKey, const char *zData);
   int (*xRcrdDelete)(const char*, const char *zKey);
-  const int nKeySize;
+  const int nKeySize;             /* Used by the JS bindings */
   const int nBufferSize;
 #ifndef SQLITE_WASM
 #  define MAYBE_CONST const
@@ -914,6 +914,13 @@ static int kvvfsOpen(
     pFile->base.pMethods = &kvvfs_db_io_methods;
   }
   if( !pFile->zClass ){
+
+    if( strlen(zName) >= (KVRECORD_KEY_SZ
+                          - 6 /* "kvvfs-" */
+                          - 11 /* "-##########" */) ){
+      /* Historical naming restriction, lifted in the JS impl. */
+      return SQLITE_CANTOPEN;
+    }
     pFile->zClass = zName;
   }
   pFile->aData = sqlite3_malloc64(SQLITE_KVOS_SZ);
