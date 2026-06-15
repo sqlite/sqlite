@@ -13,6 +13,22 @@
 ** This file contains an experimental VFS layer that operates on a
 ** Key/Value storage engine where both keys and values must be pure
 ** text.
+**
+** DEBUG AND TEST
+**
+** For testing on Unix, compile using:
+**
+**    make clean sqlite3d CFLAGS='-DSQLITE_OS_KV_OPTIONAL'
+**
+** Then start up a shell using something like:
+**
+**    ./sqlite3d 'file:dbname?vfs=kvvfs'
+**
+** Each K/V entry is stored in a separate file in the working
+** directory that has a name like "kvvfs-dbname-*".  Due to limitations
+** on the key size, the name of the database must be very short - just
+** a few characters.  If the database name is too long, the VFS will
+** malfunction and you will get SQLITE_CORRUPT errors.
 */
 #include <sqliteInt.h>
 #if SQLITE_OS_KV || (SQLITE_OS_UNIX && defined(SQLITE_OS_KV_OPTIONAL))
@@ -465,12 +481,14 @@ int kvvfsDecode(const char *a, char *aOut, int nOut){
       memset(&aOut[j], 0, n);
       j += n;
       if( c==0 || mult==1 ) break; /* progress stalled if mult==1 */
-    }else{
+    }else if( j<nOut ){
       aOut[j] = c<<4;
       c = kvvfsHexValue[aIn[++i]];
       if( c<0 ) return -1 /* hex bytes are always in pairs */;
       aOut[j++] += c;
       i++;
+    }else{
+      return -1;
     }
   }
   return j;
