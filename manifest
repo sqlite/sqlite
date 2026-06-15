@@ -1,5 +1,5 @@
-C Improvements\sto\shandling\sof\sinequality\sconstraints\son\sgenerate_series().value\nagainst\svery\slarge\sfloating-point\svalues.
-D 2026-06-15T16:27:51.638
+C Fix\sa\sproblem\ssometimes\scausing\san\sUPSERT\sto\sincorrectly\sconvert\san\sexcluded.*\scolumn\sfrom\stype\sREAL\sto\sINT\sin\scases\swhere\sdoing\sso\sdoes\snot\scause\sdata\sloss.
+D 2026-06-15T16:46:14.902
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -798,7 +798,7 @@ F src/tokenize.c e9d52d9f7374d82dadcd11726bea8a597d43709d6672704f3f0375bf1d72691
 F src/treeview.c feaa59f14db4f7b5aacca9c5ad5aeb562c1f98262c1ffd74371f4186ade91fc5
 F src/trigger.c 4bf3bfb3851d165e4404a9f9e69357345f3f7103378c07e07139fdd8aeb7bd20
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
-F src/upsert.c 215328c3f91623c520ec8672c44323553f12caeb4f01b1090ebdca99fdf7b4f1
+F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 2053344769bc602b2c23ce193f4d24f89777ab67fa768b80fa197d3876dc3017
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
@@ -1937,7 +1937,7 @@ F test/upsert1.test 77e3cbabd6b5c773056aca39bda7a690901f1dbd08b0a26ee3b5aec9e9e2
 F test/upsert2.test 720e94d09f7362a282bc69b3c6b83d51daeaaf0440eb4920a08b86518b8c7496
 F test/upsert3.test 88d7d590a1948a9cb6eac1b54b0642f67a9f35a1fc0f19b200e97d5d39e3179c
 F test/upsert4.test 25d2a1da92f149331ae0c51ca6e3eee78189577585eab92de149900d62994fa5
-F test/upsert5.test 9953b180d02d1369cdbb6c73c900834e5fef8cb78e98e07511c8762ec21cc176
+F test/upsert5.test 8d0230b358965e0c11f7306b87ba1238970e44b8339e34609f44d0468c4ed458
 F test/upsertfault.test f21ca47740841fdb4d61acfa7b17646d773e67724fe8c185b71c018db8a94b35
 F test/uri.test 1250724af9beeed2d6c3716f5b990c483200c54f408d3c0ec9543a3c7961f8fc
 F test/uri2.test 9d3ba7a53ee167572d53a298ee4a5d38ec4a8fb7
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3a4667ce36a1548fffff8bbf946d84d6bbd21e7abb216d1f37717de74ce7e2a7
-Q +5aab8c2cde63f9db6b2346c86512efd6297937cad4e1306759b0f448815ad2e0
-R 97871d62c58c25e8ed8e158b93df8153
+P e10ff7cd09e962c207f897c38b83a813a3214fd4ac11e6a71ac577f21ba09fba
+Q +71334f7ec95edc91138b51ef6fe455a4a8c1db130484237eb241956bc549aa5c
+R 342a8d7102857f4a4cf204d3b2bba093
 U drh
-Z 6696b5506583a506b25fcd22dfffc70d
+Z 17000df6f2f1f06467d2bd8a11563393
 # Remove this line to create a well-formed Fossil manifest.
