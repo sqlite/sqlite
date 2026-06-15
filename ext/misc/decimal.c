@@ -299,28 +299,37 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
   sqlite3_result_text(pCtx, z, i, sqlite3_free);
 }
 
+/* Forward declaration */
+static void decimal_expand(Decimal *p, int nDigit, int nFrac);
+
 /*
 ** Round a decimal value to N significant digits.  N must be positive.
 */
 static void decimal_round(Decimal *p, int N){
   int i;
-  int nZero;
+  int nZero;  /* Number of leading zeros */
   if( N<1 ) return;
   if( p==0 ) return;
   if( p->nDigit<=N ) return;
   for(nZero=0; nZero<p->nDigit && p->a[nZero]==0; nZero++){}
   N += nZero;
   if( p->nDigit<=N ) return;
-  if( p->a[N]>4 ){
+  if( p->a[N]>=5 ){
+    /* If all leading digits are 9, increase the number of digits
+    ** by adding a new 0 to the front */
+    for(i=0; i<N && p->a[i]==9; i++){}
+    if( i==N ){
+      decimal_expand(p, p->nDigit+1, 0);
+      if( p->oom ) return;
+    }
+
+    /* Do the rounding */
     p->a[N-1]++;
     for(i=N-1; i>0 && p->a[i]>9; i--){
       p->a[i] = 0;
       p->a[i-1]++;
     }
-    if( p->a[0]>9 ){
-      p->a[0] = 1;
-      p->nFrac--;
-    }
+    assert( p->a[0]<=9 );
   }
   memset(&p->a[N], 0, p->nDigit - N);
 }
