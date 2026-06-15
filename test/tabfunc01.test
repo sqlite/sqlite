@@ -716,6 +716,43 @@ do_catchsql_test 1420 {
   FROM t2 JOIN (t1 RIGHT JOIN generate_series(t2.y,5) AS value) 
 } {1 {no such column: t2.y}}
 
+# Bug 2026-06-15T04:37:48Z
+do_execsql_test 1500 {
+  SELECT value FROM generate_series(1) WHERE value>1e19 LIMIT 3;
+} {}
+do_execsql_test 1501 {
+  SELECT value FROM generate_series(1) WHERE value>=1e19 LIMIT 3;
+} {}
+do_execsql_test 1502 {
+  SELECT value FROM generate_series(1) WHERE value<-1e19 LIMIT 3;
+} {}
+do_execsql_test 1503 {
+  SELECT value FROM generate_series(1) WHERE value<=-1e19 LIMIT 3;
+} {}
+do_execsql_test 1504 {
+  SELECT value FROM generate_series(1,9223372036854775807)
+   WHERE value>=9223372036854775807.0
+   LIMIT 3;
+} {9223372036854775807}
+do_execsql_test 1505 {
+  SELECT value FROM generate_series(1,9223372036854775807)
+   WHERE value>9223372036854775807.0
+   LIMIT 3;
+} {}
+do_execsql_test 1506 {
+  SELECT 9223372036854774784 = 9223372036854775000.0;
+} {1}
+do_execsql_test 1507 {
+  SELECT value FROM generate_series(1,9223372036854775807)
+   WHERE value>=9223372036854775000.0
+   LIMIT 3;
+} {9223372036854774784 9223372036854774785 9223372036854774786}
+do_execsql_test 1508 {
+  SELECT value FROM generate_series(1,9223372036854775807)
+   WHERE value>9223372036854775000.0
+   LIMIT 3;
+} {9223372036854774785 9223372036854774786 9223372036854774787}
+
 
 # Free up memory allocations
 intarray_addr
