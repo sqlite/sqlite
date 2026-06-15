@@ -563,15 +563,14 @@ static int seriesFilter(
           double r = sqlite3_value_double(argv[iArg++]);
           if( r>=(double)LARGEST_INT64 ){
             iMax = LARGEST_INT64;
-          }else if( r<=(double)SMALLEST_INT64
-                 && ((idxNum & 0x2000)!=0 || r<(double)SMALLEST_INT64) ){
+          }else if( r<=(double)SMALLEST_INT64 ){
             goto series_no_rows;
           }else{
             iMax = (sqlite3_int64)seriesFloor(r);
             if( iMax<0 && r>0.0 ){
               iMax = LARGEST_INT64;
             }else if( (idxNum & 0x2000)!=0 && r==seriesFloor(r) ){
-              assert( iMax>SMALLEST_INT64 );
+              if( iMax==SMALLEST_INT64 ) goto series_no_rows;
               iMax--;
             }
           }

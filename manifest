@@ -1,5 +1,5 @@
-C Better\sbehavior\sfor\sgenerate_series()\sin\scases\swhere\sconstraints\sinvolve\nfloating\spoint\snumber\sthat\sare\snear\sthe\sminimum\sand\smaximum\s64-bit\sinteger\nvalues.
-D 2026-06-15T14:16:13.474
+C Additional\stweaks\sand\stest\scases\sfor\sgenerate_series()\sconstraints\nusing\svery\slarge\sfloating-point\snumbers.
+D 2026-06-15T15:24:37.998
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -395,7 +395,7 @@ F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e
 F ext/misc/regexp.c 378e6e84516952a4b9f3f4df88927f20e6538e2609f55b773ed78899dab8206e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
-F ext/misc/series.c 1af4c480d479374ae6e6fa51742add28950d1fb97b597da7e78a2482706dc893
+F ext/misc/series.c 8612317330587e4cfeb0ae7ffe2f06fe86e66f94a0f5bbb80d8fb46f89e9f0ad
 F ext/misc/sha1.c 9a11826db885e8afd997c0a1b28bb799a43e462ef770ac33f19e744887c9c6fa
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1709,7 +1709,7 @@ F test/sync.test a619e407ede58a7b6e3e44375328628559fc9695a9c24c47cb5690a866b0031
 F test/sync2.test 06152269ed73128782c450c355988fe8dd794d305833af75e1a5e79edd4dae47
 F test/syscall.test a067468b43b8cb2305e9f9fe414e5f40c875bb5d2cba5f00b8154396e95fcf37
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 532087adcbf6774f1c550a73d30a4d18e9520a40ece7eb60f6fa38f29bcea5ad
+F test/tabfunc01.test 23d1f92fbbbaaef4cb3a1ee15fd5b44e70bde1f3ee1a6b9df9ce43b05cf0b630
 F test/table.test e87294bf1c80bfd7792142b84ab32ea5beb4f3f71e535d7fb263a6b2068377bf
 F test/tableapi.test e37c33e6be2276e3a96bb54b00eea7f321277115d10e5b30fdb52a112b432750
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -2208,11 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0fa3345fe4464804f6846c2598774b9e700df39570e81e020de21e06e2ff044d
-R 420f1b91caadadd221bcb8d7b520cc55
-T *branch * series-boundry-cases
-T *sym-series-boundry-cases *
-T -sym-trunk *
+P 236ef21789c4ebb67a8cf0a841341fab1477a6fe8e88b575e9f450a8f868e618
+R adf6cdcfb6965c29d0bb90adee6a0dc1
 U drh
-Z accc4f998a9a8942d7566835deda0da0
+Z 99da3cd88ce4fd07ad1d85179b5e2d0d
 # Remove this line to create a well-formed Fossil manifest.
