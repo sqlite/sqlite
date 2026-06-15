@@ -1,5 +1,5 @@
-C Fix\srounding\sbehavior\sin\sthe\sdecimal\sextension\swhen\sall\sleading\sdigits\nare\s9\sand\sthere\sis\snot\sfractional\scomponent.\n[bugs:/info/2026-06-15T03:49:42Z|Bug\s2026-06-15T03:49:42Z].
-D 2026-06-15T10:13:31.251
+C Regardless\sof\swhether\sthe\splatform\sis\s32\sor\s64-bits,\sUse\s64-bit\sarithmetic\sto\scalculate\sbuffer\ssizes\sin\sthe\sfts3_snippet().\sBug\s[bugs:/info/2026-06-14T09:19:52Z\s|\s2026-06-14T09:19:52Z].
+D 2026-06-15T11:03:13.802
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -89,7 +89,7 @@ F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
 F ext/fts3/fts3_porter.c 024417020c57dd1ab39816f5fe6cf45222a857b78a1f6412f040ada1ceabd4ff
-F ext/fts3/fts3_snippet.c 65e178107b59ad4724a11339a645f2e3789f3cf59b2f4e29c90efd864e53c5b4
+F ext/fts3/fts3_snippet.c 004923c49dca8c711f83fd31d3abe2e663df174afeae096b1c902cc52fda2097
 F ext/fts3/fts3_term.c 6a96027ad364001432545fe43322b6af04ed28bb5619ec51af1f59d0710d6d69
 F ext/fts3/fts3_test.c cc329471e573f95a6ea9fbca87e89dcfa1d355591c80172ffcd759ac521d25d8
 F ext/fts3/fts3_tokenize_vtab.c 66eba6c2baa04b2b15e80d68341b8fd0b4d3831f6b2edb33916a2906ff2d4389
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 732c8f81b5a914831c36610ddaed3da15a7f9fdbf54f44872e181b941368d702
-R 3a1c10d4f857c74bce7c7c10dd435465
-U drh
-Z 5c4b53d2353d4389bb72fa9ecd508297
+P c6a3b18ee9eb4b8dda57fab94aea9c61aed5e1ffe600f0bcf2c90ca752f2512b
+R 9382549419f644cf3bdc3e4ae9588cf9
+U dan
+Z 5d50be177efd8dc145d51a425398b428
 # Remove this line to create a well-formed Fossil manifest.
