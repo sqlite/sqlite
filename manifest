@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sthat\scould\scause\sfts5\sto\sreturn\sincorrect\sanswers\swhen\sperforming\sprefix\squeries\son\stokens\swith\ssynonyms.\sBug\s[bugs:/info/2026-06-14T11:11:06Z\s|\s2026-06-14T11:11:06Z].
-D 2026-06-15T11:47:52.076
+C Revert\sthe\snative\simpl\sof\skvvfs's\sxOpen()\s(as\sdistinct\sfrom\sthe\sJS\simpl\swhich\sthe\swasm\sbuild\suses)\sto\sthe\shistorical\sdb\sname\srestrictions\sof\s'local'\sor\s'session',\sfailing\swith\sSQLITE_CANTOPEN\sif\spassed\sanother\sname.\s[ec866b04d088e53b]\soverhauled\ssupport\sfor\skvvfs\sdb\snames\sin\sJS\sbut\sit\sturns\sout\sthat\sthe\snative\simpl\sstill\srelies\son\sthose\snames\sin\sorder\sto\smatch\sjournals\sto\sdatabases.\sCorrect\sa\srelated\stoo-lenient\sassert()\sin\sthe\sWASM\spieces.
+D 2026-06-15T12:36:24.537
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -606,7 +606,7 @@ F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 4325cb9a5ebfbff7cd3060e309b16711
 F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 3dbd918ef037cd8fa9c7b4dccb3c8637b228638654c429e7df6acab5981c75e2
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 3da8fe72dc9e76614a9c102b92e777ce03f81d788b607701c828d8fcbac44b06
 F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
-F ext/wasm/api/sqlite3-wasm.c ddf9d435b2e901eaceb805ff694e9609c2f32b5cf89a4f164e734a6fa303fdd2
+F ext/wasm/api/sqlite3-wasm.c 0bcc42b1faff0e4543bba1b595fe9cfde80e0c29e3abc475bce725f2a326a8e5
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 46919740f8176c10f691431a81c769c35657e3b537e2ed2bde691f9017b0ee8a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 21b20d3b8d43471d1647123616a7e5435b1e4b6fa447714f91ffc7f950ea01e8
 F ext/wasm/common/SqliteTestUtil.js dae753b95e72248c4395d8de8359e0d055cd9928488e8dd84aef89e46d23b32e
@@ -720,7 +720,7 @@ F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
-F src/os_kv.c c1b82b64d8ef86026a08f78212a5c2ed30000752d36399d5dc1701ab1c2ea5bf
+F src/os_kv.c b9df749ad64c498e8d398d83bb085cfc0ef381b2c103be6c63ac22fc4f2cf680
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
 F src/os_win.c 68b1c31693a5aeeb8126f618c95f7b53fb39e254836f9a95fbf2733461a7e01d
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 79dc1949b2171c46f6649743ed7dbbf6b83046901ec18ffcbc37a2a47544b100
-R 68e1b67a6946afe6b9aa749db4664b15
-U dan
-Z be0719e04af62ecf880f33e407f2a563
+P 323d87541a63f0b2c64271c78ad6ebd5d04220da59aebfdfbc07caa691af816a
+R f42c8adf8e75609083de92370db3c963
+U stephan
+Z 7055a57e0e6a416c4124b1a56414c547
 # Remove this line to create a well-formed Fossil manifest.
