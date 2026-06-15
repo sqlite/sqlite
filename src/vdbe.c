@@ -7560,7 +7560,7 @@ case OP_Program: {        /* jump0 */
 
   if( p->nFrame>=db->aLimit[SQLITE_LIMIT_TRIGGER_DEPTH] ){
     rc = SQLITE_ERROR;
-    sqlite3VdbeError(p, "too many levels of trigger recursion");
+    sqlite3VdbeError(p, "triggers nested too deep");
     goto abort_due_to_error;
   }
 
