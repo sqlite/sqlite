@@ -1,5 +1,5 @@
-C New\sWindows\smakefile\stargets\sfor\scommon\sEXEs\sthat\somit\sthe\s".exe"\ssuffix,\sso\nthat\swhen\smuscle\smemory\skicks\sin\sand\swe\stype\s"make\ssqlite3"\son\swindows,\sit\nstill\sworks.
-D 2026-06-15T17:14:12.845
+C Speed\sup\sSQL\saggregate\sfunctions\spercentile()\sand\smedian()\sby\susing\squickselect\sto\sfind\sthe\srequired\svalues\sinstead\sof\sfully\ssorting\sthe\sarray\sof\svalues\swith\squicksort.
+D 2026-06-15T17:27:05.287
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -691,7 +691,7 @@ F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c e97dd9f6ada4c448764e225d8963091bf630b3efb2c92e4d0762571cca2a14e5
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
-F src/func.c 555d5f7686f9eef20fe3574889403f307a6cb16ada5b05cbc6a9288dcf75aaeb
+F src/func.c b62f451d670288d4b3fbd8b0a6aa98667de30de7e8c6de9b19112a9296b9ce1a
 F src/global.c a19e4b1ca1335f560e9560e590fc13081e21f670643367f99cb9e8f9dc7d615b
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2208,8 +2208,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0b5378678e3d095ef982bb3b5d5ad05dfb15ce4ee12170b8d0a83fa4b75404c0
-R 9cbb6763894903672c2691245ef8b1d2
-U drh
-Z b18666bcbe3bd63a32e5fa1c68a87675
+P 1152463a66b47eed27b71e87533e8361b6077dc54ff55b8cd2ccde5cfa8199bd 9b43500f51ae7b43f0e2cc805bb8c93907eddbd8caf21ee5b5a3d2e795962088
+R 47d7442e9499fb070afb88cded90736e
+T +closed 9b43500f51ae7b43f0e2cc805bb8c93907eddbd8caf21ee5b5a3d2e795962088
+U dan
+Z 8aad25eee80e8de00de5243ef6acbd82
 # Remove this line to create a well-formed Fossil manifest.
