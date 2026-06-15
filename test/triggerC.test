@@ -1070,5 +1070,43 @@ do_catchsql_test 17.1 {
   INSERT INTO xyz VALUES('hello', 2, 3);
 } {1 {datatype mismatch}}
 
+# Bug 2026-06-15T06:44:07Z
+#
+reset_db
+execsql { PRAGMA recursive_triggers = on }
+do_execsql_test 18.1 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  CREATE TABLE t3(c);
+  CREATE TABLE t4(d);
+  CREATE TABLE t5(e);
+  CREATE TABLE t6(f);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t2 VALUES(new.a);
+  END;
+  CREATE TRIGGER r2 AFTER INSERT ON t2 BEGIN
+    INSERT INTO t3 VALUES(new.b);
+  END;
+  CREATE TRIGGER r3 AFTER INSERT ON t3 BEGIN
+    INSERT INTO t4 VALUES(new.c);
+  END;
+  CREATE TRIGGER r4 AFTER INSERT ON t4 BEGIN
+    INSERT INTO t5 VALUES(new.d);
+  END;
+  CREATE TRIGGER r5 AFTER INSERT ON t5 BEGIN
+    INSERT INTO t6 VALUES(new.e);
+  END;
+}
+do_execsql_test 18.2 {
+  INSERT INTO t1(a) VALUES(1);
+  SELECT f FROM t6;
+} {1}
+sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 4
+do_catchsql_test 18.3 {
+  INSERT INTO t1(a) VALUES(2);
+} {1 {triggers nested too deep}}
+
+
+
 
 finish_test
