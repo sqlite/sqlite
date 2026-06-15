@@ -1,5 +1,5 @@
-C Prevent\sarray\soverflow\swhen\sdecoding\sa\scorrupted\svalue\sfrom\sthe\nunderlying\skey/value\sstore.\n[bugs:/info/2026-06-14T21:58:12Z|Bug\s2026-06-14T21:58:12Z]
-D 2026-06-15T01:24:06.637
+C Fix\srounding\sbehavior\sin\sthe\sdecimal\sextension\swhen\sall\sleading\sdigits\nare\s9\sand\sthere\sis\snot\sfractional\scomponent.\n[bugs:/info/2026-06-15T03:49:42Z|Bug\s2026-06-15T03:49:42Z].
+D 2026-06-15T10:13:31.251
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -373,7 +373,7 @@ F ext/misc/completion.c 3f5db28e88c3313103b2dd86d910a2944fd500c46754e473493968ce
 F ext/misc/compress.c 5cc142aa82d1589a31c384657d0418c0eb0871348a2201e5dca32d24a0dd6654
 F ext/misc/csv.c 5ca451b9ce77322c4ce8476766e7ed18160e5c8b19e7cab76e13006d631b9e8f
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
-F ext/misc/decimal.c 432e5b03a0e2a68a1846a9852a565a1b546ca9b295deda834e4653f0f5577daa
+F ext/misc/decimal.c 75f206e86072bd772041e6731d153517094e298a4b8c763a9f68d73d21b52651
 F ext/misc/diskused.c 8acb4f27488fd8b9bdb0a3d300a7bd761b797b6e7858ac8038398263cededc48
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 9670c8ff7b255eea7845abc5123a4958e74016c16990b10497e56380f91704b9
@@ -1049,7 +1049,7 @@ F test/dbpage.test 2e3a50548edea551ef974b8f121f975852de9c5b16cb3284ac4bf2c9f2ed5
 F test/dbpagefault.test ea39de2ca86041a9c6df1135645180a76d0a8da93ac159e2fafe38e39636530b
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test a36518c0f0951d8fd5a3dc36f99948ad1af93fb7fc0d2e03e5bb5a643186cf52
-F test/decimal.test a11b87a2c3294eb4c11b55f3168aeac63d683fa8ada35921a6ec1d511eff7648
+F test/decimal.test 9e1c40ff2835775a3dae88e1e2f0d81438070e987aafa4d9aeb0a22d60e5bf44
 F test/default.test c7124864cded213a3f118bc7e2e26f34b7c36dfa26cf6945cc8b7f5db1191277
 F test/delete.test 2686e1c98d552ef37d79ad55b17b93fe96fad9737786917ce3839767f734c48f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 45918d5e97a0c29c6fa03d09ac8e131dcca3bf4268bf4f5c46c221b1f900651a
-R c29c588740a2631ad1bc25a4ad218786
+P 732c8f81b5a914831c36610ddaed3da15a7f9fdbf54f44872e181b941368d702
+R 3a1c10d4f857c74bce7c7c10dd435465
 U drh
-Z 39884f3f5805fec2ff2a29be0fdee4e7
+Z 5c4b53d2353d4389bb72fa9ecd508297
 # Remove this line to create a well-formed Fossil manifest.
