@@ -4377,7 +4377,8 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** or in an ORDER BY or GROUP BY clause.</dd>)^
 **
 ** [[SQLITE_LIMIT_EXPR_DEPTH]] ^(<dt>SQLITE_LIMIT_EXPR_DEPTH</dt>
-** <dd>The maximum depth of the parse tree on any expression.</dd>)^
+** <dd>The maximum depth of the parse tree on any expression and
+** the maximum nesting depth for subqueries and VIEWs</dd>)^
 **
 ** [[SQLITE_LIMIT_PARSER_DEPTH]] ^(<dt>SQLITE_LIMIT_PARSER_DEPTH</dt>
 ** <dd>The maximum depth of the LALR(1) parser stack used to analyze
@@ -4408,7 +4409,8 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dd>The maximum index number of any [parameter] in an SQL statement.)^
 **
 ** [[SQLITE_LIMIT_TRIGGER_DEPTH]] ^(<dt>SQLITE_LIMIT_TRIGGER_DEPTH</dt>
-** <dd>The maximum depth of recursion for triggers.</dd>)^
+** <dd>The maximum depth of recursion for triggers, and the maximum
+** nesting depth for separate triggers.</dd>)^
 **
 ** [[SQLITE_LIMIT_WORKER_THREADS]] ^(<dt>SQLITE_LIMIT_WORKER_THREADS</dt>
 ** <dd>The maximum number of auxiliary worker threads that a single

@@ -2441,6 +2441,13 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect, char aff){
   sqlite3 *db = pParse->db;
   u64 savedFlags;
 
+  pParse->nNestSel++;
+#if SQLITE_MAX_EXPR_DEPTH>0
+  if( pParse->nNestSel >= db->aLimit[SQLITE_LIMIT_EXPR_DEPTH] ){
+    sqlite3ErrorMsg(pParse, "VIEWs and/or subqueries nested too deep");
+    return 0;
+  }
+#endif
   savedFlags = db->flags;
   db->flags &= ~(u64)SQLITE_FullColNames;
   db->flags |= SQLITE_ShortColNames;
@@ -2462,6 +2469,8 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect, char aff){
     sqlite3DeleteTable(db, pTab);
     return 0;
   }
+  pParse->nNestSel--;
+  assert( pParse->nNestSel>=0 );
   return pTab;
 }
 
