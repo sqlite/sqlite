@@ -456,6 +456,60 @@ ifcapable explain&&subquery {
   } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 }
 
+# Bug 2026-06-17T05:04:48Z
+#
+do_execsql_test where2-6.14.1 {
+  CREATE TABLE t614a(a TEXT COLLATE NOCASE, b TEXT COLLATE NOCASE);
+  INSERT INTO t614a VALUES('AAA','BBB');
+  CREATE TABLE t614b(x,y,c TEXT);
+  INSERT INTO t614b(c) VALUES('aaa'),('bbb');
+  CREATE INDEX t614b_c ON t614b(c);
+  SELECT c FROM t614a, t614b WHERE a=c OR b=c;
+} {aaa bbb}
+do_execsql_test where2-6.14.2 {
+  SELECT c FROM t614a, t614b WHERE c=a OR c=b;
+} {}
+do_execsql_test where2-6.14.3 {
+  SELECT c FROM t614a, t614b WHERE c=a OR b=c;
+} {bbb}
+do_execsql_test where2-6.14.4 {
+  SELECT c FROM t614a, t614b WHERE a=c OR c=b;
+} {aaa}
+do_execsql_test where2-6.15.1 {
+  CREATE TABLE t615a(a TEXT, b TEXT);
+  INSERT INTO t615a VALUES('AAA','BBB');
+  CREATE TABLE t615b(x,y,c TEXT COLLATE NOCASE);
+  INSERT INTO t615b(c) VALUES('aaa'),('bbb');
+  CREATE INDEX t615b_c ON t615b(c);
+  SELECT c FROM t615a, t615b WHERE c=a OR c=b;
+} {aaa bbb}
+do_execsql_test where2-6.15.2 {
+  SELECT c FROM t615a, t615b WHERE a=c OR b=c;
+} {}
+do_execsql_test where2-6.15.3 {
+  SELECT c FROM t615a, t615b WHERE c=a OR b=c;
+} {aaa}
+do_execsql_test where2-6.15.4 {
+  SELECT c FROM t615a, t615b WHERE a=c OR c=b;
+} {bbb}
+do_execsql_test where2-6.16.1 {
+  CREATE TABLE t616a(a TEXT COLLATE NOCASE, b TEXT COLLATE NOCASE);
+  INSERT INTO t616a VALUES('AAA','BBB');
+  CREATE TABLE t616b(x,y,c TEXT COLLATE NOCASE);
+  INSERT INTO t616b(c) VALUES('aaa'),('bbb');
+  CREATE INDEX t616b_c ON t616b(c);
+  SELECT c FROM t616a, t616b WHERE c=a OR c=b;
+} {aaa bbb}
+do_execsql_test where2-6.16.2 {
+  SELECT c FROM t616a, t616b WHERE a=c OR b=c;
+} {aaa bbb}
+do_execsql_test where2-6.16.3 {
+  SELECT c FROM t616a, t616b WHERE c=a OR b=c;
+} {aaa bbb}
+do_execsql_test where2-6.16.4 {
+  SELECT c FROM t616a, t616b WHERE a=c OR c=b;
+} {aaa bbb}
+
 # Variations on the order of terms in a WHERE clause in order
 # to make sure the OR optimizer can recognize them all.
 do_test where2-6.20 {
