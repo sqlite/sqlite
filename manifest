@@ -1,5 +1,5 @@
-C Improved\sdetection\sof\swhen\sthe\salternative\swindows-compatible\smain()\sis\nneeded\sin\sthe\ssqldiff.exe\sutility.
-D 2026-06-17T09:46:23.915
+C Fix\sCLI\sCSV\stest\scases\sso\sthat\sthey\ssuppress\sthe\sCR\son\swindows\sand\sthus\nwork\scross-platform.\s\sTest\scase\schanges\sonly\s-\sno\schanges\sto\scode.
+D 2026-06-17T14:12:07.852
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1622,7 +1622,7 @@ F test/sharedA.test 64bdd21216dda2c6a3bd3475348ccdc108160f34682c97f2f51c19fc0e21
 F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8ee707
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test 184ca7216b0230a56b63184f88186d9dade702dfa88d30386b338aa30c5685c2
+F test/shell1.test d03c353f2621c23e524afc2c8d49b23da2fb5825301be4b1d6098439e23013a3
 F test/shell2.test dc541d2681503e55466a24d35a4cbf8ca5b90b8fcdef37fc4db07373a67d31d3
 F test/shell3.test 91efdd545097a61a1f72cf79c9ad5b49da080f3f10282eaf4c3c272cd1012db2
 F test/shell4.test e25580a792b7b54560c3a76b6968bd8189261f38979fe28e6bc6312c5db280db
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 38430aa5ed787ab8d24cc4d7f03b5528168e12b1f59ecfce9c471cd755b81cc7
-Q +e25b849a603cb08ab888641ff324e9aa129391c4792de86a62c55e9caf84c16e
-R 010f606fe0875f6236bb863de05c0ab9
+P 571846a9c2c9605680eab09ce994ad15908db2933cb104c3a88ddad9c409e6d9
+Q +7a2c96405e365dd2efb3593e0973536d1f87f7183d5442f3bc98ca23310e5530
+R 421a560181094452ac300ab75c24d28d
 U drh
-Z 9c5854ca05960d794af2a0f3a32fd1c1
+Z 51ae09780a7679a6cd2454af8a1d8706
 # Remove this line to create a well-formed Fossil manifest.

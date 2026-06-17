@@ -124,16 +124,16 @@ do_test shell1-1.10.1 {
 } {0 {}}
 do_test shell1-1.10.2 {
   catchcmd test.db "CREATE TABLE t1(a,b,c);INSERT INTO t1 VALUES(1,2,3),(4,5,6);"
-  catchcmd "-csv test.db" "SELECT * FROM t1"
+  catchcmd "-csv test.db" ".mode --rowsep \"\\012\"\nSELECT * FROM t1"
 } {0 {1,2,3
 4,5,6}}
 do_test shell1-1.10.3 {
-  catchcmd "-header -csv test.db" "SELECT * FROM t1"
+  catchcmd "-header -csv test.db" ".mode --rowsep \"\\012\"\nSELECT * FROM t1"
 } {0 {a,b,c
 1,2,3
 4,5,6}}
 do_test shell1-1.10.4 {
-  catchcmd "-csv -header test.db" "SELECT * FROM t1"
+  catchcmd "-csv -header test.db" ".mode --rowsep \"\\012\"\nSELECT * FROM t1"
 } {0 {a,b,c
 1,2,3
 4,5,6}}
