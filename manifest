@@ -1,5 +1,5 @@
-C Additional\srefinements\sto\sthe\slarge\sfloating-point\shandling\sin\ngenerate_series().\s\sFollow-up\sto\s[5aab8c2cde63f9db].
-D 2026-06-17T14:53:14.965
+C Safer\sconversion\sfrom\sdouble\sto\s64-bit\sinteger\sin\stwo\splaces.
+D 2026-06-17T16:57:19.733
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -717,7 +717,7 @@ F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c caec9862aeebad01f6c8997cf709a239abeb0715fcce1895720b87fe7e2ef42f
 F src/mutex_w32.c d44e94c064f8ab39e0318fb6fa00171cf7e5645bd4241129b07d655a8ddbd44b
 F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
-F src/os.c 509452169d5ea739723e213b8e2481cf0e587f0e88579a912d200db5269f5f6d
+F src/os.c 9566966dd14376099fe8f715e744ab4fef204f55bd89126c5ddd06eb37df9457
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c b9df749ad64c498e8d398d83bb085cfc0ef381b2c103be6c63ac22fc4f2cf680
@@ -823,7 +823,7 @@ F src/where.c 33e4a6558ee69f33d6a4e7069e3a40a55959d14e5653a9a83926e70305d471f3
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c bc39ccbe3648f01157038b16cc55bdbff128590972b7185521b5526dc2815765
 F src/whereexpr.c 906d30c21470bbafc31bbc2cd07a0753bdd57169caed6ba75b8b4fc0ecb24134
-F src/window.c c0a38cd32473e8e8e7bc435039f914a36ca42465506dc491c65870c01ddac9fb
+F src/window.c 0d7dacdf2e84c6ee8ff498d5cc881dd245fcb2f14f6c5976e97e112ce96e90dc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
 F test/affinity3.test 9b7d1133e11d5edd7805573c4ab6f3ba73b0b74a1f280d5b130d4bf3506a93ff
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7a2c96405e365dd2efb3593e0973536d1f87f7183d5442f3bc98ca23310e5530
-R 5e4750ea27f5546bcb8b13d734f4f3d4
+P 4247c5d9afb162a3e9f334b5121f0df2bfddb916054fa1e6fadb65b1983a7ed8
+R 5538b08ccba44b493e553455f00d2f3e
 U drh
-Z 3a40ddef26ecf3e8fe2d29979a3e444f
+Z a50d9361c7eee99aa2c23bf8d23b5ebd
 # Remove this line to create a well-formed Fossil manifest.
