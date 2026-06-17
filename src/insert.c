@@ -433,6 +433,9 @@ static int autoIncBegin(
       return 0;
     }
 
+    if( pToplevel->usesAinc==0 ){
+      pToplevel->pAinc = 0;
+    }
     pInfo = pToplevel->pAinc;
     while( pInfo && pInfo->pTab!=pTab ){ pInfo = pInfo->pNext; }
     if( pInfo==0 ){
@@ -442,6 +445,7 @@ static int autoIncBegin(
       if( pParse->db->mallocFailed ) return 0;
       pInfo->pNext = pToplevel->pAinc;
       pToplevel->pAinc = pInfo;
+      pToplevel->usesAinc = 1;
       pInfo->pTab = pTab;
       pInfo->iDb = iDb;
       pToplevel->nMem++;                  /* Register to hold name of table */
@@ -470,6 +474,7 @@ void sqlite3AutoincrementBegin(Parse *pParse){
   assert( sqlite3IsToplevel(pParse) );
 
   assert( v );   /* We failed long ago if this is not so */
+  assert( pParse->usesAinc );
   for(p = pParse->pAinc; p; p = p->pNext){
     static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList autoInc[] = {
@@ -537,6 +542,7 @@ static SQLITE_NOINLINE void autoIncrementEnd(Parse *pParse){
   sqlite3 *db = pParse->db;
 
   assert( v );
+  assert( pParse->usesAinc );
   for(p = pParse->pAinc; p; p = p->pNext){
     static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList autoIncEnd[] = {
@@ -569,7 +575,7 @@ static SQLITE_NOINLINE void autoIncrementEnd(Parse *pParse){
   }
 }
 void sqlite3AutoincrementEnd(Parse *pParse){
-  if( pParse->pAinc ) autoIncrementEnd(pParse);
+  if( pParse->usesAinc ) autoIncrementEnd(pParse);
 }
 #else
 /*

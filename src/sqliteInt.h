@@ -3911,6 +3911,7 @@ struct Parse {
   bft bHasWith :1;     /* True if statement contains WITH */
   bft okConstFactor:1; /* OK to factor out constants */
   bft checkSchema :1;  /* Causes schema cookie check after an error */
+  bft usesAinc :1;     /* True if pAinc is valid */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
   int nErr;            /* Number of errors seen */
@@ -3934,9 +3935,7 @@ struct Parse {
 #endif
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
-  TableLock *aTableLock; /* Required table locks for shared-cache mode */
 #endif
-  AutoincInfo *pAinc;  /* Information about AUTOINCREMENT counters */
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
@@ -3965,6 +3964,13 @@ struct Parse {
       Returning *pReturning; /* The RETURNING clause */
     } d;
   } u1;
+  AutoincInfo *pAinc;     /* Information about AUTOINCREMENT counters. Only
+                          ** valid if Parse.usesAinc is true */
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  TableLock *aTableLock;  /* Required table locks for shared-cache mode. Only
+                          ** valid if Parse.nTableLock>0 */
+#endif
+
 
   /************************************************************************
   ** Above is constant between recursions.  Below is reset before and after
