@@ -1,5 +1,5 @@
-C Safer\sconversion\sfrom\sdouble\sto\s64-bit\sinteger\sin\stwo\splaces.
-D 2026-06-17T16:57:19.733
+C Small\sperformance\sboost\sin\sthe\ssqlite3VdbeResolveLabel()\sroutine\sof\sthe\ncode\sgenerator.
+D 2026-06-17T18:39:05.979
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -808,7 +808,7 @@ F src/vdbe.c 39658ee12b9d6bf5fc546e1ede20b307d86d9e988ae709c9b461249a8312513d
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h c31ba4dc8d280c2b1dc89c6fcee68f2555e3813ab34279552c20b964c0e338b1
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
-F src/vdbeaux.c bd3aaf77593a5590f617ce173e8677a21eca18522eadc1c4bc81b53f6d1c7e19
+F src/vdbeaux.c 22b786874c7c26b0410990bf5acaf3e3e1f6f821a51d57d275dcc72d497e4099
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4247c5d9afb162a3e9f334b5121f0df2bfddb916054fa1e6fadb65b1983a7ed8
-R 5538b08ccba44b493e553455f00d2f3e
+P 17c444382979b70cdca78e51418366e802b2d41d1156774e5e9693b52542b84c
+R eb60e5bacc37200fc3809eda21d427d1
 U drh
-Z a50d9361c7eee99aa2c23bf8d23b5ebd
+Z 287e30c1d3e97cd73a4cfc8f041f4b06
 # Remove this line to create a well-formed Fossil manifest.
