@@ -1,5 +1,5 @@
-C Fix\sCLI\sCSV\stest\scases\sso\sthat\sthey\ssuppress\sthe\sCR\son\swindows\sand\sthus\nwork\scross-platform.
-D 2026-06-17T13:52:55.811
+C Additional\srefinements\sto\sthe\slarge\sfloating-point\shandling\sin\ngenerate_series().\s\sFollow-up\sto\s[5aab8c2cde63f9db].
+D 2026-06-17T14:53:14.965
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -395,7 +395,7 @@ F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e
 F ext/misc/regexp.c 378e6e84516952a4b9f3f4df88927f20e6538e2609f55b773ed78899dab8206e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
-F ext/misc/series.c 8612317330587e4cfeb0ae7ffe2f06fe86e66f94a0f5bbb80d8fb46f89e9f0ad
+F ext/misc/series.c ba66183ae4da6875e5cdafc065322118fd7f455a568ea2f22b45eff85f639f42
 F ext/misc/sha1.c eed0ad67ad7c69798278183a74523d95623d4864821a3f4dd82b234568e307c1
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 984c9b181801c1de06782335eb049f32d1dc1d5739a7fb9c94630c22159a4f8c
-R d9d72cc892f56ef591dd2b688bc4e967
+P 7a2c96405e365dd2efb3593e0973536d1f87f7183d5442f3bc98ca23310e5530
+R 5e4750ea27f5546bcb8b13d734f4f3d4
 U drh
-Z d27edda44f6aef54d257e849e1a2a50f
+Z 3a40ddef26ecf3e8fe2d29979a3e444f
 # Remove this line to create a well-formed Fossil manifest.
