@@ -1,5 +1,5 @@
-C Limit\sVIEW\srecursion\sdepth\sto\sSQLITE_LIMIT_EXPR_DEPTH\sto\sprevent\s\nstatic\soverflow\sin\smalicious\sschemas\swith\stens\sof\sthousands\sof\nlevels\sof\srecursive\sviews.
-D 2026-06-16T13:46:54.341
+C Improved\sdetection\sof\swhen\sthe\salternative\swindows-compatible\smain()\sis\nneeded\sin\sthe\ssqldiff.exe\sutility.
+D 2026-06-17T09:46:23.915
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2179,7 +2179,7 @@ F tool/soak1.tcl a3892082ed1079671565c044e93b55c3c7f38829aedf53cc597c65d23ffdadd
 F tool/spaceanal.tcl 1f83962090a6b60e1d7bf92495d643e622bef9fe82ea3f2d22350dcbce9a12d0
 F tool/spellsift.tcl 52b4b04dc4333c7ab024f09d9d66ed6b6f7c6eb00b38497a09f338fa55d40618 x
 F tool/split-sqlite3c.tcl 4969fd642dad0ea483e4e104163021d92baf98f6a8eac981fe48525f9b873430
-F tool/sqldiff.c 70e084d6d7d0f59ef4811fe748613a32d344f5750bd9151a6e7c70aeebd6ae95
+F tool/sqldiff.c e581749af18f02a72cd18f56b465df1bef630544aebdf13993e2be55e4158f94
 F tool/sqlite3_analyzer.c.in 14f02cb5ec3c264cd6107d1f1dad77092b1cf440fc196c30b69ae87b56a1a43b
 F tool/sqlite3_rsync.c d9ce999e5b3aa9f36de44b321755622e52258774889bd804ba56f00eca01af50
 F tool/sqltclsh.c.in c103c6fc7d42bce611f9d4596774d60b7ef3d0b291a1f58c9e6184e458b89296
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c25ac7af868864f9ec05118c3b8f645e9db00d3c7e6963801fc2489e57218e2b
-Q +3f3fb9b638f59ad982beafb7c117f24ddd3da612e62c862510805fa672ffae06
-R dfec3f958a487ea1d36b9999bd340916
+P 38430aa5ed787ab8d24cc4d7f03b5528168e12b1f59ecfce9c471cd755b81cc7
+Q +e25b849a603cb08ab888641ff324e9aa129391c4792de86a62c55e9caf84c16e
+R 010f606fe0875f6236bb863de05c0ab9
 U drh
-Z fd03e59e25d26f052627ca1e8d22364e
+Z 9c5854ca05960d794af2a0f3a32fd1c1
 # Remove this line to create a well-formed Fossil manifest.
