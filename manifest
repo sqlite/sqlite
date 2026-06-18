@@ -1,5 +1,5 @@
-C Small\sparsing\sperformance\simprovement\sby\sreducing\sthe\samount\sof\sthe\nParse\sobject\sthat\sneeds\sto\sbe\sinitialized.
-D 2026-06-17T20:11:26.655
+C Fix\sa\smemory\ssize\scomputation\serror\son\s32-bit\splatforms\scaused\sby\ncheck-in\s[9a2a230464e43140].
+D 2026-06-18T17:09:20.462
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -808,7 +808,7 @@ F src/vdbe.c 39658ee12b9d6bf5fc546e1ede20b307d86d9e988ae709c9b461249a8312513d
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h c31ba4dc8d280c2b1dc89c6fcee68f2555e3813ab34279552c20b964c0e338b1
 F src/vdbeapi.c 6cdcbe5c7afa754c998e73d2d5d2805556268362914b952811bdfb9c78a37cf1
-F src/vdbeaux.c 7c1f5542565bb7406ae2aae95acb0682a81b1abc6b86185fed8b96ed42e17822
+F src/vdbeaux.c a052c43fcf342651f655e6771003c175d49b237a9473c3c4d79d44725f494dae
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
 F src/vdbesort.c b69220f4ea9ffea5fdef34d968c60305444eea909252a81933b54c296d9cca70
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9a2a230464e4314033e67e602dbd9f554f50ec2eefc7b1a5f05b85249591f7b8
-R 3e384d65478445df469474d5aca56dc8
+P 0901b7c2dfb87707fa159f24ada5abb0a2914043c6f0571de4ce55c80edb663b
+R 37cedd917460147ee88c8b1ba51b8821
 U drh
-Z 2d3fe8709be4d5f796426b45f7c01cfe
+Z 190cce7418ee68c219422baad789c268
 # Remove this line to create a well-formed Fossil manifest.
