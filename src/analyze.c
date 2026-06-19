@@ -876,7 +876,7 @@ static void statGet(
       assert( p->current.anEq[i] || p->nRow==0 );
 #endif
     }
-    sqlite3ResultStrAccum(context, &sStat);
+    sqlite3_result_str(context, &sStat, SQLITE_XFER);
   }
 #ifdef SQLITE_ENABLE_STAT4
   else if( eCall==STAT_GET_ROWID ){
@@ -913,7 +913,7 @@ static void statGet(
       sqlite3_str_appendf(&sStat, "%llu ", (u64)aCnt[i]);
     }
     if( sStat.nChar ) sStat.nChar--;
-    sqlite3ResultStrAccum(context, &sStat);
+    sqlite3_result_str(context, &sStat, SQLITE_XFER);
   }
 #endif /* SQLITE_ENABLE_STAT4 */
 #ifndef SQLITE_DEBUG

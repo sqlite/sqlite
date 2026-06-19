@@ -5606,7 +5606,6 @@ int sqlite3StrAccumEnlarge(StrAccum*, i64);
 int sqlite3StrAccumEnlargeIfNeeded(StrAccum*, i64);
 char *sqlite3StrAccumFinish(StrAccum*);
 void sqlite3StrAccumSetError(StrAccum*, u8);
-void sqlite3ResultStrAccum(sqlite3_context*,StrAccum*);
 void sqlite3SelectDestInit(SelectDest*,int,int);
 Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 void sqlite3RecordErrorByteOffset(sqlite3*,const char*);

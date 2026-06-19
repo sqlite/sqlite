@@ -1567,7 +1567,7 @@ static void strftimeFunc(
     }
   }
   if( j<i ) sqlite3_str_append(&sRes, zFmt+j, (int)(i-j));
-  sqlite3ResultStrAccum(context, &sRes);
+  sqlite3_result_str(context, &sRes, SQLITE_XFER);
 }
 
 /*
@@ -1703,7 +1703,7 @@ static void timediffFunc(
   sqlite3StrAccumInit(&sRes, 0, 0, 0, 100);
   sqlite3_str_appendf(&sRes, "%c%04d-%02d-%02d %02d:%02d:%06.3f",
        sign, Y, M, d1.D-1, d1.h, d1.m, d1.s);
-  sqlite3ResultStrAccum(context, &sRes);
+  sqlite3_result_str(context, &sRes, SQLITE_XFER);
 }
 
 

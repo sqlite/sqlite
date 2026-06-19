@@ -751,7 +751,13 @@ void sqlite3_result_str(sqlite3_context *pCtx, sqlite3_str *pStr, int eOwn){
       if( eOwn ) sqlite3_str_reset(pStr);
     }else{
       const char *zText = sqlite3_str_value(pStr);
-      if( eOwn==SQLITE_COPY || !isMalloced(pStr) ){
+      /* Only internal code has the ability to capture a pointer to
+      ** an sqlite3_str object that uses static buffer.  And none of
+      ** those internal use cases every invoke the sqlite3_result_str()
+      ** interface on a static-buffer sqlite3_str.  Should this change
+      ** in the future, the following assert() will let us know. */
+      assert( isMalloced(pStr) );
+      if( eOwn==SQLITE_COPY ){
         setResultStrOrError(pCtx, zText, pStr->nChar, 
                             SQLITE_UTF8, SQLITE_TRANSIENT);
       }else{

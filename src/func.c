@@ -2309,7 +2309,7 @@ static void groupConcatFinalize(sqlite3_context *context){
   GroupConcatCtx *pGCC
     = (GroupConcatCtx*)sqlite3_aggregate_context(context, 0);
   if( pGCC ){
-    sqlite3ResultStrAccum(context, &pGCC->str);
+    sqlite3_result_str(context, &pGCC->str, SQLITE_XFER);
 #ifndef SQLITE_OMIT_WINDOWFUNC
     sqlite3_free(pGCC->pnSepLengths);
 #endif
