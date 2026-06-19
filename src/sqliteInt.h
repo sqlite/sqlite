@@ -5504,6 +5504,7 @@ extern const unsigned char *sqlite3aGTb;
 extern const unsigned char sqlite3CtypeMap[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern FuncDefHash sqlite3BuiltinFunctions;
+extern sqlite3_str sqlite3OomStr;
 #ifndef SQLITE_OMIT_WSD
 extern int sqlite3PendingByte;
 #endif

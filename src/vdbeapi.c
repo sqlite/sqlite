@@ -734,11 +734,11 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
 **    SQLITE_XFER      The content of the sqlite3_str is transferred to
 **                     the SQL function and the SQL function takes
 **                     responsibility for freeing that content when it is
-**                     no longer neede.  The sqlite3_str object is reset
+**                     no longer needed.  The sqlite3_str object is reset
 **                     to an empty string.
 **
 **    SQLITE_FINISH    Like SQLITE_XFER except that the pStr is also
-**                     freed using sqlite_str_free().
+**                     freed using sqlite3_str_free().
 */
 void sqlite3_result_str(sqlite3_context *pCtx, sqlite3_str *pStr, int eOwn){
 #ifdef SQLITE_ENABLE_API_ARMOR
@@ -772,7 +772,10 @@ void sqlite3_result_str(sqlite3_context *pCtx, sqlite3_str *pStr, int eOwn){
     sqlite3_result_error_toobig(pCtx);
   }
   if( eOwn ){
-    sqlite3StrAccumInit(pStr, pStr->db, 0, 0, pStr->mxAlloc);
+    testcase( pStr==&sqlite3OomStr );
+    if( pStr->accError==0 ){
+      sqlite3StrAccumInit(pStr, pStr->db, 0, 0, pStr->mxAlloc);
+    }
     if( eOwn==SQLITE_FINISH ){
       sqlite3_str_free(pStr);
     }

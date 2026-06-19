@@ -308,6 +308,16 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 */
 FuncDefHash sqlite3BuiltinFunctions;
 
+/*
+** This singleton is an sqlite3_str object that is returned if
+** sqlite3_malloc() fails to provide space for a real one.  This
+** sqlite3_str object accepts no new text and always returns
+** an SQLITE_NOMEM error.
+*/
+sqlite3_str sqlite3OomStr = {
+   0, 0, 0, 0, 0, SQLITE_NOMEM, 0
+};
+
 #if defined(SQLITE_COVERAGE_TEST) || defined(SQLITE_DEBUG)
 /*
 ** Counter used for coverage testing.  Does not come into play for
