@@ -2661,9 +2661,8 @@ static void addConstraintFunc(
   int iCol = sqlite3_value_int(argv[2]);
   int iOff = 0;
   int ii;
-  char *zNew = 0;
+  sqlite3_str *pNew;
   int t = 0;
-  sqlite3 *db;
   UNUSED_PARAMETER(NotUsed);
 
   if( skipCreateTable(ctx, zSql, &iOff) ) return;
@@ -2683,13 +2682,11 @@ static void addConstraintFunc(
 
   iOff += getWhitespace(&zSql[iOff]);
 
-  db = sqlite3_context_db_handle(ctx);
-  if( iCol<0 ){
-    zNew = sqlite3MPrintf(db, "%.*s, %s%s", iOff, zSql, zCons, &zSql[iOff]);
-  }else{
-    zNew = sqlite3MPrintf(db, "%.*s %s%s", iOff, zSql, zCons, &zSql[iOff]);
-  }
-  sqlite3_result_text(ctx, zNew, -1, SQLITE_DYNAMIC);
+  pNew = sqlite3_str_new(sqlite3_context_db_handle(ctx));
+  sqlite3_str_append(pNew, zSql, iOff);
+  if( iCol<0 ) sqlite3_str_append(pNew, ",", 1);
+  sqlite3_str_appendf(pNew, " %s%s", zCons, &zSql[iOff]);
+  sqlite3_result_str(ctx, pNew, SQLITE_FINISH);
 }
 
 /*
