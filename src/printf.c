@@ -1322,37 +1322,11 @@ char *sqlite3StrAccumFinish(StrAccum *p){
   return p->zText;
 }
 
-/*
-** Use the content of the StrAccum passed as the second argument
-** as the result of an SQL function.
-*/
-void sqlite3ResultStrAccum(sqlite3_context *pCtx, StrAccum *p){
-  if( p->accError ){
-    sqlite3_result_error_code(pCtx, p->accError);
-    sqlite3_str_reset(p);
-  }else if( isMalloced(p) ){
-    sqlite3_result_text(pCtx, p->zText, p->nChar, SQLITE_DYNAMIC);
-  }else{
-    sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
-    sqlite3_str_reset(p);
-  }
-}
-
-/*
-** This singleton is an sqlite3_str object that is returned if
-** sqlite3_malloc() fails to provide space for a real one.  This
-** sqlite3_str object accepts no new text and always returns
-** an SQLITE_NOMEM error.
-*/
-static sqlite3_str sqlite3OomStr = {
-   0, 0, 0, 0, 0, SQLITE_NOMEM, 0
-};
-
 /* Finalize a string created using sqlite3_str_new().
 */
 char *sqlite3_str_finish(sqlite3_str *p){
   char *z;
-  if( p!=0 && p!=&sqlite3OomStr ){
+  if( p!=0 && p!=(sqlite3_str*)&sqlite3OomStr ){
     z = sqlite3StrAccumFinish(p);
     sqlite3_free(p);
   }else{
@@ -1393,6 +1367,8 @@ void sqlite3_str_reset(StrAccum *p){
   if( isMalloced(p) ){
     sqlite3DbFree(p->db, p->zText);
     p->printfFlags &= ~SQLITE_PRINTF_MALLOCED;
+  }else if( p==(sqlite3_str*)&sqlite3OomStr ){
+    return;
   }
   p->nAlloc = 0;
   p->nChar = 0;
@@ -1404,7 +1380,7 @@ void sqlite3_str_reset(StrAccum *p){
 ** of its content, all in one call.
 */
 void sqlite3_str_free(sqlite3_str *p){
-  if( p!=0 && p!=&sqlite3OomStr ){
+  if( p!=0 && p!=(sqlite3_str*)&sqlite3OomStr ){
     sqlite3_str_reset(p);
     sqlite3_free(p);
   }
@@ -1441,7 +1417,7 @@ sqlite3_str *sqlite3_str_new(sqlite3 *db){
     sqlite3StrAccumInit(p, 0, 0, 0,
             db ? db->aLimit[SQLITE_LIMIT_LENGTH] : SQLITE_MAX_LENGTH);
   }else{
-    p = &sqlite3OomStr;
+    p = (sqlite3_str*)&sqlite3OomStr;
   }
   return p;
 }
