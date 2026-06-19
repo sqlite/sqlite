@@ -1326,7 +1326,7 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 */
 char *sqlite3_str_finish(sqlite3_str *p){
   char *z;
-  if( p!=0 && p!=&sqlite3OomStr ){
+  if( p!=0 && p!=(sqlite3_str*)&sqlite3OomStr ){
     z = sqlite3StrAccumFinish(p);
     sqlite3_free(p);
   }else{
@@ -1367,6 +1367,8 @@ void sqlite3_str_reset(StrAccum *p){
   if( isMalloced(p) ){
     sqlite3DbFree(p->db, p->zText);
     p->printfFlags &= ~SQLITE_PRINTF_MALLOCED;
+  }else if( p==(sqlite3_str*)&sqlite3OomStr ){
+    return;
   }
   p->nAlloc = 0;
   p->nChar = 0;
@@ -1378,7 +1380,7 @@ void sqlite3_str_reset(StrAccum *p){
 ** of its content, all in one call.
 */
 void sqlite3_str_free(sqlite3_str *p){
-  if( p!=0 && p!=&sqlite3OomStr ){
+  if( p!=0 && p!=(sqlite3_str*)&sqlite3OomStr ){
     sqlite3_str_reset(p);
     sqlite3_free(p);
   }
@@ -1415,7 +1417,7 @@ sqlite3_str *sqlite3_str_new(sqlite3 *db){
     sqlite3StrAccumInit(p, 0, 0, 0,
             db ? db->aLimit[SQLITE_LIMIT_LENGTH] : SQLITE_MAX_LENGTH);
   }else{
-    p = &sqlite3OomStr;
+    p = (sqlite3_str*)&sqlite3OomStr;
   }
   return p;
 }

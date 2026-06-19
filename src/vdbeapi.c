@@ -772,7 +772,7 @@ void sqlite3_result_str(sqlite3_context *pCtx, sqlite3_str *pStr, int eOwn){
     sqlite3_result_error_toobig(pCtx);
   }
   if( eOwn ){
-    testcase( pStr==&sqlite3OomStr );
+    testcase( pStr==(sqlite3_str*)&sqlite3OomStr );
     if( pStr->accError==0 ){
       sqlite3StrAccumInit(pStr, pStr->db, 0, 0, pStr->mxAlloc);
     }

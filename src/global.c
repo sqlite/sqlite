@@ -314,7 +314,7 @@ FuncDefHash sqlite3BuiltinFunctions;
 ** sqlite3_str object accepts no new text and always returns
 ** an SQLITE_NOMEM error.
 */
-sqlite3_str sqlite3OomStr = {
+const sqlite3_str sqlite3OomStr = {
    0, 0, 0, 0, 0, SQLITE_NOMEM, 0
 };
 
