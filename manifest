@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_result_str()\sinterface\sand\suse\sit\sto\ssimplify\sthe\scode.
-D 2026-06-19T23:53:29.221
+C Correct\smisuse\sof\sa\sloop\scontrol\svariable\sin\swriting\sof\sa\skvvfs\sjournal.\sBug\sreport\s[bugs:20e208fe17|2026-06-20T08:49:41Z].\sRemove\sa\ssnippet\sof\sdead\scode\sin\sthe\sJS\skvvfs\sside.
+D 2026-06-20T11:07:04.720
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -601,7 +601,7 @@ F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1fa34e9b0e3b90a8898e4f700d7125e44c818
 F ext/wasm/api/sqlite3-license-version-header.js 98d90255a12d02214db634e041c8e7f2f133d9361a8ebf000ba9c9af4c6761cc
 F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js 25e31482b04293a33d7599f1459eb552b3eb36ca10c02c816122d3308bf80cb2
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 27fb135ba3b805b66c90a7333b56080345bf1db79335c3e48b6d01ad7aa09607
+F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 96f79583dc12f836eadf3c6430a0beaed859306b67e8fd7b0fada8d22cc2393f
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 4325cb9a5ebfbff7cd3060e309b167116a2a1bcb9f8d69dd8e6d023dbdd783bb
 F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 3dbd918ef037cd8fa9c7b4dccb3c8637b228638654c429e7df6acab5981c75e2
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 3da8fe72dc9e76614a9c102b92e777ce03f81d788b607701c828d8fcbac44b06
@@ -720,7 +720,7 @@ F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 9566966dd14376099fe8f715e744ab4fef204f55bd89126c5ddd06eb37df9457
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
-F src/os_kv.c b9df749ad64c498e8d398d83bb085cfc0ef381b2c103be6c63ac22fc4f2cf680
+F src/os_kv.c 8807692a584a5496e764df704e41e061e4a17eb578740fd26b155611aab5081e
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
 F src/os_win.c 68b1c31693a5aeeb8126f618c95f7b53fb39e254836f9a95fbf2733461a7e01d
@@ -2208,9 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ece7af98a8bf982567b489cf82a52519f46a1c9360c82a486dbe1cd0664b1555 7356bf3a813bcd9082a7fdef5e2cc38c7a0f142f0ef4c948f78e4dafa216c039
-R 0fa5f372fdd27979e749925fe2796454
-T +closed 7356bf3a813bcd9082a7fdef5e2cc38c7a0f142f0ef4c948f78e4dafa216c039
-U drh
-Z 40775e5df77bdbb5b520868c76d98e2b
+P 8f8361edf82233d6cd53bf8cd2f7fbf0cb3552228c9202395ef1e3383ed559ff
+R 4e67d2f2a83b956fd5a00bf7dad0dcdc
+U stephan
+Z 8bdb65de2a3fe2f8a0cc116985a62d78
 # Remove this line to create a well-formed Fossil manifest.
