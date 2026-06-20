@@ -510,6 +510,26 @@ do_execsql_test where2-6.16.4 {
   SELECT c FROM t616a, t616b WHERE a=c OR c=b;
 } {aaa bbb}
 
+# Assertion faults added by check-in 2026-06-17T13:31:01.199Z and
+# subsequently discovered by dbsqlfuzz.
+#
+do_execsql_test where2-6.17.1 {
+  CREATE TABLE t617_a(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE t617_b(c INTEGER PRIMARY KEY, d TEXT);
+  CREATE VIEW t617 AS SELECT a, b FROM t617_a UNION ALL SELECT c, c FROM t617_b;
+}
+do_execsql_test where2-6.17.2 {
+  SELECT EXISTS(
+    SELECT 1
+      FROM (SELECT 1 FROM t617 WHERE a='two' OR b='i')
+     WHERE a='ex' OR b='iv'
+  ) FROM t617;
+} {}
+do_execsql_test where2-6.17.3 {
+  SELECT * FROM t617 JOIN t617 USING(a,a,b) WHERE (b=0) OR a=10;
+} {}
+
+
 # Variations on the order of terms in a WHERE clause in order
 # to make sure the OR optimizer can recognize them all.
 do_test where2-6.20 {

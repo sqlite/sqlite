@@ -938,7 +938,9 @@ static void exprAnalyzeOrTerm(
           pLeft = pThis->pLeft;
           pCollSeq = sqlite3ExprCompareCollSeq(pParse, pThis);
         }else{
-          assert( 0==sqlite3ExprCompare(pParse, pThis->pLeft, pLeft, -1) );
+          assert( 0==sqlite3ExprCompare(pParse, 
+                        sqlite3ExprSkipCollate(pThis->pLeft),
+                        sqlite3ExprSkipCollate(pLeft), -1) );
           if( pCollSeq!=sqlite3ExprCompareCollSeq(pParse, pThis) ){
             pLeft = 0;  /* Collating sequence mismatch */
             break;
