@@ -3094,15 +3094,18 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const corruptJrnl = [
           /* Test that it recovers properly from a bad journal:
              https://sqlite.org/bugs/forumpost/20e208fe172cae4f */
-          pStorage.keyPrefix+'-jrnl',
-          'd9d505f920a163d7ffffffffdeadbeef000000010000020000001000'
+          pStorage.keyPrefix+'jrnl',
+          'cb d9d505f920a163d7ffffffffdeadbeef000000010000020000001000'
         ];
         sessionStorage.setItem(...corruptJrnl);
+        //console.debug("sessionStorage",globalThis.sessionStorage);
+        T.assert( corruptJrnl[1] === sessionStorage.getItem(corruptJrnl[0]) );
         try{
           db = new JDb(filename);
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
           db.exec('insert into kvvfs(a) values(7),(8),(9)');
           T.assert(9 === db.selectValue('select count(*) from kvvfs'));
+          T.assert( corruptJrnl[1] !== sessionStorage.getItem(corruptJrnl[0]) );
         }finally{
           if( db ) db.close();
         }
