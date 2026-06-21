@@ -1,5 +1,5 @@
-C Fix\sa\sresult\svalue\ssemantics\sbug\swhich\sbroke\sapplication\sof\sa\sjournal\sin\skvvfs.\sFix\sa\smemory-reset\sbug\sin\shypothetical\snon-WASM\sbuilds\sof\skvvfs.\sBug\sreport\s[bugs:7fcd3ea30fa4fcfc|2026-06-20T18:22:59Z],\sand\sthis\sresolves\sthe\sjournaling\sissue\smentioned\sin\sthe\sparent\spost.
-D 2026-06-21T08:38:07.065
+C Add\sa\sJS\stest\sdemonstrating\sthat\s[7c4db1cd2d06]\srecovers\sgracefully\sfrom\sjournal\scorruption.
+D 2026-06-21T10:55:09.300
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -649,7 +649,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.c-pp.html 7171022e7f4da8f46e5f50ea81dd6ce840b9235c47653a5deeb3764ccc2fe472
 F ext/wasm/tester1.c-pp.html bd927ccf51ddd65e924660a0487add99e1b044afe03950e49d87ccf44efdddb6
-F ext/wasm/tester1.c-pp.js 38beb509f2136851760db79becd41a1ec0abcaaec01de27749b0fafcb0372e54
+F ext/wasm/tester1.c-pp.js 9d4f068963552aca178cd3509bf44ac2ce32743326a7763492f7b3df909e1d79
 F ext/wasm/tests/opfs/concurrency/index.html 706eab6308343c04ac2360aba6001af4ffaf46d8f33a0ccd02c64d93e3216a43
 F ext/wasm/tests/opfs/concurrency/test.js 6919778fceaac1b7cc78caf41d796f545d2c4433b31188aa9689f05b5ad28828
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c36fc5df62c7eb8fca6a43cb0b3154a030b39a4cfade8fb04496120d4d339b97
-R b75c5c3deb2a6e98bdcefa6689053da0
+P 7c4db1cd2d06d9dc6c4b5eed5c4fc0fc5466128a169a5d4ba261e0cb17020ae1
+R 1141adbe02e168dfad8b13da719d3683
 U stephan
-Z c93b6425088d4bf63100b04b9758a328
+Z f304bb0eeffe00641b38094e84ce6130
 # Remove this line to create a well-formed Fossil manifest.

@@ -3085,9 +3085,25 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
         }finally{
-          if( db ) db.close();
+          if( db ){
+            db.close();
+            db = null;
+          }
         }
         //console.debug("sessionStorage",globalThis.sessionStorage);
+        /* Test that it recovers properly from a bad journal:
+           https://sqlite.org/bugs/forumpost/20e208fe172cae4f */
+        const corruptJrnl = [
+          'kvvfs-session-jrnl',
+          'd9d505f920a163d7ffffffffdeadbeef000000010000020000001000'
+        ];
+        sessionStorage.setItem(...corruptJrnl);
+        try{
+          db = new JDb(filename);
+          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+        }finally{
+          if( db ) db.close();
+        }
       }
     }/*kvvfs sanity checks*/)
     .t({
