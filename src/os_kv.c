@@ -468,16 +468,17 @@ int kvvfsDecode(const char *a, char *aOut, int nOut){
   while( 1 ){
     c = kvvfsHexValue[aIn[i]];
     if( c<0 ){
-      int n = 0;
-      int mult = 1;
+      sqlite3_int64 n = 0;
+      sqlite3_int64 mult = 1;
       c = aIn[i];
       if( c==0 ) break;
       while( c>='a' && c<='z' ){
         n += (c - 'a')*mult;
+        if( n>nOut ) return -1 /* oversized/malformed input */;
         mult *= 26;
         c = aIn[++i];
       }
-      if( j+n>nOut ) return -1;
+      if( j+n>nOut ) return -1 /* oversized/malformed input */;
       memset(&aOut[j], 0, n);
       j += n;
       if( c==0 || mult==1 ) break; /* progress stalled if mult==1 */
