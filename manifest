@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sinteger\soverflow\swhen\sdecoding\sa\scorrupt\skvvfs\sblock.\sBug\sreport\s[bugs:76acc88b57|2026-06-20T18:35:54Z].
-D 2026-06-21T08:13:22.016
+C Fix\sa\sresult\svalue\ssemantics\sbug\swhich\sbroke\sapplication\sof\sa\sjournal\sin\skvvfs.\sFix\sa\smemory-reset\sbug\sin\shypothetical\snon-WASM\sbuilds\sof\skvvfs.\sBug\sreport\s[bugs:7fcd3ea30fa4fcfc|2026-06-20T18:22:59Z],\sand\sthis\sresolves\sthe\sjournaling\sissue\smentioned\sin\sthe\sparent\spost.
+D 2026-06-21T08:38:07.065
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -720,7 +720,7 @@ F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 9566966dd14376099fe8f715e744ab4fef204f55bd89126c5ddd06eb37df9457
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
-F src/os_kv.c e541742fb5d62848bf8d05ec2c95abeeb9334f57d1c60aa1c680c9c37e5ca5b8
+F src/os_kv.c 26ccc36ea963d328682fa685a106d7404617a2284ecdc7a35fb38d0c9242f440
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
 F src/os_win.c 68b1c31693a5aeeb8126f618c95f7b53fb39e254836f9a95fbf2733461a7e01d
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1d41c93b3636de63cc4b9ee49f73319429944f2255ab56d7556595f56434c17c
-R 744ebe01cf64c18272de128b6ad64fb5
+P c36fc5df62c7eb8fca6a43cb0b3154a030b39a4cfade8fb04496120d4d339b97
+R b75c5c3deb2a6e98bdcefa6689053da0
 U stephan
-Z cd188760798b6554f026c5e4f2d0719d
+Z c93b6425088d4bf63100b04b9758a328
 # Remove this line to create a well-formed Fossil manifest.
