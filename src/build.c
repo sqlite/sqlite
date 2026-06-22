@@ -70,6 +70,7 @@ static SQLITE_NOINLINE void lockTable(
 
   assert( pToplevel->nTableLock < 0x7fff0000 );
   nBytes = sizeof(TableLock) * (pToplevel->nTableLock+1);
+  if( pToplevel->nTableLock==0 ) pToplevel->aTableLock = 0;
   pToplevel->aTableLock =
       sqlite3DbReallocOrFree(pToplevel->db, pToplevel->aTableLock, nBytes);
   if( pToplevel->aTableLock ){
@@ -238,7 +239,7 @@ void sqlite3FinishCoding(Parse *pParse){
 
     /* Initialize any AUTOINCREMENT data structures required.
     */
-    if( pParse->pAinc ) sqlite3AutoincrementBegin(pParse);
+    if( pParse->usesAinc ) sqlite3AutoincrementBegin(pParse);
 
     /* Code constant expressions that were factored out of inner loops. 
     */
@@ -271,7 +272,7 @@ void sqlite3FinishCoding(Parse *pParse){
   if( pParse->nErr==0 ){
     /* A minimum of one cursor is required if autoincrement is used
     *  See ticket [a696379c1f08866] */
-    assert( pParse->pAinc==0 || pParse->nTab>0 );
+    assert( pParse->usesAinc==0 || pParse->nTab>0 );
     sqlite3VdbeMakeReady(v, pParse);
     pParse->rc = SQLITE_DONE;
   }else{

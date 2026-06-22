@@ -302,6 +302,12 @@
   SQLITE_EXTENSION_INIT1
 #endif
 
+
+/*
+** Assume any b-tree layer with more levels than this is corrupt.
+*/
+#define FTS3_MAX_BTREE_HEIGHT 48
+
 typedef struct Fts3HashWrapper Fts3HashWrapper;
 struct Fts3HashWrapper {
   Fts3Hash hash;                  /* Hash table */
@@ -2018,7 +2024,11 @@ static int fts3SelectLeaf(
   assert( piLeaf || piLeaf2 );
 
   fts3GetVarint32(zNode, &iHeight);
-  rc = fts3ScanInteriorNode(zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
+  if( iHeight>FTS3_MAX_BTREE_HEIGHT ){
+    rc = FTS_CORRUPT_VTAB;
+  }else{
+    rc = fts3ScanInteriorNode(zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
+  }
   assert_fts3_nc( !piLeaf2 || !piLeaf || rc!=SQLITE_OK || (*piLeaf<=*piLeaf2) );
 
   if( rc==SQLITE_OK && iHeight>1 ){
@@ -2063,8 +2073,13 @@ static void fts3PutDeltaVarint(
   sqlite3_int64 iVal              /* Write this value to the list */
 ){
   assert_fts3_nc( iVal-*piPrev > 0 || (*piPrev==0 && iVal==0) );
-  *pp += sqlite3Fts3PutVarint(*pp, iVal-*piPrev);
-  *piPrev = iVal;
+  if( iVal-(*piPrev)>=0 ){
+    /* Refuse to write a negative delta integer. This only happens with a 
+    ** corrupt db (see the assert above) and can cause buffer overwrites
+    ** in some cases.  */
+    *pp += sqlite3Fts3PutVarint(*pp, iVal-*piPrev);
+    *piPrev = iVal;
+  }
 }
 
 /*

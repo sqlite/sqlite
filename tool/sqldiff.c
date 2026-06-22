@@ -894,7 +894,8 @@ static unsigned int checksum(const char *zIn, size_t N){
 ** The delta string will be NUL-terminated, but it might also contain
 ** embedded NUL characters if either the zSrc or zOut files are
 ** binary.  This function returns the length of the delta string
-** in bytes, excluding the final NUL terminator character.
+** in bytes, excluding the final NUL terminator character.  Return 0
+** if an OOM occurs.
 **
 ** Output Format:
 **
@@ -986,6 +987,7 @@ static int rbuDeltaCreate(
   */
   nHash = lenSrc/NHASH;
   collide = sqlite3_malloc64( nHash*2*sizeof(int) );
+  if( collide==0 ) return 0;
   landmark = &collide[nHash];
   memset(landmark, -1, nHash*sizeof(int));
   memset(collide, -1, nHash*sizeof(int));
@@ -1309,7 +1311,7 @@ static void rbudiff_one_table(const char *zTab, FILE *out){
 
           aDelta = sqlite3_malloc64(nFinal + 60);
           nDelta = rbuDeltaCreate(aSrc, nSrc, aFinal, nFinal, aDelta);
-          if( nDelta<nFinal ){
+          if( nDelta>0 && nDelta<nFinal ){
             int j;
             sqlite3_fprintf(out, "x'");
             for(j=0; j<nDelta; j++) sqlite3_fprintf(out, "%02x", (u8)aDelta[j]);

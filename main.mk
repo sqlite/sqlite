@@ -983,11 +983,11 @@ FUZZCHECK_SRC = sqlite3.c \
    $(TOP)/ext/recover/dbdata.c \
    $(TOP)/ext/recover/sqlite3recover.c \
    $(TOP)/test/vt02.c \
-   $(TOP)/ext/misc/analyze.c \
    $(TOP)/ext/misc/base64.c \
    $(TOP)/ext/misc/base85.c \
    $(TOP)/ext/misc/completion.c \
    $(TOP)/ext/misc/decimal.c \
+   $(TOP)/ext/misc/diskused.c \
    $(TOP)/ext/misc/ieee754.c \
    $(TOP)/ext/misc/randomjson.c \
    $(TOP)/ext/misc/regexp.c \
@@ -2237,11 +2237,6 @@ install: install-man1
 install-pc: sqlite3.pc $(install-dir.pkgconfig)
 	$(INSTALL.noexec) sqlite3.pc "$(install-dir.pkgconfig)"
 
-scrub$(T.exe):	$(TOP)/ext/misc/scrub.c sqlite3.o
-	$(T.link) -o $@ -I. -DSCRUB_STANDALONE \
-		$(TOP)/ext/misc/scrub.c sqlite3.o $(LDFLAGS.libsqlite3)
-xbin: scrub$(T.exe)
-
 srcck1$(B.exe):	$(TOP)/tool/srcck1.c
 	$(B.cc) -o srcck1$(B.exe) $(TOP)/tool/srcck1.c
 xbin: srcck1$(B.exe)
@@ -2346,12 +2341,12 @@ SHELL_DEP = \
     $(TOP)/ext/expert/sqlite3expert.h \
     $(TOP)/ext/intck/sqlite3intck.c \
     $(TOP)/ext/intck/sqlite3intck.h \
-    $(TOP)/ext/misc/analyze.c \
     $(TOP)/ext/misc/appendvfs.c \
     $(TOP)/ext/misc/base64.c \
     $(TOP)/ext/misc/base85.c \
     $(TOP)/ext/misc/completion.c \
     $(TOP)/ext/misc/decimal.c \
+    $(TOP)/ext/misc/diskused.c \
     $(TOP)/ext/misc/fileio.c \
     $(TOP)/ext/misc/ieee754.c \
     $(TOP)/ext/misc/memtrace.c \

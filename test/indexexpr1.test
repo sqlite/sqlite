@@ -686,4 +686,24 @@ do_execsql_test indexexpr1-2300 {
   SELECT json_insert('{}', '$.a', json(y)) FROM t1;
 } {{{"a":{"b":5}}}}
 
+#-------------------------------------------------------------------------
+reset_db
+proc addone {n} {
+  return $n+1
+}
+db func addone addone
+
+do_execsql_test indexexpr1-2400 {
+  CREATE TABLE t1(x, y);
+}
+do_catchsql_test indexexpr1-2310 {
+  CREATE INDEX i1 ON t1( (addone(x)) );
+} {1 {non-deterministic functions prohibited in index expressions}}
+do_catchsql_test indexexpr1-2310 {
+  CREATE INDEX i2 ON t1( ~(addone(x)) );
+} {1 {non-deterministic functions prohibited in index expressions}}
+do_catchsql_test indexexpr1-2310 {
+  CREATE INDEX i2 ON t1( ~(addone(DISTINCT x)) );
+} {1 {non-deterministic functions prohibited in index expressions}}
+
 finish_test

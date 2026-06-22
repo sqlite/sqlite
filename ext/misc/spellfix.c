@@ -32,6 +32,7 @@ SQLITE_EXTENSION_INIT1
 # define NEVER(X)   0
   typedef unsigned char u8;
   typedef unsigned short u16;
+  typedef sqlite3_int64 i64;
 #endif
 #include <ctype.h>
 
@@ -192,7 +193,7 @@ static const unsigned char className[] = ".ABCDHLRMY9 ?";
 ** Return NULL if memory allocation fails.  
 */
 static unsigned char *phoneticHash(const unsigned char *zIn, int nIn){
-  unsigned char *zOut = sqlite3_malloc64( nIn + 1 );
+  unsigned char *zOut = sqlite3_malloc64( (i64)nIn + 1 );
   int i;
   int nOut = 0;
   char cPrev = 0x77;
@@ -422,7 +423,7 @@ static int editdist1(const char *zA, const char *zB, int *pnMatch){
   if( nB<(sizeof(mStack)*4)/(sizeof(mStack[0])*5) ){
     m = mStack;
   }else{
-    m = toFree = sqlite3_malloc64( (nB+1)*5LL*sizeof(m[0])/4 );
+    m = toFree = sqlite3_malloc64( ((i64)nB+1)*5LL*sizeof(m[0])/4 );
     if( m==0 ) return -3;
   }
   cx = (char*)&m[nB+1];
@@ -772,7 +773,7 @@ static int editDist3ConfigLoad(
     if( iCost>=10000 ) continue;  /* Costs above 10K are considered infinite */
     if( pLang==0 || iLang!=iLangPrev ){
       EditDist3Lang *pNew;
-      pNew = sqlite3_realloc64(p->a, (p->nLang+1)*sizeof(p->a[0]));
+      pNew = sqlite3_realloc64(p->a, ((i64)p->nLang+1)*sizeof(p->a[0]));
       if( pNew==0 ){ rc = SQLITE_NOMEM; break; }
       p->a = pNew;
       pLang = &p->a[p->nLang];
@@ -906,7 +907,7 @@ static EditDist3FromString *editDist3FromStringNew(
 
   if( z==0 ) return 0;
   if( n<0 ) n = (int)strlen(z);
-  pStr = sqlite3_malloc64( sizeof(*pStr) + sizeof(pStr->a[0])*n + n + 1 );
+  pStr = sqlite3_malloc64( sizeof(*pStr) + sizeof(pStr->a[0])*n + (i64)n + 1 );
   if( pStr==0 ) return 0;
   pStr->a = (EditDist3From*)&pStr[1];
   memset(pStr->a, 0, sizeof(pStr->a[0])*n);
@@ -932,13 +933,13 @@ static EditDist3FromString *editDist3FromStringNew(
       if( matchFrom(p, z+i, n-i)==0 ) continue;
       if( p->nTo==0 ){
         apNew = sqlite3_realloc64(pFrom->apDel,
-                                sizeof(*apNew)*(pFrom->nDel+1));
+                                sizeof(*apNew)*((i64)pFrom->nDel+1));
         if( apNew==0 ) break;
         pFrom->apDel = apNew;
         apNew[pFrom->nDel++] = p;
       }else{
         apNew = sqlite3_realloc64(pFrom->apSubst,
-                                sizeof(*apNew)*(pFrom->nSubst+1));
+                                sizeof(*apNew)*((i64)pFrom->nSubst+1));
         if( apNew==0 ) break;
         pFrom->apSubst = apNew;
         apNew[pFrom->nSubst++] = p;
@@ -1721,9 +1722,9 @@ static const Transliteration *spellfixFindTranslit(int c, int *pxTop){
 */
 static unsigned char *transliterate(const unsigned char *zIn, int nIn){
 #ifdef SQLITE_SPELLFIX_5BYTE_MAPPINGS
-  unsigned char *zOut = sqlite3_malloc64( nIn*5 + 1 );
+  unsigned char *zOut = sqlite3_malloc64( (i64)nIn*5 + 1 );
 #else
-  unsigned char *zOut = sqlite3_malloc64( nIn*4 + 1 );
+  unsigned char *zOut = sqlite3_malloc64( (i64)nIn*4 + 1 );
 #endif
   int c, sz, nOut;
   if( zOut==0 ) return 0;
@@ -2066,7 +2067,7 @@ static int spellfix1Init(
   int i;
 
   nDbName = (int)strlen(zDbName);
-  pNew = sqlite3_malloc64( sizeof(*pNew) + nDbName + 1);
+  pNew = sqlite3_malloc64( sizeof(*pNew) + (i64)nDbName + 1);
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{

@@ -810,7 +810,7 @@ static void jsonAppendSqlValue(
       break;
     }
     case SQLITE_FLOAT: {
-      jsonPrintf(100, p, "%!0.15g", sqlite3_value_double(pValue));
+      jsonPrintf(100, p, "%!0.17g", sqlite3_value_double(pValue));
       break;
     }
     case SQLITE_INTEGER: {

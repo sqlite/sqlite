@@ -515,7 +515,10 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 static void markTermAsChild(WhereClause *pWC, int iChild, int iParent){
   pWC->a[iChild].iParent = iParent;
   pWC->a[iChild].truthProb = pWC->a[iParent].truthProb;
+  assert(   pWC->a[iParent].nChild <  UMXV(pWC->a[0].nChild) );
   pWC->a[iParent].nChild++;
+  testcase( pWC->a[iParent].nChild == UMXV(pWC->a[0].nChild) );
+
 }
 
 /*
@@ -904,29 +907,58 @@ static void exprAnalyzeOrTerm(
       }
     }
 
-    /* At this point, okToChngToIN is true if original pTerm satisfies
-    ** case 1.  In that case, construct a new virtual term that is
-    ** pTerm converted into an IN operator.
+    /* At this point, okToChngToIN is true if original pTerm is a
+    ** candidate to satisfy case 1, though we are not yet certain that
+    ** the collating sequences are all compatible.  Try to construct a
+    ** new virtual term that is pTerm converted from an OR operator
+    ** into an IN operator.
+    **
+    ** During construction, verify that the collating sequences on all
+    ** subterms of the OR are compatible.  Omit the construction of the
+    ** new IN operator if there are any collating sequence mismatches.
     */
     if( okToChngToIN ){
       Expr *pDup;            /* A transient duplicate expression */
       ExprList *pList = 0;   /* The RHS of the IN operator */
       Expr *pLeft = 0;       /* The LHS of the IN operator */
+      CollSeq *pCollSeq = 0; /* Collating sequence to use */
       Expr *pNew;            /* The complete IN operator */
 
       for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0; i--, pOrTerm++){
+        Expr *pThis;
         if( (pOrTerm->wtFlags & TERM_OK)==0 ) continue;
         assert( pOrTerm->eOperator & WO_EQ );
         assert( (pOrTerm->eOperator & (WO_OR|WO_AND))==0 );
         assert( pOrTerm->leftCursor==iCursor );
         assert( pOrTerm->u.x.leftColumn==iColumn );
-        pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight, 0);
+        pThis = pOrTerm->pExpr;
+        pDup = sqlite3ExprDup(db, pThis->pRight, 0);
         pList = sqlite3ExprListAppend(pWInfo->pParse, pList, pDup);
-        pLeft = pOrTerm->pExpr->pLeft;
+        if( pLeft==0 ){
+          pLeft = pThis->pLeft;
+          pCollSeq = sqlite3ExprCompareCollSeq(pParse, pThis);
+        }else{
+          assert( 0==sqlite3ExprCompare(pParse, 
+                        sqlite3ExprSkipCollate(pThis->pLeft),
+                        sqlite3ExprSkipCollate(pLeft), -1) );
+          if( pCollSeq!=sqlite3ExprCompareCollSeq(pParse, pThis) ){
+            pLeft = 0;  /* Collating sequence mismatch */
+            break;
+          }
+        }
       }
-      assert( pLeft!=0 );
-      pDup = sqlite3ExprDup(db, pLeft, 0);
-      pNew = sqlite3PExpr(pParse, TK_IN, pDup, 0);
+      if( pLeft==0 ){
+        pNew = 0;  /* Collating sequence mismatch */
+      }else{
+        pDup = sqlite3ExprDup(db, pLeft, 0);
+        if( sqlite3ExprCollSeq(pParse, pDup)!=pCollSeq
+         && ALWAYS(pCollSeq!=0)
+        ){
+          assert( pCollSeq->zName!=0 );
+          pDup = sqlite3ExprAddCollateString(pParse, pDup, pCollSeq->zName);
+        }
+        pNew = sqlite3PExpr(pParse, TK_IN, pDup, 0);
+      }
       if( pNew ){
         int idxNew;
         transferJoinMarkings(pNew, pExpr);
@@ -954,7 +986,8 @@ static void exprAnalyzeOrTerm(
 **   3.  Not originating in the ON clause of an OUTER JOIN
 **   4.  The operator is not IS or else the query does not contain RIGHT JOIN
 **   5.  The affinities of A and B must be compatible
-**   6.  Both operands use the same collating sequence
+**   6.  Both operands use the same collating sequence, and they must not
+**       use explicit COLLATE clauses.
 ** If this routine returns TRUE, that means that the RHS can be substituted
 ** for the LHS anyplace else in the WHERE clause where the LHS column occurs.
 ** This is an optimization.  No harm comes from returning 0.  But if 1 is
@@ -964,7 +997,7 @@ static int termIsEquivalence(Parse *pParse, Expr *pExpr, SrcList *pSrc){
   char aff1, aff2;
   if( !OptimizationEnabled(pParse->db, SQLITE_Transitive) ) return 0;  /* (1) */
   if( pExpr->op!=TK_EQ && pExpr->op!=TK_IS ) return 0;                 /* (2) */
-  if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;                   /* (3) */
+  if( ExprHasProperty(pExpr, EP_OuterON|EP_Collate) ) return 0;        /* (3) */
   assert( pSrc!=0 );
   if( pExpr->op==TK_IS
    && pSrc->nSrc>=2
@@ -1291,6 +1324,7 @@ static void exprAnalyze(
     pList = pExpr->x.pList;
     assert( pList!=0 );
     assert( pList->nExpr==2 );
+    assert( pWC->a[idxTerm].nChild==0 );
     for(i=0; i<2; i++){
       Expr *pNewExpr;
       int idxNew;
@@ -1501,8 +1535,11 @@ static void exprAnalyze(
    && pExpr->x.pSelect->pWin==0
 #endif
    && pWC->op==TK_AND
+   && pExpr->x.pSelect->pEList->nExpr <= UMXV(pTerm->nChild)
+   /* ^-- See bug 2026-06-04T10:00:49Z */
   ){
     int i;
+    assert( pTerm->nChild==0 );
     for(i=0; i<sqlite3ExprVectorSize(pExpr->pLeft); i++){
       int idxNew;
       idxNew = whereClauseInsert(pWC, pExpr, TERM_VIRTUAL|TERM_SLICE);

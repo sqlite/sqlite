@@ -1178,4 +1178,11 @@ foreach {id start path ins set repl} {
   } [list [tx $repl]]
 }
 
+# 2026-05-29
+# JSON floating point precision
+#
+do_execsql_test json101-25.1 {
+  SELECT json_array(0.1234567890123456789)->>0 = 0.1234567890123456789;
+} 1
+
 finish_test

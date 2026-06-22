@@ -191,6 +191,29 @@ do_execsql_test 5.6 {
   SELECT snippet(p1, 0, '[', NULL, '...', 6) FROM p1('x OR ' || x'DB');
 } {{[x a a a a a...}}
 
+do_execsql_test 5.7.1 {
+  SELECT snippet(p1, 0, '[', NULL, '...', -2147483647) FROM p1('x OR ' || x'DB')
+} {{[x...}}
+do_execsql_test 5.7.2 {
+  SELECT snippet(p1, 0, '[', NULL, '...', -2147483648) FROM p1('x OR ' || x'DB')
+} {{[x...}}
+do_execsql_test 5.7.3 {
+  SELECT snippet(p1, 0, '[', NULL, '...', -2147483649) FROM p1('x OR ' || x'DB')
+} {{[x...}}
+do_execsql_test 5.7.4 {
+  SELECT snippet(p1, 0, '[', NULL, '...', 0) FROM p1('x OR ' || x'DB')
+} {{[x...}}
+
+do_execsql_test 5.8.1 {
+  SELECT snippet(p1, 0, '[', NULL, '...', 2147483647) FROM p1('x OR ' || x'DB')
+} {{[x a a a a a a a a a a}}
+do_execsql_test 5.8.2 {
+  SELECT snippet(p1, 0, '[', NULL, '...', 2147483648) FROM p1('x OR ' || x'DB')
+} {{[x a a a a a a a a a a}}
+do_execsql_test 5.8.3 {
+  SELECT snippet(p1, 0, '[', NULL, '...', 2147483649) FROM p1('x OR ' || x'DB')
+} {{[x a a a a a a a a a a}}
+
 } ;# foreach_detail_mode 
 
 reset_db
