@@ -374,15 +374,18 @@ void sqlite3_value_free(sqlite3_value *pOld){
  
 
 /**************************** sqlite3_result_  *******************************
-** The following routines are used by user-defined functions to specify
-** the function result.
+** The following routines are used by application-defined SQL functions to
+** specify the function return value.  There are many variations on
+** sqlite3_result_xxxx() for different types of return values.
 **
-** The setStrOrError() function calls sqlite3VdbeMemSetStr() to store the
-** result as a string or blob.  Appropriate errors are set if the string/blob
-** is too big or if an OOM occurs.
+** The setStrOrError() function is a helper function that invokes
+** sqlite3VdbeMemSetStr() to store the result as a string or blob.
+** Appropriate errors are set if the string/blob is too big or if
+** an OOM occurs.
 **
-** The invokeValueDestructor(P,X) routine invokes destructor function X()
-** on value P if P is not going to be used and need to be destroyed.
+** The invokeValueDestructor(P,X) helper function invokes the destructor
+** function X() on value P if P is not going to be used and need to
+** be destroyed.
 */
 static void setResultStrOrError(
   sqlite3_context *pCtx,  /* Function context */
@@ -695,7 +698,7 @@ void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   }
 }
 
-/* Force an SQLITE_TOOBIG error. */
+/* Cause the SQL function to raise an SQLITE_TOOBIG error. */
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( pCtx==0 ) return;
@@ -706,7 +709,7 @@ void sqlite3_result_error_toobig(sqlite3_context *pCtx){
                        SQLITE_UTF8, SQLITE_STATIC);
 }
 
-/* An SQLITE_NOMEM error. */
+/* Cause the SQL function to raise an SQLITE_NOMEM error. */
 void sqlite3_result_error_nomem(sqlite3_context *pCtx){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( pCtx==0 ) return;
@@ -715,6 +718,68 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   sqlite3VdbeMemSetNull(pCtx->pOut);
   pCtx->isError = SQLITE_NOMEM_BKPT;
   sqlite3OomFault(pCtx->pOut->db);
+}
+
+/* Make the return value of the SQL function or virtual table pCtx
+** be the content of the sqlite3_str object pStr.  The eOwn flag
+** determines ownership of the sqlite3_str object and its content.
+**
+**    eOwn             Ownership transfer
+**    -------------    ------------------------------------------------
+**
+**    SQLITE_COPY      The SQL function returns a copy the sqlite3_str
+**                     content and leaves the sqlite3_str object itself
+**                     unchanged.
+**
+**    SQLITE_XFER      The content of the sqlite3_str is transferred to
+**                     the SQL function and the SQL function takes
+**                     responsibility for freeing that content when it is
+**                     no longer needed.  The sqlite3_str object is reset
+**                     to an empty string.
+**
+**    SQLITE_FINISH    Like SQLITE_XFER except that the pStr is also
+**                     freed using sqlite3_str_free().
+*/
+void sqlite3_result_str(sqlite3_context *pCtx, sqlite3_str *pStr, int eOwn){
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( pCtx==0 ) return;
+  if( pStr==0 ) return;
+#endif
+  if( pStr->accError==0 ){
+    if( pStr->nChar==0 ){
+      setResultStrOrError(pCtx, "", 0, SQLITE_UTF8_ZT, SQLITE_STATIC);
+      if( eOwn ) sqlite3_str_reset(pStr);
+    }else{
+      const char *zText = sqlite3_str_value(pStr);
+      /* Only internal code has the ability to capture a pointer to
+      ** an sqlite3_str object that uses static buffer.  And none of
+      ** those internal use cases every invoke the sqlite3_result_str()
+      ** interface on a static-buffer sqlite3_str.  Should this change
+      ** in the future, the following assert() will let us know. */
+      assert( isMalloced(pStr) );
+      if( eOwn==SQLITE_COPY ){
+        setResultStrOrError(pCtx, zText, pStr->nChar, 
+                            SQLITE_UTF8, SQLITE_TRANSIENT);
+      }else{
+        setResultStrOrError(pCtx, zText, pStr->nChar,
+                            SQLITE_UTF8_ZT, SQLITE_DYNAMIC);
+      }
+    }
+  }else if( pStr->accError==SQLITE_NOMEM ){
+    sqlite3_result_error_nomem(pCtx);
+  }else{
+    assert( pStr->accError==SQLITE_TOOBIG );
+    sqlite3_result_error_toobig(pCtx);
+  }
+  if( eOwn ){
+    testcase( pStr==(sqlite3_str*)&sqlite3OomStr );
+    if( pStr->accError==0 ){
+      sqlite3StrAccumInit(pStr, pStr->db, 0, 0, pStr->mxAlloc);
+    }
+    if( eOwn==SQLITE_FINISH ){
+      sqlite3_str_free(pStr);
+    }
+  }
 }
 
 #ifndef SQLITE_UNTESTABLE

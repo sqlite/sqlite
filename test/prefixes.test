@@ -92,5 +92,9 @@ do_execsql_test 3.2 {
   SELECT prefix_length('abc',null);
 } 0
 
+# Bug 2026-06-03T07:42:00Z
+do_execsql_test 3.3 {
+  SELECT prefix_length(zeroblob(15000),zeroblob(5000));
+} 0
 
 finish_test

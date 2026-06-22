@@ -363,7 +363,7 @@ static int qpvtabBestIndex(
     }
     sqlite3_str_appendf(pStr,"aConstraint,%d,%s,%d,%d,",
        i,
-       azColname[iCol],
+       iCol>=0 ? azColname[iCol] : "rowid",
        op,
        pIdxInfo->aConstraint[i].usable);
     pVal = 0;

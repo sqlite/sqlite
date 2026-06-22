@@ -1,0 +1,28 @@
+# 2026 June 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS5 module.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5bigtok2
+return_if_no_fts5
+
+set big [string repeat a 1080000000]
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x);
+}
+
+do_catchsql_test 1.1 { INSERT INTO t VALUES($big); } {1 {out of memory}}
+
+set big {}
+
+finish_test

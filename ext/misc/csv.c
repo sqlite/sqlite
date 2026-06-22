@@ -547,6 +547,10 @@ static int csvtabConnect(
       if( nCol<=0 ){
         csv_errmsg(&sRdr, "column= value must be positive");
         goto csvtab_connect_error;
+      }else if( nCol>sqlite3_limit(db,SQLITE_LIMIT_COLUMN,-1) ){
+        csv_errmsg(&sRdr, "column= value too big, max %d",
+                   sqlite3_limit(db, SQLITE_LIMIT_COLUMN,-1));
+        goto csvtab_connect_error;
       }
     }else
     {
@@ -709,8 +713,9 @@ static int csvtabClose(sqlite3_vtab_cursor *cur){
 static int csvtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   CsvTable *pTab = (CsvTable*)p;
   CsvCursor *pCur;
-  size_t nByte;
-  nByte = sizeof(*pCur) + (sizeof(char*)+sizeof(i64))*pTab->nCol;
+  sqlite3_int64 nByte = pTab->nCol;
+  assert( pTab->nCol<32768 );
+  nByte = sizeof(*pCur) + (sizeof(char*)+sizeof(i64))*nByte;
   pCur = sqlite3_malloc64( nByte );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, nByte);

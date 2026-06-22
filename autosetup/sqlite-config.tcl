@@ -466,7 +466,7 @@ proc sqlite-configure {buildMode configScript} {
 proc sqlite-configure-phase1 {buildMode} {
   define PACKAGE_NAME sqlite
   define PACKAGE_URL {https://sqlite.org}
-  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
+  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/bugs
   define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define PACKAGE_VERSION]"
   proj-xfer-options-aliases {
     # Carry values from hidden --flag aliases over to their canonical

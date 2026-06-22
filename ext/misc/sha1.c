@@ -175,7 +175,7 @@ static void hash_step(
   }else{
     i = 0;
   }
-  (void)memcpy(&p->buffer[j], &data[i], len - i);
+  if( len-i>0 ) (void)memcpy(&p->buffer[j], &data[i], len - i);
 }
 
 /* Compute a string using sqlite3_vsnprintf() and hash it */
