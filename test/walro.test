@@ -297,4 +297,49 @@ do_multiclient_test tn {
   } {}
 }
 
+#-------------------------------------------------------------------------
+
+proc write_hex_file {fname hex} {
+  set fd [open $fname wb]
+  fconfigure $fd -translation binary -encoding binary
+  puts -nonewline $fd [decode_hexdb $hex]
+  close $fd
+}
+
+write_hex_file test.db {
+| size 8192 pagesize 4096 filename badwal.db
+| page 1 offset 0
+|      0: 53 51 4c 69 74 65 20 66 6f 72 6d 61 74 20 33 00   SQLite format 3.
+|     16: 10 00 01 01 00 40 20 20 00 00 00 02 00 00 00 02   .....@  ........
+|     32: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 04   ................
+|     48: 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 00   ................
+|     80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 02   ................
+|     96: 00 2e 76 89 0d 00 00 00 01 0f c3 00 0f c3 00 00   ..v.............
+|   4032: 00 00 00 3b 01 06 17 0f 0f 01 67 74 61 62 6c 65   ...;......gtable
+|   4048: 74 74 02 43 52 45 41 54 45 20 54 41 42 4c 45 20   tt.CREATE TABLE 
+|   4064: 74 28 78 20 49 4e 54 45 47 45 52 20 50 52 49 4d   t(x INTEGER PRIM
+|   4080: 41 52 59 20 4b 45 59 2c 20 79 20 54 45 58 54 29   ARY KEY, y TEXT)
+}
+
+write_hex_file test.db-wal {
+| size 56 pagesize 1024 filename badwal.db-wal
+| page 1 offset 0
+|      0: 37 7f 06 82 00 2d e2 18 00 00 00 00 00 00 00 00   7....-..........
+|     32: 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00 00   ................
+| end badwal.db-wal
+}
+
+write_hex_file test.db-shm {
+| size 32 pagesize 1024 filename badwal.db-wal
+| page 1 offset 0
+|      0: 53 48 4d 2d 55 4e 55 53 45 44 2d 49 4e 2d 52 45   SHM-UNUSED-IN-RE
+|     16: 41 44 4f 4e 4c 59 2d 43 41 4e 54 49 4e 49 54 0a   ADONLY-CANTINIT.
+| end badwal.db-shm
+}
+
+sqlite3 db file:test.db?mode=ro&readonly_shm=1 -uri 1
+do_execsql_test 3.0 {
+  SELECT count(*) FROM sqlite_schema
+} {1}
+
 finish_test

@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sand\sfixes\sinto\sthe\swal2\sbranch.
-D 2026-05-29T18:08:48.599
+C Fix\sa\sproblem\swith\sreadonly_shm=1\sconnections\son\sthis\sbranch\scausing\sSQLITE_PROTOCOL\sto\sbe\sreturned\sin\ssome\scases.
+D 2026-06-22T16:43:20.559
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -376,7 +376,7 @@ F ext/misc/compress.c 8191118b9b73e7796c961790db62d35d9b0fb724b045e005a5713dc9e0
 F ext/misc/csv.c 5e9d4dd749e762c144104c0f01db5bf4458735b19081ebe481a64e589a66687a
 F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a06680
 F ext/misc/decimal.c 432e5b03a0e2a68a1846a9852a565a1b546ca9b295deda834e4653f0f5577daa
-F ext/misc/diskused.c 56433ee0d1ae21975c549e873d99d07b30b1b7fee9cd58b103797d7c7a2eeab6 w ext/misc/analyze.c
+F ext/misc/diskused.c 56433ee0d1ae21975c549e873d99d07b30b1b7fee9cd58b103797d7c7a2eeab6
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 9670c8ff7b255eea7845abc5123a4958e74016c16990b10497e56380f91704b9
 F ext/misc/fileio.c 936c0a7b3382a047d833ad33f62ba59a3847b79ea745bf529797cd344966fbb0
@@ -819,7 +819,7 @@ F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 5437ce986db2f70e639ce8a3fe68dcdfe64b0f1abb14eaebecdabd5e0766cc68
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
-F src/wal.c 6fdaac2cb9a53f47052138a41ed7d102c701c6f98fba87826511c47ad31bf563
+F src/wal.c 610467d13cef79cccb9d6eddfe2d83956cc68be1f000b30cb78e42ece924e40c
 F src/wal.h 97b8a9903387401377b59507e86b93a148ef1ad4e5ce0f23659a12dcdce56af2
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 33e4a6558ee69f33d6a4e7069e3a40a55959d14e5653a9a83926e70305d471f3
@@ -2036,7 +2036,7 @@ F test/walpersist.test 8d78a1ec91299163451417b451a2bac3481f8eb9f455b1ca507a6625c
 F test/walprotocol.test 1b3f922125e341703f6e946d77fdc564d38fb3e07a9385cfdc6c99cac1ecf878
 F test/walprotocol2.test 7e4bedd5ee83607e2928ac438bf7332a396b980d3e02aa0746509ce11ad1f13c
 F test/walrestart.test 5168c0c2414d1971d8dec949c1070a0144cf15402361ba0d0e6a8054f5598a64
-F test/walro.test 78a84bc0fdae1385c06b017215c426b6845734d6a5a3ac75c918dd9b801b1b9d
+F test/walro.test 1f011c21e00596bf7135ef1a8b781ffa96e5a22eabe2ae80ab84cf67b12c577e
 F test/walro2.test 33955a6fd874dd9724005e17f77fef89d334b3171454a1256fe4941a96766cdc
 F test/walrofault.test c70cb6e308c443867701856cce92ad8288cd99488fa52afab77cca6cfd51af68
 F test/walseh1.test bae700eb99519b6d5cd3f893c04759accc5a59c391d4189fe4dd6995a533442b
@@ -2222,8 +2222,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 28d1d29ad465b150ea705af8352c0e6599b3f42c15474b2ae89e8a2c2b9b097c c7839f7a1749b38f8a36c06d93a7b59095e91ce753e8dd020de273ca8f73a239
-R da9eb2c8c6fc545fa76a8916647efb64
-U drh
-Z 81655c913c3efc0b9200f9ede46569c5
+P d8cf1a62aff38de008f9b826c4846b15e37c89dc0f8bb412b79349da4d1580b0
+R 2289bb0b48ffe72c90b31d57a179970c
+U dan
+Z d1fff2703bb94dcbe876b7cf9d75943d
 # Remove this line to create a well-formed Fossil manifest.
