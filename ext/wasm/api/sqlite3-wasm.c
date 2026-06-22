@@ -1557,7 +1557,7 @@ SQLITE_WASM_EXPORT2(int,sqlite3__wasm_posix_create_file,
 SQLITE_WASM_EXPORT2(const char *,sqlite3__wasm_kvvfsMakeKey,
                     (const char *zClass, const char *zKeyIn)){
   static char buf[SQLITE_KVOS_SZ+1] = {0};
-  assert(sqlite3KvvfsMethods.nKeySize>24);
+  assert(sqlite3KvvfsMethods.nKeySize>32);
   if( zClass && *zClass ){
     kvrecordMakeKey(zClass, zKeyIn, buf);
     return buf;

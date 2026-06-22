@@ -105,6 +105,9 @@ static const unsigned char icuUtf8Trans1[] = {
     while( (*zIn & 0xc0)==0x80 ){                          \
       c = (c<<6) + (0x3f & *(zIn++));                      \
     }                                                      \
+    if( c<0x80                                             \
+        || (c&0xFFFFF800)==0xD800                          \
+        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }        \
   }
 
 #define SQLITE_ICU_SKIP_UTF8(zIn)                          \

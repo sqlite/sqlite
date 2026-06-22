@@ -141,6 +141,7 @@ set allquicktests [test_set $alltests -exclude {
 
   writecrash.test view3.test 
   fts5dlidx.test fts5ac.test fts4merge3.test fts5prefix.test
+  fts5bigtok2.test fts5secure7.test
   sessionB.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {

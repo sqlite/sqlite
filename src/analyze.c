@@ -883,7 +883,7 @@ static void statGet(
       assert( p->current.anEq[i] || p->nRow==0 );
 #endif
     }
-    sqlite3ResultStrAccum(context, &sStat);
+    sqlite3_result_str(context, &sStat, SQLITE_XFER);
   }
 #ifdef SQLITE_ENABLE_STAT4
   else if( eCall==STAT_GET_ROWID ){
@@ -920,7 +920,7 @@ static void statGet(
       sqlite3_str_appendf(&sStat, "%llu ", (u64)aCnt[i]);
     }
     if( sStat.nChar ) sStat.nChar--;
-    sqlite3ResultStrAccum(context, &sStat);
+    sqlite3_result_str(context, &sStat, SQLITE_XFER);
   }
 #endif /* SQLITE_ENABLE_STAT4 */
 #ifndef SQLITE_DEBUG
@@ -1786,9 +1786,9 @@ static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
   }
 
   /* Set nByte to the required amount of space */
-  nByte = ROUND8(sizeof(IndexSample) * nNew);
-  nByte += sizeof(tRowcnt) * nIdxCol * 3 * nNew;
-  nByte += nIdxCol * sizeof(tRowcnt);   /* Space for Index.aAvgEq[] */
+  nByte = ROUND8(sizeof64(IndexSample) * nNew);
+  nByte += sizeof64(tRowcnt) * nIdxCol * 3 * nNew;
+  nByte += nIdxCol * sizeof64(tRowcnt);   /* Space for Index.aAvgEq[] */
 
   if( nNew==SQLITE_STAT4_EST_SAMPLES ){
     aNew = (IndexSample*)&((u8*)pIdx->pSchema->pStat4Space)[*piOff];
@@ -1800,7 +1800,7 @@ static int growSampleArray(sqlite3 *db, Index *pIdx, int *piOff){
   }
 
   pPtr = (u8*)aNew;
-  pPtr += ROUND8(nNew*sizeof(pIdx->aSample[0]));
+  pPtr += ROUND8(nNew*sizeof64(pIdx->aSample[0]));
   pSpace = (tRowcnt*)pPtr;
 
   pIdx->aAvgEq = pSpace; pSpace += nIdxCol;
@@ -1852,9 +1852,9 @@ static int stat4AllocSpace(sqlite3 *db, const char *zDb){
     }else{
       nIdxCol = pIdx->nColumn;
     }
-    nByte += ROUND8(sizeof(IndexSample) * SQLITE_STAT4_EST_SAMPLES);
-    nByte += sizeof(tRowcnt) * nIdxCol * 3 * SQLITE_STAT4_EST_SAMPLES;
-    nByte += nIdxCol * sizeof(tRowcnt);   /* Space for Index.aAvgEq[] */
+    nByte += ROUND8(sizeof64(IndexSample) * SQLITE_STAT4_EST_SAMPLES);
+    nByte += sizeof64(tRowcnt) * nIdxCol * 3 * SQLITE_STAT4_EST_SAMPLES;
+    nByte += nIdxCol * sizeof64(tRowcnt);   /* Space for Index.aAvgEq[] */
   }
 
   if( nByte>0 ){

@@ -450,4 +450,50 @@ do_execsql_test 3.6 {
   SELECT * FROM t1 INDEXED BY t1cc ORDER BY +aa;
 } {10 21 32 11 44 55 12 23 34}
 
+#-------------------------------------------------------------------------
+reset_db
+
+foreach {tn WO} {
+  1 ""
+  2 "WITHOUT ROWID"
+} {
+  reset_db
+
+  do_execsql_test 4.$tn.0 "
+    CREATE TABLE t1(a, b, c REAL, d UNIQUE, e PRIMARY KEY) $WO ;
+    INSERT INTO t1 VALUES(555, 555, 555, 555, 555);
+  "
+
+  do_execsql_test 4.$tn.1 {
+    SELECT * FROM t1;
+  } {555 555 555.0 555 555}
+
+  do_execsql_test 4.$tn.2 {
+    INSERT INTO t1(c, d, e) VALUES(22, 555, 4) 
+      ON CONFLICT(d) DO UPDATE SET b=excluded.c;
+  }
+
+  do_execsql_test 4.$tn.3 {
+    SELECT * FROM t1;
+  } {555 22.0 555.0 555 555}
+}
+
+do_execsql_test 4.3.0 {
+  CREATE TABLE t2(a, b GENERATED ALWAYS AS (a+1) VIRTUAL, c REAL, d UNIQUE);
+  INSERT INTO t2(a, c, d) VALUES(555, 555, 555);
+}
+
+do_execsql_test 4.3.1 {
+  SELECT * FROM t2
+} {555 556 555.0 555}
+
+do_execsql_test 4.3.2 {
+  INSERT INTO t2(c, d) VALUES(22, 555)
+    ON CONFLICT(d) DO UPDATE SET a = excluded.c;
+}
+
+do_execsql_test 4.3.3 {
+  SELECT * FROM t2
+} {22.0 23.0 555.0 555}
+
 finish_test
