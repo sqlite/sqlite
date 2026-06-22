@@ -13,6 +13,11 @@
 ** This file implements a virtual table that returns the whole numbers
 ** between 1 and 4294967295, inclusive.
 **
+** TESTING AND DEBUG USE ONLY ->  This is not production code.  This is
+** not a deliverable. Use the generate_series() virtual table for
+** real-world applications instead of this extension.  THIS EXTENSION
+** MAY CONTAIN BUGS.
+**
 ** Example:
 **
 **     CREATE VIRTUAL TABLE nums USING wholenumber;
@@ -154,12 +159,14 @@ static int wholenumberFilter(
   pCur->iValue = 1;
   pCur->mxValue = 0xffffffff;  /* 4294967295 */
   if( idxNum & 3 ){
-    v = sqlite3_value_int64(argv[0]) + (idxNum&1);
+    v = sqlite3_value_int64(argv[0]);
+    if( v<=pCur->mxValue && (idxNum&1)!=0 ) v++;
     if( v>pCur->iValue && v<=pCur->mxValue ) pCur->iValue = v;
     i++;
   }
   if( idxNum & 12 ){
-    v = sqlite3_value_int64(argv[i]) - ((idxNum>>2)&1);
+    v = sqlite3_value_int64(argv[i]);
+    if( v>0 && ((idxNum>>2)&1)!=0 ) v--;
     if( v>=pCur->iValue && v<pCur->mxValue ) pCur->mxValue = v;
   }
   return SQLITE_OK;

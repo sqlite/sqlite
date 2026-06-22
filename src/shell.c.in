@@ -301,7 +301,7 @@ INCLUDE ../ext/intck/sqlite3intck.h
 INCLUDE ../ext/intck/sqlite3intck.c
 INCLUDE ../ext/misc/stmtrand.c
 INCLUDE ../ext/misc/vfstrace.c
-INCLUDE ../ext/misc/analyze.c
+INCLUDE ../ext/misc/diskused.c
 
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
 #define SQLITE_SHELL_HAVE_RECOVER 1
@@ -936,7 +936,7 @@ static char *local_getline(char *zLine, FILE *in){
 ** or if the NO_COLOR environment variable exists
 */
 static int shellNoColor(void){
-#ifdef SQLITE_NO_COLOR
+#if defined(SQLITE_NO_COLOR) || defined(SQLITE_SHELL_FIDDLE)
   return 1;
 #else
   return getenv("NO_COLOR")!=0;
@@ -994,7 +994,11 @@ static const char *shellPromptAppDef(int c){
     case 4:   return "SQLITE_PS2";
 
     /* Name of the application */
+#ifndef SQLITE_CLI_APPNAME
     case 'A': return "SQLite";
+#else
+    case 'A': return SHELL_STRINGIFY(SQLITE_CLI_APPNAME);
+#endif
 
     /* Full version number of the application, including patch level */
     case 'V': return sqlite3_libversion();
@@ -2102,6 +2106,43 @@ static void modeSetStr(char **az, const char *zNew){
   }
 }
 
+/* Forward reference */
+static int pickStr(const char *zArg, char **pzErr, ...);
+
+/*
+** Change the limits on the display mode.  Return 0 on
+** success.  Return non-zero if zArg is mis-formatted.
+**
+** Valid arguments:
+**
+**    "on"             Default limits
+**    "off"            All limits turned off
+**    L,C              Line and Characters limits set
+**    L,C,T            Line, Character, and Title limits set
+**
+** Anything else returns non-zero
+*/
+static int modeSetLimit(ShellState *p, const char *zArg){
+  int k = zArg==0 ? 1 : pickStr(zArg,0,"on","off","");
+  if( k==0 ){
+    p->mode.spec.nLineLimit = DFLT_LINE_LIMIT;
+    p->mode.spec.nCharLimit = DFLT_CHAR_LIMIT;
+    p->mode.spec.nTitleLimit = DFLT_TITLE_LIMIT;
+  }else if( k==1 ){
+    p->mode.spec.nLineLimit = 0;
+    p->mode.spec.nCharLimit = 0;
+    p->mode.spec.nTitleLimit = 0;
+  }else{
+    int L, C, T = 0;
+    int nNum = sscanf(zArg, "%d,%d,%d", &L, &C, &T);
+    if( nNum<2 || L<0 || C<0 || T<0) return 1;
+    p->mode.spec.nLineLimit = L;
+    p->mode.spec.nCharLimit = C;
+    if( nNum==3 ) p->mode.spec.nTitleLimit = T;
+  }
+  return 0;
+}
+
 /*
 ** Change the mode to eMode
 */
@@ -2138,6 +2179,7 @@ static void modeChange(ShellState *p, unsigned char eMode){
     u8 mFlags = p->mode.mFlags;
     modeFree(&p->mode);
     modeChange(p, MODE_List);
+    modeSetLimit(p, "off");
     p->mode.mFlags = mFlags;
   }else if( eMode==MODE_TTY ){
     u8 mFlags = p->mode.mFlags;
@@ -4226,8 +4268,8 @@ static const char *(azHelp[]) = {
 #if SQLITE_SHELL_HAVE_RECOVER
   ".dbinfo ?DB?             Show status information about the database",
 #endif
-  ".dbstat ?SCHEMA?         Report database space and size stats",
   ".dbtotxt                 Hex dump of the database file",
+  ".diskused ?SCHEMA?       Report database space and size stats",
   ".dump ?OBJECTS?          Render database content as SQL",
   "   Options:",
   "     --data-only            Output only INSERT statements",
@@ -5072,7 +5114,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_regexp_init(p->db, 0, 0);
     sqlite3_ieee_init(p->db, 0, 0);
     sqlite3_series_init(p->db, 0, 0);
-    sqlite3_analyze_init(p->db, 0, 0);
+    sqlite3_diskused_init(p->db, 0, 0);
 #ifndef SQLITE_SHELL_FIDDLE
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
@@ -6878,7 +6920,7 @@ struct ArCommand {
   u8 eCmd;                        /* An AR_CMD_* value */
   u8 bVerbose;                    /* True if --verbose */
   u8 bZip;                        /* True if the archive is a ZIP */
-  u8 bDryRun;                     /* True if --dry-run */
+  u8 bDryRun;                     /* 1 for --dry-run, 2 for --debug */
   u8 bAppend;                     /* True if --append */
   u8 bGlob;                       /* True if --glob */
   u8 fromCmdLine;                 /* Run from -A instead of .archive */
@@ -6940,6 +6982,7 @@ static int arErrorMsg(ArCommand *pAr, const char *zFmt, ...){
 #define AR_SWITCH_APPEND     11
 #define AR_SWITCH_DRYRUN     12
 #define AR_SWITCH_GLOB       13
+#define AR_SWITCH_DEBUG      14
 
 static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
   switch( eSwitch ){
@@ -6957,7 +7000,10 @@ static int arProcessSwitch(ArCommand *pAr, int eSwitch, const char *zArg){
       break;
 
     case AR_SWITCH_DRYRUN:
-      pAr->bDryRun = 1;
+      if( pAr->bDryRun<2 ) pAr->bDryRun = 1;
+      break;
+    case AR_SWITCH_DEBUG:
+      pAr->bDryRun = 2;
       break;
     case AR_SWITCH_GLOB:
       pAr->bGlob = 1;
@@ -7008,6 +7054,7 @@ static int arParseCommand(
     { "append",    'a', AR_SWITCH_APPEND,    1 },
     { "directory", 'C', AR_SWITCH_DIRECTORY, 1 },
     { "dryrun",    'n', AR_SWITCH_DRYRUN,    0 },
+    { "debug",      0,  AR_SWITCH_DEBUG,     0 },
     { "glob",      'g', AR_SWITCH_GLOB,      0 },
   };
   int nSwitch = sizeof(aSwitch) / sizeof(struct ArSwitch);
@@ -7308,14 +7355,37 @@ static int arRemoveCommand(ArCommand *pAr){
 ** Implementation of .ar "eXtract" command.
 */
 static int arExtractCommand(ArCommand *pAr){
+  /* The zSql1[] string is a template for the query that does the
+  ** extraction.  Notes:
+  **
+  **   *  $dir is the directory into which the archive is to be extracted
+  **   *  $pass is the integer pass number: 0, 1, or 2
+  **   *  The dest CTE is created so that realpath($dir) only needs
+  **      to be called once.
+  */
   const char *zSql1 =
-    "WITH dest(dpath,dlen) AS (SELECT realpath($dir),length(realpath($dir)))\n"
-    "SELECT ($dir || name),\n"
-    "       CASE WHEN $dryrun THEN 0\n"
-    "            ELSE writefile($dir||name, %s, mode, mtime) END\n"
+    "WITH dest(dpath,dlen) AS (\n"
+#ifdef _WIN32
+    "  SELECT realpath($dir) || '\\',\n"
+#else
+    "  SELECT realpath($dir) || '/',\n"
+#endif
+    "  1+length(realpath($dir))\n"
+    ")\n"
+    "SELECT\n"
+    "    ($dir || name),\n"
+    "    CASE $dryrun\n"                /*   vv--- azExtraArg */
+    "      WHEN 0 THEN writefile($dir||name, %s, mode, mtime)\n"
+    "      WHEN 1 THEN 0\n"
+    "      ELSE shell_putsnl(format('writefile(%%Q,%%s,%%0o,%%d)',"
+                           "$dir||name,quote(%s),mode,mtime)) IS NULL\n"
+    "      END\n"                       /*   ^^--- azExtraArg */
     "  FROM dest CROSS JOIN %s\n"
-    " WHERE (%s)\n"
-    "   AND (data IS NULL OR $pass==0)\n"                /* Dirs both passes */
+    " WHERE (%s)\n"      /* ^^-- pAr->zSrcTable */
+         /*  ^^--- zWhere */
+    "   AND (CASE $pass WHEN 0 THEN (mode&0xf000)<>0xa000\n"
+    "                   WHEN 1 THEN (mode&0xf000)=0xa000\n"
+    "                   ELSE data IS NULL END)\n"
     "   AND dpath=substr(realpath($dir||name),1,dlen)\n" /* No escapes */
     "   AND name NOT GLOB '*..[/\\]*'\n";                /* No /../ in paths */
 
@@ -7346,7 +7416,10 @@ static int arExtractCommand(ArCommand *pAr){
   }
 
   shellPreparePrintf(pAr->db, &rc, &pSql, zSql1,
-      azExtraArg[pAr->bZip], pAr->zSrcTable, zWhere
+      azExtraArg[pAr->bZip],
+      azExtraArg[pAr->bZip],
+      pAr->zSrcTable,
+      zWhere
   );
 
   if( rc==SQLITE_OK ){
@@ -7356,25 +7429,31 @@ static int arExtractCommand(ArCommand *pAr){
     sqlite3_bind_int(pSql, j, pAr->bDryRun);
 
     /* Run the SELECT statement twice
-    **   (0) writefile() all files and directories
-    **   (1) writefile() for directory again
-    ** The second pass is so that the timestamps for extracted directories
+    **   (0) writefile() files and directories
+    **   (1) writefile() symlinks
+    **   (2) writefile() for directory again
+    ** The third pass is so that the timestamps for extracted directories
     ** will be reset to the value in the archive, since populating them
     ** in the first pass will have changed the timestamp. */
-    for(i=0; i<2; i++){
+    for(i=0; i<3; i++){
+      if( pAr->bDryRun>=2 ){
+        cli_printf(pAr->out, "*** BEGIN PASS %d ***\n", i+1);
+      }
       j = sqlite3_bind_parameter_index(pSql, "$pass");
       sqlite3_bind_int(pSql, j, i);
-      if( pAr->bDryRun ){
+      if( pAr->bDryRun && i==0 ){
         cli_printf(pAr->out, "%s\n", sqlite3_sql(pSql));
-        if( pAr->bVerbose==0 ) break;
       }
       while( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pSql) ){
         if( i==0 && pAr->bVerbose ){
           cli_printf(pAr->out, "%s\n", sqlite3_column_text(pSql, 0));
         }
       }
-      if( pAr->bDryRun ) break;
+      if( pAr->bDryRun==1 ) break;
       shellReset(&rc, pSql);
+      if( pAr->bDryRun>=2 ){
+        cli_printf(pAr->out, "*** END PASS %d ***\n", i+1);
+      }
     }
     shellFinalize(&rc, pSql);
   }
@@ -8158,7 +8237,7 @@ SELECT CASE WHEN (nc < 10) THEN 1 WHEN (nc < 100) THEN 2 \
 SELECT\
  '('||x'0a'\
  || group_concat(\
-  cname||' ANY',\
+  cname,\
   ','||iif((cpos-1)%4>0, ' ', x'0a'||' '))\
  ||')' AS ColsSpec \
 FROM (\
@@ -9003,26 +9082,10 @@ static int dotCmdMode(ShellState *p){
         dotCmdError(p, i-1, "missing argument", 0);
         return 1;
       }
-      k = pickStr(azArg[i],0,"on","off","");
-      if( k==0 ){
-        p->mode.spec.nLineLimit = DFLT_LINE_LIMIT;
-        p->mode.spec.nCharLimit = DFLT_CHAR_LIMIT;
-        p->mode.spec.nTitleLimit = DFLT_TITLE_LIMIT;
-      }else if( k==1 ){
-        p->mode.spec.nLineLimit = 0;
-        p->mode.spec.nCharLimit = 0;
-        p->mode.spec.nTitleLimit = 0;
-      }else{
-        int L, C, T = 0;
-        int nNum = sscanf(azArg[i], "%d,%d,%d", &L, &C, &T);
-        if( nNum<2 || L<0 || C<0 || T<0){
-          dotCmdError(p, i, "bad argument", "Should be \"L,C,T\" where L, C"
-                            " and T are unsigned integers");
-          return 1;
-        }        
-        p->mode.spec.nLineLimit = L;
-        p->mode.spec.nCharLimit = C;
-        if( nNum==3 ) p->mode.spec.nTitleLimit = T;
+      if( modeSetLimit(p, azArg[i]) ){
+        dotCmdError(p, i, "bad argument", "Should be \"on\" or \"off\" or "
+                    "\"L,C,T\" where L, C, and T are unsigned integers");
+        return 1;
       }
       chng = 1;
     }else if( optionMatch(z,"list") ){
@@ -10240,7 +10303,12 @@ static int do_meta_command(const char *zLine, ShellState *p){
   }else
 #endif /* SQLITE_SHELL_HAVE_RECOVER */
 
-  if( c=='d' && n==6 && cli_strncmp(azArg[0], "dbstat", n)==0 ){
+  if( c=='d' && n>=3 && cli_strncmp(azArg[0], "dbtotxt", n)==0 ){
+    open_db(p, 0);
+    rc = shell_dbtotxt_command(p, nArg, azArg);
+  }else
+
+  if( c=='d' && n==8 && cli_strncmp(azArg[0], "diskused", n)==0 ){
     const char *zSchema = 0;
     int ii;
     char *zSql;
@@ -10259,21 +10327,13 @@ static int do_meta_command(const char *zLine, ShellState *p){
       }
       zSchema = z;
     }
-    zSql = sqlite3_mprintf("SELECT analyze(%Q)", zSchema);
+    zSql = sqlite3_mprintf("SELECT diskused(%Q)", zSchema);
     shell_check_oom(zSql);
     modePush(p);
     modeChange(p, MODE_BATCH);
-    p->mode.spec.nLineLimit = 0;
-    p->mode.spec.nCharLimit = 0;
-    p->mode.spec.nTitleLimit = 0;
     shell_exec(p, zSql, 0);
     modePop(p);
     sqlite3_free(zSql);
-  }else
-
-  if( c=='d' && n>=3 && cli_strncmp(azArg[0], "dbtotxt", n)==0 ){
-    open_db(p, 0);
-    rc = shell_dbtotxt_command(p, nArg, azArg);
   }else
 
   if( c=='d' && cli_strncmp(azArg[0], "dump", n)==0 ){
@@ -13642,13 +13702,13 @@ static const char zOptions[] =
   "   -A ARGS...           run \".archive ARGS\" and exit\n"
 #endif
   "   -append              append the database to the end of the file\n"
-  "   -ascii               set output mode to 'ascii'\n"
+  "   -ascii               set '.mode ascii'\n"
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
-  "   -box                 set output mode to 'box'\n"
+  "   -box                 set '.mode box'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
-  "   -column              set output mode to 'column'\n"
-  "   -csv                 set output mode to 'csv'\n"
+  "   -column              set '.mode column'\n"
+  "   -csv                 set '.mode csv -limits off'\n"
 #if !defined(SQLITE_OMIT_DESERIALIZE)
   "   -deserialize         open the database using sqlite3_deserialize()\n"
 #endif
@@ -13660,14 +13720,14 @@ static const char zOptions[] =
   "   -heap SIZE           Size of heap for memsys3 or memsys5\n"
 #endif
   "   -help                show this message\n"
-  "   -html                set output mode to HTML\n"
+  "   -html                set '.mode html'\n"
   "   -ifexists            only open if database already exists\n"
   "   -interactive         force interactive I/O\n"
-  "   -json                set output mode to 'json'\n"
-  "   -line                set output mode to 'line'\n"
-  "   -list                set output mode to 'list'\n"
+  "   -json                set '.mode json'\n"
+  "   -line                set '.mode line'\n"
+  "   -list                set '.mode list'\n"
   "   -lookaside SIZE N    use N entries of SZ bytes for lookaside memory\n"
-  "   -markdown            set output mode to 'markdown'\n"
+  "   -markdown            set '.mode markdown'\n"
 #if !defined(SQLITE_OMIT_DESERIALIZE)
   "   -maxsize N           maximum size for a --deserialize database\n"
 #endif
@@ -13684,7 +13744,7 @@ static const char zOptions[] =
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
   "   -pcachetrace         trace all page cache operations\n"
-  "   -quote               set output mode to 'quote'\n"
+  "   -quote               set '.mode quote'\n"
   "   -readonly            open the database read-only\n"
   "   -safe                enable safe-mode\n"
   "   -screenwidth N       use N as the default screenwidth \n"
@@ -13693,8 +13753,8 @@ static const char zOptions[] =
   "   -sorterref SIZE      sorter references threshold size\n"
 #endif
   "   -stats               print memory stats before each finalize\n"
-  "   -table               set output mode to 'table'\n"
-  "   -tabs                set output mode to 'tabs'\n"
+  "   -table               set '.mode table'\n"
+  "   -tabs                set '.mode tabs'\n"
   "   -unsafe-testing      allow unsafe commands and modes for testing\n"
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
@@ -13730,7 +13790,7 @@ static void verify_uninitialized(void){
 /*
 ** https://sqlite.org/forum/forumpost/aad7a634916ff050:
 **
-** Calling setlocale(LC_ALL,"") is required to get libedit to accept
+** Calling setlocale(LC_...,"") is required to get libedit to accept
 ** non-ASCII input.
 */
 #define DO_SET_LOCALE 1
@@ -13796,7 +13856,7 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 /*
 ** The callback from atexit().
 */
-static void abnormalExit(void){
+static void SQLITE_CDECL abnormalExit(void){
   if( seenInterrupt ) eputz("Program interrupted.\n");
   if( globalShellState ){
     clearTempFile(globalShellState, 1, 1);
@@ -14007,7 +14067,7 @@ int SQLITE_CDECL main(int argc, char **argv){
         azCmd = realloc(azCmd, sizeof(azCmd[0])*nCmd);
         shell_check_oom(azCmd);
         aiCmd = realloc(aiCmd, sizeof(aiCmd[0])*nCmd);
-        shell_check_oom(azCmd);
+        shell_check_oom(aiCmd);
         azCmd[nCmd-1] = z;
         aiCmd[nCmd-1] = i;
       }
@@ -14298,6 +14358,7 @@ int SQLITE_CDECL main(int argc, char **argv){
       modeChange(&data, MODE_Box);
     }else if( cli_strcmp(z,"-csv")==0 ){
       modeChange(&data, MODE_Csv);
+      modeSetLimit(&data, "off");
     }else if( cli_strcmp(z,"-escape")==0 && i+1<argc ){
       /* See similar code at tag-20250224-1 */
       const char *zEsc = argv[++i];
@@ -14358,8 +14419,10 @@ int SQLITE_CDECL main(int argc, char **argv){
                        cmdline_option_value(argc,argv,++i));
     }else if( cli_strcmp(z,"-header")==0 ){
       data.mode.spec.bTitles = QRF_Yes;
+      data.mode.mFlags |= MFLG_HDR;
      }else if( cli_strcmp(z,"-noheader")==0 ){
       data.mode.spec.bTitles = QRF_No;
+      data.mode.mFlags |= MFLG_HDR;
     }else if( cli_strcmp(z,"-echo")==0 ){
       data.mode.mFlags |= MFLG_ECHO;
     }else if( cli_strcmp(z,"-eqp")==0 ){

@@ -182,12 +182,19 @@ int sqlite3BtreeNewDb(Btree *p);
 **     implementations with limits on what needs to be prefetched and thereby
 **     reduce network bandwidth.
 **
+** BTREE_HINT_TABLECURSOR  (arguments: BtCursor*)
+**
+**     This hint is invoked on a non-covering index cursor soon after it
+**     is opened. The only argument is a pointer to the table cursor used to
+**     obtain non-covered fields from the database.
+**
 ** Note that BTREE_HINT_FLAGS with BTREE_BULKLOAD is the only hint used by
 ** standard SQLite.  The other hints are provided for extensions that use
 ** the SQLite parser and code generator but substitute their own storage
 ** engine.
 */
 #define BTREE_HINT_RANGE 0       /* Range constraints on queries */
+#define BTREE_HINT_TABLECURSOR 1 /* Table csr associated with this index csr */
 
 /*
 ** Values that may be OR'd together to form the argument to the
@@ -247,6 +254,9 @@ void sqlite3BtreeCursorZero(BtCursor*);
 void sqlite3BtreeCursorHintFlags(BtCursor*, unsigned);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 void sqlite3BtreeCursorHint(BtCursor*, int, ...);
+ #ifdef SQLITE_DEBUG
+ BtCursor *sqlite3BtreeCursorHintTblCsr(BtCursor*);
+ #endif
 #endif
 
 int sqlite3BtreeCloseCursor(BtCursor*);
