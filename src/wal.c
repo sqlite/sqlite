@@ -1754,7 +1754,6 @@ static int walIndexRecoverOne(Wal *pWal, int iWal, u32 *pnCkpt, int *pbZero){
   assert( iWal==0 || iWal==1 );
 
   memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
-  sqlite3FastRandomness(&pWal->sPrng, 8, pWal->hdr.aSalt);
 
   rc = sqlite3OsFileSize(pWalFd, &nSize);
   if( rc==SQLITE_OK ){
