@@ -107,7 +107,7 @@ static int findDatabase(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
     sqlite3DbFree(pErrorDb, sParse.zErrMsg);
     sqlite3ParseObjectReset(&sParse);
     if( rc ){
-      return 0;
+      return -1;
     }
   }
 

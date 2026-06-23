@@ -1,5 +1,5 @@
-C Fix\san\sOOB\sread\son\sthe\sunused\sspellfix1\sextension.\s\sThe\sOOB\sread\sis\none\sbyte\sprior\sto\sthe\sstart\sof\san\sallocation,\swhich\sis\salmost\salways\nharmless.\s\s[bugs:/info/2026-06-23T18:48:40Z|Bug\s2026-06-23T18:48:40Z].
-D 2026-06-23T19:28:14.079
+C Fix\ssqlite3_backup_init()\sto\scorrectly\shandle\sthe\scase\swhere\sopening\sthe\stemp\sdatabase\sfails.
+D 2026-06-23T19:46:48.852
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -674,7 +674,7 @@ F src/alter.c da59ac700b52ba5d0e4dd099fb1818975cf8a79a546594da586b4e1eba3ae405
 F src/analyze.c 73162482c656187823217f4c00758c9ee13a420c8745bc542129e0279b792287
 F src/attach.c c58278c7d2d954785591c4fde81669ec3e4d52f348c453b028a19ae8adf4f338
 F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
-F src/backup.c 1ffcc8f99a419b68b21b89f8e325565a4777a717ec743682ca4a48ccd19bf973
+F src/backup.c 16ef48ecec03cd5f657f434303a5e1d6023369274e68b641c0e693bfaa672c40
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 515cf62220ceb483ba9a31ebb3d7565ea9d63ffc3d61bb974b2815fef393df0e
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9454592878b5732d37d61f4541bd6f0c1f893c20fc833ce4c600f9470e62d6f2
-R c4dcd21be9bd80fde4836ab157b00559
-U drh
-Z 5dee1f13812d90870793924b636f4dda
+P e58d5efc7b3387566661475e1a9afb6b94388a835cfb178999603135d57280fa
+R df60cc2defed7e9cd1ad0e00165cde93
+U dan
+Z c2c68d227570b5b89e22d4c92e5142dd
 # Remove this line to create a well-formed Fossil manifest.
