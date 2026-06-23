@@ -1,5 +1,5 @@
-C Fix\srounding\sbehavior\sfor\sall-9s\sdecimals\sin\sthe\sdecimal\sextension.\n[bugs:/info/2026-06-23T05:07:48Z|Bug\s2026-06-23T05:07:48Z]
-D 2026-06-23T10:07:50.396
+C Fix\sdequoting\serror\son\sthe\sinstantiation\sparameters\sof\sthe\nnon-deliverable\sextension\svirtual\stable\s"fuzzer.\n[bugs:/info/2026-06-23T05:51:36Z|Bug\s2026-06-23T05:51:36Z].
+D 2026-06-23T10:23:08.214
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -379,7 +379,7 @@ F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755d
 F ext/misc/explain.c 9670c8ff7b255eea7845abc5123a4958e74016c16990b10497e56380f91704b9
 F ext/misc/fileio.c a8caf3ffb59af6e9870d1a1c739981727ba165cd667bda085fa21ccfc8694059
 F ext/misc/fossildelta.c 37b67b2710a0dd2da7b3aeea19388a069471eb0fc04702a0521237770d0d04f1
-F ext/misc/fuzzer.c decaca5a3479dfba69576cd41d4e17161eaf154a5438e12d316bbc5853571802
+F ext/misc/fuzzer.c e916972f69ea1d275a33c5b72ab8cea0e68ae3871fafdc10260df9688140d3c5
 F ext/misc/ieee754.c 2901d08a586d00a1d3c0fd89e03c57ee9e2b5f013b0daab9e49c7a48a9d5946b
 F ext/misc/memstat.c 03ab52d2d841eb3f55118105c1964d5225f152b23bd708844c648b48d14ccbcf
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
@@ -1261,7 +1261,7 @@ F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a
 F test/fuzzdata6.db b8725a5f5cf7a3b7241a9038e57ca7e7cc8c3f4d86b44bd770617bda245ab2b0
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
 F test/fuzzdata8.db 8f34ae00d8d5d4747dd80983cf46161065e4f78324dcff3c893506ff8db3a4a6
-F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
+F test/fuzzer1.test 33dfbddc7b70c8639af895e1f4db6fe895c1e6e048b71b30413890e5b3822872
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
 F test/fuzzinvariants.c 6768bcd03290776cd982624729d2abee2e89e6aba62b4a2b839a98332725a167
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 35b3ff4007fc1abd36233a6b3b75bb6a123edc062f36437247c3dfe779868b70
-R 589e4e119bdcfa5227636f28530d49e1
+P 21b2692c8363f2c0629beef4860400a1d27f499a3f27745c23391bcfa09da898
+R 11edd10072d153a9016536fd807ecadd
 U drh
-Z 1ad0ee0e5ebc15b4f22dec731bcd9fe9
+Z 1fcbd6486c2940aa82bdd8816c026f4f
 # Remove this line to create a well-formed Fossil manifest.

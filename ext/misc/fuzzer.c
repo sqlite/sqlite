@@ -466,6 +466,8 @@ static char *fuzzerDequote(const char *zIn){
         if( zIn[iIn]==q ) iIn++;
         zOut[iOut++] = zIn[iIn];
       }
+      assert( iOut<=nIn );
+      zOut[iOut] = 0;
     }
     assert( (int)strlen(zOut)<=nIn );
   }
