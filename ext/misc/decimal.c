@@ -319,7 +319,7 @@ static void decimal_round(Decimal *p, int N){
     ** by adding a new 0 to the front */
     for(i=0; i<N && p->a[i]==9; i++){}
     if( i==N ){
-      decimal_expand(p, p->nDigit+1, 0);
+      decimal_expand(p, p->nDigit+1, p->nFrac);
       if( p->oom ) return;
     }
 
@@ -477,6 +477,7 @@ static void decimal_expand(Decimal *p, int nDigit, int nFrac){
   signed char *a;
   if( p==0 ) return;
   nAddFrac = nFrac - p->nFrac;
+  assert( nAddFrac>=0 );
   nAddSig = (nDigit - p->nDigit) - nAddFrac;
   if( nAddFrac==0 && nAddSig==0 ) return;
   if( nDigit+1>SQLITE_DECIMAL_MAX_DIGIT ){ p->oom = 1; return; }
