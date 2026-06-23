@@ -511,18 +511,24 @@ static void kvvfsDecodeJournal(
   const char *zTxt,      /* Text encoding.  Zero-terminated */
   int nTxt               /* Bytes in zTxt, excluding zero terminator */
 ){
-  unsigned int n = 0;
-  int c, i, mult;
+  unsigned int n = 0, mult;
+  int c, i;
   i = 0;
   mult = 1;
-  while( (c = zTxt[i++])>='a' && c<='z' ){
+  sqlite3_free(pFile->aJrnl);
+  pFile->aJrnl = 0;
+  pFile->nJrnl = 0;
+  while( (c = zTxt[i])>='a' && c<='z' ){
     n += (c - 'a')*mult;
     mult *= 26;
+    ++i;
   }
-  sqlite3_free(pFile->aJrnl);
+  if( ' '!=zTxt[i++] ){
+    /* Malformed input */
+    return;
+  }
   pFile->aJrnl = sqlite3_malloc64( n );
   if( pFile->aJrnl==0 ){
-    pFile->nJrnl = 0;
     return;
   }
   pFile->nJrnl = n;
