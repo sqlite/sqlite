@@ -1,5 +1,5 @@
-C Fix\sa\sNULL\spointer\sdereference\sthat\scould\soccur\sin\sthe\sunionvtab\svirtual\stable\sif\sthe\sconfiguration\sSQL\sreturned\san\sSQL\sNULL\svalue\sin\splace\sof\sa\stable\sname.
-D 2026-06-23T13:26:15.303
+C Do\snot\suse\sshared\slocks\son\sSHM\sfiles\swhen\sthe\sfilename\sis\sa\slong\sDOS-device\npath.\s\sOnly\sused\sshared\slocks\sfor\sUNC\spaths.\s\sDo\snot\sconfuse\sthe\nlong-DOS-device\ssyntax\swith\sUNC\spaths.\n[https://bugzilla.mozilla.org/show_bug.cgi?id=2016438|Bugzilla\s2016438].
+D 2026-06-23T15:16:15.963
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -721,7 +721,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c af5bfb3d373e8d00f0d87da57fec87ae940ce59c080c56ee4fdc1e56a9044bb3
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 92a1773139e0c6206a927c7e1648b06287583570b6e253210a06ee3886739d39
-F src/os_win.c d8c82024ac9d96ea182e7a5c346612f0ec2a9eeebe896a58725153581fd385c7
+F src/os_win.c 1ad2a8679104249197a9ea10d287136484fdf70c1a245bdda393bbfca2033980
 F src/os_win.h 5e168adf482484327195d10f9c3bce3520f598e04e07ffe62c9c5a8067c1037b
 F src/pager.c 4d929597af269c40e4de77151a58f6e9d1f182bb9923fd03b2f8a46c05094cc3
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ee4f5d82a3347863f2eb544c780d3efcc00bb43d7ea2495aaf21099f73cf800f
-Q +3a2163f9693086bc494ac899647f09467b1aba905f4db147910f203aaab724f0
-R c4b024a174de8444ed3828282f36c36d
+P 7e8de3ba28224a293fd1c220c3bf7ac5f721a01125debc5dce39f16745c43c17
+Q +a4691489f21bb1645bb8de649268dd457af53c5f613f2a7fd2e5569f029efa87
+R f32f630554fffe9714d0c0898e8775a7
 U drh
-Z ea73078a1f1a846e46c7881044d084cf
+Z 617e301cc83bca882542cff9ec92bc6c
 # Remove this line to create a well-formed Fossil manifest.

@@ -4238,11 +4238,29 @@ int sqlite3_win_test_unc_locking = 0;
 
 /*
 ** Return true if the string passed as the only argument is likely
-** to be a UNC path. In other words, if it starts with "\\".
+** to be a UNC path.  Return false if note.
+**
+** Return true if:
+**
+**   (1) The name begins with "\\"
+**   (2) But does not begin with "\\?\C:\" where C can be any alphabetic
+**       character.
+**
+** For testing, also return true in all cases if the global variable
+** sqlite3_win_test_unc_locking is true.
 */
 static int winIsUNCPath(const char *zFile){
   if( zFile[0]=='\\' && zFile[1]=='\\' ){
-    return 1;
+    if( zFile[2]=='?'
+     && zFile[3]=='\\'
+     && sqlite3Isalpha(zFile[4])
+     && zFile[5]==':'
+     && winIsDirSep(zFile[6])
+    ){
+      return sqlite3_win_test_unc_locking;
+    }else{
+      return 1;
+    }
   }
   return sqlite3_win_test_unc_locking;
 }
