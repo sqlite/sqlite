@@ -237,6 +237,11 @@ do_execsql_test 7080 {
   SELECT decimal('998999999999999', 14);
 } {999000000000000}
 
+# Bug 2026-06-23T05:07:48Z
+#
+do_execsql_test 8000 {
+  SELECT decimal('999.999',3);
+} {1000.000}
 
 
 finish_test
