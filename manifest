@@ -1,5 +1,5 @@
-C Fix\sa\sNULL\spointer\sdereference\sthat\scan\soccur\swhen\smisusing\sa\sextension\nvirtual\stable\sthat\swas\screated\sfor\stesting\spurposes.
-D 2026-06-23T11:16:22.602
+C Fix\sa\sNULL\spointer\sdereference\sthat\scould\soccur\sin\sthe\sunionvtab\svirtual\stable\sif\sthe\sconfiguration\sSQL\sreturned\san\sSQL\sNULL\svalue\sin\splace\sof\sa\stable\sname.
+D 2026-06-23T13:26:15.303
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -407,7 +407,7 @@ F ext/misc/templatevtab.c f2771161158bb78a0bfeaed9b50a018a731c7566df6a67181df0ac
 F ext/misc/tmstmpvfs.c 240caad4441328dc52bd2871f48811db46dff858d5598030e389176837a2f4df
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
 F ext/misc/uint.c 327afc166058acf566f33a15bf47c869d2d3564612644d9ff81a23efc8b36039
-F ext/misc/unionvtab.c 716d385256d5fb4beea31b0efede640807e423e85c9784d21d22f0cce010a785
+F ext/misc/unionvtab.c fe1011f185408b0afd1631fdce8090c4e69ff4eae10a760101e08b624f53bcb1
 F ext/misc/urifuncs.c f71360d14fa9e7626b563f1f781c6148109462741c5235ac63ae0f8917b9c751
 F ext/misc/uuid.c 5bb2264c1b64d163efa46509544fd7500cb8769cb7c16dd52052da8d961505cf
 F ext/misc/vfslog.c 3932ab932eeb2601dbc4447cb14d445aaa9fbe43b863ef5f014401c3420afd20
@@ -1919,7 +1919,7 @@ F test/unhex.test b7f1b806207cb77fa31c3e434fe92fba524464e3e9356809bfcc28f15af1a8
 F test/unionall.test 04d30726c5056f84f92b3a12bf8d8a1dbbe807d1ddc8af95def09e6ef2dd91e3
 F test/unionall2.test 71e8fa08d5699d50dc9f9dc0c9799c2e7a6bb7931a330d369307a4df7f157fa1
 F test/unionallfault.test 652bfbb630e6c43135965dc1e8f0a9a791da83aec885d626a632fe1909c56f73
-F test/unionvtab.test e1704ab1b4c1bb3ffc9da4681f8e85a0b909fd80b937984fc94b27415ac8e5a4
+F test/unionvtab.test bc8f1d5807583dfc9b715da0d570766528fb5a878b0620e23af32a6b55cb437e
 F test/unionvtabfault.test e8759f3d14fb938ce9657e2342db34aeac0fb9bc1692b0d1ebb0069630151d06
 F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c980094956a348423469015952455a97df3ca08709338aa03ea8bbb418e8af24
-Q +256d5cd478b83b1371ce24c9702f732cddb4dd4e06c238fc1a1b853b02ffc1f1
-R 8458221b28f7b4b2f37b79770002c27c
+P ee4f5d82a3347863f2eb544c780d3efcc00bb43d7ea2495aaf21099f73cf800f
+Q +3a2163f9693086bc494ac899647f09467b1aba905f4db147910f203aaab724f0
+R c4b024a174de8444ed3828282f36c36d
 U drh
-Z c4bccc1aa169b382a862f5b56f2b4045
+Z ea73078a1f1a846e46c7881044d084cf
 # Remove this line to create a well-formed Fossil manifest.
