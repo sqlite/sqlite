@@ -415,4 +415,14 @@ do_execsql_test 8.1 {
     'substr(printf(''%.*c'',2000000,''A''),1,if(abs(random())%2=0,1000001,1))')))>0
     FROM cnt;
 } {1}
+
+# Bug 2026-06-23T18:48:40Z
+#
+do_execsql_test 8.2 {
+  DROP TABLE IF EXISTS t1;
+  CREATE VIRTUAL TABLE t1 USING spellfix1;
+  INSERT INTO t1(word) VALUES('hello'),('world');
+  SELECT word FROM t1 WHERE word MATCH '';
+} {hello world}
+
 finish_test
