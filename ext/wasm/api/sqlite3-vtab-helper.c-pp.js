@@ -1,3 +1,4 @@
+//#if not omit-vtab
 /*
 ** 2022-11-30
 **
@@ -426,3 +427,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return vtab.setupModule.call(this, opt);
   };
 }/*sqlite3ApiBootstrap.initializers.push()*/);
+//#/if global snip

@@ -1,4 +1,4 @@
-//#if not target:node
+//#if not target:node and not omit-opfs-sahpool
 /*
   2023-07-14
 
@@ -43,6 +43,9 @@
 
   - Also because of that, it does not require the SharedArrayBuffer,
   so can function without the COOP/COEP HTTP response headers.
+
+  - Also because of that, this one is much faster and the performance
+  gap increases as the job sizes increase.
 
   - It can hypothetically support Safari 16.4+, whereas the "opfs" VFS
   requires v17 due to a subworker/storage bug in 16.x which makes it
@@ -1463,4 +1466,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   The OPFS SAH Pool VFS parts are elided from builds targeting
   node.js.
 */
-//#/if target:node
+//#/if global snip
