@@ -3257,7 +3257,7 @@ int sqlite3_win_test_unc_locking = 0;
 
 /*
 ** Return true if the string passed as the only argument is likely
-** to be a UNC path.  Return false if note.
+** to be a UNC path.  Return false if not.
 **
 ** Return true if:
 **
