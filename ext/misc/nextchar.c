@@ -181,6 +181,10 @@ static void findNextChars(nextCharContext *p){
     }else{
       const unsigned char *zOut = sqlite3_column_text(p->pStmt, 0);
       unsigned cNext;
+      if( sqlite3_column_bytes(p->pStmt,0)<=p->nPrefix ){
+        sqlite3_reset(p->pStmt);
+        continue;
+      }
       n = readUtf8(zOut+p->nPrefix, &cNext);
       sqlite3_reset(p->pStmt);
       nextCharAppend(p, cNext);

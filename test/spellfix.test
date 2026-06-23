@@ -402,4 +402,17 @@ foreach {tn conflict err bRollback res} {
   catchsql ROLLBACK
 }
 
+# Bug 2026-06-23T05:41:00Z
+#
+do_execsql_test 8.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE d(w);
+  INSERT INTO d VALUES(1);
+  WITH RECURSIVE cnt(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM cnt WHERE n<100)
+  SELECT sum(length(next_char(
+    printf('%.*c',1000000,'A'),
+    'd',
+    'substr(printf(''%.*c'',2000000,''A''),1,if(abs(random())%2=0,1000001,1))')))>0
+    FROM cnt;
+} {1}
 finish_test
