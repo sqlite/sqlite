@@ -1,5 +1,5 @@
-C Do\snot\sallow\sinternal-use-only\sfunctions\sto\sbe\scoded,\sanywhere,\sunless\ninside\sof\sa\snested\sparse\s(which\sis\sthe\scase\sfor\sALTER\sTABLE)\sor\sif\nthe\sappropriate\stest-control\sis\sactivated.\n[bugs:/info/2026-06-23T15:49:27Z|Bug\s2026-06-23T15:49:27Z].
-D 2026-06-23T19:08:18.383
+C Avoid\sa\suse-after-free\sproblem\sthat\scould\soccur\sif\sATTACH\sstatements\sare\sexecuted\swhile\sa\sbackup\soperation\sis\sactive.\sBug\s[bugs:/info/2026-06-23T15:46:48Z\s|\s2026-06-23T15:46:48Z].
+D 2026-06-23T19:14:44.276
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -674,11 +674,11 @@ F src/alter.c da59ac700b52ba5d0e4dd099fb1818975cf8a79a546594da586b4e1eba3ae405
 F src/analyze.c 73162482c656187823217f4c00758c9ee13a420c8745bc542129e0279b792287
 F src/attach.c c58278c7d2d954785591c4fde81669ec3e4d52f348c453b028a19ae8adf4f338
 F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
-F src/backup.c 6ebe22ccbedfcb92423833992130e8d65824be4e6599c3a03f540ab38fc7d13c
+F src/backup.c 1ffcc8f99a419b68b21b89f8e325565a4777a717ec743682ca4a48ccd19bf973
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 515cf62220ceb483ba9a31ebb3d7565ea9d63ffc3d61bb974b2815fef393df0e
-F src/btree.h d19e634e0fafd63d13b198df3a6306317a88a0d3daef7af8686e24a014933837
+F src/btree.h c3ba6ba663e185b265a327165bd795e6dc7806fe5a75fe9f547a8459c96f73a7
 F src/btreeInt.h 4f512ad31083216b6789762d4c345b73367985d3b39421c9ba7c0902d09fb38b
 F src/build.c 09946336c3011c2ae2faccdf04e33336e1cd51fd836651be0cd7eb5814f7f6a0
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
@@ -803,7 +803,7 @@ F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 98cf12c8ba65623a76c1eb6e6afa98ff40107c9919bf79af42f4bfc70e654232
-F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
+F src/vacuum.c 4eda73a75a15f939b45b26e189f5b25757b39d7cb6d5e972a7f754e75d019189
 F src/vdbe.c 6397694fa506aa1841dc8bb6a17c514aa602a4ad2515024fcd5880558c1ef57f
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h c31ba4dc8d280c2b1dc89c6fcee68f2555e3813ab34279552c20b964c0e338b1
@@ -899,7 +899,7 @@ F test/backcompat.test f2431465ed668f09fc3f6998e56e893a1506ccea6e8b6f409f085f759
 F test/backup.test 3b08fd4af69f0fa786931103a31f4542b184aba16e239e5f22b18c3c2476697f
 F test/backup2.test b153553ee5667b0748b43346b0725fbf80ce1f5544613bf087d669778b60ec56
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
-F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
+F test/backup5.test 3e16065dc45c40030378702aac3e92f4d6e7d8853f0328f0390c9e7a71d8c712
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test cff75b714866a4ffa0cdda252eb8fe8765483f5872c0076223c92d52b4fffd1b
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8a535a36a90cf12b783469289a882d1313038d444b4a7f04e3495ae9bdec416d
-R bdcde85ab85e1f4afa8f626c7e398d47
-U drh
-Z 99855b74f04f71968ba1547588fd3439
+P a145307e4d0b621c5493cecc7c826e8422cbd8dbc8cd9a042b8ec9e05d389eb6
+R 5cce1f25ef25a01d3c60d592539d65e2
+U dan
+Z 8fa96fd823d734ff31d1a771a22e98a7
 # Remove this line to create a well-formed Fossil manifest.
