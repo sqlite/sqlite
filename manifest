@@ -1,5 +1,5 @@
-C Fix\san\sOOB\sread\sin\sthe\snext_char()\sfunction\sof\sthe\n"spellfix"\sextension.\s\sThe\sspellfix\sextension\sis\snot\sa\sdeliverable.\n[bugs:/info/2026-06-23T05:41:00Z|Bug\s2026-06-23T05:41:00Z]
-D 2026-06-23T10:51:24.377
+C Fix\sa\sNULL\spointer\sdereference\sthat\scan\soccur\swhen\smisusing\sa\sextension\nvirtual\stable\sthat\swas\screated\sfor\stesting\spurposes.\n[bugs:/info/2026-06-23T05:32:49Z|Bug\s2026-06-23T05:32:49Z]
+D 2026-06-23T11:09:55.328
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -376,7 +376,7 @@ F ext/misc/dbdump.c 678f1b9ae2317b4473f65d03132a2482c3f4b08920799ed80feedd2941a0
 F ext/misc/decimal.c 7b32d10364a1b958f49d800ddca59692d6ac6aec0dd4974ab3c1734bd6dfecda
 F ext/misc/diskused.c 8acb4f27488fd8b9bdb0a3d300a7bd761b797b6e7858ac8038398263cededc48
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
-F ext/misc/explain.c 9670c8ff7b255eea7845abc5123a4958e74016c16990b10497e56380f91704b9
+F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
 F ext/misc/fileio.c a8caf3ffb59af6e9870d1a1c739981727ba165cd667bda085fa21ccfc8694059
 F ext/misc/fossildelta.c 37b67b2710a0dd2da7b3aeea19388a069471eb0fc04702a0521237770d0d04f1
 F ext/misc/fuzzer.c e916972f69ea1d275a33c5b72ab8cea0e68ae3871fafdc10260df9688140d3c5
@@ -1308,7 +1308,7 @@ F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f
 F test/indexA.test 11d84f6995e6e5b9d8315953fb1b6d29772ee7c7803ee9112715e7e4dd3e4974
 F test/indexedby.test 444fb04ce0b21a3daf79f84e6735b49e5a5b3396623b37df5431eb09c8b8f557
 F test/indexexpr1.test e1e6a851d1054fa4fa43b60ad51f350519fabe756e313bc687af430a1efbff6e
-F test/indexexpr2.test 1c382e81ef996d8ae8b834a74f2a9013dddf59214c32201d7c8a656d739f999a
+F test/indexexpr2.test 60b364492af311e931615fbece279fc463b281fc1ecfced762b0d33053c82f3f
 F test/indexexpr3.test 47b91bc7999805c9a34d356f672259bc49295ecc797448511cae554a309b47cd
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 410045796b4486fc2d301e661bf9fce3ca3a1ba61c72fe5d6c5d59a330443dd5
-R 5510a938005b223242a14b3abf4cf953
+P 6ede22e13f8e85c1a341c9a80a3be2f2677baee897c659af4ca43a04698e29a5
+R c9c65133b57bc4b1470ac5af3667f37d
 U drh
-Z c8b4a9ace02483cb111546d22badf1d6
+Z f46b2d0dd12114c6a2d8461d8ab04c79
 # Remove this line to create a well-formed Fossil manifest.
