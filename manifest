@@ -1,5 +1,5 @@
-C Do\snot\suse\sshared\slocks\son\sSHM\sfiles\swhen\sthe\sfilename\sis\sa\slong\sDOS-device\npath.\s\sOnly\sused\sshared\slocks\sfor\sUNC\spaths.\s\sDo\snot\sconfuse\sthe\nlong-DOS-device\ssyntax\swith\sUNC\spaths.\n[https://bugzilla.mozilla.org/show_bug.cgi?id=2016438|Bugzilla\s2016438].
-D 2026-06-23T15:16:15.963
+C Merge\sthe\sfixes\sfor\sthe\suse-after-free\sproblem\scaused\sby\sexecuting\san\sATTACH\swhen\sa\sbackup\soperation\swas\sactive,\sand\sfor\sthe\sOOB\sread\sin\sthe\sunused\sspellfix1\sextension.
+D 2026-06-23T20:28:51.931
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -397,7 +397,7 @@ F ext/misc/series.c 8612317330587e4cfeb0ae7ffe2f06fe86e66f94a0f5bbb80d8fb46f89e9
 F ext/misc/sha1.c 8bf60344c11a525384c2efd1ae77f160b06be336db679effaadf292d4b41451c
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
-F ext/misc/spellfix.c e9e951f9712b6c302e4ee84f5db5a7b18daab87aa229867c66f34684d2dfbb40
+F ext/misc/spellfix.c a262267b16f04d30a2896cc1ba644570cbdb55446951f97d026f4e062bd20291
 F ext/misc/sqlar.c 97c100b010159c08a7a9acd8eb1ea510a5522e64741aaafcd7b6c629de682edc
 F ext/misc/sqlite3_stdio.c b43a0f530c6f0fb3d41d9af8c0b40f3f71198a1db55ab8ffffbef5c8cc329d22
 F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bfa08ab1ce99f
@@ -672,11 +672,11 @@ F src/alter.c d7cbe4332a7a2c3a21ab58ee2609efade493f6ae78254613ada0759898629ee3
 F src/analyze.c 42ed904f4a81d0e4f32491e10ff8ea3cdf2f98a29b04a015f0a29046b32b4e0f
 F src/attach.c c58278c7d2d954785591c4fde81669ec3e4d52f348c453b028a19ae8adf4f338
 F src/auth.c ebec42df26b34a62b6750d30d9c2c03554a1c522020182476f7729a439fef04f
-F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
+F src/backup.c 2f5f350c714407a04fadc9c812b8fcbb47d472c543c492f9fc03043c94255406
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 377b98fbe170ae38298a3fcea5355ec88404f63238f80741992cda765ac91aeb
-F src/btree.h e823c46d87f63d904d735a24b76146d19f51f04445ea561f71cc3382fd1307f0
+F src/btree.h db9d500f049addf08ab5c7df1b5e7b54513c614def9f0b129085d1bc7b692e33
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 8581de0af3b6c448f5d64e2d18a91ac1e7057b3bcb8b8827e1240f80d87486a4
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
@@ -801,7 +801,7 @@ F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 2053344769bc602b2c23ce193f4d24f89777ab67fa768b80fa197d3876dc3017
-F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
+F src/vacuum.c 4eda73a75a15f939b45b26e189f5b25757b39d7cb6d5e972a7f754e75d019189
 F src/vdbe.c 6c57525d7db0232d52687d30da1093db0c152f14206c2ef1adf0c19a09d863e3
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h c31ba4dc8d280c2b1dc89c6fcee68f2555e3813ab34279552c20b964c0e338b1
@@ -897,7 +897,7 @@ F test/backcompat.test f2431465ed668f09fc3f6998e56e893a1506ccea6e8b6f409f085f759
 F test/backup.test 3b08fd4af69f0fa786931103a31f4542b184aba16e239e5f22b18c3c2476697f
 F test/backup2.test b153553ee5667b0748b43346b0725fbf80ce1f5544613bf087d669778b60ec56
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
-F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
+F test/backup5.test 3e16065dc45c40030378702aac3e92f4d6e7d8853f0328f0390c9e7a71d8c712
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -1669,7 +1669,7 @@ F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d
 F test/speedtest.md ea0c85ebe0ecff8b45ba6cdb26e694871f469009a5a29dcfe634b055f05ab241
 F test/speedtest.tcl b06f6321ef90bb68f18f7b0e430e25203d9da79b80f8926986a0d5f21ac485fb x
 F test/speedtest1.c 6c01252e66f46de0b6b8d5316e03521e2151782104f3608c10262aa5dce85721
-F test/spellfix.test 7f7770ee8bc738fb0dab182d9bb4ee998e3982e534bdffd1a176c08bafec50f1
+F test/spellfix.test 8d674c2d4776792cdd982c5a8bbbfd433c23bc98f00127cae83437f5d693e018
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
 F test/spellfix4.test 7c56a09de68b95051ef0627fe235e514efbba2aa816dc2a9c5c670d98877e632
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 7e8de3ba28224a293fd1c220c3bf7ac5f721a01125debc5dce39f16745c43c17
-Q +a4691489f21bb1645bb8de649268dd457af53c5f613f2a7fd2e5569f029efa87
-R f32f630554fffe9714d0c0898e8775a7
-U drh
-Z 617e301cc83bca882542cff9ec92bc6c
+P 246f46614fbdbc2609ee1c6fffe446abd6c0121c3e626a1776bf7e09759bc973
+Q +e458ed9cc9d46dfdade3b4e99eb209d8aefd40a245e002d68df1813f9f99e2d7
+R e83eeb82efe8ea8d6502efa2498da6db
+U dan
+Z b6c0ff2c6c6614bdfc01f0186668d841
 # Remove this line to create a well-formed Fossil manifest.

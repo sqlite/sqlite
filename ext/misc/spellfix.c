@@ -2604,7 +2604,7 @@ static int spellfix1FilterForMatch(
     goto filter_exit;
   }
   nPattern = (int)strlen(zPattern);
-  if( zPattern[nPattern-1]=='*' ) nPattern--;
+  if( nPattern>0 && zPattern[nPattern-1]=='*' ) nPattern--;
   zSql = sqlite3_mprintf(
      "SELECT id, word, rank, coalesce(k1,word)"
      "  FROM \"%w\".\"%w_vocab\""
