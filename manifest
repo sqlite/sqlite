@@ -1,5 +1,5 @@
-C Improve\srobustness\sagainst\scorrupt\skvvfs\sjournal\sfiles.\sAddresses\sbug\sreport\s[bugs:f4d88886e6|2026-06-23T06:51:34Z]\sand\sthe\sfirst\sfollow-up\sreport\sin\sthat\sthread.
-D 2026-06-23T13:26:35.723
+C Makefile\sdoc\stweaks.\sNo\sfunctional\schanges.
+D 2026-06-23T14:11:16.689
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -577,7 +577,7 @@ F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009e
 F ext/session/sqlite3session.c ce9f2ce2cc6b17f46854788e47016ba9be1b59ca4037728b6c025397b98edb12
 F ext/session/sqlite3session.h ca7c4422c1514a95056cc8d333217df6b1829d39058126b1de85d10cd62d7a9c
 F ext/session/test_session.c d3275da24b8d362e3c2b393c00d5248f75f1cd474dadf29d8c4683f75cb52e6d
-F ext/wasm/GNUmakefile 65feef4ec48e62249f90278c4c08a3fe3c69e2461ff560b61c03cd73606e0949
+F ext/wasm/GNUmakefile 1d76d4017ed0b7bd2a8cc079c437cd09d20a0f0fb99f488d2466703c38409cb2
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3a2163f9693086bc494ac899647f09467b1aba905f4db147910f203aaab724f0
-R 4cbfead3c6bacbc97e4c04f9732eca6d
+P bd24ea4d76c8d6816ac5177593ee3427b71b0508b5cdc804c29b2ed25405b9c8
+R 803b2c411d3715d3a70c01133965236c
 U stephan
-Z d37f83215a7a8d4a5ffc1b024e7f7270
+Z faf93b147266a9b0838a691afa0339b4
 # Remove this line to create a well-formed Fossil manifest.

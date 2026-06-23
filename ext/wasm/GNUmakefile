@@ -1306,7 +1306,7 @@ $(eval $(call gen-st64,speedtest1-worker.js,speedtest1-worker-64bit.js))
 # 1) Load sqlite3 in the main UI thread of a conventional script.
 # 2) Load sqlite3 in a conventional Worker thread.
 # 3) Load sqlite3 as an ES6 module (ESM) in the main thread.
-# 4) Load sqlite3 as an ESM worker. (Not all browsers support this.)
+# 4) Load sqlite3 as an ESM worker.
 #
 # To that end, we require two separate builds of tester1.js:
 #
@@ -1323,7 +1323,7 @@ $(eval $(call gen-st64,speedtest1-worker.js,speedtest1-worker-64bit.js))
 #
 define gen-tester1.js
 # $1 = build name to have a dep on
-# $2 = suffix for tester1SUFFIX JS
+# $2 = suffix for tester1${2} JS
 # $3 = $(bin.c-pp) flags
 $(call b.c-pp.target,test,tester1.c-pp.js,tester1$(2),$(3))
 tester1$(2): $(sqlite3.ext.js) $(out.$(1).wasm)
