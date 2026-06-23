@@ -454,4 +454,15 @@ do_execsql_test 5.4 {
   SELECT * FROM cc WHERE two LIKE '6'
 } {six 6}
 
+#-------------------------------------------------------------------
+reset_db
+load_static_extension db unionvtab
+
+do_catchsql_test 6.0 {
+  CREATE VIRTUAL TABLE temp.t USING unionvtab('SELECT ''main'', ''xyz'', 1, 2');
+} {1 {no such rowid table: main.xyz}}
+do_catchsql_test 6.1 {
+  CREATE VIRTUAL TABLE temp.t USING unionvtab('SELECT ''main'', NULL, 1, 2');
+} {1 {no such rowid table: main.}}
+
 finish_test
