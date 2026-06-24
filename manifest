@@ -1,5 +1,5 @@
-C Avoid\strying\sto\sdelete\sa\sdatabase\sfile\swhile\sit\sis\sstill\sopen\sin\sbackup5.test.
-D 2026-06-24T14:17:52.488
+C Check\sfor\scells\sthat\sextend\sof\sthe\send\sof\sa\spage\swhen\ssearching\sindexes.\nThis\sis\sa\swork-in-progress.\s\nThis\scheck-in\sincludes\sfour\sNEVER()\sand\sALWAYS()\smacros\sfor\swhich\ssimple\ntest\scases\sare\sneeded.
+D 2026-06-24T18:50:44.621
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -677,7 +677,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c 89de631678bcbb3ad46f8a8bb43fe4b87b8ada42accd1fe5def363d352ac26d3
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 515cf62220ceb483ba9a31ebb3d7565ea9d63ffc3d61bb974b2815fef393df0e
+F src/btree.c ea687ab62ad6ef04b97215921034e5769303763430cfaf6372280696e67621e3
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h 4f512ad31083216b6789762d4c345b73367985d3b39421c9ba7c0902d09fb38b
 F src/build.c 09946336c3011c2ae2faccdf04e33336e1cd51fd836651be0cd7eb5814f7f6a0
@@ -2208,8 +2208,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5482548b6bca2827246cd2cc928c89a953365da5ebe42d3a2876371ec6880f1b
-R b0d4c11e49460a97cc1177e498ab6558
-U dan
-Z d794be864d6f3f101d67593b1a8e2b43
+P 395cbed103af08e3a4fafd9a3041205535e019d4aeb58b46c4a7e4f3bca545c9
+R 04fe37b0e06967eb0b2fcc5ae6dd95fb
+T *branch * index-cell-overflow
+T *sym-index-cell-overflow *
+T -sym-trunk *
+U drh
+Z fe1148c1dfd9d9b85feb667214277917
 # Remove this line to create a well-formed Fossil manifest.
