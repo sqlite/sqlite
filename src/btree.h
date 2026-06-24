@@ -105,7 +105,7 @@ int sqlite3BtreeSavepoint(Btree *, int, int);
 
 const char *sqlite3BtreeGetFilename(Btree *);
 const char *sqlite3BtreeGetJournalname(Btree *);
-int sqlite3BtreeCopyFile(sqlite3*, int, int);
+int sqlite3BtreeCopyFile(Btree*, Btree*);
 
 int sqlite3BtreeIncrVacuum(Btree *);
 
