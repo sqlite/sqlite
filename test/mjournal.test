@@ -267,7 +267,11 @@ foreach {tn mjname bDel} $tests {
     append_super_journal test.db-journal $mjname
     set fd [open $mjname w]
     if {$content} {
-      puts -nonewline $fd [file normalize test.db-journal]
+      set jname [file normalize test.db-journal]
+      if {$::tcl_platform(platform) eq "windows"} {
+        set jname [string map [list / \\] $jname]
+      }
+      puts -nonewline $fd $jname
       puts -nonewline $fd "\0"
       set mjexists [expr !$bDel]
     } else {

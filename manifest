@@ -1,5 +1,5 @@
-C Only\sdelete\sa\ssuper-journal\sif\sit\scontains\sa\spointer\sto\sthe\scurrent\sdatabase's\sjournal.\sTest\scases\sin\sthis\scommit\smight\sbe\sbroken\son\ssome\splatforms.
-D 2026-06-24T18:51:36.470
+C Update\smjournal.test\sso\sthat\sit\sworks\son\swindows.
+D 2026-06-24T19:07:30.555
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1448,7 +1448,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test d595599972ec0b436985f0f02f243b68500ffc977b9b3194ec66c0866cfddcab
 F test/misc8.test 08d2380bc435486b12161521f225043ac2be26f02471c2c1ea4cac0b1548edbd
 F test/misuse.test 859f37014d9824ca66bd90c36372c08c80c51c9593a7cfa8a31d4f92cd4d5b7f
-F test/mjournal.test dab80921515d0a7856cf4db6ac1d288a271e1b61b41b8014e9469218920ead36
+F test/mjournal.test f054788b7ca261e3825e306a1c714060941b709fe90fde2f14336f355300d1f0
 F test/mmap1.test 18de3fd7b70a777af6004ca2feecfcdd3d0be17fa04058e808baf530c94b1a1d
 F test/mmap2.test dba452dc7db91e9df10f70bdd73dc4190c7b8ee7b5133b4684f04277ada0b9ac
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3973e37a1ef528676de44ddb1b1f18d55b90fca1f6b43c51c3f3ba613267bb92
-R bc7fb1e94610cf55af99479425038388
+P c768be03d4885557c9520c37e3cecbf5647d358a87cd34948578a4a0a8a59a5e
+R b8dfcb508ec4348b454064a355f65e92
 U dan
-Z b1fce37783a4345a4d95d4bad65d6cad
+Z 72ce813b36b10ffea83f4eb33dc152de
 # Remove this line to create a well-formed Fossil manifest.
