@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3ParseUri()\sfor\simproved\sdefenses\sagainst\sridiculously\slong\nURI\sinputs\scausing\sinteger\soverflow\sproblems.
-D 2026-06-24T15:16:53.666
+C When\srolling\sback\sa\sjournal\sthat\scontains\sa\ssuper-journal\spointer,\sonly\sattempt\sto\sunlink\sthe\ssuper-journal\sif\s(a)\sthe\sfilename\slooks\slike\sone\sthat\sSQLite\smight\shave\sgenerated,\sand\s(b)\sthe\ssuper-journal\scontains\sthe\sname\sof\sthe\sjournal\sbeing\srolled\sback.\sThis\sis\sto\slimit\sthe\sextent\sto\swhich\sSQLite\scan\sbe\scaused\sto\sdelete\sarbitrary\sfiles\sby\ssupplying\sit\swith\sa\scrafted\shot-journal.
+D 2026-06-24T20:28:31.446
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -723,7 +723,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 92a1773139e0c6206a927c7e1648b06287583570b6e253210a06ee3886739d39
 F src/os_win.c 1ad2a8679104249197a9ea10d287136484fdf70c1a245bdda393bbfca2033980
 F src/os_win.h 5e168adf482484327195d10f9c3bce3520f598e04e07ffe62c9c5a8067c1037b
-F src/pager.c 4d929597af269c40e4de77151a58f6e9d1f182bb9923fd03b2f8a46c05094cc3
+F src/pager.c a9fe20f18adfe7c3371cb68b42c723e9ce2a068a7558949216d9363359b267cf
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -1443,7 +1443,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test d595599972ec0b436985f0f02f243b68500ffc977b9b3194ec66c0866cfddcab
 F test/misc8.test 08d2380bc435486b12161521f225043ac2be26f02471c2c1ea4cac0b1548edbd
 F test/misuse.test 859f37014d9824ca66bd90c36372c08c80c51c9593a7cfa8a31d4f92cd4d5b7f
-F test/mjournal.test 3570ca4241b0d19ca1f47616f5293722f7c2fc9f2d359fc7933d67ef51dc2137
+F test/mjournal.test f054788b7ca261e3825e306a1c714060941b709fe90fde2f14336f355300d1f0
 F test/mmap1.test 18de3fd7b70a777af6004ca2feecfcdd3d0be17fa04058e808baf530c94b1a1d
 F test/mmap2.test dba452dc7db91e9df10f70bdd73dc4190c7b8ee7b5133b4684f04277ada0b9ac
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
@@ -1715,7 +1715,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigfault.tes fc5918e64f3867156fefe7cfca9d8e1f495134a5229b2b511b0dc11c07f2eab4
 F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3fb4769d61
-F test/tester.tcl 2d943f60200e0a36bcd3f1f0baf181a751cd3604ef6b6bd4c8dc39b4e8a53116
+F test/tester.tcl dfd8dd05b54bc493a8db6cc1263ee364c36e3c27fab258dad7305cd79b948f3f
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
 F test/testrunner.tcl 8d92cacf9989aefdf33229c414adac56d389b5b6d9d31d9ebed34d5ab4e13833 x
 F test/testrunner_data.tcl 48c8a230fcada37f4809f95c2ba49e44bc3d520b6165c09173249c6e65b01cc1
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d9177ed965d1284c1c8d2c6fbb8db0dd89a42909ff0a3c23e2e761a6be419011
-Q +140a693ee0c0cfa8f332cd1bbdfe045c016e4bf5169d6dd94648cbe38d7517c6
-R 1f61b3093fa865b801ac97c7d1dc6aef
+P a9cea5b555eed4315e426ee8168029840cacb165d1fcd5e2d21a105db84dc46e
+Q +6d8da8861c8ccbfdbe838587dc2f5ef1817bc0af4a6167940446ee7bdc53955c
+R c7602b608ea6d4346a62553a77ccd9f6
 U drh
-Z d755684f38209830a892294bb07f0996
+Z ade0c9258c13d6f538a26e7167f8af33
 # Remove this line to create a well-formed Fossil manifest.
