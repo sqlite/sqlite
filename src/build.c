@@ -608,7 +608,6 @@ void sqlite3CollapseDatabaseArray(sqlite3 *db){
     }
     if( j<i ){
       db->aDb[j] = db->aDb[i];
-//      sqlite3BackupUpdateSrc(db, j);
     }
     j++;
   }
