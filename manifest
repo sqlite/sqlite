@@ -1,5 +1,5 @@
-C Merge\sthe\sfixes\sfor\sthe\suse-after-free\sproblem\scaused\sby\sexecuting\san\sATTACH\swhen\sa\sbackup\soperation\swas\sactive,\sand\sfor\sthe\sOOB\sread\sin\sthe\sunused\sspellfix1\sextension.
-D 2026-06-23T20:12:17.985
+C Swap\stwo\slines\sto\sget\sthe\samalgamation\sbuilding\sagain\swith\sSQLITE_OMIT_FLOATING_POINT,\snoting\sthat\sneither\sthe\sshell\snor\sthe\scanonical\slibrary\sbuild\swith\sthat\sflag.\sReported\sin\s[forum:8c3df4da0d|forum\spost\s2026-06-24T07:21:05Z].
+D 2026-06-24T10:22:36.339
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -802,7 +802,7 @@ F src/trigger.c 5028874dd1f4fd3085bacd55c30114b5ad651525508656f65af09adf227181d5
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 98cf12c8ba65623a76c1eb6e6afa98ff40107c9919bf79af42f4bfc70e654232
+F src/util.c c069caa2e85389deeda302b792161dc536d50c401dd447269e4934aca8f6790c
 F src/vacuum.c 4eda73a75a15f939b45b26e189f5b25757b39d7cb6d5e972a7f754e75d019189
 F src/vdbe.c 6397694fa506aa1841dc8bb6a17c514aa602a4ad2515024fcd5880558c1ef57f
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a145307e4d0b621c5493cecc7c826e8422cbd8dbc8cd9a042b8ec9e05d389eb6 c08bb97f399447be767ca2932858d88db5c1ba6ba29a68b1def23957206f9883
-R 8a4bcddd80eeb20a01677ea35c3f4e1e
-U dan
-Z e588bc6f748f638589bb041cdbd85aac
+P e458ed9cc9d46dfdade3b4e99eb209d8aefd40a245e002d68df1813f9f99e2d7
+R 592bd4e6bc47a54bee1f0be621a913e3
+U stephan
+Z 56bbc5d496907534eef40aa7c99dc40d
 # Remove this line to create a well-formed Fossil manifest.
