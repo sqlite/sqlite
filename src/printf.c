@@ -858,7 +858,7 @@ void sqlite3_str_vappendf(
             while( precision-- > 0 && z[0] ){
               SQLITE_SKIP_UTF8(z);
             }
-            length = (int)(z - (unsigned char*)bufpt);
+            length = (int)MIN((z - (unsigned char*)bufpt),0x7ffffff0);
           }else{
             for(length=0; length<precision && bufpt[length]; length++){}
           }
