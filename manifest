@@ -1,5 +1,5 @@
-C Fix\sa\scomment\sin\sos_kv.c\sso\sthat\sit\sdoes\snot\smatch\s"###"\sand\sthus\sdoes\nnot\scause\sfalse-positives\swhen\ssearching\sthe\soutput\sof\sgcov.\s\sNo\nchanges\sto\scode.
-D 2026-06-24T13:46:37.585
+C Avoid\strying\sto\sdelete\sa\sdatabase\sfile\swhile\sit\sis\sstill\sopen\sin\sbackup5.test.
+D 2026-06-24T14:17:52.488
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -899,7 +899,7 @@ F test/backcompat.test f2431465ed668f09fc3f6998e56e893a1506ccea6e8b6f409f085f759
 F test/backup.test 3b08fd4af69f0fa786931103a31f4542b184aba16e239e5f22b18c3c2476697f
 F test/backup2.test b153553ee5667b0748b43346b0725fbf80ce1f5544613bf087d669778b60ec56
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
-F test/backup5.test a0716934a41bea622c5f1928d00c23093e986c3dfc58aaca9db3b431c66276dc
+F test/backup5.test b14a7681bfe99a07bbf08c526a3899f7ee3329a19359f24ca83667b290309700
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test cff75b714866a4ffa0cdda252eb8fe8765483f5872c0076223c92d52b4fffd1b
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 140a693ee0c0cfa8f332cd1bbdfe045c016e4bf5169d6dd94648cbe38d7517c6
-R ddc0e8599e94c4bd10d27a9740846df6
-U drh
-Z 7a2959fb4c647913c767460d4ddf41fb
+P 5482548b6bca2827246cd2cc928c89a953365da5ebe42d3a2876371ec6880f1b
+R b0d4c11e49460a97cc1177e498ab6558
+U dan
+Z d794be864d6f3f101d67593b1a8e2b43
 # Remove this line to create a well-formed Fossil manifest.
