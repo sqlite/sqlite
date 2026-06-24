@@ -2505,7 +2505,7 @@ static int pager_playback_one_page(
 **
 **   + The 3rd and 4th last bytes of the filename are ".9", and the 
 **     following 2 bytes are hex digits. This is a file created in 8.3 
-**     filenames
+**     filenames mode.
 **
 **   + The 3rd last byte of the filename is "9" and the filename
 **     contains the string "-mj" starting at the 12th last byte.
@@ -2520,9 +2520,11 @@ static int pagerIsSuperJrnlName(const char *zSuper){
 
   if( nSuper<4 ) return 0;
   if( zSuper[nSuper-3]!='9' ) return 0;
+#ifdef SQLITE_ENABLE_8_3_NAMES
   if( sqlite3Isxdigit(zSuper[nSuper-2])==0 ) return 0;
   if( sqlite3Isxdigit(zSuper[nSuper-1])==0 ) return 0;
   if( zSuper[nSuper-4]=='.' ) return 1;
+#endif
   if( nSuper<12 ) return 0;
   if( memcmp(&zSuper[nSuper-12], "-mj", 3) ) return 0;
   for(ii=nSuper-9; ii<nSuper; ii++){

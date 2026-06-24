@@ -1,5 +1,5 @@
-C When\srolling\sback\sa\sjournal\sthat\scontains\sa\ssuper-journal\spointer,\sonly\sattempt\sto\sunlink\sthe\ssuper-journal\sif\sthe\sfilename\slooks\slike\sone\sthat\sSQLite\smight\shave\sgenerated.\sThis\sis\sto\slimit\sthe\sextent\sto\swhich\sSQLite\scan\sbe\scaused\sto\sdelete\sarbitrary\sfiles\sby\ssupplying\sit\swith\sa\scrafted\shot-journal.\s\sBug\s[bugs:/info/2026-06-24T14:18:00Z\s|\s2026-06-24T14:18:00Z].
-D 2026-06-24T17:14:57.054
+C Do\snot\sdelete\ssuper-journal\sfiles\snamed\s"xyz.9hh"\sunless\sthe\slibrary\sis\sbuilt\swith\sSQLITE_ENABLE_8_3_FILENAMES.
+D 2026-06-24T18:03:20.210
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -725,7 +725,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
 F src/os_win.c 1227a3e962b017d676d985a8aec0d64f273991931ea0a0b99773651102f62df4
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c a2b8fa68af33b9942603e5d81fddd3a14b349eee7ef01938748855cb438ec312
+F src/pager.c 743890169ec2aee165f194334334ef07ccc2f499a49f39f1a373ddcc3a643a60
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -1448,7 +1448,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test d595599972ec0b436985f0f02f243b68500ffc977b9b3194ec66c0866cfddcab
 F test/misc8.test 08d2380bc435486b12161521f225043ac2be26f02471c2c1ea4cac0b1548edbd
 F test/misuse.test 859f37014d9824ca66bd90c36372c08c80c51c9593a7cfa8a31d4f92cd4d5b7f
-F test/mjournal.test 39677dd63cacb12aaf62173ef4ab0e9b7af3cdabdeb0ea335d17d1f22c4bb84b
+F test/mjournal.test b5cf0f006ed6e5ebee585b59c038fb452d6b7ef267c573cf3808d45006ab7adb
 F test/mmap1.test 18de3fd7b70a777af6004ca2feecfcdd3d0be17fa04058e808baf530c94b1a1d
 F test/mmap2.test dba452dc7db91e9df10f70bdd73dc4190c7b8ee7b5133b4684f04277ada0b9ac
 F test/mmap3.test b3c297e78e6a8520aafcc1a8f140535594c9086e
@@ -2208,11 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 395cbed103af08e3a4fafd9a3041205535e019d4aeb58b46c4a7e4f3bca545c9
-R 73c1d4bd2cc78546d34368e3afe8224e
-T *branch * del-super-filter
-T *sym-del-super-filter *
-T -sym-trunk *
+P 0cdde6755837935e4feaa4367a0b107e363582adc8112a91dc7416f1100ae3aa
+R f742f6a3b760fe3304ca4b954a3f0e18
 U dan
-Z b9d7aa6744ea09c029dff1ca3aa0a964
+Z a2b308a7214f63948761fd690edee7c3
 # Remove this line to create a well-formed Fossil manifest.

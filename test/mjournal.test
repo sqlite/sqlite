@@ -233,9 +233,14 @@ proc append_super_journal {jrnl mjname} {
   close $fd
 }
 
-foreach {tn mjname bDel} {
+set c 0
+ifcapable 8_3_names {
+  set c 1
+}
+
+set tests [subst {
   1 notamasterjournal   0
-  2 master.9FF          1
+  2 master.9FF          $c
   3 master-mj1234569AA  1
   4 master-mj123456_AA  0
   5 abc                 0
@@ -243,10 +248,13 @@ foreach {tn mjname bDel} {
   7 master-fj123456_AA  0
   8 -mj1234569AA        1
   9 1-mj1234569AA       1
-  10 .9AB               1
+  10 .9AB               0
   11 master.9X2         0
   12 master.92X         0
   13 master-mj12G4569AA 0
+}]
+
+foreach {tn mjname bDel} {
 } {
   db_restore_and_reopen
   execsql {
