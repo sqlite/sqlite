@@ -876,8 +876,8 @@ static double sqlite3Fp10Convert2(u64 d, int p){
 ** possible to do better without some kind of BigNum.
 */
 int sqlite3AtoF(const char *zIn, double *pResult){
-  const unsigned char *z = (const unsigned char*)zIn;
 #ifndef SQLITE_OMIT_FLOATING_POINT
+  const unsigned char *z = (const unsigned char*)zIn;
   int neg = 0;       /* True for a negative value */
   u64 s = 0;         /* mantissa */
   int d = 0;         /* Value is s * pow(10,d) */
@@ -940,7 +940,7 @@ int sqlite3AtoF(const char *zIn, double *pResult){
   if( *z=='e' || *z=='E' ){
     int esign;
     z++;
-
+ 
     /* get sign of exponent */
     if( *z=='-' ){
       esign = -1;
