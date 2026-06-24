@@ -234,9 +234,7 @@ proc append_super_journal {jrnl mjname} {
 }
 
 set c 0
-ifcapable 8_3_names {
-  set c 1
-}
+ifcapable 8_3_names { set c 1 }
 
 set tests [subst {
   1 notamasterjournal   0
@@ -254,33 +252,41 @@ set tests [subst {
   13 master-mj12G4569AA 0
 }]
 
-foreach {tn mjname bDel} {
-} {
-  db_restore_and_reopen
-  execsql {
-    PRAGMA synchronous = OFF;
-    BEGIN;
-      INSERT INTO t1 DEFAULT VALUES;
-  }
-
-  db_save_and_close
-  db_restore
-
-  append_super_journal test.db-journal $mjname
-  set fd [open $mjname w]
-  puts $fd "helloworld"
-  close $fd
-
-  sqlite3 db test.db
-  do_test 4.$tn.1 {
-    execsql { SELECT * FROM t1 }
-    file exists $mjname
-  } [expr !$bDel]
-  do_test 4.$tn.2 {
-    file exists test.db-journal
-  } {0}
+foreach {tn mjname bDel} $tests {
+  for {set content 0} {$content<2} {incr content} {
+    db_restore_and_reopen
+    execsql {
+      PRAGMA synchronous = OFF;
+      BEGIN;
+        INSERT INTO t1 DEFAULT VALUES;
+    }
   
-  forcedelete $mjname
+    db_save_and_close
+    db_restore
+  
+    append_super_journal test.db-journal $mjname
+    set fd [open $mjname w]
+    if {$content} {
+      puts -nonewline $fd [file normalize test.db-journal]
+      puts -nonewline $fd "\0"
+      set mjexists [expr !$bDel]
+    } else {
+      puts -nonewline $fd "helloworld"
+      set mjexists 1
+    }
+    close $fd
+  
+    sqlite3 db test.db
+    do_test 4.$tn.$content.1 {
+      execsql { SELECT * FROM t1 }
+      file exists $mjname
+    } $mjexists
+    do_test 4.$tn.$content.2 {
+      file exists test.db-journal
+    } {0}
+    
+    forcedelete $mjname
+  }
 }
 
 finish_test

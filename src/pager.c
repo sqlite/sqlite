@@ -2585,6 +2585,7 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   i64 nSuperJournal;        /* Size of super-journal file */
   char *zJournal;           /* Pointer to one journal within MJ file */
   char *zFree = 0;          /* Free this buffer */
+  int bSeen = 0;            /* If super-journal contains pPager->zJournal */
 
   /* Check if this looks like a real super-journal name. If it does not,
   ** return SQLITE_OK without attempting to delete it. This is to limit
@@ -2632,47 +2633,56 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
 
   zJournal = zSuperJournal;
   while( (zJournal-zSuperJournal)<nSuperJournal ){
-    int exists;
-    rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS, &exists);
-    if( rc!=SQLITE_OK ){
-      goto delsuper_out;
-    }
-    if( exists ){
-      char *zSuperPtr = 0;
-
-      /* One of the journals pointed to by the super-journal exists.
-      ** Open it and check if it points at the super-journal. If
-      ** so, return without deleting the super-journal file.
-      ** NB:  zJournal is really a MAIN_JOURNAL.  But call it a
-      ** SUPER_JOURNAL here so that the VFS will not send the zJournal
-      ** name into sqlite3_database_file_object().
-      */
-      int c;
-      int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_SUPER_JOURNAL);
-      rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
+    if( strcmp(zJournal, pPager->zJournal)==0 ){
+      bSeen = 1;
+    }else{
+      int exists;
+      rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS, &exists);
       if( rc!=SQLITE_OK ){
         goto delsuper_out;
       }
+      if( exists ){
+        char *zSuperPtr = 0;
 
-      rc = readSuperJournal(pJournal, 1+(u64)pVfs->mxPathname, &zSuperPtr);
-      sqlite3OsClose(pJournal);
-      if( rc!=SQLITE_OK ){
-        assert( zSuperPtr==0 );
-        goto delsuper_out;
-      }
+        /* One of the journals pointed to by the super-journal exists.
+        ** Open it and check if it points at the super-journal. If
+        ** so, return without deleting the super-journal file.
+        ** NB:  zJournal is really a MAIN_JOURNAL.  But call it a
+        ** SUPER_JOURNAL here so that the VFS will not send the zJournal
+        ** name into sqlite3_database_file_object().
+        */
+        int c;
+        int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_SUPER_JOURNAL);
+        rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
+        if( rc!=SQLITE_OK ){
+          goto delsuper_out;
+        }
 
-      c = zSuperPtr!=0 && strcmp(zSuperPtr, zSuper)==0;
-      freeSuperJournal(zSuperPtr);
-      if( c ){
-        /* We have a match. Do not delete the super-journal file. */
-        goto delsuper_out;
+        rc = readSuperJournal(pJournal, 1+(u64)pVfs->mxPathname, &zSuperPtr);
+        sqlite3OsClose(pJournal);
+        if( rc!=SQLITE_OK ){
+          assert( zSuperPtr==0 );
+          goto delsuper_out;
+        }
+
+        c = zSuperPtr!=0 && strcmp(zSuperPtr, zSuper)==0;
+        freeSuperJournal(zSuperPtr);
+        if( c ){
+          /* We have a match. Do not delete the super-journal file. */
+          goto delsuper_out;
+        }
       }
     }
     zJournal += (sqlite3Strlen30(zJournal)+1);
   }
 
   sqlite3OsClose(pSuper);
-  rc = sqlite3OsDelete(pVfs, zSuper, 0);
+  if( bSeen ){
+    /* Only delete the super-journal if bSeen is true - indicating that
+    ** the super-journal contained a pointer to this database's journal 
+    ** file. */
+    rc = sqlite3OsDelete(pVfs, zSuper, 0);
+  }
 
 delsuper_out:
   sqlite3_free(zFree);
