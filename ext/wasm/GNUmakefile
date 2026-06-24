@@ -244,6 +244,10 @@ endef
 #
 # -Dtarget:es6-module: for all ESM module builds
 #
+# -Dtarget:standalone-module: for JS pieces which are emitted as
+#    standalone ESM modules, as opposed to being injected into
+#    Emscripten's post-js wrapper.
+#
 # -Dtarget:node: for node.js builds
 #
 # -Dtarget:es6-module -Dtarget:es6-bundler-friendly: intended for
@@ -1167,6 +1171,81 @@ endef
 $(eval $(call gen-promiser,.js,$(c-pp.D.vanilla)))
 $(eval $(call gen-promiser,.mjs,$(c-pp.D.esm)))
 $(eval $(call gen-promiser,-bundler-friendly.mjs,$(c-pp.D.bundler)))
+
+#
+# Standalone ESM modules for API pieces. These are emitted without
+# sqlite3ApiBootstrap registration side effects.
+#
+c-pp.D.standalone-module = $(c-pp.D.esm) -Dtarget:standalone-module
+sqlite3.api.modules = \
+  $(dir.dout)/whwasmutil.js \
+  $(dir.dout)/jaccwabyt.js \
+  $(dir.dout)/sqlite3-api-glue.js \
+  $(dir.dout)/sqlite3-api-oo1.js \
+  $(dir.dout)/sqlite3-api-worker1.js \
+  $(dir.dout)/sqlite3-vtab-helper.js
+
+define gen-api-module
+$(call b.c-pp.target,filter,$(1),$$(dir.dout)/$(2),$$(c-pp.D.standalone-module))
+sqlite3.ext.js += $$(dir.dout)/$(2)
+all: $$(dir.dout)/$(2)
+endef
+
+$(eval $(call gen-api-module,$(dir.common)/whwasmutil.js,whwasmutil.js))
+$(eval $(call gen-api-module,$(dir.jacc)/jaccwabyt.js,jaccwabyt.js))
+$(eval $(call gen-api-module,$(dir.api)/sqlite3-api-glue.c-pp.js,sqlite3-api-glue.js))
+$(eval $(call gen-api-module,$(dir.api)/sqlite3-api-oo1.c-pp.js,sqlite3-api-oo1.js))
+$(eval $(call gen-api-module,$(dir.api)/sqlite3-api-worker1.c-pp.js,sqlite3-api-worker1.js))
+$(eval $(call gen-api-module,$(dir.api)/sqlite3-vtab-helper.c-pp.js,sqlite3-vtab-helper.js))
+
+$(dir.dout)/sqlite3-api-glue.js: $(dir.dout)/whwasmutil.js $(dir.dout)/jaccwabyt.js
+
+#
+# Standalone ESM modules for optional sqlite3_vfs support. These are
+# intentionally built with a distinct preprocessor flag: the canonical
+# sqlite3.mjs build also uses target:es6-module, but its API pieces are
+# injected into Emscripten's wrapper and must not emit module-level
+# import/export syntax.
+#
+sqlite3.vfs.modules = \
+  $(dir.dout)/sqlite3-vfs-helper.js \
+  $(dir.dout)/sqlite3-vfs-kvvfs.js \
+  $(dir.dout)/sqlite3-opfs-common.js \
+  $(dir.dout)/sqlite3-vfs-opfs.js \
+  $(dir.dout)/sqlite3-vfs-opfs-sahpool.js \
+  $(dir.dout)/sqlite3-vfs-opfs-wl.js
+sqlite3.vfs.bundle.jses = \
+  $(dir.api)/sqlite3-vfs-helper.c-pp.js \
+  $(dir.api)/sqlite3-vfs-kvvfs.c-pp.js \
+  $(dir.api)/opfs-common-shared.c-pp.js \
+  $(dir.api)/sqlite3-vfs-opfs.c-pp.js \
+  $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js \
+  $(dir.api)/sqlite3-vfs-opfs-wl.c-pp.js \
+  $(dir.api)/sqlite3-vfs-all.c-pp.js
+
+define gen-vfs-module
+$(call b.c-pp.target,filter,$$(dir.api)/$(1),$$(dir.dout)/$(2),$$(c-pp.D.standalone-module))
+sqlite3.ext.js += $$(dir.dout)/$(2)
+all: $$(dir.dout)/$(2)
+endef
+
+$(eval $(call gen-vfs-module,sqlite3-vfs-helper.c-pp.js,sqlite3-vfs-helper.js))
+$(eval $(call gen-vfs-module,sqlite3-vfs-kvvfs.c-pp.js,sqlite3-vfs-kvvfs.js))
+$(eval $(call gen-vfs-module,opfs-common-shared.c-pp.js,sqlite3-opfs-common.js))
+$(eval $(call gen-vfs-module,sqlite3-vfs-opfs.c-pp.js,sqlite3-vfs-opfs.js))
+$(eval $(call gen-vfs-module,sqlite3-vfs-opfs-sahpool.c-pp.js,sqlite3-vfs-opfs-sahpool.js))
+$(eval $(call gen-vfs-module,sqlite3-vfs-opfs-wl.c-pp.js,sqlite3-vfs-opfs-wl.js))
+
+$(dir.dout)/sqlite3-opfs-common.js: $(dir.api)/opfs-common-inline.c-pp.js \
+  $(dir.dout)/sqlite3-vfs-helper.js
+$(dir.dout)/sqlite3-vfs-opfs.js: $(dir.dout)/sqlite3-opfs-common.js
+$(dir.dout)/sqlite3-vfs-opfs-wl.js: $(dir.dout)/sqlite3-opfs-common.js
+$(dir.dout)/sqlite3-vfs-opfs-sahpool.js: $(dir.dout)/sqlite3-vfs-helper.js
+
+$(eval $(call b.c-pp.target,filter,$(sqlite3.vfs.bundle.jses),$(dir.dout)/sqlite3-vfs-all.js,$(c-pp.D.vanilla)))
+$(dir.dout)/sqlite3-vfs-all.js: $(dir.api)/opfs-common-inline.c-pp.js
+sqlite3.ext.js += $(dir.dout)/sqlite3-vfs-all.js
+all: $(dir.dout)/sqlite3-vfs-all.js
 
 #
 # demo1-worker-*.*:

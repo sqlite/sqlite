@@ -15,7 +15,7 @@
   WASM build. It requires that sqlite3-api-glue.js has already run
   and it installs its deliverable as sqlite3.oo1.
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+const sqlite3ApiOo1Initializer = function(sqlite3){
   const toss3 = (...args)=>{throw new sqlite3.SQLite3Error(...args)};
 
   const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
@@ -2423,7 +2423,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     Stmt
   }/*oo1 object*/;
 
-});
+  return sqlite3;
+}/*sqlite3ApiOo1Initializer()*/;
+//#if target:standalone-module
+export {sqlite3ApiOo1Initializer};
+//#/if target:standalone-module
 //#else
 /* Built with the omit-oo1 flag. */
 //#/if if not omit-oo1

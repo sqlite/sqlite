@@ -19,11 +19,12 @@
   Documentation home page: https://sqlite.org/wasm
 */
 //#if omit-kvvfs
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+const sqlite3KvvfsInitializer = function(sqlite3){
   /* These are JS plumbing, not part of the public API */
   delete sqlite3.capi.sqlite3_kvvfs_methods;
   delete sqlite3.capi.KVVfsFile;
-}
+  return sqlite3;
+};
 //#else
 //#@ policy error
 //#savepoint begin
@@ -85,9 +86,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
    e.g. asynchronously post updates to db pages to some back-end for
    backups.
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+const sqlite3KvvfsInitializer = function(sqlite3){
   if( sqlite3.config.disable?.vfs?.kvvfs ){
-    return;
+    return sqlite3;
   }
   'use strict';
   const capi = sqlite3.capi,
@@ -99,7 +100,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   delete capi.sqlite3_kvvfs_methods;
   delete capi.KVVfsFile;
 
-  if( !pKvvfs ) return /* nothing to do */;
+  if( !pKvvfs ) return sqlite3 /* nothing to do */;
   if( 0 ){
     /* This working would be our proverbial holy grail, in that it
        would allow us to eliminate the current default VFS, which
@@ -2093,6 +2094,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*KvvfsListener*/;
 //#/if nope
 
-})/*globalThis.sqlite3ApiBootstrap.initializers*/;
+  return sqlite3;
+}/*sqlite3KvvfsInitializer()*/;
 //#savepoint rollback
 //#/if not omit-kvvfs
+//#if target:standalone-module
+export {sqlite3KvvfsInitializer};
+//#/if target:standalone-module

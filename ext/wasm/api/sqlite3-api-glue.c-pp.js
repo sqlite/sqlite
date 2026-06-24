@@ -17,12 +17,19 @@
   (e.g. sqlite3-api-oo1.js) have all of the infrastructure that they
   need.
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+//#if target:standalone-module
+import {WhWasmUtilInstaller} from "./whwasmutil.js";
+import {StructBinderFactory as Jaccwabyt} from "./jaccwabyt.js";
+//#/if target:standalone-module
+const sqlite3ApiGlueInitializer = function(sqlite3){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
-  globalThis.WhWasmUtilInstaller(wasm);
-  delete globalThis.WhWasmUtilInstaller;
+//#if target:standalone-module
+  WhWasmUtilInstaller(wasm);
+//#else
+  WhWasmUtilInstaller(wasm);
+//#/if target:standalone-module
 
   if(0){
     /**
@@ -758,7 +765,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Prepare JS<->C struct bindings for the non-opaque struct types we
      need...
   */
-  sqlite3.StructBinder = globalThis.Jaccwabyt({
+  sqlite3.StructBinder =
+//#if target:standalone-module
+  Jaccwabyt({
+//#else
+  StructBinderFactory({
+//#/if target:standalone-module
     heap: wasm.heap8u,
     alloc: wasm.alloc,
     dealloc: wasm.dealloc,
@@ -769,7 +781,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                      later: it probably should have been '$$', but see
                      the previous sentence.) */ '$'
   });
-  delete globalThis.Jaccwabyt;
 
   {// wasm.xWrap() bindings...
 
@@ -1961,4 +1972,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return installMethods(this, methods, applyArgcCheck);
   };
 
-});
+  return sqlite3;
+}/*sqlite3ApiGlueInitializer()*/;
+//#if target:standalone-module
+export {sqlite3ApiGlueInitializer};
+//#/if target:standalone-module

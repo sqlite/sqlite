@@ -15,9 +15,9 @@
    without virtual table support then this function does nothing.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+const sqlite3VtabHelperInitializer = function(sqlite3){
   if( !sqlite3.wasm.exports.sqlite3_declare_vtab ){
-    return;
+    return sqlite3;
   }
   const wasm = sqlite3.wasm, capi = sqlite3.capi, toss = sqlite3.util.toss3;
   const vtab = Object.create(null);
@@ -425,4 +425,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   capi.sqlite3_module.prototype.setupModule = function(opt){
     return vtab.setupModule.call(this, opt);
   };
-}/*sqlite3ApiBootstrap.initializers.push()*/);
+  return sqlite3;
+}/*sqlite3VtabHelperInitializer()*/;
+//#if target:standalone-module
+export {sqlite3VtabHelperInitializer};
+//#/if target:standalone-module

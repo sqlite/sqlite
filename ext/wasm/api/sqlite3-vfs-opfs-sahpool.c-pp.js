@@ -53,10 +53,20 @@
   major browsers released since March 2023). If that API is not
   detected, the VFS is not registered.
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+//#if target:standalone-module
+import {sqlite3VfsHelperInitializer as installSqlite3VfsHelper}
+  from "./sqlite3-vfs-helper.js";
+//#/if target:standalone-module
+const sqlite3OpfsSAHPoolVfsInitializer = function(sqlite3){
   'use strict';
+//#if target:standalone-module
+  installSqlite3VfsHelper(sqlite3);
+//#/if target:standalone-module
   if( sqlite3.config.disable?.vfs?.['opfs-sahpool'] ){
-    return;
+    return sqlite3;
+  }
+  if( sqlite3.installOpfsSAHPoolVfs ){
+    return sqlite3;
   }
 
   const toss = sqlite3.util.toss;
@@ -1457,7 +1467,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return initPromises[vfsName] = Promise.reject(err);
     });
   }/*installOpfsSAHPoolVfs()*/;
-}/*sqlite3ApiBootstrap.initializers*/);
+  return sqlite3;
+}/*sqlite3OpfsSAHPoolVfsInitializer()*/;
+//#if target:standalone-module
+export {sqlite3OpfsSAHPoolVfsInitializer};
+//#/if target:standalone-module
 //#else
 /*
   The OPFS SAH Pool VFS parts are elided from builds targeting

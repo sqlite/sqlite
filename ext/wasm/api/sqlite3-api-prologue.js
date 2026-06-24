@@ -2117,7 +2117,52 @@ globalThis.sqlite3ApiBootstrap = async function sqlite3ApiBootstrap(
   if( 'undefined'!==typeof sqlite3IsUnderTest/* from post-js-header.js */ ){
     sqlite3.__isUnderTest = !!sqlite3IsUnderTest;
   }
+  const runInitializer = (f,...args)=>{
+    if(f instanceof Function) f(sqlite3, ...args);
+  };
   try{
+    runInitializer(
+      'function'===typeof sqlite3ApiGlueInitializer
+        && sqlite3ApiGlueInitializer
+    );
+    runInitializer(
+      'function'===typeof sqlite3ApiOo1Initializer
+        && sqlite3ApiOo1Initializer
+    );
+    runInitializer(
+      'function'===typeof sqlite3ApiWorker1Initializer
+        && sqlite3ApiWorker1Initializer
+    );
+    runInitializer(
+      'function'===typeof sqlite3VfsHelperInitializer
+        && sqlite3VfsHelperInitializer
+    );
+    runInitializer(
+      'function'===typeof sqlite3VtabHelperInitializer
+        && sqlite3VtabHelperInitializer
+    );
+    runInitializer(
+      'function'===typeof sqlite3KvvfsInitializer
+        && sqlite3KvvfsInitializer
+    );
+    runInitializer(
+      'function'===typeof sqlite3OpfsCommonInitializer
+        && sqlite3OpfsCommonInitializer
+    );
+    runInitializer(
+      'function'===typeof sqlite3OpfsSAHPoolVfsInitializer
+        && sqlite3OpfsSAHPoolVfsInitializer
+    );
+    runInitializer(
+      'function'===typeof sqlite3OpfsVfsInitializer
+        && sqlite3OpfsVfsInitializer,
+      sqlite3ApiBootstrap.initializersAsync
+    );
+    runInitializer(
+      'function'===typeof sqlite3OpfsWlVfsInitializer
+        && sqlite3OpfsWlVfsInitializer,
+      sqlite3ApiBootstrap.initializersAsync
+    );
     sqlite3ApiBootstrap.initializers.forEach((f)=>{
       f(sqlite3);
     });

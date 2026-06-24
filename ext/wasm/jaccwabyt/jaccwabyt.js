@@ -24,8 +24,7 @@
   by libcmpp 2.x 2fc4afc31f6505c27b9c34988973a2bd9b157d559247cdd26868ae75632c3a5e @ 2025-11-16 23:03:27.352 UTC
 */
 'use strict';
-globalThis.Jaccwabyt =
-function StructBinderFactory(config){
+const StructBinderFactory = function StructBinderFactory(config){
   'use strict';
 /* ^^^^ it is recommended that clients move that object into wherever
    they'd like to have it and delete the globalThis-held copy.  This
@@ -1196,3 +1195,6 @@ function StructBinderFactory(config){
   }
   return StructBinder;
 }/*StructBinderFactory*/;
+//#if target:standalone-module
+export {StructBinderFactory};
+//#/if target:standalone-module

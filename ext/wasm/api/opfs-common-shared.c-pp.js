@@ -19,11 +19,21 @@
   testing purposes only) using an undocumented and unsupported
   mechanism.
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+//#if target:standalone-module
+import {sqlite3VfsHelperInitializer as installSqlite3VfsHelper}
+  from "./sqlite3-vfs-helper.js";
+//#/if target:standalone-module
+const sqlite3OpfsCommonInitializer = function(sqlite3){
   'use strict';
+//#if target:standalone-module
+  installSqlite3VfsHelper(sqlite3);
+//#/if target:standalone-module
   if( sqlite3.config.disable?.vfs?.opfs &&
       sqlite3.config.disable.vfs['opfs-vfs'] ){
-    return;
+    return sqlite3;
+  }
+  if( sqlite3.opfs?.createVfsState ){
+    return sqlite3;
   }
   const toss = sqlite3.util.toss,
         capi = sqlite3.capi,
@@ -1302,5 +1312,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     return state;
   }/*createVfsState()*/;
 
-}/*sqlite3ApiBootstrap.initializers*/);
+  return sqlite3;
+}/*sqlite3OpfsCommonInitializer()*/;
+//#if target:standalone-module
+export {sqlite3OpfsCommonInitializer};
+//#/if target:standalone-module
 //#/if target:node

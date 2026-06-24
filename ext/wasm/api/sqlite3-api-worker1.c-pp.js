@@ -367,7 +367,7 @@
   ```
 
 */
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+const sqlite3ApiWorker1Initializer = function(sqlite3){
 const util = sqlite3.util;
 sqlite3.initWorker1API = function(){
   'use strict';
@@ -674,7 +674,11 @@ sqlite3.initWorker1API = function(){
   };
   globalThis.postMessage({type:'sqlite3-api',result:'worker1-ready'});
 }.bind({sqlite3});
-});
+  return sqlite3;
+}/*sqlite3ApiWorker1Initializer()*/;
+//#if target:standalone-module
+export {sqlite3ApiWorker1Initializer};
+//#/if target:standalone-module
 //#else
 /* Built with the omit-oo1 flag. */
 //#/if if not omit-oo1

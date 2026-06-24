@@ -18,10 +18,17 @@
   intended to be appended to the main sqlite3 JS deliverable somewhere
   after sqlite3-api-oo1.js.
 */
+//#if target:standalone-module
+import {sqlite3OpfsCommonInitializer as installSqlite3OpfsCommon}
+  from "./sqlite3-opfs-common.js";
+//#/if target:standalone-module
 'use strict';
-globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+const sqlite3OpfsVfsInitializer = function(sqlite3, asyncInitializers){
+//#if target:standalone-module
+  installSqlite3OpfsCommon(sqlite3);
+//#/if target:standalone-module
   if( !sqlite3.opfs || sqlite3.config.disable?.vfs?.opfs ){
-    return;
+    return sqlite3;
   }
   const util = sqlite3.util,
         opfsUtil = sqlite3.opfs || sqlite3.util.toss("Missing sqlite3.opfs");
@@ -171,10 +178,18 @@ const installOpfsVfs = async function(options){
     }/*extend sqlite3.oo1*/
   })/*bindVfs()*/;
 }/*installOpfsVfs()*/;
-globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
+const opfsVfsAsyncInitializer = async (sqlite3)=>{
   return installOpfsVfs().catch((e)=>{
     sqlite3.config.warn("Ignoring inability to install 'opfs' sqlite3_vfs:",e);
   })
-});
-}/*sqlite3ApiBootstrap.initializers.push()*/);
+};
+if( asyncInitializers ){
+  asyncInitializers.push(opfsVfsAsyncInitializer);
+  return sqlite3;
+}
+return opfsVfsAsyncInitializer(sqlite3);
+}/*sqlite3OpfsVfsInitializer()*/;
+//#if target:standalone-module
+export {sqlite3OpfsVfsInitializer};
+//#/if target:standalone-module
 //#/if target:node

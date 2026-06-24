@@ -50,8 +50,7 @@
 
    ```
    const target = {}; // ... some object ...
-   globalThis.WhWasmUtilInstaller(target);
-   delete globalThis.WhWasmUtilInstaller;
+   WhWasmUtilInstaller(target);
    ```
 
    The `target` object then holds the APIs. The caller may set certain
@@ -226,8 +225,7 @@
      seemed better at the time.
 */
 'use strict';
-globalThis.WhWasmUtilInstaller =
-function WhWasmUtilInstaller(target){
+const WhWasmUtilInstaller = function WhWasmUtilInstaller(target){
   'use strict';
   if(undefined===target.bigIntEnabled){
     target.bigIntEnabled = !!globalThis['BigInt64Array'];
@@ -2496,7 +2494,7 @@ function WhWasmUtilInstaller(target){
    Error handling is up to the caller, who may attach a `catch()` call
    to the promise.
 */
-globalThis.WhWasmUtilInstaller
+WhWasmUtilInstaller
 .yawl = function yawl(config){
   'use strict';
   const wfetch = ()=>fetch(config.uri, {credentials: 'same-origin'});
@@ -2543,5 +2541,8 @@ globalThis.WhWasmUtilInstaller
   ;
   return loadWasm;
 }.bind(
-globalThis.WhWasmUtilInstaller
+WhWasmUtilInstaller
 )/*yawl()*/;
+//#if target:standalone-module
+export {WhWasmUtilInstaller};
+//#/if target:standalone-module
