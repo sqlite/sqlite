@@ -209,8 +209,8 @@ b.cp = $(call b.mkdir@); \
   cp -f -p $(2) $(3) || exit
 
 # D.common = flags to use for all $(bin.c-pp) invocations. These must
-# passed before any input file names because c-pp's args are processed
-# in their given order.
+# be passed before any input file names because c-pp's args are
+# processed in their given order.
 #
 # Maintenance reminder: we cannot include -@policy=error here because
 # of the @sqlite3.wasm@ placeholders in JS files, which trigger an
@@ -593,7 +593,7 @@ ifeq (0,$(MAKING_CLEAN))
   # omit-api="feature names..." disables various featuresw by name.
   # Recognized names are: kvvfs oo1 opfs opfs-sahpool opfs-wl. The name
   # OPFS is shorthand for all of the OPFS VFSes. For-nodejs builds
-  # filter out OPFS from withni the OPFS-using files so OPFS is implied
+  # filter out OPFS from within the OPFS-using files so OPFS is implied
   # for those builds.
   D.omit =
   ifneq (,$(omit-api))
@@ -1652,7 +1652,7 @@ sqlite3-node.mjs \
 npm: $(sqlite3.canonical.c)
 	@echo "$(emo.cleanup) Forcing a clean rebuild to ensure consistent optimization flags."
 	$(MAKE) clean
-	$(MAKE) -e "emcc_opt=-Oz $(emcc-opt-extra)" $(npm_files)
+	$(MAKE) -e "emcc_opt=-Oz $(emcc-opt-extra)" "omit-api=$(omit-api)" $(npm_files)
 	rm -f $(npm.bundle.zip); zip -r $(npm.bundle.zip) $(npm_files)
 	unzip -l $(npm.bundle.zip)
 
