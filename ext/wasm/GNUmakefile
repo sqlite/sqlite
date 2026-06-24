@@ -591,10 +591,13 @@ DISTCLEAN_FILES += $(bin.c-pp)
 
 ifeq (0,$(MAKING_CLEAN))
   # omit-api="feature names..." disables various featuresw by name.
-  # Recognized names are: kvvfs oo1 opfs opfs-sahpool opfs-wl. The name
-  # OPFS is shorthand for all of the OPFS VFSes. For-nodejs builds
-  # filter out OPFS from within the OPFS-using files so OPFS is implied
-  # for those builds.
+  # Recognized names are:
+  #
+  #   kvvfs oo1 opfs opfs-sahpool opfs-wl vtab
+  #
+  # The name OPFS is shorthand for all of the OPFS VFSes. For-nodejs
+  # builds filter out OPFS from within the OPFS-using files so OPFS is
+  # implied for those builds.
   D.omit =
   ifneq (,$(omit-api))
     # Translate omit-api="X Y" into -Domit-X...
