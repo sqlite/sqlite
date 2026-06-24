@@ -989,7 +989,7 @@ int sqlite3AtoF(const char *zIn, double *pResult){
   }
   return 0xfffffff0 | mState;
 #else
-  return sqlite3Atoi64(z, pResult, strlen(z), SQLITE_UTF8)==0;
+  return sqlite3Atoi64(zIn, pResult, strlen(zIn), SQLITE_UTF8)==0;
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 }
 

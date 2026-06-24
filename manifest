@@ -1,5 +1,5 @@
-C Swap\stwo\slines\sto\sget\sthe\samalgamation\sbuilding\sagain\swith\sSQLITE_OMIT_FLOATING_POINT,\snoting\sthat\sneither\sthe\sshell\snor\sthe\scanonical\slibrary\sbuild\swith\sthat\sflag.\sReported\sin\s[forum:8c3df4da0d|forum\spost\s2026-06-24T07:21:05Z].
-D 2026-06-24T10:22:36.339
+C Fixes\sfor\sSQLITE_OMIT_FLOATING_POINT.
+D 2026-06-24T11:51:35.372
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -698,7 +698,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 5cb15147c8583d0fc4748e1c12ea6f38c9deaeefa147a4d8d379fd9bc81fee9a
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c e6e9b574b4863649e2c433f2260f226183e697df1ab73fcb8da9a85d5abcd390
-F src/json.c f058c449acb9fdb1d3d1bb9f7e97b225ba773f5b6fdcec4310d3f49980125ed4
+F src/json.c 74e903d4b84171b674727edc67eb8e89190eee0e7b737210f2af5b79db2f3bff
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 5cd4cd7ec6e1a46416806899086363fbf95eecd3bfb9a388b436c9a77243c902
 F src/main.c efd782fadd65b8e67952f439d56d7605134582346573018a614a8e082e074bd7
@@ -802,7 +802,7 @@ F src/trigger.c 5028874dd1f4fd3085bacd55c30114b5ad651525508656f65af09adf227181d5
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c c069caa2e85389deeda302b792161dc536d50c401dd447269e4934aca8f6790c
+F src/util.c 082a272b135f146b274f2abccc5923ae74e807c982c75920a156c323f8003d58
 F src/vacuum.c 4eda73a75a15f939b45b26e189f5b25757b39d7cb6d5e972a7f754e75d019189
 F src/vdbe.c 6397694fa506aa1841dc8bb6a17c514aa602a4ad2515024fcd5880558c1ef57f
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e458ed9cc9d46dfdade3b4e99eb209d8aefd40a245e002d68df1813f9f99e2d7
-R 592bd4e6bc47a54bee1f0be621a913e3
-U stephan
-Z 56bbc5d496907534eef40aa7c99dc40d
+P 23936786e680131af644510eb50b7ad20ee39221d1fb29732dea76483aed2273
+R 14dd7d0c397010fc5fc4a1f263437795
+U drh
+Z 65295beb3412023ecbd41cc57c827bfd
 # Remove this line to create a well-formed Fossil manifest.
