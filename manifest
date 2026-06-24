@@ -1,5 +1,5 @@
-C When\srolling\sback\sa\sjournal\sthat\scontains\sa\ssuper-journal\spointer,\sonly\sattempt\sto\sunlink\sthe\ssuper-journal\sif\s(a)\sthe\sfilename\slooks\slike\sone\sthat\sSQLite\smight\shave\sgenerated,\sand\s(b)\sthe\ssuper-journal\scontains\sthe\sname\sof\sthe\sjournal\sbeing\srolled\sback.\sThis\sis\sto\slimit\sthe\sextent\sto\swhich\sSQLite\scan\sbe\scaused\sto\sdelete\sarbitrary\sfiles\sby\ssupplying\sit\swith\sa\scrafted\shot-journal.\sReport\s[bugs:/info/2026-06-24T14:18:00Z\s|\s2026-06-24T14:18:00Z].
-D 2026-06-24T19:28:55.897
+C Check\sfor\scells\sextending\stoo\sfar\spast\sthe\send\sof\sa\spage\swhile\ssearch\nan\sindex.\s\s[bugs:/info/2026-06-24T14:55:57Z|Bug\s2026-06-24T14:55:57Z]
+D 2026-06-24T20:20:57.799
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -677,7 +677,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c 89de631678bcbb3ad46f8a8bb43fe4b87b8ada42accd1fe5def363d352ac26d3
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 515cf62220ceb483ba9a31ebb3d7565ea9d63ffc3d61bb974b2815fef393df0e
+F src/btree.c e715d722635e133c84dca2c83c1c382df85e105918ca5d6d83ad26af2866589e
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h 4f512ad31083216b6789762d4c345b73367985d3b39421c9ba7c0902d09fb38b
 F src/build.c 09946336c3011c2ae2faccdf04e33336e1cd51fd836651be0cd7eb5814f7f6a0
@@ -2208,9 +2208,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 395cbed103af08e3a4fafd9a3041205535e019d4aeb58b46c4a7e4f3bca545c9 6007b5c2d3c27a4597631914d4114b626ba647954ecfb381de67d4cf27d31ccd
-R b8dfcb508ec4348b454064a355f65e92
-T +closed 6007b5c2d3c27a4597631914d4114b626ba647954ecfb381de67d4cf27d31ccd
-U dan
-Z 3c15f5ed294490c5b31181679891e2fa
+P 6d8da8861c8ccbfdbe838587dc2f5ef1817bc0af4a6167940446ee7bdc53955c f3532fc55a2be273acb97023165e96817c291576a9d6d45f8d6e7ae57adbd577
+R 0c5287411b82e6d6d095972e5f92d140
+T +closed f3532fc55a2be273acb97023165e96817c291576a9d6d45f8d6e7ae57adbd577
+U drh
+Z 7a04e41ad7bd853d9d0045e8e2eb7838
 # Remove this line to create a well-formed Fossil manifest.
