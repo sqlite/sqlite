@@ -213,6 +213,68 @@ do_execsql_test 3.3 {
   SELECT type, name, tbl_name, sql FROM sqlite_schema
 } {table t1 t1 {CREATE TABLE t1(x, y)}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY);
+}
+db_save_and_close
 
+proc append_super_journal {jrnl mjname} {
+  binary scan $mjname c* bytes
+  set cksum 0
+  foreach b $bytes { incr cksum $b }
+  set fd [open $jrnl a+]
+  fconfigure $fd -translation binary -encoding iso8859-1
+  puts -nonewline $fd $mjname
+  puts -nonewline $fd [binary format I [string length $mjname]]
+  puts -nonewline $fd [binary format I $cksum]
+  puts -nonewline $fd [binary decode hex "d9d505f920a163d7"]
+  close $fd
+}
+
+foreach {tn mjname bDel} {
+  1 notamasterjournal   0
+  2 master.9FF          1
+  3 master-mj1234569AA  1
+  4 master-mj123456_AA  0
+  5 abc                 0
+  6 masterr9FF          0
+  7 master-fj123456_AA  0
+  8 -mj1234569AA        1
+  9 1-mj1234569AA       1
+  10 .9AB               1
+  11 master.9X2         0
+  12 master.92X         0
+  13 master-mj12G4569AA 0
+} {
+  db_restore_and_reopen
+  execsql {
+    PRAGMA synchronous = OFF;
+    BEGIN;
+      INSERT INTO t1 DEFAULT VALUES;
+  }
+
+  db_save_and_close
+  db_restore
+
+  append_super_journal test.db-journal $mjname
+  set fd [open $mjname w]
+  puts $fd "helloworld"
+  close $fd
+
+  sqlite3 db test.db
+  do_test 4.$tn.1 {
+    execsql { SELECT * FROM t1 }
+    file exists $mjname
+  } [expr !$bDel]
+  do_test 4.$tn.2 {
+    file exists test.db-journal
+  } {0}
+  
+  forcedelete $mjname
+}
 
 finish_test
+
+

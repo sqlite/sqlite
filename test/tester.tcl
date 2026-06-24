@@ -291,9 +291,9 @@ proc do_delete_file {force args} {
       for {set i 0} {$i<$nRetry} {incr i} {
         set rc [catch {
           if {$force} {
-            file delete -force $filename
+            file delete -force -- $filename
           } else {
-            file delete $filename
+            file delete -- $filename
           }
         } msg]
         if {$rc==0} break
@@ -302,9 +302,9 @@ proc do_delete_file {force args} {
       if {$rc} { error $msg }
     } else {
       if {$force} {
-        file delete -force $filename
+        file delete -force -- $filename
       } else {
-        file delete $filename
+        file delete -- $filename
       }
     }
   }

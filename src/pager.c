@@ -2499,6 +2499,38 @@ static int pager_playback_one_page(
   return rc;
 }
 
+/* 
+** Check if zSuper is a valid super-journal name. There are two valid
+** formats:
+**
+**   + The 3rd and 4th last bytes of the filename are ".9", and the 
+**     following 2 bytes are hex digits. This is a file created in 8.3 
+**     filenames
+**
+**   + The 3rd last byte of the filename is "9" and the filename
+**     contains the string "-mj" starting at the 12th last byte.
+**     All bytes following the "-mj" are hex digits.
+**
+** If the filename matches either of these patterns, return non-zero. 
+** Otherwise, return zero.
+*/
+static int pagerIsSuperJrnlName(const char *zSuper){
+  const int nSuper = sqlite3Strlen30(zSuper);
+  int ii;
+
+  if( nSuper<4 ) return 0;
+  if( zSuper[nSuper-3]!='9' ) return 0;
+  if( sqlite3Isxdigit(zSuper[nSuper-2])==0 ) return 0;
+  if( sqlite3Isxdigit(zSuper[nSuper-1])==0 ) return 0;
+  if( zSuper[nSuper-4]=='.' ) return 1;
+  if( nSuper<12 ) return 0;
+  if( memcmp(&zSuper[nSuper-12], "-mj", 3) ) return 0;
+  for(ii=nSuper-9; ii<nSuper; ii++){
+    if( sqlite3Isxdigit(zSuper[ii])==0 ) return 0;
+  }
+  return 1;
+}
+
 /*
 ** Parameter zSuper is the name of a super-journal file. A single journal
 ** file that referred to the super-journal file has just been rolled back.
@@ -2551,6 +2583,14 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   i64 nSuperJournal;        /* Size of super-journal file */
   char *zJournal;           /* Pointer to one journal within MJ file */
   char *zFree = 0;          /* Free this buffer */
+
+  /* Check if this looks like a real super-journal name. If it does not,
+  ** return SQLITE_OK without attempting to delete it. This is to limit
+  ** the degree to which a crafted journal file can be used to cause
+  ** SQLite to delete arbitrary files. */
+  if( pagerIsSuperJrnlName(zSuper)==0 ){
+    return SQLITE_OK;
+  }
 
   /* Allocate space for both the pJournal and pSuper file descriptors.
   ** If successful, open the super-journal file for reading.
