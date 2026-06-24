@@ -17,9 +17,9 @@
 /**
    This file was preprocessed using:
 
-//#@ policy error
+//#@ policy error <<
    @c-pp::argv@
-//#@ policy off
+//#/@
 */
 //#if unsupported-build
 /**
