@@ -1,5 +1,5 @@
-C When\srolling\sback\sa\sjournal\sthat\scontains\sa\ssuper-journal\spointer,\sonly\sattempt\sto\sunlink\sthe\ssuper-journal\sif\s(a)\sthe\sfilename\slooks\slike\sone\sthat\sSQLite\smight\shave\sgenerated,\sand\s(b)\sthe\ssuper-journal\scontains\sthe\sname\sof\sthe\sjournal\sbeing\srolled\sback.\sThis\sis\sto\slimit\sthe\sextent\sto\swhich\sSQLite\scan\sbe\scaused\sto\sdelete\sarbitrary\sfiles\sby\ssupplying\sit\swith\sa\scrafted\shot-journal.
-D 2026-06-24T20:28:31.446
+C Check\sfor\scells\sextending\stoo\sfar\spast\sthe\send\sof\sa\spage\swhile\ssearch\nan\sindex.
+D 2026-06-24T20:31:41.407
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -675,7 +675,7 @@ F src/auth.c ebec42df26b34a62b6750d30d9c2c03554a1c522020182476f7729a439fef04f
 F src/backup.c 89de631678bcbb3ad46f8a8bb43fe4b87b8ada42accd1fe5def363d352ac26d3
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 377b98fbe170ae38298a3fcea5355ec88404f63238f80741992cda765ac91aeb
+F src/btree.c c69601aac556129f64d9e8221441572c89479b720a51cbf738658fe0797d7107
 F src/btree.h ddc9e4a17d3cf501f4d3d25b2a5bbdd15c464d457276bd98c5600f7c5f0607b9
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 8581de0af3b6c448f5d64e2d18a91ac1e7057b3bcb8b8827e1240f80d87486a4
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a9cea5b555eed4315e426ee8168029840cacb165d1fcd5e2d21a105db84dc46e
-Q +6d8da8861c8ccbfdbe838587dc2f5ef1817bc0af4a6167940446ee7bdc53955c
-R c7602b608ea6d4346a62553a77ccd9f6
+P 9471fa2c9ce03713b875b3350d65b5ed6e38e501585126bb3b90694800edfb25
+Q +6d0696706a9e2f70229b2db52f053e540fe0a89290a6c57f23ec0c8bd7a49213
+R 712ab0a9ab0507268f55499675cfc590
 U drh
-Z ade0c9258c13d6f538a26e7167f8af33
+Z b167b3008c492440950d98a656c18092
 # Remove this line to create a well-formed Fossil manifest.
