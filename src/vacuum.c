@@ -376,9 +376,7 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
     }
 
     if( pOut==0 ){
-      assert( pMain==db->aDb[iDb].pBt );
-      assert( pTemp==db->aDb[nDb].pBt );
-      rc = sqlite3BtreeCopyFile(db, iDb, nDb);
+      rc = sqlite3BtreeCopyFile(pMain, pTemp);
     }
     if( rc!=SQLITE_OK ) goto end_of_vacuum;
     rc = sqlite3BtreeCommit(pTemp);

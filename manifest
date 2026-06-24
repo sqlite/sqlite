@@ -1,5 +1,5 @@
-C Merge\sthe\sfixes\sfor\sthe\suse-after-free\sproblem\scaused\sby\sexecuting\san\sATTACH\swhen\sa\sbackup\soperation\swas\sactive,\sand\sfor\sthe\sOOB\sread\sin\sthe\sunused\sspellfix1\sextension.
-D 2026-06-23T20:28:51.931
+C Revert\sthe\srecent\sfixes\sto\sbackup\scode\sand\sinstead\sfix\sthe\sproblem\sreported\sby\sforum\spost\s[forum:15d82885e2\s|\s15d82885e2]\s(that\sa\scall\sto\ssqlite3_deserialize()\safter\ssqlite3_backup_init()\sbut\sbefore\sthe\sfirst\scall\sto\ssqlite3_backup_step()\son\sthe\sdestination\sdb\sof\sa\sbackup\scould\scause\sa\scrash)\sby\sdeferring\scaching\sthe\spointer\sto\sthe\sdestination\sBtree\suntil\safter\sit\sis\slocked.
+D 2026-06-24T14:27:21.391
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -672,11 +672,11 @@ F src/alter.c d7cbe4332a7a2c3a21ab58ee2609efade493f6ae78254613ada0759898629ee3
 F src/analyze.c 42ed904f4a81d0e4f32491e10ff8ea3cdf2f98a29b04a015f0a29046b32b4e0f
 F src/attach.c c58278c7d2d954785591c4fde81669ec3e4d52f348c453b028a19ae8adf4f338
 F src/auth.c ebec42df26b34a62b6750d30d9c2c03554a1c522020182476f7729a439fef04f
-F src/backup.c 2f5f350c714407a04fadc9c812b8fcbb47d472c543c492f9fc03043c94255406
+F src/backup.c 89de631678bcbb3ad46f8a8bb43fe4b87b8ada42accd1fe5def363d352ac26d3
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c 377b98fbe170ae38298a3fcea5355ec88404f63238f80741992cda765ac91aeb
-F src/btree.h db9d500f049addf08ab5c7df1b5e7b54513c614def9f0b129085d1bc7b692e33
+F src/btree.h ddc9e4a17d3cf501f4d3d25b2a5bbdd15c464d457276bd98c5600f7c5f0607b9
 F src/btreeInt.h 9c0f9ea5c9b5f4dcaea18111d43efe95f2ac276cd86d770dce10fd99ccc93886
 F src/build.c 8581de0af3b6c448f5d64e2d18a91ac1e7057b3bcb8b8827e1240f80d87486a4
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
@@ -801,7 +801,7 @@ F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 2053344769bc602b2c23ce193f4d24f89777ab67fa768b80fa197d3876dc3017
-F src/vacuum.c 4eda73a75a15f939b45b26e189f5b25757b39d7cb6d5e972a7f754e75d019189
+F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 6c57525d7db0232d52687d30da1093db0c152f14206c2ef1adf0c19a09d863e3
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h c31ba4dc8d280c2b1dc89c6fcee68f2555e3813ab34279552c20b964c0e338b1
@@ -897,7 +897,7 @@ F test/backcompat.test f2431465ed668f09fc3f6998e56e893a1506ccea6e8b6f409f085f759
 F test/backup.test 3b08fd4af69f0fa786931103a31f4542b184aba16e239e5f22b18c3c2476697f
 F test/backup2.test b153553ee5667b0748b43346b0725fbf80ce1f5544613bf087d669778b60ec56
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
-F test/backup5.test 3e16065dc45c40030378702aac3e92f4d6e7d8853f0328f0390c9e7a71d8c712
+F test/backup5.test b14a7681bfe99a07bbf08c526a3899f7ee3329a19359f24ca83667b290309700
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 0c9abdf74c51e7bedb66d504cd684f28d4bd4027
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -2200,9 +2200,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 246f46614fbdbc2609ee1c6fffe446abd6c0121c3e626a1776bf7e09759bc973
-Q +e458ed9cc9d46dfdade3b4e99eb209d8aefd40a245e002d68df1813f9f99e2d7
-R e83eeb82efe8ea8d6502efa2498da6db
+P 121a749d0f3d54eef7f35d527f0eed9a2531ac741452ed85d4c49556df8955ea
+Q +18da5759590793c934184a6f1e28fe61a9714f305f1e9704061364325c0bbf9e
+R 3d3081111557818e02acd227c3afcbae
 U dan
-Z b6c0ff2c6c6614bdfc01f0186668d841
+Z 6bf3ff182aa6ce8cf893ca80eee87e0f
 # Remove this line to create a well-formed Fossil manifest.
