@@ -1,5 +1,5 @@
-C Have\sAPI\sfunctions\ssqlite3_serialize,\ssqlite3_limit,\ssqlite3_busy_timeout,\ssqlite3_error_offset,\ssqlite3_db_name,\ssqlite3_get_autocommit,\ssqlite3_errcode,\ssqlite3_total_changes64,\ssqlite3_changes64,\ssqlite3_last_insert_rowid\sand\ssqlite3_expired\stake\sand\shold\sthe\sdatabase\smutex\swhile\srunning.
-D 2026-06-25T17:07:53.090
+C Check\ssuper-journal\snames\sfor\svalidity\searlier,\sas\sthis\ssimplifies\nverification\sthat\sthe\slogic\sis\scorrect.
+D 2026-06-25T20:26:17.638
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -725,7 +725,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 83759942d1ea8d59daed50901c123016f845fada74caf3496b8a2537c9a08838
 F src/os_win.c 1227a3e962b017d676d985a8aec0d64f273991931ea0a0b99773651102f62df4
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c 927713c6cc3033268f2c440f3ccc45081266fe956e018ce6c04092f1776215e7
+F src/pager.c 678ee3b68638ee427cc1b071b11181d0f2a827f6cb4d6ec7c12d5fa5f6a752d0
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -2208,9 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c30ea3cefe346a3d87b57710a51b059371543c5abc75d08c4ca827bbe3b3f622 46509e48d3049a1ca52d9cc3f023634a651cd633d36bd9056ca0172759ba201e
-R bf72fafaea2070ac4d3be5ad21ee93ea
-T +closed 46509e48d3049a1ca52d9cc3f023634a651cd633d36bd9056ca0172759ba201e
-U dan
-Z 8ba48b9154271fe0d84b01609d2c1867
+P 7bfd5c810c6f04ddfd275457a2a03b4da0c3e7d4ee5acb61a54d805e2e67f819
+R fcb35e9d64943876915ecd53a38bf408
+U drh
+Z a532ffc4f25f92a370d40bff92615b32
 # Remove this line to create a well-formed Fossil manifest.
