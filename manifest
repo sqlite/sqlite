@@ -1,5 +1,5 @@
-C Have\ssqlite3_drop_modules()\stake\sthe\sdatabase\smutex.\sBug\s[bugs:/info/2026-06-25T12:11:37Z\s|\s2026-06-25T12:11:37Z\s].
-D 2026-06-25T14:25:15.704
+C Improve\sthe\ssqlite3_str_vappendf()\sroutine\sfor\sadditional\srobustness\sin\sthe\nface\sof\sover-sized\sinputs.\nProbable\sfix\sfor\s[bugs:/info/2026-06-25T11:29:23Z|Bug\s2026-06-25T11:29:23Z].
+D 2026-06-25T14:48:09.072
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -733,7 +733,7 @@ F src/pcache.h 092b758d2c5e4dabb30eae46d8dfad77c0f70b16bf3ff1943f7a232b0fe0d4ba
 F src/pcache1.c d7ee0f95992501a65379f620b3de1430b64e52e397769938668a9fd9dd1c8145
 F src/pragma.c 789ef67117b74b5be0a2db6681f7f0c55e6913791b9da309aefd280de2c8a74d
 F src/prepare.c b1337cd601f8cb58c07a61bafdf2e501332dd1a07959c5d1c118a5adef01f4c7
-F src/printf.c f85d3d8b8d88cd4775eb1d5f8c748bccc73295b019e23d1fe8b8bdc72e34e4bb
+F src/printf.c 69a89414b6368901b286a5579dea34cc3470a7d10f2b0fea93f7eb5d8f1e2e71
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d0724113da9f5c0430d2052808ce59519f51ae7c4fbb1f5ef21fe3a832956086
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
@@ -2208,8 +2208,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 50cce4758361379f1585b30c619f2c9f7f8873dbfaeaec3ff357e26c1034546c
-R 41808b48b7d47b44783f317331e7538d
-U dan
-Z 8791c131d6a449cb873822403028b35a
+P 533e59b40c4ce6b3579cb85deb9cb1a7179aa2cf4f91d8848558087869653a76
+R ae624d5f391b48a06271e9ea7c82fcdc
+U drh
+Z 9b8286faa7f7c2ce59f32e157afe28d6
 # Remove this line to create a well-formed Fossil manifest.
