@@ -3379,7 +3379,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
     DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
-    FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
+    SFUNCTION(sqlite_log,        2, 0, 0, errlogFunc       ),
     FUNCTION(unistr,             1, 0, 0, unistrFunc       ),
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(unistr_quote,       1, 1, 0, quoteFunc        ),
