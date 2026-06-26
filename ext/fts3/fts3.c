@@ -4433,6 +4433,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
       char *p1;
       char *p2;
       char *aOut;
+      i64 nAlloc = (i64)nPoslist*2 + FTS3_BUFFER_PADDING;
 
       if( nMaxUndeferred>iPrev ){
         p1 = aPoslist;
@@ -4444,7 +4445,7 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
         nDistance = iPrev - nMaxUndeferred;
       }
 
-      aOut = (char *)sqlite3Fts3MallocZero(((i64)nPoslist)+FTS3_BUFFER_PADDING);
+      aOut = (char *)sqlite3Fts3MallocZero(nAlloc);
       if( !aOut ){
         sqlite3_free(aPoslist);
         return SQLITE_NOMEM;
