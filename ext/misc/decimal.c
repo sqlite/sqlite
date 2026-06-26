@@ -67,6 +67,9 @@ static void decimal_free(Decimal *p){
 /*
 ** Allocate a new Decimal object initialized to the text in zIn[].
 ** Return NULL if any kind of error occurs.
+**
+** Note that zIn[] is not necessarily zero-terminated.  Always
+** respect the boundary imposed by the n argument.
 */
 static Decimal *decimalNewFromText(const char *zIn, int n){
   Decimal *p = 0;
@@ -84,11 +87,11 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
   p->nFrac = 0;
   p->a = sqlite3_malloc64( n+1 );
   if( p->a==0 ) goto new_from_text_failed;
-  for(i=0; IsSpace(zIn[i]); i++){}
-  if( zIn[i]=='-' ){
+  for(i=0; i<n && IsSpace(zIn[i]); i++){}
+  if( i<n && zIn[i]=='-' ){
     p->sign = 1;
     i++;
-  }else if( zIn[i]=='+' ){
+  }else if( i<n && zIn[i]=='+' ){
     i++;
   }
   while( i<n && zIn[i]=='0' ) i++;
