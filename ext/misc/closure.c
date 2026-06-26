@@ -10,6 +10,18 @@
 **
 *************************************************************************
 **
+** WARNING:  Experimental and obsolete.  Demonstration and testing only.
+**
+** This virtual table was created prior to the addition of support for
+** common table expressions in SQLite.  Common table expressions are a
+** better and more portable solution to any problem that this virtual
+** table solves.
+**
+** Given its experimental and testing-only status, the code here is
+** deactivated unless compiled with -DSQLITE_TEST=1
+**
+** DEMONSTRATION AND TESTING USE ONLY.
+**
 ** This file contains code for a virtual table that finds the transitive
 ** closure of a parent/child relationship in a real table.  The virtual 
 ** table is called "transitive_closure".
@@ -441,6 +453,7 @@ static char *closureDequote(const char *zIn){
         if( zIn[iIn]==q ) iIn++;
         zOut[iOut++] = zIn[iIn];
       }
+      zOut[iOut] = 0;
     }
     assert( (int)strlen(zOut)<=nIn );
   }
@@ -964,8 +977,8 @@ int sqlite3_closure_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
+#if defined(SQLITE_TEST) && !defined(SQLITE_OMIT_VIRTUALTABLE)
   rc = sqlite3_create_module(db, "transitive_closure", &closureModule, 0);
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
+#endif /* SQLITE_TEST && !SQLITE_OMIT_VIRTUALTABLE */
   return rc;
 }
