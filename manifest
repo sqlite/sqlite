@@ -1,5 +1,5 @@
-C Have\sAPI\sfunctions\ssqlite3_serialize,\ssqlite3_limit,\ssqlite3_busy_timeout,\ssqlite3_error_offset,\ssqlite3_db_name,\ssqlite3_get_autocommit,\ssqlite3_errcode,\ssqlite3_total_changes64,\ssqlite3_changes64,\ssqlite3_last_insert_rowid\sand\ssqlite3_expired\stake\sand\shold\sthe\sdatabase\smutex\swhile\srunning.
-D 2026-06-26T17:36:58.237
+C Version\s3.53.3
+D 2026-06-26T20:14:12.354
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2201,9 +2201,10 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 12d0d2363a3082f68153393ed1aa91264ee987bc9187e7afd131d503f66e4faa
-Q +7bfd5c810c6f04ddfd275457a2a03b4da0c3e7d4ee5acb61a54d805e2e67f819
+P 0d57a60060ee822137f3c1cf7ba1cf40ded024d038981bd51b9cab3bf7f42b2f
 R 8e1ed0dd5add9274b65390abdc7e90c0
-U dan
-Z fb281d3c1be2eb1fc433a639f6a89650
+T +sym-release *
+T +sym-version-3.53.3 *
+U drh
+Z 6b27219624954d53a57cae0706fcfb79
 # Remove this line to create a well-formed Fossil manifest.
