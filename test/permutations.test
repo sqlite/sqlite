@@ -139,6 +139,7 @@ set allquicktests [test_set $alltests -exclude {
 
   rtree4.test
   sessionbig.test
+  sessionbig2.test
 
   writecrash.test view3.test 
   fts5dlidx.test fts5ac.test fts4merge3.test fts5prefix.test

@@ -206,7 +206,54 @@ do_execsql_test 6130 {
   SELECT printf('%.8e',ieee754_from_blob(x'ffefffffffffffff'));
 } {-1.79769313e+308}
 
+# Bug 2026-06-15T03:49:42Z
+#
+do_execsql_test 7000 {
+  SELECT decimal('999999999999999', 1);
+} {1000000000000000}
+#   999999999999999
+do_execsql_test 7010 {
+  SELECT decimal('999999999999999', 2);
+} {1000000000000000}
+do_execsql_test 7020 {
+  SELECT decimal('999999999999999', 14);
+} {1000000000000000}
+do_execsql_test 7030 {
+  SELECT decimal('999999999999999', 15);
+} {999999999999999}
+do_execsql_test 7040 {
+  SELECT decimal('899999999999999', 1);
+} {900000000000000}
+do_execsql_test 7050 {
+  SELECT decimal('899999999999999', 14);
+} {900000000000000}
+do_execsql_test 7060 {
+  SELECT decimal('899999999999999', 15);
+} {899999999999999}
+do_execsql_test 7070 {
+  SELECT decimal('989999999999999', 14);
+} {990000000000000}
+do_execsql_test 7080 {
+  SELECT decimal('998999999999999', 14);
+} {999000000000000}
 
+# Bug 2026-06-23T05:07:48Z
+#
+do_execsql_test 8000 {
+  SELECT decimal('999.999',3);
+} {1000.000}
 
+# Bug 2026-06-26T10:06:54Z
+#
+reset_db
+load_static_extension db decimal
+do_execsql_test 8100 {
+  PRAGMA cache_size=10;
+  PRAGMA page_size=512;
+  CREATE TABLE t(x TEXT, pad TEXT);
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<5000)
+    INSERT INTO t SELECT printf('%*s', 8, ''), randomblob(2000) FROM c;
+  SELECT count(*) FROM (SELECT x FROM t ORDER BY x COLLATE decimal);
+} {5000}
 
 finish_test

@@ -199,7 +199,7 @@ static int explainFilter(
   int rc;
   sqlite3_finalize(pCur->pExplain);
   pCur->pExplain = 0;
-  if( sqlite3_value_type(argv[0])!=SQLITE_TEXT ){
+  if( argc<=0 || sqlite3_value_type(argv[0])!=SQLITE_TEXT ){
     pCur->rc = SQLITE_DONE;
     return SQLITE_OK;
   }

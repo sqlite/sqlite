@@ -292,4 +292,20 @@ do_execsql_test 6.1 {
   SELECT * FROM t4, vt4 WHERE t4.id = vt4.root AND vt4.id=4 AND vt4.depth=2;
 }
 
+# Bug 2026-06-26T10:06:27Z
+#
+reset_db
+load_static_extension db closure
+do_execsql_test 7.1 {
+  CREATE TABLE t(p, abcx);
+  INSERT INTO t VALUES(1, 2);
+}
+do_execsql_test 7.2 {
+  CREATE VIRTUAL TABLE c
+    USING transitive_closure(idcolumn='abc'x, tablename='t', parentcolumn='p');
+}
+do_execsql_test 7.3 {
+  SELECT * FROM c WHERE root=1;
+} {1 0 2 1}
+
 finish_test

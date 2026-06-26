@@ -3061,10 +3061,10 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         const JDb = sqlite3.oo1.JsStorageDb;
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
         T.assert(looksLikePtr(pVfs));
-        let x = sqlite3.kvvfs.internal.storageForZClass('session');
-        T.assert( 0 === x.files.length )
-          .assert( globalThis.sessionStorage===x.storage )
-          .assert( 'kvvfs-session-' === x.keyPrefix );
+        const pStorage = sqlite3.kvvfs.internal.storageForZClass('session');
+        T.assert( 0 === pStorage.files.length )
+          .assert( globalThis.sessionStorage===pStorage.storage )
+          .assert( 'kvvfs-session-' === pStorage.keyPrefix );
         const filename = this.kvvfsDbFile = 'session';
         const unlink = this.kvvfsUnlink = ()=>sqlite3.kvvfs.clear(filename);
         unlink();
@@ -3082,9 +3082,30 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           db.exec('insert into kvvfs(a) values(4),(5),(6)');
           T.assert(6 === db.selectValue('select count(*) from kvvfs'));
         }finally{
-          if( db ) db.close();
+          if( db ){
+            db.close();
+            db = null;
+          }
         }
         //console.debug("sessionStorage",globalThis.sessionStorage);
+        const corruptJrnl = [
+          /* Test that it recovers properly from a bad journal:
+             https://sqlite.org/bugs/forumpost/20e208fe172cae4f */
+          pStorage.keyPrefix+'jrnl',
+          'cb d9d505f920a163d7ffffffffdeadbeef000000010000020000001000'
+        ];
+        sessionStorage.setItem(...corruptJrnl);
+        //console.debug("sessionStorage",globalThis.sessionStorage);
+        T.assert( corruptJrnl[1] === sessionStorage.getItem(corruptJrnl[0]) );
+        try{
+          db = new JDb(filename);
+          T.assert(6 === db.selectValue('select count(*) from kvvfs'));
+          db.exec('insert into kvvfs(a) values(7),(8),(9)');
+          T.assert(9 === db.selectValue('select count(*) from kvvfs'));
+          T.assert( corruptJrnl[1] !== sessionStorage.getItem(corruptJrnl[0]) );
+        }finally{
+          if( db ) db.close();
+        }
       }
     }/*kvvfs sanity checks*/)
     .t({

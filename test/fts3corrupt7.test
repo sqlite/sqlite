@@ -345,4 +345,32 @@ do_catchsql_test 4.4 {
   SELECT * FROM t1_terms;
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t USING fts3(x);
+  INSERT INTO t_segdir(level,idx,start_block,leaves_end_block,end_block,root)
+    VALUES(1,0,0,0,'0 -9223372036854775808',x'00');
+}
+
+do_execsql_test 7.1 {
+  INSERT INTO t(x) VALUES('alpha');
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE t USING fts4(x);
+  INSERT INTO t_content(docid,c0x) VALUES(1,'a b');
+  DELETE FROM t_segments;
+  DELETE FROM t_segdir;
+  INSERT INTO t_segdir(level,idx,start_block,leaves_end_block,end_block,root)
+    VALUES(0,0,0,0,0,x'000161110150028001500a818080800103038101000001622c010281008101ffffffffffffffffff010204ffffffffffffffffff01ffffffffffffffffff01c80109323200');
+}
+
+do_execsql_test 8.1 {
+  SELECT count(*) FROM t WHERE t MATCH 'a NEAR/100 b';
+} {1}
+
 finish_test

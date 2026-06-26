@@ -124,5 +124,174 @@ do_test 3.1 {
   set {} {}
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(content);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  BEGIN;
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<5000
+    ) 
+    INSERT INTO t1(content) SELECT 'xyzterm' FROM s;
+  COMMIT;
+  INSERT INTO t1(t1) VALUES('optimize');
+}
+
+do_test 4.1 {
+  db eval {
+    SELECT rowid AS a, hex(block) AS block FROM t1_data 
+    WHERE ((rowid>>36) & 0x01)==1
+      AND ((rowid>>31) & 0x1F)==0
+  } {
+    set n [string length $block]
+    set block [string range $block 0 11]
+    append block [string repeat "00" [expr ($n/2)-7-2]]
+    append block "8080"
+    db eval {
+      UPDATE t1_data SET block = unhex($block) WHERE rowid = $a
+    }
+  }
+} {}
+
+do_catchsql_test 4.2 {
+  SELECT count(*) FROM (
+      SELECT rowid FROM t1 WHERE t1 MATCH 'xyzterm' ORDER BY rowid ASC
+  )
+} {0 5000}
+
+do_catchsql_test 4.3 {
+  SELECT count(*) FROM (
+      SELECT rowid FROM t1 WHERE t1 MATCH 'xyzterm' ORDER BY rowid DESC
+  )
+} {0 4987}
+
+do_test 4.4 {
+  db eval {
+    SELECT rowid AS a, hex(block) AS block FROM t1_data 
+    WHERE ((rowid>>36) & 0x01)==1
+      AND ((rowid>>31) & 0x1F)==0
+  } {
+    set n [string length $block]
+    set block [string range $block 0 $n-5]
+    append block [string repeat "00" 2]
+    db eval {
+      UPDATE t1_data SET block = unhex($block) WHERE rowid = $a
+    }
+  }
+} {}
+
+do_catchsql_test 4.5 {
+  SELECT count(*) FROM (
+      SELECT rowid FROM t1 WHERE t1 MATCH 'xyzterm' ORDER BY rowid ASC
+  )
+} {0 5000}
+
+do_catchsql_test 4.6 {
+  SELECT count(*) FROM (
+      SELECT rowid FROM t1 WHERE t1 MATCH 'xyzterm' ORDER BY rowid DESC
+  )
+} {0 4879}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x);
+  INSERT INTO t(t,rank) VALUES('pgsz', 64);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<80
+  )
+  INSERT INTO t SELECT 'shared word' || (i%10) || ' shared shared' FROM s;
+  INSERT INTO t(t) VALUES('optimize');
+}
+
+set lLeaf [db eval { SELECT id FROM t_data }]
+db_save_and_close
+
+foreach leaf $lLeaf {
+  db_restore_and_reopen
+  set leaf [expr $leaf]
+  set hex [db one { 
+    SELECT hex(block) FROM t_data WHERE id=$leaf 
+  }]
+
+  # Replace the first 4 bytes of each leaf page with the size of the leaf in
+  # bytes plus 50 as a 2 byte integer, followed by 0x7FFF.
+  #
+  set nn [expr [string length $hex]/2]
+  set first "[format %.4x [expr $nn+50]]7FFF"
+  set hex [string replace $hex 0 7 $first]
+
+  db eval { UPDATE t_data SET block=unhex($hex) WHERE id=$leaf }
+  do_test 5.1.$leaf {
+    catchsql {
+      SELECT rowid FROM t WHERE t MATCH 'shared' ORDER BY rowid DESC;
+    }
+    set {} {}
+  } {}
+
+  do_test 5.1.$leaf.2 {
+    catchsql {
+      PRAGMA integrity_check;
+    }
+    set {} {}
+  } {}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO t(rowid,x) 
+    VALUES(1,'a b'), (2,'c d'), (3,'e f'), (4,'g h'), (5,'i j');
+  INSERT INTO t(t) VALUES('optimize');
+  DELETE FROM t WHERE rowid=2;
+}
+
+do_test 6.1 {
+  db eval {
+    SELECT rowid AS rid, hex(block) AS blk 
+    FROM t_data WHERE rowid>1_000_000_000_000
+  } {}
+
+  set blk [string replace $blk 8 15 20000000]
+  execsql {
+    UPDATE t_data SET block = unhex($blk) WHERE rowid=$rid
+  }
+} {}
+
+do_execsql_test 6.2 {
+  DELETE FROM t WHERE rowid=3;
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+  INSERT INTO ft(ft,rank) VALUES('pgsz',64);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10
+  )
+  INSERT INTO ft SELECT 'a b b a c c d' FROM s;
+}
+
+set B "00000040FFFF61010402050104020501040205010402050104020501040205010402050104020501040205010402050101620104030301040303010403030104042b"
+set N "306162[string repeat 00 5000]"
+
+do_execsql_test 7.1 {
+  UPDATE ft_data SET block = unhex($B) WHERE id = 137438953473;
+  UPDATE ft_idx SET term=unhex($N) WHERE segid=1 AND pgno=2;
+}
+
+do_execsql_test 7.2 {
+  PRAGMA integrity_check
+} {
+  {fts5: corruption found reading blob 137438953473 from table "ft"}
+}
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
+
+

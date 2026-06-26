@@ -2986,7 +2986,7 @@ static void percentSort(double *a, unsigned int n){
         i++;
       }
     }while( i<iGt );
-    if( iLt>n/2 ){
+    if( iLt>(int)(n/2) ){
       if( n-iGt>=2 ) percentSort(a+iGt, n-iGt);
       n = iLt;
     }else{

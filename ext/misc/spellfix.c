@@ -28,8 +28,6 @@ SQLITE_EXTENSION_INIT1
 # include <stdio.h>
 # include <stdlib.h>
 # include <assert.h>
-# define ALWAYS(X)  1
-# define NEVER(X)   0
   typedef unsigned char u8;
   typedef unsigned short u16;
   typedef sqlite3_int64 i64;
@@ -1270,7 +1268,7 @@ static int utf8Read(const unsigned char *z, int n, int *pSize){
 
   /* All callers to this routine (in the current implementation)
   ** always have n>0. */
-  if( NEVER(n==0) ){
+  if( n==0 ){
     c = i = 0;
   }else{
     c = z[0];
@@ -2020,13 +2018,13 @@ static char *spellfix1Dequote(const char *zIn){
   zOut = sqlite3_mprintf("%s", zIn);
   if( zOut==0 ) return 0;
   i = (int)strlen(zOut);
-#if 0  /* The parser will never leave spaces at the end */
+  /* The parser should never leave spaces at the end, but we'll
+  ** remove them just in case. */
   while( i>0 && isspace(zOut[i-1]) ){ i--; }
-#endif
   zOut[i] = 0;
   c = zOut[0];
   if( c=='\'' || c=='"' ){
-    for(i=1, j=0; ALWAYS(zOut[i]); i++){
+    for(i=1, j=0; zOut[i]; i++){
       zOut[j++] = zOut[i];
       if( zOut[i]==c ){
         if( zOut[i+1]==c ){
@@ -2604,7 +2602,7 @@ static int spellfix1FilterForMatch(
     goto filter_exit;
   }
   nPattern = (int)strlen(zPattern);
-  if( zPattern[nPattern-1]=='*' ) nPattern--;
+  if( nPattern>0 && zPattern[nPattern-1]=='*' ) nPattern--;
   zSql = sqlite3_mprintf(
      "SELECT id, word, rank, coalesce(k1,word)"
      "  FROM \"%w\".\"%w_vocab\""

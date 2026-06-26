@@ -167,16 +167,26 @@ static unsigned int deltaGetInt(const char **pz, int *pLen){
     25, 26, 27, 28, 29, 30, 31, 32,   33, 34, 35, -1, -1, -1, -1, 36,
     -1, 37, 38, 39, 40, 41, 42, 43,   44, 45, 46, 47, 48, 49, 50, 51,
     52, 53, 54, 55, 56, 57, 58, 59,   60, 61, 62, -1, -1, -1, 63, -1,
+
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
   };
   unsigned int v = 0;
   int c;
   unsigned char *z = (unsigned char*)*pz;
-  unsigned char *zStart = z;
-  while( (c = zValue[0x7f&*(z++)])>=0 ){
-     v = (v<<6) + c;
+  unsigned char *zEnd = z + (*pLen);
+  while( z<zEnd && (c = zValue[*z])>=0 ){
+    v = (v<<6) + c;
+    z++;
   }
-  z--;
-  *pLen -= z - zStart;
+
+  *pLen -= (int)(z - (unsigned char*)*pz);
   *pz = (char*)z;
   return v;
 }
@@ -266,7 +276,8 @@ static unsigned int checksum(const char *zIn, size_t N){
 ** The delta string will be NUL-terminated, but it might also contain
 ** embedded NUL characters if either the zSrc or zOut files are
 ** binary.  This function returns the length of the delta string
-** in bytes, excluding the final NUL terminator character.
+** in bytes, excluding the final NUL terminator character.  It returns
+** 0 if an OOM occurs.
 **
 ** Output Format:
 **
@@ -358,6 +369,7 @@ static int delta_create(
   */
   nHash = lenSrc/NHASH;
   collide = sqlite3_malloc64( (sqlite3_int64)nHash*2*sizeof(int) );
+  if( collide==0 ) return 0;
   memset(collide, -1, nHash*2*sizeof(int));
   landmark = &collide[nHash];
   for(i=0; i<lenSrc-NHASH; i+=NHASH){
@@ -508,7 +520,7 @@ static int delta_create(
 static int delta_output_size(const char *zDelta, int lenDelta){
   int size;
   size = deltaGetInt(&zDelta, &lenDelta);
-  if( *zDelta!='\n' ){
+  if( lenDelta<=0 || *zDelta!='\n' ){
     /* ERROR: size integer not terminated by "\n" */
     return -1;
   }
@@ -550,7 +562,7 @@ static int delta_apply(
 #endif
 
   limit = deltaGetInt(&zDelta, &lenDelta);
-  if( *zDelta!='\n' ){
+  if( lenDelta<=0 || *zDelta!='\n' ){
     /* ERROR: size integer not terminated by "\n" */
     return -1;
   }
@@ -558,6 +570,7 @@ static int delta_apply(
   while( *zDelta && lenDelta>0 ){
     unsigned int cnt, ofst;
     cnt = deltaGetInt(&zDelta, &lenDelta);
+    if( lenDelta<=0 ) return -1;
     switch( zDelta[0] ){
       case '@': {
         zDelta++; lenDelta--;
@@ -877,7 +890,7 @@ static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
   }
   z = pCur->aDelta + pCur->iCursor;
   pCur->a1 = deltaGetInt(&z, &i);
-  switch( z[0] ){
+  switch( i>0 ? z[0] : 0 ){
     case '@': {
       z++;
       if( pCur->iNext>=pCur->nDelta ){
@@ -1007,7 +1020,7 @@ static int deltaparsevtabFilter(
   a = pCur->aDelta;
   pCur->eOp = DELTAPARSE_OP_SIZE;
   pCur->a1 = deltaGetInt(&a, &i);
-  if( a[0]!='\n' ){
+  if( i<=0 || a[0]!='\n' ){
     pCur->eOp = DELTAPARSE_OP_ERROR;
     pCur->a1 = pCur->a2 = 0;
     pCur->iNext = pCur->nDelta;

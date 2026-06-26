@@ -1,0 +1,62 @@
+# 2026 June 26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements regression tests for sessions SQLite extension.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+if {[permutation]=="session_strm" || [permutation]=="session_eec"} {
+  finish_test
+  return
+}
+
+if {$::tcl_platform(pointerSize)<8} {
+  finish_test
+  return
+}
+
+set testprefix sessionbig2
+
+foreach {tn sz} {
+  1 1000
+  2 1073741820
+} {
+  reset_db
+
+  set big [string repeat A $sz]
+
+  do_execsql_test 1.$tn.0 {
+    CREATE TABLE t(pk BLOB PRIMARY KEY);
+    INSERT INTO t VALUES($big);
+  }
+  set D [changeset_from_sql { DELETE FROM t WHERE 1 }]
+  do_execsql_test 1.$tn.1 {
+    DROP TABLE t;
+    CREATE TABLE t(pk BLOB PRIMARY KEY, v INT);
+    INSERT INTO t VALUES($big, 1);
+  }
+  set U [changeset_from_sql { UPDATE t SET v=2 WHERE 1 }]
+  do_test 1.$tn.2 {
+    sqlite3rebaser_create R
+    R configure $D
+    R rebase $U
+    R delete
+  } {}
+}
+
+finish_test
+
