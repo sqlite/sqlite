@@ -1111,13 +1111,17 @@ static int nocaseCollatingFunc(
 ** Return the ROWID of the most recent insert
 */
 sqlite_int64 sqlite3_last_insert_rowid(sqlite3 *db){
+  i64 iRet;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
 #endif
-  return db->lastRowid;
+  sqlite3_mutex_enter(db->mutex);
+  iRet = db->lastRowid;
+  sqlite3_mutex_leave(db->mutex);
+  return iRet;
 }
 
 /*
@@ -1139,13 +1143,17 @@ void sqlite3_set_last_insert_rowid(sqlite3 *db, sqlite3_int64 iRowid){
 ** Return the number of changes in the most recent call to sqlite3_exec().
 */
 sqlite3_int64 sqlite3_changes64(sqlite3 *db){
+  i64 iRet;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
 #endif
-  return db->nChange;
+  sqlite3_mutex_enter(db->mutex);
+  iRet = db->nChange;
+  sqlite3_mutex_leave(db->mutex);
+  return iRet;
 }
 int sqlite3_changes(sqlite3 *db){
   return (int)sqlite3_changes64(db);
@@ -1155,13 +1163,17 @@ int sqlite3_changes(sqlite3 *db){
 ** Return the number of changes since the database handle was opened.
 */
 sqlite3_int64 sqlite3_total_changes64(sqlite3 *db){
+  i64 iRet;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
 #endif
-  return db->nTotalChange;
+  sqlite3_mutex_enter(db->mutex);
+  iRet = db->nTotalChange;
+  sqlite3_mutex_leave(db->mutex);
+  return iRet;
 }
 int sqlite3_total_changes(sqlite3 *db){
   return (int)sqlite3_total_changes64(db);
@@ -1844,6 +1856,7 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
 #endif
+  sqlite3_mutex_enter(db->mutex);
   if( ms>0 ){
     sqlite3_busy_handler(db, (int(*)(void*,int))sqliteDefaultBusyCallback,
                              (void*)db);
@@ -1854,6 +1867,7 @@ int sqlite3_busy_timeout(sqlite3 *db, int ms){
   }else{
     sqlite3_busy_handler(db, 0, 0);
   }
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 
@@ -2759,9 +2773,11 @@ int sqlite3_set_errmsg(sqlite3 *db, int errcode, const char *zMsg){
 */
 int sqlite3_error_offset(sqlite3 *db){
   int iOffset = -1;
-  if( db && sqlite3SafetyCheckSickOrOk(db) && db->errCode ){
+  if( db && sqlite3SafetyCheckSickOrOk(db) ){
     sqlite3_mutex_enter(db->mutex);
-    iOffset = db->errByteOffset;
+    if( db->errCode ){
+      iOffset = db->errByteOffset;
+    }
     sqlite3_mutex_leave(db->mutex);
   }
   return iOffset;
@@ -2815,25 +2831,43 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 ** passed to this function, we assume a malloc() failed during sqlite3_open().
 */
 int sqlite3_errcode(sqlite3 *db){
-  if( db && !sqlite3SafetyCheckSickOrOk(db) ){
+  int iRet;
+  if( !db ) return SQLITE_NOMEM_BKPT;
+  if( !sqlite3SafetyCheckSickOrOk(db) ){
     return SQLITE_MISUSE_BKPT;
   }
-  if( !db || db->mallocFailed ){
-    return SQLITE_NOMEM_BKPT;
+  sqlite3_mutex_enter(db->mutex);
+  if( db->mallocFailed ){
+    iRet = SQLITE_NOMEM_BKPT;
+  }else{
+    iRet = db->errCode & db->errMask;
   }
-  return db->errCode & db->errMask;
+  sqlite3_mutex_leave(db->mutex);
+  return iRet;
 }
 int sqlite3_extended_errcode(sqlite3 *db){
-  if( db && !sqlite3SafetyCheckSickOrOk(db) ){
+  int iRet;
+  if( !db ) return SQLITE_NOMEM_BKPT;
+  if( !sqlite3SafetyCheckSickOrOk(db) ){
     return SQLITE_MISUSE_BKPT;
   }
-  if( !db || db->mallocFailed ){
-    return SQLITE_NOMEM_BKPT;
+  sqlite3_mutex_enter(db->mutex);
+  if( db->mallocFailed ){
+    iRet = SQLITE_NOMEM_BKPT;
+  }else{
+    iRet = db->errCode;
   }
-  return db->errCode;
+  sqlite3_mutex_leave(db->mutex);
+  return iRet;
 }
 int sqlite3_system_errno(sqlite3 *db){
-  return db ? db->iSysErrno : 0;
+  int iRet = 0;
+  if( db ){
+    sqlite3_mutex_enter(db->mutex);
+    iRet = db->iSysErrno;
+    sqlite3_mutex_leave(db->mutex);
+  }
+  return iRet;
 } 
 
 /*
@@ -3028,6 +3062,7 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   if( limitId<0 || limitId>=SQLITE_N_LIMIT ){
     return -1;
   }
+  sqlite3_mutex_enter(db->mutex);
   oldLimit = db->aLimit[limitId];
   if( newLimit>=0 ){                   /* IMP: R-52476-28732 */
     if( newLimit>aHardLimit[limitId] ){
@@ -3037,6 +3072,7 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
     }
     db->aLimit[limitId] = newLimit;
   }
+  sqlite3_mutex_leave(db->mutex);
   return oldLimit;                     /* IMP: R-53341-35419 */
 }
 
@@ -3934,13 +3970,17 @@ int sqlite3_global_recover(void){
 ** by the next COMMIT or ROLLBACK.
 */
 int sqlite3_get_autocommit(sqlite3 *db){
+  int iRet;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
 #endif
-  return db->autoCommit;
+  sqlite3_mutex_enter(db->mutex);
+  iRet = db->autoCommit;
+  sqlite3_mutex_leave(db->mutex);
+  return iRet;
 }
 
 /*
@@ -4965,17 +5005,19 @@ Btree *sqlite3DbNameToBtree(sqlite3 *db, const char *zDbName){
 ** of range.
 */
 const char *sqlite3_db_name(sqlite3 *db, int N){
+  const char *zRet = 0;
 #ifdef SQLITE_ENABLE_API_ARMOR
   if( !sqlite3SafetyCheckOk(db) ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
 #endif
-  if( N<0 || N>=db->nDb ){
-    return 0;
-  }else{
-    return db->aDb[N].zDbSName;
+  sqlite3_mutex_enter(db->mutex);
+  if( N>=0 && N<db->nDb ){
+    zRet = db->aDb[N].zDbSName;
   }
+  sqlite3_mutex_leave(db->mutex);
+  return zRet;
 }
 
 /*
