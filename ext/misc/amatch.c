@@ -189,16 +189,16 @@ struct amatch_avl {
   amatch_avl *pBefore;  /* Other elements less than zKey */
   amatch_avl *pAfter;   /* Other elements greater than zKey */
   amatch_avl *pUp;      /* Parent element */
-  short int height;     /* Height of this node.  Leaf==1 */
-  short int imbalance;  /* Height difference between pBefore and pAfter */
+  int height;           /* Height of this node.  Leaf==1 */
+  int imbalance;        /* Height difference between pBefore and pAfter */
 };
 
 /* Recompute the amatch_avl.height and amatch_avl.imbalance fields for p.
 ** Assume that the children of p have correct heights.
 */
 static void amatchAvlRecomputeHeight(amatch_avl *p){
-  short int hBefore = p->pBefore ? p->pBefore->height : 0;
-  short int hAfter = p->pAfter ? p->pAfter->height : 0;
+  int hBefore = p->pBefore ? p->pBefore->height : 0;
+  int hAfter = p->pAfter ? p->pAfter->height : 0;
   p->imbalance = hBefore - hAfter;  /* -: pAfter higher.  +: pBefore higher */
   p->height = (hBefore>hAfter ? hBefore : hAfter)+1;
 }
@@ -459,6 +459,8 @@ typedef int amatch_langid;
 #define AMATCH_MX_LENGTH          50  /* Maximum length of a rule string */
 #define AMATCH_MX_LANGID  2147483647  /* Maximum rule ID */
 #define AMATCH_MX_COST          1000  /* Maximum single-rule cost */
+#define AMATCH_MX_WORD          1000  /* Maximum length of a word */
+
 
 /*
 ** A match or partial match
@@ -469,8 +471,8 @@ struct amatch_word {
   amatch_avl sWord;     /* Linkage of this node into the word tree */
   amatch_cost rCost;    /* Cost of the match so far */
   int iSeq;             /* Sequence number */
+  int nMatch;           /* Input characters matched */
   char zCost[10];       /* Cost key (text rendering of rCost) */
-  short int nMatch;     /* Input characters matched */
   char zWord[4];        /* Text of the word.  Extra space appended as needed */
 };
 
@@ -1076,7 +1078,7 @@ static void amatchAddWord(
   pWord->rCost = rCost;
   pWord->iSeq = pCur->nWord++;
   amatchWriteCost(pWord);
-  pWord->nMatch = (short)nMatch;
+  pWord->nMatch = nMatch;
   pWord->pNext = pCur->pAllWords;
   pCur->pAllWords = pWord;
   pWord->sCost.zKey = pWord->zCost;
@@ -1256,11 +1258,13 @@ static int amatchFilter(
   amatch_cursor *pCur = (amatch_cursor *)pVtabCursor;
   const char *zWord = "*";
   int idx;
+  int rc = SQLITE_OK;
 
   amatchClearCursor(pCur);
   idx = 0;
   if( idxNum & 1 ){
     zWord = (const char*)sqlite3_value_text(argv[0]);
+    if( zWord==0 ) zWord = "";
     idx++;
   }
   if( idxNum & 2 ){
@@ -1273,10 +1277,13 @@ static int amatchFilter(
   }
   pCur->zInput = sqlite3_mprintf("%s", zWord);
   if( pCur->zInput==0 ) return SQLITE_NOMEM;
+  if( strlen(pCur->zInput)>AMATCH_MX_WORD ){
+    pCur->zInput[AMATCH_MX_WORD] = 0;
+    rc = SQLITE_TOOBIG;
+  }
   amatchAddWord(pCur, 0, 0, "", "");
   amatchNext(pVtabCursor);
-
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
