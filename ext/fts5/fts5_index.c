@@ -8540,7 +8540,7 @@ static void fts5IndexIntegrityCheckSegment(
         FTS5_CORRUPT_ROWID(p, iRow);
       }else{
         iOff += fts5GetVarint32(&pLeaf->p[iOff], nTerm);
-        if( iOff+nTerm>pLeaf->szLeaf ){
+        if( (i64)iOff+(i64)nTerm>(i64)pLeaf->szLeaf ){
           FTS5_CORRUPT_ROWID(p, iRow);
         }else{
           res = fts5Memcmp(&pLeaf->p[iOff], zIdxTerm, MIN(nTerm, nIdxTerm));
