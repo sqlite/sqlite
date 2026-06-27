@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\s"jump\sor\smove\sdepends\son\suninitialised\svalue"\swarning\sthat\scould\soccur\swhen\susing\sa\svirtual\stable\sas\sthe\sRHS\sof\san\souter\sjoin\swithin\sa\strigger.
-D 2026-06-26T19:31:46.902
+C Add\sa\snew\ssqlite3FaultSim()\sto\smake\sit\seasier\sto\stest\sthe\schanges\nin\scheck-in\s[942498724f5bb83b].
+D 2026-06-27T15:25:53.013
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -678,7 +678,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c a3181d1a979bca40dd2b60393cf664c9659e71c25938661c1d3a786e489880f0
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 72a19486a2ba8f218a1688e41c7fd7bdb1c55ef2680e9bc25a6081a24bb616f3
+F src/btree.c cbdab6077e7ba9426e79e89601054b2deb42893006a6cf0f2db1f856f0750fe6
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h 1e4a7d04e809e98abc39654b6089c60d749a724598041ff553b392a3277e9b98
 F src/build.c 09946336c3011c2ae2faccdf04e33336e1cd51fd836651be0cd7eb5814f7f6a0
@@ -2209,8 +2209,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 45213c1c398cad9d05eda5420ae7379e84fa37d30793f8b4d28c358b88d62931
-R a655c9561d5416e0ec2f34dd35824420
-U dan
-Z 968269c493f0b7238c18353af755695c
+P 716782abe939083b7732289d862ddfd841057d3458814f96e5e6d7826ec7fa5c
+R 7498424998637c841fd2a0bd9c7ba084
+U drh
+Z 84ecd5316bfd14394119f346ec4d70f8
 # Remove this line to create a well-formed Fossil manifest.
