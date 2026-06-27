@@ -1,5 +1,5 @@
-C Add\sa\snew\ssqlite3FaultSim()\sto\smake\sit\seasier\sto\stest\sthe\schanges\nin\scheck-in\s[942498724f5bb83b].
-D 2026-06-27T15:25:53.013
+C Improved\sdetection\sof\sCTEs\sbeing\smisused\sas\stable-valued\sfunctions.\nRemove\san\sincorrect\sassert()\sfrom\scheck-in\s[716782abe939083b].
+D 2026-06-27T16:07:17.079
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -738,7 +738,7 @@ F src/printf.c 69a89414b6368901b286a5579dea34cc3470a7d10f2b0fea93f7eb5d8f1e2e71
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d0724113da9f5c0430d2052808ce59519f51ae7c4fbb1f5ef21fe3a832956086
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c 7b7f0ba07a443d5882b3285bda4ed9d9fdbe43a1ed46302d9833ce9b310ed85c
+F src/select.c f553420eaf5c72a49cef786621eea79dd8c4411671839fb05250bb49ca74a0a0
 F src/shell.c.in a4e83895cfa336065ad7f7a7dea8fc2a19d050f7ce7466621c67208acaac9e44
 F src/sqlite.h.in d9ec41feb4cd804e68b174328b43beb3f1f71bba13e1c7a439efb826d301cccc
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
@@ -823,7 +823,7 @@ F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c e76636ee3a58a3fc84e6a0362c69dd61234c24a77cfc9219b8db8cc2278ae5b7
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
 F src/wherecode.c bc39ccbe3648f01157038b16cc55bdbff128590972b7185521b5526dc2815765
-F src/whereexpr.c 00e778c829a6ac6bf2bb8899cd1e39ccc48670d665b5891e99632180a2768a15
+F src/whereexpr.c b48dd990a15d36173e12acbcf961b81b2ea9917adeda01b2fdb9821e2cea08f8
 F src/window.c 0d7dacdf2e84c6ee8ff498d5cc881dd245fcb2f14f6c5976e97e112ce96e90dc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test 4d7a34d328e58ca2a2d78fd76c27614a41ca7ddf4312ded9c68c04f430b3b47d
@@ -2092,7 +2092,7 @@ F test/windowerr.tcl f5acd6fbc210d7b5546c0e879d157888455cd4a17a1d3f28f07c1c8a387
 F test/windowerr.test a8b752402109c15aa1c5efe1b93ccb0ce1ef84fa964ae1cd6684dd0b3cc1819b
 F test/windowfault.test 15094c1529424e62f798bc679e3fe9dfab6e8ba2f7dfe8c923b6248c31660a7c
 F test/windowpushd.test c420e2265f0e09a0e798d0513a660d71b51602088d81b3dbd038918ee1339dcc
-F test/with1.test 31db84788e0429885b63995149fab57d32e26196b752a3a926249ae74c0adddd
+F test/with1.test c416097db4ead936b98a76ff3069f76a6009c5aaec5ff2b2c5ca210bc595ad57
 F test/with2.test 181674a6cc86a601ca2ac052741cdfad5b529e07e870435d2f6cdb92d589ff17
 F test/with3.test e30369ea27aa27eb1bda4c5e510c8a9f782c8afd2ab99d1a02b8a7f25a5d3e65
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
@@ -2209,8 +2209,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 716782abe939083b7732289d862ddfd841057d3458814f96e5e6d7826ec7fa5c
-R 7498424998637c841fd2a0bd9c7ba084
+P a4472a17e878fce92d88c1db08e7e390df25f6699e801602cc725cbfdb836e9e
+R c34b67c3e743b26b86cd20a1050d5968
 U drh
-Z 84ecd5316bfd14394119f346ec4d70f8
+Z cb7880e5c587089698ad32525c391a4e
 # Remove this line to create a well-formed Fossil manifest.

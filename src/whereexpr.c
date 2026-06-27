@@ -1941,6 +1941,10 @@ void sqlite3WhereTabFuncArgs(
   if( pItem->fg.isTabFunc==0 ) return;
   pTab = pItem->pSTab;
   assert( pTab!=0 );
+  if( !IsVirtual(pTab) ){
+    sqlite3ErrorMsg(pParse, "'%s' is not a function", pItem->zName);
+    return;
+  }
   pArgs = pItem->u1.pFuncArg;
   if( pArgs==0 ) return;
   for(j=k=0; j<pArgs->nExpr; j++){

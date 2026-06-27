@@ -1256,4 +1256,15 @@ do_execsql_test 28.1 {
   ) FROM t1;
 } {NULL 1 NULL}
 
+# 2026-06-27 A CTE cannot masqudrade as a table-valued function.
+#
+do_catchsql_test 29.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a);
+  WITH RECURSIVE cte1(x,y,z) AS (
+      VALUES(1,2,3) UNION ALL SELECT x,4,5 FROM t1 RIGHT JOIN cte1(x)
+  )
+  SELECT * FROM cte1;
+} {1 {'cte1' is not a function}}
+
 finish_test
