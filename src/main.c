@@ -2263,7 +2263,7 @@ int sqlite3_overload_function(
 ** Register a trace function.  The pArg from the previously registered trace
 ** is returned. 
 **
-** A NULL trace function means that no tracing is executes.  A non-NULL
+** A NULL trace function means that no tracing is executed.  A non-NULL
 ** trace is a pointer to a function that is invoked at the start of each
 ** SQL statement.
 */
@@ -2315,7 +2315,7 @@ int sqlite3_trace_v2(
 ** Register a profile function.  The pArg from the previously registered
 ** profile function is returned. 
 **
-** A NULL profile function means that no profiling is executes.  A non-NULL
+** A NULL profile function means that no profiling is executed.  A non-NULL
 ** profile is a pointer to a function that is invoked at the conclusion of
 ** each SQL statement that is run.
 */

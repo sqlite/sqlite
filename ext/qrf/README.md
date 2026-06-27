@@ -8,7 +8,7 @@ table formats, with flexible column widths and alignments, row-oriented
 formats, such as CSV and similar, as well as various special purpose formats
 like JSON.
 
-For the first 25 years of SQLite's existance, the
+For the first 25 years of SQLite's existence, the
 [command-line interface](https://sqlite.org/cli.html) (CLI)
 formatted query results using a hodge-podge of routines
 that had grown slowly by accretion.  The QRF was created

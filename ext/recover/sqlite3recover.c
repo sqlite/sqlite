@@ -70,7 +70,7 @@ typedef struct RecoverColumn RecoverColumn;
 **   the bind parameter its values will be bound to in the INSERT statement
 **   used to construct the output database. If the table does has a rowid
 **   but not an INTEGER PRIMARY KEY column, then iRowidBind contains the
-**   index of the bind paramater to which the rowid value should be bound.
+**   index of the bind parameter to which the rowid value should be bound.
 **   Otherwise, it contains -1. If the table does contain an INTEGER PRIMARY 
 **   KEY column, then the rowid value should be bound to the index associated
 **   with the column.

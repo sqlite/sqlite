@@ -63,7 +63,7 @@ struct Fts5VocabCursor {
   void *pStruct;                  /* From sqlite3Fts5StructureRef() */
 
   int nLeTerm;                    /* Size of zLeTerm in bytes */
-  char *zLeTerm;                  /* (term <= $zLeTerm) paramater, or NULL */
+  char *zLeTerm;                  /* (term <= $zLeTerm) parameter, or NULL */
   int colUsed;                    /* Copy of sqlite3_index_info.colUsed */
 
   /* These are used by 'col' tables only */

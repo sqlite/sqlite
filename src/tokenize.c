@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** An tokenizer for SQL
+** A tokenizer for SQL
 **
 ** This file contains C code that splits an SQL input string up into
 ** individual tokens and sends those tokens one-by-one over to the

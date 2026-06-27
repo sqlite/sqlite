@@ -230,7 +230,7 @@ If there is no permutation, the individual test script may be run with:
   ./testfixture $PATH_TO_SCRIPT
 ```
 
-Or, if the failure occured as part of a permutation:
+Or, if the failure occurred as part of a permutation:
 
 ```
   test/testrunner.tcl $PERMUTATION $PATH_TO_SCRIPT

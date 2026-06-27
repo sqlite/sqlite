@@ -44,7 +44,7 @@
 #   define SQLITE_TCLAPI
 # endif
 #endif
-/* Compatability between Tcl8.6 and Tcl9.0 */
+/* Compatibility between Tcl8.6 and Tcl9.0 */
 #if TCL_MAJOR_VERSION==9
 # define CONST const
 #elif !defined(Tcl_Size)

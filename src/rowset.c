@@ -47,7 +47,7 @@
 ** The initial batch number is zero, so if the very first TEST contains
 ** a non-zero batch number, it will see all prior INSERTs.
 **
-** No INSERTs may occurs after a SMALLEST.  An assertion will fail if
+** No INSERTs may occur after a SMALLEST.  An assertion will fail if
 ** that is attempted.
 **
 ** The cost of an INSERT is roughly constant.  (Sometimes new memory

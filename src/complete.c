@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** An tokenizer for SQL
+** A tokenizer for SQL
 **
 ** This file contains C code that implements the sqlite3_complete() API.
 ** This code used to be part of the tokenizer.c source file.  But by
@@ -51,12 +51,12 @@ extern const char sqlite3IsEbcdicIdChar[];
 /*
 ** Return zero if the given SQL string is complete - if all comments,
 ** string and blob literals, and quoted identifiers have been closed and
-** if the entire string ends with ";" and possible with ";END;" if the
+** if the entire string ends with ";" and possibly with ";END;" if the
 ** string is a CREATE TRIGGER statement.  A non-zero return indicates
 ** that the string is incomplete.  Bits of the return value indicate
 ** what is missing and is needed to close out the statement.
 **
-** Special handling is require for CREATE TRIGGER statements.
+** Special handling is required for CREATE TRIGGER statements.
 ** Whenever the CREATE TRIGGER keywords are seen, the statement
 ** must end with ";END;".
 **
@@ -81,15 +81,15 @@ extern const char sqlite3IsEbcdicIdChar[];
 **
 **   xx == '\''            Incomplete string or blob literal
 **   xx == '"'             Incomplete quoted identifier
-**   xx == '`'             Incompelte MySQL-style quoted identifier
-**   xx == ']'             Incomplete SQLServer-style quoted identifer
+**   xx == '`'             Incomplete MySQL-style quoted identifier
+**   xx == ']'             Incomplete SQLServer-style quoted identifier
 **   xx == '-'             Incomplete SQL-style comment
 **   xx == '/'             Incomplete C-style comment
 **   xx != 0               New values of xx may be added in the future
 **
 **   wwwwwwww              Interpret as a signed integer, the number
 **                         of unmatched "(".  Negative means there are
-**                         more ")" and "(".
+**                         more ")" than "(".
 **
 **   ((R>>24)&0xff)!=0     New uses for the 4th byte may be added
 **                         in the future
@@ -138,7 +138,7 @@ extern const char sqlite3IsEbcdicIdChar[];
 **
 ** If we compile with SQLITE_OMIT_TRIGGER, all of the computation needed
 ** to recognize the end of a trigger can be omitted.  All we have to do
-** is look for a semicolon that is not part of an string or comment.
+** is look for a semicolon that is not part of a string or comment.
 */
 sqlite3_int64 sqlite3_incomplete(const char *zSql){
   u8 state = 0;   /* Current state, using numbers defined in header comment */

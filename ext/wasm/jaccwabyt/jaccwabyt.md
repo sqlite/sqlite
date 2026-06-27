@@ -522,7 +522,7 @@ StructBinder has the following members:
   Allocates a new UTF-8-encoded, NUL-terminated copy of the given JS
   string and returns its address relative to `config.heap()`. If
   allocation returns 0 this function throws. Ownership of the memory
-  is transfered to the caller, who must eventually pass it to the
+  is transferred to the caller, who must eventually pass it to the
   configured `config.dealloc()` function.
 
 - `config`  
@@ -969,7 +969,7 @@ const x = new MyStruct({
 - If `wrap` is set then (A) it must be at least
   `MyStruct.structInfo.sizeof` of memory owned by the caller, (B) it
   _must_ have been allocated using the same allocator as Jaccwabyt is
-  configured for, and (C) ownership of it is transfered to the new
+  configured for, and (C) ownership of it is transferred to the new
   object. `zeroOnDispose` and `extraBytes` are disregarded if `wrap`
   is set. A falsy `wrap` value is equivalent to not providing one and
   a non-integer value, or a number less than 0, triggers an error.

@@ -67,9 +67,10 @@ void sqlite3BenignMallocHooks(
 }
 
 /*
-** This (sqlite3EndBenignMalloc()) is called by SQLite code to indicate that
-** subsequent malloc failures are benign. A call to sqlite3EndBenignMalloc()
-** indicates that subsequent malloc failures are non-benign.
+** sqlite3BeginBenignMalloc() is called by SQLite code to indicate that
+** subsequent malloc failures are benign.  A later call to
+** sqlite3EndBenignMalloc() indicates that subsequent malloc failures are
+** again non-benign.
 */
 void sqlite3BeginBenignMalloc(void){
   wsdHooksInit;

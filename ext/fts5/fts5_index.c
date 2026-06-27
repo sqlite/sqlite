@@ -4694,7 +4694,7 @@ static void fts5TrimSegments(Fts5Index *p, Fts5Iter *pIter){
     if( pSeg->pSeg==0 ){
       /* no-op */
     }else if( pSeg->pLeaf==0 ){
-      /* All keys from this input segment have been transfered to the output.
+      /* All keys from this input segment have been transferred to the output.
       ** Set both the first and last page-numbers to 0 to indicate that the
       ** segment is now empty. */
       pSeg->pSeg->pgnoLast = 0;

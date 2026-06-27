@@ -8901,7 +8901,7 @@ void sqlite3_result_str(sqlite3_context*, sqlite3_str*, int);
 ** to [sqlite3_result_str(C,S,F)].
 */
 #define SQLITE_COPY   0   /* Results copied.  Dynamic string unchanged */
-#define SQLITE_XFER   1   /* Results transfered.  Dynamic string reset */
+#define SQLITE_XFER   1   /* Results transferred.  Dynamic string reset */
 #define SQLITE_FINISH 2   /* Like SQLITE_XFER, plus dynamic string freed */
 
 /*
