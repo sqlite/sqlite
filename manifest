@@ -1,5 +1,5 @@
-C Put\sreasonable\sinput\slimits\son\sthe\s(non-deliverable\sand\sobsolete)\namatch.c\sextension.\n[bugs:/info/2026-06-27T19:15:11Z|Bug\s2026-06-27T19:15:11Z]
-D 2026-06-27T20:18:46.100
+C In\sthe\samatch.c\sand\sfuzzer.c\sextensions\s(both\sof\swhich\sare\sexperimental,\nfor\stesting\spurposes\sonly,\sand\sare\snot\spart\sof\sany\sdeliverable)\streat\nNULL\sinputs\sas\sempty\sstrings.\n[bugs:/info/2026-06-27T19:32:29Z|Bug\s2026-06-27T19:32:29Z].
+D 2026-06-27T20:30:17.000
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -360,7 +360,7 @@ F ext/jni/src/tests/000-000-sanity.test c3427a0e0ac84d7cbe4c95fdc1cd4b61f9ddcf43
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
 F ext/jni/src/tests/900-001-fts.test bf0ce17a8d082773450e91f2388f5bbb2dfa316d0b676c313c637a91198090f0
 F ext/misc/README.md 6243cdc4d7eb791c41ef0716f3980b8b5f6aa8c61ff76a3958cbf0031c6ebfa7
-F ext/misc/amatch.c 09a39f0bb7c53997752470a897a082c67090230796c9fca0d59fc51fb038ca6d
+F ext/misc/amatch.c 2bbdb0145655cfb1e6ac1c4d717a8cb2e81b7193e5eadf2b290682d7fea82ff2
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
 F ext/misc/base64.c 1445761667c16356e827fc6418294c869468be934429aaa8315035e76dd58acf
@@ -379,7 +379,7 @@ F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755d
 F ext/misc/explain.c 04c9270fd8cf93a9bceb12d2f5f67e3f09a4e58b3e0efe14d24531444d2fffdf
 F ext/misc/fileio.c a8caf3ffb59af6e9870d1a1c739981727ba165cd667bda085fa21ccfc8694059
 F ext/misc/fossildelta.c 37b67b2710a0dd2da7b3aeea19388a069471eb0fc04702a0521237770d0d04f1
-F ext/misc/fuzzer.c e916972f69ea1d275a33c5b72ab8cea0e68ae3871fafdc10260df9688140d3c5
+F ext/misc/fuzzer.c 32cef9a29864a1bc1329ccb6dfa613f197bb83491a7612c2ca2c83ee26cd8f14
 F ext/misc/ieee754.c 2901d08a586d00a1d3c0fd89e03c57ee9e2b5f013b0daab9e49c7a48a9d5946b
 F ext/misc/memstat.c 03ab52d2d841eb3f55118105c1964d5225f152b23bd708844c648b48d14ccbcf
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
@@ -2209,8 +2209,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ca197caec7b2b4fd71a9853bb2452b7ce7dd2fbb1bbc871aa375558e53c216f7
-R a8704575bf984a3097e70dd77605a8b9
+P 2fe1366e649ddd964153059b3c33b380af1924afb59210ac3311fd7bc8af5922
+R d63f69b991fc4ab7b12d4dedccd9773f
 U drh
-Z e07002d4e89760641f81f1792b0e0d25
+Z 5633f3b04f6151e24a1e01de8fc3b342
 # Remove this line to create a well-formed Fossil manifest.
