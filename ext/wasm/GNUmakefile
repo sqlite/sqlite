@@ -599,11 +599,11 @@ ifeq (0,$(MAKING_CLEAN))
   # builds filter out OPFS from within the OPFS-using files so OPFS is
   # implied for those builds.
   #
-  # The name "all" is shorthand for all of the above names.
+  # The name "ALL" is shorthand for all of the above names.
   D.omit =
   ifneq (,$(omit-api))
     # Translate omit-api="X Y" into -Domit-X...
-    Xomit-api := $(subst all,kvvfs oo1 OPFS worker1,$(omit-api))
+    Xomit-api := $(subst ALL,kvvfs oo1 OPFS worker1,$(omit-api))
     Xomit-api := $(subst OPFS,opfs opfs-sahpool opfs-wl,$(Xomit-api))
     Xomit-api := $(sort $(Xomit-api))
     $(foreach X,$(Xomit-api),$(eval D.omit += -Domit-$(X)))
