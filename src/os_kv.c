@@ -923,7 +923,7 @@ static int kvvfsOpen(
 #ifdef SQLITE_WASM
     if( strlen(zName) >= (KVRECORD_KEY_SZ
                           - 6 /* "kvvfs-" */
-                          - 11 /* "-##########" */) ){
+                          - 11 /* "-NNNNNNNNNNN" */) ){
       return SQLITE_CANTOPEN;
     }
 #else

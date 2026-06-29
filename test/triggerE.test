@@ -111,4 +111,24 @@ do_execsql_test 2.3 {
   SELECT * FROM t2;
 } {1 2 x y z z}
 
+#-------------------------------------------------------------------------
+# At one point this was causing a harmless "branch on unitialized value"
+# warning.
+ifcapable rtree {
+  db close
+  sqlite3_shutdown
+  sqlite3_config_lookaside 0 0
+  sqlite3_initialize
+  reset_db
+
+  do_execsql_test 3.0 {
+    CREATE TABLE t1(a);
+    CREATE VIRTUAL TABLE rr USING rtree(id, a, b);
+    CREATE TRIGGER r1 AFTER DELETE ON t1 BEGIN
+      SELECT a FROM t1 NATURAL LEFT JOIN rr;
+    END;
+    DELETE FROM t1;
+  }
+}
+
 finish_test

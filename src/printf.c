@@ -193,6 +193,10 @@ static char *printfTempBuf(sqlite3_str *pAccum, sqlite3_int64 n){
 # define SQLITE_FP_PRECISION_LIMIT 100000000
 #endif
 
+/* Forward reference */
+static void sqlite3StrAppend64(sqlite3_str *p, const char *z, i64 N);
+static void sqlite3StrAppendchar64(sqlite3_str *p, i64 N, char c);
+
 /*
 ** Render a string given by "fmt" into the StrAccum object.
 */
@@ -203,10 +207,10 @@ void sqlite3_str_vappendf(
 ){
   int c;                     /* Next character in the format string */
   char *bufpt;               /* Pointer to the conversion buffer */
-  int precision;             /* Precision of the current field */
-  int length;                /* Length of the field */
+  i64 precision;             /* Precision of the current field */
+  i64 length;                /* Length of the field */
   int idx;                   /* A general purpose loop counter */
-  int width;                 /* Width of the current field */
+  i64 width;                 /* Width of the current field */
   etByte flag_leftjustify;   /* True if "-" flag is present */
   etByte flag_prefix;        /* '+' or ' ' or 0 for prefix */
   etByte flag_alternateform; /* True if "#" flag is present */
@@ -254,7 +258,7 @@ void sqlite3_str_vappendf(
         fmt = bufpt + strlen(bufpt);
       }
 #endif
-      sqlite3_str_append(pAccum, bufpt, (int)(fmt - bufpt));
+      sqlite3StrAppend64(pAccum, bufpt, fmt - bufpt);
       if( *fmt==0 ) break;
     }
     if( (c=(*++fmt))==0 ){
@@ -500,22 +504,23 @@ void sqlite3_str_vappendf(
             longvalue = longvalue/base;
           }while( longvalue>0 );
         }
-        length = (int)(&zOut[nOut-1]-bufpt);
+        length = &zOut[nOut-1] - bufpt;
         if( precision>length ){                         /* zero pad */
-          int nn = precision-length;
+          i64 nn = precision-length;
           bufpt -= nn;
           memset(bufpt,'0',nn);
           length = precision;
         }
         if( cThousand ){
-          int nn = (length - 1)/3;  /* Number of "," to insert */
-          int ix = (length - 1)%3 + 1;
+          i64 nn = (length - 1)/3;  /* Number of "," to insert */
+          i64 ix = (length - 1)%3 + 1;
+          int ii;
           bufpt -= nn;
-          for(idx=0; nn>0; idx++){
-            bufpt[idx] = bufpt[idx+nn];
+          for(ii=0; nn>0; ii++){
+            bufpt[ii] = bufpt[ii+nn];
             ix--;
             if( ix==0 ){
-              bufpt[++idx] = cThousand;
+              bufpt[++ii] = cThousand;
               nn--;
               ix = 3;
             }
@@ -528,7 +533,7 @@ void sqlite3_str_vappendf(
           pre = &aPrefix[infop->prefix];
           for(; (x=(*pre))!=0; pre++) *(--bufpt) = x;
         }
-        length = (int)(&zOut[nOut-1]-bufpt);
+        length = &zOut[nOut-1] - bufpt;
         break;
       case etFLOAT:
       case etEXP:
@@ -560,8 +565,13 @@ void sqlite3_str_vappendf(
         sqlite3FpDecode(&s, realvalue, iRound, flag_altform2 ? 20 : 16);
         if( s.isSpecial ){
           if( s.isSpecial==2 ){
-            bufpt = flag_zeropad ? "null" : "NaN";
-            length = sqlite3Strlen30(bufpt);
+            if( flag_zeropad ){
+              bufpt = "null";
+              length = 4;
+            }else{
+              bufpt = "NaN";
+              length = 3;
+            }
             break;
           }else if( flag_zeropad ){
             s.z[0] = '9';
@@ -577,7 +587,7 @@ void sqlite3_str_vappendf(
             }else{
               bufpt++;
             }
-            length = sqlite3Strlen30(bufpt);
+            length = strlen(bufpt);
             break;
           }
         }
@@ -733,7 +743,7 @@ void sqlite3_str_vappendf(
           *(bufpt++) = (char)(exp%10+'0');             /* 1's digit */
         }
 
-        length = (int)(bufpt-zOut);
+        length = bufpt - zOut;
         assert( length <= szBufNeeded );
         if( length<width ){
           i64 nPad = width - length;
@@ -753,6 +763,7 @@ void sqlite3_str_vappendf(
         if( zExtra==0 ){
           /* The result is being rendered directory into pAccum.  This
           ** is the common and fast case */
+          assert( pAccum->nChar + length < SMXV(pAccum->nChar) );
           pAccum->nChar += length;
           zOut[length] = 0;
           continue;
@@ -799,10 +810,10 @@ void sqlite3_str_vappendf(
           i64 nPrior = 1;
           width -= precision-1;
           if( width>1 && !flag_leftjustify ){
-            sqlite3_str_appendchar(pAccum, width-1, ' ');
+            sqlite3StrAppendchar64(pAccum, width-1, ' ');
             width = 0;
           }
-          sqlite3_str_append(pAccum, buf, length);
+          sqlite3StrAppend64(pAccum, buf, length);
           precision--;
           while( precision > 1 ){
             i64 nCopyBytes;
@@ -858,17 +869,17 @@ void sqlite3_str_vappendf(
             while( precision-- > 0 && z[0] ){
               SQLITE_SKIP_UTF8(z);
             }
-            length = (int)(z - (unsigned char*)bufpt);
+            length = z - (unsigned char*)bufpt;
           }else{
             for(length=0; length<precision && bufpt[length]; length++){}
           }
         }else{
-          length = 0x7fffffff & (int)strlen(bufpt);
+          length = strlen(bufpt);
         }
       adjust_width_for_utf8:
         if( flag_altform2 && width>0 ){
           /* Adjust width to account for extra bytes in UTF-8 characters */
-          int ii = length - 1;
+          i64 ii = length - 1;
           while( ii>=0 ) if( (bufpt[ii--] & 0xc0)==0x80 ) width++;
         }
         break;
@@ -903,7 +914,7 @@ void sqlite3_str_vappendf(
           }
           for(i=j=0; i<px; i++){
             if( (ch = ((u8*)escarg)[i])<=0x1f || ch=='"' || ch=='\\' ){
-              if( j<i ) sqlite3_str_append(pAccum, &escarg[j], i-j);
+              if( j<i ) sqlite3StrAppend64(pAccum, &escarg[j], i-j);
               j = i+1;
               if( ch==0 ) break;
               sqlite3_str_appendchar(pAccum, 1, '\\');
@@ -919,7 +930,7 @@ void sqlite3_str_vappendf(
               }
             }
           }
-          if( j<i ) sqlite3_str_append(pAccum, &escarg[j], i-j);
+          if( j<i ) sqlite3StrAppend64(pAccum, &escarg[j], i-j);
           if( xtype==etESCAPE_J ) sqlite3_str_append(pAccum, "\"", 1);
         }
         if( width>0 && sqlite3_str_errcode(pAccum)==SQLITE_OK ){
@@ -935,7 +946,7 @@ void sqlite3_str_vappendf(
           if( width>len ){
             sqlite3_int64 sp = width-len;
             assert( sp>0 && sp<0x7fffffff );
-            sqlite3_str_appendchar(pAccum, (int)sp, ' ');
+            sqlite3StrAppendchar64(pAccum, (int)sp, ' ');
             if( !flag_leftjustify
              && n>0
              && sqlite3_str_errcode(pAccum)==0
@@ -1127,11 +1138,11 @@ void sqlite3_str_vappendf(
     */
     width -= length;
     if( width>0 ){
-      if( !flag_leftjustify ) sqlite3_str_appendchar(pAccum, width, ' ');
-      sqlite3_str_append(pAccum, bufpt, length);
-      if( flag_leftjustify ) sqlite3_str_appendchar(pAccum, width, ' ');
+      if( !flag_leftjustify ) sqlite3StrAppendchar64(pAccum, width, ' ');
+      sqlite3StrAppend64(pAccum, bufpt, length);
+      if( flag_leftjustify ) sqlite3StrAppendchar64(pAccum, width, ' ');
     }else{
-      sqlite3_str_append(pAccum, bufpt, length);
+      sqlite3StrAppend64(pAccum, bufpt, length);
     }
 
     if( zExtra ){
@@ -1251,6 +1262,13 @@ void sqlite3_str_appendchar(sqlite3_str *p, int N, char c){
   }
   while( (N--)>0 ) p->zText[p->nChar++] = c;
 }
+static void sqlite3StrAppendchar64(sqlite3_str *p, i64 N, char c){
+  testcase( p->nChar + N > 0x7fffffff );
+  if( p->nChar+N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ){
+    return;
+  }
+  while( (N--)>0 ) p->zText[p->nChar++] = c;
+}
 
 /*
 ** The StrAccum "p" is not large enough to accept N new bytes of z[].
@@ -1285,6 +1303,20 @@ void sqlite3_str_append(sqlite3_str *p, const char *z, int N){
     memcpy(&p->zText[p->nChar-N], z, N);
   }
 }
+static void sqlite3StrAppend64(sqlite3_str *p, const char *z, i64 N){
+  assert( z!=0 || N==0 );
+  assert( p->zText!=0 || p->nChar==0 || p->accError );
+  assert( N>=0 );
+  assert( p->accError==0 || p->nAlloc==0 || p->mxAlloc==0 );
+  if( p->nChar+N >= (i64)p->nAlloc ){
+    enlargeAndAppend(p,z,N);
+  }else if( N ){
+    assert( p->zText );
+    p->nChar += N;
+    memcpy(&p->zText[p->nChar-N], z, N);
+  }
+}
+
 
 /*
 ** Append the complete text of zero-terminated string z[] to the p string.

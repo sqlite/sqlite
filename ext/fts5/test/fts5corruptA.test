@@ -266,6 +266,30 @@ do_execsql_test 6.2 {
   DELETE FROM t WHERE rowid=3;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+  INSERT INTO ft(ft,rank) VALUES('pgsz',64);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10
+  )
+  INSERT INTO ft SELECT 'a b b a c c d' FROM s;
+}
+
+set B "00000040FFFF61010402050104020501040205010402050104020501040205010402050104020501040205010402050101620104030301040303010403030104042b"
+set N "306162[string repeat 00 5000]"
+
+do_execsql_test 7.1 {
+  UPDATE ft_data SET block = unhex($B) WHERE id = 137438953473;
+  UPDATE ft_idx SET term=unhex($N) WHERE segid=1 AND pgno=2;
+}
+
+do_execsql_test 7.2 {
+  PRAGMA integrity_check
+} {
+  {fts5: corruption found reading blob 137438953473 from table "ft"}
+}
 
 sqlite3_fts5_may_be_corrupt 0
 finish_test

@@ -2586,14 +2586,11 @@ void sqlite3MarkAllShadowTablesOf(sqlite3 *db, Table *pTab){
 /*
 ** Return true if zName is a shadow table name in the current database
 ** connection.
-**
-** zName is temporarily modified while this routine is running, but is
-** restored to its original value prior to this routine returning.
 */
 int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
   const char *zTail;            /* Pointer to the last "_" in zName */
   Table *pTab;                  /* Table that zName is a shadow of */
-  char *zCopy;
+  char *zCopy;                  /* Transient copy of zName after last "_" */
   zTail = strrchr(zName, '_');
   if( zTail==0 ) return 0;
   zCopy = sqlite3DbStrNDup(db, zName, (int)(zTail-zName));
