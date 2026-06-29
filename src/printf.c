@@ -1280,6 +1280,7 @@ static void sqlite3StrAppendchar64(sqlite3_str *p, i64 N, char c){
 */
 static void SQLITE_NOINLINE enlargeAndAppend(StrAccum *p, const char *z, int N){
   N = sqlite3StrAccumEnlarge(p, N);
+  assert( z!=0 || N==0 );
   if( N>0 ){
     memcpy(&p->zText[p->nChar], z, N);
     p->nChar += N;

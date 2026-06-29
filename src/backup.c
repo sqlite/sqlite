@@ -81,8 +81,10 @@ struct sqlite3_backup {
 ** error message to pErrorDb.
 */
 static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
-  int i = sqlite3FindDbName(pDb, zDb);
+  int i;
 
+  assert( pDb!=0 );
+  i = sqlite3FindDbName(pDb, zDb);
   if( i==1 ){
     Parse sParse;
     int rc = 0;
