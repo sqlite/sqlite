@@ -593,19 +593,24 @@ ifeq (0,$(MAKING_CLEAN))
   # omit-api="feature names..." disables various featuresw by name.
   # Recognized names are:
   #
-  #   kvvfs oo1 opfs opfs-sahpool opfs-wl vtab
+  #   kvvfs oo1 opfs opfs-sahpool opfs-wl vtab worker1
   #
-  # The name OPFS is shorthand for all of the OPFS VFSes. For-nodejs
+  # The name "OPFS" is shorthand for all of the OPFS VFSes. For-nodejs
   # builds filter out OPFS from within the OPFS-using files so OPFS is
   # implied for those builds.
+  #
+  # The name "all" is shorthand for all of the above names.
   D.omit =
   ifneq (,$(omit-api))
     # Translate omit-api="X Y" into -Domit-X...
-    Xomit-api = $(subst OPFS,opfs opfs-sahpool opfs-wl,$(omit-api))
+    Xomit-api := $(subst all,kvvfs oo1 OPFS worker1,$(omit-api))
+    Xomit-api := $(subst OPFS,opfs opfs-sahpool opfs-wl,$(Xomit-api))
+    Xomit-api := $(sort $(Xomit-api))
     $(foreach X,$(Xomit-api),$(eval D.omit += -Domit-$(X)))
   endif
   ifneq (,$(D.omit))
     D.common += $(D.omit)
+    achtung = $(emo.megaphone) WARNING $(emo.megaphone)
     $(info $(achtung): *******************************************************************)
     $(info $(achtung): Be sure to do 'make clean' before using custom omit-api flags.)
     $(info $(achtung): Omit flags: $(D.omit))
