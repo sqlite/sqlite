@@ -81,20 +81,34 @@ for {set i 0} {$i<1000} {incr i} {
   set res [format {06:28:00.%03d} $i]
   datetest 2.2c-$i $sql $res
 }
-datetest 2.3 {date('2003-10-22','weekday 0')} 2003-10-26
-datetest 2.4 {date('2003-10-22','weekday 1')} 2003-10-27
+datetest 2.3  {date('2003-10-22','weekday 0')} 2003-10-26
+datetest 2.3b {date('2003-10-22','weekday -0')} 2003-10-19
+datetest 2.4  {date('2003-10-22','weekday 1')} 2003-10-27
 datetest 2.4a {date('2003-10-22','weekday  1')} 2003-10-27
 datetest 2.4b {date('2003-10-22','weekday  1x')} NULL
-datetest 2.4c {date('2003-10-22','weekday  -1')} NULL
-datetest 2.4d {date('2003-10-22','weakday  1x')} NULL
+datetest 2.4c {date('2003-10-22','weekday  -1')} 2003-10-20
+datetest 2.4d {date('2003-10-22','weakday  -1x')} NULL
 datetest 2.4e {date('2003-10-22','weekday ')} NULL
-datetest 2.5 {date('2003-10-22','weekday 2')} 2003-10-28
-datetest 2.6 {date('2003-10-22','weekday 3')} 2003-10-22
-datetest 2.7 {date('2003-10-22','weekday 4')} 2003-10-23
-datetest 2.8 {date('2003-10-22','weekday 5')} 2003-10-24
-datetest 2.9 {date('2003-10-22','weekday 6')} 2003-10-25
-datetest 2.10 {date('2003-10-22','weekday 7')} NULL
-datetest 2.11 {date('2003-10-22','weekday 5.5')} NULL
+datetest 2.5  {date('2003-10-22','weekday 2')} 2003-10-28
+datetest 2.5b {date('2003-10-22','weekday -2')} 2003-10-21
+datetest 2.5c {date('2003-10-23','weekday 2')} 2003-10-28
+datetest 2.5d {date('2003-10-24','weekday 2')} 2003-10-28
+datetest 2.5e {date('2003-10-25','weekday 2')} 2003-10-28
+datetest 2.5f {date('2003-10-26','weekday 2')} 2003-10-28
+datetest 2.5g {date('2003-10-27','weekday 2')} 2003-10-28
+datetest 2.5h {date('2003-10-28','weekday 2')} 2003-10-28
+datetest 2.6  {date('2003-10-22','weekday 3')} 2003-10-22
+datetest 2.6b {date('2003-10-22','weekday -3')} 2003-10-22
+datetest 2.7  {date('2003-10-22','weekday 4')} 2003-10-23
+datetest 2.7b {date('2003-10-22','weekday -4')} 2003-10-16
+datetest 2.8  {date('2003-10-22','weekday 5')} 2003-10-24
+datetest 2.8b {date('2003-10-22','weekday -5')} 2003-10-17
+datetest 2.9  {date('2003-10-22','weekday 6')} 2003-10-25
+datetest 2.9b {date('2003-10-22','weekday -6')} 2003-10-18
+datetest 2.10  {date('2003-10-22','weekday 7')} NULL
+datetest 2.10b {date('2003-10-22','weekday -7')} NULL
+datetest 2.11  {date('2003-10-22','weekday 5.5')} NULL
+datetest 2.11b {date('2003-10-22','weekday -5.5')} NULL
 datetest 2.12 {datetime('2003-10-22 12:34','weekday 0')} {2003-10-26 12:34:00}
 datetest 2.13 {datetime('2003-10-22 12:34','start of month')} \
    {2003-10-01 00:00:00}

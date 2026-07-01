@@ -869,22 +869,30 @@ static int parseModifier(
     case 'w': {
       /*
       **    weekday N
+      **    weekday -N
       **
-      ** Move the date to the same time on the next occurrence of
-      ** weekday N where 0==Sunday, 1==Monday, and so forth.  If the
-      ** date is already on the appropriate weekday, this is a no-op.
+      ** Move the date forward (for N>=0) or backward (for N<=-0) to the
+      ** same time on the next/previous occurrence of weekday abs(N)
+      ** where 0==Sunday, 1==Monday, and so forth.  If the date is already
+      ** on the appropriate weekday, this is a no-op.
       */
       if( sqlite3_strnicmp(z, "weekday ", 8)==0
-               && sqlite3AtoF(&z[8], &r)>0
-               && r>=0.0 && r<7.0 && (n=(int)r)==r ){
+       && sqlite3AtoF(&z[8], &r)>0
+       && r>=-6.0 && r<=6.0
+       && (n=(int)r)==r
+      ){
         sqlite3_int64 Z;
         computeYMD_HMS(p);
         p->tz = 0;
         p->validJD = 0;
         computeJD(p);
         Z = ((p->iJD + 129600000)/86400000) % 7;
-        if( Z>n ) Z -= 7;
-        p->iJD += (n - Z)*86400000;
+        if( n<0 ) n = -n;
+        if( Z!=n ){
+          if( Z>n ) Z -= 7;
+          p->iJD += (n - Z)*86400000;
+          if( strchr(z+8,'-')!=0 ) p->iJD -= 7*86400000;
+        }
         clearYMD_HMS_TZ(p);
         rc = 0;
       }

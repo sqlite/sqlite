@@ -1,5 +1,5 @@
-C Add\snew\sassert()s\sto\shelp\sstatic\sanalyzers\srealize\sthat\sthe\scode\sis\scorrect.
-D 2026-06-29T15:11:58.186
+C Enhance\sthe\s"weekday\sN"\smodifier\sfor\sdate/time\sfunctions\ssuch\sthat\sif\nthe\sargument\sis\snegative,\sit\smove\sthe\sdate\sbackwards\sin\stime\sto\sthe\nmatching\sweekday,\srather\sthan\sforwards.
+D 2026-07-01T03:02:42.977
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -686,7 +686,7 @@ F src/build.c 86e97b26600535ab9dffd780ecbdb1560362e81bd2e9bcb179b52b2050c3302b
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c f216b970ce99c5a657556cf1f17e7ddd494515d3beb63df426bf59ff43bd3d9a
-F src/date.c 86d9530729eeb5b3d833e7403de495f4d4b79f3d5f7e74bcc8abda237f5aeafb
+F src/date.c 36729f31ab5a8ea566271190d89c6d865d28f110a4db6a151259e240bdfbeb3f
 F src/dbpage.c c6a9de13b0a01f0bc94a41e16213ab1ecd15ccfe86df7255ced40fda9446257d
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
@@ -1036,7 +1036,7 @@ F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c47
 F test/cursorhint.test d8b93ac48dfdb2cf4284142710d63e860b6497afff2e9c525daf752a229e5b97
 F test/cursorhint2.test a10f29c0c52d4d73c19cf639f3c33cccbf5024bcf950fa48f2a8cdc14628b985
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
-F test/date.test 328ed63091d34c8a6e8dcec4f999a031ce310f24395b8f0f67f07eaf36cbfd1f
+F test/date.test 00b94b54142684d9933cb9863113e33ee340e605abceb1139c0c982cf6626977
 F test/date2.test 7e12ec14aaf4d5e6294b4ba140445b0eca06ea50062a9c3a69c4ee13d0b6f8b1
 F test/date3.test a1b77abf05c6772fe5ca2337cac1398892f2a41e62bce7e6be0f4a08a0e64ae5
 F test/date4.test b5ad22baf7394e008ac59383840159daedd45be31dcf74a3b2450ec0e28955ce
@@ -2210,8 +2210,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3e80958a7052a123f4599d64baa8cc31a761e5a58d04c75ca38f2a375d247808
-R 6e225e2a5b21c61670a4cf3bac94cdef
+P 007f0496619e571092382a3668b6bbcc17919908895dc4be71f8d1b6ec2aeeed
+R 18313aa34d61ec6c7f4d87ce028e01a7
+T *branch * prev-weekday
+T *sym-prev-weekday *
+T -sym-trunk *
 U drh
-Z 2f447aaf8cc29ef8d2182c61654b2dfa
+Z b811783717ad5a74ebd02205196154d7
 # Remove this line to create a well-formed Fossil manifest.
