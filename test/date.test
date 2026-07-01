@@ -112,12 +112,20 @@ datetest 2.11b {date('2003-10-22','weekday -5.5')} NULL
 datetest 2.12 {datetime('2003-10-22 12:34','weekday 0')} {2003-10-26 12:34:00}
 datetest 2.13 {datetime('2003-10-22 12:34','start of month')} \
    {2003-10-01 00:00:00}
+datetest 2.13b {datetime('2003-10-22 12:34','end of month')} \
+   {2003-10-31 23:59:59}
 datetest 2.14 {datetime('2003-10-22 12:34','start of year')} \
    {2003-01-01 00:00:00}
+datetest 2.14b {datetime('2003-10-22 12:34','end of year')} \
+   {2003-12-31 23:59:59}
 datetest 2.15 {datetime('2003-10-22 12:34','start of day')} \
    {2003-10-22 00:00:00}
-datetest 2.15a {datetime('2003-10-22 12:34','start of')} NULL
-datetest 2.15b {datetime('2003-10-22 12:34','start of bogus')} NULL
+datetest 2.15b {datetime('2003-10-22 12:34','end of day','subsec')} \
+   {2003-10-22 23:59:59.999}
+datetest 2.15c {datetime('2003-10-22 12:34','start of')} NULL
+datetest 2.15d {datetime('2003-10-22 12:34','start of bogus')} NULL
+datetest 2.15e {datetime('2003-10-22 12:34','end of')} NULL
+datetest 2.15f {datetime('2003-10-22 12:34','end of bogus')} NULL
 datetest 2.16 time('12:34:56.43') 12:34:56
 datetest 2.17 {datetime('2003-10-22 12:34','1 day')} {2003-10-23 12:34:00}
 datetest 2.18 {datetime('2003-10-22 12:34','+1 day')} {2003-10-23 12:34:00}
@@ -693,5 +701,41 @@ datetest 20.2 {datetime('2024-12-31 23:59:59.9999999999999')} \
                  {2024-12-31 23:59:59}
 datetest 20.3 {datetime('2024-12-31 23:59:59.9995')} {2024-12-31 23:59:59}
 datetest 20.4 {datetime('2024-12-31 23:59:58.9995')} {2024-12-31 23:59:58}
+
+# 2026-07-01
+# Additional tests for the new "weekday -N" and "end of ..." modifiers.
+#
+datetest 21.1  {date('2026-07-04','weekday +0')} {2026-07-05}
+datetest 21.2  {date('2026-07-05','weekday -0')} {2026-07-05}
+datetest 21.3  {date('2026-07-04','weekday -0')} {2026-06-28}
+datetest 21.4  {date('2026-07-03','weekday -0')} {2026-06-28}
+datetest 21.5  {date('2026-07-02','weekday -0')} {2026-06-28}
+datetest 21.6  {date('2026-07-01','weekday -0')} {2026-06-28}
+datetest 21.7  {date('2026-06-30','weekday -0')} {2026-06-28}
+datetest 21.8  {date('2026-06-29','weekday -0')} {2026-06-28}
+datetest 21.9  {date('2026-06-28','weekday -0')} {2026-06-28}
+datetest 21.10 {date('2026-07-05','weekday +0')} {2026-07-05}
+datetest 21.11 {date('2026-07-04','weekday +0')} {2026-07-05}
+datetest 21.12 {date('2026-07-03','weekday +0')} {2026-07-05}
+datetest 21.13 {date('2026-07-02','weekday +0')} {2026-07-05}
+datetest 21.14 {date('2026-07-01','weekday +0')} {2026-07-05}
+datetest 21.15 {date('2026-06-30','weekday +0')} {2026-07-05}
+datetest 21.16 {date('2026-06-29','weekday +0')} {2026-07-05}
+datetest 21.17 {date('2026-06-28','weekday +0')} {2026-06-28}
+datetest 22.1  {datetime('2026-02-17 12:34','end of day','subsec')} \
+               {2026-02-17 23:59:59.999}
+datetest 22.2  {datetime('2026-02-17 12:34','end of month','subsec')} \
+               {2026-02-28 23:59:59.999}
+datetest 22.3  {datetime('2024-02-17 12:34','end of month','subsec')} \
+               {2024-02-29 23:59:59.999}
+datetest 22.4  {datetime('1900-02-17 12:34','end of month','subsec')} \
+               {1900-02-28 23:59:59.999}
+datetest 22.5  {datetime('2026-12-17 12:34','end of month','subsec')} \
+               {2026-12-31 23:59:59.999}
+datetest 22.6  {datetime('2026-02-17 12:34','end of year','subsec')} \
+               {2026-12-31 23:59:59.999}
+datetest 22.7  {datetime('2026-02-17 12:34','end of time','subsec')} {NULL}
+
+
 
 finish_test

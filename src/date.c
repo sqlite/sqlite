@@ -767,6 +767,49 @@ static int parseModifier(
       }
       break;
     }
+    case 'e': {
+      /*
+      **    end of day
+      **    end of month
+      **    end of year
+      **
+      ** Move the date forwards to the last millisecond of the current
+      ** day, month or year.
+      */
+      if( sqlite3_strnicmp(z, "end of ", 7)!=0 ){
+        break;
+      }        
+      if( !p->validJD && !p->validYMD && !p->validHMS ) break;
+      z += 7;
+      computeYMD(p);
+      p->validHMS = 1;
+      p->h = 23;
+      p->m = 59;
+      p->s = 59.999;
+      p->rawS = 0;
+      p->tz = 0;
+      p->validJD = 0;
+      if( sqlite3_stricmp(z,"month")==0 ){
+        p->D = 1;
+        p->M++;
+        if( p->M>12 ){
+          p->Y++;
+          p->M = 1;
+        }
+        computeFloor(p);
+        computeJD(p);
+        p->iJD -= (p->nFloor+1)*86400000;
+        clearYMD_HMS_TZ(p);
+        rc = 0;
+      }else if( sqlite3_stricmp(z,"year")==0 ){
+        p->M = 12;
+        p->D = 31;
+        rc = 0;
+      }else if( sqlite3_stricmp(z,"day")==0 ){
+        rc = 0;
+      }
+      break;
+    }
     case 'f': {
       /*
       **    floor
@@ -900,7 +943,9 @@ static int parseModifier(
     }
     case 's': {
       /*
-      **    start of TTTTT
+      **    start of day
+      **    start of month
+      **    start of year
       **
       ** Move the date backwards to the beginning of the current day,
       ** or month or year.
