@@ -1,4 +1,4 @@
-//#if not target:node
+//#if not target:node and not omit-opfs
 /*
   2022-09-18
 
@@ -177,4 +177,4 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   })
 });
 }/*sqlite3ApiBootstrap.initializers.push()*/);
-//#/if target:node
+//#/if global snip

@@ -208,6 +208,16 @@ b.cp = $(call b.mkdir@); \
   echo '$(logtag.$(1)) $(emo.disk) $(2) ==> $3'; \
   cp -f -p $(2) $(3) || exit
 
+# D.common = flags to use for all $(bin.c-pp) invocations. These must
+# be passed before any input file names because c-pp's args are
+# processed in their given order.
+#
+# Maintenance reminder: we cannot include -@policy=error here because
+# of the @sqlite3.wasm@ placeholders in JS files, which trigger an
+# error before we get to handle that filename juggling. Most JS files
+# defensively set a file-local @policy.
+D.common =
+
 #
 # $(call b.c-pp.shcmd,LOGTAG,src,dest,-Dx=y...)
 #
@@ -221,7 +231,9 @@ b.cp = $(call b.mkdir@); \
 define b.c-pp.shcmd
 $(call b.mkdir@); \
 $(call b.echo,$(1),$(emo.disk)$(emo.lock)[$(3)] $(4)); \
-rm -f $(3); $(bin.c-pp) -o $(3) $(4) $(2) || exit; \
+rm -f $(3); \
+if [ x1 = x$(loud.if) ]; then set -x; fi; \
+$(bin.c-pp) -o $(3) $(D.common) $(4) $(2) || exit; \
 chmod -w $(3)
 endef
 
@@ -234,7 +246,7 @@ endef
 define b.c-pp.target
 $(3): $$(MAKEFILE_LIST) $$(bin.c-pp) $(2)
 	@$$(call b.mkdir@)
-	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4) $$(b.c-pp.target.flags))
+	@$$(call b.c-pp.shcmd,$(1),$(2),$(3),$(4))
 CLEAN_FILES += $(3)
 endef
 
@@ -352,6 +364,7 @@ else
     SQLITE_C_IS_SEE = 0
   else
     SQLITE_C_IS_SEE = 1
+    D.common += -Denable-see
     $(info $(emo.lock)$(emo.lock)$(emo.lock) This is an SEE build $(emo.lock)$(emo.lock)$(emo.lock))
   endif
 endif
@@ -564,7 +577,7 @@ WASM_CUSTOM_INSTANTIATE = 1
 # build. They are solely for use with $(bin.c-pp) itself.
 #
 # -D... flags which should be included in all invocations should be
-# appended to $(b.c-pp.target.flags).
+# appended to $(D.common)
 #
 bin.c-pp = ./c-pp
 $(bin.c-pp): libcmpp.c $(sqlite3.c) $(MAKEFILE)
@@ -575,13 +588,34 @@ $(bin.c-pp): libcmpp.c $(sqlite3.c) $(MAKEFILE)
 		'-DCMPP_DEFAULT_DELIM="//#"' -DCMPP_MAIN -DCMPP_OMIT_D_MODULE \
 		-DCMPP_OMIT_D_PIPE
 DISTCLEAN_FILES += $(bin.c-pp)
-b.c-pp.target.flags ?=
-ifeq (1,$(SQLITE_C_IS_SEE))
-  b.c-pp.target.flags += -Denable-see
-endif
-api.oo1 ?= 1
-ifeq (0,$(api.oo1))
-  b.c-pp.target.flags += -Domit-oo1
+
+ifeq (0,$(MAKING_CLEAN))
+  # omit-api="feature names..." disables various featuresw by name.
+  # Recognized names are:
+  #
+  #   kvvfs oo1 opfs opfs-sahpool opfs-wl vtab worker1
+  #
+  # The name "OPFS" is shorthand for all of the OPFS VFSes. For-nodejs
+  # builds filter out OPFS from within the OPFS-using files so OPFS is
+  # implied for those builds.
+  #
+  # The name "ALL" is shorthand for all of the above names.
+  D.omit =
+  ifneq (,$(omit-api))
+    # Translate omit-api="X Y" into -Domit-X...
+    Xomit-api := $(subst ALL,kvvfs oo1 OPFS worker1,$(omit-api))
+    Xomit-api := $(subst OPFS,opfs opfs-sahpool opfs-wl,$(Xomit-api))
+    Xomit-api := $(sort $(Xomit-api))
+    $(foreach X,$(Xomit-api),$(eval D.omit += -Domit-$(X)))
+  endif
+  ifneq (,$(D.omit))
+    D.common += $(D.omit)
+    achtung = $(emo.megaphone) WARNING $(emo.megaphone)
+    $(info $(achtung): *******************************************************************)
+    $(info $(achtung): Be sure to do 'make clean' before using custom omit-api flags.)
+    $(info $(achtung): Omit flags: $(D.omit))
+    $(info $(achtung): *******************************************************************)
+  endif
 endif
 
 #
@@ -1626,7 +1660,7 @@ sqlite3-node.mjs \
 npm: $(sqlite3.canonical.c)
 	@echo "$(emo.cleanup) Forcing a clean rebuild to ensure consistent optimization flags."
 	$(MAKE) clean
-	$(MAKE) -e "emcc_opt=-Oz $(emcc-opt-extra)" $(npm_files)
+	$(MAKE) -e "emcc_opt=-Oz $(emcc-opt-extra)" "omit-api=$(omit-api)" $(npm_files)
 	rm -f $(npm.bundle.zip); zip -r $(npm.bundle.zip) $(npm_files)
 	unzip -l $(npm.bundle.zip)
 

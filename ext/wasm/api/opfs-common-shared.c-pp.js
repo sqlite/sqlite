@@ -1,4 +1,4 @@
-//#if not target:node
+//#if not target:node and (not omit-opfs or not omit-opfs-wl)
 /*
   2026-03-04
 
@@ -1303,4 +1303,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*createVfsState()*/;
 
 }/*sqlite3ApiBootstrap.initializers*/);
-//#/if target:node
+//#/if global snip

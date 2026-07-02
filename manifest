@@ -1,5 +1,5 @@
-C Enhancements\sto\sdate/time\sfunctions:\s\sThe\s"weekday\s-N"\smodifier\smoves\nthe\sdate\sbackward\sin\stime.\s\sThe\s"end\sof\sday/month/year"\smodifiers\sadded.
-D 2026-07-01T12:11:41.802
+C In\sext/wasm,\sadd\sthe\sability\sto\somit\sspecific\sJS\sAPIs\sand\sVFSes\sat\sbuild-time.
+D 2026-07-02T09:52:03.709
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -579,7 +579,7 @@ F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009e
 F ext/session/sqlite3session.c f609882f830bf5e533112ed1ef9b888fa75670175fca810d6b6e48ca6395b15b
 F ext/session/sqlite3session.h ca7c4422c1514a95056cc8d333217df6b1829d39058126b1de85d10cd62d7a9c
 F ext/session/test_session.c d3275da24b8d362e3c2b393c00d5248f75f1cd474dadf29d8c4683f75cb52e6d
-F ext/wasm/GNUmakefile 1d76d4017ed0b7bd2a8cc079c437cd09d20a0f0fb99f488d2466703c38409cb2
+F ext/wasm/GNUmakefile 92936a75dc15057dae3a87d96fe8282b22e663edb139852551da9179b437f1b3
 F ext/wasm/README-dist.txt f01081a850ce38a56706af6b481e3a7878e24e42b314cfcd4b129f0f8427066a
 F ext/wasm/README.md 2e87804e12c98f1d194b7a06162a88441d33bb443efcfe00dc6565a780d2f259
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
@@ -592,22 +592,22 @@ F ext/wasm/api/README.md a905d5c6bfc3e2df875bd391d6d6b7b48d41b43bdee02ad115b4724
 F ext/wasm/api/extern-post-js.c-pp.js 80accc53cc6ea1e61c721595f42ba95baa7c7ea636807d9507e69403301f8c54
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/opfs-common-inline.c-pp.js 496ca858af09b7fef2efaece467960611d35f57254078424bcdeac42ded9e85d
-F ext/wasm/api/opfs-common-shared.c-pp.js d0a62a1d367d850d8e07c06e82499a5006f347e4025dbd59a8623048d858e7a1
+F ext/wasm/api/opfs-common-shared.c-pp.js 9a9019bcc070d7c90829af5f5eb81d25135bf9543944a691631c0184f0c62416
 F ext/wasm/api/post-js-footer.js a50c1a2c4d008aede7b2aa1f18891a7ee71437c2f415b8aeb3db237ddce2935b
 F ext/wasm/api/post-js-header.js f35d2dcf1ab7f22a93d565f8e0b622a2934fc4e743edf3b708e4dd8140eeff55
-F ext/wasm/api/pre-js.c-pp.js d6bf82f83f60caa2904bddb95a29cb738b310f672d2796cdc5fe54463ab0d6cd
+F ext/wasm/api/pre-js.c-pp.js 949c1a9bdee2457d2a8d9ba9b362634b19d3aa71241fad348aab01ba2cde0c1a
 F ext/wasm/api/sqlite3-api-glue.c-pp.js 31a721ada7225838a61310a9f3f797fa5275353f8e9b0ae769d85b437be061f5
 F ext/wasm/api/sqlite3-api-oo1.c-pp.js 35e4727010f15fd72ead0dd1eb4e3c2c9bb1cc60e51544cbdff1f7c14f209de2
 F ext/wasm/api/sqlite3-api-prologue.js 0084e15d66fbcd75cacbaa58e3b473d5e57082c30f3122be7fdadff5589cf6b6
-F ext/wasm/api/sqlite3-api-worker1.c-pp.js 1fa34e9b0e3b90a8898e4f700d7125e44c81877f182627bb8564b97989bc6e78
+F ext/wasm/api/sqlite3-api-worker1.c-pp.js eee70a9962c02d86d2332f2432e257ccdf5eb7a742f90d34bdc137346fbc97ae
 F ext/wasm/api/sqlite3-license-version-header.js 98d90255a12d02214db634e041c8e7f2f133d9361a8ebf000ba9c9af4c6761cc
 F ext/wasm/api/sqlite3-opfs-async-proxy.c-pp.js 25e31482b04293a33d7599f1459eb552b3eb36ca10c02c816122d3308bf80cb2
 F ext/wasm/api/sqlite3-vfs-helper.c-pp.js 3f828cc66758acb40e9c5b4dcfd87fd478a14c8fb7f0630264e6c7fa0e57515d
-F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 96f79583dc12f836eadf3c6430a0beaed859306b67e8fd7b0fada8d22cc2393f
-F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 4325cb9a5ebfbff7cd3060e309b167116a2a1bcb9f8d69dd8e6d023dbdd783bb
-F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 3dbd918ef037cd8fa9c7b4dccb3c8637b228638654c429e7df6acab5981c75e2
-F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 3da8fe72dc9e76614a9c102b92e777ce03f81d788b607701c828d8fcbac44b06
-F ext/wasm/api/sqlite3-vtab-helper.c-pp.js 366596d8ff73d4cefb938bbe95bc839d503c3fab6c8335ce4bf52f0d8a7dee81
+F ext/wasm/api/sqlite3-vfs-kvvfs.c-pp.js 2d41f4d4ddf4cfd4e46717dba2ce3a92e72f28061db3dc690acfe8cb9ff8e447
+F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js 91f864f95c7195378b968cd4612e54b294e2e0445125a15f8626139de39c0462
+F ext/wasm/api/sqlite3-vfs-opfs-wl.c-pp.js 60fa106fc11d31adb1773ac16dd60fc9335a35496b0ca7bab8b4032cb61a441b
+F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 5dd8410121acf623ce53005a4aab2c7b2b7f5d1ad072f69ebc208882bc7b7236
+F ext/wasm/api/sqlite3-vtab-helper.c-pp.js c67d92bc65b02a7af85b03dca06a62a82a9582af7235da7fe59a66aca783434e
 F ext/wasm/api/sqlite3-wasm.c 0bcc42b1faff0e4543bba1b595fe9cfde80e0c29e3abc475bce725f2a326a8e5
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 46919740f8176c10f691431a81c769c35657e3b537e2ed2bde691f9017b0ee8a
 F ext/wasm/api/sqlite3-worker1.c-pp.js 21b20d3b8d43471d1647123616a7e5435b1e4b6fa447714f91ffc7f950ea01e8
@@ -651,7 +651,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 1618670e466f424aa289859fe0ec8ded223e42e9e69b5c851f809baaaca1a00c
 F ext/wasm/tester1-worker.c-pp.html 7171022e7f4da8f46e5f50ea81dd6ce840b9235c47653a5deeb3764ccc2fe472
 F ext/wasm/tester1.c-pp.html bd927ccf51ddd65e924660a0487add99e1b044afe03950e49d87ccf44efdddb6
-F ext/wasm/tester1.c-pp.js 273f98ed9423c428e582e741b8097567fb6581c34f3c22427d7e02d400aa5743
+F ext/wasm/tester1.c-pp.js e9bf289ad5360f73e4e58c1c262c62afd04eb3144a2b0e88dacf7528369702e2
 F ext/wasm/tests/opfs/concurrency/index.html 706eab6308343c04ac2360aba6001af4ffaf46d8f33a0ccd02c64d93e3216a43
 F ext/wasm/tests/opfs/concurrency/test.js 6919778fceaac1b7cc78caf41d796f545d2c4433b31188aa9689f05b5ad28828
 F ext/wasm/tests/opfs/concurrency/worker.js 704d82c5e287e47f612349e027765943a58ad967dcf178fb5a1c3a8eaafb09af
@@ -2210,9 +2210,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 007f0496619e571092382a3668b6bbcc17919908895dc4be71f8d1b6ec2aeeed 2c4cb3223c6c56d05fe91b8d19b60eac26a274e41f34a2d8f2cf911927581932
-R 1e8cc3c2fef8cd515a643be551bc5111
-T +closed 2c4cb3223c6c56d05fe91b8d19b60eac26a274e41f34a2d8f2cf911927581932
-U drh
-Z 72253f088d1bca64ce0c9a09dc87f11f
+P 88901fffcd445ccb97e4e379ea15d8b06d87b8170cad0f717c909944ff21851f 225dd27e147b46e85097ada7234a307f55842d98155cd36fe00da57744598bc3
+R d20cfce4969b948014d3a3d610a966ce
+T +closed 225dd27e147b46e85097ada7234a307f55842d98155cd36fe00da57744598bc3 Closed\sby\sintegrate-merge.
+U stephan
+Z 4776f4f7741018f2b4629b3adc43c7dd
 # Remove this line to create a well-formed Fossil manifest.

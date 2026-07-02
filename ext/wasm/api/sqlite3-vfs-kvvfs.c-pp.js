@@ -18,14 +18,14 @@
 
   Documentation home page: https://sqlite.org/wasm
 */
-//#if omit-kvvfs
+//#if target:node or omit-kvvfs
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /* These are JS plumbing, not part of the public API */
   delete sqlite3.capi.sqlite3_kvvfs_methods;
   delete sqlite3.capi.KVVfsFile;
-}
+});
 //#else
-//#@ policy error
+//#@ push policy error
 //#savepoint begin
 //#define kvvfs-v2-added-in "3.52.0"
 
@@ -2095,4 +2095,5 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
 })/*globalThis.sqlite3ApiBootstrap.initializers*/;
 //#savepoint rollback
-//#/if not omit-kvvfs
+//#@ pop policy
+//#/if kvvfs disabled
