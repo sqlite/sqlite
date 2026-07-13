@@ -181,21 +181,21 @@ static void print_decode_line(
   int i, j;
   int val = aData[ofst];
   char zBuf[100];
-  sprintf(zBuf, " %03x: %02x", ofst, aData[ofst]);
+  snprintf(zBuf, sizeof(zBuf), " %03x: %02x", ofst, aData[ofst]);
   i = (int)strlen(zBuf);
   for(j=1; j<4; j++){
     if( j>=nByte ){
-      sprintf(&zBuf[i], "   ");
+      snprintf(&zBuf[i], sizeof(zBuf)-i, "   ");
     }else{
-      sprintf(&zBuf[i], " %02x", aData[ofst+j]);
+      snprintf(&zBuf[i], sizeof(zBuf)-i, " %02x", aData[ofst+j]);
       val = val*256 + aData[ofst+j];
     }
     i += (int)strlen(&zBuf[i]);
   }
   if( asHex ){
-    sprintf(&zBuf[i], "  0x%08x", val);
+    snprintf(&zBuf[i], sizeof(zBuf)-i, "  0x%08x", val);
   }else{
-    sprintf(&zBuf[i], "   %9d", val);
+    snprintf(&zBuf[i], sizeof(zBuf)-i, "   %9d", val);
   }
   printf("%s  %s\n", zBuf, zMsg);
 }
@@ -291,7 +291,8 @@ static void print_wal_header(Cksum *pCksum){
 static i64 describeContent(
   unsigned char *a,       /* Cell content */
   i64 nLocal,             /* Bytes in a[] */
-  char *zDesc             /* Write description here */
+  char *zDesc,            /* Write description here */
+  i64 nMax                /* Size of zDesc buffer */
 ){
   int nDesc = 0;
   int n, j;
@@ -310,12 +311,13 @@ static i64 describeContent(
     a += n;
     i -= n;
     nLocal -= n;
+    if( nDesc+1>=nMax ) break;
     zDesc[0] = sep;
     sep = ',';
     nDesc++;
     zDesc++;
     if( x==0 ){
-      sprintf(zDesc, "*");     /* NULL is a "*" */
+      snprintf(zDesc, nMax-nDesc, "*");     /* NULL is a "*" */
     }else if( x>=1 && x<=6 ){
       v = (signed char)pData[0];
       pData++;
@@ -326,20 +328,20 @@ static i64 describeContent(
         case 3:  v = (v<<8) + pData[0];  pData++;
         case 2:  v = (v<<8) + pData[0];  pData++;
       }
-      sprintf(zDesc, "%lld", v);
+      snprintf(zDesc, nMax-nDesc, "%lld", v);
     }else if( x==7 ){
-      sprintf(zDesc, "real");
+      snprintf(zDesc, nMax-nDesc, "real");
       pData += 8;
     }else if( x==8 ){
-      sprintf(zDesc, "0");
+      snprintf(zDesc, nMax-nDesc, "0");
     }else if( x==9 ){
-      sprintf(zDesc, "1");
+      snprintf(zDesc, nMax-nDesc, "1");
     }else if( x>=12 ){
       i64 size = (x-12)/2;
       if( (x&1)==0 ){
-        sprintf(zDesc, "blob(%lld)", size);
+        snprintf(zDesc, nMax-nDesc, "blob(%lld)", size);
       }else{
-        sprintf(zDesc, "txt(%lld)", size);
+        snprintf(zDesc, nMax-nDesc, "txt(%lld)", size);
       }
       pData += size;
     }
@@ -404,14 +406,14 @@ static i64 describeCell(
     leftChild = ((a[0]*256 + a[1])*256 + a[2])*256 + a[3];
     a += 4;
     n += 4;
-    sprintf(zDesc, "lx: %d ", leftChild);
+    snprintf(zDesc, sizeof(zDesc), "lx: %d ", leftChild);
     nDesc = strlen(zDesc);
   }
   if( cType!=5 ){
     i = decodeVarint(a, &nPayload);
     a += i;
     n += i;
-    sprintf(&zDesc[nDesc], "n: %lld ", nPayload);
+    snprintf(&zDesc[nDesc], sizeof(zDesc)-nDesc, "n: %lld ", nPayload);
     nDesc += strlen(&zDesc[nDesc]);
     nLocal = localPayload(nPayload, cType);
   }else{
@@ -421,19 +423,19 @@ static i64 describeCell(
     i = decodeVarint(a, &rowid);
     a += i;
     n += i;
-    sprintf(&zDesc[nDesc], "r: %lld ", rowid);
+    snprintf(&zDesc[nDesc], sizeof(zDesc)-nDesc, "r: %lld ", rowid);
     nDesc += strlen(&zDesc[nDesc]);
   }
   if( nLocal<nPayload ){
     int ovfl;
     unsigned char *b = &a[nLocal];
     ovfl = ((b[0]*256 + b[1])*256 + b[2])*256 + b[3];
-    sprintf(&zDesc[nDesc], "ov: %d ", ovfl);
+    snprintf(&zDesc[nDesc], sizeof(zDesc)-nDesc, "ov: %d ", ovfl);
     nDesc += strlen(&zDesc[nDesc]);
     n += 4;
   }
   if( showCellContent && cType!=5 ){
-    nDesc += describeContent(a, nLocal, &zDesc[nDesc-1]);
+    nDesc += describeContent(a, nLocal, &zDesc[nDesc-1], 1000-(nDesc-1));
   }
   *pzDesc = zDesc;
   return nLocal+n;
@@ -503,7 +505,7 @@ static void decode_btree_page(
       memset(&zMap[cofst], '*', (size_t)n);
       zMap[cofst] = '[';
       zMap[cofst+n-1] = ']';
-      sprintf(zBuf, "%d", i);
+      snprintf(zBuf, sizeof(zBuf), "%d", i);
       j = (int)strlen(zBuf);
       if( j<=n-2 ) memcpy(&zMap[cofst+1], zBuf, j);
     }
@@ -545,23 +547,23 @@ int main(int argc, char **argv){
   zPgSz[1] = 0;
   fstat(fd, &sbuf);
   if( sbuf.st_size<32 ){
-    printf("%s: file too small to be a WAL - only %d bytes\n",
+    fprintf(stderr, "%s: file too small to be a WAL - only %d bytes\n",
            argv[1], (int)sbuf.st_size);
     return 0;
   }
   if( lseek(fd, 8, SEEK_SET)!=8 ){
-    printf("\"%s\" seems to not be a valid WAL file\n", argv[1]);
+    fprintf(stderr, "\"%s\" seems to not be a valid WAL file\n", argv[1]);
     return 1;
   }
   if( read(fd, zPgSz, 4)!=4 ){
-    printf("\"%s\": cannot read the page size\n", argv[1]);
+    fprintf(stderr, "\"%s\": cannot read the page size\n", argv[1]);
     return 1;
   }
   pagesize = zPgSz[1]*65536 + zPgSz[2]*256 + zPgSz[3];
   if( pagesize==0 ) pagesize = 1024;
   printf("Pagesize: %d\n", pagesize);
   if( (pagesize & (pagesize-1))!=0 || pagesize<512 || pagesize>65536 ){
-    printf("\"%s\": invalid page size.\n", argv[1]);
+    fprintf(stderr, "\"%s\": invalid page size.\n", argv[1]);
     return 1;
   }
   mxFrame = (sbuf.st_size - 32)/(pagesize + 24);
