@@ -839,14 +839,13 @@ lookupname_end:
 #ifndef SQLITE_OMIT_AUTHORIZATION
     if( db->xAuth ){
       if( pFJMatch ){
-        int ii;
         assert( pExpr->op==TK_FUNCTION );
         assert( sqlite3_stricmp(pExpr->u.zToken,"coalesce")==0 );
         assert( pExpr->x.pList==pFJMatch );
         assert( pFJMatch->nExpr>0 );
-        for(ii=0; ii<pFJMatch->nExpr; ii++){
-          assert( pFJMatch->a[0].pExpr->op==TK_COLUMN );
-          sqlite3AuthRead(pParse, pFJMatch->a[0].pExpr, pSchema, pNC->pSrcList);
+        for(i=0; i<pFJMatch->nExpr; i++){
+          assert( pFJMatch->a[i].pExpr->op==TK_COLUMN );
+          sqlite3AuthRead(pParse,pFJMatch->a[i].pExpr,pSchema,pNC->pSrcList);
         }
       }else if( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER ){
         sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
