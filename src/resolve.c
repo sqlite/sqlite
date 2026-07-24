@@ -954,11 +954,20 @@ static SQLITE_NOINLINE void resolveSetExprSubtypeArg(ExprList *pList){
   nn = pList ? pList->nExpr : 0;
   for(ii=0; ii<nn; ii++){
     Expr *pExpr = pList->a[ii].pExpr;
-    ExprSetProperty(pExpr, EP_SubtArg);
-    if( pExpr->op==TK_SELECT ){
-      assert( ExprUseXSelect(pExpr) );
-      assert( pExpr->x.pSelect!=0 );
-      resolveSetExprSubtypeArg(pExpr->x.pSelect->pEList);
+    while( 1 /*exit-by-break*/ ){
+      ExprSetProperty(pExpr, EP_SubtArg);
+      if( pExpr->op==TK_SELECT ){
+        assert( ExprUseXSelect(pExpr) );
+        assert( pExpr->x.pSelect!=0 );
+        resolveSetExprSubtypeArg(pExpr->x.pSelect->pEList);
+        break;
+      }
+      if( pExpr->op==TK_UPLUS ){
+        pExpr = pExpr->pLeft;
+        assert( pExpr!=0 );
+      }else{
+        break;
+      }
     }
   }
 }

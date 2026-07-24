@@ -1,5 +1,5 @@
-C Ensure\sthat\sa\shot\sjournal\sis\srolled\sback\sin\sthe\scase\swhere\sa\sprocess\sor\ssystem\scrash\sresulted\sin\sa\scorrupt\ssuper-journal\srecord\swhere\sthe\smagic\sand\slength\svalues\sare\scorrect\sbut\sthe\ssuper-journal\sname\sand\schecksum\sfields\sare\sboth\szeroed.\sFrorum\spost\s[forum:/info/2026-07-20T18:27:00Z\s|\s2026-07-20T18:27:00Z].
-D 2026-07-20T20:15:08.230
+C Fix\sto\sthe\sinteraction\sbetween\sindexes-on-expressions,\ssubtypes,\sand\nthe\sunary\s"+"\soperator.
+D 2026-07-24T14:05:22.310
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -737,7 +737,7 @@ F src/pragma.c 789ef67117b74b5be0a2db6681f7f0c55e6913791b9da309aefd280de2c8a74d
 F src/prepare.c f6a6e28a281bd1d1da12f47d370a81af46159b40f73bf7fa0b276b664f9c8b7d
 F src/printf.c ed43bcd6b551b590e47b905115aa1c35504267f532680590102e79894230a06b
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
-F src/resolve.c f5a780a7b604d43b78bca290cace7479bca0c7d8ef9ce855830d9498b975baec
+F src/resolve.c 53d14a8a11578825e561d82035669f4a2d99f7817a968a46e8ae269ddd789dd4
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 80ea6935f8470b97d1212bc1b759b7fadb28351797877f493d0cf598be1fef5e
 F src/shell.c.in 6d65129dc4a24a38a22e044eeafffbd70cd74f95561ab05a8fb1d71ab3d31cfd
@@ -1307,7 +1307,7 @@ F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a91
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
 F test/indexA.test 11d84f6995e6e5b9d8315953fb1b6d29772ee7c7803ee9112715e7e4dd3e4974
 F test/indexedby.test 444fb04ce0b21a3daf79f84e6735b49e5a5b3396623b37df5431eb09c8b8f557
-F test/indexexpr1.test d32dba192b8a566a81bb437ee8b6219931458e010c2d94610da775fa9d318f17
+F test/indexexpr1.test 3027cab7192336ebdcb76a39dc32e9f7e5098196847b8a726b7b07ff4fbca103
 F test/indexexpr2.test 60b364492af311e931615fbece279fc463b281fc1ecfced762b0d33053c82f3f
 F test/indexexpr3.test 47b91bc7999805c9a34d356f672259bc49295ecc797448511cae554a309b47cd
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
@@ -2205,8 +2205,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1d84dc151bada74952819b5193a3d39706ef54b6a1b2d52aea04666b7904210f
-R 8c93044f747e571fd4f497805da83e02
-U dan
-Z d43d94ea92fa68a1e71775ba03427cda
+P bf70dadc2d455844cfd3e759cc2f78bd38841f7362dde302af3dce0d20303935
+Q +5398c6a2b6b218461ce1f6437791c62c1ee125fba195660e0d6d1ad97ed6d14c
+R eb9b53c6ec57d94858c3f2b508c41918
+U drh
+Z 239e63b9c39d63a206a1c9cb4c375aa4
 # Remove this line to create a well-formed Fossil manifest.
