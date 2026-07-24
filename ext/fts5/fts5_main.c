@@ -2704,19 +2704,23 @@ static int fts5ApiPhraseFirstColumn(
 
   if( pConfig->eDetail==FTS5_DETAIL_COLUMNS ){
     Fts5Sorter *pSorter = pCsr->pSorter;
-    int n;
-    if( pSorter ){
-      int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
-      n = pSorter->aIdx[iPhrase] - i1;
-      pIter->a = &pSorter->aPoslist[i1];
+    if( iPhrase<0 || iPhrase>=sqlite3Fts5ExprPhraseCount(pCsr->pExpr) ){
+      rc = SQLITE_RANGE;
     }else{
-      rc = sqlite3Fts5ExprPhraseCollist(pCsr->pExpr, iPhrase, &pIter->a, &n);
-    }
-    if( rc==SQLITE_OK ){
-      assert( pIter->a || n==0 );
-      pIter->b = (pIter->a ? &pIter->a[n] : 0);
-      *piCol = 0;
-      fts5ApiPhraseNextColumn(pCtx, pIter, piCol);
+      int n;
+      if( pSorter ){
+        int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
+        n = pSorter->aIdx[iPhrase] - i1;
+        pIter->a = &pSorter->aPoslist[i1];
+      }else{
+        rc = sqlite3Fts5ExprPhraseCollist(pCsr->pExpr, iPhrase, &pIter->a, &n);
+      }
+      if( rc==SQLITE_OK ){
+        assert( pIter->a || n==0 );
+        pIter->b = (pIter->a ? &pIter->a[n] : 0);
+        *piCol = 0;
+        fts5ApiPhraseNextColumn(pCtx, pIter, piCol);
+      }
     }
   }else{
     int n;

@@ -799,7 +799,11 @@ static int fsdirColumn(
           }
         }
 
-        sqlite3_result_text(ctx, aBuf, n, SQLITE_TRANSIENT);
+        if( n>0 ){
+          sqlite3_result_text(ctx, aBuf, n, SQLITE_TRANSIENT);
+        }else{
+          sqlite3_result_null(ctx);
+        }
         if( aBuf!=aStatic ) sqlite3_free(aBuf);
 #endif
       }else{

@@ -6557,7 +6557,12 @@ static int sessionChangesetToHash(
 
   pIter->in.bNoDiscard = 1;
   while( SQLITE_ROW==(sessionChangesetNext(pIter, &aRec, &nRec, 0)) ){
-    rc = sessionOneChangeIterToHash(pGrp, pIter, bRebase);
+    if( bRebase && pIter->bPatchset ){
+      /* A patchset may not be used as a rebase */
+      rc = SQLITE_ERROR;
+    }else{
+      rc = sessionOneChangeIterToHash(pGrp, pIter, bRebase);
+    }
     if( rc!=SQLITE_OK ) break;
   }
 
@@ -6934,13 +6939,14 @@ static void sessionAppendPartialUpdate(
     int i;
     u8 *a1 = aRec;
     u8 *a2 = aChange;
+    u8 *a2Eof = &a2[nChange];
 
     *pOut++ = SQLITE_UPDATE;
     *pOut++ = pIter->bIndirect;
     for(i=0; i<pIter->nCol; i++){
       int n1 = sessionSerialLen(a1);
-      int n2 = sessionSerialLen(a2);
-      if( pIter->abPK[i] || a2[0]==0 ){
+      int n2 = (a2>=a2Eof) ? 0 : sessionSerialLen(a2);
+      if( n2<=0 || pIter->abPK[i] || a2[0]==0 ){
         if( !pIter->abPK[i] && a1[0] ) bData = 1;
         memcpy(pOut, a1, n1);
         pOut += n1;
@@ -7141,8 +7147,8 @@ int sqlite3rebaser_configure(
   sqlite3_rebaser *p, 
   int nRebase, const void *pRebase
 ){
-  sqlite3_changeset_iter *pIter = 0;   /* Iterator opened on pData/nData */
   int rc;                              /* Return code */
+  sqlite3_changeset_iter *pIter = 0;   /* Iterator opened on pData/nData */
   rc = sqlite3changeset_start(&pIter, nRebase, (void*)pRebase);
   if( rc==SQLITE_OK ){
     rc = sessionChangesetToHash(pIter, &p->grp, 1);

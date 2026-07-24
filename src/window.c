@@ -222,7 +222,7 @@ static void nth_valueStepFunc(
         break;
       case SQLITE_FLOAT: {
         double fVal = sqlite3_value_double(apArg[1]);
-        if( ((i64)fVal)!=fVal ) goto error_out;
+        if( sqlite3RealToI64(fVal)!=fVal ) goto error_out;
         iVal = (i64)fVal;
         break;
       }

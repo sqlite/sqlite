@@ -1334,7 +1334,7 @@ static int readSuperJournal(sqlite3_file *pJrnl, u64 nSuper, char **pzSuper){
         cksum -= zOut[u];
       }
     }
-    if( rc!=SQLITE_OK || cksum ){
+    if( rc!=SQLITE_OK || cksum || zOut[0]==0 ){
       /* If the checksum doesn't add up, then one or more of the disk sectors
       ** containing the super-journal filename is corrupted. This means
       ** definitely roll back, so just return SQLITE_OK and report a (nul)

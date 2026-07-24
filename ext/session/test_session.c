@@ -1340,8 +1340,9 @@ static int SQLITE_TCLAPI test_rebaser_cmd(
   switch( iSub ){
     case 0: {   /* configure */
       Tcl_Size nRebase = 0;
-      unsigned char *pRebase = Tcl_GetByteArrayFromObj(objv[2], &nRebase);
+      unsigned char *pRebase = testGetByteArrayFromObj(objv[2], &nRebase);
       rc = sqlite3rebaser_configure(p, (int)nRebase, pRebase);
+      free(pRebase);
       break;
     }
 
@@ -1504,7 +1505,7 @@ static int SQLITE_TCLAPI test_changeset(
     Tcl_WrongNumArgs(interp, 1, objv, "CHANGESET");
     return TCL_ERROR;
   }
-  pChangeset = (void *)Tcl_GetByteArrayFromObj(objv[1], &nChangeset);
+  pChangeset = (void*)testGetByteArrayFromObj(objv[1], &nChangeset);
 
   Tcl_ResetResult(interp);
   rc = sqlite3_test_changeset((int)nChangeset, pChangeset, &z);
@@ -1514,6 +1515,7 @@ static int SQLITE_TCLAPI test_changeset(
     sqlite3_free(zErr);
   }
   sqlite3_free(z);
+  free(pChangeset);
 
   return rc ? TCL_ERROR : TCL_OK;
 }

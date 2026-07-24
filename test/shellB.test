@@ -22,10 +22,10 @@ set CLI [test_cli_invocation]
 # Capture the number of test cases and the number of
 # errors and increment the counts.
 #
-proc do_clitest {name} {
-  set mapping [list <NAME> $::testdir/$name <CLI> $::CLI]
+proc do_clitest {name args} {
+  set mapping [list <NAME> $::testdir/$name <CLI> $::CLI <ARGS> $args]
   set script [string map $mapping {
-    catch {exec <CLI> :memory: ".read <NAME>" 2>@stdout} res
+    catch {exec <CLI> <ARGS> :memory: ".read <NAME>" 2>@stdout} res
     set ntest 0
     set nerr 999
     regexp {(\d+) tests? run with (\d+) errors?} $res all ntest nerr
@@ -46,7 +46,7 @@ do_clitest imposter1.sql
 ifcapable vtab {
   do_clitest dotcmd01.sql
   do_clitest import01.sql
-  do_clitest intck01.sql
+  do_clitest intck01.sql --unsafe-testing
 }
 do_clitest fptest01.sql
 

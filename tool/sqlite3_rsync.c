@@ -1021,11 +1021,11 @@ void writeByte(SQLiteRsync *p, int c){
   p->nOut++;
 }
 
-/* Read a power of two encoded as a single byte.
+/* Read a power of two page size encoded as a single byte.
 */
 int readPow2(SQLiteRsync *p){
   int x = readByte(p);
-  if( x<0 || x>=32 ){
+  if( x<0 || x>16 ){
     logError(p, "read invalid page size %d\n", x);
     return 0;
   }
@@ -1309,6 +1309,10 @@ static int runSqlReturnText(
 */
 static void closeDb(SQLiteRsync *p){
   if( p->db ){
+    sqlite3_stmt *pStmt;
+    while( (pStmt = sqlite3_next_stmt(p->db, 0))!=0 ){
+      sqlite3_finalize(pStmt);
+    }
     sqlite3_close(p->db);
     p->db = 0;
   }
@@ -1752,7 +1756,6 @@ static void subdivideHashRange(
 static void replicaSide(SQLiteRsync *p){
   int c;
   sqlite3_stmt *pIns = 0;
-  unsigned int szOPage = 0;
   char eJMode = 0;               /* Journal mode prior to sync */
   char buf[65536];
 
@@ -1778,10 +1781,12 @@ static void replicaSide(SQLiteRsync *p){
       case ORIGIN_BEGIN: {
         unsigned int nOPage = 0;
         unsigned int nRPage = 0, szRPage = 0;
+        unsigned int szOPage = 0;
         int rc = 0;
         u8 iProtocol;
 
         closeDb(p);
+        pIns = 0;
         iProtocol = readByte(p);
         szOPage = readPow2(p);
         readUint32(p, &nOPage);
@@ -1811,6 +1816,7 @@ static void replicaSide(SQLiteRsync *p){
           reportError(p, "cannot open in-memory database: %s",
                       sqlite3_errmsg(p->db));
           closeDb(p);
+          pIns = 0;
           break;
         }
         sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
@@ -1827,6 +1833,7 @@ static void replicaSide(SQLiteRsync *p){
         }
         if( p->nErr ){
           closeDb(p);
+          pIns = 0;
           break;
         }
         runSql(p,
@@ -1935,7 +1942,7 @@ static void replicaSide(SQLiteRsync *p){
           );
           if( pIns==0 ) break;
         }
-        readBytes(p, szOPage, buf);
+        readBytes(p, p->szPage, buf);
         if( p->nErr ) break;
         if( pgno==1 &&  eJMode==2 && buf[18]==1 ){
           /* Do not switch the replica out of WAL mode if it started in 
@@ -1944,7 +1951,7 @@ static void replicaSide(SQLiteRsync *p){
         }
         p->nPageSent++;
         sqlite3_bind_int64(pIns, 1, pgno);
-        sqlite3_bind_blob(pIns, 2, buf, szOPage, SQLITE_STATIC);
+        sqlite3_bind_blob(pIns, 2, buf, p->szPage, SQLITE_STATIC);
         rc = sqlite3_step(pIns);
         if( rc!=SQLITE_DONE ){
           reportError(p, "SQL statement [%s] failed (pgno=%u): %s",
@@ -1961,7 +1968,6 @@ static void replicaSide(SQLiteRsync *p){
     }
   }
 
-  if( pIns ) sqlite3_finalize(pIns);
   closeDb(p);
 }
 

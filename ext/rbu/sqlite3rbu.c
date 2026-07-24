@@ -604,8 +604,8 @@ static int rbuDeltaApply(
   int lenDelta,          /* Length of the delta */
   char *zOut             /* Write the output into this preallocated buffer */
 ){
-  unsigned int limit;
-  unsigned int total = 0;
+  sqlite3_uint64 limit;
+  sqlite3_uint64 total = 0;
 #if RBU_ENABLE_DELTA_CKSUM
   char *zOrigOut = zOut;
 #endif
@@ -615,8 +615,8 @@ static int rbuDeltaApply(
     /* ERROR: size integer not terminated by "\n" */
     return -1;
   }
-  zDelta++; lenDelta--;
-  while( *zDelta && lenDelta>0 ){
+  zDelta++; lenDelta--; /* Skip the \n */
+  while( lenDelta>0 && zDelta[0] ){
     unsigned int cnt, ofst;
     cnt = rbuDeltaGetInt(&zDelta, &lenDelta);
     if( lenDelta<=0 ) return -1;
@@ -624,7 +624,7 @@ static int rbuDeltaApply(
       case '@': {
         zDelta++; lenDelta--;
         ofst = rbuDeltaGetInt(&zDelta, &lenDelta);
-        if( lenDelta>0 || zDelta[0]!=',' ){
+        if( lenDelta>0 && zDelta[0]!=',' ){
           /* ERROR: copy command not terminated by ',' */
           return -1;
         }
@@ -649,7 +649,7 @@ static int rbuDeltaApply(
           /* ERROR:  insert command gives an output larger than predicted */
           return -1;
         }
-        if( (i64)cnt>(i64)lenDelta ){
+        if( cnt>lenDelta ){
           /* ERROR: insert count exceeds size of delta */
           return -1;
         }
@@ -2662,13 +2662,13 @@ static int rbuGetUpdateStmt(
     char *zUpdate = 0;
 
     pUp->zMask = (char*)&pUp[1];
-    memcpy(pUp->zMask, zMask, pIter->nTblCol);
     pUp->pNext = pIter->pRbuUpdate;
     pIter->pRbuUpdate = pUp;
 
     if( zSet ){
       const char *zPrefix = "";
-
+      assert( p->rc==SQLITE_OK );
+      memcpy(pUp->zMask, zMask, pIter->nTblCol);
       if( pIter->eType!=RBU_PK_VTAB ) zPrefix = "rbu_imp_";
       zUpdate = sqlite3_mprintf("UPDATE \"%s%w\" SET %s WHERE %s", 
           zPrefix, pIter->zTbl, zSet, zWhere
@@ -2758,6 +2758,9 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 
       case RBU_STATE_ROW:
         pRet->nRow = sqlite3_column_int(pStmt, 1);
+        if( pRet->nRow<0 ){
+          rc = SQLITE_CORRUPT;
+        }
         break;
 
       case RBU_STATE_PROGRESS:

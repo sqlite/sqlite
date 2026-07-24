@@ -1185,4 +1185,18 @@ do_execsql_test json101-25.1 {
   SELECT json_array(0.1234567890123456789)->>0 = 0.1234567890123456789;
 } 1
 
+# Bug 2026-07-04T04:58:54Z
+#
+# The JSONB is corrupt such that the last member of the structure has
+# a label but no value.  The jsonSkipLabel() should return the index
+# of the label, making the value appear to be the same as the label
+# as far as json_each() is concerned.
+#
+do_execsql_test json101-26.1 {
+  SELECT value FROM json_each(x'CC141761133117621332176313331764133437656565') WHERE key='eee';
+} {eee}
+do_execsql_test json101-26.2 {
+  SELECT json_valid(x'CC141761133117621332176313331764133437656565',8);
+} {0}
+
 finish_test

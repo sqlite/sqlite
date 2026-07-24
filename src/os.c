@@ -300,7 +300,7 @@ int sqlite3OsCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
   }else{
     double r;
     rc = pVfs->xCurrentTime(pVfs, &r);
-    *pTimeOut = (sqlite3_int64)(r*86400000.0);
+    *pTimeOut = sqlite3RealToI64(r*86400000.0);
   }
   return rc;
 }

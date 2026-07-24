@@ -566,8 +566,8 @@ static int delta_apply(
     /* ERROR: size integer not terminated by "\n" */
     return -1;
   }
-  zDelta++; lenDelta--;
-  while( *zDelta && lenDelta>0 ){
+  zDelta++; lenDelta--; /* Skip the \n */
+  while( lenDelta>0 && zDelta[0] ){
     unsigned int cnt, ofst;
     cnt = deltaGetInt(&zDelta, &lenDelta);
     if( lenDelta<=0 ) return -1;

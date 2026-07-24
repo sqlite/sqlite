@@ -613,7 +613,7 @@ char *sqlite3_normalize(const char *zSql){
     int nParen;
     if( zIn==0 ) break;
     n = (int)(zIn-z)+3;  /* Index of first char past "in(" */
-    if( n && IdChar(zIn[-1]) ) continue;
+    if( n>3 && IdChar(zIn[-1]) ) continue;
     if( strncmp(zIn, "in(select",9)==0 && !IdChar(zIn[9]) ) continue;
     if( strncmp(zIn, "in(with",7)==0 && !IdChar(zIn[7]) ) continue;
     for(nParen=1, k=0; z[n+k]; k++){

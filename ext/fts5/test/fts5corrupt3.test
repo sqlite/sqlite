@@ -15362,8 +15362,9 @@ do_test 79.0 {
 | end sql053282.txt.db 
 }]} {}
 
+breakpoint
 do_execsql_test 79.1 {
-  CREATE VIRTUAL TABLE t2 USING fts5vocab('t1','row');
+  CREATE VIRTUAL TABLE temp.t2 USING fts5vocab(main, 't1','row');
 }
 
 do_catchsql_test 79.2 {
@@ -15891,22 +15892,16 @@ do_test 82.0 {
 | end c0.txt.db
 }]} {}
 
-do_execsql_test 82.2 {
+do_catchsql_test 82.2 {
   UPDATE t1 SET b=quote(zeroblob(current_date)) WHERE t1 MATCH 't*';
   PRAGMA writable_schema=ON;
 
   UPDATE sqlite_schema SET sql='SELECT * FROM t1' WHERE rowid=6;
   INSERT INTO t1(t1,rank) VALUES('secure-delete',1);
-}
+} {1 {database disk image is malformed}}
 
 do_catchsql_test 82.3 {
   CREATE VIRTUAL TABLE IF NOT EXISTS t USING rtree(x,c);
-} {1 {Too few columns for an rtree table}}
-
-do_catchsql_test 82.4 {
-  BEGIN;
-  REPLACE INTO t1(rowid,b,a,rowid) VALUES(x'44023b9eb002d28b0ee90c',1,2,3);
-  SAVEPOINT b;
 } {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------

@@ -883,6 +883,7 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
       pRet = (Fts5Data*)sqlite3_malloc64(nAlloc);
       if( pRet ){
         pRet->nn = nByte;
+        pRet->szLeaf = 0;
         aOut = pRet->p = (u8*)pRet + szData;
       }else{
         rc = SQLITE_NOMEM;
@@ -895,10 +896,8 @@ static Fts5Data *fts5DataRead(Fts5Index *p, i64 iRowid){
         sqlite3_free(pRet);
         pRet = 0;
       }else{
-        /* TODO1: Fix this */
         pRet->p[nByte] = 0x00;
         pRet->p[nByte+1] = 0x00;
-        pRet->szLeaf = fts5GetU16(&pRet->p[2]);
       }
     }
     p->rc = rc;
@@ -919,9 +918,17 @@ static void fts5DataRelease(Fts5Data *pData){
   sqlite3_free(pData);
 }
 
+/*
+** Read a leaf-page record. This is similar to fts5DataRead(), except that
+** it fills in the Fts5Data.szLeaf value before returning.
+*/
 static Fts5Data *fts5LeafRead(Fts5Index *p, i64 iRowid){
   Fts5Data *pRet = fts5DataRead(p, iRowid);
   if( pRet ){
+    assert( pRet->szLeaf==0 );
+    if( pRet->nn>=4 ){
+      pRet->szLeaf = fts5GetU16(&pRet->p[2]);
+    }
     if( pRet->szLeaf<4 || pRet->szLeaf>pRet->nn ){
       FTS5_CORRUPT_ROWID(p, iRowid);
       fts5DataRelease(pRet);
@@ -2831,6 +2838,10 @@ static void fts5SegIterNextInit(
 
     pIter->iPgidxOff = pIter->pLeaf->szLeaf;
     pIter->iPgidxOff += fts5GetVarint32(&a[pIter->iPgidxOff], iTermOff);
+    if( iTermOff > pIter->pLeaf->szLeaf ){
+      p->rc = FTS5_CORRUPT;
+      return;
+    }
     pIter->iLeafOffset = iTermOff;
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
@@ -5157,7 +5168,7 @@ static void fts5SecureDeleteOverflow(
     int iNext = 0;
     u8 *aPg = 0;
 
-    pLeaf = fts5DataRead(p, iRowid);
+    pLeaf = fts5LeafRead(p, iRowid);
     if( pLeaf==0 ) break;
     aPg = pLeaf->p;
 
@@ -5165,7 +5176,7 @@ static void fts5SecureDeleteOverflow(
     if( iNext!=0 ){
       *pbLastInDoclist = 0;
     }
-    if( iNext==0 && pLeaf->szLeaf!=pLeaf->nn ){
+    if( iNext==0 && pLeaf->szLeaf<pLeaf->nn ){
       fts5GetVarint32(&aPg[pLeaf->szLeaf], iNext);
     }
 
@@ -5452,7 +5463,7 @@ static void fts5DoSecureDelete(
     /* The entry being removed may be the only position list in
     ** its doclist. */
     for(iPgno=pSeg->iLeafPgno-1; iPgno>pSeg->iTermLeafPgno; iPgno-- ){
-      Fts5Data *pPg = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, iPgno));
+      Fts5Data *pPg = fts5LeafRead(p, FTS5_SEGMENT_ROWID(iSegid, iPgno));
       int bEmpty = (pPg && pPg->nn==4);
       fts5DataRelease(pPg);
       if( bEmpty==0 ) break;
@@ -5460,7 +5471,7 @@ static void fts5DoSecureDelete(
 
     if( iPgno==pSeg->iTermLeafPgno ){
       i64 iId = FTS5_SEGMENT_ROWID(iSegid, pSeg->iTermLeafPgno);
-      Fts5Data *pTerm = fts5DataRead(p, iId);
+      Fts5Data *pTerm = fts5LeafRead(p, iId);
       if( pTerm && pTerm->szLeaf==pSeg->iTermLeafOffset ){
         u8 *aTermIdx = &pTerm->p[pTerm->szLeaf];
         int nTermIdx = pTerm->nn - pTerm->szLeaf;
@@ -8412,7 +8423,7 @@ static void fts5IndexIntegrityCheckEmpty(
   /* Now check that the iter.nEmpty leaves following the current leaf
   ** (a) exist and (b) contain no terms. */
   for(i=iFirst; p->rc==SQLITE_OK && i<=iLast; i++){
-    Fts5Data *pLeaf = fts5DataRead(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, i));
+    Fts5Data *pLeaf = fts5LeafRead(p, FTS5_SEGMENT_ROWID(pSeg->iSegid, i));
     if( pLeaf ){
       if( !fts5LeafIsTermless(pLeaf)
        || (i>=iNoRowid && 0!=fts5LeafFirstRowidOff(pLeaf))
@@ -8540,7 +8551,7 @@ static void fts5IndexIntegrityCheckSegment(
         FTS5_CORRUPT_ROWID(p, iRow);
       }else{
         iOff += fts5GetVarint32(&pLeaf->p[iOff], nTerm);
-        if( iOff+nTerm>pLeaf->szLeaf ){
+        if( (i64)iOff+(i64)nTerm>(i64)pLeaf->szLeaf ){
           FTS5_CORRUPT_ROWID(p, iRow);
         }else{
           res = fts5Memcmp(&pLeaf->p[iOff], zIdxTerm, MIN(nTerm, nIdxTerm));

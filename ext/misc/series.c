@@ -404,7 +404,7 @@ static double seriesFloor(double r){
 ** a way that avoids 'outside the range of representable values' warnings
 ** from UBSAN.
 */
-sqlite3_int64 seriesRealToI64(double r){
+static sqlite3_int64 seriesRealToI64(double r){
   if( r<-9223372036854774784.0 ) return SMALLEST_INT64;
   if( r>+9223372036854774784.0 ) return LARGEST_INT64;
   return (sqlite3_int64)r;

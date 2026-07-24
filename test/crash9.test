@@ -1,0 +1,71 @@
+# 2026 July 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix crash9
+
+forcedelete test.db2
+
+#-------------------------------------------------------------------------
+# The following test is to hit the bug reported here:
+#
+# https://sqlite.org/forum/info/2026-07-20T18:27:00Z
+#
+# Essentially, when a super-journal record is appended to a journal file,
+# if the write() calls that set the super-journal magic values and length
+# succeed, but the calls that write the super-journal name and checksum
+# fail and end up writing zeroes into the file, then the super-journal
+# checksum appears to match (because 0 is the checksum for a zero length
+# string). This was confusing SQLite, preventing it from rolling the
+# journal back later on.
+#
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+  CREATE INDEX i1 ON t1(y);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10
+  )
+  INSERT INTO t1 SELECT i, randomblob(900) FROM s;
+
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t2(x, y);
+}
+db_save_and_close
+for {set ii 0} {$ii < 200} {incr ii} {
+  set iDelay 1
+
+  while 1 {
+    db_restore
+    set c [crashsql -delay $iDelay -file test.db-journal -seed $ii "
+      ATTACH 'test.db2' AS aux;
+      PRAGMA cache_size = 5;
+      BEGIN;
+      INSERT INTO aux.t2 VALUES(1, 2);
+      UPDATE t1 SET y=randomblob(901);
+      COMMIT;
+    "]
+
+    if {$c!="1 {child process exited abnormally}"} break
+
+    sqlite3 db test.db
+    do_execsql_test 1.1.$ii.$iDelay { PRAGMA integrity_check } ok
+    incr iDelay
+    db close
+  }
+}
+
+finish_test
+
+
+

@@ -15,9 +15,9 @@
 #
 .testcase 100
 .mode quote
-.intck 1
+.intck register
 SELECT parse_create_index('CREATE IDEX i ON t("x',0);
-.check <<END
-1 steps, 0 errors
-NULL
-END
+.check NULL
+.testcase 110
+SELECT parse_create_index('',0);
+.check NULL

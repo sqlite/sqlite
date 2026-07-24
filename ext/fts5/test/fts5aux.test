@@ -377,6 +377,10 @@ do_catchsql_test 12.3.3 {
   SELECT fts5_collist(t1, 1) FROM t1('one AND two');
 } {0 1}
 
+do_catchsql_test 12.3.4 {
+  SELECT fts5_collist(t1, 15000) FROM t1('one AND two');
+} {1 SQLITE_RANGE}
+
 #-------------------------------------------------------------------------
 reset_db
 do_execsql_test 13.1 {
@@ -400,5 +404,34 @@ sqlite3 db test.db
 do_catchsql_test 13.4 {
   SELECT highlight(t1, 0, '[', ']') FROM t1
 } {1 {SQL logic error}}
+
+#-------------------------------------------------------------------------
+
+foreach_detail_mode $testprefix {
+  reset_db
+  fts5_aux_test_functions db
+
+  do_execsql_test 14.0 {
+    CREATE VIRTUAL TABLE t1 USING fts5(x, detail=%DETAIL%);
+    INSERT INTO t1 VALUES('one two three');
+    INSERT INTO t1 VALUES('three two one');
+  }
+
+  do_catchsql_test 14.1 {
+    SELECT fts5_collist(t1, 15000) FROM t1('one AND two');
+  } {1 SQLITE_RANGE}
+
+  do_catchsql_test 14.2 {
+    SELECT fts5_collist(t1, 0) FROM t1('one AND two');
+  } {0 {0 0}}
+
+  do_catchsql_test 14.3 {
+    SELECT fts5_collist(t1, 0) FROM t1('one AND two') ORDER BY rank;
+  } {0 {0 0}}
+
+  do_catchsql_test 14.3 {
+    SELECT fts5_collist(t1, 15000) FROM t1('one AND two') ORDER BY rank;
+  } {1 SQLITE_RANGE}
+}
 
 finish_test

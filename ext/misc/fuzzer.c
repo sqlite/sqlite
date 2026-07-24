@@ -983,6 +983,7 @@ static int fuzzerFilter(
   idx = 0;
   if( idxNum & 1 ){
     zWord = (const char*)sqlite3_value_text(argv[0]);
+    if( zWord==0 ) zWord = "";
     idx++;
   }
   if( idxNum & 2 ){
