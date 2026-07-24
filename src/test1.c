@@ -7196,7 +7196,7 @@ static int SQLITE_TCLAPI file_control_win32_set_handle(
   }
   rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_WIN32_SET_HANDLE,
                             (void*)&hFile);
-  sqlite3_snprintf(sizeof(z), z, "%d %p", rc, (void*)hFile);
+  sqlite3_snprintf(sizeof(z), z, "%d %s", rc,testPointerToString((void*)hFile));
   Tcl_AppendResult(interp, z, (char*)0);
   return TCL_OK;  
 }
