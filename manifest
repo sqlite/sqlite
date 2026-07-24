@@ -1,5 +1,5 @@
-C Fix\sto\sthe\sinteraction\sbetween\sindexes-on-expressions,\ssubtypes,\sand\nthe\sunary\s"+"\soperator.
-D 2026-07-24T14:05:22.310
+C Version\s3.53.4
+D 2026-07-24T19:02:57.525
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2205,9 +2205,10 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bf70dadc2d455844cfd3e759cc2f78bd38841f7362dde302af3dce0d20303935
-Q +5398c6a2b6b218461ce1f6437791c62c1ee125fba195660e0d6d1ad97ed6d14c
+P 5d7c6fe1e93bec72c5afdf404b5ddd548595488fd420a0e8593487635228fd76
 R eb9b53c6ec57d94858c3f2b508c41918
+T +sym-release *
+T +sym-version-3.53.4 *
 U drh
-Z 239e63b9c39d63a206a1c9cb4c375aa4
+Z fda973afbef50bae57a9b27fe1ff9eac
 # Remove this line to create a well-formed Fossil manifest.
