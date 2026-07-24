@@ -1,5 +1,5 @@
-C Fix\ssome\stest\scases\son\sWindows.
-D 2026-07-24T00:39:41.488
+C In\stest_syscall.c,\sassume\sSQLite\salways\scalls\sthe\s4\s(not\s5)\sargument\sform\sof\smremap().\sThis\sfixes\sa\sproblem\swith\sFil-C\sand\smmap2.test.
+D 2026-07-24T10:38:27.958
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -792,7 +792,7 @@ F src/test_rtree.c d844d746a3cc027247318b970025a927f14772339c991f40e7911583ea5ed
 F src/test_schema.c b06d3ddc3edc173c143878f3edb869dd200d57d918ae2f38820534f9a5e3d7d9
 F src/test_sqllog.c 5abf04865758c0a3915b4ec2b2ee5ab75f74c00e2f05bf503b9083e0ab6829d7
 F src/test_superlock.c 3387fc794a68d8c6b6ed059aabacbfe870dc502c5cf65562f36aac78b4a4d629
-F src/test_syscall.c c5bf039261973135068aa68f4d185a6147333dcf266977989f8245b3a1968f1b
+F src/test_syscall.c d67ce5cb8bdd949bbdc39f9d21c1b49dbe38fc3644207a8574d889f5dcc00321
 F src/test_tclsh.c c01706ac60bd3176754d3ccd37da74c6ad97c2e14489f8ed71b497c1c0ac0dd4
 F src/test_tclvar.c ae873248a0188459b1c16ca7cc431265dacce524399e8b46725c2b3b7e048424
 F src/test_thread.c 3edb4a5b5aeb1a6e9a275dccc848ac95acab7f496b3e9230f6d2d04953a2b862
@@ -2217,8 +2217,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a67bff640c9e4ffdf2f48c049eaf829b9e43d167a1055bf8780ff29c910bbade
-R 05fed42f7b71b411ba0dc3a1f12c01a6
-U drh
-Z a81899ab7267511ed7b67d3ce44513fa
+P d2d6363f31ecbae353a1e80810f42d9e2f0f8db0fe6294c7deadf0c58669b9d0
+R 28a9b7364f9b60c2ea806c4d63f7b987
+U dan
+Z 51a343c0ae8825047216d933eea79aac
 # Remove this line to create a well-formed Fossil manifest.
