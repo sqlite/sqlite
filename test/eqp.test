@@ -340,7 +340,7 @@ det 3.3.3 {
 } {
   QUERY PLAN
   |--SCAN t1
-  `--SCAN t2 EXISTS
+  `--SCAN t2 EXISTS USING COVERING INDEX t2i1
 }
 
 #-------------------------------------------------------------------------
