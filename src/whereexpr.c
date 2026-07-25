@@ -1180,6 +1180,7 @@ static void exprAnalyze(
   pExpr = pTerm->pExpr;
   assert( pExpr!=0 ); /* Because malloc() has not failed */
   assert( pExpr->op!=TK_AS && pExpr->op!=TK_COLLATE );
+exprAnalyze_restart:
   pMaskSet->bVarSelect = 0;
   prereqLeft = sqlite3WhereExprUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
@@ -1346,6 +1347,11 @@ static void exprAnalyze(
   ** an OR operator.
   */
   else if( pExpr->op==TK_OR && !ExprHasProperty(pExpr, EP_Collate) ){
+    Expr *pAlt = sqlite3ExprSimplifiedAndOr(pExpr);
+    if( pAlt!=pExpr ){
+      pTerm->pExpr = pExpr = sqlite3ExprSkipCollateAndLikely(pAlt);
+      goto exprAnalyze_restart;
+    }
     assert( pWC->op==TK_AND );
     exprAnalyzeOrTerm(pSrc, pWC, idxTerm);
     pTerm = &pWC->a[idxTerm];
