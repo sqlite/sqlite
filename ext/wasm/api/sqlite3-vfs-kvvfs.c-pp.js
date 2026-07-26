@@ -754,9 +754,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
           const zV = cache.memBuffer(0);
           const heap = wasm.heap8();
-          const nZBuf = wasm.ptr.coerce(zBuf);
           for (let i = 0; i < nV; ++i) {
-            heap[wasm.ptr.add(nZBuf, i)] = jV.codePointAt(i) & 0xff;
+            heap[wasm.ptr.add(zBuf, i)] = jV.codePointAt(i) & 0xff;
           }
           heap[wasm.ptr.add(zBuf, nV)] = 0;
           return nBuf;
