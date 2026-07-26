@@ -2996,8 +2996,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     .t('Close db', function(){
       T.assert(this.db).assert(wasm.isPtr(this.db.pointer));
       //wasm.sqlite3__wasm_db_reset(this.db); // will leak virtual tables!
+      const strayStmt = this.db.prepare("select 1");
+      T.assert( strayStmt.pointer );
       this.db.close();
-      T.assert(!this.db.pointer);
+      T.assert(!this.db.pointer)
+        .assert(!strayStmt.pointer, "Stmt should have been finalized");
     })
   ;/* end of oo1 checks */
 
