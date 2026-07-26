@@ -753,15 +753,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                   wasm.cstrToJs(zKey), nV, jV, store);
           }
           const zV = cache.memBuffer(0);
-          //if( !zV ) return -3 /*OOM*/;
           const heap = wasm.heap8();
-          let i;
-          for(i = 0; i < nV; ++i){
-            heap[wasm.ptr.add(zV,i)] = jV.codePointAt(i) & 0xFF;
+          const nZBuf = wasm.ptr.coerce(zBuf);
+          for (let i = 0; i < nV; ++i) {
+            heap[wasm.ptr.add(nZBuf, i)] = jV.codePointAt(i) & 0xff;
           }
-          heap.copyWithin(
-            Number(zBuf), Number(zV), wasm.ptr.addn(zV, i)
-          );
           heap[wasm.ptr.add(zBuf, nV)] = 0;
           return nBuf;
         }catch(e){
