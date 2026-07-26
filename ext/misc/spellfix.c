@@ -590,6 +590,7 @@ static const EditDist3Lang editDist3Lang = { 0, 100, 100, 150, 0 };
 ** Complete configuration
 */
 struct EditDist3Config {
+  int nRef;              /* Reference counter.  Free when zero */
   int nLang;             /* Number of language IDs.  Size of a[] */
   EditDist3Lang *a;      /* One for each distinct language ID */
 };
@@ -654,12 +655,19 @@ static void editDist3ConfigClear(EditDist3Config *p){
     }
   }
   sqlite3_free(p->a);
-  memset(p, 0, sizeof(*p));
+  p->nLang = 0;
+  p->a = 0;
 }
 static void editDist3ConfigDelete(void *pIn){
-  EditDist3Config *p = (EditDist3Config*)pIn;
-  editDist3ConfigClear(p);
-  sqlite3_free(p);
+  if( pIn ){
+    EditDist3Config *p = (EditDist3Config*)pIn;
+    assert( p->nRef>=1 );
+    p->nRef--;
+    if( p->nRef==0 ){
+      editDist3ConfigClear(p);
+      sqlite3_free(p);
+    }
+  }
 }
 
 /* Compare the FROM values of two EditDist3Cost objects, for sorting.
@@ -1220,21 +1228,23 @@ static int editDist3Install(sqlite3 *db){
   EditDist3Config *pConfig = sqlite3_malloc64( sizeof(*pConfig) );
   if( pConfig==0 ) return SQLITE_NOMEM;
   memset(pConfig, 0, sizeof(*pConfig));
+  pConfig->nRef = 2;
   rc = sqlite3_create_function_v2(db, "editdist3",
               2, SQLITE_UTF8|SQLITE_DETERMINISTIC, pConfig,
-              editDist3SqlFunc, 0, 0, 0);
+              editDist3SqlFunc, 0, 0, editDist3ConfigDelete);
   if( rc==SQLITE_OK ){
+    pConfig->nRef++;
     rc = sqlite3_create_function_v2(db, "editdist3",
                 3, SQLITE_UTF8|SQLITE_DETERMINISTIC, pConfig,
-                editDist3SqlFunc, 0, 0, 0);
+                editDist3SqlFunc, 0, 0, editDist3ConfigDelete);
   }
   if( rc==SQLITE_OK ){
+    pConfig->nRef++;
     rc = sqlite3_create_function_v2(db, "editdist3",
                 1, SQLITE_UTF8|SQLITE_DETERMINISTIC, pConfig,
                 editDist3SqlFunc, 0, 0, editDist3ConfigDelete);
-  }else{
-    sqlite3_free(pConfig);
   }
+  editDist3ConfigDelete(pConfig);
   return rc;
 }
 /* End configurable cost unicode edit distance routines
@@ -2556,6 +2566,7 @@ static int spellfix1FilterForMatch(
     p->pConfig3 = sqlite3_malloc64( sizeof(p->pConfig3[0]) );
     if( p->pConfig3==0 ) return SQLITE_NOMEM;
     memset(p->pConfig3, 0, sizeof(p->pConfig3[0]));
+    p->pConfig3->nRef = 1;
     rc = editDist3ConfigLoad(p->pConfig3, p->db, p->zCostTable);
     if( rc ) return rc;
   }
