@@ -1,5 +1,5 @@
-C The\sMREMAP_FIXED\smacro\s(added\sby\s[4d60798b20a560be])\sis\snot\savailable\non\sall\splatforms.
-D 2026-07-27T11:19:44.664
+C Remove\sa\sstray\sreference\sto\s"sqlite3_checker.exe"\sfrom\sMakefile.msc.\ssqlite3_checker\swas\sremoved\sfrom\sthe\stree\shere\s[213b1c6608].
+D 2026-07-27T14:22:55.676
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -7,7 +7,7 @@ F AGENTS.md 44ddfb38ef23e277888bd70ae378e6cbf5f5cab0e2a4420bd21d89b6caff7a4a
 F LICENSE.md 6bc480fc673fb4acbc4094e77edb326267dd460162d7723c7f30bee2d3d9e97d
 F Makefile.in 5fda086f33b144da08119255da1d2557f983d0764a13707f05acf0159fd89ba5
 F Makefile.linux-generic bd3e3cacd369821a6241d4ea1967395c962dfe3057e38cb0a435cee0e8b789d0
-F Makefile.msc 82edb7e63db4768908bb4223b36df2bd58dbd853f93f517153e2a92860bf484d
+F Makefile.msc 4f25c07ccb10cd4fb04eaefba912296664b26cf65152d51974f24272fcf4aa6d
 F README.md f00091ffb5c6379b783afb57ca5f443a5742e119082f37c407f64a5e16c56346
 F VERSION 99cf3be5f13d091183e4314b7fc2e0c0e69accfbe64608b45a313338bbdd7b62
 F art/icon-243x273.gif 9750b734f82fdb3dc43127753d5e6fbf3b62c9f4e136c2fbf573b2f57ea87af5
@@ -2217,8 +2217,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c0681a6cb72c3bf012a253206ba4ef30db039cdfb01d53758cdb184b67ff954f
-R bf51b1e96bdf7e2eb5a86adb628928ab
-U drh
-Z 6b94a97d0f9df6762fe11edb8b9672b0
+P 8afa7a1d40eef6fd5e9d6a2c250822de607cb211b301547a3317bdb9e942c937
+R 8b7aef3fdcc743f3a382b3c07d8756bc
+U dan
+Z 088c3b5994a83cefc661260cd4d41ebf
 # Remove this line to create a well-formed Fossil manifest.

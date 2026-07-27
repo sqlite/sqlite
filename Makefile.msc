@@ -1680,7 +1680,6 @@ TESTPROGS = \
   testfixture.exe \
   $(SQLITE3EXE) \
   sqlite3_analyzer.exe \
-  sqlite3_checker.exe \
   sqldiff.exe \
   dbhash.exe \
   sqltclsh.exe
