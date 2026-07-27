@@ -415,7 +415,9 @@ static void *ts_mremap(void *a, size_t b, size_t c, int d, ...){
   ** set. But SQLite only ever calls the 4 argument form, and attempting to
   ** read another argument using va_arg(void*) when one has not been specified
   ** causes problems for Fil-C. So assume the 4 argument form here.  */
+#ifdef MREMAP_FIXED
   assert( (d & MREMAP_FIXED)==0 );
+#endif
   return orig_mremap(a, b, c, d);
 }
 
