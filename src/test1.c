@@ -312,6 +312,25 @@ static int SQLITE_TCLAPI test_io_trace(
 }
 
 /*
+** Usage:  filc_build 
+**
+** Returns true if the program was compiled using fil-c.
+*/
+static int SQLITE_TCLAPI filc_build(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  int res = 0;
+#ifdef __PIZLONATOR_WAS_HERE__
+  res = 1;
+#endif
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
+  return TCL_OK;
+}
+
+/*
 ** Usage:  clang_sanitize_address 
 **
 ** Returns true if the program was compiled using clang with the 
@@ -9156,6 +9175,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "printf",                        (Tcl_CmdProc*)test_printf           },
      { "sqlite3IoTrace",              (Tcl_CmdProc*)test_io_trace         },
      { "clang_sanitize_address",        (Tcl_CmdProc*)clang_sanitize_address },
+     { "filc_build",                    (Tcl_CmdProc*)filc_build },
   };
   static struct {
      char *zName;

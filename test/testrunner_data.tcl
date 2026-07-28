@@ -425,7 +425,7 @@ proc trd_extras {platform bld} {
 
 # Usage: 
 #
-#     trd_fuzztest_data $buildname
+#     trd_fuzztest_data $buildname $bNoSan
 #
 # This returns data used by testrunner.tcl to run commands equivalent 
 # to [make fuzztest]. The returned value is a list, which should be
@@ -445,7 +445,7 @@ proc trd_extras {platform bld} {
 # directory containing this file). "fuzzcheck" and "sessionfuzz" have .exe
 # extensions on windows.
 #
-proc trd_fuzztest_data {buildname} {
+proc trd_fuzztest_data {buildname bNoSan} {
   set EXE ""
   set lFuzzDb    [glob [file join $::testdir fuzzdata*.db]] 
   set lSessionDb [glob [file join $::testdir sessionfuzz-data*.db]]
@@ -455,7 +455,7 @@ proc trd_fuzztest_data {buildname} {
     return [list fuzzcheck.exe $lFuzzDb]
   } else {
     set lRet [list [trd_get_bin_name fuzzcheck] $lFuzzDb]
-    if {[lsearch $sanBuilds $buildname]>=0} {
+    if {$bNoSan==0 && [lsearch $sanBuilds $buildname]>=0} {
       lappend lRet [trd_get_bin_name fuzzcheck-asan] $lFuzzDb 
       if {$::tcl_platform(os) ne "OpenBSD"} {
         lappend lRet [trd_get_bin_name fuzzcheck-ubsan] $lFuzzDb 

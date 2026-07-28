@@ -239,6 +239,33 @@ proc default_njob {} {
   }
   return $nHelper
 }
+
+# Return true if the current test is using Fil-C. False otherwise.
+#
+proc is_fil_cc {} {
+  set ret 0
+  if {[catch { exec $::env(CC) --version } msg]==0 
+   && [string first Fil-C $msg]>=0
+  } {
+    set ret 1
+  }
+  return $ret
+}
+
+# Return the default value for the -nbuild switch. This value limits the
+# number of build jobs that may be run concurrently. Usually there is
+# no special limit for this, but with Fil-C the compiler has been observed
+# using up to 8GB of memory to build sqlite3.c, so in this case the default
+# limit is two concurrent builds.
+#
+proc default_nbuild {} {
+  set ret -1
+  if {$::TRG(fil-cc)} {
+    set ret 2
+  }
+  return $ret
+}
+
 #-------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------
@@ -249,7 +276,9 @@ set TRG(logname) [file normalize testrunner.log]
 set TRG(build.logname) [file normalize testrunner_build.log]
 set TRG(info_script) [file normalize [info script]]
 set TRG(timeout) 10000              ;# Default busy-timeout for testrunner.db 
+set TRG(fil-cc)  [is_fil_cc]        ;# True for fil-cc on Linux */
 set TRG(nJob)    [default_njob]     ;# Default number of helper processes
+set TRG(nBuild)  [default_nbuild]   ;# Default number of max build processes
 set TRG(patternlist) [list]
 set TRG(cmdline) $argv
 set TRG(reporttime) 2000
@@ -1038,6 +1067,10 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       } else {
         set TRG(fullstatus) 1
       }
+    } elseif {($n>2 && [string match "$a*" --nbuild]) || $a=="-nb"} {
+      incr ii
+      set TRG(nBuild) [lindex $argv $ii]
+      if {$isLast} { usage }
     } else {
       usage
     }
@@ -1116,22 +1149,36 @@ proc r_write_db {tcl} {
 }
 
 # Obtain a new job to be run by worker $iJob (an integer). A job is
-# returned as a three element list:
-#
-#    {$build $config $file}
+# returned as a serialized array containing all fields from the "jobs"
+# table. 
 #
 proc r_get_next_job {iJob} {
   global T
-
-  if {($iJob%2)} {
-    set orderby "ORDER BY priority ASC"
-  } else {
-    set orderby "ORDER BY priority DESC"
-  }
-
-  set ret [list]
+  global TRG
+  set orderby ""
 
   r_write_db {
+    # If the TRG(nBuild) variable is greater than 0, count how many builds 
+    # are running already. If there are $TRG(nBuild) or more, ensure that
+    # something other than a build is selected to run next.
+    #
+    if {$TRG(nBuild)>0} {
+      set n [trdb one {
+        SELECT count(*) FROM jobs WHERE state='running' AND displaytype='bld'
+      }]
+      if {$n>=$TRG(nBuild)} {
+        set orderby "AND displaytype!='bld' "
+      }
+    }
+
+    if {($iJob%2)} {
+      append orderby "ORDER BY priority ASC"
+    } else {
+      append orderby "ORDER BY priority DESC"
+    }
+
+    set ret [list]
+
     set query "
       SELECT * FROM jobs AS j WHERE state='ready' $orderby LIMIT 1
     " 
@@ -1478,7 +1525,7 @@ proc add_fuzztest_jobs {buildname patternlist} {
   global env TRG
   # puts buildname=$buildname
 
-  foreach {interpreter scripts} [trd_fuzztest_data $buildname] {
+  foreach {interpreter scripts} [trd_fuzztest_data $buildname $TRG(fil-cc)] {
     set bldDone 0
     set subcmd [lrange $interpreter 1 end]
     set interpreter [lindex $interpreter 0]
