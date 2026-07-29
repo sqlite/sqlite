@@ -1,5 +1,5 @@
-C Fix\sthe\sdetection\sON\sclauses\susing\stables\sto\sthe\sright\sso\sthat\sit\sdoes\nnot\sdepend\son\sthe\sorder\sof\scursor\sallocation,\swhich\sis\sinconsistent\swith\nrecursive\sCTEs.\s\sProblem\sintroduced\sby\s[d96271db6a3a44e5].\sReported\sby\n[bugs:/info/2026-07-29T17:50:40Z|Bug\s2026-07-29T17:50:40Z].
-D 2026-07-29T23:28:56.834
+C Enforce\sthe\s1GiB\ssize\slimit\son\sappendvfs\sfiles.\n[bugs:/info/2026-07-29T06:29:52Z|Bug\s2026-07-29T06:29:52Z]
+D 2026-07-29T23:47:55.133
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -363,7 +363,7 @@ F ext/jni/src/tests/900-001-fts.test bf0ce17a8d082773450e91f2388f5bbb2dfa316d0b6
 F ext/misc/README.md 6243cdc4d7eb791c41ef0716f3980b8b5f6aa8c61ff76a3958cbf0031c6ebfa7
 F ext/misc/amatch.c 04d0f3d0e6206adaec93369e82c45d40e8f6f42c2b3701741c1197e4327b079d
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
-F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
+F ext/misc/appendvfs.c 7ad2cdf861399bff503f7e510bfbbc18a4529752255d9766f3a24ced67cb68c5
 F ext/misc/base64.c 1445761667c16356e827fc6418294c869468be934429aaa8315035e76dd58acf
 F ext/misc/base85.c c713c7c81b05558c488cbdd8c68d612d5a97f9f0b8adf1167148dd7c89ce3f96
 F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
@@ -2218,9 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 86b7a62c5ccf41479a9556e705e3c43973a4033c2db42d298050dcfce121ee05 f26831158e28a46805466da71b3fc04e19c2199545cc8c5d68281867f8110ef3
-R 8970f263b40be2434a009fa7d993ab80
-T +closed f26831158e28a46805466da71b3fc04e19c2199545cc8c5d68281867f8110ef3
+P 5a22150bf812774825ffc5bd8adcb5aa6d2177d5fe7eb95cb4130e4a44a706c6
+R dc2f3056c392f956a020ad06d0e1c0e4
 U drh
-Z 488ee58cb57d07648a634ad384509dc5
+Z 8e6963e697c701fc789b46b25b93c42f
 # Remove this line to create a well-formed Fossil manifest.
