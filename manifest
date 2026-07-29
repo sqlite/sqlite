@@ -1,5 +1,5 @@
-C Turn\sredundant\sloads\sof\sthe\sexperimental\svfsstat.c\sextension\sfrom\sa\nstack\soverflow\sinto\sa\sharmless\sno-op.\n[bugs:/info/2026-07-29T06:28:47Z|Bug\s2026-07-29T06:28:47Z].
-D 2026-07-29T17:19:00.751
+C Do\snot\sallow\srecursion\sin\sextension\sfunctions\ssha1_query()\sor\ssha3_query().\n[bugs:/info/2026-07-29T06:29:33Z|Bug\s2026-07-29T06:29:33Z].
+D 2026-07-29T17:36:16.031
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -397,8 +397,8 @@ F ext/misc/regexp.c 378e6e84516952a4b9f3f4df88927f20e6538e2609f55b773ed78899dab8
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/series.c fd82b5c14849b861a299a316b0c63bfd69f7249601ee9bcc6fda2317fec0f821
-F ext/misc/sha1.c fe474ba3e4f9d8915cf58bc0a9e4c00a565a6523942136da56b01909e2ce0493
-F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
+F ext/misc/sha1.c 5c8e36f618fe93751cdebf6d6730d9ecb132a45c6b26a43b11b83c1c54642fbc
+F ext/misc/shathree.c 6102b3edc273253eb2b189c5affa96b4ca674f668f2ae62b48527fb1f54fcce0
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 9099bd2d8701d820904663242e470537e919826060042288e6bfafd3e406c9b4
 F ext/misc/sqlar.c 97c100b010159c08a7a9acd8eb1ea510a5522e64741aaafcd7b6c629de682edc
@@ -1625,7 +1625,7 @@ F test/selectH.test 0b54599f1917d99568c9b929df22ec6261ed7b6d2f02a46b5945ef81b787
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
 F test/sessionfuzz.c 0ec813258fbfd222c62ba6867c6a5a015f098fcaa6d89e7e0ee623ea91145cf0
-F test/sha1.sql 5a4057dee1434144013567c8aecd2f996ec659398f04c61c0891ed1a3a8e20ac
+F test/sha1.sql 636e2e1234e7a4c426c87febac0637fd6552b9f3aeb38bf952aba1b673b7ef56
 F test/shared.test 50bd8091735b272732125928c363476a17b5fb264835de7d19e90c72055c888b
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test cb92d083003ddf0f313166e494ec2fcafa55fdebf648628923ded3169dba8850
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d6453bc80e6e717813f2f5d4a40548cbc25e83e09c209793cacfddb94a408053
-R 9c91171a65bf7daf2c758ba028357a79
+P add89fba2ffe9da5b0305182c97f8408e0dd7d2c3d81f40e0a84f6f79154c5a3
+R 4b73c8f6c7c8301ed17d2e85e6f236b9
 U drh
-Z b4c946a69b225985c58a95617dcfbcb1
+Z dea29c174681fe97f839f10198407f07
 # Remove this line to create a well-formed Fossil manifest.
