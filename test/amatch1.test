@@ -130,4 +130,22 @@ do_execsql_test amatch1-3.0 {
   SELECT length(word) FROM am WHERE word MATCH format('%.81c','a');
 } {81}
 
+# Bug 2026-07-29T06:30:13Z
+reset_db
+load_static_extension db amatch
+do_execsql_test amatch1-4.0 {
+  CREATE TABLE v(w TEXT, l INT);
+  INSERT INTO v VALUES('abc',0);
+  INSERT INTO v VALUES('abd',0);
+  CREATE TABLE ec(iLang, cFrom, cTo, Cost);
+  INSERT INTO ec VALUES(0,'?','a',-2000000000);
+}
+do_catchsql_test amatch1-4.1 {
+  CREATE VIRTUAL TABLE t USING approximate_match(
+    vocabulary_table=v,
+    vocabulary_word=w,
+    edit_distances=ec
+  );
+} {1 {approximate_match: cost must be between 1 and 1000}}
+
 finish_test

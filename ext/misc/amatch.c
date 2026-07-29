@@ -587,6 +587,13 @@ static int amatchLoadOneRule(
   nFrom = (int)strlen(zFrom);
   nTo = (int)strlen(zTo);
 
+  if( rCost<=0 || rCost>AMATCH_MX_COST ){
+    *pzErr = sqlite3_mprintf("%s: cost must be between 1 and %d", 
+        p->zClassName, AMATCH_MX_COST
+    );
+    return SQLITE_ERROR;
+  }
+
   /* Silently ignore null transformations */
   if( strcmp(zFrom, zTo)==0 ){
     if( zFrom[0]=='?' && zFrom[1]==0 ){
@@ -596,12 +603,6 @@ static int amatchLoadOneRule(
     return SQLITE_OK;
   }
 
-  if( rCost<=0 || rCost>AMATCH_MX_COST ){
-    *pzErr = sqlite3_mprintf("%s: cost must be between 1 and %d", 
-        p->zClassName, AMATCH_MX_COST
-    );
-    rc = SQLITE_ERROR;
-  }else
   if( nFrom>AMATCH_MX_LENGTH || nTo>AMATCH_MX_LENGTH ){
     *pzErr = sqlite3_mprintf("%s: maximum string length is %d", 
         p->zClassName, AMATCH_MX_LENGTH
