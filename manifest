@@ -1,5 +1,5 @@
-C Fix\sthe\ssha1()\sextension\sfunction\sso\sthat\sit\sinterprets\szero-length\nBLOBs\sas\sBLOBs\sand\snot\sas\sNULL.\s\sAlso\sadd\sa\sfew\stest\scases\sfor\sthat\nextension\sfunction,\swhich\swas\spreviously\scompletely\suntested.\n[bugs:/info/2026-07-29T06:31:41Z|Bug\s2026-07-29T06:31:41Z].
-D 2026-07-29T10:28:44.733
+C Improved\scomments\sclarifying\soperation\sof\sthe\sext/misc/noop.c\stesting\nextension.\n[bugs:/info/2026-07-29T06:31:22Z|Bug\s2026-07-29T06:31:22Z].
+D 2026-07-29T11:28:07.767
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -386,7 +386,7 @@ F ext/misc/memstat.c 03ab52d2d841eb3f55118105c1964d5225f152b23bd708844c648b48d14
 F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2d5537b
 F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
 F ext/misc/nextchar.c bb5bc64780c9ef4aa903b510249d0d37ec05a2f8faa5420bca71a6552cc1bd59
-F ext/misc/noop.c f1a21cc9b7a4e667e5c8458d80ba680b8bd4315a003f256006046879f679c5a0
+F ext/misc/noop.c 9d13ea10abab57811cbf2b731fd39b0a7dab46eb34cb95d102a8436cb12f4ccc
 F ext/misc/normalize.c 7f526ccf91b05f47c05eac6c147f0f9033d6c625f0260039518e582dc9c3cb7c
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
 F ext/misc/percentile.c b6b9c740f0dc42838efd776eec0f68a93bc5ac86524c71337a70950860bf6c4d
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1ed5e5bed26e3d38dd09541ce73dc68188574e236ecb60142260a0c40bf8902a
-R 6ce74aef2f51db9d2c3ebc6d22322ce0
+P 978d12de384fef985d0363633566304bb20f452dfe8ceb836ca1d353a135f30a
+R 74f307287448cb9fdc20d53b9bfe41f0
 U drh
-Z af18f06a2c863de02c94ce6afa93abdc
+Z 6f1cfb365fc9ffd712c8213b12afe99d
 # Remove this line to create a well-formed Fossil manifest.
