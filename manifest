@@ -1,5 +1,5 @@
-C Further\sfixes\sfor\srunning\s[make\sdevtest]\swith\sFil-C.
-D 2026-07-28T14:16:52.727
+C Fix\sthe\ssha1()\sextension\sfunction\sso\sthat\sit\sinterprets\szero-length\nBLOBs\sas\sBLOBs\sand\snot\sas\sNULL.\s\sAlso\sadd\sa\sfew\stest\scases\sfor\sthat\nextension\sfunction,\swhich\swas\spreviously\scompletely\suntested.\n[bugs:/info/2026-07-29T06:31:41Z|Bug\s2026-07-29T06:31:41Z].
+D 2026-07-29T10:28:44.733
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -397,7 +397,7 @@ F ext/misc/regexp.c 378e6e84516952a4b9f3f4df88927f20e6538e2609f55b773ed78899dab8
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/series.c fd82b5c14849b861a299a316b0c63bfd69f7249601ee9bcc6fda2317fec0f821
-F ext/misc/sha1.c eed0ad67ad7c69798278183a74523d95623d4864821a3f4dd82b234568e307c1
+F ext/misc/sha1.c fe474ba3e4f9d8915cf58bc0a9e4c00a565a6523942136da56b01909e2ce0493
 F ext/misc/shathree.c fd22d70620f86a0467acfdd3acd8435d5cb54eb1e2d9ff36ae44e389826993df
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 9099bd2d8701d820904663242e470537e919826060042288e6bfafd3e406c9b4
@@ -1625,6 +1625,7 @@ F test/selectH.test 0b54599f1917d99568c9b929df22ec6261ed7b6d2f02a46b5945ef81b787
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
 F test/sessionfuzz.c 0ec813258fbfd222c62ba6867c6a5a015f098fcaa6d89e7e0ee623ea91145cf0
+F test/sha1.sql 5a4057dee1434144013567c8aecd2f996ec659398f04c61c0891ed1a3a8e20ac
 F test/shared.test 50bd8091735b272732125928c363476a17b5fb264835de7d19e90c72055c888b
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test cb92d083003ddf0f313166e494ec2fcafa55fdebf648628923ded3169dba8850
@@ -1648,7 +1649,7 @@ F test/shell7.test 6b006d296b569a7ec78b8168af77578b3bde8f58b79c32d9f46cff1eaf763
 F test/shell8.test 38c9e4d7e85d2a3ecfacaa9f6cda4f7a81bf4fffb5f3f37f9cd76827c6883192
 F test/shell9.test c0e8871061a92151450b3332279a893b516fa73a6c46d4f51a0998407cbf8c89
 F test/shellA.test 05cdaafa1f79913654487ce3aefa038d4106245d58f52e02faf506140a76d480
-F test/shellB.test 132ece4f4c50ca0af53dfc70ff5ebfb4d5ee98cd436db1bd4aae22a367877391
+F test/shellB.test 592748d685ccf4986fcd2b464098ea244b3b4c03d5400ee097e6698f14ed9a67
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2217,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 86bc7c8648fa6df303cd6953e377227d8a778b7becca984332bb6f623cb52cec
-R 4db5ee716be273ed42e2597013e3a376
-U dan
-Z 5fd40feb490512285b8dddf6c53153cd
+P 1ed5e5bed26e3d38dd09541ce73dc68188574e236ecb60142260a0c40bf8902a
+R 6ce74aef2f51db9d2c3ebc6d22322ce0
+U drh
+Z af18f06a2c863de02c94ce6afa93abdc
 # Remove this line to create a well-formed Fossil manifest.

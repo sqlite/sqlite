@@ -267,7 +267,10 @@ static void sha1Func(
   }else{
     pData = (const unsigned char*)sqlite3_value_text(argv[0]);
   }
-  if( pData==0 ) return;
+  if( pData==0 ){
+    if( nByte ) return;
+    pData = (const unsigned char*)"";
+  }
   hash_step(&cx, pData, nByte);
   if( sqlite3_user_data(context)!=0 ){
     /* sha1b() - binary result */
