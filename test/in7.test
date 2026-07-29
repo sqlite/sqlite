@@ -248,4 +248,94 @@ do_execsql_test 4.0 {
   SELECT quote(b) FROM t1;
 } {X'3333'}
 
+
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t0(c0 INT, c1 TEXT, PRIMARY KEY(c0));
+  CREATE VIEW v74(vout) AS SELECT t0.c1 FROM t0 GROUP BY t0.c1;
+  INSERT INTO t0(c0, c1) VALUES (1, -89807229);
+}
+
+do_execsql_test 5.1 {
+  SELECT vout,
+         (vout IN (SELECT t0.c1 FROM t0)) AS A,
+         (vout IN (SELECT t0.c0 FROM t0)) AS D,
+         ((vout IN (SELECT t0.c1 FROM t0)) AND NOT (vout IN (SELECT t0.c0 FROM t0))) AS P
+           FROM v74;
+} {-89807229 1 0 1}
+
+do_execsql_test 5.2 {
+  SELECT * FROM v74
+    WHERE (vout IN (SELECT t0.c1 FROM t0))
+} {-89807229}
+
+do_execsql_test 5.3 {
+  SELECT * FROM v74
+    WHERE NOT (vout IN (SELECT t0.c0 FROM t0));
+} {-89807229}
+
+do_execsql_test 5.4 {
+  SELECT * FROM v74
+    WHERE (vout IN (SELECT t0.c1 FROM t0))
+} {-89807229}
+
+do_execsql_test 5.5 {
+  SELECT t0.c1 FROM t0 GROUP BY t0.c1
+     HAVING 
+     NOT (t0.c1 IN (SELECT t0.c0 FROM t0))
+     AND (t0.c1 IN (SELECT t0.c1 FROM t0)) 
+} {-89807229}
+
+do_execsql_test 5.6 {
+  SELECT t0.c1 FROM t0 GROUP BY t0.c1
+     HAVING 
+             (t0.c1 IN (SELECT t0.c1 FROM t0)) 
+     AND NOT (t0.c1 IN (SELECT t0.c0 FROM t0))
+} {-89807229}
+
+#---------------------------------------------------------------
+
+do_execsql_test 5.7 {
+  CREATE TABLE t1(a TEXT);
+  INSERT INTO t1 VALUES('07777');
+
+  CREATE TABLE t2(b TEXT);
+  INSERT INTO t2 VALUES('07777');
+
+  CREATE TABLE t3(c INT, PRIMARY KEY(c));
+  INSERT INTO t3 VALUES(7777);
+}
+
+do_execsql_test 5.8 {
+  SELECT * FROM t1 GROUP BY t1.a
+} {07777}
+
+do_execsql_test 5.9 {
+  SELECT * FROM t1 GROUP BY t1.a
+     HAVING 
+             (t1.a IN (SELECT t3.c FROM t3)) 
+         AND (t1.a IN (SELECT t2.b FROM t2))
+} {07777}
+
+do_execsql_test 5.10 {
+  SELECT * FROM t1 GROUP BY t1.a
+     HAVING 
+             (t1.a IN (SELECT t2.b FROM t2))
+         AND (t1.a IN (SELECT t3.c FROM t3)) 
+} {07777}
+
+do_execsql_test 5.11 {
+  SELECT * FROM t1 GROUP BY t1.a HAVING (t1.a IN (SELECT t3.c FROM t3)) 
+} {07777}
+
+do_execsql_test 5.12 {
+  SELECT 
+      t1.a, 
+      (t1.a IN (SELECT t3.c FROM t3)), 
+      t1.a
+  FROM t1 
+  GROUP BY t1.a 
+} {07777 1 07777}
+
 finish_test
+
