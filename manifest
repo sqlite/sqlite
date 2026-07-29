@@ -1,5 +1,5 @@
-C Return\san\sempty\sstring\sif\san\sfts3\ssnippet()\sis\srequested\sfor\san\sout-of-range\scolumn\sindex.\sBug\s[bugs:/info/2026-07-29T06:30:35Z\s|\s2026-07-29T06:30:35Z].
-D 2026-07-29T16:55:36.511
+C Turn\sredundant\sregistrations\sof\sthe\scksumvfs\sextension\sfrom\sa\sstack\noverflow\sinto\sa\sharmless\sno-op.\n[gugs:/info/2026-07-29T06:28:31Z|Bug\s2026-07-29T06:28:31Z]
+D 2026-07-29T17:08:52.389
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -368,7 +368,7 @@ F ext/misc/base64.c 1445761667c16356e827fc6418294c869468be934429aaa8315035e76dd5
 F ext/misc/base85.c c713c7c81b05558c488cbdd8c68d612d5a97f9f0b8adf1167148dd7c89ce3f96
 F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
 F ext/misc/btreeinfo.c 5fe97f798a9ee90e92b3031ed7969ec3f558661bb36b821c3ba045a17cfb951c
-F ext/misc/cksumvfs.c 9d7d0cf1a8893ac5d48922bfe9f3f217b4a61a6265f559263a02bb2001259913
+F ext/misc/cksumvfs.c 83414e220e6cdfb29929f3154a24f32ff219d9794690bcb1b2db48f668651b35
 F ext/misc/closure.c 6166746f1537a65e82ecc58e64e182f368006d1fe4c5b075a7558cb72ca3c57f
 F ext/misc/completion.c 3f5db28e88c3313103b2dd86d910a2944fd500c46754e473493968ce81e994a4
 F ext/misc/compress.c 5cc142aa82d1589a31c384657d0418c0eb0871348a2201e5dca32d24a0dd6654
@@ -975,7 +975,7 @@ F test/changes2.test 07949edcc732af28cb54276bfb7d99723bccc1e905a423648bf57ac5cb0
 F test/check.test 3a7972ccbaad80d496833da8714d69d9d5d4ce9e7211af1cd2a06ae488a7de12
 F test/checkfault.test da6cb3d50247169efcb20bdf57863a3ccfa1d27d9e55cd324f0680096970f014
 F test/chunksize.test faea11c5d6df9d392252a8dd879e1b1d68c9d3e8b7909cbed8bcec3b60c706f1
-F test/cksumvfs.test 38748166f486c59e8d94f3ee705040031ed3790a4dd69c4a9eef64f623a30ad4
+F test/cksumvfs.test f9639eac08c06485ecf62eed3c558521d2ffe62de0774248d6862826740fe433
 F test/close.test eccbad8ecd611d974cbf47278c3d4e5874faf02d811338d5d348af42d56d647c
 F test/closure01.test d3b90cc67744921a32a2421bb9f590fb6c8d2f14fbb1d7733ec0b2c37d45cab1
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8d626b31ae058de1eebb50d9b6e777318bd9d3a4c75e9f5ada4faba88a1e0188
-R d2dfac96739eeb8afbd1a65c9ac3bd93
-U dan
-Z 0a7132d17118bfa7812fb5bfe1401ece
+P 5c645d5e241f6055c8dd45936a52245ecb2476a6603e06b793912bf897e42239
+R 4a7eba7c225e220494a53483c56460c1
+U drh
+Z 50e31bbbf628fabb17dd34ad78669e74
 # Remove this line to create a well-formed Fossil manifest.
