@@ -1,5 +1,5 @@
-C Avoid\sapply\san\saffinity\sto\sa\sregister\sthat\smight\sbe\sthe\sresult\sof\sa\sTK_AGG_COLUMN\sexpression,\sas\sit\smight\sbe\sreused.\sFix\sfor\sbug\s[bugs:/info/2026-07-29T05:51:06Z\s|\s2026-07-29T05:51:06Z].
-D 2026-07-29T15:13:41.322
+C Always\stake\sa\scopy\sof\sa\svalue\sused\sto\sdrive\san\sindex\sas\spart\sof\sa\sRIGHT\sJOIN\sloop.\sOtherwise,\sthe\sRIGHT\sJOIN\sloop\sand\sthe\sbody\sof\sthe\sloop\sit\sjumps\sback\sinto\smay\sinterfere\swith\seach\sother.\sFix\sfor\s[bugs:/info/2026-07-29T05:33:50Z\s|\s2026-07-29T05:33:50Z].
+D 2026-07-29T15:57:29.283
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -826,7 +826,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 2f5b4091f37bfac7658ea3d52b2c192d8fb2ec062f232815e0eb5152a46267db
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
-F src/wherecode.c dd500ffc8682ec57d3ac7edee3699b675338c4e885c6d1fdb86c791103ebe1dd
+F src/wherecode.c 48603db02e70b579e813b076e4dd7da4ad48099633918b21a85c9a83a949500e
 F src/whereexpr.c 89d33f43594a4a5c3028c86ff0d0f8946aca96b2e535074f23b9893f51c95705
 F src/window.c 0d7dacdf2e84c6ee8ff498d5cc881dd245fcb2f14f6c5976e97e112ce96e90dc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1358,7 +1358,7 @@ F test/joinC.test 1f1a602c2127f55f136e2cbd3bf2d26546614bf8cffe5902ec1ac9c07f87f2
 F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be28
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
-F test/joinH.test 1d2fc3190be68525fd9ce749b9468c40ba2930181e52fb5ee6f836051b38effb
+F test/joinH.test 19fed5f335f75990a537612ad6ad2d2bfced58ff5cd458af17d83878a167e08e
 F test/joinI.test f5e8613c3262f056c56249cc98255bf5fa1a764d7667b8ceb9fe08b4c965f061
 F test/journal1.test bc61a4228db11bffca118bd358ba4b868524bf080f3532749de6c539656e20fa
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
@@ -2218,9 +2218,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3e99c27fe3db76a146bb4a77c08007e6c4598cda7975dd40d4f7f14c3bd914b5 e5cce8a0026e71985f3afd07aba4b3f550871a1079d18234efa19438eed15d2d
-R ed0d3c2a5e1531754fb08e4fab3d48f3
-T +closed e5cce8a0026e71985f3afd07aba4b3f550871a1079d18234efa19438eed15d2d
+P b9ecd9caf755dd33f1de952ac8e5e2d731c20880a0872f10494f92ecf8cae331 d7ad2d0a91b7b837b09b04f78e617fe80eb5ae48f178446c942c2a84e0e0201a
+R 27a15e446b3c453328f5c96d641ed01f
+T +closed d7ad2d0a91b7b837b09b04f78e617fe80eb5ae48f178446c942c2a84e0e0201a
 U dan
-Z 3d79e5839a403cd86b83686e815e33b6
+Z a7305ae2025b4c5b54677903415edb7d
 # Remove this line to create a well-formed Fossil manifest.

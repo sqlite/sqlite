@@ -958,7 +958,12 @@ static int codeAllEqualityTerms(
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
     r1 = codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, regBase+j);
     if( r1!=regBase+j ){
-      if( nReg==1 ){
+      /* If this routine is being called as part of a RIGHT JOIN loop, then
+      ** register r1 may be used by the body of the loop that the RIGHT JOIN
+      ** will jump back into (e.g. if pTerm is a sub-query). This can cause
+      ** problems if (say) the affinity of r1 is modified by the caller of
+      ** this routine. So, always take a copy of the value in this case. */
+      if( nReg==1 && pParse->withinRJSubrtn==0 ){
         sqlite3ReleaseTempReg(pParse, regBase);
         regBase = r1;
       }else{
