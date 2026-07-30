@@ -15,13 +15,13 @@
 
   ./c-pp -I. -I./src -Dsrcdir=./src -Dsed=/usr/bin/sed -o libcmpp.h ./tool/libcmpp.c-pp.h -o libcmpp.c ./tool/libcmpp.c-pp.c
 
-  with libcmpp 2.0.x 7f7a9127b675829bf0f834bc13db17b69f7c53061d54efbfd32cfd5ae6e735f5 @ 2026-07-22 14:02:02.120 UTC
+  with libcmpp 2.0.x 637c8cc2093e132190b05106c6a9f019abc530860b9673646766095ad5804d42 @ 2026-07-27 11:39:39.449 UTC
 */
 #define CMPP_PACKAGE_NAME "libcmpp"
 #define CMPP_LIB_VERSION "2.0.x"
-#define CMPP_LIB_VERSION_HASH "7f7a9127b675829bf0f834bc13db17b69f7c53061d54efbfd32cfd5ae6e735f5"
-#define CMPP_LIB_VERSION_TIMESTAMP "2026-07-22 14:02:02.120 UTC"
-#define CMPP_LIB_CONFIG_TIMESTAMP "2026-07-22 14:02 GMT"
+#define CMPP_LIB_VERSION_HASH "637c8cc2093e132190b05106c6a9f019abc530860b9673646766095ad5804d42"
+#define CMPP_LIB_VERSION_TIMESTAMP "2026-07-27 11:39:39.449 UTC"
+#define CMPP_LIB_CONFIG_TIMESTAMP "2026-07-29 15:00 GMT"
 #define CMPP_VERSION CMPP_LIB_VERSION " " CMPP_LIB_VERSION_HASH " @ " CMPP_LIB_VERSION_TIMESTAMP
 #define CMPP_PLATFORM_EXT_DLL ".so"
 #define CMPP_MODULE_PATH ".:/usr/local/lib/cmpp"
@@ -1267,14 +1267,14 @@ struct cmpp_b {
   /**
      Number of bytes allocated in this->z.
 
-     Potential TODO: use a value of zero here, with a non-zero
-     this->n, to mean that this->z is owned elsewhere. This would
+     Potential TODO: use a value of zero here, with a non-zero this->z
+     or this->n, to mean that this->z is owned elsewhere. This would
      cause cmpp_b_append() to copy its original source before
-     appending. Similarly, cmpp_b_clear() would necessarily _not_
-     free this->z. We've used that heuristic in a predecessor of this
-     class in another tree to good effect for years, but it's not
-     certain that we'd get the same level of utility out of that
-     capability as we do in that other project.
+     appending. Similarly, cmpp_b_clear() would necessarily _not_ free
+     this->z. We've used that heuristic in a predecessor of this class
+     in another tree to good effect for years, but it's not certain
+     that we'd get the same level of utility out of that capability as
+     we do in that other project.
   */
   cmpp_size_t nAlloc;
 
@@ -1441,7 +1441,10 @@ enum cmpp_tt {
 
    - String: a quoted string.
 
-   - StringAt: an @"..." string.
+   - StringAt: an @"..." string. This is a holdover from times before
+     we had #expand and the ability for invidivual to be to "function
+     calls". Use of @-strings is discouraged and they may be removed
+     from the API at some point.
 
    - GroupParen, GroupBrace, GroupSquiggly: (), [], and {}
 
@@ -1793,7 +1796,8 @@ struct cmpp_dx {
   cmpp * const pp;
 
   /**
-     The directive on whose behalf this context is active.
+     The directive on whose behalf this context is active.  See
+     this->args for notes about invalidation of this value.
   */
   cmpp_d const *d;
 
@@ -1823,7 +1827,10 @@ struct cmpp_dx {
     unsigned const char * z;
 
     /**
-       The byte length of z.
+       The byte length of z. It is not called "n", like its
+       counterpart in other structs, so as to avoid confusion between
+       dx->args->n and dx->args->argc (see, that was confusing,
+       right?).
     */
     cmpp_size_t nz;
 
@@ -1942,7 +1949,7 @@ enum cmpp_dx_consume_e {
      This may misinteract in unpredictable ways when used with
      cmpp_dx_consume_F_PROCESS_OTHER_D. Please report them as bugs.
   */
-  cmpp_dx_consume_F_RAW           = 0x02
+  cmpp_dx_consume_F_ATPOL_OFF      = 0x02
 };
 
 /**
@@ -1960,11 +1967,11 @@ enum cmpp_dx_consume_e {
    given channel is NULL then output is not captured - it instead goes
    dx's current output channel.
 
-   dClosers must be a list of legal closing tags nClosers entries
-   long. Typically this is the single closing directive/tag of the
+   dClosers must be a list of nClosers legal closing tags
+   entries. Typically this is the single closing directive/tag of the
    current directive, available to the opening directive's cmpp_dx_f()
    impl via dx->d->closer. Some special cases require multiple
-   candidates, however.
+   candidates, however (examples: #query and the #if family).
 
    The flags argument may be 0 or a bitmask of values from the
    cmpp_dx_consume_e enum.
@@ -2008,19 +2015,13 @@ enum cmpp_dx_consume_e {
    cmpp_outputer oss = cmpp_outputer_b;
    cmpp_b os = cmpp_b_empty;
    oss.state = &os;
-   if( 0==cmpp_dx_consume(dx, &oss, dx->d->closer, 0) ){
+   if( 0==cmpp_dx_consume(dx, &oss, dx->d->closer, 1, 0) ){
      cmpp_b_chomp( &os );
      ... maybe modify the buffer or decorate the output in some way...
      cmpp_dx_out_raw(dx, os.z, os.n);
    }
    cmpp_b_clear(&os);
    ```
-
-   Design issue: this API does not currently have a way to handle
-   directives which have multiple potential waypoints/endpoints, in
-   the way that an #if may optionally have an #elif or #else before
-   the #/if. Such processing has to be done in the directive's
-   impl.
 */
 CMPP_EXPORT int cmpp_dx_consume(cmpp_dx * dx, cmpp_outputer * os,
                                 cmpp_d const *const * dClosers,
@@ -2097,7 +2098,11 @@ CMPP_EXPORT void cmpp_arg_reuse(cmpp_arg *arg);
      cmpp_TT_GroupParen, cmpp_TT_GroupSquiggly, and
      cmpp_TT_GroupBrace. These types do not automatically get parsed
      recursively. To recurse into one of these, pass cmpp_arg_parse()
-     the grouping argument's bytes as the input range.
+     the grouping argument's bytes as the input range. Their
+     interpretation is context-dependent but the general conventions
+     are that {} are used for strings and context-dependent ad hoc
+     data structures (tcl-style), (...) for subexpressions, and [...]
+     for either "function calls" or lists of values.
 
    - Word: anything which doesn't look like one of these above.  Token
      type IDs: cmpp_TT_Word. These are most often interpreted as
@@ -2230,6 +2235,34 @@ enum cmpp_arg_to_b_e {
 */
 CMPP_EXPORT int cmpp_arg_to_b(cmpp_dx * dx, cmpp_arg const *arg,
                               cmpp_b * os, cmpp_flag32_t flags);
+
+/**
+   This is a helper routine for cmpp_dx_f() implementations which
+   process flags like -f filename. This function treats arg as a
+   filename, consumes that file, and returns 0 on success. The
+   argument's value is expanded using the preprocessor's conventional
+   approaches, using cmpp_arg_to_b().
+
+   HUGE WARNING: this routine necessarily requires recursing into dx,
+   which means that it will INVALIDATE dx->args when it does. It is
+   CRITICAL that the caller pass a second argument which was populated
+   by cmpp_args_clone() and eventually, before returning, pass them to
+   cmpp_args_cleanup(). Similarly the caller needs to record in
+   advance of calling this, if it needs it, cmpp_dx_is_call().
+
+   If name is not NULL then the buffer's contents get replaced with
+   the resolved name of the file.
+
+   content must not be NULL. If filename lookup passes then it is
+   passed to cmpp_b_reuse() before being streamed the content of the
+   file. If preprocessIt is true then the content will be piped
+   through dx->pp and sent to the content buffer, else it will be
+   consumed as-is into the buffer.
+*/
+CMPP_EXPORT int cmpp_arg_consume_as_file(
+  cmpp_dx * dx, cmpp_arg const *arg,
+  cmpp_b *name, cmpp_b * content, bool preprocessIt
+);
 
 /**
    Flags for use with cmpp_call_str() and friends.
@@ -3409,7 +3442,7 @@ CMPP_EXPORT int cmpp_array_reserve(cmpp *pp, void **list, cmpp_size_t nDesired,
    The current cmpp_api_thunk::apiVersion value.
    See cmpp_api_thunk_map.
 */
-#define cmpp_api_thunk_version 20260206
+#define cmpp_api_thunk_version 20260725
 
 /**
    A helper for use with cmpp_api_thunk.
@@ -3596,6 +3629,9 @@ CMPP_EXPORT int cmpp_array_reserve(cmpp *pp, void **list, cmpp_size_t nDesired,
   A(20260206)                                                         \
   F(b_borrow,cmpp_b *,(cmpp *dx))                                     \
   F(b_return,void,(cmpp *dx, cmpp_b*))                                \
+  A(20260725)                                                         \
+  F(arg_consume_as_file,int,(cmpp_dx*, cmpp_arg const*,               \
+                             cmpp_b*, cmpp_b*, bool))                 \
   A(1+cmpp_api_thunk_version)
 
 
@@ -4002,7 +4038,7 @@ static cmpp_api_thunk const * CMPP_API_THUNK_NAME = 0;
    NULL, which would make the next cmpp_...() call segfault.
 */
 #  if !defined(CMPP_API_THUNK__assigned)
-#  define CMPP_API_THUNK__assigned
+#    define CMPP_API_THUNK__assigned
 #    define cmpp_api_init(PP) CMPP_API_THUNK_NAME = (PP)->api
 #  else
 #    define cmpp_api_init(PP) (void)(PP)/*CMPP_API_THUNK_NAME*/
@@ -4102,8 +4138,6 @@ static cmpp_api_thunk const * CMPP_API_THUNK_NAME = 0;
 #define cmpp_d_autoloader_set CMPP_API_THUNK_NAME->d_autoloader_set
 #define cmpp_d_autoloader_take CMPP_API_THUNK_NAME->d_autoloader_take
 #define cmpp_isspace CMPP_API_THUNK_NAME->isspace
-#define cmpp_isnl CMPP_API_THUNK_NAME->isnl
-#define cmpp_issnl CMPP_API_THUNK_NAME->issnl
 #define cmpp_skip_space CMPP_API_THUNK_NAME->skip_space
 #define cmpp_skip_snl CMPP_API_THUNK_NAME->skip_snl
 #define cmpp_skip_space_trailing CMPP_API_THUNK_NAME->skip_space_trailing
@@ -4130,6 +4164,8 @@ static cmpp_api_thunk const * CMPP_API_THUNK_NAME = 0;
 /* Thunk APIs which follow are available as of version 20260206... */
 #define cmpp_b_borrow CMPP_API_THUNK_NAME->b_borrow
 #define cmpp_b_return CMPP_API_THUNK_NAME->b_return
+/* Thunk APIs which follow are available as of version 20260725... */
+#define cmpp_arg_consume_as_file CMPP_API_THUNK_NAME->arg_consume_as_file
 
 
 #else /* not CMPP_API_THUNK */
@@ -4450,7 +4486,7 @@ typedef struct CmppLvl CmppLvl;
   };                                                   \
   typedef struct T T;                                  \
   int T ## _reserve(cmpp *pp, T *li, cmpp_size_t min)
-#define CMPP__MAX(X,Y) ((X)<=(Y) ? (X) : (Y))
+
 #define cmpp__ListType_impl(T,MT)                             \
   int T ## _reserve(cmpp *pp,struct T *li, cmpp_size_t min) { \
     return cmpp_array_reserve(pp, (void**)&li->list, min,     \
@@ -5693,7 +5729,7 @@ char const * cmpp__unpol_name(cmpp *pp, cmpp_unpol_e p);
    oMine.state = &bMine;
    cmpp__outputer_swap(pp, &oMine, &oOld);
    ...do some work then ALWAYS do...
-   cmpp__outputer_swap(pp, &oOld, &oMine);
+   cmpp__outputer_swap(pp, &oOld, NULL);
    ```
 
    Because this involves bitwise copying, care must be taken with
@@ -8341,7 +8377,7 @@ CMPP__EXPORT(int, cmpp_dx_consume)(cmpp_dx * const dx, cmpp_outputer * const os,
     (flags & cmpp_dx_consume_F_PROCESS_OTHER_D);
   cmpp_d const * const d = cmpp_dx_d(dx);
   cmpp_size_t const lineNo = dx->pimpl->dline.lineNo;
-  bool const pushAt = (cmpp_dx_consume_F_RAW & flags);
+  bool const pushAt = (cmpp_dx_consume_F_ATPOL_OFF & flags);
   if( pushAt && cmpp_atpol_push(dx->pp, cmpp_atpol_OFF) ){
     return dxppCode;
   }
@@ -8993,7 +9029,9 @@ CMPP__EXPORT(int, cmpp_process_stream)(cmpp *pp, const char * zName,
       ? cmpp_stream(src, srcState, cmpp_output_f_b, os)
       : ppCode;
     if( 0==rc ){
-      cmpp_process_string(pp, zName, os->z, os->n);
+      if( os->n ){
+        cmpp_process_string(pp, zName, os->z, os->n);
+      }
     }else{
       cmpp__err(pp, rc, "Error reading from input stream '%s'.", zName);
     }
@@ -9044,7 +9082,7 @@ CMPP__EXPORT(int, cmpp_call_str)(
          via cmpp_process_string() is a call context. */;
     cmpp__outputer_swap(pp, &oB, &oOld);
     cmpp_process_string(pp, (char*)b->z, b->z, b->n);
-    cmpp__outputer_swap(pp, &oOld, &oB);
+    cmpp__outputer_swap(pp, &oOld, NULL);
     assert( !pi->flags.nextIsCall || ppCode );
     pi->flags.nextIsCall = false;
   }
@@ -10063,7 +10101,7 @@ CMPP__EXPORT(void, cmpp_b_list_cleanup)(cmpp_b_list *li){
 
 CMPP__EXPORT(void, cmpp_b_list_reuse)(cmpp_b_list *li){
   while( li->n ){
-    cmpp_b * const b = li->list[li->n--];
+    cmpp_b * const b = li->list[--li->n];
     if(b) cmpp_b_reuse(b);
   }
 }
@@ -10215,22 +10253,17 @@ const cmpp_outputer cmpp_outputer_obuf = {
 #define ND 0x82 /* Not above or digit-value */
 #define PAD_CHAR '='
 
-#ifndef U8_TYPEDEF
-typedef unsigned char u8;
-#define U8_TYPEDEF
-#endif
-
 static const char b64Numerals[64+1]
 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-#define BX_NUMERAL(dv) (b64Numerals[(u8)(dv)])
+#define BX_NUMERAL(dv) (b64Numerals[(uint8_t)(dv)])
 /* Width of base64 lines. Should be an integer multiple of 4. */
 #define B64_DARK_MAX 72
 
 /* Encode a byte buffer into base64 text with linefeeds appended to limit
 ** encoded group lengths to B64_DARK_MAX or to terminate the last group.
 */
-static char* toBase64( u8 const *pIn, cmpp_size_t nbIn, char *pOut ){
+static char* toBase64( uint8_t const *pIn, cmpp_size_t nbIn, char *pOut ){
   int nCol = 0;
   while( nbIn >= 3 ){
     /* Do the bit-shuffle, exploiting unsigned input to avoid masking. */
@@ -10255,7 +10288,7 @@ static char* toBase64( u8 const *pIn, cmpp_size_t nbIn, char *pOut ){
       if( (cmpp_size_t)nbe<nbIn ) qv |= *pIn++;
     }
     for( nbe=3; nbe>=0; --nbe ){
-      char ce = (nbe<nco)? BX_NUMERAL((u8)(qv & 0x3f)) : PAD_CHAR;
+      char ce = (nbe<nco)? BX_NUMERAL((uint8_t)(qv & 0x3f)) : PAD_CHAR;
       qv >>= 6;
       pOut[nbe] = ce;
     }
@@ -10268,7 +10301,7 @@ static char* toBase64( u8 const *pIn, cmpp_size_t nbIn, char *pOut ){
 
 #if 0 /* from-base-64. We don't yet have a #base64 -d[ecode] */
 /* Decoding table, ASCII (7-bit) value to base 64 digit value or other */
-static const u8 b64DigitValues[128] = {
+static const uint8_t b64DigitValues[128] = {
   /*                             HT LF VT  FF CR       */
     ND,ND,ND,ND, ND,ND,ND,ND, ND,WS,WS,WS, WS,WS,ND,ND,
   /*                                                US */
@@ -10287,8 +10320,8 @@ static const u8 b64DigitValues[128] = {
     41,42,43,44, 45,46,47,48, 49,50,51,ND, ND,ND,ND,ND
 };
 #define BX_DV_PROTO(c) \
-  ((((u8)(c))<0x80)? (u8)(b64DigitValues[(u8)(c)]) : 0x80)
-#define IS_BX_DIGIT(bdp) (((u8)(bdp))<0x80)
+  ((((uint8_t)(c))<0x80)? (uint8_t)(b64DigitValues[(uint8_t)(c)]) : 0x80)
+#define IS_BX_DIGIT(bdp) (((uint8_t)(bdp))<0x80)
 #define IS_BX_WS(bdp) ((bdp)==WS)
 #define IS_BX_PAD(bdp) ((bdp)==PC)
 /* Skip over text which is not base64 numeral(s). */
@@ -10299,7 +10332,7 @@ static char * skipNonB64( char *s, int nc ){
 }
 
 /* Decode base64 text into a byte buffer. */
-static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
+static uint8_t* fromBase64( char *pIn, int ncIn, uint8_t *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 && *pIn!=PAD_CHAR ){
     static signed char nboi[] = { 0, 0, 1, 2, 3 };
@@ -10314,7 +10347,7 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
     if( nbo==0 ) break;
     for( nac=0; nac<4; ++nac ){
       char c = (nac<nti)? *pIn++ : b64Numerals[0];
-      u8 bdp = BX_DV_PROTO(c);
+      uint8_t bdp = BX_DV_PROTO(c);
       switch( bdp ){
       case ND:
         /*  Treat dark non-digits as pad, but they terminate decode too. */
@@ -11139,8 +11172,8 @@ static void cmpp_dx_f_error(cmpp_dx *dx){
 
 /* Impl. for #define. */
 static void cmpp_dx_f_define(cmpp_dx *dx){
-  cmpp_d const * const d = dx->d;
-  assert(d);
+  //cmpp_d const * const d = dx->d;
+  //assert(d);
   if( !dx->args.arg0 ){
     cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
                 "Expecting one or more arguments");
@@ -11347,7 +11380,7 @@ static void cmpp_dx_f_define(cmpp_dx *dx){
     if( os &&
         0==cmpp_dx_consume_b(dx, os, &dx->d->closer, 1,
                              raw
-                             ? cmpp_dx_consume_F_RAW
+                             ? cmpp_dx_consume_F_ATPOL_OFF
                              : cmpp_dx_consume_F_PROCESS_OTHER_D) ){
       while( nChomp-- && cmpp_b_chomp(os) ){}
       g_debug(dx->pp,2,("define  heredoc: [%s]=[%.*s]\n",
@@ -11518,9 +11551,9 @@ static void cmpp_dx_f_expand(cmpp_dx *dx){
                       "#expand.../#expand is not legal for [call].");
       goto end;
     }
-    if( cmpp_dx_consume_b(dx, osIn, &dx->d->closer, 1,
+    if( cmpp_dx_consume_b(dx, osIn, &d->closer, 1,
                           raw
-                          ? cmpp_dx_consume_F_RAW
+                          ? cmpp_dx_consume_F_ATPOL_OFF
                           : cmpp_dx_consume_F_PROCESS_OTHER_D) ){
       goto end;
     }
@@ -12906,7 +12939,7 @@ static void cmpp_dx_f_pipe(cmpp_dx *dx){
      filtering.
   */
   bool seenDD = false /* true if seen "--" or [...] */;
-  bool doCapture = true /* true if we need a closing /pipe */;
+  bool doCapture = true /* true if we need a closing #/pipe */;
   bool argsAsGroup = false /* true if args is [...] */;
   bool dumpDebug = false;
   cmpp_flag32_t popenFlags = 0;
@@ -12953,7 +12986,7 @@ static void cmpp_dx_f_pipe(cmpp_dx *dx){
         goto cleanup;
       }
       //g_warn("command: [%s]=>%s", arg.z, cmd->z);
-      if( cmd->n<2 ){
+      if( cmd->n<2 /* 2026-07-26: why two? */){
         cmpp_dx_err_set(dx, CMPP_RC_RANGE,
                         "Command name '%s' resolves to empty. "
                         "This is most commonly caused by not "
@@ -13066,9 +13099,9 @@ static void cmpp_dx_f_pipe(cmpp_dx *dx){
   if( dxppCode ) goto cleanup;
   int rc = 0;
   if( doCapture ){
-    /* Bug: if body is too bug (no idea how much that is), this will
-       block while waiting on input from the child. This can easily
-       happen with #include -raw. */
+    /* [tag:bug-pipe-block] if body is too big (no idea how much that
+       is), this will block while waiting on input from the
+       child. This can easily happen with #include -raw. */
 #if 0
     /* Failed attempt to work around it. */
     assert( fpToChild );
@@ -13109,20 +13142,16 @@ static void cmpp_dx_f_pipe(cmpp_dx *dx){
     //g_warn("wrote %u bytes to child.", (unsigned)body->n);
     fclose(fpToChild);
     fpToChild = 0;
-    if( dxppCode ) goto cleanup;
-    goto stream_chout;
 #endif
-  }else{
-  stream_chout:
-    //g_warn0("waiting on child...");
-    rc = cmpp_stream(cmpp_input_f_fd, &po.fdFromChild,
-                     cmpp_output_f_b, chout);
-    //g_warn0("I/O done");
-    if( rc ){
-      //err_reading:
-      cmpp_dx_err_set(dx, rc, "Error reading stdout from piped process.");
-      goto cleanup;
-    }
+    if( dxppCode ) goto cleanup;
+  }
+  //g_warn0("waiting on child...");
+  rc = cmpp_stream(cmpp_input_f_fd, &po.fdFromChild,
+                   cmpp_output_f_b, chout);
+  //g_warn0("I/O done");
+  if( rc ){
+    cmpp_dx_err_set(dx, rc, "Error reading stdout from piped process.");
+    goto cleanup;
   }
   while( nChompOut-- && cmpp_b_chomp(chout) ){}
   //g_warn("Read in:\n%.*s", (int)chout->n, chout->z);
@@ -13276,7 +13305,6 @@ end:
   cmpp_b_return(dx->pp, bSep);
 }
 
-
 /* Impl. for #file */
 static void cmpp_dx_f_file(cmpp_dx *dx){
   if( !dx->args.arg0 ){
@@ -13360,7 +13388,6 @@ missing_arg:
   goto end;
 }
 
-
 /**
    #cmp LHS op RHS
 */
@@ -13404,60 +13431,28 @@ end:
 
 /** Impl for #base64. */
 static void cmpp_dx_f_base64(cmpp_dx *dx){
-  cmpp_b ob = cmpp_b_empty;
   cmpp_flag32_t consumeFlags = cmpp_dx_consume_F_PROCESS_OTHER_D;
   bool comma = false;
   bool quote = false;
   cmpp_arg const *arg = 0;
-  char * zResolved = 0;
+  cmpp_arg const * argFile = 0;
+  bool preprocessFileArg = false;
+  cmpp_d const * const d = dx->d;
   cmpp_args args = cmpp_args_empty;
-  cmpp_b * const bFile = cmpp_b_borrow(dx->pp) /* -f|-file NAME */;
+  cmpp_b * const ob = cmpp_b_borrow(dx->pp);
   const bool isCall = cmpp_dx_is_call(dx);
-  //bool interpretFile = false;
-  if( !bFile || cmpp_dx_args_clone(dx, &args) ){
+  if( !ob || cmpp_dx_args_clone(dx, &args) ){
     goto end;
   }
   for( arg = args.arg0; arg; arg = arg->next ){
-
 #define M(STR) cmpp_arg_equals(arg, STR)
     if( M("-comma") ) comma = true;
     else if( M("-quote") ) quote = true;
     else if( M("-f") || M("-file")
-             //|| M("-F") || M("-FILE")
+               || (preprocessFileArg=M("-F")) || (preprocessFileArg=M("-FILE"))
     ){
-      if( !arg->next ){
-        cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
-                        "Expecting a filename argument for %s", arg->z);
-        goto end;
-      }
-      arg = arg->next;
-      assert( !bFile->z );
-      if( cmpp_arg_to_b(dx, arg, bFile,
-                        cmpp_arg_to_b_F_BRACE_CALL) ){
-        goto end;
-      }
-      if( !bFile->n || !bFile->z[0] ){
-        cmpp_dx_err_set(dx, CMPP_RC_MISUSE, "Empty filename is not permitted.");
-        goto end;
-      }
-#if 1
-      zResolved = sqlite3_mprintf("%.*s", (int)bFile->n, bFile->z)
-        /* memory must come from our allocator, not strndup() */;
-      if( cmpp_check_oom(dx->pp, zResolved) ){
-        goto end;
-      }
-#else
-      int nResolved = 0;
-      zResolved = cmpp__include_search(dx->pp, bFile->z, &nResolved);
-      if( !zResolved ){
-        if( !dxppCode ){
-          cmpp_dx_err_set(dx, CMPP_RC_NOT_FOUND, "file not found: %s",
-                          bFile->z);
-        }
-        goto end;
-      }
-#endif
-      //interpretFile = (char)'F'==(char)arg->z[1];
+      if( !arg->next ) goto missing_arg;
+      argFile = arg = arg->next;
     }else{
       cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
                       "Unhandled argument: %s", arg->z);
@@ -13465,52 +13460,42 @@ static void cmpp_dx_f_base64(cmpp_dx *dx){
     }
 #undef M
   }
-  if( zResolved ){
-    cmpp_outputer out = cmpp_outputer_b;
-    out.state = cmpp_b_reuse(bFile);
-    cmpp_FILE * const fp = cmpp_fopen(zResolved, "r");
-    if( fp ){
-      /* TODO (2026-07-22): -F|-FILE NAME tells it to preprocess the
-         input file before encoding, for which we can use
-         cmpp_process_stream(dx->pp,zResolved,cmpp_input_f_FILE, fp).
-         We need to temporarily redirect dx->pp's output to ob before
-         doing so. */
-      int const rc = cmpp_stream(cmpp_input_f_FILE, fp, out.out, out.state);
-      if( rc ){
-        cmpp_dx_err_set(dx, rc, "Unknown error streaming file %s.",
-                        zResolved);
-      }
-      cmpp_fclose(fp);
-    }else{
-      cmpp_dx_err_set(dx, cmpp_errno_rc(errno, CMPP_RC_IO),
-                      "Unknown error opening file %s.", zResolved);
+
+  if( argFile ){
+    if(cmpp_arg_consume_as_file(dx, argFile, NULL, ob, preprocessFileArg) ){
+      goto end;
     }
-    if( dxppCode ) goto end;
-    cmpp_b_swap(bFile, &ob);
-  }else if( isCall ){
-    cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
-                    "#base64.../#base64 is not legal for [call]. "
-                    "Pass the -f FILENAME flag instead.");
-    goto end;
-  }else if( cmpp_dx_consume_b(dx, &ob, &dx->d->closer, 1, consumeFlags) ){
-    goto end;
+  }else{
+    if( isCall ){
+      cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
+                      "#%s...#/%s is not legal for a [call]. "
+                      "Pass the -f FILENAME flag instead.",
+                      d->name.z, d->name.z);
+      goto end;
+    }else{
+      assert( !ob->n );
+      if( cmpp_dx_consume_b(dx, ob, &d->closer, 1, consumeFlags) ){
+        goto end;
+      }
+    }
   }
-  if( ob.n ){
+
+  if( ob->n ){
     cmpp_b * const b64 = cmpp_b_borrow(dx->pp);
     if( !b64 ) goto end;
     int cmpp__b_base64_encode(cmpp *, cmpp_b const *, cmpp_b *)/* in b.c */;
-    cmpp__b_base64_encode(dx->pp, &ob, b64);
-    cmpp_b_swap(&ob, b64);
+    cmpp__b_base64_encode(dx->pp, ob, b64);
+    cmpp_b_swap(ob, b64);
     cmpp_b_return(dx->pp, b64);
     if( cmpp_dx_err_check(dx) ) goto end;
   }
-  unsigned char const * zEnd = ob.z + ob.n;
+  unsigned char const * zEnd = ob->z + ob->n;
 #define out(P,N) if( cmpp_dx_out_raw(dx, P, N) ) goto end
   if( !quote ){
-    cmpp_dx_out_raw(dx, ob.z, ob.n);
-    zEnd = ob.z /* skip the next loop */;
+    cmpp_dx_out_raw(dx, ob->z, ob->n);
+    goto end;
   }
-  for( unsigned char const * z = ob.z; z < zEnd; ++z ){
+  for( unsigned char const * z = ob->z; z < zEnd; ++z ){
     if( quote ){
       out("\"", 1);
     }
@@ -13538,16 +13523,14 @@ static void cmpp_dx_f_base64(cmpp_dx *dx){
   }
 #undef out
 end:
-  if( bFile ){
-    /* ob has its whole contents, i.e. probably a large buffer, so
-       let's keep that one. */
-    cmpp_b_swap(&ob, bFile);
-    cmpp_b_return(dx->pp, bFile);
-  }
-  cmpp_mfree(zResolved);
   cmpp_args_cleanup(&args);
-  cmpp_b_clear(&ob);
+  cmpp_b_return(dx->pp, ob);
   return;
+missing_arg:
+  assert(arg);
+  cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
+                  "Expecting an argument after %s.", arg->z);
+  goto end;
 }
 
 
@@ -13851,6 +13834,8 @@ void cmpp__fclose( FILE * f ){
 ************************************************************************
 ** This file houses the arguments-handling-related pieces for libcmpp.
 */
+#include <assert.h>
+#include <errno.h>
 
 const cmpp_args_pimpl cmpp_args_pimpl_empty =
   cmpp_args_pimpl_empty_m;
@@ -15262,11 +15247,8 @@ CMPP__EXPORT(int, cmpp_kav_each)(cmpp_dx *dx,
   cmpp_args args = cmpp_args_empty;
   unsigned char exprBuf[32] = {0};
   cmpp_size_t const nz = cmpp__strlenu(zBegin,nIn);
-  unsigned char const * const zEnd = zBegin + nz;
   cmpp_flag32_t a2bK = 0, a2bV = 0 /*cmpp_arg_to_b() flags*/;
   assert( zBegin );
-  assert( zEnd );
-  assert( zEnd>=zBegin );
 
   if( cmpp__each_parse_args(dx, &args, zBegin, nz,  flags) ){
     goto cleanup;
@@ -15371,10 +15353,7 @@ CMPP__EXPORT(int, cmpp_str_each)(cmpp_dx *dx,
   cmpp_args args = cmpp_args_empty;
   unsigned char exprBuf[32] = {0};
   cmpp_size_t const nz = cmpp__strlenu(zBegin,nIn);
-  unsigned char const * const zEnd = zBegin + nz;
   assert( zBegin );
-  assert( zEnd );
-  assert( zEnd>=zBegin );
 
   if( cmpp__each_parse_args(dx, &args, zBegin, nz,  flags) ){
     goto cleanup;
@@ -15475,6 +15454,60 @@ bool cmpp__arg_wordIsPathOrFlag(
         || strchr((char*)arg->z, '-')
         || strchr((char*)arg->z, '/')
         || strchr((char*)arg->z, '\\'));
+}
+
+int cmpp_arg_consume_as_file(
+  cmpp_dx * dx, cmpp_arg const *arg,
+  cmpp_b * bNameOut, cmpp_b * content, bool preprocessIt
+){
+  if( !arg ){
+    return cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
+                           "Expecting filename argument.");
+  }
+  cmpp_b * const bFile = cmpp_b_borrow(dx->pp);
+  if( !bFile ) return dxppCode;
+  else if( cmpp_arg_to_b(dx, arg, bFile,
+                         cmpp_arg_to_b_F_BRACE_CALL) ){
+    goto end;
+  }
+  if( !bFile->n || !bFile->z[0] ){
+    cmpp_dx_err_set(dx, CMPP_RC_MISUSE, "Empty filename is not permitted.");
+    goto end;
+  }
+  /* Resolving as -Idir does currently requires an internal API
+     and would arguably be a bug. */
+  cmpp_FILE * const fp = cmpp_fopen((char const*)bFile->z, "r");
+  if( fp ){
+    /* TODO (2026-07-22): -F|-FILE NAME tells it to preprocess the
+       input file before encoding. */
+    cmpp_outputer out = cmpp_outputer_b;
+    int rc;
+    out.state = cmpp_b_reuse(content);
+    if( preprocessIt ){
+      cmpp_outputer oOld = {0};
+      cmpp__outputer_swap(dx->pp, &out, &oOld);
+      rc = cmpp_process_stream(dx->pp, (char const *)bFile->z,
+                               cmpp_input_f_FILE, fp);
+      cmpp__outputer_swap(dx->pp, &oOld, NULL);
+    }else{
+      rc = cmpp_stream(cmpp_input_f_FILE, fp, out.out, out.state);
+    }
+    if( rc && !cmpp_dx_err_check(dx) ){
+      /* Propagate error. */
+      cmpp_dx_err_set(dx, rc, "Unknown error streaming file [%s].",
+                      bFile->z);
+    }
+    cmpp_fclose(fp);
+  }else{
+    cmpp_dx_err_set(dx, cmpp_errno_rc(errno, CMPP_RC_IO),
+                    "Unknown error opening file %s.", bFile->z);
+  }
+ end:
+  if( bNameOut && bFile && !dxppCode ){
+    cmpp_b_swap(bFile, bNameOut);
+  }
+  cmpp_b_return(dx->pp, bFile);
+  return dxppCode;
 }
 /*
 ** 2022-11-12:
