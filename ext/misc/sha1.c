@@ -320,7 +320,6 @@ static void sha1QueryFunc(
     *pIsRecursive = 1;
     return;
   }
-  sqlite3_set_clientdata(db, "sha1_query()", &isRecursive, 0);
   hash_init(&cx);
   while( zSql[0] ){
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
@@ -347,6 +346,7 @@ static void sha1QueryFunc(
     hash_step(&cx,(unsigned char*)z,n);
 
     /* Compute a hash over the result of the query */
+    sqlite3_set_clientdata(db, "sha1_query()", &isRecursive, 0);
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
       hash_step(&cx,(const unsigned char*)"R",1);
       for(i=0; i<nCol; i++){
@@ -401,9 +401,9 @@ static void sha1QueryFunc(
       }
     }
     sqlite3_finalize(pStmt);
+    sqlite3_set_clientdata(db, "sha1_query()", 0, 0);
   }
   hash_finish(&cx, zOut, 0);
-  sqlite3_set_clientdata(db, "sha1_query()", &isRecursive, 0);
   if( isRecursive ){
     sqlite3_result_error(context, "recursive use of sha1_query()", -1);
   }else{
