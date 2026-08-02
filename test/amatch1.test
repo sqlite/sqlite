@@ -148,4 +148,27 @@ do_catchsql_test amatch1-4.1 {
   );
 } {1 {approximate_match: cost must be between 1 and 1000}}
 
+# Bug 2026-08-02T13:01:25Z
+do_execsql_test amatch1-5.0 {
+  CREATE TABLE vocab(w);
+  INSERT INTO vocab VALUES('abc');
+  CREATE TABLE costs(a,b,c,d);
+  INSERT INTO costs VALUES(0,'?','',97),(0,'','?',98);
+  CREATE VIRTUAL TABLE t USING approximate_match(
+     vocabulary_table=vocab,
+     vocabulary_word=w,
+     edit_distances=costs
+  );
+}
+do_execsql_test amatch1-5.1 {
+  SELECT word, distance FROM t WHERE word MATCH 'abc';
+} {abc 0}
+do_execsql_test amatch1-5.2 {
+  SELECT word, distance FROM t WHERE word MATCH 'abc'
+                                 AND distance<9223372036854775807;
+} {abc 0}
+do_execsql_test amatch1-5.3 {
+  SELECT word, distance FROM t WHERE word MATCH 'abc' AND distance<10;
+} {abc 0}
+
 finish_test
