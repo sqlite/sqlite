@@ -707,7 +707,7 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
     }else if( p->flags & MEM_Str ){
       u64 x;
       h += p->n;
-      if( p->n >= sizeof(x) ){
+      if( p->n >= (int)sizeof(x) ){
         memcpy(&x, p->z, sizeof(x));
         h += x;
         memcpy(&x, p->z + p->n - sizeof(x), sizeof(x));
@@ -721,7 +721,7 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
       int n = p->n;
       u64 x = 0;
       if( n ){
-        memcpy(&x, p->z, MIN(n, sizeof(x)));
+        memcpy(&x, p->z, MIN(n, (int)sizeof(x)));
         h += x;
       }
       h += n;
