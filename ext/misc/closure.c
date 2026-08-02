@@ -10,17 +10,25 @@
 **
 *************************************************************************
 **
-** WARNING:  Experimental and obsolete.  Demonstration and testing only.
+** WARNING:  Experimental and obsolete.  Demonstration and testing use only.
 **
 ** This virtual table was created prior to the addition of support for
 ** common table expressions in SQLite.  Common table expressions are a
 ** better and more portable solution to any problem that this virtual
-** table solves.
+** table solves.  Common table expressions where added to SQLite in
+** version 3.8.3 (2014-02-02), less than 10 months after this extension
+** was created.  Hence this extension was only useful for a small
+** 10-month window of time in 2013 and early 2014.
+**
+** The continued use of this extension in any real-world application should
+** be considered a bug in that application.
 **
 ** Given its experimental and testing-only status, the code here is
 ** deactivated unless compiled with -DSQLITE_TEST=1
 **
 ** DEMONSTRATION AND TESTING USE ONLY.
+**
+*************************************************************************
 **
 ** This file contains code for a virtual table that finds the transitive
 ** closure of a parent/child relationship in a real table.  The virtual 
@@ -544,6 +552,11 @@ static int closureConnect(
       sqlite3_free(pNew->zTableName);
       pNew->zTableName = closureDequote(zVal);
       if( pNew->zTableName==0 ) goto closureConnectError;
+      if( sqlite3_stricmp(pNew->zTableName, argv[2])==0 ){
+        *pzErr = sqlite3_mprintf("self-referential closure table");
+        rc = SQLITE_ERROR;
+        goto closureConnectError;
+      }
       continue;
     }
     zVal = closureValueOfKey("idcolumn", argv[i]);

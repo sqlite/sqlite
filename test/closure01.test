@@ -308,4 +308,17 @@ do_execsql_test 7.3 {
   SELECT * FROM c WHERE root=1;
 } {1 0 2 1}
 
+# Bug 2026-08-02T13:07:40Z
+#
+do_catchsql_test 8.1 {
+  CREATE VIRTUAL TABLE ct1 USING transitive_closure(
+    tablename='ct1',
+    idcolumn='id',
+    parentcolumn='root'
+  );
+} {1 {self-referential closure table}}
+do_catchsql_test 8.2 {
+  SELECT id, depth FROM ct1 WHERE root=1 LIMIT 5;
+} {1 {no such table: ct1}}
+
 finish_test
