@@ -1,5 +1,5 @@
-C Cap\sconstraint\svalues\son\sconstraints\sto\sthe\samatch\svirtual\stable\sso\nthat\sthey\sfit\sinto\sa\s32-bit\ssigned\sinteger.\n[bugs:/info/2026-08-02T13:01:25Z|Bug\s2026-08-02T13:01:25Z]
-D 2026-08-02T21:59:03.804
+C Make\sthe\stest-use-only\sSQL\sfunction\sfts3_exprtest()\s(available\sonly\sif\ncompiled\swith\sSQLITE_TEST)\smore\sresistant\sto\sout-of-bounds\sinputs.\n[bugs:/info/2026-08-02T12:28:28Z|Bug\s2026-08-02T12:28:28Z]\sand\n[bugs:/info/2026-08-02T12:31:40Z|bug\s2026-08-02T12:31:40Z].
+D 2026-08-02T22:45:36.376
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -84,7 +84,7 @@ F ext/fts3/fts3.c 3a68333835a5152e16bc7059b50c049b2ccb616bea165b319b456ba796b0a5
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 277f32f304e82f4397fc2a74793c0a95318b7abb9670b519e4805a00946cbd9b
 F ext/fts3/fts3_aux.c bbb614abcc995bf748cba4717e9fd8de67898e33c80f60379f6feb2358189b4b
-F ext/fts3/fts3_expr.c 907dd64deb881c0586d5ecbabc96cfebdbe2ff9e7a052d379fd3b606edfa21ea
+F ext/fts3/fts3_expr.c c101b4e37458c35d452653de601a683b75f81b09ac681bb38031fa5a77e4a270
 F ext/fts3/fts3_hash.c d9dba473741445789330c7513d4f65737c92df23c3212784312931641814672a
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c 305ce7fb6036484085b5556a9c8e62acdc7763f0f4cdf5fd538212a9f3720116
@@ -1189,7 +1189,7 @@ F test/fts3defer3.test dd53fc13223c6d8264a98244e9b19abd35ed71cd
 F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3dropmod.test 7de242ea1c8a713a8b143ea54468f4b1c4953fa068349e23ac178e2c90c59889
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
-F test/fts3expr.test ebae205a7a89446c32583bcd492dcb817b9f6b31819bb4dde2583bb99c77e526
+F test/fts3expr.test fb4f6ac01020865f88cbfac1691a7e31f913f45c4d61b45bd2b9df866b27de88
 F test/fts3expr2.test ef381978b9bdcfc6d4b47c86270ba356a75dbff164ce52ff5d18a5924a788614
 F test/fts3expr3.test c4d4a7d6327418428c96e0a3a1137c251b8dfbf8
 F test/fts3expr4.test 6c7675bbdbffe6ffc95e9e861500b8ac3f739c4d004ffda812f138eeb1b45529
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 1b623a6064427e81dffc2897e017accc98243ecaf23c5f4df752d3da91b51be6
-R 740cb170217d66f4150da7baf3c46ad1
+P 092b87164aa7d097287ad0fee4be8b66cf840043dc3091193824d74f2d54a833
+R 56d59c39f731282b997e0f77b0d7e095
 U drh
-Z 08dc212a3315cb5ee144d1adba1172c3
+Z 1c2bbdd6cd4e685211f038a0db162a0f
 # Remove this line to create a well-formed Fossil manifest.
