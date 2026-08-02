@@ -38,7 +38,7 @@
 ** by adding new methods.
 **
 ** This template implements an eponymous-only virtual table with a rowid and
-** two columns named "a" and "b".  The table as 10 rows with fixed integer
+** two columns named "a" and "b".  The table as 9 rows with fixed integer
 ** values. Usage example:
 **
 **     SELECT rowid, a, b FROM templatevtab;
