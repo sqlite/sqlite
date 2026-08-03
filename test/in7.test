@@ -337,5 +337,65 @@ do_execsql_test 5.12 {
   GROUP BY t1.a 
 } {07777 1 07777}
 
+#-------------------------------------------------------------------------
+# Report <https://sqlite.org/bugs/info/2026-08-03T09:05:06Z>
+#
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t0(c1 INTEGER NOT NULL, UNIQUE(c1));
+  INSERT INTO t0(c1) VALUES (5), (-1);
+
+  CREATE TABLE t2(c2 INTEGER NOT NULL, UNIQUE(c2));
+  INSERT INTO t2(c2) VALUES (5), (-1);
+} {}
+
+do_execsql_test 6.1 {
+  SELECT c1 FROM t0 WHERE (((c1),(c1)) IN (
+        SELECT c2, min(c2) FROM t2)
+  );
+} {-1}
+
+reset_db
+do_execsql_test 6.2 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(4, 'four');
+  INSERT INTO t1 VALUES(3, 'three');
+
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES(1), (2), (3);
+}
+
+foreach {tn idx} {
+  3 { CREATE INDEX i1 ON t1(a) }
+  4 { CREATE INDEX i1 ON t1(b) }
+} {
+  do_execsql_test 6.$tn.1 { DROP INDEX IF EXISTS i1 }
+  execsql $idx
+
+  do_execsql_test 6.$tn.2 {
+    SELECT * FROM t1 WHERE a IN (SELECT count(*) FROM t2)
+  } {3 three}
+
+  do_execsql_test 6.$tn.3 {
+    SELECT * FROM t1 WHERE (a, b) IN (SELECT count(*), 'three' FROM t2)
+  } {3 three}
+
+  do_eqp_test 6.$tn.4 {
+    SELECT * FROM t1 WHERE (a, b) IN (SELECT count(*), 'three' FROM t2)
+  } {SEARCH t1 USING INDEX i1}
+
+  do_eqp_test 6.$tn.5 {
+    SELECT * FROM t1 WHERE (a, b) IN (SELECT min(x), 'one' FROM t2)
+  } {SCAN t1}
+
+  do_execsql_test 6.$tn.6 {
+    SELECT * FROM t1 WHERE (a, b) IN (SELECT min(x), 'one' FROM t2)
+  } {1 one}
+
+
+}
+
 finish_test
 
