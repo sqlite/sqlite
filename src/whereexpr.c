@@ -1540,6 +1540,7 @@ exprAnalyze_restart:
 #ifndef SQLITE_OMIT_WINDOWFUNC
    && pExpr->x.pSelect->pWin==0
 #endif
+   && (pExpr->x.pSelect->selFlags & SF_MinMaxAgg)==0
    && pWC->op==TK_AND
    && pExpr->x.pSelect->pEList->nExpr <= UMXV(pTerm->nChild)
    /* ^-- See bug 2026-06-04T10:00:49Z */
