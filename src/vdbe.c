@@ -693,13 +693,13 @@ static Mem *out2Prerelease(Vdbe *p, VdbeOp *pOp){
 ** collating sequence for TEXT is BINARY. Hence, Bloom filters that use this
 ** hash will not work for look-ups that use any other collating sequence.
 */
-static u64 filterHash(const Mem *aMem, const Op *pOp){
+static u64 filterHash(Mem *aMem, const Op *pOp){
   int i, mx;
   u64 h = 0;
 
   assert( pOp->p4type==P4_INT32 );
   for(i=pOp->p3, mx=i+pOp->p4.i; i<mx; i++){
-    const Mem *p = &aMem[i];
+    Mem *p = &aMem[i];
     if( p->flags & (MEM_Int|MEM_IntReal) ){
       h += p->u.i;
     }else if( p->flags & MEM_Real ){

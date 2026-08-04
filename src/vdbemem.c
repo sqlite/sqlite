@@ -633,12 +633,17 @@ void sqlite3VdbeMemReleaseMalloc(Mem *p){
 **
 ** If pMem represents a string value, its encoding might be changed.
 */
-static SQLITE_NOINLINE i64 memIntValue(const Mem *pMem){
+static SQLITE_NOINLINE i64 memIntValue(Mem *pMem){
   i64 value = 0;
-  sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
+  double r;
+  if( sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc)>0
+   && sqlite3MemRealValueRC(pMem, &r)>0
+  ){
+    value = sqlite3RealToI64(r);
+  }
   return value;
 }
-i64 sqlite3VdbeIntValue(const Mem *pMem){
+i64 sqlite3VdbeIntValue(Mem *pMem){
   int flags;
   assert( pMem!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
