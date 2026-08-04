@@ -10,7 +10,9 @@
 **
 ******************************************************************************
 **
-** This SQLite extension implements a noop() function used for testing.
+** This SQLite extension implements a noop() function originally intended
+** to be used for testing purposes only, but never actually used for anything
+** beyond interactive testing.
 **
 ** Variants:
 **
@@ -41,9 +43,19 @@ static void noopfunc(
 /*
 ** Implementation of the multitype_text() function.
 **
-** The function returns its argument.  The result will always have a
-** TEXT value.  But if the original input is numeric, it will also
-** have that numeric value.
+** The function returns its argument as text.
+**
+**   *  TEXT inputs are passed through unchanged
+**
+**   *  BLOB inputs return TEXT that is the original BLOB
+**      interpreted as UTF-8.  If the BLOB contains a 0x00
+**      byte, that byte is interpreted as the string
+**      terminator.
+**
+**   *  INTEGER or REAL inputs return a TEXT representation of
+**      the number.
+**
+**   *  NULL inputs return NULL
 */
 static void multitypeTextFunc(
   sqlite3_context *context,

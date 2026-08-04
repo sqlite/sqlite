@@ -89,11 +89,15 @@ do_execsql_test 1.3.2 {
 set literal [db one {SELECT quote( fts3_tokenizer($bound) )}]
 set blob    [db one {SELECT fts3_tokenizer($bound) }]
 
-do_execsql_test 1.4.1 "
-  SELECT typeof( fts3_tokenizer('mytok2', $literal) );
-" {blob}
-do_execsql_test 1.4.2 {
-  CREATE VIRTUAL TABLE x2 USING fts3(col, tokenize=mytok2);
+if {[filc_build]==0} {
+  # Omit these two tests with Fil-C, as it will abort() if a pointer 
+  # decoded from an SQL literal is dereferenced.
+  do_execsql_test 1.4.1 "
+    SELECT typeof( fts3_tokenizer('mytok2', $literal) );
+  " {blob}
+  do_execsql_test 1.4.2 {
+    CREATE VIRTUAL TABLE x2 USING fts3(col, tokenize=mytok2);
+  }
 }
 do_execsql_test 1.4.3 {
   SELECT typeof( fts3_tokenizer('mytok3', $blob) );

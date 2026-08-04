@@ -1521,6 +1521,10 @@ static int SQLITE_TCLAPI test_quota_dump(
   return TCL_OK;
 }
 
+/* Defined in test1.c */
+extern void *sqlite3TestTextToPtr(const char*);
+extern const char *sqlite3TestPtrToText(void*);
+
 /*
 ** tclcmd: sqlite3_quota_fopen FILENAME MODE
 */
@@ -1533,7 +1537,6 @@ static int SQLITE_TCLAPI test_quota_fopen(
   const char *zFilename;          /* File pattern to configure */
   const char *zMode;              /* Mode string */
   quota_FILE *p;                  /* Open string object */
-  char zReturn[50];               /* Name of pointer to return */
 
   /* Process arguments */
   if( objc!=3 ){
@@ -1543,13 +1546,9 @@ static int SQLITE_TCLAPI test_quota_fopen(
   zFilename = Tcl_GetString(objv[1]);
   zMode = Tcl_GetString(objv[2]);
   p = sqlite3_quota_fopen(zFilename, zMode);
-  sqlite3_snprintf(sizeof(zReturn), zReturn, "%p", p);
-  Tcl_SetResult(interp, zReturn, TCL_VOLATILE);
+  Tcl_SetResult(interp, (char*)sqlite3TestPtrToText(p), TCL_VOLATILE);
   return TCL_OK;
 }
-
-/* Defined in test1.c */
-extern void *sqlite3TestTextToPtr(const char*);
 
 /*
 ** tclcmd: sqlite3_quota_fread HANDLE SIZE NELEM

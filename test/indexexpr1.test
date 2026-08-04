@@ -706,4 +706,30 @@ do_catchsql_test indexexpr1-2310 {
   CREATE INDEX i2 ON t1( ~(addone(DISTINCT x)) );
 } {1 {non-deterministic functions prohibited in index expressions}}
 
+# Bug 2026-07-24T08:42:47Z
+# Indexes-on-expression interacting with subtypes and the unary "+" operator
+#
+do_execsql_test indexexpr1-2500 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INT, j TEXT);
+  INSERT INTO t1 VALUES(1,'{"x":[1,2]}');
+  SELECT json_array(json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2501 {
+  SELECT json_array(+json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2502 {
+  SELECT json_array(++json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2503 {
+  CREATE INDEX ix ON t1(a, json_extract(j,'$.x'));
+  SELECT json_array(json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2504 {
+  SELECT json_array(+json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2505 {
+  SELECT json_array(++json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+
 finish_test

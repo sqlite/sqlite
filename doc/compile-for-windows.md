@@ -1,7 +1,19 @@
 # Notes On Compiling SQLite On Windows 11
 
+## Executive Summary
+
+  1.  Install Microsoft Visual Studio
+  2.  Get a "Native Tools Command Prompt"
+  3.  Get a tarball of the canonical SQLite source tree and unpack it
+  4.  Run commands like: <ul>
+      <li> `make sqlite3.c`
+      <li> `make sqlite3.exe`
+      <li> `make sqlite3.dll`</ul>
+
+## Details For Standard 64-bit Builds On Either x64 Or ARM
+
 Below are step-by-step instructions on how to build SQLite from
-canonical source on a new Windows 11 PC, as of 2025-10-31.
+canonical source on a new Windows 11 PC, as of 2026-08-01.
 See [](./compile-for-unix.md) for a similar guide for unix-like
 systems, including MacOS.
 
@@ -70,25 +82,24 @@ systems, including MacOS.
   4.  Download the SQLite source tree and unpack it. CD into the
       toplevel directory of the source tree.
 
-  5.  Run the "`Makefile.msc`" makefile with an appropriate target.
-      Examples:
+  5.  The source tree contains the "`make.bat`" batch script that
+      simulations the behavior of Unix-style "make" using "`nmake`".
+      So the build process for Windows is the same as for Unix:
       <ul>
-      <li>  `nmake /f makefile.msc`
-      <li>  `nmake /f makefile.msc sqlite3.c`
-      <li>  `nmake /f makefile.msc sqlite3.exe`
-      <li>  `nmake /f makefile.msc sqldiff.exe`
-      <li>  `nmake /f makefile.msc sqlite3_rsync.exe`
+      <li>  `make sqlite3.c`
+      <li>  `make sqlite3.exe`
+      <li>  `make sqldiff.exe`
+      <li>  `make sqlite3_rsync.exe`
       </ul>
-      <p>No TCL is required for the nmake targets above.  But for the ones
+      <p>No TCL is required for the make targets above.  But for the ones
       that follow, you will need a TCL installation, as described in step 3
       above.  If you install TCL in some directory other than C:\\Tcl, then
       you will also need to add the "TCLDIR=<i>&lt;dir&gt;</i>" option on the
       nmake command line to tell nmake where your TCL is installed.
       <ul>
-      <li>  `nmake /f makefile.msc tclextension-install`
-      <li>  `nmake /f makefile.msc devtest`
-      <li>  `nmake /f makefile.msc releasetest`
-      <li>  `nmake /f makefile.msc sqlite3_analyzer.exe`
+      <li>  `make tclextension-install`
+      <li>  `make test`
+      <li>  `make releasetest`
       </ul>
 
       It is not required that you run the "tclextension-install" target prior to
@@ -102,9 +113,8 @@ systems, including MacOS.
   7.  For a debugging build of the CLI, where the ".treetrace" and ".wheretrace"
       commands work, add the DEBUG=3 argument to nmake.  Like this:
       <ul>
-      <li> `nmake /f makefile.msc DEBUG=3 clean sqlite3.exe`
+      <li> `make DEBUG=3 clean sqlite3`
       </ul>
-   
 
 ## 32-bit Builds
 

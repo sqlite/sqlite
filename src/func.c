@@ -2951,13 +2951,17 @@ static void percentSort(
   unsigned int n,                 /* Number of elements in array a[] */
   int iReq                        /* Element caller cares about (or -ve) */
 ){
-  int iLt;  /* Entries before a[iLt] are less than rPivot */
-  int iGt;  /* Entries at or after a[iGt] are greater than rPivot */
+  int iLt;       /* Entries before a[iLt] are less than or equal to rPivot */
+  int iGt;       /* Entries a[iGt] and after are greater or equal to rPivot */
   int i;         /* Loop counter */
   double rPivot; /* The pivot value */
 
   assert( n>=2 );
   do{
+    /* Put the first, middle, and last elements in sorted order.
+    ** After doing so, return immediately if the array contains
+    ** three or fewer elements as there is nothing more to do.
+    */
     if( a[0]>a[n-1] ){
       SWAP_DOUBLE(a[0],a[n-1])
     }
@@ -2970,6 +2974,11 @@ static void percentSort(
       SWAP_DOUBLE(a[i],a[iGt])
     }
     if( n==3 ) return;
+
+    /* Take the value of the middle element as the pivot.  Shuffle
+    ** values around so that all elements less than the pivot come
+    ** before all elements greater than the pivot.
+    */
     rPivot = a[i];
     iLt = i = 1;
     do{
@@ -2987,8 +2996,12 @@ static void percentSort(
       }
     }while( i<iGt );
 
+    assert( iLt>0 && iLt<iGt && (unsigned)iGt<n );
+    testcase( iGt>iLt+1 );
     assert( a[iLt]==rPivot );
-    assert( iGt>iLt );
+    assert( a[iLt-1]<=rPivot );
+    assert( a[iGt]>=rPivot );
+    assert( a[iLt+1]>=rPivot );
 
     if( iReq>=0 ){
       /* In this case, the only elements that the caller requires sorted into 

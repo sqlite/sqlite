@@ -53,7 +53,7 @@ if {$tcl_platform(platform) eq "windows"} {
     db close
     forcedelete test2.db
     list $size $handle [expr {$handle != 0}]
-  } {/^0 \{0 [0-9A-Fa-f]+\} 1$/}
+  } {/^0 ptr:[0-9A-Fa-f]+ 1$/}
 
   do_test filectrl-2.2 {
     sqlite3 db test2.db
@@ -65,8 +65,8 @@ if {$tcl_platform(platform) eq "windows"} {
     set handle [file_control_win32_get_handle db]
     db close
     forcedelete test2.db
-    list $size $handle [expr {$handle != 0}]
-  } {/^1\d+ \{0 [0-9A-Fa-f]+\} 1$/}
+    list $size $handle [regexp {^ptr:0+} $handle]
+  } {/^\d+ ptr:[0-9A-Fa-f]+ 1$/}
 }
 
 finish_test

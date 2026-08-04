@@ -301,7 +301,7 @@ do_multiclient_test tn {
 
 proc write_hex_file {fname hex} {
   set fd [open $fname wb]
-  fconfigure $fd -translation binary -encoding binary
+  fconfigure $fd -translation binary
   puts -nonewline $fd [decode_hexdb $hex]
   close $fd
 }

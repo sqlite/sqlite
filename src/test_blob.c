@@ -26,17 +26,6 @@ extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 extern void *sqlite3TestTextToPtr(const char *z);
 
 /*
-** Return a pointer to a buffer containing a text representation of the
-** pointer passed as the only argument. The original pointer may be extracted
-** from the text using sqlite3TestTextToPtr().
-*/
-static char *ptrToText(void *p){
-  static char buf[100];
-  sqlite3_snprintf(sizeof(buf)-1, buf, "%p", p);
-  return buf;
-}
-
-/*
 ** Attempt to extract a blob handle (type sqlite3_blob*) from the Tcl
 ** object passed as the second argument. If successful, set *ppBlob to
 ** point to the blob handle and return TCL_OK. Otherwise, store an error
@@ -128,7 +117,7 @@ static int SQLITE_TCLAPI test_blob_open(
 
   if( nVarname>0 ){
     rc = sqlite3_blob_open(db, zDb, zTable, zColumn, iRowid, flags, &pBlob);
-    Tcl_SetVar(interp, zVarname, ptrToText(pBlob), 0);
+    Tcl_SetVar(interp, zVarname, sqlite3TestPtrToText(pBlob), 0);
   }else{
     rc = sqlite3_blob_open(db, zDb, zTable, zColumn, iRowid, flags, 0);
   }
