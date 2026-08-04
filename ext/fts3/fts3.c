@@ -3719,6 +3719,7 @@ static void fts3SnippetFunc(
   int nVal,                       /* Size of apVal[] array */
   sqlite3_value **apVal           /* Array of arguments */
 ){
+  Fts3Table *pTab = 0;
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
   const char *zStart = "<b>";
   const char *zEnd = "</b>";
@@ -3737,6 +3738,7 @@ static void fts3SnippetFunc(
     return;
   }
   if( fts3FunctionArg(pContext, "snippet", apVal[0], &pCsr) ) return;
+  pTab = (Fts3Table *)pCsr->base.pVtab;
 
   switch( nVal ){
     case 6: nToken = sqlite3_value_int(apVal[5]);
@@ -3751,7 +3753,7 @@ static void fts3SnippetFunc(
   }
   if( !zEllipsis || !zEnd || !zStart ){
     sqlite3_result_error_nomem(pContext);
-  }else if( nToken==0 ){
+  }else if( nToken==0 || iCol>=pTab->nColumn ){
     sqlite3_result_text(pContext, "", -1, SQLITE_STATIC);
   }else if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
     sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis, iCol, nToken);

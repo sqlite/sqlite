@@ -1150,7 +1150,7 @@ static void jsonWrongNumArgs(
 **
 ** Return the number of errors.
 */
-static int jsonBlobExpand(JsonParse *pParse, u32 N){
+static int jsonBlobExpand(JsonParse *pParse, u64 N){
   u8 *aNew;
   u64 t;
   assert( N>pParse->nBlobAlloc );
@@ -1178,7 +1178,7 @@ static int jsonBlobExpand(JsonParse *pParse, u32 N){
 */
 static int jsonBlobMakeEditable(JsonParse *pParse, u32 nExtra){
   u8 *aOld;
-  u32 nSize;
+  u64 nSize;
   assert( !pParse->bReadOnly );
   if( pParse->oom ) return 0;
   if( pParse->nBlobAlloc>0 ) return 1;
@@ -1199,7 +1199,7 @@ static SQLITE_NOINLINE void jsonBlobExpandAndAppendOneByte(
   JsonParse *pParse,
   u8 c
 ){
-  jsonBlobExpand(pParse, pParse->nBlob+1);
+  jsonBlobExpand(pParse, (u64)pParse->nBlob+1);
   if( pParse->oom==0 ){
     assert( pParse->nBlob+1<=pParse->nBlobAlloc );
     pParse->aBlob[pParse->nBlob++] = c;
@@ -1226,7 +1226,7 @@ static SQLITE_NOINLINE void jsonBlobExpandAndAppendNode(
   u64 szPayload,
   const void *aPayload
 ){
-  if( jsonBlobExpand(pParse, pParse->nBlob+szPayload+9) ) return;
+  if( jsonBlobExpand(pParse, (u64)pParse->nBlob+(u64)szPayload+9) ) return;
   jsonBlobAppendNode(pParse, eType, szPayload, aPayload);
 }
 
@@ -1316,7 +1316,7 @@ static int jsonBlobChangePayloadSize(
   }
   delta = nNeeded - nExtra;
   if( delta ){
-    u32 newSize = pParse->nBlob + delta;
+    u64 newSize = (u64)pParse->nBlob + delta;
     if( delta>0 ){
       if( newSize>pParse->nBlobAlloc && jsonBlobExpand(pParse, newSize) ){
         return 0;  /* OOM error.  Error state recorded in pParse->oom. */
@@ -2664,7 +2664,7 @@ static void jsonBlobEdit(
   }
   if( d!=0 ){
     if( pParse->nBlob + d > pParse->nBlobAlloc ){
-      jsonBlobExpand(pParse, pParse->nBlob+d);
+      jsonBlobExpand(pParse, (u64)pParse->nBlob+d);
       if( pParse->oom ) return;
     }
     memmove(&pParse->aBlob[iDel+nIns],

@@ -2694,7 +2694,7 @@ do_test auth-9.3 {
 } [list \
   SQLITE_SELECT {} {} {} {} \
   SQLITE_READ t1 x main {} \
-  SQLITE_READ t1 x main {} \
+  SQLITE_READ t2 x main {} \
   SQLITE_READ t2 y2 main {} \
 ]
 

@@ -1,5 +1,15 @@
 # Notes On Compiling SQLite On All Kinds Of Unix
 
+## Executive Summary
+
+  1.  Get a tarball of the canonical SQLite source tree and unpack it
+  2.  Run: `./configure`
+  3.  Run commands like: <ul>
+      <li> `make sqlite3.c`
+      <li> `make sqlite3`</ul>
+
+## Details
+
 Here are step-by-step instructions on how to build SQLite from
 canonical source on any modern machine that isn't Windows.  These
 notes are tested (on 2024-10-11) on Ubuntu and on MacOS, but they
@@ -77,7 +87,7 @@ guidance on building for Windows.
       for the following targets:
       <ul>
       <li>  `make tclextension-install`
-      <li>  `make devtest`
+      <li>  `make test`
       <li>  `make releasetest`
       <li>  `make sqlite3_analyzer`
       </ul>

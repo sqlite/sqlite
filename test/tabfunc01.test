@@ -309,9 +309,8 @@ do_test tabfunc01-721 {
   }
 } {123 123 7 13 17 23}
 do_test tabfunc01-722 {
-  set PTR3 [expr {$PTR2+16}]
   db eval {
-    SELECT remember(987,inttoptr($PTR3));
+    SELECT remember(987,inttoptr($PTR2, 16));
     SELECT value FROM carray(inttoptr($PTR2),5,'int64');
   }
 } {987 123 7 987 17 23}

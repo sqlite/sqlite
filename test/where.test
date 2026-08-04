@@ -1704,4 +1704,37 @@ do_test where-30.1 {
 } {SCAN}
 # ^^^^^^-- there should only be one top-level table scan in the query plan.
 
+# Bug 2026-07-25T08:36:25Z (really an enhancement request: a request to
+# do a better job of optimizing out the OR operator in "expr OR FALSE".)
+#
+do_execsql_test where-31.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    id INTEGER PRIMARY KEY,
+    x INTEGER NOT NULL
+  );
+  CREATE INDEX t1x ON t1(x);
+  WITH RECURSIVE seq(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM seq WHERE i<200)
+    INSERT INTO t1(id, x) SELECT i, i % 13 FROM seq;
+  ANALYZE;
+}
+do_execsql_test where-31.1 {
+  SELECT count(*) FROM t1 WHERE x=1 OR false;
+} 16
+do_eqp_test where-31.2 {
+  SELECT count(*) FROM t1 WHERE x=1 OR false;
+} {
+  QUERY PLAN
+  `--SEARCH t1 USING COVERING INDEX t1x (x=?)
+}
+do_execsql_test where-31.3 {
+  SELECT count(*) FROM t1 WHERE x=1 OR false;
+} 16
+do_eqp_test where-31.4 {
+  SELECT count(*) FROM t1 WHERE false OR x=1
+} {
+  QUERY PLAN
+  `--SEARCH t1 USING COVERING INDEX t1x (x=?)
+}
+
 finish_test

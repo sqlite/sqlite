@@ -282,7 +282,9 @@ static int apndWrite(
 ){
   ApndFile *paf = (ApndFile *)pFile;
   sqlite_int64 iWriteEnd = iOfst + iAmt;
-  if( iWriteEnd>=APND_MAX_SIZE ) return SQLITE_FULL;
+  if( iWriteEnd + paf->iPgOne >= APND_MAX_SIZE-APND_MARK_SIZE ){
+    return SQLITE_FULL;
+  }
   pFile = ORIGFILE(pFile);
   /* If append-mark is absent or will be overwritten, write it. */
   if( paf->iMark < 0 || paf->iPgOne + iWriteEnd > paf->iMark ){

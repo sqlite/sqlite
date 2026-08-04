@@ -307,35 +307,35 @@ do_test 1.63.0 {
 do_test 1.70 {
   set result "\n[db format -style html {SELECT * FROM t1}]"
 } {
-<TR>
-<TD>1
-<TD>2.5
-<TD>three
-</TR>
-<TR>
-<TD>BLOB
-<TD>null
-<TD>Ἀμήν
-</TR>
+<tr>
+<td>1
+<td>2.5
+<td>three
+</tr>
+<tr>
+<td>BLOB
+<td>null
+<td>Ἀμήν
+</tr>
 }
 do_test 1.71 {
   set result "\n[db format -style html -title auto {SELECT * FROM t1}]"
 } {
-<TR>
-<TH>a
-<TH>b
-<TH>c
-</TR>
-<TR>
-<TD>1
-<TD>2.5
-<TD>three
-</TR>
-<TR>
-<TD>BLOB
-<TD>null
-<TD>Ἀμήν
-</TR>
+<tr>
+<th>a
+<th>b
+<th>c
+</tr>
+<tr>
+<td>1
+<td>2.5
+<td>three
+</tr>
+<tr>
+<td>BLOB
+<td>null
+<td>Ἀμήν
+</tr>
 }
 do_test 1.72 {
   set result "\n[db format -style html {
@@ -343,22 +343,22 @@ do_test 1.72 {
             'ab>cd' AS c, 'ab"cd' AS d,
             'xy''z' AS e}]"
 } {
-<TR>
-<TD>ab&lt;cd
-<TD>ab&amp;cd
-<TD>ab&gt;cd
-<TD>ab&quot;cd
-<TD>xy&#39;z
-</TR>
+<tr>
+<td>ab&lt;cd
+<td>ab&amp;cd
+<td>ab&gt;cd
+<td>ab&quot;cd
+<td>xy&#39;z
+</tr>
 }
 do_test 1.73 {
   set result "\n[db format -style html -rowcount on {SELECT * FROM t1 WHERE a=1}]"
 } {
-<TR>
-<TD>1
-<TD>2.5
-<TD>three
-</TR>
+<tr>
+<td>1
+<td>2.5
+<td>three
+</tr>
 <!-- 1 row -->
 }
 do_test 1.74 {
@@ -369,21 +369,21 @@ do_test 1.74 {
 do_test 1.75 {
   set result "\n[db format -style html -title always -rowcount on {SELECT * FROM t1 WHERE a=2}]"
 } {
-<TR>
-<TH>a
-<TH>b
-<TH>c
-</TR>
+<tr>
+<th>a
+<th>b
+<th>c
+</tr>
 <!-- 0 rows -->
 }
 do_test 1.76 {
   set result "\n[db format -style html -title always -rowcount off {SELECT * FROM t1 WHERE a=2}]"
 } {
-<TR>
-<TH>a
-<TH>b
-<TH>c
-</TR>
+<tr>
+<th>a
+<th>b
+<th>c
+</tr>
 }
 
 do_test 1.80 {

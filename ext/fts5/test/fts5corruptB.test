@@ -2536,7 +2536,7 @@ do_test 3.0 {
 } {}
 do_catchsql_test 3.1 {
   DELETE FROM t WHERE rowid=1;
-} {0 {}}
+} {1 {fts5: corruption found reading blob 137438953474 from table "t"}}
 do_catchsql_test 3.2 {
   INSERT INTO t(t) VALUES('integrity-check');
 } {1 {fts5: corruption found reading blob 137438953474 from table "t"}}

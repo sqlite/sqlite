@@ -113,7 +113,7 @@ For example:
         make sqldiff                  ;#  The "sqldiff" command-line tool
         #### Targets below require tcl-dev ####
         make tclextension-install     ;#  Install the SQLite TCL extension
-        make devtest                  ;#  Run development tests
+        make test                     ;#  Run development tests
         make releasetest              ;#  Run full release tests
         make sqlite3_analyzer         ;#  Builds the "sqlite3_analyzer" tool
 
@@ -177,7 +177,7 @@ file:
         make sqldiff.exe
         #### Targets below require TCL development libraries ####
         make tclextension-install
-        make devtest
+        make test
         make releasetest
         make sqlite3_analyzer.exe
  
