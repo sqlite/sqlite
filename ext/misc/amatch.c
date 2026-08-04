@@ -1072,7 +1072,7 @@ static void amatchAddWord(
     }
     return;
   }
-  pWord = sqlite3_malloc64( sizeof(*pWord) + nBase + nTail - 1 );
+  pWord = sqlite3_malloc64( sizeof(*pWord) + nBase + nTail );
   if( pWord==0 ) return;
   memset(pWord, 0, sizeof(*pWord));
   pWord->rCost = rCost;
