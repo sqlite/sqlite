@@ -6104,7 +6104,7 @@ static void fts5MergeRowidLists(
   (void)nBuf;
   memset(&out, 0, sizeof(out));
   assert( nBuf==1 );
-  sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n);
+  sqlite3Fts5BufferSize(&p->rc, &out, p1->n + p2->n + 9);
   if( p->rc ) return;
 
   fts5NextRowid(p1, &i1, &iRowid1);
@@ -6112,12 +6112,12 @@ static void fts5MergeRowidLists(
   while( i1>=0 || i2>=0 ){
     if( i1>=0 && (i2<0 || iRowid1<iRowid2) ){
       assert( iOut==0 || iRowid1>iOut );
-      fts5BufferSafeAppendVarint(&out, iRowid1 - iOut);
+      fts5BufferSafeAppendVarint(&out, (u64)iRowid1 - (u64)iOut);
       iOut = iRowid1;
       fts5NextRowid(p1, &i1, &iRowid1);
     }else{
       assert( iOut==0 || iRowid2>iOut );
-      fts5BufferSafeAppendVarint(&out, iRowid2 - iOut);
+      fts5BufferSafeAppendVarint(&out, (u64)iRowid2 - (u64)iOut);
       iOut = iRowid2;
       if( i1>=0 && iRowid1==iRowid2 ){
         fts5NextRowid(p1, &i1, &iRowid1);

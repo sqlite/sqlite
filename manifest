@@ -1,5 +1,5 @@
-C Add\sa\stest\sfor\s[012550c089].
-D 2026-07-26T16:06:30.266
+C In\sfts5,\saccount\sfor\sthe\spossibility\sof\snegative\sdocids\swhen\sallocating\na\sbuffer\sto\sstore\sthe\sresults\sof\smerging\sdetail=none\sprefix\slists.
+D 2026-08-04T12:29:22.761
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -113,7 +113,7 @@ F ext/fts5/fts5_buffer.c dcc3f0352339fe79c9d8abbc1c2009bc3469206467880bf43558447
 F ext/fts5/fts5_config.c bfba970fe1e4eed18ee57c8d51458e226db9a960ddf775c5e50e3d76603a667e
 F ext/fts5/fts5_expr.c b906c59e9e842805cc3eea4e131b822e586bb01260e542f67920c61798dcb53d
 F ext/fts5/fts5_hash.c d5871df92ce3fa210a650cf419ee916b87c29977e86084d06612edf772bff6f5
-F ext/fts5/fts5_index.c 3f42a40dcbec4b70264b300370579f9fee8ab970684f776ebe0b48f01e18ff83
+F ext/fts5/fts5_index.c 636aff6c92a650703ae852b3be42b568baf3ac4c87a990123d7dbed7a5c5be93
 F ext/fts5/fts5_main.c 7819fc80808a135c3ad7bec65071a053827d1e8fe7b77ddfd734ed451c2db7a9
 F ext/fts5/fts5_storage.c 46b0024fdd8002fbfba162230e5cc212c8f019ba4075396860354bfaf549a546
 F ext/fts5/fts5_tcl.c 2be6cc14f9448f720fd4418339cd202961a0801ea9424cb3d9de946f8f5a051c
@@ -231,7 +231,7 @@ F ext/fts5/test/fts5plan.test f8b0d752a818059a934cdc96c0f77de058a67a0a57bb3a8181
 F ext/fts5/test/fts5porter.test 15b514fac8690b58e99c330efe5bf5615bc43f2fae4a3cca3f923dbaff55a0c0
 F ext/fts5/test/fts5porter2.test 94f0e4351e2c99b4e74f1fae05a4ddf1cb5b926620a8c14554160d075ddc7a59
 F ext/fts5/test/fts5prefix.test c0b7842f1a2d830c0b146cd438a95ea4c5a25635719ed0d973ffe41907338b83
-F ext/fts5/test/fts5prefix2.test a5bb43b8a2687efafa7ac4e5ccff6812015cf8cf18e3086bb0eb3126f30fbbf6
+F ext/fts5/test/fts5prefix2.test 6cf99fe938e6151f07666a391576b01317c456a157106523eb9cf98e12571982
 F ext/fts5/test/fts5query.test 0320a7a4b58a6e3e50ec8910b301649da90ace675001f9e0bf6392750ad4591d
 F ext/fts5/test/fts5rank.test 47c1e8e5d84754ff18e012fdd629776088b5a15de41bdd24957581cf084d8a00
 F ext/fts5/test/fts5rebuild.test dc09779fbbe151ab68206a0931c10a611912a7a12c7a85d71c5e48453f2375a5
@@ -2205,9 +2205,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 012550c089146772ef576daf9f64db778117b62d3082c0b08130fa39370e82dd
-Q +f28494eeafc37320932a932044ecd66b6900632a1eccd45a9f8bed653cee3466
-R 05a8ae369b1ce700af2951ae32dd2cdb
-U stephan
-Z 3ee07b58ef89c5d9dc23a6f31577a0a4
+P 6a496de180c342b728f663d771b30fbcae487898d64e9fb4c322f26639d19510
+Q +a7f8c92f623e9cbe8a61266d949916acc9e5110c94dff4aa6fd1ad2ea8a60d4e
+R 5adf75f8e3e2ea3c9ce5d113130ba86c
+U drh
+Z 8f6c56959b40ec0fda5e26ce93097a79
 # Remove this line to create a well-formed Fossil manifest.
