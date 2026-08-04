@@ -2238,6 +2238,23 @@ static int resizeIndexObject(Parse *pParse, Index *pIdx, int N){
 }
 
 /*
+** Return true if the index pIdx can support a Bloom filter on its
+** first N columns.  Specifically, return true if all of the first N
+** columns have the BINARY collating sequence or no collating sequence
+** at all, and return false if there are any non-BINARY collating
+** seqeuences on any of the first N columns.  tag-202607231411
+*/
+int sqlite3IndexBloomable(const Index *pIdx, int N){
+  int i;
+  assert( pIdx!=0 );
+  assert( N <= pIdx->nColumn );
+  for(i=0; i<N; i++){
+    if( sqlite3StrICmp(pIdx->azColl[i],"BINARY")!=0 ) return 0;
+  }
+  return 1;
+}
+
+/*
 ** Estimate the total row width for a table.
 */
 static void estimateTableWidth(Table *pTab){
@@ -4104,8 +4121,9 @@ void sqlite3CreateIndex(
       if( sqlite3FindIndex(db, zName, pDb->zDbSName)!=0 ){
         if( !ifNotExist ){
           sqlite3ErrorMsg(pParse, "index %s already exists", zName);
+        }else if( db->init.busy ){
+          sqlite3ErrorMsg(pParse,"");  /* corruptSchema() will do the error */
         }else{
-          assert( !db->init.busy );
           sqlite3CodeVerifySchema(pParse, iDb);
           sqlite3ForceNotReadOnly(pParse);
         }

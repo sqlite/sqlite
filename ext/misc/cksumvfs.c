@@ -791,6 +791,7 @@ static int cksmRegisterVfs(void){
   int rc = SQLITE_OK;
   sqlite3_vfs *pOrig = sqlite3_vfs_find(0);
   if( pOrig==0 ) return SQLITE_ERROR;
+  if( sqlite3_vfs_find("cksmvfs")!=0 ) return SQLITE_OK;
   cksm_vfs.iVersion = pOrig->iVersion;
   cksm_vfs.pAppData = pOrig;
   cksm_vfs.szOsFile = pOrig->szOsFile + sizeof(CksmFile);

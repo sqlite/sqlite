@@ -105,7 +105,7 @@
 //#/if target:es6-module
   }.bind(sIMS);
 
-//#if Module.instantiateWasm and not wasmfs and not target:node
+//#if Module.instantiateWasm and not wasmfs
   /**
      Override Module.instantiateWasm().
 
@@ -118,12 +118,40 @@
      It's disabled in the (unsupported/untested) node builds because
      node does not do fetch().
   */
-  Module['instantiateWasm'] = function callee(imports,onSuccess){
+  Module['instantiateWasm'] = function callee(imports, onSuccess){
     if( this.emscriptenInstantiateWasm instanceof Function ){
       /* See [tag:locateFile]. Same story here */
       return this.emscriptenInstantiateWasm(imports, onSuccess);
     }
     const sims = this;
+    const finalThen = (arg)=>{
+      arg.imports = imports;
+      sims.instantiateWasm = arg; /* used by sqlite3-api-prologue.c-pp.js */
+      onSuccess(arg.instance, arg.module);
+    };
+//#// \
+{/*
+  The following block uses //% as a directive delimiter and is
+  replaced in a second pass after compilation of sqlite3.js.
+ */}
+//%define ? base64.wasm 0
+//%if base64.wasm and defined sqlite3.wasm.base64
+//%@ push policy error delimiter '<<<' '>>>'
+    let b64Wasm = `<<<[base64 -file sqlite3.wasm.base64]>>>`;
+//%@ pop policy delimiter
+    const bytes = Uint8Array.fromBase64(b64Wasm);
+    b64Wasm = null;
+
+    WebAssembly.instantiate(bytes.buffer, imports)
+      .then(finalThen)
+      .catch((err)=>{
+        console.error("Failed to instantiate embedded sqlite3.wasm", err);
+        throw err;
+      });
+
+    return {}/* Emscripten interprets this to wait on async instantiation
+                via onSuccess(). */;
+//%else
     const uri = Module.locateFile(
       sims.wasmFilename, (
         ('undefined'===typeof scriptDirectory/*var defined by Emscripten glue*/)
@@ -131,11 +159,6 @@
     );
     sims.debugModule("instantiateWasm() uri =", uri, "sIMS =",this);
     const wfetch = ()=>fetch(uri, {credentials: 'same-origin'});
-    const finalThen = (arg)=>{
-      arg.imports = imports;
-      sims.instantiateWasm = arg /* used by sqlite3-api-prologue.c-pp.js */;
-      onSuccess(arg.instance, arg.module);
-    };
     const loadWasm = WebAssembly.instantiateStreaming
           ? async ()=>
           WebAssembly
@@ -147,6 +170,7 @@
           .then(bytes => WebAssembly.instantiate(bytes, imports))
           .then(finalThen)
     return loadWasm();
+//%/if sqlite3.wasm.base64 pass 2
   }.bind(sIMS);
 //#/if Module.instantiateWasm and not wasmfs
 })(Module);

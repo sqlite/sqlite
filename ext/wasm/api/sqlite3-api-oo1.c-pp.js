@@ -67,8 +67,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const __doesNotOwnHandle = new Set();
   /**
-     Map of DB instances to objects, each object being a map of Stmt
-     wasm pointers to Stmt objects.
+     Map of DB instances to objects, each object being a map of
+     sqlite3_stmt wasm pointers to Stmt objects.
   */
   const __stmtMap = new WeakMap();
 
@@ -759,12 +759,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           try{this.onclose.before(this)}
           catch(e){/*ignore*/}
         }
-        Object.keys(__stmtMap.get(this)).forEach((k,s)=>{
-          if(s && s.pointer){
+        for(const s of Object.values(__stmtMap.get(this))){
+          if(s?.pointer){
             try{s.finalize()}
-            catch(e){/*ignore*/}
+            catch(ex){/*ignore*/}
           }
-        });
+        }
         __ptrMap.delete(this);
         __stmtMap.delete(this);
         if( !__doesNotOwnHandle.delete(this) ){

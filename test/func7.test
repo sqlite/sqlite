@@ -247,5 +247,12 @@ do_execsql_test func7-mysql-331 {
    SELECT round(tan(pi()+1),7);
 } {1.5574077}
 
+do_execsql_test func7-400 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(NULL);
+  CREATE INDEX t1x ON t1(coalesce(x,pi()));
+  SELECT json_quote(coalesce(x,pi())) FROM t1 INDEXED BY t1x;
+} 3.1415926535897931
 
 finish_test

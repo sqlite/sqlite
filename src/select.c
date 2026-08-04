@@ -1127,6 +1127,48 @@ static void selectExprDefer(
 }
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** This is a byte-code validation check that only runs when SQLITE_DEBUG
+** is defined.  This routine looks backwards through the bytecode
+** for the definition of cursor with index iCur.  It extracts the KeyInfo from
+** that cursor (it must be an index cursor) and verifies that the cursor
+** does not use any collating seqeuences other than BINARY for its first
+** nCol columns.
+**
+** This routine is used inside of an assert().  So it should return true
+** on success and false if the invariant is not satisfied.
+**
+** tag-202607231411
+*/
+static int sqlite3CursorBloomable(Parse *pParse, int iCur, int nCol){
+  int i,k;
+  Vdbe *v = pParse->pVdbe;
+  if( pParse->nErr ) return 1;
+  assert( v );
+  for(k=sqlite3VdbeCurrentAddr(v)-1; k>0; k--){
+    const VdbeOp *pOp = sqlite3VdbeGetOp(v, k);
+    const KeyInfo *pKeyInfo;
+    if( pOp->p1!=iCur ) continue;
+    if( pOp->opcode!=OP_OpenRead
+     && pOp->opcode!=OP_OpenWrite
+     && pOp->opcode!=OP_OpenEphemeral
+    ){
+      continue;
+    }
+    assert( pOp->p4type==P4_KEYINFO );
+    pKeyInfo = (const KeyInfo*)pOp->p4.pKeyInfo;
+    assert( pKeyInfo!=0 );
+    for(i=0; i<nCol; i++){
+      assert( sqlite3IsBinary(pKeyInfo->aColl[i]) );
+    }
+    return 1;
+  }
+  return 0;
+}
+#endif /* SQLITE_DEBUG */
+
+
 /*
 ** This routine generates the code for the inside of the inner loop
 ** of a SELECT.
@@ -1397,6 +1439,7 @@ static void selectInnerLoop(
             r1, pDest->zAffSdst, nResultCol);
         sqlite3VdbeAddOp4Int(v, OP_IdxInsert, iParm, r1, regResult, nResultCol);
         if( pDest->iSDParm2 ){
+          assert( sqlite3CursorBloomable(pParse,iParm,nResultCol) );
           sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pDest->iSDParm2, 0,
                                regResult, nResultCol);
           ExplainQueryPlan((pParse, 0, "CREATE BLOOM FILTER"));
@@ -3206,6 +3249,7 @@ static int generateOutputSubroutine(
       sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pDest->iSDParm, r1,
                            pIn->iSdst, pIn->nSdst);
       if( pDest->iSDParm2>0 ){
+        assert( sqlite3CursorBloomable(pParse, pDest->iSDParm, pIn->nSdst) );
         sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pDest->iSDParm2, 0,
                              pIn->iSdst, pIn->nSdst);
         ExplainQueryPlan((pParse, 0, "CREATE BLOOM FILTER"));
@@ -7155,7 +7199,8 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( p->pSrc->nSrc!=1 ) return 0;                  /* One table in FROM  */
   if( ExprHasProperty(pExpr, EP_WinFunc) ) return 0;/* Not a window function */
   pFrom = p->pSrc->a;
-  if( pFrom->fg.isSubquery==0 ) return 0;    /* FROM is a subquery */
+  if( pFrom->fg.isSubquery==0 ) return 0;           /* FROM is a subquery */
+  if( (p->selFlags & SF_Correlated)!=0 ) return 0;  /* Not a correlated subq */
   pSub = pFrom->u4.pSubq->pSelect;
   if( pSub->pPrior==0 ) return 0;                   /* Must be a compound */
   if( pSub->selFlags & SF_CopyCte ) return 0;       /* Not a CTE */
@@ -7374,6 +7419,7 @@ static SQLITE_NOINLINE void existsToJoin(
         }
         pSub->pSrc = 0;
         sqlite3ParserAddCleanup(pParse, sqlite3SelectDeleteGeneric, pSub);
+        recomputeColumnsUsed(p, &p->pSrc->a[p->pSrc->nSrc-1]);
 #if TREETRACE_ENABLED
         if( sqlite3TreeTrace & 0x100000 ){
           TREETRACE(0x100000,pParse,p,
@@ -7391,10 +7437,10 @@ static SQLITE_NOINLINE void existsToJoin(
 */
 typedef struct CheckOnCtx CheckOnCtx;
 struct CheckOnCtx {
-  SrcList *pSrc;                  /* SrcList for this context */
-  int iJoin;                      /* Cursor numbers must be =< than this */
-  int bFuncArg;                   /* True for table-function arg */
-  CheckOnCtx *pParent;            /* Parent context */
+  SrcList *pSrc;       /* SrcList for this context */
+  int iJoin;           /* Cursors must be left of this one, if not zero */
+  int bFuncArg;        /* True for table-function arg */
+  CheckOnCtx *pParent; /* Parent context */
 };
 
 /*
@@ -7439,19 +7485,25 @@ static int selectCheckOnClausesExpr(Walker *pWalker, Expr *pExpr){
     ** Then, if CheckOnCtx.iJoin indicates that this expression is part of an
     ** ON clause from that SrcList (i.e. if iJoin is non-zero), check that it
     ** does not refer to a table to the right of CheckOnCtx.iJoin. */
+    int iTab = pExpr->iTable;
     do {
       SrcList *pSrc = pCtx->pSrc;
       int nSrc = pSrc->nSrc;
-      int iTab = pExpr->iTable;
       int ii;
       for(ii=0; ii<nSrc && pSrc->a[ii].iCursor!=iTab; ii++){}
       if( ii<nSrc ){
-        if( pCtx->iJoin && iTab>pCtx->iJoin ){
-          sqlite3ErrorMsg(pWalker->pParse, 
-              "%s references tables to its right",
-              (pCtx->bFuncArg ? "table-function argument" : "ON clause")
-          );
-          return WRC_Abort;
+        /* pSrc is the FROM clause that contains iTab */
+        if( pCtx->iJoin ){
+          for(ii--; ii>=0 && pSrc->a[ii].iCursor!=pCtx->iJoin; ii--){}
+          if( ii>=0 ){
+            /* Table iJoin appears to the left of table iTab in the SrcList.
+            ** Therefore the expression refers to a table to its right. */
+            sqlite3ErrorMsg(pWalker->pParse, 
+                "%s references tables to its right",
+                (pCtx->bFuncArg ? "table-function argument" : "ON clause")
+            );
+            return WRC_Abort;
+          }
         }
         break;
       }

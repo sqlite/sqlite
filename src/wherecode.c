@@ -958,7 +958,12 @@ static int codeAllEqualityTerms(
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
     r1 = codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, regBase+j);
     if( r1!=regBase+j ){
-      if( nReg==1 ){
+      /* If this routine is being called as part of a RIGHT JOIN loop, then
+      ** register r1 may be used by the body of the loop that the RIGHT JOIN
+      ** will jump back into (e.g. if pTerm is a sub-query). This can cause
+      ** problems if (say) the affinity of r1 is modified by the caller of
+      ** this routine. So, always take a copy of the value in this case. */
+      if( nReg==1 && pParse->withinRJSubrtn==0 ){
         sqlite3ReleaseTempReg(pParse, regBase);
         regBase = r1;
       }else{
@@ -1416,6 +1421,7 @@ static SQLITE_NOINLINE void filterPullDown(
       regRowid = codeEqualityTerm(pParse, pTerm, pLevel, 0, 0, regRowid);
       sqlite3VdbeAddOp2(pParse->pVdbe, OP_MustBeInt, regRowid, addrNxt);
       VdbeCoverage(pParse->pVdbe);
+      assert( sqlite3WhereLoopBloomable(pLoop) );
       sqlite3VdbeAddOp4Int(pParse->pVdbe, OP_Filter, pLevel->regFilter,
                            addrNxt, regRowid, 1);
       VdbeCoverage(pParse->pVdbe);
@@ -1429,6 +1435,7 @@ static SQLITE_NOINLINE void filterPullDown(
       r1 = codeAllEqualityTerms(pParse,pLevel,0,0,&zStartAff);
       codeApplyAffinity(pParse, r1, nEq, zStartAff);
       sqlite3DbFree(pParse->db, zStartAff);
+      assert( sqlite3WhereLoopBloomable(pLoop) );
       sqlite3VdbeAddOp4Int(pParse->pVdbe, OP_Filter, pLevel->regFilter,
                            addrNxt, r1, nEq);
       VdbeCoverage(pParse->pVdbe);
@@ -2032,6 +2039,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         VdbeComment((v, "NULL-scan pass ctr"));
       }
       if( pLevel->regFilter ){
+        assert( sqlite3WhereLoopBloomable(pLoop) );
         sqlite3VdbeAddOp4Int(v, OP_Filter, pLevel->regFilter, addrNxt,
                              regBase, nEq);
         VdbeCoverage(v);
@@ -2769,8 +2777,10 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     VdbeComment((v, "match against %s", pTab->zName));
     sqlite3VdbeAddOp3(v, OP_MakeRecord, r+1, nPk, r);
     sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pRJ->iMatch, r, r+1, nPk);
-    sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pRJ->regBloom, 0, r+1, nPk);
-    sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+    if( pRJ->regBloom ){
+      sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pRJ->regBloom, 0, r+1, nPk);
+      sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+    }
     sqlite3VdbeJumpHere(v, jmp1);
     sqlite3ReleaseTempRange(pParse, r, nPk+1);
   }
@@ -2922,7 +2932,7 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
     int iCur = pLevel->iTabCur;
     int r = ++pParse->nMem;
     int nPk;
-    int jmp;
+    int jmp = 0;
     int addrCont = sqlite3WhereContinueLabel(pSubWInfo);
     Table *pTab = pTabItem->pSTab;
     if( HasRowid(pTab) ){
@@ -2938,11 +2948,13 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+iPk);
       }
     }
-    jmp = sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, 0, r, nPk);
-    VdbeCoverage(v);
+    if( pRJ->regBloom ){
+      jmp = sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, 0, r, nPk);
+      VdbeCoverage(v);
+    }
     sqlite3VdbeAddOp4Int(v, OP_Found, pRJ->iMatch, addrCont, r, nPk);
     VdbeCoverage(v);
-    sqlite3VdbeJumpHere(v, jmp);
+    if( jmp ) sqlite3VdbeJumpHere(v, jmp);
     sqlite3VdbeAddOp2(v, OP_Gosub, pRJ->regReturn, pRJ->addrSubrtn);
     sqlite3WhereEnd(pSubWInfo);
   }

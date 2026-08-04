@@ -41,7 +41,6 @@ static int SQLITE_TCLAPI btree_open(
 ){
   Btree *pBt;
   int rc, nCache;
-  char zBuf[100];
   int n;
   char *zFilename;
   if( argc!=3 ){
@@ -70,8 +69,7 @@ static int SQLITE_TCLAPI btree_open(
     return TCL_ERROR;
   }
   sqlite3BtreeSetCacheSize(pBt, nCache);
-  sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pBt);
-  Tcl_AppendResult(interp, zBuf, NULL);
+  Tcl_AppendResult(interp, sqlite3TestPtrToText(pBt), NULL);
   return TCL_OK;
 }
 
@@ -205,7 +203,6 @@ static int SQLITE_TCLAPI btree_cursor(
   BtCursor *pCur;
   int rc = SQLITE_OK;
   int wrFlag;
-  char zBuf[30];
 
   if( argc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -233,8 +230,7 @@ static int SQLITE_TCLAPI btree_cursor(
     Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
-  sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pCur);
-  Tcl_AppendResult(interp, zBuf, NULL);
+  Tcl_AppendResult(interp, sqlite3TestPtrToText(pCur), NULL);
   return SQLITE_OK;
 }
 
@@ -516,7 +512,6 @@ static int SQLITE_TCLAPI btree_from_db(
   int argc,              /* Number of arguments */
   const char **argv      /* Text of each argument */
 ){
-  char zBuf[100];
   Tcl_CmdInfo info;
   sqlite3 *db;
   Btree *pBt;
@@ -540,8 +535,7 @@ static int SQLITE_TCLAPI btree_from_db(
   assert( db );
 
   pBt = db->aDb[iDb].pBt;
-  sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", pBt);
-  Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+  Tcl_SetResult(interp, (char*)sqlite3TestPtrToText(pBt), TCL_VOLATILE);
   return TCL_OK;
 }
 
