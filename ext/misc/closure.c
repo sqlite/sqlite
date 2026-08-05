@@ -10,17 +10,25 @@
 **
 *************************************************************************
 **
-** WARNING:  Experimental and obsolete.  Demonstration and testing only.
+** WARNING:  Experimental and obsolete.  Demonstration and testing use only.
 **
 ** This virtual table was created prior to the addition of support for
 ** common table expressions in SQLite.  Common table expressions are a
 ** better and more portable solution to any problem that this virtual
-** table solves.
+** table solves.  Common table expressions where added to SQLite in
+** version 3.8.3 (2014-02-02), less than 10 months after this extension
+** was created.  Hence this extension was only useful for a small
+** 10-month window of time in 2013 and early 2014.
+**
+** The continued use of this extension in any real-world application should
+** be considered a bug in that application.
 **
 ** Given its experimental and testing-only status, the code here is
 ** deactivated unless compiled with -DSQLITE_TEST=1
 **
 ** DEMONSTRATION AND TESTING USE ONLY.
+**
+*************************************************************************
 **
 ** This file contains code for a virtual table that finds the transitive
 ** closure of a parent/child relationship in a real table.  The virtual 
@@ -179,7 +187,7 @@ typedef struct closure_avl closure_avl;
 */
 struct closure_avl {
   sqlite3_int64 id;     /* Id of this entry in the table */
-  int iGeneration;      /* Which generation is this entry part of */
+  sqlite3_int64 iGeneration; /* Which generation is this entry part of */
   closure_avl *pList;   /* A linked list of nodes */
   closure_avl *pBefore; /* Other elements less than id */
   closure_avl *pAfter;  /* Other elements greater than id */
@@ -544,6 +552,11 @@ static int closureConnect(
       sqlite3_free(pNew->zTableName);
       pNew->zTableName = closureDequote(zVal);
       if( pNew->zTableName==0 ) goto closureConnectError;
+      if( sqlite3_stricmp(pNew->zTableName, argv[2])==0 ){
+        *pzErr = sqlite3_mprintf("self-referential closure table");
+        rc = SQLITE_ERROR;
+        goto closureConnectError;
+      }
       continue;
     }
     zVal = closureValueOfKey("idcolumn", argv[i]);
@@ -649,7 +662,7 @@ static int closureInsertNode(
   closure_queue *pQueue,  /* Add new node to this queue */
   closure_cursor *pCur,   /* The cursor into which to add the node */
   sqlite3_int64 id,       /* The node ID */
-  int iGeneration         /* The generation number for this node */
+  sqlite3_int64 iGeneration /* The generation number for this node */
 ){
   closure_avl *pNew = sqlite3_malloc64( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
@@ -680,7 +693,7 @@ static int closureFilter(
   closure_cursor *pCur = (closure_cursor *)pVtabCursor;
   closure_vtab *pVtab = pCur->pVtab;
   sqlite3_int64 iRoot;
-  int mxGen = 999999999;
+  sqlite3_int64 mxGen = 999999999;
   char *zSql;
   sqlite3_stmt *pStmt;
   closure_avl *pAvl;
@@ -700,7 +713,7 @@ static int closureFilter(
   }
   iRoot = sqlite3_value_int64(argv[0]);
   if( (idxNum & 0x000f0)!=0 ){
-    mxGen = sqlite3_value_int(argv[(idxNum>>4)&0x0f]);
+    mxGen = sqlite3_value_int64(argv[(idxNum>>4)&0x0f]);
     if( (idxNum & 0x00002)!=0 ) mxGen--;
   }
   if( (idxNum & 0x00f00)!=0 ){
@@ -766,7 +779,7 @@ static int closureColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
       break;
     }
     case CLOSURE_COL_DEPTH: {
-      sqlite3_result_int(ctx, pCur->pCurrent->iGeneration);
+      sqlite3_result_int64(ctx, pCur->pCurrent->iGeneration);
       break;
     }
     case CLOSURE_COL_ROOT: {

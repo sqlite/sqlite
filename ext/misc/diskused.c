@@ -257,11 +257,24 @@ static void diskusedLine(
 ** two or three significant digits, with the decimal point being the fourth
 ** character.  
 */
-static void diskusedPercent(DiskUsed *p, double r){
+static void diskusedPercent(
+  DiskUsed *p,           /* Context of the disk-usage analysis */
+  sqlite3_int64 num,     /* Numerator of the fraction */
+  sqlite3_int64 denom    /* Denominator of the fraction.  Might be zero! */
+){
   char zNum[100];
   char *zDP;
   int nLeadingDigit;
   int sz;
+  double r;
+  if( num==0 ){
+    r = 0.0;
+  }else if( denom==0 ){
+    sqlite3_str_appendchar(p->pOut, 1, '\n');
+    return;
+  }else{
+    r = num*100.0/(double)denom;
+  }
   sqlite3_snprintf(sizeof(zNum)-5, zNum, r>=10.0 ? "%.3g" :"%.2g", r);
   sz = (int)strlen(zNum);
   zDP = strchr(zNum, '.');
@@ -364,15 +377,15 @@ static int diskusedSubreport(
     storage = total_pages*pgsz;
     diskusedLine(p, "Bytes of storage consumed", "%lld\n", storage);
     diskusedLine(p, "Bytes of payload", "%-11lld ", payload);
-    diskusedPercent(p, payload*100.0/(double)storage);
+    diskusedPercent(p, payload, storage);
     if( ovfl_cnt>0 ){
       diskusedLine(p, "Bytes of payload in overflow","%-11lld ",ovfl_payload);
-      diskusedPercent(p, ovfl_payload*100.0/(double)payload);
+      diskusedPercent(p, ovfl_payload, payload);
     }
     total_unused = leaf_unused + int_unused + ovfl_unused;
     total_meta = storage - payload - total_unused;
     diskusedLine(p, "Bytes of metadata","%-11lld ", total_meta);
-    diskusedPercent(p, total_meta*100.0/(double)storage);
+    diskusedPercent(p, total_meta, storage);
     if( cnt==1 ){
       diskusedLine(p, "B-tree depth", "%lld\n", depth);
       if( int_cell>1 ){
@@ -391,7 +404,7 @@ static int diskusedSubreport(
     diskusedLine(p, "Maximum single-entry payload", "%lld\n", mx_payload);
     if( nentry>0 ){
       diskusedLine(p, "Entries that use overflow", "%-11lld ", ovfl_cnt);
-      diskusedPercent(p, ovfl_cnt*100.0/(double)nentry);
+      diskusedPercent(p, ovfl_cnt, nentry);
     }
     if( int_pages>0 ){
       diskusedLine(p, "Index pages used", "%lld\n", int_pages);
@@ -409,7 +422,7 @@ static int diskusedSubreport(
       diskusedLine(p, "Unused bytes on overflow pages", "%lld\n", ovfl_unused);
     }
     diskusedLine(p, "Unused bytes on all pages", "%-11lld ", total_unused);
-    diskusedPercent(p, total_unused*100.0/(double)storage);
+    diskusedPercent(p, total_unused, storage);
   }
   return diskusedStmtFinish(p, rc, pStmt);
 }
@@ -572,13 +585,13 @@ static void diskusedFunc(
        "SELECT sum(leaf_pages+int_pages+ovfl_pages) FROM temp.%s", s.zSU);
   if( rc ) return;
   diskusedLine(&s, "Pages that store data", "%-11lld ", nPageInUse);
-  diskusedPercent(&s, (nPageInUse*100.0)/(double)nPage);
+  diskusedPercent(&s, nPageInUse, nPage);
 
   nFreeList = 0;
   rc = diskusedSqlInt(&s, &nFreeList, "PRAGMA \"%w\".freelist_count",s.zSchema);
   if( rc ) return;
   diskusedLine(&s, "Pages on the freelist", "%-11lld ", nFreeList);
-  diskusedPercent(&s, (nFreeList*100.0)/(double)nPage);
+  diskusedPercent(&s, nFreeList, nPage);
 
   ii = 0;
   rc = diskusedSqlInt(&s, &ii, "PRAGMA \"%w\".auto_vacuum", s.zSchema);
@@ -591,7 +604,7 @@ static void diskusedFunc(
     ii = (sqlite3_int64)ceil(rAvPage);
   }
   diskusedLine(&s, "Pages of auto-vacuum overhead", "%-11lld ", ii);
-  diskusedPercent(&s, (ii*100.0)/(double)nPage);
+  diskusedPercent(&s, ii, nPage);
 
   ii = 0;
   rc = diskusedSqlInt(&s, &ii, 
@@ -630,7 +643,7 @@ static void diskusedFunc(
        s.zSU);
   if( rc ) return;
   diskusedLine(&s, "Bytes of payload", "%-11lld ", ii);
-  diskusedPercent(&s, ii*100.0/(double)(pgsz*nPage));
+  diskusedPercent(&s, ii, pgsz*nPage);
 
   diskusedTitle(&s, "Page counts for all tables with their indexes");
   pStmt = diskusedPrepare(&s,
@@ -645,7 +658,7 @@ static void diskusedFunc(
   while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
     sqlite3_int64 nn = sqlite3_column_int64(pStmt,1);
     diskusedLine(&s, (const char*)sqlite3_column_text(pStmt,0), "%-11lld ", nn);
-    diskusedPercent(&s, (nn*100.0)/(double)nPage);
+    diskusedPercent(&s, nn, nPage);
   }
   if( diskusedStmtFinish(&s, rc, pStmt) ) return;
 
@@ -662,7 +675,7 @@ static void diskusedFunc(
   while( (rc = sqlite3_step(pStmt))==SQLITE_ROW ){
     sqlite3_int64 nn = sqlite3_column_int64(pStmt,1);
     diskusedLine(&s, (const char*)sqlite3_column_text(pStmt,0), "%-11lld ", nn);
-    diskusedPercent(&s, (nn*100.0)/(double)nPage);
+    diskusedPercent(&s, nn, nPage);
   }
   if( diskusedStmtFinish(&s, rc, pStmt) ) return;
 

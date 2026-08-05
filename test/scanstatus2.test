@@ -265,15 +265,18 @@ ifcapable trace {
   }
   
   proc trace {stmt sql} {
-    array set A [sqlite3_stmt_scanstatus -flags complex [format %llx $stmt] 0]
+    set ptr [format "ptr:0x%llx" $stmt]
+    array set A [sqlite3_stmt_scanstatus -flags complex $ptr 0]
     lappend ::trace_explain $A(zExplain)
   }
   db trace_v2 trace 
   
   set ::trace_explain [list]
-  do_execsql_test 5.1 {
-    DELETE FROM t1 WHERE x=1;
-  }
+  set ::delstmt [sqlite3_prepare db "DELETE FROM t1 WHERE x=1" -1 TAIL]
+  do_test 5.1 {
+    sqlite3_step $::delstmt
+    sqlite3_finalize $::delstmt
+  } {SQLITE_OK}
   
   do_test 5.2 {
     set ::trace_explain

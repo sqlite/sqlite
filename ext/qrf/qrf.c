@@ -2604,13 +2604,13 @@ static void qrfSimpleTitle(Qrf *p){
   switch( p->spec.eStyle ){
     case QRF_STYLE_Html: {
       int i;
-      sqlite3_str_append(p->pOut, "<TR>", 4);
+      sqlite3_str_append(p->pOut, "<tr>", 4);
       for(i=0; i<p->nCol; i++){
         const char *zCName = sqlite3_column_name(p->pStmt, i);
-        sqlite3_str_append(p->pOut, "\n<TH>", 5);
+        sqlite3_str_append(p->pOut, "\n<th>", 5);
         qrfEncodeText(p, p->pOut, zCName);
       }
-      sqlite3_str_append(p->pOut, "\n</TR>\n", 7);
+      sqlite3_str_append(p->pOut, "\n</tr>\n", 7);
       break;
     }
     case QRF_STYLE_Quote:
@@ -2666,12 +2666,12 @@ static void qrfOneSimpleRow(Qrf *p){
       if( p->nRow==0 && p->spec.bTitles>=QRF_Yes ){
         qrfSimpleTitle(p);
       }
-      sqlite3_str_append(p->pOut, "<TR>", 4);
+      sqlite3_str_append(p->pOut, "<tr>", 4);
       for(i=0; i<p->nCol; i++){
-        sqlite3_str_append(p->pOut, "\n<TD>", 5);
+        sqlite3_str_append(p->pOut, "\n<td>", 5);
         qrfRenderValue(p, p->pOut, i);
       }
-      sqlite3_str_append(p->pOut, "\n</TR>\n", 7);
+      sqlite3_str_append(p->pOut, "\n</tr>\n", 7);
       qrfWrite(p);
       break;
     }

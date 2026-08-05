@@ -89,6 +89,23 @@ do_execsql_test 2.2 {
   2 2
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(c INTEGER PRIMARY KEY, d, e);
+  CREATE INDEX t2b ON t2(d);
+}
+
+do_execsql_test 3.1 {
+  EXPLAIN SELECT * FROM t1 WHERE EXISTS (
+      SELECT 1 FROM t2 WHERE b=d
+  );
+} [execsql {
+  EXPLAIN SELECT * FROM t1 WHERE EXISTS (
+      SELECT 1 FROM t2 WHERE b=d ORDER BY e
+  );
+}]
 
 
 finish_test

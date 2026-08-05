@@ -633,7 +633,7 @@ The following output modes are currently defined:
 #define QRF_STYLE_Csv       4 /* Comma-separated-value */
 #define QRF_STYLE_Eqp       5 /* Format EXPLAIN QUERY PLAN output */
 #define QRF_STYLE_Explain   6 /* EXPLAIN output */
-#define QRF_STYLE_Html      7 /* Generate an XHTML table */
+#define QRF_STYLE_Html      7 /* Generate HTML-style <tr><td> output */
 #define QRF_STYLE_Insert    8 /* Generate SQL "insert" statements */
 #define QRF_STYLE_Json      9 /* Output is a list of JSON objects */
 #define QRF_STYLE_JObject  10 /* Independent JSON objects for each row */
@@ -724,7 +724,7 @@ with hard-coded values for some of the sqlite3_qrf_spec settings:
 </table>
 
 The **Html** style generates HTML table content, just without
-the `<TABLE>..</TABLE>` around the outside.
+the `<table>..</table>` around the outside.
 
 The **Insert** style generates a series of SQL "INSERT" statements
 that will inserts the data that is output into a table whose name is defined

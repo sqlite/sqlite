@@ -30,6 +30,81 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+/*
+** Global hash table mapping from string to pointer value.
+**
+** Sometimes the SQLite Tcl test scripts manipulate pointer values directly
+** (e.g. (sqlite3_stmt*) pointers). This used to be accomplished by converting
+** the pointer to a string containing hex digits (e.g. using printf("%p"))
+** before handing it to a Tcl script, then converting it back to the original 
+** pointer value when the script passed it to a C routine. But this doesn't
+** work for safe compilers like filcc, which does not allow pointers decoded
+** from strings or integers to be dereferenced. 
+**
+** To work around this restriction, each time a pointer is to be passed to a
+** Tcl script, an entry is added to this hash table, and the string key 
+** passed to Tcl. Later on, when the string key is passed back to a C
+** routine, that routine retrieves the original pointer from this hash table.
+**
+** There is currently no way to remove elements from this hash table. 
+*/
+static struct Test1Global {
+  int isInit;
+  Tcl_Mutex m;
+  Tcl_HashTable h;
+} g;
+
+/*
+** Convert a pointer to a string, and return a pointer to a buffer containing
+** a copy of that string. The buffer belongs to the global hash table and
+** should not be disposed of or modified in any way by the caller.
+*/
+static const char *testPointerToString(void *pPtr){
+  char aKey[64];
+  Tcl_HashEntry *pEntry = 0;
+  int dummy = 0;
+  const char *zRet = 0;
+
+  if( pPtr==0 ){
+    zRet = "0";
+  }else{
+    Tcl_MutexLock(&g.m);
+    if( g.isInit==0 ){
+      Tcl_InitHashTable(&g.h, TCL_STRING_KEYS);
+      g.isInit = 1;
+    }
+    sprintf(aKey, "ptr:%p", pPtr);
+    pEntry = Tcl_CreateHashEntry(&g.h, aKey, &dummy);
+    Tcl_SetHashValue(pEntry, pPtr);
+    zRet = Tcl_GetHashKey(&g.h, pEntry);
+    Tcl_MutexUnlock(&g.m);
+  }
+
+  return zRet;
+}
+
+/*
+** Convert a string returned by an earlier call to testPointerToString()
+** back to the original pointer.
+*/
+static void *testStringToPointer(const char *zStr){
+  void *pRet = 0;
+
+  if( zStr[0]!='0' ){
+    Tcl_MutexLock(&g.m);
+    if( g.isInit ){
+      Tcl_HashEntry *pEntry = Tcl_FindHashEntry(&g.h, zStr);
+      if( pEntry ){
+        pRet = Tcl_GetHashValue(pEntry);
+      }
+    }
+    Tcl_MutexUnlock(&g.m);
+  }
+
+  return pRet;
+}
+
 /*
 ** This is a copy of the first part of the SqliteDb structure in 
 ** tclsqlite.c.  We need it here so that the get_sqlite_pointer routine
@@ -54,26 +129,12 @@ static int testHexToInt(int h){
     return h - 'A' + 10;
   }
 }
+
 void *sqlite3TestTextToPtr(const char *z){
-  void *p;
-  u64 v;
-  u32 v2;
-  if( z[0]=='0' && z[1]=='x' ){
-    z += 2;
-  }
-  v = 0;
-  while( *z ){
-    v = (v<<4) + testHexToInt(*z);
-    z++;
-  }
-  if( sizeof(p)==sizeof(v) ){
-    memcpy(&p, &v, sizeof(p));
-  }else{
-    assert( sizeof(p)==sizeof(v2) );
-    v2 = (u32)v;
-    memcpy(&p, &v2, sizeof(p));
-  }
-  return p;
+  return testStringToPointer(z);
+}
+const char* sqlite3TestPtrToText(void *p){
+  return testPointerToString(p);
 }
 
 
@@ -90,7 +151,6 @@ static int SQLITE_TCLAPI get_sqlite_pointer(
 ){
   struct SqliteDb *p;
   Tcl_CmdInfo cmdInfo;
-  char zBuf[100];
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SQLITE-CONNECTION");
     return TCL_ERROR;
@@ -101,8 +161,7 @@ static int SQLITE_TCLAPI get_sqlite_pointer(
     return TCL_ERROR;
   }
   p = (struct SqliteDb*)cmdInfo.objClientData;
-  sqlite3_snprintf(sizeof(zBuf), zBuf, "%p", p->db);
-  Tcl_AppendResult(interp, zBuf, NULL);
+  Tcl_AppendResult(interp, sqlite3TestPtrToText(p->db), NULL);
   return TCL_OK;
 }
 
@@ -116,7 +175,7 @@ int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
     p = (struct SqliteDb*)cmdInfo.objClientData;
     *ppDb = p->db;
   }else{
-    *ppDb = (sqlite3*)sqlite3TestTextToPtr(zA);
+    *ppDb = (sqlite3*)testStringToPointer(zA);
   }
   return TCL_OK;
 }
@@ -126,7 +185,7 @@ int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
 ** Decode a Win32 HANDLE object.
 */
 int getWin32Handle(Tcl_Interp *interp, const char *zA, LPHANDLE phFile){
-  *phFile = (HANDLE)sqlite3TestTextToPtr(zA);
+  *phFile = (HANDLE)testStringToPointer(zA);
   return TCL_OK;
 }
 #endif
@@ -167,25 +226,16 @@ static int getStmtPointer(
   const char *zArg,  
   sqlite3_stmt **ppStmt
 ){
-  *ppStmt = (sqlite3_stmt*)sqlite3TestTextToPtr(zArg);
+  *ppStmt = (sqlite3_stmt*)testStringToPointer(zArg);
   return TCL_OK;
 }
 
 /*
 ** Generate a text representation of a pointer that can be understood
 ** by the getDbPointer and getVmPointer routines above.
-**
-** The problem is, on some machines (Solaris) if you do a printf with
-** "%p" you cannot turn around and do a scanf with the same "%p" and
-** get your pointer back.  You have to prepend a "0x" before it will
-** work.  Or at least that is what is reported to me (drh).  But this
-** behavior varies from machine to machine.  The solution used her is
-** to test the string right after it is generated to see if it can be
-** understood by scanf, and if not, try prepending an "0x" to see if
-** that helps.  If nothing works, a fatal error is generated.
 */
 int sqlite3TestMakePointerStr(Tcl_Interp *interp, char *zPtr, void *p){
-  sqlite3_snprintf(100, zPtr, "%p", p);
+  sqlite3_snprintf(100, zPtr, "%s", testPointerToString(p));
   return TCL_OK;
 }
 
@@ -262,6 +312,25 @@ static int SQLITE_TCLAPI test_io_trace(
 }
 
 /*
+** Usage:  filc_build 
+**
+** Returns true if the program was compiled using fil-c.
+*/
+static int SQLITE_TCLAPI filc_build(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  int res = 0;
+#ifdef __PIZLONATOR_WAS_HERE__
+  res = 1;
+#endif
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
+  return TCL_OK;
+}
+
+/*
 ** Usage:  clang_sanitize_address 
 **
 ** Returns true if the program was compiled using clang with the 
@@ -282,6 +351,10 @@ static int SQLITE_TCLAPI clang_sanitize_address(
 # endif
 #endif
 #ifdef __SANITIZE_ADDRESS__
+  res = 1;
+#endif
+#ifdef __PIZLONATOR_WAS_HERE__
+  /* Fil-C */
   res = 1;
 #endif
   if( res==0 && getenv("OMIT_MISUSE")!=0 ) res = 1;
@@ -1073,14 +1146,11 @@ static void inttoptrFunc(
   int argc,
   sqlite3_value **argv
 ){
-  void *p;
-  sqlite3_int64 i64;
-  i64 = sqlite3_value_int64(argv[0]);
-  if( sizeof(i64)==sizeof(p) ){
-    memcpy(&p, &i64, sizeof(p));
-  }else{
-    int i32 = i64 & 0xffffffff;
-    memcpy(&p, &i32, sizeof(p));
+  unsigned char *p;
+  p = (unsigned char*)testStringToPointer(
+                           (const char*)sqlite3_value_text(argv[0]));
+  if( argc==2 ){
+    p += sqlite3_value_int(argv[1]);
   }
   sqlite3_result_pointer(context, p, "carray", 0);
 }
@@ -1196,6 +1266,10 @@ static int SQLITE_TCLAPI test_create_function(
   }
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "inttoptr", 1, SQLITE_UTF8, 0,
+                                 inttoptrFunc, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "inttoptr", 2, SQLITE_UTF8, 0,
                                  inttoptrFunc, 0, 0);
   }
 
@@ -2683,7 +2757,7 @@ static int SQLITE_TCLAPI test_snapshot_open(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zName = Tcl_GetString(objv[2]);
-  pSnapshot = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[3]));
+  pSnapshot = (sqlite3_snapshot*)testStringToPointer(Tcl_GetString(objv[3]));
 
   rc = sqlite3_snapshot_open(db, zName, pSnapshot);
   if( rc!=SQLITE_OK ){
@@ -2711,7 +2785,7 @@ static int SQLITE_TCLAPI test_snapshot_free(
     Tcl_WrongNumArgs(interp, 1, objv, "SNAPSHOT");
     return TCL_ERROR;
   }
-  pSnapshot = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
+  pSnapshot = (sqlite3_snapshot*)testStringToPointer(Tcl_GetString(objv[1]));
   sqlite3_snapshot_free(pSnapshot);
   return TCL_OK;
 }
@@ -2734,8 +2808,8 @@ static int SQLITE_TCLAPI test_snapshot_cmp(
     Tcl_WrongNumArgs(interp, 1, objv, "SNAPSHOT1 SNAPSHOT2");
     return TCL_ERROR;
   }
-  p1 = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
-  p2 = (sqlite3_snapshot*)sqlite3TestTextToPtr(Tcl_GetString(objv[2]));
+  p1 = (sqlite3_snapshot*)testStringToPointer(Tcl_GetString(objv[1]));
+  p2 = (sqlite3_snapshot*)testStringToPointer(Tcl_GetString(objv[2]));
   res = sqlite3_snapshot_cmp(p1, p2);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
   return TCL_OK;
@@ -3855,7 +3929,7 @@ static int SQLITE_TCLAPI test_intarray_addr(
       }
     }
   }  
-  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestPtrToText(p), -1));
   return TCL_OK;
 }
 /*
@@ -3891,7 +3965,7 @@ static int SQLITE_TCLAPI test_int64array_addr(
       p[i] = v;
     }
   }  
-  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(testPointerToString(p), -1));
   return TCL_OK;
 }
 /*
@@ -3925,7 +3999,7 @@ static int SQLITE_TCLAPI test_doublearray_addr(
       }
     }
   }  
-  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(testPointerToString(p), -1));
   return TCL_OK;
 }
 /*
@@ -3958,7 +4032,7 @@ static int SQLITE_TCLAPI test_textarray_addr(
     }
   }
   n = objc-1;
-  Tcl_SetObjResult(interp, Tcl_NewWideIntObj((uptr)p));
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(testPointerToString(p), -1));
   return TCL_OK;
 }
 
@@ -7096,7 +7170,6 @@ static int file_control_win32_get_handle(
   sqlite3 *db;
   int rc;
   HANDLE hFile = NULL;
-  char z[100];
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -7108,8 +7181,7 @@ static int file_control_win32_get_handle(
   }
   rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_WIN32_GET_HANDLE,
                             (void*)&hFile);
-  sqlite3_snprintf(sizeof(z), z, "%d %p", rc, (void*)hFile);
-  Tcl_AppendResult(interp, z, (char*)0);
+  Tcl_AppendResult(interp, sqlite3TestPtrToText((void*)hFile), (char*)0);
   return TCL_OK;
 }
 
@@ -7143,7 +7215,7 @@ static int SQLITE_TCLAPI file_control_win32_set_handle(
   }
   rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_WIN32_SET_HANDLE,
                             (void*)&hFile);
-  sqlite3_snprintf(sizeof(z), z, "%d %p", rc, (void*)hFile);
+  sqlite3_snprintf(sizeof(z), z, "%d %s", rc,testPointerToString((void*)hFile));
   Tcl_AppendResult(interp, z, (char*)0);
   return TCL_OK;  
 }
@@ -8333,6 +8405,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "propagate-const",     SQLITE_PropagateConst },
     { "one-pass",            SQLITE_OnePass        },
     { "exists-to-join",      SQLITE_ExistsToJoin   },
+    { "count-of-view",       SQLITE_CountOfView    },
   };
 
   if( objc!=4 ){
@@ -9102,6 +9175,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "printf",                        (Tcl_CmdProc*)test_printf           },
      { "sqlite3IoTrace",              (Tcl_CmdProc*)test_io_trace         },
      { "clang_sanitize_address",        (Tcl_CmdProc*)clang_sanitize_address },
+     { "filc_build",                    (Tcl_CmdProc*)filc_build },
   };
   static struct {
      char *zName;

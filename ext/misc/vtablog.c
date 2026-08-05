@@ -361,7 +361,8 @@ static int vtablogColumn(
 
   if( i<26 ){
     sqlite3_snprintf(sizeof(zVal),zVal,"%c%d", 
-                     "abcdefghijklmnopqrstuvwyz"[i], pCur->iRowid);
+                     "abcdefghijklmnopqrstuvwxyz"[i], pCur->iRowid);
+                   /* 0123456789 123456789 12345 */
   }else{
     sqlite3_snprintf(sizeof(zVal),zVal,"{%d}%d", i, pCur->iRowid);
   }

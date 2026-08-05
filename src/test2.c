@@ -48,7 +48,6 @@ static int SQLITE_TCLAPI pager_open(
   Pager *pPager;
   int nPage;
   int rc;
-  char zBuf[100];
   if( argc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " FILENAME N-PAGE\"", NULL);
@@ -65,8 +64,7 @@ static int SQLITE_TCLAPI pager_open(
   sqlite3PagerSetCachesize(pPager, nPage);
   pageSize = test_pagesize;
   sqlite3PagerSetPagesize(pPager, &pageSize, -1);
-  sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",pPager);
-  Tcl_AppendResult(interp, zBuf, NULL);
+  Tcl_AppendResult(interp, sqlite3TestPtrToText(pPager), NULL);
   return TCL_OK;
 }
 
@@ -309,7 +307,6 @@ static int SQLITE_TCLAPI page_get(
   const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
-  char zBuf[100];
   DbPage *pPage = 0;
   int pgno;
   int rc;
@@ -328,8 +325,7 @@ static int SQLITE_TCLAPI page_get(
     Tcl_AppendResult(interp, sqlite3ErrName(rc), NULL);
     return TCL_ERROR;
   }
-  sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",pPage);
-  Tcl_AppendResult(interp, zBuf, NULL);
+  Tcl_AppendResult(interp, sqlite3TestPtrToText(pPage), NULL);
   return TCL_OK;
 }
 
@@ -346,7 +342,6 @@ static int SQLITE_TCLAPI page_lookup(
   const char **argv      /* Text of each argument */
 ){
   Pager *pPager;
-  char zBuf[100];
   DbPage *pPage;
   int pgno;
   if( argc!=3 ){
@@ -358,8 +353,7 @@ static int SQLITE_TCLAPI page_lookup(
   if( Tcl_GetInt(interp, argv[2], &pgno) ) return TCL_ERROR;
   pPage = sqlite3PagerLookup(pPager, pgno);
   if( pPage ){
-    sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",pPage);
-    Tcl_AppendResult(interp, zBuf, NULL);
+    Tcl_AppendResult(interp, sqlite3TestPtrToText(pPage), NULL);
   }
   return TCL_OK;
 }

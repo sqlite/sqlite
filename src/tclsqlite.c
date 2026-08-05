@@ -4209,10 +4209,9 @@ deserialize_error:
       ** most recent sqlite3_stmt in the statement cache.
       */
       if( strcmp(zArg, "-last-stmt-ptr")==0 ){
-        char zBuf[100];
-        sqlite3_snprintf(sizeof(zBuf), zBuf, "%p",
-                         pDb->stmtList ? pDb->stmtList->pStmt: 0);
-        Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+        extern const char *sqlite3TestPtrToText(void*);
+        void *ptr = (void*)(pDb->stmtList ? pDb->stmtList->pStmt: 0);
+        Tcl_SetResult(interp, (char*)sqlite3TestPtrToText(ptr), TCL_VOLATILE);
       }else
 #endif /* SQLITE_TEST */
       {

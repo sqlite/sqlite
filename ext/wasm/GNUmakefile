@@ -314,19 +314,20 @@ endif
 # Set up sqlite3.c and sqlite3.h...
 #
 # To build with SEE (https://sqlite.org/see), either put sqlite3-see.c
-# in $(dir.top) or pass sqlite3.c=PATH_TO_sqlite3-see.c to the $(MAKE)
-# invocation. Note that only encryption modules with no 3rd-party
+# in $(dir.top) or pass sqlite3.c=/path/to/sqlite3-see.c to the
+# $(MAKE) invocation. Only encryption modules with no 3rd-party
 # dependencies will currently work here: AES256-OFB, AES128-OFB, and
 # AES128-CCM. Not coincidentally, those 3 modules are included in the
-# sqlite3-see.c bundle. Note, however, that distributing an SEE build
-# of the WASM on a public site is in violation of the SEE license
-# because it effectively provides a usable copy of the SEE build to
-# all visitors.
+# sqlite3-see.c bundle. However, distributing an SEE build of the WASM
+# on a public site is in violation of the SEE license because it
+# effectively provides a usable copy of the SEE build to all visitors.
+# Its use is permitted within the intranet of an SEE licensee, but use
+# on networks accessible to non-licensees is in violation.
 #
 # A custom sqlite3.c must not have any spaces in its name.
-# $(sqlite3.canonical.c) must point to the sqlite3.c in
-# the sqlite3 canonical source tree, as that source file
-# is required for certain utility and test code.
+# $(sqlite3.canonical.c) must point to the sqlite3.c in the sqlite3
+# canonical source tree, as that source file is required for certain
+# utility and test code.
 #
 sqlite3.canonical.c = $(dir.top)/sqlite3.c
 sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
@@ -545,7 +546,19 @@ endif
 #
 # Changing this may require a clean rebuild. It also might not work.
 #
+# A value of 1 is required for the base64.wasm=1 build, as this custom
+# instantiator is where we embed the base64-encoded WASM files.
+#
+# 2026-07: it's been deployed almost a year now and the only issues
+# with it were in npm-/node-specific builds, where we now
+# automatically disable it.
 WASM_CUSTOM_INSTANTIATE = 1
+
+ifeq (0,$(WASM_CUSTOM_INSTANTIATE))
+ifeq (1,$(base64.wasm))
+  $(error base64.wasm=1 is incompatible with WASM_CUSTOM_INSTANTIATE=0)
+endif
+endif
 
 #
 # $(bin.c-pp): a minimal text file preprocessor. Like C's but much
@@ -571,13 +584,14 @@ WASM_CUSTOM_INSTANTIATE = 1
 #
 # c-pp-lite.c was written specifically for the sqlite project's
 # JavaScript builds but is maintained as a standalone project:
-# https://fossil.wanderinghorse.net/r/c-pp
+# https://fossil.wanderinghorse.net/r/c-pp. It has since been vastly
+# extended, largely reimplemented, and has dropped the "lite" suffix.
 #
 # The SQLITE_... build flags used here have NO EFFECT on the JS/WASM
 # build. They are solely for use with $(bin.c-pp) itself.
 #
 # -D... flags which should be included in all invocations should be
-# appended to $(D.common)
+# appended to $(D.common).
 #
 bin.c-pp = ./c-pp
 $(bin.c-pp): libcmpp.c $(sqlite3.c) $(MAKEFILE)
@@ -590,7 +604,7 @@ $(bin.c-pp): libcmpp.c $(sqlite3.c) $(MAKEFILE)
 DISTCLEAN_FILES += $(bin.c-pp)
 
 ifeq (0,$(MAKING_CLEAN))
-  # omit-api="feature names..." disables various featuresw by name.
+  # omit-api="feature names..." disables various features by name.
   # Recognized names are:
   #
   #   kvvfs oo1 opfs opfs-sahpool opfs-wl vtab worker1
@@ -606,7 +620,8 @@ ifeq (0,$(MAKING_CLEAN))
     Xomit-api := $(subst ALL,kvvfs oo1 OPFS worker1,$(omit-api))
     Xomit-api := $(subst OPFS,opfs opfs-sahpool opfs-wl,$(Xomit-api))
     Xomit-api := $(sort $(Xomit-api))
-    $(foreach X,$(Xomit-api),$(eval D.omit += -Domit-$(X)))
+    #$(foreach X,$(Xomit-api),$(eval D.omit += -Domit-$(X)))
+    D.omit = $(patsubst %,-Domit-%,$(Xomit-api))
   endif
   ifneq (,$(D.omit))
     D.common += $(D.omit)
@@ -623,7 +638,11 @@ endif
 cflags.common =  -I. -I$(dir $(sqlite3.c)) -std=c99 -fPIC
 # emcc.WASM_BIGINT = 1 for BigInt (C int64) support, else 0.  The API
 # disables certain features if BigInt is not enabled and such builds
-# _are not tested_ on any regular basis.
+# _are not tested_ on any regular basis. Update 2026-07: Browsers old
+# enough to not have BigInt probably won't otherwise run the WASM
+# build (and we've never had direct access to such a browser to test
+# on). i.e. non-BigInt builds are effectively unnecessary and can be
+# safely removed at some point.
 emcc.WASM_BIGINT ?= 1
 emcc.MEMORY64 ?= 0
 #

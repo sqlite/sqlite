@@ -125,16 +125,16 @@ do_eqp_test 3.2 {
   `--SEARCH t0 USING AUTOMATIC PARTIAL COVERING INDEX (x=?)
 }
 # ^^^^^--- The key feature in the previous result is that no Bloom filter
-# is used.  In the following, a Bloom filter is used because the data type
-# is INT instead of TEXT.
+# is used because of the COLLATE rtrim.  In the following, a Bloom filter
+# is omitted because collating sequence is binary instead.
 do_execsql_test 3.3 {
-  CREATE TABLE t1(x INT COLLATE rtrim);
+  CREATE TABLE t1(x INT COLLATE binary);
   INSERT INTO t1(x) VALUES ('a'), ('b'), ('c');
   CREATE VIEW v1(y) AS SELECT DISTINCT x FROM t1;
-  SELECT count(*) FROM t1, v1 WHERE x='b ';
+  SELECT count(*) FROM t1, v1 WHERE x='b';
 } 3
 do_eqp_test 3.4 {
-  SELECT count(*) FROM t1, v1 WHERE x='b ';
+  SELECT count(*) FROM t1, v1 WHERE x='b';
 } {
   QUERY PLAN
   |--CO-ROUTINE v1
@@ -237,5 +237,55 @@ do_execsql_test 6.1 {
     SELECT 444 FROM (SELECT 555 FROM t1 ORDER BY 1)
   );
 } 0
+
+# Bug 2026-07-21T04:39:35Z  (Really an enhancement request, not a bug)
+#
+# Bloom filters are used for text comparisons as long as the collating
+# sequence is BINARY.  For any other collating sequence, the Bloom filter
+# is omitted.
+#
+reset_db
+do_execsql_test 7.1 {
+  CREATE TABLE big(a INTEGER PRIMARY KEY, b TEXT);
+  CREATE TABLE small(k TEXT PRIMARY KEY, v TEXT) WITHOUT ROWID;
+  WITH RECURSIVE c(n) AS(VALUES(0) UNION ALL SELECT n+1 FROM c WHERE n<9999)
+    INSERT INTO big(b) SELECT format('k%07d',n) FROM c;
+  WITH RECURSIVE c(n) AS(VALUES(0) UNION ALL SELECT n+1 FROM c WHERE n<99)
+    INSERT INTO small(k,v) SELECT format('k%07d',n), n*1000 FROM c;
+  ANALYZE;
+}
+do_execsql_test 7.2 {
+  SELECT count(*) FROM big CROSS JOIN small
+   WHERE small.k=big.b AND small.v<>'nope';
+} 100
+do_eqp_test 7.3 {
+  SELECT count(*) FROM big CROSS JOIN small
+   WHERE small.k=big.b AND small.v<>'nope';
+} {
+  QUERY PLAN
+  |--SCAN big
+  |--BLOOM FILTER ON small (k=?)
+  `--SEARCH small USING PRIMARY KEY (k=?)
+}
+do_execsql_test 7.4 {
+  CREATE TABLE big2(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO big2 SELECT * FROM big;
+  CREATE TABLE small2(k TEXT COLLATE nocase, v TEXT);
+  CREATE INDEX sx1 on small2(k);
+  INSERT INTO small2 SELECT * FROM small;
+  ANALYZE;
+}
+do_execsql_test 7.5 {
+  SELECT count(*) FROM big2, small2
+   WHERE small2.k=big2.b AND small2.v<>'nope';
+} 100
+do_eqp_test 7.6 {
+  SELECT count(*) FROM big2, small2
+   WHERE small2.k=big2.b AND small2.v<>'nope';
+} {
+  QUERY PLAN
+  |--SCAN big2
+  `--SEARCH small2 USING INDEX sx1 (k=?)
+}
 
 finish_test
