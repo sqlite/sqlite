@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\sand\ssize\sreduction\sin\sthe\spage\scache.
-D 2026-08-05T14:00:08.422
+C Fix\sa\scompiler\swarning\sthat\scomes\sup\sin\sgcc\s4.0.1\sfor\starget\spowerpc-apple-darwin9
+D 2026-08-05T15:30:43.684
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -690,7 +690,7 @@ F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804a
 F src/carray.c 3efe3982d5fb323334c29328a4e189ccaef6b95612a6084ad5fa124fd5db1179
 F src/complete.c f216b970ce99c5a657556cf1f17e7ddd494515d3beb63df426bf59ff43bd3d9a
 F src/date.c e1a002a4199bfa85e8778c0f72182c679580b131147d8e46d9221cfceffb8500
-F src/dbpage.c c6a9de13b0a01f0bc94a41e16213ab1ecd15ccfe86df7255ced40fda9446257d
+F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c 43c750797e82d5686c0f198d759f77d9c9166038837d7574d75d71649e09a335
@@ -2218,9 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 6bdfff7ddb63d0b4f28f6c174a36e81486a652056a4e21644378a22feda780fd 750c37d4044c0957b81a12448293c0f85bab0b9f981d8e6f573ffe27eeb8f16d
-R 696eb69ee5490c1498ca703ebfcb71e1
-T +closed 750c37d4044c0957b81a12448293c0f85bab0b9f981d8e6f573ffe27eeb8f16d
+P 2c3ae5b8e1bba3234dac9eb8869dffc8f54ccd20ea278d8440790c715a7f5a00
+R 48381e48921dc09f56d376ab47ea49ea
 U drh
-Z 0a29ee0953fdb3eb5c0900087e252dba
+Z 42c6614eec965e9141770f28f3ea111b
 # Remove this line to create a well-formed Fossil manifest.
