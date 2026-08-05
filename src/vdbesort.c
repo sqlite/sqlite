@@ -1035,10 +1035,17 @@ static SQLITE_NOINLINE int vdbeSorterCompareRealInt(
 ){
   const u8 * const p1 = (const u8 * const)pKey1;
   const u8 * const p2 = (const u8 * const)pKey2;
-  double r1 = vdbeSorterGetReal(p1);
-  double r2 = vdbeSorterGetReal(p2);
-  return vdbeSorterFinishRealCompare(pTask,pbKey2Cached,
-                pKey1,nKey1,pKey2,nKey2,r1,r2);
+  if( p1[1]==6 || p2[1]==6 ){
+    /* 64-bit integer values cannot be represented exactly by a double so
+    ** must be handled by the generalized comparison function. */
+    return vdbeSorterCompare(pTask,
+       pbKey2Cached, pKey1,nKey1, pKey2,nKey2);
+  }else{
+    double r1 = vdbeSorterGetReal(p1);
+    double r2 = vdbeSorterGetReal(p2);
+    return vdbeSorterFinishRealCompare(pTask,pbKey2Cached,
+                  pKey1,nKey1,pKey2,nKey2,r1,r2);
+  }
 }
 
 /*
@@ -1066,8 +1073,8 @@ static int vdbeSorterCompareReal(
   assert( p2[1]>0 && p2[1]<10 );       /* first field guaranteed numeric */
 
   if( p1[1]!=7 || p2[1]!=7 ){
-    /* One or both floating point values are stored as INTEGER (MEM_RealInt).
-    ** Handle this case separately for efficiency */
+    /* One or both floating point values are stored as INTEGER.  This might
+    ** be because of the MEM_RealInt encoding.  Try to optimize that case. */
     return vdbeSorterCompareRealInt(pTask,
        pbKey2Cached, pKey1,nKey1, pKey2,nKey2
     );
