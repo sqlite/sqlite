@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\senhancements\sinto\sthe\sbegin-concurrent\sbranch.
-D 2026-08-04T18:25:59.487
+C Merge\sthe\ssorter\sbug\sfix\sto\sthe\sbegin-concurrent\sbranch.
+D 2026-08-05T12:59:03.910
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -821,7 +821,7 @@ F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
 F src/vdbeaux.c 3837ec88a5e15dbc9793c624b2f1322bc7b29404481cebe257c13267c46946c4
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
-F src/vdbesort.c 82e4f8eab771f14d95a057c0df11c4d401b09d0c5030bfd2a5f2d29dde8441d3
+F src/vdbesort.c 2cb0f80f1ab96a905412c6e0394f67a33ef2dc498dced80e66f065b2569788f2
 F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b41
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 1fa9e01d3da114a634a6ba1f36de8a3af6381b675cbbca399f0de64934e50ac6
@@ -1684,7 +1684,7 @@ F test/snapshot_fault.test 129234ceb9b26a0e1000e8563a16e790f5c1412354e70749cbd78
 F test/snapshot_up.test 77dc7853bfb2b4fa249f76e1714cfa1e596826165d9ef22c06ac3a0b7b778d9a
 F test/soak.test 18944cf21b94a7fe0df02016a6ee1e9632bc4e8d095a0cb49d95e15d5cca2d5c
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
-F test/sort.test f86751134159abb5e5fd4381a0d7038c91013638cd1e3fa1d7850901f6df6196
+F test/sort.test 7867829c576567641cefb8a3f8cfec2d56b38419d7b8241ab8e2d96414fc345d
 F test/sort2.test 2f8c66402a03adebe77ce7aafca129fbf32df27d6c9b8f7a9f1b958e39f56da8
 F test/sort3.test 1480ed7c4c157682542224e05e3b75faf4a149e5
 F test/sort4.test c7a88629aecc8eec3c919eda54b221da5cf7a1b48f0cd372e7e832188d6737d8
@@ -2235,8 +2235,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b825cf6734515950ca9635b9f4fc0a653974d91962457ae68ec21f711002b23b bdc841de10fef65b627deb8b770702c976174a66af847c96ebecf24d91798744
-R c147754fd42400167a070e58e60ce162
+P 82e983a8ec81fd312fec2d293af1858bd4e3dbf2710a2142f59e9fe6d4f2ff05 6bdfff7ddb63d0b4f28f6c174a36e81486a652056a4e21644378a22feda780fd
+R e696670e1742ea0c5785dfd9e2a6a9ef
 U drh
-Z ccaf02cbd5ae25533b9c7def356f595b
+Z c026cf3426f4cfd7cfbc8d53febf89e8
 # Remove this line to create a well-formed Fossil manifest.
