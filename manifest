@@ -1,5 +1,5 @@
-C Merge\sin\sthe\serrant\swasm-updates\sbranch,\scaused\sby\sdeveloper\sPEBKAC.
-D 2026-08-05T15:40:00.978
+C Fix\sa\shyperlink\stypo\sin\sthe\sLemon\sdocumentation
+D 2026-08-06T17:20:07.634
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -61,7 +61,7 @@ F doc/compile-for-unix.md e729dff2f54ce7afbb0a8bb6813dcbc8720b3838133c5c7449e399
 F doc/compile-for-windows.md 19f87b5b2bd980e0f91c31b2c9d3375e60b4d7901c9bf0c5d060f7cb48334706
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md acd77fc3a709f51242655ad7803510c886aa8304202fa9cf2abc5f5c4e9d7ae5
-F doc/lemon.html 2085fda0a90a94fe92159a79dccc5c30d5a2313524887a31659cd66162f17233
+F doc/lemon.html 3f22b2cd9dedc8baddae02d556895e9c37a1010e89fdd29aa3ee8d8ff3d8a672
 F doc/pager-invariants.txt 83aa3a4724b2d7970cc3f3461f0295c46d4fc19a835a5781cbb35cb52feb0577
 F doc/tcl-extension-testing.md b88861804fc1eaf83249f8e206334189b61e150c360e1b80d0dcf91af82354f5
 F doc/testrunner.md 3589f7914d36adaff6d108566e09b2c6166887bea00580e5343f8b43615ffe12
@@ -2218,9 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 90fe33d9edfd5100c4459940ee39f268da8edcdaa9315d2610428d5d1f99938d 3ec42b829e8de23f8d050b49b48eac1220463156eb973fd4daff440e6183c868
-R ee76ff6ebb526c5976887d4ccae54d61
-T +closed 3ec42b829e8de23f8d050b49b48eac1220463156eb973fd4daff440e6183c868
-U stephan
-Z dfd836d82463bc5e779b391b32b4a120
+P 75d3343fa3daa0503c057bae14c83ce6a1c5b8dfa4b5a312168b26e5d877684b
+R fcb6e0065b538176c8401fda4f31369d
+U drh
+Z c58ebe71540fbe985fc88c4a07da823a
 # Remove this line to create a well-formed Fossil manifest.
