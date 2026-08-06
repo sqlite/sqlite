@@ -699,6 +699,15 @@ static void yy_shift(
   yytos = yypParser->yytos;
   if( yytos>yypParser->yystackEnd ){
     if( yyGrowStack(yypParser) ){
+#if YY_MIN_DSTRCTR==0
+      /* yy_shift() is a high-runner.  So even though this branch is rarely
+      ** invoked, we want to omit the call to yy_destructor() if there is no
+      ** token destructor since its presence within the function increases
+      ** the start-up and break-down overhead of invoking yy_shift(). */
+      YYMINORTYPE t;
+      t.yy0 = yyMinor;
+      yy_destructor(yypParser, yyMajor, &t);
+#endif
       yypParser->yytos--;
       yyStackOverflow(yypParser);
       return;
