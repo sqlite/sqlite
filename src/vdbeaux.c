@@ -4056,16 +4056,6 @@ u64 sqlite3FloatSwap(u64 in){
 }
 #endif /* SQLITE_MIXED_ENDIAN_64BIT_FLOAT */
 
-
-/* Input "x" is a sequence of unsigned characters that represent a
-** big-endian integer.  Return the equivalent native integer
-*/
-#define ONE_BYTE_INT(x)    ((i8)(x)[0])
-#define TWO_BYTE_INT(x)    (256*(i8)((x)[0])|(x)[1])
-#define THREE_BYTE_INT(x)  (65536*(i8)((x)[0])|((x)[1]<<8)|(x)[2])
-#define FOUR_BYTE_UINT(x)  (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
-#define FOUR_BYTE_INT(x) (16777216*(i8)((x)[0])|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
-
 /*
 ** Deserialize the data blob pointed to by buf as serial type serial_type
 ** and store the result in pMem.
@@ -4110,7 +4100,7 @@ static void serialGet(
     pMem->flags = IsNaN(x) ? MEM_Null : MEM_Real;
   }
 }
-static int serialGet7(
+static int sqlite3VdbeSerialGet7(
   const unsigned char *buf,     /* Buffer to deserialize from */
   Mem *pMem                     /* Memory cell to write value into */
 ){
@@ -4132,6 +4122,7 @@ void sqlite3VdbeSerialGet(
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
+  /* Note: similar code found in the implementation of OP_Column */
   switch( serial_type ){
     case 10: { /* Internal use only: NULL with virtual table
                ** UPDATE no-change flag set */
@@ -4800,7 +4791,7 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else if( serial_type==7 ){
-        serialGet7(&aKey1[d1], &mem1);
+        sqlite3VdbeSerialGet7(&aKey1[d1], &mem1);
         rc = -sqlite3IntFloatCompare(pRhs->u.i, mem1.u.r);
       }else{
         i64 lhs = vdbeRecordDecodeInt(serial_type, &aKey1[d1]);
@@ -4826,7 +4817,7 @@ int sqlite3VdbeRecordCompareWithSkip(
         rc = -1;
       }else{
         if( serial_type==7 ){
-          if( serialGet7(&aKey1[d1], &mem1) ){
+          if( sqlite3VdbeSerialGet7(&aKey1[d1], &mem1) ){
             rc = -1;  /* mem1 is a NaN */
           }else if( mem1.u.r<pRhs->u.r ){
             rc = -1;
@@ -4908,7 +4899,7 @@ int sqlite3VdbeRecordCompareWithSkip(
       serial_type = aKey1[idx1];
       if( serial_type==0
        || serial_type==10
-       || (serial_type==7 && serialGet7(&aKey1[d1], &mem1)!=0)
+       || (serial_type==7 && sqlite3VdbeSerialGet7(&aKey1[d1], &mem1)!=0)
       ){
         assert( rc==0 );
       }else{

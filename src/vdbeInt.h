@@ -587,6 +587,18 @@ struct ValueList {
 extern const u8 sqlite3SmallTypeSizes[];
 #endif
 
+/* Input "x" is a sequence of unsigned characters that represent a
+** big-endian integer.  Return the equivalent native integer
+*/
+#define ONE_BYTE_INT(x)    ((i8)(x)[0])
+#define TWO_BYTE_INT(x)    (256*(i8)((x)[0])|(x)[1])
+#define THREE_BYTE_INT(x)  (65536*(i8)((x)[0])|((x)[1]<<8)|(x)[2])
+#define FOUR_BYTE_UINT(x)  (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+#define FOUR_BYTE_U64(x)   (((u64)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+#define FOUR_BYTE_INT(x)   (16777216*((x)[0])|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+#define SIX_BYTE_INT(x)    (FOUR_BYTE_UINT(x+2)+4294967296LL*TWO_BYTE_INT(x))
+#define EIGHT_BYTE_UINT(x) (FOUR_BYTE_U64(x+4)+(FOUR_BYTE_U64(x)<<32))
+
 /*
 ** Function prototypes
 */
@@ -606,6 +618,7 @@ u8 sqlite3VdbeOneByteSerialTypeLen(u8);
 # define swapMixedEndianFloat(X)
 #endif
 void sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
+int sqilte3VdbeSerialGet7(const unsigned char*, Mem*);
 void sqlite3VdbeDeleteAuxData(sqlite3*, AuxData**, int, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
