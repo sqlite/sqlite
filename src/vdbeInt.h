@@ -618,7 +618,6 @@ u8 sqlite3VdbeOneByteSerialTypeLen(u8);
 # define swapMixedEndianFloat(X)
 #endif
 void sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
-int sqilte3VdbeSerialGet7(const unsigned char*, Mem*);
 void sqlite3VdbeDeleteAuxData(sqlite3*, AuxData**, int, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);

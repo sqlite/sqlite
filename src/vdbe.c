@@ -3249,8 +3249,8 @@ op_column_restart:
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page.
     **
-    ** The big switch() is an in-line variant of sqlite3VdbeGetSerial() that
-    ** has been optimized for this the needs of the OP_Column opcode.
+    ** The big switch() is an in-line variant of sqlite3VdbeSerialGet() that
+    ** has been optimized for the OP_Column opcode.
     */
     zData = pC->aRow + aOffset[p2];
     switch( t ){
