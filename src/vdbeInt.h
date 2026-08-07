@@ -597,7 +597,7 @@ extern const u8 sqlite3SmallTypeSizes[];
 #define FOUR_BYTE_U64(x)   (((u64)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
 #define FOUR_BYTE_INT(x)   (16777216*((x)[0])|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
 #define SIX_BYTE_INT(x)    (FOUR_BYTE_UINT(x+2)+4294967296LL*TWO_BYTE_INT(x))
-#define EIGHT_BYTE_UINT(x) (FOUR_BYTE_U64(x+4)+(FOUR_BYTE_U64(x)<<32))
+#define EIGHT_BYTE_U64(x)  (FOUR_BYTE_U64(x+4)+(FOUR_BYTE_U64(x)<<32))
 
 /*
 ** Function prototypes
