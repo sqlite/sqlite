@@ -3250,7 +3250,53 @@ op_column_restart:
     ** page - where the content is not on an overflow page */
     zData = pC->aRow + aOffset[p2];
     if( t<12 ){
-      sqlite3VdbeSerialGet(zData, t, pDest);
+      switch( t ){
+        case 0:
+          pDest->flags = MEM_Null;
+          break;
+        case 1:
+          pDest->u.i = (i8)zData[0];
+          pDest->flags = MEM_Int;
+          testcase( pDest->u.i<0 );
+          break;
+        case 2:
+          pDest->u.i = 256*(i8)zData[0] | zData[1];
+          pDest->flags = MEM_Int;
+          testcase( pDest->u.i<0 );
+          break;
+        case 3:
+          pDest->u.i = 65536*(i8)zData[0] | (zData[1]<<8) | zData[2];
+          pDest->flags = MEM_Int;
+          testcase( pDest->u.i<0 );
+          break;
+        case 4:
+          pDest->u.i = 16777216*(i8)zData[0] | (zData[1]<<16)
+                         | (zData[2]<<8) | zData[3];
+          pDest->flags = MEM_Int;
+          testcase( pDest->u.i<0 );
+          break;
+        case 5:
+          pDest->u.i = (((u32)zData[2]<<24)|(zData[3]<<16)|(zData[4]<<8)|zData[5])
+                         + (((i64)1)<<32)*(256*(i8)zData[0] | zData[1]);
+          pDest->flags = MEM_Int;
+          testcase( pDest->u.i<0 );
+          break;
+        case 6: {
+          u64 x = ((u64)(((u32)zData[0]<<24)|(zData[1]<<16)|(zData[2]<<8)|zData[3])<<32)
+                    + (((u32)zData[4]<<24)|(zData[5]<<16)|(zData[6]<<8)|zData[7]);
+          memcpy(&pDest->u.i, &x, sizeof(x));
+          pDest->flags = MEM_Int;
+          testcase( pDest->u.i<0 );
+          break;
+        }
+        case 8:
+        case 9:
+          pDest->u.i = t-8;
+          pDest->flags = MEM_Int;
+          break;
+        default:
+          sqlite3VdbeSerialGet(zData, t, pDest);
+      }
     }else{
       /* If the column value is a string, we need a persistent value, not
       ** a MEM_Ephem value.  This branch is a fast short-cut that is equivalent
