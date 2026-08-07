@@ -3292,8 +3292,8 @@ op_column_restart:
       case 7: {
         u64 x = EIGHT_BYTE_U64(zData);
         swapMixedEndianFloat(x);
-        memcpy(&pDest->u.r, &x, sizeof(x));
         pDest->flags = IsNaN(x) ? MEM_Null : MEM_Real;
+        memcpy(&pDest->u.r, &x, sizeof(x));
         testcase( pDest->u.r<0 );
         break;
       }
