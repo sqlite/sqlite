@@ -77,7 +77,7 @@ namespace eval trd {
     persistent_journal_error no_journal no_journal_error
     autovacuum_ioerr no_mutex_try fullmutex journaltest
     inmemory_journal pcache0 pcache10 pcache50 pcache90
-    pcache100 prepare mmap
+    pcache100 prepare mmap session_eec session_strm
   }
 
   #-----------------------------------------------------------------------
