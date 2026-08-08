@@ -178,6 +178,7 @@ foreach hdr {
    msvc.h
    mutex.h
    opcodes.h
+   opcodeLabels.h
    os_common.h
    os_setup.h
    os_win.h

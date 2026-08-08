@@ -711,6 +711,7 @@ SRC += \
   keywordhash.h \
   opcodes.c \
   opcodes.h \
+  opcodeLabels.h \
   parse.c \
   parse.h \
   sqlite_cfg.h \
@@ -878,6 +879,7 @@ HDR = \
    $(TOP)/src/msvc.h \
    $(TOP)/src/mutex.h \
    opcodes.h \
+   opcodeLabels.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
    $(TOP)/src/os_setup.h \
@@ -1132,7 +1134,7 @@ sqlite3.h: $(MAKE_SANITY_CHECK) $(TOP)/src/sqlite.h.in \
 	$(B.tclsh) $(TOP)/tool/mksqlite3h.tcl $(TOP) -o sqlite3.h
 
 sqlite3.c:	.target_source sqlite3.h $(TOP)/tool/mksqlite3c.tcl src-verify$(B.exe) \
-		$(B.tclsh) $(EXTRA_SRC)
+		opcodes.h opcodeLabels.h $(B.tclsh) $(EXTRA_SRC)
 	$(B.tclsh) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_GEN_FLAGS) $(EXTRA_SRC)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
@@ -1445,7 +1447,7 @@ tclsqlite3$(T.exe)-1: tclsqlite3$(T.exe)
 tclsqlite3$(T.exe)-0:
 tcl: tclsqlite3$(T.exe)-$(HAVE_TCL)
 
-# Rules to build opcodes.c and opcodes.h
+# Rules to build opcodes.c, opcodes.h, opcodeLabels.h
 #
 opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
@@ -1453,6 +1455,9 @@ opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl $(B.tclsh)
 opcodes.h:	parse.h $(TOP)/src/vdbe.c \
 		$(TOP)/tool/mkopcodeh.tcl $(B.tclsh)
 	cat parse.h $(TOP)/src/vdbe.c | $(B.tclsh) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
+
+opcodeLabels.h:	opcodes.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodec.tcl $(B.tclsh)
+	$(B.tclsh) $(TOP)/tool/mkopcodeLabels.tcl opcodes.h $(TOP)/src/vdbe.c >opcodeLabels.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #

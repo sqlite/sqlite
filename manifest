@@ -1,5 +1,5 @@
-C Improve\sthe\sperformance\sof\sthe\sOP_Column\sopcode\sof\sthe\sbytecode\sengine\nby\sin-lining\sthe\scall\sto\ssqlite3VdbeSerialGet().
-D 2026-08-08T09:58:25.927
+C This\sis\san\sattempt\sto\suse\sthe\slabels\sas\svalues\sfeature\sof\sgcc\sto\simplement\ntoken-threaded\sbytecode.\s\sInspired\sby\s\n[forum:/info/2026-08-08T10:14:30Z|Forum\s2026-08-08T10:14:30Z]\sbut\sa\ncompletely\sdifferent\simplementation.\s\sShows\sonly\sabout\shalf\sthe\sperformance\ngain.\s\sStill\scontains\sbugs.\s\sExperimental.\s\sWork-in-progress.
+D 2026-08-08T22:57:22.239
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -664,7 +664,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk a070741c2aa50883c370c55c1351be46b3db6958164426a3c4dfc456072e8343
+F main.mk 3c36d0859af83b0027e1b5998ab1119b3ae09c6ef15b73d265e4e6b957b0ce91
 F make.bat a136fd0b1c93e89854a86d5f4edcf0386d211e5d5ec2434480f6eea436c7420c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -809,7 +809,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c fcab5d997364c657e973e2bd3b9d2181aeb0926be0c028f20dfd4445894af3b4
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c d548f6479871cf57b4ae60329dc24a7894e1dc724abb26691d3f0453d6474637
+F src/vdbe.c 0419e6cfd73f14a55c2f1b084b8731751e27f5474c93c318f08f88cf91d3b01f
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h 0789d42b79d80233c9cb3c43e6491d457c66314ac3d40cbe21a123b8684ecb68
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
@@ -2163,14 +2163,15 @@ F tool/mkctimec.tcl 85ce722e10f81368bc42fb194fe6af450f7f0ef9199b706cbc02b5b484ce
 F tool/mkfptab.c 24ea40113f96584caca3f6dd06b4ad5adffa0f39023910cb83fa7ef2ffa9b0ba
 F tool/mkkeywordhash.c 82d5af1d0e677900739fba59155cddac172d8c712c2d91ab73d6e6bcb30060f0
 F tool/mkmsvcmin.tcl d76c45efda1cce2d4005bcea7b8a22bb752e3256009f331120fb4fecb14ebb7a
+F tool/mkopcodeLabels.tcl 2ef7c58301f28fe7022012f43c0884332e9cdf37b5efc6c6674e6007fa7b77e5
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
-F tool/mkopcodeh.tcl 2b4e6967a670ef21bf53a164964c35c6163277d002a4c6f56fa231d68c88d023
+F tool/mkopcodeh.tcl 11d2b897da9b7639020fb08fdc654a5a9ec1c5a79012b5ae516dd41b0f4423e9
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl 3801ce32f8c55fe63a3b279f231fb26c2c1a2ea9a09d2dd599239d87a609acec
 F tool/mkshellc.tcl da6918b128e928a8f0d663519e14829153e59465bd5eb596442e99fa10a411b7
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
 F tool/mksqlite3c-noext.tcl 351c55256213154cabb051a3c870ef9f4487de905015141ae50dc7578a901b84
-F tool/mksqlite3c.tcl 7a268139158e5deef27a370bc2f8db6ccf100c1ad7ac5e5b23743c0fd354f609
+F tool/mksqlite3c.tcl 0ab09a17ab2ad5a00cc21a56ef258f12e41bd6cecdc305997f45463dda0d0dbe
 F tool/mksqlite3h.tcl ef6831c97e6e638d2324863e8125306baea239b23defd75da77edffa3b620e81
 F tool/mksqlite3internalh.tcl 46ef6ed6ccd3c36e23051109dd25085d8edef3887635cea25afa81c4adf4d4db
 F tool/mksrczip.tcl 81efd9974dbb36005383f2cd655520057a2ae5aa85ac2441a80c7c28f803ac52
@@ -2218,9 +2219,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8b3da5d6cea2e3b31784f5e8f05c4801a3d881039aa26ecadf3a50b4454a3de6 b08d213dafe2ec284fccabeff0350fecdffcdd762841b381a1bcd7e02b1fda77
-R 77d6215110b1fb079f6d2ade83d01587
-T +closed b08d213dafe2ec284fccabeff0350fecdffcdd762841b381a1bcd7e02b1fda77
+P d2dd7b3b1355b245cc5e69dff10ad23de3b280571ab3c1cd29d4446404b31402
+R 65cf7c805a93b3ddaa84fad68b6a1d1e
+T *branch * threaded-bytecode-experiment
+T *sym-threaded-bytecode-experiment *
+T -sym-trunk *
 U drh
-Z d609023c6d61935bb56d50cf807003d6
+Z 52f007fa320d2b5a3a5b642bccfeced3
 # Remove this line to create a well-formed Fossil manifest.

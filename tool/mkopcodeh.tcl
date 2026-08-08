@@ -6,9 +6,10 @@
 # parser and the vdbe.c source file in order to generate the opcodes numbers
 # for all opcodes.  
 #
-# The lines of the vdbe.c that we are interested in are of the form:
+# The lines of the vdbe.c that we are interested in are on of of the forms:
 #
 #       case OP_aaaa:      /* same as TK_bbbbb */
+#       VDBE_OPCODE(aaa):  /* same as TK_bbbbb */
 #
 # The TK_ comment is optional.  If it is present, then the value assigned to
 # the OP_ is the same as the TK_ value.  If missing, the OP_ value is assigned
@@ -22,9 +23,10 @@
 # code to translate from one to the other is avoided.  This makes the
 # code generator smaller and faster.
 #
-# This script also scans for lines of the form:
+# This script also scans for lines in these forms:
 #
 #       case OP_aaaa:       /* jump, in1, in2, in3, out2, out3 */
+#       VDBE_OPCODE(aaaa):  /* jump, in1, in2, in3, out2, out3 */
 #
 # When such comments are found on an opcode, it means that certain
 # properties apply to that opcode.  Set corresponding flags using the
@@ -72,8 +74,9 @@ while {![eof $in]} {
     set synopsis($currentOp) [string trim $x]
   }
 
-  # Scan for "case OP_aaaa:" lines in the vdbe.c file
+  # Scan for "case OP_aaaa:" or "VDBE_OPCODE(aaaa):" lines in the vdbe.c file
   #
+  regsub {^VDBE_OPCODE\(([a-zA-Z0-9]+)\)} $line {case OP_\1:} line
   if {[regexp {^case OP_} $line]} {
     set line [split $line]
     set name [string trim [lindex $line 1] :]
