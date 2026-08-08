@@ -1,5 +1,5 @@
-C Change\sthe\sway\sfts5\stest\scode\scasts\sbetween\sintegers\sand\spointers\sto\savoid\sa\subsan\serror\sin\ssome\sversions\sof\sgcc.\sReport\s[bugs:/info/2026-08-08T15:54:04Z\s|\s2026-08-08T15:54:04Z].
-D 2026-08-08T19:47:28.132
+C Remove\sunused\svariable\sfrom\spragma.c.
+D 2026-08-08T20:29:57.717
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -736,7 +736,7 @@ F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 092b758d2c5e4dabb30eae46d8dfad77c0f70b16bf3ff1943f7a232b0fe0d4ba
 F src/pcache1.c c5725cfc6043c33b1343fc848176b8cfceacd6bc5102423c8b61f9ba62b21a9d
-F src/pragma.c 789ef67117b74b5be0a2db6681f7f0c55e6913791b9da309aefd280de2c8a74d
+F src/pragma.c a3ffc8473689240121084fdd87d462164de0aa04c306df377074d8c9eb331725
 F src/prepare.c 8954bb69defe377cd6a926f8c61d8215ea4f1974838d3ec6f22681a2c0a2939f
 F src/printf.c b480176bd0aaed9d64e804cfa3ca27fc585f65a73e7c7ca2fe9b9016db2cf6d5
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d2dd7b3b1355b245cc5e69dff10ad23de3b280571ab3c1cd29d4446404b31402
-R b519bb733ca9b1c6ecdc02b3a8f62faf
+P d275eb5b634afb85bf1f5fab4fd5243247ed06e03db3e2077192c01ff43713d0
+R 0524de807e091ec96f2c45c28604b54e
 U dan
-Z 72509a50899fd6004539720d0cb5c143
+Z 5639d7cc98c947a282ff142cfaf2b5c8
 # Remove this line to create a well-formed Fossil manifest.
