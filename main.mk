@@ -1456,7 +1456,7 @@ opcodes.h:	parse.h $(TOP)/src/vdbe.c \
 		$(TOP)/tool/mkopcodeh.tcl $(B.tclsh)
 	cat parse.h $(TOP)/src/vdbe.c | $(B.tclsh) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
 
-opcodeLabels.h:	opcodes.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodec.tcl $(B.tclsh)
+opcodeLabels.h:	opcodes.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeLabels.tcl $(B.tclsh)
 	$(B.tclsh) $(TOP)/tool/mkopcodeLabels.tcl opcodes.h $(TOP)/src/vdbe.c >opcodeLabels.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.

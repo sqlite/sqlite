@@ -967,7 +967,7 @@ int sqlite3VdbeExec(
   int bStmtScanStatus = IS_STMT_SCANSTATUS(db)!=0;
 #endif
   /*** INSERT STACK UNION HERE ***/
-#ifdef SQLITE_THREADED_BYTECODE
+#if SQLITE_THREADED_BYTECODE>0
 # include "opcodeLabels.h"
 #endif
 
