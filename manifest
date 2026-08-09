@@ -1,5 +1,5 @@
-C Code\sand\scomment\srestructuring\sfor\sclarity.\sNot\smuch\slogic\schange.\s\sThis\nversion\sclearly\sshows\sthat\sSQLITE_THREADED_BYTECODE=2\sis\sfaster\sthan\sthe\ndefault,\sthough\slarger,\swhile\sSQLITE_THREADED_BYTECODE=1\sis\sslower\sand\nlarger\sstill.\s\sUnclear\syet\swhy\sthat\sis\sthe\scase.
-D 2026-08-09T16:22:54.177
+C Hybrid\sfull\sdirect-threaded\sand\sfor-loop\sdesigns.
+D 2026-08-09T18:43:47.982
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -809,7 +809,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c fcab5d997364c657e973e2bd3b9d2181aeb0926be0c028f20dfd4445894af3b4
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 0d8bb049e173a70fef0a969a634cb0553fe23b8b34a353e42663bfc573f8b696
+F src/vdbe.c 137e63a1058a0e360a1c1e89a0249cf05982728bdf5c0aa8f5b6b949fba9f9e1
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h 0789d42b79d80233c9cb3c43e6491d457c66314ac3d40cbe21a123b8684ecb68
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2db8dab73e6fde850d489d99d4d65d41bd33a90dc9f725dfd2829c478b50713e
-R 6a2d58c49a89db4e8fa6738c305f0fe9
+P 250d059db9c3dd0a2b5ffab8433e3b8315ec7944ca898ef10f1c252495768c8b
+R ba55ed7f23d0718e2a77df7bed0b6411
 U drh
-Z afbc8c879f0dc1524a87963fd088b609
+Z 8c77baab3d10d12b9bc14c4c5133e807
 # Remove this line to create a well-formed Fossil manifest.

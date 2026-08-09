@@ -896,15 +896,18 @@ static const char *vdbeMemTypeName(Mem *pMem){
 }
 
 /*
-** Set the SQLITE_THREADED_BYTECODE macro to 0, 1, or 2.
+** Set the SQLITE_THREADED_BYTECODE macro to 0, 1, 2, or 3.
 **
 **    0:    Do not use token-threading.  Use a traditional switch() statement.
+**          This is portable to all standard C compilers.  All the others
+**          require GCC or compatible (ex: clang).
 **
 **    1:    Token-threading in which the implementation of each opcode
 **          takes care of jumping to the next opcode all by itself.  This
 **          mode does not work with SQLITE_DEBUG and SQLITE_PROFILE as it
 **          skips some extra common code that occurs at the start of each
-**          opcode.
+**          opcode.  This turns out to be the slowest and probably ought
+**          never be used, outside of testing.
 **
 **    2:    Use token-threading dispatch, but keep the for() loop over
 **          opcodes that the traditional switch() statement uses.  So the
@@ -915,20 +918,24 @@ static const char *vdbeMemTypeName(Mem *pMem){
 **          extra operations used by SQLITE_DEBUG and SQLITE_PROFILE.
 **          This is really just a faster switch().
 **
+**    3:    This approach is a hybrid between 1 and 2.  The direct-threading
+**          approach is used for frequent continuations (those marked with
+**          VDBE_NEXT_HOT instead of the usual VDBE_NEXT) but the for-loop
+**          is used for all others.  This is faster variant.
+**
 ** The token-threaded bytecode engine is prohibited (value 0) if
-** SQLITE_OMIT_THREADED_BYTECODE exists or if __GNUC__ is not defined.
-** Token-threading is set to debug mode (value 2) if any of the
-** following macros are defined:
+** if __GNUC__ is not defined.  Token-threading is set to debug mode
+** (value 2) if any of the following macros are defined:
 **
 **     *  SQLITE_DEBUG
 **     *  SQLITE_TEST
 **     *  SQLITE_PROFILE
 **     *  SQLITE_ENABLE_STMT_SCANSTATUS
+**
+** Otherwise, the default value is the hybrid variant (3) which is the
+** fastest.
 */
-#if defined(SQLITE_OMIT_THREADED_BYTECODE)
-# undef SQLITE_THREADED_BYTECODE
-# defined SQLITE_THREADED_BYTECODE 0
-#elif !defined(__GNUC__) 
+#if !defined(__GNUC__) 
 # undef SQLITE_THREADED_BYTECODE
 # define SQLITE_THREADED_BYTECODE 0
 #elif defined(SQLITE_THREADED_BYTECODE)
@@ -942,7 +949,7 @@ static const char *vdbeMemTypeName(Mem *pMem){
 #elif defined(SQLITE_ENABLE_STMT_SCANSTATUS)
 # define SQLITE_THREADED_BYTECODE 2
 #else
-# define SQLITE_THREADED_BYTECODE 1
+# define SQLITE_THREADED_BYTECODE 3
 #endif
 
 /*
@@ -958,6 +965,10 @@ static const char *vdbeMemTypeName(Mem *pMem){
 **
 **  VDBE_NEXT              This occurs at the end of an opcode implementation.
 **                         It causes a jump to the next opcode in sequence.
+**
+**  VDBE_NEXT_HOT          This is the same as VDBE_NEXT but indicates that
+**                         this particular branch is frequently taken.  It
+**                         might be beneficial to do additional optimization.
 **
 **  VDBE_DEFAULT           This is the start of the "default" opcode
 **                         (OP_Noop).  It needs to be a separate macro
@@ -978,6 +989,7 @@ static const char *vdbeMemTypeName(Mem *pMem){
 # define VDBE_OPCODE(x)    case OP_##x
 # define VDBE_DISPATCH(x)  switch(x)
 # define VDBE_NEXT         break
+# define VDBE_NEXT_HOT     break;
 # define VDBE_DEFAULT      default
 # define VDBE_FALLTHRU     deliberate_fall_through
 
@@ -991,10 +1003,12 @@ static const char *vdbeMemTypeName(Mem *pMem){
 # define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
 # define VDBE_NEXT         \
          do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
+# define VDBE_NEXT_HOT     \
+         do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
 # define VDBE_DEFAULT      opcode_Noop
 # define VDBE_FALLTHRU
 
-#else
+#elif SQLITE_THREADED_BYTECODE==2
 /* In this variant, there is a single common computed-goto at the top
 ** of the loop and dispatches to the next opcode.  Opcodes end by invoking
 ** "continue" to go to the next iteration of the loop.  This variant is
@@ -1004,10 +1018,26 @@ static const char *vdbeMemTypeName(Mem *pMem){
 # define VDBE_OPCODE(x)    opcode_##x
 # define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
 # define VDBE_NEXT         continue
+# define VDBE_NEXT_HOT     continue
 # define VDBE_DEFAULT      opcode_Noop
 # define VDBE_FALLTHRU
-#endif
 
+#elif SQLITE_THREADED_BYTECODE==3
+/* This is hybrid between approach 1 (full threaded) and 2 (use the for-loop).
+** The for-loop is used in most cases (VDBE_NEXT) but direct threading is
+** used for VDBE_NEXT_HOT.
+*/
+# define VDBE_OPCODE(x)    opcode_##x
+# define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
+# define VDBE_NEXT         continue
+# define VDBE_NEXT_HOT     \
+         do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
+# define VDBE_DEFAULT      opcode_Noop
+# define VDBE_FALLTHRU
+
+#else
+#  error SQLITE_THREADED_BYTECODE must be between 0 and 3
+#endif
 
 /*
 ** Execute as much of a VDBE program as we can.
@@ -1292,7 +1322,7 @@ check_for_interrupt:
   }
 #endif
  
-  VDBE_NEXT;
+  VDBE_NEXT_HOT;
 }
 
 /* Opcode:  Gosub P1 P2 * * *
@@ -1371,7 +1401,7 @@ jump_to_p2:
   assert( pOp->p2>0 );       /* There are never any jumps to instruction 0 */
   assert( pOp->p2<p->nOp );  /* Jumps must be in range */
   pOp = &aOp[pOp->p2 - 1];
-  VDBE_NEXT;
+  VDBE_NEXT_HOT;
 }
 
 /* Opcode:  EndCoroutine P1 * * * *
@@ -2151,7 +2181,7 @@ fp_math:
     MemSetTypeFlag(pOut, MEM_Real);
 #endif
   }
-  VDBE_NEXT;
+  VDBE_NEXT_HOT;
 
 arithmetic_result_is_null:
   sqlite3VdbeMemSetNull(pOut);
@@ -3500,7 +3530,7 @@ op_column_restart:
 op_column_out:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
-  VDBE_NEXT;
+  VDBE_NEXT_HOT;
 
 op_column_corrupt:
   if( aOp[0].p3>0 ){
@@ -4026,7 +4056,7 @@ VDBE_OPCODE(MakeRecord): {
 
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   REGISTER_TRACE(pOp->p3, pOut);
-  VDBE_NEXT;
+  VDBE_NEXT_HOT;
 }
 
 /* Opcode: Count P1 P2 P3 * *
@@ -6849,7 +6879,7 @@ VDBE_OPCODE(IdxInsert): {        /* in2 */
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
   if( rc) goto abort_due_to_error;
-  VDBE_NEXT;
+  VDBE_NEXT_HOT;
 }
 
 /* Opcode: SorterInsert P1 P2 * * *
@@ -9177,7 +9207,7 @@ VDBE_OPCODE(Function): {            /* group */
 
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
-  VDBE_NEXT;
+  VDBE_NEXT_HOT;
 }
 
 /* Opcode: ClrSubtype P1 * * * *
