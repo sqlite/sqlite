@@ -900,14 +900,23 @@ static const char *vdbeMemTypeName(Mem *pMem){
 **
 **    0:    Do not use token-threading.  Use a traditional switch() statement.
 **
-**    1:    Use full-on token-threading.
+**    1:    Token-threading in which the implementation of each opcode
+**          takes care of jumping to the next opcode all by itself.  This
+**          mode does not work with SQLITE_DEBUG and SQLITE_PROFILE as it
+**          skips some extra common code that occurs at the start of each
+**          opcode.
 **
 **    2:    Use token-threading dispatch, but keep the for() loop over
-**          opcodes that the traditional switch() statement uses.  This
-**          option is used for debugging.
+**          opcodes that the traditional switch() statement uses.  So the
+**          opcodes are in a loop, and the dispatch to the next opcode is
+**          A jump instruction near the top of the loop.  Each opcode
+**          ends with a "continue" to continue to the next cycle of the
+**          loop.  This mode includes common code at the top that handles
+**          extra operations used by SQLITE_DEBUG and SQLITE_PROFILE.
+**          This is really just a faster switch().
 **
 ** The token-threaded bytecode engine is prohibited (value 0) if
-** SQLITE_OMIT_THREADED_BYTECODE or if __GNUC__ is not defined.
+** SQLITE_OMIT_THREADED_BYTECODE exists or if __GNUC__ is not defined.
 ** Token-threading is set to debug mode (value 2) if any of the
 ** following macros are defined:
 **
@@ -916,11 +925,14 @@ static const char *vdbeMemTypeName(Mem *pMem){
 **     *  SQLITE_PROFILE
 **     *  SQLITE_ENABLE_STMT_SCANSTATUS
 */
-#undef SQLITE_THREADED_BYTECODE
 #if defined(SQLITE_OMIT_THREADED_BYTECODE)
+# undef SQLITE_THREADED_BYTECODE
 # defined SQLITE_THREADED_BYTECODE 0
 #elif !defined(__GNUC__) 
+# undef SQLITE_THREADED_BYTECODE
 # define SQLITE_THREADED_BYTECODE 0
+#elif defined(SQLITE_THREADED_BYTECODE)
+  /* Use whatever definition of SQLITE_THREADED_BYTECODE is provided */
 #elif defined(SQLITE_DEBUG)
 # define SQLITE_THREADED_BYTECODE 2
 #elif defined(SQLITE_TEST)
@@ -932,6 +944,70 @@ static const char *vdbeMemTypeName(Mem *pMem){
 #else
 # define SQLITE_THREADED_BYTECODE 1
 #endif
+
+/*
+** Define macros used for opcode identification and evaluation:
+**
+**  VDBE_OPCODE(x)         This defines the start of the implemention
+**                         for opcode x.  It must be at the left margin
+**                         so that tools like mkopcodeh.tcl can pick it up.
+**
+**  VDBE_DISPATCH(x)       If x is an integer opcode, this macro causes
+**                         a jump to the start of the implementation of
+**                         that opcode.
+**
+**  VDBE_NEXT              This occurs at the end of an opcode implementation.
+**                         It causes a jump to the next opcode in sequence.
+**
+**  VDBE_DEFAULT           This is the start of the "default" opcode
+**                         (OP_Noop).  It needs to be a separate macro
+**                         so that we have a "default:" for the switch()
+**                         implementation.
+**
+**  VDBE_FALLTHRU          This occurs at the end of an opcode implementation
+**                         to indicate that the implementation actually
+**                         continues (falls through) into the next opcode.
+**                         The purpose is to prevent compiler warnings
+**                         for the switch() implementation.
+*/
+#if SQLITE_THREADED_BYTECODE==0
+/* This is the standard-C portable implementation based on switch().  Each
+** opcode is a case of that switch().  This is the only variant that will
+** work on builds using other than GCC.
+*/
+# define VDBE_OPCODE(x)    case OP_##x
+# define VDBE_DISPATCH(x)  switch(x)
+# define VDBE_NEXT         break
+# define VDBE_DEFAULT      default
+# define VDBE_FALLTHRU     deliberate_fall_through
+
+#elif SQLITE_THREADED_BYTECODE==1
+/* This is variant using the computed-goto feature of GCC.  Each opcode
+** contains a computed goto to jump directly to the next opcode.  The for()
+** loop does not really do anything.  This is the closest to true
+** token-threading.
+*/
+# define VDBE_OPCODE(x)    opcode_##x
+# define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
+# define VDBE_NEXT         \
+         do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
+# define VDBE_DEFAULT      opcode_Noop
+# define VDBE_FALLTHRU
+
+#else
+/* In this variant, there is a single common computed-goto at the top
+** of the loop and dispatches to the next opcode.  Opcodes end by invoking
+** "continue" to go to the next iteration of the loop.  This variant is
+** similar to switch(), except that it uses computed-goto instead of switch,
+** since computed-goto appears to be faster.
+*/
+# define VDBE_OPCODE(x)    opcode_##x
+# define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
+# define VDBE_NEXT         continue
+# define VDBE_DEFAULT      opcode_Noop
+# define VDBE_FALLTHRU
+#endif
+
 
 /*
 ** Execute as much of a VDBE program as we can.
@@ -968,6 +1044,10 @@ int sqlite3VdbeExec(
 #endif
   /*** INSERT STACK UNION HERE ***/
 #if SQLITE_THREADED_BYTECODE>0
+  /* The opcodeLabels.h file is computed at build-time using opcodes.h and
+  ** this source file as inputs.  It defines a static array aOpcodeLabel[]
+  ** that contains pointers to the start of every defined opcode.  This
+  ** array is used to implement the computed-goto dispatch algorithm. */
 # include "opcodeLabels.h"
 #endif
 
@@ -1025,7 +1105,8 @@ int sqlite3VdbeExec(
   }
   sqlite3EndBenignMalloc();
 #endif
-  for(pOp=&aOp[p->pc]; 1; pOp++){
+
+  for(pOp=&aOp[p->pc]; 1; pOp++){  /* Loop over all opcodes. tag-20260809-1 */
     /* Errors are detected by individual opcodes, with an immediate
     ** jumps to abort_due_to_error. */
     assert( rc==SQLITE_OK );
@@ -1108,79 +1189,41 @@ int sqlite3VdbeExec(
     pOrigOp = pOp;
 #endif
 
-#if SQLITE_THREADED_BYTECODE==0
-/* This is the normal implementation, for all builds other than GCC and
-** for all builds that omit SQLITE_THREADED_BYTECODE
-*/
-# define VDBE_OPCODE(x)    case OP_##x
-# define VDBE_DISPATCH(x)  switch(x)
-# define VDBE_NEXT         break
-# define VDBE_DEFAULT      default
-# define VDBE_FALLTHRU     deliberate_fall_through
-#elif SQLITE_THREADED_BYTECODE==1
-/* This is an optimization, available on on GCC, which replaces the
-** switch() statement used for opcode dispatch with token-threading.
-*/
-# define VDBE_OPCODE(x)    opcode_##x
-# define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
-# define VDBE_NEXT         \
-         do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
-//# define VDBE_NEXT         continue
-# define VDBE_DEFAULT      opcode_Noop
-# define VDBE_FALLTHRU
-#else
-/* This is an optimization, available on on GCC, which replaces the
-** switch() statement used for opcode dispatch with token-threading.
-*/
-# define VDBE_OPCODE(x)    opcode_##x
-# define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
-# define VDBE_NEXT         continue
-# define VDBE_DEFAULT      opcode_Noop
-# define VDBE_FALLTHRU
-#endif
-
     VDBE_DISPATCH( pOp->opcode ){
 
 /*****************************************************************************
-** What follows is a massive switch statement where each case implements a
-** separate instruction in the virtual machine.  If we follow the usual
-** indentation conventions, each case should be indented by 6 spaces.  But
-** that is a lot of wasted space on the left margin.  So the code within
-** the switch statement will break with convention and be flush-left. Another
-** big comment (similar to this one) will mark the point in the code where
-** we transition back to normal indentation.
+** The following section implements all opcodes of the bytecode engine.
+** Each separate opcode begins with "VDBE_OPCODE(aaaa)" at the left margin,
+** where "aaaa" is the opcode name.  Opcodes are really unsigned integers.
+** Scripts that run at build-time will search for instances of the
+** VDBE_OPCODE() macro in order to build tables of symbolic names for
+** the numeric opcodes, and similar.  See tool/mkopcodec.tcl for example.
 **
-** Each case of the switch implements an opcode.  The case statement itself
-** is genenerated by a macro:
+** The default implementation is that this is a big switch() statement
+** where each opcode is a separate case: of that switch().  Macros are
+** used instead of literal "switch" and "case" so that a computed-goto
+** implementation can be substituted on compilers that support that.
+** Search backwards for the definition of the VDBE_OPCODE for additional
+** information about various other macros used within this section.
 **
-**     VDBE_OPCODE(aaaa)    ->    case OP_aaaa
-**
-** The reason for this macro is that if SQLite is compiled with
-** -DSQLITE_THREADED_BYTECODE, then the GCC-specific "computed goto"
-** extension is used instead of a switch statement, for performance.
+** Search ahead for "undef VDBE_OPCODE" to find the end of this sectcion.
 **
 ** The formatting of each opcode implementation is important.  The makefile
-** for SQLite generates two C files "opcodes.h" and "opcodes.c" by scanning
-** this file looking for lines that begin with "VDBE_OPCODE(...)".  The
-** opcodes.h files will be filled with #defines that give unique integer
-** values to each opcode and the opcodes.c file is filled with an array
-** of strings where each string is the symbolic name for the corresponding
-** opcode.  If the VDBE_OPCODE() macro is followed by a comment of the form
-** "/# same as ... #/" that comment is used to determine the particular
-** value of the opcode.
-**
-** Other keywords in the comment that follows each case are used to
-** construct the OPFLG_INITIALIZER value that initializes opcodeProperty[].
-** Keywords include: in1, in2, in3, out2, out3.  See tool/mkopcodeh.tcl
-** script for additional information.
+** for SQLite generates various C files such as "opcodes.h", "opcodes.c",
+** and "opcodeLabels.h" by scanning this file looking for lines that begin
+** with "VDBE_OPCODE(...)".  Special comments following each VDBE_OPCODE()
+** are used to describe extra properties of that opcode which are important
+** for table generation in those auxiliary files.
 **
 ** Documentation about VDBE opcodes is generated by scanning this file
 ** for comment lines of that contain "Opcode:".  That line and all subsequent
 ** comment lines are used in the generation of the opcode.html documentation
 ** file.
 **
-** Search forward for the comment text: "undef VDBE_OPCODE" to find the end
-** of the logic that implements all VDBE opcodes.
+** This whole section ought to be indented by 6 spaces if we followed
+** standard indentation rules.  But that would just be wasted space.  Hence
+** for this section, all code is move 6 spaces to the left so that the
+** VDBE_OPCODE() macros are flush-left.
 **
 ** SUMMARY:
 **
@@ -9485,15 +9528,17 @@ VDBE_DEFAULT: {          /* This is really OP_Noop, OP_Explain */
   VDBE_NEXT;
 }
 
-} /* End of the switch() statement used to dispatch opcodes */
+} /* End of the switch() statement or computed-goto used to dispatch opcodes */
 /*****************************************************************************
 ** Here ends the implementation of VDBE opcodes.  From this point forward
-** everything is ordinary C code
+** everything is ordinary C code.  At this point we are still inside the
+** for(;;) loop at tag-20260809-1.
 *****************************************************************************/
 #undef VDBE_OPCODE       /* We don't need these macros any more... */
 #undef VDBE_NEXT
 #undef VDBE_DEFAULT
 #undef VDBE_DISPATCH
+#undef VDBE_FALLTHRU
 
 #if defined(VDBE_PROFILE)
     *pnCycle += sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
@@ -9532,7 +9577,7 @@ VDBE_DEFAULT: {          /* This is really OP_Noop, OP_Explain */
     }
 #endif  /* SQLITE_DEBUG */
 #endif  /* NDEBUG */
-  }  /* The end of the for(;;) loop the loops through opcodes */
+  }  /* The end of the for(;;) loop at tag-20260809-1
 
   /* If we reach this point, it means that execution is finished with
   ** an error of some kind.
