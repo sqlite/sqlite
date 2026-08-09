@@ -1,5 +1,5 @@
-C Remove\sunused\svariable\sfrom\spragma.c.
-D 2026-08-08T20:29:57.717
+C Decode\sfixed-width\sinteger\sserial\stypes\sin\svdbeRecordCompareInt()\swith\sa\ssingle\seight-byte\sread\sand\san\sarithmetic\sshift,\sreplacing\sa\sswitch\sthat\spredicts\spoorly\son\smixed-width\sinteger\skeys.
+D 2026-08-09T19:03:50.493
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -813,7 +813,7 @@ F src/vdbe.c d548f6479871cf57b4ae60329dc24a7894e1dc724abb26691d3f0453d6474637
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h 0789d42b79d80233c9cb3c43e6491d457c66314ac3d40cbe21a123b8684ecb68
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
-F src/vdbeaux.c 00d784fb1713fdc95493266b2a2e7ff6638f6eb657b37b622bc71e074c875a7e
+F src/vdbeaux.c d4ef0b8f78ebae34bd5ed1e14032f5ff79076610f3be7f72f14201beedc84d2b
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
 F src/vdbesort.c 2cb0f80f1ab96a905412c6e0394f67a33ef2dc498dced80e66f065b2569788f2
@@ -2218,8 +2218,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d275eb5b634afb85bf1f5fab4fd5243247ed06e03db3e2077192c01ff43713d0
-R 0524de807e091ec96f2c45c28604b54e
-U dan
-Z 5639d7cc98c947a282ff142cfaf2b5c8
+P 7e3ad0dcde0fcfae8a6e7e16af5844cd02fe16fef5927891a11166c1f54eb45a
+R 80e760ff32d50017e2712048f41cde82
+T *branch * branchless-int-compare
+T *sym-branchless-int-compare *
+T -sym-trunk *
+U jeffchen
+Z 17ba5fc3305795a73aa2ecf3ff5b11fc
 # Remove this line to create a well-formed Fossil manifest.

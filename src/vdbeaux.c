@@ -4943,13 +4943,33 @@ static int vdbeRecordCompareInt(
   const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
   int serial_type = ((const u8*)pKey1)[1];
   int res;
-  u32 y;
-  u64 x;
   i64 v;
   i64 lhs;
 
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
   assert( (*(u8*)pKey1)<=0x3F || CORRUPT_DB );
+#if SQLITE_BYTEORDER==1234 && !defined(SQLITE_DISABLE_INTRINSIC) \
+    && (GCC_VERSION>=4003000 || defined(__clang__))
+  /* Serial types 1 through 6 are big-endian integers of 1, 2, 3, 4,
+  ** 6, or 8 bytes.  Rather than handle each width in its own switch
+  ** case, read 8 bytes and use an arithmetic right shift to drop the
+  ** unwanted low-order bytes and sign-extend the value.  This helps
+  ** because the switch tends to mispredict when a key column contains
+  ** integers of varying sizes.  The first entry of aShift[] is a
+  ** placeholder so that the table can be indexed by serial_type
+  ** directly.  Reading 8 bytes is always safe, because a buffer passed
+  ** to this routine has at least 74 bytes of padding after it, as
+  ** explained in sqlite3VdbeFindCompare() below. */
+  if( (u32)(serial_type-1)<=5 ){
+    static const u8 aShift[] = { 0, 56, 48, 40, 32, 16, 0 };
+    lhs = ((i64)EIGHT_BYTE_U64(aKey)) >> aShift[serial_type];
+    testcase( lhs<0 );
+  }else if( serial_type==8 || serial_type==9 ){
+    lhs = serial_type - 8;
+  }else{
+    return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
+  }
+#else
   switch( serial_type ){
     case 1: { /* 1-byte signed integer */
       lhs = ONE_BYTE_INT(aKey);
@@ -4967,7 +4987,7 @@ static int vdbeRecordCompareInt(
       break;
     }
     case 4: { /* 4-byte signed integer */
-      y = FOUR_BYTE_UINT(aKey);
+      u32 y = FOUR_BYTE_UINT(aKey);
       lhs = (i64)*(int*)&y;
       testcase( lhs<0 );
       break;
@@ -4978,7 +4998,7 @@ static int vdbeRecordCompareInt(
       break;
     }
     case 6: { /* 8-byte signed integer */
-      x = FOUR_BYTE_UINT(aKey);
+      u64 x = FOUR_BYTE_UINT(aKey);
       x = (x<<32) | FOUR_BYTE_UINT(aKey+4);
       lhs = *(i64*)&x;
       testcase( lhs<0 );
@@ -5003,6 +5023,7 @@ static int vdbeRecordCompareInt(
     default:
       return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
   }
+#endif
 
   assert( pPKey2->u.i == pPKey2->aMem[0].u.i );
   v = pPKey2->u.i;
