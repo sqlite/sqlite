@@ -1123,8 +1123,9 @@ int sqlite3VdbeExec(
 */
 # define VDBE_OPCODE(x)    opcode_##x
 # define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
-//# define VDBE_NEXT         pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode]
-# define VDBE_NEXT         continue
+# define VDBE_NEXT         \
+         do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
+//# define VDBE_NEXT         continue
 # define VDBE_DEFAULT      opcode_Noop
 # define VDBE_FALLTHRU
 #else

@@ -1,5 +1,5 @@
-C Makefile\sworking\son\sMSVC
-D 2026-08-09T09:29:06.877
+C Fix\sthe\sSQLITE_THREADED_BYTECODE==1\scase\sso\sthat\sit\suses\slocal\sdispatch\sat\nthe\send\sof\seach\sopcode,\srather\sthan\slooping.\s\sCuriously,\sthis\smakes\sthe\ncode\sboth\slarger\sand\sslower.\s\sIt\sseems\slike\swe\sshould\suse\sonly\sthe\nSQLITE_THREADED_BYTECODE==2\scase.
+D 2026-08-09T09:51:58.977
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -809,7 +809,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c fcab5d997364c657e973e2bd3b9d2181aeb0926be0c028f20dfd4445894af3b4
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c b0c0ee904af99012b8a1363a6c72a2f6af7751509b0115b21de2422d96201c2b
+F src/vdbe.c 725fdb0da3ecf00afdef2d43107edd01f0ebbd4e7930dd943c5604637c9420f2
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h 0789d42b79d80233c9cb3c43e6491d457c66314ac3d40cbe21a123b8684ecb68
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P cce83bf9e9d38af1d6fcb73b979f2ab902a73b0bfa419d897080295afe72b375
-R cf86113caf8939c72360172f4d99760b
+P 4df67b7425b31b348e4db65b491af302363ff2e85e4449be630431b49394ac0c
+R 76acf23e544ab618441d59a7876961ff
 U drh
-Z e69d36cc9f7759802286cce367644c8f
+Z a750a5300d82b16b6dab5d87c02cab13
 # Remove this line to create a well-formed Fossil manifest.
