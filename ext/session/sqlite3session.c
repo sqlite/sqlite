@@ -5549,7 +5549,7 @@ static int sessionRetryConstraints(
     if( rc==SQLITE_OK ){
       sqlite3_step(pInsert);
       rc = sqlite3_finalize(pInsert);
-      if( rc==SQLITE_CONSTRAINT ){
+      if( (rc&0xff)==SQLITE_CONSTRAINT ){
         rc = sqlite3_exec(db, "ROLLBACK TO update_op", 0, 0, 0);
         sqlite3_free(pApply->constraints.aBuf);
         pApply->constraints = cons;

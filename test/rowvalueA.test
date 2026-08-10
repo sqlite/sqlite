@@ -142,4 +142,51 @@ do_execsql_test 5.3 {
    ORDER BY +a;
 } {a NULL b ABCD}
 
+#-------------------------------------------------------------------------
+# Bug report https://sqlite.org/bugs/info/2026-08-09T09:33:49Z
+#
+do_execsql_test 6.1 {
+  SELECT 'abc' = (SELECT 'ABC' COLLATE nocase);
+} {0} 
+
+do_execsql_test 6.2 {
+  SELECT 'abc' IN (SELECT 'ABC' COLLATE nocase);
+} {1}
+
+do_execsql_test 6.3 {
+  SELECT ('abc', 1) = (SELECT 'ABC' COLLATE nocase, 1);
+} {0}
+
+do_execsql_test 6.4 {
+  SELECT ( SELECT CAST(123 AS INTEGER) )=='123'
+} {1}
+do_execsql_test 6.5 {
+  SELECT (SELECT CAST(123 AS INTEGER), 1)==('123', 1)
+} {1}
+
+do_execsql_test 6.6 {
+  SELECT ( SELECT 123 )=='123'
+} {0}
+
+do_execsql_test 6.7 {
+  CREATE TABLE t33(a, b, c);
+  INSERT INTO t33 VALUES ('abc', 1, 'i');
+  INSERT INTO t33 VALUES ('ABC', 1, 'ii');
+}
+
+do_execsql_test 6.8 {
+  SELECT c FROM t33 WHERE (a, b) = (SELECT 'abc' COLLATE nocase, 1);
+} {i}
+
+do_execsql_test 6.9 {
+  SELECT (a, b) = (SELECT 'abc' COLLATE nocase, 1) FROM t33;
+} {1 0}
+
+do_execsql_test 6.10 {
+    SELECT c FROM t33 WHERE CASE WHEN 1
+      THEN (a, b) = (SELECT 'abc' COLLATE nocase, 1)
+      ELSE (a, b) = (SELECT 'abc' COLLATE nocase, 1)
+    END;
+} {i}
+
 finish_test

@@ -282,22 +282,37 @@
 #endif
 
 /*
-** Macros to hint to the compiler that a function should or should not be
-** inlined.
+** Hint to the compiler that a function should or should not be inlined:
+**
+**    SQLITE_NOINLINE         Never in-line this function
+**
+**    SQLITE_INLINE           Strive to in-line this function
+**
+**    SQLITE_OPT_INLINE       In-line this function if building the
+**                            amalgamation.
 */
 #if defined(__GNUC__)
-#  define SQLITE_NOINLINE  __attribute__((noinline))
-#  define SQLITE_INLINE    __attribute__((always_inline)) inline
+#  define SQLITE_NOINLINE    __attribute__((noinline))
+#  define SQLITE_INLINE      __attribute__((always_inline)) inline
+#  define SQLITE_OPT_INLINE  __attribute__((always_inline)) inline
 #elif defined(_MSC_VER) && _MSC_VER>=1310
-#  define SQLITE_NOINLINE  __declspec(noinline)
-#  define SQLITE_INLINE    __forceinline
+#  define SQLITE_NOINLINE    __declspec(noinline)
+#  define SQLITE_INLINE      __forceinline
+#  define SQLITE_OPT_INLINE  __forceinline
 #else
 #  define SQLITE_NOINLINE
 #  define SQLITE_INLINE
+#  define SQLITE_OPT_INLINE
 #endif
 #if defined(SQLITE_COVERAGE_TEST) || defined(__STRICT_ANSI__)
 # undef SQLITE_INLINE
 # define SQLITE_INLINE
+# undef SQLITE_OPT_INLINE
+# define SQLITE_OPT_INLINE
+#endif
+#if !defined(SQLITE_AMALGAMATION)
+# undef SQLITE_OPT_INLINE
+# define SQLITE_OPT_INLINE
 #endif
 
 /*
@@ -5884,6 +5899,10 @@ void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p);
 void sqlite3ExprSetErrorOffset(Expr*,int);
 
 u32 sqlite3Get4byte(const u8*);
+SQLITE_OPT_INLINE u64 sqlite3Get8byte(const u8*);
+#if SQLITE_BYTEORDER!=4321
+SQLITE_OPT_INLINE u64 sqlite3BSwap64(u64);
+#endif
 void sqlite3Put4byte(u8*, u32);
 
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
