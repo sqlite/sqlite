@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sthe\sjs-backup-bindings\sbranch.
-D 2026-08-10T11:23:29.394
+C Fix\sa\scircular\sdep\sgenerated\sby\smkwasmbuilds.c
+D 2026-08-10T11:51:20.826
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -638,7 +638,7 @@ F ext/wasm/jaccwabyt/jaccwabyt.js 4e2b797dc170851c9c530c3567679f4aa509eec0fab73b
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
 F ext/wasm/libcmpp.c d6c29b55941ccd306b2edb83c2959a4cfc73d117bb094a816d393837cea3d65b
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
-F ext/wasm/mkwasmbuilds.c d4648ef369df6ea3b4e046494b3077f0baa5732282301a7418fdda39ec505a0f
+F ext/wasm/mkwasmbuilds.c 74a74a4e96e67cdb132f701140d53c677b2871fc49d2cdd143064f01329a3e51
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
 F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 48fdf51b53e9314f938fb0107ba04f6051d6c47b743c47e30c18a1be0da4015c 7e3ad0dcde0fcfae8a6e7e16af5844cd02fe16fef5927891a11166c1f54eb45a
-R e8cbf6840ed64a0b8124e329dfbec3f4
+P 692c4e8ad81f142a454c2038fcdc83317dbaeb71dd6d0497edb4621297c2e35c
+R 1d1c96f190819491afbeabe2688086ee
 U stephan
-Z 879ec2ca59e45fdbce354c929a90208b
+Z ebcb132a040deea2dd8c3e9143bc0831
 # Remove this line to create a well-formed Fossil manifest.
