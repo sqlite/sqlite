@@ -22,6 +22,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef SQLITE_DEBUG
 extern int sqlite3_fts5_may_be_corrupt;
