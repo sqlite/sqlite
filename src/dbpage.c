@@ -386,7 +386,7 @@ static int dbpageUpdate(
     }
   }
   pBt = pTab->db->aDb[iDb].pBt;
-  if( pgno64<1 || pgno64>4294967294 || NEVER(pBt==0) ){
+  if( pgno64<1 || pgno64>4294967294U || NEVER(pBt==0) ){
     zErr = "bad page number";
     goto update_fail;
   }

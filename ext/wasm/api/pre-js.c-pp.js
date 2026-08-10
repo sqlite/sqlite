@@ -34,7 +34,7 @@
    deliverables.
 */
 //#/if
-//#if not target:es6-bundler-friendly
+//#if not target:es6-bundler-friendly and not target:node
 (function(Module){
   const sIMS =
         globalThis.sqlite3InitModuleState/*from extern-post-js.c-pp.js*/
@@ -86,7 +86,7 @@
     'use strict';
     let theFile;
     const up = this.urlParams;
-    if(up.has(path)){
+    if(up?.has(path)){
       theFile = up.get(path);
     }else if(this.sqlite3Dir){
       theFile = this.sqlite3Dir + path;
@@ -105,7 +105,7 @@
 //#/if target:es6-module
   }.bind(sIMS);
 
-//#if Module.instantiateWasm and not wasmfs
+//#if Module.instantiateWasm and not wasmfs and not target:node
   /**
      Override Module.instantiateWasm().
 
