@@ -1910,6 +1910,26 @@ SQLITE_OPT_INLINE u64 sqlite3Get8byte(const u8 *p){
 #endif
 }
 
+#if SQLITE_BYTEORDER!=4321  /* Only used for little-endian machines */
+/*
+** Byte-swap a 64-bit unsigned integer.
+*/
+SQLITE_OPT_INLINE u64 sqlite3BSwap64(u64 x){
+#if SQLITE_BYTEORDER==1234 && GCC_VERSION>=4003000
+  return __builtin_bswap64(x);
+#elif SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  return _byteswap_uint64(x);
+#else
+  x = (x << 32) | (x >> 32);
+  x = ((x & UINT64_C(0x0000ffff0000ffff)) << 16) |
+      ((x & UINT64_C(0xffff0000ffff0000)) >> 16);
+  x = ((x & UINT64_C(0x00ff00ff00ff00ff)) <<  8) |
+      ((x & UINT64_C(0xff00ff00ff00ff00)) >>  8);
+  return x;
+#endif
+}
+#endif /* SQLITE_BYTEORDER!=4321 */
+
 /*
 ** Translate a single byte of Hex into an integer.
 ** This routine only works if h really is a valid hexadecimal
