@@ -3284,13 +3284,13 @@ op_column_restart:
         testcase( pDest->u.i<0 );
         break;
       case 6: {
-        pDest->u.i = (i64)EIGHT_BYTE_U64(zData);
+        pDest->u.i = (i64)sqlite3Get8byte(zData);
         pDest->flags = MEM_Int;
         testcase( pDest->u.i<0 );
         break;
       }
       case 7: {
-        u64 x = EIGHT_BYTE_U64(zData);
+        u64 x = sqlite3Get8byte(zData);
         swapMixedEndianFloat(x);
         pDest->flags = IsNaN(x) ? MEM_Null : MEM_Real;
         memcpy(&pDest->u.r, &x, sizeof(x));

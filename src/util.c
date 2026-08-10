@@ -1839,7 +1839,7 @@ int sqlite3VarintLen(u64 v){
 
 
 /*
-** Read or write a four-byte big-endian integer value.
+** Read an unsigned 32-bit integer from an unaligned big-endian array of bytes.
 */
 u32 sqlite3Get4byte(const u8 *p){
 #if SQLITE_BYTEORDER==4321
@@ -1859,6 +1859,9 @@ u32 sqlite3Get4byte(const u8 *p){
   return ((unsigned)p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
 #endif
 }
+
+/* Write an unsigned 32-bit integer into an unaligned big-endian array of bytes.
+*/
 void sqlite3Put4byte(unsigned char *p, u32 v){
 #if SQLITE_BYTEORDER==4321
   memcpy(p,&v,4);
@@ -1876,7 +1879,36 @@ void sqlite3Put4byte(unsigned char *p, u32 v){
 #endif
 }
 
-
+/*
+** Read an unsigned 64-bit integer from an unaligned big-endian byte array.
+*/
+SQLITE_OPT_INLINE u64 sqlite3Get8byte(const u8 *p){
+#if SQLITE_BYTEORDER==4321
+  u64 x;
+  memcpy(&x,p,8);
+  return x;
+#elif SQLITE_BYTEORDER==1234 && GCC_VERSION>=4003000
+  u64 x;
+  memcpy(&x,p,8);
+  return __builtin_bswap64(x);
+#elif SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+  u64 x;
+  memcpy(&x,p,8);
+  return _byteswap_uint64(x);
+#else
+  testcase( p[0]&0x80 );
+  return (u64)(
+    (((u64)p[0]) << 56) +
+    (((u64)p[1]) << 48) +
+    (((u64)p[2]) << 40) +
+    (((u64)p[3]) << 32) +
+    (((u64)p[4]) << 24) +
+    (((u64)p[5]) << 16) +
+    (((u64)p[6]) <<  8) +
+    (((u64)p[7]) <<  0)
+  );
+#endif
+}
 
 /*
 ** Translate a single byte of Hex into an integer.
