@@ -663,6 +663,7 @@ static int exprVectorRegister(
   Expr *pVector,                  /* Vector to extract element from */
   int iField,                     /* Field to extract from pVector */
   int regSelect,                  /* First in array of registers */
+  Expr *pTmp,                     /* Temporary space */
   Expr **ppExpr,                  /* OUT: Expression element */
   int *pRegFree                   /* OUT: Temp register to free */
 ){
@@ -674,8 +675,17 @@ static int exprVectorRegister(
   }
   if( op==TK_SELECT ){
     assert( ExprUseXSelect(pVector) );
-    *ppExpr = pVector->x.pSelect->pEList->a[iField].pExpr;
-     return regSelect+iField;
+    /* Use the temporary expression node to wrap expression iField of the
+    ** sub-select in a TK_SELECT_COLUMN node. This causes the caller to
+    ** use the affinity of the expression in any comparison, but not the
+    ** collation sequence.  */
+    memset(pTmp, 0, sizeof(Expr));
+    pTmp->op = TK_SELECT_COLUMN;
+    pTmp->pLeft = pVector;
+    pTmp->iColumn = iField;
+    pTmp->iTable = pVector->x.pSelect->pEList->nExpr;
+    *ppExpr = pTmp;
+    return regSelect+iField;
   }
   if( op==TK_VECTOR ){
     assert( ExprUseXList(pVector) );
@@ -742,11 +752,12 @@ static void codeVectorCompare(
   for(i=0; 1 /*Loop exits by "break"*/; i++){
     int regFree1 = 0, regFree2 = 0;
     Expr *pL = 0, *pR = 0;
+    Expr tmp1, tmp2;
     int r1, r2;
     assert( i>=0 && i<nLeft );
     if( addrCmp ) sqlite3VdbeJumpHere(v, addrCmp);
-    r1 = exprVectorRegister(pParse, pLeft, i, regLeft, &pL, &regFree1);
-    r2 = exprVectorRegister(pParse, pRight, i, regRight, &pR, &regFree2);
+    r1 = exprVectorRegister(pParse, pLeft, i, regLeft, &tmp1, &pL, &regFree1);
+    r2 = exprVectorRegister(pParse, pRight, i, regRight, &tmp2, &pR, &regFree2);
     addrCmp = sqlite3VdbeCurrentAddr(v);
     codeCompare(pParse, pL, pR, opx, r1, r2, addrDone, p5, isCommuted);
     testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
