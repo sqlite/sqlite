@@ -1070,7 +1070,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
 //#define vfs.metrics.enable
 //#// import initS11n()
-//#include api/opfs-common-inline.c-pp.js
+//#include "api/opfs-common-inline.c-pp.js"
 //#undef vfs.metrics.enable
     opfsVfs.initS11n = initS11n;
 

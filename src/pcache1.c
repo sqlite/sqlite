@@ -1021,8 +1021,11 @@ static PgHdr1 *pcache1FetchNoMutex(
   PCache1 *pCache = (PCache1 *)p;
   PgHdr1 *pPage = 0;
 
-  /* Step 1: Search the hash table for an existing entry. */
-  pPage = pCache->apHash[iKey % pCache->nHash];
+  /* Step 1: Search the hash table for an existing entry.  nHash is always
+  ** a power of two when the cache is in use (see pcache1ResizeHash()), so
+  ** the modulo reduces to a mask, avoiding a hardware divide. */
+  assert( pCache->nHash>0 && (pCache->nHash & (pCache->nHash-1))==0 );
+  pPage = pCache->apHash[iKey & (pCache->nHash-1u)];
   while( pPage && pPage->iKey!=iKey ){ pPage = pPage->pNext; }
 
   /* Step 2: If the page was found in the hash table, then return it.

@@ -316,7 +316,9 @@ SQLITE_WASM_EXPORT void sqlite3__wasm_pstack_restore(unsigned char * p){
 ** doing so).
 */
 SQLITE_WASM_EXPORT2(void *,sqlite3__wasm_pstack_alloc,(int n)){
-  if( n<=0 ) return 0;
+  if( n<=0 || n>(1024 * 1024/*https://sqlite.org/bugs/forumpost/4dbd096fe3*/) ){
+      return 0;
+    }
   n = (n + 7) & ~7 /* align to 8-byte boundary */;
   if( PStack.pBegin + n > PStack.pPos /*not enough space left*/
       || PStack.pBegin + n <= PStack.pBegin /*overflow*/ ) return 0;

@@ -3,6 +3,11 @@ _free
 _realloc
 _sqlite3_aggregate_context
 _sqlite3_auto_extension
+_sqlite3_backup_init
+_sqlite3_backup_step
+_sqlite3_backup_finish
+_sqlite3_backup_remaining
+_sqlite3_backup_pagecount
 _sqlite3_bind_blob
 _sqlite3_bind_double
 _sqlite3_bind_int
