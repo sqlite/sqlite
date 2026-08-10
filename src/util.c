@@ -1855,6 +1855,7 @@ u32 sqlite3Get4byte(const u8 *p){
   memcpy(&x,p,4);
   return _byteswap_ulong(x);
 #else
+  /* Test this limb using -DSQLITE_BYTEORDER=0 */
   testcase( p[0]&0x80 );
   return ((unsigned)p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
 #endif
@@ -1872,6 +1873,7 @@ void sqlite3Put4byte(unsigned char *p, u32 v){
   u32 x = _byteswap_ulong(v);
   memcpy(p,&x,4);
 #else
+  /* Test this limb using -DSQLITE_BYTEORDER=0 */
   p[0] = (u8)(v>>24);
   p[1] = (u8)(v>>16);
   p[2] = (u8)(v>>8);
@@ -1896,6 +1898,7 @@ SQLITE_OPT_INLINE u64 sqlite3Get8byte(const u8 *p){
   memcpy(&x,p,8);
   return _byteswap_uint64(x);
 #else
+  /* Test this limb using -DSQLITE_BYTEORDER=0 */
   testcase( p[0]&0x80 );
   return (u64)(
     (((u64)p[0]) << 56) +
@@ -1920,6 +1923,7 @@ SQLITE_OPT_INLINE u64 sqlite3BSwap64(u64 x){
 #elif SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
   return _byteswap_uint64(x);
 #else
+  /* Test this limb using -DSQLITE_BYTEORDER=0 */
   x = (x << 32) | (x >> 32);
   x = ((x & UINT64_C(0x0000ffff0000ffff)) << 16) |
       ((x & UINT64_C(0xffff0000ffff0000)) >> 16);

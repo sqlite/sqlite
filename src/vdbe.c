@@ -3801,10 +3801,11 @@ case OP_MakeRecord: {
 
   /* If we are able to put an over-run area of 7 bytes on the end of the
   ** memory allocation into which the record is being constructed, then
-  ** the encoding of integer values can go faster.  This is only possible
-  ** if SQLITE_MAX_LENGTH is no with 7 of INT32_MAX.
+  ** the encoding of integer values can go faster. This is only possible
+  ** if SQLITE_MAX_LENGTH is no with 7 of INT32_MAX and if the host CPU
+  ** byte-order is known at compile-time.
   */
-#if SQLITE_MAX_LENGTH<=2147483640
+#if SQLITE_MAX_LENGTH<=2147483640 && SQLITE_BYTEORDER>0
 # define OVERRUN 7   /* We are able to allocate an overrun of 7 bytes */
 #else
 # define OVERRUN 0   /* No overrun will be available */
@@ -3868,18 +3869,27 @@ case OP_MakeRecord: {
         }
         len = sqlite3SmallTypeSizes[serial_type];
         assert( len>=1 && len<=8 && len!=5 && len!=7 );
-#if SQLITE_BYTEORDER>0
-        if( SQLITE_BYTEORDER==1234 ){
-          v = sqlite3BSwap64(v);
-        }
+#if SQLITE_BYTEORDER==1234
+        v = sqlite3BSwap64(v);
         if( OVERRUN ){
           static const u8 aShift[] = { 0, 56, 48, 40, 32, 16, 0, 0 };
           v >>= aShift[serial_type];
           memcpy(zPayload, &v, 8);
         }else{
+          /* Test this limb by compiling with -DSQLITE_MAX_LENGTH=2147483647 */
+          memcpy(zPayload, (u8*)&v + 8 - len, len);
+        }
+#elif SQLITE_BYTEORDER==4321
+        if( OVERRUN ){
+          static const u8 aShift[] = { 0, 56, 48, 40, 32, 16, 0, 0 };
+          v <<= aShift[serial_type];
+          memcpy(zPayload, &v, 8);
+        }else{
+          /* Test this limb by compiling with -DSQLITE_MAX_LENGTH=2147483647 */
           memcpy(zPayload, (u8*)&v + 8 - len, len);
         }
 #else
+        /* Test this limb by compiling with -DSQLITE_BYTEORDER=0 */
         switch( len ){
           default: zPayload[7] = (u8)(v&0xff); v >>= 8;
                    zPayload[6] = (u8)(v&0xff); v >>= 8;
