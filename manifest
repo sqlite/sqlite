@@ -1,5 +1,5 @@
-C Performance\simprovement\sand\ssize\sreduction\sin\sthe\sOP_MakeRecord\sopcode.
-D 2026-08-10T20:05:36.565
+C Performance\simprovement\sand\ssize\sreduction\sin\sthe\svdbeRecordCompareInt()\nroutine.
+D 2026-08-10T20:17:00.181
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -813,7 +813,7 @@ F src/vdbe.c e1e84712a15e9a126ea5b6bb0689c28569d8421c80104bb20c1acac04d86edf4
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h 39f4c8eb1e4ac0593037d5268a54a691c72d34896db9973a9d39f2a5dea14163
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
-F src/vdbeaux.c 5593cf14515c0d8d0fa173a304210bd0abafc4f8b4cf68ed35e3c0e4269730e3
+F src/vdbeaux.c 1e3fefcdf497d0240296de3064e3c85204c03ded23a9010417a57af51a2c560e
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
@@ -2218,9 +2218,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9cf3f0079a7f9a4f02a6a86bd50f4ffc5645625eaa6de8cd9d09dd6a40d11176 cf49f4fc96d7493745e6611069598a14200ee062d6f25f94d275d18a782cd374
-R 0acbe7d54f763c6a7928d7b760551de8
-T +closed cf49f4fc96d7493745e6611069598a14200ee062d6f25f94d275d18a782cd374
+P 8b1f4923748cdcd6dc2ced81805c844e7d0ba84354f8c0c3bb79a0fec2137493 cce760dc6b3a9162a4afbf9b2b8cefb872092be8616c43b60754794b592fe782
+R 1f7e46ff56d1530670278f0f22c014e3
+T +closed cce760dc6b3a9162a4afbf9b2b8cefb872092be8616c43b60754794b592fe782
 U drh
-Z 72fec87230bfeef512eed6a7342d87d0
+Z cd86b80ecd61a5636aa0a3441d68fcb8
 # Remove this line to create a well-formed Fossil manifest.
