@@ -638,7 +638,7 @@ static void mk_pre_post(char const *zBuildName, BuildDef const * pB){
     */
     pf("$(pre-js.%s.js): $(pre-js.in.js) $(bin.c-pp) $(MAKEFILE_LIST)",
        zBuildName);
-    if( zDotWasm ){
+    if( 0 && zDotWasm ){
       pf(" $(dir.dout)/%s.wasm" /* This .wasm is from some other
                                    build, so this may trigger a full
                                    build of the reference copy. */,

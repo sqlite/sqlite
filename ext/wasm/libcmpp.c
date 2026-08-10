@@ -21,7 +21,7 @@
 #define CMPP_LIB_VERSION "2.0.x"
 #define CMPP_LIB_VERSION_HASH "1775ed29e5022f4b95b73b19406651a84a2895995915138f99b1d638e4cbf3c9"
 #define CMPP_LIB_VERSION_TIMESTAMP "2026-08-05 14:42:14.496 UTC"
-#define CMPP_LIB_CONFIG_TIMESTAMP "2026-08-05 14:53 GMT"
+#define CMPP_LIB_CONFIG_TIMESTAMP "2026-08-05 15:26 GMT"
 #define CMPP_VERSION CMPP_LIB_VERSION " " CMPP_LIB_VERSION_HASH " @ " CMPP_LIB_VERSION_TIMESTAMP
 #define CMPP_PLATFORM_EXT_DLL ".so"
 #define CMPP_MODULE_PATH ".:/usr/local/lib/cmpp"
@@ -64,6 +64,12 @@
 ** Canonical home:
 **
 ** - <https://fossil.wanderinghorse.net/r/c-pp>
+**
+** One may see mentions of %lite in some comments. Those are
+** preprocessor directives for this very preprocessor, used by the
+** build process to filter out certain API features to produce a
+** "lite" build. Their placement is significant, especially when
+** they're embedded within a multi-line C macro.
 */
 
 #if defined(CMPP_HAVE_AUTOCONFIG_H)
@@ -947,6 +953,30 @@ CMPP_EXPORT int cmpp_sp_commit(cmpp *pp);
 */
 CMPP_EXPORT int cmpp_sp_rollback(cmpp *pp);
 
+
+/**
+   _Almost_ equivalent to fopen(3) but:
+
+   - If name=="-", it returns one of stdin or stdout, depending on the
+   mode string: stdout is returned if 'w' or '+' appear, otherwise
+   stdin.
+
+   If it returns NULL, the global errno "should" contain a description
+   of the problem unless the problem was argument validation.
+
+   If at all possible, use cmpp_fclose() (as opposed to fclose()) to
+   close these handles, as it has logic to skip closing the three
+   standard streams.
+*/
+CMPP_EXPORT cmpp_FILE * cmpp_fopen(char const * name, char const *mode);
+
+/**
+   Passes f to fclose(3) unless f is NULL or one of the C-standard
+   handles (stdin, stdout, stderr), in which cases it does nothing at
+   all.
+*/
+CMPP_EXPORT void cmpp_fclose(cmpp_FILE * f);
+
 /**
    A cmpp_output_f() impl which requires state to be a (FILE*), which
    this function passes the call on to fwrite(). Returns 0 on
@@ -1030,29 +1060,6 @@ CMPP_EXPORT int cmpp_stream(cmpp_input_f inF, void * inState,
 */
 CMPP_EXPORT int cmpp_slurp(cmpp_input_f xIn, void *stateIn,
                            unsigned char **pOut, cmpp_size_t * nOut);
-
-/**
-   _Almost_ equivalent to fopen(3) but:
-
-   - If name=="-", it returns one of stdin or stdout, depending on the
-   mode string: stdout is returned if 'w' or '+' appear, otherwise
-   stdin.
-
-   If it returns NULL, the global errno "should" contain a description
-   of the problem unless the problem was argument validation.
-
-   If at all possible, use cmpp_fclose() (as opposed to fclose()) to
-   close these handles, as it has logic to skip closing the three
-   standard streams.
-*/
-CMPP_EXPORT cmpp_FILE * cmpp_fopen(char const * name, char const *mode);
-
-/**
-   Passes f to fclose(3) unless f is NULL or one of the C-standard
-   handles (stdin, stdout, stderr), in which cases it does nothing at
-   all.
-*/
-CMPP_EXPORT void cmpp_fclose(cmpp_FILE * f);
 
 /**
    A cleanup callback interface for use with cmpp_outputer::cleanup().
@@ -3551,12 +3558,12 @@ struct cmpp_api_thunk {
 
 
 /**
-   For loadable modules to be able portably access the cmpp API,
+   For loadable modules to be able to portably access the cmpp API,
    without requiring that their loading binary be linked with
-   -rdynamic, we need a "thunk". The API exposes cmpp_api_thunk
-   for that purpose. The following macros set up the thunk for
-   a given compilation unit. They are intended to only be used
-   by loadable modules, not generic client code.
+   -rdynamic, we need a "thunk". The API exposes cmpp_api_thunk for
+   that purpose. The following macros set up the thunk for a given
+   compilation unit. They are intended to only be used by loadable
+   modules, not generic client code.
 
    Before including this header, define CMPP_API_THUNK with no value
    and/or define CMPP_API_THUNK_NAME to a C symbol name.  The latter
@@ -3600,125 +3607,117 @@ static cmpp_api_thunk const * CMPP_API_THUNK_NAME = 0;
 #  else
 #    define cmpp_api_init(PP) (void)(PP)/*CMPP_API_THUNK_NAME*/
 #  endif
-/* What follows is generated code from c-pp's (#pragma api-thunk). */
-/* Thunk APIs which follow are available as of version 0... */
-#define cmpp_mrealloc CMPP_API_THUNK_NAME->mrealloc
-#define cmpp_malloc CMPP_API_THUNK_NAME->malloc
-#define cmpp_mfree CMPP_API_THUNK_NAME->mfree
-#define cmpp_ctor CMPP_API_THUNK_NAME->ctor
-#define cmpp_dtor CMPP_API_THUNK_NAME->dtor
-#define cmpp_reset CMPP_API_THUNK_NAME->reset
-#define cmpp_check_oom CMPP_API_THUNK_NAME->check_oom
-#define cmpp_is_legal_key CMPP_API_THUNK_NAME->is_legal_key
-#define cmpp_define_legacy CMPP_API_THUNK_NAME->define_legacy
-#define cmpp_define_v2 CMPP_API_THUNK_NAME->define_v2
-#define cmpp_undef CMPP_API_THUNK_NAME->undef
-#define cmpp_define_shadow CMPP_API_THUNK_NAME->define_shadow
-#define cmpp_define_unshadow CMPP_API_THUNK_NAME->define_unshadow
-#define cmpp_process_string CMPP_API_THUNK_NAME->process_string
-#define cmpp_process_file CMPP_API_THUNK_NAME->process_file
-#define cmpp_process_stream CMPP_API_THUNK_NAME->process_stream
-#define cmpp_process_argv CMPP_API_THUNK_NAME->process_argv
-#define cmpp_err_get CMPP_API_THUNK_NAME->err_get
-#define cmpp_err_set CMPP_API_THUNK_NAME->err_set
-#define cmpp_err_set1 CMPP_API_THUNK_NAME->err_set1
-#define cmpp_err_has CMPP_API_THUNK_NAME->err_has
-#define cmpp_is_safemode CMPP_API_THUNK_NAME->is_safemode
-#define cmpp_sp_begin CMPP_API_THUNK_NAME->sp_begin
-#define cmpp_sp_commit CMPP_API_THUNK_NAME->sp_commit
-#define cmpp_sp_rollback CMPP_API_THUNK_NAME->sp_rollback
-#define cmpp_output_f_FILE CMPP_API_THUNK_NAME->output_f_FILE
-#define cmpp_output_f_fd CMPP_API_THUNK_NAME->output_f_fd
-#define cmpp_input_f_FILE CMPP_API_THUNK_NAME->input_f_FILE
-#define cmpp_input_f_fd CMPP_API_THUNK_NAME->input_f_fd
-#define cmpp_flush_f_FILE CMPP_API_THUNK_NAME->flush_f_FILE
-#define cmpp_stream CMPP_API_THUNK_NAME->stream
-#define cmpp_slurp CMPP_API_THUNK_NAME->slurp
-#define cmpp_fopen CMPP_API_THUNK_NAME->fopen
-#define cmpp_fclose CMPP_API_THUNK_NAME->fclose
-#define cmpp_outputer_out CMPP_API_THUNK_NAME->outputer_out
-#define cmpp_outputer_flush CMPP_API_THUNK_NAME->outputer_flush
-#define cmpp_outputer_cleanup CMPP_API_THUNK_NAME->outputer_cleanup
-#define cmpp_outputer_cleanup_f_FILE CMPP_API_THUNK_NAME->outputer_cleanup_f_FILE
-#define cmpp_delimiter_set CMPP_API_THUNK_NAME->delimiter_set
-#define cmpp_delimiter_get CMPP_API_THUNK_NAME->delimiter_get
-#define cmpp_chomp CMPP_API_THUNK_NAME->chomp
-#define cmpp_b_clear CMPP_API_THUNK_NAME->b_clear
-#define cmpp_b_reuse CMPP_API_THUNK_NAME->b_reuse
-#define cmpp_b_swap CMPP_API_THUNK_NAME->b_swap
-#define cmpp_b_reserve CMPP_API_THUNK_NAME->b_reserve
-#define cmpp_b_reserve3 CMPP_API_THUNK_NAME->b_reserve3
-#define cmpp_b_append CMPP_API_THUNK_NAME->b_append
-#define cmpp_b_append4 CMPP_API_THUNK_NAME->b_append4
-#define cmpp_b_append_ch CMPP_API_THUNK_NAME->b_append_ch
-#define cmpp_b_append_i32 CMPP_API_THUNK_NAME->b_append_i32
-#define cmpp_b_append_i64 CMPP_API_THUNK_NAME->b_append_i64
-#define cmpp_b_chomp CMPP_API_THUNK_NAME->b_chomp
-#define cmpp_output_f_b CMPP_API_THUNK_NAME->output_f_b
-#define cmpp_outputer_cleanup_f_b CMPP_API_THUNK_NAME->outputer_cleanup_f_b
-#define cmpp_version CMPP_API_THUNK_NAME->version
-#define cmpp_tt_cstr CMPP_API_THUNK_NAME->tt_cstr
-#define cmpp_dx_err_set CMPP_API_THUNK_NAME->dx_err_set
-#define cmpp_dx_next CMPP_API_THUNK_NAME->dx_next
-#define cmpp_dx_process CMPP_API_THUNK_NAME->dx_process
-#define cmpp_dx_consume CMPP_API_THUNK_NAME->dx_consume
-#define cmpp_dx_consume_b CMPP_API_THUNK_NAME->dx_consume_b
-#define cmpp_arg_parse CMPP_API_THUNK_NAME->arg_parse
-#define cmpp_arg_strdup CMPP_API_THUNK_NAME->arg_strdup
-#define cmpp_arg_to_b CMPP_API_THUNK_NAME->arg_to_b
-#define cmpp_errno_rc CMPP_API_THUNK_NAME->errno_rc
-#define cmpp_d_register CMPP_API_THUNK_NAME->d_register
-#define cmpp_dx_f_dangling_closer CMPP_API_THUNK_NAME->dx_f_dangling_closer
-#define cmpp_dx_out_raw CMPP_API_THUNK_NAME->dx_out_raw
-#define cmpp_dx_out_expand CMPP_API_THUNK_NAME->dx_out_expand
-#define cmpp_dx_outf CMPP_API_THUNK_NAME->dx_outf
-#define cmpp_dx_delim CMPP_API_THUNK_NAME->dx_delim
-#define cmpp_atpol_from_str CMPP_API_THUNK_NAME->atpol_from_str
-#define cmpp_atpol_get CMPP_API_THUNK_NAME->atpol_get
-#define cmpp_atpol_set CMPP_API_THUNK_NAME->atpol_set
-#define cmpp_atpol_push CMPP_API_THUNK_NAME->atpol_push
-#define cmpp_atpol_pop CMPP_API_THUNK_NAME->atpol_pop
-#define cmpp_unpol_from_str CMPP_API_THUNK_NAME->unpol_from_str
-#define cmpp_unpol_get CMPP_API_THUNK_NAME->unpol_get
-#define cmpp_unpol_set CMPP_API_THUNK_NAME->unpol_set
-#define cmpp_unpol_push CMPP_API_THUNK_NAME->unpol_push
-#define cmpp_unpol_pop CMPP_API_THUNK_NAME->unpol_pop
-#define cmpp_path_search CMPP_API_THUNK_NAME->path_search
-#define cmpp_args_parse CMPP_API_THUNK_NAME->args_parse
-#define cmpp_args_cleanup CMPP_API_THUNK_NAME->args_cleanup
-#define cmpp_dx_args_clone CMPP_API_THUNK_NAME->dx_args_clone
-#define cmpp_kav_each CMPP_API_THUNK_NAME->kav_each
-#define cmpp_d_autoloader_set CMPP_API_THUNK_NAME->d_autoloader_set
-#define cmpp_d_autoloader_take CMPP_API_THUNK_NAME->d_autoloader_take
-#define cmpp_isspace CMPP_API_THUNK_NAME->isspace
-#define cmpp_skip_space CMPP_API_THUNK_NAME->skip_space
-#define cmpp_skip_snl CMPP_API_THUNK_NAME->skip_snl
-#define cmpp_skip_space_trailing CMPP_API_THUNK_NAME->skip_space_trailing
-#define cmpp_skip_snl_trailing CMPP_API_THUNK_NAME->skip_snl_trailing
-#define cmpp_array_reserve CMPP_API_THUNK_NAME->array_reserve
-#define cmpp_outputer_FILE (*CMPP_API_THUNK_NAME->outputer_FILE)
-#define cmpp_outputer_b (*CMPP_API_THUNK_NAME->outputer_b)
-#define cmpp_outputer_empty (*CMPP_API_THUNK_NAME->outputer_empty)
-#define cmpp_b_empty (*CMPP_API_THUNK_NAME->b_empty)
-/* Thunk APIs which follow are available as of version 20251116... */
-#define cmpp_next_chunk CMPP_API_THUNK_NAME->next_chunk
-/* Thunk APIs which follow are available as of version 20251118... */
-#define cmpp_atdelim_get CMPP_API_THUNK_NAME->atdelim_get
-#define cmpp_atdelim_set CMPP_API_THUNK_NAME->atdelim_set
-#define cmpp_atdelim_push CMPP_API_THUNK_NAME->atdelim_push
-#define cmpp_atdelim_pop CMPP_API_THUNK_NAME->atdelim_pop
-/* Thunk APIs which follow are available as of version 20251224... */
-#define cmpp_dx_pos_save CMPP_API_THUNK_NAME->dx_pos_save
-#define cmpp_dx_pos_restore CMPP_API_THUNK_NAME->dx_pos_restore
-/* Thunk APIs which follow are available as of version 20260130... */
-#define cmpp_dx_is_call CMPP_API_THUNK_NAME->dx_is_call
-/* Thunk APIs which follow are available as of version 20260206... */
-#define cmpp_b_borrow CMPP_API_THUNK_NAME->b_borrow
-#define cmpp_b_return CMPP_API_THUNK_NAME->b_return
-/* Thunk APIs which follow are available as of version 20260725... */
-#define cmpp_arg_consume_as_file CMPP_API_THUNK_NAME->arg_consume_as_file
-
-
+/* What follows is a hand-massaged version of code generated from
+   c-pp's (#pragma api-thunk). */
+#  define cmpp_arg_consume_as_file CMPP_API_THUNK_NAME->arg_consume_as_file
+#  define cmpp_arg_parse CMPP_API_THUNK_NAME->arg_parse
+#  define cmpp_arg_strdup CMPP_API_THUNK_NAME->arg_strdup
+#  define cmpp_arg_to_b CMPP_API_THUNK_NAME->arg_to_b
+#  define cmpp_args_cleanup CMPP_API_THUNK_NAME->args_cleanup
+#  define cmpp_args_parse CMPP_API_THUNK_NAME->args_parse
+#  define cmpp_array_reserve CMPP_API_THUNK_NAME->array_reserve
+#  define cmpp_atdelim_get CMPP_API_THUNK_NAME->atdelim_get
+#  define cmpp_atdelim_pop CMPP_API_THUNK_NAME->atdelim_pop
+#  define cmpp_atdelim_push CMPP_API_THUNK_NAME->atdelim_push
+#  define cmpp_atdelim_set CMPP_API_THUNK_NAME->atdelim_set
+#  define cmpp_atpol_from_str CMPP_API_THUNK_NAME->atpol_from_str
+#  define cmpp_atpol_get CMPP_API_THUNK_NAME->atpol_get
+#  define cmpp_atpol_pop CMPP_API_THUNK_NAME->atpol_pop
+#  define cmpp_atpol_push CMPP_API_THUNK_NAME->atpol_push
+#  define cmpp_atpol_set CMPP_API_THUNK_NAME->atpol_set
+#  define cmpp_b_append CMPP_API_THUNK_NAME->b_append
+#  define cmpp_b_append4 CMPP_API_THUNK_NAME->b_append4
+#  define cmpp_b_append_ch CMPP_API_THUNK_NAME->b_append_ch
+#  define cmpp_b_append_i32 CMPP_API_THUNK_NAME->b_append_i32
+#  define cmpp_b_append_i64 CMPP_API_THUNK_NAME->b_append_i64
+#  define cmpp_b_borrow CMPP_API_THUNK_NAME->b_borrow
+#  define cmpp_b_chomp CMPP_API_THUNK_NAME->b_chomp
+#  define cmpp_b_clear CMPP_API_THUNK_NAME->b_clear
+#  define cmpp_b_empty (*CMPP_API_THUNK_NAME->b_empty)
+#  define cmpp_b_reserve CMPP_API_THUNK_NAME->b_reserve
+#  define cmpp_b_reserve3 CMPP_API_THUNK_NAME->b_reserve3
+#  define cmpp_b_return CMPP_API_THUNK_NAME->b_return
+#  define cmpp_b_reuse CMPP_API_THUNK_NAME->b_reuse
+#  define cmpp_b_swap CMPP_API_THUNK_NAME->b_swap
+#  define cmpp_check_oom CMPP_API_THUNK_NAME->check_oom
+#  define cmpp_chomp CMPP_API_THUNK_NAME->chomp
+#  define cmpp_ctor CMPP_API_THUNK_NAME->ctor
+#  define cmpp_d_autoloader_set CMPP_API_THUNK_NAME->d_autoloader_set
+#  define cmpp_d_autoloader_take CMPP_API_THUNK_NAME->d_autoloader_take
+#  define cmpp_d_register CMPP_API_THUNK_NAME->d_register
+#  define cmpp_define_legacy CMPP_API_THUNK_NAME->define_legacy
+#  define cmpp_define_shadow CMPP_API_THUNK_NAME->define_shadow
+#  define cmpp_define_unshadow CMPP_API_THUNK_NAME->define_unshadow
+#  define cmpp_define_v2 CMPP_API_THUNK_NAME->define_v2
+#  define cmpp_delimiter_get CMPP_API_THUNK_NAME->delimiter_get
+#  define cmpp_delimiter_set CMPP_API_THUNK_NAME->delimiter_set
+#  define cmpp_dtor CMPP_API_THUNK_NAME->dtor
+#  define cmpp_dx_args_clone CMPP_API_THUNK_NAME->dx_args_clone
+#  define cmpp_dx_consume CMPP_API_THUNK_NAME->dx_consume
+#  define cmpp_dx_consume_b CMPP_API_THUNK_NAME->dx_consume_b
+#  define cmpp_dx_delim CMPP_API_THUNK_NAME->dx_delim
+#  define cmpp_dx_err_set CMPP_API_THUNK_NAME->dx_err_set
+#  define cmpp_dx_f_dangling_closer CMPP_API_THUNK_NAME->dx_f_dangling_closer
+#  define cmpp_dx_is_call CMPP_API_THUNK_NAME->dx_is_call
+#  define cmpp_dx_next CMPP_API_THUNK_NAME->dx_next
+#  define cmpp_dx_out_expand CMPP_API_THUNK_NAME->dx_out_expand
+#  define cmpp_dx_out_raw CMPP_API_THUNK_NAME->dx_out_raw
+#  define cmpp_dx_outf CMPP_API_THUNK_NAME->dx_outf
+#  define cmpp_dx_pos_restore CMPP_API_THUNK_NAME->dx_pos_restore
+#  define cmpp_dx_pos_save CMPP_API_THUNK_NAME->dx_pos_save
+#  define cmpp_dx_process CMPP_API_THUNK_NAME->dx_process
+#  define cmpp_err_get CMPP_API_THUNK_NAME->err_get
+#  define cmpp_err_has CMPP_API_THUNK_NAME->err_has
+#  define cmpp_err_set CMPP_API_THUNK_NAME->err_set
+#  define cmpp_err_set1 CMPP_API_THUNK_NAME->err_set1
+#  define cmpp_errno_rc CMPP_API_THUNK_NAME->errno_rc
+#  define cmpp_is_legal_key CMPP_API_THUNK_NAME->is_legal_key
+#  define cmpp_is_safemode CMPP_API_THUNK_NAME->is_safemode
+#  define cmpp_isspace CMPP_API_THUNK_NAME->isspace
+#  define cmpp_kav_each CMPP_API_THUNK_NAME->kav_each
+#  define cmpp_malloc CMPP_API_THUNK_NAME->malloc
+#  define cmpp_mfree CMPP_API_THUNK_NAME->mfree
+#  define cmpp_mrealloc CMPP_API_THUNK_NAME->mrealloc
+#  define cmpp_next_chunk CMPP_API_THUNK_NAME->next_chunk
+#  define cmpp_output_f_b CMPP_API_THUNK_NAME->output_f_b
+#  define cmpp_outputer_b (*CMPP_API_THUNK_NAME->outputer_b)
+#  define cmpp_outputer_cleanup CMPP_API_THUNK_NAME->outputer_cleanup
+#  define cmpp_outputer_cleanup_f_b CMPP_API_THUNK_NAME->outputer_cleanup_f_b
+#  define cmpp_outputer_empty (*CMPP_API_THUNK_NAME->outputer_empty)
+#  define cmpp_outputer_flush CMPP_API_THUNK_NAME->outputer_flush
+#  define cmpp_outputer_out CMPP_API_THUNK_NAME->outputer_out
+#  define cmpp_path_search CMPP_API_THUNK_NAME->path_search
+#  define cmpp_process_argv CMPP_API_THUNK_NAME->process_argv
+#  define cmpp_process_file CMPP_API_THUNK_NAME->process_file
+#  define cmpp_process_stream CMPP_API_THUNK_NAME->process_stream
+#  define cmpp_process_string CMPP_API_THUNK_NAME->process_string
+#  define cmpp_reset CMPP_API_THUNK_NAME->reset
+#  define cmpp_skip_snl CMPP_API_THUNK_NAME->skip_snl
+#  define cmpp_skip_snl_trailing CMPP_API_THUNK_NAME->skip_snl_trailing
+#  define cmpp_skip_space CMPP_API_THUNK_NAME->skip_space
+#  define cmpp_skip_space_trailing CMPP_API_THUNK_NAME->skip_space_trailing
+#  define cmpp_slurp CMPP_API_THUNK_NAME->slurp
+#  define cmpp_sp_begin CMPP_API_THUNK_NAME->sp_begin
+#  define cmpp_sp_commit CMPP_API_THUNK_NAME->sp_commit
+#  define cmpp_sp_rollback CMPP_API_THUNK_NAME->sp_rollback
+#  define cmpp_stream CMPP_API_THUNK_NAME->stream
+#  define cmpp_tt_cstr CMPP_API_THUNK_NAME->tt_cstr
+#  define cmpp_undef CMPP_API_THUNK_NAME->undef
+#  define cmpp_unpol_from_str CMPP_API_THUNK_NAME->unpol_from_str
+#  define cmpp_unpol_get CMPP_API_THUNK_NAME->unpol_get
+#  define cmpp_unpol_pop CMPP_API_THUNK_NAME->unpol_pop
+#  define cmpp_unpol_push CMPP_API_THUNK_NAME->unpol_push
+#  define cmpp_unpol_set CMPP_API_THUNK_NAME->unpol_set
+#  define cmpp_version CMPP_API_THUNK_NAME->version
+#  define cmpp_fclose CMPP_API_THUNK_NAME->fclose
+#  define cmpp_flush_f_FILE CMPP_API_THUNK_NAME->flush_f_FILE
+#  define cmpp_fopen CMPP_API_THUNK_NAME->fopen
+#  define cmpp_input_f_fd CMPP_API_THUNK_NAME->input_f_fd
+#  define cmpp_input_f_FILE CMPP_API_THUNK_NAME->input_f_FILE
+#  define cmpp_output_f_fd CMPP_API_THUNK_NAME->output_f_fd
+#  define cmpp_output_f_FILE CMPP_API_THUNK_NAME->output_f_FILE
+#  define cmpp_outputer_cleanup_f_FILE CMPP_API_THUNK_NAME->outputer_cleanup_f_FILE
+#  define cmpp_outputer_FILE (*CMPP_API_THUNK_NAME->outputer_FILE)
 #else /* no CMPP_API_THUNK */
 /**
    cmpp_api_init() is a no-op when not including a file-local API
@@ -3791,7 +3790,7 @@ static cmpp_api_thunk const * CMPP_API_THUNK_NAME = 0;
 #endif
 
 #if !defined(CMPP_VERSION)
-#error "exporting CMPP_VERSION to have been set up"
+#error "expecting CMPP_VERSION to have been set up"
 #endif
 
 #define CMPP__DB_MAIN_NAME "cmpp"
@@ -11343,11 +11342,8 @@ static void cmpp_dx_f_include(cmpp_dx *dx){
                 "Expecting at least one filename argument.");
   }
   for( ; !dxppCode && arg; arg = arg->next ){
-    cmpp_flag32_t a2bf = cmpp_arg_to_b_F_BRACE_CALL;
-    if( cmpp_TT_Word==arg->ttype && cmpp__arg_wordIsPathOrFlag(arg) ){
-      a2bf |= cmpp_arg_to_b_F_NO_DEFINES;
-    }
-    if( cmpp_arg_to_b(dx, arg, cmpp_b_reuse(ob), a2bf) ){
+    if( cmpp_arg_to_b(dx, arg, cmpp_b_reuse(ob),
+                      cmpp_arg_to_b_F_BRACE_CALL) ){
       break;
     }
     //g_stderr("zFile=%s zResolved=%s\n", zFile, zResolved);
@@ -11594,22 +11590,27 @@ static void cmpp_dx_f_pragma(cmpp_dx *dx){
     /* Generate macros for CMPP_API_THUNK and friends from
        cmpp_api_thunk_map. */
     char const * zName = "CMPP_API_THUNK_NAME";
-    char buf[256];
-#define out(FMT,...) snprintf(buf, sizeof(buf), FMT,__VA_ARGS__); \
-    cmpp_dx_out_raw(dx, buf, strlen(buf))
+    char buf[512];
+    int n;
+#define out(FMT,...) \
+    n = snprintf(buf, sizeof(buf), FMT,__VA_ARGS__);  \
+    assert(n>0); \
+    cmpp_dx_out_raw(dx, buf, (cmpp_size_t)n)
     if( 0 ){
       out("/* libcmpp API thunk. */\n"
           "static cmpp_api_thunk const * %s = 0;\n"
           "#define cmpp_api_init(PP) %s = (PP)->api\n", zName, zName);
     }
-#define A(V)                                          \
-    if(V<=cmpp_api_thunk_version) {                   \
+#define A(V)                                                \
+    if(0 && V<=cmpp_api_thunk_version) {                    \
       out("/* Thunk APIs which follow are available as of " \
-        "version %d... */\n",V);                      \
+          "version %d... */\n",V);                          \
     }
 #define V(N,T,V)
-#define F(N,T,P) out("#define cmpp_%s %s->%s\n", # N, zName, # N);
-#define O(N,T) out("#define cmpp_%s (*%s->%s)\n", # N, zName, # N);
+#define F(N,T,P) out("#  define cmpp_%s %s->%s\n", # N, zName, # N);
+#define O(N,T)   out("#  define cmpp_%s (*%s->%s)\n", # N, zName, # N);
+    /* ----------------^^ a consolation for how these get
+                       hand-massaged into libcmpp.h.  */;
 cmpp_api_thunk_map(A,V,F,O)
 #undef V
 #undef F
