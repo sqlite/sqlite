@@ -1,5 +1,5 @@
-C Make\sthis\soptimization\savailable\sto\sMSVC\sin\saddition\sto\sGCC.
-D 2026-08-10T12:56:41.401
+C Add\san\sassert()\sto\sdemonstrate\sthat\san\sarithmetic\sright-shift\sis\sbeing\nused\swhere\sit\sis\sneeded.
+D 2026-08-10T19:38:44.118
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -813,7 +813,7 @@ F src/vdbe.c 990c7ceb7ec441b6766d79a1d1b7cf0b4f4ea6518315ad250d04a801dc7c8def
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h 39f4c8eb1e4ac0593037d5268a54a691c72d34896db9973a9d39f2a5dea14163
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
-F src/vdbeaux.c 1c676e45ea02708656db2fdb6f2e1b6285a5d7850c95c0a8ae17d34f2b769b3c
+F src/vdbeaux.c 1e3fefcdf497d0240296de3064e3c85204c03ded23a9010417a57af51a2c560e
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 661d0c7104cc58c9b74fbf00b51ce6859e7640d0aa7f0b715b43a2d4fa4c8718
-R 568edbf479ff75ee4fc86ff7d84dc427
+P 648ab3f7aec532689cefd13d37889e262804e2f74b0c276ac4e41647cf08dcdc
+R 168ebfbecaa3856408f7acb15e6ceff9
 U drh
-Z 29ecaf56cd7cfeb3263921fae9d8b55d
+Z 8224398b02a84842c16acb7d7d798d46
 # Remove this line to create a well-formed Fossil manifest.

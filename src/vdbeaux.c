@@ -4963,6 +4963,17 @@ static int vdbeRecordCompareInt(
   if( (u32)(serial_type-1)<=5 ){
     static const u8 aShift[] = { 0, 56, 48, 40, 32, 16, 0 };
     lhs = ((i64)sqlite3Get8byte(aKey)) >> aShift[serial_type];
+    /*                                 ^^--- This shift operator 
+    ** needs to be an arithmetic right-shift, which means that
+    ** if the left-hand operand (LHS) is negative, it will be sign-extended
+    ** so that the final results is also negative.  All modern C
+    ** compilers work this way as long as the LHS is a signed integer
+    ** (which is why the unsigned result from sqlite3Get8byte() is cast
+    ** into i64), but it is not defined by the C standards, or so Claude
+    ** tells me.  That the correct result is obtained is verified by the
+    ** following assert() and testcase() macros:
+    */
+    assert( 0<=(i64)sqlite3Get8byte(aKey) || lhs<0 );
     testcase( lhs<0 );
   }else if( serial_type==8 || serial_type==9 ){
     lhs = serial_type - 8;
