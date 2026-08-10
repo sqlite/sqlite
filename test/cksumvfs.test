@@ -24,7 +24,14 @@ proc logfunc {args} {
   puts "LOG: $args"
 }
 
-sqlite3_register_cksumvfs
+do_test 0.1 {
+  sqlite3_register_cksumvfs
+} {SQLITE_OK}
+do_test 0.2 {
+  # Multiple registrations of cksumvfs are harmless.  Bug 2026-07-29T06:28:31Z
+  sqlite3_register_cksumvfs
+} {SQLITE_OK}
+
 sqlite3 db test.db
 
 file_control_reservebytes db 8

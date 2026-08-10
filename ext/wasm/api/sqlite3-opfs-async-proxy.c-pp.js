@@ -112,7 +112,7 @@ const installAsyncProxy = function(){
      copies in the synchronous and async halves. This side does not
      load the SQLite library, so does not have access to that copy. */
 //#define opfs-async-proxy
-//#include api/opfs-common-inline.c-pp.js
+//#include "api/opfs-common-inline.c-pp.js"
 //#undef opfs-async-proxy
 
   /**

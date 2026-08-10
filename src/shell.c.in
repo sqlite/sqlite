@@ -13764,6 +13764,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   hOut = GetStdHandle(STD_OUTPUT_HANDLE);
   GetConsoleMode(hOut, &mode);
   SetConsoleMode(hOut, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+  _setmode(_fileno(stdout),_O_BINARY); /* Bug 2026-08-03T08:52:42Z */
   rc = utf8_main(argc, argv);
   for(i=0; i<argc; i++) free(orig[i]);
   free(argv);

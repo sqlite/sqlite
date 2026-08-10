@@ -474,4 +474,32 @@ do_catchsql_test 16.5.2 {
   SELECT * FROM (t0 NATURAL RIGHT JOIN (t0 FULL JOIN (v0 NATURAL FULL JOIN t2) ON TRUE)) NATURAL FULL JOIN t1;
 } {1 {ambiguous column name: c0}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.0 {
+  CREATE TABLE t0(c0 TEXT, c1 TEXT, c2 TEXT);
+  INSERT INTO t0(c2) VALUES (0), (-1736265906), (0);
+
+  CREATE UNIQUE INDEX i4 ON t0(c2, c0, c1);
+
+  CREATE TABLE v0(c0);
+  CREATE TABLE e1(b);
+}
+
+do_execsql_test 17.1 {
+  SELECT t0.c2,
+         (t0.c2 IS (SELECT count(*) FROM t0 AS x WHERE x.c0 = v0.c0)) AS p
+  FROM v0 RIGHT JOIN t0 ON t0.c0;
+} {
+  0 1 
+  -1736265906 0 
+  0 1
+}
+
+do_execsql_test 17.2 {
+  SELECT t0.c2
+  FROM v0 RIGHT JOIN t0 ON (0)
+  WHERE (t0.c2 IS ( SELECT count(*) FROM e1 WHERE v0.c0=555 ))
+} {0 0}
+
 finish_test

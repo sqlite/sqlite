@@ -4166,7 +4166,21 @@ static void sqlite3ExprCodeIN(
     ** we need to reorder the LHS values to be in index order.  Run Affinity
     ** before reordering the columns, so that the affinity is correct.
     */
-    sqlite3VdbeAddOp4(v, OP_Affinity, rLhs, nVector, 0, zAff, nVector);
+    if( nVector==1 ){
+      char aff = zAff[0];
+      if( aff>=SQLITE_AFF_TEXT && aff!=sqlite3ExprAffinity(pLeft) ){
+        /* The OP_Affinity below may change the value. In this case, create a
+        ** copy of rLhs to run OP_Affinity on, in case the original register
+        ** is used again (e.g. if it is TK_AGG_COLUMN).  */
+        int rTmp = sqlite3GetTempReg(pParse);
+        sqlite3VdbeAddOp3(v, OP_Copy, rLhs, rTmp, 0);
+        rLhs = rTmp;
+        sqlite3VdbeAddOp4(v, OP_Affinity, rLhs, 1, 0, zAff, 1);
+      }
+    }else{
+      sqlite3VdbeAddOp4(v, OP_Affinity, rLhs, nVector, 0, zAff, nVector);
+    }
+
     for(i=0; i<nVector && aiMap[i]==i; i++){} /* Are LHS fields reordered? */
     if( i!=nVector ){
       /* Need to reorder the LHS fields according to aiMap */

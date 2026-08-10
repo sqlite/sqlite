@@ -32,3 +32,19 @@ SELECT sha1('');
 .testcase 150
 SELECT sha1(x'');
 .check da39a3ee5e6b4b0d3255bfef95601890afd80709
+
+.testcase 200
+CREATE TABLE t1(x TEXT);
+INSERT INTO t1 VALUES('SELECT sha1_query((SELECT x FROM t1))');
+.check ''
+.testcase 210
+SELECT sha1_query((SELECT x FROM t1));
+.check -glob '*recursive use of sha1_query()*'
+
+.testcase 300
+DELETE FROM t1;
+INSERT INTO t1 VALUES('SELECT sha3_query((SELECT x FROM t1))');
+.check ''
+.testcase 301
+SELECT sha3_query((SELECT x FROM t1));
+.check -glob '*recursive use of sha3_query()*'

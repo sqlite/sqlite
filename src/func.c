@@ -2996,7 +2996,7 @@ static void percentSort(
       }
     }while( i<iGt );
 
-    assert( iLt>0 && iLt<iGt && iGt<n );
+    assert( iLt>0 && iLt<iGt && (unsigned)iGt<n );
     testcase( iGt>iLt+1 );
     assert( a[iLt]==rPivot );
     assert( a[iLt-1]<=rPivot );
