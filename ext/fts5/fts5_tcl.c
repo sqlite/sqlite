@@ -22,6 +22,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef SQLITE_DEBUG
 extern int sqlite3_fts5_may_be_corrupt;
@@ -203,6 +204,17 @@ static void xSetAuxdataDestructor(void *p){
   Tcl_DecrRefCount(pData->pObj);
   sqlite3_free(pData);
 }
+
+/*
+** Convert back and forth between (int) and (void*).
+*/
+#if defined(HAVE_STDINT_H)
+# define FTS5TCL_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
+# define FTS5TCL_PTR_TO_INT(X)  ((int)(intptr_t)(X))
+#else
+# define FTS5TCL_INT_TO_PTR(X)  ((void*)((char*)0 + (X)))
+# define FTS5TCL_PTR_TO_INT(X)  ((int)((char*)(X) - (char*)0))
+#endif
 
 /*
 **      api sub-command...
@@ -426,14 +438,14 @@ static int SQLITE_TCLAPI xF5tApi(
     CASE(14, "xSetAuxdataInt") {
       int iVal;
       if( Tcl_GetIntFromObj(interp, objv[2], &iVal) ) return TCL_ERROR;
-      rc = p->pApi->xSetAuxdata(p->pFts, (void*)((char*)0 + iVal), 0);
+      rc = p->pApi->xSetAuxdata(p->pFts, FTS5TCL_INT_TO_PTR(iVal), 0);
       break;
     }
     CASE(15, "xGetAuxdataInt") {
       int iVal;
       int bClear;
       if( Tcl_GetBooleanFromObj(interp, objv[2], &bClear) ) return TCL_ERROR;
-      iVal = (int)((char*)p->pApi->xGetAuxdata(p->pFts, bClear) - (char*)0);
+      iVal = FTS5TCL_PTR_TO_INT( p->pApi->xGetAuxdata(p->pFts, bClear) );
       Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
       break;
     }

@@ -4065,7 +4065,7 @@ static int sqlite3VdbeSerialGet7(
 ){
   /* EVIDENCE-OF: R-57343-49114 Value is a big-endian IEEE 754-2008 64-bit
   ** floating point number. */
-  u64 x = EIGHT_BYTE_U64(buf);
+  u64 x = sqlite3Get8byte(buf);
   assert( sizeof(x)==8 && sizeof(pMem->u.r)==8 );
   swapMixedEndianFloat(x);
   memcpy(&pMem->u.r, &x, sizeof(x));
@@ -4149,7 +4149,7 @@ void sqlite3VdbeSerialGet(
     case 6: {   /* 8-byte signed integer */
       /* EVIDENCE-OF: R-29851-52272 Value is a big-endian 64-bit
       ** twos-complement integer. */
-      pMem->u.i = (i64)EIGHT_BYTE_U64(buf);
+      pMem->u.i = (i64)sqlite3Get8byte(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
       return;

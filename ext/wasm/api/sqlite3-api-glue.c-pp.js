@@ -88,6 +88,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       // Please keep these sorted by function name!
       ["sqlite3_aggregate_context","void*", "sqlite3_context*", "int"],
       /* sqlite3_auto_extension() has a hand-written binding. */
+      ["sqlite3_backup_init", "sqlite3_backup*", "sqlite3*", "string", "sqlite3*", "string"],
+      ["sqlite3_backup_step", "int", "sqlite3_backup*", "int"],
+      ["sqlite3_backup_finish", "int", "sqlite3_backup*"],
+      ["sqlite3_backup_remaining", "int", "sqlite3_backup*"],
+      ["sqlite3_backup_pagecount", "int", "sqlite3_backup*"],
       /* sqlite3_bind_blob() and sqlite3_bind_text() have hand-written
          bindings to permit more flexible inputs. */
       ["sqlite3_bind_double","int", "sqlite3_stmt*", "int", "f64"],
@@ -824,6 +829,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       /*a class which no value can ever be an instance of*/
     };
     wasm.xWrap.argAdapter('sqlite3_filename', __xArgPtr)
+    ('sqlite3_backup*', __xArgPtr)
     ('sqlite3_context*', __xArgPtr)
     ('sqlite3_value*', __xArgPtr)
     ('void*', __xArgPtr)
@@ -875,6 +881,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     const __xRcPtr = wasm.xWrap.resultAdapter('*');
     wasm.xWrap.resultAdapter('sqlite3*', __xRcPtr)
+    ('sqlite3_backup*', __xRcPtr)
     ('sqlite3_context*', __xRcPtr)
     ('sqlite3_stmt*', __xRcPtr)
     ('sqlite3_value*', __xRcPtr)
