@@ -3868,11 +3868,17 @@ case OP_MakeRecord: {
         }
         len = sqlite3SmallTypeSizes[serial_type];
         assert( len>=1 && len<=8 && len!=5 && len!=7 );
-#if SQLITE_BYTEORDER==1234
-        v = sqlite3BSwap64(v);
-        memcpy(zPayload, (u8*)&v + 8 - len, OVERRUN ? 8 : len);
-#elif SQLITE_BYTEORDER==4321
-        memcpy(zPayload, (u8*)&v + 8 - len, OVERRUN ? 8 : len);
+#if SQLITE_BYTEORDER>0
+        if( SQLITE_BYTEORDER==1234 ){
+          v = sqlite3BSwap64(v);
+        }
+        if( OVERRUN ){
+          static const u8 aShift[] = { 0, 56, 48, 40, 32, 16, 0, 0 };
+          v >>= aShift[serial_type];
+          memcpy(zPayload, &v, 8);
+        }else{
+          memcpy(zPayload, (u8*)&v + 8 - len, len);
+        }
 #else
         switch( len ){
           default: zPayload[7] = (u8)(v&0xff); v >>= 8;
@@ -3890,7 +3896,7 @@ case OP_MakeRecord: {
           case 1:  zPayload[0] = (u8)(v&0xff);
         }
 #endif
-#undef OVERRUN  /* We are done with that OVERRUN macro now */
+#undef OVERRUN  /* We are done with the OVERRUN macro now */
         zPayload += len;
       }
     }else if( serial_type<0x80 ){
