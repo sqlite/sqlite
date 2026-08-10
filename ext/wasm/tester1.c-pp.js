@@ -3929,29 +3929,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             T.assert(nPageCount>=0, "Expecting integer nPageCount");
           }while( 0===rc );
           T.assert(capi.SQLITE_DONE===rc, "Expecting SQLITE_DONE from backup_step()");
-          debug(
-            "About to backup finish",
-            sqlite3.wasm.exports.sqlite3_backup_finish,
-            capi.sqlite3_backup_finish
-            /* ^^^^ Why on earth is this === sqlite3InitModule?!?!?! */
-          );
-          /* backup_finish() triggers an "Index out of bounds"
-             exception with the very curious stack of:
-
-             sqlite3InitModule http://localhost:8080/jswasm/sqlite3.js:9948
-             test http://localhost:8080/tester1.js:3827
-             run http://localhost:8080/tester1.js:286
-             runTests http://localhost:8080/tester1.js:336
-             runTests http://localhost:8080/tester1.js:331
-             <anonymous> http://localhost:8080/tester1.js:4446
-             promise callback* http://localhost:8080/tester1.js:4418
-             <anonymous> http://localhost:8080/tester1.js:4448
-
-             And it's caused by capi.sqlite3_backup_finish being ===
-             sqlite3InitModule for... well, nobody knows why. Most
-             functions are mapping to that one, but only in Firefox
-             151!
-          */
           rc = capi.sqlite3_backup_finish(pBackup);
           pBackup = null
           T.assert(0===rc, "Expecting 0 from backup_finish()")
