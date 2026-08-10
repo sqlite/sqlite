@@ -298,7 +298,9 @@ c-pp.D.64bit = -Dbits64
 # This is inherently fragile and has been broken by Emscripten updates
 # before.
 #
-ifeq (1,1)
+ifeq (1,0)
+# 2026-08-10: disabling to rule out that it's not the cause of some testing weirdness.
+# Preliminary this is not the problem.
 define b.strip-js-emcc-bindings
 echo "$(1) $(emo.garbage) Stripping export wrappers."; \
 sed -i -e '/var _sqlite3.*makeInvalidEarly.*;/d' \

@@ -3904,7 +3904,65 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       }
     })/*session API sanity tests*/
   ;/*end of session API group*/;
+  ////////////////////////////////////////////////////////////////////////
+  T.g('Backup API')
+    .t({
+      predicate: ()=>'skipping due to triggering inexplicable exception in unrelated code',
+      name: 'Backup API sanity checks',
+      test: function(sqlite3){
+        const capi = sqlite3.capi;
+        const dbSrc = new sqlite3.oo1.DB(), dbDest = new sqlite3.oo1.DB();
+        let pBackup;
+        try{
+          dbSrc.exec([
+            "CREATE TABLE t(id INTEGER PRIMARY KEY, val TEXT);",
+            "INSERT INTO t(val) VALUES('alpha'), ('beta'), ('gamma'), ('delta');"
+          ]);
+          pBackup = capi.sqlite3_backup_init(dbDest, "main", dbSrc, "main");
+          T.assert( sqlite3.wasm.isPtr(pBackup), "Expecting pointer from sqlite3_backup_init()" );
+          let rc;
+          do{
+            rc = capi.sqlite3_backup_step(pBackup, 1);
+            const nRemaining = capi.sqlite3_backup_remaining(pBackup);
+            const nPageCount = capi.sqlite3_backup_pagecount(pBackup);
+            T.assert(nRemaining>=0, "Expecting integer nRemaining");
+            T.assert(nPageCount>=0, "Expecting integer nPageCount");
+          }while( 0===rc );
+          T.assert(capi.SQLITE_DONE===rc, "Expecting SQLITE_DONE from backup_step()");
+          debug(
+            "About to backup finish",
+            sqlite3.wasm.exports.sqlite3_backup_finish,
+            capi.sqlite3_backup_finish
+            /* ^^^^ Why on earth is this === sqlite3InitModule?!?!?! */
+          );
+          /* backup_finish() triggers an "Index out of bounds"
+             exception with the very curious stack of:
 
+             sqlite3InitModule http://localhost:8080/jswasm/sqlite3.js:9948
+             test http://localhost:8080/tester1.js:3827
+             run http://localhost:8080/tester1.js:286
+             runTests http://localhost:8080/tester1.js:336
+             runTests http://localhost:8080/tester1.js:331
+             <anonymous> http://localhost:8080/tester1.js:4446
+             promise callback* http://localhost:8080/tester1.js:4418
+             <anonymous> http://localhost:8080/tester1.js:4448
+
+             And it's caused by capi.sqlite3_backup_finish being ===
+             sqlite3InitModule for... well, nobody knows why.
+          */
+          rc = capi.sqlite3_backup_finish(pBackup);
+          T.assert(0===rc, "Expecting 0 from backup_finish()")
+            .assert( dbDest.selectValue('select count(*) from t'),
+                     "Expecting data to have been backed up" );
+        }finally{
+          if( pBackup  ){
+            sqlite3.capi.sqlite3_backup_finish(pBackup);
+          }
+          dbDest.close();
+          dbSrc.close();
+        }
+      }
+    });
   ////////////////////////////////////////////////////////////////////////
   // Tests for "opfs" and "opfs-wl" are essentially identical, so...
 //#query {
