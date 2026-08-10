@@ -13,15 +13,15 @@
   This is the auto-generated "amalgamation build" of libcmpp. It was amalgamated
   using:
 
-  ./c-pp -I. -I./src -Dsrcdir=./src -Dsed=/usr/bin/sed -o libcmpp.h ./tool/libcmpp.c-pp.h -o libcmpp.c ./tool/libcmpp.c-pp.c
+  ./c-pp -I. -I./src -Dsrcdir=./src -Dsed=/usr/bin/sed -o libcmpp.h ./tool/libcmpp.c-pp.h
 
-  with libcmpp 2.0.x 7f7a9127b675829bf0f834bc13db17b69f7c53061d54efbfd32cfd5ae6e735f5 @ 2026-07-22 14:02:02.120 UTC
+  with libcmpp 2.0.x 1775ed29e5022f4b95b73b19406651a84a2895995915138f99b1d638e4cbf3c9 @ 2026-08-05 14:42:14.496 UTC
 */
 #define CMPP_PACKAGE_NAME "libcmpp"
 #define CMPP_LIB_VERSION "2.0.x"
-#define CMPP_LIB_VERSION_HASH "7f7a9127b675829bf0f834bc13db17b69f7c53061d54efbfd32cfd5ae6e735f5"
-#define CMPP_LIB_VERSION_TIMESTAMP "2026-07-22 14:02:02.120 UTC"
-#define CMPP_LIB_CONFIG_TIMESTAMP "2026-07-22 14:02 GMT"
+#define CMPP_LIB_VERSION_HASH "1775ed29e5022f4b95b73b19406651a84a2895995915138f99b1d638e4cbf3c9"
+#define CMPP_LIB_VERSION_TIMESTAMP "2026-08-05 14:42:14.496 UTC"
+#define CMPP_LIB_CONFIG_TIMESTAMP "2026-08-05 15:26 GMT"
 #define CMPP_VERSION CMPP_LIB_VERSION " " CMPP_LIB_VERSION_HASH " @ " CMPP_LIB_VERSION_TIMESTAMP
 #define CMPP_PLATFORM_EXT_DLL ".so"
 #define CMPP_MODULE_PATH ".:/usr/local/lib/cmpp"
@@ -64,6 +64,12 @@
 ** Canonical home:
 **
 ** - <https://fossil.wanderinghorse.net/r/c-pp>
+**
+** One may see mentions of %lite in some comments. Those are
+** preprocessor directives for this very preprocessor, used by the
+** build process to filter out certain API features to produce a
+** "lite" build. Their placement is significant, especially when
+** they're embedded within a multi-line C macro.
 */
 
 #if defined(CMPP_HAVE_AUTOCONFIG_H)
@@ -947,6 +953,30 @@ CMPP_EXPORT int cmpp_sp_commit(cmpp *pp);
 */
 CMPP_EXPORT int cmpp_sp_rollback(cmpp *pp);
 
+
+/**
+   _Almost_ equivalent to fopen(3) but:
+
+   - If name=="-", it returns one of stdin or stdout, depending on the
+   mode string: stdout is returned if 'w' or '+' appear, otherwise
+   stdin.
+
+   If it returns NULL, the global errno "should" contain a description
+   of the problem unless the problem was argument validation.
+
+   If at all possible, use cmpp_fclose() (as opposed to fclose()) to
+   close these handles, as it has logic to skip closing the three
+   standard streams.
+*/
+CMPP_EXPORT cmpp_FILE * cmpp_fopen(char const * name, char const *mode);
+
+/**
+   Passes f to fclose(3) unless f is NULL or one of the C-standard
+   handles (stdin, stdout, stderr), in which cases it does nothing at
+   all.
+*/
+CMPP_EXPORT void cmpp_fclose(cmpp_FILE * f);
+
 /**
    A cmpp_output_f() impl which requires state to be a (FILE*), which
    this function passes the call on to fwrite(). Returns 0 on
@@ -1030,29 +1060,6 @@ CMPP_EXPORT int cmpp_stream(cmpp_input_f inF, void * inState,
 */
 CMPP_EXPORT int cmpp_slurp(cmpp_input_f xIn, void *stateIn,
                            unsigned char **pOut, cmpp_size_t * nOut);
-
-/**
-   _Almost_ equivalent to fopen(3) but:
-
-   - If name=="-", it returns one of stdin or stdout, depending on the
-   mode string: stdout is returned if 'w' or '+' appear, otherwise
-   stdin.
-
-   If it returns NULL, the global errno "should" contain a description
-   of the problem unless the problem was argument validation.
-
-   If at all possible, use cmpp_fclose() (as opposed to fclose()) to
-   close these handles, as it has logic to skip closing the three
-   standard streams.
-*/
-CMPP_EXPORT cmpp_FILE * cmpp_fopen(char const * name, char const *mode);
-
-/**
-   Passes f to fclose(3) unless f is NULL or one of the C-standard
-   handles (stdin, stdout, stderr), in which cases it does nothing at
-   all.
-*/
-CMPP_EXPORT void cmpp_fclose(cmpp_FILE * f);
 
 /**
    A cleanup callback interface for use with cmpp_outputer::cleanup().
@@ -1267,14 +1274,14 @@ struct cmpp_b {
   /**
      Number of bytes allocated in this->z.
 
-     Potential TODO: use a value of zero here, with a non-zero
-     this->n, to mean that this->z is owned elsewhere. This would
+     Potential TODO: use a value of zero here, with a non-zero this->z
+     or this->n, to mean that this->z is owned elsewhere. This would
      cause cmpp_b_append() to copy its original source before
-     appending. Similarly, cmpp_b_clear() would necessarily _not_
-     free this->z. We've used that heuristic in a predecessor of this
-     class in another tree to good effect for years, but it's not
-     certain that we'd get the same level of utility out of that
-     capability as we do in that other project.
+     appending. Similarly, cmpp_b_clear() would necessarily _not_ free
+     this->z. We've used that heuristic in a predecessor of this class
+     in another tree to good effect for years, but it's not certain
+     that we'd get the same level of utility out of that capability as
+     we do in that other project.
   */
   cmpp_size_t nAlloc;
 
@@ -1441,7 +1448,10 @@ enum cmpp_tt {
 
    - String: a quoted string.
 
-   - StringAt: an @"..." string.
+   - StringAt: an @"..." string. This is a holdover from times before
+     we had #expand and the ability for invidivual to be to "function
+     calls". Use of @-strings is discouraged and they may be removed
+     from the API at some point.
 
    - GroupParen, GroupBrace, GroupSquiggly: (), [], and {}
 
@@ -1793,7 +1803,8 @@ struct cmpp_dx {
   cmpp * const pp;
 
   /**
-     The directive on whose behalf this context is active.
+     The directive on whose behalf this context is active.  See
+     this->args for notes about invalidation of this value.
   */
   cmpp_d const *d;
 
@@ -1823,7 +1834,10 @@ struct cmpp_dx {
     unsigned const char * z;
 
     /**
-       The byte length of z.
+       The byte length of z. It is not called "n", like its
+       counterpart in other structs, so as to avoid confusion between
+       dx->args->n and dx->args->argc (see, that was confusing,
+       right?).
     */
     cmpp_size_t nz;
 
@@ -1942,7 +1956,7 @@ enum cmpp_dx_consume_e {
      This may misinteract in unpredictable ways when used with
      cmpp_dx_consume_F_PROCESS_OTHER_D. Please report them as bugs.
   */
-  cmpp_dx_consume_F_RAW           = 0x02
+  cmpp_dx_consume_F_ATPOL_OFF      = 0x02
 };
 
 /**
@@ -1960,11 +1974,11 @@ enum cmpp_dx_consume_e {
    given channel is NULL then output is not captured - it instead goes
    dx's current output channel.
 
-   dClosers must be a list of legal closing tags nClosers entries
-   long. Typically this is the single closing directive/tag of the
+   dClosers must be a list of nClosers legal closing tags
+   entries. Typically this is the single closing directive/tag of the
    current directive, available to the opening directive's cmpp_dx_f()
    impl via dx->d->closer. Some special cases require multiple
-   candidates, however.
+   candidates, however (examples: #query and the #if family).
 
    The flags argument may be 0 or a bitmask of values from the
    cmpp_dx_consume_e enum.
@@ -2008,19 +2022,13 @@ enum cmpp_dx_consume_e {
    cmpp_outputer oss = cmpp_outputer_b;
    cmpp_b os = cmpp_b_empty;
    oss.state = &os;
-   if( 0==cmpp_dx_consume(dx, &oss, dx->d->closer, 0) ){
+   if( 0==cmpp_dx_consume(dx, &oss, dx->d->closer, 1, 0) ){
      cmpp_b_chomp( &os );
      ... maybe modify the buffer or decorate the output in some way...
      cmpp_dx_out_raw(dx, os.z, os.n);
    }
    cmpp_b_clear(&os);
    ```
-
-   Design issue: this API does not currently have a way to handle
-   directives which have multiple potential waypoints/endpoints, in
-   the way that an #if may optionally have an #elif or #else before
-   the #/if. Such processing has to be done in the directive's
-   impl.
 */
 CMPP_EXPORT int cmpp_dx_consume(cmpp_dx * dx, cmpp_outputer * os,
                                 cmpp_d const *const * dClosers,
@@ -2097,7 +2105,11 @@ CMPP_EXPORT void cmpp_arg_reuse(cmpp_arg *arg);
      cmpp_TT_GroupParen, cmpp_TT_GroupSquiggly, and
      cmpp_TT_GroupBrace. These types do not automatically get parsed
      recursively. To recurse into one of these, pass cmpp_arg_parse()
-     the grouping argument's bytes as the input range.
+     the grouping argument's bytes as the input range. Their
+     interpretation is context-dependent but the general conventions
+     are that {} are used for strings and context-dependent ad hoc
+     data structures (tcl-style), (...) for subexpressions, and [...]
+     for either "function calls" or lists of values.
 
    - Word: anything which doesn't look like one of these above.  Token
      type IDs: cmpp_TT_Word. These are most often interpreted as
@@ -2230,6 +2242,34 @@ enum cmpp_arg_to_b_e {
 */
 CMPP_EXPORT int cmpp_arg_to_b(cmpp_dx * dx, cmpp_arg const *arg,
                               cmpp_b * os, cmpp_flag32_t flags);
+
+/**
+   This is a helper routine for cmpp_dx_f() implementations which
+   process flags like -f filename. This function treats arg as a
+   filename, consumes that file, and returns 0 on success. The
+   argument's value is expanded using the preprocessor's conventional
+   approaches, using cmpp_arg_to_b().
+
+   HUGE WARNING: this routine necessarily requires recursing into dx,
+   which means that it will INVALIDATE dx->args when it does. It is
+   CRITICAL that the caller pass a second argument which was populated
+   by cmpp_args_clone() and eventually, before returning, pass them to
+   cmpp_args_cleanup(). Similarly the caller needs to record in
+   advance of calling this, if it needs it, cmpp_dx_is_call().
+
+   If name is not NULL then the buffer's contents get replaced with
+   the resolved name of the file.
+
+   content must not be NULL. If filename lookup passes then it is
+   passed to cmpp_b_reuse() before being streamed the content of the
+   file. If preprocessIt is true then the content will be piped
+   through dx->pp and sent to the content buffer, else it will be
+   consumed as-is into the buffer.
+*/
+CMPP_EXPORT int cmpp_arg_consume_as_file(
+  cmpp_dx * dx, cmpp_arg const *arg,
+  cmpp_b *name, cmpp_b * content, bool preprocessIt
+);
 
 /**
    Flags for use with cmpp_call_str() and friends.
@@ -2915,153 +2955,6 @@ CMPP_EXPORT int cmpp_dx_args_parse(cmpp_dx *dx, cmpp_args *args);
 */
 CMPP_EXPORT int cmpp_dx_args_clone(cmpp_dx * dx, cmpp_args *pOut);
 
-/** Flags for cmpp_popen(). */
-enum cmpp_popen_e {
-  /**
-     Use execl[p](CMD, CMD,0) instead of
-     execl[p]("/bin/sh","-c",CMD,0).
-  */
-  cmpp_popen_F_DIRECT = 0x01,
-  /** Use execlp() or execvp() instead of execl() or execv(). */
-  cmpp_popen_F_PATH   = 0x02
-};
-
-/**
-   Result state for cmpp_popen() and friends.
-*/
-struct cmpp_popen_t {
-  /**
-     The child process ID.
-   */
-  int childPid;
-  /**
-     The child process's stdout.
-  */
-  int fdFromChild;
-  /**
-     If not NULL, cmpp_popen() will set *fpToChild to a FILE handle
-     mapped to the child process's stdin. If it is NULL, the child
-     process's stdin will be closed instead.
-  */
-  cmpp_FILE **fpToChild;
-};
-typedef struct cmpp_popen_t cmpp_popen_t;
-/**
-   Empty-initialized cmpp_popen_t instance, intended for const-copy
-   initialization.
-*/
-#define cmpp_popen_t_empty_m {-1,-1,0}
-/**
-   Empty-initialized instance, intended for non-const-copy
-   initialization.
-*/
-extern const cmpp_popen_t cmpp_popen_t_empty;
-
-/**
-   Uses fork()/exec() to run a command in a separate process and open
-   a two-way stream to it. It is provided in this API to facilitate
-   the creation of custom directives which shell out to external
-   processes.
-
-   zCmd must contain the NUL-terminated command to run and any flags
-   for that command, e.g. "myapp --flag --other-flag". It is passed as
-   the 4th argument to:
-
-     execl("/bin/sh", "/bin/sh", "-c", zCmd, NULL)
-
-   The po object MUST be cleanly initialized before calling this by
-   bitwise copying cmpp_popen_t_empty or (depending on the context)
-   cmpp_popen_t_empty_m.
-
-   Flags:
-
-   - cmpp_popen_F_DIRECT: zCmd is passed to execl(zCmd, zCmd, NULL).
-     instead of exec(). That can only work if zCmd is a single command
-     without arguments.
-
-   - cmpp_popen_F_PATH: tells it to use execlp() or execvp(), which
-     performs path lookup of its initial argument. Again, that can
-     only work if zCmd is a single command without arguments.
-
-   On success:
-
-   - po->childPid will be set to the PID of the child process.
-
-   - po->fdFromChild is set to the child's stdout file
-   descriptor. read(2) from it to read from the child.
-
-   - If po->fpToChild is not NULL then *po->fpToChild is set to a
-   buffered output handle to the child's stdin.  fwrite(3) to it to
-   send the child stuff. Be sure to fflush(3) and/or fclose(3) it to
-   keep it from hanging forever. If po->fpToChild is NULL then the
-   stdin of the child is closed. (Why buffered instead of unbuffered?
-   My attempts at getting unbuffered child stdin to work have all
-   failed when write() is called on it.)
-
-   On success, the caller is obligated to pass po to cmpp_pclose().
-   The caller may pass pi to cmpp_pclose() on error, if that's easier
-   for them, provided that the po argument was cleanly initialized
-   before passing it to this function.
-
-   If the caller fclose(3)s *po->fpToChild then they must set it to
-   NULL so that passing it to cmpp_pclose() knows not to close it.
-
-   On error: you know the drill. This function is a no-op if pp has
-   error state when it's called, and the current error code is
-   returned instead.
-
-   This function is only available on non-WASM Unix-like environments.
-   On others it will always trigger a CMPP_RC_UNSUPPORTED error.
-
-   Bugs: because the command is run via /bin/sh -c ...  we cannot tell
-   if it's actually found. All we can tell is that /bin/sh ran.
-
-   Also: this doesn't capture stderr, so commands should redirect
-   stderr to stdout. Adding the child's stderr handle to cmpp_popen_t is
-   a potential TODO without a current use case.
-
-   See: cmpp_pclose()
-   See: cmpp_popenv()
-*/
-CMPP_EXPORT int cmpp_popen(cmpp *pp, unsigned char const *zCmd,
-                           cmpp_flag32_t flags, cmpp_popen_t *po);
-
-/**
-   Works like cmpp_popen() except that:
-
-   - It takes it arguments in the form of a main()-style array of
-     strings because it uses execv() instead of exec(). The
-     cmpp_popen_F_PATH flag causes it to use execvp().
-
-   - It does not honor the cmpp_popen_F_DIRECT flag because all
-     arguments have to be passed in via the arguments array.
-
-   As per execv()'s requirements: azCmd _MUST_ end with a NULL entry.
-*/
-CMPP_EXPORT int cmpp_popenv(cmpp *pp, char * const * azCmd,
-                            cmpp_flag32_t flags, cmpp_popen_t *po);
-
-/**
-   Closes handles returned by cmpp_popen() and zeroes out po. If the
-   caller fclose()d *po->fpToChild then they need to set it to NULL so
-   that this function does not double-close it.
-
-   Returns the result code of the child process.
-
-   After calling this, po may again be used as an argument to
-   cmpp_popen().
-*/
-CMPP_EXPORT int cmpp_pclose(cmpp_popen_t *po);
-
-/**
-   A cmpp_popenv() proxy which builds up an execv()-style array of
-   arguments from the given args. It has a hard, and mostly arbitrary,
-   upper limit on the number of args it can take in order to avoid
-   extra allocation.
-*/
-CMPP_EXPORT int cmpp_popen_args(cmpp_dx *dx, cmpp_args const * args,
-                                cmpp_popen_t *p);
-
 
 /**
    Callback type for use with cmpp_kav_each().
@@ -3404,12 +3297,43 @@ CMPP_EXPORT void cmpp_skip_snl_trailing( unsigned char const *zBegin,
 CMPP_EXPORT int cmpp_array_reserve(cmpp *pp, void **list, cmpp_size_t nDesired,
                                    cmpp_size_t * nAlloc, unsigned sizeOfEntry);
 
+/**
+   State for a cmpp_dx_pimpl which we need in order to snapshot the
+   parse position for purposes of restoring it later. This is
+   basically to support that #query can contain other #query
+   directives, but this same capability is required by any directives
+   which want to both process directives in their content block and
+   loop over the content block.
+*/
+struct cmpp_dx_pos {
+  /** Current parse pos. */
+  unsigned char const *z;
+  /** Current line number. */
+  cmpp_size_t lineNo;
+};
+typedef struct cmpp_dx_pos cmpp_dx_pos;
+#define cmpp_dx_pos_empty_m {.z=0,.lineNo=0U}//,.dline=CmppDLine_empty_m}
+
+/**
+   Stores dx's current input position into pos. pos gets completely
+   initialized by this routine - it need not (in contrast to many
+   other functions in this library) be cleanly initialized by the
+   caller first.
+*/
+CMPP_EXPORT void cmpp_dx_pos_save(cmpp_dx const * dx, cmpp_dx_pos *pos);
+
+/**
+   Restores dx's input position from pos. Results are undefined if pos
+   is not populated with the result of having passed the same dx/pos
+   pointer combination to cmpp_dx_pos_save().
+*/
+CMPP_EXPORT void cmpp_dx_pos_restore(cmpp_dx * dx, cmpp_dx_pos const * pos);
 
 /**
    The current cmpp_api_thunk::apiVersion value.
    See cmpp_api_thunk_map.
 */
-#define cmpp_api_thunk_version 20260206
+#define cmpp_api_thunk_version 20260725
 
 /**
    A helper for use with cmpp_api_thunk.
@@ -3555,12 +3479,6 @@ CMPP_EXPORT int cmpp_array_reserve(cmpp *pp, void **list, cmpp_size_t nDesired,
                     cmpp_ssize_t nIn, cmpp_flag32_t flags))           \
   F(args_cleanup,void,(cmpp_args *a))                                 \
   F(dx_args_clone,int,(cmpp_dx * dx, cmpp_args *pOut))                \
-  F(popen,int,(cmpp *, unsigned char const *, cmpp_flag32_t,          \
-               cmpp_popen_t *))                                       \
-  F(popenv,int,(cmpp *pp, char * const * azCmd, cmpp_flag32_t flags,  \
-                cmpp_popen_t *po))                                    \
-  F(pclose,int,(cmpp_popen_t *po))                                    \
-  F(popen_args,int,(cmpp_dx *, cmpp_args const *, cmpp_popen_t *))    \
   F(kav_each,int, (cmpp_dx *,unsigned char const *, cmpp_ssize_t,     \
                    cmpp_kav_each_f, void *, cmpp_flag32_t))           \
   F(d_autoloader_set,void,(cmpp *pp, cmpp_d_autoloader const * pNew)) \
@@ -3574,8 +3492,6 @@ CMPP_EXPORT int cmpp_array_reserve(cmpp *pp, void **list, cmpp_size_t nDesired,
                             unsigned char const **p))                 \
   F(array_reserve,int,(cmpp *pp, void **list, cmpp_size_t nDesired,   \
                        cmpp_size_t * nAlloc, unsigned sizeOfEntry))   \
-  F(module_load,int,(cmpp *, char const *,char const *))              \
-  F(module_dir_add,int,(cmpp *, const char *))                        \
   O(outputer_FILE,cmpp_outputer const)                                \
   O(outputer_b,cmpp_outputer const)                                   \
   O(outputer_empty,cmpp_outputer const)                               \
@@ -3596,328 +3512,11 @@ CMPP_EXPORT int cmpp_array_reserve(cmpp *pp, void **list, cmpp_size_t nDesired,
   A(20260206)                                                         \
   F(b_borrow,cmpp_b *,(cmpp *dx))                                     \
   F(b_return,void,(cmpp *dx, cmpp_b*))                                \
+  A(20260725)                                                         \
+  F(arg_consume_as_file,int,(cmpp_dx*, cmpp_arg const*,               \
+                             cmpp_b*, cmpp_b*, bool))                 \
   A(1+cmpp_api_thunk_version)
 
-
-/**
-   Callback signature for cmpp module import routines.
-
-   This is called by the library after having first encountering this
-   module (typically after looking for it in a DLL, but static
-   instances are supported).
-
-   The primary intended purpose of this interface is for
-   implementations to call cmpp_d_register() (any number of times). It
-   is also legal to use APIs which set or query defines. This
-   interface is not intended to interact with pp's I/O in any way
-   (that's the job of the directives which these functions
-   register). Violating that will invoke undefined results, perhaps
-   stepping on the toes of any being-processed directive which
-   triggered the dynamic load of this directive.
-
-   Errors in module initialization must be reported via cmpp_err_set()
-   and that code must be returned.
-
-   Implementations must typically call cmpp_api_init(pp) as their
-   first operation.
-
-   See the files named d-*.c in libcmpp's source tree for examples.
-*/
-typedef int (*cmpp_module_init_f)(cmpp * pp);
-
-/**
-   Holds information for mapping a cmpp_module_init_f to a name.
-   Its purpose is to get installed by the CMPP_MODULE_xxx family of
-   macros and referenced later via a module-loading mechanism.
-*/
-struct cmpp_module{
-  /**
-     Symbolic name of the module.
-  */
-  char const * name;
-
-  /**
-     The initialization routine for the module.
-  */
-  cmpp_module_init_f init;
-};
-
-/** Convenience typedef. */
-typedef struct cmpp_module cmpp_module;
-
-/** @def CMPP_MODULE_DECL
-
-   Declares an extern (cmpp_module*) symbol called
-   cmpp_module__#\#CNAME.
-
-   Use CMPP_MODULE_IMPL2() or CMPP_MODULE_IMPL3() to create the
-   matching implementation code.
-
-   This macro should be used in the C or H file for a loadable module.
-   It may be compined in a file with a single CMPP_MODULE_IMPL_SOLO()
-   declaration with the same name, such that the module can be loaded
-   both with and without the explicit symbol name.
-*/
-#define CMPP_MODULE_DECL(CNAME)                            \
-    extern const cmpp_module * cmpp_module__##CNAME
-
-/** @def CMPP_MODULE_IMPL
-
-   Intended to be used to implement module declarations.  If a module
-   has both C and H files, CMPP_MODULE_DECL(CNAME) should be used in the
-   H file and CMPP_MODULE_IMPL2() should be used in the C file. If the
-   DLL has only a C file (or no public H file), CMPP_MODULE_DECL is
-   unnecessary.
-
-   If the module's human-use name is a legal C identifier,
-   CMPP_MODULE_IMPL2() is slightly easier to use than this macro.
-
-   Implements a static cmpp_module object named
-   cmpp_module__#\#CNAME#\#_impl and a non-static
-   (cmpp_module*) named cmpp_module__#\#CNAME which points to
-   cmpp_module__#\#CNAME#\#_impl. (The latter symbol may optionally be
-   declared in a header file via CMPP_MODULE_DECL.) NAME is used as
-   the cmpp_module::name value.
-
-   INIT_F must be a cmpp_module_init_f() function pointer. That function
-   is called when cmpp_module_load() loads the module.
-
-   This macro may be combined in a file with a single
-   CMPP_MODULE_IMPL_SOLO() declaration using the same CNAME value,
-   such that the module can be loaded both with and without the
-   explicit symbol name.
-
-   Example usage, in a module's header file, if any:
-
-   ```
-   CMPP_MODULE_DECL(mymodule);
-   ```
-
-   (The declaration is not strictly necessary - it is more of a matter
-   of documentation.)
-
-   And in the C file:
-
-   ```
-   CMPP_MODULE_IMPL3(mymodule,"mymodule",mymodule_install);
-   // OR:
-   CMPP_MODULE_IMPL2(mymodule,mymodule_install);
-   ```
-
-   If it will be the only module in the target DLL, one can also add
-   this:
-
-   ```
-   CMPP_MODULE_IMPL2(mymodule,mymodule_install);
-   // _OR_ (every so slightly different):
-   CMPP_MODULE_STANDALONE_IMPL2(mymodule,mymodule_install);
-   ```
-
-   Which simplifies client-side module loading by allowing them to
-   leave out the module name when loading, but that approach only
-   works if modules are compiled one per DLL (as opposed to being
-   packaged together in one DLL).
-
-   @see CMPP_MODULE_DECL
-   @see CMPP_MODULE_IMPL_SOLO
-*/
-#define CMPP_MODULE_IMPL3(CNAME,NAME,INIT_F)        \
-  static const cmpp_module                 \
-  cmpp_module__##CNAME##_impl = { NAME, INIT_F };   \
-  const cmpp_module *                      \
-  cmpp_module__##CNAME = &cmpp_module__##CNAME##_impl
-
-/** @def CMPP_MODULE_IMPL3
-
-    A simplier form of CMPP_MODULE_IMPL3() for cases where a module name
-    is a legal C symbol name.
-*/
-#define CMPP_MODULE_IMPL2(CNAME,INIT_F) \
-  CMPP_MODULE_IMPL3(CNAME,#CNAME,INIT_F)
-
-/** @def CMPP_MODULE_IMPL_SOLO
-
-   Implements a static cmpp_module symbol called
-   cmpp_module1_impl and a non-static (cmpp_module*) named
-   cmpp_module1 which points to cmpp_module1_impl
-
-   INIT_F must be a cmpp_module_init_f.
-
-   This macro must only be used in the C file for a loadable module
-   when that module is to be the only one in the resuling DLL. Do not
-   use it when packaging multiple modules into one DLL: use
-   CMPP_MODULE_IMPL for those cases (CMPP_MODULE_IMPL can also be used
-   together with this macro).
-
-   @see CMPP_MODULE_IMPL
-   @see CMPP_MODULE_DECL
-   @see CMPP_MODULE_STANDALONE_IMPL
-*/
-#define CMPP_MODULE_IMPL_SOLO(NAME,INIT_F)        \
-  static const cmpp_module               \
-  cmpp_module1_impl = { NAME, INIT_F };           \
-  const cmpp_module * cmpp_module1 = &cmpp_module1_impl
-/** @def CMPP_MODULE_STANDALONE_IMPL
-
-    CMPP_MODULE_STANDALONE_IMPL2() works like CMPP_MODULE_IMPL_SOLO()
-    but is only fully expanded if the preprocessor variable
-    CMPP_MODULE_STANDALONE is defined (to any value).  If
-    CMPP_MODULE_STANDALONE is not defined, this macro expands to a
-    dummy placeholder which does nothing (but has to expand to
-    something to avoid leaving a trailing semicolon in the C code,
-    which upsets the compiler (the other alternative would be to not
-    require a semicolon after the macro call, but that upsets emacs'
-    sense of indentation (and keeping emacs happy is more important
-    than keeping compilers happy (all of these parens are _not_ a
-    reference to emacs lisp, by the way)))).
-
-    This macro may be used in the same source file as
-    CMPP_MODULE_IMPL.
-
-    The intention is that DLLs prefer this option over
-    CMPP_MODULE_IMPL_SOLO, to allow that the DLLs can be built as
-    standalone DLLs, multi-plugin DLLs, and compiled directly into a
-    project (in which case the code linking it in needs to resolve and
-    call the cmpp_module entry for each built-in module).
-
-   @see CMPP_MODULE_IMPL_SOLO
-   @see CMPP_MODULE_REGISTER
-*/
-#if defined(CMPP_MODULE_STANDALONE)
-#  define CMPP_MODULE_STANDALONE_IMPL2(NAME,INIT_F) \
-  CMPP_MODULE_IMPL_SOLO(NAME,INIT_F)
-//arguably too much magic in one place:
-//#  if !defined(CMPP_API_THUNK)
-//#    define CMPP_API_THUNK
-//#  endif
-#else
-#  define CMPP_MODULE_STANDALONE_IMPL2(NAME,INIT_F) \
-  extern void cmpp_module__dummy_does_not_exist__(void)
-#endif
-
-/** @def CMPP_MODULE_REGISTER3
-
-   Performs all the necessary setup for registering a loadable module,
-   including declaration and definition. NAME is the stringified name
-   of the module. This is normally called immediately after defining
-   the plugin's init func (which is passed as the 3rd argument to this
-   macro).
-
-   See CMPP_MODULE_IMPL3() and CMPP_MODULE_STANDALONE_IMPL2() for
-   the fine details.
-*/
-#define CMPP_MODULE_REGISTER3(CNAME,NAME,INIT_F) \
-  CMPP_MODULE_IMPL3(CNAME,NAME,INIT_F);          \
-  CMPP_MODULE_STANDALONE_IMPL2(NAME,INIT_F)
-
-/**
-   Slight convenience form of CMPP_MODULE_REGISTER3() which assumes a
-   registration function name of cpp_ext_${CNAME}_register().
-*/
-#define CMPP_MODULE_REGISTER2(CNAME,NAME) \
-  CMPP_MODULE_REGISTER3(CNAME,NAME,cmpp_module__ ## CNAME ## _register)
-
-/**
-   Slight convenience form of CMPP_MODULE_REGISTER2() for cases when
-   CNAME and NAME are the same.
-*/
-#define CMPP_MODULE_REGISTER1(CNAME) \
-  CMPP_MODULE_REGISTER3(CNAME,#CNAME,cmpp_module__ ## CNAME ## _register)
-
-/**
-   This looks for a DLL file named fname.  If found, it is dlopen()ed
-   (or equivalent) and searched for a symbol named symName. If found,
-   it is assumed to be a cmpp_module instance and its init() method is
-   invoked.
-
-   If fname is NULL then the module is looked up in the
-   currently-running program.
-
-   If symName is NULL then the name "cmpp_module1" is assumed, which
-   is the name used by CMPP_MODULE_IMPL_SOLO() and friends (for use
-   when a module is the only one in its DLL).
-
-   If no match is found, or there's a problem loading the DLL or
-   resolving the name, non-0 is returned. Similarly, if the init()
-   method fails, non-0 is returned.
-
-   The file name is searched using the cmpp_module_dir_add() path, and
-   if fname is an exact match, or an exact when the system's
-   conventional DLL file extension is appended to it, that is used
-   rather than any potential match from the search path.
-
-   On error, pp's error state will contain more information. It's
-   indeterminate which errors from this API are recoverable.
-
-   This function is a no-op if called when pp's error state is set,
-   returning that code.
-
-   If built without module-loading support then this will always
-   fail with CMPP_RC_UNSUPPORTED.
-*/
-CMPP_EXPORT int cmpp_module_load(cmpp * pp, char const * fname,
-                                 char const * symName);
-
-/**
-   Adds the directory or directories listed in zDirs to the search
-   path used by cmpp_module_load(). The entries are expected to be
-   either colon- or semicolon-delimited, depending on the platform the
-   library was built for.
-
-   If zDirs is NULL and pp's library path is empty then it looks for
-   the environment variable CMPP_MODULE_PATH. If that is set, it is
-   used in place of zDirs, otherwise the library's compile-time
-   default is used (as set by the CMPP_MODULE_PATH compile-time value,
-   which defaults to ".:$prefix/lib/cmpp" in the canonical builds).
-   This should only be done once per cmpp instance, as the path will
-   otherwise be extended each time. (The current list structure does
-   not make it easy to recognize duplicates.)
-
-   Returns 0 on success or if zDirs is empty. Returns CMPP_RC_OOM on
-   allocation error (ostensibly recoverable - see cmpp_err_set()).
-
-   This is a no-op if called when pp has error state, returning that
-   code without other side-effects.
-
-   If modules are not enabled then this function is a no-op and always
-   returns CMPP_RC_UNSUPPORTED _without_ setting pp's error state (as
-   it's not an error, per se). That can typically be ignored as a
-   non-error.
-*/
-CMPP_EXPORT int cmpp_module_dir_add(cmpp *pp, const char * zDirs);
-
-
-/**
-   State for a cmpp_dx_pimpl which we need in order to snapshot the
-   parse position for purposes of restoring it later. This is
-   basically to support that #query can contain other #query
-   directives, but this same capability is required by any directives
-   which want to both process directives in their content block and
-   loop over the content block.
-*/
-struct cmpp_dx_pos {
-  /** Current parse pos. */
-  unsigned char const *z;
-  /** Current line number. */
-  cmpp_size_t lineNo;
-};
-typedef struct cmpp_dx_pos cmpp_dx_pos;
-#define cmpp_dx_pos_empty_m {.z=0,.lineNo=0U}//,.dline=CmppDLine_empty_m}
-
-/**
-   Stores dx's current input position into pos. pos gets completely
-   initialized by this routine - it need not (in contrast to many
-   other functions in this library) be cleanly initialized by the
-   caller first.
-*/
-CMPP_EXPORT void cmpp_dx_pos_save(cmpp_dx const * dx, cmpp_dx_pos *pos);
-
-/**
-   Restores dx's input position from pos. Results are undefined if pos
-   is not populated with the result of having passed the same dx/pos
-   pointer combination to cmpp_dx_pos_save().
-*/
-CMPP_EXPORT void cmpp_dx_pos_restore(cmpp_dx * dx, cmpp_dx_pos const * pos);
 
 /**
    A "thunk" for use with loadable modules, encapsulating all of the
@@ -3957,13 +3556,14 @@ struct cmpp_api_thunk {
 #undef A
 };
 
+
 /**
-   For loadable modules to be able portably access the cmpp API,
+   For loadable modules to be able to portably access the cmpp API,
    without requiring that their loading binary be linked with
-   -rdynamic, we need a "thunk". The API exposes cmpp_api_thunk
-   for that purpose. The following macros set up the thunk for
-   a given compilation unit. They are intended to only be used
-   by loadable modules, not generic client code.
+   -rdynamic, we need a "thunk". The API exposes cmpp_api_thunk for
+   that purpose. The following macros set up the thunk for a given
+   compilation unit. They are intended to only be used by loadable
+   modules, not generic client code.
 
    Before including this header, define CMPP_API_THUNK with no value
    and/or define CMPP_API_THUNK_NAME to a C symbol name.  The latter
@@ -4002,137 +3602,123 @@ static cmpp_api_thunk const * CMPP_API_THUNK_NAME = 0;
    NULL, which would make the next cmpp_...() call segfault.
 */
 #  if !defined(CMPP_API_THUNK__assigned)
-#  define CMPP_API_THUNK__assigned
+#    define CMPP_API_THUNK__assigned
 #    define cmpp_api_init(PP) CMPP_API_THUNK_NAME = (PP)->api
 #  else
 #    define cmpp_api_init(PP) (void)(PP)/*CMPP_API_THUNK_NAME*/
 #  endif
-/* What follows is generated code from c-pp's (#pragma api-thunk). */
-/* Thunk APIs which follow are available as of version 0... */
-#define cmpp_mrealloc CMPP_API_THUNK_NAME->mrealloc
-#define cmpp_malloc CMPP_API_THUNK_NAME->malloc
-#define cmpp_mfree CMPP_API_THUNK_NAME->mfree
-#define cmpp_ctor CMPP_API_THUNK_NAME->ctor
-#define cmpp_dtor CMPP_API_THUNK_NAME->dtor
-#define cmpp_reset CMPP_API_THUNK_NAME->reset
-#define cmpp_check_oom CMPP_API_THUNK_NAME->check_oom
-#define cmpp_is_legal_key CMPP_API_THUNK_NAME->is_legal_key
-#define cmpp_define_legacy CMPP_API_THUNK_NAME->define_legacy
-#define cmpp_define_v2 CMPP_API_THUNK_NAME->define_v2
-#define cmpp_undef CMPP_API_THUNK_NAME->undef
-#define cmpp_define_shadow CMPP_API_THUNK_NAME->define_shadow
-#define cmpp_define_unshadow CMPP_API_THUNK_NAME->define_unshadow
-#define cmpp_process_string CMPP_API_THUNK_NAME->process_string
-#define cmpp_process_file CMPP_API_THUNK_NAME->process_file
-#define cmpp_process_stream CMPP_API_THUNK_NAME->process_stream
-#define cmpp_process_argv CMPP_API_THUNK_NAME->process_argv
-#define cmpp_err_get CMPP_API_THUNK_NAME->err_get
-#define cmpp_err_set CMPP_API_THUNK_NAME->err_set
-#define cmpp_err_set1 CMPP_API_THUNK_NAME->err_set1
-#define cmpp_err_has CMPP_API_THUNK_NAME->err_has
-#define cmpp_is_safemode CMPP_API_THUNK_NAME->is_safemode
-#define cmpp_sp_begin CMPP_API_THUNK_NAME->sp_begin
-#define cmpp_sp_commit CMPP_API_THUNK_NAME->sp_commit
-#define cmpp_sp_rollback CMPP_API_THUNK_NAME->sp_rollback
-#define cmpp_output_f_FILE CMPP_API_THUNK_NAME->output_f_FILE
-#define cmpp_output_f_fd CMPP_API_THUNK_NAME->output_f_fd
-#define cmpp_input_f_FILE CMPP_API_THUNK_NAME->input_f_FILE
-#define cmpp_input_f_fd CMPP_API_THUNK_NAME->input_f_fd
-#define cmpp_flush_f_FILE CMPP_API_THUNK_NAME->flush_f_FILE
-#define cmpp_stream CMPP_API_THUNK_NAME->stream
-#define cmpp_slurp CMPP_API_THUNK_NAME->slurp
-#define cmpp_fopen CMPP_API_THUNK_NAME->fopen
-#define cmpp_fclose CMPP_API_THUNK_NAME->fclose
-#define cmpp_outputer_out CMPP_API_THUNK_NAME->outputer_out
-#define cmpp_outputer_flush CMPP_API_THUNK_NAME->outputer_flush
-#define cmpp_outputer_cleanup CMPP_API_THUNK_NAME->outputer_cleanup
-#define cmpp_outputer_cleanup_f_FILE CMPP_API_THUNK_NAME->outputer_cleanup_f_FILE
-#define cmpp_delimiter_set CMPP_API_THUNK_NAME->delimiter_set
-#define cmpp_delimiter_get CMPP_API_THUNK_NAME->delimiter_get
-#define cmpp_chomp CMPP_API_THUNK_NAME->chomp
-#define cmpp_b_clear CMPP_API_THUNK_NAME->b_clear
-#define cmpp_b_reuse CMPP_API_THUNK_NAME->b_reuse
-#define cmpp_b_swap CMPP_API_THUNK_NAME->b_swap
-#define cmpp_b_reserve CMPP_API_THUNK_NAME->b_reserve
-#define cmpp_b_reserve3 CMPP_API_THUNK_NAME->b_reserve3
-#define cmpp_b_append CMPP_API_THUNK_NAME->b_append
-#define cmpp_b_append4 CMPP_API_THUNK_NAME->b_append4
-#define cmpp_b_append_ch CMPP_API_THUNK_NAME->b_append_ch
-#define cmpp_b_append_i32 CMPP_API_THUNK_NAME->b_append_i32
-#define cmpp_b_append_i64 CMPP_API_THUNK_NAME->b_append_i64
-#define cmpp_b_chomp CMPP_API_THUNK_NAME->b_chomp
-#define cmpp_output_f_b CMPP_API_THUNK_NAME->output_f_b
-#define cmpp_outputer_cleanup_f_b CMPP_API_THUNK_NAME->outputer_cleanup_f_b
-#define cmpp_version CMPP_API_THUNK_NAME->version
-#define cmpp_tt_cstr CMPP_API_THUNK_NAME->tt_cstr
-#define cmpp_dx_err_set CMPP_API_THUNK_NAME->dx_err_set
-#define cmpp_dx_next CMPP_API_THUNK_NAME->dx_next
-#define cmpp_dx_process CMPP_API_THUNK_NAME->dx_process
-#define cmpp_dx_consume CMPP_API_THUNK_NAME->dx_consume
-#define cmpp_dx_consume_b CMPP_API_THUNK_NAME->dx_consume_b
-#define cmpp_arg_parse CMPP_API_THUNK_NAME->arg_parse
-#define cmpp_arg_strdup CMPP_API_THUNK_NAME->arg_strdup
-#define cmpp_arg_to_b CMPP_API_THUNK_NAME->arg_to_b
-#define cmpp_errno_rc CMPP_API_THUNK_NAME->errno_rc
-#define cmpp_d_register CMPP_API_THUNK_NAME->d_register
-#define cmpp_dx_f_dangling_closer CMPP_API_THUNK_NAME->dx_f_dangling_closer
-#define cmpp_dx_out_raw CMPP_API_THUNK_NAME->dx_out_raw
-#define cmpp_dx_out_expand CMPP_API_THUNK_NAME->dx_out_expand
-#define cmpp_dx_outf CMPP_API_THUNK_NAME->dx_outf
-#define cmpp_dx_delim CMPP_API_THUNK_NAME->dx_delim
-#define cmpp_atpol_from_str CMPP_API_THUNK_NAME->atpol_from_str
-#define cmpp_atpol_get CMPP_API_THUNK_NAME->atpol_get
-#define cmpp_atpol_set CMPP_API_THUNK_NAME->atpol_set
-#define cmpp_atpol_push CMPP_API_THUNK_NAME->atpol_push
-#define cmpp_atpol_pop CMPP_API_THUNK_NAME->atpol_pop
-#define cmpp_unpol_from_str CMPP_API_THUNK_NAME->unpol_from_str
-#define cmpp_unpol_get CMPP_API_THUNK_NAME->unpol_get
-#define cmpp_unpol_set CMPP_API_THUNK_NAME->unpol_set
-#define cmpp_unpol_push CMPP_API_THUNK_NAME->unpol_push
-#define cmpp_unpol_pop CMPP_API_THUNK_NAME->unpol_pop
-#define cmpp_path_search CMPP_API_THUNK_NAME->path_search
-#define cmpp_args_parse CMPP_API_THUNK_NAME->args_parse
-#define cmpp_args_cleanup CMPP_API_THUNK_NAME->args_cleanup
-#define cmpp_dx_args_clone CMPP_API_THUNK_NAME->dx_args_clone
-#define cmpp_popen CMPP_API_THUNK_NAME->popen
-#define cmpp_popenv CMPP_API_THUNK_NAME->popenv
-#define cmpp_pclose CMPP_API_THUNK_NAME->pclose
-#define cmpp_popen_args CMPP_API_THUNK_NAME->popen_args
-#define cmpp_kav_each CMPP_API_THUNK_NAME->kav_each
-#define cmpp_d_autoloader_set CMPP_API_THUNK_NAME->d_autoloader_set
-#define cmpp_d_autoloader_take CMPP_API_THUNK_NAME->d_autoloader_take
-#define cmpp_isspace CMPP_API_THUNK_NAME->isspace
-#define cmpp_isnl CMPP_API_THUNK_NAME->isnl
-#define cmpp_issnl CMPP_API_THUNK_NAME->issnl
-#define cmpp_skip_space CMPP_API_THUNK_NAME->skip_space
-#define cmpp_skip_snl CMPP_API_THUNK_NAME->skip_snl
-#define cmpp_skip_space_trailing CMPP_API_THUNK_NAME->skip_space_trailing
-#define cmpp_skip_snl_trailing CMPP_API_THUNK_NAME->skip_snl_trailing
-#define cmpp_array_reserve CMPP_API_THUNK_NAME->array_reserve
-#define cmpp_module_load CMPP_API_THUNK_NAME->module_load
-#define cmpp_module_dir_add CMPP_API_THUNK_NAME->module_dir_add
-#define cmpp_outputer_FILE (*CMPP_API_THUNK_NAME->outputer_FILE)
-#define cmpp_outputer_b (*CMPP_API_THUNK_NAME->outputer_b)
-#define cmpp_outputer_empty (*CMPP_API_THUNK_NAME->outputer_empty)
-#define cmpp_b_empty (*CMPP_API_THUNK_NAME->b_empty)
-/* Thunk APIs which follow are available as of version 20251116... */
-#define cmpp_next_chunk CMPP_API_THUNK_NAME->next_chunk
-/* Thunk APIs which follow are available as of version 20251118... */
-#define cmpp_atdelim_get CMPP_API_THUNK_NAME->atdelim_get
-#define cmpp_atdelim_set CMPP_API_THUNK_NAME->atdelim_set
-#define cmpp_atdelim_push CMPP_API_THUNK_NAME->atdelim_push
-#define cmpp_atdelim_pop CMPP_API_THUNK_NAME->atdelim_pop
-/* Thunk APIs which follow are available as of version 20251224... */
-#define cmpp_dx_pos_save CMPP_API_THUNK_NAME->dx_pos_save
-#define cmpp_dx_pos_restore CMPP_API_THUNK_NAME->dx_pos_restore
-/* Thunk APIs which follow are available as of version 20260130... */
-#define cmpp_dx_is_call CMPP_API_THUNK_NAME->dx_is_call
-/* Thunk APIs which follow are available as of version 20260206... */
-#define cmpp_b_borrow CMPP_API_THUNK_NAME->b_borrow
-#define cmpp_b_return CMPP_API_THUNK_NAME->b_return
-
-
-#else /* not CMPP_API_THUNK */
+/* What follows is a hand-massaged version of code generated from
+   c-pp's (#pragma api-thunk). */
+#  define cmpp_arg_consume_as_file CMPP_API_THUNK_NAME->arg_consume_as_file
+#  define cmpp_arg_parse CMPP_API_THUNK_NAME->arg_parse
+#  define cmpp_arg_strdup CMPP_API_THUNK_NAME->arg_strdup
+#  define cmpp_arg_to_b CMPP_API_THUNK_NAME->arg_to_b
+#  define cmpp_args_cleanup CMPP_API_THUNK_NAME->args_cleanup
+#  define cmpp_args_parse CMPP_API_THUNK_NAME->args_parse
+#  define cmpp_array_reserve CMPP_API_THUNK_NAME->array_reserve
+#  define cmpp_atdelim_get CMPP_API_THUNK_NAME->atdelim_get
+#  define cmpp_atdelim_pop CMPP_API_THUNK_NAME->atdelim_pop
+#  define cmpp_atdelim_push CMPP_API_THUNK_NAME->atdelim_push
+#  define cmpp_atdelim_set CMPP_API_THUNK_NAME->atdelim_set
+#  define cmpp_atpol_from_str CMPP_API_THUNK_NAME->atpol_from_str
+#  define cmpp_atpol_get CMPP_API_THUNK_NAME->atpol_get
+#  define cmpp_atpol_pop CMPP_API_THUNK_NAME->atpol_pop
+#  define cmpp_atpol_push CMPP_API_THUNK_NAME->atpol_push
+#  define cmpp_atpol_set CMPP_API_THUNK_NAME->atpol_set
+#  define cmpp_b_append CMPP_API_THUNK_NAME->b_append
+#  define cmpp_b_append4 CMPP_API_THUNK_NAME->b_append4
+#  define cmpp_b_append_ch CMPP_API_THUNK_NAME->b_append_ch
+#  define cmpp_b_append_i32 CMPP_API_THUNK_NAME->b_append_i32
+#  define cmpp_b_append_i64 CMPP_API_THUNK_NAME->b_append_i64
+#  define cmpp_b_borrow CMPP_API_THUNK_NAME->b_borrow
+#  define cmpp_b_chomp CMPP_API_THUNK_NAME->b_chomp
+#  define cmpp_b_clear CMPP_API_THUNK_NAME->b_clear
+#  define cmpp_b_empty (*CMPP_API_THUNK_NAME->b_empty)
+#  define cmpp_b_reserve CMPP_API_THUNK_NAME->b_reserve
+#  define cmpp_b_reserve3 CMPP_API_THUNK_NAME->b_reserve3
+#  define cmpp_b_return CMPP_API_THUNK_NAME->b_return
+#  define cmpp_b_reuse CMPP_API_THUNK_NAME->b_reuse
+#  define cmpp_b_swap CMPP_API_THUNK_NAME->b_swap
+#  define cmpp_check_oom CMPP_API_THUNK_NAME->check_oom
+#  define cmpp_chomp CMPP_API_THUNK_NAME->chomp
+#  define cmpp_ctor CMPP_API_THUNK_NAME->ctor
+#  define cmpp_d_autoloader_set CMPP_API_THUNK_NAME->d_autoloader_set
+#  define cmpp_d_autoloader_take CMPP_API_THUNK_NAME->d_autoloader_take
+#  define cmpp_d_register CMPP_API_THUNK_NAME->d_register
+#  define cmpp_define_legacy CMPP_API_THUNK_NAME->define_legacy
+#  define cmpp_define_shadow CMPP_API_THUNK_NAME->define_shadow
+#  define cmpp_define_unshadow CMPP_API_THUNK_NAME->define_unshadow
+#  define cmpp_define_v2 CMPP_API_THUNK_NAME->define_v2
+#  define cmpp_delimiter_get CMPP_API_THUNK_NAME->delimiter_get
+#  define cmpp_delimiter_set CMPP_API_THUNK_NAME->delimiter_set
+#  define cmpp_dtor CMPP_API_THUNK_NAME->dtor
+#  define cmpp_dx_args_clone CMPP_API_THUNK_NAME->dx_args_clone
+#  define cmpp_dx_consume CMPP_API_THUNK_NAME->dx_consume
+#  define cmpp_dx_consume_b CMPP_API_THUNK_NAME->dx_consume_b
+#  define cmpp_dx_delim CMPP_API_THUNK_NAME->dx_delim
+#  define cmpp_dx_err_set CMPP_API_THUNK_NAME->dx_err_set
+#  define cmpp_dx_f_dangling_closer CMPP_API_THUNK_NAME->dx_f_dangling_closer
+#  define cmpp_dx_is_call CMPP_API_THUNK_NAME->dx_is_call
+#  define cmpp_dx_next CMPP_API_THUNK_NAME->dx_next
+#  define cmpp_dx_out_expand CMPP_API_THUNK_NAME->dx_out_expand
+#  define cmpp_dx_out_raw CMPP_API_THUNK_NAME->dx_out_raw
+#  define cmpp_dx_outf CMPP_API_THUNK_NAME->dx_outf
+#  define cmpp_dx_pos_restore CMPP_API_THUNK_NAME->dx_pos_restore
+#  define cmpp_dx_pos_save CMPP_API_THUNK_NAME->dx_pos_save
+#  define cmpp_dx_process CMPP_API_THUNK_NAME->dx_process
+#  define cmpp_err_get CMPP_API_THUNK_NAME->err_get
+#  define cmpp_err_has CMPP_API_THUNK_NAME->err_has
+#  define cmpp_err_set CMPP_API_THUNK_NAME->err_set
+#  define cmpp_err_set1 CMPP_API_THUNK_NAME->err_set1
+#  define cmpp_errno_rc CMPP_API_THUNK_NAME->errno_rc
+#  define cmpp_is_legal_key CMPP_API_THUNK_NAME->is_legal_key
+#  define cmpp_is_safemode CMPP_API_THUNK_NAME->is_safemode
+#  define cmpp_isspace CMPP_API_THUNK_NAME->isspace
+#  define cmpp_kav_each CMPP_API_THUNK_NAME->kav_each
+#  define cmpp_malloc CMPP_API_THUNK_NAME->malloc
+#  define cmpp_mfree CMPP_API_THUNK_NAME->mfree
+#  define cmpp_mrealloc CMPP_API_THUNK_NAME->mrealloc
+#  define cmpp_next_chunk CMPP_API_THUNK_NAME->next_chunk
+#  define cmpp_output_f_b CMPP_API_THUNK_NAME->output_f_b
+#  define cmpp_outputer_b (*CMPP_API_THUNK_NAME->outputer_b)
+#  define cmpp_outputer_cleanup CMPP_API_THUNK_NAME->outputer_cleanup
+#  define cmpp_outputer_cleanup_f_b CMPP_API_THUNK_NAME->outputer_cleanup_f_b
+#  define cmpp_outputer_empty (*CMPP_API_THUNK_NAME->outputer_empty)
+#  define cmpp_outputer_flush CMPP_API_THUNK_NAME->outputer_flush
+#  define cmpp_outputer_out CMPP_API_THUNK_NAME->outputer_out
+#  define cmpp_path_search CMPP_API_THUNK_NAME->path_search
+#  define cmpp_process_argv CMPP_API_THUNK_NAME->process_argv
+#  define cmpp_process_file CMPP_API_THUNK_NAME->process_file
+#  define cmpp_process_stream CMPP_API_THUNK_NAME->process_stream
+#  define cmpp_process_string CMPP_API_THUNK_NAME->process_string
+#  define cmpp_reset CMPP_API_THUNK_NAME->reset
+#  define cmpp_skip_snl CMPP_API_THUNK_NAME->skip_snl
+#  define cmpp_skip_snl_trailing CMPP_API_THUNK_NAME->skip_snl_trailing
+#  define cmpp_skip_space CMPP_API_THUNK_NAME->skip_space
+#  define cmpp_skip_space_trailing CMPP_API_THUNK_NAME->skip_space_trailing
+#  define cmpp_slurp CMPP_API_THUNK_NAME->slurp
+#  define cmpp_sp_begin CMPP_API_THUNK_NAME->sp_begin
+#  define cmpp_sp_commit CMPP_API_THUNK_NAME->sp_commit
+#  define cmpp_sp_rollback CMPP_API_THUNK_NAME->sp_rollback
+#  define cmpp_stream CMPP_API_THUNK_NAME->stream
+#  define cmpp_tt_cstr CMPP_API_THUNK_NAME->tt_cstr
+#  define cmpp_undef CMPP_API_THUNK_NAME->undef
+#  define cmpp_unpol_from_str CMPP_API_THUNK_NAME->unpol_from_str
+#  define cmpp_unpol_get CMPP_API_THUNK_NAME->unpol_get
+#  define cmpp_unpol_pop CMPP_API_THUNK_NAME->unpol_pop
+#  define cmpp_unpol_push CMPP_API_THUNK_NAME->unpol_push
+#  define cmpp_unpol_set CMPP_API_THUNK_NAME->unpol_set
+#  define cmpp_version CMPP_API_THUNK_NAME->version
+#  define cmpp_fclose CMPP_API_THUNK_NAME->fclose
+#  define cmpp_flush_f_FILE CMPP_API_THUNK_NAME->flush_f_FILE
+#  define cmpp_fopen CMPP_API_THUNK_NAME->fopen
+#  define cmpp_input_f_fd CMPP_API_THUNK_NAME->input_f_fd
+#  define cmpp_input_f_FILE CMPP_API_THUNK_NAME->input_f_FILE
+#  define cmpp_output_f_fd CMPP_API_THUNK_NAME->output_f_fd
+#  define cmpp_output_f_FILE CMPP_API_THUNK_NAME->output_f_FILE
+#  define cmpp_outputer_cleanup_f_FILE CMPP_API_THUNK_NAME->outputer_cleanup_f_FILE
+#  define cmpp_outputer_FILE (*CMPP_API_THUNK_NAME->outputer_FILE)
+#else /* no CMPP_API_THUNK */
 /**
    cmpp_api_init() is a no-op when not including a file-local API
    thunk.
@@ -4204,7 +3790,7 @@ static cmpp_api_thunk const * CMPP_API_THUNK_NAME = 0;
 #endif
 
 #if !defined(CMPP_VERSION)
-#error "exporting CMPP_VERSION to have been set up"
+#error "expecting CMPP_VERSION to have been set up"
 #endif
 
 #define CMPP__DB_MAIN_NAME "cmpp"
@@ -4450,7 +4036,7 @@ typedef struct CmppLvl CmppLvl;
   };                                                   \
   typedef struct T T;                                  \
   int T ## _reserve(cmpp *pp, T *li, cmpp_size_t min)
-#define CMPP__MAX(X,Y) ((X)<=(Y) ? (X) : (Y))
+
 #define cmpp__ListType_impl(T,MT)                             \
   int T ## _reserve(cmpp *pp,struct T *li, cmpp_size_t min) { \
     return cmpp_array_reserve(pp, (void**)&li->list, min,     \
@@ -5397,6 +4983,7 @@ int cmpp__legal_key_check(cmpp *pp, unsigned char const *zKey,
                           cmpp_ssize_t nKey,
                           bool permitEqualSign);
 
+//%cmpp if not defined strip.module
 /**
    Appends DLL handle soh to soli. Returns 0 on success, CMPP_RC_OOM
    on error. If pp is not NULL then its error state is updated as
@@ -5409,8 +4996,14 @@ int cmpp__legal_key_check(cmpp *pp, unsigned char const *zKey,
    returning 0.
 */
 int CmppSohList_append(cmpp *pp, CmppSohList *soli, void *soh);
+//%cmpp /if not defined strip.module
 
-/** True if arg is of type cmpp_TT_Word and it looks like it
+
+/**
+   TODO (2026-08-05): get rid of this. It is/was a crutch to
+   keep older inputs working with #include changes.
+
+   True if arg is of type cmpp_TT_Word and it looks like it
     _might_ be a filename or flag argument. Might. */
 bool cmpp__arg_wordIsPathOrFlag(cmpp_arg const * const arg);
 
@@ -5524,7 +5117,8 @@ int cmpp__get_b(cmpp *pp, unsigned const char * zName,
    value else it defines nothing.
 */
 int cmpp__define_from_row(cmpp * const pp, sqlite3_stmt * const q,
-                          bool defineIfNoRow);
+                          bool defineIfNoRow,
+                          cmpp_b * optionalCaptureBuffer);
 
 /** Start a new savepoint for dx. */
 int cmpp__dx_sp_begin(cmpp_dx * const dx);
@@ -5693,7 +5287,7 @@ char const * cmpp__unpol_name(cmpp *pp, cmpp_unpol_e p);
    oMine.state = &bMine;
    cmpp__outputer_swap(pp, &oMine, &oOld);
    ...do some work then ALWAYS do...
-   cmpp__outputer_swap(pp, &oOld, &oMine);
+   cmpp__outputer_swap(pp, &oOld, NULL);
    ```
 
    Because this involves bitwise copying, care must be taken with
@@ -5807,7 +5401,6 @@ static const cmpp__delim delimAtDefault = {
   .close = { .z = ustr_c("@"), .n = 1 },
   .zOwns = NULL
 };
-
 static const cmpp_api_thunk cmppApiMethods = {
 #define A(V)
 #define V(N,T,V) .N = V,
@@ -5965,27 +5558,19 @@ CMPP__EXPORT(void *, cmpp_malloc)(size_t n){
 #endif
 }
 
-cmpp_FILE * cmpp_fopen(const char *zName, const char *zMode){
-  cmpp_FILE *f;
-  if(zName && ('-'==*zName && !zName[1])){
-    f = (strchr(zMode, 'w') || strchr(zMode,'+'))
-      ? stdout
-      : stdin
-      ;
-  }else{
-    f = fopen(zName, zMode);
+CMPP__EXPORT(bool, cmpp_chomp)(unsigned char * z, cmpp_size_t * n){
+  if( *n && '\n'==z[*n-1] ){
+    z[--*n] = 0;
+    if( *n && '\r'==z[*n-1] ){
+      z[--*n] = 0;
+    }
+    return true;
   }
-  return f;
+  return false;
 }
 
-void cmpp_fclose( cmpp_FILE * f ){
-  if(f && (stdin!=f) && (stdout!=f) && (stderr!=f)){
-    fclose(f);
-  }
-}
-
-int cmpp_slurp(cmpp_input_f fIn, void *sIn,
-               unsigned char **pOut, cmpp_size_t * nOut){
+CMPP__EXPORT(int, cmpp_slurp)(cmpp_input_f fIn, void *sIn,
+                              unsigned char **pOut, cmpp_size_t * nOut){
   unsigned char zBuf[1024 * 16];
   unsigned char * pDest = 0;
   unsigned nAlloc = 0;
@@ -6018,6 +5603,25 @@ int cmpp_slurp(cmpp_input_f fIn, void *sIn,
   return rc;
 }
 
+cmpp_FILE * cmpp_fopen(const char *zName, const char *zMode){
+  cmpp_FILE *f;
+  if(zName && ('-'==*zName && !zName[1])){
+    f = (strchr(zMode, 'w') || strchr(zMode,'+'))
+      ? stdout
+      : stdin
+      ;
+  }else{
+    f = fopen(zName, zMode);
+  }
+  return f;
+}
+
+void cmpp_fclose( cmpp_FILE * f ){
+  if(f && (stdin!=f) && (stdout!=f) && (stderr!=f)){
+    fclose(f);
+  }
+}
+
 void FileWrapper_close(FileWrapper * p){
   if(p->pFile) cmpp_fclose(p->pFile);
   if(p->zContent) cmpp_mfree(p->zContent);
@@ -6045,17 +5649,6 @@ int FileWrapper_slurp(FileWrapper * p, int bCloseFile){
     p->pFile = 0;
   }
   return rc;
-}
-
-CMPP__EXPORT(bool, cmpp_chomp)(unsigned char * z, cmpp_size_t * n){
-  if( *n && '\n'==z[*n-1] ){
-    z[--*n] = 0;
-    if( *n && '\r'==z[*n-1] ){
-      z[--*n] = 0;
-    }
-    return true;
-  }
-  return false;
 }
 
 bool FileWrapper_chomp(FileWrapper * p){
@@ -6699,6 +6292,11 @@ static int cmpp__out_expand(cmpp * pp, cmpp_outputer * pOut,
              i'm not a huge fan of this syntax, but that may go away
              if we replace the single-char separator with a pair of
              opening/closing delimiters.
+
+             BUG: ... part of @[...]@ may not span lines because
+             cmpp_dx_delim_search() incrementally feeds us these and
+             it does not have, at that point, anything more than the
+             first line. That is a severe limitation.
           */
           if( z<zEnd && '['==*z ){
             unsigned char const * zb = z;
@@ -7397,6 +6995,7 @@ int cmpp__include_dir_rm_id(cmpp *pp, int64_t rowid){
   return ppCode;
 }
 
+//%cmpp if not defined strip.module
 CMPP__EXPORT(int, cmpp_module_dir_add)(cmpp *pp, const char * zDirs){
 #if CMPP_ENABLE_DLLS
   if( !ppCode ){
@@ -7435,6 +7034,7 @@ CMPP__EXPORT(int, cmpp_module_dir_add)(cmpp *pp, const char * zDirs){
   return CMPP_RC_UNSUPPORTED;
 #endif
 }
+//%cmpp /if
 
 CMPP__EXPORT(int, cmpp_db_name_set)(cmpp *pp, const char * zName){
   if( 0==ppCode ){
@@ -8341,7 +7941,7 @@ CMPP__EXPORT(int, cmpp_dx_consume)(cmpp_dx * const dx, cmpp_outputer * const os,
     (flags & cmpp_dx_consume_F_PROCESS_OTHER_D);
   cmpp_d const * const d = cmpp_dx_d(dx);
   cmpp_size_t const lineNo = dx->pimpl->dline.lineNo;
-  bool const pushAt = (cmpp_dx_consume_F_RAW & flags);
+  bool const pushAt = (cmpp_dx_consume_F_ATPOL_OFF & flags);
   if( pushAt && cmpp_atpol_push(dx->pp, cmpp_atpol_OFF) ){
     return dxppCode;
   }
@@ -8751,12 +8351,13 @@ cmpp_tt cmpp__tt_for_sqlite(int sqType){
 }
 
 int cmpp__define_from_row(cmpp * const pp, sqlite3_stmt * const q,
-                          bool defineIfNoRow){
+                          bool defineIfNoRow, cmpp_b * bCol0){
   if( 0==ppCode ){
     int const nCol = sqlite3_column_count(q);
     assert( sqlite3_data_count(q)>0 || defineIfNoRow);
     /* Create a #define for each column */
     bool const hasRow = sqlite3_data_count(q)>0;
+    if( bCol0 ) cmpp_b_reuse(bCol0);
     for( int i = 0; !ppCode && i < nCol; ++i ){
       char const * const zCol = sqlite3_column_name(q, i);
       if( hasRow ){
@@ -8765,6 +8366,9 @@ int cmpp__define_from_row(cmpp * const pp, sqlite3_stmt * const q,
         cmpp_tt const ttype =
           cmpp__tt_for_sqlite(sqlite3_column_type(q,i));
         cmpp__define2(pp, ustr_c(zCol), -1, zVal, nVal, ttype);
+        if( bCol0 ){
+          cmpp_b_append4(pp, bCol0, zVal, nVal);
+        }
       }else if(defineIfNoRow){
         cmpp__define2(pp, ustr_c(zCol), -1, ustr_c(""), 0, cmpp_TT_Null);
       }else{
@@ -8993,7 +8597,9 @@ CMPP__EXPORT(int, cmpp_process_stream)(cmpp *pp, const char * zName,
       ? cmpp_stream(src, srcState, cmpp_output_f_b, os)
       : ppCode;
     if( 0==rc ){
-      cmpp_process_string(pp, zName, os->z, os->n);
+      if( os->n ){
+        cmpp_process_string(pp, zName, os->z, os->n);
+      }
     }else{
       cmpp__err(pp, rc, "Error reading from input stream '%s'.", zName);
     }
@@ -9044,7 +8650,7 @@ CMPP__EXPORT(int, cmpp_call_str)(
          via cmpp_process_string() is a call context. */;
     cmpp__outputer_swap(pp, &oB, &oOld);
     cmpp_process_string(pp, (char*)b->z, b->z, b->n);
-    cmpp__outputer_swap(pp, &oOld, &oB);
+    cmpp__outputer_swap(pp, &oOld, NULL);
     assert( !pi->flags.nextIsCall || ppCode );
     pi->flags.nextIsCall = false;
   }
@@ -9194,7 +8800,7 @@ void cmpp__fatalv_base(char const *zFile, int line,
 }
 
 void cmpp__fatal_base(char const *zFile, int line,
-                 char const *zFmt, ...){
+                      char const *zFmt, ...){
   va_list va;
   va_start(va, zFmt);
   cmpp__fatalv_base(zFile, line, zFmt, va);
@@ -10063,7 +9669,7 @@ CMPP__EXPORT(void, cmpp_b_list_cleanup)(cmpp_b_list *li){
 
 CMPP__EXPORT(void, cmpp_b_list_reuse)(cmpp_b_list *li){
   while( li->n ){
-    cmpp_b * const b = li->list[li->n--];
+    cmpp_b * const b = li->list[--li->n];
     if(b) cmpp_b_reuse(b);
   }
 }
@@ -10215,22 +9821,17 @@ const cmpp_outputer cmpp_outputer_obuf = {
 #define ND 0x82 /* Not above or digit-value */
 #define PAD_CHAR '='
 
-#ifndef U8_TYPEDEF
-typedef unsigned char u8;
-#define U8_TYPEDEF
-#endif
-
 static const char b64Numerals[64+1]
 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-#define BX_NUMERAL(dv) (b64Numerals[(u8)(dv)])
+#define BX_NUMERAL(dv) (b64Numerals[(uint8_t)(dv)])
 /* Width of base64 lines. Should be an integer multiple of 4. */
 #define B64_DARK_MAX 72
 
 /* Encode a byte buffer into base64 text with linefeeds appended to limit
 ** encoded group lengths to B64_DARK_MAX or to terminate the last group.
 */
-static char* toBase64( u8 const *pIn, cmpp_size_t nbIn, char *pOut ){
+static char* toBase64( uint8_t const *pIn, cmpp_size_t nbIn, char *pOut ){
   int nCol = 0;
   while( nbIn >= 3 ){
     /* Do the bit-shuffle, exploiting unsigned input to avoid masking. */
@@ -10255,7 +9856,7 @@ static char* toBase64( u8 const *pIn, cmpp_size_t nbIn, char *pOut ){
       if( (cmpp_size_t)nbe<nbIn ) qv |= *pIn++;
     }
     for( nbe=3; nbe>=0; --nbe ){
-      char ce = (nbe<nco)? BX_NUMERAL((u8)(qv & 0x3f)) : PAD_CHAR;
+      char ce = (nbe<nco)? BX_NUMERAL((uint8_t)(qv & 0x3f)) : PAD_CHAR;
       qv >>= 6;
       pOut[nbe] = ce;
     }
@@ -10268,7 +9869,7 @@ static char* toBase64( u8 const *pIn, cmpp_size_t nbIn, char *pOut ){
 
 #if 0 /* from-base-64. We don't yet have a #base64 -d[ecode] */
 /* Decoding table, ASCII (7-bit) value to base 64 digit value or other */
-static const u8 b64DigitValues[128] = {
+static const uint8_t b64DigitValues[128] = {
   /*                             HT LF VT  FF CR       */
     ND,ND,ND,ND, ND,ND,ND,ND, ND,WS,WS,WS, WS,WS,ND,ND,
   /*                                                US */
@@ -10287,8 +9888,8 @@ static const u8 b64DigitValues[128] = {
     41,42,43,44, 45,46,47,48, 49,50,51,ND, ND,ND,ND,ND
 };
 #define BX_DV_PROTO(c) \
-  ((((u8)(c))<0x80)? (u8)(b64DigitValues[(u8)(c)]) : 0x80)
-#define IS_BX_DIGIT(bdp) (((u8)(bdp))<0x80)
+  ((((uint8_t)(c))<0x80)? (uint8_t)(b64DigitValues[(uint8_t)(c)]) : 0x80)
+#define IS_BX_DIGIT(bdp) (((uint8_t)(bdp))<0x80)
 #define IS_BX_WS(bdp) ((bdp)==WS)
 #define IS_BX_PAD(bdp) ((bdp)==PC)
 /* Skip over text which is not base64 numeral(s). */
@@ -10299,7 +9900,7 @@ static char * skipNonB64( char *s, int nc ){
 }
 
 /* Decode base64 text into a byte buffer. */
-static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
+static uint8_t* fromBase64( char *pIn, int ncIn, uint8_t *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 && *pIn!=PAD_CHAR ){
     static signed char nboi[] = { 0, 0, 1, 2, 3 };
@@ -10314,7 +9915,7 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
     if( nbo==0 ) break;
     for( nac=0; nac<4; ++nac ){
       char c = (nac<nti)? *pIn++ : b64Numerals[0];
-      u8 bdp = BX_DV_PROTO(c);
+      uint8_t bdp = BX_DV_PROTO(c);
       switch( bdp ){
       case ND:
         /*  Treat dark non-digits as pad, but they terminate decode too. */
@@ -10786,12 +10387,32 @@ static void cmpp__udf_file_exists(
   }
 }
 
+/*
+** sqlite3 UDF which returns the size of a file, or NULL if
+** stat(2) fails.
+*/
+static void cmpp__udf_file_size(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zName;
+  (void)(argc);
+  zName = (const char*)sqlite3_value_text(argv[0]);
+  if( 0!=zName && 0!=zName[0] ){
+    struct stat sb;
+    if( 0==stat(zName, &sb) ){
+      sqlite3_result_int64(context, (int64_t)sb.st_size);
+    }
+  }
+}
+
 static void cmpp__udf_truthy(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
-  (void)(argc);  /* Unused parameter */
+  (void)(argc);
   assert(1==argc);
   int buul = 0;
   sqlite3_value * const sv = argv[0];
@@ -11000,6 +10621,12 @@ int cmpp__db_init(cmpp *pp){
       .flags = SQLITE_UTF8 | SQLITE_DIRECTONLY
     },
     {
+      .zName = "cmpp_file_size",
+      .xUdf  = cmpp__udf_file_size,
+      .arity = 1,
+      .flags = SQLITE_UTF8 | SQLITE_DIRECTONLY
+    },
+    {
       .zName = "cmpp_truthy",
       .xUdf  = cmpp__udf_truthy,
       .arity = 1,
@@ -11139,8 +10766,8 @@ static void cmpp_dx_f_error(cmpp_dx *dx){
 
 /* Impl. for #define. */
 static void cmpp_dx_f_define(cmpp_dx *dx){
-  cmpp_d const * const d = dx->d;
-  assert(d);
+  //cmpp_d const * const d = dx->d;
+  //assert(d);
   if( !dx->args.arg0 ){
     cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
                 "Expecting one or more arguments");
@@ -11347,7 +10974,7 @@ static void cmpp_dx_f_define(cmpp_dx *dx){
     if( os &&
         0==cmpp_dx_consume_b(dx, os, &dx->d->closer, 1,
                              raw
-                             ? cmpp_dx_consume_F_RAW
+                             ? cmpp_dx_consume_F_ATPOL_OFF
                              : cmpp_dx_consume_F_PROCESS_OTHER_D) ){
       while( nChomp-- && cmpp_b_chomp(os) ){}
       g_debug(dx->pp,2,("define  heredoc: [%s]=[%.*s]\n",
@@ -11518,9 +11145,9 @@ static void cmpp_dx_f_expand(cmpp_dx *dx){
                       "#expand.../#expand is not legal for [call].");
       goto end;
     }
-    if( cmpp_dx_consume_b(dx, osIn, &dx->d->closer, 1,
+    if( cmpp_dx_consume_b(dx, osIn, &d->closer, 1,
                           raw
-                          ? cmpp_dx_consume_F_RAW
+                          ? cmpp_dx_consume_F_ATPOL_OFF
                           : cmpp_dx_consume_F_PROCESS_OTHER_D) ){
       goto end;
     }
@@ -11715,11 +11342,8 @@ static void cmpp_dx_f_include(cmpp_dx *dx){
                 "Expecting at least one filename argument.");
   }
   for( ; !dxppCode && arg; arg = arg->next ){
-    cmpp_flag32_t a2bf = cmpp_arg_to_b_F_BRACE_CALL;
-    if( cmpp_TT_Word==arg->ttype && cmpp__arg_wordIsPathOrFlag(arg) ){
-      a2bf |= cmpp_arg_to_b_F_NO_DEFINES;
-    }
-    if( cmpp_arg_to_b(dx, arg, cmpp_b_reuse(ob), a2bf) ){
+    if( cmpp_arg_to_b(dx, arg, cmpp_b_reuse(ob),
+                      cmpp_arg_to_b_F_BRACE_CALL) ){
       break;
     }
     //g_stderr("zFile=%s zResolved=%s\n", zFile, zResolved);
@@ -11966,22 +11590,27 @@ static void cmpp_dx_f_pragma(cmpp_dx *dx){
     /* Generate macros for CMPP_API_THUNK and friends from
        cmpp_api_thunk_map. */
     char const * zName = "CMPP_API_THUNK_NAME";
-    char buf[256];
-#define out(FMT,...) snprintf(buf, sizeof(buf), FMT,__VA_ARGS__); \
-    cmpp_dx_out_raw(dx, buf, strlen(buf))
+    char buf[512];
+    int n;
+#define out(FMT,...) \
+    n = snprintf(buf, sizeof(buf), FMT,__VA_ARGS__);  \
+    assert(n>0); \
+    cmpp_dx_out_raw(dx, buf, (cmpp_size_t)n)
     if( 0 ){
       out("/* libcmpp API thunk. */\n"
           "static cmpp_api_thunk const * %s = 0;\n"
           "#define cmpp_api_init(PP) %s = (PP)->api\n", zName, zName);
     }
-#define A(V)                                          \
-    if(V<=cmpp_api_thunk_version) {                   \
+#define A(V)                                                \
+    if(0 && V<=cmpp_api_thunk_version) {                    \
       out("/* Thunk APIs which follow are available as of " \
-        "version %d... */\n",V);                      \
+          "version %d... */\n",V);                          \
     }
 #define V(N,T,V)
-#define F(N,T,P) out("#define cmpp_%s %s->%s\n", # N, zName, # N);
-#define O(N,T) out("#define cmpp_%s (*%s->%s)\n", # N, zName, # N);
+#define F(N,T,P) out("#  define cmpp_%s %s->%s\n", # N, zName, # N);
+#define O(N,T)   out("#  define cmpp_%s (*%s->%s)\n", # N, zName, # N);
+    /* ----------------^^ a consolation for how these get
+                       hand-massaged into libcmpp.h.  */;
 cmpp_api_thunk_map(A,V,F,O)
 #undef V
 #undef F
@@ -12684,6 +12313,7 @@ static void cmpp_dx_f_query(cmpp_dx *dx){
                 "Expecting one or more arguments");
     return;
   }
+  bool const isCall = cmpp_dx_is_call(dx);
   cmpp * const pp = dx->pp;
   sqlite3_stmt * q = 0;
   cmpp_b * const obBody = cmpp_b_borrow(dx->pp);
@@ -12694,8 +12324,10 @@ static void cmpp_dx_f_query(cmpp_dx *dx){
     /* We need to copy the args or do some arg-type-specific work to
        copy the memory for specific cases. */;
   int nChomp = 0;
+  int nUnchomp = 0;
   bool spStarted = false;
   bool seenDefine = false;
+  bool seenEmit = false;
   bool batchMode = false;
   cmpp_arg const * pNext = 0;
   cmpp_arg const * aBind = 0;
@@ -12722,8 +12354,23 @@ static void cmpp_dx_f_query(cmpp_dx *dx){
       seenDefine = true;
       continue;
     }
+    if( cmpp_arg_equals(arg, "emit") ){
+      if( seenEmit ){
+        cmpp__dx_err_just_once(dx, arg);
+        goto cleanup;
+      }/*else if( !isCall ){
+        cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
+                        "emit may only be used in a call context.");
+                        }*/
+      seenEmit = true;
+      continue;
+    }
     if( cmpp_arg_equals(arg, "-chomp") ){
       ++nChomp;
+      continue;
+    }
+    if( cmpp_arg_equals(arg, "-unchomp") ){
+      ++nUnchomp;
       continue;
     }
     if( cmpp_arg_equals(arg, "-batch") ){
@@ -12748,12 +12395,15 @@ static void cmpp_dx_f_query(cmpp_dx *dx){
     goto cleanup;
   }
   if( ppCode ) goto cleanup;
-  if( seenDefine ){
-    if( nChomp ){
+  seenEmit |= isCall;
+
+  if( seenDefine || seenEmit ){
+    if( seenDefine && nChomp ){
+      /* fixme (2026-07-30): support chomp for define */
       serr("-chomp and define may not be used together.");
       goto cleanup;
     }else if( batchMode ){
-      serr("-batch and define may not be used together.");
+      serr("-batch and define/emit may not be used together.");
       goto cleanup;
     }
   }
@@ -12764,7 +12414,7 @@ static void cmpp_dx_f_query(cmpp_dx *dx){
 
   if( batchMode ){
     if( aBind ){
-      serr("Bindable values may not be used with -batch.");
+      serr("Bindable emits may not be used with -batch.");
       goto cleanup;
     }
     char *zErr = 0;
@@ -12808,12 +12458,24 @@ static void cmpp_dx_f_query(cmpp_dx *dx){
   while( 0==ppCode ){
     int const dbrc = cmpp__step(pp, q, false);
     if( SQLITE_ROW==dbrc ){
-      nChomp = nChompOrig;
       gotARow = true;
-      if( cmpp__define_from_row(pp, q, false) ) break;
-      if( seenDefine ) break;
-      cmpp_dx_pos_restore(dx, &dxPosStart);
+      nChomp = nChompOrig;
       cmpp_b_reuse(obBody);
+      if( cmpp__define_from_row(pp, q, false,
+                                seenEmit ? obBody : 0) ){
+        break;
+      }
+      if( seenEmit ){
+        while( nChomp-- && cmpp_b_chomp(obBody) ){}
+        while( nUnchomp-- ) cmpp_b_append_ch(obBody, '\n');
+        if( seenEmit && !obBody->errCode && obBody->n ){
+          cmpp_dx_out_raw(dx, obBody->z, obBody->n);
+        }
+        break;
+      }else if( seenDefine ){
+        break;
+      }
+      cmpp_dx_pos_restore(dx, &dxPosStart);
       /* If it weren't for -chomp, we wouldn't need to
          buffer this. */
       if( cmpp_dx_consume_b(dx, obBody, dClosers,
@@ -12834,16 +12496,16 @@ static void cmpp_dx_f_query(cmpp_dx *dx){
       }
       continue;
     }
-    if( 0==ppCode && seenDefine ){
+    if( 0==ppCode && (seenDefine || seenEmit) ){
       /* If we got here, there was no result row. */
-      cmpp__define_from_row(pp, q, true);
+      cmpp__define_from_row(pp, q, true, 0);
     }
     break;
   }/*result row loop*/
   cmpp__stmt_reset(q);
   if( ppCode ) goto cleanup;
 
-  while( !seenDefine && !gotARow ){
+  while( !seenDefine && !seenEmit && !gotARow ){
     /* No result rows. Skip past the body, emitting the #query:no-rows
        content, if any. We disable @token processing for that first
        step because (A) the output is not going anywhere, so no need
@@ -12879,264 +12541,6 @@ cleanup:
 }
 #endif /* #ifndef CMPP_OMIT_D_DB */
 
-#ifndef CMPP_OMIT_D_PIPE
-/** #pipe impl. */
-static void cmpp_dx_f_pipe(cmpp_dx *dx){
-  //cmpp_d const * d = cmpp_dx_d(dx);
-  unsigned char const * zArgs = dx->args.z;
-  assert( dx->args.arg0->n == dx->args.nz );
-  unsigned char const * const zArgsEnd = zArgs + dx->args.nz;
-  if( zArgs==zArgsEnd ){
-    cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
-               "Expecting a command and arguments to pipe.");
-    return;
-  }
-  cmpp_FILE * fpToChild = 0;
-  int nChompIn = 0, nChompOut = 0;
-  cmpp_b * const chout = cmpp_b_borrow(dx->pp);
-  cmpp_b * const cmd = cmpp_b_borrow(dx->pp);
-  cmpp_b * const body = cmpp_b_borrow(dx->pp);
-  cmpp_b * const bArg = cmpp_b_borrow(dx->pp)
-    /* arg parsing and the initial command name part of the
-       external command. */;
-  cmpp_args cmdArgs = cmpp_args_empty;
-  /* TODOs and FIXMEs:
-
-     We need flags to optionally @token@-parse before and/or after
-     filtering.
-  */
-  bool seenDD = false /* true if seen "--" or [...] */;
-  bool doCapture = true /* true if we need a closing /pipe */;
-  bool argsAsGroup = false /* true if args is [...] */;
-  bool dumpDebug = false;
-  cmpp_flag32_t popenFlags = 0;
-  cmpp_popen_t po = cmpp_popen_t_empty;
-  if( cmpp_b_reserve3(dx->pp, cmd, zArgsEnd-zArgs + 1)
-      || cmpp_b_reserve3(dx->pp, bArg, cmd->nAlloc) ){
-    goto cleanup;
-  }
-
-  unsigned char * zOut = bArg->z;
-  unsigned char const * const zOutEnd = bArg->z + bArg->nAlloc - 1;
-  while( 0==dxppCode ){
-    cmpp_arg arg = cmpp_arg_empty;
-    zOut = bArg->z;
-    if( cmpp_arg_parse(dx, &arg, &zArgs, zArgsEnd,
-                       &zOut, zOutEnd) ){
-      goto cleanup;
-    }
-    if( cmpp_arg_equals(&arg, "--") ){
-      zOut = bArg->z;
-      if( cmpp_arg_parse(dx, &arg, &zArgs, zArgsEnd,
-                         &zOut, zOutEnd) ){
-        goto cleanup;
-      }
-      if( !arg.n ){
-        cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
-                        "Expecting external command name "
-                        "or [...] after --.");
-        goto cleanup;
-      }
-    do_arg_list:
-      seenDD = true;
-      cmpp_flag32_t a2bFlags = cmpp_arg_to_b_F_BRACE_CALL;
-      if( cmpp_TT_GroupBrace==arg.ttype ){
-        argsAsGroup = true;
-        a2bFlags |= cmpp_arg_to_b_F_NO_BRACE_CALL;
-      }else if( cmpp__arg_wordIsPathOrFlag(&arg) ){
-        /* If it looks like it is a path, do not
-           expand it as a word. */
-        arg.ttype = cmpp_TT_String;
-      }
-      if( cmpp_arg_to_b(dx, &arg, cmd, a2bFlags)
-          || (!argsAsGroup && cmpp_b_append_ch(cmd, ' ')) ){
-        goto cleanup;
-      }
-      //g_warn("command: [%s]=>%s", arg.z, cmd->z);
-      if( cmd->n<2 ){
-        cmpp_dx_err_set(dx, CMPP_RC_RANGE,
-                        "Command name '%s' resolves to empty. "
-                        "This is most commonly caused by not "
-                        "quoting it but it can also mean that it "
-                        "is an unknown define key.", arg.z);
-        goto cleanup;
-      }
-      //g_warn("arg=%s", arg.z);
-      //g_warn("cmd=%s", cmd->z);
-      break;
-    }
-    if( cmpp_TT_GroupBrace==arg.ttype ){
-      goto do_arg_list;
-    }
-#define FLAG(X)if( cmpp_arg_isflag(&arg, X) )
-    FLAG("-no-input"){
-      doCapture = false;
-      continue;
-    }
-    FLAG("-chomp-output"){
-      ++nChompOut;
-      continue;
-    }
-    FLAG("-chomp"){
-      ++nChompIn;
-      continue;
-    }
-    FLAG("-exec-direct"){
-      popenFlags |= cmpp_popen_F_DIRECT;
-      continue;
-    }
-    FLAG("-path"){
-      popenFlags |= cmpp_popen_F_PATH;
-      continue;
-    }
-    FLAG("-debug"){
-      dumpDebug = true;
-      continue;
-    }
-#undef FLAG
-    cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
-                    "Unhandled argument: %s. %s%s requires -- "
-                    "before its external command name.",
-                    arg.z, cmpp_dx_delim(dx),
-                    dx->d->name.z);
-    goto cleanup;
-  }
-
-  if( !seenDD ){
-    cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
-                    "%s%s requires a -- before the name of "
-                    "its external app.",
-                    cmpp_dx_delim(dx), dx->d->name.z);
-    goto cleanup;
-  }
-
-  //g_warn("zArgs n=%u zArgs=%s", (unsigned)(zArgsEnd-zArgs), zArgs);
-  /* dx->pimpl->args gets overwritten by cmpp_dx_consume(), so we have to copy
-     the args. */
-  if( argsAsGroup ){
-    assert( cmd->z );
-    if( cmpp_args_parse(dx, &cmdArgs, cmd->z, cmd->n, 0) ){
-      goto cleanup;
-    }
-  }else{
-    /* zArgs can have newlines in it. We need to strip those out
-       before passing it on. We elide them entirely, as opposed to
-       replacing them with a space. */
-    cmpp_skip_snl(&zArgs, zArgsEnd);
-    if( cmpp_b_reserve3(dx->pp, cmd, cmd->n + (zArgsEnd-zArgs) + 1) ){
-      goto cleanup;
-    }
-    unsigned char * zo = cmd->z + cmd->n;
-    unsigned char const *zi = zArgs;
-#if !defined(NDEBUG)
-    unsigned char const * zoEnd = cmd->z + cmd->nAlloc;
-#endif
-    for( ; zi<zArgsEnd; ++zi){
-      if( '\n'!=*zi && '\r'!=*zi ) *zo++ = *zi;
-    }
-    assert( zoEnd > zo );
-    *zo = 0;
-    cmd->n = zo - cmd->z;
-  }
-  assert( !dxppCode );
-
-  if( doCapture ){
-    assert( dx->d->closer );
-    if( cmpp_dx_consume_b(dx, body, &dx->d->closer, 1,
-                          cmpp_dx_consume_F_PROCESS_OTHER_D) ){
-      goto cleanup;
-    }
-    while( nChompIn-- && cmpp_b_chomp(body) ){}
-    po.fpToChild = &fpToChild;
-  }
-
-  if( dumpDebug ){
-    g_warn("%s%s -debug: cmd argsAsGroup=%d n=%u z=%s",
-           cmpp_dx_delim(dx), dx->d->name.z,
-           (int)argsAsGroup,
-           (unsigned)cmd->n, cmd->z);
-  }
-  if( argsAsGroup ){
-    cmpp_popen_args(dx, &cmdArgs, &po);
-  }else{
-    unsigned char const * z = cmd->z;
-    //cmpp_skip_snl(&z, cmd->z + cmd->n);
-    cmpp_popen(dx->pp, z, popenFlags, &po);
-  }
-  if( dxppCode ) goto cleanup;
-  int rc = 0;
-  if( doCapture ){
-    /* Bug: if body is too bug (no idea how much that is), this will
-       block while waiting on input from the child. This can easily
-       happen with #include -raw. */
-#if 0
-    /* Failed attempt to work around it. */
-    assert( fpToChild );
-    enum { BufSize = 128 };
-    unsigned char buf[BufSize];
-    cmpp_size_t nLeft = body->n;
-    unsigned char const * z = body->z;
-    while( nLeft>0 && !dxppCode ){
-      cmpp_size_t nWrite = nLeft < BufSize ? nLeft : BufSize;
-      g_warn("writing %u to child...", (unsigned)nWrite);
-      rc = cmpp_output_f_FILE(fpToChild, z, nWrite);
-      if( rc ){
-        cmpp_dx_err_set(dx, rc, "Error feeding stdin to piped process.");
-        break;
-      }
-      z += nWrite;
-      nLeft -= nWrite;
-      fflush(fpToChild);
-      cmpp_size_t nRead = BufSize;
-      rc = cmpp_input_f_fd(&po.fdFromChild, &buf[0], &nRead);
-      if( rc ) goto err_reading;
-      cmpp_b_append4(dx->pp, &chout, buf, nRead);\
-    }
-    if( !dxppCode ){
-      g_warn0("reading from child...");
-      rc = cmpp_stream( cmpp_input_f_fd, &po.fdFromChild,
-                        cmpp_output_f_b, chout );
-      if( rc ) goto err_reading;
-    }
-    g_warn0("I/O done");
-#else
-    //g_warn("writing %u bytes to child...", (unsigned)body->n);
-    rc = cmpp_output_f_FILE(fpToChild, body->z, body->n);
-    if( rc ){
-      cmpp_dx_err_set(dx, rc, "Error feeding stdin to piped process.");
-      goto cleanup;
-    }
-    //g_warn("wrote %u bytes to child.", (unsigned)body->n);
-    fclose(fpToChild);
-    fpToChild = 0;
-    if( dxppCode ) goto cleanup;
-    goto stream_chout;
-#endif
-  }else{
-  stream_chout:
-    //g_warn0("waiting on child...");
-    rc = cmpp_stream(cmpp_input_f_fd, &po.fdFromChild,
-                     cmpp_output_f_b, chout);
-    //g_warn0("I/O done");
-    if( rc ){
-      //err_reading:
-      cmpp_dx_err_set(dx, rc, "Error reading stdout from piped process.");
-      goto cleanup;
-    }
-  }
-  while( nChompOut-- && cmpp_b_chomp(chout) ){}
-  //g_warn("Read in:\n%.*s", (int)chout->n, chout->z);
-  cmpp_dx_out_raw(dx, chout->z, chout->n);
-
-cleanup:
-  cmpp_args_cleanup(&cmdArgs);
-  cmpp_b_return(dx->pp, chout);
-  cmpp_b_return(dx->pp, cmd);
-  cmpp_b_return(dx->pp, body);
-  cmpp_b_return(dx->pp, bArg);
-  cmpp_pclose(&po);
-}
-#endif /* #ifndef CMPP_OMIT_D_PIPE */
 
 /**
    #sum ...args
@@ -13276,7 +12680,6 @@ end:
   cmpp_b_return(dx->pp, bSep);
 }
 
-
 /* Impl. for #file */
 static void cmpp_dx_f_file(cmpp_dx *dx){
   if( !dx->args.arg0 ){
@@ -13360,7 +12763,6 @@ missing_arg:
   goto end;
 }
 
-
 /**
    #cmp LHS op RHS
 */
@@ -13404,60 +12806,28 @@ end:
 
 /** Impl for #base64. */
 static void cmpp_dx_f_base64(cmpp_dx *dx){
-  cmpp_b ob = cmpp_b_empty;
   cmpp_flag32_t consumeFlags = cmpp_dx_consume_F_PROCESS_OTHER_D;
   bool comma = false;
   bool quote = false;
   cmpp_arg const *arg = 0;
-  char * zResolved = 0;
+  cmpp_arg const * argFile = 0;
+  bool preprocessFileArg = false;
+  cmpp_d const * const d = dx->d;
   cmpp_args args = cmpp_args_empty;
-  cmpp_b * const bFile = cmpp_b_borrow(dx->pp) /* -f|-file NAME */;
+  cmpp_b * const ob = cmpp_b_borrow(dx->pp);
   const bool isCall = cmpp_dx_is_call(dx);
-  //bool interpretFile = false;
-  if( !bFile || cmpp_dx_args_clone(dx, &args) ){
+  if( !ob || cmpp_dx_args_clone(dx, &args) ){
     goto end;
   }
   for( arg = args.arg0; arg; arg = arg->next ){
-
 #define M(STR) cmpp_arg_equals(arg, STR)
     if( M("-comma") ) comma = true;
     else if( M("-quote") ) quote = true;
     else if( M("-f") || M("-file")
-             //|| M("-F") || M("-FILE")
+               || (preprocessFileArg=M("-F")) || (preprocessFileArg=M("-FILE"))
     ){
-      if( !arg->next ){
-        cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
-                        "Expecting a filename argument for %s", arg->z);
-        goto end;
-      }
-      arg = arg->next;
-      assert( !bFile->z );
-      if( cmpp_arg_to_b(dx, arg, bFile,
-                        cmpp_arg_to_b_F_BRACE_CALL) ){
-        goto end;
-      }
-      if( !bFile->n || !bFile->z[0] ){
-        cmpp_dx_err_set(dx, CMPP_RC_MISUSE, "Empty filename is not permitted.");
-        goto end;
-      }
-#if 1
-      zResolved = sqlite3_mprintf("%.*s", (int)bFile->n, bFile->z)
-        /* memory must come from our allocator, not strndup() */;
-      if( cmpp_check_oom(dx->pp, zResolved) ){
-        goto end;
-      }
-#else
-      int nResolved = 0;
-      zResolved = cmpp__include_search(dx->pp, bFile->z, &nResolved);
-      if( !zResolved ){
-        if( !dxppCode ){
-          cmpp_dx_err_set(dx, CMPP_RC_NOT_FOUND, "file not found: %s",
-                          bFile->z);
-        }
-        goto end;
-      }
-#endif
-      //interpretFile = (char)'F'==(char)arg->z[1];
+      if( !arg->next ) goto missing_arg;
+      argFile = arg = arg->next;
     }else{
       cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
                       "Unhandled argument: %s", arg->z);
@@ -13465,52 +12835,42 @@ static void cmpp_dx_f_base64(cmpp_dx *dx){
     }
 #undef M
   }
-  if( zResolved ){
-    cmpp_outputer out = cmpp_outputer_b;
-    out.state = cmpp_b_reuse(bFile);
-    cmpp_FILE * const fp = cmpp_fopen(zResolved, "r");
-    if( fp ){
-      /* TODO (2026-07-22): -F|-FILE NAME tells it to preprocess the
-         input file before encoding, for which we can use
-         cmpp_process_stream(dx->pp,zResolved,cmpp_input_f_FILE, fp).
-         We need to temporarily redirect dx->pp's output to ob before
-         doing so. */
-      int const rc = cmpp_stream(cmpp_input_f_FILE, fp, out.out, out.state);
-      if( rc ){
-        cmpp_dx_err_set(dx, rc, "Unknown error streaming file %s.",
-                        zResolved);
-      }
-      cmpp_fclose(fp);
-    }else{
-      cmpp_dx_err_set(dx, cmpp_errno_rc(errno, CMPP_RC_IO),
-                      "Unknown error opening file %s.", zResolved);
+
+  if( argFile ){
+    if(cmpp_arg_consume_as_file(dx, argFile, NULL, ob, preprocessFileArg) ){
+      goto end;
     }
-    if( dxppCode ) goto end;
-    cmpp_b_swap(bFile, &ob);
-  }else if( isCall ){
-    cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
-                    "#base64.../#base64 is not legal for [call]. "
-                    "Pass the -f FILENAME flag instead.");
-    goto end;
-  }else if( cmpp_dx_consume_b(dx, &ob, &dx->d->closer, 1, consumeFlags) ){
-    goto end;
+  }else{
+    if( isCall ){
+      cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
+                      "#%s...#/%s is not legal for a [call]. "
+                      "Pass the -f FILENAME flag instead.",
+                      d->name.z, d->name.z);
+      goto end;
+    }else{
+      assert( !ob->n );
+      if( cmpp_dx_consume_b(dx, ob, &d->closer, 1, consumeFlags) ){
+        goto end;
+      }
+    }
   }
-  if( ob.n ){
+
+  if( ob->n ){
     cmpp_b * const b64 = cmpp_b_borrow(dx->pp);
     if( !b64 ) goto end;
     int cmpp__b_base64_encode(cmpp *, cmpp_b const *, cmpp_b *)/* in b.c */;
-    cmpp__b_base64_encode(dx->pp, &ob, b64);
-    cmpp_b_swap(&ob, b64);
+    cmpp__b_base64_encode(dx->pp, ob, b64);
+    cmpp_b_swap(ob, b64);
     cmpp_b_return(dx->pp, b64);
     if( cmpp_dx_err_check(dx) ) goto end;
   }
-  unsigned char const * zEnd = ob.z + ob.n;
+  unsigned char const * zEnd = ob->z + ob->n;
 #define out(P,N) if( cmpp_dx_out_raw(dx, P, N) ) goto end
   if( !quote ){
-    cmpp_dx_out_raw(dx, ob.z, ob.n);
-    zEnd = ob.z /* skip the next loop */;
+    cmpp_dx_out_raw(dx, ob->z, ob->n);
+    goto end;
   }
-  for( unsigned char const * z = ob.z; z < zEnd; ++z ){
+  for( unsigned char const * z = ob->z; z < zEnd; ++z ){
     if( quote ){
       out("\"", 1);
     }
@@ -13538,16 +12898,14 @@ static void cmpp_dx_f_base64(cmpp_dx *dx){
   }
 #undef out
 end:
-  if( bFile ){
-    /* ob has its whole contents, i.e. probably a large buffer, so
-       let's keep that one. */
-    cmpp_b_swap(&ob, bFile);
-    cmpp_b_return(dx->pp, bFile);
-  }
-  cmpp_mfree(zResolved);
   cmpp_args_cleanup(&args);
-  cmpp_b_clear(&ob);
+  cmpp_b_return(dx->pp, ob);
   return;
+missing_arg:
+  assert(arg);
+  cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
+                  "Expecting an argument after %s.", arg->z);
+  goto end;
 }
 
 
@@ -13694,11 +13052,6 @@ int cmpp__d_delayed_load(cmpp *pp, char const *zName){
                0, 0);
 #endif
 
-#ifndef CMPP_OMIT_D_PIPE
-  M_IF_FLAGGED("pipe", cmpp_ctor_F_NO_PIPE,
-               cmpp_dx_f_pipe, F_A_RAW | F_UNSAFE,
-               cmpp_dx_f_dangling_closer, 0);
-#endif
 
 #ifndef CMPP_OMIT_D_DB
   M_IF_FLAGGED("attach", cmpp_ctor_F_NO_DB,
@@ -13851,6 +13204,8 @@ void cmpp__fclose( FILE * f ){
 ************************************************************************
 ** This file houses the arguments-handling-related pieces for libcmpp.
 */
+#include <assert.h>
+#include <errno.h>
 
 const cmpp_args_pimpl cmpp_args_pimpl_empty =
   cmpp_args_pimpl_empty_m;
@@ -15262,11 +14617,8 @@ CMPP__EXPORT(int, cmpp_kav_each)(cmpp_dx *dx,
   cmpp_args args = cmpp_args_empty;
   unsigned char exprBuf[32] = {0};
   cmpp_size_t const nz = cmpp__strlenu(zBegin,nIn);
-  unsigned char const * const zEnd = zBegin + nz;
   cmpp_flag32_t a2bK = 0, a2bV = 0 /*cmpp_arg_to_b() flags*/;
   assert( zBegin );
-  assert( zEnd );
-  assert( zEnd>=zBegin );
 
   if( cmpp__each_parse_args(dx, &args, zBegin, nz,  flags) ){
     goto cleanup;
@@ -15371,10 +14723,7 @@ CMPP__EXPORT(int, cmpp_str_each)(cmpp_dx *dx,
   cmpp_args args = cmpp_args_empty;
   unsigned char exprBuf[32] = {0};
   cmpp_size_t const nz = cmpp__strlenu(zBegin,nIn);
-  unsigned char const * const zEnd = zBegin + nz;
   assert( zBegin );
-  assert( zEnd );
-  assert( zEnd>=zBegin );
 
   if( cmpp__each_parse_args(dx, &args, zBegin, nz,  flags) ){
     goto cleanup;
@@ -15476,6 +14825,58 @@ bool cmpp__arg_wordIsPathOrFlag(
         || strchr((char*)arg->z, '/')
         || strchr((char*)arg->z, '\\'));
 }
+
+int cmpp_arg_consume_as_file(
+  cmpp_dx * dx, cmpp_arg const *arg,
+  cmpp_b * bNameOut, cmpp_b * content, bool preprocessIt
+){
+  if( !arg ){
+    return cmpp_dx_err_set(dx, CMPP_RC_MISUSE,
+                           "Expecting filename argument.");
+  }
+  cmpp_b * const bFile = cmpp_b_borrow(dx->pp);
+  if( !bFile ) return dxppCode;
+  else if( cmpp_arg_to_b(dx, arg, bFile,
+                         cmpp_arg_to_b_F_BRACE_CALL) ){
+    goto end;
+  }
+  if( !bFile->n || !bFile->z[0] ){
+    cmpp_dx_err_set(dx, CMPP_RC_MISUSE, "Empty filename is not permitted.");
+    goto end;
+  }
+  cmpp_FILE * const fp =
+    cmpp_fopen((char const*)bFile->z, "r")
+    /* Resolving as -Idir does would arguably be a bug. */;
+  if( fp ){
+    cmpp_outputer out = cmpp_outputer_b;
+    int rc;
+    out.state = cmpp_b_reuse(content);
+    if( preprocessIt ){
+      cmpp_outputer oOld = {0};
+      cmpp__outputer_swap(dx->pp, &out, &oOld);
+      rc = cmpp_process_stream(dx->pp, (char const *)bFile->z,
+                               cmpp_input_f_FILE, fp);
+      cmpp__outputer_swap(dx->pp, &oOld, NULL);
+    }else{
+      rc = cmpp_stream(cmpp_input_f_FILE, fp, out.out, out.state);
+    }
+    if( rc && !cmpp_dx_err_check(dx) ){
+      /* Propagate error. */
+      cmpp_dx_err_set(dx, rc, "Unknown error streaming file [%s].",
+                      bFile->z);
+    }
+    cmpp_fclose(fp);
+  }else{
+    cmpp_dx_err_set(dx, cmpp_errno_rc(errno, CMPP_RC_IO),
+                    "Unknown error opening file %s.", bFile->z);
+  }
+ end:
+  if( bNameOut && bFile && !dxppCode ){
+    cmpp_b_swap(bFile, bNameOut);
+  }
+  cmpp_b_return(dx->pp, bFile);
+  return dxppCode;
+}
 /*
 ** 2022-11-12:
 **
@@ -15489,267 +14890,6 @@ bool cmpp__arg_wordIsPathOrFlag(
 ************************************************************************
 ** This file houses the cmpp_popen() pieces.
 */
-#if !defined(_POSIX_C_SOURCE)
-#  define _POSIX_C_SOURCE 200809L /* for fdopen() in stdio.h */
-#endif
-#include <signal.h>
-
-const cmpp_popen_t cmpp_popen_t_empty = cmpp_popen_t_empty_m;
-
-#if CMPP_PLATFORM_IS_UNIX
-#include <signal.h>
-static int cmpp__err_errno(cmpp *pp, int errNo, char const *zContext){
-  return cmpp_err_set(pp, cmpp_errno_rc(errNo, CMPP_RC_ERROR),
-                      "errno #%d: %s", errNo, zContext);
-}
-#endif
-
-/**
-   Uses fork()/exec() to run a command in a separate process and open
-   a two-way stream to it.
-
-   If azCmd is NULL then zCmd must contain the command to run and
-   any flags. It is passed as the 4th argument to
-   execl("/bin/sh", "/bin/sh", "-c", zCmd, NULL).
-
-   If azCmd is not NULL then it must be suitable for use as the 2nd
-   argument to execv(2). execv(X, azCmd) is used in this case, where
-   X is (zCmd ? zCmd : azCmd[0]).
-
-   Flags:
-
-   - cmpp_popen_F_DIRECT: if azCmd is NULL and flags has this bit set then
-     zCmd is instead passed to execl(zCmd, zCmd, NULL). That can only
-     work if zCmd is a single command without arguments.
-     cmpp_popen_F_DIRECT has no effect if azCmd is not NULL.
-
-   - cmpp_popen_F_PATH: tells it to use execlp() or execvp(), which
-     performs path lookup of its initial argument.
-
-   On success:
-
-   - po->fdFromChild is the child's stdout. Read from it to read from
-   the child.
-
-   - If po->fpToChild is not NULL then *po->fpToChild is set to the
-   child's stdin. Write to it to send the child stuff. Be sure to
-   flush() and/or close() it to keep it from hanging forever. If
-   po->fpToChild is NULL then the stdin of the child is closed.
-
-   - po->childPid will be set to the PID of the child process.
-
-   On error: you know the drill.
-
-   After calling this, the caller is obligated to pass po to
-   cmpp_pclose(). If the caller fcloses() *po->fpToChild then they
-   must set it to NULL so that passing it to cmpp_pclose() knows not
-   to close it.
-
-   Bugs: because the command is run via /bin/sh -c ...  we cannot tell
-   if it's actually found. All we can tell is that /bin/sh ran.
-
-   Also: this doesn't capture stderr, so commands should redirect
-   stderr to stdout. Adding the child's stderr handle to cmpp_popen_t is
-   a potential TODO without a current use case.
-*/
-static
-int cmpp__popen_impl(cmpp *pp, unsigned char const *zCmd,
-                     char * const * azCmd, cmpp_flag32_t flags,
-                     cmpp_popen_t *po){
-#if !CMPP_PLATFORM_IS_UNIX
-  return cmpp__err(pp, CMPP_RC_UNSUPPORTED,
-                   "Piping is not supported in this build.");
-#else
-  if( ppCode ) return ppCode;
-#define shut(P,N) close(P[N])
-  /** Attribution: this impl is derived from one found in
-      the Fossil SCM. */
-  int pin[2];
-  int pout[2];
-
-  po->fdFromChild = -1;
-  if( po->fpToChild ) *po->fpToChild = 0;
-  if( pipe(pin)<0 ){
-    return cmpp__err_errno(pp, errno, "pipe(in) failed");
-  }
-  if( pipe(pout)<0 ){
-    int const rc = cmpp__err_errno(pp, errno,
-                                   "pipe(out) failed");
-    shut(pin,0);
-    shut(pin,1);
-    return rc;
-  }
-  po->childPid = fork();
-  if( po->childPid<0 ){
-    int const rc = cmpp__err_errno(pp, errno, "fork() failed");
-    shut(pin,0);
-    shut(pin,1);
-    shut(pout,0);
-    shut(pout,1);
-    return rc;
-  }
-  signal(SIGPIPE,SIG_IGN);
-  if( po->childPid==0 ){
-    /* The child process. */
-    int fd;
-    close(0);
-    fd = dup(pout[0]);
-    if( fd!=0 ) {
-      cmpp__fatal("Error opening file descriptor 0.");
-    };
-    shut(pout,0);
-    shut(pout,1);
-    close(1);
-    fd = dup(pin[1]);
-    if(fd!=1) {
-      cmpp__fatal("Error opening file descriptor 1.");
-    };
-    shut(pin,0);
-    shut(pin,1);
-    if( azCmd ){
-      if( pp->pimpl->flags.doDebug>1 ){
-        for( int i = 0; azCmd[i]; ++i ){
-          g_warn("execv arg[%d]=%s", i, azCmd[i]);
-        }
-      }
-      int (*exc)(const char *, char *const []) =
-        (cmpp_popen_F_PATH & flags) ? execvp : execv;
-      exc(zCmd ? (char*)zCmd : azCmd[0], azCmd);
-      cmpp__fatal("execv() failed");
-    }else{
-      g_debug(pp,2,("zCmd=%s\n", zCmd));
-      int (*exc)(const char *, char const *, ...) =
-        (cmpp_popen_F_PATH & flags) ? execlp : execl;
-      if( cmpp_popen_F_DIRECT & flags ){
-        exc((char*)zCmd, (char*)zCmd, (char*)0);
-      }else{
-        exc("/bin/sh", "/bin/sh", "-c", zCmd, (char*)0);
-      }
-      cmpp__fatal("execl() failed");
-    }
-    /* not reached */
-  }else{
-    /* The parent process. */
-    //cmpp_outputer_flush(&pp->pimpl->out.ch);
-    po->fdFromChild = pin[0];
-    shut(pin,1);
-    shut(pout,0);
-    if( po->fpToChild ){
-      *po->fpToChild = fdopen(pout[1], "w");
-      if( !*po->fpToChild ){
-        shut(pin,0);
-        shut(pout,1);
-        po->fdFromChild = -1;
-        cmpp__err_errno(pp, errno,
-                        "Error opening child process's stdin "
-                        "FILE handle from its descriptor.");
-      }
-    }else{
-      shut(pout,1);
-    }
-    return ppCode;
-  }
-#undef shut
-#endif
-}
-
-int cmpp_popen(cmpp *pp, unsigned char const *zCmd,
-                cmpp_flag32_t flags, cmpp_popen_t *po){
-  return cmpp__popen_impl(pp, zCmd, NULL, flags, po);
-}
-
-int cmpp_popenv(cmpp *pp, char * const * azCmd,
-                cmpp_flag32_t flags, cmpp_popen_t *po){
-  return cmpp__popen_impl(pp, NULL, azCmd, flags, po);
-}
-
-int cmpp_popen_args(cmpp_dx *dx, cmpp_args const * args,
-                    cmpp_popen_t *po){
-#if !CMPP_PLATFORM_IS_UNIX
-  return cmpp__popen_impl(dx->pp, NULL, 0, po) /* will fail */;
-#else
-  if( dxppCode ) return dxppCode;
-  enum { MaxArgs = 128 };
-  char * argv[MaxArgs] = {0};
-  cmpp_size_t offsets[MaxArgs] = {0};
-  cmpp_b osAll = cmpp_b_empty;
-  cmpp_b os1 = cmpp_b_empty;
-  if( args->argc >= MaxArgs ){
-    return cmpp_dx_err_set(dx, CMPP_RC_RANGE,
-                           "Too many arguments (%d). Max is %d.",
-                           args->argc, (int)MaxArgs);
-  }
-  int i = 0;
-  for(cmpp_arg const * a = args->arg0;
-      a; ++i, a = a->next ){
-    offsets[i] = osAll.n;
-    cmpp_flag32_t a2bFlags = cmpp_arg_to_b_F_BRACE_CALL;
-    if( cmpp__arg_wordIsPathOrFlag(a) ){
-      a2bFlags |= cmpp_arg_to_b_F_FORCE_STRING;
-    }
-    if( cmpp_arg_to_b(dx, a, cmpp_b_reuse(&os1), a2bFlags)
-        || cmpp_b_append4(dx->pp, &osAll, os1.z, os1.n+1/*NUL*/) ){
-      goto end;
-    }
-    assert( osAll.n > offsets[i] );
-    if( 0 ){
-      g_warn("execv arg[%d] = %s => %s", i, a->z,
-             osAll.z+offsets[i]);
-    }
-  }
-  argv[i] = 0;
-  for( --i; i >= 0; --i ){
-    argv[i] = (char*)(osAll.z + offsets[i]);
-    if( 0 ){
-      g_warn("execv arg[%d] = %s", i, argv[i]);
-    }
-  }
-end:
-  if( 0==dxppCode ){
-    cmpp__popen_impl(dx->pp, NULL, argv, 0, po);
-  }
-  cmpp_b_clear(&osAll);
-  cmpp_b_clear(&os1);
-  return dxppCode;
-#endif
-}
-
-int cmpp_pclose(cmpp_popen_t *po){
-#if CMPP_PLATFORM_IS_UNIX
-  if( po->fdFromChild>=0 ) close(po->fdFromChild);
-  if( po->fpToChild && *po->fpToChild ) fclose(*po->fpToChild);
-  int const childPid = po->childPid;
-  *po = cmpp_popen_t_empty;
-#if 1
-  int wp, rc = 0;
-  if( childPid>0 ){
-    //kill(childPid, SIGINT); // really needed?
-    do{
-      wp = waitpid(childPid, &rc, WNOHANG);
-      if( wp>0 ){
-        if( WIFEXITED(rc) ){
-          rc = WEXITSTATUS(rc);
-        }else if( WIFSIGNALED(rc) ){
-          rc = WTERMSIG(rc);
-        }else{
-          rc = 0/*???*/;
-        }
-      }
-    } while( wp>0 );
-  }
-  return rc;
-#elif 0
-  while( waitpid(childPid, NULL, WNOHANG)>0 ){}
-#else
-  if( childPid>0 ){
-    kill(childPid, SIGINT); // really needed?
-    waitpid((pid_t)childPid, NULL, WNOHANG);
-  }else{
-    while( waitpid( (pid_t)0, NULL, WNOHANG)>0 ){}
-  }
-#endif
-#endif
-}
 /*
 ** 2022-11-12:
 **
@@ -15764,78 +14904,7 @@ int cmpp_pclose(cmpp_popen_t *po){
 ** This file houses the module-loading pieces libcmpp.
 */
 
-#if CMPP_ENABLE_DLLS
-static const CmppSohList CmppSohList_empty =
-  CmppSohList_empty_m;
-#endif
 
-#if CMPP_ENABLE_DLLS
-/**
-   If compiled without CMPP_ENABLE_DLLS defined to a true value
-   then this function always returns CMPP_RC_UNSUPPORTED and updates
-   the error state of its first argument with information about that
-   code.
-
-   Its first argument is the controlling cmpp. It can actually be
-   NULL - it's only used for reporting error details.
-
-   Its second argument is the name of a DLL file.
-
-   Its third argument is the name of a symbol in the given DLL which
-   resolves to a cmpp_module pointer. This name may be NULL,
-   in which case a default symbol name of "cmpp_module1" is used
-   (which is only useful when plugins are built one per DLL).
-
-   The fourth argument is the output pointer to store the
-   resulting module handle in.
-
-   The fifth argument is an optional list to append the DLL's
-   native handle to. It may be NULL.
-
-   This function tries to open a DLL named fname using the system's
-   DLL loader. If none is found, CMPP_RC_NOT_FOUND is returned and the
-   cmpp's error state is populated with info about the error. If
-   one is found, it looks for a symbol in the DLL: if symName is not
-   NULL and is not empty then the symbol "cmpp_module_symName" is
-   sought, else "cmpp_module". (e.g. if symName is "foo" then it
-   searches for a symbol names "cmpp_module_foo".) If no such symbol is
-   found then CMPP_RC_NOT_FOUND (again) is returned and the
-   cmpp's error state is populated, else the symbol is assumed to
-   be a (cmpp_module*) and *mod is assigned to it.
-
-   All errors update pp's error state but all are recoverable.
-
-   Returns 0 on success.
-
-   On success:
-
-  - `*mod` is set to the module object. Its ownship is kinda murky: it
-    lives in memory made available via the module loader. It remains
-    valid memory until the DLL is closed. The module might also
-    actually be statically linked with the application, in which case
-    it will live as long as the app.
-
-  - If soli is not NULL then the native DLL handle is appended to it.
-    Allocation errors when appending the DLL handle to the target list
-    are ignored - failure to retain a DLL handle for closing later is
-    not considered critical (and it would be extraordinarily rare (and
-    closing them outside of late-/post-main() cleanup is ill-advised,
-    anyway)).
-
-   @see cmpp_module_load()
-   @see CMPP_MODULE_DECL
-   @see CMPP_MODULE_IMPL2
-   @see CMPP_MODULE_IMPL3
-   @see CMPP_MODULE_IMPL_SOLO
-   @see CMPP_MODULE_REGISTER2
-   @see CMPP_MODULE_REGISTER3
-*/
-static
-int cmpp__module_extract(cmpp * pp,
-                         char const * dllFileName,
-                         char const * symName,
-                         cmpp_module const ** mod);
-#endif
 
 #if CMPP_ENABLE_DLLS && !defined(CMPP_OMIT_D_MODULE)
 #  define CMPP_D_MODULE 1
@@ -16046,90 +15115,7 @@ CmppSohList * CmppSohList_new(void){
 
 #undef CmppSohList_works
 
-#if CMPP_ENABLE_DLLS
-/**
-   Default entry point symbol name for loadable modules.  This must
-   match the symbolic name defined by CMPP_MODULE_IMPL_SOLO().
-*/
-static char const * const cmppModDfltSym = "cmpp_module1";
 
-/**
-   Looks for a symbol in the given DLL handle. If symName is NULL or
-   empty, the symbol "cmpp_module" is used, else the symbols
-   ("cmpp_module__" + symName) is used. If it finds one, it casts it to
-   cmpp_module and returns it. On error it may update pp's
-   error state with the error information if pp is not NULL.
-
-   Errors:
-
-   - symName is too long.
-
-   - cmpp__dlsym() lookup failure.
-*/
-static cmpp_module const *
-cmpp__module_fish_out_entry_pt(cmpp * pp,
-                               cmpp_soh soh,
-                               char const * symName){
-  enum { MaxLen = 128 };
-  char buf[MaxLen] = {0};
-  cmpp_size_t const slen = symName ? strlen(symName) : 0;
-  cmpp_module const * mod = 0;
-  if(slen > (MaxLen-20)){
-    cmpp_err_set(pp, CMPP_RC_RANGE,
-                 "DLL symbol name '%.*s' is too long. Max is %d.",
-                 (int)slen, symName, (int)MaxLen-20);
-  }else{
-    if(symName && *symName){
-      snprintf(buf, MaxLen,"cmpp_module__%s", symName);
-      symName = &buf[0];
-    }else{
-      symName = cmppModDfltSym;
-    }
-    mod = cmpp__dlsym(soh, symName);
-  }
-  /*MARKER(("%s() [%s] ==> %p\n",__func__, symName,
-    (void const *)mod));*/
-  return mod;
-}
-#endif/*CMPP_ENABLE_DLLS*/
-
-#if CMPP_ENABLE_DLLS
-/**
-   Tries to dlsym() the given cmpp_module symbol from the given
-   DLL handle. On success, 0 is returned and *mod is assigned to the
-   memory. On error, non-0 is returned and pp's error state may be
-   updated.
-
-   Ownership of the returned module ostensibly lies with the first
-   argument, but that's not entirely true. If CMPP_CLOSE_DLLS is true
-   then a copy of the module's pointer is stored in the engine for
-   later closing. The memory itself is owned by the module loader, and
-   "should" stay valid until the DLL is closed.
-*/
-static int cmpp__module_get_sym(cmpp * pp,
-                                cmpp_soh soh,
-                                char const * symName,
-                                cmpp_module const ** mod){
-
-  cmpp_module const * lm = 0;
-  int rc = cmpp_err_has(pp);
-  if( 0==rc ){
-    lm = cmpp__module_fish_out_entry_pt(pp, soh, symName);
-    rc = cmpp_err_has(pp);
-  }
-  if(0==rc){
-    if(lm){
-      *mod = lm;
-    }else{
-      cmpp__dlclose(soh);
-      rc = cmpp_err_set(pp, CMPP_RC_NOT_FOUND,
-                        "Did not find module entry point symbol '%s'.",
-                        symName ? symName : cmppModDfltSym);
-    }
-  }
-  return rc;
-}
-#endif/*CMPP_ENABLE_DLLS*/
 
 #if !CMPP_ENABLE_DLLS
 static int cmpp__err_no_dlls(cmpp * const pp){
@@ -16139,85 +15125,12 @@ static int cmpp__err_no_dlls(cmpp * const pp){
 }
 #endif
 
-#if CMPP_ENABLE_DLLS
-//no: CMPP_WASM_EXPORT
-int cmpp__module_extract(cmpp * pp,
-                         char const * fname,
-                         char const * symName,
-                         cmpp_module const ** mod){
-  int rc = cmpp_err_has(pp);
-  if( rc ) return rc;
-  else if( cmpp_is_safemode(pp) ){
-    return cmpp_err_set(pp, CMPP_RC_ACCESS,
-                        "Cannot use DLLs in safe mode.");
-  }else{
-    cmpp_soh soh;
-    char const * errMsg = 0;
-    soh = cmpp__dlopen(fname, &errMsg);
-    if(soh){
-      if( pp ){
-        CmppSohList_append(NULL/*alloc error here can be ignored*/,
-                           &pp->pimpl->mod.sohList, soh);
-      }
-      cmpp_module const * x = 0;
-      rc = cmpp__module_get_sym(pp, soh, symName, &x);
-      if(!rc && mod) *mod = x;
-      return rc;
-    }else{
-      return errMsg
-        ? cmpp_err_set(pp, CMPP_RC_ERROR, "DLL open failed: %s",
-                       errMsg)
-        : cmpp_err_set(pp, CMPP_RC_ERROR,
-                       "DLL open failed for unknown reason.");
-    }
-  }
-}
-#endif
 
 //no: CMPP_WASM_EXPORT
 int cmpp_module_load(cmpp * pp, char const * fname,
                      char const * symName){
-#if CMPP_ENABLE_DLLS
-  if( ppCode ){
-    /* fall through */
-  }else if( cmpp_ctor_F_SAFEMODE & pp->pimpl->flags.newFlags ){
-    cmpp_err_set(pp, CMPP_RC_ACCESS,
-                        "%s() is disallowed in safe-mode.");
-  }else{
-    cmpp__pi(pp);
-    char * zName = 0;
-    if( fname ){
-      zName = cmpp_path_search(pp, (char const *)pi->mod.path.z,
-                               pi->mod.pathSep, fname,
-                               pi->mod.soExt);
-      if( !zName ){
-        return cmpp_err_set(pp, CMPP_RC_NOT_FOUND,
-                            "Did not find [%s] or [%s%s] "
-                            "in search path [%s].",
-                            fname, fname, pi->mod.soExt,
-                            pi->mod.path.z);
-      }
-    }
-    cmpp_module const * mod = 0;
-    if( 0==cmpp__module_extract(pp, zName, symName, &mod) ){
-      assert(mod);
-      assert(mod->init);
-      int const rc = mod->init(pp);
-      if( rc && !ppCode ){
-        cmpp_err_set(pp, CMPP_RC_ERROR,
-                     "Module %s::init() failed with code #%d/%s "
-                     "without providing additional info.",
-                     symName ? symName : "cmpp_module",
-                     rc, cmpp_rc_cstr(rc));
-      }
-      cmpp_mfree(zName);
-    }
-  }
-  return ppCode;
-#else
   (void)fname; (void)symName;
   return cmpp__err_no_dlls(pp);
-#endif
 }
 /*
 ** 2015-08-18, 2023-04-28
@@ -17175,206 +16088,5 @@ int sqlite3_series_init(
 ** This file contains demonstration client-side directives for the
 ** c-pp API.
 */
-#if defined(CMPP_D_DEMO)
-/* Only when building with the main c-pp app. */
-#elif !defined(CMPP_MODULE_REGISTER1)
-/**
-  Assume a standalone module build. Arrange for the default module
-  entry point to be installed so that cmpp_module_load() does not
-  require that the user know the entry point name.
-*/
-#define CMPP_MODULE_STANDALONE
-#define CMPP_API_THUNK
-#include "libcmpp.h"
-#endif
 
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-
-/**
-   cmpp_d_autoload_f() impl for this file's directives and its close
-   friends.
-*/
-int cmpp_d_autoload_f_demos(cmpp *pp, char const *dname, void *state);
-/**
-   Registers demo and utility directives with pp.
-*/
-int cmpp_module__demo_register(cmpp *pp);
-
-/**
-   Simply says hello and emits info about its arguments.
-*/
-static void cmpp_dx_f_demo1(cmpp_dx *dx){
-  cmpp_dx_outf(dx, "Hello from %s%s\n",
-               cmpp_dx_delim(dx), dx->d->name.z);
-  for( cmpp_arg const * a = dx->args.arg0;
-       0==cmpp_dx_err_check(dx) && a;
-       a = a->next ){
-    cmpp_dx_outf(dx, "arg type=%s n=%u z=%.*s\n",
-                 cmpp_tt_cstr(a->ttype),
-                 (unsigned)a->n, (int)a->n, a->z);
-  }
-}
-
-/**
-   Internal helper for other directives.  Emits an HTML <div> tag. If
-   passed any arguments, each is assumed to be a CSS class name and is
-   applied to the DIV. This does _not_ emit the lcosing DIV
-   tag. Returns 0 on success.
-*/
-static int divOpener(cmpp_dx *dx){
-  cmpp_dx_out_raw(dx, "<div", 4);
-  int nClass = 0;
-  for( cmpp_arg const * a = dx->args.arg0;
-       0==cmpp_dx_err_check(dx) && a;
-       a = a->next ){
-    if( 1==++nClass ){
-      cmpp_dx_out_raw(dx, " class='", 8);
-    }else{
-      cmpp_dx_out_raw(dx, " ", 1);
-    }
-    cmpp_dx_out_raw(dx, a->z, a->n);
-  }
-  return cmpp_dx_out_raw(dx, nClass ? "'>" : ">", 1 + !!nClass);
-}
-
-/**
-   Opens an HTML DIV tag, as per divOpener().
-*/
-static void cmpp_dx_f_divOpen(cmpp_dx *dx){
-  if( 0==divOpener(dx) ){
-    int * const nDiv = dx->d->impl.state;
-    assert( nDiv );
-    ++*nDiv;
-  }
-}
-
-/**
-   Closes an HTML DIV tag which was opened by cmpp_dx_f_divOpen().
-*/
-static void cmpp_dx_f_divClose(cmpp_dx *dx){
-  int * const nDiv = dx->d->impl.state;
-  assert( nDiv );
-  if( *nDiv > 0 ){
-    --*nDiv;
-  }else{
-    char const * const zDelim = cmpp_dx_delim(dx);
-    cmpp_dx_err_set(
-      dx, CMPP_RC_MISUSE,
-      "%s/%s was used without an opening %s%s directive",
-      zDelim, dx->d->name.z, zDelim, dx->d->name.z
-    );
-  }
-}
-
-/**
-   Another HTML DIV-inspired wrapper which consumes a block of input
-   and wraps it in a DIV. This is functionally the same as the
-   divOpen/divClose examples but demonstrates how to slurp up the
-   content between the open/close directives from within the opening
-   directive's callback.
-*/
-static void cmpp_dx_f_divWrapper(cmpp_dx *dx){
-  if( divOpener(dx) ) return;
-  cmpp_b os = {0};
-  if( 0==cmpp_dx_consume_b(
-        dx, &os, &dx->d->closer, 1,
-        cmpp_dx_consume_F_PROCESS_OTHER_D
-      )
-      /* ^^^ says "read to the matching #/div" accounting for, and
-         processing, nested directives). The #/div closing tag is
-         identified by dx->d->closer. */
-  ){
-    cmpp_b_chomp( &os );
-    /* Recall that most cmpp APIs become no-ops if dx->pp has an error
-       set, so we don't strictly need to error-check these calls: */
-    cmpp_dx_out_raw(dx, os.z, os.n);
-    cmpp_dx_out_raw(dx, "</div>\n", 7);
-  }
-  cmpp_b_clear(&os);
-}
-
-/**
-   A cmpp_d_autoload_f() impl for testing and demonstration
-   purposes.
-*/
-int cmpp_d_autoload_f_demos(cmpp *pp, char const *dname, void *state){
-  (void)state;
-  cmpp_api_init(pp);
-
-#define M(NAME) (0==strcmp(NAME,dname))
-#define MOC(NAME) (M(NAME) || M("/"NAME))
-
-#define DREG0(SYMNAME, NAME, OPENER, OFLAGS, CLOSER, CFLAGS)  \
-  cmpp_d_reg SYMNAME = {  \
-    .name = NAME,         \
-    .opener = {           \
-      .f = OPENER,        \
-      .flags = OFLAGS     \
-    },                    \
-    .closer = {           \
-      .f = CLOSER,        \
-      .flags = CFLAGS     \
-    },                    \
-    .dtor = 0,            \
-    .state = 0            \
-  }
-
-#define CHECK(NAME,CHECKCLOSER,OPENER,OFLAGS,CLOSER,CFLAGS) \
-  if( M(NAME) || (CHECKCLOSER && M("/"NAME)) ){             \
-    DREG0(reg,NAME,OPENER,OFLAGS,CLOSER,CFLAGS);            \
-    return cmpp_d_register(pp, &reg, NULL);     \
-  } (void)0
-
-
-  CHECK("demo1", 0, cmpp_dx_f_demo1, cmpp_d_F_ARGS_LIST, 0, 0);
-
-  CHECK("demo-div-wrapper", 1, cmpp_dx_f_divWrapper,
-        cmpp_d_F_ARGS_LIST | cmpp_d_F_NO_CALL,
-        cmpp_dx_f_dangling_closer, 0);
-
-  if( MOC("demo-div") ){
-    cmpp_d_reg const r = {
-      .name = "demo-div",
-      .opener = {
-        .f = cmpp_dx_f_divOpen,
-        .flags = cmpp_d_F_ARGS_LIST | cmpp_d_F_NO_CALL
-      },
-      .closer = {
-        .f = cmpp_dx_f_divClose
-      },
-      .state = cmpp_malloc(sizeof(int)),
-      .dtor = cmpp_mfree
-    };
-    /* State for one of the custom directives. */;
-    int const rc = cmpp_d_register(pp, &r, NULL);
-    if( 0==rc ){
-      *((int*)r.state) = 0
-        /* else reg.state was freed by cmpp_d_register() */;
-    }
-    return rc;
-  }
-
-#undef M
-#undef MOC
-#undef CHECK
-#undef DREG0
-  return CMPP_RC_NO_DIRECTIVE;
-}
-
-int cmpp_module__demo_register(cmpp *pp){
-  cmpp_api_init(pp);
-  int rc;
-#define X(D) \
-  rc = cmpp_d_autoload_f_demos(pp, D, NULL);    \
-  if( rc && CMPP_RC_NO_DIRECTIVE!=rc ) goto end
-  X("demo1");
-  X("demo-div");
-  X("demo-div-wrapper");
-#undef X
-end:
-  return cmpp_err_get(pp, NULL);
-}
-CMPP_MODULE_REGISTER1(demo);
 #endif /* include guard */

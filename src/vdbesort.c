@@ -954,41 +954,6 @@ static int vdbeSorterFinishRealCompare(
 
 /* Helper function for vdbeSorterCompareReal().
 **
-** Read the bits of an 8-byte big-endian IEEE-754 value and store them
-** into a u64.  Do any necessary byte-swapping so that the bits are in
-** the right order for the host machine.
-**
-** Copied and slightly modified from the readInt64() routine in rtree.c
-*/
-static u64 vdbeSorterDecodeU64(const u8 *p){
-#if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
-  u64 x;
-  memcpy(&x, p, 8);
-  return _byteswap_uint64(x);
-#elif SQLITE_BYTEORDER==1234 && GCC_VERSION>=4003000
-  u64 x;
-  memcpy(&x, p, 8);
-  return __builtin_bswap64(x);
-#elif SQLITE_BYTEORDER==4321
-  i64 x;
-  memcpy(&x, p, 8);
-  return x;
-#else
-  return (i64)(
-    (((u64)p[0]) << 56) +
-    (((u64)p[1]) << 48) +
-    (((u64)p[2]) << 40) +
-    (((u64)p[3]) << 32) +
-    (((u64)p[4]) << 24) +
-    (((u64)p[5]) << 16) +
-    (((u64)p[6]) <<  8) +
-    (((u64)p[7]) <<  0)
-  );
-#endif
-}
-
-/* Helper function for vdbeSorterCompareReal().
-**
 ** Buffer p[] is a record where the first term is guaranteed to be either
 ** a floating-point value, or an integer stand-in for a floating point
 ** value (a MEM_IntReal).  Whatever its format, extract the value and
@@ -1001,7 +966,7 @@ static double vdbeSorterGetReal(const u8 *p){
   assert( p[1]>0 && p[1]<10 ); /* first fields proven numeric */
 
   if( p[1]==7 ){
-    u64 x = vdbeSorterDecodeU64(p + p[0]);
+    u64 x = sqlite3Get8byte(p + p[0]);
     swapMixedEndianFloat(x);
     assert( !IsNaN(x) );
     memcpy(&r, &x, sizeof(r));
@@ -1081,11 +1046,11 @@ static int vdbeSorterCompareReal(
   }
   assert( p1[0]<=nKey1-8 && p2[0]<=nKey2-8 );
 
-  x = vdbeSorterDecodeU64(p1 + *p1);
+  x = sqlite3Get8byte(p1 + *p1);
   swapMixedEndianFloat(x);
   assert( !IsNaN(x) );
   memcpy(&r1, &x, sizeof(r1));
-  x = vdbeSorterDecodeU64(p2 + *p2);
+  x = sqlite3Get8byte(p2 + *p2);
   swapMixedEndianFloat(x);
   assert( !IsNaN(x) );
   memcpy(&r2, &x, sizeof(r2));
