@@ -105,7 +105,7 @@
 //#/if target:es6-module
   }.bind(sIMS);
 
-//#if Module.instantiateWasm and not wasmfs
+//#if Module.instantiateWasm and not wasmfs and not target:node
   /**
      Override Module.instantiateWasm().
 

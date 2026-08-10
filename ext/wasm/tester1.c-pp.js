@@ -3907,7 +3907,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
   T.g('Backup API')
     .t({
-      predicate: ()=>'skipping due to triggering inexplicable exception in unrelated code',
+      //predicate: ()=>'skipping due to triggering inexplicable exception in unrelated code',
       name: 'Backup API sanity checks',
       test: function(sqlite3){
         const capi = sqlite3.capi;
@@ -3948,9 +3948,12 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
              <anonymous> http://localhost:8080/tester1.js:4448
 
              And it's caused by capi.sqlite3_backup_finish being ===
-             sqlite3InitModule for... well, nobody knows why.
+             sqlite3InitModule for... well, nobody knows why. Most
+             functions are mapping to that one, but only in Firefox
+             151!
           */
           rc = capi.sqlite3_backup_finish(pBackup);
+          pBackup = null
           T.assert(0===rc, "Expecting 0 from backup_finish()")
             .assert( dbDest.selectValue('select count(*) from t'),
                      "Expecting data to have been backed up" );
