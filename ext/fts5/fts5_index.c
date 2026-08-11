@@ -5514,34 +5514,38 @@ static void fts5DoSecureDelete(
   if( p->rc==SQLITE_OK ){
     const int nMove = nPg - iNextOff;     /* Number of bytes to move */
     int nShift = iNextOff - iOff;         /* Distance to move them */
-
+    int nNewPg = 0;
     int iPrevKeyOut = 0;
-    int iKeyIn = 0;
+    i64 iKeyIn = 0;
 
     if( nMove>0 ){
       memmove(&aPg[iOff], &aPg[iNextOff], nMove);
     }
     iPgIdx -= nShift;
-    nPg = iPgIdx;
+    nNewPg = iPgIdx;
     fts5PutU16(&aPg[2], iPgIdx);
 
     for(iIdx=0; iIdx<nIdx; /* no-op */){
       u32 iVal = 0;
       iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
       iKeyIn += iVal;
+      if( iKeyIn>nPg ){
+        FTS5_CORRUPT_IDX(p);
+        break;
+      }
       if( iKeyIn!=iDelKeyOff ){
         int iKeyOut = (iKeyIn - (iKeyIn>iOff ? nShift : 0));
-        nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOut - iPrevKeyOut);
+        nNewPg += sqlite3Fts5PutVarint(&aPg[nNewPg], iKeyOut - iPrevKeyOut);
         iPrevKeyOut = iKeyOut;
       }
     }
 
-    if( iPgIdx==nPg && nIdx>0 && pSeg->iLeafPgno!=1 ){
+    if( p->rc==SQLITE_OK && iPgIdx==nNewPg && nIdx>0 && pSeg->iLeafPgno!=1 ){
       fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iLeafPgno);
     }
 
-    assert_nc( nPg>4 || fts5GetU16(aPg)==0 );
-    fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid,pSeg->iLeafPgno), aPg, nPg);
+    assert_nc( nNewPg>4 || fts5GetU16(aPg)==0 );
+    fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid,pSeg->iLeafPgno), aPg, nNewPg);
   }
   sqlite3_free(aIdx);
 }
