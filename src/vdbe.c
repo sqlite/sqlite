@@ -909,19 +909,20 @@ static const char *vdbeMemTypeName(Mem *pMem){
 **          opcode.  This turns out to be the slowest and probably ought
 **          never be used, outside of testing.
 **
-**    2:    Use token-threading dispatch, but keep the for() loop over
-**          opcodes that the traditional switch() statement uses.  So the
-**          opcodes are in a loop, and the dispatch to the next opcode is
-**          A jump instruction near the top of the loop.  Each opcode
-**          ends with a "continue" to continue to the next cycle of the
-**          loop.  This mode includes common code at the top that handles
-**          extra operations used by SQLITE_DEBUG and SQLITE_PROFILE.
-**          This is really just a faster switch().
+**    2:    Use token-threading dispatch, but keep the for() loop
+**          (at tag-20260809-1) over opcodes that the traditional switch()
+**          statement uses.  So the opcodes are still processed within a
+**          a loop, and the dispatch to the next opcode is a jump instruction
+**          near the top of the loop.  Each opcode ends with a "continue" to
+**          continue to the next cycle of the loop.  This mode includes
+**          common code at the top that handles extra operations used by
+**          SQLITE_DEBUG and SQLITE_PROFILE.  Hence, this mode is really
+**          just an optimized switch().
 **
 **    3:    This approach is a hybrid between 1 and 2.  The direct-threading
 **          approach is used for frequent continuations (those marked with
 **          VDBE_NEXT_HOT instead of the usual VDBE_NEXT) but the for-loop
-**          is used for all others.  This is faster variant.
+**          is used for all others.  This is fastest variant.
 **
 ** The token-threaded bytecode engine is prohibited (value 0) if
 ** if __GNUC__ is not defined.  Token-threading is set to debug mode
@@ -986,7 +987,7 @@ static const char *vdbeMemTypeName(Mem *pMem){
 ** opcode is a case of that switch().  This is the only variant that will
 ** work on builds using other than GCC.
 */
-# define VDBE_OPCODE(x)    case OP_##x
+# define VDBE_OPCODE(x)    case x
 # define VDBE_DISPATCH(x)  switch(x)
 # define VDBE_NEXT         break
 # define VDBE_NEXT_HOT     break;
@@ -1000,12 +1001,12 @@ static const char *vdbeMemTypeName(Mem *pMem){
 ** token-threading.
 */
 # define VDBE_OPCODE(x)    opcode_##x
-# define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
+# define VDBE_DISPATCH(x)  goto *aOpLabel[x];
 # define VDBE_NEXT         \
-         do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
+         do{pOp++;nVmStep++;goto*aOpLabel[pOp->opcode];}while(0)
 # define VDBE_NEXT_HOT     \
-         do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
-# define VDBE_DEFAULT      opcode_Noop
+         do{pOp++;nVmStep++;goto*aOpLabel[pOp->opcode];}while(0)
+# define VDBE_DEFAULT      opcode_OP_Noop
 # define VDBE_FALLTHRU
 
 #elif SQLITE_THREADED_BYTECODE==2
@@ -1016,10 +1017,10 @@ static const char *vdbeMemTypeName(Mem *pMem){
 ** since computed-goto appears to be faster.
 */
 # define VDBE_OPCODE(x)    opcode_##x
-# define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
+# define VDBE_DISPATCH(x)  goto *aOpLabel[x];
 # define VDBE_NEXT         continue
 # define VDBE_NEXT_HOT     continue
-# define VDBE_DEFAULT      opcode_Noop
+# define VDBE_DEFAULT      opcode_OP_Noop
 # define VDBE_FALLTHRU
 
 #elif SQLITE_THREADED_BYTECODE==3
@@ -1028,11 +1029,11 @@ static const char *vdbeMemTypeName(Mem *pMem){
 ** used for VDBE_NEXT_HOT.
 */
 # define VDBE_OPCODE(x)    opcode_##x
-# define VDBE_DISPATCH(x)  goto *aOpcodeLabel[x];
+# define VDBE_DISPATCH(x)  goto *aOpLabel[x];
 # define VDBE_NEXT         continue
 # define VDBE_NEXT_HOT     \
-         do{pOp++;nVmStep++;goto*aOpcodeLabel[pOp->opcode];}while(0)
-# define VDBE_DEFAULT      opcode_Noop
+         do{pOp++;nVmStep++;goto*aOpLabel[pOp->opcode];}while(0)
+# define VDBE_DEFAULT      opcode_OP_Noop
 # define VDBE_FALLTHRU
 
 #else
@@ -1074,12 +1075,8 @@ int sqlite3VdbeExec(
 #endif
   /*** INSERT STACK UNION HERE ***/
 #if SQLITE_THREADED_BYTECODE>0
-  /* The opcodeLabels.h file is computed at build-time using opcodes.h and
-  ** this source file as inputs.  It defines a static array aOpcodeLabel[]
-  ** that contains pointers to the start of every defined opcode.  This
-  ** array is used to implement the computed-goto dispatch algorithm. */
-# include "opcodeLabels.h"
-#endif
+# include "oplabel.h"
+#endif /* SQLITE_THREADED_BYTECODE>0 */
 
   assert( p->eVdbeState==VDBE_RUN_STATE );  /* sqlite3_step() verifies this */
   if( DbMaskNonZero(p->lockMask) ){
@@ -1223,8 +1220,8 @@ int sqlite3VdbeExec(
 
 /*****************************************************************************
 ** The following section implements all opcodes of the bytecode engine.
-** Each separate opcode begins with "VDBE_OPCODE(aaaa)" at the left margin,
-** where "aaaa" is the opcode name.  Opcodes are really unsigned integers.
+** Each separate opcode begins with "VDBE_OPCODE(OP_aaaa)" at the left margin,
+** where "OP_aaaa" is the opcode name.  Opcodes are really unsigned integers.
 ** Scripts that run at build-time will search for instances of the
 ** VDBE_OPCODE() macro in order to build tables of symbolic names for
 ** the numeric opcodes, and similar.  See tool/mkopcodec.tcl for example.
@@ -1236,11 +1233,11 @@ int sqlite3VdbeExec(
 ** Search backwards for the definition of the VDBE_OPCODE for additional
 ** information about various other macros used within this section.
 **
-** Search ahead for "undef VDBE_OPCODE" to find the end of this sectcion.
+** Search ahead for "undef VDBE_OPCODE" to find the end of this section.
 **
 ** The formatting of each opcode implementation is important.  The makefile
 ** for SQLite generates various C files such as "opcodes.h", "opcodes.c",
-** and "opcodeLabels.h" by scanning this file looking for lines that begin
+** and "oplabel.h" by scanning this file looking for lines that begin
 ** with "VDBE_OPCODE(...)".  Special comments following each VDBE_OPCODE()
 ** are used to describe extra properties of that opcode which are important
 ** for table generation in those auxiliary files.
@@ -1250,15 +1247,20 @@ int sqlite3VdbeExec(
 ** comment lines are used in the generation of the opcode.html documentation
 ** file.
 **
+** If an opcode is to be conditionally included using #if, then the #if
+** should come right before the "/* Opcode:" header comment.  There should
+** be no blank lines nor lines that begin with a space in between the #if
+** and the VDBE_OPCODE() macro that is the beginning of the opcode.
+**
 ** This whole section ought to be indented by 6 spaces if we followed
 ** standard indentation rules.  But that would just be wasted space.  Hence
 ** for this section, all code is move 6 spaces to the left so that the
 ** VDBE_OPCODE() macros are flush-left.
 **
-** SUMMARY:
+** KEY POINTS:
 **
-**     Formatting is important to scripts that scan this file.
-**     Do not deviate from the formatting style currently in use.
+**   *  Formatting is important to scripts that scan this file.
+**   *  Do not deviate from the formatting style currently in use.
 **
 *****************************************************************************/
 
@@ -1274,7 +1276,7 @@ int sqlite3VdbeExec(
 ** that this Goto is the bottom of a loop and that the lines from P2 down
 ** to the current line should be indented for EXPLAIN output.
 */
-VDBE_OPCODE(Goto): {             /* jump */
+VDBE_OPCODE(OP_Goto): {             /* jump */
 
 #ifdef SQLITE_DEBUG
   /* In debugging mode, when the p5 flags is set on an OP_Goto, that
@@ -1330,7 +1332,7 @@ check_for_interrupt:
 ** Write the current address onto register P1
 ** and then jump to address P2.
 */
-VDBE_OPCODE(Gosub): {            /* jump */
+VDBE_OPCODE(OP_Gosub): {            /* jump */
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pIn1 = &aMem[pOp->p1];
   assert( VdbeMemDynamic(pIn1)==0 );
@@ -1363,7 +1365,7 @@ VDBE_OPCODE(Gosub): {            /* jump */
 ** value is a byte-code indentation hint.  See tag-20220407a in
 ** wherecode.c and shell.c.
 */
-VDBE_OPCODE(Return): {           /* in1 */
+VDBE_OPCODE(OP_Return): {           /* in1 */
   pIn1 = &aMem[pOp->p1];
   if( pIn1->flags & MEM_Int ){
     if( pOp->p3 ){ VdbeBranchTaken(1, 2); }
@@ -1385,7 +1387,7 @@ VDBE_OPCODE(Return): {           /* in1 */
 **
 ** See also: EndCoroutine
 */
-VDBE_OPCODE(InitCoroutine): {     /* jump0 */
+VDBE_OPCODE(OP_InitCoroutine): {     /* jump0 */
   assert( pOp->p1>0 &&  pOp->p1<=(p->nMem+1 - p->nCursor) );
   assert( pOp->p2>=0 && pOp->p2<p->nOp );
   assert( pOp->p3>=0 && pOp->p3<p->nOp );
@@ -1414,7 +1416,7 @@ jump_to_p2:
 **
 ** See also: InitCoroutine
 */
-VDBE_OPCODE(EndCoroutine): {           /* in1 */
+VDBE_OPCODE(OP_EndCoroutine): {           /* in1 */
   VdbeOp *pCaller;
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags==MEM_Int );
@@ -1440,7 +1442,7 @@ VDBE_OPCODE(EndCoroutine): {           /* in1 */
 **
 ** See also: InitCoroutine
 */
-VDBE_OPCODE(Yield): {            /* in1, jump0 */
+VDBE_OPCODE(OP_Yield): {            /* in1, jump0 */
   int pcDest;
   pIn1 = &aMem[pOp->p1];
   assert( VdbeMemDynamic(pIn1)==0 );
@@ -1460,7 +1462,7 @@ VDBE_OPCODE(Yield): {            /* in1, jump0 */
 ** value in register P3 is not NULL, then this routine is a no-op.
 ** The P5 parameter should be 1.
 */
-VDBE_OPCODE(HaltIfNull): {      /* in3 */
+VDBE_OPCODE(OP_HaltIfNull): {      /* in3 */
   pIn3 = &aMem[pOp->p3];
 #ifdef SQLITE_DEBUG
   if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
@@ -1504,7 +1506,7 @@ VDBE_OPCODE(HaltIfNull): {      /* in3 */
 ** every program.  So a jump past the last instruction of the program
 ** is the same as executing Halt.
 */
-VDBE_OPCODE(Halt): {
+VDBE_OPCODE(OP_Halt): {
   VdbeFrame *pFrame;
   int pcx;
 
@@ -1582,7 +1584,7 @@ VDBE_OPCODE(Halt): {
 **
 ** The 32-bit integer value P1 is written into register P2.
 */
-VDBE_OPCODE(Integer): {         /* out2 */
+VDBE_OPCODE(OP_Integer): {         /* out2 */
   pOut = out2Prerelease(p, pOp);
   pOut->u.i = pOp->p1;
   VDBE_NEXT;
@@ -1594,7 +1596,7 @@ VDBE_OPCODE(Integer): {         /* out2 */
 ** P4 is a pointer to a 64-bit integer value.
 ** Write that value into register P2.
 */
-VDBE_OPCODE(Int64): {           /* out2 */
+VDBE_OPCODE(OP_Int64): {           /* out2 */
   pOut = out2Prerelease(p, pOp);
   assert( pOp->p4.pI64!=0 );
   pOut->u.i = *pOp->p4.pI64;
@@ -1608,7 +1610,7 @@ VDBE_OPCODE(Int64): {           /* out2 */
 ** P4 is a pointer to a 64-bit floating point value.
 ** Write that value into register P2.
 */
-VDBE_OPCODE(Real): {            /* same as TK_FLOAT, out2 */
+VDBE_OPCODE(OP_Real): {            /* same as TK_FLOAT, out2 */
   pOut = out2Prerelease(p, pOp);
   pOut->flags = MEM_Real;
   assert( !sqlite3IsNaN(*pOp->p4.pReal) );
@@ -1625,7 +1627,7 @@ VDBE_OPCODE(Real): {            /* same as TK_FLOAT, out2 */
 ** this transformation, the length of string P4 is computed and stored
 ** as the P1 parameter.
 */
-VDBE_OPCODE(String8): {         /* same as TK_STRING, out2 */
+VDBE_OPCODE(OP_String8): {         /* same as TK_STRING, out2 */
   assert( pOp->p4.z!=0 );
   pOut = out2Prerelease(p, pOp);
   pOp->p1 = sqlite3Strlen30(pOp->p4.z);
@@ -1669,7 +1671,7 @@ VDBE_OPCODE(String8): {         /* same as TK_STRING, out2 */
 **
 ** if( P3!=0 and reg[P3]==P5 ) reg[P2] := CAST(reg[P2] as BLOB)
 */
-VDBE_OPCODE(String): {          /* out2 */
+VDBE_OPCODE(OP_String): {          /* out2 */
   assert( pOp->p4.z!=0 );
   pOut = out2Prerelease(p, pOp);
   pOut->flags = MEM_Str|MEM_Static|MEM_Term;
@@ -1722,8 +1724,8 @@ VDBE_OPCODE(String): {          /* out2 */
 ** NULL values will not compare equal even if SQLITE_NULLEQ is set on
 ** OP_Ne or OP_Eq.
 */
-VDBE_OPCODE(BeginSubrtn):
-VDBE_OPCODE(Null): {           /* out2 */
+VDBE_OPCODE(OP_BeginSubrtn):
+VDBE_OPCODE(OP_Null): {           /* out2 */
   int cnt;
   u16 nullFlag;
   pOut = out2Prerelease(p, pOp);
@@ -1753,7 +1755,7 @@ VDBE_OPCODE(Null): {           /* out2 */
 ** the register, so that if the value was a string or blob that was
 ** previously copied using OP_SCopy, the copies will continue to be valid.
 */
-VDBE_OPCODE(SoftNull): {
+VDBE_OPCODE(OP_SoftNull): {
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   pOut = &aMem[pOp->p1];
   pOut->flags = (pOut->flags&~(MEM_Undefined|MEM_AffMask))|MEM_Null;
@@ -1767,7 +1769,7 @@ VDBE_OPCODE(SoftNull): {
 ** blob in register P2.  If P4 is a NULL pointer, then construct
 ** a zero-filled blob that is P1 bytes long in P2.
 */
-VDBE_OPCODE(Blob): {                /* out2 */
+VDBE_OPCODE(OP_Blob): {                /* out2 */
   assert( pOp->p1 <= SQLITE_MAX_LENGTH );
   pOut = out2Prerelease(p, pOp);
   if( pOp->p4.z==0 ){
@@ -1786,7 +1788,7 @@ VDBE_OPCODE(Blob): {                /* out2 */
 **
 ** Transfer the values of bound parameter P1 into register P2
 */
-VDBE_OPCODE(Variable): {            /* out2 */
+VDBE_OPCODE(OP_Variable): {            /* out2 */
   Mem *pVar;       /* Value being transferred */
 
   assert( pOp->p1>0 && pOp->p1<=p->nVar );
@@ -1812,7 +1814,7 @@ VDBE_OPCODE(Variable): {            /* out2 */
 ** P1..P1+P3-1 and P2..P2+P3-1 to overlap.  It is an error
 ** for P3 to be less than 1.
 */
-VDBE_OPCODE(Move): {
+VDBE_OPCODE(OP_Move): {
   int n;           /* Number of registers left to copy */
   int p1;          /* Register to copy from */
   int p2;          /* Register to copy to */
@@ -1863,7 +1865,7 @@ VDBE_OPCODE(Move): {
 ** This instruction makes a deep copy of the value.  A duplicate
 ** is made of any string or blob constant.  See also OP_SCopy.
 */
-VDBE_OPCODE(Copy): {
+VDBE_OPCODE(OP_Copy): {
   int n;
 
   n = pOp->p3;
@@ -1901,7 +1903,7 @@ VDBE_OPCODE(Copy): {
 ** during the lifetime of the copy.  Use OP_Copy to make a complete
 ** copy.
 */
-VDBE_OPCODE(SCopy): {            /* out2 */
+VDBE_OPCODE(OP_SCopy): {            /* out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
   assert( pOut!=pIn1 );
@@ -1922,7 +1924,7 @@ VDBE_OPCODE(SCopy): {            /* out2 */
 ** This is an optimized version of SCopy that works only for integer
 ** values.
 */
-VDBE_OPCODE(IntCopy): {            /* out2 */
+VDBE_OPCODE(OP_IntCopy): {            /* out2 */
   pIn1 = &aMem[pOp->p1];
   assert( (pIn1->flags & MEM_Int)!=0 );
   pOut = &aMem[pOp->p2];
@@ -1941,7 +1943,7 @@ VDBE_OPCODE(IntCopy): {            /* out2 */
 ** to returning results such as a row change count or the result of a
 ** RETURNING clause.
 */
-VDBE_OPCODE(FkCheck): {
+VDBE_OPCODE(OP_FkCheck): {
   if( (rc = sqlite3VdbeCheckFkImmediate(p))!=SQLITE_OK ){
     goto abort_due_to_error;
   }
@@ -1957,7 +1959,7 @@ VDBE_OPCODE(FkCheck): {
 ** structure to provide access to the r(P1)..r(P1+P2-1) values as
 ** the result row.
 */
-VDBE_OPCODE(ResultRow): {
+VDBE_OPCODE(OP_ResultRow): {
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 || CORRUPT_DB );
   assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );
@@ -2002,7 +2004,7 @@ VDBE_OPCODE(ResultRow): {
 ** if P3 is the same register as P2, the implementation is able
 ** to avoid a memcpy().
 */
-VDBE_OPCODE(Concat): {           /* same as TK_CONCAT, in1, in2, out3 */
+VDBE_OPCODE(OP_Concat): {           /* same as TK_CONCAT, in1, in2, out3 */
   i64 nByte;          /* Total size of the output string or blob */
   u16 flags1;         /* Initial flags for P1 */
   u16 flags2;         /* Initial flags for P2 */
@@ -2102,11 +2104,11 @@ VDBE_OPCODE(Concat): {           /* same as TK_CONCAT, in1, in2, out3 */
 ** If the value in register P1 is zero the result is NULL.
 ** If either operand is NULL, the result is NULL.
 */
-VDBE_OPCODE(Add):                   /* same as TK_PLUS, in1, in2, out3 */
-VDBE_OPCODE(Subtract):              /* same as TK_MINUS, in1, in2, out3 */
-VDBE_OPCODE(Multiply):              /* same as TK_STAR, in1, in2, out3 */
-VDBE_OPCODE(Divide):                /* same as TK_SLASH, in1, in2, out3 */
-VDBE_OPCODE(Remainder): {           /* same as TK_REM, in1, in2, out3 */
+VDBE_OPCODE(OP_Add):                   /* same as TK_PLUS, in1, in2, out3 */
+VDBE_OPCODE(OP_Subtract):              /* same as TK_MINUS, in1, in2, out3 */
+VDBE_OPCODE(OP_Multiply):              /* same as TK_STAR, in1, in2, out3 */
+VDBE_OPCODE(OP_Divide):                /* same as TK_SLASH, in1, in2, out3 */
+VDBE_OPCODE(OP_Remainder): {           /* same as TK_REM, in1, in2, out3 */
   u16 type1;      /* Numeric type of left operand */
   u16 type2;      /* Numeric type of right operand */
   i64 iA;         /* Integer value of left operand */
@@ -2203,7 +2205,7 @@ arithmetic_result_is_null:
 ** to retrieve the collation sequence set by this opcode is not available
 ** publicly.  Only built-in functions have access to this feature.
 */
-VDBE_OPCODE(CollSeq): {
+VDBE_OPCODE(OP_CollSeq): {
   assert( pOp->p4type==P4_COLLSEQ );
   if( pOp->p1 ){
     sqlite3VdbeMemSetInt64(&aMem[pOp->p1], 0);
@@ -2241,10 +2243,10 @@ VDBE_OPCODE(CollSeq): {
 ** Store the result in register P3.
 ** If either input is NULL, the result is NULL.
 */
-VDBE_OPCODE(BitAnd):                 /* same as TK_BITAND, in1, in2, out3 */
-VDBE_OPCODE(BitOr):                  /* same as TK_BITOR, in1, in2, out3 */
-VDBE_OPCODE(ShiftLeft):              /* same as TK_LSHIFT, in1, in2, out3 */
-VDBE_OPCODE(ShiftRight): {           /* same as TK_RSHIFT, in1, in2, out3 */
+VDBE_OPCODE(OP_BitAnd):                 /* same as TK_BITAND, in1, in2, out3 */
+VDBE_OPCODE(OP_BitOr):                  /* same as TK_BITOR, in1, in2, out3 */
+VDBE_OPCODE(OP_ShiftLeft):              /* same as TK_LSHIFT, in1, in2, out3 */
+VDBE_OPCODE(OP_ShiftRight): {           /* same as TK_RSHIFT, in1, in2, out3 */
   i64 iA;
   u64 uA;
   i64 iB;
@@ -2301,7 +2303,7 @@ VDBE_OPCODE(ShiftRight): {           /* same as TK_RSHIFT, in1, in2, out3 */
 **
 ** To force any register to be an integer, just add 0.
 */
-VDBE_OPCODE(AddImm): {            /* in1 */
+VDBE_OPCODE(OP_AddImm): {            /* in1 */
   pIn1 = &aMem[pOp->p1];
   memAboutToChange(p, pIn1);
   sqlite3VdbeMemIntegerify(pIn1);
@@ -2316,7 +2318,7 @@ VDBE_OPCODE(AddImm): {            /* in1 */
 ** without data loss, then jump immediately to P2, or if P2==0
 ** raise an SQLITE_MISMATCH exception.
 */
-VDBE_OPCODE(MustBeInt): {            /* jump0, in1 */
+VDBE_OPCODE(OP_MustBeInt): {            /* jump0, in1 */
   pIn1 = &aMem[pOp->p1];
   if( (pIn1->flags & MEM_Int)==0 ){
     applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
@@ -2345,7 +2347,7 @@ VDBE_OPCODE(MustBeInt): {            /* jump0, in1 */
 ** integers, for space efficiency, but after extraction we want them
 ** to have only a real value.
 */
-VDBE_OPCODE(RealAffinity): {                  /* in1 */
+VDBE_OPCODE(OP_RealAffinity): {                  /* in1 */
   pIn1 = &aMem[pOp->p1];
   if( pIn1->flags & (MEM_Int|MEM_IntReal) ){
     testcase( pIn1->flags & MEM_Int );
@@ -2373,7 +2375,7 @@ VDBE_OPCODE(RealAffinity): {                  /* in1 */
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-VDBE_OPCODE(Cast): {                  /* in1 */
+VDBE_OPCODE(OP_Cast): {                  /* in1 */
   assert( pOp->p2>=SQLITE_AFF_BLOB && pOp->p2<=SQLITE_AFF_REAL );
   testcase( pOp->p2==SQLITE_AFF_TEXT );
   testcase( pOp->p2==SQLITE_AFF_BLOB );
@@ -2484,12 +2486,12 @@ VDBE_OPCODE(Cast): {                  /* in1 */
 ** the content of register P3 is greater than or equal to the content of
 ** register P1.  See the Lt opcode for additional information.
 */
-VDBE_OPCODE(Eq):               /* same as TK_EQ, jump, in1, in3 */
-VDBE_OPCODE(Ne):               /* same as TK_NE, jump, in1, in3 */
-VDBE_OPCODE(Lt):               /* same as TK_LT, jump, in1, in3 */
-VDBE_OPCODE(Le):               /* same as TK_LE, jump, in1, in3 */
-VDBE_OPCODE(Gt):               /* same as TK_GT, jump, in1, in3 */
-VDBE_OPCODE(Ge): {             /* same as TK_GE, jump, in1, in3 */
+VDBE_OPCODE(OP_Eq):               /* same as TK_EQ, jump, in1, in3 */
+VDBE_OPCODE(OP_Ne):               /* same as TK_NE, jump, in1, in3 */
+VDBE_OPCODE(OP_Lt):               /* same as TK_LT, jump, in1, in3 */
+VDBE_OPCODE(OP_Le):               /* same as TK_LE, jump, in1, in3 */
+VDBE_OPCODE(OP_Gt):               /* same as TK_GT, jump, in1, in3 */
+VDBE_OPCODE(OP_Ge): {             /* same as TK_GE, jump, in1, in3 */
   int res, res2;      /* Result of the comparison of pIn1 against pIn3 */
   char affinity;      /* Affinity to use for comparison */
   u16 flags1;         /* Copy of initial value of pIn1->flags */
@@ -2641,7 +2643,7 @@ VDBE_OPCODE(Ge): {             /* same as TK_GE, jump, in1, in3 */
 ** the result of an OP_Eq comparison on the two previous operands
 ** would have been false or NULL, then fall through.
 */
-VDBE_OPCODE(ElseEq): {       /* same as TK_ESCAPE, jump */
+VDBE_OPCODE(OP_ElseEq): {       /* same as TK_ESCAPE, jump */
 
 #ifdef SQLITE_DEBUG
   /* Verify the preconditions of this opcode - that it follows an OP_Lt or
@@ -2671,7 +2673,7 @@ VDBE_OPCODE(ElseEq): {       /* same as TK_ESCAPE, jump */
 ** The first integer in the P4 integer array is the length of the array
 ** and does not become part of the permutation.
 */
-VDBE_OPCODE(Permutation): {
+VDBE_OPCODE(OP_Permutation): {
   assert( pOp->p4type==P4_INTARRAY );
   assert( pOp->p4.ai );
   assert( pOp[1].opcode==OP_Compare );
@@ -2701,7 +2703,7 @@ VDBE_OPCODE(Permutation): {
 **
 ** This opcode must be immediately followed by an OP_Jump opcode.
 */
-VDBE_OPCODE(Compare): {
+VDBE_OPCODE(OP_Compare): {
   int n;
   int i;
   int p1;
@@ -2772,7 +2774,7 @@ VDBE_OPCODE(Compare): {
 **
 ** This opcode must immediately follow an OP_Compare opcode.
 */
-VDBE_OPCODE(Jump): {             /* jump */
+VDBE_OPCODE(OP_Jump): {             /* jump */
   assert( pOp>aOp && pOp[-1].opcode==OP_Compare );
   assert( iCompareIsInit );
   if( iCompare<0 ){
@@ -2805,8 +2807,8 @@ VDBE_OPCODE(Jump): {             /* jump */
 ** even if the other input is NULL.  A NULL and false or two NULLs
 ** give a NULL output.
 */
-VDBE_OPCODE(And):              /* same as TK_AND, in1, in2, out3 */
-VDBE_OPCODE(Or): {             /* same as TK_OR, in1, in2, out3 */
+VDBE_OPCODE(OP_And):              /* same as TK_AND, in1, in2, out3 */
+VDBE_OPCODE(OP_Or): {             /* same as TK_OR, in1, in2, out3 */
   int v1;    /* Left operand:  0==FALSE, 1==TRUE, 2==UNKNOWN or NULL */
   int v2;    /* Right operand: 0==FALSE, 1==TRUE, 2==UNKNOWN or NULL */
 
@@ -2849,7 +2851,7 @@ VDBE_OPCODE(Or): {             /* same as TK_OR, in1, in2, out3 */
 ** <li> If P3==1 and P4==0  then  r[P2] := r[P1] IS NOT FALSE
 ** </ul>
 */
-VDBE_OPCODE(IsTrue): {               /* in1, out2 */
+VDBE_OPCODE(OP_IsTrue): {               /* in1, out2 */
   assert( pOp->p4type==P4_INT32 );
   assert( pOp->p4.i==0 || pOp->p4.i==1 );
   assert( pOp->p3==0 || pOp->p3==1 );
@@ -2865,7 +2867,7 @@ VDBE_OPCODE(IsTrue): {               /* in1, out2 */
 ** boolean complement in register P2.  If the value in register P1 is
 ** NULL, then a NULL is stored in P2.
 */
-VDBE_OPCODE(Not): {                /* same as TK_NOT, in1, out2 */
+VDBE_OPCODE(OP_Not): {                /* same as TK_NOT, in1, out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
   if( (pIn1->flags & MEM_Null)==0 ){
@@ -2883,7 +2885,7 @@ VDBE_OPCODE(Not): {                /* same as TK_NOT, in1, out2 */
 ** ones-complement of the P1 value into register P2.  If P1 holds
 ** a NULL then store a NULL in P2.
 */
-VDBE_OPCODE(BitNot): {             /* same as TK_BITNOT, in1, out2 */
+VDBE_OPCODE(OP_BitNot): {             /* same as TK_BITNOT, in1, out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
   sqlite3VdbeMemSetNull(pOut);
@@ -2917,7 +2919,7 @@ VDBE_OPCODE(BitNot): {             /* same as TK_BITNOT, in1, out2 */
 ** be the register that holds that Bloom filter.  See tag-202407032019
 ** in the source code for implementation details.
 */
-VDBE_OPCODE(Once): {             /* jump */
+VDBE_OPCODE(OP_Once): {             /* jump */
   u32 iAddr;                /* Address of this instruction */
   assert( p->aOp[0].opcode==OP_Init );
   if( p->pFrame ){
@@ -2944,7 +2946,7 @@ VDBE_OPCODE(Once): {             /* jump */
 ** is considered true if it is numeric and non-zero.  If the value
 ** in P1 is NULL then take the jump if and only if P3 is non-zero.
 */
-VDBE_OPCODE(If):  {               /* jump, in1 */
+VDBE_OPCODE(OP_If):  {               /* jump, in1 */
   int c;
   c = sqlite3VdbeBooleanValue(&aMem[pOp->p1], pOp->p3);
   VdbeBranchTaken(c!=0, 2);
@@ -2958,7 +2960,7 @@ VDBE_OPCODE(If):  {               /* jump, in1 */
 ** is considered false if it has a numeric value of zero.  If the value
 ** in P1 is NULL then take the jump if and only if P3 is non-zero.
 */
-VDBE_OPCODE(IfNot): {            /* jump, in1 */
+VDBE_OPCODE(OP_IfNot): {            /* jump, in1 */
   int c;
   c = !sqlite3VdbeBooleanValue(&aMem[pOp->p1], !pOp->p3);
   VdbeBranchTaken(c!=0, 2);
@@ -2971,7 +2973,7 @@ VDBE_OPCODE(IfNot): {            /* jump, in1 */
 **
 ** Jump to P2 if the value in register P1 is NULL.
 */
-VDBE_OPCODE(IsNull): {            /* same as TK_ISNULL, jump, in1 */
+VDBE_OPCODE(OP_IsNull): {            /* same as TK_ISNULL, jump, in1 */
   pIn1 = &aMem[pOp->p1];
   VdbeBranchTaken( (pIn1->flags & MEM_Null)!=0, 2);
   if( (pIn1->flags & MEM_Null)!=0 ){
@@ -3011,7 +3013,7 @@ VDBE_OPCODE(IsNull): {            /* same as TK_ISNULL, jump, in1 */
 ** P5 bitmask.
 **
 */
-VDBE_OPCODE(IsType): {        /* jump */
+VDBE_OPCODE(OP_IsType): {        /* jump */
   VdbeCursor *pC;
   u16 typeMask;
   u32 serialType;
@@ -3080,7 +3082,7 @@ VDBE_OPCODE(IsType): {        /* jump */
 ** register P2.  If either registers P1 or P3 are NULL then put
 ** a NULL in register P2.
 */
-VDBE_OPCODE(ZeroOrNull): {            /* in1, in2, out2, in3 */
+VDBE_OPCODE(OP_ZeroOrNull): {            /* in1, in2, out2, in3 */
   if( (aMem[pOp->p1].flags & MEM_Null)!=0
    || (aMem[pOp->p3].flags & MEM_Null)!=0
   ){
@@ -3096,7 +3098,7 @@ VDBE_OPCODE(ZeroOrNull): {            /* in1, in2, out2, in3 */
 **
 ** Jump to P2 if the value in register P1 is not NULL. 
 */
-VDBE_OPCODE(NotNull): {            /* same as TK_NOTNULL, jump, in1 */
+VDBE_OPCODE(OP_NotNull): {            /* same as TK_NOTNULL, jump, in1 */
   pIn1 = &aMem[pOp->p1];
   VdbeBranchTaken( (pIn1->flags & MEM_Null)==0, 2);
   if( (pIn1->flags & MEM_Null)==0 ){
@@ -3115,7 +3117,7 @@ VDBE_OPCODE(NotNull): {            /* same as TK_NOTNULL, jump, in1 */
 **
 ** If P1 is not an open cursor, then this opcode is a no-op.
 */
-VDBE_OPCODE(IfNullRow): {         /* jump */
+VDBE_OPCODE(OP_IfNullRow): {         /* jump */
   VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -3142,7 +3144,7 @@ VDBE_OPCODE(IfNullRow): {         /* jump */
 ** This opcode is only available if SQLite is compiled with the
 ** -DSQLITE_ENABLE_OFFSET_SQL_FUNC option.
 */
-VDBE_OPCODE(Offset): {          /* out3 */
+VDBE_OPCODE(OP_Offset): {          /* out3 */
   VdbeCursor *pC;    /* The VDBE cursor */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -3186,7 +3188,7 @@ VDBE_OPCODE(Offset): {          /* out3 */
 ** typeof() function or the IS NULL or IS NOT NULL operators or the
 ** equivalent.  In this case, all content loading can be omitted.
 */
-VDBE_OPCODE(Column): {            /* ncycle */
+VDBE_OPCODE(OP_Column): {            /* ncycle */
   u32 p2;            /* column number to retrieve */
   VdbeCursor *pC;    /* The VDBE cursor */
   BtCursor *pCrsr;   /* The B-Tree cursor corresponding to pC */
@@ -3577,7 +3579,7 @@ op_column_corrupt:
 **
 ** If any precondition is false, an assertion fault occurs.
 */
-VDBE_OPCODE(TypeCheck): {
+VDBE_OPCODE(OP_TypeCheck): {
   Table *pTab;
   Column *aCol;
   int i;
@@ -3676,7 +3678,7 @@ vdbe_type_error:
 ** string indicates the column affinity that should be used for the N-th
 ** memory cell in the range.
 */
-VDBE_OPCODE(Affinity): {
+VDBE_OPCODE(OP_Affinity): {
   const char *zAffinity;   /* The affinity to be applied */
 
   zAffinity = pOp->p4.z;
@@ -3741,7 +3743,7 @@ VDBE_OPCODE(Affinity): {
 **     accept no-change records with serial_type 10.  This value is
 **     only used inside an assert() and does not affect the end result.
 */
-VDBE_OPCODE(MakeRecord): {
+VDBE_OPCODE(OP_MakeRecord): {
   Mem *pRec;             /* The new record */
   u64 nData;             /* Number of bytes of data space */
   int nHdr;              /* Number of bytes of header space */
@@ -4069,7 +4071,7 @@ VDBE_OPCODE(MakeRecord): {
 ** every btree page of the table.  But if P3 is non-zero, an estimate
 ** is returned based on the current cursor position. 
 */
-VDBE_OPCODE(Count): {         /* out2 */
+VDBE_OPCODE(OP_Count): {         /* out2 */
   i64 nEntry;
   BtCursor *pCrsr;
 
@@ -4095,7 +4097,7 @@ VDBE_OPCODE(Count): {         /* out2 */
 ** To release (commit) an existing savepoint set P1==1 (SAVEPOINT_RELEASE).
 ** To rollback an existing savepoint set P1==2 (SAVEPOINT_ROLLBACK).
 */
-VDBE_OPCODE(Savepoint): {
+VDBE_OPCODE(OP_Savepoint): {
   int p1;                         /* Value of P1 operand */
   char *zName;                    /* Name of savepoint */
   int nName;
@@ -4285,7 +4287,7 @@ VDBE_OPCODE(Savepoint): {
 **
 ** This instruction causes the VM to halt.
 */
-VDBE_OPCODE(AutoCommit): {
+VDBE_OPCODE(OP_AutoCommit): {
   int desiredAutoCommit;
   int iRollback;
 
@@ -4374,7 +4376,7 @@ VDBE_OPCODE(AutoCommit): {
 ** halts.  The sqlite3_step() wrapper function might then reprepare the
 ** statement and rerun it from the beginning.
 */
-VDBE_OPCODE(Transaction): {
+VDBE_OPCODE(OP_Transaction): {
   Btree *pBt;
   Db *pDb;
   int iMeta = 0;
@@ -4487,7 +4489,7 @@ VDBE_OPCODE(Transaction): {
 ** must be started or there must be an open cursor) before
 ** executing this instruction.
 */
-VDBE_OPCODE(ReadCookie): {               /* out2 */
+VDBE_OPCODE(OP_ReadCookie): {               /* out2 */
   int iMeta;
   int iDb;
   int iCookie;
@@ -4521,7 +4523,7 @@ VDBE_OPCODE(ReadCookie): {               /* out2 */
 ** has P5 set to 1, so that the internal schema version will be different
 ** from the database schema version, resulting in a schema reset.
 */
-VDBE_OPCODE(SetCookie): {
+VDBE_OPCODE(OP_SetCookie): {
   Db *pDb;
 
   sqlite3VdbeIncrWriteCounter(p, 0);
@@ -4637,7 +4639,7 @@ VDBE_OPCODE(SetCookie): {
 **
 ** See also: OP_OpenRead, OP_ReopenIdx
 */
-VDBE_OPCODE(ReopenIdx): {         /* ncycle */
+VDBE_OPCODE(OP_ReopenIdx): {         /* ncycle */
   int nField;
   KeyInfo *pKeyInfo;
   u32 p2;
@@ -4658,8 +4660,8 @@ VDBE_OPCODE(ReopenIdx): {         /* ncycle */
   }
   /* If the cursor is not currently open or is open on a different
   ** index, then fall through into OP_OpenRead to force a reopen */
-VDBE_OPCODE(OpenRead):            /* ncycle */
-VDBE_OPCODE(OpenWrite):
+VDBE_OPCODE(OP_OpenRead):            /* ncycle */
+VDBE_OPCODE(OP_OpenWrite):
 
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 || pOp->p5==OPFLAG_SEEKEQ );
   assert( p->bIsReader );
@@ -4752,7 +4754,7 @@ open_cursor_set_hints:
 **
 ** Duplicate ephemeral cursors are used for self-joins of materialized views.
 */
-VDBE_OPCODE(OpenDup): {           /* ncycle */
+VDBE_OPCODE(OP_OpenDup): {           /* ncycle */
   VdbeCursor *pOrig;    /* The original cursor to be duplicated */
   VdbeCursor *pCx;      /* The new cursor */
 
@@ -4814,8 +4816,8 @@ VDBE_OPCODE(OpenDup): {           /* ncycle */
 ** by this opcode will be used for automatically created transient
 ** indices in joins.
 */
-VDBE_OPCODE(OpenAutoindex):       /* ncycle */
-VDBE_OPCODE(OpenEphemeral): {     /* ncycle */
+VDBE_OPCODE(OP_OpenAutoindex):       /* ncycle */
+VDBE_OPCODE(OP_OpenEphemeral): {     /* ncycle */
   VdbeCursor *pCx;
   KeyInfo *pKeyInfo;
 
@@ -4905,7 +4907,7 @@ VDBE_OPCODE(OpenEphemeral): {     /* ncycle */
 ** assume that a stable sort considering the first P3 fields of each
 ** key is sufficient to produce the required results.
 */
-VDBE_OPCODE(SorterOpen): {
+VDBE_OPCODE(OP_SorterOpen): {
   VdbeCursor *pCx;
 
   assert( pOp->p1>=0 );
@@ -4927,7 +4929,7 @@ VDBE_OPCODE(SorterOpen): {
 ** to P2. Regardless of whether or not the jump is taken, increment the
 ** the sequence value.
 */
-VDBE_OPCODE(SequenceTest): {
+VDBE_OPCODE(OP_SequenceTest): {
   VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -4955,7 +4957,7 @@ VDBE_OPCODE(SequenceTest): {
 ** the pseudo-table.  If P2 is 0 or negative then the pseudo-cursor
 ** will return NULL for every column.
 */
-VDBE_OPCODE(OpenPseudo): {
+VDBE_OPCODE(OP_OpenPseudo): {
   VdbeCursor *pCx;
 
   assert( pOp->p1>=0 );
@@ -4979,7 +4981,7 @@ VDBE_OPCODE(OpenPseudo): {
 ** Close a cursor previously opened as P1.  If P1 is not
 ** currently open, this instruction is a no-op.
 */
-VDBE_OPCODE(Close): {             /* ncycle */
+VDBE_OPCODE(OP_Close): {             /* ncycle */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   sqlite3VdbeFreeCursor(p, p->apCsr[pOp->p1]);
   p->apCsr[pOp->p1] = 0;
@@ -4997,7 +4999,7 @@ VDBE_OPCODE(Close): {             /* ncycle */
 ** by the cursor.  The high-order bit is set if any column after
 ** the 64th is used.
 */
-VDBE_OPCODE(ColumnsUsed): {
+VDBE_OPCODE(OP_ColumnsUsed): {
   VdbeCursor *pC;
   pC = p->apCsr[pOp->p1];
   assert( pC->eCurType==CURTYPE_BTREE );
@@ -5096,10 +5098,10 @@ VDBE_OPCODE(ColumnsUsed): {
 **
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLt
 */
-VDBE_OPCODE(SeekLT):         /* jump0, in3, group, ncycle */
-VDBE_OPCODE(SeekLE):         /* jump0, in3, group, ncycle */
-VDBE_OPCODE(SeekGE):         /* jump0, in3, group, ncycle */
-VDBE_OPCODE(SeekGT): {       /* jump0, in3, group, ncycle */
+VDBE_OPCODE(OP_SeekLT):         /* jump0, in3, group, ncycle */
+VDBE_OPCODE(OP_SeekLE):         /* jump0, in3, group, ncycle */
+VDBE_OPCODE(OP_SeekGE):         /* jump0, in3, group, ncycle */
+VDBE_OPCODE(OP_SeekGT): {       /* jump0, in3, group, ncycle */
   int res;           /* Comparison result */
   int oc;            /* Opcode */
   VdbeCursor *pC;    /* The cursor to seek */
@@ -5365,7 +5367,7 @@ seek_not_found:
 **      jump to SeekOP.P2 if This.P5==0 or to This.P2 if This.P5>0.
 ** </ol>
 */
-VDBE_OPCODE(SeekScan): {          /* ncycle */
+VDBE_OPCODE(OP_SeekScan): {          /* ncycle */
   VdbeCursor *pC;
   int res;
   int nStep;
@@ -5488,7 +5490,7 @@ VDBE_OPCODE(SeekScan): {          /* ncycle */
 **
 ** P1 must be a valid b-tree cursor.
 */
-VDBE_OPCODE(SeekHit): {           /* ncycle */
+VDBE_OPCODE(OP_SeekHit): {           /* ncycle */
   VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -5518,7 +5520,7 @@ VDBE_OPCODE(SeekHit): {           /* ncycle */
 ** If cursor P1 is not open or if P1 is set to a NULL row using the
 ** OP_NullRow opcode, then jump to instruction P2. Otherwise, fall through.
 */
-VDBE_OPCODE(IfNotOpen): {        /* jump */
+VDBE_OPCODE(OP_IfNotOpen): {        /* jump */
   VdbeCursor *pCur;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -5620,7 +5622,7 @@ VDBE_OPCODE(IfNotOpen): {        /* jump */
 **
 ** See also: NotFound, Found, NotExists
 */
-VDBE_OPCODE(IfNoHope): {     /* jump, in3, ncycle */
+VDBE_OPCODE(OP_IfNoHope): {     /* jump, in3, ncycle */
   VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -5634,9 +5636,9 @@ VDBE_OPCODE(IfNoHope): {     /* jump, in3, ncycle */
   /* Fall through into OP_NotFound */
   /* no break */ VDBE_FALLTHRU
 }
-VDBE_OPCODE(NoConflict):     /* jump, in3, ncycle */
-VDBE_OPCODE(NotFound):       /* jump, in3, ncycle */
-VDBE_OPCODE(Found): {        /* jump, in3, ncycle */
+VDBE_OPCODE(OP_NoConflict):     /* jump, in3, ncycle */
+VDBE_OPCODE(OP_NotFound):       /* jump, in3, ncycle */
+VDBE_OPCODE(OP_Found): {        /* jump, in3, ncycle */
   int alreadyExists;
   int ii;
   VdbeCursor *pC;
@@ -5767,7 +5769,7 @@ VDBE_OPCODE(Found): {        /* jump, in3, ncycle */
 **
 ** See also: Found, NotFound, NoConflict, SeekRowid
 */
-VDBE_OPCODE(SeekRowid): {        /* jump0, in3, ncycle */
+VDBE_OPCODE(OP_SeekRowid): {        /* jump0, in3, ncycle */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -5802,7 +5804,7 @@ VDBE_OPCODE(SeekRowid): {        /* jump0, in3, ncycle */
   }
   /* Fall through into OP_NotExists */
   /* no break */ VDBE_FALLTHRU
-VDBE_OPCODE(NotExists):          /* jump, in3, ncycle */
+VDBE_OPCODE(OP_NotExists):          /* jump, in3, ncycle */
   pIn3 = &aMem[pOp->p3];
   assert( (pIn3->flags & MEM_Int)!=0 || pOp->opcode==OP_SeekRowid );
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -5846,7 +5848,7 @@ notExistsWithKey:
 ** The sequence number on the cursor is incremented after this
 ** instruction. 
 */
-VDBE_OPCODE(Sequence): {           /* out2 */
+VDBE_OPCODE(OP_Sequence): {           /* out2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( p->apCsr[pOp->p1]!=0 );
   assert( p->apCsr[pOp->p1]->eCurType!=CURTYPE_VTAB );
@@ -5871,7 +5873,7 @@ VDBE_OPCODE(Sequence): {           /* out2 */
 ** generated record number. This P3 mechanism is used to help implement the
 ** AUTOINCREMENT feature.
 */
-VDBE_OPCODE(NewRowid): {           /* out2 */
+VDBE_OPCODE(OP_NewRowid): {           /* out2 */
   i64 v;                 /* The new rowid */
   VdbeCursor *pC;        /* Cursor of table to get the new rowid */
   int res;               /* Result of an sqlite3BtreeLast() */
@@ -6030,7 +6032,7 @@ VDBE_OPCODE(NewRowid): {           /* out2 */
 ** This instruction only works on tables.  The equivalent instruction
 ** for indices is OP_IdxInsert.
 */
-VDBE_OPCODE(Insert): {
+VDBE_OPCODE(OP_Insert): {
   Mem *pData;       /* MEM cell holding data for the record to be inserted */
   Mem *pKey;        /* MEM cell holding key  for the record */
   VdbeCursor *pC;   /* Cursor to table into which insert is written */
@@ -6129,7 +6131,7 @@ VDBE_OPCODE(Insert): {
 ** This opcode must be followed by either an Insert or InsertIdx opcode
 ** with the OPFLAG_PREFORMAT flag set to complete the insert operation.
 */
-VDBE_OPCODE(RowCell): {
+VDBE_OPCODE(OP_RowCell): {
   VdbeCursor *pDest;              /* Cursor to write to */
   VdbeCursor *pSrc;               /* Cursor to read from */
   i64 iKey;                       /* Rowid value to insert with */
@@ -6185,7 +6187,7 @@ VDBE_OPCODE(RowCell): {
 ** of the memory cell that contains the value that the rowid of the row will
 ** be set to by the update.
 */
-VDBE_OPCODE(Delete): {
+VDBE_OPCODE(OP_Delete): {
   VdbeCursor *pC;
   const char *zDb;
   Table *pTab;
@@ -6293,7 +6295,7 @@ VDBE_OPCODE(Delete): {
 ** Then the VMs internal change counter resets to 0.
 ** This is used by trigger programs.
 */
-VDBE_OPCODE(ResetCount): {
+VDBE_OPCODE(OP_ResetCount): {
   sqlite3VdbeSetChanges(db, p->nChange);
   p->nChange = 0;
   VDBE_NEXT;
@@ -6314,7 +6316,7 @@ VDBE_OPCODE(ResetCount): {
 ** Fall through to next instruction if the two records compare equal to
 ** each other.  Jump to P2 if they are different.
 */
-VDBE_OPCODE(SorterCompare): {
+VDBE_OPCODE(OP_SorterCompare): {
   VdbeCursor *pC;
   int res;
   int nKeyCol;
@@ -6344,7 +6346,7 @@ VDBE_OPCODE(SorterCompare): {
 ** parameter P3.  Clearing the P3 column cache as part of this opcode saves
 ** us from having to issue a separate NullRow instruction to clear that cache.
 */
-VDBE_OPCODE(SorterData): {       /* ncycle */
+VDBE_OPCODE(OP_SorterData): {       /* ncycle */
   VdbeCursor *pC;
 
   pOut = &aMem[pOp->p2];
@@ -6386,7 +6388,7 @@ VDBE_OPCODE(SorterData): {       /* ncycle */
 ** The P2 register content is invalidated by opcodes like OP_Function or
 ** by any use of another cursor pointing to the same table.
 */
-VDBE_OPCODE(RowData): {
+VDBE_OPCODE(OP_RowData): {
   VdbeCursor *pC;
   BtCursor *pCrsr;
   u32 n;
@@ -6436,7 +6438,7 @@ VDBE_OPCODE(RowData): {
 ** be a separate OP_VRowid opcode for use with virtual tables, but this
 ** one opcode now works for both table types.
 */
-VDBE_OPCODE(Rowid): {                 /* out2, ncycle */
+VDBE_OPCODE(OP_Rowid): {                 /* out2, ncycle */
   VdbeCursor *pC;
   i64 v;
   sqlite3_vtab *pVtab;
@@ -6486,7 +6488,7 @@ VDBE_OPCODE(Rowid): {                 /* out2, ncycle */
 ** If cursor P1 is not previously opened, open it now to a special
 ** pseudo-cursor that always returns NULL for every column.
 */
-VDBE_OPCODE(NullRow): {
+VDBE_OPCODE(OP_NullRow): {
   VdbeCursor *pC;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -6535,8 +6537,8 @@ VDBE_OPCODE(NullRow): {
 ** from the end toward the beginning.  In other words, the cursor is
 ** configured to use Prev, not Next.
 */
-VDBE_OPCODE(SeekEnd):             /* ncycle */
-VDBE_OPCODE(Last): {              /* jump0, ncycle */
+VDBE_OPCODE(OP_SeekEnd):             /* ncycle */
+VDBE_OPCODE(OP_Last): {              /* jump0, ncycle */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -6578,7 +6580,7 @@ VDBE_OPCODE(Last): {              /* jump0, ncycle */
 **
 ** Jump to P2 if X is in between P3 and P4, inclusive.
 */
-VDBE_OPCODE(IfSizeBetween): {        /* jump */
+VDBE_OPCODE(OP_IfSizeBetween): {        /* jump */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -6629,8 +6631,8 @@ VDBE_OPCODE(IfSizeBetween): {        /* jump */
 ** regression tests can determine whether or not the optimizer is
 ** correctly optimizing out sorts.
 */
-VDBE_OPCODE(SorterSort):    /* jump ncycle */
-VDBE_OPCODE(Sort): {        /* jump ncycle */
+VDBE_OPCODE(OP_SorterSort):    /* jump ncycle */
+VDBE_OPCODE(OP_Sort): {        /* jump ncycle */
 #ifdef SQLITE_TEST
   sqlite3_sort_count++;
   sqlite3_search_count--;
@@ -6654,7 +6656,7 @@ VDBE_OPCODE(Sort): {        /* jump ncycle */
 ** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
 */
-VDBE_OPCODE(Rewind): {        /* jump0, ncycle */
+VDBE_OPCODE(OP_Rewind): {        /* jump0, ncycle */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -6695,7 +6697,7 @@ VDBE_OPCODE(Rewind): {        /* jump0, ncycle */
 ** Check to see if the b-tree table that cursor P1 references is empty
 ** and jump to P2 if it is.
 */
-VDBE_OPCODE(IfEmpty): {        /* jump */
+VDBE_OPCODE(OP_IfEmpty): {        /* jump */
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -6769,7 +6771,7 @@ VDBE_OPCODE(IfEmpty): {        /* jump */
 ** invoked.  This opcode advances the cursor to the next sorted
 ** record, or jumps to P2 if there are no more sorted records.
 */
-VDBE_OPCODE(SorterNext): {  /* jump */
+VDBE_OPCODE(OP_SorterNext): {  /* jump */
   VdbeCursor *pC;
 
   pC = p->apCsr[pOp->p1];
@@ -6777,7 +6779,7 @@ VDBE_OPCODE(SorterNext): {  /* jump */
   rc = sqlite3VdbeSorterNext(db, pC);
   goto next_tail;
 
-VDBE_OPCODE(Prev):          /* jump, ncycle */
+VDBE_OPCODE(OP_Prev):          /* jump, ncycle */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5==0
        || pOp->p5==SQLITE_STMTSTATUS_FULLSCAN_STEP
@@ -6792,7 +6794,7 @@ VDBE_OPCODE(Prev):          /* jump, ncycle */
   rc = sqlite3BtreePrevious(pC->uc.pCursor, pOp->p3);
   goto next_tail;
 
-VDBE_OPCODE(Next):          /* jump, ncycle */
+VDBE_OPCODE(OP_Next):          /* jump, ncycle */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5==0
        || pOp->p5==SQLITE_STMTSTATUS_FULLSCAN_STEP
@@ -6852,7 +6854,7 @@ next_tail:
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.
 */
-VDBE_OPCODE(IdxInsert): {        /* in2 */
+VDBE_OPCODE(OP_IdxInsert): {        /* in2 */
   VdbeCursor *pC;
   BtreePayload x;
 
@@ -6889,7 +6891,7 @@ VDBE_OPCODE(IdxInsert): {        /* in2 */
 ** MakeRecord instructions.  This opcode writes that key
 ** into the sorter P1.  Data for the entry is nil.
 */
-VDBE_OPCODE(SorterInsert): {     /* in2 */
+VDBE_OPCODE(OP_SorterInsert): {     /* in2 */
   VdbeCursor *pC;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -6924,7 +6926,7 @@ VDBE_OPCODE(SorterInsert): {     /* in2 */
 ** Raise an SQLITE_CORRUPT_INDEX error if no matching index entry is found
 ** and not in writable_schema mode.
 */
-VDBE_OPCODE(IdxDelete): {
+VDBE_OPCODE(OP_IdxDelete): {
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
@@ -7002,8 +7004,8 @@ VDBE_OPCODE(IdxDelete): {
 **
 ** See also: Rowid, MakeRecord.
 */
-VDBE_OPCODE(DeferredSeek):         /* ncycle */
-VDBE_OPCODE(IdxRowid): {           /* out2, ncycle */
+VDBE_OPCODE(OP_DeferredSeek):         /* ncycle */
+VDBE_OPCODE(OP_IdxRowid): {           /* out2, ncycle */
   VdbeCursor *pC;             /* The P1 index cursor */
   VdbeCursor *pTabCur;        /* The P2 table cursor (OP_DeferredSeek only) */
   i64 rowid;                  /* Rowid that P1 current points to */
@@ -7070,7 +7072,7 @@ VDBE_OPCODE(IdxRowid): {           /* out2, ncycle */
 ** seek operation now, without further delay.  If the cursor seek has
 ** already occurred, this instruction is a no-op.
 */
-VDBE_OPCODE(FinishSeek): {        /* ncycle */
+VDBE_OPCODE(OP_FinishSeek): {        /* ncycle */
   VdbeCursor *pC;            /* The P1 index cursor */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -7126,10 +7128,10 @@ VDBE_OPCODE(FinishSeek): {        /* ncycle */
 ** If the P1 index entry is less than or equal to the key value then jump
 ** to P2. Otherwise fall through to the next instruction.
 */
-VDBE_OPCODE(IdxLE):          /* jump, ncycle */
-VDBE_OPCODE(IdxGT):          /* jump, ncycle */
-VDBE_OPCODE(IdxLT):          /* jump, ncycle */
-VDBE_OPCODE(IdxGE):  {       /* jump, ncycle */
+VDBE_OPCODE(OP_IdxLE):          /* jump, ncycle */
+VDBE_OPCODE(OP_IdxGT):          /* jump, ncycle */
+VDBE_OPCODE(OP_IdxLT):          /* jump, ncycle */
+VDBE_OPCODE(OP_IdxGE):  {       /* jump, ncycle */
   VdbeCursor *pC;
   int res;
   UnpackedRecord r;
@@ -7227,7 +7229,7 @@ VDBE_OPCODE(IdxGE):  {       /* jump, ncycle */
 **
 ** See also: Clear
 */
-VDBE_OPCODE(Destroy): {     /* out2 */
+VDBE_OPCODE(OP_Destroy): {     /* out2 */
   int iMoved;
   int iDb;
 
@@ -7277,7 +7279,7 @@ VDBE_OPCODE(Destroy): {     /* out2 */
 **
 ** See also: Destroy
 */
-VDBE_OPCODE(Clear): {
+VDBE_OPCODE(OP_Clear): {
   i64 nChange;
 
   sqlite3VdbeIncrWriteCounter(p, 0);
@@ -7305,7 +7307,7 @@ VDBE_OPCODE(Clear): {
 ** This opcode only works for cursors used for sorting and
 ** opened with OP_OpenEphemeral or OP_SorterOpen.
 */
-VDBE_OPCODE(ResetSorter): {
+VDBE_OPCODE(OP_ResetSorter): {
   VdbeCursor *pC;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
@@ -7331,7 +7333,7 @@ VDBE_OPCODE(ResetSorter): {
 ** it must be 2 (BTREE_BLOBKEY) for an index or WITHOUT ROWID table.
 ** The root page number of the new b-tree is stored in register P2.
 */
-VDBE_OPCODE(CreateBtree): {          /* out2 */
+VDBE_OPCODE(OP_CreateBtree): {          /* out2 */
   Pgno pgno;
   Db *pDb;
 
@@ -7363,7 +7365,7 @@ VDBE_OPCODE(CreateBtree): {          /* out2 */
 **               P4 are running.
 **
 */
-VDBE_OPCODE(SqlExec): {
+VDBE_OPCODE(OP_SqlExec): {
   char *zErr;
 #ifndef SQLITE_OMIT_AUTHORIZATION
   sqlite3_xauth xAuth;
@@ -7420,7 +7422,7 @@ VDBE_OPCODE(SqlExec): {
 ** This opcode invokes the parser to create a new virtual machine,
 ** then runs the new virtual machine.  It is thus a re-entrant opcode.
 */
-VDBE_OPCODE(ParseSchema): {
+VDBE_OPCODE(OP_ParseSchema): {
   int iDb;
   const char *zSchema;
   char *zSql;
@@ -7500,7 +7502,7 @@ VDBE_OPCODE(ParseSchema): {
 ** of that table into the internal index hash table.  This will cause
 ** the analysis to be used when preparing all subsequent queries.
 */
-VDBE_OPCODE(LoadAnalysis): {
+VDBE_OPCODE(OP_LoadAnalysis): {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   rc = sqlite3AnalysisLoad(db, pOp->p1);
   if( rc ) goto abort_due_to_error;
@@ -7516,7 +7518,7 @@ VDBE_OPCODE(LoadAnalysis): {
 ** the internal representation of the
 ** schema consistent with what is on disk.
 */
-VDBE_OPCODE(DropTable): {
+VDBE_OPCODE(OP_DropTable): {
   sqlite3VdbeIncrWriteCounter(p, 0);
   sqlite3UnlinkAndDeleteTable(db, pOp->p1, pOp->p4.z);
   VDBE_NEXT;
@@ -7530,7 +7532,7 @@ VDBE_OPCODE(DropTable): {
 ** in order to keep the internal representation of the
 ** schema consistent with what is on disk.
 */
-VDBE_OPCODE(DropIndex): {
+VDBE_OPCODE(OP_DropIndex): {
   sqlite3VdbeIncrWriteCounter(p, 0);
   sqlite3UnlinkAndDeleteIndex(db, pOp->p1, pOp->p4.z);
   VDBE_NEXT;
@@ -7544,7 +7546,7 @@ VDBE_OPCODE(DropIndex): {
 ** the internal representation of the
 ** schema consistent with what is on disk.
 */
-VDBE_OPCODE(DropTrigger): {
+VDBE_OPCODE(OP_DropTrigger): {
   sqlite3VdbeIncrWriteCounter(p, 0);
   sqlite3UnlinkAndDeleteTrigger(db, pOp->p1, pOp->p4.z);
   VDBE_NEXT;
@@ -7571,7 +7573,7 @@ VDBE_OPCODE(DropTrigger): {
 **
 ** This opcode is used to implement the integrity_check pragma.
 */
-VDBE_OPCODE(IntegrityCk): {
+VDBE_OPCODE(OP_IntegrityCk): {
   int nRoot;      /* Number of tables to check.  (Number of root pages.) */
   Pgno *aRoot;    /* Array of rootpage numbers for tables to be checked */
   int nErr;       /* Number of errors reported */
@@ -7633,7 +7635,7 @@ VDBE_OPCODE(IntegrityCk): {
 ** between truely corrupt indexes and expression indexes that are holding
 ** floating-point values that are off by one or two ULPs.
 */
-VDBE_OPCODE(IFindKey): {     /* jump, in3 */
+VDBE_OPCODE(OP_IFindKey): {     /* jump, in3 */
   VdbeCursor *pC;
   int res;
   UnpackedRecord r;
@@ -7670,7 +7672,7 @@ VDBE_OPCODE(IFindKey): {     /* jump, in3 */
 **
 ** An assertion fails if P2 is not an integer.
 */
-VDBE_OPCODE(RowSetAdd): {       /* in1, in2 */
+VDBE_OPCODE(OP_RowSetAdd): {       /* in1, in2 */
   pIn1 = &aMem[pOp->p1];
   pIn2 = &aMem[pOp->p2];
   assert( (pIn2->flags & MEM_Int)!=0 );
@@ -7690,7 +7692,7 @@ VDBE_OPCODE(RowSetAdd): {       /* in1, in2 */
 ** Or, if RowSet object P1 is initially empty, leave P3
 ** unchanged and jump to instruction P2.
 */
-VDBE_OPCODE(RowSetRead): {       /* jump, in1, out3 */
+VDBE_OPCODE(OP_RowSetRead): {       /* jump, in1, out3 */
   i64 val;
 
   pIn1 = &aMem[pOp->p1];
@@ -7733,7 +7735,7 @@ VDBE_OPCODE(RowSetRead): {       /* jump, in1, out3 */
 ** previously inserted as part of set X (only if it was previously
 ** inserted as part of some other set).
 */
-VDBE_OPCODE(RowSetTest): {                     /* jump, in1, in3 */
+VDBE_OPCODE(OP_RowSetTest): {                     /* jump, in1, in3 */
   int iSet;
   int exists;
 
@@ -7782,7 +7784,7 @@ VDBE_OPCODE(RowSetTest): {                     /* jump, in1, in3 */
 **
 ** If P5 is non-zero, then recursive program invocation is enabled.
 */
-VDBE_OPCODE(Program): {        /* jump0 */
+VDBE_OPCODE(OP_Program): {        /* jump0 */
   int nMem;               /* Number of memory registers for sub-program */
   i64 nByte;              /* Bytes of runtime space required for sub-program */
   Mem *pRt;               /* Register to allocate runtime space */
@@ -7920,7 +7922,7 @@ VDBE_OPCODE(Program): {        /* jump0 */
 ** the value of the P1 argument to the value of the P1 argument to the
 ** calling OP_Program instruction.
 */
-VDBE_OPCODE(Param): {           /* out2 */
+VDBE_OPCODE(OP_Param): {           /* out2 */
   VdbeFrame *pFrame;
   Mem *pIn;
   pOut = out2Prerelease(p, pOp);
@@ -7941,7 +7943,7 @@ VDBE_OPCODE(Param): {           /* out2 */
 ** (deferred foreign key constraints). Otherwise, if P1 is zero, the
 ** statement counter is incremented (immediate foreign key constraints).
 */
-VDBE_OPCODE(FkCounter): {
+VDBE_OPCODE(OP_FkCounter): {
   if( pOp->p1 ){
     db->nDeferredCons += pOp->p2;
   }else{
@@ -7966,7 +7968,7 @@ VDBE_OPCODE(FkCounter): {
 ** zero, the jump is taken if the statement constraint-counter is zero
 ** (immediate foreign key constraint violations).
 */
-VDBE_OPCODE(FkIfZero): {         /* jump */
+VDBE_OPCODE(OP_FkIfZero): {         /* jump */
   if( pOp->p1 ){
     VdbeBranchTaken(db->nDeferredCons==0 && db->nDeferredImmCons==0, 2);
     if( db->nDeferredCons==0 && db->nDeferredImmCons==0 ) goto jump_to_p2;
@@ -7990,7 +7992,7 @@ VDBE_OPCODE(FkIfZero): {         /* jump */
 ** This instruction throws an error if the memory cell is not initially
 ** an integer.
 */
-VDBE_OPCODE(MemMax): {        /* in2 */
+VDBE_OPCODE(OP_MemMax): {        /* in2 */
   VdbeFrame *pFrame;
   if( p->pFrame ){
     for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
@@ -8019,7 +8021,7 @@ VDBE_OPCODE(MemMax): {        /* in2 */
 ** If the initial value of register P1 is less than 1, then the
 ** value is unchanged and control passes through to the next instruction.
 */
-VDBE_OPCODE(IfPos): {        /* jump, in1 */
+VDBE_OPCODE(OP_IfPos): {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
   VdbeBranchTaken( pIn1->u.i>0, 2);
@@ -8048,7 +8050,7 @@ VDBE_OPCODE(IfPos): {        /* jump, in1 */
 **
 ** Otherwise, r[P2] is set to the sum of r[P1] and r[P3].
 */
-VDBE_OPCODE(OffsetLimit): {    /* in1, out2, in3 */
+VDBE_OPCODE(OP_OffsetLimit): {    /* in1, out2, in3 */
   i64 x;
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
@@ -8079,7 +8081,7 @@ VDBE_OPCODE(OffsetLimit): {    /* in1, out2, in3 */
 ** If it is non-zero (negative or positive) and then also jump to P2. 
 ** If register P1 is initially zero, leave it unchanged and fall through.
 */
-VDBE_OPCODE(IfNotZero): {        /* jump, in1 */
+VDBE_OPCODE(OP_IfNotZero): {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
   VdbeBranchTaken(pIn1->u.i<0, 2);
@@ -8096,7 +8098,7 @@ VDBE_OPCODE(IfNotZero): {        /* jump, in1 */
 ** Register P1 must hold an integer.  Decrement the value in P1
 ** and jump to P2 if the new value is exactly zero.
 */
-VDBE_OPCODE(DecrJumpZero): {      /* jump, in1 */
+VDBE_OPCODE(OP_DecrJumpZero): {      /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
   if( pIn1->u.i>SMALLEST_INT64 ) pIn1->u.i--;
@@ -8145,8 +8147,8 @@ VDBE_OPCODE(DecrJumpZero): {      /* jump, in1 */
 ** sqlite3_context only happens once, instead of on each call to the
 ** step function.
 */
-VDBE_OPCODE(AggInverse):
-VDBE_OPCODE(AggStep): {
+VDBE_OPCODE(OP_AggInverse):
+VDBE_OPCODE(OP_AggStep): {
   int n;
   sqlite3_context *pCtx;
   u64 nAlloc;
@@ -8189,7 +8191,7 @@ VDBE_OPCODE(AggStep): {
   /* Fall through into OP_AggStep */
   /* no break */ VDBE_FALLTHRU
 }
-VDBE_OPCODE(AggStep1): {
+VDBE_OPCODE(OP_AggStep1): {
   int i;
   sqlite3_context *pCtx;
   Mem *pMem;
@@ -8283,8 +8285,8 @@ VDBE_OPCODE(AggStep1): {
 ** P4 argument is only needed for the case where
 ** the step function was not previously called.
 */
-VDBE_OPCODE(AggValue):
-VDBE_OPCODE(AggFinal): {
+VDBE_OPCODE(OP_AggValue):
+VDBE_OPCODE(OP_AggFinal): {
   Mem *pMem;
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
   assert( pOp->p3==0 || pOp->opcode==OP_AggValue );
@@ -8323,7 +8325,7 @@ VDBE_OPCODE(AggFinal): {
 ** completes into mem[P3+2].  However on an error, mem[P3+1] and
 ** mem[P3+2] are initialized to -1.
 */
-VDBE_OPCODE(Checkpoint): {
+VDBE_OPCODE(OP_Checkpoint): {
   int i;                          /* Loop counter */
   int aRes[3];                    /* Results */
   Mem *pMem;                      /* Write results here */
@@ -8362,7 +8364,7 @@ VDBE_OPCODE(Checkpoint): {
 **
 ** Write a string containing the final journal-mode to register P2.
 */
-VDBE_OPCODE(JournalMode): {    /* out2 */
+VDBE_OPCODE(OP_JournalMode): {    /* out2 */
   Btree *pBt;                     /* Btree to change journal mode of */
   Pager *pPager;                  /* Pager associated with pBt */
   int eNew;                       /* New journal mode */
@@ -8466,7 +8468,7 @@ VDBE_OPCODE(JournalMode): {    /* out2 */
 ** the file into which the result of vacuum should be written.  When
 ** P2 is zero, the vacuum overwrites the original database.
 */
-VDBE_OPCODE(Vacuum): {
+VDBE_OPCODE(OP_Vacuum): {
   assert( p->readOnly==0 );
   rc = sqlite3RunVacuum(&p->zErrMsg, db, pOp->p1,
                         pOp->p2 ? &aMem[pOp->p2] : 0);
@@ -8482,7 +8484,7 @@ VDBE_OPCODE(Vacuum): {
 ** the P1 database. If the vacuum has finished, jump to instruction
 ** P2. Otherwise, fall through to the next instruction.
 */
-VDBE_OPCODE(IncrVacuum): {        /* jump */
+VDBE_OPCODE(OP_IncrVacuum): {        /* jump */
   Btree *pBt;
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
@@ -8516,7 +8518,7 @@ VDBE_OPCODE(IncrVacuum): {        /* jump */
 ** that might help the statement run faster but which does not affect the
 ** correctness of operation.
 */
-VDBE_OPCODE(Expire): {
+VDBE_OPCODE(OP_Expire): {
   assert( pOp->p2==0 || pOp->p2==1 );
   if( !pOp->p1 ){
     sqlite3ExpirePreparedStatements(db, pOp->p2);
@@ -8531,7 +8533,7 @@ VDBE_OPCODE(Expire): {
 ** Lock the btree to which cursor P1 is pointing so that the btree cannot be
 ** written by an other cursor.
 */
-VDBE_OPCODE(CursorLock): {
+VDBE_OPCODE(OP_CursorLock): {
   VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -8546,7 +8548,7 @@ VDBE_OPCODE(CursorLock): {
 ** Unlock the btree to which cursor P1 is pointing so that it can be
 ** written by other cursors.
 */
-VDBE_OPCODE(CursorUnlock): {
+VDBE_OPCODE(OP_CursorUnlock): {
   VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -8572,7 +8574,7 @@ VDBE_OPCODE(CursorUnlock): {
 ** P4 contains a pointer to the name of the table being locked. This is only
 ** used to generate an error message if the lock cannot be obtained.
 */
-VDBE_OPCODE(TableLock): {
+VDBE_OPCODE(OP_TableLock): {
   u8 isWriteLock = (u8)pOp->p3;
   if( isWriteLock || 0==(db->flags&SQLITE_ReadUncommit) ){
     int p1 = pOp->p1;
@@ -8602,7 +8604,7 @@ VDBE_OPCODE(TableLock): {
 ** within a callback to a virtual table xSync() method. If it is, the error
 ** code will be set to SQLITE_LOCKED.
 */
-VDBE_OPCODE(VBegin): {
+VDBE_OPCODE(OP_VBegin): {
   VTable *pVTab;
   pVTab = pOp->p4.pVtab;
   rc = sqlite3VtabBegin(db, pVTab);
@@ -8618,7 +8620,7 @@ VDBE_OPCODE(VBegin): {
 ** P2 is a register that holds the name of a virtual table in database
 ** P1. Call the xCreate method for that table.
 */
-VDBE_OPCODE(VCreate): {
+VDBE_OPCODE(OP_VCreate): {
   Mem sMem;          /* For storing the record being decoded */
   const char *zTab;  /* Name of the virtual table */
 
@@ -8647,7 +8649,7 @@ VDBE_OPCODE(VCreate): {
 ** P4 is the name of a virtual table in database P1.  Call the xDestroy method
 ** of that table.
 */
-VDBE_OPCODE(VDestroy): {
+VDBE_OPCODE(OP_VDestroy): {
   db->nVDestroy++;
   rc = sqlite3VtabCallDestroy(db, pOp->p1, pOp->p4.z);
   db->nVDestroy--;
@@ -8664,7 +8666,7 @@ VDBE_OPCODE(VDestroy): {
 ** P1 is a cursor number.  This opcode opens a cursor to the virtual
 ** table and stores that cursor in P1.
 */
-VDBE_OPCODE(VOpen): {             /* ncycle */
+VDBE_OPCODE(OP_VOpen): {             /* ncycle */
   VdbeCursor *pCur;
   sqlite3_vtab_cursor *pVCur;
   sqlite3_vtab *pVtab;
@@ -8717,7 +8719,7 @@ VDBE_OPCODE(VOpen): {             /* ncycle */
 ** message and that message is stored in P2.  If no errors are seen,
 ** register P2 is set to NULL.
 */
-VDBE_OPCODE(VCheck): {             /* out2 */
+VDBE_OPCODE(OP_VCheck): {             /* out2 */
   Table *pTab;
   sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
@@ -8764,7 +8766,7 @@ VDBE_OPCODE(VCheck): {             /* out2 */
 ** cursor.  Register P3 is used to hold the values returned by
 ** sqlite3_vtab_in_first() and sqlite3_vtab_in_next().
 */
-VDBE_OPCODE(VInitIn): {        /* out2, ncycle */
+VDBE_OPCODE(OP_VInitIn): {        /* out2, ncycle */
   VdbeCursor *pC;         /* The cursor containing the RHS values */
   ValueList *pRhs;        /* New ValueList object to put in reg[P2] */
 
@@ -8801,7 +8803,7 @@ VDBE_OPCODE(VInitIn): {        /* out2, ncycle */
 **
 ** A jump is made to P2 if the result set after filtering would be empty.
 */
-VDBE_OPCODE(VFilter): {   /* jump, ncycle */
+VDBE_OPCODE(OP_VFilter): {   /* jump, ncycle */
   int nArg;
   int iQuery;
   const sqlite3_module *pModule;
@@ -8862,7 +8864,7 @@ VDBE_OPCODE(VFilter): {   /* jump, ncycle */
 ** bits (OPFLAG_LENGTHARG or OPFLAG_TYPEOFARG) but those bits are
 ** unused by OP_VColumn.
 */
-VDBE_OPCODE(VColumn): {           /* ncycle */
+VDBE_OPCODE(OP_VColumn): {           /* ncycle */
   sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
   Mem *pDest;
@@ -8918,7 +8920,7 @@ VDBE_OPCODE(VColumn): {           /* ncycle */
 ** jump to instruction P2.  Or, if the virtual table has reached
 ** the end of its result set, then fall through to the next instruction.
 */
-VDBE_OPCODE(VNext): {   /* jump, ncycle */
+VDBE_OPCODE(OP_VNext): {   /* jump, ncycle */
   sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
   int res;
@@ -8960,7 +8962,7 @@ VDBE_OPCODE(VNext): {   /* jump, ncycle */
 ** This opcode invokes the corresponding xRename method. The value
 ** in register P1 is passed as the zName argument to the xRename method.
 */
-VDBE_OPCODE(VRename): {
+VDBE_OPCODE(OP_VRename): {
   sqlite3_vtab *pVtab;
   Mem *pName;
   int isLegacy;
@@ -9016,7 +9018,7 @@ VDBE_OPCODE(VRename): {
 ** P5 is the error actions (OE_Replace, OE_Fail, OE_Ignore, etc) to
 ** apply in the case of a constraint failure on an insert or update.
 */
-VDBE_OPCODE(VUpdate): {
+VDBE_OPCODE(OP_VUpdate): {
   sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
   int nArg;
@@ -9078,7 +9080,7 @@ VDBE_OPCODE(VUpdate): {
 **
 ** Write the current number of pages in database P1 to memory cell P2.
 */
-VDBE_OPCODE(Pagecount): {            /* out2 */
+VDBE_OPCODE(OP_Pagecount): {            /* out2 */
   pOut = out2Prerelease(p, pOp);
   pOut->u.i = sqlite3BtreeLastPage(db->aDb[pOp->p1].pBt);
   VDBE_NEXT;
@@ -9095,7 +9097,7 @@ VDBE_OPCODE(Pagecount): {            /* out2 */
 **
 ** Store the maximum page count after the change in register P2.
 */
-VDBE_OPCODE(MaxPgcnt): {            /* out2 */
+VDBE_OPCODE(OP_MaxPgcnt): {            /* out2 */
   unsigned int newMax;
   Btree *pBt;
 
@@ -9157,8 +9159,8 @@ VDBE_OPCODE(MaxPgcnt): {            /* out2 */
 **
 ** See also: AggStep, AggFinal, Function
 */
-VDBE_OPCODE(PureFunc):              /* group */
-VDBE_OPCODE(Function): {            /* group */
+VDBE_OPCODE(OP_PureFunc):              /* group */
+VDBE_OPCODE(OP_Function): {            /* group */
   int i;
   sqlite3_context *pCtx;
 
@@ -9215,7 +9217,7 @@ VDBE_OPCODE(Function): {            /* group */
 **
 ** Clear the subtype from register P1.
 */
-VDBE_OPCODE(ClrSubtype): {   /* in1 */
+VDBE_OPCODE(OP_ClrSubtype): {   /* in1 */
   pIn1 = &aMem[pOp->p1];
   pIn1->flags &= ~MEM_Subtype;
   VDBE_NEXT;
@@ -9227,7 +9229,7 @@ VDBE_OPCODE(ClrSubtype): {   /* in1 */
 ** Extract the subtype value from register P1 and write that subtype
 ** into register P2.  If P1 has no subtype, then P1 gets a NULL.
 */
-VDBE_OPCODE(GetSubtype): {   /* in1 out2 */
+VDBE_OPCODE(OP_GetSubtype): {   /* in1 out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
   if( pIn1->flags & MEM_Subtype ){
@@ -9244,7 +9246,7 @@ VDBE_OPCODE(GetSubtype): {   /* in1 out2 */
 ** Set the subtype value of register P2 to the integer from register P1.
 ** If P1 is NULL, clear the subtype from p2.
 */
-VDBE_OPCODE(SetSubtype): {   /* in1 out2 */
+VDBE_OPCODE(OP_SetSubtype): {   /* in1 out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
   if( pIn1->flags & MEM_Null ){
@@ -9263,7 +9265,7 @@ VDBE_OPCODE(SetSubtype): {   /* in1 out2 */
 ** Compute a hash on the P4 registers starting with r[P3] and
 ** add that hash to the bloom filter contained in r[P1].
 */
-VDBE_OPCODE(FilterAdd): {
+VDBE_OPCODE(OP_FilterAdd): {
   u64 h;
 
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
@@ -9299,7 +9301,7 @@ VDBE_OPCODE(FilterAdd): {
 ** answer.  However, an incorrect answer may well arise from a
 ** false positive - if the jump is taken when it should fall through.
 */
-VDBE_OPCODE(Filter): {          /* jump */
+VDBE_OPCODE(OP_Filter): {          /* jump */
   u64 h;
 
   assert( pOp->p1>0 && pOp->p1<=(p->nMem+1 - p->nCursor) );
@@ -9353,8 +9355,8 @@ VDBE_OPCODE(Filter): {          /* jump */
 ** If P3 is not zero, then it is an address to jump to if an SQLITE_CORRUPT
 ** error is encountered.
 */
-VDBE_OPCODE(Trace):
-VDBE_OPCODE(Init): {          /* jump0 */
+VDBE_OPCODE(OP_Trace):
+VDBE_OPCODE(OP_Init): {          /* jump0 */
   int i;
 #ifndef SQLITE_OMIT_TRACE
   char *zTrace;
@@ -9441,7 +9443,7 @@ VDBE_OPCODE(Init): {          /* jump0 */
 ** OP_DeferredSeek instructions to lazily position P3 based on current 
 ** position of P1.
 */
-VDBE_OPCODE(CursorHint): {
+VDBE_OPCODE(OP_CursorHint): {
   VdbeCursor *pC;
   pC = p->apCsr[pOp->p1];
 
@@ -9472,7 +9474,7 @@ VDBE_OPCODE(CursorHint): {
 ** An Abort is safe if either there have been no writes, or if there is
 ** an active statement journal.
 */
-VDBE_OPCODE(Abortable): {
+VDBE_OPCODE(OP_Abortable): {
   sqlite3VdbeAssertAbortable(p);
   VDBE_NEXT;
 }
@@ -9509,7 +9511,7 @@ VDBE_OPCODE(Abortable): {
 ** validate the generated bytecode.  This opcode does not actually contribute
 ** to computing an answer.
 */
-VDBE_OPCODE(ReleaseReg): {
+VDBE_OPCODE(OP_ReleaseReg): {
   Mem *pMem;
   int i;
   u32 constMask;

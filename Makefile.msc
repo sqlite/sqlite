@@ -1502,7 +1502,7 @@ SRC10 = \
 SRC11 = \
   keywordhash.h \
   opcodes.h \
-  opcodeLabels.h \
+  oplabel.h \
   parse.h \
   shell.c \
   $(SQLITE3H)
@@ -1641,7 +1641,7 @@ HDR = \
    $(TOP)\src\msvc.h \
    $(TOP)\src\mutex.h \
    opcodes.h \
-   opcodeLabels.h \
+   oplabel.h \
    $(TOP)\src\os.h \
    $(TOP)\src\os_common.h \
    $(TOP)\src\os_setup.h \
@@ -2290,7 +2290,7 @@ tclsqlite-shell.lo:	tclsqlite-ex.c $(HDR) $(SQLITE_TCL_DEP)
 tclsqlite3.exe:	tclsqlite-shell.lo $(SQLITE3C) $(SQLITE3H) $(LIBRESOBJS)
 	$(LTLINK) $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS) $(TCLLIBPATHS) $(LTLIBPATHS) /OUT:$@ tclsqlite-shell.lo $(LIBRESOBJS) $(TCLLIBS) $(LTLIBS) $(TLIBS)
 
-# Rules to build opcodes.c, opcodes.h, and opcodeLabels.h
+# Rules to build opcodes.c, opcodes.h, and oplabel.h
 #
 opcodes.c:	opcodes.h $(TOP)\tool\mkopcodec.tcl $(JIM_TCLSH)
 	$(JIM_TCLSH) $(TOP)\tool\mkopcodec.tcl opcodes.h > opcodes.c
@@ -2298,8 +2298,8 @@ opcodes.c:	opcodes.h $(TOP)\tool\mkopcodec.tcl $(JIM_TCLSH)
 opcodes.h:	parse.h $(TOP)\src\vdbe.c $(TOP)\tool\mkopcodeh.tcl $(JIM_TCLSH)
 	type parse.h $(TOP)\src\vdbe.c | $(JIM_TCLSH) $(TOP)\tool\mkopcodeh.tcl > opcodes.h
 
-opcodeLabels.h:	opcodes.h $(TOP)\src\vdbe.c $(TOP)\tool\mkopcodeLabels.tcl $(JIM_TCLSH)
-	$(JIM_TCLSH) $(TOP)\tool\mkopcodeLabels.tcl opcodes.h $(TOP)\src\vdbe.c >opcodeLabels.h
+oplabel.h:	opcodes.h $(TOP)\src\vdbe.c $(TOP)\tool\mkoplabel.tcl $(JIM_TCLSH)
+	$(JIM_TCLSH) $(TOP)\tool\mkoplabel.tcl opcodes.h $(TOP)\src\vdbe.c >oplabel.h
 
 # Rules to build parse.c and parse.h - the outputs of lemon.
 #
