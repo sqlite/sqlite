@@ -4943,65 +4943,42 @@ static int vdbeRecordCompareInt(
   const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
   int serial_type = ((const u8*)pKey1)[1];
   int res;
-  u32 y;
-  u64 x;
   i64 v;
   i64 lhs;
 
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
   assert( (*(u8*)pKey1)<=0x3F || CORRUPT_DB );
-  switch( serial_type ){
-    case 1: { /* 1-byte signed integer */
-      lhs = ONE_BYTE_INT(aKey);
-      testcase( lhs<0 );
-      break;
-    }
-    case 2: { /* 2-byte signed integer */
-      lhs = TWO_BYTE_INT(aKey);
-      testcase( lhs<0 );
-      break;
-    }
-    case 3: { /* 3-byte signed integer */
-      lhs = THREE_BYTE_INT(aKey);
-      testcase( lhs<0 );
-      break;
-    }
-    case 4: { /* 4-byte signed integer */
-      y = FOUR_BYTE_UINT(aKey);
-      lhs = (i64)*(int*)&y;
-      testcase( lhs<0 );
-      break;
-    }
-    case 5: { /* 6-byte signed integer */
-      lhs = FOUR_BYTE_UINT(aKey+2) + (((i64)1)<<32)*TWO_BYTE_INT(aKey);
-      testcase( lhs<0 );
-      break;
-    }
-    case 6: { /* 8-byte signed integer */
-      x = FOUR_BYTE_UINT(aKey);
-      x = (x<<32) | FOUR_BYTE_UINT(aKey+4);
-      lhs = *(i64*)&x;
-      testcase( lhs<0 );
-      break;
-    }
-    case 8:
-      lhs = 0;
-      break;
-    case 9:
-      lhs = 1;
-      break;
 
-    /* This case could be removed without changing the results of running
-    ** this code. Including it causes gcc to generate a faster switch
-    ** statement (since the range of switch targets now starts at zero and
-    ** is contiguous) but does not cause any duplicate code to be generated
-    ** (as gcc is clever enough to combine the two like cases). Other
-    ** compilers might be similar.  */
-    case 0: case 7:
-      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
-
-    default:
-      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
+  /* Serial types 1 through 6 are big-endian integers of 1, 2, 3, 4,
+  ** 6, or 8 bytes.  Rather than handle each width in its own switch
+  ** case, read 8 bytes and use an arithmetic right shift to drop the
+  ** unwanted low-order bytes and sign-extend the value.  This helps
+  ** because the switch tends to mispredict when a key column contains
+  ** integers of varying sizes.  The first entry of aShift[] is a
+  ** placeholder so that the table can be indexed by serial_type
+  ** directly.  Reading 8 bytes is always safe, because a buffer passed
+  ** to this routine has at least 74 bytes of padding after it, as
+  ** explained in sqlite3VdbeFindCompare() below. 
+  */
+  if( (u32)(serial_type-1)<=5 ){
+    static const u8 aShift[] = { 0, 56, 48, 40, 32, 16, 0 };
+    lhs = ((i64)sqlite3Get8byte(aKey)) >> aShift[serial_type];
+    /*                                 ^^--- This shift operator 
+    ** needs to be an arithmetic right-shift, which means that
+    ** if the left-hand operand (LHS) is negative, it will be sign-extended
+    ** so that the final results is also negative.  All modern C
+    ** compilers work this way as long as the LHS is a signed integer
+    ** (which is why the unsigned result from sqlite3Get8byte() is cast
+    ** into i64), but it is not defined by the C standards, or so Claude
+    ** tells me.  That the correct result is obtained is verified by the
+    ** following assert() and testcase() macros:
+    */
+    assert( 0<=(i64)sqlite3Get8byte(aKey) || lhs<0 );
+    testcase( lhs<0 );
+  }else if( serial_type==8 || serial_type==9 ){
+    lhs = serial_type - 8;
+  }else{
+    return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
   }
 
   assert( pPKey2->u.i == pPKey2->aMem[0].u.i );

@@ -486,7 +486,7 @@ struct RtreeMatchArg {
 **
 ** For best performance, an attempt is made to guess at the byte-order
 ** using C-preprocessor macros.  If that is unsuccessful, or if
-** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
+** -DSQLITE_BYTEORDER=0 is set, then byte-order is determined
 ** at run-time.
 */
 #ifndef SQLITE_BYTEORDER /* Replicate changes at tag-20230904a */
