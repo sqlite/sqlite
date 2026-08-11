@@ -924,9 +924,9 @@ static const char *vdbeMemTypeName(Mem *pMem){
 **          VDBE_NEXT_NODELAY instead of the usual VDBE_NEXT) and the for-loop
 **          is used for all others.  This is fastest variant.
 **
-** The token-threaded bytecode engine is prohibited (value 0) if
-** if __GNUC__ is not defined.  Token-threading is set to debug mode
-** (value 2) if any of the following macros are defined:
+** The token-threaded bytecode engine is prohibited (value 0) if __GNUC__ is
+** not defined.  Token-threading is set to debug mode (value 2) if any of
+** the following macros are defined:
 **
 **     *  SQLITE_DEBUG
 **     *  SQLITE_TEST
@@ -1248,7 +1248,7 @@ int sqlite3VdbeExec(
 ** file.
 **
 ** If an opcode is to be conditionally included using #if, then the #if
-** should come right before the "/* Opcode:" header comment.  There should
+** should come right before the "** Opcode:" header comment.  There should
 ** be no blank lines nor lines that begin with a space in between the #if
 ** and the VDBE_OPCODE() macro that is the beginning of the opcode.
 **
