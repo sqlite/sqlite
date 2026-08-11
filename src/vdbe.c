@@ -921,7 +921,7 @@ static const char *vdbeMemTypeName(Mem *pMem){
 **
 **    3:    This approach is a hybrid between 1 and 2.  The direct-threading
 **          approach is used for frequent continuations (those marked with
-**          VDBE_NEXT_HOT instead of the usual VDBE_NEXT) but the for-loop
+**          VDBE_NEXT_NODELAY instead of the usual VDBE_NEXT) and the for-loop
 **          is used for all others.  This is fastest variant.
 **
 ** The token-threaded bytecode engine is prohibited (value 0) if
@@ -967,9 +967,9 @@ static const char *vdbeMemTypeName(Mem *pMem){
 **  VDBE_NEXT              This occurs at the end of an opcode implementation.
 **                         It causes a jump to the next opcode in sequence.
 **
-**  VDBE_NEXT_HOT          This is the same as VDBE_NEXT but indicates that
-**                         this particular branch is frequently taken.  It
-**                         might be beneficial to do additional optimization.
+**  VDBE_NEXT_NODELAY      This is the same as VDBE_NEXT except that it also
+**                         indicates that this particular branch is common and
+**                         might benefit from extra optimization.
 **
 **  VDBE_DEFAULT           This is the start of the "default" opcode
 **                         (OP_Noop).  It needs to be a separate macro
@@ -990,7 +990,7 @@ static const char *vdbeMemTypeName(Mem *pMem){
 # define VDBE_OPCODE(x)    case x
 # define VDBE_DISPATCH(x)  switch(x)
 # define VDBE_NEXT         break
-# define VDBE_NEXT_HOT     break;
+# define VDBE_NEXT_NODELAY break;
 # define VDBE_DEFAULT      default
 # define VDBE_FALLTHRU     deliberate_fall_through
 
@@ -1004,7 +1004,7 @@ static const char *vdbeMemTypeName(Mem *pMem){
 # define VDBE_DISPATCH(x)  goto *aOpLabel[x];
 # define VDBE_NEXT         \
          do{pOp++;nVmStep++;goto*aOpLabel[pOp->opcode];}while(0)
-# define VDBE_NEXT_HOT     \
+# define VDBE_NEXT_NODELAY \
          do{pOp++;nVmStep++;goto*aOpLabel[pOp->opcode];}while(0)
 # define VDBE_DEFAULT      opcode_OP_Noop
 # define VDBE_FALLTHRU
@@ -1019,19 +1019,19 @@ static const char *vdbeMemTypeName(Mem *pMem){
 # define VDBE_OPCODE(x)    opcode_##x
 # define VDBE_DISPATCH(x)  goto *aOpLabel[x];
 # define VDBE_NEXT         continue
-# define VDBE_NEXT_HOT     continue
+# define VDBE_NEXT_NODELAY continue
 # define VDBE_DEFAULT      opcode_OP_Noop
 # define VDBE_FALLTHRU
 
 #elif SQLITE_THREADED_BYTECODE==3
 /* This is hybrid between approach 1 (full threaded) and 2 (use the for-loop).
 ** The for-loop is used in most cases (VDBE_NEXT) but direct threading is
-** used for VDBE_NEXT_HOT.
+** used for VDBE_NEXT_NODELAY.
 */
 # define VDBE_OPCODE(x)    opcode_##x
 # define VDBE_DISPATCH(x)  goto *aOpLabel[x];
 # define VDBE_NEXT         continue
-# define VDBE_NEXT_HOT     \
+# define VDBE_NEXT_NODELAY \
          do{pOp++;nVmStep++;goto*aOpLabel[pOp->opcode];}while(0)
 # define VDBE_DEFAULT      opcode_OP_Noop
 # define VDBE_FALLTHRU
@@ -1324,7 +1324,7 @@ check_for_interrupt:
   }
 #endif
  
-  VDBE_NEXT_HOT;
+  VDBE_NEXT_NODELAY;
 }
 
 /* Opcode:  Gosub P1 P2 * * *
@@ -1403,7 +1403,7 @@ jump_to_p2:
   assert( pOp->p2>0 );       /* There are never any jumps to instruction 0 */
   assert( pOp->p2<p->nOp );  /* Jumps must be in range */
   pOp = &aOp[pOp->p2 - 1];
-  VDBE_NEXT_HOT;
+  VDBE_NEXT_NODELAY;
 }
 
 /* Opcode:  EndCoroutine P1 * * * *
@@ -2183,7 +2183,7 @@ fp_math:
     MemSetTypeFlag(pOut, MEM_Real);
 #endif
   }
-  VDBE_NEXT_HOT;
+  VDBE_NEXT_NODELAY;
 
 arithmetic_result_is_null:
   sqlite3VdbeMemSetNull(pOut);
@@ -3532,7 +3532,7 @@ op_column_restart:
 op_column_out:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
-  VDBE_NEXT_HOT;
+  VDBE_NEXT_NODELAY;
 
 op_column_corrupt:
   if( aOp[0].p3>0 ){
@@ -4093,7 +4093,7 @@ VDBE_OPCODE(OP_MakeRecord): {
 
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   REGISTER_TRACE(pOp->p3, pOut);
-  VDBE_NEXT_HOT;
+  VDBE_NEXT_NODELAY;
 }
 
 /* Opcode: Count P1 P2 P3 * *
@@ -6916,7 +6916,7 @@ VDBE_OPCODE(OP_IdxInsert): {        /* in2 */
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
   if( rc) goto abort_due_to_error;
-  VDBE_NEXT_HOT;
+  VDBE_NEXT_NODELAY;
 }
 
 /* Opcode: SorterInsert P1 P2 * * *
@@ -9244,7 +9244,7 @@ VDBE_OPCODE(OP_Function): {            /* group */
 
   REGISTER_TRACE(pOp->p3, pOut);
   UPDATE_MAX_BLOBSIZE(pOut);
-  VDBE_NEXT_HOT;
+  VDBE_NEXT_NODELAY;
 }
 
 /* Opcode: ClrSubtype P1 * * * *

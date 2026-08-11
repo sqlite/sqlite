@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements\sinto\sthe\sthreaded-bytecode\sexperiment.
-D 2026-08-11T17:29:32.005
+C Rename\son\sof\sthe\sdispatch\smacros\sin\sthe\snew\sthreading\smechanism.\nNo\sfunctional\schanges.
+D 2026-08-11T17:48:41.333
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -809,7 +809,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c 632170ab96371faa577bf2e7fbaced2a1265e1827cff9444cb44cbbfaeabe117
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 2669204f2338041d643a695642614a4df7f7e7ef690e9aa54b42f8401a1c7296
+F src/vdbe.c 3f9fb71274abde95a4a9b3b4b580d67db87183baae4967ebd6712e69be71b030
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h 39f4c8eb1e4ac0593037d5268a54a691c72d34896db9973a9d39f2a5dea14163
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 61871c4bf5467b9dd6f4e9e177ad0d11916967e0c14777bd86fe881c7e2efdb8 9cd4f9e9205c5a5096388397a39349db9ff5377d19095c6b20388ff799969c31
-R 098f17f156975f933b3c36124f845c54
+P 10202795e386166f2483b3577142ef3f7fecf1be7ca37cfea80ba1a53a6120b7
+R 2de85ed1b829889b29fbc4c75d9c70cb
 U drh
-Z 54672af0b1a4507799eb8cc43892e73b
+Z b33fb9c4d38c96215f7e879421cab329
 # Remove this line to create a well-formed Fossil manifest.
