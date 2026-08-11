@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sfts5\ssecure-delete\scode\sthat\scould\slead\sto\sa\sbuffer\soverrun\swhen\sdealing\swith\sa\sstrategically\scorrupted\sdatabase.\sProblem\sreported\sby\sYEONBA.
-D 2026-08-11T14:16:12.940
+C Ensure\sthat\sdatabases\sopened\swith\simmutable=1\sspecified\sare\sopened\sread-only\sat\sthe\sOS\slevel.\sReport\s[bugs:/info/2026-08-11T17:21:54Z\s|\s2026-08-11T17:21:54Z]
+D 2026-08-11T18:22:01.078
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -730,7 +730,7 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 5ccac2954679efc003330a5686cd2048ec9059f90f54f43900e60877e9158aa7
 F src/os_win.c 1227a3e962b017d676d985a8aec0d64f273991931ea0a0b99773651102f62df4
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c 678ee3b68638ee427cc1b071b11181d0f2a827f6cb4d6ec7c12d5fa5f6a752d0
+F src/pager.c 55fecb3d8f2c9bd751109aca1df554f3ab3f2ab1c04a7fd99478cb724d73f8b4
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
@@ -1474,7 +1474,7 @@ F test/mutex1.test 2cdc320a3320521d73b8090a04a2245c1e625e5f90672882517bf5fedcec8
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 73ea63ab43668313e2f8cc9ef9e9a966672c7934f3ce76926fbe991235d07d91
 F test/nockpt.test 3db354270fc63b6871eebd40285d4c55324fb27be629c958adbff6d7fcaa8e14
-F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
+F test/nolock.test 848ac7792e7a04cc66f115756affbe064af29e14d5ffb60fcf1f456012cad84d
 F test/normalize.test 88ba50b75feaa16735ac780f675c9e111179f81da40e5e026ecb777664e18da2
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P fee71cd6f7294ffd02784d26811a9d11d80e83d4075e1233b8ec0289519bb891
-R fe5b0d1837c0e6fd3c81fb867082e58f
+P 9cd4f9e9205c5a5096388397a39349db9ff5377d19095c6b20388ff799969c31
+R 32f481950c359f5b9972a7bb17af5ec3
 U dan
-Z 49eb055c28482fbfeedf08e8b54f22bf
+Z 8cda5ef2ceaae0eb741b336f4245bfe5
 # Remove this line to create a well-formed Fossil manifest.
