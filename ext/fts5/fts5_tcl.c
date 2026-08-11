@@ -208,7 +208,7 @@ static void xSetAuxdataDestructor(void *p){
 /*
 ** Convert back and forth between (int) and (void*).
 */
-#if defined(HAVE_STDINT_H)
+#if defined(INTPTR_MAX)
 # define FTS5TCL_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
 # define FTS5TCL_PTR_TO_INT(X)  ((int)(intptr_t)(X))
 #else
