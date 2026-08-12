@@ -1,5 +1,5 @@
-C Create\sa\snew\svarint\sdecoder\sthat\sdoes\snot\sneed\sto\sreturn\sthe\ssize\sof\sthe\nvarint,\sand\suse\sthat\sin\ssqlite3BtreeTableMoveto().\s\sOmit\sthe\spointless\ngetVarint\sand\sputVarint\smacros\sand\suse\sthe\sactual\sfunction\snames\sinstead.
-D 2026-08-12T19:42:02.714
+C Simplify\sthe\simplementation\sof\ssqlite3GetVarint().
+D 2026-08-12T20:04:07.232
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -807,7 +807,7 @@ F src/trigger.c 74bc99aaa36dc820481960d4cde3cd7f060964525deebd527eee55ac3b6a2895
 F src/update.c 3e5e7ff66fa19ebe4d1b113d480639a24cc1175adbefabbd1a948a07f28e37cf
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
-F src/util.c 36970e81f236520d8c251c791acab8825280daaa8068a23ba834e65e0ddf986d
+F src/util.c cfdf9c6e5323af886d5ce766709da607ba1d14193ad3a15f4f462a45420e8211
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c e1e84712a15e9a126ea5b6bb0689c28569d8421c80104bb20c1acac04d86edf4
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
@@ -2218,11 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bc57a14ab92dd8c247a893cf4cec7c0dccaa7e8407854a63aa3af699c60bacd5
-R 4b8dd99e5eb110bdce1a955655fb0d11
-T *branch * varint-decode
-T *sym-varint-decode *
-T -sym-trunk *
+P f845ede54c065ebd222f3f3488f655f2cbbf2c40bae782b3f4eac76cbb0525ad
+R 0a5a5987e95f916d15c138e1832779bb
 U drh
-Z ff7c33ab682d53337cbbfd8d9584b7b5
+Z dae75b8b511d421e3405d86d50888391
 # Remove this line to create a well-formed Fossil manifest.
