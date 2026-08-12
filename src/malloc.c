@@ -811,6 +811,10 @@ void sqlite3SetString(char **pz, sqlite3 *db, const char *zNew){
   *pz = z;
 }
 
+#if HAVE_BACKTRACE
+#include <execinfo.h>
+#endif
+
 /*
 ** Call this routine to record the fact that an OOM (out-of-memory) error
 ** has happened.  This routine will set db->mallocFailed, and also
@@ -840,6 +844,16 @@ void *sqlite3OomFault(sqlite3 *db){
         pParse->rc = SQLITE_NOMEM;
       } 
     }
+#if HAVE_BACKTRACE
+    if(1){
+      void *array[30];
+      size_t size;
+      size = backtrace(array, sizeof(array)/sizeof(array[0]));
+      fprintf(stderr, "OOM encountered:\n");
+      fflush(stderr);
+      backtrace_symbols_fd(array, size, 2);
+    }
+#endif
   }
   return 0;
 }
