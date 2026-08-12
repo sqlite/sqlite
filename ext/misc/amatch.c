@@ -564,7 +564,7 @@ static int amatchTruncateInt(sqlite3_int64 i){
   if( i>=-2147483647 && i<=2147483646 ){
     return (int)i;
   }else{
-    return i<0 ? -2147483648 : 2147483647;
+    return i<0 ? (-1)-2147483647 : 2147483647;
   }
 }
 
