@@ -1788,6 +1788,45 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
 }
 
 /*
+** Return the value of a variable-length integer without computing
+** its length.  This is an optimization on sqlite3GetVarint() for the
+** cases when the return value of sqlite3GetVarint() is not needed.
+*/
+i64 sqlite3VarintValue(const unsigned char *p){
+  u64 iKey = p[0];
+  if( iKey>=0x80 ){
+    u8 x;
+    iKey = (iKey<<7) ^ (x = *++p);
+    if( x>=0x80 ){
+      iKey = (iKey<<7) ^ (x = *++p);
+      if( x>=0x80 ){
+        iKey = (iKey<<7) ^ 0x10204000 ^ (x = *++p);
+        if( x>=0x80 ){
+          iKey = (iKey<<7) ^ 0x4000 ^ (x = *++p);
+          if( x>=0x80 ){
+            iKey = (iKey<<7) ^ 0x4000 ^ (x = *++p);
+            if( x>=0x80 ){
+              iKey = (iKey<<7) ^ 0x4000 ^ (x = *++p);
+              if( x>=0x80 ){
+                iKey = (iKey<<7) ^ 0x4000 ^ (x = *++p);
+                if( x>=0x80 ){
+                  iKey = (iKey<<8) ^ 0x8000 ^ (*++p);
+                }
+              }
+            }
+          }
+        }
+      }else{
+        iKey ^= 0x204000;
+      }
+    }else{
+      iKey ^= 0x4000;
+    }
+  }
+  return *(i64*)&iKey;
+}
+
+/*
 ** Read a 32-bit variable-length integer from memory starting at p[0].
 ** Return the number of bytes read.  The value is stored in *v.
 **

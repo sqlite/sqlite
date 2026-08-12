@@ -1277,7 +1277,7 @@ static void btreeParseCellPtrNoPayload(
 #ifndef SQLITE_DEBUG
   UNUSED_PARAMETER(pPage);
 #endif
-  pInfo->nSize = 4 + getVarint(&pCell[4], (u64*)&pInfo->nKey);
+  pInfo->nSize = 4 + sqlite3GetVarint(&pCell[4], (u64*)&pInfo->nKey);
   pInfo->nPayload = 0;
   pInfo->nLocal = 0;
   pInfo->pPayload = 0;
@@ -1317,7 +1317,7 @@ static void btreeParseCellPtr(
 
   /* The next block of code is equivalent to:
   **
-  **     pIter += getVarint(pIter, (u64*)&pInfo->nKey);
+  **     pIter += sqlite3GetVarint(pIter, (u64*)&pInfo->nKey);
   **
   ** The code is inlined and the loop is unrolled for performance.
   ** This routine is a high-runner.
@@ -5928,7 +5928,7 @@ int sqlite3BtreeTableMoveto(
           }
         }
       }
-      getVarint(pCell, (u64*)&nCellKey);
+      nCellKey = sqlite3VarintValue(pCell);
       if( nCellKey<intKey ){
         lwr = idx+1;
         if( lwr>upr ){ c = -1; break; }
@@ -7135,7 +7135,7 @@ static int fillInCell(
     nSrc = pX->nData;
     assert( pPage->intKeyLeaf ); /* fillInCell() only called for leaves */
     nHeader += putVarint32(&pCell[nHeader], nPayload);
-    nHeader += putVarint(&pCell[nHeader], *(u64*)&pX->nKey);
+    nHeader += sqlite3PutVarint(&pCell[nHeader], *(u64*)&pX->nKey);
   }else{
     assert( pX->nKey<=0x7fffffff && pX->pKey!=0 );
     nSrc = nPayload = (int)pX->nKey;
@@ -8884,7 +8884,7 @@ static int balance_nonroot(
       j--;
       pNew->xParseCell(pNew, b.apCell[j], &info);
       pCell = pTemp;
-      sz = 4 + putVarint(&pCell[4], info.nKey);
+      sz = 4 + sqlite3PutVarint(&pCell[4], info.nKey);
       pTemp = 0;
     }else{
       pCell -= 4;
@@ -9769,7 +9769,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   }else{
     aOut += sqlite3PutVarint(aOut, pSrc->info.nPayload);
   }
-  if( pDest->pKeyInfo==0 ) aOut += putVarint(aOut, iKey);
+  if( pDest->pKeyInfo==0 ) aOut += sqlite3PutVarint(aOut, iKey);
   nIn = pSrc->info.nLocal;
   aIn = pSrc->info.pPayload;
   if( aIn+nIn>pSrc->pPage->aDataEnd ){
