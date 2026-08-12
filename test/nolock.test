@@ -219,6 +219,11 @@ if {[permutation]!="inmemory_journal"} {
 }
 
 #-------------------------------------------------------------------------
+# For these tests, move the pending-byte to later in the file. This way,
+# all locks are placed past the end of the file, allowing it to be read
+# at the OS level on windows even when locked.
+#
+sqlite3_test_control_pending_byte 0x10000000
 reset_db
 
 do_execsql_test 5.0 {
