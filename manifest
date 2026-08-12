@@ -1,5 +1,5 @@
-C Ensure\sthat\sdatabases\sopened\swith\simmutable=1\sspecified\sare\sopened\sread-only\sat\sthe\sOS\slevel.\sReport\s[bugs:/info/2026-08-11T17:21:54Z\s|\s2026-08-11T17:21:54Z]
-D 2026-08-11T18:22:01.078
+C Decode\stable\sb-tree\srowid\svarints\sinline\sin\ssqlite3BtreeTableMoveto().Add\sbtreeGetIntKey(),\susing\sa\sflat\sdecoder\son\sARM64\sand\sthe\sexisting\sbtreeParseCellPtr()-style\scascade\selsewhere.\sThis\savoids\sthe\sout-of-line\sgetVarint()\scall\swhile\spreserving\sthe\sdecoded\sbit\spattern\sand\s1–9\sbyte\saccess\sbounds.\sThe\sarchitecture-specific\ssplit\sadds\scomplexity(I\salso\sdid\snot\stest\son\sMacOS),\sbut\sneither\sdecoder\sperforms\sbest\sacross\sall\stested\sprocessors\sand\srowid\swidths,\sand\sCPU-bound,\srowid-seek-heavy\sworkloads\sbenefit\smore\sthan\sthe\sbroader\sspeedtest1\sworkload.
+D 2026-08-12T08:01:46.397
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -682,7 +682,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c f6a1490f4ef86cca51f0f93158bbc140b5822406e0c50ec61731e3fcdc1242a2
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 462c140d0c1af68d75fd13a082f3c08883cc90496c2f02054ec6ca3592ee4b1c
+F src/btree.c 88be56e39509659ffa49af9094252fa8ed693c9088a322400edeccfdde770803
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h 1e4a7d04e809e98abc39654b6089c60d749a724598041ff553b392a3277e9b98
 F src/build.c 6d55fcda11273ae382e1bcf9695468ca0c05547a2e2f6f09d64f30cb64f4400e
@@ -2218,8 +2218,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9cd4f9e9205c5a5096388397a39349db9ff5377d19095c6b20388ff799969c31
-R 32f481950c359f5b9972a7bb17af5ec3
-U dan
-Z 8cda5ef2ceaae0eb741b336f4245bfe5
+P 702cdeb78c19ac971892093bf9d9c90d3c6b7193518db2437d89123fffd9c5f9
+R b9032a38ebe54e6eaf5de40f1a3169c3
+T *branch * opt-complex-rowid-varint-decode
+T *sym-opt-complex-rowid-varint-decode *
+T -sym-trunk *
+U jeffchen
+Z 57612b97be64804ad28904b4cf951ea4
 # Remove this line to create a well-formed Fossil manifest.

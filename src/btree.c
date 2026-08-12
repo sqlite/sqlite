@@ -5811,6 +5811,94 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
   return btreeLast(pCur, pRes);
 }
 
+/* Decode the intkey varint that begins at p and return its value.
+**
+** This routine is functionally equivalent to:
+**
+**    u64 v;  getVarint(p, &v);  return *(i64*)&v;
+**
+** It is inlined and unrolled because the caller is a high-runner.  Both
+** forms below read byte k+1 only after byte k's continuation bit is seen,
+** so neither reaches any byte offset that getVarint() would not reach.
+**
+** Two encodings of the same function are provided.  The cascade (the
+** #else branch) is the technique already used by btreeParseCellPtr() and
+** is the smaller and faster form on most targets.  Its shift-xor chain is
+** strictly serial, however, which costs latency on wide out-of-order ARM64
+** cores; there the flat form, which assembles each width from independent
+** masked shifts, schedules as a shallow reduction tree instead.  Define
+** SQLITE_INTKEY_CASCADE to select the cascade on any target.
+*/
+static SQLITE_INLINE i64 btreeGetIntKey(const u8 *p){
+#if (defined(__aarch64__) || defined(_M_ARM64)) && !defined(SQLITE_INTKEY_CASCADE)
+  u64 v;
+  if( p[0]<0x80 ){
+    v = p[0];
+  }else if( p[1]<0x80 ){
+    v = ((u64)(p[0]&0x7f)<<7) | p[1];
+  }else if( p[2]<0x80 ){
+    v = ((u64)(p[0]&0x7f)<<14) | ((u64)(p[1]&0x7f)<<7) | p[2];
+  }else if( p[3]<0x80 ){
+    v = ((u64)(p[0]&0x7f)<<21) | ((u64)(p[1]&0x7f)<<14)
+      | ((u64)(p[2]&0x7f)<<7)  | p[3];
+  }else if( p[4]<0x80 ){
+    v = ((u64)(p[0]&0x7f)<<28) | ((u64)(p[1]&0x7f)<<21)
+      | ((u64)(p[2]&0x7f)<<14) | ((u64)(p[3]&0x7f)<<7) | p[4];
+  }else if( p[5]<0x80 ){
+    v = ((u64)(p[0]&0x7f)<<35) | ((u64)(p[1]&0x7f)<<28)
+      | ((u64)(p[2]&0x7f)<<21) | ((u64)(p[3]&0x7f)<<14)
+      | ((u64)(p[4]&0x7f)<<7)  | p[5];
+  }else if( p[6]<0x80 ){
+    v = ((u64)(p[0]&0x7f)<<42) | ((u64)(p[1]&0x7f)<<35)
+      | ((u64)(p[2]&0x7f)<<28) | ((u64)(p[3]&0x7f)<<21)
+      | ((u64)(p[4]&0x7f)<<14) | ((u64)(p[5]&0x7f)<<7) | p[6];
+  }else if( p[7]<0x80 ){
+    v = ((u64)(p[0]&0x7f)<<49) | ((u64)(p[1]&0x7f)<<42)
+      | ((u64)(p[2]&0x7f)<<35) | ((u64)(p[3]&0x7f)<<28)
+      | ((u64)(p[4]&0x7f)<<21) | ((u64)(p[5]&0x7f)<<14)
+      | ((u64)(p[6]&0x7f)<<7)  | p[7];
+  }else{
+    v = ((u64)(p[0]&0x7f)<<57) | ((u64)(p[1]&0x7f)<<50)
+      | ((u64)(p[2]&0x7f)<<43) | ((u64)(p[3]&0x7f)<<36)
+      | ((u64)(p[4]&0x7f)<<29) | ((u64)(p[5]&0x7f)<<22)
+      | ((u64)(p[6]&0x7f)<<15) | ((u64)(p[7]&0x7f)<<8) | p[8];
+  }
+  return *(i64*)&v;
+#else
+  u64 iKey = p[0];
+  if( iKey>=0x80 ){
+    u8 x;
+    iKey = (iKey<<7) ^ (x = *++p);
+    if( x>=0x80 ){
+      iKey = (iKey<<7) ^ (x = *++p);
+      if( x>=0x80 ){
+        iKey = (iKey<<7) ^ 0x10204000 ^ (x = *++p);
+        if( x>=0x80 ){
+          iKey = (iKey<<7) ^ 0x4000 ^ (x = *++p);
+          if( x>=0x80 ){
+            iKey = (iKey<<7) ^ 0x4000 ^ (x = *++p);
+            if( x>=0x80 ){
+              iKey = (iKey<<7) ^ 0x4000 ^ (x = *++p);
+              if( x>=0x80 ){
+                iKey = (iKey<<7) ^ 0x4000 ^ (x = *++p);
+                if( x>=0x80 ){
+                  iKey = (iKey<<8) ^ 0x8000 ^ (*++p);
+                }
+              }
+            }
+          }
+        }
+      }else{
+        iKey ^= 0x204000;
+      }
+    }else{
+      iKey ^= 0x4000;
+    }
+  }
+  return *(i64*)&iKey;
+#endif
+}
+
 /* Move the cursor so that it points to an entry in a table (a.k.a INTKEY)
 ** table near the key intKey.   Return a success code.
 **
@@ -5928,7 +6016,7 @@ int sqlite3BtreeTableMoveto(
           }
         }
       }
-      getVarint(pCell, (u64*)&nCellKey);
+      nCellKey = btreeGetIntKey(pCell);
       if( nCellKey<intKey ){
         lwr = idx+1;
         if( lwr>upr ){ c = -1; break; }
