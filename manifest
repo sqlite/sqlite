@@ -1,5 +1,5 @@
-C Fix\san\sMSVC\scompiler\swarning\sin\sthe\samatch.c\sextension.
-D 2026-08-12T20:26:57.046
+C Disable\srecently\sadded\stest\scases\sfor\simmutable=1\swhen\srunning\nthe\sinmemory_journal\spermutation.
+D 2026-08-13T00:21:08.075
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1474,7 +1474,7 @@ F test/mutex1.test 2cdc320a3320521d73b8090a04a2245c1e625e5f90672882517bf5fedcec8
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test 73ea63ab43668313e2f8cc9ef9e9a966672c7934f3ce76926fbe991235d07d91
 F test/nockpt.test 3db354270fc63b6871eebd40285d4c55324fb27be629c958adbff6d7fcaa8e14
-F test/nolock.test e4b279152d3650a28551194cb10142d38243b6381219713dd29f1707cc3fd5c6
+F test/nolock.test 40e0639fcc774420b8c1d2189a7a2f54e4b1de2408e965cf68d1ecbc5b3797c7
 F test/normalize.test 88ba50b75feaa16735ac780f675c9e111179f81da40e5e026ecb777664e18da2
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2d7ac2095e4a9d774aabd408fa2855fa4281a3aa27c405451ade5d545f5ce382
-R 25c9c737dc982a57212de7a80076a3db
+P 43b23132a1288979063b3121b3f4f0d9d7805323b8e8496508426fa371425338
+R 68cf3faf9020d656b86204c58e239cd4
 U drh
-Z 1734f6686b64193a413c22fe8d740c84
+Z fdc36282921e779336cf9bd7ee5a4f4d
 # Remove this line to create a well-formed Fossil manifest.
