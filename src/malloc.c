@@ -847,11 +847,26 @@ void *sqlite3OomFault(sqlite3 *db){
 #if HAVE_BACKTRACE
     if(1){
       void *array[30];
-      size_t size;
+      char zMsg[4000];
+      size_t size, i;
+      char **symbol;
+      StrAccum msg;
+      sqlite3StrAccumInit(&msg, db, zMsg, 3999, 0);
       size = backtrace(array, sizeof(array)/sizeof(array[0]));
-      fprintf(stderr, "OOM encountered:\n");
-      fflush(stderr);
-      backtrace_symbols_fd(array, size, 2);
+      symbol = backtrace_symbols(array,size);
+      sqlite3_str_appendf(&msg, "OOM stack:\n");
+      for(i=0; i<size; i++){
+        const char *z = symbol[i];
+        const char *zEnd = strchr(z,' ');
+        if( zEnd ){
+          sqlite3_str_appendf(&msg, "%.*s\n", (int)(zEnd - z), z);
+        }else{
+          sqlite3_str_appendf(&msg, "%s\n", z);
+        }
+      }
+      zMsg[msg.nChar] = 0;
+      free(symbol);
+      sqlite3_log(SQLITE_NOMEM, zMsg);
     }
 #endif
   }

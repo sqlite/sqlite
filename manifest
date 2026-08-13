@@ -1,5 +1,5 @@
-C Compile\swith\s-DHAVE_BACKTRACE\sto\sget\sa\sbacktrace()\sdump\sto\sstderr\son\nthe\sfirst\sOOM\sof\seach\sstatement.
-D 2026-08-12T15:55:44.549
+C Log\sthe\sOOM\sstack\strace\srather\sthan\sprinting\son\sstderr.
+D 2026-08-13T14:05:40.820
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -707,7 +707,7 @@ F src/json.c 3f05a035d3a747a549e75bb419afcad7137e3241a5a836d20a62335d9e90a35d
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 5cd4cd7ec6e1a46416806899086363fbf95eecd3bfb9a388b436c9a77243c902
 F src/main.c 2af1793f14ae547168e11682720aefc360d3fec75bc1dbabd9565ca09b02c8ab
-F src/malloc.c b43d2614fbc7478674719e9e6ba041a1683f152538a806fd64cebd6199a0f5f6
+F src/malloc.c 51bce3a5db70a18604aa864791fe06c80a2869ac4223ddc598a26d29da8fc710
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
@@ -2218,11 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P bc57a14ab92dd8c247a893cf4cec7c0dccaa7e8407854a63aa3af699c60bacd5
-R 7d729f429030a109e383cf9deb2831ef
-T *branch * oom-backtrace
-T *sym-oom-backtrace *
-T -sym-trunk *
+P 6d9c85d4dd0a7c89628b6cf4faf859fe43de47eb77e477dfab2b4325665968b3
+R 6d43967e2aa20e480ccab2d6a33a8d01
 U drh
-Z 6aefa548bd728eb7a6e4d0962a6d30cd
+Z 69db90081c535417e4eef87539e01315
 # Remove this line to create a well-formed Fossil manifest.
