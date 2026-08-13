@@ -3373,8 +3373,16 @@ int sqlite3FindInIndex(
             if( j==nExpr ) break;
             mCol = MASKBIT(j);
             if( mCol & colUsed ) break; /* Each column used only once */
+            if( aiMap ){
+              /* If this IN(...) expression is used by a seek-scan loop,
+              ** not only must the index be unique, but the rows must be
+              ** delivered in order when the index is scanned. This will
+              ** only be the case if the index fields are in the same order
+              ** as the RHS list of expressions. */
+              if( (inFlags & IN_INDEX_SEEKSCAN) && i!=j ) break;
+              aiMap[i] = j;
+            }
             colUsed |= mCol;
-            if( aiMap ) aiMap[i] = j;
           }
  
           assert( nExpr>0 && nExpr<BMS );

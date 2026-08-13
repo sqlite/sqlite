@@ -711,8 +711,10 @@ static SQLITE_NOINLINE void codeINTerm(
     sqlite3 *db = pParse->db;
     Expr *pXMod = removeUnindexableInClauseTerms(pParse, iEq, pLoop, pX);
     if( !db->mallocFailed ){
+      int flags = IN_INDEX_LOOP;
+      flags |= ((pLoop->wsFlags & WHERE_IN_SEEKSCAN) ? IN_INDEX_SEEKSCAN : 0);
       aiMap = (int*)sqlite3DbMallocZero(db, sizeof(int)*nEq);
-      eType = sqlite3FindInIndex(pParse, pXMod, IN_INDEX_LOOP, 0, aiMap, &iTab);
+      eType = sqlite3FindInIndex(pParse, pXMod, flags, 0, aiMap, &iTab);
     }
     sqlite3ExprDelete(db, pXMod);
   }
