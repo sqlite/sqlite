@@ -1,5 +1,5 @@
-C Disable\smisuse\stesting\sunless\sthe\sENABLE_MISUSE\senvironment\svariable\nis\sset.\n[bugs:/info/2026-08-13T13:27:50Z|Bug\s2026-08-13T13:27:50Z]
-D 2026-08-13T17:49:11.073
+C Disable\sthe\sseekscan\soptimization\sfor\sIN(...)\sexpressions\swhen\sthe\sRHS\sis\sa\sSELECT\sthat\sreturns\smore\sthan\sone\scolumn.\sThis\swas\spreviously\sonly\spossible\sif\sthe\ssqlite_stat1\stable\swas\spopulated\swith\sinconsistent\sinformation,\sand\swas\smalfunctioning\sin\ssome\scircumstances.\sReport\s[bugs:/info/2026-08-13T08:45:47\s|\s2026-08-13T08:45:47Z].
+D 2026-08-13T18:50:59.165
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -826,7 +826,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 2f5b4091f37bfac7658ea3d52b2c192d8fb2ec062f232815e0eb5152a46267db
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
-F src/wherecode.c 48603db02e70b579e813b076e4dd7da4ad48099633918b21a85c9a83a949500e
+F src/wherecode.c 32ca3ee7a56ee29c49ab31e4aa6152e9c01c2fcbf6a1ad2f612308780dd4583f
 F src/whereexpr.c cd88bd3e1a421fb987eb5991ecf7a9a3d5dad1abb02a8baa070336b6dfa70b59
 F src/window.c 0d7dacdf2e84c6ee8ff498d5cc881dd245fcb2f14f6c5976e97e112ce96e90dc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1604,7 +1604,7 @@ F test/schema6.test e4bd1f23d368695eb9e7b51ef6e02ca0642ea2ab4a52579959826b5e7dce
 F test/schemafault.test 1936bceca55ac82c5efbcc9fc91a1933e45c8d1e1d106b9a7e56c972a5a2a51e
 F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2ff09384
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
-F test/seekscan1.test 31af16e3bb3203d153aea320939c5da97ec44705c2710d153c06a01397d45b09
+F test/seekscan1.test 2148a174ba55fa378f18fdf62eeed1f3a3cc9b6f360a948db613cad0c80b1f04
 F test/select1.test 692e84cfa29c405854c69e8a4027183d64c22952866a123fabbce741a379e889
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 152ce3978c8600c70413e921e39e4c5aeb8ff1e96dd722442a9981e1b8afc702
@@ -2218,8 +2218,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5a4e6920afce4a5b63f8ad4e183506a5dd738dd191027395b710a2904eb7f296
-R a21f99a21210751d19074035832dfcdd
-U drh
-Z 9abfe7a3f85dc4102c26fbe2ef400810
+P 273e1bcc2c669bc9dc3de3752bdf9c0b6ce26a6a0937f35d2da47e687542d521 9544d46a6d51dbc12057e33ec1a635cd2cd48101c46d4b92171b56b70ea23f53
+R 6d5cf3723d3388c1077e1c990e94b9dc
+T +closed 9544d46a6d51dbc12057e33ec1a635cd2cd48101c46d4b92171b56b70ea23f53
+U dan
+Z 6d425a96002c80b9e4f34639ae786c54
 # Remove this line to create a well-formed Fossil manifest.
