@@ -59,6 +59,8 @@ struct sqlite3_qrf_spec {
   char **pzOutput;            /* Storage location for output string */
   /* The following are available in iVersion 2 and later */
   unsigned char bRowCount;    /* Show the number of rows at end of each query */
+  char *zIntFmt;              /* Format string for integers */
+  char *zRealFmt;             /* Format string for floating point */
   /* Additional fields may be added in the future */
 };
 
@@ -200,6 +202,18 @@ int sqlite3_qrf_wcwidth(int c);
 */
 size_t sqlite3_qrf_wcswidth(const char*);
 
+/*
+** The argument is a proposed format string for the zIntFmt or zRealFmt
+** parameters.  Return value indicates:
+**
+**    0     The input is not a valid format string.  If this string
+**          appears in either zIntFmt or zRealFmt, it will be ignored.
+**
+**    1     The input is a valid format string for integers.
+**
+**    2     The input is a valid format string for floating point.
+*/
+int sqlite3_qrf_ckformat(const char*);
 
 #ifdef __cplusplus
 }
