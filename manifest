@@ -1,5 +1,5 @@
-C Adjust\sthe\sbytecode\sgenerated\sfor\sRIGHT\sJOIN\sso\sthat\sit\schecks\sfor\sduplicate\nRHS\srows\swhen\sthe\sLHS\sis\sNULL.\n[bugs:/info/2026-08-14T04:56:02Z|Bug\s2026-08-14T04:56:02Z]
-D 2026-08-14T14:03:07.205
+C Build\sportability\simprovements\sfor\sbuildtclext.tcl,\sfrom\s[bugs:2026-08-13T19:40:39Z|bug\sforum\spost\s2026-08-13T19:40:39Z].
+D 2026-08-14T15:17:24.791
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2128,7 +2128,7 @@ F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e045
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat 1ee9dbadcc07fc23268025854e97b392bcbad72376b47aee7b22f3797a4f2c87 x
 F tool/build-shell.sh 369c4b171cc877ad974fef691e4da782b4c1e99fe8f4361316c735f64d49280f
-F tool/buildtclext.tcl b58df93e772fec8b2ae44ee1a82d13378e13edb1e94c4ab2f7ee3440a9523bff
+F tool/buildtclext.tcl 9adab8a218dff21ec39e9326980240e57f6f3648488b4815a6b3dcea859bec61
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/cktclsh.sh 6075eef9c6b9ba4b38fef2ca2a66d25f2311bd3c610498d18a9b01f861629cca
@@ -2218,9 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d5b57f76b63552b23ba3e5e372a3773118b929a4116f60f374a91cba87c1152e 9d39b0973bff5af1787fafdd49e455c6c27d493c3bce997ae0fdf88eb9adb1d2
-R 87fd0f1fa4fa8993d3fd221438fd0c12
-T +closed 9d39b0973bff5af1787fafdd49e455c6c27d493c3bce997ae0fdf88eb9adb1d2
-U drh
-Z 76a5d5a1a70df39c1a32e85a2320988d
+P f4f57ca539520b687cf00b0034cb20868cafa5f6c7602c1db71e1a7f885f3daf
+R def4fd32bce938e199441eb4d5b3d679
+U stephan
+Z 5827fbd5188d54ae35cacc6404a59989
 # Remove this line to create a well-formed Fossil manifest.

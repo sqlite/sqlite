@@ -167,9 +167,18 @@ if {$tcl_platform(platform) eq "windows"} {
   }
   set cmd {${CC} ${CFLAGS} ${LDFLAGS} -shared}
   regexp {TCL_SHLIB_LD='([^']+)(-Wl,--out-implib.*)?'} $tclConfig all cmd
-  set LDFLAGS "$INC -DUSE_TCL_STUBS"
+
+  # TCL_SHLIB_LD is a shell command recorded from the Tcl build, so the names
+  # in it are Tcl's configure-time variables. We use every name that 
+  # a tclConfig.sh is known to use so [subst] below doesn't fail.
+  set SHLIB_CFLAGS $CFLAGS
+  set LDFLAGS ""
+
+  # Our own options get appended to the command directly.
+ 
+  set EXTRA "$INC -DUSE_TCL_STUBS"
   if {[string length $OPTS]>1} {
-    append LDFLAGS $OPTS
+    append EXTRA $OPTS
   }
   if {$tcl_platform(os) eq "Windows NT"} {
     set OUT cyg
@@ -184,7 +193,11 @@ if {$tcl_platform(platform) eq "windows"} {
   set @ $OUT; # Workaround for https://sqlite.org/forum/forumpost/0683a49cb02f31a1
               # in which Gentoo edits their tclConfig.sh to include an soname
               # linker flag which includes ${@} (the target file's name).
-  set CMD [subst $cmd]
+  if {[catch {subst $cmd} CMD]} {
+    puts stderr "warning: cannot expand TCL_SHLIB_LD: $CMD"
+    set CMD "$CC $CFLAGS -shared"
+  }
+  append CMD " $EXTRA"
 }
 
 # Check the SQLite TCL extension that is loaded by default by this running
