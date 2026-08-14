@@ -2079,6 +2079,8 @@ static void DbHookCmd(
 **     -rowsep TEXT                            Row separator text
 **     -tablename TEXT                         Table name for style "insert"
 **     -null TEXT                              Text for NULL values
+**     -intfmt STRING                          Format for integer values
+**     -realfmt STRING                         Format for floating-point values
 **
 ** A mapping from TCL "format" command options to sqlite3_qrf_spec fields
 ** is below.  Use this to reference the QRF documentation:
@@ -2096,6 +2098,7 @@ static void DbHookCmd(
 **     -defaultalign     eDfltAlign
 **     -titlealign       eTitleAlign
 **     -border           bBorder
+**     -rowcount         bRowCount
 **     -wrap             nWrap
 **     -screenwidth      nScreenWidth
 **     -linelimit        nLineLimit
@@ -2108,6 +2111,8 @@ static void DbHookCmd(
 **     -rowsep           zRowSep
 **     -tablename        zTableName
 **     -null             zNull
+**     -intfmt           zIntFmt
+**     -realfmt          zRealFmt
 **
 ** The TCL -title option maps to eTitle and bTitles as follows:
 **
@@ -2402,6 +2407,28 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       i++;
     }else if( strcmp(zArg,"-null")==0 ){
       qrf.zNull = Tcl_GetString(objv[i+1]);
+      i++;
+    }else if( strcmp(zArg,"-intfmt")==0 ){
+      char *zFmt = Tcl_GetString(objv[i+1]);
+      if( zFmt[0]==0 || strcmp(zFmt,"default")==0 ){
+        zFmt = 0;
+      }else if( sqlite3_qrf_ckformat(zFmt)!=1 ){
+        Tcl_AppendResult(pDb->interp, "bad format for -intfmt", (char*)0);
+        rc = TCL_ERROR;
+        goto format_failed;
+      }
+      qrf.zIntFmt = zFmt;
+      i++;
+    }else if( strcmp(zArg,"-realfmt")==0 ){
+      char *zFmt = Tcl_GetString(objv[i+1]);
+      if( zFmt[0]==0 || strcmp(zFmt,"default")==0 ){
+        zFmt = 0;
+      }else if( sqlite3_qrf_ckformat(zFmt)!=2 ){
+        Tcl_AppendResult(pDb->interp, "bad format for -realfmt", (char*)0);
+        rc = TCL_ERROR;
+        goto format_failed;
+      }
+      qrf.zRealFmt = zFmt;
       i++;
     }else if( strcmp(zArg,"-version")==0 ){
       /* Undocumented. Testing use only */
