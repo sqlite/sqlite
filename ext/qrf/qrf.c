@@ -2849,14 +2849,6 @@ static void qrfOneSimpleRow(Qrf *p){
 }
 
 /*
-** GCC does not define the offsetof() macro so we'll have to do it
-** ourselves.
-*/
-#ifndef offsetof
-# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
-#endif
-
-/*
 ** Initialize the internal Qrf object.
 */
 static void qrfInitialize(

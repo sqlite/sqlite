@@ -1,5 +1,5 @@
-C Enhance\sQRF\swith\soptions\sto\ssupply\sformat\sstrings\sused\sto\srender\sintegers\nand\sfloating\spoint\snumbers.\s\sMake\sthose\soptions\saccessible\sin\sthe\nshell\susing\sthe\s".mode\s--intfmt"\sand\s".mode\s--realfmt"\srespectively.\nAlso\smake\sthose\soptions\savailable\sto\sthe\s"format"\smethod\sof\sthe\ssqlite3\nobject\sin\sthe\sTCL\sinterface.
-D 2026-08-14T17:31:48.472
+C Remove\sredundant\soffsetof\sdefinition\sfrom\sqrf.c.
+D 2026-08-14T18:49:42.749
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -425,7 +425,7 @@ F ext/misc/zipfile.c 84d8c265f6d1835327009458413b4cc017c5a9e19936583b562bd6808a6
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md 40377f2b4acb15dd2d8a8894674c52f0b1498ad439a26bfb64800f0bc0e42e3a
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
-F ext/qrf/qrf.c fdb0836b1d86194d0558fa5af66bc60b5fb342bdbdc10a46cb32a51bee509117
+F ext/qrf/qrf.c b30c9dfdc29a7d6bfb51029797f391416b195b45114896f9b4ab822bdfa37e6a
 F ext/qrf/qrf.h 62208aefef5714b9e9294f993a653f3ec5fb85a5873e5fe3e88df34c90f1bcab
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
@@ -2218,9 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2530b5ada6e814931db257d3b5ca756032f2c004a2d96cb2d998619e79ce0958 49778c334aaed6d05342a2063cf7f9f8caa1ec9aac0d49ac1db491ddd3d564b5
-R 7522ae30d81ab7faabfc9c6f7dc257d8
-T +closed 49778c334aaed6d05342a2063cf7f9f8caa1ec9aac0d49ac1db491ddd3d564b5
+P 61b0157686da3e6700ddcb7273b91eba69ff3015f8185470fd4fa02e52205401
+R a5735a82c7fe2149f7f200065d699e6a
 U drh
-Z 4691f48463c70bccacc4012ecd3ce9a5
+Z 344b2d08006f8d18da2d1fa756e0e9a0
 # Remove this line to create a well-formed Fossil manifest.
