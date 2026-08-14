@@ -3030,10 +3030,10 @@ qrf_reinit:
   }else{
     size_t n = strlen(p->spec.zIntFmt);
     memcpy(p->zFmt, p->spec.zIntFmt, n-1);
+    p->zFmt[n-1] = 'l';
     p->zFmt[n] = 'l';
-    p->zFmt[n+1] = 'l';
-    p->zFmt[n+2] = p->spec.zIntFmt[n-1];
-    p->zFmt[n+3] = 0;
+    p->zFmt[n+1] = p->spec.zIntFmt[n-1];
+    p->zFmt[n+2] = 0;
     p->spec.zIntFmt = p->zFmt;
   }
   if( p->spec.zRealFmt && sqlite3_qrf_ckformat(p->spec.zRealFmt)!=2 ){
