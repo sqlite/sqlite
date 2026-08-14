@@ -1152,7 +1152,7 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
         sqlite3_str_appendf(pOut,p->spec.zRealFmt,r);
       }else{
         const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
-        sqlite3_str_appendf(pOut, zTxt);
+        sqlite3_str_appendall(pOut, zTxt);
       }
       break;
     }
@@ -2868,7 +2868,7 @@ static void qrfInitialize(
   size_t sz;                     /* Size of pSpec[], based on pSpec->iVersion */
   memset(p, 0, sizeof(*p));
   p->pzErr = pzErr;
-  if( pSpec->iVersion>3 ){
+  if( pSpec->iVersion>2 ){
     qrfError(p, SQLITE_ERROR,
        "unusable sqlite3_qrf_spec.iVersion (%d)",
        pSpec->iVersion);
@@ -2887,7 +2887,6 @@ static void qrfInitialize(
   switch( pSpec->iVersion ){
     case 0: sz = offsetof(sqlite3_qrf_spec, bRowCount);  break;
     case 1: sz = offsetof(sqlite3_qrf_spec, bRowCount);  break;
-    case 2: sz = offsetof(sqlite3_qrf_spec, zIntFmt);    break;
     default: sz = sizeof(sqlite3_qrf_spec);              break;
   }
   memcpy(&p->spec, pSpec, sz);
