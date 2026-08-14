@@ -1410,4 +1410,29 @@ do_eqp_test join-33.3-eqp {
   `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
 }
 
+# Bug 2026-08-14T04:56:02Z
+#
+reset_db
+db null NULL
+do_execsql_test join-34.1 {
+  CREATE TABLE t0(a INT, b INT);
+  CREATE INDEX t0i ON t0(a);
+  INSERT INTO t0 VALUES (1,10), (1,20);
+  CREATE VIEW empty(c) AS SELECT 1 WHERE 0;
+}
+do_execsql_test join-34.2 {
+  SELECT *
+    FROM empty RIGHT JOIN t0 ON true
+   WHERE (a,b) IN (SELECT a,b FROM t0)
+   ORDER BY +b;
+} {NULL 1 10 NULL 1 20}
+do_execsql_test join-34.3 {
+  SELECT *
+    FROM empty FULL OUTER JOIN t0 ON true
+   WHERE (a,b) IN (SELECT a,b FROM t0)
+   ORDER BY +b;
+} {NULL 1 10 NULL 1 20}
+
+
+
 finish_test
