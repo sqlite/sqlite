@@ -72,6 +72,7 @@ struct Qrf {
   } u;
   sqlite3_int64 nRow;         /* Number of rows handled so far */
   int *actualWidth;           /* Actual width of each column */
+  char zFmt[24];              /* Space to hold the true integer rendering fmt */
   sqlite3_qrf_spec spec;      /* Copy of the original spec */
 };
 
@@ -115,6 +116,44 @@ static const char qrfCType[] = {
 #  define deliberate_fall_through
 # endif
 #endif
+
+/*
+** The argument is a proposed format string for the zIntFmt or zRealFmt
+** parameters.  Return value indicates:
+**
+**    0     The input is not a valid format string.  If this string
+**          appears in either zIntFmt or zRealFmt, it will be ignored.
+**
+**    1     The input is a valid format string for integers.
+**
+**    2     The input is a valid format string for floating point.
+*/
+int sqlite3_qrf_ckformat(const char *z){
+  size_t n;
+  if( z==0 ) return 0;
+  if( z[0]!='%' ) return 0;
+  z++;
+  n = strspn(z,"+-,#0");
+  if( n>5 ) return 0;
+  z += n;
+  if( z[0]>='1' && z[0]<='9' ){
+    n = strspn(z,"0123456789");
+    if( n>3 ) return 0;
+    z += n;
+  }
+  if( z[0]=='.' ){
+    z++;
+    n = strspn(z,"0123456789");
+    if( n>3 ) return 0;
+    z += n;
+  }
+  n = strspn(z,"eEgGf");
+  if( n==1 && z[1]==0 ) return 2;
+  n = strspn(z,"dxXo");
+  if( n==1 && z[1]==0 ) return 1;
+  return 0;
+}
+
 
 /*
 ** Set an error code and error message.
@@ -1103,12 +1142,18 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
   }
   switch( sqlite3_column_type(p->pStmt,iCol) ){
     case SQLITE_INTEGER: {
-      sqlite3_str_appendf(pOut, "%lld", sqlite3_column_int64(p->pStmt,iCol));
+      sqlite3_str_appendf(pOut, p->spec.zIntFmt,
+                          sqlite3_column_int64(p->pStmt,iCol));
       break;
     }
     case SQLITE_FLOAT: {
-      const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
-      sqlite3_str_appendall(pOut, zTxt);
+      if( p->spec.zRealFmt ){
+        double r = sqlite3_column_double(p->pStmt,iCol);
+        sqlite3_str_appendf(pOut,p->spec.zRealFmt,r);
+      }else{
+        const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
+        sqlite3_str_appendf(pOut, zTxt);
+      }
       break;
     }
     case SQLITE_BLOB: {
@@ -2804,6 +2849,14 @@ static void qrfOneSimpleRow(Qrf *p){
 }
 
 /*
+** GCC does not define the offsetof() macro so we'll have to do it
+** ourselves.
+*/
+#ifndef offsetof
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
+#endif
+
+/*
 ** Initialize the internal Qrf object.
 */
 static void qrfInitialize(
@@ -2815,7 +2868,7 @@ static void qrfInitialize(
   size_t sz;                     /* Size of pSpec[], based on pSpec->iVersion */
   memset(p, 0, sizeof(*p));
   p->pzErr = pzErr;
-  if( pSpec->iVersion>2 ){
+  if( pSpec->iVersion>3 ){
     qrfError(p, SQLITE_ERROR,
        "unusable sqlite3_qrf_spec.iVersion (%d)",
        pSpec->iVersion);
@@ -2831,7 +2884,12 @@ static void qrfInitialize(
   p->iErr = SQLITE_OK;
   p->nCol = sqlite3_column_count(p->pStmt);
   p->nRow = 0;
-  sz = sizeof(sqlite3_qrf_spec);
+  switch( pSpec->iVersion ){
+    case 0: sz = offsetof(sqlite3_qrf_spec, bRowCount);  break;
+    case 1: sz = offsetof(sqlite3_qrf_spec, bRowCount);  break;
+    case 2: sz = offsetof(sqlite3_qrf_spec, zIntFmt);    break;
+    default: sz = sizeof(sqlite3_qrf_spec);              break;
+  }
   memcpy(&p->spec, pSpec, sz);
   if( p->spec.zNull==0 ) p->spec.zNull = "";
   p->mxWidth = p->spec.nScreenWidth;
@@ -2843,9 +2901,6 @@ static void qrfInitialize(
   if( p->spec.eText>QRF_TEXT_Relaxed ) p->spec.eText = QRF_Auto;
   if( p->spec.eTitle>QRF_TEXT_Relaxed ) p->spec.eTitle = QRF_Auto;
   if( p->spec.eBlob>QRF_BLOB_Size ) p->spec.eBlob = QRF_Auto;
-  if( pSpec->iVersion<=1 ){
-    p->spec.bRowCount = 0;
-  }
 qrf_reinit:
   switch( p->spec.eStyle ){
     case QRF_Auto: {
@@ -2970,6 +3025,20 @@ qrf_reinit:
   }
   if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = ",";
   if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
+  if( p->spec.zIntFmt==0 || sqlite3_qrf_ckformat(p->spec.zIntFmt)!=1 ){
+    p->spec.zIntFmt = "%lld";
+  }else{
+    size_t n = strlen(p->spec.zIntFmt);
+    memcpy(p->zFmt, p->spec.zIntFmt, n-1);
+    p->zFmt[n] = 'l';
+    p->zFmt[n+1] = 'l';
+    p->zFmt[n+2] = p->spec.zIntFmt[n-1];
+    p->zFmt[n+3] = 0;
+    p->spec.zIntFmt = p->zFmt;
+  }
+  if( p->spec.zRealFmt && sqlite3_qrf_ckformat(p->spec.zRealFmt)!=2 ){
+    p->spec.zRealFmt = 0;
+  }
 }
 
 /*

@@ -1,5 +1,5 @@
-C Adjust\sthe\sbytecode\sgenerated\sfor\sRIGHT\sJOIN\sso\sthat\sit\schecks\sfor\sduplicate\nRHS\srows\swhen\sthe\sLHS\sis\sNULL.\n[bugs:/info/2026-08-14T04:56:02Z|Bug\s2026-08-14T04:56:02Z]
-D 2026-08-14T14:03:07.205
+C Initial\scode\sfor\san\senhancement\sto\sQRF\sthat\sallows\sfor\sapp-defined\sformat\nstrings\sused\sto\srender\sinteger\sand\sfloating-point\svalues.
+D 2026-08-14T15:57:32.789
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -425,8 +425,8 @@ F ext/misc/zipfile.c 84d8c265f6d1835327009458413b4cc017c5a9e19936583b562bd6808a6
 F ext/misc/zorder.c bddff2e1b9661a90c95c2a9a9c7ecd8908afab5763256294dd12d609d4664eee
 F ext/qrf/README.md e87f6420a0518a9c15957f3b91fcd7ba774f7641adf56310e408a4e96ed07811
 F ext/qrf/dev-notes.md e68a6d91ce4c7eb296ef2daadc2bb79c95c317ad15b9fafe40850c67b29c2430
-F ext/qrf/qrf.c a4b11f21ce066043a642273a3a72e6ea4ee40cc6a6c51f47cf9c914fdda730db
-F ext/qrf/qrf.h 457ab1299039fca5d591246be924eb328397df0d4be35d3a193d78e9c7874b4a
+F ext/qrf/qrf.c 59bb21a16af9a4546b5b53f8f912ec6ccbe681945af5a57cfe244783433677f2
+F ext/qrf/qrf.h 7e8cbcbc4f990873da76672cd4e00b9e612eb73ee9bb41a7163df295e6e6d649
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test 25870dd7db7eb5597e2b4d6e29e7a7e095abf332660f67d89959552ce8f8f255
 F ext/rbu/rbu10.test 7c22caa32c2ff26983ca8320779a31495a6555737684af7aba3daaf762ef3363
@@ -743,7 +743,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 7145e41ad75e04a811b326aa5faf83c2e071480fabd9fc825055a6b889e6cb86
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 7720e5e4ffcdf630691a2208e284a5b4eb507f51a06a380487b10ef5f6a9c8dc
-F src/shell.c.in dfa303c6edb31d3a338e5312631fb78c80628e57640f4a6ae8194fd3e0bde861
+F src/shell.c.in 6f9eb20dbbc241fba2f44335b787fb8353a653fb7598182927fd8233f4d8faca
 F src/sqlite.h.in 2101a2b494cbc282d0dc1c3f631c4fb83060c52876cc9d7615b091ad66d932b1
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0efd4723bad9124ea1f581d9f1ea0254ac1c6f3e5fb29e4f3dcf36c72485a456
@@ -1465,7 +1465,7 @@ F test/mmap4.test 2e2b4e32555b58da15176e6fe750f17c9dcf7f93
 F test/mmapcorrupt.test 470fb44fe92e99c1d23701d156f8c17865f5b027063c9119dcfdb842791f4465
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
 F test/mmapwarm.test 2272005969cd17a910077bd5082f70bc1fefad9a875afec7fc9af483898ecaf3
-F test/modeA.sql 4c1e10ec06f0a061ae75f06c0dfc102674c519ee1574323faa1e11cb47db44c8
+F test/modeA.sql 698b4cfbaaa511c7b6600c510815d91649ba516b5d308edead5252d11cfdf040
 F test/multiplex.test d74c034e52805f6de8cc5432cef8c9eb774bb64ec29b83a22effc8ca4dac1f08
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test fac575e0b1b852025575a6a8357701d80933e98b5d2fe6d35ddaa68f92f6a1f7
@@ -2218,9 +2218,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d5b57f76b63552b23ba3e5e372a3773118b929a4116f60f374a91cba87c1152e 9d39b0973bff5af1787fafdd49e455c6c27d493c3bce997ae0fdf88eb9adb1d2
-R 87fd0f1fa4fa8993d3fd221438fd0c12
-T +closed 9d39b0973bff5af1787fafdd49e455c6c27d493c3bce997ae0fdf88eb9adb1d2
+P f4f57ca539520b687cf00b0034cb20868cafa5f6c7602c1db71e1a7f885f3daf
+R 572c3b97d7f9b35ec239568784ebe4ec
+T *branch * qrf-num-format
+T *sym-qrf-num-format *
+T -sym-trunk *
 U drh
-Z 76a5d5a1a70df39c1a32e85a2320988d
+Z 6c72f86893e74c7e6c6cb97119966e1a
 # Remove this line to create a well-formed Fossil manifest.
