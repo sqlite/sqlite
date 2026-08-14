@@ -416,7 +416,7 @@ static int fts3auxFilterMethod(
   pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;
   if( isScan ) pCsr->filter.flags |= FTS3_SEGMENT_SCAN;
 
-  if( iEq>=0 || iGe>=0 ){
+  if( (iEq>=0 || iGe>=0) && sqlite3_value_type(apVal[0])==SQLITE_TEXT ){
     const unsigned char *zStr = sqlite3_value_text(apVal[0]);
     assert( (iEq==0 && iGe==-1) || (iEq==-1 && iGe==0) );
     if( zStr ){
@@ -426,7 +426,7 @@ static int fts3auxFilterMethod(
     }
   }
 
-  if( iLe>=0 ){
+  if( iLe>=0 && sqlite3_value_type(apVal[0])==SQLITE_TEXT ){
     pCsr->zStop = sqlite3_mprintf("%s", sqlite3_value_text(apVal[iLe]));
     if( pCsr->zStop==0 ) return SQLITE_NOMEM;
     pCsr->nStop = (int)strlen(pCsr->zStop);
