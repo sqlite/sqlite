@@ -1444,7 +1444,7 @@ do_test 14.2 {
   set res
 } {bad format for -ifmt}
 do_test 14.3 {
-  db format -style list -columnsep { } -ifmt default {SELECT 100, 2.5}
+  db format -style list -columnsep { } -ifmt auto {SELECT 100, 2.5}
 } {100 2.5}
 do_test 14.4 {
   db format -style list -columnsep { } -ifmt {} {SELECT 100, 2.5}
@@ -1454,7 +1454,7 @@ do_test 14.5 {
   set res
 } {bad format for -fpfmt}
 do_test 14.6 {
-  db format -style list -columnsep { } -fpfmt default {SELECT 100, 2.5}
+  db format -style list -columnsep { } -fpfmt auto {SELECT 100, 2.5}
 } {100 2.5}
 do_test 14.7 {
   db format -style list -columnsep { } -fpfmt {} {SELECT 100, 2.5}

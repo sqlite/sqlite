@@ -103,7 +103,7 @@ END
 .testcase 140
 .mode -v
 .check <<END
-.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --fpfmt "" --ifmt "" --limits on --multiinsert 3000 --null "NULL" --quote relaxed --rowcount off --rowsep "" --sw auto --tablename "" --textjsonb on --titles always --widths "" --wordwrap off --wrap 10
+.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --fpfmt auto --ifmt auto --limits on --multiinsert 3000 --null "NULL" --quote relaxed --rowcount off --rowsep "" --sw auto --tablename "" --textjsonb on --titles always --widths "" --wordwrap off --wrap 10
 END
 .testcase 150 --error-prefix "Error:"
 .mode foo
@@ -162,7 +162,7 @@ END
 .mode --limits 0,0,0
 .mode -v
 .check <<END
-.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --fpfmt "" --ifmt "" --limits off --multiinsert 0 --null "" --quote off --rowcount off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles always --widths "" --wordwrap off
+.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --fpfmt auto --ifmt auto --limits off --multiinsert 0 --null "" --quote off --rowcount off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles always --widths "" --wordwrap off
 END
 
 .testcase 400
@@ -364,7 +364,7 @@ SELECT hex(randomblob(100)) c;
 .testcase 900
 .mode --reset psql -v
 .check <<END
-.mode psql --align "" --border off --blob-quote auto --colsep "" --escape auto --fpfmt "" --ifmt "" --limits off --multiinsert 0 --null "" --quote off --rowcount on --rowsep "" --sw 0 --tablename "" --textjsonb off --titles always --widths "" --wordwrap off
+.mode psql --align "" --border off --blob-quote auto --colsep "" --escape auto --fpfmt auto --ifmt auto --limits off --multiinsert 0 --null "" --quote off --rowcount on --rowsep "" --sw 0 --tablename "" --textjsonb off --titles always --widths "" --wordwrap off
 END
 .testcase 901
 .mode
@@ -555,7 +555,7 @@ SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 ╰──────────────┴─────────────────────╯
 END
 .testcase 1103
-.mode -fpfmt default -ifmt default
+.mode -fpfmt auto -ifmt auto
 WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n*10 FROM c WHERE n<1e4)
 SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 .check <<END
@@ -621,3 +621,7 @@ SELECT 1.23456789e+12;
 .mode list -fpfmt %G
 SELECT 1.23456789e+12;
 .check 1.23457E+12
+.testcase 1114
+.mode list -fpfmt "" -ifmt ""
+SELECT 1.25e+12, 0x1234;
+.check 1250000000000.0|4660

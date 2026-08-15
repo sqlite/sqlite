@@ -203,11 +203,11 @@ int sqlite3_qrf_wcwidth(int c);
 size_t sqlite3_qrf_wcswidth(const char*);
 
 /*
-** The argument is a proposed format string for the zIntFmt or zRealFmt
+** The argument is a proposed format string for the zIFmt or zFpFmt
 ** parameters.  Return value indicates:
 **
 **    0     The input is not a valid format string.  If this string
-**          appears in either zIntFmt or zRealFmt, it will be ignored.
+**          appears in either zIFmt or zFpFmt, it will be ignored.
 **
 **    1     The input is a valid format string for integers.
 **

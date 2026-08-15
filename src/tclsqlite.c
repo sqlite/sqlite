@@ -2410,7 +2410,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       i++;
     }else if( strcmp(zArg,"-ifmt")==0 ){
       char *zFmt = Tcl_GetString(objv[i+1]);
-      if( zFmt[0]==0 || strcmp(zFmt,"default")==0 ){
+      if( zFmt[0]==0 || strcmp(zFmt,"auto")==0 ){
         zFmt = 0;
       }else if( sqlite3_qrf_ckformat(zFmt)!=1 ){
         Tcl_AppendResult(pDb->interp, "bad format for -ifmt", (char*)0);
@@ -2421,7 +2421,7 @@ static int dbQrf(SqliteDb *pDb, int objc, Tcl_Obj *const*objv){
       i++;
     }else if( strcmp(zArg,"-fpfmt")==0 ){
       char *zFmt = Tcl_GetString(objv[i+1]);
-      if( zFmt[0]==0 || strcmp(zFmt,"default")==0 ){
+      if( zFmt[0]==0 || strcmp(zFmt,"auto")==0 ){
         zFmt = 0;
       }else if( sqlite3_qrf_ckformat(zFmt)!=2 ){
         Tcl_AppendResult(pDb->interp, "bad format for -fpfmt", (char*)0);
