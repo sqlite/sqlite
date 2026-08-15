@@ -1,5 +1,5 @@
-C Fix\stypos.\s\sTurn\soff\s-fpfmt\sand\s-ifmt\susing\s"auto"\sinstead\sof\s"default".
-D 2026-08-15T12:22:31.206
+C In\sthe\sCLI,\sfix\sthe\sinternal\smodeDup()\sroutine\sso\sthat\sit\scorrectly\shandles\nzIFmt\sand\szFpFmt.
+D 2026-08-15T12:35:27.217
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -743,7 +743,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 7145e41ad75e04a811b326aa5faf83c2e071480fabd9fc825055a6b889e6cb86
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 7720e5e4ffcdf630691a2208e284a5b4eb507f51a06a380487b10ef5f6a9c8dc
-F src/shell.c.in 870d363a74673554e8ff8f5ab7b4c33536622d78cc2d236ec65258aab4e4ab26
+F src/shell.c.in 49689bdd9228e3ff3a199c3e0a214c3601dd8448537bc6790e5b2ac2a594b6d5
 F src/sqlite.h.in 2101a2b494cbc282d0dc1c3f631c4fb83060c52876cc9d7615b091ad66d932b1
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0efd4723bad9124ea1f581d9f1ea0254ac1c6f3e5fb29e4f3dcf36c72485a456
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 17277813d101187d85755b7bad3f1c95380335021e13ee368be0add0c8c346b3
-R 2712bfe04dd5b24d2c046dbf2ea958f1
+P 530b55da56326f4816d43893d05f57b10541605a9508b0b37c46df21ecd22b76
+R 7ccb28a5e3822712281b3f7bcfddf585
 U drh
-Z 7aec66b2c730f0f046bcfb36fc78a7da
+Z 5c677cfba782789b244bb7ab00ac959f
 # Remove this line to create a well-formed Fossil manifest.
