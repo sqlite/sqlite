@@ -103,7 +103,7 @@ END
 .testcase 140
 .mode -v
 .check <<END
-.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --intfmt default --limits on --multiinsert 3000 --null "NULL" --quote relaxed --realfmt default --rowcount off --rowsep "" --sw auto --tablename "" --textjsonb on --titles always --widths "" --wordwrap off --wrap 10
+.mode qbox --align "" --border on --blob-quote auto --colsep "" --escape auto --fpfmt "" --ifmt "" --limits on --multiinsert 3000 --null "NULL" --quote relaxed --rowcount off --rowsep "" --sw auto --tablename "" --textjsonb on --titles always --widths "" --wordwrap off --wrap 10
 END
 .testcase 150 --error-prefix "Error:"
 .mode foo
@@ -162,7 +162,7 @@ END
 .mode --limits 0,0,0
 .mode -v
 .check <<END
-.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --intfmt default --limits off --multiinsert 0 --null "" --quote off --realfmt default --rowcount off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles always --widths "" --wordwrap off
+.mode box --align "" --border on --blob-quote auto --colsep "" --escape auto --fpfmt "" --ifmt "" --limits off --multiinsert 0 --null "" --quote off --rowcount off --rowsep "" --sw 0 --tablename "" --textjsonb off --titles always --widths "" --wordwrap off
 END
 
 .testcase 400
@@ -364,7 +364,7 @@ SELECT hex(randomblob(100)) c;
 .testcase 900
 .mode --reset psql -v
 .check <<END
-.mode psql --align "" --border off --blob-quote auto --colsep "" --escape auto --intfmt default --limits off --multiinsert 0 --null "" --quote off --realfmt default --rowcount on --rowsep "" --sw 0 --tablename "" --textjsonb off --titles always --widths "" --wordwrap off
+.mode psql --align "" --border off --blob-quote auto --colsep "" --escape auto --fpfmt "" --ifmt "" --limits off --multiinsert 0 --null "" --quote off --rowcount on --rowsep "" --sw 0 --tablename "" --textjsonb off --titles always --widths "" --wordwrap off
 END
 .testcase 901
 .mode
@@ -492,7 +492,7 @@ SELECT * FROM t1;
 ╘═════╧═════════╧═════╧═════╛
 END
 .testcase 1100
-.mode -reset -realfmt %.2f -intfmt %,d
+.mode -reset -fpfmt %.2f -ifmt %,d
 WITH RECURSIVE c(n) AS (VALUES(0.01) UNION ALL SELECT n*10 FROM c WHERE n<1e8)
 SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 .check <<END
@@ -513,7 +513,7 @@ SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 ╰──────────────┴─────────────────────╯
 END
 .testcase 1101
-.mode -realfmt %+,0.2f -intfmt %04x
+.mode -fpfmt %+,0.2f -ifmt %04x
 WITH RECURSIVE c(n) AS (VALUES(0.01) UNION ALL SELECT n*10 FROM c WHERE n<1e8)
 SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 .check <<END
@@ -534,7 +534,7 @@ SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 ╰─────────────────┴─────────────────────╯
 END
 .testcase 1102
-.mode -realfmt %.6e -intfmt %#+o
+.mode -fpfmt %.6e -ifmt %#+o
 WITH RECURSIVE c(n) AS (VALUES(0.01) UNION ALL SELECT n*10 FROM c WHERE n<1e8)
 SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 .check <<END
@@ -555,7 +555,7 @@ SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 ╰──────────────┴─────────────────────╯
 END
 .testcase 1103
-.mode -realfmt default -intfmt default
+.mode -fpfmt default -ifmt default
 WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n*10 FROM c WHERE n<1e4)
 SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 .check <<END
@@ -570,54 +570,54 @@ SELECT pi()*n, CAST(pi()*n AS INT) FROM c;
 ╰────────────────────┴─────────────────────╯
 END
 .testcase 1104
-.mode -realfmt %d
+.mode -fpfmt %d
 .check <<END
-Error: .mode -realfmt %d
-Error:                ^--- not a valid floating-point format
+Error: .mode -fpfmt %d
+Error:              ^--- not a valid floating-point format
 END
 .testcase 1105
-.mode -realfmt xyz
+.mode -fpfmt xyz
 .check <<END
-Error: .mode -realfmt xyz
-Error:                ^--- not a valid floating-point format
+Error: .mode -fpfmt xyz
+Error:              ^--- not a valid floating-point format
 END
 .testcase 1106
-.mode -realfmt %1234f
+.mode -fpfmt %1234f
 .check <<END
-Error: .mode -realfmt %1234f
-Error:                ^--- not a valid floating-point format
+Error: .mode -fpfmt %1234f
+Error:              ^--- not a valid floating-point format
 END
 .testcase 1107
-.mode -realfmt %.1234f
+.mode -fpfmt %.1234f
 .check <<END
-Error: .mode -realfmt %.1234f
-Error:                ^--- not a valid floating-point format
+Error: .mode -fpfmt %.1234f
+Error:              ^--- not a valid floating-point format
 END
 .testcase 1108
-.mode -realfmt %?.2f
+.mode -fpfmt %?.2f
 .check <<END
-Error: .mode -realfmt %?.2f
-Error:                ^--- not a valid floating-point format
+Error: .mode -fpfmt %?.2f
+Error:              ^--- not a valid floating-point format
 END
 .testcase 1109
-.mode -intfmt %.2f
+.mode -ifmt %.2f
 .check <<END
-Error: .mode -intfmt %.2f
-Error:               ^--- not a valid integer format
+Error: .mode -ifmt %.2f
+Error:             ^--- not a valid integer format
 END
 .testcase 1110
-.mode list -intfmt %x
+.mode list -ifmt %x
 SELECT 123;
 .check 7b
 .testcase 1111
-.mode list -intfmt %X
+.mode list -ifmt %X
 SELECT 123;
 .check 7B
 .testcase 1112
-.mode list -realfmt %g
+.mode list -fpfmt %g
 SELECT 1.23456789e+12;
 .check 1.23457e+12
 .testcase 1113
-.mode list -realfmt %G
+.mode list -fpfmt %G
 SELECT 1.23456789e+12;
 .check 1.23457E+12

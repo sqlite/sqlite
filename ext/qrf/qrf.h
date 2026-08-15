@@ -59,8 +59,8 @@ struct sqlite3_qrf_spec {
   char **pzOutput;            /* Storage location for output string */
   /* The following are available in iVersion 2 and later */
   unsigned char bRowCount;    /* Show the number of rows at end of each query */
-  char *zIntFmt;              /* Format string for integers */
-  char *zRealFmt;             /* Format string for floating point */
+  char *zIFmt;                /* Format string for integers */
+  char *zFpFmt;               /* Format string for floating point */
   /* Additional fields may be added in the future */
 };
 

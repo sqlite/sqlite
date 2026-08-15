@@ -1417,7 +1417,7 @@ do_test 13.2 {
 }
 
 do_test 14.1 {
-  set result \n[db format -style box -intfmt %,d -realfmt %.2f -rowcount on \
+  set result \n[db format -style box -ifmt %,d -fpfmt %.2f -rowcount on \
                  {WITH RECURSIVE c(n) AS
                     (VALUES(0.01) UNION ALL SELECT n*10 FROM c WHERE n<1e8)
                   SELECT pi()*n, CAST(pi()*n AS INT) FROM c;}]
@@ -1440,24 +1440,24 @@ do_test 14.1 {
 (11 rows)
 }
 do_test 14.2 {
-  catch {db format -intfmt %.2f {SELECT 100, 2.5}} res
+  catch {db format -ifmt %.2f {SELECT 100, 2.5}} res
   set res
-} {bad format for -intfmt}
+} {bad format for -ifmt}
 do_test 14.3 {
-  db format -style list -columnsep { } -intfmt default {SELECT 100, 2.5}
+  db format -style list -columnsep { } -ifmt default {SELECT 100, 2.5}
 } {100 2.5}
 do_test 14.4 {
-  db format -style list -columnsep { } -intfmt {} {SELECT 100, 2.5}
+  db format -style list -columnsep { } -ifmt {} {SELECT 100, 2.5}
 } {100 2.5}
 do_test 14.5 {
-  catch {db format -realfmt %d {SELECT 100, 2.5}} res
+  catch {db format -fpfmt %d {SELECT 100, 2.5}} res
   set res
-} {bad format for -realfmt}
+} {bad format for -fpfmt}
 do_test 14.6 {
-  db format -style list -columnsep { } -realfmt default {SELECT 100, 2.5}
+  db format -style list -columnsep { } -fpfmt default {SELECT 100, 2.5}
 } {100 2.5}
 do_test 14.7 {
-  db format -style list -columnsep { } -realfmt {} {SELECT 100, 2.5}
+  db format -style list -columnsep { } -fpfmt {} {SELECT 100, 2.5}
 } {100 2.5}
 
 

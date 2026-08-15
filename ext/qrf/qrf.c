@@ -118,11 +118,11 @@ static const char qrfCType[] = {
 #endif
 
 /*
-** The argument is a proposed format string for the zIntFmt or zRealFmt
+** The argument is a proposed format string for the zIFmt or zFpFmt
 ** parameters.  Return value indicates:
 **
 **    0     The input is not a valid format string.  If this string
-**          appears in either zIntFmt or zRealFmt, it will be ignored.
+**          appears in either zIFmt or zFpFmt, it will be ignored.
 **
 **    1     The input is a valid format string for integers.
 **
@@ -1142,14 +1142,14 @@ static void qrfRenderValue(Qrf *p, sqlite3_str *pOut, int iCol){
   }
   switch( sqlite3_column_type(p->pStmt,iCol) ){
     case SQLITE_INTEGER: {
-      sqlite3_str_appendf(pOut, p->spec.zIntFmt,
+      sqlite3_str_appendf(pOut, p->spec.zIFmt,
                           sqlite3_column_int64(p->pStmt,iCol));
       break;
     }
     case SQLITE_FLOAT: {
-      if( p->spec.zRealFmt ){
+      if( p->spec.zFpFmt ){
         double r = sqlite3_column_double(p->pStmt,iCol);
-        sqlite3_str_appendf(pOut,p->spec.zRealFmt,r);
+        sqlite3_str_appendf(pOut,p->spec.zFpFmt,r);
       }else{
         const char *zTxt = (const char*)sqlite3_column_text(p->pStmt,iCol);
         sqlite3_str_appendall(pOut, zTxt);
@@ -3016,19 +3016,19 @@ qrf_reinit:
   }
   if( p->spec.zColumnSep==0 ) p->spec.zColumnSep = ",";
   if( p->spec.zRowSep==0 ) p->spec.zRowSep = "\n";
-  if( p->spec.zIntFmt==0 || sqlite3_qrf_ckformat(p->spec.zIntFmt)!=1 ){
-    p->spec.zIntFmt = "%lld";
+  if( p->spec.zIFmt==0 || sqlite3_qrf_ckformat(p->spec.zIFmt)!=1 ){
+    p->spec.zIFmt = "%lld";
   }else{
-    size_t n = strlen(p->spec.zIntFmt);
-    memcpy(p->zFmt, p->spec.zIntFmt, n-1);
+    size_t n = strlen(p->spec.zIFmt);
+    memcpy(p->zFmt, p->spec.zIFmt, n-1);
     p->zFmt[n-1] = 'l';
     p->zFmt[n] = 'l';
-    p->zFmt[n+1] = p->spec.zIntFmt[n-1];
+    p->zFmt[n+1] = p->spec.zIFmt[n-1];
     p->zFmt[n+2] = 0;
-    p->spec.zIntFmt = p->zFmt;
+    p->spec.zIFmt = p->zFmt;
   }
-  if( p->spec.zRealFmt && sqlite3_qrf_ckformat(p->spec.zRealFmt)!=2 ){
-    p->spec.zRealFmt = 0;
+  if( p->spec.zFpFmt && sqlite3_qrf_ckformat(p->spec.zFpFmt)!=2 ){
+    p->spec.zFpFmt = 0;
   }
 }
 

@@ -371,8 +371,8 @@ typedef struct Mode {
   u8 bAutoScreenWidth;   /* Using the TTY to determine screen width */
   u8 mFlags;             /* MFLG_ECHO, MFLG_CRLF, etc. */
   u8 eMode;              /* One of the MODE_ values */
-  char zIntFmt[24];      /* Space to hold the --intfmt value */
-  char zRealFmt[24];     /* Space to hold the --realfmt value */
+  char zIFmt[24];        /* Space to hold the --ifmt value */
+  char zFpFmt[24];       /* Space to hold the --fpfmt value */
   sqlite3_qrf_spec spec; /* Spec to be passed into QRF */
 } Mode;
 
@@ -8676,7 +8676,9 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **   --escape ESC             Enable/disable escaping of control characters
 **                            found in the output. ESC can be "off", "ascii",
 **                            or "symbol".
-**   --intfmt STRING          String is a printf-style format string used to
+**   --fpfmt STRING           String is a printf-style format string used to
+**                            render floating-point values.
+**   --ifmt STRING            String is a printf-style format string used to
 **                            render integer values.
 **   --linelimit N            Set the maximum number of output lines to show for
 **                            any single SQL value to N. Longer values are
@@ -8697,8 +8699,6 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            "off", "on", "sql", "relaxed", "csv", "html",
 **                            "tcl", or "json". "off" means show the text as-is.
 **                            "on" is an alias for "sql".
-**   --realfmt STRING         String is a printf-style format string used to
-**                            render floating-point values.
 **   --reset                  Changes all mode settings back to their default.
 **   --rowcount BOOLEAN       Show "(N rows)" at the end of query results.
 **   --rowsep STRING          Use STRING as the row separator
@@ -8936,38 +8936,38 @@ static int dotCmdMode(ShellState *p){
           break;
       }
       chng = 1;
-    }else if( optionMatch(z,"intfmt") ){
+    }else if( optionMatch(z,"ifmt") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
       i++;
       if( azArg[i][0]==0 || cli_strcmp(azArg[i],"default")==0 ){
-        p->mode.spec.zIntFmt = 0;
+        p->mode.spec.zIFmt = 0;
       }else if( sqlite3_qrf_ckformat(azArg[i])!=1 ){
         dotCmdError(p, i, "not a valid integer format", 0);
         return 1;
       }else{
-        assert( strlen(azArg[i])<sizeof(p->mode.zIntFmt)-1 );
-        memcpy(p->mode.zIntFmt, azArg[i], strlen(azArg[i])+1);
-        p->mode.spec.zIntFmt = p->mode.zIntFmt;
+        assert( strlen(azArg[i])<sizeof(p->mode.zIFmt)-1 );
+        memcpy(p->mode.zIFmt, azArg[i], strlen(azArg[i])+1);
+        p->mode.spec.zIFmt = p->mode.zIFmt;
       }
       chng = 1;
-    }else if( optionMatch(z,"realfmt") ){
+    }else if( optionMatch(z,"fpfmt") ){
       if( i+1>=nArg ){
         dotCmdError(p, i, "missing argument", 0);
         return 1;
       }
       i++;
       if( azArg[i][0]==0 || cli_strcmp(azArg[i],"default")==0 ){
-        p->mode.spec.zRealFmt = 0;
+        p->mode.spec.zFpFmt = 0;
       }else if( sqlite3_qrf_ckformat(azArg[i])!=2 ){
         dotCmdError(p, i, "not a valid floating-point format", 0);
         return 1;
       }else{
-        assert( strlen(azArg[i])<sizeof(p->mode.zRealFmt)-1 );
-        memcpy(p->mode.zRealFmt, azArg[i], strlen(azArg[i])+1);
-        p->mode.spec.zRealFmt = p->mode.zRealFmt;
+        assert( strlen(azArg[i])<sizeof(p->mode.zFpFmt)-1 );
+        memcpy(p->mode.zFpFmt, azArg[i], strlen(azArg[i])+1);
+        p->mode.spec.zFpFmt = p->mode.zFpFmt;
       }
       chng = 1;
     }else if( optionMatch(z,"reset") ){
@@ -9204,9 +9204,13 @@ static int dotCmdMode(ShellState *p){
     if( bAll || p->mode.spec.eEsc!=QRF_Auto ){
       sqlite3_str_appendf(pDesc, " --escape %s",qrfEscNames[p->mode.spec.eEsc]);
     }
-    if( bAll || p->mode.spec.zIntFmt!=0 ){
-      const char *z = p->mode.spec.zIntFmt;
-      sqlite3_str_appendf(pDesc, " --intfmt %s", z ? z : "default");
+    if( bAll || p->mode.spec.zFpFmt!=0 ){
+      const char *z = p->mode.spec.zFpFmt;
+      sqlite3_str_appendf(pDesc, " --fpfmt %s", z ? z : "\"\"");
+    }
+    if( bAll || p->mode.spec.zIFmt!=0 ){
+      const char *z = p->mode.spec.zIFmt;
+      sqlite3_str_appendf(pDesc, " --ifmt %s", z ? z : "\"\"");
     }
     if( bAll
      || (p->mode.spec.nLineLimit>0 && pI->eCx>0)
@@ -9244,10 +9248,6 @@ static int dotCmdMode(ShellState *p){
      || (pI->eText!=p->mode.spec.eText && (pI->eText>1 || p->mode.spec.eText>1))
     ){
       sqlite3_str_appendf(pDesc," --quote %s",qrfQuoteNames[p->mode.spec.eText]);
-    }
-    if( bAll || p->mode.spec.zRealFmt!=0 ){
-      const char *z = p->mode.spec.zRealFmt;
-      sqlite3_str_appendf(pDesc, " --realfmt %s", z ? z : "default");
     }
     if( bAll 
      || ((p->mode.spec.bRowCount==QRF_Yes) != ((pI->mFlg&4)!=0))

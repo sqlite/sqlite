@@ -132,8 +132,8 @@ struct sqlite3_qrf_spec {
   char **pzOutput;            /* Storage location for output string */
   /* The following are available in iVersion 2 and later */
   unsigned char bRowCount;    /* Show the number of rows at end of each query */
-  char *zIntFmt;              /* Format string for integers */
-  char *zRealFmt;             /* Format string for floating point */
+  char *zIFmt;                /* Format string for integers */
+  char *zFpFmt;               /* Format string for floating point */
   /* Additional fields may be added in the future */
 };
 ~~~
@@ -608,9 +608,9 @@ If the value of bRowCount is QRF_Yes, then an extra line of text
 of the form "(N rows)" might be appended to the end of query output,
 depending on eStyle.
 
-### 2.19 Number Formatting (zIntFmt and zRealFmt)
+### 2.19 Number Formatting (zIFmt and zFpFmt)
 
-If the zIntFmt and zRealFmt fields are a short printf-style format
+If the zIFmt and zFpFmt fields are a short printf-style format
 string, than that formatting string is used to render integer and
 floating-point values, respectively.  The width and precision fields
 of the format string (if present) must not exceed three decimal digits.
