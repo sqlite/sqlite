@@ -1,5 +1,5 @@
-C Add\s-DBUILD_sqlite\sto\sthe\sT.compile.tcl\smakefile\sdefinition\sfor\sthe\ssake\sof\sUnix-on-Windows\senvironments\sas\sa\spartial\sresolution\sto\s[forum:fe9e99eb27c8c2ba|forum\spost\sfe9e99eb27].
-D 2026-08-16T05:19:47.564
+C When\sreading\sa\sframe\sfrom\sa\sWAL\sfile\swhere\sthe\sWAL\spagesize\sand\sthe\sdatabase\npagesize\sdisagree,\sbe\ssure\sto\sfully\sinitialize\sthe\spage\sthat\sis\sread.
+D 2026-08-16T10:49:39.944
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -821,7 +821,7 @@ F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 1fa9e01d3da114a634a6ba1f36de8a3af6381b675cbbca399f0de64934e50ac6
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
-F src/wal.c abfd99239725a258af4f733681b24dd7a9ee298babe389a36d29c197e2443ebf
+F src/wal.c cb28ab3a71cb73ea422a2fcc26283b65a1e5a2a65c44de86951c7d6a186381ac
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 2f5b4091f37bfac7658ea3d52b2c192d8fb2ec062f232815e0eb5152a46267db
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P db05b203f47e6ed0792ac011b18e0da98275e900407436798ca28d5f7dd2e094
-R dd32637ce4016baab68dff30ba2210e4
-U stephan
-Z 91f2c240c481389096fc7b2877fd5bb4
+P aff3e43ed52c6cfe434919b580c5546339e8b539574de2884c979a9cbb72f85b
+R e594563914c10bd0b63fbba43ab0cef3
+U drh
+Z 190235e910a1063fc0c502868e20d509
 # Remove this line to create a well-formed Fossil manifest.
