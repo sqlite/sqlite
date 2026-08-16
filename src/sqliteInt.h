@@ -3881,6 +3881,13 @@ struct ParseCleanup {
 };
 
 /*
+** Number of 64-bit entried in the variable number bitmap cache (VNBMC).
+*/
+#ifndef SQLITE_VNBMC
+# define SQLITE_VNBMC 2
+#endif
+
+/*
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
 ** carry around information that is global to the entire parse.
@@ -3998,6 +4005,7 @@ struct Parse {
 
   Token sLastToken;       /* The last token parsed */
   ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
+  u64 aVnbmc[SQLITE_VNBMC]; /* Varible Number Bitmap Cache */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
   u8 eParseMode;            /* PARSE_MODE_XXX constant */

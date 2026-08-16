@@ -1369,6 +1369,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
       if( x>pParse->nVar ){
         pParse->nVar = (int)x;
         doAdd = 1;
+      }else if( x<SQLITE_VNBMC*64 ){
+        doAdd = (pParse->aVnbmc[x>>6] & MASKBIT64(x&63))==0;
       }else if( sqlite3VListNumToName(pParse->pVList, x)==0 ){
         doAdd = 1;
       }
@@ -1385,6 +1387,9 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
     }
     if( doAdd ){
       pParse->pVList = sqlite3VListAdd(db, pParse->pVList, z, n, x);
+      if( pParse->pVList!=0 && x<SQLITE_VNBMC*64 ){
+        pParse->aVnbmc[x>>6] |= MASKBIT64(x&63);
+      }
     }
   }
   pExpr->iColumn = x;
