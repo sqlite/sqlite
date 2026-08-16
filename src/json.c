@@ -408,7 +408,7 @@ static u32 jsonTranslateBlobToText(JsonParse*,u32,JsonString*);
 static void jsonReturnParse(sqlite3_context*,JsonParse*);
 static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
 static void jsonParseFree(JsonParse*);
-static u32 jsonbPayloadSize(const JsonParse*, u32, u32*);
+static SQLITE_OPT_INLINE u32 jsonbPayloadSize(const JsonParse*, u32, u32*);
 static u32 jsonUnescapeOneChar(const char*, u32, u32*);
 
 /**************************************************************************
@@ -2120,7 +2120,9 @@ static void jsonReturnStringAsBlob(JsonString *pStr){
 ** payload size in to *pSz.  It returns the offset from i to the
 ** beginning of the payload.  Return 0 on error.
 */
-static u32 jsonbPayloadSize(const JsonParse *pParse, u32 i, u32 *pSz){
+static SQLITE_OPT_INLINE u32 jsonbPayloadSize(
+  const JsonParse *pParse, u32 i, u32 *pSz
+){
   u8 x;
   u32 sz;
   u32 n;
