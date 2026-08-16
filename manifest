@@ -1,5 +1,5 @@
-C Fix\sthe\sfts5vocab\svirtual\stable\sso\sthat\scolumns\salways\sbehave\sas\sif\sthey\shave\sblob\saffinity.\sReport\s[bugs:/info/2026-08-15T07:03:55Z\s|\s2026-08-15T07:03:55Z].
-D 2026-08-15T14:24:18.400
+C Add\s-DBUILD_sqlite\sto\sthe\sT.compile.tcl\smakefile\sdefinition\sfor\sthe\ssake\sof\sUnix-on-Windows\senvironments\sas\sa\spartial\sresolution\sto\s[forum:fe9e99eb27c8c2ba|forum\spost\sfe9e99eb27].
+D 2026-08-16T05:19:47.564
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -664,7 +664,7 @@ F ext/wasm/tests/opfs/sahpool/index.html be736567fd92d3ecb9754c145755037cbbd2bca
 F ext/wasm/tests/opfs/sahpool/sahpool-pausing.js f264925cfc82155de38cecb3d204c36e0f6991460fff0cb7c15079454679a4e2
 F ext/wasm/tests/opfs/sahpool/sahpool-worker.js bd25a43fc2ab2d1bafd8f2854ad3943ef673f7c3be03e95ecf1612ff6e8e2a61
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk a070741c2aa50883c370c55c1351be46b3db6958164426a3c4dfc456072e8343
+F main.mk 29b935cdd8bc6a1b5782a8a42d168c757aa66f4f12996bf0c6444e6c473b1eb8
 F make.bat a136fd0b1c93e89854a86d5f4edcf0386d211e5d5ec2434480f6eea436c7420c
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2218,8 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P aa5a515490dabb07776086099a2f6ae120bccde2fd15dc260b04bb8f5d5e3fb8
-R 901ee85ffbcff3260effe5e969f333f3
-U dan
-Z a9ab740bd2c5a8b6717d523e3b45ba74
+P db05b203f47e6ed0792ac011b18e0da98275e900407436798ca28d5f7dd2e094
+R dd32637ce4016baab68dff30ba2210e4
+U stephan
+Z 91f2c240c481389096fc7b2877fd5bb4
 # Remove this line to create a well-formed Fossil manifest.

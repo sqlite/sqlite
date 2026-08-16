@@ -1058,11 +1058,15 @@ $(T.tcl.env.sh): $(TCLSH_CMD) $(TCL_CONFIG_SH) $(MAKEFILE_LIST)
 T.tcl.env.source = . $(T.tcl.env.sh) || exit $$?
 
 #
-# $(T.compile.tcl) and $(T.link.tcl) are TCL-specific counterparts for $(T.compile)
-# and $(T.link) which first invoke $(T.tcl.env.source). Any targets which used them
-# must have a dependency on $(T.tcl.env.sh)
+# $(T.compile.tcl) and $(T.link.tcl) are TCL-specific counterparts for
+# $(T.compile) and $(T.link) which first invoke
+# $(T.tcl.env.source). Any targets which used them must have a
+# dependency on $(T.tcl.env.sh)
 #
-T.compile.tcl = $(T.tcl.env.source); $(T.compile) $(CFLAGS.intree_includes)
+# -DBUILD_sqlite is required for cross-compilation on Unix-on-Windows
+# environments: https://sqlite.org/forum/forumpost/fe9e99eb27c8c2ba
+#
+T.compile.tcl = $(T.tcl.env.source); $(T.compile) $(CFLAGS.intree_includes) -DBUILD_sqlite
 T.link.tcl = $(T.tcl.env.source); $(T.link)
 
 #
