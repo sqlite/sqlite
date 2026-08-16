@@ -270,8 +270,9 @@ static int analyzeFilterKeyword(const unsigned char *z, int lastToken){
 ** Return the length (in bytes) of the token that begins at z[0]. 
 ** Store the token type in *tokenType before returning.
 */
-int sqlite3GetToken(const unsigned char *z, int *tokenType){
-  int i, c;
+i64 sqlite3GetToken(const unsigned char *z, int *tokenType){
+  i64 i;
+  int c;
   switch( aiClass[*z] ){  /* Switch on the character-class of the first byte
                           ** of the token. See the comment on the CC_ defines
                           ** above. */
@@ -507,7 +508,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case CC_DOLLAR:
     case CC_VARALPHA: {
-      int n = 0;
+      i64 n = 0;
       testcase( z[0]=='$' );  testcase( z[0]=='@' );
       testcase( z[0]==':' );  testcase( z[0]=='#' );
       *tokenType = TK_VARIABLE;
@@ -599,11 +600,11 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 int sqlite3RunParser(Parse *pParse, const char *zSql){
   int nErr = 0;                   /* Number of errors encountered */
   void *pEngine;                  /* The LEMON-generated LALR(1) parser */
-  int n = 0;                      /* Length of the next token token */
+  i64 n = 0;                      /* Length of the next token token */
   int tokenType;                  /* type of the next token */
   int lastTokenParsed = -1;       /* type of the previous token */
   sqlite3 *db = pParse->db;       /* The database connection */
-  int mxSqlLen;                   /* Max length of an SQL string */
+  i64 mxSqlLen;                   /* Max length of an SQL string */
   Parse *pParentParse = 0;        /* Outer parse context, if any */
 #ifdef sqlite3Parser_ENGINEALWAYSONSTACK
   yyParser sEngine;    /* Space to hold the Lemon-generated Parser object */
@@ -702,13 +703,13 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
       }else if( tokenType!=TK_QNUMBER ){
         Token x;
         x.z = zSql;
-        x.n = n;
+        x.n = (u32)n;
         sqlite3ErrorMsg(pParse, "unrecognized token: \"%T\"", &x);
         break;
       }
     }
     pParse->sLastToken.z = zSql;
-    pParse->sLastToken.n = n;
+    pParse->sLastToken.n = (u32)n;
     sqlite3Parser(pEngine, tokenType, pParse->sLastToken);
     lastTokenParsed = tokenType;
     zSql += n;
@@ -733,7 +734,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql){
   }
   if( pParse->zErrMsg || (pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE) ){
     if( pParse->zErrMsg==0 ){
-      pParse->zErrMsg = sqlite3MPrintf(db, "%s", sqlite3ErrStr(pParse->rc));
+      pParse->zErrMsg = sqlite3DbStrDup(db, sqlite3ErrStr(pParse->rc));
     }
     if( (pParse->prepFlags & SQLITE_PREPARE_DONT_LOG)==0 ){
       sqlite3_log(pParse->rc, "%s in \"%s\"", pParse->zErrMsg, pParse->zTail);
@@ -784,7 +785,7 @@ char *sqlite3Normalize(
 ){
   sqlite3 *db;       /* The database connection */
   int i;             /* Next unread byte of zSql[] */
-  int n;             /* length of current token */
+  i64 n;             /* length of current token */
   int tokenType;     /* type of current token */
   int prevType = 0;  /* Previous non-whitespace token */
   int nParen;        /* Number of nested levels of parentheses */
@@ -814,7 +815,7 @@ char *sqlite3Normalize(
           sqlite3_str_append(pStr, " NULL", 5);
           break;
         }
-        /* Fall through */
+        /* no break */ deliberate_fall_through
       }
       case TK_STRING:
       case TK_INTEGER:
@@ -878,7 +879,7 @@ char *sqlite3Normalize(
       }
       case TK_SELECT: {
         iStartIN = 0;
-        /* fall through */
+        /* no break */ deliberate_fall_through
       }
       default: {
         if( sqlite3IsIdChar(zSql[i]) ) addSpaceSeparator(pStr);

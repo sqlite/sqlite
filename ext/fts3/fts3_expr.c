@@ -471,6 +471,7 @@ static int getNextNode(
         assert( nKey==4 );
         if( zInput[4]=='/' && zInput[5]>='0' && zInput[5]<='9' ){
           nKey += 1+sqlite3Fts3ReadInt(&zInput[nKey+1], &nNear);
+          if( nNear>=1000000000 ) nNear = 1000000000;
         }
       }
 
@@ -548,7 +549,7 @@ static int getNextNode(
   iColLen = 0;
   for(ii=0; ii<pParse->nCol; ii++){
     const char *zStr = pParse->azCol[ii];
-    int nStr = (int)strlen(zStr);
+    int nStr = zStr ? (int)strlen(zStr) : 0;
     if( nInput>nStr && zInput[nStr]==':' 
      && sqlite3_strnicmp(zStr, zInput, nStr)==0 
     ){
@@ -1263,7 +1264,9 @@ static void fts3ExprTestCommon(
     );
   }
 
-  if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM ){
+  if( rc==SQLITE_OK && fts3ExprCheckDepth(pExpr, SQLITE_FTS3_MAX_EXPR_DEPTH) ){
+    sqlite3_result_error(context, "Expression nested too deep", -1);
+  }else if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM ){
     sqlite3_result_error(context, "Error parsing expression", -1);
   }else if( rc==SQLITE_NOMEM || !(zBuf = exprToString(pExpr, 0)) ){
     sqlite3_result_error_nomem(context);

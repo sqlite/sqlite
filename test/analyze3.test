@@ -415,7 +415,7 @@ do_test analyze3-3.4.1 {
 do_test analyze3-3.4.2 {
   sqlite3_bind_text $S 1 "abc" 3
   sqlite3_expired $S
-} {0}
+} {1}
 do_test analyze3-3.4.3 {
   sqlite3_bind_text $S 2 "def" 3
   sqlite3_expired $S

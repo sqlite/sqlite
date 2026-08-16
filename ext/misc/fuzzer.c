@@ -466,6 +466,8 @@ static char *fuzzerDequote(const char *zIn){
         if( zIn[iIn]==q ) iIn++;
         zOut[iOut++] = zIn[iIn];
       }
+      assert( iOut<=nIn );
+      zOut[iOut] = 0;
     }
     assert( (int)strlen(zOut)<=nIn );
   }
@@ -556,7 +558,7 @@ static int fuzzerConnect(
 static int fuzzerOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   fuzzer_vtab *p = (fuzzer_vtab*)pVTab;
   fuzzer_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->pVtab = p;
@@ -617,12 +619,12 @@ static int fuzzerRender(
   int *pnBuf            /* Size of the buffer */
 ){
   const fuzzer_rule *pRule = pStem->pRule;
-  int n;                          /* Size of output term without nul-term */
+  sqlite3_int64 n;                /* Size of output term without nul-term */
   char *z;                        /* Buffer to assemble output term in */
 
   n = pStem->nBasis + pRule->nTo - pRule->nFrom;
   if( (*pnBuf)<n+1 ){
-    (*pzBuf) = sqlite3_realloc((*pzBuf), n+100);
+    (*pzBuf) = sqlite3_realloc64((*pzBuf), n+100);
     if( (*pzBuf)==0 ) return SQLITE_NOMEM;
     (*pnBuf) = n+100;
   }
@@ -981,6 +983,7 @@ static int fuzzerFilter(
   idx = 0;
   if( idxNum & 1 ){
     zWord = (const char*)sqlite3_value_text(argv[0]);
+    if( zWord==0 ) zWord = "";
     idx++;
   }
   if( idxNum & 2 ){

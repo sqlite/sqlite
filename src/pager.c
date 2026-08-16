@@ -813,6 +813,8 @@ int sqlite3PagerDirectReadOk(Pager *pPager, Pgno pgno){
     (void)sqlite3WalFindFrame(pPager->pWal, pgno, &iRead);
     if( iRead ) return 0;  /* Case (4) */
   }
+#else
+  UNUSED_PARAMETER(pgno);
 #endif
   assert( pPager->fd->pMethods->xDeviceCharacteristics!=0 );
   if( (pPager->fd->pMethods->xDeviceCharacteristics(pPager->fd)
@@ -1233,17 +1235,17 @@ static int jrnlBufferSize(Pager *pPager){
 */
 #ifdef SQLITE_CHECK_PAGES
 /*
-** Return a 32-bit hash of the page data for pPage.
+** Return a 64-bit hash of the page data for pPage.
 */
-static u32 pager_datahash(int nByte, unsigned char *pData){
-  u32 hash = 0;
+static u64 pager_datahash(int nByte, unsigned char *pData){
+  u64 hash = 0;
   int i;
   for(i=0; i<nByte; i++){
     hash = (hash*1039) + pData[i];
   }
   return hash;
 }
-static u32 pager_pagehash(PgHdr *pPage){
+static u64 pager_pagehash(PgHdr *pPage){
   return pager_datahash(pPage->pPager->pageSize, (unsigned char *)pPage->pData);
 }
 static void pager_set_pagehash(PgHdr *pPage){
@@ -1270,39 +1272,78 @@ static void checkPage(PgHdr *pPg){
 #endif  /* SQLITE_CHECK_PAGES */
 
 /*
-** When this is called the journal file for pager pPager must be open.
-** This function attempts to read a super-journal file name from the
-** end of the file and, if successful, copies it into memory supplied
-** by the caller. See comments above writeSuperJournal() for the format
-** used to store a super-journal file name at the end of a journal file.
-**
-** zSuper must point to a buffer of at least nSuper bytes allocated by
-** the caller. This should be sqlite3_vfs.mxPathname+1 (to ensure there is
-** enough space to write the super-journal name). If the super-journal
-** name in the journal is longer than nSuper bytes (including a
-** nul-terminator), then this is handled as if no super-journal name
-** were present in the journal.
-**
-** If a super-journal file name is present at the end of the journal
-** file, then it is copied into the buffer pointed to by zSuper. A
-** nul-terminator byte is appended to the buffer following the
-** super-journal file name.
-**
-** If it is determined that no super-journal file name is present
-** zSuper[0] is set to 0 and SQLITE_OK returned.
-**
-** If an error occurs while reading from the journal file, an SQLite
-** error code is returned.
+** Free a buffer allocated by the readSuperJournal() function.
 */
-static int readSuperJournal(sqlite3_file *pJrnl, char *zSuper, u64 nSuper){
+static void freeSuperJournal(char *zSuper){
+  if( zSuper ){
+    sqlite3_free(&zSuper[-4]);
+  }
+}
+
+/* 
+** Check if zSuper is a valid super-journal name. There are two valid
+** formats:
+**
+**   + The 3rd and 4th last bytes of the filename are ".9", and the 
+**     following 2 bytes are hex digits. This is a file created in 8.3 
+**     filenames mode.
+**
+**   + The 3rd last byte of the filename is "9" and the filename
+**     contains the string "-mj" starting at the 12th last byte.
+**     All bytes following the "-mj" are hex digits.
+**
+** If the filename matches either of these patterns, return non-zero. 
+** Otherwise, return zero.
+*/
+static int pagerIsSuperJrnlName(const char *zSuper){
+  const int nSuper = sqlite3Strlen30(zSuper);
+  int ii;
+
+#ifdef SQLITE_ENABLE_8_3_NAMES
+  if( nSuper<4 ) return 0;
+  if( zSuper[nSuper-3]!='9' ) return 0;
+  if( sqlite3Isxdigit(zSuper[nSuper-2])==0 ) return 0;
+  if( sqlite3Isxdigit(zSuper[nSuper-1])==0 ) return 0;
+  if( zSuper[nSuper-4]=='.' ) return 1;
+#endif
+  if( nSuper<12 ) return 0;
+  if( memcmp(&zSuper[nSuper-12], "-mj", 3) ) return 0;
+  if( zSuper[nSuper-3]!='9' ) return 0;
+  for(ii=nSuper-9; ii<nSuper; ii++){
+    if( sqlite3Isxdigit(zSuper[ii])==0 ) return 0;
+  }
+  return 1;
+}
+
+/*
+** Parameter pJrnl is a file-handle open on a journal file. This function
+** attempts to read a super-journal file name from the end of the journal 
+** file. If successful, it sets output parameter (*pzSuper) to point to a
+** buffer containing the super-journal name as a nul-terminated string.
+** The caller is responsible for freeing the buffer using freeSuperJournal().
+**
+** Refer to comments above writeSuperJournal() for the format used to store 
+** a super-journal file name at the end of a journal file.
+**
+** Parameter nSuper is passed the maximum allowable size of the super journal
+** name in bytes. If the super-journal name in the journal is longer than
+** nSuper bytes (including a nul-terminator), then this is handled as if no
+** super-journal name were present in the journal.
+**
+** If there is no super-journal name at the end of pJrnl, (*pzSuper) is
+** set to 0 and SQLITE_OK is returned. Or, if an error occurs while reading
+** the super-journal name, an SQLite error code is returned and (*pzSuper)
+** is set to 0.
+*/
+static int readSuperJournal(sqlite3_file *pJrnl, u64 nSuper, char **pzSuper){
   int rc;                    /* Return code */
   u32 len;                   /* Length in bytes of super-journal name */
   i64 szJ;                   /* Total size in bytes of journal file pJrnl */
   u32 cksum;                 /* MJ checksum value read from journal */
-  u32 u;                     /* Unsigned loop counter */
   unsigned char aMagic[8];   /* A buffer to hold the magic header */
-  zSuper[0] = '\0';
+  char *zOut = 0;
 
+  *pzSuper = 0;
   if( SQLITE_OK!=(rc = sqlite3OsFileSize(pJrnl, &szJ))
    || szJ<16
    || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-16, &len))
@@ -1311,28 +1352,37 @@ static int readSuperJournal(sqlite3_file *pJrnl, char *zSuper, u64 nSuper){
    || len==0
    || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-12, &cksum))
    || SQLITE_OK!=(rc = sqlite3OsRead(pJrnl, aMagic, 8, szJ-8))
-   || memcmp(aMagic, aJournalMagic, 8)
-   || SQLITE_OK!=(rc = sqlite3OsRead(pJrnl, zSuper, len, szJ-16-len))
   ){
     return rc;
   }
 
-  /* See if the checksum matches the super-journal name */
-  for(u=0; u<len; u++){
-    cksum -= zSuper[u];
+  zOut = (char*)sqlite3MallocZero(4 + len + 2);
+  if( !zOut ){
+    rc = memcmp(aMagic,aJournalMagic,8) ? SQLITE_OK : SQLITE_NOMEM_BKPT;
+  }else{
+    zOut = &zOut[4];
+    if( SQLITE_OK==(rc = sqlite3OsRead(pJrnl, zOut, len, szJ-16-len)) ){
+      u32 u;                   /* Unsigned loop counter */
+      /* See if the checksum matches the super-journal name */
+      for(u=0; u<len; u++){
+        cksum -= zOut[u];
+      }
+    }
+    if( rc!=SQLITE_OK                        /* Couldn't read the name */
+     || !pagerIsSuperJrnlName(zOut)          /* Name is not valid */
+     || cksum                                /* checksum is incorrect */
+     || memcmp(aMagic, aJournalMagic, 8)!=0  /* Bad magic number */
+    ){
+      /* If any validity checks fail, that means the super-journal filename
+      ** is corrupted, so rollback.  Return SQLITE_K and a NULL super-journal
+      ** name */
+      freeSuperJournal(zOut);
+      zOut = 0;
+    }
   }
-  if( cksum ){
-    /* If the checksum doesn't add up, then one or more of the disk sectors
-    ** containing the super-journal filename is corrupted. This means
-    ** definitely roll back, so just return SQLITE_OK and report a (nul)
-    ** super-journal filename.
-    */
-    len = 0;
-  }
-  zSuper[len] = '\0';
-  zSuper[len+1] = '\0';
-  
-  return SQLITE_OK;
+
+  *pzSuper = zOut;
+  return rc;
 }
 
 /*
@@ -1708,6 +1758,7 @@ static int writeSuperJournal(Pager *pPager, const char *zSuper){
 
   assert( pPager->setSuper==0 );
   assert( !pagerUseWal(pPager) );
+  assert( zSuper==0 || pagerIsSuperJrnlName(zSuper) );
 
   if( !zSuper
    || pPager->journalMode==PAGER_JOURNALMODE_MEMORY
@@ -1856,7 +1907,7 @@ static void pager_unlock(Pager *pPager){
       ** have sqlite3WalEndReadTransaction() drop the write-lock, as it once
       ** did, because this would break "BEGIN EXCLUSIVE" handling for
       ** SQLITE_ENABLE_SETLK_TIMEOUT builds.  */
-      sqlite3WalEndWriteTransaction(pPager->pWal);
+      (void)sqlite3WalEndWriteTransaction(pPager->pWal);
     }
     sqlite3WalEndReadTransaction(pPager->pWal);
     pPager->eState = PAGER_OPEN;
@@ -1991,7 +2042,7 @@ static int pagerFlushOnCommit(Pager *pPager, int bCommit){
 ** database transaction.
 **
 ** This routine is never called in PAGER_ERROR state. If it is called
-** in PAGER_NONE or PAGER_SHARED state and the lock held is less
+** in PAGER_OPEN or PAGER_READER state and the lock held is less
 ** exclusive than a RESERVED lock, it is a no-op.
 **
 ** Otherwise, any active savepoints are released.
@@ -2537,9 +2588,20 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   char *zSuperJournal = 0;  /* Contents of super-journal file */
   i64 nSuperJournal;        /* Size of super-journal file */
   char *zJournal;           /* Pointer to one journal within MJ file */
-  char *zSuperPtr;          /* Space to hold super-journal filename */
   char *zFree = 0;          /* Free this buffer */
-  i64 nSuperPtr;            /* Amount of space allocated to zSuperPtr[] */
+  int bSeen = 0;            /* If super-journal contains pPager->zJournal */
+
+  /* Check if this looks like a real super-journal name. If it does not,
+  ** return SQLITE_OK without attempting to delete it. This is to limit
+  ** the degree to which a crafted journal file can be used to cause
+  ** SQLite to delete arbitrary files.
+  **
+  ** This test never fails, becaue the super journal name is checked
+  ** by readSuperJournal().
+  */
+  if( NEVER(pagerIsSuperJrnlName(zSuper)==0) ){
+    return SQLITE_OK;
+  }
 
   /* Allocate space for both the pJournal and pSuper file descriptors.
   ** If successful, open the super-journal file for reading.
@@ -2562,9 +2624,8 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   */
   rc = sqlite3OsFileSize(pSuper, &nSuperJournal);
   if( rc!=SQLITE_OK ) goto delsuper_out;
-  nSuperPtr = 1 + (i64)pVfs->mxPathname;
-  assert( nSuperJournal>=0 && nSuperPtr>0 );
-  zFree = sqlite3Malloc(4 + nSuperJournal + nSuperPtr + 2);
+  assert( nSuperJournal>=0 );
+  zFree = sqlite3Malloc(4 + nSuperJournal + 2);
   if( !zFree ){
     rc = SQLITE_NOMEM_BKPT;
     goto delsuper_out;
@@ -2573,7 +2634,6 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
   }
   zFree[0] = zFree[1] = zFree[2] = zFree[3] = 0;
   zSuperJournal = &zFree[4];
-  zSuperPtr = &zSuperJournal[nSuperJournal+2];
   rc = sqlite3OsRead(pSuper, zSuperJournal, (int)nSuperJournal, 0);
   if( rc!=SQLITE_OK ) goto delsuper_out;
   zSuperJournal[nSuperJournal] = 0;
@@ -2581,43 +2641,56 @@ static int pager_delsuper(Pager *pPager, const char *zSuper){
 
   zJournal = zSuperJournal;
   while( (zJournal-zSuperJournal)<nSuperJournal ){
-    int exists;
-    rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS, &exists);
-    if( rc!=SQLITE_OK ){
-      goto delsuper_out;
-    }
-    if( exists ){
-      /* One of the journals pointed to by the super-journal exists.
-      ** Open it and check if it points at the super-journal. If
-      ** so, return without deleting the super-journal file.
-      ** NB:  zJournal is really a MAIN_JOURNAL.  But call it a
-      ** SUPER_JOURNAL here so that the VFS will not send the zJournal
-      ** name into sqlite3_database_file_object().
-      */
-      int c;
-      int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_SUPER_JOURNAL);
-      rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
+    if( strcmp(zJournal, pPager->zJournal)==0 ){
+      bSeen = 1;
+    }else{
+      int exists;
+      rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS, &exists);
       if( rc!=SQLITE_OK ){
         goto delsuper_out;
       }
+      if( exists ){
+        char *zSuperPtr = 0;
 
-      rc = readSuperJournal(pJournal, zSuperPtr, nSuperPtr);
-      sqlite3OsClose(pJournal);
-      if( rc!=SQLITE_OK ){
-        goto delsuper_out;
-      }
+        /* One of the journals pointed to by the super-journal exists.
+        ** Open it and check if it points at the super-journal. If
+        ** so, return without deleting the super-journal file.
+        ** NB:  zJournal is really a MAIN_JOURNAL.  But call it a
+        ** SUPER_JOURNAL here so that the VFS will not send the zJournal
+        ** name into sqlite3_database_file_object().
+        */
+        int c;
+        int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_SUPER_JOURNAL);
+        rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
+        if( rc!=SQLITE_OK ){
+          goto delsuper_out;
+        }
 
-      c = zSuperPtr[0]!=0 && strcmp(zSuperPtr, zSuper)==0;
-      if( c ){
-        /* We have a match. Do not delete the super-journal file. */
-        goto delsuper_out;
+        rc = readSuperJournal(pJournal, 1+(u64)pVfs->mxPathname, &zSuperPtr);
+        sqlite3OsClose(pJournal);
+        if( rc!=SQLITE_OK ){
+          assert( zSuperPtr==0 );
+          goto delsuper_out;
+        }
+
+        c = zSuperPtr!=0 && strcmp(zSuperPtr, zSuper)==0;
+        freeSuperJournal(zSuperPtr);
+        if( c ){
+          /* We have a match. Do not delete the super-journal file. */
+          goto delsuper_out;
+        }
       }
     }
     zJournal += (sqlite3Strlen30(zJournal)+1);
   }
 
   sqlite3OsClose(pSuper);
-  rc = sqlite3OsDelete(pVfs, zSuper, 0);
+  if( bSeen ){
+    /* Only delete the super-journal if bSeen is true - indicating that
+    ** the super-journal contained a pointer to this database's journal 
+    ** file. */
+    rc = sqlite3OsDelete(pVfs, zSuper, 0);
+  }
 
 delsuper_out:
   sqlite3_free(zFree);
@@ -2822,19 +2895,11 @@ static int pager_playback(Pager *pPager, int isHot){
   ** If a super-journal file name is specified, but the file is not
   ** present on disk, then the journal is not hot and does not need to be
   ** played back.
-  **
-  ** TODO: Technically the following is an error because it assumes that
-  ** buffer Pager.pTmpSpace is (mxPathname+1) bytes or larger. i.e. that
-  ** (pPager->pageSize >= pPager->pVfs->mxPathname+1). Using os_unix.c,
-  ** mxPathname is 512, which is the same as the minimum allowable value
-  ** for pageSize.
   */
-  zSuper = pPager->pTmpSpace;
-  rc = readSuperJournal(pPager->jfd, zSuper, 1+(i64)pPager->pVfs->mxPathname);
-  if( rc==SQLITE_OK && zSuper[0] ){
+  rc = readSuperJournal(pPager->jfd, 1+(i64)pPager->pVfs->mxPathname, &zSuper);
+  if( rc==SQLITE_OK && zSuper ){
     rc = sqlite3OsAccess(pVfs, zSuper, SQLITE_ACCESS_EXISTS, &res);
   }
-  zSuper = 0;
   if( rc!=SQLITE_OK || !res ){
     goto end_playback;
   }
@@ -2963,30 +3028,20 @@ end_playback:
   */
   pPager->changeCountDone = pPager->tempFile;
 
-  if( rc==SQLITE_OK ){
-    /* Leave 4 bytes of space before the super-journal filename in memory.
-    ** This is because it may end up being passed to sqlite3OsOpen(), in
-    ** which case it requires 4 0x00 bytes in memory immediately before
-    ** the filename. */
-    zSuper = &pPager->pTmpSpace[4];
-    rc = readSuperJournal(pPager->jfd, zSuper, 1+(i64)pPager->pVfs->mxPathname);
-    testcase( rc!=SQLITE_OK );
-  }
   if( rc==SQLITE_OK
    && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN)
   ){
     rc = sqlite3PagerSync(pPager, 0);
   }
   if( rc==SQLITE_OK ){
-    rc = pager_end_transaction(pPager, zSuper[0]!='\0', 0);
+    rc = pager_end_transaction(pPager, zSuper!=0, 0);
     testcase( rc!=SQLITE_OK );
   }
-  if( rc==SQLITE_OK && zSuper[0] && res ){
+  if( rc==SQLITE_OK && zSuper && res ){
     /* If there was a super-journal and this routine will return success,
     ** see if it is possible to delete the super-journal.
     */
-    assert( zSuper==&pPager->pTmpSpace[4] );
-    memset(pPager->pTmpSpace, 0, 4);
+    assert( memcmp(&zSuper[-4], "\0\0\0\0", 4)==0 );
     rc = pager_delsuper(pPager, zSuper);
     testcase( rc!=SQLITE_OK );
   }
@@ -2999,6 +3054,7 @@ end_playback:
   ** back a journal created by a process with a different sector size
   ** value. Reset it to the correct value for this process.
   */
+  freeSuperJournal(zSuper);
   setSectorSize(pPager);
   return rc;
 }
@@ -3612,14 +3668,27 @@ void sqlite3PagerSetFlags(
   unsigned pgFlags      /* Various flags */
 ){
   unsigned level = pgFlags & PAGER_SYNCHRONOUS_MASK;
-  if( pPager->tempFile ){
+  if( pPager->tempFile || level==PAGER_SYNCHRONOUS_OFF ){
     pPager->noSync = 1;
     pPager->fullSync = 0;
     pPager->extraSync = 0;
   }else{
-    pPager->noSync =  level==PAGER_SYNCHRONOUS_OFF ?1:0;
+    pPager->noSync =  0;
     pPager->fullSync = level>=PAGER_SYNCHRONOUS_FULL ?1:0;
-    pPager->extraSync = level==PAGER_SYNCHRONOUS_EXTRA ?1:0;
+
+    /* Set Pager.extraSync if "PRAGMA synchronous=EXTRA" is requested, or 
+    ** if the file-system supports F2FS style atomic writes. If this flag
+    ** is set, SQLite syncs the directory to disk immediately after deleting 
+    ** a journal file in "PRAGMA journal_mode=DELETE" mode.  */
+    if( level==PAGER_SYNCHRONOUS_EXTRA 
+#ifdef SQLITE_ENABLE_BATCH_ATOMIC_WRITE
+     || (sqlite3OsDeviceCharacteristics(pPager->fd) & SQLITE_IOCAP_BATCH_ATOMIC)
+#endif
+    ){
+      pPager->extraSync = 1;
+    }else{
+      pPager->extraSync = 0;
+    }
   }
   if( pPager->noSync ){
     pPager->syncFlags = 0;
@@ -3739,7 +3808,7 @@ void sqlite3PagerSetBusyHandler(
 **
 ** then the pager object page size is set to *pPageSize.
 **
-** If the page size is changed, then this function uses sqlite3PagerMalloc()
+** If the page size is changed, then this function uses sqlite3PageMalloc()
 ** to obtain a new Pager.pTmpSpace buffer. If this allocation attempt
 ** fails, SQLITE_NOMEM is returned and the page size remains unchanged.
 ** In all other cases, SQLITE_OK is returned.
@@ -4179,6 +4248,8 @@ int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
     sqlite3WalClose(pPager->pWal, db, pPager->walSyncFlags, pPager->pageSize,a);
     pPager->pWal = 0;
   }
+#else
+  UNUSED_PARAMETER(db);
 #endif
   pager_reset(pPager);
   if( MEMDB ){
@@ -4928,7 +4999,15 @@ int sqlite3PagerOpen(
   */
   if( zFilename && zFilename[0] ){
     int fout = 0;                    /* VFS flags returned by xOpen() */
+    int bImmutable = sqlite3_uri_boolean(pPager->zFilename, "immutable", 0);
+    if( bImmutable ){
+      vfsFlags |= SQLITE_OPEN_READONLY;
+      vfsFlags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
+    }
     rc = sqlite3OsOpen(pVfs, pPager->zFilename, pPager->fd, vfsFlags, &fout);
+    if( bImmutable ){
+      goto act_like_temp_file;
+    }
     assert( !memDb );
     pPager->memVfs = memJM = (fout&SQLITE_OPEN_MEMORY)!=0;
     readOnly = (fout&SQLITE_OPEN_READONLY)!=0;
@@ -4968,10 +5047,9 @@ int sqlite3PagerOpen(
 #endif
       }
       pPager->noLock = sqlite3_uri_boolean(pPager->zFilename, "nolock", 0);
-      if( (iDc & SQLITE_IOCAP_IMMUTABLE)!=0
-       || sqlite3_uri_boolean(pPager->zFilename, "immutable", 0) ){
-          vfsFlags |= SQLITE_OPEN_READONLY;
-          goto act_like_temp_file;
+      if( (iDc & SQLITE_IOCAP_IMMUTABLE)!=0 ){
+        vfsFlags |= SQLITE_OPEN_READONLY;
+        goto act_like_temp_file;
       }
     }
   }else{
@@ -4991,6 +5069,7 @@ act_like_temp_file:
     pPager->eLock = EXCLUSIVE_LOCK;    /* Pretend we are in EXCLUSIVE mode */
     pPager->noLock = 1;                /* Do no locking */
     readOnly = (vfsFlags&SQLITE_OPEN_READONLY);
+    assert( readOnly==0 || readOnly==1 );
   }
 
   /* The following call to PagerSetPagesize() serves to set the value of
@@ -5084,8 +5163,8 @@ sqlite3_file *sqlite3_database_file_object(const char *zName){
 
 
 /*
-** This function is called after transitioning from PAGER_UNLOCK to
-** PAGER_SHARED state. It tests if there is a hot journal present in
+** This function is called while transitioning from PAGER_OPEN to a
+** higher state. It tests if there is a hot journal present in
 ** the file-system for the given pager. A hot journal is one that
 ** needs to be played back. According to this function, a hot-journal
 ** file exists if the following criteria are met:
@@ -7512,7 +7591,7 @@ int sqlite3PagerCheckpoint(
   }
   if( pPager->pWal ){
     rc = sqlite3WalCheckpoint(pPager->pWal, db, eMode,
-        (eMode==SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
+        (eMode<=SQLITE_CHECKPOINT_PASSIVE ? 0 : pPager->xBusyHandler),
         pPager->pBusyHandlerArg,
         pPager->walSyncFlags, pPager->pageSize, (u8 *)pPager->pTmpSpace,
         pnLog, pnCkpt

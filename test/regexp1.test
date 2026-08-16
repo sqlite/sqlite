@@ -331,5 +331,29 @@ do_execsql_test regexp1-7.12 {
   SELECT char(0x61,0x10ffff,0x62) REGEXP char(0x10ffff);
 } 1
 
+do_execsql_test regexp1-8.0 {
+  CREATE TABLE t2(a);
+  INSERT INTO t2 VALUES('abc-def');
+  SELECT length(a) FROM t2;
+} {7}
+
+do_execsql_test regexp1-8.1 {
+  SELECT rowid FROM t2 WHERE a REGEXP '[1-5]';
+} {}
+do_execsql_test regexp1-8.2 {
+  SELECT rowid FROM t2 WHERE a REGEXP '[1\-5]';
+} {1}
+do_execsql_test regexp1-8.3 {
+  SELECT rowid FROM t2 WHERE a REGEXP '[x\-]';
+} {1}
+do_catchsql_test regexp1-8.4 {
+  SELECT rowid FROM t2 WHERE a REGEXP '[x-]';
+} {1 {unclosed '['}}
+do_execsql_test regexp1-8.5 {
+  SELECT rowid FROM t2 WHERE a REGEXP '-';
+} {1}
+do_execsql_test regexp1-8.6 {
+  SELECT rowid FROM t2 WHERE a REGEXP '\-';
+} {1}
 
 finish_test

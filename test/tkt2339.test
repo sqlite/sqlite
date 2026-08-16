@@ -47,12 +47,12 @@ do_test tkt2339.2 {
   }
 } {4 3 14 13}
 do_test tkt2339.3 {
-  execsql {
+  lsort -integer [execsql {
     SELECT * FROM (SELECT * FROM t1 ORDER BY num DESC)
     UNION ALL
     SELECT * FROM (SELECT * FROM t2 ORDER BY num DESC LIMIT 2)
-  }
-} {4 3 2 1 14 13}
+  }]
+} {1 2 3 4 13 14}
 do_test tkt2339.4 {
   execsql {
     SELECT * FROM (SELECT * FROM t1 ORDER BY num DESC LIMIT 2)

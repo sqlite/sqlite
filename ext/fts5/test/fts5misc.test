@@ -685,5 +685,17 @@ do_execsql_test 26.1 {
   COMMIT;
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 27.0 {
+  CREATE VIRTUAL TABLE ft1 USING fts5(a, b);
+  INSERT INTO ft1(rowid, a, b) VALUES(3, '3', '3');
+}
+
+do_execsql_test 27.1 {
+  SELECT * FROM ft1 WHERE rowid=3 AND b MATCH 'hello';
+}
+
 finish_test
 

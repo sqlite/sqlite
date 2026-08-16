@@ -278,6 +278,10 @@ set literals {
  13     NULL
 }
 foreach op $oplist {
+  if {$op eq "AND" || $op eq "OR"} {
+    # These tests do not work with AND and OR due to short-circuit evaluation
+    continue
+  }
   foreach {n1 rhs} $literals { 
   foreach {n2 lhs} $literals {
 
@@ -1740,10 +1744,10 @@ do_execsql_test e_expr-32.2.8 {
  integer 9223372036854775807 \
  integer 9223372036854775807 \
  integer 9223372036854775807 \
- real 9.22337203685478e+18 \
- real 9.22337203685478e+18 \
- real 9.22337203685478e+18 \
- real 9.22337203685478e+18 \
+ real 9.2233720368547758e+18 \
+ real 9.2233720368547758e+18 \
+ real 9.2233720368547758e+18 \
+ real 9.2233720368547758e+18 \
  integer -5 \
  integer -5 \
 ]

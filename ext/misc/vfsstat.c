@@ -613,7 +613,7 @@ static int vstattabConnect(
 
   rc = sqlite3_declare_vtab(db,"CREATE TABLE x(file,stat,count)");
   if( rc==SQLITE_OK ){
-    pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+    pNew = *ppVtab = sqlite3_malloc64( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
   }
@@ -633,7 +633,7 @@ static int vstattabDisconnect(sqlite3_vtab *pVtab){
 */
 static int vstattabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   VfsStatCursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
@@ -810,6 +810,7 @@ int sqlite3_vfsstat_init(
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
+  if( sqlite3_vfs_find("vfslog")!=0 ) return SQLITE_OK;
   vstat_vfs.pVfs = sqlite3_vfs_find(0);
   if( vstat_vfs.pVfs==0 ) return SQLITE_ERROR;
   vstat_vfs.base.szOsFile = sizeof(VStatFile) + vstat_vfs.pVfs->szOsFile;

@@ -325,6 +325,8 @@ foreach {tn sql error ac data } {
 # EVIDENCE-OF: R-43190-62442 In other words, the schema-name. prefix on
 # the table name of the UPDATE is not allowed within triggers.
 #
+# Update: Unless the trigger is in the temp schema.
+#
 do_update_tests e_update-2.1 -error {
   qualified table names are not allowed on INSERT, UPDATE, and DELETE statements within triggers
 } {
@@ -339,12 +341,14 @@ do_update_tests e_update-2.1 -error {
         UPDATE aux.t1 SET a=1, b=2;
       END;
   } {}
+}
 
-  3 {
-      CREATE TRIGGER tr1 AFTER DELETE ON t4 BEGIN
-        UPDATE main.t1 SET a=1, b=2;
-      END;
-  } {}
+# Qualified table name is allowed as t4 is a temp table.
+do_execsql_test e_update-2.1.3 {
+  CREATE TRIGGER tr1 AFTER DELETE ON t4 BEGIN
+    UPDATE main.t1 SET a=1, b=2;
+  END;
+  DROP TRIGGER tr1;
 }
 
 # EVIDENCE-OF: R-06085-13761 Unless the table to which the trigger is

@@ -33,7 +33,7 @@ INCLUDE $ROOT/ext/misc/appendvfs.c
 INCLUDE $ROOT/ext/misc/zipfile.c
 INCLUDE $ROOT/ext/misc/sqlar.c
 #endif
-INCLUDE $ROOT/src/tclsqlite.c
+INCLUDE tclsqlite-ex.c
 
 const char *sqlite3_tclapp_init_proc(Tcl_Interp *interp){
   (void)interp;

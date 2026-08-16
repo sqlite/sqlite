@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix nolock
 
 unset -nocomplain tvfs_calls
 proc tvfs_reset {} {
@@ -215,6 +216,46 @@ if {[permutation]!="inmemory_journal"} {
     set rc [catch {db eval {SELECT * FROM t1}} msg]
     lappend rc $msg
   } {1 {unable to open database file}}
+}
+
+if {[permutation] ne "inmemory_journal"} {
+  #-------------------------------------------------------------------------
+  # For these tests, move the pending-byte to later in the file. This way,
+  # all locks are placed past the end of the file, allowing it to be read
+  # at the OS level on windows even when locked.
+  #
+  sqlite3_test_control_pending_byte 0x10000000
+  reset_db
+  
+  do_execsql_test 5.0 {
+    PRAGMA cache_size = 100;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
+  }
+  
+  do_execsql_test 5.1 {
+    WITH s(i) AS (
+        VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1000
+    )
+    INSERT INTO t1 SELECT NULL, randomblob(100) FROM s;
+    BEGIN;
+      UPDATE t1 SET b=randomblob(100);
+  }
+  
+  db_save_and_close
+  db_restore
+  
+  # With immutable=1, the hot journal is not rolled back and the db is corrupt.
+  do_test 5.2 {
+    sqlite3 db file:test.db?immutable=1 -uri 1
+    expr {[db one { PRAGMA integrity_check }]=="ok"}
+  } {0}
+  
+  # Without immutable=1, the hot journal is correctly rolled back and the db 
+  # is not corrupt.
+  do_test 5.3 {
+    sqlite3 db file:test.db -uri 1
+    expr {[db one { PRAGMA integrity_check }]=="ok"}
+  } {1}
 }
 
 finish_test

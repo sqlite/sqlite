@@ -64,4 +64,21 @@ foreach {tn sql} {
   }
 }
 
+#-------------------------------------------------------------------------
+# Verify that https://sqlite.org/forum/forumpost/95413eb410 has been 
+# fixed.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE f1 USING fts5(x);
+  BEGIN TRANSACTION;
+    INSERT INTO f1(x) VALUES('abc def ghi');
+}
+do_test 2.1 {
+  sqlite3_interrupt db
+} {}
+do_execsql_test 2.2 {
+  ROLLBACK
+}
+
 finish_test

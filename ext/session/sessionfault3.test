@@ -43,12 +43,26 @@ set C2 [changeset_from_sql {
   INSERT INTO t1 VALUES(0, 0, 0, 0);
 }]
 
-do_faultsim_test 1 -faults oom* -prep {
+do_faultsim_test 1.2 -faults oom* -prep {
   sqlite3changegroup G
 } -body {
   G schema db main
   G add $::C1
   G add $::C2
+  G output
+  set {} {}
+} -test {
+  catch { G delete }
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+}
+
+do_faultsim_test 1.3 -faults oom* -prep {
+  sqlite3changegroup G
+} -body {
+  G schema db main
+  G change_begin INSERT t1 0
+  G change_int64 new 0 12345
+  G change_int64 new 1 67890
   G output
   set {} {}
 } -test {
@@ -78,6 +92,47 @@ do_faultsim_test 2 -faults oom-t* -prep {
 } -test {
   faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
   catch { S delete }
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b UNIQUE);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  INSERT INTO t1 VALUES(3, 'three');
+  INSERT INTO t1 VALUES(4, 'four');
+  INSERT INTO t1 VALUES(5, 'five');
+}
+faultsim_save_and_close
+faultsim_restore_and_reopen
+
+set C [changeset_from_sql {
+  UPDATE t1 SET b=NULL WHERE a IN (1, 3, 5);
+  UPDATE t1 SET b='three' WHERE a=1;
+  UPDATE t1 SET b='five' WHERE a=3;
+  UPDATE t1 SET b='one' WHERE a=5;
+}]
+
+do_execsql_test 3.1 {
+  SELECT * FROM t1
+} {
+  1 three 2 two 3 five 4 four 5 one
+}
+
+proc xConflict {args} {
+  lappend ::conflict_list $args
+  return "OMIT"
+}
+
+do_faultsim_test 3 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  db eval {SELECT * FROM sqlite_schema}
+} -body {
+  sqlite3changeset_apply_v2 db $::C xConflict
+  set {} {}
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
 }
 
 finish_test

@@ -86,7 +86,7 @@ static int vtshimCreate(
     }
     return SQLITE_ERROR;
   }
-  pNew = sqlite3_malloc( sizeof(*pNew) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) );
   *ppVtab = (sqlite3_vtab*)pNew;
   if( pNew==0 ) return SQLITE_NOMEM;
   memset(pNew, 0, sizeof(*pNew));
@@ -125,7 +125,7 @@ static int vtshimConnect(
     }
     return SQLITE_ERROR;
   }
-  pNew = sqlite3_malloc( sizeof(*pNew) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) );
   *ppVtab = (sqlite3_vtab*)pNew;
   if( pNew==0 ) return SQLITE_NOMEM;
   memset(pNew, 0, sizeof(*pNew));
@@ -192,7 +192,7 @@ static int vtshimOpen(sqlite3_vtab *pBase, sqlite3_vtab_cursor **ppCursor){
   int rc;
   *ppCursor = 0;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   rc = pAux->pMod->xOpen(pVtab->pChild, &pCur->pChild);
@@ -444,7 +444,7 @@ static int vtshimCopyModule(
 ){
   sqlite3_module *p;
   if( !pMod || !ppMod ) return SQLITE_ERROR;
-  p = sqlite3_malloc( sizeof(*p) );
+  p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memcpy(p, pMod, sizeof(*p));
   *ppMod = p;
@@ -464,7 +464,7 @@ void *sqlite3_create_disposable_module(
   vtshim_aux *pAux;
   sqlite3_module *pMod;
   int rc;
-  pAux = sqlite3_malloc( sizeof(*pAux) );
+  pAux = sqlite3_malloc64( sizeof(*pAux) );
   if( pAux==0 ){
     if( xDestroy ) xDestroy(pClientData);
     return 0;

@@ -555,4 +555,24 @@ do_catchsql_test 11.110 {
   SELECT rowid+1,rowid, * FROM t3 WHERE null>rowid ;
 } {1 {SQL logic error}}
 
+#-------------------------------------------------------------------------
+# Ensure fts5vocab columns behave consistently as if they have blob
+# affinity. Report here:
+#
+#  https://sqlite.org/bugs/forumpost/9d60b0c997
+#
+reset_db
+do_execsql_test 12.0 {
+  CREATE VIRTUAL TABLE t0 USING fts5(c0);
+  INSERT INTO t0(c0) VALUES ('0zero');
+  CREATE VIRTUAL TABLE t1 USING fts5vocab(t0, 'row');
+}
+do_execsql_test 12.1 {
+  SELECT term, term >= 5 FROM t1;
+} {0zero 1}
+
+do_execsql_test 12.2 {
+  SELECT count(*) FROM t1 WHERE term >= 5;
+} {1}
+
 finish_test

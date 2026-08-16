@@ -188,6 +188,10 @@ static int parseTimezone(const char *zDate, DateTime *p){
   }
   zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
+  if( p->tz==0 ){   /* Forum post 2025-09-17T10:12:14z */
+    p->isLocal = 0;
+    p->isUtc = 1;
+  }
 zulu_time:
   while( sqlite3Isspace(*zDate) ){ zDate++; }
   return *zDate!=0;
@@ -425,7 +429,7 @@ static int parseDateOrTime(
     return 0;
   }else if( sqlite3StrICmp(zDate,"now")==0 && sqlite3NotPureFunc(context) ){
     return setDateTimeToCurrent(context, p);
-  }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8)>0 ){
+  }else if( sqlite3AtoF(zDate, &r)>0 ){
     setRawDateNumber(p, r);
     return 0;
   }else if( (sqlite3StrICmp(zDate,"subsec")==0
@@ -763,6 +767,49 @@ static int parseModifier(
       }
       break;
     }
+    case 'e': {
+      /*
+      **    end of day
+      **    end of month
+      **    end of year
+      **
+      ** Move the date forwards to the last millisecond of the current
+      ** day, month or year.
+      */
+      if( sqlite3_strnicmp(z, "end of ", 7)!=0 ){
+        break;
+      }        
+      if( !p->validJD && !p->validYMD && !p->validHMS ) break;
+      z += 7;
+      computeYMD(p);
+      p->validHMS = 1;
+      p->h = 23;
+      p->m = 59;
+      p->s = 59.999;
+      p->rawS = 0;
+      p->tz = 0;
+      p->validJD = 0;
+      if( sqlite3_stricmp(z,"month")==0 ){
+        p->D = 1;
+        p->M++;
+        if( p->M>12 ){
+          p->Y++;
+          p->M = 1;
+        }
+        computeFloor(p);
+        computeJD(p);
+        p->iJD -= (p->nFloor+1)*86400000;
+        clearYMD_HMS_TZ(p);
+        rc = 0;
+      }else if( sqlite3_stricmp(z,"year")==0 ){
+        p->M = 12;
+        p->D = 31;
+        rc = 0;
+      }else if( sqlite3_stricmp(z,"day")==0 ){
+        rc = 0;
+      }
+      break;
+    }
     case 'f': {
       /*
       **    floor
@@ -865,22 +912,30 @@ static int parseModifier(
     case 'w': {
       /*
       **    weekday N
+      **    weekday -N
       **
-      ** Move the date to the same time on the next occurrence of
-      ** weekday N where 0==Sunday, 1==Monday, and so forth.  If the
-      ** date is already on the appropriate weekday, this is a no-op.
+      ** Move the date forward (for N>=0) or backward (for N<=-0) to the
+      ** same time on the next/previous occurrence of weekday abs(N)
+      ** where 0==Sunday, 1==Monday, and so forth.  If the date is already
+      ** on the appropriate weekday, this is a no-op.
       */
       if( sqlite3_strnicmp(z, "weekday ", 8)==0
-               && sqlite3AtoF(&z[8], &r, sqlite3Strlen30(&z[8]), SQLITE_UTF8)>0
-               && r>=0.0 && r<7.0 && (n=(int)r)==r ){
+       && sqlite3AtoF(&z[8], &r)>0
+       && r>=-6.0 && r<=6.0
+       && sqlite3RealSameAsInt(r,(i64)(n=(int)r))
+      ){
         sqlite3_int64 Z;
         computeYMD_HMS(p);
         p->tz = 0;
         p->validJD = 0;
         computeJD(p);
         Z = ((p->iJD + 129600000)/86400000) % 7;
-        if( Z>n ) Z -= 7;
-        p->iJD += (n - Z)*86400000;
+        if( n<0 ) n = -n;
+        if( Z!=n ){
+          if( Z>n ) Z -= 7;
+          p->iJD += (n - Z)*86400000;
+          if( strchr(z+8,'-')!=0 ) p->iJD -= 7*86400000;
+        }
         clearYMD_HMS_TZ(p);
         rc = 0;
       }
@@ -888,7 +943,9 @@ static int parseModifier(
     }
     case 's': {
       /*
-      **    start of TTTTT
+      **    start of day
+      **    start of month
+      **    start of year
       **
       ** Move the date backwards to the beginning of the current day,
       ** or month or year.
@@ -942,9 +999,11 @@ static int parseModifier(
     case '8':
     case '9': {
       double rRounder;
-      int i;
+      int i, rx;
       int Y,M,D,h,m,x;
       const char *z2 = z;
+      char *zCopy;
+      sqlite3 *db = sqlite3_context_db_handle(pCtx);
       char z0 = z[0];
       for(n=1; z[n]; n++){
         if( z[n]==':' ) break;
@@ -954,7 +1013,11 @@ static int parseModifier(
           if( n==6 && getDigits(&z[1], "50f", &Y)==1 ) break;
         }
       }
-      if( sqlite3AtoF(z, &r, n, SQLITE_UTF8)<=0 ){
+      zCopy = sqlite3DbStrNDup(db, z, n);
+      if( zCopy==0 ) break;
+      rx = sqlite3AtoF(zCopy, &r)<=0;
+      sqlite3DbFree(db, zCopy);
+      if( rx ){
         assert( rc==1 );
         break;
       }
@@ -1383,8 +1446,8 @@ static int daysAfterSunday(DateTime *pDate){
 **   %l  hour  1-12  (leading zero converted to space)
 **   %m  month 01-12
 **   %M  minute 00-59
-**   %p  "am" or "pm"
-**   %P  "AM" or "PM"
+**   %p  "AM" or "PM"
+**   %P  "am" or "pm"
 **   %R  time as HH:MM
 **   %s  seconds since 1970-01-01
 **   %S  seconds 00-59
@@ -1406,38 +1469,38 @@ static void strftimeFunc(
   size_t i,j;
   sqlite3 *db;
   const char *zFmt;
-  sqlite3_str sRes;
+  sqlite3_str *pRes;
 
 
   if( argc==0 ) return;
   zFmt = (const char*)sqlite3_value_text(argv[0]);
   if( zFmt==0 || isDate(context, argc-1, argv+1, &x) ) return;
   db = sqlite3_context_db_handle(context);
-  sqlite3StrAccumInit(&sRes, 0, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
+  pRes = sqlite3_str_new(db);
 
   computeJD(&x);
   computeYMD_HMS(&x);
   for(i=j=0; zFmt[i]; i++){
     char cf;
     if( zFmt[i]!='%' ) continue;
-    if( j<i ) sqlite3_str_append(&sRes, zFmt+j, (int)(i-j));
+    if( j<i ) sqlite3_str_append(pRes, zFmt+j, (int)(i-j));
     i++;
     j = i + 1;
     cf = zFmt[i];
     switch( cf ){
       case 'd':  /* Fall thru */
       case 'e': {
-        sqlite3_str_appendf(&sRes, cf=='d' ? "%02d" : "%2d", x.D);
+        sqlite3_str_appendf(pRes, cf=='d' ? "%02d" : "%2d", x.D);
         break;
       }
       case 'f': {  /* Fractional seconds.  (Non-standard) */
         double s = x.s;
         if( NEVER(s>59.999) ) s = 59.999;
-        sqlite3_str_appendf(&sRes, "%06.3f", s);
+        sqlite3_str_appendf(pRes, "%06.3f", s);
         break;
       }
       case 'F': {
-        sqlite3_str_appendf(&sRes, "%04d-%02d-%02d", x.Y, x.M, x.D);
+        sqlite3_str_appendf(pRes, "%04d-%02d-%02d", x.Y, x.M, x.D);
         break;
       }
       case 'G': /* Fall thru */
@@ -1449,15 +1512,15 @@ static void strftimeFunc(
         y.validYMD = 0;
         computeYMD(&y);
         if( cf=='g' ){
-          sqlite3_str_appendf(&sRes, "%02d", y.Y%100);
+          sqlite3_str_appendf(pRes, "%02d", y.Y%100);
         }else{
-          sqlite3_str_appendf(&sRes, "%04d", y.Y);
+          sqlite3_str_appendf(pRes, "%04d", y.Y);
         }
         break;
       }
       case 'H':
       case 'k': {
-        sqlite3_str_appendf(&sRes, cf=='H' ? "%02d" : "%2d", x.h);
+        sqlite3_str_appendf(pRes, cf=='H' ? "%02d" : "%2d", x.h);
         break;
       }
       case 'I': /* Fall thru */
@@ -1465,65 +1528,65 @@ static void strftimeFunc(
         int h = x.h;
         if( h>12 ) h -= 12;
         if( h==0 ) h = 12;
-        sqlite3_str_appendf(&sRes, cf=='I' ? "%02d" : "%2d", h);
+        sqlite3_str_appendf(pRes, cf=='I' ? "%02d" : "%2d", h);
         break;
       }
       case 'j': {  /* Day of year.  Jan01==1, Jan02==2, and so forth */
-        sqlite3_str_appendf(&sRes,"%03d",daysAfterJan01(&x)+1);
+        sqlite3_str_appendf(pRes,"%03d",daysAfterJan01(&x)+1);
         break;
       }
       case 'J': {  /* Julian day number.  (Non-standard) */
-        sqlite3_str_appendf(&sRes,"%.16g",x.iJD/86400000.0);
+        sqlite3_str_appendf(pRes,"%.16g",x.iJD/86400000.0);
         break;
       }
       case 'm': {
-        sqlite3_str_appendf(&sRes,"%02d",x.M);
+        sqlite3_str_appendf(pRes,"%02d",x.M);
         break;
       }
       case 'M': {
-        sqlite3_str_appendf(&sRes,"%02d",x.m);
+        sqlite3_str_appendf(pRes,"%02d",x.m);
         break;
       }
       case 'p': /* Fall thru */
       case 'P': {
         if( x.h>=12 ){
-          sqlite3_str_append(&sRes, cf=='p' ? "PM" : "pm", 2);
+          sqlite3_str_append(pRes, cf=='p' ? "PM" : "pm", 2);
         }else{
-          sqlite3_str_append(&sRes, cf=='p' ? "AM" : "am", 2);
+          sqlite3_str_append(pRes, cf=='p' ? "AM" : "am", 2);
         }
         break;
       }
       case 'R': {
-        sqlite3_str_appendf(&sRes, "%02d:%02d", x.h, x.m);
+        sqlite3_str_appendf(pRes, "%02d:%02d", x.h, x.m);
         break;
       }
       case 's': {
         if( x.useSubsec ){
-          sqlite3_str_appendf(&sRes,"%.3f",
+          sqlite3_str_appendf(pRes,"%.3f",
                 (x.iJD - 21086676*(i64)10000000)/1000.0);
         }else{
           i64 iS = (i64)(x.iJD/1000 - 21086676*(i64)10000);
-          sqlite3_str_appendf(&sRes,"%lld",iS);
+          sqlite3_str_appendf(pRes,"%lld",iS);
         }
         break;
       }
       case 'S': {
-        sqlite3_str_appendf(&sRes,"%02d",(int)x.s);
+        sqlite3_str_appendf(pRes,"%02d",(int)x.s);
         break;
       }
       case 'T': {
-        sqlite3_str_appendf(&sRes,"%02d:%02d:%02d", x.h, x.m, (int)x.s);
+        sqlite3_str_appendf(pRes,"%02d:%02d:%02d", x.h, x.m, (int)x.s);
         break;
       }
       case 'u':    /* Day of week.  1 to 7.  Monday==1, Sunday==7 */
       case 'w': {  /* Day of week.  0 to 6.  Sunday==0, Monday==1 */
         char c = (char)daysAfterSunday(&x) + '0';
         if( c=='0' && cf=='u' ) c = '7';
-        sqlite3_str_appendchar(&sRes, 1, c);
+        sqlite3_str_appendchar(pRes, 1, c);
         break;
       }
       case 'U': {  /* Week num. 00-53. First Sun of the year is week 01 */
-        sqlite3_str_appendf(&sRes,"%02d",
+        sqlite3_str_appendf(pRes,"%02d",
               (daysAfterJan01(&x)-daysAfterSunday(&x)+7)/7);
         break;
       }
@@ -1534,30 +1597,30 @@ static void strftimeFunc(
         y.iJD += (3 - daysAfterMonday(&x))*86400000;
         y.validYMD = 0;
         computeYMD(&y);
-        sqlite3_str_appendf(&sRes,"%02d", daysAfterJan01(&y)/7+1);
+        sqlite3_str_appendf(pRes,"%02d", daysAfterJan01(&y)/7+1);
         break;
       }
       case 'W': {  /* Week num. 00-53. First Mon of the year is week 01 */
-        sqlite3_str_appendf(&sRes,"%02d",
+        sqlite3_str_appendf(pRes,"%02d",
            (daysAfterJan01(&x)-daysAfterMonday(&x)+7)/7);
         break;
       }
       case 'Y': {
-        sqlite3_str_appendf(&sRes,"%04d",x.Y);
+        sqlite3_str_appendf(pRes,"%04d",x.Y);
         break;
       }
       case '%': {
-        sqlite3_str_appendchar(&sRes, 1, '%');
+        sqlite3_str_appendchar(pRes, 1, '%');
         break;
       }
       default: {
-        sqlite3_str_reset(&sRes);
+        sqlite3_str_free(pRes);
         return;
       }
     }
   }
-  if( j<i ) sqlite3_str_append(&sRes, zFmt+j, (int)(i-j));
-  sqlite3ResultStrAccum(context, &sRes);
+  if( j<i ) sqlite3_str_append(pRes, zFmt+j, (int)(i-j));
+  sqlite3_result_str(context, pRes, SQLITE_FINISH);
 }
 
 /*
@@ -1693,7 +1756,7 @@ static void timediffFunc(
   sqlite3StrAccumInit(&sRes, 0, 0, 0, 100);
   sqlite3_str_appendf(&sRes, "%c%04d-%02d-%02d %02d:%02d:%06.3f",
        sign, Y, M, d1.D-1, d1.h, d1.m, d1.s);
-  sqlite3ResultStrAccum(context, &sRes);
+  sqlite3_result_str(context, &sRes, SQLITE_XFER);
 }
 
 
@@ -1774,7 +1837,7 @@ static void datedebugFunc(
     char *zJson;
     zJson = sqlite3_mprintf(
       "{iJD:%lld,Y:%d,M:%d,D:%d,h:%d,m:%d,tz:%d,"
-      "s:%.3f,validJD:%d,validYMS:%d,validHMS:%d,"
+      "s:%.3f,validJD:%d,validYMD:%d,validHMS:%d,"
       "nFloor:%d,rawS:%d,isError:%d,useSubsec:%d,"
       "isUtc:%d,isLocal:%d}",
       x.iJD, x.Y, x.M, x.D, x.h, x.m, x.tz,

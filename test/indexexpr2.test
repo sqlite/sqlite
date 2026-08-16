@@ -229,6 +229,14 @@ ifcapable vtab {
        AND sqlite_master.rootpage=explain.p2
      ORDER BY 1;
   } {t2 t2abc t2cd t2def}
+
+  # Bug 2026-06-23T05:32:49Z
+  #
+  unset -nocomplain ::abc
+  set ::abc 0
+  do_catchsql_test 4.900 {
+    SELECT * FROM explain WHERE rowid = $abc
+  } {0 {}}
 }
 
 #-------------------------------------------------------------------------

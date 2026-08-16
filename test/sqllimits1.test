@@ -21,6 +21,9 @@ set testprefix sqllimits1
 # Verify that the default per-connection limits are the same as
 # the compile-time hard limits.
 #
+# NB:  These magic $SQLITE_MAX_xxx variables are set by LINKVAR()
+#      macros in the src/test_config.c source file.
+#
 sqlite3 db2 :memory:
 do_test sqllimits1-1.1 {
   sqlite3_limit db SQLITE_LIMIT_LENGTH -1
@@ -59,6 +62,10 @@ do_test sqllimits1-1.12 {
   sqlite3_limit db SQLITE_LIMIT_WORKER_THREADS 99999
   sqlite3_limit db SQLITE_LIMIT_WORKER_THREADS -1
 } $SQLITE_MAX_WORKER_THREADS
+do_test sqllimits1-1.13 {
+  sqlite3_limit db SQLITE_LIMIT_SCHEMA 999999999
+  sqlite3_limit db SQLITE_LIMIT_SCHEMA -1
+} $SQLITE_MAX_SCHEMA
 
 # Limit parameters out of range.
 #
@@ -174,6 +181,15 @@ if {$SQLITE_MAX_VARIABLE_NUMBER>=2} {
   do_test sqllimits1-2.10.2 {
     sqlite3_limit db SQLITE_LIMIT_VARIABLE_NUMBER -1
   } [expr {$SQLITE_MAX_VARIABLE_NUMBER/2}]
+}
+if {$SQLITE_MAX_SCHEMA>=2} {
+  do_test sqllimits1-2.11.1 {
+    sqlite3_limit db SQLITE_LIMIT_SCHEMA \
+                    [expr {$::SQLITE_MAX_SCHEMA/2}]
+  } $SQLITE_MAX_SCHEMA
+  do_test sqllimits1-2.11.2 {
+    sqlite3_limit db SQLITE_LIMIT_SCHEMA -1
+  } [expr {$SQLITE_MAX_SCHEMA/2}]
 }
 
 # In a separate database connection, verify that the limits are unchanged.

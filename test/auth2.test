@@ -157,4 +157,34 @@ SQLITE_SELECT {} {} {} v2
 }
 db2 close
 
+do_test auth2-3.1 {
+  set ::authargs {}
+  db eval {
+    INSERT INTO t2 SELECT * FROM t1;
+  }
+  set ::authargs
+} {SQLITE_INSERT t2 {} main {}
+SQLITE_SELECT {} {} {} {}
+SQLITE_READ t1 a main {}
+SQLITE_READ t1 b main {}
+SQLITE_READ t1 c main {}
+}
+proc auth {op a0 a1 a2 a3} {
+  global authargs
+  append authargs "$op $a0 [list $a1] [list $a2] [list $a3]\n"
+  if {$op eq "SQLITE_READ" && $a0 eq "t1" && $a1 eq "b"} {
+    return SQLITE_IGNORE
+  }
+  return SQLITE_OK
+}
+db null NULL
+set authargs {}
+do_execsql_test auth2-3.2 {
+  DELETE FROM t1;
+  INSERT INTO t1 VALUES(1,2,3),('a','b','c');
+  DELETE FROM t2;
+  INSERT INTO t2 SELECT * FROM t1;
+  SELECT * FROM t2;
+} {1 NULL 3 a NULL c}
+
 finish_test

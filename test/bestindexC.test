@@ -333,20 +333,39 @@ do_execsql_test 5.7 {
   INSERT INTO t1(rowid, a, b, c, d) VALUES(7, 'X', 'Y', 'z', 'seven');
 }
 
-do_execsql_test 5.8 {
-  SELECT d FROM x1 
-  WHERE a='x' AND ((b='y' AND c='z') OR (b='Y' AND c='z' COLLATE nocase))
-} {
-  zero two three
-}
 
-do_execsql_test 5.9 {
-  SELECT d FROM x1 
-  WHERE a='x' COLLATE nocase 
-  AND ((b='y' AND c='z') OR (b='Y' AND c='z' COLLATE nocase))
-} {
-  zero four two
-  three six seven
+if {1} {
+  # Since 2026-05-18, SQLite does not attempt the OR-optimization on
+  # conjuncts that contain COLLATE operators, due to
+  # bug report 2026-05-17T11:46:40Z.
+  do_catchsql_test 5.8 {
+    SELECT d FROM x1 
+    WHERE a='x' AND ((b='y' AND c='z') OR (b='Y' AND c='z' COLLATE nocase))
+  } {1 {no query solution}}
+
+  do_catchsql_test 5.9 {
+    SELECT d FROM x1 
+    WHERE a='x' COLLATE nocase 
+    AND ((b='y' AND c='z') OR (b='Y' AND c='z' COLLATE nocase))
+  } {1 {no query solution}}
+} else {
+  # This case would work if SQLite knew how to deal with conjuncts that
+  # contain COLLATE operators.
+  do_execsql_test 5.8 {
+    SELECT d FROM x1 
+    WHERE a='x' AND ((b='y' AND c='z') OR (b='Y' AND c='z' COLLATE nocase))
+  } {
+    zero two three
+  }
+  
+  do_execsql_test 5.9 {
+    SELECT d FROM x1 
+    WHERE a='x' COLLATE nocase 
+    AND ((b='y' AND c='z') OR (b='Y' AND c='z' COLLATE nocase))
+  } {
+    zero four two
+    three six seven
+  }
 }
 
 #--------------------------------------------------------------------------
@@ -422,5 +441,3 @@ do_execsql_test 6.6 {
 } {555}
 
 finish_test
-
-

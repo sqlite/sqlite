@@ -364,6 +364,7 @@ set estwork(shell6.test) 3
 set estwork(shell8.test) 104
 set estwork(shell9.test) 3
 set estwork(shellA.test) 2
+set estwork(shellB.test) 2
 set estwork(shmlock.test) 27
 set estwork(sidedelete.test) 10
 set estwork(skipscan1.test) 7

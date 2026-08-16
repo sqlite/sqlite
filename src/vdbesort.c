@@ -302,6 +302,7 @@ struct SortSubtask {
   SorterCompare xCompare;         /* Compare function to use */
   SorterFile file;                /* Temp file for level-0 PMAs */
   SorterFile file2;               /* Space for other PMAs */
+  u64 nSpill;                     /* Total bytes written by this task */
 };
 
 
@@ -340,6 +341,7 @@ struct VdbeSorter {
 
 #define SORTER_TYPE_INTEGER 0x01
 #define SORTER_TYPE_TEXT    0x02
+#define SORTER_TYPE_REAL    0x04
 
 /*
 ** An instance of the following object is used to read records out of a
@@ -422,6 +424,7 @@ struct PmaWriter {
   int iBufEnd;                    /* Last byte of buffer to write */
   i64 iWriteOff;                  /* Offset of start of buffer in file */
   sqlite3_file *pFd;              /* File handle to write to */
+  u64 nPmaSpill;                  /* Total number of bytes written */
 };
 
 /*
@@ -912,6 +915,150 @@ static int vdbeSorterCompareInt(
   return res;
 }
 
+/* Helper function for vdbeSorterCompareReal().
+**
+** The first elements of both pKey1 and pKey2 have been decoded into double
+** values r1 and r2.  Do the comparison between those keys and return the
+** result.  If r1==r2, break the tie with a comparison of subsequent elements
+** from each key.
+*/
+static int vdbeSorterFinishRealCompare(
+  SortSubtask *pTask,             /* Subtask context (for pKeyInfo) */
+  int *pbKey2Cached,              /* True if pTask->pUnpacked is pKey2 */
+  const void *pKey1, int nKey1,   /* Left side of comparison */
+  const void *pKey2, int nKey2,   /* Right side of comparison */
+  double r1,                      /* REAL value of first element of pKey1 */
+  double r2                       /* REAL value of first element of pKey2 */
+){
+  int res;
+  if( r1<r2 ){
+    res = -1;
+  }else if( r1>r2 ){
+    res = +1;
+  }else{
+    res = 0;
+  }
+  assert( pTask->pSorter->pKeyInfo->aSortFlags!=0 );
+  if( res==0 ){
+    if( pTask->pSorter->pKeyInfo->nKeyField>1 ){
+      res = vdbeSorterCompareTail(
+          pTask, pbKey2Cached, pKey1, nKey1, pKey2, nKey2
+      );
+    }
+  }else if( pTask->pSorter->pKeyInfo->aSortFlags[0] ){
+    assert( !(pTask->pSorter->pKeyInfo->aSortFlags[0]&KEYINFO_ORDER_BIGNULL) );
+    res = res * -1;
+  }
+  return res;
+}
+
+/* Helper function for vdbeSorterCompareReal().
+**
+** Buffer p[] is a record where the first term is guaranteed to be either
+** a floating-point value, or an integer stand-in for a floating point
+** value (a MEM_IntReal).  Whatever its format, extract the value and
+** return it.
+*/
+static double vdbeSorterGetReal(const u8 *p){
+  double r;                    /* the return value */
+
+  assert( p[0]<0x80 );         /* 1-byte headers: nAllField<13 */
+  assert( p[1]>0 && p[1]<10 ); /* first fields proven numeric */
+
+  if( p[1]==7 ){
+    u64 x = sqlite3Get8byte(p + p[0]);
+    swapMixedEndianFloat(x);
+    assert( !IsNaN(x) );
+    memcpy(&r, &x, sizeof(r));
+  }else{
+    Mem m;
+    m.u.i = 0;
+    sqlite3VdbeSerialGet(p + p[0], p[1], &m);
+    assert( m.flags==MEM_Int );
+    r = (double)m.u.i;
+  }
+  return r;
+}
+
+/* Helper function for vdbeSorterCompareReal()
+**
+** This routine handles the case of comparing two floating-point values
+** where one or both of the floating-point are represented by integers.
+** In other words, where one both is an MEM_RealInt.
+**
+** This subroutine is factored out from vdbeSorterCompareReal() for
+** efficiency.  If inlined into vdbeSorterCompareReal(), this routine
+** will use extra stack space and consume CPU cycles setting up and
+** breaking down that stack space, even if in the common case where
+** this path is not used.
+*/
+static SQLITE_NOINLINE int vdbeSorterCompareRealInt(
+  SortSubtask *pTask,             /* Subtask context (for pKeyInfo) */
+  int *pbKey2Cached,              /* True if pTask->pUnpacked is pKey2 */
+  const void *pKey1, int nKey1,   /* Left side of comparison */
+  const void *pKey2, int nKey2    /* Right side of comparison */
+){
+  const u8 * const p1 = (const u8 * const)pKey1;
+  const u8 * const p2 = (const u8 * const)pKey2;
+  if( p1[1]==6 || p2[1]==6 ){
+    /* 64-bit integer values cannot be represented exactly by a double so
+    ** must be handled by the generalized comparison function. */
+    return vdbeSorterCompare(pTask,
+       pbKey2Cached, pKey1,nKey1, pKey2,nKey2);
+  }else{
+    double r1 = vdbeSorterGetReal(p1);
+    double r2 = vdbeSorterGetReal(p2);
+    return vdbeSorterFinishRealCompare(pTask,pbKey2Cached,
+                  pKey1,nKey1,pKey2,nKey2,r1,r2);
+  }
+}
+
+/*
+** Comparison function optimized for the case where the first term
+** of both keys are either MEM_Real or MEM_RealInt.
+**
+** See also vdbeSorterCompareInt() for MEM_Int values and
+** vdbeSorterCompareText() for MEM_Str values.  The general
+** case is vdbeSorterCompare() which handles anything, but is slower.
+*/
+static int vdbeSorterCompareReal(
+  SortSubtask *pTask,             /* Subtask context (for pKeyInfo) */
+  int *pbKey2Cached,              /* True if pTask->pUnpacked is pKey2 */
+  const void *pKey1, int nKey1,   /* Left side of comparison */
+  const void *pKey2, int nKey2    /* Right side of comparison */
+){
+  const u8*const p1 = (const u8*const)pKey1;  /* Left key record */
+  const u8*const p2 = (const u8*const)pKey2;  /* Right key record */
+  u64 x;                   /* A real value stored as an integer */
+  double r1;               /* First element of pKey1 */
+  double r2;               /* First element of pKey2 */
+
+  assert( p1[0]<0x80 && p2[0]<0x80 );  /* 1-byte headers: nAllField<13 */
+  assert( p1[1]>0 && p1[1]<10 );       /* first field guaranteed numeric */
+  assert( p2[1]>0 && p2[1]<10 );       /* first field guaranteed numeric */
+
+  if( p1[1]!=7 || p2[1]!=7 ){
+    /* One or both floating point values are stored as INTEGER.  This might
+    ** be because of the MEM_RealInt encoding.  Try to optimize that case. */
+    return vdbeSorterCompareRealInt(pTask,
+       pbKey2Cached, pKey1,nKey1, pKey2,nKey2
+    );
+  }
+  assert( p1[0]<=nKey1-8 && p2[0]<=nKey2-8 );
+
+  x = sqlite3Get8byte(p1 + *p1);
+  swapMixedEndianFloat(x);
+  assert( !IsNaN(x) );
+  memcpy(&r1, &x, sizeof(r1));
+  x = sqlite3Get8byte(p2 + *p2);
+  swapMixedEndianFloat(x);
+  assert( !IsNaN(x) );
+  memcpy(&r2, &x, sizeof(r2));
+  return vdbeSorterFinishRealCompare(pTask,
+      pbKey2Cached, pKey1,nKey1,  pKey2,nKey2, r1, r2
+  );
+}
+
 /*
 ** Initialize the temporary index cursor just opened as a sorter cursor.
 **
@@ -1034,7 +1181,7 @@ int sqlite3VdbeSorterInit(
      && (pKeyInfo->aColl[0]==0 || pKeyInfo->aColl[0]==db->pDfltColl)
      && (pKeyInfo->aSortFlags[0] & KEYINFO_ORDER_BIGNULL)==0
     ){
-      pSorter->typeMask = SORTER_TYPE_INTEGER | SORTER_TYPE_TEXT;
+      pSorter->typeMask = SORTER_TYPE_INTEGER|SORTER_TYPE_TEXT|SORTER_TYPE_REAL;
     }
   }
 
@@ -1280,6 +1427,12 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
   assert( pCsr->eCurType==CURTYPE_SORTER );
   pSorter = pCsr->uc.pSorter;
   if( pSorter ){
+    /* Increment db->nSpill by the total number of bytes of data written
+    ** to temp files by this sort operation.  */
+    int ii;
+    for(ii=0; ii<pSorter->nTask; ii++){
+      db->nSpill += pSorter->aTask[ii].nSpill;
+    }
     sqlite3VdbeSorterReset(db, pSorter);
     sqlite3_free(pSorter->list.aMemory);
     sqlite3DbFree(db, pSorter);
@@ -1400,10 +1553,12 @@ static SorterRecord *vdbeSorterMerge(
 ** sorter object passed as the only argument.
 */
 static SorterCompare vdbeSorterGetCompare(VdbeSorter *p){
-  if( p->typeMask==SORTER_TYPE_INTEGER ){
+  if( p->typeMask & SORTER_TYPE_INTEGER ){
     return vdbeSorterCompareInt;
-  }else if( p->typeMask==SORTER_TYPE_TEXT ){
+  }else if( p->typeMask & SORTER_TYPE_TEXT ){
     return vdbeSorterCompareText;
+  }else if( p->typeMask & SORTER_TYPE_REAL ){
+    return vdbeSorterCompareReal;
   }
   return vdbeSorterCompare;
 }
@@ -1505,6 +1660,7 @@ static void vdbePmaWriteBlob(PmaWriter *p, u8 *pData, int nData){
           &p->aBuffer[p->iBufStart], p->iBufEnd - p->iBufStart,
           p->iWriteOff + p->iBufStart
       );
+      p->nPmaSpill += (p->iBufEnd - p->iBufStart);
       p->iBufStart = p->iBufEnd = 0;
       p->iWriteOff += p->nBuffer;
     }
@@ -1521,17 +1677,20 @@ static void vdbePmaWriteBlob(PmaWriter *p, u8 *pData, int nData){
 ** required. Otherwise, return an SQLite error code.
 **
 ** Before returning, set *piEof to the offset immediately following the
-** last byte written to the file.
+** last byte written to the file. Also, increment (*pnSpill) by the total
+** number of bytes written to the file.
 */
-static int vdbePmaWriterFinish(PmaWriter *p, i64 *piEof){
+static int vdbePmaWriterFinish(PmaWriter *p, i64 *piEof, u64 *pnSpill){
   int rc;
   if( p->eFWErr==0 && ALWAYS(p->aBuffer) && p->iBufEnd>p->iBufStart ){
     p->eFWErr = sqlite3OsWrite(p->pFd,
         &p->aBuffer[p->iBufStart], p->iBufEnd - p->iBufStart,
         p->iWriteOff + p->iBufStart
     );
+    p->nPmaSpill += (p->iBufEnd - p->iBufStart);
   }
   *piEof = (p->iWriteOff + p->iBufEnd);
+  *pnSpill += p->nPmaSpill;
   sqlite3_free(p->aBuffer);
   rc = p->eFWErr;
   memset(p, 0, sizeof(PmaWriter));
@@ -1611,7 +1770,7 @@ static int vdbeSorterListToPMA(SortSubtask *pTask, SorterList *pList){
       if( pList->aMemory==0 ) sqlite3_free(p);
     }
     pList->pList = p;
-    rc = vdbePmaWriterFinish(&writer, &pTask->file.iEof);
+    rc = vdbePmaWriterFinish(&writer, &pTask->file.iEof, &pTask->nSpill);
   }
 
   vdbeSorterWorkDebug(pTask, "exit");
@@ -1797,8 +1956,12 @@ int sqlite3VdbeSorterWrite(
   assert( pCsr->eCurType==CURTYPE_SORTER );
   pSorter = pCsr->uc.pSorter;
   getVarint32NR((const u8*)&pVal->z[1], t);
-  if( t>0 && t<10 && t!=7 ){
-    pSorter->typeMask &= SORTER_TYPE_INTEGER;
+  if( t>0 && t<10 ){
+    if( t==7 ){
+      pSorter->typeMask &= SORTER_TYPE_REAL;
+    }else{
+      pSorter->typeMask &= (SORTER_TYPE_INTEGER|SORTER_TYPE_REAL);
+    }
   }else if( t>10 && (t & 0x01) ){
     pSorter->typeMask &= SORTER_TYPE_TEXT;
   }else{
@@ -1925,7 +2088,7 @@ static int vdbeIncrPopulate(IncrMerger *pIncr){
     rc = vdbeMergeEngineStep(pIncr->pMerger, &dummy);
   }
 
-  rc2 = vdbePmaWriterFinish(&writer, &pOut->iEof);
+  rc2 = vdbePmaWriterFinish(&writer, &pOut->iEof, &pTask->nSpill);
   if( rc==SQLITE_OK ) rc = rc2;
   vdbeSorterPopulateDebug(pTask, "exit");
   return rc;

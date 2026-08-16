@@ -105,7 +105,6 @@ REM When set, these values are expanded and passed to the NMAKE command line,
 REM after its other arguments.  These may be used to specify additional NMAKE
 REM options, for example:
 REM
-REM                        SET NMAKE_ARGS=FOR_WINRT=1
 REM                        SET NMAKE_ARGS_DEBUG=MEMDEBUG=1
 REM                        SET NMAKE_ARGS_RETAIL=WIN32HEAP=1
 REM

@@ -189,16 +189,16 @@ struct amatch_avl {
   amatch_avl *pBefore;  /* Other elements less than zKey */
   amatch_avl *pAfter;   /* Other elements greater than zKey */
   amatch_avl *pUp;      /* Parent element */
-  short int height;     /* Height of this node.  Leaf==1 */
-  short int imbalance;  /* Height difference between pBefore and pAfter */
+  int height;           /* Height of this node.  Leaf==1 */
+  int imbalance;        /* Height difference between pBefore and pAfter */
 };
 
 /* Recompute the amatch_avl.height and amatch_avl.imbalance fields for p.
 ** Assume that the children of p have correct heights.
 */
 static void amatchAvlRecomputeHeight(amatch_avl *p){
-  short int hBefore = p->pBefore ? p->pBefore->height : 0;
-  short int hAfter = p->pAfter ? p->pAfter->height : 0;
+  int hBefore = p->pBefore ? p->pBefore->height : 0;
+  int hAfter = p->pAfter ? p->pAfter->height : 0;
   p->imbalance = hBefore - hAfter;  /* -: pAfter higher.  +: pBefore higher */
   p->height = (hBefore>hAfter ? hBefore : hAfter)+1;
 }
@@ -459,6 +459,8 @@ typedef int amatch_langid;
 #define AMATCH_MX_LENGTH          50  /* Maximum length of a rule string */
 #define AMATCH_MX_LANGID  2147483647  /* Maximum rule ID */
 #define AMATCH_MX_COST          1000  /* Maximum single-rule cost */
+#define AMATCH_MX_WORD          1000  /* Maximum length of a word */
+
 
 /*
 ** A match or partial match
@@ -469,8 +471,8 @@ struct amatch_word {
   amatch_avl sWord;     /* Linkage of this node into the word tree */
   amatch_cost rCost;    /* Cost of the match so far */
   int iSeq;             /* Sequence number */
+  int nMatch;           /* Input characters matched */
   char zCost[10];       /* Cost key (text rendering of rCost) */
-  short int nMatch;     /* Input characters matched */
   char zWord[4];        /* Text of the word.  Extra space appended as needed */
 };
 
@@ -514,7 +516,7 @@ struct amatch_cursor {
   sqlite3_int64 iRowid;      /* The rowid of the current word */
   amatch_langid iLang;       /* Use this language ID */
   amatch_cost rLimit;        /* Maximum cost of any term */
-  int nBuf;                  /* Space allocated for zBuf */
+  sqlite3_int64 nBuf;        /* Space allocated for zBuf */
   int oomErr;                /* True following an OOM error */
   int nWord;                 /* Number of amatch_word objects */
   char *zBuf;                /* Temp-use buffer space */
@@ -556,6 +558,17 @@ static amatch_rule *amatchMergeRules(amatch_rule *pA, amatch_rule *pB){
 }
 
 /*
+** Truncate an integer so that it fits in 32 bits.
+*/
+static int amatchTruncateInt(sqlite3_int64 i){
+  if( i>=-2147483647 && i<=2147483646 ){
+    return (int)i;
+  }else{
+    return i<0 ? (-1)-2147483647 : 2147483647;
+  }
+}
+
+/*
 ** Statement pStmt currently points to a row in the amatch data table. This
 ** function allocates and populates a amatch_rule structure according to
 ** the content of the row.
@@ -573,7 +586,8 @@ static int amatchLoadOneRule(
   sqlite3_int64 iLang = sqlite3_column_int64(pStmt, 0);
   const char *zFrom = (const char *)sqlite3_column_text(pStmt, 1);
   const char *zTo = (const char *)sqlite3_column_text(pStmt, 2);
-  amatch_cost rCost = sqlite3_column_int(pStmt, 3);
+  sqlite3_int64 iCost = sqlite3_column_int64(pStmt, 3);
+  amatch_cost rCost = amatchTruncateInt(iCost);
 
   int rc = SQLITE_OK;             /* Return code */
   int nFrom;                      /* Size of string zFrom, in bytes */
@@ -585,6 +599,13 @@ static int amatchLoadOneRule(
   nFrom = (int)strlen(zFrom);
   nTo = (int)strlen(zTo);
 
+  if( rCost<=0 || rCost>AMATCH_MX_COST ){
+    *pzErr = sqlite3_mprintf("%s: cost must be between 1 and %d", 
+        p->zClassName, AMATCH_MX_COST
+    );
+    return SQLITE_ERROR;
+  }
+
   /* Silently ignore null transformations */
   if( strcmp(zFrom, zTo)==0 ){
     if( zFrom[0]=='?' && zFrom[1]==0 ){
@@ -594,12 +615,6 @@ static int amatchLoadOneRule(
     return SQLITE_OK;
   }
 
-  if( rCost<=0 || rCost>AMATCH_MX_COST ){
-    *pzErr = sqlite3_mprintf("%s: cost must be between 1 and %d", 
-        p->zClassName, AMATCH_MX_COST
-    );
-    rc = SQLITE_ERROR;
-  }else
   if( nFrom>AMATCH_MX_LENGTH || nTo>AMATCH_MX_LENGTH ){
     *pzErr = sqlite3_mprintf("%s: maximum string length is %d", 
         p->zClassName, AMATCH_MX_LENGTH
@@ -847,7 +862,7 @@ static int amatchConnect(
 
   (void)pAux;
   *ppVtab = 0;
-  pNew = sqlite3_malloc( sizeof(*pNew) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
   rc = SQLITE_NOMEM;
   memset(pNew, 0, sizeof(*pNew));
@@ -928,7 +943,7 @@ amatchConnectError:
 static int amatchOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   amatch_vtab *p = (amatch_vtab*)pVTab;
   amatch_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->pVtab = p;
@@ -1039,7 +1054,7 @@ static void amatchAddWord(
   nTail = (int)strlen(zWordTail);
   if( nBase+nTail+3>pCur->nBuf ){
     pCur->nBuf = nBase+nTail+100;
-    pCur->zBuf = sqlite3_realloc(pCur->zBuf, pCur->nBuf);
+    pCur->zBuf = sqlite3_realloc64(pCur->zBuf, pCur->nBuf);
     if( pCur->zBuf==0 ){
       pCur->nBuf = 0;
       return;
@@ -1070,13 +1085,13 @@ static void amatchAddWord(
     }
     return;
   }
-  pWord = sqlite3_malloc64( sizeof(*pWord) + nBase + nTail - 1 );
+  pWord = sqlite3_malloc64( sizeof(*pWord) + nBase + nTail );
   if( pWord==0 ) return;
   memset(pWord, 0, sizeof(*pWord));
   pWord->rCost = rCost;
   pWord->iSeq = pCur->nWord++;
   amatchWriteCost(pWord);
-  pWord->nMatch = (short)nMatch;
+  pWord->nMatch = nMatch;
   pWord->pNext = pCur->pAllWords;
   pCur->pAllWords = pWord;
   pWord->sCost.zKey = pWord->zCost;
@@ -1105,13 +1120,13 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
   amatch_avl *pNode;
   int isMatch = 0;
   amatch_vtab *p = pCur->pVtab;
-  int nWord;
+  sqlite3_int64 nWord;
   int rc;
   int i;
   const char *zW;
   amatch_rule *pRule;
   char *zBuf = 0;
-  char nBuf = 0;
+  sqlite3_int64 nBuf = 0;
   char zNext[8];
   char zNextIn[8];
   int nNextIn;
@@ -1157,8 +1172,8 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
 #endif
     nWord = (int)strlen(pWord->zWord+2);
     if( nWord+20>nBuf ){
-      nBuf = (char)(nWord+100);
-      zBuf = sqlite3_realloc(zBuf, nBuf);
+      nBuf = nWord+100;
+      zBuf = sqlite3_realloc64(zBuf, nBuf);
       if( zBuf==0 ) return SQLITE_NOMEM;
     }
     amatchStrcpy(zBuf, pWord->zWord+2);
@@ -1256,27 +1271,34 @@ static int amatchFilter(
   amatch_cursor *pCur = (amatch_cursor *)pVtabCursor;
   const char *zWord = "*";
   int idx;
+  int rc = SQLITE_OK;
 
   amatchClearCursor(pCur);
   idx = 0;
   if( idxNum & 1 ){
     zWord = (const char*)sqlite3_value_text(argv[0]);
+    if( zWord==0 ) zWord = "";
     idx++;
   }
   if( idxNum & 2 ){
-    pCur->rLimit = (amatch_cost)sqlite3_value_int(argv[idx]);
+    sqlite3_int64 ii = sqlite3_value_int64(argv[idx]);
+    pCur->rLimit = (amatch_cost)amatchTruncateInt(ii);
     idx++;
   }
   if( idxNum & 4 ){
-    pCur->iLang = (amatch_cost)sqlite3_value_int(argv[idx]);
+    sqlite3_int64 ii = sqlite3_value_int64(argv[idx]);
+    pCur->iLang = (amatch_cost)amatchTruncateInt(ii);
     idx++;
   }
   pCur->zInput = sqlite3_mprintf("%s", zWord);
   if( pCur->zInput==0 ) return SQLITE_NOMEM;
+  if( strlen(pCur->zInput)>AMATCH_MX_WORD ){
+    pCur->zInput[AMATCH_MX_WORD] = 0;
+    rc = SQLITE_TOOBIG;
+  }
   amatchAddWord(pCur, 0, 0, "", "");
   amatchNext(pVtabCursor);
-
-  return SQLITE_OK;
+  return rc;
 }
 
 /*

@@ -27,8 +27,19 @@
 ** This delta format is used by the RBU extension, which is the main
 ** reason that these routines are included in the extension library.
 ** RBU does not use this extension directly.  Rather, this extension is
-** provided as a convenience to developers who want to analyze RBU files 
+** provided as a convenience to developers who want to analyze RBU files
 ** that contain deltas.
+**
+** Typical build commands assuming
+** 
+**    DIR=ext/misc
+*     NAME=fossildelta
+**
+** First run "make sqlite3ext.h" then:
+**
+**   linux: gcc -shared -I. -fPIC -o $NAME.so $DIR/$NAME.c
+**   OS-X:  gcc -dynamiclib -fPIC -I. -o $NAME.dylib $DIR/$NAME.c
+**   Win11: cl -I. $DIR/$NAME.c -link -dll -out:$NAME.dll
 */
 #include <string.h>
 #include <assert.h>
@@ -38,9 +49,12 @@ SQLITE_EXTENSION_INIT1
 
 #ifndef SQLITE_AMALGAMATION
 /*
-** The "u32" type must be an unsigned 32-bit integer.  Adjust this
+** The "u32" type must be an unsigned 32-bit integer.  "u64" is
+** an unsigned 64-bit integer.
 */
 typedef unsigned int u32;
+typedef sqlite3_uint64 u64;
+typedef sqlite3_int64 i64;
 
 /*
 ** Must be a 16-bit value
@@ -165,16 +179,26 @@ static unsigned int deltaGetInt(const char **pz, int *pLen){
     25, 26, 27, 28, 29, 30, 31, 32,   33, 34, 35, -1, -1, -1, -1, 36,
     -1, 37, 38, 39, 40, 41, 42, 43,   44, 45, 46, 47, 48, 49, 50, 51,
     52, 53, 54, 55, 56, 57, 58, 59,   60, 61, 62, -1, -1, -1, 63, -1,
+
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
   };
   unsigned int v = 0;
   int c;
   unsigned char *z = (unsigned char*)*pz;
-  unsigned char *zStart = z;
-  while( (c = zValue[0x7f&*(z++)])>=0 ){
-     v = (v<<6) + c;
+  unsigned char *zEnd = z + (*pLen);
+  while( z<zEnd && (c = zValue[*z])>=0 ){
+    v = (v<<6) + c;
+    z++;
   }
-  z--;
-  *pLen -= z - zStart;
+
+  *pLen -= (int)(z - (unsigned char*)*pz);
   *pz = (char*)z;
   return v;
 }
@@ -264,7 +288,8 @@ static unsigned int checksum(const char *zIn, size_t N){
 ** The delta string will be NUL-terminated, but it might also contain
 ** embedded NUL characters if either the zSrc or zOut files are
 ** binary.  This function returns the length of the delta string
-** in bytes, excluding the final NUL terminator character.
+** in bytes, excluding the final NUL terminator character.  It returns
+** 0 if an OOM occurs.
 **
 ** Output Format:
 **
@@ -356,6 +381,7 @@ static int delta_create(
   */
   nHash = lenSrc/NHASH;
   collide = sqlite3_malloc64( (sqlite3_int64)nHash*2*sizeof(int) );
+  if( collide==0 ) return 0;
   memset(collide, -1, nHash*2*sizeof(int));
   landmark = &collide[nHash];
   for(i=0; i<lenSrc-NHASH; i+=NHASH){
@@ -506,7 +532,7 @@ static int delta_create(
 static int delta_output_size(const char *zDelta, int lenDelta){
   int size;
   size = deltaGetInt(&zDelta, &lenDelta);
-  if( *zDelta!='\n' ){
+  if( lenDelta<=0 || *zDelta!='\n' ){
     /* ERROR: size integer not terminated by "\n" */
     return -1;
   }
@@ -541,21 +567,22 @@ static int delta_apply(
   int lenDelta,          /* Length of the delta */
   char *zOut             /* Write the output into this preallocated buffer */
 ){
-  unsigned int limit;
-  unsigned int total = 0;
+  sqlite3_uint64 limit;
+  sqlite3_uint64 total = 0;
 #ifdef FOSSIL_ENABLE_DELTA_CKSUM_TEST
   char *zOrigOut = zOut;
 #endif
 
   limit = deltaGetInt(&zDelta, &lenDelta);
-  if( *zDelta!='\n' ){
+  if( lenDelta<=0 || *zDelta!='\n' ){
     /* ERROR: size integer not terminated by "\n" */
     return -1;
   }
-  zDelta++; lenDelta--;
-  while( *zDelta && lenDelta>0 ){
+  zDelta++; lenDelta--; /* Skip the \n */
+  while( lenDelta>0 && zDelta[0] ){
     unsigned int cnt, ofst;
     cnt = deltaGetInt(&zDelta, &lenDelta);
+    if( lenDelta<=0 ) return -1;
     switch( zDelta[0] ){
       case '@': {
         zDelta++; lenDelta--;
@@ -570,7 +597,7 @@ static int delta_apply(
           /* ERROR: copy exceeds output file size */
           return -1;
         }
-        if( ofst+cnt > lenSrc ){
+        if( (u64)ofst+(u64)cnt > (u64)lenSrc ){
           /* ERROR: copy extends past end of input */
           return -1;
         }
@@ -767,11 +794,11 @@ struct deltaparsevtab_vtab {
 struct deltaparsevtab_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   char *aDelta;              /* The delta being parsed */
-  int nDelta;                /* Number of bytes in the delta */
-  int iCursor;               /* Current cursor location */
+  i64 iCursor;               /* Current cursor location */
+  i64 iNext;                 /* Next cursor value */
+  i64 nDelta;                /* Number of bytes in the delta */
   int eOp;                   /* Name of current operator */
   unsigned int a1, a2;       /* Arguments to current operator */
-  int iNext;                 /* Next cursor value */
 };
 
 /* Operator names:
@@ -841,7 +868,7 @@ static int deltaparsevtabDisconnect(sqlite3_vtab *pVtab){
 */
 static int deltaparsevtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   deltaparsevtab_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
@@ -868,21 +895,31 @@ static int deltaparsevtabNext(sqlite3_vtab_cursor *cur){
   int i = 0;
 
   pCur->iCursor = pCur->iNext;
+  if( pCur->iCursor >= pCur->nDelta ){
+    pCur->eOp = DELTAPARSE_OP_ERROR;
+    pCur->iNext = pCur->nDelta;
+    return SQLITE_OK;
+  }
   z = pCur->aDelta + pCur->iCursor;
   pCur->a1 = deltaGetInt(&z, &i);
-  switch( z[0] ){
+  switch( i>0 ? z[0] : 0 ){
     case '@': {
       z++;
+      if( pCur->iNext>=pCur->nDelta ){
+        pCur->eOp = DELTAPARSE_OP_ERROR;
+        pCur->iNext = pCur->nDelta;
+        break;
+      }
       pCur->a2 = deltaGetInt(&z, &i);
       pCur->eOp = DELTAPARSE_OP_COPY;
-      pCur->iNext = (int)(&z[1] - pCur->aDelta);
+      pCur->iNext = (i64)(&z[1] - pCur->aDelta);
       break;
     }
     case ':': {
       z++;
       pCur->a2 = (unsigned int)(z - pCur->aDelta);
       pCur->eOp = DELTAPARSE_OP_INSERT;
-      pCur->iNext = (int)(&z[pCur->a1] - pCur->aDelta);
+      pCur->iNext = (i64)(&z[pCur->a1] - pCur->aDelta);
       break;
     }
     case ';': {
@@ -926,8 +963,12 @@ static int deltaparsevtabColumn(
       if( pCur->eOp==DELTAPARSE_OP_COPY ){
         sqlite3_result_int(ctx, pCur->a2);
       }else if( pCur->eOp==DELTAPARSE_OP_INSERT ){
-        sqlite3_result_blob(ctx, pCur->aDelta+pCur->a2, pCur->a1,
-                            SQLITE_TRANSIENT);
+        if( (i64)pCur->a2 + (i64)pCur->a1 > pCur->nDelta ){
+          sqlite3_result_zeroblob(ctx, pCur->a1);
+        }else{
+          sqlite3_result_blob(ctx, pCur->aDelta+pCur->a2, pCur->a1,
+                              SQLITE_TRANSIENT);
+        }
       }
       break;
     }
@@ -955,17 +996,17 @@ static int deltaparsevtabRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 */
 static int deltaparsevtabEof(sqlite3_vtab_cursor *cur){
   deltaparsevtab_cursor *pCur = (deltaparsevtab_cursor*)cur;
-  return pCur->eOp==DELTAPARSE_OP_EOF;
+  return pCur->eOp==DELTAPARSE_OP_EOF || pCur->iCursor>=pCur->nDelta;
 }
 
 /*
 ** This method is called to "rewind" the deltaparsevtab_cursor object back
 ** to the first row of output.  This method is always called at least
-** once prior to any call to deltaparsevtabColumn() or deltaparsevtabRowid() or 
+** once prior to any call to deltaparsevtabColumn() or deltaparsevtabRowid() or
 ** deltaparsevtabEof().
 */
 static int deltaparsevtabFilter(
-  sqlite3_vtab_cursor *pVtabCursor, 
+  sqlite3_vtab_cursor *pVtabCursor,
   int idxNum, const char *idxStr,
   int argc, sqlite3_value **argv
 ){
@@ -991,14 +1032,14 @@ static int deltaparsevtabFilter(
   a = pCur->aDelta;
   pCur->eOp = DELTAPARSE_OP_SIZE;
   pCur->a1 = deltaGetInt(&a, &i);
-  if( a[0]!='\n' ){
+  if( i<=0 || a[0]!='\n' ){
     pCur->eOp = DELTAPARSE_OP_ERROR;
     pCur->a1 = pCur->a2 = 0;
     pCur->iNext = pCur->nDelta;
     return SQLITE_OK;
   }
   a++;
-  pCur->iNext = (unsigned int)(a - pCur->aDelta);
+  pCur->iNext = (i64)(a - pCur->aDelta);
   return SQLITE_OK;
 }
 
@@ -1031,7 +1072,7 @@ static int deltaparsevtabBestIndex(
 }
 
 /*
-** This following structure defines all the methods for the 
+** This following structure defines all the methods for the
 ** virtual table.
 */
 static sqlite3_module deltaparsevtabModule = {
@@ -1068,8 +1109,8 @@ static sqlite3_module deltaparsevtabModule = {
 __declspec(dllexport)
 #endif
 int sqlite3_fossildelta_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
   static const int enc = SQLITE_UTF8|SQLITE_INNOCUOUS;

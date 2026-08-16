@@ -192,4 +192,32 @@ do_test 4.7.2 {
   list [catch {rbu close} msg] $msg
 } {1 {SQLITE_ERROR - rbu_state mismatch error}}
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/forum/info/6d0a31e22a435877
+#
+reset_db
+forcedelete rbu.db
+
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a BLOB); 
+  INSERT INTO t1 VALUES(x'41');
+}
+
+sqlite3 dbRbu rbu.db
+dbRbu eval {
+  CREATE TABLE data_t1(a, rbu_control, rbu_rowid);
+  INSERT INTO data_t1 VALUES(X'310a313a5a337e7e7e7e7e40302c303b','f',1);
+}
+dbRbu close
+
+do_test 5.1 {
+  sqlite3rbu rbu test.db rbu.db
+  rbu step
+} {SQLITE_ERROR}
+
+do_test 5.2 {
+  list [catch {rbu close} msg] $msg
+} {1 {SQLITE_ERROR - corrupt fossil delta}}
+
+
 finish_test

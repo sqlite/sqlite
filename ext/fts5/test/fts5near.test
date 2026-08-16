@@ -66,5 +66,18 @@ do_near_test 1.23 "a b c d e f g h i" { NEAR(a+b+c+d i b+c, 4) } 0
 do_near_test 1.24 "a b c d e f g h i" { NEAR(i a+b+c+d b+c, 5) } 1
 do_near_test 1.25 "a b c d e f g h i" { NEAR(i a+b+c+d b+c, 4) } 0
 
+#-------------------------------------------------------------------------
+# Check that https://sqlite.org/bugs/forumpost/16bb36f7e8 is fixed.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t USING fts5(x, tokenize=trigram);
+  INSERT INTO t 
+  VALUES('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+}
+
+do_execsql_test 2.1 {
+  SELECT count(*) FROM t WHERE t MATCH 'NEAR(aaa aaa, 4)';
+} {1}
 
 finish_test

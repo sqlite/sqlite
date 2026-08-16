@@ -1,6 +1,12 @@
 /*
-** Copyright 2008 D. Richard Hipp and Hipp, Wyrick & Company, Inc.
-** All Rights Reserved
+** 2018-12-13
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
 **
 ******************************************************************************
 **
@@ -22,6 +28,8 @@
 **                       then the SQL.
 **
 **    --pagesize N       set the database page size for later reading
+**
+**    --raw              not actually a database, just binary data
 **
 ** The translation of the database appears on standard output.  If the
 ** --pagesize command-line option is omitted, then the page size is taken
@@ -60,6 +68,7 @@ int main(int argc, char **argv){
   const char *zBaseName = 0;  /* Base name of the file */
   int lastPage = 0;           /* Last page number shown */
   int iPage;                  /* Current page number */
+  int bRaw = 0;               /* Not actually a database */
   unsigned char *aData = 0;   /* All data */
   unsigned char *aLine;       /* A single line of the file */
   unsigned char *aHdr;        /* File header */
@@ -89,6 +98,9 @@ int main(int argc, char **argv){
         forCli = 1;
         bSQL = 1;
         continue;
+      }else if( strcmp(z,"raw")==0 ){
+        bRaw = 1;
+        continue;
       }
       fprintf(stderr, "Unknown option: %s\n", argv[i]);
       nErr++;
@@ -116,7 +128,7 @@ int main(int argc, char **argv){
   fseek(in, 0, SEEK_END);
   szFile = ftell(in);
   rewind(in);
-  if( szFile<100 ){
+  if( szFile<100 && !bRaw ){
     fprintf(stderr, "File too short. Minimum size is 100 bytes.\n");
     exit(1);
   }
@@ -138,7 +150,7 @@ int main(int argc, char **argv){
       exit(1);
     }
     nSQL = i+1;
-    if( szFile - nSQL<100 ){
+    if( szFile - nSQL<100 && !bRaw ){
       fprintf(stderr, "Less than 100 bytes in the database\n");
       exit(1);
     }
@@ -147,11 +159,15 @@ int main(int argc, char **argv){
   }
   aHdr = aData + nSQL;
   if( pgsz==0 ){
-    pgsz = (aHdr[16]<<8) | aHdr[17];
-    if( pgsz==1 ) pgsz = 65536;
-    if( pgsz<512 || (pgsz&(pgsz-1))!=0 ){
-      fprintf(stderr, "Invalid page size in header: %d\n", pgsz);
-      exit(1);
+    if( bRaw ){
+      pgsz = 1024;
+    }else{
+      pgsz = (aHdr[16]<<8) | aHdr[17];
+      if( pgsz==1 ) pgsz = 65536;
+      if( pgsz<512 || (pgsz&(pgsz-1))!=0 ){
+        fprintf(stderr, "Invalid page size in header: %d\n", pgsz);
+        exit(1);
+      }
     }
   }
   zBaseName = zInputFile;

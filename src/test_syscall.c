@@ -408,14 +408,17 @@ static void *ts_mmap(
 }
 
 static void *ts_mremap(void *a, size_t b, size_t c, int d, ...){
-  va_list ap;
-  void *pArg;
   if( tsIsFailErrno("mremap") ){
     return MAP_FAILED;
   }
-  va_start(ap, d);
-  pArg = va_arg(ap, void *);
-  return orig_mremap(a, b, c, d, pArg);
+  /* mremap() may be called with 4 or 5 arguments (when MREMAP_FIXED) is
+  ** set. But SQLite only ever calls the 4 argument form, and attempting to
+  ** read another argument using va_arg(void*) when one has not been specified
+  ** causes problems for Fil-C. So assume the 4 argument form here.  */
+#ifdef MREMAP_FIXED
+  assert( (d & MREMAP_FIXED)==0 );
+#endif
+  return orig_mremap(a, b, c, d);
 }
 
 static int SQLITE_TCLAPI test_syscall_install(

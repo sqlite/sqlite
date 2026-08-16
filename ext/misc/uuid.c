@@ -120,6 +120,7 @@ static int sqlite3UuidStrToBlob(
   unsigned char *aBlob         /* Write results here */
 ){
   int i;
+  if( zStr==0 ) return 1;
   if( zStr[0]=='{' ) zStr++;
   for(i=0; i<16; i++){
     if( zStr[0]=='-' ) zStr++;

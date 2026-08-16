@@ -130,13 +130,17 @@ static void lengthFunc(
     case SQLITE_TEXT: {
       const unsigned char *z = sqlite3_value_text(argv[0]);
       const unsigned char *z0;
-      unsigned char c;
       if( z==0 ) return;
       z0 = z;
-      while( (c = *z)!=0 ){
-        z++;
-        if( c>=0xc0 ){
-          while( (*z & 0xc0)==0x80 ){ z++; z0++; }
+      while( 1 /*exit-by-break*/ ){
+                      /*  vvvvvv----  See tag-20260418-01 */
+        if( (u8)(z[0]-1)<(0x80-1) ){
+          z++;
+        }else if( z[0]==0 ){
+          break;
+        }else{
+          z++;
+          while( (z[0]&0xc0)==0x80 ){ z++; z0++; }
         }
       }
       sqlite3_result_int(context, (int)(z-z0));
@@ -316,7 +320,6 @@ static void printfFunc(
   PrintfArguments x;
   StrAccum str;
   const char *zFormat;
-  int n;
   sqlite3 *db = sqlite3_context_db_handle(context);
 
   if( argc>=1 && (zFormat = (const char*)sqlite3_value_text(argv[0]))!=0 ){
@@ -326,9 +329,7 @@ static void printfFunc(
     sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
     str.printfFlags = SQLITE_PRINTF_SQLFUNC;
     sqlite3_str_appendf(&str, zFormat, &x);
-    n = str.nChar;
-    sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
-                        SQLITE_DYNAMIC);
+    sqlite3_result_str(context, &str, SQLITE_XFER);
   }
 }
 
@@ -415,12 +416,25 @@ static void substrFunc(
   }
   assert( p1>=0 && p2>=0 );
   if( p0type!=SQLITE_BLOB ){
-    while( *z && p1 ){
-      SQLITE_SKIP_UTF8(z);
-      p1--;
+    for( ; p1>0; p1--){
+                    /*  vvvvvv----  See tag-20260418-01 */
+      if( (u8)(z[0]-1)<(0x80-1) ){
+        z++;
+      }else if( z[0]==0 ){
+        break;
+      }else{
+        do{ z++; }while( (z[0]&0xc0)==0x80 );
+      }
     }
-    for(z2=z; *z2 && p2; p2--){
-      SQLITE_SKIP_UTF8(z2);
+    for(z2=z; p2>0; p2--){
+                     /*  vvvvvv----  See tag-20260418-01 */
+      if( (u8)(z2[0]-1)<(0x80-1) ){
+        z2++;
+      }else if( z2[0]==0 ){
+        break;
+      }else{
+        do{ z2++; }while( (z2[0]&0xc0)==0x80 );
+      }
     }
     sqlite3_result_text64(context, (char*)z, z2-z, SQLITE_TRANSIENT,
                           SQLITE_UTF8);
@@ -466,7 +480,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       sqlite3_result_error_nomem(context);
       return;
     }
-    sqlite3AtoF(zBuf, &r, sqlite3Strlen30(zBuf), SQLITE_UTF8);
+    sqlite3AtoF(zBuf, &r);
     sqlite3_free(zBuf);
   }
   sqlite3_result_double(context, r);
@@ -485,7 +499,7 @@ static void *contextMalloc(sqlite3_context *context, i64 nByte){
   sqlite3 *db = sqlite3_context_db_handle(context);
   assert( nByte>0 );
   testcase( nByte==db->aLimit[SQLITE_LIMIT_LENGTH] );
-  testcase( nByte==db->aLimit[SQLITE_LIMIT_LENGTH]+1 );
+  testcase( nByte==(i64)db->aLimit[SQLITE_LIMIT_LENGTH]+1 );
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     sqlite3_result_error_toobig(context);
     z = 0;
@@ -1098,18 +1112,11 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
 
   switch( sqlite3_value_type(pValue) ){
     case SQLITE_FLOAT: {
-      double r1, r2;
-      const char *zVal;
-      r1 = sqlite3_value_double(pValue);
-      sqlite3_str_appendf(pStr, "%!0.15g", r1);
-      zVal = sqlite3_str_value(pStr);
-      if( zVal ){
-        sqlite3AtoF(zVal, &r2, pStr->nChar, SQLITE_UTF8);
-        if( r1!=r2 ){
-          sqlite3_str_reset(pStr);
-          sqlite3_str_appendf(pStr, "%!0.20e", r1);
-        }
-      }
+                             /*    ,---  Show infinity as 9.0e+999
+                             **    |   
+                             **    | ,--- 17 precision guarantees round-trip
+                             **    v v                                       */
+      sqlite3_str_appendf(pStr, "%!0.17g", sqlite3_value_double(pValue));
       break;
     }
     case SQLITE_INTEGER: {
@@ -1156,7 +1163,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue, int bEscape){
 */
 static int isNHex(const char *z, int N, u32 *pVal){
   int i;
-  int v = 0;
+  u32 v = 0;
   for(i=0; i<N; i++){
     if( !sqlite3Isxdigit(z[i]) ) return 0;
     v = (v<<4) + sqlite3HexToInt(z[i]);
@@ -1201,7 +1208,7 @@ static void unistrFunc(
   }
   i = j = 0;
   while( i<nIn ){
-    char *z = strchr(&zIn[i],'\\');
+    const char *z = strchr(&zIn[i],'\\');
     if( z==0 ){
       n = nIn - i;
       memmove(&zOut[j], &zIn[i], n);
@@ -1238,7 +1245,7 @@ static void unistrFunc(
     }
   }
   zOut[j] = 0;
-  sqlite3_result_text64(context, zOut, j, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, zOut, j, sqlite3_free, SQLITE_UTF8_ZT);
   return;
 
 unistr_error:
@@ -1269,12 +1276,7 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   UNUSED_PARAMETER(argc);
   sqlite3StrAccumInit(&str, db, 0, 0, db->aLimit[SQLITE_LIMIT_LENGTH]);
   sqlite3QuoteValue(&str,argv[0],SQLITE_PTR_TO_INT(sqlite3_user_data(context)));
-  sqlite3_result_text(context, sqlite3StrAccumFinish(&str), str.nChar,
-                      SQLITE_DYNAMIC);
-  if( str.accError!=SQLITE_OK ){
-    sqlite3_result_null(context);
-    sqlite3_result_error_code(context, str.accError);
-  }
+  sqlite3_result_str(context, &str, SQLITE_XFER);
 }
 
 /*
@@ -1331,7 +1333,7 @@ static void charFunc(
     }                                                    \
   }
   *zOut = 0;
-  sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, (char*)z, zOut-z,sqlite3_free,SQLITE_UTF8_ZT);
 }
 
 /*
@@ -1360,7 +1362,7 @@ static void hexFunc(
     }
     *z = 0;
     sqlite3_result_text64(context, zHex, (u64)(z-zHex),
-                          sqlite3_free, SQLITE_UTF8);
+                          sqlite3_free, SQLITE_UTF8_ZT);
   }
 }
 
@@ -1494,7 +1496,7 @@ static void replaceFunc(
   int nRep;                /* Size of zRep */
   i64 nOut;                /* Maximum size of zOut */
   int loopLimit;           /* Last zStr[] that might match zPattern[] */
-  int i, j;                /* Loop counters */
+  i64 i, j;                /* Loop counters */
   unsigned cntExpand;      /* Number zOut expansions */
   sqlite3 *db = sqlite3_context_db_handle(context);
 
@@ -1669,6 +1671,7 @@ static void concatFuncCore(
 ){
   i64 j, n = 0;
   int i;
+  int bNotNull = 0;   /* True after at least NOT NULL argument seen */
   char *z;
   for(i=0; i<argc; i++){
     n += sqlite3_value_bytes(argv[i]);
@@ -1685,18 +1688,19 @@ static void concatFuncCore(
       int k = sqlite3_value_bytes(argv[i]);
       const char *v = (const char*)sqlite3_value_text(argv[i]);
       if( v!=0 ){
-        if( j>0 && nSep>0 ){
+        if( bNotNull && nSep>0 ){
           memcpy(&z[j], zSep, nSep);
           j += nSep;
         }
         memcpy(&z[j], v, k);
         j += k;
+        bNotNull = 1;
       }
     }
   }
   z[j] = 0;
   assert( j<=n );
-  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8);
+  sqlite3_result_text64(context, z, j, sqlite3_free, SQLITE_UTF8_ZT);
 }
 
 /*
@@ -1971,11 +1975,16 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
     assert( p->cnt>0 );
     p->cnt--;
     if( !p->approx ){
-      if( sqlite3SubInt64(&p->iSum, sqlite3_value_int64(argv[0])) ){
-        p->ovrfl = 1;
-        p->approx = 1;
+      i64 x = p->iSum;
+      if( sqlite3SubInt64(&x, sqlite3_value_int64(argv[0]))==0 ){
+        p->iSum = x;
+        return;
       }
-    }else if( type==SQLITE_INTEGER ){
+      p->ovrfl = 1;
+      p->approx = 1;
+      kahanBabuskaNeumaierInit(p, p->iSum);
+    }
+    if( type==SQLITE_INTEGER ){
       i64 iVal = sqlite3_value_int64(argv[0]);
       if( iVal!=SMALLEST_INT64 ){
         kahanBabuskaNeumaierStepInt64(p, -iVal);
@@ -2300,7 +2309,7 @@ static void groupConcatFinalize(sqlite3_context *context){
   GroupConcatCtx *pGCC
     = (GroupConcatCtx*)sqlite3_aggregate_context(context, 0);
   if( pGCC ){
-    sqlite3ResultStrAccum(context, &pGCC->str);
+    sqlite3_result_str(context, &pGCC->str, SQLITE_XFER);
 #ifndef SQLITE_OMIT_WINDOWFUNC
     sqlite3_free(pGCC->pnSepLengths);
 #endif
@@ -2310,18 +2319,8 @@ static void groupConcatFinalize(sqlite3_context *context){
 static void groupConcatValue(sqlite3_context *context){
   GroupConcatCtx *pGCC
     = (GroupConcatCtx*)sqlite3_aggregate_context(context, 0);
-  if( pGCC ){
-    StrAccum *pAccum = &pGCC->str;
-    if( pAccum->accError==SQLITE_TOOBIG ){
-      sqlite3_result_error_toobig(context);
-    }else if( pAccum->accError==SQLITE_NOMEM ){
-      sqlite3_result_error_nomem(context);
-    }else if( pGCC->nAccum>0 && pAccum->nChar==0 ){
-      sqlite3_result_text(context, "", 1, SQLITE_STATIC);
-    }else{   
-      const char *zText = sqlite3_str_value(pAccum);
-      sqlite3_result_text(context, zText, pAccum->nChar, SQLITE_TRANSIENT);
-    }
+  if( pGCC && pGCC->nAccum>0 ){
+    sqlite3_result_str(context, &pGCC->str, SQLITE_COPY);
   }
 }
 #else
@@ -2362,6 +2361,8 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
     sqlite3CreateFunc(db, "like", nArg, SQLITE_UTF8, pInfo, likeFunc, 
                       0, 0, 0, 0, 0);
     pDef = sqlite3FindFunction(db, "like", nArg, SQLITE_UTF8, 0);
+    assert( pDef!=0 ); /* The sqlite3CreateFunc() call above cannot fail
+                       ** because the "like" SQL-function already exists */
     pDef->funcFlags |= flags;
     pDef->funcFlags &= ~SQLITE_FUNC_UNSAFE;
   }
@@ -2636,6 +2637,556 @@ static void signFunc(
   sqlite3_result_int(context, x<0.0 ? -1 : x>0.0 ? +1 : 0);
 }
 
+#if defined(SQLITE_ENABLE_PERCENTILE)
+/***********************************************************************
+** This section implements the percentile(Y,P) SQL function and similar.
+** Requirements:
+**
+**   (1)  The percentile(Y,P) function is an aggregate function taking
+**        exactly two arguments.
+**
+**   (2)  If the P argument to percentile(Y,P) is not the same for every
+**        row in the aggregate then an error is thrown.  The word "same"
+**        in the previous sentence means that the value differ by less
+**        than 0.001.
+**
+**   (3)  If the P argument to percentile(Y,P) evaluates to anything other
+**        than a number in the range of 0.0 to 100.0 inclusive then an
+**        error is thrown.
+**
+**   (4)  If any Y argument to percentile(Y,P) evaluates to a value that
+**        is not NULL and is not numeric then an error is thrown.
+**
+**   (5)  If any Y argument to percentile(Y,P) evaluates to plus or minus
+**        infinity then an error is thrown.  (SQLite always interprets NaN
+**        values as NULL.)
+**
+**   (6)  Both Y and P in percentile(Y,P) can be arbitrary expressions,
+**        including CASE WHEN expressions.
+**
+**   (7)  The percentile(Y,P) aggregate is able to handle inputs of at least
+**        one million (1,000,000) rows.
+**
+**   (8)  If there are no non-NULL values for Y, then percentile(Y,P)
+**        returns NULL.
+**
+**   (9)  If there is exactly one non-NULL value for Y, the percentile(Y,P)
+**        returns the one Y value.
+**
+**  (10)  If there N non-NULL values of Y where N is two or more and
+**        the Y values are ordered from least to greatest and a graph is
+**        drawn from 0 to N-1 such that the height of the graph at J is
+**        the J-th Y value and such that straight lines are drawn between
+**        adjacent Y values, then the percentile(Y,P) function returns
+**        the height of the graph at P*(N-1)/100.
+**
+**  (11)  The percentile(Y,P) function always returns either a floating
+**        point number or NULL.
+**
+**  (12)  The percentile(Y,P) is implemented as a single C99 source-code
+**        file that compiles into a shared-library or DLL that can be loaded
+**        into SQLite using the sqlite3_load_extension() interface.
+**
+**  (13)  A separate median(Y) function is the equivalent percentile(Y,50).
+**
+**  (14)  A separate percentile_cont(Y,P) function is equivalent to
+**        percentile(Y,P/100.0).  In other words, the fraction value in
+**        the second argument is in the range of 0 to 1 instead of 0 to 100.
+**
+**  (15)  A separate percentile_disc(Y,P) function is like
+**        percentile_cont(Y,P) except that instead of returning the weighted
+**        average of the nearest two input values, it returns the next lower
+**        value.  So the percentile_disc(Y,P) will always return a value
+**        that was one of the inputs.
+**
+**  (16)  All of median(), percentile(Y,P), percentile_cont(Y,P) and
+**        percentile_disc(Y,P) can be used as window functions.
+**
+** Differences from standard SQL:
+**
+**  *  The percentile_cont(X,P) function is equivalent to the following in
+**     standard SQL:
+**
+**         (percentile_cont(P) WITHIN GROUP (ORDER BY X))
+**
+**     The SQLite syntax is much more compact.  The standard SQL syntax
+**     is also supported if SQLite is compiled with the
+**     -DSQLITE_ENABLE_ORDERED_SET_AGGREGATES option.
+**
+**  *  No median(X) function exists in the SQL standard.  App developers
+**     are expected to write "percentile_cont(0.5)WITHIN GROUP(ORDER BY X)".
+**
+**  *  No percentile(Y,P) function exists in the SQL standard.  Instead of
+**     percential(Y,P), developers must write this:
+**     "percentile_cont(P/100.0) WITHIN GROUP (ORDER BY Y)".  Note that
+**     the fraction parameter to percentile() goes from 0 to 100 whereas
+**     the fraction parameter in SQL standard percentile_cont() goes from
+**     0 to 1.
+**
+** Implementation notes as of 2024-08-31:
+**
+**  *  The regular aggregate-function versions of these routines work
+**     by accumulating all values in an array of doubles, then sorting
+**     that array using quicksort before computing the answer. Thus
+**     the runtime is O(NlogN) where N is the number of rows of input.
+**
+**  *  For the window-function versions of these routines, the array of
+**     inputs is sorted as soon as the first value is computed.  Thereafter,
+**     the array is kept in sorted order using an insert-sort.  This
+**     results in O(N*K) performance where K is the size of the window.
+**     One can imagine alternative implementations that give O(N*logN*logK)
+**     performance, but they require more complex logic and data structures.
+**     The developers have elected to keep the asymptotically slower
+**     algorithm for now, for simplicity, under the theory that window
+**     functions are seldom used and when they are, the window size K is
+**     often small.  The developers might revisit that decision later,
+**     should the need arise.
+*/
+
+/* The following object is the group context for a single percentile()
+** aggregate.  Remember all input Y values until the very end.
+** Those values are accumulated in the Percentile.a[] array.
+*/
+typedef struct Percentile Percentile;
+struct Percentile {
+  u64 nAlloc;          /* Number of slots allocated for a[] */
+  u64 nUsed;           /* Number of slots actually used in a[] */
+  char bSorted;        /* True if a[] is already in sorted order */
+  char bKeepSorted;    /* True if advantageous to keep a[] sorted */
+  char bPctValid;      /* True if rPct is valid */
+  double rPct;         /* Fraction.  0.0 to 1.0 */
+  double *a;           /* Array of Y values */
+};
+
+/*
+** Return TRUE if the input floating-point number is an infinity.
+*/
+static int percentIsInfinity(double r){
+  sqlite3_uint64 u;
+  assert( sizeof(u)==sizeof(r) );
+  memcpy(&u, &r, sizeof(u));
+  return ((u>>52)&0x7ff)==0x7ff;
+}
+
+/*
+** Return TRUE if two doubles differ by 0.001 or less.
+*/
+static int percentSameValue(double a, double b){
+  a -= b;
+  return a>=-0.001 && a<=0.001;
+}
+
+/*
+** Search p (which must have p->bSorted) looking for an entry with
+** value y.  Return the index of that entry.
+**
+** If bExact is true, return -1 if the entry is not found.
+**
+** If bExact is false, return the index at which a new entry with
+** value y should be insert in order to keep the values in sorted
+** order.  The smallest return value in this case will be 0, and
+** the largest return value will be p->nUsed.
+*/
+static i64 percentBinarySearch(Percentile *p, double y, int bExact){
+  i64 iFirst = 0;                   /* First element of search range */
+  i64 iLast = (i64)p->nUsed - 1;    /* Last element of search range */
+  while( iLast>=iFirst ){
+    i64 iMid = (iFirst+iLast)/2;
+    double x = p->a[iMid];
+    if( x<y ){
+      iFirst = iMid + 1;
+    }else if( x>y ){
+      iLast = iMid - 1;
+    }else{
+      return iMid;
+    }
+  }
+  if( bExact ) return -1;
+  return iFirst;
+}
+
+/*
+** Generate an error for a percentile function.
+**
+** The error format string must have exactly one occurrence of "%%s()"
+** (with two '%' characters).  That substring will be replaced by the name
+** of the function.
+*/
+static void percentError(sqlite3_context *pCtx, const char *zFormat, ...){
+  char *zMsg1;
+  char *zMsg2;
+  va_list ap;
+
+  va_start(ap, zFormat);
+  zMsg1 = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  zMsg2 = zMsg1 ? sqlite3_mprintf(zMsg1, sqlite3VdbeFuncName(pCtx)) : 0;
+  sqlite3_result_error(pCtx, zMsg2, -1);
+  sqlite3_free(zMsg1);
+  sqlite3_free(zMsg2);
+}
+
+/*
+** The "step" function for percentile(Y,P) is called once for each
+** input row.
+*/
+static void percentStep(sqlite3_context *pCtx, int argc, sqlite3_value **argv){
+  Percentile *p;
+  double rPct;
+  int eType;
+  double y;
+  assert( argc==2 || argc==1 );
+
+  if( argc==1 ){
+    /* Requirement 13:  median(Y) is the same as percentile(Y,50). */
+    rPct = 0.5;
+  }else{
+    /* P must be a number between 0 and 100 for percentile() or between
+    ** 0.0 and 1.0 for percentile_cont() and percentile_disc().
+    **
+    ** The user-data is an integer which is 10 times the upper bound.
+    */
+    double mxFrac = (SQLITE_PTR_TO_INT(sqlite3_user_data(pCtx))&2)? 100.0 : 1.0;
+    eType = sqlite3_value_numeric_type(argv[1]);
+    rPct = sqlite3_value_double(argv[1])/mxFrac;
+    if( (eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT)
+     || rPct<0.0 || rPct>1.0
+    ){
+      percentError(pCtx, "the fraction argument to %%s()"
+                        " is not between 0.0 and %.1f",
+                        (double)mxFrac);
+      return;
+    }
+  }
+
+  /* Allocate the session context. */
+  p = (Percentile*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  if( p==0 ) return;
+
+  /* Remember the P value.  Throw an error if the P value is different
+  ** from any prior row, per Requirement (2). */
+  if( !p->bPctValid ){
+    p->rPct = rPct;
+    p->bPctValid = 1;
+  }else if( !percentSameValue(p->rPct,rPct) ){
+    percentError(pCtx, "the fraction argument to %%s()"
+                      " is not the same for all input rows");
+    return;
+  }
+
+  /* Ignore rows for which Y is NULL */
+  eType = sqlite3_value_type(argv[0]);
+  if( eType==SQLITE_NULL ) return;
+
+  /* If not NULL, then Y must be numeric.  Otherwise throw an error.
+  ** Requirement 4 */
+  if( eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT ){
+    percentError(pCtx, "input to %%s() is not numeric");
+    return;
+  }
+
+  /* Throw an error if the Y value is infinity or NaN */
+  y = sqlite3_value_double(argv[0]);
+  if( percentIsInfinity(y) ){
+    percentError(pCtx, "Inf input to %%s()");
+    return;
+  }
+
+  /* Allocate and store the Y */
+  if( p->nUsed>=p->nAlloc ){
+    u64 n = p->nAlloc*2 + 250;
+    double *a = sqlite3_realloc64(p->a, sizeof(double)*n);
+    if( a==0 ){
+      sqlite3_free(p->a);
+      memset(p, 0, sizeof(*p));
+      sqlite3_result_error_nomem(pCtx);
+      return;
+    }
+    p->nAlloc = n;
+    p->a = a;
+  }
+  if( p->nUsed==0 ){
+    p->a[p->nUsed++] = y;
+    p->bSorted = 1;
+  }else if( !p->bSorted || y>=p->a[p->nUsed-1] ){
+    p->a[p->nUsed++] = y;
+  }else if( p->bKeepSorted ){
+    i64 i;
+    i = percentBinarySearch(p, y, 0);
+    if( i<(int)p->nUsed ){
+      memmove(&p->a[i+1], &p->a[i], (p->nUsed-i)*sizeof(p->a[0]));
+    }
+    p->a[i] = y;
+    p->nUsed++;
+  }else{
+    p->a[p->nUsed++] = y;
+    p->bSorted = 0;
+  }
+}
+
+/*
+** Interchange two doubles.
+*/
+#define SWAP_DOUBLE(X,Y)  {double ttt=(X);(X)=(Y);(Y)=ttt;}
+
+/*
+** Sort an array of doubles.
+**
+** Algorithm: quicksort
+**
+** This is implemented separately rather than using the qsort() routine
+** from the standard library because:
+**
+**    (1)  To avoid a dependency on qsort()
+**    (2)  To avoid the function call to the comparison routine for each
+**         comparison.
+**
+** If parameter iReq is non-negative, then the caller will only access
+** elements a[iReq] and a[iReq+1] (if it exists) of the sorted array and
+** so it is not necessary to position any other elements. Or if iReq is
+** negative, then the final array must be fully sorted.
+*/
+static void percentSort(
+  double *a,                      /* Array to sort */
+  unsigned int n,                 /* Number of elements in array a[] */
+  int iReq                        /* Element caller cares about (or -ve) */
+){
+  int iLt;       /* Entries before a[iLt] are less than or equal to rPivot */
+  int iGt;       /* Entries a[iGt] and after are greater or equal to rPivot */
+  int i;         /* Loop counter */
+  double rPivot; /* The pivot value */
+
+  assert( n>=2 );
+  do{
+    /* Put the first, middle, and last elements in sorted order.
+    ** After doing so, return immediately if the array contains
+    ** three or fewer elements as there is nothing more to do.
+    */
+    if( a[0]>a[n-1] ){
+      SWAP_DOUBLE(a[0],a[n-1])
+    }
+    if( n==2 ) return;
+    iGt = n-1;
+    i = n/2;
+    if( a[0]>a[i] ){
+      SWAP_DOUBLE(a[0],a[i])
+    }else if( a[i]>a[iGt] ){
+      SWAP_DOUBLE(a[i],a[iGt])
+    }
+    if( n==3 ) return;
+
+    /* Take the value of the middle element as the pivot.  Shuffle
+    ** values around so that all elements less than the pivot come
+    ** before all elements greater than the pivot.
+    */
+    rPivot = a[i];
+    iLt = i = 1;
+    do{
+      if( a[i]<rPivot ){
+        if( i>iLt ) SWAP_DOUBLE(a[i],a[iLt])
+        iLt++;
+        i++;
+      }else if( a[i]>rPivot ){
+        do{
+          iGt--;
+        }while( iGt>i && a[iGt]>rPivot );
+        SWAP_DOUBLE(a[i],a[iGt])
+      }else{
+        i++;
+      }
+    }while( i<iGt );
+
+    assert( iLt>0 && iLt<iGt && (unsigned)iGt<n );
+    testcase( iGt>iLt+1 );
+    assert( a[iLt]==rPivot );
+    assert( a[iLt-1]<=rPivot );
+    assert( a[iGt]>=rPivot );
+    assert( a[iLt+1]>=rPivot );
+
+    if( iReq>=0 ){
+      /* In this case, the only elements that the caller requires sorted into 
+      ** the correct positions are elements a[iReq] and a[iReq+1]. At this
+      ** point we know that element a[iLt] is in the correct position and
+      ** all elements smaller than a[iLt] are in the left-hand partition.
+      ** So if (iReq<iLt), then it is only necessary to sort the left
+      ** partition.
+      **
+      ** If (iReq>=iLt), then elements iReq and iReq+1 are either in the
+      ** right partition or the equal partition (elements for which 
+      ** iLt<=iElem<iGt). Therefore it is always sufficient to sort only
+      ** the right partition in this case.  */
+      if( iReq<iLt ){
+        n = iLt;
+      }else{
+        a += iGt;
+        n -= iGt;
+        iReq = MAX(0, iReq-iGt);
+      }
+    }else{
+      /* Recurse on the smaller partition only.  The smaller partition
+      ** will hold n/2 or fewer entries, which assures that the stack
+      ** depth will not exceed O(log(n)), even for pathological cases.
+      ** Loop without recursion for the larger partition. */
+      if( iLt>(int)(n/2) ){
+        if( n-iGt>=2 ) percentSort(a+iGt, n-iGt, -1);
+        n = iLt;
+      }else{
+        if( iLt>=2 ) percentSort(a, iLt, -1);
+        a += iGt;
+        n -= iGt;
+      }
+    }
+  }while( n>=2 );
+}
+
+/*
+** The "inverse" function for percentile(Y,P) is called to remove a
+** row that was previously inserted by "step".
+*/
+static void percentInverse(sqlite3_context *pCtx,int argc,sqlite3_value **argv){
+  Percentile *p;
+  int eType;
+  double y;
+  i64 i;
+  assert( argc==2 || argc==1 );
+
+  /* Allocate the session context. */
+  p = (Percentile*)sqlite3_aggregate_context(pCtx, sizeof(*p));
+  assert( p!=0 );
+
+  /* Ignore rows for which Y is NULL */
+  eType = sqlite3_value_type(argv[0]);
+  if( eType==SQLITE_NULL ) return;
+
+  /* If not NULL, then Y must be numeric.  Otherwise throw an error.
+  ** Requirement 4 */
+  if( eType!=SQLITE_INTEGER && eType!=SQLITE_FLOAT ){
+    return;
+  }
+
+  /* Ignore the Y value if it is infinity or NaN */
+  y = sqlite3_value_double(argv[0]);
+  if( percentIsInfinity(y) ){
+    return;
+  }
+  if( p->bSorted==0 ){
+    assert( p->nUsed>1 );
+    percentSort(p->a, p->nUsed, -1);
+    p->bSorted = 1;
+  }
+  p->bKeepSorted = 1;
+
+  /* Find and remove the row */
+  i = percentBinarySearch(p, y, 1);
+  if( i>=0 ){
+    p->nUsed--;
+    if( i<(int)p->nUsed ){
+      memmove(&p->a[i], &p->a[i+1], (p->nUsed - i)*sizeof(p->a[0]));
+    }
+  }
+}
+
+/*
+** Compute the final output of percentile().  Clean up all allocated
+** memory if and only if bIsFinal is true.
+*/
+static void percentCompute(sqlite3_context *pCtx, int bIsFinal){
+  Percentile *p;
+  int settings = SQLITE_PTR_TO_INT(sqlite3_user_data(pCtx))&1; /* Discrete? */
+  unsigned i1, i2;
+  double v1, v2;
+  double ix, vx;
+  p = (Percentile*)sqlite3_aggregate_context(pCtx, 0);
+  if( p==0 ) return;
+  if( p->a==0 ) return;
+  if( p->nUsed ){
+    ix = p->rPct*(p->nUsed-1);
+    i1 = (unsigned)ix;
+    if( p->bSorted==0 ){
+      /* In cases where bIsFinal is non-zero, setting Percentile.bSorted 
+      ** after the percentSort() call here is not technically correct, as 
+      ** the array is not fully sorted. But in this case the object will be 
+      ** freed below anyway, so it doesn't matter.  */
+      assert( p->nUsed>1 );
+      percentSort(p->a, p->nUsed, (bIsFinal ? (int)i1 : -1));
+      p->bSorted = 1;
+    }
+    if( settings & 1 ){
+      vx = p->a[i1];
+    }else{
+      i2 = ix==(double)i1 || i1==p->nUsed-1 ? i1 : i1+1;
+      v1 = p->a[i1];
+      v2 = p->a[i2];
+      vx = v1 + (v2-v1)*(ix-i1);
+    }
+    sqlite3_result_double(pCtx, vx);
+  }
+  if( bIsFinal ){
+    sqlite3_free(p->a);
+    memset(p, 0, sizeof(*p));
+  }else{
+    p->bKeepSorted = 1;
+  }
+}
+static void percentFinal(sqlite3_context *pCtx){
+  percentCompute(pCtx, 1);
+}
+static void percentValue(sqlite3_context *pCtx){
+  percentCompute(pCtx, 0);
+}
+/****** End of percentile family of functions ******/
+#endif /* SQLITE_ENABLE_PERCENTILE */
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+/*
+** Implementation of sqlite_filestat(SCHEMA).
+**
+** Return JSON text that describes low-level debug/diagnostic information
+** about the sqlite3_file object associated with SCHEMA.
+*/
+static void filestatFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  const char *zDbName;
+  sqlite3_str *pStr;
+  Btree *pBtree;
+
+  zDbName = (const char*)sqlite3_value_text(argv[0]);
+  pBtree = sqlite3DbNameToBtree(db, zDbName);
+  if( pBtree ){
+    Pager *pPager;
+    sqlite3_file *fd;
+    int rc;
+    sqlite3BtreeEnter(pBtree);
+    pPager = sqlite3BtreePager(pBtree);
+    assert( pPager!=0 );
+    fd = sqlite3PagerFile(pPager);
+    pStr = sqlite3_str_new(db);
+    if( sqlite3_str_errcode(pStr) ){
+      sqlite3_result_error_nomem(context);
+    }else{
+      sqlite3_str_append(pStr, "{\"db\":", 6);
+      rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_FILESTAT, pStr);
+      if( rc ) sqlite3_str_append(pStr, "null", 4);
+      fd = sqlite3PagerJrnlFile(pPager);
+      if( fd && fd->pMethods!=0 ){
+        sqlite3_str_appendall(pStr, ",\"journal\":");
+        rc = sqlite3OsFileControl(fd, SQLITE_FCNTL_FILESTAT, pStr);
+        if( rc ) sqlite3_str_append(pStr, "null", 4);
+      }
+      sqlite3_str_append(pStr, "}", 1);
+      sqlite3_result_str(context, pStr, SQLITE_FINISH);
+    }
+    sqlite3BtreeLeave(pBtree);
+  }else{
+    sqlite3_result_text(context, "{}", 2, SQLITE_STATIC);
+  }
+}
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_FILESTAT */
+
 #ifdef SQLITE_DEBUG
 /*
 ** Implementation of fpdecode(x,y,z) function.
@@ -2716,7 +3267,7 @@ static void parseuriFunc(
   flgs = (unsigned int)sqlite3_value_int(argv[1]);
   rc = sqlite3ParseUri(zVfs, zUri, &flgs, &pVfs, &zFile, &zErr);
   pResult = sqlite3_str_new(0);
-  if( pResult ){
+  if( !sqlite3_str_errcode(pResult) ){
     int i;
     sqlite3_str_appendf(pResult, "rc=%d", rc);
     sqlite3_str_appendf(pResult, ", flags=0x%x", flgs);
@@ -2743,8 +3294,8 @@ static void parseuriFunc(
         }
       }
     }
-    sqlite3_result_text(ctx, sqlite3_str_finish(pResult), -1, sqlite3_free);
   }
+  sqlite3_result_str(ctx, pResult, SQLITE_FINISH);
   sqlite3_free_filename(zFile);
   sqlite3_free(zErr);
 }
@@ -2794,6 +3345,9 @@ void sqlite3RegisterBuiltinFunctions(void){
 #ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
     INLINE_FUNC(sqlite_offset,   1, INLINEFUNC_sqlite_offset, 0 ),
 #endif
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_FILESTAT)
+    FUNCTION(sqlite_filestat,    1, 0, 0, filestatFunc     ),
+#endif
     FUNCTION(ltrim,              1, 1, 0, trimFunc         ),
     FUNCTION(ltrim,              2, 1, 0, trimFunc         ),
     FUNCTION(rtrim,              1, 2, 0, trimFunc         ),
@@ -2838,7 +3392,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     DFUNCTION(sqlite_version,    0, 0, 0, versionFunc      ),
     DFUNCTION(sqlite_source_id,  0, 0, 0, sourceidFunc     ),
-    FUNCTION(sqlite_log,         2, 0, 0, errlogFunc       ),
+    SFUNCTION(sqlite_log,        2, 0, 0, errlogFunc       ),
     FUNCTION(unistr,             1, 0, 0, unistrFunc       ),
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(unistr_quote,       1, 1, 0, quoteFunc        ),
@@ -2865,6 +3419,21 @@ void sqlite3RegisterBuiltinFunctions(void){
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
     WAGGREGATE(string_agg,   2, 0, 0, groupConcatStep,
         groupConcatFinalize, groupConcatValue, groupConcatInverse, 0),
+
+#ifdef SQLITE_ENABLE_PERCENTILE
+    WAGGREGATE(median,          1,   0,0, percentStep,
+        percentFinal, percentValue, percentInverse,
+        SQLITE_INNOCUOUS|SQLITE_SELFORDER1),
+    WAGGREGATE(percentile,      2, 0x2,0, percentStep,
+        percentFinal, percentValue, percentInverse,
+        SQLITE_INNOCUOUS|SQLITE_SELFORDER1),
+    WAGGREGATE(percentile_cont, 2,   0,0, percentStep,
+        percentFinal, percentValue, percentInverse,
+        SQLITE_INNOCUOUS|SQLITE_SELFORDER1),
+    WAGGREGATE(percentile_disc, 2, 0x1,0, percentStep,
+        percentFinal, percentValue, percentInverse,
+        SQLITE_INNOCUOUS|SQLITE_SELFORDER1),
+#endif /* SQLITE_ENABLE_PERCENTILE */
  
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
 #ifdef SQLITE_CASE_SENSITIVE_LIKE

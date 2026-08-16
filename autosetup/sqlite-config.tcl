@@ -65,7 +65,7 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
   # The list of feature --flags which the --all flag implies. This
   # requires special handling in a few places.
   #
-  all-flag-enables {fts4 fts5 rtree geopoly session}
+  all-flag-enables {fts4 fts5 rtree geopoly session dbpage dbstat carray}
 
   #
   # Default value for the --all flag. Can hypothetically be modified
@@ -220,6 +220,9 @@ proc sqlite-configure {buildMode configScript} {
         geopoly              => {Enable the GEOPOLY extension}
         rtree                => {Enable the RTREE extension}
         session              => {Enable the SESSION extension}
+        dbpage               => {Enable the sqlite3_dbpage extension}
+        dbstat               => {Enable the sqlite3_dbstat extension}
+        carray=1             => {Disable the CARRAY extension}
         all=$::sqliteConfig(all-flag-default) => {$allFlagHelp}
         largefile=1
           => {This legacy flag has no effect on the library but may influence
@@ -463,7 +466,7 @@ proc sqlite-configure {buildMode configScript} {
 proc sqlite-configure-phase1 {buildMode} {
   define PACKAGE_NAME sqlite
   define PACKAGE_URL {https://sqlite.org}
-  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
+  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/bugs
   define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define PACKAGE_VERSION]"
   proj-xfer-options-aliases {
     # Carry values from hidden --flag aliases over to their canonical
@@ -501,6 +504,7 @@ proc sqlite-configure-phase1 {buildMode} {
   if {[file exists $srcdir/sqlite3.pc.in]} {
     proj-dot-ins-append $srcdir/sqlite3.pc.in
   }
+  sqlite-handle-hpux; # must be relatively early so that other config tests can work
 }; # sqlite-configure-phase1
 
 ########################################################################
@@ -553,7 +557,25 @@ proc proc-debug {msg} {
 }
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
-define OPT_SHELL {}         ; # Feature-related CFLAGS for the sqlite3 CLI app
+#
+# OPT_SHELL = feature-related CFLAGS for the sqlite3 CLI app. The
+# list's initial values are defaults which are always applied and not
+# affected by --feature-flags. The list is appended to by various
+# --feature-flags.
+define OPT_SHELL {
+  -DSQLITE_DQS=0
+  -DSQLITE_ENABLE_FTS4
+  -DSQLITE_ENABLE_RTREE
+  -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  -DSQLITE_ENABLE_STMTVTAB
+  -DSQLITE_ENABLE_DBPAGE_VTAB
+  -DSQLITE_ENABLE_DBSTAT_VTAB
+  -DSQLITE_ENABLE_BYTECODE_VTAB
+  -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+  -DSQLITE_ENABLE_PERCENTILE
+  -DSQLITE_STRICT_SUBTYPE=1
+}
 ########################################################################
 # Adds $args, if not empty, to OPT_FEATURE_FLAGS.  If the first arg is
 # -shell then it strips that arg and passes the remaining args the
@@ -627,7 +649,7 @@ proc sqlite-check-common-system-deps {} {
 
   # Check for needed/wanted functions
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
-    strchrnul usleep utime pread pread64 pwrite pwrite64
+    usleep utime pread pread64 pwrite pwrite64
 
   apply {{} {
     set ldrt ""
@@ -657,6 +679,7 @@ proc sqlite-check-common-system-deps {} {
     define HAVE_ZLIB 1
     define LDFLAGS_ZLIB -lz
     sqlite-add-shell-opt -DSQLITE_HAVE_ZLIB=1
+    sqlite-add-feature-flag -DSQLITE_HAVE_ZLIB=1
   } else {
     define HAVE_ZLIB 0
     define LDFLAGS_ZLIB ""
@@ -720,12 +743,11 @@ proc sqlite-setup-default-cflags {} {
   # compiling binaries for the target system (CC a.k.a. $(T.cc)).
   # Normally they're the same, but they will differ when
   # cross-compiling.
-  #
-  # When cross-compiling we default to not using the -g flag, based on a
-  # /chat discussion prompted by
-  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
   set defaultCFlags {-O2}
   if {!$::sqliteConfig(is-cross-compiling)} {
+    # When cross-compiling we default to not using the -g flag, based
+    # on a /chat discussion prompted by
+    # https://sqlite.org/forum/forumpost/9a67df63eda9925c
     lappend defaultCFlags -g
   }
   define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
@@ -783,8 +805,12 @@ proc sqlite-handle-common-feature-flags {} {
         sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
       }
     }
-    scanstatus      -DSQLITE_ENABLE_STMT_SCANSTATUS {}
+    bytecode-vtab   -DSQLITE_ENABLE_BYTECODE_VTAB {}
+    scanstatus      {-DSQLITE_ENABLE_STMT_SCANSTATUS -DSQLITE_ENABLE_BYTECODE_VTAB} {}
     column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
+    dbpage          -DSQLITE_ENABLE_DBPAGE_VTAB {}
+    dbstat          -DSQLITE_ENABLE_DBSTAT_VTAB {}
+    carray          -DSQLITE_ENABLE_CARRAY {}
   }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
@@ -1041,7 +1067,7 @@ proc sqlite-get-readline-dir-list {} {
     }
     *-haiku {
       lappend dirs /boot/system/develop/headers
-      if {[opt-val with-readline-ldflags] in {auto ""}} {
+      if {![opt-bool editline] && [opt-val with-readline-ldflags] in {auto ""}} {
         # If the user did not supply their own --with-readline-ldflags
         # value, hijack that flag to inject options which are known to
         # work on Haiku OS installations.
@@ -1068,16 +1094,30 @@ proc sqlite-get-readline-dir-list {} {
 #   - HAVE_LINENOISE to 0, 1, or 2
 #   - HAVE_EDITLINE to 0 or 1
 #
-# Only one of ^^^ those will be set to non-0.
+#  Those will be set as follows:
+#
+#   HAVE_LINENOISE=0, HAVE_EDITLINE=0, HAVE_READLINE=0: no line editing
+#
+#   HAVE_LINENOISE>0: 1=antirez flavor, 2=msteveb flavor
+#
+#   HAVE_EDITLINE=0, HAVE_READLINE=1: use GNU readline
+#
+#   HAVE_EDITLINE=1, HAVE_READLINE=1: use BSD editline header
+#   <readline/readline.h>.
+#
+#   HAVE_EDITLINE=1, HAVE_READLINE=0: use BSD editline header
+#   <editline/readline.h>.
+#
+# Other defines it sets:
 #
 #   - LDFLAGS_READLINE = linker flags or empty string
 #
 #   - CFLAGS_READLINE = compilation flags for clients or empty string.
 #
-# Note that LDFLAGS_READLINE and CFLAGS_READLINE may refer to
-# linenoise or editline, not necessarily libreadline.  In some cases
-# it will set HAVE_READLINE=1 when it's really using editline, for
-# reasons described in this function's comments.
+# Both LDFLAGS_READLINE and CFLAGS_READLINE may refer to linenoise or
+# editline, not necessarily libreadline.  In some cases it will set
+# HAVE_READLINE=1 when it's really using editline, for reasons
+# described in this function's comments.
 #
 # Returns a string describing which line-editing approach to use, or
 # "none" if no option is available.
@@ -1111,6 +1151,27 @@ proc sqlite-check-line-editing {} {
   set editLibName "readline"     ; # "readline" or "editline"
   set editLibDef "HAVE_READLINE" ; # "HAVE_READLINE" or "HAVE_EDITLINE"
   set dirLn [opt-val with-linenoise]
+
+  # If none of --with-linenoise, --enable-readline, or --enable-editline
+  # are provided, but there exists a directory "linenoise" at $HOME or
+  # a sibling of the build or source directory, then try to use that linenoise
+  # directory.
+  #
+  if {"" eq $dirLn
+   && ![proj-opt-was-provided readline]
+   && ![proj-opt-was-provided editline]
+  } {
+    set dirlist ../linenoise
+    catch {lappend dirlist [file-normalize $::autosetup(srcdir)/../linenoise]}
+    catch {lappend dirlist $::env(HOME)/linenoise}
+    foreach d $dirlist {
+      if {[file exists $d/linenoise.c] && [file exists $d/linenoise.h]} {
+        set dirLn $d
+        break
+      }
+    }
+  }
+
   if {"" ne $dirLn} {
     # Use linenoise from a copy of its sources (not a library)...
     if {![file isdir $dirLn]} {
@@ -1146,6 +1207,8 @@ proc sqlite-check-line-editing {} {
     if {$::sqliteConfig(use-jim-for-codegen) && 2 == $lnVal} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
       user-notice "Adding linenoise support to jimsh."
+    } else {
+      msg-result "Using linenoise at [file-normalize $dirLn]"
     }
     return "linenoise ($flavor)"
   } elseif {[opt-bool editline]} {
@@ -1256,14 +1319,18 @@ proc sqlite-check-line-editing {} {
 
   # If we found a library, configure the build to use it...
   if {"" ne $rlLib} {
-    if {"editline" eq $editLibName && "HAVE_READLINE" eq $editLibDef} {
-      # Alert the user that, despite outward appearances, we won't be
-      # linking to the GPL'd libreadline. Presumably that distinction is
-      # significant for those using --editline.
-      proj-indented-notice {
-        NOTE: the local libedit uses <readline/readline.h> so we
-        will compile with -DHAVE_READLINE=1 but will link with
-        libedit.
+    if {"editline" eq $editLibName} {
+      # sqlite-add-shell-opt -DEL_WIDECHAR=1;
+      if {"HAVE_READLINE" eq $editLibDef} {
+        sqlite-add-shell-opt -DHAVE_EDITLINE=1
+        # Alert the user that, despite outward appearances, we won't be
+        # linking to the GPL'd libreadline. Presumably that distinction is
+        # significant for those using --editline.
+        proj-indented-notice {
+          NOTE: the local libedit uses <readline/readline.h> so we
+          will compile with -DHAVE_READLINE=1 but will link with
+          libedit.
+        }
       }
     }
     set rlLib [join $rlLib]
@@ -1483,7 +1550,7 @@ proc sqlite-handle-math {} {
     }
     define LDFLAGS_MATH [get-define lib_ceil]
     undefine lib_ceil
-    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS
+    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_ENABLE_PERCENTILE
     msg-result "Enabling math SQL functions"
   } {
     define LDFLAGS_MATH ""
@@ -1543,6 +1610,19 @@ proc sqlite-handle-mac-install-name {} {
     }
   }
   return $rc
+}
+
+#
+# Checks specific to HP-UX.
+#
+proc sqlite-handle-hpux {} {
+  switch -glob -- [get-define host] {
+    *hpux* {
+      if {[cc-check-flags "-Ae"]} {
+        define-append CFLAGS -Ae
+      }
+    }
+  }
 }
 
 ########################################################################
@@ -1683,8 +1763,12 @@ proc sqlite-handle-env-quirks {} {
   set autoDll 0; # true if --out-implib/--dll-basename should be implied
   set host [get-define host]
   switch -glob -- $host {
-    *apple* -
-    *darwin*    { set instName darwin }
+    *-*-darwin* {
+      set instName darwin
+      # We don't look for *apple* because:
+      # https://sqlite.org/forum/forumpost/7b218c3c9f207646
+      # There's at least one Linux out there which matches *apple*.
+    }
     default {
       set x [sqlite-env-is-unix-on-windows $host]
       if {"" ne $x} {
@@ -1980,7 +2064,7 @@ proc sqlite-check-tcl {} {
       }
     }
     if {![file-isexec $with_tclsh]} {
-      proj-warn "Cannot find a usable tclsh (tried: $tryThese)
+      proj-warn "Cannot find a usable tclsh (tried: $tryThese)"
     }
   }
   define TCLSH_CMD $with_tclsh

@@ -1,0 +1,101 @@
+# 2026 July 8
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix altercons3
+
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
+#-------------------------------------------------------------------------
+do_execsql_test 1.0 {
+  CREATE TABLE p1(a PRIMARY KEY);
+  CREATE TABLE c1(b CONSTRAINT fk REFERENCES p1(a));
+}
+do_execsql_test 1.1 {
+  ALTER TABLE c1 DROP CONSTRAINT fk;
+  SELECT sql FROM sqlite_schema WHERE name='c1';
+} {{CREATE TABLE c1(b)}}
+
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE p1(a PRIMARY KEY);
+  CREATE TABLE c1(b, CONSTRAINT fk FOREIGN KEY (b) REFERENCES p1(a));
+}
+do_execsql_test 2.1 {
+  ALTER TABLE c1 DROP CONSTRAINT fk;
+  SELECT sql FROM sqlite_schema WHERE name='c1';
+} {{CREATE TABLE c1(b)}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE TABLE generated(a PRIMARY KEY);
+  CREATE TABLE c1(b CONSTRAINT fk REFERENCES generated(a));
+}
+do_execsql_test 3.1 {
+  ALTER TABLE c1 DROP CONSTRAINT fk;
+  SELECT sql FROM sqlite_schema WHERE name='c1';
+} {{CREATE TABLE c1(b)}}
+
+#--------------------------------------------------------------------------
+reset_db
+
+foreach {tn before after} {
+  1 "CREATE TABLE c1(b CONSTRAINT fk REFERENCES p1(a))"
+    "CREATE TABLE c1(b)"
+
+  2 "CREATE TABLE c1(b, c, CONSTRAINT fk FOREIGN key (c, b) REFERENCES p1(o,t))"
+    "CREATE TABLE c1(b, c)"
+
+  3 "CREATE TABLE c1(b, generated, 
+       CONSTRAINT fk FOREIGN key (generated) REFERENCES p1(o))"
+    "CREATE TABLE c1(b, generated)"
+
+  4 "CREATE TABLE c1(b, generated CONSTRAINT fk REFERENCES p1(o) NOT NULL)"
+    "CREATE TABLE c1(b, generated NOT NULL)"
+
+  5 "CREATE TABLE c1(b, generated CONSTRAINT fk REFERENCES x1)"
+    "CREATE TABLE c1(b, generated)"
+} {
+  do_execsql_test 4.$tn.1 { DROP TABLE IF EXISTS c1 }
+  do_execsql_test 4.$tn.2 $before
+  do_execsql_test 4.$tn.3 { ALTER TABLE c1 DROP CONSTRAINT fk }
+  do_execsql_test 4.$tn.4 { 
+    SELECT sql FROM sqlite_schema WHERE name='c1' 
+  } [list $after]
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE x1(a, b CONSTRAINT ott REFERENCES x2);
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_schema SET sql='CREATE TABLE x1(a, b CONSTRAINT ott REFERENCES';
+}
+
+do_execsql_test 5.1 {
+  ALTER TABLE x1 DROP CONSTRAINT ott;
+}
+
+do_execsql_test 5.2 {
+  SELECT sql FROM sqlite_schema
+} {{CREATE TABLE x1(a, b }}
+
+finish_test
+

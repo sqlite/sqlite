@@ -892,7 +892,7 @@ static int vfstraceOpen(
   vfstrace_printf(pInfo, "%s.xOpen(%s,flags=0x%x)",
                   pInfo->zVfsName, p->zFName, flags);
   if( p->pReal->pMethods ){
-    sqlite3_io_methods *pNew = sqlite3_malloc( sizeof(*pNew) );
+    sqlite3_io_methods *pNew = sqlite3_malloc64( sizeof(*pNew) );
     const sqlite3_io_methods *pSub = p->pReal->pMethods;
     memset(pNew, 0, sizeof(*pNew));
     pNew->iVersion = pSub->iVersion;

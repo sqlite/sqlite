@@ -203,8 +203,8 @@ do_eqp_test 8.2 {
 } {
   QUERY PLAN
   |--SCAN track
-  |--SEARCH album USING INTEGER PRIMARY KEY (rowid=?)
   |--SEARCH composer USING INTEGER PRIMARY KEY (rowid=?)
+  |--SEARCH album USING INTEGER PRIMARY KEY (rowid=?)
   `--USE TEMP B-TREE FOR DISTINCT
 }
 

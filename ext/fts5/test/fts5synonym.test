@@ -418,6 +418,34 @@ do_execsql_test 7.1.2 {
   INSERT INTO t2(t2) VALUES('integrity-check');
 }
 
+#-------------------------------------------------------------------------
+
+reset_db
+fts5_aux_test_functions db
+
+proc tcl_create {args} { return "tcl_tokenize" }
+sqlite3_fts5_create_tokenizer db tcl tcl_create
+
+proc tcl_tokenize {tflags text} {
+  foreach {w iStart iEnd} [fts5_tokenize_split $text] {
+    sqlite3_fts5_token $w $iStart $iEnd
+    if {$w=="usa"} {
+      sqlite3_fts5_token -colo "united" $iStart $iEnd
+    }
+  }
+}
+
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x, tokenize='tcl', tokendata=1);
+  INSERT INTO t1 VALUES('usa is great');
+  INSERT INTO t1 VALUES('canada is cool');
+  INSERT INTO t1 VALUES('australia is what matters');
+}
+
+do_execsql_test 8.1 {
+  SELECT * FROM t1 WHERE t1 MATCH 'usa*';
+} {{usa is great}}
+
 } ;# foreach_detail_mode
 
 finish_test

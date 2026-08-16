@@ -169,10 +169,20 @@ static struct GlobalVars {
 /*
 ** Include various extensions.
 */
-extern int sqlite3_vt02_init(sqlite3*,char**,const sqlite3_api_routines*);
-extern int sqlite3_randomjson_init(sqlite3*,char**,const sqlite3_api_routines*);
-extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
-
+extern int sqlite3_vt02_init(sqlite3*,char**,void*);
+extern int sqlite3_randomjson_init(sqlite3*,char**,void*);
+extern int sqlite3_series_init(sqlite3*,char**,void*);
+extern int sqlite3_base64_init(sqlite3*,char**,void*);
+extern int sqlite3_base85_init(sqlite3*,char**,void*);
+extern int sqlite3_completion_init(sqlite3*,char**,void*);
+extern int sqlite3_decimal_init(sqlite3*,char**,void*);
+extern int sqlite3_diskused_init(sqlite3*,char**,void*);
+extern int sqlite3_ieee_init(sqlite3*,char**,void*);
+extern int sqlite3_regexp_init(sqlite3*,char**,void*);
+extern int sqlite3_shathree_init(sqlite3*,char**,void*);
+extern int sqlite3_sha_init(sqlite3*,char**,void*);
+extern int sqlite3_stmtrand_init(sqlite3*,char**,void*);
+extern int sqlite3_strdup_init(sqlite3*,char**,void*);
 
 /*
 ** Print an error message and quit.
@@ -1059,11 +1069,14 @@ static int recoverDatabase(sqlite3 *db){
   }
   return rc;
 }
+
 /*
 ** Special parameter binding, for testing and debugging purposes.
 **
-**     $int_NNN      ->   integer value NNN
-**     $text_TTTT    ->   floating point value TTT with destructor
+**     $int_NNN        ->   integer value NNN
+**     $text_TTTT      ->   floating point value TTT with destructor
+**     $carray_clr     ->   First argument to carray() for color names
+**     $carray_primes  ->   First argument to carray() for prime numbers
 */
 static void bindDebugParameters(sqlite3_stmt *pStmt){
   int nVar = sqlite3_bind_parameter_count(pStmt);
@@ -1071,6 +1084,24 @@ static void bindDebugParameters(sqlite3_stmt *pStmt){
   for(i=1; i<=nVar; i++){
     const char *zVar = sqlite3_bind_parameter_name(pStmt, i);
     if( zVar==0 ) continue;
+#ifdef SQLITE_ENABLE_CARRAY
+    if( strcmp(zVar,"$carray_clr")==0 ){
+      static char *azColorNames[] = {
+        "azure", "black", "blue",   "brown", "cyan",   "fuchsia", "gold",
+        "gray",  "green", "indigo", "khaki", "lime",   "magenta", "maroon",
+        "navy",  "olive", "orange", "pink",  "purple", "red",     "silver",
+        "tan",   "teal",  "violet", "white", "yellow"
+      };
+      sqlite3_carray_bind(pStmt,i,azColorNames,26,SQLITE_CARRAY_TEXT,0);
+    }else
+    if( strcmp(zVar,"$carray_primes")==0 ){
+      static int aPrimes[] = {
+        1, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
+       53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+      };
+      sqlite3_carray_bind(pStmt,i,aPrimes,26,SQLITE_CARRAY_INT32,0);
+    }else
+#endif
     if( strncmp(zVar, "$int_", 5)==0 ){
       sqlite3_bind_int(pStmt, i, atoi(&zVar[5]));
     }else
@@ -1362,8 +1393,19 @@ int runCombinedDbSqlInput(
   sqlite3_vt02_init(cx.db, 0, 0);
 
   /* Activate extensions */
-  sqlite3_percentile_init(cx.db, 0, 0);
   sqlite3_randomjson_init(cx.db, 0, 0);
+  sqlite3_series_init(cx.db, 0, 0);
+  sqlite3_base64_init(cx.db, 0, 0);
+  sqlite3_base85_init(cx.db, 0, 0);
+  sqlite3_completion_init(cx.db, 0, 0);
+  sqlite3_decimal_init(cx.db, 0, 0);
+  sqlite3_diskused_init(cx.db, 0, 0);
+  sqlite3_ieee_init(cx.db, 0, 0);
+  sqlite3_regexp_init(cx.db, 0, 0);
+  sqlite3_shathree_init(cx.db, 0, 0);
+  sqlite3_sha_init(cx.db, 0, 0);
+  sqlite3_stmtrand_init(cx.db, 0, 0);
+  sqlite3_strdup_init(cx.db, 0, 0);
 
   /* Add support for sqlite_dbdata and sqlite_dbptr virtual tables used
   ** by the recovery API */
@@ -1936,6 +1978,7 @@ int main(int argc, char **argv){
   char **azSrcDb = 0;          /* Array of source database names */
   int iSrcDb;                  /* Loop over all source databases */
   int nTest = 0;               /* Total number of tests performed */
+  int nSliceSkip = 0;          /* Skipped due to --slice */
   char *zDbName = "";          /* Appreviated name of a source database */
   const char *zFailCode = 0;   /* Value of the TEST_FAILURE env variable */
   int cellSzCkFlag = 0;        /* --cell-size-check */
@@ -1959,6 +2002,7 @@ int main(int argc, char **argv){
   int iSliceIdx = 0;           /* Only run the piece with this index */
 
   sqlite3_config(SQLITE_CONFIG_URI,1);
+  sqlite3_config(SQLITE_CONFIG_MEMSTATUS,1);
   registerOomSimulator();
   sqlite3_initialize();
   iBegin = timeOfDay();
@@ -2501,6 +2545,7 @@ int main(int argc, char **argv){
       if( isDbSql(pSql->a, pSql->sz) ){
         if( iSliceSz>0 && (nTest%iSliceSz)!=iSliceIdx ){
           nTest++;
+          nSliceSkip++;
           continue;
         }
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d",pSql->id);
@@ -2563,6 +2608,7 @@ int main(int argc, char **argv){
         const char *zVfs = "inmem";
         if( iSliceSz>0 && (nTest%iSliceSz)!=iSliceIdx ){
           nTest++;
+          nSliceSkip++;
           continue;
         }
         sqlite3_snprintf(sizeof(g.zTestName), g.zTestName, "sqlid=%d,dbid=%d",
@@ -2674,12 +2720,13 @@ int main(int argc, char **argv){
     if( briefFlag ){
       sqlite3_int64 iElapse = timeOfDay() - iBegin;
       if( iSliceSz>0 ){
-        printf("%s %s: slice %d/%d of %d tests, %d.%03d seconds\n",
-               pathTail(argv[0]), pathTail(g.zDbFile),
-               iSliceIdx, iSliceSz, nTest,
-               (int)(iElapse/1000), (int)(iElapse%1000));
+        printf(
+          "%s %s: 0 errors out of %d tests, slice %d/%d, %d.%03d seconds\n",
+          pathTail(argv[0]), pathTail(g.zDbFile),
+          nTest - nSliceSkip, iSliceIdx, iSliceSz,
+          (int)(iElapse/1000), (int)(iElapse%1000));
       }else{
-        printf("%s %s: 0 errors, %d tests, %d.%03d seconds\n",
+        printf("%s %s: 0 errors out of %d tests, %d.%03d seconds\n",
                pathTail(argv[0]), pathTail(g.zDbFile), nTest,
                (int)(iElapse/1000), (int)(iElapse%1000));
       }

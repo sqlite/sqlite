@@ -36,7 +36,9 @@ proc extract_hints {sql} {
         set csr($a(p1)) $lookup($a(p2))
       }
       CursorHint { 
-        lappend ret $csr($a(p1)) $a(p4) 
+        if {$a(p4)!=""} {
+          lappend ret $csr($a(p1)) $a(p4) 
+        }
       }
     }
   }

@@ -29,6 +29,7 @@ do_execsql_test 1.0 {
 proc imposter_edit {obj create sql} {
   sqlite3 xdb test.db
   set pgno [xdb one {SELECT rootpage FROM sqlite_schema WHERE name=$obj}]
+  xdb eval {PRAGMA Writable_schema=ON}
 
   sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER xdb main 1 $pgno
   xdb eval $create

@@ -7,9 +7,13 @@
 #include <string.h>
 #include "tclsqlite.h"
 
+#include <stdlib.h>
+
 #ifndef SQLITE_AMALGAMATION
   typedef unsigned char u8;
 #endif
+
+extern const char *sqlite3ErrName(int);
 
 typedef struct TestSession TestSession;
 struct TestSession {
@@ -395,7 +399,6 @@ static int SQLITE_TCLAPI test_session_cmd(
       }
       rc = sqlite3session_object_config(pSession, aOpt[iOpt].opt, &iArg);
       if( rc!=SQLITE_OK ){
-        extern const char *sqlite3ErrName(int);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
       }else{
         Tcl_SetObjResult(interp, Tcl_NewIntObj(iArg));
@@ -856,6 +859,21 @@ static int testStreamInput(
   return SQLITE_OK;
 }
 
+/*
+** This works like Tcl_GetByteArrayFromObj(), except that it returns a buffer
+** allocated using malloc() that must be freed by the caller. This is done
+** because Tcl's buffers are often padded by a few bytes, which prevents
+** small overreads from being detected when tests are run under asan.
+*/
+static void *testGetByteArrayFromObj(Tcl_Obj *p, Tcl_Size *pnByte){
+  Tcl_Size nByte = 0;
+  void *aByte = Tcl_GetByteArrayFromObj(p, &nByte);
+  void *aCopy = malloc(nByte ? (size_t)nByte : 1);
+  memcpy(aCopy, aByte, (size_t)nByte);
+  *pnByte = nByte;
+  return aCopy;
+}
+
 
 static int SQLITE_TCLAPI testSqlite3changesetApply(
   int iVersion,
@@ -896,6 +914,9 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
       }
       else if( n>2 && n<=11 && 0==sqlite3_strnicmp("-ignorenoop", z1, n) ){
         flags |= SQLITE_CHANGESETAPPLY_IGNORENOOP;
+      }
+      else if( n>3 && n<=13 && 0==sqlite3_strnicmp("-noupdateloop", z1, n) ){
+        flags |= SQLITE_CHANGESETAPPLY_NOUPDATELOOP;
       }else{
         break;
       }
@@ -920,7 +941,7 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
     return TCL_ERROR;
   }
   db = *(sqlite3 **)info.objClientData;
-  pChangeset = (void *)Tcl_GetByteArrayFromObj(objv[2], &nChangeset);
+  pChangeset = (void *)testGetByteArrayFromObj(objv[2], &nChangeset);
   ctx.pConflictScript = objv[3];
   ctx.pFilterScript = objc==5 ? objv[4] : 0;
   ctx.interp = interp;
@@ -972,6 +993,7 @@ static int SQLITE_TCLAPI testSqlite3changesetApply(
     }
   }
 
+  free(pChangeset);
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc, 0);
   }else{
@@ -1076,7 +1098,7 @@ static int SQLITE_TCLAPI test_sqlite3changeset_invert(
   memset(&sIn, 0, sizeof(sIn));
   memset(&sOut, 0, sizeof(sOut));
   sIn.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
-  sIn.aData = Tcl_GetByteArrayFromObj(objv[1], &nn);
+  sIn.aData = testGetByteArrayFromObj(objv[1], &nn);
   sIn.nData = (int)nn;
 
   if( sIn.nStream ){
@@ -1093,7 +1115,23 @@ static int SQLITE_TCLAPI test_sqlite3changeset_invert(
     Tcl_SetObjResult(interp,Tcl_NewByteArrayObj((unsigned char*)sOut.p,sOut.n));
   }
   sqlite3_free(sOut.p);
+  free(sIn.aData);
   return rc;
+}
+
+/*
+** Copy buffer aIn[] to a new nIn byte buffer obtained from malloc(). Use
+** plain malloc() instead of any Tcl function because valgrind and asan are
+** better at detecting small overflows in that case. Avoid sqlite3_malloc()
+** here because that means dealing with injected OOM errors. 
+**
+** The caller is responsible for eventually calling free() on the returned
+** value.
+*/
+static u8 *copyToMalloc(const u8 *aIn, int nIn){
+  u8 *pRet = malloc(nIn);
+  memcpy(pRet, aIn, nIn);
+  return pRet;
 }
 
 /*
@@ -1126,6 +1164,9 @@ static int SQLITE_TCLAPI test_sqlite3changeset_concat(
   sLeft.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
   sRight.nStream = sLeft.nStream;
 
+  sLeft.aData = copyToMalloc(sLeft.aData, sLeft.nData);
+  sRight.aData = copyToMalloc(sRight.aData, sRight.nData);
+
   if( sLeft.nStream>0 ){
     rc = sqlite3changeset_concat_strm(
         testStreamInput, (void*)&sLeft,
@@ -1137,6 +1178,9 @@ static int SQLITE_TCLAPI test_sqlite3changeset_concat(
         sLeft.nData, sLeft.aData, sRight.nData, sRight.aData, &sOut.n, &sOut.p
     );
   }
+
+  free(sLeft.aData);
+  free(sRight.aData);
 
   if( rc!=SQLITE_OK ){
     rc = test_session_error(interp, rc, 0);
@@ -1195,7 +1239,12 @@ static int SQLITE_TCLAPI test_sqlite3session_foreach(
   pCS = objv[2];
   pScript = objv[3];
 
-  pChangeset = (void *)Tcl_GetByteArrayFromObj(pCS, &nChangeset);
+  /* Take a copy of the changeset into an exact sized buffer allocated 
+  ** using malloc(). The Tcl buffer will be padded by a few bytes, which
+  ** prevents small overreads from being detected by ASAN when the tests
+  ** are run.  */
+  pChangeset = (void*)testGetByteArrayFromObj(pCS, &nChangeset);
+
   sStr.nStream = test_tcl_integer(interp, SESSION_STREAM_TCL_VAR);
   if( isInvert ){
     int f = SQLITE_CHANGESETSTART_INVERT;
@@ -1216,32 +1265,33 @@ static int SQLITE_TCLAPI test_sqlite3session_foreach(
       rc = sqlite3changeset_start_strm(&pIter, testStreamInput, (void*)&sStr);
     }
   }
-  if( rc!=SQLITE_OK ){
-    return test_session_error(interp, rc, 0);
-  }
 
-  while( SQLITE_ROW==sqlite3changeset_next(pIter) ){
-    Tcl_Obj *pVar = 0;            /* Tcl value to set $VARNAME to */
-    pVar = testIterData(pIter);
-    Tcl_ObjSetVar2(interp, pVarname, 0, pVar, 0);
-    rc = Tcl_EvalObjEx(interp, pScript, 0);
-    if( rc!=TCL_OK && rc!=TCL_CONTINUE ){
-      sqlite3changeset_finalize(pIter);
-      return rc==TCL_BREAK ? TCL_OK : rc;
+  if( rc==SQLITE_OK ){
+    while( SQLITE_ROW==sqlite3changeset_next(pIter) ){
+      Tcl_Obj *pVar = 0;            /* Tcl value to set $VARNAME to */
+      pVar = testIterData(pIter);
+      Tcl_ObjSetVar2(interp, pVarname, 0, pVar, 0);
+      rc = Tcl_EvalObjEx(interp, pScript, 0);
+      if( rc!=TCL_OK && rc!=TCL_CONTINUE ){
+        sqlite3changeset_finalize(pIter);
+        free(pChangeset);
+        return rc==TCL_BREAK ? TCL_OK : rc;
+      }
+    }
+
+    if( isCheckNext ){
+      int rc2 = sqlite3changeset_next(pIter);
+      rc = sqlite3changeset_finalize(pIter);
+      assert( (rc2==SQLITE_DONE && rc==SQLITE_OK) || rc2==rc );
+    }else{
+      rc = sqlite3changeset_finalize(pIter);
     }
   }
 
-  if( isCheckNext ){
-    int rc2 = sqlite3changeset_next(pIter);
-    rc = sqlite3changeset_finalize(pIter);
-    assert( (rc2==SQLITE_DONE && rc==SQLITE_OK) || rc2==rc );
-  }else{
-    rc = sqlite3changeset_finalize(pIter);
-  }
+  free(pChangeset);
   if( rc!=SQLITE_OK ){
     return test_session_error(interp, rc, 0);
   }
-
   return TCL_OK;
 }
 
@@ -1290,8 +1340,9 @@ static int SQLITE_TCLAPI test_rebaser_cmd(
   switch( iSub ){
     case 0: {   /* configure */
       Tcl_Size nRebase = 0;
-      unsigned char *pRebase = Tcl_GetByteArrayFromObj(objv[2], &nRebase);
+      unsigned char *pRebase = testGetByteArrayFromObj(objv[2], &nRebase);
       rc = sqlite3rebaser_configure(p, (int)nRebase, pRebase);
+      free(pRebase);
       break;
     }
 
@@ -1454,7 +1505,7 @@ static int SQLITE_TCLAPI test_changeset(
     Tcl_WrongNumArgs(interp, 1, objv, "CHANGESET");
     return TCL_ERROR;
   }
-  pChangeset = (void *)Tcl_GetByteArrayFromObj(objv[1], &nChangeset);
+  pChangeset = (void*)testGetByteArrayFromObj(objv[1], &nChangeset);
 
   Tcl_ResetResult(interp);
   rc = sqlite3_test_changeset((int)nChangeset, pChangeset, &z);
@@ -1464,6 +1515,7 @@ static int SQLITE_TCLAPI test_changeset(
     sqlite3_free(zErr);
   }
   sqlite3_free(z);
+  free(pChangeset);
 
   return rc ? TCL_ERROR : TCL_OK;
 }
@@ -1530,6 +1582,14 @@ static void test_changegroup_del(void *clientData){
   ckfree(pGrp);
 }
 
+static int testGetNewOrOld(Tcl_Interp *interp, Tcl_Obj *pObj, int *pbNew){
+  const char *azVal[] = { "old", "new", 0 };
+  int iIdx = 0;
+  int rc = Tcl_GetIndexFromObj(interp, pObj, azVal, "record", 0, &iIdx);
+  *pbNew = iIdx;
+  return rc;
+}
+
 /*
 ** Tclcmd:  $changegroup schema DB DBNAME
 ** Tclcmd:  $changegroup add CHANGESET
@@ -1547,14 +1607,26 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
     const char *zSub;
     int nArg;
     const char *zMsg;
-    int iSub;
   } aSub[] = {
-    { "schema",       2, "DB DBNAME",  }, /* 0 */
-    { "add",          1, "CHANGESET",  }, /* 1 */
-    { "output",       0, "",           }, /* 2 */
-    { "delete",       0, "",           }, /* 3 */
-    { "add_change",   1, "ITERATOR",   }, /* 4 */
-    { 0 }
+    { "schema",          2, "DB DBNAME"            },    /* 0 */
+    { "add",             1, "CHANGESET"            },    /* 1 */
+    { "output",          0, ""                     },    /* 2 */
+    { "delete",          0, ""                     },    /* 3 */
+    { "add_change",      1, "ITERATOR"             },    /* 4 */
+
+    { "change_begin",    3, "TYPE TABLE INDIRECT"  },    /* 5 */
+    { "change_int64",    3, "[new|old] ICOL VALUE" },    /* 6 */
+    { "change_null",     2, "[new|old] ICOL"       },    /* 7 */
+    { "change_double",   3, "[new|old] ICOL VALUE" },    /* 8 */
+    { "change_text",     3, "[new|old] ICOL VALUE" },    /* 9 */
+    { "change_blob",     3, "[new|old] ICOL VALUE" },    /* 10 */
+    { "change_finish",   1, "BDISCARD"             },    /* 11 */
+    { "change_finishne", 1, "BDISCARD"             },    /* 12 */
+
+    { "config",          2, "OPTION INTVAL"        },    /* 13 */
+    { "change_text-1",   3, "[new|old] ICOL VALUE" },    /* 14 */
+    { "change_begin_ne", 3, "TYPE TABLE INDIRECT"  },    /* 15 */
+    { 0, 0, 0 }
   };
   int rc = TCL_OK;
   int iSub = 0;
@@ -1586,9 +1658,10 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
 
     case 1: {      /* add */
       Tcl_Size nByte = 0;
-      const u8 *aByte = Tcl_GetByteArrayFromObj(objv[2], &nByte);
-      rc = sqlite3changegroup_add(p->pGrp, (int)nByte, (void*)aByte);
+      void *aByte = testGetByteArrayFromObj(objv[2], &nByte);
+      rc = sqlite3changegroup_add(p->pGrp, (int)nByte, aByte);
       if( rc!=SQLITE_OK ) rc = test_session_error(interp, rc, 0);
+      free(aByte);
       break;
     };
 
@@ -1622,6 +1695,196 @@ static int SQLITE_TCLAPI test_changegroup_cmd(
       }
       break;
     };
+
+    case 15:        /* change_beginne */
+    case 5: {       /* change_begin */
+      struct ChangeType {
+        const char *zType;
+        int eType;
+      } aType[] = {
+        { "INSERT", SQLITE_INSERT },
+        { "UPDATE", SQLITE_UPDATE },
+        { "DELETE", SQLITE_DELETE },
+        { 0, 0 }
+      };
+      int eType = 0;
+      const char *zTab = 0;
+      int bIndirect;
+      int iIdx = 0;
+      char *zErr = 0;
+      char **pz = ((iSub==5) ? &zErr : 0);
+
+      if( TCL_OK!=Tcl_GetIntFromObj(0, objv[2], &eType) ){
+        rc = Tcl_GetIndexFromObjStruct(
+            interp, objv[2], aType, sizeof(aType[0]), "TYPE", 0, &iIdx
+        );
+        if( rc!=TCL_OK ) return rc;
+        eType = aType[iIdx].eType;
+      }
+      zTab = Tcl_GetString(objv[3]);
+      if( Tcl_GetBooleanFromObj(interp, objv[4], &bIndirect) ){
+        return TCL_ERROR;
+      }
+
+      rc = sqlite3changegroup_change_begin(p->pGrp, eType, zTab, bIndirect, pz);
+      assert( zErr==0 || rc!=SQLITE_OK );
+      if( rc!=SQLITE_OK ){
+        rc = test_session_error(interp, rc, zErr);
+      }
+
+      break;
+    }
+
+    case 6: {      /* change_int64 */
+      int bNew = 0;
+      int iCol = 0;
+      sqlite3_int64 iVal = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+       || TCL_OK!=Tcl_GetWideIntFromObj(interp, objv[4], &iVal)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        rc = sqlite3changegroup_change_int64(p->pGrp, bNew, iCol, iVal);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 7: {      /* change_null */
+      int bNew = 0;
+      int iCol = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        rc = sqlite3changegroup_change_null(p->pGrp, bNew, iCol);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 8: {      /* change_double */
+      int bNew = 0;
+      int iCol = 0;
+      double rVal = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+       || TCL_OK!=Tcl_GetDoubleFromObj(interp, objv[4], &rVal)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        rc = sqlite3changegroup_change_double(p->pGrp, bNew, iCol, rVal);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 9: {      /* change_text */
+      int bNew = 0;
+      int iCol = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        Tcl_Size nVal = 0;
+        const char *pVal = Tcl_GetStringFromObj(objv[4], &nVal);
+        rc = sqlite3changegroup_change_text(p->pGrp, bNew, iCol, pVal, nVal);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 10: {      /* change_blob */
+      int bNew = 0;
+      int iCol = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        Tcl_Size nVal = 0;
+        const u8 *pVal = Tcl_GetByteArrayFromObj(objv[4], &nVal);
+        rc = sqlite3changegroup_change_blob(p->pGrp, bNew, iCol, pVal, nVal);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
+
+    case 12:        /* change_finishne */
+    case 11: {      /* change_finish */
+      int bDiscard = 0;
+      if( TCL_OK!=Tcl_GetBooleanFromObj(interp, objv[2], &bDiscard) ){
+        rc = TCL_ERROR;
+      }else{
+        char *zErr = 0;
+        char **pz = &zErr;
+        if( iSub==12 ) pz = 0;
+        rc = sqlite3changegroup_change_finish(p->pGrp, bDiscard, pz);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, zErr);
+        }
+      }
+      break;
+    }
+
+    case 13: {      /* config */
+      struct OptionName {
+        const char *zOpt;
+        int op;
+      } aOp[] = {
+        { "patchset", SQLITE_CHANGEGROUP_CONFIG_PATCHSET },
+        { 0, 0 }
+      };
+      int iIdx = 0;
+      int iArg = 0;
+      rc = Tcl_GetIndexFromObjStruct(
+          interp, objv[2], aOp, sizeof(aOp[0]), "option", 0, &iIdx
+      );
+      if( rc==TCL_OK 
+       && (rc = Tcl_GetIntFromObj(interp, objv[3], &iArg))==TCL_OK 
+      ){
+        int op = aOp[iIdx].op;
+        void *pArg = (void*)&iArg;
+
+        rc = sqlite3changegroup_config(p->pGrp, op, pArg);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }else{
+          Tcl_SetObjResult(interp, Tcl_NewIntObj(iArg));
+        }
+      }
+      break;
+    }
+
+    case 14: {      /* change_text-1 */
+      int bNew = 0;
+      int iCol = 0;
+      if( TCL_OK!=testGetNewOrOld(interp, objv[2], &bNew)
+       || TCL_OK!=Tcl_GetIntFromObj(interp, objv[3], &iCol)
+      ){
+        rc = TCL_ERROR;
+      }else{
+        const char *pVal = Tcl_GetString(objv[4]);
+        rc = sqlite3changegroup_change_text(p->pGrp, bNew, iCol, pVal, -1);
+        if( rc!=SQLITE_OK ){
+          rc = test_session_error(interp, rc, 0);
+        }
+      }
+      break;
+    }
 
     default: {     /* delete */
       assert( iSub==3 );

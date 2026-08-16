@@ -62,7 +62,7 @@
 #else
   #include "sqlite3.h"
 #endif
-int sqlite3GetToken(const unsigned char*,int*); /* In the SQLite core */
+sqlite3_int64 sqlite3GetToken(const unsigned char*,int*); /* In SQLite core */
 
 #include <stddef.h>
 
@@ -166,7 +166,7 @@ struct Rtree {
   u8 eCoordType;              /* RTREE_COORD_REAL32 or RTREE_COORD_INT32 */
   u8 nBytesPerCell;           /* Bytes consumed per cell */
   u8 inWrTrans;               /* True if inside write transaction */
-  u8 nAux;                    /* # of auxiliary columns in %_rowid */
+  u16 nAux;                   /* # of auxiliary columns in %_rowid */
 #ifdef SQLITE_ENABLE_GEOPOLY
   u8 nAuxNotNull;             /* Number of initial not-null aux columns */
 #endif
@@ -306,7 +306,7 @@ struct RtreeCursor {
   sqlite3_stmt *pReadAux;           /* Statement to read aux-data */
   RtreeSearchPoint sPoint;          /* Cached next search point */
   RtreeNode *aNode[RTREE_CACHE_SZ]; /* Rtree node cache */
-  u32 anQueue[RTREE_MAX_DEPTH+1];   /* Number of queued entries by iLevel */
+  u32 anQueue[RTREE_MAX_DEPTH+2];   /* Number of queued entries by iLevel */
 };
 
 /* Return the Rtree of a RtreeCursor */
@@ -486,7 +486,7 @@ struct RtreeMatchArg {
 **
 ** For best performance, an attempt is made to guess at the byte-order
 ** using C-preprocessor macros.  If that is unsuccessful, or if
-** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
+** -DSQLITE_BYTEORDER=0 is set, then byte-order is determined
 ** at run-time.
 */
 #ifndef SQLITE_BYTEORDER /* Replicate changes at tag-20230904a */
@@ -542,8 +542,11 @@ static void readCoord(u8 *p, RtreeCoord *pCoord){
   );
 #endif
 }
+
 static i64 readInt64(u8 *p){
-#if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
+#if defined(SQLITE_AMALGAMATION)
+  return (i64)sqlite3Get8byte(p);
+#elif SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
   u64 x;
   memcpy(&x, p, 8);
   return (i64)_byteswap_uint64(x);
@@ -761,6 +764,9 @@ static int nodeAcquire(
       rc = SQLITE_CORRUPT_VTAB;
       RTREE_IS_CORRUPT(pRtree);
     }
+  }else if( iNode<=0 ){
+    RTREE_IS_CORRUPT(pRtree);
+    rc = SQLITE_CORRUPT_VTAB;
   }else if( pRtree->iNodeSize==sqlite3_blob_bytes(pRtree->pNodeBlob) ){
     pNode = (RtreeNode *)sqlite3_malloc64(sizeof(RtreeNode)+pRtree->iNodeSize);
     if( !pNode ){
@@ -786,7 +792,7 @@ static int nodeAcquire(
   */
   if( rc==SQLITE_OK && pNode && iNode==1 ){
     pRtree->iDepth = readInt16(pNode->zData);
-    if( pRtree->iDepth>RTREE_MAX_DEPTH ){
+    if( pRtree->iDepth>=RTREE_MAX_DEPTH ){
       rc = SQLITE_CORRUPT_VTAB;
       RTREE_IS_CORRUPT(pRtree);
     }
@@ -1037,7 +1043,17 @@ static void rtreeRelease(Rtree *pRtree){
     pRtree->inWrTrans = 0;
     assert( pRtree->nCursor==0 );
     nodeBlobReset(pRtree);
-    assert( pRtree->nNodeRef==0 || pRtree->bCorrupt );
+    if( pRtree->nNodeRef ){
+      int i;
+      assert( pRtree->bCorrupt );
+      for(i=0; i<HASHSIZE; i++){
+        while( pRtree->aHash[i] ){
+          RtreeNode *pNext = pRtree->aHash[i]->pNext;
+          sqlite3_free(pRtree->aHash[i]);
+          pRtree->aHash[i] = pNext;
+        }
+      }
+    }
     sqlite3_finalize(pRtree->pWriteNode);
     sqlite3_finalize(pRtree->pDeleteNode);
     sqlite3_finalize(pRtree->pReadRowid);
@@ -1392,7 +1408,7 @@ static int nodeRowidIndex(
 ){
   int ii;
   int nCell = NCELL(pNode);
-  assert( nCell<200 );
+  assert( nCell<65536 && nCell>=0 );
   for(ii=0; ii<nCell; ii++){
     if( nodeGetRowid(pRtree, pNode, ii)==iRowid ){
       *piIndex = ii;
@@ -1654,7 +1670,10 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
     pNode = rtreeNodeOfFirstSearchPoint(pCur, &rc);
     if( rc ) return rc;
     nCell = NCELL(pNode);
-    assert( nCell<200 );
+    if( nCell>RTREE_MAXCELLS ){
+      RTREE_IS_CORRUPT(pRtree);
+      return SQLITE_CORRUPT_VTAB;
+    }
     pCellData = pNode->zData + (4+pRtree->nBytesPerCell*p->iCell);
     while( p->iCell<nCell ){
       sqlite3_rtree_dbl rScore = (sqlite3_rtree_dbl)-1;
@@ -2329,7 +2348,7 @@ static int AdjustTree(
     int iCell;
 
     cnt++;
-    if( NEVER(cnt>100) ){
+    if( cnt>100 ){
       RTREE_IS_CORRUPT(pRtree);
       return SQLITE_CORRUPT_VTAB;
     }
@@ -2687,15 +2706,6 @@ static int SplitNode(
     rc = updateMapping(pRtree, pCell->iRowid, pLeft, iHeight);
   }
 
-  if( rc==SQLITE_OK ){
-    rc = nodeRelease(pRtree, pRight);
-    pRight = 0;
-  }
-  if( rc==SQLITE_OK ){
-    rc = nodeRelease(pRtree, pLeft);
-    pLeft = 0;
-  }
-
 splitnode_out:
   nodeRelease(pRtree, pRight);
   nodeRelease(pRtree, pLeft);
@@ -2880,7 +2890,7 @@ static int rtreeInsertCell(
     rc = SplitNode(pRtree, pNode, pCell, iHeight);
   }else{
     rc = AdjustTree(pRtree, pNode, pCell);
-    if( ALWAYS(rc==SQLITE_OK) ){
+    if( rc==SQLITE_OK ){
       if( iHeight==0 ){
         rc = rowidWrite(pRtree, pCell->iRowid, pNode->iNode);
       }else{
@@ -3640,7 +3650,7 @@ static int rtreeInit(
     "Auxiliary rtree columns must be last"                /* 4 */
   };
 
-  assert( RTREE_MAX_AUX_COLUMN<256 ); /* Aux columns counted by a u8 */
+  assert( RTREE_MAX_AUX_COLUMN<256 );
   if( argc<6 || argc>RTREE_MAX_AUX_COLUMN+3 ){
     *pzErr = sqlite3_mprintf("%s", aErrMsg[2 + (argc>=6)]);
     return SQLITE_ERROR;
@@ -3775,7 +3785,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   if( node.zData==0 ) return;
   nData = sqlite3_value_bytes(apArg[1]);
   if( nData<4 ) return;
-  if( nData<NCELL(&node)*tree.nBytesPerCell ) return;
+  if( nData<4+NCELL(&node)*tree.nBytesPerCell ) return;
 
   pOut = sqlite3_str_new(0);
   for(ii=0; ii<NCELL(&node); ii++){

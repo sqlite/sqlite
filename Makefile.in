@@ -131,9 +131,15 @@ libsqlite3.DLL.install-rules = @SQLITE_DLL_INSTALL_RULES@
 CFLAGS.fuzzcheck-asan.fsanitize = @CFLAGS_ASAN_FSANITIZE@
 
 #
-# Intended to either be empty or be set to -g -DSQLITE_DEBUG=1.
+# TARGET_DEBUG is intended to either be empty or be set to -g
+# -DSQLITE_DEBUG=1, plus any other flags relevant for debug-only
+# builds. These get added near the front of $(T.cc) so that they can
+# be overridden by CFLAGS passed directly to make. Historically (prior
+# to 2026-03-30) these were at/near the end of the flags but that made
+# it impossible to pass custom -O* flags to specific binaries without
+# reconfiguring.
 #
-T.cc.TARGET_DEBUG = @TARGET_DEBUG@
+T.cc += @TARGET_DEBUG@
 
 #
 # $(JIMSH) and $(CFLAGS.jimsh) are documented in main.mk.  $(JIMSH)
@@ -164,7 +170,9 @@ OPT_FEATURE_FLAGS = @OPT_FEATURE_FLAGS@ $(OPTIONS)
 PACKAGE_VERSION = @PACKAGE_VERSION@
 
 #
-# Filename extensions for binaries and libraries
+# Filename extensions for binaries and libraries. B.* are for the
+# being-built-on platform and T.* are for the build's target platform.
+# i.e. B.* is for build-time tooling and T.* is for deliverables.
 #
 B.exe = @BUILD_EXEEXT@
 T.exe = @TARGET_EXEEXT@

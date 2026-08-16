@@ -31,6 +31,10 @@ SQLITE_EXTENSION_INIT1
 #define IsSpace(X)  isspace((unsigned char)X)
 #endif
 
+#ifndef SQLITE_DECIMAL_MAX_DIGIT
+# define SQLITE_DECIMAL_MAX_DIGIT 10000000
+#endif
+
 /* A decimal object */
 typedef struct Decimal Decimal;
 struct Decimal {
@@ -63,13 +67,17 @@ static void decimal_free(Decimal *p){
 /*
 ** Allocate a new Decimal object initialized to the text in zIn[].
 ** Return NULL if any kind of error occurs.
+**
+** Note that zIn[] is not necessarily zero-terminated.  Always
+** respect the boundary imposed by the n argument.
 */
 static Decimal *decimalNewFromText(const char *zIn, int n){
   Decimal *p = 0;
   int i;
   int iExp = 0;
 
-  p = sqlite3_malloc( sizeof(*p) );
+  if( zIn==0 ) goto new_from_text_failed;
+  p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ) goto new_from_text_failed;
   p->sign = 0;
   p->oom = 0;
@@ -79,11 +87,11 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
   p->nFrac = 0;
   p->a = sqlite3_malloc64( n+1 );
   if( p->a==0 ) goto new_from_text_failed;
-  for(i=0; IsSpace(zIn[i]); i++){}
-  if( zIn[i]=='-' ){
+  for(i=0; i<n && IsSpace(zIn[i]); i++){}
+  if( i<n && zIn[i]=='-' ){
     p->sign = 1;
     i++;
-  }else if( zIn[i]=='+' ){
+  }else if( i<n && zIn[i]=='+' ){
     i++;
   }
   while( i<n && zIn[i]=='0' ) i++;
@@ -128,8 +136,10 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
       }
     }
     if( iExp>0 ){   
-      p->a = sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
-      if( p->a==0 ) goto new_from_text_failed;
+      signed char *a = sqlite3_realloc64(p->a, (sqlite3_int64)p->nDigit
+                                     + (sqlite3_int64)iExp + 1 );
+      if( a==0 ) goto new_from_text_failed;
+      p->a = a;
       memset(p->a+p->nDigit, 0, iExp);
       p->nDigit += iExp;
     }
@@ -147,14 +157,21 @@ static Decimal *decimalNewFromText(const char *zIn, int n){
       }
     }
     if( iExp>0 ){
-      p->a = sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
-      if( p->a==0 ) goto new_from_text_failed;
+      signed char *a = sqlite3_realloc64(p->a, (sqlite3_int64)p->nDigit
+                                     + (sqlite3_int64)iExp + 1 );
+      if( a==0 ) goto new_from_text_failed;
+      p->a = a;
       memmove(p->a+iExp, p->a, p->nDigit);
       memset(p->a, 0, iExp);
       p->nDigit += iExp;
       p->nFrac += iExp;
     }
   }
+  if( p->sign ){
+    for(i=0; i<p->nDigit && p->a[i]==0; i++){}
+    if( i>=p->nDigit ) p->sign = 0;
+  }
+  if( p->nDigit>SQLITE_DECIMAL_MAX_DIGIT ) goto new_from_text_failed;
   return p;
 
 new_from_text_failed:
@@ -247,7 +264,7 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
     sqlite3_result_null(pCtx);
     return;
   }
-  z = sqlite3_malloc( p->nDigit+4 );
+  z = sqlite3_malloc64( (sqlite3_int64)p->nDigit+8 );
   if( z==0 ){
     sqlite3_result_error_nomem(pCtx);
     return;
@@ -285,12 +302,47 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
   sqlite3_result_text(pCtx, z, i, sqlite3_free);
 }
 
+/* Forward declaration */
+static void decimal_expand(Decimal *p, int nDigit, int nFrac);
+
+/*
+** Round a decimal value to N significant digits.  N must be positive.
+*/
+static void decimal_round(Decimal *p, int N){
+  int i;
+  int nZero;  /* Number of leading zeros */
+  if( N<1 ) return;
+  if( p==0 ) return;
+  if( p->nDigit<=N ) return;
+  for(nZero=0; nZero<p->nDigit && p->a[nZero]==0; nZero++){}
+  N += nZero;
+  if( p->nDigit<=N ) return;
+  if( p->a[N]>=5 ){
+    /* If all leading digits are 9, increase the number of digits
+    ** by adding a new 0 to the front */
+    for(i=0; i<N && p->a[i]==9; i++){}
+    if( i==N ){
+      decimal_expand(p, p->nDigit+1, p->nFrac);
+      if( p->oom ) return;
+    }
+
+    /* Do the rounding */
+    p->a[N-1]++;
+    for(i=N-1; i>0 && p->a[i]>9; i--){
+      p->a[i] = 0;
+      p->a[i-1]++;
+    }
+    assert( p->a[0]<=9 );
+  }
+  memset(&p->a[N], 0, p->nDigit - N);
+}
+
 /*
 ** Make the given Decimal the result in an format similar to  '%+#e'.
 ** In other words, show exponential notation with leading and trailing
 ** zeros omitted.
 */
-static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p){
+static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p, int N){
   char *z;       /* The output buffer */
   int i;         /* Loop counter */
   int nZero;     /* Number of leading zeros */
@@ -308,11 +360,12 @@ static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p){
     sqlite3_result_null(pCtx);
     return;
   }
-  for(nDigit=p->nDigit; nDigit>0 && p->a[nDigit-1]==0; nDigit--){}
+  if( N<1 ) N = 0;
+  for(nDigit=p->nDigit; nDigit>N && p->a[nDigit-1]==0; nDigit--){}
   for(nZero=0; nZero<nDigit && p->a[nZero]==0; nZero++){}
   nFrac = p->nFrac + (nDigit - p->nDigit);
   nDigit -= nZero;
-  z = sqlite3_malloc( nDigit+20 );
+  z = sqlite3_malloc64( (sqlite3_int64)nDigit+20 );
   if( z==0 ){
     sqlite3_result_error_nomem(pCtx);
     return;
@@ -357,13 +410,21 @@ static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p){
 **    pB!=0
 **    pB->isNull==0
 */
-static int decimal_cmp(const Decimal *pA, const Decimal *pB){
+static int decimal_cmp(Decimal *pA, Decimal *pB){
   int nASig, nBSig, rc, n;
+  while( pA->nFrac>0 && pA->a[pA->nDigit-1]==0 ){
+    pA->nDigit--;
+    pA->nFrac--;
+  }
+  while( pB->nFrac>0 && pB->a[pB->nDigit-1]==0 ){
+    pB->nDigit--;
+    pB->nFrac--;
+  }
   if( pA->sign!=pB->sign ){
     return pA->sign ? -1 : +1;
   }
   if( pA->sign ){
-    const Decimal *pTemp = pA;
+    Decimal *pTemp = pA;
     pA = pB;
     pB = pTemp;
   }
@@ -416,15 +477,19 @@ cmp_done:
 static void decimal_expand(Decimal *p, int nDigit, int nFrac){
   int nAddSig;
   int nAddFrac;
+  signed char *a;
   if( p==0 ) return;
   nAddFrac = nFrac - p->nFrac;
+  assert( nAddFrac>=0 );
   nAddSig = (nDigit - p->nDigit) - nAddFrac;
   if( nAddFrac==0 && nAddSig==0 ) return;
-  p->a = sqlite3_realloc64(p->a, nDigit+1);
-  if( p->a==0 ){
+  if( nDigit+1>SQLITE_DECIMAL_MAX_DIGIT ){ p->oom = 1; return; }
+  a = sqlite3_realloc64(p->a, nDigit+1);
+  if( a==0 ){
     p->oom = 1;
     return;
   }
+  p->a = a;
   if( nAddSig ){
     memmove(p->a+nAddSig, p->a, p->nDigit);
     memset(p->a, 0, nAddSig);
@@ -519,13 +584,18 @@ static void decimalMul(Decimal *pA, Decimal *pB){
   signed char *acc = 0;
   int i, j, k;
   int minFrac;
+  sqlite3_int64 sumDigit;
 
   if( pA==0 || pA->oom || pA->isNull
    || pB==0 || pB->oom || pB->isNull 
   ){
     goto mul_end;
   }
-  acc = sqlite3_malloc64( pA->nDigit + pB->nDigit + 2 );
+  sumDigit = pA->nDigit;
+  sumDigit += pB->nDigit;
+  sumDigit += 2;
+  if( sumDigit>SQLITE_DECIMAL_MAX_DIGIT ){ pA->oom = 1; return; }
+  acc = sqlite3_malloc64( sumDigit );
   if( acc==0 ){
     pA->oom = 1;
     goto mul_end;
@@ -612,7 +682,7 @@ static Decimal *decimalFromDouble(double r){
     isNeg = 0;
   }
   memcpy(&a,&r,sizeof(a));
-  if( a==0 ){
+  if( a==0 || a==(sqlite3_int64)0x8000000000000000LL){
     e = 0;
     m = 0;
   }else{
@@ -662,10 +732,16 @@ static void decimalFunc(
   sqlite3_value **argv
 ){
   Decimal *p =  decimal_new(context, argv[0], 0);
-  UNUSED_PARAMETER(argc);
+  int N;
+  if( argc==2 ){
+    N = sqlite3_value_int(argv[1]);
+    if( N>0 ) decimal_round(p, N);
+  }else{
+    N = 0;
+  }
   if( p ){
     if( sqlite3_user_data(context)!=0 ){
-      decimal_result_sci(context, p);
+      decimal_result_sci(context, p, N);
     }else{
       decimal_result(context, p);
     }
@@ -751,7 +827,7 @@ static void decimalSumStep(
   if( p==0 ) return;
   if( !p->isInit ){
     p->isInit = 1;
-    p->a = sqlite3_malloc(2);
+    p->a = sqlite3_malloc64(2);
     if( p->a==0 ){
       p->oom = 1;
     }else{
@@ -835,7 +911,7 @@ static void decimalPow2Func(
   UNUSED_PARAMETER(argc);
   if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
     Decimal *pA = decimalPow2(sqlite3_value_int(argv[0]));
-    decimal_result_sci(context, pA);
+    decimal_result_sci(context, pA, 0);
     decimal_free(pA);
   }
 }
@@ -856,7 +932,9 @@ int sqlite3_decimal_init(
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
     { "decimal",       1, 0,  decimalFunc        },
+    { "decimal",       2, 0,  decimalFunc        },
     { "decimal_exp",   1, 1,  decimalFunc        },
+    { "decimal_exp",   2, 1,  decimalFunc        },
     { "decimal_cmp",   2, 0,  decimalCmpFunc     },
     { "decimal_add",   2, 0,  decimalAddFunc     },
     { "decimal_sub",   2, 0,  decimalSubFunc     },

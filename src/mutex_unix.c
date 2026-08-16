@@ -35,8 +35,15 @@
 # define SQLITE_MUTEX_NREF 0
 #endif
 
+#if GCC_VERSION>0
+# define ALIGN128 __attribute__((aligned(128)))
+#else
+# define ALIGN128
+#endif
+
 /*
-** Each recursive mutex is an instance of the following structure.
+** Each SQLite mutex is an instance of the following structure.
+**
 */
 struct sqlite3_mutex {
   pthread_mutex_t mutex;     /* Mutex controlling the lock */
@@ -151,19 +158,31 @@ static int pthreadMutexEnd(void){ return SQLITE_OK; }
 ** the same type number.
 */
 static sqlite3_mutex *pthreadMutexAlloc(int iType){
-  static sqlite3_mutex staticMutexes[] = {
-    SQLITE3_MUTEX_INITIALIZER(2),
-    SQLITE3_MUTEX_INITIALIZER(3),
-    SQLITE3_MUTEX_INITIALIZER(4),
-    SQLITE3_MUTEX_INITIALIZER(5),
-    SQLITE3_MUTEX_INITIALIZER(6),
-    SQLITE3_MUTEX_INITIALIZER(7),
-    SQLITE3_MUTEX_INITIALIZER(8),
-    SQLITE3_MUTEX_INITIALIZER(9),
-    SQLITE3_MUTEX_INITIALIZER(10),
-    SQLITE3_MUTEX_INITIALIZER(11),
-    SQLITE3_MUTEX_INITIALIZER(12),
-    SQLITE3_MUTEX_INITIALIZER(13)
+  /* Static mutexes - those with IDs of 2 or more...
+  **
+  ** The ALIGN128 macro attempts to force 128-byte alignment on mutexes,
+  ** so that adjacent mutex objects are always on different cache lines
+  ** in the CPU.  This is CPU-dependent, of course, but 128-byte alignment
+  ** seems to work well for all contemporary processors.  Experiments show
+  ** that 64 works just as well most of the time, but the internet says
+  ** that 128-byte alignment works better.
+  */
+  static ALIGN128 union staticMutex {
+     sqlite3_mutex m;
+     char aSpacer[128];
+  } aMutex[] = {
+    { .m = SQLITE3_MUTEX_INITIALIZER(2) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(3) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(4) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(5) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(6) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(7) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(8) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(9) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(10) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(11) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(12) },
+    { .m = SQLITE3_MUTEX_INITIALIZER(13) },
   };
   sqlite3_mutex *p;
   switch( iType ){
@@ -200,12 +219,12 @@ static sqlite3_mutex *pthreadMutexAlloc(int iType){
     }
     default: {
 #ifdef SQLITE_ENABLE_API_ARMOR
-      if( iType-2<0 || iType-2>=ArraySize(staticMutexes) ){
+      if( iType-2<0 || iType-2>=ArraySize(aMutex) ){
         (void)SQLITE_MISUSE_BKPT;
         return 0;
       }
 #endif
-      p = &staticMutexes[iType-2];
+      p = &aMutex[iType-2].m;
       break;
     }
   }

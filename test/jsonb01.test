@@ -50,4 +50,15 @@ do_catchsql_test jsonb01-2.0 {
   SELECT x'8ce6ffffffff171333' -> '$';
 } {1 {malformed JSON}}
 
+# Bug 2026-07-04T04:59:19Z
+# Malformed FLOAT5 within a JSONB
+#
+do_catchsql_test jsonb01-3.0 {
+  SELECT json(x'6B37616263162d');
+} {1 {malformed JSON}}
+load_static_extension db strdup
+do_catchsql_test jsonb01-3.1 {
+  SELECT json(strdup(x'6B37616263162d'));
+} {1 {malformed JSON}}
+
 finish_test

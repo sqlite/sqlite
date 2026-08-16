@@ -32,6 +32,7 @@ static const char zUsage[] =
   "\n"
   "   --exe PATH      Name of the sqlite3_rsync program on the remote side\n"
   "   --help          Show this help screen\n"
+  "   -p|--port PORT  Run SSH over TCP port PORT instead of the default 22\n"
   "   --protocol N    Use sync protocol version N.\n"
   "   --ssh PATH      Name of the SSH program used to reach the remote side\n"
   "   -v              Verbose.  Multiple v's for increasing output\n"
@@ -324,15 +325,29 @@ static int popen2(
 ** Close the connection to a child process previously created using
 ** popen2().
 */
-static void pclose2(FILE *pIn, FILE *pOut, int childPid){
+static int pclose2(FILE *pIn, FILE *pOut, int childPid){
 #ifdef _WIN32
   /* Not implemented, yet */
   fclose(pIn);
   fclose(pOut);
+  return 0;
 #else
+  int wp, rc = 0;
   fclose(pIn);
   fclose(pOut);
-  while( waitpid(0, 0, WNOHANG)>0 ) {}
+  do{
+    wp = waitpid(0, &rc, WNOHANG);
+    if( wp>0 ){
+      if( WIFEXITED(rc) ){
+        rc = WEXITSTATUS(rc);
+      }else if( WIFSIGNALED(rc) ){
+        rc = WTERMSIG(rc);
+      }else{
+        rc = 0/*???*/;
+      }
+    }
+  } while( wp>0 );
+  return rc;
 #endif
 }
 /*****************************************************************************
@@ -1006,11 +1021,11 @@ void writeByte(SQLiteRsync *p, int c){
   p->nOut++;
 }
 
-/* Read a power of two encoded as a single byte.
+/* Read a power of two page size encoded as a single byte.
 */
 int readPow2(SQLiteRsync *p){
   int x = readByte(p);
-  if( x<0 || x>=32 ){
+  if( x<0 || x>16 ){
     logError(p, "read invalid page size %d\n", x);
     return 0;
   }
@@ -1294,6 +1309,10 @@ static int runSqlReturnText(
 */
 static void closeDb(SQLiteRsync *p){
   if( p->db ){
+    sqlite3_stmt *pStmt;
+    while( (pStmt = sqlite3_next_stmt(p->db, 0))!=0 ){
+      sqlite3_finalize(pStmt);
+    }
     sqlite3_close(p->db);
     p->db = 0;
   }
@@ -1737,7 +1756,6 @@ static void subdivideHashRange(
 static void replicaSide(SQLiteRsync *p){
   int c;
   sqlite3_stmt *pIns = 0;
-  unsigned int szOPage = 0;
   char eJMode = 0;               /* Journal mode prior to sync */
   char buf[65536];
 
@@ -1763,10 +1781,12 @@ static void replicaSide(SQLiteRsync *p){
       case ORIGIN_BEGIN: {
         unsigned int nOPage = 0;
         unsigned int nRPage = 0, szRPage = 0;
+        unsigned int szOPage = 0;
         int rc = 0;
         u8 iProtocol;
 
         closeDb(p);
+        pIns = 0;
         iProtocol = readByte(p);
         szOPage = readPow2(p);
         readUint32(p, &nOPage);
@@ -1796,6 +1816,7 @@ static void replicaSide(SQLiteRsync *p){
           reportError(p, "cannot open in-memory database: %s",
                       sqlite3_errmsg(p->db));
           closeDb(p);
+          pIns = 0;
           break;
         }
         sqlite3_db_config(p->db, SQLITE_DBCONFIG_WRITABLE_SCHEMA, 1, 0);
@@ -1812,6 +1833,7 @@ static void replicaSide(SQLiteRsync *p){
         }
         if( p->nErr ){
           closeDb(p);
+          pIns = 0;
           break;
         }
         runSql(p,
@@ -1854,7 +1876,7 @@ static void replicaSide(SQLiteRsync *p){
             nRPage);
         }else{
           runSql(p,"INSERT INTO sendHash VALUES(1,1)");
-          subdivideHashRange(p, 2, nRPage);
+          subdivideHashRange(p, 2, nRPage-1);
         }
         sendHashMessages(p, 1, 1);
         runSql(p, "PRAGMA writable_schema=ON");
@@ -1920,7 +1942,7 @@ static void replicaSide(SQLiteRsync *p){
           );
           if( pIns==0 ) break;
         }
-        readBytes(p, szOPage, buf);
+        readBytes(p, p->szPage, buf);
         if( p->nErr ) break;
         if( pgno==1 &&  eJMode==2 && buf[18]==1 ){
           /* Do not switch the replica out of WAL mode if it started in 
@@ -1929,7 +1951,7 @@ static void replicaSide(SQLiteRsync *p){
         }
         p->nPageSent++;
         sqlite3_bind_int64(pIns, 1, pgno);
-        sqlite3_bind_blob(pIns, 2, buf, szOPage, SQLITE_STATIC);
+        sqlite3_bind_blob(pIns, 2, buf, p->szPage, SQLITE_STATIC);
         rc = sqlite3_step(pIns);
         if( rc!=SQLITE_DONE ){
           reportError(p, "SQL statement [%s] failed (pgno=%u): %s",
@@ -1946,7 +1968,6 @@ static void replicaSide(SQLiteRsync *p){
     }
   }
 
-  if( pIns ) sqlite3_finalize(pIns);
   closeDb(p);
 }
 
@@ -2054,6 +2075,7 @@ int main(int argc, char const * const *argv){
   FILE *pOut = 0;
   int childPid = 0;
   const char *zSsh = "ssh";
+  int iPort = 0;
   const char *zExe = "sqlite3_rsync";
   char *zCmd = 0;
   sqlite3_int64 tmStart;
@@ -2092,6 +2114,15 @@ int main(int argc, char const * const *argv){
     }
     if( strcmp(z, "-ssh")==0 ){
       zSsh = cli_opt_val;
+      continue;
+    }
+    if( strcmp(z, "-port")==0 || strcmp(z, "-p")==0 ){
+      const char *zPort = cli_opt_val;
+      iPort = atoi(zPort);
+      if( iPort<1 || iPort>65535 ){
+        fprintf(stderr, "invalid TCP port number: \"%s\"\n", zPort);
+        return 1;
+      }
       continue;
     }
     if( strcmp(z, "-exe")==0 ){
@@ -2168,7 +2199,7 @@ int main(int argc, char const * const *argv){
       printf("%s\n", sqlite3_str_value(pStr));
       return 0;
     }
-    if( z[i]=='-' ){
+    if( z[0]=='-' ){
       fprintf(stderr,
          "unknown option: \"%s\". Use --help for more detail.\n", z);
       return 1;
@@ -2235,8 +2266,9 @@ int main(int argc, char const * const *argv){
     for(iRetry=0; 1 /*exit-via-break*/; iRetry++){
       sqlite3_str *pStr = sqlite3_str_new(0);
       append_escaped_arg(pStr, zSsh, 1);
+      if( iPort>0 ) sqlite3_str_appendf(pStr, " -p %d", iPort);
       sqlite3_str_appendf(pStr, " -e none");
-      append_escaped_arg(pStr, ctx.zOrigin, 0);
+      append_escaped_arg(pStr, ctx.zOrigin, 1);
       if( iRetry ) add_path_argument(pStr);
       append_escaped_arg(pStr, zExe, 1);
       append_escaped_arg(pStr, "--origin", 0);
@@ -2283,8 +2315,9 @@ int main(int argc, char const * const *argv){
     for(iRetry=0; 1 /*exit-by-break*/; iRetry++){
       sqlite3_str *pStr = sqlite3_str_new(0);
       append_escaped_arg(pStr, zSsh, 1);
+      if( iPort>0 ) sqlite3_str_appendf(pStr, " -p %d", iPort);
       sqlite3_str_appendf(pStr, " -e none");
-      append_escaped_arg(pStr, ctx.zReplica, 0);
+      append_escaped_arg(pStr, ctx.zReplica, 1);
       if( iRetry==1 ) add_path_argument(pStr);
       append_escaped_arg(pStr, zExe, 1);
       append_escaped_arg(pStr, "--replica", 0);
@@ -2349,7 +2382,7 @@ int main(int argc, char const * const *argv){
     }
     originSide(&ctx);
   }
-  pclose2(ctx.pIn, ctx.pOut, childPid);
+  ctx.nErr += !!pclose2(ctx.pIn, ctx.pOut, childPid);
   if( ctx.pLog ) fclose(ctx.pLog);
   tmEnd = currentTime();
   tmElapse = tmEnd - tmStart;  /* Elapse time in milliseconds */

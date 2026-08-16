@@ -235,56 +235,11 @@ extern const char *sqlite3ErrName(int);
 ** Transform pointers to text and back again
 */
 static void pointerToText(void *p, char *z){
-  static const char zHex[] = "0123456789abcdef";
-  int i, k;
-  unsigned int u;
-  sqlite3_uint64 n;
-  if( p==0 ){
-    strcpy(z, "0");
-    return;
-  }
-  if( sizeof(n)==sizeof(p) ){
-    memcpy(&n, &p, sizeof(p));
-  }else if( sizeof(u)==sizeof(p) ){
-    memcpy(&u, &p, sizeof(u));
-    n = u;
-  }else{
-    assert( 0 );
-  }
-  for(i=0, k=sizeof(p)*2-1; i<sizeof(p)*2; i++, k--){
-    z[k] = zHex[n&0xf];
-    n >>= 4;
-  }
-  z[sizeof(p)*2] = 0;
-}
-static int hexToInt(int h){
-  if( h>='0' && h<='9' ){
-    return h - '0';
-  }else if( h>='a' && h<='f' ){
-    return h - 'a' + 10;
-  }else{
-    return -1;
-  }
+  const char *zRet = sqlite3TestPtrToText(p);
+  sprintf(z, "%s", zRet);
 }
 static int textToPointer(const char *z, void **pp){
-  sqlite3_uint64 n = 0;
-  int i;
-  unsigned int u;
-  for(i=0; i<sizeof(void*)*2 && z[0]; i++){
-    int v;
-    v = hexToInt(*z++);
-    if( v<0 ) return TCL_ERROR;
-    n = n*16 + v;
-  }
-  if( *z!=0 ) return TCL_ERROR;
-  if( sizeof(n)==sizeof(*pp) ){
-    memcpy(pp, &n, sizeof(n));
-  }else if( sizeof(u)==sizeof(*pp) ){
-    u = (unsigned int)n;
-    memcpy(pp, &u, sizeof(u));
-  }else{
-    assert( 0 );
-  }
+  *pp = sqlite3TestTextToPtr(z);
   return TCL_OK;
 }
 
@@ -1368,6 +1323,7 @@ static int SQLITE_TCLAPI test_db_status(
     { "DEFERRED_FKS",        SQLITE_DBSTATUS_DEFERRED_FKS        },
     { "CACHE_USED_SHARED",   SQLITE_DBSTATUS_CACHE_USED_SHARED   },
     { "CACHE_SPILL",         SQLITE_DBSTATUS_CACHE_SPILL         },
+    { "TEMPBUF_SPILL",       SQLITE_DBSTATUS_TEMPBUF_SPILL       },
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){

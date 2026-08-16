@@ -71,6 +71,25 @@ do_test pcache2-1.4 {
   sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0
 } {0 13 13}
 
+# Check that a small (1KB) bulk cache allocation is handled.
+#
+do_test pcache2-2.1 {
+  catch {db2 close}
+  db close
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_pagecache 0 -1
+  sqlite3_config singlethread
+  sqlite3_initialize
+  autoinstall_test_functions
+} {0}
+
+reset_db
+do_execsql_test pcache2-2.2 {
+  PRAGMA page_size = 4096;
+  CREATE TABLE t1(x);
+}
+
 db close
 catch {db2 close}
 sqlite3_reset_auto_extension

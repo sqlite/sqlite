@@ -365,34 +365,31 @@ int sqlite3Fts5StorageOpen(
     if( pConfig->eContent==FTS5_CONTENT_NORMAL 
      || pConfig->eContent==FTS5_CONTENT_UNINDEXED 
     ){
-      int nDefn = 32 + pConfig->nCol*10;
-      char *zDefn = sqlite3_malloc64(32 + (sqlite3_int64)pConfig->nCol * 20);
-      if( zDefn==0 ){
-        rc = SQLITE_NOMEM;
-      }else{
-        int i;
-        int iOff;
-        sqlite3_snprintf(nDefn, zDefn, "id INTEGER PRIMARY KEY");
-        iOff = (int)strlen(zDefn);
-        for(i=0; i<pConfig->nCol; i++){
-          if( pConfig->eContent==FTS5_CONTENT_NORMAL 
-           || pConfig->abUnindexed[i] 
-          ){
-            sqlite3_snprintf(nDefn-iOff, &zDefn[iOff], ", c%d", i);
-            iOff += (int)strlen(&zDefn[iOff]);
-          }
+      int i = 0;
+      char *zDefn = 0;
+      sqlite3_str *pDefn = sqlite3_str_new(pConfig->db);
+
+      sqlite3_str_appendf(pDefn, "id INTEGER PRIMARY KEY");
+      for(i=0; i<pConfig->nCol; i++){
+        if( pConfig->eContent==FTS5_CONTENT_NORMAL || pConfig->abUnindexed[i] ){
+          sqlite3_str_appendf(pDefn, ", c%d", i);
         }
-        if( pConfig->bLocale ){
-          for(i=0; i<pConfig->nCol; i++){
-            if( pConfig->abUnindexed[i]==0 ){
-              sqlite3_snprintf(nDefn-iOff, &zDefn[iOff], ", l%d", i);
-              iOff += (int)strlen(&zDefn[iOff]);
-            }
-          }
-        }
-        rc = sqlite3Fts5CreateTable(pConfig, "content", zDefn, 0, pzErr);
       }
-      sqlite3_free(zDefn);
+      if( pConfig->bLocale ){
+        for(i=0; i<pConfig->nCol; i++){
+          if( pConfig->abUnindexed[i]==0 ){
+            sqlite3_str_appendf(pDefn, ", l%d", i);
+          }
+        }
+      }
+      zDefn = sqlite3_str_finish(pDefn);
+
+      if( zDefn ){
+        rc = sqlite3Fts5CreateTable(pConfig, "content", zDefn, 0, pzErr);
+        sqlite3_free(zDefn);
+      }else{
+        rc = SQLITE_NOMEM;
+      }
     }
 
     if( rc==SQLITE_OK && pConfig->bColumnsize ){

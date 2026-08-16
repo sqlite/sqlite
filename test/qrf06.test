@@ -1,0 +1,576 @@
+# 2025-12-02
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test cases for the Query Result Formatter (QRF), and especially
+# the sqlite3_qrf_wcwidth() function and its utilization.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix qrf06
+
+# Data
+db eval {
+   BEGIN TRANSACTION;
+   CREATE TABLE language(name TEXT);
+   INSERT INTO language(name) VALUES
+     ('العربية'),
+     ('Deutsch'),
+     ('English'),
+     ('Español'),
+     ('فارسی'),
+     ('Français'),
+     ('Italiano'),
+     ('مصرى'),
+     ('Nederlands'),
+     ('日本語'),
+     ('Polski'),
+     ('Português'),
+     ('Sinugboanong Binisaya'),
+     ('Svenska'),
+     ('Українська'),
+     ('Tiếng Việt'),
+     ('Winaray'),
+     ('中文'),
+     ('Русский'),
+     ('Afrikaans'),
+     ('Shqip'),
+     ('Asturianu'),
+     ('Azərbaycanca'),
+     ('Български'),
+     ('閩南語 / Bân-lâm-gú'),
+     ('বাংলা'),
+     ('Беларуская'),
+     ('Català'),
+     ('Čeština'),
+     ('Cymraeg'),
+     ('Dansk'),
+     ('Eesti'),
+     ('Ελληνικά'),
+     ('Esperanto'),
+     ('Euskara'),
+     ('Galego'),
+     ('한국어'),
+     ('Հայերեն'),
+     ('हिन्दी'),
+     ('Hrvatski'),
+     ('Bahasa Indonesia'),
+     ('עברית'),
+     ('ქართული'),
+     ('Ladin'),
+     ('Latina'),
+     ('Latviešu'),
+     ('Lietuvių'),
+     ('Magyar'),
+     ('Македонски'),
+     ('Malagasy'),
+     ('मराठी'),
+     ('Bahasa Melayu'),
+     ('Bahaso Minangkabau'),
+     ('မြန်မာဘာသာ'),
+     ('Norskbokmålnynorsk'),
+     ('Нохчийн'),
+     ('Oʻzbekcha / Ўзбекча'),
+     ('Қазақша / Qazaqşa / قازاقشا'),
+     ('Română'),
+     ('Simple English'),
+     ('Slovenčina'),
+     ('Slovenščina'),
+     ('Српски / Srpski'),
+     ('Srpskohrvatski / Српскохрватски'),
+     ('Suomi'),
+     ('Kiswahili'),
+     ('தமிழ்'),
+     ('Татарча / Tatarça'),
+     ('తెలుగు'),
+     ('ภาษาไทย'),
+     ('Тоҷикӣ'),
+     ('تۆرکجه'),
+     ('Türkçe'),
+     ('اردو'),
+     ('粵語'),
+     ('Bahsa Acèh'),
+     ('Alemannisch'),
+     ('አማርኛ'),
+     ('Aragonés'),
+     ('Արեւմտահայերէն'),
+     ('Bahasa Hulontalo'),
+     ('Basa Bali'),
+     ('Bahasa Banjar'),
+     ('Basa Banyumasan'),
+     ('Башҡортса'),
+     ('Беларуская (тарашкевіца)'),
+     ('Bikol Central'),
+     ('বিষ্ণুপ্রিয়া মণিপুরী'),
+     ('Boarisch'),
+     ('Bosanski'),
+     ('Brezhoneg'),
+     ('Чӑвашла'),
+     ('Dagbanli'),
+     ('الدارجة'),
+     ('Diné Bizaad'),
+     ('Emigliàn–Rumagnòl'),
+     ('Fiji Hindi'),
+     ('Føroyskt'),
+     ('Frysk'),
+     ('Fulfulde'),
+     ('Gaeilge'),
+     ('Gàidhlig'),
+     ('گیلکی'),
+     ('ગુજરાતી'),
+     ('Hak-kâ-ngî / 客家語'),
+     ('Hausa'),
+     ('Hornjoserbsce'),
+     ('Ido'),
+     ('Igbo'),
+     ('Ilokano'),
+     ('Interlingua'),
+     ('Interlingue'),
+     ('Ирон'),
+     ('Íslenska'),
+     ('Jawa'),
+     ('ಕನ್ನಡ'),
+     ('Kapampangan'),
+     ('ភាសាខ្មែរ'),
+     ('Kotava'),
+     ('Kreyòl Ayisyen'),
+     ('Kurdî / كوردی'),
+     ('کوردیی ناوەندی'),
+     ('Кыргызча'),
+     ('Кырык мары'),
+     ('Lëtzebuergesch'),
+     ('Lìgure'),
+     ('Limburgs'),
+     ('Lombard'),
+     ('मैथिली'),
+     ('മലയാളം'),
+     ('მარგალური'),
+     ('مازِرونی'),
+     ('Mìng-dĕ̤ng-ngṳ̄ / 閩東語'),
+     ('Монгол'),
+     ('Napulitano'),
+     ('नेपाल भाषा'),
+     ('Nordfriisk'),
+     ('Occitan'),
+     ('Олык марий'),
+     ('ଓଡି଼ଆ'),
+     ('অসমীযা়'),
+     ('ਪੰਜਾਬੀ'),
+     ('پنجابی (شاہ مکھی)'),
+     ('پښتو'),
+     ('Piemontèis'),
+     ('Plattdüütsch'),
+     ('Qaraqalpaqsha'),
+     ('Qırımtatarca'),
+     ('Runa Simi'),
+     ('Русиньскый'),
+     ('संस्कृतम्'),
+     ('ᱥᱟᱱᱛᱟᱲᱤ'),
+     ('سرائیکی'),
+     ('Саха Тыла'),
+     ('Scots'),
+     ('ChiShona'),
+     ('Sicilianu'),
+     ('සිංහල'),
+     ('سنڌي'),
+     ('Ślůnski'),
+     ('Basa Sunda'),
+     ('Taclḥit'),
+     ('Tagalog'),
+     ('ၽႃႇသႃႇတႆး'),
+     ('ⵜⴰⵎⴰⵣⵉⵖⵜ ⵜⴰⵏⴰⵡⴰⵢⵜ'),
+     ('tolışi'),
+     ('chiTumbuka'),
+     ('Basa Ugi'),
+     ('Vèneto'),
+     ('Volapük'),
+     ('Walon'),
+     ('文言'),
+     ('吴语'),
+     ('ייִדיש'),
+     ('Yorùbá'),
+     ('Zazaki'),
+     ('žemaitėška'),
+     ('isiZulu'),
+     ('नेपाली'),
+     ('ꯃꯤꯇꯩ ꯂꯣꯟ'),
+     ('Dzhudezmo / לאדינו'),
+     ('Адыгэбзэ'),
+     ('Ænglisc'),
+     ('Anarâškielâ'),
+     ('अंगिका'),
+     ('Аԥсшәа'),
+     ('armãneashti'),
+     ('Arpitan'),
+     ('atikamekw'),
+     ('ܐܬܘܪܝܐ'),
+     ('Avañe’ẽ'),
+     ('Авар'),
+     ('Aymar'),
+     ('Batak Toba'),
+     ('Betawi'),
+     ('भोजपुरी'),
+     ('Bislama'),
+     ('བོད་ཡིག'),
+     ('Буряад'),
+     ('Chavacano de Zamboanga'),
+     ('Chichewa'),
+     ('Corsu'),
+     ('Vahcuengh / 話僮'),
+     ('Dagaare'),
+     ('Davvisámegiella'),
+     ('Deitsch'),
+     ('ދިވެހިބަސް'),
+     ('Dolnoserbski'),
+     ('Dusun Bundu-liwan'),
+     ('Эрзянь'),
+     ('Estremeñu'),
+     ('Eʋegbe'),
+     ('Farefare'),
+     ('Fɔ̀ngbè'),
+     ('Furlan'),
+     ('Gaelg'),
+     ('Gagauz'),
+     ('ГӀалгӀай'),
+     ('Ghanaian Pidgin'),
+     ('Gĩkũyũ'),
+     ('赣语 / 贛語'),
+     ('Gungbe'),
+     ('Хальмг'),
+     ('ʻŌlelo Hawaiʻi'),
+     ('Ikinyarwanda'),
+     ('Jaku Iban'),
+     ('Kabɩyɛ'),
+     ('Yerwa Kanuri'),
+     ('Kaszëbsczi'),
+     ('Kernewek'),
+     ('Коми'),
+     ('Перем коми'),
+     ('Kongo'),
+     ('कोंकणी / Konknni'),
+     ('كٲشُر'),
+     ('Kriyòl Gwiyannen'),
+     ('Kumoring'),
+     ('Kʋsaal'),
+     ('ພາສາລາວ'),
+     ('Лакку'),
+     ('Latgaļu'),
+     ('Лезги'),
+     ('Li Niha'),
+     ('Lingála'),
+     ('Lingua Franca Nova'),
+     ('livvinkarjala'),
+     ('lojban'),
+     ('Luganda'),
+     ('Madhurâ'),
+     ('Malti'),
+     ('Mandailing'),
+     ('Māori'),
+     ('Mfantse'),
+     ('Mirandés'),
+     ('Мокшень'),
+     ('ဘာသာ မန်'),
+     ('Moore'),
+     ('ߒߞߏ'),
+     ('Na Vosa Vaka-Viti'),
+     ('Nāhuatlahtōlli'),
+     ('Naijá'),
+     ('Nedersaksisch'),
+     ('Nouormand / Normaund'),
+     ('Novial'),
+     ('Afaan Oromoo'),
+     ('ပအိုဝ်ႏဘာႏသာႏ'),
+     ('Pangasinán'),
+     ('Pangcah'),
+     ('Papiamentu'),
+     ('Patois'),
+     ('Pfälzisch'),
+     ('Picard'),
+     ('Къарачай–малкъар'),
+     ('Ripoarisch'),
+     ('Rumantsch'),
+     ('Sakizaya'),
+     ('Gagana Sāmoa'),
+     ('Sardu'),
+     ('Seediq'),
+     ('Seeltersk'),
+     ('Sesotho'),
+     ('Sesotho sa Leboa'),
+     ('Setswana'),
+     ('ꠍꠤꠟꠐꠤ'),
+     ('Словѣ́ньскъ / ⰔⰎⰑⰂⰡⰐⰠⰔⰍⰟ'),
+     ('Soomaaliga'),
+     ('Sranantongo'),
+     ('SiSwati'),
+     ('Reo tahiti'),
+     ('Taqbaylit'),
+     ('Tarandíne'),
+     ('Tayal'),
+     ('Tetun'),
+     ('Tok Pisin'),
+     ('faka Tonga'),
+     ('Türkmençe'),
+     ('Twi'),
+     ('Tyap'),
+     ('Тыва дыл'),
+     ('Удмурт'),
+     ('ئۇيغۇرچه'),
+     ('Vepsän'),
+     ('võro'),
+     ('West-Vlams'),
+     ('Wolof'),
+     ('isiXhosa'),
+     ('Zeêuws'),
+     ('алтай тил'),
+     ('अवधी'),
+     ('डोटेली'),
+     ('ತುಳು'),
+     ('ရခိုင်'),
+     ('Bajau Sama'),
+     ('Bamanankan'),
+     ('Chamoru'),
+     ('རྫོང་ཁ'),
+     ('𐌲𐌿𐍄𐌹𐍃𐌺x'),
+     ('Igala'),
+     ('ᐃᓄᒃᑎᑐᑦ / Inuktitut'),
+     ('Iñupiak'),
+     ('isiNdebele seSewula'),
+     ('Kalaallisut'),
+     ('Nupe'),
+     ('Obolo'),
+     ('पालि'),
+     ('pinayuanan'),
+     ('Ποντιακά'),
+     ('romani čhib'),
+     ('Ikirundi'),
+     ('руски'),
+     ('Sängö'),
+     ('ᥖᥭᥰᥖᥬᥳᥑᥨᥒᥰ'),
+     ('ትግርኛ'),
+     ('Thuɔŋjäŋ'),
+     ('ᏣᎳᎩ'),
+     ('Tsėhesenėstsestotse'),
+     ('Xitsonga'),
+     ('Tshivenḓa'),
+     ('Wayuunaiki'),
+     ('адыгабзэ');
+   COMMIT;
+}
+
+do_test 1.2 {
+  set res \n[db format -style box {
+    SELECT name, rowid AS id FROM language
+     WHERE length(name)=2
+     ORDER BY name
+  }]
+  set exp {
+╭──────┬─────╮
+│ name │ id  │
+╞══════╪═════╡
+│ 中文 │  18 │
+│ 吴语 │ 173 │
+│ 文言 │ 172 │
+│ 粵語 │  75 │
+╰──────┴─────╯
+}
+  if {$res ne $exp} {
+    puts [list $res]
+    puts [list $exp]
+  }
+  string compare $res $exp
+} {0}
+
+do_test 1.3 {
+  set res \n[db format -style box {
+    SELECT name, rowid AS id FROM language
+     WHERE length(name)=3
+     ORDER BY name
+  }]
+  set exp {
+╭────────┬─────╮
+│  name  │ id  │
+╞════════╪═════╡
+│ Ido    │ 108 │
+│ Twi    │ 297 │
+│ ߒߞߏ    │ 258 │
+│ ᏣᎳᎩ    │ 335 │
+│ 日本語 │  10 │
+│ 한국어 │  37 │
+╰────────┴─────╯
+}
+  if {$res ne $exp} {
+    puts [list $res]
+    puts [list $exp]
+  }
+  string compare $res $exp
+} {0}
+
+do_test 1.4 {
+  set res \n[db format -style box {
+    SELECT name, rowid AS id FROM language
+     WHERE length(name)=4
+     ORDER BY name
+  }]
+  set exp {
+╭──────┬─────╮
+│ name │ id  │
+╞══════╪═════╡
+│ Igbo │ 109 │
+│ Jawa │ 115 │
+│ Nupe │ 323 │
+│ Tyap │ 298 │
+│ võro │ 303 │
+│ Авар │ 192 │
+│ Ирон │ 113 │
+│ Коми │ 231 │
+│ اردو │  74 │
+│ سنڌي │ 159 │
+│ مصرى │   8 │
+│ پښتو │ 144 │
+│ अवधी │ 309 │
+│ पालि │ 325 │
+│ ತುಳು │ 311 │
+│ ትግርኛ │ 333 │
+│ አማርኛ │  78 │
+╰──────┴─────╯
+}
+  if {$res ne $exp} {
+    puts [list $res]
+    puts [list $exp]
+  }
+  string compare $res $exp
+} {0}
+
+do_test 1.5 {
+  set res \n[db format -style box {
+    SELECT name, rowid AS id FROM language
+     WHERE length(name)=5
+     ORDER BY name
+  }]
+  set exp {
+╭───────┬─────╮
+│ name  │ id  │
+╞═══════╪═════╡
+│ Aymar │ 193 │
+│ Corsu │ 202 │
+│ Dansk │  31 │
+│ Eesti │  32 │
+│ Frysk │  99 │
+│ Gaelg │ 216 │
+│ Hausa │ 106 │
+│ Igala │ 318 │
+│ Kongo │ 233 │
+│ Ladin │  44 │
+│ Malti │ 250 │
+│ Moore │ 257 │
+│ Māori │ 252 │
+│ Naijá │ 261 │
+│ Obolo │ 324 │
+│ Sardu │ 278 │
+│ Scots │ 155 │
+│ Shqip │  21 │
+│ Suomi │  65 │
+│ Sängö │ 331 │
+│ Tayal │ 292 │
+│ Tetun │ 293 │
+│ Walon │ 171 │
+│ Wolof │ 305 │
+│ Лакку │ 240 │
+│ Лезги │ 242 │
+│ руски │ 330 │
+│ עברית │  42 │
+│ فارسی │   5 │
+│ كٲشُر  │ 235 │
+│ گیلکی │ 103 │
+│ मराठी │  51 │
+│ বাংলা │  26 │
+│ ଓଡି଼ଆ   │ 140 │
+│ தமிழ்  │  67 │
+│ ಕನ್ನಡ  │ 116 │
+│ සිංහල  │ 158 │
+│ ꠍꠤꠟꠐꠤ │ 284 │
+╰───────┴─────╯
+}
+  if {$res ne $exp} {
+    puts [list $res]
+    puts [list $exp]
+  }
+  string compare $res $exp
+} {0}
+
+do_test 1.6 {
+  set res \n[db format -style box {
+    SELECT name, rowid AS id FROM language
+     WHERE length(name)=6
+     ORDER BY name
+  }]
+  set exp {
+╭────────┬─────╮
+│  name  │ id  │
+╞════════╪═════╡
+│ Betawi │ 195 │
+│ Català │  28 │
+│ Eʋegbe │ 212 │
+│ Furlan │ 215 │
+│ Gagauz │ 217 │
+│ Galego │  36 │
+│ Gungbe │ 222 │
+│ Gĩkũyũ │ 220 │
+│ Kabɩyɛ │ 227 │
+│ Kotava │ 119 │
+│ Kʋsaal │ 238 │
+│ Latina │  45 │
+│ Lìgure │ 126 │
+│ Magyar │  48 │
+│ Novial │ 264 │
+│ Patois │ 270 │
+│ Picard │ 272 │
+│ Polski │  11 │
+│ Română │  59 │
+│ Seediq │ 279 │
+│ Türkçe │  73 │
+│ Vepsän │ 302 │
+│ Vèneto │ 169 │
+│ Yorùbá │ 175 │
+│ Zazaki │ 176 │
+│ Zeêuws │ 307 │
+│ lojban │ 247 │
+│ tolışi │ 166 │
+│ Аԥсшәа │ 186 │
+│ Буряад │ 199 │
+│ Монгол │ 134 │
+│ Тоҷикӣ │  71 │
+│ Удмурт │ 300 │
+│ Хальмг │ 223 │
+│ Эрзянь │ 210 │
+│ ייִדיש  │ 174 │
+│ تۆرکجه │  72 │
+│ ܐܬܘܪܝܐ │ 190 │
+│ अंगिका  │ 185 │
+│ डोटेली  │ 310 │
+│ नेपाली  │ 179 │
+│ मैथिली  │ 129 │
+│ हिन्दी  │  39 │
+│ ਪੰਜਾਬੀ  │ 142 │
+│ తెలుగు  │  69 │
+│ മലയാളം │ 130 │
+│ རྫོང་ཁ   │ 316 │
+│ ရခိုင်    │ 312 │
+╰────────┴─────╯
+}
+  if {$res ne $exp} {
+    puts [list $res]
+    puts [list $exp]
+  }
+  string compare $res $exp
+} {0}
+
+finish_test

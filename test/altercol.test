@@ -946,4 +946,17 @@ do_execsql_test 23.20 {
   ROLLBACK;
 } {t4new}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 24.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  CREATE TABLE t2(a, b, c);
+  INSERT INTO t2 VALUES(1, 1, 1);
+}
+
+do_catchsql_test 24.1 {
+  PRAGMA foreign_keys = 1;
+  ALTER TABLE t2 ADD COLUMN d REFERENCES t1 DEFAULT 123;
+} {1 {Cannot add a REFERENCES column with non-NULL default value}}
+
 finish_test

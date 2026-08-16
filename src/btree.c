@@ -16,6 +16,16 @@
 #include "btreeInt.h"
 
 /*
+** Suppress false-positive compiler warnings from GCC.  Warnings are
+** re-enabled at the bottom of this source file.
+*/
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstringop-overread"
+# pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
+
+/*
 ** The header string that appears at the beginning of every
 ** SQLite database.
 */
@@ -995,24 +1005,41 @@ int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
 void sqlite3BtreeCursorHint(BtCursor *pCur, int eHintType, ...){
   /* Used only by system that substitute their own storage engine */
 #ifdef SQLITE_DEBUG
-  if( ALWAYS(eHintType==BTREE_HINT_RANGE) ){
-    va_list ap;
+  va_list ap;
+  va_start(ap, eHintType);
+  if( eHintType==BTREE_HINT_RANGE ){
     Expr *pExpr;
     Walker w;
     memset(&w, 0, sizeof(w));
     w.xExprCallback = sqlite3CursorRangeHintExprCheck;
-    va_start(ap, eHintType);
     pExpr = va_arg(ap, Expr*);
     w.u.aMem = va_arg(ap, Mem*);
-    va_end(ap);
     assert( pExpr!=0 );
     assert( w.u.aMem!=0 );
     sqlite3WalkExpr(&w, pExpr);
+  }else if( ALWAYS(eHintType==BTREE_HINT_TABLECURSOR) ){
+    BtCursor *pCsr = va_arg(ap, BtCursor*);
+    assert( pCur->pCursorHintTableCursor==0 
+         || pCur->pCursorHintTableCursor==pCsr
+    );
+    assert( pCsr->pKeyInfo==0 || CORRUPT_DB );
+    pCur->pCursorHintTableCursor = pCsr;
   }
+  va_end(ap);
 #endif /* SQLITE_DEBUG */
 }
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
+#if defined(SQLITE_ENABLE_CURSOR_HINTS) && defined(SQLITE_DEBUG)
+/*
+** Return the pointer configured via the BTREE_HINT_TABLECURSOR hint on
+** cursor pCsr. This is used from OP_DeferredSeek to assert() that the
+** index cursor has been correctly configured with the table cursor.
+*/
+BtCursor *sqlite3BtreeCursorHintTblCsr(BtCursor *pCsr){
+  return pCsr->pCursorHintTableCursor;
+}
+#endif
 
 /*
 ** Provide flag hints to the cursor.
@@ -1250,7 +1277,7 @@ static void btreeParseCellPtrNoPayload(
 #ifndef SQLITE_DEBUG
   UNUSED_PARAMETER(pPage);
 #endif
-  pInfo->nSize = 4 + getVarint(&pCell[4], (u64*)&pInfo->nKey);
+  pInfo->nSize = 4 + sqlite3GetVarint(&pCell[4], (u64*)&pInfo->nKey);
   pInfo->nPayload = 0;
   pInfo->nLocal = 0;
   pInfo->pPayload = 0;
@@ -1262,7 +1289,7 @@ static void btreeParseCellPtr(
   CellInfo *pInfo         /* Fill in this structure */
 ){
   u8 *pIter;              /* For scanning through pCell */
-  u32 nPayload;           /* Number of bytes of cell payload */
+  u64 nPayload;           /* Number of bytes of cell payload */
   u64 iKey;               /* Extracted Key value */
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
@@ -1284,12 +1311,13 @@ static void btreeParseCellPtr(
     do{
       nPayload = (nPayload<<7) | (*++pIter & 0x7f);
     }while( (*pIter)>=0x80 && pIter<pEnd );
+    nPayload &= 0xffffffff;
   }
   pIter++;
 
   /* The next block of code is equivalent to:
   **
-  **     pIter += getVarint(pIter, (u64*)&pInfo->nKey);
+  **     pIter += sqlite3GetVarint(pIter, (u64*)&pInfo->nKey);
   **
   ** The code is inlined and the loop is unrolled for performance.
   ** This routine is a high-runner.
@@ -1327,11 +1355,10 @@ static void btreeParseCellPtr(
   pIter++;
 
   pInfo->nKey = *(i64*)&iKey;
-  pInfo->nPayload = nPayload;
+  pInfo->nPayload = (u32)nPayload;
   pInfo->pPayload = pIter;
   testcase( nPayload==pPage->maxLocal );
   testcase( nPayload==(u32)pPage->maxLocal+1 );
-  assert( nPayload>=0 );
   assert( pPage->maxLocal <= BT_MAX_LOCAL );
   if( nPayload<=pPage->maxLocal ){
     /* This is the (easy) common case where the entire payload fits
@@ -2138,8 +2165,15 @@ static int btreeComputeFreeSpace(MemPage *pPage){
       }
       next = get2byte(&data[pc]);
       size = get2byte(&data[pc+2]);
+      if( size<4 && sqlite3FaultSim(422)==SQLITE_OK ){
+        /* Minimum freeblock size is 4.  Enable fault-sim 422 to disable this
+        ** check to reach interesting error stats.  However, disabling this
+        ** check can cause assertion faults due to min-heap overflow.  All
+        ** fault-sims are for testing use only, but this one especially so. */
+        return SQLITE_CORRUPT_PAGE(pPage);
+      }
       nFree = nFree + size;
-      if( next<=pc+size+3 ) break;
+      if( next<pc+size+4 ) break;
       pc = next;
     }
     if( next>0 ){
@@ -3673,6 +3707,30 @@ static SQLITE_NOINLINE int btreeBeginTrans(
     }
 #endif
 
+#ifdef SQLITE_EXPERIMENTAL_PRAGMA_20251114
+    /* If both a read and write transaction will be opened by this call,
+    ** then issue a file-control as if the following pragma command had
+    ** been evaluated:
+    **
+    **     PRAGMA experimental_pragma_20251114 = 1|2
+    **
+    ** where the RHS is "1" if wrflag is 1 (RESERVED lock), or "2" if wrflag 
+    ** is 2 (EXCLUSIVE lock). Ignore any result or error returned by the VFS.
+    **
+    ** WARNING: This code will likely remain part of SQLite only temporarily -
+    ** it exists to allow users to experiment with certain types of blocking 
+    ** locks in custom VFS implementations. It MAY BE REMOVED AT ANY TIME.  */
+    if( pBt->pPage1==0 && wrflag ){
+      sqlite3_file *fd = sqlite3PagerFile(pPager);
+      char *aFcntl[3] = {0,0,0};
+      aFcntl[1] = "experimental_pragma_20251114";
+      assert( wrflag==1 || wrflag==2 );
+      aFcntl[2] = (wrflag==1 ? "1" : "2");
+      sqlite3OsFileControlHint(fd, SQLITE_FCNTL_PRAGMA, (void*)aFcntl);
+      sqlite3_free(aFcntl[0]);
+    }
+#endif
+
     /* Call lockBtree() until either pBt->pPage1 is populated or
     ** lockBtree() returns something other than SQLITE_OK. lockBtree()
     ** may return SQLITE_OK but leave pBt->pPage1 set to 0 if after
@@ -5120,7 +5178,7 @@ static int accessPayload(
 
   getCellInfo(pCur);
   aPayload = pCur->info.pPayload;
-  assert( offset+amt <= pCur->info.nPayload );
+  assert( (u64)offset+(u64)amt <= (u64)pCur->info.nPayload );
 
   assert( aPayload > pPage->aData );
   if( (uptr)(aPayload - pPage->aData) > (pBt->usableSize - pCur->info.nLocal) ){
@@ -5161,7 +5219,9 @@ static int accessPayload(
     ** means "not yet known" (the cache is lazily populated).
     */
     if( (pCur->curFlags & BTCF_ValidOvfl)==0 ){
-      int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
+      i64 nOvfl = pCur->info.nPayload;
+      testcase( nOvfl - pCur->info.nLocal + ovflSize - 1 > 0xffffffffU );
+      nOvfl = (nOvfl - pCur->info.nLocal + ovflSize-1)/ovflSize;
       if( pCur->aOverflow==0
        || nOvfl*(int)sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
       ){
@@ -5266,6 +5326,14 @@ static int accessPayload(
               (eOp==0 ? PAGER_GET_READONLY : 0)
           );
           if( rc==SQLITE_OK ){
+            if( eOp!=0
+             && (sqlite3PagerPageRefcount(pDbPage)!=1
+                 || NEVER(((MemPage*)sqlite3PagerGetExtra(pDbPage))->isInit))
+             && sqlite3FaultSim(411)==SQLITE_OK
+            ){
+              sqlite3PagerUnref(pDbPage);
+              return SQLITE_CORRUPT_PAGE(pPage);
+            }
             aPayload = sqlite3PagerGetData(pDbPage);
             nextPage = get4byte(aPayload);
             rc = copyPayload(&aPayload[offset+4], pBuf, a, eOp, pDbPage);
@@ -5677,7 +5745,7 @@ int sqlite3BtreeIsEmpty(BtCursor *pCur, int *pRes){
 
   assert( cursorOwnsBtShared(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
-  if( pCur->eState==CURSOR_VALID ){
+  if( NEVER(pCur->eState==CURSOR_VALID) ){
     *pRes = 0;
     return SQLITE_OK;
   }
@@ -5860,7 +5928,7 @@ int sqlite3BtreeTableMoveto(
           }
         }
       }
-      getVarint(pCell, (u64*)&nCellKey);
+      nCellKey = sqlite3VarintValue(pCell);
       if( nCellKey<intKey ){
         lwr = idx+1;
         if( lwr>upr ){ c = -1; break; }
@@ -5915,12 +5983,12 @@ moveto_table_finish:
 ** zero if the cell is less than or equal pIdxKey.  Return positive
 ** if unknown.
 **
-**    Return value negative:     Cell at pCur[idx] less than pIdxKey
+**    Return value negative:     Cell at pPage[idx] less than pIdxKey
 **
-**    Return value is zero:      Cell at pCur[idx] equals pIdxKey
+**    Return value is zero:      Cell at pPage[idx] equals pIdxKey
 **
 **    Return value positive:     Nothing is known about the relationship
-**                               of the cell at pCur[idx] and pIdxKey.
+**                               of the cell at pPage[idx] and pIdxKey.
 **
 ** This routine is part of an optimization.  It is always safe to return
 ** a positive value as that will cause the optimization to be skipped.
@@ -5940,14 +6008,14 @@ static int indexCellCompare(
     /* This branch runs if the record-size field of the cell is a
     ** single byte varint and the record fits entirely on the main
     ** b-tree page.  */
-    testcase( pCell+nCell+1==pPage->aDataEnd );
+    if( pCell + nCell >= pPage->aDataEnd ) return 99;
     c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
   }else if( !(pCell[1] & 0x80)
     && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
   ){
     /* The record-size field is a 2 byte varint and the record
     ** fits entirely on the main b-tree page.  */
-    testcase( pCell+nCell+2==pPage->aDataEnd );
+    if( pCell + nCell >= pPage->aDataEnd ) return 99;
     c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
   }else{
     /* If the record extends into overflow pages, do not attempt
@@ -6109,14 +6177,17 @@ bypass_moveto_root:
         /* This branch runs if the record-size field of the cell is a
         ** single byte varint and the record fits entirely on the main
         ** b-tree page.  */
-        testcase( pCell+nCell+1==pPage->aDataEnd );
+        if( pCell + nCell >= pPage->aDataEnd ){
+          rc = SQLITE_CORRUPT_PAGE(pPage);
+          goto moveto_index_finish;
+        }
         c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
       }else if( !(pCell[1] & 0x80)
         && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
+        && pCell + nCell < pPage->aDataEnd
       ){
         /* The record-size field is a 2 byte varint and the record
         ** fits entirely on the main b-tree page.  */
-        testcase( pCell+nCell+2==pPage->aDataEnd );
         c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
       }else{
         /* The record flows over onto one or more overflow pages. In
@@ -7064,7 +7135,7 @@ static int fillInCell(
     nSrc = pX->nData;
     assert( pPage->intKeyLeaf ); /* fillInCell() only called for leaves */
     nHeader += putVarint32(&pCell[nHeader], nPayload);
-    nHeader += putVarint(&pCell[nHeader], *(u64*)&pX->nKey);
+    nHeader += sqlite3PutVarint(&pCell[nHeader], *(u64*)&pX->nKey);
   }else{
     assert( pX->nKey<=0x7fffffff && pX->pKey!=0 );
     nSrc = nPayload = (int)pX->nKey;
@@ -8813,7 +8884,7 @@ static int balance_nonroot(
       j--;
       pNew->xParseCell(pNew, b.apCell[j], &info);
       pCell = pTemp;
-      sz = 4 + putVarint(&pCell[4], info.nKey);
+      sz = 4 + sqlite3PutVarint(&pCell[4], info.nKey);
       pTemp = 0;
     }else{
       pCell -= 4;
@@ -9698,7 +9769,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   }else{
     aOut += sqlite3PutVarint(aOut, pSrc->info.nPayload);
   }
-  if( pDest->pKeyInfo==0 ) aOut += putVarint(aOut, iKey);
+  if( pDest->pKeyInfo==0 ) aOut += sqlite3PutVarint(aOut, iKey);
   nIn = pSrc->info.nLocal;
   aIn = pSrc->info.pPayload;
   if( aIn+nIn>pSrc->pPage->aDataEnd ){
@@ -9758,7 +9829,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
       }while( rc==SQLITE_OK && nOut>0 );
  
       if( rc==SQLITE_OK && nRem>0 && ALWAYS(pPgnoOut) ){
-        Pgno pgnoNew;
+        Pgno pgnoNew = 0;  /* Prevent harmless static-analyzer warning */
         MemPage *pNew = 0;
         rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);
         put4byte(pPgnoOut, pgnoNew);
@@ -10940,6 +11011,11 @@ static int checkTreePage(
       doCoverageCheck = 0;
       continue;
     }
+    if( info.nPayload && info.pPayload[0]<2 ){
+      checkAppendMsg(pCheck, "Bad cell header size");
+      doCoverageCheck = 0;
+      continue;
+    }
 
     /* Check for integer primary key out of range */
     if( pPage->intKey ){
@@ -10981,6 +11057,7 @@ static int checkTreePage(
       }
     }else{
       /* Populate the coverage-checking heap for leaf pages */
+      assert( heap!=0 && heap[0] < pCheck->mxHeap );
       btreeHeapInsert(heap, (pc<<16)|(pc+info.nSize-1));
     }
   }
@@ -11000,6 +11077,7 @@ static int checkTreePage(
         u32 size;
         pc = get2byteAligned(&data[cellStart+i*2]);
         size = pPage->xCellSize(pPage, &data[pc]);
+        assert( heap!=0 && heap[0] < pCheck->mxHeap );
         btreeHeapInsert(heap, (pc<<16)|(pc+size-1));
       }
     }
@@ -11016,6 +11094,7 @@ static int checkTreePage(
       assert( (u32)i<=usableSize-4 ); /* Enforced by btreeComputeFreeSpace() */
       size = get2byte(&data[i+2]);
       assert( (u32)(i+size)<=usableSize ); /* due to btreeComputeFreeSpace() */
+      assert( heap!=0 && heap[0] < pCheck->mxHeap );
       btreeHeapInsert(heap, (((u32)i)<<16)|(i+size-1));
       /* EVIDENCE-OF: R-58208-19414 The first 2 bytes of a freeblock are a
       ** big-endian integer which is the offset in the b-tree page of the next
@@ -11150,6 +11229,9 @@ int sqlite3BtreeIntegrityCheck(
     goto integrity_ck_cleanup;
   }
   sCheck.heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
+#ifdef SQLITE_DEBUG
+  sCheck.mxHeap = pBt->pageSize/4 - 1;
+#endif
   if( sCheck.heap==0 ){
     checkOom(&sCheck);
     goto integrity_ck_cleanup;
@@ -11541,4 +11623,11 @@ int sqlite3BtreeConnectionCount(Btree *p){
   testcase( p->sharable );
   return p->pBt->nRef;
 }
+#endif
+
+/* Re-enable GCC compiler warnings that were suppressed at the top
+** of this source file to prevent annoying false-positives.
+*/
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic pop
 #endif

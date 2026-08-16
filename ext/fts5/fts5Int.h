@@ -81,7 +81,13 @@ typedef sqlite3_uint64 u64;
 # define FLEXARRAY 1
 #endif
 
-#endif
+#endif /* SQLITE_AMALGAMATION */
+
+/*
+** Constants for the largest and smallest possible 32-bit signed integers.
+*/
+# define LARGEST_INT32  ((int)(0x7fffffff))
+# define SMALLEST_INT32 ((int)((-1) - LARGEST_INT32))
 
 /* Truncate very long tokens to this many bytes. Hard limit is 
 ** (65536-1-1-4-9)==65521 bytes. The limiting factor is the 16-bit offset
@@ -815,7 +821,7 @@ int sqlite3Fts5ExprPattern(
 **   i64 iRowid = sqlite3Fts5ExprRowid(pExpr);
 ** }
 */
-int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, i64 iMin, int bDesc);
+int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, i64 iMin, i64, int bDesc);
 int sqlite3Fts5ExprNext(Fts5Expr*, i64 iMax);
 int sqlite3Fts5ExprEof(Fts5Expr*);
 i64 sqlite3Fts5ExprRowid(Fts5Expr*);

@@ -62,7 +62,6 @@ do_execsql_test 2.0 {
 
 sqlite3_create_aggregate db
 
-breakpoint
 do_catchsql_test 2.1 {
   SELECT min(x) OVER w1 FROM t1
     WINDOW w1 AS (PARTITION BY x_count(x) OVER w1);
@@ -105,6 +104,64 @@ do_execsql_test 3.1 {
   537 1.0 538 1.0 539 1.0 540 1.0 543 1.0 544 1.0
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t1 VALUES(2, 9223372036854775807);
+  INSERT INTO t1 VALUES(3, 3);
+  INSERT INTO t1 VALUES(4, 4);
+}
+
+do_execsql_test 4.1 {
+  SELECT a, 
+    total(b) OVER (ORDER BY a ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
+  FROM t1;
+} {
+  1 9.22337203685478e+18 2 9.22337203685478e+18 3 7.0 4 4.0
+}
+
+do_execsql_test 4.2 {
+  SELECT a, 
+    total(b) OVER (ORDER BY a ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING)
+  FROM t1;
+} {
+  1 9.22337203685478e+18 2 9.22337203685478e+18 3 7.0 4 4.0
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t(id, x);
+  INSERT INTO t VALUES(1, -1);
+  INSERT INTO t VALUES(2, 9223372036854775807);
+  INSERT INTO t VALUES(3, 1);
+  INSERT INTO t VALUES(4, 0.5);
+}
+
+do_execsql_test 5.1 {
+  SELECT id,
+    sum(id) OVER (ORDER BY id ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) 
+  FROM t t1
+} {
+  1 6
+  2 9
+  3 7
+  4 4
+}
+
+breakpoint
+do_execsql_test 5.2 {
+  SELECT id,
+    sum(x) OVER (ORDER BY id ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) 
+  FROM t t1
+} {
+  1 9223372036854775807 
+  2 9.22337203685478e+18 
+  3 1.5 
+  4 0.5
+}
 
 finish_test
 

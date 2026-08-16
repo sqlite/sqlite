@@ -41,7 +41,6 @@ Vdbe *sqlite3VdbeCreate(Parse *pParse){
   assert( pParse->aLabel==0 );
   assert( pParse->nLabel==0 );
   assert( p->nOpAlloc==0 );
-  assert( pParse->szOpAlloc==0 );
   sqlite3VdbeAddOp2(p, OP_Init, 0, 1);
   return p;
 }
@@ -191,8 +190,7 @@ static int growOpArray(Vdbe *v, int nOp){
   assert( nNew>=(v->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
-    p->szOpAlloc = sqlite3DbMallocSize(p->db, pNew);
-    v->nOpAlloc = p->szOpAlloc/sizeof(Op);
+    v->nOpAlloc = sqlite3DbMallocSize(p->db, pNew)/sizeof(Op);
     v->aOp = pNew;
   }
   return (pNew ? SQLITE_OK : SQLITE_NOMEM_BKPT);
@@ -556,11 +554,21 @@ void sqlite3VdbeExplainPop(Parse *pParse){
 ** sqlite3VdbeAddOp4() since it needs to also needs to mark all btrees
 ** as having been used.
 **
-** The zWhere string must have been obtained from sqlite3_malloc().
+** zWhere is a WHERE clause that defines which entries of the schema
+** to reparse.  If zWhere==0, that means all entries.  p5 is a mask
+** of INITFLAG_* values for the parse.
+**
+** In the current usage, the following are always true:
+**
+**     ALTER TABLE:     zWhere==0,  p5!=0
+**     Otherwise:       zWhere!=0,  p5==0
+**
+** The zWhere string must have been obtained from sqlite3DbMalloc().
 ** This routine will take ownership of the allocated memory.
 */
 void sqlite3VdbeAddParseSchemaOp(Vdbe *p, int iDb, char *zWhere, u16 p5){
   int j;
+  assert( p5==0 || zWhere==0 );
   sqlite3VdbeAddOp4(p, OP_ParseSchema, iDb, 0, 0, zWhere, P4_DYNAMIC);
   sqlite3VdbeChangeP5(p, p5);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
@@ -617,7 +625,7 @@ int sqlite3VdbeMakeLabel(Parse *pParse){
 ** a prior call to sqlite3VdbeMakeLabel().
 */
 static SQLITE_NOINLINE void resizeResolveLabel(Parse *p, Vdbe *v, int j){
-  int nNewSize = 10 - p->nLabel;
+  int nNewSize = 25 - p->nLabel;
   p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel,
                      nNewSize*sizeof(p->aLabel[0]));
   if( p->aLabel==0 ){
@@ -1900,7 +1908,6 @@ static void displayP4Expr(StrAccum *p, Expr *pExpr){
 #if VDBE_DISPLAY_P4
 /*
 ** Compute a string that describes the P4 parameter for an opcode.
-** Use zTemp for any required temporary buffer space.
 */
 char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
   char *zP4 = 0;
@@ -2001,6 +2008,10 @@ char *sqlite3VdbeDisplayP4(sqlite3 *db, Op *pOp){
     }
     case P4_TABLE: {
       zP4 = pOp->p4.pTab->zName;
+      break;
+    }
+    case P4_INDEX: {
+      zP4 = pOp->p4.pIdx->zName;
       break;
     }
     case P4_SUBRTNSIG: {
@@ -2682,7 +2693,7 @@ void sqlite3VdbeMakeReady(
   n = ROUND8P(sizeof(Op)*p->nOp);             /* Bytes of opcode memory used */
   x.pSpace = &((u8*)p->aOp)[n];               /* Unused opcode memory */
   assert( EIGHT_BYTE_ALIGNMENT(x.pSpace) );
-  x.nFree = ROUNDDOWN8(pParse->szOpAlloc - n);  /* Bytes of unused memory */
+  x.nFree = ROUNDDOWN8((p->nOpAlloc-p->nOp)*sizeof(Op)); /* Bytes unused mem */
   assert( x.nFree>=0 );
   assert( EIGHT_BYTE_ALIGNMENT(&x.pSpace[x.nFree]) );
 
@@ -2901,7 +2912,7 @@ int sqlite3VdbeSetColName(
   }
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx+var*p->nResAlloc]);
-  rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, xDel);
+  rc = sqlite3VdbeMemSetText(pColName, zName, -1, xDel);
   assert( rc!=0 || !zName || (pColName->flags&MEM_Term)!=0 );
   return rc;
 }
@@ -4045,67 +4056,16 @@ u64 sqlite3FloatSwap(u64 in){
 }
 #endif /* SQLITE_MIXED_ENDIAN_64BIT_FLOAT */
 
-
-/* Input "x" is a sequence of unsigned characters that represent a
-** big-endian integer.  Return the equivalent native integer
-*/
-#define ONE_BYTE_INT(x)    ((i8)(x)[0])
-#define TWO_BYTE_INT(x)    (256*(i8)((x)[0])|(x)[1])
-#define THREE_BYTE_INT(x)  (65536*(i8)((x)[0])|((x)[1]<<8)|(x)[2])
-#define FOUR_BYTE_UINT(x)  (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
-#define FOUR_BYTE_INT(x) (16777216*(i8)((x)[0])|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
-
 /*
-** Deserialize the data blob pointed to by buf as serial type serial_type
-** and store the result in pMem.
-**
-** This function is implemented as two separate routines for performance.
-** The few cases that require local variables are broken out into a separate
-** routine so that in most cases the overhead of moving the stack pointer
-** is avoided.
+** Deserialize the REAL number pointed to by buf and store it in pMem.
 */
-static void serialGet(
-  const unsigned char *buf,     /* Buffer to deserialize from */
-  u32 serial_type,              /* Serial type to deserialize */
-  Mem *pMem                     /* Memory cell to write value into */
-){
-  u64 x = FOUR_BYTE_UINT(buf);
-  u32 y = FOUR_BYTE_UINT(buf+4);
-  x = (x<<32) + y;
-  if( serial_type==6 ){
-    /* EVIDENCE-OF: R-29851-52272 Value is a big-endian 64-bit
-    ** twos-complement integer. */
-    pMem->u.i = *(i64*)&x;
-    pMem->flags = MEM_Int;
-    testcase( pMem->u.i<0 );
-  }else{
-    /* EVIDENCE-OF: R-57343-49114 Value is a big-endian IEEE 754-2008 64-bit
-    ** floating point number. */
-#if !defined(NDEBUG) && !defined(SQLITE_OMIT_FLOATING_POINT)
-    /* Verify that integers and floating point values use the same
-    ** byte order.  Or, that if SQLITE_MIXED_ENDIAN_64BIT_FLOAT is
-    ** defined that 64-bit floating point values really are mixed
-    ** endian.
-    */
-    static const u64 t1 = ((u64)0x3ff00000)<<32;
-    static const double r1 = 1.0;
-    u64 t2 = t1;
-    swapMixedEndianFloat(t2);
-    assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
-#endif
-    assert( sizeof(x)==8 && sizeof(pMem->u.r)==8 );
-    swapMixedEndianFloat(x);
-    memcpy(&pMem->u.r, &x, sizeof(x));
-    pMem->flags = IsNaN(x) ? MEM_Null : MEM_Real;
-  }
-}
-static int serialGet7(
+static int sqlite3VdbeSerialGet7(
   const unsigned char *buf,     /* Buffer to deserialize from */
   Mem *pMem                     /* Memory cell to write value into */
 ){
-  u64 x = FOUR_BYTE_UINT(buf);
-  u32 y = FOUR_BYTE_UINT(buf+4);
-  x = (x<<32) + y;
+  /* EVIDENCE-OF: R-57343-49114 Value is a big-endian IEEE 754-2008 64-bit
+  ** floating point number. */
+  u64 x = sqlite3Get8byte(buf);
   assert( sizeof(x)==8 && sizeof(pMem->u.r)==8 );
   swapMixedEndianFloat(x);
   memcpy(&pMem->u.r, &x, sizeof(x));
@@ -4116,6 +4076,13 @@ static int serialGet7(
   pMem->flags = MEM_Real;
   return 0;
 }
+
+/*
+** Deserialize the data blob pointed to by buf as serial type serial_type
+** and store the result in pMem.
+**
+** Similar code is found in the implementation of the OP_Column opcode.
+*/
 void sqlite3VdbeSerialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
   u32 serial_type,              /* Serial type to deserialize */
@@ -4174,16 +4141,21 @@ void sqlite3VdbeSerialGet(
     case 5: { /* 6-byte signed integer */
       /* EVIDENCE-OF: R-50385-09674 Value is a big-endian 48-bit
       ** twos-complement integer. */
-      pMem->u.i = FOUR_BYTE_UINT(buf+2) + (((i64)1)<<32)*TWO_BYTE_INT(buf);
+      pMem->u.i = SIX_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
       return;
     }
-    case 6:   /* 8-byte signed integer */
+    case 6: {   /* 8-byte signed integer */
+      /* EVIDENCE-OF: R-29851-52272 Value is a big-endian 64-bit
+      ** twos-complement integer. */
+      pMem->u.i = (i64)sqlite3Get8byte(buf);
+      pMem->flags = MEM_Int;
+      testcase( pMem->u.i<0 );
+      return;
+    }
     case 7: { /* IEEE floating point */
-      /* These use local variables, so do them in a separate routine
-      ** to avoid having to move the frame pointer in the common case */
-      serialGet(buf,serial_type,pMem);
+      sqlite3VdbeSerialGet7(buf, pMem);
       return;
     }
     case 8:    /* Integer 0 */
@@ -4789,7 +4761,7 @@ int sqlite3VdbeRecordCompareWithSkip(
       }else if( serial_type==0 ){
         rc = -1;
       }else if( serial_type==7 ){
-        serialGet7(&aKey1[d1], &mem1);
+        sqlite3VdbeSerialGet7(&aKey1[d1], &mem1);
         rc = -sqlite3IntFloatCompare(pRhs->u.i, mem1.u.r);
       }else{
         i64 lhs = vdbeRecordDecodeInt(serial_type, &aKey1[d1]);
@@ -4815,7 +4787,7 @@ int sqlite3VdbeRecordCompareWithSkip(
         rc = -1;
       }else{
         if( serial_type==7 ){
-          if( serialGet7(&aKey1[d1], &mem1) ){
+          if( sqlite3VdbeSerialGet7(&aKey1[d1], &mem1) ){
             rc = -1;  /* mem1 is a NaN */
           }else if( mem1.u.r<pRhs->u.r ){
             rc = -1;
@@ -4897,7 +4869,7 @@ int sqlite3VdbeRecordCompareWithSkip(
       serial_type = aKey1[idx1];
       if( serial_type==0
        || serial_type==10
-       || (serial_type==7 && serialGet7(&aKey1[d1], &mem1)!=0)
+       || (serial_type==7 && sqlite3VdbeSerialGet7(&aKey1[d1], &mem1)!=0)
       ){
         assert( rc==0 );
       }else{
@@ -4971,65 +4943,42 @@ static int vdbeRecordCompareInt(
   const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
   int serial_type = ((const u8*)pKey1)[1];
   int res;
-  u32 y;
-  u64 x;
   i64 v;
   i64 lhs;
 
   vdbeAssertFieldCountWithinLimits(nKey1, pKey1, pPKey2->pKeyInfo);
   assert( (*(u8*)pKey1)<=0x3F || CORRUPT_DB );
-  switch( serial_type ){
-    case 1: { /* 1-byte signed integer */
-      lhs = ONE_BYTE_INT(aKey);
-      testcase( lhs<0 );
-      break;
-    }
-    case 2: { /* 2-byte signed integer */
-      lhs = TWO_BYTE_INT(aKey);
-      testcase( lhs<0 );
-      break;
-    }
-    case 3: { /* 3-byte signed integer */
-      lhs = THREE_BYTE_INT(aKey);
-      testcase( lhs<0 );
-      break;
-    }
-    case 4: { /* 4-byte signed integer */
-      y = FOUR_BYTE_UINT(aKey);
-      lhs = (i64)*(int*)&y;
-      testcase( lhs<0 );
-      break;
-    }
-    case 5: { /* 6-byte signed integer */
-      lhs = FOUR_BYTE_UINT(aKey+2) + (((i64)1)<<32)*TWO_BYTE_INT(aKey);
-      testcase( lhs<0 );
-      break;
-    }
-    case 6: { /* 8-byte signed integer */
-      x = FOUR_BYTE_UINT(aKey);
-      x = (x<<32) | FOUR_BYTE_UINT(aKey+4);
-      lhs = *(i64*)&x;
-      testcase( lhs<0 );
-      break;
-    }
-    case 8:
-      lhs = 0;
-      break;
-    case 9:
-      lhs = 1;
-      break;
 
-    /* This case could be removed without changing the results of running
-    ** this code. Including it causes gcc to generate a faster switch
-    ** statement (since the range of switch targets now starts at zero and
-    ** is contiguous) but does not cause any duplicate code to be generated
-    ** (as gcc is clever enough to combine the two like cases). Other
-    ** compilers might be similar.  */
-    case 0: case 7:
-      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
-
-    default:
-      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
+  /* Serial types 1 through 6 are big-endian integers of 1, 2, 3, 4,
+  ** 6, or 8 bytes.  Rather than handle each width in its own switch
+  ** case, read 8 bytes and use an arithmetic right shift to drop the
+  ** unwanted low-order bytes and sign-extend the value.  This helps
+  ** because the switch tends to mispredict when a key column contains
+  ** integers of varying sizes.  The first entry of aShift[] is a
+  ** placeholder so that the table can be indexed by serial_type
+  ** directly.  Reading 8 bytes is always safe, because a buffer passed
+  ** to this routine has at least 74 bytes of padding after it, as
+  ** explained in sqlite3VdbeFindCompare() below. 
+  */
+  if( (u32)(serial_type-1)<=5 ){
+    static const u8 aShift[] = { 0, 56, 48, 40, 32, 16, 0 };
+    lhs = ((i64)sqlite3Get8byte(aKey)) >> aShift[serial_type];
+    /*                                 ^^--- This shift operator 
+    ** needs to be an arithmetic right-shift, which means that
+    ** if the left-hand operand (LHS) is negative, it will be sign-extended
+    ** so that the final results is also negative.  All modern C
+    ** compilers work this way as long as the LHS is a signed integer
+    ** (which is why the unsigned result from sqlite3Get8byte() is cast
+    ** into i64), but it is not defined by the C standards, or so Claude
+    ** tells me.  That the correct result is obtained is verified by the
+    ** following assert() and testcase() macros:
+    */
+    assert( 0<=(i64)sqlite3Get8byte(aKey) || lhs<0 );
+    testcase( lhs<0 );
+  }else if( serial_type==8 || serial_type==9 ){
+    lhs = serial_type - 8;
+  }else{
+    return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2);
   }
 
   assert( pPKey2->u.i == pPKey2->aMem[0].u.i );
@@ -5393,6 +5342,223 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   }
 }
 
+/*
+** Helper function for vdbeIsMatchingIndexKey(). Return true if column
+** iCol should be ignored when comparing a record with a record from 
+** an index on disk. The field should be ignored if:
+**
+**   * the corresponding bit in mask is set, and
+**   * either:
+**       - bIntegrity is false, or
+**       - the two Mem values are both real values that differ by 
+**         BTREE_ULPDISTORTION or fewer ULPs.
+*/
+static int vdbeSkipField(
+  Bitmask mask,                   /* Mask of indexed expression fields */
+  int iCol,                       /* Column of index being considered */
+  Mem *pMem1,                     /* Expected index value */
+  Mem *pMem2,                     /* Actual indexed value */
+  int bIntegrity                  /* True if running PRAGMA integrity_check */
+){
+#define BTREE_ULPDISTORTION 2
+  if( iCol>=BMS || (mask & MASKBIT(iCol))==0 ) return 0;
+  if( bIntegrity==0 ) return 1;
+  if( (pMem1->flags & MEM_Real) && (pMem2->flags & MEM_Real) ){
+    u64 m1, m2;
+    memcpy(&m1,&pMem1->u.r,8);
+    memcpy(&m2,&pMem2->u.r,8);
+    if( (m1<m2 ? m2-m1 : m1-m2) <= BTREE_ULPDISTORTION ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
+** This function compares the unpacked record with the current key that
+** cursor pCur points to. If bInt is false, all fields for which the 
+** corresponding bit in parameter "mask" is set are ignored. Or, if
+** bInt is true, then a difference of BTREE_ULPDISTORTION or fewer ULPs
+** in real values is overlooked for fields with the corresponding bit
+** set in mask.  
+**
+** Return the usual less than zero, zero, or greater than zero if the 
+** remaining fields of the cursor cursor key are less than, equal to or 
+** greater than those in (*p).
+*/
+static int vdbeIsMatchingIndexKey(
+  BtCursor *pCur,            /* Cursor open on index */
+  int bInt,                  /* True for integrity_check-style search */
+  Bitmask mask,              /* Mask of columns to skip */
+  UnpackedRecord *p,         /* Index key being deleted */
+  int *piRes                 /* 0 for a match, non-zero for not a match */
+){
+  u8 *aRec = 0;
+  u32 nRec = 0;
+  Mem m;
+  int rc = SQLITE_OK;
+
+  memset(&m, 0, sizeof(m));
+  m.enc = p->pKeyInfo->enc;
+  m.db = p->pKeyInfo->db;
+  nRec = sqlite3BtreePayloadSize(pCur);
+  if( nRec>0x7fffffff ){
+    return SQLITE_CORRUPT_BKPT;
+  }
+
+  /* Allocate 5 extra bytes at the end of the buffer. This allows the
+  ** getVarint32() call below to read slightly past the end of the buffer 
+  ** if the record is corrupt. */
+  aRec = sqlite3MallocZero(nRec+5);
+  if( aRec==0 ){
+    rc = SQLITE_NOMEM_BKPT;
+  }else{
+    rc = sqlite3BtreePayload(pCur, 0, nRec, aRec);
+  }
+
+  if( rc==SQLITE_OK ){
+    u32 szHdr = 0;                /* Size of record header in bytes */
+    u32 idxHdr = 0;               /* Current index in header */
+
+    idxHdr = getVarint32(aRec, szHdr);
+    if( szHdr>98307 ){
+      rc = SQLITE_CORRUPT;
+    }else{
+      int res = 0;                /* Result of this function call */
+      u32 idxRec = szHdr;         /* Index of next field in record body */
+      int ii = 0;                 /* Iterator variable */
+
+      int nCol = p->pKeyInfo->nAllField;
+      for(ii=0; ii<nCol && rc==SQLITE_OK; ii++){
+        u32 iSerial = 0;
+        int nSerial = 0;
+
+        if( idxHdr>=szHdr ){
+          rc = SQLITE_CORRUPT_BKPT;
+          break;
+        }
+        idxHdr += getVarint32(&aRec[idxHdr], iSerial);
+        nSerial = sqlite3VdbeSerialTypeLen(iSerial);
+        if( (idxRec+nSerial)>nRec ){
+          rc = SQLITE_CORRUPT_BKPT;
+        }else{
+          sqlite3VdbeSerialGet(&aRec[idxRec], iSerial, &m);
+          if( vdbeSkipField(mask, ii, &p->aMem[ii], &m, bInt)==0 ){
+            res = sqlite3MemCompare(&m, &p->aMem[ii], p->pKeyInfo->aColl[ii]);
+            if( res!=0 ) break;
+          }
+        }
+        idxRec += sqlite3VdbeSerialTypeLen(iSerial);
+      }
+
+      *piRes = res;
+    }
+  }
+
+  sqlite3_free(aRec);
+  return rc;
+}
+
+/*
+** This is called when the record in (*p) should be found in the index 
+** opened by cursor pCur, but was not. This may happen as part of a DELETE
+** operation or an integrity check.
+**
+** One reason that an exact match was not found may be the EIIB bug - that
+** a text-to-float conversion may have caused a real value in record (*p)
+** to be slightly different from its counterpart on disk. This function
+** attempts to find the right index record. If it does find the right
+** record, it leaves *pCur pointing to it and sets (*pRes) to 0 before
+** returning. Otherwise, (*pRes) is set to non-zero and an SQLite error
+** code returned.
+**
+** The algorithm used to find the correct record is:
+**
+**   * Scan up to BTREE_FDK_RANGE entries either side of the current entry.
+**     If parameter bIntegrity is false, then all fields that are indexed
+**     expressions or virtual table columns are omitted from the comparison.
+**     If bIntegrity is true, then small differences in real values in
+**     such fields are overlooked, but they are not omitted from the comparison
+**     altogether.
+**
+**   * If the above fails to find an entry and bIntegrity is false, search 
+**     the entire index.
+*/
+int sqlite3VdbeFindIndexKey(
+  BtCursor *pCur, 
+  Index *pIdx,
+  UnpackedRecord *p, 
+  int *pRes,
+  int bIntegrity
+){
+#define BTREE_FDK_RANGE 10
+  int nStep = 0;
+  int res = 1;
+  int rc = SQLITE_OK;
+  int ii = 0;
+
+  /* Calculate a mask based on the first 64 columns of the index. The mask
+  ** bit is set if the corresponding index field is either an expression
+  ** or a virtual column of the table.  */
+  Bitmask mask = 0;
+  for(ii=0; ii<MIN(pIdx->nColumn, BMS); ii++){
+    int iCol = pIdx->aiColumn[ii];
+    if( (iCol==XN_EXPR)
+     || (iCol>=0 && (pIdx->pTable->aCol[iCol].colFlags & COLFLAG_VIRTUAL))
+    ){
+      mask |= MASKBIT(ii);
+    }
+  }
+
+  /* If the mask is 0 at this point, then the index contains no expressions
+  ** or virtual columns. So do not search for a match - return so that the
+  ** caller may declare the db corrupt immediately. Or, if mask is non-zero,
+  ** proceed.  */
+  if( mask!=0 ){
+
+    /* Move the cursor back BTREE_FDK_RANGE entries. If this hits an EOF, 
+    ** position the cursor at the first entry in the index and set nStep
+    ** to -1 so that the first loop below scans the entire index. Otherwise,
+    ** set nStep to BTREE_FDK_RANGE*2 so that the first loop below scans
+    ** just that many entries.  */
+    for(ii=0; sqlite3BtreeEof(pCur)==0 && ii<BTREE_FDK_RANGE; ii++){
+      rc = sqlite3BtreePrevious(pCur, 0);
+    }
+    if( rc==SQLITE_DONE ){
+      rc = sqlite3BtreeFirst(pCur, &res);
+      nStep = -1;
+    }else{
+      nStep = BTREE_FDK_RANGE*2;
+    }
+  
+    /* This loop runs at most twice to search for a key with matching PK 
+    ** fields in the index. The second iteration always searches the entire 
+    ** index. The first iteration searches nStep entries starting with the
+    ** current cursor entry if (nStep>=0), or the entire index if (nStep<0).  */
+    while( sqlite3BtreeCursorIsValidNN(pCur) ){
+      for(ii=0; rc==SQLITE_OK && (ii<nStep || nStep<0); ii++){
+        rc = vdbeIsMatchingIndexKey(pCur, bIntegrity, mask, p, &res);
+        if( res==0 || rc!=SQLITE_OK ) break;
+        rc = sqlite3BtreeNext(pCur, 0);
+      }
+      if( rc==SQLITE_DONE ){
+        rc = SQLITE_OK;
+        assert( res!=0 );
+      }
+      if( nStep<0 || rc!=SQLITE_OK || res==0 || bIntegrity ) break;
+  
+      /* The first, non-exhaustive, search failed to find an entry with 
+      ** matching PK fields. So restart for an exhaustive search of the 
+      ** entire index.  */
+      nStep = -1;
+      rc = sqlite3BtreeFirst(pCur, &res);
+    }
+  }
+
+  *pRes = res;
+  return rc;
+}
+
 #ifndef SQLITE_OMIT_DATETIME_FUNCS
 /*
 ** Cause a function to throw an error if it was call from OP_PureFunc
@@ -5538,7 +5704,7 @@ void sqlite3VdbePreUpdateHook(
   preupdate.pCsr = pCsr;
   preupdate.op = op;
   preupdate.iNewReg = iReg;
-  preupdate.pKeyinfo = &preupdate.uKey.sKey;
+  preupdate.pKeyinfo = (KeyInfo*)&preupdate.uKey;
   preupdate.pKeyinfo->db = db;
   preupdate.pKeyinfo->enc = ENC(db);
   preupdate.pKeyinfo->nKeyField = pTab->nCol;
@@ -5571,3 +5737,14 @@ void sqlite3VdbePreUpdateHook(
   }
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+#ifdef SQLITE_ENABLE_PERCENTILE
+/*
+** Return the name of an SQL function associated with the sqlite3_context.
+*/
+const char *sqlite3VdbeFuncName(const sqlite3_context *pCtx){
+  assert( pCtx!=0 );
+  assert( pCtx->pFunc!=0 );
+  return pCtx->pFunc->zName;
+}
+#endif /* SQLITE_ENABLE_PERCENTILE */

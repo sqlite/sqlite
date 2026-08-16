@@ -21,9 +21,9 @@ do_execsql_test 1.0 {
 }
 
 
-explain_i {
-  INSERT INTO x1(a, b, c) VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4);
-}
+#explain_i {
+#  INSERT INTO x1(a, b, c) VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4);
+#}
 do_execsql_test 1.1.1 {
   INSERT INTO x1 VALUES(1, 1, 1), (2, 2, 2), (3, 3, 3), (4, 4, 4);
 }

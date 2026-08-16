@@ -27,7 +27,7 @@ Other options include:
    --lookaside N SZ      Lookahead uses N slots of SZ bytes each.
    --osmalloc            Use the OS native malloc() instead of MEMSYS5
    --pagesize N          Use N as the page size.
-   --quiet | -q          "Quite".  Put results in file but don't pop up editor
+   --quiet | -q          "Quiet".  Put results in file but don't pop up editor
    --size N              Change the test size.  100 means 100%.  Default: 5.
    --testset TEST        Specify the specific testset to use.  The default
                          is "mix1".  Other options include: "main", "json",
@@ -116,7 +116,7 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
     continue
   }
   if {[string match CC=* $arg]} {
-    set cc [lrange $arg 3 end]
+    set cc [string range $arg 3 end]
     continue
   }
   if {[string match *.c $arg]} {

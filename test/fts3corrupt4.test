@@ -4159,7 +4159,7 @@ do_catchsql_test 24.5 {
 
 do_catchsql_test 24.7 {
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
@@ -5124,7 +5124,7 @@ do_catchsql_test 28.7 {
 
 do_catchsql_test 28.8 {
   INSERT INTO t1(t1) SELECT x FROM t2;
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 #

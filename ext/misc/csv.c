@@ -24,8 +24,8 @@
 ** schema= parameter, like this:
 **
 **    CREATE VIRTUAL TABLE temp.csv2 USING csv(
-**       filename = "../http.log",
-**       schema = "CREATE TABLE x(date,ipaddr,url,referrer,userAgent)"
+**       filename = '../http.log',
+**       schema = 'CREATE TABLE x(date,ipaddr,url,referrer,userAgent)'
 **    );
 **
 ** Instead of specifying a file, the text of the CSV can be loaded using
@@ -62,6 +62,10 @@ SQLITE_EXTENSION_INIT1
 #  define CSV_NOINLINE
 #endif
 
+#ifndef SQLITEINT_H
+typedef sqlite3_int64 i64;
+typedef sqlite3_uint64 u64;
+#endif
 
 /* Max size of the error message in a CsvReader */
 #define CSV_MXERR 200
@@ -74,9 +78,9 @@ typedef struct CsvReader CsvReader;
 struct CsvReader {
   FILE *in;              /* Read the CSV text from this input stream */
   char *z;               /* Accumulated text for a field */
-  int n;                 /* Number of bytes in z */
-  int nAlloc;            /* Space allocated for z[] */
-  int nLine;             /* Current line number */
+  i64 n;                 /* Number of bytes in z */
+  i64 nAlloc;            /* Space allocated for z[] */
+  i64 nLine;             /* Current line number */
   int bNotFirst;         /* True if prior text has been seen */
   int cTerm;             /* Character that terminated the most recent field */
   size_t iIn;            /* Next unread character in the input buffer */
@@ -125,7 +129,7 @@ static int csv_reader_open(
   const char *zData           /*  ... or use this data */
 ){
   if( zFilename ){
-    p->zIn = sqlite3_malloc( CSV_INBUFSZ );
+    p->zIn = sqlite3_malloc64( CSV_INBUFSZ );
     if( p->zIn==0 ){
       csv_errmsg(p, "out of memory");
       return 1;
@@ -174,7 +178,7 @@ static int csv_getc(CsvReader *p){
 ** Return 0 on success and non-zero if there is an OOM error */
 static CSV_NOINLINE int csv_resize_and_append(CsvReader *p, char c){
   char *zNew;
-  int nNew = p->nAlloc*2 + 100;
+  i64 nNew = p->nAlloc*2 + 100;
   zNew = sqlite3_realloc64(p->z, nNew);
   if( zNew ){
     p->z = zNew;
@@ -218,7 +222,7 @@ static char *csv_read_one_field(CsvReader *p){
   }
   if( c=='"' ){
     int pc, ppc;
-    int startLine = p->nLine;
+    i64 startLine = p->nLine;
     pc = ppc = 0;
     while( 1 ){
       c = csv_getc(p);
@@ -322,7 +326,7 @@ typedef struct CsvCursor {
   sqlite3_vtab_cursor base;       /* Base class.  Must be first */
   CsvReader rdr;                  /* The CsvReader object */
   char **azVal;                   /* Value of the current row */
-  int *aLen;                      /* Length of each entry */
+  i64 *aLen;                      /* Length of each entry */
   sqlite3_int64 iRowid;           /* The current rowid.  Negative for EOF */
 } CsvCursor;
 
@@ -494,7 +498,7 @@ static int csvtabConnect(
   CsvTable *pNew = 0;        /* The CsvTable object to construct */
   int bHeader = -1;          /* header= flags.  -1 means not seen yet */
   int rc = SQLITE_OK;        /* Result code from this routine */
-  int i, j;                  /* Loop counters */
+  u64 i, j;                  /* Loop counters */
 #ifdef SQLITE_TEST
   int tstFlags = 0;          /* Value for testflags=N parameter */
 #endif
@@ -510,11 +514,10 @@ static int csvtabConnect(
 # define CSV_DATA     (azPValue[1])
 # define CSV_SCHEMA   (azPValue[2])
 
-
   assert( sizeof(azPValue)==sizeof(azParam) );
   memset(&sRdr, 0, sizeof(sRdr));
   memset(azPValue, 0, sizeof(azPValue));
-  for(i=3; i<argc; i++){
+  for(i=3; i<(u64)argc; i++){
     const char *z = argv[i];
     const char *zValue;
     for(j=0; j<sizeof(azParam)/sizeof(azParam[0]); j++){
@@ -544,6 +547,10 @@ static int csvtabConnect(
       if( nCol<=0 ){
         csv_errmsg(&sRdr, "column= value must be positive");
         goto csvtab_connect_error;
+      }else if( nCol>sqlite3_limit(db,SQLITE_LIMIT_COLUMN,-1) ){
+        csv_errmsg(&sRdr, "column= value too big, max %d",
+                   sqlite3_limit(db, SQLITE_LIMIT_COLUMN,-1));
+        goto csvtab_connect_error;
       }
     }else
     {
@@ -561,7 +568,7 @@ static int csvtabConnect(
   ){
     goto csvtab_connect_error;
   }
-  pNew = sqlite3_malloc( sizeof(*pNew) );
+  pNew = sqlite3_malloc64( sizeof(*pNew) );
   *ppVtab = (sqlite3_vtab*)pNew;
   if( pNew==0 ) goto csvtab_connect_oom;
   memset(pNew, 0, sizeof(*pNew));
@@ -706,13 +713,14 @@ static int csvtabClose(sqlite3_vtab_cursor *cur){
 static int csvtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   CsvTable *pTab = (CsvTable*)p;
   CsvCursor *pCur;
-  size_t nByte;
-  nByte = sizeof(*pCur) + (sizeof(char*)+sizeof(int))*pTab->nCol;
+  sqlite3_int64 nByte = pTab->nCol;
+  assert( pTab->nCol<32768 );
+  nByte = sizeof(*pCur) + (sizeof(char*)+sizeof(i64))*nByte;
   pCur = sqlite3_malloc64( nByte );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, nByte);
   pCur->azVal = (char**)&pCur[1];
-  pCur->aLen = (int*)&pCur->azVal[pTab->nCol];
+  pCur->aLen = (i64*)&pCur->azVal[pTab->nCol];
   *ppCursor = &pCur->base;
   if( csv_reader_open(&pCur->rdr, pTab->zFilename, pTab->zData) ){
     csv_xfer_error(pTab, &pCur->rdr);

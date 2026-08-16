@@ -14,6 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix transitive1
 
 do_execsql_test transitive1-100 {
   CREATE TABLE t1(a TEXT, b TEXT, c TEXT COLLATE NOCASE);
@@ -351,7 +352,7 @@ do_execsql_test transitive1-570 {
 do_execsql_test transitive1-570eqp {
   EXPLAIN QUERY PLAN
   SELECT * FROM c1 WHERE x=y AND z=y AND z='abc';
-} {/SEARCH c1 USING INDEX c1x/}
+} {/SCAN c1/}
 
 # 2021-05-04 forum https://sqlite.org/forum/forumpost/eb8613976a
 reset_db
@@ -425,5 +426,101 @@ do_execsql_test transitive1-812 {
 do_execsql_test transitive1-813 {
   SELECT * FROM t3 WHERE a=b AND a='5x';
 } {}
+
+# Bug 2026-05-21T03:39:28Z
+#
+reset_db
+do_execsql_test transitive1-900 {
+  CREATE TABLE t1(a TEXT);
+  CREATE TABLE t2(b TEXT COLLATE NOCASE);
+  INSERT INTO t1 VALUES('abc');
+  INSERT INTO t2 VALUES('abc');
+  SELECT * FROM t1 CROSS JOIN t2 WHERE a=b AND b='ABC';
+} {abc abc}
+
+#-------------------------------------------------------------------------
+reset_db
+db cache size 0
+
+do_execsql_test 1000 {
+  PRAGMA automatic_index = 0;
+  
+  CREATE TABLE t1(a TEXT);
+  CREATE TABLE t2(b TEXT);
+
+  INSERT INTO t1 VALUES ('hello');
+  INSERT INTO t1 VALUES ('Hello');
+  INSERT INTO t1 VALUES ('HELLO');
+  INSERT INTO t1 VALUES ('HeLLo');
+
+  INSERT INTO t2 VALUES ('hello');
+  INSERT INTO t2 VALUES ('Hello');
+  INSERT INTO t2 VALUES ('HELLO');
+  INSERT INTO t2 VALUES ('HeLLo');
+}
+
+optimization_control db transitive 1
+
+do_execsql_test 1010 {
+  SELECT t1.a, t2.b
+    FROM t1 CROSS JOIN t2
+    WHERE t1.a = t2.b
+    AND t2.b COLLATE NOCASE = 'Hello';
+} {
+  hello hello 
+  Hello Hello 
+  HELLO HELLO 
+  HeLLo HeLLo
+}
+
+optimization_control db transitive 0
+
+do_execsql_test 1020 {
+  SELECT t1.a, t2.b
+    FROM t1 CROSS JOIN t2
+    WHERE t1.a = t2.b
+    AND t2.b COLLATE NOCASE = 'Hello';
+} {
+  hello hello 
+  Hello Hello 
+  HELLO HELLO 
+  HeLLo HeLLo
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 1100 {
+  PRAGMA automatic_index = 0;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+
+  INSERT INTO t1 VALUES('ABC');
+  INSERT INTO t2 VALUES('abc');
+}
+
+do_execsql_test 1110 {
+  SELECT * FROM t1 CROSS JOIN t2 
+  WHERE (t1.x COLLATE nocase) = (t2.y COLLATE nocase) 
+    AND (t2.y = 'ABC')
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 1200 {
+  PRAGMA automatic_index = 0;
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+
+  INSERT INTO t1 VALUES('ABC');
+  INSERT INTO t2 VALUES('ABC');
+}
+
+do_execsql_test 1210 {
+  SELECT * FROM t1 CROSS JOIN t2 
+  WHERE t1.x = t2.y
+    AND (t1.x COLLATE nocase = 'abc')
+} {ABC ABC}
 
 finish_test

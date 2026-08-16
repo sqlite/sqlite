@@ -26,6 +26,27 @@
 #define SQLITE_MIN_LENGTH 30   /* Minimum value for the length limit */
 
 /*
+** Maximum size of any single memory allocation.
+**
+** This is not a limit on the total amount of memory used.  This is
+** a limit on the size parameter to sqlite3_malloc() and sqlite3_realloc().
+**
+** The upper bound is slightly less than 2GiB:  0x7ffffeff == 2,147,483,391
+** This provides a 256-byte safety margin for defense against 32-bit 
+** signed integer overflow bugs when computing memory allocation sizes.
+** Paranoid applications might want to reduce the maximum allocation size
+** further for an even larger safety margin.  0x3fffffff or 0x0fffffff
+** or even smaller would be reasonable upper bounds on the size of a memory
+** allocations for most applications.
+*/
+#ifndef SQLITE_MAX_ALLOCATION_SIZE
+# define SQLITE_MAX_ALLOCATION_SIZE  2147483391
+#endif
+#if SQLITE_MAX_ALLOCATION_SIZE>2147483391
+# error Maximum size for SQLITE_MAX_ALLOCATION_SIZE is 2147483391
+#endif
+
+/*
 ** This is the maximum number of
 **
 **    * Columns in a table
@@ -60,19 +81,40 @@
 ** It used to be the case that setting this value to zero would
 ** turn the limit off.  That is no longer true.  It is not possible
 ** to turn this limit off.
+**
+** The hard limit is the largest possible 32-bit signed integer less
+** 1024, or 2147482624.
 */
 #ifndef SQLITE_MAX_SQL_LENGTH
 # define SQLITE_MAX_SQL_LENGTH 1000000000
 #endif
 
 /*
-** The maximum depth of an expression tree. This is limited to
-** some extent by SQLITE_MAX_SQL_LENGTH. But sometime you might
-** want to place more severe limits on the complexity of an
-** expression. A value of 0 means that there is no limit.
+** The maximum depth of an expression tree. The expression tree depth
+** is also limited indirectly by SQLITE_MAX_SQL_LENGTH and by
+** SQLITE_MAX_PARSER_DEPTH.  Reducing the maximum complexity of
+** expressions can help prevent excess memory usage by hostile SQL.
+**
+** A value of 0 for this compile-time option causes all expression
+** depth limiting code to be omitted.
 */
 #ifndef SQLITE_MAX_EXPR_DEPTH
 # define SQLITE_MAX_EXPR_DEPTH 1000
+#endif
+
+/*
+** The maximum depth of the LALR(1) stack used in the parser that
+** interprets SQL inputs. The parser stack depth can also be limited
+** indirectly by SQLITE_MAX_SQL_LENGTH.  Limiting the parser stack
+** depth can help prevent excess memory usage and excess CPU stack
+** usage when processing hostile SQL.
+**
+** Prior to version 3.45.0 (2024-01-15), the parser stack was
+** hard-coded to 100 entries, and that worked fine for almost all
+** applications.  So the upper bound on this limit need not be large.
+*/
+#ifndef SQLITE_MAX_PARSER_DEPTH
+# define SQLITE_MAX_PARSER_DEPTH 2500
 #endif
 
 /*
@@ -190,6 +232,10 @@
 # undef SQLITE_MAX_DEFAULT_PAGE_SIZE
 # define SQLITE_MAX_DEFAULT_PAGE_SIZE SQLITE_MAX_PAGE_SIZE
 #endif
+#if SQLITE_MAX_DEFAULT_PAGE_SIZE<SQLITE_DEFAULT_PAGE_SIZE
+# undef SQLITE_MAX_DEFAULT_PAGE_SIZE
+# define SQLITE_MAX_DEFAULT_PAGE_SIZE SQLITE_DEFAULT_PAGE_SIZE
+#endif
 
 
 /*
@@ -220,4 +266,31 @@
 */
 #ifndef SQLITE_MAX_TRIGGER_DEPTH
 # define SQLITE_MAX_TRIGGER_DEPTH 1000
+#endif
+
+/*
+** Maximum number of objects defined by a single database schema.
+** Objects include:
+**
+**   *  tables (including the sqlite_schema table)
+**   *  virtual tables
+**   *  named indexes
+**   *  indexes created automatically by UNIQUE and PRIMARY KEY constraints
+**   *  triggers
+**   *  views
+**
+** The total of all of the above is the number of objects in the schema,
+** and that number may not exceed this value.
+**
+** The maximum number of objects is restricted to forestall theoretical
+** signed integer overflow attacks using databases with billions of
+** schema objects.  Such attacks are "theoretical" because memory and
+** disk space constraints would be reached long before billions of schema
+** objects could be created.  Even so, it seems good to have a well defined
+** upper limit on the complexity of the schema, for defense in depth.
+** No real-world application should ever get anywhere close to hitting
+** this limit.
+*/
+#ifndef SQLITE_MAX_SCHEMA
+# define SQLITE_MAX_SCHEMA 10000000
 #endif

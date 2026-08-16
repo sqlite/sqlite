@@ -778,4 +778,52 @@ do_execsql_test 31.2 {
   SELECT rr FROM t1 LIMIT 1
 } {5.0}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 32.1.0 {
+  CREATE TABLE t1(
+      a INT,
+      b INT,
+      -- comment with comma
+      c INT
+  );
+}
+do_execsql_test 32.1.1 {
+  ALTER TABLE t1 DROP COLUMN c;
+}
+do_execsql_test 32.1.2 {
+  SELECT sql FROM sqlite_schema
+} {{CREATE TABLE t1(
+      a INT,
+      b INT)}}
+
+reset_db
+do_execsql_test 32.2.0 {
+  CREATE TABLE t1(
+      a INT,
+      b INT,
+      -- comment with, comma
+      c INT
+  );
+}
+do_execsql_test 32.2.1 {
+  ALTER TABLE t1 DROP COLUMN c;
+}
+do_execsql_test 32.2.2 {
+  SELECT sql FROM sqlite_schema
+} {{CREATE TABLE t1(
+      a INT,
+      b INT)}}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 33.1 {
+  CREATE TABLE x1(a TEXT, b INTEGER, c CHECK(c!=0));
+}
+
+do_execsql_test 33.2 {
+  ALTER TABLE x1 DROP COLUMN b;
+  SELECT sql FROM sqlite_schema;
+} {{CREATE TABLE x1(a TEXT, c CHECK(c!=0))}}
+
 finish_test

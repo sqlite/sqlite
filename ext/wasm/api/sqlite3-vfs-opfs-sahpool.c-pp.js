@@ -1,4 +1,4 @@
-//#ifnot target=node
+//#if not target:node and not omit-opfs-sahpool
 /*
   2023-07-14
 
@@ -44,6 +44,9 @@
   - Also because of that, it does not require the SharedArrayBuffer,
   so can function without the COOP/COEP HTTP response headers.
 
+  - Also because of that, this one is much faster and the performance
+  gap increases as the job sizes increase.
+
   - It can hypothetically support Safari 16.4+, whereas the "opfs" VFS
   requires v17 due to a subworker/storage bug in 16.x which makes it
   incompatible with that VFS.
@@ -55,6 +58,10 @@
 */
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
+  if( sqlite3.config.disable?.vfs?.['opfs-sahpool'] ){
+    return;
+  }
+
   const toss = sqlite3.util.toss;
   const toss3 = sqlite3.util.toss3;
   const initPromises = Object.create(null) /* cache of (name:result) of VFS init results */;
@@ -232,11 +239,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       pool.log(`xRead ${file.path} ${n} @ ${offset64}`);
       try {
         const nRead = file.sah.read(
-          wasm.heap8u().subarray(pDest, pDest+n),
+          wasm.heap8u().subarray(Number(pDest), Number(pDest)+n),
           {at: HEADER_OFFSET_DATA + Number(offset64)}
         );
         if(nRead < n){
-          wasm.heap8u().fill(0, pDest + nRead, pDest + n);
+          wasm.heap8u().fill(0, Number(pDest) + nRead, Number(pDest) + n);
           return capi.SQLITE_IOERR_SHORT_READ;
         }
         return 0;
@@ -287,7 +294,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       pool.log(`xWrite ${file.path} ${n} ${offset64}`);
       try{
         const nBytes = file.sah.write(
-          wasm.heap8u().subarray(pSrc, pSrc+n),
+          wasm.heap8u().subarray(Number(pSrc), Number(pSrc)+n),
           { at: HEADER_OFFSET_DATA + Number(offset64) }
         );
         return n===nBytes ? 0 : toss("Unknown write() failure.");
@@ -358,7 +365,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try{
           const [cMsg, n] = wasm.scopedAllocCString(e.message, true);
           wasm.cstrncpy(pOut, cMsg, nOut);
-          if(n > nOut) wasm.poke8(pOut + nOut - 1, 0);
+          if(n > nOut) wasm.poke8(wasm.ptr.add(pOut,nOut,-1), 0);
         }catch(e){
           return capi.SQLITE_NOMEM;
         }finally{
@@ -410,7 +417,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   }/*vfsMethods*/;
 
   /**
-     Creates and initializes an sqlite3_vfs instance for an
+     Creates, initializes, and returns an sqlite3_vfs instance for an
      OpfsSAHPool. The argument is the VFS's name (JS string).
 
      Throws if the VFS name is already registered or if something
@@ -452,7 +459,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       vfsMethods.xRandomness = function(pVfs, nOut, pOut){
         const heap = wasm.heap8u();
         let i = 0;
-        for(; i < nOut; ++i) heap[pOut + i] = (Math.random()*255000) & 0xFF;
+        const npOut = Number(pOut);
+        for(; i < nOut; ++i) heap[npOut + i] = (Math.random()*255000) & 0xFF;
         return i;
       };
     }
@@ -493,7 +501,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /* Maps SAH to an abstract File Object which contains
        various metadata about that handle. */
-    //#mapSAHToMeta = new Map();
 
     /** Buffer used by [sg]etAssociatedPath(). */
     #apBody = new Uint8Array(HEADER_CORPUS_SIZE);
@@ -1006,7 +1013,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try{
         while( undefined !== (chunk = await callback()) ){
           if(chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
-          if( 0===nWrote && chunk.byteLength>=15 ){
+          if( !checkedHeader && 0===nWrote && chunk.byteLength>=15 ){
             util.affirmDbHeader(chunk);
             checkedHeader = true;
           }
@@ -1036,19 +1043,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     importDb(name, bytes){
       if( bytes instanceof ArrayBuffer ) bytes = new Uint8Array(bytes);
       else if( bytes instanceof Function ) return this.importDbChunked(name, bytes);
+      util.affirmIsDb(bytes);
       const sah = this.#mapFilenameToSAH.get(name)
             || this.nextAvailableSAH()
             || toss("No available handles to import to.");
       const n = bytes.byteLength;
-      if(n<512 || n%512!=0){
-        toss("Byte array size is invalid for an SQLite db.");
-      }
-      const header = "SQLite format 3";
-      for(let i = 0; i < header.length; ++i){
-        if( header.charCodeAt(i) !== bytes[i] ){
-          toss("Input does not contain an SQLite database header.");
-        }
-      }
       const nWrote = sah.write(bytes, {at: HEADER_OFFSET_DATA});
       if(nWrote != n){
         this.setAssociatedPath(sah, '', 0);
@@ -1157,8 +1156,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      described at the end of these docs.
 
      This function accepts an options object to configure certain
-     parts but it is only acknowledged for the very first call and
-     ignored for all subsequent calls.
+     parts but it is only acknowledged for the very first call for
+     each distinct name and ignored for all subsequent calls with that
+     same name.
 
      The options, in alphabetical order:
 
@@ -1224,7 +1224,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      - Paths given to it _must_ be absolute. Relative paths will not
      be properly recognized. This is arguably a bug but correcting it
      requires some hoop-jumping in routines which have no business
-     doing such tricks.
+     doing such tricks. (2026-01-19 (2.5 years later): the specifics
+     are lost to history, but this was a side effect of xOpen()
+     receiving an immutable C-string filename, to which no implicit
+     "/" can be prefixed without causing a discrepancy between what
+     the user provided and what the VFS stores. Its conceivable that
+     that quirk could be glossed over in xFullPathname(), but
+     regressions when doing so cannot be ruled out, so there are no
+     current plans to change this behavior.)
 
      - It is possible to install multiple instances under different
      names, each sandboxed from one another inside their own private
@@ -1459,4 +1466,4 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   The OPFS SAH Pool VFS parts are elided from builds targeting
   node.js.
 */
-//#endif target=node
+//#/if global snip

@@ -52,7 +52,7 @@ static void stmtrandFunc(
   p = (Stmtrand*)sqlite3_get_auxdata(context, STMTRAND_KEY);
   if( p==0 ){
     unsigned int seed;
-    p = sqlite3_malloc( sizeof(*p) );
+    p = sqlite3_malloc64( sizeof(*p) );
     if( p==0 ){
       sqlite3_result_error_nomem(context);
       return;

@@ -876,7 +876,7 @@ static void statGet(
       assert( p->current.anEq[i] || p->nRow==0 );
 #endif
     }
-    sqlite3ResultStrAccum(context, &sStat);
+    sqlite3_result_str(context, &sStat, SQLITE_XFER);
   }
 #ifdef SQLITE_ENABLE_STAT4
   else if( eCall==STAT_GET_ROWID ){
@@ -913,7 +913,7 @@ static void statGet(
       sqlite3_str_appendf(&sStat, "%llu ", (u64)aCnt[i]);
     }
     if( sStat.nChar ) sStat.nChar--;
-    sqlite3ResultStrAccum(context, &sStat);
+    sqlite3_result_str(context, &sStat, SQLITE_XFER);
   }
 #endif /* SQLITE_ENABLE_STAT4 */
 #ifndef SQLITE_DEBUG
@@ -1814,9 +1814,9 @@ static int loadStatTbl(
     }
     pIdx->nSampleCol = nIdxCol;
     pIdx->mxSample = nSample;
-    nByte = ROUND8(sizeof(IndexSample) * nSample);
-    nByte += sizeof(tRowcnt) * nIdxCol * 3 * nSample;
-    nByte += nIdxCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
+    nByte = ROUND8(sizeof64(IndexSample) * nSample);
+    nByte += sizeof64(tRowcnt) * nIdxCol * 3 * nSample;
+    nByte += nIdxCol * sizeof64(tRowcnt);   /* Space for Index.aAvgEq[] */
 
     pIdx->aSample = sqlite3DbMallocZero(db, nByte);
     if( pIdx->aSample==0 ){
@@ -1824,7 +1824,7 @@ static int loadStatTbl(
       return SQLITE_NOMEM_BKPT;
     }
     pPtr = (u8*)pIdx->aSample;
-    pPtr += ROUND8(nSample*sizeof(pIdx->aSample[0]));
+    pPtr += ROUND8(nSample*sizeof64(pIdx->aSample[0]));
     pSpace = (tRowcnt*)pPtr;
     assert( EIGHT_BYTE_ALIGNMENT( pSpace ) );
     pIdx->aAvgEq = pSpace; pSpace += nIdxCol;

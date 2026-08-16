@@ -75,6 +75,7 @@ struct VdbeOp {
     SubProgram *pProgram;  /* Used when p4type is P4_SUBPROGRAM */
     Table *pTab;           /* Used when p4type is P4_TABLE */
     SubrtnSig *pSubrtnSig; /* Used when p4type is P4_SUBRTNSIG */
+    Index *pIdx;           /* Used when p4type is P4_INDEX */
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
     Expr *pExpr;           /* Used when p4type is P4_EXPR */
 #endif
@@ -129,20 +130,21 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_INT32      (-3)  /* P4 is a 32-bit signed integer */
 #define P4_SUBPROGRAM (-4)  /* P4 is a pointer to a SubProgram structure */
 #define P4_TABLE      (-5)  /* P4 is a pointer to a Table structure */
+#define P4_INDEX      (-6)  /* P4 is a pointer to an Index structure */
 /* Above do not own any resources.  Must free those below */
-#define P4_FREE_IF_LE (-6)
-#define P4_DYNAMIC    (-6)  /* Pointer to memory from sqliteMalloc() */
-#define P4_FUNCDEF    (-7)  /* P4 is a pointer to a FuncDef structure */
-#define P4_KEYINFO    (-8)  /* P4 is a pointer to a KeyInfo structure */
-#define P4_EXPR       (-9) /* P4 is a pointer to an Expr tree */
-#define P4_MEM        (-10) /* P4 is a pointer to a Mem*    structure */
-#define P4_VTAB       (-11) /* P4 is a pointer to an sqlite3_vtab structure */
-#define P4_REAL       (-12) /* P4 is a 64-bit floating point value */
-#define P4_INT64      (-13) /* P4 is a 64-bit signed integer */
-#define P4_INTARRAY   (-14) /* P4 is a vector of 32-bit integers */
-#define P4_FUNCCTX    (-15) /* P4 is a pointer to an sqlite3_context object */
-#define P4_TABLEREF   (-16) /* Like P4_TABLE, but reference counted */
-#define P4_SUBRTNSIG  (-17) /* P4 is a SubrtnSig pointer */
+#define P4_FREE_IF_LE (-7)
+#define P4_DYNAMIC    (-7)  /* Pointer to memory from sqliteMalloc() */
+#define P4_FUNCDEF    (-8)  /* P4 is a pointer to a FuncDef structure */
+#define P4_KEYINFO    (-9)  /* P4 is a pointer to a KeyInfo structure */
+#define P4_EXPR       (-10) /* P4 is a pointer to an Expr tree */
+#define P4_MEM        (-11) /* P4 is a pointer to a Mem*    structure */
+#define P4_VTAB       (-12) /* P4 is a pointer to an sqlite3_vtab structure */
+#define P4_REAL       (-13) /* P4 is a 64-bit floating point value */
+#define P4_INT64      (-14) /* P4 is a 64-bit signed integer */
+#define P4_INTARRAY   (-15) /* P4 is a vector of 32-bit integers */
+#define P4_FUNCCTX    (-16) /* P4 is a pointer to an sqlite3_context object */
+#define P4_TABLEREF   (-17) /* Like P4_TABLE, but reference counted */
+#define P4_SUBRTNSIG  (-18) /* P4 is a SubrtnSig pointer */
 
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1
@@ -186,7 +188,7 @@ typedef struct VdbeOpList VdbeOpList;
 ** Additional non-public SQLITE_PREPARE_* flags
 */
 #define SQLITE_PREPARE_SAVESQL  0x80  /* Preserve SQL text */
-#define SQLITE_PREPARE_MASK     0x1f  /* Mask of public flags */
+#define SQLITE_PREPARE_MASK     0x3f  /* Mask of public flags */
 
 /*
 ** Prototypes for the VDBE interface.  See comments on the implementation
@@ -300,6 +302,9 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 #endif
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3BlobCompare(const Mem*, const Mem*);
+#ifdef SQLITE_ENABLE_PERCENTILE
+  const char *sqlite3VdbeFuncName(const sqlite3_context*);
+#endif
 
 void sqlite3VdbeRecordUnpack(int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);

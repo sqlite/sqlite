@@ -297,8 +297,9 @@ static const unsigned char sqlite3CtypeMap[256] = {
 ** Return the length (in bytes) of the token that begins at z[0]. 
 ** Store the token type in *tokenType before returning.
 */
-static int sqlite3GetToken(const unsigned char *z, int *tokenType){
-  int i, c;
+static sqlite3_int64 sqlite3GetToken(const unsigned char *z, int *tokenType){
+  sqlite3_int64 i;
+  int c;
   switch( aiClass[*z] ){  /* Switch on the character-class of the first byte
                           ** of the token. See the comment on the CC_ defines
                           ** above. */
@@ -559,7 +560,7 @@ char *sqlite3_normalize(const char *zSql){
   int i;                /* Next character to read from zSql[] */
   int j;                /* Next slot to fill in on z[] */
   int tokenType;        /* Type of the next token */
-  int n;                /* Size of the next token */
+  sqlite3_int64 n;      /* Size of the next token */
   int k;                /* Loop counter */
 
   nSql = strlen(zSql);
@@ -612,7 +613,7 @@ char *sqlite3_normalize(const char *zSql){
     int nParen;
     if( zIn==0 ) break;
     n = (int)(zIn-z)+3;  /* Index of first char past "in(" */
-    if( n && IdChar(zIn[-1]) ) continue;
+    if( n>3 && IdChar(zIn[-1]) ) continue;
     if( strncmp(zIn, "in(select",9)==0 && !IdChar(zIn[9]) ) continue;
     if( strncmp(zIn, "in(with",7)==0 && !IdChar(zIn[7]) ) continue;
     for(nParen=1, k=0; z[n+k]; k++){

@@ -960,7 +960,7 @@ static int unionConnect(
 
       if( rc==SQLITE_OK ){
         pSrc = &pTab->aSrc[pTab->nSrc++];
-        pSrc->zTab = unionStrdup(&rc, zTab);
+        pSrc->zTab = unionStrdup(&rc, (zTab ? zTab : ""));
         pSrc->iMin = iMin;
         pSrc->iMax = iMax;
         if( bSwarm ){

@@ -371,4 +371,14 @@ do_execsql_test 10.10 {
   a 2 2 b 2 2 c 2 2 d 1 1 e 1 1 f 1 1
 }
 
+# Bug report 2026-05-18T05:19:01Z
+#
+set manyporters {porter Porter}
+for {set i 0} {$i<18} {incr i} {
+  set manyporters "$manyporters $manyporters"
+}
+do_execsql_test 11.1 "
+  CREATE VIRTUAL TABLE t11 USING fts5(a,b,tokenize=\"$manyporters\");
+" {}
+
 finish_test

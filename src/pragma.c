@@ -392,6 +392,22 @@ static int integrityCheckResultRow(Vdbe *v){
 }
 
 /*
+** Should table pTab be skipped when doing an integrity_check?
+** Return true or false.
+**
+** If pObjTab is not null, the return true if pTab matches pObjTab.
+**
+** If pObjTab is null, then return true only if pTab is an imposter table.
+*/
+static int tableSkipIntegrityCheck(const Table *pTab, const Table *pObjTab){
+  if( pObjTab ){
+    return pTab!=pObjTab;
+  }else{
+    return (pTab->tabFlags & TF_Imposter)!=0;
+  }
+}
+
+/*
 ** Process a pragma statement. 
 **
 ** Pragmas are of this form:
@@ -1735,10 +1751,9 @@ void sqlite3Pragma(
       for(cnt=0, x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);  /* Current table */
         Index *pIdx;                      /* An index on pTab */
-        int nIdx;                         /* Number of indexes on pTab */
-        if( pObjTab && pObjTab!=pTab ) continue;
+        if( tableSkipIntegrityCheck(pTab,pObjTab) ) continue;
         if( HasRowid(pTab) ) cnt++;
-        for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){ cnt++; }
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){ cnt++; }
       }
       if( cnt==0 ) continue;
       if( pObjTab ) cnt++;
@@ -1749,7 +1764,7 @@ void sqlite3Pragma(
       for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
-        if( pObjTab && pObjTab!=pTab ) continue;
+        if( tableSkipIntegrityCheck(pTab,pObjTab) ) continue;
         if( HasRowid(pTab) ) aRoot[++cnt] = pTab->tnum;
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           aRoot[++cnt] = pIdx->tnum;
@@ -1780,7 +1795,7 @@ void sqlite3Pragma(
         int iTab = 0;
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
-        if( pObjTab && pObjTab!=pTab ) continue;
+        if( tableSkipIntegrityCheck(pTab,pObjTab) ) continue;
         if( HasRowid(pTab) ){
           iTab = cnt++;
         }else{
@@ -1816,7 +1831,7 @@ void sqlite3Pragma(
         int r2;                 /* Previous key for WITHOUT ROWID tables */
         int mxCol;              /* Maximum non-virtual column number */
 
-        if( pObjTab && pObjTab!=pTab ) continue;
+        if( tableSkipIntegrityCheck(pTab,pObjTab) ) continue;
         if( !IsOrdinaryTable(pTab) ) continue;
         if( isQuick || HasRowid(pTab) ){
           pPk = 0;
@@ -2051,8 +2066,20 @@ void sqlite3Pragma(
             pPrior = pIdx;
             sqlite3VdbeAddOp2(v, OP_AddImm, 8+j, 1);/* increment entry count */
             /* Verify that an index entry exists for the current table row */
-            jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
+            sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, ckUniq, r1,
                                         pIdx->nColumn); VdbeCoverage(v);
+            jmp2 = sqlite3VdbeAddOp3(v, OP_IFindKey, iIdxCur+j, ckUniq, r1); 
+            VdbeCoverage(v);
+            sqlite3VdbeChangeP4(v, -1, (const char*)pIdx, P4_INDEX);
+            sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
+              sqlite3MPrintf(db, "index %s stores an imprecise floating-point "
+                                 "value for row ", pIdx->zName),
+              P4_DYNAMIC);
+            sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
+            integrityCheckResultRow(v);
+            sqlite3VdbeAddOp2(v, OP_Goto, 0, ckUniq);
+
+            sqlite3VdbeJumpHere(v, jmp2);
             sqlite3VdbeLoadString(v, 3, "row ");
             sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
             sqlite3VdbeLoadString(v, 4, " missing from index ");
@@ -2060,7 +2087,7 @@ void sqlite3Pragma(
             jmp5 = sqlite3VdbeLoadString(v, 4, pIdx->zName);
             sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
             jmp4 = integrityCheckResultRow(v);
-            sqlite3VdbeJumpHere(v, jmp2);
+            sqlite3VdbeResolveLabel(v, ckUniq);
 
             /* The OP_IdxRowid opcode is an optimized version of OP_Column
             ** that extracts the rowid off the end of the index record.
@@ -2140,7 +2167,7 @@ void sqlite3Pragma(
         Table *pTab = sqliteHashData(x);
         sqlite3_vtab *pVTab;
         int a1;
-        if( pObjTab && pObjTab!=pTab ) continue;
+        if( tableSkipIntegrityCheck(pTab,pObjTab) ) continue;
         if( IsOrdinaryTable(pTab) ) continue;
         if( !IsVirtual(pTab) ) continue;
         if( pTab->nCol<=0 ){
@@ -2372,6 +2399,8 @@ void sqlite3Pragma(
         eMode = SQLITE_CHECKPOINT_RESTART;
       }else if( sqlite3StrICmp(zRight, "truncate")==0 ){
         eMode = SQLITE_CHECKPOINT_TRUNCATE;
+      }else if( sqlite3StrICmp(zRight, "noop")==0 ){
+        eMode = SQLITE_CHECKPOINT_NOOP;
       }
     }
     pParse->nMem = 3;

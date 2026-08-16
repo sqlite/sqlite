@@ -125,4 +125,40 @@ do_catchsql_test 2.3 {
   DELETE FROM t1 WHERE rowid = 1
 } {/.*fts5: corrupt.*/}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA page_size=4096;
+  PRAGMA journal_mode=DELETE;
+  CREATE VIRTUAL TABLE t USING fts5(x, detail=none);
+
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<5000
+  ) 
+  INSERT INTO t(rowid, x) SELECT i, 'vulnerabilitytest' FROM s;
+
+  INSERT INTO t(t) VALUES('optimize');
+  INSERT INTO t(t, rank) VALUES('secure-delete', 1);
+} {delete}
+
+do_test 3.1 {
+  db eval { SELECT rowid AS rowid, block FROM t_data ORDER BY rowid } {
+    if {$rowid>=10 && [string length $block]>=4} {
+      binary scan $block Su first_rowid_off
+      set pgno [expr ($rowid & 0x7FFFFFFF)]
+      if {$pgno>=2 && $first_rowid_off>0} break
+    }
+  }
+
+  set bad [binary format a*a* "\xFF\xFF" [string range $block 2 end]]
+  db eval {
+    UPDATE t_data SET block = $bad WHERE rowid=$rowid
+  }
+} {}
+
+do_catchsql_test 3.2 {
+  DELETE FROM t WHERE rowid=4500;
+} {1 {fts5: corruption in table "t"}}
+
+
 finish_test

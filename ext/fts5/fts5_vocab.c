@@ -396,7 +396,12 @@ static int fts5VocabOpenMethod(
   return rc;
 }
 
+/*
+** Restore cursor pCsr to the state it was in immediately after being
+** created by the xOpen() method.
+*/
 static void fts5VocabResetCursor(Fts5VocabCursor *pCsr){
+  int nCol = pCsr->pFts5->pConfig->nCol;
   pCsr->rowid = 0;
   sqlite3Fts5IterClose(pCsr->pIter);
   sqlite3Fts5StructureRelease(pCsr->pStruct);
@@ -406,6 +411,12 @@ static void fts5VocabResetCursor(Fts5VocabCursor *pCsr){
   pCsr->nLeTerm = -1;
   pCsr->zLeTerm = 0;
   pCsr->bEof = 0;
+  pCsr->iCol = 0;
+  pCsr->iInstPos = 0;
+  pCsr->iInstOff = 0;
+  pCsr->colUsed = 0;
+  memset(pCsr->aCnt, 0, sizeof(i64)*nCol);
+  memset(pCsr->aDoc, 0, sizeof(i64)*nCol);
 }
 
 /*
@@ -611,6 +622,26 @@ static int fts5VocabNextMethod(sqlite3_vtab_cursor *pCursor){
 }
 
 /*
+** If value pVal is an SQLITE_TEXT value, return a pointer to a buffer
+** containing the UTF-8 representation of the value, and set output 
+** parameter (*pnText) to the size of the buffer contents in bytes. Or,
+** if pVal is some other type of value, return NULL and set (*pnText)
+** to 0 before returning.
+*/
+static const char *fts5VocabValueText(sqlite3_value *pVal, int *pnText){
+  const char *zRet = 0;
+  int nRet = 0;
+
+  if( sqlite3_value_type(pVal)==SQLITE_TEXT ){
+    zRet = (const char*)sqlite3_value_text(pVal);
+    nRet = sqlite3_value_bytes(pVal);
+  }
+
+  *pnText = nRet;
+  return zRet;
+}
+
+/*
 ** This is the xFilter implementation for the virtual table.
 */
 static int fts5VocabFilterMethod(
@@ -643,19 +674,17 @@ static int fts5VocabFilterMethod(
   pCsr->colUsed = (idxNum & FTS5_VOCAB_COLUSED_MASK);
 
   if( pEq ){
-    zTerm = (const char *)sqlite3_value_text(pEq);
-    nTerm = sqlite3_value_bytes(pEq);
+    zTerm = fts5VocabValueText(pEq, &nTerm);
     f = FTS5INDEX_QUERY_NOTOKENDATA;
   }else{
     if( pGe ){
-      zTerm = (const char *)sqlite3_value_text(pGe);
-      nTerm = sqlite3_value_bytes(pGe);
+      zTerm = fts5VocabValueText(pGe, &nTerm);
     }
     if( pLe ){
-      const char *zCopy = (const char *)sqlite3_value_text(pLe);
+      const char *zCopy = fts5VocabValueText(pLe, &pCsr->nLeTerm);
       if( zCopy==0 ) zCopy = "";
       pCsr->nLeTerm = sqlite3_value_bytes(pLe);
-      pCsr->zLeTerm = sqlite3_malloc(pCsr->nLeTerm+1);
+      pCsr->zLeTerm = sqlite3_malloc64((i64)pCsr->nLeTerm+1);
       if( pCsr->zLeTerm==0 ){
         rc = SQLITE_NOMEM;
       }else{

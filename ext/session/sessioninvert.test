@@ -181,5 +181,11 @@ do_invert_test 4.1 {
   {UPDATE t1 0 X. {i 4 t three} {{} {} t four}}
 }
 
+#-------------------------------------------------------------------------
+#
+do_test 5.0 {
+  set C [db one {SELECT unhex('54000009')}]
+  list [catch { sqlite3changeset_invert $C } msg] $msg
+} {1 SQLITE_CORRUPT}
 
 finish_test

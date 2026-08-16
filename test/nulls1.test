@@ -336,7 +336,44 @@ do_execsql_test 10.51 {
    ORDER BY +d NULLS LAST, +c NULLS LAST;
 } {X 3 X | X 4 X | X 5 X | X 7 X | X {} X | {} {} {} | Y {} {} |}
 
+#-------------------------------------------------------------------------
 
+foreach {tn idx} {
+  1 {}
+  2 { CREATE INDEX i1 ON t1(a, b) }
+  3 { CREATE INDEX i1 ON t1(b, a) }
+} {
+  reset_db
+ 
+  do_execsql_test 11.$tn.1 {
+    CREATE TABLE t1(a TEXT COLLATE NOCASE, b TEXT);
+    INSERT INTO t1 VALUES('Hello', 'world');
+  }
+  
+  do_execsql_test 11.$tn.2 $idx
+  
+  foreach {tn sql res} {
+    0 "SELECT null" NULL
+  
+    1 "SELECT     ('hello', NULL) IN (SELECT a, b FROM t1)"  NULL
+    2 "SELECT NOT ('hello', NULL) IN (SELECT a, b FROM t1)"  NULL
+  
+    3 "SELECT ('Hello', NULL) IN (SELECT a, b FROM t1)"  NULL
+    4 "SELECT ('Hello' COLLATE NOCASE, NULL) IN (SELECT a, b FROM t1)"  NULL
+    5 "SELECT ('hello', 'world') IN (SELECT a, b FROM t1)" 1
+  
+    6 "SELECT ('hi', NULL) IN (SELECT a, b FROM t1)" 0
+     
+    7 "SELECT ('hello', NULL) IN ((a, b), (3, 4), (5, 6)) FROM t1"  0
+    8 "SELECT (a, b) IN (('hello', NULL), (3, 4), (5, 6)) FROM t1"  NULL
+  
+    9 "SELECT ('Hello', NULL) IN ((a, b), (3, 4), (5, 6)) FROM t1"  NULL
+  } {
+    db nullvalue NULL
+    do_execsql_test 11.$tn.3.$tn $sql $res
+  }
+
+}
 
 
 

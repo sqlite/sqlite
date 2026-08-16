@@ -882,6 +882,10 @@ int main(int argc, char **argv){
   int nChgset;
   int bVerbose = 0;
 
+#ifdef SQLITE_OMIT_AUTOINIT
+  sqlite3_initialize();
+#endif
+
   if( argc<2 ){
     fprintf(stderr, "%s", zHelp);
     exit(1);

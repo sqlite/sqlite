@@ -200,7 +200,7 @@ static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
      /* The sqlite3AtoF() routine is much much faster than atof(), if it
      ** is available */
      double r;
-     (void)sqlite3AtoF((const char*)p->z, &r, j, SQLITE_UTF8);
+     (void)sqlite3AtoF((const char*)p->z, &r);
      *pVal = r;
 #else
      *pVal = (GeoCoord)atof((const char*)p->z);
@@ -1250,6 +1250,11 @@ static int geopolyInit(
   char *zSql;
   int ii;
   (void)pAux;
+
+  if( argc>=RTREE_MAX_AUX_COLUMN+4 ){
+    *pzErr = sqlite3_mprintf("Too many columns for a geopoly table");
+    return SQLITE_ERROR;
+  }
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
   sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);

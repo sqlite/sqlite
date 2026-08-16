@@ -823,5 +823,35 @@ do_execsql_test view-31.2 {
   WITH s AS ( VALUES(123), (456) ) SELECT * FROM t3 WHERE b IN s;
 } {123 123}
 
+# Bug 2026-06-16T04:21:51Z
+#
+reset_db
+do_execsql_test view-32.1 {
+  CREATE TABLE t0(a);
+  INSERT INTO t0 VALUES(0);
+  CREATE VIEW v1(a) AS SELECT a+1 FROM t0;
+  CREATE VIEW v2(a) AS SELECT a+1 FROM v1;
+  CREATE VIEW v3(a) AS SELECT a+1 FROM v2;
+  CREATE VIEW v4(a) AS SELECT a+1 FROM v3;
+  CREATE VIEW v5(a) AS SELECT a+1 FROM v4;
+  CREATE VIEW v6(a) AS SELECT a+1 FROM v5;
+  CREATE VIEW v7(a) AS SELECT a+1 FROM v6;
+}
+if {[sqlite3_limit db SQLITE_LIMIT_EXPR_DEPTH -1]>0} {
+  sqlite3_limit db SQLITE_LIMIT_EXPR_DEPTH 7
+  do_catchsql_test view-32.2 {
+    SELECT * FROM v7;
+  } {1 {VIEWs and/or subqueries nested too deep}}
+  sqlite3_limit db SQLITE_LIMIT_EXPR_DEPTH 6
+  db cache flush
+  do_catchsql_test view-32.3 {
+    SELECT * FROM v7;
+  } {1 {VIEWs and/or subqueries nested too deep}}
+  sqlite3_limit db SQLITE_LIMIT_EXPR_DEPTH 8
+  db cache flush
+}
+do_execsql_test view-32.4 {
+  SELECT * FROM v7;
+} 7
 
 finish_test

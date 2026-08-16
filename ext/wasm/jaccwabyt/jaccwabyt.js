@@ -17,56 +17,106 @@
   - https://fossil.wanderinghorse.net/r/jaccwabyt
   - https://sqlite.org/src/dir/ext/wasm/jaccwabyt
 
+  This build was generated using:
+
+  ./c-pp -o js/jaccwabyt.js -@policy=error jaccwabyt/jaccwabyt.c-pp.js
+
+  by libcmpp 2.x 2fc4afc31f6505c27b9c34988973a2bd9b157d559247cdd26868ae75632c3a5e @ 2025-11-16 23:03:27.352 UTC
 */
 'use strict';
-globalThis.Jaccwabyt = function StructBinderFactory(config){
+globalThis.Jaccwabyt =
+function StructBinderFactory(config){
+  'use strict';
 /* ^^^^ it is recommended that clients move that object into wherever
-   they'd like to have it and delete the self-held copy ("self" being
-   the global window or worker object).  This API does not require the
-   global reference - it is simply installed as a convenience for
-   connecting these bits to other co-developed code before it gets
-   removed from the global namespace.
+   they'd like to have it and delete the globalThis-held copy.  This
+   API does not require the global reference - it is simply installed
+   as a convenience for connecting these bits to other co-developed
+   code before it gets removed from the global namespace.
 */
 
   /** Throws a new Error, the message of which is the concatenation
       all args with a space between each. */
   const toss = (...args)=>{throw new Error(args.join(' '))};
 
-  /**
-     Implementing function bindings revealed significant
-     shortcomings in Emscripten's addFunction()/removeFunction()
-     interfaces:
-
-     https://github.com/emscripten-core/emscripten/issues/17323
-
-     Until those are resolved, or a suitable replacement can be
-     implemented, our function-binding API will be more limited
-     and/or clumsier to use than initially hoped.
-  */
-  if(!(config.heap instanceof WebAssembly.Memory)
-     && !(config.heap instanceof Function)){
-    toss("config.heap must be WebAssembly.Memory instance or a function.");
+  {
+    let h = config.heap;
+    if( h instanceof WebAssembly.Memory ){
+      h = function(){return new Uint8Array(this.buffer)}.bind(h);
+    }else if( !(h instanceof Function) ){
+      //console.warn("The bothersome StructBinderFactory config:",config);
+      toss("config.heap must be WebAssembly.Memory instance or",
+           "a function which returns one.");
+    }
+    config.heap = h;
   }
   ['alloc','dealloc'].forEach(function(k){
     (config[k] instanceof Function) ||
       toss("Config option '"+k+"' must be a function.");
   });
   const SBF = StructBinderFactory;
-  const heap = (config.heap instanceof Function)
-        ? config.heap : (()=>new Uint8Array(config.heap.buffer)),
+  const heap = config.heap,
         alloc = config.alloc,
         dealloc = config.dealloc,
-        log = config.log || console.log.bind(console),
+        realloc = (config.realloc || function(){
+          toss("This StructBinderFactory was configured without realloc()");
+          /* We can't know the original memory's size from here unless
+             we internally proxy alloc()/dealloc() to track all
+             pointers (not going to happen), so we can't fall back to
+             doing alloc()/copy/dealloc(). */
+        }),
+        log = config.log || console.debug.bind(console),
         memberPrefix = (config.memberPrefix || ""),
         memberSuffix = (config.memberSuffix || ""),
-        bigIntEnabled = (undefined===config.bigIntEnabled
-                         ? !!globalThis['BigInt64Array'] : !!config.bigIntEnabled),
         BigInt = globalThis['BigInt'],
         BigInt64Array = globalThis['BigInt64Array'],
-        /* Undocumented (on purpose) config options: */
-        ptrSizeof = config.ptrSizeof || 4,
-        ptrIR = config.ptrIR || 'i32'
-  ;
+        bigIntEnabled = config.bigIntEnabled ?? !!BigInt64Array;
+
+  //console.warn("config",config);
+  let ptr;
+  const ptrSize = config.pointerSize
+        || config.ptrSize/*deprecated*/
+        || ('bigint'===typeof (ptr = alloc(1)) ? 8 : 4);
+  const ptrIR = config.pointerIR/*deprecated*/
+        || config.ptrIR/*deprecated*/
+        || (4===ptrSize ? 'i32' : 'i64');
+  if( ptr ){
+    dealloc(ptr);
+    ptr = undefined;
+  }
+  //console.warn("ptrIR =",ptrIR,"ptrSize =",ptrSize);
+
+  if(ptrSize!==4 && ptrSize!==8) toss("Invalid pointer size:",ptrSize);
+  if(ptrIR!=='i32' && ptrIR!=='i64') toss("Invalid pointer representation:",ptrIR);
+
+  /** Either BigInt or, if !bigIntEnabled, a function which
+      throws complaining that BigInt is not enabled. */
+  const __BigInt = (bigIntEnabled && BigInt)
+        ? (v)=>BigInt(v || 0)
+        : (v)=>toss("BigInt support is disabled in this build.");
+  const __asPtrType = ('i32'==ptrIR) ? Number : __BigInt;
+  const __NullPtr = __asPtrType(0);
+
+  /**
+     Expects any number of numeric arguments, each one of either type
+     Number or BigInt. It sums them up (from an implicit starting
+     point of 0 or 0n) and returns them as a number of the same type
+     which target.asPtrType() uses.
+
+     This is a workaround for not being able to mix Number/BigInt in
+     addition/subtraction expressions (which we frequently need for
+     calculating pointer offsets).
+  */
+  const __ptrAdd = function(...args){
+    let rc = __NullPtr;
+    for( let i = 0; i < args.length; ++i ){
+      rc += __asPtrType(args[i]);
+    }
+    return rc;
+  };
+
+  const __ptrAddSelf = function(...args){
+    return __ptrAdd(this.pointer,...args);
+  };
 
   if(!SBF.debugFlags){
     SBF.__makeDebugFlags = function(deriveFrom=null){
@@ -97,30 +147,35 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     SBF.debugFlags = SBF.__makeDebugFlags();
   }/*static init*/
 
-  const isLittleEndian = (function() {
+  const isLittleEndian = true || (function() {
     const buffer = new ArrayBuffer(2);
     new DataView(buffer).setInt16(0, 256, true /* littleEndian */);
     // Int16Array uses the platform's endianness.
     return new Int16Array(buffer)[0] === 256;
-  })();
+  })() /* WASM is, by definition, Little Endian */;
+
   /**
      Some terms used in the internal docs:
 
      StructType: a struct-wrapping class generated by this
      framework.
+
      DEF: struct description object.
+
      SIG: struct member signature string.
   */
 
   /** True if SIG s looks like a function signature, else
       false. */
   const isFuncSig = (s)=>'('===s[1];
-  /** True if SIG s is-a pointer signature. */
-  const isPtrSig = (s)=>'p'===s || 'P'===s;
+  /** True if SIG s is-a pointer-type signature. */
+  const isPtrSig = (s)=>'p'===s || 'P'===s || 's'===s;
   const isAutoPtrSig = (s)=>'P'===s /*EXPERIMENTAL*/;
-  const sigLetter = (s)=>isFuncSig(s) ? 'p' : s[0];
-  /** Returns the WASM IR form of the Emscripten-conventional letter
-      at SIG s[0]. Throws for an unknown SIG. */
+  /** Returns p if SIG s is a function SIG, else returns s[0]. */
+  const sigLetter = (s)=>s ? (isFuncSig(s) ? 'p' : s[0]) : undefined;
+
+  /** Returns the WASM IR form of the letter at SIG s[0]. Throws for
+      an unknown SIG. */
   const sigIR = function(s){
     switch(sigLetter(s)){
         case 'c': case 'C': return 'i8';
@@ -133,14 +188,29 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     toss("Unhandled signature IR:",s);
   };
 
+  /** Returns the WASM sizeof of the letter at SIG s[0]. Throws for an
+      unknown SIG. */
+  const sigSize = function(s){
+    switch(sigLetter(s)){
+        case 'c': case 'C': return 1;
+        case 'i': return 4;
+        case 'p': case 'P': case 's': return ptrSize;
+        case 'j': return 8;
+        case 'f': return 4;
+        case 'd': return 8;
+    }
+    toss("Unhandled signature sizeof:",s);
+  };
+
   const affirmBigIntArray = BigInt64Array
         ? ()=>true : ()=>toss('BigInt64Array is not available.');
+
   /** Returns the name of a DataView getter method corresponding
       to the given SIG. */
   const sigDVGetter = function(s){
     switch(sigLetter(s)) {
         case 'p': case 'P': case 's': {
-          switch(ptrSizeof){
+          switch(ptrSize){
               case 4: return 'getInt32';
               case 8: return affirmBigIntArray() && 'getBigInt64';
           }
@@ -155,12 +225,13 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     }
     toss("Unhandled DataView getter for signature:",s);
   };
+
   /** Returns the name of a DataView setter method corresponding
       to the given SIG. */
   const sigDVSetter = function(s){
     switch(sigLetter(s)){
         case 'p': case 'P': case 's': {
-          switch(ptrSizeof){
+          switch(ptrSize){
               case 4: return 'setInt32';
               case 8: return affirmBigIntArray() && 'setBigInt64';
           }
@@ -175,19 +246,20 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     }
     toss("Unhandled DataView setter for signature:",s);
   };
+
   /**
-     Returns either Number of BigInt, depending on the given
-     SIG. This constructor is used in property setters to coerce
-     the being-set value to the correct size.
+     Returns a factory for either Number or BigInt, depending on the
+     given SIG. This constructor is used in property setters to coerce
+     the being-set value to the correct pointer size.
   */
   const sigDVSetWrapper = function(s){
     switch(sigLetter(s)) {
         case 'i': case 'f': case 'c': case 'C': case 'd': return Number;
-        case 'j': return affirmBigIntArray() && BigInt;
+        case 'j': return __BigInt;
         case 'p': case 'P': case 's':
-          switch(ptrSizeof){
+          switch(ptrSize){
               case 4: return Number;
-              case 8: return affirmBigIntArray() && BigInt;
+              case 8: return __BigInt;
           }
           break;
     }
@@ -203,95 +275,251 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   };
 
   /**
-     In order to completely hide StructBinder-bound struct
-     pointers from JS code, we store them in a scope-local
-     WeakMap which maps the struct-bound objects to their WASM
-     pointers. The pointers are accessible via
-     boundObject.pointer, which is gated behind an accessor
-     function, but are not exposed anywhere else in the
-     object. The main intention of that is to make it impossible
-     for stale copies to be made.
+     In order to completely hide StructBinder-bound struct pointers
+     from JS code, we store them in a scope-local WeakMap which maps
+     the struct-bound objects to an object with their metadata:
+
+     {
+       .p = the native pointer,
+       .o = self (for an eventual reverse-mapping),
+       .xb = extra bytes allocated for p,
+       .zod = zeroOnDispose,
+       .ownsPointer = true if this object owns p
+     }
+
+     The .p data are accessible via obj.pointer, which is gated behind
+     a property interceptor, but are not exposed anywhere else in the
+     public API.
   */
-  const __instancePointerMap = new WeakMap();
+  const getInstanceHandle = function f(obj, create=true){
+    let ii = f.map.get(obj);
+    if( !ii && create ){
+      f.map.set(obj, (ii=f.create(obj)));
+    }
+    return ii;
+  };
+  getInstanceHandle.map = new WeakMap;
+  getInstanceHandle.create = (forObj)=>{
+    return Object.assign(Object.create(null),{
+      o: forObj,
+      p: undefined/*native ptr*/,
+      ownsPointer: false,
+      zod: false/*zeroOnDispose*/,
+      xb: 0/*extraBytes*/
+    });
+  };
 
-  /** Property name for the pointer-is-external marker. */
-  const xPtrPropName = '(pointer-is-external)';
+  /**
+     Remove the getInstanceHandle() mapping for obj.
+  */
+  const rmInstanceHandle = (obj)=>getInstanceHandle.map.delete(obj)
+    /* If/when we have a reverse map of ptr-to-objects, we need to
+       clean that here. */;
 
-  /** Frees the obj.pointer memory and clears the pointer
-      property. */
+  const __isPtr32 = (ptr)=>('number'===typeof ptr && (ptr===(ptr|0)) && ptr>=0);
+  const __isPtr64 = (ptr)=>(
+    ('bigint'===typeof ptr && ptr >= 0) || __isPtr32(ptr)
+  );
+
+  /**
+     isPtr() is an alias for isPtr32() or isPtr64(), depending on
+     ptrSize.
+  */
+  const __isPtr = (4===ptrSize) ? __isPtr32 : __isPtr64;
+
+  const __isNonNullPtr = (v)=>__isPtr(v) && (v>0);
+
+  /** Frees the obj.pointer memory (a.k.a. m), handles obj.ondispose,
+      and unmaps obj from its native resources. */
   const __freeStruct = function(ctor, obj, m){
-    if(!m) m = __instancePointerMap.get(obj);
-    if(m) {
-      __instancePointerMap.delete(obj);
-      if(Array.isArray(obj.ondispose)){
-        let x;
-        while((x = obj.ondispose.shift())){
-          try{
-            if(x instanceof Function) x.call(obj);
-            else if(x instanceof StructType) x.dispose();
-            else if('number' === typeof x) dealloc(x);
-            // else ignore. Strings are permitted to annotate entries
-            // to assist in debugging.
-          }catch(e){
-            console.warn("ondispose() for",ctor.structName,'@',
-                         m,'threw. NOT propagating it.',e);
-          }
-        }
-      }else if(obj.ondispose instanceof Function){
-        try{obj.ondispose()}
-        catch(e){
-          /*do not rethrow: destructors must not throw*/
+    const ii = getInstanceHandle(obj, false);
+    if( !ii ) return;
+    rmInstanceHandle(obj);
+    if( !m && !(m = ii.p) ){
+      console.warn("Cannot(?) happen: __freeStruct() found no instanceInfo");
+      return;
+    }
+    if(Array.isArray(obj.ondispose)){
+      let x;
+      while((x = obj.ondispose.pop())){
+        try{
+          if(x instanceof Function) x.call(obj);
+          else if(x instanceof StructType) x.dispose();
+          else if(__isPtr(x)) dealloc(x);
+          // else ignore. Strings are permitted to annotate entries
+          // to assist in debugging.
+        }catch(e){
           console.warn("ondispose() for",ctor.structName,'@',
                        m,'threw. NOT propagating it.',e);
         }
       }
-      delete obj.ondispose;
-      if(ctor.debugFlags.__flags.dealloc){
-        log("debug.dealloc:",(obj[xPtrPropName]?"EXTERNAL":""),
-            ctor.structName,"instance:",
-            ctor.structInfo.sizeof,"bytes @"+m);
+    }else if(obj.ondispose instanceof Function){
+      try{obj.ondispose()}
+      catch(e){
+        /*do not rethrow: destructors must not throw*/
+        console.warn("ondispose() for",ctor.structName,'@',
+                     m,'threw. NOT propagating it.',e);
       }
-      if(!obj[xPtrPropName]) dealloc(m);
+    }
+    delete obj.ondispose;
+    if(ctor.debugFlags.__flags.dealloc){
+      log("debug.dealloc:",(ii.ownsPointer?"":"EXTERNAL"),
+          ctor.structName,"instance:",
+          ctor.structInfo.sizeof,"bytes @"+m);
+    }
+    if(ii.ownsPointer){
+      if( ii.zod || ctor.structInfo.zeroOnDispose ){
+        heap().fill(0, Number(m),
+                    Number(m) + ctor.structInfo.sizeof + ii.xb);
+      }
+      dealloc(m);
     }
   };
+
+  /** Returns a skeleton for a read-only, non-iterable property
+   * descriptor. */
+  const rop0 = ()=>{return {configurable: false, writable: false,
+                            iterable: false}};
 
   /** Returns a skeleton for a read-only property accessor wrapping
       value v. */
-  const rop = (v)=>{return {configurable: false, writable: false,
-                            iterable: false, value: v}};
+  const rop = (v)=>{return {...rop0(), value: v}};
 
   /** Allocates obj's memory buffer based on the size defined in
       ctor.structInfo.sizeof. */
-  const __allocStruct = function(ctor, obj, m){
-    let fill = !m;
-    if(m) Object.defineProperty(obj, xPtrPropName, rop(m));
-    else{
-      m = alloc(ctor.structInfo.sizeof);
-      if(!m) toss("Allocation of",ctor.structName,"structure failed.");
+  const __allocStruct = function f(ctor, obj, xm){
+    let opt;
+    const checkPtr = (ptr)=>{
+      __isNonNullPtr(ptr) ||
+        toss("Invalid pointer value",arguments[0],"for",ctor.structName,"constructor.");
+    };
+    if( arguments.length>=3 ){
+      if( xm && ('object'===typeof xm) ){
+        opt = xm;
+        xm = opt?.wrap;
+      }else{
+        checkPtr(xm);
+        opt = {wrap: xm};
+      }
+    }else{
+      opt = {}
+    }
+
+    const fill = !xm /* true if we need to zero the memory */;
+    let nAlloc = 0;
+    let ownsPointer = false;
+    if(xm){
+      /* Externally-allocated memory. */
+      checkPtr(xm);
+      ownsPointer = !!opt?.takeOwnership;
+    }else{
+      const nX = opt?.extraBytes ?? 0;
+      if( nX<0 || (nX!==(nX|0)) ){
+        toss("Invalid extraBytes value:",opt?.extraBytes);
+      }
+      nAlloc = ctor.structInfo.sizeof + nX;
+      xm = alloc(nAlloc)
+        || toss("Allocation of",ctor.structName,"structure failed.");
+      ownsPointer = true;
     }
     try {
-      if(ctor.debugFlags.__flags.alloc){
+      if( opt?.debugFlags ){
+        /* specifically undocumented */
+        obj.debugFlags(opt.debugFlags);
+      }
+      if(ctor./*prototype.???*/debugFlags.__flags.alloc){
         log("debug.alloc:",(fill?"":"EXTERNAL"),
             ctor.structName,"instance:",
-            ctor.structInfo.sizeof,"bytes @"+m);
+            ctor.structInfo.sizeof,"bytes @"+xm);
       }
-      if(fill) heap().fill(0, m, m + ctor.structInfo.sizeof);
-      __instancePointerMap.set(obj, m);
+      if(fill){
+        heap().fill(0, Number(xm), Number(xm) + nAlloc);
+      }
+      const ii = getInstanceHandle(obj);
+      ii.p = xm;
+      ii.ownsPointer = ownsPointer;
+      ii.xb = nAlloc ? (nAlloc-ctor.structInfo.sizeof) : 0;
+      ii.zod = !!opt?.zeroOnDispose;
+      if( opt?.ondispose && opt.ondispose!==xm ){
+        obj.addOnDispose( opt.ondispose );
+      }
     }catch(e){
-      __freeStruct(ctor, obj, m);
+      __freeStruct(ctor, obj, xm);
       throw e;
     }
   };
-  /** Gets installed as the memoryDump() method of all structs. */
-  const __memoryDump = function(){
-    const p = this.pointer;
-    return p
-      ? new Uint8Array(heap().slice(p, p+this.structInfo.sizeof))
-      : null;
+
+  /** True if sig looks like an emscripten/jaccwabyt
+      type signature, else false. */
+  const looksLikeASig = function f(sig){
+    f.rxSig1 ??= /^[ipPsjfdcC]$/;
+    f.rxSig2 ??= /^[vipPsjfdcC]\([ipPsjfdcC]*\)$/;
+    return f.rxSig1.test(sig) || f.rxSig2.test(sig);
+  };
+
+  /** Returns a pair of adaptor maps (objects) in a length-3
+      array specific to the given object. */
+  const __adaptorsFor = function(who){
+    let x = this.get(who);
+    if( !x ){
+      x = [ Object.create(null), Object.create(null), Object.create(null) ];
+      this.set(who, x);
+    }
+    return x;
+  }.bind(new WeakMap);
+
+  /** Code de-duplifier for __adaptGet(), __adaptSet(), and
+      __adaptStruct(). */
+  const __adaptor = function(who, which, key, proxy){
+    const a = __adaptorsFor(who)[which];
+    if(3===arguments.length) return a[key];
+    if( proxy ) return a[key] = proxy;
+    return delete a[key];
+  };
+
+  const noopAdapter = (x)=>x;
+
+  // StructBinder::adaptGet()
+  const __adaptGet = function(key, ...args){
+    return __adaptor(this, 0, key, ...args);
+  };
+
+  const __affirmNotASig = function(ctx,key){
+    looksLikeASig(key) &&
+      toss(ctx,"(",key,") collides with a data type signature.");
+  };
+
+  // StructBinder::adaptSet()
+  const __adaptSet = function(key, ...args){
+    __affirmNotASig('Setter adaptor',key);
+    return __adaptor(this, 1, key, ...args);
+  };
+
+  // StructBinder::adaptStruct()
+  const __adaptStruct = function(key, ...args){
+    __affirmNotASig('Struct adaptor',key);
+    return __adaptor(this, 2, key, ...args);
+  };
+
+  /**
+     An internal counterpart of __adaptStruct().  If key is-a string,
+     uses __adaptor(who) to fetch the struct-adaptor entry for key,
+     else key is assumed to be a struct description object. If it
+     resolves to an object, that's returned, else an exception is
+     thrown.
+  */
+  const __adaptStruct2 = function(who,key){
+    const si = ('string'===typeof key)
+          ? __adaptor(who, 2, key) : key;
+    if( 'object'!==typeof si ){
+      toss("Invalid struct mapping object. Arg =",key,JSON.stringify(si));
+    }
+    return si;
   };
 
   const __memberKey = (k)=>memberPrefix + k + memberSuffix;
   const __memberKeyProp = rop(__memberKey);
+  //const __adaptGetProp = rop(__adaptGet);
 
   /**
      Looks up a struct member in structInfo.members. Throws if found
@@ -308,7 +536,8 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         if(v.key===memberName){ m = v; break; }
       }
       if(!m && tossIfNotFound){
-        toss(sPropName(structInfo.name,memberName),'is not a mapped struct member.');
+        toss(sPropName(structInfo.name || structInfo.structName, memberName),
+             'is not a mapped struct member.');
       }
     }
     return m;
@@ -323,15 +552,6 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     if(!f._) f._ = (x)=>x.replace(/[^vipPsjrdcC]/g,"").replace(/[pPscC]/g,'i');
     const m = __lookupMember(obj.structInfo, memberName, true);
     return emscriptenFormat ? f._(m.signature) : m.signature;
-  };
-
-  const __ptrPropDescriptor = {
-    configurable: false, enumerable: false,
-    get: function(){return __instancePointerMap.get(this)},
-    set: ()=>toss("Cannot assign the 'pointer' property of a struct.")
-    // Reminder: leaving `set` undefined makes assignments
-    // to the property _silently_ do nothing. Current unit tests
-    // rely on it throwing, though.
   };
 
   /** Impl of X.memberKeys() for StructType and struct ctors. */
@@ -350,12 +570,17 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   const __SAB = ('undefined'===typeof SharedArrayBuffer)
         ? function(){} : SharedArrayBuffer;
   const __utf8Decode = function(arrayBuffer, begin, end){
+    if( 8===ptrSize ){
+      begin = Number(begin);
+      end = Number(end);
+    }
     return __utf8Decoder.decode(
       (arrayBuffer.buffer instanceof __SAB)
         ? arrayBuffer.slice(begin, end)
         : arrayBuffer.subarray(begin, end)
     );
   };
+
   /**
      Uses __lookupMember() to find the given obj.structInfo key.
      Returns that member if it is a string, else returns false. If the
@@ -430,8 +655,8 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     const h = heap();
     //let i = 0;
     //for( ; i < u.length; ++i ) h[mem + i] = u[i];
-    h.set(u, mem);
-    h[mem + u.length] = 0;
+    h.set(u, Number(mem));
+    h[__ptrAdd(mem, u.length)] = 0;
     //log("allocCString @",mem," =",u);
     return mem;
   };
@@ -462,13 +687,13 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
      Prototype for all StructFactory instances (the constructors
      returned from StructBinder).
   */
-  const StructType = function ctor(structName, structInfo){
-    if(arguments[2]!==rop){
+  const StructType = function StructType(structName, structInfo){
+    if(arguments[2]!==rop/*internal sentinel value*/){
       toss("Do not call the StructType constructor",
            "from client-level code.");
     }
     Object.defineProperties(this,{
-      //isA: rop((v)=>v instanceof ctor),
+      //isA: rop((v)=>v instanceof StructType),
       structName: rop(structName),
       structInfo: rop(structInfo)
     });
@@ -494,13 +719,36 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
     memberSignature: rop(function(memberName, emscriptenFormat=false){
       return __memberSignature(this, memberName, emscriptenFormat);
     }),
-    memoryDump: rop(__memoryDump),
-    pointer: __ptrPropDescriptor,
+    memoryDump: rop(function(){
+      const p = this.pointer;
+      return p
+        ? new Uint8Array(heap().slice(Number(p), Number(p) + this.structInfo.sizeof))
+        : null;
+    }),
+    extraBytes: {
+      configurable: false, enumerable: false,
+      get: function(){return getInstanceHandle(this, false)?.xb ?? 0;}
+    },
+    zeroOnDispose: {
+      configurable: false, enumerable: false,
+      get: function(){
+        return getInstanceHandle(this, false)?.zod
+          ?? !!this.structInfo.zeroOnDispose;
+      }
+    },
+    pointer: {
+      configurable: false, enumerable: false,
+      get: function(){return getInstanceHandle(this, false)?.p},
+      set: ()=>toss("Cannot assign the 'pointer' property of a struct.")
+      // Reminder: leaving `set` undefined makes assignments
+      // to the property _silently_ do nothing. Current unit tests
+      // rely on it throwing, though.
+    },
     setMemberCString: rop(function(memberName, str){
       return __setMemberCString(this, memberName, str);
     })
   });
-  // Function-type non-Property inherited members 
+  // Function-type non-Property inherited members
   Object.assign(StructType.prototype,{
     addOnDispose: function(...v){
       __addOnDispose(this,...v);
@@ -514,181 +762,435 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
   Object.defineProperties(StructType, {
     allocCString: rop(__allocCString),
     isA: rop((v)=>v instanceof StructType),
-    hasExternalPointer: rop((v)=>(v instanceof StructType) && !!v[xPtrPropName]),
+    hasExternalPointer: rop((v)=>{
+      const ii = getInstanceHandle(v, false);
+      return !!(ii?.p && !ii?.ownsPointer);
+    }),
     memberKey: __memberKeyProp
+    //ptrAdd = rop(__ptrAdd) no b/c one might think that it adds based on this.pointer.
   });
 
-  const isNumericValue = (v)=>Number.isFinite(v) || (v instanceof (BigInt || Number));
+  /**
+     If struct description object si has a getter proxy, return it (a
+     function), else return undefined.
+  */
+  const memberGetterProxy = function(si){
+    return si.get || (si.adaptGet
+                      ? StructBinder.adaptGet(si.adaptGet)
+                      : undefined);
+  };
 
   /**
-     Pass this a StructBinder-generated prototype, and the struct
-     member description object. It will define property accessors for
-     proto[memberKey] which read from/write to memory in
-     this.pointer. It modifies descr to make certain downstream
-     operations much simpler.
+     If struct description object si has a setter proxy, return it (a
+     function), else return undefined.
   */
-  const makeMemberWrapper = function f(ctor,name, descr){
-    if(!f._){
-      /*cache all available getters/setters/set-wrappers for
-        direct reuse in each accessor function. */
-      f._ = {getters: {}, setters: {}, sw:{}};
+  const memberSetterProxy = function(si){
+    return si.set || (si.adaptSet
+                      ? StructBinder.adaptSet(si.adaptSet)
+                      : undefined);
+  };
+
+  /**
+     To be called by makeMemberWrapper() when si has a 'members'
+     member, i.e. is an embedded struct. This function sets up that
+     struct like any other and also sets up property accessor for
+     ctor.memberKey(name) which returns an instance of that new
+     StructType when the member is accessed. That instance wraps the
+     memory of the member's part of the containing C struct instance.
+
+     That is, if struct Foo has member bar which is an inner struct
+     then:
+
+     const f = new Foo;
+     const b = f.bar;
+     assert( b is-a StructType object );
+     assert( b.pointer === f.b.pointer );
+
+     b will be disposed of when f() is. Calling b.dispose() will not
+     do any permanent harm, as the wrapper object will be recreated
+     when accessing f.bar, pointing to the same memory in f.
+
+     The si.zeroOnDispose flag has no effect on embedded structs because
+     they wrap "external" memory, so do not own it, and are thus never
+     freed, as such.
+  */
+  const makeMemberStructWrapper = function callee(ctor, name, si){
+    /**
+       Where we store inner-struct member proxies. Keys are a
+       combination of the parent object's pointer address and the
+       property's name. The values are StructType instances.
+    */
+    const __innerStructs = (callee.innerStructs ??= new Map());
+    const key = ctor.memberKey(name);
+    if( undefined!==si.signature ){
+      toss("'signature' cannot be used on an embedded struct (",
+           ctor.structName,".",key,").");
+    }
+    if( memberSetterProxy(si) ){
+      toss("'set' and 'adaptSet' are not permitted for nested struct members.");
+    }
+    //console.warn("si =",ctor.structName, name, JSON.stringify(si,'  '));
+    si.structName ??= ctor.structName+'::'+name;
+    si.key = key;
+    si.name = name;
+    si.constructor = this.call(this, si.structName, si);
+    //console.warn("si.constructor =",si.constructor);
+    //console.warn("si =",si,"ctor=",ctor);
+    const getterProxy = memberGetterProxy(si);
+    const prop = Object.assign(Object.create(null),{
+      configurable: false,
+      enumerable: false,
+      set: __propThrowOnSet(ctor/*not si.constructor*/.structName, key),
+      get: function(){
+        const dbg = this.debugFlags.__flags;
+        const p = this.pointer;
+        const k = p+'.'+key;
+        let s = __innerStructs.get(k);
+        if(dbg.getter){ log("debug.getter: k =",k); }
+        if( !s ){
+          s = new si.constructor(__ptrAdd(p, si.offset));
+          __innerStructs.set(k, s);
+          this.addOnDispose(()=>s.dispose());
+          s.addOnDispose(()=>__innerStructs.delete(k));
+          //console.warn("Created",k,"proxy");
+        }
+        if(getterProxy) s = getterProxy.apply(this,[s,key]);
+        if(dbg.getter) log("debug.getter: result =",s);
+        return s;
+      }
+    });
+    Object.defineProperty(ctor.prototype, key, prop);
+  }/*makeMemberStructWrapper()*/;
+
+  /**
+     This is where most of the magic happens.
+
+     Pass this a StructBinderImpl-generated constructor, a member
+     property name, and the struct member description object. It will
+     define property accessors for proto[memberKey] which read
+     from/write to memory in this.pointer. It modifies si to make
+     certain downstream operations simpler.
+  */
+  const makeMemberWrapper = function f(ctor, name, si){
+    si = __adaptStruct2(this, si);
+    if( si.members ){
+      return makeMemberStructWrapper.call(this, ctor, name, si);
+    }
+
+    if(!f.cache){
+      /* Cache all available getters/setters/set-wrappers for
+         direct reuse in each accessor function. */
+      f.cache = {getters: {}, setters: {}, sw:{}};
       const a = ['i','c','C','p','P','s','f','d','v()'];
       if(bigIntEnabled) a.push('j');
       a.forEach(function(v){
-        //const ir = sigIR(v);
-        f._.getters[v] = sigDVGetter(v) /* DataView[MethodName] values for GETTERS */;
-        f._.setters[v] = sigDVSetter(v) /* DataView[MethodName] values for SETTERS */;
-        f._.sw[v] = sigDVSetWrapper(v)  /* BigInt or Number ctor to wrap around values
+        f.cache.getters[v] = sigDVGetter(v) /* DataView[MethodName] values for GETTERS */;
+        f.cache.setters[v] = sigDVSetter(v) /* DataView[MethodName] values for SETTERS */;
+        f.cache.sw[v] = sigDVSetWrapper(v)  /* BigInt or Number ctor to wrap around values
                                            for conversion */;
       });
-      const rxSig1 = /^[ipPsjfdcC]$/,
-            rxSig2 = /^[vipPsjfdcC]\([ipPsjfdcC]*\)$/;
       f.sigCheck = function(obj, name, key,sig){
         if(Object.prototype.hasOwnProperty.call(obj, key)){
           toss(obj.structName,'already has a property named',key+'.');
         }
-        rxSig1.test(sig) || rxSig2.test(sig)
+        looksLikeASig(sig)
           || toss("Malformed signature for",
                   sPropName(obj.structName,name)+":",sig);
       };
     }
     const key = ctor.memberKey(name);
-    f.sigCheck(ctor.prototype, name, key, descr.signature);
-    descr.key = key;
-    descr.name = name;
-    const sigGlyph = sigLetter(descr.signature);
-    const xPropName = sPropName(ctor.prototype.structName,key);
-    const dbg = ctor.prototype.debugFlags.__flags;
+    f.sigCheck(ctor.prototype, name, key, si.signature);
+    si.key = key;
+    si.name = name;
+    const sigGlyph = sigLetter(si.signature);
+    const xPropName = sPropName(ctor.structName,key);
+    const dbg = ctor.debugFlags.__flags;
     /*
-      TODO?: set prototype of descr to an object which can set/fetch
+      TODO?: set prototype of si to an object which can set/fetch
       its preferred representation, e.g. conversion to string or mapped
       function. Advantage: we can avoid doing that via if/else if/else
       in the get/set methods.
     */
+    const getterProxy = memberGetterProxy(si);
     const prop = Object.create(null);
     prop.configurable = false;
     prop.enumerable = false;
     prop.get = function(){
+      /**
+         This getter proxy reads its value from the appropriate pointer
+         address in the heap. It knows where and how much to read based on
+         this.pointer, si.offset, and si.sizeof.
+      */
       if(dbg.getter){
-        log("debug.getter:",f._.getters[sigGlyph],"for", sigIR(sigGlyph),
-            xPropName,'@', this.pointer,'+',descr.offset,'sz',descr.sizeof);
+        log("debug.getter:",f.cache.getters[sigGlyph],"for", sigIR(sigGlyph),
+            xPropName,'@', this.pointer,'+',si.offset,'sz',si.sizeof);
       }
       let rc = (
-        new DataView(heap().buffer, this.pointer + descr.offset, descr.sizeof)
-      )[f._.getters[sigGlyph]](0, isLittleEndian);
+        new DataView(heap().buffer, Number(this.pointer) + si.offset, si.sizeof)
+      )[f.cache.getters[sigGlyph]](0, isLittleEndian);
+
+      if(getterProxy) rc = getterProxy.apply(this,[key,rc]);
       if(dbg.getter) log("debug.getter:",xPropName,"result =",rc);
       return rc;
     };
-    if(descr.readOnly){
+    if(si.readOnly){
       prop.set = __propThrowOnSet(ctor.prototype.structName,key);
     }else{
+      const setterProxy = memberSetterProxy(si);
       prop.set = function(v){
+        /**
+           The converse of prop.get(), this encodes v into the appropriate
+           spot in the WASM heap.
+        */
         if(dbg.setter){
-          log("debug.setter:",f._.setters[sigGlyph],"for", sigIR(sigGlyph),
-              xPropName,'@', this.pointer,'+',descr.offset,'sz',descr.sizeof, v);
+          log("debug.setter:",f.cache.setters[sigGlyph],"for", sigIR(sigGlyph),
+              xPropName,'@', this.pointer,'+',si.offset,'sz',si.sizeof, v);
         }
         if(!this.pointer){
-          toss("Cannot set struct property on disposed instance.");
+          toss("Cannot set native property on a disposed",
+               this.structName,"instance.");
         }
-        if(null===v) v = 0;
-        else while(!isNumericValue(v)){
-          if(isAutoPtrSig(descr.signature) && (v instanceof StructType)){
-            // It's a struct instance: let's store its pointer value!
-            v = v.pointer || 0;
+        if( setterProxy ) v = setterProxy.apply(this,[key,v]);
+        if( null===v || undefined===v ) v = __NullPtr;
+        else if( isPtrSig(si.signature) && !__isPtr(v) ){
+          if(isAutoPtrSig(si.signature) && (v instanceof StructType)){
+            // It's a struct instance: store its pointer value
+            v = v.pointer || __NullPtr;
             if(dbg.setter) log("debug.setter:",xPropName,"resolved to",v);
-            break;
+          }else{
+            toss("Invalid value for pointer-type",xPropName+'.');
           }
-          toss("Invalid value for pointer-type",xPropName+'.');
         }
         (
-          new DataView(heap().buffer, this.pointer + descr.offset, descr.sizeof)
-        )[f._.setters[sigGlyph]](0, f._.sw[sigGlyph](v), isLittleEndian);
+          new DataView(heap().buffer, Number(this.pointer) + si.offset,
+                       si.sizeof)
+        )[f.cache.setters[sigGlyph]](0, f.cache.sw[sigGlyph](v), isLittleEndian);
       };
     }
     Object.defineProperty(ctor.prototype, key, prop);
-  }/*makeMemberWrapper*/;
-  
+  }/*makeMemberWrapper()*/;
+
   /**
      The main factory function which will be returned to the
-     caller.
+     caller. The third argument is structly for internal use.
+
+     This level of indirection is to avoid that clients can pass a
+     third argument to this, as that's only for internal use.
+
+     internalOpt options:
+
+     - None right now. This is for potential use in recursion.
+
+     Usages:
+
+     StructBinder(string, obj [,optObj]);
+     StructBinder(obj);
   */
-  const StructBinder = function StructBinder(structName, structInfo){
-    if(1===arguments.length){
-      structInfo = structName;
-      structName = structInfo.name;
-    }else if(!structInfo.name){
-      structInfo.name = structName;
-    }
-    if(!structName) toss("Struct name is required.");
-    let lastMember = false;
-    Object.keys(structInfo.members).forEach((k)=>{
-      // Sanity checks of sizeof/offset info...
-      const m = structInfo.members[k];
-      if(!m.sizeof) toss(structName,"member",k,"is missing sizeof.");
-      else if(m.sizeof===1){
-        (m.signature === 'c' || m.signature === 'C') ||
-          toss("Unexpected sizeof==1 member",
-               sPropName(structInfo.name,k),
-               "with signature",m.signature);
-      }else{
-        // sizes and offsets of size-1 members may be odd values, but
-        // others may not.
-        if(0!==(m.sizeof%4)){
-          console.warn("Invalid struct member description =",m,"from",structInfo);
-          toss(structName,"member",k,"sizeof is not aligned. sizeof="+m.sizeof);
-        }
-        if(0!==(m.offset%4)){
-          console.warn("Invalid struct member description =",m,"from",structInfo);
-          toss(structName,"member",k,"offset is not aligned. offset="+m.offset);
-        }
-      }
-      if(!lastMember || lastMember.offset < m.offset) lastMember = m;
-    });
-    if(!lastMember) toss("No member property descriptions found.");
-    else if(structInfo.sizeof < lastMember.offset+lastMember.sizeof){
-      toss("Invalid struct config:",structName,
-           "max member offset ("+lastMember.offset+") ",
-           "extends past end of struct (sizeof="+structInfo.sizeof+").");
-    }
-    const debugFlags = rop(SBF.__makeDebugFlags(StructBinder.debugFlags));
-    /** Constructor for the StructCtor. */
-    const StructCtor = function StructCtor(externalMemory){
+  const StructBinderImpl = function StructBinderImpl(
+    structName, si, opt = Object.create(null)
+  ){
+    /**
+       StructCtor is the eventual return value of this function. We
+       need to populate this early on so that we can do some trickery
+       in feeding it through recursion.
+
+       Uses:
+
+       // heap-allocated:
+       const x = new StructCtor;
+       // externally-managed memory:
+       const y = new StructCtor( aPtrToACompatibleCStruct );
+
+       or, more recently:
+
+       const z = new StructCtor({
+         extraBytes: [int=0] extra bytes to allocate after the struct
+
+         wrap: [aPtrToACompatibleCStruct=undefined]. If provided, this
+         instance waps, but does not (by default) own the memory, else
+         a new instance is allocated from the WASM heap.
+
+         ownsPointer: true if this object takes over ownership of
+         wrap.
+
+         zeroOnDispose: [bool=StructCtor.structInfo.zeroOnDispose]
+
+         autoCalcSizeOffset: [bool=false] Automatically calculate
+         sizeof an offset. This is fine for pure-JS structs (which
+         probably aren't useful beyond testing of Jaccwabyt) but it's
+         dangerous to use with actual WASM objects because we cannot
+         be guaranteed to have the same memory layout as an ostensibly
+         matching C struct. This applies recursively to all children
+         of the struct description.
+
+         // TODO? Per-instance overrides of the struct-level flags?
+
+         get: (k,v)=>v,
+         set: (k,v)=>v,
+         adaptGet: string,
+         adaptSet: string
+
+         // That wouldn't fit really well right now, apparently.
+       });
+
+    */
+    const StructCtor = function StructCtor(arg){
+      //console.warn("opt",opt,arguments[0]);
       if(!(this instanceof StructCtor)){
         toss("The",structName,"constructor may only be called via 'new'.");
-      }else if(arguments.length){
-        if(externalMemory!==(externalMemory|0) || externalMemory<=0){
-          toss("Invalid pointer value for",structName,"constructor.");
-        }
-        __allocStruct(StructCtor, this, externalMemory);
-      }else{
-        __allocStruct(StructCtor, this);
       }
+      __allocStruct(StructCtor, this, ...arguments);
     };
+    const self = this;
+    /**
+      "Convert" struct description x to a struct description, if
+      needed. This expands adaptStruct() mappings and transforms
+      {memberName:signatureString} signature syntax to object form.
+    */
+    const ads = (x)=>{
+      //console.warn("looksLikeASig(",x,") =",looksLikeASig(x));
+      return (('string'===typeof x) && looksLikeASig(x))
+        ? {signature: x} : __adaptStruct2(self,x);
+    };
+    if(1===arguments.length){
+      si = ads(structName);
+      structName = si.structName || si.name;
+    }else if(2===arguments.length){
+      si = ads(si);
+      si.name ??= structName;
+    }else{
+      si = ads(si);
+    }
+    structName ??= si.structName;
+    //console.warn("arguments =",JSON.stringify(arguments));
+    structName ??= opt.structName;
+    if( !structName ) toss("One of 'name' or 'structName' are required.");
+    if( si.adapt ){
+      /* Install adaptGet(), adaptSet(), and adaptStruct() proxies. */
+      Object.keys(si.adapt.struct||{}).forEach((k)=>{
+        __adaptStruct.call(StructBinderImpl, k, si.adapt.struct[k]);
+      });
+      Object.keys(si.adapt.set||{}).forEach((k)=>{
+        __adaptSet.call(StructBinderImpl, k, si.adapt.set[k]);
+      });
+      Object.keys(si.adapt.get||{}).forEach((k)=>{
+        __adaptGet.call(StructBinderImpl, k, si.adapt.get[k]);
+      });
+    }
+    if(!si.members && !si.sizeof){
+      si.sizeof = sigSize(si.signature);
+    }
+
+    const debugFlags = rop(SBF.__makeDebugFlags(StructBinder.debugFlags));
     Object.defineProperties(StructCtor,{
       debugFlags: debugFlags,
       isA: rop((v)=>v instanceof StructCtor),
       memberKey: __memberKeyProp,
       memberKeys: __structMemberKeys,
-      methodInfoForKey: rop(function(mKey){
-      }),
-      structInfo: rop(structInfo),
-      structName: rop(structName)
+      //methodInfoForKey: rop(function(mKey){/*???*/}),
+      structInfo: rop(si),
+      structName: rop(structName),
+      ptrAdd: rop(__ptrAdd)
     });
-    StructCtor.prototype = new StructType(structName, structInfo, rop);
+    StructCtor.prototype = new StructType(structName, si, rop);
     Object.defineProperties(StructCtor.prototype,{
       debugFlags: debugFlags,
       constructor: rop(StructCtor)
       /*if we assign StructCtor.prototype and don't do
-        this then StructCtor!==instance.constructor!*/
+        this then StructCtor!==instance.constructor*/,
+      ptrAdd: rop(__ptrAddSelf)
     });
-    Object.keys(structInfo.members).forEach(
-      (name)=>makeMemberWrapper(StructCtor, name, structInfo.members[name])
-    );
+    let lastMember = false;
+    let offset = 0;
+    const autoCalc = !!si.autoCalcSizeOffset;
+    //console.warn(structName,"si =",si);
+    if( !autoCalc ){
+      if( !si.sizeof ){
+        toss(structName,"description is missing its sizeof property.");
+      }
+      /*if( undefined===si.offset ){
+        toss(structName,"description is missing its offset property.");
+      }*/
+      si.offset ??= 0;
+    }else{
+      si.offset ??= 0;
+    }
+    Object.keys(si.members || {}).forEach((k)=>{
+      // Sanity checks of sizeof/offset info...
+      let m = ads(si.members[k]);
+      if(!m.members && !m.sizeof){
+        /* ^^^^ fixme: we need to recursively collect all sizeofs
+           before updating that. */
+        m.sizeof = sigSize(m.signature);
+        if(!m.sizeof){
+          toss(sPropName(structName,k), "is missing a sizeof property.",m);
+        }
+      }
+      if( undefined===m.offset ){
+        if( autoCalc ) m.offset = offset;
+        else{
+          toss(sPropName(structName,k),"is missing its offset.",
+               JSON.stringify(m));
+        }
+        /* A missing offset on the initial child is okay (it's always
+           zero), but we don't know for sure that the members are
+           their natural order, so we don't know, at this point, which
+           one is "first". */
+      }
+      si.members[k] = m /* in case ads() resolved it to something else */;
+      if(!lastMember || lastMember.offset < m.offset) lastMember = m;
+      const oldAutoCalc = !!m.autoCalc;
+      if( autoCalc ) m.autoCalcSizeOffset = true;
+      makeMemberWrapper.call(self, StructCtor, k, m);
+      if( oldAutoCalc ) m.autoCalcSizeOffset = true;
+      else delete m.autoCalcSizeOffset;
+      offset += m.sizeof;
+      //console.warn("offset",sPropName(structName,k),offset);
+    });
+
+    if( !lastMember ) toss("No member property descriptions found.");
+    if( !si.sizeof ) si.sizeof = offset;
+    if(si.sizeof===1){
+      (si.signature === 'c' || si.signature === 'C') ||
+        toss("Unexpected sizeof==1 member",
+             sPropName(structName,k),
+             "with signature",si.signature);
+    }else{
+      // sizes and offsets of size-1 members may be odd values, but
+      // others may not.
+      if(0!==(si.sizeof%4)){
+        console.warn("Invalid struct member description",si);
+        toss(structName,"sizeof is not aligned. sizeof="+si.sizeof);
+      }
+      if(0!==(si.offset%4)){
+        console.warn("Invalid struct member description",si);
+        toss(structName,"offset is not aligned. offset="+si.offset);
+      }
+    }
+    if( si.sizeof < offset ){
+      console.warn("Suspect struct description:",si,"offset =",offset);
+      toss("Mismatch in the calculated vs. the provided sizeof/offset info.",
+           "Expected sizeof",offset,"but got",si.sizeof,"for",si);
+      /* It is legal for the native struct to be larger, so long as
+         we're pointing to all the right offsets for the members
+         exposed here. */
+    }
+    delete si.autoCalcSizeOffset;
     return StructCtor;
+  }/*StructBinderImpl*/;
+
+  const StructBinder = function StructBinder(structName, structInfo){
+    return (1==arguments.length)
+      ? StructBinderImpl.call(StructBinder, structName)
+      : StructBinderImpl.call(StructBinder, structName, structInfo);
   };
   StructBinder.StructType = StructType;
   StructBinder.config = config;
   StructBinder.allocCString = __allocCString;
+  StructBinder.adaptGet = __adaptGet;
+  StructBinder.adaptSet = __adaptSet;
+  StructBinder.adaptStruct = __adaptStruct;
+  StructBinder.ptrAdd = __ptrAdd;
   if(!StructBinder.debugFlags){
     StructBinder.debugFlags = SBF.__makeDebugFlags(SBF.debugFlags);
   }

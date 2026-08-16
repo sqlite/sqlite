@@ -50,7 +50,11 @@
 #else
 #define _GNU_SOURCE
 #endif
+#ifndef __ixemul__
 #define HAVE_FORK
+#else
+#define HAVE_VFORK
+#endif
 #define HAVE_WAITPID
 #define HAVE_ISATTY
 #define HAVE_MKSTEMP
@@ -158,7 +162,6 @@ int utf8_fromunicode(char *p, unsigned uc);
 
 
 #define utf8_strlen(S, B) ((B) < 0 ? (int)strlen(S) : (B))
-#define utf8_strwidth(S, B) utf8_strlen((S), (B))
 #define utf8_tounicode(S, CP) (*(CP) = (unsigned char)*(S), 1)
 #define utf8_getchars(CP, C) (*(CP) = (C), 1)
 #define utf8_upper(C) toupper(C)
@@ -167,7 +170,6 @@ int utf8_fromunicode(char *p, unsigned uc);
 #define utf8_index(C, I) (I)
 #define utf8_charlen(C) 1
 #define utf8_prev_len(S, L) 1
-#define utf8_width(C) 1
 
 #else
 
@@ -223,11 +225,13 @@ extern "C" {
 #  endif
 #endif
 
+
 #define UCHAR(c) ((unsigned char)(c))
 
 
 
-#define JIM_ABI_VERSION 101
+#define JIM_ABI_VERSION 102
+
 
 #define JIM_OK 0
 #define JIM_ERR 1
@@ -236,6 +240,8 @@ extern "C" {
 #define JIM_CONTINUE 4
 #define JIM_SIGNAL 5
 #define JIM_EXIT 6
+
+#define JIM_USAGE -1
 
 #define JIM_EVAL 7
 
@@ -247,7 +253,6 @@ extern "C" {
 
 #define JIM_NONE 0
 #define JIM_ERRMSG 1
-#define JIM_ENUM_ABBREV 2
 #define JIM_UNSHARED 4
 #define JIM_MUSTEXIST 8
 #define JIM_NORESULT 16
@@ -258,6 +263,14 @@ extern "C" {
 #define JIM_SUBST_NOESC 4
 #define JIM_SUBST_FLAG 128
 
+#define JIM_TAINT_STD   1 /* The "normal" type of taint. Allows for multiple
+                           * types of taint in the future
+                           */
+#define JIM_TAINT_ANY   ~0
+
+
+#define JIM_ENUM_ABBREV 2
+
 
 #define JIM_CASESENS    0
 #define JIM_NOCASE      1
@@ -265,6 +278,7 @@ extern "C" {
 
 
 #define JIM_PATH_LEN 1024
+
 
 
 #define JIM_NOTUSED(V) ((void) V)
@@ -277,6 +291,7 @@ typedef struct Jim_Stack {
     int len;
     int maxlen;
     void **vector;
+    void (*freefunc) (void *ptr);
 } Jim_Stack;
 
 
@@ -319,9 +334,11 @@ typedef struct Jim_HashTableIterator {
 #define JIM_HT_INITIAL_SIZE     16
 
 
+
 #define Jim_FreeEntryVal(ht, entry) \
     if ((ht)->type->valDestructor) \
         (ht)->type->valDestructor((ht)->privdata, (entry)->u.val)
+
 
 #define Jim_SetHashVal(ht, entry, _val_) do { \
     if ((ht)->type->valDup) \
@@ -330,11 +347,14 @@ typedef struct Jim_HashTableIterator {
         (entry)->u.val = (_val_); \
 } while(0)
 
+
 #define Jim_SetHashIntVal(ht, entry, _val_) (entry)->u.intval = (_val_)
+
 
 #define Jim_FreeEntryKey(ht, entry) \
     if ((ht)->type->keyDestructor) \
         (ht)->type->keyDestructor((ht)->privdata, (entry)->key)
+
 
 #define Jim_SetHashKey(ht, entry, _key_) do { \
     if ((ht)->type->keyDup) \
@@ -343,18 +363,26 @@ typedef struct Jim_HashTableIterator {
         (entry)->key = (void *)(_key_); \
 } while(0)
 
+
 #define Jim_CompareHashKeys(ht, key1, key2) \
     (((ht)->type->keyCompare) ? \
         (ht)->type->keyCompare((ht)->privdata, (key1), (key2)) : \
         (key1) == (key2))
 
+
 #define Jim_HashKey(ht, key) ((ht)->type->hashFunction(key) + (ht)->uniq)
 
+
 #define Jim_GetHashEntryKey(he) ((he)->key)
+
 #define Jim_GetHashEntryVal(he) ((he)->u.val)
+
 #define Jim_GetHashEntryIntVal(he) ((he)->u.intval)
+
 #define Jim_GetHashTableCollisions(ht) ((ht)->collisions)
+
 #define Jim_GetHashTableSize(ht) ((ht)->size)
+
 #define Jim_GetHashTableUsed(ht) ((ht)->used)
 
 
@@ -363,6 +391,7 @@ typedef struct Jim_Obj {
     const struct Jim_ObjType *typePtr;
     int refCount;
     int length;
+    unsigned taint;
 
     union {
 
@@ -434,14 +463,18 @@ typedef struct Jim_Obj {
 } Jim_Obj;
 
 
+
 #define Jim_IncrRefCount(objPtr) \
     ++(objPtr)->refCount
+
 #define Jim_DecrRefCount(interp, objPtr) \
     if (--(objPtr)->refCount <= 0) Jim_FreeObj(interp, objPtr)
+
 #define Jim_IsShared(objPtr) \
     ((objPtr)->refCount > 1)
 
 #define Jim_FreeNewObj Jim_FreeObj
+
 
 
 #define Jim_FreeIntRep(i,o) \
@@ -449,7 +482,9 @@ typedef struct Jim_Obj {
         (o)->typePtr->freeIntRepProc(i, o)
 
 
+
 #define Jim_GetIntRepPtr(o) (o)->internalRep.ptr
+
 
 
 #define Jim_SetIntRepPtr(o, p) \
@@ -490,8 +525,6 @@ typedef struct Jim_CallFrame {
     Jim_Obj *procBodyObjPtr;
     struct Jim_CallFrame *next;
     Jim_Obj *nsObj;
-    Jim_Obj *unused_fileNameObj;
-    int unused_line;
     Jim_Stack *localCommands;
     struct Jim_Obj *tailcallObj;
     struct Jim_Cmd *tailcallCmd;
@@ -534,9 +567,15 @@ typedef struct Jim_Dict {
     unsigned int dummy;
 } Jim_Dict;
 
+#define JIM_CMD_ISPROC 1
+#define JIM_CMD_ISCHANNEL 2
+#define JIM_CMD_ISALIAS 4
+
+#define JIM_CMD_NOTAINT 0x100
+
 typedef struct Jim_Cmd {
     int inUse;
-    int isproc;
+    int flags;
     struct Jim_Cmd *prevCmd;
     Jim_Obj *cmdNameObj;
     union {
@@ -545,6 +584,10 @@ typedef struct Jim_Cmd {
             Jim_CmdProc *cmdProc;
             Jim_DelCmdProc *delProc;
             void *privData;
+            const char *usage;
+            const char *help;
+            short minargs;
+            short maxargs;
         } native;
         struct {
 
@@ -573,7 +616,6 @@ typedef struct Jim_PrngState {
 
 typedef struct Jim_Interp {
     Jim_Obj *result;
-    int unused_errorLine;
     Jim_Obj *currentFilenameObj;
     int break_level;
     int maxCallFrameDepth;
@@ -601,11 +643,9 @@ typedef struct Jim_Interp {
     int safeexpr;
     Jim_Obj *liveList;
     Jim_Obj *freeList;
-    Jim_Obj *unused_currentScriptObj;
     Jim_EvalFrame topEvalFrame;
     Jim_EvalFrame *evalFrame;
     int procLevel;
-    Jim_Obj * const *unused_argv;
     Jim_Obj *nullScriptObj;
     Jim_Obj *emptyObj;
     Jim_Obj *trueObj;
@@ -624,7 +664,7 @@ typedef struct Jim_Interp {
     Jim_Obj *defer;
     Jim_Obj *traceCmdObj;
     int unknown_called;
-    int errorFlag;
+    int hasErrorStackTrace;
     void *cmdPrivData; /* Used to pass the private data pointer to
                   a command. It is set to what the user specified
                   via Jim_CreateCommand(). */
@@ -636,15 +676,23 @@ typedef struct Jim_Interp {
     Jim_PrngState *prngState;
     struct Jim_HashTable packages;
     Jim_Stack *loadHandles;
+    unsigned taint;
 } Jim_Interp;
 
+
 #define Jim_SetResultString(i,s,l) Jim_SetResult(i, Jim_NewStringObj(i,s,l))
+
 #define Jim_SetResultInt(i,intval) Jim_SetResult(i, Jim_NewIntObj(i,intval))
 
+
 #define Jim_SetResultBool(i,b) Jim_SetResultInt(i, b)
+
 #define Jim_SetEmptyResult(i) Jim_SetResult(i, (i)->emptyObj)
+
 #define Jim_GetResult(i) ((i)->result)
+
 #define Jim_CmdPrivData(i) ((i)->cmdPrivData)
+
 
 #define Jim_SetResult(i,o) do {     \
     Jim_Obj *_resultObjPtr_ = (o);    \
@@ -652,6 +700,7 @@ typedef struct Jim_Interp {
     Jim_DecrRefCount(i,(i)->result);  \
     (i)->result = _resultObjPtr_;     \
 } while(0)
+
 
 
 #define Jim_GetId(i) (++(i)->id)
@@ -666,7 +715,9 @@ typedef struct Jim_Reference {
 } Jim_Reference;
 
 
+
 #define Jim_NewEmptyStringObj(i) Jim_NewStringObj(i, "", 0)
+
 #define Jim_FreeHashTableIterator(iter) Jim_Free(iter)
 
 #define JIM_EXPORT extern
@@ -675,15 +726,23 @@ typedef struct Jim_Reference {
 
 JIM_EXPORT void *(*Jim_Allocator)(void *ptr, size_t size);
 
+
 #define Jim_Free(P) Jim_Allocator((P), 0)
+
 #define Jim_Realloc(P, S) Jim_Allocator((P), (S))
+
 #define Jim_Alloc(S) Jim_Allocator(NULL, (S))
+
 JIM_EXPORT char * Jim_StrDup (const char *s);
+
 JIM_EXPORT char *Jim_StrDupLen(const char *s, int l);
 
 
+
 JIM_EXPORT char **Jim_GetEnviron(void);
+
 JIM_EXPORT void Jim_SetEnviron(char **env);
+
 JIM_EXPORT int Jim_MakeTempFile(Jim_Interp *interp, const char *filename_template, int unlink_file);
 #ifndef CLOCK_REALTIME
 #  define CLOCK_REALTIME 0
@@ -694,252 +753,380 @@ JIM_EXPORT int Jim_MakeTempFile(Jim_Interp *interp, const char *filename_templat
 #ifndef CLOCK_MONOTONIC_RAW
 #  define CLOCK_MONOTONIC_RAW CLOCK_MONOTONIC
 #endif
+
 JIM_EXPORT jim_wide Jim_GetTimeUsec(unsigned type);
+
 
 
 JIM_EXPORT int Jim_Eval(Jim_Interp *interp, const char *script);
 
 
+
 JIM_EXPORT int Jim_EvalSource(Jim_Interp *interp, const char *filename, int lineno, const char *script);
+
 
 #define Jim_Eval_Named(I, S, F, L) Jim_EvalSource((I), (F), (L), (S))
 
+
 JIM_EXPORT int Jim_EvalGlobal(Jim_Interp *interp, const char *script);
+
 JIM_EXPORT int Jim_EvalFile(Jim_Interp *interp, const char *filename);
+
 JIM_EXPORT int Jim_EvalFileGlobal(Jim_Interp *interp, const char *filename);
+
 JIM_EXPORT int Jim_EvalObj (Jim_Interp *interp, Jim_Obj *scriptObjPtr);
+
 JIM_EXPORT int Jim_EvalObjVector (Jim_Interp *interp, int objc,
         Jim_Obj *const *objv);
+
 JIM_EXPORT int Jim_EvalObjList(Jim_Interp *interp, Jim_Obj *listObj);
+
 JIM_EXPORT int Jim_EvalObjPrefix(Jim_Interp *interp, Jim_Obj *prefix,
         int objc, Jim_Obj *const *objv);
+
 #define Jim_EvalPrefix(i, p, oc, ov) Jim_EvalObjPrefix((i), Jim_NewStringObj((i), (p), -1), (oc), (ov))
+
 JIM_EXPORT int Jim_EvalNamespace(Jim_Interp *interp, Jim_Obj *scriptObj, Jim_Obj *nsObj);
 JIM_EXPORT int Jim_SubstObj (Jim_Interp *interp, Jim_Obj *substObjPtr,
         Jim_Obj **resObjPtrPtr, int flags);
 
 
+
 JIM_EXPORT Jim_Obj *Jim_GetSourceInfo(Jim_Interp *interp, Jim_Obj *objPtr,
         int *lineptr);
+
 
 JIM_EXPORT void Jim_SetSourceInfo(Jim_Interp *interp, Jim_Obj *objPtr,
         Jim_Obj *fileNameObj, int lineNumber);
 
 
 
-JIM_EXPORT void Jim_InitStack(Jim_Stack *stack);
-JIM_EXPORT void Jim_FreeStack(Jim_Stack *stack);
-JIM_EXPORT int Jim_StackLen(Jim_Stack *stack);
+
+JIM_EXPORT void Jim_StackInit(Jim_Stack *stack, void (*freefunc) (void *ptr));
+
+JIM_EXPORT void Jim_StackFree(Jim_Stack *stack);
+
 JIM_EXPORT void Jim_StackPush(Jim_Stack *stack, void *element);
-JIM_EXPORT void * Jim_StackPop(Jim_Stack *stack);
-JIM_EXPORT void * Jim_StackPeek(Jim_Stack *stack);
-JIM_EXPORT void Jim_FreeStackElements(Jim_Stack *stack, void (*freeFunc)(void *ptr));
+
+JIM_EXPORT void *Jim_StackPop(Jim_Stack *stack);
+
 
 
 JIM_EXPORT int Jim_InitHashTable (Jim_HashTable *ht,
         const Jim_HashTableType *type, void *privdata);
+
 JIM_EXPORT void Jim_ExpandHashTable (Jim_HashTable *ht,
         unsigned int size);
+
 JIM_EXPORT int Jim_AddHashEntry (Jim_HashTable *ht, const void *key,
         void *val);
+
 JIM_EXPORT int Jim_ReplaceHashEntry (Jim_HashTable *ht,
         const void *key, void *val);
+
 JIM_EXPORT int Jim_DeleteHashEntry (Jim_HashTable *ht,
         const void *key);
+
 JIM_EXPORT int Jim_FreeHashTable (Jim_HashTable *ht);
+
 JIM_EXPORT Jim_HashEntry * Jim_FindHashEntry (Jim_HashTable *ht,
         const void *key);
+
 JIM_EXPORT Jim_HashTableIterator *Jim_GetHashTableIterator
         (Jim_HashTable *ht);
+
 JIM_EXPORT Jim_HashEntry * Jim_NextHashEntry
         (Jim_HashTableIterator *iter);
 
 
+
 JIM_EXPORT Jim_Obj * Jim_NewObj (Jim_Interp *interp);
+
 JIM_EXPORT void Jim_FreeObj (Jim_Interp *interp, Jim_Obj *objPtr);
+
 JIM_EXPORT void Jim_InvalidateStringRep (Jim_Obj *objPtr);
+
 JIM_EXPORT Jim_Obj * Jim_DuplicateObj (Jim_Interp *interp,
         Jim_Obj *objPtr);
+
 JIM_EXPORT const char * Jim_GetString(Jim_Obj *objPtr,
         int *lenPtr);
+
 JIM_EXPORT const char *Jim_String(Jim_Obj *objPtr);
+
 JIM_EXPORT int Jim_Length(Jim_Obj *objPtr);
+
 
 
 JIM_EXPORT Jim_Obj * Jim_NewStringObj (Jim_Interp *interp,
         const char *s, int len);
+
 JIM_EXPORT Jim_Obj *Jim_NewStringObjUtf8(Jim_Interp *interp,
         const char *s, int charlen);
+
 JIM_EXPORT Jim_Obj * Jim_NewStringObjNoAlloc (Jim_Interp *interp,
         char *s, int len);
+
 JIM_EXPORT void Jim_AppendString (Jim_Interp *interp, Jim_Obj *objPtr,
         const char *str, int len);
+
 JIM_EXPORT void Jim_AppendObj (Jim_Interp *interp, Jim_Obj *objPtr,
         Jim_Obj *appendObjPtr);
+
 JIM_EXPORT void Jim_AppendStrings (Jim_Interp *interp,
         Jim_Obj *objPtr, ...);
+
 JIM_EXPORT int Jim_StringEqObj(Jim_Obj *aObjPtr, Jim_Obj *bObjPtr);
+
 JIM_EXPORT int Jim_StringMatchObj (Jim_Interp *interp, Jim_Obj *patternObjPtr,
         Jim_Obj *objPtr, int nocase);
+
 JIM_EXPORT Jim_Obj * Jim_StringRangeObj (Jim_Interp *interp,
         Jim_Obj *strObjPtr, Jim_Obj *firstObjPtr,
         Jim_Obj *lastObjPtr);
+
 JIM_EXPORT Jim_Obj * Jim_FormatString (Jim_Interp *interp,
         Jim_Obj *fmtObjPtr, int objc, Jim_Obj *const *objv);
+
 JIM_EXPORT Jim_Obj * Jim_ScanString (Jim_Interp *interp, Jim_Obj *strObjPtr,
         Jim_Obj *fmtObjPtr, int flags);
+
 JIM_EXPORT int Jim_CompareStringImmediate (Jim_Interp *interp,
         Jim_Obj *objPtr, const char *str);
+
 JIM_EXPORT int Jim_StringCompareObj(Jim_Interp *interp, Jim_Obj *firstObjPtr,
         Jim_Obj *secondObjPtr, int nocase);
+
 JIM_EXPORT int Jim_Utf8Length(Jim_Interp *interp, Jim_Obj *objPtr);
+
 
 
 JIM_EXPORT Jim_Obj * Jim_NewReference (Jim_Interp *interp,
         Jim_Obj *objPtr, Jim_Obj *tagPtr, Jim_Obj *cmdNamePtr);
+
 JIM_EXPORT Jim_Reference * Jim_GetReference (Jim_Interp *interp,
         Jim_Obj *objPtr);
+
 JIM_EXPORT int Jim_SetFinalizer (Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *cmdNamePtr);
+
 JIM_EXPORT int Jim_GetFinalizer (Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj **cmdNamePtrPtr);
 
 
+
 JIM_EXPORT Jim_Interp * Jim_CreateInterp (void);
+
 JIM_EXPORT void Jim_FreeInterp (Jim_Interp *i);
+
 JIM_EXPORT int Jim_GetExitCode (Jim_Interp *interp);
+
 JIM_EXPORT const char *Jim_ReturnCode(int code);
+
 JIM_EXPORT void Jim_SetResultFormatted(Jim_Interp *interp, const char *format, ...);
 
 
-JIM_EXPORT void Jim_RegisterCoreCommands (Jim_Interp *interp);
+JIM_EXPORT Jim_Cmd *Jim_RegisterCommand(Jim_Interp *interp, Jim_Obj *cmdNameObj,
+    Jim_CmdProc *cmdProc,
+    Jim_DelCmdProc *delProc,
+    const char *usage,
+    const char *help,
+    short minargs,
+    short maxargs,
+    int flags,
+    void *privData);
+
 JIM_EXPORT int Jim_CreateCommand (Jim_Interp *interp,
         const char *cmdName, Jim_CmdProc *cmdProc, void *privData,
          Jim_DelCmdProc *delProc);
+#define Jim_RegisterSimpleCmd(interp, name, usage, minargs, maxargs, cmdproc) \
+        Jim_RegisterCommand(interp, Jim_NewStringObj(interp, name, -1), cmdproc, NULL, usage, NULL, minargs, maxargs, 0, NULL)
+
+#define Jim_RegisterCmd(interp, name, usage, minargs, maxargs, cmdproc, delproc, privdata, flags) \
+        Jim_RegisterCommand(interp, Jim_NewStringObj(interp, name, -1), cmdproc, delproc, usage, NULL, minargs, maxargs, flags, privdata)
+
+
+JIM_EXPORT void Jim_RegisterCoreCommands (Jim_Interp *interp);
+
+JIM_EXPORT int Jim_CreateCommand (Jim_Interp *interp,
+        const char *cmdName, Jim_CmdProc *cmdProc, void *privData,
+         Jim_DelCmdProc *delProc);
+
 JIM_EXPORT int Jim_DeleteCommand (Jim_Interp *interp,
         Jim_Obj *cmdNameObj);
+
 JIM_EXPORT int Jim_RenameCommand (Jim_Interp *interp,
         Jim_Obj *oldNameObj, Jim_Obj *newNameObj);
+
 JIM_EXPORT Jim_Cmd * Jim_GetCommand (Jim_Interp *interp,
         Jim_Obj *objPtr, int flags);
+
+
 JIM_EXPORT int Jim_SetVariable (Jim_Interp *interp,
         Jim_Obj *nameObjPtr, Jim_Obj *valObjPtr);
+
 JIM_EXPORT int Jim_SetVariableStr (Jim_Interp *interp,
         const char *name, Jim_Obj *objPtr);
+
 JIM_EXPORT int Jim_SetGlobalVariableStr (Jim_Interp *interp,
         const char *name, Jim_Obj *objPtr);
+
 JIM_EXPORT int Jim_SetVariableStrWithStr (Jim_Interp *interp,
         const char *name, const char *val);
+
 JIM_EXPORT int Jim_SetVariableLink (Jim_Interp *interp,
         Jim_Obj *nameObjPtr, Jim_Obj *targetNameObjPtr,
         Jim_CallFrame *targetCallFrame);
+
 JIM_EXPORT Jim_Obj * Jim_MakeGlobalNamespaceName(Jim_Interp *interp,
         Jim_Obj *nameObjPtr);
 JIM_EXPORT Jim_Obj * Jim_GetVariable (Jim_Interp *interp,
         Jim_Obj *nameObjPtr, int flags);
+
 JIM_EXPORT Jim_Obj * Jim_GetGlobalVariable (Jim_Interp *interp,
         Jim_Obj *nameObjPtr, int flags);
+
 JIM_EXPORT Jim_Obj * Jim_GetVariableStr (Jim_Interp *interp,
         const char *name, int flags);
+
 JIM_EXPORT Jim_Obj * Jim_GetGlobalVariableStr (Jim_Interp *interp,
         const char *name, int flags);
+
 JIM_EXPORT int Jim_UnsetVariable (Jim_Interp *interp,
         Jim_Obj *nameObjPtr, int flags);
+
 
 
 JIM_EXPORT Jim_CallFrame *Jim_GetCallFrameByLevel(Jim_Interp *interp,
         Jim_Obj *levelObjPtr);
 
 
+
 JIM_EXPORT int Jim_Collect (Jim_Interp *interp);
+
 JIM_EXPORT void Jim_CollectIfNeeded (Jim_Interp *interp);
+
 
 
 JIM_EXPORT int Jim_GetIndex (Jim_Interp *interp, Jim_Obj *objPtr,
         int *indexPtr);
 
 
+
 JIM_EXPORT Jim_Obj * Jim_NewListObj (Jim_Interp *interp,
         Jim_Obj *const *elements, int len);
+
 JIM_EXPORT void Jim_ListInsertElements (Jim_Interp *interp,
         Jim_Obj *listPtr, int listindex, int objc, Jim_Obj *const *objVec);
+
 JIM_EXPORT void Jim_ListAppendElement (Jim_Interp *interp,
         Jim_Obj *listPtr, Jim_Obj *objPtr);
+
 JIM_EXPORT void Jim_ListAppendList (Jim_Interp *interp,
         Jim_Obj *listPtr, Jim_Obj *appendListPtr);
+
 JIM_EXPORT int Jim_ListLength (Jim_Interp *interp, Jim_Obj *objPtr);
+
 JIM_EXPORT int Jim_ListIndex (Jim_Interp *interp, Jim_Obj *listPrt,
         int listindex, Jim_Obj **objPtrPtr, int seterr);
+
 JIM_EXPORT Jim_Obj *Jim_ListGetIndex(Jim_Interp *interp, Jim_Obj *listPtr, int idx);
+
 JIM_EXPORT int Jim_SetListIndex (Jim_Interp *interp,
         Jim_Obj *varNamePtr, Jim_Obj *const *indexv, int indexc,
         Jim_Obj *newObjPtr);
+
 JIM_EXPORT Jim_Obj * Jim_ConcatObj (Jim_Interp *interp, int objc,
         Jim_Obj *const *objv);
+
 JIM_EXPORT Jim_Obj *Jim_ListJoin(Jim_Interp *interp,
         Jim_Obj *listObjPtr, const char *joinStr, int joinStrLen);
 
 
+
 JIM_EXPORT Jim_Obj * Jim_NewDictObj (Jim_Interp *interp,
         Jim_Obj *const *elements, int len);
+
 JIM_EXPORT int Jim_DictKey (Jim_Interp *interp, Jim_Obj *dictPtr,
         Jim_Obj *keyPtr, Jim_Obj **objPtrPtr, int flags);
+
 JIM_EXPORT int Jim_DictKeysVector (Jim_Interp *interp,
         Jim_Obj *dictPtr, Jim_Obj *const *keyv, int keyc,
         Jim_Obj **objPtrPtr, int flags);
 JIM_EXPORT int Jim_SetDictKeysVector (Jim_Interp *interp,
         Jim_Obj *varNamePtr, Jim_Obj *const *keyv, int keyc,
         Jim_Obj *newObjPtr, int flags);
+
 JIM_EXPORT Jim_Obj **Jim_DictPairs(Jim_Interp *interp,
         Jim_Obj *dictPtr, int *len);
+
 JIM_EXPORT int Jim_DictAddElement(Jim_Interp *interp, Jim_Obj *objPtr,
         Jim_Obj *keyObjPtr, Jim_Obj *valueObjPtr);
 
 #define JIM_DICTMATCH_KEYS 0x0001
 #define JIM_DICTMATCH_VALUES 0x002
 
+
 JIM_EXPORT int Jim_DictMatchTypes(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *patternObj, int match_type, int return_types);
+
 JIM_EXPORT int Jim_DictSize(Jim_Interp *interp, Jim_Obj *objPtr);
+
 JIM_EXPORT int Jim_DictInfo(Jim_Interp *interp, Jim_Obj *objPtr);
+
 JIM_EXPORT Jim_Obj *Jim_DictMerge(Jim_Interp *interp, int objc, Jim_Obj *const *objv);
+
 
 
 JIM_EXPORT int Jim_GetReturnCode (Jim_Interp *interp, Jim_Obj *objPtr,
         int *intPtr);
 
 
+
 JIM_EXPORT int Jim_EvalExpression (Jim_Interp *interp,
         Jim_Obj *exprObjPtr);
+
 JIM_EXPORT int Jim_GetBoolFromExpr (Jim_Interp *interp,
         Jim_Obj *exprObjPtr, int *boolPtr);
+
 
 
 JIM_EXPORT int Jim_GetBoolean(Jim_Interp *interp, Jim_Obj *objPtr,
         int *booleanPtr);
 
 
+
 JIM_EXPORT int Jim_GetWide (Jim_Interp *interp, Jim_Obj *objPtr,
         jim_wide *widePtr);
+
 JIM_EXPORT int Jim_GetWideExpr(Jim_Interp *interp, Jim_Obj *objPtr,
         jim_wide *widePtr);
+
 JIM_EXPORT int Jim_GetLong (Jim_Interp *interp, Jim_Obj *objPtr,
         long *longPtr);
+
 #define Jim_NewWideObj  Jim_NewIntObj
+
 JIM_EXPORT Jim_Obj * Jim_NewIntObj (Jim_Interp *interp,
         jim_wide wideValue);
 
 
+
 JIM_EXPORT int Jim_GetDouble(Jim_Interp *interp, Jim_Obj *objPtr,
         double *doublePtr);
+
 JIM_EXPORT void Jim_SetDouble(Jim_Interp *interp, Jim_Obj *objPtr,
         double doubleValue);
+
 JIM_EXPORT Jim_Obj * Jim_NewDoubleObj(Jim_Interp *interp, double doubleValue);
+
 
 
 JIM_EXPORT void Jim_WrongNumArgs (Jim_Interp *interp, int argc,
         Jim_Obj *const *argv, const char *msg);
 JIM_EXPORT int Jim_GetEnum (Jim_Interp *interp, Jim_Obj *objPtr,
         const char * const *tablePtr, int *indexPtr, const char *name, int flags);
+
 JIM_EXPORT int Jim_CheckShowCommands(Jim_Interp *interp, Jim_Obj *objPtr,
         const char *const *tablePtr);
+
 JIM_EXPORT int Jim_ScriptIsComplete(Jim_Interp *interp,
         Jim_Obj *scriptObj, char *stateCharPtr);
 
@@ -947,56 +1134,99 @@ JIM_EXPORT int Jim_FindByName(const char *name, const char * const array[], size
 
 
 typedef void (Jim_InterpDeleteProc)(Jim_Interp *interp, void *data);
+
 JIM_EXPORT void * Jim_GetAssocData(Jim_Interp *interp, const char *key);
+
 JIM_EXPORT int Jim_SetAssocData(Jim_Interp *interp, const char *key,
         Jim_InterpDeleteProc *delProc, void *data);
+
 JIM_EXPORT int Jim_DeleteAssocData(Jim_Interp *interp, const char *key);
+
 JIM_EXPORT int Jim_CheckAbiVersion(Jim_Interp *interp, int abi_version);
+
 
 
 
 
 JIM_EXPORT int Jim_PackageProvide (Jim_Interp *interp,
         const char *name, const char *ver, int flags);
+
 JIM_EXPORT int Jim_PackageRequire (Jim_Interp *interp,
         const char *name, int flags);
+
 #define Jim_PackageProvideCheck(INTERP, NAME) \
         if (Jim_CheckAbiVersion(INTERP, JIM_ABI_VERSION) == JIM_ERR || Jim_PackageProvide(INTERP, NAME, "1.0", JIM_ERRMSG)) \
                 return JIM_ERR
 
 
+
 JIM_EXPORT void Jim_MakeErrorMessage (Jim_Interp *interp);
 
 
+
 JIM_EXPORT int Jim_InteractivePrompt (Jim_Interp *interp);
+
 JIM_EXPORT void Jim_HistoryLoad(const char *filename);
+
 JIM_EXPORT void Jim_HistorySave(const char *filename);
+
 JIM_EXPORT char *Jim_HistoryGetline(Jim_Interp *interp, const char *prompt);
+
 JIM_EXPORT void Jim_HistorySetCompletion(Jim_Interp *interp, Jim_Obj *completionCommandObj);
+
 JIM_EXPORT void Jim_HistorySetHints(Jim_Interp *interp, Jim_Obj *hintsCommandObj);
+
 JIM_EXPORT void Jim_HistoryAdd(const char *line);
+
 JIM_EXPORT void Jim_HistoryShow(void);
+
 JIM_EXPORT void Jim_HistorySetMaxLen(int length);
+
 JIM_EXPORT int Jim_HistoryGetMaxLen(void);
 
 
+
 JIM_EXPORT int Jim_InitStaticExtensions(Jim_Interp *interp);
+
 JIM_EXPORT int Jim_StringToWide(const char *str, jim_wide *widePtr, int base);
+
 JIM_EXPORT int Jim_IsBigEndian(void);
 
 #define Jim_CheckSignal(i) ((i)->signal_level && (i)->sigmask)
+
 JIM_EXPORT void Jim_SignalSetIgnored(jim_wide mask);
 
 
+
 JIM_EXPORT int Jim_LoadLibrary(Jim_Interp *interp, const char *pathName);
+
 JIM_EXPORT void Jim_FreeLoadHandles(Jim_Interp *interp);
+
 
 
 JIM_EXPORT int Jim_AioFilehandle(Jim_Interp *interp, Jim_Obj *command);
 
 
+
 JIM_EXPORT int Jim_IsDict(Jim_Obj *objPtr);
+
 JIM_EXPORT int Jim_IsList(Jim_Obj *objPtr);
+
+
+JIM_EXPORT void Jim_SetTaintError(Jim_Interp *interp, int cmdargs, Jim_Obj *const *argv);
+JIM_EXPORT int Jim_CalcTaint(int argc, Jim_Obj *const *argv);
+
+#ifdef JIM_TAINT
+#define Jim_CheckTaint(i, t) ((i)->taint & (t))
+#define Jim_TaintObj(o,t) (o)->taint |= (t)
+#define Jim_UntaintObj(o) (o)->taint = 0
+#define Jim_GetObjTaint(o) (o)->taint
+#else
+#define Jim_CheckTaint(i, t) 0
+#define Jim_TaintObj(o,t)
+#define Jim_UntaintObj(o)
+#define Jim_GetObjTaint(o) 0
+#endif
 
 #ifdef __cplusplus
 }
@@ -1015,6 +1245,10 @@ extern "C" {
 
 #define JIM_MODFLAG_HIDDEN   0x0001
 #define JIM_MODFLAG_FULLARGV 0x0002
+#define JIM_MODFLAG_NOTAINT  0x0004
+
+#define JIM_SUBCMD_BADARGS -1
+#define JIM_SUBCMD_TAINTED -2
 
 
 
@@ -1040,6 +1274,9 @@ int Jim_SubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
 int Jim_CallSubCmd(Jim_Interp *interp, const jim_subcmd_type *ct, int argc, Jim_Obj *const *argv);
 
 void Jim_SubCmdArgError(Jim_Interp *interp, const jim_subcmd_type *ct, Jim_Obj *subcmd);
+
+Jim_Cmd *Jim_RegisterSubCmd(Jim_Interp *interp, const char *cmdname,
+	const jim_subcmd_type *command_table, Jim_DelCmdProc *delProc);
 
 #ifdef __cplusplus
 }
@@ -1074,6 +1311,7 @@ typedef struct regexp {
 	int regmust;
 	int regmlen;
 	int *program;
+	char *exp;
 
 
 	const char *regparse;
@@ -1094,10 +1332,14 @@ typedef struct regexp {
 typedef regexp regex_t;
 
 #define REG_EXTENDED 0
-#define REG_NEWLINE 1
 #define REG_ICASE 2
+#define REG_NEWLINE_ANCHOR 4
+#define REG_NEWLINE_STOP 8
+
+#define REG_NEWLINE (REG_NEWLINE_ANCHOR | REG_NEWLINE_STOP)
 
 #define REG_NOTBOL 16
+#define REG_EXPANDED 32
 
 enum {
 	REG_NOERROR,
@@ -1408,8 +1650,8 @@ int Jim_initjimshInit(Jim_Interp *interp)
 "\n"
 "proc tcl::stdhint {string} {\n"
 "	set result \"\"\n"
+"	lassign $string cmd arg\n"
 "	if {[llength $string] >= 2} {\n"
-"		lassign $string cmd arg\n"
 "		if {$cmd in $::tcl::stdhint_commands || [info channel $cmd] ne \"\"} {\n"
 "			catch {\n"
 "				set help [$cmd -help $arg]\n"
@@ -1430,6 +1672,23 @@ int Jim_initjimshInit(Jim_Interp *interp)
 "					set result [list $prefix$hint {*}$::tcl::stdhint_col]\n"
 "				}\n"
 "			}\n"
+"		}\n"
+"	} else {\n"
+"		catch {\n"
+"			if {[exists -alias $cmd] && [llength [info alias $cmd]] == 1} {\n"
+"\n"
+"\n"
+"\n"
+"				set help [info usage [info alias $cmd]]\n"
+"			} else {\n"
+"				set help [info usage $cmd]\n"
+"			}\n"
+"			set hint [join [lrange $help 1 end]]\n"
+"			set prefix \" \"\n"
+"			if {[string match \"* \" $string]} {\n"
+"				set prefix \"\"\n"
+"			}\n"
+"			set result [list $prefix$hint {*}$::tcl::stdhint_col]\n"
 "		}\n"
 "	}\n"
 "	return $result\n"
@@ -1894,7 +2153,9 @@ int Jim_tclcompatInit(Jim_Interp *interp)
 "\n"
 "\n"
 "\n"
-"proc parray {arrayname {pattern *} {puts puts}} {\n"
+"\n"
+"\n"
+"proc parray {arrayname {pattern *} {puts puts} args} {\n"
 "	upvar $arrayname a\n"
 "\n"
 "	set max 0\n"
@@ -1906,7 +2167,7 @@ int Jim_tclcompatInit(Jim_Interp *interp)
 "	incr max [string length $arrayname]\n"
 "	incr max 2\n"
 "	foreach name [lsort [array names a $pattern]] {\n"
-"		$puts [format \"%-${max}s = %s\" $arrayname\\($name\\) $a($name)]\n"
+"		$puts {*}$args [format \"%-${max}s = %s\" $arrayname\\($name\\) $a($name)]\n"
 "	}\n"
 "}\n"
 "\n"
@@ -2073,6 +2334,7 @@ int Jim_tclcompatInit(Jim_Interp *interp)
 #define AIO_EOF 4
 #define AIO_WBUF_NONE 8
 #define AIO_NONBLOCK 16
+#define AIO_NOTAINT  32
 
 #define AIO_ONEREAD 32
 
@@ -2131,7 +2393,6 @@ typedef struct {
     int (*reader)(struct AioFile *af, char *buf, int len, int pending);
     int (*error)(const struct AioFile *af);
     const char *(*strerror)(struct AioFile *af);
-    int (*verify)(struct AioFile *af);
 } JimAioFopsType;
 
 typedef struct AioFile
@@ -2141,6 +2402,8 @@ typedef struct AioFile
     int flags;
     long timeout;
     int fd;
+    unsigned taintsource;
+    unsigned taintsink;
     int addr_family;
     void *ssl;
     const JimAioFopsType *fops;
@@ -2211,7 +2474,6 @@ static const JimAioFopsType stdio_fops = {
     stdio_reader,
     stdio_error,
     stdio_strerror,
-    NULL,
 };
 
 
@@ -2244,6 +2506,7 @@ static int aio_start_nonblocking(AioFile *af)
 }
 
 static int JimAioSubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
+static void JimAioSetTaint(AioFile *af, int taintsource, int taintsink);
 static AioFile *JimMakeChannel(Jim_Interp *interp, int fd, Jim_Obj *filename,
     const char *hdlfmt, int family, int flags);
 
@@ -2498,7 +2761,7 @@ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         argv++;
     }
     if (argc) {
-        return -1;
+        return JIM_USAGE;
     }
 
 
@@ -2509,6 +2772,7 @@ static int aio_cmd_read(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         return JIM_ERR;
     }
     objPtr = aio_read_consume(interp, af, neededLen);
+    Jim_TaintObj(objPtr, af->taintsource);
 
     aio_set_nonblocking(af, nb);
 
@@ -2535,7 +2799,7 @@ int Jim_AioFilehandle(Jim_Interp *interp, Jim_Obj *command)
     Jim_Cmd *cmdPtr = Jim_GetCommand(interp, command, JIM_ERRMSG);
 
 
-    if (cmdPtr && !cmdPtr->isproc && cmdPtr->u.native.cmdProc == JimAioSubCmdProc) {
+    if (cmdPtr && !(cmdPtr->flags & JIM_CMD_ISPROC) && cmdPtr->u.native.cmdProc == JimAioSubCmdProc) {
         return ((AioFile *) cmdPtr->u.native.privData)->fd;
     }
     Jim_SetResultFormatted(interp, "Not a filehandle: \"%#s\"", command);
@@ -2554,6 +2818,30 @@ static int aio_cmd_getfd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return JIM_OK;
 }
 
+static int aio_cmd_gettaint(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+    AioFile *af = Jim_CmdPrivData(interp);
+
+    static const char * const options[] = { "-source", "-sink", NULL };
+    enum { OPT_SOURCE, OPT_SINK };
+    int option;
+
+    if (Jim_GetEnum(interp, argv[0], options, &option, NULL, JIM_ERRMSG) != JIM_OK) {
+        return JIM_ERR;
+    }
+    switch (option) {
+        case OPT_SOURCE:
+            Jim_SetResultInt(interp, af->taintsource);
+            break;
+
+        case OPT_SINK:
+            Jim_SetResultInt(interp, af->taintsink);
+            break;
+    }
+
+    return JIM_OK;
+}
+
 static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     AioFile *af = Jim_CmdPrivData(interp);
@@ -2561,11 +2849,25 @@ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     jim_wide maxlen = JIM_WIDE_MAX;
     int ok = 1;
     Jim_Obj *objv[4];
+    long taintsink;
 
     if (argc == 2) {
         if (Jim_GetWide(interp, argv[1], &maxlen) != JIM_OK) {
             return JIM_ERR;
         }
+    }
+
+    objv[0] = argv[0];
+    objv[1] = Jim_NewStringObj(interp, "gettaint", -1);
+    objv[2] = Jim_NewStringObj(interp, "-sink", -1);
+    if (Jim_EvalObjVector(interp, 3, objv) != JIM_OK || Jim_GetLong(interp, Jim_GetResult(interp), &taintsink) != JIM_OK) {
+        Jim_SetResultFormatted(interp, "Not a filehandle: \"%#s\"", argv[0]);
+        return JIM_ERR;
+    }
+
+    if (af->taintsource & taintsink) {
+        Jim_SetResultString(interp, "copying tainted source", -1);
+        return JIM_ERR;
     }
 
     objv[0] = argv[0];
@@ -2619,6 +2921,15 @@ static int aio_cmd_copy(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return JIM_OK;
 }
 
+
+static const char *jim_strstr(const char *haystack, int haylen, const char *needle, int needlen)
+{
+    if (needlen == 1) {
+        return (const char *)memchr(haystack, needle[0], haylen);
+    }
+    return strstr(haystack, needle);
+}
+
 static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     AioFile *af = Jim_CmdPrivData(interp);
@@ -2626,8 +2937,44 @@ static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     int len;
     int nb;
     unsigned flags = AIO_ONEREAD;
-    char *nl = NULL;
+    const char *nl = NULL;
     int offset = 0;
+    long keepnl = 0;
+    const char *nlstr = "\n";
+    int nlstrlen = 1;
+
+    while (argc >= 2) {
+        enum {OPT_EOL, OPT_KEEP};
+        static const char * const options[] = {
+            "-eol",
+            "-keep",
+            NULL
+        };
+        int opt;
+
+
+        if (*Jim_String(argv[0]) != '-') {
+            return JIM_USAGE;
+        }
+
+        if (Jim_GetEnum(interp, argv[0], options, &opt, NULL, JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
+            return JIM_ERR;
+        }
+
+        switch (opt) {
+            case OPT_EOL:
+                nlstr = Jim_GetString(argv[1], &nlstrlen);
+                break;
+
+            case OPT_KEEP:
+                if (Jim_GetLong(interp, argv[1], &keepnl) != JIM_OK) {
+                    return JIM_ERR;
+                }
+                break;
+        }
+        argc -= 2;
+        argv += 2;
+    }
 
     errno = 0;
 
@@ -2640,12 +2987,12 @@ static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     while (!aio_eof(af)) {
         if (af->readbuf) {
             const char *pt = Jim_GetString(af->readbuf, &len);
-            nl = memchr(pt + offset, '\n', len - offset);
+            nl = jim_strstr(pt + offset, len - offset, nlstr, nlstrlen);
             if (nl) {
 
-                objPtr = Jim_NewStringObj(interp, pt, nl - pt);
+                objPtr = Jim_NewStringObj(interp, pt, nl - pt + (keepnl ? nlstrlen : 0));
 
-                aio_consume(af->readbuf, nl - pt + 1);
+                aio_consume(af->readbuf, nl - pt + nlstrlen);
                 break;
             }
             offset = len;
@@ -2667,10 +3014,10 @@ static int aio_cmd_gets(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     else if (!objPtr) {
         objPtr = Jim_NewStringObj(interp, NULL, 0);
     }
+    Jim_TaintObj(objPtr, af->taintsource);
 
     if (argc) {
         if (Jim_SetVariable(interp, argv[0], objPtr) != JIM_OK) {
-            Jim_FreeNewObj(interp, objPtr);
             return JIM_ERR;
         }
 
@@ -2697,9 +3044,14 @@ static int aio_cmd_puts(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     int wnow = 0;
     int nl = 1;
 
+    if (Jim_CheckTaint(interp, af->taintsink)) {
+        Jim_SetResultString(interp, "puts: tainted data", -1);
+        return JIM_ERR;
+    }
+
     if (argc == 2) {
         if (!Jim_CompareStringImmediate(interp, argv[0], "-nonewline")) {
-            return -1;
+            return JIM_USAGE;
         }
         strObj = argv[1];
         nl = 0;
@@ -2832,7 +3184,7 @@ static int aio_cmd_seek(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         else if (Jim_CompareStringImmediate(interp, argv[1], "end"))
             orig = SEEK_END;
         else {
-            return -1;
+            return JIM_USAGE;
         }
     }
     if (Jim_GetWide(interp, argv[0], &offset) != JIM_OK) {
@@ -2869,6 +3221,45 @@ static int aio_cmd_filename(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     Jim_SetResult(interp, af->filename);
     return JIM_OK;
 }
+
+#ifdef JIM_TAINT
+static int aio_cmd_taint(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+    AioFile *af = Jim_CmdPrivData(interp);
+    static const char * const types[] = {
+        "sink",
+        "source",
+        NULL
+    };
+    enum
+    {
+        TAINT_TYPE_SINK,
+        TAINT_TYPE_SOURCE,
+    };
+    int type;
+    long taint;
+
+    if (Jim_GetEnum(interp, argv[0], types, &type, NULL, JIM_ERRMSG) != JIM_OK)
+        return JIM_ERR;
+
+    if (argc == 1) {
+        Jim_SetResultInt(interp, type == TAINT_TYPE_SINK ? af->taintsink : af->taintsource);
+        return JIM_OK;
+    }
+    else if (Jim_GetLong(interp, argv[1], &taint) == JIM_OK) {
+        if (type == TAINT_TYPE_SINK) {
+            af->taintsink = taint;
+        }
+        else {
+            af->taintsource = taint;
+        }
+        return JIM_OK;
+    }
+    else {
+        return JIM_ERR;
+    }
+}
+#endif
 
 #ifdef O_NDELAY
 static int aio_cmd_ndelay(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
@@ -3086,13 +3477,22 @@ static const jim_subcmd_type aio_command_table[] = {
         aio_cmd_getfd,
         0,
         0,
+        JIM_MODFLAG_HIDDEN,
+
+    },
+    {   "gettaint",
+        "?-source|-sink?",
+        aio_cmd_gettaint,
+        1,
+        1,
+        JIM_MODFLAG_HIDDEN,
 
     },
     {   "gets",
-        "?var?",
+        "?-eol <str>? ?-keep 0|1? ?var?",
         aio_cmd_gets,
         0,
-        1,
+        -1,
 
     },
     {   "puts",
@@ -3152,6 +3552,15 @@ static const jim_subcmd_type aio_command_table[] = {
         0,
 
     },
+#ifdef JIM_TAINT
+    {   "taint",
+        "source|sink ?0|n?",
+        aio_cmd_taint,
+        1,
+        2,
+
+    },
+#endif
 #ifdef O_NDELAY
     {   "ndelay",
         "?0|1?",
@@ -3333,18 +3742,24 @@ static int JimAioOpenCommand(Jim_Interp *interp, int argc,
         Jim_Obj *const *argv)
 {
     int openflags;
+    AioFile *af;
     const char *filename;
     int fd = -1;
     int n = 0;
-    int flags = 0;
+
+    int flags = AIO_NOTAINT;
 
     if (argc > 2 && Jim_CompareStringImmediate(interp, argv[2], "-noclose")) {
         flags = AIO_KEEPOPEN;
         n++;
     }
-    if (argc < 2 || argc > 3 + n) {
-        Jim_WrongNumArgs(interp, 1, argv, "filename ?-noclose? ?mode?");
+
+    if (Jim_CheckTaint(interp, JIM_TAINT_ANY)) {
+        Jim_SetTaintError(interp, 1, argv);
         return JIM_ERR;
+    }
+    if (argc > 3 + n) {
+        return JIM_USAGE;
     }
 
     filename = Jim_String(argv[1]);
@@ -3376,15 +3791,28 @@ static int JimAioOpenCommand(Jim_Interp *interp, int argc,
     else {
         openflags = O_RDONLY;
     }
+
     fd = open(filename, openflags, 0666);
     if (fd < 0) {
         JimAioSetError(interp, argv[1]);
         return JIM_ERR;
     }
 
-    return JimMakeChannel(interp, fd, argv[1], "aio.handle%ld", 0, flags) ? JIM_OK : JIM_ERR;
+    af = JimMakeChannel(interp, fd, argv[1], "aio.handle%ld", 0, flags);
+    if (af) {
+
+        JimAioSetTaint(af, 0, 0);
+        return JIM_OK;
+    }
+    return JIM_ERR;
 }
 
+
+static void JimAioSetTaint(AioFile *af, int taintsource, int taintsink)
+{
+    af->taintsource = taintsource;
+    af->taintsink = taintsink;
+}
 
 static AioFile *JimMakeChannel(Jim_Interp *interp, int fd, Jim_Obj *filename,
     const char *hdlfmt, int family, int flags)
@@ -3434,7 +3862,15 @@ static AioFile *JimMakeChannel(Jim_Interp *interp, int fd, Jim_Obj *filename,
     af->rbuf_len = AIO_DEFAULT_RBUF_LEN;
 
 
-    Jim_CreateCommand(interp, buf, JimAioSubCmdProc, af, JimAioDelProc);
+
+    if (!(flags & AIO_NOTAINT)) {
+        JimAioSetTaint(af, JIM_TAINT_STD, JIM_TAINT_STD);
+    }
+    Jim_RegisterCommand(interp, cmdname,
+        JimAioSubCmdProc, JimAioDelProc,
+        NULL,
+        NULL,
+        0, -1, JIM_CMD_ISCHANNEL, af);
 
     Jim_SetResult(interp, Jim_MakeGlobalNamespaceName(interp, cmdname));
 
@@ -3479,10 +3915,6 @@ static int JimCreatePipe(Jim_Interp *interp, Jim_Obj *filenameObj, int flags)
 
 static int JimAioPipeCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 1) {
-        Jim_WrongNumArgs(interp, 1, argv, "");
-        return JIM_ERR;
-    }
     return JimCreatePipe(interp, argv[0], 0);
 }
 #endif
@@ -3492,11 +3924,6 @@ static int JimAioOpenPtyCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 {
     int p[2];
     char path[MAXPATHLEN];
-
-    if (argc != 1) {
-        Jim_WrongNumArgs(interp, 1, argv, "");
-        return JIM_ERR;
-    }
 
     if (openpty(&p[0], &p[1], path, NULL, NULL) != 0) {
         JimAioSetError(interp, NULL);
@@ -3511,27 +3938,33 @@ static int JimAioOpenPtyCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 
 
 
+
+static void JimMakeStdioChannel(Jim_Interp *interp, FILE *fh, const char *name, unsigned flags)
+{
+
+    AioFile *af = JimMakeChannel(interp, fileno(fh), NULL, name, 0, AIO_KEEPOPEN | flags);
+    JimAioSetTaint(af, 0, 0);
+}
+
 int Jim_aioInit(Jim_Interp *interp)
 {
-    if (Jim_PackageProvide(interp, "aio", "1.0", JIM_ERRMSG))
-        return JIM_ERR;
-
+    Jim_PackageProvideCheck(interp, "aio");
 #if defined(JIM_SSL)
-    Jim_CreateCommand(interp, "load_ssl_certs", JimAioLoadSSLCertsCommand, NULL, NULL);
+    Jim_RegisterSimpleCmd(interp, "load_ssl_certs", "dir", 1, 1, JimAioLoadSSLCertsCommand);
 #endif
 
-    Jim_CreateCommand(interp, "open", JimAioOpenCommand, NULL, NULL);
+    Jim_RegisterCmd(interp, "open", "filename ?-noclose? ?mode?", 1, 3, JimAioOpenCommand, NULL, NULL, JIM_CMD_NOTAINT);
 #ifdef HAVE_SOCKETS
-    Jim_CreateCommand(interp, "socket", JimAioSockCommand, NULL, NULL);
+    Jim_RegisterCmd(interp, "socket", "?-async? ?-ipv6? socktype ?address?", 1, 4, JimAioSockCommand, NULL, NULL, JIM_CMD_NOTAINT);
 #endif
 #ifdef HAVE_PIPE
-    Jim_CreateCommand(interp, "pipe", JimAioPipeCommand, NULL, NULL);
+    Jim_RegisterSimpleCmd(interp, "pipe", "", 0, 0, JimAioPipeCommand);
 #endif
 
 
-    JimMakeChannel(interp, fileno(stdin), NULL, "stdin", 0, AIO_KEEPOPEN);
-    JimMakeChannel(interp, fileno(stdout), NULL, "stdout", 0, AIO_KEEPOPEN);
-    JimMakeChannel(interp, fileno(stderr), NULL, "stderr", 0, AIO_KEEPOPEN | AIO_WBUF_NONE);
+    JimMakeStdioChannel(interp, stdin, "stdin", 0);
+    JimMakeStdioChannel(interp, stdout, "stdout", 0);
+    JimMakeStdioChannel(interp, stderr, "stderr", AIO_WBUF_NONE);
 
     return JIM_OK;
 }
@@ -3556,8 +3989,7 @@ int Jim_ReaddirCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         nocomplain = 1;
     }
     if (argc != 2 && !nocomplain) {
-        Jim_WrongNumArgs(interp, 1, argv, "?-nocomplain? dirPath");
-        return JIM_ERR;
+        return JIM_USAGE;
     }
 
     dirPath = Jim_String(argv[1 + nocomplain]);
@@ -3594,7 +4026,7 @@ int Jim_ReaddirCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 int Jim_readdirInit(Jim_Interp *interp)
 {
     Jim_PackageProvideCheck(interp, "readdir");
-    Jim_CreateCommand(interp, "readdir", Jim_ReaddirCmd, NULL, NULL);
+    Jim_RegisterSimpleCmd(interp, "readdir", "?-nocomplain? dirPath", 1, 2, Jim_ReaddirCmd);
     return JIM_OK;
 }
 
@@ -3667,6 +4099,7 @@ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     int opt_indices = 0;
     int opt_all = 0;
     int opt_inline = 0;
+    int opt_lineanchor = 0;
     regex_t *regex;
     int match, i, j;
     int offset = 0;
@@ -3682,18 +4115,11 @@ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     int eflags = 0;
     int option;
     enum {
-        OPT_INDICES,  OPT_NOCASE, OPT_LINE, OPT_ALL, OPT_INLINE, OPT_START, OPT_END
+        OPT_INDICES,  OPT_NOCASE, OPT_LINE, OPT_LINESTOP, OPT_LINEANCHOR, OPT_ALL, OPT_INLINE, OPT_START, OPT_EXPANDED, OPT_END
     };
     static const char * const options[] = {
-        "-indices", "-nocase", "-line", "-all", "-inline", "-start", "--", NULL
+        "-indices", "-nocase", "-line", "-linestop", "-lineanchor", "-all", "-inline", "-start", "-expanded", "--", NULL
     };
-
-    if (argc < 3) {
-      wrongNumArgs:
-        Jim_WrongNumArgs(interp, 1, argv,
-            "?-switch ...? exp string ?matchVar? ?subMatchVar ...?");
-        return JIM_ERR;
-    }
 
     for (i = 1; i < argc; i++) {
         const char *opt = Jim_String(argv[i]);
@@ -3701,7 +4127,7 @@ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         if (*opt != '-') {
             break;
         }
-        if (Jim_GetEnum(interp, argv[i], options, &option, "switch", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
+        if (Jim_GetEnum(interp, argv[i], options, &option, "option", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
             return JIM_ERR;
         }
         if (option == OPT_END) {
@@ -3719,8 +4145,20 @@ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
             case OPT_LINE:
                 regcomp_flags |= REG_NEWLINE;
+                opt_lineanchor = 1;
                 break;
 
+#ifdef REG_NEWLINE_STOP
+            case OPT_LINESTOP:
+                regcomp_flags |= REG_NEWLINE_STOP;
+                break;
+#endif
+#ifdef REG_NEWLINE_ANCHOR
+            case OPT_LINEANCHOR:
+                regcomp_flags |= REG_NEWLINE_ANCHOR;
+                opt_lineanchor = 1;
+                break;
+#endif
             case OPT_ALL:
                 opt_all = 1;
                 break;
@@ -3731,16 +4169,26 @@ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
             case OPT_START:
                 if (++i == argc) {
-                    goto wrongNumArgs;
+                    return JIM_USAGE;
                 }
                 if (Jim_GetIndex(interp, argv[i], &offset) != JIM_OK) {
                     return JIM_ERR;
                 }
                 break;
+
+#ifdef REG_EXPANDED
+            case OPT_EXPANDED:
+                regcomp_flags |= REG_EXPANDED;
+                break;
+#endif
+            default:
+
+                Jim_SetResultFormatted(interp, "not supported: %#s", argv[i]);
+                return JIM_ERR;
         }
     }
     if (argc - i < 2) {
-        goto wrongNumArgs;
+        return JIM_USAGE;
     }
 
     regex = SetRegexpFromAny(interp, argv[i], regcomp_flags);
@@ -3799,14 +4247,10 @@ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
     num_matches++;
 
-    if (opt_all && !opt_inline) {
-
-        goto try_next_match;
-    }
 
 
     j = 0;
-    for (i += 2; opt_inline ? j < num_vars : i < argc; i++, j++) {
+    for (j = 0; j < num_vars; j++) {
         Jim_Obj *resultObj;
 
         if (opt_indices) {
@@ -3840,17 +4284,15 @@ int Jim_RegexpCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         }
         else {
 
-            result = Jim_SetVariable(interp, argv[i], resultObj);
+            result = Jim_SetVariable(interp, argv[i + 2 + j], resultObj);
 
             if (result != JIM_OK) {
-                Jim_FreeObj(interp, resultObj);
                 break;
             }
         }
     }
 
-  try_next_match:
-    if (opt_all && (pattern[0] != '^' || (regcomp_flags & REG_NEWLINE)) && *source_str) {
+    if (opt_all && (pattern[0] != '^' || opt_lineanchor) && *source_str) {
         if (pmatch[0].rm_eo) {
             offset += utf8_strlen(source_str, pmatch[0].rm_eo);
             source_str += pmatch[0].rm_eo;
@@ -3906,18 +4348,11 @@ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     const char *pattern;
     int option;
     enum {
-        OPT_NOCASE, OPT_LINE, OPT_ALL, OPT_START, OPT_COMMAND, OPT_END
+        OPT_NOCASE, OPT_LINE, OPT_LINESTOP, OPT_LINEANCHOR, OPT_ALL, OPT_START, OPT_COMMAND, OPT_EXPANDED, OPT_END
     };
     static const char * const options[] = {
-        "-nocase", "-line", "-all", "-start", "-command", "--", NULL
+        "-nocase", "-line", "-linestop", "-lineanchor", "-all", "-start", "-command", "-expanded", "--", NULL
     };
-
-    if (argc < 4) {
-      wrongNumArgs:
-        Jim_WrongNumArgs(interp, 1, argv,
-            "?-switch ...? exp string subSpec ?varName?");
-        return JIM_ERR;
-    }
 
     for (i = 1; i < argc; i++) {
         const char *opt = Jim_String(argv[i]);
@@ -3925,7 +4360,7 @@ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         if (*opt != '-') {
             break;
         }
-        if (Jim_GetEnum(interp, argv[i], options, &option, "switch", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
+        if (Jim_GetEnum(interp, argv[i], options, &option, "option", JIM_ERRMSG | JIM_ENUM_ABBREV) != JIM_OK) {
             return JIM_ERR;
         }
         if (option == OPT_END) {
@@ -3941,13 +4376,23 @@ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
                 regcomp_flags |= REG_NEWLINE;
                 break;
 
+#ifdef REG_NEWLINE_STOP
+            case OPT_LINESTOP:
+                regcomp_flags |= REG_NEWLINE_STOP;
+                break;
+#endif
+#ifdef REG_NEWLINE_ANCHOR
+            case OPT_LINEANCHOR:
+                regcomp_flags |= REG_NEWLINE_ANCHOR;
+                break;
+#endif
             case OPT_ALL:
                 opt_all = 1;
                 break;
 
             case OPT_START:
                 if (++i == argc) {
-                    goto wrongNumArgs;
+                    return JIM_USAGE;
                 }
                 if (Jim_GetIndex(interp, argv[i], &offset) != JIM_OK) {
                     return JIM_ERR;
@@ -3957,18 +4402,29 @@ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
             case OPT_COMMAND:
                 opt_command = 1;
                 break;
+
+#ifdef REG_EXPANDED
+            case OPT_EXPANDED:
+                regcomp_flags |= REG_EXPANDED;
+                break;
+#endif
+
+            default:
+
+                Jim_SetResultFormatted(interp, "not supported: %#s", argv[i]);
+                return JIM_ERR;
         }
     }
     if (argc - i != 3 && argc - i != 4) {
-        goto wrongNumArgs;
+        return JIM_USAGE;
     }
 
 
     regcomp_obj = Jim_DuplicateObj(interp, argv[i]);
-	Jim_IncrRefCount(regcomp_obj);
+    Jim_IncrRefCount(regcomp_obj);
     regex = SetRegexpFromAny(interp, regcomp_obj, regcomp_flags);
     if (!regex) {
-		Jim_DecrRefCount(interp, regcomp_obj);
+        Jim_DecrRefCount(interp, regcomp_obj);
         return JIM_ERR;
     }
     pattern = Jim_String(argv[i]);
@@ -3978,7 +4434,7 @@ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         cmd_prefix = argv[i + 2];
         if (Jim_ListLength(interp, cmd_prefix) == 0) {
             Jim_SetResultString(interp, "command prefix must be a list of at least one element", -1);
-			Jim_DecrRefCount(interp, regcomp_obj);
+            Jim_DecrRefCount(interp, regcomp_obj);
             return JIM_ERR;
         }
         Jim_IncrRefCount(cmd_prefix);
@@ -4011,7 +4467,8 @@ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
     n = source_len - offset;
     p = source_str + offset;
-    do {
+
+    while (n || pattern[0]) {
         int match = jim_regexec(regex, p, MAX_SUB_MATCHES, pmatch, regexec_flags);
 
         if (match >= REG_BADPAT) {
@@ -4092,28 +4549,22 @@ int Jim_RegsubCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
             break;
         }
 
-
-        if ((regcomp_flags & REG_NEWLINE) == 0 && pattern[0] == '^') {
-            break;
-        }
-
-
-        if (pattern[0] == '\0' && n) {
-
-            Jim_AppendString(interp, resultObj, p, 1);
-            p++;
-            n--;
-        }
-
+        regexec_flags = 0;
         if (pmatch[0].rm_eo == pmatch[0].rm_so) {
 
-            regexec_flags = REG_NOTBOL;
-        }
-        else {
-            regexec_flags = 0;
-        }
+            if (pattern[0] == '^') {
 
-    } while (n);
+                regexec_flags = REG_NOTBOL;
+            }
+            else {
+
+                int charlen = utf8_charlen(p[0]);
+                Jim_AppendString(interp, resultObj, p, charlen);
+                p += charlen;
+                n -= charlen;
+            }
+        }
+    }
 
     Jim_AppendString(interp, resultObj, p, -1);
 
@@ -4125,9 +4576,6 @@ cmd_error:
 
             if (result == JIM_OK) {
                 Jim_SetResultInt(interp, num_matches);
-            }
-            else {
-                Jim_FreeObj(interp, resultObj);
             }
         }
         else {
@@ -4143,7 +4591,7 @@ cmd_error:
         Jim_DecrRefCount(interp, cmd_prefix);
     }
 
-	Jim_DecrRefCount(interp, regcomp_obj);
+    Jim_DecrRefCount(interp, regcomp_obj);
 
     return result;
 }
@@ -4151,8 +4599,8 @@ cmd_error:
 int Jim_regexpInit(Jim_Interp *interp)
 {
     Jim_PackageProvideCheck(interp, "regexp");
-    Jim_CreateCommand(interp, "regexp", Jim_RegexpCmd, NULL, NULL);
-    Jim_CreateCommand(interp, "regsub", Jim_RegsubCmd, NULL, NULL);
+    Jim_RegisterSimpleCmd(interp, "regexp", "?-option ...? exp string ?matchVar? ?subMatchVar ...?", 2, -1, Jim_RegexpCmd);
+    Jim_RegisterSimpleCmd(interp, "regsub", "?-option ...? exp string subSpec ?varName?", 3, -1, Jim_RegsubCmd);
     return JIM_OK;
 }
 
@@ -4620,7 +5068,7 @@ static int mkdir_all(char *path)
             continue;
         }
 
-        if (errno == EEXIST) {
+        if (errno == EEXIST || errno == ENOTDIR) {
             jim_stat_t sb;
 
             if (Jim_Stat(path, &sb) == 0 && S_ISDIR(sb.st_mode)) {
@@ -5055,6 +5503,7 @@ static const jim_subcmd_type file_command_table[] = {
         file_cmd_delete,
         1,
         -1,
+        JIM_MODFLAG_NOTAINT,
 
     },
     {   "mkdir",
@@ -5062,6 +5511,7 @@ static const jim_subcmd_type file_command_table[] = {
         file_cmd_mkdir,
         1,
         -1,
+        JIM_MODFLAG_NOTAINT,
 
     },
     {   "tempfile",
@@ -5069,6 +5519,7 @@ static const jim_subcmd_type file_command_table[] = {
         file_cmd_tempfile,
         0,
         1,
+        JIM_MODFLAG_NOTAINT,
 
     },
     {   "rename",
@@ -5076,6 +5527,7 @@ static const jim_subcmd_type file_command_table[] = {
         file_cmd_rename,
         2,
         3,
+        JIM_MODFLAG_NOTAINT,
 
     },
 #if defined(HAVE_LINK) && defined(HAVE_SYMLINK)
@@ -5154,14 +5606,7 @@ static const jim_subcmd_type file_command_table[] = {
 
 static int Jim_CdCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    const char *path;
-
-    if (argc != 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "dirname");
-        return JIM_ERR;
-    }
-
-    path = Jim_String(argv[1]);
+    const char *path = Jim_String(argv[1]);
 
     if (chdir(path) != 0) {
         Jim_SetResultFormatted(interp, "couldn't change working directory to \"%s\": %s", path,
@@ -5190,9 +5635,9 @@ static int Jim_PwdCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 int Jim_fileInit(Jim_Interp *interp)
 {
     Jim_PackageProvideCheck(interp, "file");
-    Jim_CreateCommand(interp, "file", Jim_SubCmdProc, (void *)file_command_table, NULL);
-    Jim_CreateCommand(interp, "pwd", Jim_PwdCmd, NULL, NULL);
-    Jim_CreateCommand(interp, "cd", Jim_CdCmd, NULL, NULL);
+    Jim_RegisterSubCmd(interp, "file", file_command_table, NULL);
+    Jim_RegisterSimpleCmd(interp, "pwd", "", 0, 0, Jim_PwdCmd);
+    Jim_RegisterCmd(interp, "cd", "dirname", 1, 1, Jim_CdCmd, NULL, NULL, JIM_CMD_NOTAINT);
     return JIM_OK;
 }
 
@@ -5249,7 +5694,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 int Jim_execInit(Jim_Interp *interp)
 {
     Jim_PackageProvideCheck(interp, "exec");
-    Jim_CreateCommand(interp, "exec", Jim_ExecCmd, NULL, NULL);
+    Jim_RegisterSimpleCmd(interp, "exec", "arg ?arg ...? ?&?", 1, -1, Jim_ExecCmd);
     return JIM_OK;
 }
 #else
@@ -5264,8 +5709,8 @@ struct WaitInfoTable;
 static char **JimOriginalEnviron(void);
 static char **JimSaveEnv(char **env);
 static void JimRestoreEnv(char **env);
-static int JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv,
-    phandle_t **pidArrayPtr, int *inPipePtr, int *outPipePtr, int *errFilePtr);
+static int JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, phandle_t **pidArrayPtr,
+    int *outPipePtr, int *errFilePtr);
 static void JimDetachPids(struct WaitInfoTable *table, int numPids, const phandle_t *pidPtr);
 static int JimCleanupChildren(Jim_Interp *interp, int numPids, phandle_t *pidPtr, Jim_Obj *errStrObj);
 static int Jim_WaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv);
@@ -5447,7 +5892,7 @@ static struct WaitInfoTable *JimAllocWaitInfoTable(void)
     struct WaitInfoTable *table = Jim_Alloc(sizeof(*table));
     table->info = NULL;
     table->size = table->used = 0;
-    table->refcount = 1;
+    table->refcount = 0;
 
     return table;
 }
@@ -5485,7 +5930,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         int i;
 
         argc--;
-        numPids = JimCreatePipeline(interp, argc - 1, argv + 1, &pidPtr, NULL, NULL, NULL);
+        numPids = JimCreatePipeline(interp, argc - 1, argv + 1, &pidPtr, NULL, NULL);
         if (numPids < 0) {
             return JIM_ERR;
         }
@@ -5501,7 +5946,7 @@ static int Jim_ExecCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     }
 
     numPids =
-        JimCreatePipeline(interp, argc - 1, argv + 1, &pidPtr, NULL, &outputId, &errorId);
+        JimCreatePipeline(interp, argc - 1, argv + 1, &pidPtr, &outputId, &errorId);
 
     if (numPids < 0) {
         return JIM_ERR;
@@ -5593,7 +6038,7 @@ static int JimGetChannelFd(Jim_Interp *interp, const char *name)
     if (Jim_EvalObjVector(interp, 2, objv) == JIM_OK) {
         jim_wide fd;
         if (Jim_GetWide(interp, Jim_GetResult(interp), &fd) == JIM_OK) {
-            return fd;
+            return dup(fd);
         }
     }
     return -1;
@@ -5647,8 +6092,7 @@ static int Jim_WaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         nohang = 1;
     }
     if (argc != nohang + 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "?-nohang? ?pid?");
-        return JIM_ERR;
+        return JIM_USAGE;
     }
     if (Jim_GetLong(interp, argv[nohang + 1], &pid) != JIM_OK) {
         return JIM_ERR;
@@ -5662,6 +6106,10 @@ static int Jim_WaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 #ifndef __MINGW32__
     else if (pid < 0) {
         pid = phandle;
+    }
+    else if (phandle == 0) {
+
+        pid = 0;
     }
 #endif
 
@@ -5677,18 +6125,188 @@ static int Jim_WaitCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 
 static int Jim_PidCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 1) {
-        Jim_WrongNumArgs(interp, 1, argv, "");
-        return JIM_ERR;
-    }
-
     Jim_SetResultInt(interp, (jim_wide)getpid());
     return JIM_OK;
 }
 
-static int
-JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, phandle_t **pidArrayPtr,
-    int *inPipePtr, int *outPipePtr, int *errFilePtr)
+#define JIM_ETT_IN    0x0001
+#define JIM_ETT_OUT   0x0002
+#define JIM_ETT_ERR   0x0004
+#define JIM_ETT_PIPE  0x0008
+
+#define JIM_ETT_NOARG   0x0010
+#define JIM_ETT_APPEND  0x0020
+#define JIM_ETT_STR     0x0040
+#define JIM_ETT_DUPERR  0x0080
+#define JIM_ETT_HANDLE  0x0100
+
+#define JIM_ETT_CMD     0xF000
+#define JIM_ETT_BAD     0xF001
+
+struct redir_type_t {
+    const char *prefix;
+    unsigned flags;
+};
+
+
+static const struct redir_type_t redir_types[] = {
+    { "<<@",    JIM_ETT_IN | JIM_ETT_HANDLE | JIM_ETT_STR },
+    { "<<",     JIM_ETT_IN | JIM_ETT_STR },
+    { "<@",     JIM_ETT_IN | JIM_ETT_HANDLE },
+    { "<",      JIM_ETT_IN },
+
+    { "2>>",    JIM_ETT_ERR | JIM_ETT_APPEND },
+    { "2>@",    JIM_ETT_ERR | JIM_ETT_HANDLE },
+    { "2>",     JIM_ETT_ERR },
+
+    { ">>&",    JIM_ETT_OUT | JIM_ETT_APPEND | JIM_ETT_DUPERR },
+    { ">>",     JIM_ETT_OUT | JIM_ETT_APPEND },
+    { ">&@",    JIM_ETT_OUT | JIM_ETT_HANDLE | JIM_ETT_DUPERR },
+    { ">@",     JIM_ETT_OUT | JIM_ETT_HANDLE },
+    { ">&",     JIM_ETT_OUT | JIM_ETT_DUPERR },
+    { ">",      JIM_ETT_OUT },
+
+    { "|&",     JIM_ETT_PIPE | JIM_ETT_DUPERR },
+    { "|",      JIM_ETT_PIPE },
+    { NULL }
+};
+
+static unsigned JimExecClassifyArg(const char *arg)
+{
+    int i;
+    for (i = 0; redir_types[i].prefix; i++) {
+        int len = strlen(redir_types[i].prefix);
+        if (strncmp(arg, redir_types[i].prefix, len) == 0) {
+            if (strlen(arg) > len) {
+                if (redir_types[i].flags & JIM_ETT_NOARG) {
+
+                    return JIM_ETT_BAD;
+                }
+                return redir_types[i].flags;
+            }
+
+            return redir_types[i].flags | JIM_ETT_NOARG;
+        }
+    }
+    return JIM_ETT_CMD;
+}
+
+static int JimParsePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, Jim_Obj *cmdList, Jim_Obj *redirectList)
+{
+    int i;
+
+    int first = 1;
+    const char *arg = NULL;
+
+    for (i = 0; i < argc; i++) {
+        unsigned ett;
+        if (first) {
+            if (Jim_ListLength(interp, argv[i]) == 0) {
+                Jim_SetResultString(interp, "empty command list", -1);
+                return JIM_ERR;
+            }
+            Jim_ListAppendElement(interp, cmdList, argv[i]);
+            first = 0;
+            continue;
+        }
+
+        arg = Jim_String(argv[i]);
+        ett = JimExecClassifyArg(arg);
+        if (ett == JIM_ETT_BAD || ett == JIM_ETT_CMD) {
+            Jim_SetResultFormatted(interp, "invalid redirection %s", arg);
+            return JIM_ERR;
+        }
+        if (ett & JIM_ETT_PIPE) {
+            Jim_ListAppendElement(interp, cmdList, argv[i]);
+            first = 1;
+            continue;
+        }
+        Jim_ListAppendElement(interp, redirectList, argv[i]);
+        if ((ett & JIM_ETT_NOARG)) {
+
+            if (i >= argc - 1) {
+
+                Jim_SetResultFormatted(interp, "can't specify \"%#s\" as last word in command", argv[i]);
+                return -1;
+            }
+            i++;
+            Jim_ListAppendElement(interp, redirectList, argv[i]);
+        }
+    }
+
+    if (first) {
+        if (Jim_ListLength(interp, cmdList)) {
+            Jim_SetResultFormatted(interp, "cmdlist required after %s", arg);
+        }
+        else {
+            Jim_SetResultString(interp, "cmdlist is required", -1);
+        }
+        return JIM_ERR;
+    }
+
+    return JIM_OK;
+}
+
+static int JimParsePipelineLegacy(Jim_Interp *interp, int argc, Jim_Obj *const *argv, Jim_Obj *cmdList, Jim_Obj *redirectList)
+{
+    int i;
+
+    Jim_Obj *cmdObj = Jim_NewListObj(interp, NULL, 0);
+    Jim_ListAppendElement(interp, cmdList, cmdObj);
+    const char *arg = NULL;
+
+    for (i = 0; i < argc; i++) {
+        arg = Jim_String(argv[i]);
+        unsigned ett = JimExecClassifyArg(arg);
+        if (ett == JIM_ETT_BAD) {
+            Jim_SetResultFormatted(interp, "invalid: %s", arg);
+            return JIM_ERR;
+        }
+        if (ett == JIM_ETT_CMD) {
+
+            Jim_ListAppendElement(interp, cmdObj, argv[i]);
+            continue;
+        }
+        if (ett & JIM_ETT_PIPE) {
+            if (Jim_ListLength(interp, cmdObj) == 0) {
+                goto missing_cmd;
+            }
+
+            Jim_ListAppendElement(interp, cmdList, argv[i]);
+
+            cmdObj = Jim_NewListObj(interp, NULL, 0);
+            Jim_ListAppendElement(interp, cmdList, cmdObj);
+            continue;
+        }
+        Jim_ListAppendElement(interp, redirectList, argv[i]);
+        if ((ett & JIM_ETT_NOARG)) {
+
+            if (i >= argc - 1) {
+
+                Jim_SetResultFormatted(interp, "can't specify \"%#s\" as last word in command", argv[i]);
+                return -1;
+            }
+            i++;
+            Jim_ListAppendElement(interp, redirectList, argv[i]);
+        }
+    }
+
+    if (Jim_ListLength(interp, cmdObj) == 0) {
+missing_cmd:
+        if (arg && *arg == '|') {
+            Jim_SetResultString(interp, "illegal use of | or |& in command", -1);
+        }
+        else {
+            Jim_SetResultString(interp, "didn't specify command to execute", -1);
+        }
+        return JIM_ERR;
+    }
+
+    return JIM_OK;
+}
+
+static int JimExecPipeline(Jim_Interp *interp, Jim_Obj *cmdList, Jim_Obj *redirectList,
+    phandle_t **pidArrayPtr, int *outPipePtr, int *errFilePtr)
 {
     phandle_t *pidPtr = NULL;         /* Points to alloc-ed array holding all
                                  * the pids of child processes. */
@@ -5730,9 +6348,6 @@ JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, phandle_t 
     int errorId = -1;
     int lastOutputId = -1;
     int pipeIds[2];
-    int firstArg, lastArg;      /* Indexes of first and last arguments in
-                                 * current command. */
-    int lastBar;
     int i;
     phandle_t phandle;
     char **save_environ;
@@ -5741,13 +6356,6 @@ JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, phandle_t 
 #endif
     struct WaitInfoTable *table = Jim_CmdPrivData(interp);
 
-
-    char **arg_array = Jim_Alloc(sizeof(*arg_array) * (argc + 1));
-    int arg_count = 0;
-
-    if (inPipePtr != NULL) {
-        *inPipePtr = -1;
-    }
     if (outPipePtr != NULL) {
         *outPipePtr = -1;
     }
@@ -5756,96 +6364,68 @@ JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, phandle_t 
     }
     pipeIds[0] = pipeIds[1] = -1;
 
-    cmdCount = 1;
-    lastBar = -1;
-    for (i = 0; i < argc; i++) {
-        const char *arg = Jim_String(argv[i]);
+    int redir_len = Jim_ListLength(interp, redirectList);
+    for (i = 0; i < redir_len; i++) {
+        int len;
+        int item_len;
+        Jim_Obj *redirObj = Jim_ListGetIndex(interp, redirectList, i);
+        const char *arg = Jim_GetString(redirObj, &len);
+        unsigned ett = JimExecClassifyArg(arg);
+        const char *item;
+        int type = FILE_NAME;
+        if ((ett & JIM_ETT_NOARG) == 0) {
 
-        if (arg[0] == '<') {
-            inputFile = FILE_NAME;
-            input = arg + 1;
-            if (*input == '<') {
-                inputFile = FILE_TEXT;
-                input_len = Jim_Length(argv[i]) - 2;
-                input++;
+            item = arg + 1;
+            if (ett & JIM_ETT_HANDLE) {
+                item++;
             }
-            else if (*input == '@') {
-                inputFile = FILE_HANDLE;
-                input++;
+            if (ett & JIM_ETT_APPEND) {
+                item++;
             }
-
-            if (!*input && ++i < argc) {
-                input = Jim_GetString(argv[i], &input_len);
+            if (ett & JIM_ETT_DUPERR) {
+                item++;
             }
-        }
-        else if (arg[0] == '>') {
-            int dup_error = 0;
-
-            outputFile = FILE_NAME;
-
-            output = arg + 1;
-            if (*output == '>') {
-                outputFile = FILE_APPEND;
-                output++;
+            if (ett & JIM_ETT_ERR) {
+                item++;
             }
-            if (*output == '&') {
-
-                output++;
-                dup_error = 1;
+            if (ett & JIM_ETT_STR) {
+                type = FILE_TEXT;
+                item++;
             }
-            if (*output == '@') {
-                outputFile = FILE_HANDLE;
-                output++;
-            }
-            if (!*output && ++i < argc) {
-                output = Jim_String(argv[i]);
-            }
-            if (dup_error) {
-                errorFile = outputFile;
-                error = output;
-            }
-        }
-        else if (arg[0] == '2' && arg[1] == '>') {
-            error = arg + 2;
-            errorFile = FILE_NAME;
-
-            if (*error == '@') {
-                errorFile = FILE_HANDLE;
-                error++;
-            }
-            else if (*error == '>') {
-                errorFile = FILE_APPEND;
-                error++;
-            }
-            if (!*error && ++i < argc) {
-                error = Jim_String(argv[i]);
-            }
+            item_len = len - (item - arg);
         }
         else {
-            if (strcmp(arg, "|") == 0 || strcmp(arg, "|&") == 0) {
-                if (i == lastBar + 1 || i == argc - 1) {
-                    Jim_SetResultString(interp, "illegal use of | or |& in command", -1);
-                    goto badargs;
-                }
-                lastBar = i;
-                cmdCount++;
+
+            i++;
+            item = Jim_GetString(Jim_ListGetIndex(interp, redirectList, i), &item_len);
+        }
+
+        if (ett & JIM_ETT_HANDLE) {
+            type = FILE_HANDLE;
+        }
+        if (ett & JIM_ETT_APPEND) {
+            type = FILE_APPEND;
+        }
+        if (ett & JIM_ETT_STR) {
+            type = FILE_TEXT;
+        }
+        if (ett & JIM_ETT_IN) {
+            input = item;
+            input_len = item_len;
+            inputFile = type;
+        }
+        else if (ett & JIM_ETT_OUT) {
+            output = item;
+            outputFile = type;
+            if (ett & JIM_ETT_DUPERR) {
+                error = output;
+                errorFile = outputFile;
             }
-
-            arg_array[arg_count++] = (char *)arg;
-            continue;
         }
-
-        if (i >= argc) {
-            Jim_SetResultFormatted(interp, "can't specify \"%s\" as last word in command", arg);
-            goto badargs;
+        else if (ett & JIM_ETT_ERR) {
+            error = item;
+            errorFile = type;
         }
-    }
-
-    if (arg_count == 0) {
-        Jim_SetResultString(interp, "didn't specify command to execute", -1);
-badargs:
-        Jim_Free(arg_array);
-        return -1;
     }
 
 
@@ -5865,12 +6445,10 @@ badargs:
             Jim_Lseek(inputId, 0L, SEEK_SET);
         }
         else if (inputFile == FILE_HANDLE) {
-            int fd = JimGetChannelFd(interp, input);
-
-            if (fd < 0) {
+            inputId = JimGetChannelFd(interp, input);
+            if (inputId < 0) {
                 goto error;
             }
-            inputId = dup(fd);
         }
         else {
             inputId = Jim_OpenForRead(input);
@@ -5880,23 +6458,13 @@ badargs:
             }
         }
     }
-    else if (inPipePtr != NULL) {
-        if (pipe(pipeIds) != 0) {
-            Jim_SetResultErrno(interp, "couldn't create input pipe for command");
-            goto error;
-        }
-        inputId = pipeIds[0];
-        *inPipePtr = pipeIds[1];
-        pipeIds[0] = pipeIds[1] = -1;
-    }
 
     if (output != NULL) {
         if (outputFile == FILE_HANDLE) {
-            int fd = JimGetChannelFd(interp, output);
-            if (fd < 0) {
+            lastOutputId = JimGetChannelFd(interp, output);
+            if (lastOutputId < 0) {
                 goto error;
             }
-            lastOutputId = dup(fd);
         }
         else {
             lastOutputId = Jim_OpenForWrite(output, outputFile == FILE_APPEND);
@@ -5916,6 +6484,7 @@ badargs:
         pipeIds[0] = pipeIds[1] = -1;
     }
 
+
     if (error != NULL) {
         if (errorFile == FILE_HANDLE) {
             if (strcmp(error, "1") == 0) {
@@ -5929,11 +6498,10 @@ badargs:
                 }
             }
             if (errorId == -1) {
-                int fd = JimGetChannelFd(interp, error);
-                if (fd < 0) {
+                errorId = JimGetChannelFd(interp, error);
+                if (errorId < 0) {
                     goto error;
                 }
-                errorId = dup(fd);
             }
         }
         else {
@@ -5952,56 +6520,56 @@ badargs:
         *errFilePtr = dup(errorId);
     }
 
-
+    int cmd_list_size = Jim_ListLength(interp, cmdList);
+    cmdCount = (cmd_list_size + 1) / 2;
     pidPtr = Jim_Alloc(cmdCount * sizeof(*pidPtr));
-    for (firstArg = 0; firstArg < arg_count; numPids++, firstArg = lastArg + 1) {
-        int pipe_dup_err = 0;
+
+    for (i = 0; i < cmd_list_size; ) {
+        char **arg_array;
+        int j;
         int origErrorId = errorId;
-
-        for (lastArg = firstArg; lastArg < arg_count; lastArg++) {
-            if (strcmp(arg_array[lastArg], "|") == 0) {
-                break;
-            }
-            if (strcmp(arg_array[lastArg], "|&") == 0) {
-                pipe_dup_err = 1;
-                break;
-            }
-        }
-
-        if (lastArg == firstArg) {
-            Jim_SetResultString(interp, "missing command to exec", -1);
-            goto error;
+        Jim_Obj *cmdObj = Jim_ListGetIndex(interp, cmdList, i++);
+        int cmd_len = Jim_ListLength(interp, cmdObj);
+        Jim_Obj *sepObj = NULL;
+        if (i < cmd_list_size - 1) {
+            sepObj = Jim_ListGetIndex(interp, cmdList, i++);
         }
 
 
-        arg_array[lastArg] = NULL;
-        if (lastArg == arg_count) {
+        arg_array = Jim_Alloc((cmd_len + 1) * sizeof(*arg_array));
+        for (j = 0; j < cmd_len; j++) {
+            arg_array[j] = (char *)Jim_String(Jim_ListGetIndex(interp, cmdObj, j));
+        }
+        arg_array[j] = NULL;
+
+        if (sepObj == NULL) {
             outputId = lastOutputId;
             lastOutputId = -1;
         }
         else {
             if (pipe(pipeIds) != 0) {
                 Jim_SetResultErrno(interp, "couldn't create pipe");
+                Jim_Free(arg_array);
                 goto error;
             }
             outputId = pipeIds[1];
         }
 
 
-        if (pipe_dup_err) {
+        if (sepObj && Jim_CompareStringImmediate(interp, sepObj, "|&")) {
             errorId = outputId;
         }
 
 
 
 #ifdef __MINGW32__
-        phandle = JimStartWinProcess(interp, &arg_array[firstArg], save_environ, inputId, outputId, errorId);
+        phandle = JimStartWinProcess(interp, &arg_array[0], save_environ, inputId, outputId, errorId);
         if (phandle == JIM_BAD_PHANDLE) {
-            Jim_SetResultFormatted(interp, "couldn't exec \"%s\"", arg_array[firstArg]);
+            Jim_SetResultFormatted(interp, "couldn't exec \"%s\"", arg_array[0]);
             goto error;
         }
 #else
-        i = strlen(arg_array[firstArg]);
+        int argv0_len = strlen(arg_array[0]);
 
 #ifdef HAVE_EXECVPE
         child_environ = Jim_GetEnviron();
@@ -6046,10 +6614,10 @@ badargs:
                 close(lastOutputId);
             }
 
-            execvpe(arg_array[firstArg], &arg_array[firstArg], child_environ);
+            execvpe(arg_array[0], arg_array, child_environ);
 
             if (write(fileno(stderr), "couldn't exec \"", 15) &&
-                write(fileno(stderr), arg_array[firstArg], i) &&
+                write(fileno(stderr), arg_array[0], argv0_len) &&
                 write(fileno(stderr), "\"\n", 2)) {
 
             }
@@ -6065,6 +6633,7 @@ badargs:
 #endif
 
 
+        Jim_Free(arg_array);
 
         if (table->used == table->size) {
             table->size += WAIT_TABLE_GROW_BY;
@@ -6075,7 +6644,7 @@ badargs:
         table->info[table->used].flags = 0;
         table->used++;
 
-        pidPtr[numPids] = phandle;
+        pidPtr[numPids++] = phandle;
 
 
         errorId = origErrorId;
@@ -6103,7 +6672,6 @@ badargs:
     if (errorId != -1) {
         close(errorId);
     }
-    Jim_Free(arg_array);
 
     JimRestoreEnv(save_environ);
 
@@ -6111,10 +6679,6 @@ badargs:
 
 
   error:
-    if ((inPipePtr != NULL) && (*inPipePtr != -1)) {
-        close(*inPipePtr);
-        *inPipePtr = -1;
-    }
     if ((outPipePtr != NULL) && (*outPipePtr != -1)) {
         close(*outPipePtr);
         *outPipePtr = -1;
@@ -6139,6 +6703,35 @@ badargs:
     }
     numPids = -1;
     goto cleanup;
+}
+
+static int
+JimCreatePipeline(Jim_Interp *interp, int argc, Jim_Obj *const *argv, phandle_t **pidArrayPtr,
+    int *outPipePtr, int *errFilePtr)
+{
+    int rc = -1;
+    int ret;
+
+    Jim_Obj *cmdList = Jim_NewListObj(interp, NULL, 0);
+    Jim_Obj *redirectList = Jim_NewListObj(interp, NULL, 0);
+    Jim_IncrRefCount(cmdList);
+    Jim_IncrRefCount(redirectList);
+
+    if (argc > 1 && Jim_CompareStringImmediate(interp, argv[0], "|")) {
+
+        ret = JimParsePipeline(interp, argc - 1, argv + 1, cmdList, redirectList);
+    }
+    else {
+
+        ret = JimParsePipelineLegacy(interp, argc, argv, cmdList, redirectList);
+    }
+    if (ret == JIM_OK) {
+
+        rc = JimExecPipeline(interp, cmdList, redirectList, pidArrayPtr, outPipePtr, errFilePtr);
+    }
+    Jim_DecrRefCount(interp, cmdList);
+    Jim_DecrRefCount(interp, redirectList);
+    return rc;
 }
 
 
@@ -6170,10 +6763,11 @@ int Jim_execInit(Jim_Interp *interp)
     Jim_PackageProvideCheck(interp, "exec");
 
     waitinfo = JimAllocWaitInfoTable();
-    Jim_CreateCommand(interp, "exec", Jim_ExecCmd, waitinfo, JimFreeWaitInfoTable);
+    Jim_RegisterCmd(interp, "exec", "arg ?arg ...? ?&?", 1, -1, Jim_ExecCmd, JimFreeWaitInfoTable, waitinfo, JIM_CMD_NOTAINT);
     waitinfo->refcount++;
-    Jim_CreateCommand(interp, "wait", Jim_WaitCommand, waitinfo, JimFreeWaitInfoTable);
-    Jim_CreateCommand(interp, "pid", Jim_PidCommand, 0, 0);
+    Jim_RegisterCmd(interp, "wait", "?-nohang? ?pid?", 0, 2, Jim_WaitCommand, JimFreeWaitInfoTable, waitinfo, 0);
+    waitinfo->refcount++;
+    Jim_RegisterSimpleCmd(interp, "pid", "", 0, 0, Jim_PidCommand);
 
     return JIM_OK;
 }
@@ -6600,7 +7194,7 @@ static const jim_subcmd_type clock_command_table[] = {
 int Jim_clockInit(Jim_Interp *interp)
 {
     Jim_PackageProvideCheck(interp, "clock");
-    Jim_CreateCommand(interp, "clock", Jim_SubCmdProc, (void *)clock_command_table, NULL);
+    Jim_RegisterSubCmd(interp, "clock", clock_command_table, NULL);
     return JIM_OK;
 }
 
@@ -6820,7 +7414,7 @@ static const jim_subcmd_type array_command_table[] = {
 int Jim_arrayInit(Jim_Interp *interp)
 {
     Jim_PackageProvideCheck(interp, "array");
-    Jim_CreateCommand(interp, "array", Jim_SubCmdProc, (void *)array_command_table, NULL);
+    Jim_RegisterSubCmd(interp, "array", array_command_table, NULL);
     return JIM_OK;
 }
 int Jim_InitStaticExtensions(Jim_Interp *interp)
@@ -6911,7 +7505,8 @@ return JIM_OK;
 
 #define JIM_INTEGER_SPACE 24
 
-#if defined(DEBUG_SHOW_SCRIPT) || defined(DEBUG_SHOW_SCRIPT_TOKENS) || defined(JIM_DEBUG_COMMAND) || defined(DEBUG_SHOW_SUBST)
+#if defined(DEBUG_SHOW_SCRIPT) || defined(DEBUG_SHOW_SCRIPT_TOKENS) || defined(JIM_DEBUG_COMMAND) || defined(DEBUG_SHOW_EXPR_TOKENS) || defined(DEBUG_SHOW_EXPR)
+#define JIM_TT_NAME
 static const char *jim_tt_name(int type);
 #endif
 
@@ -6950,6 +7545,7 @@ static void JimRandomBytes(Jim_Interp *interp, void *dest, unsigned int len);
 static int JimSetNewVariable(Jim_HashTable *ht, Jim_Obj *nameObjPtr, Jim_VarVal *vv);
 static Jim_VarVal *JimFindVariable(Jim_HashTable *ht, Jim_Obj *nameObjPtr);
 static int SetVariableFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr);
+static int JimCallNative(Jim_Interp *interp, Jim_Cmd *cmd, int argc, Jim_Obj *const *argv);
 
 #define JIM_DICT_SUGAR 100
 
@@ -6959,6 +7555,7 @@ static int SetVariableFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr);
 #define JimWideValue(objPtr) (objPtr)->internalRep.wideValue
 
 #define JimObjTypeName(O) ((O)->typePtr ? (O)->typePtr->name : "none")
+
 
 static int utf8_tounicode_case(const char *s, int *uc, int upper)
 {
@@ -7168,7 +7765,7 @@ static int JimStringFirst(const char *s1, int l1, const char *s2, int l2, int id
     int i;
     int l1bytelen;
 
-    if (!l1 || !l2 || l1 > l2) {
+    if (!l1 || !l2 || l1 > l2 || idx > l2) {
         return -1;
     }
     if (idx < 0)
@@ -7341,6 +7938,7 @@ int Jim_StringToDouble(const char *str, double *doublePtr)
     return JimCheckConversion(str, endptr);
 }
 
+
 static jim_wide JimPowWide(jim_wide b, jim_wide e)
 {
     jim_wide res = 1;
@@ -7368,6 +7966,7 @@ static jim_wide JimPowWide(jim_wide b, jim_wide e)
 }
 
 #ifdef JIM_DEBUG_PANIC
+
 static void JimPanicDump(int condition, const char *fmt, ...)
 {
     va_list ap;
@@ -7504,6 +8103,7 @@ static void JimResetHashTable(Jim_HashTable *ht)
     ht->uniq = 0;
 #endif
 }
+
 
 static void JimInitHashTableIterator(Jim_HashTable *ht, Jim_HashTableIterator *iter)
 {
@@ -7774,15 +8374,18 @@ static unsigned int JimStringCopyHTHashFunction(const void *key)
     return Jim_GenHashFunction(key, strlen(key));
 }
 
+
 static void *JimStringCopyHTDup(void *privdata, const void *key)
 {
     return Jim_StrDup(key);
 }
 
+
 static int JimStringCopyHTKeyCompare(void *privdata, const void *key1, const void *key2)
 {
     return strcmp(key1, key2) == 0;
 }
+
 
 static void JimStringCopyHTKeyDestructor(void *privdata, void *key)
 {
@@ -7804,6 +8407,7 @@ typedef struct AssocDataValue
     void *data;
 } AssocDataValue;
 
+
 static void JimAssocDataHashTableValueDestructor(void *privdata, void *data)
 {
     AssocDataValue *assocPtr = (AssocDataValue *) data;
@@ -7822,21 +8426,24 @@ static const Jim_HashTableType JimAssocDataHashTableType = {
     JimAssocDataHashTableValueDestructor
 };
 
-void Jim_InitStack(Jim_Stack *stack)
+void Jim_StackInit(Jim_Stack *stack, void (*freefunc) (void *ptr))
 {
     stack->len = 0;
     stack->maxlen = 0;
     stack->vector = NULL;
+    stack->freefunc = freefunc;
 }
 
-void Jim_FreeStack(Jim_Stack *stack)
+void Jim_StackFree(Jim_Stack *stack)
 {
+    int i;
+
+    if (stack->freefunc) {
+        for (i = 0; i < stack->len; i++) {
+            stack->freefunc(stack->vector[i]);
+        }
+    }
     Jim_Free(stack->vector);
-}
-
-int Jim_StackLen(Jim_Stack *stack)
-{
-    return stack->len;
 }
 
 void Jim_StackPush(Jim_Stack *stack, void *element)
@@ -7857,21 +8464,6 @@ void *Jim_StackPop(Jim_Stack *stack)
         return NULL;
     stack->len--;
     return stack->vector[stack->len];
-}
-
-void *Jim_StackPeek(Jim_Stack *stack)
-{
-    if (stack->len == 0)
-        return NULL;
-    return stack->vector[stack->len - 1];
-}
-
-void Jim_FreeStackElements(Jim_Stack *stack, void (*freeFunc) (void *ptr))
-{
-    int i;
-
-    for (i = 0; i < stack->len; i++)
-        freeFunc(stack->vector[i]);
 }
 
 
@@ -7959,6 +8551,7 @@ static void JimParserInit(struct JimParserCtx *pc, const char *prg, int len, int
     pc->missing.line = linenr;
 }
 
+
 static int JimParseScript(struct JimParserCtx *pc)
 {
     while (1) {
@@ -8020,6 +8613,7 @@ static int JimParseScript(struct JimParserCtx *pc)
     }
 }
 
+
 static int JimParseSep(struct JimParserCtx *pc)
 {
     pc->tstart = pc->p;
@@ -8040,6 +8634,7 @@ static int JimParseSep(struct JimParserCtx *pc)
     pc->tt = JIM_TT_SEP;
     return JIM_OK;
 }
+
 
 static int JimParseEol(struct JimParserCtx *pc)
 {
@@ -8209,6 +8804,7 @@ static void JimParseSubCmd(struct JimParserCtx *pc)
     pc->tend = pc->p - 1;
 }
 
+
 static int JimParseBrace(struct JimParserCtx *pc)
 {
     pc->tstart = pc->p + 1;
@@ -8217,6 +8813,7 @@ static int JimParseBrace(struct JimParserCtx *pc)
     JimParseSubBrace(pc);
     return JIM_OK;
 }
+
 
 static int JimParseCmd(struct JimParserCtx *pc)
 {
@@ -8227,6 +8824,7 @@ static int JimParseCmd(struct JimParserCtx *pc)
     return JIM_OK;
 }
 
+
 static int JimParseQuote(struct JimParserCtx *pc)
 {
     pc->tstart = pc->p + 1;
@@ -8234,6 +8832,7 @@ static int JimParseQuote(struct JimParserCtx *pc)
     pc->tt = JimParseSubQuote(pc);
     return JIM_OK;
 }
+
 
 static int JimParseVar(struct JimParserCtx *pc)
 {
@@ -8335,6 +8934,7 @@ static int JimParseVar(struct JimParserCtx *pc)
     }
     return JIM_OK;
 }
+
 
 static int JimParseStr(struct JimParserCtx *pc)
 {
@@ -8439,6 +9039,7 @@ static int JimParseStr(struct JimParserCtx *pc)
     return JIM_OK;
 }
 
+
 static int JimParseComment(struct JimParserCtx *pc)
 {
     while (*pc->p) {
@@ -8476,6 +9077,7 @@ static int xdigitval(int c)
         return c - 'A' + 10;
     return -1;
 }
+
 
 static int odigitval(int c)
 {
@@ -8667,6 +9269,7 @@ static int JimParseListSep(struct JimParserCtx *pc);
 static int JimParseListStr(struct JimParserCtx *pc);
 static int JimParseListQuote(struct JimParserCtx *pc);
 
+
 static int JimParseList(struct JimParserCtx *pc)
 {
     if (isspace(UCHAR(*pc->p))) {
@@ -8693,6 +9296,7 @@ static int JimParseList(struct JimParserCtx *pc)
     return JIM_OK;
 }
 
+
 static int JimParseListSep(struct JimParserCtx *pc)
 {
     pc->tstart = pc->p;
@@ -8708,6 +9312,7 @@ static int JimParseListSep(struct JimParserCtx *pc)
     pc->tt = JIM_TT_SEP;
     return JIM_OK;
 }
+
 
 static int JimParseListQuote(struct JimParserCtx *pc)
 {
@@ -8745,6 +9350,7 @@ static int JimParseListQuote(struct JimParserCtx *pc)
     pc->tend = pc->p - 1;
     return JIM_OK;
 }
+
 
 static int JimParseListStr(struct JimParserCtx *pc)
 {
@@ -8791,6 +9397,7 @@ Jim_Obj *Jim_NewObj(Jim_Interp *interp)
     }
 
     objPtr->refCount = 0;
+    objPtr->taint = interp->taint;
 
 
     objPtr->prevObjPtr = NULL;
@@ -8851,6 +9458,8 @@ Jim_Obj *Jim_DuplicateObj(Jim_Interp *interp, Jim_Obj *objPtr)
     Jim_Obj *dupPtr;
 
     dupPtr = Jim_NewObj(interp);
+    dupPtr->taint = objPtr->taint;
+
     if (objPtr->bytes == NULL) {
 
         dupPtr->bytes = NULL;
@@ -8914,6 +9523,7 @@ const char *Jim_String(Jim_Obj *objPtr)
     return objPtr->bytes;
 }
 
+
 static void JimSetStringBytes(Jim_Obj *objPtr, const char *str)
 {
     objPtr->bytes = Jim_StrDup(str);
@@ -8942,10 +9552,12 @@ static const Jim_ObjType interpolatedObjType = {
     JIM_TYPE_NONE,
 };
 
+
 static void FreeInterpolatedInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
 {
     Jim_DecrRefCount(interp, objPtr->internalRep.dictSubstValue.indexObjPtr);
 }
+
 
 static void DupInterpolatedInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 {
@@ -8966,6 +9578,7 @@ static const Jim_ObjType stringObjType = {
     JIM_TYPE_REFERENCES,
 };
 
+
 static void DupStringInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 {
     JIM_NOTUSED(interp);
@@ -8973,6 +9586,7 @@ static void DupStringInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *d
     dupPtr->internalRep.strValue.maxLength = srcPtr->length;
     dupPtr->internalRep.strValue.charLength = srcPtr->internalRep.strValue.charLength;
 }
+
 
 static int SetStringFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 {
@@ -9104,6 +9718,7 @@ void Jim_AppendObj(Jim_Interp *interp, Jim_Obj *objPtr, Jim_Obj *appendObjPtr)
     int len;
     const char *str = Jim_GetString(appendObjPtr, &len);
     Jim_AppendString(interp, objPtr, str, len);
+    objPtr->taint |= appendObjPtr->taint;
 }
 
 void Jim_AppendStrings(Jim_Interp *interp, Jim_Obj *objPtr, ...)
@@ -9185,6 +9800,7 @@ static void JimRelToAbsRange(int len, int *firstPtr, int *lastPtr, int *rangeLen
 
     *rangeLenPtr = rangeLen;
 }
+
 
 static int JimStringGetRange(Jim_Interp *interp, Jim_Obj *firstObjPtr, Jim_Obj *lastObjPtr,
     int len, int *first, int *last, int *range)
@@ -9407,6 +10023,7 @@ static const char default_trim_chars[] = " \t\n\r";
 
 static int default_trim_chars_len = sizeof(default_trim_chars);
 
+
 static Jim_Obj *JimStringTrimLeft(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
 {
     int len;
@@ -9426,6 +10043,7 @@ static Jim_Obj *JimStringTrimLeft(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Ob
 
     return Jim_NewStringObj(interp, newstr, len - (newstr - str));
 }
+
 
 static Jim_Obj *JimStringTrimRight(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
 {
@@ -9464,6 +10082,7 @@ static Jim_Obj *JimStringTrimRight(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_O
     return strObjPtr;
 }
 
+
 static Jim_Obj *JimStringTrim(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *trimcharsObjPtr)
 {
 
@@ -9485,11 +10104,13 @@ static Jim_Obj *JimStringTrim(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *t
 #ifdef HAVE_ISASCII
 #define jim_isascii isascii
 #else
+
 static int jim_isascii(int c)
 {
     return !(c & ~0x7f);
 }
 #endif
+
 
 static int JimStringIs(Jim_Interp *interp, Jim_Obj *strObjPtr, Jim_Obj *strClass, int strict)
 {
@@ -9596,10 +10217,21 @@ int Jim_CompareStringImmediate(Jim_Interp *interp, Jim_Obj *objPtr, const char *
     }
 }
 
+
+
 static int qsortCompareStringPointers(const void *a, const void *b)
 {
     char *const *sa = (char *const *)a;
     char *const *sb = (char *const *)b;
+
+
+    if (strcmp(*sa, "--") == 0) {
+        return 1;
+    }
+    if (strcmp(*sb, "--") == 0) {
+
+        return -1;
+    }
 
     return strcmp(*sa, *sb);
 }
@@ -9635,6 +10267,7 @@ static const Jim_ObjType scriptLineObjType = {
     NULL,
     JIM_NONE,
 };
+
 
 static Jim_Obj *JimNewScriptLineObj(Jim_Interp *interp, int argc, int line)
 {
@@ -9730,12 +10363,14 @@ typedef struct
     ParseToken static_list[20];
 } ParseTokenList;
 
+
 static void ScriptTokenListInit(ParseTokenList *tokenlist)
 {
     tokenlist->list = tokenlist->static_list;
     tokenlist->size = sizeof(tokenlist->static_list) / sizeof(ParseToken);
     tokenlist->count = 0;
 }
+
 
 static void ScriptTokenListFree(ParseTokenList *tokenlist)
 {
@@ -10027,6 +10662,7 @@ static void JimSetScriptFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
     ParseTokenList tokenlist;
     Jim_Obj *fileNameObj;
     int line;
+    int oldtaint;
 
 
     fileNameObj = Jim_GetSourceInfo(interp, objPtr, &line);
@@ -10045,6 +10681,11 @@ static void JimSetScriptFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
     ScriptAddToken(&tokenlist, scriptText + scriptTextLen, 0, JIM_TT_EOF, 0);
 
 
+
+
+    oldtaint = interp->taint;
+    interp->taint = objPtr->taint;
+
     script = Jim_Alloc(sizeof(*script));
     memset(script, 0, sizeof(*script));
     script->inUse = 1;
@@ -10062,6 +10703,8 @@ static void JimSetScriptFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
     Jim_FreeIntRep(interp, objPtr);
     Jim_SetIntRepPtr(objPtr, script);
     objPtr->typePtr = &scriptObjType;
+
+    interp->taint = oldtaint;
 }
 
 static ScriptObj *JimGetScript(Jim_Interp *interp, Jim_Obj *objPtr)
@@ -10091,15 +10734,17 @@ void Jim_InterpIncrProcEpoch(Jim_Interp *interp)
     interp->oldCmdCacheSize = 0;
 }
 
+
 static void JimIncrCmdRefCount(Jim_Cmd *cmdPtr)
 {
     cmdPtr->inUse++;
 }
 
+
 static void JimDecrCmdRefCount(Jim_Interp *interp, Jim_Cmd *cmdPtr)
 {
     if (--cmdPtr->inUse == 0) {
-        if (cmdPtr->isproc) {
+        if (cmdPtr->flags & JIM_CMD_ISPROC) {
             Jim_DecrRefCount(interp, cmdPtr->u.proc.argListObjPtr);
             Jim_DecrRefCount(interp, cmdPtr->u.proc.bodyObjPtr);
             Jim_DecrRefCount(interp, cmdPtr->u.proc.nsObj);
@@ -10132,6 +10777,7 @@ static void JimIncrVarRef(Jim_VarVal *vv)
     vv->refCount++;
 }
 
+
 static void JimDecrVarRef(Jim_Interp *interp, Jim_VarVal *vv)
 {
     assert(vv->refCount > 0);
@@ -10143,10 +10789,12 @@ static void JimDecrVarRef(Jim_Interp *interp, Jim_VarVal *vv)
     }
 }
 
+
 static void JimVariablesHTValDestructor(void *interp, void *val)
 {
     JimDecrVarRef(interp, val);
 }
+
 
 static unsigned int JimObjectHTHashFunction(const void *key)
 {
@@ -10183,6 +10831,7 @@ static unsigned int JimObjectHTHashFunction(const void *key)
     return Jim_GenHashFunction((const unsigned char *)string, length);
 }
 
+
 static int JimObjectHTKeyCompare(void *privdata, const void *key1, const void *key2)
 {
     return Jim_StringEqObj((Jim_Obj *)key1, (Jim_Obj *)key2);
@@ -10193,6 +10842,7 @@ static void *JimObjectHTKeyValDup(void *privdata, const void *val)
     Jim_IncrRefCount((Jim_Obj *)val);
     return (void *)val;
 }
+
 
 static void JimObjectHTKeyValDestructor(void *interp, void *val)
 {
@@ -10230,12 +10880,14 @@ static const char *Jim_GetStringNoQualifier(Jim_Obj *objPtr, int *length)
     return str;
 }
 
+
 static unsigned int JimCommandsHT_HashFunction(const void *key)
 {
     int len;
     const char *str = Jim_GetStringNoQualifier((Jim_Obj *)key, &len);
     return Jim_GenHashFunction((const unsigned char *)str, len);
 }
+
 
 static int JimCommandsHT_KeyCompare(void *privdata, const void *key1, const void *key2)
 {
@@ -10244,6 +10896,7 @@ static int JimCommandsHT_KeyCompare(void *privdata, const void *key1, const void
     const char *str2 = Jim_GetStringNoQualifier((Jim_Obj *)key2, &len2);
     return len1 == len2 && *str1 == *str2 && memcmp(str1, str2, len1) == 0;
 }
+
 
 static void JimCommandsHT_ValDestructor(void *interp, void *val)
 {
@@ -10319,31 +10972,46 @@ static void JimCreateCommand(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Cmd *c
     Jim_ReplaceHashEntry(&interp->commands, nameObjPtr, cmd);
 }
 
-int Jim_CreateCommandObj(Jim_Interp *interp, Jim_Obj *cmdNameObj,
-    Jim_CmdProc *cmdProc, void *privData, Jim_DelCmdProc *delProc)
+
+Jim_Cmd *Jim_RegisterCommand(Jim_Interp *interp, Jim_Obj *cmdNameObj,
+    Jim_CmdProc *cmdProc,
+    Jim_DelCmdProc *delProc,
+    const char *usage,
+    const char *help,
+    short minargs,
+    short maxargs,
+    int flags,
+    void *privData)
 {
+    JimPanic(((flags & JIM_CMD_ISPROC), "Jim_RegisterCommand called with JIM_CMD_ISPROC flag"));
     Jim_Cmd *cmdPtr = Jim_Alloc(sizeof(*cmdPtr));
 
 
     memset(cmdPtr, 0, sizeof(*cmdPtr));
     cmdPtr->inUse = 1;
+    cmdPtr->flags = flags;
     cmdPtr->u.native.delProc = delProc;
     cmdPtr->u.native.cmdProc = cmdProc;
+    cmdPtr->u.native.usage = usage;
+    cmdPtr->u.native.help = help;
+    cmdPtr->u.native.minargs = minargs;
+    cmdPtr->u.native.maxargs = maxargs;
     cmdPtr->u.native.privData = privData;
 
     Jim_IncrRefCount(cmdNameObj);
     JimCreateCommand(interp, cmdNameObj, cmdPtr);
     Jim_DecrRefCount(interp, cmdNameObj);
 
-    return JIM_OK;
+    return cmdPtr;
 }
-
 
 int Jim_CreateCommand(Jim_Interp *interp, const char *cmdNameStr,
     Jim_CmdProc *cmdProc, void *privData, Jim_DelCmdProc *delProc)
 {
-    return Jim_CreateCommandObj(interp, Jim_NewStringObj(interp, cmdNameStr, -1), cmdProc, privData, delProc);
+    Jim_RegisterCmd(interp, cmdNameStr, NULL, 0, -1, cmdProc, delProc, privData, 0);
+    return JIM_OK;
 }
+
 
 static int JimCreateProcedureStatics(Jim_Interp *interp, Jim_Cmd *cmdPtr, Jim_Obj *staticsListObjPtr)
 {
@@ -10404,6 +11072,11 @@ static int JimCreateProcedureStatics(Jim_Interp *interp, Jim_Cmd *cmdPtr, Jim_Ob
                     }
                     else {
                         initObjPtr = Jim_GetVariable(interp, nameObjPtr, JIM_NONE);
+                        if (!initObjPtr) {
+                            Jim_SetResultFormatted(interp, "Could not resolve upvar \"%#s\"'s value", nameObjPtr);
+                            Jim_DecrRefCount(interp, nameObjPtr);
+                            return JIM_ERR;
+                        }
                     }
                     break;
 
@@ -10459,7 +11132,7 @@ static const char *Jim_memrchr(const char *p, int c, int len)
 static void JimUpdateProcNamespace(Jim_Interp *interp, Jim_Cmd *cmdPtr, Jim_Obj *nameObjPtr)
 {
 #ifdef jim_ext_namespace
-    if (cmdPtr->isproc) {
+    if (cmdPtr->flags & JIM_CMD_ISPROC) {
         int len;
         const char *cmdname = Jim_GetStringNoQualifier(nameObjPtr, &len);
 
@@ -10495,7 +11168,7 @@ static Jim_Cmd *JimCreateProcedureCmd(Jim_Interp *interp, Jim_Obj *argListObjPtr
     assert(cmdPtr);
     memset(cmdPtr, 0, sizeof(*cmdPtr));
     cmdPtr->inUse = 1;
-    cmdPtr->isproc = 1;
+    cmdPtr->flags = JIM_CMD_ISPROC;
     cmdPtr->u.proc.argListObjPtr = argListObjPtr;
     cmdPtr->u.proc.argListLen = argListLen;
     cmdPtr->u.proc.bodyObjPtr = bodyObjPtr;
@@ -10639,6 +11312,7 @@ static void FreeCommandInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
     Jim_DecrRefCount(interp, objPtr->internalRep.cmdValue.nsObj);
 }
 
+
 static void DupCommandInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 {
     dupPtr->internalRep.cmdValue = srcPtr->internalRep.cmdValue;
@@ -10695,7 +11369,7 @@ Jim_Cmd *Jim_GetCommand(Jim_Interp *interp, Jim_Obj *objPtr, int flags)
         Jim_IncrRefCount(interp->framePtr->nsObj);
         Jim_DecrRefCount(interp, qualifiedNameObj);
     }
-    while (cmd->u.proc.upcall) {
+    while ((cmd->flags & JIM_CMD_ISPROC) && cmd->u.proc.upcall) {
         cmd = cmd->prevCmd;
     }
     return cmd;
@@ -10777,12 +11451,14 @@ static int SetVariableFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
 
 
 static int JimDictSugarSet(Jim_Interp *interp, Jim_Obj *ObjPtr, Jim_Obj *valObjPtr);
-static Jim_Obj *JimDictSugarGet(Jim_Interp *interp, Jim_Obj *ObjPtr, int flags);
+static Jim_Obj *JimDictSugarGet(Jim_Interp *interp, Jim_Obj *objPtr, int flags);
+
 
 static int JimSetNewVariable(Jim_HashTable *ht, Jim_Obj *nameObjPtr, Jim_VarVal *vv)
 {
     return Jim_AddHashEntry(ht, nameObjPtr, vv);
 }
+
 
 static Jim_VarVal *JimFindVariable(Jim_HashTable *ht, Jim_Obj *nameObjPtr)
 {
@@ -10793,10 +11469,12 @@ static Jim_VarVal *JimFindVariable(Jim_HashTable *ht, Jim_Obj *nameObjPtr)
     return NULL;
 }
 
+
 static int JimUnsetVariable(Jim_HashTable *ht, Jim_Obj *nameObjPtr)
 {
     return Jim_DeleteHashEntry(ht, nameObjPtr);
 }
+
 
 static Jim_VarVal *JimCreateVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *valObjPtr)
 {
@@ -10841,15 +11519,18 @@ static Jim_VarVal *JimCreateVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Ji
 
 int Jim_SetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *valObjPtr)
 {
-    int err;
+    int ret = JIM_OK;
     Jim_VarVal *vv;
 
     switch (SetVariableFromAny(interp, nameObjPtr)) {
         case JIM_DICT_SUGAR:
-            return JimDictSugarSet(interp, nameObjPtr, valObjPtr);
+            ret = JimDictSugarSet(interp, nameObjPtr, valObjPtr);
+            break;
 
         case JIM_ERR:
-            JimCreateVariable(interp, nameObjPtr, valObjPtr);
+            if (JimCreateVariable(interp, nameObjPtr, valObjPtr) == NULL) {
+                ret = JIM_ERR;
+            }
             break;
 
         case JIM_OK:
@@ -10864,13 +11545,16 @@ int Jim_SetVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, Jim_Obj *valObjPtr)
 
                 savedCallFrame = interp->framePtr;
                 interp->framePtr = vv->linkFramePtr;
-                err = Jim_SetVariable(interp, vv->objPtr, valObjPtr);
+                ret = Jim_SetVariable(interp, vv->objPtr, valObjPtr);
                 interp->framePtr = savedCallFrame;
-                if (err != JIM_OK)
-                    return err;
             }
+            break;
     }
-    return JIM_OK;
+    if (ret != JIM_OK && valObjPtr->refCount == 0) {
+
+        Jim_FreeNewObj(interp, valObjPtr);
+    }
+    return ret;
 }
 
 int Jim_SetVariableStr(Jim_Interp *interp, const char *name, Jim_Obj *objPtr)
@@ -11144,6 +11828,7 @@ static void JimDictSugarParseVarKey(Jim_Interp *interp, Jim_Obj *objPtr,
     JimPanic((p == NULL, "JimDictSugarParseVarKey() called for non-dict-sugar (%s)", str));
 
     varObjPtr = Jim_NewStringObj(interp, str, p - str);
+    varObjPtr->taint = objPtr->taint;
 
     p++;
     keyLen = (str + len) - p;
@@ -11153,6 +11838,7 @@ static void JimDictSugarParseVarKey(Jim_Interp *interp, Jim_Obj *objPtr,
 
 
     keyObjPtr = Jim_NewStringObj(interp, p, keyLen);
+    keyObjPtr->taint = objPtr->taint;
 
     Jim_IncrRefCount(varObjPtr);
     Jim_IncrRefCount(keyObjPtr);
@@ -11232,6 +11918,7 @@ void FreeDictSubstInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
     Jim_DecrRefCount(interp, objPtr->internalRep.dictSubstValue.varNameObjPtr);
     Jim_DecrRefCount(interp, objPtr->internalRep.dictSubstValue.indexObjPtr);
 }
+
 
 static void DupDictSubstInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 {
@@ -11328,6 +12015,7 @@ static Jim_CallFrame *JimCreateCallFrame(Jim_Interp *interp, Jim_CallFrame *pare
     return cf;
 }
 
+
 static int JimDeleteLocalProcs(Jim_Interp *interp, Jim_Stack *localCommands)
 {
 
@@ -11355,7 +12043,7 @@ static int JimDeleteLocalProcs(Jim_Interp *interp, Jim_Stack *localCommands)
             }
             Jim_DecrRefCount(interp, cmdNameObj);
         }
-        Jim_FreeStack(localCommands);
+        Jim_StackFree(localCommands);
         Jim_Free(localCommands);
     }
     return JIM_OK;
@@ -11409,6 +12097,7 @@ static int JimInvokeDefer(Jim_Interp *interp, int retcode)
 
 #define JIM_FCF_FULL 0
 #define JIM_FCF_REUSE 1
+
 static void JimFreeCallFrame(Jim_Interp *interp, Jim_CallFrame *cf, int action)
  {
     JimDeleteLocalProcs(interp, cf->localCommands);
@@ -11661,6 +12350,7 @@ static Jim_CallFrame *JimGetCallFrameByInteger(Jim_Interp *interp, long level)
     return NULL;
 }
 
+
 static Jim_EvalFrame *JimGetEvalFrameByProcLevel(Jim_Interp *interp, int proclevel)
 {
     Jim_EvalFrame *evalFrame;
@@ -11690,7 +12380,7 @@ static Jim_Obj *JimProcForEvalFrame(Jim_Interp *interp, Jim_EvalFrame *frame)
     if (frame == interp->evalFrame || (frame->cmd && frame->cmd->cmdNameObj)) {
         Jim_EvalFrame *e;
         for (e = frame->parent; e; e = e->parent) {
-            if (e->cmd && e->cmd->isproc && e->cmd->cmdNameObj) {
+            if (e->cmd && (e->cmd->flags & JIM_CMD_ISPROC) && e->cmd->cmdNameObj) {
                 break;
             }
         }
@@ -11719,18 +12409,20 @@ static void JimAddStackFrame(Jim_Interp *interp, Jim_EvalFrame *frame, Jim_Obj *
     Jim_ListAppendElement(interp, listObj, Jim_NewListObj(interp, frame->argv, frame->argc));
 }
 
+
 static void JimSetStackTrace(Jim_Interp *interp, Jim_Obj *stackTraceObj)
 {
 
     Jim_IncrRefCount(stackTraceObj);
     Jim_DecrRefCount(interp, interp->stackTrace);
     interp->stackTrace = stackTraceObj;
-    interp->errorFlag = 1;
+    interp->hasErrorStackTrace = 1;
 }
+
 
 static void JimSetErrorStack(Jim_Interp *interp, ScriptObj *script)
 {
-    if (!interp->errorFlag) {
+    if (!interp->hasErrorStackTrace) {
         int i;
         Jim_Obj *stackTrace = Jim_NewListObj(interp, NULL, 0);
 
@@ -11803,6 +12495,7 @@ static const Jim_ObjType coercedDoubleObjType = {
 };
 
 
+
 static void UpdateStringOfInt(struct Jim_Obj *objPtr)
 {
     char buf[JIM_INTEGER_SPACE + 1];
@@ -11838,6 +12531,7 @@ static void UpdateStringOfInt(struct Jim_Obj *objPtr)
     JimSetStringBytes(objPtr, buf);
 }
 
+
 static int SetIntFromAny(Jim_Interp *interp, Jim_Obj *objPtr, int flags)
 {
     jim_wide wideValue;
@@ -11870,6 +12564,7 @@ static int SetIntFromAny(Jim_Interp *interp, Jim_Obj *objPtr, int flags)
 }
 
 #ifdef JIM_OPTIMIZATION
+
 static int JimIsWide(Jim_Obj *objPtr)
 {
     return objPtr->typePtr == &intObjType;
@@ -11939,6 +12634,7 @@ Jim_Obj *Jim_NewIntObj(Jim_Interp *interp, jim_wide wideValue)
     objPtr = Jim_NewObj(interp);
     objPtr->typePtr = &intObjType;
     objPtr->bytes = NULL;
+    objPtr->taint = 0;
     objPtr->internalRep.wideValue = wideValue;
     return objPtr;
 }
@@ -11964,6 +12660,7 @@ static const Jim_ObjType doubleObjType = {
 #undef isinf
 #define isinf(X) (1.0 / (X) == 0.0)
 #endif
+
 
 static void UpdateStringOfDouble(struct Jim_Obj *objPtr)
 {
@@ -12009,6 +12706,7 @@ static void UpdateStringOfDouble(struct Jim_Obj *objPtr)
         JimSetStringBytes(objPtr, buf);
     }
 }
+
 
 static int SetDoubleFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 {
@@ -12078,6 +12776,7 @@ Jim_Obj *Jim_NewDoubleObj(Jim_Interp *interp, double doubleValue)
     objPtr = Jim_NewObj(interp);
     objPtr->typePtr = &doubleObjType;
     objPtr->bytes = NULL;
+    objPtr->taint = 0;
     objPtr->internalRep.doubleValue = doubleValue;
     return objPtr;
 }
@@ -12101,6 +12800,7 @@ static const int jim_true_false_lens[8] = {
     1, 4, 3, 2,
     1, 5, 2, 3,
 };
+
 
 static int SetBooleanFromAny(Jim_Interp *interp, Jim_Obj *objPtr, int flags)
 {
@@ -12167,6 +12867,7 @@ void DupListInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 #define JIM_ELESTR_SIMPLE 0
 #define JIM_ELESTR_BRACE 1
 #define JIM_ELESTR_QUOTE 2
+
 static unsigned char ListElementQuotingType(const char *s, int len)
 {
     int i, level, blevel, trySimple = 1;
@@ -12314,6 +13015,7 @@ static int BackslashQuoteString(const char *s, int len, char *q)
     return p - q;
 }
 
+
 static void JimMakeListStringRep(Jim_Obj *objPtr, Jim_Obj **objv, int objc)
 {
     #define STATIC_QUOTING_LEN 32
@@ -12400,10 +13102,12 @@ static void JimMakeListStringRep(Jim_Obj *objPtr, Jim_Obj **objv, int objc)
     }
 }
 
+
 static void UpdateStringOfList(struct Jim_Obj *objPtr)
 {
     JimMakeListStringRep(objPtr, objPtr->internalRep.listValue.ele, objPtr->internalRep.listValue.len);
 }
+
 
 static int SetListFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
 {
@@ -12459,6 +13163,7 @@ static int SetListFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
                 continue;
             elementPtr = JimParserGetTokenObj(interp, &parser);
             Jim_SetSourceInfo(interp, elementPtr, fileNameObj, parser.tline);
+            elementPtr->taint = objPtr->taint;
             ListAppendElement(objPtr, elementPtr);
         }
     }
@@ -12473,6 +13178,7 @@ Jim_Obj *Jim_NewListObj(Jim_Interp *interp, Jim_Obj *const *elements, int len)
     objPtr = Jim_NewObj(interp);
     objPtr->typePtr = &listObjType;
     objPtr->bytes = NULL;
+    objPtr->taint = 0;
     objPtr->internalRep.listValue.ele = NULL;
     objPtr->internalRep.listValue.len = 0;
     objPtr->internalRep.listValue.maxLen = 0;
@@ -12525,6 +13231,7 @@ struct lsort_info {
 
 static struct lsort_info *sort_info;
 
+
 static int ListSortIndexHelper(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
     Jim_Obj *lObj, *rObj;
@@ -12542,10 +13249,12 @@ static int ListSortString(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
     return Jim_StringCompareObj(sort_info->interp, *lhsObj, *rhsObj, 0) * sort_info->order;
 }
 
+
 static int ListSortStringNoCase(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
     return Jim_StringCompareObj(sort_info->interp, *lhsObj, *rhsObj, 1) * sort_info->order;
 }
+
 
 static int ListSortDict(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
@@ -12584,6 +13293,7 @@ static int ListSortDict(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
     }
 }
 
+
 static int ListSortInteger(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
     jim_wide lhs = 0, rhs = 0;
@@ -12595,6 +13305,7 @@ static int ListSortInteger(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 
     return JimSign(lhs - rhs) * sort_info->order;
 }
+
 
 static int ListSortReal(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
@@ -12612,6 +13323,7 @@ static int ListSortReal(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
     }
     return -sort_info->order;
 }
+
 
 static int ListSortCommand(Jim_Obj **lhsObj, Jim_Obj **rhsObj)
 {
@@ -12769,6 +13481,7 @@ static void ListInsertElements(Jim_Obj *listPtr, int idx, int elemc, Jim_Obj *co
     memmove(point + elemc, point, (currentLen - idx) * sizeof(Jim_Obj *));
     for (i = 0; i < elemc; ++i) {
         point[i] = elemVec[i];
+        listPtr->taint |= point[i]->taint;
         Jim_IncrRefCount(point[i]);
     }
     listPtr->internalRep.listValue.len += elemc;
@@ -12886,6 +13599,7 @@ err:
     return ret;
 }
 
+
 static int ListSetIndex(Jim_Interp *interp, Jim_Obj *listPtr, int idx,
     Jim_Obj *newObjPtr, int flags)
 {
@@ -12901,6 +13615,7 @@ static int ListSetIndex(Jim_Interp *interp, Jim_Obj *listPtr, int idx,
         idx = listPtr->internalRep.listValue.len + idx;
     Jim_DecrRefCount(interp, listPtr->internalRep.listValue.ele[idx]);
     listPtr->internalRep.listValue.ele[idx] = newObjPtr;
+    listPtr->taint |= newObjPtr->taint;
     Jim_IncrRefCount(newObjPtr);
     return JIM_OK;
 }
@@ -12938,8 +13653,9 @@ int Jim_ListSetIndex(Jim_Interp *interp, Jim_Obj *varNamePtr,
         goto err;
     Jim_InvalidateStringRep(objPtr);
     Jim_InvalidateStringRep(varObjPtr);
-    if (Jim_SetVariable(interp, varNamePtr, varObjPtr) != JIM_OK)
-        goto err;
+    if (Jim_SetVariable(interp, varNamePtr, varObjPtr) != JIM_OK) {
+        return JIM_ERR;
+    }
     Jim_SetResult(interp, varObjPtr);
     return JIM_OK;
   err:
@@ -13193,10 +13909,12 @@ static Jim_Dict *JimDictNew(Jim_Interp *interp, int table_size, int ht_size)
     return dict;
 }
 
+
 static void FreeDictInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
 {
     JimFreeDict(interp, objPtr->internalRep.dictValue);
 }
+
 
 static void DupDictInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 {
@@ -13223,10 +13941,12 @@ static void DupDictInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dup
     dupPtr->typePtr = &dictObjType;
 }
 
+
 static void UpdateStringOfDict(struct Jim_Obj *objPtr)
 {
     JimMakeListStringRep(objPtr, objPtr->internalRep.dictValue->table, objPtr->internalRep.dictValue->len);
 }
+
 
 static int SetDictFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
 {
@@ -13337,6 +14057,7 @@ static int DictAddElement(Jim_Interp *interp, Jim_Obj *objPtr,
             dict->table[dict->len++] = valueObjPtr;
 
         }
+        objPtr->taint |= keyObjPtr->taint | valueObjPtr->taint;
         return JIM_OK;
     }
 }
@@ -13448,7 +14169,6 @@ int Jim_SetDictKeysVector(Jim_Interp *interp, Jim_Obj *varNamePtr,
         }
         varObjPtr = objPtr = Jim_NewDictObj(interp, NULL, 0);
         if (Jim_SetVariable(interp, varNamePtr, objPtr) != JIM_OK) {
-            Jim_FreeNewObj(interp, varObjPtr);
             return JIM_ERR;
         }
     }
@@ -13468,6 +14188,9 @@ int Jim_SetDictKeysVector(Jim_Interp *interp, Jim_Obj *varNamePtr,
                 if (newObjPtr || (flags & JIM_MUSTEXIST)) {
                     goto err;
                 }
+            }
+            if (newObjPtr) {
+                varObjPtr->taint |= newObjPtr->taint;
             }
             break;
         }
@@ -13493,7 +14216,7 @@ int Jim_SetDictKeysVector(Jim_Interp *interp, Jim_Obj *varNamePtr,
     Jim_InvalidateStringRep(objPtr);
     Jim_InvalidateStringRep(varObjPtr);
     if (Jim_SetVariable(interp, varNamePtr, varObjPtr) != JIM_OK) {
-        goto err;
+        return JIM_ERR;
     }
 
     if (!(flags & JIM_NORESULT)) {
@@ -13518,6 +14241,7 @@ static const Jim_ObjType indexObjType = {
     JIM_TYPE_NONE,
 };
 
+
 static void UpdateStringOfIndex(struct Jim_Obj *objPtr)
 {
     if (objPtr->internalRep.intValue == -1) {
@@ -13535,6 +14259,7 @@ static void UpdateStringOfIndex(struct Jim_Obj *objPtr)
         JimSetStringBytes(objPtr, buf);
     }
 }
+
 
 static int SetIndexFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 {
@@ -13588,6 +14313,9 @@ static int SetIndexFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
     }
     else if (idx < 0) {
         idx = -INT_MAX;
+    }
+    else if (idx > INT_MAX) {
+        goto badindex;
     }
 
 
@@ -13656,6 +14384,7 @@ const char *Jim_ReturnCode(int code)
     }
 }
 
+
 static int SetReturnCodeFromAny(Jim_Interp *interp, Jim_Obj *objPtr)
 {
     int returnCode;
@@ -13721,6 +14450,9 @@ enum
 
     JIM_EXPROP_STREQ,
     JIM_EXPROP_STRNE,
+    JIM_EXPROP_STRGLOB,
+    JIM_EXPROP_STRRE,
+
     JIM_EXPROP_STRIN,
     JIM_EXPROP_STRNI,
     JIM_EXPROP_STRLT,
@@ -13788,6 +14520,7 @@ typedef struct Jim_ExprOperator
 static int JimExprGetTerm(Jim_Interp *interp, struct JimExprNode *node, Jim_Obj **objPtrPtr);
 static int JimExprGetTermBoolean(Jim_Interp *interp, struct JimExprNode *node);
 static int JimExprEvalTermNode(Jim_Interp *interp, struct JimExprNode *node);
+
 
 static int JimExprOpNumUnary(Jim_Interp *interp, struct JimExprNode *node)
 {
@@ -13890,6 +14623,7 @@ static int JimExprOpNumUnary(Jim_Interp *interp, struct JimExprNode *node)
     return rc;
 }
 
+
 static double JimRandDouble(Jim_Interp *interp)
 {
     unsigned long x;
@@ -13897,6 +14631,7 @@ static double JimRandDouble(Jim_Interp *interp)
 
     return (double)x / (double)~0UL;
 }
+
 
 static int JimExprOpIntUnary(Jim_Interp *interp, struct JimExprNode *node)
 {
@@ -13928,6 +14663,7 @@ static int JimExprOpIntUnary(Jim_Interp *interp, struct JimExprNode *node)
     return rc;
 }
 
+
 static int JimExprOpNone(Jim_Interp *interp, struct JimExprNode *node)
 {
     JimPanic((node->type != JIM_EXPROP_FUNC_RAND, "JimExprOpNone only support rand()"));
@@ -13938,6 +14674,7 @@ static int JimExprOpNone(Jim_Interp *interp, struct JimExprNode *node)
 }
 
 #ifdef JIM_MATH_FUNCTIONS
+
 static int JimExprOpDoubleUnary(Jim_Interp *interp, struct JimExprNode *node)
 {
     int rc;
@@ -14284,6 +15021,7 @@ doubleresult:
     goto done;
 }
 
+
 static int JimSearchList(Jim_Interp *interp, Jim_Obj *listObjPtr, Jim_Obj *valObj)
 {
     int listlen;
@@ -14298,6 +15036,25 @@ static int JimSearchList(Jim_Interp *interp, Jim_Obj *listObjPtr, Jim_Obj *valOb
     return 0;
 }
 
+static int JimRegexpMatch(Jim_Interp *interp, Jim_Obj *patternObj, Jim_Obj *objPtr)
+{
+    Jim_Obj *argv[3];
+    int argc = 0;
+    long eq;
+    int rc;
+
+    argv[argc++] = Jim_NewStringObj(interp, "regexp", -1);
+    argv[argc++] = patternObj;
+    argv[argc++] = objPtr;
+
+    rc = Jim_EvalObjVector(interp, argc, argv);
+
+    if (rc != JIM_OK || Jim_GetLong(interp, Jim_GetResult(interp), &eq) != JIM_OK) {
+        eq = -rc;
+    }
+
+    return eq;
+}
 
 
 static int JimExprOpStrBin(Jim_Interp *interp, struct JimExprNode *node)
@@ -14343,16 +15100,28 @@ static int JimExprOpStrBin(Jim_Interp *interp, struct JimExprNode *node)
         case JIM_EXPROP_STRNI:
             wC = !JimSearchList(interp, B, A);
             break;
+        case JIM_EXPROP_STRGLOB:
+            wC = Jim_StringMatchObj(interp, B, A, 0);
+            break;
+        case JIM_EXPROP_STRRE:
+            wC = JimRegexpMatch(interp, B, A);
+            if (wC < 0) {
+                rc = JIM_ERR;
+                goto error;
+            }
+            break;
         default:
             abort();
     }
     Jim_SetResultInt(interp, wC);
 
+error:
     Jim_DecrRefCount(interp, A);
     Jim_DecrRefCount(interp, B);
 
     return rc;
 }
+
 
 static int ExprBool(Jim_Interp *interp, Jim_Obj *obj)
 {
@@ -14378,6 +15147,7 @@ static int ExprBool(Jim_Interp *interp, Jim_Obj *obj)
     return ret;
 }
 
+
 static int JimExprOpAnd(Jim_Interp *interp, struct JimExprNode *node)
 {
 
@@ -14394,6 +15164,7 @@ static int JimExprOpAnd(Jim_Interp *interp, struct JimExprNode *node)
     return JIM_OK;
 }
 
+
 static int JimExprOpOr(Jim_Interp *interp, struct JimExprNode *node)
 {
 
@@ -14409,6 +15180,7 @@ static int JimExprOpOr(Jim_Interp *interp, struct JimExprNode *node)
     Jim_SetResultInt(interp, result);
     return JIM_OK;
 }
+
 
 static int JimExprOpTernary(Jim_Interp *interp, struct JimExprNode *node)
 {
@@ -14472,6 +15244,8 @@ static const struct Jim_ExprOperator Jim_ExprOperators[] = {
 
     OPRINIT("eq", 60, 2, JimExprOpStrBin),
     OPRINIT("ne", 60, 2, JimExprOpStrBin),
+    OPRINIT("=*", 60, 2, JimExprOpStrBin),
+    OPRINIT("=~", 60, 2, JimExprOpStrBin),
 
     OPRINIT("in", 55, 2, JimExprOpStrBin),
     OPRINIT("ni", 55, 2, JimExprOpStrBin),
@@ -14523,6 +15297,7 @@ static const struct Jim_ExprOperator Jim_ExprOperators[] = {
 
 #define JIM_EXPR_OPERATORS_NUM \
     (sizeof(Jim_ExprOperators)/sizeof(struct Jim_ExprOperator))
+
 
 static int JimParseExpression(struct JimParserCtx *pc)
 {
@@ -14623,6 +15398,7 @@ singlechar:
     return JIM_OK;
 }
 
+
 static int JimParseExprNumber(struct JimParserCtx *pc)
 {
     char *end;
@@ -14647,6 +15423,7 @@ static int JimParseExprNumber(struct JimParserCtx *pc)
     return JIM_OK;
 }
 
+
 static int JimParseExprIrrational(struct JimParserCtx *pc)
 {
     const char *irrationals[] = { "NaN", "nan", "NAN", "Inf", "inf", "INF", NULL };
@@ -14665,6 +15442,7 @@ static int JimParseExprIrrational(struct JimParserCtx *pc)
     }
     return JIM_ERR;
 }
+
 
 static int JimParseExprBoolean(struct JimParserCtx *pc)
 {
@@ -14689,6 +15467,7 @@ static const struct Jim_ExprOperator *JimExprOperatorInfoByOpcode(int opcode)
     }
     return &Jim_ExprOperators[opcode - JIM_TT_EXPR_OP];
 }
+
 
 static int JimParseExprOperator(struct JimParserCtx *pc)
 {
@@ -14757,6 +15536,7 @@ struct ExprTree
     int inUse;
 };
 
+
 static void ExprTreeFreeNodes(Jim_Interp *interp, struct JimExprNode *nodes, int num)
 {
     int i;
@@ -14768,11 +15548,13 @@ static void ExprTreeFreeNodes(Jim_Interp *interp, struct JimExprNode *nodes, int
     Jim_Free(nodes);
 }
 
+
 static void ExprTreeFree(Jim_Interp *interp, struct ExprTree *expr)
 {
     ExprTreeFreeNodes(interp, expr->nodes, expr->len);
     Jim_Free(expr);
 }
+
 
 static void FreeExprInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
 {
@@ -14786,6 +15568,7 @@ static void FreeExprInternalRep(Jim_Interp *interp, Jim_Obj *objPtr)
         ExprTreeFree(interp, expr);
     }
 }
+
 
 static void DupExprInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
 {
@@ -14809,6 +15592,7 @@ struct ExprBuilder {
 };
 
 #ifdef DEBUG_SHOW_EXPR
+
 static void JimShowExprNode(struct JimExprNode *node, int level)
 {
     int i;
@@ -15094,7 +15878,7 @@ static struct ExprTree *ExprTreeCreateTree(Jim_Interp *interp, const ParseTokenL
     builder.nodes = Jim_Alloc(sizeof(struct JimExprNode) * (tokenlist->count - 1));
     memset(builder.nodes, 0, sizeof(struct JimExprNode) * (tokenlist->count - 1));
     builder.next = builder.nodes;
-    Jim_InitStack(&builder.stack);
+    Jim_StackInit(&builder.stack, NULL);
 
     rc = ExprTreeBuildTree(interp, &builder, 0, 0, 1);
 
@@ -15108,7 +15892,7 @@ static struct ExprTree *ExprTreeCreateTree(Jim_Interp *interp, const ParseTokenL
     }
 
 
-    Jim_FreeStack(&builder.stack);
+    Jim_StackFree(&builder.stack);
 
     if (rc != JIM_OK) {
         ExprTreeFreeNodes(interp, builder.nodes, builder.next - builder.nodes);
@@ -15142,6 +15926,9 @@ static int SetExprFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
     Jim_IncrRefCount(fileNameObj);
 
     exprText = Jim_GetString(objPtr, &exprTextLen);
+
+    int oldtaint = interp->taint;
+    interp->taint = objPtr->taint;
 
 
     ScriptTokenListInit(&tokenlist);
@@ -15209,6 +15996,9 @@ static int SetExprFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr)
     Jim_FreeIntRep(interp, objPtr);
     Jim_SetIntRepPtr(objPtr, expr);
     objPtr->typePtr = &exprObjType;
+
+    interp->taint = oldtaint;
+
     return rc;
 }
 
@@ -15294,6 +16084,7 @@ static int JimExprEvalTermNode(Jim_Interp *interp, struct JimExprNode *node)
     }
 }
 
+
 static int JimExprGetTerm(Jim_Interp *interp, struct JimExprNode *node, Jim_Obj **objPtrPtr)
 {
     int rc = JimExprEvalTermNode(interp, node);
@@ -15303,6 +16094,7 @@ static int JimExprGetTerm(Jim_Interp *interp, struct JimExprNode *node, Jim_Obj 
     }
     return rc;
 }
+
 
 static int JimExprGetTermBoolean(Jim_Interp *interp, struct JimExprNode *node)
 {
@@ -15483,6 +16275,7 @@ void DupScanFmtInternalRep(Jim_Interp *interp, Jim_Obj *srcPtr, Jim_Obj *dupPtr)
     dupPtr->internalRep.ptr = newVec;
     dupPtr->typePtr = &scanFmtStringObjType;
 }
+
 
 static void UpdateStringOfScanFmt(Jim_Obj *objPtr)
 {
@@ -15985,10 +16778,6 @@ static int Jim_IncrCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     jim_wide wideValue, increment = 1;
     Jim_Obj *intObjPtr;
 
-    if (argc != 2 && argc != 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "varName ?increment?");
-        return JIM_ERR;
-    }
     if (argc == 3) {
         if (Jim_GetWideExpr(interp, argv[2], &increment) != JIM_OK)
             return JIM_ERR;
@@ -16004,7 +16793,6 @@ static int Jim_IncrCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     if (!intObjPtr || Jim_IsShared(intObjPtr)) {
         intObjPtr = Jim_NewIntObj(interp, wideValue + increment);
         if (Jim_SetVariable(interp, argv[1], intObjPtr) != JIM_OK) {
-            Jim_FreeNewObj(interp, intObjPtr);
             return JIM_ERR;
         }
     }
@@ -16092,6 +16880,7 @@ static int JimUnknown(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return retcode;
 }
 
+
 static void JimPushEvalFrame(Jim_Interp *interp, Jim_EvalFrame *frame, Jim_Obj *scriptObj)
 {
     memset(frame, 0, sizeof(*frame));
@@ -16112,6 +16901,7 @@ static void JimPushEvalFrame(Jim_Interp *interp, Jim_EvalFrame *frame, Jim_Obj *
     }
 #endif
 }
+
 
 static void JimPopEvalFrame(Jim_Interp *interp)
 {
@@ -16159,12 +16949,17 @@ tailcall:
         (retcode = JimTraceCallback(interp, "cmd", objc, objv)) == JIM_OK) {
 
         Jim_SetEmptyResult(interp);
-        if (cmdPtr->isproc) {
+        interp->taint = Jim_CalcTaint(objc, objv);
+        if (cmdPtr->flags & JIM_CMD_ISPROC) {
             retcode = JimCallProcedure(interp, cmdPtr, objc, objv);
         }
+        else if ((cmdPtr->flags & JIM_CMD_NOTAINT) && Jim_CheckTaint(interp, JIM_TAINT_ANY)) {
+            Jim_SetTaintError(interp, 1, objv);
+            retcode = JIM_ERR;
+        }
         else {
-            interp->cmdPrivData = cmdPtr->u.native.privData;
-            retcode = cmdPtr->u.native.cmdProc(interp, objc, objv);
+            retcode = JimCallNative(interp, cmdPtr, objc, objv);
+
         }
         if (retcode == JIM_ERR) {
             JimSetErrorStack(interp, NULL);
@@ -16250,6 +17045,7 @@ int Jim_EvalObjPrefix(Jim_Interp *interp, Jim_Obj *prefix, int objc, Jim_Obj *co
     return ret;
 }
 
+
 static int JimSubstOneToken(Jim_Interp *interp, const ScriptToken *token, Jim_Obj **objPtrPtr)
 {
     Jim_Obj *objPtr;
@@ -16304,6 +17100,8 @@ static Jim_Obj *JimInterpolateTokens(Jim_Interp *interp, const ScriptToken * tok
     Jim_Obj *sintv[JIM_EVAL_SINTV_LEN];
     Jim_Obj *objPtr;
     char *s;
+    int taint = 0;
+    const char *error_action = NULL;
 
     if (tokens <= JIM_EVAL_SINTV_LEN)
         intv = sintv;
@@ -16321,14 +17119,16 @@ static Jim_Obj *JimInterpolateTokens(Jim_Interp *interp, const ScriptToken * tok
                     tokens = i;
                     continue;
                 }
-
+                error_action = "break";
 
             case JIM_CONTINUE:
                 if (flags & JIM_SUBST_FLAG) {
                     intv[i] = NULL;
                     continue;
                 }
-
+                if (!error_action) {
+                    error_action = "continue";
+                }
 
             default:
                 while (i--) {
@@ -16337,8 +17137,12 @@ static Jim_Obj *JimInterpolateTokens(Jim_Interp *interp, const ScriptToken * tok
                 if (intv != sintv) {
                     Jim_Free(intv);
                 }
+                if (error_action) {
+                    Jim_SetResultFormatted(interp, "invoked \"%s\" outside of a loop", error_action);
+                }
                 return NULL;
         }
+        taint |= intv[i]->taint;
         Jim_IncrRefCount(intv[i]);
         Jim_String(intv[i]);
         totlen += intv[i]->length;
@@ -16352,6 +17156,7 @@ static Jim_Obj *JimInterpolateTokens(Jim_Interp *interp, const ScriptToken * tok
     }
 
     objPtr = Jim_NewStringObjNoAlloc(interp, NULL, 0);
+    objPtr->taint = taint;
 
     if (tokens == 4 && token[0].type == JIM_TT_ESC && token[1].type == JIM_TT_ESC
         && token[2].type == JIM_TT_VAR) {
@@ -16387,6 +17192,107 @@ static Jim_Obj *JimInterpolateTokens(Jim_Interp *interp, const ScriptToken * tok
     return objPtr;
 }
 
+#define JIM_LSUBST_LINE 0x0001
+
+static int JimListSubstObj(Jim_Interp *interp, struct Jim_Obj *objPtr, unsigned flags)
+{
+    int i;
+    ScriptObj *script;
+    ScriptToken *token;
+    Jim_Obj *resultListObj;
+    int retcode = JIM_OK;
+
+    Jim_IncrRefCount(objPtr);
+    script = JimGetScript(interp, objPtr);
+    if (JimParseCheckMissing(interp, script->missing) == JIM_ERR) {
+        JimSetErrorStack(interp, script);
+        Jim_DecrRefCount(interp, objPtr);
+        return JIM_ERR;
+    }
+
+    token = script->token;
+
+    script->inUse++;
+
+
+    resultListObj = Jim_NewListObj(interp, NULL, 0);
+
+
+    for (i = 0; i < script->len && retcode == JIM_OK; ) {
+        int argc;
+        int j;
+        Jim_Obj *lineListObj = resultListObj;
+
+
+        argc = token[i].objPtr->internalRep.scriptLineValue.argc;
+        script->linenr = token[i].objPtr->internalRep.scriptLineValue.line;
+
+
+        i++;
+
+        if (flags & JIM_LSUBST_LINE) {
+            lineListObj = Jim_NewListObj(interp, NULL, 0);
+        }
+
+
+        for (j = 0; j < argc; j++) {
+            long wordtokens = 1;
+            int expand = 0;
+            Jim_Obj *wordObjPtr = NULL;
+
+            if (token[i].type == JIM_TT_WORD) {
+                wordtokens = JimWideValue(token[i++].objPtr);
+                if (wordtokens < 0) {
+                    expand = 1;
+                    wordtokens = -wordtokens;
+                }
+            }
+
+
+            wordObjPtr = JimInterpolateTokens(interp, token + i, wordtokens, JIM_NONE);
+
+            if (!wordObjPtr) {
+                if (retcode == JIM_OK) {
+                    retcode = JIM_ERR;
+                }
+                break;
+            }
+
+            Jim_IncrRefCount(wordObjPtr);
+            i += wordtokens;
+
+            if (!expand) {
+                Jim_ListAppendElement(interp, lineListObj, wordObjPtr);
+            }
+            else {
+                int k;
+
+                for (k = 0; k < Jim_ListLength(interp, wordObjPtr); k++) {
+                    Jim_ListAppendElement(interp, lineListObj, Jim_ListGetIndex(interp, wordObjPtr, k));
+                }
+            }
+            Jim_DecrRefCount(interp, wordObjPtr);
+        }
+
+        if (flags & JIM_LSUBST_LINE) {
+            Jim_ListAppendElement(interp, resultListObj, lineListObj);
+        }
+    }
+
+    Jim_FreeIntRep(interp, objPtr);
+    objPtr->typePtr = &scriptObjType;
+    Jim_SetIntRepPtr(objPtr, script);
+    Jim_DecrRefCount(interp, objPtr);
+
+    if (retcode == JIM_OK) {
+        Jim_SetResult(interp, resultListObj);
+    }
+    else {
+        Jim_FreeNewObj(interp, resultListObj);
+    }
+
+    return retcode;
+}
 
 static int JimEvalObjList(Jim_Interp *interp, Jim_Obj *listPtr)
 {
@@ -16448,7 +17354,7 @@ int Jim_EvalObj(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
     }
     if (script->len == 3
         && token[1].objPtr->typePtr == &commandObjType
-        && token[1].objPtr->internalRep.cmdValue.cmdPtr->isproc == 0
+        && (token[1].objPtr->internalRep.cmdValue.cmdPtr->flags & JIM_CMD_ISPROC) == 0
         && token[1].objPtr->internalRep.cmdValue.cmdPtr->u.native.cmdProc == Jim_IncrCoreCommand
         && token[2].objPtr->typePtr == &variableObjType) {
 
@@ -16469,7 +17375,7 @@ int Jim_EvalObj(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
     JimPushEvalFrame(interp, &frame, scriptObjPtr);
 
 
-    interp->errorFlag = 0;
+    interp->hasErrorStackTrace = 0;
     argv = sargv;
 
     for (i = 0; i < script->len && retcode == JIM_OK; ) {
@@ -16585,6 +17491,7 @@ int Jim_EvalObj(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
         if (retcode == JIM_OK && argc) {
 
             retcode = JimInvokeCommand(interp, argc, argv);
+            interp->taint = 0;
 
             if (Jim_CheckSignal(interp)) {
                 retcode = JIM_SIGNAL;
@@ -16617,6 +17524,7 @@ int Jim_EvalObj(Jim_Interp *interp, Jim_Obj *scriptObjPtr)
     return retcode;
 }
 
+
 static int JimSetProcArg(Jim_Interp *interp, Jim_Obj *argNameObj, Jim_Obj *argValObj)
 {
     int retcode;
@@ -16646,43 +17554,58 @@ static int JimSetProcArg(Jim_Interp *interp, Jim_Obj *argNameObj, Jim_Obj *argVa
     return retcode;
 }
 
-static void JimSetProcWrongArgs(Jim_Interp *interp, Jim_Obj *procNameObj, Jim_Cmd *cmd)
+static Jim_Obj *JimCmdUsage(Jim_Interp *interp, Jim_Obj *cmdNameObj, Jim_Cmd *cmd)
 {
+    Jim_Obj *usage = Jim_DuplicateObj(interp, cmdNameObj);
 
-    Jim_Obj *argmsg = Jim_NewStringObj(interp, "", 0);
-    int i;
+    if (cmd->flags & JIM_CMD_ISPROC) {
+        int i;
+        for (i = 0; i < cmd->u.proc.argListLen; i++) {
+            Jim_AppendString(interp, usage, " ", 1);
 
-    for (i = 0; i < cmd->u.proc.argListLen; i++) {
-        Jim_AppendString(interp, argmsg, " ", 1);
+            if (i == cmd->u.proc.argsPos) {
+                if (cmd->u.proc.arglist[i].defaultObjPtr) {
 
-        if (i == cmd->u.proc.argsPos) {
-            if (cmd->u.proc.arglist[i].defaultObjPtr) {
-
-                Jim_AppendString(interp, argmsg, "?", 1);
-                Jim_AppendObj(interp, argmsg, cmd->u.proc.arglist[i].defaultObjPtr);
-                Jim_AppendString(interp, argmsg, " ...?", -1);
-            }
-            else {
-
-                Jim_AppendString(interp, argmsg, "?arg ...?", -1);
-            }
-        }
-        else {
-            if (cmd->u.proc.arglist[i].defaultObjPtr) {
-                Jim_AppendString(interp, argmsg, "?", 1);
-                Jim_AppendObj(interp, argmsg, cmd->u.proc.arglist[i].nameObjPtr);
-                Jim_AppendString(interp, argmsg, "?", 1);
-            }
-            else {
-                const char *arg = Jim_String(cmd->u.proc.arglist[i].nameObjPtr);
-                if (*arg == '&') {
-                    arg++;
+                    Jim_AppendString(interp, usage, "?", 1);
+                    Jim_AppendObj(interp, usage, cmd->u.proc.arglist[i].defaultObjPtr);
+                    Jim_AppendString(interp, usage, " ...?", -1);
                 }
-                Jim_AppendString(interp, argmsg, arg, -1);
+                else {
+
+                    Jim_AppendString(interp, usage, "?arg ...?", -1);
+                }
+            }
+            else {
+                if (cmd->u.proc.arglist[i].defaultObjPtr) {
+                    Jim_AppendString(interp, usage, "?", 1);
+                    Jim_AppendObj(interp, usage, cmd->u.proc.arglist[i].nameObjPtr);
+                    Jim_AppendString(interp, usage, "?", 1);
+                }
+                else {
+                    const char *arg = Jim_String(cmd->u.proc.arglist[i].nameObjPtr);
+                    if (*arg == '&') {
+                        arg++;
+                    }
+                    Jim_AppendString(interp, usage, arg, -1);
+                }
             }
         }
     }
-    Jim_SetResultFormatted(interp, "wrong # args: should be \"%#s%#s\"", procNameObj, argmsg);
+    else if (cmd->u.native.usage) {
+        if (*cmd->u.native.usage) {
+            Jim_AppendStrings(interp, usage, " ", cmd->u.native.usage, NULL);
+        }
+    }
+    else {
+        Jim_AppendString(interp, usage, " ...", -1);
+    }
+
+    return usage;
+}
+
+static void JimSetProcWrongArgs(Jim_Interp *interp, Jim_Obj *procNameObj, Jim_Cmd *cmd)
+{
+    Jim_SetResultFormatted(interp, "wrong # args: should be \"%#s\"", JimCmdUsage(interp, procNameObj, cmd));
 }
 
 #ifdef jim_ext_namespace
@@ -16824,6 +17747,36 @@ badargset:
     return retcode;
 }
 
+static int JimCallNative(Jim_Interp *interp, Jim_Cmd *cmd, int argc, Jim_Obj *const *argv)
+{
+    int argsok = 1;
+    int ret;
+
+
+    if (argc - 1 < cmd->u.native.minargs) {
+        argsok = 0;
+    }
+    else if (cmd->u.native.maxargs >= 0 && argc - 1 > cmd->u.native.maxargs) {
+        argsok = 0;
+    }
+    else if (cmd->u.native.maxargs < -1 && (argc - 1) % -cmd->u.native.maxargs != 0) {
+
+        argsok = 0;
+    }
+    if (argsok) {
+        interp->cmdPrivData = cmd->u.native.privData;
+        ret = cmd->u.native.cmdProc(interp, argc, argv);
+        if (ret != JIM_USAGE) {
+            return ret;
+        }
+
+    }
+
+    //printf("Wrong args for %s, argc=%d, minargs=%d, maxargs=%d\n", Jim_String(argv[0]), argc, cmd->u.native.minargs, cmd->u.native.maxargs);
+    Jim_SetResultFormatted(interp, "wrong # args: should be \"%#s\"", JimCmdUsage(interp, argv[0], cmd));
+    return JIM_ERR;
+}
+
 int Jim_EvalSource(Jim_Interp *interp, const char *filename, int lineno, const char *script)
 {
     int retval;
@@ -16871,51 +17824,38 @@ int Jim_EvalFileGlobal(Jim_Interp *interp, const char *filename)
 
 #include <sys/stat.h>
 
-static Jim_Obj *JimReadTextFile(Jim_Interp *interp, const char *filename)
-{
-    jim_stat_t sb;
-    int fd;
-    char *buf;
-    int readlen;
-
-    if (Jim_Stat(filename, &sb) == -1 || (fd = open(filename, O_RDONLY | O_TEXT, 0666)) < 0) {
-        Jim_SetResultFormatted(interp, "couldn't read file \"%s\": %s", filename, strerror(errno));
-        return NULL;
-    }
-    buf = Jim_Alloc(sb.st_size + 1);
-    readlen = read(fd, buf, sb.st_size);
-    close(fd);
-    if (readlen < 0) {
-        Jim_Free(buf);
-        Jim_SetResultFormatted(interp, "failed to load file \"%s\": %s", filename, strerror(errno));
-        return NULL;
-    }
-    else {
-        Jim_Obj *objPtr;
-        buf[readlen] = 0;
-
-        objPtr = Jim_NewStringObjNoAlloc(interp, buf, readlen);
-
-        return objPtr;
-    }
-}
-
-
 int Jim_EvalFile(Jim_Interp *interp, const char *filename)
 {
-    Jim_Obj *filenameObj;
-    Jim_Obj *oldFilenameObj;
+    FILE *fp;
+    char *buf;
     Jim_Obj *scriptObjPtr;
-    int retcode;
+    Jim_Obj *filenameObj, *oldFilenameObj;
+    int retcode = JIM_ERR;
+    int readlen;
+#define READ_BUF_SIZE 256
 
-    scriptObjPtr = JimReadTextFile(interp, filename);
-    if (!scriptObjPtr) {
+   if ((fp = fopen(filename, "rt")) == NULL) {
+        Jim_SetResultFormatted(interp, "couldn't read file \"%s\": %s", filename, strerror(errno));
         return JIM_ERR;
     }
+    scriptObjPtr = Jim_NewStringObj(interp, NULL, 0);
+
+    buf = Jim_Alloc(READ_BUF_SIZE);
+    while ((readlen = fread(buf, 1, READ_BUF_SIZE, fp)) > 0) {
+        Jim_AppendString(interp, scriptObjPtr, buf, readlen);
+    }
+    Jim_Free(buf);
+    if (ferror(fp)) {
+        fclose(fp);
+        Jim_SetResultFormatted(interp, "failed to load file \"%s\": %s", filename, strerror(errno));
+        Jim_FreeNewObj(interp, scriptObjPtr);
+        return retcode;
+    }
+    fclose(fp);
+
 
     filenameObj = Jim_NewStringObj(interp, filename, -1);
     Jim_SetSourceInfo(interp, scriptObjPtr, filenameObj, 1);
-
     oldFilenameObj = JimPushInterpObj(interp->currentFilenameObj, filenameObj);
 
     retcode = Jim_EvalObj(interp, scriptObjPtr);
@@ -16985,6 +17925,7 @@ static int SetSubstFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr, int flags
     struct JimParserCtx parser;
     struct ScriptObj *script = Jim_Alloc(sizeof(*script));
     ParseTokenList tokenlist;
+    int oldtaint;
 
 
     ScriptTokenListInit(&tokenlist);
@@ -16999,6 +17940,9 @@ static int SetSubstFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr, int flags
         ScriptAddToken(&tokenlist, parser.tstart, parser.tend - parser.tstart + 1, parser.tt,
             parser.tline);
     }
+
+    oldtaint = interp->taint;
+    interp->taint = objPtr->taint;
 
 
     script->inUse = 1;
@@ -17026,6 +17970,7 @@ static int SetSubstFromAny(Jim_Interp *interp, struct Jim_Obj *objPtr, int flags
     Jim_FreeIntRep(interp, objPtr);
     Jim_SetIntRepPtr(objPtr, script);
     objPtr->typePtr = &scriptObjType;
+    interp->taint = oldtaint;
     return JIM_OK;
 }
 
@@ -17057,23 +18002,55 @@ int Jim_SubstObj(Jim_Interp *interp, Jim_Obj *substObjPtr, Jim_Obj **resObjPtrPt
     return JIM_OK;
 }
 
-void Jim_WrongNumArgs(Jim_Interp *interp, int argc, Jim_Obj *const *argv, const char *msg)
+static Jim_Obj *JimJoinCmdArgs(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     Jim_Obj *objPtr;
     Jim_Obj *listObjPtr;
 
-    JimPanic((argc == 0, "Jim_WrongNumArgs() called with argc=0"));
-
     listObjPtr = Jim_NewListObj(interp, argv, argc);
 
-    if (msg && *msg) {
-        Jim_ListAppendElement(interp, listObjPtr, Jim_NewStringObj(interp, msg, -1));
-    }
     Jim_IncrRefCount(listObjPtr);
     objPtr = Jim_ListJoin(interp, listObjPtr, " ", 1);
     Jim_DecrRefCount(interp, listObjPtr);
+    Jim_IncrRefCount(objPtr);
 
-    Jim_SetResultFormatted(interp, "wrong # args: should be \"%#s\"", objPtr);
+    return objPtr;
+}
+
+void Jim_WrongNumArgs(Jim_Interp *interp, int argc, Jim_Obj *const *argv, const char *msg)
+{
+    Jim_Obj *objPtr = JimJoinCmdArgs(interp, argc, argv);
+    if (*msg) {
+        Jim_SetResultFormatted(interp, "wrong # args: should be \"%#s %s\"", objPtr, msg);
+    }
+    else {
+        Jim_SetResultFormatted(interp, "wrong # args: should be \"%#s\"", objPtr);
+    }
+    Jim_DecrRefCount(interp, objPtr);
+}
+
+int Jim_CalcTaint(int argc, Jim_Obj *const *argv)
+{
+    int taint = 0;
+#ifdef JIM_TAINT
+    int i;
+    for (i = 0; i < argc; i++) {
+        if (argv[i]) {
+            taint |= argv[i]->taint;
+        }
+    }
+#endif
+    return taint;
+}
+
+void Jim_SetTaintError(Jim_Interp *interp, int cmdargs, Jim_Obj *const *argv)
+{
+#ifdef JIM_TAINT
+    Jim_Obj *objPtr = JimJoinCmdArgs(interp, cmdargs, argv);
+    Jim_SetResultFormatted(interp, "%#s: tainted data", objPtr);
+    Jim_DecrRefCount(interp, objPtr);
+    Jim_SetGlobalVariableStr(interp, "errorCode", Jim_NewStringObj(interp, "TAINTED", -1));
+#endif
 }
 
 typedef void JimHashtableIteratorCallbackType(Jim_Interp *interp, Jim_Obj *listObjPtr,
@@ -17107,38 +18084,51 @@ static Jim_Obj *JimHashtablePatternMatch(Jim_Interp *interp, Jim_HashTable *ht, 
 }
 
 
-#define JIM_CMDLIST_COMMANDS 0
-#define JIM_CMDLIST_PROCS 1
-#define JIM_CMDLIST_CHANNELS 2
+#define JIM_CMDLIST_COMMANDS 1
+#define JIM_CMDLIST_PROCS 2
+#define JIM_CMDLIST_ALIASES 4
+#define JIM_CMDLIST_CHANNELS 8
+
+#define JIM_CMDLIST_ALL 0x1000
 
 static void JimCommandMatch(Jim_Interp *interp, Jim_Obj *listObjPtr,
     Jim_Obj *keyObj, void *value, Jim_Obj *patternObj, int type)
 {
     Jim_Cmd *cmdPtr = (Jim_Cmd *)value;
+    int match = 1;
 
-    if (type == JIM_CMDLIST_PROCS && !cmdPtr->isproc) {
+    if ((type & JIM_CMDLIST_PROCS) && !(cmdPtr->flags & JIM_CMD_ISPROC)) {
+
+        return;
+    }
+    if ((type & JIM_CMDLIST_CHANNELS) && !(cmdPtr->flags & JIM_CMD_ISCHANNEL)) {
+
+        return;
+    }
+    if ((type & JIM_CMDLIST_ALIASES) && !(cmdPtr->flags & JIM_CMD_ISALIAS)) {
+
+        return;
+    }
+    if (!(type & JIM_CMDLIST_ALL) && strchr(Jim_String(keyObj), ' ')) {
 
         return;
     }
 
     Jim_IncrRefCount(keyObj);
 
-    if (type != JIM_CMDLIST_CHANNELS || Jim_AioFilehandle(interp, keyObj) >= 0) {
-        int match = 1;
-        if (patternObj) {
-            int plen, slen;
-            const char *pattern = Jim_GetStringNoQualifier(patternObj, &plen);
-            const char *str = Jim_GetStringNoQualifier(keyObj, &slen);
+    if (patternObj) {
+        int plen, slen;
+        const char *pattern = Jim_GetStringNoQualifier(patternObj, &plen);
+        const char *str = Jim_GetStringNoQualifier(keyObj, &slen);
 #ifdef JIM_NO_INTROSPECTION
 
-            match = (JimStringCompareUtf8(pattern, plen, str, slen, 0) == 0);
+        match = (JimStringCompareUtf8(pattern, plen, str, slen, 0) == 0);
 #else
-            match = JimGlobMatch(pattern, plen, str, slen, 0);
+        match = JimGlobMatch(pattern, plen, str, slen, 0);
 #endif
-        }
-        if (match) {
-            Jim_ListAppendElement(interp, listObjPtr, keyObj);
-        }
+    }
+    if (match) {
+        Jim_ListAppendElement(interp, listObjPtr, keyObj);
     }
     Jim_DecrRefCount(interp, keyObj);
 }
@@ -17149,10 +18139,9 @@ static Jim_Obj *JimCommandsList(Jim_Interp *interp, Jim_Obj *patternObjPtr, int 
 }
 
 
-#define JIM_VARLIST_GLOBALS 0
-#define JIM_VARLIST_LOCALS 1
-#define JIM_VARLIST_VARS 2
-#define JIM_VARLIST_MASK 0x000f
+#define JIM_VARLIST_GLOBALS 1
+#define JIM_VARLIST_LOCALS 2
+#define JIM_VARLIST_VARS 4
 
 #define JIM_VARLIST_VALUES 0x1000
 
@@ -17161,7 +18150,7 @@ static void JimVariablesMatch(Jim_Interp *interp, Jim_Obj *listObjPtr,
 {
     Jim_VarVal *vv = (Jim_VarVal *)value;
 
-    if ((type & JIM_VARLIST_MASK) != JIM_VARLIST_LOCALS || vv->linkFramePtr == NULL) {
+    if (!(type & JIM_VARLIST_LOCALS) || vv->linkFramePtr == NULL) {
         if (patternObj == NULL || Jim_StringMatchObj(interp, patternObj, keyObj, 0)) {
             Jim_ListAppendElement(interp, listObjPtr, keyObj);
             if (type & JIM_VARLIST_VALUES) {
@@ -17174,15 +18163,16 @@ static void JimVariablesMatch(Jim_Interp *interp, Jim_Obj *listObjPtr,
 
 static Jim_Obj *JimVariablesList(Jim_Interp *interp, Jim_Obj *patternObjPtr, int mode)
 {
-    if (mode == JIM_VARLIST_LOCALS && interp->framePtr == interp->topFramePtr) {
+    if ((mode & JIM_VARLIST_LOCALS) && interp->framePtr == interp->topFramePtr) {
         return interp->emptyObj;
     }
     else {
-        Jim_CallFrame *framePtr = (mode == JIM_VARLIST_GLOBALS) ? interp->topFramePtr : interp->framePtr;
+        Jim_CallFrame *framePtr = (mode & JIM_VARLIST_GLOBALS) ? interp->topFramePtr : interp->framePtr;
         return JimHashtablePatternMatch(interp, &framePtr->vars, patternObjPtr, JimVariablesMatch,
             mode);
     }
 }
+
 
 static int JimInfoLevel(Jim_Interp *interp, Jim_Obj *levelObjPtr, Jim_Obj **objPtrPtr)
 {
@@ -17203,6 +18193,7 @@ static int JimInfoLevel(Jim_Interp *interp, Jim_Obj *levelObjPtr, Jim_Obj **objP
     Jim_SetResultFormatted(interp, "bad level \"%#s\"", levelObjPtr);
     return JIM_ERR;
 }
+
 
 static int JimInfoFrame(Jim_Interp *interp, Jim_Obj *levelObjPtr, Jim_Obj **objPtrPtr)
 {
@@ -17251,10 +18242,6 @@ static int JimInfoFrame(Jim_Interp *interp, Jim_Obj *levelObjPtr, Jim_Obj **objP
 
 static int Jim_PutsCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 2 && argc != 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "?-nonewline? string");
-        return JIM_ERR;
-    }
     if (argc == 3) {
         if (!Jim_CompareStringImmediate(interp, argv[1], "-nonewline")) {
             Jim_SetResultString(interp, "The second argument must " "be -nonewline", -1);
@@ -17310,11 +18297,7 @@ static int JimSubDivHelper(Jim_Interp *interp, int argc, Jim_Obj *const *argv, i
     double doubleValue, doubleRes = 0;
     int i = 2;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "number ?number ... number?");
-        return JIM_ERR;
-    }
-    else if (argc == 2) {
+    if (argc == 2) {
         if (Jim_GetWide(interp, argv[1], &wideValue) != JIM_OK) {
             if (Jim_GetDouble(interp, argv[1], &doubleValue) != JIM_OK) {
                 return JIM_ERR;
@@ -17407,10 +18390,6 @@ static int Jim_DivCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv
 
 static int Jim_SetCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 2 && argc != 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "varName ?newValue?");
-        return JIM_ERR;
-    }
     if (argc == 2) {
         Jim_Obj *objPtr;
 
@@ -17470,11 +18449,6 @@ static int JimCheckLoopRetcode(Jim_Interp *interp, int retval)
 
 static int Jim_WhileCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "condition body");
-        return JIM_ERR;
-    }
-
 
     while (1) {
         int boolean = 0, retval;
@@ -17511,11 +18485,6 @@ static int Jim_ForCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv
     int immediate = 0;
     Jim_Obj *varNamePtr = NULL;
     Jim_Obj *stopVarNamePtr = NULL;
-
-    if (argc != 5) {
-        Jim_WrongNumArgs(interp, 1, argv, "start test next body");
-        return JIM_ERR;
-    }
 
 
     if ((retval = Jim_EvalObj(interp, argv[1])) != JIM_OK) {
@@ -17692,11 +18661,6 @@ static int Jim_LoopCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     jim_wide incr = 1;
     Jim_Obj *bodyObjPtr;
 
-    if (argc < 4 || argc > 6) {
-        Jim_WrongNumArgs(interp, 1, argv, "var ?first? limit ?incr? body");
-        return JIM_ERR;
-    }
-
     retval = Jim_GetWideExpr(interp, argv[2], &i);
     if (argc > 4 && retval == JIM_OK) {
         retval = Jim_GetWideExpr(interp, argv[3], &limit);
@@ -17747,9 +18711,6 @@ static int Jim_LoopCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
             else {
                 objPtr = Jim_NewIntObj(interp, i);
                 retval = Jim_SetVariable(interp, argv[1], objPtr);
-                if (retval != JIM_OK) {
-                    Jim_FreeNewObj(interp, objPtr);
-                }
             }
         }
     }
@@ -17795,9 +18756,8 @@ static int JimForeachMapHelper(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     Jim_Obj *script;
     Jim_Obj *resultObj;
 
-    if (argc < 4 || argc % 2 != 0) {
-        Jim_WrongNumArgs(interp, 1, argv, "varList list ?varList list ...? script");
-        return JIM_ERR;
+    if (argc % 2 != 0) {
+        return JIM_USAGE;
     }
     script = argv[argc - 1];
     numargs = (argc - 1 - 1);
@@ -17851,10 +18811,10 @@ static int JimForeachMapHelper(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 
                     valObj = interp->emptyObj;
                 }
-
-                Jim_IncrRefCount(valObj);
+                // XXX
+                //Jim_IncrRefCount(valObj);
                 result = Jim_SetVariable(interp, varName, valObj);
-                Jim_DecrRefCount(interp, valObj);
+                //Jim_DecrRefCount(interp, valObj);
                 if (result != JIM_OK) {
                     goto err;
                 }
@@ -17910,11 +18870,6 @@ static int Jim_LassignCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
     Jim_ListIter iter;
     Jim_Obj *resultObj;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "varList list ?varName ...?");
-        return JIM_ERR;
-    }
-
     JimListIterInit(&iter, argv[1]);
 
     for (i = 2; i < argc; i++) {
@@ -17940,52 +18895,52 @@ static int Jim_IfCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     int boolean, retval, current = 1, falsebody = 0;
 
-    if (argc >= 3) {
-        while (1) {
+    while (1) {
 
-            if (current >= argc)
-                goto err;
-            if ((retval = Jim_GetBoolFromExpr(interp, argv[current++], &boolean))
-                != JIM_OK)
-                return retval;
-
-            if (current >= argc)
-                goto err;
-            if (Jim_CompareStringImmediate(interp, argv[current], "then"))
-                current++;
-
-            if (current >= argc)
-                goto err;
-            if (boolean)
-                return Jim_EvalObj(interp, argv[current]);
-
-            if (++current >= argc) {
-                Jim_SetResult(interp, Jim_NewEmptyStringObj(interp));
-                return JIM_OK;
-            }
-            falsebody = current++;
-            if (Jim_CompareStringImmediate(interp, argv[falsebody], "else")) {
-
-                if (current != argc - 1)
-                    goto err;
-                return Jim_EvalObj(interp, argv[current]);
-            }
-            else if (Jim_CompareStringImmediate(interp, argv[falsebody], "elseif"))
-                continue;
-
-            else if (falsebody != argc - 1)
-                goto err;
-            return Jim_EvalObj(interp, argv[falsebody]);
+        if (current >= argc) {
+            return JIM_USAGE;
         }
-        return JIM_OK;
+        if ((retval = Jim_GetBoolFromExpr(interp, argv[current++], &boolean))
+            != JIM_OK)
+            return retval;
+
+        if (current >= argc) {
+            return JIM_USAGE;
+        }
+        if (Jim_CompareStringImmediate(interp, argv[current], "then"))
+            current++;
+
+        if (current >= argc) {
+            return JIM_USAGE;
+        }
+        if (boolean)
+            return Jim_EvalObj(interp, argv[current]);
+
+        if (++current >= argc) {
+            Jim_SetResult(interp, Jim_NewEmptyStringObj(interp));
+            return JIM_OK;
+        }
+        falsebody = current++;
+        if (Jim_CompareStringImmediate(interp, argv[falsebody], "else")) {
+
+            if (current != argc - 1) {
+                return JIM_USAGE;
+            }
+            return Jim_EvalObj(interp, argv[current]);
+        }
+        else if (Jim_CompareStringImmediate(interp, argv[falsebody], "elseif"))
+            continue;
+
+        else if (falsebody != argc - 1) {
+            return JIM_USAGE;
+        }
+        return Jim_EvalObj(interp, argv[falsebody]);
     }
-  err:
-    Jim_WrongNumArgs(interp, 1, argv, "condition ?then? trueBody ?elseif ...? ?else? falseBody");
-    return JIM_ERR;
+    return JIM_OK;
 }
 
 
-int Jim_CommandMatchObj(Jim_Interp *interp, Jim_Obj *commandObj, Jim_Obj *patternObj,
+static int JimCommandMatchObj(Jim_Interp *interp, Jim_Obj *commandObj, Jim_Obj *patternObj,
     Jim_Obj *stringObj, int flags)
 {
     Jim_Obj *parms[5];
@@ -18021,12 +18976,6 @@ static int Jim_SwitchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
     Jim_Obj *command = NULL, *scriptObj = NULL, *strObj;
     Jim_Obj **caseList;
 
-    if (argc < 3) {
-      wrongnumargs:
-        Jim_WrongNumArgs(interp, 1, argv, "?options? string "
-            "pattern body ... ?default body?   or   " "{pattern body ?pattern body ...?}");
-        return JIM_ERR;
-    }
     for (opt = 1; opt < argc; ++opt) {
         const char *option = Jim_String(argv[opt]);
 
@@ -18047,7 +18996,7 @@ static int Jim_SwitchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
         else if (strncmp(option, "-command", 2) == 0) {
             matchOpt = SWITCH_CMD;
             if ((argc - opt) < 2)
-                goto wrongnumargs;
+                return JIM_USAGE;
             command = argv[++opt];
         }
         else {
@@ -18057,7 +19006,7 @@ static int Jim_SwitchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
             return JIM_ERR;
         }
         if ((argc - opt) < 2)
-            goto wrongnumargs;
+            return JIM_USAGE;
     }
     strObj = argv[opt++];
     patCount = argc - opt;
@@ -18067,7 +19016,7 @@ static int Jim_SwitchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
     else
         caseList = (Jim_Obj **)&argv[opt];
     if (patCount == 0 || patCount % 2 != 0)
-        goto wrongnumargs;
+        return JIM_USAGE;
     for (i = 0; scriptObj == NULL && i < patCount; i += 2) {
         Jim_Obj *patObj = caseList[i];
 
@@ -18086,7 +19035,7 @@ static int Jim_SwitchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
                     command = Jim_NewStringObj(interp, "regexp", -1);
 
                 case SWITCH_CMD:{
-                        int rc = Jim_CommandMatchObj(interp, command, patObj, strObj, match_flags);
+                        int rc = JimCommandMatchObj(interp, command, patObj, strObj, match_flags);
 
                         if (argc - opt == 1) {
                             JimListGetElements(interp, argv[opt], &patCount, &caseList);
@@ -18134,10 +19083,6 @@ static int Jim_LindexCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
     Jim_Obj *objPtr;
     int ret;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "list ?index ...?");
-        return JIM_ERR;
-    }
     ret = Jim_ListIndices(interp, argv[1], argv + 2, argc - 2, &objPtr, JIM_NONE);
     if (ret < 0) {
         ret = JIM_OK;
@@ -18152,10 +19097,6 @@ static int Jim_LindexCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
 
 static int Jim_LlengthCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "list");
-        return JIM_ERR;
-    }
     Jim_SetResultInt(interp, Jim_ListLength(interp, argv[1]));
     return JIM_OK;
 }
@@ -18183,13 +19124,6 @@ static int Jim_LsearchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
     Jim_Obj *indexObj = NULL;
     int match_flags = 0;
     long stride = 1;
-
-    if (argc < 3) {
-      wrongargs:
-        Jim_WrongNumArgs(interp, 1, argv,
-            "?-exact|-glob|-regexp|-command 'command'? ?-bool|-inline? ?-not? ?-nocase? ?-all? ?-stride len? ?-index val? list value");
-        return JIM_ERR;
-    }
 
     for (i = 1; i < argc - 2; i++) {
         int option;
@@ -18221,7 +19155,7 @@ static int Jim_LsearchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
                 break;
             case OPT_COMMAND:
                 if (i >= argc - 2) {
-                    goto wrongargs;
+                    return JIM_USAGE;
                 }
                 commandObj = argv[++i];
 
@@ -18231,13 +19165,13 @@ static int Jim_LsearchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
                 break;
             case OPT_INDEX:
                 if (i >= argc - 2) {
-                    goto wrongargs;
+                    return JIM_USAGE;
                 }
                 indexObj = argv[++i];
                 break;
             case OPT_STRIDE:
                 if (i >= argc - 2) {
-                    goto wrongargs;
+                    return JIM_USAGE;
                 }
                 if (Jim_GetLong(interp, argv[++i], &stride) != JIM_OK) {
                     return JIM_ERR;
@@ -18252,7 +19186,7 @@ static int Jim_LsearchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
 
     argc -= i;
     if (argc < 2) {
-        goto wrongargs;
+        return JIM_USAGE;
     }
     argv += i;
 
@@ -18315,7 +19249,7 @@ static int Jim_LsearchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
 
             case OPT_REGEXP:
             case OPT_COMMAND:
-                eq = Jim_CommandMatchObj(interp, commandObj, argv[1], objPtr, match_flags);
+                eq = JimCommandMatchObj(interp, commandObj, argv[1], objPtr, match_flags);
                 if (eq < 0) {
                     Jim_DecrRefCount(interp, searchListObj);
                     rc = JIM_ERR;
@@ -18391,28 +19325,19 @@ static int Jim_LsearchCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
 static int Jim_LappendCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     Jim_Obj *listObjPtr;
-    int new_obj = 0;
     int i;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "varName ?value value ...?");
-        return JIM_ERR;
-    }
     listObjPtr = Jim_GetVariable(interp, argv[1], JIM_UNSHARED);
     if (!listObjPtr) {
 
         listObjPtr = Jim_NewListObj(interp, NULL, 0);
-        new_obj = 1;
     }
     else if (Jim_IsShared(listObjPtr)) {
         listObjPtr = Jim_DuplicateObj(interp, listObjPtr);
-        new_obj = 1;
     }
     for (i = 2; i < argc; i++)
         Jim_ListAppendElement(interp, listObjPtr, argv[i]);
     if (Jim_SetVariable(interp, argv[1], listObjPtr) != JIM_OK) {
-        if (new_obj)
-            Jim_FreeNewObj(interp, listObjPtr);
         return JIM_ERR;
     }
     Jim_SetResult(interp, listObjPtr);
@@ -18425,10 +19350,6 @@ static int Jim_LinsertCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
     int idx, len;
     Jim_Obj *listPtr;
 
-    if (argc < 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "list index ?element ...?");
-        return JIM_ERR;
-    }
     listPtr = argv[1];
     if (Jim_IsShared(listPtr))
         listPtr = Jim_DuplicateObj(interp, listPtr);
@@ -18456,10 +19377,6 @@ static int Jim_LreplaceCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
     Jim_Obj *listObj;
     Jim_Obj *newListObj;
 
-    if (argc < 4) {
-        Jim_WrongNumArgs(interp, 1, argv, "list first last ?element ...?");
-        return JIM_ERR;
-    }
     if (Jim_GetIndex(interp, argv[2], &first) != JIM_OK ||
         Jim_GetIndex(interp, argv[3], &last) != JIM_OK) {
         return JIM_ERR;
@@ -18493,11 +19410,7 @@ static int Jim_LreplaceCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
 
 static int Jim_LsetCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc < 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "listVar ?index ...? value");
-        return JIM_ERR;
-    }
-    else if (argc == 3) {
+    if (argc == 3) {
 
         if (Jim_SetVariable(interp, argv[1], argv[2]) != JIM_OK)
             return JIM_ERR;
@@ -18527,12 +19440,6 @@ static int Jim_LsortCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const arg
     int listlen;
 
     struct lsort_info info;
-
-    if (argc < 2) {
-wrongargs:
-        Jim_WrongNumArgs(interp, 1, argv, "?options? list");
-        return JIM_ERR;
-    }
 
     info.type = JIM_LSORT_ASCII;
     info.order = 1;
@@ -18583,7 +19490,7 @@ wrongargs:
                 break;
             case OPT_STRIDE:
                 if (i >= argc - 2) {
-                    goto wrongargs;
+                    return JIM_USAGE;
                 }
                 if (Jim_GetLong(interp, argv[++i], &stride) != JIM_OK) {
                     return JIM_ERR;
@@ -18661,34 +19568,24 @@ static int Jim_AppendCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
     Jim_Obj *stringObjPtr;
     int i;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "varName ?value ...?");
-        return JIM_ERR;
-    }
     if (argc == 2) {
         stringObjPtr = Jim_GetVariable(interp, argv[1], JIM_ERRMSG);
         if (!stringObjPtr)
             return JIM_ERR;
     }
     else {
-        int new_obj = 0;
         stringObjPtr = Jim_GetVariable(interp, argv[1], JIM_UNSHARED);
         if (!stringObjPtr) {
 
             stringObjPtr = Jim_NewEmptyStringObj(interp);
-            new_obj = 1;
         }
         else if (Jim_IsShared(stringObjPtr)) {
-            new_obj = 1;
             stringObjPtr = Jim_DuplicateObj(interp, stringObjPtr);
         }
         for (i = 2; i < argc; i++) {
             Jim_AppendObj(interp, stringObjPtr, argv[i]);
         }
         if (Jim_SetVariable(interp, argv[1], stringObjPtr) != JIM_OK) {
-            if (new_obj) {
-                Jim_FreeNewObj(interp, stringObjPtr);
-            }
             return JIM_ERR;
         }
     }
@@ -18704,11 +19601,6 @@ static int Jim_EvalCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 {
     int rc;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "arg ?arg ...?");
-        return JIM_ERR;
-    }
-
     if (argc == 2) {
         rc = Jim_EvalObj(interp, argv[1]);
     }
@@ -18722,84 +19614,63 @@ static int Jim_EvalCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 
 static int Jim_UplevelCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc >= 2) {
-        int retcode;
-        Jim_CallFrame *savedCallFrame, *targetCallFrame;
-        const char *str;
+    int retcode;
+    Jim_CallFrame *savedCallFrame, *targetCallFrame;
+    const char *str;
 
 
-        savedCallFrame = interp->framePtr;
+    savedCallFrame = interp->framePtr;
 
 
-        str = Jim_String(argv[1]);
-        if ((str[0] >= '0' && str[0] <= '9') || str[0] == '#') {
-            targetCallFrame = Jim_GetCallFrameByLevel(interp, argv[1]);
-            argc--;
-            argv++;
-        }
-        else {
-            targetCallFrame = Jim_GetCallFrameByLevel(interp, NULL);
-        }
-        if (targetCallFrame == NULL) {
-            return JIM_ERR;
-        }
-        if (argc < 2) {
-            Jim_WrongNumArgs(interp, 1, argv - 1, "?level? command ?arg ...?");
-            return JIM_ERR;
-        }
-
-        interp->framePtr = targetCallFrame;
-        if (argc == 2) {
-            retcode = Jim_EvalObj(interp, argv[1]);
-        }
-        else {
-            retcode = Jim_EvalObj(interp, Jim_ConcatObj(interp, argc - 1, argv + 1));
-        }
-        interp->framePtr = savedCallFrame;
-        return retcode;
+    str = Jim_String(argv[1]);
+    if ((str[0] >= '0' && str[0] <= '9') || str[0] == '#') {
+        targetCallFrame = Jim_GetCallFrameByLevel(interp, argv[1]);
+        argc--;
+        argv++;
     }
     else {
-        Jim_WrongNumArgs(interp, 1, argv, "?level? command ?arg ...?");
+        targetCallFrame = Jim_GetCallFrameByLevel(interp, NULL);
+    }
+    if (targetCallFrame == NULL) {
         return JIM_ERR;
     }
+    if (argc < 2) {
+        return JIM_USAGE;
+    }
+
+    interp->framePtr = targetCallFrame;
+    if (argc == 2) {
+        retcode = Jim_EvalObj(interp, argv[1]);
+    }
+    else {
+        retcode = Jim_EvalObj(interp, Jim_ConcatObj(interp, argc - 1, argv + 1));
+    }
+    interp->framePtr = savedCallFrame;
+    return retcode;
 }
 
 
 static int Jim_ExprCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    int retcode;
-
-    if (argc == 2) {
-        retcode = Jim_EvalExpression(interp, argv[1]);
-    }
-#ifndef JIM_COMPAT
-    else {
-        Jim_WrongNumArgs(interp, 1, argv, "expression");
-        retcode = JIM_ERR;
-    }
-#else
-    else if (argc > 2) {
+#ifdef JIM_COMPAT
+    if (argc > 2) {
+        int retcode;
         Jim_Obj *objPtr;
 
         objPtr = Jim_ConcatObj(interp, argc - 1, argv + 1);
         Jim_IncrRefCount(objPtr);
         retcode = Jim_EvalExpression(interp, objPtr);
         Jim_DecrRefCount(interp, objPtr);
-    }
-    else {
-        Jim_WrongNumArgs(interp, 1, argv, "expression ?...?");
-        return JIM_ERR;
+
+        return retcode;
     }
 #endif
-    return retcode;
+    return Jim_EvalExpression(interp, argv[1]);
 }
+
 
 static int JimBreakContinueHelper(Jim_Interp *interp, int argc, Jim_Obj *const *argv, int retcode)
 {
-    if (argc != 1 && argc != 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "?level?");
-        return JIM_ERR;
-    }
     if (argc == 2) {
         long level;
         int ret = Jim_GetLong(interp, argv[1], &level);
@@ -18887,8 +19758,7 @@ static int Jim_ReturnCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
     }
 
     if (i != argc - 1 && i != argc) {
-        Jim_WrongNumArgs(interp, 1, argv,
-            "?-code code? ?-errorinfo stacktrace? ?-level level? ?result?");
+        return JIM_USAGE;
     }
 
 
@@ -18942,6 +19812,7 @@ static int Jim_TailcallCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
     return JIM_OK;
 }
 
+
 static int JimAliasCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     Jim_Obj *cmdList;
@@ -18954,37 +19825,28 @@ static int JimAliasCmd(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
     return JimEvalObjList(interp, cmdList);
 }
 
+
 static void JimAliasCmdDelete(Jim_Interp *interp, void *privData)
 {
     Jim_Obj *prefixListObj = privData;
     Jim_DecrRefCount(interp, prefixListObj);
 }
 
+
 static int Jim_AliasCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    Jim_Obj *prefixListObj;
-
-    if (argc < 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "newname command ?args ...?");
-        return JIM_ERR;
-    }
-
-    prefixListObj = Jim_NewListObj(interp, argv + 2, argc - 2);
+    Jim_Obj *prefixListObj = Jim_NewListObj(interp, argv + 2, argc - 2);
     Jim_IncrRefCount(prefixListObj);
     Jim_SetResult(interp, argv[1]);
 
-    return Jim_CreateCommandObj(interp, argv[1], JimAliasCmd, prefixListObj, JimAliasCmdDelete);
+    Jim_RegisterCommand(interp, argv[1], JimAliasCmd, JimAliasCmdDelete, NULL, NULL, 0, -1, JIM_CMD_ISALIAS, prefixListObj);
+    return JIM_OK;
 }
 
 
 static int Jim_ProcCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     Jim_Cmd *cmd;
-
-    if (argc != 4 && argc != 5) {
-        Jim_WrongNumArgs(interp, 1, argv, "name arglist ?statics? body");
-        return JIM_ERR;
-    }
 
     if (argc == 4) {
         cmd = JimCreateProcedureCmd(interp, argv[2], NULL, argv[3], NULL);
@@ -19012,11 +19874,6 @@ static int Jim_ProcCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 
 static int Jim_XtraceCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "callback");
-        return JIM_ERR;
-    }
-
     if (interp->traceCmdObj) {
         Jim_DecrRefCount(interp, interp->traceCmdObj);
         interp->traceCmdObj = NULL;
@@ -19035,11 +19892,6 @@ static int Jim_LocalCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 {
     int retcode;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "cmd ?args ...?");
-        return JIM_ERR;
-    }
-
 
     interp->local++;
     retcode = Jim_EvalObjVector(interp, argc - 1, argv + 1);
@@ -19055,7 +19907,7 @@ static int Jim_LocalCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
         }
         if (interp->framePtr->localCommands == NULL) {
             interp->framePtr->localCommands = Jim_Alloc(sizeof(*interp->framePtr->localCommands));
-            Jim_InitStack(interp->framePtr->localCommands);
+            Jim_StackInit(interp->framePtr->localCommands, NULL);
         }
         Jim_IncrRefCount(cmdNameObj);
         Jim_StackPush(interp->framePtr->localCommands, cmdNameObj);
@@ -19067,85 +19919,125 @@ static int Jim_LocalCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 
 static int Jim_UpcallCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "cmd ?args ...?");
+    int retcode;
+
+    Jim_Cmd *cmdPtr = Jim_GetCommand(interp, argv[1], JIM_ERRMSG);
+    if (cmdPtr == NULL || !(cmdPtr->flags & JIM_CMD_ISPROC) || !cmdPtr->prevCmd) {
+        Jim_SetResultFormatted(interp, "no previous command: \"%#s\"", argv[1]);
         return JIM_ERR;
     }
-    else {
-        int retcode;
 
-        Jim_Cmd *cmdPtr = Jim_GetCommand(interp, argv[1], JIM_ERRMSG);
-        if (cmdPtr == NULL || !cmdPtr->isproc || !cmdPtr->prevCmd) {
-            Jim_SetResultFormatted(interp, "no previous command: \"%#s\"", argv[1]);
-            return JIM_ERR;
-        }
-
-        cmdPtr->u.proc.upcall++;
-        JimIncrCmdRefCount(cmdPtr);
+    cmdPtr->u.proc.upcall++;
+    JimIncrCmdRefCount(cmdPtr);
 
 
-        retcode = Jim_EvalObjVector(interp, argc - 1, argv + 1);
+    retcode = Jim_EvalObjVector(interp, argc - 1, argv + 1);
 
 
-        cmdPtr->u.proc.upcall--;
-        JimDecrCmdRefCount(interp, cmdPtr);
+    cmdPtr->u.proc.upcall--;
+    JimDecrCmdRefCount(interp, cmdPtr);
 
-        return retcode;
-    }
+    return retcode;
 }
 
 
 static int Jim_ApplyCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "lambdaExpr ?arg ...?");
+    int ret;
+    Jim_Cmd *cmd;
+    Jim_Obj *argListObjPtr;
+    Jim_Obj *bodyObjPtr;
+    Jim_Obj *nsObj = NULL;
+    Jim_Obj **nargv;
+
+    int len = Jim_ListLength(interp, argv[1]);
+    if (len != 2 && len != 3) {
+        Jim_SetResultFormatted(interp, "can't interpret \"%#s\" as a lambda expression", argv[1]);
         return JIM_ERR;
     }
-    else {
-        int ret;
-        Jim_Cmd *cmd;
-        Jim_Obj *argListObjPtr;
-        Jim_Obj *bodyObjPtr;
-        Jim_Obj *nsObj = NULL;
-        Jim_Obj **nargv;
 
-        int len = Jim_ListLength(interp, argv[1]);
-        if (len != 2 && len != 3) {
-            Jim_SetResultFormatted(interp, "can't interpret \"%#s\" as a lambda expression", argv[1]);
-            return JIM_ERR;
-        }
-
-        if (len == 3) {
+    if (len == 3) {
 #ifdef jim_ext_namespace
 
-            nsObj = Jim_ListGetIndex(interp, argv[1], 2);
+        nsObj = Jim_ListGetIndex(interp, argv[1], 2);
 #else
-            Jim_SetResultString(interp, "namespaces not enabled", -1);
-            return JIM_ERR;
-#endif
-        }
-        argListObjPtr = Jim_ListGetIndex(interp, argv[1], 0);
-        bodyObjPtr = Jim_ListGetIndex(interp, argv[1], 1);
-
-        cmd = JimCreateProcedureCmd(interp, argListObjPtr, NULL, bodyObjPtr, nsObj);
-
-        if (cmd) {
-
-            nargv = Jim_Alloc((argc - 2 + 1) * sizeof(*nargv));
-            nargv[0] = Jim_NewStringObj(interp, "apply lambdaExpr", -1);
-            Jim_IncrRefCount(nargv[0]);
-            memcpy(&nargv[1], argv + 2, (argc - 2) * sizeof(*nargv));
-            ret = JimCallProcedure(interp, cmd, argc - 2 + 1, nargv);
-            Jim_DecrRefCount(interp, nargv[0]);
-            Jim_Free(nargv);
-
-            JimDecrCmdRefCount(interp, cmd);
-            return ret;
-        }
+        Jim_SetResultString(interp, "namespaces not enabled", -1);
         return JIM_ERR;
+#endif
     }
+    argListObjPtr = Jim_ListGetIndex(interp, argv[1], 0);
+    bodyObjPtr = Jim_ListGetIndex(interp, argv[1], 1);
+
+    cmd = JimCreateProcedureCmd(interp, argListObjPtr, NULL, bodyObjPtr, nsObj);
+
+    if (cmd) {
+
+        nargv = Jim_Alloc((argc - 2 + 1) * sizeof(*nargv));
+        nargv[0] = Jim_NewStringObj(interp, "apply lambdaExpr", -1);
+        Jim_IncrRefCount(nargv[0]);
+        memcpy(&nargv[1], argv + 2, (argc - 2) * sizeof(*nargv));
+        ret = JimCallProcedure(interp, cmd, argc - 2 + 1, nargv);
+        Jim_DecrRefCount(interp, nargv[0]);
+        Jim_Free(nargv);
+
+        JimDecrCmdRefCount(interp, cmd);
+        return ret;
+    }
+    return JIM_ERR;
 }
 
+#ifdef JIM_TAINT
+static int JimTaintVariable(Jim_Interp *interp, Jim_Obj *nameObjPtr, int taint)
+{
+    Jim_Obj *valueObjPtr = Jim_GetVariable(interp, nameObjPtr, JIM_ERRMSG | JIM_UNSHARED);
+
+    if (valueObjPtr == NULL) {
+        return JIM_ERR;
+    }
+
+    if (Jim_IsShared(valueObjPtr)) {
+        valueObjPtr = Jim_DuplicateObj(interp, valueObjPtr);
+        Jim_SetVariable(interp, nameObjPtr, valueObjPtr);
+    }
+
+    if (taint && nameObjPtr->typePtr == &dictSubstObjType) {
+
+        Jim_Obj *objPtr = Jim_GetVariable(interp, nameObjPtr->internalRep.dictSubstValue.varNameObjPtr, JIM_NONE);
+        if (objPtr) {
+            SetStringFromAny(interp, valueObjPtr);
+            valueObjPtr->taint = taint;
+            objPtr->taint |= taint;
+        }
+    }
+
+
+    SetStringFromAny(interp, valueObjPtr);
+    valueObjPtr->taint = taint;
+
+    //printf("taint of %s is %d\n", valueObjPtr->bytes, valueObjPtr->taint);
+    return JIM_OK;
+}
+
+
+static int Jim_TaintCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+    if (argc != 2) {
+        Jim_WrongNumArgs(interp, 1, argv, "varname");
+        return JIM_ERR;
+    }
+    return JimTaintVariable(interp, argv[1], 1);
+}
+
+
+static int Jim_UntaintCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+    if (argc != 2) {
+        Jim_WrongNumArgs(interp, 1, argv, "varname");
+        return JIM_ERR;
+    }
+    return JimTaintVariable(interp, argv[1], 0);
+}
+#endif
 
 
 static int Jim_ConcatCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
@@ -19175,8 +20067,7 @@ static int Jim_UpvarCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
 
 
     if (argc < 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "?level? otherVar localVar ?otherVar localVar ...?");
-        return JIM_ERR;
+        return JIM_USAGE;
     }
 
 
@@ -19192,10 +20083,6 @@ static int Jim_GlobalCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
 {
     int i;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "varName ?varName ...?");
-        return JIM_ERR;
-    }
 
     if (interp->framePtr->level == 0)
         return JIM_OK;
@@ -19309,7 +20196,7 @@ static int Jim_StringCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
     static const jim_subcmd_type cmds[OPT_COUNT + 1] = {
         JIM_DEF_SUBCMD("bytelength", "string", 1, 1),
         JIM_DEF_SUBCMD("byterange", "string first last", 3, 3),
-        JIM_DEF_SUBCMD("cat", "?...?", 0, -1),
+        JIM_DEF_SUBCMD("cat", "?string ...?", 0, -1),
         JIM_DEF_SUBCMD("compare", "?-nocase? ?-length int? string1 string2", 2, 5),
         JIM_DEF_SUBCMD("equal", "?-nocase? ?-length int? string1 string2", 2, 5),
         JIM_DEF_SUBCMD("first", "subString string ?index?", 2, 3),
@@ -19627,10 +20514,6 @@ static int Jim_TimeCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     long i, count = 1;
     jim_wide start, elapsed;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "script ?count?");
-        return JIM_ERR;
-    }
     if (argc == 3) {
         if (Jim_GetLong(interp, argv[2], &count) != JIM_OK)
             return JIM_ERR;
@@ -19659,7 +20542,7 @@ static int Jim_TimeCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 }
 
 
-static int Jim_TimeRateCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+static int Jim_TimerateCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     long us = 0;
     jim_wide start, delta, overhead;
@@ -19668,10 +20551,6 @@ static int Jim_TimeRateCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
     int count;
     int n;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "script ?milliseconds?");
-        return JIM_ERR;
-    }
     if (argc == 3) {
         if (Jim_GetLong(interp, argv[2], &us) != JIM_OK)
             return JIM_ERR;
@@ -19728,10 +20607,6 @@ static int Jim_ExitCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 {
     long exitCode = 0;
 
-    if (argc > 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "?exitCode?");
-        return JIM_ERR;
-    }
     if (argc == 2) {
         if (Jim_GetLong(interp, argv[1], &exitCode) != JIM_OK)
             return JIM_ERR;
@@ -19740,6 +20615,7 @@ static int Jim_ExitCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     interp->exitCode = exitCode;
     return JIM_EXIT;
 }
+
 
 static int JimMatchReturnCodes(Jim_Interp *interp, Jim_Obj *retcodeListObj, int rc)
 {
@@ -19760,10 +20636,6 @@ static int JimMatchReturnCodes(Jim_Interp *interp, Jim_Obj *retcodeListObj, int 
 
 static int JimCatchTryHelper(Jim_Interp *interp, int istry, int argc, Jim_Obj *const *argv)
 {
-    static const char * const wrongargs_catchtry[2] = {
-        "?-?no?code ... --? script ?resultVarName? ?optionVarName?",
-        "?-?no?code ... --? script ?on|trap codes vars script? ... ?finally script?"
-    };
     int exitCode = 0;
     int i;
     int sig = 0;
@@ -19813,7 +20685,7 @@ static int JimCatchTryHelper(Jim_Interp *interp, int istry, int argc, Jim_Obj *c
             option = Jim_FindByName(arg, jimReturnCodes, jimReturnCodesSize);
         }
         if (option < 0) {
-            goto wrongargs;
+            return JIM_USAGE;
         }
 
         if (ignore) {
@@ -19827,9 +20699,7 @@ static int JimCatchTryHelper(Jim_Interp *interp, int istry, int argc, Jim_Obj *c
     idx = i;
 
     if (argc - idx < 1) {
-wrongargs:
-        Jim_WrongNumArgs(interp, 1, argv, wrongargs_catchtry[istry]);
-        return JIM_ERR;
+        return JIM_USAGE;
     }
 
     if ((ignore_mask & (1 << JIM_SIGNAL)) == 0) {
@@ -19844,7 +20714,7 @@ wrongargs:
     else {
         exitCode = Jim_EvalObj(interp, argv[idx]);
 
-        interp->errorFlag = 0;
+        interp->hasErrorStackTrace = 0;
     }
     interp->signal_level -= sig;
 
@@ -19865,12 +20735,12 @@ wrongargs:
                 case TRY_ON:
                 case TRY_TRAP:
                     if (idx + 4 > argc) {
-                        goto wrongargs;
+                        return JIM_USAGE;
                     }
                     if (option == TRY_ON) {
                         ret = JimMatchReturnCodes(interp, argv[idx + 1], exitCode);
                         if (ret > JIM_OK) {
-                            goto wrongargs;
+                            return JIM_USAGE;
                         }
                     }
                     else if (errorCodeObj) {
@@ -19908,7 +20778,7 @@ wrongargs:
                     break;
                 case TRY_FINALLY:
                     if (idx + 2 != argc) {
-                        goto wrongargs;
+                        return JIM_USAGE;
                     }
                     finallyScriptObj = argv[idx + 1];
                     idx += 2;
@@ -20016,11 +20886,6 @@ static int Jim_TryCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv
 
 static int Jim_RenameCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "oldName newName");
-        return JIM_ERR;
-    }
-
     return Jim_RenameCommand(interp, argv[1], argv[2]);
 }
 
@@ -20114,6 +20979,7 @@ int Jim_DictInfo(Jim_Interp *interp, Jim_Obj *objPtr)
     Jim_SetResult(interp, output);
     return JIM_OK;
 }
+
 
 static int Jim_EvalEnsemble(Jim_Interp *interp, const char *basecmd, const char *subcmd, int argc, Jim_Obj *const *argv)
 {
@@ -20341,10 +21207,6 @@ static int Jim_SubstCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
     int flags = JIM_SUBST_FLAG;
     Jim_Obj *objPtr;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "?options? string");
-        return JIM_ERR;
-    }
     for (i = 1; i < (argc - 1); i++) {
         int option;
 
@@ -20371,7 +21233,20 @@ static int Jim_SubstCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
     return JIM_OK;
 }
 
+
+static int Jim_LsubstCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
+{
+    if (argc == 3) {
+        if (Jim_CompareStringImmediate(interp, argv[1], "-line")) {
+            return JimListSubstObj(interp, argv[2], JIM_LSUBST_LINE);
+        }
+        return JIM_USAGE;
+    }
+    return JimListSubstObj(interp, argv[1], 0);
+}
+
 #ifdef jim_ext_namespace
+
 static int JimIsGlobalNamespace(Jim_Obj *objPtr)
 {
     int len;
@@ -20384,11 +21259,12 @@ static int JimIsGlobalNamespace(Jim_Obj *objPtr)
 static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
     Jim_Obj *objPtr;
-    int mode = 0;
+    int mode = 1;
 
 
     enum {
         INFO_ALIAS,
+        INFO_ALIASES,
         INFO_ARGS,
         INFO_BODY,
         INFO_CHANNELS,
@@ -20397,6 +21273,7 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
         INFO_EXISTS,
         INFO_FRAME,
         INFO_GLOBALS,
+        INFO_HELP,
         INFO_HOSTNAME,
         INFO_LEVEL,
         INFO_LOCALS,
@@ -20409,32 +21286,38 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
         INFO_SOURCE,
         INFO_STACKTRACE,
         INFO_STATICS,
+        INFO_TAINTED,
+        INFO_USAGE,
         INFO_VARS,
         INFO_VERSION,
         INFO_COUNT
     };
     static const jim_subcmd_type cmds[INFO_COUNT + 1] = {
         JIM_DEF_SUBCMD("alias", "command", 1, 1),
+        JIM_DEF_SUBCMD("aliases", "?-all? ?pattern?", 0, 2),
         JIM_DEF_SUBCMD("args", "procname", 1, 1),
         JIM_DEF_SUBCMD("body", "procname", 1, 1),
-        JIM_DEF_SUBCMD("channels", "?pattern?", 0, 1),
-        JIM_DEF_SUBCMD("commands", "?pattern?", 0, 1),
+        JIM_DEF_SUBCMD("channels", "?-all? ?pattern?", 0, 2),
+        JIM_DEF_SUBCMD("commands", "?-all? ?pattern?", 0, 2),
         JIM_DEF_SUBCMD("complete", "script ?missing?", 1, 2),
         JIM_DEF_SUBCMD("exists", "varName", 1, 1),
         JIM_DEF_SUBCMD("frame", "?levelNum?", 0, 1),
         JIM_DEF_SUBCMD("globals", "?pattern?", 0, 1),
+        JIM_DEF_SUBCMD("help", "command", 1, 1),
         JIM_DEF_SUBCMD("hostname", NULL, 0, 0),
         JIM_DEF_SUBCMD("level", "?levelNum?", 0, 1),
         JIM_DEF_SUBCMD("locals", "?pattern?", 0, 1),
         JIM_DEF_SUBCMD("nameofexecutable", NULL, 0, 0),
         JIM_DEF_SUBCMD("patchlevel", NULL, 0, 0),
-        JIM_DEF_SUBCMD("procs", "?pattern?", 0, 1),
+        JIM_DEF_SUBCMD("procs", "?-all? ?pattern?", 0, 2),
         JIM_DEF_SUBCMD("references", NULL, 0, 0),
         JIM_DEF_SUBCMD("returncodes", "?code?", 0, 1),
         JIM_DEF_SUBCMD("script", "?filename?", 0, 1),
         JIM_DEF_SUBCMD("source", "source ?filename line?", 1, 3),
         JIM_DEF_SUBCMD("stacktrace", NULL, 0, 0),
         JIM_DEF_SUBCMD("statics", "procname", 1, 1),
+        JIM_DEF_SUBCMD("tainted", "value", 1, 1),
+        JIM_DEF_SUBCMD("usage", "command", 1, 1),
         JIM_DEF_SUBCMD("vars", "?pattern?", 0, 1),
         JIM_DEF_SUBCMD("version", NULL, 0, 0),
         { NULL }
@@ -20472,7 +21355,7 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
             if ((cmdPtr = Jim_GetCommand(interp, argv[2], JIM_ERRMSG)) == NULL) {
                 return JIM_ERR;
             }
-            if (cmdPtr->isproc || cmdPtr->u.native.cmdProc != JimAliasCmd) {
+            if ((cmdPtr->flags & JIM_CMD_ISALIAS) == 0) {
                 Jim_SetResultFormatted(interp, "command \"%#s\" is not an alias", argv[2]);
                 return JIM_ERR;
             }
@@ -20480,33 +21363,54 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
             return JIM_OK;
         }
 
+        case INFO_TAINTED:
+            if (argc != 3) {
+                Jim_WrongNumArgs(interp, 2, argv, "value");
+                return JIM_ERR;
+            }
+            Jim_SetResultBool(interp, argv[2]->taint != 0);
+            return JIM_OK;
         case INFO_CHANNELS:
-            mode++;
+            mode <<= 1;
 #ifndef jim_ext_aio
             Jim_SetResultString(interp, "aio not enabled", -1);
             return JIM_ERR;
 #endif
 
+        case INFO_ALIASES:
+            mode <<= 1;
+
         case INFO_PROCS:
-            mode++;
+            mode <<= 1;
 
-        case INFO_COMMANDS:
+        case INFO_COMMANDS:{
+            int n = 0;
 
+            if (argc > 2 && Jim_CompareStringImmediate(interp, argv[2], "-all")) {
+                mode |= JIM_CMDLIST_ALL;
+                n++;
+            }
+            if (argc < 2 + n || argc > 3 + n) {
+                Jim_SetResultFormatted(interp, "wrong # args: should be \"info %#s %s\"", argv[1], cmds[option].args);
+                return JIM_ERR;
+            }
 #ifdef jim_ext_namespace
             if (!nons) {
+
                 if (Jim_Length(interp->framePtr->nsObj) || (argc == 3 && JimIsGlobalNamespace(argv[2]))) {
                     return Jim_EvalPrefix(interp, "namespace info", argc - 1, argv + 1);
                 }
             }
 #endif
-            Jim_SetResult(interp, JimCommandsList(interp, (argc == 3) ? argv[2] : NULL, mode));
+            Jim_SetResult(interp, JimCommandsList(interp, (argc == 3 + n) ? argv[2 + n] : NULL, mode));
             return JIM_OK;
+        }
 
         case INFO_VARS:
-            mode++;
+            mode <<= 1;
 
         case INFO_LOCALS:
-            mode++;
+            mode <<= 1;
 
         case INFO_GLOBALS:
 
@@ -20584,6 +21488,27 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
             }
             return JIM_OK;
 
+        case INFO_USAGE:
+        case INFO_HELP:{
+            Jim_Cmd *cmdPtr = Jim_GetCommand(interp, argv[2], JIM_ERRMSG);
+            if (!cmdPtr) {
+                return JIM_ERR;
+            }
+            if (option == INFO_USAGE) {
+                Jim_SetResult(interp, JimCmdUsage(interp, argv[2], cmdPtr));
+                return JIM_OK;
+            }
+            else if ((cmdPtr->flags & JIM_CMD_ISPROC) == 0) {
+                if (cmdPtr->u.native.help) {
+                    Jim_SetResultString(interp, cmdPtr->u.native.help, -1);
+                    return JIM_OK;
+                }
+            }
+
+            Jim_SetResultFormatted(interp, "No help available for command \"%#s\"", argv[2]);
+            return JIM_OK;
+        }
+
         case INFO_BODY:
         case INFO_STATICS:
         case INFO_ARGS:{
@@ -20592,7 +21517,7 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
                 if ((cmdPtr = Jim_GetCommand(interp, argv[2], JIM_ERRMSG)) == NULL) {
                     return JIM_ERR;
                 }
-                if (!cmdPtr->isproc) {
+                if ((cmdPtr->flags & JIM_CMD_ISPROC) == 0) {
                     Jim_SetResultFormatted(interp, "command \"%#s\" is not a procedure", argv[2]);
                     return JIM_ERR;
                 }
@@ -20619,12 +21544,17 @@ static int Jim_InfoCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
                 return JIM_OK;
             }
 
-        case INFO_VERSION:
-        case INFO_PATCHLEVEL:{
-                char buf[(JIM_INTEGER_SPACE * 2) + 1];
+        case INFO_PATCHLEVEL:
 
-                sprintf(buf, "%d.%d", JIM_VERSION / 100, JIM_VERSION % 100);
-                Jim_SetResultString(interp, buf, -1);
+#ifdef JIM_GITVERSION
+            Jim_SetResultString(interp, JIM_GITVERSION, -1);
+            return JIM_OK;
+#endif
+
+        case INFO_VERSION:{
+                char versionbuf[64];
+                snprintf(versionbuf, sizeof(versionbuf), "%d.%d", JIM_VERSION / 100, JIM_VERSION % 100);
+                Jim_SetResultString(interp, versionbuf, -1);
                 return JIM_OK;
             }
 
@@ -20694,11 +21624,11 @@ static int Jim_ExistsCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
     int result = 0;
 
     static const char * const options[] = {
-        "-command", "-proc", "-alias", "-var", NULL
+        "-command", "-proc", "-alias", "-channel", "-var", NULL
     };
     enum
     {
-        OPT_COMMAND, OPT_PROC, OPT_ALIAS, OPT_VAR
+        OPT_COMMAND, OPT_PROC, OPT_ALIAS, OPT_CHANNEL, OPT_VAR
     };
     int option;
 
@@ -20713,8 +21643,7 @@ static int Jim_ExistsCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
         objPtr = argv[2];
     }
     else {
-        Jim_WrongNumArgs(interp, 1, argv, "?option? name");
-        return JIM_ERR;
+        return JIM_USAGE;
     }
 
     if (option == OPT_VAR) {
@@ -20731,11 +21660,15 @@ static int Jim_ExistsCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
                 break;
 
             case OPT_ALIAS:
-                result = cmd->isproc == 0 && cmd->u.native.cmdProc == JimAliasCmd;
+                result = (cmd->flags & JIM_CMD_ISALIAS) != 0;
                 break;
 
             case OPT_PROC:
-                result = cmd->isproc;
+                result = (cmd->flags & JIM_CMD_ISPROC) != 0;
+                break;
+
+            case OPT_CHANNEL:
+                result = (cmd->flags & JIM_CMD_ISCHANNEL) != 0;
                 break;
             }
         }
@@ -20752,11 +21685,6 @@ static int Jim_SplitCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
     Jim_Obj *resObjPtr;
     int c;
     int len;
-
-    if (argc != 2 && argc != 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "string ?splitChars?");
-        return JIM_ERR;
-    }
 
     str = Jim_GetString(argv[1], &len);
     if (len == 0) {
@@ -20836,10 +21764,6 @@ static int Jim_JoinCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     const char *joinStr;
     int joinStrLen;
 
-    if (argc != 2 && argc != 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "list ?joinString?");
-        return JIM_ERR;
-    }
 
     if (argc == 2) {
         joinStr = " ";
@@ -20857,10 +21781,6 @@ static int Jim_FormatCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
 {
     Jim_Obj *objPtr;
 
-    if (argc < 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "formatString ?arg arg ...?");
-        return JIM_ERR;
-    }
     objPtr = Jim_FormatString(interp, argv[1], argc - 2, argv + 2);
     if (objPtr == NULL)
         return JIM_ERR;
@@ -20874,10 +21794,6 @@ static int Jim_ScanCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     Jim_Obj *listPtr, **outVec;
     int outc, i;
 
-    if (argc < 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "string format ?varName varName ...?");
-        return JIM_ERR;
-    }
     if (argv[2]->typePtr != &scanFmtStringObjType)
         SetScanFmtFromAny(interp, argv[2]);
     if (FormatGetError(argv[2]) != 0) {
@@ -20947,10 +21863,6 @@ static int Jim_ScanCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 
 static int Jim_ErrorCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    if (argc != 2 && argc != 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "message ?stacktrace?");
-        return JIM_ERR;
-    }
     Jim_SetResult(interp, argv[1]);
     if (argc == 3) {
         JimSetStackTrace(interp, argv[2]);
@@ -20964,10 +21876,6 @@ static int Jim_LrangeCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *a
 {
     Jim_Obj *objPtr;
 
-    if (argc != 4) {
-        Jim_WrongNumArgs(interp, 1, argv, "list first last");
-        return JIM_ERR;
-    }
     if ((objPtr = Jim_ListRange(interp, argv[1], argv[2], argv[3])) == NULL)
         return JIM_ERR;
     Jim_SetResult(interp, objPtr);
@@ -20981,8 +21889,7 @@ static int Jim_LrepeatCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *
     jim_wide count;
 
     if (argc < 2 || Jim_GetWideExpr(interp, argv[1], &count) != JIM_OK || count < 0) {
-        Jim_WrongNumArgs(interp, 1, argv, "count ?value ...?");
-        return JIM_ERR;
+        return JIM_USAGE;
     }
     if (count == 0 || argc == 2) {
         Jim_SetEmptyResult(interp);
@@ -21057,10 +21964,6 @@ static int Jim_EnvCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv
         return JIM_OK;
     }
 
-    if (argc > 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "varName ?default?");
-        return JIM_ERR;
-    }
     key = Jim_String(argv[1]);
     val = getenv(key);
     if (val == NULL) {
@@ -21077,16 +21980,9 @@ static int Jim_EnvCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv
 
 static int Jim_SourceCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
 {
-    int retval;
+    int retval = Jim_EvalFile(interp, Jim_String(argv[1]));
 
-    if (argc != 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "fileName");
-        return JIM_ERR;
-    }
-    retval = Jim_EvalFile(interp, Jim_String(argv[1]));
-    if (retval == JIM_RETURN)
-        return JIM_OK;
-    return retval;
+    return retval == JIM_RETURN ? JIM_OK : retval;
 }
 
 
@@ -21095,10 +21991,6 @@ static int Jim_LreverseCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
     Jim_Obj *revObjPtr, **ele;
     int len;
 
-    if (argc != 2) {
-        Jim_WrongNumArgs(interp, 1, argv, "list");
-        return JIM_ERR;
-    }
     JimListGetElements(interp, argv[1], &len, &ele);
     revObjPtr = Jim_NewListObj(interp, NULL, 0);
     ListEnsureLength(revObjPtr, len);
@@ -21108,6 +22000,7 @@ static int Jim_LreverseCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const 
     Jim_SetResult(interp, revObjPtr);
     return JIM_OK;
 }
+
 
 static int JimRangeLen(jim_wide start, jim_wide end, jim_wide step)
 {
@@ -21139,10 +22032,6 @@ static int Jim_RangeCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *ar
     int len, i;
     Jim_Obj *objPtr;
 
-    if (argc < 2 || argc > 4) {
-        Jim_WrongNumArgs(interp, 1, argv, "?start? end ?step?");
-        return JIM_ERR;
-    }
     if (argc == 2) {
         if (Jim_GetWideExpr(interp, argv[1], &end) != JIM_OK)
             return JIM_ERR;
@@ -21171,10 +22060,6 @@ static int Jim_RandCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
 {
     jim_wide min = 0, max = 0, len, maxMul;
 
-    if (argc < 1 || argc > 3) {
-        Jim_WrongNumArgs(interp, 1, argv, "?min? max");
-        return JIM_ERR;
-    }
     if (argc == 1) {
         max = JIM_WIDE_MAX;
     } else if (argc == 2) {
@@ -21202,94 +22087,107 @@ static int Jim_RandCoreCommand(Jim_Interp *interp, int argc, Jim_Obj *const *arg
     }
 }
 
-static const struct {
+static const struct jim_core_cmd_def_t {
     const char *name;
     Jim_CmdProc *cmdProc;
+    short minargs;
+    short maxargs;
+    const char *usage;
+    int flags;
 } Jim_CoreCommandsTable[] = {
-    {"alias", Jim_AliasCoreCommand},
-    {"set", Jim_SetCoreCommand},
-    {"unset", Jim_UnsetCoreCommand},
-    {"puts", Jim_PutsCoreCommand},
-    {"+", Jim_AddCoreCommand},
-    {"*", Jim_MulCoreCommand},
-    {"-", Jim_SubCoreCommand},
-    {"/", Jim_DivCoreCommand},
-    {"incr", Jim_IncrCoreCommand},
-    {"while", Jim_WhileCoreCommand},
-    {"loop", Jim_LoopCoreCommand},
-    {"for", Jim_ForCoreCommand},
-    {"foreach", Jim_ForeachCoreCommand},
-    {"lmap", Jim_LmapCoreCommand},
-    {"lassign", Jim_LassignCoreCommand},
-    {"if", Jim_IfCoreCommand},
-    {"switch", Jim_SwitchCoreCommand},
-    {"list", Jim_ListCoreCommand},
-    {"lindex", Jim_LindexCoreCommand},
-    {"lset", Jim_LsetCoreCommand},
-    {"lsearch", Jim_LsearchCoreCommand},
-    {"llength", Jim_LlengthCoreCommand},
-    {"lappend", Jim_LappendCoreCommand},
-    {"linsert", Jim_LinsertCoreCommand},
-    {"lreplace", Jim_LreplaceCoreCommand},
-    {"lsort", Jim_LsortCoreCommand},
-    {"append", Jim_AppendCoreCommand},
-    {"eval", Jim_EvalCoreCommand},
-    {"uplevel", Jim_UplevelCoreCommand},
-    {"expr", Jim_ExprCoreCommand},
-    {"break", Jim_BreakCoreCommand},
-    {"continue", Jim_ContinueCoreCommand},
-    {"proc", Jim_ProcCoreCommand},
-    {"xtrace", Jim_XtraceCoreCommand},
-    {"concat", Jim_ConcatCoreCommand},
-    {"return", Jim_ReturnCoreCommand},
-    {"upvar", Jim_UpvarCoreCommand},
-    {"global", Jim_GlobalCoreCommand},
-    {"string", Jim_StringCoreCommand},
-    {"time", Jim_TimeCoreCommand},
-    {"timerate", Jim_TimeRateCoreCommand},
-    {"exit", Jim_ExitCoreCommand},
-    {"catch", Jim_CatchCoreCommand},
-    {"try", Jim_TryCoreCommand},
-#ifdef JIM_REFERENCES
-    {"ref", Jim_RefCoreCommand},
-    {"getref", Jim_GetrefCoreCommand},
-    {"setref", Jim_SetrefCoreCommand},
-    {"finalize", Jim_FinalizeCoreCommand},
-    {"collect", Jim_CollectCoreCommand},
+    {"*", Jim_MulCoreCommand, 0, -1, "?number ...?"  },
+    {"+", Jim_AddCoreCommand, 0, -1, "?number ...?"  },
+    {"-", Jim_SubCoreCommand, 1, -1, "number ?number ...?" },
+    {"/", Jim_DivCoreCommand, 1, -1, "number ?number ...?" },
+    {"alias", Jim_AliasCoreCommand, 2, -1, "newname command ?args ...?" },
+    {"append", Jim_AppendCoreCommand, 1, -1, "varName ?value ...?" },
+    {"apply", Jim_ApplyCoreCommand, 1, -1, "lambdaExpr ?arg ...?" },
+    {"break", Jim_BreakCoreCommand, 0, 1, "?level?" },
+    {"catch", Jim_CatchCoreCommand, 1, -1, "?-?no?code ... --? script ?resultVarName? ?optionVarName?" },
+    {"concat", Jim_ConcatCoreCommand, 0, -1, "?arg ...?" },
+    {"continue", Jim_ContinueCoreCommand, 0, 1, "?level?" },
+    {"dict", Jim_DictCoreCommand, 1, -1, "subcommand ?arg ...?"},
+    {"env", Jim_EnvCoreCommand, 0, 2, "?varName? ?default?" },
+    {"error", Jim_ErrorCoreCommand, 1, 2, "message ?stacktrace?" },
+    {"eval", Jim_EvalCoreCommand, 1, -1, "arg ?arg ...?" },
+    {"exists", Jim_ExistsCoreCommand, 1, 2, "?-command|-proc|-alias|-channel|-var? name" },
+    {"exit", Jim_ExitCoreCommand, 0, 1, "?exitCode?" },
+#ifdef JIM_COMPAT
+    {"expr", Jim_ExprCoreCommand, 1, -1, "expression ?...?" },
+#else
+    {"expr", Jim_ExprCoreCommand, 1, 1, "expression" },
 #endif
-    {"rename", Jim_RenameCoreCommand},
-    {"dict", Jim_DictCoreCommand},
-    {"subst", Jim_SubstCoreCommand},
-    {"info", Jim_InfoCoreCommand},
-    {"exists", Jim_ExistsCoreCommand},
-    {"split", Jim_SplitCoreCommand},
-    {"join", Jim_JoinCoreCommand},
-    {"format", Jim_FormatCoreCommand},
-    {"scan", Jim_ScanCoreCommand},
-    {"error", Jim_ErrorCoreCommand},
-    {"lrange", Jim_LrangeCoreCommand},
-    {"lrepeat", Jim_LrepeatCoreCommand},
-    {"env", Jim_EnvCoreCommand},
-    {"source", Jim_SourceCoreCommand},
-    {"lreverse", Jim_LreverseCoreCommand},
-    {"range", Jim_RangeCoreCommand},
-    {"rand", Jim_RandCoreCommand},
-    {"tailcall", Jim_TailcallCoreCommand},
-    {"local", Jim_LocalCoreCommand},
-    {"upcall", Jim_UpcallCoreCommand},
-    {"apply", Jim_ApplyCoreCommand},
-    {"stacktrace", Jim_StacktraceCoreCommand},
+    {"for", Jim_ForCoreCommand, 4, 4, "start test next body" },
+    {"foreach", Jim_ForeachCoreCommand, 3, -1, "varList list ?varList list ...? script" },
+    {"format", Jim_FormatCoreCommand, 1, -1, "formatString ?arg arg ...?" },
+    {"global", Jim_GlobalCoreCommand, 1, -1, "varName ?varName ...?" },
+    {"if", Jim_IfCoreCommand, 2, -1, "condition ?then? trueBody ?elseif ...? ?else? ?falseBody?" },
+    {"incr", Jim_IncrCoreCommand, 1, 2, "varName ?increment?" },
+    {"info", Jim_InfoCoreCommand, 1, -1, "subcommand ?arg ...?"},
+    {"join", Jim_JoinCoreCommand, 1, 2, "list ?joinString?" },
+    {"lappend", Jim_LappendCoreCommand, 1, -1, "varName ?value value ...?" },
+    {"lassign", Jim_LassignCoreCommand, 2, -1, "varList list ?varName ...?" },
+    {"lindex", Jim_LindexCoreCommand, 1, -1, "list ?index ...?" },
+    {"linsert", Jim_LinsertCoreCommand, 2, -1, "list index ?element ...?" },
+    {"list", Jim_ListCoreCommand, 0, -1, "?arg ...?" },
+    {"llength", Jim_LlengthCoreCommand, 1, 1, "list" },
+    {"lmap", Jim_LmapCoreCommand, 3, -1, "varList list ?varList list ...? script" },
+    {"local", Jim_LocalCoreCommand, 1, -1, "cmd ?args ...?" },
+    {"loop", Jim_LoopCoreCommand, 3, 5, "var ?first? limit ?incr? body" },
+    {"lrange", Jim_LrangeCoreCommand, 3, 3, "list first last" },
+    {"lrepeat", Jim_LrepeatCoreCommand, 1, -1, "count ?value ...?" },
+    {"lreplace", Jim_LreplaceCoreCommand, 3, -1, "list first last ?element ...?" },
+    {"lreverse", Jim_LreverseCoreCommand, 1, 1, "list" },
+    {"lsearch", Jim_LsearchCoreCommand, 2, -1, "?-exact|-glob|-regexp|-command 'command'? ?-bool|-inline? ?-not? ?-nocase? ?-all? ?-stride len? ?-index val? list value" },
+    {"lset", Jim_LsetCoreCommand, 2, -1, "listVar ?index ...? value" },
+    {"lsort", Jim_LsortCoreCommand, 1, -1, "?options? list" },
+    {"lsubst", Jim_LsubstCoreCommand, 1, 2, "?-line? string" },
+    {"proc", Jim_ProcCoreCommand, 3, 4, "name arglist ?statics? body" },
+    {"puts", Jim_PutsCoreCommand, 1, 2, "?-nonewline? string" },
+    {"rand", Jim_RandCoreCommand, 0, 2, "?min? ?max?" },
+    {"range", Jim_RangeCoreCommand, 1, 3, "?start? end ?step?" },
+    {"rename", Jim_RenameCoreCommand, 2, 2, "oldName newName" },
+    {"return", Jim_ReturnCoreCommand, 0, -1, "?-code code? ?-errorinfo stacktrace? ?-level level? ?result?" },
+    {"scan", Jim_ScanCoreCommand, 2, -1, "string format ?varName varName ...?" },
+    {"set", Jim_SetCoreCommand, 1, 2, "varName ?newValue?" },
+    {"source", Jim_SourceCoreCommand, 1, 1, "fileName", JIM_CMD_NOTAINT },
+    {"split", Jim_SplitCoreCommand, 1, 2, "string ?splitChars?" },
+    {"stacktrace", Jim_StacktraceCoreCommand, 0, 2, "?firstlevel? ?lastlevel?" },
+    {"string", Jim_StringCoreCommand, 1, -1, "subcommand ?arg ...?" },
+    {"subst", Jim_SubstCoreCommand, 1, 4, "?options? string" },
+    {"switch", Jim_SwitchCoreCommand, 2, -1, "?options? string pattern body ... ?default body? or pattern body ?pattern body ...?" },
+    {"tailcall", Jim_TailcallCoreCommand, 0, -1, "?cmd arg ...?" },
+    {"time", Jim_TimeCoreCommand, 1, 2, "script ?count?" },
+    {"timerate", Jim_TimerateCoreCommand, 1, 2, "script ?milliseconds?" },
+    {"try", Jim_TryCoreCommand, 1, -1, "?-?no?code ... --? script ?on|trap codes vars script? ... ?finally script?" },
+    {"unset", Jim_UnsetCoreCommand, 0, -1, "?-nocomplain? ?--? ?varName ...?"},
+    {"upcall", Jim_UpcallCoreCommand, 1, -1, "cmd ?args ...?" },
+    {"uplevel", Jim_UplevelCoreCommand, 1, -1, "?level? command ?arg ...?" },
+    {"upvar", Jim_UpvarCoreCommand, 2, -1, "?level? otherVar myVar ?otherVar myVar ...?"},
+    {"while", Jim_WhileCoreCommand, 2, 2, "condition body" },
+    {"xtrace", Jim_XtraceCoreCommand, 1, 1, "callback" },
+#ifdef JIM_REFERENCES
+    {"collect", Jim_CollectCoreCommand, 0, 0, "" },
+    {"finalize", Jim_FinalizeCoreCommand, 1, 2, "reference ?finalizerProc?" },
+    {"getref", Jim_GetrefCoreCommand, 1, 1, "reference" },
+    {"ref", Jim_RefCoreCommand, 2, 3, "string tag ?finalizer?" },
+    {"setref", Jim_SetrefCoreCommand, 2, 2, "reference newValue" },
+#endif
+#ifdef JIM_TAINT
+    {"taint", Jim_TaintCoreCommand, 1, 1, "varname"},
+    {"untaint", Jim_UntaintCoreCommand, 1, 1, "varname"},
+#endif
     {NULL, NULL},
 };
 
 void Jim_RegisterCoreCommands(Jim_Interp *interp)
 {
-    int i = 0;
+    const struct jim_core_cmd_def_t *c;
 
-    while (Jim_CoreCommandsTable[i].name != NULL) {
-        Jim_CreateCommand(interp,
-            Jim_CoreCommandsTable[i].name, Jim_CoreCommandsTable[i].cmdProc, NULL, NULL);
-        i++;
+    for (c = Jim_CoreCommandsTable; c->name; c++) {
+
+        assert(c->usage);
+        Jim_RegisterCmd(interp, c->name, c->usage, c->minargs, c->maxargs, c->cmdProc, NULL, NULL, c->flags);
     }
 }
 
@@ -21736,14 +22634,22 @@ int Jim_CallSubCmd(Jim_Interp *interp, const jim_subcmd_type * ct, int argc, Jim
     int ret = JIM_ERR;
 
     if (ct) {
-        if (ct->flags & JIM_MODFLAG_FULLARGV) {
+        if ((ct->flags & JIM_MODFLAG_NOTAINT) && Jim_CheckTaint(interp, JIM_TAINT_ANY)) {
+            ret = JIM_SUBCMD_TAINTED;
+        }
+        else if (ct->flags & JIM_MODFLAG_FULLARGV) {
             ret = ct->function(interp, argc, argv);
         }
         else {
             ret = ct->function(interp, argc - 2, argv + 2);
         }
         if (ret < 0) {
-            Jim_SubCmdArgError(interp, ct, argv[0]);
+            if (ret == JIM_SUBCMD_TAINTED) {
+                Jim_SetTaintError(interp, 2, argv);
+            }
+            else {
+                Jim_SubCmdArgError(interp, ct, argv[0]);
+            }
             ret = JIM_ERR;
         }
     }
@@ -21756,6 +22662,18 @@ int Jim_SubCmdProc(Jim_Interp *interp, int argc, Jim_Obj *const *argv)
         Jim_ParseSubCmd(interp, (const jim_subcmd_type *)Jim_CmdPrivData(interp), argc, argv);
 
     return Jim_CallSubCmd(interp, ct, argc, argv);
+}
+
+Jim_Cmd *Jim_RegisterSubCmd(Jim_Interp *interp, const char *cmdname,
+	const jim_subcmd_type *command_table, Jim_DelCmdProc *delProc)
+{
+    return Jim_RegisterCmd(interp, cmdname,
+        "subcommand ?arg ...?",
+        1, -1,
+        Jim_SubCmdProc,
+        delProc,
+        (void *)command_table,
+        0);
 }
 
 #include <ctype.h>
@@ -21947,7 +22865,7 @@ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int objc, Jim_
             step = utf8_tounicode(format, &ch);
         }
         if (isdigit(ch)) {
-            precision = strtoul(format, &end, 10);
+            precision = strtol(format, &end, 10);
             format = end;
             step = utf8_tounicode(format, &ch);
         } else if (ch == '*') {
@@ -22234,8 +23152,7 @@ Jim_Obj *Jim_FormatString(Jim_Interp *interp, Jim_Obj *fmtObjPtr, int objc, Jim_
 
 
 #define	FAIL(R,M)	{ (R)->err = (M); return (M); }
-#define	ISMULT(c)	((c) == '*' || (c) == '+' || (c) == '?' || (c) == '{')
-#define	META		"^$.[()|?{+*"
+#define	META		"^$.[()|"
 
 #define	HASWIDTH	1
 #define	SIMPLE		2
@@ -22268,6 +23185,22 @@ static const char *regprop( int op );
 #endif
 
 
+static int str_is_mult(const char *s)
+{
+	switch (*s) {
+		case '*':
+		case '+':
+		case '?':
+			return 1;
+		case '{':
+			if (isdigit(UCHAR(s[1]))) {
+				return 1;
+			}
+			break;
+	}
+	return 0;
+}
+
 static int str_int_len(const int *seq)
 {
 	int n = 0;
@@ -22275,6 +23208,41 @@ static int str_int_len(const int *seq)
 		n++;
 	}
 	return n;
+}
+
+
+static char *reg_expanded_new_pattern(const char *exp)
+{
+
+	char *newexp = strdup(exp);
+	char *d = newexp;
+	const char *s = exp;
+	int escape = 0;
+
+	while (*s) {
+		if (escape) {
+			escape = 0;
+			continue;
+		}
+		else if (*s == '\\') {
+			escape = 1;
+		}
+		else if (strchr(" \t\r\n\f\v", *s)) {
+			s++;
+			continue;
+		}
+		else if (*s == '#') {
+
+			s++;
+			while (*s && *s != '\n') {
+				s++;
+			}
+			continue;
+		}
+		*d++ = *s++;
+	}
+	*d++ = '\0';
+	return newexp;
 }
 
 int jim_regcomp(regex_t *preg, const char *exp, int cflags)
@@ -22291,6 +23259,11 @@ int jim_regcomp(regex_t *preg, const char *exp, int cflags)
 
 	if (exp == NULL)
 		FAIL(preg, REG_ERR_NULL_ARGUMENT);
+
+	if (cflags & REG_EXPANDED) {
+		preg->exp = reg_expanded_new_pattern(exp);
+		exp = preg->exp;
+	}
 
 
 	preg->cflags = cflags;
@@ -22466,12 +23439,12 @@ static int regpiece(regex_t *preg, int *flagp)
 	if (ret == 0)
 		return 0;
 
-	op = *preg->regparse;
-	if (!ISMULT(op)) {
+	if (!str_is_mult(preg->regparse)) {
 		*flagp = flags;
 		return(ret);
 	}
 
+	op = *preg->regparse;
 	if (!(flags&HASWIDTH) && op != '?') {
 		preg->err = REG_ERR_OPERAND_COULD_BE_EMPTY;
 		return 0;
@@ -22540,7 +23513,7 @@ static int regpiece(regex_t *preg, int *flagp)
 	}
 
 	preg->regparse++;
-	if (ISMULT(*preg->regparse)) {
+	if (str_is_mult(preg->regparse)) {
 		preg->err = REG_ERR_NESTED_COUNT;
 		return 0;
 	}
@@ -22849,12 +23822,6 @@ cc_switch:
 	case ')':
 		preg->err = REG_ERR_INTERNAL;
 		return 0;
-	case '?':
-	case '+':
-	case '*':
-	case '{':
-		preg->err = REG_ERR_COUNT_FOLLOWS_NOTHING;
-		return 0;
 	case '\\':
 		ch = *preg->regparse++;
 		switch (ch) {
@@ -22916,11 +23883,16 @@ cc_switch:
 
 			preg->regparse -= n;
 
+			if (str_is_mult(preg->regparse)) {
+				preg->err = REG_ERR_COUNT_FOLLOWS_NOTHING;
+				return 0;
+			}
+
 			ret = regnode(preg, EXACTLY);
 
 
 
-			while (*preg->regparse && strchr(META, *preg->regparse) == NULL) {
+			while (*preg->regparse && strchr(META, *preg->regparse) == NULL && !str_is_mult(preg->regparse)) {
 				n = reg_utf8_tounicode_case(preg->regparse, &ch, (preg->cflags & REG_ICASE));
 				if (ch == '\\' && preg->regparse[n]) {
 					if (strchr("<>mMwWdDsSAZ", preg->regparse[n])) {
@@ -22935,7 +23907,7 @@ cc_switch:
 				}
 
 
-				if (ISMULT(preg->regparse[n])) {
+				if (str_is_mult(&preg->regparse[n])) {
 
 					if (added) {
 
@@ -23108,7 +24080,7 @@ int jim_regexec(regex_t  *preg,  const  char *string, size_t nmatch, regmatch_t 
 			}
 			if (*string) {
 nextline:
-				if (preg->cflags & REG_NEWLINE) {
+				if (preg->cflags & REG_NEWLINE_ANCHOR) {
 
 					string = strchr(string, '\n');
 					if (string) {
@@ -23218,7 +24190,7 @@ static const char *str_find(const char *string, int c, int nocase)
 
 static int reg_iseol(regex_t *preg, int ch)
 {
-	if (preg->cflags & REG_NEWLINE) {
+	if (preg->cflags & REG_NEWLINE_STOP) {
 		return ch == '\0' || ch == '\n';
 	}
 	else {
@@ -23629,6 +24601,7 @@ size_t jim_regerror(int errcode, const regex_t *preg, char *errbuf,  size_t errb
 
 void jim_regfree(regex_t *preg)
 {
+	free(preg->exp);
 	free(preg->program);
 }
 
@@ -23817,7 +24790,9 @@ int Jim_OpenForRead(const char *filename)
 int Jim_MakeTempFile(Jim_Interp *interp, const char *filename_template, int unlink_file)
 {
     int fd;
+#ifdef HAVE_UMASK
     mode_t mask;
+#endif
     Jim_Obj *filenameObj;
 
     if (filename_template == NULL) {

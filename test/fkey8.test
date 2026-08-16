@@ -249,5 +249,45 @@ do_execsql_test 6.3 {
   DELETE FROM aux.p1 WHERE a=123;
 }
 
+#-------------------------------------------------------------------------
+# Forum: https://sqlite.org/forum/forumpost/636bd0180a
+#
+reset_db
+do_execsql_test 7.0 {
+  PRAGMA foreign_keys = ON;
+  CREATE TABLE p1 (pid PRIMARY KEY);
+  CREATE TABLE c1 (cid PRIMARY KEY,
+      pid REFERENCES p1(pid) ON UPDATE CASCADE
+  );
+}
+
+do_execsql_test 7.1 {
+  ATTACH ':memory:' AS aux;
+  CREATE TABLE aux.p1 (pid PRIMARY KEY);
+  CREATE TABLE aux.c1 (cid PRIMARY KEY,
+      pid REFERENCES p1(pid) ON UPDATE CASCADE);
+
+  INSERT INTO aux.p1 VALUES (10);
+  INSERT INTO aux.p1 VALUES (20);
+
+  INSERT INTO aux.c1 VALUES(11, 10);
+  INSERT INTO aux.c1 VALUES(12, 10);
+  INSERT INTO aux.c1 VALUES(21, 20);
+  INSERT INTO aux.c1 VALUES(22, 20);
+}
+
+do_catchsql_test 7.2 {
+  UPDATE aux.p1 SET pid = pid * 10;
+} {0 {}}
+
+do_execsql_test 7.3 {
+  SELECT * FROM aux.p1;
+} {100 200}
+
+do_execsql_test 7.4 {
+  SELECT * FROM aux.c1;
+} {11 100 12 100 21 200 22 200}
+
+
 
 finish_test

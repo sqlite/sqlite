@@ -344,6 +344,16 @@
     ].join(' ');
     SF.echo("SQLite version",a.innerText);
   });
+  SF.addMsgHandler('wasm-info', (ev)=>{
+    const v = ev.data;
+    SF.e.wasmInfo.innerText = 'WASM: '+(
+      4===v.pointerSize ? 32 : 64
+    )+'-bit'
+    +' heap: '+Number(v.heapSize)
+    // Heap size is not changing even when loading a huge db?
+    ;
+    SF.jqTerm?.set_prompt?.(v.prompt);
+  });
 
   /* querySelectorAll() proxy */
   const EAll = function(/*[element=document,] cssSelector*/){
@@ -409,6 +419,7 @@
   SF.e ={
     about: E('#view-about'),
     split: E('#view-split'),
+    wasmInfo: E('#opt-wasm-info'),
     terminal: E('#view-terminal'),
     hideInTerminal: EAll('.hide-in-terminal'
                          /* Elements to hide when in terminal mode */)
@@ -633,13 +644,13 @@
 
     SF.addMsgHandler('working',function f(ev){
       switch(ev.data){
-          case 'start': /* See notes in preStartWork(). */; return;
-          case 'end':
-            preStartWork._.pageTitle.innerText = preStartWork._.pageTitleOrig;
-            btnShellExec.innerText = preStartWork._.btnLabel;
-            btnShellExec.removeAttribute('disabled');
-            btnInterrupt.setAttribute('disabled','disabled');
-            return;
+        case 'start': /* See notes in preStartWork(). */; return;
+        case 'end':
+          preStartWork._.pageTitle.innerText = preStartWork._.pageTitleOrig;
+          btnShellExec.innerText = preStartWork._.btnLabel;
+          btnShellExec.removeAttribute('disabled');
+          btnInterrupt.setAttribute('disabled','disabled');
+          return;
       }
       console.warn("Unhandled 'working' event:",ev.data);
     });
@@ -855,8 +866,14 @@
       const jqeTerm = window.jQuery(SF.e.terminal).empty();
       SF.jqTerm = jqeTerm.terminal(SF.dbExec.bind(SF),{
         prompt: 'sqlite> ',
-        greetings: false /* note that the docs incorrectly call this 'greeting' */
+        greetings: false /* the docs incorrectly call this 'greeting' */
       });
+      /* Disable all special handling of the input:
+         https://sqlite.org/forum/forumpost/c6665017c0dbba1f
+         https://github.com/jcubic/jquery.terminal/issues/1044 */
+      const no_formatting = (str)=>window.jQuery.terminal.escape_formatting(str);
+      no_formatting.__meta__ = true;
+      window.jQuery.terminal.new_formatter(no_formatting);
       EAll('.unhide-if-terminal-available').forEach(e=>{
         e.classList.remove('hidden');
       });
@@ -880,5 +897,6 @@
     SF.dbExec(urlParams.get('sql') || null);
     delete SF.ForceResizeKludge.$disabled;
     SF.ForceResizeKludge();
+    globalThis.fiddle = SF;
   }/*onSFLoaded()*/;
 })();

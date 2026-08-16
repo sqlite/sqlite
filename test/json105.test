@@ -29,6 +29,11 @@ json_extract_test 30 {'$.b[#-2]'} {'[2,3]'}
 json_extract_test 31 {'$.b[#-02]'} {'[2,3]'}
 json_extract_test 40 {'$.b[#-3]'} 1
 json_extract_test 50 {'$.b[#-4]'} NULL
+json_extract_test 51 {'$.b[#-4296967295]'} NULL
+json_extract_test 52 {'$.b[#-4296967296]'} NULL
+json_extract_test 53 {'$.b[#-4296967297]'} NULL
+json_extract_test 54 {'$.b[#-42969672950]'} NULL
+json_extract_test 55 {'$.b[#-42969672960]'} NULL
 json_extract_test 60 {'$.b[#-2][#-1]'} 3
 json_extract_test 70 {'$.b[0]','$.b[#-1]'} {'[1,4]'}
 

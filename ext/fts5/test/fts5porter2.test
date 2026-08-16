@@ -65,5 +65,13 @@ foreach {in out} $test_vocab {
   incr i
 }
 
+#-------------------------------------------------------------------------
+reset_db
+  
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE tbl USING fts5(t, tokenize='porter unicode61');
+  INSERT INTO tbl VALUES(' andeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee');
+}
+
 
 finish_test

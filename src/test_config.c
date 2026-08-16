@@ -63,6 +63,12 @@ static void set_options(Tcl_Interp *interp){
       interp, "sqlite_options", "allow_rowid_in_view", "0", TCL_GLOBAL_ONLY);
 #endif
 
+#if defined(SQLITE_ENABLE_CARRAY)
+  Tcl_SetVar2(interp, "sqlite_options","carray","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options","carray","0",TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_CASE_SENSITIVE_LIKE
   Tcl_SetVar2(interp, "sqlite_options","casesensitivelike","1",TCL_GLOBAL_ONLY);
 #else
@@ -76,7 +82,7 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options","configslower","1.0",TCL_GLOBAL_ONLY);
 #endif
 
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
+#if !SQLITE_OS_WINCE
   Tcl_SetVar2(interp, "sqlite_options", "curdir", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "curdir", "0", TCL_GLOBAL_ONLY);
@@ -86,12 +92,6 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "win32malloc", "1", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "win32malloc", "0", TCL_GLOBAL_ONLY);
-#endif
-
-#if defined(SQLITE_OS_WINRT) && SQLITE_OS_WINRT
-  Tcl_SetVar2(interp, "sqlite_options", "winrt", "1", TCL_GLOBAL_ONLY);
-#else
-  Tcl_SetVar2(interp, "sqlite_options", "winrt", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_DEBUG
@@ -679,6 +679,14 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   Tcl_SetVar2(interp, "sqlite_options", "trace", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_THREAD_MISUSE_WARNINGS
+  Tcl_SetVar2(interp, "sqlite_options", "thread_misuse_warnings",
+                                        "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "thread_misuse_warnings",
+                                        "0", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_TRIGGER
   Tcl_SetVar2(interp, "sqlite_options", "trigger", "0", TCL_GLOBAL_ONLY);
 #else
@@ -819,6 +827,7 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   LINKVAR( MAX_ATTACHED );
   LINKVAR( MAX_DEFAULT_PAGE_SIZE );
   LINKVAR( MAX_WORKER_THREADS );
+  LINKVAR( MAX_SCHEMA );
 
   {
     static const int cv_TEMP_STORE = SQLITE_TEMP_STORE;
