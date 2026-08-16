@@ -1,5 +1,5 @@
-C Mark\sjsonbPayloadSize()\swith\sSQLITE_OPT_INLINE,\sso\sthat\seach\sJSONB\snode-header\sdecode\ssite\sabsorbs\sa\sspecialized\scopy\sin\samalgamation\sbuilds.\sReduces\sJSON\stestset\stime\sat\sa\scost\sof\sabout\s9-10KB\sof\scode\sspace\sin\sspeed\sbuilds
-D 2026-08-16T11:52:54.863
+C Partial\sin-lining\sof\sjsonbPayloadSize(),\shappens\sin\sonly\s5\sperformance\scritical\nplaces\sinstead\sof\severywhere.\s\sThis\sgives\s96%\sof\sthe\sperformance\sincrease\swith\nonly\s18%\sof\sthe\sobject\scode\ssize\sincrease.
+D 2026-08-16T23:05:00.539
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -703,7 +703,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 5cb15147c8583d0fc4748e1c12ea6f38c9deaeefa147a4d8d379fd9bc81fee9a
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 64c22744bce3b1e9630288043c1967a60b4f02c8fc7707fdb10d13c1ec30d297
-F src/json.c 35b54c8a79c1c540f1b98f22ab744b44068052abc7b96b115e0f735e5cdb04f6
+F src/json.c 5705f0b4fbaecdb8cf126276a5a19bdaf511ed10357b19d68fa1805dca981eff
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 5cd4cd7ec6e1a46416806899086363fbf95eecd3bfb9a388b436c9a77243c902
 F src/main.c 2af1793f14ae547168e11682720aefc360d3fec75bc1dbabd9565ca09b02c8ab
@@ -747,7 +747,7 @@ F src/shell.c.in 49689bdd9228e3ff3a199c3e0a214c3601dd8448537bc6790e5b2ac2a594b6d
 F src/sqlite.h.in 2101a2b494cbc282d0dc1c3f631c4fb83060c52876cc9d7615b091ad66d932b1
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0efd4723bad9124ea1f581d9f1ea0254ac1c6f3e5fb29e4f3dcf36c72485a456
-F src/sqliteInt.h e024c4d4d6ec812e087c46126a5aea9ca3b386240459da6013aab90a9d18cfbb
+F src/sqliteInt.h 3002d74b8f9ce79cbd3f59a26f2fb08059e3cfcdd76e665453c5bb0eff09aa2d
 F src/sqliteLimit.h 7617f2ee673dab382046beba4552283f442cf1a181bb169ac38eb908135dd8da
 F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2218,11 +2218,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f9b4ee369557c36c606666bd7e6d8dc4685d87531993d3ce4e7a718aa814a5ac
-R eba04b313c64ef2265f5386705361991
-T *branch * opt-inline-jsonbPayloadSize
-T *sym-opt-inline-jsonbPayloadSize *
-T -sym-trunk *
-U jeffchen
-Z 221e5603734aa87b93103f6d5f095513
+P 6d8e8474c516fdb1cf9355846fa09098fb5f8f5fbd94d99d8d1b5778138b243d
+R acccf4e146748c5845cd10a0c96a4849
+U drh
+Z 5c8df627dfd605fe50258941f59a77ab
 # Remove this line to create a well-formed Fossil manifest.

@@ -408,7 +408,8 @@ static u32 jsonTranslateBlobToText(JsonParse*,u32,JsonString*);
 static void jsonReturnParse(sqlite3_context*,JsonParse*);
 static JsonParse *jsonParseFuncArg(sqlite3_context*,sqlite3_value*,u32);
 static void jsonParseFree(JsonParse*);
-static SQLITE_OPT_INLINE u32 jsonbPayloadSize(const JsonParse*, u32, u32*);
+static u32 jsonbPayloadSize(const JsonParse*, u32, u32*);
+static SQLITE_INLINE u32 jsonbPayloadSizeInline(const JsonParse*,u32,u32*);
 static u32 jsonUnescapeOneChar(const char*, u32, u32*);
 
 /**************************************************************************
@@ -2120,7 +2121,7 @@ static void jsonReturnStringAsBlob(JsonString *pStr){
 ** payload size in to *pSz.  It returns the offset from i to the
 ** beginning of the payload.  Return 0 on error.
 */
-static SQLITE_OPT_INLINE u32 jsonbPayloadSize(
+static u32 jsonbPayloadSize(
   const JsonParse *pParse, u32 i, u32 *pSz
 ){
   u8 x;
@@ -2178,6 +2179,72 @@ static SQLITE_OPT_INLINE u32 jsonbPayloadSize(
   return n;
 }
 
+/* A separate inline version of jsonbPayloadSize(), used in a few
+** select performance-critical places.
+*/
+static SQLITE_INLINE u32 jsonbPayloadSizeInline(
+  const JsonParse *pParse,
+  u32 i,
+  u32 *pSz
+){
+#if !SQLITE_USES_INLINE
+  return jsonbPayloadSize(pParse,i,pSz);
+#else
+  u8 x;
+  u32 sz;
+  u32 n;
+  if( i>=pParse->nBlob ){
+    *pSz = 0;
+    return 0;
+  }else if( (x = pParse->aBlob[i]>>4)<=11 ){
+    sz = x;
+    n = 1;
+  }else if( x==12 ){
+    if( i+1>=pParse->nBlob ){
+      *pSz = 0;
+      return 0;
+    }
+    sz = pParse->aBlob[i+1];
+    n = 2;
+  }else if( x==13 ){
+    if( i+2>=pParse->nBlob ){
+      *pSz = 0;
+      return 0;
+    }
+    sz = (pParse->aBlob[i+1]<<8) + pParse->aBlob[i+2];
+    n = 3;
+  }else if( x==14 ){
+    if( i+4>=pParse->nBlob ){
+      *pSz = 0;
+      return 0;
+    }
+    sz = ((u32)pParse->aBlob[i+1]<<24) + (pParse->aBlob[i+2]<<16) +
+         (pParse->aBlob[i+3]<<8) + pParse->aBlob[i+4];
+    n = 5;
+  }else{
+    if( i+8>=pParse->nBlob
+     || pParse->aBlob[i+1]!=0
+     || pParse->aBlob[i+2]!=0
+     || pParse->aBlob[i+3]!=0
+     || pParse->aBlob[i+4]!=0
+    ){
+      *pSz = 0;
+      return 0;
+    }
+    sz = ((u32)pParse->aBlob[i+5]<<24) + (pParse->aBlob[i+6]<<16) +
+         (pParse->aBlob[i+7]<<8) + pParse->aBlob[i+8];
+    n = 9;
+  }
+  if( (i64)i+sz+n > pParse->nBlob
+   && (i64)i+sz+n > pParse->nBlob-pParse->delta
+  ){
+    *pSz = 0;
+    return 0;
+  }
+  *pSz = sz;
+  return n;
+#endif
+}
 
 /*
 ** Translate the binary JSONB representation of JSON beginning at
@@ -2199,7 +2266,7 @@ static u32 jsonTranslateBlobToText(
 ){
   u32 sz, n, j, iEnd;
 
-  n = jsonbPayloadSize(pParse, i, &sz);
+  n = jsonbPayloadSizeInline(pParse, i, &sz);
   if( n==0 ){
     pOut->eErr |= JSTRING_MALFORMED;
     return pParse->nBlob+1;
@@ -2539,7 +2606,7 @@ static u32 jsonbArrayCount(JsonParse *pParse, u32 iRoot){
   n = jsonbPayloadSize(pParse, iRoot, &sz);
   iEnd = iRoot+n+sz;
   for(i=iRoot+n; n>0 && i<iEnd; i+=sz+n, k++){
-    n = jsonbPayloadSize(pParse, i, &sz);
+    n = jsonbPayloadSizeInline(pParse, i, &sz);
   }
   return k;
 }
@@ -3049,7 +3116,7 @@ static u32 jsonLookupStep(
       const char *zLabel;
       x = pParse->aBlob[j] & 0x0f;
       if( x<JSONB_TEXT || x>JSONB_TEXTRAW ) return JSON_LOOKUP_ERROR;
-      n = jsonbPayloadSize(pParse, j, &sz);
+      n = jsonbPayloadSizeInline(pParse, j, &sz);
       if( n==0 ) return JSON_LOOKUP_ERROR;
       k = j+n;  /* k is the index of the label text */
       if( k+sz>=iEnd ) return JSON_LOOKUP_ERROR;
@@ -3071,7 +3138,7 @@ static u32 jsonLookupStep(
       }
       j = k+sz;
       if( ((pParse->aBlob[j])&0x0f)>JSONB_OBJECT ) return JSON_LOOKUP_ERROR;
-      n = jsonbPayloadSize(pParse, j, &sz);
+      n = jsonbPayloadSizeInline(pParse, j, &sz);
       if( n==0 ) return JSON_LOOKUP_ERROR;
       j += n+sz;
     }
@@ -3160,7 +3227,7 @@ static u32 jsonLookupStep(
         return rc;
       }
       kk--;
-      n = jsonbPayloadSize(pParse, j, &sz);
+      n = jsonbPayloadSizeInline(pParse, j, &sz);
       if( n==0 ) return JSON_LOOKUP_ERROR;
       j += n+sz;
     }
