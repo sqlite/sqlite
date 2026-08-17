@@ -144,6 +144,14 @@ static int fts3auxDisconnectMethod(sqlite3_vtab *pVtab){
 #define FTS4AUX_LE_CONSTRAINT 4
 
 /*
+** Return true if constraint iCons of pInfo uses the "binary" collation
+** sequence. Or false it it uses anything else.
+*/
+static int fts3auxIsBinary(sqlite3_index_info *pInfo, int iCons){
+  return 0==sqlite3_stricmp("binary", sqlite3_vtab_collation(pInfo, iCons));
+}
+
+/*
 ** xBestIndex - Analyze a WHERE and ORDER BY clause.
 */
 static int fts3auxBestIndexMethod(
@@ -170,7 +178,7 @@ static int fts3auxBestIndexMethod(
   /* Search for equality and range constraints on the "term" column. 
   ** And equality constraints on the hidden "languageid" column. */
   for(i=0; i<pInfo->nConstraint; i++){
-    if( pInfo->aConstraint[i].usable ){
+    if( pInfo->aConstraint[i].usable && fts3auxIsBinary(pInfo, i) ){
       int op = pInfo->aConstraint[i].op;
       int iCol = pInfo->aConstraint[i].iColumn;
 

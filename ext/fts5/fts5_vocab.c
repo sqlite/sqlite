@@ -252,6 +252,14 @@ static int fts5VocabCreateMethod(
   return fts5VocabInitVtab(db, pAux, argc, argv, ppVtab, pzErr);
 }
 
+/*
+** Return true if constraint iCons of pInfo uses the "binary" collation
+** sequence. Or false it it uses anything else.
+*/
+static int fts5VocabIsBinary(sqlite3_index_info *pInfo, int iCons){
+  return 0==sqlite3_stricmp("binary", sqlite3_vtab_collation(pInfo, iCons));
+}
+
 /* 
 ** Implementation of the xBestIndex method.
 **
@@ -282,7 +290,7 @@ static int fts5VocabBestIndexMethod(
   for(i=0; i<pInfo->nConstraint; i++){
     struct sqlite3_index_constraint *p = &pInfo->aConstraint[i];
     if( p->usable==0 ) continue;
-    if( p->iColumn==0 ){          /* term column */
+    if( p->iColumn==0 && fts5VocabIsBinary(pInfo, i) ){    /* term column */
       if( p->op==SQLITE_INDEX_CONSTRAINT_EQ ) iTermEq = i;
       if( p->op==SQLITE_INDEX_CONSTRAINT_LE ) iTermLe = i;
       if( p->op==SQLITE_INDEX_CONSTRAINT_LT ) iTermLe = i;
