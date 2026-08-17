@@ -3881,6 +3881,13 @@ struct ParseCleanup {
 };
 
 /*
+** Number of 64-bit entried in the variable number bitmap cache (VNBMC).
+*/
+#ifndef SQLITE_VNBMC
+# define SQLITE_VNBMC 2
+#endif
+
+/*
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
 ** carry around information that is global to the entire parse.
@@ -3998,6 +4005,7 @@ struct Parse {
 
   Token sLastToken;       /* The last token parsed */
   ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
+  u64 aVnbmc[SQLITE_VNBMC]; /* Varible Number Bitmap Cache */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
   u8 eParseMode;            /* PARSE_MODE_XXX constant */
@@ -5037,6 +5045,7 @@ void sqlite3ExprListSetName(Parse*,ExprList*,const Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
 void sqlite3ExprListDeleteGeneric(sqlite3*,void*);
+int sqlite3ExprCanReturnSubtype(Parse*,Expr*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3IndexHasDuplicateRootPage(Index*);
 int sqlite3Init(sqlite3*, char**);
@@ -5416,6 +5425,7 @@ int sqlite3VListNameToNum(VList*,const char*,int);
 */
 int sqlite3PutVarint(unsigned char*, u64);
 u8 sqlite3GetVarint(const unsigned char *, u64 *);
+i64 sqlite3VarintValue(const unsigned char*);
 u8 sqlite3GetVarint32(const unsigned char *, u32 *);
 int sqlite3VarintLen(u64 v);
 
@@ -5431,9 +5441,6 @@ int sqlite3VarintLen(u64 v);
 #define putVarint32(A,B)  \
   (u8)(((u32)(B)<(u32)0x80)?(*(A)=(unsigned char)(B)),1:\
   sqlite3PutVarint((A),(B)))
-#define getVarint    sqlite3GetVarint
-#define putVarint    sqlite3PutVarint
-
 
 const char *sqlite3IndexAffinityStr(sqlite3*, Index*);
 char *sqlite3TableAffinityStr(sqlite3*,const Table*);

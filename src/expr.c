@@ -1369,6 +1369,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
       if( x>pParse->nVar ){
         pParse->nVar = (int)x;
         doAdd = 1;
+      }else if( x<SQLITE_VNBMC*64 ){
+        doAdd = (pParse->aVnbmc[x>>6] & MASKBIT64(x&63))==0;
       }else if( sqlite3VListNumToName(pParse->pVList, x)==0 ){
         doAdd = 1;
       }
@@ -1385,6 +1387,9 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
     }
     if( doAdd ){
       pParse->pVList = sqlite3VListAdd(db, pParse->pVList, z, n, x);
+      if( pParse->pVList!=0 && x<SQLITE_VNBMC*64 ){
+        pParse->aVnbmc[x>>6] |= MASKBIT64(x&63);
+      }
     }
   }
   pExpr->iColumn = x;
@@ -4780,7 +4785,7 @@ static int exprNodeCanReturnSubtype(Walker *pWalker, Expr *pExpr){
 ** are acceptable as they only disable an optimization.  False negatives,
 ** on the other hand, can lead to incorrect answers.
 */
-static int sqlite3ExprCanReturnSubtype(Parse *pParse, Expr *pExpr){
+int sqlite3ExprCanReturnSubtype(Parse *pParse, Expr *pExpr){
   Walker w;
   memset(&w, 0, sizeof(w));
   w.pParse = pParse;

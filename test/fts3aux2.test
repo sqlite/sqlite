@@ -157,12 +157,49 @@ do_execsql_test 2.1 {
 do_execsql_test 2.2 {
   SELECT term FROM t2 WHERE term<X'625f003334353637383930313233343536373839';
 } {
-  234567890123456789 234567890123456789 a a b b
+  234567890123456789 234567890123456789 a a b b c c
 }
 
 do_execsql_test 2.3 {
   SELECT term FROM t2 WHERE term=X'625f003334353637383930313233343536373839';
 }
 
+#-------------------------------------------------------------------------
+# <https://sqlite.org/bugs/forumpost/5c1922e4bb>
+#
+reset_db
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t0 USING fts4(c0);
+  INSERT INTO t0(c0) VALUES ('0zero');
+  CREATE VIRTUAL TABLE t1 USING fts4aux(t0);
+}
+
+do_execsql_test 3.1 {
+  SELECT term, term >= 5 FROM t1;
+} {0zero 1 0zero 1}
+
+do_execsql_test 3.2 {
+  SELECT * FROM t1 WHERE term >= 5;
+} {0zero * 1 1 0zero 0 1 1}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t0 USING fts3(c0);
+  CREATE VIRTUAL TABLE t1 USING fts4aux(t0);
+  INSERT INTO t0(c0) VALUES ('abc'), ('ABC');
+}
+
+do_execsql_test 4.1 {
+  SELECT (t0.c0 = t1.term) AND (t1.term COLLATE NOCASE = 'ABC') FROM t1, t0;
+} {1 1 0 0}
+
+do_execsql_test 4.2 {
+  SELECT count(*) FROM t1, t0 
+  WHERE (t0.c0 = t1.term) AND (t1.term COLLATE NOCASE = 'ABC');
+} {2}
 
 finish_test
+

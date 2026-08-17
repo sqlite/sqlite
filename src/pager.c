@@ -4999,7 +4999,15 @@ int sqlite3PagerOpen(
   */
   if( zFilename && zFilename[0] ){
     int fout = 0;                    /* VFS flags returned by xOpen() */
+    int bImmutable = sqlite3_uri_boolean(pPager->zFilename, "immutable", 0);
+    if( bImmutable ){
+      vfsFlags |= SQLITE_OPEN_READONLY;
+      vfsFlags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
+    }
     rc = sqlite3OsOpen(pVfs, pPager->zFilename, pPager->fd, vfsFlags, &fout);
+    if( bImmutable ){
+      goto act_like_temp_file;
+    }
     assert( !memDb );
     pPager->memVfs = memJM = (fout&SQLITE_OPEN_MEMORY)!=0;
     readOnly = (fout&SQLITE_OPEN_READONLY)!=0;
@@ -5039,10 +5047,9 @@ int sqlite3PagerOpen(
 #endif
       }
       pPager->noLock = sqlite3_uri_boolean(pPager->zFilename, "nolock", 0);
-      if( (iDc & SQLITE_IOCAP_IMMUTABLE)!=0
-       || sqlite3_uri_boolean(pPager->zFilename, "immutable", 0) ){
-          vfsFlags |= SQLITE_OPEN_READONLY;
-          goto act_like_temp_file;
+      if( (iDc & SQLITE_IOCAP_IMMUTABLE)!=0 ){
+        vfsFlags |= SQLITE_OPEN_READONLY;
+        goto act_like_temp_file;
       }
     }
   }else{
@@ -5062,6 +5069,7 @@ act_like_temp_file:
     pPager->eLock = EXCLUSIVE_LOCK;    /* Pretend we are in EXCLUSIVE mode */
     pPager->noLock = 1;                /* Do no locking */
     readOnly = (vfsFlags&SQLITE_OPEN_READONLY);
+    assert( readOnly==0 || readOnly==1 );
   }
 
   /* The following call to PagerSetPagesize() serves to set the value of

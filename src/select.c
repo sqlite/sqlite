@@ -4782,12 +4782,21 @@ struct WhereConst {
 };
 
 /*
-** Add a new entry to the pConst object.  Except, do not add duplicate
-** pColumn entries.  Also, do not add if doing so would not be appropriate.
+** Add a new entry to the pConst object, if appropriate.
 **
-** The caller guarantees the pColumn is a column and pValue is a constant.
-** This routine has to do some additional checks before completing the
-** insert.
+**    *   Do not add if pValue is not constant.  (This is enforced by
+**        the caller)
+**
+**    *   Do not add duplicate pColumn entries
+**
+**    *   Do not add if pValue has an affinity
+**
+**    *   Do not add if the comparison uses a collating sequence other
+**        than binary.
+**
+**    *   Do not add if pValue is a function that might return a subtype
+**
+** The caller guarantees the pColumn is a column.
 */
 static void constInsert(
   WhereConst *pConst,  /* The WhereConst into which we are inserting */
@@ -4798,12 +4807,12 @@ static void constInsert(
   int i;
   assert( pColumn->op==TK_COLUMN );
   assert( sqlite3ExprIsConstant(pConst->pParse, pValue) );
-
   if( ExprHasProperty(pColumn, EP_FixedCol) ) return;
   if( sqlite3ExprAffinity(pValue)!=0 ) return;
   if( !sqlite3IsBinary(sqlite3ExprCompareCollSeq(pConst->pParse,pExpr)) ){
     return;
   }
+  if( sqlite3ExprCanReturnSubtype(pConst->pParse, pValue) ) return;
 
   /* 2018-10-25 ticket [cf5ed20f]
   ** Make sure the same pColumn is not inserted more than once */

@@ -3691,22 +3691,9 @@ VDBE_OPCODE(OP_Affinity): {
     assert( zAffinity[0]==SQLITE_AFF_NONE || memIsValid(pIn1) );
     applyAffinity(pIn1, zAffinity[0], encoding);
     if( zAffinity[0]==SQLITE_AFF_REAL && (pIn1->flags & MEM_Int)!=0 ){
-      /* When applying REAL affinity, if the result is still an MEM_Int
-      ** that will fit in 6 bytes, then change the type to MEM_IntReal
-      ** so that we keep the high-resolution integer value but know that
-      ** the type really wants to be REAL. */
-      testcase( pIn1->u.i==140737488355328LL );
-      testcase( pIn1->u.i==140737488355327LL );
-      testcase( pIn1->u.i==-140737488355328LL );
-      testcase( pIn1->u.i==-140737488355329LL );
-      if( pIn1->u.i<=140737488355327LL && pIn1->u.i>=-140737488355328LL ){
-        pIn1->flags |= MEM_IntReal;
-        pIn1->flags &= ~MEM_Int;
-      }else{
-        pIn1->u.r = (double)pIn1->u.i;
-        pIn1->flags |= MEM_Real;
-        pIn1->flags &= ~(MEM_Int|MEM_Str);
-      }
+      pIn1->u.r = (double)pIn1->u.i;
+      pIn1->flags |= MEM_Real;
+      pIn1->flags &= ~(MEM_Int|MEM_Str);
     }
     REGISTER_TRACE((int)(pIn1-aMem), pIn1);
     zAffinity++;

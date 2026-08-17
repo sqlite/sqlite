@@ -710,6 +710,17 @@ static SQLITE_NOINLINE void codeINTerm(
   }else{
     sqlite3 *db = pParse->db;
     Expr *pXMod = removeUnindexableInClauseTerms(pParse, iEq, pLoop, pX);
+    if( nEq>1 ){
+      /* If this IN(SELECT ...) expression drives more than one column of
+      ** the index, disable the seek-scan optimization. The reasons for this
+      ** are that (a) it is only possible to make this happen by populating
+      ** the sqlite_stat1 table with inconsistent information, and (b) it
+      ** would require sqlite3FindInIndex() to find an index that is not
+      ** only unique for the columns in question, but also delivers them
+      ** in sorted order (requires checking asc/desc, and rejecting cases
+      ** where the indexed columns are not in the right order).  */
+      pLoop->wsFlags &= ~WHERE_IN_SEEKSCAN;
+    }
     if( !db->mallocFailed ){
       aiMap = (int*)sqlite3DbMallocZero(db, sizeof(int)*nEq);
       eType = sqlite3FindInIndex(pParse, pXMod, IN_INDEX_LOOP, 0, aiMap, &iTab);
@@ -2929,12 +2940,12 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
   pSubWInfo = sqlite3WhereBegin(pParse, pFrom, pSubWhere, 0, 0, 0,
                                 WHERE_RIGHT_JOIN, 0);
   if( pSubWInfo ){
-    int iCur = pLevel->iTabCur;
-    int r = ++pParse->nMem;
-    int nPk;
-    int jmp = 0;
+    int iCur = pLevel->iTabCur;  /* Table on RHS of RIGHT JOIN &*/
+    int r = ++pParse->nMem;      /* Register range to hold primary key */
+    int nPk;                     /* Number of values in the primary key */
+    int r2;                      /* Register holding record for primary key */
     int addrCont = sqlite3WhereContinueLabel(pSubWInfo);
-    Table *pTab = pTabItem->pSTab;
+    Table *pTab = pTabItem->pSTab;  /* Table on RHS of RIGHT JOIN */
     if( HasRowid(pTab) ){
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, -1, r);
       nPk = 1;
@@ -2948,13 +2959,31 @@ SQLITE_NOINLINE void sqlite3WhereRightJoinLoop(
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol,r+iPk);
       }
     }
+
+    /* Generate code that checks to see if the current row of the RHS table
+    ** has appeared in any prior output row. */
     if( pRJ->regBloom ){
-      jmp = sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, 0, r, nPk);
+      sqlite3VdbeAddOp4Int(v, OP_Filter, pRJ->regBloom, 
+                 sqlite3VdbeCurrentAddr(v)+2, r, nPk);
       VdbeCoverage(v);
     }
     sqlite3VdbeAddOp4Int(v, OP_Found, pRJ->iMatch, addrCont, r, nPk);
     VdbeCoverage(v);
-    if( jmp ) sqlite3VdbeJumpHere(v, jmp);
+    r2 = sqlite3GetTempReg(pParse);
+
+    /* Generate code that inserts the PK of the RHS table into the
+    ** pRH->iMatch index to indicate that the current row has appeared
+    ** in the output set. */
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, r, nPk, r2);
+    sqlite3VdbeAddOp4Int(v, OP_IdxInsert, pRJ->iMatch, r2, r, nPk);
+    sqlite3ReleaseTempReg(pParse, r2);
+    if( pRJ->regBloom ){
+      sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pRJ->regBloom, 0, r, nPk);
+      sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+    }
+
+    /* Invoke the subroutine that actually puts the current RHS table row
+    ** into the output set, with NULLs for the LHS. */
     sqlite3VdbeAddOp2(v, OP_Gosub, pRJ->regReturn, pRJ->addrSubrtn);
     sqlite3WhereEnd(pSubWInfo);
   }

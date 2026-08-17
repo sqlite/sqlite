@@ -336,7 +336,9 @@ static int SQLITE_TCLAPI filc_build(
 ** Returns true if the program was compiled using clang with the 
 ** -fsanitize=address switch on the command line. False otherwise.
 **
-** Also return true if the OMIT_MISUSE environment variable exists.
+** 2026-08-13:  Environments are getting increasingly picky about
+** misuse.  So do not run misuse tests unless ENABLE_MISUSE environment
+** variable is set.
 */
 static int SQLITE_TCLAPI clang_sanitize_address(
   void *NotUsed,
@@ -357,7 +359,9 @@ static int SQLITE_TCLAPI clang_sanitize_address(
   /* Fil-C */
   res = 1;
 #endif
-  if( res==0 && getenv("OMIT_MISUSE")!=0 ) res = 1;
+  if( getenv("ENABLE_MISUSE")==0 ){
+    res = 1;
+  }
   Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
   return TCL_OK;
 }
