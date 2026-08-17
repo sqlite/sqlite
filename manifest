@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements\sinto\sthe\sthreaded\sbytecode\sbranch.
-D 2026-08-17T13:07:18.095
+C Fix\sharmless\smissing\send-comment.
+D 2026-08-17T13:25:49.933
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -810,7 +810,7 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c cfdf9c6e5323af886d5ce766709da607ba1d14193ad3a15f4f462a45420e8211
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 38ffb5c1d630e7c70fad0bafabf692621717f8a75ceb5bc3afdbfbaee7d16367
+F src/vdbe.c 5dacb9b7b1c159f6f08d94e5969f647431e690cc1ab8eae747215de585d57ce2
 F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
 F src/vdbeInt.h 39f4c8eb1e4ac0593037d5268a54a691c72d34896db9973a9d39f2a5dea14163
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
@@ -2220,8 +2220,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3e725527a2f5be3c01fd849e6f5386fa0a5a88c2be8112fba0a738f1b439982a f26099b7fad1eab2791b574c9371021d4f05fbf824141e77cdff921a2819866a
-R e8c26a7f97d29d027d17da8019623b68
+P 3ba47c84bd07703acd8718ebc1a5fd4888ac8ab9b8ab39fc7fffa21780c90c2b
+R 60beaccf50f0616fa97d72410d799db8
 U drh
-Z 91e366e271d5e8dc56da6c77eb8aed01
+Z e618cefc5c2ef3fea2ccab4e3fa676da
 # Remove this line to create a well-formed Fossil manifest.

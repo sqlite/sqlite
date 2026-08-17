@@ -9631,7 +9631,7 @@ VDBE_DEFAULT: {          /* This is really OP_Noop, OP_Explain */
     }
 #endif  /* SQLITE_DEBUG */
 #endif  /* NDEBUG */
-  }  /* The end of the for(;;) loop at tag-20260809-1
+  }  /* The end of the for(;;) loop at tag-20260809-1 */
 
   /* If we reach this point, it means that execution is finished with
   ** an error of some kind.
