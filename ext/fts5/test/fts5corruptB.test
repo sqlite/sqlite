@@ -2743,5 +2743,39 @@ do_catchsql_test 4.1 {
   DELETE FROM t WHERE rowid = 1;
 } {1 {fts5: corruption in table "t"}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(c);
+  INSERT INTO x1 VALUES('yellow brick road');
+  INSERT INTO x1 VALUES('one two three');
+  INSERT INTO x1 VALUES('not at this hour');
+}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 5.1 {
+  SELECT quote(block) FROM x1_data WHERE id=10
+} {
+  X'000000000103030003010101020101030101'
+}
+
+do_execsql_test 5.2 {
+  SELECT rowid FROM x1('two');
+} {2}
+
+do_execsql_test 5.3 {
+  UPDATE x1_data SET block = X'000000000103030003010187FFFFFF7F020101030101'
+}
+
+db close
+sqlite3 db test.db
+
+do_catchsql_test 5.4 {
+  SELECT rowid FROM x1('two');
+} {1 {fts5: corrupt structure record for table "x1"}}
+
+
 sqlite3_fts5_may_be_corrupt 0
 finish_test
