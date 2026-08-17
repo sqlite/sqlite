@@ -1,5 +1,5 @@
-C Avoid\sa\sproblem\scausing\sa\suse-after-free\sin\sthe\sfts3\ssnippet()\sfunction.\sReport\s[bugs:/info/2026-08-17T09:18:24Z\s|\s2026-08-17T09:18:24Z].
-D 2026-08-17T13:55:38.695
+C New\s-pgo\soption\sto\stest/speedtest.tcl\scompiles\susing\sgcc-style\sPGO.
+D 2026-08-17T15:31:20.575
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1685,7 +1685,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
 F test/speedtest.md ea0c85ebe0ecff8b45ba6cdb26e694871f469009a5a29dcfe634b055f05ab241
-F test/speedtest.tcl b06f6321ef90bb68f18f7b0e430e25203d9da79b80f8926986a0d5f21ac485fb x
+F test/speedtest.tcl f3d6c71b28969e02f60dd1de597da0551a2b335e4b49f3b753f0d57a1871e31f x
 F test/speedtest1.c f9f30f35431bfc1d3ee9acc561624e0c0b4614071044bc302169dd27206a0fca
 F test/spellfix.test 2dff669793b1c0f682fcea4941cba8aaf899123db252de998b1c84594abc0dc7
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P f26099b7fad1eab2791b574c9371021d4f05fbf824141e77cdff921a2819866a
-R 6d39d056cf4751746ef7730743a7481a
-U dan
-Z a4b7ddd4532af1e1ba2c611ad918a2fd
+P e4635c41536a0b3620780c3f1c872de33121370bafb608fce9fe7e3113e2ae01
+R c33f2d9b4aecdb9dc327630a37faf9b0
+U drh
+Z d0f0d1b9f97c0513fac301096385d0eb
 # Remove this line to create a well-formed Fossil manifest.
