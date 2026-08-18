@@ -1,5 +1,5 @@
-C Declare\sfts5\sstructure\srecords\scorrupt\sif\sthey\scontain\sa\spage\snumber\sgreater\sthan\s0x7FFFFF00.\sReport\s[bugs:/info/2026-08-17T20:07:33Z\s|\s2026-08-17T20:07:33Z].
-D 2026-08-17T21:26:44.787
+C Fix\sthe\sinclude\sguard\son\spcache.h,\sas\srequested\sby\sReport\n[bugs:/info/2026-08-17T20:09:10Z|2026-08-17T20:09:10Z].
+D 2026-08-18T00:36:18.470
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -735,7 +735,7 @@ F src/pager.c 55fecb3d8f2c9bd751109aca1df554f3ab3f2ab1c04a7fd99478cb724d73f8b4
 F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
-F src/pcache.h 092b758d2c5e4dabb30eae46d8dfad77c0f70b16bf3ff1943f7a232b0fe0d4ba
+F src/pcache.h 00c5797ddf546ee0fe2828d7f75d1afbf1b40ba054f362905326c5ccca15e60c
 F src/pcache1.c 6bc38b44961f767985ae5022fb7887eda206040f57475812473929c702f6799d
 F src/pragma.c a3ffc8473689240121084fdd87d462164de0aa04c306df377074d8c9eb331725
 F src/prepare.c 8954bb69defe377cd6a926f8c61d8215ea4f1974838d3ec6f22681a2c0a2939f
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P b460488d0572f4fecf45d213932560f83b789fe1c8847d767c9415b19fc7a33c
-R fcfcfc20bdb6aee5ee010e9b9c151a06
-U dan
-Z 25b6947a22d00dae8fd06b9884c7fdd2
+P c97a940ceb4c21adc68123e084c8b8b688bcd309579a82951b2e160dc7bacf44
+R 1ad678d60fd00457cffdd024be05c8bb
+U drh
+Z 54f1c6f4fb18c31265f0ba1d4e0a0502
 # Remove this line to create a well-formed Fossil manifest.

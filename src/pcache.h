@@ -14,6 +14,7 @@
 */
 
 #ifndef _PCACHE_H_
+#define _PCACHE_H_
 
 typedef struct PgHdr PgHdr;
 typedef struct PCache PCache;
