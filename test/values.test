@@ -758,5 +758,9 @@ do_execsql_test 20.7 {
   SELECT 12345 FROM t0 WHERE (t0.c1 IN (VALUES (1), (0.5 IS true)))
 } {1}
 
+do_execsql_test 20.8 {
+  SELECT * FROM ( VALUES (0.5 IS NOT true), (0.5 IS NOT true) )
+} {0 0}
+
 
 finish_test
