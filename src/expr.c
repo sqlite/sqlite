@@ -2937,8 +2937,16 @@ int sqlite3ExprContainsSubquery(Expr *p){
 ** If the pParse pointer is provided, then allow the expression p to be
 ** a parameter (TK_VARIABLE) that is bound to an integer.
 ** But if pParse is NULL, then p must be a pure integer literal.
+**
+** If pParse is not NULL and expression p is a variable, then the variable
+** is marked so as to cause the statement to be reprepared each time a new
+** value is bound to it. Except, if parameter bRSI is true, then the statement
+** will only be reprepared if either the new value bound to the variable
+** is integer value 0 or 1, or if the value being replaced is integer value
+** 0 or 1. RSI -> Reprepare Small Integers.
+** 
 */
-int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse){
+int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse, int bRSI){
   int rc = 0;
   if( NEVER(p==0) ) return 0;  /* Used to only happen following on OOM */
 
@@ -2953,12 +2961,12 @@ int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse){
   }
   switch( p->op ){
     case TK_UPLUS: {
-      rc = sqlite3ExprIsInteger(p->pLeft, pValue, 0);
+      rc = sqlite3ExprIsInteger(p->pLeft, pValue, 0, bRSI);
       break;
     }
     case TK_UMINUS: {
       int v = 0;
-      if( sqlite3ExprIsInteger(p->pLeft, &v, 0) ){
+      if( sqlite3ExprIsInteger(p->pLeft, &v, 0, bRSI) ){
         assert( ((unsigned int)v)!=0x80000000 );
         *pValue = -v;
         rc = 1;
@@ -2966,11 +2974,11 @@ int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse){
       break;
     }
     case TK_VARIABLE: {
+      int bReprepareSmallint = bRSI;
       sqlite3_value *pVal;
       if( pParse==0 ) break;
       if( NEVER(pParse->pVdbe==0) ) break;
       if( (pParse->db->flags & SQLITE_EnableQPSG)!=0 ) break;
-      sqlite3VdbeSetVarmask(pParse->pVdbe, p->iColumn);
       pVal = sqlite3VdbeGetBoundValue(pParse->pReprepare, p->iColumn,
                                       SQLITE_AFF_BLOB);
       if( pVal ){
@@ -2979,10 +2987,12 @@ int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse){
           if( vv == (vv & 0x7fffffff) ){ /* non-negative numbers only */
             *pValue = (int)vv;
             rc = 1;
+            if( vv==0 || vv==1 ) bReprepareSmallint = 0;
           }
         }
         sqlite3ValueFree(pVal);
       }
+      sqlite3VdbeReprepareOnBind(pParse->pVdbe, p->iColumn, bReprepareSmallint);
       break;
     }
     default: break;
@@ -6587,7 +6597,7 @@ static SQLITE_NOINLINE int exprCompareVariable(
   sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, SQLITE_AFF_BLOB, &pR);
   if( pR ){
     iVar = pVar->iColumn;
-    sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
+    sqlite3VdbeReprepareOnBind(pParse->pVdbe, iVar, 0);
     pL = sqlite3VdbeGetBoundValue(pParse->pReprepare, iVar, SQLITE_AFF_BLOB);
     if( pL ){
       if( sqlite3_value_type(pL)==SQLITE_TEXT ){
@@ -6843,7 +6853,7 @@ static int sqlite3ExprIsNotTrue(Expr *pExpr){
   if( pExpr->op==TK_NULL ) return 1;
   if( pExpr->op==TK_TRUEFALSE && sqlite3ExprTruthValue(pExpr)==0 ) return 1;
   v = 1;
-  if( sqlite3ExprIsInteger(pExpr, &v, 0) && v==0 ) return 1;
+  if( sqlite3ExprIsInteger(pExpr, &v, 0, 0) && v==0 ) return 1;
   return 0;
 }
 

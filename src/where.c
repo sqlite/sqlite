@@ -3095,12 +3095,10 @@ static void whereLoopOutputAdjust(
           Expr *pRight = pOpExpr->pRight;
           Parse *pParse = pWC->pWInfo->pParse;
           int k = 0;
-          u32 expmask = sqlite3VdbeGetVarmask(pParse->pVdbe); 
           testcase( pOpExpr->op==TK_IS );
-          if( sqlite3ExprIsInteger(pRight, &k, pParse) && k>=(-1) && k<=1 ){
+          if( sqlite3ExprIsInteger(pRight, &k, pParse, 1) && k>=(-1) && k<=1 ){
             k = 10;
           }else{
-            sqlite3VdbeSetSmallint(pParse->pVdbe, expmask);
             k = 20;
           }
           if( iReduce<k ){
