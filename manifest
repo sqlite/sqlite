@@ -1,5 +1,5 @@
-C Add\sSQLITE_LIMIT_TRIGGER_STEPS\sand\s-DSQLITE_MAX_TRIGGER_STEPS=n.\s\sDefault\smaximum\nis\s65000.
-D 2026-08-18T09:17:48.729
+C Limit\sthe\snumber\sof\snested\sRIGHT\sJOINs\s(or\sFULL\sJOINs)\sthat\scan\soccur\nin\sa\ssingle\squery.\s\sReport\s[bugs:/info/2026-08-18T07:03:05Z|2026-08-18T07:03:05Z].
+D 2026-08-18T10:12:46.360
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -827,7 +827,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 2f5b4091f37bfac7658ea3d52b2c192d8fb2ec062f232815e0eb5152a46267db
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
-F src/wherecode.c f705ef20659991c9f570a6263c072eb0d04a8f6927242b433ab969900bbf9507
+F src/wherecode.c aa733a45b550c65aae0641335ddd6179a24c6bf0889bf0dda44a8dddc74d6bb0
 F src/whereexpr.c cd88bd3e1a421fb987eb5991ecf7a9a3d5dad1abb02a8baa070336b6dfa70b59
 F src/window.c 0d7dacdf2e84c6ee8ff498d5cc881dd245fcb2f14f6c5976e97e112ce96e90dc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1344,7 +1344,7 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 5984da7bf74b6540aa356f2ab0c6ae68a6d12039a3d798a9ac6a100abc17d520
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test b41503f19c6d9b6a7cee7353c4ec98238131809275a96ee585041ab004e305e2
+F test/join.test c4481b70ff31b7a8ba01116d8808aa013693b7861d3d01666c4ded3756d8d1fd
 F test/join2.test f59d63264fb24784ae9c3bc9d867eb569cd6d442da5660f8852effe5c1938c27
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2df4fe72f74afb650e23c3643e61ec5bf8a3f1d163af9adbc4ce8ba4c1f895ec
-R 83901b437f2bcf333fd9e8706583327f
+P 6fbed57b1447725ae9d923d69b509fd5932d8c6bae6cf6ac0d1248a943752a58
+R 8216a81991b609c836142ddd0d7dc768
 U drh
-Z 59f61ab32d908d034d9fef2583905ec5
+Z d3fdf407104a0e6adc318f283492e2dd
 # Remove this line to create a well-formed Fossil manifest.
