@@ -5343,6 +5343,35 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
 }
 
 /*
+** Return the current value of expmask - the mask of variables for which
+** binding a new value forces repreparation of the statement.
+*/
+u32 sqlite3VdbeGetVarmask(Vdbe *v){
+  return v->expmask;
+}
+
+/*
+** This is called to configure an SQL variable so that the statement is
+** reprepared if a small integer value (0 or 1) is bound to it.
+**
+** To use this function, the current value of expmask is obtained via
+** sqlite3VdbeGetVarmask(). This value should be passed as the second
+** parameter to this function. Then some sub-routine is called that may 
+** make a call to sqlite3VdbeSetVarmask(). Finally, this routine is called.
+** If sqlite3VdbeSetVarmask was called, then the variable that it marked
+** as causing repreparation is modified to that it only causes a reprepare
+** if a small integer value is bound to it.
+**
+**   u32 mask = sqlite3VdbeGetVarmask();
+**   sqlite3VdbeSetVarmask(v, iVar);      // mark iVar as causing repreparation
+**   sqlite3VdbeSetSmallint(v, mask);     // but only for small integer values
+*/
+void sqlite3VdbeSetSmallint(Vdbe *v, u32 expmask){
+  v->smimask |= (v->expmask ^ expmask);
+  v->expmask = expmask;
+}
+
+/*
 ** Helper function for vdbeIsMatchingIndexKey(). Return true if column
 ** iCol should be ignored when comparing a record with a record from 
 ** an index on disk. The field should be ignored if:

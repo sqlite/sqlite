@@ -3042,6 +3042,13 @@ static void whereLoopOutputAdjust(
   int i, j;
   LogEst iReduce = 0;    /* pLoop->nOut should not exceed nRow-iReduce */
 
+  /* Skip all this if the FROM clause of the query is a single table and
+  ** there is no ORDER BY. In this case it doesn't matter how accurate
+  ** the WhereLoop.nOut values are.  */
+  if( pWC->pWInfo->pTabList->nSrc<=1 && pWC->pWInfo->pOrderBy==0 ){
+    return;
+  }
+
   assert( (pLoop->wsFlags & WHERE_AUTO_INDEX)==0 );
   for(i=pWC->nBase, pTerm=pWC->a; i>0; i--, pTerm++){
     assert( pTerm!=0 );
@@ -3088,10 +3095,12 @@ static void whereLoopOutputAdjust(
           Expr *pRight = pOpExpr->pRight;
           Parse *pParse = pWC->pWInfo->pParse;
           int k = 0;
+          u32 expmask = sqlite3VdbeGetVarmask(pParse->pVdbe); 
           testcase( pOpExpr->op==TK_IS );
           if( sqlite3ExprIsInteger(pRight, &k, pParse) && k>=(-1) && k<=1 ){
             k = 10;
           }else{
+            sqlite3VdbeSetSmallint(pParse->pVdbe, expmask);
             k = 20;
           }
           if( iReduce<k ){

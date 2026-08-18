@@ -1856,6 +1856,14 @@ int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, sqlite_int64 iValue){
   if( rc==SQLITE_OK ){
     assert( p!=0 && p->aVar!=0 && i>0 && i<=p->nVar ); /* tag-20240917-01 */
     sqlite3VdbeMemSetInt64(&p->aVar[i-1], iValue);
+
+    /* If the bit corresponding to this variable is set in smimask, and the
+    ** value bound was 0 or 1, recompile the statement.  */
+    if( (iValue==0 || iValue==1) 
+     && (p->smimask & (i>=32 ? 0x80000000 : (u32)1<<(i-1)))!=0 
+    ){
+      p->expired = 1;
+    }
     sqlite3_mutex_leave(p->db->mutex);
   }
   return rc;

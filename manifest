@@ -1,5 +1,5 @@
-C Correctly\sprocess\s"x\sIS\sTRUE"\sand\ssimilar\sexpressions\sthat\sappear\sin\sthe\ssecond\sor\slater\srows\sof\sa\sVALUES()\sclause.\sReport\s[bugs:/info/2026-08-18T05:06:40Z\s|\s2026-08-18T05:06:40Z].
-D 2026-08-18T15:13:10.104
+C Experimental\sattempt\sto\sreduce\sreprepares\scaused\sby\sbound\svariables\sand\s"="\sconstraints\sin\sWHERE\sclauses.
+D 2026-08-18T18:22:47.790
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -811,10 +811,10 @@ F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c cfdf9c6e5323af886d5ce766709da607ba1d14193ad3a15f4f462a45420e8211
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c 37ffba7c3fe3ed2c90dd8b889b0e1b957c337bf5ecdca49dac769e579b96ec9f
-F src/vdbe.h 70e862ac8a11b590f8c1eaac17a0078429d42bc4ea3f757a9af0f451dd966a71
-F src/vdbeInt.h 39f4c8eb1e4ac0593037d5268a54a691c72d34896db9973a9d39f2a5dea14163
-F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
-F src/vdbeaux.c 1e3fefcdf497d0240296de3064e3c85204c03ded23a9010417a57af51a2c560e
+F src/vdbe.h 772a672b9f7dc3446b1233cf08016fa02b4e57736e21de1b625f924ee5743de3
+F src/vdbeInt.h 2ab0984d970c9aa9dc5f861f4938e627137bf0122c61cd19e0a8e2c3b2704105
+F src/vdbeapi.c f413302be2dfe6fd9b7397c5ef269ed34d51a47e48d8da406a618bbd99dbf6d2
+F src/vdbeaux.c d1018b2442a6f14df8952702aa735a2c6540a99ef941cb8e060d75fb2b84a657
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
@@ -825,7 +825,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c cb28ab3a71cb73ea422a2fcc26283b65a1e5a2a65c44de86951c7d6a186381ac
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c 2f5b4091f37bfac7658ea3d52b2c192d8fb2ec062f232815e0eb5152a46267db
+F src/where.c 1e688d7ca06f48104fa217d61f7864a471d400dd7c161cc0928ea4a23e1662c9
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
 F src/wherecode.c aa733a45b550c65aae0641335ddd6179a24c6bf0889bf0dda44a8dddc74d6bb0
 F src/whereexpr.c cd88bd3e1a421fb987eb5991ecf7a9a3d5dad1abb02a8baa070336b6dfa70b59
@@ -1594,7 +1594,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test 48a645a7bb3a59a6fcf06a7364cfe5b655c336760de39068f7c241b0fc80d963
 F test/savepoint7.test 24c69af86d750c80d51cf6500fde9270717f2b6e5658f055b5e75af75d5af179
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
-F test/scanstatus.test b249328caf4d317e71058006872b8012598a5fa045b30bf24a81eeff650ab49e
+F test/scanstatus.test f5eccd84923bb2f19dad894ecbb9ec44ad9082e716d3f5c5618d9a3e8b20c377
 F test/scanstatus2.test 1f0fcf71c6653435caa114a79588bdd146d4ceb5e9a4e1a7e449bf0643ed30f5
 F test/schema.test e615575f2d756df4629596523f11d9322384ecf9f980e58c774cff80ff041c33
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
@@ -2219,9 +2219,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 08e5a730d4ccfba16e961550a232512a956f0f2f9116a2e59e4a2124c3277915 0de50d5685b2edf317bdc48f79052f58a64738d3ee966ad1e631f76f4aba6168
-R 04d586313750ba0ac5176c8f7c20409d
-T +closed 0de50d5685b2edf317bdc48f79052f58a64738d3ee966ad1e631f76f4aba6168
+P d287358b8d356d4fd3643b6776c56c6a6fdfb175834351eaed0148db4079dc67
+R 7b40db5f79b899d44c32b421bb859cb8
+T *branch * reduce-reprepares
+T *sym-reduce-reprepares *
+T -sym-trunk *
 U dan
-Z a67f08c32f6d4593019e9b394667875d
+Z 072b1ba5ace1e3a1e224512341b20686
 # Remove this line to create a well-formed Fossil manifest.
