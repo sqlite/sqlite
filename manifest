@@ -1,5 +1,5 @@
-C Limit\sthe\snumber\sof\sstatements\sin\sa\strigger\sto\s65000.
-D 2026-08-18T09:23:44.292
+C Limit\sthe\snumber\sof\snested\sRIGHT\sJOINs\s(or\sFULL\sJOINs)\sthat\scan\soccur\nin\sa\ssingle\squery.
+D 2026-08-18T10:14:28.860
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -824,7 +824,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c a1caeb656f74e58de7e7310ee91c6dfb40e975c7dd9b18e61a965aea46a610f2
 F src/whereInt.h 8d94cb116c9e06205c3d5ac87af065fc044f8cf08bfdccd94b6ea1c1308e65da
-F src/wherecode.c bc39ccbe3648f01157038b16cc55bdbff128590972b7185521b5526dc2815765
+F src/wherecode.c 989a7f1c7a5b441e215ae7b18de8dd20fd0cb66199dafe0dd5f62003f1a0cf57
 F src/whereexpr.c a1e22cf9f6cb59770d9652c757dcf1924078ad2d48a9da89e254be9327677465
 F src/window.c 0d7dacdf2e84c6ee8ff498d5cc881dd245fcb2f14f6c5976e97e112ce96e90dc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2206,8 +2206,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 14be580d240496f1615dad42c5442443c0629f3aff6ba8ac77485992d5e8d625
-R 545810402ddce0dd033c371b0fa28b76
+P ed8d4fd91e6db4da342ac77282a15a95977e91db81f5a3fd204e6733d1eb262c
+Q +003ed951d85416da97f5cabf96d89b974279bd8ef2433ae1987bdedad38a4b90
+R 035cff872fb437e512f839575530c1de
 U drh
-Z 71813247949fb2820f27e78535db2809
+Z 2e2cb7e4eafe7a338100dddfe8bd930c
 # Remove this line to create a well-formed Fossil manifest.
