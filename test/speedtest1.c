@@ -2945,7 +2945,7 @@ static void displayLinuxIoStats(FILE *out){
     }
   }
   fclose(in);
-}   
+}
 #endif
 
 #if SQLITE_VERSION_NUMBER<3006018
@@ -2995,7 +2995,11 @@ int main(int argc, char **argv){
 
   /* "mix1" is a macro testset: */
   static char zMix1Tests[] =
-    "main,orm/25,cte/20,json,fp/3,parsenumber/25,rtree/10,star"
+    "main,orm/25,cte/20,json,fp/3,parsenumber/25"
+#ifdef SQLITE_ENABLE_RTREE
+    ",rtree/10"
+#endif
+    ",star"
 #if !defined(SQLITE_SPEEDTEST1_WASM)
     ",app"
     /* This test misbehaves in WASM builds: sqlite3_open_v2() is
