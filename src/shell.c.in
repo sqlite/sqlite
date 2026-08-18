@@ -10901,6 +10901,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       { "trigger_depth",         SQLITE_LIMIT_TRIGGER_DEPTH             },
       { "worker_threads",        SQLITE_LIMIT_WORKER_THREADS            },
       { "schema",                SQLITE_LIMIT_SCHEMA                    },
+      { "trigger_steps",         SQLITE_LIMIT_TRIGGER_STEPS             },
     };
     int i, n2;
     open_db(p, 0);
