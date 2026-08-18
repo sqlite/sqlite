@@ -145,6 +145,7 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   pB->zNormSql = zTmp;
 #endif
   pB->expmask = pA->expmask;
+  pB->smimask = pA->smimask;
   pB->prepFlags = pA->prepFlags;
   memcpy(pB->aCounter, pA->aCounter, sizeof(pB->aCounter));
   pB->aCounter[SQLITE_STMTSTATUS_REPREPARE]++;

@@ -1,5 +1,5 @@
-C Experimental\sattempt\sto\sreduce\sreprepares\scaused\sby\sbound\svariables\sand\s"="\sconstraints\sin\sWHERE\sclauses.
-D 2026-08-18T18:22:47.790
+C Ensure\sthat\sVdbe.smimask\sis\scorrectly\sset\safter\sa\sreprepare.
+D 2026-08-18T20:22:37.721
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -814,7 +814,7 @@ F src/vdbe.c 37ffba7c3fe3ed2c90dd8b889b0e1b957c337bf5ecdca49dac769e579b96ec9f
 F src/vdbe.h 772a672b9f7dc3446b1233cf08016fa02b4e57736e21de1b625f924ee5743de3
 F src/vdbeInt.h 2ab0984d970c9aa9dc5f861f4938e627137bf0122c61cd19e0a8e2c3b2704105
 F src/vdbeapi.c f413302be2dfe6fd9b7397c5ef269ed34d51a47e48d8da406a618bbd99dbf6d2
-F src/vdbeaux.c d1018b2442a6f14df8952702aa735a2c6540a99ef941cb8e060d75fb2b84a657
+F src/vdbeaux.c 4845fe5b5b8a1d13881c1cd045970bcd35d723cdd6c35de3a4f2422c46b0ae5b
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
@@ -2219,11 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d287358b8d356d4fd3643b6776c56c6a6fdfb175834351eaed0148db4079dc67
-R 7b40db5f79b899d44c32b421bb859cb8
-T *branch * reduce-reprepares
-T *sym-reduce-reprepares *
-T -sym-trunk *
+P 1cfdde74f1c68589d722b876c20317c2a70cec2d915546a2200035190d3fb082
+R c75aca9a0572272070413ed32f5fd21e
 U dan
-Z 072b1ba5ace1e3a1e224512341b20686
+Z bb889800e9827ba37f88cf9367828b9c
 # Remove this line to create a well-formed Fossil manifest.
