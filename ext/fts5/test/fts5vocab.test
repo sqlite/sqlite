@@ -575,4 +575,21 @@ do_execsql_test 12.2 {
   SELECT count(*) FROM t1 WHERE term >= 5;
 } {1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE t0 USING fts5(c0, tokenize='trigram', detail=column);
+  CREATE VIRTUAL TABLE t1 USING fts5vocab(t0, 'instance');
+  INSERT INTO t0(c0) VALUES ('abc'), ('ABC');
+}
+
+do_execsql_test 13.1 {
+  SELECT (t0.c0 = t1.term) AND (t1.term COLLATE NOCASE = 'ABC') FROM t1, t0;
+} {1 0 1 0}
+
+do_execsql_test 13.2 {
+  SELECT count(*) FROM t1, t0 
+  WHERE (t0.c0 = t1.term) AND (t1.term COLLATE NOCASE = 'ABC');
+} {2}
+
 finish_test

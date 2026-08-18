@@ -1369,6 +1369,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
       if( x>pParse->nVar ){
         pParse->nVar = (int)x;
         doAdd = 1;
+      }else if( x<SQLITE_VNBMC*64 ){
+        doAdd = (pParse->aVnbmc[x>>6] & MASKBIT64(x&63))==0;
       }else if( sqlite3VListNumToName(pParse->pVList, x)==0 ){
         doAdd = 1;
       }
@@ -1385,6 +1387,9 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
     }
     if( doAdd ){
       pParse->pVList = sqlite3VListAdd(db, pParse->pVList, z, n, x);
+      if( pParse->pVList!=0 && x<SQLITE_VNBMC*64 ){
+        pParse->aVnbmc[x>>6] |= MASKBIT64(x&63);
+      }
     }
   }
   pExpr->iColumn = x;
@@ -2537,6 +2542,7 @@ static SQLITE_NOINLINE int exprNodeIsConstantFunction(
 **     sqlite3ExprIsConstantNotJoin()           pWalker->eCode==2
 **     sqlite3ExprIsTableConstant()             pWalker->eCode==3
 **     sqlite3ExprIsConstantOrFunction()        pWalker->eCode==4 or 5
+**     sqlite3ExprListIsConstant()              pWalker->eCode==1 or 6
 **
 ** In all cases, the callbacks set Walker.eCode=0 and abort if the expression
 ** is found to not be a constant.
@@ -2609,6 +2615,13 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_RAISE );
       pWalker->eCode = 0;
       return WRC_Abort;
+    case TK_IS:
+    case TK_ISNOT:
+      if( pWalker->eCode==6 ){
+        pWalker->eCode = 0;
+        return WRC_Prune;
+      }
+      return WRC_Continue;
     case TK_VARIABLE:
       if( pWalker->eCode==5 ){
         /* Silently convert bound parameters that appear inside of CREATE
@@ -2657,6 +2670,22 @@ static int exprIsConst(Parse *pParse, Expr *p, int initFlag){
 */
 int sqlite3ExprIsConstant(Parse *pParse, Expr *p){
   return exprIsConst(pParse, p, 1);
+}
+
+/*
+** Return true if all expressions in pList are constant. If parameter bNoIs
+** is true, do not consider expressions that contain "IS" operators to be
+** constant. IS operators are not always considered constant as expressions
+** like "x IS TRUE" need to be transformed to TK_TRUTH expression nodes,
+** which happens at the same time as column name resolution.
+*/
+int sqlite3ExprListIsConstant(Parse *pParse, ExprList *pList, int bNoIs){
+  const int iInit = bNoIs ? 6 : 1;
+  int ii;
+  for(ii=0; ii<pList->nExpr; ii++){
+    if( 0==exprIsConst(pParse, pList->a[ii].pExpr, iInit) ) return 0;
+  }
+  return 1;
 }
 
 /*

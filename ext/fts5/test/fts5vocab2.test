@@ -326,6 +326,16 @@ do_execsql_test 7.1 {
   SELECT * FROM x1 WHERE 'a'=(SELECT col FROM v1 WHERE term=t)
 } {xx xx}
 
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b, content='', contentless_delete=1);
+  CREATE VIRTUAL TABLE t2 USING fts5vocab('t1','instance');
+}
+
+do_execsql_test 8.1 {
+  SELECT * FROM t2 WHERE term<0;
+}
+
 
 finish_test
 

@@ -604,23 +604,11 @@ void sqlite3MultiValuesEnd(Parse *pParse, Select *pVal){
 
 /*
 ** Return true if all expressions in the expression-list passed as the
-** only argument are constant.
-*/
-static int exprListIsConstant(Parse *pParse, ExprList *pRow){
-  int ii;
-  for(ii=0; ii<pRow->nExpr; ii++){
-    if( 0==sqlite3ExprIsConstant(pParse, pRow->a[ii].pExpr) ) return 0;
-  }
-  return 1;
-}
-
-/*
-** Return true if all expressions in the expression-list passed as the
 ** only argument are both constant and have no affinity.
 */
 static int exprListIsNoAffinity(Parse *pParse, ExprList *pRow){
   int ii;
-  if( exprListIsConstant(pParse,pRow)==0 ) return 0;
+  if( sqlite3ExprListIsConstant(pParse, pRow, 0)==0 ) return 0;
   for(ii=0; ii<pRow->nExpr; ii++){
     Expr *pExpr = pRow->a[ii].pExpr;
     assert( pExpr->op!=TK_RAISE );
@@ -686,7 +674,7 @@ Select *sqlite3MultiValues(Parse *pParse, Select *pLeft, ExprList *pRow){
 
   if( pParse->bHasWith                   /* condition (a) above */
    || pParse->db->init.busy              /* condition (b) above */
-   || exprListIsConstant(pParse,pRow)==0 /* condition (c) above */
+   || sqlite3ExprListIsConstant(pParse, pRow, 1)==0   /* condition (c) above */
    || (pLeft->pSrc->nSrc==0 &&
        exprListIsNoAffinity(pParse,pLeft->pEList)==0) /* condition (d) above */
    || IN_SPECIAL_PARSE

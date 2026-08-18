@@ -27,6 +27,7 @@ Other options include:
    --lookaside N SZ      Lookahead uses N slots of SZ bytes each.
    --osmalloc            Use the OS native malloc() instead of MEMSYS5
    --pagesize N          Use N as the page size.
+   --pgo                 Use GCC-style PGO
    --quiet | -q          "Quiet".  Put results in file but don't pop up editor
    --size N              Change the test size.  100 means 100%.  Default: 5.
    --testset TEST        Specify the specific testset to use.  The default
@@ -42,6 +43,7 @@ set testset mix1
 set dryrun 0
 set quiet 0
 set osmalloc 0
+set usePGO 0
 set speedtestflags {--shrink-memory --reprepare --stats}
 lappend speedtestflags --journal wal --size 5
 
@@ -108,6 +110,9 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
       -quiet -
       --quiet {
         set quiet 1
+      }
+      -pgo {
+        set usePGO 1
       }
       default {
         lappend cflags $arg
@@ -186,11 +191,28 @@ lappend cccmd {*}[lsort $cflags]
 lappend cccmd [file dir $argv0]/speedtest1.c
 lappend cccmd $srcfile
 lappend cccmd -o speedtest1
+lappend speedtestflags --testset $testset
+if {$usePGO} {
+  set cccmd [linsert $cccmd 2 -fprofile-generate]
+  puts $cccmd
+  if {!$dryrun} {
+    exec {*}$cccmd
+  }
+  foreach gcda [glob -nocomplain *.gcda] {
+    puts "Delete $gcda"
+    if {!$dryrun} {file delete $gcda}
+  }
+  set stcmd [list ./speedtest1 {*}$speedtestflags]
+  puts $stcmd
+  if {!$dryrun} {
+    exec {*}$stcmd >/dev/null
+  }
+  set cccmd [lreplace $cccmd 2 2 -fprofile-use]
+}
 puts $cccmd
 if {!$dryrun} {
   exec {*}$cccmd
 }
-lappend speedtestflags --testset $testset
 set stcmd [list valgrind --tool=cachegrind ./speedtest1 {*}$speedtestflags]
 lappend stcmd speedtest1.db
 lappend stcmd >valgrind-out.txt 2>valgrind-err.txt
