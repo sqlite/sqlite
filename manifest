@@ -1,5 +1,5 @@
-C Detect\sand\sreport\sFTS5\sindex\scorruption\searly\senough\sto\sprevent\sCPU\sstack\noverflow.\n[bugs:/info/2026-08-19T01:42:02Z|Bug\s2026-08-19T01:42:02Z].
-D 2026-08-19T14:27:45.258
+C In\sthe\s(test\sand\sdebug\suse\sonly)\sqpvtab\sextension,\sterminate\seach\sstring\nat\sthe\sfirst\s0x00\scharacter.\n[bugs:/info/2026-08-19T02:29:00Z|Bug\s2026-08-19T02:29:00Z].
+D 2026-08-19T15:06:04.661
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -391,7 +391,7 @@ F ext/misc/normalize.c 7f526ccf91b05f47c05eac6c147f0f9033d6c625f0260039518e582dc
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
 F ext/misc/percentile.c b6b9c740f0dc42838efd776eec0f68a93bc5ac86524c71337a70950860bf6c4d
 F ext/misc/prefixes.c e7d3e7a39174db412c5f77c266fa221c2dc3cb2621a9422835a607ad08805eb2
-F ext/misc/qpvtab.c eeb04e4fcead64648629d6375077a5d5fd48c0384023edd21defa32730714d5e
+F ext/misc/qpvtab.c 45a6eb3d810b9b09838ccc5cd593c56a0bce87c4781f31ad409f600d1a449952
 F ext/misc/randomjson.c ef835fc64289e76ac4873b85fe12f9463a036168d7683cf2b773e36e6262c4ed
 F ext/misc/regexp.c 378e6e84516952a4b9f3f4df88927f20e6538e2609f55b773ed78899dab8206e
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 33296ed1d6cf6ebd7ff6638b20afaad2b0ffd7ed997a70450354034a74e7f643
-R b1e0f5ea6b3af414f7a9568f33b34082
+P 663aa876b54ddf477bc31e286e2101726bc637fe4f4570fd3b47abc4dc9ba713
+R e2131013eb27ccf4e4f0d7f36ba0fb56
 U drh
-Z ccd1ad522ceea7ae547a41912d5e37c9
+Z e1943ed50807f08c7abbd751e53ab96e
 # Remove this line to create a well-formed Fossil manifest.
