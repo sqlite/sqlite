@@ -90,7 +90,7 @@ static void resolveAlias(
     Expr temp;
     incrAggFunctionDepth(pDup, nSubquery);
     if( pExpr->op==TK_COLLATE ){
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
     }
     memcpy(&temp, pDup, sizeof(Expr));
@@ -295,8 +295,11 @@ static int lookupName(
   int eNewExprOp = TK_COLUMN;       /* New value for pExpr->op on success */
   Table *pTab = 0;                  /* Table holding the row */
   ExprList *pFJMatch = 0;           /* Matches for FULL JOIN .. USING */
-  const char *zCol = pRight->u.zToken;
+  const char *zCol;                 /* pRight column name */
 
+
+  assert( ExprUseUToken(pRight) );
+  zCol = pRight->u.zToken;
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
   assert( zDb==0 || zTab!=0 );
@@ -757,7 +760,7 @@ static int lookupName(
   ** be multiple matches for a NATURAL OUTER JOIN or a OUTER JOIN USING.
   */
   assert( pFJMatch==0 || cnt>0 );
-  assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
+  assert( ExprUseUToken(pExpr) && !ExprUseXSelect(pExpr) );
   if( cnt!=1 ){
     const char *zErr;
     if( pFJMatch ){
@@ -840,6 +843,7 @@ lookupname_end:
     if( db->xAuth ){
       if( pFJMatch ){
         assert( pExpr->op==TK_FUNCTION );
+        assert( ExprUseUToken(pExpr) );
         assert( sqlite3_stricmp(pExpr->u.zToken,"coalesce")==0 );
         assert( pExpr->x.pList==pFJMatch );
         assert( pFJMatch->nExpr>0 );
@@ -945,7 +949,7 @@ static void notValidImpl(
 static int exprProbability(Expr *p){
   double r = -1.0;
   if( p->op!=TK_FLOAT ) return -1;
-  assert( !ExprHasProperty(p, EP_IntValue) );
+  assert( ExprUseUToken(p) );
   sqlite3AtoF(p->u.zToken, &r);
   assert( r>=0.0 );
   if( r>1.0 ) return -1;
@@ -1079,7 +1083,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }
       testcase( ExprHasProperty(pExpr, EP_OuterON) );
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
 #if TREETRACE_ENABLED
       if( sqlite3TreeTrace & 0x80000 ){
         sqlite3DebugPrintf(
@@ -1117,7 +1121,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       if( pExpr->op==TK_ID ){
         zDb = 0;
         zTable = 0;
-        assert( !ExprHasProperty(pExpr, EP_IntValue) );
+        assert( ExprUseUToken(pExpr) );
         pRight = pExpr;
       }else{
         Expr *pLeft = pExpr->pLeft;
@@ -1130,7 +1134,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           zDb = 0;
         }else{
           assert( pRight->op==TK_DOT );
-          assert( !ExprHasProperty(pRight, EP_IntValue) );
+          assert( ExprUseUToken(pRight) );
           zDb = pLeft->u.zToken;
           pLeft = pRight->pLeft;
           pRight = pRight->pRight;
@@ -1161,7 +1165,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 #ifndef SQLITE_OMIT_WINDOWFUNC
       Window *pWin = (IsWindowFunc(pExpr) ? pExpr->y.pWin : 0);
 #endif
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect|EP_IntValue) );
+      assert( ExprUseUToken(pExpr) && ExprUseXList(pExpr) );
       assert( pExpr->pLeft==0 || pExpr->pLeft->op==TK_ORDER );
       pList = pExpr->x.pList;
       n = pList ? pList->nExpr : 0;
@@ -1528,7 +1532,7 @@ static int resolveAsName(
 
   if( pE->op==TK_ID ){
     const char *zCol;
-    assert( !ExprHasProperty(pE, EP_IntValue) );
+    assert( ExprUseUToken(pE) );
     zCol = pE->u.zToken;
     for(i=0; i<pEList->nExpr; i++){
       if( pEList->a[i].fg.eEName==ENAME_NAME

@@ -325,7 +325,7 @@ void sqlite3Dequote(char *z){
   z[j] = 0;
 }
 void sqlite3DequoteExpr(Expr *p){
-  assert( !ExprHasProperty(p, EP_IntValue) );
+  assert( ExprUseUToken(p) );
   assert( sqlite3Isquote(p->u.zToken[0]) );
   p->flags |= p->u.zToken[0]=='"' ? EP_Quoted|EP_DblQuoted : EP_Quoted;
   sqlite3Dequote(p->u.zToken);
@@ -338,6 +338,7 @@ void sqlite3DequoteExpr(Expr *p){
 */
 void sqlite3DequoteNumber(Parse *pParse, Expr *p){
   assert( p!=0 || pParse->db->mallocFailed );
+  assert( p==0 || ExprUseUToken(p) );
   if( p ){
     const char *pIn = p->u.zToken;
     char *pOut = p->u.zToken;

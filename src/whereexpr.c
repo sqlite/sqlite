@@ -215,7 +215,7 @@ static int isLikeOrGlob(
     sqlite3VdbeSetVarmask(pParse->pVdbe, iCol);
     assert( pRight->op==TK_VARIABLE || pRight->op==TK_REGISTER );
   }else if( op==TK_STRING ){
-    assert( !ExprHasProperty(pRight, EP_IntValue) );
+    assert( ExprUseUToken(pRight) );
      z = (u8*)pRight->u.zToken;
   }
   if( z ){
@@ -262,7 +262,7 @@ static int isLikeOrGlob(
       if( pPrefix ){
         int iFrom, iTo;
         char *zNew;
-        assert( !ExprHasProperty(pPrefix, EP_IntValue) );
+        assert( ExprUseUToken(pPrefix) );
         zNew = pPrefix->u.zToken;
         zNew[cnt] = 0;
         for(iFrom=iTo=0; iFrom<cnt; iFrom++){
@@ -318,7 +318,7 @@ static int isLikeOrGlob(
       if( op==TK_VARIABLE ){
         Vdbe *v = pParse->pVdbe;
         sqlite3VdbeSetVarmask(v, pRight->iColumn);
-        assert( !ExprHasProperty(pRight, EP_IntValue) );
+        assert( ExprUseUToken(pRight) );
         if( *pisComplete && pRight->u.zToken[1] ){
           /* If the rhs of the LIKE expression is a variable, and the current
           ** value of the variable means there is no need to invoke the LIKE
@@ -362,7 +362,7 @@ int sqlite3ExprIsLikeOperator(const Expr *pExpr){
   };
   int i;
   assert( pExpr->op==TK_FUNCTION );
-  assert( !ExprHasProperty(pExpr, EP_IntValue) );
+  assert( ExprUseUToken(pExpr) );
   for(i=0; i<ArraySize(aOp); i++){
     if( sqlite3StrICmp(pExpr->u.zToken, aOp[i].zOp)==0 ){
       return aOp[i].eOp;
@@ -454,7 +454,7 @@ static int isAuxiliaryVtabOperator(
       pVtab = sqlite3GetVTable(db, pCol->y.pTab)->pVtab;
       assert( pVtab!=0 );
       assert( pVtab->pModule!=0 );
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       pMod = (sqlite3_module *)pVtab->pModule;
       if( pMod->xFindFunction!=0 ){
         i = pMod->xFindFunction(pVtab,2, pExpr->u.zToken, &xNotUsed, &pNotUsed);
@@ -1292,7 +1292,7 @@ exprAnalyze_restart:
      && !ExprHasProperty(pExpr,EP_OuterON)
      && 0==sqlite3ExprCanBeNull(pLeft)
     ){
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       pExpr->op = TK_TRUEFALSE;  /* See tag-20230504-1 */
       pExpr->u.zToken = "false";
       ExprSetProperty(pExpr, EP_IsFalse);
@@ -1424,8 +1424,8 @@ exprAnalyze_restart:
     assert( ExprUseXList(pExpr) );
     pLeft = pExpr->x.pList->a[1].pExpr;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
-    assert( pStr1==0 || !ExprHasProperty(pStr1, EP_IntValue) );
-    assert( pStr2==0 || !ExprHasProperty(pStr2, EP_IntValue) );
+    assert( pStr1==0 || ExprUseUToken(pStr1) );
+    assert( pStr2==0 || ExprUseUToken(pStr1) );
 
 
     /* Convert the lower bound to upper-case and the upper bound to
@@ -1436,6 +1436,7 @@ exprAnalyze_restart:
       int i;
       char c;
       pTerm->wtFlags |= TERM_LIKE;
+      assert( ExprUseUToken(pStr1) );
       for(i=0; (c = pStr1->u.zToken[i])!=0; i++){
         pStr1->u.zToken[i] = sqlite3Toupper(c);
         pStr2->u.zToken[i] = sqlite3Tolower(c);
@@ -1444,6 +1445,7 @@ exprAnalyze_restart:
 
     if( !db->mallocFailed ){
       u8 *pC;       /* Last character before the first wildcard */
+      assert( ExprUseUToken(pStr2) );
       pC = (u8*)&pStr2->u.zToken[sqlite3Strlen30(pStr2->u.zToken)-1];
       if( noCase ){
         /* The point is to increment the last character before the first

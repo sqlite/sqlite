@@ -270,4 +270,3 @@ void *sqlite3HashInsert(Hash *pH, const char *pKey, void *data){
   insertElement(pH, pH->ht ? &pH->ht[new_elem->h % pH->htsize] : 0, new_elem);
   return 0;
 }
-

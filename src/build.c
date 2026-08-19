@@ -1875,7 +1875,7 @@ void sqlite3AddPrimaryKey(
       assert( pCExpr!=0 );
       sqlite3StringToId(pCExpr);
       if( pCExpr->op==TK_ID ){
-        assert( !ExprHasProperty(pCExpr, EP_IntValue) );
+        assert( ExprUseUToken(pCExpr) );
         iCol = sqlite3ColumnIndex(pTab, pCExpr->u.zToken);
         if( iCol>=0 ){
           pCol = &pTab->aCol[iCol];
@@ -4187,7 +4187,7 @@ void sqlite3CreateIndex(
     Expr *pExpr = pList->a[i].pExpr;
     assert( pExpr!=0 );
     if( pExpr->op==TK_COLLATE ){
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       nExtra += (1 + sqlite3Strlen30(pExpr->u.zToken));
     }
   }
@@ -4285,7 +4285,7 @@ void sqlite3CreateIndex(
     zColl = 0;
     if( pListItem->pExpr->op==TK_COLLATE ){
       int nColl;
-      assert( !ExprHasProperty(pListItem->pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pListItem->pExpr) );
       zColl = pListItem->pExpr->u.zToken;
       nColl = sqlite3Strlen30(zColl) + 1;
       assert( nExtra>=nColl );

@@ -60,7 +60,7 @@ char sqlite3ExprAffinity(const Expr *pExpr){
     }
 #ifndef SQLITE_OMIT_CAST
     if( op==TK_CAST ){
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       return sqlite3AffinityType(pExpr->u.zToken, 0);
     }
 #endif
@@ -276,7 +276,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
       continue;
     }
     if( op==TK_COLLATE ){
-      assert( !ExprHasProperty(p, EP_IntValue) );
+      assert( ExprUseUToken(p) );
       pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
@@ -1333,7 +1333,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr, u32 n){
   ynVar x;
 
   if( pExpr==0 ) return;
-  assert( !ExprHasProperty(pExpr, EP_IntValue|EP_Reduced|EP_TokenOnly) );
+  assert( !ExprHasProperty(pExpr, EP_Reduced|EP_TokenOnly) );
+  assert( ExprUseUToken(pExpr) );
   z = pExpr->u.zToken;
   assert( z!=0 );
   assert( z[0]!=0 );
@@ -1572,7 +1573,7 @@ static int dupedExprStructSize(const Expr *p, int flags){
 */
 static int dupedExprNodeSize(const Expr *p, int flags){
   int nByte = dupedExprStructSize(p, flags) & 0xfff;
-  if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+  if( ExprUseUToken(p) && p->u.zToken ){
     nByte += sqlite3Strlen30NN(p->u.zToken)+1;
   }
   return ROUND8(nByte);
@@ -1650,7 +1651,7 @@ static Expr *exprDup(
     int nAlloc;
     if( dupFlags ){
       nAlloc = dupedExprSize(p);
-    }else if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+    }else if( ExprUseUToken(p) && p->u.zToken ){
       nToken = sqlite3Strlen30NN(p->u.zToken)+1;
       nAlloc = ROUND8(EXPR_FULLSIZE + nToken);
     }else{
@@ -1677,7 +1678,7 @@ static Expr *exprDup(
     const unsigned nStructSize = dupedExprStructSize(p, dupFlags);
     int nNewSize = nStructSize & 0xfff;
     if( nToken<0 ){
-      if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+      if( ExprUseUToken(p) && p->u.zToken ){
         nToken = sqlite3Strlen30(p->u.zToken) + 1;
       }else{
         nToken = 0;
@@ -2352,7 +2353,8 @@ u32 sqlite3IsTrueOrFalse(const char *zIn){
 int sqlite3ExprIdToTrueFalse(Expr *pExpr){
   u32 v;
   assert( pExpr->op==TK_ID || pExpr->op==TK_STRING );
-  if( !ExprHasProperty(pExpr, EP_Quoted|EP_IntValue)
+  assert( ExprUseUToken(pExpr) );
+  if( !ExprHasProperty(pExpr, EP_Quoted)
    && (v = sqlite3IsTrueOrFalse(pExpr->u.zToken))!=0
   ){
     pExpr->op = TK_TRUEFALSE;
@@ -2369,7 +2371,7 @@ int sqlite3ExprIdToTrueFalse(Expr *pExpr){
 int sqlite3ExprTruthValue(const Expr *pExpr){
   pExpr = sqlite3ExprSkipCollateAndLikely((Expr*)pExpr);
   assert( pExpr->op==TK_TRUEFALSE );
-  assert( !ExprHasProperty(pExpr, EP_IntValue) );
+  assert( ExprUseUToken(pExpr) );
   assert( sqlite3StrICmp(pExpr->u.zToken,"true")==0
        || sqlite3StrICmp(pExpr->u.zToken,"false")==0 );
   return pExpr->u.zToken[4]==0;
@@ -2517,6 +2519,7 @@ static SQLITE_NOINLINE int exprNodeIsConstantFunction(
     if( pWalker->eCode==0 ) return WRC_Abort;
   }
   db = pWalker->pParse->db;
+  assert( ExprUseUToken(pExpr) );
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, n, ENC(db), 0);
   if( pDef==0
    || pDef->xFinalize!=0
@@ -2944,8 +2947,8 @@ int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse){
 
   /* If an expression is an integer literal that fits in a signed 32-bit
   ** integer, then the EP_IntValue flag will have already been set */
-  assert( p->op!=TK_INTEGER || (p->flags & EP_IntValue)!=0
-           || sqlite3GetInt32(p->u.zToken, &rc)==0 );
+  assert( p->op!=TK_INTEGER || ExprUseUValue(p)
+       || sqlite3GetInt32(p->u.zToken, &rc)==0 );
 
   if( p->flags & EP_IntValue ){
     *pValue = p->u.iValue;
@@ -3980,9 +3983,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
     ** not already integer value 1 or 0, then make the new limit X<>0 so that
     ** the new limit is either 1 or 0 */
     Expr *pLeft = pSel->pLimit->pLeft;
-    if( ExprHasProperty(pLeft, EP_IntValue)==0
-     || (pLeft->u.iValue!=1 && pLeft->u.iValue!=0)
-    ){
+    if( !ExprUseUValue(pLeft) || (pLeft->u.iValue!=1 && pLeft->u.iValue!=0) ){
       sqlite3 *db = pParse->db;
       pLimit = sqlite3ExprInt32(db, 0);
       if( pLimit ){
@@ -4391,7 +4392,7 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
 */
 static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
   Vdbe *v = pParse->pVdbe;
-  if( pExpr->flags & EP_IntValue ){
+  if( ExprUseUValue(pExpr) ){
     int i = pExpr->u.iValue;
     assert( i>=0 );
     if( negFlag ) i = -i;
@@ -5178,13 +5179,13 @@ expr_code_doover:
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     case TK_FLOAT: {
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       codeReal(v, pExpr->u.zToken, 0, target);
       return target;
     }
 #endif
     case TK_STRING: {
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       sqlite3VdbeLoadString(v, target, pExpr->u.zToken);
       return target;
     }
@@ -5208,7 +5209,7 @@ expr_code_doover:
       int n;
       const char *z;
       char *zBlob;
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
       assert( pExpr->u.zToken[1]=='\'' );
       z = &pExpr->u.zToken[2];
@@ -5220,7 +5221,7 @@ expr_code_doover:
     }
 #endif
     case TK_VARIABLE: {
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       assert( pExpr->u.zToken!=0 );
       assert( pExpr->u.zToken[0]!=0 );
       sqlite3VdbeAddOp2(v, OP_Variable, pExpr->iColumn, target);
@@ -5234,7 +5235,7 @@ expr_code_doover:
       /* Expressions of the form:   CAST(pLeft AS token) */
       sqlite3ExprCode(pParse, pExpr->pLeft, target);
       assert( inReg==target );
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       sqlite3VdbeAddOp2(v, OP_Cast, target,
                         sqlite3AffinityType(pExpr->u.zToken, 0));
       return inReg;
@@ -5340,7 +5341,7 @@ expr_code_doover:
         return target;
 #ifndef SQLITE_OMIT_FLOATING_POINT
       }else if( pLeft->op==TK_FLOAT ){
-        assert( !ExprHasProperty(pExpr, EP_IntValue) );
+        assert( ExprUseUToken(pExpr) );
         codeReal(v, pLeft->u.zToken, 1, target);
         return target;
 #endif
@@ -5398,7 +5399,7 @@ expr_code_doover:
        || NEVER(pExpr->iAgg<0)
        || NEVER(pExpr->iAgg>=pInfo->nFunc)
       ){
-        assert( !ExprHasProperty(pExpr, EP_IntValue) );
+        assert( ExprUseUToken(pExpr) );
         sqlite3ErrorMsg(pParse, "misuse of aggregate: %#T()", pExpr);
       }else{
         return AggInfoFuncReg(pInfo, pExpr->iAgg);
@@ -5433,7 +5434,7 @@ expr_code_doover:
       assert( ExprUseXList(pExpr) );
       pFarg = pExpr->x.pList;
       nFarg = pFarg ? pFarg->nExpr : 0;
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       zId = pExpr->u.zToken;
       pDef = sqlite3FindFunction(db, zId, nFarg, enc, 0);
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
@@ -5825,7 +5826,7 @@ expr_code_doover:
       if( pExpr->affExpr==OE_Abort ){
         sqlite3MayAbort(pParse);
       }
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( ExprUseUToken(pExpr) );
       if( pExpr->affExpr==OE_Ignore ){
         sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_OK, OE_Ignore);
         VdbeCoverage(v);
@@ -6663,8 +6664,8 @@ int sqlite3ExprCompare(
       return 2;
     }
   }
-  assert( !ExprHasProperty(pA, EP_IntValue) );
-  assert( !ExprHasProperty(pB, EP_IntValue) );
+  assert( ExprUseUToken(pA) );
+  assert( ExprUseUToken(pB) );
   if( pA->u.zToken ){
     if( pA->op==TK_FUNCTION || pA->op==TK_AGG_FUNCTION ){
       if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ) return 2;

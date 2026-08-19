@@ -1498,7 +1498,7 @@ static sqlite3_index_info *allocateIndexInfo(
        && pE2->iTable==pSrc->iCursor
       ){
         const char *zColl;  /* The collating sequence name */
-        assert( !ExprHasProperty(pExpr, EP_IntValue) );
+        assert( ExprUseUToken(pExpr) );
         assert( pExpr->u.zToken!=0 );
         assert( pE2->iColumn>=XN_ROWID && pE2->iColumn<pTab->nCol );
         pExpr->iColumn = pE2->iColumn;
@@ -2949,9 +2949,11 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 static int exprNodePatternLengthEst(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_STRING ){
     int sz = 0;                    /* Pattern size in bytes */
-    u8 *z = (u8*)pExpr->u.zToken;  /* The pattern */
+    u8 *z;                         /* The pattern */
     u8 c;                          /* Next character of the pattern */
     u8 c1, c2, c3;                 /* Wildcards */
+    assert( ExprUseUToken(pExpr) );
+    z = (u8*)pExpr->u.zToken;
     if( pWalker->eCode ){
       c1 = '%';
       c2 = '_';

@@ -385,7 +385,7 @@ static void codeAttach(
   if( ALWAYS(pAuthArg) ){
     char *zAuthArg;
     if( pAuthArg->op==TK_STRING ){
-      assert( !ExprHasProperty(pAuthArg, EP_IntValue) );
+      assert( ExprUseUToken(pAuthArg) );
       zAuthArg = pAuthArg->u.zToken;
     }else{
       zAuthArg = 0;

@@ -941,7 +941,7 @@ static int sqlite3WindowExtraAggFuncDepth(Walker *pWalker, Expr *pExpr){
 
 static int disallowAggregatesInOrderByCb(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_AGG_FUNCTION && pExpr->pAggInfo==0 ){
-    assert( !ExprHasProperty(pExpr, EP_IntValue) );
+    assert( ExprUseUToken(pExpr) );
      sqlite3ErrorMsg(pWalker->pParse,
          "misuse of aggregate: %s()", pExpr->u.zToken);
   }

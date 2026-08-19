@@ -1714,7 +1714,7 @@ static int valueFromFunction(
   assert( ExprUseXList(p) );
   pList = p->x.pList;
   if( pList ) nVal = pList->nExpr;
-  assert( !ExprHasProperty(p, EP_IntValue) );
+  assert( ExprUseUToken(p) );
   pFunc = sqlite3FindFunction(db, p->u.zToken, nVal, enc, 0);
 #ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
   if( pFunc==0 ) return SQLITE_OK;
@@ -1819,7 +1819,7 @@ static int valueFromExpr(
 
   if( op==TK_CAST ){
     u8 aff;
-    assert( !ExprHasProperty(pExpr, EP_IntValue) );
+    assert( ExprUseUToken(pExpr) );
     aff = sqlite3AffinityType(pExpr->u.zToken,0);
     rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
@@ -1843,7 +1843,7 @@ static int valueFromExpr(
   if( op==TK_UMINUS ){
     Expr *pLeft = pExpr->pLeft;
     if( (pLeft->op==TK_INTEGER || pLeft->op==TK_FLOAT) ){
-      if( ExprHasProperty(pLeft, EP_IntValue)
+      if( ExprUseUValue(pLeft)
        || pLeft->u.zToken[0]!='0' || (pLeft->u.zToken[1] & ~0x20)!='X'
       ){
         pExpr = pLeft;
@@ -1857,7 +1857,7 @@ static int valueFromExpr(
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
     pVal = valueNew(db, pCtx);
     if( pVal==0 ) goto no_mem;
-    if( ExprHasProperty(pExpr, EP_IntValue) ){
+    if( ExprUseUValue(pExpr) ){
       sqlite3VdbeMemSetInt64(pVal, (i64)pExpr->u.iValue*negInt);
     }else{
       i64 iVal;
@@ -1920,7 +1920,7 @@ static int valueFromExpr(
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
     int nVal;
-    assert( !ExprHasProperty(pExpr, EP_IntValue) );
+    assert( ExprUseUToken(pExpr) );
     assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
     assert( pExpr->u.zToken[1]=='\'' );
     pVal = valueNew(db, pCtx);
@@ -1938,7 +1938,7 @@ static int valueFromExpr(
   }
 #endif
   else if( op==TK_TRUEFALSE ){
-    assert( !ExprHasProperty(pExpr, EP_IntValue) );
+    assert( ExprUseUToken(pExpr) );
     pVal = valueNew(db, pCtx);
     if( pVal ){
       pVal->flags = MEM_Int;
