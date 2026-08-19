@@ -1002,4 +1002,24 @@ do_catchsql_test 25.0 {
   ) SELECT z.name FROM t, zipfile(t.v) AS z;
 } {1 {cannot open file: x}}
 
+# Bug 2026-08-19T01:52:09Z
+#
+reset_db
+forcedelete test.zip
+load_static_extension db zipfile
+do_execsql_test 26.0 {
+  CREATE VIRTUAL TABLE z USING zipfile('test.zip');
+  INSERT INTO z(name, data) VALUES('a.txt','AAAA'),('b.txt','BBBB');
+} {}
+do_execsql_test 26.1 {
+  SELECT name, quote(data) FROM z ORDER BY 1;
+} {a.txt X'41414141' b.txt X'42424242'}
+do_execsql_test 26.2 {
+  UPDATE OR REPLACE z SET name='b.txt' FROM (VALUES(1),(2));
+} {}
+do_execsql_test 26.3 {
+  SELECT name, quote(data) FROM z ORDER BY 1;
+} {b.txt X'42424242'}
+
+
 finish_test
