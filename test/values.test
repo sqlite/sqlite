@@ -762,5 +762,9 @@ do_execsql_test 20.8 {
   SELECT * FROM ( VALUES (0.5 IS NOT true), (0.5 IS NOT true) )
 } {0 0}
 
+do_execsql_test 20.9 {
+  VALUES(10),(CASE 4.2 WHEN 239 IS TRUE THEN 3.7 WHEN 554 THEN 275 ELSE 16 END);
+} {10 16}
+
 
 finish_test
