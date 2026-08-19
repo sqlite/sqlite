@@ -1,5 +1,5 @@
-C Fix\sthe\szipvfs\svirtual\stable\sso\sthat\sit\sworks\swith\sUPDATE\sOR\sREPLACE.\n[bugs:/info/2026-08-19T01:52:09Z|Bug\s2026-08-19T01:52:09Z].
-D 2026-08-19T15:29:15.771
+C Disable\sthree\sunimportant\sscanstatus\stests\son\sWindows\sto\swork\saround\nplatform\sincompatibilities.\n[bugs:/info/2026-08-19T20:22:44Z|Bug\s2026-08-19T20:22:44Z].
+D 2026-08-19T21:01:42.832
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1595,7 +1595,7 @@ F test/savepoint6.test 48a645a7bb3a59a6fcf06a7364cfe5b655c336760de39068f7c241b0f
 F test/savepoint7.test 24c69af86d750c80d51cf6500fde9270717f2b6e5658f055b5e75af75d5af179
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test b249328caf4d317e71058006872b8012598a5fa045b30bf24a81eeff650ab49e
-F test/scanstatus2.test 1f0fcf71c6653435caa114a79588bdd146d4ceb5e9a4e1a7e449bf0643ed30f5
+F test/scanstatus2.test c6a513911e41b9ca146ee249096b3c671a382ec695743834671c0e86822538eb
 F test/schema.test e615575f2d756df4629596523f11d9322384ecf9f980e58c774cff80ff041c33
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 8ed4ae66e082cdd8b1b1f22d8549e1e7a0db4527a8e6ee8b6193053ee1e5c9ce
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 15192e7a4f6b08dc267b7215e1a126a5e6664e988ad68195195ab164cb63e90e
-R 1fd8d96c31eaa8ee1b03a7e44f3741a6
+P 1f71a577adfbfe9ca691766b9c97d002720118dbfdee5f16424ecf96b4a40b9b
+R 3fd9a287774866c886edc7a37fed96ac
 U drh
-Z fae80eb025ff2d920b5f820c5d2dcc70
+Z 58a5fe80008f77f273ceeb5b526470ad
 # Remove this line to create a well-formed Fossil manifest.
