@@ -2619,7 +2619,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
     case TK_ISNOT:
       if( pWalker->eCode==6 ){
         pWalker->eCode = 0;
-        return WRC_Prune;
+        return WRC_Abort;
       }
       return WRC_Continue;
     case TK_VARIABLE:
