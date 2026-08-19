@@ -121,4 +121,46 @@ do_catchsql_test 4.3 {
   DELETE FROM t2 WHERE rowid=3
 } {1 {database disk image is malformed}}
 
+#--------------------------------------------------------------------
+# Bug 2026-08-19T01:42:02Z
+#
+reset_db
+do_execsql_test 5.0 {
+  PRAGMA writable_schema=ON;
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  WITH RECURSIVE c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<200)
+    INSERT INTO t1(rowid, x)
+       SELECT i, CASE WHEN i%10=0 OR i=1 THEN 'a b c x' ELSE 'a b c' END FROM c;
+  UPDATE t1_data SET block=x'01'||substr(block,2) WHERE id=206158430209;
+  INSERT INTO t1_data(id, block)
+  SELECT 206158430209 + i*2147483648, if(i=32,x'000101',x'010101')
+    FROM (WITH RECURSIVE r(i) AS (
+              SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<32
+            ) SELECT i FROM r
+         );
+} {}
+do_catchsql_test 5.1 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'a AND x';
+} {1 {database disk image is malformed}}
+reset_db
+do_execsql_test 5.2 {
+  PRAGMA writable_schema=ON;
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  WITH RECURSIVE c(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM c WHERE i<200)
+    INSERT INTO t1(rowid, x)
+       SELECT i, CASE WHEN i%10=0 OR i=1 THEN 'a b c x' ELSE 'a b c' END FROM c;
+  UPDATE t1_data SET block=x'01'||substr(block,2) WHERE id=206158430209;
+  INSERT INTO t1_data(id, block)
+  SELECT 206158430209 + i*2147483648, if(i=31,x'000101',x'010101')
+    FROM (WITH RECURSIVE r(i) AS (
+              SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i<31
+            ) SELECT i FROM r
+         );
+} {}
+do_catchsql_test 5.3 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'a AND x';
+} {0 {1 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200}}
+
 finish_test
