@@ -1,5 +1,5 @@
-C Fix\sa\sminor\serror\sin\s[d287358b8d356d4f]\sthat\swas\scausing\san\sassertion\sfault.
-D 2026-08-19T10:38:49.575
+C In\sLemon,\sdo\snot\sinvoke\sqsort()\swith\sa\sNULL\sarray\spointer\seven\sif\sthe\nnumber\sof\selements\sis\szero.\s\sThat\sis\sharmless\sin\spractice,\sbut\sis\ntechnically\sundefined\sbehavior.\s\sThis\schange\sdoes\snot\saffect\sSQLite.\n[bugs:/info/2026-08-19T05:56:54Z|Bug\s2026-08-19T05:56:54Z].
+D 2026-08-19T11:15:38.103
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2149,7 +2149,7 @@ F tool/genfkey.README e550911fa984c8255ebed2ef97824125d83806eb5232582700de949edf
 F tool/genfkey.test b6afd7b825d797a1e1274f519ab5695373552ecad5cd373530c63533638a5a4f
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/index_usage.c f62a0c701b2c7ff2f3e21d206f093c123f222dbf07136a10ffd1ca15a5c706c5
-F tool/lemon.c 3fdc16b23f1ea0c91c049b518fc3f75c71843dbfe2b447fcb3cd92d9e4f219f8
+F tool/lemon.c 2a3943da517ab12e084b0245f786dc6504761f75e4044c458340e41bad2c119e
 F tool/lempar.c a8de510526f9cbfb45ff0aca9d16f1c828600246f198c1c7d49c8d5492142ffa
 F tool/libvers.c caafc3b689638a1d88d44bc5f526c2278760d9b9
 F tool/loadfts.c 63412f9790e5e8538fbde0b4f6db154aaaf80f7a10a01e3c94d14b773a8dd5a6
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d287358b8d356d4fd3643b6776c56c6a6fdfb175834351eaed0148db4079dc67
-R a252dd69687b080a120879d168921bc2
+P 1357ac105a0e0c380dc88b13d53b93799221a389f3f81ba6d05fe8fd9ffc6975
+R 8ebecbbb571be2dc42565405ce4418d8
 U drh
-Z 0599fcdafb3eed2c66de34397d6d1d74
+Z ab2da6c7054d9181b65c2b981e982094
 # Remove this line to create a well-formed Fossil manifest.
