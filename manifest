@@ -1,5 +1,5 @@
-C Performance\senhancements\s(inlining\sand\spartial\sinlining)\sin\sthe\njsonbPayloadSize()\sroutine\sof\sthe\sJSON\slogic\ssaves\sa\slittle\smore\sthan\n10\smillion\scycles\s(0.6%)\son\sthe\sstandard\sbenchmark\s(gcc\s13.3,\s-Os,\smint\slinux)\nwhile\susing\sless\sthan\s700\sextra\sbytes\sof\scode\sspace.
-D 2026-08-20T13:25:12.207
+C Remove\sa\sliteral\s0x0d\scharacter\sfrom\sa\ssessions\stest\sscript,\susing\nchar(0x0d)\sin\sits\splace,\sto\savoid\sfalse-positive\smixed-line-ending\nwarnings\sfrom\sFossil.
+D 2026-08-20T15:59:53.914
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -564,7 +564,7 @@ F ext/session/sessionchange.test 6618cb1c1338a4b6df173b6ac42d09623fb71269962abf2
 F ext/session/sessionchange2.test 8f59185216882adc8b34bb5ba63887459acf3df58493bcffa12e4d05ab6a6b85
 F ext/session/sessionconflict.test 19e4a53795c4c930bfec49e809311e09b2a9e202d9446e56d7a8b139046a0c07 x
 F ext/session/sessionconflict2.test d7f4caf59360dbca8a4698b9a3a322adf6f547f810ad41d131cacb730e02dd5e x
-F ext/session/sessioncorrupt.test 62f7648c23eca96a4bd494a80b694f106d7d0b440ea014ce9067c4f979a66cac x
+F ext/session/sessioncorrupt.test e4e4c346415b09f3354a1ade13d25cf08bb073beb750ebaea9fc6d6313f857d9 x
 F ext/session/sessiondiff.test e89f7aedcdd89e5ebac3a455224eb553a171e9586fc3e1e6a7b3388d2648ba8d
 F ext/session/sessionfault.test c2b43d01213b389a3f518e90775fca2120812ba51e50444c4066962263e45c11
 F ext/session/sessionfault2.test b0d6a7c1d7398a7e800d84657404909c7d385965ea8576dc79ed344c46fbf41c
@@ -2219,9 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P dc176e433555fc818fb20218d846f06477305e6524dc1d73f175de9efccb3428 cff777eeb9b3e124a775bdd284b498fedf3945b42e20bd1ff68bf0c4085971bc
-R 71f5df27cba2504fac435c3c0bd0de3d
-T +closed cff777eeb9b3e124a775bdd284b498fedf3945b42e20bd1ff68bf0c4085971bc
+P 3bd5456e50ef321f2cafcf67261d556a760624ce0caab430ed9454cebec233e7
+R 2ecbe6878a444b5284c93041fc23c73e
 U drh
-Z a493bffdae739d875d162754a4f66083
+Z 25d59f472dffecc28851ed3697ec5203
 # Remove this line to create a well-formed Fossil manifest.
