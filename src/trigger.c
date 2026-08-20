@@ -332,6 +332,7 @@ void sqlite3FinishTrigger(
   DbFixer sFix;                           /* Fixer object */
   int iDb;                                /* Database containing the trigger */
   Token nameToken;                        /* Trigger name for error reporting */
+  i64 n;                                  /* Number of steps */
 
   pParse->pNewTrigger = 0;
   if( NEVER(pParse->nErr) || !pTrig ) goto triggerfinish_cleanup;
@@ -339,9 +340,13 @@ void sqlite3FinishTrigger(
   iDb = sqlite3SchemaToIndex(pParse->db, pTrig->pSchema);
   assert( iDb>=00 && iDb<db->nDb );
   pTrig->step_list = pStepList;
-  while( pStepList ){
+  for(n=0; pStepList; n++){
     pStepList->pTrig = pTrig;
     pStepList = pStepList->pNext;
+  }
+  if( n>pParse->db->aLimit[SQLITE_LIMIT_TRIGGER_STEPS] ){
+    sqlite3ErrorMsg(pParse, "trigger \"%w\" contains too many steps", zName);
+    goto triggerfinish_cleanup;
   }
   sqlite3TokenInit(&nameToken, pTrig->zName);
   sqlite3FixInit(&sFix, pParse, iDb, "trigger", &nameToken);

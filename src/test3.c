@@ -411,11 +411,11 @@ static int SQLITE_TCLAPI btree_payload_size(
 /*
 ** usage:   varint_test  START  MULTIPLIER  COUNT  INCREMENT
 **
-** This command tests the putVarint() and getVarint()
+** This command tests the sqlite3PutVarint() and sqlite3GetVarint()
 ** routines, both for accuracy and for speed.
 **
-** An integer is written using putVarint() and read back with
-** getVarint() and verified to be unchanged.  This repeats COUNT
+** An integer is written using sqlite3PutVarint() and read back with
+** sqlite3GetVarint() and verified to be unchanged.  This repeats COUNT
 ** times.  The first integer is START*MULTIPLIER.  Each iteration
 ** increases the integer by INCREMENT.
 **
@@ -445,14 +445,14 @@ static int SQLITE_TCLAPI btree_varint_test(
   in *= mult;
   for(i=0; i<(int)count; i++){
     char zErr[200];
-    n1 = putVarint(zBuf, in);
+    n1 = sqlite3PutVarint(zBuf, in);
     if( n1>9 || n1<1 ){
       sqlite3_snprintf(sizeof(zErr), zErr,
          "putVarint returned %d - should be between 1 and 9", n1);
       Tcl_AppendResult(interp, zErr, NULL);
       return TCL_ERROR;
     }
-    n2 = getVarint(zBuf, &out);
+    n2 = sqlite3GetVarint(zBuf, &out);
     if( n1!=n2 ){
       sqlite3_snprintf(sizeof(zErr), zErr,
           "putVarint returned %d and getVarint returned %d", n1, n2);
@@ -490,7 +490,7 @@ static int SQLITE_TCLAPI btree_varint_test(
     ** than putVarint.
     */
     for(j=0; j<19; j++){
-      getVarint(zBuf, &out);
+      sqlite3GetVarint(zBuf, &out);
     }
     in += incr;
   }

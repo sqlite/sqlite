@@ -294,3 +294,11 @@
 #ifndef SQLITE_MAX_SCHEMA
 # define SQLITE_MAX_SCHEMA 10000000
 #endif
+
+/*
+** Maximum number of SQL statements allowed in the body of a single
+** trigger.
+*/
+#ifndef SQLITE_MAX_TRIGGER_STEPS
+# define SQLITE_MAX_TRIGGER_STEPS 65000
+#endif

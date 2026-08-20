@@ -1416,6 +1416,51 @@ do_test 13.2 {
 ╰─────────┴─────────────╯
 }
 
+do_test 14.1 {
+  set result \n[db format -style box -ifmt %,d -fpfmt %.2f -rowcount on \
+                 {WITH RECURSIVE c(n) AS
+                    (VALUES(0.01) UNION ALL SELECT n*10 FROM c WHERE n<1e8)
+                  SELECT pi()*n, CAST(pi()*n AS INT) FROM c;}]
+} {
+╭──────────────┬─────────────────────╮
+│    pi()*n    │ CAST(pi()*n AS INT) │
+╞══════════════╪═════════════════════╡
+│         0.03 │                   0 │
+│         0.31 │                   0 │
+│         3.14 │                   3 │
+│        31.42 │                  31 │
+│       314.16 │                 314 │
+│      3141.59 │               3,141 │
+│     31415.93 │              31,415 │
+│    314159.27 │             314,159 │
+│   3141592.65 │           3,141,592 │
+│  31415926.54 │          31,415,926 │
+│ 314159265.36 │         314,159,265 │
+╰──────────────┴─────────────────────╯
+(11 rows)
+}
+do_test 14.2 {
+  catch {db format -ifmt %.2f {SELECT 100, 2.5}} res
+  set res
+} {bad format for -ifmt}
+do_test 14.3 {
+  db format -style list -columnsep { } -ifmt auto {SELECT 100, 2.5}
+} {100 2.5}
+do_test 14.4 {
+  db format -style list -columnsep { } -ifmt {} {SELECT 100, 2.5}
+} {100 2.5}
+do_test 14.5 {
+  catch {db format -fpfmt %d {SELECT 100, 2.5}} res
+  set res
+} {bad format for -fpfmt}
+do_test 14.6 {
+  db format -style list -columnsep { } -fpfmt auto {SELECT 100, 2.5}
+} {100 2.5}
+do_test 14.7 {
+  db format -style list -columnsep { } -fpfmt {} {SELECT 100, 2.5}
+} {100 2.5}
+
+
 db close
 
 finish_test

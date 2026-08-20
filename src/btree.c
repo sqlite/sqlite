@@ -1517,7 +1517,7 @@ static void btreeParseCellPtrNoPayload(
 #ifndef SQLITE_DEBUG
   UNUSED_PARAMETER(pPage);
 #endif
-  pInfo->nSize = 4 + getVarint(&pCell[4], (u64*)&pInfo->nKey);
+  pInfo->nSize = 4 + sqlite3GetVarint(&pCell[4], (u64*)&pInfo->nKey);
   pInfo->nPayload = 0;
   pInfo->nLocal = 0;
   pInfo->pPayload = 0;
@@ -1557,7 +1557,7 @@ static void btreeParseCellPtr(
 
   /* The next block of code is equivalent to:
   **
-  **     pIter += getVarint(pIter, (u64*)&pInfo->nKey);
+  **     pIter += sqlite3GetVarint(pIter, (u64*)&pInfo->nKey);
   **
   ** The code is inlined and the loop is unrolled for performance.
   ** This routine is a high-runner.
@@ -6426,7 +6426,7 @@ int sqlite3BtreeTableMoveto(
           }
         }
       }
-      getVarint(pCell, (u64*)&nCellKey);
+      nCellKey = sqlite3VarintValue(pCell);
       if( nCellKey<intKey ){
         lwr = idx+1;
         if( lwr>upr ){ c = -1; break; }
@@ -7644,7 +7644,7 @@ static int fillInCell(
     nSrc = pX->nData;
     assert( pPage->intKeyLeaf ); /* fillInCell() only called for leaves */
     nHeader += putVarint32(&pCell[nHeader], nPayload);
-    nHeader += putVarint(&pCell[nHeader], *(u64*)&pX->nKey);
+    nHeader += sqlite3PutVarint(&pCell[nHeader], *(u64*)&pX->nKey);
   }else{
     assert( pX->nKey<=0x7fffffff && pX->pKey!=0 );
     nSrc = nPayload = (int)pX->nKey;
@@ -9394,7 +9394,7 @@ static int balance_nonroot(
       j--;
       pNew->xParseCell(pNew, b.apCell[j], &info);
       pCell = pTemp;
-      sz = 4 + putVarint(&pCell[4], info.nKey);
+      sz = 4 + sqlite3PutVarint(&pCell[4], info.nKey);
       pTemp = 0;
     }else{
       pCell -= 4;
@@ -10281,7 +10281,7 @@ int sqlite3BtreeTransferRow(BtCursor *pDest, BtCursor *pSrc, i64 iKey){
   }else{
     aOut += sqlite3PutVarint(aOut, pSrc->info.nPayload);
   }
-  if( pDest->pKeyInfo==0 ) aOut += putVarint(aOut, iKey);
+  if( pDest->pKeyInfo==0 ) aOut += sqlite3PutVarint(aOut, iKey);
   nIn = pSrc->info.nLocal;
   aIn = pSrc->info.pPayload;
   if( aIn+nIn>pSrc->pPage->aDataEnd ){
@@ -10754,11 +10754,20 @@ int sqlite3BtreeCreateTable(Btree *p, Pgno *piTable, int flags){
 /*
 ** Erase the given database page and all its children.  Return
 ** the page to the freelist.
+**
+** The freePageFlag parameter serves a double role:
+**
+**    *  Bit 0 (freePageFlag&1) means that the page should be freed
+**       after it is cleared.
+**
+**    *  Bits 1-31 (freePageFlag>>1) is the depth of recursion.  Use this
+**       to prevent a corrupt database file from recursing too deeply and
+**       overflowing the CPU stack.
 */
 static int clearDatabasePage(
   BtShared *pBt,           /* The BTree that contains the table */
   Pgno pgno,               /* Page number to clear */
-  int freePageFlag,        /* Deallocate page if true */
+  int freePageFlag,        /* bit 0: Deallocate page.  Bits 1-31: depth */
   i64 *pnChange,           /* Add number of Cells freed to this counter */
   Pgno pgnoRoot
 ){
@@ -10771,6 +10780,9 @@ static int clearDatabasePage(
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   if( pgno>btreePagecount(pBt) ){
+    return SQLITE_CORRUPT_PGNO(pgno);
+  }
+  if( (freePageFlag>>1) > BTCURSOR_MAX_DEPTH ){
     return SQLITE_CORRUPT_PGNO(pgno);
   }
   rc = getAndInitPage(pBt, pgno, &pPage, 0);
@@ -10786,7 +10798,8 @@ static int clearDatabasePage(
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
     if( !pPage->leaf ){
-      rc = clearDatabasePage(pBt, get4byte(pCell), 1, pnChange, pgnoRoot);
+      rc = clearDatabasePage(pBt, get4byte(pCell),
+                             (freePageFlag+2)|1, pnChange, pgnoRoot);
       if( rc ) goto cleardatabasepage_out;
     }
     BTREE_CLEAR_CELL(rc, pPage, pCell, info);
@@ -10794,7 +10807,8 @@ static int clearDatabasePage(
   }
   if( !pPage->leaf ){
     rc = clearDatabasePage(
-        pBt, get4byte(&pPage->aData[hdr+8]), 1, pnChange, pgnoRoot
+        pBt, get4byte(&pPage->aData[hdr+8]), 
+                           (freePageFlag+2)|1, pnChange, pgnoRoot
     );
     if( rc ) goto cleardatabasepage_out;
     if( pPage->intKey ) pnChange = 0;
@@ -10803,7 +10817,7 @@ static int clearDatabasePage(
     testcase( !pPage->intKey );
     *pnChange += pPage->nCell;
   }
-  if( freePageFlag ){
+  if( (freePageFlag&1)!=0 ){
     freePage(pPage, &rc);
   }else if( (rc = sqlite3PagerWrite(pPage->pDbPage))==0 ){
     zeroPage(pPage, pPage->aData[hdr] | PTF_LEAF);
@@ -11438,17 +11452,22 @@ static int checkTreePage(
   /* Check that the page exists
   */
   checkProgress(pCheck);
-  if( pCheck->mxErr==0 ) goto end_of_check;
+  if( pCheck->mxErr==0 ) return 0;
   pBt = pCheck->pBt;
   usableSize = pBt->usableSize;
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage) ) return 0;
   pCheck->zPfx = "Tree %u page %u: ";
   pCheck->v1 = iPage;
+  pCheck->nAbove++;
   if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
     if( rc==SQLITE_IOERR_NOMEM ) pCheck->rc = SQLITE_NOMEM;
+    goto end_of_check;
+  }
+  if( pCheck->nAbove > BTCURSOR_MAX_DEPTH ){
+    checkAppendMsg(pCheck,"btree depth exceeds %d",BTCURSOR_MAX_DEPTH);
     goto end_of_check;
   }
 
@@ -11670,6 +11689,7 @@ end_of_check:
   pCheck->zPfx = saved_zPfx;
   pCheck->v1 = saved_v1;
   pCheck->v2 = saved_v2;
+  pCheck->nAbove--;
   return depth+1;
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -11802,7 +11822,9 @@ int sqlite3BtreeIntegrityCheck(
       }
 #endif
       sCheck.v0 = aRoot[i];
+      assert( sCheck.nAbove==0 );
       checkTreePage(&sCheck, aRoot[i], &notUsed, LARGEST_INT64);
+      assert( sCheck.nAbove==0 );
     }
     sqlite3MemSetArrayInt64(aCnt, i, sCheck.nRow);
   }

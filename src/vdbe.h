@@ -63,8 +63,6 @@ struct VdbeOp {
     int i;                 /* Integer value if p4type==P4_INT32 */
     void *p;               /* Generic pointer */
     char *z;               /* Pointer to data for string (char array) types */
-    i64 *pI64;             /* Used when p4type is P4_INT64 */
-    double *pReal;         /* Used when p4type is P4_REAL */
     FuncDef *pFunc;        /* Used when p4type is P4_FUNCDEF */
     sqlite3_context *pCtx; /* Used when p4type is P4_FUNCCTX */
     CollSeq *pColl;        /* Used when p4type is P4_COLLSEQ */
@@ -121,6 +119,19 @@ struct VdbeOpList {
 typedef struct VdbeOpList VdbeOpList;
 
 /*
+** Combine two int32 values into a single int64.  The least significant
+** term comes first.
+*/
+#define INT32_TO_64(a,b)  (i64)(((u64)(u32)(b)<<32)|(u32)(a))
+
+/*
+** Return an int32 that is the lower or upper 32-bits of an int64.
+*/
+#define LOWER32(x)  (int)(((u64)(x))&0xffffffff)
+#define UPPER32(x)  (int)(((u64)(x))>>32)
+
+
+/*
 ** Allowed values of VdbeOp.p4type
 */
 #define P4_NOTUSED      0   /* The P4 parameter is not used */
@@ -139,12 +150,10 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_EXPR       (-10) /* P4 is a pointer to an Expr tree */
 #define P4_MEM        (-11) /* P4 is a pointer to a Mem*    structure */
 #define P4_VTAB       (-12) /* P4 is a pointer to an sqlite3_vtab structure */
-#define P4_REAL       (-13) /* P4 is a 64-bit floating point value */
-#define P4_INT64      (-14) /* P4 is a 64-bit signed integer */
-#define P4_INTARRAY   (-15) /* P4 is a vector of 32-bit integers */
-#define P4_FUNCCTX    (-16) /* P4 is a pointer to an sqlite3_context object */
-#define P4_TABLEREF   (-17) /* Like P4_TABLE, but reference counted */
-#define P4_SUBRTNSIG  (-18) /* P4 is a SubrtnSig pointer */
+#define P4_INTARRAY   (-13) /* P4 is a vector of 32-bit integers */
+#define P4_FUNCCTX    (-14) /* P4 is a pointer to an sqlite3_context object */
+#define P4_TABLEREF   (-15) /* Like P4_TABLE, but reference counted */
+#define P4_SUBRTNSIG  (-16) /* P4 is a SubrtnSig pointer */
 
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1
@@ -203,8 +212,9 @@ int sqlite3VdbeGoto(Vdbe*,int);
 int sqlite3VdbeLoadString(Vdbe*,int,const char*);
 void sqlite3VdbeMultiLoad(Vdbe*,int,const char*,...);
 int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
+int sqlite3VdbeAddInt64(Vdbe*,int,i64);
+int sqlite3VdbeAddDouble(Vdbe*,int,double);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
-int sqlite3VdbeAddOp4Dup8(Vdbe*,int,int,int,int,const u8*,int);
 int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
 int sqlite3VdbeAddFunctionCall(Parse*,int,int,int,int,const FuncDef*,int);
 void sqlite3VdbeEndCoroutine(Vdbe*,int);

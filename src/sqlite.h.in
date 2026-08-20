@@ -4436,6 +4436,10 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [[SQLITE_LIMIT_SCHEMA]] ^(<dt>SQLITE_LIMIT_SCHEMA</dt>
 ** <dd>The maximum number of objects (tables, indexes, triggers, and views)
 ** defined by the database schema.</dd>)^
+**
+** [[SQLITE_LIMIT_TRIGGER_STEPS]] ^(<dt>SQLITE_LIMIT_TRIGGER_STEPS</dt>
+** <dd>The maximum number of SQL statements that can be contained within
+** a single trigger.</dd>)^
 ** </dl>
 */
 #define SQLITE_LIMIT_LENGTH                    0
@@ -4452,6 +4456,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_LIMIT_WORKER_THREADS           11
 #define SQLITE_LIMIT_PARSER_DEPTH             12
 #define SQLITE_LIMIT_SCHEMA                   13
+#define SQLITE_LIMIT_TRIGGER_STEPS            14
 
 /*
 ** CAPI3REF: Prepare Flags

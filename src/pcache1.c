@@ -545,6 +545,7 @@ static void pcache1ResizeHash(PCache1 *p){
   if( nNew<256 ){
     nNew = 256;
   }
+  assert( (nNew & (nNew-1))==0 );   /* nNew is always a power of two */
 
   pcache1LeaveMutex(p->pGroup);
   if( p->nHash ){ sqlite3BeginBenignMalloc(); }
@@ -556,7 +557,7 @@ static void pcache1ResizeHash(PCache1 *p){
       PgHdr1 *pPage;
       PgHdr1 *pNext = p->apHash[i];
       while( (pPage = pNext)!=0 ){
-        unsigned int h = pPage->iKey % nNew;
+        unsigned int h = (unsigned int)(pPage->iKey & (nNew-1));
         pNext = pPage->pNext;
         pPage->pNext = apNew[h];
         apNew[h] = pPage;
@@ -606,7 +607,8 @@ static void pcache1RemoveFromHash(PgHdr1 *pPage, int freeFlag){
   PgHdr1 **pp;
 
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
-  h = pPage->iKey % pCache->nHash;
+  assert( pCache->nHash>0 && (pCache->nHash & (pCache->nHash-1))==0 );
+  h = pPage->iKey & (pCache->nHash-1);
   for(pp=&pCache->apHash[h]; (*pp)!=pPage; pp=&(*pp)->pNext);
   *pp = (*pp)->pNext;
 
@@ -659,14 +661,14 @@ static void pcache1TruncateUnsafe(
   unsigned int h, iStop;
   assert( sqlite3_mutex_held(pCache->pGroup->mutex) );
   assert( pCache->iMaxKey >= iLimit );
-  assert( pCache->nHash > 0 );
+  assert( pCache->nHash>0 && (pCache->nHash & (pCache->nHash-1))==0 );
   if( pCache->iMaxKey - iLimit < pCache->nHash ){
     /* If we are just shaving the last few pages off the end of the
     ** cache, then there is no point in scanning the entire hash table.
     ** Only scan those hash slots that might contain pages that need to
     ** be removed. */
-    h = iLimit % pCache->nHash;
-    iStop = pCache->iMaxKey % pCache->nHash;
+    h = iLimit & (pCache->nHash-1);
+    iStop = pCache->iMaxKey & (pCache->nHash-1);
     TESTONLY( nPage = -10; )  /* Disable the pCache->nPage validity check */
   }else{
     /* This is the general case where many pages are being removed.
@@ -697,7 +699,7 @@ static void pcache1TruncateUnsafe(
       }
     }
     if( h==iStop ) break;
-    h = (h+1) % pCache->nHash;
+    h = (h+1) & (pCache->nHash-1);
   }
   assert( nPage<0 || pCache->nPage==(unsigned)nPage );
 }
@@ -909,6 +911,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
 
   if( pCache->nPage>=pCache->nHash ) pcache1ResizeHash(pCache);
   assert( pCache->nHash>0 && pCache->apHash );
+  assert( (pCache->nHash & (pCache->nHash-1))==0 );
 
   /* Step 4. Try to recycle a page. */
   if( pCache->bPurgeable
@@ -937,7 +940,7 @@ static SQLITE_NOINLINE PgHdr1 *pcache1FetchStage2(
   }
 
   if( pPage ){
-    unsigned int h = iKey % pCache->nHash;
+    unsigned int h = iKey & (pCache->nHash-1);
     pCache->nPage++;
     pPage->iKey = iKey;
     pPage->pNext = pCache->apHash[h];
@@ -1144,7 +1147,8 @@ static void pcache1Rekey(
   pcache1EnterMutex(pCache->pGroup);
 
   assert( pcache1FetchNoMutex(p, iOld, 0)==pPage ); /* pPg really is iOld */
-  hOld = iOld%pCache->nHash;
+  assert( pCache->nHash>0 && (pCache->nHash & (pCache->nHash-1))==0 );
+  hOld = iOld & (pCache->nHash-1);
   pp = &pCache->apHash[hOld];
   while( (*pp)!=pPage ){
     pp = &(*pp)->pNext;
@@ -1152,7 +1156,7 @@ static void pcache1Rekey(
   *pp = pPage->pNext;
 
   assert( pcache1FetchNoMutex(p, iNew, 0)==0 ); /* iNew not in cache */
-  hNew = iNew%pCache->nHash;
+  hNew = iNew & (pCache->nHash-1);
   pPage->iKey = iNew;
   pPage->pNext = pCache->apHash[hNew];
   pCache->apHash[hNew] = pPage;

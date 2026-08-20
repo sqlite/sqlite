@@ -851,4 +851,29 @@ do_catchsql_test trigger1-24.2 {
   INSERT INTO t1 VALUES(9876);
 } {1 {attempt to insert 9876 where is not a power of 2}}
 
+# 2026-08-18 Limit to the number of statements in a trigger.
+#
+reset_db
+do_execsql_test trigger1-25.1 {
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+} {}
+sqlite3_limit db SQLITE_LIMIT_TRIGGER_STEPS 3
+do_execsql_test trigger1-25.2 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    SELECT * FROM t2;
+    SELECT * FROM t2;
+    SELECT * FROM t2;
+  END;
+} {}
+do_catchsql_test trigger1-25.3 {
+  CREATE TRIGGER r2 AFTER UPDATE ON t1 BEGIN
+    SELECT * FROM t2;
+    SELECT * FROM t2;
+    SELECT * FROM t2;
+    SELECT * FROM t2;
+  END;
+} {1 {trigger "r2" contains too many steps}}
+
+
 finish_test
