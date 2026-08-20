@@ -3423,7 +3423,7 @@ int sqlite3FindInIndex(
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
               u64 mask = (1<<nExpr)-1;
               sqlite3VdbeAddOp3(v, OP_ColumnsUsed,
-                                iTab, (int)(mask>>32), (int)mask);
+                                iTab, LOWER32(mask), UPPER32(mask));
 #endif
               *prRhsHasNull = ++pParse->nMem;
               if( nExpr==1 ){

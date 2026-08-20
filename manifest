@@ -1,5 +1,5 @@
-C Modify\sthe\sOP_Int64\sand\sOP_Real\sopcodes\sso\sthat\stheir\s64-bit\simmediate\svalue\nis\sstored\ssplit\sacross\sto\sarguments,\sP1\sand\sP3,\srather\sthan\sbeing\sstored\nas\sa\sseparate\smemory\sallocation\spointed\sto\sby\sP4.\s\sSlightly\ssmaller\sand\nslightly\sfaster,\sbut\sperhaps\salso\seasier\sto\smaintain.
-D 2026-08-20T01:22:18.609
+C Fix\sthe\sorder\sof\s32-bit\sworks\son\san\sOP_ColumnsUsed\soperator.
+D 2026-08-20T09:26:01.251
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -694,7 +694,7 @@ F src/date.c e1a002a4199bfa85e8778c0f72182c679580b131147d8e46d9221cfceffb8500
 F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
-F src/expr.c a3632d733ce5b112c549de9fb345f560291282a7cbcd8b9ebec02da70e5966de
+F src/expr.c 25fedc655d69168369a1432dfe5dbe632af9aa6aee189a8e006bcfe905ed2487
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c d833ab92ed95e84af60247e7d752cda33234d8979173442079d54d96e9853dd9
@@ -2219,11 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 3f2b5dc6cd9d83724fcf39e9d7e2ca0eae6b8c698d1eb5444c705696a866d85a
-R 80e90daca8943b3c367bd10335efb3e9
-T *branch * split-64bit-opcodes
-T *sym-split-64bit-opcodes *
-T -sym-trunk *
+P c13b4c2c41e19fc47925dfb75e5f48d9972ef9ffb68c2d3c57e71a23e75717f9
+R 4e82f33b0040b0773923870928cddab5
 U drh
-Z 24dbef899259ba9fe2d382cc740b807a
+Z e40a15b0b2488d34dd2c572e778e5103
 # Remove this line to create a well-formed Fossil manifest.
