@@ -3421,9 +3421,9 @@ int sqlite3FindInIndex(
  
             if( prRhsHasNull ){
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
-              i64 mask = (1<<nExpr)-1;
-              sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed,
-                  iTab, 0, 0, (u8*)&mask, P4_INT64);
+              u64 mask = (1<<nExpr)-1;
+              sqlite3VdbeAddOp3(v, OP_ColumnsUsed,
+                                iTab, (int)(mask>>32), (int)mask);
 #endif
               *prRhsHasNull = ++pParse->nMem;
               if( nExpr==1 ){
@@ -4377,7 +4377,7 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
     sqlite3AtoF(z, &value);
     assert( !sqlite3IsNaN(value) ); /* The new AtoF never returns NaN */
     if( negateFlag ) value = -value;
-    sqlite3VdbeAddOp4Dup8(v, OP_Real, 0, iMem, 0, (u8*)&value, P4_REAL);
+    sqlite3VdbeAddDouble(v, iMem, value);
   }
 }
 #endif
@@ -4418,7 +4418,7 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
 #endif
     }else{
       if( negFlag ){ value = c==3 ? SMALLEST_INT64 : -value; }
-      sqlite3VdbeAddOp4Dup8(v, OP_Int64, 0, iMem, 0, (u8*)&value, P4_INT64);
+      sqlite3VdbeAddInt64(v, iMem, value);
     }
   }
 }
