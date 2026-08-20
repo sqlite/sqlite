@@ -709,6 +709,7 @@ struct IntegrityCk {
   int nErr;         /* Number of messages written to zErrMsg so far */
   int rc;           /* SQLITE_OK, SQLITE_NOMEM, or SQLITE_INTERRUPT */
   u32 nStep;        /* Number of steps into the integrity_check process */
+  u8 nAbove;        /* Current btree recursion depth */
   const char *zPfx; /* Error message prefix */
   Pgno v0;          /* Value for first %u substitution in zPfx (root page) */
   Pgno v1;          /* Value for second %u substitution in zPfx (current pg) */

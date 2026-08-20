@@ -4398,6 +4398,10 @@ int sqlite3WalReadFrame(
   /* Figure out the page size */
   sz = pWal->hdr.szPage;
   sz = (sz&0xfe00) + ((sz&0x0001)<<16);
+  if( nOut>sz ){
+    memset(pOut+sz, 0, nOut-sz);
+    nOut = sz;
+  }
   testcase( sz<=32768 );
   testcase( sz>=65536 );
 
@@ -4412,7 +4416,7 @@ int sqlite3WalReadFrame(
   WALTRACE(("WAL%p: reading frame %d wal %d\n", pWal, iRead, iWal));
   iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;
   /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
-  return sqlite3OsRead(pWal->apWalFd[iWal], pOut, (nOut>sz?sz:nOut), iOffset);
+  return sqlite3OsRead(pWal->apWalFd[iWal], pOut, nOut, iOffset);
 }
 
 /*

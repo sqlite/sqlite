@@ -314,6 +314,8 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(runcmd)      "bash run.sh"
   }
   *freebsd* -
+  *netbsd* -
+  *dragonfly* -
   *openbsd* {
     set TRG(platform)    linux
     set TRG(make)        make.sh

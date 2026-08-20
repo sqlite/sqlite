@@ -66,6 +66,10 @@ do_test sqllimits1-1.13 {
   sqlite3_limit db SQLITE_LIMIT_SCHEMA 999999999
   sqlite3_limit db SQLITE_LIMIT_SCHEMA -1
 } $SQLITE_MAX_SCHEMA
+do_test sqllimits1-1.14 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_STEPS 999999999
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_STEPS -1
+} $SQLITE_MAX_TRIGGER_STEPS
 
 # Limit parameters out of range.
 #

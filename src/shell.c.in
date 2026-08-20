@@ -371,6 +371,8 @@ typedef struct Mode {
   u8 bAutoScreenWidth;   /* Using the TTY to determine screen width */
   u8 mFlags;             /* MFLG_ECHO, MFLG_CRLF, etc. */
   u8 eMode;              /* One of the MODE_ values */
+  char zIFmt[24];        /* Space to hold the --ifmt value */
+  char zFpFmt[24];       /* Space to hold the --fpfmt value */
   sqlite3_qrf_spec spec; /* Spec to be passed into QRF */
 } Mode;
 
@@ -2113,6 +2115,14 @@ static void modeDup(Mode *pDest, Mode *pSrc){
   }
   if( pDest->spec.zNull ){
     pDest->spec.zNull = strdup(pSrc->spec.zNull);
+  }
+  if( pDest->spec.zFpFmt ){
+    assert( pDest->spec.zFpFmt==pSrc->zFpFmt );
+    pDest->spec.zFpFmt = pDest->zFpFmt;
+  }
+  if( pDest->spec.zIFmt ){
+    assert( pDest->spec.zIFmt==pSrc->zIFmt );
+    pDest->spec.zIFmt = pDest->zIFmt;
   }
 }
 
@@ -8674,6 +8684,10 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **   --escape ESC             Enable/disable escaping of control characters
 **                            found in the output. ESC can be "off", "ascii",
 **                            or "symbol".
+**   --fpfmt STRING           String is a printf-style format string used to
+**                            render floating-point values.
+**   --ifmt STRING            String is a printf-style format string used to
+**                            render integer values.
 **   --linelimit N            Set the maximum number of output lines to show for
 **                            any single SQL value to N. Longer values are
 **                            truncated. Zero means "no limit". Only works
@@ -8930,6 +8944,40 @@ static int dotCmdMode(ShellState *p){
           break;
       }
       chng = 1;
+    }else if( optionMatch(z,"ifmt") ){
+      if( i+1>=nArg ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      i++;
+      if( azArg[i][0]==0 || cli_strcmp(azArg[i],"auto")==0 ){
+        p->mode.spec.zIFmt = 0;
+      }else if( sqlite3_qrf_ckformat(azArg[i])!=1 ){
+        dotCmdError(p, i, "not a valid integer format", 0);
+        return 1;
+      }else{
+        assert( strlen(azArg[i])<sizeof(p->mode.zIFmt)-1 );
+        memcpy(p->mode.zIFmt, azArg[i], strlen(azArg[i])+1);
+        p->mode.spec.zIFmt = p->mode.zIFmt;
+      }
+      chng = 1;
+    }else if( optionMatch(z,"fpfmt") ){
+      if( i+1>=nArg ){
+        dotCmdError(p, i, "missing argument", 0);
+        return 1;
+      }
+      i++;
+      if( azArg[i][0]==0 || cli_strcmp(azArg[i],"auto")==0 ){
+        p->mode.spec.zFpFmt = 0;
+      }else if( sqlite3_qrf_ckformat(azArg[i])!=2 ){
+        dotCmdError(p, i, "not a valid floating-point format", 0);
+        return 1;
+      }else{
+        assert( strlen(azArg[i])<sizeof(p->mode.zFpFmt)-1 );
+        memcpy(p->mode.zFpFmt, azArg[i], strlen(azArg[i])+1);
+        p->mode.spec.zFpFmt = p->mode.zFpFmt;
+      }
+      chng = 1;
     }else if( optionMatch(z,"reset") ){
       int saved_eMode = p->mode.eMode;
       modeFree(&p->mode);
@@ -9163,6 +9211,14 @@ static int dotCmdMode(ShellState *p){
     }
     if( bAll || p->mode.spec.eEsc!=QRF_Auto ){
       sqlite3_str_appendf(pDesc, " --escape %s",qrfEscNames[p->mode.spec.eEsc]);
+    }
+    if( bAll || p->mode.spec.zFpFmt!=0 ){
+      const char *z = p->mode.spec.zFpFmt;
+      sqlite3_str_appendf(pDesc, " --fpfmt %s", z ? z : "auto");
+    }
+    if( bAll || p->mode.spec.zIFmt!=0 ){
+      const char *z = p->mode.spec.zIFmt;
+      sqlite3_str_appendf(pDesc, " --ifmt %s", z ? z : "auto");
     }
     if( bAll
      || (p->mode.spec.nLineLimit>0 && pI->eCx>0)
@@ -10845,6 +10901,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
       { "trigger_depth",         SQLITE_LIMIT_TRIGGER_DEPTH             },
       { "worker_threads",        SQLITE_LIMIT_WORKER_THREADS            },
       { "schema",                SQLITE_LIMIT_SCHEMA                    },
+      { "trigger_steps",         SQLITE_LIMIT_TRIGGER_STEPS             },
     };
     int i, n2;
     open_db(p, 0);

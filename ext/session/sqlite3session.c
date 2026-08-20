@@ -5590,10 +5590,10 @@ static int sessionChangesetApply(
   int schemaMismatch = 0;
   int rc = SQLITE_OK;             /* Return code */
   const char *zTab = 0;           /* Name of current table */
-  int nTab = 0;                   /* Result of sqlite3Strlen30(zTab) */
   SessionApplyCtx sApply;         /* changeset_apply() context object */
   int bPatchset;
   u64 savedFlag = db->flags & SQLITE_FkNoAction;
+  int bNew = 0;                   /* True for first entry of new table */
 
   assert( xConflict!=0 );
 
@@ -5615,15 +5615,16 @@ static int sessionChangesetApply(
   if( rc==SQLITE_OK ){
     rc = sqlite3_exec(db, "PRAGMA defer_foreign_keys = 1", 0, 0, 0);
   }
-  while( rc==SQLITE_OK && SQLITE_ROW==sqlite3changeset_next(pIter) ){
+  while( rc==SQLITE_OK && SQLITE_ROW==sessionChangesetNext(pIter, 0, 0,&bNew) ){
     int nCol;
     int op;
     const char *zNew;
     
     sqlite3changeset_op(pIter, &zNew, &nCol, &op, 0);
 
-    if( zTab==0 || sqlite3_strnicmp(zNew, zTab, nTab+1) ){
+    if( bNew ){
       u8 *abPK;
+      bNew = 0;
 
       rc = sessionRetryConstraints(
           db, pIter->bPatchset, zTab, &sApply, xConflict, pCtx
@@ -5658,7 +5659,6 @@ static int sessionChangesetApply(
           rc = SQLITE_NOMEM;
           break;
         }
-        nTab = (int)strlen(zTab);
         sApply.azCol = (const char **)zTab;
       }else{
         int nMinCol = 0;
@@ -5711,7 +5711,6 @@ static int sessionChangesetApply(
             sApply.bStat1 = 0;
           }
         }
-        nTab = sqlite3Strlen30(zTab);
       }
     }
 
