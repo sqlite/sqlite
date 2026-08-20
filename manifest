@@ -1,5 +1,5 @@
-C Internal\sdoc\stypo\sfix.\sNo\scode\schanges.
-D 2026-08-20T11:12:56.623
+C Latest\supstream\slibcmpp.c\sfor\s#eval\sand\s#include\s-resolve,\sand\sremoval\sof\sthe\sclumsy\s@'string'\sliterals.
+D 2026-08-20T11:50:33.174
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -637,7 +637,7 @@ F ext/wasm/index-dist.html db23748044e286773f2768eec287669501703b5d5f72755e8db73
 F ext/wasm/index.html 5bf6cf1b0a3c8b9f5f54d77f2219d7ae87a15162055ce308109c49b1dcab4239
 F ext/wasm/jaccwabyt/jaccwabyt.js 4e2b797dc170851c9c530c3567679f4aa509eec0fab73b466d945b00b356574b
 F ext/wasm/jaccwabyt/jaccwabyt.md 6aa90fa1a973d0ad10d077088bea163b241d8470c75eafdef87620a1de1dea41
-F ext/wasm/libcmpp.c 09aa66170928fc371a1fb629a93ebbb19e71e1a58ca787ad9a36f1c4923e3a77
+F ext/wasm/libcmpp.c a2b6b1f35a17a1e544cbe2e552c8afcd3453d0c60410959d00e8211bd3a1469e
 F ext/wasm/mkdist.sh f8883b077a2ca47cf92e6f0ce305fbf72ca648c3501810125056c4b09c2d5554 x
 F ext/wasm/mkwasmbuilds.c 74a74a4e96e67cdb132f701140d53c677b2871fc49d2cdd143064f01329a3e51
 F ext/wasm/module-symbols.html e54f42112e0aac2a31f850ab33e7f2630a2ea4f63496f484a12469a2501e07e2
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 83e72cc862bf0e586271eed64660f70172a5b7d5a3299debb6b97ef71bd0802e
-R b77f90180caa8cf2239d437fd54c4153
+P 1c19bc27cbeb6614e7c01a28c76a7e5f649dba3c15c5fa4588c4e84fe5541947
+R 063c7d21ff2416666a57dc391216e440
 U stephan
-Z 53a44ac2e6f8500e89183700b0b594fb
+Z ccc601341acf11bbaf5c34c708d54ab0
 # Remove this line to create a well-formed Fossil manifest.
