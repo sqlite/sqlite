@@ -2982,7 +2982,7 @@ int main(int argc, char **argv){
   int memDb = 0;                /* --memdb.  Use an in-memory database */
   int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
     ;                           /* SQLITE_OPEN_xxx flags. */
-  char *zTSet = "mix1";         /* Which --testset torun */
+  char *zTSet = "mix1";         /* Which --testset to run */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
 

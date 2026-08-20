@@ -290,25 +290,38 @@
 **
 **    SQLITE_OPT_INLINE       In-line this function if building the
 **                            amalgamation.
+**
+**    SQLITE_USES_INLINE      Set to 1 or 0 according to whether or not
+**                            inline functions are supported.
 */
-#if defined(__GNUC__)
+#if defined(SQLITE_DISABLE_INLINE)
+#  define SQLITE_NOINLINE
+#  define SQLITE_INLINE
+#  define SQLITE_OPT_INLINE
+#  define SQLITE_USES_INLINE 0
+#elif defined(__GNUC__)
 #  define SQLITE_NOINLINE    __attribute__((noinline))
 #  define SQLITE_INLINE      __attribute__((always_inline)) inline
 #  define SQLITE_OPT_INLINE  __attribute__((always_inline)) inline
+#  define SQLITE_USES_INLINE 1
 #elif defined(_MSC_VER) && _MSC_VER>=1310
 #  define SQLITE_NOINLINE    __declspec(noinline)
 #  define SQLITE_INLINE      __forceinline
 #  define SQLITE_OPT_INLINE  __forceinline
+#  define SQLITE_USES_INLINE 1
 #else
 #  define SQLITE_NOINLINE
 #  define SQLITE_INLINE
 #  define SQLITE_OPT_INLINE
+#  define SQLITE_USES_INLINE 0
 #endif
 #if defined(SQLITE_COVERAGE_TEST) || defined(__STRICT_ANSI__)
 # undef SQLITE_INLINE
 # define SQLITE_INLINE
 # undef SQLITE_OPT_INLINE
 # define SQLITE_OPT_INLINE
+# undef SQLITE_USES_INLINE
+# define SQLITE_USES_INLINE 0
 #endif
 #if !defined(SQLITE_AMALGAMATION)
 # undef SQLITE_OPT_INLINE
