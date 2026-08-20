@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment.\s\sNo\scode\schanges.
-D 2026-08-20T10:24:54.378
+C Use\stestcase()\smacros\sto\sprove\scoverage\sin\sjsonbPayloadSizeWide()
+D 2026-08-20T13:12:16.626
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -704,7 +704,7 @@ F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
 F src/hwtime.h 5cb15147c8583d0fc4748e1c12ea6f38c9deaeefa147a4d8d379fd9bc81fee9a
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 1c3dfe4076a4dc9a4c6890bbe5e5dbbf78d43893e175a0370cc9a56d0cc6ce90
-F src/json.c d5a041a1fa6d6d8b862f3d99aa8885cef36e837061dc249ad7b31dbb44ab5cd6
+F src/json.c 507a7be1d4c7ca435a6b22e742cc344a3f318d68b49995dadb921502b374aa18
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 5cd4cd7ec6e1a46416806899086363fbf95eecd3bfb9a388b436c9a77243c902
 F src/main.c fb8399bd4731dd01392628fdd452d16abd00216681af58aab34265018441219a
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 88fbeafc8d783fe72625c3c631cf0163ff98b2eb42152e401e14d3df66199a7a
-R fc79694fbd033336c8254ade4cf93741
+P da3cb2b23eef2a9e4a421f1a16301894a6dcc533009f4a70a938a2309540edec
+R 90f1ae7d264b6c919e8cefa54dc07269
 U drh
-Z 2ce0c77e8a0a16e2851734885bbdf1a6
+Z ac91b4c62c6ed9bd487a48303876e9b8
 # Remove this line to create a well-formed Fossil manifest.

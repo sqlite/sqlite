@@ -2161,8 +2161,16 @@ static u32 jsonbPayloadSizeWide(
          (pParse->aBlob[i+7]<<8) + pParse->aBlob[i+8];
     n = 9;
   }
+  testcase( (i64)i+sz+n > pParse->nBlob );
+  testcase( (i64)i+sz+n > pParse->nBlob-pParse->delta
+         && (i64)i+sz+n > pParse->nBlob );
+  testcase( pParse->delta>0 );
+  testcase( pParse->delta<0 );
+  /* Quirks with -Os and gcov cause the NO_TEST line below to show up as
+  ** false-positive coverage miss.  The testcases() macros above are
+  ** sufficient to prove that the branch is in fact covered */
   if( (i64)i+sz+n > pParse->nBlob
-   && (i64)i+sz+n > pParse->nBlob-pParse->delta
+   && (i64)i+sz+n > pParse->nBlob-pParse->delta  /*NO_TEST*/
   ){
     *pSz = 0;
     return 0;
