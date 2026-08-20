@@ -7302,8 +7302,8 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeChangeP5(v, bFordelete);
       }
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
-      sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, pTabItem->iCursor, 0, 0,
-                            (const u8*)&pTabItem->colUsed, P4_INT64);
+      sqlite3VdbeAddOp3(v, OP_ColumnsUsed, pTabItem->iCursor,
+                    LOWER32(pTabItem->colUsed), UPPER32(pTabItem->colUsed));
 #endif
       if( ii>=2
        && (pTabItem[0].fg.jointype & (JT_LTORJ|JT_LEFT))==0 
@@ -7380,8 +7380,8 @@ WhereInfo *sqlite3WhereBegin(
             if( (pTabItem->colUsed & MASKBIT(jj))==0 ) continue;
             colUsed |= ((u64)1)<<(ii<63 ? ii : 63);
           }
-          sqlite3VdbeAddOp4Dup8(v, OP_ColumnsUsed, iIndexCur, 0, 0,
-                                (u8*)&colUsed, P4_INT64);
+          sqlite3VdbeAddOp3(v, OP_ColumnsUsed, iIndexCur,
+                            LOWER32(colUsed),UPPER32(colUsed));
         }
 #endif /* SQLITE_ENABLE_COLUMN_USED_MASK */
 #ifdef SQLITE_ENABLE_CURSOR_HINTS

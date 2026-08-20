@@ -31,7 +31,7 @@ char *zResult = 0;      /* Formatted output written here */
 int rc;                 /* Result code */
 
 memset(&spec, 0, sizeof(spec));       /* Initialize the spec */
-spec.iVersion = 1;                    /* Version number must be 1 */
+spec.iVersion = 2;                    /* Latest version number */
 spec.pzOutput = &zResult;             /* Write results in variable zResult */
 /* Optionally fill in other settings in spec here, as needed */
 zErrMsg = 0;                          /* Not required; just being pedantic */
@@ -66,7 +66,7 @@ sqlite3_stmt *pStmt;    /* Next prepared statement */
 int rc;                 /* Result code */
 
 memset(&spec, 0, sizeof(spec));       /* Initialize the spec */
-spec.iVersion = 1;                    /* Version number must be 1 */
+spec.iVersion = 2;                    /* Latest version number */
 spec.pzOutput = &zResult;             /* Write results in variable zResult */
 /* Optionally fill in other settings in spec here, as needed */
 zErrMsg = 0;                          /* Not required; just being pedantic */
@@ -130,6 +130,10 @@ struct sqlite3_qrf_spec {
   void *pRenderArg;           /* First argument to the xRender callback */
   void *pWriteArg;            /* First argument to the xWrite callback */
   char **pzOutput;            /* Storage location for output string */
+  /* The following are available in iVersion 2 and later */
+  unsigned char bRowCount;    /* Show the number of rows at end of each query */
+  char *zIFmt;                /* Format string for integers */
+  char *zFpFmt;               /* Format string for floating point */
   /* Additional fields may be added in the future */
 };
 ~~~
@@ -150,10 +154,10 @@ Further detail on the meanings of each of the fields in the
 
 ### 2.1 Structure Version Number
 
-The sqlite3_qrf_spec.iVersion field must be 1.  Future enhancements to 
+The sqlite3_qrf_spec.iVersion field must be 1 or 2.  Future enhancements to 
 the QRF might add new fields to the bottom of the sqlite3_qrf_spec
 object. Those new fields will only be accessible if the iVersion is greater
-than 1. Thus the iVersion field is used to support upgradability.
+than 2. Thus the iVersion field is used to support upgradability.
 
 ### 2.2 Output Deposition (xWrite and pzOutput)
 
@@ -603,6 +607,16 @@ and so that names of columns are never processed by xRender.
 If the value of bRowCount is QRF_Yes, then an extra line of text
 of the form "(N rows)" might be appended to the end of query output,
 depending on eStyle.
+
+### 2.19 Number Formatting (zIFmt and zFpFmt)
+
+If the zIFmt and zFpFmt fields are a short printf-style format
+string, than that formatting string is used to render integer and
+floating-point values, respectively.  The width and precision fields
+of the format string (if present) must not exceed three decimal digits.
+An invalid or unsupported format string causes the formatting to
+revert to its default.  The sqlite3_qrf_ckformat() API function can
+be used to validate format strings.
 
 ## 3.0 The `sqlite3_format_query_result()` Interface
 

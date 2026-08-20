@@ -144,6 +144,14 @@ static int fts3auxDisconnectMethod(sqlite3_vtab *pVtab){
 #define FTS4AUX_LE_CONSTRAINT 4
 
 /*
+** Return true if constraint iCons of pInfo uses the "binary" collation
+** sequence. Or false it it uses anything else.
+*/
+static int fts3auxIsBinary(sqlite3_index_info *pInfo, int iCons){
+  return 0==sqlite3_stricmp("binary", sqlite3_vtab_collation(pInfo, iCons));
+}
+
+/*
 ** xBestIndex - Analyze a WHERE and ORDER BY clause.
 */
 static int fts3auxBestIndexMethod(
@@ -170,7 +178,7 @@ static int fts3auxBestIndexMethod(
   /* Search for equality and range constraints on the "term" column. 
   ** And equality constraints on the hidden "languageid" column. */
   for(i=0; i<pInfo->nConstraint; i++){
-    if( pInfo->aConstraint[i].usable ){
+    if( pInfo->aConstraint[i].usable && fts3auxIsBinary(pInfo, i) ){
       int op = pInfo->aConstraint[i].op;
       int iCol = pInfo->aConstraint[i].iColumn;
 
@@ -341,7 +349,7 @@ static int fts3auxNextMethod(sqlite3_vtab_cursor *pCursor){
         /* State 3. The integer just read is a column number. */
         default: assert( eState==3 );
           iCol = (int)v;
-          if( iCol<1 || iCol>(pFts3->nColumn+1) ){
+          if( iCol<1 || iCol>32767 ){
             rc = SQLITE_CORRUPT_VTAB;
             break;
           }
@@ -416,7 +424,7 @@ static int fts3auxFilterMethod(
   pCsr->filter.flags = FTS3_SEGMENT_REQUIRE_POS|FTS3_SEGMENT_IGNORE_EMPTY;
   if( isScan ) pCsr->filter.flags |= FTS3_SEGMENT_SCAN;
 
-  if( iEq>=0 || iGe>=0 ){
+  if( (iEq>=0 || iGe>=0) && sqlite3_value_type(apVal[0])==SQLITE_TEXT ){
     const unsigned char *zStr = sqlite3_value_text(apVal[0]);
     assert( (iEq==0 && iGe==-1) || (iEq==-1 && iGe==0) );
     if( zStr ){
@@ -426,7 +434,7 @@ static int fts3auxFilterMethod(
     }
   }
 
-  if( iLe>=0 ){
+  if( iLe>=0 && sqlite3_value_type(apVal[0])==SQLITE_TEXT ){
     pCsr->zStop = sqlite3_mprintf("%s", sqlite3_value_text(apVal[iLe]));
     if( pCsr->zStop==0 ) return SQLITE_NOMEM;
     pCsr->nStop = (int)strlen(pCsr->zStop);

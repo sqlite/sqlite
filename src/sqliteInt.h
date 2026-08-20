@@ -290,25 +290,38 @@
 **
 **    SQLITE_OPT_INLINE       In-line this function if building the
 **                            amalgamation.
+**
+**    SQLITE_USES_INLINE      Set to 1 or 0 according to whether or not
+**                            inline functions are supported.
 */
-#if defined(__GNUC__)
+#if defined(SQLITE_DISABLE_INLINE)
+#  define SQLITE_NOINLINE
+#  define SQLITE_INLINE
+#  define SQLITE_OPT_INLINE
+#  define SQLITE_USES_INLINE 0
+#elif defined(__GNUC__)
 #  define SQLITE_NOINLINE    __attribute__((noinline))
 #  define SQLITE_INLINE      __attribute__((always_inline)) inline
 #  define SQLITE_OPT_INLINE  __attribute__((always_inline)) inline
+#  define SQLITE_USES_INLINE 1
 #elif defined(_MSC_VER) && _MSC_VER>=1310
 #  define SQLITE_NOINLINE    __declspec(noinline)
 #  define SQLITE_INLINE      __forceinline
 #  define SQLITE_OPT_INLINE  __forceinline
+#  define SQLITE_USES_INLINE 1
 #else
 #  define SQLITE_NOINLINE
 #  define SQLITE_INLINE
 #  define SQLITE_OPT_INLINE
+#  define SQLITE_USES_INLINE 0
 #endif
 #if defined(SQLITE_COVERAGE_TEST) || defined(__STRICT_ANSI__)
 # undef SQLITE_INLINE
 # define SQLITE_INLINE
 # undef SQLITE_OPT_INLINE
 # define SQLITE_OPT_INLINE
+# undef SQLITE_USES_INLINE
+# define SQLITE_USES_INLINE 0
 #endif
 #if !defined(SQLITE_AMALGAMATION)
 # undef SQLITE_OPT_INLINE
@@ -1570,7 +1583,7 @@ struct Schema {
 ** The number of different kinds of things that can be limited
 ** using the sqlite3_limit() interface.
 */
-#define SQLITE_N_LIMIT (SQLITE_LIMIT_SCHEMA+1)
+#define SQLITE_N_LIMIT (SQLITE_LIMIT_TRIGGER_STEPS+1)
 
 /*
 ** Lookaside malloc is a set of fixed-size buffers that can be used
@@ -3902,6 +3915,13 @@ struct ParseCleanup {
 };
 
 /*
+** Number of 64-bit entried in the variable number bitmap cache (VNBMC).
+*/
+#ifndef SQLITE_VNBMC
+# define SQLITE_VNBMC 2
+#endif
+
+/*
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
 ** carry around information that is global to the entire parse.
@@ -4019,6 +4039,7 @@ struct Parse {
 
   Token sLastToken;       /* The last token parsed */
   ynVar nVar;               /* Number of '?' variables seen in the SQL so far */
+  u64 aVnbmc[SQLITE_VNBMC]; /* Varible Number Bitmap Cache */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
   u8 eParseMode;            /* PARSE_MODE_XXX constant */
@@ -5058,6 +5079,7 @@ void sqlite3ExprListSetName(Parse*,ExprList*,const Token*,int);
 void sqlite3ExprListSetSpan(Parse*,ExprList*,const char*,const char*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
 void sqlite3ExprListDeleteGeneric(sqlite3*,void*);
+int sqlite3ExprCanReturnSubtype(Parse*,Expr*);
 u32 sqlite3ExprListFlags(const ExprList*);
 int sqlite3IndexHasDuplicateRootPage(Index*);
 int sqlite3Init(sqlite3*, char**);
@@ -5284,6 +5306,7 @@ int sqlite3ExprIsConstant(Parse*,Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsConstantOrGroupBy(Parse*, Expr*, ExprList*);
 int sqlite3ExprIsSingleTableConstraint(Expr*,const SrcList*,int,int);
+int sqlite3ExprListIsConstant(Parse *pParse, ExprList *pList, int bNoIs);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 int sqlite3ExprContainsSubquery(Expr*);
 #endif
@@ -5439,6 +5462,7 @@ int sqlite3VListNameToNum(VList*,const char*,int);
 */
 int sqlite3PutVarint(unsigned char*, u64);
 u8 sqlite3GetVarint(const unsigned char *, u64 *);
+i64 sqlite3VarintValue(const unsigned char*);
 u8 sqlite3GetVarint32(const unsigned char *, u32 *);
 int sqlite3VarintLen(u64 v);
 
@@ -5454,9 +5478,6 @@ int sqlite3VarintLen(u64 v);
 #define putVarint32(A,B)  \
   (u8)(((u32)(B)<(u32)0x80)?(*(A)=(unsigned char)(B)),1:\
   sqlite3PutVarint((A),(B)))
-#define getVarint    sqlite3GetVarint
-#define putVarint    sqlite3PutVarint
-
 
 const char *sqlite3IndexAffinityStr(sqlite3*, Index*);
 char *sqlite3TableAffinityStr(sqlite3*,const Table*);

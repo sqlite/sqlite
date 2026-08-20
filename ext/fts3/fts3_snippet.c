@@ -528,6 +528,7 @@ static int fts3BestSnippet(
   sqlite3_int64 nByte;            /* Number of bytes of space to allocate */
   int iBestScore = -1;            /* Best snippet score found so far */
   int i;                          /* Loop counter */
+  Fts3Expr *pExpr = pCsr->pExpr;
 
   memset(&sIter, 0, sizeof(sIter));
 
@@ -556,9 +557,12 @@ static int fts3BestSnippet(
   sIter.nSnippet = nSnippet;
   sIter.nPhrase = nList;
   sIter.iCurrent = -1;
-  rc = sqlite3Fts3ExprIterate(
-      pCsr->pExpr, fts3SnippetFindPositions, (void*)&sIter
-  );
+  rc = sqlite3Fts3ExprIterate(pExpr, fts3SnippetFindPositions, (void*)&sIter);
+  if( rc==SQLITE_OK ){
+    /* Iterate through the expression twice, in case pointers garnered during
+    ** the first iteration are invalidated by a call to fts5EvalRestart(). */
+    rc = sqlite3Fts3ExprIterate(pExpr, fts3SnippetFindPositions, (void*)&sIter);
+  }
   if( rc==SQLITE_OK ){
 
     /* Set the *pmSeen output variable. */

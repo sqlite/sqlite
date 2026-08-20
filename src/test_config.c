@@ -834,6 +834,7 @@ Tcl_SetVar2(interp, "sqlite_options", "mergesort", "1", TCL_GLOBAL_ONLY);
   LINKVAR( MAX_DEFAULT_PAGE_SIZE );
   LINKVAR( MAX_WORKER_THREADS );
   LINKVAR( MAX_SCHEMA );
+  LINKVAR( MAX_TRIGGER_STEPS );
 
   {
     static const int cv_TEMP_STORE = SQLITE_TEMP_STORE;

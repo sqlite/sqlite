@@ -216,8 +216,14 @@ static int carrayColumn(
         default: {
           const struct iovec *p = (struct iovec*)pCur->pPtr;
           assert( pCur->eType==CARRAY_BLOB );
-          sqlite3_result_blob(ctx, p[pCur->iRowid-1].iov_base,
-                              (int)p[pCur->iRowid-1].iov_len, SQLITE_TRANSIENT);
+          p += pCur->iRowid-1;
+          if( p->iov_len>0x7fffffff ){
+            sqlite3_result_error_toobig(ctx);
+            return SQLITE_TOOBIG;
+          }else{
+            sqlite3_result_blob(ctx, p->iov_base, (int)p->iov_len,
+                                 SQLITE_TRANSIENT);
+          }
           return SQLITE_OK;
         }
       }
