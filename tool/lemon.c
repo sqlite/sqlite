@@ -1360,6 +1360,7 @@ static int resolve_conflict(
     }
   }else{
     assert(
+      apx->type==ERROR ||
       apx->type==SH_RESOLVED ||
       apx->type==RD_RESOLVED ||
       apx->type==SSCONFLICT ||
