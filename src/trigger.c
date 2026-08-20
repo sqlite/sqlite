@@ -332,7 +332,7 @@ void sqlite3FinishTrigger(
   DbFixer sFix;                           /* Fixer object */
   int iDb;                                /* Database containing the trigger */
   Token nameToken;                        /* Trigger name for error reporting */
-  u64 n;                                  /* Number of steps */
+  i64 n;                                  /* Number of steps */
 
   pParse->pNewTrigger = 0;
   if( NEVER(pParse->nErr) || !pTrig ) goto triggerfinish_cleanup;
