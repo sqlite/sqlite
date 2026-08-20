@@ -1458,6 +1458,7 @@ case OP_Real: {            /* same as TK_FLOAT, out2 */
   ii = (u64)INT32_TO_64(pOp->p1,pOp->p3);
   swapMixedEndianFloat(ii);
   memcpy(&pOut->u.r, &ii, 8);
+  assert( !sqlite3IsNaN(pOut->u.r) );
   break;
 }
 #endif

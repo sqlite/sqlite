@@ -1,5 +1,5 @@
-C Add\sa\scomment\son\sthe\sOP_ColumnsUsed\soperator.
-D 2026-08-20T09:41:13.858
+C Fix\sa\scomment\stypo\sand\sadd\sback\sa\smissing\sassert().
+D 2026-08-20T10:03:54.153
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -810,11 +810,11 @@ F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c cfdf9c6e5323af886d5ce766709da607ba1d14193ad3a15f4f462a45420e8211
 F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
-F src/vdbe.c 9cd0c3e570bab8c4aa006c8d6e089780527b3ae68eb560a387b8a6a7c96b2312
+F src/vdbe.c a3bf71b5fc69cc0b7bf87fb8b35a1faf9ccf524e7c2e8a90c3c7a47a7728d90e
 F src/vdbe.h ec2d5613f403a29934652276172b030887a7e6c109e0679dff636ab02df19a60
 F src/vdbeInt.h 39f4c8eb1e4ac0593037d5268a54a691c72d34896db9973a9d39f2a5dea14163
 F src/vdbeapi.c 6ad0c841b6cb87de068f71787f385149d794e8830176bf72d09a36b9f655ac5b
-F src/vdbeaux.c f9257a3eb0a6233d8841e094bde1771d5b466c053ac859629f592c4550c69bf8
+F src/vdbeaux.c 8dfb16ec3b0768ce0bcc9596da5ddd588b893d80732b3a3b04a221238fead9c7
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 6e7ad67507c9a8e625b46256a9c003929331d6a27b99bbe139b8f0dab636e1f2
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 0433f33e02e181fecfaff043f72c24118303d767aa9768ed118f48e548f61db3
-R 4352a0c44e02d21ca53a448c1435ec0a
+P 8b3a5599940fe92e632a482275f8ee9ade48defc7f0d3cafc8d47035ed75d443
+R fe502559ea2f41b4d19998fd59d9eb74
 U drh
-Z 1c3c55df851e419fc6fdb13173b11ae6
+Z 73a6fef100f5716b9c91ad64908ac2d7
 # Remove this line to create a well-formed Fossil manifest.

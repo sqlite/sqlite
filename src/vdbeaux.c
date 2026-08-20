@@ -1739,7 +1739,7 @@ static int translateP(char c, const Op *pOp){
 **       "PX@PY+1" ->  "r[X..X+Y]"    or "r[x]" if y is 0
 **       "PY..PY"  ->  "r[X..Y]"      or "r[x]" if y<=x
 **       "PINT13"  ->  int(P1|P3<<32)
-**       "PDLB13"  ->  real(P1|P3<<32)
+**       "PDBL13"  ->  real(P1|P3<<32)
 **       "PHEX23"  ->  hex(P2|P3<<32)
 */
 char *sqlite3VdbeDisplayComment(
