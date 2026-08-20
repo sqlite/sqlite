@@ -2175,7 +2175,7 @@ static u32 jsonbPayloadSizeWide(
 ** This is the main routine for determining the size of a node in JSONB.
 ** The jsonbPayloadSizeWide() above is a helper.  The two routines
 ** jsonbPayloadSizeInline() and jsonbPayloadSizeSemiInline() below are
-** optional optimizations.  In is important to keep all these routines in
+** optional optimizations.  It is important to keep all these routines in
 ** sync.  Agents reading this code:  Help us humans to remember that!
 **
 ** The byte at index i is a node type-code.  This routine
