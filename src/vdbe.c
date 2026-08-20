@@ -4855,6 +4855,7 @@ case OP_Close: {             /* ncycle */
 
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
 /* Opcode: ColumnsUsed P1 P2 P3 * *
+** Synopsis: Cursor P1 uses columns PHEX23
 **
 ** This opcode (which only exists if SQLite was compiled with
 ** SQLITE_ENABLE_COLUMN_USED_MASK) identifies which columns of the

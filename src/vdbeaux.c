@@ -1738,8 +1738,9 @@ static int translateP(char c, const Op *pOp){
 **       "PX@PY"   ->  "r[X..X+Y-1]"  or "r[x]" if y is 0 or 1
 **       "PX@PY+1" ->  "r[X..X+Y]"    or "r[x]" if y is 0
 **       "PY..PY"  ->  "r[X..Y]"      or "r[x]" if y<=x
-**       "PINT13"  ->  int(P1<<32|P3)
-**       "PDLB13"  ->  real(P1<<32|P3)
+**       "PINT13"  ->  int(P1|P3<<32)
+**       "PDLB13"  ->  real(P1|P3<<32)
+**       "PHEX23"  ->  hex(P2|P3<<32)
 */
 char *sqlite3VdbeDisplayComment(
   sqlite3 *db,       /* Optional - Oom error reporting only */
@@ -1778,6 +1779,11 @@ char *sqlite3VdbeDisplayComment(
         }else if( strncmp(&zSynopsis[ii],"INT13",5)==0 ){
           sqlite3_str_appendf(&x,"%lld",INT32_TO_64(pOp->p1,pOp->p3));
           ii += 4;
+#ifdef SQLITE_ENABLE_COLUMN_USED_MASK
+        }else if( strncmp(&zSynopsis[ii],"HEX23",5)==0 ){
+          sqlite3_str_appendf(&x,"0x%llx",INT32_TO_64(pOp->p2,pOp->p3));
+          ii += 4;
+#endif
         }else if( strncmp(&zSynopsis[ii],"DBL13",5)==0 ){
           i64 iVal = INT32_TO_64(pOp->p1,pOp->p3);
           double r;
