@@ -1430,31 +1430,35 @@ case OP_Integer: {         /* out2 */
   break;
 }
 
-/* Opcode: Int64 * P2 * P4 *
-** Synopsis: r[P2]=P4
+/* Opcode: Int64 P1 P2 P3 * *
+** Synopsis: r[P2]=PINT13
 **
-** P4 is a pointer to a 64-bit integer value.
-** Write that value into register P2.
+** Combine P1 and P3 into a signed 64-bit integer.  P1 is the least
+** significant 32 bits and P3 is the most significant.  Store the
+** result in register P2.
 */
 case OP_Int64: {           /* out2 */
   pOut = out2Prerelease(p, pOp);
-  assert( pOp->p4.pI64!=0 );
-  pOut->u.i = *pOp->p4.pI64;
+  pOut->u.i = INT32_TO_64(pOp->p1,pOp->p3);
   break;
 }
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
-/* Opcode: Real * P2 * P4 *
-** Synopsis: r[P2]=P4
+/* Opcode: Real P1 P2 P3 * *
+** Synopsis: r[P2]=PDBL13
 **
-** P4 is a pointer to a 64-bit floating point value.
-** Write that value into register P2.
+** P1 and P3 are combined to 64 bits with P1 being the lower the P3
+** the upper.  The result is interpreted as a 64-bit floating-point
+** and stored in register P2.
 */
 case OP_Real: {            /* same as TK_FLOAT, out2 */
+  u64 ii;
   pOut = out2Prerelease(p, pOp);
   pOut->flags = MEM_Real;
-  assert( !sqlite3IsNaN(*pOp->p4.pReal) );
-  pOut->u.r = *pOp->p4.pReal;
+  ii = (u64)INT32_TO_64(pOp->p1,pOp->p3);
+  swapMixedEndianFloat(ii);
+  memcpy(&pOut->u.r, &ii, 8);
+  assert( !sqlite3IsNaN(pOut->u.r) );
   break;
 }
 #endif
@@ -4851,21 +4855,21 @@ case OP_Close: {             /* ncycle */
 }
 
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
-/* Opcode: ColumnsUsed P1 * * P4 *
+/* Opcode: ColumnsUsed P1 P2 P3 * *
+** Synopsis: Cursor P1 uses columns PHEX23
 **
 ** This opcode (which only exists if SQLite was compiled with
 ** SQLITE_ENABLE_COLUMN_USED_MASK) identifies which columns of the
-** table or index for cursor P1 are used.  P4 is a 64-bit integer
-** (P4_INT64) in which the first 63 bits are one for each of the
-** first 63 columns of the table or index that are actually used
-** by the cursor.  The high-order bit is set if any column after
-** the 64th is used.
+** table or index for cursor P1 are used.  P2 and P3 combine to give
+** a 64-bit unsigned integer mask.  P2 stores the lower 32 bits and
+** P3 stores the upper 32 bits.  If the high-order bit of P3 is set
+** that means that and 64-th or some later column is used.
 */
 case OP_ColumnsUsed: {
   VdbeCursor *pC;
   pC = p->apCsr[pOp->p1];
   assert( pC->eCurType==CURTYPE_BTREE );
-  pC->maskUsed = *(u64*)pOp->p4.pI64;
+  pC->maskUsed = INT32_TO_64(pOp->p2,pOp->p3);
   break;
 }
 #endif
