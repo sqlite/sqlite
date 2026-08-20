@@ -306,7 +306,7 @@ static void qpvtabStrAppendValue(
       const char *a = (const char*)sqlite3_value_text(pVal);
       int n = sqlite3_value_bytes(pVal);
       sqlite3_str_append(pStr, "'", 1);
-      for(i=0; i<n; i++){
+      for(i=0; i<n && a[i]!=0; i++){
         char c = a[i];
         if( c=='\n' ) c = ' ';
         sqlite3_str_append(pStr, &c, 1);

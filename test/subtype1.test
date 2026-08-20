@@ -112,5 +112,23 @@ foreach {tn expr st} {
   " [list 1 $st 2 0]
 }
 
+# Bug 2026-08-12T09:26:04Z
+#
+# Do not use the propagate constant optimization on a constant
+# function that might return a subtype.
+#
+reset_db
+do_execsql_test subtype1-600 {
+  CREATE TABLE t1(c1 TEXT);
+  INSERT INTO t1 VALUES(0);
+  SELECT count(*) FROM t1
+   WHERE (c1=json_quote(0)) AND (json_object('c',c1) IS '{"c":0}');
+} 0
+do_execsql_test subtype1-610 {
+  CREATE TABLE t2(c2 TEXT);
+  INSERT INTO t2 VALUES(0);
+  SELECT count(*) FROM t2
+   WHERE (c2=json_quote(0)) AND (json_array(c2)<'[0]');
+} 1
 
 finish_test

@@ -3665,11 +3665,15 @@ int sqlite3WalReadFrame(
   i64 iOffset;
   sz = pWal->hdr.szPage;
   sz = (sz&0xfe00) + ((sz&0x0001)<<16);
+  if( nOut>sz ){
+    memset(pOut+sz, 0, nOut-sz);
+    nOut = sz;
+  }
   testcase( sz<=32768 );
   testcase( sz>=65536 );
   iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;
   /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
-  return sqlite3OsRead(pWal->pWalFd, pOut, (nOut>sz ? sz : nOut), iOffset);
+  return sqlite3OsRead(pWal->pWalFd, pOut, nOut, iOffset);
 }
 
 /*

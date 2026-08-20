@@ -285,7 +285,12 @@
 #define FTS5_DATA_ID_B     16     /* Max seg id number 65535 */
 #define FTS5_DATA_DLI_B     1     /* Doclist-index flag (1 bit) */
 #define FTS5_DATA_HEIGHT_B  5     /* Max dlidx tree height of 32 */
-#define FTS5_DATA_PAGE_B   31     /* Max page number of 2147483648 */
+#define FTS5_DATA_PAGE_B   31     /* 31-bit page numbers */
+
+/* Maximum page number within a segment. Declare any structure read from
+** the database with a page number greater than this corrupt. It is not
+** actually possible to create a database this large.  */
+#define FTS5_MAX_PGNO 0x7FFFFF00
 
 #define fts5_dri(segid, dlidx, height, pgno) (                                 \
  ((i64)(segid)  << (FTS5_DATA_PAGE_B+FTS5_DATA_HEIGHT_B+FTS5_DATA_DLI_B)) +    \
@@ -1198,7 +1203,7 @@ static int fts5StructureDecode(
             i += fts5GetVarint(&pData[i], &pSeg->nEntry);
             nOriginCntr = MAX(nOriginCntr, pSeg->iOrigin2);
           }
-          if( pSeg->pgnoLast<pSeg->pgnoFirst ){
+          if( pSeg->pgnoLast<pSeg->pgnoFirst || pSeg->pgnoLast>FTS5_MAX_PGNO ){
             rc = FTS5_CORRUPT;
             break;
           }
@@ -1794,6 +1799,9 @@ static Fts5DlidxIter *fts5DlidxIterInit(
         bDone = 1;
       }
       pIter->nLvl = i+1;
+      if( pIter->nLvl > (1<<FTS5_DATA_HEIGHT_B) ){
+        p->rc = FTS5_CORRUPT;
+      }
     }
   }
 
@@ -5515,34 +5523,38 @@ static void fts5DoSecureDelete(
   if( p->rc==SQLITE_OK ){
     const int nMove = nPg - iNextOff;     /* Number of bytes to move */
     int nShift = iNextOff - iOff;         /* Distance to move them */
-
+    int nNewPg = 0;
     int iPrevKeyOut = 0;
-    int iKeyIn = 0;
+    i64 iKeyIn = 0;
 
     if( nMove>0 ){
       memmove(&aPg[iOff], &aPg[iNextOff], nMove);
     }
     iPgIdx -= nShift;
-    nPg = iPgIdx;
+    nNewPg = iPgIdx;
     fts5PutU16(&aPg[2], iPgIdx);
 
     for(iIdx=0; iIdx<nIdx; /* no-op */){
       u32 iVal = 0;
       iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
       iKeyIn += iVal;
+      if( iKeyIn>nPg ){
+        FTS5_CORRUPT_IDX(p);
+        break;
+      }
       if( iKeyIn!=iDelKeyOff ){
         int iKeyOut = (iKeyIn - (iKeyIn>iOff ? nShift : 0));
-        nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOut - iPrevKeyOut);
+        nNewPg += sqlite3Fts5PutVarint(&aPg[nNewPg], iKeyOut - iPrevKeyOut);
         iPrevKeyOut = iKeyOut;
       }
     }
 
-    if( iPgIdx==nPg && nIdx>0 && pSeg->iLeafPgno!=1 ){
+    if( p->rc==SQLITE_OK && iPgIdx==nNewPg && nIdx>0 && pSeg->iLeafPgno!=1 ){
       fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iLeafPgno);
     }
 
-    assert_nc( nPg>4 || fts5GetU16(aPg)==0 );
-    fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid,pSeg->iLeafPgno), aPg, nPg);
+    assert_nc( nNewPg>4 || fts5GetU16(aPg)==0 );
+    fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid,pSeg->iLeafPgno), aPg, nNewPg);
   }
   sqlite3_free(aIdx);
 }
