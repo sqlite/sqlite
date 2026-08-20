@@ -1,5 +1,5 @@
-C Revise\sthe\sOP_Int64,\sOP_Real,\sand\sOP_ColumnsUsed\sopcodes\sto\ssplit\stheir\n64-bit\sargument\sacross\stwo\sordinary\s32-bit\sarguments\srather\sthan\sstoring\nthe\s64-bit\svalue\sas\sa\sseparate\smemory\sallocation.\s\sThis\sgives\sa\ssmall\nperformance\sboost\sand\ssize\sreduction,\sand\smakes\sthe\scode\sa\slittle\seasier\nto\smaintain.
-D 2026-08-20T10:08:42.504
+C Internal\sdoc\stypo\sfix.\sNo\scode\schanges.
+D 2026-08-20T11:12:56.623
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1686,7 +1686,7 @@ F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
 F test/speedtest.md ea0c85ebe0ecff8b45ba6cdb26e694871f469009a5a29dcfe634b055f05ab241
 F test/speedtest.tcl f3d6c71b28969e02f60dd1de597da0551a2b335e4b49f3b753f0d57a1871e31f x
-F test/speedtest1.c fbea49d5353395a7be2bc05d780054c587aa93fb10259adedcbd472e754faa3f
+F test/speedtest1.c 93db99e912b43da74c91a0757c019e8f892ac4a2374285b9634f5fc4c88534a6
 F test/spellfix.test 2dff669793b1c0f682fcea4941cba8aaf899123db252de998b1c84594abc0dc7
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2219,9 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4278ee631a33400edd81f5bf33df195daf327a7f46711d1fc749b076200e3491 63de2f92abe39b9cccb6f4df5b4ade58823b456dd3382af57cdb7a5478dc4d46
-R 4647b4452f62968f7233d1084f0f9b4f
-T +closed 63de2f92abe39b9cccb6f4df5b4ade58823b456dd3382af57cdb7a5478dc4d46
-U drh
-Z 50ee1a9ae64e2ca226a836edf349a481
+P 83e72cc862bf0e586271eed64660f70172a5b7d5a3299debb6b97ef71bd0802e
+R b77f90180caa8cf2239d437fd54c4153
+U stephan
+Z 53a44ac2e6f8500e89183700b0b594fb
 # Remove this line to create a well-formed Fossil manifest.
