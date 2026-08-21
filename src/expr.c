@@ -2929,75 +2929,75 @@ int sqlite3ExprContainsSubquery(Expr *p){
 #endif
 
 /*
-** If the expression p codes a constant integer that is small enough
-** to fit in a 32-bit integer, return 1 and put the value of the integer
-** in *pValue.  If the expression is not an integer or if it is too big
-** to fit in a signed 32-bit integer, return 0 and leave *pValue unchanged.
+** If the expression p codes a constant integer between 0 and 0x7fffffff,
+** then return 1 and put the value of the integer in *pValue.  If the
+** expression is not an integer or if it is an integer that is out side
+** the range of 0...0x7fffffff, then return 0 and leave *pValue unchanged.
 **
 ** If the pParse pointer is provided, then allow the expression p to be
-** a parameter (TK_VARIABLE) that is bound to an integer.
-** But if pParse is NULL, then p must be a pure integer literal.
+** a parameter (TK_VARIABLE) that is bound to an integer between 0 and
+** 0x7fffffff.  Variables that hold anything other than integers, or that
+** hold integers outside the range of 0..0x7fffffff are not seen.
+** But if pParse is NULL, then p must be a pure integer literal between
+** 0 and 0x7fffffff.
 **
 ** If pParse is not NULL and expression p is a variable, then the variable
 ** is marked so as to cause the statement to be reprepared each time a new
 ** value is bound to it. Except, if parameter bRSI is true, then the statement
-** will only be reprepared if either the new value bound to the variable
-** is integer value 0 or 1, or if the value being replaced is integer value
-** 0 or 1. RSI -> Reprepare Small Integers.
-** 
+** will only be reprepared if the rebind changes the value to or from a
+** "small integer" (either 0 or 1).  Note that if p is a variable then
+** reprepare is always enabled for that variable, regardless of its current
+** binding.  The RSI is only enabled if the current binding is a small
+** integer.  "RSI" stands for "Reprepare Small Integers".
 */
 int sqlite3ExprIsInteger(const Expr *p, int *pValue, Parse *pParse, int bRSI){
-  int rc = 0;
-  if( NEVER(p==0) ) return 0;  /* Used to only happen following on OOM */
-
-  /* If an expression is an integer literal that fits in a signed 32-bit
-  ** integer, then the EP_IntValue flag will have already been set */
-  assert( p->op!=TK_INTEGER || (p->flags & EP_IntValue)!=0
-           || sqlite3GetInt32(p->u.zToken, &rc)==0 );
-
-  if( p->flags & EP_IntValue ){
-    *pValue = p->u.iValue;
-    return 1;
-  }
-  switch( p->op ){
-    case TK_UPLUS: {
-      rc = sqlite3ExprIsInteger(p->pLeft, pValue, 0, bRSI);
-      break;
+  int iSign = 1;   /* Either +1 or -1. */
+  while( 1/*exit-by-break*/ ){
+    if( NEVER(p==0) ) return 0;
+    if( ExprUseUValue(p) ){
+      *pValue = p->u.iValue*iSign;
+      return 1;
     }
-    case TK_UMINUS: {
-      int v = 0;
-      if( sqlite3ExprIsInteger(p->pLeft, &v, 0, bRSI) ){
-        assert( ((unsigned int)v)!=0x80000000 );
-        *pValue = -v;
-        rc = 1;
-      }
-      break;
+    if( p->op==TK_UPLUS ){
+      p = p->pLeft;
+      pParse = 0;
+      continue;
     }
-    case TK_VARIABLE: {
-      int bReprepareSmallint = bRSI;
-      sqlite3_value *pVal;
-      if( pParse==0 ) break;
+    if( p->op==TK_UMINUS ){
+      iSign = -iSign;
+      p = p->pLeft;
+      pParse = 0;
+      continue;
+    }
+    if( p->op==TK_VARIABLE && pParse!=0 ){
+      sqlite3_value *pVal; /* The variable */
+      int isSmall = 0;     /* Only reprepare if change to/from small integer */
+      int rc = 0;          /* 1 if successful, 0 if failed */
+      assert( iSign==1 );
       if( NEVER(pParse->pVdbe==0) ) break;
       if( (pParse->db->flags & SQLITE_EnableQPSG)!=0 ) break;
       pVal = sqlite3VdbeGetBoundValue(pParse->pReprepare, p->iColumn,
                                       SQLITE_AFF_BLOB);
       if( pVal ){
-        if( sqlite3_value_type(pVal)==SQLITE_INTEGER ){
-          sqlite3_int64 vv = sqlite3_value_int64(pVal);
-          if( vv == (vv & 0x7fffffff) ){ /* non-negative numbers only */
-            *pValue = (int)vv;
-            rc = 1;
-            if( vv==0 || vv==1 ) bReprepareSmallint = 0;
+        i64 vv;
+        if( sqlite3_value_type(pVal)==SQLITE_INTEGER
+         && (vv = sqlite3_value_int64(pVal))>=0
+         && vv<=0x7fffffff
+        ){
+          *pValue = (int)vv;
+          if( bRSI ){
+            isSmall = vv<=1;
           }
+          rc = 1;       
         }
         sqlite3ValueFree(pVal);
       }
-      sqlite3VdbeReprepareOnBind(pParse->pVdbe, p->iColumn, bReprepareSmallint);
-      break;
+      sqlite3VdbeReprepareOnBind(pParse->pVdbe, p->iColumn, isSmall);
+      return rc;
     }
-    default: break;
+    break;
   }
-  return rc;
+  return 0;
 }
 
 /*

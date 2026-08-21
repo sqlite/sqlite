@@ -144,8 +144,8 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   pA->zNormSql = pB->zNormSql;
   pB->zNormSql = zTmp;
 #endif
-  pB->expmask = pA->expmask;
-  pB->smimask = pA->smimask;
+  pB->expmask |= pA->expmask;
+  pB->smimask |= pA->smimask;
   pB->prepFlags = pA->prepFlags;
   memcpy(pB->aCounter, pA->aCounter, sizeof(pB->aCounter));
   pB->aCounter[SQLITE_STMTSTATUS_REPREPARE]++;
@@ -5334,7 +5334,12 @@ sqlite3_value *sqlite3VdbeGetBoundValue(Vdbe *v, int iVar, u8 aff){
 ** Configure SQL variable iVar so that binding a new value to it signals
 ** to sqlite3_reoptimize() that re-preparing the statement may result
 ** in a better query plan. If parameter bSmallint is true, then the
-* *statement is only re-prepared if the new value is integer value 0 or 1.
+** statement is only re-prepared if the new value is integer value 0 or 1.
+**
+** The v->expmask bit is always set.  expmask means that a reprepare is
+** possible.  The v->smimask bit is only set if we want to restrict
+** reprepare when the value changes from (0,1) to something else, or from
+** something else to (0,1).
 */
 void sqlite3VdbeReprepareOnBind(Vdbe *v, int iVar, int bSmallint){
   u32 m;
@@ -5343,11 +5348,13 @@ void sqlite3VdbeReprepareOnBind(Vdbe *v, int iVar, int bSmallint){
        || (v->db->mDbFlags & DBFLAG_InternalFunc)!=0 );
 
   m = (iVar>=32) ? 0x80000000 : ((u32)1 << (iVar-1));
+  v->expmask |= m;
   if( bSmallint ){
     v->smimask |= m;
-  }else{
-    v->expmask |= m;
   }
+
+  /* smimask is always a subset of expmask */
+  assert( (v->smimask & v->expmask) == v->smimask );
 }
 
 /*

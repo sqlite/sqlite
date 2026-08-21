@@ -519,8 +519,9 @@ struct Vdbe {
   VdbeFrame *pFrame;      /* Parent frame */
   VdbeFrame *pDelFrame;   /* List of frame objects to free on VM reset */
   int nFrame;             /* Number of frames in pFrame list */
-  u32 expmask;            /* Binding to these vars invalidates VM */
-  u32 smimask;            /* Binding 0 or 1 to these vars invalidates VM */
+  u32 expmask;            /* Binding to these vars might invalidate VM */
+  u32 smimask;            /* Only invalid if changing to/from small integer */
+                          /* Note: smimask is always a subset of expmask */
   SubProgram *pProgram;   /* Linked list of all sub-programs used by VM */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
