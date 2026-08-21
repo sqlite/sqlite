@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\slemon,\sas\sreported\sat\n[forum:/info/2026-08-20T14:18:08Z|Forum\spost\s2026-08-20T14:18:08Z].
-D 2026-08-20T16:47:20.662
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\snon-deliverable\snormalize.c\nextension.\s\s[bugs:/info/2026-08-20T23:33:57Z|Bug\s2026-08-20T23:33:57Z].
+D 2026-08-21T00:31:55.989
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -387,7 +387,7 @@ F ext/misc/memtrace.c 7c0d115d2ef716ad0ba632c91e05bd119cb16c1aedf3bec9f06196ead2
 F ext/misc/mmapwarm.c a81af4aaec00f24f308e2f4c19bf1d88f3ac3ce848c36daa7a4cd38145c4080d
 F ext/misc/nextchar.c bb5bc64780c9ef4aa903b510249d0d37ec05a2f8faa5420bca71a6552cc1bd59
 F ext/misc/noop.c 9d13ea10abab57811cbf2b731fd39b0a7dab46eb34cb95d102a8436cb12f4ccc
-F ext/misc/normalize.c 7f526ccf91b05f47c05eac6c147f0f9033d6c625f0260039518e582dc9c3cb7c
+F ext/misc/normalize.c 2887c895f7c23b80cd0671af77acc57a88429d95d05ba2ce5c477e736c477a17
 F ext/misc/pcachetrace.c f4227ce03fb16aa8d6f321b72dd051097419d7a028a9853af048bee7645cb405
 F ext/misc/percentile.c b6b9c740f0dc42838efd776eec0f68a93bc5ac86524c71337a70950860bf6c4d
 F ext/misc/prefixes.c e7d3e7a39174db412c5f77c266fa221c2dc3cb2621a9422835a607ad08805eb2
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P d0e4714aff80e74d16ed2d5b3a2186890ae0f801e9cef0199bb9ebc8de3c81ac
-R f02f47d115959fb270f6e4eec38d10e2
+P 0672f6f07483b570eb9b3d27ca50a3f8564d2adad18fa7703240d45bbbd098b2
+R 5b0e73e17f6995c58833a59623842b19
 U drh
-Z 632382639d774baf3dbfad783fb5c2e1
+Z aa7dfe92393eb3c8f4406fa289039255
 # Remove this line to create a well-formed Fossil manifest.
