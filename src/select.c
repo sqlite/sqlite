@@ -2945,11 +2945,37 @@ static int hasAnchor(Select *p){
 }
 
 /*
-** This routine is called to process a compound query form from
+** If a compound SELECT is of the form:
+**
+**    SELECT ... UNION SELECT ... LIMIT 1;
+**
+** That is, a UNION with a LIMIT of exact 1 and no OFFET or ORDER BY,
+** then convert the UNION to a UNION ALL, as that will typically run
+** faster.
+**
+** Return true (non-zero) if the optimization is successful.  Return
+** false (zero) of the constraints are not met.
+*/
+static int convertUnionToAll(Select *p){
+  int v;
+  if( p->op!=TK_UNION ) return 0;
+  if( p->pOrderBy ) return 0;
+  if( p->pLimit==0 ) return 0;
+  if( p->pLimit->pRight ) return 0;  /* No OFFSET */
+  v = 0;
+  assert( p->pLimit->pLeft!=0 );
+  if( sqlite3ExprIsInteger(p->pLimit->pLeft, &v, 0, 0)==0 ) return 0;
+  if( v!=1 ) return 0;
+  p->op = TK_ALL;
+  return 1;
+}
+
+/*
+** This routine is called to process a compound query formed from
 ** two or more separate queries using UNION, UNION ALL, EXCEPT, or
 ** INTERSECT
 **
-** "p" points to the right-most of the two queries.  the query on the
+** "p" points to the right-most of the two queries.  The query on the
 ** left is p->pPrior.  The left query could also be a compound query
 ** in which case this routine will be called recursively.
 **
@@ -3033,7 +3059,7 @@ static int multiSelect(
     /* If the compound has an ORDER BY clause, then always use the merge
     ** algorithm. */
     return multiSelectByMerge(pParse, p, pDest);
-  }else if( p->op!=TK_ALL ){
+  }else if( p->op!=TK_ALL && !convertUnionToAll(p) ){
     /* If the compound is EXCEPT, INTERSECT, or UNION (anything other than
     ** UNION ALL) then also always use the merge algorithm.  However, the
     ** multiSelectByMerge() routine requires that the compound have an
