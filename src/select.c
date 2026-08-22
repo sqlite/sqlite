@@ -2958,19 +2958,15 @@ static int hasAnchor(Select *p){
 */
 static int convertUnionToAll(sqlite3 *db, Select *p){
   int v;
+  assert( p->pOrderBy==0 );          /* Prevented by caller */
   if( p->op!=TK_UNION ) return 0;
-  if( NEVER(p->pOrderBy) ) return 0; /* Prevented by caller */
   if( p->pLimit==0 ) return 0;
   if( p->pLimit->pRight ) return 0;  /* No OFFSET */
   v = 0;
   assert( p->pLimit->pLeft!=0 );
   if( sqlite3ExprIsInteger(p->pLimit->pLeft, &v, 0, 0)==0 ) return 0;
   if( v!=1 ) return 0;
-  /* This is not the BalancedMerge optimization.  But it does have to do
-  ** with Merge (the UNION operator) and we are out of optimization bits,
-  ** so BalancedMerge also serves to disable this optimization for testing
-  ** purposes. ----------------vvvvvvvvvvvvvvvvvvvv                     */
-  if( OptimizationDisabled(db, SQLITE_BalancedMerge) ) return 0;
+  if( OptimizationDisabled(db, SQLITE_UnionLimit) ) return 0;
   p->op = TK_ALL;
   return 1;
 }
