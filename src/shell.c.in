@@ -9794,9 +9794,9 @@ static int dotCmdStats(ShellState *p){
       }else{
         mNew = 0;
       }
-    }else if( pickStr(z, 0, "on", "yes", "ON", "YES", 0)>=0 ){
+    }else if( pickStr(z, 0, "on", "yes", "ON", "YES", "")>=0 ){
       mNew |= CLISTAT_ON;
-    }else if( pickStr(z, 0, "off", "no", "OFF", "NO", 0)>=0 ){
+    }else if( pickStr(z, 0, "off", "no", "OFF", "NO", "")>=0 ){
       mNew = 0;
     }else{
       dotCmdError(p, ii, "unknown argument", 0);
