@@ -2956,16 +2956,21 @@ static int hasAnchor(Select *p){
 ** Return true (non-zero) if the optimization is successful.  Return
 ** false (zero) of the constraints are not met.
 */
-static int convertUnionToAll(Select *p){
+static int convertUnionToAll(sqlite3 *db, Select *p){
   int v;
   if( p->op!=TK_UNION ) return 0;
-  if( p->pOrderBy ) return 0;
+  if( NEVER(p->pOrderBy) ) return 0; /* Prevented by caller */
   if( p->pLimit==0 ) return 0;
   if( p->pLimit->pRight ) return 0;  /* No OFFSET */
   v = 0;
   assert( p->pLimit->pLeft!=0 );
   if( sqlite3ExprIsInteger(p->pLimit->pLeft, &v, 0, 0)==0 ) return 0;
   if( v!=1 ) return 0;
+  /* This is not the BalancedMerge optimization.  But it does have to do
+  ** with Merge (the UNION operator) and we are out of optimization bits,
+  ** so BalancedMerge also serves to disable this optimization for testing
+  ** purposes. ----------------vvvvvvvvvvvvvvvvvvvv                     */
+  if( OptimizationDisabled(db, SQLITE_BalancedMerge) ) return 0;
   p->op = TK_ALL;
   return 1;
 }
@@ -3059,7 +3064,7 @@ static int multiSelect(
     /* If the compound has an ORDER BY clause, then always use the merge
     ** algorithm. */
     return multiSelectByMerge(pParse, p, pDest);
-  }else if( p->op!=TK_ALL && !convertUnionToAll(p) ){
+  }else if( p->op!=TK_ALL && !convertUnionToAll(db,p) ){
     /* If the compound is EXCEPT, INTERSECT, or UNION (anything other than
     ** UNION ALL) then also always use the merge algorithm.  However, the
     ** multiSelectByMerge() routine requires that the compound have an
