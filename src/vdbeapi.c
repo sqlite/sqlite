@@ -1874,7 +1874,7 @@ int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, sqlite_int64 iValue){
   }
   pVar = &p->aVar[i];
   if( p->expmask!=0 ){
-    u32 expireMask = (u32)1 << i;
+    u32 expireMask = i>=32 ? 0x80000000 : (u32)1 << i;
     assert( (p->expmask & p->smimask)==p->smimask );
     if( (p->expmask & expireMask)!=0 ){
       if( (p->smimask & expireMask)!=0 ){
