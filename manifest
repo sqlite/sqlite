@@ -1,5 +1,5 @@
-C Fix\sincorrect\stermination\sof\svarargs\sargument\sto\spickStr()\sin\ncheck-in\s[852972861636d75e]\sfrom\syesterday.
-D 2026-08-22T17:56:46.607
+C Enhance\ssqlite3_bind_int64()\sso\sthat\sit\snever\striggers\sa\sreprepare\sif\sthe\nvalue\sdoes\snot\sactually\schange.
+D 2026-08-22T19:27:30.677
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -813,7 +813,7 @@ F src/vacuum.c d3d35d8ae893d419ade5fa196d761a83bddcbb62137a1a157ae751ef38b26e82
 F src/vdbe.c a3bf71b5fc69cc0b7bf87fb8b35a1faf9ccf524e7c2e8a90c3c7a47a7728d90e
 F src/vdbe.h b6ffb28da04363fd5d439b8204118fd3f2e751abe4f8e3edb089155fb90d4607
 F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
-F src/vdbeapi.c 66bcf10035e72eff05d0b17dfaf81d47b687a34f19dd34e24e222c33bf69d21f
+F src/vdbeapi.c 5f5f86d4642ce1927b4b45a6b87a978ef6b11c8420e6ce440695177618fc25d0
 F src/vdbeaux.c 2d4a69dade72db5844e21894b718aae38102c5545483efde3cc90a1ef9abffff
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
 F src/vdbemem.c 025fcbeebd9a285afbed4bd3c751248c25da3a0515e0e76c9957d5d2a4226ff8
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 2a9cb1e12ab4b81875e2d08f6cdecfb08b57137a69f6eb4efd19a56347184c3b
-R ef9df14508087a661c0c01a2e2e03f39
+P ad7d15323b091b6e193ee7bc4eb1bf7b088cd18aa92ac29729cd30b16e4b2981
+R ac01e68c4a7e1b59331d4a79ee4ef243
 U drh
-Z 11045dd821d43c9bc24f61d82db6df2f
+Z 977a9fdee769da4e94be328a0bf6bf12
 # Remove this line to create a well-formed Fossil manifest.
