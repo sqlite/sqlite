@@ -3623,7 +3623,7 @@ static int multiSelectByMerge(
 
   /* Compute the limit registers */
   computeLimitRegisters(pParse, p, labelEnd);
-  if( p->iLimit && op==TK_ALL ){
+  if( p->iLimit && (op==TK_ALL || op==TK_UNION) ){
     regLimitA = ++pParse->nMem;
     regLimitB = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Copy, p->iOffset ? p->iOffset+1 : p->iLimit,
