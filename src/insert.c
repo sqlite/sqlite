@@ -2661,7 +2661,7 @@ void sqlite3GenerateConstraintChecks(
         ** Hence, make a complete copy of the opcode, rather than using
         ** a pointer to the opcode. */
         x = *sqlite3VdbeGetOp(v, addrConflictCk);
-        if( x.opcode!=OP_IdxRowid ){
+        if( x.opcode!=OP_IdxRowid || isUpdate ){
           int p2;      /* New P2 value for copied conflict check opcode */
           const char *zP4;
           if( sqlite3OpcodeProperty[x.opcode]&OPFLG_JUMP ){
