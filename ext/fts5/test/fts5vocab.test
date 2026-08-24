@@ -592,4 +592,32 @@ do_execsql_test 13.2 {
   WHERE (t0.c0 = t1.term) AND (t1.term COLLATE NOCASE = 'ABC');
 } {2}
 
+#-------------------------------------------------------------------------
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(c);
+  INSERT INTO t2 VALUES('alpha beta gamma');
+  CREATE VIRTUAL TABLE v2 USING fts5vocab(t2, row);
+  SELECT 'alpha' < X'62';
+} {1}
+
+do_execsql_test 3.1 {
+  SELECT term FROM v2 ORDER BY term;
+} {alpha beta gamma}
+
+do_execsql_test 3.2 {
+  SELECT term FROM v2 WHERE +term < X'62' ORDER BY term;
+} {alpha beta gamma}
+
+do_execsql_test 3.3 {
+  SELECT term FROM v2 WHERE term < X'62' ORDER BY term;
+} {alpha beta gamma}
+
+do_execsql_test 3.4 {
+  SELECT term FROM v2 WHERE term <= X'62' ORDER BY term;
+} {alpha beta gamma}
+
+do_execsql_test 3.5 {
+  SELECT term FROM v2 WHERE term > 123 ORDER BY term;
+} {alpha beta gamma}
+
 finish_test
