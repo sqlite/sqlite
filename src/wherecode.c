@@ -2821,9 +2821,11 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     ** loop will run that invokes this subroutine for unmatched rows
     ** of pTab, with all tables to left begin set to NULL.
     */
-    WhereRightJoin *pRJ = pLevel->pRJ;
-    sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pRJ->regReturn);
-    pRJ->addrSubrtn = sqlite3VdbeCurrentAddr(v);
+    {
+      WhereRightJoin *pRJ = pLevel->pRJ;
+      sqlite3VdbeAddOp2(v, OP_BeginSubrtn, 0, pRJ->regReturn);
+      pRJ->addrSubrtn = sqlite3VdbeCurrentAddr(v);
+    }
     assert( pParse->withinRJSubrtn < 255 );
     pParse->withinRJSubrtn++;
 
