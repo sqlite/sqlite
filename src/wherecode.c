@@ -587,6 +587,7 @@ static Expr *removeUnindexableInClauseTerms(
       ExprList *pRhs = 0;         /* New RHS after modifications */
       ExprList *pLhs = 0;         /* New LHS after mods */
       int i;                      /* Loop counter */
+      int nRhs = 0;               /* Number of RHS terms added so far */
 
       assert( ExprUseXSelect(pNew) );
       pOrigRhs = pSelect->pEList;
@@ -600,6 +601,9 @@ static Expr *removeUnindexableInClauseTerms(
           int iField;
           assert( (pLoop->aLTerm[i]->eOperator & (WO_OR|WO_AND))==0 );
           iField = pLoop->aLTerm[i]->u.x.iField - 1;
+          if( iField!=nRhs ){
+            ExprClearProperty(pNew, EP_Subrtn);
+          }
           if( NEVER(pOrigRhs->a[iField].pExpr==0) ){
             continue; /* Duplicate PK column */
           }
@@ -611,6 +615,7 @@ static Expr *removeUnindexableInClauseTerms(
             pLhs = sqlite3ExprListAppend(pParse,pLhs,pOrigLhs->a[iField].pExpr);
             pOrigLhs->a[iField].pExpr = 0;
           }
+          nRhs++;
         }
       }
       sqlite3ExprListDelete(db, pOrigRhs);
@@ -722,7 +727,8 @@ static SQLITE_NOINLINE void codeINTerm(
       pLoop->wsFlags &= ~WHERE_IN_SEEKSCAN;
     }
     if( !db->mallocFailed ){
-      aiMap = (int*)sqlite3DbMallocZero(db, sizeof(int)*nEq);
+      int nCol = pX->x.pSelect->pEList->nExpr;
+      aiMap = (int*)sqlite3DbMallocZero(db, sizeof(int)*nCol);
       eType = sqlite3FindInIndex(pParse, pXMod, IN_INDEX_LOOP, 0, aiMap, &iTab);
     }
     sqlite3ExprDelete(db, pXMod);

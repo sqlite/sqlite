@@ -1,5 +1,5 @@
-C Remove\sa\sharmless\sunused\svariadic\sargument\sin\ssqlite3_rsync.\sBug\sreport\s[bugs:bc49306e10e92b10|2026-08-24T01:22:51Z].
-D 2026-08-24T09:56:51.804
+C When\sgenerating\scode\sto\sevaluate\sa\svector\sIN\sconstraint\swhere\sthe\sRHS\nof\sthe\sIN\soperator\sis\sa\ssubquery,\sif\sthe\sremoveUnindexableInClauseTerms()\nsubroutine\schanges\sthe\sorder\sof\sterms\sin\sthe\sIN\soperator,\sthen\sdo\snot\nallow\sthe\smodified\sIN\soperator\sto\sreuse\sa\spreviously\sgenerated\sevaluation\nof\sthe\ssubquery.\n[bugs:/info/2026-08-23T06:58:36Z|Bug\s2026-08-23T06:58:36Z].
+D 2026-08-24T14:30:29.641
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -827,7 +827,7 @@ F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 523806acab93c82979a37143ac76b51fde659bf69e3aa7d1aa3e472963d276c4
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
-F src/wherecode.c aa733a45b550c65aae0641335ddd6179a24c6bf0889bf0dda44a8dddc74d6bb0
+F src/wherecode.c 1a75a96198246b14681a17faed152b22cfee6fa5855ebb419855f835b726e4e3
 F src/whereexpr.c 76f72a95c5cf0e8a8edb679ca4fb7afa17ba45ff4effe73c414266510109e701
 F src/window.c de9948416a216c7ef970337d8eb5228fcb3c6e67c9989a1d21c49201d8aa0242
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1294,7 +1294,7 @@ F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test 6630816b7e59b7bd336b0a95cbf831dcf046d35b10ea987d6e69d223735f1887
 F test/in5.test 4fd79c70dfa0681313e8cdca07f5ff0400bdc0e20f808a5c59eaef1e4b48082a
 F test/in6.test f5f40d6816a8bb7c784424b58a10ac38efb76ab29127a2c17399e0cbeeda0e4b
-F test/in7.test eeb2e73631c39824195bcb12cc298fd7ccb539398b50d410c2207b7a95a4f908
+F test/in7.test 817ce3df4141944b3bb121dd341826d69d229eef383bbbc2cacc9d92a1a89a02
 F test/incrblob.test c9b96afc292aeff43d6687bcb09b0280aa599822
 F test/incrblob2.test a494c9e848560039a23974b9119cfc2cf3ad3bd15cc2694ee6367ae537ef8f1f
 F test/incrblob3.test 67621a04b3084113bf38ce03797d70eca012d9d8f948193b8f655df577b0da6f
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 383e42bc1096d6fe6a2a0a147da90a1bb0bfb37c78a3288bbacaaf9bf7ac17c4
-R 7145b82991fdf84d5fa6af82d6d9e2af
-U stephan
-Z 8d604996da456d722c9a45ee7ec45aeb
+P 5231ac428da4486d64e473e98aa72da5ca68848fba97845dbcf51fd2314debbf
+R 8ad8fb53834efbccd1015e057165b03b
+U drh
+Z c561d2d4faa5d8ef1a310a08275936a8
 # Remove this line to create a well-formed Fossil manifest.
