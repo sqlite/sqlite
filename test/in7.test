@@ -248,4 +248,35 @@ do_execsql_test 4.0 {
   SELECT quote(b) FROM t1;
 } {X'3333'}
 
+# Bug 2026-08-23T06:58:36Z
+#
+# When generating code to evaluate a vector IN constraint where the RHS
+# of the IN operator is a subquery, if the removeUnindexableInClauseTerms()
+# subroutine changes the order of terms in the IN operator, then do not
+# allow the modified IN operator to reuse a previously generated evaluation
+# of the subquery.
+#
+reset_db
+do_execsql_test 7.1 {
+  CREATE TABLE t0(x INT);
+  CREATE TABLE t1(a INT, b TEXT);
+  CREATE INDEX t1a ON t1(a);
+  INSERT INTO t1(a,b) VALUES(9,'z');
+  SELECT b, a, (b, a) IN (('z',9)) AS p FROM t0 RIGHT JOIN t1 ON true;
+} {z 9 1}
+do_execsql_test 7.2 {
+  SELECT b, a FROM t0 RIGHT JOIN t1 ON true WHERE b='z' AND a=9;
+} {z 9}
+do_execsql_test 7.3 {
+  SELECT b, a FROM t0 RIGHT JOIN t1 ON true WHERE (b,+a) IN (('z',9));
+} {z 9}
+do_execsql_test 7.4 {
+  SELECT b, a FROM t0 RIGHT JOIN t1 ON true WHERE ((b,a) IN (('z',9))) IS TRUE;
+} {z 9}
+do_execsql_test 7.5 {
+  SELECT b, a FROM t0 RIGHT JOIN t1 ON true WHERE (a,b) IN ((9,'z'));
+} {z 9}
+do_execsql_test 7.6 {
+  SELECT b, a FROM t0 RIGHT JOIN t1 ON true WHERE (b,a) IN (('z',9));
+} {z 9}
 finish_test
