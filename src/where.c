@@ -5263,12 +5263,20 @@ static i8 wherePathSatisfiesOrderBy(
       if( (pTerm->eOperator&(WO_EQ|WO_IS))!=0 && pOBExpr->iColumn>=0 ){
         Parse *pParse = pWInfo->pParse;
         CollSeq *pColl1 = sqlite3ExprNNCollSeq(pParse, pOrderBy->a[i].pExpr);
-        CollSeq *pColl2 = sqlite3ExprCompareCollSeq(pParse, pTerm->pExpr);
+        const Expr *pCExpr = pTerm->pExpr;
+        CollSeq *pColl2 = sqlite3ExprCompareCollSeq(pParse, pCExpr);
+        char affRight;
         assert( pColl1 );
         if( pColl2==0 || sqlite3StrICmp(pColl1->zName, pColl2->zName) ){
           continue;
         }
-        testcase( pTerm->pExpr->op==TK_IS );
+        affRight = sqlite3ExprAffinity(pCExpr->pRight);
+        /* Left operand must be a column, hence always has affinity */
+        assert( sqlite3ExprAffinity(pCExpr->pLeft)!=0 );
+        if( affRight!=0 && affRight!=sqlite3ExprAffinity(pCExpr->pLeft) ){
+          continue;  /* An affinity conversion would be required */
+        }
+        testcase( pCExpr->op==TK_IS );
       }
       obSat |= MASKBIT(i);
     }

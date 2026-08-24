@@ -1,5 +1,5 @@
-C Correctly\senforce\sa\sUNIQUE\sconstraint\son\sa\snon-PRIMARY\sKEY\scolumn\sof\sa\stable\nthat\shas\san\sINTEGER\sPRIMARY\sKEY\swith\sON\sCONFLICT\sREPLACE\sand\sthat\shas\na\sAFTER\sDELETE\strigger\sthat\sfires\swhen\sthe\sREPLACE\shappens\sand\sthat\strigger\ntries\sto\sINSERT\sa\snew\srow\sthat\sviolates\suniqueness.\n[bugs:/info/2026-08-22T23:55:15Z|Bug\s2026-08-22T23:55:15Z].
-D 2026-08-23T21:41:08.892
+C The\soptimization\sof\sdisabling\san\sORDER\sBY\sterm\sif\sit\sis\sconstrained\sby\nan\sequality\scomparison\swith\sa\scolumn\sfrom\san\souter\squery\sdoes\snot\swork\nif\sthere\sis\san\saffinity\smismatch\sbetween\sthe\stwo\scolumns.\s\sThis\sis\sa\nfollow-on\sto\scheck-in\s[16aed5d0c63dcdc2]\sand\sa\sfix\sfor\n[bugs:/info/2026-08-23T01:02:14Z|Bug\s2026-08-23T01:02:14Z].
+D 2026-08-24T00:08:45.494
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -825,7 +825,7 @@ F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
 F src/wal.c cb28ab3a71cb73ea422a2fcc26283b65a1e5a2a65c44de86951c7d6a186381ac
 F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
-F src/where.c ff03395a6915ff32ec867605ff2312fe4a4f80c8604ed56c0856d31c541a74ee
+F src/where.c 523806acab93c82979a37143ac76b51fde659bf69e3aa7d1aa3e472963d276c4
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
 F src/wherecode.c aa733a45b550c65aae0641335ddd6179a24c6bf0889bf0dda44a8dddc74d6bb0
 F src/whereexpr.c 76f72a95c5cf0e8a8edb679ca4fb7afa17ba45ff4effe73c414266510109e701
@@ -1497,7 +1497,7 @@ F test/orderby1.test 64d6aac62e68c289d378a18cea9b9941d812b6a26f141a18c9fbde79bd7
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 64465d29ab6dabb38731ff24ead2aa0bb262bb06a7b6aa17c6f874a5f24fee94
 F test/orderby4.test daff719d0eead9ae92863a0b5a2e367bfdc7efcc9dfe16d83d667f84df597eff
-F test/orderby5.test bd7d9e3380e87e5dcf6ea817ebaab6d15da213c7804b38767e1b3e695e85650b
+F test/orderby5.test cb282f32371c103d4fbb88145fd5070270013f70673e7e3a3cce9e823ff1cb2c
 F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/orderby8.test 23ef1a5d72bd3adcc2f65561c654295d1b8047bd
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P db0cb462aaf2014cfe8cfc90f7cddda07458a5439b2154dc2781420154bd3098
-R 3299256b56d50f1b8b3e3aadeb08dafe
+P 521c9f5f282f159332101be32031568cb3f08fd937f354a282e09957dd570f53
+R 8ddb0f8ac05e05b965a0382db7367340
 U drh
-Z 2c4510849b0866e71cc7f28b326c60ec
+Z f28e22d48bf5b8ec8b6760477f509098
 # Remove this line to create a well-formed Fossil manifest.
