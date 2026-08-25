@@ -869,6 +869,38 @@ token to which all the other tokens fall back to.  The second and subsequent
 arguments are tokens which fall back to the token identified by the first
 argument.</p>
 
+<p>The <tt>%fallback</tt> mechanism should be thought of as an error-recovery
+technique.  The concept originated with SQLite and the need to maintain
+backwards compatibility as new keywords were added to the SQL language dialect
+understood by SQLite.  For example, when SQLite was enhanced to support
+window functions, it needed many new keywords including PARTITION, RANGE, and
+UNBOUNDED.  But what if there existed legacy database files that contained
+tables or columns with those names?  How would we continue to parse statements
+like the following?
+
+<blockquote><pre>
+CREATE TABLE partition(range TEXT, unbounded BOOLEAN);
+</pre></blockquote>
+
+<p>This conundrum is resolved using a <tt>%fallback</tt> directive similar to:
+
+<blockquote><pre>
+%fallback ID    PARTITION RANGE UNBOUNDED.
+</pre></blockquote>
+
+<p>According to the LALR grammar that defines the SQLite syntax,
+the CREATE TABLE statement above is not syntactically correct
+because of the use of those keywords.  But the <tt>%fallback</tt> directive
+instructs the parser to change the look-ahead token to ID if it encounters
+a syntax error, and try using the ID token instead before giving up and
+reporting an error.
+
+<p>As <a href="https://sqlite.org/forum/info/2026-08-21T19:04:53Z">Sam Atman
+observes on the SQLite Forum</a>, it is possible to get goofy behavior
+with <tt>%fallback</tt>.  Used judiciously, <tt>%fallback</tt> can make
+a parser simpler, faster and more robust.  Misuse or overuse can lead
+to ambiguities, however.
+
 <a id='pifdef'></a>
 <h4>4.4.8 The <tt>%if</tt> directive and its friends</h4>
 
@@ -1202,6 +1234,38 @@ match any input token.</p>
 <p>When the generated parser has the choice of matching an input against
 the wildcard token and some other token, the other token is always used.
 The wildcard token is only matched if there are no alternatives.</p>
+
+<p>Think of the wildcard as an error recovery mechanism.
+It is similar, but not identical to, the classic "error" non-terminal
+in Yacc/Bison.
+
+<p>
+The <tt>%wildcard</tt> directive was added to support parsing
+of the CREATE VIRTUAL TABLE statement in the language dialect understood
+by SQLite.  A CREATE VIRTUAL TABLE statement follows syntax like this:
+
+<blockquote>
+<tt>CREATE VIRTUAL TABLE</tt> <i>name</i> <tt>USING</tt> <i>module</i><tt>(</tt><i>...</i><tt>)</tt>
+</blockquote>
+
+<p>The ellipsis in the example means any (parenthesis-balanced) text can
+go here.  The ellipsis can include keywords, operators, identifiers, and
+any other text, as long as parentheses are balanced.  Maybe you could
+specify such a thing in pure LALR(1), but doing so would be tricky and
+fragile (likely to break as new keywords are added) and slow.  By using
+<tt>%wildcard</tt>, the ellipsis gets parsed using the already existing
+error recovery logic.  The grammar is simplified and the resulting parser
+is compact and efficient.
+
+<p>Indiscriminate use of <tt>%wildcard</tt> can lead to a parser with many
+conflicts and/or a parser that do not work as anticipated.  However, used
+judiciously and in the right context, <tt>%wildcard</tt> provides a
+technique to identify a part of the language where any sequence of tokens
+can be inserted, and which is parsed robustly, efficiently, and with
+small parsing tables.  Search for the "ANY" token in the
+<a href="https://sqlite.org/src/doc/trunk/src/parse.y?mimetype=text/plain">SQLite grammar</a>
+to see the case for which the <tt>%wildcard</tt> directive was originally
+designed and implemented.
 
 <a id='reallc'></a>
 <h4>4.4.26 The <tt>%realloc</tt>, <tt>%free</tt>, and 

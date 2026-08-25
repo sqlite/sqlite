@@ -1,5 +1,5 @@
-C When\san\sexpression\sthat\smay\shave\sa\ssubtype\sfrom\sthe\sWHERE\sclause\sof\sa\spartial\sindex\sis\ssubstituted\sfor\sa\scolumn\svalue,\sclear\sthe\ssubtype\sbefore\sthe\svalue\sis\sused.\sReport\s[bugs:/info/2026-08-25T05:36:33Z\s|\s2026-08-25T05:36:33Z].
-D 2026-08-25T14:26:16.554
+C Update\sthe\sLemon\sdocumentation\swith\sclarifications\sregarding\sthe\n%fallback\sand\s%wildcard\sdirectives.
+D 2026-08-25T14:27:11.654
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -61,7 +61,7 @@ F doc/compile-for-unix.md e729dff2f54ce7afbb0a8bb6813dcbc8720b3838133c5c7449e399
 F doc/compile-for-windows.md 19f87b5b2bd980e0f91c31b2c9d3375e60b4d7901c9bf0c5d060f7cb48334706
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
 F doc/jsonb.md acd77fc3a709f51242655ad7803510c886aa8304202fa9cf2abc5f5c4e9d7ae5
-F doc/lemon.html 3f22b2cd9dedc8baddae02d556895e9c37a1010e89fdd29aa3ee8d8ff3d8a672
+F doc/lemon.html bd0285f1d28e68dfedce0b2a00e2cdfc0493c8df7bb99c5c948762d629a38ee9
 F doc/pager-invariants.txt 83aa3a4724b2d7970cc3f3461f0295c46d4fc19a835a5781cbb35cb52feb0577
 F doc/tcl-extension-testing.md b88861804fc1eaf83249f8e206334189b61e150c360e1b80d0dcf91af82354f5
 F doc/testrunner.md 3589f7914d36adaff6d108566e09b2c6166887bea00580e5343f8b43615ffe12
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ff0e3dd09486dad093b8392e088d17f78e4445f68baebf63d24ad232d45e69b3
-R ccaa87418c55552d81fabd9d1e137425
-U dan
-Z fbc138feac0a53db83967cdc28716d64
+P e6ae6fbd5c0b33ae6950a5a45fc0631cd5e0a437eb672f0a2ec6d288596f1be2
+R 57ec7de14e2f3b80f7a6bf8aa63c749c
+U drh
+Z b0f403b2f8db22ac4f979abdade20523
 # Remove this line to create a well-formed Fossil manifest.
