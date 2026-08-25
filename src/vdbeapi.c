@@ -1885,8 +1885,8 @@ int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, sqlite_int64 iValue){
         if( sm1!=sm2 ){
           p->expired = 1;
         }
-      }else{
-        /* Always expire if the expmask bit is set but the smimask bit is not */
+      }else if( (pVar->flags & MEM_Int)==0 || pVar->u.i!=iValue ){
+        /* Always expire if the value really is changing */
         p->expired = 1;
       }
     }

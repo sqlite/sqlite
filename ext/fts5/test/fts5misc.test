@@ -697,5 +697,13 @@ do_execsql_test 27.1 {
   SELECT * FROM ft1 WHERE rowid=3 AND b MATCH 'hello';
 }
 
+#-------------------------------------------------------------------------
+do_execsql_test 28.0 {
+  CREATE VIRTUAL TABLE t5 USING fts5(c0);
+  INSERT INTO t5(rowid, c0) VALUES(-9223372036854775807, 'xy x');
+  INSERT INTO t5(rowid, c0) VALUES( 2147483647,          'x');
+  SELECT rowid FROM t5 WHERE t5 MATCH 'x*';
+} {-9223372036854775807 2147483647}
+
 finish_test
 

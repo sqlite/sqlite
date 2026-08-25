@@ -184,4 +184,42 @@ do_execsql_test 4.4.0 {
    WHERE c>10;
 } {}
 
+# Bug 2026-08-23T01:02:14Z
+#
+reset_db
+do_execsql_test 5.1 {
+  CREATE TABLE t0(i INTEGER);
+  INSERT INTO t0 VALUES(1);
+  CREATE TABLE t1(t TEXT);
+  INSERT INTO t1 VALUES('1'),(' 1');
+} {}
+do_execsql_test 5.2 {
+  SELECT *,i=t, t=i, +i=t, t=+i, i=+t, +t=i, +i=+t FROM t0,t1 ORDER BY 2;
+} {
+  1 { 1}   1     1     0      0      1      1      0
+  1 1      1     1     1      1      1      1      0
+}
+db null NULL
+do_execsql_test 5.3 {
+  SELECT (SELECT t FROM t1 WHERE i=t ORDER BY t) FROM t0;
+} {{ 1}}
+do_execsql_test 5.4 {
+  SELECT (SELECT t FROM t1 WHERE t=i ORDER BY t) FROM t0;
+} {{ 1}}
+do_execsql_test 5.5 {
+  SELECT (SELECT t FROM t1 WHERE +i=t ORDER BY t) FROM t0;
+} {1}
+do_execsql_test 5.6 {
+  SELECT (SELECT t FROM t1 WHERE t=+i ORDER BY t) FROM t0;
+} {1}
+do_execsql_test 5.7 {
+  SELECT (SELECT t FROM t1 WHERE i=+t ORDER BY t) FROM t0;
+} {{ 1}}
+do_execsql_test 5.8 {
+  SELECT (SELECT t FROM t1 WHERE +t=i ORDER BY t) FROM t0;
+} {{ 1}}
+do_execsql_test 5.9 {
+  SELECT (SELECT t FROM t1 WHERE +t=+i ORDER BY t) FROM t0;
+} {NULL}
+
 finish_test
