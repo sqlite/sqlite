@@ -848,7 +848,7 @@ foreach {tn sql err alias} {
   3 "ALTER TABLE t3 ADD COLUMN _rowid_ INTEGER" "add" "_rowid_"
   4 "ALTER TABLE t2 DROP COLUMN oid" "drop" "oid"
 } {
-  do_catchsql_test 34.1.$tn $sql [list 1 "Cannot $err rowid alias: $alias"]
+  do_catchsql_test 34.1.$tn $sql [list 1 "cannot $err rowid alias: $alias"]
 }
 
 foreach {tn sql} {

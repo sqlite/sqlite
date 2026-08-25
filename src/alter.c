@@ -318,7 +318,7 @@ static int isRowidAlias(
   const char *zOp
 ){
   if( HasRowid(pTab) && sqlite3IsRowid(zCol) ){
-    sqlite3ErrorMsg(pParse, "Cannot %s rowid alias: %s", zOp, zCol);
+    sqlite3ErrorMsg(pParse, "cannot %s rowid alias: %s", zOp, zCol);
     return SQLITE_ERROR;
   }
   return SQLITE_OK;
