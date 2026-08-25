@@ -1,5 +1,5 @@
-C Avoid\scoding\sWHERE\sconstraints\stoo\searly\swhen\susing\sthe\sOR-optimization\swith\sOUTER\sjoin\squeries.\sReport\s[bugs:/info/2026-08-25T02:08:22Z\s|\s2026-08-25T02:08:22Z].
-D 2026-08-25T11:42:00.861
+C Fix\stest\sfile\sdefault.test\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_ALTERTABLE\sbuilds.
+D 2026-08-25T11:50:11.275
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1060,7 +1060,7 @@ F test/dbpagefault.test ea39de2ca86041a9c6df1135645180a76d0a8da93ac159e2fafe38e3
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test a36518c0f0951d8fd5a3dc36f99948ad1af93fb7fc0d2e03e5bb5a643186cf52
 F test/decimal.test f1975a3fbfeb9e00c7b2024ba2282a9868e09ecba94c88dcae2aac07ae29967b
-F test/default.test a3f5363b334c655fcdfffe661cd01590d6c9542d2aabeac87e6e2b0612117688
+F test/default.test a4c9e41318d25e3e6d6adfbb3fbbc198b9c6a3f42b1abd4e24a900dcc6e6b887
 F test/delete.test 2686e1c98d552ef37d79ad55b17b93fe96fad9737786917ce3839767f734c48f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c4bd2ffcb7110d71bf1ec8114d65b57cbbad084851295adca754def847751464
-R caef4848abce9b55765989884c1ebd27
+P a3d15e4937c8f767db046615994f53618be0a407dee09a1989a6382e9b945574
+R c6f555ec866e35ebe224f26062adbbd6
 U dan
-Z d63133d5aabf8b198d3658ec2c61d49e
+Z 0c5eda415df8234a7b7800fdbeea8507
 # Remove this line to create a well-formed Fossil manifest.
