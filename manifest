@@ -1,5 +1,5 @@
-C Update\sthe\sLemon\sdocumentation\swith\sclarifications\sregarding\sthe\n%fallback\sand\s%wildcard\sdirectives.
-D 2026-08-25T14:27:11.654
+C Fix\sOOM\shandling\sin\slittle-used\sextension\sfile\s"expert.c".\sReport\s[bugs:/info/2026-08-25T16:02:31Z\s|\s2026-08-25T16:02:31Z].
+D 2026-08-25T16:15:15.839
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -71,7 +71,7 @@ F doc/vfs-shm.txt 1a55f3f0e7b6745931b117ba5c9df3640d7a0536f532ef0052563100f4416f
 F doc/wal-lock.md 7db0cd61e2000b545b78ce89b0c2a9a8dd8d64c097839258ac10d7c5c4156ec1
 F ext/README.md 6eb1ac267d917767952ed0ef63f55de003b6a5da433ce1fa389e1a9532e73132
 F ext/expert/README.md b321c2762bb93c18ea102d5a5f7753a4b8bac646cb392b3b437f633caf2020c3
-F ext/expert/expert.c d548d603a4cc9e61f446cc179c120c6713511c413f82a4a32b1e1e69d3f086a4
+F ext/expert/expert.c 9f4d6751981bf5dda7b7480f6f878659d032a47fe74d84f31f80fdc05d6cad78
 F ext/expert/expert1.test 5292f9f488ca396fa0973e8ed5d26914bc29a0cdb5979db3d9e05416f30858c3
 F ext/expert/sqlite3expert.c 1a5296245bf80c201b2f5fa5947ef54a7d2b7e90428cb86240dd18076242ec1f
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e6ae6fbd5c0b33ae6950a5a45fc0631cd5e0a437eb672f0a2ec6d288596f1be2
-R 57ec7de14e2f3b80f7a6bf8aa63c749c
-U drh
-Z b0f403b2f8db22ac4f979abdade20523
+P f3ad1b4394ff0902e4ae9e8d0ea36ee198149c5ce8745851eaf84105484fedf2
+R 3bdc73eba82986d23e6b27dd2317c611
+U dan
+Z ab1005716313da03aef3665d5bfce64d
 # Remove this line to create a well-formed Fossil manifest.
