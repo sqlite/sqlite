@@ -1,5 +1,5 @@
-C Fix\stest\sfile\sdefault.test\sso\sthat\sit\sworks\swith\sSQLITE_OMIT_ALTERTABLE\sbuilds.
-D 2026-08-25T11:50:11.275
+C When\san\sexpression\sthat\smay\shave\sa\ssubtype\sfrom\sthe\sWHERE\sclause\sof\sa\spartial\sindex\sis\ssubstituted\sfor\sa\scolumn\svalue,\sclear\sthe\ssubtype\sbefore\sthe\svalue\sis\sused.\sReport\s[bugs:/info/2026-08-25T05:36:33Z\s|\s2026-08-25T05:36:33Z].
+D 2026-08-25T14:26:16.554
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -694,7 +694,7 @@ F src/date.c e1a002a4199bfa85e8778c0f72182c679580b131147d8e46d9221cfceffb8500
 F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
-F src/expr.c 870076c21c8d4b66d5feee37640629370830bd6c7a46b24787e81457cf104760
+F src/expr.c 790908105301a328922c6dbf2cc5a87e6ae78f293e486a6993754c1ec2b2c41f
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c d833ab92ed95e84af60247e7d752cda33234d8979173442079d54d96e9853dd9
@@ -1708,7 +1708,7 @@ F test/subquery.test 0a8fc4fc4eb04b9ee40b17f2cc5416aacfbf756b583fa8880b801e395d5
 F test/subquery2.test ab96ff3fa9c4e3dce0d699f74e61c50250ed4335bc8f400e127707d552a8999e
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test a673e3763e247e9b5e497a6cacbaf3da2bd8ec8921c0677145c109f2e633f36b
-F test/subtype1.test c8e749a2a81be094fb2b291acd1479df85cfebc247160101f79f9e12017fb44c
+F test/subtype1.test 6e385ea8c0cab8d51f8193a8b107669224486fba0601ee256ad66a57cb4b77bc
 F test/superlock.test 85256830339a6871ce36a2ef591c3f67716a701b5497788fb2068b90159c2442
 F test/swarmvtab.test 250231404fcac88f61a6c147bb0e3a118ed879278cd3ccb0ae2d3a729e1e8e26
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P a3d15e4937c8f767db046615994f53618be0a407dee09a1989a6382e9b945574
-R c6f555ec866e35ebe224f26062adbbd6
+P ff0e3dd09486dad093b8392e088d17f78e4445f68baebf63d24ad232d45e69b3
+R ccaa87418c55552d81fabd9d1e137425
 U dan
-Z 0c5eda415df8234a7b7800fdbeea8507
+Z fbc138feac0a53db83967cdc28716d64
 # Remove this line to create a well-formed Fossil manifest.
