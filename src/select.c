@@ -2943,20 +2943,16 @@ static int hasAnchor(Select *p){
 }
 
 /*
-** If a compound SELECT is of the form:
+** Return TRUE if p is a UNION with a LIMIT of exactly 1 and no OFFSET
+** clause.  This is a precondition for a couple of related optimizations.
 **
-**    SELECT ... UNION SELECT ... LIMIT 1;
-**
-** That is, a UNION with a LIMIT of exact 1 and no OFFET or ORDER BY,
-** then convert the UNION to a UNION ALL, as that will typically run
-** faster.
-**
-** Return true (non-zero) if the optimization is successful.  Return
-** false (zero) of the constraints are not met.
+** False negatives are harmless (apart from resulting in a slower query).
+** False positives can result in incorrect answers, however.  To provoke
+** false negatives for testing purposes, disable the SQLITE_UnionLimit
+** optimization.
 */
-static int convertUnionToAll(sqlite3 *db, Select *p){
+static int unionWithLimitOne(sqlite3 *db, Select *p){
   int v;
-  assert( p->pOrderBy==0 );          /* Prevented by caller */
   if( p->op!=TK_UNION ) return 0;
   if( p->pLimit==0 ) return 0;
   if( p->pLimit->pRight ) return 0;  /* No OFFSET */
@@ -2965,7 +2961,6 @@ static int convertUnionToAll(sqlite3 *db, Select *p){
   if( sqlite3ExprIsInteger(p->pLimit->pLeft, &v, 0, 0)==0 ) return 0;
   if( v!=1 ) return 0;
   if( OptimizationDisabled(db, SQLITE_UnionLimit) ) return 0;
-  p->op = TK_ALL;
   return 1;
 }
 
@@ -3058,7 +3053,7 @@ static int multiSelect(
     /* If the compound has an ORDER BY clause, then always use the merge
     ** algorithm. */
     return multiSelectByMerge(pParse, p, pDest);
-  }else if( p->op!=TK_ALL && !convertUnionToAll(db,p) ){
+  }else if( p->op!=TK_ALL && !unionWithLimitOne(db,p) ){
     /* If the compound is EXCEPT, INTERSECT, or UNION (anything other than
     ** UNION ALL) then also always use the merge algorithm.  However, the
     ** multiSelectByMerge() routine requires that the compound have an
@@ -3070,7 +3065,8 @@ static int multiSelect(
     p->pOrderBy->a[0].u.x.iOrderByCol = 1;
     return multiSelectByMerge(pParse, p, pDest);
   }else{
-    /* For a UNION ALL compound without ORDER BY, simply run the left
+    /* For a UNION ALL compound without ORDER BY, or for a UNION with a 
+    ** LIMIT of exactly 1 and no OFFSET and no ORDER BY, simply run the left
     ** query, then run the right query */
     int addr = 0;
     int nLimit = 0;  /* Initialize to suppress harmless compiler warning */
@@ -3621,7 +3617,7 @@ static int multiSelectByMerge(
 
   /* Compute the limit registers */
   computeLimitRegisters(pParse, p, labelEnd);
-  if( p->iLimit && (op==TK_ALL || op==TK_UNION) ){
+  if( p->iLimit && (op==TK_ALL || unionWithLimitOne(db,p)) ){
     regLimitA = ++pParse->nMem;
     regLimitB = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Copy, p->iOffset ? p->iOffset+1 : p->iLimit,
