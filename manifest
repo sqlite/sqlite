@@ -1,5 +1,5 @@
-C Make\sthe\soptimization\sof\sUNION\swith\sORDER\sBY\sand\sLIMIT\ssound\sby\srestricing\nit\sto\sLIMIT\s1.
-D 2026-08-25T16:29:27.136
+C Fix\stwo\stest\scases\sthat\sdo\snot\swork\swhen\soptimizations\sare\sdisabled.
+D 2026-08-25T17:08:19.067
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1606,7 +1606,7 @@ F test/schemafault.test 1936bceca55ac82c5efbcc9fc91a1933e45c8d1e1d106b9a7e56c972
 F test/securedel.test 2f70b2449186a1921bd01ec9da407fbfa98c3a7a5521854c300c194b2ff09384
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
 F test/seekscan1.test 2148a174ba55fa378f18fdf62eeed1f3a3cc9b6f360a948db613cad0c80b1f04
-F test/select1.test ce7ba6aef289a8a1fd6e140fb58bcc8e095034cbc6d8aab7d0eea9145cd49818
+F test/select1.test f5afdbe971a9dd05f0c094d44eb7ee157d61326e7e15357a2a84f20e6937ed52
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 152ce3978c8600c70413e921e39e4c5aeb8ff1e96dd722442a9981e1b8afc702
 F test/select4.test 21941409ac6b65bfca83de020afb5d976d802d3d8ad216dc774a3fbbf55fe277
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c58631b26ad6ee39d8db2700a26413249fd88d137c3a7944bad7af07cd7fe121
-R 76e0f6f942ae68e31165a889e51c3470
+P 7e6e665d05e5d5895bac60d68b49bdf28e2ec6d8dc4ef8c18703f2e6d4f8870f
+R d3e75f49084b217af9b302a35ef67efa
 U drh
-Z 52028eaf171cca386a7f527b8fa6e46f
+Z 34e45bf4bccec09351565be06ae13be1
 # Remove this line to create a well-formed Fossil manifest.

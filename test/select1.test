@@ -1227,15 +1227,8 @@ do_execsql_test select1-22.3 {
 do_execsql_test select1-22.3 {
   SELECT a FROM t1 UNION SELECT b FROM t2 LIMIT 1;
 } {1}
-do_execsql_test select1-22.3-eqp {
-  EXPLAIN SELECT a FROM t1 UNION SELECT b FROM t2 LIMIT 1;
-} {/UNION ALL/}
 do_execsql_test select1-22.4 {
   SELECT a FROM t1 UNION SELECT b FROM t2 LIMIT 2;
 } {1 2}
-do_execsql_test select1-22.4-eqp {
-  EXPLAIN SELECT a FROM t1 UNION SELECT b FROM t2 LIMIT 2;
-} {~/UNION ALL/}
-
 
 finish_test
