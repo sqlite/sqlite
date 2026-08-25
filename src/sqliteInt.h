@@ -1968,6 +1968,7 @@ struct sqlite3 {
 #define SQLITE_OrderBySubq    0x10000000 /* ORDER BY in subquery helps outer */
 #define SQLITE_StarQuery      0x20000000 /* Heurists for star queries */
 #define SQLITE_ExistsToJoin   0x40000000 /* The EXISTS-to-JOIN optimization */
+#define SQLITE_UnionLimit     0x80000000 /* Optimizations for UNION + LIMIT */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
