@@ -444,6 +444,8 @@ struct ShellState {
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char *zTempFile;       /* Temporary file that might need deleting */
   char *zErrPrefix;      /* Alternative error message prefix */
+  char *zAuthIgnore;     /* Authorizer returns SQLITE_IGNORE for glob matches */
+  char *zAuthDeny;       /* Authorizer returns SQLITE_DENY for glob matches */
   sqlite3_stmt *pStmt;   /* Current statement if any. */
   FILE *pLog;            /* Write log output here */
   char *azPrompt[2];     /* Main and continuation prompt strings */
@@ -2852,24 +2854,20 @@ static int shellAuth(
      "ANALYZE",              "CREATE_VTABLE",        "DROP_VTABLE",
      "FUNCTION",             "SAVEPOINT",            "RECURSIVE"
   };
-  int i;
-  const char *az[4];
-  az[0] = zA1;
-  az[1] = zA2;
-  az[2] = zA3;
-  az[3] = zA4;
-  cli_printf(p->out, "authorizer: %s", azAction[op]);
-  for(i=0; i<4; i++){
-    cli_puts(" ", p->out);
-    if( az[i] ){
-      output_c_string(p->out, az[i]);
-    }else{
-      cli_puts("NULL", p->out);
-    }
+  char *zResult = "OK";
+  int rc = SQLITE_OK;
+  char *zMsg = sqlite3_mprintf("%s %Q %Q %Q %Q", azAction[op],zA1,zA2,zA3,zA4);
+  if( p->zAuthDeny && sqlite3_strglob(p->zAuthDeny, zMsg)==0 ){
+    zResult = "DENY";
+    rc = SQLITE_DENY;
+  }else if( p->zAuthIgnore && sqlite3_strglob(p->zAuthIgnore, zMsg)==0 ){
+    zResult = "IGNORE";
+    rc = SQLITE_IGNORE;
   }
-  cli_puts("\n", p->out);
+  cli_printf(p->out, "authorizer: %s -> %s\n", zMsg, zResult);
+  sqlite3_free(zMsg);
   if( p->bSafeMode ) (void)safeModeAuth(pClientData, op, zA1, zA2, zA3, zA4);
-  return SQLITE_OK;
+  return rc;
 }
 #endif
 
@@ -4307,6 +4305,9 @@ static const char *(azHelp[]) = {
 #endif
 #ifndef SQLITE_OMIT_AUTHORIZATION
   ".auth ON|OFF             Show authorizer callbacks",
+  "   Options:",
+  "     --deny GLOB           Return SQLITE_DENY if pattern matches",
+  "     --ignore GLOB         Return SQLITE_IGNORE if pattern matches",
 #endif
 #ifndef SQLITE_SHELL_FIDDLE
   ".backup ?DB? FILE        Backup DB (default \"main\") to FILE",
@@ -9962,13 +9963,57 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( c=='a' && cli_strncmp(azArg[0], "auth", n)==0 ){
-    if( nArg!=2 ){
-      cli_printf(stderr, "Usage: .auth ON|OFF\n");
+    int ii;
+    int eOnOff = -1;
+    open_db(p, 0);
+    for(ii=1; ii<nArg && rc==0; ii++){
+      const char *z = azArg[ii];
+      if( z[0]=='-' && z[1]=='-' ) z++;
+      if( strcmp(z,"-deny")==0 ){
+        ii++;
+        if( ii>=nArg ){
+          dotCmdError(p, ii-1, "missing argument", 0);
+          rc = 1;
+          goto meta_command_exit;
+        }else{
+          free(p->zAuthDeny);
+          p->zAuthDeny = 0;
+          if( azArg[ii][0] ){
+            p->zAuthDeny = strdup(azArg[ii]);
+            shell_check_oom(p->zAuthDeny);
+          }
+        }
+      }else
+      if( strcmp(z,"-ignore")==0 ){
+        ii++;
+        if( ii>=nArg ){
+          dotCmdError(p, ii-1, "missing argument", 0);
+          rc = 1;
+          goto meta_command_exit;
+        }else{
+          free(p->zAuthIgnore);
+          p->zAuthIgnore = 0;
+          if( azArg[ii][0] ){
+            p->zAuthIgnore = strdup(azArg[ii]);
+            shell_check_oom(p->zAuthIgnore);
+          }
+        }
+      }else
+      if( eOnOff<0 ){
+        eOnOff = booleanValue(z);
+      }else
+      {
+        dotCmdError(p, ii, "unknown argument", 0);
+        rc = 1;
+        goto meta_command_exit;
+      }
+    }
+    if( eOnOff<0 ){
+      cli_printf(stderr, "Usage: .auth ON|OFF [--deny GLOB] [--ignore]\n");
       rc = 1;
       goto meta_command_exit;
     }
-    open_db(p, 0);
-    if( booleanValue(azArg[1]) ){
+    if( eOnOff ){
       sqlite3_set_authorizer(p->db, shellAuth, p);
     }else if( p->bSafeModePersist ){
       sqlite3_set_authorizer(p->db, safeModeAuth, p);
@@ -14704,6 +14749,8 @@ int SQLITE_CDECL main(int argc, char **argv){
   free(data.dot.abQuot);
   free(data.azPrompt[0]);
   free(data.azPrompt[1]);
+  free(data.zAuthDeny);
+  free(data.zAuthIgnore);
   if( data.nTestRun ){
     sqlite3_fprintf(stdout, "%d test%s run with %d error%s\n",
        data.nTestRun, data.nTestRun==1 ? "" : "s",
