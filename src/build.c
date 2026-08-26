@@ -703,16 +703,48 @@ void sqlite3ColumnSetExpr(
 }
 
 /*
+** If the expression contains any TK_FUNCTION, send it to the authorizer
+** and if the authorization fails then raise an error.
+*/
+static int authFunctions(Walker *pWalker, Expr *p){
+  if( p->op==TK_FUNCTION ){
+    Parse *pParse = pWalker->pParse;
+    int rc = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0, p->u.zToken, 0);
+    if( rc ){
+      sqlite3ErrorMsg(pParse, "not authorized to use function: %#T", p);
+      return WRC_Abort;
+    }
+  }
+  return WRC_Continue;
+}
+static void sqlite3FuncAuth(Parse *pParse, Expr *pExpr){
+  Walker w;
+  memset(&w, 0, sizeof(w));
+  w.xExprCallback = authFunctions;
+  w.pParse = pParse;
+  sqlite3WalkExpr(&w,pExpr);
+}
+
+/*
 ** Return the expression associated with a column.  The expression might be
 ** the DEFAULT clause or the AS clause of a generated column.
 ** Return NULL if the column has no associated expression.
+**
+** If pParse is not NULL, then this routine also invokes the authorizer
+** callback on any function calls within the expression and raises an error
+** if that callback ever returns anything other then SQLITE_OK.
 */
-Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
+Expr *sqlite3ColumnExpr(Parse *pParse, Table *pTab, Column *pCol){
+  Expr *pExpr;
   if( pCol->iDflt==0 ) return 0;
   if( !IsOrdinaryTable(pTab) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
-  return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
+  pExpr = pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
+  if( pParse && pParse->db->xAuth!=0 ){
+    sqlite3FuncAuth(pParse, pExpr);
+  }
+  return pExpr;
 }
 
 /*
@@ -1780,6 +1812,13 @@ void sqlite3AddDefaultValue(
       pDfltExpr = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
       sqlite3DbFree(db, x.u.zToken);
       sqlite3ColumnSetExpr(pParse, p, pCol, pDfltExpr);
+#ifndef SQLITE_OMIT_AUTHORIZER
+      /* Reject unauthorized functions from DEFAULT clauses */
+      if( db->init.busy==0 && db->xAuth!=0 ){
+        sqlite3FuncAuth(pParse, pExpr);
+      }
+#endif /* SQLITE_OMIT_AUTHORIZER */
+
     }
   }
   if( IN_RENAME_OBJECT ){
@@ -2646,7 +2685,6 @@ static void markExprListImmutable(ExprList *pList){
 #define markExprListImmutable(X)  /* no-op */
 #endif /* SQLITE_DEBUG */
 
-
 /*
 ** This routine is called to report the final ")" that terminates
 ** a CREATE TABLE statement.
@@ -2790,7 +2828,7 @@ void sqlite3EndTable(
     for(ii=0; ii<p->nCol; ii++){
       u32 colFlags = p->aCol[ii].colFlags;
       if( (colFlags & COLFLAG_GENERATED)!=0 ){
-        Expr *pX = sqlite3ColumnExpr(p, &p->aCol[ii]);
+        Expr *pX = sqlite3ColumnExpr(0, p, &p->aCol[ii]);
         testcase( colFlags & COLFLAG_VIRTUAL );
         testcase( colFlags & COLFLAG_STORED );
         if( sqlite3ResolveSelfReference(pParse, p, NC_GenCol, pX, 0) ){

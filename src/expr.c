@@ -4502,7 +4502,7 @@ void sqlite3ExprCodeGeneratedColumn(
   }else{
     iAddr = 0;
   }
-  sqlite3ExprCodeCopy(pParse, sqlite3ColumnExpr(pTab,pCol), regOut);
+  sqlite3ExprCodeCopy(pParse, sqlite3ColumnExpr(0,pTab,pCol), regOut);
   if( (pCol->colFlags & COLFLAG_VIRTUAL)!=0
    && (pTab->tabFlags & TF_Strict)!=0
   ){

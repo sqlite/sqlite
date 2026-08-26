@@ -1242,7 +1242,7 @@ void sqlite3Pragma(
         }else{
           for(k=1; k<=pTab->nCol && pPk->aiColumn[k-1]!=i; k++){}
         }
-        pColExpr = sqlite3ColumnExpr(pTab,pCol);
+        pColExpr = sqlite3ColumnExpr(0,pTab,pCol);
         assert( pColExpr==0 || pColExpr->op==TK_SPAN || isHidden>=2 );
         assert( pColExpr==0 || !ExprHasProperty(pColExpr, EP_IntValue)
                   || isHidden>=2 );
@@ -1933,7 +1933,7 @@ void sqlite3Pragma(
           }else{
             if( pCol->iDflt ){
               sqlite3_value *pDfltValue = 0;
-              sqlite3ValueFromExpr(db, sqlite3ColumnExpr(pTab,pCol), ENC(db),
+              sqlite3ValueFromExpr(db, sqlite3ColumnExpr(0,pTab,pCol), ENC(db),
                                    pCol->affinity, &pDfltValue);
               if( pDfltValue ){
                 p4 = sqlite3_value_type(pDfltValue);

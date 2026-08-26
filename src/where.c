@@ -6692,7 +6692,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     if( j==XN_EXPR ){
       pExpr = pIdx->aColExpr->a[i].pExpr;
     }else if( j>=0 && (pTab->aCol[j].colFlags & COLFLAG_VIRTUAL)!=0 ){
-      pExpr = sqlite3ColumnExpr(pTab, &pTab->aCol[j]);
+      pExpr = sqlite3ColumnExpr(0, pTab, &pTab->aCol[j]);
     }else{
       continue;
     }

@@ -359,7 +359,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   zDb = db->aDb[iDb].zDbSName;
   zTab = &pNew->zName[16];  /* Skip the "sqlite_altertab_" prefix on the name */
   pCol = &pNew->aCol[pNew->nCol-1];
-  pDflt = sqlite3ColumnExpr(pNew, pCol);
+  pDflt = sqlite3ColumnExpr(0, pNew, pCol);
   pTab = sqlite3FindTable(db, zTab, zDb);
   assert( pTab );
 
@@ -1642,8 +1642,8 @@ static void renameColumnFunc(
         }
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
         for(i=0; i<sParse.pNewTable->nCol; i++){
-          Expr *pExpr = sqlite3ColumnExpr(sParse.pNewTable,
-                                                  &sParse.pNewTable->aCol[i]);
+          Expr *pExpr = sqlite3ColumnExpr(0, sParse.pNewTable,
+                                             &sParse.pNewTable->aCol[i]);
           sqlite3WalkExpr(&sWalker, pExpr);
         }
 #endif
@@ -2011,8 +2011,8 @@ static void renameQuotefixFunc(
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
           for(i=0; i<sParse.pNewTable->nCol; i++){
             sqlite3WalkExpr(&sWalker,
-               sqlite3ColumnExpr(sParse.pNewTable,
-                                         &sParse.pNewTable->aCol[i]));
+               sqlite3ColumnExpr(0, sParse.pNewTable,
+                                    &sParse.pNewTable->aCol[i]));
           }
 #endif /* SQLITE_OMIT_GENERATED_COLUMNS */
         }

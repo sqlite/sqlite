@@ -360,7 +360,7 @@ void sqlite3ComputeGeneratedColumns(
         int x;
         pCol->colFlags |= COLFLAG_BUSY;
         w.eCode = 0;
-        sqlite3WalkExpr(&w, sqlite3ColumnExpr(pTab, pCol));
+        sqlite3WalkExpr(&w, sqlite3ColumnExpr(0, pTab, pCol));
         pCol->colFlags &= ~COLFLAG_BUSY;
         if( w.eCode & COLFLAG_NOTAVAIL ){
           pRedo = pCol;
@@ -1387,7 +1387,7 @@ void sqlite3Insert(
         /* Hidden columns that are not explicitly named in the INSERT
         ** get their default value */
         sqlite3ExprCodeFactorable(pParse,
-            sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+            sqlite3ColumnExpr(pParse, pTab, &pTab->aCol[i]),
             iRegStore);
         continue;
       }
@@ -1399,7 +1399,7 @@ void sqlite3Insert(
         /* A column not named in the insert column list gets its
         ** default value */
         sqlite3ExprCodeFactorable(pParse,
-            sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+            sqlite3ColumnExpr(pParse, pTab, &pTab->aCol[i]),
             iRegStore);
         continue;
       }
@@ -1407,7 +1407,7 @@ void sqlite3Insert(
     }else if( nColumn==0 ){
       /* This is INSERT INTO ... DEFAULT VALUES.  Load the default value. */
       sqlite3ExprCodeFactorable(pParse,
-          sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+          sqlite3ColumnExpr(pParse, pTab, &pTab->aCol[i]),
           iRegStore);
       continue;
     }else{
@@ -2005,7 +2005,7 @@ void sqlite3GenerateConstraintChecks(
             assert( (pCol->colFlags & COLFLAG_GENERATED)==0 );
             nSeenReplace++;
             sqlite3ExprCodeCopy(pParse,
-               sqlite3ColumnExpr(pTab, pCol), iReg);
+               sqlite3ColumnExpr(pParse, pTab, pCol), iReg);
             sqlite3VdbeJumpHere(v, addr1);
             break;
           }
@@ -3216,8 +3216,8 @@ static int xferOptimization(
     */
     if( (pDestCol->colFlags & COLFLAG_GENERATED)!=0 ){
       if( sqlite3ExprCompare(0,
-             sqlite3ColumnExpr(pSrc, pSrcCol),
-             sqlite3ColumnExpr(pDest, pDestCol), -1)!=0 ){
+             sqlite3ColumnExpr(0, pSrc, pSrcCol),
+             sqlite3ColumnExpr(0, pDest, pDestCol), -1)!=0 ){
         testcase( pDestCol->colFlags & COLFLAG_VIRTUAL );
         testcase( pDestCol->colFlags & COLFLAG_STORED );
         return 0;  /* Different generator expressions */
@@ -3236,8 +3236,8 @@ static int xferOptimization(
     }
     /* Default values for second and subsequent columns need to match. */
     if( (pDestCol->colFlags & COLFLAG_GENERATED)==0 && i>0 ){
-      Expr *pDestExpr = sqlite3ColumnExpr(pDest, pDestCol);
-      Expr *pSrcExpr = sqlite3ColumnExpr(pSrc, pSrcCol);
+      Expr *pDestExpr = sqlite3ColumnExpr(0, pDest, pDestCol);
+      Expr *pSrcExpr = sqlite3ColumnExpr(0, pSrc, pSrcCol);
       assert( pDestExpr==0 || pDestExpr->op==TK_SPAN );
       assert( pDestExpr==0 || !ExprHasProperty(pDestExpr, EP_IntValue) );
       assert( pSrcExpr==0 || pSrcExpr->op==TK_SPAN );
