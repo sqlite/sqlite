@@ -2521,7 +2521,7 @@ static SQLITE_NOINLINE int exprNodeIsConstantFunction(
   if( pDef==0
    || pDef->xFinalize!=0
    || (pDef->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0
-   || ExprHasProperty(pExpr, EP_WinFunc)
+   || NEVER(ExprHasProperty(pExpr, EP_WinFunc))
   ){
     pWalker->eCode = 0;
     return WRC_Abort;
@@ -2569,19 +2569,25 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
   }
 
   switch( pExpr->op ){
-    /* Consider functions to be constant if all their arguments are constant
-    ** and either pWalker->eCode==4 or 5 or the function has the
-    ** SQLITE_FUNC_CONST flag. */
     case TK_FUNCTION:
-      if( (pWalker->eCode>=4 || ExprHasProperty(pExpr,EP_ConstFunc))
-       && !ExprHasProperty(pExpr, EP_WinFunc)
-      ){
+      if( ExprHasProperty(pExpr, EP_WinFunc) ){
+        pWalker->eCode = 0;  /* Window functions are never constant */
+        return WRC_Abort;
+      }else if( pWalker->eCode>=4 && pWalker->eCode<=5 ){
+        /* Functions used within a CREATE TABLE statement are constant as
+        ** long as all of their arguments are constant */
         if( pWalker->eCode==5 ) ExprSetProperty(pExpr, EP_FromDDL);
         return WRC_Continue;
+      }else if( ExprHasProperty(pExpr,EP_ConstFunc) ){
+        /* Functions marked with EP_ConstFunc are constant as long as 
+        ** all their arugments are constant and they are not window functions */
+        return WRC_Continue;
       }else if( pWalker->pParse ){
+        /* Functions are constant if they have SQLITE_FUNC_CONSTANT or
+        ** SQLITE_FUNC_SLOCHNG and if all arguments are constant */
         return exprNodeIsConstantFunction(pWalker, pExpr);
       }else{
-        pWalker->eCode = 0;
+        pWalker->eCode = 0;  /* Function call is not constant */
         return WRC_Abort;
       }
     case TK_ID:

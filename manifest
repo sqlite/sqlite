@@ -1,5 +1,5 @@
-C Enhance\sthe\stmstmpvfs.c\sextension\sso\sthat\sit\stags\szero\spages\sin\sthe\slog\sfile.
-D 2026-08-26T12:31:34.750
+C The\ssqlite3ExprListIsConstant()\sroutine\sprobably\sshould\snot\sreturn\strue\nif\sthe\slist\scontains\sa\sfunction\slike\srandom().\s\sFixed\shere.\s\sSimplify\nthe\slogic\sused\sto\stest\sif\sexpressions\sare\sconstant.
+D 2026-08-26T15:23:14.203
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -694,7 +694,7 @@ F src/date.c e1a002a4199bfa85e8778c0f72182c679580b131147d8e46d9221cfceffb8500
 F src/dbpage.c ec8590c5e7a564cef28ca3c6156521316a4d26cb572a34841b0bcb26b67b3f97
 F src/dbstat.c 73362c0df0f40ad5523a6f5501224959d0976757b511299bf892313e79d14f5c
 F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
-F src/expr.c 790908105301a328922c6dbf2cc5a87e6ae78f293e486a6993754c1ec2b2c41f
+F src/expr.c 3e4b36f0517128ea7e0a349373816d783b7313f8b8c59bbc6779f3200ed69ea4
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 931f74cec1dc8038a0217ef340c91ce147dd1bbed08dc40c47ee0ec6edfffb08
 F src/func.c d833ab92ed95e84af60247e7d752cda33234d8979173442079d54d96e9853dd9
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ce2aa9f8495edfa361220c4702a54035e9df78984ce6c9fff40e04bd45cc3393
-R f7ef5c62909643d5337acbde4db70895
+P e9d649b77b14990cdc5440e08fdace6989737f3fd1acfc8b1c1bb72be7022ec0
+R a7c7173c778a23a5d1e04aaeed5b904d
 U drh
-Z 3bc7da1960aa01e911e5d014c47c686b
+Z dbc9a331394beaa0f8ce7fac2aeb2e09
 # Remove this line to create a well-formed Fossil manifest.
