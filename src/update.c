@@ -66,11 +66,12 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
   if( pCol->iDflt ){
     sqlite3_value *pValue = 0;
     u8 enc = ENC(sqlite3VdbeDb(v));
+    Parse *pParse = sqlite3VdbeParser(v);
     assert( !IsView(pTab) );
     VdbeComment((v, "%s.%s", pTab->zName, pCol->zCnName));
     assert( i<pTab->nCol );
     sqlite3ValueFromExpr(sqlite3VdbeDb(v),
-                         sqlite3ColumnExpr(0,pTab,pCol), enc,
+                         sqlite3ColumnExprAuth(pTab,pCol,pParse), enc,
                          pCol->affinity, &pValue);
     if( pValue ){
       sqlite3VdbeAppendP4(v, pValue, P4_MEM);
@@ -539,7 +540,7 @@ void sqlite3Update(
         if( aXRef[i]>=0 ) continue;
         if( (pTab->aCol[i].colFlags & COLFLAG_GENERATED)==0 ) continue;
         if( sqlite3ExprReferencesUpdatedColumn(
-                sqlite3ColumnExpr(0,pTab, &pTab->aCol[i]),
+                sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
                  aXRef, chngRowid)
         ){
           aXRef[i] = 99999;

@@ -734,14 +734,16 @@ static void sqlite3FuncAuth(Parse *pParse, Expr *pExpr){
 ** callback on any function calls within the expression and raises an error
 ** if that callback ever returns anything other then SQLITE_OK.
 */
-Expr *sqlite3ColumnExpr(Parse *pParse, Table *pTab, Column *pCol){
-  Expr *pExpr;
+Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
   if( !IsOrdinaryTable(pTab) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList==0) ) return 0;
   if( NEVER(pTab->u.tab.pDfltList->nExpr<pCol->iDflt) ) return 0;
-  pExpr = pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
-  if( pParse && pParse->db->xAuth!=0 ){
+  return pTab->u.tab.pDfltList->a[pCol->iDflt-1].pExpr;
+}
+Expr *sqlite3ColumnExprAuth(Table *pTab, Column *pCol, Parse *pParse){
+  Expr *pExpr = sqlite3ColumnExpr(pTab,pCol);
+  if( pParse->db->xAuth!=0 ){
     sqlite3FuncAuth(pParse, pExpr);
   }
   return pExpr;
@@ -2828,7 +2830,7 @@ void sqlite3EndTable(
     for(ii=0; ii<p->nCol; ii++){
       u32 colFlags = p->aCol[ii].colFlags;
       if( (colFlags & COLFLAG_GENERATED)!=0 ){
-        Expr *pX = sqlite3ColumnExpr(0, p, &p->aCol[ii]);
+        Expr *pX = sqlite3ColumnExpr(p, &p->aCol[ii]);
         testcase( colFlags & COLFLAG_VIRTUAL );
         testcase( colFlags & COLFLAG_STORED );
         if( sqlite3ResolveSelfReference(pParse, p, NC_GenCol, pX, 0) ){
