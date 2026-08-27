@@ -1,5 +1,5 @@
-C Performance\soptimizations\sand\scode\ssimplifications.
-D 2026-08-27T01:42:32.550
+C Update\sa\sstale\scomment.\s\sFix\sminor\s#ifdef\sissues.
+D 2026-08-27T10:16:08.350
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -686,7 +686,7 @@ F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
 F src/btree.c d454bbda4b2a25b7a852c70ab61bcd6c0e5b3f6cda212d6e7529177c0518fb0e
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
-F src/build.c bf548c70d9950bcb0f25bea215b0e4c02f39d72278fd73f81307ae00409ec495
+F src/build.c 0a160b40ea1f85b5a95e62310bbe2b944b8834a26c36f1f4b7f0f2c7e654f789
 F src/callback.c 3605bbf02bd7ed46c79cd48346db4a32fc51d67624400539c0532f4eead804ad
 F src/carray.c 22879bbd9e14fc4868f223b0d49bcdbbda4616c89f1519ec6a5e64b98a4137b1
 F src/complete.c f216b970ce99c5a657556cf1f17e7ddd494515d3beb63df426bf59ff43bd3d9a
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 51a1149bdcbe142b8eb92c2b817d3973bf88aaa73859e0c475505aa201da920b
-R 850a817e1997493ed36b8d3d211a04ea
+P cbf2e796e02b23df9d51b59e047673fe0bdecd6497e678507b5bbc5c136dad7d
+R d41ab8cb5247aa371ebf0229cdec5645
 U drh
-Z 580fbd601223cab9459b830f59020c71
+Z 5cd764cf9732f86c0b2b326c0094bbd5
 # Remove this line to create a well-formed Fossil manifest.

@@ -702,6 +702,7 @@ void sqlite3ColumnSetExpr(
   }
 }
 
+#ifndef SQLITE_OMIT_AUTHORIZATION
 /*
 ** If the expression contains any TK_FUNCTION, send it to the authorizer
 ** and if the authorization fails then raise an error.
@@ -724,15 +725,18 @@ static void sqlite3FuncAuth(Parse *pParse, Expr *pExpr){
   w.pParse = pParse;
   sqlite3WalkExpr(&w,pExpr);
 }
+#endif /* SQLITE_OMIT_AUTHORIZATION */
 
 /*
 ** Return the expression associated with a column.  The expression might be
 ** the DEFAULT clause or the AS clause of a generated column.
 ** Return NULL if the column has no associated expression.
 **
-** If pParse is not NULL, then this routine also invokes the authorizer
-** callback on any function calls within the expression and raises an error
-** if that callback ever returns anything other then SQLITE_OK.
+** There are two variants of this routine.  sqlite3ColumnExpr() just
+** returns the expression with no side effects.  sqlite3ColumnExprAuth()
+** takes the extra step of invoking the authorizer (if one is defined)
+** and raising an error if the returned expression uses any unauthorized
+** SQL function.
 */
 Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
   if( pCol->iDflt==0 ) return 0;
@@ -743,9 +747,11 @@ Expr *sqlite3ColumnExpr(Table *pTab, Column *pCol){
 }
 Expr *sqlite3ColumnExprAuth(Table *pTab, Column *pCol, Parse *pParse){
   Expr *pExpr = sqlite3ColumnExpr(pTab,pCol);
+#ifndef SQLITE_OMIT_AUTHORIZATION
   if( pParse->db->xAuth!=0 ){
     sqlite3FuncAuth(pParse, pExpr);
   }
+#endif
   return pExpr;
 }
 
@@ -1814,7 +1820,7 @@ void sqlite3AddDefaultValue(
       pDfltExpr = sqlite3ExprDup(db, &x, EXPRDUP_REDUCE);
       sqlite3DbFree(db, x.u.zToken);
       sqlite3ColumnSetExpr(pParse, p, pCol, pDfltExpr);
-#ifndef SQLITE_OMIT_AUTHORIZER
+#ifndef SQLITE_OMIT_AUTHORIZATION
       /* Reject unauthorized functions from DEFAULT clauses */
       if( db->init.busy==0 && db->xAuth!=0 ){
         sqlite3FuncAuth(pParse, pExpr);
