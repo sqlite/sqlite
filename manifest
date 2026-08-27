@@ -1,5 +1,5 @@
-C Built-in\sSQL\sfunction\soom()\sinvokes\ssqlite3OomFault()\sand\sthen\sreturns\sNULL,\nbut\sonly\sif\scompiled\swith\sSQLITE_DEBUG\sor\sSQLITE_BUILTIN_OOM_FUNCTION.
-D 2026-08-27T14:26:50.128
+C Fix\sa\scase\sin\sthe\sfts5\smatchinfo()\sdemo\sfunction\scausing\sit\sto\sreturn\sthe\swrong\serror\scode.
+D 2026-08-27T18:07:23.412
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -118,7 +118,7 @@ F ext/fts5/fts5_index.c fe37868b748d08ac704b42cae18766c37cce543f6bd87d511e0c988d
 F ext/fts5/fts5_main.c 7819fc80808a135c3ad7bec65071a053827d1e8fe7b77ddfd734ed451c2db7a9
 F ext/fts5/fts5_storage.c 46b0024fdd8002fbfba162230e5cc212c8f019ba4075396860354bfaf549a546
 F ext/fts5/fts5_tcl.c aed8905b1a3c6ecc94da15e9cc54d889045b9eacecc7a17b6fcc1294225f7716
-F ext/fts5/fts5_test_mi.c 4308d5658cb1f5eee5998dcbaac7d5bdf7a2ef43c8192ca6e0c843f856ccee26
+F ext/fts5/fts5_test_mi.c 3074a25cb661b2301143022ef96a950618452a5b082abd9ba7b9daaf29d01537
 F ext/fts5/fts5_test_tok.c 6021033bd4f4feffe8579efb6e1f58156ed462256bf99a2acdbd629246529204
 F ext/fts5/fts5_tokenize.c 0469b30e7bf25255fbb7c101e2b549a521fb501342e7269cf73cbb6b2dbd8da2
 F ext/fts5/fts5_unicode2.c 536a6dae41d16edadd6a6b58c56e2ebbb133f0dfe757562a2edbcdc9b8362e50
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 555f31c64d3fcc55df2715a7c8c1cb28503b2c0eb21d950ccdcbf6f577593dd5
-R 643b7e9db936692c9d8ff24b07d9dbff
-U drh
-Z 0b6d8c6ca7078a4d2a08d58055a66e10
+P 90dfac7f2734078ae8c30b6f3379ed4d2283726fee9ea5799d73408d40e7e63e
+R 8c18af53f8db56e350e2d7c9c11edf8a
+U dan
+Z 4938a292e802433665390d0cd8feae70
 # Remove this line to create a well-formed Fossil manifest.
