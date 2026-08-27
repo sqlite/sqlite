@@ -4533,12 +4533,12 @@ void sqlite3ExprCodeGetColumnOfTable(
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
     VdbeComment((v, "%s.rowid", pTab->zName));
-  }else{
-    int op;
+ }else{
     int x;
     if( IsVirtual(pTab) ){
-      op = OP_VColumn;
       x = iCol;
+      sqlite3VdbeAddOp3(v, OP_VColumn, iTabCur, x, regOut);
+      return;
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
     }else if( (pCol = &pTab->aCol[iCol])->colFlags & COLFLAG_VIRTUAL ){
       Parse *pParse = sqlite3VdbeParser(v);
@@ -4558,13 +4558,11 @@ void sqlite3ExprCodeGetColumnOfTable(
     }else if( !HasRowid(pTab) ){
       testcase( iCol!=sqlite3TableColumnToStorage(pTab, iCol) );
       x = sqlite3TableColumnToIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
-      op = OP_Column;
     }else{
       x = sqlite3TableColumnToStorage(pTab,iCol);
       testcase( x!=iCol );
-      op = OP_Column;
     }
-    sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
+    sqlite3VdbeAddOp3(v, OP_Column, iTabCur, x, regOut);
     sqlite3ColumnDefault(v, pTab, iCol, regOut);
   }
 }
