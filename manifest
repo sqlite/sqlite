@@ -1,5 +1,5 @@
-C Fix\sa\sC90-compliance\sissue\sin\sthe\sCLI.
-D 2026-08-27T10:58:16.680
+C Built-in\sSQL\sfunction\soom()\sinvokes\ssqlite3OomFault()\sand\sthen\sreturns\sNULL,\nbut\sonly\sif\scompiled\swith\sSQLITE_DEBUG\sor\sSQLITE_BUILTIN_OOM_FUNCTION.
+D 2026-08-27T14:26:50.128
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -697,7 +697,7 @@ F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c e312efc69da66f6f0fe91f6cecc5024aa9d0797d232ba4d5032558ed4458f841
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 26788ae6c785d70f9829c4176e9764447014fc73e6ba31e9f1881720a64ae7f1
-F src/func.c d833ab92ed95e84af60247e7d752cda33234d8979173442079d54d96e9853dd9
+F src/func.c 830e012d0aa60925e76d597a8f4cc45e14c19cdc643dfc97e7dda26d92dee5b5
 F src/global.c 7eea537ac0c113ac55cb2dd4d8fc2a6a91ae478be34231b4efaffc46817fee85
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4b30d1d7e22b9b74753a6fb4d9e1f884ddcee12273d6842954ed44de94e5f4b9
-R f809ed418b0b4a3c0299896f3b3d6ddf
+P 555f31c64d3fcc55df2715a7c8c1cb28503b2c0eb21d950ccdcbf6f577593dd5
+R 643b7e9db936692c9d8ff24b07d9dbff
 U drh
-Z 2a62912c7d4ef5a816ba4dda1ff2a50c
+Z 0b6d8c6ca7078a4d2a08d58055a66e10
 # Remove this line to create a well-formed Fossil manifest.

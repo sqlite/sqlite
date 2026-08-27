@@ -1817,6 +1817,21 @@ static void soundexFunc(
 }
 #endif /* SQLITE_SOUNDEX */
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_BUILTIN_OOM_FUNCTION)
+/*
+** This SQL function just invokes sqlite3OomFault() and then returns
+** NULL.  Used for testing only.
+*/
+static void oomFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  sqlite3OomFault(db);
+}
+#endif /* SQLITE_DEBUG || SQLITE_BUILTIN_OOM_FUNCTION */
+
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
 ** A function that loads a shared-library extension then returns NULL.
@@ -3374,6 +3389,9 @@ void sqlite3RegisterBuiltinFunctions(void){
 #ifdef SQLITE_DEBUG
     FUNCTION(fpdecode,           3, 0, 0, fpdecodeFunc     ),
     FUNCTION(parseuri,          -1, 0, 0, parseuriFunc     ),
+#endif
+#if defined(SQLITE_DEBUG) || defined(SQLITE_BUILTIN_OOM_FUNCTION)
+    FUNCTION(oom,               -1, 0, 0, oomFunc          ),
 #endif
 #ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(round,              1, 0, 0, roundFunc        ),
