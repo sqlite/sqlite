@@ -8685,7 +8685,9 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **
 ** Change the output mode to MODE and/or apply OPTIONS to the output mode.
 ** Arguments are processed from left to right.  If no arguments, show the
-** current output mode and relevant options.
+** current output mode and relevant options.  Use the --list option to get
+** a list of available MODE values.  Use -v to show all the current output
+** mode settings.
 **
 ** Options:
 **   --align STRING           Set the alignment of text in columnar modes
@@ -8735,7 +8737,7 @@ static int modeTitleDsply(ShellState *p, int bAll){
 **                            means "no limit".  Or N can be "auto" to set the
 **                            width automatically.
 **   --tablename NAME         Set the name of the table for "insert" mode.
-**   --tag NAME               Save mode to the left as NAME.
+**   --tag NAME               Save current settings as a new mode called NAME.
 **   --textjsonb BOOLEAN      If enabled, JSONB text is displayed as text JSON.
 **   --title ARG              Whether or not to show column headers, and if so
 **                            how to encode them.  ARG can be "off", "on",
