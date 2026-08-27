@@ -1387,7 +1387,7 @@ void sqlite3Insert(
         /* Hidden columns that are not explicitly named in the INSERT
         ** get their default value */
         sqlite3ExprCodeFactorable(pParse,
-            sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+            sqlite3ColumnExprAuth(pTab, &pTab->aCol[i], pParse),
             iRegStore);
         continue;
       }
@@ -1399,7 +1399,7 @@ void sqlite3Insert(
         /* A column not named in the insert column list gets its
         ** default value */
         sqlite3ExprCodeFactorable(pParse,
-            sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+            sqlite3ColumnExprAuth(pTab, &pTab->aCol[i], pParse),
             iRegStore);
         continue;
       }
@@ -1407,7 +1407,7 @@ void sqlite3Insert(
     }else if( nColumn==0 ){
       /* This is INSERT INTO ... DEFAULT VALUES.  Load the default value. */
       sqlite3ExprCodeFactorable(pParse,
-          sqlite3ColumnExpr(pTab, &pTab->aCol[i]),
+          sqlite3ColumnExprAuth(pTab, &pTab->aCol[i], pParse),
           iRegStore);
       continue;
     }else{
@@ -2005,7 +2005,7 @@ void sqlite3GenerateConstraintChecks(
             assert( (pCol->colFlags & COLFLAG_GENERATED)==0 );
             nSeenReplace++;
             sqlite3ExprCodeCopy(pParse,
-               sqlite3ColumnExpr(pTab, pCol), iReg);
+               sqlite3ColumnExprAuth(pTab, pCol, pParse), iReg);
             sqlite3VdbeJumpHere(v, addr1);
             break;
           }
