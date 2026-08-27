@@ -3356,9 +3356,11 @@ static int display_stats(
   int iCur, iHiwtr;
   sqlite3_int64 iCur64, iHiwtr64;
   FILE *out;
+  int bReset;
+
   if( pArg==0 || pArg->out==0 ) return 0;
   out = pArg->out;
-  int bReset = (pArg->mStats & CLISTAT_RESET)!=0;
+  bReset = (pArg->mStats & CLISTAT_RESET)!=0;
 
   if( pArg->pStmt && (pArg->mStats & CLISTAT_XSTMT)!=0 ){
     int nCol, i, x;
