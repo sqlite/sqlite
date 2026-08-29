@@ -1,5 +1,5 @@
-C Fix\sharmless\scomment\stypo.
-D 2026-08-29T13:42:11.770
+C Ensure\sthat\sALTER\sTABLE\sADD\sCOLUMN\shas\szero\sreturn\scolumns,\seven\swhen\naltering\sa\sSTRICT\stable.\s\sTest\scase\sin\sTH3.
+D 2026-08-29T16:26:34.346
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -676,7 +676,7 @@ F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 1b9c24374a85dfc7eb8fa7c4266ee0db4f9609cceecfc5481cd8307e5af04366
 F sqlite3.pc.in e6dee284fba59ef500092fdc1843df3be8433323a3733c91da96690a50a5b398
-F src/alter.c 2c68141c2f256681a79a166f57e3811a9c0021d9e19ed73878d93e8c26551a88
+F src/alter.c 103ab127aaf0ad7746db53e58c38cb5a0eceae1b200c48104eacec12d090c78a
 F src/analyze.c 73162482c656187823217f4c00758c9ee13a420c8745bc542129e0279b792287
 F src/attach.c c58278c7d2d954785591c4fde81669ec3e4d52f348c453b028a19ae8adf4f338
 F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 5251f4d7071f86ad9d772d8b9309bc7191ca485c3db5cb658f689abf02de72c4
-R 728b6317630111d1ce1626d392208a9d
+P 66f608cecab53b5e3cd02bd33566ee7c37b123b9002bbf84f7b22b7856bec9c0
+R ee9c569699e6b801ebe62f491ea0d034
 U drh
-Z bb32496dfa730b175d7a41ead69a7eaa
+Z d6ee1f2986bb8de22e6e3eb723ea2983
 # Remove this line to create a well-formed Fossil manifest.
