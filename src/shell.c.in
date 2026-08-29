@@ -13410,8 +13410,11 @@ static int runOneSqlLine(
 
 static void echo_group_input(ShellState *p, const char *zDo){
   if( p->mode.mFlags & MFLG_ECHO ){
+    sqlite3_str *savedCliCapture = cli_output_capture;
+    cli_output_capture = 0;  /* .echo should not be captured by .testcase */
     cli_printf(p->out, "%s\n", zDo);
     fflush(p->out);
+    cli_output_capture = savedCliCapture;
   }
 }
 

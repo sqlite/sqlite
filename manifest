@@ -1,5 +1,5 @@
-C Ensure\sthat\sALTER\sTABLE\sADD\sCOLUMN\shas\szero\sreturn\scolumns,\seven\swhen\naltering\sa\sSTRICT\stable.\s\sTest\scase\sin\sTH3.
-D 2026-08-29T16:26:34.346
+C Fix\sthe\sCLI\sso\sthat\sit\sdoes\snot\scapture\s".echo"\soutput\sas\spart\sof\sthe\nresult\sof\sa\s".testcase"...".check".
+D 2026-08-29T18:39:28.884
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -744,7 +744,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 0e0990f60c93db38c735d85e5d1741130e72dd0670aec204b5a39118b53c8044
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c a962dd2573404110b438d9226494d57f71609cbc5f8365e40d1f8fa25e12f6aa
-F src/shell.c.in e09206008bd0a8b33921006b483af79916f5c5d846015fba4f85f52f20335c7e
+F src/shell.c.in 0489afff97ae362c2d2bfa463387ad5625481a3d1561f5ce5871179130bf92e1
 F src/sqlite.h.in efc3f7aa00a2bb01c087435e6fa5f86103e310e6c3ea072b12cc110cf2715a75
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
 F src/sqlite3ext.h 0efd4723bad9124ea1f581d9f1ea0254ac1c6f3e5fb29e4f3dcf36c72485a456
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 66f608cecab53b5e3cd02bd33566ee7c37b123b9002bbf84f7b22b7856bec9c0
-R ee9c569699e6b801ebe62f491ea0d034
+P 778e2bb9a6e06398012bc59b4c62bf8269828bf8f68e9c14e819c6f34edbe29f
+R 58522fdb69c95386985c7e5e9cbca5d7
 U drh
-Z d6ee1f2986bb8de22e6e3eb723ea2983
+Z 1044c70528544031ba25c41b5b572166
 # Remove this line to create a well-formed Fossil manifest.
