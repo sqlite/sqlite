@@ -2167,7 +2167,7 @@ static int btreeComputeFreeSpace(MemPage *pPage){
       size = get2byte(&data[pc+2]);
       if( size<4 && sqlite3FaultSim(422)==SQLITE_OK ){
         /* Minimum freeblock size is 4.  Enable fault-sim 422 to disable this
-        ** check to reach interesting error stats.  However, disabling this
+        ** check to reach interesting error states.  However, disabling this
         ** check can cause assertion faults due to min-heap overflow.  All
         ** fault-sims are for testing use only, but this one especially so. */
         return SQLITE_CORRUPT_PAGE(pPage);
