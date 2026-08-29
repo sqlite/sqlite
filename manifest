@@ -1,5 +1,5 @@
-C Fix\sthe\sCLI\sso\sthat\sit\sdoes\snot\scapture\s".echo"\soutput\sas\spart\sof\sthe\nresult\sof\sa\s".testcase"...".check".
-D 2026-08-29T18:39:28.884
+C Remove\sa\sredundant\sOP_RealAffinity\sinserted\sby\srecent\schanges\sto\nsqlite3ColumnDefault().
+D 2026-08-29T19:51:48.649
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -805,7 +805,7 @@ F src/threads.c 85d8b9f05f78211c61e3739ab5db761d7118766d1916ae7f2764735106bc4e13
 F src/tokenize.c e9d52d9f7374d82dadcd11726bea8a597d43709d6672704f3f0375bf1d726912
 F src/treeview.c feaa59f14db4f7b5aacca9c5ad5aeb562c1f98262c1ffd74371f4186ade91fc5
 F src/trigger.c d6d8991ca346eb6f56e50a3c5df486176b67a9179336798a75bb05e622c72cac
-F src/update.c 3db883bf5f2eefa92eacd5a486b05fd59048e9ffa4e395095f69f87029e4930c
+F src/update.c 3bbb3a2ae58a83db9e8bd2a997d6dac214fd0dff3dd916d865149051a12e3b07
 F src/upsert.c dd9f0fcccbfb4f20e1026a21a7254ba3f2c08e9cfa92affaff5b5ec3b00ea549
 F src/utf.c 7267c3fb9e2467020507601af3354c2446c61f444387e094c779dccd5ca62165
 F src/util.c cfdf9c6e5323af886d5ce766709da607ba1d14193ad3a15f4f462a45420e8211
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 778e2bb9a6e06398012bc59b4c62bf8269828bf8f68e9c14e819c6f34edbe29f
-R 58522fdb69c95386985c7e5e9cbca5d7
+P 33322913a87caf64f430786e9b5fbe7b1fe42b82b410c8b7b410737ffd8e29e4
+R 4865abeced7e783678501df33b3bcdb2
 U drh
-Z 1044c70528544031ba25c41b5b572166
+Z ae4b55c7d37038b27a97aa4219ba01fb
 # Remove this line to create a well-formed Fossil manifest.

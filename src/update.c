@@ -74,11 +74,6 @@ static SQLITE_NOINLINE void columnDefaultUncommonCase(
   if( pValue ){
     sqlite3VdbeAppendP4(v, pValue, P4_MEM);
   }
-#ifndef SQLITE_OMIT_FLOATING_POINT
-  if( pCol->affinity==SQLITE_AFF_REAL ){
-    sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
-  }
-#endif
 }
 void sqlite3ColumnDefault(
   Vdbe *v,          /* Byte code under construction */
