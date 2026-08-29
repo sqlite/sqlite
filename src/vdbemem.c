@@ -1989,7 +1989,7 @@ int sqlite3ValueFromExpr(
     if( rc==SQLITE_OK && pVal 
      && affinity==SQLITE_AFF_REAL 
      && (pVal->flags & MEM_Int) 
-     && (u64)(pVal->u.i<0 ? pVal->u.i : pVal->u.i)>140737488355327LL
+     && (pVal->u.i<-140737488355328LL || pVal->u.i>140737488355327LL)
     ){
       /* If the integer value is too large to fit in a 6-byte integer and
       ** the affinity is REAL, convert it to a real value now. In most

@@ -1,5 +1,5 @@
-C Remove\sa\sredundant\sOP_RealAffinity\sinserted\sby\srecent\schanges\sto\nsqlite3ColumnDefault().
-D 2026-08-29T19:51:48.649
+C Follow-up\sto\scheck-in\s[2cb349e5b02aa549]\sto\shelp\sindexes\son\snegative\nDEFAULT\sinteger\svalues\sget\sstored\smore\sefficiently.
+D 2026-08-29T20:27:09.042
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -816,7 +816,7 @@ F src/vdbeInt.h 68e5ab63f184f2871780c83ce78b425d0360869611baea4c65575f91f76ac1d3
 F src/vdbeapi.c 5f5f86d4642ce1927b4b45a6b87a978ef6b11c8420e6ce440695177618fc25d0
 F src/vdbeaux.c 2d4a69dade72db5844e21894b718aae38102c5545483efde3cc90a1ef9abffff
 F src/vdbeblob.c b3f0640db9642fbdc88bd6ebcc83d6009514cafc98f062f675f2c8d505d82692
-F src/vdbemem.c 77f40b2cac350c61e1b5b83d81fc2dc0ecc4d83deea248b9151d70d60e04e442
+F src/vdbemem.c b2113c949e2ed918294e16a5ebaacdaca6be4f820f670517e3362e94c7019432
 F src/vdbesort.c a72ad2a629df2901fde4aa588e38590d0aa27b7d5bc3b2a416e5f295de839cc1
 F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b41
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
@@ -1335,7 +1335,7 @@ F test/intck01.sql cc67c49bb0dbffd8ede29d3e095ba2b758eaa3907eeeca3fd44048a01c407
 F test/interrupt.test ac1ef50ec9ab8e4f0e17c47629f82539d4b22558904e321ed5abea2e6187da7a
 F test/interrupt2.test 7eaa40a975d950826cd56e6c37f0f0629adfa2d1a8d3333aff0ff7cf86069963
 F test/intpkey.test e8feb8326089e78bfb6bfe03c2005c920b87417a692f33369ae953692c51c8d9
-F test/intreal.test 4ebf44dca3a0eccfddde44ec14121050958275628cda03612b140f950bd77d12
+F test/intreal.test 0ac8f96f8d891b1703c70b768d43985f699ba4404d64bfe0ae2ff8cb17430336
 F test/io.test d267fdc8915444a45e19841489033ebe70bb69f6db605b00df70be16b2a80f59
 F test/ioerr.test 78552a95d53b9674d85f63bdf3d76a8df70b4d5dba5a6a1b8a1d60f166cd2c6b
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 33322913a87caf64f430786e9b5fbe7b1fe42b82b410c8b7b410737ffd8e29e4
-R 4865abeced7e783678501df33b3bcdb2
+P c7a987a4f7b4c937073536b714235e18295cc2c3bd8df8dfa4d8ba770ab6038d
+R ba7af8263893a9a244bf278fdb0d6a6a
 U drh
-Z ae4b55c7d37038b27a97aa4219ba01fb
+Z b47434bdad411bee667dbf5ff86f1e77
 # Remove this line to create a well-formed Fossil manifest.
