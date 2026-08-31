@@ -132,8 +132,11 @@ with a brief explanation of what each does by typing</p>
 <li><b>-b</b>
 Show only the basis for each parser state in the report file.
 <li><b>-c</b>
-Do not compress the generated action tables.  The parser will be a
-little larger and slower, but it will detect syntax errors sooner.
+<s>Do not compress the generated action tables.  The parser will be a
+little larger and slower, but it will detect syntax errors sooner.</s>
+As of 2026-08-31,
+this option is no longer supported.  Lemon always compresses the action
+table.
 <li><b>-d</b><i>directory</i>
 Write all output files into <i>directory</i>.  Normally, output files
 are written into the directory that contains the input grammar file.
