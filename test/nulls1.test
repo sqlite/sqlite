@@ -375,6 +375,47 @@ foreach {tn idx} {
 
 }
 
+#-------------------------------------------------------------------------
+# Check that NULLS FIRST / NULLS LAST work with the skip-ahead DISTINCT
+# optimization.
+reset_db
+do_execsql_test 12.0 {
+
+  CREATE TABLE t0(c0 TEXT);
+  CREATE INDEX i0 ON t0(c0);
+  INSERT INTO t0(c0) VALUES (NULL),(NULL),(NULL),(NULL),(NULL),(NULL),
+                          (NULL),(NULL),(NULL),(NULL),(NULL),(NULL);
+}
+do_execsql_test 12.1 {
+  ANALYZE;
+}
+do_execsql_test 12.2 {
+  INSERT INTO t0(c0) VALUES('A');
+}
+do_execsql_test 12.3 {
+  SELECT c0 FROM t0 ORDER BY c0 DESC NULLS FIRST;
+} {{} {} {} {} {} {} {} {} {} {} {} {} A}
+do_execsql_test 12.4 {
+  SELECT c0 FROM t0 NOT INDEXED ORDER BY c0 DESC NULLS FIRST;
+} {{} {} {} {} {} {} {} {} {} {} {} {} A}
+
+do_execsql_test 12.5 {
+  SELECT DISTINCT c0 FROM t0 NOT INDEXED ORDER BY c0 DESC NULLS FIRST;
+} {{} A}
+
+do_execsql_test 12.6 {
+  SELECT DISTINCT c0 FROM t0 INDEXED BY i0 ORDER BY c0 DESC NULLS FIRST;
+} {{} A}
+do_execsql_test 12.7 {
+  SELECT DISTINCT c0 FROM t0 INDEXED BY i0 ORDER BY c0 DESC NULLS LAST;
+} {A {}}
+do_execsql_test 12.8 {
+  SELECT DISTINCT c0 FROM t0 INDEXED BY i0 ORDER BY c0 ASC NULLS FIRST;
+} {{} A}
+do_execsql_test 12.9 {
+  SELECT DISTINCT c0 FROM t0 INDEXED BY i0 ORDER BY c0 ASC NULLS LAST;
+} {A {}}
+
 
 
 finish_test
