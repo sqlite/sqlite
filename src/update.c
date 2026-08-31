@@ -61,8 +61,7 @@ static void updateVirtualTable(
 static SQLITE_NOINLINE void columnDefaultUncommonCase(
   Vdbe *v,          /* Byte code under construction */
   Table *pTab,      /* The table */
-  Column *pCol,     /* Which column of the table */
-  int iReg          /* Register in which results are stored */
+  Column *pCol      /* Which column of the table */
 ){
   sqlite3_value *pValue = 0;
   u8 enc = ENC(sqlite3VdbeDb(v));
@@ -86,7 +85,7 @@ void sqlite3ColumnDefault(
   assert( pTab->nCol>i );
   pCol = &pTab->aCol[i];
   if( pCol->iDflt ){
-    columnDefaultUncommonCase(v,pTab,pCol,iReg);
+    columnDefaultUncommonCase(v,pTab,pCol);
   }
 #ifndef SQLITE_OMIT_FLOATING_POINT
   if( pCol->affinity==SQLITE_AFF_REAL ){
