@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2026-08-31T15:18:12.195
+C Fix\san\sSQLITE_CORRUPT\serror\sthat\scould\soccur\swith\san\sincremental\svacuum\sdatabase\sif\smany\stables\swere\screated\sand\sdropped\swithin\sa\ssingle\swal-mode\stransaction.
+D 2026-08-31T18:15:11.986
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -683,7 +683,7 @@ F src/auth.c b5ece4e1edccad082c0332fa0087df225473bae0feea9269f824312201377185
 F src/backup.c f6a1490f4ef86cca51f0f93158bbc140b5822406e0c50ec61731e3fcdc1242a2
 F src/bitvec.c e242d4496774dfc88fa278177dd23b607dce369ccafb3f61b41638eea2c9b399
 F src/btmutex.c 30dada73a819a1ef5b7583786370dce1842e12e1ad941e4d05ac29695528daea
-F src/btree.c 35c3ae30b645eb5c5142a383c7e9585f10b617b8f34de0e0d3a70e4dafac9ab9
+F src/btree.c 6a9bd6a311801b28f5c191ef5d5469ff8bac677f810a63a6708d761e0d1c19eb
 F src/btree.h 2ee0ddfdf4f8530ad1d46afffd7da21a0e243bfab10973011ac6f6b7fb4109a1
 F src/btreeInt.h df956bca48cd49d2a38886bc3b02045c039e8a16353f86fccd116c6487f79d82
 F src/build.c 0a160b40ea1f85b5a95e62310bbe2b944b8834a26c36f1f4b7f0f2c7e654f789
@@ -1303,7 +1303,7 @@ F test/incrblob_err.test 89372a28f1d98254f03fed705f9efcd34ef61a674df16d2dbb47269
 F test/incrblobfault.test de274b1e329169c2c3438f9528994807ea8201ebf38ae9f157d34bf3ec0cc549
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
 F test/incrvacuum.test 3fa6145f5e71f603554fd7b8ec3da4290b1341029682313285cb5f9e1893d6ba
-F test/incrvacuum2.test 7d26cfda66c7e55898d196de54ac4ec7d86a4e3d
+F test/incrvacuum2.test 74202bfb39326ce482064a4946dee11c6a9b5ad98008cca12c3daaccf9fdfc33
 F test/incrvacuum3.test 0bf0ffe7f2cbc87ba1d471e4bbadabbf10dacf8d4ee26b3a072708d575d637a9
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
 F test/index.test 9a060cbb12b70dd0e6bca0404106242703c0827ba58712f46b0d5a3b3968b341
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 43c8d7c41c3d8a2602ea0a7759c6b85eeca8640bc85024746e77eb58648f73a6
-R 1df23ea553d7d2c1e25a31e345a0bfd3
-U drh
-Z 01ba4d20a5c9aa3f3dce7a1131201de9
+P 40530cf21d1a0ad5e7e0a1023857de8c3a87a7177eba7d526cbfd08af3c80eab
+R d5cad551c398f1d191383d69fb18d8be
+U dan
+Z abd91bd642bd4ff4e646134474a16255
 # Remove this line to create a well-formed Fossil manifest.

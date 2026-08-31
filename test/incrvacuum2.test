@@ -210,4 +210,96 @@ if {[wal_is_capable]} {
   } [expr {32+3*(512+24)}]
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+if {[wal_is_capable]} {
+  do_execsql_test 5.0 {
+    PRAGMA page_size = 4096;
+    PRAGMA auto_vacuum = INCREMENTAL;
+    PRAGMA journal_mode = wal;
+  } {wal}
+  
+  do_test 5.1 {
+    execsql BEGIN
+    for {set ii 0} {$ii < 37} {incr ii} {
+      execsql "CREATE TABLE t$ii (a TEXT);"
+      if {$ii==0} {
+        execsql " INSERT INTO t0 VALUES( '[string repeat y 7000]' )"
+      }
+    }
+  
+    execsql " DELETE FROM t0"
+    for {set ii 0} {$ii < 37} {incr ii} {
+      execsql "DROP TABLE t$ii"
+    }
+    execsql COMMIT
+  } {}
+  
+  do_execsql_test 5.2 {
+    PRAGMA integrity_check;
+  } {ok}
+  
+  do_execsql_test 5.3 {
+    PRAGMA wal_checkpoint
+  } {0 40 40}
+  
+  reset_db
+  do_execsql_test 5.4 {
+    PRAGMA auto_vacuum = 0;
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = wal;
+    CREATE TABLE t1 (a TEXT);
+  } {wal}
+  
+  do_test 5.5 {
+    execsql BEGIN
+    execsql "INSERT INTO t1 VALUES( '[string repeat x 2000000]' )"
+    execsql "DELETE FROM t1"
+    execsql COMMIT
+  } {}
+  
+  do_execsql_test 5.6 {
+    PRAGMA integrity_check;
+  } {ok}
+  
+  do_execsql_test 5.7 {
+    PRAGMA wal_checkpoint
+  } {0 1964 1964}
+  
+  db close
+  sqlite3 db test.db
+  
+  do_execsql_test 5.8 {
+    PRAGMA integrity_check;
+  } {ok}
+  
+  sqlite3_test_control_pending_byte 0x1000000
+  reset_db
+  do_execsql_test 5.9 {
+    PRAGMA page_size = 65536;
+    PRAGMA auto_vacuum = INCREMENTAL;
+    PRAGMA journal_mode = wal;
+  } {wal}
+  
+  do_test 5.10 {
+    execsql BEGIN
+    for {set ii 0} {$ii < 10} {incr ii} {
+      execsql "CREATE TABLE t$ii (a TEXT);"
+    }
+    for {set ii 0} {$ii < 10} {incr ii} {
+      execsql "DROP TABLE t$ii"
+    }
+    execsql COMMIT
+  } {}
+  
+  do_execsql_test 5.11 {
+    PRAGMA integrity_check;
+  } {ok}
+  
+  do_execsql_test 5.12 {
+    PRAGMA wal_checkpoint
+  } {0 12 12}
+}
+
 finish_test

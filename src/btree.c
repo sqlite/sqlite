@@ -10428,6 +10428,9 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
       }
       pMove = 0;
       rc = btreeGetPage(pBt, maxRootPgno, &pMove, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerWrite(pMove->pDbPage);
+      }
       freePage(pMove, &rc);
       releasePage(pMove);
       if( rc!=SQLITE_OK ){
