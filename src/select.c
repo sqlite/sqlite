@@ -660,7 +660,10 @@ static int sqlite3ProcessJoin(Parse *pParse, Select *p){
       p->selFlags |= SF_OnToWhere;
     }
 
-    if( pRight->fg.isTabFunc && joinType==EP_OuterON && pRight->u1.pFuncArg ){
+    if( (pRight->fg.isTabFunc && joinType==EP_OuterON && pRight->u1.pFuncArg)
+     || (pLeft->fg.isTabFunc && pLeft->u1.pFuncArg
+         && pLeft->fg.jointype & JT_LTORJ)
+    ){
       p->selFlags |= SF_OnToWhere;
     }
   }
@@ -7468,7 +7471,7 @@ static SQLITE_NOINLINE void existsToJoin(
 typedef struct CheckOnCtx CheckOnCtx;
 struct CheckOnCtx {
   SrcList *pSrc;       /* SrcList for this context */
-  int iJoin;           /* Cursors must be left of this one, if not zero */
+  int iJoin;           /* Cursors must be left of this one, if not negative */
   int bFuncArg;        /* True for table-function arg */
   CheckOnCtx *pParent; /* Parent context */
 };
@@ -7501,11 +7504,11 @@ static int selectCheckOnClausesExpr(Walker *pWalker, Expr *pExpr){
     ** set it to the cursor number of the RHS of the join to which this
     ** ON expression was attached and then iterate through the entire 
     ** expression.  */
-    assert( pCtx->iJoin==0 || pCtx->iJoin==pExpr->w.iJoin );
-    if( pCtx->iJoin==0 ){
+    assert( pCtx->iJoin<0 || pCtx->iJoin==pExpr->w.iJoin );
+    if( pCtx->iJoin<0 ){
       pCtx->iJoin = pExpr->w.iJoin;
       sqlite3WalkExprNN(pWalker, pExpr);
-      pCtx->iJoin = 0;
+      pCtx->iJoin = -1;
       return WRC_Prune;
     }
   }
@@ -7523,7 +7526,7 @@ static int selectCheckOnClausesExpr(Walker *pWalker, Expr *pExpr){
       for(ii=0; ii<nSrc && pSrc->a[ii].iCursor!=iTab; ii++){}
       if( ii<nSrc ){
         /* pSrc is the FROM clause that contains iTab */
-        if( pCtx->iJoin ){
+        if( pCtx->iJoin>=0 ){
           for(ii--; ii>=0 && pSrc->a[ii].iCursor!=pCtx->iJoin; ii--){}
           if( ii>=0 ){
             /* Table iJoin appears to the left of table iTab in the SrcList.
@@ -7555,6 +7558,7 @@ static int selectCheckOnClausesSelect(Walker *pWalker, Select *pSelect){
     memset(&sCtx, 0, sizeof(sCtx));
     sCtx.pSrc = pSelect->pSrc;
     sCtx.pParent = pCtx;
+    sCtx.iJoin = -1;
     pWalker->u.pCheckOnCtx = &sCtx;
     sqlite3WalkSelect(pWalker, pSelect);
     pWalker->u.pCheckOnCtx = pCtx;
@@ -7580,6 +7584,7 @@ void sqlite3SelectCheckOnClauses(Parse *pParse, Select *pSelect){
   w.u.pCheckOnCtx = &sCtx;
   memset(&sCtx, 0, sizeof(sCtx));
   sCtx.pSrc = pSelect->pSrc;
+  sCtx.iJoin = -1;
   sqlite3WalkExpr(&w, pSelect->pWhere);
   pSelect->selFlags &= ~SF_OnToWhere;
 
@@ -7590,7 +7595,7 @@ void sqlite3SelectCheckOnClauses(Parse *pParse, Select *pSelect){
   for(ii=0; ii<pSelect->pSrc->nSrc; ii++){
     SrcItem *pItem = &pSelect->pSrc->a[ii];
     if( pItem->fg.isTabFunc
-     && (pItem->fg.jointype & JT_OUTER)
+     && (pItem->fg.jointype & (JT_OUTER|JT_LTORJ))
     ){
       sCtx.iJoin = pItem->iCursor;
       sqlite3WalkExprList(&w, pItem->u1.pFuncArg);

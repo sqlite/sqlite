@@ -1,5 +1,5 @@
-C Fix\sa\sbad\sinteraction\sbetween\sthe\sskip-ahead\sDISTINCT\soptimization\sand\s"ORDER\sBY\s...\sNULLS\sFIRST/LAST"\sclauses.\sReport\s[bugs:/info/2026-08-30T23:22:05Z\s|\s2026-08-30T23:22:05Z].
-D 2026-08-31T11:04:03.301
+C Return\san\serror\sif\sthe\sarguments\sof\sa\stable-valued\sfunction\sthat\sis\son\sthe\sleft\sof\sa\sRIGHT\sJOIN\sdepend\son\stables\sto\sthe\sright\sof\sit\sin\sthe\sFROM\sclause.\sReport\s[bugs:/info/2026-08-31T08:07:08Z\s|\s2026-08-31T08:07:08Z].
+D 2026-08-31T15:02:19.597
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -743,7 +743,7 @@ F src/printf.c 1ee57184d4b8f36333f6b5a9904984594b977798aaeee76a39103a99436e794c
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 0e0990f60c93db38c735d85e5d1741130e72dd0670aec204b5a39118b53c8044
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
-F src/select.c a962dd2573404110b438d9226494d57f71609cbc5f8365e40d1f8fa25e12f6aa
+F src/select.c b892e51e401fc0ba5b9943a3b91d0306113491f1755d65e824e087b663597962
 F src/shell.c.in 0489afff97ae362c2d2bfa463387ad5625481a3d1561f5ce5871179130bf92e1
 F src/sqlite.h.in efc3f7aa00a2bb01c087435e6fa5f86103e310e6c3ea072b12cc110cf2715a75
 F src/sqlite3.rc 015537e6ac1eec6c7050e17b616c2ffe6f70fca241835a84a4f0d5937383c479
@@ -1720,7 +1720,7 @@ F test/sync.test a619e407ede58a7b6e3e44375328628559fc9695a9c24c47cb5690a866b0031
 F test/sync2.test 06152269ed73128782c450c355988fe8dd794d305833af75e1a5e79edd4dae47
 F test/syscall.test a067468b43b8cb2305e9f9fe414e5f40c875bb5d2cba5f00b8154396e95fcf37
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test b2582f73ab1971265e66f3e98b5ff66eb79084d01987978bf3a228ed6f4638ed
+F test/tabfunc01.test 173820a340c9fa6591c5fd8ae7e60e405e324bca6f2fd5ae746568fc955fe1b7
 F test/table.test e87294bf1c80bfd7792142b84ab32ea5beb4f3f71e535d7fb263a6b2068377bf
 F test/tableapi.test e37c33e6be2276e3a96bb54b00eea7f321277115d10e5b30fdb52a112b432750
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -2219,8 +2219,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 9b75f0c3466a551ff24a21a4caac3e0b6b92768e025c603560929e374acf5ef3
-R 03f4c5ac482a45b9e3172d9792e20c6e
+P 7bfd3d6f80316f3d129a1e8c798be0a0efa8fbeb69d6958c1c2af9f4f6945a9e
+R b5a9f5799975ef6492eefb5b50c3404a
 U dan
-Z e6f143740bd3c4b64bd63a24b68d81e1
+Z a524f04826a3fa7a57a1d83f1226b8ae
 # Remove this line to create a well-formed Fossil manifest.

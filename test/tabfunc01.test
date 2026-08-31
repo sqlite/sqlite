@@ -800,6 +800,31 @@ do_execsql_test 1523ck {
 } {9223372036854775805 9223372036854775806 9223372036854775807}
 
 
+#------------------------------------------------------------------------
+#
+ifcapable json1 {
+  reset_db
+  do_execsql_test 1600 {
+    CREATE TABLE t0(c0 TEXT);
+    INSERT INTO t0 VALUES('[1,2,3]');
+  }
+  
+  do_execsql_test 1601 {
+    SELECT value FROM json_each(t0.c0), t0;
+  } {1 2 3}
+  
+  do_catchsql_test 1602 {
+    SELECT value
+      FROM json_each(t0.c0), t0 RIGHT JOIN (SELECT 1)
+      WHERE t0.c0 != 400
+  } {1 {table-function argument references tables to its right}}
+  
+  do_catchsql_test 1603 {
+    SELECT value FROM json_each(t0.c0), t0 RIGHT JOIN (SELECT 1);
+  } {1 {table-function argument references tables to its right}}
+}
+
+
 # Free up memory allocations
 intarray_addr
 int64array_addr
