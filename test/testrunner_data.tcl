@@ -451,7 +451,7 @@ proc trd_fuzztest_data {buildname bNoSan} {
   set lSessionDb [glob [file join $::testdir sessionfuzz-data*.db]]
   set sanBuilds {All-Debug Apple Have-Not Update-Delete-Limit}
 
-  if {$::tcl_platform(platform) eq "windows"} {
+  if {$::tcl_platform(os) eq "Windows NT"} {
     return [list fuzzcheck.exe $lFuzzDb]
   } else {
     set lRet [list [trd_get_bin_name fuzzcheck] $lFuzzDb]

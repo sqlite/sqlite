@@ -341,8 +341,8 @@ switch -nocase -glob -- $tcl_platform(os) {
       set TRG(platform)  cygwin
       set TRG(make)      make.sh
       set TRG(makecmd)   "bash make.sh"
-      set TRG(testfixture) testfixture
-      set TRG(shell)       sqlite3
+      set TRG(testfixture) testfixture.exe
+      set TRG(shell)       sqlite3.exe
       set TRG(run)       run.sh
       set TRG(runcmd)    "bash run.sh"
     }
