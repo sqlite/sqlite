@@ -1772,6 +1772,9 @@ static void generateSortTail(
     Table *pTab = pSort->aDefer[i].pTab;
     int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
     sqlite3OpenTable(pParse, pSort->aDefer[i].iCsr, iDb, pTab, OP_OpenRead);
+    sqlite3VdbeAddOp2(v, OP_Rewind, pSort->aDefer[i].iCsr,
+                      sqlite3VdbeCurrentAddr(v)+1);
+    VdbeCoverage(v);
     nRefKey = MAX(nRefKey, pSort->aDefer[i].nKey);
   }
 #endif

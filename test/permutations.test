@@ -1100,7 +1100,7 @@ test_suite "sorterref" -prefix "" -description {
 ] -initialize {
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_sorterref 0
+  sqlite3_config_sorterref 50
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {

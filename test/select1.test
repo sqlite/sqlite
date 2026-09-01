@@ -1231,4 +1231,16 @@ do_execsql_test select1-22.4 {
   SELECT a FROM t1 UNION SELECT b FROM t2 LIMIT 2;
 } {1 2}
 
+# Bug 2026-09-01T01:34:02Z
+#
+do_execsql_test select1-23.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(xx,yy CHAR(100));
+  INSERT INTO t1(xx) VALUES(0);
+  SELECT COUNT() FROM t1 AS a0
+   WHERE (SELECT a0.yy FROM t1
+           WHERE a0.xx LIKE '' ORDER BY 8000000000 )
+   ORDER BY 8000000000;
+} 0
+
 finish_test
