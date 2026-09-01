@@ -216,7 +216,7 @@ set pragma_def {
 
   NAME: data_store_directory
   FLAG: NoColumns1
-  IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_OS_WIN
+  IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && defined(_WIN32)
 
   NAME: lock_proxy_file
   FLAG: NoColumns1

@@ -339,7 +339,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   zIn = sqlite3_sql(pStmt);
   if( zIn==0 ) return 0;
   nIn = strlen(zIn);
-  while( nIn>0 && (isspace(zIn[nIn-1]) || zIn[nIn-1]==';') ) nIn--;
+  while( nIn>0 && (isspace((unsigned char)zIn[nIn-1]) || zIn[nIn-1]==';') ) nIn--;
   if( strchr(zIn, '?') ) return 0;
   pTest = sqlite3_str_new(0);
   sqlite3_str_appendf(pTest, "SELECT %s* FROM (",  
@@ -357,8 +357,8 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     const char *zColName = sqlite3_column_name(pBase,i);
     const char *zSuffix = zColName ? strrchr(zColName, ':') : 0;
     if( zSuffix 
-     && isdigit(zSuffix[1])
-     && (zSuffix[1]>'3' || isdigit(zSuffix[2]))
+     && isdigit((unsigned char)zSuffix[1])
+     && (zSuffix[1]>'3' || isdigit((unsigned char)zSuffix[2]))
     ){
       /* This is a randomized column name and so cannot be used in the
       ** WHERE clause. */

@@ -196,7 +196,7 @@ do_test 2.1.1 {
 
 # Test symbolic links.
 #
-if {$tcl_platform(platform)=="unix"} {
+if {$tcl_platform(os) ne "Windows NT"} {
   populate_dir ar2 {
     file1 "1234" 
     file2 "3456"
