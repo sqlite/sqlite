@@ -1,5 +1,5 @@
-C Cygwin\sportability\spatches\sfrom\sJan\sNijtmans.
-D 2026-09-01T17:50:43.487
+C When\s-DSQLITE_DEBUG\sor\s-DSQLITE_ENABLE_WALSTAT\sis\sused,\sprovide\sthe\nsqlite_walstat()\sSQL\sfunction\sthat\sprovides\sstate\sinformation\sabout\sthe\nWAL\ssubsystem.\s\sUsed\sfor\sdebugging\sonly.\s\sFunction\ssubject\sto\schange\sor\nremoval.
+D 2026-09-02T12:39:06.762
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -697,7 +697,7 @@ F src/delete.c 59eeca3fb88c29329afc41bb803ee568b120d9dd7470b5f38ab55cc38390b451
 F src/expr.c e312efc69da66f6f0fe91f6cecc5024aa9d0797d232ba4d5032558ed4458f841
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 26788ae6c785d70f9829c4176e9764447014fc73e6ba31e9f1881720a64ae7f1
-F src/func.c 830e012d0aa60925e76d597a8f4cc45e14c19cdc643dfc97e7dda26d92dee5b5
+F src/func.c 1a5fdec75485222cdf0410fac07b9d31b0553d0c65fada6fd1d3faf4bb0112a4
 F src/global.c 7eea537ac0c113ac55cb2dd4d8fc2a6a91ae478be34231b4efaffc46817fee85
 F src/hash.c 03c8c0f4be9e8bcb6de65aa26d34a61d48a9430747084a69f9469fbb00ea52ca
 F src/hash.h 46b92795a95bfefb210f52f0c316e9d7cdbcdd7e7fcfb0d8be796d3a5767cddf
@@ -731,8 +731,8 @@ F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae
 F src/os_unix.c 5ccac2954679efc003330a5686cd2048ec9059f90f54f43900e60877e9158aa7
 F src/os_win.c 1227a3e962b017d676d985a8aec0d64f273991931ea0a0b99773651102f62df4
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
-F src/pager.c 55fecb3d8f2c9bd751109aca1df554f3ab3f2ab1c04a7fd99478cb724d73f8b4
-F src/pager.h 6137149346e6c8a3ddc1eeb40aee46381e9bc8b0fcc6dda8a1efde993c2275b8
+F src/pager.c fd9ca8fe01b09c490e66a440e2f56648d489ccb9e0e3b5508424079b046fc824
+F src/pager.h 53cabc1fd881a9c078eab7db6c233bc0ed29d8938fc05585f0e75e80d905d308
 F src/parse.y d5a3c5b0277a441c38b35071c05e2b61ff5fc918a63309c809f4b6706179c320
 F src/pcache.c 588cc3c5ccaaadde689ed35ce5c5c891a1f7b1f4d1f56f6cf0143b74d8ee6484
 F src/pcache.h 00c5797ddf546ee0fe2828d7f75d1afbf1b40ba054f362905326c5ccca15e60c
@@ -822,8 +822,8 @@ F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 1fa9e01d3da114a634a6ba1f36de8a3af6381b675cbbca399f0de64934e50ac6
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
-F src/wal.c d8eae4a293cecc250141061a0064b9b016939ea2d9beb25e8f162d7faf4b9309
-F src/wal.h ba252daaa94f889f4b2c17c027e823d9be47ce39da1d3799886bbd51f0490452
+F src/wal.c 8124330a8702418202a3653712e03702ab0562e9bd9aa19ffe77067565ea8f5d
+F src/wal.h c6251cfc1950643a976625ca452e46dc9b466b4f5dd2e85f244f29f79bf68ace
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 717331794a92c00151b080c2c44de592720d26d03ea50de34e3fab05ab09ba61
 F src/whereInt.h f039ad303bc2913de673e431821ef8db3b619d249e6e5548d90072a684e72285
@@ -2220,9 +2220,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 53a9312cc923073066d697a0038e647d83a17ad0730dd91033e8fe7435fcc8df f8306cd54d28ceda631ce9053d94df2bb28cffccce2a7e72d088b4b1f2a0d3ed
-R 54e4ee7cba2ce500fc9c10968cdbfd3c
-T +closed f8306cd54d28ceda631ce9053d94df2bb28cffccce2a7e72d088b4b1f2a0d3ed Closed\sby\sintegrate-merge.
-U stephan
-Z e7ae0ad764f67022362fa0b091065217
+P c76e64373cca884ab47ea24f8df3cedcdc823ccf3484e9b78715154f6d1ea66f
+R 2d1ce33cb2d779c5d5c57e14c35ffcbc
+U drh
+Z 9a2c2b5126acb895a729e0270509945a
 # Remove this line to create a well-formed Fossil manifest.

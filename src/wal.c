@@ -4652,4 +4652,62 @@ sqlite3_file *sqlite3WalFile(Wal *pWal){
   return pWal->pWalFd;
 }
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_WALSTAT)
+/*
+** Helper function to sqlite3WalStat().
+**
+** Append JSON-5 structure elements onto describing the current state
+** of pWal onto the end of pStr.  This function is for debugging and
+** analysis only and is not included in production builds.
+*/
+static void walIndexHdrStat(volatile WalIndexHdr *pHdr, sqlite3_str *pStr){
+  sqlite3_str_appendf(pStr, "iVersion:%u",pHdr->iVersion);
+  sqlite3_str_appendf(pStr, ",iChange:%u",pHdr->iChange);
+  sqlite3_str_appendf(pStr, ",isInit:%u",pHdr->isInit);
+  sqlite3_str_appendf(pStr, ",bigEndCksum:%u",pHdr->bigEndCksum);
+  sqlite3_str_appendf(pStr, ",szPage:%u",pHdr->szPage);
+  sqlite3_str_appendf(pStr, ",mxFrame:%u",pHdr->mxFrame);
+  sqlite3_str_appendf(pStr, ",nPage:%u",pHdr->nPage);
+#if 0  /* Not often needed.  Declutter. */
+  sqlite3_str_appendf(pStr, ",aFrameCksum:[0x%08x,0x%08x]",
+                      pHdr->aFrameCksum[0], pHdr->aFrameCksum[1]);
+  sqlite3_str_appendf(pStr, ",aSalt:[0x%08x,0x%08x]",
+                      pHdr->aSalt[0], pHdr->aSalt[1]);
+  sqlite3_str_appendf(pStr, ",aCksum:[0x%08x,0x%08x]",
+                      pHdr->aCksum[0], pHdr->aCksum[1]);
+#endif
+}
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_WALSTAT */
+
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_WALSTAT)
+/*
+** Append JSON-5 structure elements onto describing the current state
+** of pWal onto the end of pStr.  This function is for debugging and
+** analysis only and is not included in production builds.
+*/
+void sqlite3WalStat(Wal *pWal, sqlite3_str *pStr){
+  SEH_TRY {
+    int i;
+    volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+    volatile WalIndexHdr *pHdr = walIndexHdr(pWal);
+    sqlite3_str_appendf(pStr, "hdr0:{");
+    walIndexHdrStat(pHdr,pStr);
+    sqlite3_str_appendf(pStr, "},ckpt:{");
+    sqlite3_str_appendf(pStr, "nBackfill:%u",pInfo->nBackfill);
+    sqlite3_str_appendf(pStr, ",aReadMark:[%u", pInfo->aReadMark[0]);
+    for(i=1; i<WAL_NREADER; i++){
+      sqlite3_str_appendf(pStr, ",%u", pInfo->aReadMark[i]);
+    }
+    sqlite3_str_appendf(pStr, "],nBackfillAttempted:%u}", 
+                        pInfo->nBackfillAttempted);
+
+    sqlite3_str_appendf(pStr, ",nWiData:%d", pWal->nWiData);
+    sqlite3_str_appendf(pStr, ",readLock:%d", pWal->readLock);
+    sqlite3_str_appendf(pStr, ",minFrame:%u", pWal->minFrame);
+  }
+  SEH_EXCEPT( ; )
+}
+#endif /* SQLITE_DEBUG || SQLITE_ENABLE_WALSTAT */
+
 #endif /* #ifndef SQLITE_OMIT_WAL */
