@@ -1,5 +1,5 @@
-C Enhance\sthe\sWAL\scheckpoint\salgorithm\sto\srun\sfaster\sand\suse\sless\smemory\nif\sthe\sWAL\sfile\sis\slarger\sthan\sthe\sdatabase\sfile.
-D 2026-09-03T18:37:25.313
+C On\sWindows,\suse\sthe\sGetDriveTypeW()\sinterface\sto\sdetect\snetwork\sfilesystems\nand\salways\suse\sa\ssingle\sshared\sfile\shandle\sfor\sthe\s-shm\sfiles\son\ssuch\nfilesystems.
+D 2026-09-03T19:56:36.548
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -729,7 +729,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 5ccac2954679efc003330a5686cd2048ec9059f90f54f43900e60877e9158aa7
-F src/os_win.c 1227a3e962b017d676d985a8aec0d64f273991931ea0a0b99773651102f62df4
+F src/os_win.c eabdab13f20ae16bf4e18c3ec89cc53627343dfaf44a1affbf718567c23ed249
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fd9ca8fe01b09c490e66a440e2f56648d489ccb9e0e3b5508424079b046fc824
 F src/pager.h 53cabc1fd881a9c078eab7db6c233bc0ed29d8938fc05585f0e75e80d905d308
@@ -2220,9 +2220,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ac094ec69b9b726985d2fdb82062f098e77c427539cdf5b07ee15dd8427cba66 f690f5b1487083fde158a9dcd1f61c67821ed163726e07f1f42585e979b0462d
-R e75fbab533c8c8b3fa3266c0c9e694ba
-T +closed f690f5b1487083fde158a9dcd1f61c67821ed163726e07f1f42585e979b0462d
+P 630ab4b6bd4497d4d09e3910f8a95908d19b0a0ab0da4bfe9c3f22e613411523
+R 647397ac8363bcf6f25b8c5d53a6017a
 U drh
-Z 7f35250b36cc57f279af568bdc0046b3
+Z 82751fa77902aba28aaed1b0914fa76e
 # Remove this line to create a well-formed Fossil manifest.
