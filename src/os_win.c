@@ -2991,24 +2991,20 @@ static int winShmMutexHeld(void) {
 **      zFilename
 **      hSharedShm
 **      mutex
-**      bUseSharedLockHandle
 **
 ** Either winShmNode.mutex must be held or winShmNode.pWinShmList==0 and
 ** winShmMutexHeld() is true when reading or writing any other field
 ** in this structure.
 **
-** File-handle hSharedShm is always used to (a) take the DMS lock, (b) 
+** File-handle hSharedShm is always used to (a) take all locks, (b) 
 ** truncate the *-shm file if the DMS-locking protocol demands it, and 
 ** (c) map regions of the *-shm file into memory using MapViewOfFile() 
-** or similar. If bUseSharedLockHandle is true, then other locks are also 
-** taken on hSharedShm. Or, if bUseSharedLockHandle is false, then other 
-** locks are taken using each connection's winShm.hShm handles.
+** or similar.
 */
 struct winShmNode {
   sqlite3_mutex *mutex;      /* Mutex to access this object */
   char *zFilename;           /* Name of the file */
   HANDLE hSharedShm;         /* File handle open on zFilename */
-  int bUseSharedLockHandle;  /* True to use hSharedShm for everything */
 
   int isUnlocked;            /* DMS lock has not yet been obtained */
   int isReadonly;            /* True if read-only */
@@ -3045,8 +3041,6 @@ struct winShm {
   winShmNode *pShmNode;      /* The underlying winShmNode object */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
-  HANDLE hShm;               /* File-handle on *-shm file. For locking. */
-  int bReadonly;             /* True if hShm is opened read-only */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
   u8 id;                     /* Id of this connection with its winShmNode */
 #endif
@@ -3222,9 +3216,6 @@ static int winCloseSharedMemory(winFile *pDbFd, int deleteFlag){
 
   p = pDbFd->pShm;
   if( p==0 ) return SQLITE_OK;
-  if( p->hShm!=INVALID_HANDLE_VALUE ){
-    osCloseHandle(p->hShm);
-  }
 
   winShmEnterMutex();
   pShmNode = p->pShmNode;
@@ -3242,46 +3233,6 @@ static int winCloseSharedMemory(winFile *pDbFd, int deleteFlag){
   sqlite3_free(p);
   pDbFd->pShm = 0;
   return SQLITE_OK;
-}
-
-/*
-** testfixture builds may set this global variable to true via a
-** Tcl interface. This forces the VFS to use the locking normally
-** only used for UNC paths for all files.
-*/
-#ifdef SQLITE_TEST
-int sqlite3_win_test_unc_locking = 0;
-#else
-# define sqlite3_win_test_unc_locking 0
-#endif
-
-/*
-** Return true if the string passed as the only argument is likely
-** to be a UNC path.  Return false if not.
-**
-** Return true if:
-**
-**   (1) The name begins with "\\"
-**   (2) But does not begin with "\\?\C:\" where C can be any alphabetic
-**       character.
-**
-** For testing, also return true in all cases if the global variable
-** sqlite3_win_test_unc_locking is true.
-*/
-static int winIsUNCPath(const char *zFile){
-  if( zFile[0]=='\\' && zFile[1]=='\\' ){
-    if( zFile[2]=='?'
-     && zFile[3]=='\\'
-     && sqlite3Isalpha(zFile[4])
-     && zFile[5]==':'
-     && winIsDirSep(zFile[6])
-    ){
-      return sqlite3_win_test_unc_locking;
-    }else{
-      return 1;
-    }
-  }
-  return sqlite3_win_test_unc_locking;
 }
 
 /*
@@ -3309,7 +3260,6 @@ static int winOpenSharedMemory(winFile *pDbFd){
   pNew->zFilename = (char*)&pNew[1];
   pNew->hSharedShm = INVALID_HANDLE_VALUE;
   pNew->isUnlocked = 1;
-  pNew->bUseSharedLockHandle = winIsUNCPath(pDbFd->zPath);
   sqlite3_snprintf(nName+15, pNew->zFilename, "%s-shm", pDbFd->zPath);
   sqlite3FileSuffix3(pDbFd->zPath, pNew->zFilename);
 
@@ -3371,18 +3321,6 @@ static int winOpenSharedMemory(winFile *pDbFd){
   assert( rc!=SQLITE_OK || pShmNode->isUnlocked==0 || pShmNode->nRegion==0 );
   winShmLeaveMutex();
   sqlite3_free(pNew);
-
-  /* Open a file-handle on the *-shm file for this connection. This file-handle
-  ** is only used for locking. The mapping of the *-shm file is created using
-  ** the shared file handle in winShmNode.hSharedShm.  */
-  if( rc==SQLITE_OK && pShmNode->bUseSharedLockHandle==0 ){
-    p->bReadonly = sqlite3_uri_boolean(pDbFd->zPath, "readonly_shm", 0);
-    rc = winHandleOpen(pShmNode->zFilename, &p->bReadonly, &p->hShm);
-    if( rc!=SQLITE_OK ){
-      assert( p->hShm==INVALID_HANDLE_VALUE );
-      winCloseSharedMemory(pDbFd, 0);
-    }
-  }
 
   return rc;
 }
@@ -3464,7 +3402,7 @@ static int winShmLock(
    || (flags==(SQLITE_SHM_SHARED|SQLITE_SHM_LOCK) && 0==(p->sharedMask & mask))
    || (flags==(SQLITE_SHM_EXCLUSIVE|SQLITE_SHM_LOCK))
   ){
-    HANDLE h = p->hShm;
+    HANDLE h;
 
     if( flags & SQLITE_SHM_UNLOCK ){
       /* Case (a) - unlock.  */
@@ -3474,21 +3412,19 @@ static int winShmLock(
       assert( !(flags & SQLITE_SHM_SHARED) || (p->sharedMask & mask)==mask );
 
       assert( !(flags & SQLITE_SHM_SHARED) || n==1 );
-      if( pShmNode->bUseSharedLockHandle ){
-        h = pShmNode->hSharedShm;
-        if( flags & SQLITE_SHM_SHARED ){
-          winShm *pShm;
-          sqlite3_mutex_enter(pShmNode->mutex);
-          for(pShm=pShmNode->pWinShmList; pShm; pShm=pShm->pWinShmNext){
-            if( pShm!=p && (pShm->sharedMask & mask) ){
-              /* Another connection within this process is also holding this
-              ** SHARED lock. So do not actually release the OS lock.  */
-              h = INVALID_HANDLE_VALUE;
-              break;
-            }
+      h = pShmNode->hSharedShm;
+      if( flags & SQLITE_SHM_SHARED ){
+        winShm *pShm;
+        sqlite3_mutex_enter(pShmNode->mutex);
+        for(pShm=pShmNode->pWinShmList; pShm; pShm=pShm->pWinShmNext){
+          if( pShm!=p && (pShm->sharedMask & mask) ){
+            /* Another connection within this process is also holding this
+            ** SHARED lock. So do not actually release the OS lock.  */
+            h = INVALID_HANDLE_VALUE;
+            break;
           }
-          sqlite3_mutex_leave(pShmNode->mutex);
         }
+        sqlite3_mutex_leave(pShmNode->mutex);
       }
 
       if( h!=INVALID_HANDLE_VALUE ){
@@ -3503,28 +3439,26 @@ static int winShmLock(
     }else{
       int bExcl = ((flags & SQLITE_SHM_EXCLUSIVE) ? 1 : 0);
       DWORD nMs = winFileBusyTimeout(pDbFd);
+      winShm *pShm;
 
-      if( pShmNode->bUseSharedLockHandle ){
-        winShm *pShm;
-        h = pShmNode->hSharedShm;
-        sqlite3_mutex_enter(pShmNode->mutex);
-        for(pShm=pShmNode->pWinShmList; pShm; pShm=pShm->pWinShmNext){
-          if( bExcl ){
-            if( (pShm->sharedMask|pShm->exclMask) & mask ){
-              rc = SQLITE_BUSY;
-              h = INVALID_HANDLE_VALUE;
-            }
-          }else{
-            if( pShm->sharedMask & mask ){
-              h = INVALID_HANDLE_VALUE;
-            }else if( pShm->exclMask & mask ){
-              rc = SQLITE_BUSY;
-              h = INVALID_HANDLE_VALUE;
-            }
+      h = pShmNode->hSharedShm;
+      sqlite3_mutex_enter(pShmNode->mutex);
+      for(pShm=pShmNode->pWinShmList; pShm; pShm=pShm->pWinShmNext){
+        if( bExcl ){
+          if( (pShm->sharedMask|pShm->exclMask) & mask ){
+            rc = SQLITE_BUSY;
+            h = INVALID_HANDLE_VALUE;
+          }
+        }else{
+          if( pShm->sharedMask & mask ){
+            h = INVALID_HANDLE_VALUE;
+          }else if( pShm->exclMask & mask ){
+            rc = SQLITE_BUSY;
+            h = INVALID_HANDLE_VALUE;
           }
         }
-        sqlite3_mutex_leave(pShmNode->mutex);
       }
+      sqlite3_mutex_leave(pShmNode->mutex);
 
       if( h!=INVALID_HANDLE_VALUE ){
         rc = winHandleLockTimeout(h, ofst+WIN_SHM_BASE, n, bExcl, nMs);

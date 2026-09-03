@@ -1,5 +1,5 @@
-C When\s-DSQLITE_DEBUG\sor\s-DSQLITE_ENABLE_WALSTAT\sis\sused,\sprovide\sthe\nsqlite_walstat()\sSQL\sfunction\sthat\sprovides\sstate\sinformation\sabout\sthe\nWAL\ssubsystem.\s\sUsed\sfor\sdebugging\sonly.\s\sFunction\ssubject\sto\schange\sor\nremoval.
-D 2026-09-02T12:39:06.762
+C On\swindows,\smultiple\sopen\sconnections\sto\sa\sWAL-mode\sdatabase\sfrom\sa\ssingle\nprocess\snow\sshare\sthe\ssame\sfile\shandle\sfor\sthe\s*-shm\sfile.
+D 2026-09-03T13:11:55.419
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -729,7 +729,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 5ccac2954679efc003330a5686cd2048ec9059f90f54f43900e60877e9158aa7
-F src/os_win.c 1227a3e962b017d676d985a8aec0d64f273991931ea0a0b99773651102f62df4
+F src/os_win.c f8f7f0c9db63a052eba576afc9dae1c8bc542558f5e861942adf4b1815ea1e3e
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fd9ca8fe01b09c490e66a440e2f56648d489ccb9e0e3b5508424079b046fc824
 F src/pager.h 53cabc1fd881a9c078eab7db6c233bc0ed29d8938fc05585f0e75e80d905d308
@@ -754,7 +754,7 @@ F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ed8f7cd15cf56e05a31270d002598f349c1c17f5a21b9f8b55688a519f633ec6
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c 6bb9bee04156c0bead88369d24d1bc0055bb15592402592eb232ef02ffd09198
+F src/test1.c ec23bbe393bbe5212948c2b927e2b0b16e9c0a783d4c49ab1db52555f5108801
 F src/test2.c a61ed01d9264a1db74ab42fbc981fc66165f85d5e3947e92be61a73e79ec4f2d
 F src/test3.c c959fe0c3b04157483f5a6fa1950c1f222e062d920fee0a8e70410c6b6d45522
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -1523,7 +1523,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test 8a801d2b8e4b0ebb99701f026a67a9e84634c8aa24799a842c44003b93250da1
 F test/pendingrace.test e99efc5ab3584da3dfc8cd6a0ec4e5a42214820574f5ea24ee93f1d84655f463
 F test/percentile.test fd78896fa882fa4fbf693640097859721f3629926c2ccf804af5bcb7001fd35b
-F test/permutations.test 1fd848d38291131d0c7eed41321311ee5d58ae5b7ce6f37a3d79ebaff7e1b95c
+F test/permutations.test 2a091d0468424eb2b79904ffed890ff326ef47b93c458ccf373fce3f95ab91da
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 7d07b7bb76e273215d6a20c4f83c3062cc28976c737ccb70a686025801e86c8f
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -2220,8 +2220,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P c76e64373cca884ab47ea24f8df3cedcdc823ccf3484e9b78715154f6d1ea66f
-R 2d1ce33cb2d779c5d5c57e14c35ffcbc
+P 789d84e69171ef05d36486c38fbb0db10f8d827d9941472a2809f3113503e6c4
+R c643731a84a650fe52e1238cc7f306f3
+T *branch * win-shared-shm
+T *sym-win-shared-shm *
+T -sym-trunk *
 U drh
-Z 9a2c2b5126acb895a729e0270509945a
+Z 4f966006c87749f0485c8dd1e49ea0b5
 # Remove this line to create a well-formed Fossil manifest.
