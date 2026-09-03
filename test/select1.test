@@ -1243,4 +1243,18 @@ do_execsql_test select1-23.1 {
    ORDER BY 8000000000;
 } 0
 
+# Bug 2026-09-03T02:29:56Z
+#
+do_execsql_test select1-24.1 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  CREATE TABLE t1(x INT);
+  CREATE INDEX t1x ON t1(x);
+  CREATE TABLE t2(y TEXT);
+  INSERT INTO t2 VALUES('01');
+  SELECT typeof(y), EXISTS(SELECT 1 FROM t1 WHERE x=y), typeof(y)
+    FROM t2
+   GROUP BY y;
+} {text 0 text}
+
 finish_test
