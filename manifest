@@ -1,5 +1,5 @@
-C When\scheckpointing,\suse\sa\smapping\sfrom\spgno\sto\sframe\sinstead\sof\sthe\ssorted\slist\sof\sframe/pgno\spairs\sin\scases\swhere\sthis\swill\suse\sless\smemory.
-D 2026-09-03T14:45:41.450
+C Improve\sthe\sdocumentation\sof\sthe\sWalIterator\sobject\sand\sthe\snew\spagemap\nalgorithm.\s\sRemove\sone\sunnecessary\sconditional.
+D 2026-09-03T18:26:53.404
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -822,7 +822,7 @@ F src/vdbetrace.c 49e689f751505839742f4a243a1a566e57d5c9eaf0d33bbaa26e2de3febf7b
 F src/vdbevtab.c fc46b9cbd759dc013f0b3724549cc0d71379183c667df3a5988f7e2f1bd485f3
 F src/vtab.c 1fa9e01d3da114a634a6ba1f36de8a3af6381b675cbbca399f0de64934e50ac6
 F src/vxworks.h 9d18819c5235b49c2340a8a4d48195ec5d5afb637b152406de95a9436beeaeab
-F src/wal.c 35cf86afedeff7e093358ca8fdf31e23f747d155eb8d65be065a4e7c43701ae1
+F src/wal.c 41438914e455bbc42ccff8545eab4c711f91233e480337e44a3d5fdf121fce74
 F src/wal.h c6251cfc1950643a976625ca452e46dc9b466b4f5dd2e85f244f29f79bf68ace
 F src/walker.c d5006d6b005e4ea7302ad390957a8d41ed83faa177e412f89bc5600a7462a014
 F src/where.c 717331794a92c00151b080c2c44de592720d26d03ea50de34e3fab05ab09ba61
@@ -2220,11 +2220,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 789d84e69171ef05d36486c38fbb0db10f8d827d9941472a2809f3113503e6c4
-R 0b558490a350d1a2751554bd844ca2c3
-T *branch * pagemap-checkpoint
-T *sym-pagemap-checkpoint *
-T -sym-trunk *
-U dan
-Z 9188279066c8596e85d377f21a6c9942
+P ec3d33931be807ba77296397775f2d88228d4200ed23e54962d2592ddff37979
+R f7d01afe083cba83456db34833f65bcd
+U drh
+Z d6d208cd5260b0abc28c325ce271d5be
 # Remove this line to create a well-formed Fossil manifest.

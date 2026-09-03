@@ -588,14 +588,35 @@ typedef u16 ht_slot;
 **
 ** This functionality is used by the checkpoint code (see walCheckpoint()).
 **
-** nPagemap:
-**   If this is non-zero, then the iterator struct is used in a different
-**   way. In this case, it is always true that nSegment==1 and that
-**   aSegment[0].aPgno points to an array containing one entry for each
-**   page in the database file. If the entry is 0, then the corresponding
-**   page is not present in the wal file. Or, if the entry is non-zero,
-**   then it is the frame number of the last (newest) frame in the wal file 
-**   that contains a version of the corresponding page.
+** There are two possible algorithms:
+**
+**   WALITER-1     Load all pages mentioned in the WAL file and sort them,
+**                 then hand them back out in sorted order as requested by
+**                 walIteratorNext().  nPagemap==0 for this algorithm.
+**
+**   WALITER-2     Create a map of all database file pages and record the
+**                 last WAL file frame that updates that page.  Then walk
+**                 through the map in acsending order and return all
+**                 non-zero entries. nPagemap is positive for this algorithm.
+**
+** Either algorithm should work for any database and WAL file, however
+** algorithm WALITER-1 is faster and uses less memory when the database is
+** larger than the WAL file and algorithm WALITER-2 is faster and uses
+** less memory when the WAL file is larger than the database, modulo a
+** constant of proportionality.  The walIteratorInit() routine selects
+** the best algorithm for each situation.  WALITER-2 was added for
+** SQLite 3.54.0.  Prior to that, WALITER-1 was used always.
+** 
+** For algorithm WALITER-2, nPagemap stores the number of pages in the
+** database file, nSegment==1, and aSegment[0].aPgno[] is the page map array
+** that is nPagemap+1 entries in length.  The value of aSegment[0].aPgno[PGNO]
+** is the frame number of the last (newest) entry for page PGNO in the WAL
+** file, or 0 if PGNO is not in the WAL file.  (Aside: There is no page
+** number 0 in a well-formed database, so the memory allocation is arranged
+** such that aSegment[0].aPgno[0] and aSegment[0].iZero are aliases for the
+** same four bits of memory.  This saves us from having to use -1 and +1
+** offsets to translate between 1-based SQLite page numbers and 0-based
+** C-language index numbers.  tag-20260903-1)
 */
 struct WalIterator {
   u32 iPrior;                     /* Last result returned from the iterator */
@@ -1780,6 +1801,7 @@ static int walIteratorNext(
   u32 iRet = 0xFFFFFFFF;        /* 0xffffffff is never a valid page number */
 
   if( p->nPagemap ){
+    /* Algorithm WALITER-2 */
     while( p->iPrior<p->nPagemap ){
       p->iPrior++;
       if( p->aSegment[0].aPgno[p->iPrior] ){
@@ -1789,6 +1811,7 @@ static int walIteratorNext(
       }
     }
   }else{
+    /* Algorithm WALITER-1 */
     u32 iMin;                     /* Result pgno must be greater than iMin */
     int i;                        /* For looping through segments */
 
@@ -1982,11 +2005,11 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   int nSegment;                   /* Number of segments to merge */
   u32 iLast;                      /* Last frame in log */
   sqlite3_int64 nByte;            /* Number of bytes to allocate */
-  sqlite3_int64 nExtra;          /* Number of bytes to allocate */
+  sqlite3_int64 nExtra;           /* Number of bytes to allocate */
   int i;                          /* Iterator variable */
   ht_slot *aTmp = 0;              /* Temp space used by merge-sort */
   int rc = SQLITE_OK;             /* Return Code */
-  int bPagemap = 0;
+  int eAlg;                       /* Which algorithm to use.  1 or 2 */
 
   /* This routine only runs while holding the checkpoint lock. And
   ** it only runs if there is actually content in the log (mxFrame>0).  */
@@ -1998,16 +2021,15 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   iZero = iFirstPage ? (HASHTABLE_NPAGE_ONE+(iFirstPage-1)*HASHTABLE_NPAGE) : 0;
 
   if( (iLast-iZero)*sizeof(ht_slot)>pWal->hdr.nPage*sizeof(u32) ){
-    /* In this case it would require more memory to use the normal 
-    ** WalIterator scheme than it would to simply create a map from
-    ** page-number -> frame-number with an entry for each page in
-    ** the database. So do that instead. */
+    /* Algorithm WALITER-2 */
     nSegment = 1;
-    bPagemap = 1;
+    eAlg = 2;
     nByte = SZ_WALITERATOR(nSegment) + pWal->hdr.nPage * sizeof(u32);
     nExtra = 0;
   }else{
+    /* Algorithm WALITER-1 */
     nSegment = iLastPage - iFirstPage + 1;
+    eAlg = 1;
     nByte = SZ_WALITERATOR(nSegment) + (iLast-iZero)*sizeof(ht_slot);
     nExtra = sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast);
   }
@@ -2019,9 +2041,11 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   }
   memset(p, 0, nByte);
   p->nSegment = nSegment;
-  if( bPagemap ){
+  if( eAlg==2 ){
     p->nPagemap = pWal->hdr.nPage;
     p->aSegment[0].aPgno = ((u32*)&p->aSegment[1]) - 1;
+    assert( (u8*)&(p->aSegment[0].aPgno[0]) == (u8*)&(p->aSegment[0].iZero) );
+    /* ^-- verifies tag-20260903-1 */
   }else{
     aTmp = (ht_slot*)&(((u8*)p)[nByte]);
   }
@@ -2041,11 +2065,11 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
         nEntry = (int)((u32*)sLoc.aHash - (u32*)sLoc.aPgno);
       }
 
-      if( bPagemap ){
+      if( eAlg==2 ){
         u32 *aPagemap = p->aSegment[0].aPgno;
         for(j=0; j<nEntry; j++){
           u32 pgno = sLoc.aPgno[ j ];
-          if( pgno!=0 && pgno<=p->nPagemap ){
+          if( pgno<=p->nPagemap ){
             aPagemap[pgno] = sLoc.iZero + j + 1;
           }
         }
