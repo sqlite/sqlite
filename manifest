@@ -1,5 +1,5 @@
-C On\swindows,\smultiple\sopen\sconnections\sto\sa\sWAL-mode\sdatabase\sfrom\sa\ssingle\nprocess\snow\sshare\sthe\ssame\sfile\shandle\sfor\sthe\s*-shm\sfile.
-D 2026-09-03T13:11:55.419
+C Remove\sa\sresidual\s"win_unc_locking"\sdetail\sfrom\sthe\stestrunner\slogic.
+D 2026-09-03T13:14:55.032
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1736,7 +1736,7 @@ F test/temptrigger.test a00f258ed8d21a0e8fd4f322f15e8cfb5cef2e43655670e07a753e3f
 F test/tester.tcl dfd8dd05b54bc493a8db6cc1263ee364c36e3c27fab258dad7305cd79b948f3f
 F test/testloadext.c 862b848783eaed9985fbce46c65cd214664376b549fae252b364d5d1ef350a27
 F test/testrunner.tcl 926a31b398846af738f6cb2f1fc8ca6a62ea17bd4312af7b6ed9652f3db67230 x
-F test/testrunner_data.tcl 72ffc35e17dc332af3114faecc03109a91dd5ba8ef239d1879d15b7139df46cf
+F test/testrunner_data.tcl 0e905434ab2e657f52b7417df523da16e5344e4c7f81cd8ee6cf9e3b909a743a
 F test/testrunner_estwork.tcl 81e2ae10238f50540f42fbf2d94913052a99bfb494b69e546506323f195dcff9
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2220,11 +2220,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 789d84e69171ef05d36486c38fbb0db10f8d827d9941472a2809f3113503e6c4
-R c643731a84a650fe52e1238cc7f306f3
-T *branch * win-shared-shm
-T *sym-win-shared-shm *
-T -sym-trunk *
+P e9da3cfb8d3afa543ed390b7bdebe0f55971ac2c35140332c8926296cc0c69e2
+R aeffe92e973360778ff94ad8df659075
 U drh
-Z 4f966006c87749f0485c8dd1e49ea0b5
+Z 36ca4f3c42d5b102322d3b90b66d87f5
 # Remove this line to create a well-formed Fossil manifest.
