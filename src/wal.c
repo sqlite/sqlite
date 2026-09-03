@@ -587,10 +587,20 @@ typedef u16 ht_slot;
 **   walIteratorFree() - Free an iterator.
 **
 ** This functionality is used by the checkpoint code (see walCheckpoint()).
+**
+** nPagemap:
+**   If this is non-zero, then the iterator struct is used in a different
+**   way. In this case, it is always true that nSegment==1 and that
+**   aSegment[0].aPgno points to an array containing one entry for each
+**   page in the database file. If the entry is 0, then the corresponding
+**   page is not present in the wal file. Or, if the entry is non-zero,
+**   then it is the frame number of the last (newest) frame in the wal file 
+**   that contains a version of the corresponding page.
 */
 struct WalIterator {
   u32 iPrior;                     /* Last result returned from the iterator */
   int nSegment;                   /* Number of entries in aSegment[] */
+  u32 nPagemap;                   /* Non-zero in "page-map" mode */
   struct WalSegment {
     int iNext;                    /* Next slot in aIndex[] not yet returned */
     ht_slot *aIndex;              /* i0, i1, i2... such that aPgno[iN] ascend */
@@ -603,6 +613,7 @@ struct WalIterator {
 /* Size (in bytes) of a WalIterator object suitable for N or fewer segments */
 #define SZ_WALITERATOR(N)  \
      (offsetof(WalIterator,aSegment)+(N)*sizeof(struct WalSegment))
+
 
 /*
 ** Define the parameters of the hash tables in the wal-index file. There
@@ -1766,24 +1777,36 @@ static int walIteratorNext(
   u32 *piPage,                  /* OUT: The page number of the next page */
   u32 *piFrame                  /* OUT: Wal frame index of next page */
 ){
-  u32 iMin;                     /* Result pgno must be greater than iMin */
   u32 iRet = 0xFFFFFFFF;        /* 0xffffffff is never a valid page number */
-  int i;                        /* For looping through segments */
 
-  iMin = p->iPrior;
-  assert( iMin<0xffffffff );
-  for(i=p->nSegment-1; i>=0; i--){
-    struct WalSegment *pSegment = &p->aSegment[i];
-    while( pSegment->iNext<pSegment->nEntry ){
-      u32 iPg = pSegment->aPgno[pSegment->aIndex[pSegment->iNext]];
-      if( iPg>iMin ){
-        if( iPg<iRet ){
-          iRet = iPg;
-          *piFrame = pSegment->iZero + pSegment->aIndex[pSegment->iNext];
-        }
+  if( p->nPagemap ){
+    while( p->iPrior<p->nPagemap ){
+      p->iPrior++;
+      if( p->aSegment[0].aPgno[p->iPrior] ){
+        iRet = p->iPrior;
+        *piFrame = p->aSegment[0].aPgno[p->iPrior];
         break;
       }
-      pSegment->iNext++;
+    }
+  }else{
+    u32 iMin;                     /* Result pgno must be greater than iMin */
+    int i;                        /* For looping through segments */
+
+    iMin = p->iPrior;
+    assert( iMin<0xffffffff );
+    for(i=p->nSegment-1; i>=0; i--){
+      struct WalSegment *pSegment = &p->aSegment[i];
+      while( pSegment->iNext<pSegment->nEntry ){
+        u32 iPg = pSegment->aPgno[pSegment->aIndex[pSegment->iNext]];
+        if( iPg>iMin ){
+          if( iPg<iRet ){
+            iRet = iPg;
+            *piFrame = pSegment->iZero + pSegment->aIndex[pSegment->iNext];
+          }
+          break;
+        }
+        pSegment->iNext++;
+      }
     }
   }
 
@@ -1959,9 +1982,11 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   int nSegment;                   /* Number of segments to merge */
   u32 iLast;                      /* Last frame in log */
   sqlite3_int64 nByte;            /* Number of bytes to allocate */
+  sqlite3_int64 nExtra;          /* Number of bytes to allocate */
   int i;                          /* Iterator variable */
-  ht_slot *aTmp;                  /* Temp space used by merge-sort */
+  ht_slot *aTmp = 0;              /* Temp space used by merge-sort */
   int rc = SQLITE_OK;             /* Return Code */
+  int bPagemap = 0;
 
   /* This routine only runs while holding the checkpoint lock. And
   ** it only runs if there is actually content in the log (mxFrame>0).  */
@@ -1972,18 +1997,34 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   iLastPage = walFramePage(iLast);
   iZero = iFirstPage ? (HASHTABLE_NPAGE_ONE+(iFirstPage-1)*HASHTABLE_NPAGE) : 0;
 
+  if( (iLast-iZero)*sizeof(ht_slot)>pWal->hdr.nPage*sizeof(u32) ){
+    /* In this case it would require more memory to use the normal 
+    ** WalIterator scheme than it would to simply create a map from
+    ** page-number -> frame-number with an entry for each page in
+    ** the database. So do that instead. */
+    nSegment = 1;
+    bPagemap = 1;
+    nByte = SZ_WALITERATOR(nSegment) + pWal->hdr.nPage * sizeof(u32);
+    nExtra = 0;
+  }else{
+    nSegment = iLastPage - iFirstPage + 1;
+    nByte = SZ_WALITERATOR(nSegment) + (iLast-iZero)*sizeof(ht_slot);
+    nExtra = sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast);
+  }
+
   /* Allocate space for the WalIterator object. */
-  nSegment = iLastPage - iFirstPage + 1;
-  nByte = SZ_WALITERATOR(nSegment) + (iLast-iZero)*sizeof(ht_slot);
-  p = (WalIterator *)sqlite3_malloc64(nByte
-      + sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)
-  );
+  p = (WalIterator *)sqlite3_malloc64(nByte + nExtra);
   if( !p ){
     return SQLITE_NOMEM_BKPT;
   }
   memset(p, 0, nByte);
   p->nSegment = nSegment;
-  aTmp = (ht_slot*)&(((u8*)p)[nByte]);
+  if( bPagemap ){
+    p->nPagemap = pWal->hdr.nPage;
+    p->aSegment[0].aPgno = ((u32*)&p->aSegment[1]) - 1;
+  }else{
+    aTmp = (ht_slot*)&(((u8*)p)[nByte]);
+  }
   SEH_FREE_ON_ERROR(0, p);
   for(i=iFirstPage; rc==SQLITE_OK && i<=iLastPage; i++){
     WalHashLoc sLoc;
@@ -1999,18 +2040,29 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
       }else{
         nEntry = (int)((u32*)sLoc.aHash - (u32*)sLoc.aPgno);
       }
-      assert( i!=iFirstPage || iZero==sLoc.iZero );
-      aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[sLoc.iZero - iZero];
-      sLoc.iZero++;
 
-      for(j=0; j<nEntry; j++){
-        aIndex[j] = (ht_slot)j;
+      if( bPagemap ){
+        u32 *aPagemap = p->aSegment[0].aPgno;
+        for(j=0; j<nEntry; j++){
+          u32 pgno = sLoc.aPgno[ j ];
+          if( pgno!=0 && pgno<=p->nPagemap ){
+            aPagemap[pgno] = sLoc.iZero + j + 1;
+          }
+        }
+      }else{
+        assert( i!=iFirstPage || iZero==sLoc.iZero );
+        aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[sLoc.iZero - iZero];
+        sLoc.iZero++;
+
+        for(j=0; j<nEntry; j++){
+          aIndex[j] = (ht_slot)j;
+        }
+        walMergesort((u32 *)sLoc.aPgno, aTmp, aIndex, &nEntry);
+        p->aSegment[i-iFirstPage].iZero = sLoc.iZero;
+        p->aSegment[i-iFirstPage].nEntry = nEntry;
+        p->aSegment[i-iFirstPage].aIndex = aIndex;
+        p->aSegment[i-iFirstPage].aPgno = (u32 *)sLoc.aPgno;
       }
-      walMergesort((u32 *)sLoc.aPgno, aTmp, aIndex, &nEntry);
-      p->aSegment[i-iFirstPage].iZero = sLoc.iZero;
-      p->aSegment[i-iFirstPage].nEntry = nEntry;
-      p->aSegment[i-iFirstPage].aIndex = aIndex;
-      p->aSegment[i-iFirstPage].aPgno = (u32 *)sLoc.aPgno;
     }
   }
   if( rc!=SQLITE_OK ){
