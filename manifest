@@ -1,5 +1,5 @@
-C The\stestrunner.tcl\sscript\sis\senhanced\sso\sthat\s--stop-on-error\sdoes\snot\nexit\simmediately,\sbut\sinstead\s\smarks\sall\spending\stasks\sas\s"halt"\sso\nthat\sno\snew\stasks\sare\sscheduled,\sbut\sallows\s"running"\stasks\sto\scontinue\non\sto\scompletion,\sas\san\simmediate\shalt\scan\scause\shung\sprocesses\son\s\sWindows.\nAlso,\sin\sMakefile.msc,\sthe\s"test"\starget\snow\sincludes\s--stop-on-error.
-D 2026-09-04T13:37:51.131
+C Remove\san\sintentional\serror\sused\sfor\stesting\sthat\swas\saccidently\sleft\sin\nthe\sprevious\scheck-in.
+D 2026-09-04T13:43:43.352
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -2107,7 +2107,7 @@ F test/with1.test c416097db4ead936b98a76ff3069f76a6009c5aaec5ff2b2c5ca210bc595ad
 F test/with2.test 181674a6cc86a601ca2ac052741cdfad5b529e07e870435d2f6cdb92d589ff17
 F test/with3.test e30369ea27aa27eb1bda4c5e510c8a9f782c8afd2ab99d1a02b8a7f25a5d3e65
 F test/with4.test 257be66c0c67fee1defbbac0f685c3465e2cad037f21ce65f23f86084f198205
-F test/with5.test cdb47cdf82a688ed3ea35ddb4097cb92244e8ef9387dc32f5d232fe3d29efee4
+F test/with5.test 262a604e001938428da3d06ca90df9a478eff34ada737e2c023a99954418e8cf
 F test/with6.test 281e4861b5e517f6c3c2f08517a520c1e2ee7c11966545d3901f258a4fe8ef76
 F test/withM.test 693b61765f2b387b5e3e24a4536e2e82de15ff64
 F test/without_rowid1.test f6e75e32821eb423ac3812434d12bdd8098f17e3b2206da61575e1db77f82428
@@ -2220,8 +2220,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P ae1650228de3b5a6f02527a17d5398f12528ad56ffc5f551f19078b34ef5eda9
-R dad6a30a54aeaf3ecbdabda701afe7b6
+P 0fba9b52b41a5fade0d162c947712669653c4619c89a79800017703e978d8a24
+R 787be7dd912ce8812e04b649bb0889b2
 U drh
-Z 650db2d737c2c4738e16d516c5268bab
+Z a7d4b0cc9e94085c2ca36d2eb550ffb8
 # Remove this line to create a well-formed Fossil manifest.
