@@ -58,6 +58,7 @@ do_execsql_test 111 {
   )
   SELECT x FROM closure ORDER BY x;
 } {1 3 5 7 9 11}
+error Boom!
 do_execsql_test 112 {
   WITH RECURSIVE closure(x) AS (
      VALUES(1)

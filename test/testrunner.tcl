@@ -1847,6 +1847,17 @@ proc mark_job_as_finished {jobid output state endtm} {
   }
 }
 
+# Stop scheduling new jobs
+#
+proc orderly_shutdown {} {
+  set n [trdb one {SELECT count(*) FROM jobs WHERE state='running'}]
+  trdb eval {UPDATE jobs SET state='halt' WHERE state in ('ready','')}
+  if {$n>0} {
+    puts "Deferred shutdown: Waiting on $n running tasks to complete."
+  }
+}
+
+
 proc script_input_ready {fd iJob jobid} {
   global TRG
   global O
@@ -1871,12 +1882,14 @@ proc script_input_ready {fd iJob jobid} {
       puts [format %-79.79s "FAILED: $job(displayname) ($iJob)"]
       set state "failed" 
       if {$TRG(stopOnError)} {
-        puts "OUTPUT: $O($iJob)"
-        exit 1
+        puts "Stopping due to errors in $job(displayname)..."
+        # puts "OUTPUT: $O($iJob)"
+        orderly_shutdown
       }
       if {$TRG(stopOnCore) && [string first {core dumped} $O($iJob)]>0} {
-        puts "OUTPUT: $O($iJob)"
-        exit 1
+        puts "Stopping due to core dump in $job(displayname)..."
+        # puts "OUTPUT: $O($iJob)"
+        orderly_shutdown
       }
     }
 
