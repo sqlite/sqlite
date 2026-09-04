@@ -709,7 +709,7 @@ static struct win_syscall {
     const void *, void *, size_t))aSyscall[58].pCurrent)
 
   { "GetDriveTypeW",            (SYSCALL)GetDriveTypeW,          0 },
-#define osGetDriveTypeW ((UINT(*)(LPCWSTR))aSyscall[59].pCurrent)
+#define osGetDriveTypeW ((UINT(WINAPI*)(LPCWSTR))aSyscall[59].pCurrent)
 
 }; /* End of the overrideable system calls */
 
