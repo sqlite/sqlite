@@ -1671,7 +1671,7 @@ static void sendHashMessages(
   writeByte(p, REPLICA_READY);
   fflush(p->pOut);
   p->nRound++;
-  if( p->zDebugFile ) debugMessage(p, "-> REPLICA_READY\n", iHash);
+  if( p->zDebugFile ) debugMessage(p, "-> REPLICA_READY\n");
 }
 
 /*

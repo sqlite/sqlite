@@ -278,4 +278,8 @@ int sqlite3PagerWalInfo(Pager*, u32 *pnPrior, u32 *pnFrame);
 int sqlite3PagerWalSystemErrno(Pager*);
 #endif
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_WALSTAT)
+  void sqlite3PagerWalStat(Pager*,sqlite3_str*);
+#endif
+
 #endif /* SQLITE_PAGER_H */

@@ -8396,7 +8396,6 @@ static int SQLITE_TCLAPI optimization_control(
     { "none",                0                     },
     { "query-flattener",     SQLITE_QueryFlattener },
     { "groupby-order",       SQLITE_GroupByOrder   },
-    { "factor-constants",    SQLITE_FactorOutConst },
     { "distinct-opt",        SQLITE_DistinctOpt    },
     { "cover-idx-scan",      SQLITE_CoverIdxScan   },
     { "order-by-idx-join",   SQLITE_OrderByIdxJoin },

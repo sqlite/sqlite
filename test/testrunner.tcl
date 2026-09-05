@@ -341,8 +341,8 @@ switch -nocase -glob -- $tcl_platform(os) {
       set TRG(platform)  cygwin
       set TRG(make)      make.sh
       set TRG(makecmd)   "bash make.sh"
-      set TRG(testfixture) testfixture
-      set TRG(shell)       sqlite3
+      set TRG(testfixture) testfixture.exe
+      set TRG(shell)       sqlite3.exe
       set TRG(run)       run.sh
       set TRG(runcmd)    "bash run.sh"
     }
@@ -1847,6 +1847,29 @@ proc mark_job_as_finished {jobid output state endtm} {
   }
 }
 
+# We want to stop running tests.  Do this in an orderly way that
+# avoids confusing Windows.  (On unix we just invoke "exit 1".)
+#
+proc orderly_shutdown {} {
+  global tcl_platform
+  if {$tcl_platform(platform) ne "windows"} {
+    # Non-Windows platform can just call exit and the OS stops everything
+    # for us automatically.
+    exit 1
+  }
+
+  # Only windows reaches this point.  Mark pending jobs as 'halt' to prevent
+  # them from being scheduled.  Let running jobs continue to completion.
+  #
+  set n [trdb one {SELECT count(*) FROM jobs WHERE state='running'}]
+  trdb eval {UPDATE jobs SET state='halt' WHERE state in ('ready','')}
+  if {$n>1} {
+    incr n -1
+    puts "Deferred shutdown: Waiting on $n running tasks to complete."
+  }
+}
+
+
 proc script_input_ready {fd iJob jobid} {
   global TRG
   global O
@@ -1871,12 +1894,14 @@ proc script_input_ready {fd iJob jobid} {
       puts [format %-79.79s "FAILED: $job(displayname) ($iJob)"]
       set state "failed" 
       if {$TRG(stopOnError)} {
-        puts "OUTPUT: $O($iJob)"
-        exit 1
+        puts "Stopping due to errors in $job(displayname)..."
+        # puts "OUTPUT: $O($iJob)"
+        orderly_shutdown
       }
       if {$TRG(stopOnCore) && [string first {core dumped} $O($iJob)]>0} {
-        puts "OUTPUT: $O($iJob)"
-        exit 1
+        puts "Stopping due to core dump in $job(displayname)..."
+        # puts "OUTPUT: $O($iJob)"
+        orderly_shutdown
       }
     }
 
@@ -1900,7 +1925,6 @@ proc script_input_ready {fd iJob jobid} {
       append O($iJob) "$line\n"
     }
   }
-
 }
 
 proc dirname {ii} {

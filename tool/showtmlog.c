@@ -80,47 +80,47 @@ static void renderCSV(int iFile, unsigned char *a){
   for(a3=0, j=12; j<=15; j++) a3 = (a3<<8)+a[j];
   switch( a[0] ){
     case 0x01: {
-      printf("\"open-db\",%u,,,,\r\n",a2);
+      printf("\"open-db\",%u,,,,,0\r\n",a2);
       break;
     }
     case 0x02: {
-      printf("\"open-wal\",%u,,,,\r\n", a2);
+      printf("\"open-wal\",%u,,,,,0\r\n", a2);
       break;
     }
     case 0x03: {
-      printf("\"wal-page\",,%u,%u,,%d\r\n", a2, a3, a[1]);
+      printf("\"wal-page\",,%u,%u,,%d,%d\r\n", a2, a3, a[1]&1, (a[1]>>1)&1);
       break;
     }
     case 0x04: {
-      printf("\"db-page\",,%u,,,\r\n", a2);
+      printf("\"db-page\",,%u,,,,%d\r\n", a2,(a[1]>>1)&1);
       break;
     }
     case 0x05: {
-      printf("\"ckpt-start\",,,,,\r\n");
+      printf("\"ckpt-start\",,,,,,0\r\n");
       break;
     }
     case 0x06: {
-      printf("\"ckpt-page\",,%u,%u,,\r\n", a2, a3);
+      printf("\"ckpt-page\",,%u,%u,,%d\r\n", a2, a3, (a[1]>>1)&1);
       break;
     }
     case 0x07: {
-      printf("\"ckpt-end\",,,,,\r\n");
+      printf("\"ckpt-end\",,,,,,0\r\n");
       break;
     }
     case 0x08: {
-      printf("\"wal-reset\",,,,%u,\r\n", a3);
+      printf("\"wal-reset\",,,,%u,,0\r\n", a3);
       break;
     }
     case 0x0e: {
-      printf("\"close-wal\",,,,,\r\n");
+      printf("\"close-wal\",,,,,,0\r\n");
       break;
     }
     case 0x0f: {
-      printf("\"close-db\",,,,,\r\n");
+      printf("\"close-db\",,,,,,0\r\n");
       break;
     }
     default: {
-      printf("\"invalid-record\",,,,,\r\n");
+      printf("\"invalid-record\",,,,,,0\r\n");
       break;
     }
   }
@@ -147,12 +147,12 @@ static void renderText(unsigned char *a){
       break;
     }
     case 0x03: {
-      printf("wal-page  pgno %-8u frame %-8u%s\n", a2, a3,
-             a[1]==1 ? " txn" : "");
+      static const char *za1[4] = { "", " txn", " zero", " txn zero" };
+      printf("wal-page  pgno %-8u frame %-8u%s\n", a2, a3, za1[a[1]&3]);
       break;
     }
     case 0x04: {
-      printf("db-page   pgno %-8u\n", a2);
+      printf("db-page   pgno %-8u%s\n", a2, (a[1]&2)!=0 ? " zero" : "");
       break;
     }
     case 0x05: {
@@ -160,7 +160,8 @@ static void renderText(unsigned char *a){
       break;
     }
     case 0x06: {
-      printf("ckpt-page pgno %-8u frame %-8u\n", a2, a3);
+      printf("ckpt-page pgno %-8u frame %-8u%s\n", a2, a3,
+             (a[1]&2)!=0 ? " zero" : "");
       break;
     }
     case 0x07: {
@@ -227,7 +228,7 @@ int main(int argc, char **argv){
   }
   iFile = 0;
   if( bCSV ){
-    printf("tmstmp,fileno,op,pid,pgno,frame,salt,txn\r\n");
+    printf("tmstmp,fileno,op,pid,pgno,frame,salt,txn,zero\r\n");
   }
   for(i=1; i<argc; i++){
     z = argv[i];

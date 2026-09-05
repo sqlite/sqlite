@@ -1181,10 +1181,13 @@ void sqlite3RecordErrorByteOffset(sqlite3 *db, const char *z){
 ** as the error offset.
 */
 void sqlite3RecordErrorOffsetOfExpr(sqlite3 *db, const Expr *pExpr){
-  while( pExpr
-     && (ExprHasProperty(pExpr,EP_OuterON|EP_InnerON) || pExpr->w.iOfst<=0)
-  ){
-    pExpr = pExpr->pLeft;
+  while( pExpr ){
+    if( ExprHasProperty(pExpr, EP_Reduced|EP_TokenOnly) ) return;
+    if( ExprHasProperty(pExpr,EP_OuterON|EP_InnerON) || pExpr->w.iOfst<=0 ){
+      pExpr = pExpr->pLeft;
+    }else{
+      break;
+    }
   }
   if( pExpr==0 ) return;
   if( ExprHasProperty(pExpr, EP_FromDDL) ) return;

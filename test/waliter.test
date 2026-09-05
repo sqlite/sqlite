@@ -1,0 +1,122 @@
+# 2026 September 1
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
+
+set testprefix waliter
+
+ifcapable !wal {finish_test ; return }
+
+testvfs tvfs -default 1 -fullshm 1
+tvfs script vfs_callback
+tvfs filter xWrite
+
+proc vfs_callback {method file nm offset amt} {
+  if {[file tail $file]=="test.db" && $amt==1024} {
+    incr ::WRITE([expr $offset/1024]) 1
+    if {[info exists ::DEBUG]} {
+      puts "write page [expr $offset/1024]"
+    }
+  }
+}
+
+sqlite3 db test.db
+
+do_execsql_test 1.0 {
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB[900]);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  ) 
+  INSERT INTO t1(b) SELECT randomblob(900) FROM s;
+  PRAGMA journal_mode = wal;
+  PRAGMA wal_autocheckpoint = 0;
+} {wal 0}
+
+do_execsql_test 1.1 {
+  PRAGMA wal_autocheckpoint = 0;
+  UPDATE t1 SET b = randomblob(900);
+  UPDATE t1 SET b = randomblob(900);
+  UPDATE t1 SET b = randomblob(900);
+  UPDATE t1 SET b = randomblob(900);
+
+  UPDATE t1 SET b = randomblob(900);
+  UPDATE t1 SET b = randomblob(900);
+  UPDATE t1 SET b = randomblob(900);
+  UPDATE t1 SET b = randomblob(900);
+
+  UPDATE t1 SET b = randomblob(900);
+  UPDATE t1 SET b = randomblob(900);
+} {0}
+
+do_test 1.2 {
+  file size test.db-shm
+} [expr 32768 * 3]
+
+do_execsql_test 1.3 {
+  PRAGMA wal_checkpoint
+} {0 10000 10000}
+# foreach k [array names WRITE] { puts "$k : $WRITE($k) writes" }
+
+db close
+tvfs delete
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB[900]);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  ) 
+  INSERT INTO t1(b) SELECT randomblob(900) FROM s;
+  CREATE INDEX i1 ON t1(b);
+  PRAGMA journal_mode = wal;
+} {wal}
+
+sqlite3 db2 test.db
+
+do_test 2.1 {
+  for {set ii 1} {$ii<4000} {incr ii} {
+    db2 eval {
+      BEGIN;
+        SELECT count(*) FROM t1;
+    }
+    execsql {
+      UPDATE t1 SET b = randomblob(900) WHERE a = ($ii%1000)+1;
+      PRAGMA wal_checkpoint;
+    }
+    db2 eval COMMIT
+
+    if {($ii%100)==0} {
+      if {[db one {PRAGMA integrity_check}]!="ok"} {
+        error "integrity_check failure"
+      }
+    }
+  }
+  set {} {}
+} {}
+
+do_execsql_test 2.2.1 { PRAGMA integrity_check } ok
+do_test 2.2.2 { execsql { PRAGMA wal_checkpoint } ; set {} {} } {}
+do_execsql_test 2.2.3 { PRAGMA integrity_check } ok
+
+
+finish_test

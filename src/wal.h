@@ -165,6 +165,10 @@ void sqlite3WalDb(Wal *pWal, sqlite3 *db);
 int sqlite3WalSystemErrno(Wal*);
 #endif
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_WALSTAT)
+  void sqlite3WalStat(Wal*,sqlite3_str*);
+#endif
+
 /* sqlite3_wal_info() data */
 int sqlite3WalInfo(Wal *pWal, u32 *pnPrior, u32 *pnFrame);
 

@@ -676,9 +676,18 @@ static int fts5VocabFilterMethod(
   UNUSED_PARAM2(zUnused, nUnused);
 
   fts5VocabResetCursor(pCsr);
-  if( idxNum & FTS5_VOCAB_TERM_EQ ) pEq = apVal[iVal++];
-  if( idxNum & FTS5_VOCAB_TERM_GE ) pGe = apVal[iVal++];
-  if( idxNum & FTS5_VOCAB_TERM_LE ) pLe = apVal[iVal++];
+  if( idxNum & FTS5_VOCAB_TERM_EQ ){
+    pEq = apVal[iVal++];
+    if( sqlite3_value_type(pEq)!=SQLITE_TEXT ) pEq = 0;
+  }
+  if( idxNum & FTS5_VOCAB_TERM_GE ){
+    pGe = apVal[iVal++];
+    if( sqlite3_value_type(pGe)!=SQLITE_TEXT ) pGe = 0;
+  }
+  if( idxNum & FTS5_VOCAB_TERM_LE ){
+    pLe = apVal[iVal++];
+    if( sqlite3_value_type(pLe)!=SQLITE_TEXT ) pLe = 0;
+  }
   pCsr->colUsed = (idxNum & FTS5_VOCAB_COLUSED_MASK);
 
   if( pEq ){

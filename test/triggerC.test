@@ -990,9 +990,6 @@ set SQL {
 
 reset_db
 do_execsql_test triggerC-14.1 $SQL {1 2 3}
-reset_db
-optimization_control db factor-constants 0
-do_execsql_test triggerC-14.2 $SQL {1 2 3}
 
 #-------------------------------------------------------------------------
 # Check that table names used by trigger programs are dequoted exactly

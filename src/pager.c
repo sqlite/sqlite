@@ -7064,6 +7064,20 @@ int sqlite3PagerRefcount(Pager *pPager){
 }
 #endif
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_ENABLE_WALSTAT)
+/*
+** Append JSON structure elements describing the current state of
+** the write-ahead log to pStr.
+*/
+void sqlite3PagerWalStat(Pager *pPager, sqlite3_str *pStr){
+#ifndef SQLITE_OMIT_WAL
+  if( pPager->pWal ){
+    sqlite3WalStat(pPager->pWal, pStr);
+  }
+#endif
+}
+#endif
+
 /*
 ** Return the approximate number of bytes of memory currently
 ** used by the pager and its associated cache.

@@ -11,7 +11,7 @@
 ******************************************************************************
 **
 ** This file implements a VFS shim that writes a timestamp and other tracing
-** information into 16 byts of reserved space at the end of each page of the
+** information into 16 bytes of reserved space at the end of each page of the
 ** database file.
 **
 ** The VFS also tries to generate log-files with names of the form:
@@ -180,12 +180,13 @@
 **
 **   ELOG_WAL_PAGE        "New page added to the WAL file"
 **                        op = 0x03
-**                        a1 = 1 if last page of a txn.  0 otherwise.
+**                        a1 = 0x1 set if last page of txn. 0x2 if all zeros
 **                        a2 = page number in the DB file
 **                        a3 = frame number in the WAL file
 **
 **   ELOG_DB_PAGE         "Database page updated using rollback mode"
 **                        op = 0x04
+**                        a1 = 0x2 set if all zeros
 **                        a2 = page number in the DB file
 **
 **   ELOG_CKPT_START      "Start of a checkpoint operation"
@@ -193,6 +194,7 @@
 **
 **   ELOG_CKPT_PAGE       "Page xfer from WAL to database"
 **                        op = 0x06
+**                        a1 = 0x2 set if all zeros
 **                        a2 = database page number
 **                        a3 = frame number in the WAL file
 **
@@ -602,6 +604,17 @@ static int tmstmpRead(
 }
 
 /*
+** Return 0x02 if all bytes of zBuf are zero.  Return 0x00 if one
+** or more bytes are non-zero.
+*/
+static u8 tmstmpAllZero(const void *zBuf, int n){
+  const u8 *a = (const u8*)zBuf;
+  int i;
+  for(i=0; i<n; i++){ if( a[i] ) return 0x00; }
+  return 0x02;
+}
+
+/*
 ** Write data to a tmstmp-file.
 */
 static int tmstmpWrite(
@@ -627,29 +640,32 @@ static int tmstmpWrite(
       p->iOfst = iOfst;
     }else if( iAmt>=512 && iOfst==p->iOfst+24 ){
       unsigned char s[TMSTMP_RESERVE];
+      u8 a1 = tmstmpAllZero(zBuf,iAmt-TMSTMP_RESERVE);
       memset(s, 0, TMSTMP_RESERVE);
       tmstmpPutTS(p, s+2);
-      tmstmpEvent(p, ELOG_WAL_PAGE, p->isCommit, p->pgno, p->iFrame, s+2);
+      tmstmpEvent(p, ELOG_WAL_PAGE, p->isCommit|a1, p->pgno, p->iFrame, s+2);
     }else if( iAmt==32 && iOfst==0 ){
       p->salt1 = tmstmpGetU32(((const u8*)zBuf)+16);
       tmstmpEvent(p, ELOG_WAL_RESET, 0, 0, p->salt1, 0);
     }
   }else if( p->inCkpt ){
     unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
+    u8 a1 = tmstmpAllZero(zBuf,iAmt-TMSTMP_RESERVE);
     memset(s, 0, TMSTMP_RESERVE);
     tmstmpPutTS(p, s+2);
     tmstmpPutU32(p->iFrame, s+8);
     tmstmpPutU32(p->pPartner->salt1 & 0xffffff, s+12);
     assert( p->pgsz>0 );
-    tmstmpEvent(p, ELOG_CKPT_PAGE, 0, (iOfst/p->pgsz)+1, p->iFrame, 0);
+    tmstmpEvent(p, ELOG_CKPT_PAGE, a1, (iOfst/p->pgsz)+1, p->iFrame, 0);
   }else if( p->pPartner==0 ){
     /* Writing into a database in rollback mode */
     unsigned char *s = (unsigned char*)zBuf+iAmt-TMSTMP_RESERVE;
+    u8 a1 = tmstmpAllZero(zBuf,iAmt-TMSTMP_RESERVE);
     memset(s, 0, TMSTMP_RESERVE);
     tmstmpPutTS(p, s+2);
     s[12] = 2;
     assert( p->pgsz>0 );
-    tmstmpEvent(p, ELOG_DB_PAGE, 0, (u32)(iOfst/p->pgsz)+1, 0, s+2);
+    tmstmpEvent(p, ELOG_DB_PAGE, a1, (u32)(iOfst/p->pgsz)+1, 0, s+2);
   }
   return pSub->pMethods->xWrite(pSub,zBuf,iAmt,iOfst);
 }

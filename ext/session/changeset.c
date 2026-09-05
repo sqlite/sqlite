@@ -397,6 +397,10 @@ int main(int argc, char **argv){
         }else{
           zSQLTabName = sqlite3_mprintf("%s", zTab);
         }
+        if( zSQLTablName==0 ){
+          printf("/***** Out Of Memory ******/\n");
+          break;
+        }
         printf("/****** Changes for table %s ***************/\n", zSQLTabName);
       }
       switch( op ){

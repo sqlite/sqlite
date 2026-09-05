@@ -2585,7 +2585,7 @@ testrunner:	testfixture.exe
 # Probably other tests too, but at least this one.
 #
 devtest:	srctree-check sourcetest
-	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest --stop-on-error
 
 mdevtest:
 	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
@@ -2593,7 +2593,7 @@ mdevtest:
 # Rerun test cases that failed on the previous testrunner invocation
 #
 retest:
-	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl retest
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl retest --stop-on-error
 
 # Show all errors from the most reason testrunner invocation
 #

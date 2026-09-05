@@ -1210,4 +1210,51 @@ do_execsql_test select1-21.1 {
   SELECT a,(+a)b,(+a)b,(+a)b,NOT EXISTS(SELECT null FROM t2),CASE z WHEN 487 THEN 992 WHEN 391 THEN 203 WHEN 10 THEN '?k<D Q' END,'' FROM t1 LEFT JOIN v1a ON z=b;
 } {}
 
+# branch union-to-union-all
+#
+reset_db
+do_execsql_test select1-22.1 {
+  CREATE TABLE t1(a); INSERT INTO t1 VALUES(1),(1),(1),(2),(3);
+  CREATE TABLE t2(b); INSERT INTO t2 VALUES(10),(11);
+  SELECT a FROM t1 UNION SELECT b FROM t2 ORDER BY 1 LIMIT 3;
+} {1 2 3}
+do_execsql_test select1-22.2 {
+  SELECT a FROM t1 UNION SELECT b FROM t2 ORDER BY 1 LIMIT 1;
+} {1}
+do_execsql_test select1-22.3 {
+  SELECT a FROM t1 UNION SELECT b FROM t2 ORDER BY 1 LIMIT 1 OFFSET 2;
+} {3}
+do_execsql_test select1-22.3 {
+  SELECT a FROM t1 UNION SELECT b FROM t2 LIMIT 1;
+} {1}
+do_execsql_test select1-22.4 {
+  SELECT a FROM t1 UNION SELECT b FROM t2 LIMIT 2;
+} {1 2}
+
+# Bug 2026-09-01T01:34:02Z
+#
+do_execsql_test select1-23.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(xx,yy CHAR(100));
+  INSERT INTO t1(xx) VALUES(0);
+  SELECT COUNT() FROM t1 AS a0
+   WHERE (SELECT a0.yy FROM t1
+           WHERE a0.xx LIKE '' ORDER BY 8000000000 )
+   ORDER BY 8000000000;
+} 0
+
+# Bug 2026-09-03T02:29:56Z
+#
+do_execsql_test select1-24.1 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  CREATE TABLE t1(x INT);
+  CREATE INDEX t1x ON t1(x);
+  CREATE TABLE t2(y TEXT);
+  INSERT INTO t2 VALUES('01');
+  SELECT typeof(y), EXISTS(SELECT 1 FROM t1 WHERE x=y), typeof(y)
+    FROM t2
+   GROUP BY y;
+} {text 0 text}
+
 finish_test
