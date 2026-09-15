@@ -2223,6 +2223,9 @@ proc sqlite-determine-codegen-tcl {} {
     # so that we can avoid the situation that we later, at
     # make-time, try to compile jimsh but it then fails due to
     # missing headers (i.e. fail earlier rather than later).
+    #
+    # One of HAVE_REALPATH or HAVE__FULLPATH are required here for
+    # jimsh's [file normalize] to work.
     if {$sysh && [cc-check-functions realpath]} {
       define-append CFLAGS_JIMSH -DHAVE_REALPATH
       define BTCLSH "\$(JIMSH)"
