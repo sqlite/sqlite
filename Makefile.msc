@@ -59,8 +59,8 @@ MINIMAL_AMALGAMATION = 0
 # Set this non-0 to use "stdcall" calling convention for the core library
 # and shell executable.
 #
-!IFNDEF USE_STDCALL
-USE_STDCALL = 0
+!IFDEF USE_STDCALL
+!ERROR STDCALL is no longer supported
 !ENDIF
 
 # Use the USE_SEH=0 option on the nmake command line to omit structured
@@ -370,11 +370,7 @@ SQLITE3TCLDLL = tclsqlite3.dll
 # Tcl library should depend on when compiling, etc.
 #
 !IFNDEF SQLITE_TCL_DEP
-!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
-SQLITE_TCL_DEP = $(SQLITETCLDECLSH) $(SQLITETCLH)
-!ELSE
 SQLITE_TCL_DEP =
-!ENDIF
 !ENDIF
 # <</mark>>
 
@@ -617,50 +613,11 @@ TCC = $(TCC) -WX
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src $(RCOPTS) $(RCCOPTS)
 
-# Check if we want to use the "stdcall" calling convention when compiling.
-# This is not supported by the compilers for non-x86 platforms.  It should
-# also be noted here that building any target with these "stdcall" options
-# will most likely fail if the Tcl library is also required.  This is due
-# to how the Tcl library functions are declared and exported (i.e. without
-# an explicit calling convention, which results in "cdecl").
-#
-!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
-!IF "$(PLATFORM)"=="x86"
-CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-
-# <<mark>>
-# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
-#
-TEST_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
-# <</mark>>
-
-!ELSE
-!IFNDEF PLATFORM
-CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-
-# <<mark>>
-# ^^^^^^^^-- content between mark and /mark omitted from autoconf/Makefile.msc
-#
-TEST_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall -DINCLUDE_SQLITE_TCL_H=1 -DSQLITE_TCLAPI=__cdecl
-# <</mark>>
-
-!ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
 # <<mark>>
 TEST_CCONV_OPTS =
 # <</mark>>
-!ENDIF
-!ENDIF
-!ELSE
-CORE_CCONV_OPTS =
-SHELL_CCONV_OPTS =
-# <<mark>>
-TEST_CCONV_OPTS =
-# <</mark>>
-!ENDIF
 
 # These are additional compiler options used for the core library.
 #
@@ -841,9 +798,6 @@ MKSQLITE3C_ARGS = --linemacros=1
 !ELSE
 MKSQLITE3C_ARGS = --linemacros=0
 !ENDIF
-!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
-MKSQLITE3C_ARGS = $(MKSQLITE3C_ARGS) --useapicall
-!ENDIF
 !ENDIF
 
 # The mksqlite3h.tcl script accepts some options on the command line.
@@ -851,11 +805,7 @@ MKSQLITE3C_ARGS = $(MKSQLITE3C_ARGS) --useapicall
 # necessary.
 #
 !IFNDEF MKSQLITE3H_ARGS
-!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
-MKSQLITE3H_ARGS = --useapicall
-!ELSE
 MKSQLITE3H_ARGS =
-!ENDIF
 !ENDIF
 # <</mark>>
 
@@ -1508,13 +1458,7 @@ SRC11 = \
 
 # Generated Tcl header files
 #
-!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
-SRC12 = \
-  $(SQLITETCLH) \
-  $(SQLITETCLDECLSH)
-!ELSE
 SRC12 =
-!ENDIF
 
 # All source code files.
 #
@@ -2313,14 +2257,8 @@ $(SQLITE3H):	$(TOP)\src\sqlite.h.in $(TOP)\manifest mksourceid.exe $(TOP)\VERSIO
 	$(JIM_TCLSH) $(TOP)\tool\mksqlite3h.tcl "$(TOP:\=/)" -o $(SQLITE3H) $(MKSQLITE3H_ARGS)
 
 sqlite3ext.h:	.target_source
-!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
-	type tsrc\sqlite3ext.h | $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*\)" "(SQLITE_CALLBACK *)" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*" "(SQLITE_APICALL *" > sqlite3ext.h
-	copy /Y sqlite3ext.h tsrc\sqlite3ext.h
-!ELSE
 	copy /Y tsrc\sqlite3ext.h sqlite3ext.h
 	copy /B sqlite3ext.h +,,
-!ENDIF
 
 sqlite3session.h:	$(TOP)\ext\session\sqlite3session.h
 	copy /Y $(TOP)\ext\session\sqlite3session.h .
@@ -2505,26 +2443,6 @@ TESTFIXTURE_SRC1 = $(TESTEXT) $(SQLITE3C)
 TESTFIXTURE_SRC = $(TESTSRC) tclsqlite-ex.c $(TESTFIXTURE_SRC0)
 !ELSE
 TESTFIXTURE_SRC = $(TESTSRC) tclsqlite-ex.c $(TESTFIXTURE_SRC1)
-!ENDIF
-
-!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
-sqlite_tclDecls.h:
-	echo #ifndef SQLITE_TCLAPI > $(SQLITETCLDECLSH)
-	echo #  define SQLITE_TCLAPI >> $(SQLITETCLDECLSH)
-	echo #endif >> $(SQLITETCLDECLSH)
-	type "$(TCLINCDIR)\tclDecls.h" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN(?: CONST\d+?)?\s+?[^\(]*?\s+?)Tcl_" "\1 SQLITE_TCLAPI Tcl_" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "^(EXTERN\s+?(?:void|VOID)\s+?)TclFreeObj" "\1 SQLITE_TCLAPI TclFreeObj" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*tcl_" "(SQLITE_TCLAPI *tcl_" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*tclFreeObj" "(SQLITE_TCLAPI *tclFreeObj" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "\(\*" "(SQLITE_TCLAPI *" >> $(SQLITETCLDECLSH)
-
-sqlite_tcl.h:
-	type "$(TCLINCDIR)\tcl.h" | $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact tclDecls.h sqlite_tclDecls.h \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl regsub "typedef (.*?)\(Tcl_" "typedef \1 (SQLITE_TCLAPI Tcl_" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "void (*freeProc)" "void (SQLITE_TCLAPI *freeProc)" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "Tcl_HashEntry *(*findProc)" "Tcl_HashEntry *(SQLITE_TCLAPI *findProc)" \
-		| $(TCLSH_CMD) $(TOP)\tool\replace.tcl exact "Tcl_HashEntry *(*createProc)" "Tcl_HashEntry *(SQLITE_TCLAPI *createProc)" >> $(SQLITETCLH)
 !ENDIF
 
 testfixture.exe:	$(TESTFIXTURE_SRC) $(TESTFIXTURE_DEP) $(SQLITE3H) $(LIBRESOBJS) $(HDR) $(SQLITE_TCL_DEP)
@@ -2903,7 +2821,6 @@ env:
 	@echo USE_RC = $(USE_RC)
 	@echo USE_RUNTIME_CHECKS = $(USE_RUNTIME_CHECKS)
 	@echo USE_SEH = $(USE_SEH)
-	@echo USE_STDCALL = $(USE_STDCALL)
 	@echo USE_ZLIB = $(USE_ZLIB)
 	@echo XCOMPILE = $(XCOMPILE)
 	@echo ZLIBCFLAGS = $(ZLIBCFLAGS)

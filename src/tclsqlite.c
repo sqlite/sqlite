@@ -4604,7 +4604,7 @@ static const char *tclsh_main_loop(void){
 #ifndef TCLSH_MAIN
 # define TCLSH_MAIN main
 #endif
-int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
+int TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
   int i;
   const char *zScript = 0;

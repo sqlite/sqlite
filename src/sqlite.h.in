@@ -50,23 +50,11 @@ extern "C" {
 ** The SQLITE_EXTERN and SQLITE_API macros are used to instruct the
 ** compiler that the target identifier should have external linkage.
 **
-** The SQLITE_CDECL macro is used to set the calling convention for
-** public functions that accept a variable number of arguments.
-**
-** The SQLITE_APICALL macro is used to set the calling convention for
-** public functions that accept a fixed number of arguments.
-**
-** The SQLITE_STDCALL macro is no longer used and is now deprecated.
-**
-** The SQLITE_CALLBACK macro is used to set the calling convention for
-** function pointers.
-**
-** The SQLITE_SYSAPI macro is used to set the calling convention for
-** functions provided by the operating system.
-**
-** Currently, the SQLITE_CDECL, SQLITE_APICALL, SQLITE_CALLBACK, and
-** SQLITE_SYSAPI macros are used only when building for environments
-** that require non-default calling conventions.
+** Other symbols (SQLITE_CDECL through SQLITE_SYSAPI) were formerly
+** used when SQLite supported builds for 32-bit Windows using the STDCALL
+** calling convention.  No major supported software does that anymore and 
+** so such support is now omitted from SQLite as well.  The symbols are
+** retained for backwards compatibility.
 */
 #ifndef SQLITE_EXTERN
 # define SQLITE_EXTERN extern
@@ -75,19 +63,19 @@ extern "C" {
 # define SQLITE_API
 #endif
 #ifndef SQLITE_CDECL
-# define SQLITE_CDECL
+# define SQLITE_CDECL     /*deprecated*/
 #endif
 #ifndef SQLITE_APICALL
-# define SQLITE_APICALL
+# define SQLITE_APICALL   /*deprecated*/
 #endif
 #ifndef SQLITE_STDCALL
-# define SQLITE_STDCALL SQLITE_APICALL
+# define SQLITE_STDCALL   /*deprecated*/
 #endif
 #ifndef SQLITE_CALLBACK
-# define SQLITE_CALLBACK
+# define SQLITE_CALLBACK  /*deprecated*/
 #endif
 #ifndef SQLITE_SYSAPI
-# define SQLITE_SYSAPI
+# define SQLITE_SYSAPI    /*deprecated*/
 #endif
 
 /*

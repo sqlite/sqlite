@@ -57,8 +57,8 @@ MINIMAL_AMALGAMATION = 0
 # Set this non-0 to use "stdcall" calling convention for the core library
 # and shell executable.
 #
-!IFNDEF USE_STDCALL
-USE_STDCALL = 0
+!IFDEF USE_STDCALL
+!ERROR STDCALL is no longer supported
 !ENDIF
 
 # Use the USE_SEH=0 option on the nmake command line to omit structured
@@ -537,34 +537,8 @@ TCC = $(TCC) -WX
 TCC = $(TCC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I. -I$(TOP) $(RCOPTS) $(RCCOPTS)
 
-# Check if we want to use the "stdcall" calling convention when compiling.
-# This is not supported by the compilers for non-x86 platforms.  It should
-# also be noted here that building any target with these "stdcall" options
-# will most likely fail if the Tcl library is also required.  This is due
-# to how the Tcl library functions are declared and exported (i.e. without
-# an explicit calling convention, which results in "cdecl").
-#
-!IF $(USE_STDCALL)!=0 || $(FOR_WIN10)!=0
-!IF "$(PLATFORM)"=="x86"
-CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-
-
-!ELSE
-!IFNDEF PLATFORM
-CORE_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-SHELL_CCONV_OPTS = -Gz -guard:cf -DSQLITE_CDECL=__cdecl -DSQLITE_APICALL=__stdcall -DSQLITE_CALLBACK=__stdcall -DSQLITE_SYSAPI=__stdcall
-
-
-!ELSE
 CORE_CCONV_OPTS =
 SHELL_CCONV_OPTS =
-!ENDIF
-!ENDIF
-!ELSE
-CORE_CCONV_OPTS =
-SHELL_CCONV_OPTS =
-!ENDIF
 
 # These are additional compiler options used for the core library.
 #

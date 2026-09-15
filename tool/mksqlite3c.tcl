@@ -26,7 +26,6 @@ set help {Usage: tclsh mksqlite3c.tcl <options>
  where <options> is zero or more of the following with these effects:
    --nostatic     => Do not generate with compile-time modifiable linkage.
    --linemacros=?  => Emit #line directives into output or not. (? = 1 or 0)
-   --useapicall   => Prepend functions with SQLITE_APICALL or SQLITE_CDECL.
    --srcdir $SRC  => Specify the directory containing constituent sources.
    --help         => See this.
  The value setting options default to --linemacros=1 and '--srcdir tsrc' .
@@ -39,7 +38,6 @@ set help {Usage: tclsh mksqlite3c.tcl <options>
 
 set addstatic 1
 set linemacros 0
-set useapicall 0
 set enable_recover 0
 set srcdir tsrc
 set extrasrc [list]
@@ -54,7 +52,7 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
     if {$ulm == ""} {set ulm 1}
     set linemacros $ulm
   } elseif {[regexp {^-?-useapicall$} $x]} {
-    set useapicall 1
+    error "The --useapicall option is no longer supported"
   } elseif {[regexp {^-?-srcdir$} $x]} {
     incr i
     if {$i==[llength $argv]} {
@@ -211,19 +209,6 @@ set available_hdr(sqlite3session.h) 0
 # of their function declarations or definitions.
 set varonly_hdr(sqlite3.h) 1
 
-# These are the functions that accept a variable number of arguments.  They
-# always need to use the "cdecl" calling convention even when another calling
-# convention (e.g. "stcall") is being used for the rest of the library.
-set cdecllist {
-  sqlite3_config
-  sqlite3_db_config
-  sqlite3_log
-  sqlite3_mprintf
-  sqlite3_snprintf
-  sqlite3_test_control
-  sqlite3_vtab_config
-}
-
 # 78 stars used for comment formatting.
 set s78 \
 {*****************************************************************************}
@@ -244,7 +229,7 @@ proc section_comment {text} {
 #
 proc copy_file {filename} {
   global seen_hdr available_hdr varonly_hdr cdecllist out
-  global addstatic linemacros useapicall srcdir
+  global addstatic linemacros srcdir
   set ln 0
   set tail [file tail $filename]
   section_comment "Begin file $tail"
@@ -306,13 +291,6 @@ proc copy_file {filename} {
           append line " " [string trim $rettype]
           if {[string index $rettype end] ne "*"} {
             append line " "
-          }
-          if {$useapicall} {
-            if {[lsearch -exact $cdecllist $funcname] >= 0} {
-              append line SQLITE_CDECL " "
-            } else {
-              append line SQLITE_APICALL " "
-            }
           }
           append line $funcname $rest
           if {$funcname=="sqlite3_sourceid"} {

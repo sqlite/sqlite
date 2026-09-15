@@ -8250,7 +8250,7 @@ struct win32FileLocker {
 /*
 ** The background thread that does file locking.
 */
-static void SQLITE_CDECL win32_file_locker(void *pAppData){
+static void win32_file_locker(void *pAppData){
   struct win32FileLocker *p = (struct win32FileLocker*)pAppData;
   sqlite3_file *pFd = p->pFd;
   HANDLE h = INVALID_HANDLE_VALUE;

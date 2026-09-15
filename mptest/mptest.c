@@ -1280,7 +1280,7 @@ static void unrecognizedArguments(
   exit(1);
 }
 
-int SQLITE_CDECL main(int argc, char **argv){
+int main(int argc, char **argv){
   const char *zClient;
   int iClient;
   int n, i;

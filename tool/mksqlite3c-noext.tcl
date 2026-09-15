@@ -28,7 +28,6 @@
 #
 set addstatic 1
 set linemacros 0
-set useapicall 0
 for {set i 0} {$i<[llength $argv]} {incr i} {
   set x [lindex $argv $i]
   if {[regexp {^-+nostatic$} $x]} {
@@ -36,7 +35,7 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
   } elseif {[regexp {^-+linemacros} $x]} {
     set linemacros 1
   } elseif {[regexp {^-+useapicall} $x]} {
-    set useapicall 1
+    error "The --useapicall option is no longer supported"
   } else {
     error "unknown command-line option: $x"
   }
@@ -161,7 +160,7 @@ proc section_comment {text} {
 #
 proc copy_file {filename} {
   global seen_hdr available_hdr varonly_hdr cdecllist out
-  global addstatic linemacros useapicall
+  global addstatic linemacros
   set ln 0
   set tail [file tail $filename]
   section_comment "Begin file $tail"
@@ -223,13 +222,6 @@ proc copy_file {filename} {
           append line " " [string trim $rettype]
           if {[string index $rettype end] ne "*"} {
             append line " "
-          }
-          if {$useapicall} {
-            if {[lsearch -exact $cdecllist $funcname] >= 0} {
-              append line SQLITE_CDECL " "
-            } else {
-              append line SQLITE_APICALL " "
-            }
           }
           append line $funcname $rest
           puts $out $line

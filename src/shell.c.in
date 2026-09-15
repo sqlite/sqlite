@@ -869,7 +869,7 @@ static void shell_check_oom(const void *p){
 ** is written to iotrace.
 */
 #ifdef SQLITE_ENABLE_IOTRACE
-static void SQLITE_CDECL iotracePrintf(const char *zFormat, ...){
+static void iotracePrintf(const char *zFormat, ...){
   va_list ap;
   char *z;
   if( iotrace==0 ) return;
@@ -5581,7 +5581,7 @@ typedef struct ImportCtx ImportCtx;
 struct ImportCtx {
   const char *zFile;  /* Name of the input file */
   FILE *in;           /* Read the CSV text from this input stream */
-  int (SQLITE_CDECL *xCloser)(FILE*);      /* Func to close in */
+  int (*xCloser)(FILE*);      /* Func to close in */
   char *zIn;          /* Input text */
   char *z;            /* Accumulated text for a field */
   i64 nUsed;          /* Bytes of zIn[] used so far */
@@ -5650,7 +5650,7 @@ static void import_append_char(ImportCtx *p, int c){
 **      EOF on end-of-file.
 **   +  Report syntax errors on stderr
 */
-static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
+static char *csv_read_one_field(ImportCtx *p){
   int c;
   int cSep = (u8)p->cColSep;
   int rSep = (u8)p->cRowSep;
@@ -5749,7 +5749,7 @@ static char *SQLITE_CDECL csv_read_one_field(ImportCtx *p){
 **      EOF on end-of-file.
 **   +  Report syntax errors on stderr
 */
-static char *SQLITE_CDECL ascii_read_one_field(ImportCtx *p){
+static char *ascii_read_one_field(ImportCtx *p){
   int c;
   int cSep = (u8)p->cColSep;
   int rSep = (u8)p->cRowSep;
@@ -8258,7 +8258,7 @@ static int dotCmdImport(ShellState *p){
   int needCommit;             /* True to COMMIT or ROLLBACK at end */
   char *zSql = 0;             /* An SQL statement */
   ImportCtx sCtx;             /* Reader context */
-  char *(SQLITE_CDECL *xRead)(ImportCtx*); /* Func to read one value */
+  char *(*xRead)(ImportCtx*); /* Func to read one value */
   int eVerbose = 0;           /* Larger for more console output */
   i64 nSkip = 0;              /* Initial lines to skip */
   i64 iLineOffset = 0;        /* Offset to the first line of input */
@@ -11019,7 +11019,7 @@ static int do_meta_command(const char *zLine, ShellState *p){
 
 #ifdef SQLITE_ENABLE_IOTRACE
   if( c=='i' && cli_strncmp(azArg[0], "iotrace", n)==0 ){
-    SQLITE_API extern void (SQLITE_CDECL *sqlite3IoTrace)(const char*, ...);
+    SQLITE_API extern void (*sqlite3IoTrace)(const char*, ...);
     if( iotrace && iotrace!=stdout ) fclose(iotrace);
     iotrace = 0;
     if( nArg<2 ){
@@ -13921,7 +13921,7 @@ static char *cmdline_option_value(int argc, char **argv, int i){
 /*
 ** The callback from atexit().
 */
-static void SQLITE_CDECL abnormalExit(void){
+static void abnormalExit(void){
   if( seenInterrupt ) eputz("Program interrupted.\n");
   if( globalShellState ){
     clearTempFile(globalShellState, 1, 1);
@@ -13964,8 +13964,8 @@ static int auto_ext_leak_tester(
 */
 #if defined(_WIN32) && !defined(__MINGW32__) && !defined(main)
 #  define main utf8_main                 /* Rename entry point to utf_main() */
-int SQLITE_CDECL utf8_main(int,char**);  /* Forward declaration */  
-int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
+int utf8_main(int,char**);               /* Forward declaration */  
+int wmain(int argc, wchar_t **wargv){
   int rc, i;
   DWORD mode;
   HANDLE hOut;
@@ -14013,7 +14013,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 **     fiddle_main          In Fiddle
 **     sqlite3_shell        Other projects that use shell.c as a subroutine
 */
-int SQLITE_CDECL main(int argc, char **argv){
+int main(int argc, char **argv){
 #ifdef SQLITE_DEBUG
   sqlite3_int64 mem_main_enter = 0;
 #endif

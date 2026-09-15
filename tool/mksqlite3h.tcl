@@ -21,8 +21,6 @@
 #      formatted as an integer (e.g. "3006017").
 #   5) Replaces the string --SOURCE-ID-- with the date and time and sha1
 #      hash of the fossil-scm manifest for the source tree.
-#   6) Adds the SQLITE_CALLBACK calling convention macro in front of all
-#      callback declarations.
 #
 # This script outputs to stdout unless the -o FILENAME option is used.
 #
@@ -36,7 +34,6 @@
 #
 #   --enable-recover          Include the sqlite3recover extension
 #   -o FILENAME               Write results to FILENAME instead of stdout
-#   --useapicall              SQLITE_APICALL instead of SQLITE_CDECL
 #
 
 # Default output stream
@@ -54,17 +51,13 @@ if {$x>0} {
   set out [open [lindex $argv $x] wb]
 }
 
-# Enable use of SQLITE_APICALL macros at the right points?
-#
-set useapicall 0
-
 # Include sqlite3recover.h?
 #
 set enable_recover 0
 
 # Process command-line arguments
 if {[lsearch -regexp [lrange $argv 1 end] {^-+useapicall}] != -1} {
-  set useapicall 1
+  error "The --useapicall option is no longer supported"
 }
 if {[lsearch -regexp [lrange $argv 1 end] {^-+enable-recover}] != -1} {
   set enable_recover 1
@@ -151,19 +144,6 @@ if {$enable_recover} {
   lappend filelist "$TOP/ext/recover/sqlite3recover.h"
 }
 
-# These are the functions that accept a variable number of arguments.  They
-# always need to use the "cdecl" calling convention even when another calling
-# convention (e.g. "stcall") is being used for the rest of the library.
-set cdecllist {
-  sqlite3_config
-  sqlite3_db_config
-  sqlite3_log
-  sqlite3_mprintf
-  sqlite3_snprintf
-  sqlite3_test_control
-  sqlite3_vtab_config
-}
-
 # Process the source files.
 #
 foreach file $filelist {
@@ -200,20 +180,8 @@ foreach file $filelist {
         if {[string index $rettype end] ne "*"} {
           append line " "
         }
-        if {$useapicall} {
-          if {[lsearch -exact $cdecllist $funcname] >= 0} {
-            append line SQLITE_CDECL " "
-          } else {
-            append line SQLITE_APICALL " "
-          }
-        }
         append line $funcname $rest
       }
-    }
-    if {$useapicall} {
-      set line [string map [list (*sqlite3_syscall_ptr) \
-          "(SQLITE_SYSAPI *sqlite3_syscall_ptr)"] $line]
-      regsub {\(\*} $line {(SQLITE_CALLBACK *} line
     }
     puts $out $line
   }

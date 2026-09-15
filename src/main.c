@@ -135,7 +135,7 @@ int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
 ** I/O active are written using this function.  These messages
 ** are intended for debugging activity only.
 */
-SQLITE_API void (SQLITE_CDECL *sqlite3IoTrace)(const char*, ...) = 0;
+SQLITE_API void (*sqlite3IoTrace)(const char*, ...) = 0;
 #endif
 
 /*
