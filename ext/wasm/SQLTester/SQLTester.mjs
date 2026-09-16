@@ -87,7 +87,7 @@ const ResultBufferMode = Object.assign(Object.create(null),{
 */
 const ResultRowMode = newObj({
   //! Keep all result rows on one line, space-separated.
-  ONLINE: newE(),
+  ONELINE: newE(),
   //! Add a newline between each result row.
   NEWLINE: newE()
 });
@@ -162,8 +162,6 @@ const Rx = newObj({
   special: /[\x00-\x20\x22\x5c\x7b\x7d]/,
   squiggly: /[{}]/
 });
-
-
 
 const Util = newObj({
   toss,
