@@ -37,8 +37,11 @@
 # define ALIGN128
 #endif
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4324)
+#endif /* _MSC_VER */
+
 /*
 ** Each SQLite mutex is an instance of the following structure.
 **
@@ -61,7 +64,9 @@ struct sqlite3_mutex {
   volatile LONG trace;       /* True to trace changes */
 #endif
 };
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif /* _MSC_VER */
 
 #ifdef SQLITE_DEBUG
 /*

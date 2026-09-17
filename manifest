@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sfts5\sauxiliary\sfunction\sAPI\smethods\sxRowCount()\sand\sxColumnTotalSize()\sto\sreturn\sinaccurate\svalues\safter\srows\shad\sbeen\sdeleted\sfrom\sa\scontentless_delete=1\stable.\sForum\spost\s[forum:/info/5e6f15753a\s|\s5e6f15753a].
-D 2026-09-16T13:58:43.163
+C Portability\simprovements\sfor\sCygwin\scontributed\sby\sJan\sNijtmans.
+D 2026-09-17T13:30:54.731
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -721,7 +721,7 @@ F src/mutex.c 00b8cee206a67fd764d001f3a148494331d8d0b3b9c3974ecd69ff29bb444462
 F src/mutex.h e2159f6ce3201c90d63045701f0eaa669e9154e8b79d000982d2fa1467432a94
 F src/mutex_noop.c 9d4309c075ba9cc7249e19412d3d62f7f94839c4
 F src/mutex_unix.c caec9862aeebad01f6c8997cf709a239abeb0715fcce1895720b87fe7e2ef42f
-F src/mutex_w32.c d44e94c064f8ab39e0318fb6fa00171cf7e5645bd4241129b07d655a8ddbd44b
+F src/mutex_w32.c 6c1d1bdae24fa0af58bc6bd53e2e7e3e8ef3568ab20101788bbf96ff9c591162
 F src/notify.c 57c2d1a2805d6dee32acd5d250d928ab94e02d76369ae057dee7d445fd64e878
 F src/os.c 9566966dd14376099fe8f715e744ab4fef204f55bd89126c5ddd06eb37df9457
 F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
@@ -729,7 +729,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 713336d0c646720a9ccbd5bc6fe217bb4924dd28adea25d83a2af5346cb030e6
 F src/os_setup.h 8efc64eda6a6c2f221387eefc2e7e45fd5a3d5c8337a7a83519ba4fbd2957ae2
 F src/os_unix.c 5ccac2954679efc003330a5686cd2048ec9059f90f54f43900e60877e9158aa7
-F src/os_win.c 19fe1bcea5518605dcccde803d84b56cf24d731b24fb8bc2f94b123a04023cc2
+F src/os_win.c 364c3095fa6f1bc77b6d55acb7853011a25ff526562a576b5d89b4c14caa20a2
 F src/os_win.h c06ccc3a090cf54202ea58981c298817f3309d4c9e4d52ad0a02927346493721
 F src/pager.c fd9ca8fe01b09c490e66a440e2f56648d489ccb9e0e3b5508424079b046fc824
 F src/pager.h 53cabc1fd881a9c078eab7db6c233bc0ed29d8938fc05585f0e75e80d905d308
@@ -754,7 +754,7 @@ F src/status.c 7565d63a79aa2f326339a24a0461a60096d0bd2bce711fefb50b5c89335f3592
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c dd385a36a099482f140cb9cee85c759ab47829d1f3dedcf61e3df9c0f4d88562
 F src/tclsqlite.h 614b3780a62522bc9f8f2b9fb22689e8009958e7aa77e572d0f3149050af348a
-F src/test1.c 6bb9bee04156c0bead88369d24d1bc0055bb15592402592eb232ef02ffd09198
+F src/test1.c 933b06ead0fd5cf256384dcc1e19979ef3d679a77c67176f81a7fe40536b46c6
 F src/test2.c a61ed01d9264a1db74ab42fbc981fc66165f85d5e3947e92be61a73e79ec4f2d
 F src/test3.c c959fe0c3b04157483f5a6fa1950c1f222e062d920fee0a8e70410c6b6d45522
 F src/test4.c 0ac87fc13cdb334ab3a71823f99b6c32a6bebe5d603cd6a71d84c823d43a25a0
@@ -1651,7 +1651,7 @@ F test/shell7.test 6b006d296b569a7ec78b8168af77578b3bde8f58b79c32d9f46cff1eaf763
 F test/shell8.test d2fc95f7467c3d93834cac3327bdac03554991afed6d9a07e6a2b204b037f9d7
 F test/shell9.test c0e8871061a92151450b3332279a893b516fa73a6c46d4f51a0998407cbf8c89
 F test/shellA.test 05cdaafa1f79913654487ce3aefa038d4106245d58f52e02faf506140a76d480
-F test/shellB.test 308669158f9b7014bee30dbab58893124bd78d6b1cf7d169c13d704c2edc6fc7
+F test/shellB.test 95e8f63bcc9f9c9555b873a4846cea131eacfa053a3356b0e4b99de78e40c49e
 F test/shmlock.test 9f1f729a7fe2c46c88b156af819ac9b72c0714ac6f7246638a73c5752b5fd13c
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
@@ -2221,8 +2221,9 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 4630ee80dcb69588ec1c88d049e313b53258e7e23fc0209ac505c92b3bc85c63
-R b1ee004a816015877c9c2c8b636a45a2
-U dan
-Z 0c7a1e0d5341684747ec84c23ec6dcb7
+P 39ca0ac36596d37fd62316beb7c6341812624e6d3efea90d68ae0393f742163b fe484c8dbc4829508616a1db1bd38a8e451409bddcc20b593fbf51a6ab1a1b00
+R 52cefb75678ee4547b7882158be6b7cc
+T +closed fe484c8dbc4829508616a1db1bd38a8e451409bddcc20b593fbf51a6ab1a1b00 Closed\sby\sintegrate-merge.
+U stephan
+Z 048f93b841c256123f90ad1cf548d9b4
 # Remove this line to create a well-formed Fossil manifest.
