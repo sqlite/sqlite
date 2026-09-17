@@ -3120,11 +3120,12 @@ static int SQLITE_TCLAPI DbObjCmd(
     zCommit = "COMMIT";
     while( Tcl_GetsObj(in, str)>=0 ) {
       char *z;
+      Tcl_Size byteLen;
       lineno++;
       if (zEnc && *zEnc) {
           zLine = Tcl_GetString(str);
       }else {
-          zLine = (char *)Tcl_GetByteArrayFromObj(str, NULL);
+          zLine = (char *)Tcl_GetByteArrayFromObj(str, &byteLen);
       }
       azCol[0] = zLine;
       for(i=0, z=zLine; *z; z++){
