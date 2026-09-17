@@ -25,8 +25,10 @@ Other options include:
    --help                Show this help screen.
    --lean                "Lean" mode.
    --lookaside N SZ      Lookahead uses N slots of SZ bytes each.
+   --osmalloc            Use the OS native malloc() instead of MEMSYS5
    --pagesize N          Use N as the page size.
-   --quiet | -q          "Quite".  Put results in file but don't pop up editor
+   --pgo                 Use GCC-style PGO
+   --quiet | -q          "Quiet".  Put results in file but don't pop up editor
    --size N              Change the test size.  100 means 100%.  Default: 5.
    --testset TEST        Specify the specific testset to use.  The default
                          is "mix1".  Other options include: "main", "json",
@@ -40,7 +42,9 @@ set cc gcc
 set testset mix1
 set dryrun 0
 set quiet 0
-set speedtestflags {--shrink-memory --reprepare --stats --heap 40000000 64}
+set osmalloc 0
+set usePGO 0
+set speedtestflags {--shrink-memory --reprepare --stats}
 lappend speedtestflags --journal wal --size 5
 
 for {set i 0} {$i<[llength $argv]} {incr i} {
@@ -92,6 +96,10 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
       --dryrun {
         set dryrun 1
       }
+      -osmalloc -
+      --osmalloc {
+        set osmalloc 1
+      }
       -? -
       -help -
       --help {
@@ -103,6 +111,9 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
       --quiet {
         set quiet 1
       }
+      -pgo {
+        set usePGO 1
+      }
       default {
         lappend cflags $arg
       }
@@ -110,7 +121,7 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
     continue
   }
   if {[string match CC=* $arg]} {
-    set cc [lrange $arg 3 end]
+    set cc [string range $arg 3 end]
     continue
   }
   if {[string match *.c $arg]} {
@@ -139,10 +150,13 @@ for {set i 0} {$i<[llength $argv]} {incr i} {
 if {[lsearch -glob $cflags -O*]<0} {
   lappend cflags -Os
 }
-if {[lsearch -glob $cflags -DSQLITE_ENABLE_MEMSYS*]<0} {
+if {!$osmalloc} {
+  append speedtestflags { --heap 40000000 64}
+}
+if {!$osmalloc && [lsearch -glob $cflags {-DSQLITE_ENABLE_MEMSYS*}]<0} {
   lappend cflags -DSQLITE_ENABLE_MEMSYS5
 }
-if {[lsearch -glob $cflags -DSQLITE_ENABLE_RTREE*]<0} {
+if {[lsearch -glob $cflags {-DSQLITE_ENABLE_RTREE*}]<0} {
   lappend cflags -DSQLITE_ENABLE_RTREE
 }
 if {$srcfile==""} {
@@ -177,11 +191,28 @@ lappend cccmd {*}[lsort $cflags]
 lappend cccmd [file dir $argv0]/speedtest1.c
 lappend cccmd $srcfile
 lappend cccmd -o speedtest1
+lappend speedtestflags --testset $testset
+if {$usePGO} {
+  set cccmd [linsert $cccmd 2 -fprofile-generate]
+  puts $cccmd
+  if {!$dryrun} {
+    exec {*}$cccmd
+  }
+  foreach gcda [glob -nocomplain *.gcda] {
+    puts "Delete $gcda"
+    if {!$dryrun} {file delete $gcda}
+  }
+  set stcmd [list ./speedtest1 {*}$speedtestflags]
+  puts $stcmd
+  if {!$dryrun} {
+    exec {*}$stcmd >/dev/null
+  }
+  set cccmd [lreplace $cccmd 2 2 -fprofile-use]
+}
 puts $cccmd
 if {!$dryrun} {
   exec {*}$cccmd
 }
-lappend speedtestflags --testset $testset
 set stcmd [list valgrind --tool=cachegrind ./speedtest1 {*}$speedtestflags]
 lappend stcmd speedtest1.db
 lappend stcmd >valgrind-out.txt 2>valgrind-err.txt

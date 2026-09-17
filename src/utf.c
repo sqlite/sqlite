@@ -108,7 +108,7 @@ static const unsigned char sqlite3Utf8Trans1[] = {
 /*
 ** Write a single UTF8 character whose value is v into the
 ** buffer starting at zOut.  zOut must be sized to hold at
-** least for bytes.  Return the number of bytes needed
+** least four bytes.  Return the number of bytes needed
 ** to encode the new character.
 */
 int sqlite3AppendOneUtf8Character(char *zOut, u32 v){
@@ -555,7 +555,7 @@ int sqlite3Utf16ByteLen(const void *zIn, int nByte, int nChar){
   int n = 0;
   
   if( SQLITE_UTF16NATIVE==SQLITE_UTF16LE ) z++;
-  while( n<nChar && ALWAYS(z<=zEnd) ){
+  while( n<nChar && z<=zEnd ){
     c = z[0];
     z += 2;
     if( c>=0xd8 && c<0xdc && z<=zEnd && z[0]>=0xdc && z[0]<0xe0 ) z += 2;

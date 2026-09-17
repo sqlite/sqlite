@@ -406,8 +406,8 @@ proc options-add {opts} {
 		# Find the corresponding value in the user options
 		# and set the default if necessary
 		if {[string match "-*" $opt]} {
-			# This is a documentation-only option, like "-C <dir>"
-			set opthelp $opt
+			# We no longer support documentation-only options, like "-C <dir>"
+			autosetup-error "Option $opt is not supported"
 		} elseif {$colon eq ""} {
 			# Boolean option
 			lappend autosetup(options) $name
@@ -1611,7 +1611,7 @@ proc autosetup_output_block {type lines} {
 # Generate a command reference from inline documentation
 proc automf_command_reference {} {
     lappend files $::autosetup(prog)
-    lappend files {*}[lsort [glob -nocomplain $::autosetup(libdir)/*.tcl]]
+    lappend files {*}[lsort [glob -nocomplain $::autosetup(libdir)/{*/*.tcl,*.tcl}]]
 
     # We want to process all non-module files before module files
     # and then modules in alphabetical order.
@@ -2124,7 +2124,7 @@ if {$autosetup(istcl)} {
 			set frame [info frame -$i]
 			if {[dict exists $frame file]} {
 				# We don't need proc, so use ""
-				lappend stacktrace "" [dict get $frame file] [dict get $frame line]
+				lappend stacktrace "" [dict get $frame file] [dict get $frame line] ""
 			}
 		}
 		return $stacktrace
@@ -2181,8 +2181,12 @@ proc error-location {msg} {
 	if {$::autosetup(debug)} {
 		return -code error $msg
 	}
-	# Search back through the stack trace for the first error in a .def file
-	foreach {p f l} [stacktrace] {
+	set vars {p f l cmd}
+	if {!$::autosetup(istcl) && ![dict exists $::tcl_platform stackFormat]} {
+		# Older versions of Jim had a 3 element stacktrace
+		set vars {p f l}
+	}
+	foreach $vars [stacktrace] {
 		if {[string match *.def $f]} {
 			return "[relative-path $f]:$l: Error: $msg"
 		}
@@ -2534,7 +2538,7 @@ if {[catch {main $argv} msg opts] == 1} {
 	show-notices
 	autosetup-full-error [error-dump $msg $opts $autosetup(debug)]
 	if {!$autosetup(debug)} {
-		puts stderr "Try: '[file tail $autosetup(exe)] --autosetup-debug' for a full stack trace"
+		puts stderr "Try: '[file tail $autosetup(exe)] --debug' for a full stack trace"
 	}
 	exit 1
 }

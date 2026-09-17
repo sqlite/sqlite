@@ -17,10 +17,6 @@
 #include <string.h>
 #include <assert.h>
 
-#ifndef SQLITE_AMALGAMATION
-typedef sqlite3_int64 i64;
-#endif
-
 /*
 ** Characters that may appear in the second argument to matchinfo().
 */
@@ -136,10 +132,9 @@ struct StrBuffer {
 /*
 ** Allocate a two-slot MatchinfoBuffer object.
 */
-static MatchinfoBuffer *fts3MIBufferNew(size_t nElem, const char *zMatchinfo){
+static MatchinfoBuffer *fts3MIBufferNew(i64 nElem, const char *zMatchinfo){
   MatchinfoBuffer *pRet;
-  sqlite3_int64 nByte = sizeof(u32) * (2*(sqlite3_int64)nElem + 1)
-                           + SZ_MATCHINFOBUFFER(1);
+  sqlite3_int64 nByte = sizeof(u32) * (2*(i64)nElem+1) + SZ_MATCHINFOBUFFER(1);
   sqlite3_int64 nStr = strlen(zMatchinfo);
 
   pRet = sqlite3Fts3MallocZero(nByte + nStr+1);
@@ -533,6 +528,7 @@ static int fts3BestSnippet(
   sqlite3_int64 nByte;            /* Number of bytes of space to allocate */
   int iBestScore = -1;            /* Best snippet score found so far */
   int i;                          /* Loop counter */
+  Fts3Expr *pExpr = pCsr->pExpr;
 
   memset(&sIter, 0, sizeof(sIter));
 
@@ -561,9 +557,12 @@ static int fts3BestSnippet(
   sIter.nSnippet = nSnippet;
   sIter.nPhrase = nList;
   sIter.iCurrent = -1;
-  rc = sqlite3Fts3ExprIterate(
-      pCsr->pExpr, fts3SnippetFindPositions, (void*)&sIter
-  );
+  rc = sqlite3Fts3ExprIterate(pExpr, fts3SnippetFindPositions, (void*)&sIter);
+  if( rc==SQLITE_OK ){
+    /* Iterate through the expression twice, in case pointers garnered during
+    ** the first iteration are invalidated by a call to fts5EvalRestart(). */
+    rc = sqlite3Fts3ExprIterate(pExpr, fts3SnippetFindPositions, (void*)&sIter);
+  }
   if( rc==SQLITE_OK ){
 
     /* Set the *pmSeen output variable. */
@@ -618,8 +617,8 @@ static int fts3StringAppend(
   ** to grow the buffer until so that it is big enough to accommodate the
   ** appended data.
   */
-  if( pStr->n+nAppend+1>=pStr->nAlloc ){
-    sqlite3_int64 nAlloc = pStr->nAlloc+(sqlite3_int64)nAppend+100;
+  if( (i64)pStr->n+(i64)nAppend+1>=(i64)pStr->nAlloc ){
+    i64 nAlloc = pStr->nAlloc+(i64)nAppend+100;
     char *zNew = sqlite3_realloc64(pStr->z, nAlloc);
     if( !zNew ){
       return SQLITE_NOMEM;
@@ -891,7 +890,7 @@ static int fts3ExprLHits(
       if( p->flag==FTS3_MATCHINFO_LHITS ){
         p->aMatchinfo[iStart + iCol] = (u32)nHit;
       }else if( nHit ){
-        p->aMatchinfo[iStart + (iCol+1)/32] |= (1 << (iCol&0x1F));
+        p->aMatchinfo[iStart + iCol/32] |= (1U << (iCol&0x1F));
       }
     }
     assert( *pIter==0x00 || *pIter==0x01 );
@@ -1010,8 +1009,8 @@ static int fts3MatchinfoCheck(
   return SQLITE_ERROR;
 }
 
-static size_t fts3MatchinfoSize(MatchInfo *pInfo, char cArg){
-  size_t nVal;                      /* Number of integers output by cArg */
+static i64 fts3MatchinfoSize(MatchInfo *pInfo, char cArg){
+  i64 nVal;                      /* Number of integers output by cArg */
 
   switch( cArg ){
     case FTS3_MATCHINFO_NDOC:
@@ -1027,16 +1026,16 @@ static size_t fts3MatchinfoSize(MatchInfo *pInfo, char cArg){
       break;
 
     case FTS3_MATCHINFO_LHITS:
-      nVal = pInfo->nCol * pInfo->nPhrase;
+      nVal = (i64)pInfo->nCol * pInfo->nPhrase;
       break;
 
     case FTS3_MATCHINFO_LHITS_BM:
-      nVal = pInfo->nPhrase * ((pInfo->nCol + 31) / 32);
+      nVal = (i64)pInfo->nPhrase * ((pInfo->nCol + 31) / 32);
       break;
 
     default:
       assert( cArg==FTS3_MATCHINFO_HITS );
-      nVal = pInfo->nCol * pInfo->nPhrase * 3;
+      nVal = (i64)pInfo->nCol * pInfo->nPhrase * 3;
       break;
   }
 
@@ -1318,7 +1317,7 @@ static int fts3MatchinfoValues(
 
       case FTS3_MATCHINFO_LHITS_BM:
       case FTS3_MATCHINFO_LHITS: {
-        size_t nZero = fts3MatchinfoSize(pInfo, zArg[i]) * sizeof(u32);
+        i64 nZero = fts3MatchinfoSize(pInfo, zArg[i]) * sizeof(u32);
         memset(pInfo->aMatchinfo, 0, nZero);
         rc = fts3ExprLHitGather(pCsr->pExpr, pInfo);
         break;
@@ -1387,7 +1386,7 @@ static void fts3GetMatchinfo(
   ** initialize those elements that are constant for every row.
   */
   if( pCsr->pMIBuffer==0 ){
-    size_t nMatchinfo = 0;        /* Number of u32 elements in match-info */
+    i64 nMatchinfo = 0;           /* Number of u32 elements in match-info */
     int i;                        /* Used to iterate through zArg */
 
     /* Determine the number of phrases in the query */

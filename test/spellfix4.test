@@ -350,4 +350,14 @@ do_execsql_test 320 {
   )
 } {69d0a31872203a775e19325ea98cd053}
 
+do_catchsql_test 400 {
+  SELECT editdist3(format('%.10001c','x'),'abc');
+} {1 {string or blob too big}}
+do_catchsql_test 401 {
+  SELECT editdist3('xxxabc',format('%.10001c','x'));
+} {1 {string or blob too big}}
+do_catchsql_test 410 {
+  SELECT editdist3(format('abc%.9997c','x'),format('abc%.9997c','x'));
+} {0 0}
+
 finish_test

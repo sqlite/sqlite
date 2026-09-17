@@ -85,7 +85,7 @@ static int memstatConnect(
 
   rc = sqlite3_declare_vtab(db,"CREATE TABLE x(name,schema,value,hiwtr)");
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -107,7 +107,7 @@ static int memstatDisconnect(sqlite3_vtab *pVtab){
 */
 static int memstatOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   memstat_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->db = ((memstat_vtab*)p)->db;
@@ -401,8 +401,14 @@ static sqlite3_module memstatModule = {
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-int sqlite3MemstatVtabInit(sqlite3 *db){
+int sqlite3MemstatVtabInit(
+  sqlite3 *db,
+  char **NotUsed1,
+  const sqlite3_api_routines *NotUsed2
+){
   int rc = SQLITE_OK;
+  (void)NotUsed1;
+  (void)NotUsed2;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "sqlite_memstat", &memstatModule, 0);
 #endif
@@ -421,7 +427,7 @@ int sqlite3_memstat_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3MemstatVtabInit(db);
+  rc = sqlite3MemstatVtabInit(db, 0, 0);
 #endif
   return rc;
 }

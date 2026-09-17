@@ -62,6 +62,56 @@ do_catchsql_test 2.2 {
   INSERT INTO xyz(xyz, rank) VALUES('secure-delete', 'hello world');
 } {1 {SQL logic error}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(c, detail='none');
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  INSERT INTO t1(rowid, c) VALUES(1, 'a');
+}
+
+do_execsql_test 3.1 {
+  BEGIN;
+    DELETE FROM t1 WHERE rowid = 1;
+    INSERT INTO t1(rowid, c) VALUES(1, 'a');
+}
+
+do_execsql_test 3.2 {
+    INSERT INTO t1(rowid, c) VALUES(2, 'a');
+  COMMIT;
+}
+
+do_execsql_test 3.3 {
+  SELECT rowid FROM t1 ORDER BY rowid;
+} {1 2}
+
+# Expected {1 2}.  Observed {1}.
+do_execsql_test 3.4 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'a' ORDER BY rowid;
+} {1 2}
+
+# Expected {ok}.  Observed: SQLITE_CORRUPT_VTAB, "checksum mismatch".
+do_execsql_test 3.5 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} {}
+
+# control: the same script without secure-delete is correct
+do_execsql_test 3.6 {
+  CREATE VIRTUAL TABLE t1b USING fts5(c, detail='none');
+  INSERT INTO t1b(rowid, c) VALUES(1, 'a');
+  INSERT OR REPLACE INTO t1b(rowid, c) VALUES(1, 'a'), (2, 'a');
+  SELECT rowid FROM t1b WHERE t1b MATCH 'a' ORDER BY rowid;
+} {1 2}
+
+# control: the same script with detail=full is correct
+do_execsql_test 3.7 {
+  CREATE VIRTUAL TABLE t1c USING fts5(c, detail='full');
+  INSERT INTO t1c(t1c, rank) VALUES('secure-delete', 1);
+  INSERT INTO t1c(rowid, c) VALUES(1, 'a');
+  INSERT OR REPLACE INTO t1c(rowid, c) VALUES(1, 'a'), (2, 'a');
+  SELECT rowid FROM t1c WHERE t1c MATCH 'a' ORDER BY rowid;
+} {1 2}
 
 
 

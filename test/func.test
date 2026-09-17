@@ -1241,7 +1241,7 @@ do_test func-24.12 {
                           WHEN 'program' THEN null ELSE t1 END) FROM tbl1
   }
 } {,is,free,software}
-# Tests to verify ticket http://www.sqlite.org/src/tktview/55746f9e65f8587c0
+# Tests to verify ticket http://sqlite.org/src/tktview/55746f9e65f8587c0
 do_test func-24.13 {
   execsql {
     SELECT typeof(group_concat(x)) FROM (SELECT '' AS x);

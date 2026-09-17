@@ -517,4 +517,29 @@ do_execsql_test 13.0 {
    ORDER BY +id;
 } {10 1 2 5 20 1 3 5 30 1 2 4 40 1 3 4}
 
+#-------------------------------------------------------------------------
+# DISTINCT on the RHS of an IN(...) clause does not prevent it from
+# using an index.
+#
+reset_db
+do_execsql_test 14.0 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t2(c INTEGER PRIMARY KEY, d);
+  CREATE TABLE t3(e INTEGER PRIMARY KEY, f);
+  CREATE INDEX t3f ON t3(f);
+}
+
+do_execsql_test 14.1 {
+  EXPLAIN SELECT count(*) FROM t2 WHERE d IN (SELECT DISTINCT a FROM t1)
+} [execsql {
+  EXPLAIN SELECT count(*) FROM t2 WHERE d IN (SELECT a FROM t1)
+}]
+
+do_execsql_test 14.2 {
+  EXPLAIN SELECT count(*) FROM t2 WHERE d IN (SELECT DISTINCT f FROM t3)
+} [execsql {
+  EXPLAIN SELECT count(*) FROM t2 WHERE d IN (SELECT f FROM t3)
+}]
+
+
 finish_test

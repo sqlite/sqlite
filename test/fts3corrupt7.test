@@ -277,4 +277,100 @@ do_catchsql_test 2.1 {
   SELECT 0 FROM t1 WHERE t1 MATCH 'rtree NEAR rtree"json1 enable"';
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+
+set DEPTH 40000
+
+proc fts3_put_varint {v} {
+  set l [list]
+  while {$v >= 0x80} {
+    lappend l [expr ($v & 0x7F) | 0x80]
+    set v [expr $v >> 7]
+  }
+  lappend l [expr $v & 0x7F]
+
+  binary format cu* $l
+}
+
+proc make_interior_node {height child_blockid} {
+  binary format a*a* [fts3_put_varint $height] [fts3_put_varint $child_blockid]
+}
+db func make_interior_node make_interior_node
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE fts USING fts3(content TEXT);
+  INSERT INTO fts(content) VALUES ('hello world');
+  DELETE FROM fts_segdir;
+  INSERT INTO fts_segdir
+  (level, idx, start_block, leaves_end_block, end_block, root) VALUES
+  (0, 0, 100, 100 + $DEPTH, 100 + $DEPTH, make_interior_node($DEPTH+1, 100));
+}
+
+do_test 3.1 {
+  execsql BEGIN
+  for {set ii 0} {$ii<$DEPTH} {incr ii} {
+    execsql {
+      INSERT INTO fts_segments(blockid, block) 
+      VALUES($ii+100, make_interior_node($DEPTH-$ii, 101+$ii))
+    }
+  }
+  execsql COMMIT
+} {}
+
+do_catchsql_test 3.2 {
+  SELECT * FROM fts WHERE fts MATCH 'x';
+} {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(content);
+  DELETE FROM t1_segments;
+  DELETE FROM t1_segdir;
+}
+
+do_execsql_test 4.2 {
+  INSERT INTO t1_segdir
+  (level, idx, start_block, leaves_end_block, end_block, root)
+  VALUES(0, 0, 0, 0, 0, X'000568656C6C6F08010201FFFFFF7F00');
+}
+
+do_execsql_test 4.3 {
+  CREATE VIRTUAL TABLE t1_terms USING fts4aux(t1);
+}
+
+do_catchsql_test 4.4 {
+  SELECT * FROM t1_terms;
+} {1 {database disk image is malformed}}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE t USING fts3(x);
+  INSERT INTO t_segdir(level,idx,start_block,leaves_end_block,end_block,root)
+    VALUES(1,0,0,0,'0 -9223372036854775808',x'00');
+}
+
+do_execsql_test 7.1 {
+  INSERT INTO t(x) VALUES('alpha');
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE t USING fts4(x);
+  INSERT INTO t_content(docid,c0x) VALUES(1,'a b');
+  DELETE FROM t_segments;
+  DELETE FROM t_segdir;
+  INSERT INTO t_segdir(level,idx,start_block,leaves_end_block,end_block,root)
+    VALUES(0,0,0,0,0,x'000161110150028001500a818080800103038101000001622c010281008101ffffffffffffffffff010204ffffffffffffffffff01ffffffffffffffffff01c80109323200');
+}
+
+do_execsql_test 8.1 {
+  SELECT count(*) FROM t WHERE t MATCH 'a NEAR/100 b';
+} {1}
+
 finish_test

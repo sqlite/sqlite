@@ -261,6 +261,7 @@ do_execsql_test 8.4 {
   SELECT(
       SELECT x UNION 
       SELECT sum( avg((SELECT x FROM v1)) ) OVER()
+      ORDER BY 1
   )
   FROM v1;
 } {0.0 0.0}

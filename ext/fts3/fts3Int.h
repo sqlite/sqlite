@@ -14,16 +14,19 @@
 #ifndef _FTSINT_H
 #define _FTSINT_H
 
+/*
+** Activate assert() only if SQLITE_TEST is enabled.
+*/
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
+# define NDEBUG 1
+#endif
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
-# define NDEBUG 1
-#endif
 
 /* FTS3/FTS4 require virtual tables */
 #ifdef SQLITE_OMIT_VIRTUALTABLE
@@ -44,7 +47,7 @@
 
 /* If not building as part of the core, include sqlite3ext.h. */
 #ifndef SQLITE_CORE
-# include "sqlite3ext.h" 
+# include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
 #endif
 
@@ -187,13 +190,6 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 #define UNUSED_PARAMETER(x) (void)(x)
 
 /*
-** Activate assert() only if SQLITE_TEST is enabled.
-*/
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
-# define NDEBUG 1
-#endif
-
-/*
 ** The TESTONLY macro is used to enclose variable declarations or
 ** other bits of code that are needed to support the arguments
 ** within testcase() and assert() macros.
@@ -207,13 +203,22 @@ typedef sqlite3_int64 i64;        /* 8-byte signed integer */
 #define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 #define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
 
-#define deliberate_fall_through
+#if !defined(deliberate_fall_through)
+# if defined(__has_attribute)
+#  if __has_attribute(fallthrough)
+#    define deliberate_fall_through __attribute__((fallthrough));
+#  endif
+# endif
+#endif
+#if !defined(deliberate_fall_through)
+# define deliberate_fall_through
+#endif
 
 /*
 ** Macros needed to provide flexible arrays in a portable way
 */
 #ifndef offsetof
-# define offsetof(STRUCTURE,FIELD) ((size_t)((char*)&((STRUCTURE*)0)->FIELD))
+# define offsetof(ST,M) ((size_t)((char*)&((ST*)0)->M - (char*)0))
 #endif
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 # define FLEXARRAY
@@ -604,6 +609,15 @@ int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 #define fts3GetVarint32(p, piVal) (                                           \
   (*(u8*)(p)&0x80) ? sqlite3Fts3GetVarint32(p, piVal) : (*piVal=*(u8*)(p), 1) \
 )
+
+int sqlite3Fts3PrepareStmt(
+  Fts3Table *p,                   /* Prepare for this connection */
+  const char *zSql,               /* SQL to prepare */
+  int bPersist,                   /* True to set SQLITE_PREPARE_PERSISTENT */
+  int bAllowVtab,                 /* True to omit SQLITE_PREPARE_NO_VTAB */
+  sqlite3_stmt **pp               /* OUT: Prepared statement */
+);
+
 
 /* fts3.c */
 void sqlite3Fts3ErrMsg(char**,const char*,...);

@@ -627,4 +627,21 @@ do_execsql_test 18.2 {
 } {/.*SCAN t2.*SEARCH t1.*/}
 #     ^^^^^^^--^^^^^^^^^---  t2 should be the outer loop.
 
+# 2026-08-04 The vdbeSorterCompareReal() enhancement.  Bug in the
+# initial implementation (2026-08-04T14:55:51.598Z) by jeffchen.
+#
+reset_db
+do_execsql_test 19.1 {
+  CREATE TABLE t(x);
+  INSERT INTO t VALUES(9007199254740993),(9007199254740992.0),(0.5);
+  SELECT typeof(x), quote(x) FROM t ORDER BY x;
+  CREATE INDEX i ON t(x);
+} {real 0.5 real 9007199254740992.0 integer 9007199254740993}
+do_execsql_test 19.2 {
+  PRAGMA integrity_check;
+} ok
+do_execsql_test 19.3 {
+  SELECT typeof(x) FROM t WHERE x=9007199254740992.0;
+} real
+
 finish_test

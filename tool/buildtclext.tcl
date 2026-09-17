@@ -17,6 +17,8 @@ Options:
    --uninstall          Uninstall the extension
    --version-check      Check extension version against this source tree
    --destdir DIR        Installation root (used by "make install DESTDIR=...")
+  --tclConfig.sh FILE  Use this tclConfig.sh instead of looking for one
+  --extlibs             LDFLAGS required for external libs, e.g. ICU.
 
 Other options are retained and passed through into the compiler.}
 
@@ -28,7 +30,9 @@ set infoonly 0
 set versioncheck 0
 set CC {}
 set OPTS {}
-set DESTDIR ""; # --destdir "$(DESTDIR)"
+set DESTDIR ""    ; # --destdir "$(DESTDIR)"
+set tclConfigSh ""; # --tclConfig.sh FILE
+set LIBS {}       ; # --extlibs "-lx -ly ..."
 for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   set a0 [lindex $argv $ii]
   if {$a0=="--install-only"} {
@@ -56,6 +60,12 @@ for {set ii 0} {$ii<[llength $argv]} {incr ii} {
   } elseif {$a0=="--destdir" && $ii+1<[llength $argv]} {
     incr ii
     set DESTDIR [lindex $argv $ii]
+  } elseif {$a0=="--tclConfig.sh" && $ii+1<[llength $argv]} {
+    incr ii
+    set tclConfigSh [lindex $argv $ii]
+  } elseif {$a0=="--extlibs" && $ii+1<[llength $argv]} {
+    incr ii
+    lappend LIBS [lindex $argv $ii]
   } elseif {[string match -* $a0]} {
     append OPTS " $a0"
   } else {
@@ -88,39 +98,46 @@ if {$tcl_platform(platform) eq "windows"} {
   }
   set OUT tclsqlite3.dll
 } else {
-  # Figure out the location of the tclConfig.sh file used by the
-  # tclsh that is executing this script.
-  #
-  if {[catch {
-    set LIBDIR [tcl::pkgconfig get libdir,install]
-  }]} {
-    puts stderr "$argv0: tclsh does not support tcl::pkgconfig."
-    exit 1
-  }
-  if {![file exists $LIBDIR]} {
-    puts stderr "$argv0: cannot find the tclConfig.sh file."
-    puts stderr "$argv0: tclsh reported library directory \"$LIBDIR\"\
-                 does not exist."
-    exit 1
-  }
-  if {![file exists $LIBDIR/tclConfig.sh] 
-      || [file size $LIBDIR/tclConfig.sh]<5000} {
-    set n1 $LIBDIR/tcl$::tcl_version
-    if {[file exists $n1/tclConfig.sh]
-        && [file size $n1/tclConfig.sh]>5000} {
-      set LIBDIR $n1
-    } else {
-      puts stderr "$argv0: cannot find tclConfig.sh in either $LIBDIR or $n1"
-      exit 1
-    }
-  }
-
   # Read the tclConfig.sh file into the $tclConfig variable
   #
-  #puts "using $LIBDIR/tclConfig.sh"
-  set fd [open $LIBDIR/tclConfig.sh rb]
-  set tclConfig [read $fd]
-  close $fd
+  if {"" eq $tclConfigSh} {
+    # Figure out the location of the tclConfig.sh file used by the
+    # tclsh that is executing this script.
+    #
+    if {[catch {
+      set LIBDIR [tcl::pkgconfig get libdir,install]
+    }]} {
+      puts stderr "$argv0: tclsh does not support tcl::pkgconfig."
+      exit 1
+    }
+    if {![file exists $LIBDIR]} {
+      puts stderr "$argv0: cannot find the tclConfig.sh file."
+      puts stderr "$argv0: tclsh reported library directory \"$LIBDIR\"\
+                 does not exist."
+      exit 1
+    }
+    if {![file exists $LIBDIR/tclConfig.sh]
+        || [file size $LIBDIR/tclConfig.sh]<5000} {
+      set n1 $LIBDIR/tcl$::tcl_version
+      if {[file exists $n1/tclConfig.sh]
+          && [file size $n1/tclConfig.sh]>5000} {
+        set LIBDIR $n1
+      } else {
+        puts stderr "$argv0: cannot find tclConfig.sh in either $LIBDIR or $n1"
+        exit 1
+      }
+    }
+    #puts "using $LIBDIR/tclConfig.sh"
+    set fd [open $LIBDIR/tclConfig.sh rb]
+    set tclConfig [read $fd]
+    close $fd
+  } else {
+    # User-provided tclConfig.sh
+    #
+    set fd [open $tclConfigSh rb]
+    set tclConfig [read $fd]
+    close $fd
+  }
 
   # Extract parameter we will need from the tclConfig.sh file
   #
@@ -140,8 +157,8 @@ if {$tcl_platform(platform) eq "windows"} {
   }
   set CFLAGS -fPIC
   regexp {TCL_SHLIB_CFLAGS='([^']+)'} $tclConfig all CFLAGS
-  set LIBS {}
-  regexp {TCL_STUB_LIB_SPEC='([^']+)'} $tclConfig all LIBS
+  regexp {TCL_STUB_LIB_SPEC='([^']+)'} $tclConfig all LIBSTUB
+  lappend LIBS $LIBSTUB
   set INC "-I$srcdir/src"
   set inc {}
   regexp {TCL_INCLUDE_SPEC='([^']+)'} $tclConfig all inc
@@ -150,9 +167,18 @@ if {$tcl_platform(platform) eq "windows"} {
   }
   set cmd {${CC} ${CFLAGS} ${LDFLAGS} -shared}
   regexp {TCL_SHLIB_LD='([^']+)(-Wl,--out-implib.*)?'} $tclConfig all cmd
-  set LDFLAGS "$INC -DUSE_TCL_STUBS"
+
+  # TCL_SHLIB_LD is a shell command recorded from the Tcl build, so the names
+  # in it are Tcl's configure-time variables. We use every name that 
+  # a tclConfig.sh is known to use so [subst] below doesn't fail.
+  set SHLIB_CFLAGS $CFLAGS
+  set LDFLAGS ""
+
+  # Our own options get appended to the command directly.
+ 
+  set EXTRA "$INC -DUSE_TCL_STUBS"
   if {[string length $OPTS]>1} {
-    append LDFLAGS $OPTS
+    append EXTRA $OPTS
   }
   if {$tcl_platform(os) eq "Windows NT"} {
     set OUT cyg
@@ -167,7 +193,11 @@ if {$tcl_platform(platform) eq "windows"} {
   set @ $OUT; # Workaround for https://sqlite.org/forum/forumpost/0683a49cb02f31a1
               # in which Gentoo edits their tclConfig.sh to include an soname
               # linker flag which includes ${@} (the target file's name).
-  set CMD [subst $cmd]
+  if {[catch {subst $cmd} CMD]} {
+    puts stderr "warning: cannot expand TCL_SHLIB_LD: $CMD"
+    set CMD "$CC $CFLAGS -shared"
+  }
+  append CMD " $EXTRA"
 }
 
 # Check the SQLite TCL extension that is loaded by default by this running
@@ -300,7 +330,7 @@ package ifneeded sqlite3 $VERSION \\
 
   # Generate and execute the command with which to do the compilation.
   #
-  set cmd "$CMD -DUSE_TCL_STUBS tclsqlite3.c -o $OUT $LIBS"
+  set cmd "$CMD -DUSE_TCL_STUBS tclsqlite3.c -o $OUT [join $LIBS { }]"
   puts $cmd
   file delete -force $OUT
   catch {exec {*}$cmd} errmsg

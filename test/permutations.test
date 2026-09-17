@@ -117,7 +117,7 @@ set alltests [test_set $alltests -exclude {
 set allquicktests [test_set $alltests -exclude {
   backup_ioerr.test corrupt.test
   corruptC.test crash.test crash2.test crash3.test crash4.test crash5.test
-  crash6.test crash7.test delete3.test e_fts3.test fts3rnd.test
+  crash6.test crash7.test crash9.test delete3.test e_fts3.test fts3rnd.test
   fkey_malloc.test fuzz.test fuzz3.test fuzz_malloc.test in2.test loadext.test
   misc7.test mutex2.test onefile.test pagerfault2.test 
   savepoint4.test savepoint6.test select9.test 
@@ -139,9 +139,11 @@ set allquicktests [test_set $alltests -exclude {
 
   rtree4.test
   sessionbig.test
+  sessionbig2.test
 
   writecrash.test view3.test 
   fts5dlidx.test fts5ac.test fts4merge3.test fts5prefix.test
+  fts5bigtok2.test fts5secure7.test
   sessionB.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
@@ -1098,7 +1100,7 @@ test_suite "sorterref" -prefix "" -description {
 ] -initialize {
   catch {db close}
   sqlite3_shutdown
-  sqlite3_config_sorterref 0
+  sqlite3_config_sorterref 50
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
@@ -1117,6 +1119,18 @@ test_suite "maindbname" -prefix "" -description {
       *fts5corrupt* *fts5big* *fts5aj*
 ] -dbconfig {
   dbconfig_maindbname_icecube $::dbhandle
+}
+
+test_suite "win_unc_locking" -prefix "" -description {
+  Run the "wal*" tests with UNC style single fd locking.
+} -files [
+  test_set                                      \
+      {*}[glob [file join $testdir wal*]]       \
+      -exclude *fault* *malloc* *crash* *slow* walsetlk.test
+] -initialize {
+  set sqlite3_win_test_unc_locking 1
+} -shutdown {
+  set sqlite3_win_test_unc_locking 0
 }
 
 # End of tests

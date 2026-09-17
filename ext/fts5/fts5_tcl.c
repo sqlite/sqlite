@@ -22,6 +22,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef SQLITE_DEBUG
 extern int sqlite3_fts5_may_be_corrupt;
@@ -203,6 +204,17 @@ static void xSetAuxdataDestructor(void *p){
   Tcl_DecrRefCount(pData->pObj);
   sqlite3_free(pData);
 }
+
+/*
+** Convert back and forth between (int) and (void*).
+*/
+#if defined(INTPTR_MAX)
+# define FTS5TCL_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
+# define FTS5TCL_PTR_TO_INT(X)  ((int)(intptr_t)(X))
+#else
+# define FTS5TCL_INT_TO_PTR(X)  ((void*)((char*)0 + (X)))
+# define FTS5TCL_PTR_TO_INT(X)  ((int)((char*)(X) - (char*)0))
+#endif
 
 /*
 **      api sub-command...
@@ -391,7 +403,7 @@ static int SQLITE_TCLAPI xF5tApi(
       break;
     }
     CASE(12, "xSetAuxdata") {
-      F5tAuxData *pData = (F5tAuxData*)sqlite3_malloc(sizeof(F5tAuxData));
+      F5tAuxData *pData = (F5tAuxData*)sqlite3_malloc64(sizeof(F5tAuxData));
       if( pData==0 ){
         Tcl_AppendResult(interp, "out of memory", (char*)0);
         return TCL_ERROR;
@@ -426,14 +438,14 @@ static int SQLITE_TCLAPI xF5tApi(
     CASE(14, "xSetAuxdataInt") {
       int iVal;
       if( Tcl_GetIntFromObj(interp, objv[2], &iVal) ) return TCL_ERROR;
-      rc = p->pApi->xSetAuxdata(p->pFts, (void*)((char*)0 + iVal), 0);
+      rc = p->pApi->xSetAuxdata(p->pFts, FTS5TCL_INT_TO_PTR(iVal), 0);
       break;
     }
     CASE(15, "xGetAuxdataInt") {
       int iVal;
       int bClear;
       if( Tcl_GetBooleanFromObj(interp, objv[2], &bClear) ) return TCL_ERROR;
-      iVal = (int)((char*)p->pApi->xGetAuxdata(p->pFts, bClear) - (char*)0);
+      iVal = FTS5TCL_PTR_TO_INT( p->pApi->xGetAuxdata(p->pFts, bClear) );
       Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
       break;
     }
@@ -780,7 +792,7 @@ static int SQLITE_TCLAPI f5tTokenize(
   }
 
   if( nText>0 ){
-    pCopy = sqlite3_malloc(nText);
+    pCopy = sqlite3_malloc64(nText);
     if( pCopy==0 ){
       tokenizer.xDelete(pTok);
       Tcl_AppendResult(interp, "error in sqlite3_malloc()", (char*)0);
@@ -1420,7 +1432,7 @@ static int f5tOrigintextCreate(
   void *pTokCtx = 0;
   int rc = SQLITE_OK;
 
-  pTok = (OriginTextTokenizer*)sqlite3_malloc(sizeof(OriginTextTokenizer));
+  pTok = (OriginTextTokenizer*)sqlite3_malloc64(sizeof(OriginTextTokenizer));
   if( pTok==0 ){
     rc = SQLITE_NOMEM;
   }else if( nArg<1 ){
@@ -1480,7 +1492,7 @@ static int xOriginToken(
     int nReq = nToken + 1 + (iEnd-iStart);
     if( nReq>p->nBuf ){
       sqlite3_free(p->aBuf);
-      p->aBuf = sqlite3_malloc(nReq*2);
+      p->aBuf = sqlite3_malloc64(nReq*2);
       if( p->aBuf==0 ) return SQLITE_NOMEM;
       p->nBuf = nReq*2;
     }

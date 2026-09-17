@@ -1922,8 +1922,8 @@ do_test auth-1.283 {
   execsql {
     REINDEX BINARY;
   }
-  set ::authargs
-} {t3_idx1 {} main {} sqlite_autoindex_t3_1 {} main {}}
+  lsort -unique $::authargs
+} {{} main sqlite_autoindex_t3_1 t3_idx1 t3_idx2}
 do_test auth-1.284 {
   set ::authargs {}
   execsql {
@@ -1963,8 +1963,8 @@ ifcapable tempdb {
     execsql {
       REINDEX BINARY;
     }
-    set ::authargs
-  } {t3_idx1 {} temp {} sqlite_autoindex_t3_1 {} temp {}}
+    lsort -unique $::authargs
+  } {{} sqlite_autoindex_t3_1 t3_idx1 t3_idx2 temp}
   do_test auth-1.290 {
     set ::authargs {}
     execsql {
@@ -2672,6 +2672,31 @@ do_test auth-8.4 {
   SQLITE_READ t7 {} {} {}            \
 ]
 
+# Bug 2026-07-05T08:15:45Z
+#
+proc auth {op args} {
+  foreach {a b c d} $args break
+  lappend ::authargs $op $a $b $c $d
+  return "SQLITE_OK"
+}
+do_execsql_test auth-9.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(x,y1); INSERT INTO t1 VALUES(1,'a');
+  CREATE TABLE t2(x,y2); INSERT INTO t2 VALUES(99,'z');
+}
+set ::authargs [list]
+do_execsql_test auth-9.2 {
+  SELECT x,y2 FROM t1 FULL JOIN t2 USING(x);
+} {1 {} 99 z}
+do_test auth-9.3 {
+  set ::authargs
+} [list \
+  SQLITE_SELECT {} {} {} {} \
+  SQLITE_READ t1 x main {} \
+  SQLITE_READ t2 x main {} \
+  SQLITE_READ t2 y2 main {} \
+]
 
 rename proc {}
 rename proc_real proc

@@ -325,5 +325,25 @@ ifcapable foreignkey {
   }
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a, b);
+  INSERT INTO t1 VALUES('abc def', X'123456');
+}
+faultsim_save_and_close
+
+
+do_faultsim_test 13 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    UPDATE t1 SET a='def abc'
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
 finish_test
 

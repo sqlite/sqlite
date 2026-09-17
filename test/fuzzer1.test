@@ -1817,4 +1817,24 @@ do_execsql_test 10.3 {
   SELECT length(word) FROM x5 WHERE word MATCH 'a' LIMIT 50;
 } {1 21 41 61 81}
 
+# Bug 2026-06-23T05:51:36Z
+#
+
+do_catchsql_test 11.1 {
+  DROP TABLE IF EXISTS f1;
+  CREATE VIRTUAL TABLE f1 USING fuzzer('aaaaaaaaaaaaaaaa'bbbbbbbbbbbbbbbb);
+} {1  {fuzzer: no such table: main.aaaaaaaaaaaaaaaabbbbbbbbbbbbbbbb}}
+do_catchsql_test 11.2 {
+  DROP TABLE IF EXISTS f2;
+  CREATE VIRTUAL TABLE f2 USING fuzzer("xxxxxxxxxxxxxxxx"yyyyyyyyyyyyyyyy);
+} {1  {fuzzer: no such table: main.xxxxxxxxxxxxxxxxyyyyyyyyyyyyyyyy}}
+do_catchsql_test 11.3 {
+  DROP TABLE IF EXISTS f3;
+  CREATE VIRTUAL TABLE f3 USING fuzzer([aaaaaaaaaaaaaaaa]bbbbbbbbbbbbbbbb);
+} {1  {fuzzer: no such table: main.aaaaaaaaaaaaaaaabbbbbbbbbbbbbbbb}}
+do_catchsql_test 11.4 {
+  DROP TABLE IF EXISTS f4;
+  CREATE VIRTUAL TABLE f4 USING fuzzer('a'b);
+} {1  {fuzzer: no such table: main.ab}}
+
 finish_test

@@ -58,26 +58,37 @@ static void updateVirtualTable(
 ** integer.  In that case, add an OP_RealAffinity opcode to make sure
 ** it has been converted into REAL.
 */
-void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
+static SQLITE_NOINLINE void columnDefaultUncommonCase(
+  Vdbe *v,          /* Byte code under construction */
+  Table *pTab,      /* The table */
+  Column *pCol      /* Which column of the table */
+){
+  sqlite3_value *pValue = 0;
+  u8 enc = ENC(sqlite3VdbeDb(v));
+  Parse *pParse = sqlite3VdbeParser(v);
+  assert( !IsView(pTab) );
+  sqlite3ValueFromExpr(sqlite3VdbeDb(v),
+                       sqlite3ColumnExprAuth(pTab,pCol,pParse), enc,
+                       pCol->affinity, &pValue);
+  if( pValue ){
+    sqlite3VdbeAppendP4(v, pValue, P4_MEM);
+  }
+}
+void sqlite3ColumnDefault(
+  Vdbe *v,          /* Byte code under construction */
+  Table *pTab,      /* The table */
+  int i,            /* Which column of the table */
+  int iReg          /* Register in which results are stored */
+){
   Column *pCol;
   assert( pTab!=0 );
   assert( pTab->nCol>i );
   pCol = &pTab->aCol[i];
   if( pCol->iDflt ){
-    sqlite3_value *pValue = 0;
-    u8 enc = ENC(sqlite3VdbeDb(v));
-    assert( !IsView(pTab) );
-    VdbeComment((v, "%s.%s", pTab->zName, pCol->zCnName));
-    assert( i<pTab->nCol );
-    sqlite3ValueFromExpr(sqlite3VdbeDb(v),
-                         sqlite3ColumnExpr(pTab,pCol), enc,
-                         pCol->affinity, &pValue);
-    if( pValue ){
-      sqlite3VdbeAppendP4(v, pValue, P4_MEM);
-    }
+    columnDefaultUncommonCase(v,pTab,pCol);
   }
 #ifndef SQLITE_OMIT_FLOATING_POINT
-  if( pCol->affinity==SQLITE_AFF_REAL && !IsVirtual(pTab) ){
+  if( pCol->affinity==SQLITE_AFF_REAL ){
     sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
   }
 #endif

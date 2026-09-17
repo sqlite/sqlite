@@ -139,6 +139,7 @@ do_test 2.3 {
   sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
 
   db eval {
+    PRAGMA writable_schema=on;
     DELETE FROM imp1 WHERE rowid=1;
     DELETE FROM imp2 WHERE rowid=2;
   }
@@ -174,6 +175,7 @@ do_test 3.2 {
   sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
 
   db eval {
+    PRAGMA writable_schema=on;
     DELETE FROM imp1 WHERE a=5;
   }
   execsql_pp {

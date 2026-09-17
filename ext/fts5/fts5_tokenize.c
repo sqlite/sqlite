@@ -72,7 +72,7 @@ static int fts5AsciiCreate(
   if( nArg%2 ){
     rc = SQLITE_ERROR;
   }else{
-    p = sqlite3_malloc(sizeof(AsciiTokenizer));
+    p = sqlite3_malloc64(sizeof(AsciiTokenizer));
     if( p==0 ){
       rc = SQLITE_NOMEM;
     }else{
@@ -367,7 +367,7 @@ static int fts5UnicodeCreate(
   if( nArg%2 ){
     rc = SQLITE_ERROR;
   }else{
-    p = (Unicode61Tokenizer*)sqlite3_malloc(sizeof(Unicode61Tokenizer));
+    p = (Unicode61Tokenizer*)sqlite3_malloc64(sizeof(Unicode61Tokenizer));
     if( p ){
       const char *zCat = "L* N* Co";
       int i;
@@ -586,11 +586,17 @@ static int fts5PorterCreate(
   const char *zBase = "unicode61";
   fts5_tokenizer_v2 *pV2 = 0;
 
-  if( nArg>0 ){
-    zBase = azArg[0];
+  while( nArg>0 ){
+    if( sqlite3_stricmp(azArg[0],"porter")==0 ){
+      nArg--;
+      azArg++;
+    }else{
+      zBase = azArg[0];
+      break;
+    }
   }
 
-  pRet = (PorterTokenizer*)sqlite3_malloc(sizeof(PorterTokenizer));
+  pRet = (PorterTokenizer*)sqlite3_malloc64(sizeof(PorterTokenizer));
   if( pRet ){
     memset(pRet, 0, sizeof(PorterTokenizer));
     rc = pApi->xFindTokenizer_v2(pApi, zBase, &pUserdata, &pV2);
@@ -712,9 +718,9 @@ static int fts5Porter_Ostar(char *zStem, int nStem){
     for(i=0; i<nStem; i++){
       bCons = !fts5PorterIsVowel(zStem[i], bCons);
       assert( bCons==0 || bCons==1 );
-      mask = (mask << 1) + bCons;
+      mask = ((mask << 1) + bCons) & 0x0007;
     }
-    return ((mask & 0x0007)==0x0005);
+    return (mask==0x0005);
   }
 }
 
@@ -1297,7 +1303,7 @@ static int fts5TriCreate(
     rc = SQLITE_ERROR;
   }else{
     int i;
-    pNew = (TrigramTokenizer*)sqlite3_malloc(sizeof(*pNew));
+    pNew = (TrigramTokenizer*)sqlite3_malloc64(sizeof(*pNew));
     if( pNew==0 ){
       rc = SQLITE_NOMEM;
     }else{

@@ -314,7 +314,7 @@ int sqlite3Fts5ExprNew(
 
   assert( sParse.rc!=SQLITE_OK || sParse.zErr==0 );
   if( sParse.rc==SQLITE_OK ){
-    *ppNew = pNew = sqlite3_malloc(sizeof(Fts5Expr));
+    *ppNew = pNew = sqlite3_malloc64(sizeof(Fts5Expr));
     if( pNew==0 ){
       sParse.rc = SQLITE_NOMEM;
       sqlite3Fts5ParseNodeFree(sParse.pExpr);
@@ -466,7 +466,7 @@ int sqlite3Fts5ExprAnd(Fts5Expr **pp1, Fts5Expr *p2){
     p2->pRoot = 0;
 
     if( sParse.rc==SQLITE_OK ){
-      Fts5ExprPhrase **ap = (Fts5ExprPhrase**)sqlite3_realloc(
+      Fts5ExprPhrase **ap = (Fts5ExprPhrase**)sqlite3_realloc64(
           p1->apExprPhrase, nPhrase * sizeof(Fts5ExprPhrase*)
       );
       if( ap==0 ){
@@ -807,7 +807,7 @@ static int fts5ExprNearIsMatch(int *pRc, Fts5ExprNearset *pNear){
       i64 iPos = a[i].reader.iPos;
       Fts5PoslistWriter *pWriter = &a[i].writer;
       if( a[i].pOut->n==0 || iPos!=pWriter->iPrev ){
-        sqlite3Fts5PoslistWriterAppend(a[i].pOut, pWriter, iPos);
+        sqlite3Fts5PoslistSafeAppend(a[i].pOut, &pWriter->iPrev, iPos);
       }
     }
 
@@ -1549,7 +1549,13 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 ** Return SQLITE_OK if successful, or an SQLite error code otherwise. It
 ** is not considered an error if the query does not match any documents.
 */
-int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, i64 iFirst, int bDesc){
+int sqlite3Fts5ExprFirst(
+  Fts5Expr *p, 
+  Fts5Index *pIdx, 
+  i64 iFirst, 
+  i64 iLast, 
+  int bDesc
+){
   Fts5ExprNode *pRoot = p->pRoot;
   int rc;                         /* Return code */
 
@@ -1570,6 +1576,9 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, i64 iFirst, int bDesc){
   while( pRoot->bNomatch && rc==SQLITE_OK ){
     assert( pRoot->bEof==0 );
     rc = fts5ExprNodeNext(p, pRoot, 0, 0);
+  }
+  if( fts5RowidCmp(p, pRoot->iRowid, iLast)>0 ){
+    pRoot->bEof = 1;
   }
   return rc;
 }
@@ -1749,10 +1758,10 @@ static int fts5ParseTokenize(
       memset(pSyn, 0, (size_t)nByte);
       pSyn->pTerm = ((char*)pSyn) + sizeof(Fts5ExprTerm) + sizeof(Fts5Buffer);
       pSyn->nFullTerm = pSyn->nQueryTerm = nToken;
+      memcpy(pSyn->pTerm, pToken, nToken);
       if( pCtx->pConfig->bTokendata ){
         pSyn->nQueryTerm = (int)strlen(pSyn->pTerm);
       }
-      memcpy(pSyn->pTerm, pToken, nToken);
       pSyn->pSynonym = pPhrase->aTerm[pPhrase->nTerm-1].pSynonym;
       pPhrase->aTerm[pPhrase->nTerm-1].pSynonym = pSyn;
     }

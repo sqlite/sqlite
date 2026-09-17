@@ -516,16 +516,26 @@ static unsigned int rbuDeltaGetInt(const char **pz, int *pLen){
     25, 26, 27, 28, 29, 30, 31, 32,   33, 34, 35, -1, -1, -1, -1, 36,
     -1, 37, 38, 39, 40, 41, 42, 43,   44, 45, 46, 47, 48, 49, 50, 51,
     52, 53, 54, 55, 56, 57, 58, 59,   60, 61, 62, -1, -1, -1, 63, -1,
+
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,
   };
   unsigned int v = 0;
   int c;
   unsigned char *z = (unsigned char*)*pz;
-  unsigned char *zStart = z;
-  while( (c = zValue[0x7f&*(z++)])>=0 ){
-     v = (v<<6) + c;
+  unsigned char *zEnd = z + (*pLen);
+  while( z<zEnd && (c = zValue[*z])>=0 ){
+    v = (v<<6) + c;
+    z++;
   }
-  z--;
-  *pLen -= (int)(z - zStart);
+
+  *pLen -= (int)(z - (unsigned char*)*pz);
   *pz = (char*)z;
   return v;
 }
@@ -594,21 +604,22 @@ static int rbuDeltaApply(
   int lenDelta,          /* Length of the delta */
   char *zOut             /* Write the output into this preallocated buffer */
 ){
-  unsigned int limit;
-  unsigned int total = 0;
+  sqlite3_uint64 limit;
+  sqlite3_uint64 total = 0;
 #if RBU_ENABLE_DELTA_CKSUM
   char *zOrigOut = zOut;
 #endif
 
   limit = rbuDeltaGetInt(&zDelta, &lenDelta);
-  if( *zDelta!='\n' ){
+  if( lenDelta<=0 || *zDelta!='\n' ){
     /* ERROR: size integer not terminated by "\n" */
     return -1;
   }
-  zDelta++; lenDelta--;
-  while( *zDelta && lenDelta>0 ){
+  zDelta++; lenDelta--; /* Skip the \n */
+  while( lenDelta>0 && zDelta[0] ){
     unsigned int cnt, ofst;
     cnt = rbuDeltaGetInt(&zDelta, &lenDelta);
+    if( lenDelta<=0 ) return -1;
     switch( zDelta[0] ){
       case '@': {
         zDelta++; lenDelta--;
@@ -623,7 +634,7 @@ static int rbuDeltaApply(
           /* ERROR: copy exceeds output file size */
           return -1;
         }
-        if( (int)(ofst+cnt) > lenSrc ){
+        if( (u64)ofst+(u64)cnt > (u64)lenSrc ){
           /* ERROR: copy extends past end of input */
           return -1;
         }
@@ -638,7 +649,7 @@ static int rbuDeltaApply(
           /* ERROR:  insert command gives an output larger than predicted */
           return -1;
         }
-        if( (int)cnt>lenDelta ){
+        if( cnt>lenDelta ){
           /* ERROR: insert count exceeds size of delta */
           return -1;
         }
@@ -676,7 +687,7 @@ static int rbuDeltaApply(
 static int rbuDeltaOutputSize(const char *zDelta, int lenDelta){
   int size;
   size = rbuDeltaGetInt(&zDelta, &lenDelta);
-  if( *zDelta!='\n' ){
+  if( lenDelta<=0 || *zDelta!='\n' ){
     /* ERROR: size integer not terminated by "\n" */
     return -1;
   }
@@ -724,7 +735,7 @@ static void rbuFossilDeltaFunc(
     return;
   }
 
-  aOut = sqlite3_malloc(nOut+1);
+  aOut = sqlite3_malloc64((i64)nOut+1);
   if( aOut==0 ){
     sqlite3_result_error_nomem(context);
   }else{
@@ -2269,8 +2280,8 @@ static char *rbuObjIterGetIndexWhere(sqlite3rbu *p, RbuObjIter *pIter){
 
           /* If necessary, grow the pIter->aIdxCol[] array */
           if( iIdxCol==nIdxAlloc ){
-            RbuSpan *aIdxCol = (RbuSpan*)sqlite3_realloc(
-                pIter->aIdxCol, (nIdxAlloc+16)*sizeof(RbuSpan)
+            RbuSpan *aIdxCol = (RbuSpan*)sqlite3_realloc64(
+                pIter->aIdxCol, nIdxAlloc*sizeof(RbuSpan) + 16*sizeof(RbuSpan)
             );
             if( aIdxCol==0 ){
               rc = SQLITE_NOMEM;
@@ -2651,13 +2662,13 @@ static int rbuGetUpdateStmt(
     char *zUpdate = 0;
 
     pUp->zMask = (char*)&pUp[1];
-    memcpy(pUp->zMask, zMask, pIter->nTblCol);
     pUp->pNext = pIter->pRbuUpdate;
     pIter->pRbuUpdate = pUp;
 
     if( zSet ){
       const char *zPrefix = "";
-
+      assert( p->rc==SQLITE_OK );
+      memcpy(pUp->zMask, zMask, pIter->nTblCol);
       if( pIter->eType!=RBU_PK_VTAB ) zPrefix = "rbu_imp_";
       zUpdate = sqlite3_mprintf("UPDATE \"%s%w\" SET %s WHERE %s", 
           zPrefix, pIter->zTbl, zSet, zWhere
@@ -2747,6 +2758,9 @@ static RbuState *rbuLoadState(sqlite3rbu *p){
 
       case RBU_STATE_ROW:
         pRet->nRow = sqlite3_column_int(pStmt, 1);
+        if( pRet->nRow<0 ){
+          rc = SQLITE_CORRUPT;
+        }
         break;
 
       case RBU_STATE_PROGRESS:
@@ -3655,7 +3669,12 @@ static void rbuCreateTargetSchema(sqlite3rbu *p){
 
   while( p->rc==SQLITE_OK && sqlite3_step(pSql)==SQLITE_ROW ){
     const char *zSql = (const char*)sqlite3_column_text(pSql, 0);
-    p->rc = sqlite3_exec(p->dbMain, zSql, 0, 0, &p->zErrmsg);
+    sqlite3_stmt *pStmt = 0;
+    p->rc = prepareAndCollectError(p->dbMain, &pStmt, &p->zErrmsg, zSql);
+    if( p->rc==SQLITE_OK ){
+      sqlite3_step(pStmt);
+      rbuFinalize(p, pStmt);
+    }
   }
   rbuFinalize(p, pSql);
   if( p->rc!=SQLITE_OK ) return;

@@ -23,6 +23,7 @@
 
 /* defined in main.c */
 extern const char *sqlite3ErrName(int);
+int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 
 static const char *aName[MAX_MUTEXES+1] = {
   "fast",        "recursive",   "static_main",   "static_mem",
@@ -371,19 +372,6 @@ static int SQLITE_TCLAPI test_config(
   return TCL_OK;
 }
 
-static sqlite3 *getDbPointer(Tcl_Interp *pInterp, Tcl_Obj *pObj){
-  sqlite3 *db;
-  Tcl_CmdInfo info;
-  char *zCmd = Tcl_GetString(pObj);
-  if( Tcl_GetCommandInfo(pInterp, zCmd, &info) ){
-    db = *((sqlite3 **)info.objClientData);
-  }else{
-    db = (sqlite3*)sqlite3TestTextToPtr(zCmd);
-  }
-  assert( db );
-  return db;
-}
-
 static sqlite3_mutex *getStaticMutexPointer(
   Tcl_Interp *pInterp,
   Tcl_Obj *pObj
@@ -445,7 +433,9 @@ static int SQLITE_TCLAPI test_enter_db_mutex(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return TCL_ERROR;
   }
-  db = getDbPointer(interp, objv[1]);
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
   if( !db ){
     return TCL_ERROR;
   }
@@ -464,7 +454,9 @@ static int SQLITE_TCLAPI test_leave_db_mutex(
     Tcl_WrongNumArgs(interp, 1, objv, "DB");
     return TCL_ERROR;
   }
-  db = getDbPointer(interp, objv[1]);
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
   if( !db ){
     return TCL_ERROR;
   }

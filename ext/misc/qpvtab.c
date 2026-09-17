@@ -152,7 +152,7 @@ static int qpvtabConnect(
 #define QPVTAB_FLAGS  11
 #define QPVTAB_NONE   12
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -174,7 +174,7 @@ static int qpvtabDisconnect(sqlite3_vtab *pVtab){
 */
 static int qpvtabOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   qpvtab_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
@@ -306,7 +306,7 @@ static void qpvtabStrAppendValue(
       const char *a = (const char*)sqlite3_value_text(pVal);
       int n = sqlite3_value_bytes(pVal);
       sqlite3_str_append(pStr, "'", 1);
-      for(i=0; i<n; i++){
+      for(i=0; i<n && a[i]!=0; i++){
         char c = a[i];
         if( c=='\n' ) c = ' ';
         sqlite3_str_append(pStr, &c, 1);
@@ -363,7 +363,7 @@ static int qpvtabBestIndex(
     }
     sqlite3_str_appendf(pStr,"aConstraint,%d,%s,%d,%d,",
        i,
-       azColname[iCol],
+       iCol>=0 ? azColname[iCol] : "rowid",
        op,
        pIdxInfo->aConstraint[i].usable);
     pVal = 0;

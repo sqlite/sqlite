@@ -200,7 +200,7 @@ static int geopolyParseNumber(GeoParse *p, GeoCoord *pVal){
      /* The sqlite3AtoF() routine is much much faster than atof(), if it
      ** is available */
      double r;
-     (void)sqlite3AtoF((const char*)p->z, &r, j, SQLITE_UTF8);
+     (void)sqlite3AtoF((const char*)p->z, &r);
      *pVal = r;
 #else
      *pVal = (GeoCoord)atof((const char*)p->z);
@@ -584,6 +584,8 @@ static double geopolySine(double r){
 **
 ** Construct a simple, convex, regular polygon centered at X, Y
 ** with circumradius R and with N sides.
+**
+** Maximum N is 1000.  Maximum R is 1.0e+300.
 */
 static void geopolyRegularFunc(
   sqlite3_context *context,
@@ -598,7 +600,7 @@ static void geopolyRegularFunc(
   GeoPoly *p;
   (void)argc;
 
-  if( n<3 || r<=0.0 ) return;
+  if( n<3 || r<=0.0 || r>=1e300 ) return;
   if( n>1000 ) n = 1000;
   p = sqlite3_malloc64( sizeof(*p) + (n-1)*2*sizeof(GeoCoord) );
   if( p==0 ){
@@ -1250,6 +1252,11 @@ static int geopolyInit(
   char *zSql;
   int ii;
   (void)pAux;
+
+  if( argc>=RTREE_MAX_AUX_COLUMN+4 ){
+    *pzErr = sqlite3_mprintf("Too many columns for a geopoly table");
+    return SQLITE_ERROR;
+  }
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
   sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);

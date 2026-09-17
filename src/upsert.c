@@ -318,7 +318,8 @@ void sqlite3UpsertDoUpdate(
   /* excluded.* columns of type REAL need to be converted to a hard real */
   for(i=0; i<pTab->nCol; i++){
     if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
-      sqlite3VdbeAddOp1(v, OP_RealAffinity, pTop->regData+i);
+      int iStorage = pTop->regData + sqlite3TableColumnToStorage(pTab, i);
+      sqlite3VdbeAddOp1(v, OP_RealAffinity, iStorage);
     }
   }
   sqlite3Update(pParse, pSrc, sqlite3ExprListDup(db,pUpsert->pUpsertSet,0),

@@ -190,10 +190,10 @@ if {$tcl_platform(platform) ne "windows" || \
       lappend res "/$p"
     }
   }
-  set num_root_files [llength $root_files]
+  set num_root_files [llength $res]
   do_test 3.1 {
     sort_files [execsql {
-      SELECT path FROM fstree WHERE path NOT GLOB '*\$*' LIMIT $num_root_files;
+      SELECT path FROM fstree WHERE path NOT GLOB '*$*' LIMIT $num_root_files
     }] true
   } [sort_files $res true]
 

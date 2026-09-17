@@ -555,4 +555,69 @@ do_catchsql_test 11.110 {
   SELECT rowid+1,rowid, * FROM t3 WHERE null>rowid ;
 } {1 {SQL logic error}}
 
+#-------------------------------------------------------------------------
+# Ensure fts5vocab columns behave consistently as if they have blob
+# affinity. Report here:
+#
+#  https://sqlite.org/bugs/forumpost/9d60b0c997
+#
+reset_db
+do_execsql_test 12.0 {
+  CREATE VIRTUAL TABLE t0 USING fts5(c0);
+  INSERT INTO t0(c0) VALUES ('0zero');
+  CREATE VIRTUAL TABLE t1 USING fts5vocab(t0, 'row');
+}
+do_execsql_test 12.1 {
+  SELECT term, term >= 5 FROM t1;
+} {0zero 1}
+
+do_execsql_test 12.2 {
+  SELECT count(*) FROM t1 WHERE term >= 5;
+} {1}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.0 {
+  CREATE VIRTUAL TABLE t0 USING fts5(c0, tokenize='trigram', detail=column);
+  CREATE VIRTUAL TABLE t1 USING fts5vocab(t0, 'instance');
+  INSERT INTO t0(c0) VALUES ('abc'), ('ABC');
+}
+
+do_execsql_test 13.1 {
+  SELECT (t0.c0 = t1.term) AND (t1.term COLLATE NOCASE = 'ABC') FROM t1, t0;
+} {1 0 1 0}
+
+do_execsql_test 13.2 {
+  SELECT count(*) FROM t1, t0 
+  WHERE (t0.c0 = t1.term) AND (t1.term COLLATE NOCASE = 'ABC');
+} {2}
+
+#-------------------------------------------------------------------------
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(c);
+  INSERT INTO t2 VALUES('alpha beta gamma');
+  CREATE VIRTUAL TABLE v2 USING fts5vocab(t2, row);
+  SELECT 'alpha' < X'62';
+} {1}
+
+do_execsql_test 3.1 {
+  SELECT term FROM v2 ORDER BY term;
+} {alpha beta gamma}
+
+do_execsql_test 3.2 {
+  SELECT term FROM v2 WHERE +term < X'62' ORDER BY term;
+} {alpha beta gamma}
+
+do_execsql_test 3.3 {
+  SELECT term FROM v2 WHERE term < X'62' ORDER BY term;
+} {alpha beta gamma}
+
+do_execsql_test 3.4 {
+  SELECT term FROM v2 WHERE term <= X'62' ORDER BY term;
+} {alpha beta gamma}
+
+do_execsql_test 3.5 {
+  SELECT term FROM v2 WHERE term > 123 ORDER BY term;
+} {alpha beta gamma}
+
 finish_test

@@ -1388,7 +1388,7 @@ do_execsql_test where-19.0 {
   SELECT t191.rowid FROM t192, t191 WHERE (a=y OR b=y) AND x=?1;
 } {/.* sqlite_autoindex_t191_1 .* sqlite_autoindex_t191_2 .*/}
 
-# 2018-04-24 ticket [https://www.sqlite.org/src/info/4ba5abf65c5b0f9a]
+# 2018-04-24 ticket [https://sqlite.org/src/info/4ba5abf65c5b0f9a]
 # Index on expressions leads to an incorrect answer for a LEFT JOIN
 #
 do_execsql_test where-20.0 {
@@ -1422,7 +1422,7 @@ do_execsql_test where-21.1 {
   4 0 1
 }
 
-# 2018-11-05: ticket [https://www.sqlite.org/src/tktview/65eb38f6e46de8c75e188a]
+# 2018-11-05: ticket [https://sqlite.org/src/tktview/65eb38f6e46de8c75e188a]
 # Incorrect result in LEFT JOIN when STAT4 is enabled.
 #
 sqlite3 db :memory:
@@ -1435,7 +1435,7 @@ do_execsql_test where-22.1 {
 } {5}
 
 # 20190-02-22:  A bug introduced by checkin
-# https://www.sqlite.org/src/info/fa792714ae62fa98.
+# https://sqlite.org/src/info/fa792714ae62fa98.
 #
 do_execsql_test where-23.0 {
   DROP TABLE IF EXISTS t1;
@@ -1547,7 +1547,7 @@ do_catchsql_test where-25.5 {
     ON CONFLICT(c) DO UPDATE SET b=NULL
 } {1 {corrupt database}}
 
-# 2019-08-21 Ticket https://www.sqlite.org/src/info/d9f584e936c7a8d0
+# 2019-08-21 Ticket https://sqlite.org/src/info/d9f584e936c7a8d0
 #
 db close
 sqlite3 db :memory:
@@ -1703,5 +1703,38 @@ do_test where-30.1 {
   set res
 } {SCAN}
 # ^^^^^^-- there should only be one top-level table scan in the query plan.
+
+# Bug 2026-07-25T08:36:25Z (really an enhancement request: a request to
+# do a better job of optimizing out the OR operator in "expr OR FALSE".)
+#
+do_execsql_test where-31.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    id INTEGER PRIMARY KEY,
+    x INTEGER NOT NULL
+  );
+  CREATE INDEX t1x ON t1(x);
+  WITH RECURSIVE seq(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM seq WHERE i<200)
+    INSERT INTO t1(id, x) SELECT i, i % 13 FROM seq;
+  ANALYZE;
+}
+do_execsql_test where-31.1 {
+  SELECT count(*) FROM t1 WHERE x=1 OR false;
+} 16
+do_eqp_test where-31.2 {
+  SELECT count(*) FROM t1 WHERE x=1 OR false;
+} {
+  QUERY PLAN
+  `--SEARCH t1 USING COVERING INDEX t1x (x=?)
+}
+do_execsql_test where-31.3 {
+  SELECT count(*) FROM t1 WHERE x=1 OR false;
+} 16
+do_eqp_test where-31.4 {
+  SELECT count(*) FROM t1 WHERE false OR x=1
+} {
+  QUERY PLAN
+  `--SEARCH t1 USING COVERING INDEX t1x (x=?)
+}
 
 finish_test

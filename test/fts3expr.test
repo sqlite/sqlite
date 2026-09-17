@@ -518,4 +518,23 @@ do_test fts3expr-10.1 { test_fts3expr "abc *" } {PHRASE 3 0 abc}
 do_test fts3expr-10.2 { test_fts3expr "*" } {}
 do_test fts3expr-10.3 { test_fts3expr "abc*" } {PHRASE 3 0 abc+}
 
+# Bug 2026-08-02T12:31:40Z
+#
+do_execsql_test fts3expr-11.1 {
+  SELECT fts3_exprtest('simple', 'hello', NULL);
+} {{PHRASE 1 0 hello}}
+
+# Bug 2026-08-02T12:28:28Z
+#
+breakpoint
+do_catchsql_test fts3expr-11.2 {
+  SELECT length(
+    fts3_exprtest(
+      'simple',
+      rtrim(replace(hex(zeroblob(200000)), '00', 'a ')),
+      'col1'
+    )
+  );
+} {1 {Expression nested too deep}}
+
 finish_test

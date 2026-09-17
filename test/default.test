@@ -141,4 +141,81 @@ do_catchsql_test default-5.2 {
   INSERT INTO Table0 DEFAULT VALUES ;
 } {1 {default value of column [Col0] is not constant}}
 
+#-------------------------------------------------------------------------
+# Large integer values as defaults for columns with real affinity. Report 
+# <https://sqlite.org/bugs/forumpost/26a45166b3>
+#
+ifcapable altertable {
+  do_execsql_test 6.0 {
+    CREATE TABLE t(id INTEGER PRIMARY KEY, k INT);
+    INSERT INTO t VALUES(1,1),(2,2);
+    ALTER TABLE t ADD COLUMN c REAL DEFAULT 9223372036854775807;
+    CREATE INDEX ti ON t(c);
+    INSERT INTO t(id, k) VALUES(3,3);
+  }
+  
+  do_execsql_test 1.1 {
+    SELECT DISTINCT typeof(c), quote(c) FROM t;
+  } {real 9.2233720368547758e+18}
+  
+  do_execsql_test 6.2 {
+    SELECT (SELECT c FROM t WHERE id=1) = (SELECT c FROM t WHERE id=3);
+  } {1}
+  
+  do_execsql_test 6.3 {
+    SELECT id FROM t WHERE c = 9.2233720368547758e+18;
+  } {1 2 3}
+  
+  do_execsql_test 6.4 {
+    SELECT id FROM t NOT INDEXED WHERE c = 9.2233720368547758e+18;
+  } {1 2 3}
+  
+  do_execsql_test 6.5 {
+    PRAGMA integrity_check;
+  } {ok}
+  
+  do_execsql_test 6.6 {
+    CREATE TABLE u(id INTEGER PRIMARY KEY, k INT);
+    INSERT INTO u VALUES(1,1);
+    ALTER TABLE u ADD COLUMN c REAL DEFAULT (9223372036854775807);
+    CREATE UNIQUE INDEX ui ON u(c);
+  }
+  
+  do_catchsql_test 6.7 {
+    INSERT INTO u(id,k) VALUES(2,2);
+  } {1 {UNIQUE constraint failed: u.c}}
+  
+  do_execsql_test 6.8 {
+    SELECT count(*) FROM u NOT INDEXED WHERE c = (SELECT c FROM u WHERE id=1);
+  } {1}
+  do_execsql_test 6.9 {
+    PRAGMA integrity_check;
+  } {ok}
+  
+  do_execsql_test 6.10 {
+    CREATE TABLE c1(id INTEGER PRIMARY KEY, k INT,
+                    c REAL DEFAULT (9223372036854775807));
+    INSERT INTO c1(id,k) VALUES(1,1),(2,2),(3,3);
+    CREATE INDEX c1i ON c1(c);
+    SELECT id FROM c1 WHERE c = 9.2233720368547758e+18;
+  } {1 2 3}
+  
+  do_execsql_test 6.11 {
+    CREATE TABLE c2(id INTEGER PRIMARY KEY, k INT);
+    INSERT INTO c2 VALUES(1,1),(2,2);
+    ALTER TABLE c2 ADD COLUMN c REAL DEFAULT (1000000000000000000);
+    INSERT INTO c2(id,k) VALUES(3,3);
+    CREATE INDEX c2i ON c2(c);
+    SELECT id FROM c2 WHERE c = 1.0e+18;
+  } {1 2 3}
+  do_execsql_test 6.12 {
+    CREATE TABLE c3(id INTEGER PRIMARY KEY, k INT);
+    INSERT INTO c3 VALUES(1,1),(2,2);
+    ALTER TABLE c3 ADD COLUMN c INT DEFAULT (9223372036854775807);
+    INSERT INTO c3(id,k) VALUES(3,3);
+    CREATE INDEX c3i ON c3(c);
+    SELECT id FROM c3 WHERE c = 9223372036854775807;
+  } {1 2 3}
+}
+
 finish_test

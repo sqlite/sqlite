@@ -611,7 +611,7 @@ do_execsql_test 11.100 {
     FROM ( SELECT count(*) AS cnt FROM t1 );
 } {{}}
 
-# 2019-05-29 ticket https://www.sqlite.org/src/info/c41afac34f15781f
+# 2019-05-29 ticket https://sqlite.org/src/info/c41afac34f15781f
 # A LIMIT clause in a subquery is incorrectly applied to a subquery.
 #
 do_execsql_test 12.100 {

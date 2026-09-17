@@ -595,7 +595,7 @@ do_test misc5-7.1.2 {
   }
   append sql "0$tail); SELECT * FROM t1;"
   catchsql $sql
-} {0 900}
+} {1 {Recursion limit}}
 
 
 # Parser stack overflow is silently ignored when it occurs while parsing the

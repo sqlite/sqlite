@@ -31,6 +31,10 @@ SQLITE_EXTENSION_INIT1
 /******************************************************************************
 ** The Hash Engine
 */
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstringop-overread"
+#endif
 /* Context for the SHA1 hash */
 typedef struct SHA1Context SHA1Context;
 struct SHA1Context {
@@ -171,7 +175,7 @@ static void hash_step(
   }else{
     i = 0;
   }
-  (void)memcpy(&p->buffer[j], &data[i], len - i);
+  if( len-i>0 ) (void)memcpy(&p->buffer[j], &data[i], len - i);
 }
 
 /* Compute a string using sqlite3_vsnprintf() and hash it */
@@ -226,17 +230,23 @@ static void hash_finish(
     zOut[i*2]= 0;
   }
 }
+#if defined(__GNUC__) && __GNUC__>=11
+# pragma GCC diagnostic pop
+#endif
 /* End of the hashing logic
 *****************************************************************************/
 
 /*
-** Implementation of the sha1(X) function.
+** Two SQL functions:  sha1(X) and sha1b(X).
 **
-** Return a lower-case hexadecimal rendering of the SHA1 hash of the
-** argument X.  If X is a BLOB, it is hashed as is.  For all other
+** sha1(X) returns a lower-case hexadecimal rendering of the SHA1 hash
+** of the argument X.  If X is a BLOB, it is hashed as is.  For all other
 ** types of input, X is converted into a UTF-8 string and the string
-** is hash without the trailing 0x00 terminator.  The hash of a NULL
+** is hashed without the trailing 0x00 terminator.  The hash of a NULL
 ** value is NULL.
+**
+** sha1b(X) is the same except that it returns a 20-byte BLOB containing
+** the binary hash instead of a hexadecimal string.
 */
 static void sha1Func(
   sqlite3_context *context,
@@ -246,22 +256,30 @@ static void sha1Func(
   SHA1Context cx;
   int eType = sqlite3_value_type(argv[0]);
   int nByte = sqlite3_value_bytes(argv[0]);
+  const unsigned char *pData;
   char zOut[44];
 
   assert( argc==1 );
   if( eType==SQLITE_NULL ) return;
   hash_init(&cx);
   if( eType==SQLITE_BLOB ){
-    hash_step(&cx, sqlite3_value_blob(argv[0]), nByte);
+    pData = (const unsigned char*)sqlite3_value_blob(argv[0]);
   }else{
-    hash_step(&cx, sqlite3_value_text(argv[0]), nByte);
+    pData = (const unsigned char*)sqlite3_value_text(argv[0]);
   }
+  if( pData==0 ){
+    if( nByte ) return;
+    pData = (const unsigned char*)"";
+  }
+  hash_step(&cx, pData, nByte);
   if( sqlite3_user_data(context)!=0 ){
+    /* sha1b() - binary result */
     hash_finish(&cx, zOut, 1);
     sqlite3_result_blob(context, zOut, 20, SQLITE_TRANSIENT);
   }else{
+    /* sha1() - hexadecimal text result */
     hash_finish(&cx, zOut, 0);
-    sqlite3_result_blob(context, zOut, 40, SQLITE_TRANSIENT);
+    sqlite3_result_text(context, zOut, 40, SQLITE_TRANSIENT);
   }
 }
 
@@ -292,9 +310,16 @@ static void sha1QueryFunc(
   const char *z;
   SHA1Context cx;
   char zOut[44];
+  int isRecursive = 0;
+  int *pIsRecursive;
 
   assert( argc==1 );
   if( zSql==0 ) return;
+  pIsRecursive = sqlite3_get_clientdata(db, "sha1_query()");
+  if( pIsRecursive ){
+    *pIsRecursive = 1;
+    return;
+  }
   hash_init(&cx);
   while( zSql[0] ){
     rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zSql);
@@ -315,11 +340,13 @@ static void sha1QueryFunc(
     }
     nCol = sqlite3_column_count(pStmt);
     z = sqlite3_sql(pStmt);
+    if( z==0 ) z = "";
     n = (int)strlen(z);
     hash_step_vformat(&cx,"S%d:",n);
     hash_step(&cx,(unsigned char*)z,n);
 
     /* Compute a hash over the result of the query */
+    sqlite3_set_clientdata(db, "sha1_query()", &isRecursive, 0);
     while( SQLITE_ROW==sqlite3_step(pStmt) ){
       hash_step(&cx,(const unsigned char*)"R",1);
       for(i=0; i<nCol; i++){
@@ -374,9 +401,14 @@ static void sha1QueryFunc(
       }
     }
     sqlite3_finalize(pStmt);
+    sqlite3_set_clientdata(db, "sha1_query()", 0, 0);
   }
   hash_finish(&cx, zOut, 0);
-  sqlite3_result_text(context, zOut, 40, SQLITE_TRANSIENT);
+  if( isRecursive ){
+    sqlite3_result_error(context, "recursive use of sha1_query()", -1);
+  }else{
+    sqlite3_result_text(context, zOut, 40, SQLITE_TRANSIENT);
+  }
 }
 
 

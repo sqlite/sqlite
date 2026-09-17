@@ -75,7 +75,7 @@ static int prefixesConnect(
            "CREATE TABLE prefixes(prefix TEXT, original_string TEXT HIDDEN)"
        );
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -98,7 +98,7 @@ static int prefixesDisconnect(sqlite3_vtab *pVtab){
 */
 static int prefixesOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   prefixes_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
@@ -289,10 +289,14 @@ static void prefixLengthFunc(
   int nL = sqlite3_value_bytes(apVal[0]);
   int nR = sqlite3_value_bytes(apVal[1]);
   int i;
+  if( zL==0 || zR==0 ){
+    sqlite3_result_int(ctx, 0);
+    return;
+  }
 
   nByte = (nL > nR ? nL : nR);
   for(i=0; i<nByte; i++){
-    if( zL[i]!=zR[i] ) break;
+    if( zL[i]==0 || zL[i]!=zR[i] ) break;
     if( (zL[i] & 0xC0)!=0x80 ) nRet++;
   }
 

@@ -616,7 +616,7 @@ do_test update-14.4 {
 
 } ;# ifcapable {trigger}
 
-# Ticket [https://www.sqlite.org/src/tktview/43107840f1c02] on 2014-10-29
+# Ticket [https://sqlite.org/src/tktview/43107840f1c02] on 2014-10-29
 # An assertion fault on UPDATE
 #
 ifcapable altertable {
@@ -703,7 +703,7 @@ do_execsql_test update-19.10 {
   SELECT * FROM t1;
 } {2 2}
 
-# 2019-12-29 ticket https://www.sqlite.org/src/info/314cc133e5ada126
+# 2019-12-29 ticket https://sqlite.org/src/info/314cc133e5ada126
 # REPLACE conflict resolution during an UPDATE causes a DELETE trigger 
 # to fire.  If that DELETE trigger subsequently modifies the row
 # being updated, bad things can happen.  Prevent this by prohibiting
@@ -711,8 +711,8 @@ do_execsql_test update-19.10 {
 # REPLACE conflict resolution on the UPDATE.
 #
 # See also tickets:
-#   https://www.sqlite.org/src/info/c1e19e12046d23fe 2019-10-25
-#   https://www.sqlite.org/src/info/a8a4847a2d96f5de 2019-10-16 
+#   https://sqlite.org/src/info/c1e19e12046d23fe 2019-10-25
+#   https://sqlite.org/src/info/a8a4847a2d96f5de 2019-10-16 
 #
 reset_db
 do_execsql_test update-20.10 {
@@ -786,5 +786,15 @@ do_eqp_test update-21.12 {
      |--BLOOM FILTER ON t3 (x=?)
      `--SEARCH t3 USING AUTOMATIC COVERING INDEX (x=?)
 }
+
+# /forumpost/2026-04-21T19:10:55Z
+do_execsql_test update-22.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x INT, y INT);
+  INSERT INTO t1(x) VALUES(1),(2),(3),(4),(5);
+  UPDATE t1 SET x=x+100, y=x<=(SELECT min(x) FROM t1)
+   WHERE x<3 OR (1 BETWEEN 0 AND x<=(SELECT min(x)+2 FROM t1));
+  SELECT x FROM t1 WHERE x<100 ORDER BY x;
+} {4 5}
 
 finish_test

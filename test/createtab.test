@@ -150,5 +150,18 @@ do_test createtab-3.1 {
   set sql "CREATE TABLE t1(x,UNIQUE(x[string repeat ,x 100000]))"
   catchsql $sql
 } {1 {too many columns in index}}
+
+# Test cases for SQLITE_LIMIT_SCHEMA
+#
+reset_db
+sqlite3_limit db SQLITE_LIMIT_SCHEMA 5
+do_execsql_test createtab-4.0 {
+  CREATE TABLE t1(a,b,c UNIQUE);
+  CREATE INDEX x1 ON t1(a);
+  CREATE VIEW v1 AS SELECT a+b AS x FROM t1;
+} {}
+do_catchsql_test createtab-4.1 {
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT true; END;
+} {1 {too many schema objects}}
   
 finish_test

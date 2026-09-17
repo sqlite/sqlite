@@ -60,6 +60,13 @@
 **
 **      SELECT name FROM sqlite_btreeinfo
 **       WHERE type='table' AND NOT hasRowid;
+**
+** UNUSED, UNTESTED, UNSUPPORTED
+**
+** This extension exists for information and demonstration purposes
+** only.  The developers are not aware of any real-world use of this
+** extension.  The extension has no formal test cases.  The developers
+** do not actively support it.
 */
 #if !defined(SQLITEINT_H)
 #include "sqlite3ext.h"
@@ -286,6 +293,11 @@ static int binfoCompute(sqlite3 *db, int pgno, BinfoCursor *pCsr){
   pCsr->depth = 1;
   while(1){
     sqlite3_bind_int(pStmt, 1, pgno);
+    if( pCsr->depth>25 ){
+      sqlite3_set_errmsg(db, SQLITE_CORRUPT, "btree nested too deep");
+      rc = SQLITE_ERROR;
+      break;
+    }
     rc = sqlite3_step(pStmt);
     if( rc!=SQLITE_ROW ){
       rc = SQLITE_ERROR;
@@ -306,6 +318,10 @@ static int binfoCompute(sqlite3 *db, int pgno, BinfoCursor *pCsr){
     nEntry *= (nCell+1);
     if( aData[0]==10 || aData[0]==13 ) break;
     nPage *= (nCell+1);
+    if( 14+2*(nCell/2)>=pgsz ){
+      rc = SQLITE_CORRUPT;
+      break;
+    }
     if( nCell<=1 ){
       pgno = get_uint32(aData+8);
     }else{
@@ -339,7 +355,7 @@ static int binfoColumn(
     sqlite3 *db = sqlite3_context_db_handle(ctx);
     int rc = binfoCompute(db, pgno, pCsr);
     if( rc ){
-      pCursor->pVtab->zErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+      pCursor->pVtab->zErrMsg = sqlite3_mprintf("%s", sqlite3_errstr(rc));
       return SQLITE_ERROR;
     }
   }

@@ -280,4 +280,65 @@ do_test 900 {
 } 1
 dbempty close
 
+
+#-------------------------------------------------------------------------
+# Make sure a database cannot be overwritten by deserialize() if 
+# there is an open transaction on it. 
+#
+do_execsql_test 1000 {
+  CREATE TABLE t(x); 
+  INSERT INTO t VALUES(1),(2);
+}
+
+set blob [db serialize main]
+
+do_test 1010 {
+  set seen 0
+  list [catch {
+    db eval {SELECT x FROM t} {
+      incr seen
+      if {$seen == 1} {
+        db deserialize main $blob
+      }
+    }
+  } msg] $msg
+} {1 {unable to set MEMDB content}}
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+do_test 1020 {
+  set seen 0
+  sqlite3_backup B db2 main db main
+  B step 2
+  set res [list [catch {
+    db deserialize main $blob
+  } msg] $msg]
+  B finish
+  set res
+} {1 {unable to set MEMDB content}}
+db2 close
+
+#-------------------------------------------------------------------------
+# Check that things work if the destination database of a backup is
+# overwritten using sqlite3_deserialize() between sqlite3_backup_init()
+# and the first call to sqlite3_backup_step(). Forum post 15d82885e2.
+#
+reset_db
+do_execsql_test 1100 {
+  CREATE TABLE t(x); 
+  INSERT INTO t VALUES(1),(2);
+}
+
+set blob [db serialize main]
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+do_test 1110 {
+  set seen 0
+  sqlite3_backup B db2 main db main
+  db2 deserialize main $blob
+  B step 2
+  B finish
+} {SQLITE_OK}
+
 finish_test

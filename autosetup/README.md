@@ -375,17 +375,28 @@ configure process, and check it in.
 Patching Autosetup for Project-local Changes
 ------------------------------------------------------------------------
 
+The autosetup files require the following patches after updating
+from their upstream sources:
+
+### `--debug` flag
+
 Autosetup reserves the flag name **`--debug`** for its own purposes,
 and its own special handling of `--enable-...` flags makes `--debug`
 an alias for `--enable-debug`. As this project has a long history of
 using `--enable-debug`, we patch autosetup to use the name
 `--autosetup-debug` in place of `--debug`. That requires (as of this
-writing) four small edits in [](/file/autosetup/autosetup), as
-demonstrated in [check-in 3296c8d3](/info/3296c8d3).
+writing) four small edits in
+[/autosetup/autosetup](/file/autosetup/autosetup), as demonstrated in
+[check-in 3296c8d3](/info/3296c8d3).
 
 If autosetup is upgraded and this patch is _not_ applied the invoking
 `./configure` will fail loudly because of the declaration of the
 `debug` flag in `auto.def` - duplicated flags are not permitted.
+
+### Fail on `malloc()` error
+
+See [check-in 72c8a5b94cdf5d](/info/72c8a5b94cdf5d).
+
 
 <a name="branch-customization"></a>
 Branch-specific Customization
@@ -426,7 +437,7 @@ proc sqlite-custom-flags {} {
 ```
 
 That function must return either an empty string or a list in the form
-used internally by `sqlite-config.tcl:sqlite-configure`.
+used internally by [sqlite-config.tcl][]'s `sqlite-configure`.
 
 Next, define:
 
@@ -450,4 +461,4 @@ all other significant processing.
 [sqlite-config.tcl]: /file/autosetup/sqlite-config.tcl
 [Makefile.in]: /file/Makefile.in
 [main.mk]: /file/main.mk
-[JimTCL]: https://jim.tcl.tk
+[JimTCL]: https://msteveb.github.io/jimtcl/

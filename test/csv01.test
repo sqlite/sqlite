@@ -275,5 +275,15 @@ for {set ii 0} {$ii < 20} {incr ii} {
   } [list abcd $T]
 }
 
+# Bug 2026-06-14T15:22:47Z
+#
+reset_db
+load_static_extension db csv
+do_catchsql_test 8.1 {
+  CREATE VIRTUAL TABLE abc USING csv(
+     data='1,2,3,4,5,6',
+     columns=32768
+  );
+} {1 {column= value too big, max 2000}}
 
 finish_test

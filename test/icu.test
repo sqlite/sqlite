@@ -141,7 +141,7 @@ ifcapable icu {
   do_catchsql_test icu-5.5 {SELECT 'abc' REGEXP }   {1 {incomplete input}}
   do_catchsql_test icu-5.6 {SELECT 'abc' REGEXP, 1} {1 {near ",": syntax error}}
  
-  do_malloc_test icu-6.10 -sqlbody {
+  do_malloc_test icu-5.10 -sqlbody {
     SELECT upper(char(0xfb04,0xdf,0xfb04,0xe8,0xfb04));
   }
 }
@@ -180,4 +180,21 @@ do_execsql_test icu-7.3 {
   SELECT char(0x100)=='a', char(0x100)=='a' COLLATE dflt, char(0x100)=='a' COLLATE prim;
 } {0 0 1}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test icu-8.1 {
+  CREATE TABLE t1(x TEXT);
+  INSERT INTO t1 VALUES('abcdefg');
+  INSERT INTO t1 VALUES('1234567');
+}
+
+do_execsql_test icu-8.2 {
+  SELECT * FROM t1 WHERE x LIKE CAST(x'C0A5' AS TEXT);
+} {}
+
+do_execsql_test icu-8.3 {
+  SELECT * FROM t1 WHERE x LIKE CAST(x'C19F' AS TEXT) || 'bcdefg';
+} {}
+
 finish_test
+

@@ -134,6 +134,9 @@ static void ieee754func(
     if( a==0 ){
       e = 0;
       m = 0;
+    }else if( a==(sqlite3_int64)0x8000000000000000LL ){
+      e = -1996;
+      m = -1;
     }else{
       e = a>>52;
       m = a & ((((sqlite3_int64)1)<<52)-1);
@@ -176,9 +179,9 @@ static void ieee754func(
     }
 
     if( m<0 ){
+      if( m<(-9223372036854775807LL) ) return;
       isNeg = 1;
       m = -m;
-      if( m<0 ) return;
     }else if( m==0 && e>-1000 && e<1000 ){
       sqlite3_result_double(context, 0.0);
       return;
@@ -257,6 +260,38 @@ static void ieee754func_to_blob(
 }
 
 /*
+** Functions to convert between 64-bit integers and floats.
+**
+** The bit patterns are copied.  The numeric values are different.
+*/
+static void ieee754func_from_int(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_INTEGER ){
+    double r;
+    sqlite3_int64 v = sqlite3_value_int64(argv[0]);
+    memcpy(&r, &v, sizeof(r));
+    sqlite3_result_double(context, r);
+  }
+}
+static void ieee754func_to_int(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_FLOAT ){
+    double r = sqlite3_value_double(argv[0]);
+    sqlite3_uint64 v;
+    memcpy(&v, &r, sizeof(v));
+    sqlite3_result_int64(context, v);
+  }
+}
+
+/*
 ** SQL Function:   ieee754_inc(r,N)
 **
 ** Move the floating point value r by N quantums and return the new
@@ -308,6 +343,8 @@ int sqlite3_ieee_init(
     { "ieee754_exponent",  1,   2, ieee754func },
     { "ieee754_to_blob",   1,   0, ieee754func_to_blob },
     { "ieee754_from_blob", 1,   0, ieee754func_from_blob },
+    { "ieee754_to_int",    1,   0, ieee754func_to_int },
+    { "ieee754_from_int",  1,   0, ieee754func_from_int },
     { "ieee754_inc",       2,   0, ieee754inc  },
   };
   unsigned int i;

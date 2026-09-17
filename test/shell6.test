@@ -103,6 +103,7 @@ foreach {tn schema output} {
   }
 
 } {
+  catch {db close}
   forcedelete test.db
   sqlite3 db test.db
   execsql $schema

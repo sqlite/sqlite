@@ -2982,14 +2982,14 @@ if {[clang_sanitize_address]==0} {
   } {0 0}
   do_test e_fkey-63.1.2 {
     test_on_delete_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
-  } {1 {too many levels of trigger recursion}}
+  } {1 {triggers nested too deep}}
   do_test e_fkey-63.1.3 {
     sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
       test_on_delete_recursion 5
   } {0 0}
   do_test e_fkey-63.1.4 {
     test_on_delete_recursion 6
-  } {1 {too many levels of trigger recursion}}
+  } {1 {triggers nested too deep}}
   do_test e_fkey-63.1.5 {
     sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
   } {5}
@@ -2998,14 +2998,14 @@ if {[clang_sanitize_address]==0} {
   } {0 0}
   do_test e_fkey-63.2.2 {
     test_on_update_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
-  } {1 {too many levels of trigger recursion}}
+  } {1 {triggers nested too deep}}
   do_test e_fkey-63.2.3 {
     sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
       test_on_update_recursion 5
   } {0 0}
   do_test e_fkey-63.2.4 {
     test_on_update_recursion 6
-  } {1 {too many levels of trigger recursion}}
+  } {1 {triggers nested too deep}}
   do_test e_fkey-63.2.5 {
     sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
   } {5}

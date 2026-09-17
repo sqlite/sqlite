@@ -583,7 +583,7 @@ proc cctest {args} {
 		configlog "============"
 	}
 	file delete $src
-	file delete $tmp
+	catch {file delete $tmp}
 
 	# cache it
 	set ::cc_cache($cmdline,$lines) $ok

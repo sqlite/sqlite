@@ -91,7 +91,7 @@ int sqlite3Fts5HashNew(Fts5Config *pConfig, Fts5Hash **ppNew, int *pnByte){
   int rc = SQLITE_OK;
   Fts5Hash *pNew;
 
-  *ppNew = pNew = (Fts5Hash*)sqlite3_malloc(sizeof(Fts5Hash));
+  *ppNew = pNew = (Fts5Hash*)sqlite3_malloc64(sizeof(Fts5Hash));
   if( pNew==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -323,7 +323,7 @@ int sqlite3Fts5HashWrite(
     **     + 5 bytes for the new position offset (32-bit max).
     */
     if( (p->nAlloc - p->nData) < (9 + 4 + 1 + 3 + 5) ){
-      sqlite3_int64 nNew = p->nAlloc * 2;
+      sqlite3_int64 nNew = (i64)p->nAlloc * 2;
       Fts5HashEntry *pNew;
       Fts5HashEntry **pp;
       pNew = (Fts5HashEntry*)sqlite3_realloc64(p, nNew);

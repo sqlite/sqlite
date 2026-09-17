@@ -62,6 +62,17 @@ do_catchsql_test misc8-1.8 {
   SELECT eval('SELECT * FROM t1 WHERE 1 = 0;');
 } {0 {{}}}
 
+# Bug 2026-07-29T06:29:11Z
+#
+do_execsql_test misc8-1.9 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x text);
+  INSERT INTO t1 VALUES('SELECT eval(x) FROM t1');
+} {}
+do_catchsql_test misc8-1.10 {
+  SELECT eval(x) FROM t1;
+} {1 {eval() nested too deep}}
+
 reset_db
 
 proc dbeval {sql} { db eval $sql }
@@ -140,6 +151,7 @@ do_execsql_test misc8-4.2 {
 do_test misc8-4.3 {
   regexp {0 icecube .* 2 aux2} [db eval {PRAGMA database_list}] 
 } 1
+
 
 
 

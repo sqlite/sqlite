@@ -107,7 +107,7 @@ do_test 212 {
 do_test 220 {
   set STMT [sqlite3_prepare_v3 $DB \
       "SELECT a, b FROM t1 WHERE b = 'a' ORDER BY a;" -1 2 TAIL]
-} {/^[0-9A-Fa-f]+$/}
+} {/^(ptr:)?(0x)?[0-9A-Fa-f]+$/}
 do_test 221 {
   sqlite3_normalized_sql $STMT
 } {SELECT a,b FROM t1 WHERE b=?ORDER BY a;}

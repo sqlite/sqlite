@@ -107,5 +107,50 @@ do_execsql_test 2.3 {
   INSERT INTO ft VALUES($doc)
 }
 
+#-------------------------------------------------------------------------
+# Test the auxiliary functions on contentless_delete tables.
+#
+reset_db
+fts5_aux_test_functions db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(a, contentless_delete=1, content='');
+  INSERT INTO ft(rowid, a) VALUES(1, 'A A B B');
+  INSERT INTO ft(rowid, a) VALUES(2, 'A A B B');
+  INSERT INTO ft(rowid, a) VALUES(3, 'A A B B');
+  INSERT INTO ft(rowid, a) VALUES(4, 'A A B B');
+}
+
+do_execsql_test 3.1.1 {
+  SELECT fts5_test_rowcount(ft) FROM ft('a b');
+} {4 4 4 4}
+
+do_execsql_test 3.1.2 {
+  SELECT fts5_test_all(ft) FROM ft('a b');
+} {
+  {columnsize 4 columntext {{}} columntotalsize 16 poslist {0.0.0 0.0.1 1.0.2 1.0.3} tokenize {{}} rowcount 4}
+  {columnsize 4 columntext {{}} columntotalsize 16 poslist {0.0.0 0.0.1 1.0.2 1.0.3} tokenize {{}} rowcount 4}
+  {columnsize 4 columntext {{}} columntotalsize 16 poslist {0.0.0 0.0.1 1.0.2 1.0.3} tokenize {{}} rowcount 4}
+  {columnsize 4 columntext {{}} columntotalsize 16 poslist {0.0.0 0.0.1 1.0.2 1.0.3} tokenize {{}} rowcount 4}
+}
+
+do_execsql_test 3.2 {
+  DELETE FROM ft WHERE rowid=2;
+  DELETE FROM ft WHERE rowid=3;
+}
+
+do_execsql_test 3.3.1 {
+  SELECT fts5_test_rowcount(ft) FROM ft('a b');
+} {2 2}
+
+do_execsql_test 3.3.2 {
+  SELECT fts5_test_all(ft) FROM ft('a b');
+} {
+  {columnsize 4 columntext {{}} columntotalsize 8 poslist {0.0.0 0.0.1 1.0.2 1.0.3} tokenize {{}} rowcount 2}
+  {columnsize 4 columntext {{}} columntotalsize 8 poslist {0.0.0 0.0.1 1.0.2 1.0.3} tokenize {{}} rowcount 2}
+}
+
+
+
 
 finish_test
+

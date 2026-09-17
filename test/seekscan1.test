@@ -64,5 +64,133 @@ do_execsql_test 1.5 {
   SELECT a,b,c FROM t1 WHERE b IN (235, 345) AND c<=3 AND a='abc' ORDER BY a, b;
 }
 
+proc do_unordered_test {tn sql res} {
+  set body [subst -nocom {lsort [execsql {$sql}]}]
+  uplevel [list do_test $tn $body [lsort $res]]
+}
+
+#-------------------------------------------------------------------------
+# Report <https://sqlite.org/bugs/forumpost/e7a615f18e>
+#
+foreach {tn idx} {
+  1 {
+    CREATE UNIQUE INDEX i10 ON t1(c1, c0);
+    CREATE        INDEX i1 ON t0(c0, c1);
+  }
+
+  2 {
+    CREATE UNIQUE INDEX i10 ON t1(c0, c1);
+    CREATE        INDEX i1 ON t0(c1, c0);
+  }
+
+  3 {
+    CREATE UNIQUE INDEX i10 ON t1(c0, c1);
+    CREATE        INDEX i1 ON t0(c0, c1);
+  }
+
+} {
+  reset_db
+  do_execsql_test 2.$tn.0 {
+    CREATE TABLE t0(c0, c1);
+    CREATE TABLE t1(c0, c1);
+  }
+  do_execsql_test 2.$tn.1 $idx
+  do_execsql_test 2.$tn.2 {
+
+    CREATE INDEX i2 ON t0(c0);
+    CREATE INDEX i3 ON t0(c1);
+  
+    INSERT INTO t0 VALUES (NULL,'c'), (0,'a'), (0.83,'d'), (9,'e'), (0.87,'b');
+    INSERT INTO t1 VALUES (NULL,'c'), (0,'a'), (0.83,'d'), (9,'e'), (0.87,'b');
+  
+    ANALYZE;
+    DELETE FROM sqlite_stat1;
+    INSERT INTO sqlite_stat1 VALUES('t0', 'i1', '4 1 1');
+    INSERT INTO sqlite_stat1 VALUES('t0', 'i0', '4 1 1');
+    INSERT INTO sqlite_stat1 VALUES('t1', 'i11', '4 1 1');
+    INSERT INTO sqlite_stat1 VALUES('t1', 'i10', '4 1 1');
+  }
+  
+  # Ensure new ANALYZE data is loaded.
+  db close
+  sqlite3 db test.db
+  
+  if {$tn==3} {
+    set sqlite_where_trace [expr 0x40]
+    # explain_i { SELECT * FROM t0 WHERE (c0,c1) IN (SELECT c0,c1 FROM t1) }
+    set sqlite_where_trace 0
+  }
+  do_unordered_test 2.$tn.3 {
+    SELECT * FROM t0 WHERE (c0,c1) IN (SELECT c0,c1 FROM t1);
+  } {
+    0    a
+    0.83 d
+    0.87 b
+    9    e
+  }
+
+  do_unordered_test 2.$tn.4 {
+    SELECT * FROM t0 WHERE (c1,c0) IN (SELECT c1,c0 FROM t1);
+  } {
+    0    a
+    0.83 d
+    0.87 b
+    9    e
+  }
+}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 3.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(c, d);
+
+  INSERT INTO t1 VALUES
+      (1, 'a', 4), 
+      (1, 'b', 3), 
+      (1, 'c', 2), 
+      (1, 'd', 1),
+      (1, 'd', 2);
+  INSERT INTO t2 VALUES
+      ('a', 4), 
+      ('c', 1), 
+      ('d', 1),
+      ('d', 2);
+
+  CREATE INDEX t1abc ON t1(a, b, c);
+  ANALYZE;
+
+  UPDATE sqlite_stat1 SET stat = '2000 2 2 2' WHERE idx='t1abc';
+  ANALYZE sqlite_master;
+}
+
+foreach {tn idx used} {
+  1 { CREATE UNIQUE INDEX t2idx ON t2(c, d); }          0
+  2 { CREATE UNIQUE INDEX t2idx ON t2(d, c); }          0
+  3 { CREATE UNIQUE INDEX t2idx ON t2(c, d DESC); }     0
+} {
+  do_execsql_test 3.$tn.1 { DROP INDEX IF EXISTS t2idx; }
+  execsql $idx
+  set SQL { SELECT * FROM t1 WHERE a=1 AND (b, c) IN (SELECT c, d FROM t2); }
+
+  do_test 3.$tn.2 {
+    set res [lsearch [execsql "EXPLAIN $SQL"] SeekScan]
+    expr $res>=0
+  } {1}
+
+  do_test 3.$tn.3 {
+    set res [lsearch [execsql "EXPLAIN $SQL"] t2idx]
+    expr $res>=0
+  } $used
+
+  do_execsql_test 3.$tn.3 $SQL {
+    1 a 4  1 d 1  1 d 2
+  }
+}
 
 finish_test
+
+
+
+

@@ -41,5 +41,26 @@ do_faultsim_test 2 -faults oom* -prep {
   faultsim_test_result {0 ABCDEF}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  PRAGMA page_size=1024;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  CREATE INDEX i1 ON t1( hex(b) );
+  INSERT INTO t1 VALUES(10, randomblob(500));
+}
+faultsim_save_and_close
+
+do_faultsim_test 3 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    UPDATE t1 SET b=randomblob(500);
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+
 
 finish_test

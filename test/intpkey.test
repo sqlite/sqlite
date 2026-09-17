@@ -484,7 +484,7 @@ do_test intpkey-11.1 {
     SELECT b FROM t1 WHERE a=2.0+3.0;
   }
 } {hello}
-do_test intpkey-11.1 {
+do_test intpkey-11.2 {
   execsql {
     SELECT b FROM t1 WHERE a=2.0+3.5;
   }
@@ -604,7 +604,7 @@ do_test intpkey-15.7 {
   }
 } {}
 
-# 2016-04-18 ticket https://www.sqlite.org/src/tktview/7d7525cb01b68712495d3a
+# 2016-04-18 ticket https://sqlite.org/src/tktview/7d7525cb01b68712495d3a
 # Be sure to escape quoted typenames.
 #
 do_execsql_test intpkey-16.0 {
@@ -614,7 +614,7 @@ do_execsql_test intpkey-16.1 {
   PRAGMA table_info=t16a;
 } {0 id INTEGER 0 {} 1 1 b TEXT 0 {} 0 2 c INT 0 {} 0}
 
-# 2016-05-06 ticket https://www.sqlite.org/src/tktview/16c9801ceba4923939085
+# 2016-05-06 ticket https://sqlite.org/src/tktview/16c9801ceba4923939085
 # When the schema contains an index on the IPK and no other index
 # and a WHERE clause on a delete uses an OR where both sides referencing
 # the IPK, then it is possible that the OP_Delete will fail because there
@@ -641,5 +641,41 @@ do_execsql_test intpkey-17.2 {
   UPDATE t17 SET y='ostrich' WHERE abs(x)=248;
   SELECT * FROM t17 ORDER BY +x;
 } {123 elephant 248 ostrich}
+
+# Forum post 2026-07-19T07:31:46Z
+#
+reset_db
+do_execsql_test intpkey-18.0 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1(rowid,x) VALUES
+    (-9223372036854775808, 'min-int'),
+    (0, 'zero'),
+    (9223372036854775807, 'max-int');
+  SELECT rowid, * FROM t1 ORDER BY rowid;
+} {-9223372036854775808 min-int 0 zero 9223372036854775807 max-int}
+do_execsql_test intpkey-18.1 {
+  SELECT x FROM t1 WHERE rowid = -9223372036854775808;
+} {min-int}
+do_execsql_test intpkey-18.2 {
+  SELECT x FROM t1 WHERE rowid = -9223372036854775808.0;
+} {min-int}
+do_execsql_test intpkey-18.3 {
+  SELECT x FROM t1 WHERE rowid = -9223372036854775809.0;
+} {min-int}
+do_execsql_test intpkey-18.4 {
+  SELECT x FROM t1 WHERE rowid = -9223372036854777856.0;
+} {}
+do_execsql_test intpkey-18.5 {
+  SELECT x FROM t1 WHERE rowid = +9223372036854775807;
+} {max-int}
+do_execsql_test intpkey-18.6 {
+  SELECT x FROM t1 WHERE rowid = +9223372036854775807.0;
+} {max-int}
+do_execsql_test intpkey-18.7 {
+  SELECT x FROM t1 WHERE rowid = +9223372036854775808.0;
+} {max-int}
+do_execsql_test intpkey-18.8 {
+  SELECT x FROM t1 WHERE rowid = +9223372036854777856.0;
+} {}
 
 finish_test

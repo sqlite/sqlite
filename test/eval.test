@@ -84,4 +84,15 @@ do_test eval-4.1 {
   execsql { SELECT test_eval('SELECT ''abcdefghij''') }
 } {abcdefghij}
 
+# Bug 2026-07-29T06:29:11Z
+#
+do_catchsql_test eval-5.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x text);
+  INSERT INTO t1 VALUES('SELECT test_eval(x) FROM t1');
+} {0 {}}
+do_catchsql_test eval-5.2 {
+  SELECT test_eval(x) FROM t1;
+} {1 {sqlite3_prepare_v2() error: nested test_eval()}}
+
 finish_test

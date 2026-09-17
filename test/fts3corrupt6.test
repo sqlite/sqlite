@@ -64,7 +64,6 @@ do_execsql_test 2.1 {
 
 #-------------------------------------------------------------------------
 reset_db
-breakpoint
 do_catchsql_test 3.0 {
   CREATE VIRTUAL TABLE main.Table0 USING fts3();
   INSERT INTO Table0 VALUES (1), (printf('%8.1280000X') ), (1), (printf('%8.1280000X') ), (1)  ;
@@ -75,5 +74,43 @@ do_catchsql_test 3.0 {
   INSERT INTO Table0(Table0) VALUES('merge=6,8');
 } {1 {database disk image is malformed}}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t USING fts4(c);
+  INSERT INTO t(t) VALUES('nodesize=200');
+  INSERT INTO t VALUES('alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november');
+  INSERT INTO t VALUES('oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu alpha bravo');
+  INSERT INTO t(t) VALUES('merge=16,4');
+  UPDATE t_segdir SET end_block = start_block + 2147483647 WHERE level=0;
+  INSERT OR REPLACE INTO t_segments(blockid,block)
+    SELECT start_block+2147483647, NULL FROM t_segdir WHERE level=0;
+}
+
+do_execsql_test 4.1 {
+  PRAGMA integrity_check
+} {ok}
+
+do_execsql_test 4.2 {
+  INSERT INTO t VALUES(
+      'mike november oscar papa quebec romeo 
+      sierra tango uniform victor whiskey xray yankee'
+  );
+  INSERT INTO t VALUES(
+      'charlie delta echo foxtrot golf hotel india 
+      juliet kilo lima mike november oscar papa'
+  );
+  INSERT INTO t(t) VALUES('merge=16,4');
+  SELECT blockid FROM t_segments ORDER BY blockid;
+} {
+  2147483647 2147483648 2147483649 2147483775
+}
+
+do_execsql_test 4.3 {
+  PRAGMA integrity_check
+} {ok}
+
+
 set sqlite_fts3_enable_parentheses $saved_sqlite_fts3_enable_parentheses
 finish_test
+

@@ -90,6 +90,8 @@ tvfs delete
 # but other operations do not use the retry mechanism.
 #
 reset_db
+db close
+sqlite3 db test.db -fullmutex 1
 
 do_execsql_test 2.0 {
   CREATE TABLE t1(a, b);

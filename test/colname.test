@@ -378,7 +378,7 @@ do_test colname-9.210 {
   execsql2 {SELECT t1.a, v3.a AS n FROM t1 JOIN v3}
 } {a 1 n 3}
 
-# 2017-12-23:  Ticket https://www.sqlite.org/src/info/3b4450072511e621
+# 2017-12-23:  Ticket https://sqlite.org/src/info/3b4450072511e621
 # Inconsistent column names in CREATE TABLE AS
 #
 # Verify that the names of columns in the created table of a CREATE TABLE AS
@@ -403,7 +403,7 @@ do_execsql_test colname-9.330 { -- added 2019-08-10 to invalidate
   DROP TABLE IF EXISTS t1;      -- a couple assert()s that were
   CREATE TABLE t1(a);           -- added by ticket 3b44500725
   INSERT INTO t1 VALUES(17),(2),(99),(-3),(7);
-  SELECT (SELECT avg(a) UNION SELECT min(a) OVER()) FROM t1;
+  SELECT (SELECT avg(a) UNION SELECT min(a) OVER() ORDER BY 1) FROM t1;
 } {17}
 
 # Issue detected by OSSFuzz on 2017-12-24 (Christmas Eve)

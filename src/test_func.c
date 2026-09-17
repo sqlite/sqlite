@@ -296,8 +296,14 @@ static void test_eval(
   int rc;
   sqlite3 *db = sqlite3_context_db_handle(pCtx);
   const char *zSql;
+  static const char zTag[] = "test_eval()";
 
+  if( sqlite3_get_clientdata(db, zTag) ){
+    sqlite3_result_error(pCtx, "nested test_eval()", -1);
+    return;
+  }
   zSql = (char*)sqlite3_value_text(argv[0]);
+  sqlite3_set_clientdata(db, zTag, &rc, 0);
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3_step(pStmt);
@@ -306,9 +312,9 @@ static void test_eval(
     }
     rc = sqlite3_finalize(pStmt);
   }
+  sqlite3_set_clientdata(db, zTag, 0, 0);
   if( rc ){
     char *zErr;
-    assert( pStmt==0 );
     zErr = sqlite3_mprintf("sqlite3_prepare_v2() error: %s",sqlite3_errmsg(db));
     sqlite3_result_text(pCtx, zErr, -1, sqlite3_free);
     sqlite3_result_error_code(pCtx, rc);

@@ -752,7 +752,7 @@ void sha1sum_file(const char *zFilename, char *zCksum){
   SHA1Final(zResult, &ctx);
   DigestToBase16(zResult, zCksum, 20);
 }
-	
+
 /*
 ** Decode a fossilized string in-place.
 */

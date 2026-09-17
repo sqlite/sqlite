@@ -30,12 +30,19 @@ tvfs filter xWrite
 tvfs script write_cb
 
 set ::trigger_interrupt 0
+set ::dbpointer ""
 proc write_cb {method args} {
   set filename [lindex $args 0]
   if {[file tail $filename]=="test.db" && $::trigger_interrupt} {
     if {$::trigger_interrupt} {
       incr ::trigger_interrupt -1
-      if {$::trigger_interrupt==0} { sqlite3_interrupt db }
+      if {$::trigger_interrupt==0} { 
+        if {$::dbpointer!=""} {
+          sqlite3_interrupt $::dbpointer 
+        } else {
+          sqlite3_interrupt db 
+        }
+      }
     }
   }
   return 0
@@ -110,8 +117,17 @@ db_save_and_close
 db_restore_and_reopen
 do_test 3.1.1 {
   set ::trigger_interrupt 10
+
+  # Set dbpointer here so that the write-callback can use the (sqlite3*)
+  # pointer with sqlite3_interrupt() directly instead of looking up the
+  # command. On at least some versions of Tcl9, looking up a command from
+  # within Tcl_DeleteCommand apparently returns a bad pointer.
+  #
+  set ::dbpointer [sqlite3_connection_pointer db]
   db eval { SELECT * FROM sqlite_master }
   db close
+  set ::dbpointer ""
+
   set {} {}
 } {}
 do_test 3.1.2 {

@@ -1,0 +1,176 @@
+# 2025-11-15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test cases for the Query Result Formatter (QRF)
+#
+# Format narrowing due to nScreenWidth
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix qrf03
+
+do_execsql_test 1.0 {
+  CREATE TABLE mlink(
+    mid INTEGER,
+    fid INTEGER,
+    pmid INTEGER,
+    pid INTEGER,
+    fnid INTEGER REFERENCES filename,
+    pfnid INTEGER,
+    mperm INTEGER,
+    isaux BOOLEAN DEFAULT 0
+  );
+  INSERT INTO mlink VALUES(28775,28774,28773,28706,1,0,0,0);
+  INSERT INTO mlink VALUES(28773,28706,28770,28685,1,0,0,0);
+  INSERT INTO mlink VALUES(28770,28736,28769,28695,2,0,0,0);
+  INSERT INTO mlink VALUES(28770,28697,28769,28698,3,0,0,0);
+  INSERT INTO mlink VALUES(28767,28768,28759,28746,4,0,0,0);
+  CREATE TABLE event(
+    type TEXT,
+    mtime DATETIME,
+    objid INTEGER PRIMARY KEY,
+    tagid INTEGER,
+    uid INTEGER REFERENCES user,
+    bgcolor TEXT,
+    euser TEXT,
+    user TEXT,
+    ecomment TEXT,
+    comment TEXT,
+    brief TEXT,
+    omtime DATETIME
+  );
+  INSERT INTO event VALUES('ci',2460994.978048461023,126223,NULL,NULL,NULL,NULL,'drh',NULL,unistr('Data structure improvements on columnar layout.  Prep work for getting\u000acolumnar layouts to respond to nScreenWidth.'),NULL,2460994.978048461023);
+  INSERT INTO event VALUES('ci',2460994.836955601816,126218,NULL,NULL,NULL,NULL,'stephan',NULL,'API doc typo fix.',NULL,2460994.836955601816);
+  INSERT INTO event VALUES('ci',2460994.88823369192,126212,NULL,NULL,NULL,NULL,'stephan',NULL,'Move sqlite3-api-cleanup.js into post-js-footer.js to remove the final direct Emscripten dependency from the intermediary build product sqlite3-api.js (the whole library, waiting to be bootstrapped). This is partly in response to [forum:4b7d45433731d2e0|forum post 4b7d45433731d2e0], which demonstrates a potential use case for a standalone sqlite3-api.js. This is a build/doc change, not a functional one.',NULL,2460994.88823369192);
+  INSERT INTO event VALUES('ci',2460994.516081551089,126211,NULL,NULL,NULL,NULL,'drh',NULL,unistr('Improve columnar layout in QRF so that it correctly deals with control\u000acharacters, and especially tabs.'),NULL,2460994.516081551089);
+  INSERT INTO event VALUES('ci',2460994.409343171865,126208,NULL,NULL,NULL,NULL,'drh',NULL,'Make use of the new sqlite3_str_free() interface in the CLI.',NULL,2460994.409343171865);
+}
+
+do_test 1.10 {
+  set x "\n[db format -style box -screenwidth 68 \
+              {SELECT * FROM mlink ORDER BY rowid}]"
+  
+} {
+╭───────┬───────┬───────┬───────┬──────┬───────┬───────┬───────╮
+│  mid  │  fid  │ pmid  │  pid  │ fnid │ pfnid │ mperm │ isaux │
+╞═══════╪═══════╪═══════╪═══════╪══════╪═══════╪═══════╪═══════╡
+│ 28775 │ 28774 │ 28773 │ 28706 │    1 │     0 │     0 │     0 │
+│ 28773 │ 28706 │ 28770 │ 28685 │    1 │     0 │     0 │     0 │
+│ 28770 │ 28736 │ 28769 │ 28695 │    2 │     0 │     0 │     0 │
+│ 28770 │ 28697 │ 28769 │ 28698 │    3 │     0 │     0 │     0 │
+│ 28767 │ 28768 │ 28759 │ 28746 │    4 │     0 │     0 │     0 │
+╰───────┴───────┴───────┴───────┴──────┴───────┴───────┴───────╯
+}
+do_test 1.11 {
+  set x "\n[db format -style box -screenwidth 52 \
+              {SELECT * FROM mlink ORDER BY rowid}]"
+  
+} {
+╭─────┬─────┬─────┬─────┬────┬─────┬─────┬─────╮
+│ mid │ fid │pmid │ pid │fnid│pfnid│mperm│isaux│
+╞═════╪═════╪═════╪═════╪════╪═════╪═════╪═════╡
+│28775│28774│28773│28706│   1│    0│    0│    0│
+│28773│28706│28770│28685│   1│    0│    0│    0│
+│28770│28736│28769│28695│   2│    0│    0│    0│
+│28770│28697│28769│28698│   3│    0│    0│    0│
+│28767│28768│28759│28746│   4│    0│    0│    0│
+╰─────┴─────┴─────┴─────┴────┴─────┴─────┴─────╯
+}
+
+do_test 1.20 {
+  set x "\n[db format -style table -screenwidth 68 \
+              {SELECT * FROM mlink ORDER BY rowid}]"
+  
+} {
++-------+-------+-------+-------+------+-------+-------+-------+
+|  mid  |  fid  | pmid  |  pid  | fnid | pfnid | mperm | isaux |
++-------+-------+-------+-------+------+-------+-------+-------+
+| 28775 | 28774 | 28773 | 28706 |    1 |     0 |     0 |     0 |
+| 28773 | 28706 | 28770 | 28685 |    1 |     0 |     0 |     0 |
+| 28770 | 28736 | 28769 | 28695 |    2 |     0 |     0 |     0 |
+| 28770 | 28697 | 28769 | 28698 |    3 |     0 |     0 |     0 |
+| 28767 | 28768 | 28759 | 28746 |    4 |     0 |     0 |     0 |
++-------+-------+-------+-------+------+-------+-------+-------+
+}
+do_test 1.21 {
+  set x "\n[db format -style table -screenwidth 52 \
+              {SELECT * FROM mlink ORDER BY rowid}]"
+  
+} {
++-----+-----+-----+-----+----+-----+-----+-----+
+| mid | fid |pmid | pid |fnid|pfnid|mperm|isaux|
++-----+-----+-----+-----+----+-----+-----+-----+
+|28775|28774|28773|28706|   1|    0|    0|    0|
+|28773|28706|28770|28685|   1|    0|    0|    0|
+|28770|28736|28769|28695|   2|    0|    0|    0|
+|28770|28697|28769|28698|   3|    0|    0|    0|
+|28767|28768|28759|28746|   4|    0|    0|    0|
++-----+-----+-----+-----+----+-----+-----+-----+
+}
+
+do_test 1.30 {
+  set x "\n[db format -style markdown -screenwidth 68 \
+              {SELECT * FROM mlink ORDER BY rowid}]"
+  
+} {
+|  mid  |  fid  | pmid  |  pid  | fnid | pfnid | mperm | isaux |
+|-------|-------|-------|-------|------|-------|-------|-------|
+| 28775 | 28774 | 28773 | 28706 |    1 |     0 |     0 |     0 |
+| 28773 | 28706 | 28770 | 28685 |    1 |     0 |     0 |     0 |
+| 28770 | 28736 | 28769 | 28695 |    2 |     0 |     0 |     0 |
+| 28770 | 28697 | 28769 | 28698 |    3 |     0 |     0 |     0 |
+| 28767 | 28768 | 28759 | 28746 |    4 |     0 |     0 |     0 |
+}
+do_test 1.31 {
+  set x "\n[db format -style markdown -screenwidth 52 \
+              {SELECT * FROM mlink ORDER BY rowid}]"
+  
+} {
+| mid | fid |pmid | pid |fnid|pfnid|mperm|isaux|
+|-----|-----|-----|-----|----|-----|-----|-----|
+|28775|28774|28773|28706|   1|    0|    0|    0|
+|28773|28706|28770|28685|   1|    0|    0|    0|
+|28770|28736|28769|28695|   2|    0|    0|    0|
+|28770|28697|28769|28698|   3|    0|    0|    0|
+|28767|28768|28759|28746|   4|    0|    0|    0|
+}
+
+do_test 1.40 {
+  set x "\n[db format -style column -screenwidth 68 \
+              {SELECT * FROM mlink ORDER BY rowid}]"
+  
+} {
+ mid    fid   pmid    pid   fnid  pfnid  mperm  isaux
+-----  -----  -----  -----  ----  -----  -----  -----
+28775  28774  28773  28706  1     0      0      0
+28773  28706  28770  28685  1     0      0      0
+28770  28736  28769  28695  2     0      0      0
+28770  28697  28769  28698  3     0      0      0
+28767  28768  28759  28746  4     0      0      0
+}
+do_test 1.41 {
+  set x "\n[db format -style column -screenwidth 52 \
+              {SELECT * FROM mlink ORDER BY rowid}]"
+  
+} {
+ mid   fid  pmid   pid  fnid pfnid mperm isaux
+----- ----- ----- ----- ---- ----- ----- -----
+28775 28774 28773 28706 1    0     0     0
+28773 28706 28770 28685 1    0     0     0
+28770 28736 28769 28695 2    0     0     0
+28770 28697 28769 28698 3    0     0     0
+28767 28768 28759 28746 4    0     0     0
+}
+
+
+
+finish_test

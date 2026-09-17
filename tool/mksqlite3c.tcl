@@ -491,6 +491,7 @@ set flist {
    sqlite3rbu.c
    dbstat.c
    dbpage.c
+   carray.c
    sqlite3session.c
    fts5.c
    stmt.c

@@ -92,7 +92,7 @@ static int explainConnect(
   rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(addr,opcode,p1,p2,p3,p4,p5,comment,sql HIDDEN)");
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -114,7 +114,7 @@ static int explainDisconnect(sqlite3_vtab *pVtab){
 */
 static int explainOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   explain_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->db = ((explain_vtab*)p)->db;
@@ -199,7 +199,7 @@ static int explainFilter(
   int rc;
   sqlite3_finalize(pCur->pExplain);
   pCur->pExplain = 0;
-  if( sqlite3_value_type(argv[0])!=SQLITE_TEXT ){
+  if( argc<=0 || sqlite3_value_type(argv[0])!=SQLITE_TEXT ){
     pCur->rc = SQLITE_DONE;
     return SQLITE_OK;
   }

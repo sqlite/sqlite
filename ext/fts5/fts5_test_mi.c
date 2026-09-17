@@ -14,7 +14,7 @@
 ** versions of FTS5. It contains the implementation of an FTS5 auxiliary
 ** function very similar to the FTS4 function matchinfo():
 **
-**     https://www.sqlite.org/fts3.html#matchinfo
+**     https://sqlite.org/fts3.html#matchinfo
 **
 ** Known differences are that:
 **
@@ -375,7 +375,9 @@ static void fts5MatchinfoFunc(
   if( p==0 || sqlite3_stricmp(zArg, p->zArg) ){
     p = fts5MatchinfoNew(pApi, pFts, pCtx, zArg);
     if( p==0 ){
-      rc = SQLITE_NOMEM;
+      /* If p==0, then fts5MatchinfoNew() has already configure pCtx with
+      ** an error code. So just return early here. */
+      return;
     }else{
       rc = pApi->xSetAuxdata(pFts, p, sqlite3_free);
     }

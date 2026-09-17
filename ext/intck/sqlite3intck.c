@@ -160,6 +160,7 @@ static char *intckMprintf(sqlite3_intck *p, const char *zFmt, ...){
     sqlite3_free(zRet);
     zRet = 0;
   }
+  va_end(ap);
   return zRet;
 }
 
@@ -318,7 +319,7 @@ static int intckGetToken(const char *z){
   char c = z[0];
   int iRet = 1;
   if( c=='\'' || c=='"' || c=='`' ){
-    while( 1 ){
+    while( z[iRet] ){
       if( z[iRet]==c ){
         iRet++;
         if( z[iRet]!=c ) break;
@@ -327,12 +328,15 @@ static int intckGetToken(const char *z){
     }
   }
   else if( c=='[' ){
-    while( z[iRet++]!=']' && z[iRet] );
+    while( z[iRet] && z[iRet++]!=']' ){}
   }
   else if( (c>='A' && c<='Z') || (c>='a' && c<='z') ){
     while( (z[iRet]>='A' && z[iRet]<='Z') || (z[iRet]>='a' && z[iRet]<='z') ){
       iRet++;
     }
+  }
+  else if( c==0 ){
+    iRet = 0;
   }
 
   return iRet;
@@ -775,6 +779,23 @@ static char *intckCheckObjectSql(
 }
 
 /*
+** Register or unregister special SQL functions implemented by intck.
+**
+** Normally the custom SQL functions used by intck are only available
+** in between sqlite3_intck_open() and sqlite3_intck_close().  However,
+** for testing and debugging, it is sometimes useful to make those
+** functions available generally.  This routine provides as a separate
+** interface in order to provide that capability.
+*/
+int sqlite3_intck_register(sqlite3 *db, int bCreate){
+  int rc;
+  rc = sqlite3_create_function(db, "parse_create_index", 
+    2, SQLITE_UTF8, 0, bCreate ? intckParseCreateIndexFunc : 0, 0, 0
+  );
+  return rc;
+}
+
+/*
 ** Open a new integrity-check object.
 */
 int sqlite3_intck_open(
@@ -795,9 +816,7 @@ int sqlite3_intck_open(
     pNew->db = db;
     pNew->zDb = (const char*)&pNew[1];
     memcpy(&pNew[1], zDb, nDb+1);
-    rc = sqlite3_create_function(db, "parse_create_index", 
-        2, SQLITE_UTF8, 0, intckParseCreateIndexFunc, 0, 0
-    );
+    rc = sqlite3_intck_register(db, 1);
     if( rc!=SQLITE_OK ){
       sqlite3_intck_close(pNew);
       pNew = 0;
@@ -814,9 +833,7 @@ int sqlite3_intck_open(
 void sqlite3_intck_close(sqlite3_intck *p){
   if( p ){
     sqlite3_finalize(p->pCheck);
-    sqlite3_create_function(
-        p->db, "parse_create_index", 1, SQLITE_UTF8, 0, 0, 0, 0
-    );
+    sqlite3_intck_register(p->db, 0);
     sqlite3_free(p->zObj);
     sqlite3_free(p->zKey);
     sqlite3_free(p->zTestSql);

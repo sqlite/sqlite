@@ -799,7 +799,7 @@ do_execsql_test join-14.9 {
 } {111 {}}
 
 # Verify the fix to ticket 
-# https://www.sqlite.org/src/tktview/7fde638e94287d2c948cd9389
+# https://sqlite.org/src/tktview/7fde638e94287d2c948cd9389
 #
 db close
 sqlite3 db :memory:
@@ -819,7 +819,7 @@ do_execsql_test join-14.12 {
 } {4 {} {} | 2 2 1 |}
 
 # Verify the fix for ticket
-# https://www.sqlite.org/src/info/892fc34f173e99d8
+# https://sqlite.org/src/info/892fc34f173e99d8
 #
 db close
 sqlite3 db :memory:
@@ -904,7 +904,7 @@ do_execsql_test join-15.110 {
    ORDER BY a1, a2, a3, a4, a5;
 } {1 {} {} {} {} 1 11 {} {} {} 1 12 {} {} {} 1 12 121 {} {} 1 13 {} {} {}}
 
-# 2019-02-05 Ticket https://www.sqlite.org/src/tktview/5948e09b8c415bc45da5c
+# 2019-02-05 Ticket https://sqlite.org/src/tktview/5948e09b8c415bc45da5c
 # Error in join due to the LEFT JOIN strength reduction optimization.
 #
 do_execsql_test join-16.100 {
@@ -1001,6 +1001,21 @@ do_execsql_test join-20.2 {
   CREATE INDEX t1x ON t1(0) WHERE NULL IN (c1);
   SELECT * FROM t0 LEFT JOIN t1 WHERE NULL IN (c1);
 } {}
+
+# 2025-05-29 forum post 7dee41d32506c4ae
+# The complaint in the forum post appears to be the same as for the
+# ticket on 2019-11-02, only for RIGHT JOIN instead of LEFT JOIN.  Note
+# that RIGHT JOIN did not yet exist in SQLite when the ticket was
+# written and fixed.
+#
+do_execsql_test join-20.3 {
+  DROP TABLE t1;
+  CREATE TABLE t1(x INT);      INSERT INTO t1(x) VALUES(1);
+  CREATE TABLE t2(y BOOLEAN);  INSERT INTO t2(y) VALUES(false);
+  CREATE TABLE t3(z INT);      INSERT INTO t3(z) VALUES(3);
+  CREATE INDEX t2y ON t2(y) WHERE y;
+  SELECT quote(z) FROM t1 RIGHT JOIN t2 ON y LEFT JOIN t3 ON y;
+} {NULL}
 
 # 2019-11-30 ticket 7f39060a24b47353
 # Do not allow a WHERE clause term to qualify a partial index on the
@@ -1288,5 +1303,142 @@ do_execsql_test join-30.3 {
     FROM t0 JOIN t1 ON z=a RIGHT JOIN t2 ON a=b LEFT JOIN v5 ON false
    WHERE x <= y;
 } {}
+
+# 2025-05-30 https://sqlite.org/forum/forumpost/4fc70203b61c7e12
+#
+# When converting a USING(x) or NATURAL into the constraint expression
+# t1.x==t2.x, mark the t1.x term as EP_CanBeNull if it is the left table
+# of a RIGHT JOIN.
+#
+reset_db
+db null NULL
+do_execsql_test join-31.1 {
+  CREATE TABLE t1(c0 INT , c1 INT); INSERT INTO t1(c0, c1) VALUES(NULL,11);
+  CREATE TABLE t2(c0 INT NOT NULL);
+  CREATE TABLE t2n(c0 INT);
+  CREATE TABLE t3(x INT);           INSERT INTO t3(x) VALUES(3);
+  CREATE TABLE t4(y INT);           INSERT INTO t4(y) VALUES(4);
+  CREATE TABLE t5(c0 INT, x INT);   INSERT INTO t5 VALUES(NULL, 5);
+}
+do_execsql_test join-31.2 {
+  SELECT * FROM t2 RIGHT JOIN t3 ON true LEFT JOIN t1 USING(c0);
+} {NULL 3 NULL}
+do_execsql_test join-31.3 {
+  SELECT * FROM t2 RIGHT JOIN t3 ON true NATURAL LEFT JOIN t1;
+} {NULL 3 NULL}
+do_execsql_test join-31.4 {
+  SELECT * FROM t2n RIGHT JOIN t3 ON true LEFT JOIN t1 USING(c0);
+} {NULL 3 NULL}
+do_execsql_test join-31.5 {
+  SELECT * FROM t5 LEFT JOIN t1 USING(c0);
+} {NULL 5 NULL}
+do_execsql_test join-31.6 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true LEFT JOIN t1 USING(c0);
+} {3 NULL NULL}
+do_execsql_test join-31.7 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true NATURAL LEFT JOIN t1;
+} {3 NULL NULL}
+do_execsql_test join-31.8 {
+  SELECT * FROM t3 LEFT JOIN t2 ON true JOIN t4 ON true NATURAL LEFT JOIN t1;
+} {3 NULL 4 NULL}
+
+# 2025-06-16 https://sqlite.org/forum/forumpost/68f29a2005
+#
+# The transitive-constraint optimization was not working for RIGHT JOIN.
+#
+reset_db
+db null NULL
+do_execsql_test join-32.1 {
+  CREATE TABLE t0(w INT);
+  CREATE TABLE t1(x INT);
+  CREATE TABLE t2(y INT UNIQUE);
+  CREATE VIEW v0(z) AS SELECT CAST(x AS INT) FROM t1 LEFT JOIN t2 ON true;
+  INSERT INTO t1(x) VALUES(123);
+  INSERT INTO t2(y) VALUES(NULL);
+}
+do_execsql_test join-32.2 {
+  SELECT *
+  FROM t0 JOIN v0 ON w=z
+          RIGHT JOIN t1 ON true
+          INNER JOIN t2 ON y IS z;
+} {NULL NULL 123 NULL}
+do_execsql_test join-32.3 {
+  SELECT *
+  FROM t0 JOIN v0 ON w=z
+          RIGHT JOIN t1 ON true
+          INNER JOIN t2 ON +y IS z;
+} {NULL NULL 123 NULL}
+
+# 2025-12-24 https://sqlite.org/forum/forumpost/11a53f2bad
+#
+# Chained omit-noop-join optimization
+#
+reset_db
+db null NULL
+do_execsql_test join-33.1 {
+  CREATE TABLE t1(a1 INTEGER PRIMARY KEY, b1);
+  CREATE TABLE t2(a2 INTEGER PRIMARY KEY, b2);
+  CREATE TABLE t3(a3 INTEGER PRIMARY KEY, b3);
+  CREATE TABLE t4(a4 INTEGER PRIMARY KEY, b4);
+  INSERT INTO t1 VALUES(1,11),(2,12),(3,13),       (5,15);
+  INSERT INTO t2 VALUES(1,21),       (3,23),(4,24),(5,25);
+  INSERT INTO t3 VALUES       (2,32),(3,33),       (5,35);
+  INSERT INTO t4 VALUES(1,41),(2,42),       (4,44),(5,45);
+  CREATE VIEW vchain AS
+    SELECT a1, b1, b2, b3, b4
+      FROM t1 LEFT JOIN t2 ON a1=a2
+              LEFT JOIN t3 ON a2=a3
+              LEFT JOIN t4 ON a3=a4;
+}
+do_execsql_test join-33.2 {
+  SELECT a1 FROM vchain ORDER BY a1;
+} {1 2 3 5}
+do_eqp_test join-33.2-eqp {
+  SELECT a1 FROM vchain ORDER BY a1;
+} {
+  QUERY PLAN
+  `--SCAN t1
+}
+do_execsql_test join-33.3 {
+  SELECT a1, b2 FROM vchain ORDER BY a1;
+} {1 21 2 NULL 3 23 5 25}
+do_eqp_test join-33.3-eqp {
+  SELECT a1, b2 FROM vchain ORDER BY a1;
+} {
+  QUERY PLAN
+  |--SCAN t1
+  `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+}
+
+# Bug 2026-08-14T04:56:02Z
+#
+reset_db
+db null NULL
+do_execsql_test join-34.1 {
+  CREATE TABLE t0(a INT, b INT);
+  CREATE INDEX t0i ON t0(a);
+  INSERT INTO t0 VALUES (1,10), (1,20);
+  CREATE VIEW empty(c) AS SELECT 1 WHERE 0;
+}
+do_execsql_test join-34.2 {
+  SELECT *
+    FROM empty RIGHT JOIN t0 ON true
+   WHERE (a,b) IN (SELECT a,b FROM t0)
+   ORDER BY +b;
+} {NULL 1 10 NULL 1 20}
+do_execsql_test join-34.3 {
+  SELECT *
+    FROM empty FULL OUTER JOIN t0 ON true
+   WHERE (a,b) IN (SELECT a,b FROM t0)
+   ORDER BY +b;
+} {NULL 1 10 NULL 1 20}
+
+# Bug 2026-08-18T07:03:05Z
+#
+reset_db
+do_catchsql_test join-35.1 {
+CREATE TABLE a(x); INSERT INTO a VALUES(1); SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT (SELECT 1 FROM a AS ia1 RIGHT JOIN a AS ib1 ON 1) FROM a AS ia2 RIGHT JOIN a AS ib2 ON 1) FROM a AS ia3 RIGHT JOIN a AS ib3 ON 1) FROM a AS ia4 RIGHT JOIN a AS ib4 ON 1) FROM a AS ia5 RIGHT JOIN a AS ib5 ON 1) FROM a AS ia6 RIGHT JOIN a AS ib6 ON 1) FROM a AS ia7 RIGHT JOIN a AS ib7 ON 1) FROM a AS ia8 RIGHT JOIN a AS ib8 ON 1) FROM a AS ia9 RIGHT JOIN a AS ib9 ON 1) FROM a AS ia10 RIGHT JOIN a AS ib10 ON 1) FROM a AS ia11 RIGHT JOIN a AS ib11 ON 1) FROM a AS ia12 RIGHT JOIN a AS ib12 ON 1) FROM a AS ia13 RIGHT JOIN a AS ib13 ON 1) FROM a AS ia14 RIGHT JOIN a AS ib14 ON 1) FROM a AS ia15 RIGHT JOIN a AS ib15 ON 1) FROM a AS ia16 RIGHT JOIN a AS ib16 ON 1) FROM a AS ia17 RIGHT JOIN a AS ib17 ON 1) FROM a AS ia18 RIGHT JOIN a AS ib18 ON 1) FROM a AS ia19 RIGHT JOIN a AS ib19 ON 1) FROM a AS ia20 RIGHT JOIN a AS ib20 ON 1) FROM a AS ia21 RIGHT JOIN a AS ib21 ON 1) FROM a AS ia22 RIGHT JOIN a AS ib22 ON 1) FROM a AS ia23 RIGHT JOIN a AS ib23 ON 1) FROM a AS ia24 RIGHT JOIN a AS ib24 ON 1) FROM a AS ia25 RIGHT JOIN a AS ib25 ON 1) FROM a AS ia26 RIGHT JOIN a AS ib26 ON 1) FROM a AS ia27 RIGHT JOIN a AS ib27 ON 1) FROM a AS ia28 RIGHT JOIN a AS ib28 ON 1) FROM a AS ia29 RIGHT JOIN a AS ib29 ON 1) FROM a AS ia30 RIGHT JOIN a AS ib30 ON 1) FROM a AS ia31 RIGHT JOIN a AS ib31 ON 1) FROM a AS ia32 RIGHT JOIN a AS ib32 ON 1) FROM a AS ia33 RIGHT JOIN a AS ib33 ON 1) FROM a AS ia34 RIGHT JOIN a AS ib34 ON 1) FROM a AS ia35 RIGHT JOIN a AS ib35 ON 1) FROM a AS ia36 RIGHT JOIN a AS ib36 ON 1) FROM a AS ia37 RIGHT JOIN a AS ib37 ON 1) FROM a AS o0 RIGHT JOIN a AS o1 ON 1 RIGHT JOIN a AS o2 ON 1 RIGHT JOIN a AS o3 ON 1 RIGHT JOIN a AS o4 ON 1 RIGHT JOIN a AS o5 ON 1 RIGHT JOIN a AS o6 ON 1 RIGHT JOIN a AS o7 ON 1 RIGHT JOIN a AS o8 ON 1 RIGHT JOIN a AS o9 ON 1 RIGHT JOIN a AS o10 ON 1 RIGHT JOIN a AS o11 ON 1 RIGHT JOIN a AS o12 ON 1 RIGHT JOIN a AS o13 ON 1 RIGHT JOIN a AS o14 ON 1 RIGHT JOIN a AS o15 ON 1 RIGHT JOIN a AS o16 ON 1 RIGHT JOIN a AS o17 ON 1 RIGHT JOIN a AS o18 ON 1 RIGHT JOIN a AS o19 ON 1 RIGHT JOIN a AS o20 ON 1 RIGHT JOIN a AS o21 ON 1 RIGHT JOIN a AS o22 ON 1 RIGHT JOIN a AS o23 ON 1 RIGHT JOIN a AS o24 ON 1 RIGHT JOIN a AS o25 ON 1 RIGHT JOIN a AS o26 ON 1 RIGHT JOIN a AS o27 ON 1 RIGHT JOIN a AS o28 ON 1 RIGHT JOIN a AS o29 ON 1 RIGHT JOIN a AS o30 ON 1 RIGHT JOIN a AS o31 ON 1 RIGHT JOIN a AS o32 ON 1 RIGHT JOIN a AS o33 ON 1 RIGHT JOIN a AS o34 ON 1 RIGHT JOIN a AS o35 ON 1 RIGHT JOIN a AS o36 ON 1 RIGHT JOIN a AS o37 ON 1 RIGHT JOIN a AS o38 ON 1 RIGHT JOIN a AS o39 ON 1 RIGHT JOIN a AS o40 ON 1 RIGHT JOIN a AS o41 ON 1 RIGHT JOIN a AS o42 ON 1 RIGHT JOIN a AS o43 ON 1 RIGHT JOIN a AS o44 ON 1 RIGHT JOIN a AS o45 ON 1 RIGHT JOIN a AS o46 ON 1 RIGHT JOIN a AS o47 ON 1 RIGHT JOIN a AS o48 ON 1 RIGHT JOIN a AS o49 ON 1 RIGHT JOIN a AS o50 ON 1 RIGHT JOIN a AS o51 ON 1 RIGHT JOIN a AS o52 ON 1 RIGHT JOIN a AS o53 ON 1 RIGHT JOIN a AS o54 ON 1 RIGHT JOIN a AS o55 ON 1 RIGHT JOIN a AS o56 ON 1 RIGHT JOIN a AS o57 ON 1 RIGHT JOIN a AS o58 ON 1 RIGHT JOIN a AS o59 ON 1 RIGHT JOIN a AS o60 ON 1 RIGHT JOIN a AS o61 ON 1 RIGHT JOIN a AS o62 ON 1 RIGHT JOIN a AS o63 ON 1;
+} {1 {too many RIGHT JOINs}}
+
 
 finish_test

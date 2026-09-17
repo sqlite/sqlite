@@ -288,7 +288,7 @@ struct sqlite3_value {
 **                             MEM_Int, MEM_Real, and MEM_IntReal.
 **
 **  *  MEM_Blob|MEM_Zero       A blob in Mem.z of length Mem.n plus
-**                             MEM.u.i extra 0x00 bytes at the end.
+**                             Mem.u.nZero extra 0x00 bytes at the end.
 **
 **  *  MEM_Int                 Integer stored in Mem.u.i.
 **
@@ -519,7 +519,9 @@ struct Vdbe {
   VdbeFrame *pFrame;      /* Parent frame */
   VdbeFrame *pDelFrame;   /* List of frame objects to free on VM reset */
   int nFrame;             /* Number of frames in pFrame list */
-  u32 expmask;            /* Binding to these vars invalidates VM */
+  u32 expmask;            /* Binding to these vars might invalidate VM */
+  u32 smimask;            /* Only invalid if changing to/from small integer */
+                          /* Note: smimask is always a subset of expmask */
   SubProgram *pProgram;   /* Linked list of all sub-programs used by VM */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
@@ -557,7 +559,9 @@ struct PreUpdate {
   Table *pTab;                    /* Schema object being updated */
   Index *pPk;                     /* PK index if pTab is WITHOUT ROWID */
   sqlite3_value **apDflt;         /* Array of default values, if required */
-  u8 keyinfoSpace[SZ_KEYINFO(0)]; /* Space to hold pKeyinfo[0] content */
+  struct {
+    u8 keyinfoSpace[SZ_KEYINFO_0];  /* Space to hold pKeyinfo[0] content */
+  } uKey;
 };
 
 /*
@@ -584,6 +588,17 @@ struct ValueList {
 #ifndef SQLITE_AMALGAMATION
 extern const u8 sqlite3SmallTypeSizes[];
 #endif
+
+/* Input "x" is a sequence of unsigned characters that represent a
+** big-endian integer.  Return the equivalent native integer
+*/
+#define ONE_BYTE_INT(x)    ((i8)(x)[0])
+#define TWO_BYTE_INT(x)    (256*(i8)((x)[0])|(x)[1])
+#define THREE_BYTE_INT(x)  (65536*(i8)((x)[0])|((x)[1]<<8)|(x)[2])
+#define FOUR_BYTE_UINT(x)  (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+#define FOUR_BYTE_U64(x)   (((u64)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+#define FOUR_BYTE_INT(x)   ((int)FOUR_BYTE_UINT(x))
+#define SIX_BYTE_INT(x)    (FOUR_BYTE_UINT(x+2)+4294967296LL*TWO_BYTE_INT(x))
 
 /*
 ** Function prototypes
@@ -628,6 +643,7 @@ void sqlite3VdbeMemShallowCopy(Mem*, const Mem*, int);
 void sqlite3VdbeMemMove(Mem*, Mem*);
 int sqlite3VdbeMemNulTerminate(Mem*);
 int sqlite3VdbeMemSetStr(Mem*, const char*, i64, u8, void(*)(void*));
+int sqlite3VdbeMemSetText(Mem*, const char*, i64, void(*)(void*));
 void sqlite3VdbeMemSetInt64(Mem*, i64);
 #ifdef SQLITE_OMIT_FLOATING_POINT
 # define sqlite3VdbeMemSetDouble sqlite3VdbeMemSetInt64
@@ -646,13 +662,14 @@ int sqlite3VdbeMemSetZeroBlob(Mem*,int);
 int sqlite3VdbeMemIsRowSet(const Mem*);
 #endif
 int sqlite3VdbeMemSetRowSet(Mem*);
-void sqlite3VdbeMemZeroTerminateIfAble(Mem*);
+int sqlite3VdbeMemZeroTerminateIfAble(Mem*);
 int sqlite3VdbeMemMakeWriteable(Mem*);
 int sqlite3VdbeMemStringify(Mem*, u8, u8);
 int sqlite3IntFloatCompare(i64,double);
 i64 sqlite3VdbeIntValue(const Mem*);
 int sqlite3VdbeMemIntegerify(Mem*);
 double sqlite3VdbeRealValue(Mem*);
+int sqlite3MemRealValueRC(Mem*, double*);
 int sqlite3VdbeBooleanValue(Mem*, int ifNull);
 void sqlite3VdbeIntegerAffinity(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
@@ -683,6 +700,7 @@ void sqlite3VdbePreUpdateHook(
     Vdbe*,VdbeCursor*,int,const char*,Table*,i64,int,int);
 #endif
 int sqlite3VdbeTransferError(Vdbe *p);
+int sqlite3VdbeFindIndexKey(BtCursor*, Index*, UnpackedRecord*, int*, int);
 
 int sqlite3VdbeSorterInit(sqlite3 *, int, VdbeCursor *);
 void sqlite3VdbeSorterReset(sqlite3 *, VdbeSorter *);
@@ -721,9 +739,11 @@ int sqlite3VdbeCheckMemInvariants(Mem*);
 #endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-int sqlite3VdbeCheckFk(Vdbe *, int);
+int sqlite3VdbeCheckFkImmediate(Vdbe*);
+int sqlite3VdbeCheckFkDeferred(Vdbe*);
 #else
-# define sqlite3VdbeCheckFk(p,i) 0
+# define sqlite3VdbeCheckFkImmediate(p) 0
+# define sqlite3VdbeCheckFkDeferred(p) 0
 #endif
 
 #ifdef SQLITE_DEBUG

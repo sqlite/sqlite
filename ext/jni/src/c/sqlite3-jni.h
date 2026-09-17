@@ -245,8 +245,10 @@ extern "C" {
 #define org_sqlite_jni_capi_CApi_SQLITE_DBSTATUS_CACHE_USED_SHARED 11L
 #undef org_sqlite_jni_capi_CApi_SQLITE_DBSTATUS_CACHE_SPILL
 #define org_sqlite_jni_capi_CApi_SQLITE_DBSTATUS_CACHE_SPILL 12L
+#undef org_sqlite_jni_capi_CApi_SQLITE_DBSTATUS_TEMPBUF_SPILL
+#define org_sqlite_jni_capi_CApi_SQLITE_DBSTATUS_TEMPBUF_SPILL 13L
 #undef org_sqlite_jni_capi_CApi_SQLITE_DBSTATUS_MAX
-#define org_sqlite_jni_capi_CApi_SQLITE_DBSTATUS_MAX 12L
+#define org_sqlite_jni_capi_CApi_SQLITE_DBSTATUS_MAX 13L
 #undef org_sqlite_jni_capi_CApi_SQLITE_UTF8
 #define org_sqlite_jni_capi_CApi_SQLITE_UTF8 1L
 #undef org_sqlite_jni_capi_CApi_SQLITE_UTF16LE
@@ -1416,6 +1418,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1errcode
  */
 JNIEXPORT jstring JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1errmsg
   (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_capi_CApi
+ * Method:    sqlite3_set_errmsg
+ * Signature: (Lorg/sqlite/jni/capi/sqlite3;ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_capi_CApi_sqlite3_1set_1errmsg
+  (JNIEnv *, jclass, jobject, jint, jstring);
 
 /*
  * Class:     org_sqlite_jni_capi_CApi

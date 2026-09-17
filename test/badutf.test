@@ -97,7 +97,7 @@ do_test badutf-3.2 {
 } {0 {x 3}}
 do_test badutf-3.3 {
   sqlite3_exec db {SELECT length('%7f%80%81') AS x}
-} {0 {x 3}}
+} {0 {x 2}}
 do_test badutf-3.4 {
   sqlite3_exec db {SELECT length('%61%c0') AS x}
 } {0 {x 2}}
@@ -109,13 +109,13 @@ do_test badutf-3.6 {
 } {0 {x 1}}
 do_test badutf-3.7 {
   sqlite3_exec db {SELECT length('%80%80%80%80%80%80%80%80%80%80') AS x}
-} {0 {x 10}}
+} {0 {x 1}}
 do_test badutf-3.8 {
   sqlite3_exec db {SELECT length('%80%80%80%80%80%f0%80%80%80%80') AS x}
-} {0 {x 6}}
+} {0 {x 2}}
 do_test badutf-3.9 {
   sqlite3_exec db {SELECT length('%80%80%80%80%80%f0%80%80%80%ff') AS x}
-} {0 {x 7}}
+} {0 {x 3}}
 
 do_test badutf-4.1 {
   sqlite3_exec db {SELECT hex(trim('%80%80%80%f0%80%80%80%ff','%80%ff')) AS x}

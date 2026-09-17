@@ -528,4 +528,17 @@ do_test 8.2 {
   catchsql { SELECT * FROM aux2 }
 } {1 {SQL logic error}}
 
+#-------------------------------------------------------------------------
+# https://sqlite.org/bugs/forumpost/2a3f211ecd
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE VIRTUAL TABLE t0 USING fts4(c0, c1, c2);
+  CREATE VIRTUAL TABLE t1 USING fts4aux(t0);
+  INSERT INTO t0(c2) VALUES ('x');
+} {}
+do_execsql_test 9.1 {
+  SELECT * FROM t1;
+} {x * 1 1 x 2 1 1}
+
 finish_test

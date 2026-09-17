@@ -90,7 +90,7 @@ Other preprocessor defines
 Additionally, preprocessor defines may be specified by using the OPTS macro
 on the NMAKE command line.  However, not all possible preprocessor defines
 may be specified in this manner as some require the amalgamation to be built
-with them enabled (see http://www.sqlite.org/compile.html). For example, the
+with them enabled (see http://sqlite.org/compile.html). For example, the
 following will work:
 
   "OPTS=-DSQLITE_ENABLE_STAT4=1 -DSQLITE_OMIT_JSON=1"

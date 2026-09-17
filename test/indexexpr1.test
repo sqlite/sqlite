@@ -330,7 +330,7 @@ do_execsql_test indexexpr1-1010 {
 # 2016-10-10
 # Make sure indexes on expressions skip over initial NULL values in the
 # index as they are suppose to do.
-# Ticket https://www.sqlite.org/src/tktview/4baa46491212947
+# Ticket https://sqlite.org/src/tktview/4baa46491212947
 #
 do_execsql_test indexexpr1-1100 {
   DROP TABLE IF EXISTS t1;
@@ -374,7 +374,7 @@ do_execsql_test indexexpr1-1200.4 {
   0 0 0 2 0 4 2 0 2 2 4 0
 }
 
-# Ticket https://www.sqlite.org/src/tktview/eb703ba7b50c1a
+# Ticket https://sqlite.org/src/tktview/eb703ba7b50c1a
 # Incorrect result using an index on an expression with a collating function
 #
 do_execsql_test indexexpr1-1300.1 {
@@ -429,7 +429,7 @@ do_execsql_test indexexpr1-1510 {
   REPLACE INTO t1 SELECT a, randomblob(a) FROM t1
 } {}
 
-# 2018-01-31 https://www.sqlite.org/src/tktview/343634942dd54ab57b702411
+# 2018-01-31 https://sqlite.org/src/tktview/343634942dd54ab57b702411
 # When an index on an expression depends on the string representation of
 # a numeric table column, trouble can arise since there are multiple
 # string that can map to the same numeric value.  (Ex: 123, 0123, 000123).
@@ -449,7 +449,7 @@ do_execsql_test indexexpr1-1620 {
   SELECT b FROM t1 WHERE lower(a)='01234' ORDER BY +b;
 } {}
 
-# 2019-08-09 https://www.sqlite.org/src/info/9080b6227fabb466
+# 2019-08-09 https://sqlite.org/src/info/9080b6227fabb466
 # ExprImpliesExpr theorem prover bug:
 # "(NULL IS FALSE) IS FALSE" does not imply "NULL IS NULL"
 #
@@ -461,7 +461,7 @@ do_execsql_test indexexpr1-1700 {
   SELECT * FROM t0 WHERE ((NULL IS FALSE) IS FALSE);
 } {0}
 
-# 2019-09-02 https://www.sqlite.org/src/tktview/57af00b6642ecd6848
+# 2019-09-02 https://sqlite.org/src/tktview/57af00b6642ecd6848
 # When the expression of an an index-on-expression references a
 # table column of type REAL that is actually holding an MEM_IntReal
 # value, be sure to use the REAL value and not the INT value when
@@ -566,6 +566,8 @@ do_execsql_test indexexpr1-2050 {
 } {/.*SCAN t1 USING COVERING INDEX t1x.*/}
 
 reset_db
+db config dqs_dml 1
+db config dqs_ddl 1
 do_execsql_test indexexpr1-2100 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
   INSERT INTO t1(a,b) VALUES(1,0);
@@ -590,6 +592,8 @@ do_execsql_test indexexpr1-2140 {
   UPDATE t1 SET b=400 WHERE (SELECT 'y') GLOB "y*";
   SELECT b FROM t1;
 } 400
+db config dqs_dml 0
+db config dqs_ddl 0
 
 # 2023-04-18 Forum post https://sqlite.org/forum/forumpost/f34e32d120 from
 # Alexis King.
@@ -681,5 +685,51 @@ do_execsql_test indexexpr1-2300 {
   CREATE INDEX t1j ON t1(json(y));
   SELECT json_insert('{}', '$.a', json(y)) FROM t1;
 } {{{"a":{"b":5}}}}
+
+#-------------------------------------------------------------------------
+reset_db
+proc addone {n} {
+  return $n+1
+}
+db func addone addone
+
+do_execsql_test indexexpr1-2400 {
+  CREATE TABLE t1(x, y);
+}
+do_catchsql_test indexexpr1-2310 {
+  CREATE INDEX i1 ON t1( (addone(x)) );
+} {1 {non-deterministic functions prohibited in index expressions}}
+do_catchsql_test indexexpr1-2310 {
+  CREATE INDEX i2 ON t1( ~(addone(x)) );
+} {1 {non-deterministic functions prohibited in index expressions}}
+do_catchsql_test indexexpr1-2310 {
+  CREATE INDEX i2 ON t1( ~(addone(DISTINCT x)) );
+} {1 {non-deterministic functions prohibited in index expressions}}
+
+# Bug 2026-07-24T08:42:47Z
+# Indexes-on-expression interacting with subtypes and the unary "+" operator
+#
+do_execsql_test indexexpr1-2500 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INT, j TEXT);
+  INSERT INTO t1 VALUES(1,'{"x":[1,2]}');
+  SELECT json_array(json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2501 {
+  SELECT json_array(+json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2502 {
+  SELECT json_array(++json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2503 {
+  CREATE INDEX ix ON t1(a, json_extract(j,'$.x'));
+  SELECT json_array(json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2504 {
+  SELECT json_array(+json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
+do_execsql_test indexexpr1-2505 {
+  SELECT json_array(++json_extract(j,'$.x')) FROM t1 WHERE a=1;
+} {[[1,2]]}
 
 finish_test

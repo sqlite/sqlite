@@ -1,0 +1,56 @@
+# 2026 August 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix sessioncorrupt
+
+
+set C [db one {SELECT unhex('
+    5402 0100 7400 1700 0100 0000 0000 0000
+    0103 036f 6c64 0003 036e 6577 5440 0100
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 7400
+    1700 0100 0000 0000 0000 0100 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0000 0000 0000 0000
+    0000 0000 0000 0000 0001 0000 0000 0000
+    0002
+', char(0x20,0x0a,0x0d))}]
+
+do_test 1.0 { string length $C } 242
+
+do_execsql_test 1.1 {
+  CREATE TABLE t(id INTEGER PRIMARY KEY, v TEXT);
+  INSERT INTO t VALUES(1, 'old');
+}
+
+proc xConflict {args} { return "OMIT" }
+
+do_test 1.2 {
+  sqlite3changeset_apply db $C xConflict
+} {}
+
+
+finish_test

@@ -13,6 +13,11 @@
 ** This file implements a virtual table that returns the whole numbers
 ** between 1 and 4294967295, inclusive.
 **
+** TESTING AND DEBUG USE ONLY ->  This is not production code.  This is
+** not a deliverable. Use the generate_series() virtual table for
+** real-world applications instead of this extension.  THIS EXTENSION
+** MAY CONTAIN BUGS.
+**
 ** Example:
 **
 **     CREATE VIRTUAL TABLE nums USING wholenumber;
@@ -47,7 +52,7 @@ static int wholenumberConnect(
   char **pzErr
 ){
   sqlite3_vtab *pNew;
-  pNew = *ppVtab = sqlite3_malloc( sizeof(*pNew) );
+  pNew = *ppVtab = sqlite3_malloc64( sizeof(*pNew) );
   if( pNew==0 ) return SQLITE_NOMEM;
   sqlite3_declare_vtab(db, "CREATE TABLE x(value)");
   sqlite3_vtab_config(db, SQLITE_VTAB_INNOCUOUS);
@@ -69,7 +74,7 @@ static int wholenumberDisconnect(sqlite3_vtab *pVtab){
 */
 static int wholenumberOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   wholenumber_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   *ppCursor = &pCur->base;
@@ -154,12 +159,14 @@ static int wholenumberFilter(
   pCur->iValue = 1;
   pCur->mxValue = 0xffffffff;  /* 4294967295 */
   if( idxNum & 3 ){
-    v = sqlite3_value_int64(argv[0]) + (idxNum&1);
+    v = sqlite3_value_int64(argv[0]);
+    if( v<=pCur->mxValue && (idxNum&1)!=0 ) v++;
     if( v>pCur->iValue && v<=pCur->mxValue ) pCur->iValue = v;
     i++;
   }
   if( idxNum & 12 ){
-    v = sqlite3_value_int64(argv[i]) - ((idxNum>>2)&1);
+    v = sqlite3_value_int64(argv[i]);
+    if( v>0 && ((idxNum>>2)&1)!=0 ) v--;
     if( v>=pCur->iValue && v<pCur->mxValue ) pCur->mxValue = v;
   }
   return SQLITE_OK;

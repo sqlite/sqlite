@@ -528,4 +528,44 @@ foreach {tn tokenizer} $tokenizers {
   do_execsql_test 5.$tn.3 { DROP TABLE x3 }
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE ft USING fts4(
+      c0,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19
+  );
+}
+
+do_execsql_test 6.1 {
+  BEGIN;
+    WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<20000
+    )
+    INSERT INTO ft(c0) SELECT 'common' FROM s;
+}
+
+do_test 6.2 {
+  set L [list]
+  for {set x 0} {$x<125} {incr x} {
+    lappend L x$x
+  }
+  lappend L common rare
+  set val [join $L " "]
+  execsql {
+      INSERT INTO ft VALUES(
+        $val, $val, $val, $val, $val, $val, $val, $val, $val, $val,
+        $val, $val, $val, $val, $val, $val, $val, $val, $val, $val
+      );
+    COMMIT;
+  }
+} {}
+
+db close
+sqlite3 db test.db
+
+do_execsql_test 6.3 {
+  SELECT count(*) FROM ft WHERE ft MATCH '"common rare"';
+} {1}
+
+
 finish_test

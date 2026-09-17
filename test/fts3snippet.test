@@ -591,5 +591,25 @@ do_execsql_test 5.2 {
   SELECT snippet(t5, '[', ']', -1, 0) FROM t5 WHERE t5 MATCH 'a5'
 } {{a4 [a5] a6}}
 
+#-------------------------------------------------------------------------
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE t6 USING fts3(a, b, c, d);
+  INSERT INTO t6 VALUES(
+      'one two three A', 'one two three B', 'one two three C', 'one two three D'
+  );
+}
+
+proc do_snip_test {name query iCol nTok lRes} {
+  set q "'[string map {' ''} $query]'"
+  set    SQL "SELECT snippet(t6, '{', '}', '...', $iCol, $nTok) "
+  append SQL " FROM t6 WHERE t6 MATCH $q"
+  uplevel [list do_execsql_test $name $SQL [list $lRes]]
+}
+
+do_snip_test 6.1 two 0 5  {one {two} three A}
+do_snip_test 6.2 two -1 5 {one {two} three A}
+do_snip_test 6.3 two 3 5  {one {two} three D}
+do_snip_test 6.4 two 4 5  {}
+
 set sqlite_fts3_enable_parentheses 0
 finish_test

@@ -42,7 +42,7 @@ proc compare_dbs {db1 db2} {
 
 proc recover_with_opts {opts} {
   set cmd ".recover $opts"
-  set fd [open [list |$::CLI test.db $cmd]]
+  set fd [open [list |$::CLI -noinit test.db $cmd]]
   fconfigure $fd -translation binary
   set sql [read $fd]
   close $fd

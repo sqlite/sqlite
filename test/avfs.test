@@ -332,9 +332,11 @@ do_test 4.3 {
   set ofd [open $shdo w]
   if {$::cliDoesAr} {
     puts $ofd ".ar -u $shdo"
+    puts $ofd ".mode list"
     puts $ofd "select count(*) from sqlar where name = '$shdo';"
   } else {
     puts $ofd "insert into sqlar values (1);"
+    puts $ofd ".mode list"
     puts $ofd "select count(*) from sqlar;"
   }
   puts $ofd ".q"

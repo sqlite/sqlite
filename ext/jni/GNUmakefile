@@ -429,7 +429,7 @@ $(doc.index): $(JAVA_FILES.main) $(MAKEFILE)
 .FORCE: doc
 doc: $(doc.index)
 javadoc: $(doc.index)
-# Force rebild of docs
+# Force rebuild of docs
 redoc:
 	@rm -f $(doc.index)
 	@$(MAKE) doc

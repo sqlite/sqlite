@@ -406,7 +406,7 @@ do_test select9-4.4 {
 do_test select9-4.5 {
   execsql { CREATE VIEW v1 AS SELECT a FROM t1 UNION SELECT d FROM t2 }
   cksort { SELECT a FROM v1 ORDER BY 1 LIMIT 5 }
-} {1 2 3 4 5 sort}
+} {1 2 3 4 5 nosort}
 do_test select9-4.X {
   execsql {
     DROP INDEX i1;

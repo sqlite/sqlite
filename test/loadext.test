@@ -86,7 +86,6 @@ if {![file exists $testextension]} {
 
   set cmdline [concat exec gcc $gcc_shared]
   lappend cmdline -Wall -I$srcdir -I. -I.. -g $testextsrc -o $testextension
-  
   if {[catch $cmdline msg]} {
     puts "Skipping loadext tests: Test extension not built..."
     puts $msg

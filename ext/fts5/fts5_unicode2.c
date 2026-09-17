@@ -778,4 +778,3 @@ void sqlite3Fts5UnicodeAscii(u8 *aArray, u8 *aAscii){
   }
   aAscii[0] = 0;                  /* 0x00 is never a token character */
 }
-

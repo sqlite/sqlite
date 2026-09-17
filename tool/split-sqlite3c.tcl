@@ -56,7 +56,7 @@ proc write_one_file {content} {
     set label $filecnt
   }
   set out [open sqlite3-$label.c w]
-  fconfigure $out -translation lf
+  fconfigure $out -translation text
   puts -nonewline $out $content
   close $out
   puts $::out1 "#include \"sqlite3-$filecnt.c\""

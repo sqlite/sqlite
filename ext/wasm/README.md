@@ -1,8 +1,9 @@
 This directory houses the [Web Assembly (WASM)](https://en.wikipedia.org/wiki/WebAssembly)
 parts of the sqlite3 build.
 
-It requires [emscripten][] and that the build environment be set up for
-emscripten. A mini-HOWTO for setting that up follows...
+It requires [emscripten][] and that the build environment be set up
+for emscripten. _Release_ builds also require [the wabt tools](#wabt),
+but dev builds do not. A mini-HOWTO for setting that up follows...
 
 First, install the Emscripten SDK, as documented
 [here](https://emscripten.org/docs/getting_started/downloads.html) and summarized
@@ -98,10 +99,10 @@ which (almost) all of the test and demo applications can be accessed.
 real utility when it's used in conjunction with the project's
 proprietary test suite, which most users don't have access to.)
 
-Note that when serving this app via [althttpd][], it must be a version
-from 2022-09-26 or newer so that it recognizes the `--enable-sab`
-flag, which causes althttpd to emit two HTTP response headers which
-are required to enable JavaScript's `SharedArrayBuffer` and `Atomics`
+When serving this app via [althttpd][], it must be a version from
+2022-09-26 or newer so that it recognizes the `--enable-sab` flag,
+which causes althttpd to emit two HTTP response headers which are
+required to enable JavaScript's `SharedArrayBuffer` and `Atomics`
 APIs. Those APIs are required in order to enable the [OPFS][]-related
 features in the apps which use them.
 
@@ -124,6 +125,23 @@ and that the request must come from "localhost" (_or_ over an SSL
 connection).  Since the web-server is on a different machine from the
 web-broser, the localhost requirement means that the connection must
 be tunneled using SSH.
+
+<a id="wabt"></a>
+# The wabt Tools
+
+_Release_ builds require the wabt tools:
+
+<https://github.com/WebAssembly/wabt>
+
+Specifically, we need `wasm-strip` so that the resulting WASM file is not
+several megabytes.
+
+Pre-built binaries can be downloaded from:
+
+<https://github.com/WebAssembly/wabt/releases>
+
+As of 2025-10-14, versions 1.36.0 or higher are known to work and
+1.34.0 is known to not work with current Emscripten output.
 
 
 [emscripten]: https://emscripten.org

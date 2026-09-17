@@ -379,7 +379,7 @@ do_execsql_test alter4-9.3 {
 # Confirm that doing an ALTER TABLE on a legacy format database
 # does not corrupt DESC indexes.
 #
-# Ticket https://www.sqlite.org/src/tktview/f68bf68513a1c
+# Ticket https://sqlite.org/src/tktview/f68bf68513a1c
 #
 do_test alter4-10.1 {
   db close

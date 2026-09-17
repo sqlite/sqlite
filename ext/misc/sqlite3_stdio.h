@@ -31,6 +31,7 @@
 #ifdef _WIN32
 /**** Definitions For Windows ****/
 #include <stdio.h>
+#include <stdarg.h>
 #include <windows.h>
 
 FILE *sqlite3_fopen(const char *zFilename, const char *zMode);
@@ -38,6 +39,7 @@ FILE *sqlite3_popen(const char *zCommand, const char *type);
 char *sqlite3_fgets(char *s, int size, FILE *stream);
 int sqlite3_fputs(const char *s, FILE *stream);
 int sqlite3_fprintf(FILE *stream, const char *format, ...);
+int sqlite3_vfprintf(FILE *stream, const char *format, va_list);
 void sqlite3_fsetmode(FILE *stream, int mode);
 
 
@@ -49,6 +51,7 @@ void sqlite3_fsetmode(FILE *stream, int mode);
 #define sqlite3_fgets     fgets
 #define sqlite3_fputs     fputs
 #define sqlite3_fprintf   fprintf
+#define sqlite3_vfprintf  vfprintf
 #define sqlite3_fsetmode(F,X)   /*no-op*/
 
 #endif

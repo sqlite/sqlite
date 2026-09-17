@@ -106,7 +106,7 @@ do_test join5-2.12 {
   execsql {SELECT * FROM xy LEFT JOIN ab ON NULL WHERE NULL}
 } {}
 
-# Ticket https://www.sqlite.org/src/tktview/6f2222d550f5b0ee7ed37601
+# Ticket https://sqlite.org/src/tktview/6f2222d550f5b0ee7ed37601
 # Incorrect output on a LEFT JOIN.
 #
 do_execsql_test join5-3.1 {
@@ -161,7 +161,7 @@ do_execsql_test join5-3.3 {
   SELECT * FROM x1 LEFT JOIN x2 JOIN x3 WHERE x3.d = x2.b;
 } {}
 
-# Ticket https://www.sqlite.org/src/tktview/c2a19d81652f40568c770c43 on
+# Ticket https://sqlite.org/src/tktview/c2a19d81652f40568c770c43 on
 # 2015-08-20.  LEFT JOIN and the push-down optimization.
 #
 do_execsql_test join5-4.1 {

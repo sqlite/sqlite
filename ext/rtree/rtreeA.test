@@ -18,6 +18,7 @@ if {![info exists testdir]} {
 } 
 source $testdir/tester.tcl
 ifcapable !rtree { finish_test ; return }
+set testprefix rtreeA
 
 proc create_t1 {} {
   db close
@@ -258,5 +259,33 @@ do_test rtreeA-7.120 {
   sqlite3_extended_errcode db
 } {SQLITE_CORRUPT_VTAB}
 
+#-------------------------------------------------------------------------
+reset_db
+
+set N 300
+set rec [binary format SS 0 $N]
+for {set ii 1} {$ii<=$N} {incr ii} {
+  set cell [binary format Wff $ii $ii [expr $ii+1]]
+  set rec [binary format a*a* $rec $cell]
+}
+
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2);
+  INSERT INTO rt VALUES(1, 0.0, 1.0);
+  UPDATE rt_node SET data = $rec WHERE nodeno = 1;
+  DELETE FROM rt_rowid;
+  WITH s(i) AS (
+      SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<300
+  )
+  INSERT INTO rt_rowid SELECT i, 1 FROM s;
+  DELETE FROM rt_parent;
+}
+
+db close
+sqlite3 db test.db 
+
+do_execsql_test 8.2 {
+  SELECT count(*) FROM rt WHERE id = 1
+} {1}
 
 finish_test

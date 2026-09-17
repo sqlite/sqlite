@@ -25,20 +25,6 @@ VERSION=`cat $TOP/VERSION`
 HASH=`cut -c1-10 $TOP/manifest.uuid`
 DATETIME=`grep '^D' $TOP/manifest | tr -c -d '[0-9]' | cut -c1-12`
 
-# Inject the current version into the TEA autoconf file.
-#
-sed -e "s/@VERSION@/$VERSION/" \
-    < $TOP/autoconf/tea/configure.ac.in \
-    > $TOP/autoconf/tea/configure.ac
-# And then verify that that worked...
-#
-if grep $VERSION $TOP/autoconf/tea/configure.ac > /dev/null
-then echo "TEA version number ok"
-else echo "TEA version number mismatch.  Should be $VERSION"; exit 1
-fi
-
-
-
 # If this script is given an argument of --snapshot, then generate a
 # snapshot tarball named for the current checkout SHA hash, rather than
 # the version number.
@@ -73,12 +59,9 @@ cp $TOP/src/sqlite3.rc    $TMPSPACE
 cp $TOP/tool/Replace.cs   $TMPSPACE
 cp $TOP/VERSION           $TMPSPACE
 cp $TOP/main.mk           $TMPSPACE
-
+cp $TOP/make.bat          $TMPSPACE
+tree $TMPSPACE
 cd $TMPSPACE
-
-# Clean up emacs-generated backup files from the target
-rm -f ./autosetup/*~
-rm -f ./*~
 
 #if true; then
   # Clean up *~ files (emacs-generated backups).
@@ -97,13 +80,14 @@ cat <<EOF > tea/generic/tclsqlite3.c
 EOF
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 
-cd tea
-rm -f configure.ac.in
-autoconf
-rm -rf autom4te.cache
+# Clean up some local remnants from the tarball.
+rm -f tea/.env-* # autosetup environment overrides
+find . -type f -name '*~' -exec rm -f \{} \;  # backup files
+find . -type f -name '#*#' -exec rm -f \{} \; # emacs lock files
+find . -type f -name '*.o' -exec rm -f \{} \;
+find . -type f -name '*.so' -exec rm -f \{} \;
 
-cd ../
-./configure && make dist
+./configure && ${MAKE-make} dist
 tar xzf sqlite-$VERSION.tar.gz
 mv sqlite-$VERSION $TARBALLNAME
 tar czf $TARBALLNAME.tar.gz $TARBALLNAME

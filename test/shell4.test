@@ -66,10 +66,6 @@ do_test shell4-1.3.2 {
 do_test shell4-1.3.3 {
   catchcmd "test.db" ".stats OFF"
 } {0 {}}
-do_test shell4-1.3.4 {
-  # too many arguments
-  catchcmd "test.db" ".stats OFF BAD"
-} {1 {Usage: .stats ?on|off|stmt|vmstep?}}
 
 # NB. whitespace is important
 do_test shell4-1.4.1 {
@@ -136,15 +132,15 @@ SELECT * FROM t1;}
 
 do_test shell4-3.1 {
   set fd [open t1.txt wb]
-  puts $fd "SELECT 'squirrel';"
+  puts $fd ".mode list\nSELECT 'squirrel';"
   close $fd
-  exec $::CLI_ONLY :memory: --interactive ".read t1.txt"
+  exec $::CLI_ONLY --noinit :memory: --interactive ".read t1.txt"
 } {squirrel}
 do_test_with_ansi_output shell4-3.2 {
   set fd [open t1.txt wb]
-  puts $fd "SELECT 'pound: \302\243';"
+  puts $fd ".mode list\nSELECT 'pound: \302\243';"
   close $fd
-  exec $::CLI_ONLY :memory: --interactive ".read t1.txt"
+  exec $::CLI_ONLY --noinit :memory: --interactive ".read t1.txt"
 } {pound: £}
 
 do_test shell4-4.1 {
@@ -152,6 +148,6 @@ do_test shell4-4.1 {
   puts $fd ".read t1.txt"
   close $fd
   catchcmd ":memory:" ".read t1.txt"
-} {1 {Input nesting limit (25) reached at line 1. Check recursion.}}
+} {1 {t1.txt: Input nesting limit (25) reached at line 1. Check recursion.}}
 
 finish_test

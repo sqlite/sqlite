@@ -538,6 +538,9 @@ struct BtCursor {
   Btree *pBtree;            /* The Btree to which this cursor belongs */
   Pgno *aOverflow;          /* Cache of overflow page locations */
   void *pKey;               /* Saved key that was cursor last known position */
+#if defined(SQLITE_ENABLE_CURSOR_HINTS) && defined(SQLITE_DEBUG)
+  BtCursor *pCursorHintTableCursor;
+#endif
   /* All fields above are zeroed when the cursor is allocated.  See
   ** sqlite3BtreeCursorZero().  Fields that follow must be manually
   ** initialized. */
@@ -706,6 +709,7 @@ struct IntegrityCk {
   int nErr;         /* Number of messages written to zErrMsg so far */
   int rc;           /* SQLITE_OK, SQLITE_NOMEM, or SQLITE_INTERRUPT */
   u32 nStep;        /* Number of steps into the integrity_check process */
+  u8 nAbove;        /* Current btree recursion depth */
   const char *zPfx; /* Error message prefix */
   Pgno v0;          /* Value for first %u substitution in zPfx (root page) */
   Pgno v1;          /* Value for second %u substitution in zPfx (current pg) */
@@ -714,6 +718,9 @@ struct IntegrityCk {
   u32 *heap;        /* Min-heap used for analyzing cell coverage */
   sqlite3 *db;      /* Database connection running the check */
   i64 nRow;         /* Number of rows visited in current tree */
+#ifdef SQLITE_DEBUG
+  u32 mxHeap;       /* Maximum number of entries in the Min-heap */
+#endif
 };
 
 /*

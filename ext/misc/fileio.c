@@ -67,16 +67,12 @@
 **     data:  For a regular file, a blob containing the file data. For a
 **            symlink, a text value containing the text of the link. For a
 **            directory, NULL.
+**     level: Directory hierarchy level.  Topmost is 1.
 **
 **   If a non-NULL value is specified for the optional $dir parameter and
 **   $path is a relative path, then $path is interpreted relative to $dir. 
 **   And the paths returned in the "name" column of the table are also 
 **   relative to directory $dir.
-**
-** Notes on building this extension for Windows:
-**   Unless linked statically with the SQLite library, a preprocessor
-**   symbol, FILEIO_WIN32_DLL, must be #define'd to create a stand-alone
-**   DLL form of this extension for WIN32. See its use below for details.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -92,20 +88,15 @@ SQLITE_EXTENSION_INIT1
 #  include <dirent.h>
 #  include <utime.h>
 #  include <sys/time.h>
+#  define STRUCT_STAT struct stat
+#  include <limits.h>
+#  include <stdlib.h>
 #else
-#  include "windows.h"
-#  include <io.h>
+#  include "windirent.h"
 #  include <direct.h>
-#  include "test_windirent.h"
-#  define dirent DIRENT
-#  ifndef chmod
-#    define chmod _chmod
-#  endif
-#  ifndef stat
-#    define stat _stat
-#  endif
-#  define mkdir(path,mode) _mkdir(path)
-#  define lstat(path,buf) stat(path,buf)
+#  define STRUCT_STAT struct _stat
+#  define chmod(path,mode) fileio_chmod(path,mode)
+#  define mkdir(path,mode) fileio_mkdir(path)
 #endif
 #include <time.h>
 #include <errno.h>
@@ -121,14 +112,100 @@ SQLITE_EXTENSION_INIT1
 /*
 ** Structure of the fsdir() table-valued function
 */
-                 /*    0    1    2     3    4           5             */
-#define FSDIR_SCHEMA "(name,mode,mtime,data,path HIDDEN,dir HIDDEN)"
+                 /*    0    1    2     3    4     5           6          */
+#define FSDIR_SCHEMA "(name,mode,mtime,data,level,path HIDDEN,dir HIDDEN)"
+
 #define FSDIR_COLUMN_NAME     0     /* Name of the file */
 #define FSDIR_COLUMN_MODE     1     /* Access mode */
 #define FSDIR_COLUMN_MTIME    2     /* Last modification time */
 #define FSDIR_COLUMN_DATA     3     /* File content */
-#define FSDIR_COLUMN_PATH     4     /* Path to top of search */
-#define FSDIR_COLUMN_DIR      5     /* Path is relative to this directory */
+#define FSDIR_COLUMN_LEVEL    4     /* Level.  Topmost is 1 */
+#define FSDIR_COLUMN_PATH     5     /* Path to top of search */
+#define FSDIR_COLUMN_DIR      6     /* Path is relative to this directory */
+
+#ifdef _WIN32
+/*
+** Convert a UTF-8 string to Microsoft Unicode.
+**
+** Space to hold the returned string is obtained from sqlite3_malloc().
+*/
+static wchar_t *winUtf8To16(const char *zText){
+  int nChar;
+  wchar_t *zWideText;
+
+  nChar = MultiByteToWideChar(CP_UTF8, 0, zText, -1, NULL, 0);
+  if( nChar==0 ){
+    return 0;
+  }
+  zWideText = sqlite3_malloc64(nChar*sizeof(WCHAR) );
+  if( zWideText==0 ){
+    return 0;
+  }
+  nChar = MultiByteToWideChar(CP_UTF8, 0, zText, -1, zWideText,
+                                nChar);
+  if( nChar==0 ){
+    sqlite3_free(zWideText);
+    zWideText = 0;
+  }
+  return zWideText;
+}
+#endif /* _WIN32 */
+
+#ifdef _WIN32
+/*
+** Convert a Microsoft Unicode string to UTF-8.
+**
+** Space to hold the returned string is obtained from sqlite3_malloc().
+*/
+static char *winUtf16To8(wchar_t *zWideText){
+  int nByte;
+  char *zText;
+
+  nByte = WideCharToMultiByte(CP_UTF8, 0, zWideText, -1, 0, 0, 0, 0);
+  if( nByte == 0 ){
+    return 0;
+  }
+  zText = sqlite3_malloc64( nByte );
+  if( zText==0 ){
+    return 0;
+  }
+  nByte = WideCharToMultiByte(CP_UTF8, 0, zWideText, -1, zText, nByte,
+                                0, 0);
+  if( nByte == 0 ){
+    sqlite3_free(zText);
+    zText = 0;
+  }
+  return zText;
+}
+#endif /* _WIN32 */
+
+/*
+** UTF8 chmod() function for Windows
+*/
+#if defined(_WIN32) || defined(WIN32)
+static int fileio_chmod(const char *zPath, int pmode){
+  int rc;
+  wchar_t *b1 = winUtf8To16(zPath);
+  if( b1==0 ) return -1;
+  rc = _wchmod(b1, pmode);
+  sqlite3_free(b1);
+  return rc;
+}
+#endif
+
+/*
+** UTF8 mkdir() function for Windows
+*/
+#if defined(_WIN32) || defined(WIN32)
+static int fileio_mkdir(const char *zPath){
+  int rc;
+  wchar_t *b1 = winUtf8To16(zPath);
+  if( b1==0 ) return -1;
+  rc = _wmkdir(b1);
+  sqlite3_free(b1);
+  return rc;
+}
+#endif
 
 
 /*
@@ -236,50 +313,7 @@ static sqlite3_uint64 fileTimeToUnixTime(
 
   return (fileIntervals.QuadPart - epochIntervals.QuadPart) / 10000000;
 }
-
-
-#if defined(FILEIO_WIN32_DLL) && (defined(_WIN32) || defined(WIN32))
-#  /* To allow a standalone DLL, use this next replacement function: */
-#  undef sqlite3_win32_utf8_to_unicode
-#  define sqlite3_win32_utf8_to_unicode utf8_to_utf16
-#
-LPWSTR utf8_to_utf16(const char *z){
-  int nAllot = MultiByteToWideChar(CP_UTF8, 0, z, -1, NULL, 0);
-  LPWSTR rv = sqlite3_malloc(nAllot * sizeof(WCHAR));
-  if( rv!=0 && 0 < MultiByteToWideChar(CP_UTF8, 0, z, -1, rv, nAllot) )
-    return rv;
-  sqlite3_free(rv);
-  return 0;
-}
-#endif
-
-/*
-** This function attempts to normalize the time values found in the stat()
-** buffer to UTC.  This is necessary on Win32, where the runtime library
-** appears to return these values as local times.
-*/
-static void statTimesToUtc(
-  const char *zPath,
-  struct stat *pStatBuf
-){
-  HANDLE hFindFile;
-  WIN32_FIND_DATAW fd;
-  LPWSTR zUnicodeName;
-  extern LPWSTR sqlite3_win32_utf8_to_unicode(const char*);
-  zUnicodeName = sqlite3_win32_utf8_to_unicode(zPath);
-  if( zUnicodeName ){
-    memset(&fd, 0, sizeof(WIN32_FIND_DATAW));
-    hFindFile = FindFirstFileW(zUnicodeName, &fd);
-    if( hFindFile!=NULL ){
-      pStatBuf->st_ctime = (time_t)fileTimeToUnixTime(&fd.ftCreationTime);
-      pStatBuf->st_atime = (time_t)fileTimeToUnixTime(&fd.ftLastAccessTime);
-      pStatBuf->st_mtime = (time_t)fileTimeToUnixTime(&fd.ftLastWriteTime);
-      FindClose(hFindFile);
-    }
-    sqlite3_free(zUnicodeName);
-  }
-}
-#endif
+#endif /* _WIN32 */
 
 /*
 ** This function is used in place of stat().  On Windows, special handling
@@ -288,11 +322,26 @@ static void statTimesToUtc(
 */
 static int fileStat(
   const char *zPath,
-  struct stat *pStatBuf
+  STRUCT_STAT *pStatBuf
 ){
 #if defined(_WIN32)
-  int rc = stat(zPath, pStatBuf);
-  if( rc==0 ) statTimesToUtc(zPath, pStatBuf);
+  int rc;
+  wchar_t *b1 = winUtf8To16(zPath);
+  if( b1==0 ) return 1;
+  rc = _wstat(b1, pStatBuf);
+  if( rc==0 ){
+    HANDLE hFindFile;
+    WIN32_FIND_DATAW fd;
+    memset(&fd, 0, sizeof(WIN32_FIND_DATAW));
+    hFindFile = FindFirstFileW(b1, &fd);
+    if( hFindFile!=NULL ){
+      pStatBuf->st_ctime = (time_t)fileTimeToUnixTime(&fd.ftCreationTime);
+      pStatBuf->st_atime = (time_t)fileTimeToUnixTime(&fd.ftLastAccessTime);
+      pStatBuf->st_mtime = (time_t)fileTimeToUnixTime(&fd.ftLastWriteTime);
+      FindClose(hFindFile);
+    }
+  }
+  sqlite3_free(b1);
   return rc;
 #else
   return stat(zPath, pStatBuf);
@@ -306,12 +355,10 @@ static int fileStat(
 */
 static int fileLinkStat(
   const char *zPath,
-  struct stat *pStatBuf
+  STRUCT_STAT *pStatBuf
 ){
 #if defined(_WIN32)
-  int rc = lstat(zPath, pStatBuf);
-  if( rc==0 ) statTimesToUtc(zPath, pStatBuf);
-  return rc;
+  return fileStat(zPath, pStatBuf);
 #else
   return lstat(zPath, pStatBuf);
 #endif
@@ -341,7 +388,7 @@ static int makeDirectory(
     int i = 1;
 
     while( rc==SQLITE_OK ){
-      struct stat sStat;
+      STRUCT_STAT sStat;
       int rc2;
 
       for(; zCopy[i]!='/' && i<nCopy; i++);
@@ -391,7 +438,7 @@ static int writeFile(
         ** be an error though - if there is already a directory at the same
         ** path and either the permissions already match or can be changed
         ** to do so using chmod(), it is not an error.  */
-        struct stat sStat;
+        STRUCT_STAT sStat;
         if( errno!=EEXIST
          || 0!=fileStat(zFile, &sStat)
          || !S_ISDIR(sStat.st_mode)
@@ -425,7 +472,6 @@ static int writeFile(
 
   if( mtime>=0 ){
 #if defined(_WIN32)
-#if !SQLITE_OS_WINRT
     /* Windows */
     FILETIME lastAccess;
     FILETIME lastWrite;
@@ -433,14 +479,13 @@ static int writeFile(
     LONGLONG intervals;
     HANDLE hFile;
     LPWSTR zUnicodeName;
-    extern LPWSTR sqlite3_win32_utf8_to_unicode(const char*);
 
     GetSystemTime(&currentTime);
     SystemTimeToFileTime(&currentTime, &lastAccess);
     intervals = (mtime*10000000) + 116444736000000000;
     lastWrite.dwLowDateTime = (DWORD)intervals;
     lastWrite.dwHighDateTime = intervals >> 32;
-    zUnicodeName = sqlite3_win32_utf8_to_unicode(zFile);
+    zUnicodeName = winUtf8To16(zFile);
     if( zUnicodeName==0 ){
       return 1;
     }
@@ -456,7 +501,6 @@ static int writeFile(
     }else{
       return 1;
     }
-#endif
 #elif defined(AT_FDCWD) && 0 /* utimensat() is not universally available */
     /* Recent unix */
     struct timespec times[2];
@@ -587,13 +631,14 @@ struct fsdir_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
 
   int nLvl;                  /* Number of entries in aLvl[] array */
+  int mxLvl;                 /* Maximum level */
   int iLvl;                  /* Index of current entry */
   FsdirLevel *aLvl;          /* Hierarchy of directories being traversed */
 
   const char *zBase;
   int nBase;
 
-  struct stat sStat;         /* Current lstat() results */
+  STRUCT_STAT sStat;         /* Current lstat() results */
   char *zPath;               /* Path to current entry */
   sqlite3_int64 iRowid;      /* Current rowid */
 };
@@ -621,7 +666,7 @@ static int fsdirConnect(
   (void)pzErr;
   rc = sqlite3_declare_vtab(db, "CREATE TABLE x" FSDIR_SCHEMA);
   if( rc==SQLITE_OK ){
-    pNew = (fsdir_tab*)sqlite3_malloc( sizeof(*pNew) );
+    pNew = (fsdir_tab*)sqlite3_malloc64( sizeof(*pNew) );
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
     sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
@@ -644,7 +689,7 @@ static int fsdirDisconnect(sqlite3_vtab *pVtab){
 static int fsdirOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   fsdir_cursor *pCur;
   (void)p;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->iLvl = -1;
@@ -705,7 +750,7 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
   mode_t m = pCur->sStat.st_mode;
 
   pCur->iRowid++;
-  if( S_ISDIR(m) ){
+  if( S_ISDIR(m) && pCur->iLvl+3<pCur->mxLvl ){
     /* Descend into this directory */
     int iNew = pCur->iLvl + 1;
     FsdirLevel *pLvl;
@@ -725,7 +770,7 @@ static int fsdirNext(sqlite3_vtab_cursor *cur){
     pCur->zPath = 0;
     pLvl->pDir = opendir(pLvl->zDir);
     if( pLvl->pDir==0 ){
-      fsdirSetErrmsg(pCur, "cannot read directory: %s", pCur->zPath);
+      fsdirSetErrmsg(pCur, "cannot read directory: %s", pLvl->zDir);
       return SQLITE_ERROR;
     }
   }
@@ -807,13 +852,21 @@ static int fsdirColumn(
           }
         }
 
-        sqlite3_result_text(ctx, aBuf, n, SQLITE_TRANSIENT);
+        if( n>0 ){
+          sqlite3_result_text(ctx, aBuf, n, SQLITE_TRANSIENT);
+        }else{
+          sqlite3_result_null(ctx);
+        }
         if( aBuf!=aStatic ) sqlite3_free(aBuf);
 #endif
       }else{
         readFileContents(ctx, pCur->zPath);
       }
+      break;
     }
+    case FSDIR_COLUMN_LEVEL:
+      sqlite3_result_int(ctx, pCur->iLvl+2);
+      break;
     case FSDIR_COLUMN_PATH:
     default: {
       /* The FSDIR_COLUMN_PATH and FSDIR_COLUMN_DIR are input parameters.
@@ -847,8 +900,11 @@ static int fsdirEof(sqlite3_vtab_cursor *cur){
 /*
 ** xFilter callback.
 **
-** idxNum==1   PATH parameter only
-** idxNum==2   Both PATH and DIR supplied
+** idxNum bit      Meaning
+**     0x01         PATH=N
+**     0x02         DIR=N
+**     0x04         LEVEL<N
+**     0x08         LEVEL<=N  
 */
 static int fsdirFilter(
   sqlite3_vtab_cursor *cur, 
@@ -857,6 +913,7 @@ static int fsdirFilter(
 ){
   const char *zDir = 0;
   fsdir_cursor *pCur = (fsdir_cursor*)cur;
+  int i;
   (void)idxStr;
   fsdirResetCursor(pCur);
 
@@ -865,14 +922,24 @@ static int fsdirFilter(
     return SQLITE_ERROR;
   }
 
-  assert( argc==idxNum && (argc==1 || argc==2) );
+  assert( (idxNum & 0x01)!=0 && argc>0 );
   zDir = (const char*)sqlite3_value_text(argv[0]);
   if( zDir==0 ){
     fsdirSetErrmsg(pCur, "table function fsdir requires a non-NULL argument");
     return SQLITE_ERROR;
   }
-  if( argc==2 ){
-    pCur->zBase = (const char*)sqlite3_value_text(argv[1]);
+  i = 1;
+  if( (idxNum & 0x02)!=0 ){
+    assert( argc>i );
+    pCur->zBase = (const char*)sqlite3_value_text(argv[i++]);
+  }
+  if( (idxNum & 0x0c)!=0 ){
+    assert( argc>i );
+    pCur->mxLvl = sqlite3_value_int(argv[i++]);
+    if( idxNum & 0x08 ) pCur->mxLvl++;
+    if( pCur->mxLvl<=0 ) pCur->mxLvl = 1000000000;
+  }else{
+    pCur->mxLvl = 1000000000;
   }
   if( pCur->zBase ){
     pCur->nBase = (int)strlen(pCur->zBase)+1;
@@ -901,10 +968,11 @@ static int fsdirFilter(
 ** In this implementation idxNum is used to represent the
 ** query plan.  idxStr is unused.
 **
-** The query plan is represented by values of idxNum:
+** The query plan is represented by bits in idxNum:
 **
-**  (1)  The path value is supplied by argv[0]
-**  (2)  Path is in argv[0] and dir is in argv[1]
+**  0x01  The path value is supplied by argv[0]
+**  0x02  dir is in argv[1]
+**  0x04  maxdepth is in argv[1] or [2]
 */
 static int fsdirBestIndex(
   sqlite3_vtab *tab,
@@ -913,6 +981,9 @@ static int fsdirBestIndex(
   int i;                 /* Loop over constraints */
   int idxPath = -1;      /* Index in pIdxInfo->aConstraint of PATH= */
   int idxDir = -1;       /* Index in pIdxInfo->aConstraint of DIR= */
+  int idxLevel = -1;     /* Index in pIdxInfo->aConstraint of LEVEL< or <= */
+  int idxLevelEQ = 0;    /* 0x08 for LEVEL<= or LEVEL=.  0x04 for LEVEL< */
+  int omitLevel = 0;     /* omit the LEVEL constraint */
   int seenPath = 0;      /* True if an unusable PATH= constraint is seen */
   int seenDir = 0;       /* True if an unusable DIR= constraint is seen */
   const struct sqlite3_index_constraint *pConstraint;
@@ -920,25 +991,48 @@ static int fsdirBestIndex(
   (void)tab;
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
-    if( pConstraint->op!=SQLITE_INDEX_CONSTRAINT_EQ ) continue;
-    switch( pConstraint->iColumn ){
-      case FSDIR_COLUMN_PATH: {
-        if( pConstraint->usable ){
-          idxPath = i;
-          seenPath = 0;
-        }else if( idxPath<0 ){
-          seenPath = 1;
+    if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      switch( pConstraint->iColumn ){
+        case FSDIR_COLUMN_PATH: {
+          if( pConstraint->usable ){
+            idxPath = i;
+            seenPath = 0;
+          }else if( idxPath<0 ){
+            seenPath = 1;
+          }
+          break;
         }
-        break;
+        case FSDIR_COLUMN_DIR: {
+          if( pConstraint->usable ){
+            idxDir = i;
+            seenDir = 0;
+          }else if( idxDir<0 ){
+            seenDir = 1;
+          }
+          break;
+        }
+        case FSDIR_COLUMN_LEVEL: {
+          if( pConstraint->usable && idxLevel<0 ){
+            idxLevel = i;
+            idxLevelEQ = 0x08;
+            omitLevel = 0;
+          }
+          break;
+        }
       }
-      case FSDIR_COLUMN_DIR: {
-        if( pConstraint->usable ){
-          idxDir = i;
-          seenDir = 0;
-        }else if( idxDir<0 ){
-          seenDir = 1;
-        }
-        break;
+    }else
+    if( pConstraint->iColumn==FSDIR_COLUMN_LEVEL
+     && pConstraint->usable
+     && idxLevel<0
+    ){
+      if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_LE ){
+        idxLevel = i;
+        idxLevelEQ = 0x08;
+        omitLevel = 1;
+      }else if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ){
+        idxLevel = i;
+        idxLevelEQ = 0x04;
+        omitLevel = 1;
       }
     } 
   }
@@ -955,14 +1049,20 @@ static int fsdirBestIndex(
   }else{
     pIdxInfo->aConstraintUsage[idxPath].omit = 1;
     pIdxInfo->aConstraintUsage[idxPath].argvIndex = 1;
+    pIdxInfo->idxNum = 0x01;
+    pIdxInfo->estimatedCost = 1.0e9;
+    i = 2;
     if( idxDir>=0 ){
       pIdxInfo->aConstraintUsage[idxDir].omit = 1;
-      pIdxInfo->aConstraintUsage[idxDir].argvIndex = 2;
-      pIdxInfo->idxNum = 2;
-      pIdxInfo->estimatedCost = 10.0;
-    }else{
-      pIdxInfo->idxNum = 1;
-      pIdxInfo->estimatedCost = 100.0;
+      pIdxInfo->aConstraintUsage[idxDir].argvIndex = i++;
+      pIdxInfo->idxNum |= 0x02;
+      pIdxInfo->estimatedCost /= 1.0e4;
+    }
+    if( idxLevel>=0 ){
+      pIdxInfo->aConstraintUsage[idxLevel].omit = omitLevel;
+      pIdxInfo->aConstraintUsage[idxLevel].argvIndex = i++;
+      pIdxInfo->idxNum |= idxLevelEQ;
+      pIdxInfo->estimatedCost /= 1.0e4;
     }
   }
 
@@ -1008,6 +1108,158 @@ static int fsdirRegister(sqlite3 *db){
 # define fsdirRegister(x) SQLITE_OK
 #endif
 
+/*
+** This version of realpath() works on any system.  The string
+** returned is held in memory allocated using sqlite3_malloc64().
+** The caller is responsible for calling sqlite3_free().
+*/
+static char *portable_realpath(const char *zPath){
+#if !defined(_WIN32)       /* BEGIN unix */
+
+  char *zOut = 0;          /* Result */
+  char *z;                 /* Temporary buffer */
+#if defined(PATH_MAX)
+  char zBuf[PATH_MAX+1];   /* Space for the temporary buffer */
+#endif
+
+  if( zPath==0 ) return 0;
+#if defined(PATH_MAX)
+  z = realpath(zPath, zBuf);
+  if( z ){
+    zOut = sqlite3_mprintf("%s", zBuf);
+  }
+#endif /* defined(PATH_MAX) */
+  if( zOut==0 ){
+    /* Try POSIX.1-2008 malloc behavior */
+    z = realpath(zPath, NULL);
+    if( z ){
+      zOut = sqlite3_mprintf("%s", z);
+      free(z);
+    }
+  }
+  return zOut;
+
+#else /* End UNIX, Begin WINDOWS */
+
+  wchar_t *zPath16;        /* UTF16 translation of zPath */
+  char *zOut = 0;          /* Result */
+  wchar_t *z = 0;          /* Temporary buffer */
+
+  if( zPath==0 ) return 0;
+
+  zPath16 = winUtf8To16(zPath);
+  if( zPath16==0 ) return 0;
+  z = _wfullpath(NULL, zPath16, 0);
+  sqlite3_free(zPath16);
+  if( z ){
+    zOut = winUtf16To8(z);
+    free(z);
+  }
+  return zOut;
+
+#endif /* End WINDOWS, Begin common code */
+}
+
+/*
+** SQL function:   realpath(X)
+**
+** Try to convert file or pathname X into its real, absolute pathname.
+** Return NULL if unable.
+**
+** The file or directory X is not required to exist.  The answer is formed
+** by calling system realpath() on the prefix of X that does exist and
+** appending the tail of X that does not (yet) exist.
+**
+** FIXME:  This routine sometimes returns NULL rather than raising
+** an SQLITE_NOMEM error if an OOM is encountered.
+*/
+static void realpathFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zPath;    /* Original input path */
+  char *zCopy;          /* An editable copy of zPath */
+  char *zOut;           /* The result */
+  char cSep = 0;        /* Separator turned into \000 */
+  size_t len;           /* Prefix length before cSep */
+#ifdef _WIN32
+  const int isWin = 1;
+#else
+  const int isWin = 0;
+#endif
+
+  (void)argc;
+  zPath = (const char*)sqlite3_value_text(argv[0]);
+  if( zPath==0 ) return;
+  if( zPath[0]==0 ) zPath = ".";
+  zCopy = sqlite3_mprintf("%s",zPath);
+  if( zCopy==0 ) return;
+  len = strlen(zCopy);
+  while( len>1 && (zCopy[len-1]=='/' || (isWin && zCopy[len-1]=='\\')) ){
+    len--;
+  }
+  zCopy[len] = 0;
+  while( 1 /*exit-by-break*/ ){
+    zOut = portable_realpath(zCopy);
+    zCopy[len] = cSep;
+    if( zOut ){
+      if( cSep ){
+        zOut = sqlite3_mprintf("%z%s",zOut,&zCopy[len]);
+      }
+      break;
+    }else{
+      size_t i = len-1;
+      while( i>0 ){
+        if( zCopy[i]=='/' || (isWin && zCopy[i]=='\\') ) break;
+        i--;
+      }
+      if( i<=0 ){
+        if( zCopy[0]=='/' ){
+          zOut = zCopy;
+          zCopy = 0;
+        }else if( (zOut = portable_realpath("."))!=0 ){
+          zOut = sqlite3_mprintf("%z/%s", zOut, zCopy);
+        }          
+        break;
+      }
+      cSep = zCopy[i];
+      zCopy[i] = 0;
+      len = i;
+    }
+  }
+  sqlite3_free(zCopy);
+  if( zOut ){
+    /* Simplify any "/./" or "/../" that might have snuck into the
+    ** pathname due to appending of zCopy.  We only have to consider
+    ** unix "/" separators, because the _wfilepath() system call on
+    ** Windows will have already done this simplification for us. */
+    size_t i, j, n;
+    n = strlen(zOut);
+    for(i=j=0; i<n; i++){
+      if( zOut[i]=='/' ){
+        if( zOut[i+1]=='/' ) continue;
+        if( zOut[i+1]=='.' && i+2<n && zOut[i+2]=='/' ){
+          i += 1;
+          continue;
+        }
+        if( zOut[i+1]=='.' && i+3<n && zOut[i+2]=='.' && zOut[i+3]=='/' ){
+          while( j>0 && zOut[j-1]!='/' ){ j--; }
+          if( j>0 ){ j--; }
+          i += 2;
+          continue;
+        }
+      }
+      zOut[j++] = zOut[i];
+    }
+    zOut[j] = 0;
+
+    /* Return the result */
+    sqlite3_result_text(context, zOut, -1, sqlite3_free);
+  }
+}
+
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -1034,13 +1286,10 @@ int sqlite3_fileio_init(
   if( rc==SQLITE_OK ){
     rc = fsdirRegister(db);
   }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "realpath", 1,
+                                 SQLITE_UTF8, 0,
+                                 realpathFunc, 0, 0);
+  }
   return rc;
 }
-
-#if defined(FILEIO_WIN32_DLL) && (defined(_WIN32) || defined(WIN32))
-/* To allow a standalone DLL, make test_windirent.c use the same
- * redefined SQLite API calls as the above extension code does.
- * Just pull in this .c to accomplish this. As a beneficial side
- * effect, this extension becomes a single translation unit. */
-#  include "test_windirent.c"
-#endif

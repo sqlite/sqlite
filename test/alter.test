@@ -981,6 +981,15 @@ do_execsql_test alter-21.4 {
   SELECT name, type FROM sqlite_schema ORDER BY name;
 } {r2 trigger t1 table t99 table}
 
-
+# 2026-05-12 Verify that ADD COLUMN cannot insert internal-use-only
+# functions.
+#
+reset_db
+do_execsql_test alter-22.1 {
+  CREATE TABLE t1(a,b);
+}
+do_catchsql_test alter-22.2 {
+  ALTER TABLE t1 ADD COLUMN c CHECK( if(c<10,1,sqlite_fail('bummer',1)));
+} {1 {error in table t1 after add column: no such function: sqlite_fail}}
 
 finish_test

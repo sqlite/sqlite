@@ -1,7 +1,7 @@
 # This file holds functions for autosetup which are specific to the
 # sqlite build tree.  They are in this file, instead of auto.def, so
 # that they can be reused in the autoconf sub-tree. This file requires
-# functions from proj.tcl.
+# functions from the project-agnostic proj.tcl.
 
 if {[string first " " $autosetup(srcdir)] != -1} {
   user-error "The pathname of the source tree\
@@ -11,7 +11,7 @@ if {[string first " " $autosetup(builddir)] != -1} {
   user-error "The pathname of the build directory\
               may not contain space characters"
 }
-#parray ::autosetup; exit 0
+
 use proj
 #
 # We want the package version info to be emitted early on, but doing
@@ -24,6 +24,7 @@ if {"--help" ni $::argv} {
 }
 use system ; # Will output "Host System" and "Build System" lines
 if {"--help" ni $::argv} {
+  proj-tweak-default-env-dirs
   msg-result "Source dir = $::autosetup(srcdir)"
   msg-result "Build dir  = $::autosetup(builddir)"
   use cc cc-db cc-shared cc-lib pkg-config
@@ -59,6 +60,19 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
   # (dump-defines-txt) but also a JSON file named after this option's
   # value.
   dump-defines-json  ""
+
+  #
+  # The list of feature --flags which the --all flag implies. This
+  # requires special handling in a few places.
+  #
+  all-flag-enables {fts4 fts5 rtree geopoly session dbpage dbstat carray}
+
+  #
+  # Default value for the --all flag. Can hypothetically be modified
+  # by non-canonical builds (it was added for a Tcl extension build
+  # mode which was eventually removed).
+  #
+  all-flag-default 0
 }]]
 
 ########################################################################
@@ -79,22 +93,30 @@ array set sqliteConfig [subst [proj-strip-hash-comments {
 #  sqlite-configure BUILD_NAME { build-specific configure script }
 #
 # There are snippets of build-mode-specific decision-making in
-# [sqlite-configure-finalize]
+# [sqlite-configure-finalize], which gets run after $configScript.
 proc sqlite-configure {buildMode configScript} {
   proj-assert {$::sqliteConfig(build-mode) eq "unknown"} \
     "sqlite-configure must not be called more than once"
-  set allBuildModes {canonical autoconf tcl-extension}
+  set allBuildModes {canonical autoconf}
   if {$buildMode ni $allBuildModes} {
     user-error "Invalid build mode: $buildMode. Expecting one of: $allBuildModes"
   }
+  if {$::sqliteConfig(all-flag-default)} {
+    set allFlagHelp "Disable these extensions: $::sqliteConfig(all-flag-enables)"
+  } else {
+    set allFlagHelp "Enable these extensions: $::sqliteConfig(all-flag-enables)"
+  }
+
   set ::sqliteConfig(build-mode) $buildMode
   ########################################################################
   # A gentle introduction to flags handling in autosetup
   #
   # Reference: https://msteveb.github.io/autosetup/developer/
   #
-  # All configure flags must be described in an 'options' call. The
-  # general syntax is:
+  # All configure flags must be described in one or more calls to
+  # autosetup's [options] and [options-add] functions. The general
+  # syntax of the single argument to those functions is a list contain
+  # a mapping of flags to help text:
   #
   #  FLAG => {Help text}
   #
@@ -145,13 +167,18 @@ proc sqlite-configure {buildMode configScript} {
   ########################################################################
   set allFlags {
     # Structure: a list of M {Z} pairs, where M is a descriptive
-    # option group name  and Z is a list of X Y pairs. X is a list of
+    # option group name and Z is a list of X Y pairs. X is a list of
     # $buildMode name(s) to which the Y flags apply, or {*} to apply
     # to all builds. Y is a {block} in the form expected by
-    # autosetup's [options] command.  Each block which is applicable
-    # to $buildMode is appended to a new list before that list is
-    # passed on to [options]. The order of each Y and sub-Y is
-    # retained, which is significant for rendering of --help.
+    # autosetup's [options] and [options-add] command.  Each block
+    # which is applicable to $buildMode is passed on to
+    # [options-add]. The order of each Y and sub-Y is retained, which
+    # is significant for rendering of --help.
+    #
+    # Maintenance note: [options] does not support comments in
+    # options, but we filter this object through
+    # [proj-strip-hash-comments] to remove them before passing them on
+    # to [options].
 
     # When writing {help text blocks}, be aware that:
     #
@@ -161,7 +188,7 @@ proc sqlite-configure {buildMode configScript} {
     # pretty-printed.
     #
     # B) Vars and commands are NOT expanded, but we use a [subst] call
-    # below which will replace (only) var refs.
+    # below which will replace (only) $var refs.
 
     # Options for how to build the library
     build-modes {
@@ -193,10 +220,18 @@ proc sqlite-configure {buildMode configScript} {
         geopoly              => {Enable the GEOPOLY extension}
         rtree                => {Enable the RTREE extension}
         session              => {Enable the SESSION extension}
-        all                  => {Enable FTS4, FTS5, Geopoly, RTree, Sessions}
+        dbpage               => {Enable the sqlite3_dbpage extension}
+        dbstat               => {Enable the sqlite3_dbstat extension}
+        carray=1             => {Disable the CARRAY extension}
+        all=$::sqliteConfig(all-flag-default) => {$allFlagHelp}
         largefile=1
           => {This legacy flag has no effect on the library but may influence
               the generated sqlite_cfg.h by adding #define HAVE_LFS}
+      }
+      {canonical} {
+        column-metadata      => {Enable the column metadata APIs}
+        # ^^^ Affects how sqlite3.c is generated, so is not available in
+        # the autoconf build.
       }
     }
 
@@ -208,8 +243,6 @@ proc sqlite-configure {buildMode configScript} {
               This tree requires TCL for code generation but can use the in-tree
               copy of autosetup/jimsh0.c for that. The SQLite TCL extension and the
               test code require a canonical tclsh.}
-      }
-      {canonical tcl-extension} {
         with-tcl:DIR
           => {Directory containing tclConfig.sh or a directory one level up from
               that, from which we can derive a directory containing tclConfig.sh.
@@ -217,9 +250,16 @@ proc sqlite-configure {buildMode configScript} {
               the --prefix flag.}
         with-tclsh:PATH
           => {Full pathname of tclsh to use.  It is used for (A) trying to find
-              tclConfig.sh and (B) all TCL-based code generation.  Warning: if
-              its containing dir has multiple tclsh versions, it may select the
+              tclConfig.sh and (B) all TCL-based code generation. Use --with-tcl
+              unless you have a specific need for this flag. Warning: if its
+              containing dir has multiple tclsh versions, it may select the
               wrong tclConfig.sh!}
+        static-tclsqlite3=0
+          => {Statically-link tclsqlite3. This only works if TCL support is
+              enabled and all requisite libraries are available in
+              static form. Note that glibc is unable to fully statically
+              link certain libraries required by tclsqlite3, so this won't
+              work on most Linux environments.}
       }
     }
 
@@ -272,13 +312,27 @@ proc sqlite-configure {buildMode configScript} {
           => {Top-most dir of the wasi-sdk for a WASI build}
       }
 
+      {*} {
+        # Note that --static-cli-shell has a completely different
+        # meaning from --static-shell in the autoconf build!
+        # --[disable-]static-shell is a legacy flag which we can't
+        # remove without breaking downstream builds.
+        static-cli-shell=0
+          => {Statically-link the sqlite3 CLI shell.
+              This only works if the requisite libraries are all available in
+              static form.}
+      }
+
       {canonical} {
+        static-shells=0
+          => {Shorthand for --static-cli-shell --static-tclsqlite3}
+
         with-emsdk:=auto
           => {Top-most dir of the Emscripten SDK installation.
               Needed only by ext/wasm. Default=EMSDK env var.}
 
         amalgamation-extra-src:FILES
-          => {Space-separated list of soure files to append as-is to the resulting
+          => {Space-separated list of source files to append as-is to the resulting
               sqlite3.c amalgamation file. May be provided multiple times.}
       }
     }
@@ -287,12 +341,13 @@ proc sqlite-configure {buildMode configScript} {
     packaging {
       {autoconf} {
         # --disable-static-shell: https://sqlite.org/forum/forumpost/cc219ee704
+        # Note that this has a different meaning from --static-cli-shell in the
+        # canonical build!
         static-shell=1
           => {Link the sqlite3 shell app against the DLL instead of embedding sqlite3.c}
       }
       {canonical autoconf} {
-        # A potential TODO without a current use case:
-        #rpath=1 => {Disable use of the rpath linker flag}
+        rpath=1 => {Disable use of the rpath linker flag}
         # soname: https://sqlite.org/src/forumpost/5a3b44f510df8ded
         soname:=legacy
           => {SONAME for libsqlite3.so. "none", or not using this flag, sets no
@@ -363,7 +418,6 @@ proc sqlite-configure {buildMode configScript} {
   # ^^^ lappend of [sqlite-custom-flags] introduces weirdness if
   # we delay [proj-strip-hash-comments] until after that.
 
-
   ########################################################################
   # sqlite-custom.tcl is intended only for vendor-branch-specific
   # customization.  See autosetup/README.md#branch-customization for
@@ -381,20 +435,18 @@ proc sqlite-configure {buildMode configScript} {
     }
   }
 
+  #lappend allFlags just-testing {{*} {soname:=duplicateEntry => {x}}}
+
   # Filter allFlags to create the set of [options] legal for this build
-  set opts {}
-  foreach {group XY} [subst -nobackslashes -nocommands \
-                        [proj-strip-hash-comments $allFlags]] {
+  foreach {group XY} [subst -nobackslashes -nocommands $allFlags] {
     foreach {X Y} $XY {
       if { $buildMode in $X || "*" in $X } {
-        foreach y $Y {
-          lappend opts $y
-        }
+        options-add $Y
       }
     }
   }
-  #lappend opts "soname:=duplicateEntry => {x}"; #just testing
-  if {[catch {options $opts} msg xopts]} {
+
+  if {[catch {options {}} msg xopts]} {
     # Workaround for <https://github.com/msteveb/autosetup/issues/73>
     # where [options] behaves oddly on _some_ TCL builds when it's
     # called from deeper than the global scope.
@@ -408,12 +460,13 @@ proc sqlite-configure {buildMode configScript} {
 
 ########################################################################
 # Runs "phase 1" of the configure process: after initial --flags
-# handling but before the build-specific parts are run. $buildMode
-# must be the mode which was passed to [sqlite-configure].
+# handling but before sqlite-configure's $configScript argument is
+# run. $buildMode must be the mode which was passed to
+# [sqlite-configure].
 proc sqlite-configure-phase1 {buildMode} {
   define PACKAGE_NAME sqlite
   define PACKAGE_URL {https://sqlite.org}
-  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/forum
+  define PACKAGE_BUGREPORT [get-define PACKAGE_URL]/bugs
   define PACKAGE_STRING "[get-define PACKAGE_NAME] [get-define PACKAGE_VERSION]"
   proj-xfer-options-aliases {
     # Carry values from hidden --flag aliases over to their canonical
@@ -425,7 +478,7 @@ proc sqlite-configure-phase1 {buildMode} {
   }
   set ::sqliteConfig(msg-debug-enabled) [proj-val-truthy [get-env msg-debug 0]]
   proc-debug "msg-debug is enabled"
-  sqlite-autoreconfig
+  proj-setup-autoreconfig SQLITE_AUTORECONFIG
   proj-file-extensions
   if {".exe" eq [get-define TARGET_EXEEXT]} {
     define SQLITE_OS_UNIX 0
@@ -446,6 +499,12 @@ proc sqlite-configure-phase1 {buildMode} {
     # may not) define HAVE_LFS.
     cc-check-lfs
   }
+  set srcdir $::autosetup(srcdir)
+  proj-dot-ins-append $srcdir/Makefile.in
+  if {[file exists $srcdir/sqlite3.pc.in]} {
+    proj-dot-ins-append $srcdir/sqlite3.pc.in
+  }
+  sqlite-handle-hpux; # must be relatively early so that other config tests can work
 }; # sqlite-configure-phase1
 
 ########################################################################
@@ -478,7 +537,6 @@ proc sqlite-configure-finalize {} {
   sqlite-handle-common-feature-flags
   sqlite-finalize-feature-flags
   sqlite-process-dot-in-files; # do not [define] anything after this
-  sqlite-post-config-validation
   sqlite-dump-defines
 }
 
@@ -495,37 +553,35 @@ proc msg-debug {msg} {
 # the debug message. It is not legal to call this from the global
 # scope.
 proc proc-debug {msg} {
-  msg-debug "\[[proj-current-proc-name 1]\]: $msg"
-}
-
-########################################################################
-# Sets up the SQLITE_AUTORECONFIG define.
-proc sqlite-autoreconfig {} {
-  # SQLITE_AUTORECONFIG contains make target rules for re-running the
-  # configure script with the same arguments it was initially invoked
-  # with. This can be used to automatically reconfigure.
-  set squote {{arg} {
-    # Wrap $arg in single-quotes if it looks like it might need that
-    # to avoid mis-handling as a shell argument. We assume that $arg
-    # will never contain any single-quote characters.
-    if {[string match {*[ &;$*"]*} $arg]} { return '$arg' }
-    return $arg
-  }}
-  define-append SQLITE_AUTORECONFIG cd [apply $squote $::autosetup(builddir)] \
-    && [apply $squote $::autosetup(srcdir)/configure]
-  #{*}$::autosetup(argv) breaks with --flag='val with spaces', so...
-  foreach arg $::autosetup(argv) {
-    define-append SQLITE_AUTORECONFIG [apply $squote $arg]
-  }
+  msg-debug "\[[proj-scope 1]\]: $msg"
 }
 
 define OPT_FEATURE_FLAGS {} ; # -DSQLITE_OMIT/ENABLE flags.
-define OPT_SHELL {}         ; # Feature-related CFLAGS for the sqlite3 CLI app
+#
+# OPT_SHELL = feature-related CFLAGS for the sqlite3 CLI app. The
+# list's initial values are defaults which are always applied and not
+# affected by --feature-flags. The list is appended to by various
+# --feature-flags.
+define OPT_SHELL {
+  -DSQLITE_DQS=0
+  -DSQLITE_ENABLE_FTS4
+  -DSQLITE_ENABLE_RTREE
+  -DSQLITE_ENABLE_EXPLAIN_COMMENTS
+  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  -DSQLITE_ENABLE_STMTVTAB
+  -DSQLITE_ENABLE_DBPAGE_VTAB
+  -DSQLITE_ENABLE_DBSTAT_VTAB
+  -DSQLITE_ENABLE_BYTECODE_VTAB
+  -DSQLITE_ENABLE_OFFSET_SQL_FUNC
+  -DSQLITE_ENABLE_PERCENTILE
+  -DSQLITE_STRICT_SUBTYPE=1
+}
 ########################################################################
 # Adds $args, if not empty, to OPT_FEATURE_FLAGS.  If the first arg is
 # -shell then it strips that arg and passes the remaining args the
 # sqlite-add-shell-opt in addition to adding them to
-# OPT_FEATURE_FLAGS.
+# OPT_FEATURE_FLAGS. This is intended only for holding
+# -DSQLITE_ENABLE/OMIT/... flags, but that is not enforced here.
 proc sqlite-add-feature-flag {args} {
   set shell ""
   if {"-shell" eq [lindex $args 0]} {
@@ -558,8 +614,12 @@ proc sqlite-affirm-have-math {featureName} {
     if {![msg-quiet proj-check-function-in-lib log m]} {
       user-error "Missing math APIs for $featureName"
     }
-    define LDFLAGS_MATH [get-define lib_log ""]
+    set lfl [get-define lib_log ""]
     undefine lib_log
+    if {"" ne $lfl} {
+      user-notice "Forcing requirement of $lfl for $featureName"
+    }
+    define LDFLAGS_MATH $lfl
   }
 }
 
@@ -589,17 +649,23 @@ proc sqlite-check-common-system-deps {} {
 
   # Check for needed/wanted functions
   cc-check-functions gmtime_r isnan localtime_r localtime_s \
-    malloc_usable_size strchrnul usleep utime pread pread64 pwrite pwrite64
+    usleep utime pread pread64 pwrite pwrite64
 
-  set ldrt ""
-  # Collapse funcs from librt into LDFLAGS_RT.
-  # Some systems (ex: SunOS) require -lrt in order to use nanosleep
-  foreach func {fdatasync nanosleep} {
-    if {[proj-check-function-in-lib $func rt]} {
-      lappend ldrt [get-define lib_${func}]
+  apply {{} {
+    set ldrt ""
+    # Collapse funcs from librt into LDFLAGS_RT.
+    # Some systems (ex: SunOS) require -lrt in order to use nanosleep
+    foreach func {fdatasync nanosleep} {
+      if {[proj-check-function-in-lib $func rt]} {
+        set ldrt [get-define lib_${func} ""]
+        undefine lib_${func}
+        if {"" ne $ldrt} {
+          break
+        }
+      }
     }
-  }
-  define LDFLAGS_RT [join [lsort -unique $ldrt] ""]
+    define LDFLAGS_RT $ldrt
+  }}
 
   # Check for needed/wanted headers
   cc-check-includes \
@@ -613,6 +679,7 @@ proc sqlite-check-common-system-deps {} {
     define HAVE_ZLIB 1
     define LDFLAGS_ZLIB -lz
     sqlite-add-shell-opt -DSQLITE_HAVE_ZLIB=1
+    sqlite-add-feature-flag -DSQLITE_HAVE_ZLIB=1
   } else {
     define HAVE_ZLIB 0
     define LDFLAGS_ZLIB ""
@@ -676,12 +743,11 @@ proc sqlite-setup-default-cflags {} {
   # compiling binaries for the target system (CC a.k.a. $(T.cc)).
   # Normally they're the same, but they will differ when
   # cross-compiling.
-  #
-  # When cross-compiling we default to not using the -g flag, based on a
-  # /chat discussion prompted by
-  # https://sqlite.org/forum/forumpost/9a67df63eda9925c
   set defaultCFlags {-O2}
   if {!$::sqliteConfig(is-cross-compiling)} {
+    # When cross-compiling we default to not using the -g flag, based
+    # on a /chat discussion prompted by
+    # https://sqlite.org/forum/forumpost/9a67df63eda9925c
     lappend defaultCFlags -g
   }
   define CFLAGS [proj-get-env CFLAGS $defaultCFlags]
@@ -694,15 +760,36 @@ proc sqlite-setup-default-cflags {} {
 # Handle various SQLITE_ENABLE/OMIT_... feature flags.
 proc sqlite-handle-common-feature-flags {} {
   msg-result "Feature flags..."
-  foreach {boolFlag featureFlag ifSetEvalThis} {
-    all         {} {
-      # The 'all' option must be first in this list.
-      proj-opt-set fts4
-      proj-opt-set fts5
-      proj-opt-set geopoly
-      proj-opt-set rtree
-      proj-opt-set session
+  if {![opt-bool all]} {
+    # Special handling for --disable-all
+    foreach flag $::sqliteConfig(all-flag-enables) {
+      if {![proj-opt-was-provided $flag]} {
+        proj-opt-set $flag 0
+      }
     }
+  }
+  foreach {boolFlag featureFlag ifSetEvalThis} [proj-strip-hash-comments {
+    all         {} {
+      # The 'all' option must be first in this list.  This impl makes
+      # an effort to only apply flags which the user did not already
+      # apply, so that combinations like (--all --disable-geopoly)
+      # will indeed disable geopoly. There are corner cases where
+      # flags which depend on each other will behave in non-intuitive
+      # ways:
+      #
+      # --all --disable-rtree
+      #
+      # Will NOT disable geopoly, though geopoly depends on rtree.
+      # The --geopoly flag, though, will automatically re-enable
+      # --rtree, so --disable-rtree won't actually disable anything in
+      # that case.
+      foreach k $::sqliteConfig(all-flag-enables) {
+        if {![proj-opt-was-provided $k]} {
+          proj-opt-set $k 1
+        }
+      }
+    }
+    fts3         -DSQLITE_ENABLE_FTS3    {sqlite-affirm-have-math fts3}
     fts4         -DSQLITE_ENABLE_FTS4    {sqlite-affirm-have-math fts4}
     fts5         -DSQLITE_ENABLE_FTS5    {sqlite-affirm-have-math fts5}
     geopoly      -DSQLITE_ENABLE_GEOPOLY {proj-opt-set rtree}
@@ -718,8 +805,13 @@ proc sqlite-handle-common-feature-flags {} {
         sqlite-add-feature-flag -DSQLITE_ENABLE_MEMSYS3
       }
     }
-    scanstatus     -DSQLITE_ENABLE_STMT_SCANSTATUS {}
-  } {
+    bytecode-vtab   -DSQLITE_ENABLE_BYTECODE_VTAB {}
+    scanstatus      {-DSQLITE_ENABLE_STMT_SCANSTATUS -DSQLITE_ENABLE_BYTECODE_VTAB} {}
+    column-metadata -DSQLITE_ENABLE_COLUMN_METADATA {}
+    dbpage          -DSQLITE_ENABLE_DBPAGE_VTAB {}
+    dbstat          -DSQLITE_ENABLE_DBSTAT_VTAB {}
+    carray          -DSQLITE_ENABLE_CARRAY {}
+  }] {
     if {$boolFlag ni $::autosetup(options)} {
       # Skip flags which are in the canonical build but not
       # the autoconf bundle.
@@ -771,6 +863,9 @@ proc sqlite-finalize-feature-flags {} {
     proj-assert {"canonical" eq $::sqliteConfig(build-mode)}
     msg-result "Appending source files to amalgamation: $extraSrc"
   }
+  if {[lsearch [get-define TARGET_DEBUG ""] -DSQLITE_DEBUG=1] > -1} {
+    msg-result "Note: this is a debug build, so performance will suffer."
+  }
 }
 
 ########################################################################
@@ -780,7 +875,8 @@ proc sqlite-finalize-feature-flags {} {
 proc sqlite-handle-debug {} {
   msg-checking "SQLITE_DEBUG build? "
   proj-if-opt-truthy debug {
-    define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE -O0 -Wall}
+    define TARGET_DEBUG {-g -DSQLITE_DEBUG=1 -O0 -Wall}
+    sqlite-add-feature-flag -DSQLITE_ENABLE_SELECTTRACE -DSQLITE_ENABLE_WHERETRACE
     proj-opt-set memsys5
     msg-result yes
   } {
@@ -935,8 +1031,10 @@ proc sqlite-handle-emsdk {} {
       # Maybe there's a copy in the path?
       proj-bin-define wasm-opt BIN_WASM_OPT
     }
-    proj-make-from-dot-in $emccSh $extWasmConfig
-    catch {exec chmod u+x $emccSh}
+    proj-dot-ins-append $emccSh.in $emccSh {
+      catch {exec chmod u+x $dotInsOut}
+    }
+    proj-dot-ins-append $extWasmConfig.in $extWasmConfig
   } else {
     define EMCC_WRAPPER ""
     file delete -force -- $emccSh $extWasmConfig
@@ -954,7 +1052,7 @@ proc sqlite-handle-emsdk {} {
 proc sqlite-get-readline-dir-list {} {
   # Historical note: the dirs list, except for the inclusion of
   # $prefix and some platform-specific dirs, originates from the
-  # legacy configure script
+  # legacy configure script.
   set dirs [list [get-define prefix]]
   switch -glob -- [get-define host] {
     *-linux-android {
@@ -969,10 +1067,10 @@ proc sqlite-get-readline-dir-list {} {
     }
     *-haiku {
       lappend dirs /boot/system/develop/headers
-      if {[opt-val with-readline-ldflags] in {auto ""}} {
+      if {![opt-bool editline] && [opt-val with-readline-ldflags] in {auto ""}} {
         # If the user did not supply their own --with-readline-ldflags
         # value, hijack that flag to inject options which are known to
-        # work on a default Haiku installation.
+        # work on Haiku OS installations.
         if {"" ne [glob -nocomplain /boot/system/lib/libreadline*]} {
           proj-opt-set with-readline-ldflags {-L/boot/system/lib -lreadline}
         }
@@ -996,16 +1094,30 @@ proc sqlite-get-readline-dir-list {} {
 #   - HAVE_LINENOISE to 0, 1, or 2
 #   - HAVE_EDITLINE to 0 or 1
 #
-# Only one of ^^^ those will be set to non-0.
+#  Those will be set as follows:
+#
+#   HAVE_LINENOISE=0, HAVE_EDITLINE=0, HAVE_READLINE=0: no line editing
+#
+#   HAVE_LINENOISE>0: 1=antirez flavor, 2=msteveb flavor
+#
+#   HAVE_EDITLINE=0, HAVE_READLINE=1: use GNU readline
+#
+#   HAVE_EDITLINE=1, HAVE_READLINE=1: use BSD editline header
+#   <readline/readline.h>.
+#
+#   HAVE_EDITLINE=1, HAVE_READLINE=0: use BSD editline header
+#   <editline/readline.h>.
+#
+# Other defines it sets:
 #
 #   - LDFLAGS_READLINE = linker flags or empty string
 #
 #   - CFLAGS_READLINE = compilation flags for clients or empty string.
 #
-# Note that LDFLAGS_READLINE and CFLAGS_READLINE may refer to
-# linenoise or editline, not necessarily libreadline.  In some cases
-# it will set HAVE_READLINE=1 when it's really using editline, for
-# reasons described in this function's comments.
+# Both LDFLAGS_READLINE and CFLAGS_READLINE may refer to linenoise or
+# editline, not necessarily libreadline.  In some cases it will set
+# HAVE_READLINE=1 when it's really using editline, for reasons
+# described in this function's comments.
 #
 # Returns a string describing which line-editing approach to use, or
 # "none" if no option is available.
@@ -1022,8 +1134,8 @@ proc sqlite-get-readline-dir-list {} {
 #  4) Default to automatic search for optional readline
 #
 #  5) Try to find readline or editline. If it's not found AND the
-#     corresponding --FEATURE flag was explicitly given, fail fatally,
-#     else fail silently.
+#     corresponding --FEATURE flag was explicitly given then fail
+#     fatally, else fail non-fatally.
 proc sqlite-check-line-editing {} {
   msg-result "Checking for line-editing capability..."
   define HAVE_READLINE 0
@@ -1036,9 +1148,30 @@ proc sqlite-check-line-editing {} {
                          # if the library is not found.
   set libsForReadline {readline edit} ; # -l<LIB> names to check for readline().
                                         # The libedit check changes this.
-  set editLibName "readline" ; # "readline" or "editline"
+  set editLibName "readline"     ; # "readline" or "editline"
   set editLibDef "HAVE_READLINE" ; # "HAVE_READLINE" or "HAVE_EDITLINE"
   set dirLn [opt-val with-linenoise]
+
+  # If none of --with-linenoise, --enable-readline, or --enable-editline
+  # are provided, but there exists a directory "linenoise" at $HOME or
+  # a sibling of the build or source directory, then try to use that linenoise
+  # directory.
+  #
+  if {"" eq $dirLn
+   && ![proj-opt-was-provided readline]
+   && ![proj-opt-was-provided editline]
+  } {
+    set dirlist ../linenoise
+    catch {lappend dirlist [file-normalize $::autosetup(srcdir)/../linenoise]}
+    catch {lappend dirlist $::env(HOME)/linenoise}
+    foreach d $dirlist {
+      if {[file exists $d/linenoise.c] && [file exists $d/linenoise.h]} {
+        set dirLn $d
+        break
+      }
+    }
+  }
+
   if {"" ne $dirLn} {
     # Use linenoise from a copy of its sources (not a library)...
     if {![file isdir $dirLn]} {
@@ -1053,7 +1186,7 @@ proc sqlite-check-line-editing {} {
     foreach f $lnCOpts {
       if {[file exists $dirLn/$f]} {
         set lnC $dirLn/$f
-        break;
+        break
       }
     }
     if {"" eq $lnC} {
@@ -1074,6 +1207,8 @@ proc sqlite-check-line-editing {} {
     if {$::sqliteConfig(use-jim-for-codegen) && 2 == $lnVal} {
       define-append CFLAGS_JIMSH -DUSE_LINENOISE [get-define CFLAGS_READLINE]
       user-notice "Adding linenoise support to jimsh."
+    } else {
+      msg-result "Using linenoise at [file-normalize $dirLn]"
     }
     return "linenoise ($flavor)"
   } elseif {[opt-bool editline]} {
@@ -1163,16 +1298,18 @@ proc sqlite-check-line-editing {} {
     set rlLib [opt-val with-readline-ldflags]
     #proc-debug "rlLib=$rlLib"
     if {$rlLib in {auto ""}} {
-      set rlLib ""
-      set libTerm ""
-      if {[proj-check-function-in-lib tgetent "$editLibName ncurses curses termcap"]} {
+      set rlLib ""  ; # make sure it's not "auto", as we may append to it below
+      set libTerm ""; # lib with tgetent(3)
+      if {[proj-check-function-in-lib tgetent [list $editLibName ncurses curses termcap]]} {
         # ^^^ that libs list comes from the legacy configure script ^^^
         set libTerm [get-define lib_tgetent]
         undefine lib_tgetent
       }
       if {$editLibName eq $libTerm} {
+        # tgetent(3) was found in the editing library
         set rlLib $libTerm
       } elseif {[proj-check-function-in-lib readline $libsForReadline $libTerm]} {
+        # tgetent(3) was found in an external lib
         set rlLib [get-define lib_readline]
         lappend rlLib $libTerm
         undefine lib_readline
@@ -1182,14 +1319,18 @@ proc sqlite-check-line-editing {} {
 
   # If we found a library, configure the build to use it...
   if {"" ne $rlLib} {
-    if {"editline" eq $editLibName && "HAVE_READLINE" eq $editLibDef} {
-      # Alert the user that, despite outward appearances, we won't be
-      # linking to the GPL'd libreadline. Presumably that distinction is
-      # significant for those using --editline.
-      proj-indented-notice {
-        NOTE: the local libedit uses <readline/readline.h> so we
-        will compile with -DHAVE_READLINE=1 but will link with
-        libedit.
+    if {"editline" eq $editLibName} {
+      # sqlite-add-shell-opt -DEL_WIDECHAR=1;
+      if {"HAVE_READLINE" eq $editLibDef} {
+        sqlite-add-shell-opt -DHAVE_EDITLINE=1
+        # Alert the user that, despite outward appearances, we won't be
+        # linking to the GPL'd libreadline. Presumably that distinction is
+        # significant for those using --editline.
+        proj-indented-notice {
+          NOTE: the local libedit uses <readline/readline.h> so we
+          will compile with -DHAVE_READLINE=1 but will link with
+          libedit.
+        }
       }
     }
     set rlLib [join $rlLib]
@@ -1202,8 +1343,8 @@ proc sqlite-check-line-editing {} {
     msg-result "Using $editLibName flags: $rlInc $rlLib"
     # Check whether rl_completion_matches() has a signature we can use
     # and disable that sub-feature if it doesn't.
-    if {![cctest \
-            -cflags "$rlInc -D${editLibDef}" -libs $rlLib -nooutput 1 -source {
+    if {![cctest -cflags "$rlInc -D${editLibDef}" -libs $rlLib -nooutput 1 \
+            -source {
              #include <stdio.h>
              #ifdef HAVE_EDITLINE
              #include <editline/readline.h>
@@ -1256,7 +1397,7 @@ proc sqlite-handle-line-editing {} {
 #   - pkg-config: use only pkg-config to determine flags
 #   - /path/to/icu-config: use that to determine flags
 #
-# If --with-icu-config is used as neither pkg-config nor icu-config
+# If --with-icu-config is used and neither pkg-config nor icu-config
 # are found, fail fatally.
 #
 # If both --with-icu-ldflags and --with-icu-config are provided, they
@@ -1349,42 +1490,53 @@ proc sqlite-handle-icu {} {
 # Makes the following environment changes:
 #
 # - defines LDFLAGS_DLOPEN to any linker flags needed for this
-#   feature.  It may legally be empty on some systems where dlopen()
-#   is in libc.
+#   feature.  It may legally be empty on (A) some systems where
+#   dlopen() is in libc and (B) certain Unix-esque Windows
+#   environments which identify as Windows for SQLite's purposes so
+#   use LoadLibrary().
 #
 # - If the feature is not available, adds
 #   -DSQLITE_OMIT_LOAD_EXTENSION=1 to the feature flags list.
 proc sqlite-handle-load-extension {} {
   define LDFLAGS_DLOPEN ""
   set found 0
+  set suffix ""
   proj-if-opt-truthy load-extension {
-    set found [proj-check-function-in-lib dlopen dl]
-    if {$found} {
-      define LDFLAGS_DLOPEN [get-define lib_dlopen]
-      undefine lib_dlopen
-    } else {
-      if {[proj-opt-was-provided load-extension]} {
-        # Explicit --enable-load-extension: fail if not found
-        proj-indented-notice -error {
-          --enable-load-extension was provided but dlopen()
-          not found. Use --disable-load-extension to bypass this
-          check.
-        }
-      } else {
-        # It was implicitly enabled: warn if not found
-        proj-indented-notice {
-          WARNING: dlopen() not found, so loadable module support will
-          be disabled. Use --disable-load-extension to bypass this
-          check.
+    switch -glob -- [get-define host] {
+      *-*-mingw* - *windows* {
+        incr found
+        set suffix "Using LoadLibrary()"
+      }
+      default {
+        set found [proj-check-function-in-lib dlopen dl]
+        if {$found} {
+          set suffix [define LDFLAGS_DLOPEN [get-define lib_dlopen]]
+          undefine lib_dlopen
+        } else {
+          if {[proj-opt-was-provided load-extension]} {
+            # Explicit --enable-load-extension: fail if not found
+            proj-indented-notice -error {
+              --enable-load-extension was provided but dlopen()
+              not found. Use --disable-load-extension to bypass this
+              check.
+            }
+          } else {
+            # It was implicitly enabled: warn if not found
+            proj-indented-notice {
+              WARNING: dlopen() not found, so loadable module support will
+              be disabled. Use --disable-load-extension to bypass this
+              check.
+            }
+          }
         }
       }
     }
   }
   if {$found} {
-    msg-result "Loadable extension support enabled."
+    msg-result "Loadable extension support enabled. $suffix"
   } else {
     msg-result "Disabling loadable extension support. Use --enable-load-extension to enable them."
-    sqlite-add-feature-flag {-DSQLITE_OMIT_LOAD_EXTENSION=1}
+    sqlite-add-feature-flag -DSQLITE_OMIT_LOAD_EXTENSION=1
   }
   return $found
 }
@@ -1398,7 +1550,7 @@ proc sqlite-handle-math {} {
     }
     define LDFLAGS_MATH [get-define lib_ceil]
     undefine lib_ceil
-    sqlite-add-feature-flag {-DSQLITE_ENABLE_MATH_FUNCTIONS}
+    sqlite-add-feature-flag -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_ENABLE_PERCENTILE
     msg-result "Enabling math SQL functions"
   } {
     define LDFLAGS_MATH ""
@@ -1436,6 +1588,41 @@ proc sqlite-handle-mac-cversion {} {
     }
   }
   return $rc
+}
+
+########################################################################
+# If this is a Mac platform, check for support for
+# -Wl,-install_name,...  and, if it's available, define
+# LDFLAGS_MAC_INSTALL_NAME to a variant of that string which is
+# intended to expand at make-time, else set LDFLAGS_MAC_INSTALL_NAME
+# to an empty string.
+#
+# https://sqlite.org/forum/forumpost/5651662b8875ec0a
+proc sqlite-handle-mac-install-name {} {
+  define LDFLAGS_MAC_INSTALL_NAME ""; # {-Wl,-install_name,"$(install-dir.lib)/$(libsqlite3.DLL)"}
+  set rc 0
+  if {[proj-looks-like-mac]} {
+    cc-with {-link 1} {
+      if {[cc-check-flags "-Wl,-install_name,/usr/local/lib/libsqlite3.dylib"]} {
+        define LDFLAGS_MAC_INSTALL_NAME {-Wl,-install_name,"$(install-dir.lib)/$(libsqlite3.DLL)"}
+        set rc 1
+      }
+    }
+  }
+  return $rc
+}
+
+#
+# Checks specific to HP-UX.
+#
+proc sqlite-handle-hpux {} {
+  switch -glob -- [get-define host] {
+    *hpux* {
+      if {[cc-check-flags "-Ae"]} {
+        define-append CFLAGS -Ae
+      }
+    }
+  }
 }
 
 ########################################################################
@@ -1576,8 +1763,12 @@ proc sqlite-handle-env-quirks {} {
   set autoDll 0; # true if --out-implib/--dll-basename should be implied
   set host [get-define host]
   switch -glob -- $host {
-    *apple* -
-    *darwin*    { set instName darwin }
+    *-*-darwin* {
+      set instName darwin
+      # We don't look for *apple* because:
+      # https://sqlite.org/forum/forumpost/7b218c3c9f207646
+      # There's at least one Linux out there which matches *apple*.
+    }
     default {
       set x [sqlite-env-is-unix-on-windows $host]
       if {"" ne $x} {
@@ -1610,6 +1801,7 @@ proc sqlite-handle-env-quirks {} {
   sqlite-handle-dll-basename
   sqlite-handle-out-implib
   sqlite-handle-mac-cversion
+  sqlite-handle-mac-install-name
   if {[llength [info proc sqlite-custom-handle-flags]] > 0} {
     # sqlite-custom-handle-flags is assumed to be imported via a
     # client-specific import: autosetup/sqlite-custom.tcl.
@@ -1632,15 +1824,7 @@ proc sqlite-process-dot-in-files {} {
   # (e.g. [proj-check-rpath]) may do so before we "mangle" them here.
   proj-remap-autoconf-dir-vars
 
-  set srcdir $::autosetup(srcdir)/
-  foreach f {Makefile sqlite3.pc} {
-    if {[file exists $srcdir/$f.in]} {
-      # ^^^ we do this only so that this block can be made to work for
-      # multiple builds. e.g. the tea build (under construction) does
-      # not hae sqlite3.pc.in.
-      proj-make-from-dot-in -touch $f
-    }
-  }
+  proj-dot-ins-process -validate
   make-config-header sqlite_cfg.h \
     -bare {SIZEOF_* HAVE_DECL_*} \
     -none {HAVE_CFLAG_* LDFLAGS_* SH_* SQLITE_AUTORECONFIG
@@ -1648,32 +1832,6 @@ proc sqlite-process-dot-in-files {} {
     -auto {HAVE_* PACKAGE_*} \
     -none *
   proj-touch sqlite_cfg.h ; # help avoid frequent unnecessary @SQLITE_AUTORECONFIG@
-}
-
-########################################################################
-# Perform some high-level validation on the generated files...
-#
-# 1) Ensure that no unresolved @VAR@ placeholders are in files which
-#    use those.
-#
-# 2) TBD
-proc sqlite-post-config-validation {} {
-  # Check #1: ensure that files which get filtered for @VAR@ do not
-  # contain any unresolved @VAR@ refs. That may indicate an
-  # unexported/unused var or a typo.
-  set srcdir $::autosetup(srcdir)
-  foreach f [list Makefile sqlite3.pc \
-             $srcdir/tool/emcc.sh \
-             $srcdir/ext/wasm/config.make] {
-    if {![file exists $f]} continue
-    set lnno 1
-    foreach line [proj-file-content-list $f] {
-      if {[regexp {(@[A-Za-z0-9_]+@)} $line match]} {
-        error "Unresolved reference to $match at line $lnno of $f"
-      }
-      incr lnno
-    }
-  }
 }
 
 ########################################################################
@@ -1906,7 +2064,7 @@ proc sqlite-check-tcl {} {
       }
     }
     if {![file-isexec $with_tclsh]} {
-      proj-warn "Cannot find a usable tclsh (tried: $tryThese)
+      proj-warn "Cannot find a usable tclsh (tried: $tryThese)"
     }
   }
   define TCLSH_CMD $with_tclsh
@@ -1920,13 +2078,14 @@ proc sqlite-check-tcl {} {
     # TCLLIBDIR from here, which will cause the canonical makefile to
     # use this one rather than to re-calculate it at make-time.
     set tcllibdir [get-env TCLLIBDIR ""]
+    set sq3Ver [get-define PACKAGE_VERSION]
     if {"" eq $tcllibdir} {
       # Attempt to extract TCLLIBDIR from TCL's $auto_path
       if {"" ne $with_tclsh &&
           [catch {exec echo "puts stdout \$auto_path" | "$with_tclsh"} result] == 0} {
         foreach i $result {
           if {[file isdir $i]} {
-            set tcllibdir $i/sqlite3
+            set tcllibdir $i/sqlite${sq3Ver}
             break
           }
         }
@@ -2058,20 +2217,35 @@ proc sqlite-determine-codegen-tcl {} {
 }; # sqlite-determine-codegen-tcl
 
 ########################################################################
-# Runs sqlite-check-tcl and, if $alsoCheckCodeGen is true,
-# sqlite-determine-codegen-tcl (intended only for the canonical
-# build).
-proc sqlite-handle-tcl {{alsoCheckCodeGen 1}} {
+# Runs sqlite-check-tcl and, if this is the canonical build,
+# sqlite-determine-codegen-tcl.
+proc sqlite-handle-tcl {} {
   sqlite-check-tcl
-  if {$alsoCheckCodeGen} {
-    msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
+  if {"canonical" ne $::sqliteConfig(build-mode)} return
+  msg-result "TCL for code generation: [sqlite-determine-codegen-tcl]"
+
+  # Determine the base name of the Tcl extension's DLL
+  #
+  if {[get-define HAVE_TCL]} {
+    if {[string match *-cygwin [get-define host]]} {
+      set libname cyg
+    } else {
+      set libname lib
+    }
+    if {[get-define TCL_MAJOR_VERSION] > 8} {
+      append libname tcl9
+    }
+    append libname sqlite
+  } else {
+    set libname ""
   }
+  define TCL_EXT_DLL_BASENAME $libname
+  # The extension is added in the makefile
 }
 
 ########################################################################
 # Handle the --enable/disable-rpath flag.
 proc sqlite-handle-rpath {} {
-  proj-check-rpath
   # autosetup/cc-shared.tcl sets the rpath flag definition in
   # [get-define SH_LINKRPATH], but it does so on a per-platform basis
   # rather than as a compiler check. Though we should do a proper
@@ -2080,12 +2254,13 @@ proc sqlite-handle-rpath {} {
   # for which sqlite-env-is-unix-on-windows returns a non-empty
   # string.
 
-#  if {[proj-opt-truthy rpath]} {
-#    proj-check-rpath
-#  } else {
-#    msg-result "Disabling use of rpath."
-#    define LDFLAGS_RPATH ""
-#  }
+  # https://sqlite.org/forum/forumpost/13cac3b56516f849
+  if {[proj-opt-truthy rpath]} {
+    proj-check-rpath
+  } else {
+    msg-result "Disabling use of rpath."
+    define LDFLAGS_RPATH ""
+  }
 }
 
 ########################################################################

@@ -743,6 +743,19 @@ do_execsql_test 15.4 {
   SELECT c, fts5_columnlocale(ft, 2) FROM ft
 } {three {} three loc}
 
+#-------------------------------------------------------------------------
+#
+set nMaxCol 500
+set nStep 20
+
+for {set ii $nStep} {$ii <= $nMaxCol} {incr ii $nStep} {
+  set C [list]
+  for {set iCol 0} {$iCol<$ii} {incr iCol} {
+    lappend C col$iCol
+  }
+  set ct "CREATE VIRTUAL TABLE t$ii USING fts5([join $C ,], locale=1)"
+  do_execsql_test 16.$ii $ct
+}
 
 finish_test
 

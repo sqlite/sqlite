@@ -38,7 +38,7 @@ do_execsql_test 1.0 {
 proc p4_of_opcode {db opcode sql} {
   set res {}
   $db eval "EXPLAIN $sql" x {
-    if {$x(opcode)==$opcode} {lappend res $x(p4)}
+    if {$x(opcode)==$opcode && $x(p4)!=""} {lappend res $x(p4)}
   }
   return $res
 }

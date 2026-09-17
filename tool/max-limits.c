@@ -21,6 +21,8 @@ static const struct {
   { SQLITE_LIMIT_VARIABLE_NUMBER,       "SQLITE_MAX_VARIABLE_NUMBER"      },
   { SQLITE_LIMIT_TRIGGER_DEPTH,         "SQLITE_MAX_TRIGGER_DEPTH"        },
   { SQLITE_LIMIT_WORKER_THREADS,        "SQLITE_MAX_WORKER_THREADS"       },
+  { SQLITE_LIMIT_PARSER_DEPTH,          "SQLITE_MAX_PARSER_DEPTH"         },
+  { SQLITE_LIMIT_SCHEMA,                "SQLITE_MAX_SCHEMA"               },
 };
 
 static int maxLimit(sqlite3 *db, int eCode){

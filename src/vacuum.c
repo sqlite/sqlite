@@ -116,7 +116,7 @@ void sqlite3Vacuum(Parse *pParse, Token *pNm, Expr *pInto){
 #else
     /* When SQLITE_BUG_COMPATIBLE_20160819 is defined, unrecognized arguments
     ** to VACUUM are silently ignored.  This is a back-out of a bug fix that
-    ** occurred on 2016-08-19 (https://www.sqlite.org/src/info/083f9e6270).
+    ** occurred on 2016-08-19 (https://sqlite.org/src/info/083f9e6270).
     ** The buggy behavior is required for binary compatibility with some
     ** legacy applications. */
     iDb = sqlite3FindDb(pParse->db, pNm);
@@ -195,7 +195,8 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
   saved_mTrace = db->mTrace;
-  db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks | SQLITE_Comments;
+  db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks | SQLITE_Comments
+               | SQLITE_AttachCreate | SQLITE_AttachWrite;
   db->mDbFlags |= DBFLAG_PreferBuiltin | DBFLAG_Vacuum;
   db->flags &= ~(u64)(SQLITE_ForeignKeys | SQLITE_ReverseOrder
                    | SQLITE_Defensive | SQLITE_CountRows);
@@ -229,9 +230,11 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
   pDb = &db->aDb[nDb];
   assert( strcmp(pDb->zDbSName,zDbVacuum)==0 );
   pTemp = pDb->pBt;
+  nRes = sqlite3BtreeGetRequestedReserve(pMain);
   if( pOut ){
     sqlite3_file *id = sqlite3PagerFile(sqlite3BtreePager(pTemp));
     i64 sz = 0;
+    const char *zFilename;
     if( id->pMethods!=0 && (sqlite3OsFileSize(id, &sz)!=SQLITE_OK || sz>0) ){
       rc = SQLITE_ERROR;
       sqlite3SetString(pzErrMsg, db, "output file already exists");
@@ -243,8 +246,16 @@ SQLITE_NOINLINE int sqlite3RunVacuum(
     ** they are for the database being vacuumed, except that PAGER_CACHESPILL
     ** is always set. */
     pgflags = db->aDb[iDb].safety_level | (db->flags & PAGER_FLAGS_MASK);
+
+    /* If the VACUUM INTO target file is a URI filename and if the
+    ** "reserve=N" query parameter is present, reset the reserve to the
+    ** amount specified, if the amount is within range */
+    zFilename = sqlite3BtreeGetFilename(pTemp);
+    if( ALWAYS(zFilename) ){
+      int nNew = (int)sqlite3_uri_int64(zFilename, "reserve", nRes);
+      if( nNew>=0 && nNew<=255 ) nRes = nNew;
+    }
   }
-  nRes = sqlite3BtreeGetRequestedReserve(pMain);
 
   sqlite3BtreeSetCacheSize(pTemp, db->aDb[iDb].pSchema->cache_size);
   sqlite3BtreeSetSpillSize(pTemp, sqlite3BtreeSetSpillSize(pMain,0));

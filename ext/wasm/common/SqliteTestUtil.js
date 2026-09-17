@@ -44,7 +44,8 @@
     /** abort() if expr is false. If expr is a function, it
         is called and its result is evaluated.
     */
-    assert: function f(expr, msg){
+    assert: function f(expr, ...msg){
+      msg = msg?.join?.(' ');
       if(!f._){
         f._ = ('undefined'===typeof abort
                ? (msg)=>{throw new Error(msg)}
