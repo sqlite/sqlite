@@ -679,7 +679,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const stmt = db.prepare(sql);
     try {
       const rc = stmt.bind(bind).step() ? stmt.get(...getArgs) : undefined;
-      stmt.reset(/*for INSERT...RETURNING locking case*/);
+      stmt.reset(/*for INSERT...RETURNING locking case
+                   https://sqlite.org/forum/forumpost/c411b3a9143d02dce */);
       return rc;
     }finally{
       stmt.finalize();
@@ -694,6 +695,55 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         (db, sql, bind, rowMode)=>db.exec({
           sql, bind, rowMode, returnValue: 'resultRows'
         });
+
+  /**
+     Internal impl of DB.Stmt APIs which fetch a column. The caller is
+     required to have validated the ndx value before calling this (see
+     affirmColIndex()). The purpose of this impl is to speed up such
+     operations which loop, to avoid having to validate the index on
+     each iteration.
+  */
+  const __stmtGetColumn = (stmt, ndx, asType)=>{
+    switch(undefined===asType
+           ? capi.sqlite3_column_type(stmt.pointer, ndx)
+           : asType){
+        case capi.SQLITE_NULL: return null;
+        case capi.SQLITE_INTEGER:{
+          if(wasm.bigIntEnabled){
+            const rc = capi.sqlite3_column_int64(stmt.pointer, ndx);
+            if(rc>=Number.MIN_SAFE_INTEGER && rc<=Number.MAX_SAFE_INTEGER){
+              return Number(rc).valueOf();
+            }
+            return rc;
+          }else{
+            const rc = capi.sqlite3_column_double(stmt.pointer, ndx);
+            if(rc>Number.MAX_SAFE_INTEGER || rc<Number.MIN_SAFE_INTEGER){
+              toss3("Integer is out of range for JS integer range: "+rc);
+            }
+            return util.isInt32(rc) ? (rc | 0) : rc;
+          }
+        }
+        case capi.SQLITE_FLOAT:
+          return capi.sqlite3_column_double(stmt.pointer, ndx);
+        case capi.SQLITE_TEXT:
+          return capi.sqlite3_column_text(stmt.pointer, ndx);
+        case capi.SQLITE_BLOB: {
+          const n = capi.sqlite3_column_bytes(stmt.pointer, ndx),
+                ptr = capi.sqlite3_column_blob(stmt.pointer, ndx),
+                rc = new Uint8Array(n);
+          if(n){
+            rc.set(wasm.heap8u().slice(Number(ptr), Number(ptr)+n), 0);
+            if(stmt.db._blobXfer instanceof Array){
+              stmt.db._blobXfer.push(rc.buffer);
+            }
+          }
+          return rc;
+        }
+        default: toss3("Don't know how to translate",
+                       "type of result column #"+ndx+".");
+    }
+    toss3("Not reached.");
+  };
 
   /**
      Expects to be given a DB instance or an `sqlite3*` pointer (may
@@ -1479,8 +1529,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     selectValues: function(sql,bind,asType){
       const stmt = this.prepare(sql), rc = [];
       try {
+        affirmColIndex(stmt, 0);
         stmt.bind(bind);
-        while(stmt.step()) rc.push(stmt.get(0,asType));
+        while(stmt.step()) rc.push(
+          __stmtGetColumn(stmt, 0, asType)
+        );
         stmt.reset(/*for INSERT...RETURNING locking case*/);
       }finally{
         stmt.finalize();
@@ -2137,14 +2190,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        an exception is thrown.
 
        By default it will determine the data type of the result
-       automatically. If passed a second argument, it must be one
-       of the enumeration values for sqlite3 types, which are
-       defined as members of the sqlite3 module: SQLITE_INTEGER,
-       SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB. Any other value,
-       except for undefined, will trigger an exception. Passing
-       undefined is the same as not passing a value. It is legal
-       to, e.g., fetch an integer value as a string, in which case
-       sqlite3 will convert the value to a string.
+       automatically. If passed a second argument, it must be one of
+       the enumeration values for sqlite3 types, which are defined as
+       members of the sqlite3.capi namespace: SQLITE_INTEGER,
+       SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB. Any other value, except
+       for undefined, will trigger an exception. Passing undefined is
+       the same as not passing a value. It is legal to, e.g., fetch an
+       integer value as a string, in which case sqlite3 will convert
+       the value to a string.
+
+       Blobs are returned as Uint8Array instances.
 
        If ndx is an array, this function behaves a differently: it
        assigns the indexes of the array, from 0 to the number of
@@ -2156,7 +2211,27 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        the values of their corresponding result columns and returns
        that object.
 
-       Blobs are returned as Uint8Array instances.
+       Performance note: this class does not cache its column names
+       because a reprepare may change them and we have(?) no(?) way of
+       hooking into that to invalidate the cache. A side effect of
+       that is that this function, when ndx is an object, has to copy
+       those names from the WASM side on each call. When fetching many
+       objects, DB.exec() can do so more efficiently by caching those
+       names for the duration of the query. In large result sets the
+       runtime difference is human-perceivable.
+
+       Behavior change notice: prior to 3.54, the asType argument was
+       ignored when ndx is an array or object, the justification being
+       that we're generally fetching rows of mixed data types. As of
+       3.54, it still behaves that way when passed the undefined value
+       resp. is not passed a value, but will coerce each column to the
+       request type of it is not the undefined value. It is not
+       believed that this change adversely affects any existing
+       client-level code because this argument was ignored and
+       applications passing a non-undefined value were not necessarily
+       getting back what they had specified (or did so only because
+       all of the data was of that type, in which case the new
+       behavior is identical for those queries).
 
        Potential TODO: add type ID SQLITE_JSON, which fetches the
        result as a string and passes it (if it's not null) to
@@ -2171,69 +2246,22 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         let i = 0;
         const n = this.columnCount;
         while(i<n){
-          ndx[i] = this.get(i++);
+          ndx[i] = __stmtGetColumn(this, i, asType);
+          ++i;
         }
         return ndx;
       }else if(ndx && 'object'===typeof ndx){
         let i = 0;
         const n = this.columnCount;
         while(i<n){
-          ndx[capi.sqlite3_column_name(this.pointer,i)] = this.get(i++);
+          ndx[capi.sqlite3_column_name(this.pointer,i)] =
+            __stmtGetColumn(this, i, asType);
+          ++i;
         }
         return ndx;
       }
       affirmColIndex(this, ndx);
-      switch(undefined===asType
-             ? capi.sqlite3_column_type(this.pointer, ndx)
-             : asType){
-          case capi.SQLITE_NULL: return null;
-          case capi.SQLITE_INTEGER:{
-            if(wasm.bigIntEnabled){
-              const rc = capi.sqlite3_column_int64(this.pointer, ndx);
-              if(rc>=Number.MIN_SAFE_INTEGER && rc<=Number.MAX_SAFE_INTEGER){
-                /* Coerce "normal" number ranges to normal number values,
-                   and only return BigInt-type values for numbers out of this
-                   range. */
-                return Number(rc).valueOf();
-              }
-              return rc;
-            }else{
-              const rc = capi.sqlite3_column_double(this.pointer, ndx);
-              if(rc>Number.MAX_SAFE_INTEGER || rc<Number.MIN_SAFE_INTEGER){
-                /* Throwing here is arguable but, since we're explicitly
-                   extracting an SQLITE_INTEGER-type value, it seems fair to throw
-                   if the extracted number is out of range for that type.
-                   This policy may be laxened to simply pass on the number and
-                   hope for the best, as the C API would do. */
-                toss3("Integer is out of range for JS integer range: "+rc);
-              }
-              //sqlite3.config.log("get integer rc=",rc,isInt32(rc));
-              return util.isInt32(rc) ? (rc | 0) : rc;
-            }
-          }
-          case capi.SQLITE_FLOAT:
-            return capi.sqlite3_column_double(this.pointer, ndx);
-          case capi.SQLITE_TEXT:
-            return capi.sqlite3_column_text(this.pointer, ndx);
-          case capi.SQLITE_BLOB: {
-            const n = capi.sqlite3_column_bytes(this.pointer, ndx),
-                  ptr = capi.sqlite3_column_blob(this.pointer, ndx),
-                  rc = new Uint8Array(n);
-            if(n){
-              rc.set(wasm.heap8u().slice(Number(ptr), Number(ptr)+n), 0);
-              if(this.db._blobXfer instanceof Array){
-                /* This is an optimization soley for the Worker1 API. It
-                   will transfer these to the main thread directly
-                   instead of copying them. */
-                this.db._blobXfer.push(rc.buffer);
-              }
-            }
-            return rc;
-          }
-          default: toss3("Don't know how to translate",
-                         "type of result column #"+ndx+".");
-      }
-      toss3("Not reached.");
+      return __stmtGetColumn(this, ndx, asType);
     },
     /** Equivalent to get(ndx) but coerces the result to an
         integer. */
