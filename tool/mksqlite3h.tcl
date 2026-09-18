@@ -160,6 +160,7 @@ set cdecllist {
   sqlite3_log
   sqlite3_mprintf
   sqlite3_snprintf
+  sqlite3_str_appendf
   sqlite3_test_control
   sqlite3_vtab_config
 }
@@ -210,10 +211,10 @@ foreach file $filelist {
         append line $funcname $rest
       }
     }
-    if {$useapicall} {
+    if {$useapicall && ![regexp {^\*\*} $line]} {
       set line [string map [list (*sqlite3_syscall_ptr) \
           "(SQLITE_SYSAPI *sqlite3_syscall_ptr)"] $line]
-      regsub {\(\*} $line {(SQLITE_CALLBACK *} line
+      regsub -all {\(\*} $line {(SQLITE_CALLBACK*} line
     }
     puts $out $line
   }
