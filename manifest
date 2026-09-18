@@ -1,5 +1,5 @@
-C Minor\sinternal\sAPI\sdoc\supdate.
-D 2026-09-18T08:00:34.573
+C Improved\ssupport\sfor\sstdcall\son\s32-bit\swindows,\sfor\slegacy.
+D 2026-09-18T15:38:29.278
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -406,7 +406,7 @@ F ext/misc/sqlite3_stdio.c a32a0cf53d82ece9d68c9b9fdaad5f0d2bf696529aece1dbf5c01
 F ext/misc/sqlite3_stdio.h 27a4ecea47e61bc9574ccdf2806f468afe23af2f95028c9b689bfa08ab1ce99f
 F ext/misc/stmt.c b090086cd6bd6281c21271d38d576eeffe662f0e6b67536352ce32bbaa438321
 F ext/misc/stmtrand.c 1c7c6a478e9c808d53a2efa9a744c86c265b6b95b4a96964e1b960c7c642ad49
-F ext/misc/strdup.c 028ea3097c7b6bb8cb9f0b7e656e9bafe6c46db76123e9ad86fb3efda629b568
+F ext/misc/strdup.c eaa6592f5d29543eef591e2919d7410363e2b75d720ee7144a8b31590713c491
 F ext/misc/templatevtab.c e76d4cdb73f986c8165c0fe7831f1a94da55d4f1eafcb7d377e1b0b79ee8679a
 F ext/misc/tmstmpvfs.c 8fe8b10e0ac7c46faf491811e21dcb67ccde5cff8f133701121f793d2a7d41e4
 F ext/misc/totype.c ba11aac3c0b52c685bd25aa4e0f80c41c624fb1cc5ab763250e09ddc762bc3a8
@@ -2172,9 +2172,9 @@ F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07
 F tool/mkpragmatab.tcl 5615f8ea9ae6990b73da765c5f121117cbc2a5197b65bed25c56f71c7ab2f42a
 F tool/mkshellc.tcl da6918b128e928a8f0d663519e14829153e59465bd5eb596442e99fa10a411b7
 F tool/mksourceid.c 36aa8020014aed0836fd13c51d6dc9219b0df1761d6b5f58ff5b616211b079b9
-F tool/mksqlite3c-noext.tcl 351c55256213154cabb051a3c870ef9f4487de905015141ae50dc7578a901b84
-F tool/mksqlite3c.tcl 7a268139158e5deef27a370bc2f8db6ccf100c1ad7ac5e5b23743c0fd354f609
-F tool/mksqlite3h.tcl ef6831c97e6e638d2324863e8125306baea239b23defd75da77edffa3b620e81
+F tool/mksqlite3c-noext.tcl 2d92e29cf386729d39497972da4b112b89d5642e0ffec1c991099e547d51ccbb
+F tool/mksqlite3c.tcl d592e422865c5e49e15ffea83401ede2912475efb4071127b9c6599d91423a5d
+F tool/mksqlite3h.tcl f8338b62df8a9dd228c09bb3aab8d9888db5efd7bcbf6a7a68d3bff63335de67
 F tool/mksqlite3internalh.tcl 46ef6ed6ccd3c36e23051109dd25085d8edef3887635cea25afa81c4adf4d4db
 F tool/mksrczip.tcl 81efd9974dbb36005383f2cd655520057a2ae5aa85ac2441a80c7c28f803ac52
 F tool/mktoolzip.tcl c9f388b2b0751982aef29a0c1d80f7959dbe38065ebb4421c39844e92622b086
@@ -2221,8 +2221,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 8c6c586c3e42dd1d0af4f374b01a660bfc6afb47fd3b34cd7ef16c198ec66d0a
-R c7346c8d02684dff19ae7ef694abb44a
-U stephan
-Z 7ed848ea4d0d2b654de2fb86f34c503b
+P 346c56e02c39858b4364e4c8b8e4c88237e64470066ebb2687ae06d2b0e978b8
+R 9163b5cdf32fd4c5523673c92b3ba0b3
+T *branch * windows-stdcall
+T *sym-windows-stdcall *
+T -sym-trunk *
+U drh
+Z 32fb62985c804744162321bb1e2a4e52
 # Remove this line to create a well-formed Fossil manifest.
