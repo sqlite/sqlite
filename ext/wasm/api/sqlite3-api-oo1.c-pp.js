@@ -701,7 +701,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      required to have validated the ndx value before calling this (see
      affirmColIndex()). The purpose of this impl is to speed up such
      operations which loop, to avoid having to validate the index on
-     each iteration.
+     each iteration. The arguments are as documented for Stmt.get()
+     with the exception that ndx must be an in-range interger (that
+     function handles the other cases and proxies them to this one).
   */
   const __stmtGetColumn = (stmt, ndx, asType)=>{
     switch(undefined===asType
