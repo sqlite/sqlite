@@ -211,10 +211,10 @@ foreach file $filelist {
         append line $funcname $rest
       }
     }
-    if {$useapicall} {
+    if {$useapicall && ![regexp {^\*\*} $line]} {
       set line [string map [list (*sqlite3_syscall_ptr) \
           "(SQLITE_SYSAPI *sqlite3_syscall_ptr)"] $line]
-      regsub {\(\*} $line {(SQLITE_CALLBACK *} line
+      regsub -all {\(\*} $line {(SQLITE_CALLBACK*} line
     }
     puts $out $line
   }
