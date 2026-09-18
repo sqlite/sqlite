@@ -24,6 +24,16 @@
       ESM worker:</a>
       (<a href='tester1-worker.html?esm' target='tester1-worker.html?esm'>32-bit</a>
       <a href='tester1-worker-64bit.html?esm' target='tester1-worker-64bit.html?esm'>64-bit</a>)
+
+      <div style="font-size: 80%; border: 1px dotted; margin: 0.5em; padding: 0.5em">
+        Testers beware: the <strong>UI-thread tests</strong> may all
+        run concurrently except that they may fail kvvfs tests because
+        of concurrent access to that storage (it's so rare that it's
+        never been seen in practice because those tests are so fast,
+        but is hypothetically possible).  The <strong>Worker-thread
+        tests</strong> run OPFS tests, which are slow in some browsers
+        and will fail if two instances of this page run them at the
+        same time.</div>
     </div>
     <div class='input-wrapper'>
       <input type='checkbox' id='cb-log-reverse'>
