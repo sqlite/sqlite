@@ -815,4 +815,32 @@ do_execsql_test 24.2 {
   SELECT * FROM rt1 WHERE rid=1.005;
 } {}
 
+# Bug 2026-09-19T00:36:32Z
+#
+# Rounding double->float should work even for sub-normal or
+# near infinite values.
+#
+do_execsql_test 25.1 {
+  CREATE VIRTUAL TABLE t1 USING rtree(id,a,b);
+  INSERT INTO t1 VALUES(1,1e-39,1e-39);
+  SELECT id FROM t1 WHERE a<=1e-32 AND b>=1e-39;
+} 1
+foreach {id v} {
+  2   1e-40
+  3   -1e-39
+  4   -1e-40
+  5   3.1234e+38
+  6   -3.1234e+38
+  7   5e-324
+  8   -5e-324
+  9   3.5e+38
+  10  -3.5e+38
+} {
+  do_execsql_test 25.$id "
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,$v,$v);
+    SELECT id FROM t1 WHERE a<=$v AND b>=$v;
+  " 1
+}
+
 finish_test

@@ -1,5 +1,5 @@
-C Fix\sissues\sin\ssupport\sfor\sSTDCALL\son\s32-bit\sWindows\sbuilds.\n[bugs:/info/2026-09-15T09:23:20Z|Bug\s2026-09-15T09:23:20Z]\sand\n[bugs:/info/2026-09-15T09:24:06Z|Bug\s2026-09-15T09:24:06Z].
-D 2026-09-18T16:50:49.794
+C Fix\s32-bit\sfloating\spoint\s(float)\srounding\sin\srtree\sso\sthat\sit\sworks\ncorrectly\sfor\ssubnormal\svalues\sand\sfor\svalues\snear\sinfinity.\n[bugs:/info/2026-09-19T00:36:32Z|Bug\s2026-09-19T00:36:32Z].
+D 2026-09-19T01:54:07.849
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -496,9 +496,9 @@ F ext/recover/sqlite3recover.h 011c799f02deb70ab685916f6f538e6bb32c4e0025e79bfd0
 F ext/recover/test_recover.c 3d0fb1df7823f5bc22a0b93955034d16a2dfa2eb1e443e9a0123a77f120599a3
 F ext/rtree/README 734aa36238bcd2dee91db5dba107d5fcbdb02396612811377a8ad50f1272b1c1
 F ext/rtree/geopoly.c e389a95f88438668787f8276a00c2409545c35e2893d16c6c599f0e5310ab3be
-F ext/rtree/rtree.c a83a8ec01a413d4be98fcb845320d1e913a4e095b0371ca5bccdab4b30bb9bcf
+F ext/rtree/rtree.c 22850c718ab0f2f209d9ba00683d5264d3dd9c576aacb04b8627d71f106a929b
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
-F ext/rtree/rtree1.test e0608db762b2aadca0ecb6f97396cf66244490adc3ba88f2a292b27be3e1da3e
+F ext/rtree/rtree1.test d23c59978d3163f039c8f4a42c006fb5ad77cf705eb4203fa6bcfce7de236fb9
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
 F ext/rtree/rtree3.test 272594f88c344e973864008bbe4c71fd3a41a264c097d568593ee7886d83d409
 F ext/rtree/rtree4.test 304de65d484540111b896827e4261815e5dca4ce28eeecd58be648cd73452c4b
@@ -2221,9 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 346c56e02c39858b4364e4c8b8e4c88237e64470066ebb2687ae06d2b0e978b8 5f8621d2f64344f4f0111f1d64cca5a71731cb037bfeea6e2e6f0368166085d1
-R 1f3d9a227a036345b1cb4381aaeb335e
-T +closed 5f8621d2f64344f4f0111f1d64cca5a71731cb037bfeea6e2e6f0368166085d1
+P 7e09ee42afab9868540875b4701cfbd55a591f8346358eebc3f54580fc2ec49d
+R 4c12ca9adf6f029967fc1bbeb793f41c
 U drh
-Z 351a347c94df48c9839f7a4395723866
+Z d467bb47df37c1a95fd8b85e3aa448d2
 # Remove this line to create a well-formed Fossil manifest.
