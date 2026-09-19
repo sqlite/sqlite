@@ -1686,7 +1686,7 @@ static char *shellFakeSchema(
   const char *zName       /* The name of the virtual table */
 ){
   sqlite3_stmt *pStmt = 0;
-  char *zSql;
+  char *zSql, *zCom;
   ShellText s;
   char cQuote;
   char *zDiv = "(";
@@ -1720,6 +1720,8 @@ static char *shellFakeSchema(
   if( nRow==0 ){
     freeText(&s);
     s.zTxt = 0;
+  }else{
+    while( s.zTxt && (zCom = strstr(s.zTxt,"*/"))!=0 ){ zCom[1] = '*'; }
   }
   return s.zTxt;
 }
@@ -1820,6 +1822,7 @@ static void shellAddSchemaName(
          && aPrefix[i][0]=='V'
          && (zFake = shellFakeSchema(db, zSchema, zName))!=0
         ){
+          assert( strstr(zFake,"*/")==0 );
           if( z==0 ){
             z = sqlite3_mprintf("%s\n/* %s */", zIn, zFake);
           }else{
@@ -5036,6 +5039,7 @@ static void shellModuleSchema(
   p->pLog = pSavedLog;
 
   if( zFake ){
+    assert( strstr(zFake,"*/")==0 );
     sqlite3_result_text(pCtx, sqlite3_mprintf("/* %s */", zFake),
                         -1, sqlite3_free);
     sqlite3_free(zFake);
