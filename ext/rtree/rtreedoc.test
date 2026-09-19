@@ -224,7 +224,7 @@ do_execsql_test 7.2 {
   );
   SELECT * FROM rtF;
 } {
-  0 -2000000000.0 2000000000.0 -1000000126976.0 10000000876544.0
+  0 -2000000000.0 2000000000.0 -1000000061440.0 10000000876544.0
 }
 
 # EVIDENCE-OF: R-47371-54529 Unlike regular SQLite tables which can
@@ -657,7 +657,7 @@ do_execsql_test 1.0 {
 do_execsql_test 1.1 {
   INSERT INTO rt VALUES(14, -1000000000000, 1000000000000);
   SELECT * FROM rt;
-} {14 -1000000126976.0 1000000126976.0}
+} {14 -1000000061440.0 1000000061440.0}
 
 # EVIDENCE-OF: R-39127-51288 When a coordinate cannot be exactly
 # represented by a 32-bit floating point number, the lower-bound

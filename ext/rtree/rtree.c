@@ -3031,51 +3031,30 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
 
 #if !defined(SQLITE_RTREE_INT_ONLY)
 /*
-** Convert a non-negative double d into the nearest float that is
-** less than or equal to (rtreeFloatDown) or greater than or equal
-** to (rtreeFloatUp) the input.
-*/
-static RtreeValue rtreeFloatDown(double d){
-  float f = d;
-  if( f>d ){
-    unsigned int x;
-    memcpy(&x, &f, 4);
-    x--;
-    memcpy(&f, &x, 4);
-  }
-  return f;
-}
-static RtreeValue rtreeFloatUp(double d){
-  float f = d;
-  if( f<d ){
-    unsigned int x;
-    memcpy(&x, &f, 4);
-    x++;
-    memcpy(&f, &x, 4);
-  }
-  return f;
-}
-/*
 ** Convert an sqlite3_value into an RtreeValue (presumably a float)
 ** while taking care to round toward negative or positive, respectively.
 */
 static RtreeValue rtreeValueDown(sqlite3_value *v){
-  double d;
-  d = sqlite3_value_double(v);
-  if( d<0 ){
-    return -rtreeFloatUp(-d);
-  }else{
-    return rtreeFloatDown(d);
+  double d = sqlite3_value_double(v);
+  float f = (float)d;
+  if( f>d ){
+    unsigned int x;
+    memcpy(&x, &f, 4);
+    x = (x & 0x80000000)!=0 ? x+1 : x-1;
+    memcpy(&f, &x, 4);
   }
+  return f;
 }
 static RtreeValue rtreeValueUp(sqlite3_value *v){
-  double d;
-  d = sqlite3_value_double(v);
-  if( d<0 ){
-    return -rtreeFloatDown(-d);
-  }else{
-    return rtreeFloatUp(d);
+  double d = sqlite3_value_double(v);
+  float f = (float)d;
+  if( f<d ){
+    unsigned int x;
+    memcpy(&x, &f, 4);
+    x = (x & 0x80000000)!=0 ? x-1 : x+1;
+    memcpy(&f, &x, 4);
   }
+  return f;
 }
 #endif /* !defined(SQLITE_RTREE_INT_ONLY) */
 
