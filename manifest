@@ -1,5 +1,5 @@
-C Fix\snew\stest\scases\sadded\sby\s[c77ff6089de242d8]\sso\sthat\sthey\swork\non\sall\sconfigurations.
-D 2026-09-19T10:58:12.120
+C Fix\stest\scases\sadded\sby\s[f847298c8d424071]\sso\sthat\sthey\swork\son\nall\sconfigurations.
+D 2026-09-19T11:07:26.487
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1304,7 +1304,7 @@ F test/incrblob_err.test 89372a28f1d98254f03fed705f9efcd34ef61a674df16d2dbb47269
 F test/incrblobfault.test de274b1e329169c2c3438f9528994807ea8201ebf38ae9f157d34bf3ec0cc549
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
 F test/incrvacuum.test 3fa6145f5e71f603554fd7b8ec3da4290b1341029682313285cb5f9e1893d6ba
-F test/incrvacuum2.test 74202bfb39326ce482064a4946dee11c6a9b5ad98008cca12c3daaccf9fdfc33
+F test/incrvacuum2.test 8a3c24c4f8a5f401478f7cc466b8acff598f10e0b3a571bfbbb8cc353008049b
 F test/incrvacuum3.test 0bf0ffe7f2cbc87ba1d471e4bbadabbf10dacf8d4ee26b3a072708d575d637a9
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
 F test/index.test 9a060cbb12b70dd0e6bca0404106242703c0827ba58712f46b0d5a3b3968b341
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e6eef2cb8fff278cfef2b8898e12d641df22c435d70800d0f031ae740cc88b7e
-R 60a498097b34a5b135e0351b0cf56c74
+P 78d3370d36fb8872de1ed853f3a479273b54d2cff9fdfe83db963f4da9c7f999
+R 329bc6be52c243875096f6c8b08d34d6
 U drh
-Z 6c55f32311b5a812948fe39a028f8641
+Z 2366084fb6f7e06b118c23769cd114a7
 # Remove this line to create a well-formed Fossil manifest.
