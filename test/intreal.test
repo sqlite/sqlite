@@ -187,6 +187,7 @@ do_execsql_test 6.2 {
     SELECT x, typeof(x) FROM s;
 } {0.0 real}
 
+ifcapable vtab {
 # Bug 2026-08-23T15:39:59Z with the revised fix on 2026-08-29
 #
 # Verify that sqlite3ValueFromExpr() only converts integers into floating-point
@@ -200,7 +201,8 @@ do_execsql_test 7.10 {
   CREATE INDEX t1b ON t1(b);
   SELECT a, typeof(b) FROM t1;
 } {1 real}
-sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 3
+set t1broot [db onecolumn {SELECT rootpage FROM sqlite_schema WHERE name='t1b'}]
+sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $t1broot
 db eval {CREATE TABLE t2(b,rowid,PRIMARY KEY(b,rowid))WITHOUT ROWID}
 sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
 do_execsql_test 7.11 {
@@ -215,7 +217,7 @@ do_execsql_test 7.20 {
   CREATE INDEX t1b ON t1(b);
   SELECT a, typeof(b) FROM t1;
 } {1 real}
-sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 3
+sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $t1broot
 db eval {CREATE TABLE t2(b,rowid,PRIMARY KEY(b,rowid))WITHOUT ROWID}
 sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
 do_execsql_test 7.21 {
@@ -230,7 +232,7 @@ do_execsql_test 7.30 {
   CREATE INDEX t1b ON t1(b);
   SELECT a, typeof(b) FROM t1;
 } {1 real}
-sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 3
+sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $t1broot
 db eval {CREATE TABLE t2(b,rowid,PRIMARY KEY(b,rowid))WITHOUT ROWID}
 sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
 do_execsql_test 7.31 {
@@ -245,11 +247,13 @@ do_execsql_test 7.40 {
   CREATE INDEX t1b ON t1(b);
   SELECT a, typeof(b) FROM t1;
 } {1 real}
-sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 3
+sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 1 $t1broot
 db eval {CREATE TABLE t2(b,rowid,PRIMARY KEY(b,rowid))WITHOUT ROWID}
 sqlite3_test_control SQLITE_TESTCTRL_IMPOSTER db main 0 0
 do_execsql_test 7.41 {
   SELECT b, typeof(b), rowid FROM t2;
 } {140737488355328.0 real 1}
+
+} ;# endif capable vtab
 
 finish_test

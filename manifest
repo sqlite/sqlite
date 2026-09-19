@@ -1,5 +1,5 @@
-C Update\ssessionChangesetFindTable()\sso\sthat\sit\shonors\sthe\scontract\sdefined\nin\sits\sheader\scomment\sand\salways\sreturns\snon-zero\sif\sthe\stable\sis\snot\nfound.
-D 2026-09-19T09:52:20.066
+C Merge\stest\scases\sfixes\sfrom\strunk
+D 2026-09-19T11:10:12.250
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1304,7 +1304,7 @@ F test/incrblob_err.test 89372a28f1d98254f03fed705f9efcd34ef61a674df16d2dbb47269
 F test/incrblobfault.test de274b1e329169c2c3438f9528994807ea8201ebf38ae9f157d34bf3ec0cc549
 F test/incrcorrupt.test 6c567fbf870aa9e91866fe52ce6f200cd548939a
 F test/incrvacuum.test 3fa6145f5e71f603554fd7b8ec3da4290b1341029682313285cb5f9e1893d6ba
-F test/incrvacuum2.test 74202bfb39326ce482064a4946dee11c6a9b5ad98008cca12c3daaccf9fdfc33
+F test/incrvacuum2.test 8a3c24c4f8a5f401478f7cc466b8acff598f10e0b3a571bfbbb8cc353008049b
 F test/incrvacuum3.test 0bf0ffe7f2cbc87ba1d471e4bbadabbf10dacf8d4ee26b3a072708d575d637a9
 F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
 F test/index.test 9a060cbb12b70dd0e6bca0404106242703c0827ba58712f46b0d5a3b3968b341
@@ -1336,7 +1336,7 @@ F test/intck01.sql cc67c49bb0dbffd8ede29d3e095ba2b758eaa3907eeeca3fd44048a01c407
 F test/interrupt.test ac1ef50ec9ab8e4f0e17c47629f82539d4b22558904e321ed5abea2e6187da7a
 F test/interrupt2.test 7eaa40a975d950826cd56e6c37f0f0629adfa2d1a8d3333aff0ff7cf86069963
 F test/intpkey.test e8feb8326089e78bfb6bfe03c2005c920b87417a692f33369ae953692c51c8d9
-F test/intreal.test 0ac8f96f8d891b1703c70b768d43985f699ba4404d64bfe0ae2ff8cb17430336
+F test/intreal.test 0f77b6931491ee0e47d2d849a8cc82b8e5fdcceb43ade1ac4cc80005c2479e96
 F test/io.test d267fdc8915444a45e19841489033ebe70bb69f6db605b00df70be16b2a80f59
 F test/ioerr.test 78552a95d53b9674d85f63bdf3d76a8df70b4d5dba5a6a1b8a1d60f166cd2c6b
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -2221,11 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P e6eef2cb8fff278cfef2b8898e12d641df22c435d70800d0f031ae740cc88b7e
-R 439e9aee41e55ca828f5d27922ce835f
-T *branch * changeset-missing-table
-T *sym-changeset-missing-table *
-T -sym-trunk *
+P 72005af24ddebbee80a7bc5f802b2d745f8a99a2cc29a2ea3a37428162626b8f 977e0faac735409fd06d61851a30686b471bcfc3f1dcfba2debe2b4a3d42b5e8
+R ae3927c54b5f9c53b04e1a6efd0184f4
 U drh
-Z e1867f5016a25d40f9dc2934db030d66
+Z 40d7e3c5d0244a981b4d00b141fc3567
 # Remove this line to create a well-formed Fossil manifest.

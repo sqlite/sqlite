@@ -265,7 +265,7 @@ if {[wal_is_capable]} {
   
   do_execsql_test 5.7 {
     PRAGMA wal_checkpoint
-  } {0 1964 1964}
+  } {/0 196. 196./}
   
   db close
   sqlite3 db test.db
