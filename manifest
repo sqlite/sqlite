@@ -1,5 +1,5 @@
-C Fix\stest\scases\sdue\sto\simproved\serror\smessages\sfrom\sthis\sbranch.
-D 2026-09-19T13:35:57.433
+C Add\stest\scases\sto\ssessionchange2.test.
+D 2026-09-19T17:20:43.902
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -561,7 +561,7 @@ F ext/session/sessionbig.test 47c381e7acfabeef17d98519a3080d69151723354d220afa20
 F ext/session/sessionbig2.test 89b330d35339a5c533c81cbbbaf34221125b99cc87adf9e21a49296ca76b9200
 F ext/session/sessionblob.test 87faf667870b72f08e91969abd9f52a383ab7b514506ee194d64a39d8faff00a
 F ext/session/sessionchange.test 6618cb1c1338a4b6df173b6ac42d09623fb71269962abf23ebb7617fe9f45a50
-F ext/session/sessionchange2.test 8f59185216882adc8b34bb5ba63887459acf3df58493bcffa12e4d05ab6a6b85
+F ext/session/sessionchange2.test eaf97490cd4931fc4b5f8be48a3143093b607de3fe72f9df33976012c0bdbeb6
 F ext/session/sessionconflict.test 19e4a53795c4c930bfec49e809311e09b2a9e202d9446e56d7a8b139046a0c07 x
 F ext/session/sessionconflict2.test d7f4caf59360dbca8a4698b9a3a322adf6f547f810ad41d131cacb730e02dd5e x
 F ext/session/sessioncorrupt.test e4e4c346415b09f3354a1ade13d25cf08bb073beb750ebaea9fc6d6313f857d9 x
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P 02b47eb9b7109837d3e60b54943d46c9069da3b9f4cbf0ae272ff1de497fe200
-R d69ebc688f24bb254304ac17e263a942
-U drh
-Z f12afe02d55a7218d434ff33150ea4f7
+P 3a2f7fc4c6f37eb374166db1d352e12dacb694a52fd8aa0cdac61838700b4b6e
+R 5adc9d12ba117bae14afd40cec61ed7e
+U dan
+Z eb1ef164b9d0c6d8d42e232bf1a966cc
 # Remove this line to create a well-formed Fossil manifest.
