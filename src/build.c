@@ -751,7 +751,7 @@ Expr *sqlite3ColumnExprAuth(Table *pTab, Column *pCol, Parse *pParse){
   if( pParse->db->xAuth!=0 ){
     sqlite3FuncAuth(pParse, pExpr);
   }
-#endif
+#endif /* SQLITE_OMIT_AUTHORIZATION */
   return pExpr;
 }
 
@@ -1825,7 +1825,7 @@ void sqlite3AddDefaultValue(
       if( db->init.busy==0 && db->xAuth!=0 ){
         sqlite3FuncAuth(pParse, pExpr);
       }
-#endif /* SQLITE_OMIT_AUTHORIZER */
+#endif /* SQLITE_OMIT_AUTHORIZATION */
 
     }
   }
