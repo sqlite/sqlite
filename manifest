@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\scomments\sgenerated\sby\sthe\s".schema"\scommand\sin\sthe\sCLI\nare\snot\sterminated\searly\sby\srogue\sSQL.
-D 2026-09-19T09:24:10.844
+C Fix\snew\stest\scases\sadded\sby\s[c77ff6089de242d8]\sso\sthat\sthey\swork\non\sall\sconfigurations.
+D 2026-09-19T10:58:12.120
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -1336,7 +1336,7 @@ F test/intck01.sql cc67c49bb0dbffd8ede29d3e095ba2b758eaa3907eeeca3fd44048a01c407
 F test/interrupt.test ac1ef50ec9ab8e4f0e17c47629f82539d4b22558904e321ed5abea2e6187da7a
 F test/interrupt2.test 7eaa40a975d950826cd56e6c37f0f0629adfa2d1a8d3333aff0ff7cf86069963
 F test/intpkey.test e8feb8326089e78bfb6bfe03c2005c920b87417a692f33369ae953692c51c8d9
-F test/intreal.test 0ac8f96f8d891b1703c70b768d43985f699ba4404d64bfe0ae2ff8cb17430336
+F test/intreal.test 0f77b6931491ee0e47d2d849a8cc82b8e5fdcceb43ade1ac4cc80005c2479e96
 F test/io.test d267fdc8915444a45e19841489033ebe70bb69f6db605b00df70be16b2a80f59
 F test/ioerr.test 78552a95d53b9674d85f63bdf3d76a8df70b4d5dba5a6a1b8a1d60f166cd2c6b
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -2221,8 +2221,8 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P edb5545003c95e3e388cc8a708e151dcc140765211ef207fe733c95c2a515048
-R 6bed64adbf46928bba2830630795cacf
+P e6eef2cb8fff278cfef2b8898e12d641df22c435d70800d0f031ae740cc88b7e
+R 60a498097b34a5b135e0351b0cf56c74
 U drh
-Z f7f15ea3804d2eaa830c6ec371747f50
+Z 6c55f32311b5a812948fe39a028f8641
 # Remove this line to create a well-formed Fossil manifest.
