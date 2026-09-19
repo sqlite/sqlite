@@ -1130,7 +1130,7 @@ static void tclSqlFunc(sqlite3_context *context, int argc, sqlite3_value**argv){
     switch( eType ){
       case SQLITE_BLOB: {
         data = Tcl_GetByteArrayFromObj(pVar, &n);
-        sqlite3_result_blob(context, data, n, SQLITE_TRANSIENT);
+        sqlite3_result_blob64(context, data, n, SQLITE_TRANSIENT);
         break;
       }
       case SQLITE_INTEGER: {
@@ -1522,7 +1522,7 @@ static int dbPrepareAndBind(
           ** it has no string representation or the host
           ** parameter name begins with "@". */
           data = Tcl_GetByteArrayFromObj(pVar, &n);
-          sqlite3_bind_blob(pStmt, i, data, n, SQLITE_STATIC);
+          sqlite3_bind_blob64(pStmt, i, data, n, SQLITE_STATIC);
           Tcl_IncrRefCount(pVar);
           pPreStmt->apParm[iParm++] = pVar;
         }else if( c=='b' && pVar->bytes==0 
