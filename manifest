@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\scomments\sgenerated\sby\sthe\s".schema"\scommand\sin\sthe\sCLI\nare\snot\sterminated\searly\sby\srogue\sSQL.
-D 2026-09-19T09:24:10.844
+C Update\ssessionChangesetFindTable()\sso\sthat\sit\shonors\sthe\scontract\sdefined\nin\sits\sheader\scomment\sand\salways\sreturns\snon-zero\sif\sthe\stable\sis\snot\nfound.
+D 2026-09-19T09:52:20.066
 F .fossil-settings/binary-glob 61195414528fb3ea9693577e1980230d78a1f8b0a54c78cf1b9b24d0a409ed6a x
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
@@ -580,7 +580,7 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test 5e718d5888c0c49bbb33a7a4f816366db85f59f6a4f97544a806421b85dc2dec
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c 4ac72dd6e3db0fedd084772e69471c31a557d9dd2d05a2ca940dd7c2bd663e4f
+F ext/session/sqlite3session.c a5723efc88d340c65b391da8a4d628ca17bec49edf0a11a55653d5d208db6ea1
 F ext/session/sqlite3session.h ca7c4422c1514a95056cc8d333217df6b1829d39058126b1de85d10cd62d7a9c
 F ext/session/test_session.c f465f13c661919f8ba4485a9d0690c4df5bff1cc79e962cfdafa9ff376d5119f
 F ext/wasm/GNUmakefile cc28e65dec12f1b992957152d8395484f4fcf7f94e6b6736a09ee4f48e7ec048
@@ -2221,8 +2221,11 @@ F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee
 F tool/warnings.sh a554d13f6e5cf3760f041b87939e3d616ec6961859c3245e8ef701d1eafc2ca2
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F tool/winmain.c 00c8fb88e365c9017db14c73d3c78af62194d9644feaf60e220ab0f411f3604c
-P edb5545003c95e3e388cc8a708e151dcc140765211ef207fe733c95c2a515048
-R 6bed64adbf46928bba2830630795cacf
+P e6eef2cb8fff278cfef2b8898e12d641df22c435d70800d0f031ae740cc88b7e
+R 439e9aee41e55ca828f5d27922ce835f
+T *branch * changeset-missing-table
+T *sym-changeset-missing-table *
+T -sym-trunk *
 U drh
-Z f7f15ea3804d2eaa830c6ec371747f50
+Z e1867f5016a25d40f9dc2934db030d66
 # Remove this line to create a well-formed Fossil manifest.
