@@ -807,7 +807,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     close: function(){
       const pDb = this.pointer;
       if(pDb){
-        if(this.onclose && (this.onclose.before instanceof Function)){
+        if(this.onclose?.before instanceof Function){
           try{this.onclose.before(this)}
           catch(e){/*ignore*/}
         }
@@ -822,7 +822,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         if( !__doesNotOwnHandle.delete(this) ){
           capi.sqlite3_close_v2(pDb);
         }
-        if(this.onclose && (this.onclose.after instanceof Function)){
+        if(this.onclose?.after instanceof Function){
           try{this.onclose.after(this)}
           catch(e){/*ignore*/}
         }
